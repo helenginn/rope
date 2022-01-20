@@ -272,7 +272,11 @@ public:
 
 	glm::vec3 rayTraceToPlane(glm::vec3 point, GLuint *trio, 
 	                          glm::vec3 dir, bool *backwards);
-
+	
+	bool isSelected()
+	{
+		return _selected;
+	}
 protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -288,11 +292,6 @@ protected:
 	void setNeedsExtra(bool extra)
 	{
 		_extra = extra;
-	}
-	
-	bool isSelected()
-	{
-		return _selected;
 	}
 	
 	std::vector<Vertex> _vertices;
