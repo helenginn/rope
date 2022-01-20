@@ -27,6 +27,8 @@ public:
 		return _tag;
 	}
 	
+	/** Renders button unable to be highlighted and suppresses action when
+	 * pressed */
 	void setInert(bool inert)
 	{
 		_inert = inert;
