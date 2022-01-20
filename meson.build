@@ -53,7 +53,7 @@ gen_src = custom_target('commit-output',
                         build_by_default: true,
                         build_always_stale: true)
 
-executable(name,
+vagafiles = [
 'src/AskYesNo.cpp',
 'src/BadChoice.cpp',
 'src/Box.cpp',
@@ -62,7 +62,6 @@ executable(name,
 'src/ChoiceGroup.cpp',
 'src/Draggable.cpp',
 'src/FileReader.cpp',
-'src/FromDatabase.cpp',
 'src/HasRenderables.cpp',
 'src/Image.cpp',
 'src/Library.cpp',
@@ -75,8 +74,40 @@ executable(name,
 'src/Text.cpp',
 'src/TextManager.cpp',
 'src/Window.cpp',
-'src/main.cpp',
-cpp_args: ['-I/usr/local/include'],
-link_args: ['-L/usr/local/lib', links],
-dependencies : deps, install: true)
+]
+
+if (links == [])
+  vag = static_library('libvag', vagafiles, 
+  cpp_args: ['-I/usr/local/include'],
+  link_args: ['-L/usr/local/lib'],
+  dependencies : deps, install: true)
+
+  executable(name, 'src/main.cpp',
+  cpp_args: ['-I/usr/local/include'],
+  link_args: ['-L/usr/local/lib', links],
+  dependencies : deps, link_with : vag, install: true)
+else
+  executable(name, vagafiles,
+  'src/main.cpp',
+  cpp_args: ['-I/usr/local/include'],
+  link_args: ['-L/usr/local/lib', links],
+  dependencies : deps, install: true)
+endif
+
+test_list = [
+'base_filename_shortens_extension', 
+'base_filename_without_path_shortens_extension',
+'split_by_comma_leaves_dangling_strings',
+'split_by_comma_starts_with_dangling_string',
+'button_without_sender_does_nothing',
+'button_highlights_when_mouse_over',
+'inert_button_does_nothing_when_mouse_over',
+'renderable_envelope_radius_is_most_maximal',
+'empty_renderable_envelope_radius_is_zero',
+]
+
+foreach entry : test_list
+  t = executable(entry, 'tests' / entry + '.cpp', link_with : vag)
+  test(entry, t)
+endforeach
 
