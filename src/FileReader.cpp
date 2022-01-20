@@ -60,7 +60,7 @@ std::string get_file_contents(std::string filename)
 	std::string errString = "Could not get file contents for file " + std::string(filename);
 	std::cout << errString << std::endl;
 
-	throw(errno);
+	throw(std::runtime_error(errString));
 }
 
 std::string defenestrate(std::string str)
