@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <SDL2/SDL.h>
+#include "matrix_functions.h"
 
 double Renderable::_selectionResize = 1.1;
 
@@ -23,7 +25,6 @@ void Renderable::addToVertexArray(glm::vec3 add, std::vector<Vertex> *vs)
 		{
 			(*vs)[i].pos[j] += add[j];
 		}
-		std::cout << std::endl;
 	}
 }
 
@@ -41,6 +42,7 @@ void Renderable::addToVertices(glm::vec3 add)
 
 Renderable::Renderable()
 {
+	_usesProj = false;
 	_texid = 0;
 	_gl = NULL;
 	_textured = true;
@@ -51,6 +53,8 @@ Renderable::Renderable()
 	_usingProgram = 0;
 	_backToFront = false;
 	_uModel = 0;
+	_model = glm::mat4(1.);
+	_proj = glm::mat4(1.);
 	_extra = false;
 	_usesLighting = false;
 	_usesFocalDepth = false;
@@ -380,16 +384,15 @@ void Renderable::setupVBOBuffers()
 	checkErrors("vbo buffering");
 
 	glBindVertexArray(0);
-
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
-	glDisableVertexAttribArray(3);
-	glDisableVertexAttribArray(4);
 }
 
 bool Renderable::checkErrors(std::string what)
 {
+	if (SDL_GL_GetCurrentContext() == NULL)
+	{
+		return 0;
+	}
+
 	GLenum err = glGetError();
 
 	if (err != 0)
@@ -473,15 +476,15 @@ void Renderable::render(SnowGL *sender)
 		_model = sender->getModel();
 		const char *uniform_name = "model";
 		_uModel = glGetUniformLocation(_usingProgram, uniform_name);
-		_glModel = glm::transpose(_model);
-		glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_glModel[0][0]);
+		_glModel = glm::transpose(model());
+		glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
 		checkErrors("rebinding model");
 
 		_proj = sender->getProjection();
 		uniform_name = "projection";
 		_uProj = glGetUniformLocation(_usingProgram, uniform_name);
-		_glProj = glm::transpose(_proj);
-		glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_glProj[0][0]);
+		_glProj = glm::transpose(projection());
+		glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
 		checkErrors("rebinding projection");
 
 		if (_gl->getOverrideProgram() == 0)
@@ -794,18 +797,8 @@ bool Renderable::intersectsPolygon(double x, double y, double *z)
 		for (int j = 0; j < 3; j++)
 		{
 			projs[j] = _vertices[_indices[i+j]].pos;
-
-			if (projs[j].x < -1 || projs[j].x > 1)
-			{
-				break;
-			}
-			
-			if (projs[j].y < -1 || projs[j].y > 1)
-			{
-				break;
-			}
 		}
-		
+
 		bool passes = nPolygon(target, projs, 2);
 
 		if (passes)
@@ -921,7 +914,9 @@ void Renderable::setHighlighted(bool selected)
 		_vertices = _unselectedVertices;
 	}
 
+	checkErrors("before setting highlighted");
 	setupVBOBuffers();
+	checkErrors("after setting highlighted");
 	_selected = selected;
 }
 
@@ -1163,4 +1158,148 @@ double Renderable::intersects(glm::vec3 pos, glm::vec3 dir)
 	}
 	
 	return closest;
+}
+
+glm::mat4x4 Renderable::model()
+{
+	if (!_usesProj)
+	{
+		return glm::mat4(1.);
+	}
+	
+	return _model;
+}
+
+glm::mat4x4 Renderable::projection()
+{
+	if (!_usesProj)
+	{
+		return glm::mat4(1.);
+	}
+	
+	return _proj;
+}
+
+void Renderable::setUsesProjection(bool usesProj)
+{
+	_usesProj = usesProj;
+	if (!_usesProj)
+	{
+		_proj = glm::mat4(1.);
+		_model = glm::mat4(1.);
+	}
+}
+
+void Renderable::calculateNormals()
+{
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].normal = glm::vec3(0.);
+	}
+	
+	for (size_t i = 0; i < _indices.size(); i += 3)
+	{
+		glm::vec3 &pos1 = _vertices[_indices[i+0]].pos;
+		glm::vec3 &pos2 = _vertices[_indices[i+1]].pos;
+		glm::vec3 &pos3 = _vertices[_indices[i+2]].pos;
+
+		glm::vec3 diff31 = pos3 - pos1;
+		glm::vec3 diff21 = pos2 - pos1;
+
+		glm::vec3 cross = glm::cross(diff31, diff21);
+		cross = glm::normalize(cross);
+		
+		if (!is_glm_vec_sane(cross))
+		{
+			continue;
+		}
+		
+		/* Normals */					
+		for (int j = 0; j < 3; j++)
+		{
+			_vertices[_indices[i + j]].normal += cross;
+		}
+	}
+
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		glm::vec3 &norm = _vertices[i].normal;
+		norm = glm::normalize(norm);
+	}
+}
+
+void Renderable::triangulate()
+{
+	if (_renderType == GL_LINES)
+	{
+		return;
+	}
+	
+	lockMutex();
+
+	std::map<std::pair<GLuint, GLuint>, GLuint> lines;
+	std::map<std::pair<GLuint, GLuint>, GLuint>::iterator linesit;
+
+	std::map<GLuint, std::map<GLuint, GLuint> > newVs;
+
+	for (size_t i = 0; i < _indices.size(); i += 3)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			int ij = i + (j % 3);
+			int ij1 = i + ((j + 1) % 3);
+			int min = std::min(_indices[ij], _indices[ij1]);
+			int max = std::max(_indices[ij], _indices[ij1]);
+			
+			std::pair<GLuint, GLuint> pair = std::make_pair(min, max);
+
+			lines[pair] = 1;
+		}
+	}
+
+	for (linesit = lines.begin(); linesit != lines.end(); linesit++)
+	{
+		std::pair<GLuint, GLuint> pair = linesit->first;
+		GLuint front = pair.first;
+		GLuint back = pair.second;
+		
+		Vertex v = _vertices[front]; 
+		glm::vec3 &v1 = v.pos;
+		glm::vec3 v2 = _vertices[back].pos;
+		double x = (v.tex[0] + _vertices[back].tex[0]) / 2;
+		double y = (v.tex[1] + _vertices[back].tex[1]) / 2;
+		
+		v1 += v2;
+		v1 *= 0.5;
+		
+		v.tex[0] = x;
+		v.tex[1] = y;
+		
+		_vertices.push_back(v);
+		newVs[front][back] = _vertices.size() - 1;
+		newVs[back][front] = _vertices.size() - 1;
+	}
+	
+	size_t idxSize = _indices.size();
+	for (size_t i = 0; i < idxSize; i += 3)
+	{
+		GLuint i1 = _indices[i];
+		GLuint i2 = _indices[i + 1];
+		GLuint i3 = _indices[i + 2];
+		
+		GLuint i12 = newVs[i1][i2];
+		GLuint i13 = newVs[i1][i3];
+		GLuint i23 = newVs[i2][i3];
+		
+		_indices[i+1] = i12;
+		_indices[i+2] = i13;
+		
+		addIndices(i13, i12, i23);
+		addIndices(i13, i23, i3);
+		addIndices(i23, i12, i2);
+	}
+	
+	calculateNormals();
+	
+	unlockMutex();
 }

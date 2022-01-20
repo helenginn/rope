@@ -4,9 +4,8 @@
 #define __practical__MainMenu__
 
 #include "Scene.h"
-#include "ButtonResponder.h"
 
-class MainMenu : public Scene, public ButtonResponder
+class MainMenu : public Scene
 {
 public:
 	MainMenu();

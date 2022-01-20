@@ -81,3 +81,18 @@ HasRenderables::~HasRenderables()
 
 }
 
+void HasRenderables::addObject(Renderable *r)
+{
+	std::vector<Renderable *>::iterator it;
+	
+	it = std::find(_objects.begin(), _objects.end(), r);
+	
+	if (it == _objects.end())
+	{
+		_objects.push_back(r);
+	}
+	else
+	{
+		throw(std::runtime_error("trying to add same object twice"));
+	}
+}

@@ -9,6 +9,7 @@
 
 
 SDL_Renderer *Window::_renderer = NULL;
+SDL_Rect Window::_rect;
 SDL_Window *Window::_window = NULL;
 SDL_GLContext Window::_context = NULL;
 
@@ -19,11 +20,10 @@ KeyResponder *Window::_keyResponder = NULL;
 Window::Window()
 {
 	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
-	SDL_Rect r;
 	
 #ifdef __EMSCRIPTEN__
-	r.w = BROWSER_WIDTH;
-	r.h = BROWSER_HEIGHT;
+	_rect.w = BROWSER_WIDTH;
+	_rect.h = BROWSER_HEIGHT;
 #else
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) 
 	{
@@ -31,7 +31,7 @@ Window::Window()
 		exit(0);
     }
 
-	SDL_GetDisplayBounds(0, &r);
+	SDL_GetDisplayBounds(0, &_rect);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -40,7 +40,7 @@ Window::Window()
 	WindowFlags += SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN;
 #endif
 
-	_window = SDL_CreateWindow("Vagabond", 0, 0, r.w, r.h, WindowFlags);
+	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);
 	_context = SDL_GL_CreateContext(_window);
 
 #ifdef __EMSCRIPTEN__
@@ -90,6 +90,7 @@ char pressedKey(SDL_Keycode sym)
 
 void Window::tick()
 {
+	_current->checkErrors("before sdl events");
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
@@ -154,14 +155,19 @@ void Window::tick()
 
 void Window::render()
 {
+	_current->checkErrors("before viewport");
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
+
+	_current->checkErrors("before clear");
 
 	glClearColor(0.9f, 0.9f, 0.9f, 0.f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	_current->render();
+
+	_current->checkErrors("after render from window");
 
 	SDL_GL_SwapWindow(_window);
 
@@ -183,7 +189,7 @@ void Window::render()
 void Window::setCurrentScene(Scene *scene)
 {
 	_current = scene;
-	_current->setDims(BROWSER_WIDTH, BROWSER_HEIGHT);
+	_current->setDims(_rect.w, _rect.h);
 	_current->setup();
 }
 

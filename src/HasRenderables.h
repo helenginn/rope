@@ -19,10 +19,7 @@ public:
 	
 	void deleteObjects();
 	
-	void addObject(Renderable *r)
-	{
-		_objects.push_back(r);
-	}
+	void addObject(Renderable *r);
 
 	size_t objectCount()
 	{

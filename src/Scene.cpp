@@ -2,6 +2,8 @@
 
 #include "Window.h"
 #include "Modal.h"
+#include "TextButton.h"
+#include "MainMenu.h"
 #include "Scene.h"
 #include "Image.h"
 #include <GLES3/gl3.h>
@@ -11,9 +13,8 @@
 
 #include <cstring>
 
-Scene::Scene() : SnowGL()
+Scene::Scene(Scene *prev) : SnowGL()
 {
-//	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	_background = NULL;
@@ -22,17 +23,19 @@ Scene::Scene() : SnowGL()
 	_dragged = NULL;
 	_removeModal = NULL;
 	
+	_back = NULL;
+	_previous = prev;
+
 	setBackground();
+	showBackButton();
 }
 
 void Scene::setBackground()
 {
-	_proj = glm::mat4(1.);
 	Image *r = new Image("assets/images/paper.jpg");
 	r->Box::makeQuad();
 	addObject(r);
 	_background = r;
-	
 }
 
 void Scene::removeModal()
@@ -188,4 +191,50 @@ char *Scene::dataToChar(void *data, int nbytes)
 	tmp[nbytes] = '\0';
 
 	return tmp;
+}
+
+void Scene::showBackButton()
+{
+	if (_previous == NULL)
+	{
+		return;
+	}
+
+	TextButton *button = new TextButton("Back", this);
+	button->setReturnTag("back");
+	button->resize(0.6);
+	setLeft(button, 0.01, 0.06);
+	addObject(button);
+	_back = button;
+}
+
+void Scene::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "back_to_menu")
+	{
+		MainMenu *menu = new MainMenu();
+		menu->show();
+	}
+
+	if (tag == "back")
+	{
+		_previous->showSimple();
+		Window::setDelete(this);
+	}
+}
+
+void Scene::back(int num)
+{
+	_previous->showSimple();
+	Window::setDelete(this);
+	
+	if (num > 0)
+	{
+		_previous->back(num - 1);
+
+		if (num == 1)
+		{
+			_previous->refresh();
+		}
+	}
 }

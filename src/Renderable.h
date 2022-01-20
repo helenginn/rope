@@ -138,13 +138,23 @@ public:
 	
 	void setProj(glm::mat4x4 proj)
 	{
+		if (!_usesProj)
+		{
+			return;
+		}
+
 		_proj = proj;
 	}
+	
+	glm::mat4x4 projection();
+	glm::mat4x4 model();
 	
 	void setUnproj(glm::mat4x4 unproj)
 	{
 		_unproj = unproj;
 	}
+	
+	void setUsesProjection(bool usesProj);
 	
 	void lockMutex()
 	{
@@ -189,6 +199,9 @@ public:
 	
 	void changeToLines();
 	void changeToTriangles();
+
+	virtual void triangulate();
+	virtual void calculateNormals();
 	
 	void remove()
 	{
@@ -277,6 +290,7 @@ public:
 	{
 		return _selected;
 	}
+
 protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -356,6 +370,7 @@ private:
 	bool _selected;
 	bool _selectable;
 	bool _draggable;
+	bool _usesProj;
 	std::string _texture;
 
 	std::string _fFile;

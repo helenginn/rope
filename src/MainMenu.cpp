@@ -1,10 +1,11 @@
 // Copyright (C) 2021 Helen Ginn
 
+#include "Display.h"
 #include "MainMenu.h"
 #include "TextButton.h"
 #include <iostream>
 
-MainMenu::MainMenu() : Scene(), ButtonResponder()
+MainMenu::MainMenu() : Scene()
 {
 
 }
@@ -22,13 +23,25 @@ void MainMenu::setup()
 
 	{
 		Text *text = new Text("Vagabond");
-		std::cout << glm::to_string(text->centroid()) << std::endl;
 		setCentre(text, 0.5, 0.1);
 		addObject(text);
+	}
+
+	{
+		TextButton *button = new TextButton("View model", this);
+		button->setReturnTag("model");
+		setCentre(button, 0.5, 0.3);
+		addObject(button);
 	}
 }
 
 void MainMenu::buttonPressed(std::string tag, Button *button)
 {
+	if (tag == "model")
+	{
+		Display *display = new Display(this);
+		display->show();
+	}
 
+	Scene::buttonPressed(tag, button);
 }

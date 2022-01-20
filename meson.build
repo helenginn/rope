@@ -25,6 +25,7 @@ install_data(
 'assets/shaders_450/box.vsh',
 'assets/shaders_450/box.fsh',
 'assets/shaders_450/shade.fsh',
+'assets/shaders_450/with_matrix.vsh',
 install_dir : shaders)
 
 install_data(
@@ -55,17 +56,22 @@ gen_src = custom_target('commit-output',
 
 vagafiles = [
 'src/AskYesNo.cpp',
+'src/Atom.cpp',
 'src/BadChoice.cpp',
 'src/Box.cpp',
 'src/Button.cpp',
 'src/Choice.cpp',
 'src/ChoiceGroup.cpp',
 'src/Draggable.cpp',
+'src/Display.cpp',
 'src/FileReader.cpp',
+'src/GuiAtom.cpp',
 'src/HasRenderables.cpp',
+'src/Icosahedron.cpp',
 'src/Image.cpp',
 'src/Library.cpp',
 'src/MainMenu.cpp',
+'src/matrix_functions.cpp',
 'src/Modal.cpp',
 'src/Renderable.cpp',
 'src/Scene.cpp',
@@ -75,6 +81,8 @@ vagafiles = [
 'src/TextManager.cpp',
 'src/Window.cpp',
 ]
+
+vag = []
 
 if (links == [])
   vag = static_library('libvag', vagafiles, 
@@ -99,15 +107,41 @@ test_list = [
 'base_filename_without_path_shortens_extension',
 'split_by_comma_leaves_dangling_strings',
 'split_by_comma_starts_with_dangling_string',
+
 'button_without_sender_does_nothing',
 'button_highlights_when_mouse_over',
 'inert_button_does_nothing_when_mouse_over',
+
 'renderable_envelope_radius_is_most_maximal',
+'renderable_returns_vertex_count_and_size',
+'renderable_does_not_add_same_object_twice',
 'empty_renderable_envelope_radius_is_zero',
+
+'right_hand_matrix_has_positive_determinant',
+
+'box_does_not_use_projection',
+'atom_can_use_projection',
+'atom_increments_vertex_array_by_number',
+'atom_vertices_per_atom_above_zero',
+'atom_does_not_accept_anumeric_positions',
+'atom_centroid_is_at_added_position',
+'atom_derived_should_immediately_match_initial_placement',
+'atom_element_throws_exception_if_null',
+'atom_element_throws_exception_if_number',
+'atom_element_converts_to_upper_case',
 ]
 
+should_fail_list = [
+]
+
+if (links == [])
 foreach entry : test_list
   t = executable(entry, 'tests' / entry + '.cpp', link_with : vag)
   test(entry, t)
 endforeach
 
+foreach entry : should_fail_list
+  t = executable(entry, 'tests' / entry + '.cpp', link_with : vag)
+  test(entry, t, should_fail : true)
+endforeach
+endif

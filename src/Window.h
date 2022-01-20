@@ -52,10 +52,16 @@ public:
 	void glSetup();
 	static void render();
 	static void tick();
+	
+	static float aspect()
+	{
+		return (float)_rect.h / (float)_rect.w;
+	}
 private:
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
 	static SDL_GLContext _context;
+	static SDL_Rect _rect;
 
 	static Scene *_current;
 	static std::vector<Scene *> _toDelete;

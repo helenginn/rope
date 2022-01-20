@@ -5,6 +5,7 @@
 #include <GLES3/gl3.h>
 #include "SnowGL.h"
 #include "Renderable.h"
+#include "Window.h"
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
@@ -25,9 +26,11 @@ SnowGL::SnowGL()
 	memset(_pingPongFbo, '\0', sizeof(GLuint) * 2);
 	_sceneFbo = 0;
 	_sceneDepth = 0;
+	_proj = glm::mat4(1.);
+	_model = glm::mat4(1.);
 
-	_zNear = 4;
-	_zFar = 400;
+	_zNear = 1;
+	_zFar = 100;
 
 	setupCamera();
 
@@ -291,6 +294,7 @@ void SnowGL::render()
 	checkErrors("clear buffer bits");
 
 	renderScene();
+	checkErrors("after render");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -342,10 +346,12 @@ void SnowGL::setupCamera()
 
 void SnowGL::updateProjection(float side)
 {
-	float aspect = (float)height() / (float)width();
+	float aspect = 1 / Window::aspect();
 	
-	_proj = glm::frustum(-side, side, side * aspect, -side * aspect,
-	                       _zNear, _zFar);
+	_proj = glm::perspective((float)deg2rad(35), aspect, 
+	                         _zNear, _zFar);
+//	_proj = glm::perspective(-side, side, side * aspect, 
+//	                         -side * aspect, _zNear, _zFar);
 
 	_unproj = glm::inverse(_proj);
 }
