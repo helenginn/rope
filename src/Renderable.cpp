@@ -1033,19 +1033,20 @@ void Renderable::setShaderFile(std::string file, std::string *location,
 		return;
 	}
 
-	if (file_exists(file))
+	std::string path = file;
+	#ifndef __EMSCRIPTEN__
+	path = std::string(DATA_DIRECTORY) + "/" + file;
+	#endif
+
+	*fLoc = file;
+	try
 	{
-		*fLoc = file;
-		std::string path = file;
-		#ifndef __EMSCRIPTEN__
-		path = std::string(DATA_DIRECTORY) + "/" + file;
-		#endif
 		file = get_file_contents(path);
 		*location = file;
 	}
-	else
+	catch (std::runtime_error err)
 	{
-		std::cout << "Could not open " << file << std::endl;
+		std::cout << "Could not open " << err.what() << std::endl;
 		return;
 	}
 }
