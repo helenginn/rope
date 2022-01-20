@@ -1,20 +1,21 @@
 project('vagabond', 'cpp')
 
 links = meson.get_cross_property('links', [])
-deps = []
+glm = dependency('glm', required: false)
+deps = [glm]
 gl = dependency('GL', method : 'system', required: false)
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 name = 'index.html'
 
 if (links == [])
-  deps = [gl, sdl2, sdl2image]
+  deps += [gl, sdl2, sdl2image]
   name = 'vagabond'
 endif
 
-data_dir = get_option('datadir') / 'vagabond' / 'assets'
-shaders = join_paths(data_dir, 'shaders')
-images = join_paths(data_dir, 'images')
+data_dir = get_option('datadir') / 'vagabond'
+shaders = data_dir / 'assets' / 'shaders'
+images = data_dir / 'assets' / 'images'
 dir_base = get_option('prefix')
 combined = join_paths(dir_base, data_dir)
 

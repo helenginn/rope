@@ -1,0 +1,17 @@
+#meson --cross-file=emscripten.txt --buildtype=release build/current
+
+[binaries]
+cpp = 'em++'
+
+[constants]
+sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2']
+shell_file = ['--shell-file', '../../minimal_shell.html']
+preload = ['--use-preload-plugins', '--preload-file', '../../assets']
+export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr', '-s', 'LLD_REPORT_UNDEFINED']
+
+[properties]
+shared_lib_suffix = 'js'
+static_lib_suffix = 'js'
+shared_module_suffix = 'js'
+exe_suffix = 'js'
+links = sdl_options + shell_file + preload + export
