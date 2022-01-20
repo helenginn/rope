@@ -250,7 +250,10 @@ void Renderable::initialisePrograms(std::string *v, std::string *f,
 
 void Renderable::deleteTextures()
 {
-	Library::getLibrary()->dropTexture(_texid);
+	if (_texid != 0)
+	{
+		Library::getLibrary()->dropTexture(_texid);
+	}
 }
 
 void Renderable::unbindVBOBuffers()
@@ -268,8 +271,12 @@ void Renderable::deleteVBOBuffers()
 //		glDeleteVertexArrays(1, &vao);
 	}
 	*/
-	GLuint vao = vaoForContext();
-	glDeleteVertexArrays(1, &vao);
+
+	if (_usingProgram != 0)
+	{
+		GLuint vao = vaoForContext();
+		glDeleteVertexArrays(1, &vao);
+	}
 }
 
 void Renderable::rebindVBOBuffers()
@@ -305,6 +312,11 @@ int Renderable::vaoForContext()
 
 void Renderable::setupVBOBuffers()
 {
+	if (_usingProgram == 0)
+	{
+		return;
+	}
+
 	int vao = vaoForContext();
 	glBindVertexArray(vao);
 
