@@ -4,7 +4,6 @@
 #define __Slip__SnowGL__
 
 #include "glm_import.h"
-#include "mat4x4.h"
 #include <GLES3/gl32.h>
 
 #include "HasRenderables.h"

@@ -7,7 +7,6 @@
 #include <mutex>
 #include <map>
 #include "glm_import.h"
-#include "mat4x4.h"
 #include "HasRenderables.h"
 
 namespace Snow

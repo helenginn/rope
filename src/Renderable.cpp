@@ -2,7 +2,6 @@
 
 #include "Renderable.h"
 #include "SnowGL.h"
-#include "mat3x3.h"
 #include "commit.h"
 #include "Library.h"
 #include "FileReader.h"
