@@ -40,3 +40,40 @@ void GuiAtom::render(SnowGL *gl)
 
 	glDisable(GL_DEPTH_TEST);
 }
+
+void GuiAtom::watchAtom(Atom *a)
+{
+	_atoms.push_back(a);
+	long index = _vertices.size();
+	addPosition(glm::vec3(0.));
+	_atomIndex[a] = index;
+	
+	checkAtoms();
+}
+
+void GuiAtom::checkAtoms()
+{
+	for (size_t i = 0; i < _atoms.size(); i++)
+	{
+		Atom *a = _atoms[i];
+		
+		glm::vec3 p;
+		if (a->positionChanged() && a->fishPosition(&p))
+		{
+			int idx = _atomIndex[a];
+			glm::vec3 last = _atomPos[a];
+
+			glm::vec3 diff = p - last;
+			
+			int end = idx + verticesPerAtom(); 
+			for (size_t j = idx; j < end; j++)
+			{
+				_vertices[j].pos += diff;
+			}
+			
+			_atomPos[a] = p;
+		}
+	}
+
+	setupVBOBuffers();
+}
