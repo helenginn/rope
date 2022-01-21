@@ -129,6 +129,12 @@ test_list = [
 'atom_element_throws_exception_if_null',
 'atom_element_throws_exception_if_number',
 'atom_element_converts_to_upper_case',
+'atom_name_converts_to_upper_case',
+'atom_number_cannot_be_negative',
+'atom_initialised_and_pushed_to_gui_is_renderable',
+'atom_initialised_with_nitrogen_is_blue',
+'atom_initialised_with_oxygen_is_red',
+'atom_initialised_with_sulphur_is_yellow',
 ]
 
 should_fail_list = [
