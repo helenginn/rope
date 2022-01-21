@@ -173,7 +173,8 @@ protected:
 
 	double _lastX; double _lastY;
 	double _shadowing;
-	bool _moving;
+	bool _left;
+	bool _right;
 	bool _controlPressed;
 	bool _shiftPressed;
 	bool _acceptsFocus;

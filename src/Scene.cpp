@@ -112,13 +112,13 @@ std::vector<Renderable *> &Scene::pertinentObjects()
 	return objects();
 }
 
-void Scene::mouseReleaseEvent(double x, double y)
+void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	_mouseDown = false;
 	_dragged = NULL;
 }
 
-void Scene::mousePressEvent(double x, double y)
+void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	convertToGLCoords(&x, &y);
 	Renderable *chosen = findObject(x, y);

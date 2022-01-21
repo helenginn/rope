@@ -305,20 +305,19 @@ void SnowGL::updateCamera()
 	glm::vec3 negCentre = centre;
 	negCentre *= -1;
 
-	glm::mat4x4 change = glm::translate(glm::mat4(1.f), negCentre);
+	/* move to centre, rotate, move away from centre */
+	glm::mat4x4 back = glm::translate(glm::mat4(1.f), negCentre);
+	glm::mat4x4 rot = glm::rotate(glm::mat4(1.f), _camAlpha, glm::vec3(1, 0, 0));
+	rot = glm::rotate(rot, _camBeta, glm::vec3(0, 1, 0));
+	rot = glm::rotate(rot, _camGamma, glm::vec3(0, 0, 1));
+	glm::mat4x4 front = glm::translate(glm::mat4(1.f), centre);
 
-	glm::mat4x4 tmp = glm::rotate(glm::mat4(1.f), _camAlpha, glm::vec3(1, 0, 0));
-	tmp = glm::rotate(tmp, _camBeta, glm::vec3(0, 1, 0));
-	tmp = glm::rotate(tmp, _camGamma, glm::vec3(0, 0, 1));
-	change = tmp * change;
-
-	change = glm::translate(change, centre);
+	glm::mat4x4 change = front * rot * back;
 
 	_centre += _translation;
 	glm::mat4x4 transMat = glm::translate(glm::mat4(1.f), _translation);
 
-	tmp = change * transMat;
-	_model = tmp * _model;
+	_model = change * transMat * _model;
 
 	_camAlpha = 0; _camBeta = 0; _camGamma = 0;
 	_translation = glm::vec3(0, 0, 0);

@@ -121,8 +121,9 @@ void Window::tick()
 				{
 					_keyResponder->keyPressed(event.key.keysym.sym);
 				}
-
 			}
+			
+			_current->keyPressEvent(event.key.keysym.sym);
 		}
 		else if (event.type == SDL_MOUSEMOTION)
 		{
@@ -130,11 +131,13 @@ void Window::tick()
 		}
 		else if (event.type == SDL_MOUSEBUTTONDOWN)
 		{
-			_current->mousePressEvent(event.motion.x, event.motion.y);
+			_current->mousePressEvent(event.motion.x, event.motion.y, 
+			                          event.button);
 		}
 		else if (event.type == SDL_MOUSEBUTTONUP)
 		{
-			_current->mouseReleaseEvent(event.motion.x, event.motion.y);
+			_current->mouseReleaseEvent(event.motion.x, event.motion.y, 
+			                            event.button);
 		}
 		else if (event.type == SDL_QUIT)
 		{

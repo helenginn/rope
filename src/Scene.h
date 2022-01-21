@@ -4,6 +4,7 @@
 #define __practical__Scene__
 
 #include "SnowGL.h"
+#include "SDL2/SDL.h"
 #include "ButtonResponder.h"
 
 class Renderable;
@@ -35,9 +36,12 @@ public:
 	virtual void showSimple();
 	virtual void render();
 
-	void mouseMoveEvent(double x, double y);
-	void mousePressEvent(double x, double y);
-	void mouseReleaseEvent(double x, double y);
+	virtual void mouseMoveEvent(double x, double y);
+	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
+	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
+
+	virtual void keyReleaseEvent(SDL_Keycode pressed) {};
+	virtual void keyPressEvent(SDL_Keycode pressed) {};
 
 	void setCentre(Renderable *r, double x, double y);
 	void setLeft(Renderable *r, double x, double y);
