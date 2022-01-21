@@ -1,5 +1,8 @@
 #include "Display.h"
 #include "GuiAtom.h"
+#include "Atom.h"
+#include "Cif2Geometry.h"
+#include <SDL2/SDL.h>
 #include <iostream>
 
 Display::Display(Scene *prev) : Scene(prev)
@@ -15,9 +18,16 @@ Display::~Display()
 
 void Display::setup()
 {
+	Cif2Geometry geom = Cif2Geometry("/Applications/ccp4-7.1/lib/data/monomers/a/ASP.cif");
+	geom.parse();
+	
 	_atoms = new GuiAtom();
-	_atoms->addPosition(glm::vec3(0, 0, 0));
-	_atoms->addPosition(glm::vec3(0, 1.2, 0));
+
+	for (size_t i = 0; i < geom.atomCount(); i++)
+	{
+		Atom *a = geom.atom(i);
+		_atoms->watchAtom(a);
+	}
 	
 	addObject(_atoms);
 }
