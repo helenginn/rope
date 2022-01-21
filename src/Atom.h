@@ -2,6 +2,7 @@
 #define __vagabond__Atom__
 
 #include "glm_import.h"
+#include <mutex>
 
 class Atom
 {
@@ -38,18 +39,90 @@ public:
 		return _derived.pos;
 	}
 	
+	void setAtomName(std::string name);
+	
+	std::string atomName()
+	{
+		return _atomName;
+	}
+	
+	/** set atom number as sequentially numbered in PDB files.
+	 *  throws exception if number is negative. */
+	void setAtomNum(int num);
+	
+	const int &atomNum()
+	{
+		return _atomNum;
+	}
+	
+	const int &residueNumber()
+	{
+		return _residueNumber;
+	}
+	
+	void setResidueNumber(int num)
+	{
+		_residueNumber = num;
+	}
+	
+	void setHetatm(bool hetatm)
+	{
+		_hetatm = hetatm;
+	}
+	
+	void setOccupancy(float occ)
+	{
+		_occupancy = occ;
+	}
+	
+	const bool &hetatm()
+	{
+		return _hetatm;
+	}
+	
+	const float &occupancy()
+	{
+		return _occupancy;
+	}
+
+	/** sets element symbol; forces upper case. Throws exception
+	 * 	if not alphabetical or empty. */
 	void setElementSymbol(std::string ele);
 	
 	std::string elementSymbol()
 	{
 		return _ele;
 	}
+	
+	void lockMutex()
+	{
+		_mutex.lock();
+	}
+	
+	void unlockMutex()
+	{
+		_mutex.unlock();
+	}
+	
+	bool positionChanged();
+	bool fishPosition(glm::vec3 *pos);
 private:
+	void changedPosition();
+
 	AtomPlacement _initial;
 	AtomPlacement _derived;
 
 	bool _setupInitial;
+	bool _changedPosition;
+
+	bool _hetatm;
+	float _occupancy;
+	int _residueNumber;
+	int _atomNum;
+
 	std::string _ele;
+	std::string _atomName;
+	std::mutex _mutex;
 };
 
 #endif
