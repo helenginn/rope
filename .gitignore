@@ -3,6 +3,7 @@ cloc.txt
 
 build
 data
+doc
 tags
 
 *.sw?
