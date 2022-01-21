@@ -1,34 +1,40 @@
 #include "../src/GuiAtom.h"
+#include "../src/Atom.h"
 
 int main()
 {
 	glm::vec3 nanvec = glm::vec3(NAN, 0, 0);
 	glm::vec3 infvec = glm::vec3(INFINITY, 0, 0);
+	const double init_b = 30;
 	
-	GuiAtom *atom = new GuiAtom();
+	GuiAtom *gui = new GuiAtom();
 	
 	try
 	{
-		atom->addPosition(nanvec);
+		Atom *atom = new Atom();
+		atom->setInitialPosition(nanvec, init_b);
+		gui->watchAtom(atom);
 	}
 	catch (std::runtime_error err)
 	{
-		delete atom;
+		delete gui;
 		return 0;
 	}
 	
 	try
 	{
-		atom->addPosition(infvec);
+		Atom *atom = new Atom();
+		atom->setInitialPosition(infvec, init_b);
+		gui->watchAtom(atom);
 	}
 	catch (std::runtime_error err)
 	{
-		delete atom;
+		delete gui;
 		return 0;
 	}
 
 	
-	delete atom;
+	delete gui;
 	return 1;
 }
 

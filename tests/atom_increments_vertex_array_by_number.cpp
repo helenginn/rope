@@ -1,11 +1,17 @@
 #include "../src/GuiAtom.h"
+#include "../src/Atom.h"
 
 int main()
 {
-	GuiAtom *atom = new GuiAtom();
-	size_t v = atom->verticesPerAtom();
+	GuiAtom *gui = new GuiAtom();
+	size_t v = gui->verticesPerAtom();
+
+	glm::vec3 start = glm::vec3(0.5, 0.5, 0.5);
+	double init_b = 30;
+	Atom *atom = new Atom();
+	atom->setInitialPosition(start, init_b);
 	
-	atom->addPosition(glm::vec3(0, 0, 0));
+	gui->watchAtom(atom);
 	
-	return !(atom->vertexCount() == v);
+	return !(gui->vertexCount() == v);
 }
