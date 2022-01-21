@@ -28,6 +28,10 @@ SnowGL::SnowGL()
 	_sceneDepth = 0;
 	_proj = glm::mat4(1.);
 	_model = glm::mat4(1.);
+	_shiftPressed = false;
+	_controlPressed = false;
+	_left = false;
+	_right = false;
 
 	_zNear = 1;
 	_zFar = 100;

@@ -3,7 +3,9 @@
 
 #include "Cif2Geometry.h"
 #include "FileReader.h"
+#include "GeometryTable.h"
 #include "Atom.h"
+#include "AtomGroup.h"
 #include "glm_import.h"
 
 using namespace gemmi::cif;
@@ -11,6 +13,24 @@ using namespace gemmi::cif;
 Cif2Geometry::Cif2Geometry(std::string filename)
 {
 	_filename = filename;
+	_table = new GeometryTable();
+	_atoms = new AtomGroup();
+	_accessedAtoms = false;
+	_accessedTable = false;
+}
+
+Cif2Geometry::~Cif2Geometry()
+{
+	if (!_accessedAtoms)
+	{
+		delete _atoms;
+	}
+
+	else if (!_accessedTable)
+	{
+		delete _table;
+	}
+
 }
 
 void Cif2Geometry::parse()
@@ -95,7 +115,7 @@ void Cif2Geometry::processLoop(Loop &loop)
 		a->setAtomName(name);
 		a->setInitialPosition(pos, 30);
 		
-		_atoms.push_back(a);
+		_atoms->add(a);
 	}
 
 }

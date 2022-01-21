@@ -1,3 +1,4 @@
+#include "commit.h"
 #include "Display.h"
 #include "GuiAtom.h"
 #include "Atom.h"
@@ -18,18 +19,19 @@ Display::~Display()
 
 void Display::setup()
 {
-	Cif2Geometry geom = Cif2Geometry("/Applications/ccp4-7.1/lib/data/monomers/a/ASP.cif");
+	std::string path = "assets/geometry/standard_geometry.cif";
+	path = "/assets/geometry/ASP.cif";
+#ifndef __EMSCRIPTEN__
+	path = std::string(DATA_DIRECTORY) + "/" + path;
+#endif
+
+	Cif2Geometry geom = Cif2Geometry(path);
 	geom.parse();
 	
-	_atoms = new GuiAtom();
+	_guiAtoms = new GuiAtom();
+	_guiAtoms->watchAtoms(geom.atoms());
 
-	for (size_t i = 0; i < geom.atomCount(); i++)
-	{
-		Atom *a = geom.atom(i);
-		_atoms->watchAtom(a);
-	}
-	
-	addObject(_atoms);
+	addObject(_guiAtoms);
 }
 
 void Display::interpretMouseButton(SDL_MouseButtonEvent button, bool dir)
@@ -61,9 +63,14 @@ void Display::mouseMoveEvent(double x, double y)
 	{
 		double dx = x - _lastX;
 		double dy = y - _lastY;
+		
+		double mult = 1;
+#ifdef __EMSCRIPTEN__
+		mult = 100;
+#endif
 
-		_camAlpha = deg2rad(-dy);
-		_camBeta = deg2rad(-dx);
+		_camAlpha = deg2rad(-dy) * mult;
+		_camBeta = deg2rad(-dx) * mult;
 		
 		updateCamera();
 	}

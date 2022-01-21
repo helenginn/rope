@@ -83,6 +83,7 @@ bool Atom::fishPosition(glm::vec3 *p)
 	if (_mutex.try_lock())
 	{
 		*p = _derived.pos;
+		_changedPosition = false;
 		unlockMutex();
 		return true;
 	}

@@ -125,6 +125,10 @@ void Window::tick()
 			
 			_current->keyPressEvent(event.key.keysym.sym);
 		}
+		else if (event.type == SDL_KEYUP)
+		{
+			_current->keyReleaseEvent(event.key.keysym.sym);
+		}
 		else if (event.type == SDL_MOUSEMOTION)
 		{
 			_current->mouseMoveEvent(event.motion.x, event.motion.y);

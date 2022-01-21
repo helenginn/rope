@@ -23,7 +23,7 @@ public:
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
 	void interpretControlKey(SDL_Keycode pressed, bool dir);
-	GuiAtom *_atoms;
+	GuiAtom *_guiAtoms;
 
 };
 

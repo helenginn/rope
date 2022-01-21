@@ -16,8 +16,15 @@ endif
 data_dir = get_option('datadir') / 'vagabond'
 shaders = data_dir / 'assets' / 'shaders'
 images = data_dir / 'assets' / 'images'
+geometry = data_dir / 'assets' / 'geometry'
 dir_base = get_option('prefix')
 combined = join_paths(dir_base, data_dir)
+
+
+install_data(
+'assets/geometry/standard_geometry.cif',
+'assets/geometry/ASP.cif',
+install_dir : geometry)
 
 install_data(
 'assets/shaders_450/quad.vsh',
@@ -57,6 +64,7 @@ gen_src = custom_target('commit-output',
 vagafiles = [
 'src/AskYesNo.cpp',
 'src/Atom.cpp',
+'src/AtomGroup.cpp',
 'src/BadChoice.cpp',
 'src/Box.cpp',
 'src/Button.cpp',
@@ -66,6 +74,7 @@ vagafiles = [
 'src/Draggable.cpp',
 'src/Display.cpp',
 'src/FileReader.cpp',
+'src/GeometryTable.cpp',
 'src/GuiAtom.cpp',
 'src/HasRenderables.cpp',
 'src/Icosahedron.cpp',
@@ -119,13 +128,24 @@ test_list = [
 'empty_renderable_envelope_radius_is_zero',
 
 'right_hand_matrix_has_positive_determinant',
+'matrix_from_unit_cell_handles_planar',
+'matrix_from_unit_cell_handles_obtuse',
 
 'box_does_not_use_projection',
+
+'cif2geometry_transfers_atom_ownership',
+'cif2geometry_transfers_table_ownership',
+
+'atomgroup_adds_single_atom',
+'atomgroup_can_remove_existing_atom',
+'atomgroup_cannot_remove_non_member_atom',
+'atomgroup_does_not_add_atom_twice',
+
 'atom_can_use_projection',
+'atom_cannot_have_negative_occupancy',
 'atom_increments_vertex_array_by_number',
 'atom_vertices_per_atom_above_zero',
 'atom_does_not_accept_anumeric_positions',
-'atom_centroid_is_at_added_position',
 'atom_derived_should_immediately_match_initial_placement',
 'atom_element_throws_exception_if_null',
 'atom_element_throws_exception_if_number',

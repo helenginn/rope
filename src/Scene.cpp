@@ -203,7 +203,7 @@ void Scene::showBackButton()
 	TextButton *button = new TextButton("Back", this);
 	button->setReturnTag("back");
 	button->resize(0.6);
-	setLeft(button, 0.01, 0.06);
+	setLeft(button, 0.02, 0.06);
 	addObject(button);
 	_back = button;
 }

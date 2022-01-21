@@ -2,6 +2,7 @@
 #include "matrix_functions.h"
 #include "Icosahedron.h"
 #include "Atom.h"
+#include "AtomGroup.h"
 
 GuiAtom::GuiAtom() : Renderable()
 {
@@ -15,7 +16,30 @@ GuiAtom::GuiAtom() : Renderable()
 	_template->resize(0.3);
 }
 
-void GuiAtom::addPosition(glm::vec3 position)
+void GuiAtom::colourByElement(std::string ele)
+{
+	glm::vec4 colour = glm::vec4(0.5, 0.5, 0.5, 1.);
+	if (ele == "O")
+	{
+		colour = glm::vec4(1.0, 0.2, 0.2, 1.);
+	}
+	if (ele == "S")
+	{
+		colour = glm::vec4(1.0, 1.0, 0.2, 1.);
+	}
+	if (ele == "H")
+	{
+		colour = glm::vec4(0.8, 0.8, 0.8, 1.);
+	}
+	if (ele == "N")
+	{
+		colour = glm::vec4(0.2, 0.2, 1.0, 1.);
+	}
+
+	_template->setColour(colour.x, colour.y, colour.z);
+}
+
+void GuiAtom::setPosition(glm::vec3 position)
 {
 	if (!is_glm_vec_sane(position))
 	{
@@ -23,7 +47,6 @@ void GuiAtom::addPosition(glm::vec3 position)
 	}
 
 	_template->setPosition(position);
-	appendObject(_template);
 }
 
 size_t GuiAtom::verticesPerAtom()
@@ -45,10 +68,23 @@ void GuiAtom::watchAtom(Atom *a)
 {
 	_atoms.push_back(a);
 	long index = _vertices.size();
-	addPosition(glm::vec3(0.));
+
+	colourByElement(a->elementSymbol());
+	setPosition(glm::vec3(0.));
+
+	appendObject(_template);
+
 	_atomIndex[a] = index;
 	
 	checkAtoms();
+}
+
+void GuiAtom::watchAtoms(AtomGroup *a)
+{
+	for (size_t i = 0; i < a->size(); i++)
+	{
+		watchAtom((*a)[i]);
+	}
 }
 
 void GuiAtom::checkAtoms()
@@ -64,6 +100,11 @@ void GuiAtom::checkAtoms()
 			glm::vec3 last = _atomPos[a];
 
 			glm::vec3 diff = p - last;
+			
+			if (!is_glm_vec_sane(diff))
+			{
+				throw std::runtime_error("position contains nan or vec values");
+			}
 			
 			int end = idx + verticesPerAtom(); 
 			for (size_t j = idx; j < end; j++)
