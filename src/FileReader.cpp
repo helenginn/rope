@@ -262,3 +262,16 @@ std::string findNewFolder(std::string prefix)
 		count++;
 	}
 }
+
+bool is_str_alphabetical(const std::string &str)
+{
+	for (size_t i = 0; i < str.length(); i++)
+	{
+		if ((str[i] < 'a' || str[i] > 'z') && (str[i] < 'A' || str[i] > 'Z'))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}

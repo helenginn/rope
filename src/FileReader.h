@@ -43,6 +43,8 @@ std::string f_to_str(double val, int precision);
 
 std::string findNewFolder(std::string prefix = "refine_");
 
+bool is_str_alphabetical(const std::string &str);
+
 /* Random string things */
 
 void trim(std::string& str);
