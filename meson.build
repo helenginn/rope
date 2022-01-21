@@ -62,6 +62,7 @@ vagafiles = [
 'src/Button.cpp',
 'src/Choice.cpp',
 'src/ChoiceGroup.cpp',
+'src/Cif2Geometry.cpp',
 'src/Draggable.cpp',
 'src/Display.cpp',
 'src/FileReader.cpp',
