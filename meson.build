@@ -138,17 +138,11 @@ test_list = [
 'atom_initialised_with_sulphur_is_yellow',
 ]
 
-should_fail_list = [
-]
 
 if (links == [])
 foreach entry : test_list
-  t = executable(entry, 'tests' / entry + '.cpp', link_with : vag)
+  t = executable(entry, 'tests' / entry + '.cpp', link_with : vag, 
+	  cpp_args : ['-std=c++11'])
   test(entry, t)
-endforeach
-
-foreach entry : should_fail_list
-  t = executable(entry, 'tests' / entry + '.cpp', link_with : vag)
-  test(entry, t, should_fail : true)
 endforeach
 endif
