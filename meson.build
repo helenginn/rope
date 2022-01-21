@@ -86,12 +86,12 @@ vag = []
 
 if (links == [])
   vag = static_library('libvag', vagafiles, 
-  cpp_args: ['-I/usr/local/include'],
+  cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib'],
   dependencies : deps, install: true)
 
   executable(name, 'src/main.cpp',
-  cpp_args: ['-I/usr/local/include'],
+  cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib', links],
   dependencies : deps, link_with : vag, install: true)
 else
