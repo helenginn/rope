@@ -59,7 +59,98 @@ public:
 	double torsion_stdev(std::string code, std::string pName, std::string qName,
 	                     std::string rName, std::string sName);
 private:
+	struct Value
+	{
+		double mean;
+		double stdev;
+	};
 
+	struct AtomPair
+	{
+		std::string p;
+		std::string q;
+		
+		bool operator<(const AtomPair &b) const
+		{
+			if (this->p == b.p)
+			{
+				return this->q < b.q;
+			}
+			else
+			{
+				return this->p < b.p;
+			}
+		}
+	};
+
+	struct AtomTriplet
+	{
+		std::string p;
+		std::string q;
+		std::string r;
+		
+		bool operator<(const AtomTriplet &b) const
+		{
+			if (this->p == b.p)
+			{
+				if (this->q == b.q)
+				{
+					return this->r < b.r;
+				}
+				else
+				{
+					return this->q < b.q;
+				}
+			}
+			else
+			{
+				return this->p < b.p;
+			}
+		}
+	};
+
+	struct AtomQuartet
+	{
+		std::string p;
+		std::string q;
+		std::string r;
+		std::string s;
+		
+		bool operator<(const AtomQuartet &b) const
+		{
+			if (this->p == b.p)
+			{
+				if (this->q == b.q)
+				{
+					if (this->r == b.r)
+					{
+						return this->s < b.s;
+					}
+					else
+					{
+						return this->r < b.r;
+					}
+				}
+				else
+				{
+					return this->q < b.q;
+				}
+			}
+			else
+			{
+				return this->p < b.p;
+			}
+		}
+	};
+
+	struct GeometryMap
+	{
+		std::map<AtomPair, Value> lengths;
+		std::map<AtomTriplet, Value> angles;
+		std::map<AtomQuartet, Value> torsions;
+	};
+	
+	std::map<std::string, GeometryMap> _codes;
 };
 
 #endif

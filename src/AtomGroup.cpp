@@ -17,18 +17,34 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AtomGroup.h"
+#include "BondLength.h"
+#include "FileReader.h"
+#include "BondTorsion.h"
+#include "BondCalculator.h"
 #include <algorithm>
+#include <iostream>
 
 AtomGroup::AtomGroup()
 {
 
 }
 
-void AtomGroup::operator+=(Atom *a)
+AtomGroup::~AtomGroup()
+{
+	deleteBondstraints();
+
+}
+
+bool AtomGroup::hasAtom(Atom *a)
 {
 	AtomVector::iterator it = std::find(_atoms.begin(), _atoms.end(), a);
 
-	if (it == _atoms.end())
+	return (it != _atoms.end());
+}
+
+void AtomGroup::operator+=(Atom *a)
+{
+	if (!hasAtom(a))
 	{
 		_atoms.push_back(a);
 	}
@@ -47,4 +63,131 @@ void AtomGroup::operator-=(Atom *a)
 AtomPtr AtomGroup::operator[](int i) const
 {
 	return _atoms[i];
+}
+
+Atom *AtomGroup::possibleAnchor(int i)
+{
+	if (_anchors.size() == 0)
+	{
+		findPossibleAnchors();
+	}
+
+	return _anchors[i];
+}
+
+size_t AtomGroup::possibleAnchorCount()
+{
+	if (_anchors.size() == 0)
+	{
+		findPossibleAnchors();
+	}
+
+	return _anchors.size();
+}
+
+void AtomGroup::findPossibleAnchors()
+{
+	AtomVector trials = _atoms;
+	AtomVector tooManyConnections;
+	_anchors.clear();
+
+	for (size_t i = 0; i < trials.size(); i++)
+	{
+		/* we don't want to start on a hydrogen */
+		if (trials[i]->elementSymbol() == "H")
+		{
+			trials[i] = nullptr;
+			continue;
+		}
+		
+		int freeTorsionCount = 0;
+		for (size_t j = 0; j < trials[i]->bondLengthCount(); j++)
+		{
+			Atom *other = trials[i]->connectedAtom(j);
+			
+			for (size_t k = 0; k < other->bondTorsionCount(); k++)
+			{
+				BondTorsion *t = other->bondTorsion(k);
+				if (!t->isConstrained())
+				{
+					freeTorsionCount++;
+				}
+			}
+		}
+
+		if (freeTorsionCount > 1)
+		{
+			tooManyConnections.push_back(trials[i]);
+			trials[i] = nullptr;
+		}
+	}
+
+	for (size_t i = 0; i < trials.size(); i++)
+	{
+		if (trials[i] != nullptr)
+		{
+			_anchors.push_back(trials[i]);
+		}
+	}
+
+	if (_anchors.size() == 0)
+	{
+		_anchors = tooManyConnections;
+	}
+}
+
+AtomVector AtomGroup::atomsWithName(std::string name)
+{
+	to_upper(name);
+	AtomVector v;
+	for (size_t i = 0; i < _atoms.size(); i++)
+	{
+		if (_atoms[i]->atomName() == name)
+		{
+			v.push_back(_atoms[i]);
+		}
+	}
+
+	return v;
+}
+
+Atom *AtomGroup::firstAtomWithName(std::string name)
+{
+	to_upper(name);
+
+	for (size_t i = 0; i < _atoms.size(); i++)
+	{
+		if (_atoms[i]->atomName() == name)
+		{
+			return _atoms[i];
+		}
+	}
+
+	return nullptr;
+}
+
+void AtomGroup::recalculate()
+{
+	Atom *anchor = firstAtomWithName("OXT");
+
+	BondCalculator calculator;
+	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
+	calculator.setMaxSimultaneousThreads(1);
+	calculator.addAnchorExtension(anchor);
+	calculator.setup();
+
+	calculator.start();
+
+	Job empty_job{};
+	calculator.submitJob(empty_job);
+	
+	Result *result = calculator.acquireResult();
+	calculator.finish();
+	for (size_t i = 0; i < result->aps.size(); i++)
+	{
+		std::cout << glm::to_string(result->aps[i].pos) << std::endl;
+	}
+
+	result->transplantPositions();
+	delete result;
 }

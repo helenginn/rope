@@ -27,14 +27,28 @@ void GeometryTable::addGeometryLength(std::string code, std::string pName,
                                       std::string qName, double mean, 
                                       double stdev)
 {
+	GeometryMap &map = _codes[code];
+	
+	Value value = {mean, stdev};
+	AtomPair pair = {pName, qName};
+	map.lengths[pair] = value;
 
+	pair = {qName, pName};
+	map.lengths[pair] = value;
 }
 
 void GeometryTable::addGeometryAngle(std::string code, std::string pName, 
                                      std::string qName, std::string rName, 
                                      double mean, double stdev)
 {
+	GeometryMap &map = _codes[code];
+	
+	Value value = {mean, stdev};
+	AtomTriplet trio = {pName, qName, rName};
+	map.angles[trio] = value;
 
+	trio = {rName, qName, pName};
+	map.angles[trio] = value;
 }
 
 void GeometryTable::addGeometryTorsion(std::string code, std::string pName, 
@@ -42,43 +56,92 @@ void GeometryTable::addGeometryTorsion(std::string code, std::string pName,
                                        std::string sName, double mean, 
                                        double stdev, int period)
 {
+	GeometryMap &map = _codes[code];
+	
+	Value value = {mean, stdev};
+	AtomQuartet quartet = {pName, qName, rName, sName};
+	map.torsions[quartet] = value;
+
+	quartet = {sName, rName, qName, pName};
+	map.torsions[quartet] = value;
 
 }
 
 bool GeometryTable::lengthExists(std::string code, std::string pName,
                                  std::string qName)
 {
-	return false;
+	GeometryMap &map = _codes[code];
+
+	AtomPair pair = {pName, qName};
+	return (map.lengths.count(pair) > 0);
 }
 
 double GeometryTable::length(std::string code, std::string pName,
                              std::string qName)
 {
-	return 0;
+	GeometryMap &map = _codes[code];
+
+	AtomPair pair = {pName, qName};
+	if (map.lengths.count(pair) == 0)
+	{
+		return -1;
+	}
+
+	Value &v = map.lengths[pair];
+
+	return v.mean;
 }
 
 double GeometryTable::length_stdev(std::string code, std::string pName,
                                    std::string qName)
 {
-	return 0;
+	GeometryMap &map = _codes[code];
+
+	AtomPair pair = {pName, qName};
+	Value &v = map.lengths[pair];
+
+	return v.stdev;
 }
 
 bool GeometryTable::angleExists(std::string code, std::string pName,
                                 std::string qName, std::string rName)
 {
-	return false;
+	GeometryMap &map = _codes[code];
+	
+	AtomTriplet trio = {pName, qName, rName};
+	return (map.angles.count(trio) > 0);
 }
 
 double GeometryTable::angle(std::string code, std::string pName,
                             std::string qName, std::string rName)
 {
-	return 0;
+	GeometryMap &map = _codes[code];
+
+	AtomTriplet trio = {pName, qName, rName};
+	if (map.angles.count(trio) == 0)
+	{
+		return -1;
+	}
+
+	Value &v = map.angles[trio];
+
+	return v.mean;
 }
 
 double GeometryTable::angle_stdev(std::string code, std::string pName,
                                   std::string qName, std::string rName)
 {
-	return 0;
+	GeometryMap &map = _codes[code];
+
+	AtomTriplet trio = {pName, qName, rName};
+	if (map.angles.count(trio) == 0)
+	{
+		return -1;
+	}
+
+	Value &v = map.angles[trio];
+
+	return v.stdev;
 }
 
 
@@ -86,20 +149,43 @@ bool GeometryTable::torsionExists(std::string code, std::string pName,
                                   std::string qName, std::string rName,
                                   std::string sName)
 {
-	return false;
+	GeometryMap &map = _codes[code];
+	
+	AtomQuartet quartet = {pName, qName, rName, sName};
+	return (map.torsions.count(quartet) > 0);
 }
 
 double GeometryTable::torsion(std::string code, std::string pName,
                               std::string qName, std::string rName,
                               std::string sName)
 {
-	return 0;
+	GeometryMap &map = _codes[code];
+
+	AtomQuartet quartet = {pName, qName, rName, sName};
+	if (map.torsions.count(quartet) == 0)
+	{
+		return -1;
+	}
+
+	Value &v = map.torsions[quartet];
+
+	return v.mean;
 }
 
 double GeometryTable::torsion_stdev(std::string code, std::string pName,
                                     std::string qName, std::string rName,
                                     std::string sName)
 {
-	return 0;
+	GeometryMap &map = _codes[code];
+
+	AtomQuartet quartet = {pName, qName, rName, sName};
+	if (map.torsions.count(quartet) == 0)
+	{
+		return -1;
+	}
+
+	Value &v = map.torsions[quartet];
+
+	return v.stdev;
 }
 

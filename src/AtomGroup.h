@@ -19,19 +19,23 @@
 #define __vagabond__AtomGroup__
 
 #include "Atom.h"
+#include "HasBondstraints.h"
 #include <vector>
 
 typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
 
-class AtomGroup
+class AtomGroup : public HasBondstraints
 {
 public:
 	AtomGroup();
+	~AtomGroup();
 
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
 	AtomPtr operator[](int i) const;
+	
+	bool hasAtom(Atom *a);
 	
 	void add(Atom *a)
 	{
@@ -47,9 +51,25 @@ public:
 	{
 		return _atoms.size();
 	}
-private:
-	AtomVector _atoms;
+	
+	/* from HasBondstraints */
+	virtual Atom *atomIdentity()
+	{
+		return nullptr;
+	}
+	
+	AtomVector atomsWithName(std::string name);
+	Atom *firstAtomWithName(std::string name);
+	
+	void recalculate();
+	
+	size_t possibleAnchorCount();
+	Atom *possibleAnchor(int i);
 
+private:
+	void findPossibleAnchors();
+	AtomVector _atoms;
+	AtomVector _anchors;
 };
 
 #endif

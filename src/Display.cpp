@@ -1,6 +1,7 @@
 #include "commit.h"
 #include "Display.h"
 #include "GuiAtom.h"
+#include "AtomGroup.h"
 #include "Atom.h"
 #include "Cif2Geometry.h"
 #include <SDL2/SDL.h>
@@ -8,8 +9,8 @@
 
 Display::Display(Scene *prev) : Scene(prev)
 {
-	_translation.z = -20;
-	updateCamera();
+	_guiAtoms = NULL;
+	_atoms = NULL;
 }
 
 Display::~Display()
@@ -17,21 +18,42 @@ Display::~Display()
 	deleteObjects();
 }
 
-void Display::setup()
+void Display::loadCif(std::string path)
 {
-	std::string path = "assets/geometry/standard_geometry.cif";
-	path = "/assets/geometry/ASP.cif";
-#ifndef __EMSCRIPTEN__
-	path = std::string(DATA_DIRECTORY) + "/" + path;
-#endif
-
 	Cif2Geometry geom = Cif2Geometry(path);
+	geom.setAutomaticKnot(true);
 	geom.parse();
 	
+	if (_guiAtoms != nullptr)
+	{
+		removeObject(_guiAtoms);
+		delete _guiAtoms;
+	}
+	
+	if (_atoms != nullptr)
+	{
+		delete _atoms;
+	}
+	
+	_atoms = geom.atoms();
+	_atoms->recalculate();
 	_guiAtoms = new GuiAtom();
-	_guiAtoms->watchAtoms(geom.atoms());
+	_guiAtoms->watchAtoms(_atoms);
+
+	_centre = _guiAtoms->centroid();
+	_translation = -_centre;
+	_translation.z -= 30;
+
+	updateCamera();
 
 	addObject(_guiAtoms);
+}
+
+void Display::setup()
+{
+	std::string path = "/assets/geometry/GLY.cif";
+
+	loadCif(path);
 }
 
 void Display::interpretMouseButton(SDL_MouseButtonEvent button, bool dir)
@@ -63,14 +85,9 @@ void Display::mouseMoveEvent(double x, double y)
 	{
 		double dx = x - _lastX;
 		double dy = y - _lastY;
-		
-		double mult = 1;
-#ifdef __EMSCRIPTEN__
-		mult = 100;
-#endif
 
-		_camAlpha = deg2rad(-dy) * mult;
-		_camBeta = deg2rad(-dx) * mult;
+		_camAlpha = deg2rad(-dy);
+		_camBeta = deg2rad(-dx);
 		
 		updateCamera();
 	}

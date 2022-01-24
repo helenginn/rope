@@ -27,6 +27,11 @@ public:
 	 * from file */
 	void parse();
 	
+	void setAutomaticKnot(bool knot)
+	{
+		_knot = true;
+	}
+	
 	/** Warning: passes ownership of the AtomGroup onto the caller.
 	 * @returns AtomGroup containing all atoms found in geometry file */
 	AtomGroup *atoms() 
@@ -44,6 +49,10 @@ public:
 	}
 private:
 	void processLoop(gemmi::cif::Loop &loop);
+	bool processLoopAsAtoms(gemmi::cif::Loop &loop);
+	bool processLoopAsLengths(gemmi::cif::Loop &loop);
+	bool processLoopAsAngles(gemmi::cif::Loop &loop);
+	bool processLoopAsTorsions(gemmi::cif::Loop &loop);
 
 	std::string _filename;
 	std::string _code;
@@ -53,6 +62,7 @@ private:
 	
 	bool _accessedAtoms;
 	bool _accessedTable;
+	bool _knot;
 };
 
 #endif

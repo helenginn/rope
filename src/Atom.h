@@ -2,9 +2,13 @@
 #define __vagabond__Atom__
 
 #include "glm_import.h"
+#include "HasBondstraints.h"
 #include <mutex>
+#include <vector>
 
-class Atom
+class BondLength;
+
+class Atom : public HasBondstraints
 {
 public:
 	Atom();
@@ -16,6 +20,12 @@ public:
 		float b;
 		glm::vec3 pos;
 	}; 
+	
+	struct WithPos
+	{
+		Atom *atom;
+		glm::vec3 pos;
+	};
 	
 	/** @param pos 3D coordinate in real space
 	 * @param b B factor in Angstroms squared
@@ -47,6 +57,11 @@ public:
 	const glm::vec3 &derivedPosition()
 	{
 		return _derived.pos;
+	}
+	
+	void setDerivedPosition(glm::vec3 &pos)
+	{
+		_derived.pos = pos;
 	}
 	
 	/** @param name identifier for atom within monomer, e.g. CG2 in valine */
@@ -142,6 +157,25 @@ public:
 	 * 	@param pos pointer to glm::vec3 storage for derived position.
 	 * 	@returns true if position was successfully accessed, otherwise false. */
 	bool fishPosition(glm::vec3 *pos);
+	
+	void setCode(std::string code);
+	
+	Atom *connectedAtom(int i);
+	
+	const std::string &code() const
+	{
+		return _code;
+	}
+
+	virtual Atom *atomIdentity()
+	{
+		return this;
+	}
+	
+	/** coordination matrix for BondSequence.
+	    @param isAnchor specifies if atom is first in sequence */
+	 /* @returns matrix describing all connected partners */
+	glm::mat4x4 coordinationMatrix();
 private:
 	void changedPosition();
 
@@ -158,7 +192,11 @@ private:
 
 	std::string _ele;
 	std::string _atomName;
+	std::string _code;
+
 	std::mutex _mutex;
+	
+	std::vector<BondLength *> _bondLengths;
 };
 
 #endif

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "../src/Atom.h"
 #include "../src/GuiAtom.h"
 
@@ -16,6 +17,10 @@ int main()
 	double l = glm::length(diff);
 
 	bool ok = (l < 1e-6);
+	if (!ok)
+	{
+		std::cout << "Distance to atom: " << l << std::endl;
+	}
 	return !ok;
 }
 

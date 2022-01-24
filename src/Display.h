@@ -5,6 +5,7 @@
 #include "Scene.h"
 
 class GuiAtom;
+class AtomGroup;
 
 class Display : public Scene
 {
@@ -20,10 +21,12 @@ public:
 	virtual void keyPressEvent(SDL_Keycode pressed);
 
 	virtual void setup();
+	void loadCif(std::string path);
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
 	void interpretControlKey(SDL_Keycode pressed, bool dir);
 	GuiAtom *_guiAtoms;
+	AtomGroup *_atoms;
 
 };
 

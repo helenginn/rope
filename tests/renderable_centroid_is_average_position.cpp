@@ -8,7 +8,7 @@ int main()
 	r->addVertex(glm::vec3(0, 0, 0.5));
 	r->addVertex(glm::vec3(0, 0, 1.0));
 	
-	vec3 centre = r->centroid();
+	glm::vec3 centre = r->centroid();
 	
 	bool ok = !(centre.z > 0.499 && centre.z < 0.501);
 	ok |= !(centre.x > -0.001 && centre.x < 0.001);

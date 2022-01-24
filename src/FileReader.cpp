@@ -267,7 +267,8 @@ bool is_str_alphabetical(const std::string &str)
 {
 	for (size_t i = 0; i < str.length(); i++)
 	{
-		if ((str[i] < 'a' || str[i] > 'z') && (str[i] < 'A' || str[i] > 'Z'))
+		if ((str[i] < 'a' || str[i] > 'z') && (str[i] < 'A' || str[i] > 'Z')
+		    && str[i] != ' ')
 		{
 			return false;
 		}

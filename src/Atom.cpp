@@ -1,4 +1,5 @@
 #include "Atom.h"
+#include "BondLength.h"
 #include "FileReader.h"
 
 Atom::Atom()
@@ -41,12 +42,14 @@ void Atom::setElementSymbol(std::string ele)
 	}
 	_ele = ele;
 	to_upper(_ele);
+	trim(_ele);
 }
 
 void Atom::setAtomName(std::string name)
 {
 	_atomName = name;
 	to_upper(_atomName);
+	trim(_atomName);
 }
 
 void Atom::setAtomNum(int num)
@@ -89,4 +92,26 @@ bool Atom::fishPosition(glm::vec3 *p)
 	}
 
 	return false;
+}
+
+void Atom::setCode(std::string code)
+{
+	to_upper(code);
+	_code = code;
+}
+
+Atom *Atom::connectedAtom(int i)
+{
+	return bondLength(i)->otherAtom(this);
+}
+
+glm::mat4x4 Atom::coordinationMatrix()
+{
+	glm::mat4x4 ret;
+	ret[0] = glm::vec4(+1., 0., 0.5, 1.);
+	ret[1] = glm::vec4(0., +1., 0.5, 1.);
+	ret[2] = glm::vec4(-1., 0., 0.5, 1.);
+	ret[3] = glm::vec4(0., -1., 0.5, 1.);
+
+	return ret;
 }

@@ -27,3 +27,5 @@ inline bool is_glm_vec_sane(T vec)
  * */
 glm::mat3x3 mat3x3_from_unit_cell(double a, double b, double c, 
                                   double alpha, double beta, double gamma);
+
+glm::mat4x4 torsion_basis(glm::mat4x4 prior, glm::vec3 prev, glm::vec4 next);

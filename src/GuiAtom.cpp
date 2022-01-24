@@ -3,17 +3,21 @@
 #include "Icosahedron.h"
 #include "Atom.h"
 #include "AtomGroup.h"
+#include "GuiBond.h"
+#include <iostream>
 
 GuiAtom::GuiAtom() : Renderable()
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/box.fsh");
+	setFragmentShaderFile("assets/shaders/lighting.fsh");
 	
 	_template = new Icosahedron();
 	_template->triangulate();
 	_template->setColour(0.5, 0.5, 0.5);
 	_template->resize(0.3);
+	
+	_bonds = new GuiBond();
 }
 
 void GuiAtom::colourByElement(std::string ele)
@@ -60,6 +64,7 @@ void GuiAtom::render(SnowGL *gl)
 	glClear(GL_DEPTH_BUFFER_BIT);
 	
 	Renderable::render(gl);
+	_bonds->render(gl);
 
 	glDisable(GL_DEPTH_TEST);
 }
@@ -76,7 +81,7 @@ void GuiAtom::watchAtom(Atom *a)
 
 	_atomIndex[a] = index;
 	
-	checkAtoms();
+	checkAtom(a);
 }
 
 void GuiAtom::watchAtoms(AtomGroup *a)
@@ -85,6 +90,34 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	{
 		watchAtom((*a)[i]);
 	}
+	
+	_bonds->watchBonds(a);
+}
+
+void GuiAtom::checkAtom(Atom *a)
+{
+	glm::vec3 p;
+	if (a->positionChanged() && a->fishPosition(&p))
+	{
+		int idx = _atomIndex[a];
+		glm::vec3 last = _atomPos[a];
+
+		glm::vec3 diff = p - last;
+
+		if (!is_glm_vec_sane(diff))
+		{
+			throw std::runtime_error("position contains nan or vec values");
+		}
+
+		int end = idx + verticesPerAtom(); 
+		for (size_t j = idx; j < end; j++)
+		{
+			_vertices[j].pos += diff;
+		}
+
+		_bonds->updateAtom(a, p);
+		_atomPos[a] = p;
+	}
 }
 
 void GuiAtom::checkAtoms()
@@ -92,28 +125,7 @@ void GuiAtom::checkAtoms()
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
 		Atom *a = _atoms[i];
-		
-		glm::vec3 p;
-		if (a->positionChanged() && a->fishPosition(&p))
-		{
-			int idx = _atomIndex[a];
-			glm::vec3 last = _atomPos[a];
-
-			glm::vec3 diff = p - last;
-			
-			if (!is_glm_vec_sane(diff))
-			{
-				throw std::runtime_error("position contains nan or vec values");
-			}
-			
-			int end = idx + verticesPerAtom(); 
-			for (size_t j = idx; j < end; j++)
-			{
-				_vertices[j].pos += diff;
-			}
-			
-			_atomPos[a] = p;
-		}
+		checkAtom(a);
 	}
 
 	setupVBOBuffers();

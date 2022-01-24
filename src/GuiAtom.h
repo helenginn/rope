@@ -5,6 +5,7 @@
 #include "Renderable.h"
 
 class Icosahedron;
+class GuiBond;
 class Atom;
 class AtomGroup;
 
@@ -23,7 +24,10 @@ private:
 	void setPosition(glm::vec3 position);
 	void colourByElement(std::string ele);
 	void checkAtoms();
+	void checkAtom(Atom *a);
+
 	Icosahedron *_template;
+	GuiBond *_bonds;
 
 	std::vector<Atom *> _atoms;
 	std::map<Atom *, int> _atomIndex;

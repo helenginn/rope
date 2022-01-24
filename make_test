@@ -1,0 +1,33 @@
+#!/bin/bash
+
+testname=`echo $1 | sed 's/.cpp$//'`
+
+if [ -z "$testname" ]; then
+echo "Please specify test name"
+exit
+fi
+
+filename="tests/$testname.cpp"
+echo "Checking for $filename"
+
+if [ -f $filename ]; then
+echo "Test $testname already exists"
+exit
+fi
+
+echo "Making test: $testname"
+
+cat > tests/$testname.cpp << EOF
+#include "../src/x.h"
+
+int main()
+{
+	return 1;
+}
+EOF
+
+cd tests
+ls -1 *.cpp | sed 's/.cpp//' > test_list
+cd ..
+
+
