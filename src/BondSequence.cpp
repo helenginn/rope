@@ -245,7 +245,7 @@ void BondSequence::assignAtomsToBlocks()
 		std::queue<AtomGraph *> todo;
 		todo.push(_atom2Graph[anchor]);
 
-		assignAtomToBlock(curr, anchor, true);
+		assignAtomToBlock(curr, anchor);
 		fixBlockAsGhost(curr);
 		curr++;
 		
