@@ -92,7 +92,9 @@ vagafiles = [
 'src/Cif2Geometry.cpp',
 'src/Draggable.cpp',
 'src/Display.cpp',
+'src/FileManager.cpp',
 'src/FileReader.cpp',
+'src/FileView.cpp',
 'src/GeometryTable.cpp',
 'src/GuiAtom.cpp',
 'src/GuiBond.cpp',
@@ -121,6 +123,10 @@ vagafiles = [
 'src/ThreadMiniJobForSequence.cpp',
 'src/Window.cpp',
 ]
+
+if (links != [])
+vagafiles += 'src/print_file.cpp'
+endif
 
 vag = []
 

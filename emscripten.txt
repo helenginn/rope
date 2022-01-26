@@ -4,12 +4,11 @@
 cpp = 'em++'
 
 [constants]
-sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread']
+sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread', '--js-library', '../../library.js']
 threads = ['-pthread', '-s', 'USE_PTHREADS=1']
 shell_file = ['--shell-file', '../../minimal_shell.html']
 preload = ['--use-preload-plugins', '--preload-file', '../../assets']
-export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr', '-s', 'LLD_REPORT_UNDEFINED',
-	'-s', 'PTHREAD_POOL_SIZE=16', '-s', 'ALLOW_MEMORY_GROWTH=1']
+export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr,ccall', '-s', 'LLD_REPORT_UNDEFINED', '-s', 'EXPORTED_FUNCTIONS=["_accept_file", "_main"]',  '-s', 'PTHREAD_POOL_SIZE=16', '-s', 'ALLOW_MEMORY_GROWTH=1']
 
 [properties]
 shared_lib_suffix = 'js'
