@@ -15,8 +15,12 @@
 
 Scene::Scene(Scene *prev) : SnowGL()
 {
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	if (Window::hasContext())
+	{
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
+
 	_background = NULL;
 	_modal = NULL;
 	_mouseDown = false;

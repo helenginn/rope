@@ -37,12 +37,8 @@ void Display::recalculateAtoms()
 	updateCamera();
 }
 
-void Display::loadCif(std::string path)
+void Display::loadAtoms(AtomGroup *atoms)
 {
-	Cif2Geometry geom = Cif2Geometry(path);
-	geom.setAutomaticKnot(true);
-	geom.parse();
-	
 	if (_guiAtoms != nullptr)
 	{
 		removeObject(_guiAtoms);
@@ -54,7 +50,7 @@ void Display::loadCif(std::string path)
 		delete _atoms;
 	}
 	
-	_atoms = geom.atoms();
+	_atoms = atoms;
 	_guiAtoms = new GuiAtom();
 	_guiAtoms->watchAtoms(_atoms);
 
@@ -65,20 +61,23 @@ void Display::loadCif(std::string path)
 	updateCamera();
 
 	addObject(_guiAtoms);
+	tieButton();
 }
 
-void Display::setup()
+void Display::tieButton()
 {
-	std::string path = "/assets/geometry/LSD.cif";
-	
-	TextButton *button = new TextButton("Tie up with bonds", 
+	TextButton *button = new TextButton("Tie up with bonds\nwork in progressger_accepts_files_when_fileview_not_assigned:!", 
 	                                    this);
 	button->setReturnTag("recalculate");
 	button->resize(0.8);
 	setCentre(button, 0.5, 0.9);
 	addObject(button);
 
-	loadCif(path);
+}
+
+void Display::setup()
+{
+	
 }
 
 void Display::buttonPressed(std::string tag, Button *button)
@@ -100,7 +99,18 @@ void Display::interpretMouseButton(SDL_MouseButtonEvent button, bool dir)
 	}
 	if (button.button == SDL_BUTTON_RIGHT)
 	{
+#ifdef __EMSCRIPTEN__
+		if (_controlPressed)
+		{
+			_left = dir;
+		}
+		else
+		{
+			_right = dir;
+		}
+#else
 		_right = dir;
+#endif
 	}
 }
 
@@ -109,6 +119,7 @@ void Display::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	Scene::mousePressEvent(x, y, button);
 
 	interpretMouseButton(button, true);
+
 	_lastX = x;
 	_lastY = y;
 }

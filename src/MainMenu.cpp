@@ -2,6 +2,7 @@
 
 #include "Display.h"
 #include "MainMenu.h"
+#include "FileView.h"
 #include "TextButton.h"
 #include <iostream>
 
@@ -17,7 +18,6 @@ MainMenu::~MainMenu()
 
 void MainMenu::setup()
 {
-	_proj = glm::mat4(1.);
 	clearObjects();
 	addObject(_background);
 
@@ -28,8 +28,8 @@ void MainMenu::setup()
 	}
 
 	{
-		TextButton *button = new TextButton("View model", this);
-		button->setReturnTag("model");
+		TextButton *button = new TextButton("View loaded files", this);
+		button->setReturnTag("show_files");
 		setCentre(button, 0.5, 0.3);
 		addObject(button);
 	}
@@ -37,7 +37,12 @@ void MainMenu::setup()
 
 void MainMenu::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "model")
+	if (tag == "show_files")
+	{
+		FileView *fileview = new FileView(this);
+		fileview->show();
+	}
+	else if (tag == "model")
 	{
 		Display *display = new Display(this);
 		display->show();

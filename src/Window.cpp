@@ -1,5 +1,6 @@
 #include "Window.h"
 #include "MainMenu.h"
+#include "FileManager.h"
 #include <iostream>
 #include <SDL2/SDL_image.h>
 
@@ -16,6 +17,8 @@ SDL_GLContext Window::_context = NULL;
 Scene *Window::_current = NULL;
 std::vector<Scene *> Window::_toDelete;
 KeyResponder *Window::_keyResponder = NULL;
+
+FileManager *Window::_fileManager = new FileManager();
 
 Window::Window()
 {
@@ -95,61 +98,45 @@ void Window::tick()
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
-		if (event.type == SDL_KEYDOWN)
+		switch (event.type)
 		{
-			switch (event.key.keysym.sym)
+			case SDL_KEYDOWN:
+			_current->keyPressEvent(event.key.keysym.sym);
+			break;
+
+			case SDL_KEYUP:
+			if (event.key.keysym.sym == SDLK_ESCAPE)
 			{
-				case SDLK_ESCAPE:
-				_running = false;
 #ifndef __EMSCRIPTEN__
 				exit(0);
 #endif
-				break;
-
-				default:
-				break;
-
 			}
-			
-			if (_keyResponder)
-			{
-				char pressed = pressedKey(event.key.keysym.sym);
-				if (pressed != '\0')
-				{
-					_keyResponder->keyPressed(pressed);
-				}
-				else
-				{
-					_keyResponder->keyPressed(event.key.keysym.sym);
-				}
-			}
-			
-			_current->keyPressEvent(event.key.keysym.sym);
-		}
-		else if (event.type == SDL_KEYUP)
-		{
 			_current->keyReleaseEvent(event.key.keysym.sym);
-		}
-		else if (event.type == SDL_MOUSEMOTION)
-		{
+			break;
+
+			case SDL_MOUSEMOTION:
 			_current->mouseMoveEvent(event.motion.x, event.motion.y);
-		}
-		else if (event.type == SDL_MOUSEBUTTONDOWN)
-		{
+			break;
+
+			case SDL_MOUSEBUTTONDOWN:
 			_current->mousePressEvent(event.motion.x, event.motion.y, 
 			                          event.button);
-		}
-		else if (event.type == SDL_MOUSEBUTTONUP)
-		{
+			break;
+
+			case SDL_MOUSEBUTTONUP:
 			_current->mouseReleaseEvent(event.motion.x, event.motion.y, 
 			                            event.button);
-		}
-		else if (event.type == SDL_QUIT)
-		{
-			_running = false;
-#ifndef __EMSCRIPTEN__
+			break;
+
+			case SDL_QUIT:
+			#ifndef __EMSCRIPTEN__
 			exit(0);
-#endif
+			#endif
+			_running = false;
+			break;
+
+			default:
+			break;
 		}
 	}
 

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Window.h"
 #include "Library.h"
 #include <iostream>
 #include "Renderable.h"
@@ -36,6 +37,11 @@ Library::Library()
 
 GLuint Library::getTexture(std::string filename, int *w, int *h)
 {
+	if (!Window::hasContext())
+	{
+		return 0;
+	}
+
 	if (filename.length() > 0 && _textures.count(filename) > 0)
 	{
 		if (w != NULL)

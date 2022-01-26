@@ -13,6 +13,7 @@
 static bool _running = true;
 
 class Scene;
+class FileManager;
 struct SDL_Renderer;
 struct SDL_Window;
 
@@ -39,6 +40,11 @@ public:
 	static void setCurrentScene(Scene *scene);
 	static void reloadScene(Scene *scene);
 	
+	static FileManager *fileManager()
+	{
+		return _fileManager;
+	}
+	
 	static Scene *currentScene()
 	{
 		return _current;
@@ -57,12 +63,18 @@ public:
 	{
 		return (float)_rect.h / (float)_rect.w;
 	}
+	
+	static bool hasContext()
+	{
+		return _context;
+	}
 private:
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
 	static SDL_GLContext _context;
 	static SDL_Rect _rect;
 
+	static FileManager *_fileManager;
 	static Scene *_current;
 	static std::vector<Scene *> _toDelete;
 	

@@ -3,6 +3,7 @@
 #define SHADOW_DIM 1024
 
 #include <GLES3/gl3.h>
+#include <SDL2/SDL.h>
 #include "SnowGL.h"
 #include "Renderable.h"
 #include "Window.h"
@@ -39,7 +40,11 @@ SnowGL::SnowGL()
 	setupCamera();
 
 	_r = 1.; _g = 1.; _b = 0.5; _a = 1.;
-	glClearColor(_r, _g, _b, _a);
+	
+	if (Window::hasContext())
+	{
+		glClearColor(_r, _g, _b, _a);
+	}
 }
 
 SnowGL::~SnowGL()
@@ -351,10 +356,13 @@ void SnowGL::updateProjection(float side)
 {
 	float aspect = 1 / Window::aspect();
 	
+	if (aspect != aspect)
+	{
+		return;
+	}
+	
 	_proj = glm::perspective((float)deg2rad(35), aspect, 
 	                         _zNear, _zFar);
-//	_proj = glm::perspective(-side, side, side * aspect, 
-//	                         -side * aspect, _zNear, _zFar);
 
 	_unproj = glm::inverse(_proj);
 }
