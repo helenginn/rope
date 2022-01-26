@@ -207,9 +207,6 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 	_blocks[idx].nBonds = atom->bondLengthCount();
 	_blocks[idx].flag = false;
 	_blocks[idx].wip = glm::mat4(0.);
-
-	glm::mat4x4 coord = atom->coordinationMatrix();
-	_blocks[idx].coordination = coord;
 	
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -277,10 +274,18 @@ void BondSequence::fillMissingWriteLocations()
 		}
 
 		AtomGraph *graph = _atom2Graph[atom];
+		Atom *children[4] = {nullptr, nullptr, nullptr, nullptr};
+		int num = graph->children.size();
 		
-		for (size_t j = 0; j < graph->children.size(); j++)
+		for (size_t j = 0; j < num; j++)
 		{
 			Atom *next = graph->children[j]->atom;
+			
+			if (j < 4)
+			{
+				children[j] = next;
+			}
+
 			int index = _atom2Block[next];
 			index -= i;
 			
@@ -289,7 +294,15 @@ void BondSequence::fillMissingWriteLocations()
 				throw std::runtime_error("Insane index specified in "
 				                         "BondSequence");
 			}
+
 			_blocks[i].write_locs[j] = index;
+		}
+
+		if (num > 0)
+		{
+			glm::mat4x4 coord = atom->coordinationMatrix(children, num, 
+			                                             graph->parent);
+			_blocks[i].coordination = coord;
 		}
 	}
 
@@ -319,6 +332,11 @@ void BondSequence::prepareForIdle()
 void BondSequence::signal(SequenceState newState)
 {
 	SequenceState old = _state;
+	if (old == SequenceInPreparation && newState != SequenceIdle)
+	{
+		// probably testing without entire BondCalculator structure involved */
+		return;
+	}
 	_state = newState;
 	_handler->signalToHandler(this, newState, old);
 }
@@ -344,7 +362,7 @@ void BondSequence::multiplyUpBySampleCount()
 
 void BondSequence::fetchTorsion(int idx)
 {
-	_blocks[idx].torsion = 0;
+	_blocks[idx].torsion = 0.;
 }
 
 void BondSequence::resetFlag(int idx)
@@ -365,13 +383,13 @@ void BondSequence::calculateBlock(int idx)
 	                                      glm::vec3(0, 0, 1));
 	wip = basis * torsion_rot * coord;
 
-	if (_blocks[idx].atom != nullptr)
+	if (_blocks[idx].atom != nullptr && false)
 	{
 		std::cout << "Atom: " << _blocks[idx].atom->atomName() << std::endl;
-//		std::cout << "Torsion: " << t << std::endl;
+		std::cout << "Torsion: " << t << std::endl;
 		std::cout << "Coordination: " << glm::to_string(coord) << std::endl;
 		std::cout << "Basis: " << glm::to_string(basis) << std::endl;
-//		std::cout << "torsion_rot: " << glm::to_string(torsion_rot) << std::endl;
+		std::cout << "torsion_rot: " << glm::to_string(torsion_rot) << std::endl;
 		std::cout << "wip: " << glm::to_string(wip) << std::endl;
 		std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
 		std::cout << std::endl;
@@ -395,13 +413,9 @@ void BondSequence::calculateBlock(int idx)
 		int n = idx + _blocks[idx].write_locs[i];
 		glm::vec4 child = wip[i];
 		glm::vec3 prev = glm::vec3(inherit);
-		std::cout << "Child position " << _blocks[n].atom->atomName() << ": "
-		 << glm::to_string(child) << std::endl;
 		_blocks[n].basis = torsion_basis(basis, prev, child);
 		_blocks[n].inherit = glm::vec3(basis[3]);
-		std::cout << "Child basis: " << glm::to_string(_blocks[n].basis) << std::endl;
 	}
-	std::cout << std::endl;
 }
 
 void BondSequence::calculate()
@@ -414,10 +428,9 @@ void BondSequence::calculate()
 	signal(SequencePositionsReady);
 }
 
-std::vector<Atom::WithPos> BondSequence::extractPositions()
+void BondSequence::preparePositions()
 {
-	std::vector<Atom::WithPos> posAtoms;
-	posAtoms.reserve(addedAtomsCount());
+	_posAtoms.reserve(addedAtomsCount());
 
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
@@ -428,11 +441,31 @@ std::vector<Atom::WithPos> BondSequence::extractPositions()
 
 		Atom::WithPos ap{};
 		ap.atom = _blocks[i].atom;
-		ap.pos = glm::vec3(_blocks[i].basis[3]);
-		posAtoms.push_back(ap);
+		_posAtoms.push_back(ap);
+	}
+}
+
+std::vector<Atom::WithPos> &BondSequence::extractPositions()
+{
+	if (_posAtoms.size() == 0)
+	{
+		preparePositions();
+	}
+
+	int idx = 0;
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		if (_blocks[i].atom == nullptr)
+		{
+			continue;
+		}
+
+		_posAtoms.at(idx).pos = _blocks[i].my_position();
+		idx++;
 	}
 	
-	return posAtoms;
+	return _posAtoms;
 }
 
 void BondSequence::cleanUpToIdle()
@@ -449,3 +482,17 @@ void BondSequence::setMiniJobInfo(MiniJob *mini)
 
 	signal(SequenceCalculateReady);
 }
+
+int BondSequence::firstBlockForAtom(Atom *atom)
+{
+	for (size_t i = 0; i < blockCount(); i++)
+	{
+		if (_blocks[i].atom == atom)
+		{
+			return i;
+		}
+	}
+	
+	return -1;
+}
+

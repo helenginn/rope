@@ -100,22 +100,18 @@ void AtomGroup::findPossibleAnchors()
 			continue;
 		}
 		
-		int freeTorsionCount = 0;
+		int nonHydrogen = 0;
 		for (size_t j = 0; j < trials[i]->bondLengthCount(); j++)
 		{
 			Atom *other = trials[i]->connectedAtom(j);
 			
-			for (size_t k = 0; k < other->bondTorsionCount(); k++)
+			if (other->elementSymbol() != "H")
 			{
-				BondTorsion *t = other->bondTorsion(k);
-				if (!t->isConstrained())
-				{
-					freeTorsionCount++;
-				}
+				nonHydrogen++;
 			}
 		}
 
-		if (freeTorsionCount > 1)
+		if (nonHydrogen > 1)
 		{
 			tooManyConnections.push_back(trials[i]);
 			trials[i] = nullptr;
@@ -168,7 +164,7 @@ Atom *AtomGroup::firstAtomWithName(std::string name)
 
 void AtomGroup::recalculate()
 {
-	Atom *anchor = firstAtomWithName("OXT");
+	Atom *anchor = possibleAnchor(0);
 
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
@@ -183,11 +179,7 @@ void AtomGroup::recalculate()
 	
 	Result *result = calculator.acquireResult();
 	calculator.finish();
-	for (size_t i = 0; i < result->aps.size(); i++)
-	{
-		std::cout << glm::to_string(result->aps[i].pos) << std::endl;
-	}
-
 	result->transplantPositions();
+
 	delete result;
 }

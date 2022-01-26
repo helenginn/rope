@@ -59,6 +59,23 @@ public:
 		return _blocks.size();
 	}
 	
+	int firstBlockForAtom(Atom *atom);
+	
+	glm::vec3 positionForPreviousBlock(int i)
+	{
+		return _blocks[i].parent_position();
+	}
+	
+	glm::vec3 positionForAtomBlock(int i)
+	{
+		return _blocks[i].my_position();
+	}
+	
+	glm::vec3 positionForNextBlock(int i, int j)
+	{
+		return _blocks[i].child_position(j);
+	}
+	
 	void cleanUpToIdle();
 	void setMiniJobInfo(MiniJob *mini);
 	void printState();
@@ -75,7 +92,7 @@ public:
 	void prepareForIdle();
 
 	void calculate();
-	std::vector<Atom::WithPos> extractPositions();
+	std::vector<Atom::WithPos> &extractPositions();
 
 	void setSampleCount(int count)
 	{
@@ -115,6 +132,21 @@ private:
 		glm::mat4x4 basis;
 		glm::mat4x4 wip;
 		int write_locs[4];
+		
+		const glm::vec3 parent_position() const
+		{
+			return inherit;
+		}
+		
+		const glm::vec3 my_position() const
+		{
+			return glm::vec3(basis[3]);
+		}
+		
+		const glm::vec3 child_position(int i) const
+		{
+			return glm::vec3(wip[i]);
+		}
 	};
 	
 	std::vector<AtomBlock> _blocks;
@@ -133,6 +165,7 @@ private:
 	void resetFlag(int idx);
 	void calculateBlock(int idx);
 	void fetchTorsion(int idx);
+	void preparePositions();
 
 
 	std::vector<Atom *> _atoms;
@@ -151,6 +184,7 @@ private:
 
 	MiniJob *_miniJob;
 	BondSequenceHandler *_handler;
+	std::vector<Atom::WithPos> _posAtoms;
 };
 
 #endif

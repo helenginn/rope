@@ -1,6 +1,7 @@
 #include "commit.h"
 #include "Display.h"
 #include "GuiAtom.h"
+#include "TextButton.h"
 #include "AtomGroup.h"
 #include "Atom.h"
 #include "Cif2Geometry.h"
@@ -9,13 +10,31 @@
 
 Display::Display(Scene *prev) : Scene(prev)
 {
-	_guiAtoms = NULL;
-	_atoms = NULL;
+	_guiAtoms = nullptr;
+	_atoms = nullptr;
 }
 
 Display::~Display()
 {
 	deleteObjects();
+	
+	if (_atoms != nullptr)
+	{
+		delete _atoms;
+		_atoms = nullptr;
+	}
+}
+
+void Display::recalculateAtoms()
+{
+	_atoms->recalculate();
+	_guiAtoms->checkAtoms();
+
+	_model = glm::mat4(1.f);
+	_centre = _guiAtoms->centroid();
+	_translation = -_centre;
+	_translation.z -= 30;
+	updateCamera();
 }
 
 void Display::loadCif(std::string path)
@@ -36,7 +55,6 @@ void Display::loadCif(std::string path)
 	}
 	
 	_atoms = geom.atoms();
-	_atoms->recalculate();
 	_guiAtoms = new GuiAtom();
 	_guiAtoms->watchAtoms(_atoms);
 
@@ -51,9 +69,27 @@ void Display::loadCif(std::string path)
 
 void Display::setup()
 {
-	std::string path = "/assets/geometry/GLY.cif";
+	std::string path = "/assets/geometry/H2S.cif";
+	
+	TextButton *button = new TextButton("I have no regard for your geometry", 
+	                                    this);
+	button->setReturnTag("recalculate");
+	button->resize(0.8);
+	setCentre(button, 0.5, 0.9);
+	addObject(button);
 
 	loadCif(path);
+}
+
+void Display::buttonPressed(std::string tag, Button *button)
+{
+	Scene::buttonPressed(tag, button);
+
+	if (tag == "recalculate")
+	{
+		recalculateAtoms();
+	}
+
 }
 
 void Display::interpretMouseButton(SDL_MouseButtonEvent button, bool dir)

@@ -133,3 +133,33 @@ void HasBondstraints::deleteBondstraints()
 	
 	_bondstraints.clear();
 }
+
+BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right)
+{
+	BondAngle ba(nullptr, left, centre, right, 0);
+
+	for (size_t i = 0; i < _bondAngles.size(); i++)
+	{
+		if (*_bondAngles[i] == ba)
+		{
+			return _bondAngles[i];
+		}
+	}
+	
+	return nullptr;
+}
+
+BondLength *HasBondstraints::findBondLength(Atom *a, Atom *b)
+{
+	BondLength bl(nullptr, a, b, 0);
+
+	for (size_t i = 0; i < _bondLengths.size(); i++)
+	{
+		if (*_bondLengths[i] == bl)
+		{
+			return _bondLengths[i];
+		}
+	}
+
+	return nullptr;
+}

@@ -20,6 +20,7 @@
 #define __vagabond__Handler__
 
 #include "Semaphore.h"
+#include "ThreadWorker.h"
 #include "Atom.h"
 #include <vector>
 #include <queue>
@@ -42,6 +43,7 @@ struct Result
 {
 	int ticket;
 	std::vector<Atom::WithPos> aps;
+	std::mutex handout;
 	
 	void transplantPositions()
 	{
@@ -82,6 +84,23 @@ protected:
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
 		Semaphore sem;
+		std::mutex handout;
+		
+		void cleanup()
+		{
+			for (size_t i = 0; i < threads.size(); i++)
+			{
+				delete threads[i];
+			}
+
+			for (size_t i = 0; i < workers.size(); i++)
+			{
+				delete workers[i];
+			}
+			
+			threads.clear();
+			workers.clear();
+		}
 		
 		void waitForThreads()
 		{
@@ -94,7 +113,6 @@ protected:
 		}
 	};
 
-	std::mutex _handout;
 	bool _finish;
 private:
 

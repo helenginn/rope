@@ -28,20 +28,24 @@ BondAngle::BondAngle(AtomGroup *owner, Atom *a, Atom *b, Atom *c, double angle)
 	_c = c;
 	_angle = angle;
 	
-	if (_owner == NULL || _a == NULL || _b == NULL || _c == NULL)
+	if (_a == NULL || _b == NULL || _c == NULL)
 	{
 		throw(std::runtime_error("Initialising bond angle with null values"));
 	}
 	
-	if (!owner->hasAtom(a) || !owner->hasAtom(b) || !owner->hasAtom(c))
+	if (owner && (!owner->hasAtom(a) || !owner->hasAtom(b) 
+	              || !owner->hasAtom(c)))
 	{
 		throw(std::runtime_error("Owner does not own atom assigned to BondAngle"));
 	}
 	
-	_a->addBondstraint(this);
-	_b->addBondstraint(this);
-	_c->addBondstraint(this);
-	_owner->addBondstraint(this);
+	if (_owner)
+	{
+		_a->addBondstraint(this);
+		_b->addBondstraint(this);
+		_c->addBondstraint(this);
+		_owner->addBondstraint(this);
+	}
 }
 
 bool BondAngle::operator==(const BondAngle &other) const

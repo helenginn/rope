@@ -4,7 +4,7 @@
 
 int main()
 {
-	std::string path = "/assets/geometry/HEX.cif";
+	std::string path = "/assets/geometry/CHX.cif";
 
 	Cif2Geometry geom = Cif2Geometry(path);
 	geom.setAutomaticKnot(true);

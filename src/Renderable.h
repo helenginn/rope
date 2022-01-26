@@ -291,6 +291,7 @@ public:
 		return _selected;
 	}
 
+	void setupVBOBuffers();
 protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -337,7 +338,6 @@ protected:
 	glm::mat4x4 _proj;
 	glm::mat4x4 _unproj;
 	GLuint _texid;
-	void setupVBOBuffers();
 	void appendObject(Renderable *object);
 private:
 	void deleteTextures();

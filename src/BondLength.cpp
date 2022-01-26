@@ -26,19 +26,22 @@ BondLength::BondLength(AtomGroup *owner, Atom *a, Atom *b, double length)
 	_b = b;
 	_length = length;
 	
-	if (_owner == NULL || _a == NULL || _b == NULL)
+	if (_a == NULL || _b == NULL)
 	{
 		throw(std::runtime_error("Initialising bond length with null values"));
 	}
 	
-	if (!owner->hasAtom(a) || !owner->hasAtom(b))
+	if (owner && (!owner->hasAtom(a) || !owner->hasAtom(b)))
 	{
 		throw(std::runtime_error("Owner does not own atom assigned to BondLength"));
 	}
 	
-	_a->addBondstraint(this);
-	_b->addBondstraint(this);
-	_owner->addBondstraint(this);
+	if (_owner)
+	{
+		_a->addBondstraint(this);
+		_b->addBondstraint(this);
+		_owner->addBondstraint(this);
+	}
 }
 
 bool BondLength::operator==(const BondLength &other) const

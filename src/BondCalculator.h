@@ -31,6 +31,7 @@ class BondCalculator : public Handler
 {
 public:
 	BondCalculator();
+	~BondCalculator();
 	
 	enum PipelineType
 	{
@@ -41,6 +42,11 @@ public:
 	
 	void submitJob(Job &job);
 	void submitResult(Result *result);
+	
+	void setTotalSamples(size_t total)
+	{
+		_totalSamples = total;
+	}
 	
 	void setPipelineType(PipelineType type)
 	{
@@ -88,11 +94,13 @@ private:
 	PipelineType _type;
 	size_t _maxThreads;
 	size_t _maxMemory;
+	size_t _totalSamples;
 	std::atomic<long int> _max_id;
 	std::atomic<long int> _running;
 	
 	Pool<Job *> _jobPool;
 	Pool<Result *> _resultPool;
+	Pool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler;
 	

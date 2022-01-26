@@ -1,11 +1,5 @@
-#include "../src/Cif2Geometry.h"
-#include "../src/AtomGroup.h"
-#include "../src/Atom.h"
-#include "../src/BondCalculator.h"
-#include "../src/matrix_functions.h"
-#include <iostream>
 
-int main()
+int check_vecs(std::string name)
 {
 	std::string path = "/assets/geometry/GLY.cif";
 
@@ -14,7 +8,7 @@ int main()
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();
-	Atom *anchor = atoms->firstAtomWithName("OXT");
+	Atom *anchor = atoms->firstAtomWithName(name);
 
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);

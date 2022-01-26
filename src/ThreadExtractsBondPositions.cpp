@@ -52,7 +52,12 @@ void ThreadExtractsBondPositions::start()
 		}
 		else
 		{
-			r = new Result();
+			if (r == nullptr)
+			{
+				r = new Result();
+			}
+
+			r->aps.reserve(seq->blockCount());
 			job->result = r;
 		}
 
@@ -60,8 +65,9 @@ void ThreadExtractsBondPositions::start()
 		
 		/* extend atom positions in the result */
 		r->ticket = mini->job->ticket;
-		r->aps.reserve(r->aps.size() + aps.size());
+		r->handout.lock();
 		r->aps.insert(r->aps.end(), aps.begin(), aps.end());
+		r->handout.unlock();
 		
 		/* don't submit the result unless all minijobs are done */
 		std::vector<MiniJob *>::iterator it;

@@ -3,7 +3,7 @@ set path=src/**
 command! Tags !ctags -R libgui/* libsrc/*
 command! Ninja :wa|!ninja -C build/current vagabond
 command! Winja :wa|!ninja -C build/website
-command! Winja :wa|!ninja -C build/website
+command! Tinja :wa|!ninja -C build/current test
 
 command! Doxy !doxygen Doxyfile
 

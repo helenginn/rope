@@ -9,7 +9,7 @@ int main()
 	{
 		BondSequenceHandler *handler = new BondSequenceHandler();
 		handler->setTotalSamples(100);
-		handler->calculateThreads(i);
+		handler->setMaxThreads(i);
 		handler->setup();
 		
 		int total = 0;

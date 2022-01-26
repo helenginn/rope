@@ -52,12 +52,16 @@ public:
 	{
 		return _bondLengths[i];
 	}
+	
+	BondLength *findBondLength(Atom *a, Atom *b);
 
 	/** @returns number of bond angles involved with given atom */
 	size_t bondAngleCount() const
 	{
 		return _bondAngles.size();
 	}
+	
+	BondAngle *findBondAngle(Atom *left, Atom *centre, Atom *right);
 	
 	/** @param i index
 	  * @returns specific bond angles involving atom */

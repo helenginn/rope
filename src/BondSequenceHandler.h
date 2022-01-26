@@ -40,6 +40,11 @@ public:
 		return _calculator;
 	}
 
+	void setMaxThreads(int total)
+	{
+		_maxThreads = total;
+	}
+
 	void setTotalSamples(int total)
 	{
 		_totalSamples = total;
@@ -51,7 +56,6 @@ public:
 	}
 
 	void addAnchorExtension(BondCalculator::AnchorExtension ext);
-	void calculateThreads(int max);
 	void setup();
 	
 	BondSequence *sequence(int i)
@@ -62,6 +66,11 @@ public:
 	int sequenceCount()
 	{
 		return _sequences.size();
+	}
+	
+	int threadCount()
+	{
+		return _threads;
 	}
 
 	void signalToHandler(BondSequence *seq, SequenceState state,
@@ -81,12 +90,14 @@ private:
 	void prepareSequenceBlocks();
 	void prepareThreads();
 	void finishThreads();
+	void calculateThreads(int max);
 
 	size_t _threads;
 	std::atomic<int> _run;
 
 	size_t _totalSamples;
 	size_t _totalSequences;
+	size_t _maxThreads;
 
 	bool _mapHandling;
 	

@@ -129,4 +129,5 @@ void GuiAtom::checkAtoms()
 	}
 
 	setupVBOBuffers();
+	_bonds->setupVBOBuffers();
 }

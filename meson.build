@@ -1,6 +1,7 @@
 project('vagabond', 'cpp')
 
 links = meson.get_cross_property('links', [])
+compile_args = meson.get_cross_property('compile_args', [])
 glm = dependency('glm', required: false)
 deps = [glm]
 gl = dependency('GL', method : 'system', required: false)
@@ -24,9 +25,13 @@ combined = join_paths(dir_base, data_dir)
 install_data(
 'assets/geometry/standard_geometry.cif',
 'assets/geometry/ASP.cif',
-'assets/geometry/GLY.cif',
+'assets/geometry/CHX.cif',
+'assets/geometry/CMO.cif',
+'assets/geometry/H2S.cif',
 'assets/geometry/HEX.cif',
+'assets/geometry/GLY.cif',
 'assets/geometry/LSD.cif',
+'assets/geometry/NH3.cif',
 install_dir : geometry)
 
 install_data(
@@ -117,7 +122,7 @@ vagafiles = [
 
 vag = []
 
-if (links == [])
+if (links == []) # not emscripten
   vag = static_library('libvag', vagafiles, 
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib'],
@@ -130,7 +135,7 @@ if (links == [])
 else
   executable(name, vagafiles,
   'src/main.cpp',
-  cpp_args: ['-I/usr/local/include'],
+  cpp_args: ['-I/usr/local/include', compile_args],
   link_args: ['-L/usr/local/lib', links],
   dependencies : deps, install: true)
 endif

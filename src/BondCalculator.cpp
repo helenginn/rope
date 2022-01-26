@@ -19,6 +19,7 @@
 #include "ThreadSubmitsJobs.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "Window.h"
 
 BondCalculator::BondCalculator()
 {
@@ -28,6 +29,14 @@ BondCalculator::BondCalculator()
 	_max_id = -1;
 	_running = 0;
 	_finish = false;
+	_totalSamples = 1;
+}
+
+BondCalculator::~BondCalculator()
+{
+	delete _sequenceHandler;
+	_resultPool.cleanup();
+	_recyclePool.cleanup();
 }
 
 void BondCalculator::sanityCheckPipeline()
@@ -64,8 +73,8 @@ void BondCalculator::addAnchorExtension(Atom *atom, size_t bondCount)
 void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
-	_sequenceHandler->calculateThreads(_maxThreads);
-	_sequenceHandler->setTotalSamples(1);
+	_sequenceHandler->setTotalSamples(_totalSamples);
+	_sequenceHandler->setMaxThreads(_maxThreads);
 	
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
@@ -103,16 +112,19 @@ void BondCalculator::start()
 
 Result *BondCalculator::acquireResult()
 {
-	_handout.lock();
+	_resultPool.handout.lock();
+	_jobPool.handout.lock();
 	if (_running == 0 && _resultPool.members.size() == 0)
 	{
-		_handout.unlock();
+		_jobPool.handout.unlock();
+		_resultPool.handout.unlock();
 		return nullptr;
 	}
-	_handout.unlock();
+	_jobPool.handout.unlock();
+	_resultPool.handout.unlock();
 
 	_resultPool.sem.wait();
-	_handout.lock();
+	_resultPool.handout.lock();
 	Result *result = nullptr;
 
 	if (_resultPool.members.size())
@@ -121,34 +133,38 @@ Result *BondCalculator::acquireResult()
 		_resultPool.members.pop();
 	}
 
-	_handout.unlock();
+	_resultPool.handout.unlock();
 	return result;
 }
 
 void BondCalculator::submitResult(Result *r)
 {
-	_handout.lock();
+	_resultPool.handout.lock();
 	_resultPool.members.push(r);
 	_resultPool.sem.signal();
+
+	_jobPool.handout.lock();
 	_running--;
-	_handout.unlock();
+	_jobPool.handout.unlock();
+
+	_resultPool.handout.unlock();
 }
 
 void BondCalculator::submitJob(Job &original_job)
 {
 	Job *job = new Job(original_job);
 
-	_handout.lock();
+	_jobPool.handout.lock();
 	_jobPool.members.push(job);
 	_jobPool.sem.signal();
 	_running++;
-	_handout.unlock();
+	_jobPool.handout.unlock();
 }
 
 Job *BondCalculator::acquireJob()
 {
 	_jobPool.sem.wait();
-	_handout.lock();
+	_jobPool.handout.lock();
 
 	Job *job = nullptr;
 
@@ -164,7 +180,7 @@ Job *BondCalculator::acquireJob()
 		_jobPool.sem.signal();
 	}
 
-	_handout.unlock();
+	_jobPool.handout.unlock();
 	
 	return job;
 
@@ -176,10 +192,11 @@ void BondCalculator::finish()
 	_sequenceHandler->finish();
 	std::cout << "Calculator finish" << std::endl;
 	
-	_handout.lock();
+	_jobPool.handout.lock();
 	_finish = true;
-	_handout.unlock();
+	_jobPool.handout.unlock();
 
 	_jobPool.waitForThreads();
+	_jobPool.cleanup();
 }
 

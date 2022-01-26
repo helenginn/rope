@@ -73,7 +73,7 @@ void Knotter::checkAtoms(Atom *atom, int start)
 		
 		double length = glm::length(diff);
 		
-		if (length < standard * 1.2)
+		if (length < standard * 1.4)
 		{
 			new BondLength(_group, atom, other, standard);
 		}
@@ -137,7 +137,7 @@ void Knotter::createBondTorsion(BondAngle *first, BondAngle *second)
 	BondTorsion *torsion = new BondTorsion(_group, a, b, c, d, standard);
 
 	/* if dev is less than 0.5 degrees, treat as constraint */
-	if (dev > 0.5) 
+	if (dev < 0.5) 
 	{
 		torsion->setConstrained(true);
 	}

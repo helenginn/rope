@@ -28,7 +28,7 @@ BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 	_threads = 0;
 	_run = 0;
 	_finish = false;
-	_totalSamples = 0;
+	_totalSamples = 1;
 	_pools[SequencePositionsReady].sem.setName("handle positions");
 	_pools[SequenceCalculateReady].sem.setName("calculate bonds");
 	_mapHandling = false;
@@ -45,6 +45,20 @@ BondSequenceHandler::~BondSequenceHandler()
 
 void BondSequenceHandler::calculateThreads(int max)
 {
+	if (_totalSamples == 0)
+	{
+		throw(std::runtime_error("Total samples specified as zero"));
+	}
+	
+	if (max > _totalSamples)
+	{
+		max = _totalSamples;
+	}
+
+	_threads = max;
+	_totalSequences = max + 2;
+	return;
+
 	if (max <= 2)
 	{
 		_threads = 1;
@@ -57,6 +71,8 @@ void BondSequenceHandler::calculateThreads(int max)
 	{
 		_threads = max - 2;
 	}
+	
+	std::cout << max << " " << _threads << std::endl;
 
 	_totalSequences = max;
 }
@@ -80,6 +96,7 @@ void BondSequenceHandler::prepareThreads()
 		CalcWorker *worker = new CalcWorker(this);
 		std::thread *thr = new std::thread(&CalcWorker::start, worker);
 		Pool<BondSequence *> &pool = _pools[SequenceCalculateReady];
+		std::cout << "Making calculator " << i << std::endl;
 
 		pool.threads.push_back(thr);
 		pool.workers.push_back(worker);
@@ -87,7 +104,6 @@ void BondSequenceHandler::prepareThreads()
 	
 	if (!_mapHandling)
 	{
-		/* single extractor */
 		ExtrWorker *worker = new ExtrWorker(this);
 		std::thread *thr = new std::thread(&ExtrWorker::start, worker);
 		Pool<BondSequence *> &pool = _pools[SequencePositionsReady];
@@ -113,6 +129,7 @@ void BondSequenceHandler::prepareThreads()
 
 void BondSequenceHandler::setup()
 {
+	calculateThreads(_maxThreads);
 	sanityCheckThreads();
 	allocateSequences();
 	prepareSequenceBlocks();
@@ -129,13 +146,26 @@ void BondSequenceHandler::finishThreads()
 	_pools[SequenceCalculateReady].waitForThreads();
 	_pools[SequencePositionsReady].waitForThreads();
 	_pools[SequenceIdle].waitForThreads();
+	
+	_miniJobPool.cleanup();
+	_pools[SequenceCalculateReady].cleanup();
+	_pools[SequencePositionsReady].cleanup();
+	_pools[SequenceIdle].cleanup();
 }
 
 void BondSequenceHandler::finish()
 {
-	_handout.lock();
+	_pools[SequenceIdle].handout.lock();
+	_pools[SequencePositionsReady].handout.lock();
+	_pools[SequenceCalculateReady].handout.lock();
+	_miniJobPool.handout.lock();
+
 	_finish = true;
-	_handout.unlock();
+
+	_pools[SequenceIdle].handout.unlock();
+	_pools[SequencePositionsReady].handout.unlock();
+	_pools[SequenceCalculateReady].handout.unlock();
+	_miniJobPool.handout.unlock();
 
 	finishThreads();
 }
@@ -180,24 +210,24 @@ void BondSequenceHandler::allocateSequences()
 void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state,
                                           SequenceState old)
 {
-	_handout.lock();
+	Pool<BondSequence *> &pool = _pools[state];
+	pool.handout.lock();
 	if (state == SequenceCalculateReady)
 	{
 		_run++;
 	}
 
-	Pool<BondSequence *> &pool = _pools[state];
 	pool.members.push(seq);
 	pool.sem.signal();
 
-	_handout.unlock();
+	pool.handout.unlock();
 }
 
 BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 {
 	Pool<BondSequence *> &pool = _pools[state];
 	pool.sem.wait();
-	_handout.lock();
+	pool.handout.lock();
 
 	BondSequence *seq = nullptr;
 
@@ -212,14 +242,14 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 		pool.sem.signal();
 	}
 
-	_handout.unlock();
+	pool.handout.unlock();
 	
 	return seq;
 }
 
 void BondSequenceHandler::generateMiniJobs(Job *job)
 {
-	_handout.lock();
+	_miniJobPool.handout.lock();
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
 		MiniJob *mini = new MiniJob();
@@ -231,7 +261,7 @@ void BondSequenceHandler::generateMiniJobs(Job *job)
 		_miniJobPool.members.push(mini);
 		_miniJobPool.sem.signal();
 	}
-	_handout.unlock();
+	_miniJobPool.handout.unlock();
 }
 
 void BondSequenceHandler::signalFinishMiniJob()
@@ -242,7 +272,7 @@ void BondSequenceHandler::signalFinishMiniJob()
 MiniJob *BondSequenceHandler::acquireMiniJob()
 {
 	_miniJobPool.sem.wait();
-	_handout.lock();
+	_miniJobPool.handout.lock();
 
 	MiniJob *mini = nullptr;
 
@@ -257,7 +287,7 @@ MiniJob *BondSequenceHandler::acquireMiniJob()
 		_miniJobPool.sem.signal();
 	}
 
-	_handout.unlock();
+	_miniJobPool.handout.unlock();
 	
 	return mini;
 

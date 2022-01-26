@@ -65,6 +65,16 @@ public:
 	}
 	
 	Semaphore(const Semaphore &) = delete;
+	
+	bool tryWait()
+	{
+		return (_mutex.try_lock());
+	}
+	
+	void unlock()
+	{
+		_mutex.unlock();
+	}
 
 	void wait()
 	{

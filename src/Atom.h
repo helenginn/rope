@@ -59,10 +59,7 @@ public:
 		return _derived.pos;
 	}
 	
-	void setDerivedPosition(glm::vec3 &pos)
-	{
-		_derived.pos = pos;
-	}
+	void setDerivedPosition(glm::vec3 &pos);
 	
 	/** @param name identifier for atom within monomer, e.g. CG2 in valine */
 	void setAtomName(std::string name);
@@ -175,7 +172,8 @@ public:
 	/** coordination matrix for BondSequence.
 	    @param isAnchor specifies if atom is first in sequence */
 	 /* @returns matrix describing all connected partners */
-	glm::mat4x4 coordinationMatrix();
+	glm::mat4x4 coordinationMatrix(Atom *children[4], int count, 
+	                               Atom *prev = NULL);
 private:
 	void changedPosition();
 

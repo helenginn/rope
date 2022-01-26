@@ -19,11 +19,11 @@ public:
 	void watchAtoms(AtomGroup *as);
 	
 	size_t verticesPerAtom();
+	void checkAtoms();
 	virtual void render(SnowGL *gl);
 private:
 	void setPosition(glm::vec3 position);
 	void colourByElement(std::string ele);
-	void checkAtoms();
 	void checkAtom(Atom *a);
 
 	Icosahedron *_template;
