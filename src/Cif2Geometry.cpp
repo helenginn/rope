@@ -23,7 +23,7 @@ Cif2Geometry::Cif2Geometry(std::string filename)
 	_atoms = new AtomGroup();
 	_accessedAtoms = false;
 	_accessedTable = false;
-	_knot = false;
+	_knot = true;
 }
 
 Cif2Geometry::~Cif2Geometry()
