@@ -58,6 +58,46 @@
     <div class="emscripten_border">
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     </div>
+	<p/>
+	<div style="margin: auto; display: block; width: 300px; text-align: center;">
+	<span style="font-family: sans-serif"><p>Upload local file to Vagabond</p> 
+		<input type="file" id="input" style="margin: auto; display: block; width: 300px; text-align: center;" multiple>
+	</span>
+	</div>
+	<script>
+
+	const inputElement = document.getElementById("input");
+	inputElement.addEventListener("change", handleFiles, false);
+	function handleFiles() {
+		const fileList = this.files; /* now you can work with the file list */
+		const numFiles = fileList.length;
+		alert('Loading ' + numFiles + ' files');
+		for (let i = 0, numFiles = fileList.length; i < numFiles; i++) {
+			const file = fileList[i];
+			var fr = new FileReader();
+			fr.addEventListener('loadend', print_file);
+
+			fr.onloadend = (function(fileobj)
+			{
+			return function(evt) {
+			print_file(evt, fileobj)
+			};
+			})(fileList[i]);
+			fr.readAsArrayBuffer(fileList[i]);
+		}
+
+		function print_file(e, file)
+		{
+			console.log('I am a console');
+			let result=fr.result;
+			const uint8_view = new Uint8Array(result);
+
+			FS.writeFile(file.name, uint8_view)
+			Module.ccall('accept_file', 'number', ['string'], [file.name])
+		}
+	}
+
+	</script>
     <div class="emscripten">
       <input type="checkbox" id="resize">Resize canvas
       <input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer
