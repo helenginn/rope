@@ -353,3 +353,8 @@ bool Cif2Geometry::processLoopAsTorsions(Loop &loop)
 	
 	return true;
 }
+
+const size_t Cif2Geometry::atomCount() const
+{
+	return _atoms->size();
+}

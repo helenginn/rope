@@ -40,6 +40,8 @@ public:
 		return _atoms;
 	}
 	
+	const size_t atomCount() const;
+	
 	/** Warning: passes ownership of the Table onto the caller.
 	 * @returns GeometryTable containing all geometry found in file */
 	GeometryTable *geometryTable()
