@@ -32,10 +32,14 @@ public:
 	BondLength(AtomGroup *owner, Atom *a, Atom *b, double length);
 	virtual ~BondLength() {};
 
-	double length() const
+	const double measurement() const;
+
+	const double &length() const
 	{
 		return _length;
 	}
+	
+	virtual const std::string desc() const;
 	
 	Atom *atom(int i)
 	{

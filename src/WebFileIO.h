@@ -16,22 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Bondstraint__
-#define __vagabond__Bondstraint__
-
+#include <iostream>
 #include <string>
 
-class BondLength;
+#include <emscripten.h>
+#include <emscripten/bind.h>
 
-class Bondstraint
+EM_JS(void, call_js, (),
 {
-public:
-	virtual ~Bondstraint() {}
-	
-	virtual const std::string desc() const
-	{
-		return "";
-	}
-};
+    jsMethod();
+});
 
-#endif
+bool callJsBack()
+{
+    call_js();
+    return true;
+}
+
+EMSCRIPTEN_BINDINGS(module)
+{
+    emscripten::function("callJsBack", &callJsBack);
+}

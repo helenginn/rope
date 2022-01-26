@@ -38,7 +38,7 @@ Window::Window()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
 	                    SDL_GL_CONTEXT_PROFILE_CORE);
 	WindowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
-	WindowFlags += SDL_WINDOW_FULLSCREEN;
+//	WindowFlags += SDL_WINDOW_FULLSCREEN;
 #endif
 
 	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);

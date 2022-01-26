@@ -183,12 +183,17 @@ void BondSequence::removeGraphs()
 	_atom2Block.clear();
 }
 
+bool BondSequence::atomgraph_less_than(const AtomGraph *a, const AtomGraph *b)
+{
+	return *a < *b;
+}
+
 void BondSequence::sortGraphChildren()
 {
 	for (size_t i = 0; i < _graphs.size(); i++)
 	{
-		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end());
-		std::reverse(_graphs[i]->children.begin(), _graphs[i]->children.end());
+		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
+		BondSequence::atomgraph_less_than);
 	}
 }
 

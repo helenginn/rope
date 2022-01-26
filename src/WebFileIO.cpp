@@ -16,22 +16,3 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Bondstraint__
-#define __vagabond__Bondstraint__
-
-#include <string>
-
-class BondLength;
-
-class Bondstraint
-{
-public:
-	virtual ~Bondstraint() {}
-	
-	virtual const std::string desc() const
-	{
-		return "";
-	}
-};
-
-#endif

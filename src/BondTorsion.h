@@ -71,7 +71,7 @@ public:
 		_constrained = constrained;
 	}
 	
-	virtual std::string desc();
+	virtual const std::string desc() const;
 private:
 	AtomGroup *_owner;
 	Atom *_a;

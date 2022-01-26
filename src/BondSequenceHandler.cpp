@@ -96,7 +96,6 @@ void BondSequenceHandler::prepareThreads()
 		CalcWorker *worker = new CalcWorker(this);
 		std::thread *thr = new std::thread(&CalcWorker::start, worker);
 		Pool<BondSequence *> &pool = _pools[SequenceCalculateReady];
-		std::cout << "Making calculator " << i << std::endl;
 
 		pool.threads.push_back(thr);
 		pool.workers.push_back(worker);

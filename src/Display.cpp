@@ -69,9 +69,9 @@ void Display::loadCif(std::string path)
 
 void Display::setup()
 {
-	std::string path = "/assets/geometry/H2S.cif";
+	std::string path = "/assets/geometry/LSD.cif";
 	
-	TextButton *button = new TextButton("I have no regard for your geometry", 
+	TextButton *button = new TextButton("Tie up with bonds", 
 	                                    this);
 	button->setReturnTag("recalculate");
 	button->resize(0.8);
@@ -124,6 +124,26 @@ void Display::mouseMoveEvent(double x, double y)
 
 		_camAlpha = deg2rad(-dy);
 		_camBeta = deg2rad(-dx);
+		
+		updateCamera();
+	}
+
+	if (_left && !_shiftPressed && _controlPressed)
+	{
+		double dx = x - _lastX;
+		double dy = y - _lastY;
+
+		_translation.x = dx / 50;
+		_translation.y = -dy / 50;
+		
+		updateCamera();
+	}
+
+	if (_right && !_shiftPressed && !_controlPressed)
+	{
+		double dy = y - _lastY;
+
+		_translation.z = dy / 2;
 		
 		updateCamera();
 	}

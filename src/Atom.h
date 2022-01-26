@@ -54,7 +54,7 @@ public:
 	
 	/** @returns updated derived position from vagabond model if in use,
 	 * otherwise initial position from PDB/mmCIF file */
-	const glm::vec3 &derivedPosition()
+	const glm::vec3 &derivedPosition() const
 	{
 		return _derived.pos;
 	}

@@ -125,7 +125,17 @@ void GuiAtom::checkAtoms()
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
 		Atom *a = _atoms[i];
-		checkAtom(a);
+		try
+		{
+			checkAtom(a);
+		}
+		catch (std::runtime_error err)
+		{
+			std::cout << "Error! " << err.what() << std::endl;
+			std::cout << "Atom: " << a->atomName() <<  std::endl;
+
+			exit(1);
+		}
 	}
 
 	setupVBOBuffers();

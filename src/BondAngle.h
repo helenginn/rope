@@ -31,12 +31,14 @@ public:
 	BondAngle(AtomGroup *owner, Atom *a, Atom *b, Atom *c, double angle);
 	virtual ~BondAngle() {};
 
-	double angle() const
+	const double &angle() const
 	{
 		return _angle;
 	}
+
+	double measurement() const;
 	
-	Atom *atom(int i)
+	const Atom *atom(int i) const
 	{
 		if (i == 0) return _a;
 		if (i == 1) return _b;
@@ -64,7 +66,7 @@ public:
 		return !(*this == other);
 	}
 
-	virtual std::string desc();
+	virtual const std::string desc() const;
 private:
 	AtomGroup *_owner;
 	Atom *_a;

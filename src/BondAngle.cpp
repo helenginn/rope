@@ -116,7 +116,19 @@ void BondAngle::getSequentialAtoms(BondAngle *o, Atom **a, Atom **b,
 	}
 }
 
-std::string BondAngle::desc()
+const std::string BondAngle::desc() const
 {
 	return _a->atomName() + "-" + _b->atomName() + "-" + _c->atomName();
+}
+
+double BondAngle::measurement() const
+{
+	glm::vec3 c   = atom(1)->derivedPosition();
+	glm::vec3 l = atom(0)->derivedPosition();
+	glm::vec3 r = atom(2)->derivedPosition();
+	
+	float angle = glm::angle(normalize(l - c),
+	                         normalize(r - c));
+
+	return rad2deg(angle);
 }

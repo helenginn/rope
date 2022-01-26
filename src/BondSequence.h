@@ -114,11 +114,13 @@ private:
 		int maxDepth;
 		std::vector<AtomGraph *> children;
 		
-		bool operator<(AtomGraph &other) const
+		bool operator<(const AtomGraph &other) const
 		{
-			return depth < other.depth;
+			return maxDepth < other.maxDepth;
 		}
 	};
+
+	static bool atomgraph_less_than(const AtomGraph *a, const AtomGraph *b);
 	
 	struct AtomBlock
 	{

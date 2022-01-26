@@ -26,10 +26,12 @@ install_data(
 'assets/geometry/standard_geometry.cif',
 'assets/geometry/ASP.cif',
 'assets/geometry/CHX.cif',
+'assets/geometry/PO4.cif',
 'assets/geometry/CMO.cif',
 'assets/geometry/H2S.cif',
 'assets/geometry/HEX.cif',
 'assets/geometry/GLY.cif',
+'assets/geometry/LHI.cif',
 'assets/geometry/LSD.cif',
 'assets/geometry/NH3.cif',
 install_dir : geometry)

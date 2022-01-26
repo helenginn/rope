@@ -77,7 +77,7 @@ bool BondTorsion::isConstrained()
 
 }
 
-std::string BondTorsion::desc()
+const std::string BondTorsion::desc() const
 {
 	return _a->atomName() + "-" + _b->atomName() + "-" + 
 	_c->atomName() + "-" + _d->atomName();

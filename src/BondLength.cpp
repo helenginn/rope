@@ -67,3 +67,17 @@ Atom *BondLength::otherAtom(Atom *a)
 
 	throw(std::runtime_error("Queried atom not either atom in bond length"));
 }
+
+const double BondLength::measurement() const
+{
+	glm::vec3 bond = _a->derivedPosition() - _b->derivedPosition();
+	float length = glm::length(bond);
+
+	return length;
+}
+
+const std::string BondLength::desc() const
+{
+	std::string desc = _a->atomName() + "-" + _b->atomName();
+	return desc;
+}

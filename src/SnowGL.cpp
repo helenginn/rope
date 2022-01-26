@@ -34,7 +34,7 @@ SnowGL::SnowGL()
 	_right = false;
 
 	_zNear = 1;
-	_zFar = 100;
+	_zFar = 400;
 
 	setupCamera();
 

@@ -43,7 +43,18 @@ glm::mat3x3 mat3x3_from_unit_cell(double a, double b, double c,
 
 glm::mat4x4 torsion_basis(glm::mat4x4 prior, glm::vec3 prev, glm::vec4 next);
 
+/** inserts four coordinated atoms using lengths and angles relating positions.
+ * @param ret matrix to insert results into
+ * @param lengths four lengths: central atom (O) to A, B, C, D in order
+ * @param angles five angles: A-O-B, B-O-C, C-O-A, B-O-D, A-O-D in order
+ */
 void insert_four_atoms(glm::mat4x4 &ret, float *lengths, float *angles);
+
+/** inserts three coordinated atoms using lengths and angles relating positions.
+ * @param ret matrix to insert results into
+ * @param lengths three lengths: central atom (O) to A, B, C in order
+ * @param angles three angles: A-O-B, B-O-C and C-O-A in order
+ */
 void insert_three_atoms(glm::mat4x4 &ret, float *lengths, float *angles);
 void insert_two_atoms(glm::mat4x4 &ret, float *lengths, float angle);
 void insert_one_atom(glm::mat4x4 &ret, float length);

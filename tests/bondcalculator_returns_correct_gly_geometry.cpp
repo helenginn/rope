@@ -7,8 +7,8 @@
 
 int main()
 {
-	std::string path = "/assets/geometry/NH3.cif";
+	std::string path = "/assets/geometry/GLY.cif";
 
-	return checkGeometry(path);
+	return checkGeometry(path, 2.0);
 }
 
