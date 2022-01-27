@@ -4,7 +4,7 @@
 cpp = 'em++'
 
 [constants]
-sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread', '--js-library', '../../library.js']
+sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread']
 threads = ['-pthread', '-s', 'USE_PTHREADS=1']
 shell_file = ['--shell-file', '../../minimal_shell.html']
 preload = ['--use-preload-plugins', '--preload-file', '../../assets']

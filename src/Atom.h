@@ -34,20 +34,20 @@ public:
 	                        glm::mat3x3 tensor = glm::mat3(1.f));
 	
 	/** @returns initial B factor, usually as found in the PDB/mmCIF file */
-	const float &initialBFactor()
+	const float &initialBFactor() const
 	{
 		return _initial.b;
 	}
 	
 	/** @returns initial position, usually as found in the PDB/mmCIF file */
-	const glm::vec3 &initialPosition()
+	const glm::vec3 &initialPosition() const
 	{
 		return _initial.pos;
 	}
 	
 	/** @returns updated derived B factor from vagabond model if in use,
 	 * otherwise initial B factor from PDB/mmCIF file */
-	const float &derivedBFactor()
+	const float &derivedBFactor() const
 	{
 		return _derived.b;
 	}
@@ -174,6 +174,9 @@ public:
 	 /* @returns matrix describing all connected partners */
 	glm::mat4x4 coordinationMatrix(Atom *children[4], int count, 
 	                               Atom *prev = NULL);
+
+	void checkChirality(glm::mat4x4 &ret, Atom *prev, 
+	                    Atom *children[4], const int count);
 private:
 	void changedPosition();
 

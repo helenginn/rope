@@ -24,7 +24,11 @@ FileManager::FileManager()
 {
 	_view = nullptr;
 	_list.push_back("assets/geometry/GLY.cif");
+	_list.push_back("assets/geometry/ACY.cif");
 	_list.push_back("assets/geometry/ASP.cif");
+	_list.push_back("assets/geometry/L-ASP.cif");
+	_list.push_back("assets/geometry/LHI.cif");
+	_list.push_back("assets/geometry/CHX.cif");
 }
 
 void FileManager::acceptFile(std::string filename, bool force)

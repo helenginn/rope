@@ -16,10 +16,12 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include "HasBondstraints.h"
 #include "BondTorsion.h"
 #include "BondLength.h"
 #include "BondAngle.h"
+#include "Chirality.h"
 
 HasBondstraints::~HasBondstraints()
 {
@@ -38,6 +40,7 @@ bool HasBondstraints::hasBondAngle(BondAngle *angle)
 
 	return false;
 }
+
 bool HasBondstraints::hasTorsion(BondTorsion *torsion)
 {
 	for (size_t i = 0; i < _torsions.size(); i++)
@@ -51,6 +54,18 @@ bool HasBondstraints::hasTorsion(BondTorsion *torsion)
 	return false;
 }
 
+bool HasBondstraints::hasChirality(Chirality *chir)
+{
+	for (size_t i = 0; i < _chirals.size(); i++)
+	{
+		if (*_chirals[i] == *chir)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
 
 bool HasBondstraints::hasBondLength(BondLength *length)
 {
@@ -123,6 +138,25 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 
 }
 
+void HasBondstraints::addBondstraint(Chirality *chir)
+{
+	if (hasChirality(chir))
+	{
+		return;
+	}
+
+	_bondstraints.push_back(chir);
+	_chirals.push_back(chir);
+	
+	Atom *me = atomIdentity();
+
+	if (me && chir->centreAtom() != me)
+	{
+		throw(std::runtime_error("Adding chirality to inappropriate "
+		                         "centre atom"));
+	}
+}
+
 void HasBondstraints::deleteBondstraints()
 {
 	for (size_t i = 0; i < _bondstraints.size(); i++)
@@ -158,6 +192,21 @@ BondLength *HasBondstraints::findBondLength(Atom *a, Atom *b)
 		if (*_bondLengths[i] == bl)
 		{
 			return _bondLengths[i];
+		}
+	}
+
+	return nullptr;
+}
+
+BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d)
+{
+	BondTorsion bt(nullptr, a, b, c, d, 0);
+
+	for (size_t i = 0; i < _torsions.size(); i++)
+	{
+		if (*_torsions[i] == bt)
+		{
+			return _torsions[i];
 		}
 	}
 

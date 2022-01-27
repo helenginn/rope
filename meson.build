@@ -24,15 +24,19 @@ combined = join_paths(dir_base, data_dir)
 
 install_data(
 'assets/geometry/standard_geometry.cif',
+'assets/geometry/L-ASP.cif',
+'assets/geometry/ACY.cif',
 'assets/geometry/ASP.cif',
 'assets/geometry/CHX.cif',
 'assets/geometry/PO4.cif',
 'assets/geometry/CMO.cif',
 'assets/geometry/H2S.cif',
 'assets/geometry/HEX.cif',
+'assets/geometry/IPA.cif',
 'assets/geometry/GLY.cif',
 'assets/geometry/LHI.cif',
 'assets/geometry/LSD.cif',
+'assets/geometry/TYR.cif',
 'assets/geometry/NH3.cif',
 install_dir : geometry)
 
@@ -87,6 +91,7 @@ vagafiles = [
 'src/BondTorsion.cpp',
 'src/Box.cpp',
 'src/Button.cpp',
+'src/Chirality.cpp',
 'src/Choice.cpp',
 'src/ChoiceGroup.cpp',
 'src/Cif2Geometry.cpp',

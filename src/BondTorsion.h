@@ -33,13 +33,22 @@ public:
 	            Atom *d, double angle);
 
 	virtual ~BondTorsion() {};
+	
+	enum Source
+	{
+		SourceInitial,
+		SourceDerived
+	};
+	
+	double measurement(BondTorsion::Source source) const;
+	double startingAngle() const;
 
 	double angle() const
 	{
 		return _angle;
 	}
 	
-	Atom *atom(int i)
+	Atom *atom(int i) const
 	{
 		if (i == 0) return _a;
 		if (i == 1) return _b;
@@ -64,7 +73,7 @@ public:
 		return !(*this == other);
 	}
 
-	bool isConstrained();
+	bool isConstrained() const;
 	
 	void setConstrained(bool constrained)
 	{

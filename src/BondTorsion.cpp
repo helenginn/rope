@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include "BondTorsion.h"
 #include "AtomGroup.h"
 #include "Atom.h"
@@ -31,23 +32,26 @@ BondTorsion::BondTorsion(AtomGroup *owner, Atom *a, Atom *b, Atom *c,
 	_d = d;
 	_angle = angle;
 	
-	if (_owner == NULL || _a == NULL || _b == NULL || _c == NULL)
+	if (_a == NULL || _b == NULL || _c == NULL || _d == NULL)
 	{
 		throw(std::runtime_error("Initialising bond torsion with null values"));
 	}
 	
-	if (!owner->hasAtom(a) || !owner->hasAtom(b) || !owner->hasAtom(c)
-	    || !owner->hasAtom(d))
+	if (owner && (!owner->hasAtom(a) || !owner->hasAtom(b) 
+	    || !owner->hasAtom(c) || !owner->hasAtom(d)))
 	{
 		throw(std::runtime_error("Owner does not own atom "
 		                         "assigned to BondTorsion"));
 	}
 	
-	_a->addBondstraint(this);
-	_b->addBondstraint(this);
-	_c->addBondstraint(this);
-	_d->addBondstraint(this);
-	_owner->addBondstraint(this);
+	if (_owner)
+	{
+		_a->addBondstraint(this);
+		_b->addBondstraint(this);
+		_c->addBondstraint(this);
+		_d->addBondstraint(this);
+		_owner->addBondstraint(this);
+	}
 }
 
 bool BondTorsion::operator==(const BondTorsion &other) const
@@ -65,7 +69,7 @@ bool BondTorsion::operator==(const BondTorsion &other) const
 	return false;
 }
 
-bool BondTorsion::isConstrained()
+bool BondTorsion::isConstrained() const
 {
 	if (_a->elementSymbol() == "H" || _b->elementSymbol() == "H" ||
 	    _c->elementSymbol() == "H" || _d->elementSymbol() == "H")
@@ -81,4 +85,45 @@ const std::string BondTorsion::desc() const
 {
 	return _a->atomName() + "-" + _b->atomName() + "-" + 
 	_c->atomName() + "-" + _d->atomName();
+}
+
+double BondTorsion::startingAngle() const
+{
+	if (isConstrained() && _angle >= 0)
+	{
+		return _angle;
+	}
+
+	return measurement(SourceInitial);
+}
+
+double BondTorsion::measurement(BondTorsion::Source source) const
+{
+	glm::vec3 poz[4];
+	
+	for (size_t i = 0; i < 4; i++)
+	{
+		if (source == SourceInitial)
+		{
+			poz[i] = atom(i)->initialPosition();
+		}
+		else if (source == SourceDerived)
+		{
+			poz[i] = atom(i)->derivedPosition();
+		}
+	}
+	
+	glm::mat3x3 squish;
+	squish[0] = poz[0] - poz[1];
+	squish[2] = poz[2] - poz[1];
+	squish[1] = glm::cross(squish[2], squish[0]);
+	
+	glm::mat3x3 inv = glm::inverse(squish);
+
+	glm::vec3 q = glm::normalize(inv * (poz[3] - poz[2]));
+	glm::vec3 axis = glm::vec3(1., 0., 0.);
+	
+	double angle = glm::angle(axis, q);
+
+	return rad2deg(angle);
 }

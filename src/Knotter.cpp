@@ -20,9 +20,10 @@
 #include "Knotter.h"
 #include "BondAngle.h"
 #include "BondTorsion.h"
+#include "BondLength.h"
+#include "Chirality.h"
 #include "AtomGroup.h"
 #include "Atom.h"
-#include "BondLength.h"
 #include "GeometryTable.h"
 
 Knotter::Knotter(AtomGroup *group, GeometryTable *table)
@@ -137,7 +138,7 @@ void Knotter::createBondTorsion(BondAngle *first, BondAngle *second)
 	BondTorsion *torsion = new BondTorsion(_group, a, b, c, d, standard);
 
 	/* if dev is less than 0.5 degrees, treat as constraint */
-	if (dev < 0.5) 
+	if (standard >= 0 && dev < 0.5) 
 	{
 		torsion->setConstrained(true);
 	}
@@ -190,10 +191,72 @@ void Knotter::findBondLengths()
 	}
 }
 
+void Knotter::checkAtomChirality(Atom *atom)
+{
+	Atom *atoms[4] = {nullptr, nullptr, nullptr, nullptr};
+	std::string code = atom->code();
+	std::string centre = atom->atomName();
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		int n = 0;
+		for (size_t j = 0; j < atom->bondLengthCount(); j++)
+		{
+			if (j == i)
+			{
+				continue;
+			}
+
+			atoms[n] = atom->connectedAtom(j);
+			n++;
+		}
+
+		bool skip = false;
+		for (size_t j = 0; j < 3; j++)
+		{
+			if (atoms[j] == nullptr)
+			{
+				skip = true;
+			}
+		}
+		
+		if (skip)
+		{
+			continue;
+		}
+
+		std::string pName = atoms[0]->atomName();
+		std::string qName = atoms[1]->atomName();
+		std::string rName = atoms[2]->atomName();
+
+		int sign = _table->chirality(code, atom->atomName(), pName, qName, rName);
+
+		if (sign != 0)
+		{
+			new Chirality(_group, atom, atoms[0], atoms[1], atoms[2], sign);
+			break;
+		}
+	}
+}
+
+void Knotter::findChiralCentres()
+{
+	AtomGroup &group = *_group;
+	for (size_t i = 0; i < group.size(); i++)
+	{
+		if (group[i]->bondLengthCount() >= 3)
+		{
+			checkAtomChirality(group[i]);
+		}
+	}
+
+}
+
 void Knotter::knot()
 {
 	findBondLengths();
 	findBondAngles();
 	findBondTorsions();
+	findChiralCentres();
 }
 

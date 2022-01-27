@@ -3,6 +3,7 @@
 #include "Atom.h"
 #include "BondLength.h"
 #include "BondAngle.h"
+#include "Chirality.h"
 #include "FileReader.h"
 
 Atom::Atom()
@@ -114,6 +115,76 @@ Atom *Atom::connectedAtom(int i)
 	return bondLength(i)->otherAtom(this);
 }
 
+void Atom::checkChirality(glm::mat4x4 &ret, Atom *prev, 
+                          Atom *children[4], const int count)
+{
+	if (chiralityCount() == 0 || count < 3)
+	{
+		return;
+	}
+
+	Atom *chosen[4] = {nullptr, nullptr, nullptr, nullptr};
+	Atom *index[4] = {nullptr, nullptr, nullptr, nullptr};
+	int offset = (prev != nullptr ? 1 : 0);
+	
+	if (prev != nullptr)
+	{
+		chosen[0] = prev;
+		index[0] = prev;
+	}
+
+	for (size_t i = 0; i < count; i++)
+	{
+		chosen[i + offset] = children[i];
+		index[i + offset] = children[i];
+	}
+
+	Chirality *ch = chirality(0);
+	int sign = ch->get_sign(&chosen[0], &chosen[1], &chosen[2], &chosen[3]);
+
+	if (sign == 0)
+	{
+		return;
+	}
+	
+	int n = 0;
+	glm::vec3 vecs[3];
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		if (chosen[i] == nullptr)
+		{
+			continue;
+		}
+		
+		for (size_t j = 0; j < 4; j++)
+		{
+			if (index[j] == chosen[i])
+			{
+				vecs[n] = glm::vec3(ret[j]);
+				n++;
+			}
+		}
+	}
+	
+	if (n != 3)
+	{
+		throw(std::runtime_error("non-sensical results for checking chirality"));
+	}
+	
+	glm::vec3 cr = glm::cross(vecs[1], vecs[2]);
+	double dot = glm::dot(cr, vecs[0]);
+	
+	if (dot * sign < 0) // flippity flip
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			ret[i].y *= -1;
+		}
+
+	}
+}
+
 glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 {
 	glm::mat4x4 ret = glm::mat4(0.f);
@@ -145,6 +216,7 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		angles[4] = findBondAngle(children[0], this, children[3])->angle();
 
 		insert_four_atoms(ret, lengths, angles);
+		checkChirality(ret, prev, children, count);
 	}
 
 	else if (prev == nullptr)
@@ -152,6 +224,7 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		if (count == 3)
 		{
 			insert_three_atoms(ret, lengths, angles);
+			checkChirality(ret, prev, children, count);
 		}
 		else if (count == 2)
 		{
@@ -207,30 +280,7 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 			insert_two_atoms(tmp, lengths, angles[0]);
 		}
 
-		if (count == 2)
-		{
-			std::cout << "VALUES" << std::endl;
-			std::cout << "I am: " << atomName() << ", caller " <<
-			prev->atomName() << std::endl;
-
-			for (size_t i = 0; i < count; i++)
-			{
-				std::cout << children[i]->atomName() << " ";
-			}
-			std::cout << std::endl;
-
-
-			for (size_t i = 0; i < 4; i++)
-			{
-				std::cout << "\tLength " << i << " = " << lengths[i] << std::endl;
-				std::cout << "\tAngle " << i << " = " << angles[i] << std::endl;
-			}
-
-			std::cout << "\tAngle " << 4 << " = " << angles[4] << std::endl;
-			std::cout << std::endl;
-			std::cout << "Tmp is: " << glm::to_string(tmp) << std::endl;
-			std::cout << std::endl;
-		}
+		checkChirality(tmp, prev, children, count);
 		
 		for (size_t i = 0; i < 3; i++)
 		{
@@ -255,15 +305,6 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 			throw std::runtime_error(ss.str());
 		}
 	}
-	if (count > 2 && false)
-	{
-		ret[0] = glm::vec4(1., 0, 0.5, 1);
-		ret[1] = glm::vec4(0, 1., 0.5, 1);
-		ret[2] = glm::vec4(-1, 0, 0.5, 1);
-		ret[3] = glm::vec4(0, -1, 0.5, 1);
-	}
-	
-//	std::cout << glm::to_string(ret) << std::endl;
 	
 	return ret;
 }

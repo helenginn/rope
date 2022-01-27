@@ -57,7 +57,6 @@ void FileView::buttonPressed(std::string tag, Button *button)
 		std::string filename = tag.substr(file_prefix.length(), 
 		                                  std::string::npos);
 
-		std::cout << "Here " << "loading " << filename << std::endl;
 		Cif2Geometry geom = Cif2Geometry(filename);
 		geom.parse();
 		

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "GeometryTable.h"
+#include <iostream>
 
 GeometryTable::GeometryTable()
 {
@@ -64,8 +65,35 @@ void GeometryTable::addGeometryTorsion(std::string code, std::string pName,
 
 	quartet = {sName, rName, qName, pName};
 	map.torsions[quartet] = value;
-
 }
+
+void GeometryTable::addGeometryChiral(std::string code, std::string centre,
+                                      std::string pName, std::string qName, 
+                                      std::string rName, int sign)
+{
+	GeometryMap &map = _codes[code];
+	
+	/* in the same direction as described */
+	AtomQuartet quartet = {centre, pName, qName, rName};
+	map.chirals[quartet] = sign;
+
+	quartet = {centre, rName, pName, qName};
+	map.chirals[quartet] = sign;
+
+	quartet = {centre, qName, rName, pName};
+	map.chirals[quartet] = sign;
+
+	/* reverse signs in case the lookup event comes in reverse */
+	quartet = {centre, qName, pName, rName};
+	map.chirals[quartet] = -sign;
+
+	quartet = {centre, pName, rName, qName};
+	map.chirals[quartet] = -sign;
+
+	quartet = {centre, rName, qName, pName};
+	map.chirals[quartet] = -sign;
+}
+
 
 bool GeometryTable::lengthExists(std::string code, std::string pName,
                                  std::string qName)
@@ -106,10 +134,7 @@ double GeometryTable::length_stdev(std::string code, std::string pName,
 bool GeometryTable::angleExists(std::string code, std::string pName,
                                 std::string qName, std::string rName)
 {
-	GeometryMap &map = _codes[code];
-	
-	AtomTriplet trio = {pName, qName, rName};
-	return (map.angles.count(trio) > 0);
+	return angle(code, pName, qName, rName) >= 0;
 }
 
 double GeometryTable::angle(std::string code, std::string pName,
@@ -187,5 +212,23 @@ double GeometryTable::torsion_stdev(std::string code, std::string pName,
 	Value &v = map.torsions[quartet];
 
 	return v.stdev;
+}
+
+int GeometryTable::chirality(std::string code, std::string centre,
+                             std::string pName, std::string qName, 
+                             std::string rName)
+{
+	GeometryMap &map = _codes[code];
+
+	AtomQuartet quartet = {centre, pName, qName, rName};
+	if (map.chirals.count(quartet) == 0)
+	{
+		return 0;
+	}
+
+	int &v = map.chirals[quartet];
+
+	return v;
+
 }
 

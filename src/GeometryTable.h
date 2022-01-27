@@ -39,6 +39,10 @@ public:
 	                        std::string sName, double mean, 
 	                        double stdev, int period);
 
+	void addGeometryChiral(std::string code, std::string centre,
+	                        std::string pName, std::string qName, 
+	                       std::string rName, int sign);
+
 	bool lengthExists(std::string code, std::string pName, std::string qName);
 
 	double length(std::string code, std::string pName, std::string qName);
@@ -58,6 +62,9 @@ public:
 	               std::string rName, std::string sName);
 	double torsion_stdev(std::string code, std::string pName, std::string qName,
 	                     std::string rName, std::string sName);
+
+	int chirality(std::string code, std::string centre, std::string pName,
+	              std::string qName, std::string rName);
 private:
 	struct Value
 	{
@@ -148,6 +155,7 @@ private:
 		std::map<AtomPair, Value> lengths;
 		std::map<AtomTriplet, Value> angles;
 		std::map<AtomQuartet, Value> torsions;
+		std::map<AtomQuartet, int> chirals;
 	};
 	
 	std::map<std::string, GeometryMap> _codes;

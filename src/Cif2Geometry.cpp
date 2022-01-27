@@ -86,6 +86,81 @@ void Cif2Geometry::processLoop(Loop &loop)
 	{
 		return;
 	}
+
+	if (processLoopAsChirals(loop))
+	{
+		return;
+	}
+}
+
+bool Cif2Geometry::processLoopAsChirals(Loop &loop)
+{
+	int code_idx = -1;
+	int ctr_idx = -1;
+	int id1_idx = -1;
+	int id2_idx = -1;
+	int id3_idx = -1;
+	int sign_idx = -1;
+	
+	for (size_t j = 0; j < loop.tags.size(); j++)
+	{
+		if (loop.tags[j] == "_chem_comp_chir.comp_id")
+		{
+			code_idx = j;
+		}
+		if (loop.tags[j] == "_chem_comp_chir.atom_id_centre")
+		{
+			ctr_idx = j;
+		}
+		if (loop.tags[j] == "_chem_comp_chir.atom_id_1")
+		{
+			id1_idx = j;
+		}
+		else if (loop.tags[j] == "_chem_comp_chir.atom_id_2")
+		{
+			id2_idx = j;
+		}
+		else if (loop.tags[j] == "_chem_comp_chir.atom_id_3")
+		{
+			id3_idx = j;
+		}
+		else if (loop.tags[j] == "_chem_comp_chir.volume_sign")
+		{
+			sign_idx = j;
+		}
+	}
+
+	if (code_idx < 0 || ctr_idx < 0 || id1_idx < 0 || id2_idx < 0
+	    || id3_idx < 0 || sign_idx < 0)
+	{
+		return false;
+	}
+	
+	for (size_t i = 0; i < loop.values.size(); i += loop.tags.size())
+	{
+		if (_code.length() && loop.values[i + code_idx] != _code)
+		{
+			continue;
+		}
+		
+		std::string code = loop.values[i + code_idx];
+		std::string centre = loop.values[i + ctr_idx];
+		std::string p = loop.values[i + id1_idx];
+		std::string q = loop.values[i + id2_idx];
+		std::string r = loop.values[i + id3_idx];
+		std::string sign_str = (loop.values[i + sign_idx]);
+		to_lower(sign_str);
+
+		int sign = -1;
+		if (sign_str == "positive")
+		{
+			sign = 1;
+		}
+
+		_table->addGeometryChiral(code, centre, p, q, r, sign);
+	}
+	
+	return true;
 }
 
 bool Cif2Geometry::processLoopAsAtoms(Loop &loop)

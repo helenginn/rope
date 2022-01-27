@@ -55,6 +55,7 @@ private:
 	bool processLoopAsLengths(gemmi::cif::Loop &loop);
 	bool processLoopAsAngles(gemmi::cif::Loop &loop);
 	bool processLoopAsTorsions(gemmi::cif::Loop &loop);
+	bool processLoopAsChirals(gemmi::cif::Loop &loop);
 
 	std::string _filename;
 	std::string _code;

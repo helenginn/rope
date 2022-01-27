@@ -47,8 +47,10 @@ private:
 	void findBondLengths();
 	void findBondAngles();
 	void findBondTorsions();
+	void findChiralCentres();
 	void createBondAngles(Atom *atom);
 	void createBondTorsion(BondAngle *first, BondAngle *second);
+	void checkAtomChirality(Atom *atom);
 	void checkAtoms(Atom *atom, int start);
 
 	AtomGroup *_group;

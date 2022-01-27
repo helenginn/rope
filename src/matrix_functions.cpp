@@ -132,7 +132,7 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
 	mat[1][1] = 0;
 	mat[1][2] = -cosC * b;
 	mat[2][0] = -c * (cosA - cosB * cosC) / sinC;
-	mat[2][1] = volume / (a * b * sinC);
+	mat[2][1] = -volume / (a * b * sinC);
 	mat[2][2] = -cosB * c;
 
 	if (mat[2][1] != mat[2][1])
@@ -166,6 +166,7 @@ void insert_three_atoms(mat4x4 &ret, float *lengths, float *angles)
 
 	if (flipped)
 	{
+		std::cout << "!!!" << std::endl;
 		for (size_t i = 0; i < 4; i++)
 		{
 			ret[i].y *= -1;

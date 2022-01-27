@@ -154,8 +154,10 @@ void BondSequence::generateAtomGraph(Atom *atom, size_t count)
 
 			AtomGraph *nextGraph = new AtomGraph();
 
+			nextGraph->grandparent = current->parent;
 			nextGraph->parent = current->atom;
 			nextGraph->atom = next;
+			
 			nextGraph->depth = current->depth + 1;
 			nextGraph->maxDepth = -1;
 
@@ -194,16 +196,62 @@ void BondSequence::sortGraphChildren()
 	{
 		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
 		BondSequence::atomgraph_less_than);
+		
+		if (_graphs[i]->children.size() == 0)
+		{
+			continue;
+		}
+
+		Atom *grandparent = _graphs[i]->grandparent;
+		Atom *parent = _graphs[i]->parent;
+		
+		/* Fix grandchildren of anchor if needed */
+		/*
+		if (!parent && _graphs[i]->depth == 0) // anchor
+		{
+			_graphs[i]->parent = _graphs[i]->children[0]->atom;
+			
+			for (size_t i = 0; i < _graphs[i]->children.size(); i++)
+			{
+				_graphs[i]->children[i]->grandparent  = _graphs[i]->parent;
+			}
+		}
+		*/
+
+		Atom *self = _graphs[i]->atom;
+		Atom *next = _graphs[i]->children[0]->atom;
+
+		if (next && self && parent && grandparent)
+		{
+			BondTorsion *torsion = nullptr;
+			torsion = self->findBondTorsion(next, self, parent, grandparent);
+			_graphs[i]->torsion = torsion;
+		}
+
 	}
+}
+
+bool BondSequence::checkAtomGraph(int i) const
+{
+	if (_graphs[i]->depth > 0 &&
+	    (_graphs[i]->parent || _graphs[i]->grandparent))
+	{
+		std::cout << "Graph for atom " << _graphs[i]->atom << std::endl;
+		std::cout << "Parent: " << _graphs[i]->parent << std::endl;
+		std::cout << "Grandparent: " << _graphs[i]->grandparent << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 void BondSequence::addToGraph(Atom *atom, size_t count)
 {
+	removeGraphs();
 	generateAtomGraph(atom, count);
 	calculateMissingMaxDepths();
 	sortGraphChildren();
 	generateBlocks();
-	removeGraphs();
 }
 
 void BondSequence::assignAtomToBlock(int idx, Atom *atom)
@@ -212,6 +260,17 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 	_blocks[idx].nBonds = atom->bondLengthCount();
 	_blocks[idx].flag = false;
 	_blocks[idx].wip = glm::mat4(0.);
+	
+	BondTorsion *torsion = _atom2Graph[atom]->torsion;
+	
+	if (torsion != nullptr)
+	{
+		double t = torsion->startingAngle();
+
+		std::cout << "Assigning atom " << atom->atomName() << std::endl;
+		std::cout << torsion->desc() << " " << t << std::endl;
+		_blocks[idx].torsion = t;
+	}
 	
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -233,6 +292,7 @@ void BondSequence::fixBlockAsGhost(int idx)
 	_blocks[idx].basis = glm::mat4(1.f);
 	_blocks[idx].coordination = glm::mat4(1.f);
 	_blocks[idx].write_locs[0] = 1;
+	_blocks[idx].torsion = 0;
 	_addedAtomsCount--;
 }
 
@@ -244,6 +304,7 @@ void BondSequence::assignAtomsToBlocks()
 	for (size_t i = 0; i < _anchors.size(); i++)
 	{
 		Atom *anchor = _anchors[i];
+		std::cout << "Anchor: " << anchor->atomName() << std::endl;
 		std::queue<AtomGraph *> todo;
 		todo.push(_atom2Graph[anchor]);
 
@@ -367,7 +428,7 @@ void BondSequence::multiplyUpBySampleCount()
 
 void BondSequence::fetchTorsion(int idx)
 {
-	_blocks[idx].torsion = 0.;
+//	_blocks[idx].torsion = 0.;
 }
 
 void BondSequence::resetFlag(int idx)
@@ -384,7 +445,8 @@ void BondSequence::calculateBlock(int idx)
 	glm::mat4x4 &wip = _blocks[idx].wip;
 	glm::vec3 &inherit = _blocks[idx].inherit;
 
-	glm::mat4x4 torsion_rot = glm::rotate(glm::mat4(1.), (float)deg2rad(t), 
+	glm::mat4x4 torsion_rot = glm::rotate(glm::mat4(1.), 
+	                                      (float)deg2rad(t), 
 	                                      glm::vec3(0, 0, 1));
 	wip = basis * torsion_rot * coord;
 
@@ -403,7 +465,7 @@ void BondSequence::calculateBlock(int idx)
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
 		_blocks[idx + 1].basis = glm::mat4(1.f);
-		_blocks[idx + 1].inherit = glm::vec3(0, 1, 0);
+		_blocks[idx + 1].inherit = glm::vec3(1, 0, 0);
 		return;
 	}
 	

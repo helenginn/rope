@@ -26,6 +26,7 @@
 #include "glm_import.h"
 #include "Atom.h"
 #include "BondSequenceHandler.h"
+#include "BondTorsion.h"
 
 class Atom;
 
@@ -76,6 +77,13 @@ public:
 		return _blocks[i].child_position(j);
 	}
 	
+	bool checkAtomGraph(int i) const;
+	
+	size_t atomGraphCount() const
+	{
+		return _graphs.size();
+	}
+	
 	void cleanUpToIdle();
 	void setMiniJobInfo(MiniJob *mini);
 	void printState();
@@ -110,12 +118,29 @@ private:
 	{
 		Atom *atom;
 		Atom *parent;
+		Atom *grandparent;
 		int depth;
 		int maxDepth;
+		BondTorsion *torsion;
 		std::vector<AtomGraph *> children;
 		
 		bool operator<(const AtomGraph &other) const
 		{
+			/* priority given to constrained torsion angles, so they
+			 * are used in the calculation */
+			if (torsion && other.torsion && 
+			    torsion->isConstrained() && !other.torsion->isConstrained())
+			{
+				return true;
+			}
+
+			if (torsion && other.torsion && 
+			    !torsion->isConstrained() && other.torsion->isConstrained())
+			{
+				return true;
+			}
+
+			/* otherwise go for tinier branch points first */
 			return maxDepth < other.maxDepth;
 		}
 	};

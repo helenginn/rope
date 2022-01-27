@@ -66,7 +66,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 
 void Display::tieButton()
 {
-	TextButton *button = new TextButton("Tie up with bonds\nwork in progressger_accepts_files_when_fileview_not_assigned:!", 
+	TextButton *button = new TextButton("Tie up with bonds\n(work in progress)", 
 	                                    this);
 	button->setReturnTag("recalculate");
 	button->resize(0.8);

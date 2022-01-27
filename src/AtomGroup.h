@@ -34,6 +34,7 @@ public:
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
 	AtomPtr operator[](int i) const;
+	AtomPtr operator[](std::string str) const;
 	
 	bool hasAtom(Atom *a);
 	
@@ -58,8 +59,8 @@ public:
 		return nullptr;
 	}
 	
-	AtomVector atomsWithName(std::string name);
-	Atom *firstAtomWithName(std::string name);
+	AtomVector atomsWithName(std::string name) const;
+	Atom *firstAtomWithName(std::string name) const;
 	
 	void recalculate();
 	

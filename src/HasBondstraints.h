@@ -25,6 +25,7 @@ class Bondstraint;
 class BondLength;
 class BondAngle;
 class BondTorsion;
+class Chirality;
 class Atom;
 
 class HasBondstraints
@@ -34,6 +35,7 @@ public:
 	void addBondstraint(BondLength *straint);
 	void addBondstraint(BondAngle *straint);
 	void addBondstraint(BondTorsion *straint);
+	void addBondstraint(Chirality *straint);
 	
 	size_t bondstraintCount()
 	{
@@ -54,6 +56,7 @@ public:
 	}
 	
 	BondLength *findBondLength(Atom *a, Atom *b);
+	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d);
 
 	/** @returns number of bond angles involved with given atom */
 	size_t bondAngleCount() const
@@ -140,12 +143,23 @@ public:
 		return _terminalTorsions[i];
 	}
 
+	size_t chiralityCount()
+	{
+		return _chirals.size();
+	}
+	
+	Chirality *chirality(int i) const
+	{
+		return _chirals[i];
+	}
+
 	virtual Atom *atomIdentity() = 0;
 protected:
 	void deleteBondstraints();
 	bool hasBondLength(BondLength *straint);
 	bool hasBondAngle(BondAngle *angle);
 	bool hasTorsion(BondTorsion *torsion);
+	bool hasChirality(Chirality *chir);
 private:
 	std::vector<Bondstraint *> _bondstraints;
 	std::vector<BondLength *> _bondLengths;
@@ -156,6 +170,8 @@ private:
 	std::vector<BondTorsion *> _torsions;
 	std::vector<BondTorsion *> _terminalTorsions;
 	std::vector<BondTorsion *> _centralTorsions;
+
+	std::vector<Chirality *> _chirals;
 };
 
 #endif

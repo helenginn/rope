@@ -65,6 +65,11 @@ AtomPtr AtomGroup::operator[](int i) const
 	return _atoms[i];
 }
 
+AtomPtr AtomGroup::operator[](std::string str) const
+{
+	return firstAtomWithName(str);
+}
+
 Atom *AtomGroup::possibleAnchor(int i)
 {
 	if (_anchors.size() == 0)
@@ -132,7 +137,7 @@ void AtomGroup::findPossibleAnchors()
 	}
 }
 
-AtomVector AtomGroup::atomsWithName(std::string name)
+AtomVector AtomGroup::atomsWithName(std::string name) const
 {
 	to_upper(name);
 	AtomVector v;
@@ -147,7 +152,7 @@ AtomVector AtomGroup::atomsWithName(std::string name)
 	return v;
 }
 
-Atom *AtomGroup::firstAtomWithName(std::string name)
+Atom *AtomGroup::firstAtomWithName(std::string name) const
 {
 	to_upper(name);
 
