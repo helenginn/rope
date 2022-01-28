@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
+#include "matrix_functions.h"
 #include "BondTorsion.h"
 #include "AtomGroup.h"
 #include "Atom.h"
@@ -71,12 +72,6 @@ bool BondTorsion::operator==(const BondTorsion &other) const
 
 bool BondTorsion::isConstrained() const
 {
-	if (_a->elementSymbol() == "H" || _b->elementSymbol() == "H" ||
-	    _c->elementSymbol() == "H" || _d->elementSymbol() == "H")
-	{
-		return true;
-	}
-
 	return _constrained;
 
 }
@@ -89,7 +84,7 @@ const std::string BondTorsion::desc() const
 
 double BondTorsion::startingAngle() const
 {
-	if (isConstrained() && _angle >= 0)
+	if (isConstrained())
 	{
 		return _angle;
 	}
@@ -113,17 +108,12 @@ double BondTorsion::measurement(BondTorsion::Source source) const
 		}
 	}
 	
-	glm::mat3x3 squish;
-	squish[0] = poz[0] - poz[1];
-	squish[2] = poz[2] - poz[1];
-	squish[1] = glm::cross(squish[2], squish[0]);
+	double putative = measure_bond_torsion(poz);
 	
-	glm::mat3x3 inv = glm::inverse(squish);
-
-	glm::vec3 q = glm::normalize(inv * (poz[3] - poz[2]));
-	glm::vec3 axis = glm::vec3(1., 0., 0.);
+	if (putative != putative)
+	{
+		return 0;
+	}
 	
-	double angle = glm::angle(axis, q);
-
-	return rad2deg(angle);
+	return putative;
 }

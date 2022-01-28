@@ -191,7 +191,7 @@ void Knotter::findBondLengths()
 	}
 }
 
-void Knotter::checkAtomChirality(Atom *atom)
+void Knotter::checkAtomChirality(Atom *atom, bool use_dictionary)
 {
 	Atom *atoms[4] = {nullptr, nullptr, nullptr, nullptr};
 	std::string code = atom->code();
@@ -230,11 +230,10 @@ void Knotter::checkAtomChirality(Atom *atom)
 		std::string rName = atoms[2]->atomName();
 
 		int sign = _table->chirality(code, atom->atomName(), pName, qName, rName);
-
-		if (sign != 0)
+		
+		if ((use_dictionary && sign != 0) || !use_dictionary)
 		{
 			new Chirality(_group, atom, atoms[0], atoms[1], atoms[2], sign);
-			break;
 		}
 	}
 }
@@ -242,14 +241,26 @@ void Knotter::checkAtomChirality(Atom *atom)
 void Knotter::findChiralCentres()
 {
 	AtomGroup &group = *_group;
+	/* first, only assign chirality from the geometry tables */
 	for (size_t i = 0; i < group.size(); i++)
 	{
-		if (group[i]->bondLengthCount() >= 3)
+		if (group[i]->bondLengthCount() >= 3 && 
+		    group[i]->chiralityCount() == 0)
 		{
-			checkAtomChirality(group[i]);
+			checkAtomChirality(group[i], true);
 		}
 	}
 
+	/* fill in gaps with those which will have to be measured from
+	 * initial positions, particularly an issue for hydrogen atoms */
+	for (size_t i = 0; i < group.size(); i++)
+	{
+		if (group[i]->bondLengthCount() >= 3 && 
+		    group[i]->chiralityCount() == 0)
+		{
+			checkAtomChirality(group[i], false);
+		}
+	}
 }
 
 void Knotter::knot()

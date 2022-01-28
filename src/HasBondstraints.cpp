@@ -168,7 +168,8 @@ void HasBondstraints::deleteBondstraints()
 	_bondstraints.clear();
 }
 
-BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right)
+BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right,
+                                          bool throw_on_failure)
 {
 	BondAngle ba(nullptr, left, centre, right, 0);
 
@@ -178,6 +179,11 @@ BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right)
 		{
 			return _bondAngles[i];
 		}
+	}
+	
+	if (throw_on_failure)
+	{
+		throw (std::runtime_error("No bond angle " + ba.desc() + " found"));
 	}
 	
 	return nullptr;

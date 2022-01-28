@@ -46,7 +46,7 @@ mat4x4 torsion_basis(mat4x4 prior, vec3 prev, vec4 next)
 
 	/* previous bond basis placement is equal to the current position of self */
 	vec3 self = vec3(prior[3]);
-	vec3 prevdir = self - prev;
+	vec3 prevdir = prev - self;
 	prevdir = normalize(prevdir);
 	
 	/* current bond direction will become the new Z direction */
@@ -60,7 +60,7 @@ mat4x4 torsion_basis(mat4x4 prior, vec3 prev, vec4 next)
 	/* "prev" won't be at a right-angle, so we need to re-make it.
 	 * it comes already normalised. */
 	vec3 x_dir = cross(curr, y_dir);
-	x_dir *= -1;
+	y_dir *= -1;
 
 	/* construct final matrix */
 	mat4x4 result;
@@ -132,7 +132,7 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
 	mat[1][1] = 0;
 	mat[1][2] = -cosC * b;
 	mat[2][0] = -c * (cosA - cosB * cosC) / sinC;
-	mat[2][1] = -volume / (a * b * sinC);
+	mat[2][1] = volume / (a * b * sinC);
 	mat[2][2] = -cosB * c;
 
 	if (mat[2][1] != mat[2][1])
@@ -163,10 +163,9 @@ void insert_three_atoms(mat4x4 &ret, float *lengths, float *angles)
 
 	ret = bond_aligned_matrix(lengths[0], lengths[1], lengths[2],
 	                          angles[1], angles[2], angles[0]);
-
+	
 	if (flipped)
 	{
-		std::cout << "!!!" << std::endl;
 		for (size_t i = 0; i < 4; i++)
 		{
 			ret[i].y *= -1;
@@ -184,8 +183,8 @@ void insert_two_atoms(mat4x4 &ret, float *lengths, float angle)
 
 	double ratio = tan(deg2rad(angle) - M_PI / 2);
 
+	ret[1][0] = -lengths[1];
 	ret[1][2] = lengths[1] * ratio;
-	ret[1][0] = lengths[1];
 	
 	ret[1] = lengths[1] * normalize(ret[1]);
 }
@@ -195,6 +194,38 @@ void insert_one_atom(mat4x4 &ret, float length)
 	ret[0] = vec4(0.);
 	/* bond points in negative Z direction */
 	ret[0][2] = -length;
+}
+
+double measure_bond_torsion(glm::vec3 poz[4])
+{
+	glm::vec3 bond = normalize(poz[2] - poz[1]);
+	glm::vec3 prev = normalize(poz[0] - poz[1]);
+	glm::vec3 next = normalize(poz[3] - poz[2]);
+	
+	glm::mat3x3 squish;
+	squish[0] = prev;
+	squish[2] = bond;
+	squish[1] = normalize(glm::cross(prev, bond));
+	squish[0] = glm::cross(squish[1], bond);
+	
+	glm::mat3x3 inv = glm::transpose(squish);
+
+	glm::vec3 p = (inv * prev);
+	glm::vec3 n = (inv * next);
+	n[2] = 0.;
+	p[2] = 0.;
+	n = normalize(n);
+	p = normalize(p);
+	
+	double angle = glm::angle(p, n);
+	glm::vec3 cr = glm::cross(p, n);
+
+	if (cr.z < 0)
+	{
+		angle *= -1;
+	}
+
+	return rad2deg(angle);
 }
 
 #endif

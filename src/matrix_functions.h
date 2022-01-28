@@ -16,6 +16,8 @@ inline bool is_glm_vec_sane(T vec)
 	return true;
 }
 
+double measure_bond_torsion(glm::vec3 positions[4]);
+
 /** matrix from three bond lengths and three bond angles, aligned with
  *  a-vector along canonical bond direction (0., 0., 1)
  * @param a unit length

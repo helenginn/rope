@@ -8,12 +8,13 @@
 
 Atom::Atom()
 {
-	_setupInitial = false;
-	_hetatm = false;
-	_occupancy = 1.;
-	_residueNumber = 1;
-	_atomNum = 1;
-	_changedPosition = false;
+
+}
+
+Atom::Atom(std::string code, std::string name)
+{
+	_code = code;
+	_atomName = name;
 }
 
 void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor)
@@ -118,70 +119,81 @@ Atom *Atom::connectedAtom(int i)
 void Atom::checkChirality(glm::mat4x4 &ret, Atom *prev, 
                           Atom *children[4], const int count)
 {
-	if (chiralityCount() == 0 || count < 3)
+	if (chiralityCount() == 0 || (!prev && count < 3) || (prev && count < 2))
 	{
 		return;
 	}
 
-	Atom *chosen[4] = {nullptr, nullptr, nullptr, nullptr};
-	Atom *index[4] = {nullptr, nullptr, nullptr, nullptr};
-	int offset = (prev != nullptr ? 1 : 0);
-	
-	if (prev != nullptr)
+	bool found = false;
+	for (size_t m = 0; m < chiralityCount(); m++)
 	{
-		chosen[0] = prev;
-		index[0] = prev;
-	}
+		Chirality *ch = chirality(m);
+		Atom *chosen[4] = {nullptr, nullptr, nullptr, nullptr};
+		Atom *index[4] = {nullptr, nullptr, nullptr, nullptr};
+		int offset = (prev != nullptr ? 1 : 0);
 
-	for (size_t i = 0; i < count; i++)
-	{
-		chosen[i + offset] = children[i];
-		index[i + offset] = children[i];
-	}
+		if (prev != nullptr)
+		{
+			chosen[0] = prev;
+			index[0] = prev;
+		}
 
-	Chirality *ch = chirality(0);
-	int sign = ch->get_sign(&chosen[0], &chosen[1], &chosen[2], &chosen[3]);
+		for (size_t i = 0; i < count; i++)
+		{
+			chosen[i + offset] = children[i];
+			index[i + offset] = children[i];
+		}
 
-	if (sign == 0)
-	{
-		return;
-	}
-	
-	int n = 0;
-	glm::vec3 vecs[3];
+		int sign = ch->get_sign(&chosen[0], &chosen[1], &chosen[2], &chosen[3]);
 
-	for (size_t i = 0; i < 4; i++)
-	{
-		if (chosen[i] == nullptr)
+		if (sign == 0)
 		{
 			continue;
 		}
-		
-		for (size_t j = 0; j < 4; j++)
-		{
-			if (index[j] == chosen[i])
-			{
-				vecs[n] = glm::vec3(ret[j]);
-				n++;
-			}
-		}
-	}
-	
-	if (n != 3)
-	{
-		throw(std::runtime_error("non-sensical results for checking chirality"));
-	}
-	
-	glm::vec3 cr = glm::cross(vecs[1], vecs[2]);
-	double dot = glm::dot(cr, vecs[0]);
-	
-	if (dot * sign < 0) // flippity flip
-	{
+
+		int n = 0;
+		glm::vec3 vecs[3];
+
 		for (size_t i = 0; i < 4; i++)
 		{
-			ret[i].y *= -1;
+			if (chosen[i] == nullptr)
+			{
+				continue;
+			}
+
+			for (size_t j = 0; j < 4; j++)
+			{
+				if (index[j] == chosen[i])
+				{
+					vecs[n] = glm::vec3(ret[j]);
+					n++;
+				}
+			}
 		}
 
+		if (n != 3)
+		{
+			continue;
+		}
+
+		found = true;
+		glm::vec3 cr = glm::cross(vecs[1], vecs[2]);
+		double dot = glm::dot(cr, vecs[0]);
+
+		if (dot * sign < 0) // flippity flip
+		{
+			for (size_t i = 0; i < 4; i++)
+			{
+				ret[i].y *= -1;
+			}
+		}
+
+		return;
+	}
+	
+	if (!found)
+	{
+//		throw (std::runtime_error("Couldn't match any chirality measurements"));
 	}
 }
 
@@ -201,19 +213,19 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 
 	if (count >= 2)
 	{
-		angles[0] = findBondAngle(children[0], this, children[1])->angle();
+		angles[0] = findBondAngle(children[0], this, children[1], true)->angle();
 	}
 
 	if (count >= 3)
 	{
-		angles[1] = findBondAngle(children[1], this, children[2])->angle();
-		angles[2] = findBondAngle(children[2], this, children[0])->angle();
+		angles[1] = findBondAngle(children[1], this, children[2], true)->angle();
+		angles[2] = findBondAngle(children[2], this, children[0], true)->angle();
 	}
 
 	if (count == 4)
 	{
-		angles[3] = findBondAngle(children[1], this, children[3])->angle();
-		angles[4] = findBondAngle(children[0], this, children[3])->angle();
+		angles[3] = findBondAngle(children[1], this, children[3], true)->angle();
+		angles[4] = findBondAngle(children[0], this, children[3], true)->angle();
 
 		insert_four_atoms(ret, lengths, angles);
 		checkChirality(ret, prev, children, count);

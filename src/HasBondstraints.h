@@ -64,7 +64,8 @@ public:
 		return _bondAngles.size();
 	}
 	
-	BondAngle *findBondAngle(Atom *left, Atom *centre, Atom *right);
+	BondAngle *findBondAngle(Atom *left, Atom *centre, Atom *right,
+	                         bool throw_on_failure = false);
 	
 	/** @param i index
 	  * @returns specific bond angles involving atom */

@@ -12,6 +12,7 @@ class Atom : public HasBondstraints
 {
 public:
 	Atom();
+	Atom(std::string code, std::string name);
 
 	/** summary (average) of atom placement */
 	struct AtomPlacement
@@ -65,7 +66,7 @@ public:
 	void setAtomName(std::string name);
 	
 	/** @returns identifier for atom within monomer, e.g. CG2 in valine */
-	std::string atomName()
+	const std::string &atomName() const
 	{
 		return _atomName;
 	}
@@ -180,16 +181,16 @@ public:
 private:
 	void changedPosition();
 
-	AtomPlacement _initial;
-	AtomPlacement _derived;
+	AtomPlacement _initial{};
+	AtomPlacement _derived{};
 
-	bool _setupInitial;
-	bool _changedPosition;
+	bool _setupInitial = false;
+	bool _changedPosition = false;
 
-	bool _hetatm;
-	float _occupancy;
-	int _residueNumber;
-	int _atomNum;
+	bool _hetatm = false;
+	float _occupancy = 1.;
+	int _residueNumber = 1.;
+	int _atomNum = 1.;
 
 	std::string _ele;
 	std::string _atomName;

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include "Chirality.h"
 #include "AtomGroup.h"
 #include "Atom.h"
@@ -41,10 +42,15 @@ Chirality::Chirality(AtomGroup *owner, Atom *cen, Atom *a, Atom *b, Atom *c,
 		throw(std::runtime_error("Owner does not own atom assigned to Chirality"));
 	}
 	
-	if (owner && sign == 0)
+	if (owner && _sign == 0)
 	{
-		throw(std::runtime_error("Sign is 0 for Chirality with assigned "
-		                         "AtomGroup"));
+		glm::vec3 v1 = _a->initialPosition() - _cen->initialPosition();
+		glm::vec3 v2 = _b->initialPosition() - _cen->initialPosition();
+		glm::vec3 v3 = _c->initialPosition() - _cen->initialPosition();
+
+		glm::vec3 cr = glm::cross(v2, v3);
+		double dot = glm::dot(cr, v1);
+		_sign = (dot > 0 ? 1 : -1);
 	}
 	
 	if (_owner)
@@ -99,7 +105,7 @@ const std::string Chirality::desc() const
 int Chirality::get_sign(Atom **a, Atom **b, Atom **c, Atom **d)
 {
 	Atom **chosen[4] = {a, b, c, d};
-	int ignored = 0;
+	int num_found = 0;
 
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -108,6 +114,7 @@ int Chirality::get_sign(Atom **a, Atom **b, Atom **c, Atom **d)
 		{
 			if ((*chosen[i]) == atom(j))
 			{
+				num_found++;
 				found = true;
 				break;
 			}
@@ -116,11 +123,10 @@ int Chirality::get_sign(Atom **a, Atom **b, Atom **c, Atom **d)
 		if (!found)
 		{
 			*chosen[i] = nullptr;
-			ignored++;
 		}
 	}
 	
-	if (ignored != 1)
+	if (num_found != 3)
 	{
 		return 0;
 	}
@@ -139,6 +145,7 @@ int Chirality::get_sign(Atom **a, Atom **b, Atom **c, Atom **d)
 	}
 	
 	int mult = 0;
+	
 	if ((as[0] == _a && as[1] == _b && as[2] == _c) ||
 	    (as[2] == _a && as[0] == _b && as[1] == _c) ||
 	    (as[1] == _a && as[2] == _b && as[0] == _c))
@@ -151,6 +158,6 @@ int Chirality::get_sign(Atom **a, Atom **b, Atom **c, Atom **d)
 	{
 		mult = -1;
 	}
-	
+
 	return mult * _sign;
 }

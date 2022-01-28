@@ -21,7 +21,7 @@ _chem_comp_atom.charge
 _chem_comp_atom.x
 _chem_comp_atom.y
 _chem_comp_atom.z
-CHX     C1      S       CH2     0       16.824      31.848      -3.480      
+CHX     C1      C       CH2     0       16.824      31.848      -3.480      
 CHX     C2      C       CH2     0       15.550      31.685      -2.678      
 CHX     C3      C       CH2     0       15.370      30.257      -2.209      
 CHX     C4      C       CH2     0       15.427      29.282      -3.365      

@@ -24,7 +24,7 @@ combined = join_paths(dir_base, data_dir)
 
 install_data(
 'assets/geometry/standard_geometry.cif',
-'assets/geometry/L-ASP.cif',
+'assets/geometry/D-ASP.cif',
 'assets/geometry/ACY.cif',
 'assets/geometry/ASP.cif',
 'assets/geometry/CHX.cif',
@@ -34,7 +34,8 @@ install_data(
 'assets/geometry/HEX.cif',
 'assets/geometry/IPA.cif',
 'assets/geometry/GLY.cif',
-'assets/geometry/LHI.cif',
+'assets/geometry/L2P.cif',
+'assets/geometry/L86.cif',
 'assets/geometry/LSD.cif',
 'assets/geometry/TYR.cif',
 'assets/geometry/NH3.cif',

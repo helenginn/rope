@@ -22,5 +22,8 @@ int main()
 	int sign = ch->get_sign(&h, &cb, &n, &c);
 	int rsign = ch->get_sign(&h, &n, &cb, &c);
 	
+	std::cout << "Sign: " << sign << std::endl;
+	std::cout << "Reverse sign: " << rsign << std::endl;
+	
 	return !(rsign * sign < 0);
 }

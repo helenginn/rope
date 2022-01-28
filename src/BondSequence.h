@@ -113,6 +113,8 @@ public:
 	}
 	
 	SequenceState state();
+	
+	std::string atomGraphDesc(int i);
 private:
 	struct AtomGraph
 	{
@@ -126,20 +128,6 @@ private:
 		
 		bool operator<(const AtomGraph &other) const
 		{
-			/* priority given to constrained torsion angles, so they
-			 * are used in the calculation */
-			if (torsion && other.torsion && 
-			    torsion->isConstrained() && !other.torsion->isConstrained())
-			{
-				return true;
-			}
-
-			if (torsion && other.torsion && 
-			    !torsion->isConstrained() && other.torsion->isConstrained())
-			{
-				return true;
-			}
-
 			/* otherwise go for tinier branch points first */
 			return maxDepth < other.maxDepth;
 		}
@@ -187,6 +175,8 @@ private:
 	void assignAtomsToBlocks();
 	void fillMissingWriteLocations();
 	void fixBlockAsGhost(int idx);
+	void fillInParents();
+	void fillTorsionAngles();
 	void removeGraphs();
 
 	void resetFlag(int idx);

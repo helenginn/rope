@@ -31,9 +31,7 @@ int main()
 	AtomGroup &glycine = *geom.atoms();
 	
 	int bad = false;
-	bad |= measure_torsion(glycine, "N", "CA", "C", "O", 63.64);
-	bad |= measure_torsion(glycine, "O", "C", "CA", "N", 63.64);
-	bad |= measure_torsion(glycine, "N", "CA", "C", "OXT", -116.35);
+	bad |= measure_torsion(glycine, "H", "N", "CA", "HA3", -114.601);
 	
 	delete &glycine;
 	return bad;

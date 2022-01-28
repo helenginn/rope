@@ -50,7 +50,7 @@ private:
 	void findChiralCentres();
 	void createBondAngles(Atom *atom);
 	void createBondTorsion(BondAngle *first, BondAngle *second);
-	void checkAtomChirality(Atom *atom);
+	void checkAtomChirality(Atom *atom, bool use_dictionary);
 	void checkAtoms(Atom *atom, int start);
 
 	AtomGroup *_group;

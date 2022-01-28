@@ -23,11 +23,6 @@ int main()
 	{
 		return 1;
 	}
-	
-	if (sequence->numBondsForBlock(0) != 1)
-	{
-		return 1;
-	}
 
 	delete atoms;
 

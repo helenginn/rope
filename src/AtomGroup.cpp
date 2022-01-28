@@ -173,7 +173,7 @@ void AtomGroup::recalculate()
 
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
-	calculator.setMaxSimultaneousThreads(1);
+	calculator.setMaxSimultaneousThreads(2);
 	calculator.addAnchorExtension(anchor);
 	calculator.setup();
 

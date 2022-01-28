@@ -21,6 +21,7 @@
 #include "BondSequence.h"
 #include "Atom.h"
 #include <iostream>
+#include <sstream>
 #include <queue>
 
 BondSequence::BondSequence(BondSequenceHandler *handler)
@@ -197,52 +198,112 @@ void BondSequence::sortGraphChildren()
 		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
 		BondSequence::atomgraph_less_than);
 		
+		if (_graphs[i]->torsion == nullptr ||
+		    _graphs[i]->children.size() == 0)
+		{
+			continue;
+		}
+		
+		/* but we must make sure that the chosen torsion takes priority */
+		
+		AtomGraph *tmp = _graphs[i]->children[0];
+		for (size_t j = 1; j < _graphs[i]->children.size(); j++)
+		{
+			Atom *child = _graphs[i]->children[j]->atom;
+			if (_graphs[i]->torsion->atomIsTerminal(child))
+			{
+				_graphs[i]->children[0] = _graphs[i]->children[j];
+				_graphs[i]->children[j] = tmp;
+			}
+		}
+	}
+}
+
+void BondSequence::fillInParents()
+{
+	for (size_t i = 0; i < _graphs.size(); i++)
+	{
+		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
+		          BondSequence::atomgraph_less_than);
+		
+		/* Fix children/grandchildren of anchor if needed */
+		if (_graphs[i]->depth == 0) 
+		{
+			if (_graphs[i]->children.size() == 0)
+			{
+				continue;
+			}
+
+			Atom *anchor = _graphs[i]->atom;
+			Atom *anchorChild = _graphs[i]->children[0]->atom;
+			
+			for (size_t j = 0; j < _graphs[i]->children.size(); j++)
+			{
+				AtomGraph *child = _graphs[i]->children[j];
+				
+				if (j > 0)
+				{
+					child->grandparent = anchorChild;
+				}
+				
+				for (size_t k = 0; k < child->children.size(); k++)
+				{
+					child->children[k]->grandparent = anchor;
+				}
+			}
+		}
+	}
+}
+
+void BondSequence::fillTorsionAngles()
+{
+	for (size_t i = 0; i < _graphs.size(); i++)
+	{
 		if (_graphs[i]->children.size() == 0)
 		{
 			continue;
 		}
 
-		Atom *grandparent = _graphs[i]->grandparent;
-		Atom *parent = _graphs[i]->parent;
-		
-		/* Fix grandchildren of anchor if needed */
-		/*
-		if (!parent && _graphs[i]->depth == 0) // anchor
+		/* we need to find the child with the priority torsion */
+		for (size_t j = 0; j < _graphs[i]->children.size(); j++)
 		{
-			_graphs[i]->parent = _graphs[i]->children[0]->atom;
-			
-			for (size_t i = 0; i < _graphs[i]->children.size(); i++)
+			Atom *self = _graphs[i]->atom;
+			Atom *next = _graphs[i]->children[j]->atom;
+			Atom *grandparent = _graphs[i]->grandparent;
+			Atom *parent = _graphs[i]->parent;
+
+			if (next && self && parent && grandparent)
 			{
-				_graphs[i]->children[i]->grandparent  = _graphs[i]->parent;
+				BondTorsion *torsion = self->findBondTorsion(next, self, 
+				                                             parent, 
+				                                             grandparent);
+				
+				/* assign something, but give priority to constraints */
+				if (torsion && (_graphs[i]->torsion == nullptr || 
+				    torsion->isConstrained()))
+				{
+					_graphs[i]->torsion = torsion;
+				}
 			}
-		}
-		*/
-
-		Atom *self = _graphs[i]->atom;
-		Atom *next = _graphs[i]->children[0]->atom;
-
-		if (next && self && parent && grandparent)
-		{
-			BondTorsion *torsion = nullptr;
-			torsion = self->findBondTorsion(next, self, parent, grandparent);
-			_graphs[i]->torsion = torsion;
 		}
 
 	}
+
 }
 
 bool BondSequence::checkAtomGraph(int i) const
 {
-	if (_graphs[i]->depth > 0 &&
-	    (_graphs[i]->parent || _graphs[i]->grandparent))
+	if ((_graphs[i]->depth >= 2 && 
+	     (!_graphs[i]->parent || !_graphs[i]->grandparent)) ||
+		 (_graphs[i]->depth >= 1 && (!_graphs[i]->parent)))
 	{
-		std::cout << "Graph for atom " << _graphs[i]->atom << std::endl;
+		std::cout << "Graph for atom " << _graphs[i]->atom->atomName() << std::endl;
 		std::cout << "Parent: " << _graphs[i]->parent << std::endl;
 		std::cout << "Grandparent: " << _graphs[i]->grandparent << std::endl;
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 void BondSequence::addToGraph(Atom *atom, size_t count)
@@ -250,6 +311,8 @@ void BondSequence::addToGraph(Atom *atom, size_t count)
 	removeGraphs();
 	generateAtomGraph(atom, count);
 	calculateMissingMaxDepths();
+	fillInParents();
+	fillTorsionAngles();
 	sortGraphChildren();
 	generateBlocks();
 }
@@ -266,10 +329,9 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 	if (torsion != nullptr)
 	{
 		double t = torsion->startingAngle();
-
-		std::cout << "Assigning atom " << atom->atomName() << std::endl;
-		std::cout << torsion->desc() << " " << t << std::endl;
 		_blocks[idx].torsion = t;
+		
+		std::cout << "Starting angle " << torsion->desc() << " " << t << std::endl;
 	}
 	
 	for (size_t i = 0; i < 4; i++)
@@ -304,12 +366,14 @@ void BondSequence::assignAtomsToBlocks()
 	for (size_t i = 0; i < _anchors.size(); i++)
 	{
 		Atom *anchor = _anchors[i];
-		std::cout << "Anchor: " << anchor->atomName() << std::endl;
+
 		std::queue<AtomGraph *> todo;
-		todo.push(_atom2Graph[anchor]);
+		AtomGraph *anchorGraph = _atom2Graph[anchor];
+		todo.push(anchorGraph);
 
 		assignAtomToBlock(curr, anchor);
 		fixBlockAsGhost(curr);
+		_blocks[curr].nBonds = anchorGraph->children.size();
 		curr++;
 		
 		while (!todo.empty())
@@ -464,8 +528,13 @@ void BondSequence::calculateBlock(int idx)
 	
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
-		_blocks[idx + 1].basis = glm::mat4(1.f);
-		_blocks[idx + 1].inherit = glm::vec3(1, 0, 0);
+		int nidx = idx + _blocks[idx].write_locs[0];
+		_blocks[nidx].basis = glm::mat4(1.f);
+		_blocks[nidx].inherit = glm::vec3(0, 0, -1);
+		if (_blocks[idx].nBonds == 1)
+		{
+			_blocks[nidx].inherit = glm::vec3(-1, 0, 0);
+		}
 		return;
 	}
 	
@@ -561,5 +630,64 @@ int BondSequence::firstBlockForAtom(Atom *atom)
 	}
 	
 	return -1;
+}
+
+std::string BondSequence::atomGraphDesc(int i)
+{
+	AtomGraph &g = *_graphs[i];
+
+	std::ostringstream ss;
+	int num = g.depth;
+	std::string indent;
+	for (int i = 0; i < num; i++)
+	{
+		indent += "  ";
+	}
+	ss << indent << "====== ATOMGRAPH " << g.atom->atomName() << " ======";
+	ss << std::endl;
+	ss << indent << "Inheritance: ";
+	if (g.grandparent == nullptr)
+	{
+		ss << "(null)";
+	}
+	else 
+	{
+		ss << g.grandparent->atomName();
+	}
+	
+	ss << " to ";
+
+	if (g.parent == nullptr)
+	{
+		ss << "(null)";
+	}
+	else 
+	{
+		ss << g.parent->atomName();
+	}
+
+	ss << " to " << g.atom->atomName() << " (this)" << std::endl;
+	
+	ss << indent << "Torsion: ";
+	
+	if (g.torsion)
+	{
+		ss << g.torsion->desc() << std::endl;
+	}
+	else
+	{
+		ss << "(null)" << std::endl;
+	}
+	
+	ss << indent << "Children: ";
+	
+	for (size_t i = 0; i < g.children.size(); i++)
+	{
+		ss << g.children[i]->atom->atomName() << " ";
+	}
+	
+	ss << std::endl;
+
+	return ss.str();
 }
 
