@@ -5,6 +5,7 @@
 #include "AtomGroup.h"
 #include "Atom.h"
 #include "Cif2Geometry.h"
+#include "Window.h"
 #include <SDL2/SDL.h>
 #include <iostream>
 
@@ -114,6 +115,30 @@ void Display::interpretMouseButton(SDL_MouseButtonEvent button, bool dir)
 	}
 }
 
+void Display::updateSpinMatrix()
+{
+	double x = _lastX;
+	double y = _lastY;
+	
+	convertCoords(&x, &y);
+	glm::vec3 pos = glm::vec3(x, y, 0);
+	
+	glm::vec3 c = _centre;
+
+	glm::vec4 tmp = _proj * glm::vec4(c, 1.);
+	tmp /= tmp[3];
+
+	glm::vec3 projAxis = glm::normalize(pos - glm::vec3(tmp));
+
+	glm::vec3 rotAxis = glm::normalize(glm::cross(projAxis, glm::vec3(1, 0, 0)));
+	_spin[0] = rotAxis;
+	_spin[1] = glm::cross(rotAxis, projAxis);
+	_spin[2] = projAxis;
+	
+//	_spin = glm::transpose(_spin);
+
+}
+
 void Display::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mousePressEvent(x, y, button);
@@ -122,6 +147,8 @@ void Display::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 
 	_lastX = x;
 	_lastY = y;
+
+	updateSpinMatrix();
 }
 
 void Display::mouseMoveEvent(double x, double y)
@@ -132,11 +159,25 @@ void Display::mouseMoveEvent(double x, double y)
 	{
 		double dx = x - _lastX;
 		double dy = y - _lastY;
+		
+		dx /= width();
+		dy /= height();
+		
+		glm::vec4 start = _proj * glm::vec4(0, 0, -1, 1);
+		glm::vec4 end = _proj * glm::vec4(dx, -dy, -1, 1);
+		
+		glm::vec3 move = start - end;
+		move.z = 0;
+		move = _spin * move;
 
-		_camAlpha = deg2rad(-dy);
-		_camBeta = deg2rad(-dx);
+		const float scale = 5;
+		_camAlpha = move.x * scale;
+		_camBeta =  move.y * scale;
+		_camGamma = -move.z * scale;
+		_camAlpha *= Window::aspect();
 		
 		updateCamera();
+		updateSpinMatrix();
 	}
 
 	if (_left && !_shiftPressed && _controlPressed)

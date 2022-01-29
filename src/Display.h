@@ -25,12 +25,15 @@ public:
 	void loadAtoms(AtomGroup *atoms);
 	void recalculateAtoms();
 	void tieButton();
+	
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
 	void interpretControlKey(SDL_Keycode pressed, bool dir);
 	GuiAtom *_guiAtoms;
 	AtomGroup *_atoms;
-
+	void updateSpinMatrix();
+	
+	glm::mat3x3 _spin;
 };
 
 #endif
