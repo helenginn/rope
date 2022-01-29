@@ -74,21 +74,38 @@ void Superpose::populateSVD(SVD &svd)
 	printMatrix(&svd.u);
 }
 
-glm::mat3x3 Superpose::getRotation(SVD &svd)
+void svd_to_rot(SVD &svd, glm::mat3x3 &rot, bool flip)
 {
-	glm::mat3x3 rot = glm::mat3x3(0.f);
-
+	rot = glm::mat3x3(0.f);
 	for (size_t j = 0; j < 3; j++)
 	{
 		for (size_t i = 0; i < 3; i++)
 		{
 			for (size_t n = 0; n < 3; n++)
 			{
-				rot[j][i] += svd.v.ptrs[i][n] * svd.u.ptrs[j][n];
+				rot[j][i] += (svd.v.ptrs[i][n] * (n == 2 && flip ? -1 : 1) 
+				              * svd.u.ptrs[j][n]);
 			}
 		}
 	}
 
+}
+
+glm::mat3x3 Superpose::getRotation(SVD &svd)
+{
+	glm::mat3x3 rot = glm::mat3x3(0.f);
+	svd_to_rot(svd, rot, false);
+
+	if (_sameHand)
+	{
+		double det = glm::determinant(rot);
+		if (det < 0)
+		{
+			svd_to_rot(svd, rot, true);
+		}
+	}
+
+	std::cout << glm::to_string(rot) << std::endl;
 	return rot;
 }
 

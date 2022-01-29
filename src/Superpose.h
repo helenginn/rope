@@ -28,6 +28,11 @@ class Superpose
 public:
 	Superpose();
 	
+	void forceSameHand(bool hand)
+	{
+		_sameHand = hand;
+	}
+	
 	struct PosPair
 	{
 		glm::vec3 p;
@@ -70,6 +75,7 @@ private:
 	                          glm::vec3 &add);
 
 	std::vector<PosPair> _pairs;
+	bool _sameHand = false;
 
 	glm::mat4x4 _transformation;
 	glm::mat3x3 _rotation;
