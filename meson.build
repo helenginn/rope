@@ -79,6 +79,7 @@ gen_src = custom_target('commit-output',
 
 vagafiles = [
 'src/AskYesNo.cpp',
+'src/AlignmentTool.cpp',
 'src/Atom.cpp',
 'src/AtomGroup.cpp',
 'src/BadChoice.cpp',
