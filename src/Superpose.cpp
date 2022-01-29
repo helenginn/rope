@@ -131,18 +131,6 @@ void Superpose::createTransformation(glm::vec3 &subtract, glm::mat3x3 &rot,
 	glm::mat4x4 rotmat = glm::mat4x4(rot);
 	glm::mat4x4 addmat = glm::translate(add);
 	
-	std::cout << "Submat: " << std::endl;
-	std::cout << glm::to_string(submat) << std::endl;
-	std::cout << std::endl;
-	
-	std::cout << "Rotmat: " << std::endl;
-	std::cout << glm::to_string(rotmat) << std::endl;
-	std::cout << std::endl;
-	
-	std::cout << "Addmat: " << std::endl;
-	std::cout << glm::to_string(addmat) << std::endl;
-	std::cout << std::endl;
-
 	_transformation = addmat * rotmat * submat;
 	_rotation = glm::mat3x3(_transformation);
 	_translation = glm::vec3(_transformation[3]);
