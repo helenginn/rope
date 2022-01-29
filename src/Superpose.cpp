@@ -57,9 +57,6 @@ void Superpose::populateSVD(SVD &svd)
 {
 	for (size_t i = 0; i < _pairs.size(); i++)
 	{
-		std::cout << glm::to_string(_pairs[i].p) << " vs " 
-		<< glm::to_string(_pairs[i].q) << std::endl;
-
 		for (size_t k = 0; k < 3; k++)
 		{
 			for (size_t j = 0; j < 3; j++)
@@ -70,8 +67,6 @@ void Superpose::populateSVD(SVD &svd)
 			}
 		}
 	}
-	
-	printMatrix(&svd.u);
 }
 
 void svd_to_rot(SVD &svd, glm::mat3x3 &rot, bool flip)
@@ -105,7 +100,6 @@ glm::mat3x3 Superpose::getRotation(SVD &svd)
 		}
 	}
 
-	std::cout << glm::to_string(rot) << std::endl;
 	return rot;
 }
 

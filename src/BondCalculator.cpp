@@ -188,9 +188,7 @@ Job *BondCalculator::acquireJob()
 
 void BondCalculator::finish()
 {
-	std::cout << "Sequence finish" << std::endl;
 	_sequenceHandler->finish();
-	std::cout << "Calculator finish" << std::endl;
 	
 	_jobPool.handout.lock();
 	_finish = true;

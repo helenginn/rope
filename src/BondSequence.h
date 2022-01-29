@@ -184,7 +184,6 @@ private:
 	void fetchTorsion(int idx);
 	void preparePositions();
 
-
 	std::vector<Atom *> _atoms;
 	std::vector<Atom *> _anchors;
 	std::vector<AtomGraph *> _graphs;

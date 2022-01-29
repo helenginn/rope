@@ -330,8 +330,6 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 	{
 		double t = torsion->startingAngle();
 		_blocks[idx].torsion = t;
-		
-		std::cout << "Starting angle " << torsion->desc() << " " << t << std::endl;
 	}
 	
 	for (size_t i = 0; i < 4; i++)
