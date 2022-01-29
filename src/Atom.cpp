@@ -244,7 +244,12 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		}
 		else if (count == 1)
 		{
-			insert_one_atom(ret, lengths[0]);
+			/* why add two atoms if only one is present? if this is the anchor,
+			 * such as O in a C=O carbonyl bond, the second length must be used 
+			 * to calculate the torsion, or we'll calculate a torsion value 
+			 * of nan */
+			lengths[1] = 1;
+			insert_two_atoms(ret, lengths, 90);
 		}
 	}
 	else if (prev != nullptr)
