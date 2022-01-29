@@ -19,6 +19,13 @@
 #ifndef __vagabond__AlignmentTool__
 #define __vagabond__AlignmentTool__
 
+#include "glm_import.h"
+
+class AtomGroup;
+
+struct Result;
+class Atom;
+
 class AlignmentTool
 {
 public:
@@ -26,8 +33,10 @@ public:
 
 	void run();
 private:
-	AtomGroup *_group;
+	Result *resultForAnchor(Atom *anchor);
+	glm::mat4x4 superposition(Result *result);
 
+	AtomGroup *_group;
 };
 
 #endif
