@@ -178,6 +178,14 @@ public:
 
 	void checkChirality(glm::mat4x4 &ret, Atom *prev, 
 	                    Atom *children[4], const int count);
+	
+	/** set matrix used for initial placement of anchor point */
+	void setTransformation(glm::mat4x4 transform);
+	
+	const glm::mat4x4 &transformation() const
+	{
+		return _transform;
+	}
 private:
 	void changedPosition();
 
@@ -199,6 +207,8 @@ private:
 	std::mutex _mutex;
 	
 	std::vector<BondLength *> _bondLengths;
+
+	glm::mat4x4 _transform = glm::mat4(1.f);
 };
 
 #endif

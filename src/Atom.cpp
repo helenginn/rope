@@ -326,3 +326,8 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 	return ret;
 }
 
+
+void Atom::setTransformation(glm::mat4x4 transform)
+{
+	_transform = transform * _transform;
+}
