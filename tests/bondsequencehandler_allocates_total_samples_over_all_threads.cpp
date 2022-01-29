@@ -19,7 +19,7 @@ int main()
 			total += sequence->sampleCount();
 		}
 		
-		if (total != 100)
+		if (total != (i + 2) * 100)
 		{
 			std::cout << "Total " << total << " instead of 100" << std::endl;
 			return 1;

@@ -49,32 +49,9 @@ void BondSequenceHandler::calculateThreads(int max)
 	{
 		throw(std::runtime_error("Total samples specified as zero"));
 	}
-	
-	if (max > _totalSamples)
-	{
-		max = _totalSamples;
-	}
 
 	_threads = max;
 	_totalSequences = max + 2;
-	return;
-
-	if (max <= 2)
-	{
-		_threads = 1;
-	}
-	else if (max <= 3)
-	{
-		_threads = 2;
-	}
-	else
-	{
-		_threads = max - 2;
-	}
-	
-	std::cout << max << " " << _threads << std::endl;
-
-	_totalSequences = max;
 }
 
 void BondSequenceHandler::sanityCheckThreads()
@@ -191,17 +168,10 @@ void BondSequenceHandler::addAnchorExtension(BondCalculator::AnchorExtension ext
 
 void BondSequenceHandler::allocateSequences()
 {
-	int minimum = _totalSamples / _totalSequences;
-	int accounted = minimum * _totalSequences;
-	int extra = _totalSamples - accounted;
-	
-	/* make sure first thread is topped up if total samples and sequences are
-	 * not cleanly divisible */
 	for (size_t i = 0; i < _totalSequences; i++)
 	{
-		int samples = minimum + (i == 0 ? extra : 0);
 		BondSequence *sequence = new BondSequence(this);
-		sequence->setSampleCount(samples);
+		sequence->setSampleCount(_totalSamples);
 		_sequences.push_back(sequence);
 	}
 }
@@ -249,17 +219,15 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 void BondSequenceHandler::generateMiniJobs(Job *job)
 {
 	_miniJobPool.handout.lock();
-	for (size_t i = 0; i < _sequences.size(); i++)
-	{
-		MiniJob *mini = new MiniJob();
-		mini->job = job;
-		job->miniJobs.push_back(mini);
+	MiniJob *mini = new MiniJob();
+	mini->job = job;
+	job->miniJobs.push_back(mini);
 
-		mini->seq = _sequences[i];
+	mini->seq = nullptr;
 
-		_miniJobPool.members.push(mini);
-		_miniJobPool.sem.signal();
-	}
+	_miniJobPool.members.push(mini);
+	_miniJobPool.sem.signal();
+
 	_miniJobPool.handout.unlock();
 }
 

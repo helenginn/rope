@@ -48,6 +48,8 @@ public:
 	void setTotalSamples(int total)
 	{
 		_totalSamples = total;
+		
+		_mode = (total == 1 ? SingleSample : MultiSample);
 	}
 	
 	void expectMapHandling(bool map)
@@ -100,6 +102,14 @@ private:
 	size_t _maxThreads;
 
 	bool _mapHandling;
+	
+	enum SampleMode
+	{
+		SingleSample,
+		MultiSample,
+	};
+
+	SampleMode _mode = MultiSample;
 	
 	std::map<SequenceState, Pool<BondSequence *> > _pools;
 	Pool<MiniJob *> _miniJobPool;
