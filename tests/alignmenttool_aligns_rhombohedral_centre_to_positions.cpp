@@ -19,11 +19,11 @@ int main()
 	
 	AtomGroup group;
 	group += &a; group += &a1; group += &a2; group += &a3;
-
+	
 	GeometryTable table;
-	table.addGeometryLength("TST", "A", "A1", 1.0, 0);
-	table.addGeometryLength("TST", "A", "A2", 1.0, 0);
-	table.addGeometryLength("TST", "A", "A3", 1.0, 0);
+	table.addGeometryLength("TST", "A", "A1", 0.5, 0);
+	table.addGeometryLength("TST", "A", "A2", 0.5, 0);
+	table.addGeometryLength("TST", "A", "A3", 0.5, 0);
 
 	table.addGeometryAngle("TST", "A1", "A", "A2", 90.0, 0);
 	table.addGeometryAngle("TST", "A2", "A", "A3", 90.0, 0);
@@ -31,10 +31,18 @@ int main()
 	
 	Knotter knotter(&group, &table);
 	knotter.knot();
-	
+
 	AlignmentTool tool(&group);
 	tool.run();
 	bool bad = false;
+	
+	for (size_t i = 0; i < group.size(); i++)
+	{
+		glm::vec3 empty = glm::vec3(0.);
+		group[i]->setDerivedPosition(empty);
+	}
+	
+	group.recalculate();
 
 	for (size_t i = 0; i < group.size(); i++)
 	{
