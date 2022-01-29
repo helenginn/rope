@@ -4,7 +4,7 @@
 #include "TextButton.h"
 #include "AtomGroup.h"
 #include "Atom.h"
-#include "Cif2Geometry.h"
+#include "AlignmentTool.h"
 #include "Window.h"
 #include <SDL2/SDL.h>
 #include <iostream>
@@ -28,6 +28,8 @@ Display::~Display()
 
 void Display::recalculateAtoms()
 {
+	AlignmentTool tool(_atoms);
+	tool.run();
 	_atoms->recalculate();
 	_guiAtoms->checkAtoms();
 
