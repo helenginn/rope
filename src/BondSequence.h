@@ -174,7 +174,7 @@ private:
 	void assignAtomToBlock(int idx, Atom *atom);
 	void assignAtomsToBlocks();
 	void fillMissingWriteLocations();
-	void fixBlockAsGhost(int idx);
+	void fixBlockAsGhost(int idx, Atom *anchor);
 	void fillInParents();
 	void fillTorsionAngles();
 	void removeGraphs();

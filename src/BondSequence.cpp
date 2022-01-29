@@ -345,12 +345,12 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 	_addedAtomsCount++;
 }
 
-void BondSequence::fixBlockAsGhost(int idx)
+void BondSequence::fixBlockAsGhost(int idx, Atom *anchor)
 {
 	_blocks[idx].atom = nullptr;
-	_blocks[idx].nBonds = 1;
+//	_blocks[idx].nBonds = 1;
 	_blocks[idx].basis = glm::mat4(1.f);
-	_blocks[idx].coordination = glm::mat4(1.f);
+	_blocks[idx].coordination = anchor->transformation();
 	_blocks[idx].write_locs[0] = 1;
 	_blocks[idx].torsion = 0;
 	_addedAtomsCount--;
@@ -370,7 +370,7 @@ void BondSequence::assignAtomsToBlocks()
 		todo.push(anchorGraph);
 
 		assignAtomToBlock(curr, anchor);
-		fixBlockAsGhost(curr);
+		fixBlockAsGhost(curr, anchor);
 		_blocks[curr].nBonds = anchorGraph->children.size();
 		curr++;
 		
@@ -512,9 +512,14 @@ void BondSequence::calculateBlock(int idx)
 	                                      glm::vec3(0, 0, 1));
 	wip = basis * torsion_rot * coord;
 
-	if (_blocks[idx].atom != nullptr && false)
+	if (false)
 	{
-		std::cout << "Atom: " << _blocks[idx].atom->atomName() << std::endl;
+		std::cout << " ===== INDEX " << idx << "=====" << std::endl;
+		if (_blocks[idx].atom != nullptr)
+		{
+			std::cout << "Atom: " << _blocks[idx].atom->atomName() << std::endl;
+		std::cout << "init pos: " << glm::to_string(_blocks[idx].atom->initialPosition()) << std::endl;
+		}
 		std::cout << "Torsion: " << t << std::endl;
 		std::cout << "Coordination: " << glm::to_string(coord) << std::endl;
 		std::cout << "Basis: " << glm::to_string(basis) << std::endl;
@@ -527,11 +532,13 @@ void BondSequence::calculateBlock(int idx)
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
 		int nidx = idx + _blocks[idx].write_locs[0];
-		_blocks[nidx].basis = glm::mat4(1.f);
-		_blocks[nidx].inherit = glm::vec3(0, 0, -1);
+		_blocks[nidx].basis = _blocks[idx].coordination;
+		glm::mat4x4 wip = _blocks[nidx].basis * _blocks[nidx].coordination;
+
+		_blocks[nidx].inherit = (wip[0]);
 		if (_blocks[idx].nBonds == 1)
 		{
-			_blocks[nidx].inherit = glm::vec3(-1, 0, 0);
+			_blocks[nidx].inherit = (wip[1]);
 		}
 		return;
 	}
