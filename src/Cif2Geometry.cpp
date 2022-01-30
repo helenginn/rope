@@ -41,7 +41,17 @@ Cif2Geometry::~Cif2Geometry()
 
 void Cif2Geometry::parse()
 {
-	Document doc = read_file(_filename);
+	Document doc;
+	try
+	{
+		doc = read_file(_filename);
+	}
+	catch (std::runtime_error err)
+	{
+		std::cout << "Could not load file." << std::endl;
+		std::cout << err.what() << std::endl;
+		return;
+	}
 
 	for (size_t j = 0; j < doc.blocks.size(); j++)
 	{
