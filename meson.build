@@ -26,6 +26,7 @@ install_data(
 'assets/geometry/standard_geometry.cif',
 'assets/geometry/D-ASP.cif',
 'assets/geometry/ACY.cif',
+'assets/geometry/ATP.cif',
 'assets/geometry/ASP.cif',
 'assets/geometry/CHX.cif',
 'assets/geometry/PO4.cif',
@@ -37,6 +38,7 @@ install_data(
 'assets/geometry/L2P.cif',
 'assets/geometry/L86.cif',
 'assets/geometry/LSD.cif',
+'assets/geometry/TCI.cif',
 'assets/geometry/TYR.cif',
 'assets/geometry/NH3.cif',
 install_dir : geometry)
