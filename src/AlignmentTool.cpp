@@ -59,7 +59,6 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	{
 		glm::vec3 init = aps[i].atom->initialPosition();
 		glm::vec3 pos = aps[i].pos;
-		std::cout << aps[i].atom->atomName() << " " << glm::to_string(init) << " " << glm::to_string(pos) <<  std::endl;
 		pose.addPositionPair(init, pos);
 	}
 	
