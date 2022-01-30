@@ -161,10 +161,14 @@ bool Cif2Geometry::processLoopAsChirals(Loop &loop)
 		std::string sign_str = (loop.values[i + sign_idx]);
 		to_lower(sign_str);
 
-		int sign = -1;
+		int sign = 0;
 		if (sign_str == "positive")
 		{
 			sign = 1;
+		}
+		else if (sign_str == "negative")
+		{
+			sign = -1;
 		}
 
 		_table->addGeometryChiral(code, centre, p, q, r, sign);
