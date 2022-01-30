@@ -106,6 +106,7 @@ void ThreadExtractsBondPositions::start()
 
 		if (job->miniJobs.size() == 0)
 		{
+			job->destroy();
 			calc->submitResult(r);
 		}
 
