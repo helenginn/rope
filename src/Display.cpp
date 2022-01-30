@@ -32,12 +32,6 @@ void Display::recalculateAtoms()
 	tool.run();
 	_atoms->recalculate();
 	_guiAtoms->checkAtoms();
-
-	_model = glm::mat4(1.f);
-	_centre = _guiAtoms->centroid();
-	_translation = -_centre;
-	_translation.z -= 30;
-	updateCamera();
 }
 
 void Display::loadAtoms(AtomGroup *atoms)
