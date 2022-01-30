@@ -62,19 +62,82 @@ struct Result
 			aps[i].atom->setDerivedPosition(pos);
 		}
 	}
+	
+	void destroy()
+	{
+		delete this;
+	}
+};
+
+struct CustomVector
+{
+	float *mean = NULL;
+	int sample_num = 0;
+	int size = 0;
+	
+	void allocate_vector(int n)
+	{
+		mean = new float[n];
+		memset(mean, '\0', n * sizeof(float));
+		size = n;
+	}
+	
+	void destroy_vector()
+	{
+		delete [] mean;
+		mean = nullptr;
+	}
+};
+
+struct CustomInfo
+{
+	CustomVector *vecs;
+	int nvecs;
+	
+	void allocate_vectors(int n, int size, int sample_num)
+	{
+		vecs = new CustomVector[n];
+		
+		int cumulative = 0;
+		for (size_t i = 0; i < n; i++)
+		{
+			vecs[i].allocate_vector(size);
+			cumulative += sample_num;
+			vecs[i].sample_num = cumulative;
+		}
+		
+		nvecs = n;
+	}
+	
+	void destroy_vectors()
+	{
+		for (size_t i = 0; i < nvecs; i++)
+		{
+			vecs[i].destroy_vector();
+		}
+		
+		delete [] vecs;
+		nvecs = 0;
+	}
 };
 
 struct MiniJob;
 
 struct Job
 {
-	double *mean_conf;
-	double *dev_conf;
+	CustomInfo custom;
 
 	int ticket;
+	JobType requests;
 
 	Result *result;
 	std::vector<MiniJob *> miniJobs;
+	
+	void destroy()
+	{
+		custom.destroy_vectors();
+		delete this;
+	}
 };
 
 struct MiniJob
