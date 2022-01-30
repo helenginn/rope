@@ -15,7 +15,7 @@ int main()
 		int total = 0;
 		for (size_t j = 0; j < handler->sequenceCount(); j++)
 		{
-			BondSequence *sequence = handler->sequence(j);
+			const BondSequence *sequence = handler->sequence(j);
 			total += sequence->sampleCount();
 		}
 		

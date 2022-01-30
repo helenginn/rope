@@ -23,6 +23,7 @@
 #include <vector>
 #include <queue>
 #include "Handler.h"
+#include "TorsionBasis.h"
 
 class Atom;
 class BondSequenceHandler;
@@ -66,11 +67,19 @@ public:
 		_maxMemory = max;
 	}
 	
+	void setTorsionBasisType(TorsionBasis::Type type)
+	{
+		_basisType = type;
+	}
+	
 	void addAnchorExtension(Atom *atom, size_t bondCount = UINT_MAX);
 
 	void setup();
 	void start();
 	void finish();
+
+	const size_t maxCustomVectorSize() const;
+
 	
 	BondSequenceHandler *sequenceHandler()
 	{
@@ -103,6 +112,7 @@ private:
 	Pool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler;
+	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::vector<AnchorExtension> _atoms;
 };

@@ -40,7 +40,7 @@ public:
 	BondSequence(BondSequenceHandler *handler = nullptr);
 	~BondSequence();
 	
-	size_t addedAtomsCount()
+	const size_t addedAtomsCount() const
 	{
 		return _addedAtomsCount;
 	}
@@ -87,6 +87,17 @@ public:
 	void cleanUpToIdle();
 	void setMiniJobInfo(MiniJob *mini);
 	void printState();
+	void removeGraphs();
+	
+	void setTorsionBasisType(TorsionBasis::Type type)
+	{
+		_basisType = type;
+	}
+	
+	const TorsionBasis *torsionBasis() const
+	{
+		return _torsionBasis;
+	}
 	
 	MiniJob *miniJob();
 
@@ -108,7 +119,7 @@ public:
 		_sampleCount = count;
 	}
 	
-	size_t sampleCount()
+	const size_t sampleCount() const
 	{
 		return _sampleCount;
 	}
@@ -125,6 +136,7 @@ private:
 		int depth;
 		int maxDepth;
 		BondTorsion *torsion;
+		int torsion_idx;
 		std::vector<AtomGraph *> children;
 		
 		bool operator<(const AtomGraph &other) const
@@ -144,6 +156,7 @@ private:
 		glm::vec3 target;
 		glm::mat4x4 coordination;
 		glm::vec3 inherit;
+		int torsion_idx;
 		float torsion;
 		glm::mat4x4 basis;
 		glm::mat4x4 wip;
@@ -173,6 +186,7 @@ private:
 	std::vector<AtomBlock> _blocks;
 
 	void generateBlocks();
+	void acquireCustomVector(int sampleNum);
 	void generateAtomGraph(Atom *atom, size_t count);
 	void addGraph(AtomGraph *graph);
 	void calculateMissingMaxDepths();
@@ -181,11 +195,11 @@ private:
 	void assignAtomsToBlocks();
 	void fillMissingWriteLocations();
 	void fixBlockAsGhost(int idx, Atom *anchor);
+	void prepareTorsionBasis();
 	void fillInParents();
 	void fillTorsionAngles();
-	void removeGraphs();
 
-	void calculateBlock(int idx);
+	int calculateBlock(int idx);
 	void fetchTorsion(int idx);
 	void preparePositions();
 
@@ -195,16 +209,21 @@ private:
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<Atom *, int> _atom2Block;
 
-	std::mutex _mutex;
-	size_t _sampleCount;
-	size_t _addedAtomsCount;
-	SequenceState _state;
+	size_t _sampleCount = 1;
+	size_t _addedAtomsCount = 0;
+	SequenceState _state = SequenceInPreparation;
 	
 	void setMiniJob(MiniJob *job);
 	void signal(SequenceState newState);
+	
+	int _customIdx = 0;
+	CustomVector *_custom = nullptr;
+	void checkCustomVectorSizeFits();
 
-	MiniJob *_miniJob;
-	BondSequenceHandler *_handler;
+	MiniJob *_miniJob = nullptr;
+	BondSequenceHandler *_handler = nullptr;
+	TorsionBasis *_torsionBasis = nullptr;
+	TorsionBasis::Type _basisType;
 	std::vector<Atom::WithPos> _posAtoms;
 };
 

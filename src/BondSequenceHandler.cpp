@@ -39,6 +39,10 @@ BondSequenceHandler::~BondSequenceHandler()
 {
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
+		if (i == 0)
+		{
+			_sequences[i]->removeGraphs();
+		}
 		delete _sequences[i];
 	}
 }
@@ -107,7 +111,6 @@ void BondSequenceHandler::setup()
 {
 	calculateThreads(_maxThreads);
 	sanityCheckThreads();
-	allocateSequences();
 	prepareSequenceBlocks();
 }
 
@@ -148,32 +151,33 @@ void BondSequenceHandler::finish()
 
 void BondSequenceHandler::prepareSequenceBlocks()
 {
+	BondSequence *sequence = new BondSequence(this);
+	sequence->setSampleCount(_totalSamples);
+	sequence->setTorsionBasisType(_basisType);
+
+	for (size_t j = 0; j < _atoms.size(); j++)
+	{
+		sequence->addToGraph(_atoms[j].atom, _atoms[j].count);
+	}
+
+	sequence->multiplyUpBySampleCount();
+	_sequences.push_back(sequence);
+
+	for (size_t i = 1; i < _totalSequences; i++)
+	{
+		BondSequence *copy = new BondSequence(*sequence);
+		_sequences.push_back(copy);
+	}
+
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
-		BondSequence *sequence = _sequences[i];
-		for (size_t j = 0; j < _atoms.size(); j++)
-		{
-			sequence->addToGraph(_atoms[j].atom, _atoms[j].count);
-		}
-		
-		sequence->multiplyUpBySampleCount();
-		sequence->prepareForIdle();
+		_sequences[i]->prepareForIdle();
 	}
 }
 
 void BondSequenceHandler::addAnchorExtension(BondCalculator::AnchorExtension ext)
 {
 	_atoms.push_back(ext);
-}
-
-void BondSequenceHandler::allocateSequences()
-{
-	for (size_t i = 0; i < _totalSequences; i++)
-	{
-		BondSequence *sequence = new BondSequence(this);
-		sequence->setSampleCount(_totalSamples);
-		_sequences.push_back(sequence);
-	}
 }
 
 void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state,
@@ -258,4 +262,24 @@ MiniJob *BondSequenceHandler::acquireMiniJob()
 	
 	return mini;
 
+}
+
+const size_t BondSequenceHandler::torsionCount() const
+{
+	if (_sequences.size() == 0)
+	{
+		return 0;
+	}
+	
+	return _sequences[0]->torsionBasis()->torsionCount();
+}
+
+const TorsionBasis *BondSequenceHandler::torsionBasis() const
+{
+	if (_sequences.size() == 0)
+	{
+		return nullptr;
+	}
+	
+	return _sequences[0]->torsionBasis();
 }

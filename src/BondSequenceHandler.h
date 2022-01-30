@@ -57,10 +57,19 @@ public:
 		_mapHandling = map;
 	}
 
+	void setTorsionBasisType(TorsionBasis::Type type)
+	{
+		_basisType = type;
+	}
+	
+	const TorsionBasis *torsionBasis() const;
+	
+	const size_t torsionCount() const;
+
 	void addAnchorExtension(BondCalculator::AnchorExtension ext);
 	void setup();
 	
-	BondSequence *sequence(int i)
+	const BondSequence *sequence(int i) const
 	{
 		return _sequences[i];
 	}
@@ -88,7 +97,6 @@ public:
 	void finish();
 private:
 	void sanityCheckThreads();
-	void allocateSequences();
 	void prepareSequenceBlocks();
 	void prepareThreads();
 	void finishThreads();
@@ -110,6 +118,7 @@ private:
 	};
 
 	SampleMode _mode = MultiSample;
+	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::map<SequenceState, Pool<BondSequence *> > _pools;
 	Pool<MiniJob *> _miniJobPool;

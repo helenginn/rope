@@ -75,6 +75,7 @@ void BondCalculator::setupSequenceHandler()
 	_sequenceHandler = new BondSequenceHandler(this);
 	_sequenceHandler->setTotalSamples(_totalSamples);
 	_sequenceHandler->setMaxThreads(_maxThreads);
+	_sequenceHandler->setTorsionBasisType(_basisType);
 	
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
@@ -200,3 +201,8 @@ void BondCalculator::finish()
 	_jobPool.cleanup();
 }
 
+
+const size_t BondCalculator::maxCustomVectorSize() const
+{
+	return _sequenceHandler->torsionCount();
+}

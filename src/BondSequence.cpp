@@ -19,6 +19,7 @@
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
+#include "TorsionBasis.h"
 #include "Atom.h"
 #include <iostream>
 #include <sstream>
@@ -26,11 +27,7 @@
 
 BondSequence::BondSequence(BondSequenceHandler *handler)
 {
-	_addedAtomsCount = 0;
-	_state = SequenceInPreparation;
 	_handler = handler;
-	_sampleCount = 1;
-	setMiniJob(nullptr);
 }
 
 void BondSequence::printState()
@@ -69,7 +66,6 @@ MiniJob *BondSequence::miniJob()
 
 BondSequence::~BondSequence()
 {
-	removeGraphs();
 }
 
 void BondSequence::addGraph(AtomGraph *graph)
@@ -259,6 +255,7 @@ void BondSequence::fillTorsionAngles()
 {
 	for (size_t i = 0; i < _graphs.size(); i++)
 	{
+		_graphs[i]->torsion_idx = -1;
 		if (_graphs[i]->children.size() == 0)
 		{
 			continue;
@@ -287,8 +284,9 @@ void BondSequence::fillTorsionAngles()
 			}
 		}
 
+		int idx = _torsionBasis->addTorsion(_graphs[i]->torsion);
+		_graphs[i]->torsion_idx = idx;
 	}
-
 }
 
 bool BondSequence::checkAtomGraph(int i) const
@@ -306,12 +304,18 @@ bool BondSequence::checkAtomGraph(int i) const
 	return false;
 }
 
+void BondSequence::prepareTorsionBasis()
+{
+	_torsionBasis = TorsionBasis::newBasis(_basisType);
+}
+
 void BondSequence::addToGraph(Atom *atom, size_t count)
 {
 	removeGraphs();
 	generateAtomGraph(atom, count);
 	calculateMissingMaxDepths();
 	fillInParents();
+	prepareTorsionBasis();
 	fillTorsionAngles();
 	sortGraphChildren();
 	generateBlocks();
@@ -321,8 +325,9 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 {
 	_blocks[idx].atom = atom;
 	_blocks[idx].nBonds = atom->bondLengthCount();
-	_blocks[idx].flag = false;
 	_blocks[idx].wip = glm::mat4(0.);
+	_blocks[idx].target = atom->initialPosition();
+	_blocks[idx].torsion_idx = _atom2Graph[atom]->torsion_idx;
 	
 	BondTorsion *torsion = _atom2Graph[atom]->torsion;
 	
@@ -490,15 +495,26 @@ void BondSequence::multiplyUpBySampleCount()
 
 void BondSequence::fetchTorsion(int idx)
 {
-//	_blocks[idx].torsion = 0.;
+	if (_blocks[idx].torsion_idx < 0)
+	{
+		return;
+	}
+	
+	int n = 0;
+	float *vec = nullptr;
+	
+	if (_custom != nullptr)
+	{
+		n = _custom->size;
+		vec = _custom->mean;
+	}
+
+	double t = _torsionBasis->torsionForVector(_blocks[idx].torsion_idx,
+	                                           nullptr, 0);
+	_blocks[idx].torsion = t;
 }
 
-void BondSequence::resetFlag(int idx)
-{
-	_blocks[idx].flag = false;
-}
-
-void BondSequence::calculateBlock(int idx)
+int BondSequence::calculateBlock(int idx)
 {
 	fetchTorsion(idx);
 	float &t = _blocks[idx].torsion;
@@ -532,7 +548,8 @@ void BondSequence::calculateBlock(int idx)
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
 		int nidx = idx + _blocks[idx].write_locs[0];
-		_blocks[nidx].basis = _blocks[idx].coordination;
+		Atom *anchor = _blocks[nidx].atom;
+		_blocks[nidx].basis = anchor->transformation();
 		glm::mat4x4 wip = _blocks[nidx].basis * _blocks[nidx].coordination;
 
 		_blocks[nidx].inherit = (wip[0]);
@@ -540,7 +557,8 @@ void BondSequence::calculateBlock(int idx)
 		{
 			_blocks[nidx].inherit = (wip[1]);
 		}
-		return;
+
+		return 1;
 	}
 	
 	// write locations!
@@ -557,13 +575,73 @@ void BondSequence::calculateBlock(int idx)
 		_blocks[n].basis = torsion_basis(basis, prev, child);
 		_blocks[n].inherit = glm::vec3(basis[3]);
 	}
+	
+	return 0;
+}
+
+void BondSequence::checkCustomVectorSizeFits()
+{
+	if (!miniJob() || !miniJob()->job)
+	{
+		return;
+	}
+
+	Job &j = *miniJob()->job;
+	if (j.custom.nvecs == 0)
+	{
+		return;
+	}
+	
+	int expected = j.custom.vecs[j.custom.nvecs - 1].sample_num;
+	std::cout << expected << " " << sampleCount() << std::endl;
+
+	if (expected > sampleCount())
+	{
+		throw std::runtime_error("Job custom vector needs more samples"
+		                         " than BondCalculator set up originally.");
+	}
+}
+
+void BondSequence::acquireCustomVector(int sampleNum)
+{
+	if (!miniJob() || !miniJob()->job)
+	{
+		return;
+	}
+
+	Job &j = *miniJob()->job;
+	if (j.custom.nvecs == 0)
+	{
+		_custom = nullptr;
+		return;
+	}
+
+	if (sampleNum > j.custom.vecs[_customIdx].sample_num)
+	{
+		_customIdx++;
+	}
+	
+	_custom = &j.custom.vecs[_customIdx];
 }
 
 void BondSequence::calculate()
 {
+	_customIdx = 0;
+	_custom = nullptr;
+	
+	checkCustomVectorSizeFits();
+
+	int sampleNum = 0;
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
-		calculateBlock(i);
+		int new_anchor = calculateBlock(i);
+		
+		if (new_anchor)
+		{
+			acquireCustomVector(sampleNum);
+		}
+
+		sampleNum++;
 	}
 	
 	signal(SequencePositionsReady);

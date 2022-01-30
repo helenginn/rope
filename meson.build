@@ -99,6 +99,7 @@ vagafiles = [
 'src/Choice.cpp',
 'src/ChoiceGroup.cpp',
 'src/Cif2Geometry.cpp',
+'src/ConcertedBasis.cpp',
 'src/Draggable.cpp',
 'src/Display.cpp',
 'src/FileManager.cpp',
@@ -118,6 +119,7 @@ vagafiles = [
 'src/Modal.cpp',
 'src/Renderable.cpp',
 'src/Scene.cpp',
+'src/SimpleBasis.cpp',
 'src/Slider.cpp',
 'src/Superpose.cpp',
 'src/SnowGL.cpp',
@@ -130,6 +132,7 @@ vagafiles = [
 'src/ThreadExtractsBondPositions.cpp',
 'src/ThreadSubmitsJobs.cpp',
 'src/ThreadMiniJobForSequence.cpp',
+'src/TorsionBasis.cpp',
 'src/Window.cpp',
 ]
 
