@@ -38,8 +38,9 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 
 	calculator.start();
 
-	Job empty_job{};
-	calculator.submitJob(empty_job);
+	Job job{};
+	job.requests = JobExtractPositions;
+	calculator.submitJob(job);
 	
 	Result *result = calculator.acquireResult();
 	calculator.finish();

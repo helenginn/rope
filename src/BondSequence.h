@@ -101,6 +101,7 @@ public:
 
 	void calculate();
 	std::vector<Atom::WithPos> &extractPositions();
+	double calculateDeviations();
 
 	void setSampleCount(int count)
 	{
@@ -140,7 +141,7 @@ private:
 		Atom *atom;
 		char element[3];
 		int nBonds;
-		bool flag;
+		glm::vec3 target;
 		glm::mat4x4 coordination;
 		glm::vec3 inherit;
 		float torsion;
@@ -156,6 +157,11 @@ private:
 		const glm::vec3 my_position() const
 		{
 			return glm::vec3(basis[3]);
+		}
+		
+		const glm::vec3 &target_position() const
+		{
+			return target;
 		}
 		
 		const glm::vec3 child_position(int i) const
@@ -179,7 +185,6 @@ private:
 	void fillTorsionAngles();
 	void removeGraphs();
 
-	void resetFlag(int idx);
 	void calculateBlock(int idx);
 	void fetchTorsion(int idx);
 	void preparePositions();

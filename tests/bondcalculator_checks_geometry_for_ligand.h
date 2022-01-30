@@ -16,8 +16,9 @@ int checkGeometry(std::string path, double angle_tol = 1e-3)
 
 	calculator.start();
 	
-	Job empty_job{};
-	calculator.submitJob(empty_job);
+	Job job{};
+	job.requests = JobExtractPositions;
+	calculator.submitJob(job);
 
 	Result *result = nullptr;
 	result = calculator.acquireResult();

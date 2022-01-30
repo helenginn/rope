@@ -586,6 +586,27 @@ void BondSequence::preparePositions()
 	}
 }
 
+double BondSequence::calculateDeviations()
+{
+	double sumsq = 0;
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		if (_blocks[i].atom == nullptr)
+		{
+			continue;
+		}
+
+		glm::vec3 trial_pos = _blocks[i].my_position();
+
+		const glm::vec3 &target = _blocks[i].target;
+		trial_pos -= target;
+		sumsq += glm::dot(trial_pos, trial_pos);
+	}
+
+	return sqrt(sumsq);
+}
+
 std::vector<Atom::WithPos> &BondSequence::extractPositions()
 {
 	if (_posAtoms.size() == 0)

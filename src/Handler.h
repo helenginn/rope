@@ -39,10 +39,19 @@ enum SequenceState
 	SequencePositionsReady,
 };
 
+enum JobType
+{
+	JobNotSpecified = 0,
+	JobExtractPositions,
+	JobCalculateDeviations,
+};
+
 struct Result
 {
 	int ticket;
+	JobType requests;
 	std::vector<Atom::WithPos> aps;
+	double deviation;
 	std::mutex handout;
 	
 	void transplantPositions()

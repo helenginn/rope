@@ -29,6 +29,28 @@ ThreadExtractsBondPositions::ThreadExtractsBondPositions(BondSequenceHandler *h)
 	_finish = false;
 }
 
+void ThreadExtractsBondPositions::extractPositions(Job *job, MiniJob *mini,
+                                                   BondSequence *seq)
+{
+	Result *r = job->result;
+	r->aps.reserve(seq->blockCount());
+
+	std::vector<Atom::WithPos> aps = seq->extractPositions();
+
+	/* extend atom positions in the result */
+	r->ticket = mini->job->ticket;
+	r->handout.lock();
+	r->aps.insert(r->aps.end(), aps.begin(), aps.end());
+	r->handout.unlock();
+}
+
+void ThreadExtractsBondPositions::calculateDeviation(Job *job, MiniJob *mini,
+                                                     BondSequence *seq)
+{
+	Result *r = job->result;
+	r->deviation = seq->calculateDeviations();
+}
+
 void ThreadExtractsBondPositions::start()
 {
 	SequenceState state = SequencePositionsReady;
@@ -44,8 +66,9 @@ void ThreadExtractsBondPositions::start()
 
 		MiniJob *mini = seq->miniJob();
 		Job *job = mini->job;
-		
+
 		Result *r = nullptr;
+
 		if (job->result)
 		{
 			r = job->result;
@@ -55,31 +78,32 @@ void ThreadExtractsBondPositions::start()
 			if (r == nullptr)
 			{
 				r = new Result();
+				r->requests = job->requests;
+				r->ticket = job->ticket;
+				job->result = r;
 			}
-
-			r->aps.reserve(seq->blockCount());
-			job->result = r;
 		}
 
-		std::vector<Atom::WithPos> aps = seq->extractPositions();
-		
-		/* extend atom positions in the result */
-		r->ticket = mini->job->ticket;
-		r->handout.lock();
-		r->aps.insert(r->aps.end(), aps.begin(), aps.end());
-		r->handout.unlock();
-		
+		if (job->requests & JobExtractPositions)
+		{
+			extractPositions(job, mini, seq);
+		}
+		if (job->requests & JobCalculateDeviations)
+		{
+			calculateDeviation(job, mini, seq);
+		}
+
 		/* don't submit the result unless all minijobs are done */
 		std::vector<MiniJob *>::iterator it;
 		it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
-		
+
 		if (it == job->miniJobs.end())
 		{
 			throw std::runtime_error("MiniJob received twice");
 		}
-		
+
 		job->miniJobs.erase(it);
-		
+
 		if (job->miniJobs.size() == 0)
 		{
 			calc->submitResult(r);

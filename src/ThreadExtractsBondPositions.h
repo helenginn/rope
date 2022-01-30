@@ -22,6 +22,10 @@
 #include "ThreadWorker.h"
 
 class BondSequenceHandler;
+class BondCalculator;
+class BondSequence;
+struct Job;
+struct MiniJob;
 
 class ThreadExtractsBondPositions : public ThreadWorker
 {
@@ -31,6 +35,8 @@ public:
 
 	virtual void start();
 private:
+	void extractPositions(Job *job, MiniJob *mini, BondSequence *seq);
+	void calculateDeviation(Job *job, MiniJob *mini, BondSequence *seq);
 	BondSequenceHandler *_handler;
 
 };

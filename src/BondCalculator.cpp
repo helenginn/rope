@@ -150,15 +150,18 @@ void BondCalculator::submitResult(Result *r)
 	_resultPool.handout.unlock();
 }
 
-void BondCalculator::submitJob(Job &original_job)
+int BondCalculator::submitJob(Job &original_job)
 {
 	Job *job = new Job(original_job);
 
 	_jobPool.handout.lock();
 	_jobPool.members.push(job);
 	_jobPool.sem.signal();
+	job->ticket = ++_max_id;
 	_running++;
 	_jobPool.handout.unlock();
+	
+	return job->ticket;
 }
 
 Job *BondCalculator::acquireJob()
@@ -172,7 +175,6 @@ Job *BondCalculator::acquireJob()
 	{
 		job = _jobPool.members.front();
 		_jobPool.members.pop();
-		job->ticket = ++_max_id;
 	}
 	
 	if (_finish)

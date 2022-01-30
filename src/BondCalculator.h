@@ -40,7 +40,7 @@ public:
 		PipelineCalculatedMaps,
 	};
 	
-	void submitJob(Job &job);
+	int submitJob(Job &job);
 	void submitResult(Result *result);
 	
 	void setTotalSamples(size_t total)
