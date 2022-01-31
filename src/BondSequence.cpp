@@ -510,7 +510,7 @@ void BondSequence::fetchTorsion(int idx)
 	}
 
 	double t = _torsionBasis->torsionForVector(_blocks[idx].torsion_idx,
-	                                           nullptr, 0);
+	                                           vec, n);
 	_blocks[idx].torsion = t;
 }
 

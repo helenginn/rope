@@ -43,5 +43,10 @@ float SimpleBasis::torsionForVector(int idx, float *vec, int n)
 		return start;
 	}
 	
+	if (idx < n)
+	{
+		start += vec[idx];
+	}
+	
 	return start;
 }
