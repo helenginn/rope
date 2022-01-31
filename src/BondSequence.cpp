@@ -593,7 +593,6 @@ void BondSequence::checkCustomVectorSizeFits()
 	}
 	
 	int expected = j.custom.vecs[j.custom.nvecs - 1].sample_num;
-	std::cout << expected << " " << sampleCount() << std::endl;
 
 	if (expected > sampleCount())
 	{
