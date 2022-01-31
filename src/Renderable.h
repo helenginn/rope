@@ -7,6 +7,7 @@
 #include <mutex>
 #include <map>
 #include "glm_import.h"
+#include <atomic>
 #include "HasRenderables.h"
 
 namespace Snow
@@ -292,6 +293,11 @@ public:
 	}
 
 	void setupVBOBuffers();
+	
+	void forceRender()
+	{
+		_forceRender = true;
+	}
 protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -339,6 +345,7 @@ protected:
 	glm::mat4x4 _unproj;
 	GLuint _texid;
 	void appendObject(Renderable *object);
+	std::atomic<bool> _forceRender;
 private:
 	void deleteTextures();
 	void rebindVBOBuffers();

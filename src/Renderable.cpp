@@ -42,6 +42,7 @@ void Renderable::addToVertices(glm::vec3 add)
 
 Renderable::Renderable()
 {
+	_forceRender = false;
 	_usesProj = false;
 	_texid = 0;
 	_gl = NULL;
@@ -300,8 +301,15 @@ void Renderable::rebindVBOBuffers()
 
 int Renderable::vaoForContext()
 {
-	if (_vaoMap.count(_usingProgram))
+	if (_vaoMap.count(_usingProgram) && !_forceRender)
 	{
+		GLuint vao = _vaoMap[_usingProgram];
+		return vao;
+	}
+	else if (_vaoMap.count(_usingProgram) && _forceRender)
+	{
+		_forceRender = false;
+		setupVBOBuffers();
 		GLuint vao = _vaoMap[_usingProgram];
 		return vao;
 	}

@@ -31,7 +31,6 @@ void Display::recalculateAtoms()
 	AlignmentTool tool(_atoms);
 	tool.run();
 	_atoms->recalculate();
-	_guiAtoms->checkAtoms();
 }
 
 void Display::loadAtoms(AtomGroup *atoms)
@@ -50,6 +49,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_atoms = atoms;
 	_guiAtoms = new GuiAtom();
 	_guiAtoms->watchAtoms(_atoms);
+	_guiAtoms->startBackgroundWatch();
 
 	_centre = _guiAtoms->centroid();
 	_translation = -_centre;

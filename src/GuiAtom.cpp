@@ -5,6 +5,7 @@
 #include "AtomGroup.h"
 #include "GuiBond.h"
 #include <iostream>
+#include <thread>
 
 GuiAtom::GuiAtom() : Renderable()
 {
@@ -18,6 +19,18 @@ GuiAtom::GuiAtom() : Renderable()
 	_template->resize(0.3);
 	
 	_bonds = new GuiBond();
+	_finish = false;
+}
+
+GuiAtom::~GuiAtom()
+{
+	if (_watch != nullptr)
+	{
+		_finish = true;
+		_watch->join();
+	}
+
+
 }
 
 void GuiAtom::colourByElement(std::string ele)
@@ -94,7 +107,7 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	_bonds->watchBonds(a);
 }
 
-void GuiAtom::checkAtom(Atom *a)
+bool GuiAtom::checkAtom(Atom *a)
 {
 	glm::vec3 p;
 	if (a->positionChanged() && a->fishPosition(&p))
@@ -117,27 +130,49 @@ void GuiAtom::checkAtom(Atom *a)
 
 		_bonds->updateAtom(a, p);
 		_atomPos[a] = p;
+		return true;
 	}
+	
+	return false;
 }
 
 void GuiAtom::checkAtoms()
 {
+	bool changed = false;
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
 		Atom *a = _atoms[i];
 		try
 		{
-			checkAtom(a);
+			changed |= checkAtom(a);
 		}
 		catch (std::runtime_error err)
 		{
-			std::cout << "Error! " << err.what() << std::endl;
+			std::cout << "Error drawing atom! " << err.what() << std::endl;
 			std::cout << "Atom: " << a->atomName() <<  std::endl;
-
-			exit(1);
+			return;
 		}
 	}
 
-	setupVBOBuffers();
-	_bonds->setupVBOBuffers();
+	if (changed)
+	{
+		forceRender();
+		_bonds->forceRender();
+	}
+}
+
+void GuiAtom::backgroundWatch(GuiAtom *what)
+{
+	while (!what->_finish)
+	{
+		what->checkAtoms();
+		std::chrono::duration<double, std::milli> time_span;
+		time_span = std::chrono::milliseconds(100);
+		std::this_thread::sleep_for(time_span);
+	}
+}
+
+void GuiAtom::startBackgroundWatch()
+{
+	_watch = new std::thread(&GuiAtom::backgroundWatch, this);
 }
