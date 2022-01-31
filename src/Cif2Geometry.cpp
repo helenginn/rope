@@ -14,23 +14,34 @@ using namespace gemmi::cif;
 
 Cif2Geometry::Cif2Geometry(std::string filename)
 {
-	_filename = filename;
-#ifndef __EMSCRIPTEN__
-	_filename = std::string(DATA_DIRECTORY) + "/" + filename;
-#endif
+	changeFilename(filename);
 
 	_table = new GeometryTable();
-	_atoms = new AtomGroup();
-	_accessedAtoms = false;
+	_compAtoms = new AtomGroup();
+	_macroAtoms = new AtomGroup();
+	_accessedCompAtoms = false;
 	_accessedTable = false;
 	_knot = true;
 }
 
+void Cif2Geometry::changeFilename(std::string filename)
+{
+	_filename = filename;
+	if (filename == "")
+	{
+		return;
+	}
+
+#ifndef __EMSCRIPTEN__
+	_filename = std::string(DATA_DIRECTORY) + "/" + _filename;
+#endif
+}
+
 Cif2Geometry::~Cif2Geometry()
 {
-	if (!_accessedAtoms)
+	if (!_accessedCompAtoms)
 	{
-		delete _atoms;
+		delete _compAtoms;
 	}
 
 	else if (!_accessedTable)
@@ -69,7 +80,7 @@ void Cif2Geometry::parse()
 	
 	if (_knot)
 	{
-		Knotter knotter(_atoms, _table);
+		Knotter knotter(_compAtoms, _table);
 		knotter.knot();
 
 	}
@@ -77,7 +88,7 @@ void Cif2Geometry::parse()
 
 void Cif2Geometry::processLoop(Loop &loop)
 {
-	if (processLoopAsAtoms(loop))
+	if (processLoopAsCompAtoms(loop))
 	{
 		return;
 	}
@@ -101,47 +112,62 @@ void Cif2Geometry::processLoop(Loop &loop)
 	{
 		return;
 	}
+
+//	if (processLoopAsMacroAtoms(loop))
+	{
+//		return;
+	}
+}
+
+bool Cif2Geometry::getHeaders(Loop &loop, std::string *headers, int *indices,
+                              int n)
+{
+	for (size_t i = 0; i < n; i++)
+	{
+		indices[i] = -1;
+	}
+
+	for (size_t j = 0; j < loop.tags.size(); j++)
+	{
+		for (size_t i = 0; i < n; i++)
+		{
+			if (loop.tags[j] == headers[i])
+			{
+				indices[i] = j;
+			}
+		}
+	}
+
+	bool found = true;
+	for (size_t i = 0; i < n; i++)
+	{
+		if (indices[i] == -1)
+		{
+			found = false;
+		}
+	}
+	
+	return found;
 }
 
 bool Cif2Geometry::processLoopAsChirals(Loop &loop)
 {
-	int code_idx = -1;
-	int ctr_idx = -1;
-	int id1_idx = -1;
-	int id2_idx = -1;
-	int id3_idx = -1;
-	int sign_idx = -1;
+	int idxs[6];
+	int &code_idx = idxs[0];
+	int &ctr_idx = idxs[1];
+	int &id1_idx = idxs[2];
+	int &id2_idx = idxs[3];
+	int &id3_idx = idxs[4];
+	int &sign_idx = idxs[5];
 	
-	for (size_t j = 0; j < loop.tags.size(); j++)
+	std::string headers[] = 
 	{
-		if (loop.tags[j] == "_chem_comp_chir.comp_id")
-		{
-			code_idx = j;
-		}
-		if (loop.tags[j] == "_chem_comp_chir.atom_id_centre")
-		{
-			ctr_idx = j;
-		}
-		if (loop.tags[j] == "_chem_comp_chir.atom_id_1")
-		{
-			id1_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_chir.atom_id_2")
-		{
-			id2_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_chir.atom_id_3")
-		{
-			id3_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_chir.volume_sign")
-		{
-			sign_idx = j;
-		}
-	}
-
-	if (code_idx < 0 || ctr_idx < 0 || id1_idx < 0 || id2_idx < 0
-	    || id3_idx < 0 || sign_idx < 0)
+		"_chem_comp_chir.comp_id", "_chem_comp_chir.atom_id_centre",
+		"_chem_comp_chir.atom_id_1", "_chem_comp_chir.atom_id_2",
+		"_chem_comp_chir.atom_id_3", "_chem_comp_chir.volume_sign"
+	};
+	
+	if (!getHeaders(loop, headers, idxs, 6))
 	{
 		return false;
 	}
@@ -177,45 +203,24 @@ bool Cif2Geometry::processLoopAsChirals(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsAtoms(Loop &loop)
+bool Cif2Geometry::processLoopAsCompAtoms(Loop &loop)
 {
-	int code_idx = -1;
-	int x_idx = -1;
-	int y_idx = -1;
-	int z_idx = -1;
-	int ele_idx = -1;
-	int atom_name_idx = -1;
+	int idxs[6];
+	int &code_idx = idxs[0];
+	int &x_idx = idxs[1];
+	int &y_idx = idxs[2];
+	int &z_idx = idxs[3];
+	int &atom_name_idx = idxs[4];
+	int &ele_idx = idxs[5];
 	
-	for (size_t j = 0; j < loop.tags.size(); j++)
+	std::string headers[] = 
 	{
-		if (loop.tags[j] == "_chem_comp_atom.comp_id")
-		{
-			code_idx = j;
-		}
-		if (loop.tags[j] == "_chem_comp_atom.x")
-		{
-			x_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_atom.y")
-		{
-			y_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_atom.z")
-		{
-			z_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_atom.atom_id")
-		{
-			atom_name_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_atom.type_symbol")
-		{
-			ele_idx = j;
-		}
-	}
+		"_chem_comp_atom.comp_id", "_chem_comp_atom.x",
+		"_chem_comp_atom.y", "_chem_comp_atom.z",
+		"_chem_comp_atom.atom_id", "_chem_comp_atom.type_symbol"
+	};
 	
-	if (code_idx < 0 || x_idx < 0 || y_idx < 0 || 
-	    z_idx < 0 || ele_idx < 0 || atom_name_idx < 0)
+	if (!getHeaders(loop, headers, idxs, 6))
 	{
 		return false;
 	}
@@ -242,7 +247,7 @@ bool Cif2Geometry::processLoopAsAtoms(Loop &loop)
 		a->setInitialPosition(pos, 30);
 		a->setCode(code);
 		
-		_atoms->add(a);
+		_compAtoms->add(a);
 	}
 	
 	return true;
@@ -250,43 +255,22 @@ bool Cif2Geometry::processLoopAsAtoms(Loop &loop)
 
 bool Cif2Geometry::processLoopAsAngles(Loop &loop)
 {
-	int code_idx = -1;
-	int id1_idx = -1;
-	int id2_idx = -1;
-	int id3_idx = -1;
-	int angle_idx = -1;
-	int dev_idx = -1;
+	int idxs[6];
+	int &code_idx = idxs[0];
+	int &id1_idx = idxs[1];
+	int &id2_idx = idxs[2];
+	int &id3_idx = idxs[3];
+	int &angle_idx = idxs[4];
+	int &dev_idx = idxs[5];
 	
-	for (size_t j = 0; j < loop.tags.size(); j++)
+	std::string headers[] = 
 	{
-		if (loop.tags[j] == "_chem_comp_angle.comp_id")
-		{
-			code_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_angle.atom_id_1")
-		{
-			id1_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_angle.atom_id_2")
-		{
-			id2_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_angle.atom_id_3")
-		{
-			id3_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_angle.value_angle")
-		{
-			angle_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_angle.value_angle_esd")
-		{
-			dev_idx = j;
-		}
-	}
+		"_chem_comp_angle.comp_id", "_chem_comp_angle.atom_id_1", 
+		"_chem_comp_angle.atom_id_2", "_chem_comp_angle.atom_id_3", 
+		"_chem_comp_angle.value_angle", "_chem_comp_angle.value_angle_esd"
+	};
 	
-	if (code_idx < 0 || id1_idx < 0 || id2_idx < 0 || id3_idx < 0 || 
-	    angle_idx < 0 || dev_idx < 0)
+	if (!getHeaders(loop, headers, idxs, 6))
 	{
 		return false;
 	}
@@ -313,38 +297,21 @@ bool Cif2Geometry::processLoopAsAngles(Loop &loop)
 
 bool Cif2Geometry::processLoopAsLengths(Loop &loop)
 {
-	int code_idx = -1;
-	int id1_idx = -1;
-	int id2_idx = -1;
-	int dist_idx = -1;
-	int dev_idx = -1;
+	int idxs[5];
+	int &code_idx = idxs[0];
+	int &id1_idx = idxs[1];
+	int &id2_idx = idxs[2];
+	int &dist_idx = idxs[3];
+	int &dev_idx = idxs[4];
 	
-	for (size_t j = 0; j < loop.tags.size(); j++)
+	std::string headers[] = 
 	{
-		if (loop.tags[j] == "_chem_comp_bond.comp_id")
-		{
-			code_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_bond.atom_id_1")
-		{
-			id1_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_bond.atom_id_2")
-		{
-			id2_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_bond.value_dist")
-		{
-			dist_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_bond.value_dist_esd")
-		{
-			dev_idx = j;
-		}
-	}
+		"_chem_comp_bond.comp_id", "_chem_comp_bond.atom_id_1", 
+		"_chem_comp_bond.atom_id_2", "_chem_comp_bond.value_dist", 
+		"_chem_comp_bond.value_dist_esd"
+	};
 	
-	if (code_idx < 0 || id1_idx < 0 || id2_idx < 0 || 
-	    dist_idx < 0 || dev_idx < 0)
+	if (!getHeaders(loop, headers, idxs, 5))
 	{
 		return false;
 	}
@@ -370,57 +337,29 @@ bool Cif2Geometry::processLoopAsLengths(Loop &loop)
 
 bool Cif2Geometry::processLoopAsTorsions(Loop &loop)
 {
-	int code_idx = -1;
-	int id1_idx = -1;
-	int id2_idx = -1;
-	int id3_idx = -1;
-	int id4_idx = -1;
-	int angle_idx = -1;
-	int dev_idx = -1;
-	int period_idx = -1;
+	int idxs[8];
+	int &code_idx = idxs[0];
+	int &id1_idx = idxs[1];
+	int &id2_idx = idxs[2];
+	int &id3_idx = idxs[3];
+	int &id4_idx = idxs[4];
+	int &angle_idx = idxs[5];
+	int &dev_idx = idxs[6];
+	int &period_idx = idxs[7];
 	
-	for (size_t j = 0; j < loop.tags.size(); j++)
+	std::string headers[] = 
 	{
-		if (loop.tags[j] == "_chem_comp_tor.comp_id")
-		{
-			code_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.atom_id_1")
-		{
-			id1_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.atom_id_2")
-		{
-			id2_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.atom_id_3")
-		{
-			id3_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.atom_id_4")
-		{
-			id4_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.value_angle")
-		{
-			angle_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.value_angle_esd")
-		{
-			dev_idx = j;
-		}
-		else if (loop.tags[j] == "_chem_comp_tor.period")
-		{
-			period_idx = j;
-		}
-	}
+		"_chem_comp_tor.comp_id", "_chem_comp_tor.atom_id_1", 
+		"_chem_comp_tor.atom_id_2", "_chem_comp_tor.atom_id_3", 
+		"_chem_comp_tor.atom_id_4", "_chem_comp_tor.value_angle",
+		"_chem_comp_tor.value_angle_esd", "_chem_comp_tor.period"
+	};
 	
-	if (code_idx < 0 || id1_idx < 0 || id2_idx < 0 || id3_idx < 0 || 
-	    id4_idx < 0 || angle_idx < 0 || dev_idx < 0 || period_idx < 0)
+	if (!getHeaders(loop, headers, idxs, 8))
 	{
 		return false;
 	}
-	
+
 	for (size_t i = 0; i < loop.values.size(); i += loop.tags.size())
 	{
 		if (_code.length() && loop.values[i + code_idx] != _code)
@@ -443,7 +382,34 @@ bool Cif2Geometry::processLoopAsTorsions(Loop &loop)
 	return true;
 }
 
+const size_t Cif2Geometry::compAtomCount() const
+{
+	return _compAtoms->size();
+}
+
 const size_t Cif2Geometry::atomCount() const
 {
-	return _atoms->size();
+	if (_macroAtoms && _macroAtoms->size() > 0)
+	{
+		return _macroAtoms->size();
+	}
+	if (_compAtoms && _compAtoms->size() > 0)
+	{
+		return _compAtoms->size();
+	}
+	
+	return 0;
+}
+
+AtomGroup *Cif2Geometry::atoms()
+{
+	if (_macroAtoms && _macroAtoms->size() > 0)
+	{
+		return _macroAtoms;
+	}
+	else
+	{
+		_accessedCompAtoms = true;
+		return _compAtoms;
+	}
 }

@@ -12,7 +12,9 @@ class GeometryTable;
 class Cif2Geometry
 {
 public:
-	Cif2Geometry(std::string filename);
+	Cif2Geometry(std::string filename = "");
+	void changeFilename(std::string filename);
+
 	~Cif2Geometry();
 	
 	/** to only pull out a single monomer from a larger collection.
@@ -33,13 +35,17 @@ public:
 	}
 	
 	/** Warning: passes ownership of the AtomGroup onto the caller.
-	 * @returns AtomGroup containing all atoms found in geometry file */
-	AtomGroup *atoms() 
+	 * @returns AtomGroup containing all molecular component atoms found 
+	 * in a geometry file */
+	AtomGroup *compAtoms() 
 	{
-		_accessedAtoms = true;
-		return _atoms;
+		_accessedCompAtoms = true;
+		return _compAtoms;
 	}
 	
+	AtomGroup *atoms();
+	
+	const size_t compAtomCount() const;
 	const size_t atomCount() const;
 	
 	/** Warning: passes ownership of the Table onto the caller.
@@ -51,19 +57,23 @@ public:
 	}
 private:
 	void processLoop(gemmi::cif::Loop &loop);
-	bool processLoopAsAtoms(gemmi::cif::Loop &loop);
+	bool processLoopAsCompAtoms(gemmi::cif::Loop &loop);
 	bool processLoopAsLengths(gemmi::cif::Loop &loop);
 	bool processLoopAsAngles(gemmi::cif::Loop &loop);
 	bool processLoopAsTorsions(gemmi::cif::Loop &loop);
 	bool processLoopAsChirals(gemmi::cif::Loop &loop);
 
+	bool getHeaders(gemmi::cif::Loop &loop, std::string *headers, 
+	                int *indices, int n);
+
 	std::string _filename;
 	std::string _code;
 
-	AtomGroup *_atoms;
+	AtomGroup *_compAtoms;
+	AtomGroup *_macroAtoms;
 	GeometryTable *_table;
 	
-	bool _accessedAtoms;
+	bool _accessedCompAtoms;
 	bool _accessedTable;
 	bool _knot;
 };
