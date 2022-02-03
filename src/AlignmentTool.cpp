@@ -76,6 +76,7 @@ void AlignmentTool::run()
 		glm::mat4x4 transform = superposition(result);
 		anchor->setTransformation(transform);
 		_group->recalculate();
+		break;
 	}
 
 }
