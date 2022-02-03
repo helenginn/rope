@@ -259,6 +259,11 @@ void Knotter::checkAtomChirality(Atom *atom, bool use_dictionary)
 		std::string pName = atoms[0]->atomName();
 		std::string qName = atoms[1]->atomName();
 		std::string rName = atoms[2]->atomName();
+		
+		if (_group->findChirality(atom, atoms[0], atoms[1], atoms[2]))
+		{
+			continue;
+		}
 
 		int sign = _table->chirality(code, atom->atomName(), pName, qName, rName);
 		
