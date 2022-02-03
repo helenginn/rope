@@ -44,6 +44,17 @@ public:
 	int submitJob(Job &job);
 	void submitResult(Result *result);
 	
+	/** Set limits for which atoms should be used for output results such
+	 *  as deviation calculations for positions. All atom positions will
+	 *  nevertheless be calculated.
+	 *  @param min minimum value for depth to be considered
+	 *  @param max maximum value for depth to be considered */
+	void setMinMaxDepth(int min, int max)
+	{
+		_minDepth = min;
+		_maxDepth = max;
+	}
+	
 	void setTotalSamples(size_t total)
 	{
 		_totalSamples = total;
@@ -104,6 +115,10 @@ private:
 	size_t _maxThreads;
 	size_t _maxMemory;
 	size_t _totalSamples;
+	
+	int _minDepth = 0;
+	int _maxDepth = INT_MAX;
+	
 	std::atomic<long int> _max_id;
 	std::atomic<long int> _running;
 	
