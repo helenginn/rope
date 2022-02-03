@@ -90,6 +90,11 @@ public:
 	void removeGraphs();
 	void removeTorsionBasis();
 	
+	const size_t maxDepth() const
+	{
+		return _maxDepth;
+	}
+	
 	void setTorsionBasisType(TorsionBasis::Type type)
 	{
 		_basisType = type;
@@ -217,6 +222,7 @@ private:
 	void setMiniJob(MiniJob *job);
 	void signal(SequenceState newState);
 	
+	int _maxDepth = 0;
 	int _customIdx = 0;
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
