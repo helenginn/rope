@@ -22,6 +22,7 @@
 #include "BondLength.h"
 #include "BondAngle.h"
 #include "Chirality.h"
+#include "Atom.h"
 
 HasBondstraints::~HasBondstraints()
 {
@@ -183,7 +184,9 @@ BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right,
 	
 	if (throw_on_failure)
 	{
-		throw (std::runtime_error("No bond angle " + ba.desc() + " found"));
+		throw (std::runtime_error("No bond angle " + ba.desc() + " found"
+		" between " + left->desc() + " " + centre->desc() + " " +
+		right->desc()));
 	}
 	
 	return nullptr;
