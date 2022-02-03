@@ -281,7 +281,7 @@ const size_t BondSequenceHandler::torsionCount() const
 	return _sequences[0]->torsionBasis()->torsionCount();
 }
 
-const TorsionBasis *BondSequenceHandler::torsionBasis() const
+TorsionBasis *BondSequenceHandler::torsionBasis() const
 {
 	if (_sequences.size() == 0)
 	{

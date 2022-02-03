@@ -62,7 +62,7 @@ public:
 		_basisType = type;
 	}
 	
-	const TorsionBasis *torsionBasis() const;
+	TorsionBasis *torsionBasis() const;
 	
 	const size_t torsionCount() const;
 
