@@ -101,6 +101,7 @@ _chem_comp.number_Q_atoms
 _chem_comp.number_D_atoms
 _chem_comp.aa_flag
 _chem_comp.nuc_acid_type
+_chem_comp.unknown
 _chem_comp.N1N9
 _chem_comp.asa_side
 _chem_comp.asa_main
@@ -1388,6 +1389,12 @@ _chem_comp_bond.value_dist_esd
 _chem_comp_bond.exception_class
 _chem_comp_bond.description
 #
+ .     N     H      SING N N  0    0.911   0.020    0 .
+ .     N     H1     SING N N  0    0.911   0.020    0 .
+ .     N     H2     SING N N  0    0.911   0.020    0 .
+ .     N     H3     SING N N  0    0.911   0.020    0 .
+ .     C     N      SING N N  0    1.336   0.023    0 .
+#
 ALA    CA    CB     SING N N  5    1.520    0.021   75 .
 ALA    CA    C      SING N N  4    1.525    0.026   65 .
 ALA    C     O      DOUB N N  7    1.229    0.019    4 .
@@ -1693,18 +1700,18 @@ PHE    CE2   HE2    SING N N 21    0.930    0.020    0 .
 PHE    CZ    HZ     SING N N 22    0.930    0.020    0 .
 PHE    OXT   HXT    SING N N 23    1.090    0.020    0 .
 #
-PRO    CA    CB     SING N N  5    1.531    0.020    2 "trans"
 PRO    CA    CB     SING N N  5    1.533    0.018  100 "cis"
+PRO    CA    CB     SING N N  5    1.531    0.020    2 "trans"
 PRO    CA    C      SING N N  4    1.524    0.020   62 .
-PRO    CB    CG     SING N N  9    1.495    0.050   41 "trans"
 PRO    CB    CG     SING N N  9    1.506    0.039   61 "cis"
-PRO    CG    CD     SING N N 12    1.502    0.033   45 "trans"
+PRO    CB    CG     SING N N  9    1.495    0.050   41 "trans"
 PRO    CG    CD     SING N N 12    1.512    0.027   68 "cis"
+PRO    CG    CD     SING N N 12    1.502    0.033   45 "trans"
 PRO    C     O      DOUB N N  7    1.228    0.020    1 .
 PRO    C     OXT    SING N N  8    1.229    0.019    5 .
 PRO    N     CA     SING N N  1    1.468    0.017   38 .
-PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
 PRO    N     CD     SING N N  2    1.474    0.014   39 "cis"
+PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
 PRO    N     H2     SING N N  3    0.860    0.020    0 .
 PRO    CA    HA     SING N N  6    0.980    0.020    0 .
 PRO    CB    HB2    SING N N 10    0.970    0.020    0 .
@@ -2392,6 +2399,23 @@ _chem_comp_angle.value_angle_esd
 _chem_comp_angle.exception_class
 _chem_comp_angle.description
 #
+ .        CA     C      N       117.2      2.2    0  .
+ .        O      C      N       122.7      1.6    0  .
+ .        C      N      CA      121.7      2.5    0  .
+ .        C      N      H       110.0      1.5    0  .
+ .        C      N      H1      110.0      1.5    0  .
+ .        CA     C      OXT     117.124    1.5    0  .
+ .         O     C      OXT     125.752    1.5    0  .
+ .        CA     N      H       110.062    1.93   0  .
+ .        CA     N      H1      110.062    1.93   0  .
+ .        CA     N      H2      110.062    1.93   0  .
+ .        CA     N      H3      110.062    1.93   0  .
+ .         H     N      H2      109.028    2.41   0  .
+ .         H     N      H3      109.028    2.41   0  .
+ .        H1     N      H2      109.028    2.41   0  .
+ .        H1     N      H3      109.028    2.41   0  .
+ .        H2     N      H3      109.028    2.41   0  .
+#
  ALA      CA     C      O       120.1      2.1   62  .
  ALA      CB     CA     C       110.1      1.5   89  .
  ALA      N      CA     C       111.0      2.7   28  .
@@ -2804,22 +2828,22 @@ _chem_comp_angle.description
  PHE      HE2    CE2    CD2     120.0      3.0    0  .
  PHE      CZ     CE2    HE2     120.0      3.0    0  .
 #
- PRO      CA     CB     CG      104.8      1.9    5  "trans"
  PRO      CA     CB     CG      104.0      1.9   20  "cis"
+ PRO      CA     CB     CG      104.8      1.9    5  "trans"
  PRO      CA     C      O       120.2      2.4   63  .
- PRO      CA     N      CD      111.7      1.4   35  "trans"
  PRO      CA     N      CD      111.5      1.4   29  "cis"
- PRO      C      N      CD      128.4      2.1  256  "trans"
+ PRO      CA     N      CD      111.7      1.4   35  "trans"
  PRO      C      N      CD      120.6      2.2  256  "cis"
- PRO      CB     CA     C       111.7      2.1   37  "trans"
+ PRO      C      N      CD      128.4      2.1  256  "trans"
  PRO      CB     CA     C       112.0      2.5   31  "cis"
- PRO      CB     CG     CD      106.5      3.9    8  "trans"
+ PRO      CB     CA     C       111.7      2.1   37  "trans"
  PRO      CB     CG     CD      105.4      2.3  111  "cis"
+ PRO      CB     CG     CD      106.5      3.9    8  "trans"
  PRO      N      CA     C       112.1      2.6   40  .
- PRO      N      CA     CB      103.3      1.2    3  "trans"
  PRO      N      CA     CB      102.6      1.1  236  "cis"
- PRO      N      CD     CG      103.2      1.5    4  "trans"
+ PRO      N      CA     CB      103.3      1.2    3  "trans"
  PRO      N      CD     CG      103.8      1.2  237  "cis"
+ PRO      N      CD     CG      103.2      1.5    4  "trans"
  PRO      HA     CA     CB      109.0      3.0    0  .
  PRO      HA     CA     C       109.0      3.0    0  .
  PRO      N      CA     HA      110.0      3.0    0  .
@@ -3806,8 +3830,10 @@ _chem_link_angle.link_id
      O    C    N      122.7      1.6    "NOT PRO GLY"
      O    C    N      121.1      1.9    PRO
      O    C    N      123.2      1.7    GLY
+     C    N    H      110.062    1.5    .
+     C    N    H1     110.062    1.5    .
      C    N    CA     121.7      2.5    "NOT GLY PRO"
-     C    N    CA     122.0      4.2    PRO-ALL
+     C    N    CA     122.0      4.2    PRO
      C    N    CA     127.0      2.4    PRO-CIS
      C    N    CA     119.3      1.5    PRO-TRANS
      C    N    CA     122.3      2.1    GLY
@@ -3819,6 +3845,7 @@ _chem_link_angle.link_id
      P    O3'  C3'    119.7      1.2    "NA s"
      C    N    CD     120.6      2.2    PRO-CIS
      C    N    CD     128.4      2.1    PRO-TRANS
+     C    N    CD     128.4      2.1    PRO
 #
 loop_
 _chem_comp_tor.comp_id
@@ -5948,7 +5975,7 @@ Al    F    1.60   2.20
 Al    H    1.35   2.00
 Al    I    2.40   2.75
 Al    N    1.65   2.45
-Al    O    1.60   3.15 2.45
+Al    O    1.60   3.15
 Al    P    2.25   2.60
 Al    S    2.10   3.00
 As    H    1.20   1.60
