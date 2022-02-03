@@ -206,7 +206,10 @@ Job *BondCalculator::acquireJob()
 
 void BondCalculator::finish()
 {
-	_sequenceHandler->finish();
+	if (_sequenceHandler != nullptr)
+	{
+		_sequenceHandler->finish();
+	}
 	
 	_jobPool.handout.lock();
 	_finish = true;
