@@ -55,6 +55,19 @@ void BondCalculator::sanityCheckPipeline()
 
 }
 
+void BondCalculator::sanityCheckDepthLimits()
+{
+	if (_maxDepth < _minDepth)
+	{
+		throw std::runtime_error("Minimum depth is more than maximum depth");
+	}
+	
+	if (_maxDepth < 0 || _minDepth < 0)
+	{
+		throw std::runtime_error("Depth limits are below zero");
+	}
+}
+
 void BondCalculator::sanityCheckThreads()
 {
 	if (_maxThreads == 0)

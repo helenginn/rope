@@ -108,6 +108,7 @@ public:
 private:
 	void sanityCheckPipeline();
 	void sanityCheckThreads();
+	void sanityCheckDepthLimits();
 	void setupSequenceHandler();
 	void prepareThreads();
 
