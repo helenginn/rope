@@ -28,11 +28,12 @@ public:
 	GeometryTable();
 
 	void addGeometryLength(std::string code, std::string pName,
-	                       std::string qName, double mean, double stdev);
+	                       std::string qName, double mean, double stdev, 
+	                       bool link = false);
 
 	void addGeometryAngle(std::string code, std::string pName, 
 	                      std::string qName, std::string rName, 
-	                      double mean, double stdev);
+	                      double mean, double stdev, bool link = false);
 
 	void addGeometryTorsion(std::string code, std::string pName, 
 	                        std::string qName, std::string rName, 
@@ -45,14 +46,15 @@ public:
 
 	bool lengthExists(std::string code, std::string pName, std::string qName);
 
-	double length(std::string code, std::string pName, std::string qName);
+	double length(std::string code, std::string pName, std::string qName, 
+	              bool links = false);
 
 	double length_stdev(std::string code, std::string pName, std::string qName);
 
 	bool angleExists(std::string code, std::string pName, std::string qName,
 	                 std::string rName);
 	double angle(std::string code, std::string pName, std::string qName,
-	                 std::string rName);
+	                 std::string rName, bool links = false);
 	double angle_stdev(std::string code, std::string pName, std::string qName,
 	                 std::string rName);
 
@@ -65,6 +67,8 @@ public:
 
 	int chirality(std::string code, std::string centre, std::string pName,
 	              std::string qName, std::string rName);
+	
+	const size_t codeEntries() const;
 private:
 	struct Value
 	{
@@ -157,8 +161,21 @@ private:
 		std::map<AtomQuartet, Value> torsions;
 		std::map<AtomQuartet, int> chirals;
 	};
+
+	double length(GeometryMap &map, std::string pName, std::string qName);
+
+	double checkLengthLinks(std::string code, std::string pName,
+	                        std::string qName);
+
+	double checkAngleLinks(std::string code, std::string pName,
+	                       std::string qName, std::string rName);
+
+	bool linkCodeMatches(std::string code, std::string query);
+	double angle(GeometryMap &map, std::string pName,
+	             std::string qName, std::string rName);
 	
 	std::map<std::string, GeometryMap> _codes;
+	std::map<std::string, GeometryMap> _links;
 };
 
 #endif
