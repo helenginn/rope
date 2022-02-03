@@ -827,5 +827,26 @@ void BondSequence::reflagDepth(int min, int max)
 		AtomGraph *graph = _atom2Graph[block.atom];
 		block.flag = (graph->depth >= min && graph->depth < max);
 	}
+}
 
+std::vector<bool> BondSequence::atomMask()
+{
+	std::vector<bool> mask = std::vector<bool>(_torsionBasis->torsionCount(),
+	                                           false);
+	
+	for (AtomBlock &block : _blocks)
+	{
+		if (!block.flag)
+		{
+			continue;
+		}
+
+		int idx = block.torsion_idx;
+		if (idx >= 0)
+		{
+			mask[idx] = true;
+		}
+	}
+	
+	return mask;
 }

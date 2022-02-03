@@ -114,6 +114,7 @@ public:
 	
 	void multiplyUpBySampleCount();
 	void reflagDepth(int min, int max);
+	std::vector<bool> atomMask();
 	
 	void prepareForIdle();
 

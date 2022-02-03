@@ -312,6 +312,8 @@ std::vector<bool> BondSequenceHandler::depthLimitMask()
 	{
 		return mask;
 	}
+	
+	mask = _sequences[0]->atomMask();
 
 	return mask;
 }
