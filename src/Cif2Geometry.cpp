@@ -214,11 +214,11 @@ bool Cif2Geometry::processLoopAsChirals(Loop &loop)
 		to_lower(sign_str);
 
 		int sign = 0;
-		if (sign_str == "positive")
+		if (sign_str.rfind("pos", 0) != std::string::npos)
 		{
 			sign = 1;
 		}
-		else if (sign_str == "negative")
+		else if (sign_str.rfind("neg", 0) != std::string::npos)
 		{
 			sign = -1;
 		}
