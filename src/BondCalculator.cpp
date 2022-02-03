@@ -37,6 +37,7 @@ BondCalculator::~BondCalculator()
 	delete _sequenceHandler;
 	_resultPool.cleanup();
 	_recyclePool.cleanup();
+	_jobPool.cleanup();
 }
 
 void BondCalculator::sanityCheckPipeline()
