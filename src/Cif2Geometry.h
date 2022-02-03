@@ -59,9 +59,12 @@ private:
 	void processLoop(gemmi::cif::Loop &loop);
 	bool processLoopAsCompAtoms(gemmi::cif::Loop &loop);
 	bool processLoopAsLengths(gemmi::cif::Loop &loop);
+	bool processLoopAsLengthLinks(gemmi::cif::Loop &loop);
+	bool processLoopAsAngleLinks(gemmi::cif::Loop &loop);
 	bool processLoopAsAngles(gemmi::cif::Loop &loop);
 	bool processLoopAsTorsions(gemmi::cif::Loop &loop);
 	bool processLoopAsChirals(gemmi::cif::Loop &loop);
+	bool processLoopAsMacroAtoms(gemmi::cif::Loop &loop);
 
 	bool getHeaders(gemmi::cif::Loop &loop, std::string *headers, 
 	                int *indices, int n);

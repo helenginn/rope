@@ -118,6 +118,16 @@ void Cif2Geometry::processLoop(Loop &loop)
 	{
 		return;
 	}
+	
+	if (processLoopAsLengthLinks(loop))
+	{
+		return;
+	}
+	
+	if (processLoopAsAngleLinks(loop))
+	{
+		return;
+	}
 
 	if (processLoopAsTorsions(loop))
 	{
@@ -311,6 +321,96 @@ bool Cif2Geometry::processLoopAsAngles(Loop &loop)
 	return true;
 }
 
+bool Cif2Geometry::processLoopAsAngleLinks(Loop &loop)
+{
+	int idxs[6];
+	int &id1_idx = idxs[0];
+	int &id2_idx = idxs[1];
+	int &id3_idx = idxs[2];
+	int &angle_idx = idxs[3];
+	int &dev_idx = idxs[4];
+	int &link_idx = idxs[5];
+	
+	std::string headers[] = 
+	{
+		"_chem_link_angle.atom_id_1", "_chem_link_angle.atom_id_2", 
+		"_chem_link_angle.atom_id_3", "_chem_link_angle.value_angle", 
+		"_chem_link_angle.value_angle_esd", "_chem_link_angle.link_id"
+	};
+	
+	if (!getHeaders(loop, headers, idxs, 6))
+	{
+		return false;
+	}
+	
+	for (size_t i = 0; i < loop.values.size(); i += loop.tags.size())
+	{
+		std::string p = loop.values[i + id1_idx];
+		std::string q = loop.values[i + id2_idx];
+		std::string r = loop.values[i + id3_idx];
+		float angle = as_number(loop.values[i + angle_idx]);
+		float dev = as_number(loop.values[i + dev_idx]);
+		std::string link_code = loop.values[i + link_idx];
+		
+		for (size_t j = 0; j < link_code.size(); j++)
+		{
+			if (link_code[j] == '\"')
+			{
+				link_code.erase(link_code.begin() + j);
+				j--;
+			}
+		}
+
+		_table->addGeometryAngle(link_code, p, q, r, angle, dev, true);
+	}
+	
+	return true;
+}
+
+bool Cif2Geometry::processLoopAsLengthLinks(Loop &loop)
+{
+	int idxs[5];
+	int &id1_idx = idxs[0];
+	int &id2_idx = idxs[1];
+	int &dist_idx = idxs[2];
+	int &dev_idx = idxs[3];
+	int &link_idx = idxs[4];
+	
+	std::string headers[] = 
+	{
+		"_chem_link_bond.atom_id_1", "_chem_link_bond.atom_id_2", 
+		"_chem_link_bond.value_dist", "_chem_link_bond.value_dist_esd",
+		"_chem_link_bond.link_id"
+	};
+	
+	if (!getHeaders(loop, headers, idxs, 5))
+	{
+		return false;
+	}
+	
+	for (size_t i = 0; i < loop.values.size(); i += loop.tags.size())
+	{
+		std::string p = loop.values[i + id1_idx];
+		std::string q = loop.values[i + id2_idx];
+		float length = as_number(loop.values[i + dist_idx]);
+		float dev = as_number(loop.values[i + dev_idx]);
+		std::string link_code = loop.values[i + link_idx];
+		
+		for (size_t j = 0; j < link_code.size(); j++)
+		{
+			if (link_code[j] == '\"')
+			{
+				link_code.erase(link_code.begin() + j);
+				j--;
+			}
+		}
+
+		_table->addGeometryLength(link_code, p, q, length, dev, true);
+	}
+	
+	return true;
+}
+
 bool Cif2Geometry::processLoopAsLengths(Loop &loop)
 {
 	int idxs[5];
@@ -395,6 +495,83 @@ bool Cif2Geometry::processLoopAsTorsions(Loop &loop)
 		_table->addGeometryTorsion(code, p, q, r, s, angle, dev, period);
 	}
 	
+	return true;
+}
+
+bool Cif2Geometry::processLoopAsMacroAtoms(Loop &loop)
+{
+	int idxs[12];
+	int &card_idx = idxs[0];
+	int &num_idx = idxs[1];
+	int &ele_idx = idxs[2];
+	int &alt_idx = idxs[3];
+	int &atom_name_idx = idxs[4];
+	int &res_idx = idxs[5];
+	int &chain_idx = idxs[6];
+	int &x_idx = idxs[7];
+	int &y_idx = idxs[8];
+	int &z_idx = idxs[9];
+	int &occ_idx = idxs[10];
+	int &b_idx = idxs[11];
+	
+	std::string headers[] = 
+	{
+		"_atom_site.group_PDB",         /* e.g. ATOM or HETATM */
+		"_atom_site.id",                /* atom number */
+		"_atom_site.type_symbol",       /* element symbol */
+		"_atom_site.label_alt_id",      /* alternative conformer */
+		"_atom_site.label_atom_id",     /* atom name */
+		"_atom_site.label_comp_id",     /* chemical component i.e. residue */
+		"_atom_site.label_asym_id",     /* seems to be chain ID */
+		"_atom_site.Cartn_x",           /* cartesian coordinate x*/
+		"_atom_site.Cartn_y",           /* cartesian coordinate y*/
+		"_atom_site.Cartn_z",           /* cartesian coordinate z*/
+		"_atom_site.occupancy",
+		"_atom_site.B_iso_or_equiv"
+	};
+	
+	if (!getHeaders(loop, headers, idxs, 12))
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < loop.values.size(); i += loop.tags.size())
+	{
+		std::string alt = loop.values[i + alt_idx];
+		
+		if (alt != "." && alt != "A")
+		{
+			continue;
+		}
+
+		glm::vec3 pos = glm::vec3(0.);
+		pos.x = as_number(loop.values[i + x_idx]);
+		pos.y = as_number(loop.values[i + y_idx]);
+		pos.z = as_number(loop.values[i + z_idx]);
+
+		int num = as_number(loop.values[i + num_idx]);
+		std::string ele = loop.values[i + ele_idx];
+		std::string name = loop.values[i + atom_name_idx];
+		std::string code = loop.values[i + res_idx];
+		std::string chain = loop.values[i + chain_idx];
+		float occ = as_number(loop.values[i + occ_idx]);
+		float b = as_number(loop.values[i + b_idx]);
+		
+		std::string card = loop.values[i + card_idx];
+		bool hetatm = (card == "HETATM");
+
+		Atom *a = new Atom();
+		a->setElementSymbol(ele);
+		a->setAtomName(name);
+		a->setAtomNum(num);
+		a->setHetatm(hetatm);
+		a->setInitialPosition(pos, b);
+		a->setOccupancy(occ);
+		a->setCode(code);
+		
+		_macroAtoms->add(a);
+	}
+
 	return true;
 }
 
