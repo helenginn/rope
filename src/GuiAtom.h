@@ -25,6 +25,7 @@ public:
 
 	virtual void render(SnowGL *gl);
 private:
+	size_t indicesPerAtom();
 	void setPosition(glm::vec3 position);
 	void colourByElement(std::string ele);
 	bool checkAtom(Atom *a);

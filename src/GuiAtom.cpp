@@ -64,6 +64,11 @@ void GuiAtom::setPosition(glm::vec3 position)
 	_template->setPosition(position);
 }
 
+size_t GuiAtom::indicesPerAtom()
+{
+	return _template->indexCount();
+}
+
 size_t GuiAtom::verticesPerAtom()
 {
 	return _template->vertexCount();
@@ -97,6 +102,9 @@ void GuiAtom::watchAtom(Atom *a)
 
 void GuiAtom::watchAtoms(AtomGroup *a)
 {
+	_vertices.reserve(verticesPerAtom() * a->size());
+	_indices.reserve(indicesPerAtom() * a->size());
+
 	for (size_t i = 0; i < a->size(); i++)
 	{
 		watchAtom((*a)[i]);
