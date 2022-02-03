@@ -127,7 +127,7 @@ private:
 
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
-	BondCalculator *_calculator;
+	BondCalculator *_calculator = nullptr;
 };
 
 #endif
