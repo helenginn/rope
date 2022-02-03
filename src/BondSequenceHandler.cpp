@@ -25,13 +25,11 @@
 
 BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 {
-	_threads = 0;
 	_run = 0;
 	_finish = false;
 	_totalSamples = 1;
 	_pools[SequencePositionsReady].sem.setName("handle positions");
 	_pools[SequenceCalculateReady].sem.setName("calculate bonds");
-	_mapHandling = false;
 	_calculator = calc;
 }
 
