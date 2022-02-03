@@ -292,3 +292,26 @@ TorsionBasis *BondSequenceHandler::torsionBasis() const
 	
 	return _sequences[0]->torsionBasis();
 }
+
+void BondSequenceHandler::imposeDepthLimits(int min, int max)
+{
+	_minDepth = min;
+	_maxDepth = max;
+	
+	for (BondSequence *sequence : _sequences)
+	{
+		sequence->reflagDepth(min, max);
+	}
+}
+
+std::vector<bool> BondSequenceHandler::depthLimitMask() 
+{
+	std::vector<bool> mask;
+
+	if (_sequences.size() == 0)
+	{
+		return mask;
+	}
+
+	return mask;
+}

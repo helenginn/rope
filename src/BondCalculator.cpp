@@ -122,6 +122,9 @@ void BondCalculator::prepareThreads()
 
 void BondCalculator::start()
 {
+	sanityCheckDepthLimits();
+
+	_sequenceHandler->imposeDepthLimits(_minDepth, _maxDepth);
 	_sequenceHandler->start();
 	prepareThreads();
 }

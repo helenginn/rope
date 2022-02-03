@@ -54,6 +54,11 @@ public:
 		_minDepth = min;
 		_maxDepth = max;
 	}
+
+	/** Returns vector of booleans corresponding to each scalar in the
+	 *  custom vector which is provided to the calculator. True if this
+	 *  vector directly affects an atom in provided depth range. */
+	std::vector<bool> depthLimitMask();
 	
 	void setTotalSamples(size_t total)
 	{

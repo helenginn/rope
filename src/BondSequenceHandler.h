@@ -93,6 +93,13 @@ public:
 	MiniJob *acquireMiniJob();
 	void signalFinishMiniJob();
 
+	/** Changes which atoms are included for calculation of position
+	 * deviation 
+	 * 	@param min minimum depth from anchor position
+	 * 	@param max maximum depth from anchor position */
+	void imposeDepthLimits(int min, int max);
+	std::vector<bool> depthLimitMask();
+
 	void start();
 	void finish();
 private:
@@ -128,6 +135,9 @@ private:
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
 	BondCalculator *_calculator = nullptr;
+	
+	int _minDepth = 0;
+	int _maxDepth = INT_MAX;
 };
 
 #endif
