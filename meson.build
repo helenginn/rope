@@ -18,9 +18,14 @@ data_dir = get_option('datadir') / 'vagabond'
 shaders = data_dir / 'assets' / 'shaders'
 images = data_dir / 'assets' / 'images'
 geometry = data_dir / 'assets' / 'geometry'
+examples = data_dir / 'assets' / 'examples'
 dir_base = get_option('prefix')
 combined = join_paths(dir_base, data_dir)
 
+
+install_data(
+'assets/examples/2YBH.cif',
+install_dir : examples)
 
 install_data(
 'assets/geometry/standard_geometry.cif',
@@ -117,9 +122,11 @@ vagafiles = [
 'src/MainMenu.cpp',
 'src/matrix_functions.cpp',
 'src/Modal.cpp',
+'src/PositionRefinery.cpp',
 'src/Renderable.cpp',
 'src/Scene.cpp',
 'src/SimpleBasis.cpp',
+'src/SimplexEngine.cpp',
 'src/Slider.cpp',
 'src/Superpose.cpp',
 'src/SnowGL.cpp',
