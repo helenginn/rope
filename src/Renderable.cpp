@@ -269,19 +269,13 @@ void Renderable::unbindVBOBuffers()
 
 void Renderable::deleteVBOBuffers()
 {
-	/*
-	for (it = _vaoMap.begin(); it != _vaoMap.end(); it++)
+	if (_usingProgram != 0 && _vaoMap.count(_usingProgram))
 	{
-		GLuint vao = it->second;
-//		glDeleteVertexArrays(1, &vao);
-	}
-	*/
-
-	if (_usingProgram != 0)
-	{
-		GLuint vao = vaoForContext();
+		GLuint vao = _vaoMap[_usingProgram];
 		glDeleteVertexArrays(1, &vao);
+		_vaoMap.erase(_usingProgram);
 	}
+	
 }
 
 void Renderable::rebindVBOBuffers()
