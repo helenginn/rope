@@ -35,6 +35,8 @@ BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 
 BondSequenceHandler::~BondSequenceHandler()
 {
+	finish();
+
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
 		if (i == 0)
