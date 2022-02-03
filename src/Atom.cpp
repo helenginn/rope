@@ -193,7 +193,24 @@ void Atom::checkChirality(glm::mat4x4 &ret, Atom *prev,
 	
 	if (!found)
 	{
-//		throw (std::runtime_error("Couldn't match any chirality measurements"));
+		if (prev)
+		{
+			std::cout << "Prev: " << prev->desc() << std::endl;
+		}
+		for (size_t i = 0; i < 4; i++)
+		{
+			if (children[i])
+			{
+				std::cout << children[i]->desc() << std::endl;
+			}
+		}
+		std::cout << "... against..." << std::endl;
+		for (size_t i = 0; i < chiralityCount(); i++)
+		{
+			std::cout << chirality(i)->desc() << std::endl;
+		}
+
+		throw (std::runtime_error("Couldn't match any chirality measurements"));
 	}
 }
 
