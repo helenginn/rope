@@ -29,8 +29,6 @@ GuiAtom::~GuiAtom()
 		_finish = true;
 		_watch->join();
 	}
-
-
 }
 
 void GuiAtom::colourByElement(std::string ele)
