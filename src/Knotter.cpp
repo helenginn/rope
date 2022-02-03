@@ -280,8 +280,7 @@ void Knotter::findChiralCentres()
 	/* first, only assign chirality from the geometry tables */
 	for (size_t i = 0; i < group.size(); i++)
 	{
-		if (group[i]->bondLengthCount() >= 3 && 
-		    group[i]->chiralityCount() == 0)
+		if (group[i]->bondLengthCount() >= 3)
 		{
 			checkAtomChirality(group[i], true);
 		}
@@ -291,8 +290,7 @@ void Knotter::findChiralCentres()
 	 * initial positions, particularly an issue for hydrogen atoms */
 	for (size_t i = 0; i < group.size(); i++)
 	{
-		if (group[i]->bondLengthCount() >= 3 && 
-		    group[i]->chiralityCount() == 0)
+		if (group[i]->bondLengthCount() >= 3)
 		{
 			checkAtomChirality(group[i], false);
 		}
