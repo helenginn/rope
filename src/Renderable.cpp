@@ -303,7 +303,7 @@ int Renderable::vaoForContext()
 	else if (_vaoMap.count(_usingProgram) && _forceRender)
 	{
 		_forceRender = false;
-		setupVBOBuffers();
+		rebufferVertexData();
 		GLuint vao = _vaoMap[_usingProgram];
 		return vao;
 	}
@@ -314,6 +314,19 @@ int Renderable::vaoForContext()
 	setupVBOBuffers();
 	
 	return vao;
+}
+
+void Renderable::rebufferVertexData()
+{
+	if (_bVertices.count(_usingProgram) == 0)
+	{
+		return;
+	}
+
+	GLuint bv = _bVertices[_usingProgram];
+	glBindBuffer(GL_ARRAY_BUFFER, bv);
+
+	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
 }
 
 void Renderable::setupVBOBuffers()

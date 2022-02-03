@@ -293,6 +293,7 @@ public:
 	}
 
 	void setupVBOBuffers();
+	void rebufferVertexData();
 	
 	void forceRender()
 	{
