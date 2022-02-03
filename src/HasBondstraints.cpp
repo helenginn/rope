@@ -221,3 +221,20 @@ BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d
 
 	return nullptr;
 }
+
+Chirality *HasBondstraints::findChirality(Atom *cen, Atom *a, Atom *b, Atom *c)
+{
+	Chirality bt(nullptr, cen, a, b, c, 0);
+
+	for (size_t i = 0; i < _chirals.size(); i++)
+	{
+		if (*_chirals[i] == bt)
+		{
+			return _chirals[i];
+		}
+	}
+
+	return nullptr;
+}
+
+

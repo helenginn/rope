@@ -57,6 +57,7 @@ public:
 	
 	BondLength *findBondLength(Atom *a, Atom *b);
 	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d);
+	Chirality *findChirality(Atom *cen, Atom *a, Atom *b, Atom *c);
 
 	/** @returns number of bond angles involved with given atom */
 	size_t bondAngleCount() const
