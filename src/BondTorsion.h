@@ -47,6 +47,12 @@ public:
 	{
 		return _angle;
 	}
+
+	void setRefinedAngle(double angle)
+	{
+		_refinedAngle = angle;
+		_refined = true;
+	}
 	
 	Atom *atom(int i) const
 	{
@@ -88,6 +94,8 @@ private:
 	Atom *_c;
 	Atom *_d;
 	double _angle;
+	double _refinedAngle;
+	bool _refined = false;
 	bool _constrained;
 };
 

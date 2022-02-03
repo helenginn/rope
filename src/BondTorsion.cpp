@@ -88,6 +88,11 @@ double BondTorsion::startingAngle() const
 	{
 		return _angle;
 	}
+	
+	if (_refined)
+	{
+		return _refinedAngle;
+	}
 
 	return measurement(SourceInitial);
 }
