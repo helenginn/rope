@@ -819,6 +819,11 @@ void BondSequence::reflagDepth(int min, int max)
 {
 	for (AtomBlock &block : _blocks)
 	{
+		if (block.atom == nullptr)
+		{
+			continue;
+		}
+
 		AtomGraph *graph = _atom2Graph[block.atom];
 		block.flag = (graph->depth >= min && graph->depth < max);
 	}
