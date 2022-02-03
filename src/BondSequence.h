@@ -100,7 +100,7 @@ public:
 		_basisType = type;
 	}
 	
-	const TorsionBasis *torsionBasis() const
+	TorsionBasis *torsionBasis() const
 	{
 		return _torsionBasis;
 	}
