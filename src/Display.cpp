@@ -63,13 +63,14 @@ void Display::loadAtoms(AtomGroup *atoms)
 
 void Display::tieButton()
 {
-	TextButton *button = new TextButton("Tie up with bonds\n(work in progress)", 
-	                                    this);
-	button->setReturnTag("recalculate");
-	button->resize(0.8);
-	setCentre(button, 0.5, 0.9);
-	addObject(button);
-
+	{
+		TextButton *button = new TextButton("Tie up with bonds", 
+		                                    this);
+		button->setReturnTag("recalculate");
+		button->resize(0.8);
+		setCentre(button, 0.5, 0.9);
+		addObject(button);
+	}
 }
 
 void Display::setup()
@@ -79,13 +80,31 @@ void Display::setup()
 
 void Display::buttonPressed(std::string tag, Button *button)
 {
+	if (tag == "back")
+	{
+		_atoms->cancelRefinement();
+	}
+
 	Scene::buttonPressed(tag, button);
 
 	if (tag == "recalculate")
 	{
 		recalculateAtoms();
-	}
+		removeObject(button);
 
+		{
+			TextButton *replace = new TextButton("Refine model positions", 
+			                                    this);
+			replace->setReturnTag("refine_positions");
+			replace->resize(0.8);
+			setCentre(replace, 0.5, 0.9);
+			addObject(replace);
+		}
+	}
+	else if (tag == "refine_positions")
+	{
+		_atoms->refinePositions();
+	}
 }
 
 void Display::interpretMouseButton(SDL_MouseButtonEvent button, bool dir)
