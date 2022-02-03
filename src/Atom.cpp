@@ -350,3 +350,10 @@ void Atom::setTransformation(glm::mat4x4 transform)
 {
 	_transform = transform * _transform;
 }
+
+const std::string Atom::desc() const
+{
+	std::string str;
+	str += code() + ":" + atomName();
+	return str;
+}

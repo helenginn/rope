@@ -87,6 +87,8 @@ public:
 		return _residueNumber;
 	}
 	
+	const std::string desc() const;
+	
 	/** @param num residue number within chain */
 	void setResidueNumber(int num)
 	{
