@@ -590,7 +590,7 @@ void Renderable::resize(double scale, bool unselected)
 		pos += centre;
 	}
 	
-	rebindVBOBuffers();
+	setupVBOBuffers();
 	
 	if (!unselected)
 	{
@@ -930,7 +930,7 @@ void Renderable::setHighlighted(bool selected)
 	}
 
 	checkErrors("before setting highlighted");
-	rebindVBOBuffers();
+	setupVBOBuffers();
 	checkErrors("after setting highlighted");
 	_selected = selected;
 }
