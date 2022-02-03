@@ -40,8 +40,17 @@ BondSequenceHandler::~BondSequenceHandler()
 		if (i == 0)
 		{
 			_sequences[i]->removeGraphs();
+			_sequences[i]->removeTorsionBasis();
 		}
+
 		delete _sequences[i];
+	}
+	
+	std::map<SequenceState, Pool<BondSequence *> >::iterator it;
+	
+	for (it = _pools.begin(); it != _pools.end(); it++)
+	{
+		it->second.cleanup();
 	}
 }
 
