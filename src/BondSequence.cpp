@@ -167,6 +167,15 @@ void BondSequence::generateAtomGraph(Atom *atom, size_t count)
 	}
 }
 
+void BondSequence::removeTorsionBasis()
+{
+	if (_torsionBasis != nullptr)
+	{
+		delete _torsionBasis;
+		_torsionBasis = nullptr;
+	}
+}
+
 void BondSequence::removeGraphs()
 {
 	for (size_t i = 0; i < _graphs.size(); i++)

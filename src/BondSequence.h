@@ -88,6 +88,7 @@ public:
 	void setMiniJobInfo(MiniJob *mini);
 	void printState();
 	void removeGraphs();
+	void removeTorsionBasis();
 	
 	void setTorsionBasisType(TorsionBasis::Type type)
 	{
