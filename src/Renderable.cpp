@@ -1095,12 +1095,9 @@ void Renderable::appendObject(Renderable *object)
 	_vertices.reserve(_vertices.size() + object->vertexCount());
 	_indices.reserve(_indices.size() + object->indexCount());
 	
-	for (size_t i = 0; i < object->vertexCount(); i++)
-	{
-		Vertex &v = object->_vertices[i];
-		_vertices.push_back(v);
-	}
-
+	_vertices.insert(_vertices.end(), object->_vertices.begin(),
+	                 object->_vertices.end());
+	
 	for (size_t i = 0; i < object->_indices.size(); i++)
 	{
 		long idx = object->_indices[i] + add;
