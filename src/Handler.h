@@ -42,8 +42,8 @@ enum SequenceState
 enum JobType
 {
 	JobNotSpecified = 0,
-	JobExtractPositions,
-	JobCalculateDeviations,
+	JobExtractPositions = 1 << 0,
+	JobCalculateDeviations = 1 << 1,
 };
 
 struct Result
