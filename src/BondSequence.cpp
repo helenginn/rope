@@ -815,3 +815,12 @@ std::string BondSequence::atomGraphDesc(int i)
 	return ss.str();
 }
 
+void BondSequence::reflagDepth(int min, int max)
+{
+	for (AtomBlock &block : _blocks)
+	{
+		AtomGraph *graph = _atom2Graph[block.atom];
+		block.flag = (graph->depth >= min && graph->depth < max);
+	}
+
+}

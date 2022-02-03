@@ -113,6 +113,7 @@ public:
 	void addToGraph(Atom *atom, size_t count = UINT_MAX);
 	
 	void multiplyUpBySampleCount();
+	void reflagDepth(int min, int max);
 	
 	void prepareForIdle();
 
@@ -159,6 +160,7 @@ private:
 		Atom *atom;
 		char element[3];
 		int nBonds;
+		bool flag = true;
 		glm::vec3 target;
 		glm::mat4x4 coordination;
 		glm::vec3 inherit;
