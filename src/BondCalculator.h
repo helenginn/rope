@@ -113,9 +113,9 @@ private:
 	void prepareThreads();
 
 	PipelineType _type;
-	size_t _maxThreads;
-	size_t _maxMemory;
-	size_t _totalSamples;
+	size_t _maxThreads = 0;
+	size_t _maxMemory = 0;
+	size_t _totalSamples = 0;
 	
 	int _minDepth = 0;
 	int _maxDepth = INT_MAX;
@@ -127,7 +127,7 @@ private:
 	Pool<Result *> _resultPool;
 	Pool<Result *> _recyclePool;
 
-	BondSequenceHandler *_sequenceHandler;
+	BondSequenceHandler *_sequenceHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::vector<AnchorExtension> _atoms;
