@@ -25,11 +25,14 @@
 typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
 
+class SimplexEngine;
+
 class AtomGroup : public HasBondstraints
 {
 public:
 	AtomGroup();
 	~AtomGroup();
+	void cancelRefinement();
 
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
@@ -67,10 +70,14 @@ public:
 	size_t possibleAnchorCount();
 	Atom *possibleAnchor(int i);
 
+	std::vector<AtomGroup *> connectedGroups();
+	void refinePositions();
 private:
 	void findPossibleAnchors();
 	AtomVector _atoms;
 	AtomVector _anchors;
+	std::thread *_refine = nullptr;
+	SimplexEngine *_engine = nullptr;
 };
 
 #endif
