@@ -53,20 +53,42 @@ void Knotter::checkAtoms(Atom *atom, int start)
 
 		glm::vec3 diff = other->derivedPosition() - pos;
 		
+		bool skip = false;
 		for (size_t j = 0; j < 3; j++)
 		{
-			if (diff[j] < -cutoff || diff[j] > cutoff)
+			if (fabs(diff[j]) > cutoff)
 			{
-				continue;
+				skip = true;
 			}
 		}
 		
+		if (skip)
+		{
+			continue;
+		}
+
 		std::string code = atom->code();
+		std::string other_code = other->code();
+
 		std::string orig = atom->atomName();
 		std::string compare = other->atomName();
 		
-		double standard = _table->length(code, orig, compare);
-		
+		double standard = -1;
+
+		if (code == other_code)
+		{
+			standard = _table->length(code, orig, compare, false);
+		}
+		else
+		{
+			standard = _table->length(code, orig, compare, true);
+
+			if (standard < 0)
+			{
+				standard = _table->length(other->code(), compare, orig, true);
+			}
+		}
+
 		if (standard < 0)
 		{
 			continue;
@@ -104,7 +126,16 @@ void Knotter::createBondAngles(Atom *atom)
 			std::string eName = end->atomName();
 			std::string aCode = atom->code();
 
-			double standard = _table->angle(aCode, sName, aName, eName);
+			double standard = -1;
+			
+			if (aCode == start->code() && aCode == end->code())
+			{
+				standard = _table->angle(aCode, sName, aName, eName);
+			}
+			else
+			{
+				standard = _table->angle(aCode, sName, aName, eName, true);
+			}
 
 			if (standard < 0)
 			{
@@ -200,7 +231,7 @@ void Knotter::checkAtomChirality(Atom *atom, bool use_dictionary)
 	for (size_t i = 0; i < 4; i++)
 	{
 		int n = 0;
-		for (size_t j = 0; j < atom->bondLengthCount(); j++)
+		for (size_t j = 0; j < atom->bondLengthCount() && j < 4; j++)
 		{
 			if (j == i)
 			{
