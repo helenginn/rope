@@ -674,7 +674,8 @@ void BondSequence::preparePositions()
 
 double BondSequence::calculateDeviations()
 {
-	double sumsq = 0;
+	double sum = 0;
+	double count = 0;
 
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
@@ -682,15 +683,21 @@ double BondSequence::calculateDeviations()
 		{
 			continue;
 		}
+		
+		if (strcmp(_blocks[i].element, "H") == 0)
+		{
+			continue;
+		}
 
 		glm::vec3 trial_pos = _blocks[i].my_position();
 
 		const glm::vec3 &target = _blocks[i].target;
-		trial_pos -= target;
-		sumsq += glm::dot(trial_pos, trial_pos);
+		glm::vec3 diff = trial_pos - target;
+		sum += glm::length(diff);
+		count++;
 	}
 
-	return sqrt(sumsq);
+	return sum / count;
 }
 
 std::vector<Atom::WithPos> &BondSequence::extractPositions()
