@@ -284,21 +284,23 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		/* angle prev-to-0 */
 		if (count >= 1)
 		{
-			angles[0] = findBondAngle(prev, this, children[0])->angle();
+			angles[0] = findBondAngle(prev, this, children[0], true)->angle();
 		}
 		
 		/* angle prev-to-1 and 1-to-0 */
 		if (count >= 2)
 		{
-			angles[1] = findBondAngle(children[0], this, children[1])->angle();
-			angles[2] = findBondAngle(prev, this, children[1])->angle();
+			angles[1] = findBondAngle(children[0], this, 
+			                          children[1], true)->angle();
+			angles[2] = findBondAngle(prev, this, children[1], true)->angle();
 		}
 
 		/* angle 2-to-1 and prev-to-2 */
 		if (count == 3)
 		{
-			angles[3] = findBondAngle(children[2], this, children[1])->angle();
-			angles[4] = findBondAngle(children[2], this, prev)->angle();
+			angles[3] = findBondAngle(children[2], this, 
+			                          children[1], true)->angle();
+			angles[4] = findBondAngle(children[2], this, prev, true)->angle();
 		}
 
 		if (count == 3)
