@@ -148,5 +148,6 @@ void Superpose::superpose()
 	glm::vec3 &add = pm;
 	
 	createTransformation(subtract, rot, add);
+	freeSVD(&svd);
 }
 
