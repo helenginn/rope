@@ -26,7 +26,8 @@ class ConcertedBasis : public TorsionBasis
 public:
 	ConcertedBasis();
 
-	virtual float torsionForVector(int idx, float *vec, int n) { return 0; };
+	virtual float torsionForVector(int idx, const float *vec, int n) { return 0; };
+	virtual void absorbVector(const float *vec, int n) { };
 private:
 
 };

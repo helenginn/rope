@@ -39,7 +39,8 @@ public:
 
 	int addTorsion(BondTorsion *torsion);
 	
-	virtual float torsionForVector(int idx, float *vec, int n) = 0;
+	virtual float torsionForVector(int idx, const float *vec, int n) = 0;
+	virtual void absorbVector(const float *vec, int n) = 0;
 	
 	const size_t torsionCount() const
 	{

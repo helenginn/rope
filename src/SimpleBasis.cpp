@@ -24,7 +24,7 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 
 }
 
-float SimpleBasis::torsionForVector(int idx, float *vec, int n)
+float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
 {
 	if (idx < 0)
 	{
@@ -49,4 +49,14 @@ float SimpleBasis::torsionForVector(int idx, float *vec, int n)
 	}
 	
 	return start;
+}
+
+void SimpleBasis::absorbVector(const float *vec, int n)
+{
+	for (size_t i = 0; i < n; i++)
+	{
+		float torsion = torsionForVector(i, vec, n);
+		_torsions[i]->setRefinedAngle(torsion);
+	}
+
 }
