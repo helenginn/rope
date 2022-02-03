@@ -65,6 +65,9 @@ struct Result
 	
 	void destroy()
 	{
+		aps.clear();
+		std::vector<Atom::WithPos>().swap(aps);
+
 		delete this;
 	}
 };
@@ -135,6 +138,8 @@ struct Job
 	
 	void destroy()
 	{
+		miniJobs.clear();
+		std::vector<MiniJob *>().swap(miniJobs);
 		custom.destroy_vectors();
 		delete this;
 	}
