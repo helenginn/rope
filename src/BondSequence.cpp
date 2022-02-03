@@ -98,6 +98,11 @@ void BondSequence::calculateMissingMaxDepths()
 				if (gp->maxDepth < head->depth)
 				{
 					gp->maxDepth = head->depth;
+					
+					if (_maxDepth < head->depth)
+					{
+						_maxDepth = head->depth;
+					}
 				}
 				
 				curr = gp;
