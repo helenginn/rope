@@ -6,7 +6,7 @@
 
 int main()
 {
-	std::string path = "/assets/geometry/GLY.cif";
+	std::string path = "/assets/geometry/ASP.cif";
 
 	Cif2Geometry geom = Cif2Geometry(path);
 	geom.parse();
@@ -20,7 +20,7 @@ int main()
 	calculator.addAnchorExtension(anchor);
 	calculator.setup();
 
-	calculator.setMinMaxDepth(0, 4);
+	calculator.setMinMaxDepth(0, 3);
 	calculator.start();
 
 	std::vector<bool> mask = calculator.sequenceHandler()->depthLimitMask();
