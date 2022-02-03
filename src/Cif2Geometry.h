@@ -66,6 +66,8 @@ private:
 	bool getHeaders(gemmi::cif::Loop &loop, std::string *headers, 
 	                int *indices, int n);
 
+	void parseFileContents(std::string filename);
+
 	std::string _filename;
 	std::string _code;
 
@@ -74,6 +76,7 @@ private:
 	GeometryTable *_table;
 	
 	bool _accessedCompAtoms;
+	bool _accessedMacroAtoms = false;
 	bool _accessedTable;
 	bool _knot;
 };

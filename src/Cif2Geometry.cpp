@@ -31,10 +31,6 @@ void Cif2Geometry::changeFilename(std::string filename)
 	{
 		return;
 	}
-
-#ifndef __EMSCRIPTEN__
-	_filename = std::string(DATA_DIRECTORY) + "/" + _filename;
-#endif
 }
 
 Cif2Geometry::~Cif2Geometry()
@@ -44,22 +40,32 @@ Cif2Geometry::~Cif2Geometry()
 		delete _compAtoms;
 	}
 
+	if (!_accessedMacroAtoms)
+	{
+		delete _macroAtoms;
+	}
+
 	else if (!_accessedTable)
 	{
 		delete _table;
 	}
 }
 
-void Cif2Geometry::parse()
+void Cif2Geometry::parseFileContents(std::string filename)
 {
+	std::string tmp = filename;
+#ifndef __EMSCRIPTEN__
+	tmp = std::string(DATA_DIRECTORY) + "/" + filename;
+#endif
+
 	Document doc;
 	try
 	{
-		doc = read_file(_filename);
+		doc = read_file(tmp);
 	}
 	catch (std::runtime_error err)
 	{
-		std::cout << "Could not load file." << std::endl;
+		std::cout << "Could not load file " << filename << std::endl;
 		std::cout << err.what() << std::endl;
 		return;
 	}
@@ -77,12 +83,22 @@ void Cif2Geometry::parse()
 			}
 		}
 	}
+}
+
+void Cif2Geometry::parse()
+{
+	parseFileContents(_filename);
+	
+	if (_knot && _macroAtoms->size() > 0)
+	{
+		parseFileContents("assets/geometry/standard_geometry.cif");
+	}
 	
 	if (_knot)
 	{
-		Knotter knotter(_compAtoms, _table);
+		AtomGroup *ptr = (_macroAtoms->size() == 0 ? _compAtoms : _macroAtoms);
+		Knotter knotter(ptr, _table);
 		knotter.knot();
-
 	}
 }
 
@@ -113,9 +129,9 @@ void Cif2Geometry::processLoop(Loop &loop)
 		return;
 	}
 
-//	if (processLoopAsMacroAtoms(loop))
+	if (processLoopAsMacroAtoms(loop))
 	{
-//		return;
+		return;
 	}
 }
 
@@ -405,6 +421,7 @@ AtomGroup *Cif2Geometry::atoms()
 {
 	if (_macroAtoms && _macroAtoms->size() > 0)
 	{
+		_accessedMacroAtoms = true;
 		return _macroAtoms;
 	}
 	else
