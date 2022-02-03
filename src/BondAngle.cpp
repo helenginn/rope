@@ -118,7 +118,8 @@ void BondAngle::getSequentialAtoms(BondAngle *o, Atom **a, Atom **b,
 
 const std::string BondAngle::desc() const
 {
-	return _a->atomName() + "-" + _b->atomName() + "-" + _c->atomName();
+	return "(" + _b->code() + ") " + _a->atomName() + "-" + 
+	_b->atomName() + "-" + _c->atomName();
 }
 
 double BondAngle::measurement() const
