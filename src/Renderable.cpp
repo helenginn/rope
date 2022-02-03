@@ -345,7 +345,7 @@ void Renderable::setupVBOBuffers()
 
 	glBindBuffer(GL_ARRAY_BUFFER, bv);
 	checkErrors("binding array buffer");
-	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_DYNAMIC_DRAW);
 
 	checkErrors("rebuffering data buffer");
 
@@ -590,7 +590,7 @@ void Renderable::resize(double scale, bool unselected)
 		pos += centre;
 	}
 	
-	setupVBOBuffers();
+	rebindVBOBuffers();
 	
 	if (!unselected)
 	{
@@ -930,7 +930,7 @@ void Renderable::setHighlighted(bool selected)
 	}
 
 	checkErrors("before setting highlighted");
-	setupVBOBuffers();
+	rebindVBOBuffers();
 	checkErrors("after setting highlighted");
 	_selected = selected;
 }
