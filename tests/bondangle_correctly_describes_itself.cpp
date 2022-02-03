@@ -8,6 +8,7 @@ int main()
 	Atom a, b, c;
 	a.setAtomName("A");
 	b.setAtomName("B");
+	b.setCode("COD");
 	c.setAtomName("C");
 	g += &a;
 	g += &b;
@@ -16,7 +17,7 @@ int main()
 	BondAngle *angle = new BondAngle(&g, &a, &b, &c, 2);
 	
 	std::string description = angle->desc();
-	std::string compare = "A-B-C";
+	std::string compare = "(COD) A-B-C";
 	
 	return !(compare == description);
 }
