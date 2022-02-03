@@ -102,14 +102,14 @@ private:
 	void finishThreads();
 	void calculateThreads(int max);
 
-	size_t _threads;
+	size_t _threads = 0;
 	std::atomic<int> _run;
 
-	size_t _totalSamples;
-	size_t _totalSequences;
-	size_t _maxThreads;
+	size_t _totalSamples = 1;
+	size_t _totalSequences = 0;
+	size_t _maxThreads = 0;
 
-	bool _mapHandling;
+	bool _mapHandling = false;
 	
 	enum SampleMode
 	{
