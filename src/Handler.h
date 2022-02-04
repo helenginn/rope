@@ -177,7 +177,11 @@ protected:
 			
 			threads.clear();
 			workers.clear();
-//			std::queue<Object>().swap(members);
+			
+			handout.lock();
+			std::queue<Object>().swap(members);
+			handout.unlock();
+
 			sem.reset();
 		}
 		
