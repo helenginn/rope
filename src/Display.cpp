@@ -1,4 +1,3 @@
-#include "commit.h"
 #include "Display.h"
 #include "GuiAtom.h"
 #include "TextButton.h"
