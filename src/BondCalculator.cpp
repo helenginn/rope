@@ -106,7 +106,6 @@ void BondCalculator::setup()
 	sanityCheckThreads();
 
 	setupSequenceHandler();
-	// setupPositionExtractor();
 }
 
 void BondCalculator::prepareThreads()
