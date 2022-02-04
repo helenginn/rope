@@ -229,6 +229,8 @@ private:
 	void setMiniJob(MiniJob *job);
 	void signal(SequenceState newState);
 	
+	int _startCalc = 0;
+	int _endCalc = INT_MAX;
 	int _maxDepth = 0;
 	int _customIdx = 0;
 	CustomVector *_custom = nullptr;
