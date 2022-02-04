@@ -634,7 +634,8 @@ void BondSequence::acquireCustomVector(int sampleNum)
 		return;
 	}
 
-	if (sampleNum > j.custom.vecs[_customIdx].sample_num)
+	int &next_num = j.custom.vecs[_customIdx].sample_num;
+	if (next_num > 0 && sampleNum > next_num)
 	{
 		_customIdx++;
 	}
