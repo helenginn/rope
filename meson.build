@@ -150,7 +150,7 @@ endif
 vag = []
 
 if (links == []) # not emscripten
-  vag = static_library('libvag', vagafiles, 
+  vag = static_library('vag', vagafiles, 
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib'],
   dependencies : deps, install: true)
@@ -167,13 +167,6 @@ else
   dependencies : deps, install: true)
 endif
 
-fs = import('fs')
-test_list = fs.read(meson.current_source_dir() / 'tests/test_list').strip().split('\n')
-
 if (links == [])
-foreach entry : test_list
-  t = executable(entry, 'tests' / entry + '.cpp', link_with : vag, 
-	  cpp_args : ['-std=c++11'])
-  test(entry, t)
-endforeach
+  subdir('tests')
 endif
