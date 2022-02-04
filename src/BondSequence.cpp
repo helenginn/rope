@@ -530,6 +530,11 @@ void BondSequence::fetchTorsion(int idx)
 
 int BondSequence::calculateBlock(int idx)
 {
+	if (!_blocks[idx].flag && _blocks[idx].atom)
+	{
+		return 0;
+	}
+
 	fetchTorsion(idx);
 	float &t = _blocks[idx].torsion;
 	glm::mat4x4 &coord = _blocks[idx].coordination;
