@@ -666,23 +666,6 @@ void BondSequence::calculate()
 	signal(SequencePositionsReady);
 }
 
-void BondSequence::preparePositions()
-{
-	_posAtoms.reserve(addedAtomsCount());
-
-	for (size_t i = 0; i < _blocks.size(); i++)
-	{
-		if (_blocks[i].atom == nullptr)
-		{
-			continue;
-		}
-
-		Atom::WithPos ap{};
-		ap.atom = _blocks[i].atom;
-		_posAtoms.push_back(ap);
-	}
-}
-
 double BondSequence::calculateDeviations()
 {
 	double sum = 0;
@@ -713,10 +696,8 @@ double BondSequence::calculateDeviations()
 
 std::vector<Atom::WithPos> &BondSequence::extractPositions()
 {
-	if (_posAtoms.size() == 0)
-	{
-		preparePositions();
-	}
+	_posAtoms.clear();
+	_posAtoms.reserve(addedAtomsCount());
 
 	int idx = 0;
 
@@ -726,9 +707,16 @@ std::vector<Atom::WithPos> &BondSequence::extractPositions()
 		{
 			continue;
 		}
-
-		_posAtoms.at(idx).pos = _blocks[i].my_position();
-		idx++;
+		
+		if (!_blocks[i].flag)
+		{
+			continue;
+		}
+		
+		Atom::WithPos ap;
+		ap.pos = _blocks[i].my_position();
+		ap.atom = _blocks[i].atom;
+		_posAtoms.push_back(ap);
 	}
 	
 	return _posAtoms;
