@@ -651,7 +651,8 @@ void BondSequence::calculate()
 	checkCustomVectorSizeFits();
 
 	int sampleNum = 0;
-	for (size_t i = 0; i < _blocks.size(); i++)
+
+	for (size_t i = 0; i < _blocks.size() && i < _endCalc; i++)
 	{
 		int new_anchor = calculateBlock(i);
 		
@@ -825,23 +826,13 @@ void BondSequence::reflagDepth(int min, int max)
 		AtomGraph *graph = _atom2Graph[block.atom];
 		block.flag = (graph->depth >= min && graph->depth < max);
 		
-		bool inclusive = (graph->depth >= min - 2 && graph->depth <= max);
+		bool inclusive = (graph->depth <= max);
 		
-		if (!found_first && inclusive)
-		{
-			_startCalc = i - 1;
-
-			found_first = true;
-		}
-		else if (inclusive)
+		if (inclusive)
 		{
 			_endCalc = i + 1;
 		}
 	}
-	
-	if (_startCalc < 0) _startCalc = 0;
-	
-	std::cout << _startCalc << " to " << _endCalc << std::endl;
 }
 
 std::vector<bool> BondSequence::atomMask()
