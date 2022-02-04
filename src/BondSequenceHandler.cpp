@@ -138,17 +138,18 @@ void BondSequenceHandler::start()
 
 void BondSequenceHandler::finishThreads()
 {
-	_miniJobPool.waitForThreads();
-	_miniJobPool.cleanup();
-
 	_pools[SequencePositionsReady].signalThreads();
 	_pools[SequenceCalculateReady].signalThreads();
 	_pools[SequenceIdle].signalThreads();
+	_miniJobPool.signalThreads();
 
 	_pools[SequencePositionsReady].joinThreads();
 	_pools[SequenceCalculateReady].joinThreads();
 	_pools[SequenceIdle].joinThreads();
 	
+	_miniJobPool.joinThreads();
+	_miniJobPool.cleanup();
+
 	_pools[SequenceCalculateReady].cleanup();
 	_pools[SequencePositionsReady].cleanup();
 	_pools[SequenceIdle].cleanup();
