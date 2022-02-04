@@ -218,7 +218,7 @@ bool SimplexEngine::awaitResults()
 	return changed;
 }
 
-int SimplexEngine::sendJob(SimplexEngine::Point &trial)
+int SimplexEngine::sendJob(const Point &trial)
 {
 	// to be implemented downstream
 	return -1;

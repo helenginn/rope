@@ -225,7 +225,7 @@ PositionRefinery::Point PositionRefinery::expandPoint(const Point &p)
 	return expanded;
 }
 
-int PositionRefinery::sendJob(Point &trial)
+int PositionRefinery::sendJob(const Point &trial)
 {
 	Job job{};
 	job.requests = JobCalculateDeviations;

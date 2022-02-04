@@ -42,7 +42,7 @@ public:
 		return _ncalls;
 	}
 protected:
-	virtual int sendJob(Point &trial);
+	virtual int sendJob(const Point &trial);
 	virtual int awaitResult(double *eval);
 private:
 	void refine(AtomGroup *group);
