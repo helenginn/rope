@@ -113,9 +113,6 @@ double PositionRefinery::fullResidual()
 
 	Result *result = _calculator->acquireResult();
 	float dev = result->deviation;
-	
-	std::cout << "Overall average distance from initial position: "
-	<< dev << " Angstroms" << std::endl;
 
 	_calculator->finish();
 	delete result;
@@ -137,6 +134,9 @@ void PositionRefinery::refine(AtomGroup *group)
 	_nBonds = _calculator->maxCustomVectorSize();
 	
 	double res = fullResidual();
+	
+	std::cout << "Overall average distance from initial position: "
+	<< res << " Angstroms" << std::endl;
 	
 	if (res < 0.25)
 	{
@@ -173,7 +173,9 @@ void PositionRefinery::refine(AtomGroup *group)
 	
 	_calculator->finish();
 	
-	fullResidual();
+	res = fullResidual();
+	std::cout << "Overall average distance from initial position: "
+	<< res << " Angstroms" << std::endl;
 
 	delete _calculator;
 	_calculator = nullptr;
