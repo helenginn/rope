@@ -673,7 +673,7 @@ double BondSequence::calculateDeviations()
 
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
-		if (_blocks[i].atom == nullptr)
+		if (_blocks[i].atom == nullptr || !_blocks[i].flag)
 		{
 			continue;
 		}
