@@ -116,8 +116,6 @@ void SimplexEngine::cycle()
 			sendShrinkJobs();
 			shrink_count++;
 		}
-		
-		std::cout << _points[0].eval << std::endl;
 	}
 
 }
