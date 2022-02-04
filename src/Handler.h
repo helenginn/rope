@@ -177,16 +177,27 @@ protected:
 			
 			threads.clear();
 			workers.clear();
+//			std::queue<Object>().swap(members);
+			sem.reset();
 		}
 		
-		void waitForThreads()
+		void joinThreads()
 		{
-			sem.signal();
-
 			for (size_t i = 0; i < threads.size(); i++)
 			{
 				threads[i]->join();
 			}
+		}
+		
+		void signalThreads()
+		{
+			sem.signal();
+		}
+		
+		void waitForThreads()
+		{
+			signalThreads();
+			joinThreads();
 		}
 	};
 

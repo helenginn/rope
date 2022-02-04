@@ -125,17 +125,30 @@ void BondSequenceHandler::setup()
 
 void BondSequenceHandler::start()
 {
+	_finish = false;
+
+	for (size_t i = 0; i < _sequences.size(); i++)
+	{
+		_sequences[i]->reset();
+		_sequences[i]->prepareForIdle();
+	}
+
 	prepareThreads();
 }
 
 void BondSequenceHandler::finishThreads()
 {
 	_miniJobPool.waitForThreads();
-	_pools[SequenceCalculateReady].waitForThreads();
-	_pools[SequencePositionsReady].waitForThreads();
-	_pools[SequenceIdle].waitForThreads();
-	
 	_miniJobPool.cleanup();
+
+	_pools[SequencePositionsReady].signalThreads();
+	_pools[SequenceCalculateReady].signalThreads();
+	_pools[SequenceIdle].signalThreads();
+
+	_pools[SequencePositionsReady].joinThreads();
+	_pools[SequenceCalculateReady].joinThreads();
+	_pools[SequenceIdle].joinThreads();
+	
 	_pools[SequenceCalculateReady].cleanup();
 	_pools[SequencePositionsReady].cleanup();
 	_pools[SequenceIdle].cleanup();
@@ -176,11 +189,6 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	{
 		BondSequence *copy = new BondSequence(*sequence);
 		_sequences.push_back(copy);
-	}
-
-	for (size_t i = 0; i < _sequences.size(); i++)
-	{
-		_sequences[i]->prepareForIdle();
 	}
 }
 

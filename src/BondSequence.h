@@ -117,6 +117,10 @@ public:
 	std::vector<bool> atomMask();
 	
 	void prepareForIdle();
+	void reset()
+	{
+		_state = SequenceInPreparation;
+	}
 
 	void calculate();
 	std::vector<Atom::WithPos> &extractPositions();

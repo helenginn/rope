@@ -59,6 +59,12 @@ public:
 		_n = n;
 	}
 	
+	void reset()
+	{
+		_n = 0;
+		_mutex.unlock();
+	}
+	
 	void setName(std::string name)
 	{
 		_name = name;

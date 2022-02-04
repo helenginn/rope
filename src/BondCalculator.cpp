@@ -214,16 +214,24 @@ void BondCalculator::finish()
 		_sequenceHandler->finish();
 	}
 	
+	_resultPool.handout.lock();
 	_jobPool.handout.lock();
 	_finish = true;
 	_jobPool.handout.unlock();
+	_resultPool.handout.unlock();
 
 	_jobPool.waitForThreads();
-	_jobPool.cleanup();
-}
+	_resultPool.waitForThreads();
 
+	_resultPool.cleanup();
+	_jobPool.cleanup();
+	
+	_running = 0;
+	_max_id = 0;
+}	
 
 const size_t BondCalculator::maxCustomVectorSize() const
 {
 	return _sequenceHandler->torsionCount();
 }
+
