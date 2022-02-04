@@ -57,6 +57,11 @@ protected:
 	virtual int sendJob(Point &trial);
 	virtual int awaitResult(double *eval);
 	
+	const float bestScore() const
+	{
+		return _points[0].eval;
+	}
+	
 	void printPoint(Point &point);
 	std::atomic<bool> _finish;
 private:
