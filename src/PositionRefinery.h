@@ -36,19 +36,34 @@ public:
 	{
 		ref->refine();
 	}
+	
+	size_t nCalls()
+	{
+		return _ncalls;
+	}
 protected:
 	virtual int sendJob(Point &trial);
 	virtual int awaitResult(double *eval);
 private:
 	void refine(AtomGroup *group);
+	bool refineBetween(int start, int end);
+	double fullResidual();
+	Point expandPoint(const Point &p);
+	void calculateActiveTorsions();
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
 
 	float *_steps = nullptr;
+	float _step = 1;
 	int _ncalls = 0;
-	int _nbonds = 0;
+	int _nBonds = 0;
+
+	int _nActive = 0;
 	int _start = 0;
+	int _end = 0;
+	
+	std::vector<bool> _mask;
 };
 
 #endif

@@ -46,45 +46,134 @@ void PositionRefinery::refine()
 	delete this;
 }
 
+void PositionRefinery::calculateActiveTorsions()
+{
+	_nActive = 0;
+
+	for (size_t i = 0; i < _mask.size(); i++)
+	{
+		if (_mask[i])
+		{
+			_nActive++;
+		}
+	}
+}
+
+bool PositionRefinery::refineBetween(int start, int end)
+{
+	_start = start;
+	_end = end;
+
+	_calculator->setMinMaxDepth(_start, _end);
+	_calculator->start();
+
+	_mask = _calculator->sequenceHandler()->depthLimitMask();
+	calculateActiveTorsions();
+
+	if (_nActive == 0)
+	{
+		_calculator->finish();
+		return false;
+	}
+
+	_steps = new float[_nActive];
+	for (size_t i = 0; i < _nActive; i++)
+	{
+		_steps[i] = _step;
+	}
+
+	setDimensionCount(_nActive);
+	chooseStepSizes(_steps);
+	setMaxJobsPerVertex(1);
+
+	run();
+
+	delete _steps;
+	const Point &trial = bestPoint();
+	Point best = expandPoint(trial);
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	basis->absorbVector(&best[0], best.size());
+
+	_calculator->finish();
+
+	return true;
+}
+
+double PositionRefinery::fullResidual()
+{
+	_calculator->setMinMaxDepth(0, INT_MAX);
+	_calculator->start();
+
+	Job job{};
+	job.requests = JobCalculateDeviations;
+
+	job.requests = static_cast<JobType>(JobCalculateDeviations);
+	
+	_calculator->submitJob(job);
+
+	Result *result = _calculator->acquireResult();
+	float dev = result->deviation;
+	
+	std::cout << "Overall average distance from initial position: "
+	<< dev << " Angstroms" << std::endl;
+
+	_calculator->finish();
+	delete result;
+	
+	return dev;
+}
+
 void PositionRefinery::refine(AtomGroup *group)
 {
 	Atom *anchor = group->possibleAnchor(0);
 	_calculator = new BondCalculator();
 
 	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
-	_calculator->setMaxSimultaneousThreads(3);
+	_calculator->setMaxSimultaneousThreads(8);
+	_calculator->setTotalSamples(1);
 	_calculator->addAnchorExtension(anchor);
 	_calculator->setup();
 
-	_calculator->start();
-	_nbonds = _calculator->maxCustomVectorSize();
-
-	for (size_t i = 0; i < 10; i++)
+	_nBonds = _calculator->maxCustomVectorSize();
+	
+	double res = fullResidual();
+	
+	if (res < 0.25)
 	{
-		_steps = new float[_nbonds];
-		for (size_t i = 0; i < _nbonds; i++)
+		_step = 0.5;
+	}
+	
+	std::chrono::high_resolution_clock::time_point tstart;
+	tstart = std::chrono::high_resolution_clock::now();
+
+	for (size_t i = 0; i < _nBonds; i++)
+	{
+		for (size_t j = 0; j < 5; j++)
 		{
-			_steps[i] = 2;
+			refineBetween(i, i + 10);
 		}
 
-		setDimensionCount(_nbonds);
-		chooseStepSizes(_steps);
-		setMaxJobsPerVertex(1);
-
-		run();
-
-		delete _steps;
-		const Point &best = bestPoint();
-		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-		basis->absorbVector(&best[0], best.size());
-		
 		if (_finish)
 		{
 			break;
 		}
 	}
+
+	std::chrono::high_resolution_clock::time_point tend;
+	tend = std::chrono::high_resolution_clock::now();
+
+	std::chrono::duration<double, std::milli> time_span = tend - tstart;
+
+	std::cout << "Milliseconds taken: " <<  time_span.count() << std::endl;
+	float seconds = time_span.count() / 1000.;
+	float rate = (float)_ncalls / seconds;
+	_ncalls = 0;
+	std::cout << "Calculations per second: " <<  rate << std::endl;
+
 	
 	_calculator->finish();
+	
+	fullResidual();
 
 	delete _calculator;
 	_calculator = nullptr;
@@ -115,24 +204,40 @@ int PositionRefinery::awaitResult(double *eval)
 	}
 }
 
+PositionRefinery::Point PositionRefinery::expandPoint(const Point &p)
+{
+	Point expanded;
+	expanded.reserve(_mask.size());
+	int num = 0;
+
+	for (size_t i = 0; i < _mask.size(); i++)
+	{
+		expanded.push_back(_mask[i] ? p[num] : 0);
+		
+		if (_mask[i])
+		{
+			num++;
+		}
+	}
+	
+	return expanded;
+}
+
 int PositionRefinery::sendJob(Point &trial)
 {
 	Job job{};
 	job.requests = JobCalculateDeviations;
 
-	job.custom.allocate_vectors(1, _start + trial.size(), 1);
+	job.custom.allocate_vectors(1, _mask.size(), 0);
 
-	for (size_t i = 0; i < _start; i++)
+	Point expanded = expandPoint(trial);
+
+	for (size_t i = 0; i < _mask.size(); i++)
 	{
-		job.custom.vecs[0].mean[i] = 0;
+		job.custom.vecs[0].mean[i] = expanded[i];
 	}
 
-	for (size_t i = 0; i < trial.size(); i++)
-	{
-		job.custom.vecs[0].mean[_start + i] = trial[i];
-	}
-
-	if (_ncalls % 5 == 0)
+	if (_ncalls % 20 == 0)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
 		                                    JobExtractPositions);
