@@ -3,7 +3,13 @@ set path=src/**
 command! Tags !ctags -R libgui/* libsrc/*
 command! Ninja :wa|!ninja -C build/current vagabond
 command! Winja :wa|!ninja -C build/website
-command! Tinja :wa|!ninja -C build/current test
+command! Unit :wa|!cd build/current; meson test --suite=unit
+command! Integration :wa|!cd build/current; meson test --suite=integration
+
+" `u to compile unit tests
+:imap `u :Tinja
+:nmap `u :Tinja
+
 
 command! Doxy !doxygen Doxyfile
 
