@@ -40,8 +40,8 @@ public:
 		SourceDerived
 	};
 	
-	double measurement(BondTorsion::Source source) const;
-	double startingAngle() const;
+	double measurement(BondTorsion::Source source);
+	double startingAngle();
 
 	double angle() const
 	{
@@ -93,8 +93,12 @@ private:
 	Atom *_b;
 	Atom *_c;
 	Atom *_d;
-	double _angle;
-	double _refinedAngle;
+
+	double _angle = 0;
+	double _refinedAngle = 0;
+	double _measuredAngle = 0;
+
+	bool _measured = false;
 	bool _refined = false;
 	bool _constrained;
 };

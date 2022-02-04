@@ -82,7 +82,7 @@ const std::string BondTorsion::desc() const
 	_c->atomName() + "-" + _d->atomName();
 }
 
-double BondTorsion::startingAngle() const
+double BondTorsion::startingAngle()
 {
 	if (isConstrained())
 	{
@@ -97,8 +97,13 @@ double BondTorsion::startingAngle() const
 	return measurement(SourceInitial);
 }
 
-double BondTorsion::measurement(BondTorsion::Source source) const
+double BondTorsion::measurement(BondTorsion::Source source)
 {
+	if (_measured && source == SourceInitial)
+	{
+		return _measuredAngle;
+	}
+
 	glm::vec3 poz[4];
 	
 	for (size_t i = 0; i < 4; i++)
@@ -117,8 +122,11 @@ double BondTorsion::measurement(BondTorsion::Source source) const
 	
 	if (putative != putative)
 	{
-		return 0;
+		putative = 0;
 	}
+	
+	_measured = true;
+	_measuredAngle = putative;
 	
 	return putative;
 }
