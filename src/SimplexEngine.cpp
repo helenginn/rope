@@ -88,7 +88,7 @@ void SimplexEngine::cycle()
 	int count = 0;
 	int shrink_count = 0;
 	
-	while (count < 100 && shrink_count < 3 && !_finish)
+	while (true)
 	{
 		bool changed = awaitResults();
 		count++;
@@ -99,6 +99,11 @@ void SimplexEngine::cycle()
 			{
 				_points[i].decision = ShouldReflect;
 			}
+		}
+		
+		if (count >= 300 || shrink_count >= 3 || _finish)
+		{
+			break;
 		}
 		
 		if (changed)
