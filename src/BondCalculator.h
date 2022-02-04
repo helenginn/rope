@@ -51,6 +51,11 @@ public:
 	 *  @param max maximum value for depth to be considered */
 	void setMinMaxDepth(int min, int max)
 	{
+		if (_minDepth != min || _maxDepth != max)
+		{
+			_changedDepth = true;
+		}
+
 		_minDepth = min;
 		_maxDepth = max;
 	}
@@ -124,6 +129,7 @@ private:
 	
 	int _minDepth = 0;
 	int _maxDepth = INT_MAX;
+	bool _changedDepth = false;
 	
 	std::atomic<long int> _max_id;
 	std::atomic<long int> _running;
