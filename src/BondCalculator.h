@@ -101,6 +101,12 @@ public:
 
 	const size_t maxCustomVectorSize() const;
 
+	/** set whether BondSequences should include hydrogen atoms.
+	 *  Ignored after setup() is called. */
+	void setIgnoreHydrogens(bool ignore)
+	{
+		_ignoreHydrogens = ignore;
+	}
 	
 	BondSequenceHandler *sequenceHandler()
 	{
@@ -130,6 +136,7 @@ private:
 	int _minDepth = 0;
 	int _maxDepth = INT_MAX;
 	bool _changedDepth = false;
+	bool _ignoreHydrogens = false;
 	
 	std::atomic<long int> _max_id;
 	std::atomic<long int> _running;

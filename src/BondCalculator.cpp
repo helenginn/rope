@@ -91,6 +91,7 @@ void BondCalculator::setupSequenceHandler()
 	_sequenceHandler->setTotalSamples(_totalSamples);
 	_sequenceHandler->setMaxThreads(_maxThreads);
 	_sequenceHandler->setTorsionBasisType(_basisType);
+	_sequenceHandler->setIgnoreHydrogens(_ignoreHydrogens);
 	
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
