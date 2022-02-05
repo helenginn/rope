@@ -130,3 +130,21 @@ double BondTorsion::measurement(BondTorsion::Source source)
 	
 	return putative;
 }
+
+glm::vec3 BondTorsion::bondDirection() const
+{
+	glm::vec3 diff = atom(2)->derivedPosition();
+	diff -= atom(1)->derivedPosition();
+
+	return diff;
+}
+
+glm::vec3 BondTorsion::bondMidPoint() const
+{
+	glm::vec3 sum = atom(1)->derivedPosition();
+	sum += atom(2)->derivedPosition();
+
+	sum /= 2;
+	return sum;
+}
+

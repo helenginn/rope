@@ -23,6 +23,7 @@ class AtomGroup;
 class Atom;
 
 #include "Bondstraint.h"
+#include "glm_import.h"
 #include <stdexcept>
 
 class BondTorsion : public Bondstraint
@@ -85,6 +86,9 @@ public:
 	{
 		_constrained = constrained;
 	}
+
+	glm::vec3 bondMidPoint() const;
+	glm::vec3 bondDirection() const;
 	
 	virtual const std::string desc() const;
 private:
