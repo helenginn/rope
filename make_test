@@ -18,6 +18,8 @@ fi
 echo "Making test: $testname"
 
 cat > tests/$testname.cpp << EOF
+'$testname',
+
 #include "../src/x.h"
 
 int main()
@@ -26,8 +28,5 @@ int main()
 }
 EOF
 
-cd tests
-ls -1 *.cpp | sed 's/.cpp//' > test_list
-cd ..
 
 
