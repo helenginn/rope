@@ -31,24 +31,25 @@ float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
 		return 0;
 	}
 
+	TorsionAngle &ta = _angles[idx];
 	if (n == 0)
 	{
-		return _torsions[idx]->startingAngle();
+		return ta.angle;
 	}
 
-	double start = _torsions[idx]->startingAngle();
+//	double start = _torsions[idx]->startingAngle();
 	
-	if (_torsions[idx]->isConstrained())
+	if (n == 0 || !ta.mask)
 	{
-		return start;
+		return ta.angle;
 	}
 	
 	if (idx < n)
 	{
-		start += vec[idx];
+		return ta.angle + vec[idx];
 	}
 	
-	return start;
+	return ta.angle;
 }
 
 void SimpleBasis::absorbVector(const float *vec, int n)
@@ -57,6 +58,20 @@ void SimpleBasis::absorbVector(const float *vec, int n)
 	{
 		float torsion = torsionForVector(i, vec, n);
 		_torsions[i]->setRefinedAngle(torsion);
+		_angles[i].angle = torsion;
+	}
+
+}
+
+void SimpleBasis::prepare()
+{
+	_angles.clear();
+	for (size_t i = 0; i < _torsions.size(); i++)
+	{
+		float start = _torsions[i]->startingAngle();
+		bool mask = !_torsions[i]->isConstrained();
+		TorsionAngle ta = {start, mask};
+		_angles.push_back(ta);
 	}
 
 }
