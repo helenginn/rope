@@ -662,7 +662,7 @@ void BondSequence::calculate()
 			continue;
 		}
 
-		int new_anchor = calculateBlock(i, _fullRecalc);
+		int new_anchor = calculateBlock(i);
 		
 		if (new_anchor)
 		{
