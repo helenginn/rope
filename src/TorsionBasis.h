@@ -34,6 +34,9 @@ public:
 
 	TorsionBasis();
 	virtual ~TorsionBasis() { };
+	virtual void prepare();
+	
+	virtual void supplyMask(std::vector<bool> mask) {}
 	
 	static TorsionBasis *newBasis(Type type);
 
@@ -53,6 +56,13 @@ public:
 	}
 protected:
 	std::vector<BondTorsion *> _torsions;
+	struct TorsionAngle
+	{
+		float angle;
+		bool mask;
+	};
+
+	std::vector<TorsionAngle> _angles;
 
 };
 
