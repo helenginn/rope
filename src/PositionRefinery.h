@@ -50,11 +50,13 @@ private:
 	double fullResidual();
 	Point expandPoint(const Point &p);
 	void calculateActiveTorsions();
+	void fullRefinement(AtomGroup *group);
+	void stepwiseRefinement(AtomGroup *group);
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
 
-	float *_steps = nullptr;
+	std::vector<float> _steps;
 	float _step = 1;
 	int _ncalls = 0;
 	int _nBonds = 0;

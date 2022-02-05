@@ -113,29 +113,29 @@ double PositionRefinery::fullResidual()
 	return dev;
 }
 
-void PositionRefinery::refine(AtomGroup *group)
+void PositionRefinery::fullRefinement(AtomGroup *group)
 {
-	Atom *anchor = group->possibleAnchor(0);
-	_calculator = new BondCalculator();
+	_calculator->setMinMaxDepth(0, INT_MAX);
+	_calculator->start();
 
-	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
-	_calculator->setMaxSimultaneousThreads(8);
-	_calculator->setTotalSamples(1);
-	_calculator->addAnchorExtension(anchor);
-	_calculator->setup();
+	calculateActiveTorsions();
 
-	_nBonds = _calculator->maxCustomVectorSize();
-	
-	double res = fullResidual();
-	
-	std::cout << "Overall average distance from initial position: "
-	<< res << " Angstroms" << std::endl;
-	
-	if (res < 0.25)
-	{
-		_step = 0.5;
-	}
-	
+	setDimensionCount(_nBonds);
+	chooseStepSizes(_steps);
+	setMaxJobsPerVertex(1);
+
+	run();
+
+	const Point &trial = bestPoint();
+	Point best = expandPoint(trial);
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	basis->absorbVector(&best[0], best.size());
+
+	_calculator->finish();
+}
+
+void PositionRefinery::stepwiseRefinement(AtomGroup *group)
+{
 	std::chrono::high_resolution_clock::time_point tstart;
 	tstart = std::chrono::high_resolution_clock::now();
 
@@ -143,7 +143,7 @@ void PositionRefinery::refine(AtomGroup *group)
 	{
 		for (size_t j = 0; j < 5; j++)
 		{
-			refineBetween(i, i + 10);
+			refineBetween(i, i + 8);
 		}
 
 		if (_finish)
@@ -162,14 +162,52 @@ void PositionRefinery::refine(AtomGroup *group)
 	float rate = (float)_ncalls / seconds;
 	_ncalls = 0;
 	std::cout << "Calculations per second: " <<  rate << std::endl;
-
 	
 	_calculator->finish();
+
+}
+
+void PositionRefinery::refine(AtomGroup *group)
+{
+	Atom *anchor = group->possibleAnchor(0);
+
+	_calculator = new BondCalculator();
+	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
+	_calculator->setMaxSimultaneousThreads(4);
+	_calculator->setTotalSamples(1);
+	_calculator->addAnchorExtension(anchor);
+	_calculator->setIgnoreHydrogens(true);
+	_calculator->setup();
+
+	_nBonds = _calculator->maxCustomVectorSize();
+	
+	double res = fullResidual();
+
+	if (res < 0.25)
+	{
+		_step = 0.5;
+	}
+
+	_steps = std::vector<float>(_nBonds, _step);
+	
+	std::cout << "Overall average distance from initial position: "
+	<< res << " Angstroms" << std::endl;
+	
+	stepwiseRefinement(group);
+	if (res < 0.25)
+	{
+//		fullRefinement(group);
+	}
+	else
+	{
+//		stepwiseRefinement(group);
+//		fullRefinement(group);
+	}
 	
 	res = fullResidual();
 	std::cout << "Overall average distance from initial position: "
 	<< res << " Angstroms" << std::endl;
-
+	
 	delete _calculator;
 	_calculator = nullptr;
 }
@@ -232,7 +270,7 @@ int PositionRefinery::sendJob(const Point &trial)
 		job.custom.vecs[0].mean[i] = expanded[i];
 	}
 
-	if (_ncalls % 20 == 0)
+	if (_ncalls % 50 == 0)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
 		                                    JobExtractPositions);
