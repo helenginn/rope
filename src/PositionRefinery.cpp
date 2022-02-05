@@ -76,19 +76,12 @@ bool PositionRefinery::refineBetween(int start, int end)
 		return false;
 	}
 
-	_steps = new float[_nActive];
-	for (size_t i = 0; i < _nActive; i++)
-	{
-		_steps[i] = _step;
-	}
-
 	setDimensionCount(_nActive);
 	chooseStepSizes(_steps);
 	setMaxJobsPerVertex(1);
 
 	run();
 
-	delete _steps;
 	const Point &trial = bestPoint();
 	Point best = expandPoint(trial);
 	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
