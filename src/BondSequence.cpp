@@ -688,7 +688,7 @@ double BondSequence::calculateDeviations()
 			continue;
 		}
 		
-		if (strcmp(_blocks[i].element, "H") == 0)
+		if (_ignoreHydrogens && strcmp(_blocks[i].element, "H") == 0)
 		{
 			continue;
 		}
