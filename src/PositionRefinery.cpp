@@ -49,6 +49,7 @@ void PositionRefinery::refine()
 void PositionRefinery::calculateActiveTorsions()
 {
 	_nActive = 0;
+	_mask = _calculator->sequenceHandler()->depthLimitMask();
 
 	for (size_t i = 0; i < _mask.size(); i++)
 	{
@@ -67,7 +68,6 @@ bool PositionRefinery::refineBetween(int start, int end)
 	_calculator->setMinMaxDepth(_start, _end);
 	_calculator->start();
 
-	_mask = _calculator->sequenceHandler()->depthLimitMask();
 	calculateActiveTorsions();
 
 	if (_nActive == 0)
