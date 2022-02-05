@@ -33,7 +33,7 @@ public:
 		_dims = dims;
 	}
 	
-	void chooseStepSizes(float *steps)
+	void chooseStepSizes(std::vector<float> &steps)
 	{
 		_steps = steps;
 	}
@@ -108,7 +108,7 @@ private:
 
 	int _dims = 0;
 	int _maxJobs = 0;
-	float *_steps = nullptr;
+	std::vector<float> _steps;
 };
 
 #endif

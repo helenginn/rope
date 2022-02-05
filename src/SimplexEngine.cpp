@@ -133,7 +133,7 @@ void SimplexEngine::run()
 		                         "for SimplexEngine");
 	}
 
-	if (_steps == nullptr)
+	if (_steps.size() == 0)
 	{
 		throw std::runtime_error("No step sizes chosen for SimplexEngine");
 	}
