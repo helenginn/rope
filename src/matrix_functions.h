@@ -43,7 +43,8 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
 glm::mat3x3 mat3x3_from_unit_cell(double a, double b, double c, 
                                   double alpha, double beta, double gamma);
 
-glm::mat4x4 torsion_basis(glm::mat4x4 prior, glm::vec3 prev, glm::vec4 next);
+void torsion_basis(glm::mat4x4 &target, const glm::vec4 &self, 
+                   const glm::vec3 &prev, const glm::vec4 &next);
 
 /** inserts four coordinated atoms using lengths and angles relating positions.
  * @param ret matrix to insert results into

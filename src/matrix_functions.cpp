@@ -39,18 +39,17 @@ bool fix_unit_cell_angles(T &alpha, T &beta, T &gamma)
 	return false;
 }
 
-mat4x4 torsion_basis(mat4x4 prior, vec3 prev, vec4 next)
+void torsion_basis(mat4x4 &target, const vec4 &self, 
+                     const vec3 &prev, const vec4 &next)
 {
 	/* previous bond direction is the old Z direction. This will be in
 	 * the same plane as the new X direction. */
 
 	/* previous bond basis placement is equal to the current position of self */
-	vec3 self = vec3(prior[3]);
-	vec3 prevdir = prev - self;
-	prevdir = normalize(prevdir);
+	vec3 prevdir = prev - vec3(self);
 	
 	/* current bond direction will become the new Z direction */
-	vec3 curr = vec3(next) - self;
+	vec3 curr = vec3(next - self);
 	curr = normalize(curr);
 
 	/* cross and normalise to get the new Y direction */
@@ -63,16 +62,13 @@ mat4x4 torsion_basis(mat4x4 prior, vec3 prev, vec4 next)
 	y_dir *= -1;
 
 	/* construct final matrix */
-	mat4x4 result;
-	result[0] = vec4(x_dir, 0);
-	result[1] = vec4(y_dir, 0);
-	result[2] = vec4(curr, 0);
+	target[0] = vec4(x_dir, 0);
+	target[1] = vec4(y_dir, 0);
+	target[2] = vec4(curr, 0);
 	
 	/* translation to next position */
-	result[3] = next;
-	result[3][3] = 1;
-
-	return result;
+	target[3] = next;
+	target[3][3] = 1;
 }
 
 mat3x3 mat3x3_from_unit_cell(double a, double b, double c, 

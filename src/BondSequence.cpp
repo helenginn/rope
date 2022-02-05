@@ -591,9 +591,7 @@ int BondSequence::calculateBlock(int idx)
 		}
 
 		int n = idx + _blocks[idx].write_locs[i];
-		glm::vec4 child = wip[i];
-		glm::vec3 prev = glm::vec3(inherit);
-		_blocks[n].basis = torsion_basis(basis, prev, child);
+		torsion_basis(_blocks[n].basis, basis[3], inherit, wip[i]);
 		_blocks[n].inherit = glm::vec3(basis[3]);
 	}
 	
