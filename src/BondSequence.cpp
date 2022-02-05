@@ -822,6 +822,9 @@ std::string BondSequence::atomGraphDesc(int i)
 void BondSequence::reflagDepth(int min, int max)
 {
 	bool found_first = false;
+	
+	_startCalc = 0;
+	_endCalc = INT_MAX;
 
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
@@ -835,13 +838,22 @@ void BondSequence::reflagDepth(int min, int max)
 		AtomGraph *graph = _atom2Graph[block.atom];
 		block.flag = (graph->depth >= min && graph->depth < max);
 		
-		bool inclusive = (graph->depth <= max);
+		bool inclusive = (graph->depth >= min - 1 && graph->depth <= max);
 		
+		if (inclusive && !found_first)
+		{
+			found_first = true;
+			_startCalc = i - 1;
+
+		}
 		if (inclusive)
 		{
 			_endCalc = i + 1;
 		}
 	}
+
+	_fullRecalc = true;
+	_torsionBasis->supplyMask(atomMask());
 }
 
 std::vector<bool> BondSequence::atomMask()
