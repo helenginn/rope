@@ -4,7 +4,6 @@
 
 int main()
 {
-	
 	for (size_t i = 1; i < 6; i++)
 	{
 		BondSequenceHandler *handler = new BondSequenceHandler();
