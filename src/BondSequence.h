@@ -77,6 +77,11 @@ public:
 		return _blocks[i].child_position(j);
 	}
 	
+	void setIgnoreHydrogens(bool ignore)
+	{
+		_ignoreHydrogens = ignore;
+	}
+	
 	bool checkAtomGraph(int i) const;
 	
 	size_t atomGraphCount() const
@@ -228,6 +233,8 @@ private:
 	void setMiniJob(MiniJob *job);
 	void signal(SequenceState newState);
 	
+	bool _ignoreHydrogens = false;
+	bool _fullRecalc = true;
 	int _startCalc = 0;
 	int _endCalc = INT_MAX;
 	int _maxDepth = 0;
