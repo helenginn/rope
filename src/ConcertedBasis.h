@@ -28,7 +28,17 @@ public:
 
 	virtual float torsionForVector(int idx, const float *vec, int n) { return 0; };
 	virtual void absorbVector(const float *vec, int n) { };
+	virtual void prepare();
+
+	/** only the torsions available in the mask will be used for calculating
+	 *  principle axes of motion */
+	virtual void supplyMask(std::vector<bool> mask);
+	
+	size_t activeBonds();
 private:
+	void setupAngleList();
+	std::vector<bool> _refineMask;
+	size_t _nActive;
 
 };
 

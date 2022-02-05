@@ -17,8 +17,51 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ConcertedBasis.h"
+#include "BondTorsion.h"
 
 ConcertedBasis::ConcertedBasis() : TorsionBasis()
 {
 
+}
+
+void ConcertedBasis::supplyMask(std::vector<bool> mask)
+{
+	_refineMask = mask;
+
+}
+
+void ConcertedBasis::setupAngleList()
+{
+	_angles.clear();
+	_nActive = 0;
+
+	for (size_t i = 0; i < _torsions.size(); i++)
+	{
+		float start = _torsions[i]->startingAngle();
+		bool mask = !_torsions[i]->isConstrained();
+		
+		if (i < _refineMask.size())
+		{
+			mask &= _refineMask[i];
+		}
+
+		TorsionAngle ta = {start, mask};
+		_angles.push_back(ta);
+		
+		if (mask)
+		{
+			_nActive++;
+		}
+	}
+}
+
+void ConcertedBasis::prepare()
+{
+	setupAngleList();
+
+}
+
+size_t ConcertedBasis::activeBonds()
+{
+	return _nActive;
 }
