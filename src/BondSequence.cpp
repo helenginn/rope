@@ -651,18 +651,27 @@ void BondSequence::calculate()
 	checkCustomVectorSizeFits();
 
 	int sampleNum = 0;
+	
+	int start = 0;
+	int end = _endCalc;
 
-	for (size_t i = 0; i < _blocks.size() && i < _endCalc; i++)
+	for (size_t i = start; i < _blocks.size() && i < end; i++)
 	{
-		int new_anchor = calculateBlock(i);
+		if (!_blocks[i].flag && _blocks[i].atom && !_fullRecalc)
+		{
+			continue;
+		}
+
+		int new_anchor = calculateBlock(i, _fullRecalc);
 		
 		if (new_anchor)
 		{
 			acquireCustomVector(sampleNum);
+			sampleNum++;
 		}
-
-		sampleNum++;
 	}
+	
+	_fullRecalc = false;
 	
 	signal(SequencePositionsReady);
 }
