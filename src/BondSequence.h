@@ -208,7 +208,7 @@ private:
 	void assignAtomsToBlocks();
 	void fillMissingWriteLocations();
 	void fixBlockAsGhost(int idx, Atom *anchor);
-	void prepareTorsionBasis();
+	void makeTorsionBasis();
 	void fillInParents();
 	void fillTorsionAngles();
 

@@ -318,7 +318,7 @@ bool BondSequence::checkAtomGraph(int i) const
 	return false;
 }
 
-void BondSequence::prepareTorsionBasis()
+void BondSequence::makeTorsionBasis()
 {
 	_torsionBasis = TorsionBasis::newBasis(_basisType);
 }
@@ -329,7 +329,7 @@ void BondSequence::addToGraph(Atom *atom, size_t count)
 	generateAtomGraph(atom, count);
 	calculateMissingMaxDepths();
 	fillInParents();
-	prepareTorsionBasis();
+	makeTorsionBasis();
 	fillTorsionAngles();
 	sortGraphChildren();
 	generateBlocks();
@@ -463,6 +463,8 @@ void BondSequence::generateBlocks()
 
 void BondSequence::prepareForIdle()
 {
+	_torsionBasis->prepare();
+
 	if (_state != SequenceInPreparation)
 	{
 		throw std::runtime_error("Sequence not in preparation to begin with");
