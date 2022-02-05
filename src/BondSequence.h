@@ -162,10 +162,10 @@ private:
 	
 	struct AtomBlock
 	{
+		bool flag = true;
 		Atom *atom;
 		char element[3];
 		int nBonds;
-		bool flag = true;
 		glm::vec3 target;
 		glm::mat4x4 coordination;
 		glm::vec3 inherit;
