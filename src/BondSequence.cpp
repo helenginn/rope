@@ -530,13 +530,30 @@ void BondSequence::fetchTorsion(int idx)
 	_blocks[idx].torsion = t;
 }
 
+void BondSequence::printBlock(int idx)
+{
+	float &t = _blocks[idx].torsion;
+	glm::mat4x4 &coord = _blocks[idx].coordination;
+	glm::mat4x4 &basis = _blocks[idx].basis;
+	glm::mat4x4 &wip = _blocks[idx].wip;
+	glm::vec3 &inherit = _blocks[idx].inherit;
+	std::cout << " ===== INDEX " << idx << "=====" << std::endl;
+	if (_blocks[idx].atom != nullptr)
+	{
+		std::cout << "Atom: " << _blocks[idx].atom->atomName() << std::endl;
+		std::cout << "init pos: " << 
+		glm::to_string(_blocks[idx].atom->initialPosition()) << std::endl;
+	}
+	std::cout << "Torsion: " << t << std::endl;
+	std::cout << "Coordination: " << glm::to_string(coord) << std::endl;
+	std::cout << "Basis: " << glm::to_string(basis) << std::endl;
+	std::cout << "wip: " << glm::to_string(wip) << std::endl;
+	std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
+	std::cout << std::endl;
+}
+
 int BondSequence::calculateBlock(int idx)
 {
-	if (!_blocks[idx].flag && _blocks[idx].atom)
-	{
-		return 0;
-	}
-
 	fetchTorsion(idx);
 	float &t = _blocks[idx].torsion;
 	glm::mat4x4 &coord = _blocks[idx].coordination;
@@ -549,23 +566,6 @@ int BondSequence::calculateBlock(int idx)
 	                                      glm::vec3(0, 0, 1));
 	wip = basis * torsion_rot * coord;
 
-	if (false)
-	{
-		std::cout << " ===== INDEX " << idx << "=====" << std::endl;
-		if (_blocks[idx].atom != nullptr)
-		{
-			std::cout << "Atom: " << _blocks[idx].atom->atomName() << std::endl;
-		std::cout << "init pos: " << glm::to_string(_blocks[idx].atom->initialPosition()) << std::endl;
-		}
-		std::cout << "Torsion: " << t << std::endl;
-		std::cout << "Coordination: " << glm::to_string(coord) << std::endl;
-		std::cout << "Basis: " << glm::to_string(basis) << std::endl;
-		std::cout << "torsion_rot: " << glm::to_string(torsion_rot) << std::endl;
-		std::cout << "wip: " << glm::to_string(wip) << std::endl;
-		std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
-		std::cout << std::endl;
-	}
-	
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
 		int nidx = idx + _blocks[idx].write_locs[0];

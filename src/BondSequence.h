@@ -232,6 +232,7 @@ private:
 	
 	void setMiniJob(MiniJob *job);
 	void signal(SequenceState newState);
+	void printBlock(int idx);
 	
 	bool _ignoreHydrogens = false;
 	bool _fullRecalc = true;
