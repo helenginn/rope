@@ -75,7 +75,8 @@ public:
 		_type = type;
 	}
 	
-	/** @param max must be explicitly specified as non-zero positive */
+	/** ignored after setup() is called.
+	 * 	@param max must be explicitly specified as non-zero positive */
 	void setMaxSimultaneousThreads(size_t max)
 	{
 		_maxThreads = max;
