@@ -83,6 +83,11 @@ public:
 	{
 		return _threads;
 	}
+	
+	void setIgnoreHydrogens(bool ignore)
+	{
+		_ignoreHydrogens = ignore;
+	}
 
 	void signalToHandler(BondSequence *seq, SequenceState state,
 	                     SequenceState old);
@@ -117,6 +122,7 @@ private:
 	size_t _maxThreads = 0;
 
 	bool _mapHandling = false;
+	bool _ignoreHydrogens = false;
 	
 	enum SampleMode
 	{

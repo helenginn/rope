@@ -175,6 +175,7 @@ void BondSequenceHandler::finish()
 void BondSequenceHandler::prepareSequenceBlocks()
 {
 	BondSequence *sequence = new BondSequence(this);
+	sequence->setIgnoreHydrogens(_ignoreHydrogens);
 	sequence->setSampleCount(_totalSamples);
 	sequence->setTorsionBasisType(_basisType);
 
