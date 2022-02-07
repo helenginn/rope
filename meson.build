@@ -11,7 +11,7 @@ name = 'index.html'
 
 if (links == [])
   deps += [gl, sdl2, sdl2image]
-  name = 'vagabond'
+  name = 'vagabond.gui'
 endif
 
 data_dir = get_option('datadir') / 'vagabond'
@@ -77,71 +77,112 @@ install_dir : images)
 hash_script = find_program('get_hash.sh')
 
 gen_src = custom_target('commit-output',
-                        input : ['src/commit.h.pre'],
+                        input : ['vagabond/commit.h.pre'],
                         output : ['commit.h'],
                         command : [hash_script, '@INPUT@', '@OUTPUT@', 
 						combined],
                         build_by_default: true,
                         build_always_stale: true)
 
-vagafiles = [
-'src/AskYesNo.cpp',
-'src/AlignmentTool.cpp',
-'src/Atom.cpp',
-'src/AtomGroup.cpp',
-'src/BadChoice.cpp',
-'src/BondAngle.cpp',
-
-'src/BondCalculator.cpp',
-'src/BondSequence.cpp',
-'src/BondSequenceHandler.cpp',
-
-'src/BondLength.cpp',
-'src/BondTorsion.cpp',
-'src/Box.cpp',
-'src/Button.cpp',
-'src/Chirality.cpp',
-'src/Choice.cpp',
-'src/ChoiceGroup.cpp',
-'src/Cif2Geometry.cpp',
-'src/ConcertedBasis.cpp',
-'src/Draggable.cpp',
-'src/Display.cpp',
-'src/FileManager.cpp',
-'src/FileReader.cpp',
-'src/FileView.cpp',
-'src/GeometryTable.cpp',
-'src/GuiAtom.cpp',
-'src/GuiBond.cpp',
-'src/HasRenderables.cpp',
-'src/HasBondstraints.cpp',
-'src/Knotter.cpp',
-'src/Icosahedron.cpp',
-'src/Image.cpp',
-'src/Library.cpp',
-'src/MainMenu.cpp',
-'src/matrix_functions.cpp',
-'src/Modal.cpp',
-'src/PositionRefinery.cpp',
-'src/Renderable.cpp',
-'src/Scene.cpp',
-'src/SimpleBasis.cpp',
-'src/SimplexEngine.cpp',
-'src/Slider.cpp',
-'src/Superpose.cpp',
-'src/SnowGL.cpp',
-'src/svd/svdcmp.cpp',
-'src/svd/PCA.cpp',
-'src/svd/matrix.cpp',
-'src/Text.cpp',
-'src/TextManager.cpp',
-'src/ThreadCalculatesBondSequence.cpp',
-'src/ThreadExtractsBondPositions.cpp',
-'src/ThreadSubmitsJobs.cpp',
-'src/ThreadMiniJobForSequence.cpp',
-'src/TorsionBasis.cpp',
-'src/Window.cpp',
+guifiles = [
+'vagabond/gui/AskYesNo.cpp',
+'vagabond/gui/BadChoice.cpp',
+'vagabond/gui/Box.cpp',
+'vagabond/gui/Button.cpp',
+'vagabond/gui/Choice.cpp',
+'vagabond/gui/ChoiceGroup.cpp',
+'vagabond/gui/Draggable.cpp',
+'vagabond/gui/Display.cpp',
+'vagabond/gui/FileManager.cpp',
+'vagabond/gui/FileView.cpp',
+'vagabond/gui/GuiAtom.cpp',
+'vagabond/gui/GuiBond.cpp',
+'vagabond/gui/HasRenderables.cpp',
+'vagabond/gui/Icosahedron.cpp',
+'vagabond/gui/Image.cpp',
+'vagabond/gui/Library.cpp',
+'vagabond/gui/MainMenu.cpp',
+'vagabond/gui/Modal.cpp',
+'vagabond/gui/Slider.cpp',
+'vagabond/gui/Renderable.cpp',
+'vagabond/gui/Scene.cpp',
+'vagabond/gui/SnowGL.cpp',
+'vagabond/gui/Text.cpp',
+'vagabond/gui/TextManager.cpp',
+'vagabond/gui/Window.cpp',
 ]
+
+vagafiles = [
+'vagabond/core/AlignmentTool.cpp',
+'vagabond/core/Atom.cpp',
+'vagabond/core/AtomGroup.cpp',
+'vagabond/core/BondAngle.cpp',
+'vagabond/core/BondCalculator.cpp',
+'vagabond/core/BondSequence.cpp',
+'vagabond/core/BondSequenceHandler.cpp',
+'vagabond/core/BondLength.cpp',
+'vagabond/core/BondTorsion.cpp',
+'vagabond/core/Chirality.cpp',
+'vagabond/core/Cif2Geometry.cpp',
+'vagabond/core/ConcertedBasis.cpp',
+'vagabond/core/GeometryTable.cpp',
+'vagabond/core/HasBondstraints.cpp',
+'vagabond/core/Knotter.cpp',
+'vagabond/core/matrix_functions.cpp',
+'vagabond/core/PositionRefinery.cpp',
+'vagabond/core/SimpleBasis.cpp',
+'vagabond/core/SimplexEngine.cpp',
+'vagabond/core/Superpose.cpp',
+'vagabond/core/ThreadCalculatesBondSequence.cpp',
+'vagabond/core/ThreadExtractsBondPositions.cpp',
+'vagabond/core/ThreadSubmitsJobs.cpp',
+'vagabond/core/ThreadMiniJobForSequence.cpp',
+'vagabond/core/TorsionBasis.cpp',
+'vagabond/utils/FileReader.cpp',
+'vagabond/utils/svd/svdcmp.cpp',
+'vagabond/utils/svd/PCA.cpp',
+'vagabond/utils/svd/matrix.cpp',
+]
+
+install_headers([
+'vagabond/utils/FileReader.h',
+'vagabond/utils/glm_import.h',
+],
+subdir : 'vagabond/utils')
+
+install_headers([
+'vagabond/core/AlignmentTool.h',
+'vagabond/core/Atom.h',
+'vagabond/core/AtomGroup.h',
+'vagabond/core/BondAngle.h',
+'vagabond/core/BondCalculator.h',
+'vagabond/core/BondLength.h',
+'vagabond/core/BondSequence.h',
+'vagabond/core/BondSequenceHandler.h',
+'vagabond/core/BondTorsion.h',
+'vagabond/core/Bondstraint.h',
+'vagabond/core/Chirality.h',
+'vagabond/core/Cif2Geometry.h',
+'vagabond/core/ConcertedBasis.h',
+'vagabond/core/GeometryTable.h',
+'vagabond/core/Handler.h',
+'vagabond/core/HasBondstraints.h',
+'vagabond/core/Knotter.h',
+'vagabond/core/PositionRefinery.h',
+'vagabond/core/Semaphore.h',
+'vagabond/core/SimpleBasis.h',
+'vagabond/core/SimplexEngine.h',
+'vagabond/core/Superpose.h',
+'vagabond/core/ThreadCalculatesBondSequence.h',
+'vagabond/core/ThreadExtractsBondPositions.h',
+'vagabond/core/ThreadMiniJobForSequence.h',
+'vagabond/core/ThreadSubmitsJobs.h',
+'vagabond/core/ThreadWorker.h',
+'vagabond/core/TorsionBasis.h',
+'vagabond/core/matrix_functions.h',
+],
+subdir : 'vagabond/core')
+
 
 if (links != [])
 vagafiles += 'src/print_file.cpp'
@@ -155,18 +196,25 @@ if (links == []) # not emscripten
   link_args: ['-L/usr/local/lib'],
   dependencies : deps, install: true)
 
-  executable(name, 'src/main.cpp',
+  gui = static_library('vaggui', guifiles,
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib', links],
   dependencies : deps, link_with : vag, install: true)
+
+  executable(name, 'vagabond/gui/main.cpp',
+  cpp_args: ['-I/usr/local/include', '-std=c++11'],
+  link_args: ['-L/usr/local/lib', links],
+  dependencies : deps, link_with : gui, install: true)
 else
-  executable(name, vagafiles,
-  'src/main.cpp',
+  executable(name, vagafiles, guifiles,
+  'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', compile_args],
   link_args: ['-L/usr/local/lib', links],
   dependencies : deps, install: true)
 endif
 
 if (links == [])
-  subdir('tests')
+  subdir('vagabond/core/tests')
+  subdir('vagabond/utils/tests')
+  subdir('vagabond/gui/tests')
 endif
