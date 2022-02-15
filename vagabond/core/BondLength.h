@@ -57,7 +57,6 @@ public:
 	
 	Atom *otherAtom(Atom *a);
 private:
-	AtomGroup *_owner;
 	Atom *_a;
 	Atom *_b;
 	double _length;

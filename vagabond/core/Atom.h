@@ -207,8 +207,6 @@ private:
 	std::string _code;
 
 	std::mutex _mutex;
-	
-	std::vector<BondLength *> _bondLengths;
 
 	glm::mat4x4 _transform = glm::mat4(1.f);
 };

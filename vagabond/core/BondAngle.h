@@ -68,7 +68,6 @@ public:
 
 	virtual const std::string desc() const;
 private:
-	AtomGroup *_owner;
 	Atom *_a;
 	Atom *_b;
 	Atom *_c;

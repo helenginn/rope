@@ -41,7 +41,16 @@ void PositionRefinery::refine()
 	}
 	
 	std::cout << "Refining" << std::endl;
-	refine(_group);
+	
+	std::vector<AtomGroup *> units = _group->connectedGroups();
+
+	for (size_t i = 0; i < units.size(); i++)
+	{
+		if (units[i]->size() > 1)
+		{
+			refine(units[i]);
+		}
+	}
 }
 
 void PositionRefinery::calculateActiveTorsions()
@@ -111,8 +120,6 @@ double PositionRefinery::fullResidual()
 
 	_calculator->finish();
 	delete result;
-	
-	_group->setLastResidual(dev);
 
 	return dev;
 }
@@ -185,10 +192,6 @@ void PositionRefinery::refine(AtomGroup *group)
 	if (_type == TorsionBasis::TypeSimple)
 	{
 		stepwiseRefinement(group);
-	}
-	else
-	{
-		fullRefinement(group);
 	}
 	
 	res = fullResidual();

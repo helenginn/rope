@@ -42,6 +42,9 @@ public:
 	
 	bool hasAtom(Atom *a);
 	
+	void add(AtomGroup *g);
+	void remove(AtomGroup *g);
+	
 	void add(Atom *a)
 	{
 		*this += a;
@@ -81,12 +84,14 @@ public:
 private:
 	void cleanupRefinement();
 	void findPossibleAnchors();
+
 	AtomVector _atoms;
 	AtomVector _anchors;
 	std::thread *_refine = nullptr;
 	SimplexEngine *_engine = nullptr;
 	
 	double _lastResidual = FLT_MAX;
+	std::vector<AtomGroup *> _subgroups;
 };
 
 #endif

@@ -26,10 +26,9 @@ FileManager::FileManager()
 	_list.push_back("assets/geometry/GLY.cif");
 	_list.push_back("assets/geometry/ASP.cif");
 	_list.push_back("assets/geometry/ATP.cif");
-	_list.push_back("assets/geometry/L86.cif");
-	_list.push_back("assets/geometry/TYR.cif");
 	_list.push_back("assets/geometry/LHI.cif");
 	_list.push_back("assets/examples/2ybh.cif");
+	_list.push_back("assets/examples/6qhu.cif");
 }
 
 void FileManager::acceptFile(std::string filename, bool force)

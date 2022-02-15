@@ -25,6 +25,7 @@ combined = join_paths(dir_base, data_dir)
 
 install_data(
 'assets/examples/2YBH.cif',
+'assets/examples/6QHU.cif',
 install_dir : examples)
 
 install_data(

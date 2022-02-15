@@ -158,12 +158,14 @@ void HasBondstraints::addBondstraint(Chirality *chir)
 	}
 }
 
-void HasBondstraints::deleteBondstraints()
+void HasBondstraints::deleteBondstraints(AtomGroup *owner)
 {
 	for (size_t i = 0; i < _bondstraints.size(); i++)
 	{
-		delete _bondstraints[i];
-		_bondstraints[i] = nullptr;
+		if (_bondstraints[i]->owner() == owner)
+		{
+			delete _bondstraints[i];
+		}
 	}
 	
 	_bondstraints.clear();

@@ -27,6 +27,7 @@ class BondAngle;
 class BondTorsion;
 class Chirality;
 class Atom;
+class AtomGroup;
 
 class HasBondstraints
 {
@@ -157,7 +158,7 @@ public:
 
 	virtual Atom *atomIdentity() = 0;
 protected:
-	void deleteBondstraints();
+	void deleteBondstraints(AtomGroup *owner);
 	bool hasBondLength(BondLength *straint);
 	bool hasBondAngle(BondAngle *angle);
 	bool hasTorsion(BondTorsion *torsion);

@@ -69,14 +69,19 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 
 void AlignmentTool::run()
 {
-	for (size_t i = 0; i < _group->possibleAnchorCount(); i++)
+	std::vector<AtomGroup *> subgroups = _group->connectedGroups();
+	for (size_t i = 0; i < subgroups.size(); i++)
 	{
-		Atom *anchor = _group->possibleAnchor(i);
+		if (subgroups.size() <= 1)
+		{
+			continue;
+		}
+
+		Atom *anchor = subgroups[i]->possibleAnchor(0);
 		Result *result = resultForAnchor(anchor);
 		glm::mat4x4 transform = superposition(result);
 		anchor->setTransformation(transform);
-		_group->recalculate();
-		break;
 	}
 
+	_group->recalculate();
 }

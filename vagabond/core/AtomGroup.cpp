@@ -18,6 +18,7 @@
 
 #include "AtomGroup.h"
 #include "BondLength.h"
+#include "BondSequence.h"
 #include "../utils/FileReader.h"
 #include "BondTorsion.h"
 #include "TorsionBasis.h"
@@ -60,7 +61,7 @@ void AtomGroup::cleanupRefinement()
 AtomGroup::~AtomGroup()
 {
 	cancelRefinement();
-	deleteBondstraints();
+	deleteBondstraints(this);
 
 	/*
 	delete _engine;
@@ -79,9 +80,16 @@ bool AtomGroup::hasAtom(Atom *a)
 
 void AtomGroup::operator+=(Atom *a)
 {
-	if (!hasAtom(a))
+	if (a != nullptr && !hasAtom(a))
 	{
 		_atoms.push_back(a);
+		
+		for (size_t j = 0; j < a->bondLengthCount(); j++)
+		{
+			addBondstraint(a->bondLength(j));
+		}
+
+		_anchors.clear();
 	}
 }
 
@@ -92,6 +100,7 @@ void AtomGroup::operator-=(Atom *a)
 	if (it != _atoms.end())
 	{
 		_atoms.erase(it);
+		_anchors.clear();
 	}
 }
 
@@ -204,25 +213,30 @@ Atom *AtomGroup::firstAtomWithName(std::string name) const
 
 void AtomGroup::recalculate()
 {
-	Atom *anchor = possibleAnchor(0);
+	connectedGroups();
 
-	BondCalculator calculator;
-	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
-	calculator.setMaxSimultaneousThreads(2);
-	calculator.addAnchorExtension(anchor);
-	calculator.setup();
+	for (size_t i = 0; i < _subgroups.size(); i++)
+	{
+		Atom *anchor = _subgroups[i]->possibleAnchor(0);
 
-	calculator.start();
+		BondCalculator calculator;
+		calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
+		calculator.setMaxSimultaneousThreads(1);
+		calculator.addAnchorExtension(anchor);
+		calculator.setup();
 
-	Job job{};
-	job.requests = JobExtractPositions;
-	calculator.submitJob(job);
-	
-	Result *result = calculator.acquireResult();
-	calculator.finish();
-	result->transplantPositions();
+		calculator.start();
 
-	delete result;
+		Job job{};
+		job.requests = JobExtractPositions;
+		calculator.submitJob(job);
+
+		Result *result = calculator.acquireResult();
+		calculator.finish();
+		result->transplantPositions();
+
+		delete result;
+	}
 }
 
 void AtomGroup::refinePositions()
@@ -236,10 +250,61 @@ void AtomGroup::refinePositions()
 	_refine = new std::thread(&PositionRefinery::backgroundRefine, refinery);
 }
 
+void AtomGroup::remove(AtomGroup *g)
+{
+	for (size_t i = 0; i < g->size(); i++)
+	{
+		remove((*g)[i]);
+	}
+}
+
+void AtomGroup::add(AtomGroup *g)
+{
+	for (size_t i = 0; i < g->size(); i++)
+	{
+		add((*g)[i]);
+	}
+}
+
 std::vector<AtomGroup *> AtomGroup::connectedGroups()
 {
+	if (_subgroups.size())
+	{
+		return _subgroups;
+	}
+
 	std::vector<AtomGroup *> groups;
-	groups.push_back(new AtomGroup(*this));
-	return groups;
+	AtomGroup total = AtomGroup(*this);
+	
+	while (total.size() > 0)
+	{
+		BondSequence *sequence = new BondSequence();
+		Atom *anchor = total.possibleAnchor(0);
+
+		sequence->addToGraph(anchor);
+		
+		AtomGroup *next = new AtomGroup();
+		for (size_t i = 0; i < sequence->blockCount(); i++)
+		{
+			Atom *a = sequence->atomForBlock(i); 
+			if (a)
+			{
+				*next += a;
+				total -= a;
+			}
+		}
+		
+		if (next->size() == 0)
+		{
+			delete sequence;
+			break;
+		}
+		
+		delete sequence;
+		groups.push_back(next);
+	}
+
+	_subgroups = groups;
+	return _subgroups;
 }
 

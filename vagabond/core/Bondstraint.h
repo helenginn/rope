@@ -22,6 +22,7 @@
 #include <string>
 
 class BondLength;
+class AtomGroup;
 
 class Bondstraint
 {
@@ -32,6 +33,13 @@ public:
 	{
 		return "";
 	}
+	
+	AtomGroup *owner()
+	{
+		return _owner;
+	}
+protected:
+	AtomGroup *_owner;
 };
 
 #endif

@@ -98,7 +98,6 @@ public:
 		return _maxSeparation;
 	}
 private:
-	AtomGroup *_owner;
 	Atom *_a;
 	Atom *_b;
 	Atom *_c;
