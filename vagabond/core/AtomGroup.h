@@ -33,6 +33,7 @@ public:
 	AtomGroup();
 	~AtomGroup();
 	void cancelRefinement();
+	void concludeRefinement();
 
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
@@ -67,17 +68,25 @@ public:
 	
 	void recalculate();
 	
+	void setLastResidual(double last)
+	{
+		_lastResidual = last;
+	}
+	
 	size_t possibleAnchorCount();
 	Atom *possibleAnchor(int i);
 
 	std::vector<AtomGroup *> connectedGroups();
 	void refinePositions();
 private:
+	void cleanupRefinement();
 	void findPossibleAnchors();
 	AtomVector _atoms;
 	AtomVector _anchors;
 	std::thread *_refine = nullptr;
 	SimplexEngine *_engine = nullptr;
+	
+	double _lastResidual = FLT_MAX;
 };
 
 #endif

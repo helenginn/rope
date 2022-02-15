@@ -59,6 +59,19 @@ public:
 		_minDepth = min;
 		_maxDepth = max;
 	}
+	
+	/** Set limits for what branches should be excluded for output results.
+	 * e.g. set to 1 to include single-atom branches but not longer sidechains 
+	 * @param max maximum atoms down side-branch to be considered */
+	void setMaxSideDepth(int max)
+	{
+		if (_sideMax != max)
+		{
+			_changedDepth = true;
+		}
+
+		_sideMax = max;
+	}
 
 	/** Returns vector of booleans corresponding to each scalar in the
 	 *  custom vector which is provided to the calculator. True if this
@@ -136,6 +149,7 @@ private:
 	
 	int _minDepth = 0;
 	int _maxDepth = INT_MAX;
+	int _sideMax = INT_MAX;
 	bool _changedDepth = false;
 	bool _ignoreHydrogens = false;
 	

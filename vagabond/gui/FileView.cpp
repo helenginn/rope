@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Display.h"
-#include <vagabond/core/Cif2Geometry.h>
+#include <vagabond/core/CifFile.h>
 #include "FileView.h"
 #include "Text.h"
 #include "TextButton.h"
@@ -57,7 +57,7 @@ void FileView::buttonPressed(std::string tag, Button *button)
 		std::string filename = tag.substr(file_prefix.length(), 
 		                                  std::string::npos);
 
-		Cif2Geometry geom = Cif2Geometry(filename);
+		CifFile geom = CifFile(filename);
 		geom.parse();
 		
 		if (geom.atomCount() > 0)

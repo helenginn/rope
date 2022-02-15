@@ -86,6 +86,8 @@ void BondSequence::calculateMissingMaxDepths()
 		if (head->children.size() == 0 && head->maxDepth < 0)
 		{
 			AtomGraph *curr = head;
+			head->maxDepth = head->depth;
+
 			while (true)
 			{
 				Atom *p = curr->parent;
@@ -95,14 +97,9 @@ void BondSequence::calculateMissingMaxDepths()
 				}
 
 				AtomGraph *gp = _atom2Graph[p];
-				if (gp->maxDepth < head->depth)
+				if (gp->maxDepth < head->maxDepth)
 				{
-					gp->maxDepth = head->depth;
-					
-					if (_maxDepth < head->depth)
-					{
-						_maxDepth = head->depth;
-					}
+					gp->maxDepth = head->maxDepth;
 				}
 				
 				curr = gp;
@@ -226,6 +223,17 @@ void BondSequence::sortGraphChildren()
 				_graphs[i]->children[j] = tmp;
 			}
 		}
+
+		/* use these to assign priority levels: 0 is main chain,
+		 * > 0 are side chains in decreasing atom count */
+		int count = _graphs[i]->children.size();
+		for (size_t j = 0; j < count; j++)
+		{
+			int priority = count - j - 1;
+			AtomGraph *child = _graphs[i]->children[j];
+			child->priority = priority;
+		}
+		
 	}
 }
 
@@ -305,13 +313,27 @@ void BondSequence::fillTorsionAngles()
 
 bool BondSequence::checkAtomGraph(int i) const
 {
+	bool problem = false;
 	if ((_graphs[i]->depth >= 2 && 
 	     (!_graphs[i]->parent || !_graphs[i]->grandparent)) ||
 		 (_graphs[i]->depth >= 1 && (!_graphs[i]->parent)))
 	{
+		problem = true;
+	}
+	
+	if (_graphs[i]->maxDepth < _graphs[i]->depth)
+	{
+		problem = true;
+	}
+	
+	if (problem)
+	{
 		std::cout << "Graph for atom " << _graphs[i]->atom->atomName() << std::endl;
 		std::cout << "Parent: " << _graphs[i]->parent << std::endl;
 		std::cout << "Grandparent: " << _graphs[i]->grandparent << std::endl;
+		std::cout << "Depth: " << _graphs[i]->depth << std::endl;
+		std::cout << "MaxDepth: " << _graphs[i]->maxDepth << std::endl;
+
 		return true;
 	}
 
@@ -331,6 +353,7 @@ void BondSequence::addToGraph(Atom *atom, size_t count)
 	fillInParents();
 	makeTorsionBasis();
 	fillTorsionAngles();
+	markHydrogenGraphs();
 	sortGraphChildren();
 	generateBlocks();
 }
@@ -461,13 +484,16 @@ void BondSequence::generateBlocks()
 	fillMissingWriteLocations();
 }
 
-void BondSequence::prepareForIdle()
+void BondSequence::prepareTorsionBasis()
 {
 	if (_torsionBasis)
 	{
 		_torsionBasis->prepare();
 	}
+}
 
+void BondSequence::prepareForIdle()
+{
 	if (_state != SequenceInPreparation)
 	{
 		throw std::runtime_error("Sequence not in preparation to begin with");
@@ -558,16 +584,20 @@ void BondSequence::printBlock(int idx)
 int BondSequence::calculateBlock(int idx)
 {
 	fetchTorsion(idx);
-	float &t = _blocks[idx].torsion;
+	float t = deg2rad(_blocks[idx].torsion);
 	glm::mat4x4 &coord = _blocks[idx].coordination;
 	glm::mat4x4 &basis = _blocks[idx].basis;
 	glm::mat4x4 &wip = _blocks[idx].wip;
 	glm::vec3 &inherit = _blocks[idx].inherit;
 
-	glm::mat4x4 torsion_rot = glm::rotate(glm::mat4(1.), 
-	                                      (float)deg2rad(t), 
-	                                      glm::vec3(0, 0, 1));
-	wip = basis * torsion_rot * coord;
+	float sint = sin(t);
+	float cost = cos(t);
+	_torsion_rot[0][0] = cost;
+	_torsion_rot[1][0] = -sint;
+	_torsion_rot[0][1] = sint;
+	_torsion_rot[1][1] = cost;
+
+	wip = basis * _torsion_rot * coord;
 
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
@@ -646,26 +676,55 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	_custom = &j.custom.vecs[_customIdx];
 }
 
-void BondSequence::calculate()
+void BondSequence::fastCalculate()
 {
 	_customIdx = 0;
 	_custom = nullptr;
 	
-	checkCustomVectorSizeFits();
+	_custom = &(miniJob()->job->custom.vecs[0]);
+	if (_fullRecalc)
+	{
+		checkCustomVectorSizeFits();
+	}
 
-	int sampleNum = 0;
-	
-	int start = 0;
+	int start = _startCalc;
 	int end = _endCalc;
 
 	for (size_t i = start; i < _blocks.size() && i < end; i++)
 	{
-		if (!_blocks[i].flag && _blocks[i].atom && !_fullRecalc)
+		if (!_blocks[i].flag && !_fullRecalc)
 		{
 			continue;
 		}
 
-		int new_anchor = calculateBlock(i);
+		calculateBlock(i);
+	}
+	
+	_fullRecalc = false;
+	
+	signal(SequencePositionsReady);
+
+}
+
+void BondSequence::calculate()
+{
+	bool extract = (miniJob()->job->requests & JobExtractPositions);
+	if (sampleCount() == 1 && !extract)
+	{
+		fastCalculate();
+		return;
+	}
+
+	_customIdx = 0;
+	_custom = nullptr;
+	
+	int sampleNum = 0;
+	
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		int new_anchor = (_blocks[i].atom == nullptr);
+
+		calculateBlock(i);
 		
 		if (new_anchor)
 		{
@@ -684,7 +743,7 @@ double BondSequence::calculateDeviations()
 	double sum = 0;
 	double count = 0;
 
-	for (size_t i = 0; i < _blocks.size(); i++)
+	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
 		if (_blocks[i].atom == nullptr || !_blocks[i].flag)
 		{
@@ -712,9 +771,7 @@ std::vector<Atom::WithPos> &BondSequence::extractPositions()
 	_posAtoms.clear();
 	_posAtoms.reserve(addedAtomsCount());
 
-	int idx = 0;
-
-	for (size_t i = 0; i < _blocks.size(); i++)
+	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
 		if (_blocks[i].atom == nullptr)
 		{
@@ -723,7 +780,7 @@ std::vector<Atom::WithPos> &BondSequence::extractPositions()
 		
 		if (!_blocks[i].flag)
 		{
-			continue;
+//			continue;
 		}
 		
 		Atom::WithPos ap;
@@ -822,7 +879,51 @@ std::string BondSequence::atomGraphDesc(int i)
 	return ss.str();
 }
 
-void BondSequence::reflagDepth(int min, int max)
+const size_t BondSequence::flagged() const
+{
+	size_t count = 0;
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		const AtomBlock &block = _blocks[i];
+
+		/* it's the beginning anchor atom, ignore */
+		if (block.atom != nullptr && block.flag)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+void BondSequence::markHydrogenGraphs()
+{
+	for (size_t i = 0; i < _graphs.size(); i++)
+	{
+		if (atomGraphChildrenOnlyHydrogens(*_graphs[i]))
+		{
+			_graphs[i]->onlyHydrogens = true;
+		}
+	}
+}
+
+bool BondSequence::atomGraphChildrenOnlyHydrogens(AtomGraph &g)
+{
+	bool hydrogens = true;
+	
+	for (size_t i = 0; i < g.children.size(); i++)
+	{
+		if (g.children[i]->atom->elementSymbol() != "H")
+		{
+			hydrogens = false;
+		}
+	}
+
+	return hydrogens;
+}
+
+void BondSequence::reflagDepth(int min, int max, int sidemax)
 {
 	bool found_first = false;
 	
@@ -833,6 +934,7 @@ void BondSequence::reflagDepth(int min, int max)
 	{
 		AtomBlock &block = _blocks[i];
 
+		/* it's the beginning anchor atom, ignore */
 		if (block.atom == nullptr)
 		{
 			continue;
@@ -852,6 +954,25 @@ void BondSequence::reflagDepth(int min, int max)
 		if (inclusive)
 		{
 			_endCalc = i + 1;
+		}
+		
+		if (strcmp(block.element, "H") == 0 && _ignoreHydrogens)
+		{
+			block.flag = false;
+			continue;
+		}
+		
+		/* we always include the main chain no matter what sidemax is */
+		if (graph->priority == 0)
+		{
+			continue;
+		}
+		
+		int depth_to_go = graph->maxDepth - graph->depth;
+		
+		if (depth_to_go >= sidemax)
+		{
+			block.flag = false;
 		}
 	}
 

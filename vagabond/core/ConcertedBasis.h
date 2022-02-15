@@ -20,14 +20,15 @@
 #define __vagabond__ConcertedBasis__
 
 #include "TorsionBasis.h"
+#include "../utils/svd/PCA.h"
 
 class ConcertedBasis : public TorsionBasis
 {
 public:
 	ConcertedBasis();
+	~ConcertedBasis();
 
-	virtual float torsionForVector(int idx, const float *vec, int n) { return 0; };
-	virtual void absorbVector(const float *vec, int n) { };
+	virtual float torsionForVector(int idx, const float *vec, int n);
 	virtual void prepare();
 
 	/** only the torsions available in the mask will be used for calculating
@@ -36,10 +37,14 @@ public:
 	
 	size_t activeBonds();
 private:
+	void prepareSVD();
 	void setupAngleList();
 	std::vector<bool> _refineMask;
+	std::vector<int> _idxs;
 	size_t _nActive;
 
+	std::vector<BondTorsion *> _filtered;
+	PCA::SVD _svd{};
 };
 
 #endif

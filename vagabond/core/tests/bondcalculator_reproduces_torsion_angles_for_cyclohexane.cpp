@@ -1,13 +1,13 @@
 #include "../AtomGroup.h"
 #include "../BondSequence.h"
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../BondTorsion.h"
 
 int main()
 {
 	std::string path = "/assets/geometry/CHX.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.parse();
 	
 	AtomGroup &chx = *geom.atoms();

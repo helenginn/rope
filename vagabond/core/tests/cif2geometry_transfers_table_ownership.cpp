@@ -1,9 +1,9 @@
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../GeometryTable.h"
 
 int main()
 {
-	Cif2Geometry *geom = new Cif2Geometry("");
+	CifFile *geom = new CifFile("");
 	GeometryTable *table = geom->geometryTable();
 	delete geom;
 	

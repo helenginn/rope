@@ -24,5 +24,5 @@ int main()
 	double similar = torsion->similarityScore(identical);
 	std::cout << similar << std::endl;
 
-	return !(fabs(similar - 0.5) < 1e-6);
+	return !(fabs(similar + 0.5) < 1e-6);
 }

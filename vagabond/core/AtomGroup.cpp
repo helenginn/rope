@@ -20,6 +20,7 @@
 #include "BondLength.h"
 #include "../utils/FileReader.h"
 #include "BondTorsion.h"
+#include "TorsionBasis.h"
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
 
@@ -34,11 +35,22 @@ AtomGroup::AtomGroup()
 
 void AtomGroup::cancelRefinement()
 {
+	if (_engine != nullptr)
+	{
+		_engine->finish();
+	}
+}
+
+void AtomGroup::cleanupRefinement()
+{
+	if (_engine != nullptr)
+	{
+		delete _engine;
+		_engine = nullptr;
+	}
+	
 	if (_refine != nullptr)
 	{
-		std::cout << "Finishing engine" << std::endl;
-		_engine->finish();
-		_engine = nullptr;
 		_refine->join();
 		delete _refine;
 		_refine = nullptr;
@@ -47,8 +59,15 @@ void AtomGroup::cancelRefinement()
 
 AtomGroup::~AtomGroup()
 {
+	cancelRefinement();
 	deleteBondstraints();
-	
+
+	/*
+	delete _engine;
+	delete _refine;
+	_engine = nullptr;
+	_refine = nullptr;
+	*/
 }
 
 bool AtomGroup::hasAtom(Atom *a)
@@ -209,20 +228,9 @@ void AtomGroup::recalculate()
 void AtomGroup::refinePositions()
 {
 	PositionRefinery *refinery = new PositionRefinery(this);
-	
+
 	cancelRefinement();
-	
-	if (_engine != nullptr)
-	{
-		delete _engine;
-		_engine = nullptr;
-	}
-	
-	if (_refine != nullptr)
-	{
-		delete _refine;
-		_refine = nullptr;
-	}
+	cleanupRefinement();
 
 	_engine = refinery;
 	_refine = new std::thread(&PositionRefinery::backgroundRefine, refinery);

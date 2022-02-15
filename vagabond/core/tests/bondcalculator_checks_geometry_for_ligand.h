@@ -1,6 +1,6 @@
 int checkGeometry(std::string path, double angle_tol = 1e-3)
 {
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.setAutomaticKnot(true);
 	geom.parse();
 	

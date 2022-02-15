@@ -89,6 +89,11 @@ public:
 		return _graphs.size();
 	}
 	
+	const int remainingDepth(int i) const
+	{
+		return _graphs[i]->maxDepth - _graphs[i]->depth;
+	}
+	
 	void cleanUpToIdle();
 	void setMiniJobInfo(MiniJob *mini);
 	void printState();
@@ -118,10 +123,15 @@ public:
 	void addToGraph(Atom *atom, size_t count = UINT_MAX);
 	
 	void multiplyUpBySampleCount();
-	void reflagDepth(int min, int max);
+	void reflagDepth(int min, int max, int sidemax);
+	
+	const size_t flagged() const;
+
 	std::vector<bool> atomMask();
 	
 	void prepareForIdle();
+	void prepareTorsionBasis();
+
 	void reset()
 	{
 		_state = SequenceInPreparation;
@@ -150,8 +160,10 @@ private:
 		Atom *atom;
 		Atom *parent;
 		Atom *grandparent;
+		int priority = 0;
 		int depth;
 		int maxDepth;
+		bool onlyHydrogens = false;
 		BondTorsion *torsion;
 		int torsion_idx;
 		std::vector<AtomGraph *> children;
@@ -201,6 +213,9 @@ private:
 		}
 	};
 	
+	bool atomGraphChildrenOnlyHydrogens(AtomGraph &g);
+	void markHydrogenGraphs();
+	
 	std::vector<AtomBlock> _blocks;
 
 	void generateBlocks();
@@ -216,6 +231,7 @@ private:
 	void makeTorsionBasis();
 	void fillInParents();
 	void fillTorsionAngles();
+	void fastCalculate();
 
 	int calculateBlock(int idx);
 	void fetchTorsion(int idx);
@@ -234,6 +250,7 @@ private:
 	void signal(SequenceState newState);
 	void printBlock(int idx);
 	
+	glm::mat4x4 _torsion_rot = glm::mat4(1.f);
 	bool _ignoreHydrogens = false;
 	bool _fullRecalc = true;
 	int _startCalc = 0;

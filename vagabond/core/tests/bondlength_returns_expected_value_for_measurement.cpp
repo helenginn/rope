@@ -1,4 +1,4 @@
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../AtomGroup.h"
 #include "../BondAngle.h"
 #include "../BondLength.h"
@@ -8,7 +8,7 @@ int main()
 {
 	std::string path = "/assets/geometry/CMO.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.setAutomaticKnot(true);
 	geom.parse();
 	

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include "ConcertedBasis.h"
 #include "BondTorsion.h"
 
@@ -24,15 +25,62 @@ ConcertedBasis::ConcertedBasis() : TorsionBasis()
 
 }
 
+ConcertedBasis::~ConcertedBasis()
+{
+	freeSVD(&_svd);
+}
+
+float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
+{
+	if (idx < 0)
+	{
+		return 0;
+	}
+
+	if (n >= idx && _angles.size() == 0)
+	{
+		prepare();
+	}
+
+	TorsionAngle &ta = _angles[idx];
+	if (n == 0 || !ta.mask)
+	{
+		return ta.angle;
+	}
+
+	float sum = 0;
+	float total = 0;
+
+	for (size_t i = 0; i < n && i < _nActive; i++)
+	{
+		int contracted = _idxs[i];
+		int reference = _idxs[idx];
+		if (contracted < 0 || reference < 0)
+		{
+			continue;
+		}
+
+		double &svd = _svd.u.ptrs[reference][contracted];
+		const float &custom = vec[contracted];
+		
+		sum += svd * custom;
+		total++;
+	}
+
+	sum += ta.angle;
+
+	return sum;
+}
+
 void ConcertedBasis::supplyMask(std::vector<bool> mask)
 {
 	_refineMask = mask;
-
 }
 
 void ConcertedBasis::setupAngleList()
 {
 	_angles.clear();
+	_idxs.clear();
 	_nActive = 0;
 
 	for (size_t i = 0; i < _torsions.size(); i++)
@@ -50,18 +98,55 @@ void ConcertedBasis::setupAngleList()
 		
 		if (mask)
 		{
+			_filtered.push_back(_torsions[i]);
+			_idxs.push_back(_nActive);
 			_nActive++;
 		}
+		else
+		{
+			_idxs.push_back(-1);
+		}
 	}
+}
+
+void ConcertedBasis::prepareSVD()
+{
+	setupSVD(&_svd, _nActive);
+
+	for (size_t i = 0; i < _nActive; i++)
+	{
+		for (size_t j = 0; j <= i; j++)
+		{
+			BondTorsion *a = _filtered[i];
+			BondTorsion *b = _filtered[j];
+			
+			float diff = a->similarityScore(b);
+
+			_svd.u.ptrs[i][j] = diff;
+			_svd.u.ptrs[j][i] = diff;
+		}
+	}
+	
+	try
+	{
+		runSVD(&_svd);
+	}
+	catch (std::runtime_error &err)
+	{
+		return;
+	}
+
+	reorderSVD(&_svd);
 }
 
 void ConcertedBasis::prepare()
 {
 	setupAngleList();
-
+	prepareSVD();
 }
 
 size_t ConcertedBasis::activeBonds()
 {
 	return _nActive;
 }
+

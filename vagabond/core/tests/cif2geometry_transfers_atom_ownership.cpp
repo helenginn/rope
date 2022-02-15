@@ -1,9 +1,9 @@
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../AtomGroup.h"
 
 int main()
 {
-	Cif2Geometry *geom = new Cif2Geometry("");
+	CifFile *geom = new CifFile("");
 	AtomGroup *atoms = geom->atoms();
 	delete geom;
 	

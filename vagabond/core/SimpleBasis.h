@@ -27,7 +27,6 @@ public:
 	SimpleBasis();
 
 	virtual float torsionForVector(int idx, const float *vec, int n);
-	virtual void absorbVector(const float *vec, int n);
 	virtual void prepare();
 private:
 

@@ -2,7 +2,7 @@
 #include <gemmi/numb.hpp>
 #include "commit.h"
 
-#include "Cif2Geometry.h"
+#include "CifFile.h"
 #include "Knotter.h"
 #include "GeometryTable.h"
 #include "Atom.h"
@@ -11,7 +11,7 @@
 
 using namespace gemmi::cif;
 
-Cif2Geometry::Cif2Geometry(std::string filename)
+CifFile::CifFile(std::string filename)
 {
 	changeFilename(filename);
 
@@ -23,7 +23,7 @@ Cif2Geometry::Cif2Geometry(std::string filename)
 	_knot = true;
 }
 
-void Cif2Geometry::changeFilename(std::string filename)
+void CifFile::changeFilename(std::string filename)
 {
 	_filename = filename;
 	if (filename == "")
@@ -32,7 +32,7 @@ void Cif2Geometry::changeFilename(std::string filename)
 	}
 }
 
-Cif2Geometry::~Cif2Geometry()
+CifFile::~CifFile()
 {
 	if (!_accessedCompAtoms)
 	{
@@ -50,7 +50,7 @@ Cif2Geometry::~Cif2Geometry()
 	}
 }
 
-void Cif2Geometry::parseFileContents(std::string filename)
+void CifFile::parseFileContents(std::string filename)
 {
 	std::string tmp = filename;
 #ifndef __EMSCRIPTEN__
@@ -80,11 +80,17 @@ void Cif2Geometry::parseFileContents(std::string filename)
 
 				processLoop(loop);
 			}
+			else if (contents.items[i].type == ItemType::Pair)
+			{
+				Pair &pair = contents.items[i].pair;
+
+				processPair(pair);
+			}
 		}
 	}
 }
 
-void Cif2Geometry::parse()
+void CifFile::parse()
 {
 	parseFileContents(_filename);
 	
@@ -101,7 +107,12 @@ void Cif2Geometry::parse()
 	}
 }
 
-void Cif2Geometry::processLoop(Loop &loop)
+void CifFile::processPair(Pair &pair)
+{
+	_values[pair[0]] = pair[1];
+}
+
+void CifFile::processLoop(Loop &loop)
 {
 	if (processLoopAsCompAtoms(loop))
 	{
@@ -144,7 +155,7 @@ void Cif2Geometry::processLoop(Loop &loop)
 	}
 }
 
-bool Cif2Geometry::getHeaders(Loop &loop, std::string *headers, int *indices,
+bool CifFile::getHeaders(Loop &loop, std::string *headers, int *indices,
                               int n)
 {
 	for (size_t i = 0; i < n; i++)
@@ -175,7 +186,7 @@ bool Cif2Geometry::getHeaders(Loop &loop, std::string *headers, int *indices,
 	return found;
 }
 
-bool Cif2Geometry::processLoopAsChirals(Loop &loop)
+bool CifFile::processLoopAsChirals(Loop &loop)
 {
 	int idxs[6];
 	int &code_idx = idxs[0];
@@ -228,7 +239,7 @@ bool Cif2Geometry::processLoopAsChirals(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsCompAtoms(Loop &loop)
+bool CifFile::processLoopAsCompAtoms(Loop &loop)
 {
 	int idxs[6];
 	int &code_idx = idxs[0];
@@ -278,7 +289,7 @@ bool Cif2Geometry::processLoopAsCompAtoms(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsAngles(Loop &loop)
+bool CifFile::processLoopAsAngles(Loop &loop)
 {
 	int idxs[6];
 	int &code_idx = idxs[0];
@@ -320,7 +331,7 @@ bool Cif2Geometry::processLoopAsAngles(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsAngleLinks(Loop &loop)
+bool CifFile::processLoopAsAngleLinks(Loop &loop)
 {
 	int idxs[6];
 	int &id1_idx = idxs[0];
@@ -366,7 +377,7 @@ bool Cif2Geometry::processLoopAsAngleLinks(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsLengthLinks(Loop &loop)
+bool CifFile::processLoopAsLengthLinks(Loop &loop)
 {
 	int idxs[5];
 	int &id1_idx = idxs[0];
@@ -410,7 +421,7 @@ bool Cif2Geometry::processLoopAsLengthLinks(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsLengths(Loop &loop)
+bool CifFile::processLoopAsLengths(Loop &loop)
 {
 	int idxs[5];
 	int &code_idx = idxs[0];
@@ -450,7 +461,7 @@ bool Cif2Geometry::processLoopAsLengths(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsTorsions(Loop &loop)
+bool CifFile::processLoopAsTorsions(Loop &loop)
 {
 	int idxs[8];
 	int &code_idx = idxs[0];
@@ -497,7 +508,7 @@ bool Cif2Geometry::processLoopAsTorsions(Loop &loop)
 	return true;
 }
 
-bool Cif2Geometry::processLoopAsMacroAtoms(Loop &loop)
+bool CifFile::processLoopAsMacroAtoms(Loop &loop)
 {
 	int idxs[12];
 	int &card_idx = idxs[0];
@@ -574,12 +585,66 @@ bool Cif2Geometry::processLoopAsMacroAtoms(Loop &loop)
 	return true;
 }
 
-const size_t Cif2Geometry::compAtomCount() const
+bool CifFile::processLoopAsReflections(Loop &loop)
+{
+	int idxs[7];
+	int &h_idx = idxs[0];
+	int &k_idx = idxs[1];
+	int &l_idx = idxs[2];
+	int &free_idx = idxs[3];
+	int &free_flag_idx = idxs[4];
+	int &amp_idx = idxs[5];
+	int &sigma_idx = idxs[6];
+	
+	std::string headers[] = 
+	{
+		"_refln.index_h",
+		"_refln.index_k",
+		"_refln.index_l",
+		"_refln.status", /** o if working set, f if free set */
+		"_refln.pdbx_r_free_flag",
+		"_refln.F_meas_au",
+		"_refln.F_meas_sigma_au",
+	};
+	
+	if (!getHeaders(loop, headers, idxs, 7))
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < loop.values.size(); i += loop.tags.size())
+	{
+		int h = as_number(loop.values[i + h_idx]);
+		int k = as_number(loop.values[i + k_idx]);
+		int l = as_number(loop.values[i + l_idx]);
+		
+		bool free = (loop.values[i + free_idx] == "f");
+		int  flag = as_number(loop.values[i + free_flag_idx]);
+
+		float f    = as_number(loop.values[i + amp_idx]);
+		float sigf = as_number(loop.values[i + sigma_idx]);
+
+		Reflection refl{};
+		refl.hkl.h = h;
+		refl.hkl.k = k;
+		refl.hkl.l = l;
+		refl.free = free;
+		refl.flag = flag;
+		refl.f = f;
+		refl.sigf = sigf;
+		
+		_reflections.push_back(refl);
+	}
+
+	return true;
+}
+
+const size_t CifFile::compAtomCount() const
 {
 	return _compAtoms->size();
 }
 
-const size_t Cif2Geometry::atomCount() const
+const size_t CifFile::atomCount() const
 {
 	if (_macroAtoms && _macroAtoms->size() > 0)
 	{
@@ -593,7 +658,7 @@ const size_t Cif2Geometry::atomCount() const
 	return 0;
 }
 
-AtomGroup *Cif2Geometry::atoms()
+AtomGroup *CifFile::atoms()
 {
 	if (_macroAtoms && _macroAtoms->size() > 0)
 	{
@@ -605,4 +670,47 @@ AtomGroup *Cif2Geometry::atoms()
 		_accessedCompAtoms = true;
 		return _compAtoms;
 	}
+}
+
+bool CifFile::hasUnitCell() const
+{
+	bool found = true;
+	found &= _values.count("_cell.length_a");
+	found &= _values.count("_cell.length_b");
+	found &= _values.count("_cell.length_c");
+	found &= _values.count("_cell.angle_alpha");
+	found &= _values.count("_cell.angle_beta");
+	found &= _values.count("_cell.angle_gamma");
+	
+	return found;
+}
+
+std::vector<double> CifFile::unitCell() 
+{
+	if (!hasUnitCell())
+	{
+		return std::vector<double>();
+	}
+
+	double a = as_number(_values["_cell.length_a"]);
+	double b = as_number(_values["_cell.length_b"]);
+	double c = as_number(_values["_cell.length_c"]);
+	double alpha = as_number(_values["_cell.angle_alpha"]);
+	double beta = as_number(_values["_cell.angle_beta"]);
+	double gamma = as_number(_values["_cell.angle_gamma"]);
+	
+	std::vector<double> cell = {a, b, c, alpha, beta, gamma};
+	
+	return cell;
+}
+
+int CifFile::spaceGroupNum()
+{
+	if (_values.count("_symmetry.Int_Tables_number") == 0)
+	{
+		return -1;
+	}
+
+	int num = as_number(_values["_symmetry.Int_Tables_number"]);
+	return num;
 }

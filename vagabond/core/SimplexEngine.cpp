@@ -101,7 +101,7 @@ void SimplexEngine::cycle()
 			}
 		}
 		
-		if (count >= 300 || shrink_count >= 3 || _finish)
+		if (count >= 300 || shrink_count >= 10 || _finish)
 		{
 			break;
 		}
@@ -120,7 +120,7 @@ void SimplexEngine::cycle()
 
 }
 
-void SimplexEngine::run()
+bool SimplexEngine::run()
 {
 	if (_dims <= 0)
 	{
@@ -138,9 +138,21 @@ void SimplexEngine::run()
 		throw std::runtime_error("No step sizes chosen for SimplexEngine");
 	}
 
+	std::vector<float> empty = std::vector<float>(_dims, 0);
+	sendJob(empty);
+	
+	double begin = FLT_MAX;
+	awaitResult(&begin);
+
 	allocateResources();
 	sendStartingJobs();
 	cycle();
+	
+	sendJob(bestPoint());
+	double end = FLT_MAX;
+	awaitResult(&end);
+	
+	return (end < begin);
 }
 
 bool SimplexEngine::awaitResults()
@@ -349,3 +361,7 @@ const SimplexEngine::Point &SimplexEngine::bestPoint() const
 	return _points[0].vertex;
 }
 
+void SimplexEngine::finish()
+{
+	_finish = true;
+}

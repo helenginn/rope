@@ -42,8 +42,6 @@ void PositionRefinery::refine()
 	
 	std::cout << "Refining" << std::endl;
 	refine(_group);
-
-	delete this;
 }
 
 void PositionRefinery::calculateActiveTorsions()
@@ -60,12 +58,13 @@ void PositionRefinery::calculateActiveTorsions()
 	}
 }
 
-bool PositionRefinery::refineBetween(int start, int end)
+bool PositionRefinery::refineBetween(int start, int end, int side_max)
 {
 	_start = start;
 	_end = end;
 
 	_calculator->setMinMaxDepth(_start, _end);
+	_calculator->setMaxSideDepth(side_max);
 	_calculator->start();
 
 	calculateActiveTorsions();
@@ -80,12 +79,15 @@ bool PositionRefinery::refineBetween(int start, int end)
 	chooseStepSizes(_steps);
 	setMaxJobsPerVertex(1);
 
-	run();
+	bool improved = run();
 
-	const Point &trial = bestPoint();
-	Point best = expandPoint(trial);
-	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-	basis->absorbVector(&best[0], best.size());
+	if (improved)
+	{
+		const Point &trial = bestPoint();
+		Point best = expandPoint(trial);
+		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+		basis->absorbVector(&best[0], best.size());
+	}
 
 	_calculator->finish();
 
@@ -110,28 +112,14 @@ double PositionRefinery::fullResidual()
 	_calculator->finish();
 	delete result;
 	
+	_group->setLastResidual(dev);
+
 	return dev;
 }
 
 void PositionRefinery::fullRefinement(AtomGroup *group)
 {
-	_calculator->setMinMaxDepth(0, INT_MAX);
-	_calculator->start();
-
-	calculateActiveTorsions();
-
-	setDimensionCount(_nBonds);
-	chooseStepSizes(_steps);
-	setMaxJobsPerVertex(1);
-
-	run();
-
-	const Point &trial = bestPoint();
-	Point best = expandPoint(trial);
-	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-	basis->absorbVector(&best[0], best.size());
-
-	_calculator->finish();
+	refineBetween(0, _nBonds);
 }
 
 void PositionRefinery::stepwiseRefinement(AtomGroup *group)
@@ -143,7 +131,7 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 	{
 		for (size_t j = 0; j < 5; j++)
 		{
-			refineBetween(i, i + 8);
+			refineBetween(i, i + _depthRange);
 		}
 
 		if (_finish)
@@ -173,8 +161,9 @@ void PositionRefinery::refine(AtomGroup *group)
 
 	_calculator = new BondCalculator();
 	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
-	_calculator->setMaxSimultaneousThreads(4);
+	_calculator->setMaxSimultaneousThreads(1);
 	_calculator->setTotalSamples(1);
+	_calculator->setTorsionBasisType(_type);
 	_calculator->addAnchorExtension(anchor);
 	_calculator->setIgnoreHydrogens(true);
 	_calculator->setup();
@@ -182,10 +171,10 @@ void PositionRefinery::refine(AtomGroup *group)
 	_nBonds = _calculator->maxCustomVectorSize();
 	
 	double res = fullResidual();
-
-	if (res < 0.25)
+	
+	if (_type == TorsionBasis::TypeConcerted)
 	{
-		_step = 0.5;
+		_step = 5.;
 	}
 
 	_steps = std::vector<float>(_nBonds, _step);
@@ -193,15 +182,13 @@ void PositionRefinery::refine(AtomGroup *group)
 	std::cout << "Overall average distance from initial position: "
 	<< res << " Angstroms" << std::endl;
 	
-	stepwiseRefinement(group);
-	if (res < 0.25)
+	if (_type == TorsionBasis::TypeSimple)
 	{
-//		fullRefinement(group);
+		stepwiseRefinement(group);
 	}
 	else
 	{
-//		stepwiseRefinement(group);
-//		fullRefinement(group);
+		fullRefinement(group);
 	}
 	
 	res = fullResidual();
@@ -270,7 +257,7 @@ int PositionRefinery::sendJob(const Point &trial)
 		job.custom.vecs[0].mean[i] = expanded[i];
 	}
 
-	if (_ncalls % 50 == 0)
+	if (_ncalls % 200 == 0)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
 		                                    JobExtractPositions);
@@ -280,4 +267,9 @@ int PositionRefinery::sendJob(const Point &trial)
 	_ncalls++;
 	
 	return ticket;
+}
+
+void PositionRefinery::finish()
+{
+	SimplexEngine::finish();
 }

@@ -132,6 +132,8 @@ void BondSequenceHandler::start()
 		_sequences[i]->reset();
 		_sequences[i]->prepareForIdle();
 	}
+	
+	_sequences[0]->prepareTorsionBasis();
 
 	prepareThreads();
 }
@@ -303,14 +305,11 @@ TorsionBasis *BondSequenceHandler::torsionBasis() const
 	return _sequences[0]->torsionBasis();
 }
 
-void BondSequenceHandler::imposeDepthLimits(int min, int max)
+void BondSequenceHandler::imposeDepthLimits(int min, int max, int sidemax)
 {
-	_minDepth = min;
-	_maxDepth = max;
-	
 	for (BondSequence *sequence : _sequences)
 	{
-		sequence->reflagDepth(min, max);
+		sequence->reflagDepth(min, max, sidemax);
 	}
 }
 

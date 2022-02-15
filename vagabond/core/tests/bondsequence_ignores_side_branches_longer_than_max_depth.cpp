@@ -14,21 +14,19 @@ int main()
 	Atom *anchor = atoms->firstAtomWithName("OXT");
 
 	BondSequence *sequence = new BondSequence();
-	sequence->setSampleCount(2);
 	sequence->addToGraph(anchor);
-	sequence->multiplyUpBySampleCount();
+	sequence->reflagDepth(0, INT_MAX, 0);
 	
-	int count = sequence->blockCount();
+	size_t nf = sequence->flagged();
 	
-	if (count != 22)
+	delete atoms;
+	if (nf != 6)
 	{
-		std::cout << "Wrong block count for sample size of 2: " << 
-		count << std::endl;
+		std::cout << "Incorrect number of flagged atoms: " << nf << std::endl;
 		return 1;
 	}
 
-	delete atoms;
-
 	return 0;
 }
+
 

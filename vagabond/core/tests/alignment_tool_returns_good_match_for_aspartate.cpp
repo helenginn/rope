@@ -1,5 +1,5 @@
 #include "../AtomGroup.h"
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../BondCalculator.h"
 #include "../AlignmentTool.h"
 #include <iomanip>
@@ -8,7 +8,7 @@ int main()
 {
 	std::string path = "/assets/geometry/ASP.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.parse();
 	
 	AtomGroup &aspartate = *geom.atoms();

@@ -154,13 +154,10 @@ double BondTorsion::similarityScore(BondTorsion *const other) const
 		glm::vec3 mine = twizzle * bondDirection();
 		glm::vec3 yours = twizzle * other->bondDirection();
 
-		std::cout << glm::to_string(mine) << std::endl;
-		std::cout << glm::to_string(yours) << std::endl;
-
 		glm::vec2 my2D = glm::normalize(glm::vec2(mine.x, mine.z));
 		glm::vec2 your2D = glm::normalize(glm::vec2(yours.x, yours.z));
 
-		dot = fabs(glm::dot(my2D, your2D));
+		dot = glm::dot(my2D, your2D);
 	}
 
 	{

@@ -1,4 +1,4 @@
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../AtomGroup.h"
 #include "../BondAngle.h"
 #include "../BondLength.h"

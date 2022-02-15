@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "FileReader.h"
+#include <vagabond/utils/FileReader.h>
 #include "Window.h"
 #include "FileManager.h"
 

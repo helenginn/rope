@@ -43,13 +43,10 @@ public:
 		_maxJobs = maxJobs;
 	}
 
-	void run();
+	bool run();
 
 
-	void finish()
-	{
-		_finish = true;
-	}
+	virtual void finish();
 protected:
 	typedef std::vector<float> Point;
 

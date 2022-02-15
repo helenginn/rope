@@ -1,4 +1,4 @@
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../AtomGroup.h"
 #include "../BondTorsion.h"
 
@@ -6,7 +6,7 @@ int main()
 {
 	std::string path = "/assets/geometry/TYR.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();

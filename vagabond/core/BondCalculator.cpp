@@ -127,7 +127,7 @@ void BondCalculator::start()
 
 	if (_changedDepth)
 	{
-		_sequenceHandler->imposeDepthLimits(_minDepth, _maxDepth);
+		_sequenceHandler->imposeDepthLimits(_minDepth, _maxDepth, _sideMax);
 		_changedDepth = false;
 	}
 

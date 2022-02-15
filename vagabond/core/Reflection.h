@@ -16,32 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/utils/FileReader.h>
-#include "FileManager.h"
-#include "FileView.h"
+#ifndef __vagabond__Reflection__
+#define __vagabond__Reflection__
 
-FileManager::FileManager()
-{
-	_view = nullptr;
-	_list.push_back("assets/geometry/GLY.cif");
-	_list.push_back("assets/geometry/ASP.cif");
-	_list.push_back("assets/geometry/ATP.cif");
-	_list.push_back("assets/geometry/L86.cif");
-	_list.push_back("assets/geometry/TYR.cif");
-	_list.push_back("assets/geometry/LHI.cif");
-	_list.push_back("assets/examples/2ybh.cif");
-}
+#include <stdexcept>
 
-void FileManager::acceptFile(std::string filename, bool force)
+struct HKL
 {
-	if (file_exists(filename) || force)
-	{
-		_list.push_back(filename);
-	}
+	int h = 0;
+	int k = 0; 
+	int l = 0;
 	
-	if (_view != nullptr)
+	int &operator[](int idx) 
 	{
-		_view->refreshFiles();
+		if (idx == 0) return h;
+		if (idx == 1) return k;
+		if (idx == 2) return l;
+		throw std::runtime_error("dimension over 3 accessing HKL");
 	}
-}
+};
+
+struct Reflection
+{
+	HKL hkl{};
+	bool free = false;
+	int flag = 0;
+	float f = 0;
+	float sigf = 0;
+	
+	Reflection() {}
+	
+	Reflection(int h, int k, int l)
+	{
+		hkl.h = h;
+		hkl.k = k;
+		hkl.l = l;
+	}
+};
+
+#endif
 

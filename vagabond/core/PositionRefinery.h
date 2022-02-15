@@ -20,6 +20,7 @@
 #define __vagabond__PositionRefinery__
 
 #include "SimplexEngine.h"
+#include "TorsionBasis.h"
 
 class AtomGroup;
 class BondCalculator;
@@ -29,8 +30,14 @@ class PositionRefinery : public SimplexEngine
 public:
 	PositionRefinery(AtomGroup *group = nullptr);
 	virtual ~PositionRefinery();
+	
+	void setTorsionBasis(TorsionBasis::Type type)
+	{
+		_type = type;
+	}
 
 	void refine();
+	virtual void finish();
 	
 	static void backgroundRefine(PositionRefinery *ref)
 	{
@@ -46,7 +53,7 @@ protected:
 	virtual int awaitResult(double *eval);
 private:
 	void refine(AtomGroup *group);
-	bool refineBetween(int start, int end);
+	bool refineBetween(int start, int end, int side_max = INT_MAX);
 	double fullResidual();
 	Point expandPoint(const Point &p);
 	void calculateActiveTorsions();
@@ -64,6 +71,10 @@ private:
 	int _nActive = 0;
 	int _start = 0;
 	int _end = 0;
+	
+	int _depthRange = 10;
+	
+	TorsionBasis::Type _type = TorsionBasis::TypeSimple;
 	
 	std::vector<bool> _mask;
 };

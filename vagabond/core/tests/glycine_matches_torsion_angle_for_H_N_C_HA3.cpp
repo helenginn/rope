@@ -1,6 +1,6 @@
 #include <iostream>
 #include "../AtomGroup.h"
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../BondTorsion.h"
 
 int measure_torsion(AtomGroup &glycine, std::string a1, std::string a2, 
@@ -24,7 +24,7 @@ int main()
 {
 	std::string path = "/assets/geometry/GLY.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.setAutomaticKnot(true);
 	geom.parse();
 	

@@ -16,32 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/utils/FileReader.h>
-#include "FileManager.h"
-#include "FileView.h"
+#ifndef __vagabond__RefList__
+#define __vagabond__RefList__
 
-FileManager::FileManager()
-{
-	_view = nullptr;
-	_list.push_back("assets/geometry/GLY.cif");
-	_list.push_back("assets/geometry/ASP.cif");
-	_list.push_back("assets/geometry/ATP.cif");
-	_list.push_back("assets/geometry/L86.cif");
-	_list.push_back("assets/geometry/TYR.cif");
-	_list.push_back("assets/geometry/LHI.cif");
-	_list.push_back("assets/examples/2ybh.cif");
-}
+#include "Reflection.h"
+#include "../utils/glm_import.h"
+#include <vector>
+#include <array>
 
-void FileManager::acceptFile(std::string filename, bool force)
+class RefList
 {
-	if (file_exists(filename) || force)
+public:
+	RefList(std::vector<Reflection> &refls);
+	
+	void setUnitCell(std::array<double, 6> &cell);
+	
+	const double resolutionOf(const int idx) const;
+
+	const size_t reflectionCount() const
 	{
-		_list.push_back(filename);
+		return _refls.size();
 	}
 	
-	if (_view != nullptr)
-	{
-		_view->refreshFiles();
-	}
-}
+	HKL maxHKL();
+private:
+	std::vector<Reflection> _refls;
+	std::array<double, 6> _cell;
 
+	glm::mat3x3 _frac2Real = glm::mat3(1.f);
+	glm::mat3x3 _recip2Frac = glm::mat3(1.f);
+};
+
+#endif

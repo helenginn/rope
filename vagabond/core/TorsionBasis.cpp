@@ -42,6 +42,17 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	return basis;
 }
 
+void TorsionBasis::absorbVector(const float *vec, int n)
+{
+	for (size_t i = 0; i < n; i++)
+	{
+		float torsion = torsionForVector(i, vec, n);
+		_torsions[i]->setRefinedAngle(torsion);
+		_angles[i].angle = torsion;
+	}
+
+}
+
 int TorsionBasis::addTorsion(BondTorsion *torsion)
 {
 	if (torsion == nullptr || torsion->isConstrained())

@@ -1,5 +1,5 @@
 #include "../Knotter.h"
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../AtomGroup.h"
 #include "../GeometryTable.h"
 
@@ -7,7 +7,7 @@ int main()
 {
 	std::string path = "/assets/geometry/ASP.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.parse();
 	
 	Knotter knotter(geom.atoms(), geom.geometryTable());

@@ -123,13 +123,14 @@ vagafiles = [
 'vagabond/core/BondLength.cpp',
 'vagabond/core/BondTorsion.cpp',
 'vagabond/core/Chirality.cpp',
-'vagabond/core/Cif2Geometry.cpp',
+'vagabond/core/CifFile.cpp',
 'vagabond/core/ConcertedBasis.cpp',
 'vagabond/core/GeometryTable.cpp',
 'vagabond/core/HasBondstraints.cpp',
 'vagabond/core/Knotter.cpp',
 'vagabond/core/matrix_functions.cpp',
 'vagabond/core/PositionRefinery.cpp',
+'vagabond/core/RefList.cpp',
 'vagabond/core/SimpleBasis.cpp',
 'vagabond/core/SimplexEngine.cpp',
 'vagabond/core/Superpose.cpp',
@@ -162,13 +163,14 @@ install_headers([
 'vagabond/core/BondTorsion.h',
 'vagabond/core/Bondstraint.h',
 'vagabond/core/Chirality.h',
-'vagabond/core/Cif2Geometry.h',
+'vagabond/core/CifFile.h',
 'vagabond/core/ConcertedBasis.h',
 'vagabond/core/GeometryTable.h',
 'vagabond/core/Handler.h',
 'vagabond/core/HasBondstraints.h',
 'vagabond/core/Knotter.h',
 'vagabond/core/PositionRefinery.h',
+'vagabond/core/RefList.h',
 'vagabond/core/Semaphore.h',
 'vagabond/core/SimpleBasis.h',
 'vagabond/core/SimplexEngine.h',
@@ -185,7 +187,7 @@ subdir : 'vagabond/core')
 
 
 if (links != [])
-vagafiles += 'src/print_file.cpp'
+vagafiles += 'vagabond/gui/print_file.cpp'
 endif
 
 vag = []

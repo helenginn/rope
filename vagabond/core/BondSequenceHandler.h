@@ -101,8 +101,10 @@ public:
 	/** Changes which atoms are included for calculation of position
 	 * deviation 
 	 * 	@param min minimum depth from anchor position
-	 * 	@param max maximum depth from anchor position */
-	void imposeDepthLimits(int min, int max);
+	 * 	@param max maximum depth from anchor position 
+	 * 	@param sidemax maximum depth permitted for side branches */
+	void imposeDepthLimits(int min, int max, int sidemax);
+
 	std::vector<bool> depthLimitMask();
 
 	void start();
@@ -141,9 +143,6 @@ private:
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
 	BondCalculator *_calculator = nullptr;
-	
-	int _minDepth = 0;
-	int _maxDepth = INT_MAX;
 };
 
 #endif

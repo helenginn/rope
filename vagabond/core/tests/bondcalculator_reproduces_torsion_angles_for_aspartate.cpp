@@ -1,12 +1,12 @@
 #include "../AtomGroup.h"
-#include "../Cif2Geometry.h"
+#include "../CifFile.h"
 #include "../BondTorsion.h"
 
 int main()
 {
 	std::string path = "/assets/geometry/ASP.cif";
 
-	Cif2Geometry geom = Cif2Geometry(path);
+	CifFile geom = CifFile(path);
 	geom.parse();
 	
 	AtomGroup &glycine = *geom.atoms();
