@@ -78,35 +78,7 @@ void BondSequence::addGraph(AtomGraph *graph)
 
 void BondSequence::calculateMissingMaxDepths()
 {
-	for (size_t i = 0; i < _graphs.size(); i++)
-	{
-		AtomGraph *head = _graphs[i];
-
-		/* assign this graph's depth up the entire chain, if higher */
-		if (head->children.size() == 0 && head->maxDepth < 0)
-		{
-			AtomGraph *curr = head;
-			head->maxDepth = head->depth;
-
-			while (true)
-			{
-				Atom *p = curr->parent;
-				if (p == nullptr)
-				{
-					break;
-				}
-
-				AtomGraph *gp = _atom2Graph[p];
-				if (gp->maxDepth < head->maxDepth)
-				{
-					gp->maxDepth = head->maxDepth;
-				}
-				
-				curr = gp;
-			}
-		}
-	}
-
+	AtomGraph::calculateMissingMaxDepths(_graphs, _atom2Graph);
 }
 
 void BondSequence::generateAtomGraph(Atom *atom, size_t count)
@@ -193,17 +165,12 @@ void BondSequence::removeGraphs()
 	_atom2Block.clear();
 }
 
-bool BondSequence::atomgraph_less_than(const AtomGraph *a, const AtomGraph *b)
-{
-	return *a < *b;
-}
-
 void BondSequence::sortGraphChildren()
 {
 	for (size_t i = 0; i < _graphs.size(); i++)
 	{
 		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
-		BondSequence::atomgraph_less_than);
+		AtomGraph::atomgraph_less_than);
 		
 		if (_graphs[i]->torsion == nullptr ||
 		    _graphs[i]->children.size() == 0)
@@ -239,38 +206,7 @@ void BondSequence::sortGraphChildren()
 
 void BondSequence::fillInParents()
 {
-	for (size_t i = 0; i < _graphs.size(); i++)
-	{
-		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
-		          BondSequence::atomgraph_less_than);
-		
-		/* Fix children/grandchildren of anchor if needed */
-		if (_graphs[i]->depth == 0) 
-		{
-			if (_graphs[i]->children.size() == 0)
-			{
-				continue;
-			}
-
-			Atom *anchor = _graphs[i]->atom;
-			Atom *anchorChild = _graphs[i]->children[0]->atom;
-			
-			for (size_t j = 0; j < _graphs[i]->children.size(); j++)
-			{
-				AtomGraph *child = _graphs[i]->children[j];
-				
-				if (j > 0)
-				{
-					child->grandparent = anchorChild;
-				}
-				
-				for (size_t k = 0; k < child->children.size(); k++)
-				{
-					child->children[k]->grandparent = anchor;
-				}
-			}
-		}
-	}
+	AtomGraph::fillInParents(_graphs);
 }
 
 void BondSequence::fillTorsionAngles()
@@ -313,31 +249,7 @@ void BondSequence::fillTorsionAngles()
 
 bool BondSequence::checkAtomGraph(int i) const
 {
-	bool problem = false;
-	if ((_graphs[i]->depth >= 2 && 
-	     (!_graphs[i]->parent || !_graphs[i]->grandparent)) ||
-		 (_graphs[i]->depth >= 1 && (!_graphs[i]->parent)))
-	{
-		problem = true;
-	}
-	
-	if (_graphs[i]->maxDepth < _graphs[i]->depth)
-	{
-		problem = true;
-	}
-	
-	if (problem)
-	{
-		std::cout << "Graph for atom " << _graphs[i]->atom->atomName() << std::endl;
-		std::cout << "Parent: " << _graphs[i]->parent << std::endl;
-		std::cout << "Grandparent: " << _graphs[i]->grandparent << std::endl;
-		std::cout << "Depth: " << _graphs[i]->depth << std::endl;
-		std::cout << "MaxDepth: " << _graphs[i]->maxDepth << std::endl;
-
-		return true;
-	}
-
-	return false;
+	return _graphs[i]->checkAtomGraph();
 }
 
 void BondSequence::makeTorsionBasis()
@@ -901,26 +813,11 @@ void BondSequence::markHydrogenGraphs()
 {
 	for (size_t i = 0; i < _graphs.size(); i++)
 	{
-		if (atomGraphChildrenOnlyHydrogens(*_graphs[i]))
+		if (_graphs[i]->childrenOnlyHydrogens())
 		{
 			_graphs[i]->onlyHydrogens = true;
 		}
 	}
-}
-
-bool BondSequence::atomGraphChildrenOnlyHydrogens(AtomGraph &g)
-{
-	bool hydrogens = true;
-	
-	for (size_t i = 0; i < g.children.size(); i++)
-	{
-		if (g.children[i]->atom->elementSymbol() != "H")
-		{
-			hydrogens = false;
-		}
-	}
-
-	return hydrogens;
 }
 
 void BondSequence::reflagDepth(int min, int max, int sidemax)

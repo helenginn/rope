@@ -27,6 +27,7 @@
 #include "Atom.h"
 #include "BondSequenceHandler.h"
 #include "BondTorsion.h"
+#include "AtomGraph.h"
 
 class Atom;
 
@@ -155,28 +156,6 @@ public:
 	
 	std::string atomGraphDesc(int i);
 private:
-	struct AtomGraph
-	{
-		Atom *atom;
-		Atom *parent;
-		Atom *grandparent;
-		int priority = 0;
-		int depth;
-		int maxDepth;
-		bool onlyHydrogens = false;
-		BondTorsion *torsion;
-		int torsion_idx;
-		std::vector<AtomGraph *> children;
-		
-		bool operator<(const AtomGraph &other) const
-		{
-			/* otherwise go for tinier branch points first */
-			return maxDepth < other.maxDepth;
-		}
-	};
-
-	static bool atomgraph_less_than(const AtomGraph *a, const AtomGraph *b);
-	
 	struct AtomBlock
 	{
 		bool flag = true;

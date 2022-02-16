@@ -117,6 +117,7 @@ vagafiles = [
 'vagabond/core/AlignmentTool.cpp',
 'vagabond/core/Atom.cpp',
 'vagabond/core/AtomGroup.cpp',
+'vagabond/core/AtomGraph.cpp',
 'vagabond/core/BondAngle.cpp',
 'vagabond/core/BondCalculator.cpp',
 'vagabond/core/BondSequence.cpp',
