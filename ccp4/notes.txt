@@ -1,0 +1,1 @@
+The CCP4 libraries are covered by the modified GPLv3 license together with the additional permissions of the LGPLv3 licence.

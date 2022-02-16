@@ -1,4 +1,4 @@
-project('vagabond', 'cpp')
+project('vagabond', 'cpp', 'c')
 
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
@@ -74,6 +74,9 @@ install_data(
 'assets/images/tick.png',
 'assets/images/tube_1.5ml.png',
 install_dir : images)
+
+subdir('ccp4')
+deps += dep_ccp4
 
 hash_script = find_program('get_hash.sh')
 
