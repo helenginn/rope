@@ -17,7 +17,9 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
+#include <sstream>
 #include "AtomGraph.h"
+#include "BondTorsion.h"
 #include "Atom.h"
 
 bool AtomGraph::childrenOnlyHydrogens()
@@ -134,3 +136,63 @@ bool AtomGraph::checkAtomGraph()
 	return false;
 
 }
+
+std::string AtomGraph::desc()
+{
+	AtomGraph &g = *this;
+
+	std::ostringstream ss;
+	int num = g.depth;
+	std::string indent;
+	for (int i = 0; i < num; i++)
+	{
+		indent += "  ";
+	}
+	ss << indent << "====== ATOMGRAPH " << g.atom->atomName() << " ======";
+	ss << std::endl;
+	ss << indent << "Inheritance: ";
+	if (g.grandparent == nullptr)
+	{
+		ss << "(null)";
+	}
+	else 
+	{
+		ss << g.grandparent->atomName();
+	}
+	
+	ss << " to ";
+
+	if (g.parent == nullptr)
+	{
+		ss << "(null)";
+	}
+	else 
+	{
+		ss << g.parent->atomName();
+	}
+
+	ss << " to " << g.atom->atomName() << " (this)" << std::endl;
+	
+	ss << indent << "Torsion: ";
+	
+	if (g.torsion)
+	{
+		ss << g.torsion->desc() << std::endl;
+	}
+	else
+	{
+		ss << "(null)" << std::endl;
+	}
+	
+	ss << indent << "Children: ";
+	
+	for (size_t i = 0; i < g.children.size(); i++)
+	{
+		ss << g.children[i]->atom->atomName() << " ";
+	}
+	
+	ss << std::endl;
+
+	return ss.str();
+}
+

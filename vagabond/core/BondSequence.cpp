@@ -22,7 +22,6 @@
 #include "TorsionBasis.h"
 #include "Atom.h"
 #include <iostream>
-#include <sstream>
 #include <queue>
 
 BondSequence::BondSequence(BondSequenceHandler *handler)
@@ -734,61 +733,7 @@ int BondSequence::firstBlockForAtom(Atom *atom)
 
 std::string BondSequence::atomGraphDesc(int i)
 {
-	AtomGraph &g = *_graphs[i];
-
-	std::ostringstream ss;
-	int num = g.depth;
-	std::string indent;
-	for (int i = 0; i < num; i++)
-	{
-		indent += "  ";
-	}
-	ss << indent << "====== ATOMGRAPH " << g.atom->atomName() << " ======";
-	ss << std::endl;
-	ss << indent << "Inheritance: ";
-	if (g.grandparent == nullptr)
-	{
-		ss << "(null)";
-	}
-	else 
-	{
-		ss << g.grandparent->atomName();
-	}
-	
-	ss << " to ";
-
-	if (g.parent == nullptr)
-	{
-		ss << "(null)";
-	}
-	else 
-	{
-		ss << g.parent->atomName();
-	}
-
-	ss << " to " << g.atom->atomName() << " (this)" << std::endl;
-	
-	ss << indent << "Torsion: ";
-	
-	if (g.torsion)
-	{
-		ss << g.torsion->desc() << std::endl;
-	}
-	else
-	{
-		ss << "(null)" << std::endl;
-	}
-	
-	ss << indent << "Children: ";
-	
-	for (size_t i = 0; i < g.children.size(); i++)
-	{
-		ss << g.children[i]->atom->atomName() << " ";
-	}
-	
-	ss << std::endl;
-
-	return ss.str();
+	return _graphs[i]->desc();
 }
 
 const size_t BondSequence::flagged() const

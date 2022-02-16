@@ -40,6 +40,7 @@ struct AtomGraph
 
 	bool childrenOnlyHydrogens();
 	bool checkAtomGraph();
+	std::string desc();
 	
 	static void calculateMissingMaxDepths(std::vector<AtomGraph *> &graphs,
 	                                      std::map<Atom *, AtomGraph *> 
