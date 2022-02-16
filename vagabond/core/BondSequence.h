@@ -30,10 +30,10 @@
 #include "AtomGraph.h"
 
 class Atom;
-
 class BondSequenceHandler;
 
 struct MiniJob;
+
 
 class BondSequence
 {
@@ -139,7 +139,7 @@ public:
 	}
 
 	void calculate();
-	std::vector<Atom::WithPos> &extractPositions();
+	std::map<Atom *, Atom::WithPos> &extractPositions();
 	double calculateDeviations();
 
 	void setSampleCount(int count)
@@ -243,7 +243,7 @@ private:
 	BondSequenceHandler *_handler = nullptr;
 	TorsionBasis *_torsionBasis = nullptr;
 	TorsionBasis::Type _basisType;
-	std::vector<Atom::WithPos> _posAtoms;
+	std::map<Atom *, Atom::WithPos> _posAtoms;
 };
 
 #endif

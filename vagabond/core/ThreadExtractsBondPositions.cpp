@@ -33,14 +33,13 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, MiniJob *mini,
                                                    BondSequence *seq)
 {
 	Result *r = job->result;
-	r->aps.reserve(seq->blockCount());
 
-	std::vector<Atom::WithPos> aps = seq->extractPositions();
+	AtomPosMap aps = seq->extractPositions();
 
 	/* extend atom positions in the result */
 	r->ticket = mini->job->ticket;
 	r->handout.lock();
-	r->aps.insert(r->aps.end(), aps.begin(), aps.end());
+	r->aps = aps;
 	r->handout.unlock();
 }
 

@@ -50,15 +50,16 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 
 glm::mat4x4 AlignmentTool::superposition(Result *result)
 {
-	std::vector<Atom::WithPos> &aps = result->aps;
+	AtomPosMap &aps = result->aps;
 
 	Superpose pose;
 	pose.forceSameHand(true);
 
-	for (size_t i = 0; i < aps.size(); i++)
+	AtomPosMap::iterator it;
+	for (it = aps.begin(); it != aps.end(); it++)
 	{
-		glm::vec3 init = aps[i].atom->initialPosition();
-		glm::vec3 pos = aps[i].pos;
+		glm::vec3 init = it->first->initialPosition();
+		glm::vec3 pos = it->second.ave;
 		pose.addPositionPair(init, pos);
 	}
 	

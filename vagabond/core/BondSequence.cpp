@@ -677,10 +677,9 @@ double BondSequence::calculateDeviations()
 	return sum / count;
 }
 
-std::vector<Atom::WithPos> &BondSequence::extractPositions()
+AtomPosMap &BondSequence::extractPositions()
 {
 	_posAtoms.clear();
-	_posAtoms.reserve(addedAtomsCount());
 
 	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
@@ -689,15 +688,10 @@ std::vector<Atom::WithPos> &BondSequence::extractPositions()
 			continue;
 		}
 		
-		if (!_blocks[i].flag)
-		{
-//			continue;
-		}
-		
-		Atom::WithPos ap;
-		ap.pos = _blocks[i].my_position();
-		ap.atom = _blocks[i].atom;
-		_posAtoms.push_back(ap);
+		Atom::WithPos &ap = _posAtoms[_blocks[i].atom];
+		glm::vec3 mypos = _blocks[i].my_position();
+		ap.ave += mypos;
+		ap.samples.push_back(mypos);
 	}
 	
 	return _posAtoms;

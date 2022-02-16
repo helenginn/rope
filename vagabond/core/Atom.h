@@ -13,20 +13,20 @@ class Atom : public HasBondstraints
 public:
 	Atom();
 	Atom(std::string code, std::string name);
+	
+	struct WithPos
+	{
+		std::vector<glm::vec3> samples;
+		glm::vec3 ave;
+	};
 
 	/** summary (average) of atom placement */
 	struct AtomPlacement
 	{
 		glm::mat3x3 tensor;
 		float b;
-		glm::vec3 pos;
+		WithPos pos;
 	}; 
-	
-	struct WithPos
-	{
-		Atom *atom;
-		glm::vec3 pos;
-	};
 	
 	/** @param pos 3D coordinate in real space
 	 * @param b B factor in Angstroms squared
@@ -43,7 +43,7 @@ public:
 	/** @returns initial position, usually as found in the PDB/mmCIF file */
 	const glm::vec3 &initialPosition() const
 	{
-		return _initial.pos;
+		return _initial.pos.ave;
 	}
 	
 	/** @returns updated derived B factor from vagabond model if in use,
@@ -57,10 +57,11 @@ public:
 	 * otherwise initial position from PDB/mmCIF file */
 	const glm::vec3 &derivedPosition() const
 	{
-		return _derived.pos;
+		return _derived.pos.ave;
 	}
 	
 	void setDerivedPosition(glm::vec3 &pos);
+	void setDerivedPositions(WithPos &pos);
 	
 	/** @param name identifier for atom within monomer, e.g. CG2 in valine */
 	void setAtomName(std::string name);

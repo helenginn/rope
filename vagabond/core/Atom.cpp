@@ -19,7 +19,7 @@ Atom::Atom(std::string code, std::string name)
 
 void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor)
 {
-	_initial.pos = pos;
+	_initial.pos.ave = pos;
 	if (b > 0)
 	{
 		_initial.b = b;
@@ -28,7 +28,7 @@ void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor)
 	
 	if (!_setupInitial)
 	{
-		_derived.pos = pos;
+		_derived.pos.ave = pos;
 		if (b > 0)
 		{
 			_derived.b = b;
@@ -75,6 +75,12 @@ void Atom::setAtomNum(int num)
 
 void Atom::setDerivedPosition(glm::vec3 &pos)
 {
+	_derived.pos.ave = pos;
+	changedPosition();
+}
+
+void Atom::setDerivedPositions(WithPos &pos)
+{
 	_derived.pos = pos;
 	changedPosition();
 }
@@ -102,7 +108,7 @@ bool Atom::fishPosition(glm::vec3 *p)
 {
 	if (_mutex.try_lock())
 	{
-		*p = _derived.pos;
+		*p = _derived.pos.ave;
 		_changedPosition = false;
 		unlockMutex();
 		return true;

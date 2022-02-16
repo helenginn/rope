@@ -25,10 +25,11 @@ int check_vecs(std::string name)
 	std::cout << "Ticket: " << result->ticket << std::endl;
 	std::cout << "Atom count: " << result->aps.size() << std::endl;
 	
-	for (size_t i = 0; i < result->aps.size(); i++)
+	AtomPosMap::iterator it;
+	for (it = result->aps.begin(); it != result->aps.end(); it++)
 	{
-		Atom *a = result->aps[i].atom;
-		glm::vec3 v = result->aps[i].pos;
+		Atom *a = it->first;
+		glm::vec3 v = it->second.ave;
 		
 		std::cout << a->atomName() << " " << glm::to_string(v) << std::endl;
 		

@@ -46,27 +46,29 @@ enum JobType
 	JobCalculateDeviations = 1 << 1,
 };
 
+typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
+
 struct Result
 {
 	int ticket;
 	JobType requests;
-	std::vector<Atom::WithPos> aps;
+	AtomPosMap aps;
 	double deviation;
 	std::mutex handout;
 	
 	void transplantPositions()
 	{
-		for (size_t i = 0; i < aps.size(); i++)
+		AtomPosMap::iterator it;
+		for (it = aps.begin(); it != aps.end(); it++)
 		{
-			glm::vec3 &pos = aps[i].pos;
-			aps[i].atom->setDerivedPosition(pos);
+			it->second.ave /= (float)it->second.samples.size();
+			it->first->setDerivedPositions(it->second);
 		}
 	}
 	
 	void destroy()
 	{
 		aps.clear();
-		std::vector<Atom::WithPos>().swap(aps);
 
 		delete this;
 	}
