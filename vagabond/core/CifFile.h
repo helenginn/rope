@@ -9,6 +9,7 @@
 class Atom;
 class AtomGroup;
 class GeometryTable;
+class RefList;
 
 class CifFile
 {
@@ -47,11 +48,13 @@ public:
 	AtomGroup *atoms();
 	
 	bool hasUnitCell() const;
-	std::vector<double> unitCell();
-	int spaceGroupNum();
+	std::array<double, 6> unitCell() const;
+	int spaceGroupNum() const;
 	
 	const size_t compAtomCount() const;
 	const size_t atomCount() const;
+	
+	RefList *reflectionList() const;
 	
 	const size_t reflectionCount() const
 	{

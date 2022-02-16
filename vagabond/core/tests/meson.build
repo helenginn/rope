@@ -69,6 +69,7 @@ unit_tests = [
 'matrix_from_unit_cell_handles_obtuse',
 'matrix_from_unit_cell_handles_planar',
 'reflist_returns_resolution_for_chosen_unit_cell',
+'reflist_returns_same_resolution_for_hexagonal_symops',
 'reflist_returns_max_hkl',
 'right_hand_matrix_has_positive_determinant',
 'simplebasis_returns_angle_for_requested_torsion',

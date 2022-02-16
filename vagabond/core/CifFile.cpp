@@ -3,6 +3,7 @@
 #include "commit.h"
 
 #include "CifFile.h"
+#include "RefList.h"
 #include "Knotter.h"
 #include "GeometryTable.h"
 #include "Atom.h"
@@ -685,32 +686,47 @@ bool CifFile::hasUnitCell() const
 	return found;
 }
 
-std::vector<double> CifFile::unitCell() 
+std::array<double, 6> CifFile::unitCell() const
 {
 	if (!hasUnitCell())
 	{
-		return std::vector<double>();
+		throw std::runtime_error("Requested non-existent unit cell");
 	}
 
-	double a = as_number(_values["_cell.length_a"]);
-	double b = as_number(_values["_cell.length_b"]);
-	double c = as_number(_values["_cell.length_c"]);
-	double alpha = as_number(_values["_cell.angle_alpha"]);
-	double beta = as_number(_values["_cell.angle_beta"]);
-	double gamma = as_number(_values["_cell.angle_gamma"]);
+	double a = as_number(_values.at("_cell.length_a"));
+	double b = as_number(_values.at("_cell.length_b"));
+	double c = as_number(_values.at("_cell.length_c"));
+	double alpha = as_number(_values.at("_cell.angle_alpha"));
+	double beta = as_number(_values.at("_cell.angle_beta"));
+	double gamma = as_number(_values.at("_cell.angle_gamma"));
 	
-	std::vector<double> cell = {a, b, c, alpha, beta, gamma};
+	std::array<double, 6> cell = {a, b, c, alpha, beta, gamma};
 	
 	return cell;
 }
 
-int CifFile::spaceGroupNum()
+int CifFile::spaceGroupNum() const
 {
 	if (_values.count("_symmetry.Int_Tables_number") == 0)
 	{
 		return -1;
 	}
 
-	int num = as_number(_values["_symmetry.Int_Tables_number"]);
+	int num = as_number(_values.at("_symmetry.Int_Tables_number"));
 	return num;
 }
+
+RefList *CifFile::reflectionList() const
+{
+	RefList *list = new RefList(_reflections);
+	list->setSpaceGroup(spaceGroupNum());
+	
+	if (hasUnitCell())
+	{
+		std::array<double, 6> cell = unitCell();
+		list->setUnitCell(cell);
+	}
+	
+	return list;
+}
+

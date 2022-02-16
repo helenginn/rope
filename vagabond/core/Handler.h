@@ -23,6 +23,7 @@
 #include "ThreadWorker.h"
 #include "Atom.h"
 #include <vector>
+#include <map>
 #include <queue>
 #include <thread>
 

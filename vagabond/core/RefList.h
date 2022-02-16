@@ -23,15 +23,34 @@
 #include "../utils/glm_import.h"
 #include <vector>
 #include <array>
+#include <ccp4/csymlib.h>
+
+/** \class RefList
+ *  This class stores reflections in a list format (rather than inserted
+ *  onto a grid) and covers symmetry operation work on the list.
+ **/
 
 class RefList
 {
 public:
-	RefList(std::vector<Reflection> &refls);
+	RefList(const std::vector<Reflection> &refls);
+	
+	void setSpaceGroup(int num);
+	void extractSymops();
+	
+	size_t symOpCount()
+	{
+		return _nsymops;
+	}
+	
+	glm::vec3 applyRotSym(const glm::vec3 v, const int i);
 	
 	void setUnitCell(std::array<double, 6> &cell);
 	
 	const double resolutionOf(const int idx) const;
+	const double resolutionOf(glm::vec3 v) const;
+	const glm::vec3 reflAsFraction(const int idx) const;
+	const glm::vec3 reflAsIndex(const int idx) const;
 
 	const size_t reflectionCount() const
 	{
@@ -42,9 +61,15 @@ public:
 private:
 	std::vector<Reflection> _refls;
 	std::array<double, 6> _cell;
+	
+	CSym::CCP4SPG *_spg = NULL;
 
 	glm::mat3x3 _frac2Real = glm::mat3(1.f);
 	glm::mat3x3 _recip2Frac = glm::mat3(1.f);
+	
+	size_t _nsymops = 0;
+	glm::mat3x3 *_rots = nullptr;
+	glm::vec3 *_trans = nullptr;
 };
 
 #endif
