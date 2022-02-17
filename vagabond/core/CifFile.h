@@ -14,6 +14,18 @@ class RefList;
 class CifFile
 {
 public:
+
+	enum Type
+	{
+		Nothing = 0,
+		Geometry = 1 << 0,
+		CompAtoms = 1 << 1,
+		MacroAtoms = 1 << 2,
+		UnitCell = 1 << 3,
+		Symmetry = 1 << 4,
+		Reflections = 1 << 5,
+	};
+
 	CifFile(std::string filename = "");
 	void changeFilename(std::string filename);
 
@@ -26,6 +38,9 @@ public:
 		_code = code;
 		to_upper(code);
 	}
+
+	/** determine bitwise contents of file */
+	Type cursoryLook();
 
 	/** commence parsing and pull out atoms and geometry information 
 	 * from file */
@@ -83,6 +98,7 @@ private:
 
 	bool getHeaders(gemmi::cif::Loop &loop, std::string *headers, 
 	                int *indices, int n);
+	bool identifyHeader(std::string *headers);
 
 	void parseFileContents(std::string filename);
 
@@ -100,6 +116,10 @@ private:
 	bool _accessedMacroAtoms = false;
 	bool _accessedTable;
 	bool _knot;
+	
+	static std::string macroHeaders[];
+	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
+	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);
 };
 
 #endif

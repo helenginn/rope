@@ -12,6 +12,22 @@
 
 using namespace gemmi::cif;
 
+std::string CifFile::macroHeaders[] = 
+{
+	"_atom_site.group_PDB",         /* e.g. ATOM or HETATM */
+	"_atom_site.id",                /* atom number */
+	"_atom_site.type_symbol",       /* element symbol */
+	"_atom_site.label_alt_id",      /* alternative conformer */
+	"_atom_site.label_atom_id",     /* atom name */
+	"_atom_site.label_comp_id",     /* chemical component i.e. residue */
+	"_atom_site.label_asym_id",     /* seems to be chain ID */
+	"_atom_site.Cartn_x",           /* cartesian coordinate x*/
+	"_atom_site.Cartn_y",           /* cartesian coordinate y*/
+	"_atom_site.Cartn_z",           /* cartesian coordinate z*/
+	"_atom_site.occupancy",
+	"_atom_site.B_iso_or_equiv"
+};
+
 CifFile::CifFile(std::string filename)
 {
 	changeFilename(filename);
@@ -51,12 +67,19 @@ CifFile::~CifFile()
 	}
 }
 
-void CifFile::parseFileContents(std::string filename)
+std::string toFilename(std::string filename)
 {
 	std::string tmp = filename;
 #ifndef __EMSCRIPTEN__
 	tmp = std::string(DATA_DIRECTORY) + "/" + filename;
 #endif
+
+	return tmp;
+}
+
+void CifFile::parseFileContents(std::string file)
+{
+	std::string tmp = toFilename(file);
 
 	Document doc;
 	try
@@ -65,7 +88,7 @@ void CifFile::parseFileContents(std::string filename)
 	}
 	catch (std::runtime_error err)
 	{
-		std::cout << "Could not load file " << filename << std::endl;
+		std::cout << "Could not load file " << file << std::endl;
 		std::cout << err.what() << std::endl;
 		return;
 	}
@@ -154,6 +177,55 @@ void CifFile::processLoop(Loop &loop)
 	{
 		return;
 	}
+}
+
+bool CifFile::identifyHeader(Loop &loop, std::string headers[])
+{
+	int n = sizeof(*headers) / sizeof(std::string);
+
+	for (size_t j = 0; j < loop.tags.size(); j++)
+	{
+		bool found = false;
+
+		for (size_t i = 0; i < n; i++)
+		{
+			if (loop.tags[j] == headers[i])
+			{
+				found = true;
+			}
+		}
+		
+		if (!found)
+		{
+			return false;
+		}
+	}
+	
+	return true;
+
+}
+
+bool CifFile::identifyHeader(Document &doc, std::string headers[])
+{
+	for (size_t j = 0; j < doc.blocks.size(); j++)
+	{
+		Block &contents = doc.blocks[j];
+		for (size_t i = 0; i < contents.items.size(); i++)
+		{
+			if (contents.items[i].type == ItemType::Loop)
+			{
+				Loop &loop = contents.items[i].loop;
+				bool found = identifyHeader(loop, headers);
+				
+				if (found)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
 }
 
 bool CifFile::getHeaders(Loop &loop, std::string *headers, int *indices,
@@ -525,23 +597,7 @@ bool CifFile::processLoopAsMacroAtoms(Loop &loop)
 	int &occ_idx = idxs[10];
 	int &b_idx = idxs[11];
 	
-	std::string headers[] = 
-	{
-		"_atom_site.group_PDB",         /* e.g. ATOM or HETATM */
-		"_atom_site.id",                /* atom number */
-		"_atom_site.type_symbol",       /* element symbol */
-		"_atom_site.label_alt_id",      /* alternative conformer */
-		"_atom_site.label_atom_id",     /* atom name */
-		"_atom_site.label_comp_id",     /* chemical component i.e. residue */
-		"_atom_site.label_asym_id",     /* seems to be chain ID */
-		"_atom_site.Cartn_x",           /* cartesian coordinate x*/
-		"_atom_site.Cartn_y",           /* cartesian coordinate y*/
-		"_atom_site.Cartn_z",           /* cartesian coordinate z*/
-		"_atom_site.occupancy",
-		"_atom_site.B_iso_or_equiv"
-	};
-	
-	if (!getHeaders(loop, headers, idxs, 12))
+	if (!getHeaders(loop, macroHeaders, idxs, 12))
 	{
 		return false;
 	}
@@ -730,3 +786,25 @@ RefList *CifFile::reflectionList() const
 	return list;
 }
 
+CifFile::Type CifFile::cursoryLook()
+{
+	std::string tmp = toFilename(_filename);
+	Type type = Nothing;
+
+	Document doc;
+	try
+	{
+		doc = read_file(tmp);
+	}
+	catch (std::runtime_error err)
+	{
+		return type;
+	}
+
+	if (identifyHeader(doc, macroHeaders))
+	{
+		type = CifFile::Type(type | MacroAtoms);
+	}
+	
+	return type;
+}
