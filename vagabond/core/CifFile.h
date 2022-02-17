@@ -118,6 +118,10 @@ private:
 	bool _knot;
 	
 	static std::string macroHeaders[];
+	static std::string lengthHeaders[];
+	static std::string angleHeaders[];
+	static std::string torsionHeaders[];
+	static std::string compHeaders[];
 	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
 	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);
 };

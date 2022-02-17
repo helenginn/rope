@@ -134,12 +134,15 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename)
 	glGenTextures(1, &texid);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
-	GLint intform = GL_RGBA;
+	GLint intform = GL_RGBA8;
 	GLenum myform = GL_RGBA;
 
 #ifndef __EMSCRIPTEN__
-	intform = GL_RGB;
-	myform = GL_RGB;
+	if (!image->format->Amask)
+	{
+		intform = GL_RGB;
+		myform = GL_RGB;
+	}
 #endif
 	
 	glTexImage2D(GL_TEXTURE_2D, 0, intform, image->w, image->h,

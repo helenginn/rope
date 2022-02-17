@@ -19,6 +19,7 @@
 #include "Display.h"
 #include <vagabond/core/CifFile.h>
 #include "FileView.h"
+#include "FileLine.h"
 #include "Text.h"
 #include "TextButton.h"
 #include "Window.h"
@@ -50,6 +51,7 @@ void FileView::setup()
 void FileView::buttonPressed(std::string tag, Button *button)
 {
 	Scene::buttonPressed(tag, button);
+	std::cout << tag << std::endl;
 
 	std::string file_prefix = "file_";
 	if (tag.rfind(file_prefix, 0) != std::string::npos)
@@ -90,13 +92,12 @@ void FileView::loadFilesFrom(int start, int num)
 	for (size_t i = start; i < start + num && i < fileCount; i++)
 	{
 		std::string filename = _manager->filename(i);
-
-		TextButton *button = new TextButton(filename, this);
-		button->setReturnTag("file_" + filename);
-		button->resize(1.0);
-		button->setLeft(0.2, pos);
+		
+		FileLine *line = new FileLine(this, filename);
+		line->setLeft(0.2, pos);
 		pos += 0.06;
-		addObject(button);
-		_temps.push_back(button);
+		addObject(line);
+		_temps.push_back(line);
 	}
 }
+

@@ -19,17 +19,24 @@
 #ifndef __vagabond__FileLine__
 #define __vagabond__FileLine__
 
+#include <vagabond/core/CifFile.h>
 #include "Box.h"
+
+class FileView;
 
 class FileLine : public Box
 {
 public:
-	FileLine(std::string filename);
+	FileLine(FileView *view,std::string filename);
+	virtual ~FileLine();
 
-	void setup();
 private:
-	std::string _filename;
+	void setup();
+	void queryFile();
 
+	FileView *_view;
+	std::string _filename;
+	CifFile::Type _type;
 };
 
 #endif

@@ -14,18 +14,49 @@ using namespace gemmi::cif;
 
 std::string CifFile::macroHeaders[] = 
 {
-	"_atom_site.group_PDB",         /* e.g. ATOM or HETATM */
+	"_atom_site.group_pdb",         /* e.g. ATOM or HETATM */
 	"_atom_site.id",                /* atom number */
 	"_atom_site.type_symbol",       /* element symbol */
 	"_atom_site.label_alt_id",      /* alternative conformer */
 	"_atom_site.label_atom_id",     /* atom name */
 	"_atom_site.label_comp_id",     /* chemical component i.e. residue */
 	"_atom_site.label_asym_id",     /* seems to be chain ID */
-	"_atom_site.Cartn_x",           /* cartesian coordinate x*/
-	"_atom_site.Cartn_y",           /* cartesian coordinate y*/
-	"_atom_site.Cartn_z",           /* cartesian coordinate z*/
+	"_atom_site.cartn_x",           /* cartesian coordinate x*/
+	"_atom_site.cartn_y",           /* cartesian coordinate y*/
+	"_atom_site.cartn_z",           /* cartesian coordinate z*/
 	"_atom_site.occupancy",
-	"_atom_site.B_iso_or_equiv"
+	"_atom_site.b_iso_or_equiv",
+	""
+};
+
+std::string CifFile::compHeaders[] = 
+{
+	"_chem_comp_atom.comp_id", "_chem_comp_atom.x",
+	"_chem_comp_atom.y", "_chem_comp_atom.z",
+	"_chem_comp_atom.atom_id", "_chem_comp_atom.type_symbol", ""
+};
+
+std::string CifFile::angleHeaders[] = 
+{
+	"_chem_comp_angle.comp_id", "_chem_comp_angle.atom_id_1", 
+	"_chem_comp_angle.atom_id_2", "_chem_comp_angle.atom_id_3", 
+	"_chem_comp_angle.value_angle", "_chem_comp_angle.value_angle_esd", ""
+};
+
+
+std::string CifFile::torsionHeaders[] = 
+{
+		"_chem_comp_tor.comp_id", "_chem_comp_tor.atom_id_1", 
+		"_chem_comp_tor.atom_id_2", "_chem_comp_tor.atom_id_3", 
+		"_chem_comp_tor.atom_id_4", "_chem_comp_tor.value_angle",
+		"_chem_comp_tor.value_angle_esd", "_chem_comp_tor.period", ""
+};
+
+std::string CifFile::lengthHeaders[] = 
+{
+	"_chem_comp_bond.comp_id", "_chem_comp_bond.atom_id_1", 
+	"_chem_comp_bond.atom_id_2", "_chem_comp_bond.value_dist", 
+	"_chem_comp_bond.value_dist_esd", ""
 };
 
 CifFile::CifFile(std::string filename)
@@ -181,15 +212,22 @@ void CifFile::processLoop(Loop &loop)
 
 bool CifFile::identifyHeader(Loop &loop, std::string headers[])
 {
-	int n = sizeof(*headers) / sizeof(std::string);
+	bool ok = true;
 
-	for (size_t j = 0; j < loop.tags.size(); j++)
+	for (size_t i = 0; ; i++)
 	{
-		bool found = false;
-
-		for (size_t i = 0; i < n; i++)
+		if (headers[i].length() == 0)
 		{
-			if (loop.tags[j] == headers[i])
+			break;
+		}
+		
+		bool found = false;
+		for (size_t j = 0; j < loop.tags.size(); j++)
+		{
+			std::string test = loop.tags[j];
+			to_lower(test);
+
+			if (headers[i] == test)
 			{
 				found = true;
 			}
@@ -240,7 +278,10 @@ bool CifFile::getHeaders(Loop &loop, std::string *headers, int *indices,
 	{
 		for (size_t i = 0; i < n; i++)
 		{
-			if (loop.tags[j] == headers[i])
+			std::string test = loop.tags[j];
+			to_lower(test);
+
+			if (test == headers[i])
 			{
 				indices[i] = j;
 			}
@@ -322,14 +363,7 @@ bool CifFile::processLoopAsCompAtoms(Loop &loop)
 	int &atom_name_idx = idxs[4];
 	int &ele_idx = idxs[5];
 	
-	std::string headers[] = 
-	{
-		"_chem_comp_atom.comp_id", "_chem_comp_atom.x",
-		"_chem_comp_atom.y", "_chem_comp_atom.z",
-		"_chem_comp_atom.atom_id", "_chem_comp_atom.type_symbol"
-	};
-	
-	if (!getHeaders(loop, headers, idxs, 6))
+	if (!getHeaders(loop, compHeaders, idxs, 6))
 	{
 		return false;
 	}
@@ -414,14 +448,7 @@ bool CifFile::processLoopAsAngleLinks(Loop &loop)
 	int &dev_idx = idxs[4];
 	int &link_idx = idxs[5];
 	
-	std::string headers[] = 
-	{
-		"_chem_link_angle.atom_id_1", "_chem_link_angle.atom_id_2", 
-		"_chem_link_angle.atom_id_3", "_chem_link_angle.value_angle", 
-		"_chem_link_angle.value_angle_esd", "_chem_link_angle.link_id"
-	};
-	
-	if (!getHeaders(loop, headers, idxs, 6))
+	if (!getHeaders(loop, angleHeaders, idxs, 6))
 	{
 		return false;
 	}
@@ -503,14 +530,7 @@ bool CifFile::processLoopAsLengths(Loop &loop)
 	int &dist_idx = idxs[3];
 	int &dev_idx = idxs[4];
 	
-	std::string headers[] = 
-	{
-		"_chem_comp_bond.comp_id", "_chem_comp_bond.atom_id_1", 
-		"_chem_comp_bond.atom_id_2", "_chem_comp_bond.value_dist", 
-		"_chem_comp_bond.value_dist_esd"
-	};
-	
-	if (!getHeaders(loop, headers, idxs, 5))
+	if (!getHeaders(loop, lengthHeaders, idxs, 5))
 	{
 		return false;
 	}
@@ -546,15 +566,7 @@ bool CifFile::processLoopAsTorsions(Loop &loop)
 	int &dev_idx = idxs[6];
 	int &period_idx = idxs[7];
 	
-	std::string headers[] = 
-	{
-		"_chem_comp_tor.comp_id", "_chem_comp_tor.atom_id_1", 
-		"_chem_comp_tor.atom_id_2", "_chem_comp_tor.atom_id_3", 
-		"_chem_comp_tor.atom_id_4", "_chem_comp_tor.value_angle",
-		"_chem_comp_tor.value_angle_esd", "_chem_comp_tor.period"
-	};
-	
-	if (!getHeaders(loop, headers, idxs, 8))
+	if (!getHeaders(loop, torsionHeaders, idxs, 8))
 	{
 		return false;
 	}
@@ -804,6 +816,17 @@ CifFile::Type CifFile::cursoryLook()
 	if (identifyHeader(doc, macroHeaders))
 	{
 		type = CifFile::Type(type | MacroAtoms);
+	}
+
+	if (identifyHeader(doc, compHeaders))
+	{
+		type = CifFile::Type(type | CompAtoms);
+	}
+
+	if (identifyHeader(doc, lengthHeaders) || identifyHeader(doc, angleHeaders)
+	    || identifyHeader(doc, torsionHeaders))
+	{
+		type = CifFile::Type(type | Geometry);
 	}
 	
 	return type;

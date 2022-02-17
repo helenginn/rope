@@ -71,7 +71,9 @@ install_data(
 'assets/images/paper.jpg',
 'assets/images/peak.png',
 'assets/images/protein.png',
+'assets/images/protractor.png',
 'assets/images/sad_face.png',
+'assets/images/some_atoms.png',
 'assets/images/tick.png',
 'assets/images/tube_1.5ml.png',
 install_dir : images)

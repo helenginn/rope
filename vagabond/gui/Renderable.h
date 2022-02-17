@@ -287,6 +287,7 @@ public:
 	void addIndex(GLint i);
 	void addIndices(GLuint i1, GLuint i2, GLuint i3);
 	double maximalWidth();
+	void maximalWidth(double *min, double *max);
 
 	glm::vec3 rayTraceToPlane(glm::vec3 point, GLuint *trio, 
 	                          glm::vec3 dir, bool *backwards);

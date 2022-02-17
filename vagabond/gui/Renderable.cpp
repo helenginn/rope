@@ -668,6 +668,15 @@ glm::vec3 Renderable::centroid()
 {
 	glm::vec3 sum = glm::vec3(0, 0, 0);
 	float count = 0;
+	
+	if (_vertices.size() == 0)
+	{
+		for (size_t i = 0; i < objectCount(); i++)
+		{
+			sum += object(i)->centroid();
+			count++;
+		}
+	}
 
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
@@ -1074,23 +1083,33 @@ void Renderable::setImage(std::string imagename)
 	_texture = imagename;
 }
 
+void Renderable::maximalWidth(double *min, double *max)
+{
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		if (_vertices[i].pos[0] > *max)
+		{
+			*max = _vertices[i].pos[0];
+		}
+
+		if (_vertices[i].pos[0] < *min)
+		{
+			*min = _vertices[i].pos[0];
+		}
+	}
+
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->maximalWidth(min, max);
+	}
+}
+
 double Renderable::maximalWidth()
 {
 	double max = -FLT_MAX;
 	double min = FLT_MAX;
 	
-	for (size_t i = 0; i < _vertices.size(); i++)
-	{
-		if (_vertices[i].pos[0] > max)
-		{
-			max = _vertices[i].pos[0];
-		}
-
-		if (_vertices[i].pos[0] < min)
-		{
-			min = _vertices[i].pos[0];
-		}
-	}
+	maximalWidth(&min, &max);
 	
 	return max - min;
 }
@@ -1333,11 +1352,23 @@ void Renderable::setCentre(double x, double y)
 void Renderable::setLeft(double x, double y)
 {
 	double xf = 2 * x - 1;
-	double yf = 2 * y - 1;
+	double yf = 1 - 2 * y;
 	
-	xf += maximalWidth() / 2;
+	double l = FLT_MAX;
+	double r = -FLT_MAX;
+	maximalWidth(&l, &r);
+	
+	glm::vec3 p = centroid();
 
-	setPosition(glm::vec3(xf, -yf, 0));
+	glm::vec3 diff = glm::vec3(0.f);
+	diff.x = xf - l;
+	diff.y = yf - p.y;
+
+	lockMutex();
+	addToVertices(diff);
+	unlockMutex();
+
+	positionChanged();
 }
 
 void Renderable::setRight(double x, double y)
