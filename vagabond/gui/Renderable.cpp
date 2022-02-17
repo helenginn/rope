@@ -1329,3 +1329,23 @@ void Renderable::setCentre(double x, double y)
 
 	setPosition(glm::vec3(xf, -yf, 0));
 }
+
+void Renderable::setLeft(double x, double y)
+{
+	double xf = 2 * x - 1;
+	double yf = 2 * y - 1;
+	
+	xf += maximalWidth() / 2;
+
+	setPosition(glm::vec3(xf, -yf, 0));
+}
+
+void Renderable::setRight(double x, double y)
+{
+	double xf = 2 * x - 1;
+	double yf = 2 * y - 1;
+	
+	xf -= maximalWidth() / 2;
+
+	setPosition(glm::vec3(xf, -yf, 0));
+}

@@ -39,7 +39,7 @@ void Modal::conv_coords(double *fx, double *fy)
 void Modal::setLeft(Renderable *r, double fx, double fy)
 {
 	conv_coords(&fx, &fy);
-	_scene->setLeft(r, fx, fy);
+	r->setLeft(fx, fy);
 }
 
 void Modal::setCentre(Renderable *r, double fx, double fy)
@@ -51,7 +51,7 @@ void Modal::setCentre(Renderable *r, double fx, double fy)
 void Modal::setRight(Renderable *r, double fx, double fy)
 {
 	conv_coords(&fx, &fy);
-	_scene->setRight(r, fx, fy);
+	r->setRight(fx, fy);
 }
 
 void Modal::hide()

@@ -43,9 +43,6 @@ public:
 	virtual void keyReleaseEvent(SDL_Keycode pressed) {};
 	virtual void keyPressEvent(SDL_Keycode pressed) {};
 
-	void setLeft(Renderable *r, double x, double y);
-	void setRight(Renderable *r, double x, double y);
-
 	virtual void back(int num);
 	void buttonPressed(std::string tag, Button *button);
 protected:

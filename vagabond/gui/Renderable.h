@@ -187,6 +187,8 @@ public:
 	glm::vec3 centroid();
 	virtual void setPosition(glm::vec3 pos);
 	void setCentre(double x, double y);
+	void setLeft(double x, double y);
+	void setRight(double x, double y);
 	
 	void changeMidPoint(double x, double y);
 	void setHighlighted(bool highlighted);

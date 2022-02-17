@@ -64,26 +64,6 @@ void Scene::render()
 	}
 }
 
-void Scene::setLeft(Renderable *r, double x, double y)
-{
-	double xf = 2 * x - 1;
-	double yf = 2 * y - 1;
-	
-	xf += r->maximalWidth() / 2;
-
-	r->setPosition(glm::vec3(xf, -yf, 0));
-}
-
-void Scene::setRight(Renderable *r, double x, double y)
-{
-	double xf = 2 * x - 1;
-	double yf = 2 * y - 1;
-	
-	xf -= r->maximalWidth() / 2;
-
-	r->setPosition(glm::vec3(xf, -yf, 0));
-}
-
 void Scene::setCentrePixels(Renderable *r, int x, int y)
 {
 	double xf = 2 * (double)x / width() - 1;
@@ -199,7 +179,7 @@ void Scene::showBackButton()
 	TextButton *button = new TextButton("Back", this);
 	button->setReturnTag("back");
 	button->resize(0.6);
-	setLeft(button, 0.02, 0.06);
+	button->setLeft(0.02, 0.06);
 	addObject(button);
 	_back = button;
 }

@@ -85,7 +85,7 @@ void FileView::loadFilesFrom(int start, int num)
 	_temps.clear();
 
 	int fileCount = _manager->fileCount();
-	float pos = 0.3;
+	double pos = 0.3;
 
 	for (size_t i = start; i < start + num && i < fileCount; i++)
 	{
@@ -94,7 +94,7 @@ void FileView::loadFilesFrom(int start, int num)
 		TextButton *button = new TextButton(filename, this);
 		button->setReturnTag("file_" + filename);
 		button->resize(1.0);
-		setLeft(button, 0.2, pos);
+		button->setLeft(0.2, pos);
 		pos += 0.06;
 		addObject(button);
 		_temps.push_back(button);
