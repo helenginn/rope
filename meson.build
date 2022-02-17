@@ -97,6 +97,7 @@ guifiles = [
 'vagabond/gui/ChoiceGroup.cpp',
 'vagabond/gui/Draggable.cpp',
 'vagabond/gui/Display.cpp',
+'vagabond/gui/FileLine.cpp',
 'vagabond/gui/FileManager.cpp',
 'vagabond/gui/FileView.cpp',
 'vagabond/gui/GuiAtom.cpp',
