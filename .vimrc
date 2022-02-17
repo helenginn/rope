@@ -1,6 +1,6 @@
 set path=vagabond/core/**,vagabond/gui/**,vagabond/utils/**
 
-command! Tags !ctags -R libgui/* libsrc/*
+command! Tags !ctags -R vagabond/core/* vagabond/gui/*
 command! Ninja :wa|!ninja -C build/current vagabond.gui
 command! Winja :wa|!ninja -C build/website
 command! Unit :wa|!cd build/current; meson test --suite=unit
