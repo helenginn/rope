@@ -70,6 +70,7 @@ install_data(
 'assets/images/ok_face.png',
 'assets/images/paper.jpg',
 'assets/images/peak.png',
+'assets/images/protein.png',
 'assets/images/sad_face.png',
 'assets/images/tick.png',
 'assets/images/tube_1.5ml.png',
