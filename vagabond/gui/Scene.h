@@ -43,7 +43,6 @@ public:
 	virtual void keyReleaseEvent(SDL_Keycode pressed) {};
 	virtual void keyPressEvent(SDL_Keycode pressed) {};
 
-	void setCentre(Renderable *r, double x, double y);
 	void setLeft(Renderable *r, double x, double y);
 	void setRight(Renderable *r, double x, double y);
 

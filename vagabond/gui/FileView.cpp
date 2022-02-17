@@ -40,7 +40,7 @@ void FileView::setup()
 {
 	{
 		Text *text = new Text("Vagabond file system");
-		setCentre(text, 0.5, 0.1);
+		text->setCentre(0.5, 0.1);
 		addObject(text);
 	}
 	

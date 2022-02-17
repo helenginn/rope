@@ -23,14 +23,14 @@ void MainMenu::setup()
 
 	{
 		Text *text = new Text("Vagabond");
-		setCentre(text, 0.5, 0.1);
+		text->setCentre(0.5, 0.1);
 		addObject(text);
 	}
 
 	{
 		TextButton *button = new TextButton("View loaded files", this);
 		button->setReturnTag("show_files");
-		setCentre(button, 0.5, 0.3);
+		button->setCentre(0.5, 0.3);
 		addObject(button);
 	}
 }

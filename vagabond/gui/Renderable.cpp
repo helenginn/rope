@@ -37,6 +37,12 @@ void Renderable::addToVertices(glm::vec3 add)
 
 	addToVertexArray(add, &_vertices);
 	addToVertexArray(add, &_unselectedVertices);
+	
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->addToVertices(add);
+	}
+
 	positionChanged();
 }
 
@@ -1314,4 +1320,12 @@ void Renderable::triangulate()
 	calculateNormals();
 	
 	unlockMutex();
+}
+
+void Renderable::setCentre(double x, double y)
+{
+	double xf = 2 * x - 1;
+	double yf = 2 * y - 1;
+
+	setPosition(glm::vec3(xf, -yf, 0));
 }

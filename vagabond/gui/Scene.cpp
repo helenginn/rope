@@ -84,14 +84,6 @@ void Scene::setRight(Renderable *r, double x, double y)
 	r->setPosition(glm::vec3(xf, -yf, 0));
 }
 
-void Scene::setCentre(Renderable *r, double x, double y)
-{
-	double xf = 2 * x - 1;
-	double yf = 2 * y - 1;
-
-	r->setPosition(glm::vec3(xf, -yf, 0));
-}
-
 void Scene::setCentrePixels(Renderable *r, int x, int y)
 {
 	double xf = 2 * (double)x / width() - 1;

@@ -15,7 +15,7 @@ Modal(scene, 0.6, 0.4)
 	{
 		TextButton *button = new TextButton("OK", this);
 		button->setReturnTag("OK");
-		setCentre(button, 0.5, 0.9);
+		button->setCentre(0.5, 0.9);
 		addObject(button);
 	}
 

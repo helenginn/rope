@@ -67,7 +67,7 @@ void Display::tieButton()
 		                                    this);
 		button->setReturnTag("recalculate");
 		button->resize(0.8);
-		setCentre(button, 0.5, 0.9);
+		button->setCentre(0.5, 0.9);
 		addObject(button);
 	}
 }
@@ -96,7 +96,7 @@ void Display::buttonPressed(std::string tag, Button *button)
 			                                    this);
 			replace->setReturnTag("refine_positions");
 			replace->resize(0.8);
-			setCentre(replace, 0.5, 0.9);
+			replace->setCentre(0.5, 0.9);
 			addObject(replace);
 		}
 	}

@@ -9,20 +9,20 @@ AskYesNo::AskYesNo(Scene *scene, std::string text, std::string tag,
 Modal(scene, 0.6, 0.4)
 {
 	Text *t = new Text(text);
-	setCentre(t, 0.5, 0.35);
+	t->setCentre(0.5, 0.35);
 	addObject(t);
 
 	{
 		TextButton *button = new TextButton("No", this);
 		button->setReturnTag("no");
-		setCentre(button, 0.2, 0.8);
+		button->setCentre(0.2, 0.8);
 		addObject(button);
 	}
 
 	{
 		TextButton *button = new TextButton("Yes", this);
 		button->setReturnTag("yes");
-		setCentre(button, 0.8, 0.8);
+		button->setCentre(0.8, 0.8);
 		addObject(button);
 	}
 	

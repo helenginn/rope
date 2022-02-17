@@ -55,7 +55,7 @@ void ChoiceGroup::arrange(double resize, double ctx, double cty,
 		double y = yinit + i * ystep;
 
 		choice(i)->resize(resize);
-		_scene->setCentre(choice(i), x, y);
+		choice(i)->setCentre(x, y);
 	}
 }
 
