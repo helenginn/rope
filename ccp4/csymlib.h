@@ -110,7 +110,7 @@ See examples on <a href="ftp://ftp.ccp4.ac.uk/mdw/csym">ftp area</a>
 /* note that definitions in ccp4_spg.h are within the CSym namespace */
 #include "ccp4_spg.h"
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CSym {
 extern "C" {
 #endif
@@ -639,7 +639,7 @@ int get_grid_sample(const int minsmp, const int nmul, const float sample);
  */
 int ccp4spg_check_symm_cell(int nsym, float rsym[][4][4], float cell[6]);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 } }
 #endif
 #endif

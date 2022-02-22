@@ -66,7 +66,7 @@ int ccp4_cmap_seek_symop(CMMFile *mfile, int isymop, unsigned int whence)
                               SEEK_SET);
     break;
   case SEEK_CUR:
-    symops = div(ccp4_file_tell(mfile->stream) - mfile->symop.offset,n_byt_symop);
+    symops = div((int)ccp4_file_tell(mfile->stream) - mfile->symop.offset,(int)n_byt_symop);
     if (symops.quot < 0 || symops.quot >= mfile->symop.number ||
         symops.quot + isymop < 0 || symops.quot + isymop >= mfile->symop.number)
       ccp4_signal( CCP4_ERRLEVEL(2) | CMAP_ERRNO(CMERR_ParamError), 

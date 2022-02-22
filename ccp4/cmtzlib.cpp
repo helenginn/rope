@@ -743,7 +743,7 @@ MTZ *MtzGetUserCellTolerance(const char *logname, int read_refs, const double ce
       if (strncmp (mkey,known_headers[i],4) == 0 )
 	break;
     if ( i == n_known_headers ) {
-      mtz->unknown_headers = ccp4_utils_realloc( mtz->unknown_headers, mtz->n_unknown_headers*MTZRECORDLENGTH+MTZRECORDLENGTH );  // if null, malloc
+      mtz->unknown_headers = (char *)ccp4_utils_realloc( mtz->unknown_headers, mtz->n_unknown_headers*MTZRECORDLENGTH+MTZRECORDLENGTH );  // if null, malloc
       memcpy( mtz->unknown_headers+mtz->n_unknown_headers*MTZRECORDLENGTH, hdrrec, MTZRECORDLENGTH );
       mtz->n_unknown_headers++;
     }
@@ -3799,7 +3799,7 @@ char *MtzSetPath(const MTZ *mtz, const MTZSET *set)
 
   path1 = MtzXtalPath( MtzSetXtal( mtz, set ) );
   length = strlen(path1)+strlen(set->dname)+2;
-  path = ccp4_utils_malloc(length*sizeof(char));
+  path = (char *)ccp4_utils_malloc(length*sizeof(char));
   strcpy( path, path1 );
   free (path1);  
   strcat( path, "/" );

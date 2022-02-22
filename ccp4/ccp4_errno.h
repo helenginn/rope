@@ -88,15 +88,15 @@
  *    3  Error
  *    4  Fatal
  */ 
-#ifdef __cplusplus
+#ifdef __plusplus
 extern "C" {
 #endif
 extern int ccp4_errno;
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 
-#ifdef __cplusplus
+#ifdef __plusplus
 namespace CCP4 {
 extern "C" {
 #endif
@@ -157,7 +157,7 @@ void ccp4_signal(const int, const char *const, void (*)());
 
 int cfile_perror(const char *);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 }
 #endif

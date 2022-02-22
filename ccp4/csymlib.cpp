@@ -1038,8 +1038,8 @@ int ccp4_spgrp_equal( int nsym1, const ccp4_symop *op1, int nsym2, const ccp4_sy
   n = nsym1;
 
   /* now make the sym code arrays */
-  symcode1 = ccp4_utils_malloc( n * sizeof(int) );
-  symcode2 = ccp4_utils_malloc( n * sizeof(int) );
+  symcode1 = (int *)ccp4_utils_malloc( n * sizeof(int) );
+  symcode2 = (int *)ccp4_utils_malloc( n * sizeof(int) );
   for ( i = 0; i < n; i++ ) {
     symcode1[i] = ccp4_symop_code( op1[i] );
     symcode2[i] = ccp4_symop_code( op2[i] );

@@ -34,7 +34,7 @@
 
 /* rcsidhp[] = "$Id$" */
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CCP4 {
 extern "C" {
 #endif
@@ -163,7 +163,7 @@ int html_log_output(int ihtml_in);
  */
 int summary_output(int isumm_in);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 } 
 } 
 #endif

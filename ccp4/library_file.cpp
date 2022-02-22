@@ -2158,7 +2158,7 @@ void ccp4_file_fatal (CCP4File *cfile, char *message)
                 NULL);
     
   l = strlen (message) + strlen (cfile->name) + 1;
-  if ( !(buff = malloc(l)))
+  if ( !(buff = (char *)malloc(l)))
       ccp4_signal(CCP4_ERRLEVEL(4), "ccp4_file_fatal", NULL);
   buff[0] = '\0';
   strcat (buff, message);

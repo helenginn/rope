@@ -109,7 +109,7 @@ See examples on <a href="ftp://ftp.ccp4.ac.uk/mdw/cmtz">ftp area</a>
 /* defines CCP4::CCP4File */
 #include "ccp4_utils.h"
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CMtz {
 extern "C" {
 typedef CCP4::CCP4File CCP4File;
@@ -1048,7 +1048,7 @@ int ccp4_lwbsetid(MTZ *mtz, MTZBAT *batch, const char xname[], const char dname[
    the Hendrickson-Lattman coefficients `hla`, `hlb`, `hlc` and `hld`. If
    `centric == TRUE`, the coefficients describe a centric distribution. */
 
-#ifdef __cplusplus
+#ifdef __plusplus
 } }
 #endif
 #endif

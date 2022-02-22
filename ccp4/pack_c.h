@@ -69,7 +69,7 @@ static LONG setbits[33] =
 			  0x000FFFFFL, 0x001FFFFFL, 0x003FFFFFL, 0x007FFFFFL,
 			  0x00FFFFFFL, 0x01FFFFFFL, 0x03FFFFFFL, 0x07FFFFFFL,
 			  0x0FFFFFFFL, 0x1FFFFFFFL, 0x3FFFFFFFL, 0x7FFFFFFFL,
-                          0xFFFFFFFFL};
+                          static_cast<int>(0xFFFFFFFFL)};
 /* This is not a macro really, but I've included it here anyway. Upon indexing,
    it returns a LONG with the lower (index) number of bits set. It is equivalent
    to the following macro:

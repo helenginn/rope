@@ -36,7 +36,7 @@
 #define __CCP4_SPG__
 /* rcsidhsp[] = "$Id$" */
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CSym {
 extern "C" {
 #endif
@@ -88,7 +88,7 @@ typedef struct ccp4_spacegroup_
 
 } CCP4SPG;
 
-#ifdef __cplusplus
+#ifdef __plusplus
 } }
 #endif
 

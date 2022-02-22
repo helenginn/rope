@@ -30,7 +30,7 @@
 #include "library_file.h"
 /* rcsidh[] = "$Id$" */
 
-#ifdef __cplusplus
+#ifdef __plusplus
 namespace CCP4 {
 extern "C" {
 #endif
@@ -104,7 +104,7 @@ double ccp4_erfc( double x );
 /****************************************************************************
 *  End of prototypes                                                        *
 *****************************************************************************/
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 }
 #endif

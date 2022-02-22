@@ -19,13 +19,13 @@
 #ifndef __GUARD_MAPLIB_SKEW
 #define __GUARD_MAPLIB_SKEW
 
-#ifdef __cplusplus
+#ifdef __plusplus
 extern "C" {
 #endif
 
 int skew_set(const CMMFile_Skew *skew);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 

@@ -25,7 +25,7 @@
 #ifndef __CCP4_UNITCELL
 #define __CCP4_UNITCELL
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CCP4uc {
 extern "C" {
 #endif
@@ -112,7 +112,7 @@ int ccp4uc_is_rhombohedral(const float cell[6], const float tolerance);
  */
 int ccp4uc_is_hexagonal(const float cell[6], const float tolerance);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 } }
 #endif
 

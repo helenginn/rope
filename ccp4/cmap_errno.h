@@ -21,7 +21,7 @@
 
 #include "ccp4_errno.h"
 
-#ifdef __cplusplus
+#ifdef __plusplus
 extern "C" {
 #endif
 
@@ -44,7 +44,7 @@ extern "C" {
 #define  CMERR_MaxFile             13
 #define  CMERR_SeekFail            14
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 

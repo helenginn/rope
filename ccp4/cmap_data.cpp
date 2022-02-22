@@ -33,8 +33,8 @@ int number_sections(CMMFile *mfile)
 {
   div_t sections;
   
-  sections = div(ccp4_file_length(mfile->stream)-mfile->data.offset, 
-                 mfile->data.block_size);
+  sections = div((int)ccp4_file_length(mfile->stream)-mfile->data.offset, 
+                 (int)mfile->data.block_size);
   
   return mfile->data.number = sections.quot;
 }
@@ -76,7 +76,7 @@ int ccp4_cmap_seek_section(CMMFile *mfile, int sec, unsigned int whence)
     break;
   case SEEK_CUR:
     curr_posn = ccp4_file_tell(mfile->stream);
-    secs = div(curr_posn - mfile->data.offset,mfile->data.block_size);
+    secs = div((int)curr_posn - mfile->data.offset,(int)mfile->data.block_size);
     if ( ccp4_file_is_read(mfile->stream) &&
        ( (secs.quot + sec) < 0 || (secs.quot + sec) >= mfile->data.number) )
       ccp4_signal( CCP4_ERRLEVEL(2) | CMAP_ERRNO(CMERR_ParamError),
@@ -115,7 +115,7 @@ int ccp4_cmap_write_section(CMMFile *mfile, const void *section)
     return 0; }
     
   write_dim = mfile->map_dim[0] * mfile->map_dim[1];
-  result = ccp4_file_write(mfile->stream, section, write_dim);
+  result = ccp4_file_write(mfile->stream, static_cast<const unsigned char *>(section), write_dim);
 
 /* note that we have started writing */
   mfile->data.number++;
@@ -157,8 +157,8 @@ int ccp4_cmap_read_section(CMMFile *mfile, void *section)
 
   curr_posn = ccp4_file_tell(mfile->stream);
               
-  secs = div(curr_posn - mfile->data.offset, 
-             mfile->data.block_size);
+  secs = div((int)curr_posn - mfile->data.offset, 
+             (int)mfile->data.block_size);
 
 /* ensure legit section (although rely upon EOF ) */  
   if (secs.quot < 0 || secs.rem < 0) {
@@ -173,7 +173,7 @@ int ccp4_cmap_read_section(CMMFile *mfile, void *section)
   read_dim = mfile->map_dim[0] * mfile->map_dim[1];
 /* do not read if at end */
   if (secs.quot < 0 || secs.quot < mfile->data.number)
-    result = ccp4_file_read(mfile->stream, section, read_dim);
+    result = ccp4_file_read(mfile->stream, static_cast<unsigned char *>(section), read_dim);
 
   if (result != read_dim)
     ccp4_signal( CCP4_ERRLEVEL(3) | CMAP_ERRNO(CMERR_ReadFail),
@@ -206,7 +206,7 @@ int ccp4_cmap_read_section_header(const CMMFile *mfile, char *header)
   if ( mfile->data.header_size == 0) return (0);
 
   result = ccp4_file_tell(mfile->stream);
-  secs = div(result - mfile->data.offset, mfile->data.block_size);
+  secs = div((int)result - mfile->data.offset, (int)mfile->data.block_size);
   
   if ( secs.quot < 0 || secs.quot >= mfile->data.number ) return (0);
  
@@ -283,7 +283,7 @@ int ccp4_cmap_seek_row(CMMFile *mfile, int row, unsigned int whence)
 
   item_size = ccp4_file_itemsize(mfile->stream);
   curr_posn = ccp4_file_tell(mfile->stream);
-  secs = div(curr_posn - mfile->data.offset,mfile->data.block_size);
+  secs = div((int)curr_posn - mfile->data.offset,(int)mfile->data.block_size);
   
   switch (whence) {
   case SEEK_SET:
@@ -308,7 +308,7 @@ int ccp4_cmap_seek_row(CMMFile *mfile, int row, unsigned int whence)
                               SEEK_SET);
      break;
   case SEEK_CUR:
-    rows = div(secs.rem,mfile->map_dim[0]*item_size);
+    rows = div((int)secs.rem,(int)mfile->map_dim[0]*item_size);
     if ( (rows.quot + row) < 0 || (rows.quot + row) >= mfile->data.number)
        ccp4_signal( CCP4_ERRLEVEL(2) | CMAP_ERRNO(CMERR_ParamError),
 		   "ccp4_cmap_seek_row",NULL);
@@ -343,7 +343,7 @@ int ccp4_cmap_write_row(CMMFile *mfile, const void *row)
 		 "ccp4_cmap_write_row",NULL);
     return EOF; }
    
-  result = ccp4_file_write(mfile->stream, row, mfile->map_dim[0]);
+  result = ccp4_file_write(mfile->stream, (uint8 *)row, mfile->map_dim[0]);
 
 /* note that we have started writing */
   mfile->data.number++;
@@ -383,9 +383,9 @@ int ccp4_cmap_read_row(CMMFile *mfile, void *row)
   item_size = ccp4_file_itemsize(mfile->stream); 
   curr_posn = ccp4_file_tell(mfile->stream);
               
-  secs = div(curr_posn - mfile->data.offset, 
-             mfile->data.block_size);
-  rows = div(secs.rem, mfile->map_dim[0]*item_size);
+  secs = div((int)curr_posn - mfile->data.offset, 
+             (int)mfile->data.block_size);
+  rows = div((int)secs.rem, (int)mfile->map_dim[0]*item_size);
     
   if (secs.quot < 0 || secs.rem < 0)
     ccp4_file_raw_seek(mfile->stream, mfile->data.offset, SEEK_SET);
@@ -395,7 +395,7 @@ int ccp4_cmap_read_row(CMMFile *mfile, void *row)
   else if( rows.rem != 0) 
     ccp4_file_raw_seek(mfile->stream, ( - secs.rem), SEEK_CUR);
 
-  result = ccp4_file_read(mfile->stream, row, mfile->map_dim[0]);
+  result = ccp4_file_read(mfile->stream, (uint8 *)row, mfile->map_dim[0]);
 
   if (result != mfile->map_dim[0])
     ccp4_signal( CCP4_ERRLEVEL(3) | CMAP_ERRNO(CMERR_ReadFail),

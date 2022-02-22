@@ -19,7 +19,7 @@
 #ifndef __CCP4_VECMAT
 #define __CCP4_VECMAT
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 extern "C" {
 #endif
 /* rcsidhv[] = "$Id$" */
@@ -32,7 +32,7 @@ float invert4matrix(const float a[4][4], float ai[4][4]);
 
 float ccp4_pow_ii(const float base, const int power);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 

@@ -57,7 +57,7 @@
 
 #include "ccp4_utils.h"
 
-#ifdef __cplusplus
+#ifdef __plusplus
 namespace CMap_io {
 typedef CCP4::CCP4File CCP4File;
 extern "C" {
@@ -233,7 +233,7 @@ int ccp4_cmap_set_title(CMMFile *mfile, const char *label);
 /* get title (label=0) */
 char *ccp4_cmap_get_title(const CMMFile *mfile);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 }
 #endif

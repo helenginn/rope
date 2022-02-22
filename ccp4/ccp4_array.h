@@ -68,7 +68,7 @@ Example: to handle an array of type mytype:
 #ifndef __CCP4_ARRAY_INC
 #define __CCP4_ARRAY_INC
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 extern "C" {
 #endif
 
@@ -244,7 +244,7 @@ int ccp4array_size_(ccp4_constptr *p);
 */
 void ccp4array_free_(ccp4_ptr *p);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 } 
 #endif
 

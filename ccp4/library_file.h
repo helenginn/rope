@@ -28,7 +28,7 @@
 #include "ccp4_sysdep.h"
 #include "ccp4_types.h"
 
-#ifdef __cplusplus
+#ifdef __plusplus
 namespace CCP4 {
 extern "C" {
 #endif
@@ -155,7 +155,7 @@ int ccp4_file_raw_seek( CCP4File *, long, int);
 int ccp4_file_raw_read ( CCP4File*, char *, size_t);
 int ccp4_file_raw_write ( CCP4File*, const char *, size_t);
 int ccp4_file_raw_setstamp( CCP4File *, const size_t);
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 }
 #endif

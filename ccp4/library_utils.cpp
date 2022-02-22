@@ -163,7 +163,7 @@ int ccp4_utils_setenv (char *str)
     ccp4_errno = CCP4_ERRNO(errno);
     return -1; }
   *param2++ = '\0';
-  return (setenv (param1, param2, 1));
+  return (::setenv (param1, param2, 1));
 #endif
 }
 #endif
@@ -464,7 +464,7 @@ char *ccp4_utils_basename(const char *filename)
       break;
     }
   }
-  basename = ccp4_utils_malloc(length*sizeof(char));
+  basename = (char *)ccp4_utils_malloc(length*sizeof(char));
   strncpy(basename,filename+indx1+1,length-1);
   basename[length-1]='\0';
   return basename;
@@ -487,7 +487,7 @@ char *ccp4_utils_pathname(const char *filename)
     }
   }
   length = indx1+2;
-  pathname = ccp4_utils_malloc(length*sizeof(char));
+  pathname = (char *)ccp4_utils_malloc(length*sizeof(char));
   strncpy(pathname,filename,length-1);
   pathname[length-1]='\0';
   return pathname;
@@ -514,7 +514,7 @@ char *ccp4_utils_extension(const char *filename)
       break;
     }
   }
-  extension = ccp4_utils_malloc(length*sizeof(char));
+  extension = (char *)ccp4_utils_malloc(length*sizeof(char));
   strncpy(extension,filename+indx1+1,length-1);
   extension[length-1]='\0';
   return extension;

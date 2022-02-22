@@ -1385,13 +1385,15 @@ void mirror_longimg(LONG *img, LONG *x, LONG *y);
 
 /******************************************************************************/
 
-#if defined (PROTOTYPES)
+//#if defined (PROTOTYPES)
   char *long_to_char(LONG *lng, char *string)
-#else
+//#else
+/*
   char *long_to_char(lng, string)
   LONG *lng;
   char *string;
-#endif
+*/
+//#endif
 /* Shrinks an array of LONGs into an array of chars, used in order to translate 
    an encoded string array passed by fortran into a c-type string. Returns
    'string'. */

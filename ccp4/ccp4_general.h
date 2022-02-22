@@ -37,7 +37,7 @@
 /* note order: this must be outside CCP4 namespace */
 #include "ccp4_parser.h"
 
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CCP4 {
 extern "C" {
 #endif
@@ -116,7 +116,7 @@ int ccpputenv(char *logical_name, char *file_name);
 
 void ccp4_banner(void);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 }
 #endif

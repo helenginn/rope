@@ -113,7 +113,7 @@ See the distributed programs <a href="../ncont.html">NCONT</a> and
 #include"ccp4_spg.h"
 
 /* Macro to make C functions callable from C++ */
-#ifdef  __cplusplus
+#ifdef  __plusplus
 namespace CCP4 {
 extern "C" {
 typedef CSym::ccp4_symop ccp4_symop;
@@ -300,7 +300,7 @@ char *mat4_to_symop(char *symchs_begin, char *symchs_end, const float rsm[4][4])
  */
 char *mat4_to_recip_symop(char *symchs_begin, char *symchs_end, const float rsm[4][4]);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 }
 #endif

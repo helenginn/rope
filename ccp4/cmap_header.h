@@ -19,7 +19,7 @@
 #ifndef __GUARD_MAPLIB_HEADER
 #define __GUARD_MAPLIB_HEADER
 
-#ifdef __cplusplus
+#ifdef __plusplus
 extern "C" {
 #endif
 
@@ -27,7 +27,7 @@ int parse_mapheader(CMMFile *mfile);
 
 int write_mapheader(CMMFile *mfile);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 

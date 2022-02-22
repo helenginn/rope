@@ -19,13 +19,13 @@
 #ifndef __GUARD_MAPLIB_DATA
 #define __GUARD_MAPLIB_DATA
 
-#ifdef __cplusplus
+#ifdef __plusplus
 extern "C" {
 #endif
 
 int number_sections(CMMFile *mfile);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 

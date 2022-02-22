@@ -19,14 +19,14 @@
 #ifndef __GUARD_MAPLIB_STATS
 #define __GUARD_MAPLIB_STATS
 
-#ifdef __cplusplus
+#ifdef __plusplus
 extern "C" {
 #endif
 
 int stats_update(CMMFile_Stats *stats, void *section_begin,
                          void *section_end);
 
-#ifdef __cplusplus
+#ifdef __plusplus
 }
 #endif
 
