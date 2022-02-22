@@ -71,9 +71,10 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 void AlignmentTool::run()
 {
 	std::vector<AtomGroup *> subgroups = _group->connectedGroups();
+
 	for (size_t i = 0; i < subgroups.size(); i++)
 	{
-		if (subgroups.size() <= 1)
+		if (subgroups[i]->size() <= 1)
 		{
 			continue;
 		}
