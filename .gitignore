@@ -1,6 +1,7 @@
 cloc.sh
 cloc.txt
 
+.DS_Store
 build
 data
 doc
