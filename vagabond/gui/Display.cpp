@@ -1,5 +1,6 @@
 #include "Display.h"
 #include "GuiAtom.h"
+#include "GuiRefls.h"
 #include "TextButton.h"
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Atom.h>
@@ -30,6 +31,26 @@ void Display::recalculateAtoms()
 	AlignmentTool tool(_atoms);
 	tool.run();
 	_atoms->recalculate();
+}
+
+void Display::loadDiffraction(Diffraction *diff)
+{
+	if (_guiRefls != nullptr)
+	{
+		removeObject(_guiRefls);
+		delete _guiRefls;
+	}
+
+	_guiRefls = new GuiRefls();
+	_guiRefls->populateFromDiffraction(diff);
+
+	_centre = glm::vec3(0., 0., 0.);
+	_translation = -_centre;
+	_translation.z -= 10;
+	
+	updateCamera();
+
+	addObject(_guiRefls);
 }
 
 void Display::loadAtoms(AtomGroup *atoms)
@@ -81,7 +102,10 @@ void Display::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")
 	{
-		_atoms->cancelRefinement();
+		if (_atoms != nullptr)
+		{
+			_atoms->cancelRefinement();
+		}
 	}
 
 	Scene::buttonPressed(tag, button);

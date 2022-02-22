@@ -22,6 +22,7 @@
 Icosahedron::Icosahedron() : Renderable()
 {
 	makeIco();
+	calculateNormals();
 }
 
 void Icosahedron::makeIco()

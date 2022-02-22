@@ -16,50 +16,34 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Reflection__
-#define __vagabond__Reflection__
+#ifndef __vagabond__FFT_cpp__
+#define __vagabond__FFT_cpp__
 
-#include <stdexcept>
+#include "FFT.h"
 
-struct HKL
+template <class T>
+FFT<T>::FFT()
 {
-	int h = 0;
-	int k = 0; 
-	int l = 0;
-	
-	int &operator[](int idx) 
-	{
-		if (idx == 0) return h;
-		if (idx == 1) return k;
-		if (idx == 2) return l;
-		throw std::runtime_error("dimension over 3 accessing HKL");
-	}
-};
+	makePlans();
+}
 
-struct Reflection
+template <class T>
+void FFT<T>::fft()
 {
-	HKL hkl{};
-	bool free = false;
-	int flag = 0;
-	float f = 0;
-	float sigf = 0;
-	float phi = 0;
-	
-	Reflection() {}
-	
-	Reflection(int h, int k, int l, float fv = 0, float sigfv = 0,
-	           bool fr = false, bool fl = 1, float ph = 0)
+	if (_status == Real)
 	{
-		hkl.h = h;
-		hkl.k = k;
-		hkl.l = l;
-		f = fv;
-		sigf = sigfv;
-		free = fr;
-		flag = fl;
-		phi = ph;
+		doFFT(1);
+		_status = Reciprocal;
 	}
-};
+	else if (_status == Reciprocal)
+	{
+		doFFT(1);
+		_status = Real;
+	}
+	else
+	{
+		throw std::runtime_error("FFT status is Empty but asked to transform");
+	}
+}
 
 #endif
-

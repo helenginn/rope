@@ -17,18 +17,23 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "RefList.h"
+#include "Diffraction.h"
 #include "matrix_functions.h"
 #include <iostream>
 
 RefList::RefList(const std::vector<Reflection> &refls)
 {
 	_refls = refls;
+	setSpaceGroup(1);
 }
 
 void RefList::setSpaceGroup(int num)
 {
-	_spg = CSym::ccp4spg_load_by_ccp4_num(num);
-	extractSymops();
+	if (num >= 1)
+	{
+		_spg = ccp4spg_load_by_ccp4_num(num);
+		extractSymops();
+	}
 }
 
 void RefList::extractSymops()
@@ -50,13 +55,30 @@ void RefList::extractSymops()
 	
 	for (size_t i = 0; i < _nsymops; i++)
 	{
-		CSym::ccp4_symop &s = _spg->symop[i];
+		ccp4_symop &s = _spg->symop[i];
 		_rots[i] = glm::mat3x3(s.rot[0][0], s.rot[0][1], s.rot[0][2],
 		                       s.rot[1][0], s.rot[1][1], s.rot[1][2],
 		                       s.rot[2][0], s.rot[2][1], s.rot[2][2]);
 
 		_trans[i] = glm::vec3(s.trn[0], s.trn[1], s.trn[2]);
 	}
+}
+
+HKL RefList::symHKL(int refl, int symop)
+{
+	HKL &orig = _refls[refl].hkl;
+	HKL hkl{};
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		for (size_t j = 0; j < 3; j++)
+		{
+			float &mv = _rots[symop][j][i];
+			hkl[i] += orig[j] * (long)lrint(mv);
+		}
+	}
+
+	return hkl;
 }
 
 HKL RefList::maxHKL()
@@ -118,5 +140,29 @@ void RefList::setUnitCell(std::array<double, 6> &cell)
 	_frac2Real = mat3x3_from_unit_cell(cell[0], cell[1], cell[2],
 	                                   cell[3], cell[4], cell[5]);
 	_recip2Frac = glm::inverse(_frac2Real);
+}
+
+void RefList::addReflectionToGrid(Diffraction *diff, int refl)
+{
+	for (size_t i = 0; i < symOpCount(); i++)
+	{
+		HKL next = symHKL(refl, i);
+		int &h = next.h;
+		int &k = next.k;
+		int &l = next.l;
+
+		for (int s = -1; s <= 1; s += 2)
+		{
+			float shift = (float)h * _trans[i][0];
+			shift += (float)k * _trans[i][1];
+			shift += (float)l * _trans[i][2];
+
+			shift = shift - floor(shift);
+			float phase = s * _refls[refl].phi + shift * 360.;
+
+			VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
+			v.setAmplitudePhase(_refls[refl].f, phase);
+		}
+	}
 }
 

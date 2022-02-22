@@ -47,6 +47,7 @@ public:
 
 	Renderable *findObject(double x, double y);
 protected:
+	void clearHighlights();
 	std::vector<Renderable *> _objects;
 
 };

@@ -16,50 +16,49 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Reflection__
-#define __vagabond__Reflection__
+#ifndef __vagabond__Diffraction__
+#define __vagabond__Diffraction__
 
-#include <stdexcept>
+#include <fftw3.h>
+#include "TransformedGrid.h"
+#include "RefList.h"
 
-struct HKL
+struct VoxelDiffraction
 {
-	int h = 0;
-	int k = 0; 
-	int l = 0;
+	fftwf_complex value;
+	short int category = 0;
 	
-	int &operator[](int idx) 
+	void setAmplitudePhase(float amp, float ph)
 	{
-		if (idx == 0) return h;
-		if (idx == 1) return k;
-		if (idx == 2) return l;
-		throw std::runtime_error("dimension over 3 accessing HKL");
+		value[0] = amp * cos(deg2rad(ph));
+		value[1] = amp * sin(deg2rad(ph));
+	}
+	
+	const float phase() const
+	{
+		double rad = atan2(value[1], value[0]);
+		return rad2deg(rad);
+	}
+	
+	const float amplitude() const
+	{
+		float amp = sqrt(value[0] * value[0] + value[1] * value[1]);
+		return amp;
 	}
 };
 
-struct Reflection
+class Diffraction : public TransformedGrid<VoxelDiffraction>
 {
-	HKL hkl{};
-	bool free = false;
-	int flag = 0;
-	float f = 0;
-	float sigf = 0;
-	float phi = 0;
+public:
+	Diffraction(int nx, int ny, int nz);
+	Diffraction(RefList &list);
+
+	void populateReflections();
 	
-	Reflection() {}
-	
-	Reflection(int h, int k, int l, float fv = 0, float sigfv = 0,
-	           bool fr = false, bool fl = 1, float ph = 0)
-	{
-		hkl.h = h;
-		hkl.k = k;
-		hkl.l = l;
-		f = fv;
-		sigf = sigfv;
-		free = fr;
-		flag = fl;
-		phi = ph;
-	}
+	size_t reflectionCount();
+private:
+	RefList *_list;
+
 };
 
 #endif
-

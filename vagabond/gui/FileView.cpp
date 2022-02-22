@@ -59,13 +59,24 @@ void FileView::buttonPressed(std::string tag, Button *button)
 		std::string filename = tag.substr(file_prefix.length(), 
 		                                  std::string::npos);
 
-		CifFile geom = CifFile(filename);
-		geom.parse();
+		CifFile file = CifFile(filename);
+		CifFile::Type type = file.cursoryLook();
 		
-		if (geom.atomCount() > 0)
+		if (type & CifFile::CompAtoms || type & CifFile::MacroAtoms)
 		{
+			file.parse();
+			if (file.atomCount() > 0)
+			{
+				Display *display = new Display(this);
+				display->loadAtoms(file.atoms());
+				display->show();
+			}
+		}
+		else if (type & CifFile::Reflections)
+		{
+			file.parse();
 			Display *display = new Display(this);
-			display->loadAtoms(geom.atoms());
+			display->loadDiffraction(file.diffractionData());
 			display->show();
 		}
 

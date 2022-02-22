@@ -1,7 +1,11 @@
-#meson --cross-file=emscripten.txt --buildtype=release build/current
+#meson --cross-file=emscripten.txt --buildtype=release build/website
 
 [binaries]
 cpp = 'em++'
+cc = 'emcc'
+c = 'emcc'
+ar = 'emar'
+pkgconfig = 'pkg-config'
 
 [constants]
 sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread']

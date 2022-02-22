@@ -16,50 +16,47 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Reflection__
-#define __vagabond__Reflection__
+#include "Diffraction.h"
 
-#include <stdexcept>
-
-struct HKL
+Diffraction::Diffraction(int nx, int ny, int nz) 
+: TransformedGrid<VoxelDiffraction>(nx, ny, nz)
 {
-	int h = 0;
-	int k = 0; 
-	int l = 0;
-	
-	int &operator[](int idx) 
-	{
-		if (idx == 0) return h;
-		if (idx == 1) return k;
-		if (idx == 2) return l;
-		throw std::runtime_error("dimension over 3 accessing HKL");
-	}
-};
 
-struct Reflection
+}
+
+Diffraction::Diffraction(RefList &list) 
+: TransformedGrid<VoxelDiffraction>(0, 0, 0)
 {
-	HKL hkl{};
-	bool free = false;
-	int flag = 0;
-	float f = 0;
-	float sigf = 0;
-	float phi = 0;
+	_list = &list;
+
+	HKL hkl = list.maxHKL();
 	
-	Reflection() {}
-	
-	Reflection(int h, int k, int l, float fv = 0, float sigfv = 0,
-	           bool fr = false, bool fl = 1, float ph = 0)
+	for (size_t i = 0; i < 3; i++)
 	{
-		hkl.h = h;
-		hkl.k = k;
-		hkl.l = l;
-		f = fv;
-		sigf = sigfv;
-		free = fr;
-		flag = fl;
-		phi = ph;
+		hkl[i] = 2 * hkl[i] + 1;
 	}
-};
 
-#endif
+	this->setDimensions(hkl[0], hkl[1], hkl[2]);
+	setRealMatrix(_list->frac2Real());
+	
+	populateReflections();
+}
 
+void Diffraction::populateReflections()
+{
+	for (size_t i = 0; i < nn(); i++)
+	{
+		element(i).setAmplitudePhase(NAN, NAN);
+	}
+
+	for (size_t i = 0; i < _list->reflectionCount(); i++)
+	{
+		_list->addReflectionToGrid(this, i);
+	}
+
+}
+
+size_t Diffraction::reflectionCount()
+{
+	return _list->reflectionCount() * _list->symOpCount() * 2;
+}

@@ -9,6 +9,7 @@
 class Atom;
 class AtomGroup;
 class GeometryTable;
+class Diffraction;
 class RefList;
 
 class CifFile
@@ -70,6 +71,7 @@ public:
 	const size_t atomCount() const;
 	
 	RefList *reflectionList() const;
+	Diffraction *diffractionData() const;
 	
 	const size_t reflectionCount() const
 	{
@@ -99,6 +101,7 @@ private:
 	bool getHeaders(gemmi::cif::Loop &loop, std::string *headers, 
 	                int *indices, int n);
 	bool identifyHeader(std::string *headers);
+	bool identifyPairs(gemmi::cif::Document &doc, std::string keys[]);
 
 	void parseFileContents(std::string filename);
 
@@ -122,6 +125,9 @@ private:
 	static std::string angleHeaders[];
 	static std::string torsionHeaders[];
 	static std::string compHeaders[];
+	static std::string reflHeaders[];
+	static std::string unitCellKeys[];
+	static std::string symmetryKeys[];
 	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
 	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);
 };

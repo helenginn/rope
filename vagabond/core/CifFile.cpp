@@ -3,6 +3,7 @@
 #include "commit.h"
 
 #include "CifFile.h"
+#include "Diffraction.h"
 #include "RefList.h"
 #include "Knotter.h"
 #include "GeometryTable.h"
@@ -57,6 +58,35 @@ std::string CifFile::lengthHeaders[] =
 	"_chem_comp_bond.comp_id", "_chem_comp_bond.atom_id_1", 
 	"_chem_comp_bond.atom_id_2", "_chem_comp_bond.value_dist", 
 	"_chem_comp_bond.value_dist_esd", ""
+};
+
+std::string CifFile::reflHeaders[] = 
+{
+	"_refln.index_h",
+	"_refln.index_k",
+	"_refln.index_l",
+	"_refln.status", /** o if working set, f if free set */
+//	"_refln.pdbx_r_free_flag",
+	"_refln.f_meas_au",
+	"_refln.f_meas_sigma_au",
+	""
+};
+
+std::string CifFile::symmetryKeys[] = 
+{
+	"_symmetry.Int_Tables_number",
+	""
+};
+
+std::string CifFile::unitCellKeys[] = 
+{
+	"_cell.length_a",
+	"_cell.length_b",
+	"_cell.length_c",
+	"_cell.angle_alpha",
+	"_cell.angle_beta",
+	"_cell.angle_gamma",
+	""
 };
 
 CifFile::CifFile(std::string filename)
@@ -208,12 +238,15 @@ void CifFile::processLoop(Loop &loop)
 	{
 		return;
 	}
+
+	if (processLoopAsReflections(loop))
+	{
+		return;
+	}
 }
 
 bool CifFile::identifyHeader(Loop &loop, std::string headers[])
 {
-	bool ok = true;
-
 	for (size_t i = 0; ; i++)
 	{
 		if (headers[i].length() == 0)
@@ -241,6 +274,46 @@ bool CifFile::identifyHeader(Loop &loop, std::string headers[])
 	
 	return true;
 
+}
+
+bool CifFile::identifyPairs(Document &doc, std::string keys[])
+{
+	for (size_t i = 0; ; i++)
+	{
+		if (keys[i].length() == 0)
+		{
+			break;
+		}
+		
+		bool found = false;
+
+		for (size_t k = 0; k < doc.blocks.size(); k++)
+		{
+			Block &contents = doc.blocks[k];
+			for (size_t j = 0; j < contents.items.size(); j++)
+			{
+				if (contents.items[j].type == ItemType::Pair)
+				{
+					Pair &pair = contents.items[j].pair;
+
+					std::string test = pair[0];
+					to_lower(test);
+
+					if (keys[i] == test)
+					{
+						found = true;
+					}
+				}
+			}
+		}
+
+		if (!found)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool CifFile::identifyHeader(Document &doc, std::string headers[])
@@ -448,7 +521,14 @@ bool CifFile::processLoopAsAngleLinks(Loop &loop)
 	int &dev_idx = idxs[4];
 	int &link_idx = idxs[5];
 	
-	if (!getHeaders(loop, angleHeaders, idxs, 6))
+	std::string headers[] = 
+	{
+		"_chem_link_angle.atom_id_1", "_chem_link_angle.atom_id_2", 
+		"_chem_link_angle.atom_id_3", "_chem_link_angle.value_angle", 
+		"_chem_link_angle.value_angle_esd", "_chem_link_angle.link_id"
+	};
+
+	if (!getHeaders(loop, headers, idxs, 6))
 	{
 		return false;
 	}
@@ -661,22 +741,11 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 	int &k_idx = idxs[1];
 	int &l_idx = idxs[2];
 	int &free_idx = idxs[3];
-	int &free_flag_idx = idxs[4];
-	int &amp_idx = idxs[5];
-	int &sigma_idx = idxs[6];
+//	int &free_flag_idx = idxs[4];
+	int &amp_idx = idxs[4];
+	int &sigma_idx = idxs[5];
 	
-	std::string headers[] = 
-	{
-		"_refln.index_h",
-		"_refln.index_k",
-		"_refln.index_l",
-		"_refln.status", /** o if working set, f if free set */
-		"_refln.pdbx_r_free_flag",
-		"_refln.F_meas_au",
-		"_refln.F_meas_sigma_au",
-	};
-	
-	if (!getHeaders(loop, headers, idxs, 7))
+	if (!getHeaders(loop, reflHeaders, idxs, 6))
 	{
 		return false;
 	}
@@ -688,9 +757,14 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 		int l = as_number(loop.values[i + l_idx]);
 		
 		bool free = (loop.values[i + free_idx] == "f");
-		int  flag = as_number(loop.values[i + free_flag_idx]);
+//		int  flag = as_number(loop.values[i + free_flag_idx]);
 
 		float f    = as_number(loop.values[i + amp_idx]);
+		if (f != f)
+		{
+			continue;
+		}
+
 		float sigf = as_number(loop.values[i + sigma_idx]);
 
 		Reflection refl{};
@@ -698,7 +772,7 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 		refl.hkl.k = k;
 		refl.hkl.l = l;
 		refl.free = free;
-		refl.flag = flag;
+//		refl.flag = flag;
 		refl.f = f;
 		refl.sigf = sigf;
 		
@@ -798,6 +872,13 @@ RefList *CifFile::reflectionList() const
 	return list;
 }
 
+Diffraction *CifFile::diffractionData() const
+{
+	RefList *list = reflectionList();
+	Diffraction *diffraction = new Diffraction(*list);
+	return diffraction;
+}
+
 CifFile::Type CifFile::cursoryLook()
 {
 	std::string tmp = toFilename(_filename);
@@ -810,12 +891,18 @@ CifFile::Type CifFile::cursoryLook()
 	}
 	catch (std::runtime_error err)
 	{
+		std::cout << "Read fail" << std::endl;
 		return type;
 	}
 
 	if (identifyHeader(doc, macroHeaders))
 	{
 		type = CifFile::Type(type | MacroAtoms);
+	}
+
+	if (identifyHeader(doc, reflHeaders))
+	{
+		type = CifFile::Type(type | Reflections);
 	}
 
 	if (identifyHeader(doc, compHeaders))
@@ -827,6 +914,16 @@ CifFile::Type CifFile::cursoryLook()
 	    || identifyHeader(doc, torsionHeaders))
 	{
 		type = CifFile::Type(type | Geometry);
+	}
+
+	if (identifyPairs(doc, symmetryKeys))
+	{
+		type = CifFile::Type(type | Symmetry);
+	}
+
+	if (identifyPairs(doc, unitCellKeys))
+	{
+		type = CifFile::Type(type | UnitCell);
 	}
 	
 	return type;

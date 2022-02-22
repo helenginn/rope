@@ -54,26 +54,42 @@ void FileLine::setup()
 	
 	if (_type & CifFile::CompAtoms)
 	{
-		Image *prot = new Image("assets/images/some_atoms.png");
-		prot->resize(0.08);
-		prot->setCentre(0.70, 0);
-		addObject(prot);
+		Image *image = new Image("assets/images/some_atoms.png");
+		image->resize(0.08);
+		image->setCentre(0.70, 0);
+		addObject(image);
 	}
 	
 	if (_type & CifFile::Geometry)
 	{
-		Image *prot = new Image("assets/images/protractor.png");
-		prot->resize(0.08);
-		prot->setCentre(0.75, 0);
-		addObject(prot);
+		Image *image = new Image("assets/images/protractor.png");
+		image->resize(0.08);
+		image->setCentre(0.75, 0);
+		addObject(image);
 	}
 	
 	if (_type & CifFile::MacroAtoms)
 	{
-		Image *macro = new Image("assets/images/protein.png");
-		macro->resize(0.08);
-		macro->setCentre(0.8, 0);
-		addObject(macro);
+		Image *image = new Image("assets/images/protein.png");
+		image->resize(0.08);
+		image->setCentre(0.8, 0);
+		addObject(image);
+	}
+	
+	if (_type & CifFile::Reflections)
+	{
+		Image *image = new Image("assets/images/reflections.png");
+		image->resize(0.08);
+		image->setCentre(0.65, 0);
+		addObject(image);
+	}
+	
+	if (_type & CifFile::UnitCell)
+	{
+		Image *image = new Image("assets/images/unit_cell.png");
+		image->resize(0.08);
+		image->setCentre(0.60, 0);
+		addObject(image);
 	}
 
 }

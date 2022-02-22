@@ -5,7 +5,9 @@
 #include "Scene.h"
 
 class GuiAtom;
+class GuiRefls;
 class AtomGroup;
+class Diffraction;
 
 class Display : public Scene
 {
@@ -23,14 +25,18 @@ public:
 
 	virtual void setup();
 	void loadAtoms(AtomGroup *atoms);
+	void loadDiffraction(Diffraction *diff);
 	void recalculateAtoms();
 	void tieButton();
 	
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
 	void interpretControlKey(SDL_Keycode pressed, bool dir);
-	GuiAtom *_guiAtoms;
+
+	GuiAtom *_guiAtoms = nullptr;
+	GuiRefls *_guiRefls = nullptr;
 	AtomGroup *_atoms;
+
 	void updateSpinMatrix();
 	
 	glm::mat3x3 _spin;

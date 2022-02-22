@@ -25,6 +25,8 @@
 #include <array>
 #include <ccp4/csymlib.h>
 
+class Diffraction;
+
 /** \class RefList
  *  This class stores reflections in a list format (rather than inserted
  *  onto a grid) and covers symmetry operation work on the list.
@@ -57,12 +59,20 @@ public:
 		return _refls.size();
 	}
 	
+	void addReflectionToGrid(Diffraction *diff, int i);
+	HKL symHKL(int refl, int symop);
+	
 	HKL maxHKL();
+	
+	const glm::mat3x3 &frac2Real() const
+	{
+		return _frac2Real;
+	}
 private:
 	std::vector<Reflection> _refls;
 	std::array<double, 6> _cell;
 	
-	CSym::CCP4SPG *_spg = NULL;
+	CCP4SPG *_spg = NULL;
 
 	glm::mat3x3 _frac2Real = glm::mat3(1.f);
 	glm::mat3x3 _recip2Frac = glm::mat3(1.f);

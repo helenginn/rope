@@ -121,6 +121,7 @@ void Scene::mouseMoveEvent(double x, double y)
 {
 	convertToGLCoords(&x, &y);
 
+	clearHighlights();
 	Renderable *chosen = findObject(x, y);
 
 	SDL_Cursor *cursor; 

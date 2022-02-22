@@ -134,7 +134,7 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename)
 	glGenTextures(1, &texid);
 	glBindTexture(GL_TEXTURE_2D, texid);
 
-	GLint intform = GL_RGBA8;
+	GLint intform = GL_RGBA;
 	GLenum myform = GL_RGBA;
 
 #ifndef __EMSCRIPTEN__

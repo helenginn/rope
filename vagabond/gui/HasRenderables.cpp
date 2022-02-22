@@ -15,6 +15,16 @@ void HasRenderables::deleteObjects()
 	clearObjects();
 }
 
+void HasRenderables::clearHighlights()
+{
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->clearHighlights();
+		object(i)->unMouseOver();
+	}
+	
+}
+
 Renderable *HasRenderables::findObject(double x, double y)
 {
 	double z = -FLT_MAX;
@@ -33,7 +43,6 @@ Renderable *HasRenderables::findObject(double x, double y)
 
 		/* search inside the object first */
 		chosen = r->findObject(x, y);
-
 		
 		if (chosen != NULL)
 		{

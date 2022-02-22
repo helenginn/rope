@@ -3,10 +3,11 @@ project('vagabond', 'cpp', 'c')
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
 glm = dependency('glm', required: false)
-deps = [glm]
 gl = dependency('GL', method : 'system', required: false)
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
+fftw = dependency('fftw3f', static: true)
+deps = [glm, fftw]
 name = 'index.html'
 
 if (links == [])
@@ -26,6 +27,7 @@ combined = join_paths(dir_base, data_dir)
 install_data(
 'assets/examples/2YBH.cif',
 'assets/examples/6QHU.cif',
+'assets/examples/6qhu-sf.cif',
 install_dir : examples)
 
 install_data(
@@ -57,6 +59,7 @@ install_data(
 'assets/shaders_450/shade.fsh',
 'assets/shaders_450/with_matrix.vsh',
 'assets/shaders_450/lighting.fsh',
+'assets/shaders_450/reflections.fsh',
 install_dir : shaders)
 
 install_data(
@@ -72,10 +75,12 @@ install_data(
 'assets/images/peak.png',
 'assets/images/protein.png',
 'assets/images/protractor.png',
+'assets/images/reflections.png',
 'assets/images/sad_face.png',
 'assets/images/some_atoms.png',
 'assets/images/tick.png',
 'assets/images/tube_1.5ml.png',
+'assets/images/unit_cell.png',
 install_dir : images)
 
 subdir('ccp4')
@@ -105,6 +110,7 @@ guifiles = [
 'vagabond/gui/FileView.cpp',
 'vagabond/gui/GuiAtom.cpp',
 'vagabond/gui/GuiBond.cpp',
+'vagabond/gui/GuiRefls.cpp',
 'vagabond/gui/HasRenderables.cpp',
 'vagabond/gui/Icosahedron.cpp',
 'vagabond/gui/Image.cpp',
@@ -134,7 +140,10 @@ vagafiles = [
 'vagabond/core/Chirality.cpp',
 'vagabond/core/CifFile.cpp',
 'vagabond/core/ConcertedBasis.cpp',
+'vagabond/core/Diffraction.cpp',
+'vagabond/core/FFT.cpp',
 'vagabond/core/GeometryTable.cpp',
+'vagabond/core/Grid.cpp',
 'vagabond/core/HasBondstraints.cpp',
 'vagabond/core/Knotter.cpp',
 'vagabond/core/matrix_functions.cpp',
@@ -147,6 +156,7 @@ vagafiles = [
 'vagabond/core/ThreadExtractsBondPositions.cpp',
 'vagabond/core/ThreadSubmitsJobs.cpp',
 'vagabond/core/ThreadMiniJobForSequence.cpp',
+'vagabond/core/TransformedGrid.cpp',
 'vagabond/core/TorsionBasis.cpp',
 'vagabond/utils/FileReader.cpp',
 'vagabond/utils/svd/svdcmp.cpp',
@@ -216,7 +226,7 @@ if (links == []) # not emscripten
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib', links],
   dependencies : deps, link_with : gui, install: true)
-else
+else # emscripten
   executable(name, vagafiles, guifiles,
   'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', compile_args],
