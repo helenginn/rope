@@ -1,5 +1,6 @@
 #include <iostream>
 #include <gemmi/numb.hpp>
+#include <gemmi/cif.hpp>
 #include "commit.h"
 
 #include "CifFile.h"

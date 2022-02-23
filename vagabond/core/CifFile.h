@@ -1,8 +1,8 @@
 #ifndef __vagabond__CifFile__
 #define __vagabond__CifFile__
 
-#include <string>
-#include <gemmi/cif.hpp>
+#include <map>
+#include <gemmi/cifdoc.hpp>
 #include "../utils/FileReader.h"
 #include "Reflection.h"
 
