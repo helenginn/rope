@@ -15,7 +15,7 @@ void main()
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.5;
 	vec3 unit = normalize(vNormal);
-	remaining *= abs(dot(unit, vec3(0, 0, 1)));
+	remaining *= abs(dot(unit, vec3(0, 0.707, 0.707)));
 	result.xyz += remaining;
 	gl_FragColor = result;
 }
