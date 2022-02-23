@@ -74,6 +74,7 @@ void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 
 				_template->recolour(red, green, blue);
 				_template->setPosition(v);
+				_template->setExtra(glm::vec4(v, 1.));
 				appendObject(_template);
 				count++;
 			}

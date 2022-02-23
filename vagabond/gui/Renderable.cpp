@@ -221,14 +221,14 @@ void Renderable::initialisePrograms(std::string *v, std::string *f,
 	glBindAttribLocation(_program, 1, "normal");
 	glBindAttribLocation(_program, 2, "color");
 
-	if (!_extra)
-	{
-		glBindAttribLocation(_program, 3, "projection");
-	}
-	else
-	{
+//	if (!_extra)
+//	{
+//		glBindAttribLocation(_program, 3, "projection");
+//	}
+//	else
+//	{
 		glBindAttribLocation(_program, 3, "extra");
-	}
+//	}
 
 	if (_textured || _texid > 0)
 	{
@@ -1379,4 +1379,12 @@ void Renderable::setRight(double x, double y)
 	xf -= maximalWidth() / 2;
 
 	setPosition(glm::vec3(xf, -yf, 0));
+}
+
+void Renderable::setExtra(glm::vec4 pos)
+{
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].extra = pos;
+	}
 }

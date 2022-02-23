@@ -186,6 +186,7 @@ public:
 	void setAlpha(double alpha);
 	glm::vec3 centroid();
 	virtual void setPosition(glm::vec3 pos);
+	virtual void setExtra(glm::vec4 pos);
 	void setCentre(double x, double y);
 	void setLeft(double x, double y);
 	void setRight(double x, double y);
