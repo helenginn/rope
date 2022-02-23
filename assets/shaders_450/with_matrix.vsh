@@ -22,7 +22,7 @@ void main()
 	vNormal = rot * normal;
 	vTex = tex;
 	vColor = color;
-	vPos = vec4(mat3(model) * vec3(pos), 1.);
+	vPos = vec4(mat3(model) * vec3(extra), 1.);
 }
 
 
