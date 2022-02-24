@@ -20,6 +20,7 @@
 #include "ThreadExtractsBondPositions.h"
 #include "ThreadMiniJobForSequence.h"
 #include "BondSequenceHandler.h"
+#include "MapTransferHandler.h"
 #include "BondSequence.h"
 #include <thread>
 
@@ -185,6 +186,13 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	}
 
 	sequence->multiplyUpBySampleCount();
+	_elements = sequence->elementList();
+	
+	if (_mapHandler)
+	{
+		_mapHandler->supplyElementList(_elements);
+	}
+
 	_sequences.push_back(sequence);
 
 	for (size_t i = 1; i < _totalSequences; i++)

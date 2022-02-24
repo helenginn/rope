@@ -143,6 +143,7 @@ private:
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
 	BondCalculator *_calculator = nullptr;
+	std::map<std::string, int> _elements;
 	MapTransferHandler *_mapHandler = nullptr;
 };
 
