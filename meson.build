@@ -149,6 +149,7 @@ vagafiles = [
 'vagabond/core/Grid.cpp',
 'vagabond/core/HasBondstraints.cpp',
 'vagabond/core/Knotter.cpp',
+'vagabond/core/MapTransferHandler.cpp',
 'vagabond/core/matrix_functions.cpp',
 'vagabond/core/PositionRefinery.cpp',
 'vagabond/core/RefList.cpp',
