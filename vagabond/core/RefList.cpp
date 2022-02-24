@@ -64,9 +64,8 @@ void RefList::extractSymops()
 	}
 }
 
-HKL RefList::symHKL(int refl, int symop)
+HKL RefList::symHKL(HKL orig, int symop)
 {
-	HKL &orig = _refls[refl].hkl;
 	HKL hkl{};
 
 	for (size_t i = 0; i < 3; i++)
@@ -77,6 +76,14 @@ HKL RefList::symHKL(int refl, int symop)
 			hkl[i] += orig[j] * (long)lrint(mv);
 		}
 	}
+
+	return hkl;
+}
+
+HKL RefList::symHKL(int refl, int symop)
+{
+	HKL &orig = _refls[refl].hkl;
+	HKL hkl = symHKL(orig, symop);
 
 	return hkl;
 }
@@ -98,6 +105,26 @@ HKL RefList::maxHKL()
 	}
 
 	return hkl;
+}
+
+HKL RefList::maxSymHKL()
+{
+	HKL true_max = HKL{};
+	
+	for (size_t j = 0; j < reflectionCount(); j++)
+	{
+		for (size_t i = 0; i < symOpCount(); i++)
+		{
+			HKL next = symHKL(j, i);
+
+			for (size_t k = 0; k < 3; k++)
+			{
+				true_max[k] = std::max(true_max[k], abs(next[k]));
+			}
+		}
+	}
+
+	return true_max;
 }
 
 glm::vec3 RefList::applyRotSym(const glm::vec3 v, const int i)

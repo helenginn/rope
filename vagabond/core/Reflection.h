@@ -34,6 +34,16 @@ struct HKL
 		if (idx == 2) return l;
 		throw std::runtime_error("dimension over 3 accessing HKL");
 	}
+	
+	HKL()
+	{
+
+	}
+	
+	HKL(int hh, int kk, int ll)
+	{
+		h = hh; k = kk; l = ll;
+	}
 };
 
 struct Reflection

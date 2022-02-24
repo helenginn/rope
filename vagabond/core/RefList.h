@@ -61,8 +61,10 @@ public:
 	
 	void addReflectionToGrid(Diffraction *diff, int i);
 	HKL symHKL(int refl, int symop);
+	HKL symHKL(HKL orig, int symop);
 	
 	HKL maxHKL();
+	HKL maxSymHKL();
 	
 	const glm::mat3x3 &frac2Real() const
 	{

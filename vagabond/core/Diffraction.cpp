@@ -29,7 +29,7 @@ Diffraction::Diffraction(RefList &list)
 {
 	_list = &list;
 
-	HKL hkl = list.maxHKL();
+	HKL hkl = list.maxSymHKL();
 	
 	for (size_t i = 0; i < 3; i++)
 	{
