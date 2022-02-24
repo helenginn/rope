@@ -395,6 +395,23 @@ void BondSequence::generateBlocks()
 	fillMissingWriteLocations();
 }
 
+std::map<std::string, int> BondSequence::elementList() const
+{
+	std::map<std::string, int> elements;
+	
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		std::string e = std::string(_blocks[i].element);
+		
+		if (e.length())
+		{
+			elements[e]++;
+		}
+	}
+
+	return elements;
+}
+
 void BondSequence::prepareTorsionBasis()
 {
 	if (_torsionBasis)

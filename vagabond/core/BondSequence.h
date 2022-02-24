@@ -46,6 +46,8 @@ public:
 		return _addedAtomsCount;
 	}
 	
+	std::map<std::string, int> elementList() const;
+	
 	Atom *atomForBlock(int i)
 	{
 		return _blocks[i].atom;
@@ -160,7 +162,7 @@ private:
 	{
 		bool flag = true;
 		Atom *atom;
-		char element[3];
+		char element[3] = "\0";
 		int nBonds;
 		glm::vec3 target;
 		glm::mat4x4 coordination;
