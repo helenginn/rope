@@ -32,7 +32,7 @@
 class Atom;
 class BondSequenceHandler;
 
-struct MiniJobSeq;
+class MiniJobSeq;
 
 
 class BondSequence

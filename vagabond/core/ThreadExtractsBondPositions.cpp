@@ -66,7 +66,7 @@ void ThreadExtractsBondPositions::start()
 			break;
 		}
 
-		MiniJobSeq *mini = seq->miniJob();
+		MiniJob *mini = seq->miniJob();
 		Job *job = mini->job;
 
 		Result *r = nullptr;
@@ -101,7 +101,7 @@ void ThreadExtractsBondPositions::start()
 		}
 
 		/* don't submit the result unless all minijobs are done */
-		std::vector<MiniJobSeq *>::iterator it;
+		std::vector<MiniJob *>::iterator it;
 		it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
 
 		if (it == job->miniJobs.end())

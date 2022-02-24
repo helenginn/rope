@@ -125,8 +125,7 @@ struct CustomInfo
 	}
 };
 
-struct MiniJobSeq;
-struct MiniJobMap;
+class MiniJob;
 
 struct Job
 {
@@ -136,25 +135,32 @@ struct Job
 	JobType requests;
 
 	Result *result;
-	std::vector<MiniJobSeq *> miniJobs;
+	std::vector<MiniJob *> miniJobs;
 	
 	void destroy()
 	{
 		miniJobs.clear();
-		std::vector<MiniJobSeq *>().swap(miniJobs);
+		std::vector<MiniJob *>().swap(miniJobs);
 		custom.destroy_vectors();
 		delete this;
 	}
 };
 
-struct MiniJobMap
+class MiniJob
 {
+public:
 	Job *job;
+};
+
+class MiniJobMap : public MiniJob
+{
+public:
 	MapTransfer *map;
 };
 
-struct MiniJobSeq
+class MiniJobSeq : public MiniJob
 {
-	Job *job;
+public:
 	BondSequence *seq;
 };
+
