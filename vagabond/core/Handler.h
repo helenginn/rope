@@ -137,18 +137,18 @@ struct Job
 	JobType requests;
 
 	Result *result;
-	std::vector<MiniJob *> miniJobs;
+	std::vector<MiniJobSeq *> miniJobs;
 	
 	void destroy()
 	{
 		miniJobs.clear();
-		std::vector<MiniJob *>().swap(miniJobs);
+		std::vector<MiniJobSeq *>().swap(miniJobs);
 		custom.destroy_vectors();
 		delete this;
 	}
 };
 
-struct MiniJob
+struct MiniJobSeq
 {
 	Job *job;
 	BondSequence *seq;

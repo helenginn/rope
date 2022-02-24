@@ -241,10 +241,10 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 	return seq;
 }
 
-void BondSequenceHandler::generateMiniJobs(Job *job)
+void BondSequenceHandler::generateMiniJobSeqs(Job *job)
 {
 	_miniJobPool.handout.lock();
-	MiniJob *mini = new MiniJob();
+	MiniJobSeq *mini = new MiniJobSeq();
 	mini->job = job;
 	job->miniJobs.push_back(mini);
 
@@ -256,17 +256,17 @@ void BondSequenceHandler::generateMiniJobs(Job *job)
 	_miniJobPool.handout.unlock();
 }
 
-void BondSequenceHandler::signalFinishMiniJob()
+void BondSequenceHandler::signalFinishMiniJobSeq()
 {
 	_miniJobPool.sem.signal();
 }
 
-MiniJob *BondSequenceHandler::acquireMiniJob()
+MiniJobSeq *BondSequenceHandler::acquireMiniJobSeq()
 {
 	_miniJobPool.sem.wait();
 	_miniJobPool.handout.lock();
 
-	MiniJob *mini = nullptr;
+	MiniJobSeq *mini = nullptr;
 
 	if (_miniJobPool.members.size())
 	{

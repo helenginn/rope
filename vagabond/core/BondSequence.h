@@ -32,7 +32,7 @@
 class Atom;
 class BondSequenceHandler;
 
-struct MiniJob;
+struct MiniJobSeq;
 
 
 class BondSequence
@@ -96,7 +96,7 @@ public:
 	}
 	
 	void cleanUpToIdle();
-	void setMiniJobInfo(MiniJob *mini);
+	void setMiniJobSeqInfo(MiniJobSeq *mini);
 	void printState();
 	void removeGraphs();
 	void removeTorsionBasis();
@@ -116,7 +116,7 @@ public:
 		return _torsionBasis;
 	}
 	
-	MiniJob *miniJob();
+	MiniJobSeq *miniJob();
 
 	/* extend the atom graph for bond sequence generation
 	 * 	@param atom beginning anchor atom
@@ -225,7 +225,7 @@ private:
 	size_t _addedAtomsCount = 0;
 	SequenceState _state = SequenceInPreparation;
 	
-	void setMiniJob(MiniJob *job);
+	void setMiniJobSeq(MiniJobSeq *job);
 	void signal(SequenceState newState);
 	void printBlock(int idx);
 	
@@ -239,7 +239,7 @@ private:
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
 
-	MiniJob *_miniJob = nullptr;
+	MiniJobSeq *_miniJob = nullptr;
 	BondSequenceHandler *_handler = nullptr;
 	TorsionBasis *_torsionBasis = nullptr;
 	TorsionBasis::Type _basisType;

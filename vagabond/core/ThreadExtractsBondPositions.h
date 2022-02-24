@@ -25,7 +25,7 @@ class BondSequenceHandler;
 class BondCalculator;
 class BondSequence;
 struct Job;
-struct MiniJob;
+struct MiniJobSeq;
 
 class ThreadExtractsBondPositions : public ThreadWorker
 {

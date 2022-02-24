@@ -63,7 +63,7 @@ void ThreadExtractsBondPositions::start()
 			break;
 		}
 
-		MiniJob *mini = seq->miniJob();
+		MiniJobSeq *mini = seq->miniJob();
 		Job *job = mini->job;
 
 		Result *r = nullptr;

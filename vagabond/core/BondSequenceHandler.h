@@ -94,9 +94,9 @@ public:
 
 	BondSequence *acquireSequence(SequenceState state);
 	
-	void generateMiniJobs(Job *job);
-	MiniJob *acquireMiniJob();
-	void signalFinishMiniJob();
+	void generateMiniJobSeqs(Job *job);
+	MiniJobSeq *acquireMiniJobSeq();
+	void signalFinishMiniJobSeq();
 
 	/** Changes which atoms are included for calculation of position
 	 * deviation 

@@ -31,7 +31,7 @@ void ThreadMiniJobForSequence::start()
 	{
 		SequenceState state = SequenceIdle;
 
-		MiniJob *job = _handler->acquireMiniJob();
+		MiniJobSeq *job = _handler->acquireMiniJobSeq();
 		if (job == nullptr)
 		{
 			break;
@@ -41,11 +41,11 @@ void ThreadMiniJobForSequence::start()
 		
 		if (seq == nullptr)
 		{
-			_handler->signalFinishMiniJob();
+			_handler->signalFinishMiniJobSeq();
 			break;
 		}
 
-		seq->setMiniJobInfo(job);
+		seq->setMiniJobSeqInfo(job);
 	}
 	while (!_finish);
 }

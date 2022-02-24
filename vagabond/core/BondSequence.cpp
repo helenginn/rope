@@ -53,12 +53,12 @@ void BondSequence::printState()
 	}
 }
 
-void BondSequence::setMiniJob(MiniJob *job)
+void BondSequence::setMiniJobSeq(MiniJobSeq *job)
 {
 	_miniJob = job;
 }
 
-MiniJob *BondSequence::miniJob()
+MiniJobSeq *BondSequence::miniJob()
 {
 	return _miniJob;
 }
@@ -700,14 +700,14 @@ AtomPosMap &BondSequence::extractPositions()
 void BondSequence::cleanUpToIdle()
 {
 	delete _miniJob;
-	setMiniJob(nullptr);
+	setMiniJobSeq(nullptr);
 
 	signal(SequenceIdle);
 }
 
-void BondSequence::setMiniJobInfo(MiniJob *mini)
+void BondSequence::setMiniJobSeqInfo(MiniJobSeq *mini)
 {
-	setMiniJob(mini);
+	setMiniJobSeq(mini);
 
 	signal(SequenceCalculateReady);
 }
