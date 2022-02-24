@@ -136,7 +136,7 @@ private:
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::map<SequenceState, Pool<BondSequence *> > _pools;
-	Pool<MiniJob *> _miniJobPool;
+	Pool<MiniJobSeq *> _miniJobPool;
 
 	std::vector<BondCalculator::AnchorExtension> _atoms;
 
