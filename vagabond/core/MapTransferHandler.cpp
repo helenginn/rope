@@ -22,3 +22,13 @@ MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
 {
 	_calculator = calculator;
 }
+
+void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
+{
+
+}
+
+void MapTransferHandler::setupTransferMap(std::vector<BondSequence::ElePos> &epos)
+{
+
+}

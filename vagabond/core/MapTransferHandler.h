@@ -21,14 +21,18 @@
 
 #include "Handler.h"
 #include "BondCalculator.h"
+#include "BondSequence.h"
 
 class MapTransferHandler : public Handler
 {
 public:
 	MapTransferHandler(BondCalculator *calculator = nullptr);
 
-private:
+	void supplyElementList(std::map<std::string, int> elements);
+	
+	void setupTransferMap(std::vector<BondSequence::ElePos> &epos);
 
+private:
 	BondCalculator *_calculator = nullptr;
 };
 
