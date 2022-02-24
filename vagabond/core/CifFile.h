@@ -127,7 +127,8 @@ private:
 	static std::string compHeaders[];
 	static std::string reflHeaders[];
 	static std::string unitCellKeys[];
-	static std::string symmetryKeys[];
+	static std::string intTableKeys[];
+	static std::string groupSymbolKeys[];
 	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
 	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);
 };

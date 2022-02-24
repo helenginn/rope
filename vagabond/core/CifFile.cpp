@@ -2,6 +2,7 @@
 #include <gemmi/numb.hpp>
 #include <gemmi/cif.hpp>
 #include "commit.h"
+#include <ccp4/csymlib.h>
 
 #include "CifFile.h"
 #include "Diffraction.h"
@@ -73,7 +74,13 @@ std::string CifFile::reflHeaders[] =
 	""
 };
 
-std::string CifFile::symmetryKeys[] = 
+std::string CifFile::groupSymbolKeys[] = 
+{
+	"_symmetry.space_group_name_H-M",
+	""
+};
+
+std::string CifFile::intTableKeys[] = 
 {
 	"_symmetry.Int_Tables_number",
 	""
@@ -848,15 +855,35 @@ std::array<double, 6> CifFile::unitCell() const
 	return cell;
 }
 
+void cleanup(std::string &str)
+{
+	for (size_t i = 0; i < str.length(); i++)
+	{
+		if ((str[i] == '\'' || str[i] == '"'))
+	    {
+		     str.erase(str.begin() + i);
+		     i--;
+	    }
+    }
+}
+
 int CifFile::spaceGroupNum() const
 {
-	if (_values.count("_symmetry.Int_Tables_number") == 0)
+	int spg = -1;
+	if (_values.count("_symmetry.Int_Tables_number") > 0)
 	{
-		return -1;
+		spg = as_number(_values.at("_symmetry.Int_Tables_number"));
+	}
+	else if (_values.count("_symmetry.space_group_name_H-M") > 0)
+	{
+		std::string str = _values.at("_symmetry.space_group_name_H-M");
+		cleanup(str);
+		CCP4SPG *group = ccp4spg_load_by_ccp4_spgname(str.c_str());
+		spg = group->spg_ccp4_num;
+		ccp4spg_free(&group);
 	}
 
-	int num = as_number(_values.at("_symmetry.Int_Tables_number"));
-	return num;
+	return spg;
 }
 
 RefList *CifFile::reflectionList() const
@@ -917,7 +944,7 @@ CifFile::Type CifFile::cursoryLook()
 		type = CifFile::Type(type | Geometry);
 	}
 
-	if (identifyPairs(doc, symmetryKeys))
+	if (identifyPairs(doc, intTableKeys) || identifyPairs(doc, groupSymbolKeys))
 	{
 		type = CifFile::Type(type | Symmetry);
 	}
