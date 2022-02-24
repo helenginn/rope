@@ -1,4 +1,5 @@
 #include "Display.h"
+#include "ImageButton.h"
 #include "GuiAtom.h"
 #include "GuiRefls.h"
 #include "TextButton.h"
@@ -51,6 +52,25 @@ void Display::loadDiffraction(Diffraction *diff)
 	updateCamera();
 
 	addObject(_guiRefls);
+	wedgeButtons();
+}
+
+void Display::wedgeButtons()
+{
+	ImageButton *lemon = new ImageButton("assets/images/lemon.png", this);
+	lemon->resize(0.16);
+	lemon->setCentre(0.9, 0.1);
+	lemon->setReturnTag("half_wedge");
+	addObject(lemon);
+	_halfWedge = lemon;
+
+	ImageButton *orange = new ImageButton("assets/images/orange.png", this);
+	orange->resize(0.16);
+	orange->setCentre(0.9, 0.1);
+	orange->setReturnTag("full_wedge");
+	orange->setDisabled(true);
+	_wedge = orange;
+	addObject(orange);
 }
 
 void Display::loadAtoms(AtomGroup *atoms)
@@ -127,6 +147,18 @@ void Display::buttonPressed(std::string tag, Button *button)
 	else if (tag == "refine_positions")
 	{
 		_atoms->refinePositions();
+	}
+	else if (tag == "full_wedge")
+	{
+		_halfWedge->setDisabled(false);
+		_wedge->setDisabled(true);
+		_guiRefls->setSlice(false);
+	}
+	else if (tag == "half_wedge")
+	{
+		_halfWedge->setDisabled(true);
+		_wedge->setDisabled(false);
+		_guiRefls->setSlice(true);
 	}
 }
 

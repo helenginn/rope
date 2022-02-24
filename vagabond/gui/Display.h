@@ -4,6 +4,7 @@
 
 #include "Scene.h"
 
+class ImageButton;
 class GuiAtom;
 class GuiRefls;
 class AtomGroup;
@@ -28,6 +29,7 @@ public:
 	void loadDiffraction(Diffraction *diff);
 	void recalculateAtoms();
 	void tieButton();
+	void wedgeButtons();
 	
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
@@ -40,6 +42,9 @@ private:
 	void updateSpinMatrix();
 	
 	glm::mat3x3 _spin;
+	
+	ImageButton *_halfWedge = nullptr;
+	ImageButton *_wedge = nullptr;
 };
 
 #endif

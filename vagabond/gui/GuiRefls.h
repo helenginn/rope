@@ -31,8 +31,15 @@ public:
 
 	virtual void render(SnowGL *gl);
 	void populateFromDiffraction(Diffraction *diffraction);
+	virtual void extraUniforms();
+	
+	void setSlice(bool slice)
+	{
+		_slice = (slice ? 1 : -1);
+	}
 private:
 	Icosahedron *_template;
+	GLfloat _slice = -1;
 };
 
 #endif
