@@ -23,7 +23,8 @@
 #include <iostream>
 
 template <class T>
-TransformedGrid<T>::TransformedGrid(int nx, int ny, int nz) : Grid<T>(nx, ny, nz)
+TransformedGrid<T>::TransformedGrid(int nx, int ny, int nz)
+: OriginGrid<T>(nx, ny, nz)
 {
 
 }
@@ -58,13 +59,6 @@ double TransformedGrid<T>::resolution(int i, int j, int k)
 	ijk = _recip2Frac * ijk;
 
 	return 1 / glm::length(ijk);
-}
-template <class T>
-int TransformedGrid<T>::reciprocalLimitIndex(int d)
-{
-	int n = this->dim(d);
-	n /= 2;
-	return n;
 }
 
 template <class T>

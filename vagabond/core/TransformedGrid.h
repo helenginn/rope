@@ -19,38 +19,22 @@
 #ifndef __vagabond__TransformedGrid__
 #define __vagabond__TransformedGrid__
 
-#include "Grid.h"
+#include "OriginGrid.h"
 #include "../utils/glm_import.h"
 
 template <class T>
-class TransformedGrid : public Grid<T>
+class TransformedGrid : public OriginGrid<T>
 {
 public:
 	TransformedGrid(int nx, int ny, int nz);
 	
 	void setRecipMatrix(glm::mat3x3 mat);
 	void setRealMatrix(glm::mat3x3 mat);
-	
-	int reciprocalLimitIndex(int dim);
 
-	double resolution(int i, int j, int k);
+	virtual double resolution(int i, int j, int k);
 	
-	glm::vec3 reciprocal(int h, int k, int l);
+	virtual glm::vec3 reciprocal(int h, int k, int l);
 
-	void addToOrigin(glm::vec3 add)
-	{
-		_origin += add;
-	}
-
-	void setOrigin(glm::vec3 orig)
-	{
-		_origin = orig;
-	}
-	
-	glm::vec3 origin()
-	{
-		return _origin;
-	}
 private:
 	void setFrac2Real(glm::mat3x3 mat)
 	{
@@ -67,8 +51,6 @@ private:
 
 	glm::mat3x3 _voxel2Real = glm::mat3(1.f);
 	glm::mat3x3 _voxel2Recip = glm::mat3(1.f);
-	
-	glm::vec3 _origin;
 };
 
 #include "TransformedGrid.cpp"

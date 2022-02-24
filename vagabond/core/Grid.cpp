@@ -145,5 +145,13 @@ bool Grid<T>::withinBounds(int i, int j, int k)
 	return true;
 }
 
+template <class T>
+int Grid<T>::reciprocalLimitIndex(int d)
+{
+	int n = dim(d);
+	n /= 2;
+	return n;
+}
+
 #endif
 

@@ -51,6 +51,8 @@ public:
 	
 	void setDimensions(int nx, int ny, int nz);
 	bool withinBounds(int i, int j, int k);
+	
+	int reciprocalLimitIndex(int dim);
 
 	void setDim(int d, int val)
 	{
