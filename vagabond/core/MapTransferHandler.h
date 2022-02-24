@@ -16,38 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadExtractsBondPositions__
-#define __vagabond__ThreadExtractsBondPositions__
+#ifndef __vagabond__MapTransferHandler__
+#define __vagabond__MapTransferHandler__
 
-#include "ThreadWorker.h"
+#include "Handler.h"
+#include "BondCalculator.h"
 
-class MapTransferHandler;
-class BondSequenceHandler;
-class BondCalculator;
-class BondSequence;
-struct Job;
-struct MiniJobSeq;
-
-class ThreadExtractsBondPositions : public ThreadWorker
+class MapTransferHandler : public Handler
 {
 public:
-	ThreadExtractsBondPositions(BondSequenceHandler *h);
-	virtual ~ThreadExtractsBondPositions() {};
+	MapTransferHandler(BondCalculator *calculator = nullptr);
 
-	virtual void start();
-	
-	void setMapTransferHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
 private:
-	void extractPositions(Job *job, BondSequence *seq);
-	void calculateDeviation(Job *job, BondSequence *seq);
-	void transferToMaps(Job *job, BondSequence *seq);
 
-	BondSequenceHandler *_seqHandler;
-	MapTransferHandler *_mapHandler;
-
+	BondCalculator *_calculator = nullptr;
 };
 
 #endif

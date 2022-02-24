@@ -27,6 +27,7 @@
 
 class Atom;
 class BondSequenceHandler;
+class MapTransferHandler;
 
 class BondCalculator : public Handler
 {
@@ -139,6 +140,7 @@ private:
 	void sanityCheckPipeline();
 	void sanityCheckThreads();
 	void sanityCheckDepthLimits();
+	void setupMapTransferHandler();
 	void setupSequenceHandler();
 	void prepareThreads();
 
@@ -161,6 +163,7 @@ private:
 	Pool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler = nullptr;
+	MapTransferHandler *_mapHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::vector<AnchorExtension> _atoms;

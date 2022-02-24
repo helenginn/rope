@@ -29,6 +29,7 @@
 
 class ThreadWorker;
 class BondSequence;
+class MapTransfer;
 
 enum SequenceState
 {
@@ -42,9 +43,11 @@ enum SequenceState
 
 enum JobType
 {
-	JobNotSpecified = 0,
-	JobExtractPositions = 1 << 0,
-	JobCalculateDeviations = 1 << 1,
+	JobNotSpecified =            0,
+	JobExtractPositions =        1 << 0,
+	JobCalculateDeviations =     1 << 1,
+	JobCalculateMapSegment =     1 << 2,
+	JobCalculateMapCorrelation = 1 << 3,
 };
 
 typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
@@ -127,7 +130,8 @@ struct CustomInfo
 	}
 };
 
-struct MiniJob;
+struct MiniJobSeq;
+struct MiniJobMap;
 
 struct Job
 {
@@ -146,6 +150,12 @@ struct Job
 		custom.destroy_vectors();
 		delete this;
 	}
+};
+
+struct MiniJobMap
+{
+	Job *job;
+	MapTransfer *map;
 };
 
 struct MiniJobSeq

@@ -25,29 +25,32 @@
 ThreadExtractsBondPositions::ThreadExtractsBondPositions(BondSequenceHandler *h)
 : ThreadWorker()
 {
-	_handler = h;
+	_seqHandler = h;
 	_finish = false;
 }
 
-void ThreadExtractsBondPositions::extractPositions(Job *job, MiniJob *mini,
-                                                   BondSequence *seq)
+void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 {
 	Result *r = job->result;
 
 	AtomPosMap aps = seq->extractPositions();
 
 	/* extend atom positions in the result */
-	r->ticket = mini->job->ticket;
+	r->ticket = job->ticket;
 	r->handout.lock();
 	r->aps = aps;
 	r->handout.unlock();
 }
 
-void ThreadExtractsBondPositions::calculateDeviation(Job *job, MiniJob *mini,
-                                                     BondSequence *seq)
+void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq)
 {
 	Result *r = job->result;
 	r->deviation = seq->calculateDeviations();
+}
+
+void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
+{
+
 }
 
 void ThreadExtractsBondPositions::start()
@@ -55,8 +58,8 @@ void ThreadExtractsBondPositions::start()
 	SequenceState state = SequencePositionsReady;
 	do
 	{
-		BondCalculator *calc = _handler->calculator();
-		BondSequence *seq = _handler->acquireSequence(state);
+		BondCalculator *calc = _seqHandler->calculator();
+		BondSequence *seq = _seqHandler->acquireSequence(state);
 		
 		if (seq == nullptr)
 		{
@@ -85,20 +88,25 @@ void ThreadExtractsBondPositions::start()
 
 		if (job->requests & JobExtractPositions)
 		{
-			extractPositions(job, mini, seq);
+			extractPositions(job, seq);
 		}
 		if (job->requests & JobCalculateDeviations)
 		{
-			calculateDeviation(job, mini, seq);
+			calculateDeviation(job, seq);
+		}
+		if (job->requests & JobCalculateMapSegment ||
+		    job->requests & JobCalculateMapCorrelation)
+		{
+			transferToMaps(job, seq);
 		}
 
 		/* don't submit the result unless all minijobs are done */
-		std::vector<MiniJob *>::iterator it;
+		std::vector<MiniJobSeq *>::iterator it;
 		it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
 
 		if (it == job->miniJobs.end())
 		{
-			throw std::runtime_error("MiniJob received twice");
+			throw std::runtime_error("MiniJobSeq received twice");
 		}
 
 		job->miniJobs.erase(it);

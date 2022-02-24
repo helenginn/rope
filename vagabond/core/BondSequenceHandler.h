@@ -26,6 +26,7 @@
 
 class BondSequence;
 class BondCalculator;
+class MapTransferHandler;
 class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
 	
@@ -34,6 +35,11 @@ class BondSequenceHandler : public Handler
 public:
 	BondSequenceHandler(BondCalculator *calculator = nullptr);
 	~BondSequenceHandler();
+	
+	void setMapTransferHandler(MapTransferHandler *handler)
+	{
+		_mapHandler = handler;
+	}
 
 	BondCalculator *calculator()
 	{
@@ -50,11 +56,6 @@ public:
 		_totalSamples = total;
 		
 		_mode = (total == 1 ? SingleSample : MultiSample);
-	}
-	
-	void expectMapHandling(bool map)
-	{
-		_mapHandling = map;
 	}
 
 	void setTorsionBasisType(TorsionBasis::Type type)
@@ -123,7 +124,6 @@ private:
 	size_t _totalSequences = 0;
 	size_t _maxThreads = 0;
 
-	bool _mapHandling = false;
 	bool _ignoreHydrogens = false;
 	
 	enum SampleMode
@@ -143,6 +143,7 @@ private:
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
 	BondCalculator *_calculator = nullptr;
+	MapTransferHandler *_mapHandler = nullptr;
 };
 
 #endif

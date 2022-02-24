@@ -19,6 +19,7 @@
 #include "ThreadSubmitsJobs.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "MapTransferHandler.h"
 
 BondCalculator::BondCalculator()
 {
@@ -84,6 +85,16 @@ void BondCalculator::addAnchorExtension(Atom *atom, size_t bondCount)
 	_atoms.push_back(ext);
 }
 
+void BondCalculator::setupMapTransferHandler()
+{
+	if (!(_type & PipelineCalculatedMaps))
+	{
+		return;
+	}
+
+	_mapHandler = new MapTransferHandler(this);
+}
+
 void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
@@ -91,6 +102,11 @@ void BondCalculator::setupSequenceHandler()
 	_sequenceHandler->setMaxThreads(_maxThreads);
 	_sequenceHandler->setTorsionBasisType(_basisType);
 	_sequenceHandler->setIgnoreHydrogens(_ignoreHydrogens);
+	
+	if (_mapHandler != nullptr)
+	{
+		_sequenceHandler->setMapTransferHandler(_mapHandler);
+	}
 	
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
@@ -105,6 +121,7 @@ void BondCalculator::setup()
 	sanityCheckPipeline();
 	sanityCheckThreads();
 
+	setupMapTransferHandler();
 	setupSequenceHandler();
 }
 

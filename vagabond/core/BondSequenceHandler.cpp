@@ -90,16 +90,14 @@ void BondSequenceHandler::prepareThreads()
 		pool.threads.push_back(thr);
 		pool.workers.push_back(worker);
 	}
-	
-	if (!_mapHandling)
-	{
-		ExtrWorker *worker = new ExtrWorker(this);
-		std::thread *thr = new std::thread(&ExtrWorker::start, worker);
-		Pool<BondSequence *> &pool = _pools[SequencePositionsReady];
 
-		pool.threads.push_back(thr);
-		pool.workers.push_back(worker);
-	}
+	ExtrWorker *worker = new ExtrWorker(this);
+	worker->setMapTransferHandler(_mapHandler);
+	std::thread *thr = new std::thread(&ExtrWorker::start, worker);
+	Pool<BondSequence *> &pool = _pools[SequencePositionsReady];
+
+	pool.threads.push_back(thr);
+	pool.workers.push_back(worker);
 	
 	/* if number of threads match number of sequences, this thread group will
 	 * never block (it must acquire both minijob and matching sequence) */
