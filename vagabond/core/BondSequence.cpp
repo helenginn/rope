@@ -401,6 +401,11 @@ std::map<std::string, int> BondSequence::elementList() const
 	
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
+		if (_blocks[i].atom == nullptr)
+		{
+			continue;
+		}
+
 		std::string e = std::string(_blocks[i].element);
 		
 		if (e.length())
