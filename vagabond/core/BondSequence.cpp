@@ -725,6 +725,27 @@ AtomPosMap &BondSequence::extractPositions()
 	return _posAtoms;
 }
 
+std::vector<BondSequence::ElePos> BondSequence::extractForMap()
+{
+	std::vector<ElePos> epos;
+	epos.reserve(_blocks.size());
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		if (_blocks[i].atom == nullptr)
+		{
+			continue;
+		}
+		
+		ElePos ep;
+		ep.pos = _blocks[i].my_position();
+		strcpy(ep.element, _blocks[i].element);
+		epos.push_back(ep);
+	}
+
+	return epos;
+}
+
 void BondSequence::cleanUpToIdle()
 {
 	delete _miniJob;

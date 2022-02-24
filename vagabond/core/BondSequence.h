@@ -142,6 +142,14 @@ public:
 
 	void calculate();
 	std::map<Atom *, Atom::WithPos> &extractPositions();
+	
+	struct ElePos
+	{
+		glm::vec3 pos;
+		char element[3];
+	};
+
+	std::vector<ElePos> extractForMap();
 	double calculateDeviations();
 
 	void setSampleCount(int count)
