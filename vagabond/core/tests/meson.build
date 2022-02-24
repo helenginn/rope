@@ -132,6 +132,7 @@ integration_tests = [
 'bondsequence_has_all_atomgraph_parents_filled_except_anchor',
 'bondsequence_multiplies_atomblocks_by_samples_requested',
 'bondsequence_parent_locations_match_child_locations',
+'bondsequence_returns_atomic_composition_of_glycine',
 'bondsequence_ignores_side_branches_longer_than_max_depth',
 'bondsequence_maxdepth_always_greater_than_depth',
 'bondsequencehandler_allocates_total_samples_over_all_threads',
