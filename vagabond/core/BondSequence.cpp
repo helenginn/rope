@@ -641,7 +641,13 @@ void BondSequence::fastCalculate()
 
 void BondSequence::calculate()
 {
-	bool extract = (miniJob()->job->requests & JobExtractPositions);
+	bool extract = true;
+	
+	if (miniJob())
+	{
+		extract = (miniJob()->job->requests & JobExtractPositions);
+	}
+
 	if (sampleCount() == 1 && !extract)
 	{
 		fastCalculate();
