@@ -22,7 +22,7 @@
 #include "TransformedGrid.h"
 
 template <class T>
-class FFT : public TransformedGrid<T>
+class FFT : public virtual Grid<T>
 {
 public:
 	FFT();

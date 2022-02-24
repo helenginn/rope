@@ -22,7 +22,7 @@
 #include "OriginGrid.h"
 
 template <class T>
-class CubicGrid : public OriginGrid<T>
+class CubicGrid : public virtual OriginGrid<T>
 {
 public:
 	CubicGrid(int nx, int ny, int nz);
