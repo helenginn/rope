@@ -60,6 +60,7 @@ unit_tests = [
 'elementsegment_can_populate_plan',
 'elementsegment_can_fourier_transform',
 'elementsegment_splits_density_over_voxels',
+'elementsegment_produces_sensible_scattering',
 'geometrytable_angle_lookup_returns_value',
 'geometrytable_torsion_lookup_returns_value',
 'grid_identifies_outside_bounds_over_zero',
