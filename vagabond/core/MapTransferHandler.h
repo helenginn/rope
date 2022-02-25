@@ -36,6 +36,8 @@ public:
 	void setupTransferMap(std::vector<BondSequence::ElePos> &epos);
 
 private:
+	AtomGroup *_all = nullptr;
+	AtomGroup *_sub = nullptr;
 	std::map<std::string, int> _elements;
 	BondCalculator *_calculator = nullptr;
 };

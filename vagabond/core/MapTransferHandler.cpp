@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MapTransferHandler.h"
+#include "ElementSegment.h"
 
 MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
 {
@@ -25,7 +26,8 @@ MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
 
 void MapTransferHandler::supplyAtomGroup(AtomGroup *all, AtomGroup *sub)
 {
-
+	_all = all;
+	_sub = sub;
 }
 
 void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
