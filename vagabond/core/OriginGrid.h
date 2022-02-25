@@ -23,13 +23,15 @@
 #include "../utils/glm_import.h"
 
 template <class T>
-class OriginGrid : public Grid<T>
+class OriginGrid : public virtual Grid<T>
 {
 public:
-	OriginGrid(int nx, int ny, int nz) : Grid<T>(nx, ny, nz) {};
+	OriginGrid(int nx, int ny, int nz) : Grid<T>(nx, ny, nz) { };
+	OriginGrid() {};
 
 	virtual double resolution(int i, int j, int k) = 0;
 	virtual glm::vec3 reciprocal(int h, int k, int l) = 0;
+	virtual void real2Voxel(glm::vec3 &real) = 0;
 
 	void addToOrigin(glm::vec3 add)
 	{
@@ -46,7 +48,7 @@ public:
 		return _origin;
 	}
 private:
-	glm::vec3 _origin;
+	glm::vec3 _origin = glm::vec3(0.f);
 };
 
 #endif

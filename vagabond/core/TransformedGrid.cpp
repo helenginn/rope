@@ -24,7 +24,7 @@
 
 template <class T>
 TransformedGrid<T>::TransformedGrid(int nx, int ny, int nz)
-: OriginGrid<T>(nx, ny, nz)
+: Grid<T>(nx, ny, nz), OriginGrid<T>(nx, ny, nz)
 {
 
 }
@@ -67,6 +67,12 @@ glm::vec3 TransformedGrid<T>::reciprocal(int h, int k, int l)
 	glm::vec3 v(h, k, l);
 	glm::vec3 next = _recip2Frac * v;
 	return next;
+}
+
+template <class T>
+void TransformedGrid<T>::real2Voxel(glm::vec3 &real)
+{
+	real = _voxel2Recip * real;
 }
 
 #endif

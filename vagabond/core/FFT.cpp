@@ -22,6 +22,9 @@
 #include "FFT.h"
 
 template <class T>
+std::vector<typename FFT<T>::PlanDims> FFT<T>::_plans;
+
+template <class T>
 FFT<T>::FFT()
 {
 	makePlans();
@@ -37,7 +40,7 @@ void FFT<T>::fft()
 	}
 	else if (_status == Reciprocal)
 	{
-		doFFT(1);
+		doFFT(-1);
 		_status = Real;
 	}
 	else
@@ -45,5 +48,67 @@ void FFT<T>::fft()
 		throw std::runtime_error("FFT status is Empty but asked to transform");
 	}
 }
+
+template <class T>
+void FFT<T>::doFFT(int dir)
+{
+	if (dir > 0)
+	{
+		fftwf_execute_dft(_plan.forward,
+		                  &this->_data[0].value, 
+		                  &this->_data[0].value);
+	}
+	else
+	{
+		fftwf_execute_dft(_plan.backward, 
+		                  &this->_data[0].value, 
+		                  &this->_data[0].value);
+		
+		this->multiply(1 / (float)this->nn());
+	}
+}
+
+template <class T>
+void FFT<T>::createNewPlan()
+{
+	PlanDims plan{};
+	plan.nx = this->nx();
+	plan.ny = this->ny();
+	plan.nz = this->nz();
+
+	populatePlan(plan);
+	
+	_plan = plan;
+}
+
+template <class T>
+typename FFT<T>::PlanDims *FFT<T>::findPlan(int nx, int ny, int nz) const
+{
+	for (size_t i = 0; i < _plans.size(); i++)
+	{
+		if (_plans[i].nx == nx && _plans[i].ny == ny && _plans[i].nz == nz)
+		{
+			return &_plans[i];
+		}
+	}
+
+	return nullptr;
+}
+
+template <class T>
+void FFT<T>::makePlans()
+{
+	PlanDims *plan = findPlan(this->nx(), this->ny(), this->nz());
+
+	if (plan != nullptr)
+	{
+		_plan = *plan;
+	}
+	else
+	{
+		createNewPlan();
+	}
+}
+
 
 #endif

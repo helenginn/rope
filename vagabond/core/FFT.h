@@ -19,6 +19,7 @@
 #ifndef __vagabond__FFT__
 #define __vagabond__FFT__
 
+#include <fftw3.h>
 #include "TransformedGrid.h"
 
 template <class T>
@@ -28,7 +29,7 @@ public:
 	FFT();
 
 	virtual void fft();
-	virtual void makePlans() {}
+	void makePlans();
 	
 	enum Status
 	{
@@ -41,11 +42,30 @@ public:
 	{
 		_status = status;
 	}
+//protected:
+	void doFFT(int dir);
+
+	struct PlanDims
+	{
+		int nx;
+		int ny;
+		int nz;
+		fftwf_plan forward;
+		fftwf_plan backward;
+	};
+	
+	PlanDims *findPlan(int nx, int ny, int nz) const;
+
+	virtual void populatePlan(PlanDims &dims) {};
 protected:
-	virtual void doFFT(int dir) = 0;
 private:
 	Status _status = Empty;
 
+	void createNewPlan();
+	
+	static std::vector<PlanDims> _plans;
+	
+	PlanDims _plan;
 };
 
 #include "FFT.cpp"

@@ -144,6 +144,7 @@ vagafiles = [
 'vagabond/core/ConcertedBasis.cpp',
 'vagabond/core/CubicGrid.cpp',
 'vagabond/core/Diffraction.cpp',
+'vagabond/core/ElementSegment.cpp',
 'vagabond/core/FFT.cpp',
 'vagabond/core/GeometryTable.cpp',
 'vagabond/core/Grid.cpp',

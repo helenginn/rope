@@ -22,7 +22,8 @@
 #include "CubicGrid.h"
 
 template <class T>
-CubicGrid<T>::CubicGrid(int nx, int ny, int nz) : OriginGrid<T>(nx, ny, nz)
+CubicGrid<T>::CubicGrid(int nx, int ny, int nz) 
+: Grid<T>(nx, ny, nz), OriginGrid<T>(nx, ny, nz)
 {
 
 }
@@ -61,6 +62,12 @@ glm::vec3 CubicGrid<T>::reciprocal(int h, int k, int l)
 	glm::vec3 v(h, k, l);
 	v *= _recipDim;
 	return v;
+}
+
+template <class T>
+void CubicGrid<T>::real2Voxel(glm::vec3 &real)
+{
+	real *= _recipDim;
 }
 
 #endif

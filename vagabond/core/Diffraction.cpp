@@ -19,13 +19,15 @@
 #include "Diffraction.h"
 
 Diffraction::Diffraction(int nx, int ny, int nz) 
-: TransformedGrid<VoxelDiffraction>(nx, ny, nz)
+: Grid<VoxelDiffraction>(nx, ny, nz),
+TransformedGrid<VoxelDiffraction>(nx, ny, nz)
 {
 
 }
 
 Diffraction::Diffraction(RefList &list) 
-: TransformedGrid<VoxelDiffraction>(0, 0, 0)
+: Grid<VoxelDiffraction>(0, 0, 0),
+TransformedGrid<VoxelDiffraction>(0, 0, 0)
 {
 	_list = &list;
 

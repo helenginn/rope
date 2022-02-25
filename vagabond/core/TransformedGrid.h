@@ -32,7 +32,7 @@ public:
 	void setRealMatrix(glm::mat3x3 mat);
 
 	virtual double resolution(int i, int j, int k);
-	
+	virtual void real2Voxel(glm::vec3 &real);
 	virtual glm::vec3 reciprocal(int h, int k, int l);
 
 private:

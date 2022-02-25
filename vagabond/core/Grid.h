@@ -27,24 +27,26 @@ class Grid
 {
 public:
 	Grid(int nx, int ny, int nz);
+	Grid() {};
+
 	virtual ~Grid();
 	
-	int nx()
+	const int &nx() const
 	{
 		return _nx;
 	}
 	
-	int ny()
+	const int &ny() const
 	{
 		return _ny;
 	}
 	
-	int nz()
+	const int &nz() const
 	{
 		return _nz;
 	}
 	
-	int nn()
+	const long &nn() const
 	{
 		return _nn;
 	}
@@ -99,18 +101,23 @@ public:
 protected:
 	void adjustNs();
 	virtual void prepareData();
+	
+	void collapse(glm::vec3 &vox)
+	{
+		collapse(vox.x, vox.y, vox.z);
+	}
 
 	template <typename V>
 	void collapse(V &x, V &y, V &z)
 	{
-		while (x < 0) x += _nx;
-		while (x >= _nx) x -= _nx;
+		while (x < 0) x += (float)_nx;
+		while (x >= _nx) x -= (float)_nx;
 
-		while (y < 0) y += _ny;
-		while (y >= _ny) y -= _ny;
+		while (y < 0) y += (float)_ny;
+		while (y >= _ny) y -= (float)_ny;
 
-		while (z < 0) z += _nz;
-		while (z >= _nz) z -= _nz;
+		while (z < 0) z += (float)_nz;
+		while (z >= _nz) z -= (float)_nz;
 	}
 
 	/** Remove whole numbers and leave remainder between 0 and 1 for each
@@ -124,8 +131,10 @@ protected:
 		}
 	}
 
-private:
 	T *_data = nullptr;
+	virtual void multiply(float scale) {};
+	virtual float sum() { return 0; };
+private:
 
 	int _nx = 0;
 	int _ny = 0;
