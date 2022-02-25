@@ -55,6 +55,8 @@ unit_tests = [
 'diffraction_created_from_reflist',
 'diffraction_gets_amplitude_from_reflist',
 'diffraction_friedel_pairs_are_instantiated',
+'elementlibrary_returns_correct_values_for_n',
+'elementlibrary_interpolates_between_n',
 'elementsegment_can_populate_plan',
 'elementsegment_can_fourier_transform',
 'elementsegment_splits_density_over_voxels',
