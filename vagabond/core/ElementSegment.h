@@ -27,7 +27,7 @@ class AtomGroup;
 struct VoxelElement
 {
 	fftwf_complex value;
-	float scatter;
+	float scatter = 1;
 };
 
 class ElementSegment : public FFTCubicGrid<VoxelElement>
