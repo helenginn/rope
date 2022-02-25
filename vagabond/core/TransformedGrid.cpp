@@ -53,7 +53,7 @@ void TransformedGrid<T>::setRecipMatrix(glm::mat3x3 mat)
 }
 
 template <class T>
-double TransformedGrid<T>::resolution(int i, int j, int k)
+float TransformedGrid<T>::resolution(int i, int j, int k)
 {
 	glm::vec3 ijk = glm::vec3(i, j, k);
 	ijk = _recip2Frac * ijk;

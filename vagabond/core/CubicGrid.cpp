@@ -47,7 +47,7 @@ void CubicGrid<T>::setRecipDim(float dim)
 }
 
 template <class T>
-double CubicGrid<T>::resolution(int i, int j, int k)
+float CubicGrid<T>::resolution(int i, int j, int k)
 {
 	glm::vec3 ijk = glm::vec3(i, j, k);
 	ijk *= _recipDim;

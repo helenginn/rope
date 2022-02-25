@@ -29,7 +29,7 @@ public:
 	OriginGrid(int nx, int ny, int nz) : Grid<T>(nx, ny, nz) { };
 	OriginGrid() {};
 
-	virtual double resolution(int i, int j, int k) = 0;
+	virtual float resolution(int i, int j, int k) = 0;
 	virtual glm::vec3 reciprocal(int h, int k, int l) = 0;
 	virtual void real2Voxel(glm::vec3 &real) = 0;
 
