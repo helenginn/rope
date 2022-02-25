@@ -23,11 +23,14 @@
 #include "BondCalculator.h"
 #include "BondSequence.h"
 
+class AtomGroup;
+
 class MapTransferHandler : public Handler
 {
 public:
 	MapTransferHandler(BondCalculator *calculator = nullptr);
 
+	void supplyAtomGroup(AtomGroup *all, AtomGroup *sub);
 	void supplyElementList(std::map<std::string, int> elements);
 	
 	void setupTransferMap(std::vector<BondSequence::ElePos> &epos);

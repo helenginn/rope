@@ -23,6 +23,11 @@ MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
 	_calculator = calculator;
 }
 
+void MapTransferHandler::supplyAtomGroup(AtomGroup *all, AtomGroup *sub)
+{
+
+}
+
 void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
 {
 	_elements = elements;
