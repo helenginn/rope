@@ -25,6 +25,7 @@ MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
 
 void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
 {
+	_elements = elements;
 
 }
 

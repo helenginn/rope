@@ -33,6 +33,7 @@ public:
 	void setupTransferMap(std::vector<BondSequence::ElePos> &epos);
 
 private:
+	std::map<std::string, int> _elements;
 	BondCalculator *_calculator = nullptr;
 };
 
