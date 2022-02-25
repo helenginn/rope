@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ElementSegment.h"
+#include "ElementLibrary.h"
 #include "AtomGroup.h"
 
 ElementSegment::ElementSegment(AtomGroup *grp)
@@ -29,6 +30,30 @@ ElementSegment::ElementSegment(AtomGroup *grp)
 	// work out dimensions from atom group
 
 	this->Grid::setDimensions(nx, ny, nz);
+}
+
+void ElementSegment::setElement(std::string element)
+{
+	ElementLibrary &library = ElementLibrary::library();
+	const float *factors = library.getElementFactors(element);
+
+	int nx, ny, nz;
+	limits(nx, ny, nz);
+
+	for (int k = -nz; k < nz; k++)
+	{
+		for (int j = -ny; j < ny; j++)
+		{
+			for (int i = -nx; i < nx; i++)
+			{
+				float res = 1 / resolution(i, j, k);
+				float val = library.valueForResolution(res, factors);
+				
+				VoxelElement &ve = this->element(i, j, k);
+				ve.scatter = val;
+			}
+		}
+	}
 }
 
 void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)
@@ -111,6 +136,19 @@ void ElementSegment::addDensity(glm::vec3 real, float density)
 			}	
 		}
 	}
+}
+
+void ElementSegment::calculateMap()
+{
+	fft();
+	
+	for (size_t i = 0; i < nn(); i++)
+	{
+		_data[i].value[0] *= _data[i].scatter;
+		_data[i].value[1] *= _data[i].scatter;
+	}
+
+	fft();
 }
 
 void ElementSegment::multiply(float scale)

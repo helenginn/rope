@@ -34,10 +34,14 @@ class ElementSegment : public FFTCubicGrid<VoxelElement>
 {
 public:
 	ElementSegment(AtomGroup *grp);
+	
+	void setElement(std::string element);
 
 	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
-	
 	void addDensity(glm::vec3 real, float density);
+	
+	void calculateMap();
+
 	virtual float sum();
 	virtual void multiply(float scale);
 protected:
