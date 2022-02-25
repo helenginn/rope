@@ -55,6 +55,8 @@ public:
 	bool withinBounds(int i, int j, int k);
 	
 	int reciprocalLimitIndex(int dim);
+	
+	void limits(int &mx, int &my, int &mz);
 
 	void setDim(int d, int val)
 	{

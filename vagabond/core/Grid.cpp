@@ -153,5 +153,13 @@ int Grid<T>::reciprocalLimitIndex(int d)
 	return n;
 }
 
+template <class T>
+void Grid<T>::limits(int &mx, int &my, int &mz)
+{
+	mx = _nx / 2;
+	my = _ny / 2;
+	mz = _nz / 2;
+}
+
 #endif
 
