@@ -719,6 +719,8 @@ bool CifFile::processLoopAsMacroAtoms(Loop &loop)
 		int num = as_number(loop.values[i + num_idx]);
 		std::string ele = loop.values[i + ele_idx];
 		std::string name = loop.values[i + atom_name_idx];
+		remove_quotes(name);
+
 		std::string code = loop.values[i + res_idx];
 		std::string chain = loop.values[i + chain_idx];
 		float occ = as_number(loop.values[i + occ_idx]);

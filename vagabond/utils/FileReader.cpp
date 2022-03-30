@@ -68,6 +68,15 @@ std::string get_file_contents(std::string filename)
 	throw(std::runtime_error(errString));
 }
 
+void remove_quotes(std::string &str)
+{
+	if (str[0] == '\"' && str.back() == '\"')
+	{
+		str.erase(str.begin());
+		str.pop_back();
+	}
+}
+
 std::string defenestrate(std::string str)
 {
 	std::ostringstream ss;
