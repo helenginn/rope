@@ -3814,7 +3814,7 @@ _chem_link_bond.link_id
  C    N        1.336    0.023    "NOT GLY PRO"
  C    N        1.338    0.019    "PRO"
  C    N        1.326    0.018    "GLY"
- O3'  P        1.607    0.012    "NUC-ACID-ALL"
+ O3'  P        1.607    0.012    .
 SG   SG        2.033    0.016    "CYS"
 #
 loop_
@@ -3837,12 +3837,16 @@ _chem_link_angle.link_id
      C    N    CA     127.0      2.4    PRO-CIS
      C    N    CA     119.3      1.5    PRO-TRANS
      C    N    CA     122.3      2.1    GLY
+     O3'  P    O5'    104.0      1.9    .
      O3'  P    O5'    104.0      1.9    "NA s"
+     OP1  P    O3'    105.2      2.2    .
      OP1  P    O3'    105.2      2.2    "NA small"
      OP1  P    O3'    110.5      1.1    "NA large"
+     OP2  P    O3'    105.2      2.2    .
      OP2  P    O3'    105.2      2.2    "NA small"
      OP2  P    O3'    110.5      1.1    "NA large"
      P    O3'  C3'    119.7      1.2    "NA s"
+     P    O3'  C3'    119.7      1.2    .
      C    N    CD     120.6      2.2    PRO-CIS
      C    N    CD     128.4      2.1    PRO-TRANS
      C    N    CD     128.4      2.1    PRO
