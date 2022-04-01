@@ -209,6 +209,10 @@ bool PCA::invertSVD(SVD *cc)
 
 void PCA::freeMatrix(Matrix *m)
 {
+	if (m == nullptr)
+	{
+		return;
+	}
 	free(m->vals);
 	free(m->ptrs);
 	m->vals = nullptr;
@@ -219,6 +223,10 @@ void PCA::freeSVD(SVD *cc)
 {
 	freeMatrix(&cc->u);
 	freeMatrix(&cc->v);
-	free(cc->w);
+
+	if (cc->w != nullptr)
+	{
+		free(cc->w);
+	}
 	cc->w = nullptr;
 }
