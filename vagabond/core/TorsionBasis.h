@@ -59,7 +59,7 @@ public:
 		return _torsions.size();
 	}
 	
-	const BondTorsion *torsion(int i) const
+	BondTorsion *torsion(int i)
 	{
 		return _torsions[i];
 	}
