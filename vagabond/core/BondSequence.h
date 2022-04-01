@@ -202,6 +202,14 @@ private:
 			return glm::vec3(wip[i]);
 		}
 	};
+
+	struct AtomBlockTodo
+	{
+		AtomBlock *block;
+		int idx;
+		int num;
+	};
+
 	
 	bool atomGraphChildrenOnlyHydrogens(AtomGraph &g);
 	void markHydrogenGraphs();
