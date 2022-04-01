@@ -35,11 +35,21 @@ public:
 	BondCalculator();
 	~BondCalculator();
 	
+	/** Extent of BondCalculator pipeline before exiting and producing a 
+	 *  Result. */
 	enum PipelineType
 	{
-		PipelineNotSpecified,
-		PipelineAtomPositions,
-		PipelineCalculatedMaps,
+		PipelineNotSpecified, /**< unknown pipeline */
+
+		/** return array of positions after calculating atom positions */
+		PipelineAtomPositions, 
+
+		/** return maps after calculating 3D map */
+		PipelineCalculatedMaps, 
+
+		/** return after calculating correlation of calculated 3D map with 
+		 * reference 3D map */
+		PipelineCorrelation,
 	};
 	
 	int submitJob(Job &job);
