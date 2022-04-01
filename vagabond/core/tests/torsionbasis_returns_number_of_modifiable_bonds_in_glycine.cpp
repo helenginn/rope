@@ -22,7 +22,7 @@ int main()
 	calculator.setTorsionBasisType(TorsionBasis::TypeConcerted);
 	calculator.setup();
 
-	const TorsionBasis &basis = *calculator.sequenceHandler()->torsionBasis();
+	TorsionBasis &basis = *calculator.sequenceHandler()->torsionBasis();
 	int count = basis.torsionCount();
 	std::cout << count << std::endl;
 	
