@@ -30,7 +30,16 @@ class MapTransferHandler : public Handler
 public:
 	MapTransferHandler(BondCalculator *calculator = nullptr);
 
+	/**let the MTH know which atoms will be involved in the calculation.
+	 * Atoms in @param all but not in @param sub will be included as part
+	 * of the 'constant' segment. 
+	 * @param all every atom to be considered in the analysis
+	 * @param sub sub-group of atoms which will change during analysis */
 	void supplyAtomGroup(AtomGroup *all, AtomGroup *sub);
+
+	/**prepares MapTransfers and appropriate thread pools etc. 
+	 * @param elements map connecting element symbol e.g. Ca to number of
+	 * instances of atom */
 	void supplyElementList(std::map<std::string, int> elements);
 	
 	void setupMiniJob(std::vector<BondSequence::ElePos> &epos);
