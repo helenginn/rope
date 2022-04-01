@@ -55,6 +55,11 @@ public:
 		_refined = true;
 	}
 	
+	const double refinedAngle() const
+	{
+		return _refinedAngle;
+	}
+	
 	Atom *atom(int i) const
 	{
 		if (i == 0) return _a;
