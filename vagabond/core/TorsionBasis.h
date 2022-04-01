@@ -36,13 +36,22 @@ public:
 	virtual ~TorsionBasis() { };
 	virtual void prepare();
 	
+	/** supply mask to switch refined torsion angles on/off 
+	 * 	@param mask vector of ordered booleans, true=refined, false=masked,
+	 * 		        corresponding to each torsion angle */
 	virtual void supplyMask(std::vector<bool> mask) {}
 	
 	static TorsionBasis *newBasis(Type type);
 
 	int addTorsion(BondTorsion *torsion);
 	
+	/** provides modified torsion angle given custom vector.
+	 * @param idx index of torsion angle within full list of refined angles
+	 * @param vec custom vector of parameters
+	 * @param n total number of parameters in vec 
+	 * @returns torsion angle in degrees */
 	virtual float torsionForVector(int idx, const float *vec, int n) = 0;
+
 	virtual void absorbVector(const float *vec, int n);
 	
 	const size_t torsionCount() const
