@@ -33,7 +33,7 @@ public:
 	void supplyAtomGroup(AtomGroup *all, AtomGroup *sub);
 	void supplyElementList(std::map<std::string, int> elements);
 	
-	void setupTransferMap(std::vector<BondSequence::ElePos> &epos);
+	void setupMiniJob(std::vector<BondSequence::ElePos> &epos);
 
 private:
 	AtomGroup *_all = nullptr;
