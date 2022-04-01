@@ -810,6 +810,90 @@ void BondSequence::markHydrogenGraphs()
 
 void BondSequence::reflagDepth(int min, int max, int sidemax)
 {
+	_startCalc = 0;
+	_endCalc = INT_MAX;
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		AtomBlock &block = _blocks[i];
+		block.flag = false;
+	}
+
+	std::queue<AtomBlockTodo> todo;
+	AtomBlockTodo minBlock = {&_blocks[min], min, min};
+	
+	if (minBlock.block->atom == nullptr)
+	{
+		min++;
+		minBlock = {&_blocks[min], min, min};
+	}
+	
+	if (min > _blocks.size())
+	{
+		return;
+	}
+
+	todo.push(minBlock);
+	_startCalc = min;
+	int last = min;
+	int count = 0;
+
+	while (todo.size() > 0)
+	{
+		AtomBlock &block = *todo.front().block;
+		int num = todo.front().num;
+		int curr = todo.front().idx;
+		todo.pop();
+
+		/* it's the beginning anchor atom, ignore */
+		if (block.atom == nullptr)
+		{
+			continue;
+		}
+
+		if (strcmp(block.element, "H") == 0 && _ignoreHydrogens)
+		{
+			block.flag = false;
+			continue;
+		}
+		
+		block.flag = true;
+		
+		if (num >= max)
+		{
+			continue;
+		}
+		
+		for (size_t i = 0; i < 4; i++)
+		{
+			int idx = block.write_locs[i];
+			if (idx < 0)
+			{
+				continue;
+			}
+			
+			int nidx = curr + idx;
+			AtomBlockTodo next = {&_blocks[nidx], nidx, num + 1};
+			
+			if (nidx > last)
+			{
+				last = nidx;
+			}
+
+			todo.push(next);
+		}
+		
+		count++;
+		num++;
+	}
+
+	_endCalc = last + 1;
+	_fullRecalc = true;
+	_torsionBasis->supplyMask(atomMask());
+}
+
+void BondSequence::reflagDepthOld(int min, int max, int sidemax)
+{
 	bool found_first = false;
 	
 	_startCalc = 0;

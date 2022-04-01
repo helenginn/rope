@@ -127,6 +127,7 @@ public:
 	
 	void multiplyUpBySampleCount();
 	void reflagDepth(int min, int max, int sidemax);
+	void reflagDepthOld(int min, int max, int sidemax);
 	
 	const size_t flagged() const;
 
