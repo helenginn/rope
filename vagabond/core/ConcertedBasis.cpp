@@ -43,6 +43,7 @@ float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
 	}
 
 	TorsionAngle &ta = _angles[idx];
+
 	if (n == 0 || !ta.mask)
 	{
 		return ta.angle;

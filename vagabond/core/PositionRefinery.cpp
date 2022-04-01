@@ -120,6 +120,8 @@ double PositionRefinery::fullResidual()
 
 	_calculator->finish();
 	delete result;
+	
+	_group->setLastResidual(dev);
 
 	return dev;
 }
