@@ -44,7 +44,7 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 
 void TorsionBasis::absorbVector(const float *vec, int n)
 {
-	for (size_t i = 0; i < n; i++)
+	for (size_t i = 0; i < torsionCount(); i++)
 	{
 		float torsion = torsionForVector(i, vec, n);
 		_torsions[i]->setRefinedAngle(torsion);
