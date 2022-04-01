@@ -193,13 +193,10 @@ void PositionRefinery::refine(AtomGroup *group)
 	std::cout << "Overall average distance from initial position: "
 	<< res << " Angstroms" << std::endl;
 	
-	if (_type == TorsionBasis::TypeSimple)
-	{
-		stepwiseRefinement(group);
-	}
+	stepwiseRefinement(group);
 	
 	res = fullResidual();
-	std::cout << "Overall average distance from initial position: "
+	std::cout << "Overall average distance after refinement: "
 	<< res << " Angstroms" << std::endl;
 	
 	delete _calculator;
