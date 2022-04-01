@@ -51,17 +51,18 @@ float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
 	float sum = 0;
 	float total = 0;
 
-	for (size_t i = 0; i < n && i < _nActive; i++)
+	int contracted = _idxs[idx];
+	for (size_t i = 0; i < torsionCount(); i++)
 	{
-		int contracted = _idxs[i];
-		int reference = _idxs[idx];
-		if (contracted < 0 || reference < 0)
+		int reference = _idxs[i];
+		if (contracted < 0 || reference < 0 || contracted > _svd.u.rows
+		    || reference > _svd.u.rows)
 		{
 			continue;
 		}
-
-		double &svd = _svd.u.ptrs[reference][contracted];
-		const float &custom = vec[contracted];
+		
+		double svd = (_svd.u.ptrs[reference][contracted]);
+		const float &custom = vec[idx];
 		
 		sum += svd * custom;
 		total++;
@@ -111,6 +112,7 @@ void ConcertedBasis::setupAngleList()
 
 void ConcertedBasis::prepareSVD()
 {
+	freeSVD(&_svd);
 	setupSVD(&_svd, _nActive);
 
 	for (size_t i = 0; i < _nActive; i++)

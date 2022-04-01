@@ -40,6 +40,9 @@ private:
 	void prepareSVD();
 	void setupAngleList();
 	std::vector<bool> _refineMask;
+	
+	/* one idx per every torsion angle; >=0 if refined, -1 if not refined 
+	 * where value < _nActive*/
 	std::vector<int> _idxs;
 	size_t _nActive;
 
