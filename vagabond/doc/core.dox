@@ -1,0 +1,85 @@
+/**
+*
+* \page core
+*
+* Vagabond core covers all the necessary code for macromolecular refinement
+* using Vagabond.
+* This covers the refinement engine which is to be streamlined from the original
+* vagabond code written before 2022.
+* 
+* \section engine_thoughts Thoughts behind refinement engine design
+*
+* The original code had a single set of model classes (e.g. Bond, Absolute) and 
+* was therefore able to recalculate atom positions on a single thread.
+* Because of the nature of recursive bond calculations, this step cannot be
+* accelerated by the GPU, and therefore the inherent limit to the speed of
+* the calculation is this recursive bond step.
+* In theory, everything downstream of this could be GPU-accelerated.
+* Therefore, the refinement engine has been designed with optimisation of this
+* recursive bond calculation step in mind.
+* 
+* In the previous iteration of Vagabond, there was an 'Atom' class, to which a
+* model (e.g. Bond) was assigned, and this Bond had fixed parameters like the
+* preceding atom, the bond length, bond angle and torsion angle.
+* In the new iteration the 'Atom' class still exists and tracks the 'initial'
+* atom position and the 'derived' atom position that would come from a Vagabond
+* model. However, instead of a Bond class, the Atom (and the owning AtomGroup)
+* contain references to BondLength, BondAngle and BondTorsion classes, all of
+* which are subclasses of the Bondstraint (i.e. bond restraint or bond constraint).
+*
+* In order to turn this Bondstraint information into a bond network to calculate
+* new atom positions, one instantiates a BondCalculator class with an anchor atom.
+* The anchor atom is no longer fixed, and can be chosen from any suitable terminal
+* atom. An ad-hoc bond network is then generated from this anchor atom in the
+* form of a BondSequence.
+*
+* In order to allow for a threaded calculation system which can explore multiple
+* trajectories at the same time, a BondCalculator actually uses a 
+* BondSequenceHandler which allocates multiple BondSequence objects and these are
+* independently able to handle different input torsion angles
+* (see \ref torsion_space).
+*
+* A BondCalculator can be limited to calculation of new Atom positions, 
+* extended to creation of new electron density/electrostatic potential maps,
+* or further extended to only return correlation coefficients with a reference map.
+* These will exit the pipeline at different stages and is controlled by 
+* BondCalculator::setPipelineType.
+*
+* In the case of transfering atom positions to produce a map of their distribution
+* the BondCalculator will also use a MapTransferHandler to allocate multiple
+* MapTransfer objects which will be responsible for transfering the atom positions
+* to individual ElementSegments.
+*
+* The MapTransferHandler will receive a list of atom positions according to the
+* element type and individual positions for each. It will split this job into
+* each element type (as these have to be handled separately due to different 
+* element scattering factors). This then releases the associated BondSequence
+* for the next calculation. The MapTransfer objects will then take these lists and * insert the contents into the ElementSegment, handling the convolution to 
+* produce the partial map for a given element.
+*
+* The results of each ElementSegment will be added to an AtomSegment.
+*
+* \image html vagabond/doc/bondcalculator_structure.png width=1200px
+* 
+* \section torsion_space Torsion parameterisation
+*
+* Torsion angle parameterisation is key to getting the Vagabond engine to explore
+* the conformational space of a macromolecule. There will be several modes by which
+* this may occur added over time.
+*
+* As of March 2022, the TorsionBasis provides a simple framework which has been
+* implemented in SimpleBasis to provide a straightforward one-to-one mapping of
+* parameter to torsion angle. This means variation of one parameter will vary only
+* one torsion angle by a proportional amount. This is used for initial positional 
+* refinement against the original positions in the PDB.
+*
+* As part of positional refinement, short sections of 8 bonds are refined, piece
+* by piece. As a result, TorsionBasis structures can also take in a supplied mask
+* which is generally covered by higher level interfaces, but limits the number of
+* torsion angles (and parameters) refined during any given refinement process. */
+*
+* TorsionBasis objects are also able to 'absorb' a vector, which means saving the
+* results of a given refinement process which are then used as the starting point
+* for subsequent refinement events.
+*
+*/

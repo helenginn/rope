@@ -1,0 +1,35 @@
+/**
+
+*   \mainpage
+*	I expect that the main Vagabond repository will only include C++ (March 2022).
+*   The vagabond project has multiple sections which separate the code into usable 
+*	libraries and implementations which provide a particular interface.
+*
+*	\image html vagabond_overview.png width=800px
+*
+*	Component list:
+*		- utils
+*		- \ref core 
+*		- gui
+*
+*	The current build system is Meson. (CMake may be added in the future if
+*	advantageous to do so.)
+*	A cross-file is included for compiling with emscripten in order to produce
+*	a webpage version of Vagabond. I do not envisage this will be used often,
+*	as the compiled webpage version will be maintained somewhere, and therefore
+*	this compile structure may only be needed within the Vagabond development
+*	group.
+*
+*	As future collaborations are likely to involve Python bindings deployed by
+*	other people, but Vagabond will contain some inherent GUI elements, these
+*	GUI elements will be implemented at a low level in OpenGL for ease-of-use
+*	within higher level GUI platforms such as Qt5 or WxPython.
+*
+*	In some cases (e.g. cluster4x) some external GUI elements from the larger
+*	GUI platforms may also be required in order to make it easier to interface 
+*	with larger projects.
+*	For example, clusters may end up being drag-droppable into other systems.
+*	As such, an API should be provided with clear instructions on how to
+*	implement the results.
+*
+*/
