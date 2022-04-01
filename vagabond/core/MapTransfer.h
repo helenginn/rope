@@ -19,6 +19,12 @@
 #ifndef __vagabond__MapTransfer__
 #define __vagabond__MapTransfer__
 
+/**
+ * \class MapTransfer
+ *  contains the information required to put all the atom positions of a
+ *  particular element type in an ElementSegment.
+ */
+
 class MapTransfer
 {
 public:
