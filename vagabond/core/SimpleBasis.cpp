@@ -37,14 +37,7 @@ float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
 	}
 
 	TorsionAngle &ta = _angles[idx];
-	if (n == 0)
-	{
-		return ta.angle;
-	}
-
-//	double start = _torsions[idx]->startingAngle();
-	
-	if (!ta.mask)
+	if (n == 0 || !ta.mask)
 	{
 		return ta.angle;
 	}
