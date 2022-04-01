@@ -58,7 +58,7 @@ public:
 		return _blocks[i].nBonds;
 	}
 	
-	size_t blockCount()
+	const size_t blockCount() const
 	{
 		return _blocks.size();
 	}
