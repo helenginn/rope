@@ -150,6 +150,7 @@ integration_tests = [
 'chirality_sign_for_aspartate_is_obtainable',
 'cif2geometry_automatically_knots_ASP_when_asked',
 'cif2geometry_loading_ASP_gets_torsion',
+'concertedbasis_absorbs_refinement_vector',
 'geometrytable_angle_lookup_is_not_permutable',
 'geometrytable_angle_lookup_is_reversible',
 'geometrytable_length_lookup_is_code_sensitive',
