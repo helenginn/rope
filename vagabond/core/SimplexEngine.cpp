@@ -214,7 +214,6 @@ bool SimplexEngine::awaitResults()
 		}
 	}
 
-
 	double new_worst = _points[_points.size() - 1].eval;
 	
 	if (new_worst >= worst)
