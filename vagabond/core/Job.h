@@ -156,7 +156,7 @@ class MiniJobMap : public MiniJob
 {
 public:
 	MapTransfer *map;
-	char element[2];
+	char element[3];
 };
 
 class MiniJobSeq : public MiniJob
