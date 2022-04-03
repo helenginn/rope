@@ -92,6 +92,11 @@ public:
 		return _graphs.size();
 	}
 	
+	const std::vector<Atom *> &atoms() const
+	{
+		return _atoms;
+	}
+	
 	const int remainingDepth(int i) const
 	{
 		return _graphs[i]->maxDepth - _graphs[i]->depth;
