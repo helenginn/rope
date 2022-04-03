@@ -828,7 +828,7 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 		minBlock = {&_blocks[min], min, min};
 	}
 	
-	if (min > _blocks.size())
+	if (min >= _blocks.size())
 	{
 		return;
 	}
