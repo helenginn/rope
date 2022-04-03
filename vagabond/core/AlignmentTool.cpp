@@ -33,7 +33,7 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTotalSamples(1);
-	calculator.addAnchorExtension(anchor, 2);
+	calculator.addAnchorExtension(anchor, 3);
 	calculator.setup();
 
 	calculator.start();
