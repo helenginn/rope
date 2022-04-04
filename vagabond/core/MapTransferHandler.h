@@ -36,20 +36,49 @@ public:
 	 * of the 'constant' segment. 
 	 * @param all every atom to be considered in the analysis
 	 * @param sub sub-group of atoms which will change during analysis */
-	void supplyAtomGroup(AtomGroup *all, AtomGroup *sub);
+	void supplyAtomGroup(std::vector<Atom *> all, 
+	                     std::vector<Atom *> sub);
 
 	/**prepares MapTransfers and appropriate thread pools etc. 
 	 * @param elements map connecting element symbol e.g. Ca to number of
 	 * instances of atom */
 	void supplyElementList(std::map<std::string, int> elements);
 	
-	void setupMiniJob(std::vector<BondSequence::ElePos> &epos);
+	/** after supplying atom groups and element list, run setup() to
+	 *  allocate internal resources */
+	void setup();
+	
+	/** set length dimension of cubic voxel
+	 * 	@param dim length in Angstroms */
+	void setCubeDim(float dim)
+	{
+		_cubeDim = dim;
+	}
+	
+	void setupMiniJobs(Job *job, std::vector<BondSequence::ElePos> &epos);
 
+	void start();
 private:
-	AtomGroup *_all = nullptr;
-	AtomGroup *_sub = nullptr;
-	std::map<std::string, int> _elements;
+	void allocateSegments();
+	void findThreadCount();
+	void prepareThreads();
+	void getRealDimensions(std::vector<Atom *> &sub);
+
+	std::vector<Atom *> _all;
+	std::vector<Atom *> _sub;
+	std::vector<ElementSegment *> _segments;
+	std::vector<std::string> _elements;
+	std::map<std::string, ElementSegment *> _element2Segment;
+	std::map<std::string, Pool<ElementSegment *> > _pools;
+	std::map<std::string, Pool<MiniJobMap *> > _miniJobPools;
 	BondCalculator *_calculator = nullptr;
+	
+	float _cubeDim = 0.5;
+	int _threads = 1;
+	
+	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+	glm::vec3 _max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	glm::vec3 _pad = glm::vec3(3, 3, 3);
 };
 
 #endif
