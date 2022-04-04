@@ -20,14 +20,12 @@
 #include "ElementLibrary.h"
 #include "AtomGroup.h"
 
-ElementSegment::ElementSegment(AtomGroup *grp)
+ElementSegment::ElementSegment()
 : FFTCubicGrid<VoxelElement>()
 {
 	int nx = 0;
 	int ny = 0;
 	int nz = 0;
-	
-	// work out dimensions from atom group
 
 	this->Grid::setDimensions(nx, ny, nz);
 }
@@ -170,4 +168,15 @@ float ElementSegment::sum()
 	}
 	
 	return val;
+}
+
+void ElementSegment::findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
+                                    glm::vec3 max, float cubeDim)
+{
+	glm::vec3 diff = max - min;
+	diff /= cubeDim;
+
+	nx = (long)lrint(diff[0]) + 1;
+	ny = (long)lrint(diff[1]) + 1;
+	nz = (long)lrint(diff[2]) + 1;
 }

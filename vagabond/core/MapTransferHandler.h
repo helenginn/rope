@@ -24,6 +24,7 @@
 #include "BondSequence.h"
 
 class AtomGroup;
+class ElementSegment;
 
 class MapTransferHandler : public Handler
 {

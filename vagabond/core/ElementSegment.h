@@ -19,7 +19,6 @@
 #ifndef __vagabond__ElementSegment__
 #define __vagabond__ElementSegment__
 
-
 #include "FFTCubicGrid.h"
 
 class AtomGroup;
@@ -33,8 +32,10 @@ struct VoxelElement
 class ElementSegment : public FFTCubicGrid<VoxelElement>
 {
 public:
-	ElementSegment(AtomGroup *grp);
+	ElementSegment();
 	
+	/** set the periodic table element symbol
+	 * @param element upper case element symbol e.g. CA for calcium. */
 	void setElement(std::string element);
 
 	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
@@ -44,6 +45,9 @@ public:
 
 	virtual float sum();
 	virtual void multiply(float scale);
+
+	static void findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
+	                           glm::vec3 max, float cubeDim);
 protected:
 
 private:
