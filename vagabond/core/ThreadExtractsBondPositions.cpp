@@ -18,6 +18,7 @@
 
 #include "ThreadExtractsBondPositions.h"
 #include "BondSequenceHandler.h"
+#include "MapTransferHandler.h"
 #include "BondSequence.h"
 #include <iostream>
 #include <algorithm>
@@ -50,7 +51,10 @@ void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq
 
 void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
 {
-
+	// send seq->extractForMap() to the _mapHandler.
+	std::vector<BondSequence::ElePos> epos = seq->extractForMap();
+	cleanupSequence(job, seq);
+	_mapHandler->setupMiniJobs(job, epos);
 }
 
 void ThreadExtractsBondPositions::start()
@@ -58,7 +62,6 @@ void ThreadExtractsBondPositions::start()
 	SequenceState state = SequencePositionsReady;
 	do
 	{
-		BondCalculator *calc = _seqHandler->calculator();
 		BondSequence *seq = _seqHandler->acquireSequence(state);
 		
 		if (seq == nullptr)
@@ -98,27 +101,37 @@ void ThreadExtractsBondPositions::start()
 		    job->requests & JobCalculateMapCorrelation)
 		{
 			transferToMaps(job, seq);
+			continue;
 		}
 
-		/* don't submit the result unless all minijobs are done */
-		std::vector<MiniJob *>::iterator it;
-		it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
-
-		if (it == job->miniJobs.end())
-		{
-			throw std::runtime_error("MiniJobSeq received twice");
-		}
-
-		job->miniJobs.erase(it);
-
-		if (job->miniJobs.size() == 0)
-		{
-			job->destroy();
-			calc->submitResult(r);
-		}
-
-		seq->cleanUpToIdle();
+		cleanupSequence(job, seq);
 	}
 	while (!_finish);
+}
+
+void ThreadExtractsBondPositions::cleanupSequence(Job *job, BondSequence *seq)
+{
+	MiniJob *mini = seq->miniJob();
+	BondCalculator *calc = _seqHandler->calculator();
+
+	/* don't submit the result unless all minijobs are done */
+	std::vector<MiniJob *>::iterator it;
+	it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
+
+	if (it == job->miniJobs.end())
+	{
+		throw std::runtime_error("MiniJobSeq received twice");
+	}
+
+	job->miniJobs.erase(it);
+
+	if (job->miniJobs.size() == 0)
+	{
+		Result *r = job->result;
+		job->destroy();
+		calc->submitResult(r);
+	}
+
+	seq->cleanUpToIdle();
 }
 

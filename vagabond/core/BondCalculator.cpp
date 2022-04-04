@@ -148,6 +148,10 @@ void BondCalculator::start()
 		_changedDepth = false;
 	}
 
+	if (_mapHandler != nullptr)
+	{
+		_mapHandler->start();
+	}
 	_sequenceHandler->start();
 
 	prepareThreads();

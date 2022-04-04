@@ -72,7 +72,7 @@ private:
 	int _start = 0;
 	int _end = 0;
 	
-	int _depthRange = 8;
+	int _depthRange = 5;
 	
 	TorsionBasis::Type _type = TorsionBasis::TypeSimple;
 	

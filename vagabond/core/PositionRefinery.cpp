@@ -138,10 +138,7 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 
 	for (size_t i = 0; i < nb; i++)
 	{
-		for (size_t j = 0; j < 5; j++)
-		{
-			refineBetween(i, i + _depthRange);
-		}
+		refineBetween(i, i + _depthRange);
 
 		if (_finish)
 		{
@@ -181,9 +178,17 @@ void PositionRefinery::refine(AtomGroup *group)
 	
 	double res = fullResidual();
 	
-	if (_type == TorsionBasis::TypeConcerted)
+	if (res < 0.3)
 	{
-		_step = 5.;
+		_depthRange = 7.;
+	}
+	else if (res < 0.2)
+	{
+		_depthRange = 8.;
+	}
+	else if (res < 0.1)
+	{
+		_depthRange = 9.;
 	}
 
 	_steps = std::vector<float>(_nBonds, _step);

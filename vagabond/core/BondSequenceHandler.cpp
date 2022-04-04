@@ -191,6 +191,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	if (_mapHandler)
 	{
 		_mapHandler->supplyElementList(_elements);
+		_mapHandler->supplyAtomGroup(sequence->atoms(), sequence->atoms());
 	}
 
 	_sequences.push_back(sequence);

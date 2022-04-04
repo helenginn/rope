@@ -16,39 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadExtractsBondPositions__
-#define __vagabond__ThreadExtractsBondPositions__
+#ifndef __vagabond__ThreadMapTransfer__
+#define __vagabond__ThreadMapTransfer__
 
 #include "ThreadWorker.h"
 
 class MapTransferHandler;
-class BondSequenceHandler;
-class BondCalculator;
-class BondSequence;
-struct Job;
-class MiniJobSeq;
 
-class ThreadExtractsBondPositions : public ThreadWorker
+/**
+ * \class ThreadMapTransfer
+ *  contains the information required to put all the atom positions of a
+ *  particular element type in an ElementSegment.
+ */
+
+class ThreadMapTransfer : public ThreadWorker
 {
 public:
-	ThreadExtractsBondPositions(BondSequenceHandler *h);
-	virtual ~ThreadExtractsBondPositions() {};
+	ThreadMapTransfer(MapTransferHandler *h, std::string element);
+	virtual ~ThreadMapTransfer() {};
 
 	virtual void start();
-	
-	void setMapTransferHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
 private:
-	void extractPositions(Job *job, BondSequence *seq);
-	void calculateDeviation(Job *job, BondSequence *seq);
-	void transferToMaps(Job *job, BondSequence *seq);
-	
-	void cleanupSequence(Job *job, BondSequence *seq);
-
-	BondSequenceHandler *_seqHandler;
 	MapTransferHandler *_mapHandler;
+	std::string _ele;
 
 };
 
