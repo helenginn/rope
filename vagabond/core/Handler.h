@@ -75,6 +75,25 @@ protected:
 			signalThreads();
 			joinThreads();
 		}
+
+		void acquireObject(Object &obj, bool &finish)
+		{
+			sem.wait();
+			handout.lock();
+
+			if (members.size())
+			{
+				obj = members.front();
+				members.pop();
+			}
+
+			if (finish)
+			{
+				sem.signal();
+			}
+
+			handout.unlock();
+		}
 	};
 
 	bool _finish;

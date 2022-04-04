@@ -226,24 +226,8 @@ void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state
 BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 {
 	Pool<BondSequence *> &pool = _pools[state];
-	pool.sem.wait();
-	pool.handout.lock();
-
 	BondSequence *seq = nullptr;
-
-	if (pool.members.size())
-	{
-		seq = pool.members.front();
-		pool.members.pop();
-	}
-
-	if (_finish)
-	{
-		pool.sem.signal();
-	}
-
-	pool.handout.unlock();
-	
+	pool.acquireObject(seq, _finish);
 	return seq;
 }
 
@@ -269,26 +253,9 @@ void BondSequenceHandler::signalFinishMiniJobSeq()
 
 MiniJobSeq *BondSequenceHandler::acquireMiniJobSeq()
 {
-	_miniJobPool.sem.wait();
-	_miniJobPool.handout.lock();
-
 	MiniJobSeq *mini = nullptr;
-
-	if (_miniJobPool.members.size())
-	{
-		mini = _miniJobPool.members.front();
-		_miniJobPool.members.pop();
-	}
-	
-	if (_finish)
-	{
-		_miniJobPool.sem.signal();
-	}
-
-	_miniJobPool.handout.unlock();
-	
+	_miniJobPool.acquireObject(mini, _finish);
 	return mini;
-
 }
 
 const size_t BondSequenceHandler::torsionCount() const
