@@ -97,6 +97,9 @@ private:
 	void sendContractionJob(int i);
 	void sendExpansionJob(int i);
 	void sendShrinkJobs();
+	void shrink();
+	void singleCycle();
+	void pickUpResults();
 	void cycle();
 	void findCentroid();
 
