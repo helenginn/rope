@@ -6,8 +6,8 @@
 #include "KeyResponder.h"
 #include <vector>
 
-#define BROWSER_WIDTH 1280.
-#define BROWSER_HEIGHT 800.
+#define BROWSER_WIDTH 1600.
+#define BROWSER_HEIGHT 900.
 #define ASPECT_RATIO (BROWSER_WIDTH / BROWSER_HEIGHT)
 
 static bool _running = true;
