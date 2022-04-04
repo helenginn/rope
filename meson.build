@@ -162,6 +162,7 @@ vagafiles = [
 'vagabond/core/ThreadCalculatesBondSequence.cpp',
 'vagabond/core/ThreadExtractsBondPositions.cpp',
 'vagabond/core/ThreadSubmitsJobs.cpp',
+'vagabond/core/ThreadMapTransfer.cpp',
 'vagabond/core/ThreadMiniJobForSequence.cpp',
 'vagabond/core/TransformedGrid.cpp',
 'vagabond/core/TorsionBasis.cpp',
