@@ -21,21 +21,6 @@ namespace Snow
 		glm::vec4 extra;
 		glm::vec2 tex;
 	};
-
-	inline glm::vec3 vec_from_pos(GLfloat *pos)
-	{
-		glm::vec3 tmpVec = glm::vec3(pos[0], pos[1],
-		                        pos[2]);
-
-		return tmpVec;
-	}
-
-	inline void pos_from_vec(GLfloat *pos, glm::vec3 v)
-	{
-		pos[0] = v.x;
-		pos[1] = v.y;
-		pos[2] = v.z;
-	}
 }
 
 using namespace Snow;
@@ -300,6 +285,7 @@ public:
 
 	void setupVBOBuffers();
 	void rebufferVertexData();
+	void rebufferIndexData();
 	
 	void forceRender()
 	{
@@ -353,13 +339,13 @@ protected:
 	GLuint _texid;
 	void appendObject(Renderable *object);
 	std::atomic<bool> _forceRender;
+	void rotateByMatrix(glm::mat3x3 m);
 private:
 	void deleteTextures();
 	void rebindVBOBuffers();
 	void unbindVBOBuffers();
 	int vaoForContext();
 	void deletePrograms();
-	void rotateByMatrix(glm::mat3x3 m);
 	GLuint addShaderFromString(GLuint program, GLenum type, std::string str);
 
 	static bool index_behind_index(IndexTrio one, IndexTrio two);

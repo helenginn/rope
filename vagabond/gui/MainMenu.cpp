@@ -22,7 +22,7 @@ void MainMenu::setup()
 	addObject(_background);
 
 	{
-		Text *text = new Text("Vagabond");
+		Text *text = new Text("Vagabond sandbox");
 		text->setCentre(0.5, 0.1);
 		addObject(text);
 	}

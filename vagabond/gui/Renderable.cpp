@@ -322,6 +322,19 @@ int Renderable::vaoForContext()
 	return vao;
 }
 
+void Renderable::rebufferIndexData()
+{
+	if (_bElements.count(_usingProgram) == 0)
+	{
+		return;
+	}
+
+	GLuint be = _bElements[_usingProgram];
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, be);
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
+}
+
 void Renderable::rebufferVertexData()
 {
 	if (_bVertices.count(_usingProgram) == 0)
@@ -542,6 +555,7 @@ void Renderable::render(SnowGL *sender)
 
 		}
 
+		checkErrors("before drawing elements");
 		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
 		checkErrors("drawing elements");
 

@@ -21,7 +21,7 @@
 #include "GuiRefls.h"
 #include "Icosahedron.h"
 
-GuiRefls::GuiRefls()
+GuiRefls::GuiRefls() : Renderable()
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");

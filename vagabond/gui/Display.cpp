@@ -2,6 +2,7 @@
 #include "ImageButton.h"
 #include "GuiAtom.h"
 #include "GuiRefls.h"
+#include "GuiDensity.h"
 #include "TextButton.h"
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Atom.h>
@@ -12,8 +13,7 @@
 
 Display::Display(Scene *prev) : Scene(prev)
 {
-	_guiAtoms = nullptr;
-	_atoms = nullptr;
+
 }
 
 Display::~Display()
@@ -73,6 +73,16 @@ void Display::wedgeButtons()
 	addObject(orange);
 }
 
+void Display::densityButton()
+{
+	ImageButton *density = new ImageButton("assets/images/density.png", this);
+	density->resize(0.15);
+	density->setCentre(0.94, 0.12);
+	density->setReturnTag("density");
+	_density = density;
+	addObject(density);
+}
+
 void Display::loadAtoms(AtomGroup *atoms)
 {
 	if (_guiAtoms != nullptr)
@@ -90,6 +100,10 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_guiAtoms = new GuiAtom();
 	_guiAtoms->watchAtoms(_atoms);
 	_guiAtoms->startBackgroundWatch();
+
+	_guiDensity = new GuiDensity();
+	_guiDensity->setAtoms(_atoms);
+	addObject(_guiDensity);
 
 	_centre = _guiAtoms->centroid();
 	_translation = -_centre;
@@ -133,6 +147,7 @@ void Display::buttonPressed(std::string tag, Button *button)
 	if (tag == "recalculate")
 	{
 		recalculateAtoms();
+		densityButton();
 		removeObject(button);
 
 		{
@@ -159,6 +174,10 @@ void Display::buttonPressed(std::string tag, Button *button)
 		_halfWedge->setDisabled(true);
 		_wedge->setDisabled(false);
 		_guiRefls->setSlice(true);
+	}
+	else if (tag == "density" && _guiDensity != nullptr)
+	{
+		_guiDensity->recalculate();
 	}
 }
 

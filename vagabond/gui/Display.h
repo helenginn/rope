@@ -7,6 +7,7 @@
 class ImageButton;
 class GuiAtom;
 class GuiRefls;
+class GuiDensity;
 class AtomGroup;
 class Diffraction;
 
@@ -30,6 +31,7 @@ public:
 	void recalculateAtoms();
 	void tieButton();
 	void wedgeButtons();
+	void densityButton();
 	
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
@@ -37,7 +39,8 @@ private:
 
 	GuiAtom *_guiAtoms = nullptr;
 	GuiRefls *_guiRefls = nullptr;
-	AtomGroup *_atoms;
+	GuiDensity *_guiDensity = nullptr;
+	AtomGroup *_atoms = nullptr;
 
 	void updateSpinMatrix();
 	
@@ -45,6 +48,7 @@ private:
 	
 	ImageButton *_halfWedge = nullptr;
 	ImageButton *_wedge = nullptr;
+	ImageButton *_density = nullptr;
 };
 
 #endif

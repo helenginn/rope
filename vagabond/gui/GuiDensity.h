@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,31 +16,39 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/utils/FileReader.h>
-#include "FileManager.h"
-#include "FileView.h"
+#ifndef __vagabond__GuiDensity__
+#define __vagabond__GuiDensity__
 
-FileManager::FileManager()
-{
-	_view = nullptr;
-	_list.push_back("assets/geometry/ATP.cif");
-	_list.push_back("assets/geometry/GLY.cif");
-	_list.push_back("assets/examples/2ybh.cif");
-	_list.push_back("assets/examples/4cvd.cif");
-	_list.push_back("assets/examples/6qhu.cif");
-	_list.push_back("assets/examples/6qhu-sf.cif");
-}
+#include "Renderable.h"
 
-void FileManager::acceptFile(std::string filename, bool force)
+class AtomMap;
+class AtomGroup;
+
+namespace MC
 {
-	if (file_exists(filename) || force)
-	{
-		_list.push_back(filename);
-	}
+	struct mcMesh;
+};
+
+class GuiDensity : public Renderable
+{
+public:
+	GuiDensity();
+
+	virtual void render(SnowGL *gl);
+	void populateFromMap(AtomMap *map);
+	void recalculate();
 	
-	if (_view != nullptr)
+	void setAtoms(AtomGroup *atoms)
 	{
-		_view->refreshFiles();
+		_atoms = atoms;
 	}
-}
 
+	virtual void extraUniforms();
+private:
+	void objectFromMesh(MC::mcMesh &mesh);
+	AtomGroup *_atoms = nullptr;
+
+	int _slice = 0;
+};
+
+#endif
