@@ -53,17 +53,15 @@ float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
 	float total = 0;
 
 	int contracted = _idxs[idx];
-	for (size_t i = 0; i < torsionCount(); i++)
+	for (size_t i = 0; i < n; i++)
 	{
-		int reference = _idxs[i];
-		if (contracted < 0 || reference < 0 || contracted > _svd.u.rows
-		    || reference > _svd.u.rows)
+		if (contracted < 0 || contracted > _svd.u.rows || i > _svd.u.rows)
 		{
 			continue;
 		}
 		
-		double svd = (_svd.u.ptrs[reference][contracted]);
-		const float &custom = vec[idx];
+		double svd = (_svd.u.ptrs[contracted][i]);
+		const float &custom = vec[i];
 		
 		sum += svd * custom;
 		total++;

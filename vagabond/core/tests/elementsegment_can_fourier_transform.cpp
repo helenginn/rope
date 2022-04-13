@@ -9,7 +9,7 @@ int main()
 	Atom a;
 	test += &a;
 	
-	ElementSegment segment();
+	ElementSegment segment;
 	segment.setStatus(FFT<VoxelElement>::Real);
 
 	segment.setDimensions(2, 2, 2);

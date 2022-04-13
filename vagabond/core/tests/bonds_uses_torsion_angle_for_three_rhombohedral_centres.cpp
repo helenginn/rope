@@ -118,7 +118,7 @@ int main()
 	if (bad)
 	{
 		BondSequence *sequence = new BondSequence();
-		sequence->addToGraph(group.possibleAnchor(0), UINT_MAX);
+		sequence->addToGraph(group.chosenAnchor(), UINT_MAX);
 		int added = sequence->addedAtomsCount();
 		
 		std::cout << "Added " << added << " atoms." << std::endl;

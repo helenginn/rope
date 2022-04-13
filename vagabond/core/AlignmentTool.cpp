@@ -79,7 +79,8 @@ void AlignmentTool::run()
 			continue;
 		}
 
-		Atom *anchor = subgroups[i]->possibleAnchor(0);
+		Atom *anchor = subgroups[i]->chosenAnchor();
+
 		Result *result = resultForAnchor(anchor);
 		glm::mat4x4 transform = superposition(result);
 		anchor->setTransformation(transform);

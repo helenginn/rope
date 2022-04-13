@@ -38,6 +38,11 @@ void CubicGrid<T>::setRealDim(float dim)
 
 	_realDim = dim;
 	_recipDim = 1 / dim;
+	
+	_dims = glm::vec3(1 / (float)Grid<T>::nx(), 
+	                  1 / (float)Grid<T>::ny(), 
+	                  1 / (float)Grid<T>::nz());
+	_dims *= _recipDim;
 }
 
 template <class T>
@@ -49,18 +54,17 @@ void CubicGrid<T>::setRecipDim(float dim)
 template <class T>
 float CubicGrid<T>::resolution(int i, int j, int k)
 {
-	glm::vec3 ijk = glm::vec3(i, j, k);
-	ijk *= _recipDim;
+	glm::vec3 ijk = reciprocal(i, j, k);
 
 	return 1 / glm::length(ijk);
-
 }
 
 template <class T>
 glm::vec3 CubicGrid<T>::reciprocal(int h, int k, int l)
 {
 	glm::vec3 v(h, k, l);
-	v *= _recipDim;
+	v *= _dims;
+	v /= 2;
 	return v;
 }
 

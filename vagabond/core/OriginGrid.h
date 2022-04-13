@@ -43,7 +43,7 @@ public:
 		_origin = orig;
 	}
 	
-	glm::vec3 origin()
+	const glm::vec3 &origin() const
 	{
 		return _origin;
 	}

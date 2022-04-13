@@ -51,7 +51,7 @@ public:
 		return _nn;
 	}
 	
-	void setDimensions(int nx, int ny, int nz);
+	void setDimensions(int nx, int ny, int nz, bool adjust = true);
 	bool withinBounds(int i, int j, int k);
 	
 	int reciprocalLimitIndex(int dim);

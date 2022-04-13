@@ -8,7 +8,7 @@ int main()
 	Atom a;
 	test += &a;
 	
-	ElementSegment segment();
+	ElementSegment segment;
 	segment.setDimensions(10, 20, 30); // to allocate _data
 
 	FFT<VoxelElement>::PlanDims dim{};

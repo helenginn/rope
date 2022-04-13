@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,35 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CubicGrid__
-#define __vagabond__CubicGrid__
+#ifndef __vagabond__AtomMap__
+#define __vagabond__AtomMap__
 
-#include "OriginGrid.h"
+#include "FFTCubicGrid.h"
 
-template <class T>
-class CubicGrid : public virtual OriginGrid<T>
+class AtomSegment;
+
+class AtomMap : public FFTCubicGrid<fftwf_complex>
 {
 public:
-	CubicGrid(int nx, int ny, int nz);
-	
-	void setRealDim(float dim);
-	void setRecipDim(float dim);
-	
-	const float &realDim() const
-	{
-		return _realDim;
-	}
+	AtomMap(AtomSegment &other);
 
-	virtual float resolution(int i, int j, int k);
-	virtual void real2Voxel(glm::vec3 &real);
-	virtual glm::vec3 reciprocal(int h, int k, int l);
+	float density(int i);
+	virtual float sum();
+	virtual void multiply(float scale);
+	void printMap();
+	
+	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
+
+	float *arrayPtr();
 private:
-	float _realDim = 1;
-	float _recipDim = 1;
+	float *_realOnly;
 
-	glm::vec3 _dims;
 };
-
-#include "CubicGrid.cpp"
 
 #endif

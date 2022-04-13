@@ -163,7 +163,7 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 
 void PositionRefinery::refine(AtomGroup *group)
 {
-	Atom *anchor = group->possibleAnchor(0);
+	Atom *anchor = group->chosenAnchor();
 
 	_calculator = new BondCalculator();
 	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);

@@ -3,7 +3,7 @@
 
 int main()
 {
-	ElementSegment seg(nullptr);
+	ElementSegment seg;
 	seg.setDimensions(6, 6, 6);
 	seg.setElement("N");
 	

@@ -55,14 +55,14 @@ void FFT<T>::doFFT(int dir)
 	if (dir > 0)
 	{
 		fftwf_execute_dft(_plan.forward,
-		                  &this->_data[0].value, 
-		                  &this->_data[0].value);
+		                  this->_planStart,
+		                  this->_planStart);
 	}
 	else
 	{
 		fftwf_execute_dft(_plan.backward, 
-		                  &this->_data[0].value, 
-		                  &this->_data[0].value);
+		                  this->_planStart,
+		                  this->_planStart);
 		
 		this->multiply(1 / (float)this->nn());
 	}

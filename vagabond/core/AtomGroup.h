@@ -78,9 +78,12 @@ public:
 	
 	size_t possibleAnchorCount();
 	Atom *possibleAnchor(int i);
+	
+	Atom *chosenAnchor();
 
 	std::vector<AtomGroup *> connectedGroups();
 	void refinePositions();
+	void organiseSamples(int n);
 private:
 	void cleanupRefinement();
 	void findPossibleAnchors();
@@ -92,6 +95,8 @@ private:
 	
 	double _lastResidual = FLT_MAX;
 	std::vector<AtomGroup *> _subgroups;
+	
+	Atom *_chosenAnchor = nullptr;
 };
 
 #endif

@@ -85,7 +85,7 @@ Grid<T>::~Grid()
 }
 
 template <class T>
-void Grid<T>::setDimensions(int nx, int ny, int nz)
+void Grid<T>::setDimensions(int nx, int ny, int nz, bool adjust)
 {
 	_nx = nx;
 	_ny = ny;
@@ -96,8 +96,11 @@ void Grid<T>::setDimensions(int nx, int ny, int nz)
 		throw std::runtime_error("specified invalid negative grid dimensions");
 	}
 	
-	make_even(_nx, _ny, _nz);
-	adjustNs();
+	if (adjust)
+	{
+		make_even(_nx, _ny, _nz);
+		adjustNs();
+	}
 	_nn = _nx * _ny * _nz;
 	eleSize = sizeof(T);
 	

@@ -211,13 +211,30 @@ Atom *AtomGroup::firstAtomWithName(std::string name) const
 	return nullptr;
 }
 
+Atom *AtomGroup::chosenAnchor()
+{
+	if (_chosenAnchor != nullptr)
+	{
+		return _chosenAnchor;
+	}
+
+	int count = possibleAnchorCount();
+	if (count == 0)
+	{
+		return nullptr;
+	}
+
+	_chosenAnchor = possibleAnchor(0);
+	return _chosenAnchor;
+}
+
 void AtomGroup::recalculate()
 {
 	connectedGroups();
 
 	for (size_t i = 0; i < _subgroups.size(); i++)
 	{
-		Atom *anchor = _subgroups[i]->possibleAnchor(0);
+		Atom *anchor = _subgroups[i]->chosenAnchor();
 
 		BondCalculator calculator;
 		calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
@@ -250,6 +267,11 @@ void AtomGroup::refinePositions()
 	_refine = new std::thread(&PositionRefinery::backgroundRefine, refinery);
 }
 
+void AtomGroup::organiseSamples(int n)
+{
+
+}
+
 void AtomGroup::remove(AtomGroup *g)
 {
 	for (size_t i = 0; i < g->size(); i++)
@@ -277,7 +299,7 @@ std::vector<AtomGroup *> AtomGroup::connectedGroups()
 	AtomGroup total = AtomGroup(*this);
 	
 	while (total.size() > 0)
-	{
+	{chosenAnchor();
 		BondSequence *sequence = new BondSequence();
 		Atom *anchor = total.possibleAnchor(0);
 

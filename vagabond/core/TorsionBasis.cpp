@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include "TorsionBasis.h"
 #include "BondTorsion.h"
 #include "SimpleBasis.h"

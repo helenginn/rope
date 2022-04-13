@@ -53,6 +53,7 @@ float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
 void SimpleBasis::prepare()
 {
 	_angles.clear();
+
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
 		float start = _torsions[i]->startingAngle();

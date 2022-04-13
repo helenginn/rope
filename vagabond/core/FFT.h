@@ -42,7 +42,7 @@ public:
 	{
 		_status = status;
 	}
-//protected:
+
 	void doFFT(int dir);
 
 	struct PlanDims
@@ -58,6 +58,8 @@ public:
 
 	virtual void populatePlan(PlanDims &dims) {};
 protected:
+	fftwf_complex *_planStart = nullptr;
+
 private:
 	Status _status = Empty;
 

@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,35 +16,48 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CubicGrid__
-#define __vagabond__CubicGrid__
+#ifndef __vagabond__Sampler__
+#define __vagabond__Sampler__
 
-#include "OriginGrid.h"
+#include <vector>
+#include "../utils/svd/PCA.h"
 
-template <class T>
-class CubicGrid : public virtual OriginGrid<T>
+class Sampler
 {
 public:
-	CubicGrid(int nx, int ny, int nz);
+	Sampler(int n, int dims);
+
+	void setup();
+	float hypersphereVolume(float radius);
 	
-	void setRealDim(float dim);
-	void setRecipDim(float dim);
+	void addToVec(float *&vec, int num);
 	
-	const float &realDim() const
+	int dims()
 	{
-		return _realDim;
+		return _dims;
 	}
 
-	virtual float resolution(int i, int j, int k);
-	virtual void real2Voxel(glm::vec3 &real);
-	virtual glm::vec3 reciprocal(int h, int k, int l);
+	const size_t pointCount() const
+	{
+		return _points.rows;
+	}
 private:
-	float _realDim = 1;
-	float _recipDim = 1;
+	float gamma();
+	void populateSamples();
+	void establishRadius();
+	void convertSamples();
 
-	glm::vec3 _dims;
+	void addPointWithinRadius(std::vector<float> &point);
+	bool incrementPoint(std::vector<float> &point);
+	std::vector<float> spawnFirstPoint();
+
+	float _radius;
+	float _max;
+	int _n;
+	int _dims;
+	
+	std::vector<std::vector<float> > _tmpPoints;
+	PCA::Matrix _points{};
 };
-
-#include "CubicGrid.cpp"
 
 #endif
