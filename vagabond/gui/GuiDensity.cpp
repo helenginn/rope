@@ -18,6 +18,7 @@
 
 #include <fstream>
 #include "GuiDensity.h"
+#include "../core/Sampler.h"
 #include "../core/AtomGroup.h"
 #include "../core/BondCalculator.h"
 #include "../core/AtomMap.h"
@@ -93,10 +94,15 @@ void GuiDensity::render(SnowGL *gl)
 
 void GuiDensity::recalculate()
 {
+	int dims = 1;
+	Sampler sampler(30, dims);
+	int num = sampler.pointCount();
+
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
 	calculator.setMaxSimultaneousThreads(1);
-	calculator.setTotalSamples(1);
+	calculator.setTorsionBasisType(TorsionBasis::TypeConcerted);
+	calculator.setSampler(&sampler);
 
 	std::vector<AtomGroup *> subgroups = _atoms->connectedGroups();
 
@@ -106,7 +112,6 @@ void GuiDensity::recalculate()
 		
 		if (anchor)
 		{
-			std::cout << anchor->desc() << std::endl;
 			calculator.addAnchorExtension(anchor);
 		}
 	}
@@ -116,6 +121,7 @@ void GuiDensity::recalculate()
 	calculator.start();
 
 	Job job{};
+	job.custom.allocate_vectors(1, dims, num);
 	job.requests = JobCalculateMapSegment;
 	calculator.submitJob(job);
 

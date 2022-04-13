@@ -29,6 +29,7 @@ private:
 	void setPosition(glm::vec3 position);
 	void colourByElement(std::string ele);
 	bool checkAtom(Atom *a);
+	void updateSinglePosition(Atom *a, glm::vec3 &p);
 	static void backgroundWatch(GuiAtom *what);
 
 	Icosahedron *_template;

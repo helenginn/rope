@@ -115,29 +115,34 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	_bonds->watchBonds(a);
 }
 
+void GuiAtom::updateSinglePosition(Atom *a, glm::vec3 &p)
+{
+	int idx = _atomIndex[a];
+	glm::vec3 last = _atomPos[a];
+
+	glm::vec3 diff = p - last;
+
+	if (!is_glm_vec_sane(diff))
+	{
+		throw std::runtime_error("position contains nan or vec values");
+	}
+
+	int end = idx + verticesPerAtom(); 
+	for (size_t j = idx; j < end; j++)
+	{
+		_vertices[j].pos += diff;
+	}
+
+	_bonds->updateAtom(a, p);
+	_atomPos[a] = p;
+}
+
 bool GuiAtom::checkAtom(Atom *a)
 {
 	glm::vec3 p;
 	if (a->positionChanged() && a->fishPosition(&p))
 	{
-		int idx = _atomIndex[a];
-		glm::vec3 last = _atomPos[a];
-
-		glm::vec3 diff = p - last;
-
-		if (!is_glm_vec_sane(diff))
-		{
-			throw std::runtime_error("position contains nan or vec values");
-		}
-
-		int end = idx + verticesPerAtom(); 
-		for (size_t j = idx; j < end; j++)
-		{
-			_vertices[j].pos += diff;
-		}
-
-		_bonds->updateAtom(a, p);
-		_atomPos[a] = p;
+		updateSinglePosition(a, p);
 		return true;
 	}
 	
