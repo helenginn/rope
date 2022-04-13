@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,22 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MapTransfer__
-#define __vagabond__MapTransfer__
+#include "ThreadMapSummer.h"
+#include "MapSumHandler.h"
+#include "MapTransferHandler.h"
+#include "AtomSegment.h"
 
-/**
- * \class MapTransfer
- *  contains the information required to put all the atom positions of a
- *  particular element type in an ElementSegment.
- */
-
-class MapTransfer
+ThreadMapSummer::ThreadMapSummer(MapSumHandler *h) : ThreadWorker()
 {
-public:
-	MapTransfer();
+	_sumHandler = h;
+}
 
-private:
+void ThreadMapSummer::start()
+{
+	do
+	{
+		MapSumHandler::MapJob *mj = nullptr;
+		MiniJobMap *mini = _sumHandler->acquireMiniJob(mj);
+		
+		if (mini == nullptr)
+		{
+			break;
+		}
+		
+		// do stuff
+		AtomSegment *sum = mj->segment;
+		ElementSegment *partial = mini->segment;
+		sum->addElementSegment(partial);
 
-};
+		_mapHandler->returnSegment(mini->segment);
+		_sumHandler->returnMiniJob(mj);
+	}
+	while (!_finish);
+}
 
-#endif

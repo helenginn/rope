@@ -20,6 +20,8 @@
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
+#include "MapSumHandler.h"
+#include "Sampler.h"
 
 BondCalculator::BondCalculator()
 {
@@ -48,12 +50,17 @@ void BondCalculator::sanityCheckPipeline()
 		throw std::runtime_error("Bond calculator pipeline not specified");
 	}
 
-	if (_type == PipelineCalculatedMaps)
+	if (_type == PipelineCalculatedMaps && false)
 	{
 		throw std::runtime_error("Calculated maps requested, but not yet "
 		                         "implemented");
 	}
 
+	if (_type == PipelineCorrelation)
+	{
+		throw std::runtime_error("Correlation requested, but not yet "
+		                         "implemented");
+	}
 }
 
 void BondCalculator::sanityCheckDepthLimits()
@@ -95,6 +102,16 @@ void BondCalculator::setupMapTransferHandler()
 	_mapHandler = new MapTransferHandler(this);
 }
 
+void BondCalculator::setupMapSumHandler()
+{
+	if (!(_type & PipelineCalculatedMaps))
+	{
+		return;
+	}
+
+	_sumHandler = new MapSumHandler(this);
+}
+
 void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
@@ -102,6 +119,7 @@ void BondCalculator::setupSequenceHandler()
 	_sequenceHandler->setMaxThreads(_maxThreads);
 	_sequenceHandler->setTorsionBasisType(_basisType);
 	_sequenceHandler->setIgnoreHydrogens(_ignoreHydrogens);
+	_sequenceHandler->setSampler(_sampler);
 	
 	if (_mapHandler != nullptr)
 	{
@@ -112,8 +130,6 @@ void BondCalculator::setupSequenceHandler()
 	{
 		_sequenceHandler->addAnchorExtension(_atoms[i]);
 	}
-
-	_sequenceHandler->setup();
 }
 
 void BondCalculator::setup()
@@ -121,8 +137,23 @@ void BondCalculator::setup()
 	sanityCheckPipeline();
 	sanityCheckThreads();
 
+	setupMapSumHandler();
 	setupMapTransferHandler();
 	setupSequenceHandler();
+	
+	if (_mapHandler != nullptr)
+	{
+		_mapHandler->setSumHandler(_sumHandler);
+		_sumHandler->setMapHandler(_mapHandler);
+	}
+
+	_sequenceHandler->setup();
+
+	if (_mapHandler != nullptr)
+	{
+		_mapHandler->setup();
+		_sumHandler->setup();
+	}
 }
 
 void BondCalculator::prepareThreads()
@@ -148,6 +179,10 @@ void BondCalculator::start()
 		_changedDepth = false;
 	}
 
+	if (_sumHandler != nullptr)
+	{
+		_sumHandler->start();
+	}
 	if (_mapHandler != nullptr)
 	{
 		_mapHandler->start();
@@ -197,8 +232,24 @@ void BondCalculator::submitResult(Result *r)
 	_resultPool.handout.unlock();
 }
 
+void BondCalculator::sanityCheckJob(Job &job)
+{
+	if ((job.requests & JobCalculateMapSegment) || 
+	    (job.requests & JobCalculateMapCorrelation))
+	{
+		if (_type != PipelineCalculatedMaps)
+		{
+			throw std::runtime_error("Job asked for request not capable of this"
+			                         " BondCalculator's settings");
+		}
+	}
+
+}
+
 int BondCalculator::submitJob(Job &original_job)
 {
+	sanityCheckJob(original_job);
+
 	Job *job = new Job(original_job);
 
 	_jobPool.handout.lock();
@@ -213,23 +264,8 @@ int BondCalculator::submitJob(Job &original_job)
 
 Job *BondCalculator::acquireJob()
 {
-	_jobPool.sem.wait();
-	_jobPool.handout.lock();
-
 	Job *job = nullptr;
-
-	if (_jobPool.members.size())
-	{
-		job = _jobPool.members.front();
-		_jobPool.members.pop();
-	}
-	
-	if (_finish)
-	{
-		_jobPool.sem.signal();
-	}
-
-	_jobPool.handout.unlock();
+	_jobPool.acquireObject(job, _finish);
 	
 	return job;
 
@@ -237,6 +273,12 @@ Job *BondCalculator::acquireJob()
 
 void BondCalculator::finish()
 {
+	if (_mapHandler != nullptr)
+	{
+		_sumHandler->finish();
+		_mapHandler->finish();
+	}
+
 	if (_sequenceHandler != nullptr)
 	{
 		_sequenceHandler->finish();
@@ -263,3 +305,10 @@ const size_t BondCalculator::maxCustomVectorSize() const
 	return _sequenceHandler->torsionCount();
 }
 
+
+void BondCalculator::setSampler(Sampler *sampler)
+{
+	_sampler = sampler;
+	sampler->setup();
+	setTotalSamples(_sampler->pointCount());
+}

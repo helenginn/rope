@@ -26,10 +26,18 @@
 class AtomGroup;
 class ElementSegment;
 
+/**
+ * \class MapTransferHandler
+ * handles the transfer of atom positions from BondSequence to produce
+ * electron distribution maps (density/electrostatic potential) for each
+ * individual element. */
+
 class MapTransferHandler : public Handler
 {
 public:
 	MapTransferHandler(BondCalculator *calculator = nullptr);
+	
+	~MapTransferHandler();
 
 	/**let the MTH know which atoms will be involved in the calculation.
 	 * Atoms in @param all but not in @param sub will be included as part
@@ -54,27 +62,57 @@ public:
 	{
 		_cubeDim = dim;
 	}
+
+	MiniJobMap *makeJobForElement(std::string ele,
+	                           std::vector<BondSequence::ElePos> &epos);
 	
 	void setupMiniJobs(Job *job, std::vector<BondSequence::ElePos> &epos);
+	ElementSegment *acquireSegment(std::string ele);
+	void returnSegment(ElementSegment *segment);
+
+	MiniJobMap *acquireMiniJob(std::string ele);
 
 	void start();
+	void finish();
+	
+	void setSumHandler(MapSumHandler *handler)
+	{
+		_sumHandler = handler;
+	}
+	
+	const size_t segmentCount() const
+	{
+		return _segments.size();
+	}
+	
+	const ElementSegment *segment(int i) const
+	{
+		return _segments[i];
+	}
+
 private:
 	void allocateSegments();
 	void findThreadCount();
 	void prepareThreads();
+	void finishThreads();
 	void getRealDimensions(std::vector<Atom *> &sub);
 
 	std::vector<Atom *> _all;
 	std::vector<Atom *> _sub;
+
 	std::vector<ElementSegment *> _segments;
 	std::vector<std::string> _elements;
 	std::map<std::string, ElementSegment *> _element2Segment;
 	std::map<std::string, Pool<ElementSegment *> > _pools;
+
 	std::map<std::string, Pool<MiniJobMap *> > _miniJobPools;
+	std::mutex _handout;
+
 	BondCalculator *_calculator = nullptr;
+	MapSumHandler *_sumHandler = nullptr;
 	
 	float _cubeDim = 0.5;
-	int _threads = 1;
+	int _threads = 2;
 	
 	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 	glm::vec3 _max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);

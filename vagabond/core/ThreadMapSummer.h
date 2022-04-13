@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,39 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadExtractsBondPositions__
-#define __vagabond__ThreadExtractsBondPositions__
+#ifndef __vagabond__ThreadMapSummer__
+#define __vagabond__ThreadMapSummer__
 
 #include "ThreadWorker.h"
 
+class MapSumHandler;
 class MapTransferHandler;
-class BondSequenceHandler;
-class BondCalculator;
-class BondSequence;
-struct Job;
-class MiniJobSeq;
+class MiniJobMap;
 
-class ThreadExtractsBondPositions : public ThreadWorker
+class ThreadMapSummer : public ThreadWorker
 {
 public:
-	ThreadExtractsBondPositions(BondSequenceHandler *h);
-	virtual ~ThreadExtractsBondPositions() {};
+	ThreadMapSummer(MapSumHandler *h);
+	
+	void setMapHandler(MapTransferHandler *h)
+	{
+		_mapHandler = h;
+	}
 
 	virtual void start();
-	
-	void setMapTransferHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
 private:
-	void extractPositions(Job *job, BondSequence *seq);
-	void calculateDeviation(Job *job, BondSequence *seq);
-	void transferToMaps(Job *job, BondSequence *seq);
-	
-	void cleanupSequence(Job *job, BondSequence *seq);
-	void returnResult(Job *job);
-
-	BondSequenceHandler *_seqHandler;
+	MapSumHandler *_sumHandler;
 	MapTransferHandler *_mapHandler;
 
 };

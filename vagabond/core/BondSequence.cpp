@@ -65,6 +65,7 @@ MiniJobSeq *BondSequence::miniJob()
 
 BondSequence::~BondSequence()
 {
+	delete [] _currentVec;
 }
 
 void BondSequence::addGraph(AtomGraph *graph)
@@ -166,7 +167,7 @@ void BondSequence::removeGraphs()
 
 void BondSequence::sortGraphChildren()
 {
-	for (size_t i = 0; i < _graphs.size(); i++)
+	for (size_t i = _graphsDone; i < _graphs.size(); i++)
 	{
 		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
 		AtomGraph::atomgraph_less_than);
@@ -210,7 +211,7 @@ void BondSequence::fillInParents()
 
 void BondSequence::fillTorsionAngles()
 {
-	for (size_t i = 0; i < _graphs.size(); i++)
+	for (size_t i = _graphsDone; i < _graphs.size(); i++)
 	{
 		_graphs[i]->torsion_idx = -1;
 		if (_graphs[i]->children.size() == 0)
@@ -234,7 +235,7 @@ void BondSequence::fillTorsionAngles()
 				
 				/* assign something, but give priority to constraints */
 				if (torsion && (_graphs[i]->torsion == nullptr || 
-				    torsion->isConstrained()))
+				                torsion->isConstrained()))
 				{
 					_graphs[i]->torsion = torsion;
 				}
@@ -258,15 +259,24 @@ void BondSequence::makeTorsionBasis()
 
 void BondSequence::addToGraph(Atom *atom, size_t count)
 {
-	removeGraphs();
+//	removeGraphs();
+
 	generateAtomGraph(atom, count);
 	calculateMissingMaxDepths();
 	fillInParents();
-	makeTorsionBasis();
+	if (!_torsionBasis)
+	{
+		makeTorsionBasis();
+	}
 	fillTorsionAngles();
 	markHydrogenGraphs();
 	sortGraphChildren();
 	generateBlocks();
+
+	_blocksDone = _blocks.size();
+	_graphsDone = _graphs.size();
+	_anchorsDone = _anchors.size();
+	_atomsDone = _atoms.size();
 }
 
 void BondSequence::assignAtomToBlock(int idx, Atom *atom)
@@ -312,9 +322,11 @@ void BondSequence::fixBlockAsGhost(int idx, Atom *anchor)
 void BondSequence::assignAtomsToBlocks()
 {
 	int curr = _blocks.size();
-	_blocks.resize(_blocks.size() + _atoms.size() + _anchors.size());
+	int total = _blocks.size() + _atoms.size() + _anchors.size();
+	total -= _atomsDone + _anchorsDone;
+	_blocks.resize(total);
 
-	for (size_t i = 0; i < _anchors.size(); i++)
+	for (size_t i = _anchorsDone; i < _anchors.size(); i++)
 	{
 		Atom *anchor = _anchors[i];
 
@@ -346,7 +358,7 @@ void BondSequence::assignAtomsToBlocks()
 
 void BondSequence::fillMissingWriteLocations()
 {
-	for (size_t i = 0; i < _blocks.size(); i++)
+	for (size_t i = _blocksDone; i < _blocks.size(); i++)
 	{
 		Atom *atom = _blocks[i].atom;
 		if (atom == nullptr)
@@ -460,6 +472,7 @@ SequenceState BondSequence::state()
 void BondSequence::multiplyUpBySampleCount()
 {
 	size_t blockCount = _blocks.size();
+	_singleSequence = blockCount;
 	size_t size = blockCount * _sampleCount;
 
 	std::vector<AtomBlock> copyBlock = _blocks;
@@ -479,16 +492,33 @@ void BondSequence::fetchTorsion(int idx)
 	}
 	
 	int n = 0;
-	float *vec = nullptr;
-	
+
 	if (_custom != nullptr)
 	{
 		n = _custom->size;
-		vec = _custom->mean;
+
+		if (_sampler && _sampler->dims() != n)
+		{
+			throw std::runtime_error("Sampler dimension does not match"\
+			                         "custom vector dimension");
+		}
+
+		if (_currentVec == nullptr)
+		{
+			_currentVec = new float[n];
+		}
+
+		memcpy(_currentVec, _custom->mean, sizeof(float) * n);
+
+		if (_sampler != nullptr)
+		{
+			_sampler->addToVec(_currentVec, _sampleNum);
+		}
 	}
 
 	double t = _torsionBasis->torsionForVector(_blocks[idx].torsion_idx,
-	                                           vec, n);
+	                                           _currentVec, n);
+
 	_blocks[idx].torsion = t;
 }
 
@@ -601,6 +631,7 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	}
 
 	int &next_num = j.custom.vecs[_customIdx].sample_num;
+	_sampleNum = sampleNum;
 	if (next_num > 0 && sampleNum > next_num)
 	{
 		_customIdx++;
@@ -665,7 +696,7 @@ void BondSequence::calculate()
 
 		calculateBlock(i);
 		
-		if (new_anchor)
+		if (i % _singleSequence == 0)
 		{
 			acquireCustomVector(sampleNum);
 			sampleNum++;
@@ -799,7 +830,7 @@ const size_t BondSequence::flagged() const
 
 void BondSequence::markHydrogenGraphs()
 {
-	for (size_t i = 0; i < _graphs.size(); i++)
+	for (size_t i = _graphsDone; i < _graphs.size(); i++)
 	{
 		if (_graphs[i]->childrenOnlyHydrogens())
 		{

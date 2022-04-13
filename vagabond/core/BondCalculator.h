@@ -28,6 +28,14 @@
 class Atom;
 class BondSequenceHandler;
 class MapTransferHandler;
+class MapSumHandler;
+class Sampler;
+
+/** \class BondCalculator
+ *  Master class for the internal Vagabond engine.
+ *
+ * \image html vagabond/doc/bondcalculator_class_connections.png width=1200px
+ */
 
 class BondCalculator : public Handler
 {
@@ -138,6 +146,18 @@ public:
 		return _sequenceHandler;
 	}
 	
+	MapTransferHandler *mapHandler()
+	{
+		return _mapHandler;
+	}
+	
+	MapSumHandler *sumHandler()
+	{
+		return _sumHandler;
+	}
+	
+	void setSampler(Sampler *sampler);
+	
 	struct AnchorExtension
 	{
 		Atom *atom;
@@ -149,8 +169,10 @@ public:
 private:
 	void sanityCheckPipeline();
 	void sanityCheckThreads();
+	void sanityCheckJob(Job &job);
 	void sanityCheckDepthLimits();
 	void setupMapTransferHandler();
+	void setupMapSumHandler();
 	void setupSequenceHandler();
 	void prepareThreads();
 
@@ -174,7 +196,9 @@ private:
 
 	BondSequenceHandler *_sequenceHandler = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
+	MapSumHandler *_sumHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
+	Sampler *_sampler = nullptr;
 	
 	std::vector<AnchorExtension> _atoms;
 };

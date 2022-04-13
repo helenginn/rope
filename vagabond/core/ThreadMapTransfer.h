@@ -22,6 +22,9 @@
 #include "ThreadWorker.h"
 
 class MapTransferHandler;
+class MiniJobMap;
+class ElementSegment;
+class MapSumHandler;
 
 /**
  * \class ThreadMapTransfer
@@ -33,11 +36,19 @@ class ThreadMapTransfer : public ThreadWorker
 {
 public:
 	ThreadMapTransfer(MapTransferHandler *h, std::string element);
+	
+	void setMapSumHandler(MapSumHandler *h)
+	{
+		_sumHandler = h;
+	}
+
+	void putAtomsInMap(MiniJobMap *mini, ElementSegment *seg);
 	virtual ~ThreadMapTransfer() {};
 
 	virtual void start();
 private:
 	MapTransferHandler *_mapHandler;
+	MapSumHandler *_sumHandler;
 	std::string _ele;
 
 };

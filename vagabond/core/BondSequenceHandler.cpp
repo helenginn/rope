@@ -176,6 +176,7 @@ void BondSequenceHandler::finish()
 void BondSequenceHandler::prepareSequenceBlocks()
 {
 	BondSequence *sequence = new BondSequence(this);
+	sequence->setSampler(_sampler);
 	sequence->setIgnoreHydrogens(_ignoreHydrogens);
 	sequence->setSampleCount(_totalSamples);
 	sequence->setTorsionBasisType(_basisType);
@@ -211,17 +212,13 @@ void BondSequenceHandler::addAnchorExtension(BondCalculator::AnchorExtension ext
 void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state,
                                           SequenceState old)
 {
-	Pool<BondSequence *> &pool = _pools[state];
-	pool.handout.lock();
 	if (state == SequenceCalculateReady)
 	{
 		_run++;
 	}
 
-	pool.members.push(seq);
-	pool.sem.signal();
-
-	pool.handout.unlock();
+	Pool<BondSequence *> &pool = _pools[state];
+	pool.pushObject(seq);
 }
 
 BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
@@ -234,17 +231,12 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 
 void BondSequenceHandler::generateMiniJobSeqs(Job *job)
 {
-	_miniJobPool.handout.lock();
 	MiniJobSeq *mini = new MiniJobSeq();
 	mini->job = job;
+	mini->seq = nullptr;
 	job->miniJobs.push_back(mini);
 
-	mini->seq = nullptr;
-
-	_miniJobPool.members.push(mini);
-	_miniJobPool.sem.signal();
-
-	_miniJobPool.handout.unlock();
+	_miniJobPool.pushObject(mini);
 }
 
 void BondSequenceHandler::signalFinishMiniJobSeq()

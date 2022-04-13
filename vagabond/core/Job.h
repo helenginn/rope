@@ -16,15 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#ifndef __vagabond__Job__
+#define __vagabond__Job__
+
 #include <vector>
 #include <map>
 #include <queue>
 #include <thread>
 #include "Atom.h"
+#include "AtomMap.h"
 
 class ThreadWorker;
 class BondSequence;
 class MapTransfer;
+struct Result;
 
 enum SequenceState
 {
@@ -46,32 +51,6 @@ enum JobType
 };
 
 typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
-
-struct Result
-{
-	int ticket;
-	JobType requests;
-	AtomPosMap aps;
-	double deviation;
-	std::mutex handout;
-	
-	void transplantPositions()
-	{
-		AtomPosMap::iterator it;
-		for (it = aps.begin(); it != aps.end(); it++)
-		{
-			it->second.ave /= (float)it->second.samples.size();
-			it->first->setDerivedPositions(it->second);
-		}
-	}
-	
-	void destroy()
-	{
-		aps.clear();
-
-		delete this;
-	}
-};
 
 struct CustomVector
 {
@@ -98,6 +77,10 @@ struct CustomInfo
 	CustomVector *vecs;
 	int nvecs;
 	
+	/** allocates vectors for figuring out perturbations ofspace.
+	 * @param n how many different perturbations (one per discrete conformer)
+	 * @param size dimension number for calculations
+	 * @param size number of samplers per discrete perturbation */
 	void allocate_vectors(int n, int size, int sample_num)
 	{
 		vecs = new CustomVector[n];
@@ -134,7 +117,7 @@ struct Job
 	int ticket;
 	JobType requests;
 
-	Result *result;
+	Result *result = nullptr;
 	std::vector<MiniJob *> miniJobs;
 	
 	void destroy()
@@ -150,13 +133,27 @@ class MiniJob
 {
 public:
 	Job *job;
+	
+	void setJob(Job *j)
+	{
+		job = j;
+//		job->miniJobs.push_back(this);
+	}
 };
+
+class ElementSegment;
 
 class MiniJobMap : public MiniJob
 {
 public:
-	MapTransfer *map;
-	char element[3];
+	std::vector<glm::vec3> positions;
+	std::string ele;
+	ElementSegment *segment = nullptr;
+	
+	MiniJobMap(std::string _ele)
+	{
+		ele = _ele;
+	}
 };
 
 class MiniJobSeq : public MiniJob
@@ -165,3 +162,40 @@ public:
 	BondSequence *seq;
 };
 
+struct Result
+{
+	int ticket;
+	JobType requests;
+	AtomPosMap aps;
+	double deviation;
+	AtomMap *map;
+
+	std::mutex handout;
+	
+	void setFromJob(Job *job)
+	{
+		requests = job->requests;
+		ticket = job->ticket;
+		job->result = this;
+	}
+	
+	void transplantPositions()
+	{
+		AtomPosMap::iterator it;
+		for (it = aps.begin(); it != aps.end(); it++)
+		{
+			it->second.ave /= (float)it->second.samples.size();
+			it->first->setDerivedPositions(it->second);
+		}
+	}
+	
+	void destroy()
+	{
+		aps.clear();
+		delete map;
+
+		delete this;
+	}
+};
+
+#endif

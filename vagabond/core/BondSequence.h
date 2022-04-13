@@ -28,8 +28,10 @@
 #include "BondSequenceHandler.h"
 #include "BondTorsion.h"
 #include "AtomGraph.h"
+#include "Sampler.h"
 
 class Atom;
+class Sampler;
 class BondSequenceHandler;
 
 class MiniJobSeq;
@@ -78,6 +80,11 @@ public:
 	glm::vec3 positionForNextBlock(int i, int j)
 	{
 		return _blocks[i].child_position(j);
+	}
+	
+	void setSampler(Sampler *sampler)
+	{
+		_sampler = sampler;
 	}
 	
 	void setIgnoreHydrogens(bool ignore)
@@ -256,10 +263,16 @@ private:
 	glm::mat4x4 _torsion_rot = glm::mat4(1.f);
 	bool _ignoreHydrogens = false;
 	bool _fullRecalc = true;
+	int _sampleNum = 0;
 	int _startCalc = 0;
 	int _endCalc = INT_MAX;
 	int _maxDepth = 0;
 	int _customIdx = 0;
+	int _blocksDone = 0;
+	int _graphsDone = 0;
+	int _anchorsDone = 0;
+	int _atomsDone = 0;
+	int _singleSequence = 0;
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
 
@@ -267,6 +280,10 @@ private:
 	BondSequenceHandler *_handler = nullptr;
 	TorsionBasis *_torsionBasis = nullptr;
 	TorsionBasis::Type _basisType;
+	Sampler *_sampler = nullptr;
+	
+	float *_currentVec = nullptr;
+
 	std::map<Atom *, Atom::WithPos> _posAtoms;
 };
 

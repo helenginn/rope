@@ -51,7 +51,6 @@ void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq
 
 void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
 {
-	// send seq->extractForMap() to the _mapHandler.
 	std::vector<BondSequence::ElePos> epos = seq->extractForMap();
 	cleanupSequence(job, seq);
 	_mapHandler->setupMiniJobs(job, epos);
@@ -83,12 +82,11 @@ void ThreadExtractsBondPositions::start()
 			if (r == nullptr)
 			{
 				r = new Result();
-				r->requests = job->requests;
-				r->ticket = job->ticket;
-				job->result = r;
+				r->setFromJob(job);
 			}
 		}
 
+		bool sendBack = true;
 		if (job->requests & JobExtractPositions)
 		{
 			extractPositions(job, seq);
@@ -101,10 +99,17 @@ void ThreadExtractsBondPositions::start()
 		    job->requests & JobCalculateMapCorrelation)
 		{
 			transferToMaps(job, seq);
+			sendBack = false;
 			continue;
 		}
 
 		cleanupSequence(job, seq);
+
+		if (sendBack)
+		{
+			returnResult(job);
+		}
+
 	}
 	while (!_finish);
 }
@@ -112,7 +117,6 @@ void ThreadExtractsBondPositions::start()
 void ThreadExtractsBondPositions::cleanupSequence(Job *job, BondSequence *seq)
 {
 	MiniJob *mini = seq->miniJob();
-	BondCalculator *calc = _seqHandler->calculator();
 
 	/* don't submit the result unless all minijobs are done */
 	std::vector<MiniJob *>::iterator it;
@@ -125,13 +129,16 @@ void ThreadExtractsBondPositions::cleanupSequence(Job *job, BondSequence *seq)
 
 	job->miniJobs.erase(it);
 
+	seq->cleanUpToIdle();
+}
+
+void ThreadExtractsBondPositions::returnResult(Job *job)
+{
 	if (job->miniJobs.size() == 0)
 	{
+		BondCalculator *calc = _seqHandler->calculator();
 		Result *r = job->result;
 		job->destroy();
 		calc->submitResult(r);
 	}
-
-	seq->cleanUpToIdle();
 }
-

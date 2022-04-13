@@ -24,6 +24,7 @@
 #include "BondCalculator.h"
 #include "BondSequence.h"
 
+class Sampler;
 class BondSequence;
 class BondCalculator;
 class MapTransferHandler;
@@ -49,6 +50,11 @@ public:
 	void setMaxThreads(int total)
 	{
 		_maxThreads = total;
+	}
+	
+	void setSampler(Sampler *sampler)
+	{
+		_sampler = sampler;
 	}
 
 	void setTotalSamples(int total)
@@ -145,6 +151,7 @@ private:
 	BondCalculator *_calculator = nullptr;
 	std::map<std::string, int> _elements;
 	MapTransferHandler *_mapHandler = nullptr;
+	Sampler *_sampler = nullptr;
 };
 
 #endif

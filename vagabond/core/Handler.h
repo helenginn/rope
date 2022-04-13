@@ -94,6 +94,16 @@ protected:
 
 			handout.unlock();
 		}
+		
+		void pushObject(Object &obj)
+		{
+			handout.lock();
+
+			members.push(obj);
+			sem.signal();
+
+			handout.unlock();
+		}
 	};
 
 	bool _finish;
