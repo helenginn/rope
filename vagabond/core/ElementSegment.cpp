@@ -32,17 +32,19 @@ ElementSegment::ElementSegment()
 
 void ElementSegment::setElement(std::string element)
 {
+	_elementSymbol = element;
+
 	ElementLibrary &library = ElementLibrary::library();
 	const float *factors = library.getElementFactors(element);
 
 	int nx, ny, nz;
 	limits(nx, ny, nz);
 
-	for (int k = -nz; k < nz; k++)
+	for (int k = -nz; k <= nz; k++)
 	{
-		for (int j = -ny; j < ny; j++)
+		for (int j = -ny; j <= ny; j++)
 		{
-			for (int i = -nx; i < nx; i++)
+			for (int i = -nx; i <= nx; i++)
 			{
 				float res = 1 / resolution(i, j, k);
 				float val = library.valueForResolution(res, factors);
@@ -66,6 +68,9 @@ void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)
 	rankdims[0] = {ns[0], ns[1] * rankdims[1].is, ns[1] * rankdims[1].os};
 	
 	unsigned flags = FFTW_MEASURE;
+#ifdef __EMSCRIPTEN__
+	flags =  FFTW_ESTIMATE;
+#endif
 
 	dims.forward =  fftwf_plan_guru_split_dft(rank, rankdims, 0, nullptr,
 	                                          &_data[0].value[0], 
@@ -79,6 +84,7 @@ void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)
 	                                          &_data[0].value[1], 
 	                                          &_data[0].value[0], flags);
 
+	_planStart = &_data[0].value;
 }
 
 void ElementSegment::addDensity(glm::vec3 real, float density)
@@ -136,17 +142,55 @@ void ElementSegment::addDensity(glm::vec3 real, float density)
 	}
 }
 
+
 void ElementSegment::calculateMap()
 {
 	fft();
 	
 	for (size_t i = 0; i < nn(); i++)
 	{
-		_data[i].value[0] *= _data[i].scatter;
-		_data[i].value[1] *= _data[i].scatter;
+		_data[i].value[0] *= _data[0].scatter;
+		_data[i].value[1] *= _data[0].scatter;
 	}
 
 	fft();
+}
+
+void ElementSegment::printMap()
+{
+	float ave = 0;
+	float scale = 100.;
+	for (size_t k = 0; k < nx(); k++)
+	{
+		for (size_t j = 0; j < ny(); j++)
+		{
+			float value = 0;
+			
+			for (size_t i = 0; i < nz(); i++)
+			{
+				value += element(k, j, i).value[0];
+			}
+			
+			ave += value;
+
+			std::string symbol = " ";
+
+			if (value > 0.01 * scale) symbol = ".";
+			if (value > 0.02 * scale) symbol = ":";
+			if (value > 0.04 * scale) symbol = "\"";
+			if (value > 0.08 * scale) symbol = "*";
+			if (value > 0.16 * scale) symbol = "x";
+			if (value > 0.32 * scale) symbol = "H";
+			if (value > 0.64 * scale) symbol = "#";
+			if (value > 1.00 * scale) symbol = "@";
+
+			std::cout << symbol;
+		}
+		std::cout << std::endl;
+	}
+
+	ave /= (float)(nz() * ny());
+	std::cout << "Ave: " << ave << std::endl;
 }
 
 void ElementSegment::multiply(float scale)
@@ -179,4 +223,10 @@ void ElementSegment::findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
 	nx = (long)lrint(diff[0]) + 1;
 	ny = (long)lrint(diff[1]) + 1;
 	nz = (long)lrint(diff[2]) + 1;
+}
+
+float ElementSegment::density(int i, int j)
+{
+	float density = element(i).value[j];
+	return density;
 }

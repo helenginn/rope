@@ -26,7 +26,7 @@ class AtomGroup;
 struct VoxelElement
 {
 	fftwf_complex value;
-	float scatter = 1;
+	float scatter = 0;
 };
 
 class ElementSegment : public FFTCubicGrid<VoxelElement>
@@ -37,9 +37,16 @@ public:
 	/** set the periodic table element symbol
 	 * @param element upper case element symbol e.g. CA for calcium. */
 	void setElement(std::string element);
+	
+	const std::string &elementSymbol() const
+	{
+		return _elementSymbol;
+	}
 
 	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
 	void addDensity(glm::vec3 real, float density);
+	float density(int i, int j);
+	void printMap();
 	
 	void calculateMap();
 
@@ -51,6 +58,7 @@ public:
 protected:
 
 private:
+	std::string _elementSymbol;
 
 };
 
