@@ -29,6 +29,8 @@ ElementLibrary::ElementLibrary()
 	addElement("n", ScatterFactors::nScatter);
 	addElement("o", ScatterFactors::oScatter);
 	addElement("s", ScatterFactors::sScatter);
+	addElement("p", ScatterFactors::pScatter);
+	addElement("f", ScatterFactors::fScatter);
 }
 
 void ElementLibrary::addElement(std::string element, const float *scatter)
