@@ -750,6 +750,7 @@ void BondSequence::calculate()
 	
 	_fullRecalc = false;
 	
+	superpose();
 	signal(SequencePositionsReady);
 }
 

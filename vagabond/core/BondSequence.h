@@ -177,6 +177,7 @@ public:
 	}
 	
 	SequenceState state();
+	void signal(SequenceState newState);
 	
 	std::string atomGraphDesc(int i);
 private:
@@ -258,7 +259,6 @@ private:
 	SequenceState _state = SequenceInPreparation;
 	
 	void setMiniJobSeq(MiniJobSeq *job);
-	void signal(SequenceState newState);
 	void printBlock(int idx);
 	
 	glm::mat4x4 _torsion_rot = glm::mat4(1.f);

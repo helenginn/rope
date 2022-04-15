@@ -40,7 +40,6 @@ void ThreadCalculatesBondSequence::start()
 		}
 
 		seq->calculate();
-		seq->superpose();
 	}
 	while (!_finish);
 }
