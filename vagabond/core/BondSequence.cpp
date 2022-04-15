@@ -312,7 +312,6 @@ void BondSequence::assignAtomToBlock(int idx, Atom *atom)
 void BondSequence::fixBlockAsGhost(int idx, Atom *anchor)
 {
 	_blocks[idx].atom = nullptr;
-//	_blocks[idx].nBonds = 1;
 	_blocks[idx].basis = glm::mat4(1.f);
 	_blocks[idx].coordination = anchor->transformation();
 	_blocks[idx].write_locs[0] = 1;
