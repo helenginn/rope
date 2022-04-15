@@ -14,11 +14,12 @@ exceptions = ['-s', 'NO_DISABLE_EXCEPTION_CATCHING']
 shell_file = ['--shell-file', '../../minimal_shell.html']
 preload = ['--use-preload-plugins', '--preload-file', '../../assets']
 export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr,ccall', '-s', 'LLD_REPORT_UNDEFINED', '-s', 'EXPORTED_FUNCTIONS=["_accept_file", "_main"]',  '-s', 'PTHREAD_POOL_SIZE=32', '-s', 'ALLOW_MEMORY_GROWTH=1']
+fftwf=['/usr/local/lib/emcc/lib/libfftw3f.a']
 
 [properties]
 shared_lib_suffix = 'js'
 static_lib_suffix = 'js'
 shared_module_suffix = 'js'
 exe_suffix = 'js'
-links = sdl_options + shell_file + preload + export + threads + exceptions
+links = sdl_options + shell_file + preload + export + threads + exceptions + fftwf
 compile_args = threads
