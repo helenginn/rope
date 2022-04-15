@@ -63,9 +63,9 @@ void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)
 	const int base_stride = sizeof(VoxelElement) / sizeof(float);
 
 	fftw_iodim rankdims[3];
-	rankdims[2] = {ns[2], base_stride, base_stride};
-	rankdims[1] = {ns[1], ns[2] * rankdims[2].is, ns[2] * rankdims[2].os};
-	rankdims[0] = {ns[0], ns[1] * rankdims[1].is, ns[1] * rankdims[1].os};
+	rankdims[2] = {ns[0], base_stride, base_stride};
+	rankdims[1] = {ns[1], ns[0] * rankdims[2].is, ns[0] * rankdims[2].os};
+	rankdims[0] = {ns[2], ns[1] * rankdims[1].is, ns[1] * rankdims[1].os};
 	
 	unsigned flags = FFTW_MEASURE;
 #ifdef __EMSCRIPTEN__
@@ -149,8 +149,8 @@ void ElementSegment::calculateMap()
 	
 	for (size_t i = 0; i < nn(); i++)
 	{
-		_data[i].value[0] *= _data[0].scatter;
-		_data[i].value[1] *= _data[0].scatter;
+		_data[i].value[0] *= _data[i].scatter;
+		_data[i].value[1] *= _data[i].scatter;
 	}
 
 	fft();
