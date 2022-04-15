@@ -16,7 +16,7 @@ void main()
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.5;
 	vec3 unit = normalize(vNormal);
-	remaining *= max(0., dot(unit, vec3(-0.707, 0.000, -0.707)));
+	remaining *= max(0., dot(unit, vec3(0., 0.000, -1.0)));
 	result.xyz += remaining;
 	gl_FragColor = result;
 }
