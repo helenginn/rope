@@ -110,6 +110,8 @@ void BondCalculator::setupMapSumHandler()
 	}
 
 	_sumHandler = new MapSumHandler(this);
+	_sumHandler->setThreads(_maxThreads);
+	_sumHandler->setMapCount(_maxThreads);
 }
 
 void BondCalculator::setupSequenceHandler()
