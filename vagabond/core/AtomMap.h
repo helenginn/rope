@@ -30,6 +30,8 @@ public:
 
 	float density(int i);
 	virtual float sum();
+	virtual float mean();
+	virtual float sigma();
 	virtual void multiply(float scale);
 	void printMap();
 	

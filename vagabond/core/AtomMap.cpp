@@ -27,6 +27,7 @@ AtomMap::AtomMap(AtomSegment &other)
 	setRealDim(other.realDim());
 	
 	_realOnly = new float[nn()];
+	setStatus(AtomMap::Reciprocal);
 	makePlans();
 
 	for (size_t i = 0; i < nn(); i++)
@@ -34,10 +35,8 @@ AtomMap::AtomMap(AtomSegment &other)
 		float r = other.density(i, 0);
 		float im = other.density(i, 1);
 		_data[i][0] = r;
-		_data[i][1] = im;
+		_data[i][1] = -im;
 	}
-
-	printMap();
 }
 
 void AtomMap::multiply(float scale)
@@ -85,6 +84,28 @@ void AtomMap::printMap()
 
 	ave /= (float)(nz() * ny());
 	std::cout << "Ave: " << ave << std::endl;
+}
+
+float AtomMap::sigma()
+{
+	float val = 0;
+	float valsq = 0;
+	float n = nn();
+	for (size_t i = 0; i < nn(); i++)
+	{
+		val += density(i);
+		valsq += density(i) * density(i);
+	}
+	
+	float mean = val / n;
+	float sigma = sqrt(valsq / n) - mean * mean;
+	
+	return sigma;
+}
+
+float AtomMap::mean()
+{
+	return sum() / (float)nn();
 }
 
 float AtomMap::sum()
