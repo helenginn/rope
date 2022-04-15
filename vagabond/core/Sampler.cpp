@@ -105,7 +105,7 @@ void Sampler::addPointWithinRadius(std::vector<float> &point)
 	{
 		_tmpPoints.push_back(point);
 	}
-	else
+	else if (rad <= _radius)
 	{
 		_tmpPoints.insert(_tmpPoints.begin(), point);
 	}
