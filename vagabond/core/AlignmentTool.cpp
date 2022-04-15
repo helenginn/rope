@@ -74,15 +74,20 @@ void AlignmentTool::run()
 
 	for (size_t i = 0; i < subgroups.size(); i++)
 	{
+		Atom *anchor = subgroups[i]->chosenAnchor();
+		glm::mat4x4 transform = glm::mat4(1.);
+
 		if (subgroups[i]->size() <= 1)
 		{
-			continue;
+			glm::vec3 init = anchor->initialPosition();
+			transform[3] = glm::vec4(init, 1.);
+		}
+		else
+		{
+			Result *result = resultForAnchor(anchor);
+			transform = superposition(result);
 		}
 
-		Atom *anchor = subgroups[i]->chosenAnchor();
-
-		Result *result = resultForAnchor(anchor);
-		glm::mat4x4 transform = superposition(result);
 		anchor->setTransformation(transform);
 	}
 
