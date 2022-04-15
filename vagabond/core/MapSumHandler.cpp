@@ -46,6 +46,14 @@ void MapSumHandler::createSegments()
 			seg->setStatus(FFT<Density>::Real);
 		}
 		
+		/* in order to calculate the plan once, rather than via competing
+		 *	threads later */
+		if (i == 0)
+		{
+			AtomMap *tmp = new AtomMap(*seg);
+			delete tmp;
+		}
+
 		_mapPool.pushObject(seg);
 	}
 }
