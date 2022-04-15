@@ -111,7 +111,7 @@ private:
 	BondCalculator *_calculator = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
 	
-	float _cubeDim = 0.5;
+	float _cubeDim = 0.8;
 	int _threads = 2;
 	
 	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
