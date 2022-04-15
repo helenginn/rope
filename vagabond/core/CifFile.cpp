@@ -1,7 +1,6 @@
 #include <iostream>
 #include <gemmi/numb.hpp>
 #include <gemmi/cif.hpp>
-#include "commit.h"
 #include <ccp4/csymlib.h>
 
 #include "CifFile.h"
@@ -97,53 +96,9 @@ std::string CifFile::unitCellKeys[] =
 	""
 };
 
-CifFile::CifFile(std::string filename)
+CifFile::CifFile(std::string filename) : File(filename)
 {
-	changeFilename(filename);
 
-	_table = new GeometryTable();
-	_compAtoms = new AtomGroup();
-	_macroAtoms = new AtomGroup();
-	_accessedCompAtoms = false;
-	_accessedTable = false;
-	_knot = true;
-}
-
-void CifFile::changeFilename(std::string filename)
-{
-	_filename = filename;
-	if (filename == "")
-	{
-		return;
-	}
-}
-
-CifFile::~CifFile()
-{
-	if (!_accessedCompAtoms)
-	{
-		delete _compAtoms;
-	}
-
-	if (!_accessedMacroAtoms)
-	{
-		delete _macroAtoms;
-	}
-
-	else if (!_accessedTable)
-	{
-		delete _table;
-	}
-}
-
-std::string toFilename(std::string filename)
-{
-	std::string tmp = filename;
-#ifndef __EMSCRIPTEN__
-	tmp = std::string(DATA_DIRECTORY) + "/" + filename;
-#endif
-
-	return tmp;
 }
 
 void CifFile::parseFileContents(std::string file)
@@ -792,124 +747,7 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 	return true;
 }
 
-const size_t CifFile::compAtomCount() const
-{
-	return _compAtoms->size();
-}
-
-const size_t CifFile::atomCount() const
-{
-	if (_macroAtoms && _macroAtoms->size() > 0)
-	{
-		return _macroAtoms->size();
-	}
-	if (_compAtoms && _compAtoms->size() > 0)
-	{
-		return _compAtoms->size();
-	}
-	
-	return 0;
-}
-
-AtomGroup *CifFile::atoms()
-{
-	if (_macroAtoms && _macroAtoms->size() > 0)
-	{
-		_accessedMacroAtoms = true;
-		return _macroAtoms;
-	}
-	else
-	{
-		_accessedCompAtoms = true;
-		return _compAtoms;
-	}
-}
-
-bool CifFile::hasUnitCell() const
-{
-	bool found = true;
-	found &= _values.count("_cell.length_a");
-	found &= _values.count("_cell.length_b");
-	found &= _values.count("_cell.length_c");
-	found &= _values.count("_cell.angle_alpha");
-	found &= _values.count("_cell.angle_beta");
-	found &= _values.count("_cell.angle_gamma");
-	
-	return found;
-}
-
-std::array<double, 6> CifFile::unitCell() const
-{
-	if (!hasUnitCell())
-	{
-		throw std::runtime_error("Requested non-existent unit cell");
-	}
-
-	double a = as_number(_values.at("_cell.length_a"));
-	double b = as_number(_values.at("_cell.length_b"));
-	double c = as_number(_values.at("_cell.length_c"));
-	double alpha = as_number(_values.at("_cell.angle_alpha"));
-	double beta = as_number(_values.at("_cell.angle_beta"));
-	double gamma = as_number(_values.at("_cell.angle_gamma"));
-	
-	std::array<double, 6> cell = {a, b, c, alpha, beta, gamma};
-	
-	return cell;
-}
-
-void cleanup(std::string &str)
-{
-	for (size_t i = 0; i < str.length(); i++)
-	{
-		if ((str[i] == '\'' || str[i] == '"'))
-	    {
-		     str.erase(str.begin() + i);
-		     i--;
-	    }
-    }
-}
-
-int CifFile::spaceGroupNum() const
-{
-	int spg = -1;
-	if (_values.count("_symmetry.Int_Tables_number") > 0)
-	{
-		spg = as_number(_values.at("_symmetry.Int_Tables_number"));
-	}
-	else if (_values.count("_symmetry.space_group_name_H-M") > 0)
-	{
-		std::string str = _values.at("_symmetry.space_group_name_H-M");
-		cleanup(str);
-		CCP4SPG *group = ccp4spg_load_by_ccp4_spgname(str.c_str());
-		spg = group->spg_ccp4_num;
-		ccp4spg_free(&group);
-	}
-
-	return spg;
-}
-
-RefList *CifFile::reflectionList() const
-{
-	RefList *list = new RefList(_reflections);
-	list->setSpaceGroup(spaceGroupNum());
-	
-	if (hasUnitCell())
-	{
-		std::array<double, 6> cell = unitCell();
-		list->setUnitCell(cell);
-	}
-	
-	return list;
-}
-
-Diffraction *CifFile::diffractionData() const
-{
-	RefList *list = reflectionList();
-	Diffraction *diffraction = new Diffraction(*list);
-	return diffraction;
-}
-
-CifFile::Type CifFile::cursoryLook()
+File::Type CifFile::cursoryLook()
 {
 	std::string tmp = toFilename(_filename);
 	Type type = Nothing;
@@ -927,33 +765,33 @@ CifFile::Type CifFile::cursoryLook()
 
 	if (identifyHeader(doc, macroHeaders))
 	{
-		type = CifFile::Type(type | MacroAtoms);
+		type = File::Type(type | MacroAtoms);
 	}
 
 	if (identifyHeader(doc, reflHeaders))
 	{
-		type = CifFile::Type(type | Reflections);
+		type = File::Type(type | Reflections);
 	}
 
 	if (identifyHeader(doc, compHeaders))
 	{
-		type = CifFile::Type(type | CompAtoms);
+		type = File::Type(type | CompAtoms);
 	}
 
 	if (identifyHeader(doc, lengthHeaders) || identifyHeader(doc, angleHeaders)
 	    || identifyHeader(doc, torsionHeaders))
 	{
-		type = CifFile::Type(type | Geometry);
+		type = File::Type(type | Geometry);
 	}
 
 	if (identifyPairs(doc, intTableKeys) || identifyPairs(doc, groupSymbolKeys))
 	{
-		type = CifFile::Type(type | Symmetry);
+		type = File::Type(type | Symmetry);
 	}
 
 	if (identifyPairs(doc, unitCellKeys))
 	{
-		type = CifFile::Type(type | UnitCell);
+		type = File::Type(type | UnitCell);
 	}
 	
 	return type;
