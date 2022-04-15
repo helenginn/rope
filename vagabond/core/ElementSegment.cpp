@@ -159,7 +159,7 @@ void ElementSegment::calculateMap()
 void ElementSegment::printMap()
 {
 	float ave = 0;
-	float scale = 100.;
+	float scale = 1000.;
 	for (size_t k = 0; k < nx(); k++)
 	{
 		for (size_t j = 0; j < ny(); j++)
@@ -168,8 +168,12 @@ void ElementSegment::printMap()
 			
 			for (size_t i = 0; i < nz(); i++)
 			{
-				value += element(k, j, i).value[0];
+				float r = element(k, j, i).value[0];
+				float im = element(k, j, i).value[1];
+				value += sqrt(r * r + im * im);
 			}
+			
+			value /= (float)nz();
 			
 			ave += value;
 
@@ -189,7 +193,7 @@ void ElementSegment::printMap()
 		std::cout << std::endl;
 	}
 
-	ave /= (float)(nz() * ny());
+	ave /= (float)(nx() * ny());
 	std::cout << "Ave: " << ave << std::endl;
 }
 
