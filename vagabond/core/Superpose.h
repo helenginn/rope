@@ -52,7 +52,7 @@ public:
 	void superpose();
 	
 	/** returns best mat4x4 matrix to map q vector list onto p */
-	const glm::mat4x4 &transformation()
+	const glm::mat4x4 &transformation() const
 	{
 		return _transformation;
 	}
