@@ -20,6 +20,7 @@
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
 #include "TorsionBasis.h"
+#include "Superpose.h"
 #include "Atom.h"
 #include <iostream>
 #include <queue>
@@ -668,6 +669,49 @@ void BondSequence::fastCalculate()
 	
 	signal(SequencePositionsReady);
 
+}
+
+void BondSequence::superpose()
+{
+	if (_sampleCount <= 1)
+	{
+		return;
+	}
+
+	for (size_t i = 1; i < _sampleCount; i++)
+	{
+		Superpose pose;
+		pose.forceSameHand(true);
+
+		for (size_t j = 0; j < _singleSequence; j++)
+		{
+			int n = i * _singleSequence + j;
+			
+			if (_blocks[j].atom == nullptr || _blocks[n].atom == nullptr)
+			{
+				continue;
+			}
+
+			glm::vec3 p = _blocks[j].my_position();
+			glm::vec3 q = _blocks[n].my_position();
+			pose.addPositionPair(p, q);
+		}
+
+		pose.superpose();
+		const glm::mat4x4 &trans = pose.transformation();
+
+		for (size_t j = 0; j < _singleSequence; j++)
+		{
+			int n = i * _singleSequence + j;
+			if (_blocks[n].atom == nullptr)
+			{
+				continue;
+			}
+
+			glm::vec4 pos = _blocks[n].basis[3];
+			_blocks[n].basis[3] = trans * pos;
+		}
+	}
 }
 
 void BondSequence::calculate()

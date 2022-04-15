@@ -154,6 +154,7 @@ public:
 	}
 
 	void calculate();
+	void superpose();
 	std::map<Atom *, Atom::WithPos> &extractPositions();
 	
 	struct ElePos
