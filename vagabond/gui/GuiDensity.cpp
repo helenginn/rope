@@ -96,7 +96,7 @@ void GuiDensity::render(SnowGL *gl)
 
 void GuiDensity::recalculate()
 {
-	int dims = 2;
+	int dims = 3;
 	Sampler sampler(80, dims);
 
 	BondCalculator calculator;
