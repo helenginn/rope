@@ -74,7 +74,6 @@ void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
 	std::map<std::string, int>::iterator it;
 	for (it = elements.begin(); it != elements.end(); it++)
 	{
-		std::cout << it->first << " " << it->second << std::endl;
 		_elements.push_back(it->first);
 	}
 
