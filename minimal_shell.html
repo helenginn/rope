@@ -68,33 +68,40 @@
 
 	const inputElement = document.getElementById("input");
 	inputElement.addEventListener("change", handleFiles, false);
-	function handleFiles() {
+	function handleFiles()
+	{
 		const fileList = this.files; /* now you can work with the file list */
 		const numFiles = fileList.length;
 		alert('Loading ' + numFiles + ' files');
-		for (let i = 0, numFiles = fileList.length; i < numFiles; i++) {
-			const file = fileList[i];
+		var n = 0;
+
+		function load_next()
+		{
 			var fr = new FileReader();
 			fr.addEventListener('loadend', print_file);
+			fr.readAsArrayBuffer(fileList[n]);
 
-			fr.onloadend = (function(fileobj)
+			function print_file(e)
 			{
-			return function(evt) {
-			print_file(evt, fileobj)
-			};
-			})(fileList[i]);
-			fr.readAsArrayBuffer(fileList[i]);
+				console.log('I am here');
+				let result=fr.result;
+				let name=fileList[n].name;
+				console.log('I assigned result');
+				const uint8_view = new Uint8Array(result);
+
+				console.log('I am a console, ' + name + " " + n);
+				FS.writeFile(name, uint8_view)
+					Module.ccall('accept_file', 'number', ['string'], [name])
+
+					n = n + 1;
+				if (n < fileList.length)
+				{
+					load_next();
+				}
+			}
 		}
 
-		function print_file(e, file)
-		{
-			console.log('I am a console');
-			let result=fr.result;
-			const uint8_view = new Uint8Array(result);
-
-			FS.writeFile(file.name, uint8_view)
-			Module.ccall('accept_file', 'number', ['string'], [file.name])
-		}
+		load_next();
 	}
 
 	</script>
