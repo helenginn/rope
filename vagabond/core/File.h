@@ -61,6 +61,7 @@ public:
 	};
 	
 	static File *loadUnknown(std::string filename);
+	static Type typeUnknown(std::string filename);
 
 	/** determine bitwise contents of file */
 	virtual Type cursoryLook() = 0;
@@ -142,7 +143,15 @@ public:
 		_knot = true;
 	}
 protected:
+	enum Flavour
+	{
+		None = 0,
+		Mtz,
+		Pdb,
+		Cif
+	};
 
+	static Flavour flavour(std::string filename);
 	static std::string toFilename(std::string filename);
 	std::string _code;
 

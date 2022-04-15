@@ -39,9 +39,7 @@ FileLine::~FileLine()
 
 void FileLine::queryFile()
 {
-	CifFile cf(_filename);
-	
-	_type = cf.cursoryLook();
+	_type = File::typeUnknown(_filename);
 }
 
 void FileLine::setup()
@@ -52,7 +50,7 @@ void FileLine::setup()
 	button->setLeft(0.2, 0);
 	addObject(button);
 	
-	if (_type & CifFile::CompAtoms)
+	if (_type & File::CompAtoms)
 	{
 		Image *image = new Image("assets/images/some_atoms.png");
 		image->resize(0.08);
@@ -60,7 +58,7 @@ void FileLine::setup()
 		addObject(image);
 	}
 	
-	if (_type & CifFile::Geometry)
+	if (_type & File::Geometry)
 	{
 		Image *image = new Image("assets/images/protractor.png");
 		image->resize(0.08);
@@ -68,7 +66,7 @@ void FileLine::setup()
 		addObject(image);
 	}
 	
-	if (_type & CifFile::MacroAtoms)
+	if (_type & File::MacroAtoms)
 	{
 		Image *image = new Image("assets/images/protein.png");
 		image->resize(0.08);
@@ -76,7 +74,7 @@ void FileLine::setup()
 		addObject(image);
 	}
 	
-	if (_type & CifFile::Reflections)
+	if (_type & File::Reflections)
 	{
 		Image *image = new Image("assets/images/reflections.png");
 		image->resize(0.08);
@@ -84,7 +82,7 @@ void FileLine::setup()
 		addObject(image);
 	}
 	
-	if (_type & CifFile::UnitCell)
+	if (_type & File::UnitCell)
 	{
 		Image *image = new Image("assets/images/unit_cell.png");
 		image->resize(0.08);

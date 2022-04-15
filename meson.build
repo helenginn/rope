@@ -162,6 +162,7 @@ vagafiles = [
 'vagabond/core/MapTransferHandler.cpp',
 'vagabond/core/MapSumHandler.cpp',
 'vagabond/core/matrix_functions.cpp',
+'vagabond/core/PdbFile.cpp',
 'vagabond/core/PositionRefinery.cpp',
 'vagabond/core/RefList.cpp',
 'vagabond/core/Sampler.cpp',

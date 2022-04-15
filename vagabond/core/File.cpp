@@ -19,7 +19,7 @@
 #include <gemmi/numb.hpp>
 #include "commit.h"
 #include "CifFile.h"
-#include "File.h"
+#include "PdbFile.h"
 #include "Atom.h"
 #include "Diffraction.h"
 #include "RefList.h"
@@ -181,23 +181,42 @@ Diffraction *File::diffractionData() const
 	return diffraction;
 }
 
-File *File::loadUnknown(std::string filename)
+File::Flavour File::flavour(std::string filename)
 {
-	File *f = nullptr;
-	
 	const std::string mtz = "mtz";
 	const std::string pdb = "pdb";
 	const std::string cif = "cif";
 	int l = filename.length();
 	if (filename.substr(l - mtz.length(), mtz.length()) == mtz)
 	{
-
+		return Mtz;
 	}
 	else if (filename.substr(l - pdb.length(), pdb.length()) == pdb)
 	{
-
+		return Pdb;
 	}
 	else if (filename.substr(l - cif.length(), cif.length()) == cif)
+	{
+		return Cif;
+	}
+
+	return None;
+}
+
+File *File::loadUnknown(std::string filename)
+{
+	File *f = nullptr;
+	
+	Flavour flav = flavour(filename);
+	if (flav == Mtz)
+	{
+		throw std::runtime_error("Implement me");
+	}
+	else if (flav == Pdb)
+	{
+		f = new PdbFile(filename);
+	}
+	else if (flav == Cif)
 	{
 		f = new CifFile(filename);
 	}
@@ -208,4 +227,27 @@ File *File::loadUnknown(std::string filename)
 	}
 	
 	return f;
+}
+
+File::Type File::typeUnknown(std::string filename)
+{
+	Flavour flav = flavour(filename);
+	Type type = Nothing;
+
+	if (flav == Mtz)
+	{
+		throw std::runtime_error("Implement me");
+	}
+	else if (flav == Pdb)
+	{
+		PdbFile f = PdbFile(filename);
+		type = f.cursoryLook();
+	}
+	else if (flav == Cif)
+	{
+		CifFile f = CifFile(filename);
+		type = f.cursoryLook();
+	}
+	
+	return type;
 }
