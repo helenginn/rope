@@ -29,7 +29,7 @@ int main()
 	
 	Job job{};
 	job.requests = JobCalculateMapSegment;
-	const int num = 1000;
+	const int num = 200;
 
 	for (size_t i = 0; i < num; i++)
 	{
@@ -69,7 +69,6 @@ int main()
 	std::chrono::duration<double, std::milli> time_span = end - start;
 	
 	std::cout << "Milliseconds taken: " <<  time_span.count() << std::endl;
-
 
 	return 0;
 }
