@@ -4,10 +4,10 @@
 
 #include "Renderable.h"
 #include <atomic>
+#include <vagabond/core/Atom.h>
 
 class Icosahedron;
 class GuiBond;
-class Atom;
 class AtomGroup;
 
 class GuiAtom : public Renderable
@@ -23,6 +23,8 @@ public:
 	void checkAtoms();
 	void startBackgroundWatch();
 
+	void setMulti(bool m);
+
 	virtual void render(SnowGL *gl);
 private:
 	size_t indicesPerAtom();
@@ -30,6 +32,7 @@ private:
 	void colourByElement(std::string ele);
 	bool checkAtom(Atom *a);
 	void updateSinglePosition(Atom *a, glm::vec3 &p);
+	void updateMultiPositions(Atom *a, Atom::WithPos &wp);
 	static void backgroundWatch(GuiAtom *what);
 
 	Icosahedron *_template;
@@ -41,6 +44,8 @@ private:
 	
 	std::thread *_watch = nullptr;
 	std::atomic<bool> _finish;
+	
+	bool _multi = true;
 };
 
 #endif

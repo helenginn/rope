@@ -33,6 +33,12 @@ GuiAtom::~GuiAtom()
 	}
 }
 
+void GuiAtom::setMulti(bool m)
+{
+	_multi = m;
+	_bonds->setMulti(m);
+}
+
 void GuiAtom::colourByElement(std::string ele)
 {
 	glm::vec4 colour = glm::vec4(0.5, 0.5, 0.5, 1.);
@@ -43,6 +49,10 @@ void GuiAtom::colourByElement(std::string ele)
 	if (ele == "S")
 	{
 		colour = glm::vec4(1.0, 1.0, 0.2, 1.);
+	}
+	if (ele == "P")
+	{
+		colour = glm::vec4(1.0, 0.2, 1.0, 1.);
 	}
 	if (ele == "H")
 	{
@@ -115,6 +125,11 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	_bonds->watchBonds(a);
 }
 
+void GuiAtom::updateMultiPositions(Atom *a, Atom::WithPos &wp)
+{
+	_bonds->updateAtoms(a, wp);
+}
+
 void GuiAtom::updateSinglePosition(Atom *a, glm::vec3 &p)
 {
 	int idx = _atomIndex[a];
@@ -133,17 +148,30 @@ void GuiAtom::updateSinglePosition(Atom *a, glm::vec3 &p)
 		_vertices[j].pos += diff;
 	}
 
-	_bonds->updateAtom(a, p);
 	_atomPos[a] = p;
 }
 
 bool GuiAtom::checkAtom(Atom *a)
 {
-	glm::vec3 p;
-	if (a->positionChanged() && a->fishPosition(&p))
+	if (!_multi)
 	{
-		updateSinglePosition(a, p);
-		return true;
+		glm::vec3 p;
+		if (a->positionChanged() && a->fishPosition(&p))
+		{
+			updateSinglePosition(a, p);
+			_bonds->updateAtom(a, p);
+			return true;
+		}
+	}
+	else
+	{
+		Atom::WithPos wp;
+		if (a->positionChanged() && a->fishPositions(&wp))
+		{
+			updateSinglePosition(a, wp.ave);
+			updateMultiPositions(a, wp);
+			return true;
+		}
 	}
 	
 	return false;
@@ -152,6 +180,8 @@ bool GuiAtom::checkAtom(Atom *a)
 void GuiAtom::checkAtoms()
 {
 	bool changed = false;
+	int pre = _bonds->indexCount();
+
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
 		Atom *a = _atoms[i];
@@ -161,11 +191,13 @@ void GuiAtom::checkAtoms()
 		}
 		catch (std::runtime_error err)
 		{
-			std::cout << "Error drawing atom! " << err.what() << std::endl;
-			std::cout << "Atom: " << a->atomName() <<  std::endl;
+			std::cout << "Error drawing atom! " << err.what() << ", ";
+			std::cout << "atom: " << a->atomName() <<  std::endl;
 			return;
 		}
 	}
+	
+	int post = _bonds->indexCount();
 
 	if (changed)
 	{

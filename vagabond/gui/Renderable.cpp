@@ -310,6 +310,7 @@ int Renderable::vaoForContext()
 	{
 		_forceRender = false;
 		rebufferVertexData();
+		rebufferIndexData();
 		GLuint vao = _vaoMap[_usingProgram];
 		return vao;
 	}

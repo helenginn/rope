@@ -20,8 +20,8 @@
 #define __vagabond__GuiBond__
 
 #include "Renderable.h"
+#include <vagabond/core/Atom.h>
 
-class Atom;
 class AtomGroup;
 
 class GuiBond : public Renderable
@@ -30,10 +30,28 @@ public:
 	GuiBond();
 
 	void watchBonds(AtomGroup *a);
-	void updateAtom(Atom *a, glm::vec3 pos);
+	
+	/** update atom position
+	 * @param a atom object
+	 * @param pos new position in space
+	 * @param n conformer number within ensemble */
+	void updateAtom(Atom *a, glm::vec3 pos, int n = 0);
+	void updateAtoms(Atom *a, Atom::WithPos &wp);
+	
+	void setMulti(bool m)
+	{
+		_multi = m;
+	}
 private:
-	std::map<Atom *, size_t> _atomIdx;
+	void changeNetworks(int n);
+	void incrementNetworks(int n);
+	void truncateNetworks(int n);
 
+	std::map<Atom *, size_t> _atomIdx;
+	Renderable *_copy = nullptr;
+
+	bool _multi = false;
+	int _num = 0;
 };
 
 #endif

@@ -60,7 +60,9 @@ void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
 void GuiDensity::populateFromMap(AtomMap *map)
 {
 	const float *ptr = map->arrayPtr();
-	float thresh = 0.1;
+	float mean = map->mean();
+	float sigma = map->sigma();
+	float thresh = mean + sigma;
 	unsigned int nx = map->nx();
 	unsigned int ny = map->ny();
 	unsigned int nz = map->nz();
@@ -94,15 +96,16 @@ void GuiDensity::render(SnowGL *gl)
 
 void GuiDensity::recalculate()
 {
-	int dims = 1;
-	Sampler sampler(30, dims);
-	int num = sampler.pointCount();
+	int dims = 2;
+	Sampler sampler(80, dims);
 
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTorsionBasisType(TorsionBasis::TypeConcerted);
 	calculator.setSampler(&sampler);
+	int num = sampler.pointCount();
+	std::cout << "Num: " << num << std::endl;
 
 	std::vector<AtomGroup *> subgroups = _atoms->connectedGroups();
 
@@ -113,6 +116,7 @@ void GuiDensity::recalculate()
 		if (anchor)
 		{
 			calculator.addAnchorExtension(anchor);
+			break;
 		}
 	}
 
@@ -122,17 +126,17 @@ void GuiDensity::recalculate()
 
 	Job job{};
 	job.custom.allocate_vectors(1, dims, num);
-	job.requests = JobCalculateMapSegment;
+	job.requests = static_cast<JobType>(JobExtractPositions | 
+	                                    JobCalculateMapSegment);
 	calculator.submitJob(job);
 
 	Result *result = calculator.acquireResult();
+	result->transplantPositions();
 	AtomMap *map = result->map;
 	populateFromMap(map);
 	result->destroy();
 
 	calculator.finish();
-
-	std::cout << "HERE" << std::endl;
 }
 
 void GuiDensity::extraUniforms()
