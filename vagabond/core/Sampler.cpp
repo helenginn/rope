@@ -28,6 +28,12 @@ Sampler::Sampler(int n, int dims)
 
 void Sampler::setup()
 {
+	_tmpPoints.clear();
+	if (_points.rows > 0)
+	{
+		freeMatrix(&_points);
+	}
+
 	establishRadius();
 	populateSamples();
 	convertSamples();
