@@ -118,7 +118,7 @@ void BondSequence::generateAtomGraph(Atom *atom, size_t count)
 			}
 			
 			/* important not to go round in circles */
-			if (std::find(_atoms.begin(), _atoms.end(), next) !=
+			if (std::find(_atoms.begin() + _atomsDone, _atoms.end(), next) !=
 			    _atoms.end())
 			{
 				continue;
@@ -323,9 +323,9 @@ void BondSequence::fixBlockAsGhost(int idx, Atom *anchor)
 void BondSequence::assignAtomsToBlocks()
 {
 	int curr = _blocks.size();
-	int total = _blocks.size() + _atoms.size() + _anchors.size();
+	int total = _atoms.size() + _anchors.size();
 	total -= _atomsDone + _anchorsDone;
-	_blocks.resize(total);
+	_blocks.resize(_blocks.size() + total);
 
 	for (size_t i = _anchorsDone; i < _anchors.size(); i++)
 	{
@@ -335,6 +335,7 @@ void BondSequence::assignAtomsToBlocks()
 		AtomGraph *anchorGraph = _atom2Graph[anchor];
 		todo.push(anchorGraph);
 
+		/* make very first ghost block */
 		assignAtomToBlock(curr, anchor);
 		fixBlockAsGhost(curr, anchor);
 		_blocks[curr].nBonds = anchorGraph->children.size();
@@ -406,6 +407,7 @@ void BondSequence::generateBlocks()
 {
 	assignAtomsToBlocks();
 	fillMissingWriteLocations();
+	_singleSequence = _blocks.size();
 }
 
 std::map<std::string, int> BondSequence::elementList() const
