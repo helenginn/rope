@@ -159,6 +159,12 @@ public:
 	 * 	@returns true if position was successfully accessed, otherwise false. */
 	bool fishPosition(glm::vec3 *pos);
 	
+	/** get all derived positions of ensemble, conditional on immediate access 
+	 * 	 by mutex lock. If inaccessible, pointer contents remain unchanged.
+	 * 	@param pos pointer to Atom::WithPos storage for derived position.
+	 * 	@returns true if position was successfully accessed, otherwise false. */
+	bool fishPositions(WithPos *wp);
+	
 	void setCode(std::string code);
 	
 	Atom *connectedAtom(int i);

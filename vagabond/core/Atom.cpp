@@ -75,13 +75,17 @@ void Atom::setAtomNum(int num)
 
 void Atom::setDerivedPosition(glm::vec3 &pos)
 {
+	lockMutex();
 	_derived.pos.ave = pos;
+	unlockMutex();
 	changedPosition();
 }
 
 void Atom::setDerivedPositions(WithPos &pos)
 {
+	lockMutex();
 	_derived.pos = pos;
+	unlockMutex();
 	changedPosition();
 }
 
@@ -102,6 +106,20 @@ bool Atom::positionChanged()
 	}
 
 	return tmp;
+}
+
+bool Atom::fishPositions(WithPos *wp)
+{
+	if (_mutex.try_lock())
+	{
+		*wp = _derived.pos;
+		_changedPosition = false;
+		unlockMutex();
+		return true;
+	}
+
+	return false;
+
 }
 
 bool Atom::fishPosition(glm::vec3 *p)
