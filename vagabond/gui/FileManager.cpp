@@ -29,16 +29,21 @@ FileManager::FileManager()
 	_list.push_back("assets/examples/4cvd.pdb");
 }
 
-void FileManager::acceptFile(std::string filename, bool force)
+bool FileManager::acceptFile(std::string filename, bool force)
 {
+	bool added = false;
+
 	if (file_exists(filename) || force)
 	{
 		_list.push_back(filename);
+		added = true;
 	}
 	
 	if (_view != nullptr)
 	{
 		_view->refreshFiles();
 	}
+	
+	return added;
 }
 

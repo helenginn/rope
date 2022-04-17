@@ -34,8 +34,7 @@ public:
 		_view = fileView;
 	}
 
-
-	void acceptFile(std::string filename, bool force = false);
+	bool acceptFile(std::string filename, bool force = false);
 	
 	const size_t fileCount() const
 	{
