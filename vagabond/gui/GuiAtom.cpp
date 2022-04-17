@@ -23,9 +23,9 @@ GuiAtom::GuiAtom() : Renderable()
 	_bonds = new GuiBond();
 	_finish = false;
 	
-#ifdef __EMSCRIPTEN__
-	_multi = false;
-#endif
+//#ifdef __EMSCRIPTEN__
+//	_multi = false;
+//#endif
 }
 
 GuiAtom::~GuiAtom()
