@@ -102,7 +102,7 @@ void GuiDensity::recalculate()
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
 	calculator.setMaxSimultaneousThreads(1);
-	calculator.setTorsionBasisType(TorsionBasis::TypeConcerted);
+	calculator.setTorsionBasisType(TorsionBasis::TypeSimple);
 	calculator.setSampler(&sampler);
 	int num = sampler.pointCount();
 	std::cout << "Num: " << num << std::endl;
