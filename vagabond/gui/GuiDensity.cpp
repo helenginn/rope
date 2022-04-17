@@ -96,8 +96,8 @@ void GuiDensity::render(SnowGL *gl)
 
 void GuiDensity::recalculate()
 {
-	int dims = 3;
-	Sampler sampler(80, dims);
+	int dims = 2;
+	Sampler sampler(50, dims);
 
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
