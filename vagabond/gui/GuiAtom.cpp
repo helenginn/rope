@@ -22,6 +22,10 @@ GuiAtom::GuiAtom() : Renderable()
 	
 	_bonds = new GuiBond();
 	_finish = false;
+	
+#ifdef __EMSCRIPTEN__
+	_multi = false;
+#endif
 }
 
 GuiAtom::~GuiAtom()
@@ -36,7 +40,6 @@ GuiAtom::~GuiAtom()
 void GuiAtom::setMulti(bool m)
 {
 	_multi = m;
-	_bonds->setMulti(m);
 }
 
 void GuiAtom::colourByElement(std::string ele)
