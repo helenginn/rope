@@ -10,7 +10,7 @@ float test = 0;
 
 int main (int argc, char **argv)
 {
-	Window window;
+	Window window(argc, argv);
 
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(Window::tick, -1, 1);

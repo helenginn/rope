@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <gemmi/numb.hpp>
+#include "../utils/FileReader.h"
 #include "commit.h"
 #include "CifFile.h"
 #include "PdbFile.h"
@@ -53,7 +54,10 @@ std::string File::toFilename(std::string filename)
 {
 	std::string tmp = filename;
 #ifndef __EMSCRIPTEN__
-	tmp = std::string(DATA_DIRECTORY) + "/" + filename;
+	if (!file_exists(tmp))
+	{
+		tmp = std::string(DATA_DIRECTORY) + "/" + filename;
+	}
 #endif
 
 	return tmp;

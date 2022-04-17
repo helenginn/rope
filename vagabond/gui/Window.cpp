@@ -1,6 +1,8 @@
 #include "Window.h"
 #include "MainMenu.h"
 #include "FileManager.h"
+#include "../cmd/Dictator.h"
+
 #include <iostream>
 #include <SDL2/SDL_image.h>
 
@@ -8,7 +10,7 @@
 #include <emscripten.h>
 #endif
 
-
+Dictator *Window::_dictator = NULL;
 SDL_Renderer *Window::_renderer = NULL;
 SDL_Rect Window::_rect;
 SDL_Window *Window::_window = NULL;
@@ -20,7 +22,7 @@ KeyResponder *Window::_keyResponder = NULL;
 
 FileManager *Window::_fileManager = new FileManager();
 
-Window::Window()
+Window::Window(int argc, char **argv)
 {
 	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
 	
@@ -64,6 +66,17 @@ Window::Window()
 	
 	_current = NULL;
 	_keyResponder = NULL;
+	
+	_dictator = new Dictator();
+	std::vector<std::string> args;
+	for (size_t i = 1; i < argc; i++)
+	{
+		args.push_back(std::string(argv[i]));
+	}
+
+	_dictator->setArgs(args);
+	_dictator->setup();
+	_dictator->start();
 
 	MainMenu *menu = new MainMenu();
 	setCurrentScene(menu);

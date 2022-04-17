@@ -13,14 +13,16 @@
 static bool _running = true;
 
 class Scene;
+class Dictator;
 class FileManager;
+
 struct SDL_Renderer;
 struct SDL_Window;
 
 class Window
 {
 public:
-	Window();
+	Window(int argc, char **argv);
 	
 	static SDL_Renderer *renderer()
 	{
@@ -68,6 +70,7 @@ public:
 	{
 		return _context;
 	}
+	
 private:
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
@@ -76,6 +79,7 @@ private:
 
 	static FileManager *_fileManager;
 	static Scene *_current;
+	static Dictator *_dictator;
 	static std::vector<Scene *> _toDelete;
 	
 	static KeyResponder *_keyResponder;

@@ -15,6 +15,7 @@ if (links == [])
   name = 'vagabond.gui'
 endif
 
+
 data_dir = get_option('datadir') / 'vagabond'
 shaders = data_dir / 'assets' / 'shaders'
 images = data_dir / 'assets' / 'images'
@@ -132,6 +133,8 @@ guifiles = [
 'vagabond/gui/Text.cpp',
 'vagabond/gui/TextManager.cpp',
 'vagabond/gui/Window.cpp',
+'vagabond/cmd/CmdWorker.cpp',
+'vagabond/cmd/Dictator.cpp',
 ]
 
 vagafiles = [
@@ -150,14 +153,11 @@ vagafiles = [
 'vagabond/core/Chirality.cpp',
 'vagabond/core/CifFile.cpp',
 'vagabond/core/ConcertedBasis.cpp',
-'vagabond/core/CubicGrid.cpp',
 'vagabond/core/Diffraction.cpp',
 'vagabond/core/ElementLibrary.cpp',
 'vagabond/core/ElementSegment.cpp',
 'vagabond/core/File.cpp',
-'vagabond/core/FFT.cpp',
 'vagabond/core/GeometryTable.cpp',
-'vagabond/core/Grid.cpp',
 'vagabond/core/HasBondstraints.cpp',
 'vagabond/core/Knotter.cpp',
 'vagabond/core/MapTransferHandler.cpp',
@@ -176,7 +176,6 @@ vagafiles = [
 'vagabond/core/ThreadMapTransfer.cpp',
 'vagabond/core/ThreadMapSummer.cpp',
 'vagabond/core/ThreadMiniJobForSequence.cpp',
-'vagabond/core/TransformedGrid.cpp',
 'vagabond/core/TorsionBasis.cpp',
 'vagabond/utils/FileReader.cpp',
 'vagabond/utils/svd/svdcmp.cpp',
@@ -225,6 +224,7 @@ install_headers([
 ],
 subdir : 'vagabond/core')
 
+nocompact = '-Wl,-no_compact_unwind'
 
 if (links != [])
 vagafiles += 'vagabond/gui/print_file.cpp'
@@ -235,17 +235,17 @@ vag = []
 if (links == []) # not emscripten
   vag = static_library('vag', vagafiles, 
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib'],
+  link_args: ['-L/usr/local/lib', nocompact],
   dependencies : deps, install: true)
 
   gui = static_library('vaggui', guifiles,
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links],
+  link_args: ['-L/usr/local/lib', links, nocompact],
   dependencies : deps, link_with : vag, install: true)
 
   executable(name, 'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links],
+  link_args: ['-L/usr/local/lib', links, nocompact],
   dependencies : deps, link_with : gui, install: true)
 else # emscripten
   executable(name, vagafiles, guifiles,
