@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileView__
-#define __vagabond__FileView__
+#ifndef __vagabond__CmdWorker__
+#define __vagabond__CmdWorker__
 
-#include "ListView.h"
-#include "FileManager.h"
+class Dictator;
 
-class FileView : public ListView
+class CmdWorker
 {
 public:
-	FileView(Scene *prev);
-	
-	virtual ~FileView();
-	virtual void setup();
+	CmdWorker(Dictator *parent);
 
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
-
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	void start();
 private:
-	void loadFilesFrom(int start, int num);
-	FileManager *_manager;
+	Dictator *_dictator;
+
 };
 
 #endif
+

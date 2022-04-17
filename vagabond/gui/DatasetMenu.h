@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,18 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileView__
-#define __vagabond__FileView__
+#ifndef __vagabond__DatasetMenu__
+#define __vagabond__DatasetMenu__
 
 #include "ListView.h"
-#include "FileManager.h"
 
-class FileView : public ListView
+class DatasetMenu : public ListView
 {
 public:
-	FileView(Scene *prev);
-	
-	virtual ~FileView();
+	DatasetMenu(Scene *prev);
+
+	virtual ~DatasetMenu();
 	virtual void setup();
 
 	virtual size_t lineCount();
@@ -35,8 +34,7 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
 private:
-	void loadFilesFrom(int start, int num);
-	FileManager *_manager;
+
 };
 
 #endif

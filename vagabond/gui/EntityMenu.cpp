@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileView__
-#define __vagabond__FileView__
+#include "EntityMenu.h"
+#include "TextButton.h"
 
-#include "ListView.h"
-#include "FileManager.h"
-
-class FileView : public ListView
+EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {
-public:
-	FileView(Scene *prev);
-	
-	virtual ~FileView();
-	virtual void setup();
+}
 
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
+EntityMenu::~EntityMenu()
+{
 
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
-private:
-	void loadFilesFrom(int start, int num);
-	FileManager *_manager;
-};
+}
 
-#endif
+void EntityMenu::setup()
+{
+	{
+		Text *text = new Text("Protein entities");
+		text->setCentre(0.5, 0.1);
+		addObject(text);
+	}
+
+	ListView::setup();
+}
+
+void EntityMenu::buttonPressed(std::string tag, Button *button)
+{
+	Scene::buttonPressed(tag, button);
+
+	ListView::buttonPressed(tag, button);
+}
+
+Renderable *EntityMenu::getLine(int i)
+{
+	TextButton *tb = new TextButton("Test", this);
+	return tb;
+}
+
+size_t EntityMenu::lineCount()
+{
+	return 1;
+}

@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileView__
-#define __vagabond__FileView__
+#ifndef __vagabond__ListView__
+#define __vagabond__ListView__
 
-#include "ListView.h"
-#include "FileManager.h"
+#include "Scene.h"
 
-class FileView : public ListView
+class ListView : public Scene
 {
 public:
-	FileView(Scene *prev);
-	
-	virtual ~FileView();
+	ListView(Scene *prev);
+	virtual ~ListView();
 	virtual void setup();
-
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
+	void refreshFiles();
 
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	
+	virtual size_t lineCount() = 0;
+	virtual Renderable *getLine(int i) = 0;
 private:
 	void loadFilesFrom(int start, int num);
-	FileManager *_manager;
+	void scrollBackButton();
+	void scrollForwardButton();
+
+	std::vector<Renderable *> _temps;
+	int _start;
 };
 
 #endif

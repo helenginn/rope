@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,47 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileView__
-#define __vagabond__FileView__
+#include "DatasetMenu.h"
+#include "TextButton.h"
 
-#include "ListView.h"
-#include "FileManager.h"
-
-class FileView : public ListView
+DatasetMenu::DatasetMenu(Scene *prev) : ListView(prev)
 {
-public:
-	FileView(Scene *prev);
-	
-	virtual ~FileView();
-	virtual void setup();
 
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
+}
 
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
-private:
-	void loadFilesFrom(int start, int num);
-	FileManager *_manager;
-};
+DatasetMenu::~DatasetMenu()
+{
 
-#endif
+}
+
+void DatasetMenu::setup()
+{
+	{
+		Text *text = new Text("Dataset preparation");
+		text->setCentre(0.5, 0.1);
+		addObject(text);
+	}
+
+	ListView::setup();
+}
+
+void DatasetMenu::buttonPressed(std::string tag, Button *button)
+{
+	Scene::buttonPressed(tag, button);
+
+	ListView::buttonPressed(tag, button);
+}
+
+Renderable *DatasetMenu::getLine(int i)
+{
+	if (i == lineCount() - 1)
+	{
+		TextButton *tb = new TextButton("Add new dataset...", this);
+		return tb;
+	}
+}
+
+size_t DatasetMenu::lineCount()
+{
+	return 1;
+}
