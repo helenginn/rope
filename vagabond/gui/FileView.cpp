@@ -133,7 +133,7 @@ void FileView::loadFilesFrom(int start, int num)
 	{
 		int mypage = _start / LINES_PER_PAGE;
 		std::ostringstream ss;
-		ss << "(" << mypage + 1 << " / " << npages + 1 << ")";
+		ss << "(" << mypage + 1 << " / " << npages << ")";
 		Text *pageNo = new Text(ss.str());
 		pageNo->setCentre(0.5, 0.8);
 		addObject(pageNo);
