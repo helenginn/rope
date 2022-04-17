@@ -1,4 +1,4 @@
-set path=vagabond/core/**,vagabond/gui/**,vagabond/utils/**
+set path=vagabond/core/**,vagabond/gui/**,vagabond/utils/**,vagabond/cmd/**,
 
 command! Tags !ctags -R vagabond/core/* vagabond/gui/*
 command! Ninja :wa|!ninja -C build/current vagabond.gui
