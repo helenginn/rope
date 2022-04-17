@@ -38,10 +38,6 @@ public:
 	void updateAtom(Atom *a, glm::vec3 pos, int n = 0);
 	void updateAtoms(Atom *a, Atom::WithPos &wp);
 	
-	void setMulti(bool m)
-	{
-		_multi = m;
-	}
 private:
 	void changeNetworks(int n);
 	void incrementNetworks(int n);
@@ -50,7 +46,6 @@ private:
 	std::map<Atom *, size_t> _atomIdx;
 	Renderable *_copy = nullptr;
 
-	bool _multi = false;
 	int _num = 0;
 };
 
