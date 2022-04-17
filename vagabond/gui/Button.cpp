@@ -19,8 +19,8 @@ void Button::click()
 		return;
 	}
 
-	_sender->buttonPressed(_tag, this);
 	setHighlighted(false);
+	_sender->buttonPressed(_tag, this);
 }
 
 bool Button::mouseOver()
