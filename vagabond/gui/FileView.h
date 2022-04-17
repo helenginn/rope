@@ -22,6 +22,8 @@
 #include "Scene.h"
 #include "FileManager.h"
 
+class ImageButton;
+
 class FileView : public Scene
 {
 public:
@@ -32,6 +34,8 @@ public:
 	void refreshFiles();
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
 private:
+	void scrollBackButton();
+	void scrollForwardButton();
 	void loadFilesFrom(int start, int num);
 	FileManager *_manager;
 

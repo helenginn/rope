@@ -19,10 +19,13 @@
 #include "Display.h"
 #include <vagabond/core/CifFile.h>
 #include "FileView.h"
+#include "ImageButton.h"
 #include "FileLine.h"
 #include "Text.h"
 #include "TextButton.h"
 #include "Window.h"
+
+#define LINES_PER_PAGE 8
 
 FileView::FileView(Scene *prev, int start) : Scene(prev)
 {
@@ -80,11 +83,26 @@ void FileView::buttonPressed(std::string tag, Button *button)
 
 		delete file;
 	}
+	
+	if (tag == "scroll_forward")
+	{
+		_start += LINES_PER_PAGE;
+		refreshFiles();
+	}
+	if (tag == "scroll_back")
+	{
+		_start -= LINES_PER_PAGE;
+		if (_start < 0)
+		{
+			_start = 0;
+		}
+		refreshFiles();
+	}
 }
 
 void FileView::refreshFiles()
 {
-	loadFilesFrom(_start, 10);
+	loadFilesFrom(_start, LINES_PER_PAGE);
 }
 
 void FileView::loadFilesFrom(int start, int num)
@@ -97,6 +115,7 @@ void FileView::loadFilesFrom(int start, int num)
 	_temps.clear();
 
 	int fileCount = _manager->fileCount();
+	int npages = ceil(fileCount / LINES_PER_PAGE);
 	double pos = 0.3;
 
 	for (size_t i = start; i < start + num && i < fileCount; i++)
@@ -109,5 +128,52 @@ void FileView::loadFilesFrom(int start, int num)
 		addObject(line);
 		_temps.push_back(line);
 	}
+	
+	if (npages > 1)
+	{
+		int mypage = _start / LINES_PER_PAGE;
+		std::ostringstream ss;
+		ss << "(" << mypage + 1 << " / " << npages + 1 << ")";
+		Text *pageNo = new Text(ss.str());
+		pageNo->setCentre(0.5, 0.8);
+		addObject(pageNo);
+		_temps.push_back(pageNo);
+
+	}
+	
+	if (start > 0)
+	{
+		scrollBackButton();
+	}
+	
+	if (fileCount > start + num)
+	{
+		scrollForwardButton();
+	}
 }
 
+void FileView::scrollBackButton()
+{
+	ImageButton *bb = new ImageButton("assets/images/arrow.png", this);
+	bb->rescale(0.1, 0.05);
+	glm::mat3x3 cw = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(90.),
+	                                         glm::vec3(0., 0., -1.)));
+	bb->rotateRoundCentre(cw);
+	bb->setCentre(0.1, 0.8);
+	bb->setReturnTag("scroll_back");
+	addObject(bb);
+	_temps.push_back(bb);
+}
+
+void FileView::scrollForwardButton()
+{
+	ImageButton *fb = new ImageButton("assets/images/arrow.png", this);
+	fb->rescale(0.1, 0.05);
+	glm::mat3x3 ccw = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(-90.),
+	                                          glm::vec3(0., 0., -1.)));
+	fb->rotateRoundCentre(ccw);
+	fb->setCentre(0.9, 0.8);
+	fb->setReturnTag("scroll_forward");
+	addObject(fb);
+	_temps.push_back(fb);
+}
