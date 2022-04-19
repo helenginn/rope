@@ -49,11 +49,12 @@ void DatasetMenu::buttonPressed(std::string tag, Button *button)
 
 Renderable *DatasetMenu::getLine(int i)
 {
+	TextButton *tb = nullptr;
 	if (i == lineCount() - 1)
 	{
-		TextButton *tb = new TextButton("Add new dataset...", this);
-		return tb;
+		tb = new TextButton("Add new dataset...", this);
 	}
+	return tb;
 }
 
 size_t DatasetMenu::lineCount()
