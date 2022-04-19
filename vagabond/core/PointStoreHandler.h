@@ -20,10 +20,12 @@
 #define __vagabond__PointStoreHandler__
 
 #include "Handler.h"
+#include "BondSequence.h"
 
 class BondCalculator;
 class MapTransferHandler;
 class PointStore;
+struct Job;
 
 class PointStoreHandler : public Handler
 {
@@ -37,6 +39,8 @@ public:
 	{
 		_threads = threads;
 	}
+	
+	void loadMixedPositions(Job *job, std::vector<BondSequence::ElePos> epos);
 
 	/** grab an object capable of taking in new points */
 	PointStore *acquireEmptyStore();
@@ -58,7 +62,7 @@ public:
 	void finish();
 private:
 	void allocateStores();
-	void finishThreads();
+	void signalThreads();
 	void prepareThreads();
 
 	BondCalculator *_calculator = nullptr;
@@ -69,7 +73,7 @@ private:
 
 	std::vector<std::string> _elements;
 	int _threads = 1;
-	int _storeCount = 1;
+	int _storeCount = 3;
 };
 
 #endif

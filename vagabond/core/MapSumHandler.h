@@ -59,16 +59,17 @@ public:
 		std::atomic<int> summed{0};
 	};
 
-	MiniJobMap *acquireMiniJob(MapJob *&mj);
-	void transferJob(MiniJobMap *mini);
+	ElementSegment *acquireElementSegment(MapJob *&mj);
+	void transferElementSegment(ElementSegment *seg);
 	void returnMiniJob(MapJob *mj);
 	void returnSegment(AtomSegment *segment);
 	void setup();
 
 	void start();
 	void finish();
+	void joinThreads();
 private:
-	void finishThreads();
+	void signalThreads();
 	void createSegments();
 	void prepareThreads();
 
@@ -79,7 +80,7 @@ private:
 	std::mutex _ticketHandout;
 	
 	Pool<AtomSegment *> _mapPool;
-	Pool<MiniJobMap *> _miniJobPool;
+	Pool<ElementSegment *> _segmentPool;
 
 	BondCalculator *_calculator = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;

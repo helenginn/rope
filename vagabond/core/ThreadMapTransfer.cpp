@@ -21,6 +21,8 @@
 #include "ElementSegment.h"
 #include "MapTransferHandler.h"
 #include "MapSumHandler.h"
+#include "PointStoreHandler.h"
+#include "PointStore.h"
 #include "Job.h"
 
 ThreadMapTransfer::ThreadMapTransfer(MapTransferHandler *h, std::string ele)
@@ -30,13 +32,13 @@ ThreadMapTransfer::ThreadMapTransfer(MapTransferHandler *h, std::string ele)
 	_ele = ele;
 }
 
-void ThreadMapTransfer::putAtomsInMap(MiniJobMap *mini, ElementSegment *seg)
+void ThreadMapTransfer::putAtomsInMap(PointStore *store, ElementSegment *seg)
 {
-	mini->segment = seg;
+	seg->setJob(store->job());
 
-	for (size_t i = 0; i < mini->positions.size(); i++)
+	for (size_t i = 0; i < store->positionCount(); i++)
 	{
-		glm::vec3 &pos = mini->positions[i];
+		const glm::vec3 &pos = store->position(i);
 		seg->addDensity(pos, 1);
 	}
 }
@@ -46,19 +48,21 @@ void ThreadMapTransfer::start()
 	do
 	{
 		ElementSegment *seg = _mapHandler->acquireSegment(_ele);
-		MiniJobMap *mini = _mapHandler->acquireMiniJob(_ele);
-		
-		if (seg == nullptr || mini == nullptr)
-		{
-			break;
-		}
 		
 		timeStart();
 
-		putAtomsInMap(mini, seg);
-		seg->calculateMap();
+		PointStore *store = _pointHandler->acquireFilledStore(_ele);
 		
-		_sumHandler->transferJob(mini);
+		if (seg == nullptr || store == nullptr)
+		{
+			break;
+		}
+
+		putAtomsInMap(store, seg);
+		_pointHandler->returnEmptyStore(store);
+
+		seg->calculateMap();
+		_sumHandler->transferElementSegment(seg);
 		
 		timeEnd();
 	}

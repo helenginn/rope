@@ -180,12 +180,18 @@ integration_tests = [
 'torsionbasis_returns_number_of_modifiable_bonds_in_glycine',
 ]
 
+nocompact = '-Wl,-no_compact_unwind'
+
 foreach entry : unit_tests
-  t = executable(entry, entry + '.cpp', link_with : [vag], cpp_args : ['-std=c++11'], include_directories: '../../../')
+  t = executable(entry, entry + '.cpp', link_with : [vag],
+ cpp_args : ['-std=c++11'], 
+ include_directories: '../../../')
   test(entry, t, suite: 'unit')
 endforeach
 
 foreach entry : integration_tests
-  t = executable(entry, entry + '.cpp', link_with : [vag], cpp_args : ['-std=c++11'], include_directories: '../../../')
+  t = executable(entry, entry + '.cpp', link_with : [vag],
+	  cpp_args : ['-std=c++11'], 
+	  include_directories: '../../../')
   test(entry, t, suite: 'integration')
 endforeach

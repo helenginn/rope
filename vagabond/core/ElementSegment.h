@@ -22,6 +22,7 @@
 #include "FFTCubicGrid.h"
 
 class AtomGroup;
+struct Job;
 
 struct VoxelElement
 {
@@ -42,6 +43,16 @@ public:
 	{
 		return _elementSymbol;
 	}
+	
+	void setJob(Job *job)
+	{
+		_job = job;
+	}
+	
+	Job *const job() const
+	{
+		return _job;
+	}
 
 	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
 	void addDensity(glm::vec3 real, float density);
@@ -58,6 +69,7 @@ public:
 protected:
 
 private:
+	Job *_job;
 	std::string _elementSymbol;
 
 };

@@ -37,7 +37,10 @@ void ThreadSubmitsJobs::start()
 		{
 			break;
 		}
+
+		timeStart();
 		_handler->sequenceHandler()->generateMiniJobSeqs(job);
+		timeEnd();
 	}
 	while (!_finish);
 }

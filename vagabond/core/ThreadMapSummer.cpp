@@ -32,9 +32,9 @@ void ThreadMapSummer::start()
 	do
 	{
 		MapSumHandler::MapJob *mj = nullptr;
-		MiniJobMap *mini = _sumHandler->acquireMiniJob(mj);
+		ElementSegment *partial = _sumHandler->acquireElementSegment(mj);
 		
-		if (mini == nullptr)
+		if (partial == nullptr)
 		{
 			break;
 		}
@@ -42,10 +42,9 @@ void ThreadMapSummer::start()
 		timeStart();
 		// do stuff
 		AtomSegment *sum = mj->segment;
-		ElementSegment *partial = mini->segment;
 		sum->addElementSegment(partial);
 
-		_mapHandler->returnSegment(mini->segment);
+		_mapHandler->returnSegment(partial);
 		_sumHandler->returnMiniJob(mj);
 		timeEnd();
 	}

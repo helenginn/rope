@@ -42,11 +42,6 @@ public:
 		return "Bond position extractor";
 	}
 
-	void setMapTransferHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
-
 	void setPointStoreHandler(PointStoreHandler *handler)
 	{
 		_pointHandler = handler;
@@ -60,7 +55,6 @@ private:
 	void returnResult(Job *job);
 
 	BondSequenceHandler *_seqHandler;
-	MapTransferHandler *_mapHandler;
 	PointStoreHandler *_pointHandler;
 
 };

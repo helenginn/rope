@@ -37,6 +37,18 @@ PointStoreHandler::~PointStoreHandler()
 	_emptyPool.cleanup();
 }
 
+void PointStoreHandler::loadMixedPositions(Job *job, 
+                                           std::vector<BondSequence::ElePos> epos)
+{
+	for (size_t i = 0; i < _elements.size(); i++)
+	{
+		PointStore *ps = acquireEmptyStore();
+		ps->loadPositions(_elements[i], epos);
+		ps->setJob(job);
+		returnFilledStore(ps);
+	}
+}
+
 void PointStoreHandler::setMapHandler(MapTransferHandler *handler)
 {
 	_mapHandler = handler;
@@ -51,6 +63,7 @@ void PointStoreHandler::allocateStores()
 			PointStore *ps = new PointStore();
 			_emptyPool.pushObject(ps);
 		}
+		_loadedPool[_elements[i]].sem.setName("loaded");
 	}
 
 }
@@ -58,48 +71,12 @@ void PointStoreHandler::allocateStores()
 void PointStoreHandler::setup()
 {
 	_elements = _mapHandler->elements();
-	
 	allocateStores();
 }
 
 void PointStoreHandler::start()
 {
 	_finish = false;
-}
-
-void PointStoreHandler::finishThreads()
-{
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		Pool<PointStore *> &pool = _loadedPool[_elements[i]];
-
-		pool.cleanup();
-	}
-
-	_emptyPool.cleanup();
-}
-
-void PointStoreHandler::finish()
-{
-	// join threads
-	
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_loadedPool[_elements[i]].handout.lock();
-	}
-	
-	_emptyPool.handout.lock();
-
-	_finish = true;
-
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_loadedPool[_elements[i]].handout.unlock();
-	}
-
-	_emptyPool.handout.unlock();
-
-	finishThreads();
 }
 
 PointStore *PointStoreHandler::acquireEmptyStore()
@@ -129,5 +106,39 @@ void PointStoreHandler::returnFilledStore(PointStore *ps)
 
 void PointStoreHandler::returnEmptyStore(PointStore *ps)
 {
+	ps->clear();
 	_emptyPool.pushObject(ps);
+}
+
+void PointStoreHandler::signalThreads()
+{
+	for (size_t i = 0; i < _elements.size(); i++)
+	{
+		Pool<PointStore *> &pool = _loadedPool[_elements[i]];
+		pool.signalThreads();
+		_emptyPool.signalThreads();
+	}
+}
+
+void PointStoreHandler::finish()
+{
+	// join threads
+	
+	for (size_t i = 0; i < _elements.size(); i++)
+	{
+		_loadedPool[_elements[i]].handout.lock();
+	}
+	
+	_emptyPool.handout.lock();
+
+	_finish = true;
+
+	for (size_t i = 0; i < _elements.size(); i++)
+	{
+		_loadedPool[_elements[i]].handout.unlock();
+	}
+
+	_emptyPool.handout.unlock();
+
+	signalThreads();
 }

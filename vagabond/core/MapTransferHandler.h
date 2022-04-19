@@ -39,6 +39,11 @@ public:
 	
 	~MapTransferHandler();
 
+	void setPointStoreHandler(PointStoreHandler *handler)
+	{
+		_pointHandler = handler;
+	}
+
 	/**let the MTH know which atoms will be involved in the calculation.
 	 * Atoms in @param all but not in @param sub will be included as part
 	 * of the 'constant' segment. 
@@ -63,14 +68,8 @@ public:
 		_cubeDim = dim;
 	}
 
-	MiniJobMap *makeJobForElement(std::string ele,
-	                           std::vector<BondSequence::ElePos> &epos);
-	
-	void setupMiniJobs(Job *job, std::vector<BondSequence::ElePos> &epos);
 	ElementSegment *acquireSegment(std::string ele);
 	void returnSegment(ElementSegment *segment);
-
-	MiniJobMap *acquireMiniJob(std::string ele);
 
 	void start();
 	void finish();
@@ -95,10 +94,11 @@ public:
 		return _segments[i];
 	}
 
+	void joinThreads();
 private:
 	void allocateSegments();
 	void prepareThreads();
-	void finishThreads();
+	void signalThreads();
 	void getRealDimensions(std::vector<Atom *> &sub);
 
 	std::vector<Atom *> _all;
@@ -108,19 +108,19 @@ private:
 	std::vector<std::string> _elements;
 	std::map<std::string, Pool<ElementSegment *> > _pools;
 
-	std::map<std::string, Pool<MiniJobMap *> > _miniJobPools;
 	std::mutex _handout;
 
 	BondCalculator *_calculator = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
+	PointStoreHandler *_pointHandler = nullptr;
 	
-	float _cubeDim = 0.8;
+	float _cubeDim = 0.6;
 	int _threads = 2;
 	int _mapNum = 2;
 	
 	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 	glm::vec3 _max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-	glm::vec3 _pad = glm::vec3(3, 3, 3);
+	glm::vec3 _pad = glm::vec3(2, 2, 2);
 };
 
 #endif

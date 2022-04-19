@@ -53,10 +53,6 @@ public:
 		std::cout << type() << ": ";
 		double ratio = (float)_timeWork / (float)(_timeWait + _timeWork);
 		std::cout << "" << ratio * 100 << "% work" << std::endl;
-		int total = std::chrono::microseconds(_t - _tStart).count();
-		std::cout << "Total: " << total / (float)1000 << " ms" << std::endl;
-//		"  (" << _timeWork << ")" << std::endl;
-		std::cout << std::endl;
 	}
 	
 	virtual std::string type() = 0;
@@ -83,12 +79,18 @@ protected:
 	
 	void timeStart()
 	{
-		time(_timeWait);
+		if (_test)
+		{
+			time(_timeWait);
+		}
 	}
 
 	void timeEnd()
 	{
-		time(_timeWork);
+		if (_test)
+		{
+			time(_timeWork);
+		}
 	}
 
 	std::atomic<bool> _finish;
@@ -98,6 +100,7 @@ protected:
 	std::chrono::system_clock::time_point _tStart;
 	std::chrono::system_clock::time_point _t;
 	bool _measured = false;
+	bool _test = false;
 };
 
 #endif

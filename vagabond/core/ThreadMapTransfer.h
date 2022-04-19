@@ -25,6 +25,8 @@ class MapTransferHandler;
 class MiniJobMap;
 class ElementSegment;
 class MapSumHandler;
+class PointStoreHandler;
+class PointStore;
 
 /**
  * \class ThreadMapTransfer
@@ -42,16 +44,22 @@ public:
 		_sumHandler = h;
 	}
 
+	void setPointStoreHandler(PointStoreHandler *h)
+	{
+		_pointHandler = h;
+	}
+
 	virtual std::string type()
 	{
 		return "Transfers element positions to maps";
 	}
 
-	void putAtomsInMap(MiniJobMap *mini, ElementSegment *seg);
+	void putAtomsInMap(PointStore *store, ElementSegment *seg);
 	virtual ~ThreadMapTransfer() {};
 
 	virtual void start();
 private:
+	PointStoreHandler *_pointHandler;
 	MapTransferHandler *_mapHandler;
 	MapSumHandler *_sumHandler;
 	std::string _ele;

@@ -121,6 +121,7 @@ void MapTransferHandler::prepareThreads()
 			/* several calculators */
 			ThreadMapTransfer *worker = new ThreadMapTransfer(this, _elements[j]);
 			worker->setMapSumHandler(_sumHandler);
+			worker->setPointStoreHandler(_pointHandler);
 			std::thread *thr = new std::thread(&ThreadMapTransfer::start, worker);
 
 			pool.threads.push_back(thr);
@@ -151,67 +152,23 @@ ElementSegment *MapTransferHandler::acquireSegment(std::string ele)
 	return seg;
 }
 
-MiniJobMap *MapTransferHandler::acquireMiniJob(std::string ele)
-{
-	_handout.lock();
-	Pool<MiniJobMap *> &pool = _miniJobPools[ele];
-	_handout.unlock();
-	MiniJobMap *mini = nullptr;
-	pool.acquireObject(mini, _finish);
-	return mini;
-}
-
-MiniJobMap *MapTransferHandler::makeJobForElement(std::string ele,
-                                               std::vector<BondSequence::ElePos> 
-                                               &epos)
-{
-	MiniJobMap *mini = new MiniJobMap(ele);
-
-	for (size_t i = 0; i < epos.size(); i++)
-	{
-		if (strcmp(&ele[0], epos[i].element) != 0)
-		{
-			continue;
-		}
-		
-		glm::vec3 pos = epos[i].pos;
-		mini->positions.push_back(pos);
-	}
-	
-	return mini;
-}
-
-void MapTransferHandler::setupMiniJobs(Job *job, 
-                                       std::vector<BondSequence::ElePos> &epos)
+void MapTransferHandler::signalThreads()
 {
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		MiniJobMap *mini = makeJobForElement(_elements[i], epos);
-		mini->setJob(job);
-		_handout.lock();
-		Pool<MiniJobMap *> &pool = _miniJobPools[_elements[i]];
-		_handout.unlock();
-		pool.pushObject(mini);
-	}
-}
-
-void MapTransferHandler::finishThreads()
-{
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_miniJobPools[_elements[i]].signalThreads();
 		_pools[_elements[i]].signalThreads();
 	}
+}
 
+void MapTransferHandler::joinThreads()
+{
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_miniJobPools[_elements[i]].joinThreads();
 		_pools[_elements[i]].joinThreads();
 	}
 
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_miniJobPools[_elements[i]].cleanup();
 		_pools[_elements[i]].cleanup();
 	}
 }
@@ -221,7 +178,6 @@ void MapTransferHandler::finish()
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
 		_pools[_elements[i]].handout.lock();
-		_miniJobPools[_elements[i]].handout.lock();
 	}
 	
 	_finish = true;
@@ -229,8 +185,7 @@ void MapTransferHandler::finish()
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
 		_pools[_elements[i]].handout.unlock();
-		_miniJobPools[_elements[i]].handout.unlock();
 	}
 
-	finishThreads();
+	signalThreads();
 }

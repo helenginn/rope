@@ -27,11 +27,12 @@ void PointStore::clear()
 {
 	_ele = "";
 	_positions.clear();
+	_job = nullptr;
 	_segment = nullptr;
 }
 
-void PointStore::getPositions(std::string ele,
-                              std::vector<BondSequence::ElePos> &epos)
+void PointStore::loadPositions(std::string ele,
+                               std::vector<BondSequence::ElePos> &epos)
 {
 	clear();
 	_ele = ele;

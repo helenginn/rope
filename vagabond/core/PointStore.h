@@ -31,17 +31,38 @@ public:
 
 	void clear();
 	
+	const glm::vec3 &position(int i) const
+	{
+		return _positions[i];
+	}
+	
+	size_t positionCount() const
+	{
+		return _positions.size();
+	}
+	
 	const std::string &element() const
 	{
 		return _ele;
 	}
 	
-	void getPositions(std::string ele, std::vector<BondSequence::ElePos> &epos);
+	void setJob(Job *j)
+	{
+		_job = j;
+	}
+	
+	Job *const job() const
+	{
+		return _job;
+	}
+	
+	void loadPositions(std::string ele, std::vector<BondSequence::ElePos> &epos);
 private:
 	std::vector<glm::vec3> _positions;
 	std::string _ele;
 	ElementSegment *_segment = nullptr;
 
+	Job *_job = nullptr;
 };
 
 #endif

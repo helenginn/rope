@@ -37,7 +37,7 @@ MapSumHandler::~MapSumHandler()
 
 void MapSumHandler::createSegments()
 {
-	for (size_t i = 0; i < _mapCount; i++)
+	for (size_t i = 0; i < _mapCount + 1; i++)
 	{
 		AtomSegment *seg = new AtomSegment();
 
@@ -65,7 +65,7 @@ void MapSumHandler::setup()
 
 void MapSumHandler::prepareThreads()
 {
-	for (size_t i = 0; i < _threads; i++)
+	for (size_t i = 0; i < _threads + 1; i++)
 	{
 		/* several calculators */
 		ThreadMapSummer *worker = new ThreadMapSummer(this);
@@ -105,23 +105,25 @@ MapSumHandler::MapJob *MapSumHandler::acquireMapJob(Job *job)
 	return mj;
 }
 
-void MapSumHandler::transferJob(MiniJobMap *mini)
+void MapSumHandler::transferElementSegment(ElementSegment *segment)
 {
-	_miniJobPool.pushObject(mini);
+	_segmentPool.pushObject(segment);
 }
 
-MiniJobMap *MapSumHandler::acquireMiniJob(MapJob *&mj)
+ElementSegment *MapSumHandler::acquireElementSegment(MapJob *&mj)
 {
-	MiniJobMap *mini = nullptr;
-	_miniJobPool.acquireObject(mini, _finish);
-	if (mini == nullptr)
+	ElementSegment *seg = nullptr;
+	_segmentPool.acquireObject(seg, _finish);
+
+	if (seg == nullptr)
 	{
 		return nullptr;
 	}
-	Job *j = mini->job;
+
+	Job *j = seg->job();
 	mj = acquireMapJob(j);
 
-	return mini;
+	return seg;
 }
 
 void MapSumHandler::returnSegment(AtomSegment *segment)
@@ -189,28 +191,31 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 	delete mj;
 }
 
-void MapSumHandler::finishThreads()
+void MapSumHandler::signalThreads()
 {
 	_mapPool.signalThreads();
-	_miniJobPool.signalThreads();
+	_segmentPool.signalThreads();
+}
 
+void MapSumHandler::joinThreads()
+{
 	_mapPool.joinThreads();
-	_miniJobPool.joinThreads();
+	_segmentPool.joinThreads();
 
 	_mapPool.cleanup();
-	_miniJobPool.cleanup();
+	_segmentPool.cleanup();
 
 }
 
 void MapSumHandler::finish()
 {
 	_mapPool.handout.lock();
-	_miniJobPool.handout.lock();
+	_segmentPool.handout.lock();
 
 	_finish = true;
 
 	_mapPool.handout.unlock();
-	_miniJobPool.handout.unlock();
+	_segmentPool.handout.unlock();
 
-	finishThreads();
+	signalThreads();
 }

@@ -127,6 +127,7 @@ void BondCalculator::setupSequenceHandler()
 	if (_mapHandler != nullptr)
 	{
 		_sequenceHandler->setMapTransferHandler(_mapHandler);
+		_sequenceHandler->setPointStoreHandler(_pointHandler);
 	}
 	
 	for (size_t i = 0; i < _atoms.size(); i++)
@@ -159,8 +160,10 @@ void BondCalculator::setup()
 	if (_mapHandler != nullptr)
 	{
 		_mapHandler->setSumHandler(_sumHandler);
+		_mapHandler->setPointStoreHandler(_pointHandler);
 		_sumHandler->setMapHandler(_mapHandler);
 		_pointHandler->setMapHandler(_mapHandler);
+		_sequenceHandler->setPointStoreHandler(_pointHandler);
 	}
 
 	_sequenceHandler->setup();
@@ -169,7 +172,6 @@ void BondCalculator::setup()
 	{
 		_mapHandler->setup();
 		_sumHandler->setup();
-		_pointHandler->setup();
 	}
 }
 
@@ -293,10 +295,8 @@ void BondCalculator::finish()
 	if (_mapHandler != nullptr)
 	{
 		_sumHandler->finish();
-		_mapHandler->finish();
-		
-		/* cannot finish before above threads are finished */
 		_pointHandler->finish();
+		_mapHandler->finish();
 	}
 
 	if (_sequenceHandler != nullptr)
@@ -315,6 +315,17 @@ void BondCalculator::finish()
 
 	_resultPool.cleanup();
 	_jobPool.cleanup();
+	
+	if (_mapHandler != nullptr)
+	{
+		_sumHandler->joinThreads();
+		_mapHandler->joinThreads();
+	}
+
+	if (_sequenceHandler != nullptr)
+	{
+		_sequenceHandler->joinThreads();
+	}
 	
 	_running = 0;
 	_max_id = 0;

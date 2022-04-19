@@ -21,6 +21,7 @@
 #include "ThreadMiniJobForSequence.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
+#include "PointStoreHandler.h"
 #include "BondSequence.h"
 #include <thread>
 
@@ -81,7 +82,7 @@ typedef ThreadExtractsBondPositions ExtrWorker;
 typedef ThreadMiniJobForSequence SJobWorker;
 void BondSequenceHandler::prepareThreads()
 {
-	for (size_t i = 0; i < _threads; i++)
+	for (size_t i = 0; i < _totalSequences; i++)
 	{
 		/* several calculators */
 		CalcWorker *worker = new CalcWorker(this);
@@ -95,7 +96,7 @@ void BondSequenceHandler::prepareThreads()
 	for (size_t i = 0; i < _threads; i++)
 	{
 		ExtrWorker *worker = new ExtrWorker(this);
-		worker->setMapTransferHandler(_mapHandler);
+		worker->setPointStoreHandler(_pointHandler);
 		std::thread *thr = new std::thread(&ExtrWorker::start, worker);
 		Pool<BondSequence *> &pool = _pools[SequencePositionsReady];
 
@@ -140,13 +141,16 @@ void BondSequenceHandler::start()
 	prepareThreads();
 }
 
-void BondSequenceHandler::finishThreads()
+void BondSequenceHandler::signalThreads()
 {
 	_pools[SequencePositionsReady].signalThreads();
 	_pools[SequenceCalculateReady].signalThreads();
 	_pools[SequenceIdle].signalThreads();
 	_miniJobPool.signalThreads();
+}
 
+void BondSequenceHandler::joinThreads()
+{
 	_pools[SequencePositionsReady].joinThreads();
 	_pools[SequenceCalculateReady].joinThreads();
 	_pools[SequenceIdle].joinThreads();
@@ -173,7 +177,7 @@ void BondSequenceHandler::finish()
 	_pools[SequenceCalculateReady].handout.unlock();
 	_miniJobPool.handout.unlock();
 
-	finishThreads();
+	signalThreads();
 }
 
 void BondSequenceHandler::prepareSequenceBlocks()
@@ -196,6 +200,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	{
 		_mapHandler->supplyElementList(_elements);
 		_mapHandler->supplyAtomGroup(sequence->atoms(), sequence->atoms());
+		_pointHandler->setup();
 	}
 
 	_sequences.push_back(sequence);

@@ -53,8 +53,9 @@ void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq
 void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
 {
 	std::vector<BondSequence::ElePos> epos = seq->extractForMap();
+	_pointHandler->loadMixedPositions(job, epos);
+
 	cleanupSequence(job, seq);
-	_mapHandler->setupMiniJobs(job, epos);
 }
 
 void ThreadExtractsBondPositions::start()

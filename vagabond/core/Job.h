@@ -143,18 +143,19 @@ public:
 
 class ElementSegment;
 
+/*
 class MiniJobMap : public MiniJob
 {
 public:
-	std::vector<glm::vec3> positions;
-	std::string ele;
 	ElementSegment *segment = nullptr;
+	std::string ele;
 	
 	MiniJobMap(std::string _ele)
 	{
 		ele = _ele;
 	}
 };
+*/
 
 class MiniJobSeq : public MiniJob
 {

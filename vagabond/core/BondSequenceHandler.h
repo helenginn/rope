@@ -28,6 +28,7 @@ class Sampler;
 class BondSequence;
 class BondCalculator;
 class MapTransferHandler;
+class PointStoreHandler;
 class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
 	
@@ -36,6 +37,11 @@ class BondSequenceHandler : public Handler
 public:
 	BondSequenceHandler(BondCalculator *calculator = nullptr);
 	~BondSequenceHandler();
+	
+	void setPointStoreHandler(PointStoreHandler *handler)
+	{
+		_pointHandler = handler;
+	}
 	
 	void setMapTransferHandler(MapTransferHandler *handler)
 	{
@@ -116,11 +122,12 @@ public:
 
 	void start();
 	void finish();
+	void joinThreads();
 private:
 	void sanityCheckThreads();
 	void prepareSequenceBlocks();
 	void prepareThreads();
-	void finishThreads();
+	void signalThreads();
 	void calculateThreads(int max);
 
 	size_t _threads = 0;
@@ -151,6 +158,7 @@ private:
 	BondCalculator *_calculator = nullptr;
 	std::map<std::string, int> _elements;
 	MapTransferHandler *_mapHandler = nullptr;
+	PointStoreHandler *_pointHandler = nullptr;
 	Sampler *_sampler = nullptr;
 };
 
