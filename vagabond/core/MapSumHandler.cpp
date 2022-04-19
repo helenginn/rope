@@ -31,6 +31,7 @@ MapSumHandler::MapSumHandler(BondCalculator *calculator)
 
 MapSumHandler::~MapSumHandler()
 {
+	delete _template;
 	finish();
 }
 
@@ -40,7 +41,7 @@ void MapSumHandler::createSegments()
 	{
 		AtomSegment *seg = new AtomSegment();
 
-		if (_mapHandler->segmentCount() > 0)
+		if (_mapHandler->elementCount() > 0)
 		{
 			seg->getDimensionsFrom(*_mapHandler->segment(0));
 			seg->setStatus(FFT<Density>::Real);
@@ -50,8 +51,7 @@ void MapSumHandler::createSegments()
 		 *	threads later */
 		if (i == 0)
 		{
-			AtomMap *tmp = new AtomMap(*seg);
-			delete tmp;
+			_template = new AtomMap(*seg);
 		}
 
 		_mapPool.pushObject(seg);
@@ -149,7 +149,7 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 	}
 	_handout.unlock();
 
-	if (val < _mapHandler->segmentCount())
+	if (val < _mapHandler->elementCount())
 	{
 		return;
 	}
@@ -170,7 +170,8 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 
 	if (job->requests & JobCalculateMapSegment) 
 	{
-		r->map = new AtomMap(*mj->segment);
+		r->map = new AtomMap(*_template);
+		r->map->copyData(*mj->segment);
 		returnSegment(mj->segment);
 	}
 	

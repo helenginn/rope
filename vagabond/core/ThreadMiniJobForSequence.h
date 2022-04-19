@@ -30,6 +30,11 @@ public:
 	~ThreadMiniJobForSequence() {};
 
 	virtual void start();
+
+	virtual std::string type()
+	{
+		return "Assigns mini Job to Sequence";
+	}
 private:
 	BondSequenceHandler *_handler;
 

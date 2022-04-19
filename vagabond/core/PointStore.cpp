@@ -16,33 +16,34 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomMap__
-#define __vagabond__AtomMap__
+#include "PointStore.h"
 
-#include "FFTCubicGrid.h"
-
-class AtomSegment;
-
-class AtomMap : public FFTCubicGrid<fftwf_complex>
+PointStore::PointStore()
 {
-public:
-	AtomMap(AtomSegment &other);
-	AtomMap(AtomMap &other);
 
-	float density(int i);
-	virtual float sum();
-	virtual float mean();
-	virtual float sigma();
-	virtual void multiply(float scale);
-	void copyData(AtomSegment &other);
-	void printMap();
-	
-	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
+}
 
-	float *arrayPtr();
-private:
-	float *_realOnly;
+void PointStore::clear()
+{
+	_ele = "";
+	_positions.clear();
+	_segment = nullptr;
+}
 
-};
+void PointStore::getPositions(std::string ele,
+                              std::vector<BondSequence::ElePos> &epos)
+{
+	clear();
+	_ele = ele;
 
-#endif
+	for (size_t i = 0; i < epos.size(); i++)
+	{
+		if (strcmp(&ele[0], epos[i].element) != 0)
+		{
+			continue;
+		}
+		
+		glm::vec3 pos = epos[i].pos;
+		_positions.push_back(pos);
+	}
+}

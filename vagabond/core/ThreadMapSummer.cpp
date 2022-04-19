@@ -20,6 +20,7 @@
 #include "MapSumHandler.h"
 #include "MapTransferHandler.h"
 #include "AtomSegment.h"
+#include "ElementSegment.h"
 
 ThreadMapSummer::ThreadMapSummer(MapSumHandler *h) : ThreadWorker()
 {
@@ -38,6 +39,7 @@ void ThreadMapSummer::start()
 			break;
 		}
 		
+		timeStart();
 		// do stuff
 		AtomSegment *sum = mj->segment;
 		ElementSegment *partial = mini->segment;
@@ -45,6 +47,7 @@ void ThreadMapSummer::start()
 
 		_mapHandler->returnSegment(mini->segment);
 		_sumHandler->returnMiniJob(mj);
+		timeEnd();
 	}
 	while (!_finish);
 }

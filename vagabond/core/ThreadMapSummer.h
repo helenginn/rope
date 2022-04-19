@@ -35,6 +35,11 @@ public:
 		_mapHandler = h;
 	}
 
+	virtual std::string type()
+	{
+		return "Sum up elements into single map";
+	}
+
 	virtual void start();
 private:
 	MapSumHandler *_sumHandler;

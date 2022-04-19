@@ -38,8 +38,11 @@ void ThreadCalculatesBondSequence::start()
 		{
 			break;
 		}
+		
+		timeStart();
 
 		seq->calculate();
+		timeEnd();
 	}
 	while (!_finish);
 }

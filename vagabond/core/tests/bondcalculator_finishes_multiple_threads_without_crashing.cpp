@@ -6,7 +6,7 @@
 
 int main()
 {
-	std::string path = "/assets/geometry/LSD.cif";
+	std::string path = "/assets/examples/4cvd.cif";
 
 	CifFile geom = CifFile(path);
 	geom.setAutomaticKnot(true);
@@ -21,13 +21,14 @@ int main()
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
 	calculator.setMaxSimultaneousThreads(4);
-	calculator.setTotalSamples(2);
+	calculator.setTotalSamples(120);
 	calculator.addAnchorExtension(anchor);
 	calculator.setup();
 	
 	calculator.start();
 	
 	Job empty_job{};
+	empty_job.requests = JobExtractPositions;
 	const int num = 1000;
 
 	for (size_t i = 0; i < num; i++)

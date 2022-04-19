@@ -29,6 +29,10 @@ public:
 	ThreadCalculatesBondSequence(BondSequenceHandler *h);
 	virtual ~ThreadCalculatesBondSequence() {};
 
+	virtual std::string type()
+	{
+		return "Bond sequence calculator";
+	}
 	virtual void start();
 private:
 	BondSequenceHandler *_handler;

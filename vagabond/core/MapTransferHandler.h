@@ -80,9 +80,14 @@ public:
 		_sumHandler = handler;
 	}
 	
-	const size_t segmentCount() const
+	const size_t elementCount() const
 	{
-		return _segments.size();
+		return _elements.size();
+	}
+	
+	const std::vector<std::string> &elements() const
+	{
+		return _elements;
 	}
 	
 	const ElementSegment *segment(int i) const
@@ -92,7 +97,6 @@ public:
 
 private:
 	void allocateSegments();
-	void findThreadCount();
 	void prepareThreads();
 	void finishThreads();
 	void getRealDimensions(std::vector<Atom *> &sub);
@@ -102,7 +106,6 @@ private:
 
 	std::vector<ElementSegment *> _segments;
 	std::vector<std::string> _elements;
-	std::map<std::string, ElementSegment *> _element2Segment;
 	std::map<std::string, Pool<ElementSegment *> > _pools;
 
 	std::map<std::string, Pool<MiniJobMap *> > _miniJobPools;
@@ -113,6 +116,7 @@ private:
 	
 	float _cubeDim = 0.8;
 	int _threads = 2;
+	int _mapNum = 2;
 	
 	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 	glm::vec3 _max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);

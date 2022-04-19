@@ -59,6 +59,7 @@ public:
 	virtual void populatePlan(PlanDims &dims) {};
 protected:
 	fftwf_complex *_planStart = nullptr;
+	PlanDims _plan;
 
 private:
 	Status _status = Empty;
@@ -67,7 +68,6 @@ private:
 	
 	static std::vector<PlanDims> _plans;
 	
-	PlanDims _plan;
 };
 
 #include "FFT.cpp"

@@ -31,6 +31,10 @@ public:
 
 	virtual void start();
 
+	virtual std::string type()
+	{
+		return "Submits overall jobs";
+	}
 private:
 	BondCalculator *_handler;
 

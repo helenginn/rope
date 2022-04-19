@@ -52,11 +52,15 @@ void ThreadMapTransfer::start()
 		{
 			break;
 		}
+		
+		timeStart();
 
 		putAtomsInMap(mini, seg);
 		seg->calculateMap();
 		
 		_sumHandler->transferJob(mini);
+		
+		timeEnd();
 	}
 	while (!_finish);
 	

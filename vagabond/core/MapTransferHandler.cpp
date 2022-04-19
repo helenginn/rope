@@ -87,29 +87,27 @@ void MapTransferHandler::allocateSegments()
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
 		std::string &ele = _elements[i];
+		Pool<ElementSegment *> &pool = _pools[ele];
 
-		ElementSegment *seg = new ElementSegment();
-		seg->setDimensions(nx, ny, nz);
-		seg->setRealDim(_cubeDim);
-		seg->setOrigin(_min);
-		seg->setElement(ele);
-		seg->setStatus(FFT<VoxelElement>::Real);
-		seg->makePlans();
-		
-		_segments.push_back(seg);
-		_element2Segment[ele] = seg;
+		for (size_t j = 0; j < _mapNum; j++)
+		{
+			ElementSegment *seg = new ElementSegment();
+			seg->setDimensions(nx, ny, nz);
+			seg->setRealDim(_cubeDim);
+			seg->setOrigin(_min);
+			seg->setElement(ele);
+			seg->setStatus(FFT<VoxelElement>::Real);
+			seg->makePlans();
+
+			_segments.push_back(seg);
+			pool.pushObject(seg);
+		}
 	}
-}
-
-void MapTransferHandler::findThreadCount()
-{
-	_threads = 1;
 }
 
 void MapTransferHandler::setup()
 {
 	allocateSegments();
-	findThreadCount();
 }
 
 void MapTransferHandler::prepareThreads()
@@ -117,8 +115,6 @@ void MapTransferHandler::prepareThreads()
 	for (size_t j = 0; j < _elements.size(); j++)
 	{
 		Pool<ElementSegment *> &pool = _pools[_elements[j]];
-		ElementSegment *seg = _element2Segment[_elements[j]];
-		pool.pushObject(seg);
 
 		for (size_t i = 0; i < _threads; i++)
 		{

@@ -42,6 +42,11 @@ public:
 		_sumHandler = h;
 	}
 
+	virtual std::string type()
+	{
+		return "Transfers element positions to maps";
+	}
+
 	void putAtomsInMap(MiniJobMap *mini, ElementSegment *seg);
 	virtual ~ThreadMapTransfer() {};
 

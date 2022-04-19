@@ -19,6 +19,7 @@
 #include "ThreadExtractsBondPositions.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
+#include "PointStoreHandler.h"
 #include "BondSequence.h"
 #include <iostream>
 #include <algorithm>
@@ -67,6 +68,8 @@ void ThreadExtractsBondPositions::start()
 		{
 			break;
 		}
+		
+		timeStart();
 
 		MiniJob *mini = seq->miniJob();
 		Job *job = mini->job;
@@ -100,6 +103,7 @@ void ThreadExtractsBondPositions::start()
 		{
 			transferToMaps(job, seq);
 			sendBack = false;
+			timeEnd();
 			continue;
 		}
 
@@ -109,6 +113,8 @@ void ThreadExtractsBondPositions::start()
 		{
 			returnResult(job);
 		}
+
+		timeEnd();
 
 	}
 	while (!_finish);

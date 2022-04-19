@@ -110,9 +110,6 @@ double PositionRefinery::fullResidual()
 
 	Job job{};
 	job.requests = JobCalculateDeviations;
-
-	job.requests = static_cast<JobType>(JobCalculateDeviations);
-	
 	_calculator->submitJob(job);
 
 	Result *result = _calculator->acquireResult();

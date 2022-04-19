@@ -16,77 +16,60 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MapSumHandler__
-#define __vagabond__MapSumHandler__
+#ifndef __vagabond__PointStoreHandler__
+#define __vagabond__PointStoreHandler__
 
 #include "Handler.h"
-#include "BondCalculator.h"
 
-class MiniJobMap;
-class AtomSegment;
-class AtomMap;
+class BondCalculator;
+class MapTransferHandler;
+class PointStore;
 
-class MapSumHandler : public Handler
+class PointStoreHandler : public Handler
 {
 public:
-	MapSumHandler(BondCalculator *calculator = nullptr);
-	~MapSumHandler();
-	
-	void setMapHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
-	
-	void setMapCount(int maps)
-	{
-		_mapCount = maps;
-	}
+	PointStoreHandler(BondCalculator *calculator = nullptr);
+	~PointStoreHandler();
+
+	void setMapHandler(MapTransferHandler *handler);
 	
 	void setThreads(int threads)
 	{
 		_threads = threads;
 	}
-	
-	size_t segmentCount()
-	{
-		return _mapPool.members.size();
-	}
-	
-	struct MapJob
-	{
-		AtomSegment *segment;
-		Job *job;
-		std::atomic<int> summed{0};
-	};
 
-	MiniJobMap *acquireMiniJob(MapJob *&mj);
-	void transferJob(MiniJobMap *mini);
-	void returnMiniJob(MapJob *mj);
-	void returnSegment(AtomSegment *segment);
+	/** grab an object capable of taking in new points */
+	PointStore *acquireEmptyStore();
+
+	/** grab an object with points that needs to be unloaded into an
+	 * ElementSegment
+	 * @param ele element symbol for ElementSegment */
+	PointStore *acquireFilledStore(std::string ele);
+
+	/** return a filled point store */
+	void returnFilledStore(PointStore *ps);
+
+	/** return an empty point store to the general pool */
+	void returnEmptyStore(PointStore *ps);
+
 	void setup();
 
 	void start();
 	void finish();
 private:
+	void allocateStores();
 	void finishThreads();
-	void createSegments();
 	void prepareThreads();
-
-	MapJob *acquireMapJob(Job *job);
-	
-	std::map<int, MapJob *> _ticketMap;
-	std::mutex _handout;
-	std::mutex _ticketHandout;
-	
-	Pool<AtomSegment *> _mapPool;
-	Pool<MiniJobMap *> _miniJobPool;
 
 	BondCalculator *_calculator = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
-	
-	AtomMap *_template = nullptr;
+
+	Pool<PointStore *> _emptyPool;
+	std::map<std::string, Pool<PointStore *> > _loadedPool;
+
+	std::vector<std::string> _elements;
 	int _threads = 1;
-	int _mapCount = 1;
+	int _storeCount = 1;
 };
 
 #endif

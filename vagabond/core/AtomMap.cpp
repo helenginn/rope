@@ -27,9 +27,14 @@ AtomMap::AtomMap(AtomSegment &other)
 	setRealDim(other.realDim());
 	
 	_realOnly = new float[nn()];
-	setStatus(AtomMap::Reciprocal);
+//	setStatus(AtomMap::Reciprocal);
 	makePlans();
+	
+	copyData(other);
+}
 
+void AtomMap::copyData(AtomSegment &other)
+{
 	for (size_t i = 0; i < nn(); i++)
 	{
 		float r = other.density(i, 0);
@@ -37,6 +42,20 @@ AtomMap::AtomMap(AtomSegment &other)
 		_data[i][0] = r;
 		_data[i][1] = -im;
 	}
+
+}
+
+AtomMap::AtomMap(AtomMap &other)
+: FFTCubicGrid<fftwf_complex>(other)
+{
+	this->Grid::setDimensions(other.nx(), other.ny(), other.nz(), false);
+	setOrigin(other.origin());
+	setRealDim(other.realDim());
+	
+	_realOnly = new float[nn()];
+//	setStatus(AtomMap::Reciprocal);
+	_plan = other._plan;
+
 }
 
 void AtomMap::multiply(float scale)

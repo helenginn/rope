@@ -153,6 +153,6 @@ void Sampler::addToVec(float *&vec, int num)
 {
 	for (size_t i = 0; i < _dims; i++)
 	{
-		vec[i] += _points.ptrs[num][i];
+		vec[i] += _points.ptrs[num][i] * 20;
 	}
 }

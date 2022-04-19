@@ -28,6 +28,7 @@
 class Atom;
 class BondSequenceHandler;
 class MapTransferHandler;
+class PointStoreHandler;
 class MapSumHandler;
 class Sampler;
 
@@ -171,9 +172,10 @@ private:
 	void sanityCheckThreads();
 	void sanityCheckJob(Job &job);
 	void sanityCheckDepthLimits();
+	void setupSequenceHandler();
+	void setupPointHandler();
 	void setupMapTransferHandler();
 	void setupMapSumHandler();
-	void setupSequenceHandler();
 	void prepareThreads();
 
 	PipelineType _type;
@@ -195,6 +197,7 @@ private:
 	Pool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler = nullptr;
+	PointStoreHandler *_pointHandler = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;

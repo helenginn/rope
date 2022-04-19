@@ -22,6 +22,7 @@
 #include "ThreadWorker.h"
 
 class MapTransferHandler;
+class PointStoreHandler;
 class BondSequenceHandler;
 class BondCalculator;
 class BondSequence;
@@ -36,9 +37,19 @@ public:
 
 	virtual void start();
 	
+	virtual std::string type()
+	{
+		return "Bond position extractor";
+	}
+
 	void setMapTransferHandler(MapTransferHandler *handler)
 	{
 		_mapHandler = handler;
+	}
+
+	void setPointStoreHandler(PointStoreHandler *handler)
+	{
+		_pointHandler = handler;
 	}
 private:
 	void extractPositions(Job *job, BondSequence *seq);
@@ -50,6 +61,7 @@ private:
 
 	BondSequenceHandler *_seqHandler;
 	MapTransferHandler *_mapHandler;
+	PointStoreHandler *_pointHandler;
 
 };
 

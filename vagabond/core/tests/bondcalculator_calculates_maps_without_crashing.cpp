@@ -20,7 +20,7 @@ int main()
 	
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
-	calculator.setMaxSimultaneousThreads(1);
+	calculator.setMaxSimultaneousThreads(4);
 	calculator.setTotalSamples(120);
 	calculator.addAnchorExtension(anchor);
 	calculator.setup();
@@ -29,7 +29,7 @@ int main()
 	
 	Job job{};
 	job.requests = JobCalculateMapSegment;
-	const int num = 200;
+	const int num = 1000;
 
 	for (size_t i = 0; i < num; i++)
 	{

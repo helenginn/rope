@@ -20,6 +20,7 @@
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
+#include "PointStoreHandler.h"
 #include "MapSumHandler.h"
 #include "Sampler.h"
 
@@ -134,6 +135,17 @@ void BondCalculator::setupSequenceHandler()
 	}
 }
 
+void BondCalculator::setupPointHandler()
+{
+	if (!(_type & PipelineCalculatedMaps))
+	{
+		return;
+	}
+
+	_pointHandler = new PointStoreHandler(this);
+	_pointHandler->setThreads(_maxThreads);
+}
+
 void BondCalculator::setup()
 {
 	sanityCheckPipeline();
@@ -142,11 +154,13 @@ void BondCalculator::setup()
 	setupMapSumHandler();
 	setupMapTransferHandler();
 	setupSequenceHandler();
+	setupPointHandler();
 	
 	if (_mapHandler != nullptr)
 	{
 		_mapHandler->setSumHandler(_sumHandler);
 		_sumHandler->setMapHandler(_mapHandler);
+		_pointHandler->setMapHandler(_mapHandler);
 	}
 
 	_sequenceHandler->setup();
@@ -155,6 +169,7 @@ void BondCalculator::setup()
 	{
 		_mapHandler->setup();
 		_sumHandler->setup();
+		_pointHandler->setup();
 	}
 }
 
@@ -279,6 +294,9 @@ void BondCalculator::finish()
 	{
 		_sumHandler->finish();
 		_mapHandler->finish();
+		
+		/* cannot finish before above threads are finished */
+		_pointHandler->finish();
 	}
 
 	if (_sequenceHandler != nullptr)
