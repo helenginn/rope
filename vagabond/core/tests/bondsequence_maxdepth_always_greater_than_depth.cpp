@@ -13,15 +13,16 @@ int main()
 	AtomGroup *atoms = geom.atoms();
 	Atom *anchor = atoms->firstAtomWithName("OXT");
 
-	BondSequence *sequence = new BondSequence();
-	sequence->addToGraph(anchor);
+	Grapher gr;
+	gr.generateGraphs(anchor);
+	gr.calculateMissingMaxDepths();
 	
-	for (size_t i = 0; i < sequence->atomGraphCount(); i++)
+	for (size_t i = 0; i < gr.graphCount(); i++)
 	{
-		int diff = sequence->remainingDepth(i);
+		int diff = gr.remainingDepth(i);
 		if (diff < 0)
 		{
-			sequence->checkAtomGraph(i);
+			gr.graph(i)->checkAtomGraph();
 			return 1;
 		}
 	}

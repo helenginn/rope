@@ -34,13 +34,11 @@ MapTransferHandler::~MapTransferHandler()
 	finish();
 }
 
-void MapTransferHandler::supplyAtomGroup(std::vector<Atom *> all, 
-                                         std::vector<Atom *> sub)
+void MapTransferHandler::supplyAtomGroup(std::vector<Atom *> all)
 {
 	_all = all;
-	_sub = sub;
 	
-	getRealDimensions(_sub);
+	getRealDimensions(_all);
 }
 
 void MapTransferHandler::getRealDimensions(std::vector<Atom *> &sub)

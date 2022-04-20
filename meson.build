@@ -146,6 +146,7 @@ guifiles = [
 vagafiles = [
 'vagabond/core/AlignmentTool.cpp',
 'vagabond/core/Atom.cpp',
+'vagabond/core/AtomContent.cpp',
 'vagabond/core/AtomGroup.cpp',
 'vagabond/core/AtomGraph.cpp',
 'vagabond/core/AtomSegment.cpp',
@@ -156,6 +157,7 @@ vagafiles = [
 'vagabond/core/BondSequenceHandler.cpp',
 'vagabond/core/BondLength.cpp',
 'vagabond/core/BondTorsion.cpp',
+'vagabond/core/Chain.cpp',
 'vagabond/core/Chirality.cpp',
 'vagabond/core/CifFile.cpp',
 'vagabond/core/ConcertedBasis.cpp',
@@ -164,6 +166,7 @@ vagafiles = [
 'vagabond/core/ElementSegment.cpp',
 'vagabond/core/File.cpp',
 'vagabond/core/GeometryTable.cpp',
+'vagabond/core/Grapher.cpp',
 'vagabond/core/HasBondstraints.cpp',
 'vagabond/core/Knotter.cpp',
 'vagabond/core/MapTransferHandler.cpp',

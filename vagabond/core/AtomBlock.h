@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,48 +16,48 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __AtomGraph__AtomGraph__
-#define __AtomGraph__AtomGraph__
+#ifndef __vagabond__AtomBlock__
+#define __vagabond__AtomBlock__
 
-#include <vector>
-#include <map>
-#include <iostream>
+#include "../utils/glm_import.h"
 
 class Atom;
-class BondTorsion;
 
-struct AtomGraph
+struct AtomBlock
 {
+	bool flag = true;
 	Atom *atom;
-	Atom *parent;
-	Atom *grandparent;
-	int priority = 0;
-	int depth;
-	int maxDepth;
-	bool onlyHydrogens = false;
-	BondTorsion *torsion;
+	char element[3] = "\0";
+	int nBonds;
+	glm::vec3 target;
+	glm::mat4x4 coordination;
+	glm::vec3 inherit;
 	int torsion_idx;
-	std::vector<AtomGraph *> children;
+	float torsion;
+	glm::mat4x4 basis;
+	glm::mat4x4 wip;
+	int write_locs[4];
 
-	bool childrenOnlyHydrogens();
-	bool checkAtomGraph() const;
-	std::string desc() const;
-	
-	~AtomGraph()
+	const glm::vec3 parent_position() const
 	{
-
+		return inherit;
 	}
 
-	bool operator<(const AtomGraph &other) const
+	const glm::vec3 my_position() const
 	{
-		/* otherwise go for tinier branch points first */
-		return maxDepth < other.maxDepth;
+		return glm::vec3(basis[3]);
 	}
 
-	static bool atomgraph_less_than(const AtomGraph *a, const AtomGraph *b)
+	const glm::vec3 &target_position() const
 	{
-		return *a < *b;
+		return target;
 	}
+
+	const glm::vec3 child_position(int i) const
+	{
+		return glm::vec3(wip[i]);
+	}
+
 };
 
 #endif

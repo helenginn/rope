@@ -27,7 +27,8 @@
 #include "Atom.h"
 #include "BondSequenceHandler.h"
 #include "BondTorsion.h"
-#include "AtomGraph.h"
+#include "AtomBlock.h"
+#include "Grapher.h"
 #include "Sampler.h"
 
 class Atom;
@@ -45,7 +46,7 @@ public:
 	
 	const size_t addedAtomsCount() const
 	{
-		return _addedAtomsCount;
+		return _grapher.atoms().size();
 	}
 	
 	std::map<std::string, int> elementList() const;
@@ -92,27 +93,14 @@ public:
 		_ignoreHydrogens = ignore;
 	}
 	
-	bool checkAtomGraph(int i) const;
-	
-	size_t atomGraphCount() const
+	Grapher &grapher() 
 	{
-		return _graphs.size();
-	}
-	
-	const std::vector<Atom *> &atoms() const
-	{
-		return _atoms;
-	}
-	
-	const int remainingDepth(int i) const
-	{
-		return _graphs[i]->maxDepth - _graphs[i]->depth;
+		return _grapher;
 	}
 	
 	void cleanUpToIdle();
 	void setMiniJobSeqInfo(MiniJobSeq *mini);
 	void printState();
-	void removeGraphs();
 	void removeTorsionBasis();
 	
 	const size_t maxDepth() const
@@ -179,43 +167,7 @@ public:
 	SequenceState state();
 	void signal(SequenceState newState);
 	
-	std::string atomGraphDesc(int i);
 private:
-	struct AtomBlock
-	{
-		bool flag = true;
-		Atom *atom;
-		char element[3] = "\0";
-		int nBonds;
-		glm::vec3 target;
-		glm::mat4x4 coordination;
-		glm::vec3 inherit;
-		int torsion_idx;
-		float torsion;
-		glm::mat4x4 basis;
-		glm::mat4x4 wip;
-		int write_locs[4];
-		
-		const glm::vec3 parent_position() const
-		{
-			return inherit;
-		}
-		
-		const glm::vec3 my_position() const
-		{
-			return glm::vec3(basis[3]);
-		}
-		
-		const glm::vec3 &target_position() const
-		{
-			return target;
-		}
-		
-		const glm::vec3 child_position(int i) const
-		{
-			return glm::vec3(wip[i]);
-		}
-	};
 
 	struct AtomBlockTodo
 	{
@@ -232,26 +184,20 @@ private:
 
 	void generateBlocks();
 	void acquireCustomVector(int sampleNum);
-	void generateAtomGraph(Atom *atom, size_t count);
-	void addGraph(AtomGraph *graph);
-	void calculateMissingMaxDepths();
-	void sortGraphChildren();
 	void assignAtomToBlock(int idx, Atom *atom);
 	void assignAtomsToBlocks();
 	void fillMissingWriteLocations();
 	void fixBlockAsGhost(int idx, Atom *anchor);
 	void makeTorsionBasis();
-	void fillInParents();
 	void fillTorsionAngles();
 	void fastCalculate();
 
 	int calculateBlock(int idx);
 	void fetchTorsion(int idx);
 
-	std::vector<Atom *> _atoms;
-	std::vector<Atom *> _anchors;
-	std::vector<AtomGraph *> _graphs;
+	Grapher _grapher;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
+
 	std::map<Atom *, int> _atom2Block;
 
 	size_t _sampleCount = 1;
@@ -270,9 +216,6 @@ private:
 	int _maxDepth = 0;
 	int _customIdx = 0;
 	int _blocksDone = 0;
-	int _graphsDone = 0;
-	int _anchorsDone = 0;
-	int _atomsDone = 0;
 	int _singleSequence = 0;
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();

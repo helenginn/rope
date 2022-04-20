@@ -78,7 +78,6 @@ void PdbFile::processModel(gemmi::Model &m)
 			processResidue(c.residues[j], ai);
 		}
 	}
-
 }
 
 void PdbFile::parseFileContents()
@@ -86,6 +85,20 @@ void PdbFile::parseFileContents()
 	std::string path = toFilename(_filename);
 
 	gemmi::Structure st = gemmi::read_structure_file(path);
+	setup_entities(st);
+	
+	for (size_t i = 0; i < st.entities.size(); i++)
+	{
+		std::vector<std::string> seq = st.entities[i].full_sequence;
+
+		std::cout << st.entities[i].name << std::endl;
+		
+		for (size_t j = 0; j < seq.size(); j++)
+		{
+			std::cout << seq[j] << " ";
+		}
+		std::cout << std::endl;
+	}
 
 	for (size_t i = 0; i < st.models.size(); i++)
 	{

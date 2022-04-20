@@ -84,6 +84,11 @@ public:
 	std::vector<AtomGroup *> connectedGroups();
 	void refinePositions();
 	void organiseSamples(int n);
+protected:
+	Atom *atom(int i)
+	{
+		return _atoms[i];
+	}
 private:
 	void cleanupRefinement();
 	void findPossibleAnchors();
@@ -94,7 +99,7 @@ private:
 	SimplexEngine *_engine = nullptr;
 	
 	double _lastResidual = FLT_MAX;
-	std::vector<AtomGroup *> _subgroups;
+	std::vector<AtomGroup *> _connectedGroups;
 	
 	Atom *_chosenAnchor = nullptr;
 };

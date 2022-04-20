@@ -119,7 +119,7 @@ public:
 	}
 
 	/** @returns occupancy for atom, usually between 0. and 1.f */
-	const float &occupancy()
+	const float &occupancy() const
 	{
 		return _occupancy;
 	}
@@ -128,6 +128,16 @@ public:
 	 * 	@param ele Element symbol e.g. K. Throws exception if not alphabetical
 	 *	or empty. */
 	void setElementSymbol(std::string ele);
+	
+	void setChain(std::string id)
+	{
+		_chain = id;
+	}
+	
+	const std::string &chain() const
+	{
+		return _chain;
+	}
 	
 	/** @returns upper case element symbol e.g. K */
 	std::string elementSymbol()
@@ -209,6 +219,7 @@ private:
 	int _residueNumber = 1.;
 	int _atomNum = 1.;
 
+	std::string _chain;
 	std::string _ele;
 	std::string _atomName;
 	std::string _code;

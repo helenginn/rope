@@ -13,6 +13,8 @@ int main()
 	AtomGroup *atoms = geom.atoms();
 	Atom *oAnchor = atoms->firstAtomWithName("OXT");
 	Atom *nAnchor = atoms->firstAtomWithName("N");
+	
+	std::cout << "Atoms: " << atoms->size() << std::endl;
 
 	BondSequence *sequence = new BondSequence();
 	sequence->addToGraph(oAnchor);
@@ -22,6 +24,10 @@ int main()
 	{
 		std::cout << "Incorrect number of blocks calculated" << std::endl;
 		std::cout << "Created " << sequence->blockCount() << std::endl;
+		
+		Grapher &g = sequence->grapher();
+		std::cout << g.desc() << std::endl;
+
 		return 1;
 	}
 

@@ -62,13 +62,6 @@ AtomGroup::~AtomGroup()
 {
 	cancelRefinement();
 	deleteBondstraints(this);
-
-	/*
-	delete _engine;
-	delete _refine;
-	_engine = nullptr;
-	_refine = nullptr;
-	*/
 }
 
 bool AtomGroup::hasAtom(Atom *a)
@@ -232,9 +225,9 @@ void AtomGroup::recalculate()
 {
 	connectedGroups();
 
-	for (size_t i = 0; i < _subgroups.size(); i++)
+	for (size_t i = 0; i < _connectedGroups.size(); i++)
 	{
-		Atom *anchor = _subgroups[i]->chosenAnchor();
+		Atom *anchor = _connectedGroups[i]->chosenAnchor();
 
 		BondCalculator calculator;
 		calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
@@ -290,9 +283,9 @@ void AtomGroup::add(AtomGroup *g)
 
 std::vector<AtomGroup *> AtomGroup::connectedGroups()
 {
-	if (_subgroups.size())
+	if (_connectedGroups.size())
 	{
-		return _subgroups;
+		return _connectedGroups;
 	}
 
 	std::vector<AtomGroup *> groups;
@@ -326,7 +319,7 @@ std::vector<AtomGroup *> AtomGroup::connectedGroups()
 		groups.push_back(next);
 	}
 
-	_subgroups = groups;
-	return _subgroups;
+	_connectedGroups = groups;
+	return _connectedGroups;
 }
 

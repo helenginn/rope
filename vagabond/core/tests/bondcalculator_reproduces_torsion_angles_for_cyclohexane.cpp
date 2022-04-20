@@ -1,5 +1,5 @@
 #include "../AtomGroup.h"
-#include "../BondSequence.h"
+#include "../Grapher.h"
 #include "../CifFile.h"
 #include "../BondTorsion.h"
 
@@ -49,19 +49,16 @@ int main()
 	
 	if (bad)
 	{
-		BondSequence *sequence = new BondSequence();
-		sequence->addToGraph(chx.possibleAnchor(0), UINT_MAX);
-		int added = sequence->addedAtomsCount();
+		Grapher gr;
+		gr.generateGraphs(chx.possibleAnchor(0), UINT_MAX);
+		int added = gr.atoms().size();
 		
 		std::cout << "Added " << added << " atoms." << std::endl;
 
-		for (size_t i = 0; i < sequence->atomGraphCount(); i++)
+		for (size_t i = 0; i < gr.graphCount(); i++)
 		{
-			std::cout << sequence->atomGraphDesc(i);
+			std::cout << gr.graph(i)->desc();
 		}
-		
-		delete sequence;
-
 	}
 	
 	return bad;

@@ -43,7 +43,6 @@ BondSequenceHandler::~BondSequenceHandler()
 	{
 		if (i == 0)
 		{
-			_sequences[i]->removeGraphs();
 			_sequences[i]->removeTorsionBasis();
 		}
 
@@ -199,7 +198,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	if (_mapHandler)
 	{
 		_mapHandler->supplyElementList(_elements);
-		_mapHandler->supplyAtomGroup(sequence->atoms(), sequence->atoms());
+		_mapHandler->supplyAtomGroup(sequence->grapher().atoms());
 		_pointHandler->setup();
 	}
 

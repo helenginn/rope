@@ -12,27 +12,30 @@ int main()
 	
 	AtomGroup *atoms = geom.atoms();
 	
+	bool bad = false;
+
 	for (size_t i = 0; i < atoms->possibleAnchorCount(); i++)
 	{
-		BondSequence *sequence = new BondSequence();
-		sequence->addToGraph(atoms->possibleAnchor(i), UINT_MAX);
+		Grapher gr;
+		gr.generateGraphs(atoms->possibleAnchor(i));
+		gr.calculateMissingMaxDepths();
 
-		int added = sequence->atomGraphCount();
+		int added = gr.graphCount();
 
 		for (size_t i = 0; i < added; i++)
 		{
-			bool result = sequence->checkAtomGraph(i);
+			bool result = gr.graph(i)->checkAtomGraph();
 			
 			if (result != 0)
 			{
 				std::cout << "Problem with block " << i << std::endl;
-				return result;
+				bad = true;
 			}
 		}
 	}
 	
 	delete atoms;
 
-	return 0;
+	return bad;
 }
 

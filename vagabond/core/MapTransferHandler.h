@@ -49,8 +49,7 @@ public:
 	 * of the 'constant' segment. 
 	 * @param all every atom to be considered in the analysis
 	 * @param sub sub-group of atoms which will change during analysis */
-	void supplyAtomGroup(std::vector<Atom *> all, 
-	                     std::vector<Atom *> sub);
+	void supplyAtomGroup(std::vector<Atom *> all);
 
 	/**prepares MapTransfers and appropriate thread pools etc. 
 	 * @param elements map connecting element symbol e.g. Ca to number of

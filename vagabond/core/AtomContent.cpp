@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,48 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __AtomGraph__AtomGraph__
-#define __AtomGraph__AtomGraph__
+#include "AtomContent.h"
+#include "Chain.h"
+#include <set>
 
-#include <vector>
-#include <map>
-#include <iostream>
-
-class Atom;
-class BondTorsion;
-
-struct AtomGraph
+AtomContent::AtomContent() : AtomGroup()
 {
-	Atom *atom;
-	Atom *parent;
-	Atom *grandparent;
-	int priority = 0;
-	int depth;
-	int maxDepth;
-	bool onlyHydrogens = false;
-	BondTorsion *torsion;
-	int torsion_idx;
-	std::vector<AtomGraph *> children;
 
-	bool childrenOnlyHydrogens();
-	bool checkAtomGraph() const;
-	std::string desc() const;
-	
-	~AtomGraph()
+}
+
+AtomContent::~AtomContent()
+{
+	for (size_t i = 0; i < size(); i++)
 	{
+		delete atom(i);
+	}
+}
 
+void AtomContent::groupByChain()
+{
+	std::set<std::string> ids;
+
+	for (size_t i = 0; i < size(); i++)
+	{
+		std::string ch = atom(i)->chain();
+		ids.insert(ch);
 	}
 
-	bool operator<(const AtomGraph &other) const
+	for (size_t i = 0; i < ids.size(); i++)
 	{
-		/* otherwise go for tinier branch points first */
-		return maxDepth < other.maxDepth;
+		Chain *chain = new Chain();
+		
+		for (size_t j = 0; j < size(); j++)
+		{
+			*chain += atom(j);
+		}
+		
+		_chains.push_back(chain);
 	}
+}
 
-	static bool atomgraph_less_than(const AtomGraph *a, const AtomGraph *b)
-	{
-		return *a < *b;
-	}
-};
-
-#endif
