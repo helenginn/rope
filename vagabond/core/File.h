@@ -74,11 +74,7 @@ public:
 	/** Warning: passes ownership of the AtomGroup onto the caller.
 	 * @return AtomGroup containing all molecular component atoms found 
 	 * in a geometry file */
-	AtomGroup *compAtoms() 
-	{
-		_accessedCompAtoms = true;
-		return _compAtoms;
-	}
+	AtomGroup *compAtoms();
 	
 	/** Warning: passes ownership of the AtomGroup onto the caller.
 	 *  @return either macromolecular atoms or component atoms depending on
@@ -166,8 +162,6 @@ protected:
 	std::map<std::string, std::string> _values;
 	std::vector<Reflection> _reflections;
 	
-	bool _accessedCompAtoms = false;
-	bool _accessedMacroAtoms = false;
 	bool _accessedTable = false;
 	bool _knot = true;
 

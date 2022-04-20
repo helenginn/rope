@@ -18,8 +18,17 @@
 
 #include "Chain.h"
 
-Chain::Chain() : AtomGroup()
+Chain::Chain(std::string id) : AtomGroup()
 {
+	_id = id;
+}
+
+void Chain::add(Atom *a)
+{
+	if (a->chain() == _id)
+	{
+		AtomGroup::add(a);
+	}
 
 }
 

@@ -23,6 +23,7 @@
 #include "BondAngle.h"
 #include "Chirality.h"
 #include "Atom.h"
+#include "AtomGroup.h"
 
 HasBondstraints::~HasBondstraints()
 {
@@ -239,4 +240,19 @@ Chirality *HasBondstraints::findChirality(Atom *cen, Atom *a, Atom *b, Atom *c)
 	return nullptr;
 }
 
+void HasBondstraints::takeBondstraintOwnership(AtomGroup *which)
+{
+	which->_bondAngles = _bondAngles;
+	which->_centralBondAngles = _centralBondAngles;
+	which->_terminalBondAngles = _terminalBondAngles;
+	which->_bondLengths = _bondLengths;
+	which->_torsions = _torsions;
+	which->_centralTorsions = _centralTorsions;
+	which->_terminalTorsions = _terminalTorsions;
+	which->_bondstraints = _bondstraints;
 
+	for (size_t i = 0; i < _bondstraints.size(); i++)
+	{
+		_bondstraints[i]->setOwner(which);
+	}
+}

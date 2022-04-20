@@ -21,6 +21,8 @@
 
 #include "AtomGroup.h"
 
+class Chain;
+
 /** \class AtomContent
  * specific AtomGroup subclass pertaining to atoms grouped according to their
  * mutual participation in a model e.g. crystal or single particle. */
@@ -29,11 +31,22 @@ class AtomContent : public AtomGroup
 {
 public:
 	AtomContent();
+	AtomContent(AtomGroup &other);
 	~AtomContent();
+	
+	size_t chainCount()
+	{
+		return _chains.size();
+	}
+	
+	const Chain *chain(int i)
+	{
+		return _chains[i];
+	}
 
-	void groupByChain();
 private:
-	std::vector<AtomGroup *> _chains;
+	void groupByChain();
+	std::vector<Chain *> _chains;
 
 
 };

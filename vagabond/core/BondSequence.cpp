@@ -30,30 +30,6 @@ BondSequence::BondSequence(BondSequenceHandler *handler)
 	_handler = handler;
 }
 
-void BondSequence::printState()
-{
-	int *test = nullptr;
-	switch (_state)
-	{
-		case SequenceIdle:
-		std::cout << "SequenceIdle" << std::endl;
-		std::cout << *test << std::endl;
-		break;
-
-		case SequenceCalculateReady:
-		std::cout << "SequenceCalculateReady" << std::endl;
-		break;
-
-		case SequencePositionsReady:
-		std::cout << "SequencePositionsReady" << std::endl;
-		break;
-
-		default:
-		std::cout << "Other" << std::endl;
-		break;
-	}
-}
-
 void BondSequence::setMiniJobSeq(MiniJobSeq *job)
 {
 	_miniJob = job;

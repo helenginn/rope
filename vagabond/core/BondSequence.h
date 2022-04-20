@@ -100,7 +100,6 @@ public:
 	
 	void cleanUpToIdle();
 	void setMiniJobSeqInfo(MiniJobSeq *mini);
-	void printState();
 	void removeTorsionBasis();
 	
 	const size_t maxDepth() const

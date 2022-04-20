@@ -42,7 +42,7 @@ public:
 	{
 		return _bondstraints.size();
 	}
-	
+
 	/** @returns number of bond lengths involved with given atom */
 	size_t bondLengthCount() const
 	{
@@ -157,6 +157,7 @@ public:
 	}
 
 	virtual Atom *atomIdentity() = 0;
+	void takeBondstraintOwnership(AtomGroup *which);
 protected:
 	void deleteBondstraints(AtomGroup *owner);
 	bool hasBondLength(BondLength *straint);

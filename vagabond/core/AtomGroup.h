@@ -37,6 +37,7 @@ public:
 
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
+
 	AtomPtr operator[](int i) const;
 	AtomPtr operator[](std::string str) const;
 	
@@ -45,10 +46,7 @@ public:
 	void add(AtomGroup *g);
 	void remove(AtomGroup *g);
 	
-	void add(Atom *a)
-	{
-		*this += a;
-	}
+	virtual void add(Atom *a);
 	
 	void remove(Atom *a)
 	{

@@ -18,7 +18,7 @@
 
 #include "AtomGroup.h"
 #include "BondLength.h"
-#include "BondSequence.h"
+#include "Grapher.h"
 #include "../utils/FileReader.h"
 #include "BondTorsion.h"
 #include "TorsionBasis.h"
@@ -71,7 +71,7 @@ bool AtomGroup::hasAtom(Atom *a)
 	return (it != _atoms.end());
 }
 
-void AtomGroup::operator+=(Atom *a)
+void AtomGroup::add(Atom *a)
 {
 	if (a != nullptr && !hasAtom(a))
 	{
@@ -84,6 +84,11 @@ void AtomGroup::operator+=(Atom *a)
 
 		_anchors.clear();
 	}
+}
+
+void AtomGroup::operator+=(Atom *a)
+{
+	add(a);
 }
 
 void AtomGroup::operator-=(Atom *a)
@@ -292,18 +297,22 @@ std::vector<AtomGroup *> AtomGroup::connectedGroups()
 	AtomGroup total = AtomGroup(*this);
 	
 	while (total.size() > 0)
-	{chosenAnchor();
-		BondSequence *sequence = new BondSequence();
+	{
+		Grapher grapher;
 		Atom *anchor = total.possibleAnchor(0);
-
-		sequence->addToGraph(anchor);
+		grapher.generateGraphs(anchor);
 		
 		AtomGroup *next = new AtomGroup();
-		for (size_t i = 0; i < sequence->blockCount(); i++)
+		for (size_t i = 0; i < grapher.graphCount(); i++)
 		{
-			Atom *a = sequence->atomForBlock(i); 
+			Atom *a = grapher.graph(i)->atom;
 			if (a)
 			{
+				if (!total.hasAtom(a))
+				{
+					continue;
+				}
+
 				*next += a;
 				total -= a;
 			}
@@ -311,11 +320,9 @@ std::vector<AtomGroup *> AtomGroup::connectedGroups()
 		
 		if (next->size() == 0)
 		{
-			delete sequence;
 			break;
 		}
 		
-		delete sequence;
 		groups.push_back(next);
 	}
 

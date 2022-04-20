@@ -34,6 +34,11 @@ public:
 		return "";
 	}
 	
+	void setOwner(AtomGroup *owner)
+	{
+		_owner = owner;
+	}
+	
 	AtomGroup *owner()
 	{
 		return _owner;

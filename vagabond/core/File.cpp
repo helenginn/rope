@@ -23,6 +23,7 @@
 #include "PdbFile.h"
 #include "Atom.h"
 #include "Diffraction.h"
+#include "AtomContent.h"
 #include "RefList.h"
 
 using namespace gemmi::cif;
@@ -34,17 +35,10 @@ File::File(std::string filename)
 
 File::~File()
 {
-	if (!_accessedCompAtoms)
-	{
-		delete _compAtoms;
-	}
+	delete _compAtoms;
+	delete _macroAtoms;
 
-	if (!_accessedMacroAtoms)
-	{
-		delete _macroAtoms;
-	}
-
-	else if (!_accessedTable)
+	if (!_accessedTable)
 	{
 		delete _table;
 	}
@@ -87,17 +81,20 @@ const size_t File::atomCount() const
 	return 0;
 }
 
+AtomGroup *File::compAtoms()
+{
+	return new AtomContent(*_compAtoms);
+}
+
 AtomGroup *File::atoms()
 {
-	if (_macroAtoms && _macroAtoms->size() > 0)
+	if (_macroAtoms->size() > 0)
 	{
-		_accessedMacroAtoms = true;
-		return _macroAtoms;
+		return new AtomContent(*_macroAtoms);
 	}
 	else
 	{
-		_accessedCompAtoms = true;
-		return _compAtoms;
+		return new AtomContent(*_compAtoms);
 	}
 }
 

@@ -28,10 +28,17 @@
 class Chain : public AtomGroup
 {
 public:
-	Chain();
+	Chain(std::string id);
 	~Chain();
+	
+	std::string id() const
+	{
+		return _id;
+	}
 
+	virtual void add(Atom *a);
 private:
+	std::string _id;
 
 };
 

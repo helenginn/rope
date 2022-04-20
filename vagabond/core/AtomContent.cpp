@@ -20,6 +20,14 @@
 #include "Chain.h"
 #include <set>
 
+AtomContent::AtomContent(AtomGroup &other) : AtomGroup()
+{
+	add(&other);
+	
+	other.takeBondstraintOwnership(this);
+	groupByChain();
+}
+
 AtomContent::AtomContent() : AtomGroup()
 {
 
@@ -43,9 +51,10 @@ void AtomContent::groupByChain()
 		ids.insert(ch);
 	}
 
-	for (size_t i = 0; i < ids.size(); i++)
+	std::set<std::string>::iterator it;
+	for (it = ids.begin(); it != ids.end(); it++)
 	{
-		Chain *chain = new Chain();
+		Chain *chain = new Chain(*it);
 		
 		for (size_t j = 0; j < size(); j++)
 		{

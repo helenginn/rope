@@ -28,15 +28,15 @@ class BondTorsion;
 
 struct AtomGraph
 {
-	Atom *atom;
-	Atom *parent;
-	Atom *grandparent;
+	Atom *atom = nullptr;
+	Atom *parent = nullptr;
+	Atom *grandparent = nullptr;
 	int priority = 0;
-	int depth;
-	int maxDepth;
+	int depth = 0;
+	int maxDepth = -1;
 	bool onlyHydrogens = false;
-	BondTorsion *torsion;
-	int torsion_idx;
+	BondTorsion *torsion = nullptr;
+	int torsion_idx = -1;
 	std::vector<AtomGraph *> children;
 
 	bool childrenOnlyHydrogens();
