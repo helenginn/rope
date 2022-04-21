@@ -44,6 +44,8 @@ void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai)
 	Atom *vagatom = new Atom();
 	vagatom->setElementSymbol(a.element.name());
 	vagatom->setAtomName(a.name);
+	vagatom->setResidueId(ai.resid);
+	vagatom->setChain(ai.chain);
 	vagatom->setCode(ai.res);
 	glm::vec3 pos = glm::vec3(a.pos.x, a.pos.y, a.pos.z);
 	vagatom->setInitialPosition(pos, a.b_iso);
@@ -54,6 +56,7 @@ void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai)
 void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
 {
 	ai.res = r.name;
+	ai.resid = r.seqid.num.str() + r.seqid.icode;
 	ai.seqstr = r.seqid.str();
 	ai.isHetatm = (r.het_flag == 'H');
 	
@@ -149,3 +152,4 @@ File::Type PdbFile::cursoryLook()
 	
 	return type;
 }
+

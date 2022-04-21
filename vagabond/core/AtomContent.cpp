@@ -18,7 +18,9 @@
 
 #include "AtomContent.h"
 #include "Chain.h"
+#include "Sequence.h"
 #include <set>
+#include <iostream>
 
 AtomContent::AtomContent(AtomGroup &other) : AtomGroup()
 {
@@ -62,6 +64,15 @@ void AtomContent::groupByChain()
 		}
 		
 		_chains.push_back(chain);
+	}
+	
+	std::cout << chainCount() << " chains" << std::endl;
+	
+	for (size_t i = 0; i < chainCount(); i++)
+	{
+		Sequence *seq = chain(i)->fullSequence();
+		
+		std::cout << seq->str() << std::endl;
 	}
 }
 

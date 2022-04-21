@@ -24,6 +24,7 @@
 #include "TorsionBasis.h"
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
+#include "Sequence.h"
 
 #include <algorithm>
 #include <iostream>
@@ -286,7 +287,7 @@ void AtomGroup::add(AtomGroup *g)
 	}
 }
 
-std::vector<AtomGroup *> AtomGroup::connectedGroups()
+std::vector<AtomGroup *> &AtomGroup::connectedGroups()
 {
 	if (_connectedGroups.size())
 	{
@@ -330,3 +331,52 @@ std::vector<AtomGroup *> AtomGroup::connectedGroups()
 	return _connectedGroups;
 }
 
+void AtomGroup::getLimitingResidues(int *min, int *max)
+{
+	*min = INT_MAX;
+	*max = -INT_MAX;
+	
+	for (size_t i = 0; i < size(); i++)
+	{
+		std::string res = atom(i)->residueId();
+		int num = atoi(res.c_str());
+		*min = std::min(*min, num);
+		*max = std::max(*max, num);
+	}
+	
+	if (size() == 0)
+	{
+		*min = 0;
+		*max = 0;
+	}
+}
+
+Sequence *AtomGroup::sequence()
+{
+	int min, max;
+	getLimitingResidues(&min, &max);
+	
+	Atom *best = nullptr;
+	int lowest = INT_MAX;
+	
+	for (size_t i = 0; i < possibleAnchorCount(); i++)
+	{
+		std::string resstr = possibleAnchor(i)->residueId();
+		int res = atoi(resstr.c_str());
+
+		if (res == min) // shortcut to victory
+		{
+			best = possibleAnchor(i);
+			break;
+		}
+		
+		if (res < lowest)
+		{
+			lowest = res;
+			best = possibleAnchor(i);
+		}
+	}
+
+	Sequence *sequence = new Sequence(best);
+	return sequence;
+}

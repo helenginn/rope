@@ -24,6 +24,12 @@
 
 class TorsionBasis;
 
+/** \class Grapher
+ * Constructs graphs from starting atoms tracing through the structure
+ *  node-by-node.
+ * Also performs housework on said structures.
+ */
+
 class Grapher
 {
 public:
@@ -32,6 +38,10 @@ public:
 	Grapher();
 	Grapher(Grapher &g);
 
+	/** generation of atom graph.
+	 * @param atom anchor point to start from
+	 * @param count how many bonds to trace through from anchor before 
+	 * ending graph */
 	void generateGraphs(Atom *atom, size_t count = UINT_MAX);
 	void calculateMissingMaxDepths();
 	void fillInParents();
@@ -43,16 +53,21 @@ public:
 	std::vector<AtomBlock> turnToBlocks();
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);
 	
+	/** returns number of nodes */
 	size_t graphCount() const
 	{
 		return _graphs.size();
 	}
 	
-	const AtomGraph *graph(int i) const
+	/** returns reference to node index */
+	AtomGraph *graph(int i)
 	{
 		return _graphs[i];
 	}
 	
+	/** offset between the maximum depth following this node vs current depth
+	 * @param i index of node to query
+	 * @return offset, should be +ve */
 	const int remainingDepth(int i) const
 	{
 		return _graphs[i]->maxDepth - _graphs[i]->depth;
@@ -65,6 +80,11 @@ public:
 	
 	std::string desc() const;
 
+	/** get the first graph of the next residue following along the nodes.
+	 * If there is a choice, take the one with the lower residue number.
+	 * @param last current node 
+	 * @return node of beginning of next residue */
+	AtomGraph *firstGraphNextResidue(AtomGraph *last);
 private:
 	void addGraph(AtomGraph *graph);
 	void fixBlockAsGhost(AtomBlock &block, Atom *anchor);

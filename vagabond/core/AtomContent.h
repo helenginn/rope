@@ -39,7 +39,7 @@ public:
 		return _chains.size();
 	}
 	
-	const Chain *chain(int i)
+	Chain *const chain(int i)
 	{
 		return _chains[i];
 	}

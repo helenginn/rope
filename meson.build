@@ -178,6 +178,7 @@ vagafiles = [
 'vagabond/core/PositionRefinery.cpp',
 'vagabond/core/RefList.cpp',
 'vagabond/core/Sampler.cpp',
+'vagabond/core/Sequence.cpp',
 'vagabond/core/SimpleBasis.cpp',
 'vagabond/core/SimplexEngine.cpp',
 'vagabond/core/Superpose.cpp',

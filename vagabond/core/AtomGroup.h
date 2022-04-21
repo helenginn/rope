@@ -26,6 +26,7 @@ typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
 
 class SimplexEngine;
+class Sequence;
 
 class AtomGroup : public HasBondstraints
 {
@@ -79,9 +80,17 @@ public:
 	
 	Atom *chosenAnchor();
 
-	std::vector<AtomGroup *> connectedGroups();
+	std::vector<AtomGroup *> &connectedGroups();
 	void refinePositions();
 	void organiseSamples(int n);
+	
+	void getLimitingResidues(int *min, int *max);
+	
+	/** returns a sequence object according to the connectivity of the
+	 * first connected atom graph in this AtomGroup. Undefined choice in
+	 * AtomGroups of multiple connected molecules.
+	 * @return sequence object */
+	Sequence *sequence();
 protected:
 	Atom *atom(int i)
 	{

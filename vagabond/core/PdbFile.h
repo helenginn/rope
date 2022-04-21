@@ -40,6 +40,7 @@ private:
 	struct AtomInfo
 	{
 		std::string chain;
+		std::string resid;
 		std::string res;
 		std::string seqstr;
 		bool isHetatm;

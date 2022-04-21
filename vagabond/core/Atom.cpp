@@ -387,3 +387,4 @@ const std::string Atom::desc() const
 	str += code() + ":" + atomName();
 	return str;
 }
+

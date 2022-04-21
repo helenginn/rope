@@ -16,32 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Chain__
-#define __vagabond__Chain__
+#ifndef __vagabond__Residue__
+#define __vagabond__Residue__
 
-#include "AtomGroup.h"
+#include <string>
 
-/** \class Chain
- * contains all atoms belonging to the same chain ID (but may be still a 
- * mixture of proteins, water, ligands etc.) */
-
-class Chain : public AtomGroup
+struct Residue
 {
-public:
-	Chain(std::string id);
-	~Chain();
+	std::string num;
+	std::string code;
+	std::string chain;
 	
-	std::string id() const
+	int as_num()
 	{
-		return _id;
+		return atoi(num.c_str());
 	}
-
-	virtual void add(Atom *a);
-
-	Sequence * fullSequence();
-private:
-	std::string _id;
-
 };
 
 #endif

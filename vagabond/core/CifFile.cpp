@@ -692,6 +692,7 @@ bool CifFile::processLoopAsMacroAtoms(Loop &loop)
 		a->setInitialPosition(pos, b);
 		a->setOccupancy(occ);
 		a->setCode(code);
+		a->setChain(chain);
 		
 		_macroAtoms->add(a);
 	}

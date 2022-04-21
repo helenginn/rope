@@ -15,6 +15,7 @@ unit_tests = [
 'atomgroup_cannot_remove_non_member_atom',
 'atomgroup_does_not_add_atom_twice',
 'atomgroup_does_not_add_identical_bondstraints',
+'atomgroup_returns_correct_sequence',
 'bondangles_with_common_atoms_form_torsions',
 'bondangle_adds_self_to_atomgroup',
 'bondangle_and_permuted_bondangle_are_not_identical',

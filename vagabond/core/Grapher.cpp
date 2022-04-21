@@ -438,3 +438,44 @@ std::string Grapher::desc() const
 	
 	return ss.str();
 }
+
+AtomGraph *Grapher::firstGraphNextResidue(AtomGraph *last)
+{
+	Atom *start = last->atom;
+	std::string start_res = start->residueId();
+	
+	std::map<int, AtomGraph *> results;
+
+	std::queue<AtomGraph *> todo;
+	todo.push(last);
+
+	while (!todo.empty())
+	{
+		AtomGraph *g = todo.front();
+		todo.pop();
+
+		for (size_t j = 0; j < g->children.size(); j++)
+		{
+			Atom *child = g->children[j]->atom;
+			std::string child_res = child->residueId();
+			int num = atoi(child_res.c_str());
+			
+			if (child_res != start_res)
+			{
+				results[num] = g->children[j];
+			}
+			else
+			{
+				todo.push(g->children[j]);
+			}
+		}
+	}
+	
+	if (results.size() == 0)
+	{
+		return nullptr;
+	}
+	
+	/* return the graph with lowest integer residue in the map */
+	return results.begin()->second;
+}

@@ -83,17 +83,17 @@ public:
 	}
 	
 	/** @returns residue number within chain */
-	const int &residueNumber()
+	const std::string &residueId()
 	{
-		return _residueNumber;
+		return _residueId;
 	}
 	
 	const std::string desc() const;
 	
 	/** @param num residue number within chain */
-	void setResidueNumber(int num)
+	void setResidueId(std::string num)
 	{
-		_residueNumber = num;
+		_residueId = num;
 	}
 	
 	/** @param hetatm if atom originally specified as HETATM in PDB/mmCIF file */
@@ -216,7 +216,7 @@ private:
 
 	bool _hetatm = false;
 	float _occupancy = 1.;
-	int _residueNumber = 1.;
+	std::string _residueId = "1";
 	int _atomNum = 1.;
 
 	std::string _chain;
