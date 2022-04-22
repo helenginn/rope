@@ -16,46 +16,46 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Environment__
-#define __vagabond__Environment__
+#ifndef __vagabond__Model__
+#define __vagabond__Model__
 
 #include <string>
 
-class FileManager;
-class ModelManager;
+#include <json/json.hpp>
+using nlohmann::json;
 
-class Environment
+class Model
 {
 public:
-	Environment();
-
-	static ModelManager *modelManager()
-	{
-		return _environment._modelManager;
-	}
-
-	static FileManager *fileManager()
-	{
-		return _environment._fileManager;
-	}
-
-	static Environment env()
-	{
-		return _environment;
-	}
-
-	static Environment environment()
-	{
-		return _environment;
-	}
+	Model();
 	
-	void save();
-	void load(std::string file = "rope.json");
-private:
-	FileManager *_fileManager;
-	ModelManager *_modelManager;
+	void setFilename(std::string file);
 
-	static Environment _environment;
+	const std::string &name() const
+	{
+		return _name;
+	}
+
+	friend void to_json(json &j, const Model &value);
+	friend void from_json(const json &j, Model &value);
+private:
+	std::string _filename;
+	std::string _name;
+
 };
+
+inline void to_json(json &j, const Model &value)
+{
+	j["name"] = value._name;
+	j["filename"] = value._filename;
+}
+
+inline void from_json(const json &j, Model &value)
+{
+	value._name = j.at("name");
+	value._filename = j.at("filename");
+}
+
+
 
 #endif

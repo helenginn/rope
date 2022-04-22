@@ -143,7 +143,7 @@ bool Dictator::nextJob()
 {
 	if (_args.size() == 0)
 	{
-		Environment::env().loadDefault();
+		Environment::env().load();
 		return false;
 	}
 	

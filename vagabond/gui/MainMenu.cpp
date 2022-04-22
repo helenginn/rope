@@ -2,6 +2,7 @@
 
 #include "DatasetMenu.h"
 #include "EntityMenu.h"
+#include "ModelMenu.h"
 #include "MainMenu.h"
 #include "FileView.h"
 #include "TextButton.h"
@@ -60,14 +61,26 @@ void MainMenu::setup()
 	}
 
 	{
-		ImageButton *button = new ImageButton("assets/images/data_model.png", this);
-		button->resize(0.3);
-		button->setReturnTag("datasets");
+		ImageButton *button = new ImageButton("assets/images/model.png", this);
+		button->resize(0.25);
+		button->setReturnTag("models");
 		button->setCentre(0.8, 0.3);
 		addObject(button);
 
-		Text *text = new Text("Dataset preparation");
+		Text *text = new Text("Models");
 		text->setCentre(0.8, 0.5);
+		addObject(text);
+	}
+
+	{
+		ImageButton *button = new ImageButton("assets/images/data_model.png", this);
+		button->resize(0.3);
+		button->setReturnTag("datasets");
+		button->setCentre(0.2, 0.6);
+		addObject(button);
+
+		Text *text = new Text("Dataset preparation");
+		text->setCentre(0.2, 0.8);
 		addObject(text);
 	}
 }
@@ -86,6 +99,11 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	else if (tag == "proteins")
 	{
 		EntityMenu *menu = new EntityMenu(this);
+		menu->show();
+	}
+	else if (tag == "models")
+	{
+		ModelMenu *menu = new ModelMenu(this);
 		menu->show();
 	}
 	else if (tag == "datasets")

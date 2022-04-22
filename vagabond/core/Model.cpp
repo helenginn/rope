@@ -16,46 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Environment__
-#define __vagabond__Environment__
+#include "Model.h"
+#include "../utils/FileReader.h"
 
-#include <string>
-
-class FileManager;
-class ModelManager;
-
-class Environment
+Model::Model()
 {
-public:
-	Environment();
 
-	static ModelManager *modelManager()
-	{
-		return _environment._modelManager;
-	}
+}
 
-	static FileManager *fileManager()
-	{
-		return _environment._fileManager;
-	}
-
-	static Environment env()
-	{
-		return _environment;
-	}
-
-	static Environment environment()
-	{
-		return _environment;
-	}
+void Model::setFilename(std::string file)
+{
+	_filename = file;
 	
-	void save();
-	void load(std::string file = "rope.json");
-private:
-	FileManager *_fileManager;
-	ModelManager *_modelManager;
+	if (_name.length() == 0)
+	{
+		_name = getBaseFilename(_filename);
+	}
 
-	static Environment _environment;
-};
-
-#endif
+}

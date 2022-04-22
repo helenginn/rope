@@ -16,46 +16,50 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Environment__
-#define __vagabond__Environment__
+#include "ModelMenu.h"
+#include "TextButton.h"
+#include <vagabond/core/Environment.h>
 
-#include <string>
-
-class FileManager;
-class ModelManager;
-
-class Environment
+ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
 {
-public:
-	Environment();
+	_manager = Environment::modelManager();
+}
 
-	static ModelManager *modelManager()
-	{
-		return _environment._modelManager;
-	}
+ModelMenu::~ModelMenu()
+{
+	addTitle("Model menu");
 
-	static FileManager *fileManager()
-	{
-		return _environment._fileManager;
-	}
+}
 
-	static Environment env()
-	{
-		return _environment;
-	}
-
-	static Environment environment()
-	{
-		return _environment;
-	}
+void ModelMenu::setup()
+{
 	
-	void save();
-	void load(std::string file = "rope.json");
-private:
-	FileManager *_fileManager;
-	ModelManager *_modelManager;
+	ListView::setup();
+}
 
-	static Environment _environment;
-};
+size_t ModelMenu::lineCount()
+{
+	return 1 + _manager->modelCount();
+}
 
-#endif
+Renderable *ModelMenu::getLine(int i)
+{
+	if (i == _manager->modelCount())
+	{
+		TextButton *t = new TextButton("Add model...", this);
+		t->setReturnTag("add");
+		return t;
+	}
+
+	return nullptr;
+}
+
+void ModelMenu::buttonPressed(std::string tag, Button *button)
+{
+	ListView::buttonPressed(tag, button);
+}
+
+void ModelMenu::modelsChanged()
+{
+	refreshFiles();
+}

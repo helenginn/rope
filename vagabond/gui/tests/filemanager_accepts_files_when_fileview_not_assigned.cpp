@@ -1,5 +1,5 @@
-#include "../Window.h"
-#include "../FileManager.h"
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/FileManager.h>
 #include "../FileView.h"
 
 int main()
@@ -7,7 +7,7 @@ int main()
 	FileView *fv = new FileView(nullptr);
 	delete fv;
 
-	FileManager *manager = Window::fileManager();
+	FileManager *manager = Environment::fileManager();
 	
 	manager->acceptFile("file", true);
 

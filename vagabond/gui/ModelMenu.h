@@ -16,46 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Environment__
-#define __vagabond__Environment__
+#ifndef __vagabond__ModelMenu__
+#define __vagabond__ModelMenu__
 
-#include <string>
+#include "ListView.h"
+#include <vagabond/core/ModelManager.h>
 
-class FileManager;
-class ModelManager;
-
-class Environment
+class ModelMenu : public ListView, public ModelManagerResponder
 {
 public:
-	Environment();
+	ModelMenu(Scene *prev);
 
-	static ModelManager *modelManager()
-	{
-		return _environment._modelManager;
-	}
+	virtual ~ModelMenu();
+	virtual void setup();
 
-	static FileManager *fileManager()
-	{
-		return _environment._fileManager;
-	}
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
 
-	static Environment env()
-	{
-		return _environment;
-	}
-
-	static Environment environment()
-	{
-		return _environment;
-	}
-	
-	void save();
-	void load(std::string file = "rope.json");
+	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void modelsChanged();
 private:
-	FileManager *_fileManager;
-	ModelManager *_modelManager;
+	ModelManager *_manager;
 
-	static Environment _environment;
 };
 
 #endif

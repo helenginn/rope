@@ -18,6 +18,7 @@
 
 #include "Environment.h"
 #include "FileManager.h"
+#include "ModelManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -29,6 +30,7 @@ Environment Environment::_environment;
 Environment::Environment()
 {
 	_fileManager = new FileManager();
+	_modelManager = new ModelManager();
 }
 
 void Environment::save()
@@ -43,14 +45,14 @@ void Environment::save()
 	file.close();
 }
 
-void Environment::loadDefault()
+void Environment::load(std::string file)
 {
 	json data;
 	
-	std::ifstream file;
-	file.open("rope.json");
-	file >> data;
-	file.close();
+	std::ifstream f;
+	f.open(file);
+	f >> data;
+	f.close();
 
 	*_fileManager = data["file_manager"];
 }

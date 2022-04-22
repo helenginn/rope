@@ -16,46 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Environment__
-#define __vagabond__Environment__
+#include "ModelManager.h"
+#include <iostream>
 
-#include <string>
-
-class FileManager;
-class ModelManager;
-
-class Environment
+ModelManager::ModelManager()
 {
-public:
-	Environment();
 
-	static ModelManager *modelManager()
-	{
-		return _environment._modelManager;
-	}
+}
 
-	static FileManager *fileManager()
+void ModelManager::insertIfUnique(const Model &m)
+{
+	for (Model &other : _models)
 	{
-		return _environment._fileManager;
-	}
-
-	static Environment env()
-	{
-		return _environment;
-	}
-
-	static Environment environment()
-	{
-		return _environment;
+		if (other.name() == m.name())
+		{
+			throw std::runtime_error("Model with same name exists");
+		}
 	}
 	
-	void save();
-	void load(std::string file = "rope.json");
-private:
-	FileManager *_fileManager;
-	ModelManager *_modelManager;
+	_models.push_back(m);
 
-	static Environment _environment;
-};
-
-#endif
+	if (_responder)
+	{
+		_responder->modelsChanged();
+	}
+}

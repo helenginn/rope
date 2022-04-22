@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,60 +16,62 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileManager__
-#define __vagabond__FileManager__
+#ifndef __vagabond__ModelManager__
+#define __vagabond__ModelManager__
 
 #include <string>
 #include <vector>
+#include <list>
+#include "Model.h"
+
+class Model;
 
 #include <json/json.hpp>
 using nlohmann::json;
 
-class FileManagerResponder
+class ModelManagerResponder
 {
 public:
-	virtual ~FileManagerResponder() {};
-	virtual void filesChanged() = 0;
+	virtual ~ModelManagerResponder() {};
+	virtual void modelsChanged() = 0;
 };
 
-class FileManager
+class ModelManager
 {
 public:
-	FileManager();
-
-	void setFileView(FileManagerResponder *fileView)
-	{
-		_view = fileView;
-	}
-
-	bool acceptFile(std::string filename, bool force = false);
+	ModelManager();
 	
-	const size_t fileCount() const
+	size_t modelCount()
 	{
-		return _list.size();
+		return _models.size();
 	}
 
-	std::string filename(int i)
+	void setResponder(ModelManagerResponder *responder)
 	{
-		return _list[i];
+		_responder = responder;
 	}
-
-	friend void to_json(json &j, const FileManager &value);
-	friend void from_json(const json &j, FileManager &value);
+	
+	void insertIfUnique(const Model &m);
+	
+	friend void to_json(json &j, const ModelManager &value);
+	friend void from_json(const json &j, ModelManager &value);
 private:
-	std::vector<std::string> _list;
-	FileManagerResponder *_view;
+	std::list<Model> _models;
+
+	ModelManagerResponder *_responder = nullptr;
 };
 
-inline void to_json(json &j, const FileManager &manager)
+
+inline void to_json(json &j, const ModelManager &value)
 {
-	j["files"] = manager._list;
+	j["models"] = value._models;
 }
 
-inline void from_json(const json &j, FileManager &manager)
+inline void from_json(const json &j, ModelManager &value)
 {
-	j.at("files").get_to(manager._list);
+	value._models = j.at("models");
 }
+
 
 
 #endif
