@@ -5,6 +5,7 @@
 
 #include <string>
 
+class KeyResponder;
 class Button;
 
 class ButtonResponder
@@ -13,6 +14,19 @@ public:
 	ButtonResponder() {};
 	virtual ~ButtonResponder() {};
 	virtual void buttonPressed(std::string tag, Button *button = NULL) = 0;
+	
+	void setKeyResponder(KeyResponder *kr)
+	{
+		_keyResponder = kr;
+	}
+	
+	KeyResponder *const keyResponder() 
+	{
+		return _keyResponder;
+	}
+
+protected:
+	KeyResponder *_keyResponder = nullptr;
 };
 
 

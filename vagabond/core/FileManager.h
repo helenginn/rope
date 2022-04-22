@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include "File.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -37,27 +38,36 @@ class FileManager
 public:
 	FileManager();
 
+	void setFilterType(File::Type type);
+	bool valid(std::string filename);
+
 	void setFileView(FileManagerResponder *fileView)
 	{
 		_view = fileView;
+		setFilterType(File::Nothing);
 	}
 
 	bool acceptFile(std::string filename, bool force = false);
 	
-	const size_t fileCount() const
+	const size_t filteredCount() const
 	{
-		return _list.size();
+		return _filtered.size();
 	}
 
-	std::string filename(int i)
+	std::string filtered(int i)
 	{
-		return _list[i];
+		return _filtered[i];
 	}
+
+	void addFile(std::string filename);
 
 	friend void to_json(json &j, const FileManager &value);
 	friend void from_json(const json &j, FileManager &value);
 private:
 	std::vector<std::string> _list;
+	std::vector<std::string> _filtered;
+
+	File::Type _type = File::Nothing;
 	FileManagerResponder *_view;
 };
 

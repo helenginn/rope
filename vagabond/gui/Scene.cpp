@@ -222,3 +222,13 @@ void Scene::back(int num)
 		}
 	}
 }
+
+void Scene::keyPressEvent(SDL_Keycode pressed)
+{
+	if (_keyResponder == nullptr)
+	{
+		return;
+	}
+
+	_keyResponder->keyPressed(pressed);
+}

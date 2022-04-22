@@ -21,18 +21,31 @@
 
 #include "ListView.h"
 #include <vagabond/core/FileManager.h>
+#include <vagabond/core/File.h>
 
 class FileManager;
+
+class FileViewResponder : public virtual Scene
+{
+public:
+	virtual ~FileViewResponder() {};
+	virtual void fileChosen(std::string filename) = 0;
+};
 
 class FileView : public ListView, public FileManagerResponder
 {
 public:
 	FileView(Scene *prev);
+	FileView(FileViewResponder *prev, bool choose);
+	
+	void filterForTypes(File::Type type);
 	
 	virtual ~FileView();
 	virtual void setup();
 	
 	virtual void filesChanged();
+	void handleFileWithoutChoice(std::string filename);
+	void returnToResponder(std::string filename);
 
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
@@ -41,6 +54,7 @@ public:
 private:
 	void loadFilesFrom(int start, int num);
 	FileManager *_manager;
+	FileViewResponder *_responder = nullptr;
 };
 
 #endif

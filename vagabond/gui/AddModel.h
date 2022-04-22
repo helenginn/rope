@@ -16,56 +16,34 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Model__
-#define __vagabond__Model__
+#ifndef __vagabond__AddModel__
+#define __vagabond__AddModel__
 
-#include <string>
+#include "Scene.h"
+#include "FileView.h"
+#include "TextButton.h"
+#include <vagabond/core/Model.h>
 
-#include <json/json.hpp>
-using nlohmann::json;
+class TextEntry;
 
-class Model
+class AddModel : public virtual Scene, public FileViewResponder
 {
 public:
-	Model();
-	
-	void setFilename(std::string file);
-	
-	void setName(std::string name)
-	{
-		_name = name;
-	}
+	AddModel(Scene *prev);
+	~AddModel();
 
-	const std::string &filename() const
-	{
-		return _filename;
-	}
+	void setup();
 
-	const std::string &name() const
-	{
-		return _name;
-	}
-
-	friend void to_json(json &j, const Model &value);
-	friend void from_json(const json &j, Model &value);
+	void refreshInfo();
+	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void fileChosen(std::string filename);
 private:
-	std::string _filename;
-	std::string _name;
+	void fileTextOrChoose(std::string &file, std::string other = "Choose...");
+	TextButton *_initialFile = nullptr;
+	TextEntry *_name = nullptr;
+	Model _m;
+	std::string _lastTag;
 
 };
-
-inline void to_json(json &j, const Model &value)
-{
-	j["name"] = value._name;
-	j["filename"] = value._filename;
-}
-
-inline void from_json(const json &j, Model &value)
-{
-	value._name = j.at("name");
-	value._filename = j.at("filename");
-}
-
-
 
 #endif

@@ -30,13 +30,51 @@ FileManager::FileManager()
 #endif
 }
 
+void FileManager::setFilterType(File::Type type)
+{
+	_type = type;
+
+	if (type == File::Nothing)
+	{
+		_filtered = _list;
+		return;
+	}
+	
+	_filtered.clear();
+
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		if (valid(_list[i]))
+		{
+			_filtered.push_back(_list[i]);
+		}
+	}
+}
+
+bool FileManager::valid(std::string filename)
+{
+	File::Type type = File::typeUnknown(filename);
+
+	return (type & _type);
+}
+
+void FileManager::addFile(std::string filename)
+{
+	_list.push_back(filename);
+
+	if (_type == File::Nothing || valid(filename))
+	{
+		_filtered.push_back(filename);
+	}
+}
+
 bool FileManager::acceptFile(std::string filename, bool force)
 {
 	bool added = false;
 
 	if (file_exists(filename) || force)
 	{
-		_list.push_back(filename);
+		addFile(filename);
 		added = true;
 	}
 	

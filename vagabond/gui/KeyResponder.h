@@ -11,6 +11,7 @@ public:
 	virtual ~KeyResponder() {};
 	virtual void keyPressed(char key) = 0;
 	virtual void keyPressed(SDL_Keycode other) = 0;
+	virtual void finish() {};
 };
 
 

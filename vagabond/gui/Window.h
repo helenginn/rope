@@ -4,7 +4,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include "KeyResponder.h"
-#include <vector>
+#include <set>
+#include <iostream>
 
 #define BROWSER_WIDTH 1600.
 #define BROWSER_HEIGHT 900.
@@ -48,7 +49,7 @@ public:
 	
 	static void setDelete(Scene *sc)
 	{
-		_toDelete.push_back(sc);
+		_toDelete.insert(sc);
 	}
 
 	void glSetup();
@@ -73,7 +74,7 @@ private:
 
 	static Scene *_current;
 	static Dictator *_dictator;
-	static std::vector<Scene *> _toDelete;
+	static std::set<Scene *> _toDelete;
 	
 	static KeyResponder *_keyResponder;
 };

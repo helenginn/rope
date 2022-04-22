@@ -176,6 +176,8 @@ public:
 	void setLeft(double x, double y);
 	void setRight(double x, double y);
 	
+	void realign();
+	
 	void changeMidPoint(double x, double y);
 	void setHighlighted(bool highlighted);
 	
@@ -377,6 +379,17 @@ private:
 	std::string _gFile;
 	std::string _vFile;
 	
+	enum Alignment
+	{
+		Left,
+		Right,
+		Centre,
+		None,
+	};
+	
+	Alignment _align;
+	double _x = 0.5;
+	double _y = 0.5;
 	SnowGL *_gl;
 	static double _selectionResize;
 };

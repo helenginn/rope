@@ -44,7 +44,7 @@ void MainMenu::setup()
 		addObject(button);
 
 		Text *text = new Text("View loaded files");
-		text->setCentre(0.2, 0.5);
+		text->setCentre(0.2, 0.45);
 		addObject(text);
 	}
 
@@ -56,7 +56,7 @@ void MainMenu::setup()
 		addObject(button);
 
 		Text *text = new Text("Protein entities");
-		text->setCentre(0.5, 0.5);
+		text->setCentre(0.5, 0.45);
 		addObject(text);
 	}
 
@@ -68,7 +68,7 @@ void MainMenu::setup()
 		addObject(button);
 
 		Text *text = new Text("Models");
-		text->setCentre(0.8, 0.5);
+		text->setCentre(0.8, 0.45);
 		addObject(text);
 	}
 
@@ -76,11 +76,11 @@ void MainMenu::setup()
 		ImageButton *button = new ImageButton("assets/images/data_model.png", this);
 		button->resize(0.3);
 		button->setReturnTag("datasets");
-		button->setCentre(0.2, 0.6);
+		button->setCentre(0.2, 0.65);
 		addObject(button);
 
 		Text *text = new Text("Dataset preparation");
-		text->setCentre(0.2, 0.8);
+		text->setCentre(0.2, 0.85);
 		addObject(text);
 	}
 }

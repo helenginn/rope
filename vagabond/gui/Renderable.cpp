@@ -1358,14 +1358,17 @@ void Renderable::triangulate()
 
 void Renderable::setCentre(double x, double y)
 {
+	_x = x; _y = y;
 	double xf = 2 * x - 1;
 	double yf = 2 * y - 1;
 
 	setPosition(glm::vec3(xf, -yf, 0));
+	_align = Centre;
 }
 
 void Renderable::setLeft(double x, double y)
 {
+	_x = x; _y = y;
 	double xf = 2 * x - 1;
 	double yf = 1 - 2 * y;
 	
@@ -1384,16 +1387,19 @@ void Renderable::setLeft(double x, double y)
 	unlockMutex();
 
 	positionChanged();
+	_align = Left;
 }
 
 void Renderable::setRight(double x, double y)
 {
+	_x = x; _y = y;
 	double xf = 2 * x - 1;
 	double yf = 2 * y - 1;
 	
 	xf -= maximalWidth() / 2;
 
 	setPosition(glm::vec3(xf, -yf, 0));
+	_align = Right;
 }
 
 void Renderable::setExtra(glm::vec4 pos)
@@ -1402,4 +1408,26 @@ void Renderable::setExtra(glm::vec4 pos)
 	{
 		_vertices[i].extra = pos;
 	}
+}
+
+void Renderable::realign()
+{
+	switch (_align)
+	{
+		case Left:
+		setLeft(_x, _y);
+		break;
+
+		case Right:
+		setRight(_x, _y);
+		break;
+
+		case Centre:
+		setCentre(_x, _y);
+		break;
+		
+		default:
+		break;
+	}
+
 }

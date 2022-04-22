@@ -14,6 +14,14 @@ public:
 	Text(std::string);
 
 	void setText(std::string text);
+	
+	std::string text()
+	{
+		return _text;
+	}
+protected:
+	std::string _text;
+
 private:
 	virtual void makeQuad();
 	int _w, _h;

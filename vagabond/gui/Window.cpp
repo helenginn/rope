@@ -16,7 +16,7 @@ SDL_Window *Window::_window = NULL;
 SDL_GLContext Window::_context = NULL;
 
 Scene *Window::_current = NULL;
-std::vector<Scene *> Window::_toDelete;
+std::set<Scene *> Window::_toDelete;
 KeyResponder *Window::_keyResponder = NULL;
 
 
@@ -179,12 +179,12 @@ void Window::render()
 
 	if (_toDelete.size())
 	{
-		for (size_t i = 0; i < _toDelete.size(); i++)
+		std::set<Scene *>::iterator it;
+		for (it = _toDelete.begin(); it != _toDelete.end(); it++)
 		{
-			if (_toDelete[i] != _current)
+			if (*it != _current)
 			{
-				delete _toDelete[i];
-				_toDelete[i] = NULL;
+				delete *it;
 			}
 		}
 		

@@ -21,18 +21,19 @@ Text::Text(std::string text) : Box()
 
 void Text::setText(std::string text)
 {
+	_text = text;
+
 	if (_texid > 0)
 	{
 		Library::getLibrary()->dropTexture(_texid);
 		_texid = 0;
 	}
 
-	glm::vec3 c = centroid();
 	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h);
 	_texid = tex;
 	clearVertices();
 	makeQuad();
-	setPosition(c);
+	realign();
 	setupVBOBuffers();
 }
 

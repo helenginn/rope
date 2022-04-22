@@ -42,9 +42,9 @@ public:
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
 
 	virtual void keyReleaseEvent(SDL_Keycode pressed) {};
-	virtual void keyPressEvent(SDL_Keycode pressed) {};
+	virtual void keyPressEvent(SDL_Keycode pressed);
 
-	virtual void back(int num);
+	virtual void back(int num = 0);
 	void buttonPressed(std::string tag, Button *button);
 protected:
 	virtual std::vector<Renderable *> &pertinentObjects();

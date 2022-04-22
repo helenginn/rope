@@ -53,6 +53,8 @@ void ListView::buttonPressed(std::string tag, Button *button)
 		}
 		refreshFiles();
 	}
+	
+	Scene::buttonPressed(tag, button);
 }
 
 void ListView::refreshFiles()

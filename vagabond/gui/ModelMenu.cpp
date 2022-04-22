@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ModelMenu.h"
+#include "AddModel.h"
 #include "TextButton.h"
 #include <vagabond/core/Environment.h>
 
@@ -27,12 +28,13 @@ ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
 
 ModelMenu::~ModelMenu()
 {
-	addTitle("Model menu");
+	deleteObjects();
 
 }
 
 void ModelMenu::setup()
 {
+	addTitle("Model menu");
 	
 	ListView::setup();
 }
@@ -57,6 +59,12 @@ Renderable *ModelMenu::getLine(int i)
 void ModelMenu::buttonPressed(std::string tag, Button *button)
 {
 	ListView::buttonPressed(tag, button);
+
+	if (tag == "add")
+	{
+		AddModel *addModel = new AddModel(this);
+		addModel->show();
+	}
 }
 
 void ModelMenu::modelsChanged()

@@ -31,9 +31,21 @@ FileView::FileView(Scene *prev) : ListView(prev)
 	_manager->setFileView(this);
 }
 
+FileView::FileView(FileViewResponder *prev, bool choose) : ListView(prev)
+{
+	_responder = prev;
+	_manager = Environment::fileManager();
+	_manager->setFileView(this);
+}
+
 FileView::~FileView()
 {
 	_manager->setFileView(nullptr);
+}
+
+void FileView::filterForTypes(File::Type type)
+{
+	_manager->setFilterType(type);
 }
 
 void FileView::setup()
@@ -47,6 +59,36 @@ void FileView::setup()
 	ListView::setup();
 }
 
+void FileView::handleFileWithoutChoice(std::string filename)
+{
+	File *file = File::loadUnknown(filename);
+	CifFile::Type type = file->cursoryLook();
+
+	if (type & CifFile::CompAtoms || type & CifFile::MacroAtoms)
+	{
+		if (file->atomCount() > 0)
+		{
+			Display *display = new Display(this);
+			display->loadAtoms(file->atoms());
+			display->show();
+		}
+	}
+	else if (type & CifFile::Reflections)
+	{
+		Display *display = new Display(this);
+		display->loadDiffraction(file->diffractionData());
+		display->show();
+	}
+
+	delete file;
+}
+
+void FileView::returnToResponder(std::string filename)
+{
+	_responder->fileChosen(filename);
+	Scene::back();
+}
+
 void FileView::buttonPressed(std::string tag, Button *button)
 {
 	Scene::buttonPressed(tag, button);
@@ -57,26 +99,14 @@ void FileView::buttonPressed(std::string tag, Button *button)
 		std::string filename = tag.substr(file_prefix.length(), 
 		                                  std::string::npos);
 
-		File *file = File::loadUnknown(filename);
-		CifFile::Type type = file->cursoryLook();
-		
-		if (type & CifFile::CompAtoms || type & CifFile::MacroAtoms)
+		if (_responder == nullptr)
 		{
-			if (file->atomCount() > 0)
-			{
-				Display *display = new Display(this);
-				display->loadAtoms(file->atoms());
-				display->show();
-			}
+			handleFileWithoutChoice(filename);
 		}
-		else if (type & CifFile::Reflections)
+		else
 		{
-			Display *display = new Display(this);
-			display->loadDiffraction(file->diffractionData());
-			display->show();
+			returnToResponder(filename);
 		}
-
-		delete file;
 	}
 	
 	ListView::buttonPressed(tag, button);
@@ -84,7 +114,7 @@ void FileView::buttonPressed(std::string tag, Button *button)
 
 Renderable *FileView::getLine(int i)
 {
-	std::string filename = _manager->filename(i);
+	std::string filename = _manager->filtered(i);
 
 	FileLine *line = new FileLine(this, filename);
 	return line;
@@ -92,7 +122,7 @@ Renderable *FileView::getLine(int i)
 
 size_t FileView::lineCount()
 {
-	int fileCount = _manager->fileCount();
+	int fileCount = _manager->filteredCount();
 	return fileCount;
 }
 

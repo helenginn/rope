@@ -109,6 +109,7 @@ gen_src = custom_target('commit-output',
                         build_always_stale: true)
 
 guifiles = [
+'vagabond/gui/AddModel.cpp',
 'vagabond/gui/AskYesNo.cpp',
 'vagabond/gui/BadChoice.cpp',
 'vagabond/gui/Box.cpp',
@@ -138,6 +139,7 @@ guifiles = [
 'vagabond/gui/Slider.cpp',
 'vagabond/gui/SnowGL.cpp',
 'vagabond/gui/Text.cpp',
+'vagabond/gui/TextEntry.cpp',
 'vagabond/gui/TextManager.cpp',
 'vagabond/gui/Window.cpp',
 'vagabond/cmd/CmdWorker.cpp',
