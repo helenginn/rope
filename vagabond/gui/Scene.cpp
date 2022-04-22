@@ -185,6 +185,13 @@ void Scene::showBackButton()
 	_back = button;
 }
 
+void Scene::addTitle(std::string title)
+{
+	Text *text = new Text(title);
+	text->setCentre(0.5, 0.1);
+	addObject(text);
+}
+
 void Scene::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back_to_menu")

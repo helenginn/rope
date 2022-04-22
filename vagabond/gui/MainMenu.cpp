@@ -24,11 +24,7 @@ void MainMenu::setup()
 	clearObjects();
 	addObject(_background);
 
-	{
-		Text *text = new Text("Vagabond sandbox");
-		text->setCentre(0.5, 0.1);
-		addObject(text);
-	}
+	addTitle("Vagabond sandbox");
 
 #ifndef __EMSCRIPTEN__
 	{

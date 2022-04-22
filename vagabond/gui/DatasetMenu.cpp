@@ -26,16 +26,12 @@ DatasetMenu::DatasetMenu(Scene *prev) : ListView(prev)
 
 DatasetMenu::~DatasetMenu()
 {
+	addTitle("Dataset menu");
 
 }
 
 void DatasetMenu::setup()
 {
-	{
-		Text *text = new Text("Dataset preparation");
-		text->setCentre(0.5, 0.1);
-		addObject(text);
-	}
 
 	ListView::setup();
 }

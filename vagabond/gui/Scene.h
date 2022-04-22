@@ -31,6 +31,7 @@ public:
 	virtual void setup() = 0;
 	virtual void refresh() {};
 	void setBackground();
+	void addTitle(std::string);
 	void show();
 	void showBackButton();
 	virtual void showSimple();
