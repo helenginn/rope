@@ -22,10 +22,21 @@
 #include <string>
 #include "ResidueId.h"
 
+#include <json/json.hpp>
+using nlohmann::json;
+
+class Sequence;
+
 class Residue
 {
 public:
 	Residue(ResidueId num, std::string code, std::string chain);
+	Residue() {};
+
+	void setSequence(Sequence *seq)
+	{
+		_sequence = seq;
+	}
 
 	int as_num()
 	{
@@ -34,26 +45,58 @@ public:
 
 	/** return sequence number and/or insertion character
 	 * @return formatted string of number followed by insertion e.g. "65A" */
-	std::string id()
+	const ResidueId &id() const
 	{
-		return _id.as_string();
+		return _id;
 	}
 
 	/** @return three letter code */
-	std::string code()
+	const std::string &code() const
 	{
 		return _code;
 	}
 
 	/** @return chain identifier */
-	std::string chain()
+	const std::string &chain() const
 	{
 		return _chain;
 	}
+	
+	friend void to_json(json &j, const Residue &value);
+	friend void from_json(const json &j, Residue &value);
 private:
 	ResidueId _id;
 	std::string _code;
 	std::string _chain;
+	
+	Sequence *_sequence = nullptr;
 };
+
+inline void to_json(json &j, const ResidueId &id)
+{
+	j = json{{"num",  id.num}, {"insert", id.insert}};
+}
+
+inline void from_json(const json &j, ResidueId &id)
+{
+	j.at("num").get_to(id.num);
+	j.at("insert").get_to(id.insert);
+}
+
+/* residue */
+inline void to_json(json &j, const Residue &value)
+{
+	j["id"] = value._id;
+	j["chain"] = value._chain;
+	j["code"] = value._code;
+}
+
+/* residue */
+inline void from_json(const json &j, Residue &value)
+{
+	j.at("id").get_to(value._id);
+	j.at("chain").get_to(value._chain);
+	j.at("code").get_to(value._code);
+}
 
 #endif

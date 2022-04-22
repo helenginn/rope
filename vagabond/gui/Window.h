@@ -14,7 +14,6 @@ static bool _running = true;
 
 class Scene;
 class Dictator;
-class FileManager;
 
 struct SDL_Renderer;
 struct SDL_Window;
@@ -41,11 +40,6 @@ public:
 	
 	static void setCurrentScene(Scene *scene);
 	static void reloadScene(Scene *scene);
-	
-	static FileManager *fileManager()
-	{
-		return _fileManager;
-	}
 	
 	static Scene *currentScene()
 	{
@@ -77,7 +71,6 @@ private:
 	static SDL_GLContext _context;
 	static SDL_Rect _rect;
 
-	static FileManager *_fileManager;
 	static Scene *_current;
 	static Dictator *_dictator;
 	static std::vector<Scene *> _toDelete;

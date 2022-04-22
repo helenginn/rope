@@ -18,7 +18,6 @@
 
 #include <vagabond/utils/FileReader.h>
 #include "FileManager.h"
-#include "FileView.h"
 
 FileManager::FileManager()
 {
@@ -43,7 +42,7 @@ bool FileManager::acceptFile(std::string filename, bool force)
 	
 	if (_view != nullptr)
 	{
-		_view->refreshFiles();
+		_view->filesChanged();
 	}
 	
 	return added;

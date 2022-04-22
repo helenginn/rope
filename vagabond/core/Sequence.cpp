@@ -36,14 +36,17 @@ Sequence::Sequence(Atom *anchor)
 
 Sequence &Sequence::operator+=(Sequence *&other)
 {
-	_residues.reserve(_residues.size() + other->_residues.size());
-	_residues.insert(_residues.end(), other->_residues.begin(),
-	                 other->_residues.end());
+	for (size_t i = 0; i < other->_residues.size(); i++)
+	{
+		*this += other->_residues[i];
+	}
+
 	return *this;
 }
 
 Sequence &Sequence::operator+=(Residue &res)
 {
+	res.setSequence(this);
 	_residues.push_back(res);
 	return *this;
 }

@@ -18,15 +18,16 @@
 
 #include "Display.h"
 #include <vagabond/core/CifFile.h>
+#include <vagabond/core/FileManager.h>
+#include <vagabond/core/Environment.h>
 #include "FileView.h"
 #include "FileLine.h"
 #include "Text.h"
 #include "TextButton.h"
-#include "Window.h"
 
 FileView::FileView(Scene *prev) : ListView(prev)
 {
-	_manager = Window::fileManager();
+	_manager = Environment::fileManager();
 	_manager->setFileView(this);
 }
 
@@ -93,4 +94,9 @@ size_t FileView::lineCount()
 {
 	int fileCount = _manager->fileCount();
 	return fileCount;
+}
+
+void FileView::filesChanged()
+{
+	refreshFiles();
 }

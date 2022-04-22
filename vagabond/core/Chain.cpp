@@ -51,7 +51,7 @@ Sequence *Chain::fullSequence()
 	
 	for (it = sequences.begin(); it != sequences.end(); it++)
 	{
-		if (it->second->size() > 1) // polymer chain
+		if (sequences.size() == 1 || it->second->size() > 1) // polymer chain
 		{
 			*full += it->second;
 		}

@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,39 +16,37 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileManager__
-#define __vagabond__FileManager__
+#ifndef __vagabond__Environment__
+#define __vagabond__Environment__
 
-#include <string>
-#include <vector>
+class FileManager;
 
-class FileView;
-
-class FileManager
+class Environment
 {
 public:
-	FileManager();
+	Environment();
 
-	void setFileView(FileView *fileView)
+	static FileManager *fileManager()
 	{
-		_view = fileView;
+		return _environment._fileManager;
 	}
 
-	bool acceptFile(std::string filename, bool force = false);
+	static Environment env()
+	{
+		return _environment;
+	}
+
+	static Environment environment()
+	{
+		return _environment;
+	}
 	
-	const size_t fileCount() const
-	{
-		return _list.size();
-	}
-
-	std::string filename(int i)
-	{
-		return _list[i];
-	}
+	void save();
+	void loadDefault();
 private:
-	std::vector<std::string> _list;
+	FileManager *_fileManager;
 
-	FileView *_view;
+	static Environment _environment;
 };
 
 #endif

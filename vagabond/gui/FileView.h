@@ -20,15 +20,19 @@
 #define __vagabond__FileView__
 
 #include "ListView.h"
-#include "FileManager.h"
+#include <vagabond/core/FileManager.h>
 
-class FileView : public ListView
+class FileManager;
+
+class FileView : public ListView, public FileManagerResponder
 {
 public:
 	FileView(Scene *prev);
 	
 	virtual ~FileView();
 	virtual void setup();
+	
+	virtual void filesChanged();
 
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);

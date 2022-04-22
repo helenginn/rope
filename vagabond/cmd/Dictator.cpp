@@ -19,8 +19,8 @@
 #include "../utils/FileReader.h"
 #include "Dictator.h"
 #include "CmdWorker.h"
-#include "../gui/FileManager.h"
-#include "../gui/Window.h"
+#include <vagabond/core/FileManager.h>
+#include <vagabond/core/Environment.h>
 #include <iostream>
 
 std::map<std::string, std::string> Dictator::_properties;
@@ -71,7 +71,7 @@ void Dictator::setup()
 
 void Dictator::loadFiles(std::string &last)
 {
-	FileManager *fm = Window::fileManager();
+	FileManager *fm = Environment::fileManager();
 	std::vector<std::string> files = split(last, ',');
 
 	for (size_t i = 0; i < files.size(); i++)
@@ -143,6 +143,7 @@ bool Dictator::nextJob()
 {
 	if (_args.size() == 0)
 	{
+		Environment::env().loadDefault();
 		return false;
 	}
 	

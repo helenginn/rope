@@ -16,63 +16,41 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ResidueId__
-#define __vagabond__ResidueId__
+#include "Environment.h"
+#include "FileManager.h"
 
-#include <sstream>
-#include <string>
+#include <iostream>
+#include <fstream>
+#include <json/json.hpp>
+using nlohmann::json;
 
-struct ResidueId
+Environment Environment::_environment;
+
+Environment::Environment()
 {
-	int num = 1;
-	std::string insert = "";
-	
-	ResidueId()
-	{
+	_fileManager = new FileManager();
+}
 
-	}
+void Environment::save()
+{
+	json data;
+	data["file_manager"] = *_fileManager;
 	
-	ResidueId(std::string str)
-	{
-		char *next = nullptr;
-		num = strtol(str.c_str(), &next, 10);
-		insert += next;
-	}
-	
-	ResidueId(int _num)
-	{
-		num = _num;
-	}
-	
-	int as_num()
-	{
-		return num;
-	}
-	
-	const std::string as_string() const
-	{
-		std::ostringstream ss;
-		ss << num << insert;
-		return ss.str();
-	}
+	std::ofstream file;
+	file.open("rope.json");
+	file << data;
+	file << std::endl;
+	file.close();
+}
 
-	const bool operator!=(const ResidueId &o) const
-	{
-		return (num != o.num || insert != o.insert);
-	}
+void Environment::loadDefault()
+{
+	json data;
 	
-	const bool operator<(const ResidueId &o) const
-	{
-		if (num == o.num)
-		{
-			return insert < o.insert;
-		}
-		else
-		{
-			return num < o.num;
-		}
-	}
-};
+	std::ifstream file;
+	file.open("rope.json");
+	file >> data;
+	file.close();
 
-
-#endif
+	*_fileManager = data["file_manager"];
+}

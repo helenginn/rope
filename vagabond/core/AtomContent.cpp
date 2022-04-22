@@ -72,7 +72,8 @@ void AtomContent::groupByChain()
 	{
 		Sequence *seq = chain(i)->fullSequence();
 		
-		std::cout << seq->str() << std::endl;
+		json data;
+		data["sequence"] = *seq;
 	}
 }
 

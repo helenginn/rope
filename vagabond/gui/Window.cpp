@@ -1,6 +1,5 @@
 #include "Window.h"
 #include "MainMenu.h"
-#include "FileManager.h"
 #include "../cmd/Dictator.h"
 
 #include <iostream>
@@ -20,7 +19,6 @@ Scene *Window::_current = NULL;
 std::vector<Scene *> Window::_toDelete;
 KeyResponder *Window::_keyResponder = NULL;
 
-FileManager *Window::_fileManager = new FileManager();
 
 Window::Window(int argc, char **argv)
 {

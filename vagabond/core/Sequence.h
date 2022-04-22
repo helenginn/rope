@@ -20,6 +20,7 @@
 #define __vagabond__Sequence__
 
 #include <vector>
+#include <map>
 #include "Residue.h"
 
 class Atom;
@@ -59,11 +60,26 @@ public:
 	}
 	
 	std::string str();
+
+	friend void to_json(json &j, const Sequence &value);
+	friend void from_json(const json &j, Sequence &value);
 private:
 	void findSequence();
 	
 	std::vector<Residue> _residues;
 	Atom *_anchor;
 };
+
+/* sequence */
+inline void to_json(json &j, const Sequence &value)
+{
+	j["residues"] = value._residues;
+}
+
+/* sequence */
+inline void from_json(const json &j, Sequence &value)
+{
+	value._residues = j.at("residues");
+}
 
 #endif

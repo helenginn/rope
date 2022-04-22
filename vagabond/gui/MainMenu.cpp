@@ -6,6 +6,7 @@
 #include "FileView.h"
 #include "TextButton.h"
 #include "ImageButton.h"
+#include <vagabond/core/Environment.h>
 #include <iostream>
 
 MainMenu::MainMenu() : Scene()
@@ -28,6 +29,15 @@ void MainMenu::setup()
 		text->setCentre(0.5, 0.1);
 		addObject(text);
 	}
+
+#ifndef __EMSCRIPTEN__
+	{
+		TextButton *text = new TextButton("Save", this);
+		text->setReturnTag("save");
+		text->setRight(0.9, 0.1);
+		addObject(text);
+	}
+#endif
 
 	{
 		ImageButton *button = new ImageButton("assets/images/files.png", this);
@@ -72,6 +82,10 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	{
 		FileView *fileview = new FileView(this);
 		fileview->show();
+	}
+	else if (tag == "save")
+	{
+		Environment::environment().save();
 	}
 	else if (tag == "proteins")
 	{
