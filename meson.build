@@ -177,6 +177,7 @@ vagafiles = [
 'vagabond/core/PointStoreHandler.cpp',
 'vagabond/core/PositionRefinery.cpp',
 'vagabond/core/RefList.cpp',
+'vagabond/core/Residue.cpp',
 'vagabond/core/Sampler.cpp',
 'vagabond/core/Sequence.cpp',
 'vagabond/core/SimpleBasis.cpp',

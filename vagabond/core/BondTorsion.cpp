@@ -72,6 +72,12 @@ bool BondTorsion::operator==(const BondTorsion &other) const
 	return false;
 }
 
+bool BondTorsion::coversMainChain()
+{
+	return (_a->isMainChain() && _b->isMainChain() && 
+	        _c->isMainChain() && _d->isMainChain());
+}
+
 bool BondTorsion::isConstrained() const
 {
 	return _constrained;
@@ -191,5 +197,17 @@ glm::vec3 BondTorsion::bondMidPoint() const
 
 	sum /= 2;
 	return sum;
+}
+
+ResidueId BondTorsion::residueId()
+{
+	if (_b->residueId() < _c->residueId())
+	{
+		return _b->residueId();
+	}
+	else
+	{
+		return _c->residueId();
+	}
 }
 

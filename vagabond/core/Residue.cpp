@@ -16,44 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Residue__
-#define __vagabond__Residue__
+#include "Residue.h"
 
-#include <string>
-#include "ResidueId.h"
-
-class Residue
+Residue::Residue(ResidueId id, std::string code, std::string chain)
 {
-public:
-	Residue(ResidueId num, std::string code, std::string chain);
-
-	int as_num()
-	{
-		return _id.as_num();
-	}
-
-	/** return sequence number and/or insertion character
-	 * @return formatted string of number followed by insertion e.g. "65A" */
-	std::string id()
-	{
-		return _id.as_string();
-	}
-
-	/** @return three letter code */
-	std::string code()
-	{
-		return _code;
-	}
-
-	/** @return chain identifier */
-	std::string chain()
-	{
-		return _chain;
-	}
-private:
-	ResidueId _id;
-	std::string _code;
-	std::string _chain;
-};
-
-#endif
+	_code = code;
+	_chain = chain;
+	_id = id;
+}

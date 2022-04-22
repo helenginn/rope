@@ -23,6 +23,7 @@ class AtomGroup;
 class Atom;
 
 #include "Bondstraint.h"
+#include "ResidueId.h"
 #include "../utils/glm_import.h"
 #include <stdexcept>
 
@@ -68,6 +69,10 @@ public:
 		if (i == 3) return _d;
 		throw std::runtime_error("asked for silly atom number from bond angle");
 	}
+	
+	bool coversMainChain();
+	
+	ResidueId residueId();
 	
 	bool atomIsTerminal(Atom *a)
 	{

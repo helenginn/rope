@@ -338,8 +338,7 @@ void AtomGroup::getLimitingResidues(int *min, int *max)
 	
 	for (size_t i = 0; i < size(); i++)
 	{
-		std::string res = atom(i)->residueId();
-		int num = atoi(res.c_str());
+		int num = atom(i)->residueNumber();
 		*min = std::min(*min, num);
 		*max = std::max(*max, num);
 	}
@@ -361,8 +360,7 @@ Sequence *AtomGroup::sequence()
 	
 	for (size_t i = 0; i < possibleAnchorCount(); i++)
 	{
-		std::string resstr = possibleAnchor(i)->residueId();
-		int res = atoi(resstr.c_str());
+		int res = possibleAnchor(i)->residueNumber();
 
 		if (res == min) // shortcut to victory
 		{

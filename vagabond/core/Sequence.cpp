@@ -65,10 +65,10 @@ void Sequence::findSequence()
 	while (last != nullptr)
 	{
 		Atom *ref = last->atom;
-		std::string num = ref->residueId();
+		ResidueId id = ref->residueId();
 		std::string code = ref->code();
 		std::string chain = ref->chain();
-		Residue res{num, code, chain};
+		Residue res{id, code, chain};
 		_residues.push_back(res);
 		
 		last = gr.firstGraphNextResidue(last);
@@ -82,8 +82,8 @@ std::string Sequence::str()
 	
 	for (size_t i = 0; i < _residues.size(); i++)
 	{
-		ss << _residues[i].code << " ";
-		resvec.push_back(_residues[i].code);
+		ss << _residues[i].code() << " ";
+		resvec.push_back(_residues[i].code());
 	}
 
 	std::string str = ss.str();

@@ -16,44 +16,62 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Residue__
-#define __vagabond__Residue__
+#ifndef __vagabond__ResidueId__
+#define __vagabond__ResidueId__
 
+#include <sstream>
 #include <string>
-#include "ResidueId.h"
 
-class Residue
+struct ResidueId
 {
-public:
-	Residue(ResidueId num, std::string code, std::string chain);
+	int num = 1;
+	std::string insert = "";
+	
+	ResidueId()
+	{
 
+	}
+	
+	ResidueId(std::string str)
+	{
+		char *next = nullptr;
+		num = strtol(str.c_str(), &next, 10);
+		insert += next;
+	}
+	
+	ResidueId(int _num)
+	{
+		num = _num;
+	}
+	
 	int as_num()
 	{
-		return _id.as_num();
+		return num;
+	}
+	
+	std::string as_string()
+	{
+		std::ostringstream ss;
+		ss << num << insert;
+		return ss.str();
 	}
 
-	/** return sequence number and/or insertion character
-	 * @return formatted string of number followed by insertion e.g. "65A" */
-	std::string id()
+	const bool operator!=(const ResidueId &o) const
 	{
-		return _id.as_string();
+		return (num != o.num || insert != o.insert);
 	}
-
-	/** @return three letter code */
-	std::string code()
+	
+	const bool operator<(const ResidueId &o) const
 	{
-		return _code;
+		if (num == o.num)
+		{
+			return insert < o.insert;
+		}
+		else
+		{
+			return num < o.num;
+		}
 	}
-
-	/** @return chain identifier */
-	std::string chain()
-	{
-		return _chain;
-	}
-private:
-	ResidueId _id;
-	std::string _code;
-	std::string _chain;
 };
 
 #endif

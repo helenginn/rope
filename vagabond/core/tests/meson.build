@@ -66,6 +66,7 @@ unit_tests = [
 'elementsegment_produces_sensible_scattering',
 'geometrytable_angle_lookup_returns_value',
 'geometrytable_torsion_lookup_returns_value',
+'grapher_assigns_mainchain_to_branched_atoms',
 'grid_identifies_outside_bounds_over_zero',
 'grid_identifies_within_bounds_under_zero',
 'grid_set_elements_positive',

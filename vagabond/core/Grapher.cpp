@@ -51,6 +51,30 @@ Grapher::Grapher(Grapher &other)
 
 }
 
+void Grapher::assignMainChain()
+{
+	calculateMissingMaxDepths();
+	sortGraphChildren();
+	
+	for (size_t i = 0; i < _graphs.size(); i++)
+	{
+		_graphs[i]->atom->setMainChain(false);
+	}
+
+	AtomGraph *graph = _graphs[0];
+	while (graph != nullptr)
+	{
+		graph->atom->setMainChain(true);
+
+		if (graph->children.size() == 0)
+		{
+			break;
+		}
+		
+		graph = graph->children[0];
+	}
+}
+
 void Grapher::generateGraphs(Atom *atom, size_t count)
 {
 	_anchors.push_back(atom);
@@ -442,9 +466,9 @@ std::string Grapher::desc() const
 AtomGraph *Grapher::firstGraphNextResidue(AtomGraph *last)
 {
 	Atom *start = last->atom;
-	std::string start_res = start->residueId();
+	ResidueId start_res = start->residueId();
 	
-	std::map<int, AtomGraph *> results;
+	std::map<ResidueId, AtomGraph *> results;
 
 	std::queue<AtomGraph *> todo;
 	todo.push(last);
@@ -457,12 +481,11 @@ AtomGraph *Grapher::firstGraphNextResidue(AtomGraph *last)
 		for (size_t j = 0; j < g->children.size(); j++)
 		{
 			Atom *child = g->children[j]->atom;
-			std::string child_res = child->residueId();
-			int num = atoi(child_res.c_str());
+			ResidueId child_res = child->residueId();
 			
 			if (child_res != start_res)
 			{
-				results[num] = g->children[j];
+				results[child_res] = g->children[j];
 			}
 			else
 			{

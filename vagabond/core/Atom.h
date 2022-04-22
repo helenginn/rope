@@ -3,6 +3,7 @@
 
 #include "../utils/glm_import.h"
 #include "HasBondstraints.h"
+#include "ResidueId.h"
 #include <mutex>
 #include <vector>
 
@@ -83,7 +84,7 @@ public:
 	}
 	
 	/** @returns residue number within chain */
-	const std::string &residueId()
+	const ResidueId &residueId()
 	{
 		return _residueId;
 	}
@@ -91,9 +92,20 @@ public:
 	const std::string desc() const;
 	
 	/** @param num residue number within chain */
-	void setResidueId(std::string num)
+	void setResidueId(ResidueId num)
 	{
 		_residueId = num;
+	}
+
+	/** @param string consisting of concatenated number and insertion code */
+	void setResidueId(std::string num)
+	{
+		_residueId = ResidueId(num);
+	}
+	
+	int residueNumber()
+	{
+		return _residueId.as_num();
 	}
 	
 	/** @param hetatm if atom originally specified as HETATM in PDB/mmCIF file */
@@ -189,6 +201,16 @@ public:
 		return this;
 	}
 	
+	bool isMainChain() const
+	{
+		return _mainChain;
+	}
+	
+	void setMainChain(bool mainChain)
+	{
+		_mainChain = mainChain;
+	}
+	
 	/** coordination matrix for BondSequence.
 	    @param isAnchor specifies if atom is first in sequence */
 	 /* @returns matrix describing all connected partners */
@@ -214,9 +236,10 @@ private:
 	bool _setupInitial = false;
 	bool _changedPosition = false;
 
+	bool _mainChain = false;
 	bool _hetatm = false;
 	float _occupancy = 1.;
-	std::string _residueId = "1";
+	ResidueId _residueId = {1};
 	int _atomNum = 1.;
 
 	std::string _chain;

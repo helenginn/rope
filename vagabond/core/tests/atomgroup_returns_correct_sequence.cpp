@@ -1,6 +1,4 @@
 #include <iostream>
-#include "../matrix_functions.h"
-#include "../BondTorsion.h"
 #include "../Sequence.h"
 #include "../Grapher.h"
 #include "../Knotter.h"
@@ -10,13 +8,13 @@
 
 int main()
 {
-	Atom a("AAA", "A");
-	Atom b("BBB", "B");
-	Atom c("CCC", "C");
+	Atom a("LEU", "A");
+	Atom b("THR", "B");
+	Atom c("ARG", "C");
 
-	a.setResidueNumber(1);
-	b.setResidueNumber(2);
-	c.setResidueNumber(3);
+	a.setResidueId("1");
+	b.setResidueId("2");
+	c.setResidueId("3");
 	c.setElementSymbol("C");
 	b.setElementSymbol("C");
 	a.setElementSymbol("C");
@@ -38,6 +36,6 @@ int main()
 	Sequence *seq = group.sequence();
 	std::string result = seq->str();
 	
-	return !(result == "AAA BBB CCC");
+	return !(result == "LTR");
 }
 
