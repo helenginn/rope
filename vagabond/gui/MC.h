@@ -21,6 +21,10 @@ namespace MC
 	typedef struct mcVec3f
 	{
 	public:
+		mcVec3f(MC_FLOAT _x, MC_FLOAT _y, MC_FLOAT _z)
+		{
+			x = _x; y = _y; z = _z;
+		}
 		union 
 		{
 			MC_FLOAT v[3];
@@ -65,6 +69,15 @@ namespace MC
 	typedef struct mcVec3i
 	{
 	public:
+		mcVec3i(muint _x, muint _y, muint _z)
+		{
+			x = _x; y = _y; z = _z;
+		}
+		mcVec3i()
+		{
+			x = 0; y = 0; z = 0;
+		}
+
 		union 
 		{
 			muint v[3];
