@@ -34,6 +34,16 @@ void ModelManager::insertIfUnique(const Model &m)
 		}
 	}
 	
+	if (m.name().length() == 0)
+	{
+		throw std::runtime_error("Model has no name");
+	}
+	
+	if (m.filename().length() == 0)
+	{
+		throw std::runtime_error("Model has no initial file");
+	}
+	
 	_models.push_back(m);
 
 	if (_responder)
