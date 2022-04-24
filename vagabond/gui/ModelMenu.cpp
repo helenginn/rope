@@ -42,19 +42,19 @@ void ModelMenu::setup()
 
 size_t ModelMenu::lineCount()
 {
-	return 1 + _manager->modelCount();
+	return 1 + _manager->objectCount();
 }
 
 Renderable *ModelMenu::getLine(int i)
 {
-	if (i == _manager->modelCount())
+	if (i == _manager->objectCount())
 	{
 		TextButton *t = new TextButton("Add model...", this);
 		t->setReturnTag("add");
 		return t;
 	}
 	
-	Model &m = _manager->model(i);
+	Model &m = _manager->object(i);
 	TextButton *t = new TextButton(m.name(), this);
 	t->setReturnTag("model_" + m.name());
 	return t;

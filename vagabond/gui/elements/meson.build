@@ -58,13 +58,8 @@ install_headers([
 ],
 subdir : 'vagabond/gui/elements')
 
-vag = []
-
-if (links == []) # not emscripten
-
-  guielements = static_library('vagguielements', guielementfiles,
-  cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links],
-  dependencies : deps, link_with : vag, install: true)
-endif
+guielements = static_library('vagguielements', guielementfiles,
+	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
+	link_args: ['-L/usr/local/lib', links],
+	dependencies : deps, install: true)
 

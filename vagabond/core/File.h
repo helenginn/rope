@@ -25,6 +25,7 @@
 #include "../utils/FileReader.h"
 
 class Atom;
+class AtomContent;
 class AtomGroup;
 class GeometryTable;
 class Diffraction;
@@ -74,12 +75,12 @@ public:
 	/** Warning: passes ownership of the AtomGroup onto the caller.
 	 * @return AtomGroup containing all molecular component atoms found 
 	 * in a geometry file */
-	AtomGroup *compAtoms();
+	AtomContent *compAtoms();
 	
 	/** Warning: passes ownership of the AtomGroup onto the caller.
 	 *  @return either macromolecular atoms or component atoms depending on
 	 * type of file loaded */
-	AtomGroup *atoms();
+	AtomContent *atoms();
 
 	/** contains unit cell information
 	 * 	@return true if unit cell assigned, false otherwise */

@@ -16,31 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "VagWindow.h"
-#include "MainMenu.h"
-#include "../cmd/Dictator.h"
+#ifndef __vagabond__EntityManager__
+#define __vagabond__EntityManager__
 
-Dictator *VagWindow::_dictator = NULL;
+#include <string>
+#include <vector>
+#include <list>
 
-VagWindow::VagWindow() : Window()
+class Entity;
+
+#include <json/json.hpp>
+using nlohmann::json;
+
+class EntityManagerResponder
 {
+public:
+	virtual ~EntityManagerResponder() {};
+	virtual void entitiesChanged() = 0;
+};
 
-}
-
-void VagWindow::setup(int argc, char **argv)
+class EntityManager
 {
-	_dictator = new Dictator();
-	std::vector<std::string> args;
-	for (size_t i = 1; i < argc; i++)
-	{
-		args.push_back(std::string(argv[i]));
-	}
+public:
+	EntityManager();
 
-	_dictator->setArgs(args);
-	_dictator->setup();
-	_dictator->start();
+private:
 
-	MainMenu *menu = new MainMenu();
-	setCurrentScene(menu);
-	_current = menu;
-}
+};
+
+#endif

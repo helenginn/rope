@@ -55,6 +55,13 @@ void Environment::load(std::string file)
 	f >> data;
 	f.close();
 
-	*_fileManager = data["file_manager"];
-	*_modelManager = data["model_manager"];
+	try
+	{
+		*_fileManager = data["file_manager"];
+		 *_modelManager = data["model_manager"];
+	}
+	catch (const nlohmann::detail::type_error &err)
+	{
+
+	}
 }

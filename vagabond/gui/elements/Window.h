@@ -21,7 +21,7 @@ struct SDL_Window;
 class Window
 {
 public:
-	Window(int argc, char **argv);
+	Window();
 	virtual ~Window();
 	
 	static SDL_Renderer *renderer()

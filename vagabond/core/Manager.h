@@ -16,31 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "VagWindow.h"
-#include "MainMenu.h"
-#include "../cmd/Dictator.h"
+#ifndef __vagabond__Manager__
+#define __vagabond__Manager__
 
-Dictator *VagWindow::_dictator = NULL;
+#include <list>
 
-VagWindow::VagWindow() : Window()
+template <class T>
+class Manager
 {
+public:
+	Manager() {};
 
-}
-
-void VagWindow::setup(int argc, char **argv)
-{
-	_dictator = new Dictator();
-	std::vector<std::string> args;
-	for (size_t i = 1; i < argc; i++)
+	size_t objectCount()
 	{
-		args.push_back(std::string(argv[i]));
+		return _objects.size();
 	}
 
-	_dictator->setArgs(args);
-	_dictator->setup();
-	_dictator->start();
+	T &object(int idx)
+	{
+		typename std::list<T>::iterator it = _objects.begin();
+		for (size_t i = 0; i < idx; i++, it++) {};
+		return *it;
+	}
+protected:
+	typename std::list<T> _objects;
+};
 
-	MainMenu *menu = new MainMenu();
-	setCurrentScene(menu);
-	_current = menu;
-}
+#endif

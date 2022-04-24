@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AddModel.h"
+#include "ChainAssignment.h"
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -139,8 +140,16 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "chain_assignment")
 	{
-//		ChainAssignment *view = new ChainAssignment(this, true);
-//		view->show();
+		try
+		{
+			ChainAssignment *view = new ChainAssignment(this, _m);
+			view->show();
+		}
+		catch (const std::runtime_error &err)
+		{
+			BadChoice *bad = new BadChoice(this, err.what());
+			setModal(bad);
+		}
 	}
 	else if (tag == "cancel")
 	{
@@ -156,11 +165,6 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 		catch (const std::runtime_error &err)
 		{
 			BadChoice *bad = new BadChoice(this, err.what());
-			setModal(bad);
-		}
-		catch (...)
-		{
-			BadChoice *bad = new BadChoice(this, "wtf");
 			setModal(bad);
 		}
 	}

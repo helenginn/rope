@@ -16,31 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "VagWindow.h"
-#include "MainMenu.h"
-#include "../cmd/Dictator.h"
+#ifndef __vagabond__ChainAssignment__
+#define __vagabond__ChainAssignment__
 
-Dictator *VagWindow::_dictator = NULL;
+#include <vagabond/gui/elements/ListView.h>
 
-VagWindow::VagWindow() : Window()
+class Model;
+class AtomContent;
+
+class ChainAssignment : public ListView
 {
+public:
+	ChainAssignment(Scene *prev, Model &model);
+	virtual ~ChainAssignment();
 
-}
+	void setup();
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
 
-void VagWindow::setup(int argc, char **argv)
-{
-	_dictator = new Dictator();
-	std::vector<std::string> args;
-	for (size_t i = 1; i < argc; i++)
-	{
-		args.push_back(std::string(argv[i]));
-	}
+	virtual void buttonPressed(std::string tag, Button *button = NULL);
+private:
+	AtomContent *_contents = nullptr;
+	Model &_model;
+};
 
-	_dictator->setArgs(args);
-	_dictator->setup();
-	_dictator->start();
-
-	MainMenu *menu = new MainMenu();
-	setCurrentScene(menu);
-	_current = menu;
-}
+#endif

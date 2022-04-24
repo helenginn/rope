@@ -18,7 +18,7 @@ std::set<Scene *> Window::_toDelete;
 KeyResponder *Window::_keyResponder = NULL;
 
 
-Window::Window(int argc, char **argv)
+Window::Window()
 {
 	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
 	
@@ -62,8 +62,6 @@ Window::Window(int argc, char **argv)
 	
 	_current = NULL;
 	_keyResponder = NULL;
-	
-	setup(argc, argv);
 }
 
 Window::~Window()

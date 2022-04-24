@@ -12,8 +12,9 @@ sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread']
 threads = ['-pthread', '-s', 'USE_PTHREADS=1', '-O2']
 exceptions = ['-s', 'NO_DISABLE_EXCEPTION_CATCHING']
 shell_file = ['--shell-file', '../../minimal_shell.html']
-preload = ['--use-preload-plugins', '--preload-file', '../../assets']
-export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr,ccall', '-s', 'LLD_REPORT_UNDEFINED', '-s', 'EXPORTED_FUNCTIONS=["_accept_file", "_main"]',  '-s', 'PTHREAD_POOL_SIZE=32', '-s', 'ALLOW_MEMORY_GROWTH=1', '-s', 'MAXIMUM_MEMORY=4gb']
+preload = ['--use-preload-plugins', '--preload-file', 'assets/']
+memory=['-s', 'ALLOW_MEMORY_GROWTH=1', '-s', 'MAXIMUM_MEMORY=4gb']
+export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr,ccall', '-s', 'LLD_REPORT_UNDEFINED', '-s', 'EXPORTED_FUNCTIONS=["_accept_file", "_main"]',  '-s', 'PTHREAD_POOL_SIZE=32']
 fftwf=['/usr/local/lib/emcc/lib/libfftw3f.a']
 
 [properties]
@@ -21,5 +22,5 @@ shared_lib_suffix = 'js'
 static_lib_suffix = 'js'
 shared_module_suffix = 'js'
 exe_suffix = 'js'
-links = sdl_options + shell_file + preload + export + threads + exceptions + fftwf
+links = sdl_options + shell_file + preload + export + threads + memory + exceptions + fftwf
 compile_args = threads

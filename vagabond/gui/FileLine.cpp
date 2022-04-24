@@ -49,7 +49,7 @@ void FileLine::setup()
 	TextButton *button = new TextButton(_filename, _view);
 	button->setReturnTag("file_" + _filename);
 	button->resize(0.9);
-	button->setLeft(0.2, 0);
+	button->setLeft(0.0, 0);
 	addObject(button);
 	
 	if (_type & File::CompAtoms)
@@ -57,7 +57,7 @@ void FileLine::setup()
 		Image *image = new Image("assets/images/some_atoms.png");
 		image->resize(0.08);
 		image->addAltTag("has ligand atoms");
-		image->setCentre(0.70, 0);
+		image->setCentre(0.50, 0);
 		
 		addObject(image);
 	}
@@ -67,7 +67,7 @@ void FileLine::setup()
 		Image *image = new Image("assets/images/protractor.png");
 		image->resize(0.08);
 		image->addAltTag("has geometry info");
-		image->setCentre(0.75, 0);
+		image->setCentre(0.55, 0);
 		addObject(image);
 	}
 	
@@ -75,7 +75,7 @@ void FileLine::setup()
 	{
 		Image *image = new Image("assets/images/protein.png");
 		image->resize(0.08);
-		image->setCentre(0.8, 0);
+		image->setCentre(0.6, 0);
 		image->addAltTag("has macromolecule atoms");
 		addObject(image);
 	}
@@ -85,7 +85,7 @@ void FileLine::setup()
 		Image *image = new Image("assets/images/reflections.png");
 		image->resize(0.08);
 		image->addAltTag("has reflections");
-		image->setCentre(0.65, 0);
+		image->setCentre(0.45, 0);
 		addObject(image);
 	}
 	
@@ -94,7 +94,7 @@ void FileLine::setup()
 		Image *image = new Image("assets/images/unit_cell.png");
 		image->resize(0.08);
 		image->addAltTag("has unit cell");
-		image->setCentre(0.60, 0);
+		image->setCentre(0.40, 0);
 		addObject(image);
 	}
 

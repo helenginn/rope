@@ -19,7 +19,7 @@
 #ifndef __vagabond__Handler__
 #define __vagabond__Handler__
 
-#include "Semaphore.h"
+#include "Vagaphore.h"
 #include "ThreadWorker.h"
 #include "Job.h"
 

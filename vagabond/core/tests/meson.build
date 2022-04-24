@@ -188,14 +188,14 @@ integration_tests = [
 nocompact = '-Wl,-no_compact_unwind'
 
 foreach entry : unit_tests
-  t = executable(entry, entry + '.cpp', link_with : [vag],
+  t = executable(entry, entry + '.cpp', link_with : [core],
  cpp_args : ['-std=c++11'], 
  include_directories: '../../../')
   test(entry, t, suite: 'unit')
 endforeach
 
 foreach entry : integration_tests
-  t = executable(entry, entry + '.cpp', link_with : [vag],
+  t = executable(entry, entry + '.cpp', link_with : [core],
 	  cpp_args : ['-std=c++11'], 
 	  include_directories: '../../../')
   test(entry, t, suite: 'integration')

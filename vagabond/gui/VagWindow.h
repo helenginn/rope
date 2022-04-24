@@ -26,7 +26,7 @@ class Dictator;
 class VagWindow : public Window
 {
 public:
-	VagWindow(int argc, char **argv);
+	VagWindow();
 	virtual void setup(int argc, char **argv);
 private:
 	static Dictator *_dictator;

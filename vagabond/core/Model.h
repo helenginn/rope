@@ -31,6 +31,8 @@ public:
 	
 	void setFilename(std::string file);
 	
+	const std::string entityForChain(std::string id) const;
+	
 	void setName(std::string name)
 	{
 		_name = name;
@@ -52,18 +54,29 @@ private:
 	std::string _filename;
 	std::string _name;
 
+	std::map<std::string, std::string> _chain2Entity;
 };
 
 inline void to_json(json &j, const Model &value)
 {
 	j["name"] = value._name;
 	j["filename"] = value._filename;
+	j["chain_to_entity"] = value._chain2Entity;
 }
 
 inline void from_json(const json &j, Model &value)
 {
 	value._name = j.at("name");
 	value._filename = j.at("filename");
+	
+	try
+	{
+		value._chain2Entity = j.at("chain_to_entity");
+	}
+	catch (const nlohmann::detail::type_error &err)
+	{
+
+	}
 }
 
 

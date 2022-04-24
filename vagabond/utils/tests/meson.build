@@ -13,11 +13,11 @@ integration_tests = [
 ]
 
 foreach entry : unit_tests
-  t = executable(entry, entry + '.cpp', link_with : vag, cpp_args : ['-std=c++11'])
+  t = executable(entry, entry + '.cpp', link_with : vagutils, cpp_args : ['-std=c++11'])
   test(entry, t, suite: 'unit')
 endforeach
 
 foreach entry : integration_tests
-  t = executable(entry, entry + '.cpp', link_with : vag, cpp_args : ['-std=c++11'])
+  t = executable(entry, entry + '.cpp', link_with : vagutils, cpp_args : ['-std=c++11'])
   test(entry, t, suite: 'integration')
 endforeach

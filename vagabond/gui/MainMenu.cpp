@@ -75,6 +75,7 @@ void MainMenu::setup()
 		addObject(text);
 	}
 
+	if (false)
 	{
 		ImageButton *button = new ImageButton("assets/images/data_model.png", this);
 		button->resize(0.3);

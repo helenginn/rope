@@ -34,3 +34,13 @@ void Model::setFilename(std::string file)
 	}
 
 }
+
+const std::string Model::entityForChain(std::string id) const
+{
+	if (_chain2Entity.count(id))
+	{
+		return _chain2Entity.at(id);
+	}
+
+	return "";
+}

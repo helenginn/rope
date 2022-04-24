@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
-#include "Window.h"
+#include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
 
 extern "C" 

@@ -37,11 +37,6 @@ void Renderable::addToVertices(glm::vec3 add)
 
 	addToVertexArray(add, &_vertices);
 	addToVertexArray(add, &_unselectedVertices);
-	
-	for (size_t i = 0; i < objectCount(); i++)
-	{
-		object(i)->addToVertices(add);
-	}
 
 	positionChanged();
 }
@@ -1375,25 +1370,22 @@ void Renderable::setCentre(double x, double y)
 
 void Renderable::setLeft(double x, double y)
 {
+	double dx = x - _x;
+	double dy = y - _y;
+
 	_x = x; _y = y;
 	double xf = 2 * x - 1;
-	double yf = 1 - 2 * y;
+	double yf = 2 * y - 1;
 	
-	double l = FLT_MAX;
-	double r = -FLT_MAX;
-	maximalWidth(&l, &r);
+	xf += maximalWidth() / 2;
+
+	setPosition(glm::vec3(xf, -yf, 0));
 	
-	glm::vec3 p = centroid();
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->addAlign(dx, dy);
+	}
 
-	glm::vec3 diff = glm::vec3(0.f);
-	diff.x = xf - l;
-	diff.y = yf - p.y;
-
-	lockMutex();
-	addToVertices(diff);
-	unlockMutex();
-
-	positionChanged();
 	_align = Left;
 	setHover(_hover);
 }
@@ -1472,7 +1464,6 @@ void Renderable::setHover(Renderable *hover)
 
 	glm::vec3 min, max;
 	_hover->boundaries(&min, &max);
-	std::cout << glm::to_string(min) << " " << glm::to_string(max) <<  std::endl;
 	
 	hy = _y - 0.02 - (max.y - min.y) / 2;
 

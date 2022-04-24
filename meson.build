@@ -21,7 +21,6 @@ if (links == [])
   name = 'vagabond.gui'
 endif
 
-
 data_dir = get_option('datadir') / 'vagabond'
 shaders = data_dir / 'assets' / 'shaders'
 images = data_dir / 'assets' / 'images'
@@ -29,7 +28,6 @@ geometry = data_dir / 'assets' / 'geometry'
 examples = data_dir / 'assets' / 'examples'
 dir_base = get_option('prefix')
 combined = join_paths(dir_base, data_dir)
-
 
 install_data(
 'assets/examples/2YBH.cif',
@@ -115,152 +113,32 @@ gen_src = custom_target('commit-output',
                         build_by_default: true,
                         build_always_stale: true)
 
+subdir('vagabond/utils')
+subdir('vagabond/core')
+
 subdir('vagabond/gui/elements')
+subdir('vagabond/gui')
 
-guifiles = [
-'vagabond/gui/AddModel.cpp',
-'vagabond/gui/DatasetMenu.cpp',
-'vagabond/gui/Display.cpp',
-'vagabond/gui/EntityMenu.cpp',
-'vagabond/gui/FileLine.cpp',
-'vagabond/gui/FileView.cpp',
-'vagabond/gui/GuiAtom.cpp',
-'vagabond/gui/GuiBond.cpp',
-'vagabond/gui/GuiDensity.cpp',
-'vagabond/gui/GuiRefls.cpp',
-'vagabond/gui/MainMenu.cpp',
-'vagabond/gui/ModelMenu.cpp',
-'vagabond/gui/VagWindow.cpp',
-'vagabond/cmd/CmdWorker.cpp',
-'vagabond/cmd/Dictator.cpp',
-]
-
-vagafiles = [
-'vagabond/core/AlignmentTool.cpp',
-'vagabond/core/Atom.cpp',
-'vagabond/core/AtomContent.cpp',
-'vagabond/core/AtomGroup.cpp',
-'vagabond/core/AtomGraph.cpp',
-'vagabond/core/AtomSegment.cpp',
-'vagabond/core/AtomMap.cpp',
-'vagabond/core/BondAngle.cpp',
-'vagabond/core/BondCalculator.cpp',
-'vagabond/core/BondSequence.cpp',
-'vagabond/core/BondSequenceHandler.cpp',
-'vagabond/core/BondLength.cpp',
-'vagabond/core/BondTorsion.cpp',
-'vagabond/core/Chain.cpp',
-'vagabond/core/Chirality.cpp',
-'vagabond/core/CifFile.cpp',
-'vagabond/core/ConcertedBasis.cpp',
-'vagabond/core/Diffraction.cpp',
-'vagabond/core/ElementLibrary.cpp',
-'vagabond/core/ElementSegment.cpp',
-'vagabond/core/Environment.cpp',
-'vagabond/core/File.cpp',
-'vagabond/core/FileManager.cpp',
-'vagabond/core/GeometryTable.cpp',
-'vagabond/core/Grapher.cpp',
-'vagabond/core/HasBondstraints.cpp',
-'vagabond/core/Knotter.cpp',
-'vagabond/core/MapTransferHandler.cpp',
-'vagabond/core/MapSumHandler.cpp',
-'vagabond/core/matrix_functions.cpp',
-'vagabond/core/Model.cpp',
-'vagabond/core/ModelManager.cpp',
-'vagabond/core/PdbFile.cpp',
-'vagabond/core/PointStore.cpp',
-'vagabond/core/PointStoreHandler.cpp',
-'vagabond/core/PositionRefinery.cpp',
-'vagabond/core/RefList.cpp',
-'vagabond/core/Residue.cpp',
-'vagabond/core/Sampler.cpp',
-'vagabond/core/Sequence.cpp',
-'vagabond/core/SimpleBasis.cpp',
-'vagabond/core/SimplexEngine.cpp',
-'vagabond/core/Superpose.cpp',
-'vagabond/core/ThreadCalculatesBondSequence.cpp',
-'vagabond/core/ThreadExtractsBondPositions.cpp',
-'vagabond/core/ThreadSubmitsJobs.cpp',
-'vagabond/core/ThreadMapTransfer.cpp',
-'vagabond/core/ThreadMapSummer.cpp',
-'vagabond/core/ThreadMiniJobForSequence.cpp',
-'vagabond/core/TorsionBasis.cpp',
-'vagabond/utils/FileReader.cpp',
-'vagabond/utils/svd/svdcmp.cpp',
-'vagabond/utils/svd/PCA.cpp',
-'vagabond/utils/svd/matrix.cpp',
-]
-
-install_headers([
-'vagabond/utils/FileReader.h',
-'vagabond/utils/glm_import.h',
-],
-subdir : 'vagabond/utils')
-
-install_headers([
-'vagabond/core/AlignmentTool.h',
-'vagabond/core/Atom.h',
-'vagabond/core/AtomGroup.h',
-'vagabond/core/AtomSegment.h',
-'vagabond/core/BondAngle.h',
-'vagabond/core/BondCalculator.h',
-'vagabond/core/BondLength.h',
-'vagabond/core/BondSequence.h',
-'vagabond/core/BondSequenceHandler.h',
-'vagabond/core/BondTorsion.h',
-'vagabond/core/Bondstraint.h',
-'vagabond/core/Chirality.h',
-'vagabond/core/CifFile.h',
-'vagabond/core/ConcertedBasis.h',
-'vagabond/core/GeometryTable.h',
-'vagabond/core/Handler.h',
-'vagabond/core/HasBondstraints.h',
-'vagabond/core/Knotter.h',
-'vagabond/core/PositionRefinery.h',
-'vagabond/core/RefList.h',
-'vagabond/core/Semaphore.h',
-'vagabond/core/SimpleBasis.h',
-'vagabond/core/SimplexEngine.h',
-'vagabond/core/Superpose.h',
-'vagabond/core/ThreadCalculatesBondSequence.h',
-'vagabond/core/ThreadExtractsBondPositions.h',
-'vagabond/core/ThreadMiniJobForSequence.h',
-'vagabond/core/ThreadSubmitsJobs.h',
-'vagabond/core/ThreadWorker.h',
-'vagabond/core/TorsionBasis.h',
-'vagabond/core/matrix_functions.h',
-],
-subdir : 'vagabond/core')
-
+extrafiles = []
 
 if (links != [])
-vagafiles += 'vagabond/gui/print_file.cpp'
+extrafiles += 'vagabond/gui/print_file.cpp'
 endif
 
-vag = []
-
 if (links == []) # not emscripten
-
-  vag = static_library('vag', vagafiles, 
-  cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib'],
-  dependencies : deps, install: true)
-
-  gui = static_library('vaggui', guifiles,
-  cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links],
-  dependencies : deps, link_with : [vag, guielements], install: true)
 
   executable(name, 'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib', links],
-  dependencies : deps, link_with : gui, install: true)
+  dependencies : deps, 
+  link_with : [gui, core],
+  install: true)
 else # emscripten
-  executable(name, vagafiles, guielementfiles, guifiles,
+  executable(name, extrafiles,
   'vagabond/gui/main.cpp',
-  cpp_args: ['-I/usr/local/include', compile_args],
+  cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
   link_args: ['-L/usr/local/lib', links],
+  link_with: [core, gui],
   dependencies : deps, install: true)
 endif
 
@@ -269,3 +147,4 @@ if (links == [])
   subdir('vagabond/utils/tests')
   subdir('vagabond/gui/tests')
 endif
+

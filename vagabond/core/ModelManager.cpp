@@ -19,14 +19,14 @@
 #include "ModelManager.h"
 #include <iostream>
 
-ModelManager::ModelManager()
+ModelManager::ModelManager() : Manager()
 {
 
 }
 
 void ModelManager::insertIfUnique(const Model &m)
 {
-	for (Model &other : _models)
+	for (Model &other : _objects)
 	{
 		if (other.name() == m.name())
 		{
@@ -44,7 +44,7 @@ void ModelManager::insertIfUnique(const Model &m)
 		throw std::runtime_error("Model has no initial file");
 	}
 	
-	_models.push_back(m);
+	_objects.push_back(m);
 
 	if (_responder)
 	{

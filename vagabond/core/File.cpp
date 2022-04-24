@@ -81,12 +81,12 @@ const size_t File::atomCount() const
 	return 0;
 }
 
-AtomGroup *File::compAtoms()
+AtomContent *File::compAtoms()
 {
 	return new AtomContent(*_compAtoms);
 }
 
-AtomGroup *File::atoms()
+AtomContent *File::atoms()
 {
 	if (_macroAtoms->size() > 0)
 	{

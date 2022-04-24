@@ -36,6 +36,7 @@ void TextEntry::click()
 
 void TextEntry::showInsert()
 {
+	setHighlighted(false);
 	if (_active)
 	{
 		setText(_scratch + "_");
@@ -43,7 +44,6 @@ void TextEntry::showInsert()
 	}
 	else
 	{
-		setHighlighted(false);
 		setText(_scratch);
 	}
 }

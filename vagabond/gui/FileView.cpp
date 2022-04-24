@@ -25,6 +25,7 @@
 
 #include <vagabond/core/CifFile.h>
 #include <vagabond/core/FileManager.h>
+#include <vagabond/core/AtomContent.h>
 #include <vagabond/core/Environment.h>
 
 FileView::FileView(Scene *prev) : ListView(prev)

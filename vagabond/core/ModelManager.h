@@ -23,8 +23,7 @@
 #include <vector>
 #include <list>
 #include "Model.h"
-
-class Model;
+#include "Manager.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -36,22 +35,10 @@ public:
 	virtual void modelsChanged() = 0;
 };
 
-class ModelManager
+class ModelManager : public Manager<Model>
 {
 public:
 	ModelManager();
-	
-	size_t modelCount()
-	{
-		return _models.size();
-	}
-	
-	Model &model(int idx)
-	{
-		std::list<Model>::iterator it = _models.begin();
-		for (size_t i = 0; i < idx; i++, it++) {};
-		return *it;
-	}
 
 	void setResponder(ModelManagerResponder *responder)
 	{
@@ -63,20 +50,18 @@ public:
 	friend void to_json(json &j, const ModelManager &value);
 	friend void from_json(const json &j, ModelManager &value);
 private:
-	std::list<Model> _models;
-
 	ModelManagerResponder *_responder = nullptr;
 };
 
 
 inline void to_json(json &j, const ModelManager &value)
 {
-	j["models"] = value._models;
+	j["models"] = value._objects;
 }
 
 inline void from_json(const json &j, ModelManager &value)
 {
-	value._models = j.at("models");
+	value._objects = j.at("models");
 }
 
 

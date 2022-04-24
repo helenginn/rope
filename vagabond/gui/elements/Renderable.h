@@ -361,6 +361,14 @@ protected:
 		_align = a;
 	}
 
+	void addAlign(float x, float y)
+	{
+		_x += x;
+		_y += y;
+
+		realign();
+	}
+
 	Renderable *_hover = nullptr;
 private:
 	void deleteTextures();
@@ -400,8 +408,8 @@ private:
 	std::string _vFile;
 	
 	Alignment _align;
-	double _x = 0.5;
-	double _y = 0.5;
+	double _x = 0.0;
+	double _y = 0.0;
 	SnowGL *_gl = nullptr;
 	static double _selectionResize;
 };

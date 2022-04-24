@@ -1,0 +1,26 @@
+guifiles = [
+'AddModel.cpp',
+'ChainAssignment.cpp',
+'DatasetMenu.cpp',
+'Display.cpp',
+'EntityMenu.cpp',
+'FileLine.cpp',
+'FileView.cpp',
+'GuiAtom.cpp',
+'GuiBond.cpp',
+'GuiDensity.cpp',
+'GuiRefls.cpp',
+'MainMenu.cpp',
+'ModelMenu.cpp',
+'VagWindow.cpp',
+'../cmd/CmdWorker.cpp',
+'../cmd/Dictator.cpp',
+]
+
+gui = static_library('vaggui', guifiles,
+	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
+	link_args: ['-L/usr/local/lib', links],
+	dependencies : deps, 
+    include_directories: ['../..', '../core'],
+	link_with : [core, guielements], 
+	install: true)
