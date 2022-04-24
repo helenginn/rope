@@ -74,16 +74,20 @@ void TextEntry::finish()
 
 void TextEntry::keyPressed(SDL_Keycode other)
 {
-	if (other == SDLK_BACKSPACE)
+	if (other == SDLK_BACKSPACE && _scratch.size() > 0)
 	{
 		_scratch.pop_back();
 		showInsert();
+	}
+	else if (other == SDLK_LSHIFT || other == SDLK_RSHIFT)
+	{
+
 	}
 	else if (other == SDLK_RETURN)
 	{
 		finish();
 	}
-	else
+	else 
 	{
 		keyPressed((char)other);
 	}

@@ -5,9 +5,12 @@
 #include "ModelMenu.h"
 #include "MainMenu.h"
 #include "FileView.h"
-#include "TextButton.h"
-#include "ImageButton.h"
+
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
+
 #include <vagabond/core/Environment.h>
+
 #include <iostream>
 
 MainMenu::MainMenu() : Scene()

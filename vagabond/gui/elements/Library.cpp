@@ -20,13 +20,14 @@
 
 #include "Window.h"
 #include "Library.h"
-#include <iostream>
+#include "TextManager.h"
 #include "Renderable.h"
+#include "../../../commit.h"
+
+#include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include "TextManager.h"
-#include "commit.h"
 #include <string>
 
 Library *Library::_library = NULL;
@@ -103,6 +104,11 @@ SDL_Surface *Library::loadImage(std::string filename)
 
 GLuint Library::loadText(std::string text, int *w, int *h)
 {
+	if (text == "")
+	{
+		text = " ";
+	}
+
 	png_byte *bytes;
 	TextManager::text_malloc(&bytes, text, w, h);
 	GLuint texid = 0;

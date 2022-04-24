@@ -16,11 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <iostream>
 #include "FileView.h"
 #include "FileLine.h"
-#include "TextButton.h"
-#include "Image.h"
+#include <vagabond/gui/elements/Image.h>
+
+#include <vagabond/gui/elements/TextButton.h>
+
+#include <iostream>
 
 FileLine::FileLine(FileView *view, std::string filename)
 {
@@ -54,7 +56,9 @@ void FileLine::setup()
 	{
 		Image *image = new Image("assets/images/some_atoms.png");
 		image->resize(0.08);
+		image->addAltTag("has ligand atoms");
 		image->setCentre(0.70, 0);
+		
 		addObject(image);
 	}
 	
@@ -62,6 +66,7 @@ void FileLine::setup()
 	{
 		Image *image = new Image("assets/images/protractor.png");
 		image->resize(0.08);
+		image->addAltTag("has geometry info");
 		image->setCentre(0.75, 0);
 		addObject(image);
 	}
@@ -71,6 +76,7 @@ void FileLine::setup()
 		Image *image = new Image("assets/images/protein.png");
 		image->resize(0.08);
 		image->setCentre(0.8, 0);
+		image->addAltTag("has macromolecule atoms");
 		addObject(image);
 	}
 	
@@ -78,6 +84,7 @@ void FileLine::setup()
 	{
 		Image *image = new Image("assets/images/reflections.png");
 		image->resize(0.08);
+		image->addAltTag("has reflections");
 		image->setCentre(0.65, 0);
 		addObject(image);
 	}
@@ -86,6 +93,7 @@ void FileLine::setup()
 	{
 		Image *image = new Image("assets/images/unit_cell.png");
 		image->resize(0.08);
+		image->addAltTag("has unit cell");
 		image->setCentre(0.60, 0);
 		addObject(image);
 	}

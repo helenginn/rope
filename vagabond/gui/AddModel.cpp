@@ -17,8 +17,14 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AddModel.h"
-#include "TextButton.h"
-#include "TextEntry.h"
+
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TextEntry.h>
+
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/ModelManager.h>
 
 AddModel::AddModel(Scene *prev) : Scene(prev)
 {
@@ -37,6 +43,8 @@ void AddModel::setup()
 	{
 		Text *t = new Text("Initialising file:");
 		t->setLeft(0.2, 0.3);
+		t->addAltTag("Choose best atomic model from other program\n"\
+		             "Used for topology and initial atom positions");
 		addObject(t);
 	}
 	{
@@ -53,6 +61,7 @@ void AddModel::setup()
 	{
 		Text *t = new Text("Model name:");
 		t->setLeft(0.2, 0.4);
+		t->addAltTag("Unique identifier for model");
 		addObject(t);
 	}
 	{
@@ -65,6 +74,32 @@ void AddModel::setup()
 		_name = t;
 		addObject(t);
 	}
+
+	{
+		Text *t = new Text("Chain assignment:");
+		t->setLeft(0.2, 0.5);
+		addObject(t);
+	}
+	{
+		ImageButton *t = ImageButton::arrow(-90., this);
+		t->setReturnTag("chain_assignment");
+		t->setCentre(0.8, 0.5);
+		addObject(t);
+	}
+	
+	{
+		TextButton *t = new TextButton("Cancel", this);
+		t->setLeft(0.2, 0.8);
+		t->setReturnTag("cancel");
+		addObject(t);
+	}
+	{
+		TextButton *t = new TextButton("Create", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnTag("create");
+		addObject(t);
+	}
+
 }
 
 void AddModel::fileTextOrChoose(std::string &file, std::string other)
@@ -84,7 +119,7 @@ void AddModel::refreshInfo()
 	}
 	{
 		std::string text = _m.name();
-		fileTextOrChoose(text);
+		fileTextOrChoose(text, "Enter...");
 		_name->setText(text);
 	}
 }
@@ -101,6 +136,33 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	{
 		_m.setName(_name->text());
 		refreshInfo();
+	}
+	else if (tag == "chain_assignment")
+	{
+//		ChainAssignment *view = new ChainAssignment(this, true);
+//		view->show();
+	}
+	else if (tag == "cancel")
+	{
+		back();
+	}
+	else if (tag == "create")
+	{
+		try
+		{
+			Environment::modelManager()->insertIfUnique(_m);
+			back();
+		}
+		catch (const std::runtime_error &err)
+		{
+			BadChoice *bad = new BadChoice(this, err.what());
+			setModal(bad);
+		}
+		catch (...)
+		{
+			BadChoice *bad = new BadChoice(this, "wtf");
+			setModal(bad);
+		}
 	}
 	
 	Scene::buttonPressed(tag, button);

@@ -19,7 +19,7 @@
 #include <iostream>
 #include <vagabond/core/Diffraction.h>
 #include "GuiRefls.h"
-#include "Icosahedron.h"
+#include <vagabond/gui/elements/Icosahedron.h>
 
 GuiRefls::GuiRefls() : Renderable()
 {

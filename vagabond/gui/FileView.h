@@ -19,7 +19,7 @@
 #ifndef __vagabond__FileView__
 #define __vagabond__FileView__
 
-#include "ListView.h"
+#include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/File.h>
 

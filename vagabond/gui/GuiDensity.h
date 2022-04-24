@@ -19,7 +19,7 @@
 #ifndef __vagabond__GuiDensity__
 #define __vagabond__GuiDensity__
 
-#include "Renderable.h"
+#include <vagabond/gui/elements/Renderable.h>
 
 class AtomMap;
 class AtomGroup;

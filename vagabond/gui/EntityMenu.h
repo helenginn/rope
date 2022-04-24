@@ -19,7 +19,7 @@
 #ifndef __vagabond__EntityMenu__
 #define __vagabond__EntityMenu__
 
-#include "ListView.h"
+#include <vagabond/gui/elements/ListView.h>
 
 class EntityMenu : public ListView
 {

@@ -17,13 +17,15 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Display.h"
+#include "FileView.h"
+#include "FileLine.h"
+
+#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextButton.h>
+
 #include <vagabond/core/CifFile.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/Environment.h>
-#include "FileView.h"
-#include "FileLine.h"
-#include "Text.h"
-#include "TextButton.h"
 
 FileView::FileView(Scene *prev) : ListView(prev)
 {

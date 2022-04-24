@@ -14,6 +14,11 @@ public:
 	virtual void addSplitQuad(double z = 0);
 	void rescale(double x, double y);
 	virtual void makeQuad();
+	
+	virtual bool mouseOver();
+	virtual void unMouseOver();
+	
+	void addAltTag(std::string text);
 protected:
 
 };

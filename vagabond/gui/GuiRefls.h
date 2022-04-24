@@ -19,7 +19,7 @@
 #ifndef __vagabond__GuiRefls__
 #define __vagabond__GuiRefls__
 
-#include "Renderable.h"
+#include <vagabond/gui/elements/Renderable.h>
 
 class Diffraction;
 class Icosahedron;

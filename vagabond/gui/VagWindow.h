@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileLine__
-#define __vagabond__FileLine__
+#ifndef __vagabond__VagWindow__
+#define __vagabond__VagWindow__
 
-#include <vagabond/core/CifFile.h>
-#include <vagabond/gui/elements/Box.h>
+#include <vagabond/gui/elements/Window.h>
 
-class FileView;
+class Dictator;
 
-class FileLine : public Box
+class VagWindow : public Window
 {
 public:
-	FileLine(FileView *view,std::string filename);
-	virtual ~FileLine();
-
+	VagWindow(int argc, char **argv);
+	virtual void setup(int argc, char **argv);
 private:
-	void setup();
-	void queryFile();
+	static Dictator *_dictator;
 
-	FileView *_view;
-	std::string _filename;
-	CifFile::Type _type;
 };
 
 #endif

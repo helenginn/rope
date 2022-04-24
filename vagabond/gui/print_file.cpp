@@ -18,14 +18,14 @@
 
 #include <vagabond/utils/FileReader.h>
 #include "Window.h"
-#include "FileManager.h"
+#include <vagabond/core/FileManager.h>
 
 extern "C" 
 {
 
 int accept_file(char* file_path)
 {
-	FileManager *manager = Window::fileManager();
+	FileManager *manager = Environment::fileManager();
 	manager->acceptFile(file_path);
 
 	return 0;

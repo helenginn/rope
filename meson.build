@@ -6,7 +6,13 @@ glm = dependency('glm', required: false)
 gl = dependency('GL', method : 'system', required: false)
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
-fftw = dependency('fftw3f', static: true)
+
+fftw_static = true
+if (links == [])
+  fftw_static = false
+endif
+
+fftw = dependency('fftw3f', static: fftw_static)
 deps = [glm, fftw]
 name = 'index.html'
 
@@ -100,24 +106,20 @@ deps += dep_ccp4
 
 hash_script = find_program('get_hash.sh')
 
+out_path = 'commit.h'
 gen_src = custom_target('commit-output',
                         input : ['vagabond/commit.h.pre'],
-                        output : ['commit.h'],
+                        output : [out_path],
                         command : [hash_script, '@INPUT@', '@OUTPUT@', 
 						combined],
                         build_by_default: true,
                         build_always_stale: true)
 
+subdir('vagabond/gui/elements')
+
 guifiles = [
 'vagabond/gui/AddModel.cpp',
-'vagabond/gui/AskYesNo.cpp',
-'vagabond/gui/BadChoice.cpp',
-'vagabond/gui/Box.cpp',
-'vagabond/gui/Button.cpp',
-'vagabond/gui/Choice.cpp',
-'vagabond/gui/ChoiceGroup.cpp',
 'vagabond/gui/DatasetMenu.cpp',
-'vagabond/gui/Draggable.cpp',
 'vagabond/gui/Display.cpp',
 'vagabond/gui/EntityMenu.cpp',
 'vagabond/gui/FileLine.cpp',
@@ -126,22 +128,9 @@ guifiles = [
 'vagabond/gui/GuiBond.cpp',
 'vagabond/gui/GuiDensity.cpp',
 'vagabond/gui/GuiRefls.cpp',
-'vagabond/gui/HasRenderables.cpp',
-'vagabond/gui/Icosahedron.cpp',
-'vagabond/gui/Image.cpp',
-'vagabond/gui/Library.cpp',
-'vagabond/gui/ListView.cpp',
 'vagabond/gui/MainMenu.cpp',
 'vagabond/gui/ModelMenu.cpp',
-'vagabond/gui/Modal.cpp',
-'vagabond/gui/Renderable.cpp',
-'vagabond/gui/Scene.cpp',
-'vagabond/gui/Slider.cpp',
-'vagabond/gui/SnowGL.cpp',
-'vagabond/gui/Text.cpp',
-'vagabond/gui/TextEntry.cpp',
-'vagabond/gui/TextManager.cpp',
-'vagabond/gui/Window.cpp',
+'vagabond/gui/VagWindow.cpp',
 'vagabond/cmd/CmdWorker.cpp',
 'vagabond/cmd/Dictator.cpp',
 ]
@@ -244,7 +233,6 @@ install_headers([
 ],
 subdir : 'vagabond/core')
 
-nocompact = '-Wl,-no_compact_unwind'
 
 if (links != [])
 vagafiles += 'vagabond/gui/print_file.cpp'
@@ -253,22 +241,23 @@ endif
 vag = []
 
 if (links == []) # not emscripten
+
   vag = static_library('vag', vagafiles, 
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', nocompact],
+  link_args: ['-L/usr/local/lib'],
   dependencies : deps, install: true)
 
   gui = static_library('vaggui', guifiles,
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links, nocompact],
-  dependencies : deps, link_with : vag, install: true)
+  link_args: ['-L/usr/local/lib', links],
+  dependencies : deps, link_with : [vag, guielements], install: true)
 
   executable(name, 'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links, nocompact],
+  link_args: ['-L/usr/local/lib', links],
   dependencies : deps, link_with : gui, install: true)
 else # emscripten
-  executable(name, vagafiles, guifiles,
+  executable(name, vagafiles, guielementfiles, guifiles,
   'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', compile_args],
   link_args: ['-L/usr/local/lib', links],

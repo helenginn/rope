@@ -19,7 +19,7 @@
 #ifndef __vagabond__DatasetMenu__
 #define __vagabond__DatasetMenu__
 
-#include "ListView.h"
+#include <vagabond/gui/elements/ListView.h>
 
 class DatasetMenu : public ListView
 {

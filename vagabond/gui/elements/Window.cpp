@@ -1,6 +1,5 @@
 #include "Window.h"
-#include "MainMenu.h"
-#include "../cmd/Dictator.h"
+#include "Scene.h"
 
 #include <iostream>
 #include <SDL2/SDL_image.h>
@@ -9,7 +8,6 @@
 #include <emscripten.h>
 #endif
 
-Dictator *Window::_dictator = NULL;
 SDL_Renderer *Window::_renderer = NULL;
 SDL_Rect Window::_rect;
 SDL_Window *Window::_window = NULL;
@@ -65,20 +63,12 @@ Window::Window(int argc, char **argv)
 	_current = NULL;
 	_keyResponder = NULL;
 	
-	_dictator = new Dictator();
-	std::vector<std::string> args;
-	for (size_t i = 1; i < argc; i++)
-	{
-		args.push_back(std::string(argv[i]));
-	}
+	setup(argc, argv);
+}
 
-	_dictator->setArgs(args);
-	_dictator->setup();
-	_dictator->start();
+Window::~Window()
+{
 
-	MainMenu *menu = new MainMenu();
-	setCurrentScene(menu);
-	_current = menu;
 }
 
 void Window::glSetup()

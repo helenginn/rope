@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "DatasetMenu.h"
-#include "TextButton.h"
+#include <vagabond/gui/elements/TextButton.h>
 
 DatasetMenu::DatasetMenu(Scene *prev) : ListView(prev)
 {

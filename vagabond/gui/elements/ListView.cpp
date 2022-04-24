@@ -109,11 +109,7 @@ void ListView::loadFilesFrom(int start, int num)
 
 void ListView::scrollBackButton()
 {
-	ImageButton *bb = new ImageButton("assets/images/arrow.png", this);
-	bb->rescale(0.1, 0.05);
-	glm::mat3x3 cw = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(90.),
-	                                         glm::vec3(0., 0., -1.)));
-	bb->rotateRoundCentre(cw);
+	ImageButton *bb = ImageButton::arrow(+90., this);
 	bb->setCentre(0.1, 0.8);
 	bb->setReturnTag("scroll_back");
 	addObject(bb);
@@ -122,11 +118,7 @@ void ListView::scrollBackButton()
 
 void ListView::scrollForwardButton()
 {
-	ImageButton *fb = new ImageButton("assets/images/arrow.png", this);
-	fb->rescale(0.1, 0.05);
-	glm::mat3x3 ccw = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(-90.),
-	                                          glm::vec3(0., 0., -1.)));
-	fb->rotateRoundCentre(ccw);
+	ImageButton *fb = ImageButton::arrow(-90., this);
 	fb->setCentre(0.9, 0.8);
 	fb->setReturnTag("scroll_forward");
 	addObject(fb);

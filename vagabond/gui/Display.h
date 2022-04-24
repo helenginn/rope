@@ -2,7 +2,7 @@
 #ifndef __vagabond__Display__
 #define __vagabond__Display__
 
-#include "Scene.h"
+#include <vagabond/gui/elements/Scene.h>
 
 class ImageButton;
 class GuiAtom;

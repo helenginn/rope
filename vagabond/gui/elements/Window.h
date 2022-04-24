@@ -14,7 +14,6 @@
 static bool _running = true;
 
 class Scene;
-class Dictator;
 
 struct SDL_Renderer;
 struct SDL_Window;
@@ -23,6 +22,7 @@ class Window
 {
 public:
 	Window(int argc, char **argv);
+	virtual ~Window();
 	
 	static SDL_Renderer *renderer()
 	{
@@ -53,6 +53,7 @@ public:
 	}
 
 	void glSetup();
+	virtual void setup(int argc, char **argv) = 0;
 	static void render();
 	static void tick();
 	
@@ -66,14 +67,14 @@ public:
 		return _context;
 	}
 	
+protected:
+	static Scene *_current;
 private:
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
 	static SDL_GLContext _context;
 	static SDL_Rect _rect;
 
-	static Scene *_current;
-	static Dictator *_dictator;
 	static std::set<Scene *> _toDelete;
 	
 	static KeyResponder *_keyResponder;

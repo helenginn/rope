@@ -2,7 +2,7 @@
 #ifndef __vagabond__GuiAtom__
 #define __vagabond__GuiAtom__
 
-#include "Renderable.h"
+#include <vagabond/gui/elements/Renderable.h>
 #include <atomic>
 #include <vagabond/core/Atom.h>
 

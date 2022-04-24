@@ -3,7 +3,6 @@
 #include "Window.h"
 #include "Modal.h"
 #include "TextButton.h"
-#include "MainMenu.h"
 #include "Scene.h"
 #include "Image.h"
 #include <GLES3/gl3.h>
@@ -194,12 +193,6 @@ void Scene::addTitle(std::string title)
 
 void Scene::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "back_to_menu")
-	{
-		MainMenu *menu = new MainMenu();
-		menu->show();
-	}
-
 	if (tag == "back")
 	{
 		_previous->showSimple();

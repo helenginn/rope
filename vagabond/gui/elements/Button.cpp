@@ -29,6 +29,8 @@ bool Button::mouseOver()
 	{
 		return false;
 	}
+	
+	Box::mouseOver();
 
 	setHighlighted(true);
 	return true;
@@ -36,5 +38,6 @@ bool Button::mouseOver()
 
 void Button::unMouseOver()
 {
+	Box::unMouseOver();
 	setHighlighted(false);
 }

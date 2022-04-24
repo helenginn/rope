@@ -1,6 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
 #include "Box.h"
+#include "Text.h"
 
 Box::Box() : Renderable()
 {
@@ -73,4 +74,29 @@ void Box::rescale(double x, double y)
 	mat[1][1] = y;
 
 	rotateRound(mat);
+}
+
+void Box::addAltTag(std::string text)
+{
+	Text *alt = new Text(text);
+	alt->resize(0.5);
+	setHover(alt);
+}
+
+bool Box::mouseOver()
+{
+	if (_hover)
+	{
+		_hover->setDisabled(false);
+	}
+
+	return false;
+}
+
+void Box::unMouseOver()
+{
+	if (_hover)
+	{
+		_hover->setDisabled(true);
+	}
 }

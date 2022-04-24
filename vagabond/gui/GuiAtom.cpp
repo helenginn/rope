@@ -1,6 +1,7 @@
 #include "GuiAtom.h"
-#include "Icosahedron.h"
 #include "GuiBond.h"
+
+#include <vagabond/gui/elements/Icosahedron.h>
 
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>

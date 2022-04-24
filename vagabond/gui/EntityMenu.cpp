@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "EntityMenu.h"
-#include "TextButton.h"
+#include <vagabond/gui/elements/TextButton.h>
 
 EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {

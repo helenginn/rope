@@ -19,9 +19,9 @@
 #ifndef __vagabond__AddModel__
 #define __vagabond__AddModel__
 
-#include "Scene.h"
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include "FileView.h"
-#include "TextButton.h"
 #include <vagabond/core/Model.h>
 
 class TextEntry;

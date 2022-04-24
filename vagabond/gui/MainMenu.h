@@ -19,7 +19,7 @@
 #ifndef __practical__MainMenu__
 #define __practical__MainMenu__
 
-#include "Scene.h"
+#include <vagabond/gui/elements/Scene.h>
 
 class MainMenu : public Scene
 {

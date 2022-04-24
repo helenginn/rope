@@ -1,13 +1,16 @@
 #include "Display.h"
-#include "ImageButton.h"
 #include "GuiAtom.h"
 #include "GuiRefls.h"
 #include "GuiDensity.h"
-#include "TextButton.h"
+
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Window.h>
+
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AlignmentTool.h>
-#include "Window.h"
+
 #include <SDL2/SDL.h>
 #include <iostream>
 

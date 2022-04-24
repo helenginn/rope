@@ -19,7 +19,7 @@
 #ifndef __vagabond__ModelMenu__
 #define __vagabond__ModelMenu__
 
-#include "ListView.h"
+#include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/ModelManager.h>
 
 class ModelMenu : public ListView, public ModelManagerResponder

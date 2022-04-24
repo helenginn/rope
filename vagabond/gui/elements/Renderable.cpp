@@ -2,7 +2,7 @@
 
 #include "Renderable.h"
 #include "SnowGL.h"
-#include "commit.h"
+#include "../../../commit.h"
 #include "Library.h"
 #include <vagabond/utils/FileReader.h>
 #include <float.h>
@@ -48,10 +48,6 @@ void Renderable::addToVertices(glm::vec3 add)
 
 Renderable::Renderable()
 {
-	_forceRender = false;
-	_usesProj = false;
-	_texid = 0;
-	_gl = NULL;
 	_textured = true;
 	_name = "generic object";
 	_remove = false;
@@ -88,6 +84,16 @@ Renderable::~Renderable()
 	std::vector<Vertex>().swap(_unselectedVertices);
 	std::vector<Vertex>().swap(_vertices);
 	std::vector<GLuint>().swap(_indices);
+	
+	for (size_t i = 0; i < _objects.size(); i++)
+	{
+		if (_objects[i] == _hover)
+		{
+			removeObject(_hover);
+			delete _hover;
+			_hover = nullptr;
+		}
+	}
 }
 
 GLuint Renderable::addShaderFromString(GLuint program, GLenum type, 
@@ -905,9 +911,9 @@ void Renderable::boundaries(glm::vec3 *min, glm::vec3 *max)
 				(*min)[j]= v.pos[j];
 			}
 
-			if (v.pos[j] < (*max)[j])
+			if (v.pos[j] > (*max)[j])
 			{
-				(*max)[j]= v.pos[j];
+				(*max)[j] = v.pos[j];
 			}
 		}
 	}
@@ -1364,6 +1370,7 @@ void Renderable::setCentre(double x, double y)
 
 	setPosition(glm::vec3(xf, -yf, 0));
 	_align = Centre;
+	setHover(_hover);
 }
 
 void Renderable::setLeft(double x, double y)
@@ -1388,6 +1395,7 @@ void Renderable::setLeft(double x, double y)
 
 	positionChanged();
 	_align = Left;
+	setHover(_hover);
 }
 
 void Renderable::setRight(double x, double y)
@@ -1400,6 +1408,7 @@ void Renderable::setRight(double x, double y)
 
 	setPosition(glm::vec3(xf, -yf, 0));
 	_align = Right;
+	setHover(_hover);
 }
 
 void Renderable::setExtra(glm::vec4 pos)
@@ -1430,4 +1439,44 @@ void Renderable::realign()
 		break;
 	}
 
+	if (_hover)
+	{
+		_hover->realign();
+	}
+}
+
+void Renderable::setHover(Renderable *hover)
+{
+	if (hover == nullptr && _hover != nullptr)
+	{
+		removeObject(_hover);
+		_hover = nullptr;
+		setSelectable(false);
+		return;
+	}
+	
+	if (hover == nullptr)
+	{
+		return;
+	}
+
+	if (_hover != hover)
+	{
+		_hover = hover;
+		addObject(_hover);
+		setSelectable(true);
+	}
+
+	float hx = _x;
+	float hy = _y;
+
+	glm::vec3 min, max;
+	_hover->boundaries(&min, &max);
+	std::cout << glm::to_string(min) << " " << glm::to_string(max) <<  std::endl;
+	
+	hy = _y - 0.02 - (max.y - min.y) / 2;
+
+	_hover->setAlignXY(_align, hx, hy);
+	_hover->realign();
+	_hover->setDisabled(true);
 }

@@ -19,7 +19,7 @@
 #ifndef __vagabond__GuiBond__
 #define __vagabond__GuiBond__
 
-#include "Renderable.h"
+#include <vagabond/gui/elements/Renderable.h>
 #include <vagabond/core/Atom.h>
 
 class AtomGroup;

@@ -293,6 +293,8 @@ public:
 	{
 		_forceRender = true;
 	}
+
+	void setHover(Renderable *hover);
 protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -338,10 +340,28 @@ protected:
 	glm::mat4x4 _model;
 	glm::mat4x4 _proj;
 	glm::mat4x4 _unproj;
-	GLuint _texid;
+	GLuint _texid = 0;
 	void appendObject(Renderable *object);
-	std::atomic<bool> _forceRender;
+	std::atomic<bool> _forceRender{false};
 	void rotateByMatrix(glm::mat3x3 m);
+
+	enum Alignment
+	{
+		Left,
+		Right,
+		Centre,
+		None,
+	};
+	
+	
+	void setAlignXY(Alignment &a, float x, float y)
+	{
+		_x = x;
+		_y = y;
+		_align = a;
+	}
+
+	Renderable *_hover = nullptr;
 private:
 	void deleteTextures();
 	void rebindVBOBuffers();
@@ -372,25 +392,17 @@ private:
 	bool _selected;
 	bool _selectable;
 	bool _draggable;
-	bool _usesProj;
+	bool _usesProj = false;
 	std::string _texture;
 
 	std::string _fFile;
 	std::string _gFile;
 	std::string _vFile;
 	
-	enum Alignment
-	{
-		Left,
-		Right,
-		Centre,
-		None,
-	};
-	
 	Alignment _align;
 	double _x = 0.5;
 	double _y = 0.5;
-	SnowGL *_gl;
+	SnowGL *_gl = nullptr;
 	static double _selectionResize;
 };
 

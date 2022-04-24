@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FileLine__
-#define __vagabond__FileLine__
+#include "VagWindow.h"
+#include "MainMenu.h"
+#include "../cmd/Dictator.h"
 
-#include <vagabond/core/CifFile.h>
-#include <vagabond/gui/elements/Box.h>
+Dictator *VagWindow::_dictator = NULL;
 
-class FileView;
-
-class FileLine : public Box
+VagWindow::VagWindow(int argc, char **argv) : Window(argc, argv)
 {
-public:
-	FileLine(FileView *view,std::string filename);
-	virtual ~FileLine();
 
-private:
-	void setup();
-	void queryFile();
+}
 
-	FileView *_view;
-	std::string _filename;
-	CifFile::Type _type;
-};
+void VagWindow::setup(int argc, char **argv)
+{
+	_dictator = new Dictator();
+	std::vector<std::string> args;
+	for (size_t i = 1; i < argc; i++)
+	{
+		args.push_back(std::string(argv[i]));
+	}
 
-#endif
+	_dictator->setArgs(args);
+	_dictator->setup();
+	_dictator->start();
+
+	MainMenu *menu = new MainMenu();
+	setCurrentScene(menu);
+	_current = menu;
+}

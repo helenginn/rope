@@ -18,12 +18,13 @@
 
 #include "ModelMenu.h"
 #include "AddModel.h"
-#include "TextButton.h"
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/Environment.h>
 
 ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
 {
 	_manager = Environment::modelManager();
+	_manager->setResponder(this);
 }
 
 ModelMenu::~ModelMenu()
@@ -52,8 +53,11 @@ Renderable *ModelMenu::getLine(int i)
 		t->setReturnTag("add");
 		return t;
 	}
-
-	return nullptr;
+	
+	Model &m = _manager->model(i);
+	TextButton *t = new TextButton(m.name(), this);
+	t->setReturnTag("model_" + m.name());
+	return t;
 }
 
 void ModelMenu::buttonPressed(std::string tag, Button *button)
