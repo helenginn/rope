@@ -18,7 +18,6 @@
 
 #include "ElementSegment.h"
 #include "ElementLibrary.h"
-#include "AtomGroup.h"
 
 ElementSegment::ElementSegment()
 : FFTCubicGrid<VoxelElement>()
