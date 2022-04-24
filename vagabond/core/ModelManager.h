@@ -45,6 +45,13 @@ public:
 	{
 		return _models.size();
 	}
+	
+	Model &model(int idx)
+	{
+		std::list<Model>::iterator it = _models.begin();
+		for (size_t i = 0; i < idx; i++, it++) {};
+		return *it;
+	}
 
 	void setResponder(ModelManagerResponder *responder)
 	{
