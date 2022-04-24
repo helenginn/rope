@@ -37,6 +37,7 @@ void Environment::save()
 {
 	json data;
 	data["file_manager"] = *_fileManager;
+	data["model_manager"] = *_modelManager;
 	
 	std::ofstream file;
 	file.open("rope.json");
@@ -55,4 +56,5 @@ void Environment::load(std::string file)
 	f.close();
 
 	*_fileManager = data["file_manager"];
+	*_modelManager = data["model_manager"];
 }
