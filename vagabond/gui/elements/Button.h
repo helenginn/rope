@@ -29,7 +29,7 @@ public:
 	
 	/** Renders button unable to be highlighted and suppresses action when
 	 * pressed */
-	void setInert(bool inert)
+	void setInert(bool inert = true)
 	{
 		_inert = inert;
 	}

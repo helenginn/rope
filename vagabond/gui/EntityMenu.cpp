@@ -17,10 +17,14 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "EntityMenu.h"
+
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/core/Environment.h>
 
 EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {
+	_manager = Environment::entityManager();
+	_manager->setResponder(this);
 }
 
 EntityMenu::~EntityMenu()
@@ -48,11 +52,18 @@ void EntityMenu::buttonPressed(std::string tag, Button *button)
 
 Renderable *EntityMenu::getLine(int i)
 {
-	TextButton *tb = new TextButton("Test", this);
-	return tb;
+	Entity &ent = _manager->object(i);
+	TextButton *t = new TextButton(ent.name(), this);
+	t->setReturnTag("entity_" + ent.name());
+	return t;
 }
 
 size_t EntityMenu::lineCount()
 {
-	return 1;
+	return _manager->objectCount();
+}
+
+void EntityMenu::objectsChanged()
+{
+	refreshFiles();
 }

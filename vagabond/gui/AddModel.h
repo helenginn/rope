@@ -29,10 +29,15 @@ class TextEntry;
 class AddModel : public virtual Scene, public FileViewResponder
 {
 public:
-	AddModel(Scene *prev);
+	AddModel(Scene *prev, Model *chosen = nullptr);
 	~AddModel();
 
 	void setup();
+	
+	const Model &model() const
+	{
+		return _m;
+	}
 
 	void refreshInfo();
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
@@ -44,6 +49,7 @@ private:
 	Model _m;
 	std::string _lastTag;
 
+	bool _existing = false;
 };
 
 #endif

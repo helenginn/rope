@@ -16,40 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityManager__
-#define __vagabond__EntityManager__
-
-#include <string>
-#include <vector>
-#include <list>
-
 #include "Entity.h"
-#include "Manager.h"
 
-#include <json/json.hpp>
-using nlohmann::json;
-
-class EntityManager : public Manager<Entity>
+Entity::Entity()
 {
-public:
-	EntityManager();
 
-	virtual void insertIfUnique(const Entity &e);
-
-	friend void to_json(json &j, const EntityManager &value);
-	friend void from_json(const json &j, EntityManager &value);
-private:
-
-};
-
-inline void to_json(json &j, const EntityManager &value)
-{
-	j["entities"] = value._objects;
 }
-
-inline void from_json(const json &j, EntityManager &value)
-{
-	value._objects = j.at("entities");
-}
-
-#endif

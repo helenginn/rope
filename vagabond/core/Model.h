@@ -20,6 +20,7 @@
 #define __vagabond__Model__
 
 #include <string>
+#include <iostream>
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -73,9 +74,9 @@ inline void from_json(const json &j, Model &value)
 	{
 		value._chain2Entity = j.at("chain_to_entity");
 	}
-	catch (const nlohmann::detail::type_error &err)
+	catch (...)
 	{
-
+		std::cout << "Error proccessing json, probably old version" << std::endl;
 	}
 }
 

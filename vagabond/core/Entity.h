@@ -16,40 +16,52 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityManager__
-#define __vagabond__EntityManager__
+#ifndef __vagabond__Entity__
+#define __vagabond__Entity__
 
 #include <string>
-#include <vector>
-#include <list>
-
-#include "Entity.h"
-#include "Manager.h"
+#include <iostream>
 
 #include <json/json.hpp>
 using nlohmann::json;
 
-class EntityManager : public Manager<Entity>
+class Entity
 {
 public:
-	EntityManager();
+	Entity();
+	
+	void setName(std::string name)
+	{
+		_name = name;
+	}
 
-	virtual void insertIfUnique(const Entity &e);
+	const std::string &name() const
+	{
+		return _name;
+	}
 
-	friend void to_json(json &j, const EntityManager &value);
-	friend void from_json(const json &j, EntityManager &value);
+	friend void to_json(json &j, const Entity &value);
+	friend void from_json(const json &j, Entity &value);
 private:
+	std::string _name;
 
 };
 
-inline void to_json(json &j, const EntityManager &value)
+inline void to_json(json &j, const Entity &value)
 {
-	j["entities"] = value._objects;
+	j["name"] = value._name;
 }
 
-inline void from_json(const json &j, EntityManager &value)
+inline void from_json(const json &j, Entity &value)
 {
-	value._objects = j.at("entities");
+	try
+	{
+		value._name = j.at("name");
+	}
+	catch (...)
+	{
+		std::cout << "Error proccessing json, probably old version" << std::endl;
+	}
 }
 
 #endif

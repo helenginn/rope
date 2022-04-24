@@ -23,6 +23,7 @@
 
 class FileManager;
 class ModelManager;
+class EntityManager;
 
 class Environment
 {
@@ -32,6 +33,11 @@ public:
 	static ModelManager *modelManager()
 	{
 		return _environment._modelManager;
+	}
+
+	static EntityManager *entityManager()
+	{
+		return _environment._entityManager;
 	}
 
 	static FileManager *fileManager()
@@ -52,8 +58,9 @@ public:
 	void save();
 	void load(std::string file = "rope.json");
 private:
-	FileManager *_fileManager;
-	ModelManager *_modelManager;
+	FileManager *_fileManager = nullptr;
+	ModelManager *_modelManager = nullptr;
+	EntityManager *_entityManager = nullptr;
 
 	static Environment _environment;
 };

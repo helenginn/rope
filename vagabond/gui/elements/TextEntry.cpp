@@ -22,6 +22,11 @@
 
 void TextEntry::click()
 {
+	if (_inert)
+	{
+		return;
+	}
+
 	if (_sender->keyResponder() != nullptr)
 	{
 		_sender->keyResponder()->finish();

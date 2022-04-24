@@ -28,31 +28,31 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
-class ModelManagerResponder
-{
-public:
-	virtual ~ModelManagerResponder() {};
-	virtual void modelsChanged() = 0;
-};
-
 class ModelManager : public Manager<Model>
 {
 public:
 	ModelManager();
 
-	void setResponder(ModelManagerResponder *responder)
+	virtual void insertIfUnique(const Model &m);
+	
+	Model *const model(std::string name) const
 	{
-		_responder = responder;
+		if (_name2Model.count(name) == 0)
+		{
+			return nullptr;
+		}
+
+		return _name2Model.at(name);
 	}
 	
-	void insertIfUnique(const Model &m);
-	
+	void housekeeping();
+
 	friend void to_json(json &j, const ModelManager &value);
 	friend void from_json(const json &j, ModelManager &value);
-private:
-	ModelManagerResponder *_responder = nullptr;
-};
+protected:
+	std::map<std::string, Model *> _name2Model;
 
+};
 
 inline void to_json(json &j, const ModelManager &value)
 {
@@ -63,7 +63,6 @@ inline void from_json(const json &j, ModelManager &value)
 {
 	value._objects = j.at("models");
 }
-
 
 
 #endif

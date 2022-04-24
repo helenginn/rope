@@ -19,6 +19,7 @@
 #include "Environment.h"
 #include "FileManager.h"
 #include "ModelManager.h"
+#include "EntityManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -31,6 +32,7 @@ Environment::Environment()
 {
 	_fileManager = new FileManager();
 	_modelManager = new ModelManager();
+	_entityManager = new EntityManager();
 }
 
 void Environment::save()
@@ -38,6 +40,7 @@ void Environment::save()
 	json data;
 	data["file_manager"] = *_fileManager;
 	data["model_manager"] = *_modelManager;
+	data["entity_manager"] = *_entityManager;
 	
 	std::ofstream file;
 	file.open("rope.json");
@@ -59,9 +62,12 @@ void Environment::load(std::string file)
 	{
 		*_fileManager = data["file_manager"];
 		 *_modelManager = data["model_manager"];
+		 *_entityManager = data["entity_manager"];
 	}
 	catch (const nlohmann::detail::type_error &err)
 	{
-
+		std::cout << "Error processing json, probably old version" << std::endl;
 	}
+	
+	_modelManager->housekeeping();
 }

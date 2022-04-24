@@ -27,9 +27,13 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/ModelManager.h>
 
-AddModel::AddModel(Scene *prev) : Scene(prev)
+AddModel::AddModel(Scene *prev, Model *chosen) : Scene(prev)
 {
-
+	if (chosen != nullptr)
+	{
+		_m = *chosen;
+		_existing = true;
+	}
 }
 
 AddModel::~AddModel()
@@ -39,7 +43,13 @@ AddModel::~AddModel()
 
 void AddModel::setup()
 {
-	addTitle("Model menu - Add model");
+	std::string title = "Model menu - Add model";
+	if (_existing)
+	{
+		title = "Model menu - edit model";
+	}
+
+	addTitle(title);
 
 	{
 		Text *t = new Text("Initialising file:");
@@ -55,6 +65,7 @@ void AddModel::setup()
 		TextButton *t = new TextButton(file, this);
 		t->setReturnTag("choose_initial_file");
 		t->setRight(0.8, 0.3);
+		if (_existing) { t->setInert(); }
 		_initialFile = t;
 		addObject(t);
 	}
@@ -72,6 +83,9 @@ void AddModel::setup()
 		TextEntry *t = new TextEntry(file, this);
 		t->setReturnTag("enter_name");
 		t->setRight(0.8, 0.4);
+		
+		if (_existing) { t->setInert(); }
+
 		_name = t;
 		addObject(t);
 	}
@@ -87,18 +101,21 @@ void AddModel::setup()
 		t->setCentre(0.8, 0.5);
 		addObject(t);
 	}
-	
+
+	if (!_existing)
 	{
-		TextButton *t = new TextButton("Cancel", this);
-		t->setLeft(0.2, 0.8);
-		t->setReturnTag("cancel");
-		addObject(t);
-	}
-	{
-		TextButton *t = new TextButton("Create", this);
-		t->setRight(0.8, 0.8);
-		t->setReturnTag("create");
-		addObject(t);
+		{
+			TextButton *t = new TextButton("Cancel", this);
+			t->setLeft(0.2, 0.8);
+			t->setReturnTag("cancel");
+			addObject(t);
+		}
+		{
+			TextButton *t = new TextButton("Create", this);
+			t->setRight(0.8, 0.8);
+			t->setReturnTag("create");
+			addObject(t);
+		}
 	}
 
 }

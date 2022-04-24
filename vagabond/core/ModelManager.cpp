@@ -48,6 +48,15 @@ void ModelManager::insertIfUnique(const Model &m)
 
 	if (_responder)
 	{
-		_responder->modelsChanged();
+		_responder->objectsChanged();
 	}
+}
+
+void ModelManager::housekeeping()
+{
+	for (Model &m : _objects)
+	{
+		_name2Model[m.name()] = &m;
+	}
+
 }

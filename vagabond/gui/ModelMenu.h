@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/ModelManager.h>
 
-class ModelMenu : public ListView, public ModelManagerResponder
+class ModelMenu : public ListView, public ManagerResponder<Model>
 {
 public:
 	ModelMenu(Scene *prev);
@@ -34,7 +34,7 @@ public:
 	virtual Renderable *getLine(int i);
 
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
-	virtual void modelsChanged();
+	virtual void objectsChanged();
 private:
 	ModelManager *_manager;
 

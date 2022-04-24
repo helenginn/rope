@@ -22,10 +22,19 @@
 #include <list>
 
 template <class T>
+class ManagerResponder
+{
+public:
+	virtual ~ManagerResponder() {};
+	virtual void objectsChanged() = 0;
+};
+
+template <class T>
 class Manager
 {
 public:
 	Manager() {};
+	virtual ~Manager() {};
 
 	size_t objectCount()
 	{
@@ -38,8 +47,20 @@ public:
 		for (size_t i = 0; i < idx; i++, it++) {};
 		return *it;
 	}
+
+	virtual void insertIfUnique(const T &m) {};
+
+	void setResponder(ManagerResponder<T> *responder)
+	{
+		_responder = responder;
+	}
+	
+	friend void to_json(json &j, const Manager<T> &value);
+	friend void from_json(const json &j, Manager<T> &value);
 protected:
+
 	typename std::list<T> _objects;
+	ManagerResponder<T> *_responder = nullptr;
 };
 
 #endif

@@ -68,10 +68,24 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 	{
 		AddModel *addModel = new AddModel(this);
 		addModel->show();
+		return;
+	}
+
+	std::string prefix = "model_";
+	if (tag.rfind(prefix, 0) != std::string::npos)
+	{
+		std::string name = tag.substr(prefix.length(), std::string::npos);
+		
+		Model *model = _manager->model(name);
+		std::cout << model << std::endl;
+		
+		AddModel *addModel = new AddModel(this, model);
+		addModel->show();
+		return;
 	}
 }
 
-void ModelMenu::modelsChanged()
+void ModelMenu::objectsChanged()
 {
 	refreshFiles();
 }

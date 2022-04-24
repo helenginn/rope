@@ -20,8 +20,11 @@
 #define __vagabond__EntityMenu__
 
 #include <vagabond/gui/elements/ListView.h>
+#include <vagabond/core/EntityManager.h>
 
-class EntityMenu : public ListView
+class EntityManager;
+
+class EntityMenu : public ListView, public ManagerResponder<Entity>
 {
 public:
 	EntityMenu(Scene *prev);
@@ -33,7 +36,9 @@ public:
 	virtual Renderable *getLine(int i);
 
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void objectsChanged();
 private:
+	EntityManager *_manager;
 
 };
 

@@ -19,6 +19,8 @@ vagafiles = [
 'Diffraction.cpp',
 'ElementLibrary.cpp',
 'ElementSegment.cpp',
+'Entity.cpp',
+'EntityManager.cpp',
 'Environment.cpp',
 'File.cpp',
 'FileManager.cpp',
