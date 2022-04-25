@@ -22,9 +22,9 @@
 
 #define LINES_PER_PAGE 8
 
-ListView::ListView(Scene *prev) : Scene(prev)
+ListView::ListView(Scene *prev) : ForwardBackward(prev)
 {
-	_start = 0;
+
 }
 
 ListView::~ListView()
@@ -34,42 +34,22 @@ ListView::~ListView()
 
 void ListView::setup()
 {
-	refreshFiles();
+	refresh();
 }
 
-void ListView::buttonPressed(std::string tag, Button *button)
-{	
-	if (tag == "scroll_forward")
-	{
-		_start += LINES_PER_PAGE;
-		refreshFiles();
-	}
-	if (tag == "scroll_back")
-	{
-		_start -= LINES_PER_PAGE;
-		if (_start < 0)
-		{
-			_start = 0;
-		}
-		refreshFiles();
-	}
-	
-	Scene::buttonPressed(tag, button);
+size_t ListView::unitsPerPage()
+{
+	return LINES_PER_PAGE;
 }
 
-void ListView::refreshFiles()
+void ListView::refresh()
 {
 	loadFilesFrom(_start, LINES_PER_PAGE);
 }
 
 void ListView::loadFilesFrom(int start, int num)
 {
-	for (size_t i = 0; i < _temps.size(); i++)
-	{
-		removeObject(_temps[i]);
-		delete _temps[i];
-	}
-	_temps.clear();
+	clearTemps();
 
 	int count = lineCount();
 	int npages = ceil((float)count / (float)LINES_PER_PAGE);
@@ -105,22 +85,4 @@ void ListView::loadFilesFrom(int start, int num)
 	{
 		scrollForwardButton();
 	}
-}
-
-void ListView::scrollBackButton()
-{
-	ImageButton *bb = ImageButton::arrow(+90., this);
-	bb->setCentre(0.1, 0.8);
-	bb->setReturnTag("scroll_back");
-	addObject(bb);
-	_temps.push_back(bb);
-}
-
-void ListView::scrollForwardButton()
-{
-	ImageButton *fb = ImageButton::arrow(-90., this);
-	fb->setCentre(0.9, 0.8);
-	fb->setReturnTag("scroll_forward");
-	addObject(fb);
-	_temps.push_back(fb);
 }

@@ -53,13 +53,17 @@ Sequence *Chain::fullSequence()
 	{
 		if (sequences.size() == 1 || it->second->size() > 1) // polymer chain
 		{
-			*full += it->second;
+			if (sequences.size() > 0)
+			{
+				*full += it->second;
+			}
 		}
 
 		next = it; next++;
 		if (next != sequences.end())
 		{
-			if (next->second->size() <= 1) // small molecule
+			if (it->second->size() <= 1 || 
+			    next->second->size() <= 1) // small molecule
 			{
 				continue;
 			}

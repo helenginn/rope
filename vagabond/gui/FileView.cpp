@@ -131,5 +131,5 @@ size_t FileView::lineCount()
 
 void FileView::filesChanged()
 {
-	refreshFiles();
+	refresh();
 }

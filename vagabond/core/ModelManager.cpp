@@ -52,6 +52,12 @@ void ModelManager::insertIfUnique(const Model &m)
 	}
 }
 
+void ModelManager::update(const Model &m)
+{
+	Model *old = model(m.name());
+	*old = m;
+}
+
 void ModelManager::housekeeping()
 {
 	for (Model &m : _objects)

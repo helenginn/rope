@@ -19,6 +19,8 @@
 #include "ChainAssignment.h"
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/SequenceView.h>
+#include <vagabond/gui/ChooseEntity.h>
 
 #include <vagabond/core/File.h>
 #include <vagabond/core/Chain.h>
@@ -82,10 +84,8 @@ Renderable *ChainAssignment::getLine(int i)
 {
 	Box *box = new Box();
 
-	std::string id = _contents->chain(i)->id();
 	Sequence *seq = _contents->chain(i)->fullSequence();
-	int numres = seq->size();
-	std::string seqstr = i_to_str(numres) + " res.";
+	std::string id = _contents->chain(i)->id();
 	std::string entity = _model.entityForChain(id);
 	
 	if (entity.length() == 0)
@@ -109,7 +109,7 @@ Renderable *ChainAssignment::getLine(int i)
 	}
 
 	{
-		TextButton *t = new TextButton(seqstr, this);
+		TextButton *t = SequenceView::button(seq, this);
 		t->setReturnTag("sequence_" + id);
 		t->setLeft(0.7 + diff, 0.0);
 		box->addObject(t);
@@ -121,4 +121,32 @@ Renderable *ChainAssignment::getLine(int i)
 void ChainAssignment::buttonPressed(std::string tag, Button *button)
 {
 	ListView::buttonPressed(tag, button);
+	
+	std::string prefix = "sequence_";
+	if (tag.rfind(prefix, 0) != std::string::npos)
+	{
+		std::string id = tag.substr(prefix.length(), std::string::npos);
+		Chain *chain = _contents->chain(id);
+		
+		Sequence *full = chain->fullSequence();
+
+		SequenceView *view = new SequenceView(this, full);
+		view->show();
+	}
+
+	prefix = "entity_";
+	if (tag.rfind(prefix, 0) != std::string::npos)
+	{
+		std::string id = tag.substr(prefix.length(), std::string::npos);
+		Chain *chain = _contents->chain(id);
+
+		ChooseEntity *choose = new ChooseEntity(this, _model, chain);
+		choose->setCaller(this);
+		choose->show();
+	}
+}
+
+void ChainAssignment::refreshInfo()
+{
+	refresh();
 }

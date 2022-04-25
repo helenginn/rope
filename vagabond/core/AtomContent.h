@@ -20,6 +20,7 @@
 #define __vagabond__AtomContent__
 
 #include "AtomGroup.h"
+#include <map>
 
 class Chain;
 
@@ -43,11 +44,21 @@ public:
 	{
 		return _chains[i];
 	}
+	
+	Chain *const chain(std::string id)
+	{
+		if (_id2Chain.count(id))
+		{
+			return _id2Chain.at(id);
+		}
+
+		return nullptr;
+	}
 
 private:
 	void groupByChain();
 	std::vector<Chain *> _chains;
-
+	std::map<std::string, Chain *> _id2Chain;
 
 };
 

@@ -41,29 +41,19 @@ SequenceComparison::SequenceComparison(Sequence *a, Sequence *b)
 	_lOutput = lss.str();
 	_rOutput = rss.str();
 	_aOutput = ass.str();
-	
-	for (size_t i = 0; i < _leftAlign.seq.size(); i++)
-	{
-		std::cout << (int)_leftAlign.map[i] << " ";
-	}
-	std::cout << std::endl;
 
 	delete_alignment(&_leftAlign);
 	delete_alignment(&_rightAlign);
-	
-	std::cout << _lOutput << std::endl;
-	std::cout << _aOutput << std::endl;
-	std::cout << _rOutput << std::endl;
 }
 
 bool SequenceComparison::hasResidue(int row, int entry)
 {
-	if (row == 2 && _rOutput[row] != ' ')
+	if (row == 0 && _indices[entry].l != ' ')
 	{
 		return true;
 	}
 
-	if (row == 0 && _lOutput[row] != ' ')
+	if (row == 2 && _indices[entry].r != ' ')
 	{
 		return true;
 	}
@@ -73,11 +63,10 @@ bool SequenceComparison::hasResidue(int row, int entry)
 
 Residue *SequenceComparison::residue(int row, int entry)
 {
-	if (entry < 0 || _indices.size() >= entry)
+	if (entry < 0 || entry >= _indices.size())
 	{
 		return nullptr;
 	}
-
 
 	if (row == 0)
 	{
@@ -97,7 +86,7 @@ Residue *SequenceComparison::residue(int row, int entry)
 
 std::string SequenceComparison::displayString(int row, int entry)
 {
-	if (entry < 0 || _indices.size() >= entry)
+	if (entry < 0 || entry >= _indices.size())
 	{
 		return "";
 	}
@@ -105,16 +94,31 @@ std::string SequenceComparison::displayString(int row, int entry)
 	std::string ret;
 	if (row == 0)
 	{
-		ret += _lOutput[row];
+		ret += _lOutput[entry];
 	}
 	else if (row == 1)
 	{
-		ret += _aOutput[row];
+		ret += _aOutput[entry];
 	}
 	else if (row == 2)
 	{
-		ret += _rOutput[row];
+		ret += _rOutput[entry];
 	}
 	
 	return ret;
+}
+
+float SequenceComparison::match()
+{
+	float count = 0;
+	for (size_t i = 0; i < _aOutput.size(); i++)
+	{
+		if (_aOutput[i] == '.')
+		{
+			count++;
+		}
+	}
+	
+	count /= (float)_aOutput.size();
+	return count;
 }

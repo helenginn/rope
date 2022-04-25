@@ -21,6 +21,7 @@
 
 #include <string>
 #include <iostream>
+#include "Sequence.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -29,6 +30,16 @@ class Entity
 {
 public:
 	Entity();
+	
+	Sequence *sequence()
+	{
+		return &_sequence;
+	}
+	
+	void setSequence(Sequence *seq)
+	{
+		_sequence = *seq;
+	}
 	
 	void setName(std::string name)
 	{
@@ -44,12 +55,14 @@ public:
 	friend void from_json(const json &j, Entity &value);
 private:
 	std::string _name;
+	Sequence _sequence;
 
 };
 
 inline void to_json(json &j, const Entity &value)
 {
 	j["name"] = value._name;
+	j["sequence"] = value._sequence;
 }
 
 inline void from_json(const json &j, Entity &value)
@@ -57,6 +70,7 @@ inline void from_json(const json &j, Entity &value)
 	try
 	{
 		value._name = j.at("name");
+		value._sequence = j.at("sequence");
 	}
 	catch (...)
 	{

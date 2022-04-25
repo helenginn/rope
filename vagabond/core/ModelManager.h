@@ -34,6 +34,7 @@ public:
 	ModelManager();
 
 	virtual void insertIfUnique(const Model &m);
+	void update(const Model &m);
 	
 	Model *const model(std::string name) const
 	{

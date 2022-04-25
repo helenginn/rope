@@ -16,48 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "EntityMenu.h"
+#ifndef __vagabond__AddEntity__
+#define __vagabond__AddEntity__
 
-#include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/core/Environment.h>
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Entity.h>
 
-EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
+class ChooseEntity;
+class TextEntry;
+class Chain;
+
+class AddEntity : public Scene
 {
-	_manager = Environment::entityManager();
-	_manager->setResponder(this);
-}
+public:
+	AddEntity(Scene *prev, Chain *chain);
 
-EntityMenu::~EntityMenu()
-{
+	void setCaller(ChooseEntity *caller)
+	{
+		_caller = caller;
+	}
 
-}
+	virtual void setup();
 
-void EntityMenu::setup()
-{
-	addTitle("Protein entities");
+	virtual void buttonPressed(std::string tag, Button *button = NULL);
+private:
+	void textOrChoose(std::string &file, std::string other);
+	void refreshInfo();
 
-	ListView::setup();
-}
+	Entity _ent;
+	bool _existing = false;
+	Chain *_chain = nullptr;
+	TextEntry *_name;
+	ChooseEntity *_caller = nullptr;
+};
 
-void EntityMenu::buttonPressed(std::string tag, Button *button)
-{
-	ListView::buttonPressed(tag, button);
-}
-
-Renderable *EntityMenu::getLine(int i)
-{
-	Entity &ent = _manager->object(i);
-	TextButton *t = new TextButton(ent.name(), this);
-	t->setReturnTag("entity_" + ent.name());
-	return t;
-}
-
-size_t EntityMenu::lineCount()
-{
-	return _manager->objectCount();
-}
-
-void EntityMenu::objectsChanged()
-{
-	refresh();
-}
+#endif

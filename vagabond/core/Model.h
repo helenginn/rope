@@ -34,6 +34,8 @@ public:
 	
 	const std::string entityForChain(std::string id) const;
 	
+	void setEntityForChain(std::string id, std::string entity);
+	
 	void setName(std::string name)
 	{
 		_name = name;

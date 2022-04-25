@@ -20,6 +20,7 @@
 #define __vagabond__Residue__
 
 #include <string>
+#include <vagabond/utils/FileReader.h>
 #include "ResidueId.h"
 
 #include <json/json.hpp>
@@ -38,7 +39,7 @@ public:
 		_sequence = seq;
 	}
 
-	int as_num()
+	int as_num() const
 	{
 		return _id.as_num();
 	}
@@ -49,6 +50,8 @@ public:
 	{
 		return _id;
 	}
+	
+	const std::string one_letter_code() const;
 
 	/** @return three letter code */
 	const std::string &code() const
@@ -60,6 +63,12 @@ public:
 	const std::string &chain() const
 	{
 		return _chain;
+	}
+	
+	const std::string desc() const
+	{
+		return _code + i_to_str(as_num());
+
 	}
 	
 	friend void to_json(json &j, const Residue &value);

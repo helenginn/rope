@@ -362,21 +362,23 @@ inline void corresponding_indices(Alignment &ala, Alignment &alb,
                                   int prev_gap, int wind,
                                   int *other_prev, int *other_wind)
 {
-	*other_wind = ala.map[wind];
+	if (wind >= ala.seq.size())
+	{
+		*other_wind = alb.seq.size();
+	}
+	else
+	{
+		*other_wind = ala.map[wind];
+	}
 
 	if (prev_gap < 0)
 	{
 		*other_prev = -1;
-		return;
 	}
-	
-	if (wind == ala.seq.size())
+	else
 	{
-		*other_wind = alb.seq.size();
-//		return;
+		*other_prev = ala.map[prev_gap];
 	}
-	
-	*other_prev = ala.map[prev_gap];
 }
 
 /** find the maximum sequence gap within a region of unmatched residues */
@@ -386,12 +388,12 @@ inline int max_sequence_gap(Alignment &ala, Alignment &alb, int prev_gap, int wi
 	corresponding_indices(ala, alb, prev_gap, wind, &other_start, &other_end);
 	
 	int my_gap = wind;
-	int their_gap = ala.map[wind];
-	if (prev_gap > 0)
-	{
-		their_gap -= ala.map[prev_gap] + 1;
-		my_gap -= prev_gap + 1;
-	}
+	int their_gap = other_end;
+
+	their_gap -= other_start + 1;
+	my_gap -= prev_gap + 1;
+	
+	std::cout << my_gap << " vs " << their_gap << std::endl;
 	
 	return std::max(my_gap, their_gap);
 }
@@ -456,6 +458,8 @@ inline void print_gap_between_alignments(Alignment &ala, Alignment &alb,
 
 	int r_last, r_wind;
 	corresponding_indices(ala, alb, last, wind, &r_last, &r_wind);
+	
+	std::cout << r_last << " to " << r_wind << std::endl;
 
 	int l_shortfall = gap_size - wind + last + 1;
 	int r_shortfall = gap_size - r_wind + r_last + 1;
@@ -523,6 +527,10 @@ inline void improve_aligned(std::ostringstream &leftseq,
 		if (lstr[i] == rstr[i])
 		{
 			aligned << ".";
+		}
+		else if (lstr[i] != rstr[i] && astr[i] == '.')
+		{
+			aligned << " ";
 		}
 		else
 		{

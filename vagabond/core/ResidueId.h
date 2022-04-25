@@ -44,7 +44,7 @@ struct ResidueId
 		num = _num;
 	}
 	
-	int as_num()
+	int as_num() const
 	{
 		return num;
 	}

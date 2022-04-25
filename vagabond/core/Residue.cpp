@@ -17,10 +17,16 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Residue.h"
+#include <gemmi/polyheur.hpp>
 
 Residue::Residue(ResidueId id, std::string code, std::string chain)
 {
 	_code = code;
 	_chain = chain;
 	_id = id;
+}
+
+const std::string Residue::one_letter_code() const
+{
+	return gemmi::one_letter_code(std::vector<std::string>(1, _code));
 }

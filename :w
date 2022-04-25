@@ -16,48 +16,18 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "EntityMenu.h"
+#include "SequenceView.h"
+#include "IndexedSequence.h"
+#include <vagabond/utils/FileReader.h>
 
-#include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/core/Environment.h>
-
-EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
+SequenceView::SequenceView(Scene *prev, IndexedSequence *sequence) : Scene(prev)
 {
-	_manager = Environment::entityManager();
-	_manager->setResponder(this);
-}
-
-EntityMenu::~EntityMenu()
-{
+	_sequence = sequence;
 
 }
 
-void EntityMenu::setup()
+void SequenceView::setup()
 {
-	addTitle("Protein entities");
+	addTitle("Sequence view " + i_to_str(_sequence.entryCount()));
 
-	ListView::setup();
-}
-
-void EntityMenu::buttonPressed(std::string tag, Button *button)
-{
-	ListView::buttonPressed(tag, button);
-}
-
-Renderable *EntityMenu::getLine(int i)
-{
-	Entity &ent = _manager->object(i);
-	TextButton *t = new TextButton(ent.name(), this);
-	t->setReturnTag("entity_" + ent.name());
-	return t;
-}
-
-size_t EntityMenu::lineCount()
-{
-	return _manager->objectCount();
-}
-
-void EntityMenu::objectsChanged()
-{
-	refresh();
 }

@@ -16,29 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ChainAssignment__
-#define __vagabond__ChainAssignment__
+#ifndef __vagabond__ChooseEntity__
+#define __vagabond__ChooseEntity__
 
 #include <vagabond/gui/elements/ListView.h>
+#include <vagabond/core/EntityManager.h>
+#include <vagabond/gui/ChainAssignment.h>
 
+class SequenceComparison;
+class Chain;
 class Model;
-class AtomContent;
 
-class ChainAssignment : public ListView
+class ChooseEntity : public ListView
 {
 public:
-	ChainAssignment(Scene *prev, Model &model);
-	virtual ~ChainAssignment();
+	ChooseEntity(Scene *prev, Model &model, Chain *chain);
+	
+	void setCaller(ChainAssignment *caller)
+	{
+		_caller = caller;
+	}
 
-	void setup();
+	virtual void setup();
+
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
 
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
-	void refreshInfo();
+	void setEntity(std::string name);
+	void findAlignments();
 private:
-	AtomContent *_contents = nullptr;
+	EntityManager *_manager;
+	Chain *_chain = nullptr;
+	ChainAssignment *_caller = nullptr;
+
 	Model &_model;
+	std::map<Entity *, SequenceComparison *> _entity2Alignment;
 };
 
 #endif

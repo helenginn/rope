@@ -19,27 +19,22 @@
 #ifndef __vagabond__ListView__
 #define __vagabond__ListView__
 
-#include "Scene.h"
+#include "ForwardBackward.h"
 
-class ListView : public Scene
+class ListView : public ForwardBackward
 {
 public:
 	ListView(Scene *prev);
 	virtual ~ListView();
 	virtual void setup();
-	void refreshFiles();
+	virtual void refresh();
+	virtual size_t unitsPerPage();
 
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
 	
 	virtual size_t lineCount() = 0;
 	virtual Renderable *getLine(int i) = 0;
 private:
 	void loadFilesFrom(int start, int num);
-	void scrollBackButton();
-	void scrollForwardButton();
-
-	std::vector<Renderable *> _temps;
-	int _start;
 };
 
 #endif

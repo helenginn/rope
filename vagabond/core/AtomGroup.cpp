@@ -338,6 +338,11 @@ void AtomGroup::getLimitingResidues(int *min, int *max)
 	
 	for (size_t i = 0; i < size(); i++)
 	{
+		if (atom(i)->hetatm())
+		{
+			continue;
+		}
+
 		int num = atom(i)->residueNumber();
 		*min = std::min(*min, num);
 		*max = std::max(*max, num);

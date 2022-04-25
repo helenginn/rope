@@ -16,48 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "EntityMenu.h"
+#ifndef __vagabond__ForwardBackward__
+#define __vagabond__ForwardBackward__
 
-#include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/core/Environment.h>
+#include "Scene.h"
 
-EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
+class ForwardBackward : public Scene
 {
-	_manager = Environment::entityManager();
-	_manager->setResponder(this);
-}
+public:
+	ForwardBackward(Scene *prev);
 
-EntityMenu::~EntityMenu()
-{
+	virtual void refresh() = 0;
+	virtual size_t unitsPerPage() = 0;
+	virtual void buttonPressed(std::string tag, Button *button = NULL);
+protected:
+	void clearTemps();
+	void scrollBackButton();
+	void scrollForwardButton();
 
-}
+	std::vector<Renderable *> _temps;
 
-void EntityMenu::setup()
-{
-	addTitle("Protein entities");
+	int _start = 0;
 
-	ListView::setup();
-}
+};
 
-void EntityMenu::buttonPressed(std::string tag, Button *button)
-{
-	ListView::buttonPressed(tag, button);
-}
-
-Renderable *EntityMenu::getLine(int i)
-{
-	Entity &ent = _manager->object(i);
-	TextButton *t = new TextButton(ent.name(), this);
-	t->setReturnTag("entity_" + ent.name());
-	return t;
-}
-
-size_t EntityMenu::lineCount()
-{
-	return _manager->objectCount();
-}
-
-void EntityMenu::objectsChanged()
-{
-	refresh();
-}
+#endif

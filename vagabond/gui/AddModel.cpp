@@ -185,6 +185,11 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 			setModal(bad);
 		}
 	}
+	else if (tag == "back" && _existing)
+	{
+		Environment::modelManager()->update(_m);
+
+	}
 	
 	Scene::buttonPressed(tag, button);
 }

@@ -51,6 +51,11 @@ void Environment::save()
 
 void Environment::load(std::string file)
 {
+	if (!file_exists(file))
+	{
+		return;
+	}
+
 	json data;
 	
 	std::ifstream f;

@@ -22,10 +22,11 @@
 #include <vector>
 #include <map>
 #include "Residue.h"
+#include "IndexedSequence.h"
 
 class Atom;
 
-class Sequence
+class Sequence : public IndexedSequence
 {
 public:
 	Sequence(Atom *anchor);
@@ -69,6 +70,30 @@ public:
 
 	friend void to_json(json &j, const Sequence &value);
 	friend void from_json(const json &j, Sequence &value);
+
+	virtual size_t rowCount()
+	{
+		return 1;
+	}
+	virtual size_t entryCount()
+	{
+		return size();
+	}
+	
+	virtual Residue *residue(int row, int entry)
+	{
+		return &_residues[entry];
+	}
+
+	virtual bool hasResidue(int row, int entry)
+	{
+		return (entry >= 0 && entry < _residues.size());
+	}
+
+	virtual std::string displayString(int row, int entry)
+	{
+		return _residues[entry].one_letter_code();
+	}
 private:
 	void findSequence();
 	

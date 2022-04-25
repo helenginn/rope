@@ -44,3 +44,8 @@ const std::string Model::entityForChain(std::string id) const
 
 	return "";
 }
+
+void Model::setEntityForChain(std::string id, std::string entity)
+{
+	_chain2Entity[id] = entity;
+}

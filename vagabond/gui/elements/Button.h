@@ -22,6 +22,16 @@ public:
 		_tag = tag;
 	}
 	
+	void setReturnObject(void *ptr)
+	{
+		_object = ptr;
+	}
+	
+	void *returnObject()
+	{
+		return _object;
+	}
+	
 	std::string tag()
 	{
 		return _tag;
@@ -48,6 +58,7 @@ protected:
 	bool _tickable;
 	ButtonResponder *_sender;
 private:
+	void *_object = nullptr;
 	std::string _tag;
 
 };

@@ -54,6 +54,8 @@ public:
 	{
 		return _rightAlign;
 	}
+	
+	float match();
 private:
 	Sequence *_left = nullptr;
 	Sequence *_right = nullptr;

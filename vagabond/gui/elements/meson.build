@@ -15,6 +15,7 @@ guielementfiles = [
 'Choice.cpp',
 'ChoiceGroup.cpp',
 'Draggable.cpp',
+'ForwardBackward.cpp',
 'HasRenderables.cpp',
 'Icosahedron.cpp',
 'Image.cpp',

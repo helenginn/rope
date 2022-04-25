@@ -1,6 +1,8 @@
 guifiles = [
+'AddEntity.cpp',
 'AddModel.cpp',
 'ChainAssignment.cpp',
+'ChooseEntity.cpp',
 'DatasetMenu.cpp',
 'Display.cpp',
 'EntityMenu.cpp',
@@ -12,6 +14,8 @@ guifiles = [
 'GuiRefls.cpp',
 'MainMenu.cpp',
 'ModelMenu.cpp',
+'SequenceView.cpp',
+'SequenceLine.cpp',
 'VagWindow.cpp',
 '../cmd/CmdWorker.cpp',
 '../cmd/Dictator.cpp',

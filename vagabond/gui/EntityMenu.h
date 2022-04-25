@@ -22,8 +22,6 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/EntityManager.h>
 
-class EntityManager;
-
 class EntityMenu : public ListView, public ManagerResponder<Entity>
 {
 public:

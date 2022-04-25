@@ -77,7 +77,6 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 		std::string name = tag.substr(prefix.length(), std::string::npos);
 		
 		Model *model = _manager->model(name);
-		std::cout << model << std::endl;
 		
 		AddModel *addModel = new AddModel(this, model);
 		addModel->show();
@@ -87,5 +86,5 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 
 void ModelMenu::objectsChanged()
 {
-	refreshFiles();
+	refresh();
 }

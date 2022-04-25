@@ -64,6 +64,7 @@ void AtomContent::groupByChain()
 		}
 		
 		_chains.push_back(chain);
+		_id2Chain[*it] = chain;
 	}
 	
 	std::cout << chainCount() << " chains" << std::endl;

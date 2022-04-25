@@ -29,6 +29,8 @@ std::map<std::string, std::string> Dictator::_commands;
 void Dictator::makeCommands()
 {
 	_commands["load"] = "Comma- or space-separated list of files to load";
+	_commands["environment"] = ("Link to json file (usually rope.json) to"\
+	                            "restore RoPE environment");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -91,6 +93,10 @@ void Dictator::processRequest(std::string &first, std::string &last)
 		loadFiles(last);
 	}
 
+	if (first == "environment" || first == "")
+	{
+		Environment::env().load(last);
+	}
 }
 
 bool Dictator::checkForFile(std::string &first, std::string &last)
