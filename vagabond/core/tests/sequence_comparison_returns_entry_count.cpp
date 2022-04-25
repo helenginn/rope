@@ -8,7 +8,7 @@ int main()
 	
 	SequenceComparison sc(&s, &t);
 	
-	int expected = 17;
+	int expected = 21;
 	int entryCount = sc.entryCount();
 	
 	std::cout << "Expected: " << expected << std::endl;

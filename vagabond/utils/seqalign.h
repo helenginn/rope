@@ -508,6 +508,29 @@ inline void assign_indices(Alignment &ala, Alignment &alb,
 	}
 }
 
+inline void improve_aligned(std::ostringstream &leftseq, 
+                            std::ostringstream &aligned, 
+                            std::ostringstream &rightseq)
+{
+	std::string astr = aligned.str();
+	std::string lstr = leftseq.str();
+	std::string rstr = rightseq.str();
+	
+	aligned.str("");
+
+	for (size_t i = 0; i < astr.size(); i++)
+	{
+		if (lstr[i] == rstr[i])
+		{
+			aligned << ".";
+		}
+		else
+		{
+			aligned << astr[i];
+		}
+	}
+}
+
 inline void print_alignments(Alignment &ala, Alignment &alb,
                              std::ostringstream &leftseq, 
                              std::ostringstream &aligned, 
@@ -540,6 +563,7 @@ inline void print_alignments(Alignment &ala, Alignment &alb,
 	}
 	
 	assign_indices(ala, alb, leftseq, rightseq, indices);
+	improve_aligned(leftseq, aligned, rightseq);
 }
 
 inline void print_masks(Alignment &al)

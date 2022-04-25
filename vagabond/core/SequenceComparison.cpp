@@ -78,14 +78,15 @@ Residue *SequenceComparison::residue(int row, int entry)
 		return nullptr;
 	}
 
-	int idx = _indices[entry].l;
 
 	if (row == 0)
 	{
+		int idx = _indices[entry].l;
 		return _left->residue(idx);
 	}
 	else if (row == 2)
 	{
+		int idx = _indices[entry].r;
 		return _right->residue(idx);
 	}
 	else
