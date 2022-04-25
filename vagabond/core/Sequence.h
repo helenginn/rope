@@ -30,6 +30,7 @@ class Sequence
 public:
 	Sequence(Atom *anchor);
 	Sequence();
+	Sequence(std::string str);
 	
 	Sequence &operator+=(Sequence *&other);
 	Sequence &operator+=(Residue &res);
@@ -37,6 +38,11 @@ public:
 	size_t size()
 	{
 		return _residues.size();
+	}
+	
+	Residue *residue(int i)
+	{
+		return &_residues[i];
 	}
 	
 	int firstNum()

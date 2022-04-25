@@ -1,4 +1,4 @@
-#include "../GuiAtom.h"
+#include <vagabond/gui/GuiAtom.h>
 #include <iostream>
 
 int main()

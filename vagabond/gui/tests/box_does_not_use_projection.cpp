@@ -1,4 +1,4 @@
-#include "../Box.h"
+#include <vagabond/gui/elements/Box.h>
 #include <iostream>
 
 int main()

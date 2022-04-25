@@ -41,6 +41,7 @@ vagafiles = [
 'Residue.cpp',
 'Sampler.cpp',
 'Sequence.cpp',
+'SequenceComparison.cpp',
 'SimpleBasis.cpp',
 'SimplexEngine.cpp',
 'Superpose.cpp',
@@ -89,7 +90,7 @@ install_headers([
 subdir : 'vagabond/core')
 
 core = static_library('vag', vagafiles, 
-	cpp_args: ['-I/usr/local/include', '-std=c++11'],
+	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
 	link_args: ['-L/usr/local/lib', links],
 	link_with: vagutils,
     include_directories: ['../..'],

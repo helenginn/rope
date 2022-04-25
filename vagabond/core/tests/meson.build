@@ -93,6 +93,8 @@ unit_tests = [
 'sampler_returns_hypersphere_volume_2d',
 'sampler_returns_hypersphere_volume_3d',
 'sampler_handles_single_dimension',
+'sequence_comparison_returns_entry_count',
+'sequence_returns_residue_count_from_string',
 'simplebasis_returns_angle_for_requested_torsion',
 'simplebasis_absorbs_modified_angle_into_bond_torsion',
 'simplebasis_returns_modified_angle_for_requested_torsion',

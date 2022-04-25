@@ -1,6 +1,6 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
-#include "../FileView.h"
+#include <vagabond/gui/FileView.h>
 
 int main()
 {

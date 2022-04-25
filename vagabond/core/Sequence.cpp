@@ -28,6 +28,19 @@ Sequence::Sequence()
 
 }
 
+Sequence::Sequence(std::string str)
+{
+	for (size_t i = 0; i < str.length(); i++)
+	{
+		char ch = str[i];
+
+		std::string tlc = gemmi::expand_protein_one_letter(ch);
+		Residue r{ResidueId(i), tlc, " "};
+		
+		*this += r;
+	}
+}
+
 Sequence::Sequence(Atom *anchor)
 {
 	_anchor = anchor;
@@ -85,17 +98,9 @@ std::string Sequence::str()
 	
 	for (size_t i = 0; i < _residues.size(); i++)
 	{
-		ss << _residues[i].code() << " ";
 		resvec.push_back(_residues[i].code());
 	}
 
-	std::string str = ss.str();
-	
-	if (_residues.size())
-	{
-		str.pop_back();
-	}
-	
 	std::string olc = gemmi::one_letter_code(resvec);
 	std::replace(olc.begin(), olc.end(), 'X', ' ');
 	

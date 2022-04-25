@@ -111,4 +111,6 @@ private:
 	Atom *_chosenAnchor = nullptr;
 };
 
+#include "AtomContent.h"
+
 #endif

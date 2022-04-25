@@ -20,6 +20,7 @@
 #define __abmap__blast__
 
 #include <cstring>
+#include <vector>
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -28,6 +29,14 @@
 #define SNP -2
 #define MATCHED -1
 #define UNTOUCHED 9
+
+typedef struct
+{
+	int l;
+	int r;
+} IndexPair;
+
+typedef std::vector<IndexPair> IndexPairs;
 
 typedef struct
 {
@@ -261,102 +270,276 @@ inline bool isContiguous(int map1, int map2)
 	return map2 == map1 + 1;
 }
 
+inline void wind_to_next_match(Alignment &ala, int &wind)
+{
+	while (wind < 0 || (wind < ala.seq.size() && (int)ala.map[wind] < 0))
+	{
+		wind++;
+	}
+}
+
+inline void wind_to_end_of_match(Alignment &ala, int &wind)
+{
+	while (wind >= 0 && wind < ala.seq.size() - 1)
+	{
+		if (ala.map[wind] == ala.map[wind + 1] - 1)
+		{
+			wind++;
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	if (wind == ala.seq.size() - 2 && ala.map[wind + 1] >= 0)
+	{
+		wind++;
+		return;
+	}
+}
+
+inline void print_character(Alignment &ala, Alignment &alb,
+                            std::ostringstream &leftseq, 
+                            std::ostringstream &aligned, 
+                            std::ostringstream &rightseq,
+                            IndexPairs &indices, int &wind)
+{
+	leftseq << ala.seq[wind];
+	rightseq << alb.seq[ala.map[wind]];
+	aligned << ".";
+
+}
+
+inline void print_overhang_on_right(Alignment &ala, Alignment &alb,
+                                    std::ostringstream &leftseq, 
+                                    std::ostringstream &aligned, 
+                                    std::ostringstream &rightseq,
+                                    IndexPairs &indices, int &wind)
+{
+	for (size_t i = wind + 1; i < alb.seq.size(); i++)
+	{
+		leftseq << " ";
+		rightseq << alb.seq[i];
+		aligned << "-";
+	}
+}
+
+
+inline void print_matched_region(Alignment &ala, Alignment &alb,
+                                 std::ostringstream &leftseq, 
+                                 std::ostringstream &aligned, 
+                                 std::ostringstream &rightseq,
+                                 IndexPairs &indices, int &wind)
+{
+	while (wind >= 0 && wind < ala.seq.size() - 1)
+	{
+		if (ala.map[wind] == ala.map[wind + 1] - 1)
+		{
+			print_character(ala, alb, leftseq, aligned, rightseq, indices, wind);
+			wind++;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (wind == ala.seq.size() - 2 && ala.map[wind + 1] >= 0)
+	{
+		print_character(ala, alb, leftseq, aligned, rightseq, indices, wind);
+		wind++;
+		print_character(ala, alb, leftseq, aligned, rightseq, indices, wind);
+		wind++;
+		return;
+	}
+
+	print_character(ala, alb, leftseq, aligned, rightseq, indices, wind);
+}
+
+
+inline void corresponding_indices(Alignment &ala, Alignment &alb,
+                                  int prev_gap, int wind,
+                                  int *other_prev, int *other_wind)
+{
+	*other_wind = ala.map[wind];
+
+	if (prev_gap < 0)
+	{
+		*other_prev = -1;
+		return;
+	}
+	
+	if (wind == ala.seq.size())
+	{
+		*other_wind = alb.seq.size();
+//		return;
+	}
+	
+	*other_prev = ala.map[prev_gap];
+}
+
+/** find the maximum sequence gap within a region of unmatched residues */
+inline int max_sequence_gap(Alignment &ala, Alignment &alb, int prev_gap, int wind)
+{
+	int other_start, other_end;
+	corresponding_indices(ala, alb, prev_gap, wind, &other_start, &other_end);
+	
+	int my_gap = wind;
+	int their_gap = ala.map[wind];
+	if (prev_gap > 0)
+	{
+		their_gap -= ala.map[prev_gap] + 1;
+		my_gap -= prev_gap + 1;
+	}
+	
+	return std::max(my_gap, their_gap);
+}
+
+inline std::string write_gap(Alignment &a, int start, int end, int shortfall,
+                             IndexPairs indices)
+{
+	std::ostringstream ss;
+	
+	for (size_t i = start + 1; i < end; i++)
+	{
+		ss << a.seq[i];
+	}
+
+	for (size_t i = 0; i < shortfall; i++)
+	{
+		ss << ' ';
+	}
+	
+	return ss.str();
+}
+
+inline std::string write_codes(Alignment &a, int matched, int shortfall,
+                               bool negative)
+{
+	std::ostringstream ss;
+	
+	for (size_t i = 0; i < matched; i++)
+	{
+		ss << ' ';
+	}
+
+	for (size_t i = 0; i < shortfall; i++)
+	{
+		ss << (negative ? '-' : '+');
+	}
+	
+	return ss.str();
+}
+
+inline void print_gap_between_alignments(Alignment &ala, Alignment &alb,
+                                         std::ostringstream &leftseq, 
+                                         std::ostringstream &aligned, 
+                                         std::ostringstream &rightseq,
+                                         IndexPairs &indices, int &wind)
+{
+	int last = wind;
+	wind++;
+	
+	if (wind >= ala.seq.size())
+	{
+		return;
+	}
+
+	wind_to_next_match(ala, wind);
+	int gap_size = max_sequence_gap(ala, alb, last, wind);
+	
+	if (gap_size == 0)
+	{
+		return;
+	}
+
+	int r_last, r_wind;
+	corresponding_indices(ala, alb, last, wind, &r_last, &r_wind);
+
+	int l_shortfall = gap_size - wind + last + 1;
+	int r_shortfall = gap_size - r_wind + r_last + 1;
+	
+	int max_shortfall = std::max(l_shortfall, r_shortfall);
+	int matched = gap_size - max_shortfall;
+	int negative = (l_shortfall > r_shortfall);
+
+	std::string left_gap = write_gap(ala, last, wind, l_shortfall, indices);
+	std::string right_gap = write_gap(alb, r_last, r_wind, r_shortfall, indices);
+	std::string code_gap = write_codes(ala, matched, max_shortfall, negative);
+
+	leftseq << left_gap;
+	aligned << code_gap;
+	rightseq << right_gap;
+
+}
+
+inline void assign_indices(Alignment &ala, Alignment &alb,
+                           std::ostringstream &leftseq, 
+                           std::ostringstream &rightseq,
+                           IndexPairs &indices)
+{
+	int lcurr = -1;
+	int rcurr = -1;
+	int idx = 0;
+	
+	std::string lstr = leftseq.str();
+	std::string rstr = rightseq.str();
+
+	while (idx < lstr.size())
+	{
+		bool lhere = false;
+		bool rhere = false;
+		
+		if (lstr[idx] != ' ')
+		{
+			lcurr++;
+			lhere = true;
+		}
+		if (rstr[idx] != ' ')
+		{
+			rcurr++;
+			rhere = true;
+		}
+		
+		IndexPair pair = {lhere ? lcurr : -1, rhere ? rcurr : -1};
+		indices.push_back(pair);
+		idx++;
+	}
+}
+
 inline void print_alignments(Alignment &ala, Alignment &alb,
                              std::ostringstream &leftseq, 
                              std::ostringstream &aligned, 
                              std::ostringstream &rightseq,
-                             std::vector<int> &indices)
+                             IndexPairs &indices)
 {
-	int plus = 0;
-
-	for (size_t i = 0; i < ala.seq.length(); i++)
+	int wind = -1;
+	
+	while (wind < (int)ala.seq.size())
 	{
-		size_t j = ala.map[i];
-		size_t next_j = j + 1;
-
-		if (i < ala.seq.length() - 1)
-		{
-			next_j = ala.map[i + 1];
-		}
-
-		unsigned char ac = ala.seq[i];
-		unsigned char bc = ' ';
+		print_gap_between_alignments(ala, alb, leftseq, aligned, rightseq,
+		                             indices, wind);
 		
-		/* if we know where we are, use it */
-		if (j < alb.seq.size() && j != std::string::npos)
+		if (wind >= ala.seq.size())
 		{
-			bc = alb.seq[j];
-
-			if (alb.seq[j] == ' ')
-			{
-				bc = '?';
-			}
-		}
-		
-		if (ac == ' ')
-		{
-			ac = '?';
+			break;
 		}
 
-		if (isIgnored(ala.mask[i]) ||  // just a space
-		    (!isAdditional(ala.mask[i])))// && isValid(j, next_j) &&
-		   // (isContiguous(j, next_j) || !isValid(j, next_j))))
-		{
-			leftseq << ac;
-			rightseq << bc;
-			plus = 0;
-
-			if (ala.mask[i] == MATCHED)
-			{
-				aligned << ".";
-			}
-			else if (ala.mask[i] == SNP)
-			{
-				aligned << "*";
-			}
-			else 
-			{
-				aligned << ".";
-			}
-
-			indices.push_back(j);
-		}
-		if (isValid(j, next_j) && !isContiguous(j, next_j)
-		    && !isIgnored(ala.mask[i]))
-		{
-			/* some in alignment B which is not in alignment A */
-
-			size_t start = j + 1;
-			size_t end = next_j;
-
-			for (size_t k = start; k < end; k++)
-			{
-				leftseq << ' ';
-				bc = alb.seq[k];
-				rightseq << bc;
-				aligned << "-";
-				indices.push_back(k);
-			}
-		}
-		else if (!isIgnored(ala.mask[i]) && ala.map[i] == std::string::npos)
-		{
-			/* have something in A not in B */
-			leftseq << ac;
-			rightseq << ' ';
-			aligned << "+";
-			plus++;
-			
-			if (!isValid(j, j))
-			{
-				indices.push_back(i + plus);
-				continue;
-			}
-
-			indices.push_back(j + plus);
-
-			continue;
-		}
+		print_matched_region(ala, alb, leftseq, aligned, rightseq,
+		                     indices, wind);
 	}
+	
+	int alb_pos = ala.map[wind - 1];
+	
+	if (alb_pos >= 0 && alb_pos < alb.seq.size() - 1)
+	{
+		print_overhang_on_right(ala, alb, leftseq, aligned, rightseq,
+		                        indices, alb_pos);
+
+	}
+	
+	assign_indices(ala, alb, leftseq, rightseq, indices);
 }
 
 inline void print_masks(Alignment &al)

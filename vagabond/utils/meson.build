@@ -8,6 +8,7 @@ utilfiles = [
 install_headers([
 'FileReader.h',
 'glm_import.h',
+'seqalign.h',
 'svd/PCA.h',
 ],
 subdir : 'vagabond/utils')

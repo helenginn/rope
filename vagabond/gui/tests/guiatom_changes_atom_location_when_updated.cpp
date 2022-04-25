@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vagabond/core/Atom.h>
-#include "../GuiAtom.h"
+#include <vagabond/gui/GuiAtom.h>
 
 int main()
 {
