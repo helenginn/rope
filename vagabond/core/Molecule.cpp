@@ -78,6 +78,39 @@ void Molecule::housekeeping()
 	_sequence.remapFromMaster(_entity);
 }
 
+void Molecule::insertTorsionAngles(AtomContent *atoms)
+{
+	if (!_refined)
+	{
+		return;
+	}
+
+	Chain *ch = atoms->chain(_chain_id);
+
+	for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+	{
+		BondTorsion *t = ch->bondTorsion(i);
+		
+		ResidueId id = t->residueId();
+		std::string desc = t->desc();
+		
+		Residue *local = _sequence.residue(id);
+		if (local == nullptr)
+		{
+			continue;
+		}
+
+		TorsionRef ref = local->copyTorsionRef(desc);
+		if (!ref.valid())
+		{
+			continue;
+		}
+
+		double angle = ref.refinedAngle();
+		t->setRefinedAngle(angle);
+	}
+
+}
 
 void Molecule::extractTorsionAngles(AtomContent *atoms)
 {
@@ -101,4 +134,5 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 		local->supplyRefinedAngle(desc, angle);
 	}
 
+	_refined = true;
 }

@@ -99,6 +99,7 @@ public:
 private:
 	void removeReferences();
 	void extractTorsions();
+	void insertTorsions();
 	std::string _filename;
 	std::string _name;
 

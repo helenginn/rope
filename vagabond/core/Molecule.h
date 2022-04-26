@@ -53,6 +53,7 @@ public:
 
 	void getTorsionRefs(Chain *ch);
 	void extractTorsionAngles(AtomContent *atoms);
+	void insertTorsionAngles(AtomContent *atoms);
 
 	void housekeeping();
 	

@@ -146,6 +146,15 @@ void Model::housekeeping()
 	createMolecules();
 }
 
+void Model::insertTorsions()
+{
+	for (Molecule &mc : _molecules)
+	{
+		mc.insertTorsionAngles(_currentAtoms);
+	}
+
+}
+
 void Model::extractTorsions()
 {
 	for (Molecule &mc : _molecules)
@@ -158,6 +167,9 @@ void Model::load()
 {
 	_currentFile = File::loadUnknown(_filename);
 	_currentAtoms = _currentFile->atoms();
+	
+	insertTorsions();
+
 	_currentAtoms->setResponder(this);
 }
 

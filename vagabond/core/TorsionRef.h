@@ -34,6 +34,11 @@ public:
 	{
 		_desc = desc;
 	}
+
+	double refinedAngle()
+	{
+		return _refinedAngle;
+	}
 	
 	void setRefinedAngle(double angle)
 	{
