@@ -3,6 +3,7 @@ guifiles = [
 'AddModel.cpp',
 'ChainAssignment.cpp',
 'ChooseEntity.cpp',
+'ConfSpaceView.cpp',
 'DatasetMenu.cpp',
 'Display.cpp',
 'EntityMenu.cpp',

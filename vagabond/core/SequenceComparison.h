@@ -44,6 +44,11 @@ public:
 	virtual Residue *residue(int row, int entry);
 	virtual bool hasResidue(int row, int entry);
 	virtual std::string displayString(int row, int entry);
+	
+	Sequence *right()
+	{
+		return _right;
+	}
 
 	const Alignment &leftAlign() const
 	{

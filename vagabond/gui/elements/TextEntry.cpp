@@ -92,7 +92,7 @@ void TextEntry::keyPressed(SDL_Keycode other)
 	{
 		finish();
 	}
-	else 
+	else if ((other & 1<<30) == false)
 	{
 		keyPressed((char)other);
 	}

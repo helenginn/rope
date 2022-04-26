@@ -16,39 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AddEntity__
-#define __vagabond__AddEntity__
+#include "TorsionRef.h"
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/core/Entity.h>
-
-class ChooseEntity;
-class TextEntry;
-class Chain;
-
-class AddEntity : public Scene
+TorsionRef::TorsionRef()
 {
-public:
-	AddEntity(Scene *prev, Chain *chain);
-	AddEntity(Scene *prev, Entity *ent);
 
-	void setCaller(ChooseEntity *caller)
+}
+
+TorsionRef::TorsionRef(BondTorsion *tmp)
+{
+	if (tmp == nullptr)
 	{
-		_caller = caller;
+		return;
 	}
 
-	virtual void setup();
-
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
-private:
-	void textOrChoose(std::string &file, std::string other);
-	void refreshInfo();
-
-	Entity _ent;
-	bool _existing = false;
-	Chain *_chain = nullptr;
-	TextEntry *_name;
-	ChooseEntity *_caller = nullptr;
-};
-
-#endif
+	_desc = tmp->desc();
+	_torsion = tmp;
+}

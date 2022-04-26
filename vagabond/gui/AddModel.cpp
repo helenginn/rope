@@ -176,6 +176,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	{
 		try
 		{
+			_m.createMolecules();
 			Environment::modelManager()->insertIfUnique(_m);
 			back();
 		}

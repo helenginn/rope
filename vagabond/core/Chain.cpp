@@ -32,6 +32,16 @@ void Chain::add(Atom *a)
 	{
 		AtomGroup::add(a);
 	}
+
+	for (size_t j = 0; j < a->bondAngleCount(); j++)
+	{
+		addBondstraint(a->bondAngle(j));
+	}
+
+	for (size_t j = 0; j < a->bondTorsionCount(); j++)
+	{
+		addBondstraint(a->bondTorsion(j));
+	}
 }
 
 Sequence *Chain::fullSequence()

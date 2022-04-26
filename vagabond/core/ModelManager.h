@@ -63,6 +63,11 @@ inline void to_json(json &j, const ModelManager &value)
 inline void from_json(const json &j, ModelManager &value)
 {
 	value._objects = j.at("models");
+	
+	for (Model &m : value._objects)
+	{
+		m.housekeeping();
+	}
 }
 
 

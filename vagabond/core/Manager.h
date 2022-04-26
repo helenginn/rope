@@ -49,6 +49,7 @@ public:
 	}
 
 	virtual void insertIfUnique(const T &m) {};
+	
 
 	void setResponder(ManagerResponder<T> *responder)
 	{

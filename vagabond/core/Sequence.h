@@ -19,18 +19,21 @@
 #ifndef __vagabond__Sequence__
 #define __vagabond__Sequence__
 
-#include <vector>
+#include <list>
 #include <map>
+#include <set>
 #include "Residue.h"
 #include "IndexedSequence.h"
 
 class Atom;
+class Entity;
 
 class Sequence : public IndexedSequence
 {
 public:
 	Sequence(Atom *anchor);
 	Sequence();
+	Sequence(const Sequence &seq);
 	Sequence(std::string str);
 	
 	Sequence &operator+=(Sequence *&other);
@@ -41,10 +44,31 @@ public:
 		return _residues.size();
 	}
 	
-	Residue *residue(int i)
+	Residue *residue(int idx)
 	{
-		return &_residues[i];
+		int i = 0;
+		for (Residue &r : _residues)
+		{
+			if (i == idx)
+			{
+				return &r;
+			}
+			i++;
+		}
+		return nullptr;
 	}
+	
+	Residue *residue(ResidueId &id)
+	{
+		if (_id2Residue.count(id) == 0)
+		{
+			return nullptr;
+		}
+
+		return _id2Residue.at(id);
+	}
+	
+	Residue *master_residue(Residue *local);
 	
 	int firstNum()
 	{
@@ -53,7 +77,7 @@ public:
 			return 0;
 		}
 
-		return _residues[0].as_num();
+		return _residues.front().as_num();
 	}
 	
 	int lastNum()
@@ -66,7 +90,13 @@ public:
 		return _residues.back().as_num();
 	}
 	
+	Residue *residueLike(const ResidueId &other);
+	
 	std::string str();
+	void housekeeping();
+	
+	void mapFromMaster(Entity *ent);
+	void remapFromMaster(Entity *entity);
 
 	friend void to_json(json &j, const Sequence &value);
 	friend void from_json(const json &j, Sequence &value);
@@ -82,7 +112,7 @@ public:
 	
 	virtual Residue *residue(int row, int entry)
 	{
-		return &_residues[entry];
+		return residue(entry);
 	}
 
 	virtual bool hasResidue(int row, int entry)
@@ -92,25 +122,35 @@ public:
 
 	virtual std::string displayString(int row, int entry)
 	{
-		return _residues[entry].one_letter_code();
+		return residue(entry)->one_letter_code();
 	}
+	
 private:
 	void findSequence();
 	
-	std::vector<Residue> _residues;
-	Atom *_anchor;
+	std::list<Residue> _residues;
+	std::list<Residue> _master;
+
+	std::map<ResidueId, Residue *> _id2Residue;
+	std::map<Residue *, Residue *> _map2Master;
+	Atom *_anchor = nullptr;
+	Entity *_entity = nullptr;
 };
 
 /* sequence */
 inline void to_json(json &j, const Sequence &value)
 {
 	j["residues"] = value._residues;
+	j["master"] = value._master;
 }
 
 /* sequence */
 inline void from_json(const json &j, Sequence &value)
 {
 	value._residues = j.at("residues");
+	value._master = j.at("master");
+	
+	value.housekeeping();
 }
 
 #endif

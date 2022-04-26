@@ -29,16 +29,33 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
+class ModelManager;
+
 class EntityManager : public Manager<Entity>
 {
 public:
 	EntityManager();
 
 	virtual void insertIfUnique(const Entity &e);
+	virtual void update(const Entity &e);
+	
+	Entity *entity(std::string name)
+	{
+		if (_name2Entity.count(name))
+		{
+			return _name2Entity.at(name);
+		}
+		
+		return nullptr;
+	}
+
+	void housekeeping();
+	void checkModelsForReferences(ModelManager *manager);
 
 	friend void to_json(json &j, const EntityManager &value);
 	friend void from_json(const json &j, EntityManager &value);
 private:
+	std::map<std::string, Entity *> _name2Entity;
 
 };
 

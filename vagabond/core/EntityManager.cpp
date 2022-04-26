@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "EntityManager.h"
+#include "ModelManager.h"
 
 EntityManager::EntityManager() : Manager()
 {
@@ -40,9 +41,41 @@ void EntityManager::insertIfUnique(const Entity &ent)
 	}
 	
 	_objects.push_back(ent);
+	_name2Entity[ent.name()] = &_objects.back();
 
 	if (_responder)
 	{
 		_responder->objectsChanged();
 	}
+}
+
+void EntityManager::update(const Entity &e)
+{
+	Entity *old = entity(e.name());
+	*old = e;
+
+}
+
+void EntityManager::housekeeping()
+{
+	for (Entity &other : _objects)
+	{
+		_name2Entity[other.name()] = &other;
+	}
+}
+
+void EntityManager::checkModelsForReferences(ModelManager *mm)
+{
+	for (size_t i = 0; i < mm->objectCount(); i++)
+	{
+		Model &m = mm->object(i);
+		m.housekeeping();
+		
+		for (size_t j = 0; j < objectCount(); j++)
+		{
+			Entity &e = object(j);
+			e.checkModel(m);
+		}
+	}
+
 }

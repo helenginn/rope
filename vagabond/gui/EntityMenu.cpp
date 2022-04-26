@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "EntityMenu.h"
+#include "AddEntity.h"
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/Environment.h>
@@ -24,6 +25,7 @@
 EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {
 	_manager = Environment::entityManager();
+	_manager->checkModelsForReferences(Environment::modelManager());
 	_manager->setResponder(this);
 }
 
@@ -41,6 +43,16 @@ void EntityMenu::setup()
 
 void EntityMenu::buttonPressed(std::string tag, Button *button)
 {
+	std::string prefix = "entity_";
+	if (tag.rfind(prefix, 0) != std::string::npos)
+	{
+		std::string id = tag.substr(prefix.length(), std::string::npos);
+		Entity *ent = _manager->entity(id);
+		
+		AddEntity *view = new AddEntity(this, ent);
+		view->show();
+	}
+
 	ListView::buttonPressed(tag, button);
 }
 
@@ -61,3 +73,4 @@ void EntityMenu::objectsChanged()
 {
 	refresh();
 }
+

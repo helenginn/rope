@@ -25,6 +25,7 @@
 #include <vagabond/core/Chain.h>
 
 #include <vagabond/gui/SequenceView.h>
+#include <vagabond/gui/ConfSpaceView.h>
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextEntry.h>
@@ -34,6 +35,12 @@ AddEntity::AddEntity(Scene *prev, Chain *chain) : Scene(prev)
 {
 	_chain = chain;
 	_ent.setSequence(_chain->fullSequence());
+}
+
+AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev)
+{
+	_ent = *ent;
+	_existing = true;
 }
 
 void AddEntity::setup()
@@ -58,6 +65,38 @@ void AddEntity::setup()
 
 		_name = t;
 		addObject(t);
+	}
+
+	{
+		Text *t = new Text("Reference sequence:");
+		t->setLeft(0.2, 0.4);
+		t->addAltTag("Models of this entity will align to this sequence");
+		addObject(t);
+	}
+	{
+		TextButton *t = SequenceView::button(_ent.sequence(), this);
+		t->setReturnTag("sequence");
+		t->setRight(0.8, 0.4);
+		addObject(t);
+	}
+	
+	if (_existing)
+	{
+		{
+			std::string str = i_to_str(_ent.modelCount()) + " models / ";
+			str += i_to_str(_ent.moleculeCount()) + " molecules";
+			Text *t = new Text(str);
+			t->setLeft(0.2, 0.5);
+			t->addAltTag("Models may contain multiple molecules of this entity");
+			addObject(t);
+		}
+
+		{
+			TextButton *t = new TextButton("View conformational space", this);
+			t->setRight(0.8, 0.5);
+			t->setReturnTag("conf_space");
+			addObject(t);
+		}
 	}
 
 	if (!_existing)
@@ -103,8 +142,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "sequence")
 	{
-		Sequence *full = _chain->fullSequence();
-		SequenceView *view = new SequenceView(this, full);
+		SequenceView *view = new SequenceView(this, _ent.sequence());
+		view->show();
+	}
+	else if (tag == "conf_space")
+	{
+		ConfSpaceView *view = new ConfSpaceView(this, &_ent);
 		view->show();
 	}
 	else if (tag == "cancel")
@@ -124,6 +167,10 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 			BadChoice *bad = new BadChoice(this, err.what());
 			setModal(bad);
 		}
+	}
+	else if (tag == "back" && _existing)
+	{
+		Environment::entityManager()->update(_ent);
 	}
 
 	Scene::buttonPressed(tag, button);

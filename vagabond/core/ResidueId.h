@@ -22,6 +22,9 @@
 #include <sstream>
 #include <string>
 
+#include <json/json.hpp>
+using nlohmann::json;
+
 struct ResidueId
 {
 	int num = 1;
@@ -56,6 +59,11 @@ struct ResidueId
 		return ss.str();
 	}
 
+	const bool operator==(const ResidueId &o) const
+	{
+		return (num == o.num && insert == o.insert);
+	}
+
 	const bool operator!=(const ResidueId &o) const
 	{
 		return (num != o.num || insert != o.insert);
@@ -74,5 +82,15 @@ struct ResidueId
 	}
 };
 
+inline void to_json(json &j, const ResidueId &id)
+{
+	j = json{{"num",  id.num}, {"insert", id.insert}};
+}
+
+inline void from_json(const json &j, ResidueId &id)
+{
+	j.at("num").get_to(id.num);
+	j.at("insert").get_to(id.insert);
+}
 
 #endif

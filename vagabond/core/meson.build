@@ -33,6 +33,7 @@ vagafiles = [
 'matrix_functions.cpp',
 'Model.cpp',
 'ModelManager.cpp',
+'Molecule.cpp',
 'PdbFile.cpp',
 'PointStore.cpp',
 'PointStoreHandler.cpp',
@@ -52,6 +53,7 @@ vagafiles = [
 'ThreadMapSummer.cpp',
 'ThreadMiniJobForSequence.cpp',
 'TorsionBasis.cpp',
+'TorsionRef.cpp',
 ]
 
 install_headers([

@@ -20,13 +20,16 @@
 #define __vagabond__Entity__
 
 #include <string>
-#include <iostream>
+#include <set>
 #include "Sequence.h"
+#include "Model.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
 
-class Entity
+class Molecule;
+
+class Entity : public ModelResponder
 {
 public:
 	Entity();
@@ -50,13 +53,38 @@ public:
 	{
 		return _name;
 	}
+	
+	void checkModel(Model &m);
+
+	size_t checkForUnrefinedMolecules();
+	void refineUnrefinedModels();
+
+	const size_t moleculeCount() const
+	{
+		return _molecules.size();
+	}
+
+	const size_t modelCount() const
+	{
+		return _models.size();
+	}
+	
+	void refineNextModel();
+	virtual void modelReady();
 
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);
 private:
+	std::set<Model *> unrefinedModels();
+
 	std::string _name;
 	Sequence _sequence;
-
+	
+	Model *_currentModel = nullptr;
+	
+	std::set<Model *> _refineSet;
+	std::set<Model *> _models;
+	std::set<Molecule *> _molecules;
 };
 
 inline void to_json(json &j, const Entity &value)
@@ -70,6 +98,14 @@ inline void from_json(const json &j, Entity &value)
 	try
 	{
 		value._name = j.at("name");
+	}
+	catch (...)
+	{
+		std::cout << "Error proccessing json, probably old version" << std::endl;
+	}
+
+	try
+	{
 		value._sequence = j.at("sequence");
 	}
 	catch (...)

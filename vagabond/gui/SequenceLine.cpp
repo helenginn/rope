@@ -84,7 +84,13 @@ void SequenceLine::setup()
 			if (_sequence->hasResidue(j, i))
 			{
 				Residue *r = _sequence->residue(j, i);
-				t->addAltTag(r->desc());
+				std::string tag = r->desc();
+				if (r->torsionCount() > 0)
+				{
+					tag += " (" + i_to_str(r->torsionCount()) + " torsions)";
+
+				}
+				t->addAltTag(tag);
 			}
 
 			t->setCentre(x, y);

@@ -75,4 +75,7 @@ void Environment::load(std::string file)
 	}
 	
 	_modelManager->housekeeping();
+	_entityManager->housekeeping();
+	
+	_entityManager->checkModelsForReferences(_modelManager);
 }

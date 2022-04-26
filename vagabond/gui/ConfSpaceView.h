@@ -16,39 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AddEntity__
-#define __vagabond__AddEntity__
+#ifndef __vagabond__ConfSpaceView__
+#define __vagabond__ConfSpaceView__
 
 #include <vagabond/gui/elements/Scene.h>
-#include <vagabond/core/Entity.h>
 
-class ChooseEntity;
-class TextEntry;
-class Chain;
+class Entity;
 
-class AddEntity : public Scene
+class ConfSpaceView : public Scene
 {
 public:
-	AddEntity(Scene *prev, Chain *chain);
-	AddEntity(Scene *prev, Entity *ent);
-
-	void setCaller(ChooseEntity *caller)
-	{
-		_caller = caller;
-	}
+	ConfSpaceView(Scene *prev, Entity *ent);
 
 	virtual void setup();
-
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
 private:
-	void textOrChoose(std::string &file, std::string other);
-	void refreshInfo();
+	void askToFoldIn(int extra);
+	Entity *_entity = nullptr;
 
-	Entity _ent;
-	bool _existing = false;
-	Chain *_chain = nullptr;
-	TextEntry *_name;
-	ChooseEntity *_caller = nullptr;
 };
 
 #endif
+

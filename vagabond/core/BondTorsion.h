@@ -72,7 +72,7 @@ public:
 	
 	bool coversMainChain();
 	
-	ResidueId residueId();
+	const ResidueId residueId() const;
 	
 	bool atomIsTerminal(Atom *a)
 	{

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AtomGroup.h"
+#include "AlignmentTool.h"
 #include "BondLength.h"
 #include "Grapher.h"
 #include "../utils/FileReader.h"
@@ -33,6 +34,13 @@
 AtomGroup::AtomGroup()
 {
 
+}
+
+void AtomGroup::alignAnchor()
+{
+	AlignmentTool tool(this);
+	tool.run();
+	recalculate();
 }
 
 void AtomGroup::cancelRefinement()

@@ -30,3 +30,46 @@ const std::string Residue::one_letter_code() const
 {
 	return gemmi::one_letter_code(std::vector<std::string>(1, _code));
 }
+
+void Residue::addTorsionRef(TorsionRef &ref)
+{
+	_refs.insert(ref);
+}
+
+const std::string Residue::desc() const
+{
+	std::string name = _code + i_to_str(as_num());
+	return name;
+}
+
+TorsionRef Residue::copyTorsionRef(std::string &desc)
+{
+	std::set<TorsionRef>::iterator it = _refs.find(TorsionRef{desc});
+	
+	if (it == _refs.end())
+	{
+		return TorsionRef("");
+	}
+	
+	TorsionRef ref = *it;
+	return ref;
+}
+
+void Residue::replaceTorsionRef(TorsionRef &newRef)
+{
+	_refs.erase(newRef);
+	_refs.insert(newRef);
+
+}
+
+void Residue::supplyRefinedAngle(std::string desc, double angle)
+{
+	TorsionRef copy = copyTorsionRef(desc);
+	if (!copy.valid())
+	{
+		return;
+	}
+
+	copy.setRefinedAngle(angle);
+	replaceTorsionRef(copy);
+}

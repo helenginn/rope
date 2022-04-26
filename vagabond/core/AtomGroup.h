@@ -28,6 +28,13 @@ typedef std::vector<AtomPtr> AtomVector;
 class SimplexEngine;
 class Sequence;
 
+class AtomGroupResponder
+{
+public:
+	virtual ~AtomGroupResponder() {}
+	virtual void finishedRefinement() = 0;
+};
+
 class AtomGroup : public HasBondstraints
 {
 public:
@@ -38,6 +45,16 @@ public:
 
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
+	
+	AtomGroupResponder *responder()
+	{
+		return _responder;
+	}
+	
+	void setResponder(AtomGroupResponder *responder)
+	{
+		_responder = responder;
+	}
 
 	AtomPtr operator[](int i) const;
 	AtomPtr operator[](std::string str) const;
@@ -81,6 +98,7 @@ public:
 	Atom *chosenAnchor();
 
 	std::vector<AtomGroup *> &connectedGroups();
+	void alignAnchor();
 	void refinePositions();
 	void organiseSamples(int n);
 	
@@ -109,6 +127,7 @@ private:
 	std::vector<AtomGroup *> _connectedGroups;
 	
 	Atom *_chosenAnchor = nullptr;
+	AtomGroupResponder *_responder = nullptr;
 };
 
 #include "AtomContent.h"

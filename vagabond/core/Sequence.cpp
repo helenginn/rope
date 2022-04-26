@@ -16,9 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "SequenceComparison.h"
 #include "Sequence.h"
 #include "Residue.h"
 #include "Grapher.h"
+#include "Entity.h"
 #include "Atom.h"
 #include <sstream>
 #include <gemmi/polyheur.hpp>
@@ -26,6 +28,17 @@
 Sequence::Sequence()
 {
 
+}
+
+Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)
+{
+	_residues = seq._residues;
+	_master = seq._master;
+	_anchor = seq._anchor;
+	_entity = seq._entity;
+	
+	housekeeping();
+	mapFromMaster(_entity);
 }
 
 Sequence::Sequence(std::string str)
@@ -44,14 +57,20 @@ Sequence::Sequence(std::string str)
 Sequence::Sequence(Atom *anchor)
 {
 	_anchor = anchor;
+
+	if (_anchor == nullptr)
+	{
+		return;
+	}
+
 	findSequence();
 }
 
 Sequence &Sequence::operator+=(Sequence *&other)
 {
-	for (size_t i = 0; i < other->_residues.size(); i++)
+	for (Residue &r : other->_residues)
 	{
-		*this += other->_residues[i];
+		*this += r;
 	}
 
 	return *this;
@@ -61,6 +80,7 @@ Sequence &Sequence::operator+=(Residue &res)
 {
 	res.setSequence(this);
 	_residues.push_back(res);
+	_id2Residue[res.id()] = &_residues.back();
 	return *this;
 }
 
@@ -89,6 +109,19 @@ void Sequence::findSequence()
 		
 		last = gr.firstGraphNextResidue(last);
 	}
+	
+	housekeeping();
+}
+
+void Sequence::housekeeping()
+{
+	_id2Residue.clear();
+	for (Residue &r : _residues)
+	{
+		r.setSequence(this);
+		const ResidueId &id = r.id();
+		_id2Residue[id] = &r;
+	}
 }
 
 std::string Sequence::str()
@@ -96,13 +129,118 @@ std::string Sequence::str()
 	std::ostringstream ss;
 	std::vector<std::string> resvec;
 	
-	for (size_t i = 0; i < _residues.size(); i++)
+	for (Residue &r : _residues)
 	{
-		resvec.push_back(_residues[i].code());
+		resvec.push_back(r.code());
 	}
 
 	std::string olc = gemmi::one_letter_code(resvec);
 	std::replace(olc.begin(), olc.end(), 'X', ' ');
 	
 	return olc;
+}
+
+void Sequence::mapFromMaster(Entity *entity)
+{
+	if (entity == nullptr && _entity != nullptr)
+	{
+		entity = _entity;
+	}
+	else if (_entity == nullptr && entity != nullptr)
+	{
+		_entity = entity;
+	}
+	else if (_entity == nullptr && entity == nullptr)
+	{
+		return;
+	}
+
+	Sequence *master = entity->sequence();
+	SequenceComparison *sc = new SequenceComparison(master, this);
+
+	_map2Master.clear();
+	
+	for (size_t i = 0; i < sc->entryCount(); i++)
+	{
+		if (sc->hasResidue(0, i) && sc->hasResidue(2, i))
+		{
+			Residue *theirs = sc->residue(0, i);
+			Residue *mine = sc->residue(2, i);
+
+			_map2Master[mine] = theirs;
+		}
+	}
+	
+	_master.clear();
+
+	for (Residue &r : _residues)
+	{
+		if (_map2Master.count(&r))
+		{
+			_master.push_back(*_map2Master[&r]);
+		}
+		else
+		{
+			Residue res;
+			res.setNothing(true);
+			_master.push_back(res);
+		}
+
+	}
+	
+	delete sc;
+}
+
+Residue *Sequence::master_residue(Residue *local)
+{
+	ResidueId id = local->id();
+
+	if (_map2Master.count(local) == 0)
+	{
+		return nullptr;
+	}
+
+	return _map2Master.at(local);
+
+}
+
+void Sequence::remapFromMaster(Entity *entity)
+{
+	std::list<Residue>::iterator local;
+	local = _residues.begin();
+	_entity = entity;
+
+	for (Residue &mres : _master)
+	{
+		if (mres.nothing())
+		{
+			local++;
+			continue;
+		}
+
+		const ResidueId &temp = mres.id();
+		Residue *other = entity->sequence()->residueLike(temp);
+		
+		if (other)
+		{
+			Residue &lres = *local;
+			_map2Master[&lres] = other;
+		}
+
+		local++;
+	}
+
+}
+
+Residue *Sequence::residueLike(const ResidueId &other)
+{
+	for (Residue &r : _residues)
+	{
+		if (r.id() == other)
+		{
+			return &r;
+		}
+	}
+
+	return nullptr;
 }

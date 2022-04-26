@@ -20,21 +20,44 @@
 #define __vagabond__Model__
 
 #include <string>
+#include <list>
 #include <iostream>
+
+#include "Molecule.h"
+#include "AtomGroup.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
 
-class Model
+class File;
+class Chain;
+class Molecule;
+class AtomContent;
+
+class ModelResponder
+{
+public:
+	virtual ~ModelResponder() {}
+	virtual void modelReady() = 0;
+};
+
+class Model : public AtomGroupResponder
 {
 public:
 	Model();
 	
+	void setResponder(ModelResponder *responder)
+	{
+		_responder = responder;
+	}
+	
 	void setFilename(std::string file);
 	
 	const std::string entityForChain(std::string id) const;
-	
 	void setEntityForChain(std::string id, std::string entity);
+	
+	bool hasEntity(std::string entity);
+	size_t moleculeCountForEntity(std::string entity);
 	
 	void setName(std::string name)
 	{
@@ -51,13 +74,36 @@ public:
 		return _name;
 	}
 
+	Molecule *moleculeFromChain(Chain *ch);
+	
+	std::list<Molecule> &molecules()
+	{
+		return _molecules;
+	}
+
+	void housekeeping();
+	
+	void createMolecules();
+	void loadAndRefine();
+
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);
+	
+	void finishedRefinement();
 private:
+	void removeReferences();
+	void extractTorsions();
 	std::string _filename;
 	std::string _name;
 
 	std::map<std::string, std::string> _chain2Entity;
+	std::map<std::string, Molecule *> _chain2Molecule;
+
+	std::list<Molecule> _molecules;
+	File *_currentFile = nullptr;
+	AtomContent *_currentAtoms = nullptr;
+	
+	ModelResponder *_responder = nullptr;
 };
 
 inline void to_json(json &j, const Model &value)
@@ -65,6 +111,7 @@ inline void to_json(json &j, const Model &value)
 	j["name"] = value._name;
 	j["filename"] = value._filename;
 	j["chain_to_entity"] = value._chain2Entity;
+	j["molecules"] = value._molecules;
 }
 
 inline void from_json(const json &j, Model &value)
@@ -75,6 +122,7 @@ inline void from_json(const json &j, Model &value)
 	try
 	{
 		value._chain2Entity = j.at("chain_to_entity");
+		value._molecules = j.at("molecules");
 	}
 	catch (...)
 	{

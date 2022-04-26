@@ -20,8 +20,9 @@
 #define __vagabond__Residue__
 
 #include <string>
+#include <set>
 #include <vagabond/utils/FileReader.h>
-#include "ResidueId.h"
+#include "TorsionRef.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -33,10 +34,30 @@ class Residue
 public:
 	Residue(ResidueId num, std::string code, std::string chain);
 	Residue() {};
+	
+	void setNothing(bool nothing)
+	{
+		_nothing = nothing;
+	}
+	
+	const bool &nothing() const
+	{
+		return _nothing;
+	}
 
 	void setSequence(Sequence *seq)
 	{
 		_sequence = seq;
+	}
+	
+	const Sequence *sequence() const
+	{
+		return _sequence;
+	}
+	
+	const size_t torsionCount() const
+	{
+		return _refs.size();
 	}
 
 	int as_num() const
@@ -65,32 +86,25 @@ public:
 		return _chain;
 	}
 	
-	const std::string desc() const
-	{
-		return _code + i_to_str(as_num());
-
-	}
+	void supplyRefinedAngle(std::string desc, double angle);
+	
+	const std::string desc() const;
+	
+	void addTorsionRef(TorsionRef &ref);
+	TorsionRef copyTorsionRef(std::string &desc);
+	void replaceTorsionRef(TorsionRef &newRef);
 	
 	friend void to_json(json &j, const Residue &value);
 	friend void from_json(const json &j, Residue &value);
 private:
-	ResidueId _id;
+	ResidueId _id{};
 	std::string _code;
 	std::string _chain;
 	
+	bool _nothing = false;
 	Sequence *_sequence = nullptr;
+	std::set<TorsionRef> _refs;
 };
-
-inline void to_json(json &j, const ResidueId &id)
-{
-	j = json{{"num",  id.num}, {"insert", id.insert}};
-}
-
-inline void from_json(const json &j, ResidueId &id)
-{
-	j.at("num").get_to(id.num);
-	j.at("insert").get_to(id.insert);
-}
 
 /* residue */
 inline void to_json(json &j, const Residue &value)
@@ -98,6 +112,8 @@ inline void to_json(json &j, const Residue &value)
 	j["id"] = value._id;
 	j["chain"] = value._chain;
 	j["code"] = value._code;
+	j["nothing"] = value._nothing;
+	j["torsions"] = value._refs;
 }
 
 /* residue */
@@ -106,6 +122,24 @@ inline void from_json(const json &j, Residue &value)
 	j.at("id").get_to(value._id);
 	j.at("chain").get_to(value._chain);
 	j.at("code").get_to(value._code);
+	
+	try
+	{
+		j.at("nothing").get_to(value._nothing);
+	}
+	catch (...)
+	{
+
+	}
+	
+	try
+	{
+		j.at("torsions").get_to(value._refs);
+	}
+	catch (...)
+	{
+
+	}
 }
 
 #endif

@@ -17,8 +17,80 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Entity.h"
+#include "Model.h"
 
 Entity::Entity()
 {
 
+}
+
+void Entity::checkModel(Model &m)
+{
+	if (m.hasEntity(name()))
+	{
+		_models.insert(&m);
+
+		for (Molecule &mol : m.molecules())
+		{
+			std::cout << m.name() << " has " << mol.chain_id() << std::endl;
+			_molecules.insert(&mol);
+		}
+	}
+}
+
+size_t Entity::checkForUnrefinedMolecules()
+{
+	int count = 0;
+
+	for (const Molecule *mol : _molecules)
+	{
+		bool refined = mol->isRefined();
+		
+		if (!refined)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+std::set<Model *> Entity::unrefinedModels()
+{
+	std::set<Model *> models;
+	for (Molecule *mol : _molecules)
+	{
+		bool refined = mol->isRefined();
+
+		if (!refined)
+		{
+			models.insert(mol->model());
+		}
+	}
+
+	return models;
+}
+
+void Entity::refineUnrefinedModels()
+{
+	_refineSet = unrefinedModels();
+	
+	refineNextModel();
+}
+
+void Entity::refineNextModel()
+{
+	if (_refineSet.size() == 0)
+	{
+		return;
+	}
+
+	_currentModel = *_refineSet.begin();
+	_refineSet.erase(_refineSet.begin());
+}
+
+void Entity::modelReady()
+{
+
+	refineNextModel();
 }

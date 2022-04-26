@@ -201,6 +201,11 @@ void PositionRefinery::refine(AtomGroup *group)
 	
 	delete _calculator;
 	_calculator = nullptr;
+	
+	if (_group->responder())
+	{
+		_group->responder()->finishedRefinement();
+	}
 }
 
 int PositionRefinery::awaitResult(double *eval)
