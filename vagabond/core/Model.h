@@ -84,7 +84,13 @@ public:
 	void housekeeping();
 	
 	void createMolecules();
-	void loadAndRefine();
+	void load();
+	void refine();
+	
+	AtomContent *currentAtoms()
+	{
+		return _currentAtoms;
+	}
 
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);

@@ -24,7 +24,6 @@ FileManager::FileManager()
 	_view = nullptr;
 #ifdef __EMSCRIPTEN__
 	_list.push_back("assets/geometry/ATP.cif");
-	_list.push_back("assets/examples/2ybh.cif");
 	_list.push_back("assets/examples/4cvd.cif");
 	_list.push_back("assets/examples/4cvd.pdb");
 #endif

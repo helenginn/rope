@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ConfSpaceView.h"
+#include "SerialRefiner.h"
+
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 
@@ -48,13 +50,15 @@ void ConfSpaceView::setup()
 
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "fold_in_yes")
+	std::cout << tag << std::endl;
+	if (tag == "yes_fold_in")
 	{
 		// refine extra molecules
+		SerialRefiner *refiner = new SerialRefiner(this, _entity);
+		refiner->show();
 
-		_entity->refineUnrefinedModels();
 	}
-	if (tag == "fold_in_yes" || tag == "fold_in_no")
+	if (tag == "no_fold_in")
 	{
 		// show conf space
 	}

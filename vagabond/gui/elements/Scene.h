@@ -28,11 +28,18 @@ public:
 	
 	void removeModal();
 
+	void preSetup();
 	virtual void setup() = 0;
 	virtual void refresh() {};
 	void setBackground();
 	void addTitle(std::string);
+	void setFutureTitle(std::string title)
+	{
+		_title = title;
+	}
+
 	void show();
+	void queueToShow();
 	void showBackButton();
 	virtual void showSimple();
 	virtual void render();
@@ -52,6 +59,8 @@ protected:
 	void setCentrePixels(Renderable *r, int x, int y);
 
 	static char *dataToChar(void *data, int nbytes);
+	
+	std::string _title;
 
 	Renderable *_dragged;
 

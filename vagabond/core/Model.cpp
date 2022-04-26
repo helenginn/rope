@@ -135,6 +135,7 @@ void Model::housekeeping()
 	{
 		std::string ch = mc.chain_id();
 		_chain2Molecule[ch] = &mc;
+		mc.setModel(this);
 	}
 
 	if (_chain2Molecule.size() < _chain2Entity.size())
@@ -153,25 +154,32 @@ void Model::extractTorsions()
 	}
 }
 
-void Model::loadAndRefine()
+void Model::load()
 {
-	File *f = File::loadUnknown(_filename);
-	AtomContent *contents = f->atoms();
-	contents->setResponder(this);
-	contents->alignAnchor();
-	contents->refinePositions();
-	
-	_currentFile = f;
-	_currentAtoms = contents;
+	_currentFile = File::loadUnknown(_filename);
+	_currentAtoms = _currentFile->atoms();
+	_currentAtoms->setResponder(this);
+}
+
+void Model::refine()
+{
+	if (_currentAtoms == nullptr)
+	{
+		load();
+	}
+
+	_currentAtoms->alignAnchor();
+	_currentAtoms->refinePositions();
 }
 
 void Model::finishedRefinement()
 {
 	extractTorsions();
-	removeReferences();
 
 	if (_responder)
 	{
 		_responder->modelReady();
 	}
+
+	removeReferences();
 }

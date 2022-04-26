@@ -14,12 +14,6 @@
 
 Scene::Scene(Scene *prev) : SnowGL()
 {
-	if (Window::hasContext())
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
 	_background = NULL;
 	_modal = NULL;
 	_mouseDown = false;
@@ -30,7 +24,19 @@ Scene::Scene(Scene *prev) : SnowGL()
 	_previous = prev;
 
 	setBackground();
+}
+
+void Scene::preSetup()
+{
 	showBackButton();
+	
+	if (_title.length())
+	{
+		addTitle(_title);
+		_title = "";
+	}
+	
+	setup();
 }
 
 void Scene::setBackground()
@@ -153,6 +159,11 @@ void Scene::mouseMoveEvent(double x, double y)
 void Scene::showSimple()
 {
 	Window::reloadScene(this);
+}
+
+void Scene::queueToShow()
+{
+	Window::setNextScene(this);
 }
 
 void Scene::show()

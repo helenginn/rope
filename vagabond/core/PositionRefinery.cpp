@@ -51,6 +51,11 @@ void PositionRefinery::refine()
 			refine(units[i]);
 		}
 	}
+	
+	if (_group->responder() != nullptr)
+	{
+		_group->responder()->finishedRefinement();
+	}
 }
 
 void PositionRefinery::calculateActiveTorsions()
@@ -201,11 +206,6 @@ void PositionRefinery::refine(AtomGroup *group)
 	
 	delete _calculator;
 	_calculator = nullptr;
-	
-	if (_group->responder())
-	{
-		_group->responder()->finishedRefinement();
-	}
 }
 
 int PositionRefinery::awaitResult(double *eval)

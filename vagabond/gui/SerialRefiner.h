@@ -16,53 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ModelManager.h"
-#include <iostream>
+#ifndef __vagabond__SerialRefiner__
+#define __vagabond__SerialRefiner__
 
-ModelManager::ModelManager() : Manager()
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Entity.h>
+
+class GuiAtom;
+class Display;
+
+class SerialRefiner : public Scene, public EntityResponder
 {
+public:
+	SerialRefiner(Scene *prev, Entity *entity);
+	virtual ~SerialRefiner();
 
-}
+	virtual void setup();
+	virtual void entityDone();
+	virtual void setActiveAtoms(Model *model);
+private:
+	Display *_display = nullptr;
+	Entity *_entity = nullptr;
+};
 
-void ModelManager::insertIfUnique(const Model &m)
-{
-	for (Model &other : _objects)
-	{
-		if (other.name() == m.name())
-		{
-			throw std::runtime_error("Model with same name exists");
-		}
-	}
-	
-	if (m.name().length() == 0)
-	{
-		throw std::runtime_error("Model has no name");
-	}
-	
-	if (m.filename().length() == 0)
-	{
-		throw std::runtime_error("Model has no initial file");
-	}
-	
-	_objects.push_back(m);
-	housekeeping();
-
-	if (_responder)
-	{
-		_responder->objectsChanged();
-	}
-}
-
-void ModelManager::update(const Model &m)
-{
-	Model *old = model(m.name());
-	*old = m;
-}
-
-void ModelManager::housekeeping()
-{
-	for (Model &m : _objects)
-	{
-		_name2Model[m.name()] = &m;
-	}
-}
+#endif

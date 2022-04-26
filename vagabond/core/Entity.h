@@ -29,6 +29,14 @@ using nlohmann::json;
 
 class Molecule;
 
+class EntityResponder
+{
+public:
+	virtual ~EntityResponder() {}
+	virtual void entityDone() = 0;
+	virtual void setActiveAtoms(Model *model) {}
+};
+
 class Entity : public ModelResponder
 {
 public:
@@ -37,6 +45,11 @@ public:
 	Sequence *sequence()
 	{
 		return &_sequence;
+	}
+	
+	void setResponder(EntityResponder *responder)
+	{
+		_responder = responder;
 	}
 	
 	void setSequence(Sequence *seq)
@@ -81,6 +94,7 @@ private:
 	Sequence _sequence;
 	
 	Model *_currentModel = nullptr;
+	EntityResponder *_responder = nullptr;
 	
 	std::set<Model *> _refineSet;
 	std::set<Model *> _models;

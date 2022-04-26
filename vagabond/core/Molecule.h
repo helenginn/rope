@@ -60,6 +60,11 @@ public:
 	{
 		return _model;
 	}
+	
+	void setModel(Model *model)
+	{
+		_model = model;
+	}
 
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);

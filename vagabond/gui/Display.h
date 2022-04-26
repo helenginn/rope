@@ -27,11 +27,23 @@ public:
 
 	virtual void setup();
 	void loadAtoms(AtomGroup *atoms);
+	void stop();
+
 	void loadDiffraction(Diffraction *diff);
 	void recalculateAtoms();
 	void tieButton();
 	void wedgeButtons();
 	void densityButton();
+	
+	void setAtoms(AtomGroup *grp)
+	{
+		_toLoad = grp;
+	}
+
+	void setControls(const bool controls)
+	{
+		_controls = false;
+	}
 	
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
@@ -41,10 +53,12 @@ private:
 	GuiRefls *_guiRefls = nullptr;
 	GuiDensity *_guiDensity = nullptr;
 	AtomGroup *_atoms = nullptr;
+	AtomGroup *_toLoad = nullptr;
 
 	void updateSpinMatrix();
 	
 	glm::mat3x3 _spin;
+	bool _controls = true;
 	
 	ImageButton *_halfWedge = nullptr;
 	ImageButton *_wedge = nullptr;

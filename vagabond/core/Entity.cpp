@@ -18,6 +18,7 @@
 
 #include "Entity.h"
 #include "Model.h"
+#include "AtomContent.h"
 
 Entity::Entity()
 {
@@ -74,6 +75,7 @@ std::set<Model *> Entity::unrefinedModels()
 void Entity::refineUnrefinedModels()
 {
 	_refineSet = unrefinedModels();
+	std::cout << "Refine set size: " << _refineSet.size() << std::endl;
 	
 	refineNextModel();
 }
@@ -86,11 +88,18 @@ void Entity::refineNextModel()
 	}
 
 	_currentModel = *_refineSet.begin();
+	_currentModel->setResponder(this);
+	_currentModel->load();
 	_refineSet.erase(_refineSet.begin());
+	
+	_responder->setActiveAtoms(_currentModel);
+	
+	_currentModel->refine();
 }
 
 void Entity::modelReady()
 {
-
+	_responder->setActiveAtoms(nullptr);
+	_currentModel->setResponder(nullptr);
 	refineNextModel();
 }

@@ -30,7 +30,6 @@ dir_base = get_option('prefix')
 combined = join_paths(dir_base, data_dir)
 
 install_data(
-'assets/examples/2YBH.cif',
 'assets/examples/6QHU.cif',
 'assets/examples/4cvd.cif',
 'assets/examples/4cvd.pdb',

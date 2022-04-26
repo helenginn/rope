@@ -40,6 +40,11 @@ public:
 	}
 	
 	static void setCurrentScene(Scene *scene);
+	static void setNextScene(Scene *scene)
+	{
+		_next = scene;
+	}
+
 	static void reloadScene(Scene *scene);
 	
 	static Scene *currentScene()
@@ -69,6 +74,7 @@ public:
 	
 protected:
 	static Scene *_current;
+	static Scene *_next;
 private:
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;

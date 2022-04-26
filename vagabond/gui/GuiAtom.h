@@ -24,6 +24,7 @@ public:
 	void startBackgroundWatch();
 
 	void setMulti(bool m);
+	void stop();
 
 	virtual void render(SnowGL *gl);
 private:

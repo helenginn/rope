@@ -94,8 +94,8 @@ void PdbFile::parseFileContents()
 	{
 		std::vector<std::string> seq = st.entities[i].full_sequence;
 
-		std::cout << st.entities[i].name << " = ";
-		std::cout << gemmi::one_letter_code(seq) << std::endl;
+//		std::cout << st.entities[i].name << " = ";
+//		std::cout << gemmi::one_letter_code(seq) << std::endl;
 	}
 
 	for (size_t i = 0; i < st.models.size(); i++)

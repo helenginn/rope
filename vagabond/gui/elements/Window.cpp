@@ -13,7 +13,8 @@ SDL_Rect Window::_rect;
 SDL_Window *Window::_window = NULL;
 SDL_GLContext Window::_context = NULL;
 
-Scene *Window::_current = NULL;
+Scene *Window::_current = nullptr;
+Scene *Window::_next = nullptr;
 std::set<Scene *> Window::_toDelete;
 KeyResponder *Window::_keyResponder = NULL;
 
@@ -145,6 +146,12 @@ void Window::tick()
 	}
 	
 	render();
+	
+	if (_next != nullptr)
+	{
+		setCurrentScene(_next);
+		_next = nullptr;
+	}
 }
 
 void Window::render()
@@ -155,9 +162,12 @@ void Window::render()
 	glViewport(0, 0, w, h);
 
 	_current->checkErrors("before clear");
+	
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(0.9f, 0.9f, 0.9f, 0.f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	_current->render();
 
@@ -184,7 +194,7 @@ void Window::setCurrentScene(Scene *scene)
 {
 	_current = scene;
 	_current->setDims(_rect.w, _rect.h);
-	_current->setup();
+	_current->preSetup();
 }
 
 void Window::reloadScene(Scene *scene)

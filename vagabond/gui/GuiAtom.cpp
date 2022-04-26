@@ -34,8 +34,19 @@ GuiAtom::~GuiAtom()
 	if (_watch != nullptr)
 	{
 		_finish = true;
-		_watch->join();
 	}
+}
+
+void GuiAtom::stop()
+{
+	if (_watch != nullptr)
+	{
+		_finish = true;
+		_watch->join();
+		delete _watch;
+		_watch = nullptr;
+	}
+
 }
 
 void GuiAtom::setMulti(bool m)

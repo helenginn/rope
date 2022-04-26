@@ -61,21 +61,11 @@ void Molecule::getTorsionRefs(Chain *ch)
 		local_res->addTorsionRef(ref);
 		Residue *master_res = _sequence.master_residue(local_res);
 
-		std::cout << local_res->desc() << " got torsion angle " <<
-		ref.desc() << " ";
-		
-		if (master_res == nullptr)
+		if (master_res == nullptr || master_res->nothing())
 		{
-			std::cout << std::endl;
 			continue;
 		}
-		else if (master_res->nothing())
-		{
-			std::cout << "but nothing" << std::endl;
-		}
 
-		std::cout << "and added to " <<
-		master_res->desc() << " in reference" << std::endl;
 		master_res->addTorsionRef(ref);
 	}
 }
@@ -91,15 +81,22 @@ void Molecule::housekeeping()
 
 void Molecule::extractTorsionAngles(AtomContent *atoms)
 {
-	for (size_t i = 0; i < atoms->bondTorsionCount(); i++)
+	Chain *ch = atoms->chain(_chain_id);
+
+	for (size_t i = 0; i < ch->bondTorsionCount(); i++)
 	{
-		BondTorsion *t = atoms->bondTorsion(i);
+		BondTorsion *t = ch->bondTorsion(i);
 		
 		ResidueId id = t->residueId();
 		std::string desc = t->desc();
 		
 		Residue *local = _sequence.residue(id);
-		double angle = t->refinedAngle();
+		if (local == nullptr)
+		{
+			continue;
+		}
+
+		double angle = t->measurement(BondTorsion::SourceDerived);
 		
 		local->supplyRefinedAngle(desc, angle);
 	}

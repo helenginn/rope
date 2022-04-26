@@ -15,6 +15,7 @@ guifiles = [
 'GuiRefls.cpp',
 'MainMenu.cpp',
 'ModelMenu.cpp',
+'SerialRefiner.cpp',
 'SequenceView.cpp',
 'SequenceLine.cpp',
 'VagWindow.cpp',

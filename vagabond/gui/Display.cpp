@@ -23,7 +23,7 @@ Display::~Display()
 {
 	deleteObjects();
 	
-	if (_atoms != nullptr)
+	if (_controls && _atoms != nullptr)
 	{
 		delete _atoms;
 		_atoms = nullptr;
@@ -115,7 +115,11 @@ void Display::loadAtoms(AtomGroup *atoms)
 	updateCamera();
 
 	addObject(_guiAtoms);
-	tieButton();
+	
+	if (_controls)
+	{
+		tieButton();
+	}
 }
 
 void Display::tieButton()
@@ -132,7 +136,17 @@ void Display::tieButton()
 
 void Display::setup()
 {
+	if (_toLoad != nullptr && _atoms == nullptr)
+	{
+		loadAtoms(_toLoad);
+		_toLoad = nullptr;
+	}
 	
+}
+
+void Display::stop()
+{
+	_guiAtoms->stop();
 }
 
 void Display::buttonPressed(std::string tag, Button *button)

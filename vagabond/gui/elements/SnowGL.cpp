@@ -40,11 +40,6 @@ SnowGL::SnowGL()
 	setupCamera();
 
 	_r = 1.; _g = 1.; _b = 0.5; _a = 1.;
-	
-	if (Window::hasContext())
-	{
-		glClearColor(_r, _g, _b, _a);
-	}
 }
 
 SnowGL::~SnowGL()
