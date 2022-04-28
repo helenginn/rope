@@ -31,5 +31,6 @@ TorsionRef::TorsionRef(BondTorsion *tmp)
 	}
 
 	_desc = tmp->desc();
+	_main = tmp->coversMainChain();
 	_torsion = tmp;
 }

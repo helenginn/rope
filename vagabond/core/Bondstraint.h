@@ -27,21 +27,14 @@ class AtomGroup;
 class Bondstraint
 {
 public:
-	virtual ~Bondstraint() {}
+	virtual ~Bondstraint()
+	{
+		_owner = nullptr;
+	}
 	
 	virtual const std::string desc() const
 	{
 		return "";
-	}
-	
-	void setOwner(AtomGroup *owner)
-	{
-		_owner = owner;
-	}
-	
-	AtomGroup *owner()
-	{
-		return _owner;
 	}
 protected:
 	AtomGroup *_owner;

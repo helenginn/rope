@@ -29,12 +29,19 @@ class SerialRefiner : public Scene, public EntityResponder
 {
 public:
 	SerialRefiner(Scene *prev, Entity *entity);
+	
+	void setExtra(const int extra)
+	{
+		_extra = extra;
+	}
 	virtual ~SerialRefiner();
 
 	virtual void setup();
 	virtual void entityDone();
 	virtual void setActiveAtoms(Model *model);
 private:
+	int _extra = 0;
+	int _count = 0;
 	Display *_display = nullptr;
 	Entity *_entity = nullptr;
 };

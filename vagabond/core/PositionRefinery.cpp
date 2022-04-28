@@ -48,7 +48,14 @@ void PositionRefinery::refine()
 	{
 		if (units[i]->size() > 1)
 		{
-			refine(units[i]);
+			try
+			{
+				refine(units[i]);
+			}
+			catch (const std::runtime_error &err)
+			{
+				std::cout << "Giving up: " << err.what() << std::endl;
+			}
 		}
 	}
 	
@@ -153,11 +160,11 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 
 	std::chrono::duration<double, std::milli> time_span = tend - tstart;
 
-	std::cout << "Milliseconds taken: " <<  time_span.count() << std::endl;
+//	std::cout << "Milliseconds taken: " <<  time_span.count() << std::endl;
 	float seconds = time_span.count() / 1000.;
 	float rate = (float)_ncalls / seconds;
 	_ncalls = 0;
-	std::cout << "Calculations per second: " <<  rate << std::endl;
+//	std::cout << "Calculations per second: " <<  rate << std::endl;
 	
 	_calculator->finish();
 
@@ -194,9 +201,6 @@ void PositionRefinery::refine(AtomGroup *group)
 	}
 
 	_steps = std::vector<float>(_nBonds, _step);
-	
-	std::cout << "Overall average distance from initial position: "
-	<< res << " Angstroms" << std::endl;
 	
 	stepwiseRefinement(group);
 	

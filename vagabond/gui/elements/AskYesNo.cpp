@@ -39,4 +39,7 @@ void AskYesNo::buttonPressed(std::string tag, Button *button)
 	hide();
 }
 
+AskYesNo::~AskYesNo()
+{
 
+}

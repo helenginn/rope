@@ -1,5 +1,6 @@
 #include "Window.h"
 #include "Scene.h"
+#include "Renderable.h"
 
 #include <iostream>
 #include <SDL2/SDL_image.h>
@@ -15,7 +16,10 @@ SDL_GLContext Window::_context = NULL;
 
 Scene *Window::_current = nullptr;
 Scene *Window::_next = nullptr;
+
 std::set<Scene *> Window::_toDelete;
+std::set<Renderable *> Window::_deleteRenderables;
+
 KeyResponder *Window::_keyResponder = NULL;
 
 
@@ -154,6 +158,23 @@ void Window::tick()
 	}
 }
 
+void Window::deleteQueued()
+{
+	for (Scene *del : _toDelete)
+	{
+		delete del;
+	}
+
+	_toDelete.clear();
+
+	for (Renderable *r : _deleteRenderables)
+	{
+		delete r;
+	}
+
+	_deleteRenderables.clear();
+}
+
 void Window::render()
 {
 	_current->checkErrors("before viewport");
@@ -174,20 +195,6 @@ void Window::render()
 	_current->checkErrors("after render from window");
 
 	SDL_GL_SwapWindow(_window);
-
-	if (_toDelete.size())
-	{
-		std::set<Scene *>::iterator it;
-		for (it = _toDelete.begin(); it != _toDelete.end(); it++)
-		{
-			if (*it != _current)
-			{
-				delete *it;
-			}
-		}
-		
-		_toDelete.clear();
-	}
 }
 
 void Window::setCurrentScene(Scene *scene)

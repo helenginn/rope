@@ -48,12 +48,16 @@ public:
 		return *it;
 	}
 
-	virtual void insertIfUnique(const T &m) {};
-	
+	virtual T *insertIfUnique(const T &m) { return nullptr; };
 
 	void setResponder(ManagerResponder<T> *responder)
 	{
 		_responder = responder;
+	}
+	
+	ManagerResponder<T> *const responder()
+	{
+		return _responder;
 	}
 	
 	friend void to_json(json &j, const Manager<T> &value);

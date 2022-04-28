@@ -3,12 +3,14 @@
 #define __vagabond__GuiAtom__
 
 #include <vagabond/gui/elements/Renderable.h>
-#include <atomic>
 #include <vagabond/core/Atom.h>
+#include <atomic>
 
 class Icosahedron;
 class GuiBond;
 class AtomGroup;
+
+class Atom;
 
 class GuiAtom : public Renderable
 {
@@ -36,15 +38,15 @@ private:
 	void updateMultiPositions(Atom *a, Atom::WithPos &wp);
 	static void backgroundWatch(GuiAtom *what);
 
-	Icosahedron *_template;
-	GuiBond *_bonds;
+	Icosahedron *_template = nullptr;
+	GuiBond *_bonds = nullptr;
 
 	std::vector<Atom *> _atoms;
 	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;
 	
 	std::thread *_watch = nullptr;
-	std::atomic<bool> _finish;
+	std::atomic<bool> _finish{false};
 	
 	bool _multi = true;
 };

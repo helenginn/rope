@@ -40,7 +40,7 @@ public:
 	}
 
 	void refreshInfo();
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	virtual void fileChosen(std::string filename);
 private:
 	void fileTextOrChoose(std::string &file, std::string other = "Choose...");

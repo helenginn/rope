@@ -27,6 +27,7 @@ typedef std::vector<AtomPtr> AtomVector;
 
 class SimplexEngine;
 class Sequence;
+class File;
 
 class AtomGroupResponder
 {
@@ -42,6 +43,7 @@ public:
 	~AtomGroup();
 	void cancelRefinement();
 	void concludeRefinement();
+	void deleteConnectedGroups();
 
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
@@ -109,11 +111,15 @@ public:
 	 * AtomGroups of multiple connected molecules.
 	 * @return sequence object */
 	Sequence *sequence();
+	
 protected:
 	Atom *atom(int i)
 	{
 		return _atoms[i];
 	}
+
+	friend File;
+	
 private:
 	void cleanupRefinement();
 	void findPossibleAnchors();

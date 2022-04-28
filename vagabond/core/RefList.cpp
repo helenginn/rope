@@ -27,6 +27,14 @@ RefList::RefList(const std::vector<Reflection> &refls)
 	setSpaceGroup(1);
 }
 
+RefList::~RefList()
+{
+	delete _rots;
+	delete _trans;
+	_rots = nullptr;
+	_trans = nullptr;
+}
+
 void RefList::setSpaceGroup(int num)
 {
 	if (num >= 1)
@@ -43,7 +51,7 @@ void RefList::extractSymops()
 	_rots = nullptr;
 	_trans = nullptr;
 	
-	if (_spg == NULL)
+	if (_spg == nullptr)
 	{
 		_nsymops = 0;
 		return;

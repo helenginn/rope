@@ -33,6 +33,12 @@ AtomMap::AtomMap(AtomSegment &other)
 	copyData(other);
 }
 
+AtomMap::~AtomMap()
+{
+	delete _realOnly;
+	_realOnly = nullptr;
+}
+
 void AtomMap::copyData(AtomSegment &other)
 {
 	for (size_t i = 0; i < nn(); i++)

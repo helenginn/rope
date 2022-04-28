@@ -35,7 +35,7 @@ public:
 
 	virtual void setup();
 	virtual void refresh();
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	virtual size_t unitsPerPage();
 	size_t linesPerPage();

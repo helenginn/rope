@@ -71,6 +71,13 @@ void ChainAssignment::setup()
 		t->setLeft(0.7, 0.2);
 		addObject(t);
 	}
+
+	{
+		TextButton *t = new TextButton("OK", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnTag("back");
+		addObject(t);
+	}
 	
 	ListView::setup();
 }

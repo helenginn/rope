@@ -55,7 +55,11 @@ struct ResidueId
 	const std::string as_string() const
 	{
 		std::ostringstream ss;
-		ss << num << insert;
+		ss << num;
+		if (insert != " ")
+		{
+			ss << insert;
+		}
 		return ss.str();
 	}
 

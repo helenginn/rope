@@ -103,7 +103,7 @@ public:
 		_residueId = ResidueId(num);
 	}
 	
-	int residueNumber()
+	const int residueNumber() const
 	{
 		return _residueId.as_num();
 	}
@@ -152,7 +152,7 @@ public:
 	}
 	
 	/** @returns upper case element symbol e.g. K */
-	std::string elementSymbol()
+	const std::string &elementSymbol() const
 	{
 		return _ele;
 	}
@@ -215,7 +215,7 @@ public:
 	    @param isAnchor specifies if atom is first in sequence */
 	 /* @returns matrix describing all connected partners */
 	glm::mat4x4 coordinationMatrix(Atom *children[4], int count, 
-	                               Atom *prev = NULL);
+	                               Atom *prev = nullptr);
 
 	void checkChirality(glm::mat4x4 &ret, Atom *prev, 
 	                    Atom *children[4], const int count);

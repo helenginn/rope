@@ -34,7 +34,7 @@ public:
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
 
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	void refreshInfo();
 private:
 	AtomContent *_contents = nullptr;

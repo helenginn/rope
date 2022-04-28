@@ -29,10 +29,11 @@ public:
 	ConfSpaceView(Scene *prev, Entity *ent);
 
 	virtual void setup();
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void askToFoldIn(int extra);
 	Entity *_entity = nullptr;
+	int _extra = 0;
 
 };
 

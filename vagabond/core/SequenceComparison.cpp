@@ -48,12 +48,12 @@ SequenceComparison::SequenceComparison(Sequence *a, Sequence *b)
 
 bool SequenceComparison::hasResidue(int row, int entry)
 {
-	if (row == 0 && _indices[entry].l != ' ')
+	if (row == 0 && _indices[entry].l >= 0)
 	{
 		return true;
 	}
 
-	if (row == 2 && _indices[entry].r != ' ')
+	if (row == 2 && _indices[entry].r >= 0)
 	{
 		return true;
 	}

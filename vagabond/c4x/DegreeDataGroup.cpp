@@ -16,28 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityMenu__
-#define __vagabond__EntityMenu__
+#include "DegreeDataGroup.h"
+#include <iostream>
 
-#include <vagabond/gui/elements/ListView.h>
-#include <vagabond/core/EntityManager.h>
-
-class EntityMenu : public ListView, public ManagerResponder<Entity>
+void DegreeDataGroup::matchDegrees(const Array &master, Array &next)
 {
-public:
-	EntityMenu(Scene *prev);
+	for (size_t i = 0; i < _length; i++)
+	{
+		if (next[i] != next[i] || !isfinite(next[i]))
+		{
+			continue;
+		}
+		
+		if (master[i] != master[i] || !isfinite(master[i]))
+		{
+			continue;
+		}
 
-	virtual ~EntityMenu();
-	virtual void setup();
+		while (next[i] < master[i] - 180)
+		{
+			next[i] += 360;
+		}
 
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
+		while (next[i] >= master[i] + 180)
+		{
+			next[i] -= 360;
+		}
+	}
 
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual void objectsChanged();
-private:
-	EntityManager *_manager;
+}
 
-};
+void DegreeDataGroup::addArray(std::string name, Array next)
+{
+	if (_vectors.size() > 0)
+	{
+		matchDegrees(_vectors[0], next);
+	}
 
-#endif
+	DataGroup<float>::addArray(name, next);
+}

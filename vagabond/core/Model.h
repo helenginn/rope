@@ -46,6 +46,8 @@ class Model : public AtomGroupResponder
 public:
 	Model();
 	
+	static Model autoModel(std::string filename);
+	
 	void setResponder(ModelResponder *responder)
 	{
 		_responder = responder;
@@ -58,6 +60,11 @@ public:
 	
 	bool hasEntity(std::string entity);
 	size_t moleculeCountForEntity(std::string entity);
+
+	void throwOutMolecule(Molecule *mol);
+	void throwOutEntity(Entity *ent);
+
+	void autoAssignEntities();
 	
 	void setName(std::string name)
 	{
@@ -97,6 +104,7 @@ public:
 	
 	void finishedRefinement();
 private:
+	void swapChainToEntity(std::string id, std::string entity);
 	void removeReferences();
 	void extractTorsions();
 	void insertTorsions();
@@ -107,6 +115,7 @@ private:
 	std::map<std::string, Molecule *> _chain2Molecule;
 
 	std::list<Molecule> _molecules;
+
 	File *_currentFile = nullptr;
 	AtomContent *_currentAtoms = nullptr;
 	

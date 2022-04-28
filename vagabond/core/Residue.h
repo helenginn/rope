@@ -55,9 +55,11 @@ public:
 		return _sequence;
 	}
 	
-	const size_t torsionCount() const
+	const size_t torsionCount(bool onlyMain = false) const;
+	
+	const std::set<TorsionRef> &torsions() const
 	{
-		return _refs.size();
+		return _refs;
 	}
 
 	int as_num() const
@@ -91,7 +93,7 @@ public:
 	const std::string desc() const;
 	
 	void addTorsionRef(TorsionRef &ref);
-	TorsionRef copyTorsionRef(std::string &desc);
+	TorsionRef copyTorsionRef(const std::string &desc);
 	void replaceTorsionRef(TorsionRef &newRef);
 	
 	friend void to_json(json &j, const Residue &value);

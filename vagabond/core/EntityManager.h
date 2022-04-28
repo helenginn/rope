@@ -29,6 +29,7 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
+class Molecule;
 class ModelManager;
 
 class EntityManager : public Manager<Entity>
@@ -36,7 +37,7 @@ class EntityManager : public Manager<Entity>
 public:
 	EntityManager();
 
-	virtual void insertIfUnique(const Entity &e);
+	virtual Entity *insertIfUnique(const Entity &e);
 	virtual void update(const Entity &e);
 	
 	Entity *entity(std::string name)
@@ -51,6 +52,10 @@ public:
 
 	void housekeeping();
 	void checkModelsForReferences(ModelManager *manager);
+
+	void purgeMolecule(Molecule *mol);
+	void purgeEntity(Entity *ent);
+	void purgeModel(Model *mol);
 
 	friend void to_json(json &j, const EntityManager &value);
 	friend void from_json(const json &j, EntityManager &value);

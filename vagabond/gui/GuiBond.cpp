@@ -35,6 +35,12 @@ GuiBond::GuiBond() : Renderable()
 	setFragmentShaderFile("assets/shaders/box.fsh");
 }
 
+GuiBond::~GuiBond()
+{
+	delete _copy;
+	_copy = nullptr;
+}
+
 void GuiBond::updateAtom(Atom *a, glm::vec3 pos, int n)
 {
 	size_t nvtx = _atomIdx.size();

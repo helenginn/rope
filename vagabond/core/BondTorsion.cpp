@@ -35,7 +35,7 @@ BondTorsion::BondTorsion(AtomGroup *owner, Atom *a, Atom *b, Atom *c,
 	_d = d;
 	_angle = angle;
 	
-	if (_a == NULL || _b == NULL || _c == NULL || _d == NULL)
+	if (_a == nullptr || _b == nullptr || _c == nullptr || _d == nullptr)
 	{
 		throw(std::runtime_error("Initialising bond torsion with null values"));
 	}

@@ -25,7 +25,7 @@ EntityManager::EntityManager() : Manager()
 }
 
 
-void EntityManager::insertIfUnique(const Entity &ent)
+Entity *EntityManager::insertIfUnique(const Entity &ent)
 {
 	for (Entity &other : _objects)
 	{
@@ -47,6 +47,8 @@ void EntityManager::insertIfUnique(const Entity &ent)
 	{
 		_responder->objectsChanged();
 	}
+	
+	return &_objects.back();
 }
 
 void EntityManager::update(const Entity &e)
@@ -64,6 +66,41 @@ void EntityManager::housekeeping()
 	}
 }
 
+void EntityManager::purgeModel(Model *model)
+{
+	for (Entity &other : _objects)
+	{
+		other.throwOutModel(model);
+	}
+
+}
+
+void EntityManager::purgeEntity(Entity *ent)
+{
+	std::list<Entity>::iterator it = _objects.begin();
+
+	std::string name = ent->name();
+	_name2Entity.erase(name);
+
+	for (Entity &other : _objects)
+	{
+		if (ent == &other)
+		{
+			_objects.erase(it);
+			return;
+		}
+		it++;
+	}
+}
+
+void EntityManager::purgeMolecule(Molecule *mol)
+{
+	for (Entity &other : _objects)
+	{
+		other.throwOutMolecule(mol);
+	}
+}
+
 void EntityManager::checkModelsForReferences(ModelManager *mm)
 {
 	for (size_t i = 0; i < mm->objectCount(); i++)
@@ -78,4 +115,8 @@ void EntityManager::checkModelsForReferences(ModelManager *mm)
 		}
 	}
 
+	if (_responder)
+	{
+		_responder->objectsChanged();
+	}
 }

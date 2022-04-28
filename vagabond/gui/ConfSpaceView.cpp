@@ -43,18 +43,24 @@ void ConfSpaceView::setup()
 
 	if (extra > 0)
 	{
+		_extra = extra;
 		askToFoldIn(extra);
+	}
+	else
+	{
+		DataGroup<float> angles = _entity->makeTorsionDataGroup();
+		angles.write("test.csv");
 	}
 }
 
 
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 {
-	std::cout << tag << std::endl;
 	if (tag == "yes_fold_in")
 	{
 		// refine extra molecules
 		SerialRefiner *refiner = new SerialRefiner(this, _entity);
+		refiner->setExtra(_extra);
 		refiner->show();
 
 	}

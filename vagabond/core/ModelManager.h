@@ -28,12 +28,14 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
+class Molecule;
+
 class ModelManager : public Manager<Model>
 {
 public:
 	ModelManager();
 
-	virtual void insertIfUnique(const Model &m);
+	virtual Model *insertIfUnique(const Model &m);
 	void update(const Model &m);
 	
 	Model *const model(std::string name) const
@@ -47,6 +49,11 @@ public:
 	}
 	
 	void housekeeping();
+	void autoModel();
+
+	void purgeMolecule(Molecule *mol);
+	void purgeEntity(Entity *ent);
+	void purgeModel(Model *mol);
 
 	friend void to_json(json &j, const ModelManager &value);
 	friend void from_json(const json &j, ModelManager &value);

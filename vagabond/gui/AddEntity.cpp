@@ -114,6 +114,16 @@ void AddEntity::setup()
 			addObject(t);
 		}
 	}
+	else
+	{
+		{
+			TextButton *t = new TextButton("Delete", this);
+			t->setRight(0.9, 0.1);
+			t->setReturnTag("delete");
+			addObject(t);
+		}
+
+	}
 }
 
 void AddEntity::textOrChoose(std::string &file, std::string other)
@@ -167,6 +177,11 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 			BadChoice *bad = new BadChoice(this, err.what());
 			setModal(bad);
 		}
+	}
+	else if (tag == "delete" && _existing)
+	{
+		Environment::purgeEntity(_ent.name());
+		back();
 	}
 	else if (tag == "back" && _existing)
 	{

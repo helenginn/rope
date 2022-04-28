@@ -124,13 +124,13 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 		std::string desc = t->desc();
 		
 		Residue *local = _sequence.residue(id);
+		
 		if (local == nullptr)
 		{
 			continue;
 		}
 
 		double angle = t->measurement(BondTorsion::SourceDerived);
-		
 		local->supplyRefinedAngle(desc, angle);
 	}
 

@@ -33,11 +33,25 @@ ModelMenu::~ModelMenu()
 
 }
 
+void ModelMenu::addAutomodelButton()
+{
+	if (Environment::entityCount() > 0)
+	{
+		TextButton *t = new TextButton("Automodel...", this);
+		t->setRight(0.9, 0.1);
+		t->setReturnTag("automodel");
+		_temps.push_back(t);
+		addObject(t);
+	}
+}
+
 void ModelMenu::setup()
 {
 	addTitle("Model menu");
-	
 	ListView::setup();
+
+	addAutomodelButton();
+	
 }
 
 size_t ModelMenu::lineCount()
@@ -64,6 +78,11 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 {
 	ListView::buttonPressed(tag, button);
 
+	if (tag == "automodel")
+	{
+		Environment::autoModel();
+		return;
+	}
 	if (tag == "add")
 	{
 		AddModel *addModel = new AddModel(this);
@@ -87,4 +106,6 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 void ModelMenu::objectsChanged()
 {
 	refresh();
+	
+	addAutomodelButton();
 }

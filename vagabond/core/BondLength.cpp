@@ -26,7 +26,7 @@ BondLength::BondLength(AtomGroup *owner, Atom *a, Atom *b, double length)
 	_b = b;
 	_length = length;
 	
-	if (_a == NULL || _b == NULL)
+	if (_a == nullptr || _b == nullptr)
 	{
 		throw(std::runtime_error("Initialising bond length with null values"));
 	}

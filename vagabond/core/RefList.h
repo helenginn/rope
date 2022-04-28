@@ -36,6 +36,7 @@ class RefList
 {
 public:
 	RefList(const std::vector<Reflection> &refls);
+	~RefList();
 	
 	void setSpaceGroup(int num);
 	void extractSymops();
@@ -74,7 +75,7 @@ private:
 	std::vector<Reflection> _refls;
 	std::array<double, 6> _cell;
 	
-	CCP4SPG *_spg = NULL;
+	CCP4SPG *_spg = nullptr;
 
 	glm::mat3x3 _frac2Real = glm::mat3(1.f);
 	glm::mat3x3 _recip2Frac = glm::mat3(1.f);

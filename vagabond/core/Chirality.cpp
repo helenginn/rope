@@ -31,7 +31,7 @@ Chirality::Chirality(AtomGroup *owner, Atom *cen, Atom *a, Atom *b, Atom *c,
 	_cen = cen;
 	_sign = sign;
 
-	if (_cen == NULL || _a == NULL || _b == NULL || _c == NULL)
+	if (_cen == nullptr || _a == nullptr || _b == nullptr || _c == nullptr)
 	{
 		throw(std::runtime_error("Initialising chirality with null values"));
 	}

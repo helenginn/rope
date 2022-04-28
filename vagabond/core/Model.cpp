@@ -21,6 +21,9 @@
 #include "Chain.h"
 #include "File.h"
 #include "AtomContent.h"
+#include "Environment.h"
+#include "EntityManager.h"
+#include "SequenceComparison.h"
 #include "../utils/FileReader.h"
 
 Model::Model()
@@ -49,9 +52,36 @@ const std::string Model::entityForChain(std::string id) const
 	return "";
 }
 
+void Model::swapChainToEntity(std::string id, std::string entity)
+{
+
+	std::cout << "Switching entity for molecule." << std::endl;
+	if (_chain2Molecule.count(id))
+	{
+		Molecule *mol = _chain2Molecule[id];
+		if (mol != nullptr)
+		{
+			std::cout << "Found old molecule of entity " << 
+			mol->entity_id() << std::endl;
+			std::cout << "Purging old molecule from environment" << std::endl;
+			_chain2Entity.erase(id);
+		}
+	}
+
+	std::cout << "Assigning new entity, " << entity << std::endl;
+	_chain2Entity[id] = entity;
+}
+
 void Model::setEntityForChain(std::string id, std::string entity)
 {
-	_chain2Entity[id] = entity;
+	if (_chain2Entity.count(id) && _chain2Entity[id] != entity)
+	{
+		swapChainToEntity(id, entity);
+	}
+	else
+	{
+		_chain2Entity[id] = entity;
+	}
 }
 
 bool Model::hasEntity(std::string entity)
@@ -103,6 +133,7 @@ void Model::removeReferences()
 void Model::createMolecules()
 {
 	std::map<std::string, std::string>::iterator it;
+	int extra = 0;
 	
 	for (it = _chain2Entity.begin(); it != _chain2Entity.end(); it++)
 	{
@@ -123,10 +154,51 @@ void Model::createMolecules()
 		if (ch)
 		{
 			moleculeFromChain(ch);
+			extra++;
 		}
 	}
 	
 	removeReferences();
+}
+
+void Model::autoAssignEntities()
+{
+	EntityManager *eManager = Environment::entityManager();
+	load();
+
+	for (size_t i = 0; i < _currentAtoms->chainCount(); i++)
+	{
+		float best_match = 0;
+		Entity *best_entity = nullptr;
+		Chain *ch = _currentAtoms->chain(i);
+		Sequence *compare = ch->fullSequence();
+
+		for (size_t i = 0; i < eManager->objectCount(); i++)
+		{
+			Entity &ent = eManager->object(i);
+			Sequence *master = ent.sequence();
+
+			SequenceComparison *sc = new SequenceComparison(master, compare);
+			float match = sc->match();
+			
+			if (match > best_match)
+			{
+				best_match = match;
+				best_entity = &ent;
+			}
+			
+			delete sc;
+		}
+
+		if (best_match > 0.8)
+		{
+			std::cout << "Chain " << ch->id() << " in model " << name() <<
+			 " becomes " << best_entity->name() << std::endl;
+			setEntityForChain(ch->id(), best_entity->name());
+		}
+	}
+	
+	housekeeping();
 }
 
 void Model::housekeeping()
@@ -137,8 +209,8 @@ void Model::housekeeping()
 		_chain2Molecule[ch] = &mc;
 		mc.setModel(this);
 	}
-
-	if (_chain2Molecule.size() < _chain2Entity.size())
+	
+	if (_chain2Molecule.size() >= _chain2Entity.size())
 	{
 		return;
 	}
@@ -152,11 +224,11 @@ void Model::insertTorsions()
 	{
 		mc.insertTorsionAngles(_currentAtoms);
 	}
-
 }
 
 void Model::extractTorsions()
 {
+	std::cout << "Extracting torsions from model " << name() << std::endl;
 	for (Molecule &mc : _molecules)
 	{
 		mc.extractTorsionAngles(_currentAtoms);
@@ -194,4 +266,60 @@ void Model::finishedRefinement()
 	}
 
 	removeReferences();
+}
+
+Model Model::autoModel(std::string filename)
+{
+	Model m;
+	m.setFilename(filename);
+
+	return m;
+}
+
+void Model::throwOutMolecule(Molecule *mol)
+{
+	std::list<Molecule>::iterator it = _molecules.begin();
+
+	for (Molecule &m : _molecules)
+	{
+		if (mol == &m)
+		{
+			_molecules.erase(it);
+			return;
+		}
+		
+		it++;
+	}
+}
+
+void Model::throwOutEntity(Entity *ent)
+{
+	std::list<Molecule>::iterator it = _molecules.begin();
+
+	std::map<std::string, std::string>::iterator jt;
+	for (jt = _chain2Entity.begin(); jt != _chain2Entity.end(); jt++)
+	{
+		if (jt->second == ent->name())
+		{
+			std::cout << "Removing " << jt->first << " as instance of " << 
+			"entity " << ent->name() << " from " << name() << std::endl;
+			_chain2Entity.erase(jt);
+		}
+	}
+
+	for (Molecule &m : _molecules)
+	{
+		if (m.entity_id() == ent->name())
+		{
+			std::string chain = m.chain_id();
+			_chain2Molecule.erase(chain);
+			std::cout << "Found created molecule " << chain << " to remove "
+			"from " << name() << std::endl;
+
+			_molecules.erase(it);
+			return;
+		}
+		
+		it++;
+	}
 }

@@ -43,6 +43,7 @@ public:
 	                                std::string *f = NULL,
 	                                std::string *g = NULL);
 	virtual void render(SnowGL *sender);
+	void deleteOnMainThread();
 	
 	GLuint renderType()
 	{

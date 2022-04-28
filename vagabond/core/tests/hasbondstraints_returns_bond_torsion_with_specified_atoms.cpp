@@ -18,6 +18,9 @@ int main()
 	BondTorsion *t = atoms->findBondTorsion(n, ca, cb, cg);
 	BondTorsion *rt = atoms->findBondTorsion(cg, cb, ca, n);
 	
+	std::cout << t << std::endl;
+	std::cout << rt << std::endl;
+	
 	return !(t != nullptr && rt != nullptr && rt == t);
 }
 

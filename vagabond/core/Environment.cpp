@@ -35,6 +35,11 @@ Environment::Environment()
 	_entityManager = new EntityManager();
 }
 
+size_t Environment::entityCount()
+{
+	return Environment::entityManager()->objectCount();
+}
+
 void Environment::save()
 {
 	json data;
@@ -53,9 +58,11 @@ void Environment::load(std::string file)
 {
 	if (!file_exists(file))
 	{
+		std::cout << "Could not find json environment." << std::endl;
 		return;
 	}
 
+	std::cout << "Loading json environment " << file << "..." << std::endl;
 	json data;
 	
 	std::ifstream f;
@@ -78,4 +85,45 @@ void Environment::load(std::string file)
 	_entityManager->housekeeping();
 	
 	_entityManager->checkModelsForReferences(_modelManager);
+	std::cout << "done." << std::endl;
+}
+
+void Environment::autoModel()
+{
+	ModelManager *mm = Environment::modelManager();
+	EntityManager *em = Environment::entityManager();
+	mm->autoModel();
+	em->checkModelsForReferences(mm);
+}
+
+void Environment::purgeMolecule(Molecule *mol)
+{
+	entityManager()->purgeMolecule(mol);
+	modelManager()->purgeMolecule(mol);
+}
+
+void Environment::purgeEntity(std::string id)
+{
+	Entity *ent = entityManager()->entity(id);
+	if (ent)
+	{
+		modelManager()->purgeEntity(ent);
+		entityManager()->purgeEntity(ent);
+	}
+}
+
+void Environment::purgeModel(std::string id)
+{
+	Model *model = modelManager()->model(id);
+	if (model)
+	{
+		entityManager()->purgeModel(model);
+		modelManager()->purgeModel(model);
+	}
+
+}
+
+Environment::~Environment()
+{
+
 }

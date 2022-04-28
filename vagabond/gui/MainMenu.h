@@ -29,7 +29,7 @@ public:
 	virtual ~MainMenu();
 
 	virtual void setup();
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 
 };

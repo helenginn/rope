@@ -21,6 +21,8 @@
 
 #include <string>
 
+class Entity;
+class Molecule;
 class FileManager;
 class ModelManager;
 class EntityManager;
@@ -29,11 +31,14 @@ class Environment
 {
 public:
 	Environment();
+	virtual ~Environment();
 
 	static ModelManager *modelManager()
 	{
 		return _environment._modelManager;
 	}
+
+	static size_t entityCount();
 
 	static EntityManager *entityManager()
 	{
@@ -54,6 +59,12 @@ public:
 	{
 		return _environment;
 	}
+	
+	static void autoModel();
+	
+	void purgeMolecule(Molecule *mol);
+	static void purgeModel(std::string name);
+	static void purgeEntity(std::string name);
 	
 	void save();
 	void load(std::string file = "rope.json");

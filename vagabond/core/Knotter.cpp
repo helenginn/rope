@@ -33,7 +33,7 @@ Knotter::Knotter(AtomGroup *group, GeometryTable *table)
 	
 	if (_group == nullptr || _table == nullptr)
 	{
-		throw std::runtime_error("Knotter initialised with NULL values");
+		throw std::runtime_error("Knotter initialised with nullptr values");
 	}
 }
 

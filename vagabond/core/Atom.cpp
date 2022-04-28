@@ -51,6 +51,7 @@ void Atom::setElementSymbol(std::string ele)
 		throw std::runtime_error("Attempting to use non-alphabetical element "
 		                         + ele);
 	}
+
 	_ele = ele;
 	to_upper(_ele);
 	trim(_ele);
@@ -384,6 +385,6 @@ void Atom::setTransformation(glm::mat4x4 transform)
 const std::string Atom::desc() const
 {
 	std::string str;
-	str += code() + ":" + atomName();
+	str += code() + i_to_str(residueNumber()) + ":" + atomName();
 	return str;
 }

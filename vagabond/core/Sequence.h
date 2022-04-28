@@ -33,6 +33,7 @@ class Sequence : public IndexedSequence
 public:
 	Sequence(Atom *anchor);
 	Sequence();
+	~Sequence();
 	Sequence(const Sequence &seq);
 	Sequence(std::string str);
 	
@@ -42,6 +43,20 @@ public:
 	size_t size()
 	{
 		return _residues.size();
+	}
+	
+	Residue *master(int idx)
+	{
+		int i = 0;
+		for (Residue &r : _master)
+		{
+			if (i == idx)
+			{
+				return &r;
+			}
+			i++;
+		}
+		return nullptr;
 	}
 	
 	Residue *residue(int idx)
@@ -68,6 +83,7 @@ public:
 		return _id2Residue.at(id);
 	}
 	
+	Residue *const local_residue(Residue *const master);
 	Residue *master_residue(Residue *local);
 	
 	int firstNum()
@@ -95,6 +111,11 @@ public:
 	std::string str();
 	void housekeeping();
 	
+	void clearMaps()
+	{
+		_map2Local.clear();
+		_map2Master.clear();
+	}
 	void mapFromMaster(Entity *ent);
 	void remapFromMaster(Entity *entity);
 
@@ -125,6 +146,12 @@ public:
 		return residue(entry)->one_letter_code();
 	}
 	
+	const size_t torsionCount(bool onlyMain) const;
+	
+	void addTorsionNames(std::vector<std::string> &names, bool onlyMain);
+	void torsionsFromMapped(Sequence *seq, std::vector<float> &vals,
+	                        bool onlyMain, float dummy = -1);
+	
 private:
 	void findSequence();
 	
@@ -133,6 +160,7 @@ private:
 
 	std::map<ResidueId, Residue *> _id2Residue;
 	std::map<Residue *, Residue *> _map2Master;
+	std::map<Residue *, Residue *> _map2Local;
 	Atom *_anchor = nullptr;
 	Entity *_entity = nullptr;
 };

@@ -86,8 +86,20 @@ void PdbFile::processModel(gemmi::Model &m)
 void PdbFile::parseFileContents()
 {
 	std::string path = toFilename(_filename);
+	std::cout << "Reading path: " << path << std::endl;
 
-	gemmi::Structure st = gemmi::read_structure_file(path);
+	gemmi::Structure st;
+	try
+	{
+		st = gemmi::read_structure_file(path);
+	}
+	catch (const std::runtime_error &err)
+	{
+		std::cout << "Reading " << path << " failed: " << std::endl;
+		std::cout << err.what() << std::endl;
+		return;
+	}
+
 	setup_entities(st);
 	
 	for (size_t i = 0; i < st.entities.size(); i++)
@@ -103,7 +115,8 @@ void PdbFile::parseFileContents()
 		processModel(st.models[i]);
 	}
 	
-	std::cout << "This file has " << atomCount() << " atoms.\n";
+	std::cout << "This file " << _filename << " has " << atomCount() 
+	<< " atoms.\n";
 	std::string spgname = st.spacegroup_hm;
 	_values["_symmetry.space_group_name_H-M"] = spgname;
 
@@ -135,7 +148,17 @@ void PdbFile::parse()
 File::Type PdbFile::cursoryLook()
 {
 	std::string path = toFilename(_filename);
-	gemmi::Structure st = gemmi::read_structure_file(path);
+	gemmi::Structure st;
+	try
+	{
+		st = gemmi::read_structure_file(path);
+	}
+	catch (const std::runtime_error &err)
+	{
+		std::cout << "Reading " << path << " failed: " << std::endl;
+		std::cout << err.what() << std::endl;
+		return Nothing;
+	}
 	Type hasAtoms = (st.models.size() > 0 ? MacroAtoms : Nothing);
 	
 	std::string spgname = st.spacegroup_hm;

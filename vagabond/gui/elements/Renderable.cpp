@@ -2,6 +2,7 @@
 
 #include "Renderable.h"
 #include "SnowGL.h"
+#include "Window.h"
 #include "../../../commit.h"
 #include "Library.h"
 #include <vagabond/utils/FileReader.h>
@@ -63,11 +64,16 @@ Renderable::Renderable()
 	_draggable = false;
 }
 
+void Renderable::deleteOnMainThread()
+{
+	Window::setDelete(this);
+
+}
+
 Renderable::~Renderable()
 {
 	deletePrograms();
 	deleteVBOBuffers();
-	
 	deleteTextures();
 	
 	_vString = "";
@@ -282,7 +288,6 @@ void Renderable::deleteVBOBuffers()
 		glDeleteVertexArrays(1, &vao);
 		_vaoMap.erase(_usingProgram);
 	}
-	
 }
 
 void Renderable::rebindVBOBuffers()

@@ -30,6 +30,26 @@ HasBondstraints::~HasBondstraints()
 
 }
 
+HasBondstraints::HasBondstraints()
+{
+	_owns = false;
+}
+
+HasBondstraints::HasBondstraints(const HasBondstraints &other)
+{
+	_owns = false;
+	_bondstraints = other._bondstraints;
+	_bondLengths = other._bondLengths;
+	_bondAngles = other._bondAngles;
+	_centralBondAngles = other._centralBondAngles;
+	_terminalBondAngles = other._terminalBondAngles;
+	_torsions = other._torsions;
+	_terminalTorsions = other._terminalTorsions;
+	_centralTorsions = other._centralTorsions;
+	_chirals = other._chirals;
+
+}
+
 bool HasBondstraints::hasBondAngle(BondAngle *angle)
 {
 	for (size_t i = 0; i < _bondAngles.size(); i++)
@@ -159,17 +179,17 @@ void HasBondstraints::addBondstraint(Chirality *chir)
 	}
 }
 
-void HasBondstraints::deleteBondstraints(AtomGroup *owner)
+void HasBondstraints::deleteBondstraints()
 {
-	for (size_t i = 0; i < _bondstraints.size(); i++)
+	if (_owns)
 	{
-		if (_bondstraints[i]->owner() == owner)
+		for (size_t i = 0; i < _bondstraints.size(); i++)
 		{
 			delete _bondstraints[i];
 		}
+
+		_bondstraints.clear();
 	}
-	
-	_bondstraints.clear();
 }
 
 BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right,
@@ -240,19 +260,12 @@ Chirality *HasBondstraints::findChirality(Atom *cen, Atom *a, Atom *b, Atom *c)
 	return nullptr;
 }
 
-void HasBondstraints::takeBondstraintOwnership(AtomGroup *which)
+void HasBondstraints::giveBondstraintOwnership(AtomGroup *which)
 {
-	which->_bondAngles = _bondAngles;
-	which->_centralBondAngles = _centralBondAngles;
-	which->_terminalBondAngles = _terminalBondAngles;
-	which->_bondLengths = _bondLengths;
-	which->_torsions = _torsions;
-	which->_centralTorsions = _centralTorsions;
-	which->_terminalTorsions = _terminalTorsions;
-	which->_bondstraints = _bondstraints;
-
-	for (size_t i = 0; i < _bondstraints.size(); i++)
+	if (_owns == true && which->_owns == false)
 	{
-		_bondstraints[i]->setOwner(which);
+		_owns = false;
+		which->_owns = true;
+
 	}
 }

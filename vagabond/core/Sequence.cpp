@@ -30,6 +30,11 @@ Sequence::Sequence()
 
 }
 
+Sequence::~Sequence()
+{
+
+}
+
 Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)
 {
 	_residues = seq._residues;
@@ -159,6 +164,7 @@ void Sequence::mapFromMaster(Entity *entity)
 	SequenceComparison *sc = new SequenceComparison(master, this);
 
 	_map2Master.clear();
+	_map2Local.clear();
 	
 	for (size_t i = 0; i < sc->entryCount(); i++)
 	{
@@ -168,6 +174,7 @@ void Sequence::mapFromMaster(Entity *entity)
 			Residue *mine = sc->residue(2, i);
 
 			_map2Master[mine] = theirs;
+			_map2Local[theirs] = mine;
 		}
 	}
 	
@@ -191,24 +198,38 @@ void Sequence::mapFromMaster(Entity *entity)
 	delete sc;
 }
 
+Residue *const Sequence::local_residue(Residue *const master)
+{
+	if (_map2Local.count(master) == 0)
+	{
+		return nullptr;
+	}
+
+	return _map2Local.at(master);
+}
+
 Residue *Sequence::master_residue(Residue *local)
 {
-	ResidueId id = local->id();
-
 	if (_map2Master.count(local) == 0)
 	{
 		return nullptr;
 	}
 
 	return _map2Master.at(local);
-
 }
 
 void Sequence::remapFromMaster(Entity *entity)
 {
+	if (_map2Master.size() > 0 && _map2Local.size() > 0)
+	{
+		return;
+	}
+
 	std::list<Residue>::iterator local;
 	local = _residues.begin();
 	_entity = entity;
+	_map2Master.clear();
+	_map2Local.clear();
 
 	for (Residue &mres : _master)
 	{
@@ -225,11 +246,11 @@ void Sequence::remapFromMaster(Entity *entity)
 		{
 			Residue &lres = *local;
 			_map2Master[&lres] = other;
+			_map2Local[other] = &lres;
 		}
 
 		local++;
 	}
-
 }
 
 Residue *Sequence::residueLike(const ResidueId &other)
@@ -243,4 +264,71 @@ Residue *Sequence::residueLike(const ResidueId &other)
 	}
 
 	return nullptr;
+}
+
+const size_t Sequence::torsionCount(bool onlyMain) const
+{
+	size_t sum = 0;
+	for (const Residue &r : _residues)
+	{
+		sum += r.torsionCount(onlyMain);
+	}
+
+	return sum;
+}
+
+void Sequence::addTorsionNames(std::vector<std::string> &names, bool onlyMain)
+{
+	for (Residue &residue : _residues)
+	{
+		for (const TorsionRef &torsion : residue.torsions())
+		{
+			if (onlyMain && !torsion.isMain())
+			{
+				continue;
+			}
+
+			std::string id = "t" + residue.id().as_string() + ":" + torsion.desc();
+			names.push_back(id);
+		}
+	}
+
+}
+
+void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals,
+                                  bool onlyMain, float dummy)
+{
+	for (Residue &master : _residues)
+	{
+		Residue *const local = seq->local_residue(&master);
+
+		if (dummy >= 0)
+		{
+			vals.push_back(dummy);
+		}
+		
+		for (const TorsionRef &torsion : master.torsions())
+		{
+			if (onlyMain && !torsion.isMain())
+			{
+				continue;
+			}
+			
+			if (!local)
+			{
+				vals.push_back(NAN);
+				continue;
+			}
+
+			TorsionRef match = local->copyTorsionRef(torsion.desc());
+			float f = NAN;
+			
+			if (match.valid())
+			{
+				f = match.refinedAngle();
+			}
+
+			vals.push_back(f);
+		}
+	}
 }

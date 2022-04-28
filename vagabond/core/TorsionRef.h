@@ -52,6 +52,11 @@ public:
 		return _desc;
 	}
 	
+	const bool &isMain() const
+	{
+		return _main;
+	}
+	
 	const bool valid() const
 	{
 		return (_desc.length() > 0);
@@ -78,7 +83,7 @@ public:
 private:
 	std::string _desc;
 	double _refinedAngle = 0;
-//	ResidueId _id{};
+	bool _main = false;
 	BondTorsion *_torsion = nullptr;
 
 };
@@ -87,6 +92,7 @@ inline void to_json(json &j, const TorsionRef &value)
 {
 	j["desc"] = value._desc;
 	j["angle"] = value._refinedAngle;
+	j["main"] = value._main;
 }
 
 inline void from_json(const json &j, TorsionRef &value)
@@ -95,6 +101,7 @@ inline void from_json(const json &j, TorsionRef &value)
 	{
 		value._desc = j.at("desc");
 		value._refinedAngle = j.at("angle");
+		value._main = j.at("main");
 	}
 	catch (...)
 	{

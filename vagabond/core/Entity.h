@@ -23,6 +23,7 @@
 #include <set>
 #include "Sequence.h"
 #include "Model.h"
+#include <vagabond/c4x/DegreeDataGroup.h>
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -71,6 +72,13 @@ public:
 
 	size_t checkForUnrefinedMolecules();
 	void refineUnrefinedModels();
+	void throwOutMolecule(Molecule *mol);
+	void throwOutModel(Model *mol);
+	
+	void refineNextModel();
+	virtual void modelReady();
+	
+	DegreeDataGroup makeTorsionDataGroup();
 
 	const size_t moleculeCount() const
 	{
@@ -81,9 +89,6 @@ public:
 	{
 		return _models.size();
 	}
-	
-	void refineNextModel();
-	virtual void modelReady();
 
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);

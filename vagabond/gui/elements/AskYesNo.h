@@ -11,6 +11,8 @@ class AskYesNo : public Modal, public ButtonResponder
 public:
 	AskYesNo(Scene *scene, std::string text, std::string tag, 
 	         ButtonResponder *sender);
+	
+	~AskYesNo();
 
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
 private:

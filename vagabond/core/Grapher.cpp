@@ -71,7 +71,7 @@ void Grapher::assignMainChain()
 			break;
 		}
 		
-		graph = graph->children[0];
+		graph = graph->children.back();
 	}
 }
 

@@ -39,6 +39,9 @@ BondCalculator::~BondCalculator()
 {
 	finish();
 	delete _sequenceHandler;
+	delete _pointHandler;
+	delete _mapHandler;
+	delete _sumHandler;
 	_resultPool.cleanup();
 	_recyclePool.cleanup();
 	_jobPool.cleanup();

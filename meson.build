@@ -113,6 +113,7 @@ gen_src = custom_target('commit-output',
                         build_always_stale: true)
 
 subdir('vagabond/utils')
+subdir('vagabond/c4x')
 subdir('vagabond/core')
 
 subdir('vagabond/gui/elements')

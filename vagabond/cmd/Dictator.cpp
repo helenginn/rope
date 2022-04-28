@@ -31,6 +31,9 @@ void Dictator::makeCommands()
 	_commands["load"] = "Comma- or space-separated list of files to load";
 	_commands["environment"] = ("Link to json file (usually rope.json) to"\
 	                            "restore RoPE environment");
+	_commands["automodel"] = ("Auto-model atom coordinate files according "\
+	                          "to existing entities matching at least 80% "
+	                          "sequence and default names");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -93,9 +96,14 @@ void Dictator::processRequest(std::string &first, std::string &last)
 		loadFiles(last);
 	}
 
-	if (first == "environment" || first == "")
+	if (first == "environment")
 	{
 		Environment::env().load(last);
+	}
+
+	if (first == "automodel")
+	{
+		Environment::env().autoModel();
 	}
 }
 
@@ -133,6 +141,7 @@ void Dictator::processNextArg(std::string arg)
 	"\"" << std::endl;
 	std::string first, last;
 	splitCommand(arg, &first, &last);
+	std::cout << first << " " << last << std::endl;
 	
 	if (checkForFile(first, last))
 	{
@@ -147,12 +156,6 @@ void Dictator::processNextArg(std::string arg)
 
 bool Dictator::nextJob()
 {
-	if (_args.size() == 0)
-	{
-		Environment::env().load();
-		return false;
-	}
-	
 	_currentJob++;
 
 	if ((size_t)_currentJob >= _args.size())

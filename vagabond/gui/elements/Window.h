@@ -14,6 +14,7 @@
 static bool _running = true;
 
 class Scene;
+class Renderable;
 
 struct SDL_Renderer;
 struct SDL_Window;
@@ -56,6 +57,11 @@ public:
 	{
 		_toDelete.insert(sc);
 	}
+	
+	static void setDelete(Renderable *r)
+	{
+		_deleteRenderables.insert(r);
+	}
 
 	void glSetup();
 	virtual void setup(int argc, char **argv) = 0;
@@ -76,12 +82,15 @@ protected:
 	static Scene *_current;
 	static Scene *_next;
 private:
+	void deleteQueued();
+
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
 	static SDL_GLContext _context;
 	static SDL_Rect _rect;
 
 	static std::set<Scene *> _toDelete;
+	static std::set<Renderable *> _deleteRenderables;
 	
 	static KeyResponder *_keyResponder;
 };

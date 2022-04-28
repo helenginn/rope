@@ -20,7 +20,7 @@
 #include "MainMenu.h"
 #include "../cmd/Dictator.h"
 
-Dictator *VagWindow::_dictator = NULL;
+Dictator *VagWindow::_dictator = nullptr;
 
 VagWindow::VagWindow() : Window()
 {
@@ -30,7 +30,10 @@ VagWindow::VagWindow() : Window()
 void VagWindow::setup(int argc, char **argv)
 {
 	_dictator = new Dictator();
+
 	std::vector<std::string> args;
+	args.push_back("environment=rope.json");
+
 	for (size_t i = 1; i < argc; i++)
 	{
 		args.push_back(std::string(argv[i]));

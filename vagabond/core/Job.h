@@ -54,7 +54,7 @@ typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
 
 struct CustomVector
 {
-	float *mean = NULL;
+	float *mean = nullptr;
 	int sample_num = 0;
 	int size = 0;
 	

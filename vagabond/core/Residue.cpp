@@ -42,7 +42,7 @@ const std::string Residue::desc() const
 	return name;
 }
 
-TorsionRef Residue::copyTorsionRef(std::string &desc)
+TorsionRef Residue::copyTorsionRef(const std::string &desc)
 {
 	std::set<TorsionRef>::iterator it = _refs.find(TorsionRef{desc});
 	
@@ -72,4 +72,23 @@ void Residue::supplyRefinedAngle(std::string desc, double angle)
 
 	copy.setRefinedAngle(angle);
 	replaceTorsionRef(copy);
+}
+
+const size_t Residue::torsionCount(bool onlyMain) const
+{
+	if (!onlyMain)
+	{
+		return _refs.size();
+	}
+
+	int count = 0;
+	for (const TorsionRef &t : _refs)
+	{
+		if (t.isMain())
+		{
+			count++;
+		}
+	}
+	
+	return count;
 }

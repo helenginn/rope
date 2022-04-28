@@ -14,7 +14,7 @@ class Diffraction;
 class Display : public Scene
 {
 public:
-	Display(Scene *prev = NULL);
+	Display(Scene *prev = nullptr);
 	~Display();
 
 	virtual void mouseMoveEvent(double x, double y);

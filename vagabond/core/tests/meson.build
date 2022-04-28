@@ -93,6 +93,8 @@ unit_tests = [
 'sampler_returns_hypersphere_volume_2d',
 'sampler_returns_hypersphere_volume_3d',
 'sampler_handles_single_dimension',
+'sequence_can_obtain_mapped_torsion_angles',
+'sequence_maps_local_to_master_successfully',
 'sequence_comparison_returns_entry_count',
 'sequence_returns_residue_count_from_string',
 'simplebasis_returns_angle_for_requested_torsion',
@@ -191,14 +193,14 @@ nocompact = '-Wl,-no_compact_unwind'
 
 foreach entry : unit_tests
   t = executable(entry, entry + '.cpp', link_with : [core],
- cpp_args : ['-std=c++11'], 
+ cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
  include_directories: '../../../')
   test(entry, t, suite: 'unit')
 endforeach
 
 foreach entry : integration_tests
   t = executable(entry, entry + '.cpp', link_with : [core],
-	  cpp_args : ['-std=c++11'], 
+	  cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
 	  include_directories: '../../../')
   test(entry, t, suite: 'integration')
 endforeach

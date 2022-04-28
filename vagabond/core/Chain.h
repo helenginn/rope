@@ -38,10 +38,12 @@ public:
 
 	virtual void add(Atom *a);
 
-	Sequence * fullSequence();
+	Sequence *fullSequence();
+	void assignMainChain();
 private:
 	std::string _id;
 
+	Sequence *_fullSequence = nullptr;
 };
 
 #endif

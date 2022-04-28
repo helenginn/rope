@@ -31,6 +31,8 @@ using namespace gemmi::cif;
 File::File(std::string filename)
 {
 	changeFilename(filename);
+	_compAtoms->setOwns(true);
+	_macroAtoms->setOwns(true);
 }
 
 File::~File()

@@ -393,8 +393,6 @@ inline int max_sequence_gap(Alignment &ala, Alignment &alb, int prev_gap, int wi
 	their_gap -= other_start + 1;
 	my_gap -= prev_gap + 1;
 	
-	std::cout << my_gap << " vs " << their_gap << std::endl;
-	
 	return std::max(my_gap, their_gap);
 }
 
@@ -458,8 +456,6 @@ inline void print_gap_between_alignments(Alignment &ala, Alignment &alb,
 
 	int r_last, r_wind;
 	corresponding_indices(ala, alb, last, wind, &r_last, &r_wind);
-	
-	std::cout << r_last << " to " << r_wind << std::endl;
 
 	int l_shortfall = gap_size - wind + last + 1;
 	int r_shortfall = gap_size - r_wind + r_last + 1;

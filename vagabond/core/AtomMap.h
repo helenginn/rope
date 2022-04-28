@@ -28,6 +28,7 @@ class AtomMap : public FFTCubicGrid<fftwf_complex>
 public:
 	AtomMap(AtomSegment &other);
 	AtomMap(AtomMap &other);
+	~AtomMap();
 
 	float density(int i);
 	virtual float sum();

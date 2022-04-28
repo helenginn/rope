@@ -117,6 +117,15 @@ void AddModel::setup()
 			addObject(t);
 		}
 	}
+	else
+	{
+		{
+			TextButton *t = new TextButton("Delete", this);
+			t->setRight(0.9, 0.1);
+			t->setReturnTag("delete");
+			addObject(t);
+		}
+	}
 
 }
 
@@ -185,6 +194,11 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 			BadChoice *bad = new BadChoice(this, err.what());
 			setModal(bad);
 		}
+	}
+	else if (tag == "delete" && _existing)
+	{
+		Environment::purgeModel(_m.name());
+		back();
 	}
 	else if (tag == "back" && _existing)
 	{

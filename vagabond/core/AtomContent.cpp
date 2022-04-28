@@ -22,11 +22,9 @@
 #include <set>
 #include <iostream>
 
-AtomContent::AtomContent(AtomGroup &other) : AtomGroup()
+AtomContent::AtomContent(AtomGroup &other) : AtomGroup(other)
 {
-	add(&other);
-	
-	other.takeBondstraintOwnership(this);
+	other.giveBondstraintOwnership(this);
 	groupByChain();
 }
 
@@ -41,6 +39,13 @@ AtomContent::~AtomContent()
 	{
 		delete atom(i);
 	}
+
+	for (size_t i = 0; i < chainCount(); i++)
+	{
+		delete chain(i);
+	}
+	
+	_chains.clear();
 }
 
 void AtomContent::groupByChain()
@@ -63,11 +68,10 @@ void AtomContent::groupByChain()
 			*chain += atom(j);
 		}
 		
+		chain->assignMainChain();
 		_chains.push_back(chain);
 		_id2Chain[*it] = chain;
 	}
-	
-	std::cout << chainCount() << " chains" << std::endl;
 	
 	for (size_t i = 0; i < chainCount(); i++)
 	{

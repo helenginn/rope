@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Chain.h"
+#include "Grapher.h"
 #include "Sequence.h"
 #include "../utils/FileReader.h"
 #include <map>
@@ -26,26 +27,36 @@ Chain::Chain(std::string id) : AtomGroup()
 	_id = id;
 }
 
+Chain::~Chain()
+{
+	delete _fullSequence;
+}
+
 void Chain::add(Atom *a)
 {
 	if (a->chain() == _id)
 	{
 		AtomGroup::add(a);
-	}
 
-	for (size_t j = 0; j < a->bondAngleCount(); j++)
-	{
-		addBondstraint(a->bondAngle(j));
-	}
+		for (size_t j = 0; j < a->bondAngleCount(); j++)
+		{
+			addBondstraint(a->bondAngle(j));
+		}
 
-	for (size_t j = 0; j < a->bondTorsionCount(); j++)
-	{
-		addBondstraint(a->bondTorsion(j));
+		for (size_t j = 0; j < a->bondTorsionCount(); j++)
+		{
+			addBondstraint(a->bondTorsion(j));
+		}
 	}
 }
 
 Sequence *Chain::fullSequence()
 {
+	if (_fullSequence != nullptr)
+	{
+		return _fullSequence;
+	}
+
 	std::map<int, Sequence *> sequences;
 	std::vector<AtomGroup *> grps = connectedGroups();
 
@@ -57,7 +68,8 @@ Sequence *Chain::fullSequence()
 	}
 	
 	std::map<int, Sequence *>::iterator it, next;
-	Sequence *full = new Sequence();
+	_fullSequence = new Sequence();
+	Sequence *full = _fullSequence;
 	
 	for (it = sequences.begin(); it != sequences.end(); it++)
 	{
@@ -90,11 +102,40 @@ Sequence *Chain::fullSequence()
 			}
 		}
 	}
+	
+	for (it = sequences.begin(); it != sequences.end(); it++)
+	{
+		delete it->second;
+		it->second = nullptr;
+	}
 
 	return full;
 }
 
-Chain::~Chain()
+void Chain::assignMainChain()
 {
+	std::vector<AtomGroup *> grps = connectedGroups();
 
+	for (size_t i = 0; i < grps.size(); i++)
+	{
+		if (grps[i]->size() <= 1)
+		{
+			continue;
+		}
+
+		Atom *start = grps[i]->chosenAnchor();
+		Grapher gr;
+		gr.generateGraphs(start);
+		gr.assignMainChain();
+	}
+	
+	int count = 0;
+	for (size_t i = 0; i < size(); i++)
+	{
+		if (atom(i)->isMainChain())
+		{
+			count++;
+		}
+	}
 }
+

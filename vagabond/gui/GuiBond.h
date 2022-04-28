@@ -28,6 +28,7 @@ class GuiBond : public Renderable
 {
 public:
 	GuiBond();
+	~GuiBond();
 
 	void watchBonds(AtomGroup *a);
 	

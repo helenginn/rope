@@ -35,7 +35,7 @@ class Molecule
 public:
 	Molecule(std::string model_id, std::string entity_id, Sequence *derivative);
 	Molecule();
-	
+
 	void setChain(std::string chain_id)
 	{
 		_chain_id = chain_id;
@@ -46,9 +46,29 @@ public:
 		return _chain_id;
 	}
 	
+	const std::string model_chain_id() const
+	{
+		return _model_id + "_" + _chain_id;
+	}
+	
+	const std::string &model_id() const
+	{
+		return _model_id;
+	}
+	
+	const std::string &entity_id() const
+	{
+		return _entity_id;
+	}
+	
 	const bool &isRefined() const
 	{
 		return _refined;
+	}
+	
+	Sequence *const sequence()
+	{
+		return &_sequence;
 	}
 
 	void getTorsionRefs(Chain *ch);

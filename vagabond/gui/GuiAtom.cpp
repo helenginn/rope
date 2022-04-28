@@ -23,18 +23,15 @@ GuiAtom::GuiAtom() : Renderable()
 	
 	_bonds = new GuiBond();
 	_finish = false;
-	
-//#ifdef __EMSCRIPTEN__
-//	_multi = false;
-//#endif
 }
 
 GuiAtom::~GuiAtom()
 {
-	if (_watch != nullptr)
-	{
-		_finish = true;
-	}
+	stop();
+	delete _bonds;
+	_bonds = nullptr;
+	delete _template;
+	_template = nullptr;
 }
 
 void GuiAtom::stop()

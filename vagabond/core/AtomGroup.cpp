@@ -31,16 +31,23 @@
 #include <iostream>
 #include <thread>
 
-AtomGroup::AtomGroup()
+AtomGroup::AtomGroup() : HasBondstraints()
 {
 
 }
 
 void AtomGroup::alignAnchor()
 {
-	AlignmentTool tool(this);
-	tool.run();
-	recalculate();
+	try
+	{
+		AlignmentTool tool(this);
+		tool.run();
+		recalculate();
+	}
+	catch (const std::runtime_error &err)
+	{
+		std::cout << "Giving up: " << err.what() << std::endl;
+	}
 }
 
 void AtomGroup::cancelRefinement()
@@ -67,10 +74,23 @@ void AtomGroup::cleanupRefinement()
 	}
 }
 
+void AtomGroup::deleteConnectedGroups()
+{
+	for (size_t i = 0; i < _connectedGroups.size(); i++)
+	{
+		delete _connectedGroups[i];
+	}
+
+	_connectedGroups.clear();
+}
+
 AtomGroup::~AtomGroup()
 {
 	cancelRefinement();
-	deleteBondstraints(this);
+	deleteBondstraints();
+	deleteConnectedGroups();
+	
+	AtomVector().swap(_atoms);
 }
 
 bool AtomGroup::hasAtom(Atom *a)
@@ -127,6 +147,11 @@ Atom *AtomGroup::possibleAnchor(int i)
 	{
 		findPossibleAnchors();
 	}
+	
+	if (_anchors.size() == 0)
+	{
+		return nullptr;
+	}
 
 	return _anchors[i];
 }
@@ -145,13 +170,21 @@ void AtomGroup::findPossibleAnchors()
 {
 	AtomVector trials = _atoms;
 	AtomVector tooManyConnections;
+	AtomVector tooFewConnections;
 	_anchors.clear();
+	
+	if (_atoms.size() == 1)
+	{
+		_anchors.push_back(_atoms[0]);
+		return;
+	}
 
 	for (size_t i = 0; i < trials.size(); i++)
 	{
 		/* we don't want to start on a hydrogen */
 		if (trials[i]->elementSymbol() == "H")
 		{
+			tooFewConnections.push_back(trials[i]);
 			trials[i] = nullptr;
 			continue;
 		}
@@ -185,6 +218,11 @@ void AtomGroup::findPossibleAnchors()
 	if (_anchors.size() == 0)
 	{
 		_anchors = tooManyConnections;
+	}
+
+	if (_anchors.size() == 0)
+	{
+		_anchors = tooFewConnections;
 	}
 }
 
@@ -230,36 +268,54 @@ Atom *AtomGroup::chosenAnchor()
 	{
 		return nullptr;
 	}
+	
+	int min_res = INT_MAX;
+	
+	for (size_t i = 0; i < possibleAnchorCount(); i++)
+	{
+		int res = possibleAnchor(i)->residueNumber();
+		if (res < min_res)
+		{
+			_chosenAnchor = possibleAnchor(i);
+			min_res = res;
+		}
+	}
 
-	_chosenAnchor = possibleAnchor(0);
 	return _chosenAnchor;
 }
 
 void AtomGroup::recalculate()
 {
-	connectedGroups();
-
-	for (size_t i = 0; i < _connectedGroups.size(); i++)
+	try
 	{
-		Atom *anchor = _connectedGroups[i]->chosenAnchor();
+		connectedGroups();
 
-		BondCalculator calculator;
-		calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
-		calculator.setMaxSimultaneousThreads(1);
-		calculator.addAnchorExtension(anchor);
-		calculator.setup();
+		for (size_t i = 0; i < _connectedGroups.size(); i++)
+		{
+			Atom *anchor = _connectedGroups[i]->chosenAnchor();
 
-		calculator.start();
+			BondCalculator calculator;
+			calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
+			calculator.setMaxSimultaneousThreads(1);
+			calculator.addAnchorExtension(anchor);
+			calculator.setup();
 
-		Job job{};
-		job.requests = JobExtractPositions;
-		calculator.submitJob(job);
+			calculator.start();
 
-		Result *result = calculator.acquireResult();
-		calculator.finish();
-		result->transplantPositions();
+			Job job{};
+			job.requests = JobExtractPositions;
+			calculator.submitJob(job);
 
-		delete result;
+			Result *result = calculator.acquireResult();
+			calculator.finish();
+			result->transplantPositions();
+
+			delete result;
+		}
+	}
+	catch (const std::runtime_error &err)
+	{
+		std::cout << "Giving up: " << err.what() << std::endl;
 	}
 }
 
@@ -309,6 +365,12 @@ std::vector<AtomGroup *> &AtomGroup::connectedGroups()
 	{
 		Grapher grapher;
 		Atom *anchor = total.possibleAnchor(0);
+		
+		if (anchor == nullptr)
+		{
+			continue;
+		}
+
 		grapher.generateGraphs(anchor);
 		
 		AtomGroup *next = new AtomGroup();

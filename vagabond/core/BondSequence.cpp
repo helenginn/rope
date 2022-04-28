@@ -561,15 +561,15 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	std::queue<AtomBlockTodo> todo;
 	AtomBlockTodo minBlock = {&_blocks[min], min, min};
 	
+	if (min >= _blocks.size())
+	{
+		return;
+	}
+	
 	if (minBlock.block->atom == nullptr)
 	{
 		min++;
 		minBlock = {&_blocks[min], min, min};
-	}
-	
-	if (min >= _blocks.size())
-	{
-		return;
 	}
 
 	todo.push(minBlock);

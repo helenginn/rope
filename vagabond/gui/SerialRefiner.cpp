@@ -19,6 +19,7 @@
 #include "SerialRefiner.h"
 #include "Display.h"
 #include <vagabond/core/Entity.h>
+#include <sstream>
 
 SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev)
 {
@@ -35,7 +36,7 @@ SerialRefiner::~SerialRefiner()
 
 void SerialRefiner::setup()
 {
-	addTitle("Refining models...");
+	addTitle("Refining " + i_to_str(_extra) + " models...");
 
 	_entity->refineUnrefinedModels();
 }
@@ -64,7 +65,13 @@ void SerialRefiner::setActiveAtoms(Model *model)
 	if (atoms)
 	{
 		_display = new Display(this);
-		_display->setFutureTitle("Refining " + model->name());
+		_count++;
+
+		std::ostringstream ss;
+		ss << "Refining " << model->name() << " (" << _count << "/" <<
+		_extra << ")" << std::endl;
+
+		_display->setFutureTitle(ss.str());
 		_display->setControls(false);
 		_display->loadAtoms(atoms);
 		_display->queueToShow();

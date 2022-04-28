@@ -16,28 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityMenu__
-#define __vagabond__EntityMenu__
+#ifndef __vagabond__DataGroup__
+#define __vagabond__DataGroup__
 
-#include <vagabond/gui/elements/ListView.h>
-#include <vagabond/core/EntityManager.h>
+#include <vector>
+#include <string>
 
-class EntityMenu : public ListView, public ManagerResponder<Entity>
+template <class Unit>
+class DataGroup
 {
 public:
-	EntityMenu(Scene *prev);
+	DataGroup(int length);
+	virtual ~DataGroup() {};
 
-	virtual ~EntityMenu();
-	virtual void setup();
+	typedef std::vector<Unit> Array;
 
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
+	void makeAverage();
+	void findDifferences();
+	void write(std::string filename);
+	virtual void addArray(std::string name, Array next);
+	
+	void addHeader(std::string header);
+	void addUnitNames(std::vector<std::string> header);
+protected:
+	std::vector<Array> _vectors;
+	std::vector<Array> _diffs;
+	std::vector<std::string> _unitNames;
+	std::vector<std::string> _vectorNames;
 
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual void objectsChanged();
-private:
-	EntityManager *_manager;
-
+	int _length;
+	Array _average;
 };
+
+#include "DataGroup.cpp"
 
 #endif

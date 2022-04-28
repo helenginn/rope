@@ -110,7 +110,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 
 	_centre = _guiAtoms->centroid();
 	_translation = -_centre;
-	_translation.z -= 30;
+	_translation.z -= 240;
 
 	updateCamera();
 

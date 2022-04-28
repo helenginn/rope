@@ -33,8 +33,10 @@ void Entity::checkModel(Model &m)
 
 		for (Molecule &mol : m.molecules())
 		{
-			std::cout << m.name() << " has " << mol.chain_id() << std::endl;
-			_molecules.insert(&mol);
+			if (mol.entity_id() == name())
+			{
+				_molecules.insert(&mol);
+			}
 		}
 	}
 }
@@ -102,4 +104,80 @@ void Entity::modelReady()
 	_responder->setActiveAtoms(nullptr);
 	_currentModel->setResponder(nullptr);
 	refineNextModel();
+}
+
+DegreeDataGroup Entity::makeTorsionDataGroup()
+{
+	size_t num = _sequence.torsionCount(true);
+	std::cout << "Torsion count: " << num << std::endl;
+	std::vector<std::string> names;
+	_sequence.addTorsionNames(names, true);
+
+	DegreeDataGroup group(num);
+	group.addUnitNames(names);
+	
+	for (Molecule *mol : _molecules)
+	{
+		Sequence *molseq = mol->sequence();
+		std::cout << "Molseq = " << molseq << std::endl;
+	
+		molseq->clearMaps();
+		molseq->remapFromMaster(this);
+		std::string name = mol->model_chain_id();
+		DataGroup<float>::Array vals;
+
+		_sequence.torsionsFromMapped(molseq, vals, true);
+		group.addArray(name, vals);
+	}
+	
+	std::cout << "done" << std::endl;
+	return group;
+}
+
+void Entity::throwOutModel(Model *model)
+{
+	size_t before = moleculeCount();
+	std::set<Molecule *>::iterator it = _molecules.begin();
+
+	while (it != _molecules.end())
+	{
+		Molecule *m = *it;
+
+		if (m->model_id() == model->name())
+		{
+			_molecules.erase(it);
+			it = _molecules.begin();
+			continue;
+		}
+		it++;
+	}
+
+	size_t diff = before - moleculeCount();
+	std::cout << "Removed " << diff << " molecules of model " << 
+	model->name() << "." << std::endl;
+
+	std::set<Model *>::iterator jt = _models.begin();
+	while (jt != _models.end())
+	{
+		Model *m = *jt;
+		if (m == model)
+		{
+			_models.erase(jt);
+			break;
+		}
+		jt++;
+	}
+
+	_refineSet.clear();
+	
+	if (_currentModel == model)
+	{
+		_currentModel = nullptr;
+	}
+}
+
+void Entity::throwOutMolecule(Molecule *mol)
+{
+	_molecules.erase(mol);
+
 }

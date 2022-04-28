@@ -33,6 +33,8 @@ class HasBondstraints
 {
 public:
 	virtual ~HasBondstraints();
+	HasBondstraints(const HasBondstraints &other);
+	HasBondstraints();
 	void addBondstraint(BondLength *straint);
 	void addBondstraint(BondAngle *straint);
 	void addBondstraint(BondTorsion *straint);
@@ -157,14 +159,20 @@ public:
 	}
 
 	virtual Atom *atomIdentity() = 0;
-	void takeBondstraintOwnership(AtomGroup *which);
+	void giveBondstraintOwnership(AtomGroup *which);
 protected:
-	void deleteBondstraints(AtomGroup *owner);
+	void deleteBondstraints();
 	bool hasBondLength(BondLength *straint);
 	bool hasBondAngle(BondAngle *angle);
 	bool hasTorsion(BondTorsion *torsion);
 	bool hasChirality(Chirality *chir);
+	void setOwns(bool owns)
+	{
+		_owns = owns;
+	}
 private:
+	bool _owns = false;
+
 	std::vector<Bondstraint *> _bondstraints;
 	std::vector<BondLength *> _bondLengths;
 	std::vector<BondAngle *> _bondAngles;

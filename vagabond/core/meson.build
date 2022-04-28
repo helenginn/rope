@@ -92,8 +92,8 @@ install_headers([
 subdir : 'vagabond/core')
 
 core = static_library('vag', vagafiles, 
-	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
+	cpp_args: ['-I/usr/local/include/vaginclude', '-std=c++11', compile_args],
 	link_args: ['-L/usr/local/lib', links],
-	link_with: vagutils,
+	link_with: [vagutils, cluster4x],
     include_directories: ['../..'],
 	dependencies : deps, install: true)
