@@ -19,7 +19,7 @@
 #include "DegreeDataGroup.h"
 #include <iostream>
 
-void DegreeDataGroup::matchDegrees(const Array &master, Array &next)
+void DegreeDataGroup::matchDegrees(Array &next)
 {
 	for (size_t i = 0; i < _length; i++)
 	{
@@ -28,9 +28,16 @@ void DegreeDataGroup::matchDegrees(const Array &master, Array &next)
 			continue;
 		}
 		
-		if (master[i] != master[i] || !isfinite(master[i]))
+		size_t j = 0;
+		Array &master = _vectors[j];
+		for (j = 0; j < vectorCount(); j++)
 		{
-			continue;
+			master = _vectors[j];
+
+			if (master[i] == master[i] && isfinite(master[i]))
+			{
+				break;
+			}
 		}
 
 		while (next[i] < master[i] - 180)
@@ -50,7 +57,7 @@ void DegreeDataGroup::addArray(std::string name, Array next)
 {
 	if (_vectors.size() > 0)
 	{
-		matchDegrees(_vectors[0], next);
+		matchDegrees(next);
 	}
 
 	DataGroup<float>::addArray(name, next);

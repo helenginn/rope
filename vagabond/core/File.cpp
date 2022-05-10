@@ -20,10 +20,12 @@
 #include "../utils/FileReader.h"
 #include "commit.h"
 #include "CifFile.h"
+#include "CsvFile.h"
 #include "PdbFile.h"
 #include "Atom.h"
 #include "Diffraction.h"
 #include "AtomContent.h"
+#include "Metadata.h"
 #include "RefList.h"
 
 using namespace gemmi::cif;
@@ -33,12 +35,14 @@ File::File(std::string filename)
 	changeFilename(filename);
 	_compAtoms->setOwns(true);
 	_macroAtoms->setOwns(true);
+	_metadata = new Metadata();
 }
 
 File::~File()
 {
 	delete _compAtoms;
 	delete _macroAtoms;
+	delete _metadata;
 
 	if (!_accessedTable)
 	{
@@ -98,6 +102,11 @@ AtomContent *File::atoms()
 	{
 		return new AtomContent(*_compAtoms);
 	}
+}
+
+Metadata *File::metadata()
+{
+	return new Metadata(*_metadata);
 }
 
 bool File::hasUnitCell() const
@@ -189,6 +198,8 @@ File::Flavour File::flavour(std::string filename)
 	const std::string mtz = "mtz";
 	const std::string pdb = "pdb";
 	const std::string cif = "cif";
+	const std::string csv = "csv";
+
 	int l = filename.length();
 	if (filename.substr(l - mtz.length(), mtz.length()) == mtz)
 	{
@@ -201,6 +212,10 @@ File::Flavour File::flavour(std::string filename)
 	else if (filename.substr(l - cif.length(), cif.length()) == cif)
 	{
 		return Cif;
+	}
+	else if (filename.substr(l - csv.length(), csv.length()) == csv)
+	{
+		return Csv;
 	}
 
 	return None;
@@ -222,6 +237,10 @@ File *File::loadUnknown(std::string filename)
 	else if (flav == Cif)
 	{
 		f = new CifFile(filename);
+	}
+	else if (flav == Csv)
+	{
+		f = new CsvFile(filename);
 	}
 	
 	if (f)
@@ -249,6 +268,11 @@ File::Type File::typeUnknown(std::string filename)
 	else if (flav == Cif)
 	{
 		CifFile f = CifFile(filename);
+		type = f.cursoryLook();
+	}
+	else if (flav == Csv)
+	{
+		CsvFile f = CsvFile(filename);
 		type = f.cursoryLook();
 	}
 	

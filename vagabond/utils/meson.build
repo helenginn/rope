@@ -3,12 +3,14 @@ utilfiles = [
 'svd/svdcmp.cpp',
 'svd/PCA.cpp',
 'svd/matrix.cpp',
+'maths.cpp',
 ]
 
 install_headers([
 'FileReader.h',
 'glm_import.h',
 'seqalign.h',
+'maths.h',
 'svd/PCA.h',
 ],
 subdir : 'vagabond/utils')

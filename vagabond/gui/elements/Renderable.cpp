@@ -715,12 +715,13 @@ glm::vec3 Renderable::centroid()
 	return sum;
 }
 
-void Renderable::addVertex(glm::vec3 v, std::vector<Vertex> *vec)
+Vertex &Renderable::addVertex(glm::vec3 v, std::vector<Vertex> *vec)
 {
 	addVertex(v.x, v.y, v.z, vec);
+	return _vertices.back();
 }
 
-void Renderable::addVertex(float v1, float v2, float v3,
+Vertex &Renderable::addVertex(float v1, float v2, float v3,
                            std::vector<Vertex> *vec)
 {
 	Vertex v;
@@ -735,10 +736,12 @@ void Renderable::addVertex(float v1, float v2, float v3,
 	if (vec == NULL)
 	{
 		_vertices.push_back(v);
+		return _vertices.back();
 	}
 	else
 	{
 		vec->push_back(v);
+		return vec->back();
 	}
 }
 
@@ -1364,11 +1367,20 @@ void Renderable::triangulate()
 
 void Renderable::setCentre(double x, double y)
 {
+	double dx = x - _x;
+	double dy = y - _y;
+
 	_x = x; _y = y;
 	double xf = 2 * x - 1;
 	double yf = 2 * y - 1;
 
 	setPosition(glm::vec3(xf, -yf, 0));
+	
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->addAlign(dx, dy);
+	}
+
 	_align = Centre;
 	setHover(_hover);
 }
@@ -1397,6 +1409,9 @@ void Renderable::setLeft(double x, double y)
 
 void Renderable::setRight(double x, double y)
 {
+	double dx = x - _x;
+	double dy = y - _y;
+
 	_x = x; _y = y;
 	double xf = 2 * x - 1;
 	double yf = 2 * y - 1;
@@ -1404,6 +1419,12 @@ void Renderable::setRight(double x, double y)
 	xf -= maximalWidth() / 2;
 
 	setPosition(glm::vec3(xf, -yf, 0));
+	
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->addAlign(dx, dy);
+	}
+
 	_align = Right;
 	setHover(_hover);
 }

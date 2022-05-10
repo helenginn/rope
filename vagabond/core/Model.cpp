@@ -201,6 +201,14 @@ void Model::autoAssignEntities()
 	housekeeping();
 }
 
+const Metadata::KeyValues *Model::metadata() const
+{
+	Metadata *md = Environment::metadata();
+	const Metadata::KeyValues *kv = md->values(_name, _filename);
+
+	return kv;
+}
+
 void Model::housekeeping()
 {
 	for (Molecule &mc : _molecules)
@@ -254,6 +262,24 @@ void Model::refine()
 
 	_currentAtoms->alignAnchor();
 	_currentAtoms->refinePositions();
+}
+
+size_t Model::moleculeCountForEntity(std::string entity_id)
+{
+	std::map<std::string, std::string>::iterator it;
+	size_t count = 0;
+	
+	for (it = _chain2Entity.begin(); it != _chain2Entity.end(); it++)
+	{
+		std::string name = it->second;
+		
+		if (name == entity_id)
+		{
+			count++;
+		}
+	}
+
+	return count;
 }
 
 void Model::finishedRefinement()

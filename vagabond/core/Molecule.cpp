@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Chain.h"
+#include "Model.h"
 #include "Molecule.h"
 #include "AtomContent.h"
 #include "Environment.h"
@@ -68,6 +69,15 @@ void Molecule::getTorsionRefs(Chain *ch)
 
 		master_res->addTorsionRef(ref);
 	}
+}
+
+Model *const Molecule::model()
+{
+	if (_model == nullptr)
+	{
+		_model = (Environment::modelManager()->model(_model_id));
+	}
+	return _model;
 }
 
 void Molecule::housekeeping()
@@ -135,4 +145,9 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 	}
 
 	_refined = true;
+}
+
+const Metadata::KeyValues *Molecule::metadata() const
+{
+	return _model->metadata();
 }

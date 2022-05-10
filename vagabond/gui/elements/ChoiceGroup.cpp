@@ -5,9 +5,11 @@
 #include "Scene.h"
 #include <iostream>
 
-ChoiceGroup::ChoiceGroup(Scene *scene)
+ChoiceGroup::ChoiceGroup(Scene *scene, ButtonResponder *responder) : Box()
 {
 	_scene = scene;
+	_responder = responder;
+	setName("Choice");
 }
 
 ChoiceImage *ChoiceGroup::addImage(std::string filename, std::string tag)
@@ -31,6 +33,8 @@ ChoiceText *ChoiceGroup::addText(std::string text, std::string tag)
 		tag = text;
 	}
 
+	setName(name() + " " + text);
+
 	ChoiceText *choice = new ChoiceText(text, _scene, this);
 	choice->setReturnTag(tag);
 	addChoice(choice);
@@ -41,11 +45,11 @@ void ChoiceGroup::arrange(double resize, double ctx, double cty,
                           double xspan, double yspan)
 {
 	double count = choiceCount();
-	double xinit = ctx - xspan / 2;
+	double xinit = 0 - xspan / 2;
 	double xstep = xspan / count;
 	xinit += xstep / 2;
 
-	double yinit = cty - yspan / 2;
+	double yinit = 0 - yspan / 2;
 	double ystep = yspan / count;
 	yinit += ystep / 2;
 
@@ -57,6 +61,8 @@ void ChoiceGroup::arrange(double resize, double ctx, double cty,
 		choice(i)->resize(resize);
 		choice(i)->setCentre(x, y);
 	}
+	
+	setCentre(ctx, cty);
 }
 
 void ChoiceGroup::buttonPressed(std::string tag, Button *button)
@@ -67,6 +73,11 @@ void ChoiceGroup::buttonPressed(std::string tag, Button *button)
 	}
 	
 	_tag = tag;
+	
+	if (_responder)
+	{
+		_responder->buttonPressed(tag, button);
+	}
 }
 
 void ChoiceGroup::setInert(bool inert)

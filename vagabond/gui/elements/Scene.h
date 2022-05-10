@@ -14,7 +14,7 @@ class Modal;
 class Scene : public SnowGL, public ButtonResponder
 {
 public:
-	Scene(Scene *prev = NULL);
+	Scene(Scene *prev = nullptr);
 	
 	void setModal(Modal *modal)
 	{

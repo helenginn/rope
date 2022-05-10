@@ -28,6 +28,8 @@
 class Atom;
 class Entity;
 
+typedef std::map<Residue *, Residue *> ResidueMap;
+
 class Sequence : public IndexedSequence
 {
 public:
@@ -159,8 +161,8 @@ private:
 	std::list<Residue> _master;
 
 	std::map<ResidueId, Residue *> _id2Residue;
-	std::map<Residue *, Residue *> _map2Master;
-	std::map<Residue *, Residue *> _map2Local;
+	ResidueMap _map2Master;
+	ResidueMap _map2Local;
 	Atom *_anchor = nullptr;
 	Entity *_entity = nullptr;
 };

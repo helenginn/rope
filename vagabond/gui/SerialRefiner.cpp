@@ -65,7 +65,7 @@ void SerialRefiner::setActiveAtoms(Model *model)
 	if (atoms)
 	{
 		_display = new Display(this);
-		_count++;
+		_count += model->moleculeCountForEntity(_entity->name());
 
 		std::ostringstream ss;
 		ss << "Refining " << model->name() << " (" << _count << "/" <<
@@ -73,6 +73,7 @@ void SerialRefiner::setActiveAtoms(Model *model)
 
 		_display->setFutureTitle(ss.str());
 		_display->setControls(false);
+		_display->setOwnsAtoms(false);
 		_display->loadAtoms(atoms);
 		_display->queueToShow();
 	}

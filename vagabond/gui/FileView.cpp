@@ -19,11 +19,12 @@
 #include "Display.h"
 #include "FileView.h"
 #include "FileLine.h"
+#include "MetadataView.h"
 
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/TextButton.h>
 
-#include <vagabond/core/CifFile.h>
+#include <vagabond/core/File.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/AtomContent.h>
 #include <vagabond/core/Environment.h>
@@ -65,9 +66,9 @@ void FileView::setup()
 void FileView::handleFileWithoutChoice(std::string filename)
 {
 	File *file = File::loadUnknown(filename);
-	CifFile::Type type = file->cursoryLook();
+	File::Type type = file->cursoryLook();
 
-	if (type & CifFile::CompAtoms || type & CifFile::MacroAtoms)
+	if (type & File::CompAtoms || type & File::MacroAtoms)
 	{
 		if (file->atomCount() > 0)
 		{
@@ -76,11 +77,16 @@ void FileView::handleFileWithoutChoice(std::string filename)
 			display->show();
 		}
 	}
-	else if (type & CifFile::Reflections)
+	else if (type & File::Reflections)
 	{
 		Display *display = new Display(this);
 		display->loadDiffraction(file->diffractionData());
 		display->show();
+	}
+	else if (type & File::Meta)
+	{
+		MetadataView *view = new MetadataView(this, file->metadata());
+		view->show();
 	}
 
 	delete file;

@@ -23,9 +23,19 @@ FileManager::FileManager()
 {
 	_view = nullptr;
 #ifdef __EMSCRIPTEN__
-	_list.push_back("assets/geometry/ATP.cif");
-	_list.push_back("assets/examples/4cvd.cif");
-	_list.push_back("assets/examples/4cvd.pdb");
+	_list.push_back("assets/examples/dark.pdb");
+	_list.push_back("assets/examples/m0.1ps.pdb");
+	_list.push_back("assets/examples/0.0ps.pdb");
+	_list.push_back("assets/examples/0.1ps.pdb");
+	_list.push_back("assets/examples/0.2ps.pdb");
+	_list.push_back("assets/examples/0.3ps.pdb");
+	_list.push_back("assets/examples/0.4ps.pdb");
+	_list.push_back("assets/examples/0.5ps.pdb");
+	_list.push_back("assets/examples/0.6ps.pdb");
+	_list.push_back("assets/examples/3.0ps.pdb");
+	_list.push_back("assets/examples/10.0ps.pdb");
+	_list.push_back("assets/examples/50.0ps.pdb");
+	_list.push_back("assets/examples/150.0ps.pdb");
 #endif
 }
 
@@ -36,6 +46,7 @@ void FileManager::setFilterType(File::Type type)
 	if (type == File::Nothing)
 	{
 		_filtered = _list;
+		std::reverse(_filtered.begin(), _filtered.end());
 		return;
 	}
 	
@@ -48,6 +59,8 @@ void FileManager::setFilterType(File::Type type)
 			_filtered.push_back(_list[i]);
 		}
 	}
+	
+	std::reverse(_filtered.begin(), _filtered.end());
 }
 
 bool FileManager::valid(std::string filename)

@@ -16,17 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "RulesMenu.h"
+#include "LineSeries.h"
 #include "ConfSpaceView.h"
+#include "ColourLegend.h"
 #include "SerialRefiner.h"
+#include "ClusterView.h"
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/c4x/ClusterSVD.h>
 
 #include <vagabond/core/Entity.h>
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/Metadata.h>
 
-ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) : Scene(prev)
+ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) : Mouse3D(prev)
 {
 	_entity = ent;
+}
+
+ConfSpaceView::~ConfSpaceView()
+{
+	deleteObjects();
 }
 
 void ConfSpaceView::askToFoldIn(int extra)
@@ -48,11 +61,51 @@ void ConfSpaceView::setup()
 	}
 	else
 	{
-		DataGroup<float> angles = _entity->makeTorsionDataGroup();
-		angles.write("test.csv");
+		showClusters();
+		applyRules();
+		showRulesButton();
+	}
+	
+	{
+		Text *text = new Text(_entity->name());
+		text->setCentre(0.5, 0.85);
+		addObject(text);
 	}
 }
 
+void ConfSpaceView::showClusters()
+{
+	MetadataGroup angles = _entity->makeTorsionDataGroup();
+	angles.write(_entity->name() + ".csv");
+	angles.normalise();
+	
+	ClusterSVD<MetadataGroup> *cx = new ClusterSVD<MetadataGroup>(angles);
+	cx->setType(PCA::Correlation);
+	cx->cluster();
+	
+	ClusterView *view = nullptr;
+	view = new ClusterView();
+	view->setCluster(cx);
+
+	_centre = view->centroid();
+	_translation = -_centre;
+	_translation.z -= 10;
+	updateCamera();
+
+	addObject(view);
+
+	_view = view;
+}
+
+void ConfSpaceView::showRulesButton()
+{
+	ImageButton *b = new ImageButton("assets/images/palette.png", this);
+	b->resize(0.1);
+	b->setRight(0.95, 0.1);
+	b->setReturnTag("rules");
+	addObject(b);
+
+}
 
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 {
@@ -67,7 +120,65 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "no_fold_in")
 	{
 		// show conf space
+		showClusters();
+		applyRules();
+		showRulesButton();
+	}
+	
+	if (tag == "rules")
+	{
+		RulesMenu *menu = new RulesMenu(this);
+		menu->setEntityId(_entity->name());
+		menu->setData(_view->cluster()->dataGroup());
+		menu->show();
 	}
 
 	Scene::buttonPressed(tag, button);
+}
+
+void ConfSpaceView::refresh()
+{
+	applyRules();
+}
+
+void ConfSpaceView::applyRule(const Rule &r)
+{
+	if (r.type() == Rule::LineSeries)
+	{
+		LineSeries *ls = new LineSeries(_view, r);
+		addObject(ls);
+		_temps.push_back(ls);
+	}
+	else
+	{
+		_view->applyRule(r);
+	}
+	
+	if (r.type() == Rule::VaryColour)
+	{
+		ColourLegend *legend = new ColourLegend(r.scheme());
+		legend->setCentre(0.5, 0.1);
+		legend->setTitle(r.header());
+		legend->setLimits(r.min(), r.max());
+		addObject(legend);
+		_temps.push_back(legend);
+	}
+}
+
+void ConfSpaceView::applyRules()
+{
+	for (size_t i = 0; i < _temps.size(); i++)
+	{
+		removeObject(_temps[i]);
+		delete _temps[i];
+	}
+
+	_temps.clear();
+
+	const Ruler &ruler = Environment::metadata()->ruler();
+
+	for (const Rule &r : ruler.rules())
+	{
+		applyRule(r);
+	}
 }

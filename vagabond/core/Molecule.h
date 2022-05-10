@@ -23,6 +23,8 @@
 using nlohmann::json;
 
 #include <string>
+#include "HasMetadata.h"
+
 class AtomContent;
 class Entity;
 class Model;
@@ -30,7 +32,7 @@ class Chain;
 
 #include "Sequence.h"
 
-class Molecule
+class Molecule : public HasMetadata
 {
 public:
 	Molecule(std::string model_id, std::string entity_id, Sequence *derivative);
@@ -49,6 +51,11 @@ public:
 	const std::string model_chain_id() const
 	{
 		return _model_id + "_" + _chain_id;
+	}
+	
+	virtual const std::string id() const
+	{
+		return model_chain_id();
 	}
 	
 	const std::string &model_id() const
@@ -77,15 +84,14 @@ public:
 
 	void housekeeping();
 	
-	Model *const model() 
-	{
-		return _model;
-	}
+	Model *const model();
 	
 	void setModel(Model *model)
 	{
 		_model = model;
 	}
+
+	virtual const Metadata::KeyValues *metadata() const;
 
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);

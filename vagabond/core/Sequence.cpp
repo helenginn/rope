@@ -32,7 +32,12 @@ Sequence::Sequence()
 
 Sequence::~Sequence()
 {
+	/* swap may look weird, but it removes memory footprint */
+	std::list<Residue>().swap(_residues);
+	std::list<Residue>().swap(_master);
 
+	ResidueMap().swap(_map2Master);
+	ResidueMap().swap(_map2Local);
 }
 
 Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)

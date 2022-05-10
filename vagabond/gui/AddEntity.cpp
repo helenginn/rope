@@ -31,15 +31,15 @@
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 
-AddEntity::AddEntity(Scene *prev, Chain *chain) : Scene(prev)
+AddEntity::AddEntity(Scene *prev, Chain *chain) : Scene(prev), AddObject(prev)
 {
 	_chain = chain;
-	_ent.setSequence(_chain->fullSequence());
+	_obj.setSequence(_chain->fullSequence());
 }
 
-AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev)
+AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev), AddObject(prev)
 {
-	_ent = *ent;
+	_obj = *ent;
 	_existing = true;
 }
 
@@ -54,7 +54,7 @@ void AddEntity::setup()
 		addObject(t);
 	}
 	{
-		std::string file = _ent.name();
+		std::string file = _obj.name();
 		textOrChoose(file, "Enter...");
 
 		TextEntry *t = new TextEntry(file, this);
@@ -74,7 +74,7 @@ void AddEntity::setup()
 		addObject(t);
 	}
 	{
-		TextButton *t = SequenceView::button(_ent.sequence(), this);
+		TextButton *t = SequenceView::button(_obj.sequence(), this);
 		t->setReturnTag("sequence");
 		t->setRight(0.8, 0.4);
 		addObject(t);
@@ -83,8 +83,8 @@ void AddEntity::setup()
 	if (_existing)
 	{
 		{
-			std::string str = i_to_str(_ent.modelCount()) + " models / ";
-			str += i_to_str(_ent.moleculeCount()) + " molecules";
+			std::string str = i_to_str(_obj.modelCount()) + " models / ";
+			str += i_to_str(_obj.moleculeCount()) + " molecules";
 			Text *t = new Text(str);
 			t->setLeft(0.2, 0.5);
 			t->addAltTag("Models may contain multiple molecules of this entity");
@@ -99,31 +99,7 @@ void AddEntity::setup()
 		}
 	}
 
-	if (!_existing)
-	{
-		{
-			TextButton *t = new TextButton("Cancel", this);
-			t->setLeft(0.2, 0.8);
-			t->setReturnTag("cancel");
-			addObject(t);
-		}
-		{
-			TextButton *t = new TextButton("Create", this);
-			t->setRight(0.8, 0.8);
-			t->setReturnTag("create");
-			addObject(t);
-		}
-	}
-	else
-	{
-		{
-			TextButton *t = new TextButton("Delete", this);
-			t->setRight(0.9, 0.1);
-			t->setReturnTag("delete");
-			addObject(t);
-		}
-
-	}
+	AddObject::setup();
 }
 
 void AddEntity::textOrChoose(std::string &file, std::string other)
@@ -137,7 +113,7 @@ void AddEntity::textOrChoose(std::string &file, std::string other)
 void AddEntity::refreshInfo()
 {
 	{
-		std::string text = _ent.name();
+		std::string text = _obj.name();
 		textOrChoose(text, "Enter...");
 		_name->setText(text);
 	}
@@ -147,30 +123,26 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "enter_name")
 	{
-		_ent.setName(_name->text());
+		_obj.setName(_name->text());
 		refreshInfo();
 	}
 	else if (tag == "sequence")
 	{
-		SequenceView *view = new SequenceView(this, _ent.sequence());
+		SequenceView *view = new SequenceView(this, _obj.sequence());
 		view->show();
 	}
 	else if (tag == "conf_space")
 	{
-		ConfSpaceView *view = new ConfSpaceView(this, &_ent);
+		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
 		view->show();
-	}
-	else if (tag == "cancel")
-	{
-		back();
 	}
 	else if (tag == "create")
 	{
 		try
 		{
-			Environment::entityManager()->insertIfUnique(_ent);
+			Environment::entityManager()->insertIfUnique(_obj);
 			back();
-			_caller->setEntity(_ent.name());
+			_caller->setEntity(_obj.name());
 		}
 		catch (const std::runtime_error &err)
 		{
@@ -180,14 +152,14 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "delete" && _existing)
 	{
-		Environment::purgeEntity(_ent.name());
+		Environment::purgeEntity(_obj.name());
 		back();
 	}
 	else if (tag == "back" && _existing)
 	{
-		Environment::entityManager()->update(_ent);
+		Environment::entityManager()->update(_obj);
 	}
 
-	Scene::buttonPressed(tag, button);
+	AddObject::buttonPressed(tag, button);
 }
 

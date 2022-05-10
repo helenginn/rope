@@ -19,6 +19,7 @@
 #ifndef __vagabond__FileView__
 #define __vagabond__FileView__
 
+#include <iostream>
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/File.h>
@@ -28,6 +29,11 @@ class FileManager;
 class FileViewResponder : public virtual Scene
 {
 public:
+	FileViewResponder(Scene *prev) : Scene(prev)
+	{
+		std::cout << "Prev: " << prev << std::endl;
+		std::cout << "_previous: " << _previous << std::endl;
+	}
 	virtual ~FileViewResponder() {};
 	virtual void fileChosen(std::string filename) = 0;
 };

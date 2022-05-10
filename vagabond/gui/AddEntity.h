@@ -19,14 +19,15 @@
 #ifndef __vagabond__AddEntity__
 #define __vagabond__AddEntity__
 
-#include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Entity.h>
+
+#include "AddModel.h"
 
 class ChooseEntity;
 class TextEntry;
 class Chain;
 
-class AddEntity : public Scene
+class AddEntity : public AddObject<Entity>
 {
 public:
 	AddEntity(Scene *prev, Chain *chain);
@@ -44,8 +45,6 @@ private:
 	void textOrChoose(std::string &file, std::string other);
 	void refreshInfo();
 
-	Entity _ent;
-	bool _existing = false;
 	Chain *_chain = nullptr;
 	TextEntry *_name;
 	ChooseEntity *_caller = nullptr;

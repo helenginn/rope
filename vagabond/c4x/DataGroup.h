@@ -22,27 +22,81 @@
 #include <vector>
 #include <string>
 
+/** \class DataGroup
+ * In charge of collecting vectors and clustering on results.
+ * Vector components are referred to as units.
+ */
+
+namespace PCA
+{
+	struct Matrix;
+}
+
 template <class Unit>
 class DataGroup
 {
 public:
+	/** allocates shell for DataGroup.
+	 *  @param length fixed length of individual vector,
+	 *  made up of units */
 	DataGroup(int length);
+
 	virtual ~DataGroup() {};
 
+	/** Array is vector of type Unit */
 	typedef std::vector<Unit> Array;
 
-	void makeAverage();
-	void findDifferences();
+	/** Calculate average vector from individual vectors */
+	void calculateAverage();
+	
+	/** Gets stored average vector, calculating if not available */
+	Array average();
+	
+	/** Find differences between individual vectors and average.
+	 * @param average vector to use as average, or internal average if
+	 * nullptr */
+	void findDifferences(Array *average = nullptr);
+	
+	/** Normalise differences for each unit (i.e. vector component) */
+	void normalise();
+	
+	/** Return correlation matrix of size m*m where m = member size */
+	PCA::Matrix correlationMatrix();
+	
+	/** Return distance matrix of size m*m where m = member size */
+	PCA::Matrix distanceMatrix();
+
+	/** write as CSV to filename */
 	void write(std::string filename);
+
+	/** add an individual vector. Vector must have
+	 * same length as specified when constructing the DataGroup.
+	 * @param name vector name
+	 * @param next vector's array to add to members of the group */
 	virtual void addArray(std::string name, Array next);
 	
-	void addHeader(std::string header);
+	/** returns number of members of this group. */
+	const size_t vectorCount() const
+	{
+		return _vectors.size();
+	}
+	
+	const Array &differenceVector(const int i) const
+	{
+		return _diffs[i];
+	}
+	
+	/** Add names of units. Total must not exceed length. */
 	void addUnitNames(std::vector<std::string> header);
 protected:
+	float correlation_between(int i, int j);
+	float distance_between(int i, int j);
 	std::vector<Array> _vectors;
 	std::vector<Array> _diffs;
 	std::vector<std::string> _unitNames;
 	std::vector<std::string> _vectorNames;
+
+	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit>::*comparison)(int, int));
 
 	int _length;
 	Array _average;

@@ -52,6 +52,24 @@ void FileLine::setup()
 	button->setLeft(0.0, 0);
 	addObject(button);
 	
+	if (_type & File::UnitCell)
+	{
+		Image *image = new Image("assets/images/unit_cell.png");
+		image->resize(0.08);
+		image->addAltTag("has unit cell");
+		image->setCentre(0.40, 0);
+		addObject(image);
+	}
+	
+	if (_type & File::Reflections)
+	{
+		Image *image = new Image("assets/images/reflections.png");
+		image->resize(0.08);
+		image->addAltTag("has reflections");
+		image->setCentre(0.45, 0);
+		addObject(image);
+	}
+	
 	if (_type & File::CompAtoms)
 	{
 		Image *image = new Image("assets/images/some_atoms.png");
@@ -80,21 +98,12 @@ void FileLine::setup()
 		addObject(image);
 	}
 	
-	if (_type & File::Reflections)
+	if (_type & File::Meta)
 	{
-		Image *image = new Image("assets/images/reflections.png");
-		image->resize(0.08);
-		image->addAltTag("has reflections");
-		image->setCentre(0.45, 0);
-		addObject(image);
-	}
-	
-	if (_type & File::UnitCell)
-	{
-		Image *image = new Image("assets/images/unit_cell.png");
-		image->resize(0.08);
-		image->addAltTag("has unit cell");
-		image->setCentre(0.40, 0);
+		Image *image = new Image("assets/images/metadata.png");
+		image->resize(0.06);
+		image->setCentre(0.65, 0);
+		image->addAltTag("metadata information");
 		addObject(image);
 	}
 

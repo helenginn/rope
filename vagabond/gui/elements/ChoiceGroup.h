@@ -4,7 +4,7 @@
 #ifndef __ChoiceGroup__ChoiceGroup__
 #define __ChoiceGroup__ChoiceGroup__
 
-#include "Renderable.h"
+#include "Box.h"
 #include "ButtonResponder.h"
 
 class Choice;
@@ -12,10 +12,10 @@ class ChoiceImage;
 class ChoiceText;
 class Scene;
 
-class ChoiceGroup : public Renderable, public ButtonResponder
+class ChoiceGroup : public Box, public ButtonResponder
 {
 public:
-	ChoiceGroup(Scene *scene);
+	ChoiceGroup(Scene *scene, ButtonResponder *responder);
 	
 	ChoiceImage *addImage(std::string filename, std::string tag);
 	void takeChoice(Choice *choice);
@@ -46,7 +46,8 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
 private:
 	std::vector<Choice *> _choices;
-	Scene *_scene;
+	Scene *_scene = nullptr;
+	ButtonResponder *_responder = nullptr;
 
 	std::string _tag;
 };

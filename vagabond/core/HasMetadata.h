@@ -16,18 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SequenceView.h"
-#include "IndexedSequence.h"
-#include <vagabond/utils/FileReader.h>
+#ifndef __vagabond__HasMetadata__
+#define __vagabond__HasMetadata__
 
-SequenceView::SequenceView(Scene *prev, IndexedSequence *sequence) : Scene(prev)
+#include "Metadata.h"
+
+class HasMetadata
 {
-	_sequence = sequence;
+public:
+	virtual ~HasMetadata() {};
 
-}
+	virtual const Metadata::KeyValues *metadata() const = 0;
+	
+	virtual const std::string id() const = 0;
+private:
 
-void SequenceView::setup()
-{
-	addTitle("Sequence view " + i_to_str(_sequence.entryCount()));
+};
 
-}
+#endif

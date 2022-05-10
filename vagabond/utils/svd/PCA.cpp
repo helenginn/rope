@@ -55,6 +55,30 @@ void PCA::setupSVD(SVD *cc, int rows, int cols)
 	cc->w = (double *)calloc(cols, sizeof(double));
 }
 
+void PCA::copyMatrix(Matrix &dest, Matrix &source)
+{
+	if (dest.rows < source.rows || dest.cols < source.cols)
+	{
+		throw std::runtime_error("Destination rows/cols not compatible with "
+		                         "source matrix.");
+	}
+	
+	if (dest.rows == source.rows && dest.cols == source.cols)
+	{
+		memcpy(dest.vals, source.vals, 
+		       sizeof(double) * source.rows * source.cols);
+		return;
+	}
+	
+	for (size_t i = 0; i < source.cols; i++)
+	{
+		for (size_t j = 0; j < source.rows; j++)
+		{
+			dest[i][j] = source[i][j];
+		}
+	}
+}
+
 void PCA::multMatrix(Matrix &mat, double *vector)
 {
 	double *ret = (double *)calloc(mat.cols, sizeof(double));

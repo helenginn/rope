@@ -272,7 +272,7 @@ public:
 	}
 
 	bool polygonIncludes(glm::vec3 point, GLuint *trio);
-	void addVertex(glm::vec3 v, std::vector<Vertex> *vec = NULL);
+	Vertex &addVertex(glm::vec3 v, std::vector<Vertex> *vec = NULL);
 	void addIndex(GLint i);
 	void addIndices(GLuint i1, GLuint i2, GLuint i3);
 	double maximalWidth();
@@ -300,8 +300,8 @@ protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
 	bool polygonIncludesY(glm::vec3 point, GLuint *trio);
-	void addVertex(float v1, float v2, float v3,
-	               std::vector<Vertex> *vec = NULL);
+	Vertex &addVertex(float v1, float v2, float v3,
+	                  std::vector<Vertex> *vec = NULL);
 	void fixCentroid(glm::vec3 centre);
 	virtual void positionChanged() {};
 	virtual void resized(double scale) {};

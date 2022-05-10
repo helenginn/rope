@@ -19,24 +19,24 @@
 #ifndef __vagabond__AddModel__
 #define __vagabond__AddModel__
 
-#include <vagabond/gui/elements/Scene.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include "FileView.h"
+#include "AddObject.h"
 #include <vagabond/core/Model.h>
 
 class TextEntry;
 
-class AddModel : public virtual Scene, public FileViewResponder
+class AddModel : public AddObject<Model>, public FileViewResponder
 {
 public:
 	AddModel(Scene *prev, Model *chosen = nullptr);
 	~AddModel();
 
-	void setup();
+	virtual void setup();
 	
 	const Model &model() const
 	{
-		return _m;
+		return _obj;
 	}
 
 	void refreshInfo();
@@ -46,10 +46,7 @@ private:
 	void fileTextOrChoose(std::string &file, std::string other = "Choose...");
 	TextButton *_initialFile = nullptr;
 	TextEntry *_name = nullptr;
-	Model _m;
 	std::string _lastTag;
-
-	bool _existing = false;
 };
 
 #endif

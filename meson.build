@@ -30,10 +30,6 @@ dir_base = get_option('prefix')
 combined = join_paths(dir_base, data_dir)
 
 install_data(
-'assets/examples/6QHU.cif',
-'assets/examples/4cvd.cif',
-'assets/examples/4cvd.pdb',
-'assets/examples/6qhu-sf.cif',
 install_dir : examples)
 
 install_data(
@@ -63,9 +59,13 @@ install_data(
 'assets/shaders_450/box.vsh',
 'assets/shaders_450/box.fsh',
 'assets/shaders_450/shade.fsh',
+'assets/shaders_450/floating_box.vsh',
 'assets/shaders_450/with_matrix.vsh',
 'assets/shaders_450/density.vsh',
 'assets/shaders_450/density.fsh',
+'assets/shaders_450/multiply.fsh',
+'assets/shaders_450/point.vsh',
+'assets/shaders_450/point.fsh',
 'assets/shaders_450/lighting.fsh',
 'assets/shaders_450/reflections.fsh',
 install_dir : shaders)
@@ -74,6 +74,7 @@ install_data(
 'assets/images/arrow.png',
 'assets/images/box.png',
 'assets/images/cartoon.png',
+'assets/images/colour_scheme.png',
 'assets/images/data_model.png',
 'assets/images/density.png',
 'assets/images/dot.png',
@@ -83,9 +84,11 @@ install_data(
 'assets/images/happy_face.png',
 'assets/images/lemon.png',
 'assets/images/line.png',
+'assets/images/metadata.png',
 'assets/images/model.png',
 'assets/images/ok_face.png',
 'assets/images/orange.png',
+'assets/images/palette.png',
 'assets/images/paper.jpg',
 'assets/images/peak.png',
 'assets/images/protein.png',
@@ -143,8 +146,9 @@ else # emscripten
 endif
 
 if (links == [])
-  subdir('vagabond/core/tests')
+  subdir('vagabond/c4x/tests')
   subdir('vagabond/utils/tests')
+  subdir('vagabond/core/tests')
   subdir('vagabond/gui/tests')
 endif
 

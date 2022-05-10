@@ -23,6 +23,7 @@
 #include <list>
 #include <iostream>
 
+#include "Metadata.h"
 #include "Molecule.h"
 #include "AtomGroup.h"
 
@@ -101,6 +102,8 @@ public:
 
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);
+	
+	virtual const Metadata::KeyValues *metadata() const;
 	
 	void finishedRefinement();
 private:

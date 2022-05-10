@@ -21,7 +21,9 @@
 
 #include <string>
 
+class Rule;
 class Entity;
+class Metadata;
 class Molecule;
 class FileManager;
 class ModelManager;
@@ -32,6 +34,11 @@ class Environment
 public:
 	Environment();
 	virtual ~Environment();
+
+	static Metadata *metadata()
+	{
+		return _environment._metadata;
+	}
 
 	static ModelManager *modelManager()
 	{
@@ -65,6 +72,7 @@ public:
 	void purgeMolecule(Molecule *mol);
 	static void purgeModel(std::string name);
 	static void purgeEntity(std::string name);
+	static void purgeRule(Rule &rule);
 	
 	void save();
 	void load(std::string file = "rope.json");
@@ -72,6 +80,7 @@ private:
 	FileManager *_fileManager = nullptr;
 	ModelManager *_modelManager = nullptr;
 	EntityManager *_entityManager = nullptr;
+	Metadata *_metadata = nullptr;
 
 	static Environment _environment;
 };

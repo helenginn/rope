@@ -19,22 +19,33 @@
 #ifndef __vagabond__ConfSpaceView__
 #define __vagabond__ConfSpaceView__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Mouse3D.h>
+#include "ClusterView.h"
 
 class Entity;
+class MetadataGroup;
 
-class ConfSpaceView : public Scene
+class ConfSpaceView : public Mouse3D
 {
 public:
 	ConfSpaceView(Scene *prev, Entity *ent);
+	~ConfSpaceView();
 
 	virtual void setup();
+	virtual void refresh();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void showClusters();
+	void showRulesButton();
+	void applyRule(const Rule &r);
+	void applyRules();
+
 	void askToFoldIn(int extra);
 	Entity *_entity = nullptr;
 	int _extra = 0;
+	ClusterView *_view = nullptr;
 
+	std::vector<Renderable *> _temps;
 };
 
 #endif

@@ -27,6 +27,7 @@
 class Atom;
 class AtomContent;
 class AtomGroup;
+class Metadata;
 class GeometryTable;
 class Diffraction;
 class RefList;
@@ -59,6 +60,7 @@ public:
 		UnitCell = 1 << 3, /**< found unit cell information */
 		Symmetry = 1 << 4, /**< found space group/symmetry information */
 		Reflections = 1 << 5, /**< found diffraction reflection data */
+		Meta = 1 << 6, /**< contains metadata on file or model names */
 	};
 	
 	static File *loadUnknown(std::string filename);
@@ -123,6 +125,11 @@ public:
 		return _table;
 	}
 	
+	/** Warning: passes ownership of the Metadata onto the caller.
+	 * @returns Metadata containing data relating to model filename or 
+	 * model id */
+	Metadata *metadata();
+	
 	/** to only pull out a single monomer from a larger collection.
 	 *	@param code three letter code */
 	void pullOutCode(std::string code)
@@ -145,7 +152,8 @@ protected:
 		None = 0,
 		Mtz,
 		Pdb,
-		Cif
+		Cif,
+		Csv
 	};
 
 	static Flavour flavour(std::string filename);
@@ -159,6 +167,7 @@ protected:
 	AtomGroup *_compAtoms = new AtomGroup();
 	AtomGroup *_macroAtoms = new AtomGroup();
 	GeometryTable *_table = new GeometryTable();
+	Metadata *_metadata = nullptr;
 	
 	std::map<std::string, std::string> _values;
 	std::vector<Reflection> _reflections;

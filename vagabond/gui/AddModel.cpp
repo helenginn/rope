@@ -18,22 +18,21 @@
 
 #include "AddModel.h"
 #include "ChainAssignment.h"
+#include "ModelMetadataView.h"
 
 #include <vagabond/gui/elements/BadChoice.h>
-#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextEntry.h>
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/ModelManager.h>
 
-AddModel::AddModel(Scene *prev, Model *chosen) : Scene(prev)
+AddModel::AddModel(Scene *prev, Model *chosen) :
+Scene(prev),
+AddObject(prev, chosen),
+FileViewResponder(prev)
 {
-	if (chosen != nullptr)
-	{
-		_m = *chosen;
-		_existing = true;
-	}
+
 }
 
 AddModel::~AddModel()
@@ -59,7 +58,7 @@ void AddModel::setup()
 		addObject(t);
 	}
 	{
-		std::string file = _m.filename();
+		std::string file = _obj.filename();
 		fileTextOrChoose(file);
 
 		TextButton *t = new TextButton(file, this);
@@ -77,7 +76,7 @@ void AddModel::setup()
 		addObject(t);
 	}
 	{
-		std::string file = _m.name();
+		std::string file = _obj.name();
 		fileTextOrChoose(file, "Enter...");
 
 		TextEntry *t = new TextEntry(file, this);
@@ -102,31 +101,22 @@ void AddModel::setup()
 		addObject(t);
 	}
 
-	if (!_existing)
+	if (_existing)
 	{
 		{
-			TextButton *t = new TextButton("Cancel", this);
-			t->setLeft(0.2, 0.8);
-			t->setReturnTag("cancel");
+			Text *t = new Text("Metadata");
+			t->setLeft(0.2, 0.6);
 			addObject(t);
 		}
 		{
-			TextButton *t = new TextButton("Create", this);
-			t->setRight(0.8, 0.8);
-			t->setReturnTag("create");
+			ImageButton *t = ImageButton::arrow(-90., this);
+			t->setReturnTag("metadata");
+			t->setCentre(0.8, 0.6);
 			addObject(t);
 		}
 	}
-	else
-	{
-		{
-			TextButton *t = new TextButton("Delete", this);
-			t->setRight(0.9, 0.1);
-			t->setReturnTag("delete");
-			addObject(t);
-		}
-	}
-
+	
+	AddObject::setup();
 }
 
 void AddModel::fileTextOrChoose(std::string &file, std::string other)
@@ -140,12 +130,12 @@ void AddModel::fileTextOrChoose(std::string &file, std::string other)
 void AddModel::refreshInfo()
 {
 	{
-		std::string text = _m.filename();
+		std::string text = _obj.filename();
 		fileTextOrChoose(text);
 		_initialFile->setText(text);
 	}
 	{
-		std::string text = _m.name();
+		std::string text = _obj.name();
 		fileTextOrChoose(text, "Enter...");
 		_name->setText(text);
 	}
@@ -161,14 +151,14 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "enter_name")
 	{
-		_m.setName(_name->text());
+		_obj.setName(_name->text());
 		refreshInfo();
 	}
 	else if (tag == "chain_assignment")
 	{
 		try
 		{
-			ChainAssignment *view = new ChainAssignment(this, _m);
+			ChainAssignment *view = new ChainAssignment(this, _obj);
 			view->show();
 		}
 		catch (const std::runtime_error &err)
@@ -177,16 +167,17 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 			setModal(bad);
 		}
 	}
-	else if (tag == "cancel")
+	else if (tag == "metadata")
 	{
-		back();
+		ModelMetadataView *mmv = new ModelMetadataView(this, _obj);
+		mmv->show();
 	}
 	else if (tag == "create")
 	{
 		try
 		{
-			_m.createMolecules();
-			Environment::modelManager()->insertIfUnique(_m);
+			_obj.createMolecules();
+			Environment::modelManager()->insertIfUnique(_obj);
 			back();
 		}
 		catch (const std::runtime_error &err)
@@ -197,23 +188,23 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "delete" && _existing)
 	{
-		Environment::purgeModel(_m.name());
+		Environment::purgeModel(_obj.name());
 		back();
 	}
 	else if (tag == "back" && _existing)
 	{
-		Environment::modelManager()->update(_m);
+		Environment::modelManager()->update(_obj);
 
 	}
 	
-	Scene::buttonPressed(tag, button);
+	AddObject::buttonPressed(tag, button);
 }
 
 void AddModel::fileChosen(std::string filename)
 {
 	if (_lastTag == "choose_initial_file")
 	{
-		_m.setFilename(filename);
+		_obj.setFilename(filename);
 	}
 	refreshInfo();
 

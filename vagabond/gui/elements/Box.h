@@ -11,6 +11,7 @@ public:
 	Box();
 
 	virtual void addQuad(double z = 0);
+
 	virtual void addSplitQuad(double z = 0);
 	void rescale(double x, double y);
 	virtual void makeQuad();

@@ -23,7 +23,8 @@ std::vector<std::string> &split(const std::string &s, char delim, std::vector<st
 {
 	std::stringstream ss(s);
 	std::string item;
-	while (std::getline(ss, item, delim)) {
+	while (std::getline(ss, item, delim))
+	{
 		elems.push_back(item);
 	}
 	
@@ -77,7 +78,7 @@ void remove_quotes(std::string &str)
 	}
 }
 
-std::string defenestrate(std::string str)
+void defenestrate(std::string &str)
 {
 	std::ostringstream ss;
 	
@@ -89,7 +90,7 @@ std::string defenestrate(std::string str)
 		}
 	}
 
-	return ss.str();
+	str = ss.str();
 }
 
 std::string getPath(std::string whole)

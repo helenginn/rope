@@ -20,6 +20,8 @@
 #define __vagabond__DataGroup__cpp__
 
 #include "DataGroup.h"
+#include <vagabond/utils/svd/PCA.h>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 
@@ -44,7 +46,18 @@ void DataGroup<Unit>::addArray(std::string name, Array next)
 }
 
 template <class Unit>
-void DataGroup<Unit>::makeAverage()
+typename DataGroup<Unit>::Array DataGroup<Unit>::average()
+{
+	if (_average.size() != _length)
+	{
+		calculateAverage();
+	}
+	
+	return _average;
+}
+
+template <class Unit>
+void DataGroup<Unit>::calculateAverage()
 {
 	_average.clear();
 	_average.resize(_length);
@@ -65,8 +78,19 @@ void DataGroup<Unit>::makeAverage()
 }
 
 template <class Unit>
-void DataGroup<Unit>::findDifferences()
+void DataGroup<Unit>::findDifferences(Array *ave)
 {
+	if (ave == nullptr)
+	{
+		average();
+		ave = &_average;
+	}
+	
+	if (ave->size() != _length)
+	{
+		throw std::runtime_error("Average array length is incorrect");
+	}
+
 	_diffs.clear();
 	_diffs.resize(_vectors.size());
 
@@ -76,6 +100,42 @@ void DataGroup<Unit>::findDifferences()
 
 		for (size_t j = 0; j < _length; j++)
 		{
+			_diffs[i][j] = _vectors[i][j] - ave->at(j);
+		}
+	}
+}
+
+template <class Unit>
+void DataGroup<Unit>::normalise()
+{
+	if (_diffs.size() == 0)
+	{
+		findDifferences();
+	}
+	
+	float n = _vectors.size();
+
+	for (size_t i = 0; i < _length; i++)
+	{
+		double x = 0; double xx = 0;
+		for (size_t j = 0; j < _vectors.size(); j++)
+		{
+			Unit &v = _diffs[j][i];
+			x += v;
+			xx += v * v;
+		}
+		
+		double stdev = sqrt(xx - x * x / n);
+		
+		if (stdev < 1e-6)
+		{
+			continue;
+		}
+
+		for (size_t j = 0; j < _vectors.size(); j++)
+		{
+			Unit &v = _diffs[j][i];
+			v /= stdev;
 		}
 	}
 }
@@ -130,6 +190,114 @@ void DataGroup<Unit>::addUnitNames(std::vector<std::string> headers)
 	_unitNames.reserve(headers.size() + _unitNames.size());
 	_unitNames.insert(_unitNames.end(), headers.begin(), headers.end());
 	
+}
+
+template <class Unit>
+float DataGroup<Unit>::distance_between(int i, int j)
+{
+	if (i == j)
+	{
+		return 0;
+	}
+	
+	Array &v = _vectors[i];
+	Array &w = _vectors[j];
+	
+	float sq = 0;
+	
+	for (size_t n = 0; n < _length; n++)
+	{
+		if (v[n] != v[n] || w[n] != w[n])
+		{
+			continue;
+		}
+
+		float add = (v[n] - w[n]) * (v[n] - w[n]);
+		sq += add;
+	}
+	
+	return sqrt(sq);
+}
+
+template <class Unit>
+float DataGroup<Unit>::correlation_between(int i, int j)
+{
+	if (i == j)
+	{
+		return 0;
+	}
+	
+	Unit x{}, y{}, xx{}, yy{}, xy{}, s{};
+	
+	Array &v = _diffs[i];
+	Array &w = _diffs[j];
+	
+	for (size_t n = 0; n < _length; n++)
+	{
+		if (v[n] != v[n] || w[n] != w[n])
+		{
+			continue;
+		}
+
+		x += v[n]; 
+		xx += v[n] * v[n];
+		y += w[n];
+		yy += w[n] * w[n];
+		xy += w[n] * v[n];
+		s += 1;
+	}
+	
+	double top = s * xy - x * y;
+	double bottom_left = s * xx - x * x;
+	double bottom_right = s * yy - y * y;
+	
+	double r = top / sqrt(bottom_left * bottom_right);
+	
+	return r;
+}
+
+
+template <class Unit>
+PCA::Matrix DataGroup<Unit>::arbitraryMatrix
+(float(DataGroup<Unit>::*comparison)(int, int))
+{
+	PCA::Matrix m;
+	
+	int n = vectorCount();
+	
+	PCA::setupMatrix(&m, n, n);
+	
+	for (size_t j = 0; j < n; j++)
+	{
+		for (size_t i = 0; i < n; i++)
+		{
+			double &val = m[j][i];
+			
+			float corr = (this->*comparison)(i, j);
+			val = corr;
+		}
+	}
+	
+	return m;
+}
+
+
+template <class Unit>
+PCA::Matrix DataGroup<Unit>::distanceMatrix()
+{
+	return arbitraryMatrix(&DataGroup::distance_between);
+}
+
+
+template <class Unit>
+PCA::Matrix DataGroup<Unit>::correlationMatrix()
+{
+	if (_diffs.size() == 0)
+	{
+		findDifferences();
+	}
+	
+	return arbitraryMatrix(&DataGroup::correlation_between);
 }
 
 #endif

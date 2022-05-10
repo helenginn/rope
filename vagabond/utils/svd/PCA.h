@@ -21,19 +21,30 @@
 
 namespace PCA
 {
+	enum MatrixType
+	{
+		Distance,
+		Correlation
+	};
+
 	struct Matrix
 	{
-		double *vals;
-		double **ptrs;
-		int rows;
-		int cols;
+		double *vals = nullptr;
+		double **ptrs = nullptr;
+		int rows = 0;
+		int cols = 0;
+		
+		double *operator[](const int i)
+		{
+			return ptrs[i];
+		}
 	};
 
 	struct SVD
 	{
-		Matrix u;
-		Matrix v;
-		double *w;
+		Matrix u{};
+		Matrix v{};
+		double *w = nullptr;
 	};
 
 	struct OrderW
@@ -44,13 +55,14 @@ namespace PCA
 
 	/** allocates internal structure for MxN dimensional matrix.
 	 * 	@param *mat pointer to Matrix structure.
-	 * 	@param rows number of rows in matrix
+	 * 	@param rows number of rows in matrix (slow axis)
 	 * 	@param cols number of columns, less than or equal to rows, or 0 for
-	 * 	default equal to rows */
+	 * 	default equal to rows (fast axis) */
 	void setupMatrix(Matrix *mat, int rows, int cols = 0);
 	void setupSVD(SVD *cc, int rows, int cols = 0);
 	void printMatrix(Matrix *mat);
 	void multMatrix(Matrix &mat, double *vector);
+	void copyMatrix(Matrix &dest, Matrix &source);
 	void reorderSVD(SVD *cc);
 	bool invertSVD(SVD *cc);
 	void freeMatrix(Matrix *m);

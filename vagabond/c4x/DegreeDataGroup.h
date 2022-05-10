@@ -21,6 +21,11 @@
 
 #include "DataGroup.h"
 
+/** \class DegreeDataGroup
+ * specialised class of DataGroup that takes degree values and ensures all
+ * values match previous entries as closely as possible by adding or subtracting
+ * multiple of 360 degrees */
+
 class DegreeDataGroup : public DataGroup<float>
 {
 public:
@@ -28,7 +33,7 @@ public:
 
 	virtual void addArray(std::string name, Array next);
 private:
-	void matchDegrees(const Array &master, Array &next);
+	void matchDegrees(Array &next);
 
 };
 

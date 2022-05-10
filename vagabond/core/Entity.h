@@ -23,7 +23,7 @@
 #include <set>
 #include "Sequence.h"
 #include "Model.h"
-#include <vagabond/c4x/DegreeDataGroup.h>
+#include "MetadataGroup.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -78,7 +78,7 @@ public:
 	void refineNextModel();
 	virtual void modelReady();
 	
-	DegreeDataGroup makeTorsionDataGroup();
+	MetadataGroup makeTorsionDataGroup();
 
 	const size_t moleculeCount() const
 	{
@@ -89,6 +89,8 @@ public:
 	{
 		return _models.size();
 	}
+	
+	std::set<std::string> allMetadataHeaders();
 
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);

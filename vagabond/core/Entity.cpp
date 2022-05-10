@@ -18,11 +18,36 @@
 
 #include "Entity.h"
 #include "Model.h"
+#include "Metadata.h"
 #include "AtomContent.h"
 
 Entity::Entity()
 {
 
+}
+
+std::set<std::string> Entity::allMetadataHeaders()
+{
+	std::set<std::string> headers;
+	
+	for (const Model *model : _models)
+	{
+		const Metadata::KeyValues *kv = model->metadata();
+		
+		if (kv == nullptr)
+		{
+			continue;
+		}
+
+		Metadata::KeyValues::const_iterator it;
+		
+		for (it = kv->cbegin(); it != kv->cend(); it++)
+		{
+			headers.insert(it->first);
+		}
+	}
+
+	return headers;
 }
 
 void Entity::checkModel(Model &m)
@@ -106,28 +131,25 @@ void Entity::modelReady()
 	refineNextModel();
 }
 
-DegreeDataGroup Entity::makeTorsionDataGroup()
+MetadataGroup Entity::makeTorsionDataGroup()
 {
 	size_t num = _sequence.torsionCount(true);
 	std::cout << "Torsion count: " << num << std::endl;
 	std::vector<std::string> names;
 	_sequence.addTorsionNames(names, true);
 
-	DegreeDataGroup group(num);
+	MetadataGroup group(num);
 	group.addUnitNames(names);
 	
 	for (Molecule *mol : _molecules)
 	{
 		Sequence *molseq = mol->sequence();
-		std::cout << "Molseq = " << molseq << std::endl;
-	
 		molseq->clearMaps();
 		molseq->remapFromMaster(this);
-		std::string name = mol->model_chain_id();
-		DataGroup<float>::Array vals;
+		MetadataGroup::Array vals;
 
 		_sequence.torsionsFromMapped(molseq, vals, true);
-		group.addArray(name, vals);
+		group.addMetadataArray(mol, vals);
 	}
 	
 	std::cout << "done" << std::endl;

@@ -55,15 +55,61 @@ void TextEntry::showInsert()
 
 bool TextEntry::validateKey(char key)
 {
-	return true;
+	if (_validation == None)
+	{
+		return true;
+	}
+	
+	if (_validation == Numeric)
+	{
+		if (key >= '0' && key <= '9')
+		{
+			return true;
+		}
+		
+		if ((key == '-' || key == '+') && _scratch.length() == 0)
+		{
+			return true;
+		}
+		
+		if (_scratch.find('.') == std::string::npos && key == '.')
+		{
+			return true;
+		}
+	}
+	
+	if (_validation == Id)
+	{
+		if ((key >= 'a' && key <= 'z') || key == '-')
+		{
+			return true;
+		}
+
+		if (key >= '0' && key <= '9')
+		{
+			return true;
+		}
+		
+	}
+	
+	return false;
+}
+
+float TextEntry::as_num() const
+{
+	std::string str = text();
+	float f = atof(str.c_str());
+	return f;
 }
 
 void TextEntry::keyPressed(char key)
 {
 	if (_active)
 	{
-		validateKey(key);
-		_scratch += key;
+		if (validateKey(key))
+		{
+			_scratch += key;
+		}
 	}
 
 	showInsert();
@@ -79,10 +125,13 @@ void TextEntry::finish()
 
 void TextEntry::keyPressed(SDL_Keycode other)
 {
-	if (other == SDLK_BACKSPACE && _scratch.size() > 0)
+	if (other == SDLK_BACKSPACE)
 	{
-		_scratch.pop_back();
-		showInsert();
+		if (_scratch.size() > 0)
+		{
+			_scratch.pop_back();
+			showInsert();
+		}
 	}
 	else if (other == SDLK_LSHIFT || other == SDLK_RSHIFT)
 	{

@@ -15,7 +15,7 @@ public:
 
 	void setText(std::string text);
 	
-	std::string text()
+	const std::string &text() const
 	{
 		return _text;
 	}

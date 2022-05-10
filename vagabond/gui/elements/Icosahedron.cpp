@@ -23,6 +23,10 @@ Icosahedron::Icosahedron() : Renderable()
 {
 	makeIco();
 	calculateNormals();
+
+	setUsesProjection(true);
+	setVertexShaderFile("assets/shaders/with_matrix.vsh");
+	setFragmentShaderFile("assets/shaders/lighting.fsh");
 }
 
 void Icosahedron::makeIco()

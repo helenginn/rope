@@ -18,6 +18,8 @@
 
 #include "Environment.h"
 #include "FileManager.h"
+#include "Metadata.h"
+#include "Ruler.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
 
@@ -30,6 +32,9 @@ Environment Environment::_environment;
 
 Environment::Environment()
 {
+	_metadata = new Metadata();
+	_metadata->setSource("master");
+
 	_fileManager = new FileManager();
 	_modelManager = new ModelManager();
 	_entityManager = new EntityManager();
@@ -46,6 +51,7 @@ void Environment::save()
 	data["file_manager"] = *_fileManager;
 	data["model_manager"] = *_modelManager;
 	data["entity_manager"] = *_entityManager;
+	data["metadata"] = *_metadata;
 	
 	std::ofstream file;
 	file.open("rope.json");
@@ -75,12 +81,14 @@ void Environment::load(std::string file)
 		*_fileManager = data["file_manager"];
 		 *_modelManager = data["model_manager"];
 		 *_entityManager = data["entity_manager"];
+		*_metadata = data["metadata"];
 	}
 	catch (const nlohmann::detail::type_error &err)
 	{
 		std::cout << "Error processing json, probably old version" << std::endl;
 	}
 	
+	_metadata->housekeeping();
 	_modelManager->housekeeping();
 	_entityManager->housekeeping();
 	
@@ -112,6 +120,12 @@ void Environment::purgeEntity(std::string id)
 	}
 }
 
+void Environment::purgeRule(Rule &rule)
+{
+	Metadata *md = metadata();
+	md->ruler().removeLike(rule);
+}
+
 void Environment::purgeModel(std::string id)
 {
 	Model *model = modelManager()->model(id);
@@ -120,7 +134,6 @@ void Environment::purgeModel(std::string id)
 		entityManager()->purgeModel(model);
 		modelManager()->purgeModel(model);
 	}
-
 }
 
 Environment::~Environment()
