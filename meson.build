@@ -91,6 +91,7 @@ install_data(
 'assets/images/palette.png',
 'assets/images/paper.jpg',
 'assets/images/peak.png',
+'assets/images/points.png',
 'assets/images/protein.png',
 'assets/images/protractor.png',
 'assets/images/reflections.png',

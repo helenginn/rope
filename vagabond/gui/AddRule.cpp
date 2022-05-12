@@ -22,6 +22,7 @@
 #include "ChooseHeader.h"
 #include "LineSeriesOptions.h"
 #include "VaryColourOptions.h"
+#include "ChangeIconOptions.h"
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -169,6 +170,12 @@ void AddRule::openOptions()
 	else if (_obj.type() == Rule::VaryColour)
 	{
 		VaryColourOptions *options = new VaryColourOptions(this, _obj);
+		options->show();
+	}
+	else if (_obj.type() == Rule::ChangeIcon)
+	{
+		ChangeIconOptions *options = new ChangeIconOptions(this, _obj);
+		options->setEntity(_entity_id);
 		options->show();
 	}
 

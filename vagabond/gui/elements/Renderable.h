@@ -178,6 +178,7 @@ public:
 	void setRight(double x, double y);
 	
 	void realign();
+	void realign(double x, double y);
 	
 	void changeMidPoint(double x, double y);
 	void setHighlighted(bool highlighted);
@@ -296,6 +297,24 @@ public:
 	}
 
 	void setHover(Renderable *hover);
+
+	enum Alignment
+	{
+		Left,
+		Right,
+		Centre,
+		None,
+	};
+	
+	void setAlignment(Alignment a)
+	{
+		_align = a;
+	}
+	
+	const Alignment &alignment() const
+	{
+		return _align;
+	}
 protected:
 	void rebindToProgram();
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -345,15 +364,6 @@ protected:
 	void appendObject(Renderable *object);
 	std::atomic<bool> _forceRender{false};
 	void rotateByMatrix(glm::mat3x3 m);
-
-	enum Alignment
-	{
-		Left,
-		Right,
-		Centre,
-		None,
-	};
-	
 	
 	void setAlignXY(Alignment &a, float x, float y)
 	{
@@ -366,6 +376,11 @@ protected:
 	{
 		_x += x;
 		_y += y;
+
+		for (size_t i = 0; i < objectCount(); i++)
+		{
+			object(i)->addAlign(x, y);
+		}
 
 		realign();
 	}

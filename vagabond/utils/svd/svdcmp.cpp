@@ -253,8 +253,8 @@ void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V)
 				break;
 			}
 
-			if( its >= 30 ) {
-				throw std::runtime_error("No convergence after 30 iterations");
+			if( its >= 60 ) {
+				throw std::runtime_error("No convergence after 60 iterations");
 			}
 
 			X = W[l];

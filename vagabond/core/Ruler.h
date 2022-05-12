@@ -22,6 +22,9 @@
 #include <list>
 #include "Rule.h"
 
+#include <json/json.hpp>
+using nlohmann::json;
+
 class RulerResponder
 {
 public:
@@ -65,9 +68,29 @@ public:
 	{
 		return _rules.size();
 	}
+
+	friend void to_json(json &j, const Ruler &value);
+	friend void from_json(const json &j, Ruler &value);
 private:
 	std::list<Rule> _rules;
 	RulerResponder *_responder = nullptr;
 };
+
+inline void to_json(json &j, const Ruler &value)
+{
+	j["rules"] = value._rules;
+}
+
+inline void from_json(const json &j, Ruler &value)
+{
+	try
+	{
+		value._rules = j.at("rules");
+	}
+	catch (const nlohmann::detail::out_of_range &err)
+	{
+		std::cout << "Error processing json, probably old version" << std::endl;
+	}
+}
 
 #endif

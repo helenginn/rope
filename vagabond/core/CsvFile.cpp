@@ -30,6 +30,12 @@ CsvFile::CsvFile(std::string filename) : File(filename)
 File::Type CsvFile::cursoryLook()
 {
 	std::string path = toFilename(_filename);
+	
+	if (!file_exists(path))
+	{
+		std::cout << "Could not open file: " << _filename << std::endl;
+		return Nothing;
+	}
 
 	std::ifstream f;
 	f.open(path);
@@ -51,8 +57,9 @@ File::Type CsvFile::cursoryLook()
 	
 	std::vector<std::string> headers = split(line, ',');
 	
-	for (const std::string &header : headers)
+	for (std::string &header : headers)
 	{
+		remove_quotes(header);
 		if (header == "model" || header == "filename")
 		{
 			f.close();
@@ -101,6 +108,7 @@ void CsvFile::processHeaders(std::string line)
 	for (std::string &h : _headers)
 	{
 		defenestrate(h);
+		remove_quotes(h);
 		std::cout << "header: " << h << ", ";
 	}
 	std::cout << std::endl;

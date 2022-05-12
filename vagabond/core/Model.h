@@ -23,6 +23,7 @@
 #include <list>
 #include <iostream>
 
+#include "HasMetadata.h"
 #include "Metadata.h"
 #include "Molecule.h"
 #include "AtomGroup.h"
@@ -42,7 +43,7 @@ public:
 	virtual void modelReady() = 0;
 };
 
-class Model : public AtomGroupResponder
+class Model : public AtomGroupResponder, public HasMetadata
 {
 public:
 	Model();
@@ -80,6 +81,11 @@ public:
 	const std::string &name() const
 	{
 		return _name;
+	}
+
+	virtual const std::string id() const
+	{
+		return name();
 	}
 
 	Molecule *moleculeFromChain(Chain *ch);

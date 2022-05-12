@@ -20,6 +20,7 @@
 #define __vagabond__HasMetadata__
 
 #include "Metadata.h"
+#include <algorithm>
 
 class HasMetadata
 {
@@ -29,6 +30,33 @@ public:
 	virtual const Metadata::KeyValues *metadata() const = 0;
 	
 	virtual const std::string id() const = 0;
+
+	template <class C>
+	void appendIfMissing(std::vector<C *> &target)
+	{
+		if (std::find(target.begin(), target.end(), this) != target.end())
+		{
+			return;
+		}
+
+		target.push_back(static_cast<C *>(this));
+	}
+
+	template <class C>
+	void eraseIfPresent(std::vector<C *> &target)
+	{
+		typename std::vector<C *>::iterator it;
+		while (true)
+		{
+			it = std::find(target.begin(), target.end(), this);
+			if (it == target.end())
+			{
+				return;
+			}
+			target.erase(it);
+		}
+	}
+
 private:
 
 };

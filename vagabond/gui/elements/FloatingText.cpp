@@ -34,6 +34,10 @@ void FloatingText::correctBox()
 	{
 		v.extra = glm::vec4(v.pos - centre, 0);
 		v.extra *= 5;
+		
+#ifdef __EMSCRIPTEN__
+		v.extra *= 10;
+#endif
 		v.extra.y += 0.5;
 		v.pos = centre;
 	}

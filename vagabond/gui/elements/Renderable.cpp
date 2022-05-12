@@ -1429,12 +1429,11 @@ void Renderable::setRight(double x, double y)
 	setHover(_hover);
 }
 
-void Renderable::setExtra(glm::vec4 pos)
+void Renderable::realign(double x, double y)
 {
-	for (size_t i = 0; i < _vertices.size(); i++)
-	{
-		_vertices[i].extra = pos;
-	}
+	_x = x;
+	_y = y;
+	realign();
 }
 
 void Renderable::realign()
@@ -1460,6 +1459,14 @@ void Renderable::realign()
 	if (_hover)
 	{
 		_hover->realign();
+	}
+}
+
+void Renderable::setExtra(glm::vec4 pos)
+{
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].extra = pos;
 	}
 }
 

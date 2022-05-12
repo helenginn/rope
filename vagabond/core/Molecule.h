@@ -32,6 +32,9 @@ class Chain;
 
 #include "Sequence.h"
 
+/** \class Molecule
+ * Molecule refers to a specific instance of an entity associated with a model */
+
 class Molecule : public HasMetadata
 {
 public:

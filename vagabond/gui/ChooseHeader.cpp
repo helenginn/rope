@@ -44,7 +44,6 @@ Renderable *ChooseHeader::getLine(int i)
 	TextButton *text = new TextButton(_headers[i], this);
 	text->setReturnTag(_headers[i]);
 	return text;
-
 }
 
 void ChooseHeader::setEntity(std::string name)

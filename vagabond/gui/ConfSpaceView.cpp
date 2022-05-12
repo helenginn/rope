@@ -20,6 +20,7 @@
 #include "LineSeries.h"
 #include "ConfSpaceView.h"
 #include "ColourLegend.h"
+#include "IconLegend.h"
 #include "SerialRefiner.h"
 #include "ClusterView.h"
 
@@ -101,9 +102,15 @@ void ConfSpaceView::showRulesButton()
 {
 	ImageButton *b = new ImageButton("assets/images/palette.png", this);
 	b->resize(0.1);
-	b->setRight(0.95, 0.1);
+	b->setRight(0.95, 0.09);
 	b->setReturnTag("rules");
+
+	Text *t = new Text("settings");
+	t->resize(0.6);
+	t->setRight(0.95, 0.15);
+
 	addObject(b);
+	addObject(t);
 
 }
 
@@ -174,11 +181,19 @@ void ConfSpaceView::applyRules()
 	}
 
 	_temps.clear();
+	
+	IconLegend *il = new IconLegend();
 
 	const Ruler &ruler = Environment::metadata()->ruler();
 
 	for (const Rule &r : ruler.rules())
 	{
 		applyRule(r);
+		il->addRule(&r);
 	}
+	
+	il->makePoints();
+	il->setCentre(0.8, 0.5);
+	addObject(il);
+	_temps.push_back(il);
 }

@@ -90,6 +90,12 @@ public:
 		return _models.size();
 	}
 	
+	const std::vector<Model *> &models() const
+	{
+		return _models;
+	}
+	
+	void housekeeping();
 	std::set<std::string> allMetadataHeaders();
 
 	friend void to_json(json &j, const Entity &value);
@@ -102,10 +108,12 @@ private:
 	
 	Model *_currentModel = nullptr;
 	EntityResponder *_responder = nullptr;
+
+	void appendMolecule(Model &m);
 	
 	std::set<Model *> _refineSet;
-	std::set<Model *> _models;
-	std::set<Molecule *> _molecules;
+	std::vector<Model *> _models;
+	std::vector<Molecule *> _molecules;
 };
 
 inline void to_json(json &j, const Entity &value)

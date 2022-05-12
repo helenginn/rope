@@ -30,7 +30,27 @@ ClusterView::ClusterView()
 	_renderType = GL_POINTS;
 	setFragmentShaderFile("assets/shaders/point.fsh");
 	setVertexShaderFile("assets/shaders/point.vsh");
-	setImage("assets/images/dot.png");
+	setImage("assets/images/points.png");
+}
+
+void ClusterView::customiseTexture(Snow::Vertex &vert)
+{
+	vert.tex.x = pointTypeCount(); /* number of points */
+	vert.tex.y = 0.; /* point index */
+	vert.color[3] = 1;
+}
+
+void ClusterView::setPointType(int idx, int type)
+{
+	_vertices[idx].tex.y = type; /* point index */
+}
+
+void ClusterView::addPoint(glm::vec3 pos, int pointType)
+{
+	Snow::Vertex &vert = addVertex(pos);
+	customiseTexture(vert);
+	setPointType(_vertices.size() - 1, pointType);
+	addIndex(-1);
 }
 
 void ClusterView::makePoints()
@@ -45,9 +65,7 @@ void ClusterView::makePoints()
 	{
 		glm::vec3 v = _cx->point(i);
 		v *= 10;
-		Snow::Vertex &vert = addVertex(v);
-		vert.color[3] = 1;
-		addIndex(-1);
+		addPoint(v, 4);
 	}
 }
 
@@ -102,11 +120,47 @@ void ClusterView::applyVaryColour(const Rule &r)
 	delete cs;
 }
 
+void ClusterView::applyChangeIcon(const Rule &r)
+{
+	std::string header = r.header();
+	std::string value = r.headerValue();
+	int pt = r.pointType();
+	bool any_assigned = r.ifAssigned();
+
+	MetadataGroup &group = *_cx->dataGroup();
+	for (size_t i = 0; i < group.objectCount(); i++)
+	{
+		HasMetadata *obj = group.object(i);
+
+		const Metadata::KeyValues *data = group.object(i)->metadata();
+		
+		if (data == nullptr || data->count(header) == 0)
+		{
+			continue;
+		}
+		
+		if (data->count(header) && any_assigned)
+		{
+			setPointType(i, pt);
+		}
+		else if (data->at(header).text() == value)
+		{
+			setPointType(i, pt);
+		}
+	}
+	
+	forceRender();
+}
+
 void ClusterView::applyRule(const Rule &r)
 {
 	if (r.type() == Rule::VaryColour)
 	{
 		applyVaryColour(r);
+	}
+	else if (r.type() == Rule::ChangeIcon)
+	{
+		applyChangeIcon(r);
 	}
 	
 }

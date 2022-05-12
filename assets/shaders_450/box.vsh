@@ -14,6 +14,7 @@ void main()
 {
     vec4 pos = vec4(position[0], position[1], position[2], 1.0);
 	gl_Position = pos;
+	gl_PointSize = 80;
 	vTex = tex;
 	vColor = color;
 }

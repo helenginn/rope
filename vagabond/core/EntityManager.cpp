@@ -115,6 +115,11 @@ void EntityManager::checkModelsForReferences(ModelManager *mm)
 		}
 	}
 
+	for (Entity &e : _objects)
+	{
+		e.housekeeping();
+	}
+
 	if (_responder)
 	{
 		_responder->objectsChanged();

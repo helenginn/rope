@@ -57,7 +57,17 @@ void ClusterSVD<DG>::cluster()
 	setupMatrix(&this->_result, mat.rows, mat.cols);
 
 	copyMatrix(_svd.u, mat);
-	runSVD(&_svd);
+	
+	try
+	{
+		runSVD(&_svd);
+	}
+	catch (std::runtime_error &err)
+	{
+		std::cout << "Error running svd: " << err.what() << std::endl;
+		return;
+	}
+
 	reorderSVD(&_svd);
 
 	copyMatrix(this->_result, _svd.u);

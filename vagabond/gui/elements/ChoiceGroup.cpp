@@ -10,6 +10,7 @@ ChoiceGroup::ChoiceGroup(Scene *scene, ButtonResponder *responder) : Box()
 	_scene = scene;
 	_responder = responder;
 	setName("Choice");
+	setAlignment(Renderable::Centre);
 }
 
 ChoiceImage *ChoiceGroup::addImage(std::string filename, std::string tag)
@@ -59,10 +60,9 @@ void ChoiceGroup::arrange(double resize, double ctx, double cty,
 		double y = yinit + i * ystep;
 
 		choice(i)->resize(resize);
-		choice(i)->setCentre(x, y);
+		choice(i)->setAlignment(alignment());
+		choice(i)->realign(ctx + x, cty + y);
 	}
-	
-	setCentre(ctx, cty);
 }
 
 void ChoiceGroup::buttonPressed(std::string tag, Button *button)

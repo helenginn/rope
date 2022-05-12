@@ -54,16 +54,26 @@ void Entity::checkModel(Model &m)
 {
 	if (m.hasEntity(name()))
 	{
-		_models.insert(&m);
+		m.appendIfMissing(_models);
 
 		for (Molecule &mol : m.molecules())
 		{
 			if (mol.entity_id() == name())
 			{
-				_molecules.insert(&mol);
+				mol.appendIfMissing(_molecules);
 			}
 		}
 	}
+}
+
+const bool compare_id(const Molecule *a, const Molecule *b)
+{
+	return a->id() < b->id();
+}
+
+void Entity::housekeeping()
+{
+	std::sort(_molecules.begin(), _molecules.end(), compare_id);
 }
 
 size_t Entity::checkForUnrefinedMolecules()
@@ -143,6 +153,7 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	
 	for (Molecule *mol : _molecules)
 	{
+		std::cout << "order " << mol->id() << std::endl;
 		Sequence *molseq = mol->sequence();
 		molseq->clearMaps();
 		molseq->remapFromMaster(this);
@@ -159,7 +170,7 @@ MetadataGroup Entity::makeTorsionDataGroup()
 void Entity::throwOutModel(Model *model)
 {
 	size_t before = moleculeCount();
-	std::set<Molecule *>::iterator it = _molecules.begin();
+	std::vector<Molecule *>::iterator it = _molecules.begin();
 
 	while (it != _molecules.end())
 	{
@@ -167,10 +178,11 @@ void Entity::throwOutModel(Model *model)
 
 		if (m->model_id() == model->name())
 		{
-			_molecules.erase(it);
+			m->eraseIfPresent(_molecules);
 			it = _molecules.begin();
 			continue;
 		}
+
 		it++;
 	}
 
@@ -178,13 +190,13 @@ void Entity::throwOutModel(Model *model)
 	std::cout << "Removed " << diff << " molecules of model " << 
 	model->name() << "." << std::endl;
 
-	std::set<Model *>::iterator jt = _models.begin();
+	std::vector<Model *>::iterator jt = _models.begin();
 	while (jt != _models.end())
 	{
 		Model *m = *jt;
 		if (m == model)
 		{
-			_models.erase(jt);
+			m->eraseIfPresent(_models);
 			break;
 		}
 		jt++;
@@ -200,6 +212,6 @@ void Entity::throwOutModel(Model *model)
 
 void Entity::throwOutMolecule(Molecule *mol)
 {
-	_molecules.erase(mol);
+	mol->eraseIfPresent(_molecules);
 
 }

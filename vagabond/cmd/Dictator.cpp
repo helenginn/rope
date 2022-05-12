@@ -21,6 +21,7 @@
 #include "CmdWorker.h"
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/Environment.h>
+#include <vagabond/core/Metadata.h>
 #include <iostream>
 
 std::map<std::string, std::string> Dictator::_properties;
@@ -29,6 +30,7 @@ std::map<std::string, std::string> Dictator::_commands;
 void Dictator::makeCommands()
 {
 	_commands["load"] = "Comma- or space-separated list of files to load";
+	_commands["add"] = "Load metadata CSV file with 'model' or 'filename' column";
 	_commands["environment"] = ("Link to json file (usually rope.json) to"\
 	                            "restore RoPE environment");
 	_commands["automodel"] = ("Auto-model atom coordinate files according "\
@@ -104,6 +106,28 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	if (first == "automodel")
 	{
 		Environment::env().autoModel();
+	}
+	
+	if (first == "add")
+	{
+		File *file = File::loadUnknown(last);
+		
+		File::Type type = File::Nothing;
+		
+		if (file)
+		{
+			type = file->cursoryLook();
+		}
+
+		if (type & File::Meta)
+		{
+			*Environment::metadata() += *file->metadata();
+		}
+		else
+		{
+			std::cout << "File " << last << " is not readable or is "
+			"not metadata." << std::endl;
+		}
 	}
 }
 

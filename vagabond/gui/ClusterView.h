@@ -22,6 +22,8 @@
 #include <vagabond/gui/elements/Renderable.h>
 #include <vagabond/c4x/Cluster.h>
 
+#define POINT_TYPE_COUNT 8
+
 class Rule;
 class MetadataGroup;
 
@@ -36,16 +38,26 @@ public:
 	{
 		return _cx;
 	}
+	
+	const size_t pointTypeCount() const
+	{
+		return POINT_TYPE_COUNT;
+	}
 
-	void makePoints();
+	void addPoint(glm::vec3 pos, int pointType);
+	void setPointType(int idx, int type);
+	virtual void makePoints();
 	void applyRule(const Rule &r);
-	void applyVaryColour(const Rule &r);
 protected:
 	virtual void extraUniforms();
+	void customiseTexture(Snow::Vertex &vert);
 private:
+	void applyVaryColour(const Rule &r);
+	void applyChangeIcon(const Rule &r);
+
 	Cluster<MetadataGroup> *_cx = nullptr;
 
-	float _size = 20;
+	float _size = 40;
 };
 
 #endif

@@ -49,7 +49,7 @@ void AddEntity::setup()
 
 	{
 		Text *t = new Text("Entity name:");
-		t->setLeft(0.2, 0.3);
+		t->setLeft(0.15, 0.3);
 		t->addAltTag("Unique identifier for entity");
 		addObject(t);
 	}
@@ -59,7 +59,7 @@ void AddEntity::setup()
 
 		TextEntry *t = new TextEntry(file, this);
 		t->setReturnTag("enter_name");
-		t->setRight(0.8, 0.3);
+		t->setRight(0.85, 0.3);
 		
 		if (_existing) { t->setInert(); }
 
@@ -69,14 +69,14 @@ void AddEntity::setup()
 
 	{
 		Text *t = new Text("Reference sequence:");
-		t->setLeft(0.2, 0.4);
+		t->setLeft(0.15, 0.4);
 		t->addAltTag("Models of this entity will align to this sequence");
 		addObject(t);
 	}
 	{
 		TextButton *t = SequenceView::button(_obj.sequence(), this);
 		t->setReturnTag("sequence");
-		t->setRight(0.8, 0.4);
+		t->setRight(0.85, 0.4);
 		addObject(t);
 	}
 	
@@ -86,14 +86,14 @@ void AddEntity::setup()
 			std::string str = i_to_str(_obj.modelCount()) + " models / ";
 			str += i_to_str(_obj.moleculeCount()) + " molecules";
 			Text *t = new Text(str);
-			t->setLeft(0.2, 0.5);
+			t->setLeft(0.15, 0.5);
 			t->addAltTag("Models may contain multiple molecules of this entity");
 			addObject(t);
 		}
 
 		{
 			TextButton *t = new TextButton("View conformational space", this);
-			t->setRight(0.8, 0.5);
+			t->setRight(0.85, 0.5);
 			t->setReturnTag("conf_space");
 			addObject(t);
 		}

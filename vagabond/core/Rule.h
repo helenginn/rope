@@ -20,6 +20,7 @@
 #define __vagabond__Rule__
 
 #include <string>
+#include <iostream>
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -48,7 +49,32 @@ public:
 		ChangeIcon,
 		VaryColour,
 	};
+
+	// map TaskState values to JSON as strings
+	NLOHMANN_JSON_SERIALIZE_ENUM( Type,
+	                             {
+		                            {LineSeries, "lineseries"},
+		                            {ChangeIcon, "changeicon"},
+		                            {VaryColour, "varycolour"},
+	                             })
+
+	enum Label
+	{
+		None = 0,
+		Start = 1 << 0,
+		End = 1 << 1,
+	};
+
+	// map TaskState values to JSON as strings
+	NLOHMANN_JSON_SERIALIZE_ENUM( Label,
+	                             {
+		                            {None, "none"},
+		                            {Start, "start"},
+		                            {End, "end"},
+		                            {Start | End, "both"},
+	                             })
 	
+
 	Rule(Type type = LineSeries);
 	
 	const bool operator==(const Rule &other) const
@@ -79,11 +105,22 @@ public:
 	void setHeader(std::string header)
 	{
 		_header = header;
+		_headerValue = "";
 	}
 	
 	const std::string &header() const
 	{
 		return _header;
+	}
+	
+	const std::string &headerValue() const
+	{
+		return _headerValue;
+	}
+
+	void setHeaderValue(std::string value)
+	{
+		_headerValue = value;
 	}
 	
 	const std::string desc() const;
@@ -116,12 +153,29 @@ public:
 		val = (v - _minVal) / (_maxVal - _minVal);
 	}
 	
-	enum Label
+	const bool &ifAssigned() const
 	{
-		None = 0,
-		Start = 1 << 0,
-		End = 1 << 1,
-	};
+		return _assigned;
+	}
+	
+	void setAssigned(bool assign)
+	{
+		_assigned = assign;
+		if (assign)
+		{
+			_headerValue = "";
+		}
+	}
+	
+	void setPointType(int idx)
+	{
+		_pointType = idx;
+	}
+	
+	const int &pointType() const
+	{
+		return _pointType;
+	}
 	
 	const Label &label() const
 	{
@@ -132,6 +186,9 @@ public:
 	{
 		_label = l;
 	}
+
+	friend void to_json(json &j, const Rule &value);
+	friend void from_json(const json &j, Rule &value);
 private:
 	Type _type = LineSeries;
 	Scheme _scheme = BlueOrange;
@@ -139,11 +196,48 @@ private:
 	
 	float _minVal = 4;
 	float _maxVal = 6.8;
+	bool _assigned = true;
 
 	std::vector<float> _vals;
 
 	std::string _header;
+	std::string _headerValue;
 
+	int _pointType = 0;
 };
+
+inline void to_json(json &j, const Rule &value)
+{
+	j["type"] = value._type;
+	j["scheme"] = value._scheme;
+	j["label"] = value._label;
+	j["min"] = value._minVal;
+	j["max"] = value._maxVal;
+	j["assigned"] = value._assigned;
+	j["header"] = value._header;
+	j["headervalue"] = value._headerValue;
+	j["point_type"] = value._pointType;
+}
+
+inline void from_json(const json &j, Rule &value)
+{
+	try
+	{
+		value._type = j.at("type");
+		value._scheme = j.at("scheme");
+		value._label = j.at("label");
+		value._minVal = j.at("min");
+		value._maxVal = j.at("max");
+		value._assigned = j.at("assigned");
+		value._header = j.at("header");
+		value._headerValue = j.at("headervalue");
+		value._pointType = j.at("point_type");
+	}
+	catch (const nlohmann::detail::out_of_range &err)
+	{
+		std::cout << "Error processing json, probably old version" << std::endl;
+	}
+}
+
 
 #endif

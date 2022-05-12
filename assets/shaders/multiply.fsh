@@ -8,8 +8,9 @@ uniform sampler2D pic_tex;
 void main()
 {
 	vec4 result = texture2D(pic_tex, vTex);
-	result *= vColor;
-	gl_FragColor = result;
+	vec4 color = vColor;
+	color.a = result.a;
+	gl_FragColor = color;
 }
 
 

@@ -16,50 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "DegreeDataGroup.h"
-#include <iostream>
+#ifndef __vagabond__IconLegend__
+#define __vagabond__IconLegend__
 
-void DegreeDataGroup::matchDegrees(Array &next)
+#include "ClusterPointDemo.h"
+
+class Rule;
+
+class IconLegend : public ClusterPointDemo
 {
-	for (size_t i = 0; i < _length; i++)
-	{
-		if (next[i] != next[i] || !isfinite(next[i]))
-		{
-			next[i] = NAN;
-			continue;
-		}
-		
-		size_t j = 0;
-		Array &master = _vectors[j];
-		for (j = 0; j < vectorCount(); j++)
-		{
-			master = _vectors[j];
+public:
+	IconLegend();
+	
+	void addRule(const Rule *r);
 
-			if (master[i] == master[i] && isfinite(master[i]))
-			{
-				break;
-			}
-		}
+	virtual void makePoints();
+private:
+	std::vector<const Rule *> _rules;
 
-		while (next[i] < master[i] - 180)
-		{
-			next[i] += 360;
-		}
+};
 
-		while (next[i] >= master[i] + 180)
-		{
-			next[i] -= 360;
-		}
-	}
-
-}
-
-void DegreeDataGroup::addArray(std::string name, Array next)
-{
-	if (_vectors.size() > 0)
-	{
-		matchDegrees(next);
-	}
-
-	DataGroup<float>::addArray(name, next);
-}
+#endif

@@ -16,50 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "DegreeDataGroup.h"
+#include "ClusterPointDemo.h"
 #include <iostream>
 
-void DegreeDataGroup::matchDegrees(Array &next)
+ClusterPointDemo::ClusterPointDemo() : ClusterView()
 {
-	for (size_t i = 0; i < _length; i++)
-	{
-		if (next[i] != next[i] || !isfinite(next[i]))
-		{
-			next[i] = NAN;
-			continue;
-		}
-		
-		size_t j = 0;
-		Array &master = _vectors[j];
-		for (j = 0; j < vectorCount(); j++)
-		{
-			master = _vectors[j];
-
-			if (master[i] == master[i] && isfinite(master[i]))
-			{
-				break;
-			}
-		}
-
-		while (next[i] < master[i] - 180)
-		{
-			next[i] += 360;
-		}
-
-		while (next[i] >= master[i] + 180)
-		{
-			next[i] -= 360;
-		}
-	}
-
+	setUsesProjection(false);
+	setVertexShaderFile("assets/shaders/box.vsh");
+	
 }
 
-void DegreeDataGroup::addArray(std::string name, Array next)
+void ClusterPointDemo::makePoints()
 {
-	if (_vectors.size() > 0)
+	clearVertices();
+	
+	const double xspan = 1.6;
+	double count = pointTypeCount();
+	double xinit = 0.0 - xspan / 2;
+	double xstep = xspan / count;
+	xinit += xstep / 2;
+
+	double yinit = 0.0;
+
+	for (size_t i = 0; i < pointTypeCount(); i++)
 	{
-		matchDegrees(next);
+		double x = xinit + i * xstep;
+		double y = yinit;
+
+		glm::vec3 v = glm::vec3(x, y, 0);
+		addPoint(v, i);
 	}
 
-	DataGroup<float>::addArray(name, next);
 }

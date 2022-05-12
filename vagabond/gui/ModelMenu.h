@@ -28,6 +28,7 @@ public:
 	ModelMenu(Scene *prev);
 
 	virtual ~ModelMenu();
+	virtual void refresh();
 	virtual void setup();
 
 	virtual size_t lineCount();

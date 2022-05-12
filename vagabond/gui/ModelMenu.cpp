@@ -49,9 +49,6 @@ void ModelMenu::setup()
 {
 	addTitle("Model menu");
 	ListView::setup();
-
-	addAutomodelButton();
-	
 }
 
 size_t ModelMenu::lineCount()
@@ -103,9 +100,13 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 	}
 }
 
+void ModelMenu::refresh()
+{
+	ListView::refresh();
+	addAutomodelButton();
+}
+
 void ModelMenu::objectsChanged()
 {
 	refresh();
-	
-	addAutomodelButton();
 }

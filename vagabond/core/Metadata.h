@@ -119,6 +119,7 @@ inline void to_json(json &j, const Metadata &value)
 	j["headers"] = value._headers;
 
 	j["data"] = value._data;
+	j["ruler"] = value._ruler;
 }
 
 inline void from_json(const json &j, Metadata &value)
@@ -129,6 +130,7 @@ inline void from_json(const json &j, Metadata &value)
 		std::list<Metadata::KeyValues> tmp = j.at("data");
 		value._data = tmp;
 		value._headers = j.at("headers");
+		value._ruler = j.at("ruler");
 	}
 	catch (const nlohmann::detail::out_of_range &err)
 	{

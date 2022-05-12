@@ -124,6 +124,6 @@ void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, 
 		}
 	
 		currentX = 0;
-		currentY += maxHeight;
+		currentY += maxHeight - 10;
 	}
 }

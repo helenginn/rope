@@ -16,50 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "DegreeDataGroup.h"
-#include <iostream>
+#ifndef __vagabond__ChooseHeaderValue__
+#define __vagabond__ChooseHeaderValue__
 
-void DegreeDataGroup::matchDegrees(Array &next)
+#include <vagabond/gui/elements/ListView.h>
+
+#include <set>
+
+class Rule;
+class Entity;
+
+class ChooseHeaderValue : public ListView
 {
-	for (size_t i = 0; i < _length; i++)
-	{
-		if (next[i] != next[i] || !isfinite(next[i]))
-		{
-			next[i] = NAN;
-			continue;
-		}
-		
-		size_t j = 0;
-		Array &master = _vectors[j];
-		for (j = 0; j < vectorCount(); j++)
-		{
-			master = _vectors[j];
+public:
+	ChooseHeaderValue(Scene *prev, Rule &rule);
 
-			if (master[i] == master[i] && isfinite(master[i]))
-			{
-				break;
-			}
-		}
+	void setEntity(std::string name);
+	virtual void setup();
 
-		while (next[i] < master[i] - 180)
-		{
-			next[i] += 360;
-		}
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
 
-		while (next[i] >= master[i] + 180)
-		{
-			next[i] -= 360;
-		}
-	}
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+private:
+	std::vector<std::string> _values;
+	Entity *_entity;
 
-}
+	Rule &_rule;
+};
 
-void DegreeDataGroup::addArray(std::string name, Array next)
-{
-	if (_vectors.size() > 0)
-	{
-		matchDegrees(next);
-	}
-
-	DataGroup<float>::addArray(name, next);
-}
+#endif

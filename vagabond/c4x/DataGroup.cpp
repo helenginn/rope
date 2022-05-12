@@ -41,6 +41,7 @@ void DataGroup<Unit>::addArray(std::string name, Array next)
 		<< _length << "!";
 		throw std::runtime_error(ss.str());
 	}
+
 	_vectors.push_back(next);
 	_vectorNames.push_back(name);
 }

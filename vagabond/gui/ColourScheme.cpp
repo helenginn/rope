@@ -28,7 +28,7 @@ ColourScheme::ColourScheme(Scheme scheme)
 	if (scheme == BlueOrange)
 	{
 		addFixedPoint(0.0, glm::vec4(0.32, 0.52, 0.92, 1.0));
-		addFixedPoint(0.5, glm::vec4(0.2, 0.2, 0.2, 1.0));
+		addFixedPoint(0.5, glm::vec4(0.6, 0.0, 0.09, 1.0));
 		addFixedPoint(1.0, glm::vec4(0.86, 0.63, 0.13, 1.0));
 		setScheme(BlueOrange);
 		setup();
