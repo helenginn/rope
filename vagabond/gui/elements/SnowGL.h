@@ -123,7 +123,7 @@ protected:
 	void shadowProgram();
 	void prepareShadowBuffer();
 	void preparePingPongBuffers(int w_over = -1, int h_over = -1);
-	void prepareRenderToTexture(size_t count);
+	void prepareDepthColourIndex();
 	void resizeTextures(int w_over = -1, int h_over = -1);
 	void renderShadows();
 	void renderScene();

@@ -65,15 +65,7 @@ bool HasBondstraints::hasBondAngle(BondAngle *angle)
 
 bool HasBondstraints::hasTorsion(BondTorsion *torsion)
 {
-	for (size_t i = 0; i < _torsions.size(); i++)
-	{
-		if (*_torsions[i] == *torsion)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return (_torsionMap.count(torsion->desc()));
 }
 
 bool HasBondstraints::hasChirality(Chirality *chir)
@@ -145,6 +137,8 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 
 	_bondstraints.push_back(torsion);
 	_torsions.push_back(torsion);
+	_torsionMap[torsion->desc()] = torsion;
+	_torsionMap[torsion->reverse_desc()] = torsion;
 	
 	Atom *me = atomIdentity();
 	

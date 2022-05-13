@@ -72,10 +72,6 @@ private:
 	void prepareNormalDist();
 	void makeQuad();
 
-	GLint _mode;
-	GLfloat _threshold;
-	GLfloat _other;
-	GLfloat _dist[20];
 	int _count;
 };
 

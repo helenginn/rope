@@ -204,9 +204,14 @@ void Model::autoAssignEntities()
 const Metadata::KeyValues Model::metadata() const
 {
 	Metadata *md = Environment::metadata();
-	const Metadata::KeyValues kv = *md->values(_name, _filename);
+	const Metadata::KeyValues *ptr = md->values(_name, _filename);
+	
+	if (ptr != nullptr)
+	{
+		return *ptr;
+	}
 
-	return kv;
+	return Metadata::KeyValues();
 }
 
 void Model::housekeeping()

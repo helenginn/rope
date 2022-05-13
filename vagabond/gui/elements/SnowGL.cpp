@@ -61,6 +61,41 @@ void SnowGL::rotate(double x, double y, double z)
 	_camGamma += z;
 }
 
+void checkFrameBuffers()
+{
+	GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (result != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << "Incomplete frame buffer" << std::endl;
+
+		switch (result)
+		{
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			std::cout << "incomplete attachment" << std::endl;
+			break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+			std::cout << "incomplete missing attachment" << std::endl;
+			break;
+			case GL_FRAMEBUFFER_UNSUPPORTED:
+			std::cout << "unsupported format combo" << std::endl;
+			break;
+			case GL_FRAMEBUFFER_UNDEFINED:
+			std::cout << "buffer undefined" << std::endl;
+			break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+			std::cout << "incomplete multisample" << std::endl;
+			break;
+
+			default:
+			std::cout << "Something else " << result << std::endl;
+			break;
+		}
+		exit(1);
+	}
+
+	std::cout << "Buffers fine" << std::endl;
+}
+
 void SnowGL::preparePingPongBuffers(int w_over, int h_over)
 {
 	glGenFramebuffers(2, _pingPongFbo);
@@ -89,34 +124,7 @@ void SnowGL::preparePingPongBuffers(int w_over, int h_over)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, 
 		                       GL_TEXTURE_2D, _pingPongMap[i], 0);
 		
-		GLenum result = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if (result != GL_FRAMEBUFFER_COMPLETE)
-		{
-			std::cout << "Incomplete frame buffer" << std::endl;
-			
-			switch (result)
-			{
-				case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				std::cout << "incomplete attachment" << std::endl;
-				break;
-				case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				std::cout << "incomplete missing attachment" << std::endl;
-				break;
-				case GL_FRAMEBUFFER_UNSUPPORTED:
-				std::cout << "unsupported format combo" << std::endl;
-				break;
-				case GL_FRAMEBUFFER_UNDEFINED:
-				std::cout << "buffer undefined" << std::endl;
-				break;
-				case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
-				std::cout << "incomplete multisample" << std::endl;
-				break;
-				
-				default:
-				std::cout << "Something else " << result << std::endl;
-				break;
-			}
-		}
+		checkFrameBuffers();
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -139,6 +147,7 @@ void SnowGL::resizeTextures(int w_over, int h_over)
 
 	for (size_t i = 0; i < _sceneMapCount; i++)
 	{
+		/* wrong, if you bring this into action */
 		glBindTexture(GL_TEXTURE_2D, _sceneMap[i]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 
 		             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -156,19 +165,25 @@ void SnowGL::resizeTextures(int w_over, int h_over)
 
 }
 
-void SnowGL::prepareRenderToTexture(size_t count)
+void SnowGL::prepareDepthColourIndex()
 {
+	/* generate new frame buffer for additional targets */
 	glGenFramebuffers(1, &_sceneFbo);
+	
+	/* bind it! */
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _sceneFbo);
 
-	glGenTextures(count, _sceneMap);
+	/* generate a texture for each target */
+	glGenTextures(2, _sceneMap);
+	/* generate a single depth buffer as well */
 	glGenTextures(1, &_sceneDepth);
 
-	_sceneMapCount = count;
+	_sceneMapCount = 2;
 
 	int w = width();
 	int h = height();
 
+	/* texture for the depth buffer */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _sceneDepth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
@@ -179,29 +194,51 @@ void SnowGL::prepareRenderToTexture(size_t count)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, 
 	                       GL_TEXTURE_2D, _sceneDepth, 0);
+	checkFrameBuffers();
 
-	unsigned int attachments[8];
+	std::cout << "Depth buffer" << std::endl;
+
+	unsigned int attachments[2];
 	
-	for (size_t i = 0; i < count; i++)
+	/* additional attachments */
+	for (size_t i = 0; i < 2; i++)
 	{
+		std::cout << i << " depth buffer" << std::endl;
+		/* bind next texture */
 		glActiveTexture(GL_TEXTURE0 + i + 1);
+		/* from texture produced earlier */
 		glBindTexture(GL_TEXTURE_2D, _sceneMap[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 
-		             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		checkErrors("Binding texture");
 
-		checkErrors("Making framebuffer");
+		if (i == 0) /* suitable for colours */
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 
+			             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
+			checkErrors("glTexImage2D");
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+		else if (i == 1)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0, 
+			             GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		}
+
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
 		                       GL_TEXTURE_2D, _sceneMap[i], 0);
-		checkErrors("Binding texture");
+		checkFrameBuffers();
 		
 		attachments[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 	
-	glDrawBuffers(count, attachments);  
+	glDrawBuffers(2, attachments); 
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

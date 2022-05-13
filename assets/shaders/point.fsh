@@ -9,7 +9,7 @@ void main()
 {
 	vec2 frag = gl_PointCoord;
 	vec2 xy = vec2(frag[0], frag[1]);
-	xy /= vTex.x;				// stores number of points
+	xy.x /= vTex.x;				// stores number of points
 	xy.x += vTex.y / vTex.x;	// stores point index
 	vec4 tex = texture2D(pic_tex, xy);
 	if (tex[3] < 0.05)

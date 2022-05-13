@@ -30,9 +30,9 @@ std::set<std::string> Entity::allMetadataHeaders()
 {
 	std::set<std::string> headers;
 	
-	for (const Model *model : _models)
+	for (const Molecule *molecule : _molecules)
 	{
-		const Metadata::KeyValues kv = model->metadata();
+		const Metadata::KeyValues kv = molecule->metadata();
 		
 		if (kv.size() == 0)
 		{

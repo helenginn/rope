@@ -53,6 +53,7 @@ void ConfSpaceView::askToFoldIn(int extra)
 
 void ConfSpaceView::setup()
 {
+//	prepareDepthColourIndex();
 	size_t extra = _entity->checkForUnrefinedMolecules();
 
 	if (extra > 0)

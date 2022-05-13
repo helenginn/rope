@@ -152,7 +152,14 @@ const Metadata::KeyValues Molecule::metadata() const
 {
 	Metadata::KeyValues mod = _model->metadata();
 	Metadata *md = Environment::metadata();
-	const Metadata::KeyValues mol = *md->valuesForMolecule(id());
+
+	const Metadata::KeyValues *ptr = md->valuesForMolecule(id());
+	Metadata::KeyValues mol;
+
+	if (ptr != nullptr)
+	{
+		mol = *ptr;
+	}
 
 	Metadata::KeyValues::const_iterator it;
 	
@@ -183,8 +190,10 @@ Metadata::KeyValues Molecule::distanceBetweenAtoms(Residue *master_id_a,
 	
 	_model->load();
 	
-	Atom *a = _model->currentAtoms()->atomByIdName(local_a->id(), a_name);
-	Atom *b = _model->currentAtoms()->atomByIdName(local_b->id(), b_name);
+	Chain *mine = _model->currentAtoms()->chain(_chain_id);
+	
+	Atom *a = mine->atomByIdName(local_a->id(), a_name);
+	Atom *b = mine->atomByIdName(local_b->id(), b_name);
 	
 	if (!a || !b)
 	{

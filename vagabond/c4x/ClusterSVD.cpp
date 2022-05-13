@@ -76,7 +76,7 @@ void ClusterSVD<DG>::cluster()
 	{
 		for (size_t j = 0; j < this->_result.rows; j++)
 		{
-			this->_result[j][i] *= _svd.w[i];
+//			this->_result[j][i] *= _svd.w[i];
 		}
 	}
 }

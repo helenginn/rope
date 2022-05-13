@@ -34,6 +34,8 @@ DistanceMaker::DistanceMaker(Scene *prev, IndexedSequence *sequence)
 
 void DistanceMaker::addExtras(TextButton *t, Residue *r) 
 {
+	std::string tag = r->desc();
+	t->addAltTag(tag);
 	t->setInert(false);
 }
 
