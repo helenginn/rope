@@ -84,6 +84,12 @@ bool BondTorsion::isConstrained() const
 
 }
 
+const std::string BondTorsion::reverse_desc() const
+{
+	return _d->atomName() + "-" + _c->atomName() + "-" + 
+	_b->atomName() + "-" + _a->atomName();
+}
+
 const std::string BondTorsion::desc() const
 {
 	return _a->atomName() + "-" + _b->atomName() + "-" + 

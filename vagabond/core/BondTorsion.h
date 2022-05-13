@@ -102,6 +102,7 @@ public:
 	double similarityScore(BondTorsion *const other) const;
 	
 	virtual const std::string desc() const;
+	virtual const std::string reverse_desc() const;
 	
 	static double maxSeparation()
 	{
