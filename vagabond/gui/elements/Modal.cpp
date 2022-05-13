@@ -4,6 +4,11 @@
 #include "Scene.h"
 #include <iostream>
 
+Modal::Modal(Scene *scene)
+{
+	_scene = scene;
+}
+
 Modal::Modal(Scene *scene, double width, double height) : Box()
 {
 	_darker = new Box();
@@ -25,7 +30,11 @@ Modal::Modal(Scene *scene, double width, double height) : Box()
 
 void Modal::render(SnowGL *gl)
 {
-	_darker->render(gl);
+	if (_darker)
+	{
+		_darker->render(gl);
+	}
+
 	Box::render(gl);
 }
 
@@ -36,11 +45,13 @@ void Modal::conv_coords(double *fx, double *fy)
 
 }
 
+/*
 void Modal::setLeft(Renderable *r, double fx, double fy)
 {
 	conv_coords(&fx, &fy);
 	r->setLeft(fx, fy);
 }
+*/
 
 void Modal::setCentre(Renderable *r, double fx, double fy)
 {

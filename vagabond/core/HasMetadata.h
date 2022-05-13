@@ -27,7 +27,7 @@ class HasMetadata
 public:
 	virtual ~HasMetadata() {};
 
-	virtual const Metadata::KeyValues *metadata() const = 0;
+	virtual const Metadata::KeyValues metadata() const = 0;
 	
 	virtual const std::string id() const = 0;
 
@@ -56,8 +56,6 @@ public:
 			target.erase(it);
 		}
 	}
-
-private:
 
 };
 

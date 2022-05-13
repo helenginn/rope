@@ -24,7 +24,7 @@
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/Chain.h>
 
-#include <vagabond/gui/SequenceView.h>
+#include <vagabond/gui/DistanceMaker.h>
 #include <vagabond/gui/ConfSpaceView.h>
 
 #include <vagabond/gui/elements/BadChoice.h>
@@ -126,7 +126,13 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		_obj.setName(_name->text());
 		refreshInfo();
 	}
-	else if (tag == "sequence")
+	else if (tag == "sequence" && _existing)
+	{
+		DistanceMaker *view = new DistanceMaker(this, _obj.sequence());
+		view->setEntity(&_obj);
+		view->show();
+	}
+	else if (tag == "sequence" && !_existing)
 	{
 		SequenceView *view = new SequenceView(this, _obj.sequence());
 		view->show();

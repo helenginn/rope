@@ -35,7 +35,7 @@ public:
 	virtual void setup();
 private:
 	Model &_model;
-	const Metadata::KeyValues *_kv = nullptr;
+	Metadata::KeyValues _kv;
 
 };
 

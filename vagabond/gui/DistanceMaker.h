@@ -16,36 +16,46 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__SequenceLine__
-#define __vagabond__SequenceLine__
-
-#define RESIDUES_PER_ROW 30
+#ifndef __vagabond__DistanceMaker__
+#define __vagabond__DistanceMaker__
 
 #include "SequenceView.h"
-#include <vagabond/gui/elements/Box.h>
 
-class IndexedSequence;
-class SequenceView;
-class TextButton;
-class Sequence;
+class Entity;
 
-class SequenceLine : public Box
+class DistanceMaker : public SequenceView
 {
 public:
-	SequenceLine(SequenceView *me, IndexedSequence *seq, int start);
+	DistanceMaker(Scene *prev, IndexedSequence *sequence);
 	
-	~SequenceLine();
+	void setEntity(Entity *ent)
+	{
+		_entity = ent;
+	}
 
-	void setup();
+	virtual void addExtras(TextButton *t, Residue *r);
+	virtual void handleResidue(Button *button, Residue *r);
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	void addLeftIndicator(int entry);
-	void addRightIndicator(int entry, float x);
+	void handleAtomName(std::string name);
+	void calculateDistance();
+	void confirmAtom();
 
-	SequenceView *_view;
-	IndexedSequence *_sequence;
-	int _start;
-	int _end;
+	enum Stage
+	{
+		Nothing,
+		ChosenFirst,
+	};
 
+	Stage _stage = Nothing;
+	Residue *_curr;
+	std::string _candidate;
+	
+	Entity *_entity = nullptr;
+	std::string _first;
+	std::string _second;
+	Residue *_aRes = nullptr;
+	Residue *_bRes = nullptr;
 };
 
 #endif

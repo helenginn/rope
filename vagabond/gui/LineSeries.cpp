@@ -50,14 +50,12 @@ LineSeries::~LineSeries()
 void LineSeries::addLabel(int idx)
 {
 	HasMetadata *hm = _group->object(idx);
-	std::cout << hm << std::endl;
-	const Metadata::KeyValues *data = hm->metadata();
-	std::cout << data << std::endl;
+	const Metadata::KeyValues data = hm->metadata();
 
-	if (data)
+	if (data.size())
 	{
 		std::string header = _rule.header();
-		std::string value = data->at(header).text();
+		std::string value = data.at(header).text();
 		std::string text = header + "/" + value;
 		FloatingText *ft = new FloatingText(text);
 		ft->setPosition(_vertices[idx].pos);
@@ -91,16 +89,11 @@ void LineSeries::setup()
 
 	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
-		const Metadata::KeyValues *data = _group->object(i)->metadata();
+		const Metadata::KeyValues data = _group->object(i)->metadata();
 		
-		if (data == nullptr)
+		if (data.count(header) && data.at(header).hasNumber())
 		{
-			continue;
-		}
-
-		if (data->count(header) && data->at(header).hasNumber())
-		{
-			float val = data->at(header).number();
+			float val = data.at(header).number();
 			OrderedIndex oi{i, val};
 			idxs.push_back(oi);
 		}

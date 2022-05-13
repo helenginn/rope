@@ -88,9 +88,16 @@ public:
 		return _chain;
 	}
 	
+	const std::set<std::string> &atomNames() const
+	{
+		return _atomNames;
+	}
+	
 	void supplyRefinedAngle(std::string desc, double angle);
 	
 	const std::string desc() const;
+	
+	void housekeeping();
 	
 	void addTorsionRef(TorsionRef &ref);
 	TorsionRef copyTorsionRef(const std::string &desc);
@@ -106,6 +113,7 @@ private:
 	bool _nothing = false;
 	Sequence *_sequence = nullptr;
 	std::set<TorsionRef> _refs;
+	std::set<std::string> _atomNames;
 };
 
 /* residue */
@@ -142,6 +150,8 @@ inline void from_json(const json &j, Residue &value)
 	{
 
 	}
+	
+	value.housekeeping();
 }
 
 #endif

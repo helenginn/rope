@@ -226,6 +226,20 @@ void AtomGroup::findPossibleAnchors()
 	}
 }
 
+Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name) const
+{
+	to_upper(name);
+	for (size_t i = 0; i < _atoms.size(); i++)
+	{
+		if (_atoms[i]->residueId() == id && _atoms[i]->atomName() == name)
+		{
+			return _atoms[i];
+		}
+	}
+	
+	return nullptr;
+}
+
 AtomVector AtomGroup::atomsWithName(std::string name) const
 {
 	to_upper(name);

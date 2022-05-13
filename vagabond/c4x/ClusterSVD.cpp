@@ -71,6 +71,14 @@ void ClusterSVD<DG>::cluster()
 	reorderSVD(&_svd);
 
 	copyMatrix(this->_result, _svd.u);
+
+	for (size_t i = 0; i < this->_result.cols; i++)
+	{
+		for (size_t j = 0; j < this->_result.rows; j++)
+		{
+			this->_result[j][i] *= _svd.w[i];
+		}
+	}
 }
 
 #endif

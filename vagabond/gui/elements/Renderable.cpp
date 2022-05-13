@@ -1107,25 +1107,35 @@ void Renderable::setImage(std::string imagename)
 	_texture = imagename;
 }
 
-void Renderable::maximalWidth(double *min, double *max)
+void Renderable::maximalDim(double *min, double *max, int dim)
 {
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
-		if (_vertices[i].pos[0] > *max)
+		if (_vertices[i].pos[dim] > *max)
 		{
-			*max = _vertices[i].pos[0];
+			*max = _vertices[i].pos[dim];
 		}
 
-		if (_vertices[i].pos[0] < *min)
+		if (_vertices[i].pos[dim] < *min)
 		{
-			*min = _vertices[i].pos[0];
+			*min = _vertices[i].pos[dim];
 		}
 	}
 
 	for (size_t i = 0; i < objectCount(); i++)
 	{
-		object(i)->maximalWidth(min, max);
+		object(i)->maximalDim(min, max, dim);
 	}
+}
+
+double Renderable::maximalHeight()
+{
+	double max = -FLT_MAX;
+	double min = FLT_MAX;
+	
+	maximalDim(&min, &max, 1);
+	
+	return max - min;
 }
 
 double Renderable::maximalWidth()
@@ -1133,7 +1143,7 @@ double Renderable::maximalWidth()
 	double max = -FLT_MAX;
 	double min = FLT_MAX;
 	
-	maximalWidth(&min, &max);
+	maximalDim(&min, &max, 0);
 	
 	return max - min;
 }
@@ -1365,7 +1375,7 @@ void Renderable::triangulate()
 	unlockMutex();
 }
 
-void Renderable::setCentre(double x, double y)
+void Renderable::setArbitrary(double x, double y, Alignment a)
 {
 	double dx = x - _x;
 	double dy = y - _y;
@@ -1374,6 +1384,12 @@ void Renderable::setCentre(double x, double y)
 	double xf = 2 * x - 1;
 	double yf = 2 * y - 1;
 
+	double widthmult = (a & Left ? 1 : (a & Right ? -1 : 0));
+	xf += widthmult * maximalWidth() / 2;
+
+	double heightmult = (a & Top ? 1 : (a & Bottom ? -1 : 0));
+	yf += heightmult * maximalHeight() / 2;
+
 	setPosition(glm::vec3(xf, -yf, 0));
 	
 	for (size_t i = 0; i < objectCount(); i++)
@@ -1381,52 +1397,24 @@ void Renderable::setCentre(double x, double y)
 		object(i)->addAlign(dx, dy);
 	}
 
-	_align = Centre;
+	_align = a;
 	setHover(_hover);
+
+}
+
+void Renderable::setCentre(double x, double y)
+{
+	setArbitrary(x, y, Centre);
 }
 
 void Renderable::setLeft(double x, double y)
 {
-	double dx = x - _x;
-	double dy = y - _y;
-
-	_x = x; _y = y;
-	double xf = 2 * x - 1;
-	double yf = 2 * y - 1;
-	
-	xf += maximalWidth() / 2;
-
-	setPosition(glm::vec3(xf, -yf, 0));
-	
-	for (size_t i = 0; i < objectCount(); i++)
-	{
-		object(i)->addAlign(dx, dy);
-	}
-
-	_align = Left;
-	setHover(_hover);
+	setArbitrary(x, y, Left);
 }
 
 void Renderable::setRight(double x, double y)
 {
-	double dx = x - _x;
-	double dy = y - _y;
-
-	_x = x; _y = y;
-	double xf = 2 * x - 1;
-	double yf = 2 * y - 1;
-	
-	xf -= maximalWidth() / 2;
-
-	setPosition(glm::vec3(xf, -yf, 0));
-	
-	for (size_t i = 0; i < objectCount(); i++)
-	{
-		object(i)->addAlign(dx, dy);
-	}
-
-	_align = Right;
-	setHover(_hover);
+	setArbitrary(x, y, Right);
 }
 
 void Renderable::realign(double x, double y)

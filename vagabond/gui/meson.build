@@ -14,6 +14,7 @@ guifiles = [
 'ColourScheme.cpp',
 'DatasetMenu.cpp',
 'Display.cpp',
+'DistanceMaker.cpp',
 'EntityMenu.cpp',
 'FileLine.cpp',
 'FileView.cpp',

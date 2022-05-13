@@ -98,18 +98,15 @@ void ClusterView::applyVaryColour(const Rule &r)
 	MetadataGroup &group = *_cx->dataGroup();
 	for (size_t i = 0; i < group.objectCount(); i++)
 	{
-		HasMetadata *obj = group.object(i);
-
-		const Metadata::KeyValues *data = group.object(i)->metadata();
+		const Metadata::KeyValues data = group.object(i)->metadata();
 		
-		if (data == nullptr || data->count(header) == 0 
-		    || !data->at(header).hasNumber())
+		if (data.count(header) == 0 || !data.at(header).hasNumber())
 		{
 			_vertices[i].color = glm::vec4(0.5, 0.5, 0.5, 0.2);
 			continue;
 		}
 		
-		float val = data->at(header).number();
+		float val = data.at(header).number();
 		r.convert_value(val);
 		glm::vec4 colour = cs->colour(val);
 		_vertices[i].color = colour;
@@ -130,20 +127,18 @@ void ClusterView::applyChangeIcon(const Rule &r)
 	MetadataGroup &group = *_cx->dataGroup();
 	for (size_t i = 0; i < group.objectCount(); i++)
 	{
-		HasMetadata *obj = group.object(i);
-
-		const Metadata::KeyValues *data = group.object(i)->metadata();
+		const Metadata::KeyValues data = group.object(i)->metadata();
 		
-		if (data == nullptr || data->count(header) == 0)
+		if (data.count(header) == 0)
 		{
 			continue;
 		}
 		
-		if (data->count(header) && any_assigned)
+		if (data.count(header) && any_assigned)
 		{
 			setPointType(i, pt);
 		}
-		else if (data->at(header).text() == value)
+		else if (data.at(header).text() == value)
 		{
 			setPointType(i, pt);
 		}

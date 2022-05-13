@@ -96,6 +96,12 @@ public:
 	}
 	
 	void housekeeping();
+	
+	Metadata *distanceBetweenAtoms(Residue *master_id_a,
+	                               std::string a_name,
+	                               Residue *master_id_b,
+	                               std::string b_name);
+
 	std::set<std::string> allMetadataHeaders();
 
 	friend void to_json(json &j, const Entity &value);

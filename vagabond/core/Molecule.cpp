@@ -18,6 +18,7 @@
 
 #include "Chain.h"
 #include "Model.h"
+#include "Value.h"
 #include "Molecule.h"
 #include "AtomContent.h"
 #include "Environment.h"
@@ -147,7 +148,58 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 	_refined = true;
 }
 
-const Metadata::KeyValues *Molecule::metadata() const
+const Metadata::KeyValues Molecule::metadata() const
 {
-	return _model->metadata();
+	Metadata::KeyValues mod = _model->metadata();
+	Metadata *md = Environment::metadata();
+	const Metadata::KeyValues mol = *md->valuesForMolecule(id());
+
+	Metadata::KeyValues::const_iterator it;
+	
+	for (it = mol.cbegin(); it != mol.cend(); it++)
+	{
+		mod[it->first] = it->second;
+	}
+	
+	return mod;
+}
+
+Metadata::KeyValues Molecule::distanceBetweenAtoms(Residue *master_id_a,
+                                                   std::string a_name,
+                                                   Residue *master_id_b,
+                                                   std::string b_name,
+                                                   std::string header) const
+{
+	Metadata::KeyValues kv;
+	
+	Residue *local_a = _sequence.local_residue(master_id_a);
+	Residue *local_b = _sequence.local_residue(master_id_b);
+
+	if (local_a == nullptr || local_b == nullptr)
+	{
+		std::cout << "local_a or local_b missing" << std::endl;
+		return kv;
+	}
+	
+	_model->load();
+	
+	Atom *a = _model->currentAtoms()->atomByIdName(local_a->id(), a_name);
+	Atom *b = _model->currentAtoms()->atomByIdName(local_b->id(), b_name);
+	
+	if (!a || !b)
+	{
+		_model->unload();
+		return kv;
+	}
+	
+	glm::vec3 init_a = a->initialPosition();
+	glm::vec3 init_b = b->initialPosition();
+	
+	double dist = glm::length(init_b - init_a);
+	
+	kv["molecule"] = Value(id());
+	kv[header] = Value(f_to_str(dist, 2));
+
+	_model->unload();
+	return kv;
 }

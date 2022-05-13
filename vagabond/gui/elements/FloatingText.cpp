@@ -19,21 +19,21 @@
 #include <iostream>
 #include "FloatingText.h"
 
-FloatingText::FloatingText(std::string text) : Text(text)
+FloatingText::FloatingText(std::string text, float mult) : Text(text)
 {
 	setVertexShaderFile("assets/shaders/floating_box.vsh");
-	correctBox();
+	correctBox(mult);
 	setUsesProjection(true);
 }
 
-void FloatingText::correctBox()
+void FloatingText::correctBox(float mult)
 {
 	glm::vec3 centre = centroid();
 
 	for (Snow::Vertex &v : _vertices)
 	{
 		v.extra = glm::vec4(v.pos - centre, 0);
-		v.extra *= 5;
+		v.extra *= mult;
 		
 #ifdef __EMSCRIPTEN__
 		v.extra *= 10;

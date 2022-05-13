@@ -43,11 +43,11 @@ void ChooseHeaderValue::setEntity(std::string name)
 	{
 		for (const Model *model : _entity->models())
 		{
-			const Metadata::KeyValues *kv = model->metadata();
+			const Metadata::KeyValues kv = model->metadata();
 
-			if (kv->count(header))
+			if (kv.count(header))
 			{
-				std::string val = kv->at(header).text();
+				std::string val = kv.at(header).text();
 				values.insert(val);
 			}
 		}

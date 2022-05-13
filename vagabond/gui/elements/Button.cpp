@@ -41,3 +41,14 @@ void Button::unMouseOver()
 	Box::unMouseOver();
 	setHighlighted(false);
 }
+
+std::string Button::tagEnd(std::string tag, std::string prefix)
+{
+	if (tag.rfind(prefix, 0) != std::string::npos)
+	{
+		std::string name = tag.substr(prefix.length(), std::string::npos);
+		return name;
+	}
+	
+	return "";
+}

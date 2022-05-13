@@ -112,15 +112,14 @@ void AddRule::recalculateLimits()
 	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
 		HasMetadata *hm = _group->object(i);
-		const Metadata::KeyValues *data = hm->metadata();
+		const Metadata::KeyValues data = hm->metadata();
 
-		if (data == nullptr || data->count(header) == 0 
-		    || !data->at(header).hasNumber())
+		if (data.count(header) == 0 || !data.at(header).hasNumber())
 		{
 			continue;
 		}
 
-		float val = data->at(header).number();
+		float val = data.at(header).number();
 		if (val != val || !isfinite(val))
 		{
 			continue;

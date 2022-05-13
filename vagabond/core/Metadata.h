@@ -65,6 +65,8 @@ public:
 		return nullptr;
 	}
 
+	const KeyValues *valuesForMolecule(const std::string name);
+
 	const KeyValues *valuesForFilename(const std::string name)
 	{
 		if (_file2Data.count(name))
@@ -109,6 +111,7 @@ private:
 	
 	std::set<std::string> _headers;
 
+	std::map<std::string, KeyValues *> _mole2Data;
 	std::map<std::string, KeyValues *> _model2Data;
 	std::map<std::string, KeyValues *> _file2Data;
 };

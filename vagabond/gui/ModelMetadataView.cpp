@@ -24,7 +24,6 @@ ModelMetadataView::ModelMetadataView(Scene *prev, Model &model) :
 ListView(prev), _model(model)
 {
 	_kv = _model.metadata();
-	std::cout << "Found " << _kv << std::endl;
 
 }
 
@@ -43,7 +42,7 @@ Renderable *ModelMetadataView::getLine(int i)
 	std::string first, last;
 	bool number = false;
 	
-	for (it = _kv->cbegin(); it != _kv->cend(); it++)
+	for (it = _kv.cbegin(); it != _kv.cend(); it++)
 	{
 		if (count == i)
 		{
@@ -72,11 +71,5 @@ Renderable *ModelMetadataView::getLine(int i)
 
 size_t ModelMetadataView::lineCount()
 {
-	if (_kv == nullptr)
-	{
-		return 0;
-	}
-
-	std::cout << "Line count: " << _kv->size() << std::endl;
-	return _kv->size();
+	return _kv.size();
 }

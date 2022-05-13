@@ -92,3 +92,19 @@ const size_t Residue::torsionCount(bool onlyMain) const
 	
 	return count;
 }
+
+void Residue::housekeeping()
+{
+	_atomNames.clear();
+
+	for (const TorsionRef &ref : _refs)
+	{
+		std::vector<std::string> comps = split(ref.desc(), '-');
+		
+		for (const std::string &comp : comps)
+		{
+			_atomNames.insert(comp);
+		}
+	}
+
+}

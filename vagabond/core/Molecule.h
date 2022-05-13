@@ -85,6 +85,12 @@ public:
 	void extractTorsionAngles(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 
+	Metadata::KeyValues distanceBetweenAtoms(Residue *master_id_a,
+	                                         std::string a_name,
+	                                         Residue *master_id_b,
+	                                         std::string b_name,
+	                                         std::string header) const;
+
 	void housekeeping();
 	
 	Model *const model();
@@ -94,7 +100,7 @@ public:
 		_model = model;
 	}
 
-	virtual const Metadata::KeyValues *metadata() const;
+	virtual const Metadata::KeyValues metadata() const;
 
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);

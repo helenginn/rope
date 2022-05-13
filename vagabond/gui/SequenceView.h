@@ -23,6 +23,7 @@
 #include <vagabond/gui/elements/ButtonResponder.h>
 
 class IndexedSequence;
+class Residue;
 class Sequence;
 class TextButton;
 
@@ -36,6 +37,8 @@ public:
 	virtual void setup();
 	virtual void refresh();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	virtual void addExtras(TextButton *t, Residue *r);
+	virtual void handleResidue(Button *button, Residue *r) {};
 private:
 	virtual size_t unitsPerPage();
 	size_t linesPerPage();

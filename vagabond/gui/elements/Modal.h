@@ -12,6 +12,7 @@ class Modal : public Box
 {
 public:
 	Modal(Scene *scene, double width, double height);
+	Modal(Scene *scene);
 	
 	~Modal();
 
@@ -19,7 +20,7 @@ public:
 
 	void hide();
 	void setCentre(Renderable *r, double fx, double fy);
-	void setLeft(Renderable *r, double fx, double fy);
+//	void setLeft(Renderable *r, double fx, double fy);
 	void setRight(Renderable *r, double fx, double fy);
 	
 	void setDismissible(double dismiss)
@@ -33,12 +34,12 @@ protected:
 private:
 	void conv_coords(double *fx, double *fy);
 
-	Box *_darker;
+	Box *_darker = nullptr;
 
-	double _width;
-	double _height;
+	double _width = 0;
+	double _height = 0;
 	
-	bool _dismissable;
+	bool _dismissable = true;
 };
 
 #endif

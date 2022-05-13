@@ -203,7 +203,7 @@ void Sequence::mapFromMaster(Entity *entity)
 	delete sc;
 }
 
-Residue *const Sequence::local_residue(Residue *const master)
+Residue *const Sequence::local_residue(Residue *const master) const
 {
 	if (_map2Local.count(master) == 0)
 	{
@@ -213,7 +213,7 @@ Residue *const Sequence::local_residue(Residue *const master)
 	return _map2Local.at(master);
 }
 
-Residue *Sequence::master_residue(Residue *local)
+Residue *Sequence::master_residue(Residue *local) const
 {
 	if (_map2Master.count(local) == 0)
 	{

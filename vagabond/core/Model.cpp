@@ -118,7 +118,7 @@ Molecule *Model::moleculeFromChain(Chain *ch)
 	return &_molecules.back();
 }
 
-void Model::removeReferences()
+void Model::unload()
 {
 	if (_currentFile)
 	{
@@ -158,7 +158,7 @@ void Model::createMolecules()
 		}
 	}
 	
-	removeReferences();
+	unload();
 }
 
 void Model::autoAssignEntities()
@@ -201,10 +201,10 @@ void Model::autoAssignEntities()
 	housekeeping();
 }
 
-const Metadata::KeyValues *Model::metadata() const
+const Metadata::KeyValues Model::metadata() const
 {
 	Metadata *md = Environment::metadata();
-	const Metadata::KeyValues *kv = md->values(_name, _filename);
+	const Metadata::KeyValues kv = *md->values(_name, _filename);
 
 	return kv;
 }
@@ -291,7 +291,7 @@ void Model::finishedRefinement()
 		_responder->modelReady();
 	}
 
-	removeReferences();
+	unload();
 }
 
 Model Model::autoModel(std::string filename)

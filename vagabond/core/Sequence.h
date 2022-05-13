@@ -85,8 +85,8 @@ public:
 		return _id2Residue.at(id);
 	}
 	
-	Residue *const local_residue(Residue *const master);
-	Residue *master_residue(Residue *local);
+	Residue *const local_residue(Residue *const master) const;
+	Residue *master_residue(Residue *local) const;
 	
 	int firstNum()
 	{

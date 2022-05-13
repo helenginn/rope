@@ -16,36 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__SequenceLine__
-#define __vagabond__SequenceLine__
+#ifndef __vagabond__Menu__
+#define __vagabond__Menu__
 
-#define RESIDUES_PER_ROW 30
+#include "Modal.h"
+#include "ButtonResponder.h"
 
-#include "SequenceView.h"
-#include <vagabond/gui/elements/Box.h>
-
-class IndexedSequence;
-class SequenceView;
 class TextButton;
-class Sequence;
 
-class SequenceLine : public Box
+class Menu : public Modal, public ButtonResponder
 {
 public:
-	SequenceLine(SequenceView *me, IndexedSequence *seq, int start);
-	
-	~SequenceLine();
+	Menu(Scene *scene, std::string prefix = "");
+	~Menu();
 
-	void setup();
+	TextButton *addOption(std::string text, std::string tag = "");
+	void setup(double x, double y);
+	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	void addLeftIndicator(int entry);
-	void addRightIndicator(int entry, float x);
-
-	SequenceView *_view;
-	IndexedSequence *_sequence;
-	int _start;
-	int _end;
-
+	std::vector<TextButton *> _options;
+	std::string _prefix;
 };
 
 #endif

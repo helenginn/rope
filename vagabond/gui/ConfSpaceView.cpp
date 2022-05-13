@@ -145,6 +145,12 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 
 void ConfSpaceView::refresh()
 {
+	if (_view == nullptr)
+	{
+		showClusters();
+		showRulesButton();
+	}
+
 	applyRules();
 }
 

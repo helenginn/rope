@@ -276,8 +276,10 @@ public:
 	Vertex &addVertex(glm::vec3 v, std::vector<Vertex> *vec = NULL);
 	void addIndex(GLint i);
 	void addIndices(GLuint i1, GLuint i2, GLuint i3);
+	void maximalDim(double *min, double *max, int dim);
 	double maximalWidth();
-	void maximalWidth(double *min, double *max);
+	double maximalHeight();
+
 
 	glm::vec3 rayTraceToPlane(glm::vec3 point, GLuint *trio, 
 	                          glm::vec3 dir, bool *backwards);
@@ -300,11 +302,16 @@ public:
 
 	enum Alignment
 	{
-		Left,
-		Right,
-		Centre,
-		None,
+		None = 0,
+		Left = 1 << 0,
+		Right = 1 << 1,
+		Centre = 1 << 2,
+		Top = 1 << 3,
+		Middle = 1 << 4,
+		Bottom = 1 << 5,
 	};
+
+	void setArbitrary(double x, double y, Alignment a);
 	
 	void setAlignment(Alignment a)
 	{
@@ -314,6 +321,11 @@ public:
 	const Alignment &alignment() const
 	{
 		return _align;
+	}
+	
+	const glm::vec2 xy() const
+	{
+		return glm::vec2(_x, _y);
 	}
 protected:
 	void rebindToProgram();

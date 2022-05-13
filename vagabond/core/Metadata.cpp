@@ -28,6 +28,17 @@ Metadata::~Metadata()
 
 }
 
+
+const Metadata::KeyValues *Metadata::valuesForMolecule(const std::string id)
+{
+	if (_mole2Data.count(id))
+	{
+		return _mole2Data.at(id);
+	}
+
+	return nullptr;
+}
+
 const Metadata::KeyValues *Metadata::values(const std::string model_id, 
                                             const std::string filename)
 {
@@ -62,7 +73,7 @@ void Metadata::housekeeping()
 
 void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 {
-	std::string filename, model_id;
+	std::string filename, model_id, molecule_id;
 	if (kv.count("filename"))
 	{
 		filename = kv.at("filename").text();
@@ -70,6 +81,10 @@ void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 	if (kv.count("model"))
 	{
 		model_id = kv.at("model").text();
+	}
+	if (kv.count("molecule"))
+	{
+		molecule_id = kv.at("molecule").text();
 	}
 
 	if (!overwrite)
@@ -79,6 +94,15 @@ void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 			if (kv != *_file2Data.at(filename))
 			{
 				throw std::runtime_error("Conflicting data for file " + filename);
+			}
+		}
+
+		if (molecule_id.length() && _mole2Data.count(molecule_id))
+		{
+			if (kv != *_mole2Data.at(molecule_id))
+			{
+				throw std::runtime_error("Conflicting data for molecule "
+				                         + molecule_id);
 			}
 		}
 
@@ -102,6 +126,7 @@ void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 	_data.push_back(kv);
 	_file2Data[filename] = &_data.back();
 	_model2Data[model_id] = &_data.back();
+	_mole2Data[molecule_id] = &_data.back();
 }
 
 Metadata &Metadata::operator+=(const Metadata &other)

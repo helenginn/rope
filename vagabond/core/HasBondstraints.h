@@ -20,6 +20,7 @@
 #define __vagabond__HasBondstraints__
 
 #include <vector>
+#include <map>
 
 class Bondstraint;
 class BondLength;
@@ -182,6 +183,8 @@ private:
 	std::vector<BondTorsion *> _torsions;
 	std::vector<BondTorsion *> _terminalTorsions;
 	std::vector<BondTorsion *> _centralTorsions;
+	
+	std::map<std::string, BondTorsion *> _torsionMap;
 
 	std::vector<Chirality *> _chirals;
 };

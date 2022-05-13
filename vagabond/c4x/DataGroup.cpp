@@ -23,6 +23,7 @@
 #include <vagabond/utils/svd/PCA.h>
 #include <cmath>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 
 template <class Unit>
@@ -68,14 +69,22 @@ void DataGroup<Unit>::calculateAverage()
 	{
 		for (size_t j = 0; j < _vectors.size(); j++)
 		{
-			_average[i] += _vectors[j][i];
+			Unit &v = _vectors[j][i];
+			if (v != v || !isfinite(v))
+			{
+				continue;
+			}
+
+			_average[i] += v;
 		}
 	}
 
 	for (size_t j = 0; j < _length; j++)
 	{
 		_average[j] /= numVectors;
+		std::cout << _average[j] << " ";
 	}
+	std::cout << std::endl;
 }
 
 template <class Unit>
@@ -102,6 +111,12 @@ void DataGroup<Unit>::findDifferences(Array *ave)
 		for (size_t j = 0; j < _length; j++)
 		{
 			_diffs[i][j] = _vectors[i][j] - ave->at(j);
+
+			if (_vectors[i][j] != _vectors[i][j] ||
+			    ave->at(j) != ave->at(j))
+			{
+				_diffs[i][j] = 0;
+			}
 		}
 	}
 }
@@ -239,6 +254,11 @@ float DataGroup<Unit>::correlation_between(int i, int j)
 		{
 			continue;
 		}
+		
+		if (!isfinite(v[n]) || !isfinite(w[n]))
+		{
+			continue;
+		}
 
 		x += v[n]; 
 		xx += v[n] * v[n];
@@ -275,6 +295,12 @@ PCA::Matrix DataGroup<Unit>::arbitraryMatrix
 			double &val = m[j][i];
 			
 			float corr = (this->*comparison)(i, j);
+
+			if (corr != corr || !isfinite(corr))
+			{
+				corr = 0;
+			}
+
 			val = corr;
 		}
 	}

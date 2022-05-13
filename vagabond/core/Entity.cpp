@@ -32,16 +32,16 @@ std::set<std::string> Entity::allMetadataHeaders()
 	
 	for (const Model *model : _models)
 	{
-		const Metadata::KeyValues *kv = model->metadata();
+		const Metadata::KeyValues kv = model->metadata();
 		
-		if (kv == nullptr)
+		if (kv.size() == 0)
 		{
 			continue;
 		}
 
 		Metadata::KeyValues::const_iterator it;
 		
-		for (it = kv->cbegin(); it != kv->cend(); it++)
+		for (it = kv.cbegin(); it != kv.cend(); it++)
 		{
 			headers.insert(it->first);
 		}
@@ -49,6 +49,36 @@ std::set<std::string> Entity::allMetadataHeaders()
 
 	return headers;
 }
+
+Metadata *Entity::distanceBetweenAtoms(Residue *master_id_a, std::string a_name,
+                                       Residue *master_id_b, std::string b_name)
+{
+	Metadata *md = new Metadata();
+	
+	std::string header;
+	header += master_id_a->id().as_string() + a_name;
+	header += " to ";
+	header += master_id_b->id().as_string() + b_name;
+
+	for (Molecule *molecule : _molecules)
+	{
+		Metadata::KeyValues kv;
+		molecule->sequence()->remapFromMaster(this);
+		kv = molecule->distanceBetweenAtoms(master_id_a, a_name,
+		                                    master_id_b, b_name, header);
+
+		if (kv.size() == 0)
+		{
+			continue;
+		}
+
+		md->addKeyValues(kv, true);
+	}
+
+	return md;
+
+}
+
 
 void Entity::checkModel(Model &m)
 {
@@ -68,7 +98,7 @@ void Entity::checkModel(Model &m)
 
 const bool compare_id(const Molecule *a, const Molecule *b)
 {
-	return a->id() < b->id();
+	return a->id() > b->id();
 }
 
 void Entity::housekeeping()
@@ -153,6 +183,11 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	
 	for (Molecule *mol : _molecules)
 	{
+		if (!mol->isRefined())
+		{
+			continue;
+		}
+
 		std::cout << "order " << mol->id() << std::endl;
 		Sequence *molseq = mol->sequence();
 		molseq->clearMaps();
@@ -213,5 +248,4 @@ void Entity::throwOutModel(Model *model)
 void Entity::throwOutMolecule(Molecule *mol)
 {
 	mol->eraseIfPresent(_molecules);
-
 }

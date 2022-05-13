@@ -18,7 +18,8 @@
 
 #include "SequenceLine.h"
 #include "SequenceView.h"
-#include "Sequence.h"
+#include <vagabond/core/Sequence.h>
+#include <vagabond/core/Residue.h>
 #include "IndexedSequence.h"
 #include <iostream>
 #include <vagabond/utils/FileReader.h>
@@ -106,7 +107,7 @@ void SequenceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "residue")
 	{
 		Residue *r = static_cast<Residue *>(button->returnObject());
-
+		handleResidue(button, r);
 	}
 
 	ForwardBackward::buttonPressed(tag, button);
@@ -119,4 +120,15 @@ TextButton *SequenceView::button(Sequence *seq, ButtonResponder *caller)
 
 	TextButton *t = new TextButton(seqstr, caller);
 	return t;
+}
+
+void SequenceView::addExtras(TextButton *t, Residue *r)
+{
+	std::string tag = r->desc();
+	if (r->torsionCount() > 0)
+	{
+		tag += " (" + i_to_str(r->torsionCount()) + " torsions)";
+
+	}
+	t->addAltTag(tag);
 }

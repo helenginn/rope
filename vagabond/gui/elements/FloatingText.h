@@ -25,9 +25,9 @@
 class FloatingText : public Text
 {
 public:
-	FloatingText(std::string text);
+	FloatingText(std::string text, float mult = 30);
 
-	void correctBox();
+	void correctBox(float mult);
 private:
 
 };

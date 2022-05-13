@@ -22,6 +22,7 @@ guielementfiles = [
 'Image.cpp',
 'Library.cpp',
 'ListView.cpp',
+'Menu.cpp',
 'Modal.cpp',
 'Mouse3D.cpp',
 'Renderable.cpp',

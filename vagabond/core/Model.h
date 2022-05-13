@@ -98,7 +98,10 @@ public:
 	void housekeeping();
 	
 	void createMolecules();
+
 	void load();
+	void unload();
+
 	void refine();
 	
 	AtomContent *currentAtoms()
@@ -109,12 +112,11 @@ public:
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);
 	
-	virtual const Metadata::KeyValues *metadata() const;
+	virtual const Metadata::KeyValues metadata() const;
 	
 	void finishedRefinement();
 private:
 	void swapChainToEntity(std::string id, std::string entity);
-	void removeReferences();
 	void extractTorsions();
 	void insertTorsions();
 	std::string _filename;

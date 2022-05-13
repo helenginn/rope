@@ -19,7 +19,7 @@
 #include "Residue.h"
 #include "SequenceLine.h"
 #include "IndexedSequence.h"
-#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/utils/FileReader.h>
 #include <iostream>
 
@@ -80,17 +80,14 @@ void SequenceLine::setup()
 		{
 			std::string str = _sequence->displayString(j, i);
 			
-			Text *t = new Text(str);
+			TextButton *t = new TextButton(str, _view);
+			t->setReturnTag("residue");
+			t->setInert(true);
 			if (_sequence->hasResidue(j, i))
 			{
 				Residue *r = _sequence->residue(j, i);
-				std::string tag = r->desc();
-				if (r->torsionCount() > 0)
-				{
-					tag += " (" + i_to_str(r->torsionCount()) + " torsions)";
-
-				}
-				t->addAltTag(tag);
+				t->setReturnObject(r);
+				_view->addExtras(t, r);
 			}
 
 			t->setCentre(x, y);

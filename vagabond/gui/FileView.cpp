@@ -102,12 +102,10 @@ void FileView::buttonPressed(std::string tag, Button *button)
 {
 	Scene::buttonPressed(tag, button);
 
-	std::string file_prefix = "file_";
-	if (tag.rfind(file_prefix, 0) != std::string::npos)
-	{
-		std::string filename = tag.substr(file_prefix.length(), 
-		                                  std::string::npos);
+	std::string filename = Button::tagEnd(tag, "file_");
 
+	if (filename.length())
+	{
 		if (_responder == nullptr)
 		{
 			handleFileWithoutChoice(filename);

@@ -16,6 +16,8 @@ public:
 	{
 		_sender = sender;
 	}
+	
+	static std::string tagEnd(std::string tag, std::string prefix);
 
 	void setReturnTag(std::string tag)
 	{
