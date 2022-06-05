@@ -23,7 +23,7 @@
 
 ModelManager::ModelManager() : Manager()
 {
-
+	std::cout << "Model manager " << Progressor::_responder << std::endl;
 }
 
 Model *ModelManager::insertIfUnique(const Model &m)

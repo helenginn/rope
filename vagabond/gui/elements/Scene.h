@@ -7,6 +7,7 @@
 #include "SDL2/SDL.h"
 #include "ButtonResponder.h"
 
+class IndexResponder;
 class Renderable;
 class Button;
 class Modal;
@@ -41,6 +42,7 @@ public:
 	void show();
 	void queueToShow();
 	void showBackButton();
+	void hideBackButton();
 	virtual void showSimple();
 	virtual void render();
 
@@ -56,7 +58,9 @@ public:
 protected:
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
+	void checkIndexBuffer(double x, double y, bool touch, bool arrow);
 	void setCentrePixels(Renderable *r, int x, int y);
+	void swapCursor(SDL_Cursor *newCursor);
 
 	static char *dataToChar(void *data, int nbytes);
 	
@@ -64,11 +68,16 @@ protected:
 
 	Renderable *_dragged;
 
+	IndexResponder *_indexResponder = nullptr;
 	Renderable *_background;
 	Modal *_modal;
 	Modal *_removeModal;
 	Scene *_previous;
 	Button *_back;
+	
+	SDL_Cursor *_cursor = nullptr;
+
+	int _lastIdx;
 
 	bool _mouseDown;
 };

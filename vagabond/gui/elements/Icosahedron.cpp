@@ -86,7 +86,7 @@ void Icosahedron::triangulate()
 	}
 	
 	calculateNormals();
-	setupVBOBuffers();
+	rebufferVertexData();
 }
 
 void Icosahedron::calculateNormals()

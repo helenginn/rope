@@ -48,6 +48,7 @@ enum JobType
 	JobCalculateDeviations =     1 << 1,
 	JobCalculateMapSegment =     1 << 2,
 	JobCalculateMapCorrelation = 1 << 3,
+	JobUpdateMechanics =         1 << 4,
 };
 
 typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
@@ -169,7 +170,7 @@ struct Result
 	JobType requests;
 	AtomPosMap aps;
 	double deviation;
-	AtomMap *map;
+	AtomMap *map = nullptr;
 
 	std::mutex handout;
 	
@@ -178,6 +179,17 @@ struct Result
 		requests = job->requests;
 		ticket = job->ticket;
 		job->result = this;
+	}
+	
+	void transplantLastPosition()
+	{
+		AtomPosMap::iterator it;
+		for (it = aps.begin(); it != aps.end(); it++)
+		{
+			std::vector<glm::vec3> last(1, it->second.samples.back());
+			Atom::WithPos wp{last, last[0]};
+			it->first->setDerivedPositions(wp);
+		}
 	}
 	
 	void transplantPositions()

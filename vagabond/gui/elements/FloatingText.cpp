@@ -36,7 +36,7 @@ void FloatingText::correctBox(float mult)
 		v.extra *= mult;
 		
 #ifdef __EMSCRIPTEN__
-		v.extra *= 10;
+//		v.extra *= 10;
 #endif
 		v.extra.y += 0.5;
 		v.pos = centre;

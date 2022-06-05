@@ -26,6 +26,7 @@ typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
 
 class SimplexEngine;
+class Mechanics;
 class Sequence;
 class File;
 
@@ -89,6 +90,7 @@ public:
 	Atom *firstAtomWithName(std::string name) const;
 	
 	void recalculate();
+	void mechanics();
 	
 	void setLastResidual(double last)
 	{
@@ -127,8 +129,13 @@ private:
 
 	AtomVector _atoms;
 	AtomVector _anchors;
+	
+	std::map<std::string, Atom *> _desc2Atom;
+
 	std::thread *_refine = nullptr;
 	SimplexEngine *_engine = nullptr;
+	std::thread *_mechThread = nullptr;
+	Mechanics *_mech = nullptr;
 	
 	double _lastResidual = FLT_MAX;
 	std::vector<AtomGroup *> _connectedGroups;

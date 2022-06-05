@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include "SnowGL.h"
 #include "Renderable.h"
+#include "Quad.h"
 #include "Window.h"
 #include <iostream>
 #include <algorithm>
@@ -44,6 +45,7 @@ SnowGL::SnowGL()
 
 SnowGL::~SnowGL()
 {
+	delete _indices;
 
 }
 
@@ -162,7 +164,6 @@ void SnowGL::resizeTextures(int w_over, int h_over)
 			             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
 		}
 	}
-
 }
 
 void SnowGL::prepareDepthColourIndex()
@@ -180,8 +181,9 @@ void SnowGL::prepareDepthColourIndex()
 
 	_sceneMapCount = 2;
 
-	int w = width();
-	int h = height();
+	int w = Window::width();
+	int h = Window::height();
+	_dw = w; _dh = h;
 
 	/* texture for the depth buffer */
 	glActiveTexture(GL_TEXTURE0);
@@ -239,8 +241,59 @@ void SnowGL::prepareDepthColourIndex()
 	}
 	
 	glDrawBuffers(2, attachments); 
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	_indices = new GLuint[_dw * _dh];
+	memset(_indices, '\0', _dw * _dh * sizeof(GLuint));
+	
+	_quad = new Quad();
+	_quad->prepareTextures(this);
+	_quad->setTextureID(_sceneMap[0]);
+}
+
+int SnowGL::checkIndex(double x, double y) const
+{
+	if (_indices == nullptr)
+	{
+		return -1;
+	}
+
+	x = 0.5 + x / 2;
+	y = 0.5 + y / 2;
+
+	x *= _dw;
+	y *= _dh;
+	
+	int idx = y * _dw + x;
+	
+	if (idx > _dw * _dh - 1)
+	{
+		return -1;
+	}
+
+	int val = _indices[idx];
+	return val - 1;
+}
+
+void SnowGL::grabIndexBuffer()
+{
+	if (_sceneFbo == 0)
+	{
+		return;
+	}
+
+	checkErrors("before read pixels");
+//	glBindTexture(GL_TEXTURE_2D, _sceneMap[1]);
+//	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, _indices);
+
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, _sceneFbo);
+#ifndef __EMSCRIPTEN__
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + 1);
+#endif
+	glReadPixels(0, 0, _dw, _dh, GL_RED_INTEGER, GL_UNSIGNED_INT, _indices);
+
+	checkErrors("read pixels");
 }
 
 void SnowGL::prepareShadowBuffer()
@@ -324,6 +377,8 @@ void SnowGL::render()
 	if (_sceneFbo > 0)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, _sceneFbo);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.f);
 	}
 	else
 	{
@@ -338,6 +393,12 @@ void SnowGL::render()
 	checkErrors("after render");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	if (_sceneFbo > 0)
+	{
+		grabIndexBuffer();
+		_quad->render(this);
+	}
 }
 
 void SnowGL::updateCamera()

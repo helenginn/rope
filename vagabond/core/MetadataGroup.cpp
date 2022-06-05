@@ -30,3 +30,53 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, Array next)
 	std::string name = hmd->id();
 	DegreeDataGroup::addArray(name, next);
 }
+
+std::vector<float> MetadataGroup::numbersForKey(std::string key)
+{
+	std::vector<float> vals;
+	for (HasMetadata *object : _objects)
+	{
+		Metadata::KeyValues kv = object->metadata();
+
+		float val = NAN;
+		if (kv.count(key))
+		{
+			val = kv.at(key).number();
+		}
+		
+		vals.push_back(val);
+	}
+
+	return vals;
+}
+
+void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
+{
+	if (list.size() == 0)
+	{
+		return;
+	}
+
+	std::vector<HasMetadata *> short_list;
+	std::vector<Array> vectors;
+	std::vector<std::string> names;
+
+	for (int i = 0; i < _objects.size(); i++)
+	{
+		HasMetadata *object = _objects[i];
+
+		if (std::find(list.begin(), list.end(), object) != list.end())
+		{
+			short_list.push_back(object);
+			names.push_back(_vectorNames[i]);
+			vectors.push_back(_vectors[i]);
+		}
+	}
+
+	_objects = short_list;
+	_vectorNames = names;
+	_vectors = vectors;
+
+	_diffs.clear();
+	_average.clear();
+}

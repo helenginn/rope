@@ -60,7 +60,7 @@ File::Type CsvFile::cursoryLook()
 	for (std::string &header : headers)
 	{
 		remove_quotes(header);
-		if (header == "model" || header == "filename")
+		if (header == "model" || header == "filename" || header == "molecule")
 		{
 			f.close();
 			return Meta;

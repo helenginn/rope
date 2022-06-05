@@ -66,7 +66,19 @@ public:
 	void glSetup();
 	virtual void setup(int argc, char **argv) = 0;
 	static void render();
-	static void tick();
+	virtual void mainThreadActivities() {};
+	static bool tick();
+	static void window_tick();
+	
+	static int height()
+	{
+		return _height;
+	}
+	
+	static int width()
+	{
+		return _width;
+	}
 	
 	static float aspect()
 	{
@@ -89,9 +101,13 @@ private:
 	static SDL_GLContext _context;
 	static SDL_Rect _rect;
 
+	static int _width;
+	static int _height;
+
 	static std::set<Scene *> _toDelete;
 	static std::set<Renderable *> _deleteRenderables;
 	
+	static Window *_myWindow;
 	static KeyResponder *_keyResponder;
 };
 

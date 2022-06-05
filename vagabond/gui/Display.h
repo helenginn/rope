@@ -3,6 +3,7 @@
 #define __vagabond__Display__
 
 #include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/core/Responder.h>
 
 class ImageButton;
 class GuiAtom;
@@ -11,13 +12,15 @@ class GuiDensity;
 class AtomGroup;
 class Diffraction;
 
-class Display : public Mouse3D
+
+class Display : public Mouse3D, public HasResponder<Display>
 {
 public:
 	Display(Scene *prev = nullptr);
 	virtual ~Display();
 
 	virtual void setup();
+
 	void loadAtoms(AtomGroup *atoms);
 	void stop();
 
@@ -26,6 +29,7 @@ public:
 	void tieButton();
 	void wedgeButtons();
 	void densityButton();
+	void mechanicsButton();
 	
 	void setOwnsAtoms(bool owns)
 	{
@@ -48,6 +52,7 @@ private:
 	ImageButton *_halfWedge = nullptr;
 	ImageButton *_wedge = nullptr;
 	ImageButton *_density = nullptr;
+	ImageButton *_mechanics = nullptr;
 	
 	bool _owns = true;
 };

@@ -86,6 +86,7 @@ void AlignmentTool::run()
 		{
 			Result *result = resultForAnchor(anchor);
 			transform = superposition(result);
+			result->destroy();
 		}
 
 		anchor->setTransformation(transform);

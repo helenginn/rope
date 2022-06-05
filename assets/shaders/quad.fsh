@@ -1,5 +1,3 @@
-#version 320 es
-
 precision lowp float;
 varying vec4 vPos;
 varying vec2 vTex;

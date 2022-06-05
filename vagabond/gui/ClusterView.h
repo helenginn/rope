@@ -20,17 +20,20 @@
 #define __vagabond__ClusterView__
 
 #include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
 
 #define POINT_TYPE_COUNT 8
 
 class Rule;
 class MetadataGroup;
+class FloatingText;
 
-class ClusterView : public Renderable
+class ClusterView : public Renderable, public IndexResponder
 {
 public:
 	ClusterView();
+	~ClusterView();
 
 	void setCluster(Cluster<MetadataGroup> *cx);
 	
@@ -48,16 +51,23 @@ public:
 	void setPointType(int idx, int type);
 	virtual void makePoints();
 	void applyRule(const Rule &r);
+
+	void render(SnowGL *gl);
+	void prioritiseMetadata(std::string key);
+	void reset();
+	
+	virtual void interacted(int idx, bool hover);
 protected:
 	virtual void extraUniforms();
 	void customiseTexture(Snow::Vertex &vert);
+	float _size = 40;
 private:
 	void applyVaryColour(const Rule &r);
 	void applyChangeIcon(const Rule &r);
 
 	Cluster<MetadataGroup> *_cx = nullptr;
+	FloatingText *_text = nullptr;
 
-	float _size = 40;
 };
 
 #endif

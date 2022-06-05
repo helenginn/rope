@@ -151,7 +151,8 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "enter_name")
 	{
-		_obj.setName(_name->text());
+		std::cout << "Name: " << _name->scratch() << std::endl;
+		_obj.setName(_name->scratch());
 		refreshInfo();
 	}
 	else if (tag == "chain_assignment")

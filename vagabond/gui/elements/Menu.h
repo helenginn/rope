@@ -20,11 +20,13 @@
 #define __vagabond__Menu__
 
 #include "Modal.h"
+#include "Button.h"
 #include "ButtonResponder.h"
 
 class TextButton;
+class Renderable;
 
-class Menu : public Modal, public ButtonResponder
+class Menu : public Modal, public ButtonResponder, virtual public Button
 {
 public:
 	Menu(Scene *scene, std::string prefix = "");
@@ -32,6 +34,7 @@ public:
 
 	TextButton *addOption(std::string text, std::string tag = "");
 	void setup(double x, double y);
+	void setup(Renderable *r);
 	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	std::vector<TextButton *> _options;

@@ -21,8 +21,8 @@
 
 #include <vector>
 #include <map>
+#include "Bondstraint.h"
 
-class Bondstraint;
 class BondLength;
 class BondAngle;
 class BondTorsion;
@@ -184,7 +184,10 @@ private:
 	std::vector<BondTorsion *> _terminalTorsions;
 	std::vector<BondTorsion *> _centralTorsions;
 	
-	std::map<std::string, BondTorsion *> _torsionMap;
+	std::map<Bondstraint::Key, Bondstraint *> _torsionMap;
+	std::map<Bondstraint::Key, Bondstraint *> _lengthMap;
+	std::map<Bondstraint::Key, Bondstraint *> _angleMap;
+	std::map<Bondstraint::Key, Bondstraint *> _chiralMap;
 
 	std::vector<Chirality *> _chirals;
 };

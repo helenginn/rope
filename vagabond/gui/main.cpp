@@ -10,17 +10,21 @@ float test = 0;
 
 int main (int argc, char **argv)
 {
-	VagWindow window;
-	window.setup(argc, argv);
+	{
+		VagWindow window;
+		window.setup(argc, argv);
 
 #ifdef __EMSCRIPTEN__
-	emscripten_set_main_loop(Window::tick, -1, 1);
+		emscripten_set_main_loop(Window::window_tick, -1, 1);
 #else
-	while (true)
-	{
-		window.tick();
-	}
+		while (window.tick())
+		{
+			
+		}
 #endif
+	}
+
+//	fscanf(stdin, "c");
 
 	return 0;
 }

@@ -20,6 +20,7 @@
 #define __vagabond__ChooseHeader__
 
 #include <vagabond/gui/elements/ListView.h>
+#include <set>
 
 class Entity;
 class AddRule;
@@ -27,11 +28,20 @@ class AddRule;
 class ChooseHeader : public ListView
 {
 public:
-	ChooseHeader(Scene *prev);
+	ChooseHeader(Scene *prev, bool choose = true);
+	~ChooseHeader();
 	
 	void setCaller(AddRule *caller)
 	{
 		_caller = caller;
+	}
+	
+	void setHeaders(std::set<std::string> &headers)
+	{
+		for (const std::string &h : headers)
+		{
+			_headers.push_back(h);
+		}
 	}
 
 	void setEntity(std::string name);
@@ -44,6 +54,8 @@ public:
 private:
 	Entity *_entity;
 	std::vector<std::string> _headers;
+	std::vector<std::string> _assigned;
+	bool _choose = false;
 
 	AddRule *_caller = nullptr;
 };

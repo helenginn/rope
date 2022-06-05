@@ -21,11 +21,13 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Entity.h>
+#include <vagabond/core/Responder.h>
 
 class GuiAtom;
 class Display;
 
-class SerialRefiner : public Scene, public EntityResponder
+class SerialRefiner : public Scene, public EntityResponder, 
+public Responder<Display>
 {
 public:
 	SerialRefiner(Scene *prev, Entity *entity);
@@ -37,6 +39,7 @@ public:
 	virtual ~SerialRefiner();
 
 	virtual void setup();
+	virtual void respond();
 	virtual void entityDone();
 	virtual void setActiveAtoms(Model *model);
 private:

@@ -8,6 +8,8 @@
 
 #include "HasRenderables.h"
 
+class Quad;
+
 class SnowGL : public HasRenderables
 {
 public:
@@ -119,6 +121,7 @@ public:
 
 	bool checkErrors(std::string what = "");
 	virtual void render();
+	void grabIndexBuffer();
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();
@@ -168,6 +171,8 @@ protected:
 	GLuint _shadowProgram;
 	
 	Renderable *_shadowObj;
+	
+	Quad *_quad = nullptr;
 
 	double _a; double _r; double _g; double _b;
 
@@ -179,8 +184,17 @@ protected:
 	bool _shiftPressed;
 	bool _acceptsFocus;
 	
+	/* widths and heights - boundaries */
 	int _w;
 	int _h;
+
+	/* widths and heights - drawable */
+	int _dw;
+	int _dh;
+	
+	int checkIndex(double x, double y) const;
+	
+	GLuint *_indices = nullptr;
 	
 	static bool _setup;
 };

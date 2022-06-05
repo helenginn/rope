@@ -17,6 +17,9 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Entity.h"
+#include "Environment.h"
+#include "EntityManager.h"
+#include "ModelManager.h"
 #include "Model.h"
 #include "Metadata.h"
 #include "AtomContent.h"
@@ -26,9 +29,9 @@ Entity::Entity()
 
 }
 
-std::set<std::string> Entity::allMetadataHeaders()
+std::map<std::string, int> Entity::allMetadataHeaders()
 {
-	std::set<std::string> headers;
+	std::map<std::string, int> headers;
 	
 	for (const Molecule *molecule : _molecules)
 	{
@@ -43,40 +46,59 @@ std::set<std::string> Entity::allMetadataHeaders()
 		
 		for (it = kv.cbegin(); it != kv.cend(); it++)
 		{
-			headers.insert(it->first);
+			headers[it->first]++;
 		}
 	}
 
 	return headers;
 }
 
-Metadata *Entity::distanceBetweenAtoms(Residue *master_id_a, std::string a_name,
-                                       Residue *master_id_b, std::string b_name)
+Metadata *Entity::angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c)
 {
 	Metadata *md = new Metadata();
 	
 	std::string header;
-	header += master_id_a->id().as_string() + a_name;
+	header += a.master->id().as_string() + a.atom_name;
+	header += " through ";
+	header += b.master->id().as_string() + b.atom_name;
 	header += " to ";
-	header += master_id_b->id().as_string() + b_name;
+	header += c.master->id().as_string() + c.atom_name;
+	
+	AtomRecall new_a = AtomRecall(_sequence.residueLike(a.master->id()),
+	                              a.atom_name);
+	AtomRecall new_b = AtomRecall(_sequence.residueLike(b.master->id()),
+	                              b.atom_name);
+	AtomRecall new_c = AtomRecall(_sequence.residueLike(c.master->id()),
+	                              c.atom_name);
 
-	for (Molecule *molecule : _molecules)
+	for (Model *model : _models)
 	{
-		Metadata::KeyValues kv;
-		molecule->sequence()->remapFromMaster(this);
-		kv = molecule->distanceBetweenAtoms(master_id_a, a_name,
-		                                    master_id_b, b_name, header);
-
-		if (kv.size() == 0)
-		{
-			continue;
-		}
-
-		md->addKeyValues(kv, true);
+		model->angleBetweenAtoms(this, new_a, new_b, new_c, header, md);
 	}
 
 	return md;
+}
 
+Metadata *Entity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
+{
+	Metadata *md = new Metadata();
+	
+	std::string header;
+	header += a.master->id().as_string() + a.atom_name;
+	header += " to ";
+	header += b.master->id().as_string() + b.atom_name;
+	
+	AtomRecall new_a = AtomRecall(_sequence.residueLike(a.master->id()),
+	                              a.atom_name);
+	AtomRecall new_b = AtomRecall(_sequence.residueLike(b.master->id()),
+	                              b.atom_name);
+
+	for (Model *model : _models)
+	{
+		model->distanceBetweenAtoms(this, new_a, new_b, header, md);
+	}
+
+	return md;
 }
 
 
@@ -173,10 +195,11 @@ void Entity::modelReady()
 
 MetadataGroup Entity::makeTorsionDataGroup()
 {
-	size_t num = _sequence.torsionCount(true);
+	const bool only_main = true;
+	size_t num = _sequence.torsionCount(only_main);
 	std::cout << "Torsion count: " << num << std::endl;
 	std::vector<std::string> names;
-	_sequence.addTorsionNames(names, true);
+	_sequence.addTorsionNames(names, only_main);
 
 	MetadataGroup group(num);
 	group.addUnitNames(names);
@@ -188,13 +211,12 @@ MetadataGroup Entity::makeTorsionDataGroup()
 			continue;
 		}
 
-		std::cout << "order " << mol->id() << std::endl;
 		Sequence *molseq = mol->sequence();
 		molseq->clearMaps();
 		molseq->remapFromMaster(this);
 		MetadataGroup::Array vals;
 
-		_sequence.torsionsFromMapped(molseq, vals, true);
+		_sequence.torsionsFromMapped(molseq, vals, only_main);
 		group.addMetadataArray(mol, vals);
 	}
 	
@@ -245,7 +267,23 @@ void Entity::throwOutModel(Model *model)
 	}
 }
 
+void Entity::searchAllModels()
+{
+	ModelManager *mm = Environment::modelManager();
+	
+	for (Model &m : mm->objects())
+	{
+		m.autoAssignEntities(this);
+		checkModel(m);
+	}
+}
+
 void Entity::throwOutMolecule(Molecule *mol)
 {
 	mol->eraseIfPresent(_molecules);
+}
+
+void Entity::clickTicker()
+{
+	Environment::entityManager()->clickTicker();
 }

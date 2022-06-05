@@ -22,5 +22,6 @@ shared_lib_suffix = 'js'
 static_lib_suffix = 'js'
 shared_module_suffix = 'js'
 exe_suffix = 'js'
+
 links = sdl_options + shell_file + preload + export + threads + memory + exceptions + fftwf
 compile_args = threads + exceptions

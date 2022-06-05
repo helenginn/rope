@@ -60,6 +60,7 @@ namespace PCA
 	 * 	default equal to rows (fast axis) */
 	void setupMatrix(Matrix *mat, int rows, int cols = 0);
 	void setupSVD(SVD *cc, int rows, int cols = 0);
+	void zeroMatrix(Matrix *mat);
 	void printMatrix(Matrix *mat);
 	void multMatrix(Matrix &mat, double *vector);
 	void copyMatrix(Matrix &dest, Matrix &source);
@@ -67,6 +68,8 @@ namespace PCA
 	bool invertSVD(SVD *cc);
 	void freeMatrix(Matrix *m);
 	void freeSVD(SVD *cc);
+
+	Matrix distancesFrom(Matrix &m);
 
 	bool runSVD(SVD *cc);
 	bool order_by_w(const OrderW &a, const OrderW &b);

@@ -42,15 +42,21 @@ public:
 	
 	/** returns how many points to display or how many members in cluster */
 	const size_t pointCount() const;
+
+	/** given a set of metadata values, find best-fitting axis */
+	int bestAxisFit(std::vector<float> &vals);
 	
 	DG *dataGroup()
 	{
 		return &_dg;
 	}
 protected:
+	void normaliseResults(float scale = 1);
+
 	DG _dg;
 
 	PCA::Matrix _result{};
+	size_t _axes[3] = {0, 1, 2};
 };
 
 #include "Cluster.cpp"

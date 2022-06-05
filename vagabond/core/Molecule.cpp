@@ -24,23 +24,46 @@
 #include "Environment.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
+#include "SequenceComparison.h"
 
 Molecule::Molecule()
 {
 
 }
 
-Molecule::Molecule(std::string model_id, std::string entity_id, 
-                   Sequence *derivative)
+Molecule::Molecule(std::string model_id, std::string chain_id,
+                   std::string entity_id, Sequence *derivative)
 {
 	_model_id = model_id;
 	_entity_id = entity_id;
+	_chain_id = chain_id;
 	_sequence = *derivative;
 	_entity = (Environment::entityManager()->entity(_entity_id));
 	
-	_sequence.mapFromMaster(_entity);
+	if (_entity) // when newly made, which is when we need to fill this in
+	{
+		SequenceComparison *sc = _sequence.newComparison(_entity);
+		_sequence.mapFromMaster(sc);
+		harvestMutations(sc);
+		delete sc;
+	}
 
 	housekeeping();
+}
+
+void Molecule::harvestMutations(SequenceComparison *sc)
+{
+	sc->calculateMutations();
+
+	Metadata::KeyValues kv;
+	kv["molecule"] = id();
+	
+	for (const std::string &mutation : sc->mutations())
+	{
+		kv["mut:" + mutation] = Value("true");
+	}
+	
+	Environment::metadata()->addKeyValues(kv, true);
 }
 
 void Molecule::getTorsionRefs(Chain *ch)
@@ -171,16 +194,26 @@ const Metadata::KeyValues Molecule::metadata() const
 	return mod;
 }
 
-Metadata::KeyValues Molecule::distanceBetweenAtoms(Residue *master_id_a,
-                                                   std::string a_name,
-                                                   Residue *master_id_b,
-                                                   std::string b_name,
-                                                   std::string header) const
+Entity *Molecule::entity()
 {
+	if (_entity != nullptr)
+	{
+		return _entity;
+	}
+	
+	_entity = Environment::entityManager()->entity(_entity_id);
+	return _entity;
+}
+
+Metadata::KeyValues Molecule::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
+                                                   std::string header) 
+{
+	_sequence.remapFromMaster(entity());
+
 	Metadata::KeyValues kv;
 	
-	Residue *local_a = _sequence.local_residue(master_id_a);
-	Residue *local_b = _sequence.local_residue(master_id_b);
+	Residue *local_a = _sequence.local_residue(a.master);
+	Residue *local_b = _sequence.local_residue(b.master);
 
 	if (local_a == nullptr || local_b == nullptr)
 	{
@@ -188,27 +221,72 @@ Metadata::KeyValues Molecule::distanceBetweenAtoms(Residue *master_id_a,
 		return kv;
 	}
 	
-	_model->load();
-	
 	Chain *mine = _model->currentAtoms()->chain(_chain_id);
 	
-	Atom *a = mine->atomByIdName(local_a->id(), a_name);
-	Atom *b = mine->atomByIdName(local_b->id(), b_name);
+	Atom *p = mine->atomByIdName(local_a->id(), a.atom_name);
+	Atom *q = mine->atomByIdName(local_b->id(), b.atom_name);
 	
-	if (!a || !b)
+	if (!p || !q)
 	{
-		_model->unload();
 		return kv;
 	}
 	
-	glm::vec3 init_a = a->initialPosition();
-	glm::vec3 init_b = b->initialPosition();
+	std::cout << p->desc() << " vs " << q->desc() << " = ";
+
+	glm::vec3 init_p = p->initialPosition();
+	glm::vec3 init_q = q->initialPosition();
 	
-	double dist = glm::length(init_b - init_a);
+	double dist = glm::length(init_p - init_q);
+	std::cout << dist << std::endl;
 	
 	kv["molecule"] = Value(id());
 	kv[header] = Value(f_to_str(dist, 2));
 
-	_model->unload();
+	return kv;
+}
+
+Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
+                                                AtomRecall &c, std::string header) 
+{
+	_sequence.remapFromMaster(entity());
+
+	Metadata::KeyValues kv;
+	
+	Residue *local_a = _sequence.local_residue(a.master);
+	Residue *local_b = _sequence.local_residue(b.master);
+	Residue *local_c = _sequence.local_residue(c.master);
+
+	if (local_a == nullptr || local_b == nullptr || local_c == nullptr)
+	{
+		std::cout << "local_a or local_b or local_c missing" << std::endl;
+		return kv;
+	}
+	
+	Chain *mine = _model->currentAtoms()->chain(_chain_id);
+	
+	Atom *p = mine->atomByIdName(local_a->id(), a.atom_name);
+	Atom *q = mine->atomByIdName(local_b->id(), b.atom_name);
+	Atom *r = mine->atomByIdName(local_c->id(), c.atom_name);
+	
+	if (!p || !q || !r)
+	{
+		return kv;
+	}
+	
+	std::cout << p->desc() << " through " << q->desc() << 
+	" to " << r->desc() << " = ";
+
+	glm::vec3 init_q = q->initialPosition();
+	glm::vec3 p_vec = p->initialPosition() - init_q;
+	glm::vec3 r_vec = r->initialPosition() - init_q;
+	p_vec = glm::normalize(p_vec);
+	r_vec = glm::normalize(r_vec);
+	
+	double angle = rad2deg(glm::angle(p_vec, r_vec));
+	std::cout << angle << std::endl;
+	
+	kv["molecule"] = Value(id());
+	kv[header] = Value(f_to_str(angle, 2));
+
 	return kv;
 }

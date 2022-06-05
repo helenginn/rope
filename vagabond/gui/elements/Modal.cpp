@@ -53,7 +53,7 @@ void Modal::setLeft(Renderable *r, double fx, double fy)
 }
 */
 
-void Modal::setCentre(Renderable *r, double fx, double fy)
+void Modal::setModalCentre(Renderable *r, double fx, double fy)
 {
 	conv_coords(&fx, &fy);
 	r->setCentre(fx, fy);

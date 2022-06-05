@@ -40,6 +40,11 @@ AddObject(prev, chosen)
 
 }
 
+AddRule::~AddRule()
+{
+	deleteObjects();
+}
+
 void AddRule::addTypeButtons()
 {
 	Text *t = new Text("Choose type of rule:");
@@ -155,6 +160,14 @@ void AddRule::setup()
 		ImageButton *t = ImageButton::arrow(-90., this);
 		t->setReturnTag("options");
 		t->setCentre(0.8, 0.55);
+		addObject(t);
+	}
+
+	if (_existing)
+	{
+		TextButton *t = new TextButton("OK", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnTag("back");
 		addObject(t);
 	}
 }

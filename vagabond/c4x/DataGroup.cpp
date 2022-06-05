@@ -33,6 +33,13 @@ DataGroup<Unit>::DataGroup(int length)
 }
 
 template <class Unit>
+DataGroup<Unit>::~DataGroup()
+{
+
+}
+
+
+template <class Unit>
 void DataGroup<Unit>::addArray(std::string name, Array next)
 {
 	if (next.size() != _length)
@@ -82,9 +89,7 @@ void DataGroup<Unit>::calculateAverage()
 	for (size_t j = 0; j < _length; j++)
 	{
 		_average[j] /= numVectors;
-		std::cout << _average[j] << " ";
 	}
-	std::cout << std::endl;
 }
 
 template <class Unit>
@@ -162,6 +167,7 @@ void DataGroup<Unit>::write(std::string filename)
 	std::ofstream file;
 	file.open(filename);
 
+	file << ",";
 	for (size_t j = 0; j < _length; j++)
 	{
 		if (j < _unitNames.size())
@@ -273,6 +279,8 @@ float DataGroup<Unit>::correlation_between(int i, int j)
 	double bottom_right = s * yy - y * y;
 	
 	double r = top / sqrt(bottom_left * bottom_right);
+	
+//	return xy / sqrt(xx * yy); 
 	
 	return r;
 }

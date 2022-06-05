@@ -20,6 +20,7 @@
 #define __vagabond__Manager__
 
 #include <list>
+#include "Progressor.h"
 
 template <class T>
 class ManagerResponder
@@ -30,7 +31,7 @@ public:
 };
 
 template <class T>
-class Manager
+class Manager : public Progressor
 {
 public:
 	Manager() {};
@@ -39,6 +40,11 @@ public:
 	size_t objectCount()
 	{
 		return _objects.size();
+	}
+	
+	std::list<T> &objects()
+	{
+		return _objects;
 	}
 
 	T &object(int idx)

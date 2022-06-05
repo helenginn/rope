@@ -13,11 +13,7 @@ Choice::Choice(ButtonResponder *sender, Scene *scene) : Button(sender)
 
 Choice::~Choice()
 {
-	if (_tick != NULL)
-	{
-		delete _tick;
-		_tick = NULL;
-	}
+	deleteObjects();
 }
 
 void Choice::makeTick()
@@ -30,6 +26,7 @@ void Choice::makeTick()
 	_tick = new Image("assets/images/tick.png");
 	_tick->rescale(0.05, 0.05);
 	_tick->setPosition(c);
+	addObject(_tick);
 }
 
 void Choice::click()
@@ -59,19 +56,16 @@ void Choice::click()
 	}
 
 	_ticked = !_ticked;
+	_tick->setDisabled(!_ticked);
 }
 
 void Choice::unclick()
 {
 	_ticked = false;
-}
-
-void Choice::render(SnowGL *gl)
-{
-	if (_tick != NULL && _ticked)
+	
+	if (_tick)
 	{
-		_tick->render(gl);
+		_tick->setDisabled(!_ticked);
 	}
-
-	Button::render(gl);
 }
+

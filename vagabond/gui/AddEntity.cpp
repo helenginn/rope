@@ -18,6 +18,7 @@
 
 #include "AddEntity.h"
 #include "ChooseEntity.h"
+#include "CalculateMetadata.h"
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/EntityManager.h>
@@ -45,7 +46,14 @@ AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev), AddObject(prev)
 
 void AddEntity::setup()
 {
-	addTitle("New entity");
+	if (!_existing)
+	{
+		addTitle("New entity");
+	}
+	else
+	{
+		addTitle("Entity - " + _obj.name());
+	}
 
 	{
 		Text *t = new Text("Entity name:");
@@ -97,6 +105,20 @@ void AddEntity::setup()
 			t->setReturnTag("conf_space");
 			addObject(t);
 		}
+
+		{
+			TextButton *t = new TextButton("Add to metadata", this);
+			t->setLeft(0.15, 0.6);
+			t->setReturnTag("metadata");
+			addObject(t);
+		}
+
+		{
+			TextButton *t = new TextButton("Search models for entity", this);
+			t->setRight(0.85, 0.6);
+			t->setReturnTag("search_models");
+			addObject(t);
+		}
 	}
 
 	AddObject::setup();
@@ -123,7 +145,7 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "enter_name")
 	{
-		_obj.setName(_name->text());
+		_obj.setName(_name->scratch());
 		refreshInfo();
 	}
 	else if (tag == "sequence" && _existing)
@@ -141,6 +163,16 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
 		view->show();
+	}
+	else if (tag == "search_models")
+	{
+		_obj.searchAllModels();
+		refreshInfo();
+	}
+	else if (tag == "metadata")
+	{
+		CalculateMetadata *cm = new CalculateMetadata(this, &_obj);
+		cm->show();
 	}
 	else if (tag == "create")
 	{

@@ -25,8 +25,8 @@ public:
 	
 	void setDragBox(double xspan, double yspan)
 	{
-		_xspan = xspan;
-		_yspan = yspan;
+		_xspan = xspan / 2;
+		_yspan = yspan / 2;
 	}
 
 	void setReturnTag(std::string tag)
@@ -44,10 +44,14 @@ public:
 
 	void setProportion(double x, double y);
 	virtual void drag(double x, double y);
-	virtual void setPosition(glm::vec3 pos);
+	virtual void setDragCentre(double x, double y);
 protected:
 	DragResponder *_sender;
 private:
+	glm::vec3 topLeftLimit();
+	glm::vec3 bottomRightLimit();
+	glm::vec3 boxLimit();
+
 	glm::vec3 _centre;
 	std::string _tag;
 	double _xspan;

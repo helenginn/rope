@@ -33,7 +33,6 @@ void TextEntry::click()
 	}
 
 	_active = true;
-	_scratch = _text;
 	showInsert();
 
 	_sender->setKeyResponder(this);
@@ -44,12 +43,12 @@ void TextEntry::showInsert()
 	setHighlighted(false);
 	if (_active)
 	{
-		setText(_scratch + "_");
+		setText(_scratch + "_", true);
 		setHighlighted(true);
 	}
 	else
 	{
-		setText(_scratch);
+		setText(_scratch, true);
 	}
 }
 

@@ -23,12 +23,18 @@
 Menu::Menu(Scene *scene, std::string prefix) : Modal(scene)
 {
 	_prefix = prefix;
-
+	setInert(true);
 }
 
 Menu::~Menu()
 {
 	deleteObjects();
+}
+
+void Menu::setup(Renderable *r)
+{
+	glm::vec2 c = r->xy();
+	setup(c.x, c.y);
 }
 
 void Menu::setup(double x, double y)
@@ -50,7 +56,7 @@ void Menu::setup(double x, double y)
 	}
 
 	addQuad(0.9);
-	rescale(width, height + 0.025);
+	rescale(width / 2 + 0.025, height + 0.025);
 	setArbitrary(0, 0, Renderable::Alignment(Left | Top));
 	setImage("assets/images/box.png");
 
@@ -72,6 +78,7 @@ TextButton *Menu::addOption(std::string text, std::string tag)
 	TextButton *option = new TextButton(text, this);
 	option->resize(0.8);
 	option->setReturnTag(tag);
+	option->setReturnObject(returnObject());
 	_options.push_back(option);
 	return option;
 }
@@ -81,7 +88,14 @@ void Menu::buttonPressed(std::string tag, Button *button)
 	hide();
 	if (_scene)
 	{
-		_scene->buttonPressed(_prefix + "_" + tag, button);
+		if (_prefix.length())
+		{
+			_scene->buttonPressed(_prefix + "_" + tag, button);
+		}
+		else
+		{
+			_scene->buttonPressed(tag, button);
+		}
 	}
 }
 

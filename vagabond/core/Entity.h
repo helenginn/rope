@@ -21,9 +21,11 @@
 
 #include <string>
 #include <set>
+#include <map>
 #include "Sequence.h"
 #include "Model.h"
 #include "MetadataGroup.h"
+#include "AtomRecall.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -69,6 +71,7 @@ public:
 	}
 	
 	void checkModel(Model &m);
+	void searchAllModels();
 
 	size_t checkForUnrefinedMolecules();
 	void refineUnrefinedModels();
@@ -97,12 +100,12 @@ public:
 	
 	void housekeeping();
 	
-	Metadata *distanceBetweenAtoms(Residue *master_id_a,
-	                               std::string a_name,
-	                               Residue *master_id_b,
-	                               std::string b_name);
+	Metadata *distanceBetweenAtoms(AtomRecall a, AtomRecall b);
+	Metadata *angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c);
 
-	std::set<std::string> allMetadataHeaders();
+	std::map<std::string, int> allMetadataHeaders();
+	
+	void clickTicker();
 
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);
@@ -147,6 +150,8 @@ inline void from_json(const json &j, Entity &value)
 	{
 		std::cout << "Error proccessing json, probably old version" << std::endl;
 	}
+	
+	value.clickTicker();
 }
 
 #endif

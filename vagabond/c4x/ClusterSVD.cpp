@@ -65,6 +65,7 @@ void ClusterSVD<DG>::cluster()
 	catch (std::runtime_error &err)
 	{
 		std::cout << "Error running svd: " << err.what() << std::endl;
+		freeMatrix(&mat);
 		return;
 	}
 
@@ -76,9 +77,21 @@ void ClusterSVD<DG>::cluster()
 	{
 		for (size_t j = 0; j < this->_result.rows; j++)
 		{
-//			this->_result[j][i] *= _svd.w[i];
+			this->_result[j][i] *= _svd.w[i];
 		}
 	}
+	
+	this->normaliseResults(4);
+
+	freeMatrix(&mat);
+}
+
+template <class DG>
+PCA::Matrix ClusterSVD<DG>::distanceMatrix()
+{
+	PCA::Matrix distances = distancesFrom(this->_result);
+
+	return distances;
 }
 
 #endif

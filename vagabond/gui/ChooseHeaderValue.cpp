@@ -37,7 +37,7 @@ void ChooseHeaderValue::setEntity(std::string name)
 	_values.clear();
 	std::string header = _rule.header();
 
-	std::set<std::string> values;
+	std::map<std::string, int> values;
 	
 	if (_entity != nullptr)
 	{
@@ -48,13 +48,21 @@ void ChooseHeaderValue::setEntity(std::string name)
 			if (kv.count(header))
 			{
 				std::string val = kv.at(header).text();
-				values.insert(val);
+				values[val]++;
 			}
 		}
 	}
 	
 	_values.reserve(values.size());
-	_values.insert(_values.begin(), values.begin(), values.end());
+	_assigned.reserve(values.size());
+
+	std::map<std::string, int>::iterator it;
+	
+	for (it = values.begin(); it != values.end(); it++)
+	{
+		_values.push_back(it->first);
+		_assigned.push_back(i_to_str(it->second));
+	}
 }
 
 void ChooseHeaderValue::setup()
@@ -71,9 +79,21 @@ size_t ChooseHeaderValue::lineCount()
 
 Renderable *ChooseHeaderValue::getLine(int i)
 {
-	TextButton *text = new TextButton(_values[i], this);
-	text->setReturnTag("?" + _values[i]);
-	return text;
+	Box *b = new Box();
+	{
+		TextButton *text = new TextButton(_values[i], this);
+		text->setLeft(0., 0.);
+		text->setReturnTag("?" + _values[i]);
+		b->addObject(text);
+	}
+
+	{
+		Text *text = new Text(_assigned[i]);
+		text->setRight(0.6, 0.0);
+		b->addObject(text);
+	}
+
+	return b;
 }
 
 void ChooseHeaderValue::buttonPressed(std::string tag, Button *button)

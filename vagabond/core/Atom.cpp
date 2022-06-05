@@ -385,6 +385,10 @@ void Atom::setTransformation(glm::mat4x4 transform)
 const std::string Atom::desc() const
 {
 	std::string str;
-	str += code() + i_to_str(residueNumber()) + ":" + atomName();
+	if (_chain.length())
+	{
+		str += _chain + "-";
+	}
+	str +=  code() + i_to_str(residueNumber()) + ":" + atomName();
 	return str;
 }

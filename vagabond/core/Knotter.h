@@ -31,6 +31,7 @@ class Knotter
 {
 public:
 	Knotter(AtomGroup *group, GeometryTable *table);
+	~Knotter();
 
 	void knot();
 	

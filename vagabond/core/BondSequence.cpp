@@ -19,11 +19,13 @@
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
-#include "TorsionBasis.h"
+#include "MechanicalBasis.h"
 #include "Superpose.h"
 #include "Atom.h"
 #include <iostream>
 #include <queue>
+
+class ForceField;
 
 BondSequence::BondSequence(BondSequenceHandler *handler)
 {
@@ -58,6 +60,17 @@ void BondSequence::removeTorsionBasis()
 void BondSequence::makeTorsionBasis()
 {
 	_torsionBasis = TorsionBasis::newBasis(_basisType);
+	
+	if (_basisType == TorsionBasis::TypeMechanical)
+	{
+		/* mechanical basis needs to understand atom connectivity */
+		PCA::Matrix m = _grapher.distanceMatrix();
+		std::vector<Atom *> atoms = _grapher.atoms();
+		MechanicalBasis *mb = dynamic_cast<MechanicalBasis *>(_torsionBasis);
+		mb->supplyDistances(m, atoms);
+		ForceField *ff = _handler->calculator()->forceField();
+		mb->supplyForceField(ff);
+	}
 }
 
 void BondSequence::addToGraph(Atom *atom, size_t count)
@@ -402,6 +415,11 @@ void BondSequence::calculate()
 	if (miniJob())
 	{
 		extract = (miniJob()->job->requests & JobExtractPositions);
+	}
+	
+	if (_torsionBasis != nullptr)
+	{
+		_torsionBasis->prepareRecalculation();
 	}
 
 	if (sampleCount() == 1 && !extract)

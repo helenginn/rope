@@ -22,6 +22,7 @@
 #include "Grapher.h"
 #include "../utils/FileReader.h"
 #include "BondTorsion.h"
+#include "Mechanics.h"
 #include "TorsionBasis.h"
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
@@ -95,6 +96,8 @@ AtomGroup::~AtomGroup()
 
 bool AtomGroup::hasAtom(Atom *a)
 {
+	return (_desc2Atom.count(a->desc()) > 0);
+
 	AtomVector::iterator it = std::find(_atoms.begin(), _atoms.end(), a);
 
 	return (it != _atoms.end());
@@ -110,6 +113,8 @@ void AtomGroup::add(Atom *a)
 		{
 			addBondstraint(a->bondLength(j));
 		}
+		
+		_desc2Atom[a->desc()] = a;
 
 		_anchors.clear();
 	}
@@ -127,6 +132,12 @@ void AtomGroup::operator-=(Atom *a)
 	if (it != _atoms.end())
 	{
 		_atoms.erase(it);
+		
+		if (_desc2Atom.at(a->desc()) == a)
+		{
+			_desc2Atom.erase(a->desc());
+		}
+
 		_anchors.clear();
 	}
 }
@@ -466,4 +477,15 @@ Sequence *AtomGroup::sequence()
 
 	Sequence *sequence = new Sequence(best);
 	return sequence;
+}
+
+void AtomGroup::mechanics()
+{
+	cancelRefinement();
+	cleanupRefinement();
+
+	Mechanics *m = new Mechanics(this);
+	_mech = m;
+
+	_mechThread = new std::thread(&Mechanics::run, _mech);
 }

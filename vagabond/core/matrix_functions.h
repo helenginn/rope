@@ -16,6 +16,11 @@ inline bool is_glm_vec_sane(T vec)
 	return true;
 }
 
+/** returns the gradient of the distance of length CD when C is rotated
+ *  by [angle] around bond AB */
+float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
+                                         const glm::vec3 &c, const glm::vec3 &d);
+
 double measure_bond_torsion(glm::vec3 positions[4]);
 
 /** matrix from three bond lengths and three bond angles, aligned with

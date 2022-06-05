@@ -30,6 +30,7 @@ class BondSequenceHandler;
 class MapTransferHandler;
 class PointStoreHandler;
 class MapSumHandler;
+class ForceField;
 class Sampler;
 
 /** \class BondCalculator
@@ -159,6 +160,16 @@ public:
 	
 	void setSampler(Sampler *sampler);
 	
+	void setForceField(ForceField *ff)
+	{
+		_forceField = ff;
+	}
+	
+	ForceField *const forceField() const
+	{
+		return _forceField;
+	}
+	
 	struct AnchorExtension
 	{
 		Atom *atom;
@@ -202,6 +213,7 @@ private:
 	MapSumHandler *_sumHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	Sampler *_sampler = nullptr;
+	ForceField *_forceField = nullptr;
 	
 	std::vector<AnchorExtension> _atoms;
 };

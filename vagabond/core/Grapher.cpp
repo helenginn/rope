@@ -502,3 +502,74 @@ AtomGraph *Grapher::firstGraphNextResidue(AtomGraph *last)
 	/* return the graph with lowest integer residue in the map */
 	return results.begin()->second;
 }
+
+void Grapher::fillDistances(PCA::Matrix &m)
+{
+	int count = m.rows;
+
+	for (size_t k = 0; k < count; k++)
+	{
+		for (size_t i = 0; i < count; i++)
+		{
+			for (size_t j = 0; j < count; j++)
+			{
+				double ij = m.ptrs[i][j];
+				double ik = m.ptrs[i][k];
+				double kj = m.ptrs[k][j];
+				
+				double sum = ik + kj;
+				
+				if (ij != ij)
+				{
+					m.ptrs[i][j] = sum;
+					m.ptrs[j][i] = sum;
+				}
+				else if (ij > sum)
+				{
+					m.ptrs[i][j] = sum;
+					m.ptrs[j][i] = sum;
+				}
+			}
+		}
+	}
+}
+
+PCA::Matrix Grapher::distanceMatrix()
+{
+	PCA::Matrix m;
+	setupMatrix(&m, _atoms.size(), _atoms.size());
+
+	for (size_t i = 0; i < m.rows * m.cols; i++)
+	{
+		m.vals[i] = NAN;
+	}
+	
+	std::map<Atom *, int> atomIdxs;
+	
+	for (size_t i = 0; i < _atoms.size(); i++)
+	{
+		atomIdxs[_atoms[i]] = i;
+		m[i][i] = 0;
+	}
+	
+	for (size_t i = 0; i < _graphs.size(); i++)
+	{
+		Atom *atom = _graphs[i]->atom;
+		Atom *parent = _graphs[i]->parent;
+
+		if (!atom || !parent)
+		{
+			continue;
+		}
+
+		int p = atomIdxs[atom];
+		int q = atomIdxs[parent];
+
+		m[p][q] = 1;
+		m[q][p] = 1;
+	}
+	
+	fillDistances(m);
+
+	return m;
+}

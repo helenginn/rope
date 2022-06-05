@@ -128,7 +128,7 @@ double PositionRefinery::fullResidual()
 	float dev = result->deviation;
 
 	_calculator->finish();
-	delete result;
+	result->destroy();
 
 	return dev;
 }
@@ -232,7 +232,7 @@ int PositionRefinery::awaitResult(double *eval)
 		}
 
 		int ticket = result->ticket;
-		delete result;
+		result->destroy();
 		return ticket;
 	}
 }

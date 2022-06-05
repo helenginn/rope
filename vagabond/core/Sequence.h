@@ -22,11 +22,13 @@
 #include <list>
 #include <map>
 #include <set>
+#include <sstream>
 #include "Residue.h"
 #include "IndexedSequence.h"
 
 class Atom;
 class Entity;
+class SequenceComparison;
 
 typedef std::map<Residue *, Residue *> ResidueMap;
 
@@ -118,7 +120,9 @@ public:
 		_map2Local.clear();
 		_map2Master.clear();
 	}
-	void mapFromMaster(Entity *ent);
+
+	SequenceComparison *newComparison(Entity *entity);
+	void mapFromMaster(SequenceComparison *sc);
 	void remapFromMaster(Entity *entity);
 
 	friend void to_json(json &j, const Sequence &value);

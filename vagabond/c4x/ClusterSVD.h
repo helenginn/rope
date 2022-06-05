@@ -20,7 +20,6 @@
 #define __vagabond__ClusterSVD__
 
 #include "Cluster.h"
-	
 
 template <class DG>
 class ClusterSVD : public Cluster<DG>
@@ -35,6 +34,7 @@ public:
 	}
 
 	virtual void cluster();
+	PCA::Matrix distanceMatrix();
 
 	virtual size_t displayableDimensions()
 	{

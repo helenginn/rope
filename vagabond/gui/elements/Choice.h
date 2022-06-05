@@ -18,7 +18,6 @@ public:
 
 	virtual void click();
 	void unclick();
-	virtual void render(SnowGL *gl);
 private:
 	void makeTick();
 	Scene *_scene;

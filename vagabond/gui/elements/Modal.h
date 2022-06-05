@@ -8,7 +8,7 @@
 
 class Scene;
 
-class Modal : public Box
+class Modal : virtual public Box
 {
 public:
 	Modal(Scene *scene, double width, double height);
@@ -19,7 +19,7 @@ public:
 	virtual void render(SnowGL *gl);
 
 	void hide();
-	void setCentre(Renderable *r, double fx, double fy);
+	void setModalCentre(Renderable *r, double fx, double fy);
 //	void setLeft(Renderable *r, double fx, double fy);
 	void setRight(Renderable *r, double fx, double fy);
 	

@@ -106,5 +106,5 @@ void Residue::housekeeping()
 			_atomNames.insert(comp);
 		}
 	}
-
 }
+

@@ -19,6 +19,11 @@
 #include "Display.h"
 #include "FileView.h"
 #include "FileLine.h"
+
+#ifdef __EMSCRIPTEN__
+#include <vagabond/gui/elements/upload.h>
+#endif
+
 #include "MetadataView.h"
 
 #include <vagabond/gui/elements/Text.h>
@@ -59,6 +64,14 @@ void FileView::setup()
 		text->setCentre(0.5, 0.1);
 		addObject(text);
 	}
+#ifdef __EMSCRIPTEN__
+	{
+		TextButton *text = new TextButton("Add", this);
+		text->setCentre(0.9, 0.1);
+		text->setReturnTag("add");
+		addObject(text);
+	}
+#endif
 	
 	ListView::setup();
 }
@@ -115,6 +128,13 @@ void FileView::buttonPressed(std::string tag, Button *button)
 			returnToResponder(filename);
 		}
 	}
+
+#ifdef __EMSCRIPTEN__
+	if (tag == "add")
+	{
+		upload_file();
+	}
+#endif
 	
 	ListView::buttonPressed(tag, button);
 }

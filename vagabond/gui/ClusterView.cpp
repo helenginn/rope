@@ -18,6 +18,9 @@
 
 #include "ClusterView.h"
 #include "ColourScheme.h"
+#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/elements/FloatingText.h>
+
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/HasMetadata.h>
@@ -31,6 +34,11 @@ ClusterView::ClusterView()
 	setFragmentShaderFile("assets/shaders/point.fsh");
 	setVertexShaderFile("assets/shaders/point.vsh");
 	setImage("assets/images/points.png");
+}
+
+ClusterView::~ClusterView()
+{
+	deleteObjects();
 }
 
 void ClusterView::customiseTexture(Snow::Vertex &vert)
@@ -50,7 +58,35 @@ void ClusterView::addPoint(glm::vec3 pos, int pointType)
 	Snow::Vertex &vert = addVertex(pos);
 	customiseTexture(vert);
 	setPointType(_vertices.size() - 1, pointType);
+
+	/* for rendering indices */
+	vert.extra[0] = _vertices.size() + 0.5;
 	addIndex(-1);
+}
+
+void ClusterView::reset()
+{
+	for (size_t i = 0; i < vertexCount(); i++)
+	{
+		Snow::Vertex &vert = _vertices[i];
+		vert.tex.y = 0.; /* point index */
+		vert.color = glm::vec4(0., 0., 0., 1.);
+	}
+}
+
+void ClusterView::prioritiseMetadata(std::string key)
+{
+	std::vector<float> vals = _cx->dataGroup()->numbersForKey(key);
+	int idx = _cx->bestAxisFit(vals);
+
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		glm::vec3 v = _cx->point(i);
+		v *= 10;
+		_vertices[i].pos = v;
+	}
+	
+	rebufferVertexData();
 }
 
 void ClusterView::makePoints()
@@ -58,6 +94,7 @@ void ClusterView::makePoints()
 	clearVertices();
 	
 	size_t count = _cx->pointCount();
+	std::cout << "Count: " << count << std::endl;
 	_vertices.reserve(count);
 	_indices.reserve(count);
 
@@ -65,8 +102,13 @@ void ClusterView::makePoints()
 	{
 		glm::vec3 v = _cx->point(i);
 		v *= 10;
-		addPoint(v, 4);
+		addPoint(v, 0);
 	}
+}
+
+void ClusterView::render(SnowGL *gl)
+{
+	Renderable::render(gl);
 }
 
 void ClusterView::setCluster(Cluster<MetadataGroup> *cx)
@@ -105,7 +147,6 @@ void ClusterView::applyVaryColour(const Rule &r)
 			_vertices[i].color = glm::vec4(0.5, 0.5, 0.5, 0.2);
 			continue;
 		}
-		
 		float val = data.at(header).number();
 		r.convert_value(val);
 		glm::vec4 colour = cs->colour(val);
@@ -160,3 +201,31 @@ void ClusterView::applyRule(const Rule &r)
 	
 }
 
+void ClusterView::interacted(int idx, bool hover)
+{
+	if (_text != nullptr)
+	{
+		removeObject(_text);
+		delete _text;
+		_text = nullptr;
+	}
+	
+	if (idx < 0 || idx >= _vertices.size())
+	{
+		return;
+	}
+
+	MetadataGroup &group = *_cx->dataGroup();
+	std::string str = group.object(idx)->id();
+
+	FloatingText *ft = new FloatingText(str);
+	ft->setPosition(_vertices[idx].pos);
+
+	addObject(ft);
+	_text = ft;
+	
+	if (hover == false) // click!
+	{
+		std::cout << "CLICK" << std::endl;
+	}
+}

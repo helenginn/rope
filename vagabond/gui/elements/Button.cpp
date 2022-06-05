@@ -25,12 +25,12 @@ void Button::click()
 
 bool Button::mouseOver()
 {
+	Box::mouseOver();
+
 	if (_inert)
 	{
 		return false;
 	}
-	
-	Box::mouseOver();
 
 	setHighlighted(true);
 	return true;

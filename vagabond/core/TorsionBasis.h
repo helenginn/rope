@@ -30,6 +30,7 @@ public:
 	{
 		TypeSimple,
 		TypeConcerted,
+		TypeMechanical,
 	};
 
 	TorsionBasis();
@@ -42,7 +43,7 @@ public:
 	virtual void supplyMask(std::vector<bool> mask) {}
 	
 	static TorsionBasis *newBasis(Type type);
-
+	
 	int addTorsion(BondTorsion *torsion);
 	
 	/** provides modified torsion angle given custom vector.
@@ -53,6 +54,8 @@ public:
 	virtual float torsionForVector(int idx, const float *vec, int n) = 0;
 
 	virtual void absorbVector(const float *vec, int n);
+
+	virtual void prepareRecalculation() {};
 	
 	const size_t torsionCount() const
 	{

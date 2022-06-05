@@ -13,7 +13,8 @@ int main()
 	entity.setName("present");
 	entity.setSequence(&master);
 	
-	local.mapFromMaster(&entity);
+	SequenceComparison *sc = master.newComparison(&entity);
+	local.mapFromMaster(sc);
 	DataGroup<float>::Array vals;
 	entity.sequence()->torsionsFromMapped(&local, vals, false, 10);
 	

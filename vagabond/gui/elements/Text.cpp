@@ -6,22 +6,56 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 
-Text::Text(std::string text) : Box()
+Text::Text(std::string text, bool delay) : Box()
 {
-	if (text.length() > 0)
+	_delay = delay;
+	_retext = delay;
+	_text = text;
+
+	if (text.length() > 0 && !_delay)
 	{
-		GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h);
-		_texid = tex;
-		makeQuad();
-		_textured = true;
+		setInitialText(text);
 	}
 	
 	setName(text);
 }
 
-void Text::setText(std::string text)
+void Text::render(SnowGL *gl)
+{
+	if (_delay && _retext)
+	{
+		if (_texid == 0)
+		{
+			setInitialText(_text);
+		}
+		else
+		{
+			setText(_text, true);
+		}
+
+		_retext = false;
+	}
+
+	Box::render(gl);
+}
+
+void Text::setInitialText(std::string text)
+{
+	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h);
+	_texid = tex;
+	makeQuad();
+	_textured = true;
+}
+
+void Text::setText(std::string text, bool force)
 {
 	_text = text;
+	
+	if (!force && _delay)
+	{
+		_retext = true;
+		return;
+	}
 
 	if (_texid > 0)
 	{
@@ -34,7 +68,7 @@ void Text::setText(std::string text)
 	clearVertices();
 	makeQuad();
 	realign();
-	setupVBOBuffers();
+	rebufferVertexData();
 }
 
 void Text::makeQuad()

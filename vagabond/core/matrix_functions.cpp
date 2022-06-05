@@ -224,6 +224,41 @@ double measure_bond_torsion(glm::vec3 poz[4])
 	return rad2deg(angle);
 }
 
+float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
+                                         const glm::vec3 &c, const glm::vec3 &d)
+{
+	/* b = bond axis */
+	glm::vec3 bond = b - a;
+	
+	/* for ease of reading: x,y,z = bond axis direction */
+	float &x = bond.x;
+	float &y = bond.y;
+	float &z = bond.z;
+	
+	/* p and q are distances to query atoms c and d */
+	glm::vec3 p = c - b;
+	glm::vec3 q = d - b;
+	
+	/* when torsion angle = 0, q.x etc. simplify to q.x */
+
+	double fx = ((q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y) + 
+	             (q.z - p.z) * (q.z - p.z));
+	
+	/* derivative of q.x with respect to alpha */
+	double dQx_by_dA = y * q.z - z * q.y;
+	double dQy_by_dA = z * q.x - x * q.z;
+	double dQz_by_dA = x * q.y - y * q.x;
+
+	/* dfx = derivative of fx */
+	double dfx = (2*(q.x - p.x) * dQx_by_dA + 
+	              2*(q.y - p.y) * dQy_by_dA +
+	              2*(q.z - p.z) * dQz_by_dA);
+
+	double dD_by_dA = -pow(fx, -0.5) * dfx / 2;
+
+	return dD_by_dA;
+}
+
 #endif
 
 

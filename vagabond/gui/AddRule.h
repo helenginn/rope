@@ -29,6 +29,7 @@ class AddRule : public AddObject<Rule>
 {
 public:
 	AddRule(Scene *prev, Rule *chosen = nullptr);
+	~AddRule();
 	
 	void setEntityId(std::string entity_id)
 	{

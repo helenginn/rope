@@ -7,13 +7,15 @@ attribute vec2 tex;
 varying vec4 vPos;
 varying vec4 vColor;
 varying vec2 vTex;
+varying vec4 vExtra;
 
 void main()
 {
     vec4 pos = vec4(position[0], position[1], position[2], 1.0);
 	gl_Position = pos;
-	gl_PointSize = 80.;
+	gl_PointSize = 20.;
 	vTex = tex;
+	vExtra = extra;
 	vColor = color;
 }
 

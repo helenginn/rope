@@ -12,7 +12,7 @@ uniform mat4 model;
 
 out vec4 vPos;
 out vec4 vColor;
-out vec3 vNormal;
+out vec4 vExtra;
 out vec2 vTex;
 
 void main()
@@ -21,7 +21,7 @@ void main()
 	gl_Position = projection * model * pos;
 	gl_PointSize = size;
 	mat3 rot = mat3(model);
-	vNormal = rot * normal;
+	vExtra = extra;
 	vTex = tex;
 	vColor = color;
 	vPos = vec4(mat3(model) * vec3(extra), 1.);

@@ -22,9 +22,15 @@
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/gui/elements/TextButton.h>
 
-ChooseHeader::ChooseHeader(Scene *prev) : ListView(prev)
+ChooseHeader::ChooseHeader(Scene *prev, bool choose) : ListView(prev)
 {
+	_choose = choose;
 
+}
+
+ChooseHeader::~ChooseHeader()
+{
+	deleteObjects();
 }
 
 void ChooseHeader::setup()
@@ -41,9 +47,26 @@ size_t ChooseHeader::lineCount()
 
 Renderable *ChooseHeader::getLine(int i)
 {
-	TextButton *text = new TextButton(_headers[i], this);
-	text->setReturnTag(_headers[i]);
-	return text;
+	Box *b = new Box();
+	{
+		TextButton *text = new TextButton(_headers[i], this);
+		text->setLeft(0.0, 0.0);
+		text->setReturnTag(_headers[i]);
+		if (!_choose)
+		{
+			text->setInert(true);
+		}
+		b->addObject(text);
+	}
+
+	if (_assigned.size() > i)
+	{
+		Text *text = new Text(_assigned[i]);
+		text->setRight(0.6, 0.0);
+		b->addObject(text);
+	}
+
+	return b;
 }
 
 void ChooseHeader::setEntity(std::string name)
@@ -52,18 +75,20 @@ void ChooseHeader::setEntity(std::string name)
 	
 	if (_entity != nullptr)
 	{
-		std::set<std::string> results = _entity->allMetadataHeaders();
+		std::map<std::string, int> results = _entity->allMetadataHeaders();
+		std::map<std::string, int>::iterator it;
 		
-		for (const std::string &r : results)
+		for (it = results.begin(); it != results.end(); it++)
 		{
-			_headers.push_back(r);
+			_headers.push_back(it->first);
+			_assigned.push_back(i_to_str(it->second));
 		}
 	}
 }
 
 void ChooseHeader::buttonPressed(std::string tag, Button *button)
 {
-	if (_caller)
+	if (_choose && _caller)
 	{
 		for (const std::string &h : _headers)
 		{

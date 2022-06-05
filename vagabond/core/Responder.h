@@ -1,5 +1,5 @@
-// helen3d
-// Copyright (C) 2019 Helen Ginn
+// vagabond
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,63 +16,50 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __Quad__Quad__
-#define __Quad__Quad__
+#ifndef __vagabond__Responder__
+#define __vagabond__Responder__
 
-#include "Renderable.h"
-
-class Quad : public Renderable
+template <class T>
+class Responder
 {
 public:
-	Quad();
-	
-	void setMode(int mode)
+	virtual void respond() = 0;
+
+	virtual ~Responder()
 	{
-		_mode = mode;
-	}
-	
-	void setHorizontal(int mode)
-	{
-		_mode = mode;
-	}
-	
-	void clearThreshold()
-	{
-		_threshold = 0;
-	}
-	
-	void addToThreshold(float val = 1)
-	{
-		_threshold += val;
-	}
-	
-	void setOther(float other)
-	{
-		_other = other;
+
 	}
 
-	void setThreshold(float thresh)
+};
+
+template <class T>
+class HasResponder
+{
+public:
+	virtual ~HasResponder()
 	{
-		_threshold = thresh;
+
 	}
 
-	void prepareTextures(SnowGL *sender);
+	virtual void setResponder(Responder<T> *r)
+	{
+		_responder = r;
+	}
 	
-	void setTexture(int i, GLuint val)
-	{
-		_textures[i] = val;
-	}
-
-	virtual void render(SnowGL *sender);
 protected:
-	virtual void extraUniforms();
-	virtual void bindTextures();
+
+	virtual void triggerResponse()
+	{
+		if (_responder != nullptr)
+		{
+			_responder->respond();
+		}
+	}
 
 private:
-	void prepareNormalDist();
-	void makeQuad();
+	Responder<T> *_responder = nullptr;
 
-	int _count;
 };
+
 
 #endif

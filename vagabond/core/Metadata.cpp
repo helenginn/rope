@@ -71,6 +71,34 @@ void Metadata::housekeeping()
 	}
 }
 
+void Metadata::addToList(KeyValues &edit, std::string &key,
+                         const std::map<std::string, KeyValues *> &search, 
+                         bool overwrite) const
+{
+	if (key.length() == 0 || search.count(key) == 0)
+	{
+		return;
+	}
+
+	if (!overwrite && search.count(key) && edit != *search.at(key))
+	{
+		throw std::runtime_error("Conflicting data for key " + key);
+	}
+
+	if (!search.count(key) || edit == *search.at(key))
+	{
+		return;
+	}
+	
+	const KeyValues &old = *search.at(key);
+	KeyValues::const_iterator it;
+
+	for (it = old.begin(); it != old.end(); it++)
+	{
+		edit[it->first] = it->second;
+	}
+}
+
 void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 {
 	std::string filename, model_id, molecule_id;
@@ -86,44 +114,22 @@ void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 	{
 		molecule_id = kv.at("molecule").text();
 	}
+	
+	KeyValues edit = kv;
 
-	if (!overwrite)
-	{
-		if (filename.length() && _file2Data.count(filename))
-		{
-			if (kv != *_file2Data.at(filename))
-			{
-				throw std::runtime_error("Conflicting data for file " + filename);
-			}
-		}
-
-		if (molecule_id.length() && _mole2Data.count(molecule_id))
-		{
-			if (kv != *_mole2Data.at(molecule_id))
-			{
-				throw std::runtime_error("Conflicting data for molecule "
-				                         + molecule_id);
-			}
-		}
-
-		if (model_id.length() && _model2Data.count(model_id))
-		{
-			if (kv != *_model2Data.at(model_id))
-			{
-				throw std::runtime_error("Conflicting data for model " + model_id);
-			}
-		}
-	}
+	addToList(edit, filename, _file2Data, overwrite);
+	addToList(edit, model_id, _model2Data, overwrite);
+	addToList(edit, molecule_id, _mole2Data, overwrite);
 	
 	KeyValues::const_iterator it;
 	
-	for (it = kv.cbegin(); it != kv.cend(); it++)
+	for (it = edit.cbegin(); it != edit.cend(); it++)
 	{
 		std::string h = it->first;
 		_headers.insert(h);
 	}
 	
-	_data.push_back(kv);
+	_data.push_back(edit);
 	_file2Data[filename] = &_data.back();
 	_model2Data[model_id] = &_data.back();
 	_mole2Data[molecule_id] = &_data.back();

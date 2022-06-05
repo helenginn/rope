@@ -65,20 +65,27 @@ Sequence *Chain::fullSequence()
 		int min, max;
 
 		grps[i]->getLimitingResidues(&min, &max);
+		Sequence *candidate = grps[i]->sequence();
 		
 		if (sequences.count(min))
 		{
 			int compare = sequences[min]->size();
-			if (grps[i]->sequence()->size() > compare)
+			if (candidate->size() > compare)
 			{
-				sequences[min] = (grps[i]->sequence());
+				Sequence *curr = sequences[min];
+				delete curr;
+
+				sequences[min] = candidate;
+			}
+			else
+			{
+				delete candidate;
 			}
 		}
 		else
 		{
-			sequences[min] = (grps[i]->sequence());
+			sequences[min] = candidate;
 		}
-
 	}
 	
 	std::map<int, Sequence *>::iterator it, next;

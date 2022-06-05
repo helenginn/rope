@@ -20,28 +20,19 @@
 #include "SnowGL.h"
 #include <iostream>
 
-Quad::Quad() : Renderable()
+Quad::Quad() : Box()
 {
-	makeQuad();
-
 	_mode = 0;
 	_threshold = 0;
 	_other = 0;
-	setFragmentShaderFile("assets/shaders/quad.fsh");
-	setVertexShaderFile("assets/shaders/quad.vsh");
+	addQuad(0);
+	
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].tex.y = 1 - _vertices[i].tex.y;
+	}
 
 	setName("Quad");
-}
-
-void Quad::makeQuad()
-{
-	addVertex(-1, -1, 0);
-	addVertex(-1, +1, 0);
-	addVertex(+1, -1, 0);
-	addVertex(+1, +1, 0);
-
-	addIndices(0, 1, 2);
-	addIndices(1, 2, 3);
 }
 
 void Quad::prepareNormalDist()
@@ -70,7 +61,7 @@ void Quad::prepareTextures(SnowGL *sender)
 		}
 	}
 	
-	prepareNormalDist();
+//	prepareNormalDist();
 }
 
 void Quad::render(SnowGL *sender)

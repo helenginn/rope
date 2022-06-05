@@ -27,6 +27,11 @@ public:
 
 	virtual void keyPressed(char key);
 	virtual void keyPressed(SDL_Keycode other);
+	
+	std::string scratch()
+	{
+		return _scratch;
+	}
 
 	virtual void click();
 	virtual void finish();

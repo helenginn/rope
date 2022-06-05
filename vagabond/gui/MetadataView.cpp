@@ -17,11 +17,12 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MetadataView.h"
+#include "ChooseHeader.h"
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Environment.h>
-#include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 
 MetadataView::MetadataView(Scene *prev, Metadata *md) : Scene(prev)
 {
@@ -54,31 +55,18 @@ void MetadataView::setup()
 	}
 
 	{
-		int i = 0;
-		std::string list;
-
-		for (const std::string &header : _md->headers())
-		{
-			list += header + ", ";
-			
-			if (i % 3 == 2)
-			{
-				list += "\n";
-			}
-			
-			if (i >= 9)
-			{
-				list += "...";
-				break;
-			}
-		}
-
-		{
-			Text *t = new Text(list);
-			t->setRight(0.8, 0.5);
-			addObject(t);
-		}
+		std::string str = "View " + i_to_str(_md->headerCount()) + " categories";
+		Text *t = new Text(str);
+		t->setLeft(0.2, 0.4);
+		addObject(t);
 	}
+	{
+		ImageButton *t = ImageButton::arrow(-90., this);
+		t->setReturnTag("headers");
+		t->setCentre(0.8, 0.4);
+		addObject(t);
+	}
+
 	
 	{
 		TextButton *t = new TextButton("Add to database", this);
@@ -96,5 +84,13 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 		master += *_md;
 		back();
 	}
-
+	else if (tag == "headers")
+	{
+		ChooseHeader *ch = new ChooseHeader(this, false);
+		std::set<std::string> headers = _md->headers();
+		ch->setHeaders(headers);
+		ch->show();
+	}
+	
+	Scene::buttonPressed(tag, button);
 }

@@ -48,7 +48,6 @@ bool AtomGraph::checkAtomGraph() const
 	}
 
 	return false;
-
 }
 
 std::string AtomGraph::desc() const

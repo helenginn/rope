@@ -77,7 +77,6 @@ glm::vec4 ColourScheme::colour(float p)
 		/* first fixed point is already beyond the requested p */
 		if (!last && fp.proportion > p)
 		{
-			std::cout << glm::to_string(fp.colour) << std::endl;
 			return fp.colour;
 		}
 		/* somewhere between the last and this one */
@@ -92,7 +91,6 @@ glm::vec4 ColourScheme::colour(float p)
 		last = &fp;
 	}
 	
-	std::cout << glm::to_string(last->colour) << std::endl;
 	/* if we got here, we never found the right point, so we take the
 	 * last as the extremity */
 	return last->colour;

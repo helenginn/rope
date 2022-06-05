@@ -8,6 +8,7 @@ in vec2 tex;
 
 out vec4 vPos;
 out vec4 vColor;
+out vec4 vExtra;
 out vec2 vTex;
 
 void main()
@@ -17,5 +18,6 @@ void main()
 	gl_PointSize = 80;
 	vTex = tex;
 	vColor = color;
+	vExtra = extra;
 }
 

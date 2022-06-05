@@ -45,14 +45,18 @@ void PCA::setupSVD(SVD *cc, int rows, int cols)
 {
 	if (rows < cols && cols != 0)
 	{
-		throw std::runtime_error("columns specified as less than number of rows");
+//		throw std::runtime_error("columns specified as less than number of rows");
+		rows = cols;
 	}
-	
-	cols = rows;
 
 	setupMatrix(&cc->u, rows, cols);
 	setupMatrix(&cc->v, cols, cols);
 	cc->w = (double *)calloc(cols, sizeof(double));
+}
+
+void PCA::zeroMatrix(Matrix *mat)
+{
+	memset(mat->vals, '\0', sizeof(mat->vals[0]) * mat->rows * mat->cols);
 }
 
 void PCA::copyMatrix(Matrix &dest, Matrix &source)
@@ -186,41 +190,42 @@ void PCA::reorderSVD(SVD *cc)
 
 bool PCA::invertSVD(SVD *cc)
 {
-	int x = cc->u.rows;
+	int x = cc->u.rows; // e.g. 12
+	int y = cc->u.cols; // e.g. 1
 
 	bool success = runSVD(cc);
-
-	for (size_t j = 0; j < x; j++)
+	
+	for (size_t j = 0; j < y; j++)
 	{
 		for (size_t i = 0; i < x; i++)
 		{
-			cc->u.ptrs[j][i] /= cc->w[i];
+			cc->u[j][i] /= cc->w[j];
 		}
 	}
 
 	Matrix tmp;
-	setupMatrix(&tmp, x);
+	setupMatrix(&tmp, x, y);
 	
-	for (size_t i = 0; i < x; i++)
+	for (size_t j = 0; j < y; j++)
 	{
-		for (size_t j = 0; j < x; j++)
+		for (size_t i = 0; i < x; i++)
 		{
-			if (cc->w[i] < 1e-6)
+			if (fabs(cc->w[j]) < 1e-6)
 			{
 				tmp.ptrs[i][j] = 0;
 			}
 			else
 			{
-				for (size_t k = 0; k < x; k++)
+				for (size_t k = 0; k < y; k++)
 				{
-					double add = cc->v.ptrs[i][k] * cc->u.ptrs[j][k];
+					double add = cc->v.ptrs[j][k] * cc->u.ptrs[i][k];
 					tmp.ptrs[i][j] += add;
 				}
 			}
 		}
 	}
 	
-	for (size_t i = 0; i < x * x; i++)
+	for (size_t i = 0; i < x * y; i++)
 	{
 		cc->u.vals[i] = tmp.vals[i];
 	}
@@ -251,4 +256,32 @@ void PCA::freeSVD(SVD *cc)
 		free(cc->w);
 	}
 	cc->w = nullptr;
+}
+
+PCA::Matrix PCA::distancesFrom(Matrix &m)
+{
+	Matrix dists;
+	setupMatrix(&dists, m.rows, m.rows);
+
+	for (size_t i = 0; i < dists.rows; i++)
+	{
+		for (size_t j = 0; j < dists.cols; j++)
+		{
+			double sq = 0;
+			for (size_t k = 0; k < m.cols; k++)
+			{
+				if (m[i][k] != m[i][k] || m[j][k] != m[j][k])
+				{
+					continue;
+				}
+
+				float add = (m[i][k] - m[j][k]) * (m[i][k] - m[j][k]);
+				sq += add;
+			}
+			
+			dists[i][j] = sqrt(sq);
+		}
+	}
+	
+	return dists;
 }

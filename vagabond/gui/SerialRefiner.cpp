@@ -78,3 +78,8 @@ void SerialRefiner::setActiveAtoms(Model *model)
 		_display->queueToShow();
 	}
 }
+
+void SerialRefiner::respond()
+{
+
+}

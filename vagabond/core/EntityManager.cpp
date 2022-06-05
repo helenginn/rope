@@ -18,9 +18,11 @@
 
 #include "EntityManager.h"
 #include "ModelManager.h"
+#include "Environment.h"
 
 EntityManager::EntityManager() : Manager()
 {
+	setProgressResponder(Environment::env().progressResponder());
 
 }
 
@@ -48,6 +50,8 @@ Entity *EntityManager::insertIfUnique(const Entity &ent)
 		_responder->objectsChanged();
 	}
 	
+	clickTicker();
+
 	return &_objects.back();
 }
 
@@ -60,8 +64,11 @@ void EntityManager::update(const Entity &e)
 
 void EntityManager::housekeeping()
 {
+	_name2Entity.clear();
+
 	for (Entity &other : _objects)
 	{
+		std::cout << other.name() << " " << &other << std::endl;
 		_name2Entity[other.name()] = &other;
 	}
 }

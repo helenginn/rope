@@ -20,16 +20,24 @@
 #define __vagabond__VagWindow__
 
 #include <vagabond/gui/elements/Window.h>
+#include "ProgressView.h"
+#include "MainMenu.h"
 
 class Dictator;
 
-class VagWindow : public Window
+class VagWindow : public Window, public ProgressViewResponder
 {
 public:
 	VagWindow();
 	virtual void setup(int argc, char **argv);
+	void setup_special();
+	virtual void resume();
+	virtual void mainThreadActivities();
 private:
 	static Dictator *_dictator;
+	ProgressView *_pv = nullptr;
+	MainMenu *_menu = nullptr;
+	bool _resume = false;
 
 };
 

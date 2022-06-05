@@ -1,0 +1,1 @@
+option('result', type : 'boolean', value : true)

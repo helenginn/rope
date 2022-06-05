@@ -28,6 +28,7 @@ class Molecule;
 class FileManager;
 class ModelManager;
 class EntityManager;
+class ProgressResponder;
 
 class Environment
 {
@@ -57,14 +58,24 @@ public:
 		return _environment._fileManager;
 	}
 
-	static Environment env()
+	static Environment &env()
 	{
 		return _environment;
 	}
 
-	static Environment environment()
+	static Environment &environment()
 	{
 		return _environment;
+	}
+	
+	ProgressResponder *progressResponder() const
+	{
+		return _pg;
+	}
+	
+	void setProgressResponder(ProgressResponder *pg)
+	{
+		_pg = pg;
 	}
 	
 	static void autoModel();
@@ -81,6 +92,8 @@ private:
 	ModelManager *_modelManager = nullptr;
 	EntityManager *_entityManager = nullptr;
 	Metadata *_metadata = nullptr;
+	
+	ProgressResponder *_pg = nullptr;
 
 	static Environment _environment;
 };

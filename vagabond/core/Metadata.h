@@ -105,6 +105,10 @@ public:
 	friend void to_json(json &j, const Metadata &value);
 	friend void from_json(const json &j, Metadata &value);
 private:
+	void addToList(KeyValues &edit, std::string &key,
+	               const std::map<std::string, KeyValues *> &search, 
+	               bool overwrite) const;
+
 	Ruler _ruler;
 	std::string _source;
 	std::list<KeyValues> _data;

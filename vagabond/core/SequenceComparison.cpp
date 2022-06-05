@@ -48,6 +48,11 @@ SequenceComparison::SequenceComparison(Sequence *a, Sequence *b)
 
 bool SequenceComparison::hasResidue(int row, int entry)
 {
+	if (_indices.size() <= entry)
+	{
+		return false;
+	}
+
 	if (row == 0 && _indices[entry].l >= 0)
 	{
 		return true;
@@ -121,4 +126,94 @@ float SequenceComparison::match()
 	
 	count /= (float)_aOutput.size();
 	return count;
+}
+
+void SequenceComparison::calculateMutations()
+{
+	for (size_t i = 0; i < _aOutput.size(); i++)
+	{
+		if (_aOutput[i] == '.')
+		{
+			continue;
+		}
+
+		if (_aOutput[i] == '+' || _aOutput[i] == '-')
+		{
+			continue;
+		}
+		
+		if (_aOutput[i] != ' ')
+		{
+			continue;
+		}
+
+		/* now dealing with ' ' only */
+		/* firstly, find the bounds of the mutated range. */
+		size_t j = i;
+		for (j = i; (j < _aOutput.size() && j < _lOutput.size()
+		             && j < _rOutput.size()); j++)
+		{
+			if (_aOutput[j] != ' ')
+			{
+				break;
+			}
+		}
+		
+		/* runs from i -> j but we must check for Xs. Xs come from disordered
+		 * regions that we don't want to report on */
+		
+		bool end = false;
+		for (size_t n = i; n < j; n++)
+		{
+			if (n >= _lOutput.size() || n >= _rOutput.size())
+			{
+				end = true;
+			}
+
+			if (_lOutput[n] == 'X' || _rOutput[n] == 'X')
+			{
+				/* truncate mutated region */
+				j = n;
+			}
+		}
+		
+		/* give up if this truncates mutated region to nothing */
+		if (j == i || end)
+		{
+			continue;
+		}
+		
+		if (j >= _rOutput.size() || j >= _lOutput.size() ||
+		    i >= _rOutput.size() || i >= _lOutput.size())
+		{
+			continue;
+		}
+		
+		std::string left, right;
+		for (size_t n = i; n < j; n++)
+		{
+			left += _lOutput[n];
+			right += _rOutput[n];
+		}
+		
+		if (left.length() == 0 || right.length() == 0)
+		{
+			continue;
+		}
+
+		Residue *first = residue(0, i);
+		
+		if (first)
+		{
+			std::string num = first->id().as_string();
+
+			std::string mut = left + num + right;
+			std::cout << mut << " ";
+			_muts.push_back(mut);
+
+			i = j;
+		}
+	}
+	
+	std::cout << " - total " << _muts.size() << " mutations." << std::endl;
 }

@@ -20,17 +20,22 @@
 #define __vagabond__ColourLegend__
 
 #include "ColourScheme.h"
+#include <vagabond/gui/elements/ButtonResponder.h>
 
-class ColourLegend : public ColourScheme
+class Scene;
+
+class ColourLegend : public ColourScheme, public ButtonResponder
 {
 public:
-	ColourLegend(Scheme scheme);
+	ColourLegend(Scheme scheme, Scene *responder);
 	~ColourLegend();
 
 	void setTitle(std::string title);
 	void setLimits(float min, float max);
+	virtual void buttonPressed(std::string tag, Button *button);
 
 private:
+	Scene *_responder = nullptr;
 
 };
 

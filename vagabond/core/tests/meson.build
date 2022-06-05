@@ -38,6 +38,8 @@ unit_tests = [
 'bondlength_returns_expected_value_for_measurement',
 'bondlength_returns_partner_for_queried_atom',
 'bondlength_throws_exception_if_queried_atom_not_member',
+'bond_rotation_on_distance_effect_matches_expected',
+'bond_rotation_on_distance_effect_matches_expected_maximum',
 'bonds_uses_torsion_angle_for_three_rhombohedral_centres',
 'bonds_uses_torsion_angle_for_two_rhombohedral_centres',
 'bonds_uses_torsion_angle_for_two_rhombohedral_one_planar_centres',

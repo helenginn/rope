@@ -40,6 +40,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	std::vector<std::string> _values;
+	std::vector<std::string> _assigned;
 	Entity *_entity;
 
 	Rule &_rule;

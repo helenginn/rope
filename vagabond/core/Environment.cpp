@@ -65,6 +65,11 @@ void Environment::load(std::string file)
 	if (!file_exists(file))
 	{
 		std::cout << "Could not find json environment." << std::endl;
+		if (_pg)
+		{
+			_pg->finish();
+		}
+
 		return;
 	}
 
@@ -94,6 +99,11 @@ void Environment::load(std::string file)
 	
 	_entityManager->checkModelsForReferences(_modelManager);
 	std::cout << "done." << std::endl;
+	
+	if (_pg)
+	{
+		_pg->finish();
+	}
 }
 
 void Environment::autoModel()

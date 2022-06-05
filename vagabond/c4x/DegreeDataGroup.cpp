@@ -30,28 +30,27 @@ void DegreeDataGroup::matchDegrees(Array &next)
 		}
 		
 		size_t j = 0;
-		Array &master = _vectors[j];
+		Array *master = &_vectors[j];
 		for (j = 0; j < vectorCount(); j++)
 		{
-			master = _vectors[j];
+			master = &_vectors[j];
 
-			if (master[i] == master[i] && isfinite(master[i]))
+			if ((*master)[i] == (*master)[i] && isfinite((*master)[i]))
 			{
 				break;
 			}
 		}
 
-		while (next[i] < master[i] - 180)
+		while (next[i] < (*master)[i] - 180)
 		{
 			next[i] += 360;
 		}
 
-		while (next[i] >= master[i] + 180)
+		while (next[i] >= (*master)[i] + 180)
 		{
 			next[i] -= 360;
 		}
 	}
-
 }
 
 void DegreeDataGroup::addArray(std::string name, Array next)
@@ -60,6 +59,11 @@ void DegreeDataGroup::addArray(std::string name, Array next)
 	{
 		matchDegrees(next);
 	}
-
+	
 	DataGroup<float>::addArray(name, next);
+
+	if (_vectors.size() <= 1)
+	{
+		return;
+	}
 }

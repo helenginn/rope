@@ -23,6 +23,8 @@
 #include "ClusterView.h"
 
 class Entity;
+class Rule;
+class HasMetadata;
 class MetadataGroup;
 
 class ConfSpaceView : public Mouse3D
@@ -31,10 +33,22 @@ public:
 	ConfSpaceView(Scene *prev, Entity *ent);
 	~ConfSpaceView();
 
+	void setWhiteList(std::vector<HasMetadata *> whiteList)
+	{
+		_whiteList = whiteList;
+	}
+	
+	void setTSNE(bool tsne)
+	{
+		_tsne = tsne;
+	}
+
 	virtual void setup();
 	virtual void refresh();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void chooseGroup(Rule *rule, bool inverse);
+	void executeSubset(float min, float max);
 	void showClusters();
 	void showRulesButton();
 	void applyRule(const Rule &r);
@@ -44,8 +58,12 @@ private:
 	Entity *_entity = nullptr;
 	int _extra = 0;
 	ClusterView *_view = nullptr;
+	const Rule *_colourRule = nullptr;
 
+	std::vector<HasMetadata *> _whiteList;
 	std::vector<Renderable *> _temps;
+
+	bool _tsne = false;
 };
 
 #endif

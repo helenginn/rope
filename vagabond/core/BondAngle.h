@@ -59,6 +59,16 @@ public:
 	bool formsTorsionWith(BondAngle *other);
 	void getSequentialAtoms(BondAngle *other, Atom **a, Atom **b, 
 	                        Atom **c, Atom **d);
+
+
+	virtual const Key key(int i) const
+	{
+		if (i == 0)
+		{
+			return Key(_a, _b, _c, nullptr);
+		}
+		else return Key(_c, _b, _a, nullptr);
+	}
 	
 	bool operator==(const BondAngle &other) const;
 	bool operator!=(const BondAngle &other) const

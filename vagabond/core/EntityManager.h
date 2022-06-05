@@ -57,6 +57,11 @@ public:
 	void purgeEntity(Entity *ent);
 	void purgeModel(Model *mol);
 
+	virtual const std::string progressName() const
+	{
+		return "entities";
+	}
+
 	friend void to_json(json &j, const EntityManager &value);
 	friend void from_json(const json &j, EntityManager &value);
 private:

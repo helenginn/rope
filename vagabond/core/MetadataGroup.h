@@ -28,6 +28,10 @@ class MetadataGroup : public DegreeDataGroup
 public:
 	MetadataGroup(size_t length);
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
+
+	std::vector<float> numbersForKey(std::string key);
+	
+	void setWhiteList(std::vector<HasMetadata *> list);
 	
 	const size_t objectCount() const
 	{

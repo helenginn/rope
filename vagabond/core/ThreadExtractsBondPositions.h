@@ -50,6 +50,7 @@ private:
 	void extractPositions(Job *job, BondSequence *seq);
 	void calculateDeviation(Job *job, BondSequence *seq);
 	void transferToMaps(Job *job, BondSequence *seq);
+	void updateMechanics(Job *job, BondSequence *seq);
 	
 	void cleanupSequence(Job *job, BondSequence *seq);
 	void returnResult(Job *job);

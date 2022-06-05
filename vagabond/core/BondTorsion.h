@@ -90,6 +90,15 @@ public:
 		return !(*this == other);
 	}
 
+	virtual const Key key(int i) const
+	{
+		if (i == 0)
+		{
+			return Key(_a, _b, _c, _d);
+		}
+		else return Key(_d, _c, _b, _a);
+	}
+
 	bool isConstrained() const;
 	
 	void setConstrained(bool constrained)

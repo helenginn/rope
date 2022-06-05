@@ -17,7 +17,14 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "VagWindow.h"
+
+#include <vagabond/core/EntityManager.h>
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/Entity.h>
+
 #include "MainMenu.h"
+#include "ConfSpaceView.h"
+
 #include "../cmd/Dictator.h"
 
 Dictator *VagWindow::_dictator = nullptr;
@@ -29,10 +36,25 @@ VagWindow::VagWindow() : Window()
 
 void VagWindow::setup(int argc, char **argv)
 {
+	MainMenu *menu = new MainMenu();
+	setCurrentScene(menu);
+	_current = menu;
+	_menu = menu;
+
+	ProgressView *pv = new ProgressView(menu);
+	pv->attachToEnvironment();
+	pv->setResponder(this);
+	pv->show();
+	_pv = pv;
+
 	_dictator = new Dictator();
 
 	std::vector<std::string> args;
+#ifdef __EMSCRIPTEN__
+	args.push_back("environment=assets/rope.json");
+#else
 	args.push_back("environment=rope.json");
+#endif
 
 	for (size_t i = 1; i < argc; i++)
 	{
@@ -42,8 +64,49 @@ void VagWindow::setup(int argc, char **argv)
 	_dictator->setArgs(args);
 	_dictator->setup();
 	_dictator->start();
+}
 
-	MainMenu *menu = new MainMenu();
-	setCurrentScene(menu);
-	_current = menu;
+void VagWindow::setup_special()
+{
+	ProgressView *pv = new ProgressView(nullptr);
+	pv->attachToEnvironment();
+	pv->setResponder(this);
+	pv->show();
+
+	_dictator = new Dictator();
+
+	std::vector<std::string> args;
+	args.push_back("environment=assets/rope.json");
+
+	_dictator->setArgs(args);
+	_dictator->setup();
+	_dictator->start();
+}
+
+void VagWindow::mainThreadActivities()
+{
+	if (_resume)
+	{
+		_resume = false;
+
+		size_t count = Environment::entityManager()->objectCount();
+
+		_pv->back();
+		_pv = nullptr;
+
+		if (count > 0)
+		{
+			Entity *e = &Environment::entityManager()->object(0);
+			ConfSpaceView *csv = new ConfSpaceView(_menu, e);
+			#ifdef __EMSCRIPTEN__
+			csv->hideBackButton();
+			#endif
+			csv->show();
+		}
+	}
+}
+
+void VagWindow::resume()
+{
+	_resume = true;
 }

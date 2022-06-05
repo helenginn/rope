@@ -37,6 +37,11 @@ Knotter::Knotter(AtomGroup *group, GeometryTable *table)
 	}
 }
 
+Knotter::~Knotter()
+{
+
+}
+
 void Knotter::checkAtoms(Atom *atom, int start)
 {
 	AtomGroup &group = *_group;

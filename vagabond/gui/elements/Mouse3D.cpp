@@ -80,6 +80,11 @@ void Mouse3D::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mousePressEvent(x, y, button);
 
+	if (_modal != nullptr)
+	{
+		return;
+	}
+
 	interpretMouseButton(button, true);
 
 	_lastX = x;
@@ -91,6 +96,12 @@ void Mouse3D::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 void Mouse3D::mouseMoveEvent(double x, double y)
 {
 	Scene::mouseMoveEvent(x, y);
+
+	if (_modal != nullptr)
+	{
+		return;
+	}
+
 
 	if (_left && !_shiftPressed && !_controlPressed)
 	{
@@ -144,6 +155,12 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mouseReleaseEvent(x, y, button);
+
+	if (_modal != nullptr)
+	{
+		return;
+	}
+
 	interpretMouseButton(button, false);
 }
 

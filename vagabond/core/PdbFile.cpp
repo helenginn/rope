@@ -32,6 +32,13 @@ void PdbFile::getStandardGeometry()
 {
 	CifFile cf("assets/geometry/standard_geometry.cif");
 	cf.parse();
+
+	if (_table != nullptr)
+	{
+		delete _table;
+		_table = nullptr;
+	}
+
 	_table = cf.geometryTable();
 }
 
@@ -86,7 +93,6 @@ void PdbFile::processModel(gemmi::Model &m)
 void PdbFile::parseFileContents()
 {
 	std::string path = toFilename(_filename);
-	std::cout << "Reading path: " << path << std::endl;
 
 	gemmi::Structure st;
 	try

@@ -39,6 +39,13 @@ void RulesMenu::setup()
 {
 	addTitle("Rule list");
 
+	{
+		TextButton *t = new TextButton("OK", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnTag("back");
+		addObject(t);
+	}
+
 	ListView::setup();
 }
 

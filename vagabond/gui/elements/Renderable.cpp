@@ -617,7 +617,7 @@ void Renderable::resize(double scale, bool unselected)
 		pos += centre;
 	}
 	
-	setupVBOBuffers();
+	rebufferVertexData();
 	
 	if (!unselected)
 	{
@@ -969,7 +969,7 @@ void Renderable::setHighlighted(bool selected)
 	}
 
 	checkErrors("before setting highlighted");
-	setupVBOBuffers();
+	rebufferVertexData();
 	checkErrors("after setting highlighted");
 	_selected = selected;
 }

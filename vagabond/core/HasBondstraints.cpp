@@ -52,46 +52,22 @@ HasBondstraints::HasBondstraints(const HasBondstraints &other)
 
 bool HasBondstraints::hasBondAngle(BondAngle *angle)
 {
-	for (size_t i = 0; i < _bondAngles.size(); i++)
-	{
-		if (*_bondAngles[i] == *angle)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return (_angleMap.count(angle->key(0)));
 }
 
 bool HasBondstraints::hasTorsion(BondTorsion *torsion)
 {
-	return (_torsionMap.count(torsion->desc()));
+	return (_torsionMap.count(torsion->key(0)));
 }
 
 bool HasBondstraints::hasChirality(Chirality *chir)
 {
-	for (size_t i = 0; i < _chirals.size(); i++)
-	{
-		if (*_chirals[i] == *chir)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return (_chiralMap.count(chir->key(0)));
 }
 
 bool HasBondstraints::hasBondLength(BondLength *length)
 {
-	for (size_t i = 0; i < _bondLengths.size(); i++)
-	{
-		if (*_bondLengths[i] == *length)
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return (_lengthMap.count(length->key(0)));
 }
 
 void HasBondstraints::addBondstraint(BondLength *length)
@@ -103,6 +79,11 @@ void HasBondstraints::addBondstraint(BondLength *length)
 
 	_bondstraints.push_back(length);
 	_bondLengths.push_back(length);
+	
+	for (size_t i = 0; i < length->keyCount(); i++)
+	{
+		_lengthMap[length->key(i)] = length;
+	}
 }
 
 void HasBondstraints::addBondstraint(BondAngle *angle)
@@ -126,6 +107,11 @@ void HasBondstraints::addBondstraint(BondAngle *angle)
 	{
 		_terminalBondAngles.push_back(angle);
 	}
+
+	for (size_t i = 0; i < angle->keyCount(); i++)
+	{
+		_angleMap[angle->key(i)] = angle;
+	}
 }
 
 void HasBondstraints::addBondstraint(BondTorsion *torsion)
@@ -137,8 +123,11 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 
 	_bondstraints.push_back(torsion);
 	_torsions.push_back(torsion);
-	_torsionMap[torsion->desc()] = torsion;
-	_torsionMap[torsion->reverse_desc()] = torsion;
+	
+	for (size_t i = 0; i < torsion->keyCount(); i++)
+	{
+		_torsionMap[torsion->key(i)] = torsion;
+	}
 	
 	Atom *me = atomIdentity();
 	
@@ -170,6 +159,11 @@ void HasBondstraints::addBondstraint(Chirality *chir)
 	{
 		throw(std::runtime_error("Adding chirality to inappropriate "
 		                         "centre atom"));
+	}
+
+	for (size_t i = 0; i < chir->keyCount(); i++)
+	{
+		_chiralMap[chir->key(i)] = chir;
 	}
 }
 

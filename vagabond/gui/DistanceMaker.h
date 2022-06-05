@@ -22,16 +22,15 @@
 #include "SequenceView.h"
 
 class Entity;
+class ImageButton;
 
 class DistanceMaker : public SequenceView
 {
 public:
 	DistanceMaker(Scene *prev, IndexedSequence *sequence);
 	
-	void setEntity(Entity *ent)
-	{
-		_entity = ent;
-	}
+	void setEntity(Entity *ent);
+	virtual void setup();
 
 	virtual void addExtras(TextButton *t, Residue *r);
 	virtual void handleResidue(Button *button, Residue *r);
@@ -39,12 +38,17 @@ public:
 private:
 	void handleAtomName(std::string name);
 	void calculateDistance();
+	void calculateAngle();
+	void distanceButton();
+	void angleButton();
 	void confirmAtom();
+	void wipe();
 
 	enum Stage
 	{
 		Nothing,
 		ChosenFirst,
+		ChosenSecond,
 	};
 
 	Stage _stage = Nothing;
@@ -54,8 +58,19 @@ private:
 	Entity *_entity = nullptr;
 	std::string _first;
 	std::string _second;
+	std::string _third;
 	Residue *_aRes = nullptr;
 	Residue *_bRes = nullptr;
+	Residue *_cRes = nullptr;
+	ImageButton *_modeButton = nullptr;
+	
+	enum Mode
+	{
+		Ruler,
+		Angle,
+	};
+
+	Mode _mode = Ruler;
 };
 
 #endif

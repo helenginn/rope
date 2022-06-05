@@ -18,18 +18,45 @@
 
 #include "IconLegend.h"
 #include <vagabond/core/Rule.h>
-#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/Scene.h>
 
 #include <iostream>
 
-IconLegend::IconLegend() : ClusterPointDemo()
+IconLegend::IconLegend(Scene *responder) : ClusterPointDemo()
 {
+	_responder = responder;
+}
 
+IconLegend::~IconLegend()
+{
+	deleteObjects();
 }
 
 void IconLegend::addRule(const Rule *r)
 {
 	_rules.push_back(r);
+}
+
+void IconLegend::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "title")
+	{
+		Menu *m = new Menu(_responder);
+		m->setReturnTag(button->tag());
+		m->setReturnObject(button->returnObject());
+		m->addOption("choose group", "choose_group");
+		m->addOption("choose inverse", "choose_inverse");
+		m->setup(button);
+
+		_responder->setModal(m);
+	}
+	
+	if (tag == "choose_subset")
+	{
+
+	}
 }
 
 void IconLegend::makePoints()
@@ -59,7 +86,9 @@ void IconLegend::makePoints()
 		glm::vec3 v = glm::vec3(0.0, -y, 0);
 		addPoint(v, pt);
 		
-		Text *t = new Text(str);
+		TextButton *t = new TextButton(str, this);
+		t->setReturnTag("title");
+		t->setReturnObject((void *)rule);
 		t->resize(0.5);
 		t->setLeft(0.02, +y / 2);
 		texts->addObject(t);
@@ -75,7 +104,7 @@ void IconLegend::makePoints()
 	{
 		float y = (float)count * inc;
 		glm::vec3 v = glm::vec3(0.0, -y, 0);
-		addPoint(v, 4);
+		addPoint(v, 0);
 
 		Text *t = new Text("other");
 		t->resize(0.5);

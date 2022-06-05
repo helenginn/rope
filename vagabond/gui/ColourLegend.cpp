@@ -17,12 +17,16 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ColourLegend.h"
-#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/utils/FileReader.h>
 
-ColourLegend::ColourLegend(Scheme scheme) : ColourScheme(scheme)
+ColourLegend::ColourLegend(Scheme scheme, Scene *r) 
+: ColourScheme(scheme)
 {
 	resize(0.25);
+	_responder = r;
 }
 
 ColourLegend::~ColourLegend()
@@ -32,10 +36,24 @@ ColourLegend::~ColourLegend()
 
 void ColourLegend::setTitle(std::string title)
 {
-	Text *text = new Text(title);
+	TextButton *text = new TextButton(title, this);
 	text->resize(0.6);
 	text->setCentre(0.5, 0.05);
+	text->setReturnTag("title");
 	addObject(text);
+}
+
+void ColourLegend::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "title")
+	{
+		Menu *m = new Menu(_responder);
+		m->addOption("prioritise axes", "align_axes");
+		m->addOption("choose subset", "choose_subset");
+		m->setup(button);
+
+		_responder->setModal(m);
+	}
 }
 
 void ColourLegend::setLimits(float min, float max)

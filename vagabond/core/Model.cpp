@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Model.h"
+#include "ModelManager.h"
 #include "Molecule.h"
 #include "Chain.h"
 #include "File.h"
@@ -84,11 +85,11 @@ void Model::setEntityForChain(std::string id, std::string entity)
 	}
 }
 
-bool Model::hasEntity(std::string entity)
+bool Model::hasEntity(std::string entity) const
 {
-	std::map<std::string, std::string>::iterator it;
+	std::map<std::string, std::string>::const_iterator it;
 	
-	for (it = _chain2Entity.begin(); it != _chain2Entity.end(); it++)
+	for (it = _chain2Entity.cbegin(); it != _chain2Entity.cend(); it++)
 	{
 		if (it->second == entity)
 		{
@@ -107,7 +108,7 @@ Molecule *Model::moleculeFromChain(Chain *ch)
 		return nullptr;
 	}
 
-	Molecule mc(name(), entity, ch->fullSequence());
+	Molecule mc(name(), ch->id(), entity, ch->fullSequence());
 	_molecules.push_back(mc);
 	
 	Molecule &ref = _molecules.back();
@@ -161,7 +162,24 @@ void Model::createMolecules()
 	unload();
 }
 
-void Model::autoAssignEntities()
+void update_score_if_better(Sequence *compare, Entity &ent, 
+                            float &best_match, Entity **best_entity)
+{
+	Sequence *master = ent.sequence();
+
+	SequenceComparison *sc = new SequenceComparison(master, compare);
+	float match = sc->match();
+
+	if (match > best_match)
+	{
+		best_match = match;
+		*best_entity = &ent;
+	}
+
+	delete sc;
+}
+
+void Model::autoAssignEntities(Entity *chosen)
 {
 	EntityManager *eManager = Environment::entityManager();
 	load();
@@ -171,23 +189,22 @@ void Model::autoAssignEntities()
 		float best_match = 0;
 		Entity *best_entity = nullptr;
 		Chain *ch = _currentAtoms->chain(i);
+		if (_chain2Entity.count(_currentAtoms->chain(i)->id()))
+		{
+			continue;
+		}
+
 		Sequence *compare = ch->fullSequence();
 
-		for (size_t i = 0; i < eManager->objectCount(); i++)
+		for (size_t i = 0; i < eManager->objectCount() && chosen == nullptr; i++)
 		{
 			Entity &ent = eManager->object(i);
-			Sequence *master = ent.sequence();
-
-			SequenceComparison *sc = new SequenceComparison(master, compare);
-			float match = sc->match();
-			
-			if (match > best_match)
-			{
-				best_match = match;
-				best_entity = &ent;
-			}
-			
-			delete sc;
+			update_score_if_better(compare, ent, best_match, &best_entity);
+		}
+		
+		if (chosen != nullptr)
+		{
+			update_score_if_better(compare, *chosen, best_match, &best_entity);
 		}
 
 		if (best_match > 0.8)
@@ -269,12 +286,12 @@ void Model::refine()
 	_currentAtoms->refinePositions();
 }
 
-size_t Model::moleculeCountForEntity(std::string entity_id)
+size_t Model::moleculeCountForEntity(std::string entity_id) const
 {
-	std::map<std::string, std::string>::iterator it;
+	std::map<std::string, std::string>::const_iterator it;
 	size_t count = 0;
 	
-	for (it = _chain2Entity.begin(); it != _chain2Entity.end(); it++)
+	for (it = _chain2Entity.cbegin(); it != _chain2Entity.cend(); it++)
 	{
 		std::string name = it->second;
 		
@@ -353,4 +370,65 @@ void Model::throwOutEntity(Entity *ent)
 		
 		it++;
 	}
+}
+
+void Model::clickTicker()
+{
+	Environment::modelManager()->clickTicker();
+}
+
+void Model::angleBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
+                              AtomRecall &c, std::string header, Metadata *md)
+{
+	Metadata::KeyValues kv;
+	
+	if (!hasEntity(ent->name()))
+	{
+		return;
+	}
+	
+	load();
+	
+	for (Molecule &m : _molecules)
+	{
+		if (m.entity_id() != ent->name())
+		{
+			continue;
+		}
+
+		Metadata::KeyValues kv;
+		kv = m.angleBetweenAtoms(a, b, c, header);
+
+		md->addKeyValues(kv, true);
+	}
+
+	unload();
+}
+
+void Model::distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
+                                 std::string header, Metadata *md)
+{
+	Metadata::KeyValues kv;
+	
+	if (!hasEntity(ent->name()))
+	{
+		return;
+	}
+	
+	load();
+	
+	for (Molecule &m : _molecules)
+	{
+		if (m.entity_id() != ent->name())
+		{
+			continue;
+		}
+
+		Metadata::KeyValues kv;
+		kv = m.distanceBetweenAtoms(a, b, header);
+
+		md->addKeyValues(kv, true);
+	}
+
+	unload();
 }

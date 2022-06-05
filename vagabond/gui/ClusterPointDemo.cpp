@@ -24,6 +24,9 @@ ClusterPointDemo::ClusterPointDemo() : ClusterView()
 	setUsesProjection(false);
 	setVertexShaderFile("assets/shaders/box.vsh");
 	
+#ifdef __EMSCRIPTEN__
+	_size = 20;
+#endif
 }
 
 void ClusterPointDemo::makePoints()

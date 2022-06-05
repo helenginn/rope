@@ -707,7 +707,6 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 	int &k_idx = idxs[1];
 	int &l_idx = idxs[2];
 	int &free_idx = idxs[3];
-//	int &free_flag_idx = idxs[4];
 	int &amp_idx = idxs[4];
 	int &sigma_idx = idxs[5];
 	
@@ -723,7 +722,6 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 		int l = as_number(loop.values[i + l_idx]);
 		
 		bool free = (loop.values[i + free_idx] == "f");
-//		int  flag = as_number(loop.values[i + free_flag_idx]);
 
 		float f    = as_number(loop.values[i + amp_idx]);
 		if (f != f)
@@ -738,7 +736,6 @@ bool CifFile::processLoopAsReflections(Loop &loop)
 		refl.hkl.k = k;
 		refl.hkl.l = l;
 		refl.free = free;
-//		refl.flag = flag;
 		refl.f = f;
 		refl.sigf = sigf;
 		

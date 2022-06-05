@@ -23,6 +23,7 @@
 using nlohmann::json;
 
 #include <string>
+#include "AtomRecall.h"
 #include "HasMetadata.h"
 
 class AtomContent;
@@ -38,7 +39,8 @@ class Chain;
 class Molecule : public HasMetadata
 {
 public:
-	Molecule(std::string model_id, std::string entity_id, Sequence *derivative);
+	Molecule(std::string model_id, std::string chain_id,
+	         std::string entity_id, Sequence *derivative);
 	Molecule();
 
 	void setChain(std::string chain_id)
@@ -85,11 +87,11 @@ public:
 	void extractTorsionAngles(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 
-	Metadata::KeyValues distanceBetweenAtoms(Residue *master_id_a,
-	                                         std::string a_name,
-	                                         Residue *master_id_b,
-	                                         std::string b_name,
-	                                         std::string header) const;
+	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
+	                                         std::string header);
+
+	Metadata::KeyValues angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
+	                                      AtomRecall &c, std::string header);
 
 	void housekeeping();
 	
@@ -99,12 +101,15 @@ public:
 	{
 		_model = model;
 	}
+	
+	Entity *entity();
 
 	virtual const Metadata::KeyValues metadata() const;
 
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
 private:
+	void harvestMutations(SequenceComparison *sc);
 	std::string _model_id;
 	std::string _entity_id;
 	std::string _chain_id;

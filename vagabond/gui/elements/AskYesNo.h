@@ -14,7 +14,7 @@ public:
 	
 	~AskYesNo();
 
-	virtual void buttonPressed(std::string tag, Button *button = NULL);
+	virtual void buttonPressed(std::string tag, Button *button);
 private:
 	ButtonResponder *_sender;
 	std::string _tag;

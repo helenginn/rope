@@ -75,6 +75,16 @@ void Display::wedgeButtons()
 	addObject(orange);
 }
 
+void Display::mechanicsButton()
+{
+	ImageButton *mechanics = new ImageButton("assets/images/torsion.png", this);
+	mechanics->resize(0.10);
+	mechanics->setCentre(0.94, 0.24);
+	mechanics->setReturnTag("mechanics");
+	_mechanics = mechanics;
+	addObject(mechanics);
+}
+
 void Display::densityButton()
 {
 	ImageButton *density = new ImageButton("assets/images/density.png", this);
@@ -156,6 +166,8 @@ void Display::buttonPressed(std::string tag, Button *button)
 		{
 			_atoms->cancelRefinement();
 		}
+		
+		triggerResponse();
 	}
 
 	Scene::buttonPressed(tag, button);
@@ -164,6 +176,7 @@ void Display::buttonPressed(std::string tag, Button *button)
 	{
 		recalculateAtoms();
 		densityButton();
+		mechanicsButton();
 		removeObject(button);
 
 		{
@@ -173,6 +186,9 @@ void Display::buttonPressed(std::string tag, Button *button)
 			replace->resize(0.8);
 			replace->setCentre(0.5, 0.9);
 			addObject(replace);
+			removeObject(button);
+			delete button;
+			return;
 		}
 	}
 	else if (tag == "refine_positions")
@@ -194,6 +210,10 @@ void Display::buttonPressed(std::string tag, Button *button)
 	else if (tag == "density" && _guiDensity != nullptr)
 	{
 		_guiDensity->recalculate();
+	}
+	else if (tag == "mechanics")
+	{
+		_atoms->mechanics();
 	}
 }
 

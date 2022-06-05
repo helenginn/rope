@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include "File.h"
+#include "Progressor.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -33,7 +34,7 @@ public:
 	virtual void filesChanged() = 0;
 };
 
-class FileManager
+class FileManager : public Progressor
 {
 public:
 	FileManager();
@@ -61,6 +62,11 @@ public:
 
 	void addFile(std::string filename);
 
+	virtual const std::string progressName() const
+	{
+		return "files";
+	}
+
 	friend void to_json(json &j, const FileManager &value);
 	friend void from_json(const json &j, FileManager &value);
 private:
@@ -78,7 +84,11 @@ inline void to_json(json &j, const FileManager &manager)
 
 inline void from_json(const json &j, FileManager &manager)
 {
-	j.at("files").get_to(manager._list);
+	for (auto &el : j.at("files").items())
+	{
+		manager._list.push_back(el.value());
+		manager.clickTicker();
+	}
 }
 
 

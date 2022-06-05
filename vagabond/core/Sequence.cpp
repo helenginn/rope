@@ -48,7 +48,9 @@ Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)
 	_entity = seq._entity;
 	
 	housekeeping();
-	mapFromMaster(_entity);
+	SequenceComparison *sc = newComparison(_entity);
+	mapFromMaster(sc);
+	delete sc;
 }
 
 Sequence::Sequence(std::string str)
@@ -145,12 +147,12 @@ std::string Sequence::str()
 	}
 
 	std::string olc = gemmi::one_letter_code(resvec);
-	std::replace(olc.begin(), olc.end(), 'X', ' ');
+//	std::replace(olc.begin(), olc.end(), 'X', ' ');
 	
 	return olc;
 }
 
-void Sequence::mapFromMaster(Entity *entity)
+SequenceComparison *Sequence::newComparison(Entity *entity)
 {
 	if (entity == nullptr && _entity != nullptr)
 	{
@@ -162,15 +164,25 @@ void Sequence::mapFromMaster(Entity *entity)
 	}
 	else if (_entity == nullptr && entity == nullptr)
 	{
-		return;
+		return nullptr;
 	}
 
 	Sequence *master = entity->sequence();
 	SequenceComparison *sc = new SequenceComparison(master, this);
 
+	return sc;
+}
+
+void Sequence::mapFromMaster(SequenceComparison *sc)
+{
 	_map2Master.clear();
 	_map2Local.clear();
 	
+	if (sc == nullptr)
+	{
+		return;
+	}
+
 	for (size_t i = 0; i < sc->entryCount(); i++)
 	{
 		if (sc->hasResidue(0, i) && sc->hasResidue(2, i))
@@ -197,10 +209,7 @@ void Sequence::mapFromMaster(Entity *entity)
 			res.setNothing(true);
 			_master.push_back(res);
 		}
-
 	}
-	
-	delete sc;
 }
 
 Residue *const Sequence::local_residue(Residue *const master) const
@@ -227,7 +236,7 @@ void Sequence::remapFromMaster(Entity *entity)
 {
 	if (_map2Master.size() > 0 && _map2Local.size() > 0)
 	{
-		return;
+//		return;
 	}
 
 	std::list<Residue>::iterator local;

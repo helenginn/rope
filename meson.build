@@ -46,7 +46,6 @@ install_data(
 'assets/geometry/IPA.cif',
 'assets/geometry/GLY.cif',
 'assets/geometry/L2P.cif',
-'assets/geometry/L86.cif',
 'assets/geometry/LSD.cif',
 'assets/geometry/TCI.cif',
 'assets/geometry/TYR.cif',
@@ -95,9 +94,11 @@ install_data(
 'assets/images/protein.png',
 'assets/images/protractor.png',
 'assets/images/reflections.png',
+'assets/images/ruler.png',
 'assets/images/sad_face.png',
 'assets/images/some_atoms.png',
 'assets/images/tick.png',
+'assets/images/torsion.png',
 'assets/images/tube_1.5ml.png',
 'assets/images/unit_cell.png',
 install_dir : images)
@@ -130,7 +131,6 @@ extrafiles += 'vagabond/gui/print_file.cpp'
 endif
 
 if (links == []) # not emscripten
-
   executable(name, 'vagabond/gui/main.cpp',
   cpp_args: ['-I/usr/local/include', '-std=c++11'],
   link_args: ['-L/usr/local/lib', links],
@@ -138,8 +138,8 @@ if (links == []) # not emscripten
   link_with : [gui, core],
   install: true)
 else # emscripten
-  executable(name, extrafiles,
-  'vagabond/gui/main.cpp',
+  start_cpp = 'vagabond/gui/main.cpp'
+  executable(name, extrafiles, start_cpp,
   cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
   link_args: ['-L/usr/local/lib', links],
   link_with: [core, gui],

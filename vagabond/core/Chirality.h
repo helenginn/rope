@@ -48,6 +48,40 @@ public:
 	 * @returns sign of chiral volume for remaining atom pointers */
 	int get_sign(Atom **a, Atom **b, Atom **c, Atom **d);
 	
+	virtual const size_t keyCount() const
+	{
+		return 6;
+	}
+
+	virtual const Key key(int i) const
+	{
+		if (i == 0)
+		{
+			return Key(_cen, _a, _b, _c);
+		}
+		else if (i == 1)
+		{
+			return Key(_cen, _c, _a, _b);
+		}
+		else if (i == 2)
+		{
+			return Key(_cen, _b, _c, _a);
+		}
+		else if (i == 3)
+		{
+			return Key(_cen, _b, _a, _c);
+		}
+		else if (i == 4)
+		{
+			return Key(_cen, _a, _c, _b);
+		}
+		else
+		{
+			return Key(_cen, _c, _b, _a);
+		}
+
+	}
+	
 	const bool operator==(const Chirality &other) const;
 
 	virtual const std::string desc() const;
@@ -60,4 +94,5 @@ private:
 	int _sign;
 	AtomGroup *_owner;
 };
+
 

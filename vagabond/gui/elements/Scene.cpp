@@ -2,6 +2,7 @@
 
 #include "Window.h"
 #include "Modal.h"
+#include "IndexResponder.h"
 #include "TextButton.h"
 #include "Scene.h"
 #include "Image.h"
@@ -97,6 +98,12 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	_mouseDown = false;
 	_dragged = NULL;
+	convertToGLCoords(&x, &y);
+
+	if (sceneTextureCount() > 0)
+	{
+		checkIndexBuffer(x, y, false, true);
+	}
 }
 
 void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
@@ -122,6 +129,19 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	_mouseDown = true;
 }
 
+void Scene::swapCursor(SDL_Cursor *newCursor)
+{
+	SDL_SetCursor(newCursor);
+
+	if (_cursor != nullptr)
+	{
+		SDL_FreeCursor(_cursor);
+		_cursor = nullptr;
+	}
+
+	_cursor = newCursor;
+}
+
 void Scene::mouseMoveEvent(double x, double y)
 {
 	convertToGLCoords(&x, &y);
@@ -129,10 +149,12 @@ void Scene::mouseMoveEvent(double x, double y)
 	clearHighlights();
 	Renderable *chosen = findObject(x, y);
 
-	SDL_Cursor *cursor; 
-	if (chosen != NULL && chosen->mouseOver())
+	SDL_Cursor *cursor;
+	bool arrow = true;
+	if (chosen != nullptr && chosen->mouseOver())
 	{
 		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+		arrow = false;
 	}
 	else
 	{
@@ -151,10 +173,32 @@ void Scene::mouseMoveEvent(double x, double y)
 	{
 		_dragged->drag(x, y);
 	}
-
-	SDL_SetCursor(cursor);
+	
+	swapCursor(cursor);
+	
+	if (sceneTextureCount() > 0 && _modal == nullptr)
+	{
+		checkIndexBuffer(x, y, true, arrow);
+	}
 }
 
+void Scene::checkIndexBuffer(double x, double y, bool touch, bool arrow)
+{
+	int val = checkIndex(x, y);
+
+	if (val >= 0 && arrow)
+	{
+		SDL_Cursor *cursor; 
+		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+		swapCursor(cursor);
+	}
+
+
+	if (_lastIdx != val && _indexResponder != nullptr)
+	{
+		_indexResponder->interacted(val, touch);
+	}
+}
 
 void Scene::showSimple()
 {
@@ -178,6 +222,14 @@ char *Scene::dataToChar(void *data, int nbytes)
 	tmp[nbytes] = '\0';
 
 	return tmp;
+}
+
+void Scene::hideBackButton()
+{
+	if (_back)
+	{
+		_back->setDisabled(true);
+	}
 }
 
 void Scene::showBackButton()

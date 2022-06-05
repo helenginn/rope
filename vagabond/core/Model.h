@@ -25,8 +25,10 @@
 
 #include "HasMetadata.h"
 #include "Metadata.h"
+
 #include "Molecule.h"
 #include "AtomGroup.h"
+#include "AtomRecall.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -60,13 +62,13 @@ public:
 	const std::string entityForChain(std::string id) const;
 	void setEntityForChain(std::string id, std::string entity);
 	
-	bool hasEntity(std::string entity);
-	size_t moleculeCountForEntity(std::string entity);
+	bool hasEntity(std::string entity) const;
+	size_t moleculeCountForEntity(std::string entity) const;
 
 	void throwOutMolecule(Molecule *mol);
 	void throwOutEntity(Entity *ent);
 
-	void autoAssignEntities();
+	void autoAssignEntities(Entity *chosen = nullptr);
 	
 	void setName(std::string name)
 	{
@@ -109,11 +111,17 @@ public:
 		return _currentAtoms;
 	}
 
+	void distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
+	                          std::string header, Metadata *md);
+	void angleBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
+	                       AtomRecall &c, std::string header, Metadata *md);
+
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);
 	
 	virtual const Metadata::KeyValues metadata() const;
 	
+	void clickTicker();
 	void finishedRefinement();
 private:
 	void swapChainToEntity(std::string id, std::string entity);
@@ -155,6 +163,8 @@ inline void from_json(const json &j, Model &value)
 	{
 		std::cout << "Error proccessing json, probably old version" << std::endl;
 	}
+	
+	value.clickTicker();
 }
 
 

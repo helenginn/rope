@@ -21,6 +21,7 @@
 #include "BondTorsion.h"
 #include "SimpleBasis.h"
 #include "ConcertedBasis.h"
+#include "MechanicalBasis.h"
 
 TorsionBasis::TorsionBasis()
 {
@@ -35,9 +36,13 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	{
 		basis = new SimpleBasis();
 	}
-	else
+	else if (type == TorsionBasis::TypeConcerted)
 	{
 		basis = new ConcertedBasis();
+	}
+	else
+	{
+		basis = new MechanicalBasis();
 	}
 
 	return basis;

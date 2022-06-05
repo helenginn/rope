@@ -7,6 +7,7 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#include <canvas.h>
 #endif
 
 SDL_Renderer *Window::_renderer = NULL;
@@ -16,6 +17,10 @@ SDL_GLContext Window::_context = NULL;
 
 Scene *Window::_current = nullptr;
 Scene *Window::_next = nullptr;
+Window *Window::_myWindow = nullptr;
+
+int Window::_width = 0;
+int Window::_height = 0;
 
 std::set<Scene *> Window::_toDelete;
 std::set<Renderable *> Window::_deleteRenderables;
@@ -65,6 +70,7 @@ Window::Window()
 
 #endif
 	
+	_myWindow = this;
 	_current = NULL;
 	_keyResponder = NULL;
 }
@@ -79,6 +85,8 @@ void Window::glSetup()
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
+	_width = w;
+	_height = h;
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -97,9 +105,16 @@ char pressedKey(SDL_Keycode sym)
 	return c;
 }
 
-void Window::tick()
+void Window::window_tick()
+{
+	tick();
+}
+
+bool Window::tick()
 {
 	_current->checkErrors("before sdl events");
+	_myWindow->mainThreadActivities();
+
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
@@ -113,7 +128,7 @@ void Window::tick()
 			if (event.key.keysym.sym == SDLK_ESCAPE)
 			{
 #ifndef __EMSCRIPTEN__
-				exit(0);
+				return false;
 #endif
 			}
 			_current->keyReleaseEvent(event.key.keysym.sym);
@@ -135,7 +150,7 @@ void Window::tick()
 
 			case SDL_QUIT:
 			#ifndef __EMSCRIPTEN__
-			exit(0);
+			return false;
 			#endif
 			_running = false;
 			break;
@@ -147,7 +162,7 @@ void Window::tick()
 
 	if (!_running)
 	{
-		return;
+		return false;
 	}
 	
 	render();
@@ -157,6 +172,8 @@ void Window::tick()
 		setCurrentScene(_next);
 		_next = nullptr;
 	}
+	
+	return true;
 }
 
 void Window::deleteQueued()

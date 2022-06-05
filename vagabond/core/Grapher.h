@@ -21,6 +21,7 @@
 
 #include "AtomGraph.h"
 #include "AtomBlock.h"
+#include <vagabond/utils/PCA.h>
 
 class TorsionBasis;
 
@@ -50,6 +51,9 @@ public:
 	void fillTorsionAngles(TorsionBasis *basis);
 	void markHydrogenGraphs();
 	void sortGraphChildren();
+	
+	PCA::Matrix distanceMatrix();
+	void fillDistances(PCA::Matrix &m);
 
 	std::vector<AtomBlock> turnToBlocks();
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);

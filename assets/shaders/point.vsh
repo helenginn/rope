@@ -17,7 +17,7 @@ void main()
 {
     vec4 pos = vec4(position[0], position[1], position[2], 1.0);
 	gl_Position = projection * model * pos;
-	gl_PointSize = size / 2;
+	gl_PointSize = size / float(2);
 	mat3 rot = mat3(model);
 	vNormal = rot * normal;
 	vTex = tex;

@@ -19,6 +19,7 @@
 #include "ThreadExtractsBondPositions.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
+#include "MechanicalBasis.h"
 #include "PointStoreHandler.h"
 #include "BondSequence.h"
 #include <iostream>
@@ -42,6 +43,22 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 	r->handout.lock();
 	r->aps = aps;
 	r->handout.unlock();
+}
+
+void ThreadExtractsBondPositions::updateMechanics(Job *job, BondSequence *seq)
+{
+	AtomPosMap aps = seq->extractPositions();
+	TorsionBasis *tb = seq->torsionBasis();
+	
+	MechanicalBasis *mb = dynamic_cast<MechanicalBasis *>(tb);
+	
+	if (!mb)
+	{
+		throw std::runtime_error("Trying to update mechanics without operating "
+		                         "on a mechanical basis.");
+	}
+	
+	mb->refreshMechanics(aps);
 }
 
 void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq)
@@ -91,6 +108,10 @@ void ThreadExtractsBondPositions::start()
 		}
 
 		bool sendBack = true;
+		if (job->requests & JobUpdateMechanics)
+		{
+			updateMechanics(job, seq);
+		}
 		if (job->requests & JobExtractPositions)
 		{
 			extractPositions(job, seq);

@@ -83,8 +83,9 @@ void FileManager::addFile(std::string filename)
 bool FileManager::acceptFile(std::string filename, bool force)
 {
 	bool added = false;
+	bool already = std::find(_list.begin(), _list.end(), filename) != _list.end();
 
-	if (file_exists(filename) || force)
+	if ((file_exists(filename) && !already) || force)
 	{
 		addFile(filename);
 		added = true;

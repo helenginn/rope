@@ -48,6 +48,16 @@ public:
 		throw std::runtime_error("asked for silly atom number from bond length");
 	}
 
+	virtual const Key key(int i) const
+	{
+		if (i == 0)
+		{
+			return Key(_a, _b, nullptr, nullptr);
+		}
+		else return Key(_b, _a, nullptr, nullptr);
+
+	}
+
 	bool operator==(const BondLength &other) const;
 
 	bool operator!=(const BondLength &other) const

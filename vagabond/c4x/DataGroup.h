@@ -41,7 +41,7 @@ public:
 	 *  made up of units */
 	DataGroup(int length);
 
-	virtual ~DataGroup() {};
+	virtual ~DataGroup();
 
 	/** Array is vector of type Unit */
 	typedef std::vector<Unit> Array;

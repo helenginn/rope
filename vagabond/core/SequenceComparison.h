@@ -45,6 +45,13 @@ public:
 	virtual bool hasResidue(int row, int entry);
 	virtual std::string displayString(int row, int entry);
 	
+	void calculateMutations();
+	
+	const std::vector<std::string> &mutations()
+	{
+		return _muts;
+	}
+	
 	Sequence *right()
 	{
 		return _right;
@@ -71,6 +78,7 @@ private:
 	std::string _lOutput;
 	std::string _rOutput;
 	std::string _aOutput;
+	std::vector<std::string> _muts;
 };
 
 #endif

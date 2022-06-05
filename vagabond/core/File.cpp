@@ -21,6 +21,7 @@
 #include "commit.h"
 #include "CifFile.h"
 #include "CsvFile.h"
+#include "MtzFile.h"
 #include "PdbFile.h"
 #include "Atom.h"
 #include "Diffraction.h"
@@ -228,7 +229,7 @@ File *File::loadUnknown(std::string filename)
 	Flavour flav = flavour(filename);
 	if (flav == Mtz)
 	{
-		throw std::runtime_error("Implement me");
+		f = new MtzFile(filename);
 	}
 	else if (flav == Pdb)
 	{
@@ -258,7 +259,8 @@ File::Type File::typeUnknown(std::string filename)
 
 	if (flav == Mtz)
 	{
-		throw std::runtime_error("Implement me");
+		MtzFile f = MtzFile(filename);
+		type = f.cursoryLook();
 	}
 	else if (flav == Pdb)
 	{

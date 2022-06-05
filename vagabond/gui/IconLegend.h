@@ -20,19 +20,24 @@
 #define __vagabond__IconLegend__
 
 #include "ClusterPointDemo.h"
+#include <vagabond/gui/elements/ButtonResponder.h>
 
 class Rule;
+class Scene;
 
-class IconLegend : public ClusterPointDemo
+class IconLegend : public ClusterPointDemo, public ButtonResponder
 {
 public:
-	IconLegend();
+	IconLegend(Scene *responder);
+	~IconLegend();
 	
 	void addRule(const Rule *r);
 
 	virtual void makePoints();
+	virtual void buttonPressed(std::string tag, Button *button);
 private:
 	std::vector<const Rule *> _rules;
+	Scene *_responder = nullptr;
 
 };
 

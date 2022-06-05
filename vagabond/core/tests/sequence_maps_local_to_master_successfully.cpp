@@ -12,7 +12,8 @@ int main()
 	entity.setName("present");
 	entity.setSequence(&master);
 	
-	local.mapFromMaster(&entity);
+	SequenceComparison *sc = master.newComparison(&entity);
+	local.mapFromMaster(sc);
 	
 	Residue *test = entity.sequence()->residue(6);
 	std::cout << "Testing for " << test << " from sequence " << &master << std::endl;
