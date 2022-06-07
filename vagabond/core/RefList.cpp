@@ -80,7 +80,7 @@ HKL RefList::symHKL(HKL orig, int symop)
 	{
 		for (size_t j = 0; j < 3; j++)
 		{
-			float &mv = _rots[symop][j][i];
+			float &mv = _rots[symop][i][j];
 			hkl[i] += orig[j] * (long)lrint(mv);
 		}
 	}
@@ -193,7 +193,7 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 			shift += (float)l * _trans[i][2];
 
 			shift = shift - floor(shift);
-			float phase = s * _refls[refl].phi + shift * 360.;
+			float phase = s * (_refls[refl].phi + shift * 360.);
 
 			VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
 			v.setAmplitudePhase(_refls[refl].f, phase);

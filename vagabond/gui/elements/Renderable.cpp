@@ -765,12 +765,12 @@ void Renderable::addIndex(GLint i)
 
 bool Renderable::index_behind_index(IndexTrio one, IndexTrio two)
 {
-	return (one.z > two.z);
+	return (one.z < two.z);
 }
 
 bool Renderable::index_in_front_of_index(IndexTrio one, IndexTrio two)
 {
-	return (one.z < two.z);
+	return (one.z > two.z);
 }
 
 void Renderable::reorderIndices()
@@ -786,7 +786,7 @@ void Renderable::reorderIndices()
 	for (size_t i = 0; i < _indices.size(); i+=3)
 	{
 		int n = _indices[i];
-		glm::vec3 &tmpVec = _vertices[n].pos;
+		glm::vec3 tmpVec = _vertices[n].pos;
 		n = _indices[i + 1];
 		glm::vec3 &tmpVec1 = _vertices[n].pos;
 		n = _indices[i + 2];
@@ -819,6 +819,9 @@ void Renderable::reorderIndices()
 		_indices[count + 2] = _temp[i].index[2];
 		count += 3;
 	}
+
+	rebufferVertexData();
+	rebufferIndexData();
 }
 
 bool nPolygon(glm::vec3 point, glm::vec3 *vs, int n)

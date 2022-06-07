@@ -1,5 +1,6 @@
 vagafiles = [
 'AlignmentTool.cpp',
+'ArbitraryMap.cpp',
 'Atom.cpp',
 'AtomContent.cpp',
 'AtomGroup.cpp',

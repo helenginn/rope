@@ -269,6 +269,8 @@ int BondSequence::calculateBlock(int idx)
 		{
 			_blocks[nidx].inherit = (wip[1]);
 		}
+		
+//		std::cout << glm::to_string(_blocks[nidx].my_position()) << std::endl;
 
 		return 1;
 	}

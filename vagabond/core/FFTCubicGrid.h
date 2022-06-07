@@ -24,10 +24,13 @@
 #include "CubicGrid.h"
 
 template <class T>
-class FFTCubicGrid : public FFT<T>, public CubicGrid<T>
+class FFTCubicGrid : virtual public CubicGrid<T>, virtual public FFT<T>
 {
 public:
-	FFTCubicGrid() : FFT<T>(), CubicGrid<T>(0, 0, 0) {}
+	FFTCubicGrid() : CubicGrid<T>(0, 0, 0), FFT<T>() {}
+	FFTCubicGrid(int nx, int ny, int nz) : 
+	CubicGrid<T>(nx, ny, nz)
+	, FFT<T>() {};
 
 private:
 

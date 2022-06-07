@@ -43,7 +43,7 @@ public:
 	AtomGroup();
 	~AtomGroup();
 	void cancelRefinement();
-	void concludeRefinement();
+	void cleanupRefinement();
 	void deleteConnectedGroups();
 
 	void operator+=(Atom *a);
@@ -65,6 +65,7 @@ public:
 	bool hasAtom(Atom *a);
 	
 	void add(AtomGroup *g);
+	void addTransformedAnchor(Atom *a, glm::mat4x4 transform);
 	void remove(AtomGroup *g);
 	
 	virtual void add(Atom *a);
@@ -86,6 +87,7 @@ public:
 	}
 	
 	Atom *atomByIdName(const ResidueId &id, std::string name) const;
+	Atom *atomByDesc(std::string desc) const;
 	AtomVector atomsWithName(std::string name) const;
 	Atom *firstAtomWithName(std::string name) const;
 	
@@ -103,6 +105,12 @@ public:
 	Atom *chosenAnchor();
 
 	std::vector<AtomGroup *> &connectedGroups();
+	
+	const std::vector<Atom *> &transformedAnchors() const
+	{
+		return _transformedAnchors;
+	}
+
 	void alignAnchor();
 	void refinePositions();
 	void organiseSamples(int n);
@@ -124,11 +132,11 @@ protected:
 	friend File;
 	
 private:
-	void cleanupRefinement();
 	void findPossibleAnchors();
 
 	AtomVector _atoms;
 	AtomVector _anchors;
+	AtomVector _transformedAnchors;
 	
 	std::map<std::string, Atom *> _desc2Atom;
 

@@ -9,6 +9,7 @@
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AlignmentTool.h>
+#include <vagabond/core/ArbitraryMap.h>
 
 #include <SDL2/SDL.h>
 #include <iostream>
@@ -55,6 +56,20 @@ void Display::loadDiffraction(Diffraction *diff)
 
 	addObject(_guiRefls);
 	wedgeButtons();
+	
+	_diff = diff;
+	_reciprocal = true;
+
+	fftButton();
+}
+
+void Display::fftButton()
+{
+	TextButton *text = new TextButton("Fourier", this);
+	text->setRight(0.95, 0.25);
+	text->setReturnTag("fft");
+	addObject(text);
+
 }
 
 void Display::wedgeButtons()
@@ -93,6 +108,14 @@ void Display::densityButton()
 	density->setReturnTag("density");
 	_density = density;
 	addObject(density);
+}
+
+void Display::densityFromDiffraction(Diffraction *diff)
+{
+	_map = new ArbitraryMap(*diff);
+	_map->setup();
+
+	_guiDensity->setReferenceDensity(_map);
 }
 
 void Display::loadAtoms(AtomGroup *atoms)
@@ -138,9 +161,42 @@ void Display::tieButton()
 		                                    this);
 		button->setReturnTag("recalculate");
 		button->resize(0.8);
-		button->setCentre(0.5, 0.9);
+		button->setCentre(0.5, 0.85);
 		addObject(button);
 	}
+}
+
+void Display::resetDensityMap()
+{
+	if (_map != nullptr)
+	{
+		delete _map;
+		_map = nullptr;
+	}
+	
+	if (_guiDensity != nullptr)
+	{
+		removeObject(_guiDensity);
+		delete _guiDensity;
+		_guiDensity = nullptr;
+	}
+}
+
+void Display::makeMapFromDiffraction()
+{
+	resetDensityMap();
+
+	if (_diff)
+	{
+		_map = new ArbitraryMap(*_diff);
+		_map->setup();
+		_guiDensity = new GuiDensity();
+		_guiDensity->populateFromMap(_map);
+		addObject(_guiDensity);
+		_guiRefls->setDisabled(true);
+	}
+	
+	_reciprocal = false;
 }
 
 void Display::setup()
@@ -164,6 +220,7 @@ void Display::buttonPressed(std::string tag, Button *button)
 	{
 		if (_atoms != nullptr)
 		{
+			stop();
 			_atoms->cancelRefinement();
 		}
 		
@@ -184,7 +241,7 @@ void Display::buttonPressed(std::string tag, Button *button)
 			                                    this);
 			replace->setReturnTag("refine_positions");
 			replace->resize(0.8);
-			replace->setCentre(0.5, 0.9);
+			replace->setCentre(0.5, 0.85);
 			addObject(replace);
 			removeObject(button);
 			delete button;
@@ -194,6 +251,19 @@ void Display::buttonPressed(std::string tag, Button *button)
 	else if (tag == "refine_positions")
 	{
 		_atoms->refinePositions();
+	}
+	else if (tag == "fft")
+	{
+		if (_reciprocal)
+		{
+			makeMapFromDiffraction();
+		}
+		else
+		{
+			_reciprocal = true;
+			resetDensityMap();
+			_guiRefls->setDisabled(false);
+		}
 	}
 	else if (tag == "full_wedge")
 	{

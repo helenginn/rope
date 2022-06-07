@@ -20,7 +20,8 @@
 #include "ElementLibrary.h"
 
 ElementSegment::ElementSegment()
-: FFTCubicGrid<VoxelElement>()
+: CubicGrid<VoxelElement>(0, 0, 0)
+, FFTCubicGrid<VoxelElement>(0, 0, 0)
 {
 	int nx = 0;
 	int ny = 0;
@@ -88,7 +89,6 @@ void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)
 
 void ElementSegment::addDensity(glm::vec3 real, float density)
 {
-	real -= origin();
 	real2Voxel(real);
 
 	collapse(real);

@@ -101,7 +101,6 @@ size_t GuiAtom::verticesPerAtom()
 void GuiAtom::render(SnowGL *gl)
 {
 	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
 	
 	Renderable::render(gl);
 	_bonds->render(gl);
@@ -192,7 +191,6 @@ bool GuiAtom::checkAtom(Atom *a)
 void GuiAtom::checkAtoms()
 {
 	bool changed = false;
-	int pre = _bonds->indexCount();
 
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
@@ -208,8 +206,6 @@ void GuiAtom::checkAtoms()
 			return;
 		}
 	}
-	
-	int post = _bonds->indexCount();
 
 	if (changed)
 	{

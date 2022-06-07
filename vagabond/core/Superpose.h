@@ -50,6 +50,7 @@ public:
 	void addPositionPairs(std::vector<PosPair> &pairs);
 
 	void superpose();
+	float rmsd();
 	
 	/** returns best mat4x4 matrix to map q vector list onto p */
 	const glm::mat4x4 &transformation() const
@@ -75,6 +76,7 @@ private:
 	                          glm::vec3 &add);
 
 	std::vector<PosPair> _pairs;
+	std::vector<PosPair> _originals;
 	bool _sameHand = false;
 
 	glm::mat4x4 _transformation;

@@ -45,6 +45,7 @@ public:
 private:
 	void fileTextOrChoose(std::string &file, std::string other = "Choose...");
 	TextButton *_initialFile = nullptr;
+	TextButton *_initialData = nullptr;
 	TextEntry *_name = nullptr;
 	std::string _lastTag;
 };

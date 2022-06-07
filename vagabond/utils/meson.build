@@ -9,6 +9,7 @@ utilfiles = [
 install_headers([
 'FileReader.h',
 'glm_import.h',
+'glm_json.h',
 'seqalign.h',
 'maths.h',
 'svd/PCA.h',

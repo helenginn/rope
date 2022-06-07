@@ -63,6 +63,8 @@ void PositionRefinery::refine()
 	{
 		_group->responder()->finishedRefinement();
 	}
+	
+	_done = true;
 }
 
 void PositionRefinery::calculateActiveTorsions()

@@ -237,6 +237,20 @@ void AtomGroup::findPossibleAnchors()
 	}
 }
 
+Atom *AtomGroup::atomByDesc(std::string desc) const
+{
+	for (size_t i = 0; i < _atoms.size(); i++)
+	{
+		if (_atoms[i]->desc() == desc)
+		{
+			return _atoms[i];
+		}
+	}
+	
+	return nullptr;
+
+}
+
 Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name) const
 {
 	to_upper(name);
@@ -295,14 +309,22 @@ Atom *AtomGroup::chosenAnchor()
 	}
 	
 	int min_res = INT_MAX;
+	std::string desc = "";
 	
 	for (size_t i = 0; i < possibleAnchorCount(); i++)
 	{
 		int res = possibleAnchor(i)->residueNumber();
 		if (res < min_res)
 		{
+			if (desc.length() > 0 && possibleAnchor(i)->desc() < desc)
+			{
+				continue;
+			}
+
 			_chosenAnchor = possibleAnchor(i);
 			min_res = res;
+			desc = possibleAnchor(i)->desc();
+			
 		}
 	}
 
@@ -346,6 +368,11 @@ void AtomGroup::recalculate()
 
 void AtomGroup::refinePositions()
 {
+	if (_engine && !_engine->isDone())
+	{
+		return;
+	}
+
 	PositionRefinery *refinery = new PositionRefinery(this);
 
 	cancelRefinement();
@@ -488,4 +515,11 @@ void AtomGroup::mechanics()
 	_mech = m;
 
 	_mechThread = new std::thread(&Mechanics::run, _mech);
+}
+
+void AtomGroup::addTransformedAnchor(Atom *a, glm::mat4x4 transform)
+{
+	a->setTransformation(transform);
+	_transformedAnchors.push_back(a);
+
 }

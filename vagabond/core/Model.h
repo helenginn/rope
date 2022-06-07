@@ -79,6 +79,16 @@ public:
 	{
 		return _filename;
 	}
+	
+	void setDataFile(const std::string name)
+	{
+		_dataFile = name;
+	}
+
+	const std::string &dataFile() const
+	{
+		return _dataFile;
+	}
 
 	const std::string &name() const
 	{
@@ -128,6 +138,7 @@ private:
 	void extractTorsions();
 	void insertTorsions();
 	std::string _filename;
+	std::string _dataFile;
 	std::string _name;
 
 	std::map<std::string, std::string> _chain2Entity;
@@ -147,6 +158,7 @@ inline void to_json(json &j, const Model &value)
 	j["filename"] = value._filename;
 	j["chain_to_entity"] = value._chain2Entity;
 	j["molecules"] = value._molecules;
+	j["datafile"] = value._dataFile;
 }
 
 inline void from_json(const json &j, Model &value)
@@ -158,6 +170,7 @@ inline void from_json(const json &j, Model &value)
 	{
 		value._chain2Entity = j.at("chain_to_entity");
 		value._molecules = j.at("molecules");
+		value._dataFile = j.at("dataFile");
 	}
 	catch (...)
 	{

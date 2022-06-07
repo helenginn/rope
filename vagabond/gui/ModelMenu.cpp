@@ -18,6 +18,7 @@
 
 #include "ModelMenu.h"
 #include "AddModel.h"
+#include "Display.h"
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/Environment.h>
 
@@ -66,9 +67,22 @@ Renderable *ModelMenu::getLine(int i)
 	}
 	
 	Model &m = _manager->object(i);
-	TextButton *t = new TextButton(m.name(), this);
-	t->setReturnTag("model_" + m.name());
-	return t;
+	Box *b = new Box();
+	{
+		TextButton *t = new TextButton(m.name(), this);
+		t->setReturnTag("model_" + m.name());
+		t->setLeft(0.0, 0.0);
+		b->addObject(t);
+	}
+
+	{
+		TextButton *t = new TextButton("refine", this);
+		t->setReturnTag("refine_" + m.name());
+		t->setRight(0.6, 0.0);
+		b->addObject(t);
+	}
+
+	return b;
 }
 
 void ModelMenu::buttonPressed(std::string tag, Button *button)
@@ -87,22 +101,59 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 		return;
 	}
 
-	std::string prefix = "model_";
-	if (tag.rfind(prefix, 0) != std::string::npos)
+	std::string name = Button::tagEnd(tag, "model_");
+	if (name.length() > 0)
 	{
-		std::string name = tag.substr(prefix.length(), std::string::npos);
-		
 		Model *model = _manager->model(name);
 		
 		AddModel *addModel = new AddModel(this, model);
 		addModel->show();
 		return;
 	}
+
+	name = Button::tagEnd(tag, "refine_");
+	if (name.length() > 0)
+	{
+		refineModel(name);
+	}
+}
+
+void ModelMenu::refineModel(std::string name)
+{
+	Model *model = _manager->model(name);
+	model->load();
+	_currModel = model;
+	AtomContent *atoms = model->currentAtoms();
+
+	Display *d = new Display(this);
+	d->loadAtoms(atoms);
+	d->setOwnsAtoms(false);
+
+	if (model->dataFile().length())
+	{
+		File *file = File::loadUnknown(model->dataFile());
+		File::Type type = file->cursoryLook();
+		
+		if (type & File::Reflections)
+		{
+			d->densityFromDiffraction(file->diffractionData());
+		}
+		
+		delete file;
+	}
+
+	d->show();
 }
 
 void ModelMenu::refresh()
 {
 	ListView::refresh();
+	
+	if (_currModel != nullptr)
+	{
+		_currModel->unload();
+	}
+
 	addAutomodelButton();
 }
 

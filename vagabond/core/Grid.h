@@ -100,6 +100,15 @@ public:
 		long idx = index(x, y, z);
 		_data[idx] = value;
 	}
+
+	virtual float sum();
+	virtual float mean();
+	virtual float sigma();
+
+	virtual float elementValue(long i)
+	{
+		return 0;
+	}
 protected:
 	void adjustNs();
 	virtual void prepareData();
@@ -135,7 +144,6 @@ protected:
 
 	T *_data = nullptr;
 	virtual void multiply(float scale) {};
-	virtual float sum() { return 0; };
 private:
 
 	int _nx = 0;

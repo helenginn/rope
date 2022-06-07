@@ -66,6 +66,11 @@ public:
 
 	static void findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
 	                           glm::vec3 max, float cubeDim);
+
+	virtual float elementValue(long i)
+	{
+		return _data[i].value[0];
+	}
 protected:
 
 private:

@@ -376,10 +376,16 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 	return ret;
 }
 
+void Atom::setAbsoluteTransformation(glm::mat4x4 transform)
+{
+	_transform = transform;
+	_transformed = true;
+}
 
 void Atom::setTransformation(glm::mat4x4 transform)
 {
 	_transform = transform * _transform;
+	_transformed = true;
 }
 
 const std::string Atom::desc() const

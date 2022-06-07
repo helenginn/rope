@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,61 +16,61 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FFT__
-#define __vagabond__FFT__
+#ifndef __vagabond__ArbitraryMap__
+#define __vagabond__ArbitraryMap__
 
 #include <fftw3.h>
 #include "TransformedGrid.h"
+#include "FFT.h"
 
-template <class T>
-class FFT : public virtual Grid<T>
+class Diffraction;
+
+class ArbitraryMap : 
+virtual public TransformedGrid<fftwf_complex>,
+virtual public FFT<fftwf_complex>
 {
 public:
-	FFT();
-	FFT(int nx, int ny, int nz);
+	ArbitraryMap();
+	ArbitraryMap(Diffraction &diff);
 
-	virtual void fft();
-	void makePlans();
+	void setup();
+
+	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
 	
-	enum Status
+
+	virtual float realValue(glm::vec3 real)
 	{
-		Empty,
-		Real,
-		Reciprocal
-	};
-	
-	void setStatus(Status status)
-	{
-		_status = status;
+		return interpolate(real);
 	}
 
-	void doFFT(int dir);
-
-	struct PlanDims
+	virtual float elementValue(long i)
 	{
-		int nx;
-		int ny;
-		int nz;
-		fftwf_plan forward;
-		fftwf_plan backward;
-	};
-	
-	PlanDims *findPlan(int nx, int ny, int nz) const;
+		return _data[i][0];
+	}
 
-	virtual void populatePlan(PlanDims &dims) {};
-protected:
-	fftwf_complex *_planStart = nullptr;
-	PlanDims _plan;
+	bool withinReal(int i, int j, int k)
+	{
+		if (i >= nx() || i < -nx())
+		{
+			return false;
+		}
+
+		if (j >= ny() || j < -ny())
+		{
+			return false;
+		}
+
+		if (k >= nz() || k < -nz())
+		{
+			return false;
+		}
+
+		return true;
+	}
 
 private:
-	Status _status = Empty;
+	Diffraction *_diff = nullptr;
 
-	void createNewPlan();
-	
-	static std::vector<PlanDims> _plans;
-	
 };
-
-#include "FFT.cpp"
 
 #endif

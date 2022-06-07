@@ -190,6 +190,7 @@ void Entity::modelReady()
 {
 	_responder->setActiveAtoms(nullptr);
 	_currentModel->setResponder(nullptr);
+	_currentModel->unload();
 	refineNextModel();
 }
 

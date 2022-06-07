@@ -262,6 +262,7 @@ void Model::extractTorsions()
 	for (Molecule &mc : _molecules)
 	{
 		mc.extractTorsionAngles(_currentAtoms);
+		mc.extractTransformedAnchors(_currentAtoms);
 	}
 }
 
@@ -312,8 +313,6 @@ void Model::finishedRefinement()
 	{
 		_responder->modelReady();
 	}
-
-	unload();
 }
 
 Model Model::autoModel(std::string filename)

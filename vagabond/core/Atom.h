@@ -222,10 +222,16 @@ public:
 	
 	/** set matrix used for initial placement of anchor point */
 	void setTransformation(glm::mat4x4 transform);
+	void setAbsoluteTransformation(glm::mat4x4 transform);
 	
 	const glm::mat4x4 &transformation() const
 	{
 		return _transform;
+	}
+	
+	const bool &isTransformed() const
+	{
+		return _transformed;
 	}
 private:
 	void changedPosition();
@@ -236,6 +242,7 @@ private:
 	bool _setupInitial = false;
 	bool _changedPosition = false;
 
+	bool _transformed = false;
 	bool _mainChain = false;
 	bool _hetatm = false;
 	float _occupancy = 1.;

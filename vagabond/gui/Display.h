@@ -11,6 +11,7 @@ class GuiRefls;
 class GuiDensity;
 class AtomGroup;
 class Diffraction;
+class ArbitraryMap;
 
 
 class Display : public Mouse3D, public HasResponder<Display>
@@ -25,6 +26,7 @@ public:
 	void stop();
 
 	void loadDiffraction(Diffraction *diff);
+	void makeMapFromDiffraction();
 	void recalculateAtoms();
 	void tieButton();
 	void wedgeButtons();
@@ -41,8 +43,13 @@ public:
 		_toLoad = grp;
 	}
 	
+	void densityFromDiffraction(Diffraction *diff);
+	
 	virtual void buttonPressed(std::string tag, Button *button);
+	void fftButton();
 private:
+	void resetDensityMap();
+
 	GuiAtom *_guiAtoms = nullptr;
 	GuiRefls *_guiRefls = nullptr;
 	GuiDensity *_guiDensity = nullptr;
@@ -54,7 +61,11 @@ private:
 	ImageButton *_density = nullptr;
 	ImageButton *_mechanics = nullptr;
 	
+	Diffraction *_diff = nullptr;
+	ArbitraryMap *_map = nullptr;
+	
 	bool _owns = true;
+	bool _reciprocal = false;
 };
 
 #endif

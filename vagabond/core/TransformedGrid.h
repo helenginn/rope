@@ -29,25 +29,45 @@ public:
 	TransformedGrid(int nx, int ny, int nz);
 	
 	void setRecipMatrix(glm::mat3x3 mat);
+
+	const glm::mat3x3 &realMatrix() const
+	{
+		return _frac2Real;
+	}
+
+	const glm::mat3x3 &recipMatrix() const
+	{
+		return _real2Frac;
+	}
+
 	void setRealMatrix(glm::mat3x3 mat);
 
 	virtual float resolution(int i, int j, int k);
 	virtual void real2Voxel(glm::vec3 &real);
 	virtual glm::vec3 reciprocal(int h, int k, int l);
 
+	virtual glm::vec3 maxBound();
+protected:
+	const glm::mat3x3 &real2Voxel() const
+	{
+		return _voxel2Recip;
+	}
 private:
 	void setFrac2Real(glm::mat3x3 mat)
 	{
 		_frac2Real = mat;
 	}
 
-	void setRecip2Frac(glm::mat3x3 mat)
+	void setReal2Frac(glm::mat3x3 mat)
 	{
-		_recip2Frac = mat;
+		_real2Frac = mat;
 	}
 
+	/* big numbers */
 	glm::mat3x3 _frac2Real = glm::mat3(1.f);
-	glm::mat3x3 _recip2Frac = glm::mat3(1.f);
+	
+	/* small numbers */
+	glm::mat3x3 _real2Frac = glm::mat3(1.f);
 
 	glm::mat3x3 _voxel2Real = glm::mat3(1.f);
 	glm::mat3x3 _voxel2Recip = glm::mat3(1.f);

@@ -20,8 +20,11 @@
 #define __vagabond__GuiDensity__
 
 #include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/core/OriginGrid.h>
+#include <fftw3.h>
 
 class AtomMap;
+class ArbitraryMap;
 class AtomGroup;
 
 namespace MC
@@ -35,18 +38,29 @@ public:
 	GuiDensity();
 
 	virtual void render(SnowGL *gl);
-	void populateFromMap(AtomMap *map);
+
+	void sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
+	                        OriginGrid<fftwf_complex> *map);
+	void populateFromMap(OriginGrid<fftwf_complex> *map);
+
 	void recalculate();
+
+	void setReferenceDensity(OriginGrid<fftwf_complex> *ref)
+	{
+		_ref = ref;
+	}
 	
 	void setAtoms(AtomGroup *atoms)
 	{
 		_atoms = atoms;
 	}
 
+	void fromMap(AtomMap *map);
 	virtual void extraUniforms();
 private:
 	void objectFromMesh(MC::mcMesh &mesh);
 	AtomGroup *_atoms = nullptr;
+	OriginGrid<fftwf_complex> *_ref = nullptr;
 
 	int _slice = 0;
 };

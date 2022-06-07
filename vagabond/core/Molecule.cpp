@@ -144,6 +144,34 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 		t->setRefinedAngle(angle);
 	}
 
+	std::map<std::string, glm::mat4x4>::iterator it;
+	
+	for (it = _transforms.begin(); it != _transforms.end(); it++)
+	{
+		std::string desc = it->first;
+		glm::mat4x4 transform = it->second;
+		
+		Atom *a = atoms->atomByDesc(desc);
+		if (a == nullptr)
+		{
+			std::cout << "Warning! - missing anchor definition " 
+			<< desc << std::endl;
+			continue;
+		}
+		
+		a->setAbsoluteTransformation(transform);
+	}
+}
+
+void Molecule::extractTransformedAnchors(AtomContent *atoms)
+{
+	for (const Atom *anchor : atoms->transformedAnchors())
+	{
+		std::string desc = anchor->desc();
+		glm::mat4x4 transform = anchor->transformation();
+		_transforms[desc] = transform;
+	}
+
 }
 
 void Molecule::extractTorsionAngles(AtomContent *atoms)

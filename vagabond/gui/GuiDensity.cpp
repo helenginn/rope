@@ -19,9 +19,11 @@
 #include <fstream>
 #include "GuiDensity.h"
 #include "../core/Sampler.h"
+#include <vagabond/gui/elements/SnowGL.h>
 #include "../core/AtomGroup.h"
 #include "../core/BondCalculator.h"
-#include "../core/AtomMap.h"
+#include <vagabond/core/AtomMap.h>
+#include "../core/ArbitraryMap.h"
 #define MC_IMPLEM_ENABLE
 #include "MC.h"
 
@@ -57,9 +59,70 @@ void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
 	
 }
 
-void GuiDensity::populateFromMap(AtomMap *map)
+void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
+                                    OriginGrid<fftwf_complex> *map)
+{
+	glm::vec3 min = map->minBound();
+	glm::vec3 max = map->maxBound();
+	float step = 0.5;
+	float num_per_ang_cubed = 1 / (step * step * step);
+	float lx = (max.x - min.x);
+	float ly = (max.y - min.y);
+	float lz = (max.z - min.z);
+	float vol = lx * ly * lz;
+
+	std::vector<float> vals;
+	vals.reserve((int)(num_per_ang_cubed * vol));
+
+	for (float z = min.z; z < max.z - step / 2; z += step)
+	{
+		for (float y = min.y; y < max.y - step / 2; y += step)
+		{
+			for (float x = min.x; x < max.x - step / 2; x += step)
+			{
+				glm::vec3 real(x, y, z);
+				float val = ref->realValue(real);
+				vals.push_back(val);
+			}
+		}
+	}
+	
+	unsigned int ns[3] = {0, 0, 0};
+	
+	for (size_t i = 0; i < 3; i++)
+	{
+		for (float j = min[i]; j < max[i] - step / 2; j += step)
+		{
+			ns[i]++;
+		}
+	}
+	
+	unsigned int nx = (int)lrint(lx / step);
+	unsigned int ny = (int)lrint(ly / step);
+	unsigned int nz = (int)lrint(lz / step);
+
+	const float *ptr = &vals[0];
+	float mean = ref->mean();
+	float sigma = ref->sigma();
+	float thresh = mean + sigma;
+
+	MC::mcMesh mesh;
+	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
+	
+	lockMutex();
+	objectFromMesh(mesh);
+	rotateByMatrix(glm::mat3(step));
+	addToVertices(min);
+	setDisabled(false);
+	rebufferVertexData();
+	rebufferIndexData();
+	unlockMutex();
+}
+
+void GuiDensity::fromMap(AtomMap *map)
 {
 	const float *ptr = map->arrayPtr();
+
 	float mean = map->mean();
 	float sigma = map->sigma();
 	float thresh = mean + sigma;
@@ -67,12 +130,18 @@ void GuiDensity::populateFromMap(AtomMap *map)
 	unsigned int ny = map->ny();
 	unsigned int nz = map->nz();
 	
+	for (size_t i = 0; i < 10; i++)
+	{
+		std::cout << ptr[i] << " ";
+	}
+	std::cout << std::endl;
+
 	float real = map->realDim();
 	glm::vec3 origin = map->origin();
 
 	MC::mcMesh mesh;
 	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
-	
+
 	lockMutex();
 	objectFromMesh(mesh);
 	rotateByMatrix(glm::mat3(real));
@@ -81,14 +150,20 @@ void GuiDensity::populateFromMap(AtomMap *map)
 	rebufferVertexData();
 	rebufferIndexData();
 	unlockMutex();
-	
+
+}
+
+void GuiDensity::populateFromMap(OriginGrid<fftwf_complex> *map)
+{
+	sampleFromOtherMap(map, map);
 }
 
 void GuiDensity::render(SnowGL *gl)
 {
 	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
 	
+	_model = gl->getModel();
+	reorderIndices();
 	Renderable::render(gl);
 
 	glDisable(GL_DEPTH_TEST);
@@ -133,7 +208,16 @@ void GuiDensity::recalculate()
 	Result *result = calculator.acquireResult();
 	result->transplantPositions();
 	AtomMap *map = result->map;
-	populateFromMap(map);
+
+	if (_ref != nullptr)
+	{
+		sampleFromOtherMap(_ref, map);
+	}
+	else
+	{
+		populateFromMap(map);
+	}
+
 	result->destroy();
 
 	calculator.finish();
@@ -141,7 +225,17 @@ void GuiDensity::recalculate()
 
 void GuiDensity::extraUniforms()
 {
+	glm::vec3 centre = glm::vec3(0.);
+	if (_gl)
+	{
+		centre = _gl->getCentre();
+	}
+
+	GLuint uCentre = glGetUniformLocation(_usingProgram, "centre");
+	glUniform3f(uCentre, centre[0], centre[1], centre[2]);
+
 	GLuint uSlice = glGetUniformLocation(_usingProgram, "slice");
 	glUniform1f(uSlice, _slice);
 	checkErrors("binding slice");
 }
+

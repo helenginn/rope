@@ -47,6 +47,11 @@ public:
 
 
 	virtual void finish();
+	
+	bool isDone()
+	{
+		return _done;
+	}
 protected:
 	typedef std::vector<float> Point;
 
@@ -61,6 +66,7 @@ protected:
 	
 	void printPoint(Point &point);
 	std::atomic<bool> _finish;
+	std::atomic<bool> _done{false};
 private:
 	
 	enum Decision

@@ -132,6 +132,8 @@ void Superpose::createTransformation(glm::vec3 &subtract, glm::mat3x3 &rot,
 
 void Superpose::superpose()
 {
+	_originals = _pairs;
+
 	glm::vec3 pm = glm::vec3(0.);
 	glm::vec3 qm = glm::vec3(0.);
 	getAveragePositions(pm, qm);
@@ -151,3 +153,18 @@ void Superpose::superpose()
 	freeSVD(&svd);
 }
 
+float Superpose::rmsd()
+{
+	float sum = 0;
+	for (size_t i = 0; i < _originals.size(); i++)
+	{
+		glm::vec3 &p = _originals[i].p;
+		glm::vec3 &q = _originals[i].q;
+		glm::vec3 transform = _transformation * glm::vec4(q, 1.);
+
+		glm::vec3 diff = glm::vec3(transform) - p;
+		sum += glm::dot(diff, diff);
+	}
+
+	return sum / (float)_pairs.size();
+}

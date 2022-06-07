@@ -49,10 +49,12 @@ void AddModel::setup()
 	}
 
 	addTitle(title);
+	float top = 0.3;
+	float inc = 0.08;
 
 	{
 		Text *t = new Text("Initialising file:");
-		t->setLeft(0.2, 0.3);
+		t->setLeft(0.2, top);
 		t->addAltTag("Choose best atomic model from other program\n"\
 		             "Used for topology and initial atom positions");
 		addObject(t);
@@ -63,15 +65,16 @@ void AddModel::setup()
 
 		TextButton *t = new TextButton(file, this);
 		t->setReturnTag("choose_initial_file");
-		t->setRight(0.8, 0.3);
+		t->setRight(0.8, top);
 		if (_existing) { t->setInert(); }
 		_initialFile = t;
 		addObject(t);
 	}
 
+	top += inc;
 	{
 		Text *t = new Text("Model name:");
-		t->setLeft(0.2, 0.4);
+		t->setLeft(0.2, top);
 		t->addAltTag("Unique identifier for model");
 		addObject(t);
 	}
@@ -81,7 +84,7 @@ void AddModel::setup()
 
 		TextEntry *t = new TextEntry(file, this);
 		t->setReturnTag("enter_name");
-		t->setRight(0.8, 0.4);
+		t->setRight(0.8, top);
 		
 		if (_existing) { t->setInert(); }
 
@@ -89,29 +92,48 @@ void AddModel::setup()
 		addObject(t);
 	}
 
+	top += inc;
 	{
 		Text *t = new Text("Chain assignment:");
-		t->setLeft(0.2, 0.5);
+		t->setLeft(0.2, top);
 		addObject(t);
 	}
 	{
 		ImageButton *t = ImageButton::arrow(-90., this);
 		t->setReturnTag("chain_assignment");
-		t->setCentre(0.8, 0.5);
+		t->setCentre(0.8, top);
 		addObject(t);
 	}
 
+	top += inc;
+	{
+		Text *t = new Text("Data file:");
+		t->setLeft(0.2, top);
+		addObject(t);
+	}
+	{
+		std::string file = _obj.dataFile();
+		fileTextOrChoose(file);
+
+		TextButton *t = new TextButton(file, this);
+		t->setReturnTag("choose_data_file");
+		t->setRight(0.8, top);
+		_initialData = t;
+		addObject(t);
+	}
+
+	top += inc;
 	if (_existing)
 	{
 		{
 			Text *t = new Text("Metadata");
-			t->setLeft(0.2, 0.6);
+			t->setLeft(0.2, top);
 			addObject(t);
 		}
 		{
 			ImageButton *t = ImageButton::arrow(-90., this);
 			t->setReturnTag("metadata");
-			t->setCentre(0.8, 0.6);
+			t->setCentre(0.8, top);
 			addObject(t);
 		}
 	}
@@ -130,6 +152,11 @@ void AddModel::fileTextOrChoose(std::string &file, std::string other)
 void AddModel::refreshInfo()
 {
 	{
+		std::string text = _obj.dataFile();
+		fileTextOrChoose(text);
+		_initialData->setText(text);
+	}
+	{
 		std::string text = _obj.filename();
 		fileTextOrChoose(text);
 		_initialFile->setText(text);
@@ -147,6 +174,13 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	if (tag == "choose_initial_file")
 	{
 		FileView *view = new FileView(this, true);
+		view->filterForTypes(File::MacroAtoms);
+		view->show();
+	}
+	else if (tag == "choose_data_file")
+	{
+		FileView *view = new FileView(this, true);
+		view->filterForTypes(File::Reflections);
 		view->show();
 	}
 	else if (tag == "enter_name")
@@ -206,6 +240,10 @@ void AddModel::fileChosen(std::string filename)
 	if (_lastTag == "choose_initial_file")
 	{
 		_obj.setFilename(filename);
+	}
+	else if (_lastTag == "choose_data_file")
+	{
+		_obj.setDataFile(filename);
 	}
 	refreshInfo();
 

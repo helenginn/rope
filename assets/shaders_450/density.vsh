@@ -8,8 +8,10 @@ in vec2 tex;
 
 uniform mat4 projection;
 uniform mat4 model;
+uniform vec3 centre;
 
 out vec4 vPos;
+out vec3 dPos;
 out vec4 vColor;
 out vec3 vNormal;
 out vec2 vTex;
@@ -22,7 +24,8 @@ void main()
 	vNormal = rot * normal;
 	vTex = tex;
 	vColor = color;
-	vPos = vec4(mat3(model) * vec3(extra), 1.);
+	vPos = vec4(rot * vec3(extra), 1.);
+	dPos = vec3(model * pos) - centre;
 }
 
 

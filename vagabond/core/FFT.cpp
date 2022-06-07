@@ -25,7 +25,13 @@ template <class T>
 std::vector<typename FFT<T>::PlanDims> FFT<T>::_plans;
 
 template <class T>
-FFT<T>::FFT()
+FFT<T>::FFT(int nx, int ny, int nz) : Grid<T>(nx, ny, nz)
+{
+	makePlans();
+}
+
+template <class T>
+FFT<T>::FFT() : Grid<T>()
 {
 	makePlans();
 }

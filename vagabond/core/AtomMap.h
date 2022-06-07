@@ -30,10 +30,6 @@ public:
 	AtomMap(AtomMap &other);
 	~AtomMap();
 
-	float density(int i);
-	virtual float sum();
-	virtual float mean();
-	virtual float sigma();
 	virtual void multiply(float scale);
 	void copyData(AtomSegment &other);
 	void printMap();
@@ -41,6 +37,11 @@ public:
 	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
 
 	float *arrayPtr();
+
+	virtual float elementValue(long i)
+	{
+		return _data[i][0];
+	}
 private:
 	float *_realOnly;
 

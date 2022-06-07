@@ -88,6 +88,12 @@ void MtzFile::parse()
 		csf = mtz.column_with_label("SIGFP");
 	}
 
+	gemmi::Mtz::Column *cph = mtz.column_with_label("PHWT");
+	if (cph == nullptr)
+	{
+		cph = mtz.column_with_label("PHWT");
+	}
+
 	gemmi::Mtz::Column *cfree = mtz.rfree_column();
 
 	int num = mtz.columns.size();
@@ -99,12 +105,9 @@ void MtzFile::parse()
 		int l = mtz.data[i + cl->idx];
 		bool free = cfree ? fabs(mtz.data[i + cfree->idx]) < 1e-6 : 0; 
 		
-		std::cout << cf << " " << csf << " ";
-		
 		float f = cf ? mtz.data[i + cf->idx] : 0;
 		float sigf = csf ? mtz.data[i + csf->idx] : 0;
-		
-		std::cout << f << " " << sigf << std::endl;
+		float phi = cph ? mtz.data[i + cph->idx] : 0;
 
 		Reflection refl{};
 		refl.hkl.h = h;
@@ -113,6 +116,7 @@ void MtzFile::parse()
 		refl.free = free;
 		refl.f = f;
 		refl.sigf = sigf;
+		refl.phi = phi;
 		
 		_reflections.push_back(refl);
 	}

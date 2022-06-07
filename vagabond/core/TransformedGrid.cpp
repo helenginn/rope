@@ -41,14 +41,18 @@ void TransformedGrid<T>::setRecipMatrix(glm::mat3x3 mat)
 {
 	setFrac2Real(mat);
 	glm::mat3x3 inv = glm::inverse(mat);
-	setRecip2Frac(mat);
+	setReal2Frac(inv);
 	
 	_voxel2Real = mat;
 	_voxel2Recip = inv;
+
 	for (size_t i = 0; i < 3; i++)
 	{
-		_voxel2Real[i] /= (float)this->dim(i);
-		_voxel2Recip[i] *= (float)this->dim(i);
+		for (size_t j = 0; j < 3; j++)
+		{
+			_voxel2Real[j][i] /= (float)this->dim(i);
+			_voxel2Recip[j][i] *= (float)this->dim(i);
+		}
 	}
 }
 
@@ -56,7 +60,7 @@ template <class T>
 float TransformedGrid<T>::resolution(int i, int j, int k)
 {
 	glm::vec3 ijk = glm::vec3(i, j, k);
-	ijk = _recip2Frac * ijk;
+	ijk = _real2Frac * ijk;
 
 	return 1 / glm::length(ijk);
 }
@@ -65,14 +69,26 @@ template <class T>
 glm::vec3 TransformedGrid<T>::reciprocal(int h, int k, int l)
 {
 	glm::vec3 v(h, k, l);
-	glm::vec3 next = _recip2Frac * v;
+	glm::vec3 next = _real2Frac * v;
 	return next;
 }
 
 template <class T>
 void TransformedGrid<T>::real2Voxel(glm::vec3 &real)
 {
+	real -= this->origin();
 	real = _voxel2Recip * real;
+}
+
+template <class T>
+glm::vec3 TransformedGrid<T>::maxBound()
+{
+	std::cout << "HERE!" << std::endl;
+	glm::vec3 max = glm::vec3(this->nx(), this->ny(), this->nz());
+	max = _voxel2Real * max;
+	max += this->origin();
+	
+	return max;
 }
 
 #endif

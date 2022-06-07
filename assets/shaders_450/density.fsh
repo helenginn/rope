@@ -4,6 +4,7 @@ in vec4 vPos;
 in vec4 vColor;
 in vec3 vNormal;
 in vec2 vTex;
+in vec3 dPos;
 
 uniform sampler2D pic_tex;
 uniform float slice;
@@ -13,13 +14,28 @@ out vec4 FragColor;
 void main()
 {
 	if (slice > 0. && vPos.z > 0.) discard;
+	vec3 d = vec3(dPos.x, dPos.y, dPos.z);
+	float dist = length(d);
+	if (dist > 20. || d.z > 15)
+	{
+		discard;
+	}
+
+	if (vNormal.z < 0.)
+	{
+		discard;
+	}
+
+	float alpha = 1 - min(dist / 20, 1);
+
 	vec4 result = texture(pic_tex, vTex);
 	result += vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
-	remaining *= 0.5;
+	remaining *= 0.8;
 	vec3 unit = normalize(vNormal);
-	remaining *= max(0., dot(unit, vec3(0., 0., -1.)));
+	remaining *= max(0., dot(unit, vec3(0., 0., 1.)));
 	result.xyz += remaining;
+	result.a = alpha;
 	FragColor = result;
 }
 

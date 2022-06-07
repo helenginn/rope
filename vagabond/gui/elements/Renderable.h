@@ -376,6 +376,8 @@ protected:
 	void appendObject(Renderable *object);
 	std::atomic<bool> _forceRender{false};
 	void rotateByMatrix(glm::mat3x3 m);
+
+	SnowGL *_gl = nullptr;
 	
 	float cx() const
 	{
@@ -448,7 +450,6 @@ private:
 	Alignment _align;
 	double _x = 0.0;
 	double _y = 0.0;
-	SnowGL *_gl = nullptr;
 	static double _selectionResize;
 };
 

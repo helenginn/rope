@@ -37,8 +37,10 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	virtual void objectsChanged();
 private:
+	void refineModel(std::string name);
 	void addAutomodelButton();
 	ModelManager *_manager;
+	Model *_currModel = nullptr;
 
 };
 

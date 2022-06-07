@@ -33,7 +33,7 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTotalSamples(1);
-	calculator.addAnchorExtension(anchor, 3);
+	calculator.addAnchorExtension(anchor, 2);
 	calculator.setup();
 
 	calculator.start();
@@ -75,21 +75,28 @@ void AlignmentTool::run()
 	for (size_t i = 0; i < subgroups.size(); i++)
 	{
 		Atom *anchor = subgroups[i]->chosenAnchor();
+		if (anchor->isTransformed())
+		{
+			continue;
+		}
+
 		glm::mat4x4 transform = glm::mat4(1.);
 
 		if (subgroups[i]->size() <= 1)
 		{
 			glm::vec3 init = anchor->initialPosition();
 			transform[3] = glm::vec4(init, 1.);
+			anchor->setAbsoluteTransformation(transform);
+			_group->addTransformedAnchor(anchor, glm::mat4(1.f));
 		}
 		else
 		{
 			Result *result = resultForAnchor(anchor);
 			transform = superposition(result);
 			result->destroy();
+			_group->addTransformedAnchor(anchor, transform);
 		}
 
-		anchor->setTransformation(transform);
 	}
 
 	_group->recalculate();

@@ -164,5 +164,43 @@ void Grid<T>::limits(int &mx, int &my, int &mz)
 	mz = _nz / 2;
 }
 
+template <class T>
+float Grid<T>::sum()
+{
+	float val = 0;
+	for (size_t i = 0; i < nn(); i++)
+	{
+		val += elementValue(i);
+	}
+	
+	return val;
+}
+
+template <class T>
+float Grid<T>::sigma()
+{
+	float val = 0;
+	float valsq = 0;
+	float n = nn();
+	for (size_t i = 0; i < nn(); i++)
+	{
+		val += elementValue(i);
+		valsq += elementValue(i) * elementValue(i);
+	}
+	
+	float mean = val / n;
+	float sigma = sqrt(valsq / n) - mean * mean;
+	
+	return sigma;
+}
+
+template <class T>
+float Grid<T>::mean()
+{
+	return sum() / (float)nn();
+}
+
+
+
 #endif
 

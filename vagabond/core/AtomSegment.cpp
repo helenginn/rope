@@ -19,10 +19,9 @@
 #include "ElementSegment.h"
 #include "AtomSegment.h"
 
-#define FIXED_MULTIPLY (1000000)
-
 AtomSegment::AtomSegment()
-: FFTCubicGrid<Density>()
+: CubicGrid<Density>(0, 0, 0)
+, FFTCubicGrid<Density>(0, 0, 0)
 {
 	int nx = 0;
 	int ny = 0;

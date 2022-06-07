@@ -21,6 +21,7 @@
 
 #include <fftw3.h>
 #include "TransformedGrid.h"
+#include "Diffraction.h"
 #include "RefList.h"
 
 struct VoxelDiffraction
@@ -56,6 +57,11 @@ public:
 	void populateReflections();
 	
 	size_t reflectionCount();
+
+	virtual float elementValue(long i)
+	{
+		return _data[i].amplitude();
+	}
 private:
 	RefList *_list;
 

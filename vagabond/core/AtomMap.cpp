@@ -20,7 +20,11 @@
 #include "AtomSegment.h"
 
 AtomMap::AtomMap(AtomSegment &other)
-: FFTCubicGrid<fftwf_complex>()
+: Grid<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, OriginGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, CubicGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, FFT<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, FFTCubicGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
 {
 	this->Grid::setDimensions(other.nx(), other.ny(), other.nz(), false);
 	setOrigin(other.origin());
@@ -52,7 +56,11 @@ void AtomMap::copyData(AtomSegment &other)
 }
 
 AtomMap::AtomMap(AtomMap &other)
-: FFTCubicGrid<fftwf_complex>(other)
+: Grid<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, OriginGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, CubicGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, FFT<fftwf_complex>(other.nx(), other.ny(), other.nz())
+, FFTCubicGrid<fftwf_complex>(other)
 {
 	this->Grid::setDimensions(other.nx(), other.ny(), other.nz(), false);
 	setOrigin(other.origin());
@@ -111,49 +119,11 @@ void AtomMap::printMap()
 	std::cout << "Ave: " << ave << std::endl;
 }
 
-float AtomMap::sigma()
-{
-	float val = 0;
-	float valsq = 0;
-	float n = nn();
-	for (size_t i = 0; i < nn(); i++)
-	{
-		val += density(i);
-		valsq += density(i) * density(i);
-	}
-	
-	float mean = val / n;
-	float sigma = sqrt(valsq / n) - mean * mean;
-	
-	return sigma;
-}
-
-float AtomMap::mean()
-{
-	return sum() / (float)nn();
-}
-
-float AtomMap::sum()
-{
-	float val = 0;
-	for (size_t i = 0; i < nn(); i++)
-	{
-		val += _data[i][0];
-	}
-	
-	return val;
-}
-
-float AtomMap::density(int i)
-{
-	return element(i)[0];
-}
-
 float *AtomMap::arrayPtr()
 {
 	for (size_t i = 0; i < nn(); i++)
 	{
-		_realOnly[i] = density(i);
+		_realOnly[i] = elementValue(i);
 	}
 
 	return _realOnly;

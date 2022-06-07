@@ -19,7 +19,7 @@
 #ifndef __vagabond__Molecule__
 #define __vagabond__Molecule__
 
-#include <json/json.hpp>
+#include <vagabond/utils/glm_json.h>
 using nlohmann::json;
 
 #include <string>
@@ -85,6 +85,7 @@ public:
 
 	void getTorsionRefs(Chain *ch);
 	void extractTorsionAngles(AtomContent *atoms);
+	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 
 	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
@@ -110,10 +111,12 @@ public:
 	friend void from_json(const json &j, Molecule &value);
 private:
 	void harvestMutations(SequenceComparison *sc);
+
 	std::string _model_id;
 	std::string _entity_id;
 	std::string _chain_id;
 
+	std::map<std::string, glm::mat4x4> _transforms;
 	Sequence _sequence;
 	Model *_model = nullptr;
 	Entity *_entity = nullptr;
@@ -127,6 +130,7 @@ inline void to_json(json &j, const Molecule &value)
 	j["model_id"] = value._model_id;
 	j["sequence"] = value._sequence;
 	j["refined"] = value._refined;
+	j["transforms"] = value._transforms;
 }
 
 inline void from_json(const json &j, Molecule &value)
@@ -139,6 +143,7 @@ inline void from_json(const json &j, Molecule &value)
 	try
 	{
 		value._refined = j.at("refined");
+		value._transforms = j.at("transforms");
 	}
 	catch (...)
 	{

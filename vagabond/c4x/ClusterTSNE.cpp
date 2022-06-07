@@ -389,7 +389,7 @@ float ClusterTSNE<DG>::incrementResult(float &scale, float &learning)
 	freeMatrix(&grads);
 	
 	float val = averagePQDiff();
-	std::cout << "Target: " << val << std::endl;
+//	std::cout << "Target: " << val << std::endl;
 	return val;
 }
 

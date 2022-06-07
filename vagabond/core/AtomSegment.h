@@ -22,6 +22,8 @@
 #include "FFTCubicGrid.h"
 #include <atomic>
 
+#define FIXED_MULTIPLY (1000000)
+
 class ElementSegment;
 
 /** \class AtomSegment
@@ -55,6 +57,10 @@ public:
 	
 	void clear();
 
+	virtual float elementValue(long i)
+	{
+		return _data[i].value[0] / (float)FIXED_MULTIPLY;
+	}
 private:
 
 };
