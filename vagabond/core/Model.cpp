@@ -195,10 +195,16 @@ void Model::autoAssignEntities(Entity *chosen)
 		}
 
 		Sequence *compare = ch->fullSequence();
-
+		
 		for (size_t i = 0; i < eManager->objectCount() && chosen == nullptr; i++)
 		{
 			Entity &ent = eManager->object(i);
+
+			if (compare->size() <= 10 && ent.sequence()->size() > 20)
+			{
+				continue;
+			}
+
 			update_score_if_better(compare, ent, best_match, &best_entity);
 		}
 		

@@ -55,7 +55,7 @@ Renderable *HasRenderables::findObject(double x, double y)
 		}
 		
 		/* if not then search the object itself */
-		bool hit = r->intersectsPolygon(x, y, &z);
+		bool hit = r->intersectsRay(x, y, &z);
 
 		if (hit)
 		{

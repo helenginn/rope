@@ -1,13 +1,16 @@
-attribute vec3 normal;
-attribute vec3 position;
-attribute vec4 color;
-attribute vec4 extra;
-attribute vec2 tex;
+#version 300 es
+precision lowp float;
 
-varying vec4 vPos;
-varying vec4 vColor;
-varying vec2 vTex;
-varying vec4 vExtra;
+in vec3 normal;
+in vec3 position;
+in vec4 color;
+in vec4 extra;
+in vec2 tex;
+
+out vec4 vPos;
+out vec4 vColor;
+out vec2 vTex;
+out vec4 vExtra;
 
 void main()
 {

@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include <pthread.h>
 #include "File.h"
 #include "Progressor.h"
 
@@ -42,12 +43,14 @@ public:
 	void setFilterType(File::Type type);
 	bool valid(std::string filename);
 
-	void setFileView(FileManagerResponder *fileView)
+	void setResponder(FileManagerResponder *fileView)
 	{
 		_view = fileView;
 		setFilterType(File::Nothing);
 	}
 
+	static void prepareDownload(void *me, void *data, int nbytes);
+	static void acceptDownload(void *me, std::string contents);
 	bool acceptFile(std::string filename, bool force = false);
 	
 	const size_t filteredCount() const
@@ -62,16 +65,21 @@ public:
 
 	void addFile(std::string filename);
 
+	bool hasFile(std::string filename);
+
 	virtual const std::string progressName() const
 	{
 		return "files";
 	}
+	
+	static pthread_t &thread();
 
 	friend void to_json(json &j, const FileManager &value);
 	friend void from_json(const json &j, FileManager &value);
 private:
 	std::vector<std::string> _list;
 	std::vector<std::string> _filtered;
+	pthread_t _thread;
 
 	File::Type _type = File::Nothing;
 	FileManagerResponder *_view;

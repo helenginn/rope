@@ -32,6 +32,10 @@ public:
 	void preSetup();
 	virtual void setup() = 0;
 	virtual void refresh() {};
+	void refreshNextRender()
+	{
+		_mustRefresh = true;
+	}
 	void setBackground();
 	void addTitle(std::string);
 	void setFutureTitle(std::string title)
@@ -61,8 +65,6 @@ protected:
 	void checkIndexBuffer(double x, double y, bool touch, bool arrow);
 	void setCentrePixels(Renderable *r, int x, int y);
 	void swapCursor(SDL_Cursor *newCursor);
-
-	static char *dataToChar(void *data, int nbytes);
 	
 	std::string _title;
 
@@ -80,6 +82,7 @@ protected:
 	int _lastIdx;
 
 	bool _mouseDown;
+	bool _mustRefresh = false;
 };
 
 #endif

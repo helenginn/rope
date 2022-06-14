@@ -419,12 +419,12 @@ inline std::string write_codes(Alignment &a, int matched, int shortfall,
 {
 	std::ostringstream ss;
 	
-	for (size_t i = 0; i < matched; i++)
+	for (int i = 0; i < matched; i++)
 	{
 		ss << ' ';
 	}
 
-	for (size_t i = 0; i < shortfall; i++)
+	for (int i = 0; i < shortfall; i++)
 	{
 		ss << (negative ? '-' : '+');
 	}

@@ -16,6 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#else
+#include <curl/curl.h>
+#include <vagabond/utils/extra_curl_utils.h>
+#endif
+
 #include "AddEntity.h"
 #include "ChooseEntity.h"
 #include "CalculateMetadata.h"
@@ -27,6 +34,7 @@
 
 #include <vagabond/gui/DistanceMaker.h>
 #include <vagabond/gui/ConfSpaceView.h>
+#include <vagabond/gui/SearchPDB.h>
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextEntry.h>
@@ -36,6 +44,12 @@ AddEntity::AddEntity(Scene *prev, Chain *chain) : Scene(prev), AddObject(prev)
 {
 	_chain = chain;
 	_obj.setSequence(_chain->fullSequence());
+}
+
+AddEntity::AddEntity(Scene *prev, std::string str) : Scene(prev), AddObject(prev)
+{
+	Sequence *seq = new Sequence(str);
+	_obj.setSequence(seq);
 }
 
 AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev), AddObject(prev)
@@ -55,9 +69,12 @@ void AddEntity::setup()
 		addTitle("Entity - " + _obj.name());
 	}
 
+	float top = 0.3;
+	float inc = 0.08;
+
 	{
 		Text *t = new Text("Entity name:");
-		t->setLeft(0.15, 0.3);
+		t->setLeft(0.15, top);
 		t->addAltTag("Unique identifier for entity");
 		addObject(t);
 	}
@@ -67,56 +84,71 @@ void AddEntity::setup()
 
 		TextEntry *t = new TextEntry(file, this);
 		t->setReturnTag("enter_name");
-		t->setRight(0.85, 0.3);
+		t->setRight(0.85, top);
 		
 		if (_existing) { t->setInert(); }
 
 		_name = t;
 		addObject(t);
 	}
+	
+	top += inc;
 
 	{
 		Text *t = new Text("Reference sequence:");
-		t->setLeft(0.15, 0.4);
+		t->setLeft(0.15, top);
 		t->addAltTag("Models of this entity will align to this sequence");
 		addObject(t);
 	}
 	{
 		TextButton *t = SequenceView::button(_obj.sequence(), this);
 		t->setReturnTag("sequence");
-		t->setRight(0.85, 0.4);
+		t->setRight(0.85, top);
 		addObject(t);
 	}
 	
+	top += inc;
+
 	if (_existing)
 	{
 		{
 			std::string str = i_to_str(_obj.modelCount()) + " models / ";
 			str += i_to_str(_obj.moleculeCount()) + " molecules";
 			Text *t = new Text(str);
-			t->setLeft(0.15, 0.5);
+			t->setLeft(0.15, top);
 			t->addAltTag("Models may contain multiple molecules of this entity");
 			addObject(t);
 		}
 
 		{
 			TextButton *t = new TextButton("View conformational space", this);
-			t->setRight(0.85, 0.5);
+			t->setRight(0.85, top);
 			t->setReturnTag("conf_space");
 			addObject(t);
 		}
 
+		top += inc;
+
 		{
 			TextButton *t = new TextButton("Add to metadata", this);
-			t->setLeft(0.15, 0.6);
+			t->setLeft(0.15, top);
 			t->setReturnTag("metadata");
 			addObject(t);
 		}
 
 		{
 			TextButton *t = new TextButton("Search models for entity", this);
-			t->setRight(0.85, 0.6);
+			t->setRight(0.85, top);
 			t->setReturnTag("search_models");
+			addObject(t);
+		}
+
+		top += inc;
+
+		{
+			TextButton *t = new TextButton("Search PDB for entity", this);
+			t->setLeft(0.15, top);
+			t->setReturnTag("search_pdb");
 			addObject(t);
 		}
 	}
@@ -139,6 +171,13 @@ void AddEntity::refreshInfo()
 		textOrChoose(text, "Enter...");
 		_name->setText(text);
 	}
+}
+
+void AddEntity::searchPdb()
+{
+	SearchPDB *search = new SearchPDB(this, &_obj);
+	search->show();
+
 }
 
 void AddEntity::buttonPressed(std::string tag, Button *button)
@@ -169,6 +208,10 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		_obj.searchAllModels();
 		refreshInfo();
 	}
+	else if (tag == "search_pdb")
+	{
+		searchPdb();
+	}
 	else if (tag == "metadata")
 	{
 		CalculateMetadata *cm = new CalculateMetadata(this, &_obj);
@@ -180,7 +223,10 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		{
 			Environment::entityManager()->insertIfUnique(_obj);
 			back();
-			_caller->setEntity(_obj.name());
+			if (_caller != nullptr)
+			{
+				_caller->setEntity(_obj.name());
+			}
 		}
 		catch (const std::runtime_error &err)
 		{

@@ -26,7 +26,7 @@
 class TextButton;
 class Renderable;
 
-class Menu : public Modal, public ButtonResponder, virtual public Button
+class Menu : public Modal, virtual public Button
 {
 public:
 	Menu(Scene *scene, std::string prefix = "");
@@ -37,6 +37,7 @@ public:
 	void setup(Renderable *r);
 	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void optionLimits(double &width, double &height);
 	std::vector<TextButton *> _options;
 	std::string _prefix;
 };

@@ -18,25 +18,13 @@
 
 #include <vagabond/utils/FileReader.h>
 #include "FileManager.h"
+#include "Environment.h"
+#include <fstream>
+#include <sstream>
 
 FileManager::FileManager()
 {
 	_view = nullptr;
-#ifdef __EMSCRIPTEN__
-	_list.push_back("assets/examples/dark.pdb");
-	_list.push_back("assets/examples/m0.1ps.pdb");
-	_list.push_back("assets/examples/0.0ps.pdb");
-	_list.push_back("assets/examples/0.1ps.pdb");
-	_list.push_back("assets/examples/0.2ps.pdb");
-	_list.push_back("assets/examples/0.3ps.pdb");
-	_list.push_back("assets/examples/0.4ps.pdb");
-	_list.push_back("assets/examples/0.5ps.pdb");
-	_list.push_back("assets/examples/0.6ps.pdb");
-	_list.push_back("assets/examples/3.0ps.pdb");
-	_list.push_back("assets/examples/10.0ps.pdb");
-	_list.push_back("assets/examples/50.0ps.pdb");
-	_list.push_back("assets/examples/150.0ps.pdb");
-#endif
 }
 
 void FileManager::setFilterType(File::Type type)
@@ -70,6 +58,14 @@ bool FileManager::valid(std::string filename)
 	return (type & _type);
 }
 
+bool FileManager::hasFile(std::string filename)
+{
+	std::vector<std::string>::iterator it;
+	it = std::find(_list.begin(), _list.end(), filename);
+	
+	return (it != _list.end());
+}
+
 void FileManager::addFile(std::string filename)
 {
 	_list.push_back(filename);
@@ -99,3 +95,51 @@ bool FileManager::acceptFile(std::string filename, bool force)
 	return added;
 }
 
+void FileManager::prepareDownload(void *me, void *data, int nbytes)
+{
+	char *tmp = new char[nbytes + 1];
+	memcpy(tmp, data, nbytes * sizeof(char));
+	tmp[nbytes] = '\0';
+
+	acceptDownload(me, std::string(tmp));
+}
+
+void FileManager::acceptDownload(void *me, std::string contents)
+{
+	FileManager *fm = Environment::fileManager();
+
+	std::string &link = *static_cast<std::string *>(me);
+	
+	if (contents.rfind("HEADER", 0) == std::string::npos)
+	{
+		std::cout << "Skipping " << link << std::endl;
+		return;
+	}
+
+	size_t slash = link.find("/", 10);
+	slash++;
+	slash = link.find("/", slash);
+	slash++;
+	std::string code = link.substr(slash, 4);
+	to_lower(code);
+	
+	std::string filename = code + ".pdb";
+	if (file_exists(filename))
+	{
+		std::cout << "filename " << filename << " already exists" << std::endl;
+	}
+
+	std::ofstream file;
+	file.open(filename);
+	file << contents;
+	file.close();
+	
+	std::cout << filename << std::endl;
+	fm->acceptFile(filename);
+}
+
+pthread_t &FileManager::thread()
+{
+	FileManager *fm = Environment::fileManager();
+	return fm->_thread;
+}

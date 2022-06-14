@@ -4,12 +4,17 @@
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
+#else
+#include <curl/curl.h>
 #endif
 
 float test = 0;
 
 int main (int argc, char **argv)
 {
+#ifndef __EMSCRIPTEN__
+	curl_global_init(CURL_GLOBAL_ALL);
+#endif
 	{
 		VagWindow window;
 		window.setup(argc, argv);
@@ -24,6 +29,11 @@ int main (int argc, char **argv)
 #endif
 	}
 
+#ifndef __EMSCRIPTEN__
+	curl_global_cleanup();
+#endif
+	
+	// for leaks
 //	fscanf(stdin, "c");
 
 	return 0;

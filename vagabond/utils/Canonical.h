@@ -1,5 +1,5 @@
-// vagabond
-// Copyright (C) 2022 Helen Ginn
+// helencore
+// Copyright (C) 2019 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,32 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CalculateMetadata__
-#define __vagabond__CalculateMetadata__
+#ifndef __helencore__Canonical__
+#define __helencore__Canonical__
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
+#include <vector>
+#include "svd/PCA.h"
 
-class Entity;
-
-class CalculateMetadata : public Scene, public Fetcher
+class Canonical
 {
 public:
-	CalculateMetadata(Scene *prev, Entity *ent);
+	Canonical(int m, int n);
+	
+	void sizeHint(int n);
+	void addVecs(std::vector<double> &ms, std::vector<double> &ns);
+	void run();
+	double correlation();
 
-	virtual void setup();
-	virtual void render();
-	virtual void buttonPressed(std::string tag, Button *button);
-protected:
-	virtual std::string prepareQuery();
-	virtual void processResult(std::string result);
-	virtual void handleError();
-	virtual std::string toURL(std::string query);
+	~Canonical();
 private:
-	void fetchFromPDB();
-	void populateBoundEntities();
-	Entity *_entity = nullptr;
-
+	void transformVectors(std::vector<double> &vals, int total,
+	                      int chosen, PCA::Matrix &basis);
+	int _nSamples;
+	int _m;
+	int _n;
+	int _d;
+	
+	PCA::SVD _mmCC, _nnCC;
+	PCA::Matrix _mBasis, _nBasis;
+	PCA::Matrix _u, _v;
+	bool _run;
+	
+	std::vector<double> _mVecs;
+	std::vector<double> _nVecs;
 };
 
 #endif

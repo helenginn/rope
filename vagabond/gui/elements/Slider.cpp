@@ -55,9 +55,7 @@ void Slider::setStart(double x, double y)
 
 void Slider::finishedDragging(std::string tag, int x, int y)
 {
-	std::cout << "props: " << x << " " << y << std::endl;
 	double val = _min + (double)x * _step;
-	std::cout << "val: " << val << " " << _min << " " << _step << std::endl;
 	_display->setText(_prefix + f_to_str(val, 0) + _suffix);
 	_display->resize(0.6);
 	_val = val;

@@ -20,6 +20,7 @@
 #define __vagabond__ClusterPointDemo__
 
 #include "ClusterView.h"
+#include <iostream>
 
 class ClusterPointDemo : public ClusterView
 {
@@ -27,6 +28,16 @@ public:
 	ClusterPointDemo();
 
 	virtual void makePoints();
+
+	virtual bool mouseOver()
+	{
+		return false;
+	}
+
+	virtual void interacted(int idx, bool hover) 
+	{
+
+	}
 private:
 
 };

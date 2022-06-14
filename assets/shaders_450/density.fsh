@@ -14,8 +14,7 @@ out vec4 FragColor;
 void main()
 {
 	if (slice > 0. && vPos.z > 0.) discard;
-	vec3 d = vec3(dPos.x, dPos.y, dPos.z);
-	float dist = length(d);
+	float dist = length(dPos);
 	if (dist > 20. || d.z > 15)
 	{
 		discard;

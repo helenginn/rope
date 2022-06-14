@@ -16,32 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CalculateMetadata__
-#define __vagabond__CalculateMetadata__
+#ifndef __vagabond__SearchPDB__
+#define __vagabond__SearchPDB__
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/gui/Fetcher.h>
 
 class Entity;
+class Text;
 
-class CalculateMetadata : public Scene, public Fetcher
+class SearchPDB : public Scene, public Fetcher
 {
 public:
-	CalculateMetadata(Scene *prev, Entity *ent);
+	SearchPDB(Scene *prev, Entity *ent);
 
 	virtual void setup();
+	virtual void refresh();
 	virtual void render();
 	virtual void buttonPressed(std::string tag, Button *button);
+
 protected:
-	virtual std::string prepareQuery();
+	std::string prepareQuery();
 	virtual void processResult(std::string result);
-	virtual void handleError();
+	virtual  void handleError();
 	virtual std::string toURL(std::string query);
 private:
-	void fetchFromPDB();
-	void populateBoundEntities();
-	Entity *_entity = nullptr;
+	Entity *_entity;
 
+	int _cutoff;
+	Text *_cutoffText;
 };
 
 #endif

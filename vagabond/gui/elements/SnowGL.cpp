@@ -184,7 +184,7 @@ void SnowGL::prepareDepthColourIndex()
 	int w = Window::width();
 	int h = Window::height();
 	_dw = w; _dh = h;
-
+	
 	/* texture for the depth buffer */
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _sceneDepth);

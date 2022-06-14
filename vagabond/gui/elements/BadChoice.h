@@ -8,7 +8,7 @@
 
 class Scene;
 
-class BadChoice : public Modal, public ButtonResponder
+class BadChoice : public Modal
 {
 public:
 	BadChoice(Scene *scene, std::string details);

@@ -30,10 +30,15 @@
 ClusterView::ClusterView()
 {
 	setUsesProjection(true);
+	setName("ClusterView");
 	_renderType = GL_POINTS;
 	setFragmentShaderFile("assets/shaders/point.fsh");
 	setVertexShaderFile("assets/shaders/point.vsh");
 	setImage("assets/images/points.png");
+	
+#ifdef __EMSCRIPTEN__
+	setSelectable(true);
+#endif
 }
 
 ClusterView::~ClusterView()
@@ -198,7 +203,17 @@ void ClusterView::applyRule(const Rule &r)
 	{
 		applyChangeIcon(r);
 	}
-	
+}
+
+bool ClusterView::mouseOver()
+{
+	interacted(currentVertex(), true);
+	return (currentVertex() >= 0);
+}
+
+void ClusterView::unMouseOver()
+{
+	interacted(-1, true);
 }
 
 void ClusterView::interacted(int idx, bool hover)

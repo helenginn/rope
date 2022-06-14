@@ -16,31 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CalculateMetadata__
-#define __vagabond__CalculateMetadata__
+#ifndef __vagabond__AskForText__
+#define __vagabond__AskForText__
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
+#include "Modal.h"
+#include "Button.h"
+#include "TextEntry.h"
 
-class Entity;
+class TextEntry;
 
-class CalculateMetadata : public Scene, public Fetcher
+class AskForText : virtual public Modal, virtual public Button
 {
 public:
-	CalculateMetadata(Scene *prev, Entity *ent);
+	AskForText(Scene *scene, std::string text, 
+	           std::string tag, ButtonResponder *sender,
+	           TextEntry::Validation v = TextEntry::None);
 
-	virtual void setup();
-	virtual void render();
+	virtual ~AskForText();
 	virtual void buttonPressed(std::string tag, Button *button);
-protected:
-	virtual std::string prepareQuery();
-	virtual void processResult(std::string result);
-	virtual void handleError();
-	virtual std::string toURL(std::string query);
 private:
-	void fetchFromPDB();
-	void populateBoundEntities();
-	Entity *_entity = nullptr;
+	TextEntry *_text;
 
 };
 

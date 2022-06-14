@@ -22,7 +22,9 @@
 ClusterPointDemo::ClusterPointDemo() : ClusterView()
 {
 	setUsesProjection(false);
+	setSelectable(false);
 	setVertexShaderFile("assets/shaders/box.vsh");
+	setName("ClusterPointDemo");
 	
 #ifdef __EMSCRIPTEN__
 	_size = 20;

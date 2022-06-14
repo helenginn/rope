@@ -68,6 +68,7 @@ void ConfSpaceView::setup()
 	}
 	else
 	{
+		removeRules();
 		showClusters();
 		applyRules();
 		showRulesButton();
@@ -221,7 +222,8 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "choose_subset")
 	{
 		std::string str = "Focus on " + _colourRule->header() + " subset:";
-		ChooseRange *cr = new ChooseRange(this, str, "execute_subset", this);
+		ChooseRange *cr = new ChooseRange(this, str, "execute_subset", 
+		                                  this, true);
 		cr->setRange(_colourRule->min(), _colourRule->max(), 100);
 		setModal(cr);
 	}
@@ -252,7 +254,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		std::string key = _colourRule->header();
 		_view->prioritiseMetadata(key);
-
+		applyRules();
 	}
 	
 	if (tag == "tsne")
@@ -326,9 +328,8 @@ void ConfSpaceView::applyRule(const Rule &r)
 	}
 }
 
-void ConfSpaceView::applyRules()
+void ConfSpaceView::removeRules()
 {
-	_view->reset();
 	_colourRule = nullptr;
 
 	for (size_t i = 0; i < _temps.size(); i++)
@@ -338,7 +339,13 @@ void ConfSpaceView::applyRules()
 	}
 
 	_temps.clear();
-	
+}
+
+void ConfSpaceView::applyRules()
+{
+	_view->reset();
+	removeRules();
+
 	IconLegend *il = new IconLegend(this);
 
 	const Ruler &ruler = Environment::metadata()->ruler();

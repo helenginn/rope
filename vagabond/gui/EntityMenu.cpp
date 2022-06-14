@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "EntityFromSequence.h"
 #include "EntityMenu.h"
 #include "AddEntity.h"
 
@@ -43,14 +44,19 @@ void EntityMenu::setup()
 
 void EntityMenu::buttonPressed(std::string tag, Button *button)
 {
-	std::string prefix = "entity_";
-	if (tag.rfind(prefix, 0) != std::string::npos)
+	std::string id = Button::tagEnd(tag, "entity_");
+	if (id.length())
 	{
-		std::string id = tag.substr(prefix.length(), std::string::npos);
 		Entity *ent = _manager->entity(id);
 		
 		AddEntity *view = new AddEntity(this, ent);
 		view->show();
+	}
+	
+	if (tag == "add_entity")
+	{
+		EntityFromSequence *efs = new EntityFromSequence(this);
+		efs->show();
 	}
 
 	ListView::buttonPressed(tag, button);
@@ -58,7 +64,13 @@ void EntityMenu::buttonPressed(std::string tag, Button *button)
 
 Renderable *EntityMenu::getLine(int i)
 {
-	Entity &ent = _manager->object(i);
+	if (i == 0)
+	{
+		TextButton *t = new TextButton("Add entity", this);
+		t->setReturnTag("add_entity");
+		return t;
+	}
+	Entity &ent = _manager->object(i - 1);
 	TextButton *t = new TextButton(ent.name(), this);
 	t->setReturnTag("entity_" + ent.name());
 	return t;
@@ -66,7 +78,7 @@ Renderable *EntityMenu::getLine(int i)
 
 size_t EntityMenu::lineCount()
 {
-	return _manager->objectCount();
+	return _manager->objectCount() + 1;
 }
 
 void EntityMenu::objectsChanged()

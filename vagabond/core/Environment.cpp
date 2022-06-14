@@ -26,6 +26,11 @@
 #include <iostream>
 #include <fstream>
 #include <json/json.hpp>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 using nlohmann::json;
 
 Environment Environment::_environment;
@@ -52,12 +57,19 @@ void Environment::save()
 	data["model_manager"] = *_modelManager;
 	data["entity_manager"] = *_entityManager;
 	data["metadata"] = *_metadata;
+	std::string contents = data.dump();
 	
 	std::ofstream file;
 	file.open("rope.json");
 	file << data;
 	file << std::endl;
 	file.close();
+
+	std::cout << contents << std::endl;
+#ifdef __EMSCRIPTEN__
+	EM_ASM_({ window.download = download; window.download($0, $1, $2) }, 
+	        "rope.json", contents.c_str(), contents.length());
+#endif
 }
 
 void Environment::load(std::string file)

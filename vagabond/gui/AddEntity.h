@@ -31,6 +31,7 @@ class AddEntity : public AddObject<Entity>
 {
 public:
 	AddEntity(Scene *prev, Chain *chain);
+	AddEntity(Scene *prev, std::string seq);
 	AddEntity(Scene *prev, Entity *ent);
 
 	void setCaller(ChooseEntity *caller)
@@ -44,6 +45,7 @@ public:
 private:
 	void textOrChoose(std::string &file, std::string other);
 	void refreshInfo();
+	void searchPdb();
 
 	Chain *_chain = nullptr;
 	TextEntry *_name;

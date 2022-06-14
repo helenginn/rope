@@ -65,10 +65,10 @@ Window::Window()
 		std::cout << "Error SDL2_image Initialization" << std::endl;
 		exit(1);
 	}
+#endif
 
 	glSetup();
 
-#endif
 	
 	_myWindow = this;
 	_current = NULL;

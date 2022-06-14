@@ -843,6 +843,53 @@ bool nPolygon(glm::vec3 point, glm::vec3 *vs, int n)
 	return c;
 }
 
+bool Renderable::intersectsRay(double x, double y, double *z)
+{
+	if (_renderType == GL_TRIANGLES)
+	{
+		return intersectsPolygon(x, y, z);
+	}
+	else if (_renderType == GL_POINTS)
+	{
+		return (intersectsPoint(x, y, z) >= 0);
+	}
+	
+	return false;
+}
+
+int Renderable::intersectsPoint(double x, double y, double *z)
+{
+	glm::vec3 target = glm::vec3(x, y, 0);
+	const float tol = 0.01;
+	int idx = -1;
+	
+	for (size_t i = 0; i < _indices.size(); i++)
+	{
+		glm::vec4 pos = glm::vec4(_vertices[_indices[i]].pos, 1.);
+		
+		if (_usesProj)
+		{
+			pos = _proj * _model * pos;
+			pos /= pos[3];
+		}
+		
+		if (pos.x < x - tol || pos.x >= x + tol ||
+		    pos.y < y - tol || pos.y >= y + tol)
+		{
+			continue;
+		}
+
+		if (pos.z > *z)
+		{
+			*z = pos.z;
+			idx = i;
+		}
+	}
+
+	_currVertex = idx;
+	return idx;
+}
+
 bool Renderable::intersectsPolygon(double x, double y, double *z)
 {
 	glm::vec3 target = glm::vec3(x, y, 0);

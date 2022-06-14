@@ -25,11 +25,11 @@
 
 class Slider;
 
-class ChooseRange : virtual public Modal, public ButtonResponder, virtual public Button
+class ChooseRange : virtual public Modal, virtual public Button
 {
 public:
 	ChooseRange(Scene *scene, std::string text, std::string tag,
-	            ButtonResponder *sender);
+	            ButtonResponder *sender, bool both = false);
 	~ChooseRange();
 
 	void setRange(float min, float max, float steps = 100);
@@ -52,6 +52,7 @@ private:
 	float _min = 0;
 	float _max = 0;
 	float _step = 1;
+	bool _both = false;
 };
 
 #endif

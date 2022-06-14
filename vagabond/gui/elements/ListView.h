@@ -29,7 +29,6 @@ public:
 	virtual void setup();
 	virtual void refresh();
 	virtual size_t unitsPerPage();
-
 	
 	virtual size_t lineCount() = 0;
 	virtual Renderable *getLine(int i) = 0;

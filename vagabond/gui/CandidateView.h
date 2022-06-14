@@ -16,32 +16,34 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CalculateMetadata__
-#define __vagabond__CalculateMetadata__
+#ifndef __vagabond__CandidateView__
+#define __vagabond__CandidateView__
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
+#include <vagabond/gui/elements/ListView.h>
 
-class Entity;
 
-class CalculateMetadata : public Scene, public Fetcher
+class CandidateView : public ListView
 {
 public:
-	CalculateMetadata(Scene *prev, Entity *ent);
+	CandidateView(Scene *prev, std::string json);
 
+	void parse();
 	virtual void setup();
-	virtual void render();
-	virtual void buttonPressed(std::string tag, Button *button);
-protected:
-	virtual std::string prepareQuery();
-	virtual void processResult(std::string result);
-	virtual void handleError();
-	virtual std::string toURL(std::string query);
-private:
-	void fetchFromPDB();
-	void populateBoundEntities();
-	Entity *_entity = nullptr;
 
+	virtual size_t lineCount()
+	{
+		return _ids.size();
+	}
+
+	virtual Renderable *getLine(int i);
+	void download();
+	virtual void buttonPressed(std::string tag, Button *button);
+	static void handleError(void *me);
+private:
+	std::string _json;
+
+	std::vector<std::string> _ids;
+	static std::vector<std::string> _links;
 };
 
 #endif

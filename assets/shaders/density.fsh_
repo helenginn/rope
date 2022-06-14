@@ -1,16 +1,13 @@
-#version 300 es
 precision lowp float;
 
-in vec4 vPos;
-in vec4 vColor;
-in vec3 vNormal;
-in vec2 vTex;
-in vec3 dPos;
+varying vec4 vPos;
+varying vec4 vColor;
+varying vec3 vNormal;
+varying vec2 vTex;
+varying vec3 dPos;
 
-uniform sampler2D pic_tex;
 uniform float slice;
-
-out vec4 FragColor;
+uniform sampler2D pic_tex;
 
 void main()
 {
@@ -26,17 +23,20 @@ void main()
 		discard;
 	}
 
-	float alpha = 1. - min(dist / 20., 1.);
+	float prop = dist / 20.;
+	if (prop > 1.) prop = 1.;
+	float alpha = 1. - prop;
 
-	vec4 result = texture(pic_tex, vTex);
+	vec4 result = texture2D(pic_tex, vTex);
 	result += vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.8;
 	vec3 unit = normalize(vNormal);
-	remaining *= max(0., dot(unit, vec3(0., 0., 1.)));
+	remaining *= max(0., dot(unit, vec3(0., 0.000, 1.0)));
 	result.xyz += remaining;
 	result.a = alpha;
-	FragColor = result;
+
+	gl_FragColor = result;
 }
 
 

@@ -9,6 +9,7 @@ endif
 
 guielementfiles = [
 'AskYesNo.cpp',
+'AskForText.cpp',
 'BadChoice.cpp',
 'Box.cpp',
 'Button.cpp',
@@ -39,14 +40,18 @@ guielementfiles = [
 
 install_headers([
 'AskYesNo.h',
+'AskForText.h',
 'BadChoice.h',
 'Box.h',
 'Button.h',
+'ButtonResponder.h',
 'canvas.h',
 'Choice.h',
 'ChoiceGroup.h',
 'Draggable.h',
+'ForwardBackward.h',
 'HasRenderables.h',
+'KeyResponder.h',
 'Icosahedron.h',
 'Image.h',
 'ImageButton.h',

@@ -16,31 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CalculateMetadata__
-#define __vagabond__CalculateMetadata__
+#ifndef __vagabond__EntityFromSequence__
+#define __vagabond__EntityFromSequence__
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/gui/Fetcher.h>
+#include <thread>
 
-class Entity;
-
-class CalculateMetadata : public Scene, public Fetcher
+class EntityFromSequence : public Scene, public Fetcher
 {
 public:
-	CalculateMetadata(Scene *prev, Entity *ent);
+	EntityFromSequence(Scene *prev);
+	virtual ~EntityFromSequence();
 
 	virtual void setup();
 	virtual void render();
-	virtual void buttonPressed(std::string tag, Button *button);
-protected:
-	virtual std::string prepareQuery();
-	virtual void processResult(std::string result);
-	virtual void handleError();
+
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	virtual std::string toURL(std::string query);
+	virtual void processResult(std::string seq);
+	virtual void handleError();
 private:
-	void fetchFromPDB();
-	void populateBoundEntities();
-	Entity *_entity = nullptr;
+	pthread_t _thread;
+
+	std::string _url;
 
 };
 

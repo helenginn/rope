@@ -1,4 +1,5 @@
 utilfiles = [
+'Canonical.cpp',
 'FileReader.cpp',
 'svd/svdcmp.cpp',
 'svd/PCA.cpp',
@@ -7,6 +8,7 @@ utilfiles = [
 ]
 
 install_headers([
+'Canonical.h',
 'FileReader.h',
 'glm_import.h',
 'glm_json.h',

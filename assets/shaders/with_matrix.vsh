@@ -1,16 +1,20 @@
-attribute vec3 normal;
-attribute vec3 position;
-attribute vec4 color;
-attribute vec4 extra;
-attribute vec2 tex;
+#version 300 es
+precision lowp float;
+
+in vec3 normal;
+in vec3 position;
+in vec4 color;
+in vec4 extra;
+in vec2 tex;
 
 uniform mat4 projection;
 uniform mat4 model;
 
-varying vec4 vPos;
-varying vec4 vColor;
-varying vec3 vNormal;
-varying vec2 vTex;
+out vec4 vPos;
+out vec4 vColor;
+out vec3 vNormal;
+out vec2 vTex;
+out vec4 vExtra;
 
 void main()
 {

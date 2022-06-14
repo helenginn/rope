@@ -5,10 +5,11 @@
 
 #include "Box.h"
 #include <vector>
+#include "ButtonResponder.h"
 
 class Scene;
 
-class Modal : virtual public Box
+class Modal : virtual public Box, virtual public ButtonResponder
 {
 public:
 	Modal(Scene *scene, double width, double height);
@@ -19,14 +20,14 @@ public:
 	virtual void render(SnowGL *gl);
 
 	void hide();
-	void setModalCentre(Renderable *r, double fx, double fy);
-//	void setLeft(Renderable *r, double fx, double fy);
-	void setRight(Renderable *r, double fx, double fy);
 	
 	void setDismissible(double dismiss)
 	{
 		_dismissable = dismiss;
 	}
+	
+	void addTwoButtons(std::string left, std::string ltag,
+	                   std::string right, std::string rtag);
 
 	void dismiss();
 protected:

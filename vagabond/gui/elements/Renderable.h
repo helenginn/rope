@@ -188,7 +188,7 @@ public:
 
 	void reorderIndices();
 	void boundaries(glm::vec3 *min, glm::vec3 *max);
-	bool intersectsPolygon(double x, double y, double *z);
+	bool intersectsRay(double x, double y, double *z);
 	double envelopeRadius();
 	double averageRadius();
 	
@@ -329,6 +329,8 @@ public:
 	}
 protected:
 	void rebindToProgram();
+	bool intersectsPolygon(double x, double y, double *z);
+	int intersectsPoint(double x, double y, double *z);
 	double intersects(glm::vec3 pos, glm::vec3 dir);
 	bool polygonIncludesY(glm::vec3 point, GLuint *trio);
 	Vertex &addVertex(float v1, float v2, float v3,
@@ -409,6 +411,11 @@ protected:
 		realign();
 	}
 
+	const int &currentVertex() const
+	{
+		return _currVertex;
+	}
+
 	Renderable *_hover = nullptr;
 private:
 	void deleteTextures();
@@ -450,6 +457,7 @@ private:
 	Alignment _align;
 	double _x = 0.0;
 	double _y = 0.0;
+	int _currVertex = -1;
 	static double _selectionResize;
 };
 

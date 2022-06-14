@@ -20,8 +20,9 @@
 #define __practical__MainMenu__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/FileManager.h>
 
-class MainMenu : public Scene
+class MainMenu : public Scene, public FileManagerResponder
 {
 public:
 	MainMenu();
@@ -29,9 +30,13 @@ public:
 	virtual ~MainMenu();
 
 	virtual void setup();
+	virtual void render();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	virtual void filesChanged();
 private:
+	void checkForJson();
 
+	bool _checkFiles = false;
 };
 
 #endif

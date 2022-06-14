@@ -22,28 +22,17 @@
 #include "TextButton.h"
 
 ChooseRange::ChooseRange(Scene *scene, std::string text, std::string tag,
-                         ButtonResponder *sender)
+                         ButtonResponder *sender, bool both)
 : Modal(scene, 0.6, 0.4), Button(scene)
 {
 	setInert(true);
 	Text *t = new Text(text);
 	t->setCentre(0.5, 0.45);
 	addObject(t);
-
-	{
-		TextButton *button = new TextButton("Cancel", this);
-		button->setReturnTag("cancel");
-		button->setCentre(0.3, 0.65);
-		addObject(button);
-	}
-
-	{
-		TextButton *button = new TextButton("OK", this);
-		button->setReturnTag("ok");
-		button->setCentre(0.7, 0.65);
-		addObject(button);
-	}
 	
+	addTwoButtons("Cancel", "cancel", "OK", "ok");
+	
+	_both = both;
 	_sender = sender;
 	setReturnTag(tag);
 
@@ -66,6 +55,7 @@ void ChooseRange::setRange(float min, float max, float steps)
 		addObject(s);
 	}
 
+	if (_both)
 	{
 		Slider *s = new Slider();
 		s->resize(0.5);
@@ -85,7 +75,15 @@ void ChooseRange::buttonPressed(std::string tag, Button *button)
 		return;
 	}
 	_min = _minSlider->value();
-	_max = _maxSlider->value();
+	
+	if (_both)
+	{
+		_max = _maxSlider->value();
+	}
+	else
+	{
+		_max = _min;
+	}
 	
 	if (_min > _max)
 	{

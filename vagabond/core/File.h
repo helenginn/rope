@@ -61,6 +61,7 @@ public:
 		Symmetry = 1 << 4, /**< found space group/symmetry information */
 		Reflections = 1 << 5, /**< found diffraction reflection data */
 		Meta = 1 << 6, /**< contains metadata on file or model names */
+		Json = 1 << 7, /**< json (environment?) file */
 	};
 	
 	static File *loadUnknown(std::string filename);
@@ -153,7 +154,8 @@ protected:
 		Mtz,
 		Pdb,
 		Cif,
-		Csv
+		Csv,
+		Jsn
 	};
 
 	static Flavour flavour(std::string filename);

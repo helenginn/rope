@@ -53,6 +53,7 @@ private:
 	void showRulesButton();
 	void applyRule(const Rule &r);
 	void applyRules();
+	void removeRules();
 
 	void askToFoldIn(int extra);
 	Entity *_entity = nullptr;

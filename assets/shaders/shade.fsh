@@ -1,15 +1,17 @@
-#version 320 es
+#version 300 es
 
 precision lowp float;
-varying vec4 vPos;
-varying vec4 vColor;
-varying vec2 vTex;
+in vec4 vPos;
+in vec4 vColor;
+in vec2 vTex;
 
 uniform sampler2D pic_tex;
 
+out vec4 FragColor;
+
 void main()
 {
-	gl_FragColor = vColor;
+	FragColor = vColor;
 }
 
 

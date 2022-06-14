@@ -6,7 +6,7 @@
 #include "Modal.h"
 #include "ButtonResponder.h"
 
-class AskYesNo : public Modal, public ButtonResponder
+class AskYesNo : public Modal
 {
 public:
 	AskYesNo(Scene *scene, std::string text, std::string tag, 

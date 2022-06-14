@@ -4,6 +4,7 @@ links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
 glm = dependency('glm', required: false)
 gl = dependency('GL', method : 'system', required: false)
+curl = dependency('libcurl')
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 
@@ -17,7 +18,7 @@ deps = [glm, fftw]
 name = 'index.html'
 
 if (links == [])
-  deps += [gl, sdl2, sdl2image]
+  deps += [gl, sdl2, sdl2image, curl]
   name = 'vagabond.gui'
 endif
 

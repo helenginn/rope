@@ -20,6 +20,8 @@
 #define __vagabond__Cluster__cpp__
 
 #include "Cluster.h"
+#include <vagabond/utils/maths.h>
+#include <vagabond/utils/Canonical.h>
 
 template <class DG>
 Cluster<DG>::Cluster(DG &dg) : _dg(dg)
@@ -89,11 +91,55 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 	
 	std::sort(_pairs.begin(), _pairs.end(), std::greater<AxisCC>());
 	
+	int max = std::min(3, _result.cols);
+	
+	/*
+	PCA::Matrix covariance;
+	setupMatrix(&covariance, max, 1);
+	
+	for (size_t i = 0; i < _result.cols; i++)
+	{
+		for (size_t j = 0; j < max; j++)
+		{
+			if (vals[i] != vals[i])
+			{
+				continue;
+			}
+
+			covariance[j][0] += _result[i][j] * vals[i];
+		}
+	}
+	
+	printMatrix(&covariance);
+	
+	CorrelData cd = empty_CD();
+	for (size_t i = 0; i < _result.rows; i++)
+	{
+		float sum = 0;
+		for (size_t j = 0; j < max; j++)
+		{
+			std::cout << _result[i][j] << " ";
+			sum += covariance[j][0] * _result[i][j];
+		}
+		std::cout << std::endl;
+		
+		add_to_CD(&cd, sum, vals[i]);
+	}
+	
+//	freeMatrix(&covariance);
+	double cc = evaluate_CD(cd);
+	*/
+	
 	for (size_t i = 0; i < 3; i++)
 	{
 		std::cout << _pairs[i].axis << " " << _pairs[i].cc << std::endl;
 		_axes[i] = _pairs[i].axis;
 	}
+
+	/*
+	std::cout << "Best correlation in first " << max << " vectors: "
+	<< cc << std::endl;
+	*/
 
 	return 0;
 }

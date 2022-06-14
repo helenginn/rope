@@ -57,7 +57,7 @@ void LineSeries::addLabel(int idx)
 		std::string header = _rule.header();
 		std::string value = data.at(header).text();
 		std::string text = header + "/" + value;
-		FloatingText *ft = new FloatingText(text, 10);
+		FloatingText *ft = new FloatingText(text);
 		ft->setPosition(_vertices[idx].pos);
 		addObject(ft);
 	}
@@ -66,6 +66,11 @@ void LineSeries::addLabel(int idx)
 void LineSeries::addLabels()
 {
 	if (_group->objectCount() < 1)
+	{
+		return;
+	}
+	
+	if (_indices.size() <= 1)
 	{
 		return;
 	}

@@ -95,6 +95,7 @@ void AddModel::setup()
 	top += inc;
 	{
 		Text *t = new Text("Chain assignment:");
+		t->addAltTag("Match each chain to an entity");
 		t->setLeft(0.2, top);
 		addObject(t);
 	}

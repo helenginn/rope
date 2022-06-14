@@ -8,7 +8,7 @@ BadChoice::BadChoice(Scene *scene, std::string details) :
 Modal(scene, 0.6, 0.4)
 {
 	Text *text = new Text(details);
-	text->setLeft(0.1, 0.5);
+	text->setLeft(0.25, 0.5);
 	addObject(text);
 
 

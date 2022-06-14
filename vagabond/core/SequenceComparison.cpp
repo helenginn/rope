@@ -115,17 +115,23 @@ std::string SequenceComparison::displayString(int row, int entry)
 
 float SequenceComparison::match()
 {
-	float count = 0;
+	float good = 0;
+	float all = 0;
 	for (size_t i = 0; i < _aOutput.size(); i++)
 	{
 		if (_aOutput[i] == '.')
 		{
-			count++;
+			good++;
+		}
+		
+		if (_rOutput[i] != ' ')
+		{
+			all++;
 		}
 	}
 	
-	count /= (float)_aOutput.size();
-	return count;
+	float match = good / all;
+	return match;
 }
 
 void SequenceComparison::calculateMutations()

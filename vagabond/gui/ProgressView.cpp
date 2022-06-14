@@ -75,4 +75,8 @@ void ProgressView::finish()
 	{
 		_responder->resume();
 	}
+	else
+	{
+		back();
+	}
 }

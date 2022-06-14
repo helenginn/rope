@@ -196,13 +196,18 @@ Diffraction *File::diffractionData() const
 
 File::Flavour File::flavour(std::string filename)
 {
+	const std::string json = "json";
 	const std::string mtz = "mtz";
 	const std::string pdb = "pdb";
 	const std::string cif = "cif";
 	const std::string csv = "csv";
 
 	int l = filename.length();
-	if (filename.substr(l - mtz.length(), mtz.length()) == mtz)
+	if (filename.substr(l - json.length(), json.length()) == json)
+	{
+		return Jsn;
+	}
+	else if (filename.substr(l - mtz.length(), mtz.length()) == mtz)
 	{
 		return Mtz;
 	}
@@ -239,6 +244,11 @@ File *File::loadUnknown(std::string filename)
 	{
 		f = new CifFile(filename);
 	}
+	else if (flav == Jsn)
+	{
+		throw std::runtime_error("Don't load json this way");
+//		f = new JsonFile(filename);
+	}
 	else if (flav == Csv)
 	{
 		f = new CsvFile(filename);
@@ -271,6 +281,10 @@ File::Type File::typeUnknown(std::string filename)
 	{
 		CifFile f = CifFile(filename);
 		type = f.cursoryLook();
+	}
+	else if (flav == Jsn)
+	{
+		return File::Json;
 	}
 	else if (flav == Csv)
 	{

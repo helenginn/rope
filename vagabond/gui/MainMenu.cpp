@@ -1,5 +1,6 @@
 // Copyright (C) 2021 Helen Ginn
 
+#include "ProgressView.h"
 #include "DatasetMenu.h"
 #include "EntityMenu.h"
 #include "ModelMenu.h"
@@ -8,10 +9,18 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/Menu.h>
 
 #include <vagabond/core/Environment.h>
 
 #include <iostream>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+EM_JS(void, upload_json, (), { document.getElementById('input').click() });
+#endif
+
+
 
 MainMenu::MainMenu() : Scene()
 {
@@ -33,7 +42,14 @@ void MainMenu::setup()
 #ifndef __EMSCRIPTEN__
 	{
 		TextButton *text = new TextButton("Save", this);
-		text->setReturnTag("save");
+		text->setReturnTag("file_save");
+		text->setRight(0.9, 0.1);
+		addObject(text);
+	}
+#else
+	{
+		TextButton *text = new TextButton("Menu", this);
+		text->setReturnTag("file_menu");
 		text->setRight(0.9, 0.1);
 		addObject(text);
 	}
@@ -89,16 +105,70 @@ void MainMenu::setup()
 	}
 }
 
+void MainMenu::render()
+{
+	if (_checkFiles)
+	{
+		checkForJson();
+	}
+
+	Scene::render();
+}
+
+void MainMenu::filesChanged()
+{
+	_checkFiles = true;
+}
+
+void MainMenu::checkForJson()
+{
+	_checkFiles = false;
+
+	FileManager *fm = Environment::fileManager();
+	int i = fm->filteredCount() - 1;
+	std::string newFile = fm->filtered(i);
+	File::Type type = File::typeUnknown(newFile);
+
+	Environment::fileManager()->setResponder(nullptr);
+
+	if (type & File::Json)
+	{
+		ProgressView *pg = new ProgressView(this);
+		pg->attachToEnvironment();
+		pg->show();
+
+		std::cout << ":)" << std::endl;
+		Environment::environment().load(newFile);
+	}
+}
+
 void MainMenu::buttonPressed(std::string tag, Button *button)
 {
+	std::cout << tag << std::endl;
 	if (tag == "files")
 	{
 		FileView *fileview = new FileView(this);
 		fileview->show();
 	}
-	else if (tag == "save")
+	else if (tag == "file_menu")
+	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, "file");
+		m->addOption("Load", "load");
+		m->addOption("Save", "save");
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+	else if (tag == "file_save")
 	{
 		Environment::environment().save();
+	}
+	else if (tag == "file_load")
+	{
+#ifdef __EMSCRIPTEN__
+	Environment::fileManager()->setResponder(this);
+	upload_json();
+#endif
 	}
 	else if (tag == "proteins")
 	{

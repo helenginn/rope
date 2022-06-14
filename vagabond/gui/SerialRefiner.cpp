@@ -19,6 +19,7 @@
 #include "SerialRefiner.h"
 #include "Display.h"
 #include <vagabond/core/Entity.h>
+#include <vagabond/gui/elements/Text.h>
 #include <sstream>
 
 SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev)
@@ -43,6 +44,11 @@ void SerialRefiner::setup()
 
 void SerialRefiner::entityDone()
 {
+	{
+		Text *text = new Text("Done!");
+		text->setCentre(0.5, 0.5);
+		addObject(text);
+	}
 
 }
 

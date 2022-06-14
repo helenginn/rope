@@ -57,6 +57,8 @@ public:
 	void reset();
 	
 	virtual void interacted(int idx, bool hover);
+	virtual bool mouseOver();
+	virtual void unMouseOver();
 protected:
 	virtual void extraUniforms();
 	void customiseTexture(Snow::Vertex &vert);

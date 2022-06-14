@@ -2,6 +2,7 @@
 
 #include "Modal.h"
 #include "Scene.h"
+#include "TextButton.h"
 #include <iostream>
 
 Modal::Modal(Scene *scene)
@@ -45,26 +46,6 @@ void Modal::conv_coords(double *fx, double *fy)
 
 }
 
-/*
-void Modal::setLeft(Renderable *r, double fx, double fy)
-{
-	conv_coords(&fx, &fy);
-	r->setLeft(fx, fy);
-}
-*/
-
-void Modal::setModalCentre(Renderable *r, double fx, double fy)
-{
-	conv_coords(&fx, &fy);
-	r->setCentre(fx, fy);
-}
-
-void Modal::setRight(Renderable *r, double fx, double fy)
-{
-	conv_coords(&fx, &fy);
-	r->setRight(fx, fy);
-}
-
 void Modal::hide()
 {
 	_scene->removeModal();
@@ -84,4 +65,23 @@ Modal::~Modal()
 	
 	delete _darker;
 	_darker = NULL;
+}
+
+void Modal::addTwoButtons(std::string left, std::string ltag,
+                          std::string right, std::string rtag)
+{
+	{
+		TextButton *button = new TextButton(left, this);
+		button->setReturnTag(ltag);
+		button->setCentre(0.3, 0.65);
+		addObject(button);
+	}
+
+	{
+		TextButton *button = new TextButton(right, this);
+		button->setReturnTag(rtag);
+		button->setCentre(0.7, 0.65);
+		addObject(button);
+	}
+
 }

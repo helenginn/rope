@@ -56,6 +56,12 @@ void Scene::removeModal()
 
 void Scene::render()
 {
+	if (_mustRefresh)
+	{
+		refresh();
+		_mustRefresh = false;
+	}
+
 	SnowGL::render();
 
 	if (_modal != NULL)
@@ -118,7 +124,7 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	if (_modal != NULL && chosen == NULL)
 	{
 		double z = -FLT_MAX;
-		bool hit = _modal->intersectsPolygon(x, y, &z);
+		bool hit = _modal->intersectsRay(x, y, &z);
 
 		if (!hit)
 		{
@@ -213,15 +219,6 @@ void Scene::queueToShow()
 void Scene::show()
 {
 	Window::setCurrentScene(this);
-}
-
-char *Scene::dataToChar(void *data, int nbytes)
-{
-	char *tmp = new char[nbytes + 1];
-	memcpy(tmp, data, nbytes * sizeof(char));
-	tmp[nbytes] = '\0';
-
-	return tmp;
 }
 
 void Scene::hideBackButton()

@@ -19,6 +19,7 @@
 #include "Menu.h"
 #include "Scene.h"
 #include "TextButton.h"
+#include <iostream>
 
 Menu::Menu(Scene *scene, std::string prefix) : Modal(scene)
 {
@@ -37,12 +38,9 @@ void Menu::setup(Renderable *r)
 	setup(c.x, c.y);
 }
 
-void Menu::setup(double x, double y)
+void Menu::optionLimits(double &width, double &height)
 {
-	double width = 0;
-	double height = 0;
 	const double inc = 0.04;
-
 	for (size_t i = 0; i < _options.size(); i++)
 	{
 		double w = _options[i]->maximalWidth();
@@ -51,21 +49,45 @@ void Menu::setup(double x, double y)
 			width = w;
 		}
 
-		_options[i]->setLeft(inc / 2, height + inc);
 		height += inc;
 	}
+}
+
+void Menu::setup(double x, double y)
+{
+	double width = 0;
+	double height = 0;
+	const double inc = 0.04;
+
+	optionLimits(width, height);
 
 	addQuad(0.9);
 	rescale(width / 2 + 0.025, height + 0.025);
-	setArbitrary(0, 0, Renderable::Alignment(Left | Top));
+	Renderable::Alignment horizontal;
+	
+	std::cout << x << " " << width << " " << y << " " << height << std::endl;
+
+	horizontal = (x + width > 1.0 ? Renderable::Right : Renderable::Left);
+
+	Renderable::Alignment vertical;
+	vertical = (y + height > 1.0 ? Renderable::Bottom : Renderable::Top);
+
+	setArbitrary(0, 0, Renderable::Alignment(horizontal | vertical));
+	
+	double start_x = horizontal == Renderable::Left ? 0 : -width;
+	double start_y = vertical == Renderable::Top ? 0 : -height;
+
 	setImage("assets/images/box.png");
 
+	height = (vertical == Renderable::Bottom ? -inc / 2 : 0);
 	for (size_t i = 0; i < _options.size(); i++)
 	{
+		_options[i]->setLeft(start_x + inc / 2, start_y + height + inc);
+		height += inc;
 		addObject(_options[i]);
 	}
 
-	setArbitrary(x, y, Renderable::Alignment(Left | Top));
+	setArbitrary(x, y, Renderable::Alignment(horizontal | vertical));
 }
 
 TextButton *Menu::addOption(std::string text, std::string tag)

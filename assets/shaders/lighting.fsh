@@ -1,22 +1,26 @@
+#version 300 es
+
 precision lowp float;
 
-varying vec4 vPos;
-varying vec4 vColor;
-varying vec3 vNormal;
-varying vec2 vTex;
+in vec4 vPos;
+in vec4 vColor;
+in vec3 vNormal;
+in vec2 vTex;
 
 uniform sampler2D pic_tex;
 
+out vec4 FragColor;
+
 void main()
 {
-	vec4 result = texture2D(pic_tex, vTex);
+	vec4 result = texture(pic_tex, vTex);
 	result += vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.5;
 	vec3 unit = normalize(vNormal);
 	remaining *= abs(dot(unit, vec3(0, 0, 1)));
 	result.xyz += remaining;
-	gl_FragColor = result;
+	FragColor = result;
 }
 
 

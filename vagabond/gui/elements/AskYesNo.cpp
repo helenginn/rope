@@ -12,19 +12,7 @@ Modal(scene, 0.6, 0.4)
 	t->setCentre(0.5, 0.45);
 	addObject(t);
 
-	{
-		TextButton *button = new TextButton("No", this);
-		button->setReturnTag("no");
-		button->setCentre(0.3, 0.65);
-		addObject(button);
-	}
-
-	{
-		TextButton *button = new TextButton("Yes", this);
-		button->setReturnTag("yes");
-		button->setCentre(0.7, 0.65);
-		addObject(button);
-	}
+	addTwoButtons("No", "no", "Yes", "yes");
 	
 	_sender = sender;
 	_tag = tag;
@@ -34,9 +22,8 @@ Modal(scene, 0.6, 0.4)
 
 void AskYesNo::buttonPressed(std::string tag, Button *button)
 {
-	_sender->buttonPressed(tag + "_" + _tag);
-
 	hide();
+	_sender->buttonPressed(tag + "_" + _tag);
 }
 
 AskYesNo::~AskYesNo()
