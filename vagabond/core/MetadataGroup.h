@@ -38,6 +38,8 @@ public:
 		return _objects.size();
 	}
 	
+	const int indexOfObject(HasMetadata *obj) const;
+	
 	HasMetadata *const object(int i) 
 	{
 		return _objects[i];

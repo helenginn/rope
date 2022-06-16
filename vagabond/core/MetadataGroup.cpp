@@ -80,3 +80,16 @@ void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
 	_diffs.clear();
 	_average.clear();
 }
+
+const int MetadataGroup::indexOfObject(HasMetadata *obj) const
+{
+	for (size_t i = 0; i < _objects.size(); i++)
+	{
+		if (obj == _objects[i])
+		{
+			return i;
+		}
+	}
+	
+	return -1;
+}
