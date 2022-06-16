@@ -91,9 +91,9 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 	
 	std::sort(_pairs.begin(), _pairs.end(), std::greater<AxisCC>());
 	
-	int max = std::min(3, _result.cols);
-	
 	/*
+	
+	int max = std::min(3, _result.cols);
 	PCA::Matrix covariance;
 	setupMatrix(&covariance, max, 1);
 	

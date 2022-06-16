@@ -77,8 +77,8 @@ void ClusterSVD<DG>::cluster()
 	{
 		for (size_t j = 0; j < this->_result.rows; j++)
 		{
-			double scale = _svd.w[0] / 4;
-			this->_result[j][i] *= _svd.w[i] / _svd.w[0];
+			double scale = _svd.w[0];
+			this->_result[j][i] *= 10 * _svd.w[i] / _svd.w[0];
 		}
 	}
 
