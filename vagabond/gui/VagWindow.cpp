@@ -34,6 +34,11 @@ VagWindow::VagWindow() : Window()
 
 }
 
+void VagWindow::addJob(std::string str)
+{
+	_dictator->addArg(str);
+}
+
 void VagWindow::setup(int argc, char **argv)
 {
 	MainMenu *menu = new MainMenu();
@@ -66,23 +71,6 @@ void VagWindow::setup(int argc, char **argv)
 	_dictator->start();
 }
 
-void VagWindow::setup_special()
-{
-	ProgressView *pv = new ProgressView(nullptr);
-	pv->attachToEnvironment();
-	pv->setResponder(this);
-	pv->show();
-
-	_dictator = new Dictator();
-
-	std::vector<std::string> args;
-	args.push_back("environment=assets/rope.json");
-
-	_dictator->setArgs(args);
-	_dictator->setup();
-	_dictator->start();
-}
-
 void VagWindow::mainThreadActivities()
 {
 	if (_resume)
@@ -93,16 +81,6 @@ void VagWindow::mainThreadActivities()
 
 		_pv->back();
 		_pv = nullptr;
-
-		if (count > 0)
-		{
-//			Entity *e = &Environment::entityManager()->object(0);
-//			ConfSpaceView *csv = new ConfSpaceView(_menu, e);
-//			#ifdef __EMSCRIPTEN__
-//			csv->hideBackButton();
-//			#endif
-//			csv->show();
-		}
 	}
 }
 

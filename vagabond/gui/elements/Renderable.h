@@ -37,7 +37,7 @@ class SnowGL;
 class Renderable : public HasRenderables
 {
 public:
-	Renderable();
+	Renderable() {}
 	virtual ~Renderable();
 	virtual void initialisePrograms(std::string *v = NULL, 
 	                                std::string *f = NULL,
@@ -341,11 +341,6 @@ protected:
 	
 	virtual void extraUniforms() {};
 	
-	void setNeedsExtra(bool extra)
-	{
-		_extra = extra;
-	}
-	
 	std::vector<Vertex> _vertices;
 	std::vector<GLuint> _indices;
 	std::vector<Vertex> _unselectedVertices;
@@ -354,26 +349,22 @@ protected:
 	double _green;
 	double _blue;
 
-	bool _central;
-	bool _usesFocalDepth;
-	bool _usesLighting;
-	bool _textured;
-	bool _backToFront;
-	GLuint _renderType;
+	bool _textured = true;
+	bool _backToFront = false;
+	GLuint _renderType = GL_TRIANGLES;
 	std::string _vString;
 	std::string _fString;
 	std::string _gString;
-	GLuint _program;
-	GLuint _usingProgram;
-	GLint _uLight;
+	GLuint _program = 0;
+	GLuint _usingProgram = 0;
 
 	GLfloat _lightPos[3];
 	GLfloat _xAxis[3];
 	GLfloat _focalPos[3];
 
-	glm::mat4x4 _model;
-	glm::mat4x4 _proj;
-	glm::mat4x4 _unproj;
+	glm::mat4x4 _model = glm::mat4(1.);
+	glm::mat4x4 _proj = glm::mat4(1.);
+	glm::mat4x4 _unproj = glm::mat4(1.);
 	GLuint _texid = 0;
 	void appendObject(Renderable *object);
 	std::atomic<bool> _forceRender{false};
@@ -440,22 +431,21 @@ private:
 	std::map<GLuint, GLuint> _bVertices;
 	std::map<GLuint, GLuint> _bElements;
 	std::map<GLuint, GLuint> _vaoMap;
-	GLuint _uModel;
-	GLuint _uProj;
+	GLuint _uModel = 0;
+	GLuint _uProj = 0;
 	std::vector<IndexTrio> _temp; // stores with model mat
-	std::string _name;
+	std::string _name = "generic object";
 	std::mutex _mut;
 	
 	glm::mat4x4 _glLightMat;
 	glm::mat4x4 _glProj;
 	glm::mat4x4 _glModel;
 
-	bool _extra;
-	bool _remove;
-	bool _disabled;
-	bool _selected;
-	bool _selectable;
-	bool _draggable;
+	bool _remove = false;
+	bool _disabled = false;
+	bool _selected = false;
+	bool _selectable = false;
+	bool _draggable = false;
 	bool _usesProj = false;
 
 	std::string _texture;

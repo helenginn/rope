@@ -18,7 +18,7 @@
 
 #include <vagabond/gui/elements/Text.h>
 #include "ModelMetadataView.h"
-#include "Model.h"
+#include <vagabond/core/Model.h>
 
 ModelMetadataView::ModelMetadataView(Scene *prev, Model &model) :
 ListView(prev), _model(model)

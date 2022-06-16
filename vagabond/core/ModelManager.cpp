@@ -49,10 +49,7 @@ Model *ModelManager::insertIfUnique(const Model &m)
 	_objects.push_back(m);
 	housekeeping();
 
-	if (_responder)
-	{
-		_responder->objectsChanged();
-	}
+	triggerResponse();
 	
 	return &_objects.back();
 }
@@ -113,10 +110,7 @@ void ModelManager::purgeModel(Model *model)
 		it++;
 	}
 
-	if (_responder)
-	{
-		_responder->objectsChanged();
-	}
+	triggerResponse();
 }
 
 void ModelManager::purgeMolecule(Molecule *mol)

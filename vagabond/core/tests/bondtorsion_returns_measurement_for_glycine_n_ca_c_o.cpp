@@ -25,7 +25,6 @@ int main()
 	std::string path = "/assets/geometry/GLY.cif";
 
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup &glycine = *geom.atoms();

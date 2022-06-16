@@ -21,7 +21,7 @@
 
 #include "AtomGraph.h"
 #include "AtomBlock.h"
-#include <vagabond/utils/PCA.h>
+#include <vagabond/utils/svd/PCA.h>
 
 class TorsionBasis;
 

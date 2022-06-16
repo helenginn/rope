@@ -2,7 +2,7 @@
 #ifndef __vagabond__Display__
 #define __vagabond__Display__
 
-#include <vagabond/gui/elements/Mouse3D.h>
+#include "vagabond/gui/elements/Mouse3D.h"
 #include <vagabond/core/Responder.h>
 
 class ImageButton;
@@ -12,9 +12,12 @@ class GuiDensity;
 class AtomGroup;
 class Diffraction;
 class ArbitraryMap;
+class Entity;
 
-
-class Display : virtual public Mouse3D, public HasResponder<Display>
+class Display : 
+public Mouse3D, 
+public HasResponder<Responder<Display>>,
+public Responder<Entity>
 {
 public:
 	Display(Scene *prev = nullptr);
@@ -47,6 +50,7 @@ public:
 	
 	virtual void buttonPressed(std::string tag, Button *button);
 	void fftButton();
+
 private:
 	void resetDensityMap();
 
@@ -66,6 +70,7 @@ private:
 	
 	bool _owns = true;
 	bool _reciprocal = false;
+	bool _finish = false;
 };
 
 #endif

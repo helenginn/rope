@@ -101,6 +101,7 @@ install_data(
 'assets/images/sad_face.png',
 'assets/images/some_atoms.png',
 'assets/images/tick.png',
+'assets/images/tools.png',
 'assets/images/torsion.png',
 'assets/images/tube_1.5ml.png',
 'assets/images/unit_cell.png',
@@ -135,17 +136,17 @@ endif
 
 if (links == []) # not emscripten
   executable(name, 'vagabond/gui/main.cpp',
-  cpp_args: ['-I/usr/local/include', '-std=c++11'],
-  link_args: ['-L/usr/local/lib', links],
-  dependencies : deps, 
   link_with : [gui, core],
+  cpp_args: ['-std=c++11'],
+  link_args: [links],
+  dependencies : deps, 
   install: true)
 else # emscripten
   start_cpp = 'vagabond/gui/main.cpp'
   executable(name, extrafiles, start_cpp,
-  cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
-  link_args: ['-L/usr/local/lib', links],
   link_with: [core, gui],
+  cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
+  link_args: [links],
   dependencies : deps, install: true)
 endif
 

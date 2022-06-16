@@ -19,7 +19,7 @@
 #ifndef __vagabond__IndexResponseView__
 #define __vagabond__IndexResponseView__
 
-#include <vagabond/gui/elements/Scene.h>
+#include "Scene.h"
 
 class IndexResponder;
 

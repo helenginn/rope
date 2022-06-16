@@ -45,10 +45,7 @@ Entity *EntityManager::insertIfUnique(const Entity &ent)
 	_objects.push_back(ent);
 	_name2Entity[ent.name()] = &_objects.back();
 
-	if (_responder)
-	{
-		_responder->objectsChanged();
-	}
+	triggerResponse();
 	
 	clickTicker();
 
@@ -70,6 +67,8 @@ void EntityManager::housekeeping()
 	{
 		std::cout << other.name() << " " << &other << std::endl;
 		_name2Entity[other.name()] = &other;
+
+		other.setResponder(this);
 	}
 }
 
@@ -127,8 +126,10 @@ void EntityManager::checkModelsForReferences(ModelManager *mm)
 		e.housekeeping();
 	}
 
-	if (_responder)
-	{
-		_responder->objectsChanged();
-	}
+	triggerResponse();
+}
+
+void EntityManager::respond()
+{
+	triggerResponse();
 }

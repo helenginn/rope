@@ -18,7 +18,6 @@
 
 #include "AddRule.h"
 #include "RulesMenu.h"
-#include "HasMetadata.h"
 #include "ChooseHeader.h"
 #include "LineSeriesOptions.h"
 #include "VaryColourOptions.h"
@@ -31,6 +30,7 @@
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/core/HasMetadata.h>
 #include <vagabond/core/MetadataGroup.h>
 
 AddRule::AddRule(Scene *prev, Rule *chosen) :

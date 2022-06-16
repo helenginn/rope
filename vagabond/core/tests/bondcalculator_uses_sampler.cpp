@@ -10,7 +10,6 @@ int main()
 	std::string path = "/assets/examples/4cvd.cif";
 
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();

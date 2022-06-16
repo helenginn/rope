@@ -25,7 +25,7 @@
 
 class TextEntry;
 
-class AskForText : virtual public Modal, virtual public Button
+class AskForText : public Modal, public Button
 {
 public:
 	AskForText(Scene *scene, std::string text, 

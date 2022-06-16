@@ -29,7 +29,7 @@ class Rule;
 class HasMetadata;
 class MetadataGroup;
 
-class ConfSpaceView : virtual public Mouse3D, virtual public IndexResponseView
+class ConfSpaceView : public Mouse3D, public IndexResponseView
 {
 public:
 	ConfSpaceView(Scene *prev, Entity *ent);

@@ -153,7 +153,7 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	else if (tag == "file_menu")
 	{
 		glm::vec2 c = button->xy();
-		Menu *m = new Menu(this, "file");
+		Menu *m = new Menu(this, this, "file");
 		m->addOption("Load", "load");
 		m->addOption("Save", "save");
 		m->setup(c.x, c.y);

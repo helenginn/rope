@@ -7,7 +7,6 @@ int main()
 	std::string path = "/assets/geometry/HEX.cif";
 
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();

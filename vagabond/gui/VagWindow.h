@@ -33,6 +33,14 @@ public:
 	void setup_special();
 	virtual void resume();
 	virtual void mainThreadActivities();
+	
+	static Dictator *dictator()
+	{
+		return _dictator;
+	}
+	
+	static void addJob(std::string str);
+	
 private:
 	static Dictator *_dictator;
 	ProgressView *_pv = nullptr;

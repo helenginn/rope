@@ -21,7 +21,7 @@
 
 #include "TorsionBasis.h"
 #include "ForceField.h"
-#include <vagabond/utils/PCA.h>
+#include <vagabond/utils/svd/PCA.h>
 #include "Job.h"
 
 struct Result;

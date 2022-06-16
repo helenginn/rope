@@ -7,7 +7,6 @@ int main()
 	std::string path = "/assets/geometry/CHX.cif";
 
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup *chx = geom.atoms();

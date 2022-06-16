@@ -16,11 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Residue.h"
 #include "SequenceLine.h"
-#include "IndexedSequence.h"
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/core/Residue.h>
+#include <vagabond/core/IndexedSequence.h>
 #include <iostream>
 
 SequenceLine::SequenceLine(SequenceView *me, IndexedSequence *sequence, int start)

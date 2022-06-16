@@ -52,37 +52,58 @@ void SerialRefiner::entityDone()
 
 }
 
-void SerialRefiner::setActiveAtoms(Model *model)
+void SerialRefiner::doThings()
 {
-	if (_display != nullptr)
+	if (_newModel == false)
+	{
+		return;
+	}
+
+	_newModel = false;
+	
+	if (_model == nullptr)
+	{
+		return;
+	}
+
+	AtomGroup *atoms = _model->currentAtoms();
+
+	if (atoms)
+	{
+		_display = new Display(this);
+		_count += _model->moleculeCountForEntity(_entity->name());
+
+		std::ostringstream ss;
+		ss << "Refining " << _model->name() << " (" << _count << "/" <<
+		_extra << ")" << std::endl;
+
+		_display->addTitle(ss.str());
+		_display->setControls(false);
+		_display->setOwnsAtoms(false);
+		_display->loadAtoms(atoms);
+		_display->show();
+	}
+	
+	_model = nullptr;
+}
+
+void SerialRefiner::sendObject(std::string tag, void *object)
+{
+	if (tag == "model_done")
 	{
 		_display->stop();
 		_display->back();
 		_display = nullptr;
 	}
-	
-	if (!model)
+
+	if (tag != "model")
 	{
 		return;
 	}
-
-	AtomGroup *atoms = model->currentAtoms();
-
-	if (atoms)
-	{
-		_display = new Display(this);
-		_count += model->moleculeCountForEntity(_entity->name());
-
-		std::ostringstream ss;
-		ss << "Refining " << model->name() << " (" << _count << "/" <<
-		_extra << ")" << std::endl;
-
-		_display->setFutureTitle(ss.str());
-		_display->setControls(false);
-		_display->setOwnsAtoms(false);
-		_display->loadAtoms(atoms);
-		_display->queueToShow();
-	}
+	
+	_model = static_cast<Model *>(object);
+	_newModel = true;
+	
 }
 
 void SerialRefiner::respond()

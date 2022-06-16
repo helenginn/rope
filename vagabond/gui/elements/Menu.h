@@ -26,10 +26,10 @@
 class TextButton;
 class Renderable;
 
-class Menu : public Modal, virtual public Button
+class Menu : public Modal, public Button
 {
 public:
-	Menu(Scene *scene, std::string prefix = "");
+	Menu(Scene *scene, ButtonResponder *br = nullptr, std::string prefix = "");
 	~Menu();
 
 	TextButton *addOption(std::string text, std::string tag = "");

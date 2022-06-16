@@ -25,6 +25,6 @@ subdir : 'svd')
 
 vagutils = static_library('vagutils', utilfiles, 
 	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
-	link_args: ['-L/usr/local/lib', links],
-	dependencies : deps, install: true)
+	link_args: [links],
+	dependencies : deps, install: false)
 

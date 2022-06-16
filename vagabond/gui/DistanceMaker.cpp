@@ -98,7 +98,7 @@ void DistanceMaker::addExtras(TextButton *t, Residue *r)
 void DistanceMaker::handleResidue(Button *button, Residue *r)
 {
 	_curr = r;
-	Menu *m = new Menu(this, "atomname");
+	Menu *m = new Menu(this, this, "atomname");
 	
 	if (r->atomNames().size() == 0)
 	{

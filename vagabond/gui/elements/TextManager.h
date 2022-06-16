@@ -20,13 +20,14 @@
 #define __vagabond__TextManager__
 
 #include <stdio.h>
-#include <png.h>
 #include <string>
 
 /**
  * \class TextManager
  * \brief Renders Helen handwriting from ASCII lookup table defined in font.h
  */
+
+typedef unsigned char png_byte;
 
 class TextManager
 {

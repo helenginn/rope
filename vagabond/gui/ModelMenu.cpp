@@ -19,6 +19,7 @@
 #include "ModelMenu.h"
 #include "AddModel.h"
 #include "Display.h"
+#include <vagabond/gui/Toolkit.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/Environment.h>
 
@@ -38,11 +39,9 @@ void ModelMenu::addAutomodelButton()
 {
 	if (Environment::entityCount() > 0)
 	{
-		TextButton *t = new TextButton("Automodel...", this);
-		t->setRight(0.9, 0.1);
-		t->setReturnTag("automodel");
-		_temps.push_back(t);
-		addObject(t);
+		Toolkit *tk = new Toolkit(this);
+		_temps.push_back(tk);
+		addObject(tk);
 	}
 }
 
@@ -89,11 +88,6 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 {
 	ListView::buttonPressed(tag, button);
 
-	if (tag == "automodel")
-	{
-		Environment::autoModel();
-		return;
-	}
 	if (tag == "add")
 	{
 		AddModel *addModel = new AddModel(this);
@@ -157,7 +151,7 @@ void ModelMenu::refresh()
 	addAutomodelButton();
 }
 
-void ModelMenu::objectsChanged()
+void ModelMenu::respond()
 {
-	refresh();
+	refreshNextRender();
 }

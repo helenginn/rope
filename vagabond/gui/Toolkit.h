@@ -16,43 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ChooseRange__
-#define __vagabond__ChooseRange__
+#ifndef __vagabond__Toolkit__
+#define __vagabond__Toolkit__
 
-#include "Modal.h"
-#include "Button.h"
-#include "ButtonResponder.h"
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/ButtonResponder.h>
 
-class Slider;
+class Scene;
 
-class ChooseRange : public Modal, public Button
+class Toolkit : public ImageButton, public ButtonResponder
 {
 public:
-	ChooseRange(Scene *scene, std::string text, std::string tag,
-	            ButtonResponder *sender, bool both = false);
-	~ChooseRange();
+	Toolkit(Scene *scene);
 
-	void setRange(float min, float max, float steps = 100);
+	virtual void click();
 	virtual void buttonPressed(std::string tag, Button *button);
-	
-	float min()
-	{
-		return _min;
-	}
-	
-	float max()
-	{
-		return _max;
-	}
 private:
-	Slider *_minSlider = nullptr;
-	Slider *_maxSlider = nullptr;
+	Scene *_scene = nullptr;
 
-	ButtonResponder *_sender = nullptr;
-	float _min = 0;
-	float _max = 0;
-	float _step = 1;
-	bool _both = false;
 };
 
 #endif

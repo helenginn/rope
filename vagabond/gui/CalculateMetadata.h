@@ -30,7 +30,7 @@ public:
 	CalculateMetadata(Scene *prev, Entity *ent);
 
 	virtual void setup();
-	virtual void render();
+	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button);
 protected:
 	virtual std::string prepareQuery();

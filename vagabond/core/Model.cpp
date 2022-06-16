@@ -182,7 +182,7 @@ void update_score_if_better(Sequence *compare, Entity &ent,
 void Model::autoAssignEntities(Entity *chosen)
 {
 	EntityManager *eManager = Environment::entityManager();
-	load();
+	load(NoAngles);
 
 	for (size_t i = 0; i < _currentAtoms->chainCount(); i++)
 	{
@@ -218,9 +218,11 @@ void Model::autoAssignEntities(Entity *chosen)
 			std::cout << "Chain " << ch->id() << " in model " << name() <<
 			 " becomes " << best_entity->name() << std::endl;
 			setEntityForChain(ch->id(), best_entity->name());
+			best_entity->checkModel(*this);
 		}
 	}
 	
+	unload();
 	housekeeping();
 }
 
@@ -274,27 +276,29 @@ void Model::extractTorsions()
 
 void Model::load(LoadOptions opts)
 {
+	if (_currentAtoms != nullptr)
+	{
+		return;
+	}
+
 	_currentFile = File::openUnknown(_filename);
 	
-	/*
 	if (opts == NoGeometry)
 	{
-		_currentFile->setAutomaticKnot(KnotNone);
+		_currentFile->setAutomaticKnot(File::KnotNone);
 	}
 	else if (opts == NoAngles)
 	{
-		_currentFile->setAutomaticKnot(KnotLengths);
+		_currentFile->setAutomaticKnot(File::KnotLengths);
 	}
-	else if (opts == NoTorsions)
-	{
-		_currentFile->setAutomaticKnot(KnotAngles);
-	}
-	*/
 
 	_currentFile->parse();
 	_currentAtoms = _currentFile->atoms();
 	
-	insertTorsions();
+	if (opts == Everything)
+	{
+		insertTorsions();
+	}
 
 	_currentAtoms->setResponder(this);
 }
@@ -331,11 +335,7 @@ size_t Model::moleculeCountForEntity(std::string entity_id) const
 void Model::finishedRefinement()
 {
 	extractTorsions();
-
-	if (_responder)
-	{
-		_responder->modelReady();
-	}
+	triggerResponse();
 }
 
 Model Model::autoModel(std::string filename)
@@ -454,3 +454,4 @@ void Model::distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
 
 	unload();
 }
+

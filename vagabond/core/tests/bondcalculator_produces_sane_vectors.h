@@ -4,7 +4,6 @@ int check_vecs(std::string name)
 	std::string path = "/assets/geometry/GLY.cif";
 
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();

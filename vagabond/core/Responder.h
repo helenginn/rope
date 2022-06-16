@@ -19,20 +19,38 @@
 #ifndef __vagabond__Responder__
 #define __vagabond__Responder__
 
+#include <vector>
+#include <iostream>
+
+template <class R>
+class HasResponder;
+
 template <class T>
 class Responder
 {
 public:
-	virtual void respond() = 0;
+	virtual void respond() {};
 
 	virtual ~Responder()
 	{
-
+		for (HasResponder<Responder<T>> *parent : _parents)
+		{
+			parent->removeResponder(this);
+		}
 	}
+
+	virtual void setParent(HasResponder<Responder<T>> *hr)
+	{
+		_parents.push_back(hr);
+	}
+
+	virtual void sendObject(std::string tag, void *object) {}
+private:
+	std::vector<HasResponder<Responder<T>> *> _parents;
 
 };
 
-template <class T>
+template <class R>
 class HasResponder
 {
 public:
@@ -41,23 +59,54 @@ public:
 
 	}
 
-	virtual void setResponder(Responder<T> *r)
+	virtual void setResponder(R *r)
 	{
-		_responder = r;
+		if (r == nullptr)
+		{
+			return;
+		}
+		
+		if (std::find(_responders.begin(), _responders.end(), r) 
+		    != _responders.end())
+		{
+			return;
+		}
+
+		_responders.push_back(r);
+		std::cout << "Adding responder, now " << _responders.size() << std::endl;
+		r->setParent(this);
 	}
 	
+	virtual void removeResponder(R *r)
+	{
+		for (size_t i = 0; i < _responders.size(); i++)
+		{
+			if (_responders[i] == r)
+			{
+				_responders.erase(_responders.begin() + i);
+			}
+		}
+	}
 protected:
+
+	virtual void sendResponse(std::string tag, void *object)
+	{
+		for (R *responder : _responders)
+		{
+			responder->sendObject(tag, object);
+		}
+	}
 
 	virtual void triggerResponse()
 	{
-		if (_responder != nullptr)
+		for (R *responder : _responders)
 		{
-			_responder->respond();
+			responder->respond();
 		}
 	}
 
 private:
-	Responder<T> *_responder = nullptr;
+	std::vector<R *> _responders;
 
 };
 

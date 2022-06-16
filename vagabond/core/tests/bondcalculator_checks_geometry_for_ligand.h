@@ -1,7 +1,6 @@
 int checkGeometry(std::string path, double angle_tol = 1e-3)
 {
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();

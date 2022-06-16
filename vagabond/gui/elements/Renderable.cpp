@@ -42,32 +42,9 @@ void Renderable::addToVertices(glm::vec3 add)
 	positionChanged();
 }
 
-Renderable::Renderable()
-{
-	_textured = true;
-	_name = "generic object";
-	_remove = false;
-	_renderType = GL_TRIANGLES;
-	_program = 0;
-	_usingProgram = 0;
-	_backToFront = false;
-	_uModel = 0;
-	_model = glm::mat4(1.);
-	_proj = glm::mat4(1.);
-	_extra = false;
-	_usesLighting = false;
-	_usesFocalDepth = false;
-	_central = 0;
-	_disabled = 0;
-	_selected = false;
-	_selectable = false;
-	_draggable = false;
-}
-
 void Renderable::deleteOnMainThread()
 {
 	Window::setDelete(this);
-
 }
 
 Renderable::~Renderable()
@@ -228,14 +205,7 @@ void Renderable::initialisePrograms(std::string *v, std::string *f,
 	glBindAttribLocation(_program, 1, "normal");
 	glBindAttribLocation(_program, 2, "color");
 
-//	if (!_extra)
-//	{
-//		glBindAttribLocation(_program, 3, "projection");
-//	}
-//	else
-//	{
-		glBindAttribLocation(_program, 3, "extra");
-//	}
+	glBindAttribLocation(_program, 3, "extra");
 
 	if (_textured || _texid > 0)
 	{

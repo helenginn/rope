@@ -116,6 +116,8 @@ void Entity::checkModel(Model &m)
 			}
 		}
 	}
+	
+	triggerResponse();
 }
 
 const bool compare_id(const Molecule *a, const Molecule *b)
@@ -181,15 +183,15 @@ void Entity::refineNextModel()
 	_currentModel->load();
 	_refineSet.erase(_refineSet.begin());
 	
-	_responder->setActiveAtoms(_currentModel);
+	sendResponse("model", _currentModel);
 	
 	_currentModel->refine();
 }
 
-void Entity::modelReady()
+void Entity::respond()
 {
-	_responder->setActiveAtoms(nullptr);
-	_currentModel->setResponder(nullptr);
+	sendResponse("model_done", nullptr);
+	_currentModel->removeResponder(this);
 	_currentModel->unload();
 	refineNextModel();
 }
@@ -274,7 +276,6 @@ void Entity::searchAllModels()
 	
 	for (Model &m : mm->objects())
 	{
-		m.autoAssignEntities(this);
 		checkModel(m);
 	}
 }

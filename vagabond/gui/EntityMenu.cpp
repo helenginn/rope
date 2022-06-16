@@ -19,6 +19,7 @@
 #include "EntityFromSequence.h"
 #include "EntityMenu.h"
 #include "AddEntity.h"
+#include "Toolkit.h"
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/Environment.h>
@@ -40,6 +41,11 @@ void EntityMenu::setup()
 	addTitle("Protein entities");
 
 	ListView::setup();
+
+	if (_manager->objectCount() >= 1)
+	{
+		addToolkit();
+	}
 }
 
 void EntityMenu::buttonPressed(std::string tag, Button *button)
@@ -71,9 +77,23 @@ Renderable *EntityMenu::getLine(int i)
 		return t;
 	}
 	Entity &ent = _manager->object(i - 1);
-	TextButton *t = new TextButton(ent.name(), this);
-	t->setReturnTag("entity_" + ent.name());
-	return t;
+
+	Box *b = new Box();
+	{
+		TextButton *t = new TextButton(ent.name(), this);
+		t->setReturnTag("entity_" + ent.name());
+		t->setLeft(0, 0);
+		b->addObject(t);
+	}
+
+	{
+		std::string str = i_to_str(ent.modelCount()) + " models";
+		Text *t = new Text(str);
+		t->setRight(0.6, 0);
+		b->addObject(t);
+	}
+
+	return b;
 }
 
 size_t EntityMenu::lineCount()
@@ -81,8 +101,14 @@ size_t EntityMenu::lineCount()
 	return _manager->objectCount() + 1;
 }
 
-void EntityMenu::objectsChanged()
+void EntityMenu::respond()
 {
-	refresh();
+	refreshNextRender();
 }
 
+void EntityMenu::addToolkit()
+{
+	Toolkit *tk = new Toolkit(this);
+	addObject(tk);
+
+}

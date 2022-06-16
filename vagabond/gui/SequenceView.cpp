@@ -20,7 +20,7 @@
 #include "SequenceView.h"
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/Residue.h>
-#include "IndexedSequence.h"
+#include <vagabond/core/IndexedSequence.h>
 #include <iostream>
 #include <vagabond/utils/FileReader.h>
 

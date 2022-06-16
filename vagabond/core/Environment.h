@@ -79,6 +79,7 @@ public:
 	}
 	
 	static void autoModel();
+	static void rescanModels();
 	
 	void purgeMolecule(Molecule *mol);
 	static void purgeModel(std::string name);

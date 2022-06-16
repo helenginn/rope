@@ -27,6 +27,7 @@
 #include "Metadata.h"
 
 #include "Molecule.h"
+#include "Responder.h"
 #include "AtomGroup.h"
 #include "AtomRecall.h"
 
@@ -38,24 +39,13 @@ class Chain;
 class Molecule;
 class AtomContent;
 
-class ModelResponder
-{
-public:
-	virtual ~ModelResponder() {}
-	virtual void modelReady() = 0;
-};
-
-class Model : public AtomGroupResponder, public HasMetadata
+class Model : public AtomGroupResponder, public HasResponder<Responder<Model>>,
+public HasMetadata
 {
 public:
 	Model();
 	
 	static Model autoModel(std::string filename);
-	
-	void setResponder(ModelResponder *responder)
-	{
-		_responder = responder;
-	}
 	
 	void setFilename(std::string file);
 	
@@ -156,8 +146,6 @@ private:
 
 	File *_currentFile = nullptr;
 	AtomContent *_currentAtoms = nullptr;
-	
-	ModelResponder *_responder = nullptr;
 };
 
 inline void to_json(json &j, const Model &value)

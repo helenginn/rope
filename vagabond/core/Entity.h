@@ -25,6 +25,7 @@
 #include "Sequence.h"
 #include "Model.h"
 #include "MetadataGroup.h"
+#include "Responder.h"
 #include "AtomRecall.h"
 
 #include <json/json.hpp>
@@ -32,15 +33,7 @@ using nlohmann::json;
 
 class Molecule;
 
-class EntityResponder
-{
-public:
-	virtual ~EntityResponder() {}
-	virtual void entityDone() = 0;
-	virtual void setActiveAtoms(Model *model) {}
-};
-
-class Entity : public ModelResponder
+class Entity : public Responder<Model>, public HasResponder<Responder<Entity>>
 {
 public:
 	Entity();
@@ -48,11 +41,6 @@ public:
 	Sequence *sequence()
 	{
 		return &_sequence;
-	}
-	
-	void setResponder(EntityResponder *responder)
-	{
-		_responder = responder;
 	}
 	
 	void setSequence(Sequence *seq)
@@ -79,7 +67,7 @@ public:
 	void throwOutModel(Model *mol);
 	
 	void refineNextModel();
-	virtual void modelReady();
+	virtual void respond();
 	
 	MetadataGroup makeTorsionDataGroup();
 
@@ -116,7 +104,6 @@ private:
 	Sequence _sequence;
 	
 	Model *_currentModel = nullptr;
-	EntityResponder *_responder = nullptr;
 
 	void appendMolecule(Model &m);
 	

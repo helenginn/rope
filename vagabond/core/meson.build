@@ -103,7 +103,7 @@ subdir : 'vagabond/core')
 
 core = static_library('vag', vagafiles, 
 	cpp_args: ['-I/usr/local/include/vaginclude', '-std=c++11', compile_args],
-	link_args: ['-L/usr/local/lib', links],
+	link_args: [links],
 	link_with: [vagutils, cluster4x],
     include_directories: ['../..'],
-	dependencies : deps, install: true)
+	dependencies : deps, install: false)

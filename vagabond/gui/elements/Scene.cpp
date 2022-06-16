@@ -56,6 +56,8 @@ void Scene::removeModal()
 
 void Scene::render()
 {
+	doThings();
+
 	if (_mustRefresh)
 	{
 		refresh();

@@ -19,9 +19,12 @@
 #ifndef __breathalyser__dictator__
 #define __breathalyser__dictator__
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <thread>
+#include <condition_variable>
+#include <mutex>
 #include <map>
 
 class CmdWorker;
@@ -41,6 +44,9 @@ public:
 	void addArg(std::string arg)
 	{
 		_args.push_back(arg);
+
+		std::cout << "Added an argument, notifying" << std::endl;
+		_cv.notify_one();
 	}
 	
 	static std::string valueForKey(std::string key)
@@ -55,6 +61,12 @@ public:
 
 	void start();
 	bool nextJob();
+	
+	void workerLock()
+	{
+		std::unique_lock<std::mutex> lock(_mutex);
+		_cv.wait(lock);
+	}
 
 	void finish();
 protected:
@@ -69,6 +81,8 @@ private:
 	void processNextArg(std::string arg);
 	void makeCommands();
 
+	std::condition_variable _cv;
+	std::mutex _mutex;
 	std::thread *_thread;
 	CmdWorker *_worker;
 	std::vector<std::string> _args;

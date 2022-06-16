@@ -21,7 +21,9 @@
 #include "TextButton.h"
 #include <iostream>
 
-Menu::Menu(Scene *scene, std::string prefix) : Modal(scene)
+Menu::Menu(Scene *scene, ButtonResponder *br, std::string prefix) :
+Modal(scene),
+Button(br == nullptr ? scene : br)
 {
 	_prefix = prefix;
 	setInert(true);
@@ -74,7 +76,7 @@ void Menu::setup(double x, double y)
 
 	setArbitrary(0, 0, Renderable::Alignment(horizontal | vertical));
 	
-	double start_x = (horizontal == Renderable::Left) ? 0 : - 3 * width / 5;
+	double start_x = (horizontal == Renderable::Left) ? 0 : -inc * 0.75;
 	double start_y = (vertical == Renderable::Top) ? 0 : -height;
 
 	setImage("assets/images/box.png");
@@ -82,7 +84,8 @@ void Menu::setup(double x, double y)
 	height = (vertical == Renderable::Bottom ? -inc / 2 : 0);
 	for (size_t i = 0; i < _options.size(); i++)
 	{
-		_options[i]->setLeft(start_x + inc / 2, start_y + height + inc);
+		_options[i]->setArbitrary(start_x + inc / 2, start_y + height + inc,
+		                          horizontal);
 		height += inc;
 		addObject(_options[i]);
 	}
@@ -112,11 +115,11 @@ void Menu::buttonPressed(std::string tag, Button *button)
 	{
 		if (_prefix.length())
 		{
-			_scene->buttonPressed(_prefix + "_" + tag, button);
+			_sender->buttonPressed(_prefix + "_" + tag, button);
 		}
 		else
 		{
-			_scene->buttonPressed(tag, button);
+			_sender->buttonPressed(tag, button);
 		}
 	}
 }

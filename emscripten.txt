@@ -28,4 +28,4 @@ shared_module_suffix = 'js'
 exe_suffix = 'js'
 
 links = sdl_options + shell_file + preload + export + threads + memory + exceptions + fftwf + gl + download + optimisation
-compile_args = threads + exceptions + incdir + optimisation
+compile_args = threads + exceptions + optimisation + incdir

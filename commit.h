@@ -1,5 +1,5 @@
-// vagabond
-// Copyright (C) 2022 Helen Ginn
+// Blot
+// Copyright (C) 2017-2018 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,32 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
-// Please email: vagabond @ hginn.co.uk for more details.
+// Please email: blot @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityMenu__
-#define __vagabond__EntityMenu__
+//#define MACOS
 
-#include <vagabond/gui/elements/ListView.h>
-#include <vagabond/core/EntityManager.h>
-
-class EntityMenu : public ListView, public Responder<Manager<Entity>>
-{
-public:
-	EntityMenu(Scene *prev);
-
-	virtual ~EntityMenu();
-	virtual void setup();
-
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
-
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual void respond();
-private:
-	void addToolkit();
-
-	EntityManager *_manager;
-
-};
-
+#ifdef MACOS
+#define DATA_DIRECTORY "."
+#else
+#define DATA_DIRECTORY "/usr/local/share/vagabond/"
 #endif
+

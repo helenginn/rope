@@ -37,6 +37,38 @@ guielementfiles = [
 'TextEntry.cpp',
 'TextManager.cpp',
 'Window.cpp',
+
+'AskYesNo.h',
+'AskForText.h',
+'BadChoice.h',
+'Box.h',
+'Button.h',
+'ButtonResponder.h',
+'canvas.h',
+'Choice.h',
+'ChoiceGroup.h',
+'Draggable.h',
+'ForwardBackward.h',
+'HasRenderables.h',
+'KeyResponder.h',
+'Icosahedron.h',
+'Image.h',
+'ImageButton.h',
+'IndexResponseView.h',
+'Library.h',
+'ListView.h',
+'Modal.h',
+'Mouse3D.h',
+'Renderable.h',
+'Scene.h',
+'Slider.h',
+'SnowGL.h',
+'Text.h',
+'TextButton.h',
+'TextEntry.h',
+'TextManager.h',
+'upload.h',
+'Window.h',
 ]
 
 install_headers([
@@ -75,7 +107,8 @@ install_headers([
 subdir : 'vagabond/gui/elements')
 
 guielements = static_library('vagguielements', guielementfiles,
-	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
-	link_args: ['-L/usr/local/lib', links],
-	dependencies : deps, install: true)
+	cpp_args: ['-std=c++11', compile_args],
+	include_directories: ['../../..'],
+	link_args: [links],
+	dependencies : deps, install: false)
 

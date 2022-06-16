@@ -26,7 +26,7 @@
 class GuiAtom;
 class Display;
 
-class SerialRefiner : public Scene, public EntityResponder, 
+class SerialRefiner : public Scene, public Responder<Entity>, 
 public Responder<Display>
 {
 public:
@@ -36,15 +36,19 @@ public:
 	{
 		_extra = extra;
 	}
+
 	virtual ~SerialRefiner();
 
 	virtual void setup();
 	virtual void respond();
+	virtual void doThings();
 	virtual void entityDone();
-	virtual void setActiveAtoms(Model *model);
+	virtual void sendObject(std::string tag, void *object);
 private:
 	int _extra = 0;
 	int _count = 0;
+	bool _newModel = false;
+	Model *_model = nullptr;
 	Display *_display = nullptr;
 	Entity *_entity = nullptr;
 };

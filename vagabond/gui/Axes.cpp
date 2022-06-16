@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/core/MetadataGroup.h>
-#include "Molecule.h"
+#include <vagabond/core/Molecule.h>
 #include "Axes.h"
 
 Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()

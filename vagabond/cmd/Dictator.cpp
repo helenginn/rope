@@ -36,6 +36,8 @@ void Dictator::makeCommands()
 	_commands["automodel"] = ("Auto-model atom coordinate files according "\
 	                          "to existing entities matching at least 80% "
 	                          "sequence and default names");
+	_commands["rescan"] = ("Rescan existing models for existing entities"
+	                          " matching at least 80% sequence and default names");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -107,7 +109,12 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	{
 		Environment::env().autoModel();
 	}
-	
+
+	if (first == "rescan")
+	{
+		Environment::rescanModels();
+	}
+
 	if (first == "add")
 	{
 		File *file = File::loadUnknown(last);
@@ -184,6 +191,7 @@ bool Dictator::nextJob()
 
 	if ((size_t)_currentJob >= _args.size())
 	{
+		_currentJob--;
 		return false;
 	}
 

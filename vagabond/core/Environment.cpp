@@ -78,6 +78,7 @@ void Environment::load(std::string file)
 		std::cout << "Could not find json environment." << std::endl;
 		if (_pg)
 		{
+			std::cout << "finish!" << std::endl;
 			_pg->finish();
 		}
 
@@ -115,6 +116,19 @@ void Environment::load(std::string file)
 	{
 		_pg->finish();
 	}
+}
+
+void Environment::rescanModels()
+{
+	ModelManager *mm = Environment::modelManager();
+	
+	for (Model &m : mm->objects())
+	{
+		m.autoAssignEntities();
+	}
+
+	EntityManager *em = Environment::entityManager();
+	em->checkModelsForReferences(mm);
 }
 
 void Environment::autoModel()

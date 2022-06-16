@@ -132,7 +132,7 @@ void CalculateMetadata::fetchFromPDB()
 
 }
 
-void CalculateMetadata::render()
+void CalculateMetadata::doThings()
 {
 	if (_process)
 	{
@@ -140,8 +140,6 @@ void CalculateMetadata::render()
 		_process = false;
 		_result = "";
 	}
-
-	Scene::render();
 }
 
 void CalculateMetadata::handleError()

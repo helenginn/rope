@@ -21,17 +21,10 @@
 
 #include <list>
 #include "Progressor.h"
+#include "Responder.h"
 
 template <class T>
-class ManagerResponder
-{
-public:
-	virtual ~ManagerResponder() {};
-	virtual void objectsChanged() = 0;
-};
-
-template <class T>
-class Manager : public Progressor
+class Manager : public Progressor, public HasResponder<Responder<Manager<T>>>
 {
 public:
 	Manager() {};
@@ -56,22 +49,11 @@ public:
 
 	virtual T *insertIfUnique(const T &m) { return nullptr; };
 
-	void setResponder(ManagerResponder<T> *responder)
-	{
-		_responder = responder;
-	}
-	
-	ManagerResponder<T> *const responder()
-	{
-		return _responder;
-	}
-	
 	friend void to_json(json &j, const Manager<T> &value);
 	friend void from_json(const json &j, Manager<T> &value);
 protected:
 
 	typename std::list<T> _objects;
-	ManagerResponder<T> *_responder = nullptr;
 };
 
 #endif

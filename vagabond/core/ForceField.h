@@ -20,7 +20,7 @@
 #define __vagabond__ForceField__
 
 #include <list>
-#include <vagabond/utils/PCA.h>
+#include <vagabond/utils/svd/PCA.h>
 #include "Job.h"
 
 class Atom;

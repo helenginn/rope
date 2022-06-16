@@ -9,7 +9,6 @@ int main()
 	std::string path = "/assets/geometry/H2S.cif";
 
 	CifFile geom = CifFile(path);
-	geom.setAutomaticKnot(true);
 	geom.parse();
 	
 	AtomGroup *atoms = geom.atoms();

@@ -24,6 +24,7 @@
 #include <list>
 
 #include "Entity.h"
+#include "Responder.h"
 #include "Manager.h"
 
 #include <json/json.hpp>
@@ -32,7 +33,9 @@ using nlohmann::json;
 class Molecule;
 class ModelManager;
 
-class EntityManager : public Manager<Entity>
+class EntityManager : 
+public Manager<Entity>, 
+public Responder<Entity>
 {
 public:
 	EntityManager();
@@ -51,6 +54,7 @@ public:
 	}
 
 	void housekeeping();
+	virtual void respond();
 	void checkModelsForReferences(ModelManager *manager);
 
 	void purgeMolecule(Molecule *mol);
