@@ -6,7 +6,6 @@
 #include <string>
 #include "Box.h"
 
-#include <vector>
 
 class Text : virtual public Box
 {
@@ -32,7 +31,6 @@ private:
 
 	bool _delay = false;
 	bool _retext = false;
-	std::vector<Text *> _texts;
 };
 
 #endif
