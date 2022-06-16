@@ -29,7 +29,7 @@ class Rule;
 class MetadataGroup;
 class FloatingText;
 
-class ClusterView : public Renderable, public IndexResponder
+class ClusterView : public IndexResponder
 {
 public:
 	ClusterView();
