@@ -2,6 +2,7 @@ guifiles = [
 'AddEntity.cpp',
 'AddModel.cpp',
 'AddRule.cpp',
+'Axes.cpp',
 'CalculateMetadata.cpp',
 'CandidateView.cpp',
 'ChainAssignment.cpp',
