@@ -117,7 +117,6 @@ void ConfSpaceView::showClusters()
 	updateCamera();
 
 	addObject(view);
-	_indexResponder = view;
 
 	_view = view;
 }
