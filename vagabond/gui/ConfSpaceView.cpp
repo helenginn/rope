@@ -36,7 +36,10 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Metadata.h>
 
-ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) : Mouse3D(prev)
+ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
+: Scene(prev),
+Mouse3D(prev),
+IndexResponseView(prev)
 {
 	_entity = ent;
 }

@@ -27,7 +27,7 @@ class Rule;
 class HasMetadata;
 class MetadataGroup;
 
-class ConfSpaceView : virtual public Mouse3D
+class ConfSpaceView : virtual public Mouse3D, virtual public IndexResponseView
 {
 public:
 	ConfSpaceView(Scene *prev, Entity *ent);
