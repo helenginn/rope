@@ -98,9 +98,12 @@ void DistanceMaker::addExtras(TextButton *t, Residue *r)
 void DistanceMaker::handleResidue(Button *button, Residue *r)
 {
 	_curr = r;
-	glm::vec2 c = button->xy();
 	Menu *m = new Menu(this, "atomname");
 	
+	if (r->atomNames().size() == 0)
+	{
+		r->housekeeping();
+	}
 	for (const std::string &name : r->atomNames())
 	{
 		if (name.length() == 0 || name[0] == 'H')
@@ -111,7 +114,7 @@ void DistanceMaker::handleResidue(Button *button, Residue *r)
 		m->addOption(name);
 	}
 
-	m->setup(c.x, c.y);
+	m->setup(button);
 	setModal(m);
 }
 

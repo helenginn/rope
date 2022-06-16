@@ -19,16 +19,19 @@
 #include "RulesMenu.h"
 #include "LineSeries.h"
 #include "ConfSpaceView.h"
+#include "Axes.h"
 #include "ColourLegend.h"
 #include "IconLegend.h"
 #include "SerialRefiner.h"
 #include "ClusterView.h"
+#include "AddModel.h"
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/c4x/ClusterTSNE.h>
 
@@ -59,9 +62,8 @@ void ConfSpaceView::askToFoldIn(int extra)
 
 void ConfSpaceView::setup()
 {
-#ifndef __EMSCRIPTEN__
-	prepareDepthColourIndex();
-#endif
+	IndexResponseView::setup();
+
 	size_t extra = _entity->checkForUnrefinedMolecules();
 
 	if (extra > 0)
@@ -91,8 +93,10 @@ void ConfSpaceView::showClusters()
 	angles.write(_entity->name() + ".csv");
 	angles.normalise();
 	
-	ClusterView *view = nullptr;
-	view = new ClusterView();
+	ClusterView *view = new ClusterView();
+	addIndexResponder(view);
+	view->setIndexResponseView(this);
+	view->setConfSpaceView(this);
 
 	if (_tsne)
 	{
@@ -113,7 +117,7 @@ void ConfSpaceView::showClusters()
 	updateCamera();
 
 	addObject(view);
-//	_indexResponder = view;
+	_indexResponder = view;
 
 	_view = view;
 }
@@ -176,8 +180,6 @@ void ConfSpaceView::chooseGroup(Rule *rule, bool inverse)
 		{
 			hit = !hit;
 		}
-
-		std::cout << value << " " << expected << " " << hit << std::endl;
 
 		if (hit)
 		{
@@ -284,6 +286,23 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		showRulesButton();
 	}
 	
+	if (tag == "view_model")
+	{
+		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		
+		if (m)
+		{
+			AddModel *am = new AddModel(this, m->model());
+			am->show();
+		}
+	}
+	
+	if (tag == "set_as_reference")
+	{
+		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		createReference(m);
+	}
+	
 	if (tag == "rules")
 	{
 		RulesMenu *menu = new RulesMenu(this);
@@ -363,4 +382,24 @@ void ConfSpaceView::applyRules()
 	il->setCentre(0.8, 0.5);
 	addObject(il);
 	_temps.push_back(il);
+}
+
+void ConfSpaceView::prepareMenu(HasMetadata *hm)
+{
+	Menu *m = new Menu(this);
+	m->setReturnObject(hm);
+	m->addOption("view model", "view_model");
+	m->addOption("set as reference", "set_as_reference");
+	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
+	m->setup(x, y);
+
+	setModal(m);
+}
+
+void ConfSpaceView::createReference(Molecule *m)
+{
+	Axes *axes = new Axes(_view->cluster(), m);
+	axes->setIndexResponseView(this);
+	addObject(axes);
+	addIndexResponder(axes);
 }

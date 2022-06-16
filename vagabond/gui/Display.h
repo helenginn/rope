@@ -14,7 +14,7 @@ class Diffraction;
 class ArbitraryMap;
 
 
-class Display : virtual public Mouse3D, virtual public HasResponder<Display>
+class Display : virtual public Mouse3D, public HasResponder<Display>
 {
 public:
 	Display(Scene *prev = nullptr);

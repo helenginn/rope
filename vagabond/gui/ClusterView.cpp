@@ -18,6 +18,7 @@
 
 #include "ClusterView.h"
 #include "ColourScheme.h"
+#include "ConfSpaceView.h"
 #include <vagabond/gui/elements/SnowGL.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
@@ -64,9 +65,17 @@ void ClusterView::addPoint(glm::vec3 pos, int pointType)
 	customiseTexture(vert);
 	setPointType(_vertices.size() - 1, pointType);
 
-	/* for rendering indices */
-	vert.extra[0] = _vertices.size() + 0.5;
 	addIndex(-1);
+}
+
+void ClusterView::reindex()
+{
+	size_t offset = indexOffset();
+	for (size_t i = 0; i < vertexCount(); i++)
+	{
+		/* in the case of multiple responders */
+		_vertices[i].extra[0] = i + offset + 1.5;
+	}
 }
 
 void ClusterView::reset()
@@ -87,7 +96,6 @@ void ClusterView::prioritiseMetadata(std::string key)
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		glm::vec3 v = _cx->point(i);
-		v *= 10;
 		_vertices[i].pos = v;
 	}
 	
@@ -106,9 +114,10 @@ void ClusterView::makePoints()
 	for (size_t i = 0; i < count; i++)
 	{
 		glm::vec3 v = _cx->point(i);
-		v *= 10;
 		addPoint(v, 0);
 	}
+	
+	reindex();
 }
 
 void ClusterView::render(SnowGL *gl)
@@ -205,6 +214,11 @@ void ClusterView::applyRule(const Rule &r)
 	}
 }
 
+void ClusterView::click()
+{
+	interacted(currentVertex(), false);
+}
+
 bool ClusterView::mouseOver()
 {
 	interacted(currentVertex(), true);
@@ -242,5 +256,6 @@ void ClusterView::interacted(int idx, bool hover)
 	if (hover == false) // click!
 	{
 		std::cout << "CLICK" << std::endl;
+		_confSpaceView->prepareMenu(group.object(idx));
 	}
 }

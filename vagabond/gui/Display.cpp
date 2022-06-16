@@ -14,7 +14,7 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 
-Display::Display(Scene *prev) : Mouse3D(prev)
+Display::Display(Scene *prev) : Scene(prev), Mouse3D(prev)
 {
 
 }

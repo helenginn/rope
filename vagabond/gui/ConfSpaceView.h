@@ -20,9 +20,11 @@
 #define __vagabond__ConfSpaceView__
 
 #include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/gui/elements/IndexResponseView.h>
 #include "ClusterView.h"
 
 class Entity;
+class Molecule;
 class Rule;
 class HasMetadata;
 class MetadataGroup;
@@ -46,6 +48,8 @@ public:
 	virtual void setup();
 	virtual void refresh();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	
+	void prepareMenu(HasMetadata *hm);
 private:
 	void chooseGroup(Rule *rule, bool inverse);
 	void executeSubset(float min, float max);
@@ -54,6 +58,7 @@ private:
 	void applyRule(const Rule &r);
 	void applyRules();
 	void removeRules();
+	void createReference(Molecule *m);
 
 	void askToFoldIn(int extra);
 	Entity *_entity = nullptr;

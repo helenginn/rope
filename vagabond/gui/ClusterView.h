@@ -19,15 +19,15 @@
 #ifndef __vagabond__ClusterView__
 #define __vagabond__ClusterView__
 
-#include <vagabond/gui/elements/Renderable.h>
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
 
 #define POINT_TYPE_COUNT 8
 
 class Rule;
-class MetadataGroup;
 class FloatingText;
+class MetadataGroup;
+class ConfSpaceView;
 
 class ClusterView : public IndexResponder
 {
@@ -36,6 +36,11 @@ public:
 	~ClusterView();
 
 	void setCluster(Cluster<MetadataGroup> *cx);
+	
+	void setConfSpaceView(ConfSpaceView *csv)
+	{
+		_confSpaceView = csv;
+	}
 	
 	Cluster<MetadataGroup> *cluster()
 	{
@@ -50,6 +55,8 @@ public:
 	void addPoint(glm::vec3 pos, int pointType);
 	void setPointType(int idx, int type);
 	virtual void makePoints();
+	virtual void click();
+
 	void applyRule(const Rule &r);
 
 	void render(SnowGL *gl);
@@ -57,6 +64,13 @@ public:
 	void reset();
 	
 	virtual void interacted(int idx, bool hover);
+	virtual size_t requestedIndices()
+	{
+		return _vertices.size();
+	}
+
+	virtual void reindex();
+
 	virtual bool mouseOver();
 	virtual void unMouseOver();
 protected:
@@ -69,6 +83,7 @@ private:
 
 	Cluster<MetadataGroup> *_cx = nullptr;
 	FloatingText *_text = nullptr;
+	ConfSpaceView *_confSpaceView = nullptr;
 
 };
 
