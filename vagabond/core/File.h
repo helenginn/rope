@@ -65,6 +65,7 @@ public:
 	};
 	
 	static File *loadUnknown(std::string filename);
+	static File *openUnknown(std::string filename);
 	static Type typeUnknown(std::string filename);
 
 	/** determine bitwise contents of file */
@@ -138,14 +139,22 @@ public:
 		_code = code;
 		to_upper(code);
 	}
+	
+	enum KnotLevel
+	{
+		KnotNone,
+		KnotLengths,
+		KnotAngles,
+		KnotTorsions
+	};
 
 	/** set whether File automatically assigns geometry to atoms found in
 	 * file using standard geometry (proteins, nucleic acids) or additional 
 	 * geometry in file.
 	 * @param knot true (default) to tie atoms up */
-	void setAutomaticKnot(bool knot)
+	void setAutomaticKnot(KnotLevel kl)
 	{
-		_knot = true;
+		_knot = kl;
 	}
 protected:
 	enum Flavour
@@ -175,7 +184,7 @@ protected:
 	std::vector<Reflection> _reflections;
 	
 	bool _accessedTable = false;
-	bool _knot = true;
+	KnotLevel _knot = KnotTorsions;
 
 };
 

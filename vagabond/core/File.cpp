@@ -227,7 +227,7 @@ File::Flavour File::flavour(std::string filename)
 	return None;
 }
 
-File *File::loadUnknown(std::string filename)
+File *File::openUnknown(std::string filename)
 {
 	File *f = nullptr;
 	
@@ -254,6 +254,13 @@ File *File::loadUnknown(std::string filename)
 		f = new CsvFile(filename);
 	}
 	
+	return f;
+}
+
+File *File::loadUnknown(std::string filename)
+{
+	File *f = openUnknown(filename);
+
 	if (f)
 	{
 		f->parse();

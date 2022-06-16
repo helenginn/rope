@@ -142,15 +142,25 @@ void CifFile::parse()
 {
 	parseFileContents(_filename);
 	
-	if (_knot && _macroAtoms->size() > 0)
+	if (_knot != KnotNone && _macroAtoms->size() > 0)
 	{
 		parseFileContents("assets/geometry/standard_geometry.cif");
 	}
 	
-	if (_knot)
+	if (_knot != KnotNone)
 	{
 		AtomGroup *ptr = (_macroAtoms->size() == 0 ? _compAtoms : _macroAtoms);
 		Knotter knotter(ptr, _table);
+		
+		if (_knot == KnotAngles)
+		{
+			knotter.setDoTorsions(false);
+		}
+		else if (_knot == KnotLengths)
+		{
+			knotter.setDoTorsions(false);
+			knotter.setDoAngles(false);
+		}
 		knotter.knot();
 	}
 }

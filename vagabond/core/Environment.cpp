@@ -65,7 +65,6 @@ void Environment::save()
 	file << std::endl;
 	file.close();
 
-	std::cout << contents << std::endl;
 #ifdef __EMSCRIPTEN__
 	EM_ASM_({ window.download = download; window.download($0, $1, $2) }, 
 	        "rope.json", contents.c_str(), contents.length());

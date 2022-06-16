@@ -35,6 +35,21 @@ public:
 
 	void knot();
 	
+	void setDoLengths(bool doit)
+	{
+		_doLengths = doit;
+	}
+	
+	void setDoAngles(bool doit)
+	{
+		_doAngles = doit;
+	}
+	
+	void setDoTorsions(bool doit)
+	{
+		_doTorsions = doit;
+	}
+	
 	std::string warning(int i)
 	{
 		return _warnings[i];
@@ -58,6 +73,9 @@ private:
 	GeometryTable *_table;
 	std::vector<std::string> _warnings;
 
+	bool _doLengths = true;
+	bool _doAngles = true;
+	bool _doTorsions = true;
 };
 
 #endif

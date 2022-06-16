@@ -272,9 +272,26 @@ void Model::extractTorsions()
 	}
 }
 
-void Model::load()
+void Model::load(LoadOptions opts)
 {
-	_currentFile = File::loadUnknown(_filename);
+	_currentFile = File::openUnknown(_filename);
+	
+	/*
+	if (opts == NoGeometry)
+	{
+		_currentFile->setAutomaticKnot(KnotNone);
+	}
+	else if (opts == NoAngles)
+	{
+		_currentFile->setAutomaticKnot(KnotLengths);
+	}
+	else if (opts == NoTorsions)
+	{
+		_currentFile->setAutomaticKnot(KnotAngles);
+	}
+	*/
+
+	_currentFile->parse();
 	_currentAtoms = _currentFile->atoms();
 	
 	insertTorsions();

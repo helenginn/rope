@@ -110,8 +110,16 @@ public:
 	void housekeeping();
 	
 	void createMolecules();
+	
+	enum LoadOptions
+	{
+		Everything = 0,
+		NoGeometry = 1 << 0,
+		NoAngles = 1 << 1,
+		NoInsert = 1 << 2,
+	};
 
-	void load();
+	void load(LoadOptions opts = Everything);
 	void unload();
 
 	void refine();

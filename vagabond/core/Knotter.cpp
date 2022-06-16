@@ -304,9 +304,21 @@ void Knotter::findChiralCentres()
 
 void Knotter::knot()
 {
-	findBondLengths();
-	findBondAngles();
-	findBondTorsions();
-	findChiralCentres();
+	if (_doLengths)
+	{
+		findBondLengths();
+
+		if (_doAngles)
+		{
+			findBondAngles();
+
+			if (_doTorsions)
+			{
+				findBondTorsions();
+				findChiralCentres();
+			}
+		}
+
+	}
 }
 
