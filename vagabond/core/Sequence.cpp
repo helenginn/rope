@@ -60,7 +60,7 @@ Sequence::Sequence(std::string str)
 		char ch = str[i];
 
 		std::string tlc = gemmi::expand_protein_one_letter(ch);
-		Residue r{ResidueId(i), tlc, " "};
+		Residue r{ResidueId(i + 1), tlc, " "};
 		
 		*this += r;
 	}
