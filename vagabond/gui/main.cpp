@@ -12,6 +12,9 @@ float test = 0;
 
 int main (int argc, char **argv)
 {
+#ifdef __EMSCRIPTEN__
+	  EM_ASM({ Module.wasmTable = wasmTable; });
+#endif
 #ifndef __EMSCRIPTEN__
 	curl_global_init(CURL_GLOBAL_ALL);
 #endif
