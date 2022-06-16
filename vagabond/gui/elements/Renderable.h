@@ -417,6 +417,15 @@ protected:
 	}
 
 	Renderable *_hover = nullptr;
+	
+	enum RaySearch
+	{
+		Default,
+		Point,
+		Plane
+	};
+	
+	RaySearch _searchType = Default;
 private:
 	void deleteTextures();
 	void rebindVBOBuffers();
@@ -448,6 +457,7 @@ private:
 	bool _selectable;
 	bool _draggable;
 	bool _usesProj = false;
+
 	std::string _texture;
 
 	std::string _fFile;

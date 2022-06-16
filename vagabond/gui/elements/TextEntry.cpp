@@ -94,6 +94,16 @@ bool TextEntry::validateKey(char key)
 	return false;
 }
 
+const std::string &TextEntry::text() const
+{
+	if (_active)
+	{
+		return _scratch;
+	}
+	
+	return Text::text();
+}
+
 float TextEntry::as_num() const
 {
 	std::string str = text();

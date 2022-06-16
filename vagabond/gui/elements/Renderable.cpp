@@ -747,9 +747,9 @@ Vertex &Renderable::addVertex(float v1, float v2, float v3,
 
 void Renderable::addIndices(GLuint i1, GLuint i2, GLuint i3)
 {
-	_indices.push_back(i1);
-	_indices.push_back(i2);
-	_indices.push_back(i3);
+	addIndex(i1);
+	addIndex(i2);
+	addIndex(i3);
 }
 
 void Renderable::addIndex(GLint i)
@@ -845,11 +845,22 @@ bool nPolygon(glm::vec3 point, glm::vec3 *vs, int n)
 
 bool Renderable::intersectsRay(double x, double y, double *z)
 {
-	if (_renderType == GL_TRIANGLES)
+	RaySearch type = _searchType;
+	
+	if (type == Default && _renderType == GL_TRIANGLES)
+	{
+		type = Plane;
+	}
+	else if (type == Default && _renderType == GL_POINTS)
+	{
+		type = Point;
+	}
+
+	if (type == Plane)
 	{
 		return intersectsPolygon(x, y, z);
 	}
-	else if (_renderType == GL_POINTS)
+	else if (type == Point)
 	{
 		return (intersectsPoint(x, y, z) >= 0);
 	}
@@ -863,9 +874,9 @@ int Renderable::intersectsPoint(double x, double y, double *z)
 	const float tol = 0.01;
 	int idx = -1;
 	
-	for (size_t i = 0; i < _indices.size(); i++)
+	for (size_t i = 0; i < _vertices.size(); i++)
 	{
-		glm::vec4 pos = glm::vec4(_vertices[_indices[i]].pos, 1.);
+		glm::vec4 pos = glm::vec4(_vertices[i].pos, 1.);
 		
 		if (_usesProj)
 		{

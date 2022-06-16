@@ -59,18 +59,22 @@ public:
 
 	virtual void back(int num = 0);
 	void buttonPressed(std::string tag, Button *button);
+	
+	virtual const bool hasIndexedObjects() const
+	{
+		return false;
+	}
 protected:
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
-	void checkIndexBuffer(double x, double y, bool touch, bool arrow);
+	virtual void checkIndexBuffer(double x, double y, 
+	                              bool touch, bool arrow) {};
 	void setCentrePixels(Renderable *r, int x, int y);
 	void swapCursor(SDL_Cursor *newCursor);
 	
 	std::string _title;
 
 	Renderable *_dragged;
-
-	IndexResponder *_indexResponder = nullptr;
 	Renderable *_background;
 	Modal *_modal;
 	Modal *_removeModal;

@@ -33,6 +33,8 @@ public:
 		return _scratch;
 	}
 
+	virtual const std::string &text() const;
+
 	virtual void click();
 	virtual void finish();
 	bool validateKey(char key);

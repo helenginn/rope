@@ -74,8 +74,8 @@ void Menu::setup(double x, double y)
 
 	setArbitrary(0, 0, Renderable::Alignment(horizontal | vertical));
 	
-	double start_x = horizontal == Renderable::Left ? 0 : -width;
-	double start_y = vertical == Renderable::Top ? 0 : -height;
+	double start_x = (horizontal == Renderable::Left) ? 0 : - 3 * width / 5;
+	double start_y = (vertical == Renderable::Top) ? 0 : -height;
 
 	setImage("assets/images/box.png");
 

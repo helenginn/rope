@@ -106,7 +106,7 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 	_dragged = NULL;
 	convertToGLCoords(&x, &y);
 
-	if (sceneTextureCount() > 0)
+	if (hasIndexedObjects() > 0)
 	{
 		checkIndexBuffer(x, y, false, true);
 	}
@@ -182,27 +182,9 @@ void Scene::mouseMoveEvent(double x, double y)
 	
 	swapCursor(cursor);
 	
-	if (sceneTextureCount() > 0 && _modal == nullptr)
+	if (hasIndexedObjects() > 0 && _modal == nullptr)
 	{
 		checkIndexBuffer(x, y, true, arrow);
-	}
-}
-
-void Scene::checkIndexBuffer(double x, double y, bool touch, bool arrow)
-{
-	int val = checkIndex(x, y);
-
-	if (val >= 0 && arrow)
-	{
-		SDL_Cursor *cursor; 
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-		swapCursor(cursor);
-	}
-
-
-	if (_lastIdx != val && _indexResponder != nullptr)
-	{
-		_indexResponder->interacted(val, touch);
 	}
 }
 

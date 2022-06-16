@@ -19,11 +19,35 @@
 #ifndef __vagabond__IndexResponder__
 #define __vagabond__IndexResponder__
 
-class IndexResponder
+#include <vagabond/gui/elements/Renderable.h>
+#include "IndexResponseView.h"
+
+class IndexResponder : public Renderable
 {
 public:
 	virtual ~IndexResponder() {};
+	
+	void setIndexResponseView(IndexResponseView *irv)
+	{
+		_view = irv;
+	}
+
 	virtual void interacted(int idx, bool hover) = 0;
+	virtual void reindex() = 0;
+
+	virtual size_t requestedIndices() = 0;
+
+	virtual size_t indexOffset()
+	{
+		if (_view == nullptr)
+		{
+			return 0;
+		}
+
+		return _view->indexOffset(this);
+	}
+protected:
+	IndexResponseView *_view = nullptr;
 
 };
 
