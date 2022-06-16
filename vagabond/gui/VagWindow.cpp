@@ -96,12 +96,12 @@ void VagWindow::mainThreadActivities()
 
 		if (count > 0)
 		{
-			Entity *e = &Environment::entityManager()->object(0);
-			ConfSpaceView *csv = new ConfSpaceView(_menu, e);
-			#ifdef __EMSCRIPTEN__
-			csv->hideBackButton();
-			#endif
-			csv->show();
+//			Entity *e = &Environment::entityManager()->object(0);
+//			ConfSpaceView *csv = new ConfSpaceView(_menu, e);
+//			#ifdef __EMSCRIPTEN__
+//			csv->hideBackButton();
+//			#endif
+//			csv->show();
 		}
 	}
 }
