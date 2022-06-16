@@ -219,6 +219,11 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "create")
 	{
+		if (_obj.name() == "")
+		{
+			_obj.setName(_name->scratch());
+		}
+
 		try
 		{
 			Environment::entityManager()->insertIfUnique(_obj);

@@ -117,7 +117,7 @@ void EntityFromSequence::buttonPressed(std::string tag, Button *button)
 	if (tag == "uniprot_id")
 	{
 		TextEntry *te = static_cast<TextEntry *>(button);
-		std::string text = te->text();
+		std::string text = te->scratch();
 		load(text);
 
 	}
