@@ -18,7 +18,7 @@ public:
 	
 	virtual void render(SnowGL *gl);
 	
-	const std::string &text() const
+	virtual const std::string &text() const
 	{
 		return _text;
 	}
