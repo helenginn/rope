@@ -21,7 +21,7 @@
 
 #include "Scene.h"
 
-class Mouse3D : public Scene
+class Mouse3D : virtual public Scene
 {
 public:
 	Mouse3D(Scene *prev = nullptr);
