@@ -122,6 +122,7 @@ public:
 	bool checkErrors(std::string what = "");
 	virtual void render();
 	void grabIndexBuffer();
+	void resetMouseKeyboard();
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();

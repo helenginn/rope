@@ -402,3 +402,4 @@ void ConfSpaceView::createReference(Molecule *m)
 	addObject(axes);
 	addIndexResponder(axes);
 }
+

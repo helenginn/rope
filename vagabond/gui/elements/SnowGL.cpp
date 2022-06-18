@@ -540,3 +540,13 @@ GLuint SnowGL::getOverrideProgram()
 	return 0;
 }
 
+void SnowGL::resetMouseKeyboard()
+{
+	_left = false;
+	_right = false;
+	_controlPressed = false;
+	_shiftPressed = false;
+	_lastX = -1;
+	_lastY = -1;
+
+}

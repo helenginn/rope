@@ -219,6 +219,10 @@ void Window::render()
 
 void Window::setCurrentScene(Scene *scene)
 {
+	if (_current != nullptr)
+	{
+		_current->resetMouseKeyboard();
+	}
 	_current = scene;
 	_current->setDims(_rect.w, _rect.h);
 	_current->preSetup();

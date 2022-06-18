@@ -52,6 +52,7 @@ void Scene::removeModal()
 {
 	_removeModal = _modal;
 	_modal = NULL;
+	resetMouseKeyboard();
 }
 
 void Scene::render()
@@ -269,3 +270,4 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 
 	_keyResponder->keyPressed(pressed);
 }
+
