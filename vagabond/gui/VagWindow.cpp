@@ -79,8 +79,12 @@ void VagWindow::mainThreadActivities()
 
 		size_t count = Environment::entityManager()->objectCount();
 
-		_pv->back();
-		_pv = nullptr;
+		if (_pv)
+		{
+			_pv->back();
+			_pv = nullptr;
+
+		}
 	}
 }
 
