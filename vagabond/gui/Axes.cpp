@@ -23,7 +23,7 @@
 Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()
 {
 	setName("Axes");
-	setImage("assets/images/arrow.png");
+	setImage("assets/images/axis.png");
 	setUsesProjection(true);
 	_cluster = group;
 	_molecule = m;
