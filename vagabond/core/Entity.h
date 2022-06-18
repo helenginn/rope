@@ -59,7 +59,6 @@ public:
 	}
 	
 	void checkModel(Model &m);
-	void searchAllModels();
 
 	size_t checkForUnrefinedMolecules();
 	void refineUnrefinedModels();

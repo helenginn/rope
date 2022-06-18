@@ -270,16 +270,6 @@ void Entity::throwOutModel(Model *model)
 	}
 }
 
-void Entity::searchAllModels()
-{
-	ModelManager *mm = Environment::modelManager();
-	
-	for (Model &m : mm->objects())
-	{
-		checkModel(m);
-	}
-}
-
 void Entity::throwOutMolecule(Molecule *mol)
 {
 	mol->eraseIfPresent(_molecules);

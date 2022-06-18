@@ -136,13 +136,6 @@ void AddEntity::setup()
 			addObject(t);
 		}
 
-		{
-			TextButton *t = new TextButton("Search models for entity", this);
-			t->setRight(0.85, top);
-			t->setReturnTag("search_models");
-			addObject(t);
-		}
-
 		top += inc;
 
 		{
@@ -202,11 +195,6 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
 		view->show();
-	}
-	else if (tag == "search_models")
-	{
-		_obj.searchAllModels();
-		refreshInfo();
 	}
 	else if (tag == "search_pdb")
 	{
