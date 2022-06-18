@@ -22,9 +22,10 @@
 #include "Environment.h"
 #include <iostream>
 
-/* \class Progressor
- * Progressor classes which are a subclass of Progressor can be hooked to
- * a ProgressorResponder. */
+/** \class Progressor Subclasses of Progressor can be hooked to a 
+ * ProgressorResponder. This allows a GUI to report some kind of
+ * progress bar/statistics to the user while something is loading, which
+ * cannot or should not be interrupted */
 
 class Progressor;
 

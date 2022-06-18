@@ -44,11 +44,15 @@ public:
 	Sequence &operator+=(Sequence *&other);
 	Sequence &operator+=(Residue &res);
 
+	/** @return number of residues */
 	size_t size()
 	{
 		return _residues.size();
 	}
 	
+	/** @return residue associated with the Entity master sequence for the
+	 * nth residue.
+	 * @param idx index of residue (unrelated to residue number) */
 	Residue *master(int idx)
 	{
 		int i = 0;
@@ -63,6 +67,8 @@ public:
 		return nullptr;
 	}
 	
+	/** @return nth residue associated with this sequence 
+	 * @param idx index of residue (unrelated to residue number) */
 	Residue *residue(int idx)
 	{
 		int i = 0;
@@ -77,6 +83,7 @@ public:
 		return nullptr;
 	}
 	
+	/** @return residue associated with a ResidueId */
 	Residue *residue(ResidueId &id)
 	{
 		if (_id2Residue.count(id) == 0)
@@ -87,9 +94,17 @@ public:
 		return _id2Residue.at(id);
 	}
 	
+	/** converts entity master residue to local residue
+	 * 	@param master pointer to the Entity master residue
+	 * 	@return pointer to the corresponding local residue */
 	Residue *const local_residue(Residue *const master) const;
+
+	/** converts local residue to entity master residue
+	 * 	@param local pointer to the corresponding local residue 
+	 * 	@return pointer to the Entity master residue */
 	Residue *master_residue(Residue *local) const;
 	
+	/** residue number of the first residue in the sequence */
 	int firstNum()
 	{
 		if (_residues.size() == 0)
@@ -100,6 +115,7 @@ public:
 		return _residues.front().as_num();
 	}
 	
+	/** residue number of the last residue in the sequence */
 	int lastNum()
 	{
 		if (_residues.size() == 0)
@@ -110,19 +126,33 @@ public:
 		return _residues.back().as_num();
 	}
 	
+	/** residue associated with a ResidueId 
+	 *  POSSIBLY DUPLICATE FUNCTION */
 	Residue *residueLike(const ResidueId &other);
 	
+	/** string of one-letter codes for this sequence */
 	std::string str();
+
+	/** called after loading from json to fix references */
 	void housekeeping();
 	
+	/** clear local-to-master residue mapping */
 	void clearMaps()
 	{
 		_map2Local.clear();
 		_map2Master.clear();
 	}
 
+	/** generate a sequence comparison object with Entity */
 	SequenceComparison *newComparison(Entity *entity);
+
+	/** call once to generate a master-to-local mapping from a given
+	 * SequenceComparison when establishing relationship to Entity 
+	 * master sequence */
 	void mapFromMaster(SequenceComparison *sc);
+	
+	/** if a master-to-local mapping has already been generated, re-generate
+	 * the mapping from master-to-local */
 	void remapFromMaster(Entity *entity);
 
 	friend void to_json(json &j, const Sequence &value);
@@ -132,6 +162,7 @@ public:
 	{
 		return 1;
 	}
+
 	virtual size_t entryCount()
 	{
 		return size();
@@ -152,9 +183,15 @@ public:
 		return residue(entry)->one_letter_code();
 	}
 	
+	/** how many torsion angles have been referenced in the entire sequence? */
 	const size_t torsionCount(bool onlyMain) const;
 	
+	/** torsion angle names in order of residue / reference, to be called
+	 * on the entity master sequence in the case of clustering */
 	void addTorsionNames(std::vector<std::string> &names, bool onlyMain);
+
+	/** call on entity master sequence to get the corresponding torsion 
+	 * angles from a derived/mapped sequence */
 	void torsionsFromMapped(Sequence *seq, std::vector<float> &vals,
 	                        bool onlyMain, float dummy = -1);
 	
