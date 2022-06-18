@@ -15,7 +15,7 @@ void main()
 {
 	if (slice > 0. && vPos.z > 0.) discard;
 	float dist = length(dPos);
-	if (dist > 20. || d.z > 15)
+	if (dist > 20. || dPos.z > 15)
 	{
 		discard;
 	}
