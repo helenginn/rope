@@ -74,6 +74,14 @@ glm::vec3 TransformedGrid<T>::reciprocal(int h, int k, int l)
 }
 
 template <class T>
+glm::vec3 TransformedGrid<T>::real(int h, int k, int l)
+{
+	glm::vec3 v(h, k, l);
+	glm::vec3 next = _frac2Real * v;
+	return next;
+}
+
+template <class T>
 void TransformedGrid<T>::real2Voxel(glm::vec3 &real)
 {
 	real -= this->origin();
