@@ -74,6 +74,7 @@ install_dir : shaders)
 
 install_data(
 'assets/images/arrow.png',
+'assets/images/axis.png',
 'assets/images/box.png',
 'assets/images/cartoon.png',
 'assets/images/colour_scheme.png',
@@ -87,6 +88,7 @@ install_data(
 'assets/images/lemon.png',
 'assets/images/line.png',
 'assets/images/metadata.png',
+'assets/images/misc_data.png',
 'assets/images/model.png',
 'assets/images/ok_face.png',
 'assets/images/orange.png',
