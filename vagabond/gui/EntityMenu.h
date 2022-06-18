@@ -35,6 +35,7 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	virtual void respond();
+	virtual void refresh();
 private:
 	void addToolkit();
 

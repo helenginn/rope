@@ -42,10 +42,7 @@ void EntityMenu::setup()
 
 	ListView::setup();
 
-	if (_manager->objectCount() >= 1)
-	{
-		addToolkit();
-	}
+	addToolkit();
 }
 
 void EntityMenu::buttonPressed(std::string tag, Button *button)
@@ -101,6 +98,12 @@ size_t EntityMenu::lineCount()
 	return _manager->objectCount() + 1;
 }
 
+void EntityMenu::refresh()
+{
+	ListView::refresh();
+	addToolkit();
+}
+
 void EntityMenu::respond()
 {
 	refreshNextRender();
@@ -108,7 +111,11 @@ void EntityMenu::respond()
 
 void EntityMenu::addToolkit()
 {
-	Toolkit *tk = new Toolkit(this);
-	addObject(tk);
+	if (_manager->objectCount() >= 1)
+	{
+		Toolkit *tk = new Toolkit(this);
+		_temps.push_back(tk);
+		addObject(tk);
+	}
 
 }
