@@ -61,8 +61,8 @@ void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 					continue;
 				}
 
-				glm::vec3 v = diffraction->reciprocal(i, j, k);
-				v *= 50.;
+				glm::vec3 v = diffraction->real(i, j, k);
+				v *= 25.;
 				float heat = log(amp) / log(10);
 				heat /= 6;
 				const float exposure = 1.2; const float gamma = 1.5;
