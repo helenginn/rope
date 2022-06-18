@@ -56,7 +56,7 @@ void AskForText::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "ok")
 	{
-		_sender->buttonPressed(AskForText::tag(), _text);
 		hide();
+		_sender->buttonPressed(AskForText::tag(), _text);
 	}
 }
