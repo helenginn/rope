@@ -23,6 +23,10 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/BadChoice.h>
+
+#include <fstream>
 
 MetadataView::MetadataView(Scene *prev, Metadata *md) : Scene(prev)
 {
@@ -42,6 +46,12 @@ void MetadataView::setup()
 {
 	addTitle("Metadata summary - " + _md->source());
 
+	{
+		TextButton *t = new TextButton("Export", this);
+		t->setRight(0.9, 0.1);
+		t->setReturnTag("export");
+		addObject(t);
+	}
 	{
 		Text *t = new Text("Number of entries");
 		t->setLeft(0.2, 0.3);
@@ -66,8 +76,8 @@ void MetadataView::setup()
 		t->setCentre(0.8, 0.4);
 		addObject(t);
 	}
-
 	
+	if (_md != Environment::metadata())
 	{
 		TextButton *t = new TextButton("Add to database", this);
 		t->setCentre(0.5, 0.8);
@@ -90,6 +100,40 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 		std::set<std::string> headers = _md->headers();
 		ch->setHeaders(headers);
 		ch->show();
+	}
+	else if (tag == "export")
+	{
+		_csv = _md->asCSV();
+#ifdef __EMSCRIPTEN__
+		EM_ASM_({ window.download = download; window.download($0, $1, $2) }, 
+		        "metadata.csv", _csv.c_str(), _csv.length());
+#else
+		AskForText *aft = new AskForText(this, "File name to save to:",
+		                                 "export_csv", this);
+		setModal(aft);
+#endif
+	}
+	else if (tag == "export_csv")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string filename = te->scratch();
+
+		std::ofstream file;
+		file.open(filename);
+		
+		if (file.is_open())
+		{
+			file << _csv;
+			file.close();
+			BadChoice *bc = new BadChoice(this, "Exported metadata file");
+			setModal(bc);
+		}
+		else
+		{
+			BadChoice *bc = new BadChoice(this, "Failure writing metadata file");
+			setModal(bc);
+		}
+		
 	}
 	
 	Scene::buttonPressed(tag, button);

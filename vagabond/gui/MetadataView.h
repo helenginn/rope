@@ -33,6 +33,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	Metadata *_md = nullptr;
+	std::string _csv;
 
 };
 
