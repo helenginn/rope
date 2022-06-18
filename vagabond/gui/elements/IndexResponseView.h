@@ -39,7 +39,7 @@ public:
 
 	size_t indexOffset(IndexResponder *ir);
 protected:
-	virtual void checkIndexBuffer(double x, double y, bool touch, bool arrow);
+	virtual void checkIndexBuffer(double x, double y, bool hover, bool arrow);
 
 private:
 	IndexResponder *getResponderForIndex(int &val);

@@ -327,6 +327,11 @@ public:
 	{
 		return glm::vec2(_x, _y);
 	}
+
+	void setCurrentVertex(int i)
+	{
+		_currVertex = i;
+	}
 protected:
 	void rebindToProgram();
 	bool intersectsPolygon(double x, double y, double *z);

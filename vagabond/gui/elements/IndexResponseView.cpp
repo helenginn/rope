@@ -58,7 +58,7 @@ IndexResponder *IndexResponseView::getResponderForIndex(int &val)
 }
 
 void IndexResponseView::checkIndexBuffer(double x, double y, 
-                                         bool touch, bool arrow)
+                                         bool hover, bool arrow)
 {
 	int val = checkIndex(x, y);
 
@@ -71,18 +71,11 @@ void IndexResponseView::checkIndexBuffer(double x, double y,
 	
 	IndexResponder *ir = getResponderForIndex(val);
 
-	if (_lastResponder == ir && _lastIdx == val) // just a repeat
-	{
-		return;
-	}
-
 	if (ir != nullptr)
 	{
-		ir->interacted(val, touch);
+		ir->interacted(val, hover);
 	}
 	
-	_lastResponder = ir;
-	_lastIdx = val;
 }
 
 size_t IndexResponseView::indexOffset(IndexResponder *ir)
