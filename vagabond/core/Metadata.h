@@ -94,20 +94,23 @@ public:
 
 	const size_t entryCount() const
 	{
-		return _data.size();
+		return _mole2Data.size() + _model2Data.size() + _file2Data.size();
 	}
 
 	Ruler &ruler()
 	{
 		return _ruler;
 	}
+	
+	std::string asCSV() const;
 
 	friend void to_json(json &j, const Metadata &value);
 	friend void from_json(const json &j, Metadata &value);
 private:
-	void addToList(KeyValues &edit, std::string &key,
+	bool addToList(KeyValues &edit, std::string &key,
 	               const std::map<std::string, KeyValues *> &search, 
 	               bool overwrite) const;
+	void extractData(std::ostringstream &csv, KeyValues &kv) const;
 
 	Ruler _ruler;
 	std::string _source;

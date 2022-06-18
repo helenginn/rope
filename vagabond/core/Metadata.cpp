@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Metadata.h"
+#include <sstream>
 
 Metadata::Metadata()
 {
@@ -71,13 +72,13 @@ void Metadata::housekeeping()
 	}
 }
 
-void Metadata::addToList(KeyValues &edit, std::string &key,
+bool Metadata::addToList(KeyValues &edit, std::string &key,
                          const std::map<std::string, KeyValues *> &search, 
                          bool overwrite) const
 {
 	if (key.length() == 0 || search.count(key) == 0)
 	{
-		return;
+		return false;
 	}
 
 	if (!overwrite && search.count(key) && edit != *search.at(key))
@@ -87,7 +88,7 @@ void Metadata::addToList(KeyValues &edit, std::string &key,
 
 	if (!search.count(key) || edit == *search.at(key))
 	{
-		return;
+		return false;
 	}
 	
 	const KeyValues &old = *search.at(key);
@@ -97,6 +98,8 @@ void Metadata::addToList(KeyValues &edit, std::string &key,
 	{
 		edit[it->first] = it->second;
 	}
+	
+	return true;
 }
 
 void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
@@ -143,4 +146,47 @@ Metadata &Metadata::operator+=(const Metadata &other)
 	}
 	
 	return *this;
+}
+
+void Metadata::extractData(std::ostringstream &csv, KeyValues &kv) const
+{
+	for (const std::string &header : _headers)
+	{
+		if (kv.count(header) == 0)
+		{
+			csv << ",";
+			continue;
+		}
+
+		std::string value = kv.at(header).text();
+		csv << value << ",";
+	}
+
+	csv << std::endl;
+}
+
+std::string Metadata::asCSV() const
+{
+	std::ostringstream csv;
+	
+	for (const std::string &header : _headers)
+	{
+		csv << header << ",";
+	}
+	
+	csv << std::endl;
+
+	std::map<std::string, KeyValues *>::const_iterator it;
+
+	for (it = _mole2Data.cbegin(); it != _mole2Data.cend(); it++)
+	{
+		extractData(csv, *it->second);
+	}
+
+	for (it = _model2Data.cbegin(); it != _model2Data.cend(); it++)
+	{
+		extractData(csv, *it->second);
+	}
+
+	return csv.str();
 }
