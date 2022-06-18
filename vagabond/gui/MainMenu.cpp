@@ -1,6 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
 #include "ProgressView.h"
+#include "MetadataView.h"
 #include "DatasetMenu.h"
 #include "EntityMenu.h"
 #include "ModelMenu.h"
@@ -91,16 +92,15 @@ void MainMenu::setup()
 		addObject(text);
 	}
 
-	if (false)
 	{
-		ImageButton *button = new ImageButton("assets/images/data_model.png", this);
-		button->resize(0.3);
-		button->setReturnTag("datasets");
+		ImageButton *button = new ImageButton("assets/images/misc_data.png", this);
+		button->resize(0.25);
+		button->setReturnTag("metadata");
 		button->setCentre(0.2, 0.65);
 		addObject(button);
 
-		Text *text = new Text("Dataset preparation");
-		text->setCentre(0.2, 0.85);
+		Text *text = new Text("Metadata");
+		text->setCentre(0.2, 0.80);
 		addObject(text);
 	}
 }
@@ -179,6 +179,12 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	{
 		ModelMenu *menu = new ModelMenu(this);
 		menu->show();
+	}
+	else if (tag == "metadata")
+	{
+		Metadata *md = Environment::metadata();
+		MetadataView *mv = new MetadataView(this, md);
+		mv->show();
 	}
 	else if (tag == "datasets")
 	{
