@@ -172,6 +172,8 @@ public:
 	{
 		return residue(entry);
 	}
+	
+	void addBufferResidue();
 
 	virtual bool hasResidue(int row, int entry)
 	{

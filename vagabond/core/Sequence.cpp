@@ -212,6 +212,15 @@ void Sequence::mapFromMaster(SequenceComparison *sc)
 	}
 }
 
+void Sequence::addBufferResidue()
+{
+	Residue res;
+	res.setNothing(true);
+
+	_residues.push_back(res);
+	_master.push_back(res);
+}
+
 Residue *const Sequence::local_residue(Residue *const master) const
 {
 	if (_map2Local.count(master) == 0)
