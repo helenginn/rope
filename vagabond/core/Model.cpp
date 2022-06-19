@@ -234,11 +234,9 @@ void Model::autoAssignEntities(Entity *chosen)
 			std::cout << "Chain " << ch->id() << " in model " << name() <<
 			 " becomes " << best_entity->name() << std::endl;
 			setEntityForChain(ch->id(), best_entity->name());
-			best_entity->checkModel(*this);
 		}
 	}
 	
-	unload();
 	housekeeping();
 }
 
@@ -270,6 +268,14 @@ void Model::housekeeping()
 	}
 
 	createMolecules();
+	
+	std::set<Entity *> ents = entities();
+	for (Entity *ent : ents)
+	{
+		ent->checkModel(*this);
+	}
+
+	unload();
 }
 
 void Model::insertTorsions()
