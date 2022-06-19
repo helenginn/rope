@@ -40,14 +40,13 @@ ChainAssignment::ChainAssignment(Scene *prev, Model &model)
 		throw std::runtime_error("File not yet specified");
 	}
 
-	File *f = File::loadUnknown(file);
-
-	_contents = f->atoms();
-	delete f;
+	_model.load(Model::NoAngles);
+	_contents = _model.currentAtoms();
 }
 
 ChainAssignment::~ChainAssignment()
 {
+	_model.unload();
 	deleteObjects();
 	delete _contents;
 }
