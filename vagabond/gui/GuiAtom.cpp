@@ -2,6 +2,7 @@
 #include "GuiBond.h"
 
 #include <vagabond/gui/elements/Icosahedron.h>
+#include <vagabond/gui/elements/SnowGL.h>
 
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
@@ -100,6 +101,7 @@ size_t GuiAtom::verticesPerAtom()
 
 void GuiAtom::render(SnowGL *gl)
 {
+	gl->viewChanged();
 	glEnable(GL_DEPTH_TEST);
 	
 	Renderable::render(gl);
