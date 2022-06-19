@@ -41,7 +41,7 @@ public:
 	Sequence(const Sequence &seq);
 	Sequence(std::string str);
 	
-	Sequence &operator+=(Sequence *&other);
+	Sequence &operator+=(Sequence *other);
 	Sequence &operator+=(Residue &res);
 
 	/** @return number of residues */
