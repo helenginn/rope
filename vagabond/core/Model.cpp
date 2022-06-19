@@ -148,11 +148,7 @@ void Model::createMolecules()
 			continue;
 		}
 		
-		if (_currentFile == nullptr)
-		{
-			_currentFile = File::loadUnknown(_filename);
-			_currentAtoms = _currentFile->atoms();
-		}
+		load();
 
 		Chain *ch = _currentAtoms->chain(id);
 		
@@ -237,6 +233,7 @@ void Model::autoAssignEntities(Entity *chosen)
 		}
 	}
 	
+	unload();
 	housekeeping();
 }
 
@@ -274,8 +271,6 @@ void Model::housekeeping()
 	{
 		ent->checkModel(*this);
 	}
-
-	unload();
 }
 
 void Model::insertTorsions()
