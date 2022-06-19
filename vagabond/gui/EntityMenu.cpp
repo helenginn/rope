@@ -27,7 +27,7 @@
 EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {
 	_manager = Environment::entityManager();
-	_manager->checkModelsForReferences(Environment::modelManager());
+//	_manager->checkModelsForReferences(Environment::modelManager());
 	_manager->setResponder(this);
 }
 
