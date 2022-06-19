@@ -78,11 +78,16 @@ Sequence::Sequence(Atom *anchor)
 	findSequence();
 }
 
-Sequence &Sequence::operator+=(Sequence *&other)
+Sequence &Sequence::operator+=(Sequence *other)
 {
 	for (Residue &r : other->_residues)
 	{
 		*this += r;
+	}
+
+	for (Residue &r : other->_master)
+	{
+		_master.push_back(r);
 	}
 
 	return *this;
