@@ -268,6 +268,8 @@ void Entity::throwOutModel(Model *model)
 	{
 		_currentModel = nullptr;
 	}
+
+	triggerResponse();
 }
 
 void Entity::throwOutMolecule(Molecule *mol)
