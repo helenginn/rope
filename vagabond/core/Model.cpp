@@ -113,7 +113,7 @@ Molecule *Model::moleculeFromChain(Chain *ch)
 	
 	Molecule &ref = _molecules.back();
 
-	ref.setChain(ch->id());
+	ref.addChain(ch->id());
 	ref.getTorsionRefs(ch);
 	
 	return &_molecules.back();
@@ -159,6 +159,8 @@ void Model::createMolecules()
 		}
 	}
 	
+	mergeAppropriateMolecules();
+	
 	unload();
 }
 
@@ -172,6 +174,124 @@ std::set<Entity *> Model::entities()
 	}
 	
 	return entities;
+}
+
+std::set<Molecule *> Model::moleculesForEntity(Entity *ent)
+{
+	std::set<Molecule *> ms;
+	for (Molecule &m : _molecules)
+	{
+		ms.insert(&m);
+	}
+
+	return ms;
+}
+
+bool Model::mergeMoleculesInSet(std::set<Molecule *> molecules)
+{
+	float best_distance = FLT_MAX;
+	Molecule *best_a = nullptr;
+	Molecule *best_b = nullptr;
+
+	for (Molecule *a : molecules)
+	{
+		for (Molecule *b : molecules)
+		{
+			if (a == b)
+			{
+				continue;
+			}
+
+			Sequence *seq_a = a->sequence();
+			Sequence *seq_b = b->sequence();
+			
+			if (!(seq_b->firstNum() > seq_a->lastNum() &&
+			      seq_b->lastNum() > seq_a->lastNum()) ||
+			     (seq_a->firstNum() > seq_b->lastNum() &&
+			      seq_a->lastNum() > seq_b->lastNum()))
+			{
+				// overlapping sequences
+				continue;
+			}
+			
+			Sequence *first = (seq_b->firstNum() < seq_a->lastNum() ?
+			                   seq_b : seq_a);
+			Sequence *last = (seq_b->firstNum() < seq_a->lastNum() ?
+			                  seq_a : seq_b);
+			
+			ResidueId id0 = first->residue(first->size() - 1)->id();
+			ResidueId id1 = last->residue(0)->id();
+
+			// now we need to decide which pair to merge; this will
+			// be the pair where the N- and C-termini come closest!
+			
+			load(NoGeometry); // if not previously done
+			
+			// we need to find an atom in these residue ranges
+			
+			Atom *aAtom = a->atomByIdName(first == seq_a ? id0 : id1, "");
+			Atom *bAtom = b->atomByIdName(first == seq_a ? id1 : id0, "");
+			
+			glm::vec3 diff = aAtom->initialPosition() - bAtom->initialPosition();
+			float d = glm::length(diff);
+			
+			if (d < best_distance)
+			{
+				best_distance = d;
+				if (first == seq_a)
+				{
+					best_a = a;
+					best_b = b;
+				}
+				else
+				{
+					best_b = a;
+					best_a = b;
+				}
+			}
+		}
+	}
+
+	if (best_a != nullptr && best_b != nullptr)
+	{
+		/*
+		std::cout << best_a->sequence()->firstNum() << "-" <<
+		best_a->sequence()->lastNum() << " to " << 
+		best_b->sequence()->firstNum() << "-" <<
+		best_b->sequence()->lastNum() << std::endl;
+		*/
+		best_a->mergeWith(best_b);
+		throwOutMolecule(best_b);
+		return true;
+	}
+
+	return false;
+}
+
+void Model::mergeAppropriateMolecules()
+{
+	std::set<Entity *> ents = entities();
+	bool restart = true;
+	
+	while (restart)
+	{
+		restart = false;
+		for (Entity *entity : ents)
+		{
+			std::set<Molecule *> mols = moleculesForEntity(entity);
+
+			if (mols.size() <= 1)
+			{
+				continue;
+			}
+
+			if (mergeMoleculesInSet(mols))
+			{
+				restart = true;
+				break;
+			}
+		}
+	}
 }
 
 void update_score_if_better(Sequence *compare, Entity &ent, 
@@ -254,8 +374,11 @@ void Model::housekeeping()
 {
 	for (Molecule &mc : _molecules)
 	{
-		std::string ch = mc.chain_id();
-		_chain2Molecule[ch] = &mc;
+		for (const std::string &ch : mc.chain_ids())
+		{
+			_chain2Molecule[ch] = &mc;
+		}
+
 		mc.setModel(this);
 	}
 	
@@ -333,14 +456,11 @@ void Model::refine()
 
 size_t Model::moleculeCountForEntity(std::string entity_id) const
 {
-	std::map<std::string, std::string>::const_iterator it;
 	size_t count = 0;
-	
-	for (it = _chain2Entity.cbegin(); it != _chain2Entity.cend(); it++)
+
+	for (const Molecule &m : _molecules)
 	{
-		std::string name = it->second;
-		
-		if (name == entity_id)
+		if (m.entity_id() == entity_id)
 		{
 			count++;
 		}
@@ -398,10 +518,12 @@ void Model::throwOutEntity(Entity *ent)
 	{
 		if (m.entity_id() == ent->name())
 		{
-			std::string chain = m.chain_id();
-			_chain2Molecule.erase(chain);
-			std::cout << "Found created molecule " << chain << " to remove "
-			"from " << name() << std::endl;
+			for (const std::string &chain : m.chain_ids())
+			{
+				_chain2Molecule.erase(chain);
+				std::cout << "Found created molecule " << chain << " to remove "
+				"from " << name() << std::endl;
+			}
 
 			_molecules.erase(it);
 			return;
@@ -454,7 +576,7 @@ void Model::distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
 		return;
 	}
 	
-	load();
+	load(NoGeometry);
 	
 	for (Molecule &m : _molecules)
 	{

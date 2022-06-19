@@ -43,20 +43,17 @@ public:
 	         std::string entity_id, Sequence *derivative);
 	Molecule();
 
-	void setChain(std::string chain_id)
+	void addChain(std::string chain_id)
 	{
-		_chain_id = chain_id;
+		_chain_ids.insert(chain_id);
 	}
 	
-	const std::string &chain_id() const
+	const std::set<std::string> &chain_ids() const
 	{
-		return _chain_id;
+		return _chain_ids;
 	}
 	
-	const std::string model_chain_id() const
-	{
-		return _model_id + "_" + _chain_id;
-	}
+	const std::string model_chain_id() const;
 	
 	virtual const std::string id() const
 	{
@@ -88,6 +85,8 @@ public:
 	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 
+	Atom *atomByIdName(const ResidueId &id, std::string name) const;
+
 	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	                                         std::string header);
 
@@ -95,6 +94,8 @@ public:
 	                                      AtomRecall &c, std::string header);
 
 	void housekeeping();
+	
+	void mergeWith(Molecule *b);
 	
 	Model *const model();
 	
@@ -114,7 +115,7 @@ private:
 
 	std::string _model_id;
 	std::string _entity_id;
-	std::string _chain_id;
+	std::set<std::string> _chain_ids;
 
 	std::map<std::string, glm::mat4x4> _transforms;
 	Sequence _sequence;
@@ -125,7 +126,7 @@ private:
 
 inline void to_json(json &j, const Molecule &value)
 {
-	j["chain_id"] = value._chain_id;
+	j["chain_ids"] = value._chain_ids;
 	j["entity_id"] = value._entity_id;
 	j["model_id"] = value._model_id;
 	j["sequence"] = value._sequence;
@@ -135,7 +136,14 @@ inline void to_json(json &j, const Molecule &value)
 
 inline void from_json(const json &j, Molecule &value)
 {
-	value._chain_id = j.at("chain_id");
+	if (j.count("chain_id") > 0)
+	{
+		value._chain_ids.insert(j.at("chain_id"));
+	}
+	else if (j.count("chain_ids") > 0)
+	{
+		value._chain_ids = j.at("chain_ids");
+	}
 	value._entity_id = j.at("entity_id");
 	value._model_id = j.at("model_id");
 	value._sequence = j.at("sequence");

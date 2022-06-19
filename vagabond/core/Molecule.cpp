@@ -36,7 +36,7 @@ Molecule::Molecule(std::string model_id, std::string chain_id,
 {
 	_model_id = model_id;
 	_entity_id = entity_id;
-	_chain_id = chain_id;
+	_chain_ids.insert(chain_id);
 	_sequence = *derivative;
 	_entity = (Environment::entityManager()->entity(_entity_id));
 	
@@ -49,6 +49,18 @@ Molecule::Molecule(std::string model_id, std::string chain_id,
 	}
 
 	housekeeping();
+}
+
+const std::string Molecule::model_chain_id() const
+{
+	std::string full = _model_id + "_";
+
+	for (const std::string &id : _chain_ids)
+	{
+		full += id;
+	}
+	
+	return full;
 }
 
 void Molecule::harvestMutations(SequenceComparison *sc)
@@ -119,29 +131,32 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 		return;
 	}
 
-	Chain *ch = atoms->chain(_chain_id);
-
-	for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+	for (const std::string &chain : _chain_ids)
 	{
-		BondTorsion *t = ch->bondTorsion(i);
-		
-		ResidueId id = t->residueId();
-		std::string desc = t->desc();
-		
-		Residue *local = _sequence.residue(id);
-		if (local == nullptr)
-		{
-			continue;
-		}
+		Chain *ch = atoms->chain(chain);
 
-		TorsionRef ref = local->copyTorsionRef(desc);
-		if (!ref.valid())
+		for (size_t i = 0; i < ch->bondTorsionCount(); i++)
 		{
-			continue;
-		}
+			BondTorsion *t = ch->bondTorsion(i);
 
-		double angle = ref.refinedAngle();
-		t->setRefinedAngle(angle);
+			ResidueId id = t->residueId();
+			std::string desc = t->desc();
+
+			Residue *local = _sequence.residue(id);
+			if (local == nullptr)
+			{
+				continue;
+			}
+
+			TorsionRef ref = local->copyTorsionRef(desc);
+			if (!ref.valid())
+			{
+				continue;
+			}
+
+			double angle = ref.refinedAngle();
+			t->setRefinedAngle(angle);
+		}
 	}
 
 	std::map<std::string, glm::mat4x4>::iterator it;
@@ -176,24 +191,27 @@ void Molecule::extractTransformedAnchors(AtomContent *atoms)
 
 void Molecule::extractTorsionAngles(AtomContent *atoms)
 {
-	Chain *ch = atoms->chain(_chain_id);
-
-	for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+	for (const std::string &chain : _chain_ids)
 	{
-		BondTorsion *t = ch->bondTorsion(i);
-		
-		ResidueId id = t->residueId();
-		std::string desc = t->desc();
-		
-		Residue *local = _sequence.residue(id);
-		
-		if (local == nullptr)
-		{
-			continue;
-		}
+		Chain *ch = atoms->chain(chain);
 
-		double angle = t->measurement(BondTorsion::SourceDerived);
-		local->supplyRefinedAngle(desc, angle);
+		for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+		{
+			BondTorsion *t = ch->bondTorsion(i);
+
+			ResidueId id = t->residueId();
+			std::string desc = t->desc();
+
+			Residue *local = _sequence.residue(id);
+
+			if (local == nullptr)
+			{
+				continue;
+			}
+
+			double angle = t->measurement(BondTorsion::SourceDerived);
+			local->supplyRefinedAngle(desc, angle);
+		}
 	}
 
 	_refined = true;
@@ -233,6 +251,23 @@ Entity *Molecule::entity()
 	return _entity;
 }
 
+Atom *Molecule::atomByIdName(const ResidueId &id, std::string name) const
+{
+	for (const std::string &chain : _chain_ids)
+	{
+		Chain *mine = _model->currentAtoms()->chain(chain);
+
+		Atom *p = mine->atomByIdName(id, name);
+		
+		if (p != nullptr)
+		{
+			return p;
+		}
+	}
+	
+	return nullptr;
+}
+
 Metadata::KeyValues Molecule::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
                                                    std::string header) 
 {
@@ -249,16 +284,14 @@ Metadata::KeyValues Molecule::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
 		return kv;
 	}
 	
-	Chain *mine = _model->currentAtoms()->chain(_chain_id);
-	
-	Atom *p = mine->atomByIdName(local_a->id(), a.atom_name);
-	Atom *q = mine->atomByIdName(local_b->id(), b.atom_name);
-	
+	Atom *p = atomByIdName(local_a->id(), a.atom_name);
+	Atom *q = atomByIdName(local_b->id(), b.atom_name);
+
 	if (!p || !q)
 	{
 		return kv;
 	}
-	
+
 	std::cout << p->desc() << " vs " << q->desc() << " = ";
 
 	glm::vec3 init_p = p->initialPosition();
@@ -290,11 +323,9 @@ Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
 		return kv;
 	}
 	
-	Chain *mine = _model->currentAtoms()->chain(_chain_id);
-	
-	Atom *p = mine->atomByIdName(local_a->id(), a.atom_name);
-	Atom *q = mine->atomByIdName(local_b->id(), b.atom_name);
-	Atom *r = mine->atomByIdName(local_c->id(), c.atom_name);
+	Atom *p = atomByIdName(local_a->id(), a.atom_name);
+	Atom *q = atomByIdName(local_b->id(), b.atom_name);
+	Atom *r = atomByIdName(local_c->id(), c.atom_name);
 	
 	if (!p || !q || !r)
 	{
@@ -317,4 +348,36 @@ Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	kv[header] = Value(f_to_str(angle, 2));
 
 	return kv;
+}
+
+void Molecule::mergeWith(Molecule *b)
+{
+	std::cout << "Molecule " << id() << " would merge with molecule "
+	<< b->id() << std::endl;
+	
+	int last = sequence()->lastNum();
+	int gap = b->sequence()->firstNum() - last;
+	std::cout << "last: " << last << std::endl;
+	std::cout << "gap: " << gap << std::endl;
+	
+	for (size_t i = 1; i < gap; i++)
+	{
+		_sequence.addBufferResidue();
+	}
+
+	_sequence += b->sequence();
+	_sequence.clearMaps();
+	_sequence.housekeeping();
+	
+	for (const std::string &ch : b->chain_ids())
+	{
+		_chain_ids.insert(ch);
+	}
+	
+	std::map<std::string, glm::mat4x4>::iterator it;
+	
+	for (it = b->_transforms.begin(); it != b->_transforms.end(); it++)
+	{
+		_transforms[it->first] = it->second;
+	}
 }

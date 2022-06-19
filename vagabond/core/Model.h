@@ -60,6 +60,8 @@ public:
 
 	void autoAssignEntities(Entity *chosen = nullptr);
 	
+	std::set<std::string> ents() const;
+	
 	void setName(std::string name)
 	{
 		_name = name;
@@ -91,6 +93,8 @@ public:
 	}
 
 	std::set<Entity *> entities();
+	std::set<Molecule *> moleculesForEntity(Entity *ent);
+
 	Molecule *moleculeFromChain(Chain *ch);
 	
 	std::list<Molecule> &molecules()
@@ -134,6 +138,9 @@ public:
 	void finishedRefinement();
 private:
 	void swapChainToEntity(std::string id, std::string entity);
+	void mergeAppropriateMolecules();
+	bool mergeMoleculesInSet(std::set<Molecule *> molecules);
+
 	void extractTorsions();
 	void insertTorsions();
 	std::string _filename;
