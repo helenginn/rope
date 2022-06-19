@@ -175,7 +175,10 @@ bool Window::tick()
 		_next = nullptr;
 	}
 	
-	SDL_Delay(20);
+	if (!_current->isAlwaysOn())
+	{
+		SDL_Delay(20);
+	}
 	
 	return true;
 }

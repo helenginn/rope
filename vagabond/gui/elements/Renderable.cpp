@@ -1542,9 +1542,4 @@ void Renderable::setHover(Renderable *hover)
 void Renderable::forceRender()
 {
 	_forceRender = true;
-	if (_gl)
-	{
-		std::cout << "view changed" << std::endl;
-		_gl->viewChanged();
-	}
 }

@@ -364,7 +364,7 @@ void SnowGL::render()
 	checkErrors("before paintGL");
 	updateCamera();
 	
-	if (!_viewChanged)
+	if (!_viewChanged && !_alwaysOn)
 	{
 		return;
 	}

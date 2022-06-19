@@ -126,7 +126,12 @@ public:
 	
 	bool isViewChanged()
 	{
-		return _viewChanged;
+		return _viewChanged || _alwaysOn;
+	}
+	
+	bool isAlwaysOn()
+	{
+		return _alwaysOn;
 	}
 
 	void viewChanged()
@@ -196,6 +201,7 @@ protected:
 	bool _acceptsFocus;
 	
 	bool _viewChanged = true;
+	bool _alwaysOn = false;
 	
 	/* widths and heights - boundaries */
 	int _w;

@@ -18,6 +18,7 @@ Display::Display(Scene *prev) :
 Scene(prev),
 Mouse3D(prev)
 {
+	_alwaysOn = true;
 
 }
 

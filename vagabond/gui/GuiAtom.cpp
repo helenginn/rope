@@ -3,6 +3,7 @@
 
 #include <vagabond/gui/elements/Icosahedron.h>
 #include <vagabond/gui/elements/SnowGL.h>
+#include <SDL2/SDL.h>
 
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
@@ -209,7 +210,7 @@ void GuiAtom::checkAtoms()
 		}
 	}
 
-	if (changed)
+	if (changed && !_finish)
 	{
 		forceRender();
 		_bonds->forceRender();
@@ -221,9 +222,13 @@ void GuiAtom::backgroundWatch(GuiAtom *what)
 	while (!what->_finish)
 	{
 		what->checkAtoms();
-		std::chrono::duration<double, std::milli> time_span;
-		time_span = std::chrono::milliseconds(100);
-		std::this_thread::sleep_for(time_span);
+		
+		if (what->_finish)
+		{
+			break;
+		}
+
+		SDL_Delay(10);
 	}
 }
 
