@@ -90,6 +90,7 @@ public:
 		return name();
 	}
 
+	std::set<Entity *> entities();
 	Molecule *moleculeFromChain(Chain *ch);
 	
 	std::list<Molecule> &molecules()

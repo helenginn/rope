@@ -166,6 +166,18 @@ void Model::createMolecules()
 	unload();
 }
 
+std::set<Entity *> Model::entities()
+{
+	std::set<Entity *> entities;
+
+	for (Molecule &m : _molecules)
+	{
+		entities.insert(m.entity());
+	}
+	
+	return entities;
+}
+
 void update_score_if_better(Sequence *compare, Entity &ent, 
                             float &best_match, Entity **best_entity)
 {
