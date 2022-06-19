@@ -94,8 +94,6 @@ void checkFrameBuffers()
 		}
 		exit(1);
 	}
-
-	std::cout << "Buffers fine" << std::endl;
 }
 
 void SnowGL::preparePingPongBuffers(int w_over, int h_over)
@@ -198,14 +196,11 @@ void SnowGL::prepareDepthColourIndex()
 	                       GL_TEXTURE_2D, _sceneDepth, 0);
 	checkFrameBuffers();
 
-	std::cout << "Depth buffer" << std::endl;
-
 	unsigned int attachments[2];
 	
 	/* additional attachments */
 	for (size_t i = 0; i < 2; i++)
 	{
-		std::cout << i << " depth buffer" << std::endl;
 		/* bind next texture */
 		glActiveTexture(GL_TEXTURE0 + i + 1);
 		/* from texture produced earlier */
@@ -368,6 +363,11 @@ void SnowGL::render()
 {
 	checkErrors("before paintGL");
 	updateCamera();
+	
+	if (!_viewChanged)
+	{
+		return;
+	}
 
 	if (_depthMap > 0)
 	{
@@ -399,6 +399,8 @@ void SnowGL::render()
 		grabIndexBuffer();
 		_quad->render(this);
 	}
+
+	_viewChanged = false;
 }
 
 void SnowGL::updateCamera()
@@ -406,6 +408,17 @@ void SnowGL::updateCamera()
 	glm::vec3 centre = _centre;
 	glm::vec3 negCentre = centre;
 	negCentre *= -1;
+	
+	if (fabs(_camAlpha) > 1e-6 || fabs(_camBeta) > 1e-6
+	    || fabs(_camGamma) > 1e-6)
+	{
+		_viewChanged = true;
+	}
+
+	if (glm::length(_translation) > 1e-6)
+	{
+		_viewChanged = true;
+	}
 
 	/* move to centre, rotate, move away from centre */
 	glm::mat4x4 back = glm::translate(glm::mat4(1.f), negCentre);

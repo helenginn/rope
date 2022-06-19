@@ -293,10 +293,7 @@ public:
 	void rebufferVertexData();
 	void rebufferIndexData();
 	
-	void forceRender()
-	{
-		_forceRender = true;
-	}
+	void forceRender();
 
 	void setHover(Renderable *hover);
 

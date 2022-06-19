@@ -175,6 +175,8 @@ bool Window::tick()
 		_next = nullptr;
 	}
 	
+	SDL_Delay(20);
+	
 	return true;
 }
 
@@ -197,18 +199,17 @@ void Window::deleteQueued()
 
 void Window::render()
 {
+	if (!_current->isViewChanged())
+	{
+		return;
+	}
+
 	_current->checkErrors("before viewport");
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
 
 	_current->checkErrors("before clear");
-	
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glClearColor(0.9f, 0.9f, 0.9f, 0.f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	_current->render();
 

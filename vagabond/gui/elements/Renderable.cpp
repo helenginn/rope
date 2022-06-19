@@ -310,6 +310,11 @@ void Renderable::rebufferIndexData()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, be);
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
+	
+	if (_gl)
+	{
+		_gl->viewChanged();
+	}
 }
 
 void Renderable::rebufferVertexData()
@@ -323,6 +328,11 @@ void Renderable::rebufferVertexData()
 	glBindBuffer(GL_ARRAY_BUFFER, bv);
 
 	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
+	
+	if (_gl)
+	{
+		_gl->viewChanged();
+	}
 }
 
 void Renderable::setupVBOBuffers()
@@ -395,6 +405,11 @@ void Renderable::setupVBOBuffers()
 	checkErrors("vbo buffering");
 
 	glBindVertexArray(0);
+	
+	if (_gl)
+	{
+		_gl->viewChanged();
+	}
 }
 
 bool Renderable::checkErrors(std::string what)
@@ -1522,4 +1537,14 @@ void Renderable::setHover(Renderable *hover)
 	_hover->setAlignXY(_align, hx, hy);
 	_hover->realign();
 	_hover->setDisabled(true);
+}
+
+void Renderable::forceRender()
+{
+	_forceRender = true;
+	if (_gl)
+	{
+		std::cout << "view changed" << std::endl;
+		_gl->viewChanged();
+	}
 }

@@ -123,6 +123,16 @@ public:
 	virtual void render();
 	void grabIndexBuffer();
 	void resetMouseKeyboard();
+	
+	bool isViewChanged()
+	{
+		return _viewChanged;
+	}
+
+	void viewChanged()
+	{
+		_viewChanged = true;
+	}
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();
@@ -184,6 +194,8 @@ protected:
 	bool _controlPressed;
 	bool _shiftPressed;
 	bool _acceptsFocus;
+	
+	bool _viewChanged = true;
 	
 	/* widths and heights - boundaries */
 	int _w;

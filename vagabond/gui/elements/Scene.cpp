@@ -38,6 +38,7 @@ void Scene::preSetup()
 	}
 	
 	setup();
+	_viewChanged = true;
 }
 
 void Scene::setBackground()
