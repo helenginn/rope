@@ -352,7 +352,6 @@ float ClusterTSNE<DG>::averagePQDiff()
 	PCA::Matrix qs = qMatrix();
 
 	float sum = 0;
-	float count = 0;
 	for (size_t i = 0; i < qs.rows; i++)
 	{
 		for (size_t j = 0; j < qs.cols; j++)
@@ -376,7 +375,6 @@ float ClusterTSNE<DG>::incrementResult(float &scale, float &learning)
 	{
 		for (size_t j = 0; j < this->_result.cols; j++)
 		{
-			float current = _tmp[i][j];
 			float momentum = scale * (_tmp[i][j] - _lastResult[i][j]);
 			float contribution = learning * grads[i][j];
 
