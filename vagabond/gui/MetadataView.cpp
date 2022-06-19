@@ -18,6 +18,11 @@
 
 #include "MetadataView.h"
 #include "ChooseHeader.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Environment.h>
