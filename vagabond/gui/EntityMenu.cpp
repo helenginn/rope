@@ -41,8 +41,6 @@ void EntityMenu::setup()
 	addTitle("Protein entities");
 
 	ListView::setup();
-
-	addToolkit();
 }
 
 void EntityMenu::buttonPressed(std::string tag, Button *button)
