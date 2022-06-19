@@ -124,11 +124,15 @@ void Model::unload()
 	if (_currentFile)
 	{
 		delete _currentAtoms;
+		_currentFile = nullptr;
+	}
+	
+	if (_currentAtoms)
+	{
 		delete _currentFile;
+		_currentAtoms = nullptr;
 	}
 
-	_currentFile = nullptr;
-	_currentAtoms = nullptr;
 }
 
 void Model::createMolecules()
