@@ -132,8 +132,8 @@ bool GeometryTable::lengthExists(std::string code, std::string pName,
 	return (map.lengths.count(pair) > 0);
 }
 
-double GeometryTable::length(GeometryMap &map, std::string pName, 
-                             std::string qName)
+double GeometryTable::length(const GeometryMap &map, std::string pName, 
+                             std::string qName) const
 {
 	AtomPair pair = {pName, qName};
 	if (map.lengths.count(pair) == 0)
@@ -141,32 +141,41 @@ double GeometryTable::length(GeometryMap &map, std::string pName,
 		return -1;
 	}
 
-	Value &v = map.lengths[pair];
+	const Value &v = map.lengths.at(pair);
 
 	return v.mean;
 }
 
 double GeometryTable::length(std::string code, std::string pName,
-                             std::string qName, bool links)
+                             std::string qName, bool links) const
 {
-	GeometryMap &map = _codes[code];
-	
-	if (!links)
+	if (_codes.count(code))
 	{
-		double l = length(map, pName, qName);
+		const GeometryMap &map = _codes.at(code);
 
-		if (l < 0)
+		if (!links)
 		{
-			l = length(_codes["."], pName, qName);
-		}
+			double l = length(map, pName, qName);
 
-		return l;
+			if (l >= 0)
+			{
+				return l;
+			}
+		}
+		else
+		{
+			double l = checkLengthLinks(code, pName, qName);
+			return l;
+		}
 	}
-	else
+
+	if (_codes.count(".") == 0)
 	{
-		double l = checkLengthLinks(code, pName, qName);
-		return l;
+		return -1;
 	}
+
+	double l = length(_codes.at("."), pName, qName);
+	return l;
 }
 
 double GeometryTable::length_stdev(std::string code, std::string pName,
@@ -306,7 +315,7 @@ const size_t GeometryTable::codeEntries() const
 	return _codes.size();
 }
 
-bool GeometryTable::linkCodeMatches(std::string code, std::string query)
+bool GeometryTable::linkCodeMatches(std::string code, std::string query) const
 {
 	if (query == ".")
 	{
@@ -375,11 +384,11 @@ double GeometryTable::checkAngleLinks(std::string code, std::string pName,
 }
 
 double GeometryTable::checkLengthLinks(std::string code, std::string pName,
-                                      std::string qName)
+                                      std::string qName) const
 {
-	std::map<std::string, GeometryMap>::iterator it;
+	std::map<std::string, GeometryMap>::const_iterator it;
 	
-	for (it = _links.begin(); it != _links.end(); it++)
+	for (it = _links.cbegin(); it != _links.cend(); it++)
 	{
 		std::string q = it->first;
 		bool match = linkCodeMatches(code, q);
@@ -389,7 +398,7 @@ double GeometryTable::checkLengthLinks(std::string code, std::string pName,
 			continue;
 		}
 		
-		GeometryMap &map = it->second;
+		const GeometryMap &map = it->second;
 		double l = length(map, pName, qName);
 
 		if (l >= 0)

@@ -47,7 +47,7 @@ public:
 	bool lengthExists(std::string code, std::string pName, std::string qName);
 
 	double length(std::string code, std::string pName, std::string qName, 
-	              bool links = false);
+	              bool links = false) const;
 
 	double length_stdev(std::string code, std::string pName, std::string qName);
 
@@ -162,15 +162,16 @@ private:
 		std::map<AtomQuartet, int> chirals;
 	};
 
-	double length(GeometryMap &map, std::string pName, std::string qName);
+	double length(const GeometryMap &map, std::string pName, 
+	              std::string qName) const;
 
 	double checkLengthLinks(std::string code, std::string pName,
-	                        std::string qName);
+	                        std::string qName) const;
 
 	double checkAngleLinks(std::string code, std::string pName,
 	                       std::string qName, std::string rName);
 
-	bool linkCodeMatches(std::string code, std::string query);
+	bool linkCodeMatches(std::string code, std::string query) const;
 	double angle(GeometryMap &map, std::string pName,
 	             std::string qName, std::string rName);
 	
