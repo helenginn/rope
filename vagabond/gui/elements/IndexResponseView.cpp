@@ -57,8 +57,8 @@ IndexResponder *IndexResponseView::getResponderForIndex(int &val)
 	return nullptr;
 }
 
-void IndexResponseView::checkIndexBuffer(double x, double y, 
-                                         bool hover, bool arrow)
+void IndexResponseView::checkIndexBuffer(double x, double y, bool hover, 
+                                         bool arrow, bool left)
 {
 	int val = checkIndex(x, y);
 
@@ -73,7 +73,7 @@ void IndexResponseView::checkIndexBuffer(double x, double y,
 
 	if (ir != nullptr)
 	{
-		ir->interacted(val, hover);
+		ir->interacted(val, hover, left);
 	}
 	
 }

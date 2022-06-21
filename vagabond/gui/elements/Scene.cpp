@@ -111,7 +111,8 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 
 	if (hasIndexedObjects() > 0)
 	{
-		checkIndexBuffer(x, y, false, true);
+		bool left = button.button == SDL_BUTTON_LEFT;
+		checkIndexBuffer(x, y, false, true, left);
 	}
 }
 
@@ -187,7 +188,7 @@ void Scene::mouseMoveEvent(double x, double y)
 	
 	if (hasIndexedObjects() > 0 && _modal == nullptr)
 	{
-		checkIndexBuffer(x, y, true, arrow);
+		checkIndexBuffer(x, y, true, arrow, true);
 	}
 }
 

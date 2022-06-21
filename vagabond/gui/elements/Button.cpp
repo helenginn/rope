@@ -12,7 +12,7 @@ Button::Button(ButtonResponder *sender) : Box()
 	_tickable = true;
 }
 
-void Button::click()
+void Button::click(bool left)
 {
 	if (_sender == NULL || _inert)
 	{

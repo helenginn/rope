@@ -247,7 +247,7 @@ public:
 	void changeFragmentShader(std::string f);
 	void setSelectable(bool selectable);
 	
-	virtual void click() {};
+	virtual void click(bool left = true) {};
 	virtual void drag(double x, double y) {};
 	
 	void setDraggable(bool draggable)

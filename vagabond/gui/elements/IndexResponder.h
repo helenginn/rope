@@ -32,7 +32,7 @@ public:
 		_view = irv;
 	}
 
-	virtual void interacted(int idx, bool hover) = 0;
+	virtual void interacted(int idx, bool hover, bool left) = 0;
 	virtual void reindex() = 0;
 
 	virtual size_t requestedIndices() = 0;

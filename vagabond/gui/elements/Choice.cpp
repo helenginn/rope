@@ -29,7 +29,7 @@ void Choice::makeTick()
 	addObject(_tick);
 }
 
-void Choice::click()
+void Choice::click(bool left)
 {
 	if (_inert)
 	{

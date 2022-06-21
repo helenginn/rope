@@ -69,7 +69,7 @@ protected:
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
 	virtual void checkIndexBuffer(double x, double y, 
-	                              bool hover, bool arrow) {};
+	                              bool hover, bool arrow, bool left) {};
 	void setCentrePixels(Renderable *r, int x, int y);
 	void swapCursor(SDL_Cursor *newCursor);
 	

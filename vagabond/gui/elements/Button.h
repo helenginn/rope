@@ -49,7 +49,7 @@ public:
 	virtual void unMouseOver();
 	virtual bool mouseOver();
 
-	virtual void click();
+	virtual void click(bool left = true);
 
 	void setTickable(bool tick)
 	{

@@ -16,7 +16,7 @@ public:
 	
 	virtual ~Choice();
 
-	virtual void click();
+	virtual void click(bool left = true);
 	void unclick();
 private:
 	void makeTick();

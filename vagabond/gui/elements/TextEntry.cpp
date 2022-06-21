@@ -20,7 +20,7 @@
 #include "ButtonResponder.h"
 #include <iostream>
 
-void TextEntry::click()
+void TextEntry::click(bool left)
 {
 	if (_inert)
 	{

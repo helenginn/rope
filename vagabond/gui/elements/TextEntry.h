@@ -33,7 +33,7 @@ public:
 		return _scratch;
 	}
 
-	virtual void click();
+	virtual void click(bool left = true);
 	virtual void finish();
 	bool validateKey(char key);
 	
