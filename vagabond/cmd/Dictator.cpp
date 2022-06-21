@@ -23,6 +23,7 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Metadata.h>
 #include <iostream>
+#include <unistd.h>
 
 std::map<std::string, std::string> Dictator::_properties;
 std::map<std::string, std::string> Dictator::_commands;
@@ -38,6 +39,8 @@ void Dictator::makeCommands()
 	                          "sequence and default names");
 	_commands["rescan"] = ("Rescan existing models for existing entities"
 	                          " matching at least 80% sequence and default names");
+	_commands["get-files-native-app"] = ("load files from three directories up in "
+	                                     "the Mac Rope app file");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -78,6 +81,21 @@ void Dictator::setup()
 	_worker = new CmdWorker(this);
 }
 
+void Dictator::getFilesNativeApp()
+{
+	std::vector<std::string> globs = glob_pattern("../../../*");
+
+	for (std::string &g : globs)
+	{
+		if (g == "Rope.app")
+		{
+			continue;
+		}
+
+		loadFiles(g);
+	}
+}
+
 void Dictator::loadFiles(std::string &last)
 {
 	FileManager *fm = Environment::fileManager();
@@ -108,6 +126,11 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	if (first == "automodel")
 	{
 		Environment::env().autoModel();
+	}
+
+	if (first == "get-files-native-app")
+	{
+		getFilesNativeApp();
 	}
 
 	if (first == "rescan")

@@ -74,6 +74,7 @@ protected:
 	bool sanityCheck(std::string &first, std::string &last);
 	void processRequest(std::string &first, std::string &last);
 	void loadFiles(std::string &last);
+	void getFilesNativeApp();
 
 	static std::map<std::string, std::string> _properties;
 	static std::map<std::string, std::string> _commands;
