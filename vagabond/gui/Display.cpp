@@ -32,6 +32,14 @@ Display::~Display()
 	}
 }
 
+void Display::stop()
+{
+	if (_guiAtoms)
+	{
+		_guiAtoms->stop();
+	}
+}
+
 void Display::recalculateAtoms()
 {
 	AlignmentTool tool(_atoms);
@@ -209,11 +217,6 @@ void Display::setup()
 		_toLoad = nullptr;
 	}
 	
-}
-
-void Display::stop()
-{
-	_guiAtoms->stop();
 }
 
 void Display::buttonPressed(std::string tag, Button *button)

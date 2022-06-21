@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Responder.h>
+#include <mutex>
 
 class GuiAtom;
 class Display;
@@ -51,6 +52,7 @@ private:
 	Model *_model = nullptr;
 	Display *_display = nullptr;
 	Entity *_entity = nullptr;
+	std::mutex _mutex;
 };
 
 #endif

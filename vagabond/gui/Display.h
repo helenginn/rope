@@ -4,6 +4,7 @@
 
 #include "vagabond/gui/elements/Mouse3D.h"
 #include <vagabond/core/Responder.h>
+#include <atomic>
 
 class ImageButton;
 class GuiAtom;
@@ -70,7 +71,7 @@ private:
 	
 	bool _owns = true;
 	bool _reciprocal = false;
-	bool _finish = false;
+	std::atomic<bool> _finish{false};
 };
 
 #endif

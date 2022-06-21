@@ -54,6 +54,7 @@ void SerialRefiner::entityDone()
 
 void SerialRefiner::doThings()
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (_newModel == false)
 	{
 		return;
@@ -89,6 +90,7 @@ void SerialRefiner::doThings()
 
 void SerialRefiner::sendObject(std::string tag, void *object)
 {
+	std::lock_guard<std::mutex> lock(_mutex);
 	if (tag == "model_done")
 	{
 		_display->stop();
