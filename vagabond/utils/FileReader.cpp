@@ -286,3 +286,4 @@ bool is_str_alphabetical(const std::string &str)
 
 	return true;
 }
+
