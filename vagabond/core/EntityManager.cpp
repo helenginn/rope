@@ -27,7 +27,7 @@ EntityManager::EntityManager() : Manager()
 }
 
 
-Entity *EntityManager::insertIfUnique(const Entity &ent)
+Entity *EntityManager::insertIfUnique(Entity &ent)
 {
 	for (Entity &other : _objects)
 	{
@@ -44,6 +44,7 @@ Entity *EntityManager::insertIfUnique(const Entity &ent)
 	
 	_objects.push_back(ent);
 	_name2Entity[ent.name()] = &_objects.back();
+	ent.setResponder(this);
 
 	triggerResponse();
 	

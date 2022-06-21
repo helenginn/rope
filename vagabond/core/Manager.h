@@ -47,7 +47,7 @@ public:
 		return *it;
 	}
 
-	virtual T *insertIfUnique(const T &m) { return nullptr; };
+	virtual T *insertIfUnique(T &m) { return nullptr; };
 
 	friend void to_json(json &j, const Manager<T> &value);
 	friend void from_json(const json &j, Manager<T> &value);

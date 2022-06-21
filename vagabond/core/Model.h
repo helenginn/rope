@@ -119,7 +119,7 @@ public:
 
 	void refine();
 	
-	AtomContent *currentAtoms()
+	AtomContent *const currentAtoms() const
 	{
 		return _currentAtoms;
 	}

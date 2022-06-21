@@ -85,7 +85,7 @@ public:
 	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 
-	Atom *atomByIdName(const ResidueId &id, std::string name) const;
+	Atom *atomByIdName(const ResidueId &id, std::string name);
 
 	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	                                         std::string header);

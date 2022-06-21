@@ -205,6 +205,11 @@ bool Model::mergeMoleculesInSet(std::set<Molecule *> molecules)
 			Sequence *seq_a = a->sequence();
 			Sequence *seq_b = b->sequence();
 			
+			if (!seq_a || !seq_b)
+			{
+				continue;
+			}
+			
 			if (!(seq_b->firstNum() > seq_a->lastNum() &&
 			      seq_b->lastNum() > seq_a->lastNum()) ||
 			     (seq_a->firstNum() > seq_b->lastNum() &&
@@ -231,6 +236,11 @@ bool Model::mergeMoleculesInSet(std::set<Molecule *> molecules)
 			
 			Atom *aAtom = a->atomByIdName(first == seq_a ? id0 : id1, "");
 			Atom *bAtom = b->atomByIdName(first == seq_a ? id1 : id0, "");
+			
+			if (aAtom == nullptr|| bAtom == nullptr)
+			{
+				continue;
+			}
 			
 			glm::vec3 diff = aAtom->initialPosition() - bAtom->initialPosition();
 			float d = glm::length(diff);

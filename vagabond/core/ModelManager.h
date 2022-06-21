@@ -35,7 +35,7 @@ class ModelManager : public Manager<Model>
 public:
 	ModelManager();
 
-	virtual Model *insertIfUnique(const Model &m);
+	virtual Model *insertIfUnique(Model &m);
 	void update(const Model &m);
 	
 	Model *const model(std::string name) const

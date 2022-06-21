@@ -251,11 +251,18 @@ Entity *Molecule::entity()
 	return _entity;
 }
 
-Atom *Molecule::atomByIdName(const ResidueId &id, std::string name) const
+Atom *Molecule::atomByIdName(const ResidueId &id, std::string name)
 {
 	for (const std::string &chain : _chain_ids)
 	{
-		Chain *mine = _model->currentAtoms()->chain(chain);
+		model();
+		
+		if (!_model)
+		{
+			return nullptr;
+		}
+
+		Chain *mine = model()->currentAtoms()->chain(chain);
 
 		Atom *p = mine->atomByIdName(id, name);
 		

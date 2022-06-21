@@ -40,7 +40,7 @@ public Responder<Entity>
 public:
 	EntityManager();
 
-	virtual Entity *insertIfUnique(const Entity &e);
+	virtual Entity *insertIfUnique(Entity &e);
 	virtual void update(const Entity &e);
 	
 	Entity *entity(std::string name)
