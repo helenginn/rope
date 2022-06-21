@@ -32,7 +32,7 @@ Toolkit::Toolkit(Scene *scene) : ImageButton("assets/images/tools.png", scene)
 	_scene = scene;
 }
 
-void Toolkit::click()
+void Toolkit::click(bool left)
 {
 	Menu *m = new Menu(_scene, this);
 	m->setReturnTag("tools");

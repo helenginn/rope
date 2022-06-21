@@ -214,9 +214,9 @@ void ClusterView::applyRule(const Rule &r)
 	}
 }
 
-void ClusterView::click()
+void ClusterView::click(bool left)
 {
-	interacted(currentVertex(), false);
+	interacted(currentVertex(), false, left);
 }
 
 bool ClusterView::mouseOver()
@@ -230,7 +230,7 @@ void ClusterView::unMouseOver()
 	interacted(-1, true);
 }
 
-void ClusterView::interacted(int idx, bool hover)
+void ClusterView::interacted(int idx, bool hover, bool left)
 {
 	if (_text != nullptr)
 	{
@@ -253,9 +253,8 @@ void ClusterView::interacted(int idx, bool hover)
 	addObject(ft);
 	_text = ft;
 	
-	if (hover == false) // click!
+	if (hover == false && !left) // click!
 	{
-		std::cout << "CLICK" << std::endl;
 		_confSpaceView->prepareMenu(group.object(idx));
 	}
 }

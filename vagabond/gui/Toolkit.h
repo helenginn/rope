@@ -29,7 +29,7 @@ class Toolkit : public ImageButton, public ButtonResponder
 public:
 	Toolkit(Scene *scene);
 
-	virtual void click();
+	virtual void click(bool left = true);
 	virtual void buttonPressed(std::string tag, Button *button);
 private:
 	Scene *_scene = nullptr;

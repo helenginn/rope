@@ -55,7 +55,7 @@ public:
 	void addPoint(glm::vec3 pos, int pointType);
 	void setPointType(int idx, int type);
 	virtual void makePoints();
-	virtual void click();
+	virtual void click(bool left = true);
 
 	void applyRule(const Rule &r);
 
@@ -63,7 +63,7 @@ public:
 	void prioritiseMetadata(std::string key);
 	void reset();
 	
-	virtual void interacted(int idx, bool hover);
+	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual size_t requestedIndices()
 	{
 		return _vertices.size();

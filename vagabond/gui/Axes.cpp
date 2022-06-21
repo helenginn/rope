@@ -55,13 +55,13 @@ void Axes::unmouseOver()
 	interacted(-1, true);
 }
 
-void Axes::click()
+void Axes::click(bool left)
 {
 	int axis = currentVertex() / 4;
-	interacted(axis, false);
+	interacted(axis, false, left);
 }
 
-void Axes::interacted(int idx, bool hover)
+void Axes::interacted(int idx, bool hover, bool left)
 {
 	if (!hover)
 	{

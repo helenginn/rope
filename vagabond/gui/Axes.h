@@ -30,9 +30,9 @@ class Axes : public IndexResponder
 public:
 	Axes(Cluster<MetadataGroup> *group, Molecule *m);
 
-	virtual void interacted(int idx, bool hover);
+	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual void reindex();
-	virtual void click();
+	virtual void click(bool left = true);
 	virtual bool mouseOver();
 	virtual void unmouseOver();
 
