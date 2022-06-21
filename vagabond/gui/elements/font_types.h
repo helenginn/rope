@@ -1,5 +1,5 @@
-// Vagabond
-// Copyright (C) 2017-2018 Helen Ginn
+// vagabond
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,29 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__TextManager__
-#define __vagabond__TextManager__
+#ifndef __vagabond__font_types__
+#define __vagabond__font_types__
 
-#include <stdio.h>
-#include <string>
-#include "font_types.h"
-
-using namespace Font;
-
-/**
- * \class TextManager
- * \brief Renders Helen handwriting from ASCII lookup table defined in font.h
- */
-
-typedef unsigned char png_byte;
-
-class TextManager
+namespace Font
 {
-public:
-
-	static void text_malloc(png_byte **pointer, std::string text, int *width, int *height, Type type);
-	static void text_free(png_byte **pointer);
-	
+	enum Type
+	{
+		Thick,
+		Thin,
+	};
 };
 
-#endif /* defined(__vagabond__TextManager__) */
+#endif

@@ -27,7 +27,7 @@ class FileView;
 class FileLine : public Box
 {
 public:
-	FileLine(FileView *view,std::string filename);
+	FileLine(FileView *view,std::string filename, std::string display = "");
 	virtual ~FileLine();
 
 private:
@@ -36,6 +36,7 @@ private:
 
 	FileView *_view;
 	std::string _filename;
+	std::string _display;
 	CifFile::Type _type;
 };
 

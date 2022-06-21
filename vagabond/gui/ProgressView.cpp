@@ -52,7 +52,7 @@ Text *ProgressView::getText(Progressor *p, std::string str)
 		return _prog2Text[p];
 	}
 
-	Text *t = new Text(str, true);
+	Text *t = new Text(str, Font::Thin, true);
 	t->setCentre(0.5, _y);
 	_y += 0.08;
 	_prog2Text[p] = t;

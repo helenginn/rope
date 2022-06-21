@@ -24,10 +24,15 @@
 
 #include <iostream>
 
-FileLine::FileLine(FileView *view, std::string filename)
+FileLine::FileLine(FileView *view, std::string filename, std::string display)
 {
 	_view = view;
 	_filename = filename;
+	_display = display;
+	if (_display == "")
+	{
+		_display = _filename;
+	}
 	setName("FileLine");
 	
 	queryFile();
@@ -46,7 +51,7 @@ void FileLine::queryFile()
 
 void FileLine::setup()
 {
-	TextButton *button = new TextButton(_filename, _view);
+	TextButton *button = new TextButton(_display, _view);
 	button->setReturnTag("file_" + _filename);
 	button->resize(0.9);
 	button->setLeft(0.0, 0);

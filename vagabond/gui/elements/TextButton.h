@@ -10,7 +10,7 @@ class TextButton : public Text, public Button
 {
 public:
 	TextButton(std::string text, ButtonResponder *sender, bool delay = false) :
-	Text(text, delay), Button(sender) {};
+	Text(text, Font::Thin, delay), Button(sender) {};
 
 private:
 

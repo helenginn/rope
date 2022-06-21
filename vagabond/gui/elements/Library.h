@@ -7,6 +7,7 @@
 #include <GLES3/gl32.h>
 #include <string>
 #include <vector>
+#include "font_types.h"
 
 struct SDL_Surface;
 class Renderable;
@@ -26,7 +27,8 @@ public:
 		return _library;
 	}
 	
-	GLuint loadText(std::string text, int *w, int *h);
+	GLuint loadText(std::string text, int *w, int *h, 
+	                Font::Type type = Font::Thin);
 	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL);
 	GLuint getProgram(std::string v, std::string g, std::string f);
 	void setProgram(Renderable *fl, std::string v, std::string g, std::string f);

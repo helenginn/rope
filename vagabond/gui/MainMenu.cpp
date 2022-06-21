@@ -38,7 +38,7 @@ void MainMenu::setup()
 	clearObjects();
 	addObject(_background);
 
-	addTitle("Vagabond sandbox");
+	addTitle("RoPE");
 
 #ifndef __EMSCRIPTEN__
 	{

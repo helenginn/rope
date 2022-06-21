@@ -6,11 +6,12 @@
 #include <SDL2/SDL.h>
 #include <iostream>
 
-Text::Text(std::string text, bool delay) : Box()
+Text::Text(std::string text, Font::Type type, bool delay) : Box()
 {
 	_delay = delay;
 	_retext = delay;
 	_text = text;
+	_type = type;
 
 	if (text.length() > 0 && !_delay)
 	{
@@ -41,7 +42,7 @@ void Text::render(SnowGL *gl)
 
 void Text::setInitialText(std::string text)
 {
-	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h);
+	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h, _type);
 	_texid = tex;
 	makeQuad();
 	_textured = true;
@@ -63,7 +64,7 @@ void Text::setText(std::string text, bool force)
 		_texid = 0;
 	}
 
-	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h);
+	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h, _type);
 	_texid = tex;
 	clearVertices();
 	makeQuad();
@@ -79,6 +80,7 @@ void Text::makeQuad()
 	mat[0][0] = (float)_w / 1800.;
 	mat[1][1] = (float)_h / 1800.;
 	mat[0][0] /= (double)ASPECT_RATIO;
+	mat *= (_type == Font::Thin ? 1 : 0.7);
 
 	rotateRound(mat);
 }

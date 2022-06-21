@@ -232,7 +232,7 @@ void Scene::showBackButton()
 
 void Scene::addTitle(std::string title)
 {
-	Text *text = new Text(title);
+	Text *text = new Text(title, Font::Thick);
 	text->setCentre(0.5, 0.1);
 	addObject(text);
 }

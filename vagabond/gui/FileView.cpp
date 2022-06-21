@@ -59,11 +59,8 @@ void FileView::filterForTypes(File::Type type)
 
 void FileView::setup()
 {
-	{
-		Text *text = new Text("Vagabond file system");
-		text->setCentre(0.5, 0.1);
-		addObject(text);
-	}
+	addTitle("Vagabond file system");
+
 #ifdef __EMSCRIPTEN__
 	{
 		TextButton *text = new TextButton("Add", this);

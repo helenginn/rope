@@ -19,6 +19,7 @@
 #include "TextManager.h"
 #include <vagabond/utils/FileReader.h>
 #include "font.h"
+#include "thick_font.h"
 #include <cstdlib>
 #include <vector>
 
@@ -27,17 +28,25 @@ void TextManager::text_free(png_byte **pointer)
 	free(*pointer);
 }
 
-void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, int *height)
+void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, int *height, Font::Type type)
 {
 	if (!text.length())
 	{
 		return;
 	}
 
-	int squish = 10;
+	int squish = (type == Thin ? 10 : 15);
 	int totalWidth = squish;
 	int maxHeight = 0;
 	int lines = 0;
+	
+	auto &dimPtr = (type == Thick ? ThickFont::asciiDimensions : 
+	                ThinFont::asciiDimensions);
+	unsigned char **asciiPtr = ThinFont::asciis;
+	if (type == Thick)
+	{
+		asciiPtr = ThickFont::asciis;
+	}
 	
 	std::vector<std::string> bits = split(text, '\n');
 
@@ -48,8 +57,8 @@ void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, 
 		int w = 0;
 		for (size_t i = 0; i < text.length(); i++)
 		{
-			int charHeight = asciiDimensions[(int)text[i]][0];
-			int charWidth = asciiDimensions[(int)text[i]][1];
+			int charHeight = dimPtr[(int)text[i]][0];
+			int charWidth = dimPtr[(int)text[i]][1];
 			w += charWidth - squish;
 			if (charHeight > maxHeight)
 			{
@@ -91,9 +100,9 @@ void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, 
 		for (int i = 0; i < text.length(); i++)
 		{
 			char whichAscii = text[i];
-			png_byte *chosenAscii = asciis[(int)whichAscii];
-			int chosenHeight = asciiDimensions[(int)whichAscii][0];
-			int chosenWidth = asciiDimensions[(int)whichAscii][1];
+			png_byte *chosenAscii = asciiPtr[(int)whichAscii];
+			int chosenHeight = dimPtr[(int)whichAscii][0];
+			int chosenWidth = dimPtr[(int)whichAscii][1];
 
 			for (int k = 0; k < chosenHeight; k++)
 			{

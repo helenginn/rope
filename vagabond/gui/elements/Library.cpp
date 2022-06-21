@@ -102,7 +102,7 @@ SDL_Surface *Library::loadImage(std::string filename)
 	return surface;
 }
 
-GLuint Library::loadText(std::string text, int *w, int *h)
+GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 {
 	if (text == "")
 	{
@@ -110,7 +110,7 @@ GLuint Library::loadText(std::string text, int *w, int *h)
 	}
 
 	png_byte *bytes;
-	TextManager::text_malloc(&bytes, text, w, h);
+	TextManager::text_malloc(&bytes, text, w, h, type);
 	GLuint texid = 0;
 	glGenTextures(1, &texid);
 	glBindTexture(GL_TEXTURE_2D, texid);
