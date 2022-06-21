@@ -139,8 +139,9 @@ void FileView::buttonPressed(std::string tag, Button *button)
 Renderable *FileView::getLine(int i)
 {
 	std::string filename = _manager->filtered(i);
+	std::string onlyname = getFilename(filename);
 
-	FileLine *line = new FileLine(this, filename);
+	FileLine *line = new FileLine(this, filename, onlyname);
 	return line;
 }
 
