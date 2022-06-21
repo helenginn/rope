@@ -66,8 +66,6 @@ void Menu::setup(double x, double y)
 	addQuad(0.9);
 	rescale(width / 2 + 0.025, height + 0.025);
 	Renderable::Alignment horizontal;
-	
-	std::cout << x << " " << width << " " << y << " " << height << std::endl;
 
 	horizontal = (x + width > 1.0 ? Renderable::Right : Renderable::Left);
 
