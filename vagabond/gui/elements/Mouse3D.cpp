@@ -21,7 +21,7 @@
 
 Mouse3D::Mouse3D(Scene *prev) : Scene(prev)
 {
-
+	_alwaysOn = true;
 }
 
 Mouse3D::~Mouse3D()
