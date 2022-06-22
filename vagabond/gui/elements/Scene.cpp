@@ -110,16 +110,13 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 	_dragged = NULL;
 	convertToGLCoords(&x, &y);
 
-	if (hasIndexedObjects() > 0)
-	{
-		bool left = button.button == SDL_BUTTON_LEFT;
-		checkIndexBuffer(x, y, false, true, left);
-	}
+	_moving = false;
 }
 
 void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	convertToGLCoords(&x, &y);
+	_moving = false;
 	Renderable *chosen = findObject(x, y);
 	if (chosen != NULL)
 	{

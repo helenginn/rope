@@ -53,12 +53,17 @@ void Slider::setStart(double x, double y)
 	_display->setCentre(wl / 2, +0.08);
 }
 
-void Slider::finishedDragging(std::string tag, int x, int y)
+void Slider::finishedDragging(std::string tag, double x, double y)
 {
 	double val = _min + (double)x * _step;
 	_display->setText(_prefix + f_to_str(val, 0) + _suffix);
 	_display->resize(0.6);
 	_val = val;
+	
+	if (_responder != nullptr)
+	{
+		_responder->finishedDragging(tag, _val, 0);
+	}
 }
 
 void Slider::setCentre(double x, double y)

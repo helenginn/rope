@@ -10,7 +10,7 @@ class DragResponder
 public:
 	DragResponder() {};
 	virtual ~DragResponder() {};
-	virtual void finishedDragging(std::string tag, int x, int y) = 0;
+	virtual void finishedDragging(std::string tag, double x, double y) = 0;
 };
 
 

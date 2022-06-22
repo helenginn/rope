@@ -97,7 +97,7 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 {
 	Scene::mouseMoveEvent(x, y);
 
-	if (_modal != nullptr)
+	if (_modal != nullptr || _dragged != nullptr)
 	{
 		return;
 	}

@@ -14,10 +14,15 @@ class Slider : public Image, public DragResponder
 {
 public:
 	Slider();
+	
+	void setDragResponder(DragResponder *next)
+	{
+		_responder = next;
+	}
 
 	void setup(std::string text, double min, double max, double step);
 
-	virtual void finishedDragging(std::string tag, int x, int y);
+	virtual void finishedDragging(std::string tag, double x, double y);
 	
 	void setPrefixSuffix(std::string prefix, std::string suffix)
 	{
@@ -47,6 +52,7 @@ private:
 	std::string _suffix;
 	
 	DraggableImage *_dot = nullptr;
+	DragResponder *_responder = nullptr;
 };
 
 #endif
