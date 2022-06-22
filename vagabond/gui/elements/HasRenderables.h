@@ -45,6 +45,9 @@ public:
 	
 	void transferObjectToOther(Renderable *r, HasRenderables *h);
 
+	virtual void doThingsCircuit();
+	virtual void doThings() {};
+
 	Renderable *findObject(double x, double y);
 protected:
 	void clearHighlights();

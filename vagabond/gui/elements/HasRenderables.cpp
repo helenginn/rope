@@ -105,3 +105,13 @@ void HasRenderables::addObject(Renderable *r)
 		throw(std::runtime_error("trying to add same object twice"));
 	}
 }
+
+void HasRenderables::doThingsCircuit()
+{
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->doThingsCircuit();
+	}
+
+	doThings();
+}

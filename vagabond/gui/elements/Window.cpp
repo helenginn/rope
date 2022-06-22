@@ -202,6 +202,8 @@ void Window::deleteQueued()
 
 void Window::render()
 {
+	_current->doThingsCircuit();
+
 	if (!_current->isViewChanged())
 	{
 		return;
