@@ -131,6 +131,13 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 			_modal->dismiss();
 		}
 	}
+
+	if (hasIndexedObjects() > 0 && _modal == NULL && chosen == NULL)
+	{
+		bool left = button.button == SDL_BUTTON_LEFT;
+		checkIndexBuffer(x, y, false, true, left);
+	}
+
 	
 	_mouseDown = true;
 }
@@ -151,6 +158,7 @@ void Scene::swapCursor(SDL_Cursor *newCursor)
 void Scene::mouseMoveEvent(double x, double y)
 {
 	convertToGLCoords(&x, &y);
+	_moving = true;
 
 	clearHighlights();
 	Renderable *chosen = findObject(x, y);

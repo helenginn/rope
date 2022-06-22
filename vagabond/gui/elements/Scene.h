@@ -85,7 +85,8 @@ protected:
 
 	int _lastIdx;
 
-	bool _mouseDown;
+	bool _moving = false;
+	bool _mouseDown = false;
 	bool _mustRefresh = false;
 };
 
