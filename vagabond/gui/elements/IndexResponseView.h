@@ -36,6 +36,7 @@ public:
 	}
 	
 	void addIndexResponder(IndexResponder *ir);
+	void removeResponder(IndexResponder *ir);
 
 	size_t indexOffset(IndexResponder *ir);
 protected:

@@ -101,3 +101,19 @@ void IndexResponseView::addIndexResponder(IndexResponder *ir)
 	ir->reindex();
 	_responders.push_back(ir);
 }
+
+void IndexResponseView::removeResponder(IndexResponder *ir)
+{
+	for (size_t i = 0; i < _responders.size(); i++)
+	{
+		if (_responders[i] == ir)
+		{
+			_responders.erase(_responders.begin() + i);
+		}
+	}
+
+	for (size_t i = 0; i < _responders.size(); i++)
+	{
+		_responders[i]->reindex();
+	}
+}
