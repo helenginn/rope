@@ -8,6 +8,8 @@
 
 class Icosahedron;
 class GuiBond;
+class GuiBalls;
+class GuiRepresentation;
 class AtomGroup;
 
 class Atom;
@@ -21,31 +23,36 @@ public:
 	void watchAtom(Atom *a);
 	void watchAtoms(AtomGroup *as);
 	
-	size_t verticesPerAtom();
 	void checkAtoms();
+	bool checkAtom(Atom *a);
 	void startBackgroundWatch();
 
-	void setMulti(bool m);
+	glm::vec3 getCentre();
+
+	void setMulti(bool m)
+	{
+		_multi = m;
+	}
+
 	void stop();
+	
+	const std::vector<Atom *> &atoms() const
+	{
+		return _atoms;
+	}
 
 	virtual void render(SnowGL *gl);
 private:
-	size_t indicesPerAtom();
-	void setPosition(glm::vec3 position);
-	void colourByElement(std::string ele);
-	bool checkAtom(Atom *a);
-	void updateSinglePosition(Atom *a, glm::vec3 &p);
-	void updateMultiPositions(Atom *a, Atom::WithPos &wp);
 	static void backgroundWatch(GuiAtom *what);
-
-	Icosahedron *_template = nullptr;
-	GuiBond *_bonds = nullptr;
+	
+	GuiBalls *_balls = nullptr;
+	
+	std::vector<GuiRepresentation *> _representations;
 
 	std::vector<Atom *> _atoms;
-	std::map<Atom *, int> _atomIndex;
-	std::map<Atom *, glm::vec3> _atomPos;
 	
 	std::thread *_watch = nullptr;
+
 	std::atomic<bool> _finish{false};
 	
 	bool _multi = true;

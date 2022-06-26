@@ -1,7 +1,24 @@
-#include "GuiAtom.h"
-#include "GuiBond.h"
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/gui/elements/Icosahedron.h>
+#include "GuiAtom.h"
+#include "GuiBalls.h"
+
 #include <vagabond/gui/elements/SnowGL.h>
 #include <SDL2/SDL.h>
 
@@ -14,26 +31,15 @@
 
 GuiAtom::GuiAtom() : Renderable()
 {
-	setUsesProjection(true);
-	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/lighting.fsh");
-	
-	_template = new Icosahedron();
-	_template->triangulate();
-	_template->setColour(0.5, 0.5, 0.5);
-	_template->resize(0.3);
-	
-	_bonds = new GuiBond();
+	_balls = new GuiBalls(this);
 	_finish = false;
 }
 
 GuiAtom::~GuiAtom()
 {
 	stop();
-	delete _bonds;
-	_bonds = nullptr;
-	delete _template;
-	_template = nullptr;
+	delete _balls;
+	_balls = nullptr;
 }
 
 void GuiAtom::stop()
@@ -45,59 +51,6 @@ void GuiAtom::stop()
 		delete _watch;
 		_watch = nullptr;
 	}
-
-}
-
-void GuiAtom::setMulti(bool m)
-{
-	_multi = m;
-}
-
-void GuiAtom::colourByElement(std::string ele)
-{
-	glm::vec4 colour = glm::vec4(0.5, 0.5, 0.5, 1.);
-	if (ele == "O")
-	{
-		colour = glm::vec4(1.0, 0.2, 0.2, 1.);
-	}
-	if (ele == "S")
-	{
-		colour = glm::vec4(1.0, 1.0, 0.2, 1.);
-	}
-	if (ele == "P")
-	{
-		colour = glm::vec4(1.0, 0.2, 1.0, 1.);
-	}
-	if (ele == "H")
-	{
-		colour = glm::vec4(0.8, 0.8, 0.8, 1.);
-	}
-	if (ele == "N")
-	{
-		colour = glm::vec4(0.2, 0.2, 1.0, 1.);
-	}
-
-	_template->setColour(colour.x, colour.y, colour.z);
-}
-
-void GuiAtom::setPosition(glm::vec3 position)
-{
-	if (!is_glm_vec_sane(position))
-	{
-		throw std::runtime_error("position contains nan or vec values");
-	}
-
-	_template->setPosition(position);
-}
-
-size_t GuiAtom::indicesPerAtom()
-{
-	return _template->indexCount();
-}
-
-size_t GuiAtom::verticesPerAtom()
-{
-	return _template->vertexCount();
 }
 
 void GuiAtom::render(SnowGL *gl)
@@ -106,7 +59,7 @@ void GuiAtom::render(SnowGL *gl)
 	glEnable(GL_DEPTH_TEST);
 	
 	Renderable::render(gl);
-	_bonds->render(gl);
+	_balls->render(gl);
 
 	glDisable(GL_DEPTH_TEST);
 }
@@ -114,55 +67,21 @@ void GuiAtom::render(SnowGL *gl)
 void GuiAtom::watchAtom(Atom *a)
 {
 	_atoms.push_back(a);
-	long index = _vertices.size();
-
-	colourByElement(a->elementSymbol());
-	setPosition(glm::vec3(0.));
-
-	appendObject(_template);
-
-	_atomIndex[a] = index;
-	
-	checkAtom(a);
+	_balls->watchAtom(a);
 }
 
 void GuiAtom::watchAtoms(AtomGroup *a)
 {
-	_vertices.reserve(verticesPerAtom() * a->size());
-	_indices.reserve(indicesPerAtom() * a->size());
-
+	lockMutex();
 	for (size_t i = 0; i < a->size(); i++)
 	{
 		watchAtom((*a)[i]);
 	}
 	
-	_bonds->watchBonds(a);
-}
+	_balls->watchBonds(a);
 
-void GuiAtom::updateMultiPositions(Atom *a, Atom::WithPos &wp)
-{
-	_bonds->updateAtoms(a, wp);
-}
-
-void GuiAtom::updateSinglePosition(Atom *a, glm::vec3 &p)
-{
-	int idx = _atomIndex[a];
-	glm::vec3 last = _atomPos[a];
-
-	glm::vec3 diff = p - last;
-
-	if (!is_glm_vec_sane(diff))
-	{
-		throw std::runtime_error("position contains nan or vec values");
-	}
-
-	int end = idx + verticesPerAtom(); 
-	for (size_t j = idx; j < end; j++)
-	{
-		_vertices[j].pos += diff;
-	}
-
-	_atomPos[a] = p;
+	checkAtoms();
+	unlockMutex();
 }
 
 bool GuiAtom::checkAtom(Atom *a)
@@ -172,8 +91,7 @@ bool GuiAtom::checkAtom(Atom *a)
 		glm::vec3 p;
 		if (a->positionChanged() && a->fishPosition(&p))
 		{
-			updateSinglePosition(a, p);
-			_bonds->updateAtom(a, p);
+			_balls->updateSinglePosition(a, p);
 			return true;
 		}
 	}
@@ -182,8 +100,8 @@ bool GuiAtom::checkAtom(Atom *a)
 		Atom::WithPos wp;
 		if (a->positionChanged() && a->fishPositions(&wp))
 		{
-			updateSinglePosition(a, wp.ave);
-			updateMultiPositions(a, wp);
+			_balls->updateSinglePosition(a, wp.ave);
+			_balls->updateMultiPositions(a, wp);
 			return true;
 		}
 	}
@@ -212,8 +130,7 @@ void GuiAtom::checkAtoms()
 
 	if (changed && !_finish)
 	{
-		forceRender();
-		_bonds->forceRender();
+		_balls->forceRender();
 	}
 }
 
@@ -235,4 +152,9 @@ void GuiAtom::backgroundWatch(GuiAtom *what)
 void GuiAtom::startBackgroundWatch()
 {
 	_watch = new std::thread(&GuiAtom::backgroundWatch, this);
+}
+
+glm::vec3 GuiAtom::getCentre()
+{
+	return _balls->centroid();
 }
