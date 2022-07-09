@@ -11,6 +11,7 @@ class IndexResponder;
 class Renderable;
 class Button;
 class Modal;
+class TextButton;
 
 class Scene : public SnowGL, public ButtonResponder
 {
@@ -64,6 +65,8 @@ public:
 	{
 		return false;
 	}
+	
+	void setInformation(std::string str);
 protected:
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
@@ -80,6 +83,7 @@ protected:
 	Modal *_removeModal;
 	Scene *_previous;
 	Button *_back;
+	TextButton *_info = nullptr;
 	
 	SDL_Cursor *_cursor = nullptr;
 

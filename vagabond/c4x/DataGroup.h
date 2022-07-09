@@ -86,8 +86,19 @@ public:
 		return _diffs[i];
 	}
 	
+	const Array weightedDifferences(std::vector<float> weights);
+
+	const Array differences(int m, int n);
+	
+	virtual Unit difference(int m, int n, int j);
+	
 	/** Add names of units. Total must not exceed length. */
 	void addUnitNames(std::vector<std::string> header);
+	
+	const std::vector<std::string> &unitNames() const
+	{
+		return _unitNames;
+	}
 protected:
 	float correlation_between(int i, int j);
 	float distance_between(int i, int j);
@@ -100,6 +111,7 @@ protected:
 
 	int _length;
 	Array _average;
+	Array _stdevs;
 };
 
 #include "DataGroup.cpp"

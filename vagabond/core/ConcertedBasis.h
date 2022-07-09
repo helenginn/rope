@@ -22,6 +22,9 @@
 #include "TorsionBasis.h"
 #include "../utils/svd/PCA.h"
 
+class Molecule;
+class Residue;
+
 class ConcertedBasis : public TorsionBasis
 {
 public:
@@ -36,10 +39,34 @@ public:
 	virtual void supplyMask(std::vector<bool> mask);
 	
 	size_t activeBonds();
+	
+	void setCustom(bool custom)
+	{
+		_custom = custom;
+	}
+	
+	void fillFromMoleculeList(Molecule *molecule, int axis,
+	                          const std::vector<std::string> &list,
+	                          const std::vector<float> &values);
+
+	const std::vector<BondTorsion *> &missingBonds() const
+	{
+		return _missing;
+	}
+	
+	Residue *unusedTorsion()
+	{
+		return _unusedId;
+	}
 private:
 	void prepareSVD();
 	void setupAngleList();
 	std::vector<bool> _refineMask;
+
+	std::vector<BondTorsion *> _missing;
+	Residue *_unusedId{};
+
+	bool _custom = false;
 	
 	/* one idx per every torsion angle; >=0 if refined, -1 if not refined 
 	 * where value < _nActive*/

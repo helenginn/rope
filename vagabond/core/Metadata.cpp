@@ -136,6 +136,8 @@ void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 	_file2Data[filename] = &_data.back();
 	_model2Data[model_id] = &_data.back();
 	_mole2Data[molecule_id] = &_data.back();
+
+	_mol2Model[molecule_id] = model_id;
 }
 
 Metadata &Metadata::operator+=(const Metadata &other)
@@ -150,14 +152,41 @@ Metadata &Metadata::operator+=(const Metadata &other)
 
 void Metadata::extractData(std::ostringstream &csv, KeyValues &kv) const
 {
+	KeyValues *model_kv = nullptr;
+	if (kv.count("molecule"))
+	{
+		std::string molecule_id = kv.at("molecule").text();
+		std::string model_id = _mol2Model.at(molecule_id);
+		model_kv = _model2Data.at(model_id);
+	}
+	
+	std::cout << model_kv << std::endl;
+
 	for (const std::string &header : _headers)
 	{
-		if (kv.count(header) == 0)
+		if (kv.count(header) == 0 && model_kv == nullptr)
 		{
+			std::cout << "kv 0, model_kv missing" << std::endl;
 			csv << ",";
 			continue;
 		}
+		else if (kv.count(header) == 0 && model_kv)
+		{
+			if (model_kv->count(header) == 0)
+			{
+			std::cout << "kv 0, model_kv 0" << std::endl;
+				csv << ",";
+				continue;
+			}
+			else
+			{
+				std::string value = model_kv->at(header).text();
+				csv << value << ",";
+				continue;
+			}
+		}
 
+			std::cout << "kv got it" << std::endl;
 		std::string value = kv.at(header).text();
 		csv << value << ",";
 	}
@@ -185,8 +214,14 @@ std::string Metadata::asCSV() const
 
 	for (it = _model2Data.cbegin(); it != _model2Data.cend(); it++)
 	{
-		extractData(csv, *it->second);
+//		extractData(csv, *it->second);
 	}
 
 	return csv.str();
+}
+
+void Metadata::setModelIdForMoleculeId(std::string mol_id, std::string mod_id)
+{
+	_mol2Model[mol_id] = mod_id;
+
 }

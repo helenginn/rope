@@ -22,7 +22,7 @@ struct SDL_Window;
 class Window
 {
 public:
-	Window();
+	Window(int width = BROWSER_WIDTH, int height = BROWSER_HEIGHT);
 	virtual ~Window();
 	
 	static SDL_Renderer *renderer()
@@ -55,12 +55,16 @@ public:
 	
 	static void setDelete(Scene *sc)
 	{
+		_deleteMutex.lock();
 		_toDelete.insert(sc);
+		_deleteMutex.unlock();
 	}
 	
 	static void setDelete(Renderable *r)
 	{
+		_deleteMutex.lock();
 		_deleteRenderables.insert(r);
+		_deleteMutex.unlock();
 	}
 
 	void glSetup();
@@ -90,6 +94,10 @@ public:
 		return _context;
 	}
 	
+	static Window *window()
+	{
+		return _myWindow;
+	}
 protected:
 	static Scene *_current;
 	static Scene *_next;
@@ -105,6 +113,7 @@ private:
 	static int _height;
 
 	static std::set<Scene *> _toDelete;
+	static std::mutex _deleteMutex;
 	static std::set<Renderable *> _deleteRenderables;
 	
 	static Window *_myWindow;

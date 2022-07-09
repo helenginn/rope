@@ -289,6 +289,8 @@ void Grapher::sortGraphChildren()
 			continue;
 		}
 		
+		_graphs[i]->torsion->setInstrumental(false);
+
 		/* but we must make sure that the chosen torsion takes priority */
 		
 		AtomGraph *tmp = _graphs[i]->children[0];
@@ -310,6 +312,11 @@ void Grapher::sortGraphChildren()
 			int priority = count - j - 1;
 			AtomGraph *child = _graphs[i]->children[j];
 			child->priority = priority;
+			
+			if (child->priority == 0)
+			{
+				_graphs[i]->torsion->setInstrumental(true);
+			}
 		}
 		
 	}

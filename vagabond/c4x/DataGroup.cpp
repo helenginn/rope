@@ -70,7 +70,8 @@ void DataGroup<Unit>::calculateAverage()
 {
 	_average.clear();
 	_average.resize(_length);
-	double numVectors = _vectors.size();
+	std::vector<double> counts;
+	counts.resize(_length);
 
 	for (size_t i = 0; i < _length; i++)
 	{
@@ -83,12 +84,13 @@ void DataGroup<Unit>::calculateAverage()
 			}
 
 			_average[i] += v;
+			counts[i]++;
 		}
 	}
 
 	for (size_t j = 0; j < _length; j++)
 	{
-		_average[j] /= numVectors;
+		_average[j] /= counts[j];
 	}
 }
 
@@ -134,6 +136,7 @@ void DataGroup<Unit>::normalise()
 		findDifferences();
 	}
 	
+	_stdevs.clear();
 	float n = _vectors.size();
 
 	for (size_t i = 0; i < _length; i++)
@@ -147,6 +150,7 @@ void DataGroup<Unit>::normalise()
 		}
 		
 		double stdev = sqrt(xx - x * x / n);
+		_stdevs.push_back(stdev);
 		
 		if (stdev < 1e-6)
 		{
@@ -316,7 +320,6 @@ PCA::Matrix DataGroup<Unit>::arbitraryMatrix
 	return m;
 }
 
-
 template <class Unit>
 PCA::Matrix DataGroup<Unit>::distanceMatrix()
 {
@@ -333,6 +336,59 @@ PCA::Matrix DataGroup<Unit>::correlationMatrix()
 	}
 	
 	return arbitraryMatrix(&DataGroup::correlation_between);
+}
+
+template <class Unit>
+Unit DataGroup<Unit>::difference(int m, int n, int j)
+{
+	return (_diffs[n][j] - _diffs[m][j]) * _stdevs[j];
+}
+
+template <class Unit>
+const typename DataGroup<Unit>::Array DataGroup<Unit>::differences(int m, int n)
+{
+	if (_diffs.size() == 0)
+	{
+		findDifferences();
+		normalise();
+	}
+	
+	Array vals = Array(_length, 0);
+
+	for (size_t j = 0; j < _length; j++)
+	{
+		vals[j] = difference(m, n, j);
+	}
+	
+	return vals;
+}
+
+template <class Unit>
+const typename DataGroup<Unit>::Array DataGroup<Unit>::weightedDifferences(std::vector<float> weights)
+{
+	if (weights.size() != _vectors.size())
+	{
+		throw std::runtime_error("Weights for data group do not match number of"\
+		                         " data points");
+	}
+
+	if (_diffs.size() == 0)
+	{
+		findDifferences();
+		normalise();
+	}
+	
+	Array vals = Array(_length, 0);
+	
+	for (size_t i = 0; i < _diffs.size(); i++)
+	{
+		for (size_t j = 0; j < _length; j++)
+		{
+			vals[j] += weights[i] * _diffs[i][j] * _stdevs[j];
+		}
+	}
+	
+	return vals;
 }
 
 #endif

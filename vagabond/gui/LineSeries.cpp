@@ -30,6 +30,7 @@
 LineSeries::LineSeries(ClusterView *cv, const Rule &r) : Renderable(),
 _rule(r)
 {
+	setName("Line series");
 	appendObject(cv);
 	_indices.clear();
 	_group = cv->cluster()->dataGroup();
@@ -37,7 +38,7 @@ _rule(r)
 	_renderType = GL_LINES;
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/box.fsh");
+	setFragmentShaderFile("assets/shaders/color_only.fsh");
 
 	setup();
 }
@@ -113,4 +114,6 @@ void LineSeries::setup()
 	}
 	
 	addLabels();
+	setColour(0., 0., 0.);
+	setAlpha(1.);
 }

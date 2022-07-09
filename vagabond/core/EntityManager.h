@@ -35,7 +35,8 @@ class ModelManager;
 
 class EntityManager : 
 public Manager<Entity>, 
-public Responder<Entity>
+public Responder<Entity>,
+public Progressor 
 {
 public:
 	EntityManager();

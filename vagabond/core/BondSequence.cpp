@@ -23,6 +23,7 @@
 #include "Superpose.h"
 #include "Atom.h"
 #include <iostream>
+#include <vagabond/utils/FileReader.h>
 #include <queue>
 
 class ForceField;
@@ -195,7 +196,9 @@ void BondSequence::fetchTorsion(int idx)
 		if (_sampler && _sampler->dims() != n)
 		{
 			throw std::runtime_error("Sampler dimension does not match"\
-			                         "custom vector dimension");
+			                         " custom vector dimension: "
+			                         + i_to_str(n) + " vs " 
+			                         + i_to_str(_sampler->dims()));
 		}
 
 		if (_currentVec == nullptr)
@@ -207,7 +210,7 @@ void BondSequence::fetchTorsion(int idx)
 
 		if (_sampler != nullptr)
 		{
-			_sampler->addToVec(_currentVec, _sampleNum);
+			_sampler->multiplyVec(_currentVec, _sampleNum);
 		}
 	}
 
@@ -270,8 +273,6 @@ int BondSequence::calculateBlock(int idx)
 			_blocks[nidx].inherit = (wip[1]);
 		}
 		
-//		std::cout << glm::to_string(_blocks[nidx].my_position()) << std::endl;
-
 		return 1;
 	}
 	
@@ -299,12 +300,12 @@ void BondSequence::checkCustomVectorSizeFits()
 	}
 
 	Job &j = *miniJob()->job;
-	if (j.custom.nvecs == 0)
+	if (j.custom.vector_count() == 0)
 	{
 		return;
 	}
 	
-	int expected = j.custom.vecs[j.custom.nvecs - 1].sample_num;
+	int expected = j.custom.vecs.back().sample_num;
 
 	if (expected > sampleCount())
 	{
@@ -321,7 +322,7 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	}
 
 	Job &j = *miniJob()->job;
-	if (j.custom.nvecs == 0)
+	if (j.custom.vector_count() == 0)
 	{
 		_custom = nullptr;
 		return;
@@ -353,7 +354,7 @@ void BondSequence::fastCalculate()
 
 	for (size_t i = start; i < _blocks.size() && i < end; i++)
 	{
-		if (!_blocks[i].flag && !_fullRecalc)
+		if (!_blocks[i].flag && !_fullRecalc && _blocks[i].atom != nullptr)
 		{
 			continue;
 		}
@@ -473,6 +474,7 @@ double BondSequence::calculateDeviations()
 
 		const glm::vec3 &target = _blocks[i].target;
 		glm::vec3 diff = trial_pos - target;
+		
 		sum += glm::length(diff);
 		count++;
 	}
@@ -647,6 +649,12 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	}
 
 	_endCalc = last + 1;
+	
+	if (_startCalc > 0 && _blocks[_startCalc - 1].atom == nullptr)
+	{
+		_startCalc--;
+	}
+
 	_fullRecalc = true;
 	_torsionBasis->supplyMask(atomMask());
 }
@@ -702,6 +710,11 @@ void BondSequence::reflagDepthOld(int min, int max, int sidemax)
 		{
 			block.flag = false;
 		}
+	}
+	
+	if (_startCalc > 0 && _blocks[_startCalc - 1].atom == nullptr)
+	{
+		_startCalc--;
 	}
 
 	_fullRecalc = true;

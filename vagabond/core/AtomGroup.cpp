@@ -96,6 +96,11 @@ AtomGroup::~AtomGroup()
 
 bool AtomGroup::hasAtom(Atom *a)
 {
+	if (_orderedPointers.count(a))
+	{
+		return true;
+	}
+
 	return (_desc2Atom.count(a->desc()) > 0);
 
 	AtomVector::iterator it = std::find(_atoms.begin(), _atoms.end(), a);
@@ -115,6 +120,7 @@ void AtomGroup::add(Atom *a)
 		}
 		
 		_desc2Atom[a->desc()] = a;
+		_orderedPointers.insert(a);
 
 		_anchors.clear();
 	}

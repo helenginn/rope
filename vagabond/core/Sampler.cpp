@@ -157,10 +157,18 @@ float Sampler::gamma()
 	return result;
 }
 
-void Sampler::addToVec(float *&vec, int num)
+void Sampler::multiplyVec(float *&vec, int sample_num)
 {
+	float result[_dims];
+	memset(result, '\0', sizeof(float) * _dims);
+
 	for (size_t i = 0; i < _dims; i++)
 	{
-		vec[i] += _points.ptrs[num][i] * 20;
+		result[i] += _points.ptrs[sample_num][i] * vec[i];
+	}
+	
+	for (size_t i = 0; i < _dims; i++)
+	{
+		vec[i] = result[i];
 	}
 }

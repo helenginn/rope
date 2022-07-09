@@ -208,7 +208,7 @@ void PositionRefinery::refine(AtomGroup *group)
 	
 	res = fullResidual();
 	std::cout << "Overall average distance after refinement: "
-	<< res << " Angstroms" << std::endl;
+	<< res << " Angstroms over " << group->size() << " atoms." << std::endl;
 	
 	delete _calculator;
 	_calculator = nullptr;

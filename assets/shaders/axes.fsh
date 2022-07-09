@@ -14,6 +14,13 @@ out vec4 FragColor;
 void main()
 {
 	vec4 result = texture(pic_tex, vTex);
+
+	if (result.a < 0.05)
+	{
+		discard;
+	}
+
+	result += vColor;
 	FragColor = result;
 }
 

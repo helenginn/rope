@@ -27,8 +27,8 @@ void main()
 
 	float alpha = 1 - min(dist / 20, 1);
 
-	vec4 result = texture(pic_tex, vTex);
-	result += vColor;
+//	vec4 result = texture(pic_tex, vTex);
+	vec4 result = vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.8;
 	vec3 unit = normalize(vNormal);

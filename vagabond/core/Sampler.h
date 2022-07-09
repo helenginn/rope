@@ -30,7 +30,7 @@ public:
 	void setup();
 	float hypersphereVolume(float radius);
 	
-	void addToVec(float *&vec, int num);
+	void multiplyVec(float *&vec, int num);
 	
 	int dims()
 	{

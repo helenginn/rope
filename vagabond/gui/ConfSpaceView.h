@@ -26,6 +26,7 @@
 class Entity;
 class Molecule;
 class Rule;
+class Axes;
 class HasMetadata;
 class MetadataGroup;
 
@@ -50,6 +51,20 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	
 	void prepareMenu(HasMetadata *hm);
+	void reorientToMolecule(Molecule *mol);
+
+private:
+	enum Status
+	{
+		Nothing,
+		Reorienting,
+	};
+	
+public:
+	bool returnToView()
+	{
+		return (_status == Reorienting);
+	}
 private:
 	void chooseGroup(Rule *rule, bool inverse);
 	void executeSubset(float min, float max);
@@ -64,10 +79,13 @@ private:
 	Entity *_entity = nullptr;
 	int _extra = 0;
 	ClusterView *_view = nullptr;
+	Axes *_axes = nullptr;
 	const Rule *_colourRule = nullptr;
 
 	std::vector<HasMetadata *> _whiteList;
 	std::vector<Renderable *> _temps;
+	
+	Status _status = Nothing;
 
 	bool _tsne = false;
 };

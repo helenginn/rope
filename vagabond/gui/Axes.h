@@ -22,26 +22,42 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
 
+class Scene;
 class Molecule;
 class MetadataGroup;
 
-class Axes : public IndexResponder
+class Axes : public IndexResponder, public ButtonResponder
 {
 public:
 	Axes(Cluster<MetadataGroup> *group, Molecule *m);
+	
+	void setScene(Scene *scene)
+	{
+		_scene = scene;
+	}
 
 	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual void reindex();
+	virtual void reorient(int i, Molecule *mol);
 	virtual void click(bool left = true);
 	virtual bool mouseOver();
 	virtual void unmouseOver();
 
 	virtual size_t requestedIndices();
+
+	void buttonPressed(std::string tag, Button *button);
 private:
+	std::vector<float> getTorsionVector(int axis);
 	void prepareAxes();
+	void refreshAxes();
+	void loadAxisExplorer(int idx);
 
 	Cluster<MetadataGroup> *_cluster = nullptr;
 	Molecule *_molecule = nullptr;
+	Scene *_scene = nullptr;
+	int _lastIdx = -1;
+	
+	Molecule *_targets[3];
 
 	std::vector<glm::vec3> _dirs;
 };

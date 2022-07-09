@@ -118,7 +118,6 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 	GLint intform = GL_RGBA;
 	GLenum myform = GL_RGBA;
 
-	
 	glTexImage2D(GL_TEXTURE_2D, 0, intform, *w, *h,
 	             0, myform, GL_UNSIGNED_BYTE, bytes);
 
@@ -132,6 +131,40 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 
 	_counts[texid] = 1;
 	return texid;
+}
+
+GLuint Library::allocateEmptyTexture(int w, int h, std::string filename)
+{
+	GLuint texid;
+	glGenTextures(1, &texid);
+	glBindTexture(GL_TEXTURE_2D, texid);
+
+	GLint intform = GL_RGBA;
+	GLenum myform = GL_RGBA;
+	
+	int size = w * h * 4 * sizeof(unsigned char);
+	unsigned char *bytes = (unsigned char *)malloc(size);
+	memset(bytes, '\0', size);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, intform, w, h, 0, myform, 
+	             GL_UNSIGNED_BYTE, bytes);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
+
+	if (filename.length() > 0)
+	{
+		_textures[filename] = texid;
+		_counts[texid] = 1;
+	}
+	
+	free(bytes);
+	
+	return texid;
+
 }
 
 GLuint Library::loadSurface(SDL_Surface *image, std::string filename)

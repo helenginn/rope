@@ -14,6 +14,11 @@ layout (location = 1) out uint ValIndex;
 void main()
 {
 	vec4 result = texture(pic_tex, vTex);
+
+	if (result.a < 0.05)
+	{
+		discard;
+	}
 	result += vColor;
 	ValIndex = uint(vExtra.x);
 	FragColor = result;

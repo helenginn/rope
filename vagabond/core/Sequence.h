@@ -155,6 +155,9 @@ public:
 	 * the mapping from master-to-local */
 	void remapFromMaster(Entity *entity);
 
+	/** name in style t<id>:<desc> to torsion angle (if available) */
+	bool torsionByName(const std::string name, Residue **res);
+
 	friend void to_json(json &j, const Sequence &value);
 	friend void from_json(const json &j, Sequence &value);
 
@@ -186,11 +189,11 @@ public:
 	}
 	
 	/** how many torsion angles have been referenced in the entire sequence? */
-	const size_t torsionCount(bool onlyMain) const;
+	const size_t torsionCount(bool onlyMain = false) const;
 	
 	/** torsion angle names in order of residue / reference, to be called
 	 * on the entity master sequence in the case of clustering */
-	void addTorsionNames(std::vector<std::string> &names, bool onlyMain);
+	void addTorsionNames(std::vector<std::string> &names, bool onlyMain = false);
 
 	/** call on entity master sequence to get the corresponding torsion 
 	 * angles from a derived/mapped sequence */

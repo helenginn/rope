@@ -87,6 +87,7 @@ void CalculateMetadata::populateBoundEntities()
 			std::string header = "has_" + e.name();
 			
 			kv[header] = str;
+			kv["has_other_entity"] = Value("true");
 
 			count++;
 		}

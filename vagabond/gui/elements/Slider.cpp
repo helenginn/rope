@@ -56,6 +56,12 @@ void Slider::setStart(double x, double y)
 void Slider::finishedDragging(std::string tag, double x, double y)
 {
 	double val = _min + (double)x * _step;
+	
+	if (val > _max)
+	{
+		val = _max;
+	}
+
 	_display->setText(_prefix + f_to_str(val, 0) + _suffix);
 	_display->resize(0.6);
 	_val = val;

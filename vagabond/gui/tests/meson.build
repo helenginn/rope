@@ -6,8 +6,6 @@ unit_tests = [
 'guiatom_initialised_with_sulphur_is_yellow',
 'guiatom_changes_atom_location_when_updated',
 'guiatom_does_not_accept_anumeric_positions',
-'guiatom_increments_vertex_array_by_number',
-'guiatom_vertices_per_atom_above_zero',
 'guiatom_can_use_projection',
 'box_does_not_use_projection',
 'button_highlights_when_mouse_over',

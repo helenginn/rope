@@ -35,6 +35,7 @@
 #include <vagabond/gui/DistanceMaker.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/SearchPDB.h>
+#include <vagabond/gui/SerialRefiner.h>
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextEntry.h>
@@ -130,6 +131,15 @@ void AddEntity::setup()
 		top += inc;
 
 		{
+			TextButton *t = new TextButton("Refine all", this);
+			t->setLeft(0.15, top);
+			t->setReturnTag("refine");
+			addObject(t);
+		}
+
+		top += inc;
+
+		{
 			TextButton *t = new TextButton("Add to metadata", this);
 			t->setLeft(0.15, top);
 			t->setReturnTag("metadata");
@@ -204,6 +214,13 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		CalculateMetadata *cm = new CalculateMetadata(this, &_obj);
 		cm->show();
+	}
+	else if (tag == "refine")
+	{
+		SerialRefiner *refiner = new SerialRefiner(this, &_obj);
+		refiner->setRefineAll(true);
+		refiner->show();
+		return;
 	}
 	else if (tag == "create")
 	{

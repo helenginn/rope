@@ -351,7 +351,6 @@ protected:
 	double _green;
 	double _blue;
 
-	bool _textured = true;
 	bool _backToFront = false;
 	GLuint _renderType = GL_TRIANGLES;
 	std::string _vString;

@@ -44,6 +44,7 @@ void Scene::preSetup()
 void Scene::setBackground()
 {
 	Image *r = new Image("assets/images/paper.jpg");
+//	Image *r = new Image("assets/images/blank.png");
 	r->Box::makeQuad();
 	addObject(r);
 	_background = r;
@@ -113,12 +114,16 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 
 void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
+	_lastX = x;
+	_lastY = y;
 	convertToGLCoords(&x, &y);
 	_moving = false;
 	Renderable *chosen = findObject(x, y);
+	bool left = button.button == SDL_BUTTON_LEFT;
+
 	if (chosen != NULL)
 	{
-		chosen->click();
+		chosen->click(left);
 	}
 	
 	if (_modal != NULL && chosen == NULL)
@@ -134,7 +139,6 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 
 	if (hasIndexedObjects() > 0 && _modal == NULL && chosen == NULL)
 	{
-		bool left = button.button == SDL_BUTTON_LEFT;
 		checkIndexBuffer(x, y, false, true, left);
 	}
 
@@ -248,22 +252,33 @@ void Scene::buttonPressed(std::string tag, Button *button)
 		_previous->showSimple();
 		Window::setDelete(this);
 	}
+	if (tag == "remove_info" && _info != nullptr)
+	{
+		removeObject(_info);
+		delete _info;
+		_info = nullptr;
+	}
 }
 
 void Scene::back(int num)
 {
+	std::cout << "Show previous screen" << std::endl;
 	_previous->showSimple();
-	Window::setDelete(this);
 	
+	/* recursively remove scenes */
 	if (num > 0)
 	{
 		_previous->back(num - 1);
 
 		if (num == 1)
 		{
-			_previous->refresh();
+			/* might be called anyway */
+//			_previous->refresh();
 		}
 	}
+
+	std::cout << "add scene (" << this << ") to delete queue" << std::endl;
+	Window::setDelete(this);
 }
 
 void Scene::keyPressEvent(SDL_Keycode pressed)
@@ -276,3 +291,23 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 	_keyResponder->keyPressed(pressed);
 }
 
+
+void Scene::setInformation(std::string str)
+{
+	if (_info != nullptr)
+	{
+		removeObject(_info);
+		delete _info;
+		_info = nullptr;
+	}
+
+	if (str.length())
+	{
+		_info = new TextButton(str, this);
+		_info->setReturnTag("remove_info");
+		_info->resize(0.6);
+		_info->setCentre(0.5, 0.25);
+		addObject(_info);
+	}
+
+}

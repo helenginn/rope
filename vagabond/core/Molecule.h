@@ -53,6 +53,11 @@ public:
 		return _chain_ids;
 	}
 	
+	const bool has_chain_id(std::string id) const
+	{
+		return _chain_ids.count(id) > 0;
+	}
+	
 	const std::string model_chain_id() const;
 	
 	virtual const std::string id() const
@@ -105,6 +110,14 @@ public:
 	}
 	
 	Entity *entity();
+	
+	void residuesFromTorsionList(std::vector<Residue *> &residues,
+	                              std::vector<std::string> &list);
+	float valueForTorsionFromList(BondTorsion *bt,
+	                              const std::vector<Residue *> &residues,
+	                              const std::vector<std::string> &list,
+	                              const std::vector<float> &values,
+	                              std::vector<bool> &found);
 
 	virtual const Metadata::KeyValues metadata() const;
 

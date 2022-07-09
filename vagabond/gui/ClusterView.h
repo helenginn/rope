@@ -73,6 +73,8 @@ public:
 
 	virtual bool mouseOver();
 	virtual void unMouseOver();
+	
+	void reselect();
 protected:
 	virtual void extraUniforms();
 	void customiseTexture(Snow::Vertex &vert);

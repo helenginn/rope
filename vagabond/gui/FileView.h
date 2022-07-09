@@ -38,7 +38,7 @@ public:
 	virtual void fileChosen(std::string filename) = 0;
 };
 
-class FileView : public ListView, public FileManagerResponder
+class FileView : public ListView, public Responder<FileManager>
 {
 public:
 	FileView(Scene *prev);
@@ -49,7 +49,7 @@ public:
 	virtual ~FileView();
 	virtual void setup();
 	
-	virtual void filesChanged();
+	virtual void triggerResponse();
 	void handleFileWithoutChoice(std::string filename);
 	void returnToResponder(std::string filename);
 

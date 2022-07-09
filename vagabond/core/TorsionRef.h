@@ -33,6 +33,7 @@ public:
 	TorsionRef(std::string desc)
 	{
 		_desc = desc;
+		organiseDescriptions();
 	}
 
 	double refinedAngle()
@@ -61,18 +62,21 @@ public:
 	{
 		return (_desc.length() > 0);
 	}
+	
+	void organiseDescriptions();
+	void housekeeping();
 
 	friend void to_json(json &j, const TorsionRef &value);
 	friend void from_json(const json &j, TorsionRef &value);
 	
 	const bool operator==(const std::string &desc) const
 	{
-		return _desc == desc;
+		return _desc == desc || _reverse_desc == desc;
 	}
 	
 	const bool operator==(const TorsionRef &other) const
 	{
-		return _desc == other._desc;
+		return _desc == other._desc || _reverse_desc == other._desc;
 	}
 	
 	const bool operator<(const TorsionRef &other) const
@@ -82,6 +86,7 @@ public:
 
 private:
 	std::string _desc;
+	std::string _reverse_desc;
 	double _refinedAngle = 0;
 	bool _main = false;
 	BondTorsion *_torsion = nullptr;
@@ -107,6 +112,8 @@ inline void from_json(const json &j, TorsionRef &value)
 	{
 		std::cout << "Error proccessing json, probably old version" << std::endl;
 	}
+	
+	value.housekeeping();
 }
 
 #endif

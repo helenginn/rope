@@ -9,6 +9,7 @@
 class Icosahedron;
 class GuiBond;
 class GuiBalls;
+class GuiRibbon;
 class GuiRepresentation;
 class AtomGroup;
 
@@ -46,6 +47,7 @@ private:
 	static void backgroundWatch(GuiAtom *what);
 	
 	GuiBalls *_balls = nullptr;
+	GuiRibbon *_ribbon = nullptr;
 	
 	std::vector<GuiRepresentation *> _representations;
 

@@ -29,6 +29,7 @@ public:
 	enum Type
 	{
 		TypeSimple,
+		TypeCustom,
 		TypeConcerted,
 		TypeMechanical,
 	};

@@ -223,6 +223,11 @@ void ConfSpaceView::executeSubset(float min, float max)
 
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 {
+	if (tag == "choose_reorient_molecule")
+	{
+		setInformation("choose molecule to reorient axis direction...");
+		_status = Reorienting;
+	}
 	if (tag == "choose_subset")
 	{
 		std::string str = "Focus on " + _colourRule->header() + " subset:";
@@ -275,7 +280,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		SerialRefiner *refiner = new SerialRefiner(this, _entity);
 		refiner->setExtra(_extra);
 		refiner->show();
-
 	}
 	if (tag == "no_fold_in")
 	{
@@ -397,9 +401,31 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 
 void ConfSpaceView::createReference(Molecule *m)
 {
-	Axes *axes = new Axes(_view->cluster(), m);
-	axes->setIndexResponseView(this);
-	addObject(axes);
-	addIndexResponder(axes);
+	if (_axes != nullptr)
+	{
+		removeObject(_axes);
+		removeResponder(_axes);
+		delete _axes;
+		_axes = nullptr;
+	}
+
+	_axes = new Axes(_view->cluster(), m);
+	_axes->setScene(this);
+	_axes->setIndexResponseView(this);
+	addObject(_axes);
+	addIndexResponder(_axes);
 }
 
+
+void ConfSpaceView::reorientToMolecule(Molecule *mol)
+{
+	if (_axes == nullptr)
+	{
+		return;
+	}
+	
+	setInformation("");
+	_status = Nothing;
+	
+	_axes->reorient(-1, mol);
+}

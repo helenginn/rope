@@ -20,6 +20,7 @@
 #define __vagabond__Progressor__
 
 #include "Environment.h"
+#include "Responder.h"
 #include <iostream>
 
 /** \class Progressor Subclasses of Progressor can be hooked to a 
@@ -29,6 +30,7 @@
 
 class Progressor;
 
+/*
 class ProgressResponder
 {
 public:
@@ -36,8 +38,10 @@ public:
 	virtual void clickTicker(Progressor *progressor) = 0;
 	virtual void finish() {};
 };
+*/
 
-class Progressor
+class Progressor :
+public HasResponder<Responder<Progressor> >
 {
 public:
 	Progressor()
@@ -46,27 +50,14 @@ public:
 
 	virtual ~Progressor() {};
 	
-	void setProgressResponder(ProgressResponder *responder)
-	{
-		_responder = responder;
-		_ticks = 0;
-	}
-	
 	virtual const std::string progressName() const = 0;
 
 	void clickTicker()
 	{
 		_ticks++;
 		
-		if (!_responder)
-		{
-			setProgressResponder(Environment::env().progressResponder());
-		}
-
-		if (_responder)
-		{
-			_responder->clickTicker(this);
-		}
+		setResponder(Environment::env().progressResponder());
+		sendResponse("tick", this);
 	}
 	
 	const int &ticks() const
@@ -74,7 +65,6 @@ public:
 		return _ticks;
 	}
 protected:
-	ProgressResponder *_responder = nullptr;
 
 	int _ticks = 0;
 };

@@ -37,19 +37,20 @@
 FileView::FileView(Scene *prev) : ListView(prev)
 {
 	_manager = Environment::fileManager();
-	_manager->setResponder(this);
+	_manager->HasResponder<Responder<FileManager>>::setResponder(this);
+	_manager->setFilterType(File::Nothing);
 }
 
 FileView::FileView(FileViewResponder *prev, bool choose) : ListView(prev)
 {
 	_responder = prev;
 	_manager = Environment::fileManager();
-	_manager->setResponder(this);
+	_manager->HasResponder<Responder<FileManager>>::setResponder(this);
+	_manager->setFilterType(File::Nothing);
 }
 
 FileView::~FileView()
 {
-	_manager->setResponder(nullptr);
 }
 
 void FileView::filterForTypes(File::Type type)
@@ -151,7 +152,7 @@ size_t FileView::lineCount()
 	return fileCount;
 }
 
-void FileView::filesChanged()
+void FileView::triggerResponse()
 {
 	refreshNextRender();
 }

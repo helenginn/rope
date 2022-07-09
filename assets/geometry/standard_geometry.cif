@@ -1710,8 +1710,8 @@ PRO    CG    CD     SING N N 12    1.502    0.033   45 "trans"
 PRO    C     O      DOUB N N  7    1.228    0.020    1 .
 PRO    C     OXT    SING N N  8    1.229    0.019    5 .
 PRO    N     CA     SING N N  1    1.468    0.017   38 .
-PRO    N     CD     SING N N  2    1.474    0.014   39 "cis"
-PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
+#PRO    N     CD     SING N N  2    1.474    0.014   39 "cis"
+#PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
 PRO    N     H2     SING N N  3    0.860    0.020    0 .
 PRO    CA    HA     SING N N  6    0.980    0.020    0 .
 PRO    CB    HB2    SING N N 10    0.970    0.020    0 .
@@ -3827,7 +3827,7 @@ _chem_link_angle.link_id
      CA   C    N      117.2      2.2    "NOT GLY PRO"
      CA   C    N      117.1      2.8    PRO
      CA   C    N      116.2      2.0    GLY
-     O    C    N      122.7      1.6    "NOT PRO GLY"
+     O    C    N      122.7      1.6    "NOT PRO GLY HOH"
      O    C    N      121.1      1.9    PRO
      O    C    N      123.2      1.7    GLY
      C    N    H      110.062    1.5    .
@@ -3886,7 +3886,9 @@ _chem_comp_tor.period
  HIS      chi1     N      CA     CB     CG       180.0     15.0     3
  HIS      chi2     CA     CB     CG     ND1       90.0     20.0     2
  HIS      C01      CB     CG     ND1    CE1      180.0      0.0     0
+ HIS      C01      CB     CG     CD2    NE2      180.0      0.0     0
  HIS      C02      CG     ND1    CE1    NE2        0.0      0.0     0
+ HIS      C02      CG     CD2    NE2    CE1        0.0      0.0     0
  HIS      C03      ND1    CE1    NE2    CD2        0.0      0.0     0
  HIS      C04      CE1    NE2    CD2    CG         0.0      0.0     0
  ILE      chi1     N      CA     CB     CG2      180.0     15.0     3
@@ -3913,10 +3915,15 @@ _chem_comp_tor.period
  PHE      chi1     N      CA     CB     CG       180.0     15.0     3
  PHE      chi2     CA     CB     CG     CD1       90.0     20.0     2
  PHE      C01      CB     CG     CD1    CE1      180.0      0.0     0
+ PHE      C01      CB     CG     CD2    CE2      180.0      0.0     0
  PHE      C02      CG     CD1    CE1    CZ         0.0      0.0     0
+ PHE      C02      CG     CD2    CE2    CZ         0.0      0.0     0
  PHE      C03      CD1    CE1    CZ     CE2        0.0      0.0     0
+ PHE      C03      CD2    CE2    CZ     CE1        0.0      0.0     0
  PHE      C04      CE1    CZ     CE2    CD2        0.0      0.0     0
+ PHE      C04      CE2    CZ     CE1    CD1        0.0      0.0     0
  PHE      C05      CZ     CE2    CD2    CG         0.0      0.0     0
+ PHE      C05      CZ     CE1    CD1    CG         0.0      0.0     0
  PRO      chi1     N      CA     CB     CG       -25.0     15.0     3
  PRO      chi2     CA     CB     CG     CD        35.0     15.0     3
  PRO      chi3     CB     CG     CD     N        -30.0     15.0     3
@@ -3938,10 +3945,14 @@ _chem_comp_tor.period
  TYR      chi1     N      CA     CB     CG       180.0     15.0     3
  TYR      chi2     CA     CB     CG     CD1       90.0     20.0     2
  TYR      C01      CB     CG     CD1    CE1      180.0      0.0     0
+ TYR      C01      CB     CG     CD2    CE2      180.0      0.0     0
  TYR      C02      CG     CD1    CE1    CZ         0.0      0.0     0
+ TYR      C02      CG     CD2    CE2    CZ         0.0      0.0     0
  TYR      C03      CD1    CE1    CZ     CE2        0.0      0.0     0
+ TYR      C03      CD2    CE2    CZ     CE1        0.0      0.0     0
  TYR      hh1      CE1    CZ     OH     HH        60.0     30.0     2
  TYR      C04      CE1    CZ     CE2    CD2        0.0      0.0     0
+ TYR      C04      CE2    CZ     CE1    CD1        0.0      0.0     0
  TYR      C05      CZ     CE2    CD2    CG         0.0      0.0     0
  VAL      chi1     N      CA     CB     CG2      180.0     15.0     3
  VAL      hh1      CA     CB     CG1   HG13       60.0     30.0     2

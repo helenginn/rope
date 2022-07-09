@@ -53,6 +53,23 @@ void DegreeDataGroup::matchDegrees(Array &next)
 	}
 }
 
+float DegreeDataGroup::difference(int m, int n, int j)
+{
+	float deg = (_diffs[n][j] - _diffs[m][j]) * _stdevs[j];
+
+	while (deg < -180)
+	{
+		deg += 360;
+	}
+
+	while (deg >= 180)
+	{
+		deg -= 360;
+	}
+	
+	return deg;
+}
+
 void DegreeDataGroup::addArray(std::string name, Array next)
 {
 	if (_vectors.size() > 0)

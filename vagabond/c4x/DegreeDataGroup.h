@@ -32,6 +32,7 @@ public:
 	DegreeDataGroup(int num) : DataGroup<float>(num) {}
 
 	virtual void addArray(std::string name, Array next);
+	virtual float difference(int m, int n, int j);
 private:
 	void matchDegrees(Array &next);
 

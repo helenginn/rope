@@ -23,7 +23,7 @@
 
 ModelManager::ModelManager() : Manager()
 {
-	std::cout << "Model manager " << Progressor::_responder << std::endl;
+
 }
 
 Model *ModelManager::insertIfUnique(Model &m)
@@ -49,7 +49,7 @@ Model *ModelManager::insertIfUnique(Model &m)
 	_objects.push_back(m);
 	housekeeping();
 
-	triggerResponse();
+	Manager::triggerResponse();
 	
 	return &_objects.back();
 }
@@ -66,6 +66,8 @@ void ModelManager::housekeeping()
 	{
 		_name2Model[m.name()] = &m;
 	}
+	
+	connectionsToDatabase();
 }
 
 void ModelManager::autoModel()
@@ -73,9 +75,11 @@ void ModelManager::autoModel()
 	FileManager *fm = Environment::fileManager();
 	fm->setFilterType(File::MacroAtoms);
 	
-	for (size_t i = 0; i < fm->filteredCount(); i++)
+	std::vector<std::string> list = fm->filteredList();
+	
+	for (size_t i = 0; i < list.size(); i++)
 	{
-		std::string filename = fm->filtered(i);
+		std::string filename = list[i];
 		Model model = Model::autoModel(filename);
 		try
 		{
@@ -110,7 +114,7 @@ void ModelManager::purgeModel(Model *model)
 		it++;
 	}
 
-	triggerResponse();
+	Manager::triggerResponse();
 }
 
 void ModelManager::purgeMolecule(Molecule *mol)
@@ -127,4 +131,21 @@ void ModelManager::purgeEntity(Entity *ent)
 	{
 		m.throwOutEntity(ent);
 	}
+}
+
+void ModelManager::connectionsToDatabase()
+{
+	for (Model &m : _objects)
+	{
+		for (Molecule &mol : m.molecules())
+		{
+			mol.housekeeping();
+			std::string mol_id = mol.model_chain_id();
+			std::string mod_id = mol.model_id();
+			Environment::metadata()->setModelIdForMoleculeId(mol_id, mod_id);
+
+		}
+	}
+
+
 }

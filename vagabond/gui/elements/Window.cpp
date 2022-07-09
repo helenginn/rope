@@ -23,18 +23,19 @@ int Window::_width = 0;
 int Window::_height = 0;
 
 std::set<Scene *> Window::_toDelete;
+std::mutex Window::_deleteMutex;
 std::set<Renderable *> Window::_deleteRenderables;
 
 KeyResponder *Window::_keyResponder = NULL;
 
 
-Window::Window()
+Window::Window(int width, int height)
 {
 	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
 	
 #ifdef __EMSCRIPTEN__
-	_rect.w = BROWSER_WIDTH;
-	_rect.h = BROWSER_HEIGHT;
+	_rect.w = width;
+	_rect.h = height;
 #else
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) 
 	{
@@ -88,6 +89,7 @@ void Window::glSetup()
 	_width = w;
 	_height = h;
 	glEnable(GL_BLEND);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 #ifndef __EMSCRIPTEN__
 	glEnable(GL_PROGRAM_POINT_SIZE);
@@ -174,6 +176,8 @@ bool Window::tick()
 		setCurrentScene(_next);
 		_next = nullptr;
 	}
+
+	_myWindow->deleteQueued();
 	
 	if (!_current->isAlwaysOn())
 	{
@@ -185,6 +189,8 @@ bool Window::tick()
 
 void Window::deleteQueued()
 {
+	_deleteMutex.lock();
+
 	for (Scene *del : _toDelete)
 	{
 		delete del;
@@ -198,6 +204,7 @@ void Window::deleteQueued()
 	}
 
 	_deleteRenderables.clear();
+	_deleteMutex.unlock();
 }
 
 void Window::render()

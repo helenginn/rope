@@ -21,7 +21,10 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Progressor.h>
+#include <vagabond/core/Responder.h>
 #include <map>
+#include <mutex>
+#include <vector>
 
 class Text;
 
@@ -32,11 +35,12 @@ public:
 	virtual void resume() = 0;
 };
 
-class ProgressView : public Scene, public ProgressResponder
+class ProgressView : public Scene,
+public Responder<Progressor>
 {
 public:
 	ProgressView(Scene *prev);
-	~ProgressView();
+	virtual ~ProgressView();
 
 	void attachToEnvironment();
 	
@@ -45,17 +49,28 @@ public:
 		_responder = pvr;
 	}
 
+	virtual void doThings();
 	virtual void setup();
 	virtual void finish();
 	virtual void clickTicker(Progressor *progressor);
+	virtual void sendObject(std::string tag, void *object);
 private:
-	Text *getText(Progressor *p, std::string str);
+	Text *getText(std::string name, std::string str);
 
-	std::map<Progressor *, Text *> _prog2Text;
+	std::map<std::string, Text *> _prog2Text;
 	float _y = 0.3;
 
 	ProgressViewResponder *_responder = nullptr;
+	
+	struct ProgressInfo
+	{
+		std::string name;
+		int ticks;
+	};
 
+	std::mutex _mutex;
+	std::vector<ProgressInfo> _queue;
+	bool _finish = false;
 };
 
 #endif

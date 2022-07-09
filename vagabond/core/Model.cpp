@@ -110,13 +110,21 @@ Molecule *Model::moleculeFromChain(Chain *ch)
 
 	Molecule mc(name(), ch->id(), entity, ch->fullSequence());
 	_molecules.push_back(mc);
-	
+
 	Molecule &ref = _molecules.back();
 
 	ref.addChain(ch->id());
 	ref.getTorsionRefs(ch);
 	
 	return &_molecules.back();
+}
+
+void Model::write(std::string filename)
+{
+	if (_currentFile)
+	{
+		_currentFile->write(filename);
+	}
 }
 
 void Model::unload()
@@ -132,7 +140,6 @@ void Model::unload()
 		delete _currentFile;
 		_currentAtoms = nullptr;
 	}
-
 }
 
 void Model::createMolecules()
@@ -170,7 +177,10 @@ std::set<Entity *> Model::entities()
 
 	for (Molecule &m : _molecules)
 	{
-		entities.insert(m.entity());
+		if (m.entity() != nullptr)
+		{
+			entities.insert(m.entity());
+		}
 	}
 	
 	return entities;
@@ -181,7 +191,10 @@ std::set<Molecule *> Model::moleculesForEntity(Entity *ent)
 	std::set<Molecule *> ms;
 	for (Molecule &m : _molecules)
 	{
-		ms.insert(&m);
+		if (m.entity_id() == ent->name())
+		{
+			ms.insert(&m);
+		}
 	}
 
 	return ms;
@@ -239,6 +252,7 @@ bool Model::mergeMoleculesInSet(std::set<Molecule *> molecules)
 			
 			if (aAtom == nullptr|| bAtom == nullptr)
 			{
+				std::cout << "atoms not found" << std::endl;
 				continue;
 			}
 			
@@ -361,6 +375,11 @@ void Model::autoAssignEntities(Entity *chosen)
 			 " becomes " << best_entity->name() << std::endl;
 			setEntityForChain(ch->id(), best_entity->name());
 		}
+		else
+		{
+			std::cout << "Chain " << ch->id() << " of " << ch->sequence()->size()
+			<< " remains unassigned" << std::endl;
+		}
 	}
 	
 	unload();
@@ -390,6 +409,7 @@ void Model::housekeeping()
 		}
 
 		mc.setModel(this);
+		
 	}
 	
 	if (_chain2Molecule.size() >= _chain2Entity.size())

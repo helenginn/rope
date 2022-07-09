@@ -136,6 +136,7 @@ public:
 	
 	void clickTicker();
 	void finishedRefinement();
+	void write(std::string filename);
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();

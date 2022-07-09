@@ -24,6 +24,7 @@
 #include <pthread.h>
 #include "File.h"
 #include "Progressor.h"
+#include "Responder.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -35,19 +36,15 @@ public:
 	virtual void filesChanged() = 0;
 };
 
-class FileManager : public Progressor
+class FileManager :
+public Progressor,
+public HasResponder<Responder<FileManager>>
 {
 public:
 	FileManager();
 
 	void setFilterType(File::Type type);
 	bool valid(std::string filename);
-
-	void setResponder(FileManagerResponder *fileView)
-	{
-		_view = fileView;
-		setFilterType(File::Nothing);
-	}
 
 	static void prepareDownload(void *me, void *data, int nbytes);
 	static void acceptDownload(void *me, std::string contents);
@@ -61,6 +58,11 @@ public:
 	std::string filtered(int i)
 	{
 		return _filtered[i];
+	}
+	
+	const std::vector<std::string> &filteredList()
+	{
+		return _filtered;
 	}
 
 	void addFile(std::string filename);
@@ -82,7 +84,6 @@ private:
 	pthread_t _thread;
 
 	File::Type _type = File::Nothing;
-	FileManagerResponder *_view;
 };
 
 inline void to_json(json &j, const FileManager &manager)

@@ -48,7 +48,6 @@ ChainAssignment::~ChainAssignment()
 {
 	_model.unload();
 	deleteObjects();
-	delete _contents;
 }
 
 void ChainAssignment::setup()

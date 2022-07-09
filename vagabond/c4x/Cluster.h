@@ -46,15 +46,23 @@ public:
 	/** given a set of metadata values, find best-fitting axis */
 	int bestAxisFit(std::vector<float> &vals);
 	
+	std::vector<float> torsionVector(int axis);
+	
 	DG *dataGroup()
 	{
 		return &_dg;
+	}
+	
+	const size_t &axis(int i) const
+	{
+		return _axes[i];
 	}
 protected:
 	void normaliseResults(float scale = 1);
 
 	DG _dg;
 
+	float _scaleFactor = 1;
 	PCA::Matrix _result{};
 	size_t _axes[3] = {0, 1, 2};
 };

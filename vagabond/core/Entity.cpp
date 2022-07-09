@@ -163,6 +163,20 @@ std::set<Model *> Entity::unrefinedModels()
 	return models;
 }
 
+void Entity::refineAllModels()
+{
+	_refineSet.clear();
+	
+	for (Model *m : _models)
+	{
+		_refineSet.insert(m);
+	}
+
+	std::cout << "Refine set size: " << _refineSet.size() << std::endl;
+	
+	refineNextModel();
+}
+
 void Entity::refineUnrefinedModels()
 {
 	_refineSet = unrefinedModels();
@@ -198,7 +212,7 @@ void Entity::respond()
 
 MetadataGroup Entity::makeTorsionDataGroup()
 {
-	const bool only_main = true;
+	const bool only_main = false;
 	size_t num = _sequence.torsionCount(only_main);
 	std::cout << "Torsion count: " << num << std::endl;
 	std::vector<std::string> names;

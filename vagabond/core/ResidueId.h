@@ -20,6 +20,7 @@
 #define __vagabond__ResidueId__
 
 #include <sstream>
+#include <iostream>
 #include <string>
 
 #include <json/json.hpp>
@@ -65,12 +66,14 @@ struct ResidueId
 
 	const bool operator==(const ResidueId &o) const
 	{
-		return (num == o.num && insert == o.insert);
+		return (num == o.num && 
+		        (insert == o.insert || (insert == " " && o.insert == "")
+		        || (insert == "" && o.insert == " ")));
 	}
 
 	const bool operator!=(const ResidueId &o) const
 	{
-		return (num != o.num || insert != o.insert);
+		return !(o == *this);
 	}
 	
 	const bool operator<(const ResidueId &o) const

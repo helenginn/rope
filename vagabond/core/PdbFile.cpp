@@ -16,7 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define GEMMI_WRITE_IMPLEMENTATION
+
 #include <gemmi/mmread.hpp>
+#include <gemmi/to_pdb.hpp>
+#include <fstream>
+#include "Environment.h"
+#include "FileManager.h"
 #include "PdbFile.h"
 #include "CifFile.h"
 #include "AtomGroup.h"
@@ -26,6 +32,23 @@
 PdbFile::PdbFile(std::string filename) : File(filename)
 {
 
+}
+
+void PdbFile::getAllGeometry()
+{
+	getStandardGeometry();
+
+	FileManager *fm = Environment::fileManager();
+	fm->setFilterType(File::Geometry);
+
+	for (size_t i = 0; i < fm->filteredCount(); i++)
+	{
+		std::string file = fm->filtered(i);
+		std::cout << "Using " << file << std::endl;
+		CifFile cf(file);
+		cf.setGeometryTable(_table);
+		cf.parse();
+	}
 }
 
 void PdbFile::getStandardGeometry()
@@ -42,9 +65,9 @@ void PdbFile::getStandardGeometry()
 	_table = cf.geometryTable();
 }
 
-void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai)
+void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)
 {
-	if (a.altloc != '\0' && a.altloc != 'A')
+	if (a.altloc != conf)
 	{
 		return;
 	}
@@ -53,11 +76,24 @@ void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai)
 	vagatom->setAtomName(a.name);
 	vagatom->setResidueId(ai.resid);
 	vagatom->setChain(ai.chain);
+	vagatom->setHetatm(ai.isHetatm);
 	vagatom->setCode(ai.res);
 	glm::vec3 pos = glm::vec3(a.pos.x, a.pos.y, a.pos.z);
 	vagatom->setInitialPosition(pos, a.b_iso);
 	
 	*_macroAtoms += vagatom;
+}
+
+std::set<char> get_alt_confs(std::vector<gemmi::Atom> &atoms)
+{
+	std::set<char> chs;
+
+	for (gemmi::Atom &atom : atoms)
+	{
+		chs.insert(atom.altloc);
+	}
+	
+	return chs;
 }
 
 void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
@@ -67,10 +103,14 @@ void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
 	ai.seqstr = r.seqid.str();
 	ai.isHetatm = (r.het_flag == 'H');
 	
+	std::set<char> confs = get_alt_confs(r.atoms);
+	
+	char chosen = *confs.begin();
+	
 	for (size_t i = 0; i < r.atoms.size(); i++)
 	{
 		gemmi::Atom &a = r.atoms[i];
-		processAtom(a, ai);
+		processAtom(a, ai, chosen);
 	}
 }
 
@@ -140,7 +180,7 @@ void PdbFile::parse()
 	
 	if (_knot != KnotNone && _macroAtoms->size() > 0)
 	{
-		getStandardGeometry();
+		getAllGeometry();
 	}
 	
 	if (_knot != KnotNone)
@@ -160,6 +200,49 @@ void PdbFile::parse()
 
 		knotter.knot();
 	}
+}
+
+void PdbFile::write(std::string filename)
+{
+	std::string path = toFilename(_filename);
+	gemmi::Structure st;
+	try
+	{
+		st = gemmi::read_structure_file(path);
+	}
+	catch (const std::runtime_error &err)
+	{
+		std::cout << "Reading " << path << " failed: " << std::endl;
+		std::cout << err.what() << std::endl;
+		return;
+	}
+
+	for (gemmi::Model &m : st.models)
+	{
+		for (gemmi::Chain &c : m.chains)
+		for (gemmi::Residue &r : c.residues)
+		{
+			ResidueId id(r.seqid.num.str() + r.seqid.icode);
+			for (gemmi::Atom &a : r.atoms)
+			{
+				Atom *atom = _macroAtoms->atomByIdName(id, a.name);
+				if (atom != nullptr)
+				{
+					glm::vec3 pos = atom->derivedPosition();
+					a.pos.x = pos.x;
+					a.pos.y = pos.y;
+					a.pos.z = pos.z;
+				}
+			}
+		}
+	}
+	
+	std::ofstream file;
+	file.open(filename);
+	
+	gemmi::write_pdb(st, file);
+	
+	file.close();
 }
 
 File::Type PdbFile::cursoryLook()

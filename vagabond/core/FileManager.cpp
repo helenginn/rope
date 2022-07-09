@@ -24,7 +24,7 @@
 
 FileManager::FileManager()
 {
-	_view = nullptr;
+
 }
 
 void FileManager::setFilterType(File::Type type)
@@ -87,10 +87,7 @@ bool FileManager::acceptFile(std::string filename, bool force)
 		added = true;
 	}
 	
-	if (_view != nullptr)
-	{
-		_view->filesChanged();
-	}
+	HasResponder<Responder<FileManager>>::triggerResponse();
 	
 	return added;
 }

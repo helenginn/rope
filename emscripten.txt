@@ -16,10 +16,13 @@ shell_file = ['--shell-file', '../../minimal_shell.html']
 preload = ['--use-preload-plugins', '--preload-file', 'assets/']
 download = ['--pre-js', '../../download.js']
 memory=['-s', 'ALLOW_MEMORY_GROWTH=1', '-s', 'MAXIMUM_MEMORY=4gb']
+total=['-s', 'TOTAL_MEMORY=33554432']
 gl=['-s', 'MIN_WEBGL_VERSION=2']
 export=['-s', 'EXPORTED_RUNTIME_METHODS=printErr,ccall', '-s', 'LLD_REPORT_UNDEFINED', '-s', 'EXPORTED_FUNCTIONS=["_accept_file", "_main"]',  '-s', 'PTHREAD_POOL_SIZE=32']
 fftwf=['/usr/local/lib/emcc/lib/libfftw3f.a']
 incdir = ['-I/usr/local/include']
+#sanitise=['-fsanitize=address']
+sanitise=['-gsource-map']
 
 [properties]
 shared_lib_suffix = 'js'
@@ -27,5 +30,5 @@ static_lib_suffix = 'js'
 shared_module_suffix = 'js'
 exe_suffix = 'js'
 
-links = sdl_options + shell_file + preload + export + threads + memory + exceptions + fftwf + gl + download + optimisation
-compile_args = threads + exceptions + optimisation + incdir
+links = sdl_options + shell_file + preload + export + threads + memory + exceptions + fftwf + gl + download + total + sanitise + optimisation
+compile_args = threads + exceptions + incdir + sanitise + optimisation

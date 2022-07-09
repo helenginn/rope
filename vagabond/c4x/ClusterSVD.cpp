@@ -72,15 +72,18 @@ void ClusterSVD<DG>::cluster()
 	reorderSVD(&_svd);
 
 	copyMatrix(this->_result, _svd.u);
+	
+	this->_scaleFactor = 10 / _svd.w[0];
 
 	for (size_t i = 0; i < this->_result.cols; i++)
 	{
 		for (size_t j = 0; j < this->_result.rows; j++)
 		{
-			double scale = _svd.w[0];
-			this->_result[j][i] *= 10 * _svd.w[i] / _svd.w[0];
+			this->_result[j][i] *= this->_scaleFactor * _svd.w[i];
 		}
+		std::cout << _svd.w[i] << " ";
 	}
+	std::cout << std::endl;
 
 	freeMatrix(&mat);
 }

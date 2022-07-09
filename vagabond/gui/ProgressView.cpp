@@ -36,7 +36,7 @@ void ProgressView::setup()
 
 ProgressView::~ProgressView()
 {
-	Environment::env().setProgressResponder(nullptr);
+
 }
 
 void ProgressView::attachToEnvironment()
@@ -44,33 +44,74 @@ void ProgressView::attachToEnvironment()
 	Environment::env().setProgressResponder(this);
 }
 
-Text *ProgressView::getText(Progressor *p, std::string str)
+Text *ProgressView::getText(std::string name, std::string str)
 {
-	if (_prog2Text.count(p))
+	if (_prog2Text.count(name))
 	{
-		_prog2Text[p]->setText(str);
-		return _prog2Text[p];
+		_prog2Text[name]->setText(str);
+		return _prog2Text[name];
 	}
 
-	Text *t = new Text(str, Font::Thin, true);
+	Text *t = new Text(str, Font::Thin);
 	t->setCentre(0.5, _y);
 	_y += 0.08;
-	_prog2Text[p] = t;
+	_prog2Text[name] = t;
 	addObject(t);
 
 	return t;
 }
 
+void ProgressView::doThings()
+{
+	_mutex.lock();
+	
+	if (_finish)
+	{
+		_mutex.unlock();
+		return;
+	}
+	
+	for (const ProgressInfo &info : _queue)
+	{
+		int ticks = info.ticks;
+		std::string str = "Loaded " + i_to_str(ticks) + " ";
+		str += info.name;
+		getText(info.name, str);
+		viewChanged();
+	}
+
+	_queue.clear();
+
+	_mutex.unlock();
+}
+
 void ProgressView::clickTicker(Progressor *progressor)
 {
-	int ticks = progressor->ticks();
-	std::string str = "Loaded " + i_to_str(ticks) + " ";
-	str += progressor->progressName();
-	Text *text = getText(progressor, str);
+	_mutex.lock();
+	ProgressInfo info{progressor->progressName(), progressor->ticks()};
+	_queue.push_back(info);
+	_mutex.unlock();
+}
+
+void ProgressView::sendObject(std::string tag, void *object)
+{
+	if (tag == "tick")
+	{
+		Progressor *view = static_cast<Progressor *>(object);
+		clickTicker(view);
+	}
+	else if (tag == "finish")
+	{
+		finish();
+	}
 }
 
 void ProgressView::finish()
 {
+	std::lock_guard<std::mutex> lock(_mutex);
+
+	_finish = true;
+
 	if (_responder)
 	{
 		_responder->resume();

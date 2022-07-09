@@ -30,6 +30,7 @@ public:
 	GLuint loadText(std::string text, int *w, int *h, 
 	                Font::Type type = Font::Thin);
 	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL);
+	GLuint allocateEmptyTexture(int w, int h, std::string tag);
 	GLuint getProgram(std::string v, std::string g, std::string f);
 	void setProgram(Renderable *fl, std::string v, std::string g, std::string f);
 

@@ -36,6 +36,12 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	{
 		basis = new SimpleBasis();
 	}
+	else if (type == TorsionBasis::TypeCustom)
+	{
+		ConcertedBasis *cb = new ConcertedBasis();
+		cb->setCustom(true);
+		basis = cb;
+	}
 	else if (type == TorsionBasis::TypeConcerted)
 	{
 		basis = new ConcertedBasis();

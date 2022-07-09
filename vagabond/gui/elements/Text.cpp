@@ -45,7 +45,6 @@ void Text::setInitialText(std::string text)
 	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h, _type);
 	_texid = tex;
 	makeQuad();
-	_textured = true;
 }
 
 void Text::setText(std::string text, bool force)
@@ -79,7 +78,7 @@ void Text::makeQuad()
 	glm::mat3x3 mat = glm::mat3(1.);
 	mat[0][0] = (float)_w / 1800.;
 	mat[1][1] = (float)_h / 1800.;
-	mat[0][0] /= (double)ASPECT_RATIO;
+	mat[0][0] *= (double)Window::aspect();
 	mat *= (_type == Font::Thin ? 1 : 0.7);
 
 	rotateRound(mat);

@@ -31,24 +31,27 @@ SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev)
 
 SerialRefiner::~SerialRefiner()
 {
-	_entity->setResponder(nullptr);
+	std::cout << "Deleting serial refiner" << std::endl;
 	deleteObjects();
 }
 
 void SerialRefiner::setup()
 {
-	addTitle("Refining " + i_to_str(_extra) + " models...");
-
-	_entity->refineUnrefinedModels();
+	if (!_all)
+	{
+		addTitle("Refining " + i_to_str(_extra) + " models...");
+		_entity->refineUnrefinedModels();
+	}
+	else if (_all)
+	{
+		addTitle("Refining all models...");
+		_extra = _entity->moleculeCount();
+		_entity->refineAllModels();
+	}
 }
 
 void SerialRefiner::entityDone()
 {
-	{
-		Text *text = new Text("Done!");
-		text->setCentre(0.5, 0.5);
-		addObject(text);
-	}
 
 }
 
@@ -91,10 +94,13 @@ void SerialRefiner::doThings()
 void SerialRefiner::sendObject(std::string tag, void *object)
 {
 	std::lock_guard<std::mutex> lock(_mutex);
-	if (tag == "model_done")
+	if (tag == "model_done" && _display != nullptr)
 	{
+		std::cout << "stopping display (" << _display << ")" << std::endl;
 		_display->stop();
+		std::cout << "display (" << _display << ") must go back" << std::endl;
 		_display->back();
+		std::cout << "display removed successfully" << std::endl;
 		_display = nullptr;
 	}
 
@@ -110,5 +116,10 @@ void SerialRefiner::sendObject(std::string tag, void *object)
 
 void SerialRefiner::respond()
 {
+	{
+		Text *text = new Text("Done!");
+		text->setCentre(0.5, 0.5);
+		addObject(text);
+	}
 
 }

@@ -26,7 +26,7 @@
 ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
 {
 	_manager = Environment::modelManager();
-	_manager->setResponder(this);
+	_manager->Manager::setResponder(this);
 }
 
 ModelMenu::~ModelMenu()

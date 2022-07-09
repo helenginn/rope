@@ -18,6 +18,7 @@
 
 #include "GuiAtom.h"
 #include "GuiBalls.h"
+#include "GuiRibbon.h"
 
 #include <vagabond/gui/elements/SnowGL.h>
 #include <SDL2/SDL.h>
@@ -32,6 +33,9 @@
 GuiAtom::GuiAtom() : Renderable()
 {
 	_balls = new GuiBalls(this);
+	_ribbon = new GuiRibbon(this);
+	_representations.push_back(_balls);
+	_representations.push_back(_ribbon);
 	_finish = false;
 }
 
@@ -40,6 +44,8 @@ GuiAtom::~GuiAtom()
 	stop();
 	delete _balls;
 	_balls = nullptr;
+	delete _ribbon;
+	_ribbon = nullptr;
 }
 
 void GuiAtom::stop()
@@ -59,19 +65,31 @@ void GuiAtom::render(SnowGL *gl)
 	glEnable(GL_DEPTH_TEST);
 	
 	Renderable::render(gl);
-	_balls->render(gl);
+
+	for (GuiRepresentation *&r : _representations)
+	{
+		r->render(gl);
+	}
 
 	glDisable(GL_DEPTH_TEST);
 }
 
 void GuiAtom::watchAtom(Atom *a)
 {
+	for (GuiRepresentation *&r : _representations)
+	{
+		r->watchAtom(a);
+	}
 	_atoms.push_back(a);
-	_balls->watchAtom(a);
 }
 
 void GuiAtom::watchAtoms(AtomGroup *a)
 {
+	for (GuiRepresentation *&r : _representations)
+	{
+		r->prepareAtomSpace(a);
+	}
+
 	lockMutex();
 	for (size_t i = 0; i < a->size(); i++)
 	{
@@ -79,6 +97,7 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	}
 	
 	_balls->watchBonds(a);
+	_ribbon->convert();
 
 	checkAtoms();
 	unlockMutex();
@@ -91,7 +110,15 @@ bool GuiAtom::checkAtom(Atom *a)
 		glm::vec3 p;
 		if (a->positionChanged() && a->fishPosition(&p))
 		{
-			_balls->updateSinglePosition(a, p);
+			for (GuiRepresentation *&r : _representations)
+			{
+				if (r->isDisabled())
+				{
+					continue;
+				}
+
+				r->updateSinglePosition(a, p);
+			}
 			return true;
 		}
 	}
@@ -100,8 +127,16 @@ bool GuiAtom::checkAtom(Atom *a)
 		Atom::WithPos wp;
 		if (a->positionChanged() && a->fishPositions(&wp))
 		{
-			_balls->updateSinglePosition(a, wp.ave);
-			_balls->updateMultiPositions(a, wp);
+			for (GuiRepresentation *&r : _representations)
+			{
+				if (r->isDisabled())
+				{
+					continue;
+				}
+
+				r->updateSinglePosition(a, wp.ave);
+				r->updateMultiPositions(a, wp);
+			}
 			return true;
 		}
 	}
@@ -130,7 +165,10 @@ void GuiAtom::checkAtoms()
 
 	if (changed && !_finish)
 	{
-		_balls->forceRender();
+		for (GuiRepresentation *&r : _representations)
+		{
+			r->forceRender();
+		}
 	}
 }
 

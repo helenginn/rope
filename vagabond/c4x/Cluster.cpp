@@ -86,6 +86,11 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 		float r = top / sqrt(bottom_left * bottom_right);
 		float cc = fabs(r);
 		
+		if (!isfinite(cc))
+		{
+			cc = 0;
+		}
+		
 		_pairs.push_back(AxisCC{j, cc});
 	}
 	
@@ -174,6 +179,41 @@ void Cluster<DG>::normaliseResults(float scale)
 		_result.vals[i] /= mag;
 		_result.vals[i] *= scale;
 	}
+}
+
+template <class DG>
+std::vector<float> Cluster<DG>::torsionVector(int axis)
+{
+	std::vector<float> weights;
+	
+	for (size_t i = 0; i < _result.rows; i++)
+	{
+		double weight = _result[i][axis] / _scaleFactor;
+		weights.push_back(weight);
+	}
+
+	std::vector<float> result = _dg.weightedDifferences(weights);
+	
+	double average = 0;
+	for (size_t i = 0; i < result.size(); i++)
+	{
+		if (result[i] != result[i])
+		{
+			result[i] = 0;
+		}
+
+		average += fabs(result[i]);
+	}
+	
+	average /= (double)result.size();
+
+	for (size_t i = 0; i < result.size(); i++)
+	{
+		result[i] /= average;
+		result[i] *= 4;
+	}
+
+	return result;
 }
 
 #endif

@@ -368,6 +368,13 @@ void SnowGL::render()
 	{
 		return;
 	}
+	
+	std::unique_lock<std::mutex> lock(_renderMutex, std::try_to_lock);
+	
+	if (!lock.owns_lock())
+	{
+		return;
+	}
 
 	if (_depthMap > 0)
 	{

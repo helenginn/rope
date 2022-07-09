@@ -28,7 +28,7 @@ void main()
 	n.z = 0.;
 
 	mat2 turn = mat2(vec2(n.x, n.y), vec2(n.y, -n.x));
-	turn[1] *= 0.5;
+	turn[1] *= 0.25;
 	mPos.xy += turn * vec2(0., tex.x);
 	vTex.xy = tex.xy;
 	vTex.x += 0.5;

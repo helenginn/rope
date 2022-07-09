@@ -34,7 +34,7 @@ public:
 		return false;
 	}
 
-	virtual void interacted(int idx, bool hover) 
+	virtual void interacted(int idx, bool hover, bool left = true) 
 	{
 
 	}

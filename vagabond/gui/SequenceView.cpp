@@ -124,6 +124,11 @@ TextButton *SequenceView::button(Sequence *seq, ButtonResponder *caller)
 
 void SequenceView::addExtras(TextButton *t, Residue *r)
 {
+	if (r == nullptr)
+	{
+		return;
+	}
+
 	std::string tag = r->desc();
 	if (r->torsionCount() > 0)
 	{

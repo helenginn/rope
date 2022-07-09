@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "TorsionRef.h"
+#include <sstream>
 
 TorsionRef::TorsionRef()
 {
@@ -33,4 +34,41 @@ TorsionRef::TorsionRef(BondTorsion *tmp)
 	_desc = tmp->desc();
 	_main = tmp->coversMainChain();
 	_torsion = tmp;
+	organiseDescriptions();
+}
+
+void TorsionRef::organiseDescriptions()
+{
+	std::ostringstream str;
+	size_t pos = 0;
+
+	std::string copy = _desc;
+
+	while (true)
+	{
+		pos = copy.rfind('-');
+		
+		if (pos == std::string::npos)
+		{
+			str << &copy[0];
+			break;
+		}
+
+		copy[pos] = '\0';
+		pos++;
+		str << &copy[pos] << "-";
+	}
+
+	std::string rev = str.str();
+	_reverse_desc = rev;
+	if (_reverse_desc > _desc)
+	{
+		_reverse_desc = _desc;
+		_desc = rev;
+	}
+}
+
+void TorsionRef::housekeeping()
+{
+	organiseDescriptions();
 }

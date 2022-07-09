@@ -79,7 +79,7 @@ void Environment::load(std::string file)
 		if (_pg)
 		{
 			std::cout << "finish!" << std::endl;
-			_pg->finish();
+			_pg->sendObject("finish", nullptr);
 		}
 
 		return;
@@ -106,15 +106,15 @@ void Environment::load(std::string file)
 	}
 	
 	_metadata->housekeeping();
-	_modelManager->housekeeping();
 	_entityManager->housekeeping();
+	_modelManager->housekeeping();
 	
 	_entityManager->checkModelsForReferences(_modelManager);
 	std::cout << "done." << std::endl;
 	
 	if (_pg)
 	{
-		_pg->finish();
+		_pg->sendObject("finish", nullptr);
 	}
 }
 
@@ -125,6 +125,7 @@ void Environment::rescanModels()
 	for (Model &m : mm->objects())
 	{
 		m.autoAssignEntities();
+
 	}
 
 	EntityManager *em = Environment::entityManager();

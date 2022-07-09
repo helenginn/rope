@@ -62,16 +62,17 @@ void Residue::replaceTorsionRef(TorsionRef &newRef)
 
 }
 
-void Residue::supplyRefinedAngle(std::string desc, double angle)
+bool Residue::supplyRefinedAngle(std::string desc, double angle)
 {
 	TorsionRef copy = copyTorsionRef(desc);
 	if (!copy.valid())
 	{
-		return;
+		return false;
 	}
 
 	copy.setRefinedAngle(angle);
 	replaceTorsionRef(copy);
+	return true;
 }
 
 const size_t Residue::torsionCount(bool onlyMain) const

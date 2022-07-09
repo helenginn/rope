@@ -48,6 +48,10 @@ void PCA::setupSVD(SVD *cc, int rows, int cols)
 //		throw std::runtime_error("columns specified as less than number of rows");
 		rows = cols;
 	}
+	if (cols == 0)
+	{
+		cols = rows;
+	}
 
 	setupMatrix(&cc->u, rows, cols);
 	setupMatrix(&cc->v, cols, cols);
@@ -240,6 +244,7 @@ void PCA::freeMatrix(Matrix *m)
 	{
 		return;
 	}
+	
 	free(m->vals);
 	free(m->ptrs);
 	m->vals = nullptr;

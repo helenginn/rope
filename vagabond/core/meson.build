@@ -55,6 +55,7 @@ vagafiles = [
 'SequenceComparison.cpp',
 'SimpleBasis.cpp',
 'SimplexEngine.cpp',
+'StructureModification.cpp',
 'Superpose.cpp',
 'ThreadCalculatesBondSequence.cpp',
 'ThreadExtractsBondPositions.cpp',

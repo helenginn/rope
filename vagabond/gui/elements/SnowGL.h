@@ -4,6 +4,7 @@
 #define __Slip__SnowGL__
 
 #include <vagabond/utils/glm_import.h>
+#include <mutex>
 #include <GLES3/gl32.h>
 
 #include "HasRenderables.h"
@@ -138,6 +139,12 @@ public:
 	{
 		_viewChanged = true;
 	}
+	
+	void getLastPos(int &lastX, int &lastY)
+	{
+		lastX = _lastX;
+		lastY = _lastY;
+	}
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();
@@ -212,6 +219,8 @@ protected:
 	int _dh;
 	
 	int checkIndex(double x, double y) const;
+	
+	std::mutex _renderMutex;
 	
 	GLuint *_indices = nullptr;
 	

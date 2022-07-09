@@ -1,11 +1,8 @@
 c4xfiles = [
 'DegreeDataGroup.cpp',
-]
-
-install_headers([
+'Cluster.h',
 'DataGroup.h',
-],
-subdir : 'vagabond/c4x')
+]
 
 cluster4x = static_library('cluster4x', c4xfiles, 
 	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],

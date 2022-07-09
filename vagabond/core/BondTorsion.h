@@ -71,8 +71,15 @@ public:
 	}
 	
 	bool coversMainChain();
+
+	/** set by BondSequence if this angle directly leads to calculation of
+	 * downstream structure */
+	void setInstrumental(bool instrumental)
+	{
+		_instrumental = instrumental;
+	}
 	
-	const ResidueId residueId() const;
+	const ResidueId residueId();
 	
 	bool atomIsTerminal(Atom *a)
 	{
@@ -129,7 +136,11 @@ private:
 
 	bool _measured = false;
 	bool _refined = false;
-	bool _constrained;
+	bool _constrained = false;
+	bool _instrumental = false;
+	
+	ResidueId _resId;
+	bool _gotId = false;
 
 	static double _maxSeparation;
 };

@@ -24,6 +24,7 @@ Mouse3D(prev)
 
 Display::~Display()
 {
+	std::cout << "Deleting display " << this << std::endl;
 	deleteObjects();
 	
 	if (_owns && _atoms != nullptr)
@@ -35,7 +36,7 @@ Display::~Display()
 
 void Display::stop()
 {
-	if (_guiAtoms)
+	if (_guiAtoms != nullptr)
 	{
 		_guiAtoms->stop();
 	}
@@ -137,7 +138,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 		delete _guiAtoms;
 	}
 	
-	if (_atoms != nullptr)
+	if (_owns && _atoms != nullptr)
 	{
 		delete _atoms;
 	}
@@ -151,7 +152,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_guiDensity->setAtoms(_atoms);
 	addObject(_guiDensity);
 
-	_centre = _guiAtoms->centroid();
+	_centre = _guiAtoms->getCentre();
 	_translation = -_centre;
 	_translation.z -= 240;
 
@@ -217,7 +218,6 @@ void Display::setup()
 		loadAtoms(_toLoad);
 		_toLoad = nullptr;
 	}
-	
 }
 
 void Display::buttonPressed(std::string tag, Button *button)

@@ -32,7 +32,7 @@ GuiBond::GuiBond() : Renderable()
 
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/box.fsh");
+	setFragmentShaderFile("assets/shaders/color_only.fsh");
 }
 
 GuiBond::~GuiBond()
@@ -52,7 +52,15 @@ void GuiBond::updateAtom(Atom *a, glm::vec3 pos, int n)
 	}
 	
 	size_t idx = _atomIdx[a] + offset;
+	
+	if (idx >= _vertices.size())
+	{
+		return;
+	}
+
+	lockMutex();
 	_vertices[idx].pos = pos;
+	unlockMutex();
 	
 }
 
@@ -138,6 +146,7 @@ void GuiBond::watchBonds(AtomGroup *a)
 		_copy->addIndex(end_idx);
 	}
 	
+	_copy->setAlpha(1.);
 	appendObject(_copy);
 	_num = 1;
 }

@@ -73,7 +73,6 @@ public:
 		}
 
 		_responders.push_back(r);
-		std::cout << "Adding responder, now " << _responders.size() << std::endl;
 		r->setParent(this);
 	}
 	
@@ -81,7 +80,8 @@ public:
 	{
 		for (size_t i = 0; i < _responders.size(); i++)
 		{
-			if (_responders[i] == r)
+			R *cast = static_cast<R *>(_responders[i]);
+			if (cast == r)
 			{
 				_responders.erase(_responders.begin() + i);
 			}

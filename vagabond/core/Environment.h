@@ -25,10 +25,12 @@ class Rule;
 class Entity;
 class Metadata;
 class Molecule;
+class Progressor;
 class FileManager;
 class ModelManager;
 class EntityManager;
-class ProgressResponder;
+
+template <typename Progressor> class Responder;
 
 class Environment
 {
@@ -68,12 +70,12 @@ public:
 		return _environment;
 	}
 	
-	ProgressResponder *progressResponder() const
+	Responder<Progressor> *progressResponder() const
 	{
 		return _pg;
 	}
 	
-	void setProgressResponder(ProgressResponder *pg)
+	void setProgressResponder(Responder<Progressor> *pg)
 	{
 		_pg = pg;
 	}
@@ -94,7 +96,7 @@ private:
 	EntityManager *_entityManager = nullptr;
 	Metadata *_metadata = nullptr;
 	
-	ProgressResponder *_pg = nullptr;
+	Responder<Progressor> *_pg = nullptr;
 
 	static Environment _environment;
 };

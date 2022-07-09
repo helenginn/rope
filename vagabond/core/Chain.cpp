@@ -112,8 +112,6 @@ Sequence *Chain::fullSequence()
 			}
 			int last = it->second->lastNum();
 			int first = next->second->firstNum();
-			std::cout << it->second->firstNum() << "-" << last << " " 
-			<< first << "-" << next->second->lastNum() << std::endl;
 			
 			for (size_t i = last + 1; i < first; i++)
 			{

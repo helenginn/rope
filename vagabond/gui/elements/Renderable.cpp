@@ -207,7 +207,7 @@ void Renderable::initialisePrograms(std::string *v, std::string *f,
 
 	glBindAttribLocation(_program, 3, "extra");
 
-	if (_textured || _texid > 0)
+	if (_texid > 0)
 	{
 		glBindAttribLocation(_program, 4, "tex");
 	}
@@ -238,7 +238,7 @@ void Renderable::initialisePrograms(std::string *v, std::string *f,
 
 void Renderable::deleteTextures()
 {
-	if (_texid != 0)
+	if (_texid > 0)
 	{
 		Library::getLibrary()->dropTexture(_texid);
 	}
@@ -284,17 +284,26 @@ int Renderable::vaoForContext()
 	}
 	else if (_vaoMap.count(_usingProgram) && _forceRender)
 	{
+		if (!tryLockMutex())
+		{
+			GLuint vao = _vaoMap[_usingProgram];
+			return vao;
+		}
+
 		_forceRender = false;
 		rebufferVertexData();
 		rebufferIndexData();
 		GLuint vao = _vaoMap[_usingProgram];
+		unlockMutex();
 		return vao;
 	}
 	
+	lockMutex();
 	GLuint vao = 0;
 	glGenVertexArrays(1, &vao);
 	_vaoMap[_usingProgram] = vao;
 	setupVBOBuffers();
+	unlockMutex();
 	
 	return vao;
 }
@@ -360,7 +369,7 @@ void Renderable::setupVBOBuffers()
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 
-	if (_textured || _texid > 0)
+	if (_texid > 0)
 	{
 		glEnableVertexAttribArray(4); 
 	}
@@ -384,7 +393,7 @@ void Renderable::setupVBOBuffers()
 
 	checkErrors("binding attributes");
 
-	if (_textured || _texid > 0)
+	if (_texid > 0)
 	{
 		glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(14 * sizeof(float)));
 
@@ -464,14 +473,14 @@ bool Renderable::checkErrors(std::string what)
 
 void Renderable::render(SnowGL *sender)
 {
-	if (!tryLockMutex())
+//	if (!tryLockMutex())
 	{
-		return;
+//		return;
 	}
 
 	if (_disabled)
 	{
-		unlockMutex();
+//		unlockMutex();
 		return;
 	}
 	
@@ -520,8 +529,7 @@ void Renderable::render(SnowGL *sender)
 
 		checkErrors("rebinding extras");
 
-		if ((_textured || _texid > 0)
-		    && _gl->getOverrideProgram() == 0)
+		if (_texid > 0 && _gl->getOverrideProgram() == 0)
 		{
 			GLuint which = GL_TEXTURE_2D;
 			glActiveTexture(GL_TEXTURE0);
@@ -553,7 +561,7 @@ void Renderable::render(SnowGL *sender)
 
 		glUseProgram(0);
 		unbindVBOBuffers();
-		unlockMutex();
+		//unlockMutex();
 	}
 
 	for (size_t i = 0; i < objectCount(); i++)
@@ -1196,6 +1204,7 @@ double Renderable::maximalWidth()
 
 void Renderable::appendObject(Renderable *object)
 {
+	lockMutex();
 	int add = _vertices.size();
 	_vertices.reserve(_vertices.size() + object->vertexCount());
 	_indices.reserve(_indices.size() + object->indexCount());
@@ -1208,6 +1217,7 @@ void Renderable::appendObject(Renderable *object)
 		long idx = object->_indices[i] + add;
 		_indices.push_back(idx);
 	}
+	unlockMutex();
 }
 
 glm::vec3 Renderable::rayTraceToPlane(glm::vec3 point, GLuint *trio, 
@@ -1542,4 +1552,9 @@ void Renderable::setHover(Renderable *hover)
 void Renderable::forceRender()
 {
 	_forceRender = true;
+	
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		_objects[i]->forceRender();
+	}
 }

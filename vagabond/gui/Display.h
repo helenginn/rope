@@ -32,7 +32,7 @@ public:
 	void loadDiffraction(Diffraction *diff);
 	void makeMapFromDiffraction();
 	void recalculateAtoms();
-	void tieButton();
+	virtual void tieButton();
 	void wedgeButtons();
 	void densityButton();
 	void mechanicsButton();
@@ -51,6 +51,8 @@ public:
 	
 	virtual void buttonPressed(std::string tag, Button *button);
 	void fftButton();
+protected:
+	AtomGroup *_atoms = nullptr;
 
 private:
 	void resetDensityMap();
@@ -58,7 +60,6 @@ private:
 	GuiAtom *_guiAtoms = nullptr;
 	GuiRefls *_guiRefls = nullptr;
 	GuiDensity *_guiDensity = nullptr;
-	AtomGroup *_atoms = nullptr;
 	AtomGroup *_toLoad = nullptr;
 
 	ImageButton *_halfWedge = nullptr;

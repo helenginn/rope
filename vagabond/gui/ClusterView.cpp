@@ -24,7 +24,7 @@
 
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
-#include <vagabond/core/HasMetadata.h>
+#include <vagabond/core/Molecule.h>
 #include <vagabond/core/MetadataGroup.h>
 #include <iostream>
 
@@ -107,7 +107,6 @@ void ClusterView::makePoints()
 	clearVertices();
 	
 	size_t count = _cx->pointCount();
-	std::cout << "Count: " << count << std::endl;
 	_vertices.reserve(count);
 	_indices.reserve(count);
 
@@ -243,8 +242,16 @@ void ClusterView::interacted(int idx, bool hover, bool left)
 	{
 		return;
 	}
-
+	
 	MetadataGroup &group = *_cx->dataGroup();
+
+	if (_confSpaceView->returnToView() && left && !hover)
+	{
+		Molecule *mol = static_cast<Molecule *>(group.object(idx));
+		_confSpaceView->reorientToMolecule(mol);
+		return;
+	}
+
 	std::string str = group.object(idx)->id();
 
 	FloatingText *ft = new FloatingText(str);

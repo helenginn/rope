@@ -127,6 +127,12 @@ public:
 		return _table;
 	}
 	
+	void setGeometryTable(GeometryTable *other)
+	{
+		_table = other;
+		_accessedTable = true;
+	}
+	
 	/** Warning: passes ownership of the Metadata onto the caller.
 	 * @returns Metadata containing data relating to model filename or 
 	 * model id */
@@ -156,6 +162,8 @@ public:
 	{
 		_knot = kl;
 	}
+	
+	virtual void write(std::string filename) {}
 protected:
 	enum Flavour
 	{

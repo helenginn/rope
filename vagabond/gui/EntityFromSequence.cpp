@@ -66,40 +66,52 @@ void EntityFromSequence::handleError()
 
 void EntityFromSequence::processResult(std::string seq)
 {
-	if (seq.rfind("Sequence", 0) == std::string::npos)
+
+	try
 	{
-		std::cout << "here" << std::endl;
-		BadChoice *bc = new BadChoice(this, "Sequence could not be obtained");
-		setModal(bc);
-		return;
-	}
-	else
-	{
-		size_t it = seq.find("\n");
-		it++;
-		std::string next = &seq[it];
+		json all = json::parse(seq);
+		json &results = all["results"];
 		
-		while (next.back() == '\n')
+		std::string next;
+
+		for (json &result : results)
 		{
-			next.pop_back();
+			if (result.count("sequence") == 0)
+			{
+				continue;
+			}
+
+			json &seq = result["sequence"];
+			if (seq.count("value") == 0)
+			{
+				continue;
+			}
+			
+			next = seq["value"];
+			break;
 		}
 		
 		if (next.length() == 0)
 		{
-			return;
+			throw std::runtime_error("no sequence");
 		}
 
 		AddEntity *addEntity = new AddEntity(_previous, next);
 		back();
 		addEntity->show();
 	}
+	catch (...)
+	{
+		BadChoice *bc = new BadChoice(this, "Sequence could not be obtained");
+		setModal(bc);
+		return;
+	}
 }
 
 std::string EntityFromSequence::toURL(std::string query)
 {
-	std::string url = "https://www.uniprot.org/uniprot/?query=id:";
+	std::string url = "https://rest.uniprot.org/uniprotkb/search?query=accession:";
 	url += query;
-	url += "&columns=sequence&format=tab";
 
 	return url;
 }

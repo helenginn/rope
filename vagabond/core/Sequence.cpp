@@ -252,6 +252,11 @@ void Sequence::remapFromMaster(Entity *entity)
 	{
 //		return;
 	}
+	
+	if (entity == nullptr)
+	{
+		return;
+	}
 
 	std::list<Residue>::iterator local;
 	local = _residues.begin();
@@ -321,6 +326,21 @@ void Sequence::addTorsionNames(std::vector<std::string> &names, bool onlyMain)
 		}
 	}
 
+}
+
+bool Sequence::torsionByName(const std::string name, Residue **res)
+{
+	if (name.rfind("t", 0) == std::string::npos || name.size() <= 1)
+	{
+		return false;
+	}
+
+	const char *numptr = &name[1];
+	int num = atoi(numptr);
+	
+	*res = residueLike(ResidueId(num));
+	
+	return true;
 }
 
 void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals,

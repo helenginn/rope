@@ -120,7 +120,7 @@ void Molecule::housekeeping()
 {
 	_model = (Environment::modelManager()->model(_model_id));
 	_entity = (Environment::entityManager()->entity(_entity_id));
-
+	
 	_sequence.remapFromMaster(_entity);
 }
 
@@ -130,6 +130,8 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 	{
 		return;
 	}
+
+	_sequence.housekeeping();
 
 	for (const std::string &chain : _chain_ids)
 	{
@@ -191,6 +193,7 @@ void Molecule::extractTransformedAnchors(AtomContent *atoms)
 
 void Molecule::extractTorsionAngles(AtomContent *atoms)
 {
+	_sequence.remapFromMaster(entity());
 	for (const std::string &chain : _chain_ids)
 	{
 		Chain *ch = atoms->chain(chain);
@@ -210,7 +213,13 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 			}
 
 			double angle = t->measurement(BondTorsion::SourceDerived);
-			local->supplyRefinedAngle(desc, angle);
+
+			bool success = local->supplyRefinedAngle(desc, angle);
+			
+			if (!success)
+			{
+				success = local->supplyRefinedAngle(t->reverse_desc(), angle);
+			}
 		}
 	}
 
@@ -359,13 +368,16 @@ Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
 
 void Molecule::mergeWith(Molecule *b)
 {
+	if (_entity_id != b->_entity_id)
+	{
+		return;
+	}
+
 	std::cout << "Molecule " << id() << " would merge with molecule "
 	<< b->id() << std::endl;
 	
 	int last = sequence()->lastNum();
 	int gap = b->sequence()->firstNum() - last;
-	std::cout << "last: " << last << std::endl;
-	std::cout << "gap: " << gap << std::endl;
 	
 	for (size_t i = 1; i < gap; i++)
 	{
@@ -388,3 +400,64 @@ void Molecule::mergeWith(Molecule *b)
 		_transforms[it->first] = it->second;
 	}
 }
+
+std::string get_desc(std::string name)
+{
+	int descptr = name.rfind(":");
+	descptr++;
+	if (name.size() <= descptr)
+	{
+		return "";
+	}
+
+	std::string desc(&name[descptr]);
+	return desc;
+}
+
+void Molecule::residuesFromTorsionList(std::vector<Residue *> &residues,
+                                        std::vector<std::string> &list)
+{
+	residues.resize(list.size());
+
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		const std::string &candidate = list[i];
+		entity()->sequence()->torsionByName(candidate, &residues[i]);
+		std::string desc = get_desc(list[i]);
+		list[i] = desc;
+	}
+}
+
+float Molecule::valueForTorsionFromList(BondTorsion *bt,
+                                        const std::vector<Residue *> &residues,
+                                        const std::vector<std::string> &list,
+                                        const std::vector<float> &values,
+                                        std::vector<bool> &found)
+{
+	ResidueId target = bt->residueId();
+	Residue *local = sequence()->residueLike(target);
+	Residue *master = sequence()->master_residue(local);
+	
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		Residue *residue = residues[i];
+		
+		if (residue == nullptr || residue != master)
+		{
+			continue;
+		}
+
+		const std::string &desc = list[i];
+		
+		if (desc != bt->desc() && desc != bt->reverse_desc())
+		{
+			continue;
+		}
+		
+		found[i] = true;
+		return values[i];
+	}
+
+	return NAN;
+}
+

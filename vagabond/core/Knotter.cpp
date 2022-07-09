@@ -79,6 +79,12 @@ void Knotter::checkAtoms(Atom *atom, int start)
 		std::string compare = other->atomName();
 		
 		double standard = -1;
+		
+		if ((atom->code() == "HOH" && other->code() != "HOH") ||
+		    (atom->code() != "HOH" && other->code() == "HOH"))
+		{
+			continue;
+		}
 
 		if (code == other_code)
 		{
@@ -295,10 +301,18 @@ void Knotter::findChiralCentres()
 	 * initial positions, particularly an issue for hydrogen atoms */
 	for (size_t i = 0; i < group.size(); i++)
 	{
-		if (group[i]->bondLengthCount() >= 3)
+		if (group[i]->bondLengthCount() < 3)
 		{
-			checkAtomChirality(group[i], false);
+			continue;
 		}
+
+		// HARDCODE
+		if (group[i]->atomName() == "C")
+		{
+			continue;
+		}
+
+		checkAtomChirality(group[i], false);
 	}
 }
 

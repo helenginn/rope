@@ -274,12 +274,11 @@ int BondCalculator::submitJob(Job &original_job)
 
 	Job *job = new Job(original_job);
 
-	_jobPool.handout.lock();
+	std::lock_guard<std::mutex> lg(_jobPool.handout);
 	_jobPool.members.push(job);
 	_jobPool.sem.signal();
 	job->ticket = ++_max_id;
 	_running++;
-	_jobPool.handout.unlock();
 	
 	return job->ticket;
 }

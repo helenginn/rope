@@ -22,8 +22,7 @@
 
 EntityManager::EntityManager() : Manager()
 {
-	setProgressResponder(Environment::env().progressResponder());
-
+	Progressor::setResponder(Environment::env().progressResponder());
 }
 
 
@@ -46,7 +45,7 @@ Entity *EntityManager::insertIfUnique(Entity &ent)
 	_name2Entity[ent.name()] = &_objects.back();
 	ent.setResponder(this);
 
-	triggerResponse();
+	Manager::triggerResponse();
 	
 	clickTicker();
 
@@ -75,6 +74,8 @@ void EntityManager::housekeeping()
 
 void EntityManager::purgeModel(Model *model)
 {
+	model->unload();
+
 	for (Entity &other : _objects)
 	{
 		other.throwOutModel(model);
@@ -127,10 +128,10 @@ void EntityManager::checkModelsForReferences(ModelManager *mm)
 		e.housekeeping();
 	}
 
-	triggerResponse();
+	Manager::triggerResponse();
 }
 
 void EntityManager::respond()
 {
-	triggerResponse();
+	Manager::triggerResponse();
 }

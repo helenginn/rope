@@ -36,6 +36,7 @@ public:
 
 	virtual File::Type cursoryLook();
 	virtual void parse();
+	virtual void write(std::string filename);
 private:
 	struct AtomInfo
 	{
@@ -49,9 +50,10 @@ private:
 
 	void processModel(gemmi::Model &m);
 	void processResidue(gemmi::Residue &r, AtomInfo &ai);
-	void processAtom(gemmi::Atom &a, AtomInfo &ai);
+	void processAtom(gemmi::Atom &a, AtomInfo &ai, char conf);
 
 	void getStandardGeometry();
+	void getAllGeometry();
 	void parseFileContents();
 
 };

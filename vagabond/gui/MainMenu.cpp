@@ -39,6 +39,51 @@ void MainMenu::setup()
 	addObject(_background);
 
 	addTitle("RoPE");
+	/*
+	addTitle("Teaching plans");
+
+	{
+		TextButton *text = new TextButton("Experience developing virtual practical labs", this);
+		text->setReturnTag("file_save");
+		text->setLeft(0.1, 0.25);
+		addObject(text);
+	}
+
+	{
+		TextButton *text = new TextButton("Interface between biophysics and computing", this);
+		text->setReturnTag("file_save");
+		text->setLeft(0.1, 0.35);
+		addObject(text);
+	}
+
+	{
+		TextButton *text = new TextButton("Extension of existing course in scientific computing:", this);
+		text->setReturnTag("file_save");
+		text->setLeft(0.1, 0.45);
+		addObject(text);
+	}
+
+	{
+		TextButton *text = new TextButton("Model parametrisation", this);
+		text->setReturnTag("file_save");
+		text->setLeft(0.15, 0.55);
+		addObject(text);
+	}
+
+	{
+		TextButton *text = new TextButton("Target function optimisation", this);
+		text->setReturnTag("file_save");
+		text->setLeft(0.15, 0.62);
+		addObject(text);
+	}
+
+	{
+		TextButton *text = new TextButton("Avoiding software development pitfalls", this);
+		text->setReturnTag("file_save");
+		text->setLeft(0.15, 0.69);
+		addObject(text);
+	}
+	*/
 
 #ifndef __EMSCRIPTEN__
 	{
@@ -129,7 +174,7 @@ void MainMenu::checkForJson()
 	std::string newFile = fm->filtered(i);
 	File::Type type = File::typeUnknown(newFile);
 
-	Environment::fileManager()->setResponder(nullptr);
+	Environment::fileManager()->Progressor::setResponder(nullptr);
 
 	if (type & File::Json)
 	{

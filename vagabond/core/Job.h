@@ -59,11 +59,11 @@ struct CustomVector
 	int sample_num = 0;
 	int size = 0;
 	
-	void allocate_vector(int n)
+	void allocate_vector(int s)
 	{
-		mean = new float[n];
-		memset(mean, '\0', n * sizeof(float));
-		size = n;
+		mean = new float[s];
+		memset(mean, '\0', s * sizeof(float));
+		size = s;
 	}
 	
 	void destroy_vector()
@@ -75,16 +75,16 @@ struct CustomVector
 
 struct CustomInfo
 {
-	CustomVector *vecs;
-	int nvecs;
+	std::vector<CustomVector> vecs;
 	
 	/** allocates vectors for figuring out perturbations ofspace.
-	 * @param n how many different perturbations (one per discrete conformer)
-	 * @param size dimension number for calculations
-	 * @param size number of samplers per discrete perturbation */
+	 * @param n how many different types of perturbation (one 
+	 * 	per discrete conformer)
+	 * @param size how many dimensions does each vector have
+	 * @param sample_num number of samples per discrete perturbation */
 	void allocate_vectors(int n, int size, int sample_num)
 	{
-		vecs = new CustomVector[n];
+		vecs.resize(n);
 		
 		int cumulative = 0;
 		for (size_t i = 0; i < n; i++)
@@ -93,19 +93,21 @@ struct CustomInfo
 			cumulative += sample_num;
 			vecs[i].sample_num = cumulative;
 		}
-		
-		nvecs = n;
+	}
+	
+	size_t vector_count()
+	{
+		return vecs.size();
 	}
 	
 	void destroy_vectors()
 	{
-		for (size_t i = 0; i < nvecs; i++)
+		for (size_t i = 0; i < vecs.size(); i++)
 		{
 			vecs[i].destroy_vector();
 		}
 		
-		delete [] vecs;
-		nvecs = 0;
+		vecs.clear();
 	}
 };
 
@@ -143,20 +145,6 @@ public:
 };
 
 class ElementSegment;
-
-/*
-class MiniJobMap : public MiniJob
-{
-public:
-	ElementSegment *segment = nullptr;
-	std::string ele;
-	
-	MiniJobMap(std::string _ele)
-	{
-		ele = _ele;
-	}
-};
-*/
 
 class MiniJobSeq : public MiniJob
 {

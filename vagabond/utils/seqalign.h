@@ -306,8 +306,16 @@ inline void print_character(Alignment &ala, Alignment &alb,
                             IndexPairs &indices, int &wind)
 {
 	leftseq << ala.seq[wind];
-	rightseq << alb.seq[ala.map[wind]];
-	aligned << ".";
+	if (ala.map[wind] == std::string::npos)
+	{
+		rightseq << " ";
+		aligned << " ";
+	}
+	else
+	{
+		rightseq << alb.seq[ala.map[wind]];
+		aligned << ".";
+	}
 
 }
 
@@ -783,7 +791,7 @@ inline void tidy_alignments(Alignment &ala, Alignment &alb)
 		int sj = j;
 		
 		/* stop if our calculated J is off the end of B */
-		if (j > alb.seq.size())
+		if (j >= alb.seq.size())
 		{
 			continue;
 		}

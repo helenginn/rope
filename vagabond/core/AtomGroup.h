@@ -21,6 +21,7 @@
 #include "Atom.h"
 #include "HasBondstraints.h"
 #include <vector>
+#include <set>
 
 typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
@@ -138,6 +139,7 @@ private:
 	AtomVector _anchors;
 	AtomVector _transformedAnchors;
 	
+	std::set<Atom *> _orderedPointers;
 	std::map<std::string, Atom *> _desc2Atom;
 
 	std::thread *_refine = nullptr;

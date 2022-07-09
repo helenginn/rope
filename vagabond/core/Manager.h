@@ -24,7 +24,7 @@
 #include "Responder.h"
 
 template <class T>
-class Manager : public Progressor, public HasResponder<Responder<Manager<T>>>
+class Manager : public HasResponder<Responder<Manager<T>>>
 {
 public:
 	Manager() {};

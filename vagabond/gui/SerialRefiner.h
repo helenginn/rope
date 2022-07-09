@@ -37,6 +37,11 @@ public:
 	{
 		_extra = extra;
 	}
+	
+	void setRefineAll(bool all)
+	{
+		_all = all;
+	}
 
 	virtual ~SerialRefiner();
 
@@ -49,6 +54,7 @@ private:
 	int _extra = 0;
 	int _count = 0;
 	bool _newModel = false;
+	bool _all = false;
 	Model *_model = nullptr;
 	Display *_display = nullptr;
 	Entity *_entity = nullptr;

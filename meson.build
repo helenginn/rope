@@ -56,6 +56,7 @@ install_dir : geometry)
 install_data(
 'assets/shaders_450/axes.vsh',
 'assets/shaders_450/axes.fsh',
+'assets/shaders_450/color_only.fsh',
 'assets/shaders_450/quad.vsh',
 'assets/shaders_450/quad.fsh',
 'assets/shaders_450/box.vsh',
@@ -75,6 +76,7 @@ install_dir : shaders)
 install_data(
 'assets/images/arrow.png',
 'assets/images/axis.png',
+'assets/images/blank.png',
 'assets/images/box.png',
 'assets/images/cartoon.png',
 'assets/images/colour_scheme.png',

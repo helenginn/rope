@@ -30,7 +30,8 @@ using nlohmann::json;
 
 class Molecule;
 
-class ModelManager : public Manager<Model>
+class ModelManager : public Manager<Model>,
+public Progressor
 {
 public:
 	ModelManager();
@@ -54,6 +55,7 @@ public:
 	void purgeMolecule(Molecule *mol);
 	void purgeEntity(Entity *ent);
 	void purgeModel(Model *mol);
+	void connectionsToDatabase();
 
 	virtual const std::string progressName() const
 	{

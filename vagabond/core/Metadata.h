@@ -66,6 +66,8 @@ public:
 	}
 
 	const KeyValues *valuesForMolecule(const std::string name);
+	
+	void setModelIdForMoleculeId(std::string, std::string);
 
 	const KeyValues *valuesForFilename(const std::string name)
 	{
@@ -117,6 +119,7 @@ private:
 	std::list<KeyValues> _data;
 	
 	std::set<std::string> _headers;
+	std::map<std::string, std::string> _mol2Model;
 
 	std::map<std::string, KeyValues *> _mole2Data;
 	std::map<std::string, KeyValues *> _model2Data;
