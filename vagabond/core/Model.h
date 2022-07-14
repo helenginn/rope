@@ -179,7 +179,7 @@ inline void from_json(const json &j, Model &value)
 	}
 	catch (...)
 	{
-		std::cout << "Error proccessing json, probably old version" << std::endl;
+		std::cout << "Error processing json, probably old version" << std::endl;
 	}
 	
 	value.clickTicker();

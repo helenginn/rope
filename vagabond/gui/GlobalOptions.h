@@ -16,34 +16,19 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__VagWindow__
-#define __vagabond__VagWindow__
+#ifndef __vagabond__GlobalOptions__
+#define __vagabond__GlobalOptions__
 
-#include <vagabond/gui/elements/Window.h>
-#include "MainMenu.h"
+#include <vagabond/gui/elements/Scene.h>
 
-class Dictator;
-
-class VagWindow : public Window//, public ProgressViewResponder
+class GlobalOptions : public Scene
 {
 public:
-	VagWindow();
-	virtual void setup(int argc, char **argv);
-	void setup_special();
-	virtual void resume();
-	virtual void mainThreadActivities();
-	
-	static Dictator *dictator()
-	{
-		return _dictator;
-	}
-	
-	static void addJob(std::string str);
+	GlobalOptions(Scene *prev);
 
+	virtual void setup();
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	static Dictator *_dictator;
-	MainMenu *_menu = nullptr;
-	bool _resume = false;
 
 };
 

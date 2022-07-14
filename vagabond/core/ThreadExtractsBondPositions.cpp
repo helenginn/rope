@@ -169,4 +169,8 @@ void ThreadExtractsBondPositions::returnResult(Job *job)
 		job->destroy();
 		calc->submitResult(r);
 	}
+	else
+	{
+		std::cout << "Oh, minijobs wasn't zero" << std::endl;
+	}
 }

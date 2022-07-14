@@ -22,6 +22,8 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Entity.h>
 
+#include "ProjectMenu.h"
+#include "ProgressView.h"
 #include "MainMenu.h"
 #include "ConfSpaceView.h"
 
@@ -45,12 +47,21 @@ void VagWindow::setup(int argc, char **argv)
 	setCurrentScene(menu);
 	_current = menu;
 	_menu = menu;
+	
+	bool is_native = isNativeApp();
 
-	ProgressView *pv = new ProgressView(menu);
-	pv->attachToEnvironment();
-	pv->setResponder(this);
-	pv->show();
-	_pv = pv;
+	if (!is_native)
+	{
+		ProgressView *pv = new ProgressView(menu);
+		pv->attachToEnvironment();
+//		pv->setResponder(this);
+		pv->show();
+	}
+	else
+	{
+		ProjectMenu *pm = new ProjectMenu(menu);
+		pm->show();
+	}
 
 	_dictator = new Dictator();
 
@@ -76,15 +87,6 @@ void VagWindow::mainThreadActivities()
 	if (_resume)
 	{
 		_resume = false;
-
-		size_t count = Environment::entityManager()->objectCount();
-
-		if (_pv)
-		{
-			_pv->back();
-			_pv = nullptr;
-
-		}
 	}
 }
 
@@ -92,3 +94,4 @@ void VagWindow::resume()
 {
 	_resume = true;
 }
+

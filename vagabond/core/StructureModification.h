@@ -42,8 +42,11 @@ public:
 	
 	virtual void fillBasis(ConcertedBasis *cb) = 0;
 protected:
+	void addToHetatmCalculator(Atom *anchor);
+	void finishHetatmCalculator();
 	Molecule *_molecule = nullptr;
 
+	BondCalculator *_hetatmCalc = nullptr;
 	std::vector<BondCalculator *> _calculators;
 	AtomContent *_fullAtoms = nullptr;
 	Sampler _sampler;

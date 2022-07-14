@@ -111,7 +111,10 @@ void ProgressView::finish()
 	std::lock_guard<std::mutex> lock(_mutex);
 
 	_finish = true;
+	Environment::env().setProgressResponder(nullptr);
+	back();
 
+	/*
 	if (_responder)
 	{
 		_responder->resume();
@@ -120,4 +123,6 @@ void ProgressView::finish()
 	{
 		back();
 	}
+	*/
+
 }

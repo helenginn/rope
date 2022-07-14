@@ -90,6 +90,23 @@ HasRenderables::~HasRenderables()
 
 }
 
+void HasRenderables::addObjectToFront(Renderable *r)
+{
+	std::vector<Renderable *>::iterator it;
+	
+	it = std::find(_objects.begin(), _objects.end(), r);
+	
+	if (it == _objects.end())
+	{
+		_objects.insert(_objects.begin(), r);
+	}
+	else
+	{
+		throw(std::runtime_error("trying to add same object twice"));
+	}
+
+}
+
 void HasRenderables::addObject(Renderable *r)
 {
 	std::vector<Renderable *>::iterator it;
@@ -104,6 +121,23 @@ void HasRenderables::addObject(Renderable *r)
 	{
 		throw(std::runtime_error("trying to add same object twice"));
 	}
+}
+
+void HasRenderables::addTempObject(Renderable *r)
+{
+	addObject(r);
+	_temps.push_back(r);
+}
+
+void HasRenderables::deleteTemps()
+{
+	for (Renderable *r : _temps)
+	{
+		removeObject(r);
+		delete r;
+	}
+
+	_temps.clear();
 }
 
 void HasRenderables::doThingsCircuit()

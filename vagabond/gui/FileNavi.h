@@ -16,35 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__VagWindow__
-#define __vagabond__VagWindow__
+#ifndef __vagabond__FileNavi__
+#define __vagabond__FileNavi__
 
-#include <vagabond/gui/elements/Window.h>
-#include "MainMenu.h"
+#include <vagabond/gui/elements/ListView.h>
+#include <vagabond/core/Responder.h>
 
-class Dictator;
+class Text;
 
-class VagWindow : public Window//, public ProgressViewResponder
+class FileNavi : public ListView, public HasResponder<Responder<FileNavi>>
 {
 public:
-	VagWindow();
-	virtual void setup(int argc, char **argv);
-	void setup_special();
-	virtual void resume();
-	virtual void mainThreadActivities();
-	
-	static Dictator *dictator()
-	{
-		return _dictator;
-	}
-	
-	static void addJob(std::string str);
+	FileNavi(Scene *prev);
 
+	virtual void setup();
+	virtual void refresh();
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	
+	std::string formNextPath(std::string end);
+
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
 private:
-	static Dictator *_dictator;
-	MainMenu *_menu = nullptr;
-	bool _resume = false;
+	void getPathContents(std::string path = "");
 
+	std::vector<std::string> _paths;
+	std::string _currentPath;
+	Text *_pathName = nullptr;
 };
 
 #endif

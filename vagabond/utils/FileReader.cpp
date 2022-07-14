@@ -41,6 +41,20 @@ std::vector<std::string> split(const std::string &s, char delim) {
 	return elems;
 }
 
+bool is_directory(const std::string &name)
+{
+	struct stat st;
+	if(stat(name.c_str(),&st) == 0)
+	{
+		if ((st.st_mode & S_IFDIR) != 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool file_exists(const std::string& name)
 {
 	struct stat buffer;
@@ -227,15 +241,6 @@ void to_lower(std::string &str)
 void to_upper(std::string &str)
 {
 	std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-}
-
-std::string i_to_str(int val)
-{
-	std::ostringstream ss;
-	ss << val;
-	std::string temp = ss.str();
-
-	return temp;
 }
 
 std::string f_to_str(double val, int precision)

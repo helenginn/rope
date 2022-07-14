@@ -193,7 +193,7 @@ void AddRule::openOptions()
 
 }
 
-void AddRule::returnHeader(std::string header)
+void AddRule::sendObject(std::string header, void *)
 {
 	_obj.setHeader(header);
 }
@@ -208,7 +208,7 @@ void AddRule::buttonPressed(std::string tag, Button *button)
 	else if (tag == "header")
 	{
 		ChooseHeader *ch = new ChooseHeader(this);
-		ch->setCaller(this);
+		ch->setResponder(this);
 		ch->setEntity(_entity_id);
 		ch->show();
 	}

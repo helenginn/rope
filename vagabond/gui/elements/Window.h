@@ -5,6 +5,7 @@
 #include <SDL2/SDL_opengl.h>
 #include "KeyResponder.h"
 #include <set>
+#include <stdlib.h>
 #include <iostream>
 
 #define BROWSER_WIDTH 1600.
@@ -98,9 +99,19 @@ public:
 	{
 		return _myWindow;
 	}
+	static bool isNativeApp()
+	{
+#ifdef __EMSCRIPTEN__
+		return false;
+#endif
+		char *native = getenv("MAC_NATIVE_APP");
+		return (native != nullptr);
+	}
+
 protected:
 	static Scene *_current;
 	static Scene *_next;
+
 private:
 	void deleteQueued();
 

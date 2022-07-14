@@ -86,7 +86,8 @@ void Knotter::checkAtoms(Atom *atom, int start)
 			continue;
 		}
 
-		if (code == other_code)
+		if (atom->residueId() == other->residueId()
+		    && atom->chain() == other->chain())
 		{
 			standard = _table->length(code, orig, compare, false);
 		}
@@ -139,7 +140,10 @@ void Knotter::createBondAngles(Atom *atom)
 
 			double standard = -1;
 			
-			if (aCode == start->code() && aCode == end->code())
+			if (start->residueId() == end->residueId() 
+			    && start->chain() == end->chain())
+//			{
+//			if (aCode == start->code() && aCode == end->code())
 			{
 				standard = _table->angle(aCode, sName, aName, eName);
 			}

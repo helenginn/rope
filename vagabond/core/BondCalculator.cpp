@@ -218,6 +218,7 @@ Result *BondCalculator::acquireResult()
 {
 	_resultPool.handout.lock();
 	_jobPool.handout.lock();
+
 	if (_running == 0 && _resultPool.members.size() == 0)
 	{
 		_jobPool.handout.unlock();
@@ -228,7 +229,8 @@ Result *BondCalculator::acquireResult()
 	_resultPool.handout.unlock();
 
 	_resultPool.sem.wait();
-	_resultPool.handout.lock();
+
+	std::lock_guard<std::mutex> lg(_resultPool.handout);
 	Result *result = nullptr;
 
 	if (_resultPool.members.size())
@@ -237,7 +239,6 @@ Result *BondCalculator::acquireResult()
 		_resultPool.members.pop();
 	}
 
-	_resultPool.handout.unlock();
 	return result;
 }
 

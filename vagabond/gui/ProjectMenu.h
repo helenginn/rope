@@ -16,56 +16,46 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ChooseHeader__
-#define __vagabond__ChooseHeader__
+#ifndef __vagabond__ProjectMenu__
+#define __vagabond__ProjectMenu__
 
-#include <vagabond/core/Responder.h>
-#include <vagabond/gui/elements/ListView.h>
 #include <set>
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Responder.h>
 
-class Entity;
+class FileNavi;
+class TextEntry;
+class ChooseHeader;
 
-class ChooseHeader : public ListView,
-public HasResponder<Responder<ChooseHeader>>
+class ProjectMenu : public Scene, public Responder<FileNavi>,
+public Responder<ChooseHeader>
 {
 public:
-	ChooseHeader(Scene *prev, bool choose = true);
-	~ChooseHeader();
+	ProjectMenu(Scene *prev);
 	
-	void setHeaders(std::set<std::string> &headers)
-	{
-		for (const std::string &h : headers)
-		{
-			_headers.push_back(h);
-		}
-	}
-	
-	void setCanDelete(bool del)
-	{
-		_canDelete = del;
-	}
-	
-	void setTitle(std::string title)
-	{
-		_title = title;
-	}
-
-	void setEntity(std::string name);
 	virtual void setup();
-
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
-
+	virtual void refresh();
+	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	
+	virtual void sendObject(std::string tag, void *object);
 private:
-	Entity *_entity;
-	std::vector<std::string> _headers;
-	std::vector<std::string> _assigned;
-	std::string _title;
-	bool _choose = false;
-	bool _canDelete = false;
+	void goToProject();
+	void addPathOptions();
+	void createProject();
+	void writeProjects();
+	void findExistingProjects();
 
+	std::vector<std::string> _projects;
+	std::set<std::string> _names;
+	std::string _path;
+	std::string _name;
+	TextEntry *_nameEntry;
 
+	FileNavi *_navi = nullptr;
+	ChooseHeader *_header = nullptr;
+	
+	bool _finish = false;
 };
 
 #endif

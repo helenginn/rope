@@ -21,11 +21,13 @@
 
 #include "AddObject.h"
 #include <vagabond/core/Rule.h>
+#include <vagabond/core/Responder.h>
 
 class RulesMenu;
 class MetadataGroup;
+class ChooseHeader;
 
-class AddRule : public AddObject<Rule>
+class AddRule : public AddObject<Rule>, public Responder<ChooseHeader>
 {
 public:
 	AddRule(Scene *prev, Rule *chosen = nullptr);
@@ -46,7 +48,7 @@ public:
 		_group = group;
 	}
 	
-	void returnHeader(std::string header);
+	virtual void sendObject(std::string header, void *);
 
 	virtual void setup();
 	virtual void refresh();

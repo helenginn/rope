@@ -83,16 +83,24 @@ void Dictator::setup()
 
 void Dictator::getFilesNativeApp()
 {
-	std::vector<std::string> globs = glob_pattern("../../../*");
+	std::vector<std::string> globs = glob_pattern("*");
 
+	FileManager *fm = Environment::fileManager();
 	for (std::string &g : globs)
 	{
-		if (g == "Rope.app")
-		{
-			continue;
-		}
-
 		loadFiles(g);
+	}
+}
+
+void escape_filename(std::string &file)
+{
+	for (size_t i = 0; i < file.size(); i++)
+	{
+		if (file[i] == ' ')
+		{
+			file.insert(i, "\\");
+			i++;
+		}
 	}
 }
 
@@ -103,10 +111,17 @@ void Dictator::loadFiles(std::string &last)
 
 	for (size_t i = 0; i < files.size(); i++)
 	{
-		if (!fm->acceptFile(files[i]))
+		std::string file = files[i];
+		escape_filename(file);
+
+		if (!fm->acceptFile(file))
 		{
 			std::cout << "File not found/accessible: " << 
-			files[i] << std::endl;
+			file << std::endl;
+		}
+		else
+		{
+			std::cout << "Found file: " << file << std::endl;
 		}
 	}
 }

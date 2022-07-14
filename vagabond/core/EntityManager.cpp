@@ -41,9 +41,9 @@ Entity *EntityManager::insertIfUnique(Entity &ent)
 		throw std::runtime_error("Entity has no name");
 	}
 	
+	ent.setResponder(this);
 	_objects.push_back(ent);
 	_name2Entity[ent.name()] = &_objects.back();
-	ent.setResponder(this);
 
 	Manager::triggerResponse();
 	

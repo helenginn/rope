@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/FileManager.h>
 
-class MainMenu : public Scene, public FileManagerResponder
+class MainMenu : public Scene, public Responder<FileManager>
 {
 public:
 	MainMenu();
@@ -30,9 +30,9 @@ public:
 	virtual ~MainMenu();
 
 	virtual void setup();
-	virtual void render();
+	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual void filesChanged();
+	virtual void respond();
 private:
 	void checkForJson();
 

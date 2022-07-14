@@ -159,6 +159,8 @@ std::string Sequence::str()
 
 SequenceComparison *Sequence::newComparison(Entity *entity)
 {
+	std::cout << "New comparison w sequence entity from " << _entity << " to "
+	<< entity << std::endl;
 	if (entity == nullptr && _entity != nullptr)
 	{
 		entity = _entity;
@@ -248,11 +250,6 @@ Residue *Sequence::master_residue(Residue *local) const
 
 void Sequence::remapFromMaster(Entity *entity)
 {
-	if (_map2Master.size() > 0 && _map2Local.size() > 0)
-	{
-//		return;
-	}
-	
 	if (entity == nullptr)
 	{
 		return;
@@ -260,6 +257,8 @@ void Sequence::remapFromMaster(Entity *entity)
 
 	std::list<Residue>::iterator local;
 	local = _residues.begin();
+	std::cout << "Changing sequence entity from " << _entity << " to "
+	<< entity << std::endl;
 	_entity = entity;
 	_map2Master.clear();
 	_map2Local.clear();

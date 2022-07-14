@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
+#include "unistd.h"
 
 #include "Window.h"
 #include "Library.h"
@@ -31,6 +32,7 @@
 #include <string>
 
 Library *Library::_library = NULL;
+std::string Library::_nativePath = "";
 
 Library::Library()
 {
@@ -85,12 +87,35 @@ GLuint Library::getTexture(std::string filename, int *w, int *h)
 	return tex;
 }
 
-SDL_Surface *Library::loadImage(std::string filename)
+void Library::correctFilename(std::string &filename)
 {
 	std::string path = filename;
 #ifndef __EMSCRIPTEN__
-	path = std::string(DATA_DIRECTORY) + "/" + filename;
+	bool native = Window::isNativeApp();
+	if (!native)
+	{
+		path = std::string(DATA_DIRECTORY) + "/" + filename;
+	}
+	else 
+	{
+		if (_nativePath.length() == 0)
+		{
+			char cwd[PATH_MAX + 1];
+			getcwd(cwd, PATH_MAX);
+			_nativePath = cwd;
+		}
+		
+		path = _nativePath + "/" + filename;
+	}
 #endif
+
+	filename = path;
+}
+
+SDL_Surface *Library::loadImage(std::string filename)
+{
+	std::string path = filename;
+	correctFilename(path);
 	SDL_Surface *surface = IMG_Load(path.c_str());
 	
 	if (surface == NULL)

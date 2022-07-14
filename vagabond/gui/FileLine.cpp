@@ -19,6 +19,7 @@
 #include "FileView.h"
 #include "FileLine.h"
 #include <vagabond/gui/elements/Image.h>
+#include <vagabond/utils/FileReader.h>
 
 #include <vagabond/gui/elements/TextButton.h>
 
@@ -55,6 +56,13 @@ void FileLine::setup()
 	button->setReturnTag("file_" + _filename);
 	button->resize(0.9);
 	button->setLeft(0.0, 0);
+	
+	if (is_directory(_filename))
+	{
+		button->setInert(true);
+		button->setAlpha(-0.4);
+	}
+
 	addObject(button);
 	
 	if (_type & File::UnitCell)

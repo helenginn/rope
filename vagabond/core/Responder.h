@@ -38,6 +38,19 @@ public:
 			parent->removeResponder(this);
 		}
 	}
+	
+	void removeParent(HasResponder<Responder<T>> *parent)
+	{
+		for (size_t i = 0; i < _parents.size(); i++)
+		{
+			if (_parents[i] == parent)
+			{
+				_parents.erase(_parents.begin() + i);
+				i--;
+			}
+		}
+
+	}
 
 	virtual void setParent(HasResponder<Responder<T>> *hr)
 	{
@@ -56,6 +69,10 @@ class HasResponder
 public:
 	virtual ~HasResponder()
 	{
+		for (size_t i = 0; i < _responders.size(); i++)
+		{
+			_responders[i]->removeParent(this);
+		}
 
 	}
 

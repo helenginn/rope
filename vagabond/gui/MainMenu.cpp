@@ -1,5 +1,6 @@
 // Copyright (C) 2021 Helen Ginn
 
+#include "GlobalOptions.h"
 #include "ProgressView.h"
 #include "MetadataView.h"
 #include "DatasetMenu.h"
@@ -85,21 +86,12 @@ void MainMenu::setup()
 	}
 	*/
 
-#ifndef __EMSCRIPTEN__
-	{
-		TextButton *text = new TextButton("Save", this);
-		text->setReturnTag("file_save");
-		text->setRight(0.9, 0.1);
-		addObject(text);
-	}
-#else
 	{
 		TextButton *text = new TextButton("Menu", this);
 		text->setReturnTag("file_menu");
 		text->setRight(0.9, 0.1);
 		addObject(text);
 	}
-#endif
 
 	{
 		ImageButton *button = new ImageButton("assets/images/files.png", this);
@@ -150,17 +142,15 @@ void MainMenu::setup()
 	}
 }
 
-void MainMenu::render()
+void MainMenu::doThings()
 {
 	if (_checkFiles)
 	{
 		checkForJson();
 	}
-
-	Scene::render();
 }
 
-void MainMenu::filesChanged()
+void MainMenu::respond()
 {
 	_checkFiles = true;
 }
@@ -199,8 +189,11 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	{
 		glm::vec2 c = button->xy();
 		Menu *m = new Menu(this, this, "file");
+#ifdef __EMSCRIPTEN__
 		m->addOption("Load", "load");
+#endif
 		m->addOption("Save", "save");
+		m->addOption("Options", "options");
 		m->setup(c.x, c.y);
 		setModal(m);
 	}
@@ -211,9 +204,14 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	else if (tag == "file_load")
 	{
 #ifdef __EMSCRIPTEN__
-	Environment::fileManager()->setResponder(this);
+	Environment::fileManager()->HasResponder<Responder<FileManager>>::setResponder(this);
 	upload_json();
 #endif
+	}
+	else if (tag == "file_options")
+	{
+		GlobalOptions *go = new GlobalOptions(this);
+		go->show();
 	}
 	else if (tag == "proteins")
 	{

@@ -48,7 +48,9 @@ public:
 	{
 	}
 
-	virtual ~Progressor() {};
+	virtual ~Progressor()
+	{
+	};
 	
 	virtual const std::string progressName() const = 0;
 

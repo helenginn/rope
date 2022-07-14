@@ -20,6 +20,11 @@ public:
 	void deleteObjects();
 	
 	void addObject(Renderable *r);
+	void addTempObject(Renderable *r);
+	
+	void deleteTemps();
+
+	void addObjectToFront(Renderable *r);
 
 	size_t objectCount()
 	{
@@ -52,6 +57,7 @@ public:
 protected:
 	void clearHighlights();
 	std::vector<Renderable *> _objects;
+	std::vector<Renderable *> _temps;
 
 };
 

@@ -20,7 +20,9 @@
 #include "ChooseHeader.h"
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/EntityManager.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 
 ChooseHeader::ChooseHeader(Scene *prev, bool choose) : ListView(prev)
 {
@@ -35,7 +37,14 @@ ChooseHeader::~ChooseHeader()
 
 void ChooseHeader::setup()
 {
-	addTitle("Choose header");
+	if (_title.length() == 0)
+	{
+		addTitle("Choose header");
+	}
+	else
+	{
+		addTitle(_title);
+	}
 
 	ListView::setup();
 }
@@ -65,6 +74,14 @@ Renderable *ChooseHeader::getLine(int i)
 		text->setRight(0.6, 0.0);
 		b->addObject(text);
 	}
+	else if (_canDelete)
+	{
+		ImageButton *ib = new ImageButton("assets/images/cross.png", this);
+		ib->resize(0.06);
+		ib->setRight(0.6, 0.0);
+		ib->setReturnTag("__del_" + _headers[i]);
+		b->addObject(ib);
+	}
 
 	return b;
 }
@@ -88,17 +105,36 @@ void ChooseHeader::setEntity(std::string name)
 
 void ChooseHeader::buttonPressed(std::string tag, Button *button)
 {
-	if (_choose && _caller)
+	if (_choose && tag.rfind("__del_", 0) != 0)
 	{
 		for (const std::string &h : _headers)
 		{
 			if (tag == h)
 			{
-				_caller->returnHeader(tag);
+				sendResponse(tag, this);
 				back();
+				return;
 			}
 		}
 	}
 
+	std::string end = Button::tagEnd(tag, "__del_");
+	if (end.length())
+	{
+		AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to delete\n" + 
+		                             end + "?", tag, this);
+		setModal(ayn);
+	}
+
+	end = Button::tagEnd(tag, "yes_");
+	
+	if (end.length())
+	{
+		sendResponse(end, this);
+		back();
+		return;
+	}
+
 	ListView::buttonPressed(tag, button);
 }
+

@@ -16,11 +16,5 @@
 // 
 // Please email: blot @ hginn.co.uk for more details.
 
-//#define MACOS
-
-#ifdef MACOS
-#define DATA_DIRECTORY "."
-#else
-#define DATA_DIRECTORY "/usr/local/share/vagabond/"
-#endif
+#define DATA_DIRECTORY "/usr/local/share/vagabond"
 

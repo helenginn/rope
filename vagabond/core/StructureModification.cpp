@@ -29,7 +29,10 @@ StructureModification::StructureModification(Molecule *mol)
 
 StructureModification::~StructureModification()
 {
-
+	for (size_t i = 0; i < _calculators.size(); i++)
+	{
+		delete _calculators[i];
+	}
 }
 
 void StructureModification::makeCalculator(Atom *anchor)
@@ -58,6 +61,34 @@ void StructureModification::makeCalculator(Atom *anchor)
 	fillBasis(cb);
 }
 
+void StructureModification::addToHetatmCalculator(Atom *anchor)
+{
+	if (_hetatmCalc == nullptr)
+	{
+		_hetatmCalc = new BondCalculator();
+		_calculators.push_back(_hetatmCalc);
+
+		_hetatmCalc->setPipelineType(BondCalculator::PipelineAtomPositions);
+		_hetatmCalc->setMaxSimultaneousThreads(1);
+		_hetatmCalc->setSampler(&_sampler);
+
+		_hetatmCalc->setIgnoreHydrogens(false);
+	}
+
+	_hetatmCalc->addAnchorExtension(anchor);
+}
+
+void StructureModification::finishHetatmCalculator()
+{
+	if (_hetatmCalc == nullptr)
+	{
+		return;
+	}
+
+	_hetatmCalc->setup();
+	_hetatmCalc->start();
+}
+
 void StructureModification::startCalculator()
 {
 	for (size_t i = 0; i < _fullAtoms->connectedGroups().size(); i++)
@@ -69,10 +100,16 @@ void StructureModification::startCalculator()
 			continue;
 		}
 		
-		if (_molecule->has_chain_id(anchor->chain()))
+		if (_molecule->has_chain_id(anchor->chain()) && !anchor->hetatm())
 		{
 			makeCalculator(anchor);
 		}
+		else
+		{
+			addToHetatmCalculator(anchor);
+		}
 	}
+	
+	finishHetatmCalculator();
 }
 

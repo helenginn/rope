@@ -26,6 +26,7 @@ std::string get_file_contents(std::string filename);
 
 std::vector<std::string> split(const std::string &s, char delim);
 bool file_exists(const std::string& name);
+bool is_directory(const std::string &name);
 
 std::string getPath(std::string whole);
 std::string getFilename(std::string filename);
@@ -38,7 +39,11 @@ std::string getExtension(std::string filename);
 std::string getBaseFilenameWithPath(std::string filename);
 std::string findNextFilename(std::string file);
 
-std::string i_to_str(int val);
+inline std::string i_to_str(int val)
+{
+	return std::to_string(val);
+}
+
 std::string f_to_str(double val, int precision);
 
 std::string findNewFolder(std::string prefix = "refine_");

@@ -72,7 +72,6 @@ void AxisExplorer::setup()
 
 void AxisExplorer::submitJob(float prop)
 {
-	
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};

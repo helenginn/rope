@@ -68,6 +68,7 @@ public:
 	
 	void setInformation(std::string str);
 protected:
+	void reloadBackground();
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
 	virtual void checkIndexBuffer(double x, double y, 
@@ -77,12 +78,12 @@ protected:
 	
 	std::string _title;
 
-	Renderable *_dragged;
-	Renderable *_background;
-	Modal *_modal;
-	Modal *_removeModal;
-	Scene *_previous;
-	Button *_back;
+	Renderable *_dragged = nullptr;
+	Renderable *_background = nullptr;
+	Modal *_modal = nullptr;
+	Modal *_removeModal = nullptr;
+	Scene *_previous = nullptr;
+	Button *_back = nullptr;
 	TextButton *_info = nullptr;
 	
 	SDL_Cursor *_cursor = nullptr;
@@ -92,6 +93,8 @@ protected:
 	bool _moving = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
+	
+	static std::string _defaultBg;
 };
 
 #endif

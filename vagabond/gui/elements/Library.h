@@ -35,7 +35,9 @@ public:
 	void setProgram(Renderable *fl, std::string v, std::string g, std::string f);
 
 	void dropTexture(GLuint tex);
+	static void correctFilename(std::string &filename);
 private:
+
 	struct ShaderTrio
 	{
 		std::string v;
@@ -53,6 +55,7 @@ private:
 	GLuint loadSurface(SDL_Surface *image, std::string filename);
 	SDL_Surface *loadImage(std::string filename);
 	static Library *_library;
+	static std::string _nativePath;
 
 	std::vector<GLuint> _texids;
 	std::map<GLuint, int> _counts;

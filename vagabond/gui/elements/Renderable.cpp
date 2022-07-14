@@ -1137,9 +1137,7 @@ void Renderable::setShaderFile(std::string file, std::string *location,
 	}
 
 	std::string path = file;
-	#ifndef __EMSCRIPTEN__
-	path = std::string(DATA_DIRECTORY) + "/" + file;
-	#endif
+	Library::correctFilename(path);
 
 	*fLoc = file;
 	try

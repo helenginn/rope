@@ -13,15 +13,11 @@
 
 #include <cstring>
 
+std::string Scene::_defaultBg = "assets/images/paper.jpg";
+
 Scene::Scene(Scene *prev) : SnowGL()
 {
-	_background = NULL;
-	_modal = NULL;
 	_mouseDown = false;
-	_dragged = NULL;
-	_removeModal = NULL;
-	
-	_back = NULL;
 	_previous = prev;
 
 	setBackground();
@@ -41,10 +37,26 @@ void Scene::preSetup()
 	_viewChanged = true;
 }
 
+void Scene::reloadBackground()
+{
+	removeObject(_background);
+	Window::setDelete(_background);
+	_background = nullptr;
+
+	Image *r = new Image(_defaultBg);
+	r->Box::makeQuad();
+	addObjectToFront(r);
+	_background = r;
+
+	if (_previous != nullptr)
+	{
+		_previous->reloadBackground();
+	}
+}
+
 void Scene::setBackground()
 {
-	Image *r = new Image("assets/images/paper.jpg");
-//	Image *r = new Image("assets/images/blank.png");
+	Image *r = new Image(_defaultBg);
 	r->Box::makeQuad();
 	addObject(r);
 	_background = r;
@@ -262,8 +274,8 @@ void Scene::buttonPressed(std::string tag, Button *button)
 
 void Scene::back(int num)
 {
-	std::cout << "Show previous screen" << std::endl;
 	_previous->showSimple();
+	Window::setDelete(this);
 	
 	/* recursively remove scenes */
 	if (num > 0)
@@ -273,12 +285,9 @@ void Scene::back(int num)
 		if (num == 1)
 		{
 			/* might be called anyway */
-//			_previous->refresh();
+			_previous->refresh();
 		}
 	}
-
-	std::cout << "add scene (" << this << ") to delete queue" << std::endl;
-	Window::setDelete(this);
 }
 
 void Scene::keyPressEvent(SDL_Keycode pressed)

@@ -67,10 +67,11 @@ void PdbFile::getStandardGeometry()
 
 void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)
 {
-	if (a.altloc != conf)
+	if (a.altloc != conf && a.altloc != '\0')
 	{
 		return;
 	}
+
 	Atom *vagatom = new Atom();
 	vagatom->setElementSymbol(a.element.name());
 	vagatom->setAtomName(a.name);
@@ -90,7 +91,10 @@ std::set<char> get_alt_confs(std::vector<gemmi::Atom> &atoms)
 
 	for (gemmi::Atom &atom : atoms)
 	{
-		chs.insert(atom.altloc);
+		if (atom.altloc != '\0')
+		{
+			chs.insert(atom.altloc);
+		}
 	}
 	
 	return chs;
@@ -105,7 +109,11 @@ void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
 	
 	std::set<char> confs = get_alt_confs(r.atoms);
 	
-	char chosen = *confs.begin();
+	char chosen = '\0';
+	if (confs.size())
+	{
+		chosen = *confs.begin();
+	}
 	
 	for (size_t i = 0; i < r.atoms.size(); i++)
 	{
