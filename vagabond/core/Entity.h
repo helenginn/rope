@@ -81,6 +81,11 @@ public:
 		return _models.size();
 	}
 	
+	const std::vector<Molecule *> &molecules() const
+	{
+		return _molecules;
+	}
+	
 	const std::vector<Model *> &models() const
 	{
 		return _models;
