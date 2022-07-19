@@ -40,6 +40,13 @@ AddObject(prev, chosen)
 
 }
 
+AddRule::AddRule(Scene *prev) :
+Scene(prev),
+AddObject(prev)
+{
+
+}
+
 AddRule::~AddRule()
 {
 	deleteObjects();

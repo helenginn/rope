@@ -30,7 +30,8 @@ class ChooseHeader;
 class AddRule : public AddObject<Rule>, public Responder<ChooseHeader>
 {
 public:
-	AddRule(Scene *prev, Rule *chosen = nullptr);
+	AddRule(Scene *prev, Rule *chosen);
+	AddRule(Scene *prev);
 	~AddRule();
 	
 	void setEntityId(std::string entity_id)

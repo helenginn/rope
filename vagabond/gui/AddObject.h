@@ -25,14 +25,22 @@ template <class Object>
 class AddObject : public virtual Scene
 {
 public:
-	AddObject(Scene *prev, Object *chosen = nullptr);
-	~AddObject() {}
+	AddObject(Scene *prev);
+	AddObject(Scene *prev, Object *chosen);
+	~AddObject();
+	
+	void setDeleteAllowed(bool allowed)
+	{
+		_deleteAllowed = allowed;
+	}
 
 	virtual void setup();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 protected:
-	Object _obj;
+	Object &_obj;
 	bool _existing = false;
+	bool _deleteAllowed = true;
+
 };
 
 #include "AddObject.cpp"

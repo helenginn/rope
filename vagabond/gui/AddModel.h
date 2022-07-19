@@ -29,7 +29,8 @@ class TextEntry;
 class AddModel : public AddObject<Model>, public FileViewResponder
 {
 public:
-	AddModel(Scene *prev, Model *chosen = nullptr);
+	AddModel(Scene *prev, Model *chosen);
+	AddModel(Scene *prev);
 	~AddModel();
 
 	virtual void setup();

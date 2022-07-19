@@ -21,14 +21,28 @@
 
 #include "AddObject.h"
 #include <vagabond/gui/elements/TextButton.h>
+#include <iostream>
 
 template <class Object>
-AddObject<Object>::AddObject(Scene *prev, Object *chosen) : Scene(prev)
+AddObject<Object>::AddObject(Scene *prev) : Scene(prev), _obj(*(new Object()))
 {
-	if (chosen != nullptr)
+	_existing = false;
+}
+
+template <class Object>
+AddObject<Object>::AddObject(Scene *prev, Object *chosen) : Scene(prev), 
+_obj(*chosen)
+{
+	std::cout << "Pointer: " << chosen << std::endl;
+	_existing = true;
+}
+
+template<class Object>
+AddObject<Object>::~AddObject()
+{
+	if (_existing == false)
 	{
-		_obj = *chosen;
-		_existing = true;
+		delete &_obj;
 	}
 }
 
@@ -63,6 +77,7 @@ void AddObject<Object>::setup()
 	}
 	else
 	{
+		if (_deleteAllowed)
 		{
 			TextButton *t = new TextButton("Delete", this);
 			t->setRight(0.9, 0.1);

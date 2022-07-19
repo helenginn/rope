@@ -27,6 +27,14 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/ModelManager.h>
 
+AddModel::AddModel(Scene *prev) :
+Scene(prev),
+AddObject(prev),
+FileViewResponder(prev)
+{
+
+}
+
 AddModel::AddModel(Scene *prev, Model *chosen) :
 Scene(prev),
 AddObject(prev, chosen),
@@ -222,7 +230,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 			setModal(bad);
 		}
 	}
-	else if (tag == "delete" && _existing)
+	else if (tag == "delete" && _existing && _deleteAllowed)
 	{
 		Environment::purgeModel(_obj.name());
 		back();

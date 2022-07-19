@@ -296,6 +296,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		if (m)
 		{
 			AddModel *am = new AddModel(this, m->model());
+			am->setDeleteAllowed(false);
 			am->show();
 		}
 	}

@@ -53,10 +53,9 @@ AddEntity::AddEntity(Scene *prev, std::string str) : Scene(prev), AddObject(prev
 	_obj.setSequence(seq);
 }
 
-AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev), AddObject(prev)
+AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev), AddObject(prev, ent)
 {
-	_obj = *ent;
-	_existing = true;
+
 }
 
 void AddEntity::setup()
