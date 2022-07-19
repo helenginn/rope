@@ -157,11 +157,12 @@ void Metadata::extractData(std::ostringstream &csv, KeyValues &kv) const
 	{
 		std::string molecule_id = kv.at("molecule").text();
 		std::string model_id = _mol2Model.at(molecule_id);
-		model_kv = _model2Data.at(model_id);
+		if (_model2Data.count(model_id))
+		{
+			model_kv = _model2Data.at(model_id);
+		}
 	}
 	
-	std::cout << model_kv << std::endl;
-
 	for (const std::string &header : _headers)
 	{
 		if (kv.count(header) == 0 && model_kv == nullptr)
@@ -186,7 +187,6 @@ void Metadata::extractData(std::ostringstream &csv, KeyValues &kv) const
 			}
 		}
 
-			std::cout << "kv got it" << std::endl;
 		std::string value = kv.at(header).text();
 		csv << value << ",";
 	}
@@ -210,11 +210,6 @@ std::string Metadata::asCSV() const
 	for (it = _mole2Data.cbegin(); it != _mole2Data.cend(); it++)
 	{
 		extractData(csv, *it->second);
-	}
-
-	for (it = _model2Data.cbegin(); it != _model2Data.cend(); it++)
-	{
-//		extractData(csv, *it->second);
 	}
 
 	return csv.str();
