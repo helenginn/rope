@@ -27,6 +27,29 @@ FileManager::FileManager()
 
 }
 
+std::set<std::string> &FileManager::geometryFiles()
+{
+	if (_geometries.size())
+	{
+		return _geometries;
+	}
+	
+	setFilterType(File::Geometry);
+
+	for (size_t i = 0; i < filteredCount(); i++)
+	{
+		std::string file = filtered(i);
+		if (!file_exists(file))
+		{
+			continue;
+		}
+
+		_geometries.insert(file);
+	}
+
+	return _geometries;
+}
+
 void FileManager::setFilterType(File::Type type)
 {
 	_type = type;
@@ -86,6 +109,8 @@ bool FileManager::acceptFile(std::string filename, bool force)
 		addFile(filename);
 		added = true;
 	}
+	
+	_geometries.clear();
 	
 	HasResponder<Responder<FileManager>>::triggerResponse();
 	

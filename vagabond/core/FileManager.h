@@ -74,6 +74,8 @@ public:
 		return "files";
 	}
 	
+	std::set<std::string> &geometryFiles();
+	
 	static pthread_t &thread();
 
 	friend void to_json(json &j, const FileManager &value);
@@ -82,6 +84,8 @@ private:
 	std::vector<std::string> _list;
 	std::vector<std::string> _filtered;
 	pthread_t _thread;
+	
+	std::set<std::string> _geometries;
 
 	File::Type _type = File::Nothing;
 };
