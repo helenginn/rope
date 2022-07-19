@@ -424,9 +424,14 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 	_idxPos[fix] = p;
 	_atomPos[a] = p;
 	
-	for (size_t i = fix - 1; i < fix + 1; i++)
+	for (int i = fix - 2; i < fix + 1; i++)
 	{
-		if (i < 0 || i >= _cAlphas.size() - 2)
+		if (i <= 1 || i >= (int)_cAlphas.size() - 2)
+		{
+			continue;
+		}
+		
+		if (_cAlphas[i] == nullptr)
 		{
 			continue;
 		}
