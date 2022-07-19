@@ -31,6 +31,21 @@ std::string CifFile::macroHeaders[] =
 	""
 };
 
+std::string CifFile::ignoreChirals[] = 
+{
+	"_ignore_chirals.atom_id", ""
+};
+
+std::string CifFile::sideLinks[] = 
+{
+	"_side_links.comp_id", "_side_links.atom_id", ""
+};
+
+std::string CifFile::centralAtoms[] = 
+{
+	"_central_atoms.comp_id", "_central_atoms.atom_id", ""
+};
+
 std::string CifFile::compHeaders[] = 
 {
 	"_chem_comp_atom.comp_id", "_chem_comp_atom.x",

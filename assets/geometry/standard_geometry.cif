@@ -1377,6 +1377,23 @@ VAL   MG2    MG2  Q  "H-gamma-2-methyl: CG2"
 VAL   QG     QG   Q  "H-all-six-gamma-methyl"
 #
 loop_
+_ignore_chirals.atom_id
+#
+C
+#
+loop_
+_side_links.comp_id
+_side_links.atom_id
+#
+CYS     SG
+#
+loop_
+_central_atoms.comp_id
+_central_atoms.atom_id
+#
+.     CA
+#
+loop_
 _chem_comp_bond.comp_id
 _chem_comp_bond.atom_id_1
 _chem_comp_bond.atom_id_2

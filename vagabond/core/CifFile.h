@@ -47,6 +47,11 @@ private:
 	static std::string unitCellKeys[];
 	static std::string intTableKeys[];
 	static std::string groupSymbolKeys[];
+
+	static std::string ignoreChirals[];
+	static std::string sideLinks[];
+	static std::string centralAtoms[];
+
 	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
 	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);
 };
