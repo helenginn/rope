@@ -96,11 +96,8 @@ void SerialRefiner::sendObject(std::string tag, void *object)
 	std::lock_guard<std::mutex> lock(_mutex);
 	if (tag == "model_done" && _display != nullptr)
 	{
-		std::cout << "stopping display (" << _display << ")" << std::endl;
 		_display->stop();
-		std::cout << "display (" << _display << ") must go back" << std::endl;
 		_display->back();
-		std::cout << "display removed successfully" << std::endl;
 		_display = nullptr;
 	}
 

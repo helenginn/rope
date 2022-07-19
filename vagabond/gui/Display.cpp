@@ -24,7 +24,6 @@ Mouse3D(prev)
 
 Display::~Display()
 {
-	std::cout << "Deleting display " << this << std::endl;
 	deleteObjects();
 	
 	if (_owns && _atoms != nullptr)
