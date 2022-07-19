@@ -50,22 +50,19 @@ void CandidateView::parse()
 	{
 		return;
 	}
+
+	std::cout << _json << std::endl;
 	json result = json::parse(_json);
 
-	json group_set = result["group_set"];
-	
-	for (json &set : group_set)
-	{
-		json result_set = set["result_set"];
+	json result_set = result["result_set"];
 
-		for (json &res : result_set)
-		{
-			std::string code = res["identifier"];
-			size_t pos = code.rfind("_");
-			code = code.substr(0, pos);
-			to_lower(code);
-			_ids.push_back(code);
-		}
+	for (json &res : result_set)
+	{
+		std::string code = res["identifier"];
+		size_t pos = code.rfind("_");
+		code = code.substr(0, pos);
+		to_lower(code);
+		_ids.push_back(code);
 	}
 }
 

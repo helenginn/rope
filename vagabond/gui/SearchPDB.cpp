@@ -22,6 +22,7 @@
 #include <vagabond/core/Entity.h>
 #include <json/json.hpp>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -29,7 +30,6 @@
 SearchPDB::SearchPDB(Scene *prev, Entity *ent) : Scene(prev)
 {
 	_entity = ent;
-	_cutoff = 98;
 }
 
 void SearchPDB::setup()
@@ -37,17 +37,35 @@ void SearchPDB::setup()
 	addTitle("Search PDB by " + _entity->name() + " sequence");
 
 	{
-		TextButton *tb = new TextButton("Sequence identity cutoff", this);
-		tb->setLeft(0.2, 0.3);
-		tb->setReturnTag("get_identity_cutoff");
-		addObject(tb);
-	}
+		{
+			Text *t = new Text("Sequence identity cutoff");
+			t->setLeft(0.2, 0.3);
+			addObject(t);
+		}
 
+		{
+			TextButton *tb = new TextButton(i_to_str(_cutoff), this);
+			tb->setRight(0.8, 0.3);
+			tb->setReturnTag("get_identity_cutoff");
+			_cutoffText = tb;
+			addObject(tb);
+		}
+	}
+	
 	{
-		Text *t = new Text(i_to_str(_cutoff));
-		t->setRight(0.8, 0.3);
-		_cutoffText = t;
-		addObject(t);
+		{
+			Text *t = new Text("Maximum structures to return");
+			t->setLeft(0.2, 0.4);
+			addObject(t);
+		}
+
+		{
+			TextEntry *te = new TextEntry(i_to_str(_rows), this);
+			te->setValidationType(TextEntry::Numeric);
+			te->setRight(0.8, 0.4);
+			_maxRowsText = te;
+			addObject(te);
+		}
 	}
 
 	{
@@ -64,7 +82,8 @@ void SearchPDB::buttonPressed(std::string tag, Button *button)
 	{
 		std::string str = "Choose sequence identify cutoff";
 		ChooseRange *cr = new ChooseRange(this, str, "set_identity_cutoff", this);
-		cr->setRange(0, 99, 99);
+		cr->setDefault(_cutoff);
+		cr->setRange(0, 100, 100);
 		setModal(cr);
 	}
 
@@ -78,7 +97,9 @@ void SearchPDB::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "run")
 	{
+		_rows = atoi(_maxRowsText->scratch().c_str());
 		std::string json = prepareQuery();
+		std::cout << json << std::endl;
 		load(json);
 	}
 	
@@ -123,6 +144,7 @@ void SearchPDB::render()
 	Scene::render();
 }
 
+/*
 std::string SearchPDB::prepareQuery()
 {
 	nlohmann::ordered_json query_params;
@@ -154,6 +176,51 @@ std::string SearchPDB::prepareQuery()
 	full["query"] = query;
 	full["request_options"] = request_options;
 	full["return_type"] = "polymer_entity";
+
+	return to_string(full);
+}
+*/
+
+std::string SearchPDB::prepareQuery()
+{
+	/*
+	{
+  "query": {
+    "type": "terminal",
+    "service": "sequence",
+    "parameters": {
+      "evalue_cutoff": 1,
+      "identity_cutoff": 0.9,
+      "sequence_type": "protein",
+      "value": "MTEYKLVVVGAGGVGKSALTIQLIQNHFVDEYDPTIEDSYRKQVVIDGETCLLDILDTAGQEEYSAMRDQYMRTGEGFLCVFAINNTKSFEDIHQYREQIKRVKDSDDVPMVLVGNKCDLPARTVETRQAQDLARSYGIPYIETSAKTRQGVEDAFYTLVREIRQHKLRKLNPPDESGPGCMNCKCVIS"
+    }
+  },
+  "request_options": {
+    "scoring_strategy": "sequence"
+  },
+  "return_type": "polymer_entity"
+}
+*/
+	nlohmann::ordered_json query_params;
+	query_params["sequence_type"] = "protein";
+	query_params["value"] = _entity->sequence()->str();
+	query_params["identity_cutoff"] = (float)_cutoff / 100.;
+	query_params["evalue_cutoff"] = 0.1;
+
+	nlohmann::ordered_json query;
+	query["type"] = "terminal";
+	query["service"] = "sequence";
+	query["parameters"] = query_params;
+	
+	nlohmann::ordered_json request_options;
+	request_options["scoring_strategy"] = "sequence";
+	request_options["paginate"]["start"] = 0;
+	request_options["paginate"]["rows"] = _rows;
+
+	nlohmann::ordered_json full;
+	full["query"] = query;
+	full["request_options"] = request_options;
+	full["return_type"] = "entry";
 
 	return to_string(full);
 }

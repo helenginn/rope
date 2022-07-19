@@ -23,6 +23,7 @@
 #include <vagabond/gui/Fetcher.h>
 
 class Entity;
+class TextEntry;
 class Text;
 
 class SearchPDB : public Scene, public Fetcher
@@ -43,8 +44,10 @@ protected:
 private:
 	Entity *_entity;
 
-	int _cutoff;
-	Text *_cutoffText;
+	int _rows = 500;
+	int _cutoff = 98;
+	TextButton *_cutoffText = nullptr;
+	TextEntry *_maxRowsText = nullptr;
 };
 
 #endif
