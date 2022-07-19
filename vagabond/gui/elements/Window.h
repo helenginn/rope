@@ -112,6 +112,7 @@ protected:
 	static Scene *_current;
 	static Scene *_next;
 
+	static Window *_myWindow;
 private:
 	void deleteQueued();
 
@@ -127,7 +128,6 @@ private:
 	static std::mutex _deleteMutex;
 	static std::set<Renderable *> _deleteRenderables;
 	
-	static Window *_myWindow;
 	static KeyResponder *_keyResponder;
 };
 

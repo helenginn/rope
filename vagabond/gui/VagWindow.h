@@ -33,6 +33,11 @@ public:
 	virtual void resume();
 	virtual void mainThreadActivities();
 	
+	static VagWindow *window()
+	{
+		return static_cast<VagWindow *>(_myWindow);
+	}
+	
 	static Dictator *dictator()
 	{
 		return _dictator;
