@@ -194,6 +194,22 @@ Diffraction *File::diffractionData() const
 	return diffraction;
 }
 
+bool File::compare_file_ending(const std::string &filename, 
+                         const std::string &comp, File::Flavour result)
+{
+	int l = filename.length();
+	if (l < comp.length())
+	{
+		return None;
+	}
+	if (filename.substr(l - comp.length(), comp.length()) == comp)
+	{
+		return Jsn;
+	}
+
+	return None;
+}
+
 File::Flavour File::flavour(std::string filename)
 {
 	const std::string json = "json";
@@ -201,25 +217,25 @@ File::Flavour File::flavour(std::string filename)
 	const std::string pdb = "pdb";
 	const std::string cif = "cif";
 	const std::string csv = "csv";
+	to_lower(filename);
 
-	int l = filename.length();
-	if (filename.substr(l - json.length(), json.length()) == json)
+	if (compare_file_ending(filename, json, Jsn))
 	{
 		return Jsn;
 	}
-	else if (filename.substr(l - mtz.length(), mtz.length()) == mtz)
+	if (compare_file_ending(filename, mtz, Mtz))
 	{
 		return Mtz;
 	}
-	else if (filename.substr(l - pdb.length(), pdb.length()) == pdb)
+	if (compare_file_ending(filename, pdb, Pdb))
 	{
 		return Pdb;
 	}
-	else if (filename.substr(l - cif.length(), cif.length()) == cif)
+	if (compare_file_ending(filename, cif, Cif))
 	{
 		return Cif;
 	}
-	else if (filename.substr(l - csv.length(), csv.length()) == csv)
+	if (compare_file_ending(filename, csv, Csv))
 	{
 		return Csv;
 	}
@@ -269,9 +285,15 @@ File *File::loadUnknown(std::string filename)
 	return f;
 }
 
-File::Type File::typeUnknown(std::string filename)
+File::Type File::typeUnknown(std::string filename, Flavour needed)
 {
 	Flavour flav = flavour(filename);
+	
+	if (needed != None && needed != flav)
+	{
+		return Nothing;
+	}
+
 	Type type = Nothing;
 
 	if (flav == Mtz)

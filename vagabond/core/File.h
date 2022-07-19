@@ -63,10 +63,20 @@ public:
 		Meta = 1 << 6, /**< contains metadata on file or model names */
 		Json = 1 << 7, /**< json (environment?) file */
 	};
+
+	enum Flavour
+	{
+		None = 0,
+		Mtz,
+		Pdb,
+		Cif,
+		Csv,
+		Jsn
+	};
 	
 	static File *loadUnknown(std::string filename);
 	static File *openUnknown(std::string filename);
-	static Type typeUnknown(std::string filename);
+	static Type typeUnknown(std::string filename, Flavour flav = None);
 
 	/** determine bitwise contents of file */
 	virtual Type cursoryLook() = 0;
@@ -165,15 +175,9 @@ public:
 	
 	virtual void write(std::string filename) {}
 protected:
-	enum Flavour
-	{
-		None = 0,
-		Mtz,
-		Pdb,
-		Cif,
-		Csv,
-		Jsn
-	};
+
+	static bool compare_file_ending(const std::string &filename, 
+	                                const std::string &comp, File::Flavour result);
 
 	static Flavour flavour(std::string filename);
 	static std::string toFilename(std::string filename);
