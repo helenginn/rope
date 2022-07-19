@@ -35,6 +35,11 @@ public:
 	void setRange(float min, float max, float steps = 100);
 	virtual void buttonPressed(std::string tag, Button *button);
 	
+	void setDefault(float def)
+	{
+		_default = def;
+	}
+	
 	float min()
 	{
 		return _min;
@@ -53,6 +58,7 @@ private:
 	float _max = 0;
 	float _step = 1;
 	bool _both = false;
+	float _default = 0;
 };
 
 #endif
