@@ -55,7 +55,7 @@ Entity *EntityManager::insertIfUnique(Entity &ent)
 void EntityManager::update(const Entity &e)
 {
 	Entity *old = entity(e.name());
-	*old = e;
+	(*old) = e;
 
 }
 
