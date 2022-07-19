@@ -48,7 +48,23 @@ void ChooseHeaderValue::setEntity(std::string name)
 			if (kv.count(header))
 			{
 				std::string val = kv.at(header).text();
+				std::cout << val << std::endl;
 				values[val]++;
+			}
+		}
+		
+		if (values.size() == 0)
+		{
+			for (const Molecule *molecule : _entity->molecules())
+			{
+				const Metadata::KeyValues kv = molecule->metadata();
+
+				if (kv.count(header))
+				{
+					std::string val = kv.at(header).text();
+					std::cout << val << std::endl;
+					values[val]++;
+				}
 			}
 		}
 	}
