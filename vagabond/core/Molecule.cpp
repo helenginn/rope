@@ -37,7 +37,6 @@ Molecule::Molecule(std::string model_id, std::string chain_id,
 	_model_id = model_id;
 	_entity_id = entity_id;
 	_chain_ids.insert(chain_id);
-	std::cout << "Molecule entity: " << _entity << std::endl;
 	_sequence = *derivative;
 	_entity = (Environment::entityManager()->entity(_entity_id));
 	
