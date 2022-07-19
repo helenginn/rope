@@ -58,6 +58,11 @@ public:
 	std::vector<AtomBlock> turnToBlocks();
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);
 	
+	void setSingleChain(bool singleChain)
+	{
+		_singleChain = singleChain;
+	}
+	
 	/** returns number of nodes */
 	size_t graphCount() const
 	{
@@ -94,6 +99,7 @@ private:
 	void addGraph(AtomGraph *graph);
 	void fixBlockAsGhost(AtomBlock &block, Atom *anchor);
 	void assignAtomToBlock(AtomBlock &block, int idx, Atom *atom);
+	bool preferredConnection(Atom *atom, Atom *next);
 
 	std::vector<AtomGraph *> _graphs;
 	std::vector<Atom *> _atoms;
@@ -105,6 +111,7 @@ private:
 	int _atomsDone = 0;
 	
 	bool _original = true;
+	bool _singleChain = false; 
 };
 
 #endif

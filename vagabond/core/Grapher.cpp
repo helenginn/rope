@@ -75,6 +75,22 @@ void Grapher::assignMainChain()
 	}
 }
 
+bool Grapher::preferredConnection(Atom *atom, Atom *next)
+{
+	// HARDCODE
+	if (atom->atomName() == "SG" && next->atomName() == "SG")
+	{
+		return false;
+	}
+
+	if (atom->chain() != next->chain())
+	{
+		return false;
+	}
+	
+	return true;
+}
+
 void Grapher::generateGraphs(Atom *atom, size_t count)
 {
 	_anchors.push_back(atom);
@@ -106,6 +122,11 @@ void Grapher::generateGraphs(Atom *atom, size_t count)
 		{
 			Atom *next = atom->connectedAtom(i);
 			if (next == current->parent)
+			{
+				continue;
+			}
+			
+			if (_singleChain && !preferredConnection(atom, next))
 			{
 				continue;
 			}
