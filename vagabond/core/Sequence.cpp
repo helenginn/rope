@@ -104,6 +104,7 @@ Sequence &Sequence::operator+=(Residue &res)
 void Sequence::findSequence()
 {
 	Grapher gr;
+	gr.setSingleChain(true);
 	gr.generateGraphs(_anchor);
 
 	int max = gr.graphCount();
