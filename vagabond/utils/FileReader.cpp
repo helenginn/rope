@@ -55,6 +55,21 @@ bool is_directory(const std::string &name)
 	return false;
 }
 
+void debom(std::string &name)
+{
+	if (name.size() >= 3)
+	{
+		if (name[0] == (char)0xef && name[1] == (char)0xbb 
+		    && name[2] == (char)0xbf)
+		{
+			for (size_t i = 0; i < 3; i++)
+			{
+				name.erase(name.begin());
+			}
+		}
+	}
+}
+
 bool file_exists(const std::string& name)
 {
 	struct stat buffer;

@@ -58,6 +58,7 @@ void to_upper(std::string &str);
 
 /** remove Windows characters */
 void defenestrate(std::string &str);
+void debom(std::string &str);
 void remove_quotes(std::string &str);
 
 inline void pad(std::string &str, char ch, size_t length)
