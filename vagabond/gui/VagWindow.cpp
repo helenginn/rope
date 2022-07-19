@@ -41,6 +41,14 @@ void VagWindow::addJob(std::string str)
 	_dictator->addArg(str);
 }
 
+void VagWindow::prepareProgressView()
+{
+	ProgressView *pv = new ProgressView(_menu);
+	pv->attachToEnvironment();
+	pv->show();
+
+}
+
 void VagWindow::setup(int argc, char **argv)
 {
 	MainMenu *menu = new MainMenu();
@@ -52,10 +60,7 @@ void VagWindow::setup(int argc, char **argv)
 
 	if (!is_native)
 	{
-		ProgressView *pv = new ProgressView(menu);
-		pv->attachToEnvironment();
-//		pv->setResponder(this);
-		pv->show();
+		prepareProgressView();
 	}
 	else
 	{

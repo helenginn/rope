@@ -131,6 +131,7 @@ void ProjectMenu::doThings()
 	if (_finish)
 	{
 		back();
+		VagWindow::window()->prepareProgressView();
 		return;
 	}
 }

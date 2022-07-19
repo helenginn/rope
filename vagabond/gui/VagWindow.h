@@ -45,6 +45,7 @@ public:
 	
 	static void addJob(std::string str);
 
+	void prepareProgressView();
 private:
 	static Dictator *_dictator;
 	MainMenu *_menu = nullptr;
