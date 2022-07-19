@@ -46,7 +46,7 @@ void Knotter::checkAtoms(Atom *atom, int start)
 {
 	AtomGroup &group = *_group;
 	glm::vec3 pos = atom->derivedPosition();
-	const float cutoff = 2;
+	const float cutoff = 3;
 
 	for (size_t i = start; i < group.size(); i++)
 	{
@@ -142,8 +142,6 @@ void Knotter::createBondAngles(Atom *atom)
 			
 			if (start->residueId() == end->residueId() 
 			    && start->chain() == end->chain())
-//			{
-//			if (aCode == start->code() && aCode == end->code())
 			{
 				standard = _table->angle(aCode, sName, aName, eName);
 			}
