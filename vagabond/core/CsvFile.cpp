@@ -48,6 +48,8 @@ File::Type CsvFile::cursoryLook()
 
 	std::string line;
 	getline(f, line);
+	defenestrate(line);
+	debom(line);
 	
 	if (line.length() == 0)
 	{			
