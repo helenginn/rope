@@ -39,12 +39,10 @@ void PdbFile::getAllGeometry()
 	getStandardGeometry();
 
 	FileManager *fm = Environment::fileManager();
-	fm->setFilterType(File::Geometry);
+	std::set<std::string> geometries = fm->geometryFiles();
 
-	for (size_t i = 0; i < fm->filteredCount(); i++)
+	for (const std::string &file : geometries)
 	{
-		std::string file = fm->filtered(i);
-		std::cout << "Using " << file << std::endl;
 		CifFile cf(file);
 		cf.setGeometryTable(_table);
 		cf.parse();
@@ -141,6 +139,7 @@ void PdbFile::processModel(gemmi::Model &m)
 void PdbFile::parseFileContents()
 {
 	std::string path = toFilename(_filename);
+	std::cout << "Reading file " << path << std::endl;
 
 	gemmi::Structure st;
 	try
