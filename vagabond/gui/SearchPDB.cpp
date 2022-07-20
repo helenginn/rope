@@ -61,6 +61,7 @@ void SearchPDB::setup()
 
 		{
 			TextEntry *te = new TextEntry(i_to_str(_rows), this);
+			te->setScratch(i_to_str(_rows));
 			te->setValidationType(TextEntry::Numeric);
 			te->setRight(0.8, 0.4);
 			_maxRowsText = te;

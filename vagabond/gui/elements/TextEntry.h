@@ -32,6 +32,11 @@ public:
 	{
 		return _scratch;
 	}
+	
+	void setScratch(std::string scratch)
+	{
+		_scratch = scratch;
+	}
 
 	virtual void click(bool left = true);
 	virtual void finish();
