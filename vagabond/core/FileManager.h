@@ -68,6 +68,18 @@ public:
 	void addFile(std::string filename);
 
 	bool hasFile(std::string filename);
+	
+	static void correctFilename(std::string &filename);
+	
+	void setDataDirectory(std::string dir)
+	{
+		_dataDir = dir;
+	}
+	
+	void setUserDirectory(std::string dir)
+	{
+		_userDir = dir;
+	}
 
 	virtual const std::string progressName() const
 	{
@@ -86,6 +98,8 @@ private:
 	pthread_t _thread;
 	
 	std::set<std::string> _geometries;
+	static std::string _userDir;
+	static std::string _dataDir;
 
 	File::Type _type = File::Nothing;
 };

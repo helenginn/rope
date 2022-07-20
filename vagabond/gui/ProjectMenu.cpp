@@ -22,13 +22,17 @@
 #include "ProjectMenu.h"
 #include "FileNavi.h"
 #include "VagWindow.h"
+
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/cmd/Dictator.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/ChooseHeader.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/cmd/Dictator.h>
+
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/FileManager.h>
 
 ProjectMenu::ProjectMenu(Scene *prev) : Scene(prev)
 {
@@ -131,7 +135,7 @@ void ProjectMenu::doThings()
 	if (_finish)
 	{
 		back();
-		VagWindow::window()->prepareProgressView();
+//		VagWindow::window()->prepareProgressView();
 		return;
 	}
 }
@@ -222,6 +226,10 @@ void ProjectMenu::sendObject(std::string tag, void *object)
 
 void ProjectMenu::goToProject()
 {
+	char cwd[PATH_MAX + 1];
+	getcwd(cwd, PATH_MAX);
+	Environment::fileManager()->setDataDirectory(std::string(cwd));
+
 	chdir(_path.c_str());
 	
 	VagWindow::dictator()->addArg("environment=rope.json");

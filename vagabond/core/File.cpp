@@ -18,7 +18,6 @@
 
 #include <gemmi/numb.hpp>
 #include "../utils/FileReader.h"
-#include "commit.h"
 #include "CifFile.h"
 #include "CsvFile.h"
 #include "MtzFile.h"
@@ -28,6 +27,7 @@
 #include "AtomContent.h"
 #include "Metadata.h"
 #include "RefList.h"
+#include "FileManager.h"
 
 using namespace gemmi::cif;
 
@@ -57,7 +57,8 @@ std::string File::toFilename(std::string filename)
 #ifndef __EMSCRIPTEN__
 	if (!file_exists(tmp))
 	{
-		tmp = std::string(DATA_DIRECTORY) + "/" + filename;
+		FileManager::correctFilename(filename);
+		tmp = filename;
 	}
 #endif
 

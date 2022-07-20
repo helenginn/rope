@@ -21,10 +21,43 @@
 #include "Environment.h"
 #include <fstream>
 #include <sstream>
+#include "commit.h"
+
+
+std::string FileManager::_dataDir;
+std::string FileManager::_userDir;
 
 FileManager::FileManager()
 {
 
+}
+
+void FileManager::correctFilename(std::string &filename)
+{
+	FileManager *fm = Environment::fileManager();
+	std::string path = filename;
+	
+	if (file_exists(path))
+	{
+		return;
+	}
+
+	if (fm->_dataDir.length() > 0)
+	{
+		path = fm->_dataDir + "/" + filename;
+	}
+
+	if (!file_exists(path) && fm->_userDir.length() > 0)
+	{
+		path = fm->_userDir + "/" + filename;
+	}
+
+	if (!file_exists(path))
+	{
+		path = std::string(DATA_DIRECTORY) + "/" + filename;
+	}
+
+	filename = path;
 }
 
 std::set<std::string> &FileManager::geometryFiles()
