@@ -163,15 +163,29 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 	molecule->residuesFromTorsionList(residues, copy);
 	std::vector<bool> found(residues.size(), false);
 
-	bool flipped = false;
-
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
 		BondTorsion *t = _torsions[i];
+		
+		bool ok = false;
+		for (size_t j = 0; j < 4; j++)
+		{
+			Atom *a = t->atom(j);
+			if (molecule->has_chain_id(a->chain()))
+			{
+				ok = true;
+				break;
+			}
+		}
+		
+		if (!ok)
+		{
+			continue;
+		}
 
 		if (_idxs[i] < 0)
 		{
-			std::cout << "Missing " << t->residueId().num << ":" << t->desc() << std::endl;
+			std::cout << "Missing " << t->atom(1)->desc() << " " << t->residueId().num << ":" << t->desc() << std::endl;
 			continue;
 		}
 
@@ -180,21 +194,12 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 		
 		if (value != value)
 		{
-			std::cout << "Missing " << t->residueId().num << " " << t->desc() << std::endl;
+			std::cout << "nan for " << t->residueId().num << " " << t->desc() << std::endl;
 			value = 0;
 			_missing.push_back(t);
 		}
 		
-		if (t->coversMainChain())// && fabs(value) > 90)
-		{
-			std::cout << "Import " << t->residueId().num << " " << t->desc() << " " << value << std::endl;
-			if (!flipped)
-			{
-//				value = 360 + value;
-//				flipped = true;
-
-			}
-		}
+		std::cout << "Import " << t->atom(1)->desc() << " " << t->residueId().num << " " << t->desc() << " " << value << std::endl;
 
 		int idx = _idxs[i];
 
