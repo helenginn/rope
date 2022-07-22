@@ -52,6 +52,8 @@ public:
 	 * @throws exception if overwrite is false, but duplicate entry found */
 	void addKeyValues(const KeyValues &kv, const bool overwrite);
 	
+	void purgeKey(std::string key);
+	
 	Metadata &operator+=(const Metadata &other);
 
 	/** picks up metadata information for a given model id */

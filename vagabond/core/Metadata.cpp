@@ -72,6 +72,18 @@ void Metadata::housekeeping()
 	}
 }
 
+void Metadata::purgeKey(std::string key)
+{
+	for (KeyValues &kv : _data)
+	{
+		if (kv.count(key))
+		{
+			kv.erase(key);
+		}
+	}
+
+}
+
 bool Metadata::addToList(KeyValues &edit, std::string &key,
                          const std::map<std::string, KeyValues *> &search, 
                          bool overwrite) const
