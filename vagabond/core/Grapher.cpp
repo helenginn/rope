@@ -342,7 +342,6 @@ void Grapher::sortGraphChildren()
 				_graphs[i]->torsion->setInstrumental(true);
 			}
 		}
-		
 	}
 }
 

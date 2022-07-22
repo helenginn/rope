@@ -238,7 +238,6 @@ MetadataGroup Entity::makeTorsionDataGroup()
 		group.addMetadataArray(mol, vals);
 	}
 	
-	std::cout << "done" << std::endl;
 	return group;
 }
 
