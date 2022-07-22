@@ -125,7 +125,7 @@ public:
 	Sequence *sequence();
 	
 protected:
-	Atom *atom(int i)
+	Atom *atom(int i) const
 	{
 		return _atoms[i];
 	}
