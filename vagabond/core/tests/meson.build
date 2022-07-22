@@ -95,7 +95,7 @@ unit_tests = [
 'sampler_returns_hypersphere_volume_2d',
 'sampler_returns_hypersphere_volume_3d',
 'sampler_handles_single_dimension',
-'sequence_can_obtain_mapped_torsion_angles',
+#'sequence_can_obtain_mapped_torsion_angles',
 'sequence_maps_local_to_master_successfully',
 'sequence_comparison_returns_entry_count',
 'sequence_returns_residue_count_from_string',

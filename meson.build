@@ -80,6 +80,7 @@ install_data(
 'assets/images/box.png',
 'assets/images/cartoon.png',
 'assets/images/colour_scheme.png',
+'assets/images/cross.png',
 'assets/images/data_model.png',
 'assets/images/density.png',
 'assets/images/dot.png',

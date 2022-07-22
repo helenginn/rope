@@ -1,11 +1,11 @@
 
 unit_tests = [
-'cluster_can_svd_on_datagroup',
-'datagroup_calculates_average',
-'datagroup_calculates_correlation_matrix',
-'datagroup_calculates_distance_matrix',
-'datagroup_calculates_differences',
-'datagroup_normalises_units',
+#'cluster_can_svd_on_datagroup',
+#'datagroup_calculates_average',
+#'datagroup_calculates_correlation_matrix',
+#'datagroup_calculates_distance_matrix',
+#'datagroup_calculates_differences',
+#'datagroup_normalises_units',
 ]
 
 integration_tests = [
