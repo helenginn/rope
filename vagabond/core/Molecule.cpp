@@ -78,6 +78,16 @@ void Molecule::harvestMutations(SequenceComparison *sc)
 	Environment::metadata()->addKeyValues(kv, true);
 }
 
+void Molecule::updateRmsdMetadata(AtomContent *atoms)
+{
+	float val = rmsd(atoms);
+
+	Metadata::KeyValues kv;
+	kv["molecule"] = id();
+	kv["rmsd"] = Value(f_to_str(val, 3));
+	Environment::metadata()->addKeyValues(kv, true);
+}
+
 void Molecule::getTorsionRefs(Chain *ch)
 {
 	_sequence.remapFromMaster(_entity);
