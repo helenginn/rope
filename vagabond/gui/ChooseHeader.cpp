@@ -131,7 +131,6 @@ void ChooseHeader::buttonPressed(std::string tag, Button *button)
 	if (end.length())
 	{
 		sendResponse(end, this);
-		back();
 		return;
 	}
 

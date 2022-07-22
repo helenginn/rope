@@ -202,9 +202,14 @@ void ProjectMenu::sendObject(std::string tag, void *object)
 					_projects.erase(_projects.begin() + i);
 					_names.erase(end);
 					writeProjects();
-					return;
+					break;
 				}
 			}
+
+			ChooseHeader *ch = static_cast<ChooseHeader *>(object);
+			ch->setHeaders(_names);
+			ch->refresh();
+			return;
 		}
 
 		for (size_t i = 0; i < _projects.size(); i++)

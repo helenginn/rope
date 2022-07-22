@@ -103,6 +103,13 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 	{
 		ChooseHeader *ch = new ChooseHeader(this, false);
 		std::set<std::string> headers = _md->headers();
+		
+		if (_md == Environment::metadata())
+		{
+			ch->setCanDelete(true);
+			ch->setResponder(this);
+		}
+
 		ch->setHeaders(headers);
 		ch->show();
 	}
@@ -142,4 +149,19 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 	}
 	
 	Scene::buttonPressed(tag, button);
+}
+
+void MetadataView::sendObject(std::string tag, void *object)
+{
+	std::string key = Button::tagEnd(tag, "__del_");
+	
+	if (key.length())
+	{
+		_md->purgeKey(key);
+		std::set<std::string> headers = _md->headers();
+		ChooseHeader *ch = static_cast<ChooseHeader *>(object);
+		ch->setHeaders(headers);
+		ch->refresh();
+	}
+
 }

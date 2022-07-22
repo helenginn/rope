@@ -19,16 +19,19 @@
 #ifndef __vagabond__MetadataView__
 #define __vagabond__MetadataView__
 
+#include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/Scene.h>
 
 class Metadata;
+class ChooseHeader;
 
-class MetadataView : public Scene
+class MetadataView : public Scene, public Responder<ChooseHeader>
 {
 public:
 	MetadataView(Scene *prev, Metadata *md);
 	~MetadataView();
 
+	virtual void sendObject(std::string tag, void *object);
 	virtual void setup();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:

@@ -34,6 +34,7 @@ public:
 	
 	void setHeaders(std::set<std::string> &headers)
 	{
+		_headers.clear();
 		for (const std::string &h : headers)
 		{
 			_headers.push_back(h);
