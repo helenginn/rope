@@ -91,7 +91,7 @@ void ClusterView::reset()
 void ClusterView::prioritiseMetadata(std::string key)
 {
 	std::vector<float> vals = _cx->dataGroup()->numbersForKey(key);
-	int idx = _cx->bestAxisFit(vals);
+//	int idx = _cx->bestAxisFit(vals);
 
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{

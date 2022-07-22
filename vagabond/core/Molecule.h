@@ -114,11 +114,8 @@ public:
 	float rmsd(AtomContent *atoms);
 	void updateRmsdMetadata(AtomContent *atoms);
 
-	void residuesFromTorsionList(std::vector<Residue *> &residues,
-	                              std::vector<std::string> &list);
 	float valueForTorsionFromList(BondTorsion *bt,
-	                              const std::vector<Residue *> &residues,
-	                              const std::vector<std::string> &list,
+	                              const std::vector<ResidueTorsion> &list,
 	                              const std::vector<float> &values,
 	                              std::vector<bool> &found);
 

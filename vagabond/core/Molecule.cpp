@@ -450,23 +450,8 @@ std::string get_desc(std::string name)
 	return desc;
 }
 
-void Molecule::residuesFromTorsionList(std::vector<Residue *> &residues,
-                                        std::vector<std::string> &list)
-{
-	residues.resize(list.size());
-
-	for (size_t i = 0; i < list.size(); i++)
-	{
-		const std::string &candidate = list[i];
-		entity()->sequence()->torsionByName(candidate, &residues[i]);
-		std::string desc = get_desc(list[i]);
-		list[i] = desc;
-	}
-}
-
 float Molecule::valueForTorsionFromList(BondTorsion *bt,
-                                        const std::vector<Residue *> &residues,
-                                        const std::vector<std::string> &list,
+                                        const std::vector<ResidueTorsion> &list,
                                         const std::vector<float> &values,
                                         std::vector<bool> &found)
 {
@@ -476,14 +461,14 @@ float Molecule::valueForTorsionFromList(BondTorsion *bt,
 	
 	for (size_t i = 0; i < list.size(); i++)
 	{
-		Residue *residue = residues[i];
+		Residue *residue = list[i].residue;
 		
 		if (residue == nullptr || residue != master)
 		{
 			continue;
 		}
 
-		const std::string &desc = list[i];
+		const std::string &desc = list[i].torsion.desc();
 		
 		if (desc != bt->desc() && desc != bt->reverse_desc())
 		{

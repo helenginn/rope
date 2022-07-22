@@ -28,7 +28,7 @@
 #include <vagabond/core/AlignmentTool.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol, 
-                           const std::vector<std::string> &list,
+                           const std::vector<ResidueTorsion> &list,
                            const std::vector<float> &values) 
 : Scene(prev), Display(prev), StructureModification(mol)
 {

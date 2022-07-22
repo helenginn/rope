@@ -152,16 +152,14 @@ void ConcertedBasis::prepareSVD()
 }
 
 void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
-                                          const std::vector<std::string> &list,
+                                          const std::vector<ResidueTorsion> &list,
                                           const std::vector<float> &values)
 {
 	freeSVD(&_svd);
 	setupSVD(&_svd, _nActive);
-	std::vector<Residue *> residues;
-	std::vector<std::string> copy = list;
 	molecule->sequence()->remapFromMaster(molecule->entity());
-	molecule->residuesFromTorsionList(residues, copy);
-	std::vector<bool> found(residues.size(), false);
+
+	std::vector<bool> found(list.size(), false);
 
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
@@ -189,8 +187,7 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 			continue;
 		}
 
-		float value = molecule->valueForTorsionFromList(t, residues, 
-		                                                copy, values, found);
+		float value = molecule->valueForTorsionFromList(t, list, values, found);
 		
 		if (value != value)
 		{
@@ -210,7 +207,7 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 	{
 		if (!found[i])
 		{
-			_unusedId = residues[i];
+			_unusedId = list[i].residue;
 		}
 	}
 

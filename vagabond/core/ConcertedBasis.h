@@ -21,6 +21,7 @@
 
 #include "TorsionBasis.h"
 #include "../utils/svd/PCA.h"
+#include <vagabond/core/Residue.h>
 
 class Molecule;
 class Residue;
@@ -46,7 +47,7 @@ public:
 	}
 	
 	void fillFromMoleculeList(Molecule *molecule, int axis,
-	                          const std::vector<std::string> &list,
+	                          const std::vector<ResidueTorsion> &list,
 	                          const std::vector<float> &values);
 
 	const std::vector<BondTorsion *> &missingBonds() const

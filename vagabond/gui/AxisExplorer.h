@@ -20,6 +20,7 @@
 #define __vagabond__AxisExplorer__
 
 #include <vagabond/gui/Display.h>
+#include <vagabond/core/Residue.h>
 #include <vagabond/core/StructureModification.h>
 #include <vagabond/gui/elements/DragResponder.h>
 
@@ -34,7 +35,7 @@ public StructureModification
 {
 public:
 	AxisExplorer(Scene *prev, Molecule *mol, 
-	             const std::vector<std::string> &list,
+	             const std::vector<ResidueTorsion> &list,
 	             const std::vector<float> &values);
 	
 	~AxisExplorer();
@@ -48,7 +49,7 @@ public:
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 private:
-	std::vector<std::string> _list;
+	std::vector<ResidueTorsion> _list;
 	std::vector<float> _values;
 	Slider *_rangeSlider = nullptr;
 

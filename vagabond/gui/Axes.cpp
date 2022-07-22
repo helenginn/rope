@@ -95,7 +95,7 @@ std::vector<float> Axes::getTorsionVector(int idx)
 
 void Axes::loadAxisExplorer(int idx)
 {
-	std::vector<std::string> list = _cluster->dataGroup()->unitNames();
+	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
 
 	std::vector<float> vals = getTorsionVector(idx);
 	if (vals.size() == 0)
