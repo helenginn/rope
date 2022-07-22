@@ -100,7 +100,7 @@ void StructureModification::startCalculator()
 			continue;
 		}
 		
-		if (_molecule->has_chain_id(anchor->chain()) && !anchor->hetatm())
+		if (!anchor->hetatm())
 		{
 			makeCalculator(anchor);
 		}
