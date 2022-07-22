@@ -16,10 +16,15 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+
+#ifndef __vagabond__DegreeDataGroup__cpp__
+#define __vagabond__DegreeDataGroup__cpp__
+
 #include "DegreeDataGroup.h"
 #include <iostream>
 
-void DegreeDataGroup::matchDegrees(Array &next)
+template <class Header>
+void DegreeDataGroup<Header>::matchDegrees(Array &next)
 {
 	for (size_t i = 0; i < _length; i++)
 	{
@@ -31,7 +36,7 @@ void DegreeDataGroup::matchDegrees(Array &next)
 		
 		size_t j = 0;
 		Array *master = &_vectors[j];
-		for (j = 0; j < vectorCount(); j++)
+		for (j = 0; j < DataGroup<float, Header>::vectorCount(); j++)
 		{
 			master = &_vectors[j];
 
@@ -53,7 +58,8 @@ void DegreeDataGroup::matchDegrees(Array &next)
 	}
 }
 
-float DegreeDataGroup::difference(int m, int n, int j)
+template <class Header>
+float DegreeDataGroup<Header>::difference(int m, int n, int j)
 {
 	float deg = (_diffs[n][j] - _diffs[m][j]) * _stdevs[j];
 
@@ -70,17 +76,20 @@ float DegreeDataGroup::difference(int m, int n, int j)
 	return deg;
 }
 
-void DegreeDataGroup::addArray(std::string name, Array next)
+template <class Header>
+void DegreeDataGroup<Header>::addArray(std::string name, Array next)
 {
 	if (_vectors.size() > 0)
 	{
 		matchDegrees(next);
 	}
 	
-	DataGroup<float>::addArray(name, next);
+	DataGroup<float, Header>::addArray(name, next);
 
 	if (_vectors.size() <= 1)
 	{
 		return;
 	}
 }
+
+#endif

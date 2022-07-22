@@ -216,11 +216,11 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	const bool only_main = false;
 	size_t num = _sequence.torsionCount(only_main);
 	std::cout << "Torsion count: " << num << std::endl;
-	std::vector<std::string> names;
-	_sequence.addTorsionNames(names, only_main);
+	std::vector<ResidueTorsion> headers;
+	_sequence.addResidueTorsions(headers, only_main);
 
 	MetadataGroup group(num);
-	group.addUnitNames(names);
+	group.addHeaders(headers);
 	
 	for (Molecule *mol : _molecules)
 	{

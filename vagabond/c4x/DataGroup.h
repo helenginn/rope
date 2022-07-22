@@ -32,7 +32,7 @@ namespace PCA
 	struct Matrix;
 }
 
-template <class Unit>
+template <class Unit, class Header>
 class DataGroup
 {
 public:
@@ -93,11 +93,16 @@ public:
 	virtual Unit difference(int m, int n, int j);
 	
 	/** Add names of units. Total must not exceed length. */
-	void addUnitNames(std::vector<std::string> header);
+	void addHeaders(std::vector<Header> header);
 	
 	const std::vector<std::string> &unitNames() const
 	{
 		return _unitNames;
+	}
+	
+	const std::vector<Header> &headers() const
+	{
+		return _headers;
 	}
 protected:
 	float correlation_between(int i, int j);
@@ -106,8 +111,9 @@ protected:
 	std::vector<Array> _diffs;
 	std::vector<std::string> _unitNames;
 	std::vector<std::string> _vectorNames;
+	std::vector<Header> _headers;
 
-	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit>::*comparison)(int, int));
+	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit, Header>::*comparison)(int, int));
 
 	int _length;
 	Array _average;

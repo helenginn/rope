@@ -210,7 +210,6 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 	{
 		if (!found[i])
 		{
-//			std::cout << "did not use " << residues[i]->desc() << std::endl;
 			_unusedId = residues[i];
 		}
 	}

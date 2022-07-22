@@ -26,21 +26,21 @@
 #include <iostream>
 #include <sstream>
 
-template <class Unit>
-DataGroup<Unit>::DataGroup(int length)
+template <class Unit, class Header>
+DataGroup<Unit, Header>::DataGroup(int length)
 {
 	_length = length;
 }
 
-template <class Unit>
-DataGroup<Unit>::~DataGroup()
+template <class Unit, class Header>
+DataGroup<Unit, Header>::~DataGroup()
 {
 
 }
 
 
-template <class Unit>
-void DataGroup<Unit>::addArray(std::string name, Array next)
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::addArray(std::string name, Array next)
 {
 	if (next.size() != _length)
 	{
@@ -54,8 +54,8 @@ void DataGroup<Unit>::addArray(std::string name, Array next)
 	_vectorNames.push_back(name);
 }
 
-template <class Unit>
-typename DataGroup<Unit>::Array DataGroup<Unit>::average()
+template <class Unit, class Header>
+typename DataGroup<Unit, Header>::Array DataGroup<Unit, Header>::average()
 {
 	if (_average.size() != _length)
 	{
@@ -65,8 +65,8 @@ typename DataGroup<Unit>::Array DataGroup<Unit>::average()
 	return _average;
 }
 
-template <class Unit>
-void DataGroup<Unit>::calculateAverage()
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::calculateAverage()
 {
 	_average.clear();
 	_average.resize(_length);
@@ -94,8 +94,8 @@ void DataGroup<Unit>::calculateAverage()
 	}
 }
 
-template <class Unit>
-void DataGroup<Unit>::findDifferences(Array *ave)
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::findDifferences(Array *ave)
 {
 	if (ave == nullptr)
 	{
@@ -128,8 +128,8 @@ void DataGroup<Unit>::findDifferences(Array *ave)
 	}
 }
 
-template <class Unit>
-void DataGroup<Unit>::normalise()
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::normalise()
 {
 	if (_diffs.size() == 0)
 	{
@@ -165,8 +165,8 @@ void DataGroup<Unit>::normalise()
 	}
 }
 
-template <class Unit>
-void DataGroup<Unit>::write(std::string filename)
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::write(std::string filename)
 {
 	std::ofstream file;
 	file.open(filename);
@@ -205,21 +205,29 @@ void DataGroup<Unit>::write(std::string filename)
 	file.close();
 }
 
-template <class Unit>
-void DataGroup<Unit>::addUnitNames(std::vector<std::string> headers)
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::addHeaders(std::vector<Header> headers)
 {
-	if (headers.size() + _unitNames.size() > _length)
+	if (headers.size() + _headers.size() > _length)
 	{
-		throw std::runtime_error("Too many unit names in DataGroup");
+		throw std::runtime_error("Too many headers for DataGroup");
 	}
 
-	_unitNames.reserve(headers.size() + _unitNames.size());
-	_unitNames.insert(_unitNames.end(), headers.begin(), headers.end());
+	_headers.reserve(headers.size() + _headers.size());
+	_headers.insert(_headers.end(), headers.begin(), headers.end());
 	
+	std::vector<std::string> names;
+	for (const Header &h : headers)
+	{
+		names.push_back(h.desc());
+	}
+
+	_unitNames.reserve(names.size() + _unitNames.size());
+	_unitNames.insert(_unitNames.end(), names.begin(), names.end());
 }
 
-template <class Unit>
-float DataGroup<Unit>::distance_between(int i, int j)
+template <class Unit, class Header>
+float DataGroup<Unit, Header>::distance_between(int i, int j)
 {
 	if (i == j)
 	{
@@ -245,8 +253,8 @@ float DataGroup<Unit>::distance_between(int i, int j)
 	return sqrt(sq);
 }
 
-template <class Unit>
-float DataGroup<Unit>::correlation_between(int i, int j)
+template <class Unit, class Header>
+float DataGroup<Unit, Header>::correlation_between(int i, int j)
 {
 	if (i == j)
 	{
@@ -290,9 +298,9 @@ float DataGroup<Unit>::correlation_between(int i, int j)
 }
 
 
-template <class Unit>
-PCA::Matrix DataGroup<Unit>::arbitraryMatrix
-(float(DataGroup<Unit>::*comparison)(int, int))
+template <class Unit, class Header>
+PCA::Matrix DataGroup<Unit, Header>::arbitraryMatrix
+(float(DataGroup<Unit, Header>::*comparison)(int, int))
 {
 	PCA::Matrix m;
 	
@@ -320,15 +328,15 @@ PCA::Matrix DataGroup<Unit>::arbitraryMatrix
 	return m;
 }
 
-template <class Unit>
-PCA::Matrix DataGroup<Unit>::distanceMatrix()
+template <class Unit, class Header>
+PCA::Matrix DataGroup<Unit, Header>::distanceMatrix()
 {
 	return arbitraryMatrix(&DataGroup::distance_between);
 }
 
 
-template <class Unit>
-PCA::Matrix DataGroup<Unit>::correlationMatrix()
+template <class Unit, class Header>
+PCA::Matrix DataGroup<Unit, Header>::correlationMatrix()
 {
 	if (_diffs.size() == 0)
 	{
@@ -338,14 +346,15 @@ PCA::Matrix DataGroup<Unit>::correlationMatrix()
 	return arbitraryMatrix(&DataGroup::correlation_between);
 }
 
-template <class Unit>
-Unit DataGroup<Unit>::difference(int m, int n, int j)
+template <class Unit, class Header>
+Unit DataGroup<Unit, Header>::difference(int m, int n, int j)
 {
 	return (_diffs[n][j] - _diffs[m][j]) * _stdevs[j];
 }
 
-template <class Unit>
-const typename DataGroup<Unit>::Array DataGroup<Unit>::differences(int m, int n)
+template <class Unit, class Header>
+const typename DataGroup<Unit, Header>::Array 
+DataGroup<Unit, Header>::differences(int m, int n)
 {
 	if (_diffs.size() == 0)
 	{
@@ -363,8 +372,9 @@ const typename DataGroup<Unit>::Array DataGroup<Unit>::differences(int m, int n)
 	return vals;
 }
 
-template <class Unit>
-const typename DataGroup<Unit>::Array DataGroup<Unit>::weightedDifferences(std::vector<float> weights)
+template <class Unit, class Header>
+const typename DataGroup<Unit, Header>::Array
+DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 {
 	if (weights.size() != _vectors.size())
 	{

@@ -26,16 +26,27 @@
  * values match previous entries as closely as possible by adding or subtracting
  * multiple of 360 degrees */
 
-class DegreeDataGroup : public DataGroup<float>
+template <class Header>
+class DegreeDataGroup : public DataGroup<float, Header>
 {
 public:
-	DegreeDataGroup(int num) : DataGroup<float>(num) {}
+	using Array = typename DataGroup<float, Header>::Array;
+
+	DegreeDataGroup(int num) : DataGroup<float, Header>(num) {}
 
 	virtual void addArray(std::string name, Array next);
 	virtual float difference(int m, int n, int j);
+protected:
+	using DataGroup<float, Header>::_length;
+	using DataGroup<float, Header>::_vectors;
+	using DataGroup<float, Header>::_diffs;
+	using DataGroup<float, Header>::_stdevs;
+
 private:
 	void matchDegrees(Array &next);
 
 };
+
+#include "DegreeDataGroup.cpp"
 
 #endif

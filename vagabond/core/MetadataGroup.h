@@ -20,10 +20,14 @@
 #define __vagabond__MetadataGroup__
 
 #include <vagabond/c4x/DegreeDataGroup.h>
+#include <vagabond/core/TorsionRef.h>
+#include <vagabond/core/Residue.h>
+
+class Residue;
 
 class HasMetadata;
 
-class MetadataGroup : public DegreeDataGroup
+class MetadataGroup : public DegreeDataGroup<ResidueTorsion>
 {
 public:
 	MetadataGroup(size_t length);

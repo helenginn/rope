@@ -161,4 +161,22 @@ inline void from_json(const json &j, Residue &value)
 	value.housekeeping();
 }
 
+struct ResidueTorsion
+{
+	TorsionRef torsion{};
+	Residue *residue = nullptr;
+	
+	std::string desc() const
+	{
+		if (residue == nullptr)
+		{
+			std::string id = "t-null:" + torsion.desc();
+			return id;
+		}
+
+		std::string id = "t" + residue->id().as_string() + ":" + torsion.desc();
+		return id;
+	}
+};
+
 #endif

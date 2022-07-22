@@ -306,7 +306,8 @@ const size_t Sequence::torsionCount(bool onlyMain) const
 	return sum;
 }
 
-void Sequence::addTorsionNames(std::vector<std::string> &names, bool onlyMain)
+void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers, 
+                                  bool onlyMain)
 {
 	for (Residue &residue : _residues)
 	{
@@ -317,8 +318,10 @@ void Sequence::addTorsionNames(std::vector<std::string> &names, bool onlyMain)
 				continue;
 			}
 
-			std::string id = "t" + residue.id().as_string() + ":" + torsion.desc();
-			names.push_back(id);
+			ResidueTorsion rt{};
+			rt.torsion = torsion;
+			rt.residue = &residue;
+			headers.push_back(rt);
 		}
 	}
 
