@@ -151,7 +151,6 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 {
 	freeSVD(&_svd);
 	setupSVD(&_svd, _nActive);
-	molecule->sequence()->remapFromMaster(molecule->entity());
 
 	std::vector<bool> found(list.size(), false);
 
