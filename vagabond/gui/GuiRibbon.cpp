@@ -225,7 +225,8 @@ std::vector<Snow::Vertex> GuiRibbon::makeBezier(int index)
 	int is[] = {index - 1, index + 0, index + 1, index + 2};
 	
 	if (is[0] < 0) is[0] = 0;
-	if (is[3] >= _cAlphas.size()) is[3] = 0;
+	if (is[2] >= _cAlphas.size()) is[2] = _cAlphas.size() - 1;
+	if (is[3] >= _cAlphas.size()) is[3] = _cAlphas.size() - 1;
 
 	glm::vec3 p1 = _idxPos[is[0]];
 	glm::vec3 p2 = _idxPos[is[1]];
@@ -426,12 +427,7 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 	
 	for (int i = fix - 2; i < fix + 1; i++)
 	{
-		if (i <= 1 || i >= (int)_cAlphas.size() - 2)
-		{
-			continue;
-		}
-		
-		if (_cAlphas[i] == nullptr)
+		if (i < 0 || i >= (int)_cAlphas.size() - 1)
 		{
 			continue;
 		}
