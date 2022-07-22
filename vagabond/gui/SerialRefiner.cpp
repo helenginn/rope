@@ -114,7 +114,7 @@ void SerialRefiner::sendObject(std::string tag, void *object)
 void SerialRefiner::respond()
 {
 	{
-		Text *text = new Text("Done!");
+		Text *text = new Text("Done!", Font::Thin, true);
 		text->setCentre(0.5, 0.5);
 		addObject(text);
 	}

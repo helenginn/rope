@@ -189,6 +189,7 @@ void Entity::refineNextModel()
 {
 	if (_refineSet.size() == 0)
 	{
+		triggerResponse();
 		return;
 	}
 
