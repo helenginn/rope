@@ -159,22 +159,6 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 	{
 		BondTorsion *t = _torsions[i];
 		
-		bool ok = false;
-		for (size_t j = 0; j < 4; j++)
-		{
-			Atom *a = t->atom(j);
-			if (molecule->has_chain_id(a->chain()))
-			{
-				ok = true;
-				break;
-			}
-		}
-		
-		if (!ok)
-		{
-			continue;
-		}
-
 		if (_idxs[i] < 0)
 		{
 			std::cout << "Missing " << t->atom(1)->desc() << " " << t->residueId().num << ":" << t->desc() << std::endl;

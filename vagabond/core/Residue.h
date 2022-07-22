@@ -161,10 +161,13 @@ inline void from_json(const json &j, Residue &value)
 	value.housekeeping();
 }
 
+class Entity;
+
 struct ResidueTorsion
 {
 	TorsionRef torsion{};
 	Residue *residue = nullptr;
+	Entity *entity = nullptr;
 	
 	std::string desc() const
 	{

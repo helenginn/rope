@@ -321,6 +321,7 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers,
 			ResidueTorsion rt{};
 			rt.torsion = torsion;
 			rt.residue = &residue;
+			rt.entity = _entity;
 			headers.push_back(rt);
 		}
 	}

@@ -461,6 +461,11 @@ float Molecule::valueForTorsionFromList(BondTorsion *bt,
 	
 	for (size_t i = 0; i < list.size(); i++)
 	{
+		if (list[i].entity != _entity)
+		{
+			continue;
+		}
+
 		Residue *residue = list[i].residue;
 		
 		if (residue == nullptr || residue != master)
