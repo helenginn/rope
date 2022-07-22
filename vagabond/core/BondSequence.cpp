@@ -267,7 +267,7 @@ int BondSequence::calculateBlock(int idx)
 		_blocks[nidx].basis = anchor->transformation();
 		glm::mat4x4 wip = _blocks[nidx].basis * _blocks[nidx].coordination;
 
-		_blocks[nidx].inherit = (wip[0]);
+		_blocks[nidx].inherit = (wip[1]);
 		if (_blocks[idx].nBonds == 1)
 		{
 			_blocks[nidx].inherit = (wip[1]);

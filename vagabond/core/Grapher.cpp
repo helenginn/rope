@@ -314,23 +314,26 @@ void Grapher::sortGraphChildren()
 
 		/* but we must make sure that the chosen torsion takes priority */
 		
+		/*
 		AtomGraph *tmp = _graphs[i]->children[0];
 		for (size_t j = 1; j < _graphs[i]->children.size(); j++)
 		{
 			Atom *child = _graphs[i]->children[j]->atom;
+
 			if (_graphs[i]->torsion->atomIsTerminal(child))
 			{
 				_graphs[i]->children[0] = _graphs[i]->children[j];
 				_graphs[i]->children[j] = tmp;
 			}
 		}
+		*/
 
 		/* use these to assign priority levels: 0 is main chain,
 		 * > 0 are side chains in decreasing atom count */
 		int count = _graphs[i]->children.size();
 		for (size_t j = 0; j < count; j++)
 		{
-			int priority = count - j - 1;
+			int priority = j;
 			AtomGraph *child = _graphs[i]->children[j];
 			child->priority = priority;
 			

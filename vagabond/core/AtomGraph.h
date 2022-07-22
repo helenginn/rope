@@ -50,8 +50,17 @@ struct AtomGraph
 
 	bool operator<(const AtomGraph &other) const
 	{
+		if (onlyHydrogens && !other.onlyHydrogens)
+		{
+			return false;
+		}
+		if (!onlyHydrogens && other.onlyHydrogens)
+		{
+			return true;
+		}
+
 		/* otherwise go for tinier branch points first */
-		return maxDepth < other.maxDepth;
+		return maxDepth > other.maxDepth;
 	}
 
 	static bool atomgraph_less_than(const AtomGraph *a, const AtomGraph *b)
