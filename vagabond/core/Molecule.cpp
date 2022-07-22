@@ -232,6 +232,7 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 	for (const std::string &chain : _chain_ids)
 	{
 		Chain *ch = atoms->chain(chain);
+		getTorsionRefs(ch);
 
 		for (size_t i = 0; i < ch->bondTorsionCount(); i++)
 		{
