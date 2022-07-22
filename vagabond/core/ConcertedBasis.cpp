@@ -72,12 +72,6 @@ float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
 	
 	BondTorsion *bt = _filtered[contracted];
 	
-	if (bt->coversMainChain())
-	{
-//		std::cout << bt->residueId().as_string() << ":\t" << vec[0] << "\t" << bt->desc() << 
-//		"\t" << sum << "\t" << ta.angle << "\t" << sum + ta.angle << std::endl;
-	}
-
 	sum += ta.angle;
 
 	return sum;
@@ -191,7 +185,6 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 		
 		if (value != value)
 		{
-			std::cout << "nan for " << t->residueId().num << " " << t->desc() << std::endl;
 			value = 0;
 			_missing.push_back(t);
 		}
