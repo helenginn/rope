@@ -124,6 +124,7 @@ public:
 	 * @return sequence object */
 	Sequence *sequence();
 	
+	float rmsd() const;
 protected:
 	Atom *atom(int i) const
 	{

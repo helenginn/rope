@@ -534,3 +534,25 @@ void AtomGroup::addTransformedAnchor(Atom *a, glm::mat4x4 transform)
 	_transformedAnchors.push_back(a);
 
 }
+
+float AtomGroup::rmsd() const
+{
+	float sum = 0;
+	float weights = 0;
+	for (size_t i = 0; i < size(); i++)
+	{
+		Atom *a = atom(i);
+		if (a->elementSymbol() == "H")
+		{
+			continue;
+		}
+
+		glm::vec3 diff = a->initialPosition() - a->derivedPosition();
+		float sqlength = glm::dot(diff, diff);
+		sum += sqlength;
+		weights++;
+	}
+
+	sum = sqrt(sum / weights);
+	return sum;
+}

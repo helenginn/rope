@@ -180,6 +180,31 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 	}
 }
 
+float Molecule::rmsd(AtomContent *atoms)
+{
+	float rmsds = 0;
+	float weights = 0;
+
+	for (size_t i = 0; i < atoms->chainCount(); i++)
+	{
+		Chain *ch = atoms->chain(i);
+		if (has_chain_id(ch->id()))
+		{
+			float weight = ch->size();
+			rmsds += ch->rmsd() * weight;
+			weights += weight;
+		}
+	}
+	
+	if (rmsds <= 0)
+	{
+		return 0;
+	}
+	
+	rmsds /= weights;
+	return rmsds;
+}
+
 void Molecule::extractTransformedAnchors(AtomContent *atoms)
 {
 	for (const Atom *anchor : atoms->transformedAnchors())

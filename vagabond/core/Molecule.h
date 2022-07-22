@@ -111,6 +111,9 @@ public:
 	
 	Entity *entity();
 	
+	float rmsd(AtomContent *atoms);
+	void updateRmsdMetadata(AtomContent *atoms);
+
 	void residuesFromTorsionList(std::vector<Residue *> &residues,
 	                              std::vector<std::string> &list);
 	float valueForTorsionFromList(BondTorsion *bt,

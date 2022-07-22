@@ -441,6 +441,7 @@ void Model::extractTorsions()
 	{
 		mc.extractTorsionAngles(_currentAtoms);
 		mc.extractTransformedAnchors(_currentAtoms);
+		mc.updateRmsdMetadata(_currentAtoms);
 	}
 }
 
