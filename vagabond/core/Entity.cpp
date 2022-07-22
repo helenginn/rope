@@ -128,6 +128,7 @@ const bool compare_id(const Molecule *a, const Molecule *b)
 void Entity::housekeeping()
 {
 	std::sort(_molecules.begin(), _molecules.end(), compare_id);
+	_sequence.setEntity(this);
 }
 
 size_t Entity::checkForUnrefinedMolecules()

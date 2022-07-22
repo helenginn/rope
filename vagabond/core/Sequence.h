@@ -154,6 +154,12 @@ public:
 	/** if a master-to-local mapping has already been generated, re-generate
 	 * the mapping from master-to-local */
 	void remapFromMaster(Entity *entity);
+	
+	/** set entity for sequence without remapping */
+	void setEntity(Entity *entity)
+	{
+		_entity = entity;
+	}
 
 	/** name in style t<id>:<desc> to torsion angle (if available) */
 	bool torsionByName(const std::string name, Residue **res);
