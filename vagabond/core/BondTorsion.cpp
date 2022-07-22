@@ -224,3 +224,17 @@ const ResidueId BondTorsion::residueId()
 	return _resId;
 }
 
+bool BondTorsion::spansMultipleChains() const
+{
+	std::string compare = atom(0)->chain();
+	
+	for (size_t i = 1; i < 4; i++)
+	{
+		if (atom(i)->chain() != compare)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}

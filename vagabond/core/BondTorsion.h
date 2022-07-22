@@ -79,6 +79,8 @@ public:
 		_instrumental = instrumental;
 	}
 	
+	bool spansMultipleChains() const;
+	
 	const ResidueId residueId();
 	
 	bool atomIsTerminal(Atom *a)

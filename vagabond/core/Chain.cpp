@@ -45,7 +45,11 @@ void Chain::add(Atom *a)
 
 		for (size_t j = 0; j < a->bondTorsionCount(); j++)
 		{
-			addBondstraint(a->bondTorsion(j));
+			BondTorsion *b = a->bondTorsion(j);
+			if (!b->spansMultipleChains() || b->atomIsCentral(a))
+			{
+				addBondstraint(a->bondTorsion(j));
+			}
 		}
 	}
 }
