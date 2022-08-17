@@ -111,6 +111,11 @@ public:
 	
 	Entity *entity();
 	
+	void setEntity(Entity *entity)
+	{
+		_entity = entity;
+	}
+	
 	float rmsd(AtomContent *atoms);
 	void updateRmsdMetadata(AtomContent *atoms);
 
