@@ -64,6 +64,11 @@ public:
 	void setDerivedPosition(glm::vec3 &pos);
 	void setDerivedPositions(WithPos &pos);
 	
+	void setDerivedBFactor(double b)
+	{
+		_derived.b = b;
+	}
+	
 	/** @param name identifier for atom within monomer, e.g. CG2 in valine */
 	void setAtomName(std::string name);
 	
