@@ -239,6 +239,8 @@ void PdbFile::write(std::string filename)
 					a.pos.x = pos.x;
 					a.pos.y = pos.y;
 					a.pos.z = pos.z;
+					double b = atom->derivedBFactor();
+//					a.b_iso = b;
 				}
 			}
 		}
