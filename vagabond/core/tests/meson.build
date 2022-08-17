@@ -1,3 +1,14 @@
+boost_files = [
+'boost_tests.cpp',
+]
+
+boost_unit_test = dependency('boost', modules: ['unit_test_framework'])
+
+boost_test = executable('boost_test_core', boost_files, 
+link_with : [core],
+dependencies : boost_unit_test,
+ cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
+ include_directories: '../../../')
 
 unit_tests = [
 'atom_cannot_have_negative_occupancy',
@@ -194,15 +205,15 @@ integration_tests = [
 nocompact = '-Wl,-no_compact_unwind'
 
 foreach entry : unit_tests
-  t = executable(entry, entry + '.cpp', link_with : [core],
- cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
- include_directories: '../../../')
-  test(entry, t, suite: 'unit')
+#  t = executable(entry, entry + '.cpp', link_with : [core],
+# cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
+# include_directories: '../../../')
+#  test(entry, t, suite: 'unit')
 endforeach
 
 foreach entry : integration_tests
-  t = executable(entry, entry + '.cpp', link_with : [core],
-	  cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
-	  include_directories: '../../../')
-  test(entry, t, suite: 'integration')
+#  t = executable(entry, entry + '.cpp', link_with : [core],
+#	  cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
+#	  include_directories: '../../../')
+#  test(entry, t, suite: 'integration')
 endforeach
