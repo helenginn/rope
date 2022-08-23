@@ -75,6 +75,7 @@ install_dir : shaders)
 
 install_data(
 'assets/images/arrow.png',
+'assets/images/axes.png',
 'assets/images/axis.png',
 'assets/images/blank.png',
 'assets/images/box.png',
