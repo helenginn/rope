@@ -115,16 +115,16 @@ install_dir : images)
 subdir('ccp4')
 deps += dep_ccp4
 
-hash_script = find_program('get_hash.sh')
+#hash_script = find_program('get_hash.sh')
 
-out_path = 'commit.h'
-gen_src = custom_target('commit-output',
-                        input : ['vagabond/commit.h.pre'],
-                        output : [out_path],
-                        command : [hash_script, '@INPUT@', '@OUTPUT@', 
-						combined],
-                        build_by_default: true,
-                        build_always_stale: true)
+#out_path = 'commit.h'
+#gen_src = custom_target('commit-output',
+#                        input : ['vagabond/commit.h.pre'],
+#                        output : [out_path],
+#                        command : [hash_script, '@INPUT@', '@OUTPUT@',
+#						combined],
+#                        build_by_default: true,
+#                        build_always_stale: true)
 
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
