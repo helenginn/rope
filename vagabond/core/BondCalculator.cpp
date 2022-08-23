@@ -267,6 +267,16 @@ void BondCalculator::sanityCheckJob(Job &job)
 		}
 	}
 
+	if ((job.requests & JobUpdateMechanics) ||
+	    (job.requests & JobScoreStructure))
+	{
+		if (_forceField == nullptr)
+		{
+			throw std::runtime_error("Job asked for request requiring non-existent"
+			                         " ForceField");
+		}
+	}
+
 }
 
 int BondCalculator::submitJob(Job &original_job)
