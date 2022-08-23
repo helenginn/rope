@@ -16,6 +16,7 @@ vagafiles = [
 'Chain.cpp',
 'Chirality.cpp',
 'CifFile.cpp',
+'Complex.cpp',
 'CsvFile.cpp',
 'ConcertedBasis.cpp',
 'Diffraction.cpp',
