@@ -268,3 +268,19 @@ PCA::Matrix PCA::distancesFrom(Matrix &m)
 	
 	return dists;
 }
+
+PCA::Matrix PCA::transpose(Matrix *other)
+{
+	PCA::Matrix tmp;
+	setupMatrix(&tmp, other->cols, other->rows);
+
+	for (size_t i = 0; i < tmp.rows; i++)
+	{
+		for (size_t j = 0; j < tmp.cols; j++)
+		{
+			tmp[i][j] = (*other)[j][i];
+		}
+	}
+	
+	return tmp;
+}

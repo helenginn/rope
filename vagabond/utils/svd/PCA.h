@@ -92,6 +92,7 @@ namespace PCA
 	bool invertSVD(SVD *cc);
 	void freeMatrix(Matrix *m);
 	void freeSVD(SVD *cc);
+	Matrix transpose(Matrix *other);
 
 	Matrix distancesFrom(Matrix &m);
 
