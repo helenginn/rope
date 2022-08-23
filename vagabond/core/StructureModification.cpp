@@ -21,10 +21,12 @@
 #include <vagabond/core/Molecule.h>
 #include <vagabond/core/ConcertedBasis.h>
 
-StructureModification::StructureModification(Molecule *mol)
-: _sampler(1, 1)
+StructureModification::StructureModification(Molecule *mol, int num, int dims)
+: _sampler(num, dims)
 {
 	_molecule = mol;
+	_num = num;
+	_dims = dims;
 }
 
 StructureModification::~StructureModification()
@@ -58,7 +60,6 @@ void StructureModification::makeCalculator(Atom *anchor)
 	TorsionBasis *basis = calc.sequenceHandler()->torsionBasis();
 	ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
 	
-	fillBasis(cb);
 }
 
 void StructureModification::addToHetatmCalculator(Atom *anchor)
@@ -111,5 +112,85 @@ void StructureModification::startCalculator()
 	}
 	
 	finishHetatmCalculator();
+}
+
+void StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
+                                           const std::vector<float> &values)
+{
+	for (BondCalculator *calc : _calculators)
+	{
+		TorsionBasis *basis = calc->sequenceHandler()->torsionBasis();
+		ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
+
+		fillBasis(cb, list, values, _axis);
+		_torsionLists.push_back(ResidueTorsionList{list, values});
+	}
+	
+	_axis++;
+}
+
+void StructureModification::fillBasis(ConcertedBasis *cb, 
+                                      const std::vector<ResidueTorsion> &list,
+                                      const std::vector<float> &values,
+                                      int axis)
+{
+	cb->fillFromMoleculeList(_molecule, axis, list, values);
+	checkMissingBonds(cb);
+}
+
+void StructureModification::checkMissingBonds(ConcertedBasis *cb)
+{
+	for (BondTorsion *bt : cb->missingBonds())
+	{
+		if (bt->coversMainChain())
+		{
+			_mainMissing++;
+		}
+		else
+		{
+			_sideMissing++;
+		}
+	}
+	
+	if (_unusedId == nullptr)
+	{
+		_unusedId = cb->unusedTorsion();
+	}
+}
+
+void StructureModification::changeMolecule(Molecule *m)
+{
+	_molecule = m;
+	_sideMissing = 0;
+	_mainMissing = 0;
+	_unusedId = nullptr;
+	_axis = 0;
+	if (m != nullptr)
+	{
+		m->model()->load();
+		_fullAtoms = m->model()->currentAtoms();
+	}
+	
+	bool hasCalc = _calculators.size() > 0;
+	
+	for (size_t i = 0; i < _calculators.size(); i++)
+	{
+		delete _calculators[i];
+	}
+
+	_calculators.clear();
+	
+	if (hasCalc)
+	{
+		startCalculator();
+	}
+
+	std::vector<ResidueTorsionList> lists = _torsionLists;
+	_torsionLists.clear();
+	
+	for (ResidueTorsionList &rtl : lists)
+	{
+		supplyTorsions(rtl.list, rtl.values);
+	}
 }
 

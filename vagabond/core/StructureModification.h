@@ -23,6 +23,7 @@
  * Molecule in a structure */
 
 #include <vagabond/core/BondCalculator.h>
+#include <vagabond/core/Residue.h>
 #include <vagabond/core/Sampler.h>
 
 class Molecule;
@@ -34,14 +35,21 @@ class Atom;
 class StructureModification
 {
 public:
-	StructureModification(Molecule *mol);
+	StructureModification(Molecule *mol, int num, int dims);
+	
+	void supplyTorsions(const std::vector<ResidueTorsion> &list,
+                        const std::vector<float> &values);
+
 	virtual ~StructureModification();
 
 	void makeCalculator(Atom *anchor);
 	void startCalculator();
 	
-	virtual void fillBasis(ConcertedBasis *cb) = 0;
+	void changeMolecule(Molecule *m);
 protected:
+	void fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
+	               const std::vector<float> &values, int axis = 0);
+	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
 	Molecule *_molecule = nullptr;
@@ -50,7 +58,22 @@ protected:
 	std::vector<BondCalculator *> _calculators;
 	AtomContent *_fullAtoms = nullptr;
 	Sampler _sampler;
-	int _num = 0;
+	
+	struct ResidueTorsionList
+	{
+		const std::vector<ResidueTorsion> list;
+		const std::vector<float> values;
+	};
+	
+	std::vector<ResidueTorsionList> _torsionLists;
+
+	int _num = 1;
+	int _dims = 1;
+	int _axis = 0;
+
+	int _sideMissing = 0;
+	int _mainMissing = 0;
+	Residue *_unusedId{};
 };
 
 #endif
