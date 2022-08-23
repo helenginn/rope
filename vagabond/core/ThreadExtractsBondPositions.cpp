@@ -45,6 +45,17 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 	r->handout.unlock();
 }
 
+void ThreadExtractsBondPositions::scoreSolution(Job *job, BondSequence *seq)
+{
+	AtomPosMap aps = seq->extractPositions();
+	BondCalculator *calc = _seqHandler->calculator();
+	ForceField *ff = calc->forceField();
+	
+	double score = ff->score(aps);
+	Result *r = job->result;
+	r->score = score;
+}
+
 void ThreadExtractsBondPositions::updateMechanics(Job *job, BondSequence *seq)
 {
 	AtomPosMap aps = seq->extractPositions();
@@ -111,6 +122,10 @@ void ThreadExtractsBondPositions::start()
 		if (job->requests & JobUpdateMechanics)
 		{
 			updateMechanics(job, seq);
+		}
+		if (job->requests & JobScoreStructure)
+		{
+			scoreSolution(job, seq);
 		}
 		if (job->requests & JobExtractPositions)
 		{
