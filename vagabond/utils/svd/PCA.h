@@ -19,6 +19,9 @@
 #ifndef __vagabond__PCA__
 #define __vagabond__PCA__
 
+#include <cstring>
+#include <cmath>
+
 namespace PCA
 {
 	enum MatrixType
@@ -62,7 +65,28 @@ namespace PCA
 	void setupSVD(SVD *cc, int rows, int cols = 0);
 	void zeroMatrix(Matrix *mat);
 	void printMatrix(Matrix *mat);
-	void multMatrix(Matrix &mat, double *vector);
+
+	template <class Float>
+	void multMatrix(Matrix &mat, Float *vector)
+	{
+		double *ret = (double *)calloc(mat.cols, sizeof(double));
+
+		for (size_t j = 0; j < mat.rows; j++)
+		{
+			for (size_t i = 0; i < mat.cols; i++)
+			{
+				ret[j] += mat.ptrs[i][j] * vector[i];
+			}
+		}
+
+		for (size_t i = 0; i < mat.cols; i++)
+		{
+			vector[i] = ret[i];
+		}
+
+		free(ret);
+	}
+
 	void copyMatrix(Matrix &dest, Matrix &source);
 	void reorderSVD(SVD *cc);
 	bool invertSVD(SVD *cc);

@@ -17,9 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PCA.h"
-#include <cmath>
 #include <algorithm>
-#include <cstring>
 #include <vector>
 #include "svdcmp.h"
 #include "matrix.h"
@@ -85,26 +83,6 @@ void PCA::copyMatrix(Matrix &dest, Matrix &source)
 			dest[i][j] = source[i][j];
 		}
 	}
-}
-
-void PCA::multMatrix(Matrix &mat, double *vector)
-{
-	double *ret = (double *)calloc(mat.cols, sizeof(double));
-
-	for (size_t i = 0; i < mat.cols; i++)
-	{
-		for (size_t j = 0; j < mat.rows; j++)
-		{
-			ret[i] += mat.ptrs[j][i] * vector[j];
-		}
-	}
-	
-	for (size_t i = 0; i < mat.cols; i++)
-	{
-		vector[i] = ret[i];
-	}
-
-	free(ret);
 }
 
 void PCA::printMatrix(Matrix *mat)
