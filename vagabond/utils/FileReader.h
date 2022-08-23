@@ -165,7 +165,11 @@ public:
 		}
 		else if (ENOENT == errno)
 		{
-			mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#ifdef OS_UNIX
+            mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+#elifdef OS_WINDOWS
+            mkdir(_dir.c_str());
+#endif
 		}
 	}
 
