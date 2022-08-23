@@ -20,6 +20,7 @@
 #include <vagabond/core/Molecule.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
+#include "PlaneView.h"
 #include "AxisExplorer.h"
 #include "Axes.h"
 
@@ -42,6 +43,7 @@ Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()
 	for (size_t i = 0; i < 3; i++)
 	{
 		_targets[i] = nullptr;
+		_planes[i] = false;
 	}
 	
 	prepareAxes();
@@ -49,6 +51,11 @@ Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()
 #ifdef __EMSCRIPTEN__
 	setSelectable(true);
 #endif
+}
+
+Axes::~Axes()
+{
+	_molecule->model()->unload();
 }
 
 bool Axes::mouseOver()
@@ -69,28 +76,69 @@ void Axes::click(bool left)
 	interacted(axis, false, left);
 }
 
-std::vector<float> Axes::getTorsionVector(int idx)
+std::vector<float> Axes::getMappedVector(int idx)
 {
 	int axis = _cluster->axis(idx);
-	std::cout << "Axis: " << idx << " converts to " << axis << std::endl;
-	if (_targets[idx] == nullptr)
+	std::vector<float> vals(_cluster->rows(), 0);
+	for (size_t i = 0; i < 3; i++)
 	{
-		std::vector<float> vals = _cluster->torsionVector(axis);
-		return vals;
+		vals[i] = _dirs[idx][i];
 	}
+	return vals;
 
+	/*
 	Molecule *other = _targets[idx];
 	int which = _cluster->dataGroup()->indexOfObject(other);
 	int mine = _cluster->dataGroup()->indexOfObject(_molecule);
 
 	if (which < 0)
 	{
-		return std::vector<float>();
+		return vals;
+	}
+
+	glm::vec3 c_a = _cluster->point(which);
+	glm::vec3 c_b = _cluster->point(mine);
+	glm::vec3 diff = glm::normalize(c_a - c_b);
+	
+	for (size_t i = 0; i < 3; i++)
+	{
+		vals[i] = diff[i];
 	}
 	
-	std::vector<float> vals;
-	vals = _cluster->dataGroup()->differences(mine, which);
 	return vals;
+	*/
+}
+
+
+std::vector<float> Axes::getTorsionVector(int idx)
+{
+	int axis = _cluster->axis(idx);
+	glm::vec3 dir = _dirs[idx];
+	
+	std::vector<float> sums;
+	for (size_t i = 0; i < 3; i++)
+	{
+		if (i >= _cluster->rows())
+		{
+			continue;
+		}
+		int axis = _cluster->axis(i);
+		std::vector<float> vals = _cluster->torsionVector(axis);
+
+		float &weight = dir[i];
+		
+		if (sums.size() == 0)
+		{
+			sums.resize(vals.size());
+		}
+		
+		for (size_t j = 0; j < vals.size(); j++)
+		{
+			sums[j] += vals[j] * weight;
+		}
+	}
+	
+	return sums;
 }
 
 void Axes::loadAxisExplorer(int idx)
@@ -108,7 +156,7 @@ void Axes::loadAxisExplorer(int idx)
 	
 	if (_targets[idx] != nullptr)
 	{
-		str += " to target " + _targets[idx]->id();
+		str += " axis to target " + _targets[idx]->id();
 		info = "Showing linear interpolation between torsion angles.\n"\
 		"Rarely a realistic motion between conformational states.";
 	}
@@ -125,7 +173,7 @@ void Axes::loadAxisExplorer(int idx)
 		AxisExplorer *ae = new AxisExplorer(_scene, _molecule, list, vals);
 		ae->setFutureTitle(str);
 		ae->show();
-		ae->setInformation(info);
+//		ae->setInformation(info);
 	}
 	catch (const std::runtime_error &err)
 	{
@@ -144,10 +192,121 @@ void Axes::buttonPressed(std::string tag, Button *button)
 	{
 		_scene->buttonPressed("choose_reorient_molecule", nullptr);
 	}
+	else if (tag == "reflect")
+	{
+		reflect(_lastIdx);
+	}
 	else if (tag == "reset")
 	{
 		reorient(_lastIdx, nullptr);
 	}
+	else if (tag == "cancel_plane")
+	{
+		cancelPlane();
+	}
+	else if (tag == "start_plane")
+	{
+		setAxisInPlane(_lastIdx, true);
+	} 
+	else if (tag == "make_plane")
+	{
+		setAxisInPlane(_lastIdx, true);
+		preparePlane();
+	}
+}
+
+void Axes::takePlaneView(PlaneView *pv)
+{
+	for (size_t i = 0; i < 3; i++)
+	{
+		_planes[i] = pv->planes()[i];
+	}
+	
+	preparePlane();
+	delete pv;
+}
+
+void Axes::preparePlane()
+{
+	std::cout << "preparing plane" << std::endl;
+
+	delete _pv; _pv = nullptr;
+	_pv = new PlaneView(_cluster, _molecule);
+	
+	Plane *plane = _pv->plane();
+	
+	for (size_t i = 0; i < 3; i++)
+	{
+		if (!_planes[i])
+		{
+			continue;
+		}
+
+		std::vector<float> mapped = getMappedVector(i);
+		
+		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+		std::vector<float> vals = getTorsionVector(i);
+
+		plane->addAxis(list, vals, mapped);
+	}
+	
+	plane->setupForceField();
+	plane->setResponder(_pv);
+	plane->refresh();
+	_pv->setPlanes(_planes);
+	_pv->populate();
+	addObject(_pv);
+}
+
+void Axes::cancelPlane()
+{
+	for (size_t i = 0; i < 3; i++)
+	{
+		setAxisInPlane(i, false);
+	}
+
+	if (_pv != nullptr)
+	{
+		removeObject(_pv);
+		delete _pv;
+		_pv = nullptr;
+	}
+	
+	refreshAxes();
+}
+
+void Axes::setAxisInPlane(int idx, bool plane)
+{
+	_planes[idx] = plane;
+	refreshAxes();
+}
+
+bool Axes::startedPlane()
+{
+	for (size_t i = 0; i < 3; i++)
+	{
+		if (_planes[i])
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool Axes::finishedPlane()
+{
+	int count = 0;
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		if (_planes[i])
+		{
+			count++;
+		}
+	}
+
+	return (count >= 2);
 }
 
 void Axes::interacted(int idx, bool hover, bool left)
@@ -159,10 +318,29 @@ void Axes::interacted(int idx, bool hover, bool left)
 		Menu *m = new Menu(_scene, this);
 		m->addOption("explore axis", "explore_axis");
 		m->addOption("reorient", "reorient");
+		m->addOption("reflect", "reflect");
 		
 		if (_targets[idx] != nullptr)
 		{
 			m->addOption("reset", "reset");
+		}
+		
+		if (!startedPlane())
+		{
+			m->addOption("start plane", "start_plane");
+		}
+		else if (!finishedPlane() && !_planes[_lastIdx])
+		{
+			m->addOption("make plane", "make_plane");
+		}
+		else if (!finishedPlane())
+		{
+			m->addOption("cancel plane", "cancel_plane");
+		}
+		else if (finishedPlane())
+		{
+			m->addOption("cancel plane", "cancel_plane");
+			m->addOption("plane options", "plane_options");
 		}
 
 		double w = _scene->width();
@@ -204,6 +382,7 @@ void Axes::refreshAxes()
 	{
 		glm::vec3 dir = _dirs[i];
 		
+		/*
 		if (_targets[i] != nullptr)
 		{
 			int tidx = group->indexOfObject(_targets[i]);
@@ -216,11 +395,16 @@ void Axes::refreshAxes()
 				dir = norm;
 			}
 		}
+		*/
 
 		for (size_t j = 0; j < 4; j++)
 		{
-			_vertices[i * 4 + j].pos = centre + (j % 2 == 1 ? dir : glm::vec3(0.f));
-			_vertices[i * 4 + j].normal = dir;
+			int index = i * 4 + j;
+			_vertices[index].pos = centre + (j % 2 == 1 ? dir : glm::vec3(0.f));
+			_vertices[index].normal = dir;
+			
+			_vertices[index].color = glm::vec4(0., 0., 0., 0.);
+			_vertices[index].color[2] = (_planes[i] ? 1. : 0.);
 		}
 	}
 
@@ -268,6 +452,12 @@ void Axes::prepareAxes()
 	refreshAxes();
 }
 
+void Axes::reflect(int i)
+{
+	_dirs[i] *= -1;
+	refreshAxes();
+}
+
 void Axes::reorient(int i, Molecule *mol)
 {
 	if (i >= 0 && i <= 2)
@@ -284,6 +474,27 @@ void Axes::reorient(int i, Molecule *mol)
 		for (size_t j = 0; j < 3; j++)
 		{
 			_targets[j] = nullptr;
+		}
+	}
+
+	MetadataGroup *group = _cluster->dataGroup();
+	int idx = group->indexOfObject(_molecule);
+	glm::vec3 centre = _cluster->point(idx);
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		if (_targets[i] != nullptr)
+		{
+			int tidx = group->indexOfObject(_targets[i]);
+			glm::vec3 diff = _cluster->point(tidx) - centre;
+			glm::vec3 norm = glm::normalize(diff);
+
+			_dirs[i] = norm;
+		}
+		else
+		{
+			_dirs[i] = glm::vec3(0.f);
+			_dirs[i][i] = 1.f;
 		}
 	}
 	

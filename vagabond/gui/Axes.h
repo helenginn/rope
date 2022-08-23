@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
 
+class PlaneView;
 class Scene;
 class Molecule;
 class MetadataGroup;
@@ -30,6 +31,7 @@ class Axes : public IndexResponder, public ButtonResponder
 {
 public:
 	Axes(Cluster<MetadataGroup> *group, Molecule *m);
+	~Axes();
 	
 	void setScene(Scene *scene)
 	{
@@ -44,12 +46,27 @@ public:
 	virtual void unmouseOver();
 
 	virtual size_t requestedIndices();
+	
+	PlaneView *planeView()
+	{
+		return _pv;
+	}
+	
+	void takePlaneView(PlaneView *pv);
 
 	void buttonPressed(std::string tag, Button *button);
 private:
+	void setAxisInPlane(int idx, bool plane);
+	std::vector<float> getMappedVector(int idx);
+	void cancelPlane();
+	bool startedPlane();
+	bool finishedPlane();
+	void preparePlane();
+
 	std::vector<float> getTorsionVector(int axis);
 	void prepareAxes();
 	void refreshAxes();
+	void reflect(int i);
 	void loadAxisExplorer(int idx);
 
 	Cluster<MetadataGroup> *_cluster = nullptr;
@@ -58,7 +75,9 @@ private:
 	int _lastIdx = -1;
 	
 	Molecule *_targets[3];
+	PlaneView *_pv = nullptr;
 
+	bool _planes[3];
 	std::vector<glm::vec3> _dirs;
 };
 
