@@ -137,7 +137,6 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 	
 	for (size_t i = 0; i < 3; i++)
 	{
-		std::cout << _pairs[i].axis << " " << _pairs[i].cc << std::endl;
 		_axes[i] = _pairs[i].axis;
 	}
 

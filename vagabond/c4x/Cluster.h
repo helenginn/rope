@@ -47,6 +47,17 @@ public:
 	int bestAxisFit(std::vector<float> &vals);
 	
 	std::vector<float> torsionVector(int axis);
+
+	size_t columns()
+	{
+		return _result.cols;
+	}
+	
+	size_t rows()
+	{
+		return _result.rows;
+	}
+
 	
 	DG *dataGroup()
 	{
@@ -56,6 +67,11 @@ public:
 	const size_t &axis(int i) const
 	{
 		return _axes[i];
+	}
+	
+	const float value(int i, int j) const
+	{
+		return _result[i][j];
 	}
 protected:
 	void normaliseResults(float scale = 1);
