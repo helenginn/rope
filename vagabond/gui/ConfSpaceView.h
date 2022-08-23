@@ -69,7 +69,12 @@ private:
 	void chooseGroup(Rule *rule, bool inverse);
 	void executeSubset(float min, float max);
 	void showClusters();
+
 	void showRulesButton();
+	void showAxesButton();
+	void showtSNE();
+	void addGuiElements();
+
 	void applyRule(const Rule &r);
 	void applyRules();
 	void removeRules();

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "RulesMenu.h"
+#include "AxesMenu.h"
 #include "LineSeries.h"
 #include "ConfSpaceView.h"
 #include "Axes.h"
@@ -73,10 +74,7 @@ void ConfSpaceView::setup()
 	}
 	else
 	{
-		removeRules();
-		showClusters();
-		applyRules();
-		showRulesButton();
+		addGuiElements();
 	}
 	
 	{
@@ -84,6 +82,15 @@ void ConfSpaceView::setup()
 		text->setCentre(0.5, 0.85);
 		addObject(text);
 	}
+}
+
+void ConfSpaceView::addGuiElements()
+{
+	removeRules();
+	showClusters();
+	applyRules();
+	showRulesButton();
+	showAxesButton();
 }
 
 void ConfSpaceView::showClusters()
@@ -121,6 +128,20 @@ void ConfSpaceView::showClusters()
 	_view = view;
 }
 
+void ConfSpaceView::showAxesButton()
+{
+	ImageButton *b = new ImageButton("assets/images/axes.png", this);
+	b->resize(0.1);
+	b->setRight(0.95, 0.22);
+	b->setReturnTag("axes");
+
+	Text *t = new Text("axes");
+	t->resize(0.6);
+	t->setRight(0.94, 0.28);
+	addObject(b);
+	addObject(t);
+}
+
 void ConfSpaceView::showRulesButton()
 {
 	ImageButton *b = new ImageButton("assets/images/palette.png", this);
@@ -128,19 +149,20 @@ void ConfSpaceView::showRulesButton()
 	b->setRight(0.95, 0.09);
 	b->setReturnTag("rules");
 
-	Text *t = new Text("settings");
+	Text *t = new Text("rules");
 	t->resize(0.6);
-	t->setRight(0.95, 0.15);
+	t->setRight(0.94, 0.15);
 	addObject(b);
 	addObject(t);
+}
 
-	{
-		TextButton *t = new TextButton("t-SNE", this);
-		t->setReturnTag("tsne");
-		t->resize(0.6);
-		t->setRight(0.95, 0.22);
-		addObject(t);
-	}
+void ConfSpaceView::showtSNE()
+{
+	TextButton *t = new TextButton("t-SNE", this);
+	t->setReturnTag("tsne");
+	t->resize(0.6);
+	t->setRight(0.95, 0.22);
+	addObject(t);
 }
 
 void ConfSpaceView::chooseGroup(Rule *rule, bool inverse)
@@ -285,8 +307,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		// show conf space
 		showClusters();
-		applyRules();
-		showRulesButton();
+		addGuiElements();
 	}
 	
 	if (tag == "view_model")
@@ -314,6 +335,14 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		menu->setData(_view->cluster()->dataGroup());
 		menu->show();
 	}
+	
+	if (tag == "axes")
+	{
+		AxesMenu *menu = new AxesMenu(this);
+		menu->setEntityId(_entity->name());
+		menu->setCluster(_view->cluster());
+		menu->show();
+	}
 
 	Scene::buttonPressed(tag, button);
 }
@@ -323,9 +352,10 @@ void ConfSpaceView::refresh()
 	if (_view == nullptr)
 	{
 		showClusters();
-		showRulesButton();
+		addGuiElements();
 	}
 
+	_view->refresh();
 	applyRules();
 }
 
@@ -402,8 +432,10 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 
 void ConfSpaceView::createReference(Molecule *m)
 {
+	PlaneView *old = nullptr;
 	if (_axes != nullptr)
 	{
+		old = _axes->planeView();
 		removeObject(_axes);
 		removeResponder(_axes);
 		delete _axes;
@@ -413,6 +445,12 @@ void ConfSpaceView::createReference(Molecule *m)
 	_axes = new Axes(_view->cluster(), m);
 	_axes->setScene(this);
 	_axes->setIndexResponseView(this);
+	
+	if (old)
+	{
+		_axes->takePlaneView(old);
+	}
+
 	addObject(_axes);
 	addIndexResponder(_axes);
 }
