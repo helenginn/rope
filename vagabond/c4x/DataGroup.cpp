@@ -19,6 +19,7 @@
 #ifndef __vagabond__DataGroup__cpp__
 #define __vagabond__DataGroup__cpp__
 
+#include <vagabond/utils/os.h>
 #include "DataGroup.h"
 #include <vagabond/utils/svd/PCA.h>
 #include <cmath>
@@ -346,8 +347,10 @@ PCA::Matrix DataGroup<Unit, Header>::arbitraryMatrix
 
 #ifdef OS_UNIX
             if (corr != corr || !isfinite(corr))
-#elifdef OS_WINDOWS
+#else
+#ifdef OS_WINDOWS
             if (corr != corr || !std::isfinite(corr))
+#endif
 #endif
 			{
 				corr = 0;

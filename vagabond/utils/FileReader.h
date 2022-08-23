@@ -9,10 +9,13 @@
 #ifndef __FileReader__
 #define __FileReader__
 
+#include "os.h"
 #ifdef OS_UNIX
 #include <glob.h> // glob(), globfree()
-#elifdef OS_WINDOWS
+#else
+#ifdef OS_WINDOWS
 #include <fileapi.h>
+#endif
 #endif
 
 #include <stdexcept>
@@ -144,11 +147,13 @@ inline std::vector<std::string> glob_pattern(const std::string& pattern)
 	// done
 	return filenames;
 }
-#elifdef OS_WINDOWS
+#else
+#ifdef OS_WINDOWS
 inline std::vector<std::string> glob_pattern(const std::string& pattern)
 {
     return std::vector<std::string>();
 }
+#endif
 #endif
 
 class FileReader
@@ -167,8 +172,10 @@ public:
 		{
 #ifdef OS_UNIX
             mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#elifdef OS_WINDOWS
+#else
+#ifdef OS_WINDOWS
             mkdir(_dir.c_str());
+#endif
 #endif
 		}
 	}
