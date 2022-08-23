@@ -114,7 +114,8 @@ void Sampler::addPointWithinRadius(std::vector<float> &point)
 void Sampler::populateSamples()
 {
 	/* special case */
-	if (_dims == 1 && _n == 1)
+//	if (_dims == 1 && _n == 1)
+	if (_n == 1)
 	{
 		_tmpPoints.push_back(std::vector<float>(_dims, 0));
 		_tmpPoints.push_back(std::vector<float>(_dims, 1));
