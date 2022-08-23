@@ -316,7 +316,11 @@ PCA::Matrix DataGroup<Unit, Header>::arbitraryMatrix
 			
 			float corr = (this->*comparison)(i, j);
 
-			if (corr != corr || !isfinite(corr))
+#ifdef OS_UNIX
+            if (corr != corr || !isfinite(corr))
+#elifdef OS_WINDOWS
+            if (corr != corr || !std::isfinite(corr))
+#endif
 			{
 				corr = 0;
 			}
