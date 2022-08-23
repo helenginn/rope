@@ -57,6 +57,8 @@ public:
 	 * nullptr */
 	void findDifferences(Array *average = nullptr);
 	
+	void convertToDifferences(Array &arr, Array *ave);
+
 	void applyNormals(Array &arr);
 	void removeNormals(Array &arr);
 	

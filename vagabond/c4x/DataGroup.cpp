@@ -95,6 +95,21 @@ void DataGroup<Unit, Header>::calculateAverage()
 }
 
 template <class Unit, class Header>
+void DataGroup<Unit, Header>::convertToDifferences(Array &arr, Array *ave)
+{
+	for (size_t j = 0; j < _length; j++)
+	{
+		arr[j] -= ave->at(j);
+
+		if (arr[j] != arr[j] || ave->at(j) != ave->at(j))
+		{
+			arr[j] = 0;
+		}
+	}
+
+}
+
+template <class Unit, class Header>
 void DataGroup<Unit, Header>::findDifferences(Array *ave)
 {
 	if (ave == nullptr)
