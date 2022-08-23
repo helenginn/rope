@@ -58,6 +58,11 @@ public:
 		return _result.rows;
 	}
 
+	virtual float weight(int axis) const;
+	virtual float weight(int i, int j) const
+	{
+		return _result[i][j];
+	}
 	
 	DG *dataGroup()
 	{
@@ -73,6 +78,8 @@ public:
 	{
 		return _result[i][j];
 	}
+	
+	void changeLastAxis(int axis);
 protected:
 	void normaliseResults(float scale = 1);
 
