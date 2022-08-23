@@ -20,7 +20,6 @@
 #define __vagabond__AxisExplorer__
 
 #include <vagabond/gui/Display.h>
-#include <vagabond/core/Residue.h>
 #include <vagabond/core/StructureModification.h>
 #include <vagabond/gui/elements/DragResponder.h>
 
@@ -44,27 +43,23 @@ public:
 	virtual void tieButton() {};
 
 	void setupSlider();
-	virtual void fillBasis(ConcertedBasis *cb);
 	void submitJob(float prop);
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 private:
-	std::vector<ResidueTorsion> _list;
-	std::vector<float> _values;
 	Slider *_rangeSlider = nullptr;
 
-	void checkMissingBonds(ConcertedBasis *cb);
 	void reportMissing();
 	
 	double _min = -1; 
 	double _max = 1; 
 	double _step = 0.001;
+
+	std::vector<ResidueTorsion> _list;
+	std::vector<float> _values;
 	
 	int _dims = 1;
 	
-	Residue *_unusedId{};
-	int _sideMissing = 0;
-	int _mainMissing = 0;
 };
 
 #endif

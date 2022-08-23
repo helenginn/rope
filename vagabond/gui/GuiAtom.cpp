@@ -34,6 +34,7 @@ GuiAtom::GuiAtom() : Renderable()
 {
 	_balls = new GuiBalls(this);
 	_ribbon = new GuiRibbon(this);
+	setDisableRibbon(true);
 	_representations.push_back(_balls);
 	_representations.push_back(_ribbon);
 	_finish = false;
@@ -183,7 +184,11 @@ void GuiAtom::backgroundWatch(GuiAtom *what)
 			break;
 		}
 
+#ifdef __EMSCRIPTEN__
+		SDL_Delay(50);
+#else
 		SDL_Delay(10);
+#endif
 	}
 }
 
@@ -195,4 +200,14 @@ void GuiAtom::startBackgroundWatch()
 glm::vec3 GuiAtom::getCentre()
 {
 	return _balls->centroid();
+}
+
+void GuiAtom::setDisableRibbon(bool dis)
+{
+	_ribbon->setDisabled(dis);
+}
+
+void GuiAtom::setDisableBalls(bool dis)
+{
+	_balls->setDisabled(dis);
 }

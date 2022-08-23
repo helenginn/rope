@@ -41,6 +41,9 @@ public:
 	{
 		return _atoms;
 	}
+	
+	void setDisableBalls(bool dis);
+	void setDisableRibbon(bool dis);
 
 	virtual void render(SnowGL *gl);
 private:

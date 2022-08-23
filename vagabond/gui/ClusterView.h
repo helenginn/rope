@@ -37,6 +37,8 @@ public:
 
 	void setCluster(Cluster<MetadataGroup> *cx);
 	
+	void refresh();
+
 	void setConfSpaceView(ConfSpaceView *csv)
 	{
 		_confSpaceView = csv;

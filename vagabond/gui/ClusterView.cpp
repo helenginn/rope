@@ -88,11 +88,8 @@ void ClusterView::reset()
 	}
 }
 
-void ClusterView::prioritiseMetadata(std::string key)
+void ClusterView::refresh()
 {
-	std::vector<float> vals = _cx->dataGroup()->numbersForKey(key);
-//	int idx = _cx->bestAxisFit(vals);
-
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		glm::vec3 v = _cx->point(i);
@@ -100,6 +97,15 @@ void ClusterView::prioritiseMetadata(std::string key)
 	}
 	
 	rebufferVertexData();
+
+}
+
+void ClusterView::prioritiseMetadata(std::string key)
+{
+	std::vector<float> vals = _cx->dataGroup()->numbersForKey(key);
+//	int idx = _cx->bestAxisFit(vals);
+
+	refresh();
 }
 
 void ClusterView::makePoints()

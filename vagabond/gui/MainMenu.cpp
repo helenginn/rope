@@ -40,11 +40,11 @@ void MainMenu::setup()
 	addObject(_background);
 
 	addTitle("RoPE");
-	/*
-	addTitle("Teaching plans");
+//	addTitle("Main protease");
 
+	/*
 	{
-		TextButton *text = new TextButton("Experience developing virtual practical labs", this);
+		TextButton *text = new TextButton("every dot is a molecule", this);
 		text->setReturnTag("file_save");
 		text->setLeft(0.1, 0.25);
 		addObject(text);

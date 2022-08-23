@@ -54,11 +54,11 @@ public:
 protected:
 	AtomGroup *_atoms = nullptr;
 
+	GuiAtom *_guiAtoms = nullptr;
+	GuiRefls *_guiRefls = nullptr;
 private:
 	void resetDensityMap();
 
-	GuiAtom *_guiAtoms = nullptr;
-	GuiRefls *_guiRefls = nullptr;
 	GuiDensity *_guiDensity = nullptr;
 	AtomGroup *_toLoad = nullptr;
 

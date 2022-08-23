@@ -20,6 +20,7 @@
 #include "Chain.h"
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/GuiAtom.h>
 #include <vagabond/utils/FileReader.h>
 
 #include <vagabond/core/Molecule.h>
@@ -27,14 +28,14 @@
 #include <vagabond/core/ConcertedBasis.h>
 #include <vagabond/core/AlignmentTool.h>
 
-AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol, 
+AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
                            const std::vector<ResidueTorsion> &list,
                            const std::vector<float> &values) 
-: Scene(prev), Display(prev), StructureModification(mol)
+: Scene(prev), Display(prev), StructureModification(mol, 1, 1)
 {
+	_dims = 1;
 	_list = list;
 	_values = values;
-	_dims = 1;
 	setOwnsAtoms(false);
 }
 
@@ -60,12 +61,15 @@ void AxisExplorer::setup()
 	Display::setup();
 	
 	startCalculator();
+	supplyTorsions(_list, _values);
 	setupSlider();
 	
-	submitJob(2.0);
-	_molecule->model()->write("modified.pdb");
+//	submitJob(2.0);
+//	_molecule->model()->write("modified.pdb");
 	submitJob(0.0);
-	_molecule->model()->write("unmodified.pdb");
+//	_molecule->model()->write("unmodified.pdb");
+	
+	_guiAtoms->setDisableRibbon(false);
 	
 	reportMissing();
 }
@@ -95,17 +99,29 @@ void AxisExplorer::submitJob(float prop)
 			r->transplantLastPosition();
 		}
 	}
-}
-
-void AxisExplorer::fillBasis(ConcertedBasis *cb)
-{
-	cb->fillFromMoleculeList(_molecule, 0, _list, _values);
-	checkMissingBonds(cb);
+	
+	return;
+	
+	AtomGroup &ag = *_molecule->model()->currentAtoms();
+	Atom *fe = ag.firstAtomWithName("FE");
+	glm::vec3 ref = fe->initialPosition();
+	
+	for (size_t i = 0; i < ag.size(); i++)
+	{
+		Atom *a = ag[i];
+		glm::vec3 pos = a->derivedPosition();
+		glm::vec3 init = a->initialPosition();
+		double start = glm::length(init - ref);
+		double end = glm::length(pos - ref);
+		double diff = end - start;
+		a->setDerivedBFactor(diff);
+	}
+	_molecule->model()->write("bfactor.pdb");
 }
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	submitJob(x * 2);
+	submitJob(x * 8);
 }
 
 void AxisExplorer::setupSlider()
@@ -119,26 +135,6 @@ void AxisExplorer::setupSlider()
 		s->setCentre(0.5, 0.85);
 		_rangeSlider = s;
 		addObject(s);
-	}
-}
-
-void AxisExplorer::checkMissingBonds(ConcertedBasis *cb)
-{
-	for (BondTorsion *bt : cb->missingBonds())
-	{
-		if (bt->coversMainChain())
-		{
-			_mainMissing++;
-		}
-		else
-		{
-			_sideMissing++;
-		}
-	}
-	
-	if (_unusedId == nullptr)
-	{
-		_unusedId = cb->unusedTorsion();
 	}
 }
 
