@@ -37,7 +37,7 @@ namespace PCA
 		int rows = 0;
 		int cols = 0;
 		
-		double *operator[](const int i)
+		double *operator[](const int i) const
 		{
 			return ptrs[i];
 		}
