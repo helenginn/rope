@@ -116,6 +116,8 @@ public:
 		_entity = entity;
 	}
 	
+	AtomGroup *currentAtoms();
+	
 	float rmsd(AtomContent *atoms);
 	void updateRmsdMetadata(AtomContent *atoms);
 

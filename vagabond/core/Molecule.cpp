@@ -487,3 +487,25 @@ float Molecule::valueForTorsionFromList(BondTorsion *bt,
 	return NAN;
 }
 
+AtomGroup *Molecule::currentAtoms()
+{
+	if (!_model->loaded())
+	{
+		_model->load();
+	}
+
+	AtomContent *ac = _model->currentAtoms();
+	
+	AtomGroup *tmp = new AtomGroup();
+	
+	for (size_t i = 0; i < ac->chainCount(); i++)
+	{
+		Chain *candidate = ac->chain(i);
+		if (has_chain_id(candidate->id()))
+		{
+			tmp->add(candidate);
+		}
+	}
+	
+	return tmp;
+}
