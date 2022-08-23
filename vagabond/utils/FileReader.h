@@ -9,7 +9,12 @@
 #ifndef __FileReader__
 #define __FileReader__
 
+#ifdef OS_UNIX
 #include <glob.h> // glob(), globfree()
+#elifdef OS_WINDOWS
+#include <fileapi.h>
+#endif
+
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
