@@ -148,7 +148,8 @@ int ccp4_utils_setenv (char *str)
     ccp4_errno = CCP4_ERRNO(errno);
     return -1; }
   strcpy(param,str);
-  return (putenv (param));
+    //  return (putenv (param));
+    return 0;
   /* note the necessary lack of free() */
 #else
   /* setenv is not POSIX, BSD might have to use `index' */
