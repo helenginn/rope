@@ -40,6 +40,10 @@ public:
 	 * @param i index of point*/
 	glm::vec3 point(int i);
 	
+	/** fetch displayable vec3 coordinate in cluster from mapped vector
+	 * @param i index of point*/
+	glm::vec3 point(std::vector<float> &mapped);
+	
 	/** returns how many points to display or how many members in cluster */
 	const size_t pointCount() const;
 

@@ -149,6 +149,23 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 }
 
 template <class DG>
+glm::vec3 Cluster<DG>::point(std::vector<float> &mapped)
+{
+	glm::vec3 v = glm::vec3(0.f);
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		int axis = _axes[i];
+		if (mapped.size() > axis)
+		{
+			v[i] = mapped[axis];
+		}
+	}
+	
+	return v;
+}
+
+template <class DG>
 glm::vec3 Cluster<DG>::point(int idx)
 {
 	glm::vec3 v = glm::vec3(0.f);
