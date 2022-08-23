@@ -112,6 +112,10 @@ void ConcertedBasis::setupAngleList()
 			_idxs.push_back(-1);
 		}
 	}
+
+	freeSVD(&_svd);
+	setupSVD(&_svd, _nActive);
+
 }
 
 void ConcertedBasis::prepareSVD()
@@ -149,9 +153,6 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
                                           const std::vector<ResidueTorsion> &list,
                                           const std::vector<float> &values)
 {
-	freeSVD(&_svd);
-	setupSVD(&_svd, _nActive);
-
 	std::vector<bool> found(list.size(), false);
 
 	for (size_t i = 0; i < _torsions.size(); i++)
