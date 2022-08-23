@@ -19,19 +19,11 @@
 #include "MetadataView.h"
 #include "ChooseHeader.h"
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
-#include <vagabond/gui/elements/AskForText.h>
-#include <vagabond/gui/elements/BadChoice.h>
-
-#include <fstream>
 
 MetadataView::MetadataView(Scene *prev, Metadata *md) : Scene(prev)
 {
@@ -52,6 +44,7 @@ void MetadataView::setup()
 	addTitle("Metadata summary - " + _md->source());
 
 	{
+		setExportHandler(this);
 		TextButton *t = new TextButton("Export", this);
 		t->setRight(0.9, 0.1);
 		t->setReturnTag("export");
@@ -91,6 +84,11 @@ void MetadataView::setup()
 	}
 }
 
+void MetadataView::supplyCSV()
+{
+	_csv = _md->asCSV();
+}
+
 void MetadataView::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "add")
@@ -113,41 +111,8 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 		ch->setHeaders(headers);
 		ch->show();
 	}
-	else if (tag == "export")
-	{
-		_csv = _md->asCSV();
-#ifdef __EMSCRIPTEN__
-		EM_ASM_({ window.download = download; window.download($0, $1, $2) }, 
-		        "metadata.csv", _csv.c_str(), _csv.length());
-#else
-		AskForText *aft = new AskForText(this, "File name to save to:",
-		                                 "export_csv", this);
-		setModal(aft);
-#endif
-	}
-	else if (tag == "export_csv")
-	{
-		TextEntry *te = static_cast<TextEntry *>(button);
-		std::string filename = te->scratch();
-
-		std::ofstream file;
-		file.open(filename);
-		
-		if (file.is_open())
-		{
-			file << _csv;
-			file.close();
-			BadChoice *bc = new BadChoice(this, "Exported metadata file");
-			setModal(bc);
-		}
-		else
-		{
-			BadChoice *bc = new BadChoice(this, "Failure writing metadata file");
-			setModal(bc);
-		}
-		
-	}
 	
+	ExportsCSV::buttonPressed(tag, button);
 	Scene::buttonPressed(tag, button);
 }
 
