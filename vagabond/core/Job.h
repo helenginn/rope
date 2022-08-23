@@ -48,7 +48,8 @@ enum JobType
 	JobCalculateDeviations =     1 << 1,
 	JobCalculateMapSegment =     1 << 2,
 	JobCalculateMapCorrelation = 1 << 3,
-	JobUpdateMechanics =         1 << 4,
+	JobScoreStructure =          1 << 4,
+	JobUpdateMechanics =         1 << 5,
 };
 
 typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
