@@ -116,6 +116,12 @@ public:
 
 	void load(LoadOptions opts = Everything);
 	void unload();
+	
+	bool loaded() const
+	{
+		return (_currentAtoms != nullptr);
+
+	}
 
 	void refine();
 	
