@@ -421,12 +421,13 @@ DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 	}
 	
 	Array vals = Array(_length, 0);
+	double scale = 1 / (double)_diffs.size();
 	
-	for (size_t i = 0; i < _diffs.size(); i++)
+	for (size_t j = 0; j < _length; j++)
 	{
-		for (size_t j = 0; j < _length; j++)
+		for (size_t i = 0; i < _diffs.size(); i++)
 		{
-			vals[j] += weights[i] * _diffs[i][j] * _stdevs[j];
+			vals[j] += weights[i] * _diffs[i][j] * _stdevs[j] * scale;
 		}
 	}
 	
