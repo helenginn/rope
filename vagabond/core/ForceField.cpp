@@ -19,6 +19,7 @@
 #include "BondTorsion.h"
 #include "ForceField.h"
 #include "MechanicalBasis.h"
+#include "AtomGroup.h"
 #include "matrix_functions.h"
 
 ForceField::ForceField(AtomGroup *grp)
@@ -26,21 +27,64 @@ ForceField::ForceField(AtomGroup *grp)
 	_group = grp;
 }
 
+void ForceField::setupCAlphaSeparation()
+{
+	AtomVector atoms = _group->atomsWithName("CA");
+
+	{
+		AtomVector tmp = _group->atomsWithName("C");
+//		atoms.reserve(atoms.size() + tmp.size());
+//		atoms.insert(atoms.end(), tmp.begin(), tmp.end());
+	}
+
+	{
+		AtomVector tmp = _group->atomsWithName("N");
+//		atoms.reserve(atoms.size() + tmp.size());
+//		atoms.insert(atoms.end(), tmp.begin(), tmp.end());
+	}
+
+	for (size_t i = 0; i < atoms.size() - 1; i++)
+	{
+		Atom &ai = *atoms[i];
+		for (size_t j = i + 1; j < atoms.size(); j++)
+		{
+			Atom &aj = *atoms[j];
+			glm::vec3 diff = ai.initialPosition() - aj.initialPosition();
+			double l = glm::length(diff);
+			
+			if (l > 4.5)
+			{
+//				std::cout << ai.desc() << " to " << aj.desc() << " w " 
+//				<< l << std::endl;
+				addLength(&ai, &aj, 5, 2);
+			}
+		}
+	}
+	
+	std::cout << "Restraints: " << _restraints.size() << std::endl;
+}
+
 void ForceField::setup()
 {
+	_restraints.clear();
+
+	if (_t == CAlphaSeparation)
+	{
+		setupCAlphaSeparation();
+	}
 }
 
 void ForceField::updateRestraint(Restraint &r, AtomPosMap &aps)
 {
+	r.current = NAN;
 	if (r.type == Restraint::Spring ||
 	    r.type == Restraint::VdW)
 	{
 		if (aps.count(r.atoms[0]) == 0 || aps.count(r.atoms[1]) == 0)
 		{
-			r.current = 0;
 			return;
 		}
-
+		
 		r.a = aps.at(r.atoms[0]).samples[1];
 		r.b = aps.at(r.atoms[1]).samples[1];
 
@@ -52,9 +96,19 @@ void ForceField::updateRestraint(Restraint &r, AtomPosMap &aps)
 
 float ForceField::gradientForRestraint(const Restraint &r)
 {
+	if (r.current != r.current)
+	{
+		return NAN;
+	}
 	if (r.type == Restraint::Spring)
 	{
 		float diff = r.current - r.target;
+		
+		if (diff != diff)
+		{
+			return 0;
+		}
+
 		diff /= r.deviation;
 		/* gradient of y = x^2 */
 		
@@ -102,6 +156,28 @@ void ForceField::setupContributions(MechanicalBasis *mb)
 			i++;
 		}
 	}
+}
+
+double ForceField::score(AtomPosMap &aps)
+{
+	double sum = 0;
+	for (Restraint &r : _restraints)
+	{
+		updateRestraint(r, aps);
+		
+		if (r.current != r.current || r.current > 4.5)
+		{
+			continue;
+		}
+		
+//		double val = gradientForRestraint(r);
+		double val = r.current - 4.5;
+		val *= 3;
+		double add = val * val;
+		sum += add;
+	}
+
+	return sum;
 }
 
 void ForceField::updateTargets(AtomPosMap &aps, MechanicalBasis *mb)

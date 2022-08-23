@@ -31,6 +31,16 @@ class ForceField
 {
 public:
 	ForceField(AtomGroup *grp);
+	
+	enum Template
+	{
+		CAlphaSeparation,
+	};
+
+	void setTemplate(Template t)
+	{
+		_t = t;
+	}
 
 	void setup();
 
@@ -87,6 +97,7 @@ public:
 	}
 
 	void updateTargets(AtomPosMap &aps, MechanicalBasis *mb);
+	double score(AtomPosMap &aps);
 
 	const std::list<Restraint> &restraints() const
 	{
@@ -103,6 +114,7 @@ public:
 
 private:
 	void setupContributions(MechanicalBasis *mb);
+	void setupCAlphaSeparation();
 	void updateRestraint(Restraint &r, AtomPosMap &aps);
 	float gradientForRestraint(const Restraint &r);
 	
@@ -117,6 +129,7 @@ private:
 	
 	PCA::SVD _contributions{};
 	PCA::Matrix _validity{};
+	Template _t;
 };
 
 #endif
