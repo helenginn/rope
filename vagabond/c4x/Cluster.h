@@ -52,6 +52,9 @@ public:
 	
 	std::vector<float> torsionVector(int axis);
 
+	/** implement by superclass to map new vector into existing space */
+	virtual void mapVector(std::vector<float> &vec) {};
+	
 	size_t columns()
 	{
 		return _result.cols;

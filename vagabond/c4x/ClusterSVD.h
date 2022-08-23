@@ -34,6 +34,18 @@ public:
 	}
 
 	virtual void cluster();
+	virtual void mapVector(std::vector<float> &vec);
+
+	virtual float weight(int axis) const
+	{
+		return _svd.w[axis];
+	}
+
+	virtual float weight(int i, int j) const
+	{
+		return _svd.u[i][j];
+	}
+
 	PCA::Matrix distanceMatrix();
 
 	virtual size_t displayableDimensions()
@@ -44,6 +56,7 @@ private:
 	PCA::Matrix matrix();
 
 	PCA::SVD _svd{};
+	PCA::Matrix _transpose{};
 	PCA::MatrixType _type = PCA::Correlation;
 };
 

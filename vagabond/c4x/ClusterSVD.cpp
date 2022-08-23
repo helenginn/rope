@@ -32,6 +32,7 @@ template <class DG>
 ClusterSVD<DG>::~ClusterSVD()
 {
 	freeSVD(&_svd);
+	freeMatrix(&_transpose);
 }
 
 template <class DG>
@@ -46,6 +47,29 @@ PCA::Matrix ClusterSVD<DG>::matrix()
 		return this->_dg.correlationMatrix();
 	}
 	
+}
+
+template <class DG>
+void ClusterSVD<DG>::mapVector(std::vector<float> &vec)
+{
+	std::vector<float> comparisons(this->rows(), 0);
+	
+	for (size_t i = 0; i < comparisons.size(); i++)
+	{
+		const typename DG::Array &v = this->_dg.differenceVector(i);
+		double cc = this->_dg.correlation_between(v, vec);
+		comparisons[i] = cc;
+	}
+	
+	multMatrix(this->_result, &comparisons[0]);
+	
+	vec.resize(comparisons.size());
+
+	for (size_t i = 0; i < comparisons.size(); i++)
+	{
+		vec[i] = comparisons[i];
+	}
+
 }
 
 template <class DG>
@@ -73,7 +97,7 @@ void ClusterSVD<DG>::cluster()
 
 	copyMatrix(this->_result, _svd.u);
 	
-	this->_scaleFactor = 10 / _svd.w[0];
+	this->_scaleFactor = sqrt(this->rows()) / _svd.w[0];
 
 	for (size_t i = 0; i < this->_result.cols; i++)
 	{
@@ -81,9 +105,15 @@ void ClusterSVD<DG>::cluster()
 		{
 			this->_result[j][i] *= this->_scaleFactor * _svd.w[i];
 		}
-		std::cout << _svd.w[i] << " ";
 	}
-	std::cout << std::endl;
+
+	std::cout << "This matrix: " << std::endl;
+	PCA::printMatrix(&this->_result);
+
+	PCA::Matrix m = this->_dg.correlationMatrix();
+	PCA::printMatrix(&m);
+	
+	_transpose = PCA::transpose(&this->_svd.u);
 
 	freeMatrix(&mat);
 }
