@@ -173,8 +173,10 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 			_missing.push_back(t);
 		}
 		
-		std::cout << "Import " << t->atom(1)->desc() << " " << t->residueId().num << " " << t->desc() << " " << value << std::endl;
-
+		if (value > 30)
+		{
+			std::cout << "Import " << t->atom(1)->desc() << " " << t->residueId().num << " " << t->desc() << " " << value << std::endl;
+		}
 		int idx = _idxs[i];
 
 		_svd.u[idx][axis] = value;
