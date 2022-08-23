@@ -159,6 +159,7 @@ struct Result
 	JobType requests;
 	AtomPosMap aps;
 	double deviation;
+	double score;
 	AtomMap *map = nullptr;
 
 	std::mutex handout;
