@@ -18,14 +18,12 @@ Choice::~Choice()
 
 void Choice::makeTick()
 {
-	glm::vec3 c = centroid();
+	glm::vec2 pos = xy();
 	double w = maximalWidth();
-	c.x -= w / 2 + 0.02;
-	c.y += 0.035;
 
 	_tick = new Image("assets/images/tick.png");
 	_tick->rescale(0.05, 0.05);
-	_tick->setPosition(c);
+	_tick->setLeft(pos.x - w / 2, pos.y);
 	addObject(_tick);
 }
 

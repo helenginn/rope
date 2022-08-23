@@ -414,7 +414,7 @@ protected:
 	{
 		Default,
 		Point,
-		Plane
+		SearchPlane
 	};
 	
 	RaySearch _searchType = Default;

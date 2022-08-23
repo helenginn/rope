@@ -842,14 +842,14 @@ bool Renderable::intersectsRay(double x, double y, double *z)
 	
 	if (type == Default && _renderType == GL_TRIANGLES)
 	{
-		type = Plane;
+		type = SearchPlane;
 	}
 	else if (type == Default && _renderType == GL_POINTS)
 	{
 		type = Point;
 	}
 
-	if (type == Plane)
+	if (type == SearchPlane)
 	{
 		return intersectsPolygon(x, y, z);
 	}
