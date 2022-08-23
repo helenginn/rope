@@ -16,12 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "maths.h"
 #include "Canonical.h"
 #include <iomanip>
-#include <cmath>
 #include <algorithm>
-#include "libica/svdcmp.h"
-#include <hcsrc/maths.h>
+#include "svd/svdcmp.h"
 
 using namespace PCA;
 
