@@ -57,6 +57,9 @@ public:
 	 * nullptr */
 	void findDifferences(Array *average = nullptr);
 	
+	void applyNormals(Array &arr);
+	void removeNormals(Array &arr);
+	
 	/** Normalise differences for each unit (i.e. vector component) */
 	void normalise();
 	
@@ -104,6 +107,8 @@ public:
 	{
 		return _headers;
 	}
+
+	float correlation_between(const Array &v, const Array &w);
 protected:
 	float correlation_between(int i, int j);
 	float distance_between(int i, int j);

@@ -113,18 +113,26 @@ void DataGroup<Unit, Header>::findDifferences(Array *ave)
 
 	for (size_t i = 0; i < _vectors.size(); i++)
 	{
-		_diffs[i].resize(_length);
+		_diffs[i] = _vectors[i];
+		convertToDifferences(_diffs[i], ave);
+	}
+}
 
-		for (size_t j = 0; j < _length; j++)
-		{
-			_diffs[i][j] = _vectors[i][j] - ave->at(j);
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::removeNormals(Array &arr)
+{
+	for (size_t j = 0; j < _length; j++)
+	{
+		arr[j] *= _stdevs[j];
+	}
+}
 
-			if (_vectors[i][j] != _vectors[i][j] ||
-			    ave->at(j) != ave->at(j))
-			{
-				_diffs[i][j] = 0;
-			}
-		}
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::applyNormals(Array &arr)
+{
+	for (size_t j = 0; j < _length; j++)
+	{
+		arr[j] /= _stdevs[j];
 	}
 }
 
@@ -254,18 +262,10 @@ float DataGroup<Unit, Header>::distance_between(int i, int j)
 }
 
 template <class Unit, class Header>
-float DataGroup<Unit, Header>::correlation_between(int i, int j)
+float DataGroup<Unit, Header>::correlation_between(const Array &v, const Array &w)
 {
-	if (i == j)
-	{
-		return 0;
-	}
-	
 	Unit x{}, y{}, xx{}, yy{}, xy{}, s{};
-	
-	Array &v = _diffs[i];
-	Array &w = _diffs[j];
-	
+
 	for (size_t n = 0; n < _length; n++)
 	{
 		if (v[n] != v[n] || w[n] != w[n])
@@ -292,9 +292,22 @@ float DataGroup<Unit, Header>::correlation_between(int i, int j)
 	
 	double r = top / sqrt(bottom_left * bottom_right);
 	
-//	return xy / sqrt(xx * yy); 
-	
 	return r;
+
+}
+
+template <class Unit, class Header>
+float DataGroup<Unit, Header>::correlation_between(int i, int j)
+{
+	if (i == j)
+	{
+		return 0;
+	}
+	
+	Array &v = _diffs[i];
+	Array &w = _diffs[j];
+	
+	return correlation_between(v, w);
 }
 
 
