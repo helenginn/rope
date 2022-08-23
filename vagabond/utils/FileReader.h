@@ -105,6 +105,7 @@ inline void urlencode(std::string &s)
 
 void print_cc_diff(std::ostream *_stream, double diff, int limit);
 
+#ifdef OS_UNIX
 inline std::vector<std::string> glob_pattern(const std::string& pattern) 
 {
 	using namespace std;
@@ -143,6 +144,12 @@ inline std::vector<std::string> glob_pattern(const std::string& pattern)
 	// done
 	return filenames;
 }
+#elifdef OS_WINDOWS
+inline std::vector<std::string> glob_pattern(const std::string& pattern)
+{
+    return std::vector<std::string>();
+}
+#endif
 
 class FileReader
 {
