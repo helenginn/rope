@@ -149,6 +149,12 @@ inline void add_to_CD(CorrelData *cd, T x, T y)
 	cd->sum_w += 1;
 }
 
+inline void mean_stdev_CD(CorrelData &cd, double *xm, double *xs)
+{
+	*xm = cd.sum_x / cd.sum_w;
+	*xs = sqrt((cd.sum_xx / cd.sum_w) - (*xm) * (*xm));
+}
+
 inline void means_stdevs_CD(CorrelData &cd, double *xm, double *ym,
                             double *xs, double *ys)
 {
