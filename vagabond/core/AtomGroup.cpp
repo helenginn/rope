@@ -108,6 +108,14 @@ bool AtomGroup::hasAtom(Atom *a)
 	return (it != _atoms.end());
 }
 
+void AtomGroup::add(AtomVector &av)
+{
+	for (Atom *a : av)
+	{
+		add(a);
+	}
+}
+
 void AtomGroup::add(Atom *a)
 {
 	if (a != nullptr && !hasAtom(a))
