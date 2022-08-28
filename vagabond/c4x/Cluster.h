@@ -86,6 +86,11 @@ public:
 		return _result[i][j];
 	}
 	
+	const float &scaleFactor() const
+	{
+		return _scaleFactor;
+	}
+	
 	void changeLastAxis(int axis);
 protected:
 	void normaliseResults(float scale = 1);
@@ -95,6 +100,7 @@ protected:
 	float _scaleFactor = 1;
 	PCA::Matrix _result{};
 	size_t _axes[3] = {0, 1, 2};
+	double _total = 0;
 };
 
 #include "Cluster.cpp"

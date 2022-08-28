@@ -201,11 +201,12 @@ void Cluster<DG>::normaliseResults(float scale)
 template <class DG>
 std::vector<float> Cluster<DG>::torsionVector(int axis)
 {
+	double axis_weight = weight(axis);
 	std::vector<float> weights;
 	
 	for (size_t i = 0; i < _result.rows; i++)
 	{
-		double w = weight(axis, i);
+		double w = weight(axis, i) / (axis_weight);
 		weights.push_back(w);
 	}
 	
