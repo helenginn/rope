@@ -31,6 +31,7 @@ class SimplexEngine;
 class Mechanics;
 class Sequence;
 class File;
+class ForceField;
 
 class AtomGroupResponder
 {
@@ -133,6 +134,28 @@ public:
 	Sequence *sequence();
 	
 	float rmsd() const;
+	
+	void assignForceField(ForceField *ff)
+	{
+		if (ff != nullptr)
+		{
+			_forceField = ff;
+			_ffCounter++;
+		}
+		else
+		{
+			_ffCounter--;
+			if (_ffCounter == 0)
+			{
+				_forceField = nullptr;
+			}
+		}
+	}
+	
+	ForceField *forceField()
+	{
+		return _forceField;
+	}
 protected:
 	Atom *atom(int i) const
 	{
@@ -155,6 +178,8 @@ private:
 	SimplexEngine *_engine = nullptr;
 	std::thread *_mechThread = nullptr;
 	Mechanics *_mech = nullptr;
+	ForceField *_forceField = nullptr;
+	int _ffCounter = 0;
 	
 	double _lastResidual = FLT_MAX;
 	std::vector<AtomGroup *> _connectedGroups;
