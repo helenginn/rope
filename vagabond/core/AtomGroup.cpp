@@ -108,7 +108,7 @@ bool AtomGroup::hasAtom(Atom *a)
 	return (it != _atoms.end());
 }
 
-void AtomGroup::add(AtomVector &av)
+void AtomGroup::add(const AtomVector &av)
 {
 	for (Atom *a : av)
 	{

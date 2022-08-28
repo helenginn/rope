@@ -68,7 +68,7 @@ public:
 	
 	virtual void add(Atom *a);
 	void add(AtomGroup *g);
-	void add(AtomVector &v);
+	void add(const AtomVector &v);
 
 	void addTransformedAnchor(Atom *a, glm::mat4x4 transform);
 	void remove(AtomGroup *g);
