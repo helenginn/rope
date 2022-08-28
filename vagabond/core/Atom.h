@@ -19,8 +19,9 @@ public:
 	
 	struct WithPos
 	{
-		std::vector<glm::vec3> samples;
-		glm::vec3 ave;
+		std::vector<glm::vec3> samples{};
+		glm::vec3 ave = glm::vec3(0.f);
+		float colour = 0;
 	};
 
 	/** summary (average) of atom placement */
@@ -240,6 +241,21 @@ public:
 	{
 		return _transformed;
 	}
+	
+	float addedColour()
+	{
+		return _colour;
+	}
+	
+	void setAddedColour(float col)
+	{
+		_colour = col;
+	}
+	
+	void addToColour(float add)
+	{
+		_colour += add;
+	}
 private:
 	void changedPosition();
 
@@ -263,6 +279,7 @@ private:
 
 	std::mutex _mutex;
 
+	float _colour = 0;
 	glm::mat4x4 _transform = glm::mat4(1.f);
 };
 
