@@ -59,8 +59,9 @@ public:
 	virtual void render(SnowGL *gl);
 private:
 	void makeGrid();
-	Plane *_plane;
-	PlaneGrid *_pg;
+
+	Plane *_plane = nullptr;
+	PlaneGrid *_pg = nullptr;
 
 	bool _planes[3];
 };

@@ -36,23 +36,20 @@ PlaneView::PlaneView(Plane *p) : Renderable()
 	_plane = p;
 }
 
-void PlaneView::respond()
-{
-	populate();
-}
-
 void PlaneView::recolour()
 {
 	int nx = _plane->num(0);
 	int ny = _plane->num(1);
-	float ref = _plane->reference();
+	float ref = _plane->mean();
+	float first = _plane->reference();
 	float stdev = _plane->stdev();
 	
-	if (stdev > 10)
+	if (stdev > 1)
 	{
-		stdev = 10;
+		stdev = 1;
 	}
 	
+	std::cout << "First: " << first << std::endl;
 	std::cout << "Mean: " << ref << std::endl;
 	std::cout << "Stdev: " << stdev << std::endl;
 
@@ -62,9 +59,8 @@ void PlaneView::recolour()
 		{
 			int idx = _plane->toIndex(x, y);
 			float score = _plane->score(idx);
-			score -= ref;
-			score /= stdev * 1;
-//			score += 0.5; // to make white neural
+			score -= first;
+//			score /= stdev;
 
 			Vertex &v = _vertices[idx];
 			val_to_cluster4x_colour(score, &v.color[0], &v.color[1], &v.color[2]);
@@ -131,4 +127,10 @@ void PlaneView::populate()
 	recolour();
 	rebufferVertexData();
 	rebufferIndexData();
+}
+
+void PlaneView::respond()
+{
+	recolour();
+	forceRender(true, false);
 }
