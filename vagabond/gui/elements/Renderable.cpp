@@ -252,11 +252,11 @@ void Renderable::unbindVBOBuffers()
 
 void Renderable::deleteVBOBuffers()
 {
-	if (_usingProgram != 0 && _vaoMap.count(_usingProgram))
+	if (_program != 0 && _vaoMap.count(_program))
 	{
-		GLuint vao = _vaoMap[_usingProgram];
+		GLuint vao = _vaoMap[_program];
 		glDeleteVertexArrays(1, &vao);
-		_vaoMap.erase(_usingProgram);
+		_vaoMap.erase(_program);
 	}
 }
 
@@ -277,23 +277,31 @@ void Renderable::rebindVBOBuffers()
 
 int Renderable::vaoForContext()
 {
-	if (_vaoMap.count(_usingProgram) && !_forceRender)
+	if (_vaoMap.count(_program) && !_forceVertices && !_forceIndices)
 	{
-		GLuint vao = _vaoMap[_usingProgram];
+		GLuint vao = _vaoMap[_program];
 		return vao;
 	}
-	else if (_vaoMap.count(_usingProgram) && _forceRender)
+	else if (_vaoMap.count(_program) && (_forceVertices || _forceIndices))
 	{
 		if (!tryLockMutex())
 		{
-			GLuint vao = _vaoMap[_usingProgram];
+			GLuint vao = _vaoMap[_program];
 			return vao;
 		}
 
-		_forceRender = false;
-		rebufferVertexData();
-		rebufferIndexData();
-		GLuint vao = _vaoMap[_usingProgram];
+		if (_forceVertices)
+		{
+			rebufferVertexData();
+			_forceVertices = false;
+		}
+		if (_forceIndices)
+		{
+			rebufferIndexData();
+			_forceIndices = false;
+		}
+
+		GLuint vao = _vaoMap[_program];
 		unlockMutex();
 		return vao;
 	}
@@ -301,7 +309,7 @@ int Renderable::vaoForContext()
 	lockMutex();
 	GLuint vao = 0;
 	glGenVertexArrays(1, &vao);
-	_vaoMap[_usingProgram] = vao;
+	_vaoMap[_program] = vao;
 	setupVBOBuffers();
 	unlockMutex();
 	
@@ -310,12 +318,12 @@ int Renderable::vaoForContext()
 
 void Renderable::rebufferIndexData()
 {
-	if (_bElements.count(_usingProgram) == 0)
+	if (_bElements.count(_program) == 0)
 	{
 		return;
 	}
 
-	GLuint be = _bElements[_usingProgram];
+	GLuint be = _bElements[_program];
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, be);
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
@@ -328,12 +336,12 @@ void Renderable::rebufferIndexData()
 
 void Renderable::rebufferVertexData()
 {
-	if (_bVertices.count(_usingProgram) == 0)
+	if (_bVertices.count(_program) == 0)
 	{
 		return;
 	}
 
-	GLuint bv = _bVertices[_usingProgram];
+	GLuint bv = _bVertices[_program];
 	glBindBuffer(GL_ARRAY_BUFFER, bv);
 
 	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
@@ -346,17 +354,23 @@ void Renderable::rebufferVertexData()
 
 void Renderable::setupVBOBuffers()
 {
-	if (_usingProgram == 0)
+	if (_program == 0)
 	{
 		return;
 	}
 
 	int vao = vaoForContext();
+	
+	if (vao == 0)
+	{
+		return;
+	}
+
 	glBindVertexArray(vao);
 
 	GLuint bv = 0;
 	glGenBuffers(1, &bv);
-	_bVertices[_usingProgram] = bv;
+	_bVertices[_program] = bv;
 
 	glBindBuffer(GL_ARRAY_BUFFER, bv);
 	checkErrors("binding array buffer");
@@ -402,13 +416,13 @@ void Renderable::setupVBOBuffers()
 
 	GLuint be = 0;
 	glGenBuffers(1, &be);
-	_bElements[_usingProgram] = be;
+	_bElements[_program] = be;
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _bElements[_usingProgram]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _bElements[_program]);
 	checkErrors("index array binding");
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
 	checkErrors("index array buffering");
-	glBindBuffer(GL_ARRAY_BUFFER, _bVertices[_usingProgram]);
+	glBindBuffer(GL_ARRAY_BUFFER, _bVertices[_program]);
 	checkErrors("vbo binding");
 	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
 	checkErrors("vbo buffering");
@@ -473,17 +487,16 @@ bool Renderable::checkErrors(std::string what)
 
 void Renderable::render(SnowGL *sender)
 {
+	if (_disabled)
+	{
+		return;
+	}
+	
 //	if (!tryLockMutex())
 	{
 //		return;
 	}
 
-	if (_disabled)
-	{
-//		unlockMutex();
-		return;
-	}
-	
 	_gl = sender;
 	
 	if (_program == 0)
@@ -491,41 +504,27 @@ void Renderable::render(SnowGL *sender)
 		initialisePrograms();
 	}
 
-	if (_gl->getOverrideProgram() > 0)
-	{
-		_usingProgram = _gl->getOverrideProgram();
-	}
-	else
-	{
-		_usingProgram = _program;
-	}
-
 	if (_program > 0)
 	{
-		glUseProgram(_usingProgram);
+		glUseProgram(_program);
 
 		checkErrors("use program");
 		rebindVBOBuffers();
 		checkErrors("rebinding program");
 
 		_model = sender->getModel();
-		const char *uniform_name = "model";
-		_uModel = glGetUniformLocation(_usingProgram, uniform_name);
+		_uModel = glGetUniformLocation(_program, "model");
 		_glModel = glm::transpose(model());
 		glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
 		checkErrors("rebinding model");
 
 		_proj = sender->getProjection();
-		uniform_name = "projection";
-		_uProj = glGetUniformLocation(_usingProgram, uniform_name);
+		_uProj = glGetUniformLocation(_program, "projection");
 		_glProj = glm::transpose(projection());
 		glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
 		checkErrors("rebinding projection");
 
-		if (_gl->getOverrideProgram() == 0)
-		{
-			extraUniforms();
-		}
+		extraUniforms();
 
 		checkErrors("rebinding extras");
 
@@ -534,25 +533,8 @@ void Renderable::render(SnowGL *sender)
 			GLuint which = GL_TEXTURE_2D;
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(which, _texid);
-			GLuint uTex = glGetUniformLocation(_usingProgram, "pic_tex");
+			GLuint uTex = glGetUniformLocation(_program, "pic_tex");
 			glUniform1i(uTex, 0);
-		}
-
-		if (_gl != NULL && _gl->depthMap() > 0 && 
-		    _gl->getOverrideProgram() == 0)
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, _gl->depthMap());
-			GLuint uTex = glGetUniformLocation(_usingProgram, "shadow_map");
-			glUniform1i(uTex, 1);
-
-			glm::mat4x4 lightMat = sender->lightMat();
-			uniform_name = "light_mat";
-			GLuint uLight = glGetUniformLocation(_usingProgram, uniform_name);
-			_glLightMat = glm::transpose(lightMat);
-			glUniformMatrix4fv(uLight, 1, GL_FALSE, &_glLightMat[0][0]);
-			checkErrors("rebinding lights");
-
 		}
 
 		checkErrors("before drawing elements");
@@ -561,8 +543,10 @@ void Renderable::render(SnowGL *sender)
 
 		glUseProgram(0);
 		unbindVBOBuffers();
-		//unlockMutex();
+
+		_renderCount++;
 	}
+	
 
 	for (size_t i = 0; i < objectCount(); i++)
 	{
@@ -1547,12 +1531,20 @@ void Renderable::setHover(Renderable *hover)
 	_hover->setDisabled(true);
 }
 
-void Renderable::forceRender()
+void Renderable::forceRender(bool vert, bool idx)
 {
-	_forceRender = true;
-	
 	for (size_t i = 0; i < objectCount(); i++)
 	{
 		_objects[i]->forceRender();
 	}
+
+	if (vert)
+	{
+		_forceVertices = true;
+	}
+	if (idx)
+	{
+		_forceIndices = true;
+	}
+	
 }

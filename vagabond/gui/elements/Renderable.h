@@ -293,7 +293,7 @@ public:
 	void rebufferVertexData();
 	void rebufferIndexData();
 	
-	void forceRender();
+	void forceRender(bool vert = true, bool idx = true);
 
 	void setHover(Renderable *hover);
 
@@ -368,7 +368,8 @@ protected:
 	glm::mat4x4 _unproj = glm::mat4(1.);
 	GLuint _texid = 0;
 	void appendObject(Renderable *object);
-	std::atomic<bool> _forceRender{false};
+	std::atomic<bool> _forceVertices{false};
+	std::atomic<bool> _forceIndices{false};
 	void rotateByMatrix(glm::mat3x3 m);
 
 	SnowGL *_gl = nullptr;
@@ -459,6 +460,7 @@ private:
 	double _x = 0.0;
 	double _y = 0.0;
 	int _currVertex = -1;
+	int _renderCount = 0;
 	static double _selectionResize;
 };
 
