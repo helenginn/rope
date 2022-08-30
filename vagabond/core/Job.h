@@ -157,7 +157,7 @@ struct Result
 {
 	int ticket;
 	JobType requests;
-	AtomPosMap aps;
+	AtomPosMap aps{};
 	double deviation;
 	double score;
 	AtomMap *map = nullptr;
@@ -177,8 +177,11 @@ struct Result
 		for (it = aps.begin(); it != aps.end(); it++)
 		{
 			std::vector<glm::vec3> last(1, it->second.samples.back());
-			Atom::WithPos wp{last, last[0]};
+			Atom::WithPos wp;
+			wp.samples = last;
+			wp.ave = last[0];
 			it->first->setDerivedPositions(wp);
+			it->first->setAddedColour(it->second.colour);
 		}
 	}
 	
