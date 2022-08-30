@@ -19,6 +19,7 @@
 #include "ThreadSubmitsJobs.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "ForceFieldHandler.h"
 #include "MapTransferHandler.h"
 #include "PointStoreHandler.h"
 #include "MapSumHandler.h"
@@ -52,12 +53,6 @@ void BondCalculator::sanityCheckPipeline()
 	if (_type == PipelineNotSpecified)
 	{
 		throw std::runtime_error("Bond calculator pipeline not specified");
-	}
-
-	if (_type == PipelineCalculatedMaps && false)
-	{
-		throw std::runtime_error("Calculated maps requested, but not yet "
-		                         "implemented");
 	}
 
 	if (_type == PipelineCorrelation)
@@ -150,6 +145,19 @@ void BondCalculator::setupPointHandler()
 	_pointHandler->setThreads(_maxThreads);
 }
 
+void BondCalculator::setupForceFieldHandler()
+{
+	if (!(_type & PipelineForceField))
+	{
+		return;
+	}
+
+	_ffHandler = new ForceFieldHandler(this);
+	_ffHandler->setFFProperties(_props);
+	_ffHandler->setThreads(_maxThreads);
+	_ffHandler->setForceFieldCount(_maxThreads);
+}
+
 void BondCalculator::setup()
 {
 	sanityCheckPipeline();
@@ -159,6 +167,7 @@ void BondCalculator::setup()
 	setupMapTransferHandler();
 	setupSequenceHandler();
 	setupPointHandler();
+	setupForceFieldHandler();
 	
 	if (_mapHandler != nullptr)
 	{
@@ -175,6 +184,11 @@ void BondCalculator::setup()
 	{
 		_mapHandler->setup();
 		_sumHandler->setup();
+	}
+	
+	if (_ffHandler != nullptr)
+	{
+		_ffHandler->setup();
 	}
 }
 
@@ -201,6 +215,10 @@ void BondCalculator::start()
 		_changedDepth = false;
 	}
 
+	if (_ffHandler != nullptr)
+	{
+		_ffHandler->start();
+	}
 	if (_sumHandler != nullptr)
 	{
 		_sumHandler->start();
@@ -270,7 +288,7 @@ void BondCalculator::sanityCheckJob(Job &job)
 	if ((job.requests & JobUpdateMechanics) ||
 	    (job.requests & JobScoreStructure))
 	{
-		if (_forceField == nullptr)
+		if (_ffHandler == nullptr)
 		{
 			throw std::runtime_error("Job asked for request requiring non-existent"
 			                         " ForceField");
@@ -305,6 +323,11 @@ Job *BondCalculator::acquireJob()
 
 void BondCalculator::finish()
 {
+	if (_ffHandler != nullptr)
+	{
+		_ffHandler->finish();
+	}
+
 	if (_mapHandler != nullptr)
 	{
 		_sumHandler->finish();
@@ -333,6 +356,11 @@ void BondCalculator::finish()
 	{
 		_sumHandler->joinThreads();
 		_mapHandler->joinThreads();
+	}
+
+	if (_ffHandler != nullptr)
+	{
+		_ffHandler->joinThreads();
 	}
 
 	if (_sequenceHandler != nullptr)

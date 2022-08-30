@@ -27,19 +27,29 @@ class Atom;
 class AtomGroup;
 class MechanicalBasis;
 
+#include "FFProperties.h"
+
 class ForceField
 {
 public:
 	ForceField(AtomGroup *grp);
+	ForceField(FFProperties &props);
 	
-	enum Template
-	{
-		CAlphaSeparation,
-	};
+	~ForceField();
 
-	void setTemplate(Template t)
+	void setTemplate(FFProperties::Template t)
 	{
 		_t = t;
+	}
+	
+	void setJob(Job *j)
+	{
+		_job = j;
+	}
+	
+	Job *job()
+	{
+		return _job;
 	}
 
 	void setup();
@@ -49,7 +59,7 @@ public:
 		enum Type
 		{
 			Spring,
-			Angle,
+			HBond,
 			VdW,
 		};
 
@@ -57,25 +67,35 @@ public:
 		float target = 0;
 		float current = 0;
 		float deviation = 1;
+		float target_angle = 0;
+		float current_angle = 0;
+		float dev_angle = 0;
 		
 		Atom *atoms[3] = {nullptr, nullptr, nullptr};
+		Atom *reporters[3] = {nullptr, nullptr, nullptr};
 		
-		glm::vec3 a{};
-		glm::vec3 b{};
-		glm::vec3 c{};
+		glm::vec3 pos[3]{};
 		
 		Restraint(Type t, float targ, float dev)
 		{
 			type = t;
 			target = targ;
 			deviation = dev;
+			
+			if (type == HBond)
+			{
+				target = 3.1;
+				deviation = 0.2;
+				dev_angle = 10;
+				target_angle = targ;
+			}
 		}
 		
 		void terminalAtoms(Atom **start, Atom **end) const
 		{
 			*start = atoms[0];
 			
-			if (type == Angle)
+			if (type == HBond)
 			{
 				*end = atoms[2];
 			}
@@ -95,11 +115,19 @@ public:
 	{
 		return _weights[i][0];
 	}
+	
+	void copyAtomMap(AtomPosMap &aps)
+	{
+		_aps = aps;
+	}
 
 	void updateTargets(AtomPosMap &aps, MechanicalBasis *mb);
-	double score(AtomPosMap &aps);
+	
+	void prepareCalculation();
+	double score();
+	void getColours(AtomPosMap &aps);
 
-	const std::list<Restraint> &restraints() const
+	const std::vector<Restraint> &restraints() const
 	{
 		return _restraints;
 	}
@@ -111,25 +139,48 @@ public:
 		r.atoms[1] = b;
 		_restraints.push_back(r);
 	}
+	
+	void processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b);
 
 private:
 	void setupContributions(MechanicalBasis *mb);
 	void setupCAlphaSeparation();
-	void updateRestraint(Restraint &r, AtomPosMap &aps);
+	void updateRestraint(Restraint &r);
 	float gradientForRestraint(const Restraint &r);
+	float valueForRestraint(const Restraint &r);
+	void makeLookupTable();
+	void assignToAtomGroup();
+	void testHydrogenBond(Atom *a, Atom *b, Atom *report_a, Atom *report_b);
 	
 	float contributionForRestraint(const Restraint &r, glm::vec3 start,
 	                               glm::vec3 end);
 
-	AtomGroup *_group = nullptr;
 
-	std::list<Restraint> _restraints;
+	bool isBackbone(Atom *a);
+	
+	struct LookupTable
+	{
+		Atom *a;
+		size_t restraint_index;
+		size_t atom_index;
+	};
+	
+	std::vector<LookupTable> _table;
+	std::map<Atom *, size_t> _tableIndices;
+	std::map<Atom *, float> _tmpColours;
+
+	AtomGroup *_group = nullptr;
+	AtomGroup *_reporters = nullptr;
+
+	AtomPosMap _aps;
+	Job *_job = nullptr;
+	std::vector<Restraint> _restraints;
 	PCA::Matrix _targets{};
 	PCA::Matrix _weights{};
 	
 	PCA::SVD _contributions{};
 	PCA::Matrix _validity{};
-	Template _t;
+	FFProperties::Template _t;
 };
 
 #endif

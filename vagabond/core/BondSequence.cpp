@@ -62,15 +62,18 @@ void BondSequence::makeTorsionBasis()
 {
 	_torsionBasis = TorsionBasis::newBasis(_basisType);
 	
-	if (_basisType == TorsionBasis::TypeMechanical)
+	if (_basisType == TorsionBasis::TypeMechanical && false)
 	{
 		/* mechanical basis needs to understand atom connectivity */
+		// FIXME
+		/*
 		PCA::Matrix m = _grapher.distanceMatrix();
 		std::vector<Atom *> atoms = _grapher.atoms();
 		MechanicalBasis *mb = dynamic_cast<MechanicalBasis *>(_torsionBasis);
 		mb->supplyDistances(m, atoms);
-		ForceField *ff = _handler->calculator()->forceField();
+		ForceField *ff = _handler->calculator()->forceFieldHandler();
 		mb->supplyForceField(ff);
+		*/
 	}
 }
 

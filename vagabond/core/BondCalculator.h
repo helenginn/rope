@@ -24,9 +24,11 @@
 #include <queue>
 #include "Handler.h"
 #include "TorsionBasis.h"
+#include "FFProperties.h"
 
 class Atom;
 class BondSequenceHandler;
+class ForceFieldHandler;
 class MapTransferHandler;
 class PointStoreHandler;
 class MapSumHandler;
@@ -49,17 +51,20 @@ public:
 	 *  Result. */
 	enum PipelineType
 	{
-		PipelineNotSpecified, /**< unknown pipeline */
+		PipelineNotSpecified = 0, /**< unknown pipeline */
 
 		/** return array of positions after calculating atom positions */
-		PipelineAtomPositions, 
+		PipelineAtomPositions = 1 << 0, 
 
 		/** return maps after calculating 3D map */
-		PipelineCalculatedMaps, 
+		PipelineCalculatedMaps = 1 << 1, 
+		
+		/** returns forcefield-related calculations from atom positions */
+		PipelineForceField = 1 << 2,
 
 		/** return after calculating correlation of calculated 3D map with 
 		 * reference 3D map */
-		PipelineCorrelation,
+		PipelineCorrelation = 1 << 3,
 	};
 	
 	int submitJob(Job &job);
@@ -107,6 +112,11 @@ public:
 	void setPipelineType(PipelineType type)
 	{
 		_type = type;
+	}
+	
+	const PipelineType &pipelineType() const
+	{
+		return _type;
 	}
 	
 	/** ignored after setup() is called.
@@ -160,14 +170,14 @@ public:
 	
 	void setSampler(Sampler *sampler);
 	
-	void setForceField(ForceField *ff)
+	ForceFieldHandler *const forceFieldHandler() const
 	{
-		_forceField = ff;
+		return _ffHandler;
 	}
 	
-	ForceField *const forceField() const
+	void setForceFieldProperties(FFProperties &props)
 	{
-		return _forceField;
+		_props = props;
 	}
 	
 	struct AnchorExtension
@@ -187,6 +197,7 @@ private:
 	void setupPointHandler();
 	void setupMapTransferHandler();
 	void setupMapSumHandler();
+	void setupForceFieldHandler();
 	void prepareThreads();
 
 	PipelineType _type;
@@ -213,7 +224,8 @@ private:
 	MapSumHandler *_sumHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	Sampler *_sampler = nullptr;
-	ForceField *_forceField = nullptr;
+	ForceFieldHandler *_ffHandler = nullptr;
+	FFProperties _props{};
 	
 	std::vector<AnchorExtension> _atoms;
 };

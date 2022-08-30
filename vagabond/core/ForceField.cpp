@@ -19,44 +19,108 @@
 #include "BondTorsion.h"
 #include "ForceField.h"
 #include "MechanicalBasis.h"
+#include "ResidueId.h"
 #include "AtomGroup.h"
 #include "matrix_functions.h"
 
 ForceField::ForceField(AtomGroup *grp)
 {
 	_group = grp;
+	_reporters = new AtomGroup();
+}
+
+ForceField::ForceField(FFProperties &props)
+{
+	_group = props.group;
+	_reporters = new AtomGroup();
+	_t = props.t;
+}
+
+ForceField::~ForceField()
+{
+	_group->assignForceField(nullptr);
+
+}
+
+bool ForceField::isBackbone(Atom *a)
+{
+	return !a->hetatm();
+
+	if (a->atomName() == "CA" || a->atomName() == "N" || a->atomName() == "C"
+	    || a->atomName() == "O" || a->atomName() == "CB" || a->atomName() == "OXT")
+	{
+		return true;
+	}
 }
 
 void ForceField::setupCAlphaSeparation()
 {
-	AtomVector atoms = _group->atomsWithName("CA");
-
+	std::cout << "Making restraints for " << this << std::endl;
+	AtomVector atoms;
+	
+	for (size_t i = 0; i < _group->size(); i++)
 	{
-		AtomVector tmp = _group->atomsWithName("C");
-//		atoms.reserve(atoms.size() + tmp.size());
-//		atoms.insert(atoms.end(), tmp.begin(), tmp.end());
+		Atom *a = (*_group)[i];
+		if (isBackbone(a))
+		{
+			atoms.push_back(a);
+		}
 	}
 
+	int added = 0;
+	const double comp = 15;
+	
+	std::map<Atom *, Atom *> tmpReporters;
+
+	for (size_t i = 0; i < atoms.size() - 1; i++)
 	{
-		AtomVector tmp = _group->atomsWithName("N");
-//		atoms.reserve(atoms.size() + tmp.size());
-//		atoms.insert(atoms.end(), tmp.begin(), tmp.end());
+		Atom &ai = *atoms[i];
+		Atom *cai = _group->atomByIdName(ResidueId(ai.residueNumber()), "CA");
+		tmpReporters[atoms[i]] = cai;
+
+		if (cai != nullptr)
+		{
+			_reporters->add(cai);
+		}
 	}
 
 	for (size_t i = 0; i < atoms.size() - 1; i++)
 	{
 		Atom &ai = *atoms[i];
+		Atom *cai = tmpReporters[&ai];
+
 		for (size_t j = i + 1; j < atoms.size(); j++)
 		{
 			Atom &aj = *atoms[j];
-			glm::vec3 diff = ai.initialPosition() - aj.initialPosition();
-			double l = glm::length(diff);
+			bool skip = false;
 			
-			if (l > 4.5)
+			for (size_t k = 0; k < ai.bondLengthCount(); k++)
 			{
-//				std::cout << ai.desc() << " to " << aj.desc() << " w " 
-//				<< l << std::endl;
-				addLength(&ai, &aj, 5, 2);
+				if (ai.connectedAtom(k) == &aj)
+				{
+					skip = true;
+				}
+			}
+
+			if (skip)
+			{
+				continue;
+			}
+			
+			Atom *caj = tmpReporters[&aj];
+
+			glm::vec3 diff = ai.initialPosition() - aj.initialPosition();
+			double l = glm::dot(diff, diff);
+			
+			if (l < (comp * comp))
+			{
+				processAtoms(&ai, &aj, cai, caj);
+				added++;
+				
+				if (added % 10000 == 0)
+				{
+					_restraints.reserve(_restraints.size() + 10000);
+				}
 			}
 		}
 	}
@@ -64,34 +128,200 @@ void ForceField::setupCAlphaSeparation()
 	std::cout << "Restraints: " << _restraints.size() << std::endl;
 }
 
+void ForceField::processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
+{
+	Restraint r(Restraint::VdW, 2.2, 0);
+	r.atoms[0] = a;
+	r.atoms[1] = b;
+	r.reporters[0] = report_a;
+	r.reporters[1] = report_b;
+	_restraints.push_back(r);
+	
+	testHydrogenBond(a, b, report_a, report_b);
+}
+
+void ForceField::testHydrogenBond(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
+{
+	Atom *atoms[] = {a, b};
+	Atom *pre = nullptr;
+	Atom *acceptor = nullptr;
+	Atom *donor = nullptr;
+
+	for (size_t i = 0; i < 2; i++)
+	{
+		if (atoms[i]->atomName() == "O")
+		{
+			acceptor = atoms[i];
+		}
+
+		if (atoms[i]->atomName() == "N")
+		{
+			donor = atoms[i];
+		}
+	}
+	
+	if (!(acceptor && donor))
+	{
+		return;
+	}
+	
+	for (size_t i = 0; i < acceptor->bondLengthCount(); i++)
+	{
+		if (acceptor->connectedAtom(i)->atomName() == "C")
+		{
+			pre = acceptor->connectedAtom(i);
+		}
+	}
+	
+	if (!(pre))
+	{
+		return;
+	}
+	
+	Restraint r(Restraint::HBond, 180, 15);
+	r.atoms[0] = donor;
+	r.atoms[1] = acceptor;
+	r.atoms[2] = pre;
+	
+	for (size_t i = 0; i < 3; i++)
+	{
+		r.pos[i] = r.atoms[i]->initialPosition();
+	}
+	
+	updateRestraint(r);
+	
+	if (fabs(r.current_angle - r.target_angle) > 30)
+	{
+		return;
+	}
+	
+	if (fabs(r.current - r.target) > 0.5)
+	{
+		return;
+	}
+	
+	std::cout << "Making hydrogen bond, " << pre->desc() << "-" 
+	<< acceptor->desc() << "-H . . . " << donor->desc() << " (angle "
+	<< r.current_angle << ", dist " << r.current << ")" << std::endl;
+
+	r.reporters[0] = report_a;
+	r.reporters[1] = report_b;
+	_restraints.push_back(r);
+
+}
+
 void ForceField::setup()
 {
 	_restraints.clear();
 
-	if (_t == CAlphaSeparation)
+	if (_t == FFProperties::CAlphaSeparation)
 	{
 		setupCAlphaSeparation();
 	}
+	
+	makeLookupTable();
+	
+	assignToAtomGroup();
 }
 
-void ForceField::updateRestraint(Restraint &r, AtomPosMap &aps)
+void ForceField::assignToAtomGroup()
+{
+	_group->assignForceField(this);
+}
+
+void ForceField::makeLookupTable()
+{
+	std::cout << "Making lookup table" << std::endl;
+	_table.clear();
+	_tableIndices.clear();
+	
+	std::map<Atom *, std::vector<LookupTable> > tmpMap;
+	_table.reserve(_restraints.size());
+
+	for (size_t i = 0; i < _group->size(); i++)
+	{
+		Atom *a = (*_group)[i];
+		bool first = true;
+		
+		for (size_t j = 0; j < _restraints.size(); j++)
+		{
+			Restraint &r = _restraints[j];
+			for (size_t n = 0; n < 3; n++)
+			{
+				if (r.atoms[n] == a)
+				{
+					LookupTable lt{a, j, n};
+					
+					if (first)
+					{
+						_tableIndices[a] = _table.size();
+					}
+
+					_table.push_back(lt);
+					
+					first = false;
+				}
+			}
+		}
+	}
+	std::cout << "... done." << std::endl;
+}
+
+void ForceField::updateRestraint(Restraint &r)
 {
 	r.current = NAN;
 	if (r.type == Restraint::Spring ||
-	    r.type == Restraint::VdW)
+	    r.type == Restraint::VdW ||
+	    r.type == Restraint::HBond)
 	{
-		if (aps.count(r.atoms[0]) == 0 || aps.count(r.atoms[1]) == 0)
-		{
-			return;
-		}
-		
-		r.a = aps.at(r.atoms[0]).samples[1];
-		r.b = aps.at(r.atoms[1]).samples[1];
-
-		float length = glm::length(r.a - r.b);
+		float length = glm::length(r.pos[0] - r.pos[1]);
 		r.current = length;
 	}
+	
+	if (r.type == Restraint::HBond)
+	{
+		glm::vec3 hbond =  (r.pos[1] - r.pos[0]);
+		glm::vec3 accept = (r.pos[1] - r.pos[2]);
+		hbond = glm::normalize(hbond);
+		accept = glm::normalize(accept);
 
+		r.current_angle = rad2deg(glm::angle(hbond, accept));
+	}
+
+}
+
+float ForceField::valueForRestraint(const Restraint &r)
+{
+	if (r.current != r.current)
+	{
+		return 0;
+	}
+
+	double vdw = 0;
+	double attract = 0;
+	double penalty = 0;
+
+	if (r.type == Restraint::VdW || r.type == Restraint::HBond)
+	{
+		float weight = 0.2;
+		float ratio = r.target / r.current;
+		float rat6 = ratio*ratio*ratio*ratio*ratio*ratio;
+		float rat12 = rat6*rat6;
+		vdw = weight * (rat12 - 2 * rat6);
+	}
+
+	if (r.type == Restraint::HBond)
+	{
+		attract = -20;
+		float angle = fabs(r.target_angle - r.current_angle) / r.dev_angle;
+		float dist = fabs(r.target - r.current) / r.deviation;
+		angle *= angle;
+		dist *= dist;
+
+		penalty += exp(-angle) + exp(-dist);
+	}
+	
+	return vdw + attract * penalty;
 }
 
 float ForceField::gradientForRestraint(const Restraint &r)
@@ -124,7 +354,7 @@ float ForceField::contributionForRestraint(const Restraint &r, glm::vec3 start,
 	float con = 0;
 	if (r.type == Restraint::Spring || r.type == Restraint::VdW)
 	{
-		con = bond_rotation_on_distance_gradient(start, end, r.a, r.b);
+		con = bond_rotation_on_distance_gradient(start, end, r.pos[0], r.pos[1]);
 	}
 
 	return con;
@@ -158,26 +388,108 @@ void ForceField::setupContributions(MechanicalBasis *mb)
 	}
 }
 
-double ForceField::score(AtomPosMap &aps)
+void ForceField::prepareCalculation()
 {
-	double sum = 0;
+	AtomPosMap::iterator it;
+	int count = 0;
+	
+	for (it = _aps.begin(); it != _aps.end(); it++)
+	{
+		Atom *a = it->first;
+		
+		if (_tableIndices.count(a))
+		{
+			size_t next = _tableIndices[a];
+
+			while (true)
+			{
+				LookupTable &lt = _table[next];
+				if (lt.a != a)
+				{
+					break;
+				}
+				
+				int ridx = lt.restraint_index;
+				int aidx = lt.atom_index;
+				
+				_restraints[ridx].pos[aidx] = _aps.at(a).samples[1];
+				count++;
+				
+				next++;
+				
+				if (next >= _table.size())
+				{
+					break;
+				}
+			}
+		}
+	}
+
 	for (Restraint &r : _restraints)
 	{
-		updateRestraint(r, aps);
+		updateRestraint(r);
+	}
+}
+
+double ForceField::score()
+{
+	for (size_t i = 0; i < _group->size(); i++)
+	{
+		_tmpColours[(*_reporters)[i]] = 0.f;
+	}
+
+	double sum = 0;
+	double weights = _group->size();
+	for (Restraint &r : _restraints)
+	{
+		double val = valueForRestraint(r);
 		
-		if (r.current != r.current || r.current > 4.5)
+		if (val != val)
 		{
 			continue;
 		}
 		
-//		double val = gradientForRestraint(r);
-		double val = r.current - 4.5;
-		val *= 3;
-		double add = val * val;
-		sum += add;
+		for (size_t i = 0; i < 2; i++)
+		{
+			if (r.reporters[i] != nullptr)
+			{
+				_tmpColours[r.reporters[i]] += val / 10.f;
+			}
+		}
+
+		sum += val;
 	}
 
-	return sum;
+	for (size_t i = 0; i < _reporters->size(); i++)
+	{
+		double tmp = _tmpColours[(*_reporters)[i]];
+		if (tmp > 1)
+		{
+			tmp = log(tmp) + 1;
+		}
+	}
+	
+	double ret = sum / weights;
+	
+	if (ret != ret)
+	{
+		ret = 0;
+	}
+
+	return ret;
+}
+
+void ForceField::getColours(AtomPosMap &aps)
+{
+	for (Atom *a : _reporters->atomVector())
+	{
+		if (aps.count(a))
+		{
+			float col = _tmpColours[a];
+			aps[a].colour = col;
+		}
+	}
+
 }
 
 void ForceField::updateTargets(AtomPosMap &aps, MechanicalBasis *mb)
@@ -189,7 +501,7 @@ void ForceField::updateTargets(AtomPosMap &aps, MechanicalBasis *mb)
 	int idx = 0;
 	for (Restraint &r : _restraints)
 	{
-		updateRestraint(r, aps);
+		updateRestraint(r);
 		float val = gradientForRestraint(r);
 		_targets[idx][0] = val;
 
