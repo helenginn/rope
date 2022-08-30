@@ -26,14 +26,24 @@ class Atom;
 struct AtomBlock
 {
 	bool flag = true;
-	Atom *atom;
+	Atom *atom = nullptr;
 	char element[3] = "\0";
 	int nBonds;
+	
+	/* position to aim for (e.g. initial position) in deviation calculations */
 	glm::vec3 target;
+
+	/* relative arrangement of 4 consecutive atoms with current atom at origin */
 	glm::mat4x4 coordination;
+	
+	/* parent's position */
 	glm::vec3 inherit;
+
 	int torsion_idx;
 	float torsion;
+	
+	/* rotation and translation to move the atom into the right place;
+	 * previous bond is in Z direction */
 	glm::mat4x4 basis;
 	glm::mat4x4 wip;
 	int write_locs[4];
