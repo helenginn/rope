@@ -38,12 +38,14 @@ void Mechanics::private_run()
 	int dims = 1;
 	Sampler sampler(1, dims);
 	
+	/*
 	_forceField = new ForceField(_grp);
 
 	Atom *O1 = _grp->firstAtomWithName("N");
 	Atom *C26 = _grp->firstAtomWithName("OXT");
 
 	_forceField->addLength(O1, C26, 3, 0.5);
+	*/
 
 	_calculator = new BondCalculator();
 	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
@@ -53,7 +55,6 @@ void Mechanics::private_run()
 	int num = sampler.pointCount();
 
 	_calculator->setTorsionBasisType(TorsionBasis::TypeMechanical);
-	_calculator->setForceField(_forceField);
 	_calculator->addAnchorExtension(anchor);
 	_calculator->setIgnoreHydrogens(false);
 	_calculator->setup();
