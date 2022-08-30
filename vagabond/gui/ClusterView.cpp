@@ -140,7 +140,7 @@ void ClusterView::setCluster(Cluster<MetadataGroup> *cx)
 void ClusterView::extraUniforms()
 {
 	const char *uniform_name = "size";
-	GLuint u = glGetUniformLocation(_usingProgram, uniform_name);
+	GLuint u = glGetUniformLocation(_program, uniform_name);
 	glUniform1f(u, _size);
 	checkErrors("rebinding size");
 }
