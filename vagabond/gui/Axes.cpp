@@ -55,6 +55,7 @@ Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()
 
 Axes::~Axes()
 {
+	delete _pv;
 	_molecule->model()->unload();
 }
 
@@ -157,15 +158,11 @@ void Axes::loadAxisExplorer(int idx)
 	if (_targets[idx] != nullptr)
 	{
 		str += " axis to target " + _targets[idx]->id();
-		info = "Showing linear interpolation between torsion angles.\n"\
-		"Rarely a realistic motion between conformational states.";
 	}
 	else
 	{
 		int axis = _cluster->axis(idx);
 		str += " PCA axis " + i_to_str(axis);
-		info = "Axis has been scaled to an average torsion angle\n"\
-		"deviation of 4 degrees.";
 	}
 
 	try
