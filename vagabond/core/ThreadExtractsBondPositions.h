@@ -51,7 +51,7 @@ private:
 	void calculateDeviation(Job *job, BondSequence *seq);
 	void transferToMaps(Job *job, BondSequence *seq);
 	void updateMechanics(Job *job, BondSequence *seq);
-	void scoreSolution(Job *job, BondSequence *seq);
+	void transferToForceFields(Job *job, BondSequence *seq);
 	
 	void cleanupSequence(Job *job, BondSequence *seq);
 	void returnResult(Job *job);

@@ -22,6 +22,7 @@
 #include "ThreadWorker.h"
 
 class BondCalculator;
+class BondSequenceHandler;
 
 class ThreadSubmitsJobs : public ThreadWorker
 {
@@ -36,7 +37,8 @@ public:
 		return "Submits overall jobs";
 	}
 private:
-	BondCalculator *_handler;
+	BondCalculator *_calc;
+	BondSequenceHandler *_handler;
 
 };
 

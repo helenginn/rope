@@ -19,6 +19,7 @@
 #include "ThreadExtractsBondPositions.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
+#include "ForceFieldHandler.h"
 #include "MechanicalBasis.h"
 #include "PointStoreHandler.h"
 #include "BondSequence.h"
@@ -39,23 +40,23 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 	AtomPosMap aps = seq->extractPositions();
 
 	/* extend atom positions in the result */
-	r->ticket = job->ticket;
 	r->handout.lock();
 	r->aps = aps;
 	r->handout.unlock();
 }
 
-void ThreadExtractsBondPositions::scoreSolution(Job *job, BondSequence *seq)
+void ThreadExtractsBondPositions::transferToForceFields(Job *job,
+                                                        BondSequence *seq)
 {
 	AtomPosMap aps = seq->extractPositions();
-	BondCalculator *calc = _seqHandler->calculator();
-	ForceField *ff = calc->forceField();
+	ForceFieldHandler *ffHandler = _seqHandler->calculator()->forceFieldHandler();
 	
-	double score = ff->score(aps);
-	Result *r = job->result;
-	r->score = score;
+	ffHandler->atomMapToForceField(job, aps);
+	timeEnd();
+	cleanupSequence(job, seq);
 }
 
+/*
 void ThreadExtractsBondPositions::updateMechanics(Job *job, BondSequence *seq)
 {
 	AtomPosMap aps = seq->extractPositions();
@@ -71,6 +72,7 @@ void ThreadExtractsBondPositions::updateMechanics(Job *job, BondSequence *seq)
 	
 	mb->refreshMechanics(aps);
 }
+*/
 
 void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq)
 {
@@ -82,7 +84,7 @@ void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
 {
 	std::vector<BondSequence::ElePos> epos = seq->extractForMap();
 	_pointHandler->loadMixedPositions(job, epos);
-
+	timeEnd();
 	cleanupSequence(job, seq);
 }
 
@@ -100,8 +102,7 @@ void ThreadExtractsBondPositions::start()
 		
 		timeStart();
 
-		MiniJob *mini = seq->miniJob();
-		Job *job = mini->job;
+		Job *job = seq->job();
 
 		Result *r = nullptr;
 
@@ -119,14 +120,6 @@ void ThreadExtractsBondPositions::start()
 		}
 
 		bool sendBack = true;
-		if (job->requests & JobUpdateMechanics)
-		{
-			updateMechanics(job, seq);
-		}
-		if (job->requests & JobScoreStructure)
-		{
-			scoreSolution(job, seq);
-		}
 		if (job->requests & JobExtractPositions)
 		{
 			extractPositions(job, seq);
@@ -135,17 +128,21 @@ void ThreadExtractsBondPositions::start()
 		{
 			calculateDeviation(job, seq);
 		}
+		if (job->requests & JobUpdateMechanics ||
+		    job->requests & JobScoreStructure)
+		{
+			transferToForceFields(job, seq);
+			continue;
+		}
 		if (job->requests & JobCalculateMapSegment ||
 		    job->requests & JobCalculateMapCorrelation)
 		{
 			transferToMaps(job, seq);
-			sendBack = false;
-			timeEnd();
 			continue;
 		}
 
 		cleanupSequence(job, seq);
-
+			
 		if (sendBack)
 		{
 			returnResult(job);
@@ -159,18 +156,23 @@ void ThreadExtractsBondPositions::start()
 
 void ThreadExtractsBondPositions::cleanupSequence(Job *job, BondSequence *seq)
 {
+	/*
 	MiniJob *mini = seq->miniJob();
 
-	/* don't submit the result unless all minijobs are done */
+	// don't submit the result unless all minijobs are done //
 	std::vector<MiniJob *>::iterator it;
 	it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
 
 	if (it == job->miniJobs.end())
 	{
-		throw std::runtime_error("MiniJobSeq received twice");
+		throw std::runtime_error("MiniJobSeq received twice for "
+		                         + std::to_string(job->ticket) + "job list "
+		                         + "size = " + 
+		                         std::to_string(job->miniJobs.size()));
 	}
 
 	job->miniJobs.erase(it);
+	*/
 
 	seq->cleanUpToIdle();
 }

@@ -22,24 +22,34 @@
 #include "BondSequence.h"
 #include <iostream>
 
-ThreadSubmitsJobs::ThreadSubmitsJobs(BondCalculator *h)
+ThreadSubmitsJobs::ThreadSubmitsJobs(BondCalculator *calc)
 : ThreadWorker()
 {
-	_handler = h;
+	_calc = calc;
+	_handler = _calc->sequenceHandler();
 }
 
 void ThreadSubmitsJobs::start()
 {
 	do
 	{
-		Job *job = _handler->acquireJob();
+		Job *job = _calc->acquireJob();
 		if (job == nullptr)
 		{
 			break;
 		}
 
+		SequenceState state = SequenceIdle;
+		BondSequence *seq = _handler->acquireSequence(state);
+
+		if (seq == nullptr)
+		{
+//			_handler->signalFinishMiniJobSeq();
+			break;
+		}
+
 		timeStart();
-		_handler->sequenceHandler()->generateMiniJobSeqs(job);
+		seq->beginJob(job);
 		timeEnd();
 	}
 	while (!_finish);
