@@ -18,6 +18,7 @@
 
 #include "Window.h"
 #include "Mouse3D.h"
+#include "SelectionBox.h"
 
 Mouse3D::Mouse3D(Scene *prev) : Scene(prev)
 {
@@ -90,6 +91,16 @@ void Mouse3D::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	_lastX = x;
 	_lastY = y;
 
+	if (_shiftPressed && _makesSelections)
+	{
+		_makingSelection = true;
+		_left = x;
+		__right = x;
+		_top = y;
+		_bottom = y;
+		updateSelectionBox();
+	}
+
 	updateSpinMatrix();
 }
 
@@ -102,6 +113,13 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 		return;
 	}
 
+	if (_makingSelection)
+	{
+		__right = x;
+		_bottom = y;
+		updateSelectionBox();
+		return;
+	}
 
 	if (_left && !_shiftPressed && !_controlPressed)
 	{
@@ -147,7 +165,7 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 		
 		updateCamera();
 	}
-
+	
 	_lastX = x;
 	_lastY = y;
 }
@@ -155,6 +173,14 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mouseReleaseEvent(x, y, button);
+	
+	if (_makingSelection && _left)
+	{
+		_makingSelection = false;
+		removeObject(_box);
+		delete _box;
+		_box = nullptr;
+	}
 
 	if (_modal != nullptr)
 	{
@@ -185,4 +211,22 @@ void Mouse3D::keyPressEvent(SDL_Keycode pressed)
 void Mouse3D::keyReleaseEvent(SDL_Keycode pressed)
 {
 	interpretControlKey(pressed, false);
+}
+
+void Mouse3D::updateSelectionBox()
+{
+	if (_box == nullptr)
+	{
+		_box = new SelectionBox();
+		addObject(_box);
+	}
+
+	double x = _left; double y = _top;
+	convertToGLCoords(&x, &y);
+	_box->setTopLeft(y, x);
+
+	x = __right; y = _bottom;
+	convertToGLCoords(&x, &y);
+
+	_box->setBottomRight(y, x);
 }

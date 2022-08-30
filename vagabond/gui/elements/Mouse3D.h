@@ -21,6 +21,8 @@
 
 #include "Scene.h"
 
+class SelectionBox;
+
 class Mouse3D : virtual public Scene
 {
 public:
@@ -38,15 +40,30 @@ public:
 	{
 		_controls = false;
 	}
+protected:
+	void setMakesSelections(bool makes = true)
+	{
+		_makesSelections = makes;
+	}
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
 	void interpretControlKey(SDL_Keycode pressed, bool dir);
 
 	void updateSpinMatrix();
+	void updateSelectionBox();
 	
 	glm::mat3x3 _spin;
 
 	bool _controls = true;
+	bool _makesSelections = false;
+	
+	bool _makingSelection = false;
+	float _top = 0;
+	float _left = 0;
+	float __right = 0;
+	float _bottom = 0;
+	
+	SelectionBox *_box = nullptr;
 };
 
 #endif

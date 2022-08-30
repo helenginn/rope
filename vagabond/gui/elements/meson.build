@@ -31,6 +31,7 @@ guielementfiles = [
 'Quad.cpp',
 'Renderable.cpp',
 'Scene.cpp',
+'SelectionBox.cpp',
 'Slider.cpp',
 'SnowGL.cpp',
 'Text.cpp',

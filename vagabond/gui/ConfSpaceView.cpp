@@ -63,6 +63,7 @@ void ConfSpaceView::askToFoldIn(int extra)
 
 void ConfSpaceView::setup()
 {
+	setMakesSelections();
 	IndexResponseView::setup();
 
 	size_t extra = _entity->checkForUnrefinedMolecules();
