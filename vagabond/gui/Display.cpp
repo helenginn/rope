@@ -145,6 +145,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_atoms = atoms;
 	_guiAtoms = new GuiAtom();
 	_guiAtoms->watchAtoms(_atoms);
+	_guiAtoms->checkAtoms();
 	_guiAtoms->startBackgroundWatch();
 
 	_guiDensity = new GuiDensity();
