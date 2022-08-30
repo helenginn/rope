@@ -33,14 +33,9 @@ BondSequence::BondSequence(BondSequenceHandler *handler)
 	_handler = handler;
 }
 
-void BondSequence::setMiniJobSeq(MiniJobSeq *job)
+void BondSequence::setJob(Job *job)
 {
-	_miniJob = job;
-}
-
-MiniJobSeq *BondSequence::miniJob()
-{
-	return _miniJob;
+	_job = job;
 }
 
 BondSequence::~BondSequence()
@@ -297,12 +292,12 @@ int BondSequence::calculateBlock(int idx)
 
 void BondSequence::checkCustomVectorSizeFits()
 {
-	if (!miniJob() || !miniJob()->job)
+	if (!job())
 	{
 		return;
 	}
 
-	Job &j = *miniJob()->job;
+	Job &j = *job();
 	if (j.custom.vector_count() == 0)
 	{
 		return;
@@ -319,12 +314,12 @@ void BondSequence::checkCustomVectorSizeFits()
 
 void BondSequence::acquireCustomVector(int sampleNum)
 {
-	if (!miniJob() || !miniJob()->job)
+	if (!job())
 	{
 		return;
 	}
 
-	Job &j = *miniJob()->job;
+	Job &j = *job();
 	if (j.custom.vector_count() == 0)
 	{
 		_custom = nullptr;
@@ -346,7 +341,7 @@ void BondSequence::fastCalculate()
 	_customIdx = 0;
 	_custom = nullptr;
 	
-	_custom = &(miniJob()->job->custom.vecs[0]);
+	_custom = &(_job->custom.vecs[0]);
 	if (_fullRecalc)
 	{
 		checkCustomVectorSizeFits();
@@ -418,9 +413,9 @@ void BondSequence::calculate()
 {
 	bool extract = true;
 	
-	if (miniJob())
+	if (job())
 	{
-		extract = (miniJob()->job->requests & JobExtractPositions);
+		extract = (job()->requests & JobExtractPositions);
 	}
 	
 	if (_torsionBasis != nullptr)
@@ -528,16 +523,12 @@ std::vector<BondSequence::ElePos> BondSequence::extractForMap()
 
 void BondSequence::cleanUpToIdle()
 {
-	delete _miniJob;
-	setMiniJobSeq(nullptr);
-
 	signal(SequenceIdle);
 }
 
-void BondSequence::setMiniJobSeqInfo(MiniJobSeq *mini)
+void BondSequence::beginJob(Job *job)
 {
-	setMiniJobSeq(mini);
-
+	setJob(job);
 	signal(SequenceCalculateReady);
 }
 

@@ -18,7 +18,6 @@
 
 #include "ThreadCalculatesBondSequence.h"
 #include "ThreadExtractsBondPositions.h"
-#include "ThreadMiniJobForSequence.h"
 #include "BondSequenceHandler.h"
 #include "MapTransferHandler.h"
 #include "PointStoreHandler.h"
@@ -78,7 +77,7 @@ void BondSequenceHandler::sanityCheckThreads()
 
 typedef ThreadCalculatesBondSequence CalcWorker;
 typedef ThreadExtractsBondPositions ExtrWorker;
-typedef ThreadMiniJobForSequence SJobWorker;
+//typedef ThreadMiniJobForSequence SJobWorker;
 void BondSequenceHandler::prepareThreads()
 {
 	for (size_t i = 0; i < _totalSequences; i++)
@@ -102,20 +101,6 @@ void BondSequenceHandler::prepareThreads()
 		pool.threads.push_back(thr);
 		pool.workers.push_back(worker);
 	}
-	
-	/* if number of threads match number of sequences, this thread group will
-	 * never block (it must acquire both minijob and matching sequence) */
-	for (size_t i = 0; i < _sequences.size(); i++)
-	{
-		/* minijob submission */
-		SJobWorker *worker = new SJobWorker(this);
-		std::thread *thr = new std::thread(&SJobWorker::start, worker);
-		Pool<BondSequence *> &pool = _pools[SequenceIdle];
-
-		pool.threads.push_back(thr);
-		pool.workers.push_back(worker);
-	}
-
 }
 
 void BondSequenceHandler::setup()

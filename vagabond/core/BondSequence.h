@@ -99,7 +99,7 @@ public:
 	}
 	
 	void cleanUpToIdle();
-	void setMiniJobSeqInfo(MiniJobSeq *mini);
+	void beginJob(Job *job);
 	void removeTorsionBasis();
 	
 	const size_t maxDepth() const
@@ -117,7 +117,10 @@ public:
 		return _torsionBasis;
 	}
 	
-	MiniJobSeq *miniJob();
+	Job *job()
+	{
+		return _job;
+	}
 
 	/* extend the atom graph for bond sequence generation
 	 * 	@param atom beginning anchor atom
@@ -203,7 +206,7 @@ private:
 	size_t _addedAtomsCount = 0;
 	SequenceState _state = SequenceInPreparation;
 	
-	void setMiniJobSeq(MiniJobSeq *job);
+	void setJob(Job *job);
 	void printBlock(int idx);
 	
 	glm::mat4x4 _torsion_rot = glm::mat4(1.f);
@@ -219,7 +222,7 @@ private:
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
 
-	MiniJobSeq *_miniJob = nullptr;
+	Job *_job = nullptr;
 	BondSequenceHandler *_handler = nullptr;
 	TorsionBasis *_torsionBasis = nullptr;
 	TorsionBasis::Type _basisType;
