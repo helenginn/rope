@@ -38,7 +38,6 @@ public:
 private:
 	std::vector<const Rule *> _rules;
 	Scene *_responder = nullptr;
-
 };
 
 #endif

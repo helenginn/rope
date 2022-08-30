@@ -25,6 +25,7 @@
 #define POINT_TYPE_COUNT 8
 
 class Rule;
+class HasMetadata;
 class FloatingText;
 class MetadataGroup;
 class ConfSpaceView;
@@ -38,10 +39,20 @@ public:
 	void setCluster(Cluster<MetadataGroup> *cx);
 	
 	void refresh();
+	
+	void clearRules()
+	{
+		_members.clear();
+	}
 
 	void setConfSpaceView(ConfSpaceView *csv)
 	{
 		_confSpaceView = csv;
+	}
+	
+	std::vector<HasMetadata *> &membersForRule(Rule *r)
+	{
+		return _members[r];
 	}
 	
 	Cluster<MetadataGroup> *cluster()
@@ -89,6 +100,7 @@ private:
 	FloatingText *_text = nullptr;
 	ConfSpaceView *_confSpaceView = nullptr;
 
+	std::map<const Rule *, std::vector<HasMetadata *>> _members;
 };
 
 #endif

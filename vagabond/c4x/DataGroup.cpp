@@ -31,6 +31,7 @@ template <class Unit, class Header>
 DataGroup<Unit, Header>::DataGroup(int length)
 {
 	_length = length;
+	_averages.push_back(Array{});
 }
 
 template <class Unit, class Header>
@@ -56,47 +57,90 @@ void DataGroup<Unit, Header>::addArray(std::string name, Array next)
 }
 
 template <class Unit, class Header>
-typename DataGroup<Unit, Header>::Array DataGroup<Unit, Header>::average()
+const typename DataGroup<Unit, Header>::Array &DataGroup<Unit, Header>::average(int i)
 {
-	if (_average.size() != _length)
+	if (_averages.size() != _groupCount + 1)
 	{
 		calculateAverage();
 	}
+
+	for (Array &ave : _averages)
+	{
+		if (ave.size() != _length)
+		{
+			calculateAverage();
+			break;
+		}
+	}
 	
-	return _average;
+	return _averages[i];
+}
+
+template <class Unit, class Header>
+int DataGroup<Unit, Header>::groupForIndex(int i)
+{
+	if (_groupMembership.size() <= i)
+	{
+		return 0;
+	}
+
+	return _groupMembership[i];
+}
+
+template <class Unit, class Header>
+typename DataGroup<Unit,Header>::Array &DataGroup<Unit, Header>::averageForIndex(int i)
+{
+	int idx = groupForIndex(i);
+	return _averages[idx];
+}
+
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::prepareAverages()
+{
+	_averages.clear();
+	_averages.resize(_groupCount + 1);
+	
+	for (Array &ave : _averages)
+	{
+		ave.resize(_length);
+	}
 }
 
 template <class Unit, class Header>
 void DataGroup<Unit, Header>::calculateAverage()
 {
-	_average.clear();
-	_average.resize(_length);
-	std::vector<double> counts;
-	counts.resize(_length);
+	prepareAverages();
+	std::vector<Array> counts = _averages;
 
-	for (size_t i = 0; i < _length; i++)
+	for (size_t j = 0; j < _vectors.size(); j++)
 	{
-		for (size_t j = 0; j < _vectors.size(); j++)
+		Array &ave = averageForIndex(j);
+		int grp = groupForIndex(j);
+		for (size_t i = 0; i < _length; i++)
 		{
 			Unit &v = _vectors[j][i];
+
 			if (v != v || !isfinite(v))
 			{
 				continue;
 			}
 
-			_average[i] += v;
-			counts[i]++;
+			ave[i] += v;
+			counts[grp][i]++;
 		}
 	}
 
-	for (size_t j = 0; j < _length; j++)
+	for (int i = 0; i <= _groupCount; i++)
 	{
-		_average[j] /= counts[j];
+		for (size_t j = 0; j < _length; j++)
+		{
+			_averages[i][j] /= counts[i][j];
+		}
 	}
 }
 
 template <class Unit, class Header>
-void DataGroup<Unit, Header>::convertToDifferences(Array &arr, Array *ave)
+void DataGroup<Unit, Header>::convertToDifferences(Array &arr, const Array *ave)
 {
 	for (size_t j = 0; j < _length; j++)
 	{
@@ -111,24 +155,16 @@ void DataGroup<Unit, Header>::convertToDifferences(Array &arr, Array *ave)
 }
 
 template <class Unit, class Header>
-void DataGroup<Unit, Header>::findDifferences(Array *ave)
+void DataGroup<Unit, Header>::findDifferences()
 {
-	if (ave == nullptr)
-	{
-		average();
-		ave = &_average;
-	}
-	
-	if (ave->size() != _length)
-	{
-		throw std::runtime_error("Average array length is incorrect");
-	}
-
 	_diffs.clear();
 	_diffs.resize(_vectors.size());
 
 	for (size_t i = 0; i < _vectors.size(); i++)
 	{
+		int grp = groupForIndex(i);
+		const Array *ave = &average(grp);
+
 		_diffs[i] = _vectors[i];
 		convertToDifferences(_diffs[i], ave);
 	}

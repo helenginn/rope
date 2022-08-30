@@ -48,6 +48,7 @@ void IconLegend::buttonPressed(std::string tag, Button *button)
 		m->setReturnObject(button->returnObject());
 		m->addOption("choose group", "choose_group");
 		m->addOption("choose inverse", "choose_inverse");
+		m->addOption("separate average", "separate_average");
 		m->setup(button);
 
 		_responder->setModal(m);

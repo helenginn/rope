@@ -103,7 +103,7 @@ void ClusterView::refresh()
 void ClusterView::prioritiseMetadata(std::string key)
 {
 	std::vector<float> vals = _cx->dataGroup()->numbersForKey(key);
-//	int idx = _cx->bestAxisFit(vals);
+	int idx = _cx->bestAxisFit(vals);
 
 	refresh();
 }
@@ -194,13 +194,11 @@ void ClusterView::applyChangeIcon(const Rule &r)
 			continue;
 		}
 		
-		if (data.count(header) && any_assigned)
+		if ((data.count(header) && any_assigned) || 
+		    (data.at(header).text() == value))
 		{
 			setPointType(i, pt);
-		}
-		else if (data.at(header).text() == value)
-		{
-			setPointType(i, pt);
+			_members[&r].push_back(group.object(i));
 		}
 	}
 	

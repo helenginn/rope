@@ -107,9 +107,6 @@ void ClusterSVD<DG>::cluster()
 	}
 	
 	this->_scaleFactor = 1 / _svd.w[0];
-
-	std::cout << "This matrix: " << std::endl;
-	PCA::printMatrix(&this->_result);
 	
 	_transpose = PCA::transpose(&this->_svd.u);
 

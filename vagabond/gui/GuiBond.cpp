@@ -116,7 +116,6 @@ void GuiBond::updateAtoms(Atom *a, Atom::WithPos &wp)
 	{
 		updateAtom(a, wp.samples[i], i);
 	}
-	
 }
 
 void GuiBond::watchBonds(AtomGroup *a)

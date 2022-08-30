@@ -79,41 +79,17 @@ void Axes::click(bool left)
 
 std::vector<float> Axes::getMappedVector(int idx)
 {
-	int axis = _cluster->axis(idx);
 	std::vector<float> vals(_cluster->rows(), 0);
 	for (size_t i = 0; i < 3; i++)
 	{
 		vals[i] = _dirs[idx][i];
 	}
 	return vals;
-
-	/*
-	Molecule *other = _targets[idx];
-	int which = _cluster->dataGroup()->indexOfObject(other);
-	int mine = _cluster->dataGroup()->indexOfObject(_molecule);
-
-	if (which < 0)
-	{
-		return vals;
-	}
-
-	glm::vec3 c_a = _cluster->point(which);
-	glm::vec3 c_b = _cluster->point(mine);
-	glm::vec3 diff = glm::normalize(c_a - c_b);
-	
-	for (size_t i = 0; i < 3; i++)
-	{
-		vals[i] = diff[i];
-	}
-	
-	return vals;
-	*/
 }
 
 
 std::vector<float> Axes::getTorsionVector(int idx)
 {
-	int axis = _cluster->axis(idx);
 	glm::vec3 dir = _dirs[idx];
 	
 	std::vector<float> sums;

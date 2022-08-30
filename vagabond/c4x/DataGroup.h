@@ -19,6 +19,7 @@
 #ifndef __vagabond__DataGroup__
 #define __vagabond__DataGroup__
 
+#include <map>
 #include <vector>
 #include <string>
 
@@ -50,14 +51,14 @@ public:
 	void calculateAverage();
 	
 	/** Gets stored average vector, calculating if not available */
-	Array average();
+	const Array &average(int i = 0);
 	
 	/** Find differences between individual vectors and average.
 	 * @param average vector to use as average, or internal average if
 	 * nullptr */
-	void findDifferences(Array *average = nullptr);
+	void findDifferences();
 	
-	void convertToDifferences(Array &arr, Array *ave);
+	void convertToDifferences(Array &arr, const Array *ave);
 
 	void applyNormals(Array &arr);
 	void removeNormals(Array &arr);
@@ -120,10 +121,19 @@ protected:
 	std::vector<std::string> _vectorNames;
 	std::vector<Header> _headers;
 
+	void prepareAverages();
+	Array &averageForIndex(int i);
+	int groupForIndex(int i);
+	
+	/** for separate average calculation */
+	int _groupCount = 0;
+	std::vector<int> _groupMembership;
+	std::map<const Array *, int> _arrayToGroup;
+
 	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit, Header>::*comparison)(int, int));
 
 	int _length;
-	Array _average;
+	std::vector<Array> _averages;
 	Array _stdevs;
 };
 

@@ -274,6 +274,16 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		chooseGroup(rule, (tag == "choose_inverse"));
 	}
 
+	if (tag == "separate_average")
+	{
+		Rule *rule = static_cast<Rule *>(button->returnObject());
+		std::vector<HasMetadata *> members = _view->membersForRule(rule);
+		MetadataGroup *mdg = _view->cluster()->dataGroup();
+		mdg->setSeparateAverage(members);
+		_view->cluster()->cluster();
+		refresh();
+	}
+
 	if (tag == "align_axes")
 	{
 		AskYesNo *askyn = new AskYesNo(this, "Prioritise PCA axes to best\n"
@@ -387,6 +397,11 @@ void ConfSpaceView::applyRule(const Rule &r)
 void ConfSpaceView::removeRules()
 {
 	_colourRule = nullptr;
+	
+	if (_view)
+	{
+		_view->clearRules();
+	}
 
 	for (size_t i = 0; i < _temps.size(); i++)
 	{

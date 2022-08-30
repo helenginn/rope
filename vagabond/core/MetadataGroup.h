@@ -36,6 +36,9 @@ public:
 	std::vector<float> numbersForKey(std::string key);
 	
 	void setWhiteList(std::vector<HasMetadata *> list);
+	void setSeparateAverage(std::vector<HasMetadata *> list);
+	
+	void clearAverages();
 	
 	const size_t objectCount() const
 	{

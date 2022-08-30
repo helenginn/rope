@@ -78,7 +78,7 @@ void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
 	_vectors = vectors;
 
 	_diffs.clear();
-	_average.clear();
+	_averages.clear();
 }
 
 const int MetadataGroup::indexOfObject(HasMetadata *obj) const
@@ -92,4 +92,42 @@ const int MetadataGroup::indexOfObject(HasMetadata *obj) const
 	}
 	
 	return -1;
+}
+
+void MetadataGroup::setSeparateAverage(std::vector<HasMetadata *> list)
+{
+	if (_groupMembership.size() != _vectors.size())
+	{
+		_groupMembership.resize(_vectors.size());
+	}
+	
+	if (list.size() == 0)
+	{
+		return;
+	}
+
+	_groupCount++;
+	int i = 0;
+	for (HasMetadata *object : _objects)
+	{
+		std::vector<HasMetadata *>::iterator it;
+		it = std::find(list.begin(), list.end(), object);
+		
+		if (it != list.end())
+		{
+			_groupMembership[i] = _groupCount;
+			_arrayToGroup[&_vectors[i]] = _groupCount;
+		}
+
+		i++;
+	}
+	
+	_diffs.clear();
+	_averages.clear();
+}
+
+void MetadataGroup::clearAverages()
+{
+	_groupCount = 0;
+	_groupMembership.clear();
 }

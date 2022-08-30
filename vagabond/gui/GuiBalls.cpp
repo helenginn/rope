@@ -42,8 +42,7 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 	_template->setAlpha(1.);
 	
 	_bonds = new GuiBond();
-	addObject(_bonds);
-//	setDisabled(true);
+//	_bonds->setDisabled(true);
 }
 
 GuiBalls::~GuiBalls()
