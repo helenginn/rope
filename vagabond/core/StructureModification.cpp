@@ -37,29 +37,25 @@ StructureModification::~StructureModification()
 	}
 }
 
-void StructureModification::makeCalculator(Atom *anchor)
+void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 {
 	_calculators.push_back(new BondCalculator());
 	BondCalculator &calc = *_calculators.back();
 
 	calc.setPipelineType(BondCalculator::PipelineAtomPositions);
-	calc.setMaxSimultaneousThreads(1);
+	calc.setMaxSimultaneousThreads(_threads);
 	calc.setSampler(&_sampler);
 
 	calc.setTorsionBasisType(TorsionBasis::TypeCustom);
-
 	calc.addAnchorExtension(anchor);
-
 	calc.setIgnoreHydrogens(false);
-	calc.setup();
 
+	customModifications(&calc, has_mol);
+
+	calc.setup();
 	calc.start();
 
 	_num = _sampler.pointCount();
-
-	TorsionBasis *basis = calc.sequenceHandler()->torsionBasis();
-	ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
-	
 }
 
 void StructureModification::addToHetatmCalculator(Atom *anchor)
@@ -90,6 +86,21 @@ void StructureModification::finishHetatmCalculator()
 	_hetatmCalc->start();
 }
 
+bool StructureModification::checkForMolecule(AtomGroup *grp)
+{
+	for (size_t i = 0; i < grp->size(); i++)
+	{
+		std::string ch = (*grp)[i]->chain();
+		
+		if (_molecule->has_chain_id(ch))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void StructureModification::startCalculator()
 {
 	for (size_t i = 0; i < _fullAtoms->connectedGroups().size(); i++)
@@ -101,9 +112,11 @@ void StructureModification::startCalculator()
 			continue;
 		}
 		
+		bool has_mol = checkForMolecule(_fullAtoms->connectedGroups()[i]);
+		
 		if (!anchor->hetatm())
 		{
-			makeCalculator(anchor);
+			makeCalculator(anchor, has_mol);
 		}
 		else
 		{
@@ -168,7 +181,7 @@ void StructureModification::changeMolecule(Molecule *m)
 	if (m != nullptr)
 	{
 		m->model()->load();
-		_fullAtoms = m->model()->currentAtoms();
+		_fullAtoms = m->currentAtoms();
 	}
 	
 	bool hasCalc = _calculators.size() > 0;

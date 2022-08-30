@@ -21,17 +21,28 @@
 #include "Plane.h"
 #include <vagabond/utils/FileReader.h>
 #include "MetadataGroup.h"
-#include "ForceField.h"
+#include "ForceFieldHandler.h"
 #include "Molecule.h"
+#include <thread>
 
 Plane::Plane(Molecule *mol, Cluster<MetadataGroup> *cluster)
 : StructureModification(mol, 1, 2)
 {
+	_threads = 4;
 	_cluster = cluster;
 	_molecule->model()->load();
+	_pType = BondCalculator::PipelineForceField;
 	AtomContent *grp = _molecule->model()->currentAtoms();
 	_fullAtoms = grp;
 	startCalculator();
+
+//	_scale /= _cluster->scaleFactor();
+}
+
+Plane::~Plane()
+{
+	_molecule->model()->unload();
+	cancelRun();
 }
 
 void Plane::addAxis(std::vector<ResidueTorsion> &list, std::vector<float> &values,
@@ -57,6 +68,8 @@ void Plane::refresh()
 	_scoreMap.clear();
 	_points.clear();
 	_toIndex.clear();
+	
+	double sc = _cluster->scaleFactor();
 
 	for (int j = -_counts[0]; j < _counts[1]; j++)
 	{
@@ -70,30 +83,30 @@ void Plane::refresh()
 				_refIdx = _points.size();
 			}
 
-			submitJob(x, y);
+			submitJob(x * sc, y * sc);
 			_points.push_back(glm::vec3(x, y, 0));
 			_scores.push_back(0);
 		}
 	}
 	
-	collectResults();
-	reportScores();
-}
-
-void Plane::reportScores()
-{
-
+	cancelRun();
+	cleanupRun();
+	_worker = new std::thread(&Plane::backgroundCollection, this);
 }
 
 void Plane::submitJob(float x, float y)
 {
 	for (BondCalculator *calc : _calculators)
 	{
+		if (!(calc->pipelineType() & BondCalculator::PipelineForceField))
+		{
+			continue;
+		}
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = x;
 		job.custom.vecs[0].mean[1] = y;
-		job.requests = static_cast<JobType>(JobScoreStructure);
+		job.requests = static_cast<JobType>(JobScoreStructure | JobExtractPositions);
 		int job_num = calc->submitJob(job);
 		_scoreMap[job_num] = _scores.size();
 	}
@@ -101,6 +114,7 @@ void Plane::submitJob(float x, float y)
 
 void Plane::collectResults()
 {
+	int count = 0;
 	bool more = true;
 	while (more)
 	{
@@ -116,15 +130,30 @@ void Plane::collectResults()
 
 			more = true;
 
+			int num = r->ticket;
 			if (r->requests & JobScoreStructure)
 			{
-				int num = r->ticket;
 				
 				if (_scoreMap.count(num))
 				{
 					int idx = _scoreMap[num];
 					_scores[idx] += r->score;
 				}
+			}
+
+//			if (r->requests & JobExtractPositions)
+			{
+//				r->transplantLastPosition();
+//				_molecule->model()->write("set/point_" + std::to_string(num) + ".pdb");
+
+			}
+			
+			r->destroy();
+			
+			count++;
+			if (count % 10 == 0)
+			{
+				triggerResponse();
 			}
 		}
 	}
@@ -163,8 +192,6 @@ glm::vec3 Plane::generateVertex(int i, int j)
 		mol[i] += add;
 	}
 
-//	_cluster->mapVector(mol);
-
 	glm::vec3 pos = _cluster->point(idx);
 	glm::vec3 horz = glm::vec3(_axes[0][0], _axes[0][1], _axes[0][2]);
 	glm::vec3 vert = glm::vec3(_axes[1][0], _axes[1][1], _axes[1][2]);
@@ -177,21 +204,33 @@ glm::vec3 Plane::generateVertex(int i, int j)
 	return pos;
 }
 
-void Plane::setupForceField()
+void Plane::customModifications(BondCalculator *calc, bool has_mol)
 {
-	if (_forceField != nullptr)
+	if (!has_mol)
 	{
-		delete _forceField;
-		_forceField = nullptr;
+		return;
 	}
 
-	_molecule->model()->load();
-	_forceField = new ForceField(_molecule->currentAtoms());
-	_forceField->setTemplate(ForceField::CAlphaSeparation);
-	_forceField->setup();
-	
-	for (BondCalculator *calc : _calculators)
+	calc->setPipelineType(_pType);
+	FFProperties props;
+	props.group = _molecule->currentAtoms();
+	props.t = FFProperties::CAlphaSeparation;
+	calc->setForceFieldProperties(props);
+
+}
+
+void Plane::cancelRun()
+{
+	_finish = true;
+}
+
+void Plane::cleanupRun()
+{
+	if (_worker != nullptr)
 	{
-		calc->setForceField(_forceField);
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
 	}
+
 }

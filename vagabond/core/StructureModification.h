@@ -42,21 +42,24 @@ public:
 
 	virtual ~StructureModification();
 
-	void makeCalculator(Atom *anchor);
+	void makeCalculator(Atom *anchor, bool has_mol);
 	void startCalculator();
 	
 	void changeMolecule(Molecule *m);
 protected:
+	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
+
 	void fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
 	               const std::vector<float> &values, int axis = 0);
 	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
+	bool checkForMolecule(AtomGroup *grp);
 	Molecule *_molecule = nullptr;
 
 	BondCalculator *_hetatmCalc = nullptr;
 	std::vector<BondCalculator *> _calculators;
-	AtomContent *_fullAtoms = nullptr;
+	AtomGroup *_fullAtoms = nullptr;
 	Sampler _sampler;
 	
 	struct ResidueTorsionList
@@ -69,11 +72,14 @@ protected:
 
 	int _num = 1;
 	int _dims = 1;
+	int _threads = 1;
 	int _axis = 0;
 
 	int _sideMissing = 0;
 	int _mainMissing = 0;
 	Residue *_unusedId{};
+	
+	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
 };
 
 #endif
