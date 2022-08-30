@@ -33,6 +33,7 @@ AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
                            const std::vector<float> &values) 
 : Scene(prev), Display(prev), StructureModification(mol, 1, 1)
 {
+	_pType = BondCalculator::PipelineForceField;
 	_dims = 1;
 	_list = list;
 	_values = values;
@@ -48,7 +49,7 @@ void AxisExplorer::setup()
 {
 	_molecule->model()->load();
 
-	AtomContent *grp = _molecule->model()->currentAtoms();
+	AtomGroup *grp = _molecule->currentAtoms();
 	AlignmentTool tool(grp);
 	tool.run();
 	grp->recalculate();
@@ -64,10 +65,7 @@ void AxisExplorer::setup()
 	supplyTorsions(_list, _values);
 	setupSlider();
 	
-//	submitJob(2.0);
-//	_molecule->model()->write("modified.pdb");
 	submitJob(0.0);
-//	_molecule->model()->write("unmodified.pdb");
 	
 	_guiAtoms->setDisableRibbon(false);
 	
@@ -81,7 +79,8 @@ void AxisExplorer::submitJob(float prop)
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = prop;
-		job.requests = static_cast<JobType>(JobExtractPositions);
+		job.requests = static_cast<JobType>(JobExtractPositions | 
+		                                    JobScoreStructure);
 		calc->submitJob(job);
 	}
 
@@ -97,6 +96,7 @@ void AxisExplorer::submitJob(float prop)
 		if (r->requests & JobExtractPositions)
 		{
 			r->transplantLastPosition();
+			std::cout << "Score: " << r->score << std::endl;
 		}
 	}
 	
@@ -121,7 +121,7 @@ void AxisExplorer::submitJob(float prop)
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	submitJob(x * 8);
+	submitJob(x);
 }
 
 void AxisExplorer::setupSlider()
@@ -185,3 +185,13 @@ void AxisExplorer::reportMissing()
 	setModal(bc);
 }
 
+
+void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
+{
+	calc->setPipelineType(_pType);
+	FFProperties props;
+	props.group = _molecule->currentAtoms();
+	props.t = FFProperties::CAlphaSeparation;
+	calc->setForceFieldProperties(props);
+
+}

@@ -46,13 +46,15 @@ public:
 	void submitJob(float prop);
 
 	virtual void finishedDragging(std::string tag, double x, double y);
+protected:
+	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 private:
 	Slider *_rangeSlider = nullptr;
 
 	void reportMissing();
 	
-	double _min = -1; 
-	double _max = 1; 
+	double _min = -5; 
+	double _max = 5; 
 	double _step = 0.001;
 
 	std::vector<ResidueTorsion> _list;
