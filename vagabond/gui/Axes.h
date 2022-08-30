@@ -52,7 +52,7 @@ public:
 		return _pv;
 	}
 	
-	void takePlaneView(PlaneView *pv);
+	void takeOldAxes(Axes *old);
 
 	void buttonPressed(std::string tag, Button *button);
 private:

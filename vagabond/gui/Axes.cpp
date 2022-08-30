@@ -212,15 +212,27 @@ void Axes::buttonPressed(std::string tag, Button *button)
 	}
 }
 
-void Axes::takePlaneView(PlaneView *pv)
+void Axes::takeOldAxes(Axes *old)
 {
-	for (size_t i = 0; i < 3; i++)
+	PlaneView *pv = old->planeView();
+
+	for (size_t i = 0; i < 3 && pv != nullptr; i++)
 	{
 		_planes[i] = pv->planes()[i];
 	}
 	
-	preparePlane();
-	delete pv;
+	for (size_t i = 0; i < 3; i++)
+	{
+		_dirs[i] = old->_dirs[i];
+		_targets[i] = old->_targets[i];
+	}
+	
+	refreshAxes();
+	
+	if (pv != nullptr)
+	{
+		preparePlane();
+	}
 }
 
 void Axes::preparePlane()
@@ -247,7 +259,6 @@ void Axes::preparePlane()
 		plane->addAxis(list, vals, mapped);
 	}
 	
-	plane->setupForceField();
 	plane->setResponder(_pv);
 	plane->refresh();
 	_pv->setPlanes(_planes);
@@ -378,6 +389,7 @@ void Axes::refreshAxes()
 	for (size_t i = 0; i < 3; i++)
 	{
 		glm::vec3 dir = _dirs[i];
+//		dir *= _cluster->scaleFactor();
 		
 		/*
 		if (_targets[i] != nullptr)
