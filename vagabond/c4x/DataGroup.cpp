@@ -317,7 +317,7 @@ float DataGroup<Unit, Header>::correlation_between(int i, int j)
 {
 	if (i == j)
 	{
-		return 0;
+		return 1.0;
 	}
 	
 	Array &v = _diffs[i];
