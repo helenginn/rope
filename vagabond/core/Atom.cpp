@@ -398,3 +398,4 @@ const std::string Atom::desc() const
 	str +=  code() + i_to_str(residueNumber()) + ":" + atomName();
 	return str;
 }
+
