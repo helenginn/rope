@@ -118,7 +118,7 @@ void Grapher::generateGraphs(Atom *atom, size_t count)
 
 		Atom *atom = current->atom;
 
-		for (size_t i = 0; i < atom->bondLengthCount(); i++)
+		for (size_t i = 0; i < atom->bondLengthCount() && i < 4; i++)
 		{
 			Atom *next = atom->connectedAtom(i);
 			if (next == current->parent)
@@ -358,7 +358,7 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 {
 	block.atom = atom;
-	block.nBonds = atom->bondLengthCount();
+	block.nBonds = std::min(atom->bondLengthCount(), 4ul);
 	block.wip = glm::mat4(0.);
 	block.target = atom->initialPosition();
 	block.torsion_idx = _atom2Graph[atom]->torsion_idx;
