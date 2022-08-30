@@ -31,6 +31,8 @@ class Plane : public StructureModification, public HasResponder<Responder<Plane>
 {
 public:
 	Plane(Molecule *mol, Cluster<MetadataGroup> *cluster);
+	
+	virtual ~Plane();
 
 	void addAxis(std::vector<ResidueTorsion> &list, std::vector<float> &values,
 	             std::vector<float> &mapped);
@@ -40,8 +42,12 @@ public:
 		return _scores[idx];
 	}
 	
-	const float &reference()
+	const float reference()
 	{
+		if (_refIdx < 0)
+		{
+			return 0;
+		}
 		return _scores[_refIdx];
 	}
 	
@@ -90,13 +96,18 @@ public:
 	}
 	
 	void refresh();
-	void setupForceField();
-	void reportScores();
 
 	glm::vec3 generateVertex(int i, int j);
+protected:
+	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 private:
 	void submitJob(float x, float y);
 	void collectResults();
+	
+	static void backgroundCollection(Plane *me)
+	{
+		me->collectResults();
+	}
 
 	std::vector<glm::vec3> _points;
 	std::map<int, std::map<int, int> > _toIndex;
@@ -107,14 +118,19 @@ private:
 	std::vector<float> _torsions[2];
 	std::vector<float> _axes[2];
 	int _counts[2] = {20, 20};
-	float _scale = 0.5;
+	float _scale = 0.2;
 	
 	float _mean;
 	float _stdev;
-	int _refIdx;
+	int _refIdx = -1;
 
 	ForceField *_forceField = nullptr;
 	Cluster<MetadataGroup> *_cluster = nullptr;
+
+	void cleanupRun();
+	void cancelRun();
+	std::thread *_worker = nullptr;
+	std::atomic<bool> _finish{false};
 };
 
 #endif
