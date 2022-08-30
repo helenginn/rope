@@ -72,13 +72,6 @@ public:
 	
 	bool coversMainChain();
 
-	/** set by BondSequence if this angle directly leads to calculation of
-	 * downstream structure */
-	void setInstrumental(bool instrumental)
-	{
-		_instrumental = instrumental;
-	}
-	
 	bool spansMultipleChains() const;
 	
 	const ResidueId residueId();
