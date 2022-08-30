@@ -432,23 +432,21 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 
 void ConfSpaceView::createReference(Molecule *m)
 {
-	PlaneView *old = nullptr;
+	Axes *old = _axes;
 	if (_axes != nullptr)
 	{
-		old = _axes->planeView();
 		removeObject(_axes);
 		removeResponder(_axes);
-		delete _axes;
-		_axes = nullptr;
 	}
-
+		
 	_axes = new Axes(_view->cluster(), m);
 	_axes->setScene(this);
 	_axes->setIndexResponseView(this);
 	
 	if (old)
 	{
-		_axes->takePlaneView(old);
+		_axes->takeOldAxes(old);
+		delete old;
 	}
 
 	addObject(_axes);
