@@ -83,8 +83,8 @@ void BondSequence::addToGraph(Atom *atom, size_t count)
 		makeTorsionBasis();
 	}
 
-	_grapher.fillTorsionAngles(_torsionBasis);
 	_grapher.markHydrogenGraphs();
+	_grapher.fillTorsionAngles(_torsionBasis);
 	_grapher.sortGraphChildren();
 	generateBlocks();
 
