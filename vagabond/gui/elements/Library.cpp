@@ -134,7 +134,7 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 		text = " ";
 	}
 
-	png_byte *bytes;
+	png_byte *bytes = nullptr;
 	TextManager::text_malloc(&bytes, text, w, h, type);
 	GLuint texid = 0;
 	glGenTextures(1, &texid);
