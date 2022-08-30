@@ -27,6 +27,7 @@ typedef std::map<Atom *, glm::vec3> AtomPosMap;
 
 GuiBond::GuiBond() : Renderable()
 {
+	setName("GuiBond");
 	_renderType = GL_LINES;
 	_copy = new Renderable();
 
@@ -81,8 +82,10 @@ void GuiBond::truncateNetworks(int n)
 	size_t isize = n * nidx;
 	size_t vsize = n * nvtx;
 	
+	lockMutex();
 	_vertices.resize(vsize);
 	_indices.resize(isize);
+	unlockMutex();
 	
 	_num = n;
 }
@@ -123,7 +126,7 @@ void GuiBond::watchBonds(AtomGroup *a)
 	{
 		Atom *atom = (*a)[i];
 		_atomIdx[atom] = v;
-		_copy->addVertex(glm::vec3(NAN));
+		_copy->addVertex(atom->initialPosition());
 		v++;
 	}
 

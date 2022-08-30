@@ -18,6 +18,7 @@
 
 #include "GuiRibbon.h"
 #include "GuiAtom.h"
+#include <vagabond/utils/maths.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
 
@@ -435,6 +436,26 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 		std::vector<Snow::Vertex> bez = makeBezier(i);
 
 		convertToCylinder(&bez);
+		
+		float colour = a->addedColour();
+		if (colour > 1)
+		{
+//			colour = log(colour) + 1;
+		}
+//		std::cout << colour << std::endl;
+
+		glm::vec4 c = glm::vec4(0.f, 0.f, 0.f, 1.f);
+		val_to_cluster4x_colour(colour, &c[0], &c[1], &c[2]);
+		
+		for (size_t j = 0; j < 3; j++)
+		{
+			c[j] /= 255.;
+		}
+		
+		for (Snow::Vertex &v : bez)
+		{
+			v.color = c;
+		}
 
 		int start = i * verticesPerAtom();
 		lockMutex();

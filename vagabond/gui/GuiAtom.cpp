@@ -168,7 +168,7 @@ void GuiAtom::checkAtoms()
 	{
 		for (GuiRepresentation *&r : _representations)
 		{
-			r->forceRender();
+			r->forceRender(true, false);
 		}
 	}
 }

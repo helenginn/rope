@@ -147,10 +147,13 @@ void GuiBalls::watchAtom(Atom *a)
 void GuiBalls::watchBonds(AtomGroup *ag)
 {
 	_bonds->watchBonds(ag);
+	addObject(_bonds);
 }
 
 void GuiBalls::prepareAtomSpace(AtomGroup *ag)
 {
+	lockMutex();
 	_vertices.reserve(verticesPerAtom() * ag->size());
 	_indices.reserve(indicesPerAtom() * ag->size());
+	unlockMutex();
 }
