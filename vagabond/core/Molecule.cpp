@@ -78,9 +78,10 @@ void Molecule::harvestMutations(SequenceComparison *sc)
 	Environment::metadata()->addKeyValues(kv, true);
 }
 
-void Molecule::updateRmsdMetadata(AtomContent *atoms)
+void Molecule::updateRmsdMetadata()
 {
-	float val = rmsd(atoms);
+	AtomGroup *atoms = currentAtoms();
+	float val = atoms->rmsd();
 
 	Metadata::KeyValues kv;
 	kv["molecule"] = id();
@@ -188,31 +189,6 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 		
 		a->setAbsoluteTransformation(transform);
 	}
-}
-
-float Molecule::rmsd(AtomContent *atoms)
-{
-	float rmsds = 0;
-	float weights = 0;
-
-	for (size_t i = 0; i < atoms->chainCount(); i++)
-	{
-		Chain *ch = atoms->chain(i);
-		if (has_chain_id(ch->id()))
-		{
-			float weight = ch->size();
-			rmsds += ch->rmsd() * weight;
-			weights += weight;
-		}
-	}
-	
-	if (rmsds <= 0)
-	{
-		return 0;
-	}
-	
-	rmsds /= weights;
-	return rmsds;
 }
 
 void Molecule::extractTransformedAnchors(AtomContent *atoms)
@@ -489,6 +465,11 @@ float Molecule::valueForTorsionFromList(BondTorsion *bt,
 
 AtomGroup *Molecule::currentAtoms()
 {
+	if (_currentAtoms != nullptr)
+	{
+		return _currentAtoms;
+	}
+
 	if (!_model->loaded())
 	{
 		_model->load();
@@ -507,5 +488,14 @@ AtomGroup *Molecule::currentAtoms()
 		}
 	}
 	
+	_currentAtoms = tmp;
+	
 	return tmp;
+}
+
+void Molecule::unload()
+{
+	delete _currentAtoms;
+	_currentAtoms = nullptr;
+
 }

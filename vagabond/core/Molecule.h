@@ -117,9 +117,9 @@ public:
 	}
 	
 	AtomGroup *currentAtoms();
+	void unload();
 	
-	float rmsd(AtomContent *atoms);
-	void updateRmsdMetadata(AtomContent *atoms);
+	void updateRmsdMetadata();
 
 	float valueForTorsionFromList(BondTorsion *bt,
 	                              const std::vector<ResidueTorsion> &list,
@@ -139,6 +139,7 @@ private:
 
 	std::map<std::string, glm::mat4x4> _transforms;
 	Sequence _sequence;
+	AtomGroup *_currentAtoms = nullptr;
 	Model *_model = nullptr;
 	Entity *_entity = nullptr;
 	bool _refined = false;

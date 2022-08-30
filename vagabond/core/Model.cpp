@@ -140,6 +140,11 @@ void Model::unload()
 		delete _currentFile;
 		_currentAtoms = nullptr;
 	}
+	
+	for (Molecule &m : _molecules)
+	{
+		m.unload();
+	}
 }
 
 void Model::createMolecules()
@@ -441,7 +446,7 @@ void Model::extractTorsions()
 	{
 		mc.extractTorsionAngles(_currentAtoms);
 		mc.extractTransformedAnchors(_currentAtoms);
-		mc.updateRmsdMetadata(_currentAtoms);
+		mc.updateRmsdMetadata();
 	}
 }
 
