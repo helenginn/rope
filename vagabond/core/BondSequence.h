@@ -49,6 +49,11 @@ public:
 		return _grapher.atoms().size();
 	}
 	
+	const std::vector<Atom *> &addedAtoms() const
+	{
+		return _grapher.atoms();
+	}
+	
 	std::map<std::string, int> elementList() const;
 	
 	Atom *atomForBlock(int i)
