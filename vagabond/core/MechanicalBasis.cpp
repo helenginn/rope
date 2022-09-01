@@ -18,6 +18,8 @@
 
 #define MAX_ANY_ANGLE (2.)
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "MechanicalBasis.h"
 #include "BondTorsion.h"
 #include "ForceField.h"

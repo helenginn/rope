@@ -10,10 +10,10 @@
 #define __vagabond__maths__
 
 #define _USE_MATH_DEFINES
+#include <math.h>
 #include <stdio.h>
 #include <vector>
 #include <cmath>
-#include <math.h>
 #include <cstring>
 #include <stdlib.h>
 #include <float.h>

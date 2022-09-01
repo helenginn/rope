@@ -1,4 +1,5 @@
 #include <iostream>
+#include "../utils/glm_import.h"
 #include <gemmi/numb.hpp>
 #include <gemmi/cif.hpp>
 #include <ccp4/csymlib.h>
@@ -10,7 +11,6 @@
 #include "GeometryTable.h"
 #include "Atom.h"
 #include "AtomGroup.h"
-#include "../utils/glm_import.h"
 
 using namespace gemmi::cif;
 

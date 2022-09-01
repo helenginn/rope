@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "Plane.h"
 #include <vagabond/utils/FileReader.h>
 #include "MetadataGroup.h"

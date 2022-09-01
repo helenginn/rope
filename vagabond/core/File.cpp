@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <gemmi/numb.hpp>
 #include "../utils/FileReader.h"
 #include "CifFile.h"
