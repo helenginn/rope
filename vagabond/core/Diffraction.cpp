@@ -31,7 +31,7 @@ TransformedGrid<VoxelDiffraction>(0, 0, 0)
 {
 	_list = &list;
 
-	HKL hkl = list.maxSymHKL();
+	Reflection::HKL hkl = list.maxSymHKL();
 	
 	for (size_t i = 0; i < 3; i++)
 	{
