@@ -23,6 +23,8 @@
 #include "DegreeDataGroup.h"
 #include <iostream>
 
+using std::isfinite;
+
 template <class Header>
 void DegreeDataGroup<Header>::matchDegrees(Array &next)
 {
