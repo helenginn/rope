@@ -21,33 +21,34 @@
 
 #include <stdexcept>
 
-struct HKL
-{
-	int h = 0;
-	int k = 0; 
-	int l = 0;
-	
-	int &operator[](int idx) 
-	{
-		if (idx == 0) return h;
-		if (idx == 1) return k;
-		if (idx == 2) return l;
-		throw std::runtime_error("dimension over 3 accessing HKL");
-	}
-	
-	HKL()
-	{
-
-	}
-	
-	HKL(int hh, int kk, int ll)
-	{
-		h = hh; k = kk; l = ll;
-	}
-};
-
 struct Reflection
 {
+
+    struct HKL
+    {
+        int h = 0;
+        int k = 0;
+        int l = 0;
+
+        int &operator[](int idx)
+        {
+            if (idx == 0) return h;
+            if (idx == 1) return k;
+            if (idx == 2) return l;
+            throw std::runtime_error("dimension over 3 accessing HKL");
+        }
+
+        HKL()
+        {
+
+        }
+
+        HKL(int hh, int kk, int ll)
+        {
+            h = hh; k = kk; l = ll;
+        }
+    };
+
 	HKL hkl{};
 	bool free = false;
 	int flag = 0;
