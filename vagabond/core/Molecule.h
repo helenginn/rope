@@ -158,11 +158,13 @@ inline void from_json(const json &j, Molecule &value)
 {
 	if (j.count("chain_id") > 0)
 	{
-		value._chain_ids.insert(j.at("chain_id"));
+        std::string chain_id = j.at("chain_id");
+        value._chain_ids.insert(chain_id);
 	}
 	else if (j.count("chain_ids") > 0)
 	{
-		value._chain_ids = j.at("chain_ids");
+        std::set<std::string> chain_ids = j.at("chain_ids");
+		value._chain_ids = chain_ids;
 	}
 	value._entity_id = j.at("entity_id");
 	value._model_id = j.at("model_id");
