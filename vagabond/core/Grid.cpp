@@ -20,6 +20,8 @@
 #define __vagabond__Grid__cpp__
 
 #include "Grid.h"
+#include <stdexcept>
+#include <cstring>
 
 inline void make_even(int &nx, int &ny, int &nz)
 {
