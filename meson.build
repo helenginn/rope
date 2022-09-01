@@ -15,7 +15,8 @@ endif
 
 fftw = dependency('fftw3f', static: fftw_static)
 json = dependency('nlohmann_json')
-deps = [glm, fftw, json]
+gemmi = dependency('gemmi')
+deps = [glm, fftw, json, gemmi]
 name = 'index.html'
 
 if (links == [])
