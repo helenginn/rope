@@ -19,6 +19,7 @@
 #ifndef __vagabond__SimplexEngine__
 #define __vagabond__SimplexEngine__
 
+#include <atomic>
 #include <vector>
 #include <map>
 
