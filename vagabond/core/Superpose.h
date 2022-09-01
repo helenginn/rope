@@ -22,6 +22,7 @@
 #include <vector>
 #include "../utils/glm_import.h"
 #include "../utils/svd/PCA.h"
+#include <stdexcept>
 
 class Superpose
 {
