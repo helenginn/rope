@@ -22,6 +22,9 @@
 class AtomGroup;
 class Atom;
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <stdexcept>
 #include "Bondstraint.h"
 
 class BondAngle : public Bondstraint
