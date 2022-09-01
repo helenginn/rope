@@ -1,5 +1,6 @@
 #include "../utils/glm_import.h"
 
+using std::isfinite;
 glm::mat3x3 mat3x3_rhbasis(glm::vec3 a, glm::vec3 b);
 
 template <class T>
