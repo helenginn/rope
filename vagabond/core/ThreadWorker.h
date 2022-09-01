@@ -22,6 +22,7 @@
 #include <atomic>
 #include <iostream>
 #include <chrono>
+#include <vagabond/utils/os.h>
 
 class ThreadWorker
 {
@@ -59,6 +60,9 @@ public:
 protected:
 	void time(int &timePool)
 	{
+#ifdef OS_WINDOWS
+        return;
+#else
 		std::chrono::system_clock::time_point n;
 		n = std::chrono::system_clock::now();
 		
@@ -74,7 +78,7 @@ protected:
 			_tStart = n;
 			_measured = true;
 		}
-		
+#endif
 	}
 	
 	void timeStart()
