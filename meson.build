@@ -14,7 +14,8 @@ if (links == [])
 endif
 
 fftw = dependency('fftw3f', static: fftw_static)
-deps = [glm, fftw]
+json = dependency('nlohmann_json')
+deps = [glm, fftw, json]
 name = 'index.html'
 
 if (links == [])
