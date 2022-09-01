@@ -72,9 +72,9 @@ void RefList::extractSymops()
 	}
 }
 
-HKL RefList::symHKL(HKL orig, int symop)
+Reflection::HKL RefList::symHKL(Reflection::HKL orig, int symop)
 {
-	HKL hkl{};
+    Reflection::HKL hkl{};
 
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -88,17 +88,17 @@ HKL RefList::symHKL(HKL orig, int symop)
 	return hkl;
 }
 
-HKL RefList::symHKL(int refl, int symop)
+Reflection::HKL RefList::symHKL(int refl, int symop)
 {
-	HKL &orig = _refls[refl].hkl;
-	HKL hkl = symHKL(orig, symop);
+    Reflection::HKL &orig = _refls[refl].hkl;
+    Reflection::HKL hkl = symHKL(orig, symop);
 
 	return hkl;
 }
 
-HKL RefList::maxHKL()
+Reflection::HKL RefList::maxHKL()
 {
-	HKL hkl{};
+    Reflection::HKL hkl{};
 	
 	for (size_t i = 0; i < _refls.size(); i++)
 	{
@@ -115,15 +115,15 @@ HKL RefList::maxHKL()
 	return hkl;
 }
 
-HKL RefList::maxSymHKL()
+Reflection::HKL RefList::maxSymHKL()
 {
-	HKL true_max = HKL{};
+    Reflection::HKL true_max = Reflection::HKL{};
 	
 	for (size_t j = 0; j < reflectionCount(); j++)
 	{
 		for (size_t i = 0; i < symOpCount(); i++)
 		{
-			HKL next = symHKL(j, i);
+            Reflection::HKL next = symHKL(j, i);
 
 			for (size_t k = 0; k < 3; k++)
 			{
@@ -181,7 +181,7 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 {
 	for (size_t i = 0; i < symOpCount(); i++)
 	{
-		HKL next = symHKL(refl, i);
+        Reflection::HKL next = symHKL(refl, i);
 		int &h = next.h;
 		int &k = next.k;
 		int &l = next.l;
