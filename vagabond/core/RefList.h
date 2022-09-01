@@ -25,6 +25,8 @@
 #include <array>
 #include <ccp4/csymlib.h>
 
+using HKL = Reflection::HKL;
+
 class Diffraction;
 
 /** \class RefList
