@@ -180,6 +180,8 @@ void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 		removeObject(_box);
 		delete _box;
 		_box = nullptr;
+		
+		sendSelection(_top, _left, _bottom, __right);
 	}
 
 	if (_modal != nullptr)
@@ -229,4 +231,9 @@ void Mouse3D::updateSelectionBox()
 	convertToGLCoords(&x, &y);
 
 	_box->setBottomRight(y, x);
+}
+
+void Mouse3D::sendSelection(float top, float left, float bottom, float right)
+{
+
 }

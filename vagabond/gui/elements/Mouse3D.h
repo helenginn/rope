@@ -41,6 +41,8 @@ public:
 		_controls = false;
 	}
 protected:
+	virtual void sendSelection(float t, float l, float b, float r);
+
 	void setMakesSelections(bool makes = true)
 	{
 		_makesSelections = makes;
