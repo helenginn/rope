@@ -99,4 +99,6 @@ void Box::unMouseOver()
 	{
 		_hover->setDisabled(true);
 	}
+	
+	Renderable::unMouseOver();
 }

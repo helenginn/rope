@@ -183,7 +183,7 @@ public:
 	void changeMidPoint(double x, double y);
 	void setHighlighted(bool highlighted);
 	
-	virtual void unMouseOver() {};
+	virtual void unMouseOver();
 	virtual bool mouseOver() { return false; };
 
 	void reorderIndices();

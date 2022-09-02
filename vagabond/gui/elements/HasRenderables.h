@@ -55,13 +55,13 @@ public:
 	virtual void doThings() {};
 
 	Renderable *findObject(double x, double y);
+	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
 protected:
 	void clearHighlights();
 
 	/** accessibility */
-	void tab(bool shift);
-	void enter(bool shift);
-	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
+	Renderable *tab(bool shift);
+	bool enter(bool shift);
 
 	std::vector<Renderable *> _objects;
 	std::vector<Renderable *> _temps;

@@ -65,7 +65,7 @@ void Scene::setBackground()
 void Scene::removeModal()
 {
 	_removeModal = _modal;
-	_modal = NULL;
+	_modal = nullptr;
 	resetMouseKeyboard();
 }
 
@@ -306,9 +306,17 @@ void Scene::interpretControlKey(SDL_Keycode pressed, bool dir)
 void Scene::keyPressEvent(SDL_Keycode pressed)
 {
 	interpretControlKey(pressed, true);
+
 	if (_keyResponder == nullptr)
 	{
-		HasRenderables::doAccessibilityThings(pressed, _shiftPressed);
+		if (_modal)
+		{
+			_modal->doAccessibilityThings(pressed, _shiftPressed);
+		}
+		else
+		{
+			doAccessibilityThings(pressed, _shiftPressed);
+		}
 		return;
 	}
 

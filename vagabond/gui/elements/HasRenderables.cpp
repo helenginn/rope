@@ -71,6 +71,11 @@ Renderable *HasRenderables::findObject(double x, double y)
 
 void HasRenderables::removeObject(Renderable *obj)
 {
+	if (_chosen == obj)
+	{
+		_chosen = nullptr;
+	}
+
 	std::vector<Renderable *>::iterator it;
 	
 	it = std::find(_objects.begin(), _objects.end(), obj);
@@ -152,75 +157,103 @@ void HasRenderables::doThingsCircuit()
 	doThings();
 }
 
-void HasRenderables::tab(bool shift)
+Renderable *HasRenderables::tab(bool shift)
 {
-	std::vector<Renderable *>::iterator pos;
-	std::vector<Renderable *>::iterator it;
-	
 	if (_chosen)
 	{
 		_chosen->unMouseOver();
 	}
 	
-	/* find _chosen in our array and loop round until we find the next
-	 * selectable object. */
-	pos = std::find(_objects.begin(), _objects.end(), _chosen);
-
-	if (pos == _objects.end())
+	int idx = -1;
+	
+	if (_objects.size() == 0)
 	{
-		for (Renderable *r : _objects)
+		return nullptr;
+	}
+	
+	/* find _chosen in our array */
+	for (size_t i = 0; i < _objects.size(); i++)
+	{
+		if (_objects[i] == _chosen)
 		{
-			if (!r->isSelectable() || r->isDisabled())
-			{
-				continue;
-			}
-
-			_chosen = r;
+			idx = i;
 			break;
 		}
 	}
-	else
+
+	int i = idx;
+	shift ? i-- : i++;
+	for (; i != idx; shift ? i-- : i++)
 	{
-		it = pos;
-		it++;
-		for (; it != pos; (shift ? it-- : it++))
+		std::cout << "Next: " << i << " - ";
+		if (i >= (int)_objects.size())
 		{
-			if (it == _objects.end())
-			{
-				it = _objects.begin();
-			}
-
-			Renderable *r = *it;
-
-			if (!shift && it == _objects.begin())
-			{
-				it = _objects.end();
-			}
-
-			if (r && (!r->isSelectable() || r->isDisabled()))
-			{
-				continue;
-			}
-
-			_chosen = r;
-			break;
+			i = 0;
 		}
+
+		if (i < 0)
+		{
+			i = _objects.size() - 1;
+		}
+		
+		std::cout << " now " << i << " - ";
+
+		Renderable *r = _objects[i];
+
+		if (r && (!r->isSelectable() || r->isDisabled()))
+		{
+			if (!r->isSelectable() && !r->isDisabled())
+			{
+				std::cout << "Checking inside " << r->name() << std::endl;
+				Renderable *result = r->tab(shift);
+
+				if (result)
+				{
+					_chosen = r;
+					return r;
+				}
+			}
+
+			std::cout << "Skipping " << r->name() << std::endl;
+			continue;
+		}
+
+		std::cout << "Choosing " << r->name() << std::endl;
+		_chosen = r;
+		break;
 	}
 
 	if (_chosen == nullptr)
 	{
-		return;
+		return nullptr;
 	}
 	
-	_chosen->mouseOver();
+	if (_chosen->isSelectable())
+	{
+		_chosen->mouseOver();
+	}
+
+	return _chosen;
 }
 
-void HasRenderables::enter(bool shift)
+bool HasRenderables::enter(bool shift)
 {
 	if (_chosen)
 	{
-		_chosen->click();
+		bool shouldClick = _chosen->enter(shift);
+		
+		if (shouldClick)
+		{
+			_chosen->click();
+		}
 	}
+	
+	if (!_chosen)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void HasRenderables::doAccessibilityThings(SDL_Keycode pressed, bool shift)

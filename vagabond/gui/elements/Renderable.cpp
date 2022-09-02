@@ -1548,3 +1548,11 @@ void Renderable::forceRender(bool vert, bool idx)
 	}
 	
 }
+
+void Renderable::unMouseOver()
+{
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->unMouseOver();
+	}
+}
