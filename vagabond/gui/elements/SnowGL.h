@@ -48,15 +48,15 @@ public:
 		_acceptsFocus = accepts;
 	}
 	
-	void setZNear(double near)
+	void setZNear(double near_)
 	{
-		_zNear = near;
+        _zNear = near_;
 		updateProjection();
 	}
 	
-	void setZFar(double far)
+	void setZFar(double far_)
 	{
-		_zFar = far;
+		_zFar = far_;
 		updateProjection();
 	}
 	
