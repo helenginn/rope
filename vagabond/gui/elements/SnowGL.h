@@ -203,8 +203,8 @@ protected:
 	double _shadowing;
 	bool _left;
 	bool _right;
-	bool _controlPressed;
-	bool _shiftPressed;
+	bool _controlPressed = false;
+	bool _shiftPressed = false;
 	bool _acceptsFocus;
 	
 	bool _viewChanged = true;

@@ -294,6 +294,7 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 {
 	if (_keyResponder == nullptr)
 	{
+		HasRenderables::doAccessibilityThings(pressed, _shiftPressed);
 		return;
 	}
 
@@ -319,4 +320,8 @@ void Scene::setInformation(std::string str)
 		addObject(_info);
 	}
 
+}
+
+void Scene::keyReleaseEvent(SDL_Keycode pressed)
+{
 }

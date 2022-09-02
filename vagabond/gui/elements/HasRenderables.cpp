@@ -1,6 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
 #include <algorithm>
+#include <SDL2/SDL.h>
 #include <cfloat>
 #include <iostream>
 #include "HasRenderables.h"
@@ -150,3 +151,88 @@ void HasRenderables::doThingsCircuit()
 
 	doThings();
 }
+
+void HasRenderables::tab(bool shift)
+{
+	std::vector<Renderable *>::iterator pos;
+	std::vector<Renderable *>::iterator it;
+	
+	if (_chosen)
+	{
+		_chosen->unMouseOver();
+	}
+	
+	/* find _chosen in our array and loop round until we find the next
+	 * selectable object. */
+	pos = std::find(_objects.begin(), _objects.end(), _chosen);
+
+	if (pos == _objects.end())
+	{
+		for (Renderable *r : _objects)
+		{
+			if (!r->isSelectable() || r->isDisabled())
+			{
+				continue;
+			}
+
+			_chosen = r;
+			break;
+		}
+	}
+	else
+	{
+		it = pos;
+		it++;
+		for (; it != pos; (shift ? it-- : it++))
+		{
+			if (it == _objects.end())
+			{
+				it = _objects.begin();
+			}
+
+			Renderable *r = *it;
+
+			if (!shift && it == _objects.begin())
+			{
+				it = _objects.end();
+			}
+
+			if (!r->isSelectable() || r->isDisabled())
+			{
+				continue;
+			}
+
+			_chosen = r;
+			break;
+		}
+	}
+
+	if (_chosen == nullptr)
+	{
+		return;
+	}
+	
+	_chosen->mouseOver();
+}
+
+void HasRenderables::enter(bool shift)
+{
+	if (_chosen)
+	{
+		_chosen->click();
+	}
+}
+
+void HasRenderables::doAccessibilityThings(SDL_Keycode pressed, bool shift)
+{
+	if (pressed == SDLK_TAB)
+	{
+		tab(shift);
+	}
+	else if (pressed == SDLK_RETURN)
+	{
+		enter(shift);
+	}
+
+}
+

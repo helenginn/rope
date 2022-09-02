@@ -4,6 +4,7 @@
 #define __practical__HasRenderables__
 
 #include <vector>
+#include <SDL2/SDL.h>
 
 class Renderable;
 
@@ -56,9 +57,16 @@ public:
 	Renderable *findObject(double x, double y);
 protected:
 	void clearHighlights();
+
+	/** accessibility */
+	void tab(bool shift);
+	void enter(bool shift);
+	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
+
 	std::vector<Renderable *> _objects;
 	std::vector<Renderable *> _temps;
 
+	Renderable *_chosen = nullptr;
 };
 
 #endif

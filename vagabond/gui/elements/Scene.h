@@ -55,7 +55,7 @@ public:
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
 
-	virtual void keyReleaseEvent(SDL_Keycode pressed) {};
+	virtual void keyReleaseEvent(SDL_Keycode pressed);
 	virtual void keyPressEvent(SDL_Keycode pressed);
 
 	virtual void back(int num = 0);
