@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <mutex>
 #include "KeyResponder.h"
 #include <set>
 #include <stdlib.h>
