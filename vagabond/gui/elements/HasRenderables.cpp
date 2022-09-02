@@ -1,5 +1,6 @@
 // Copyright (C) 2021 Helen Ginn
 
+#include <algorithm>
 #include <cfloat>
 #include <iostream>
 #include "HasRenderables.h"
