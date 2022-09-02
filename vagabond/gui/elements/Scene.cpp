@@ -6,7 +6,7 @@
 #include "TextButton.h"
 #include "Scene.h"
 #include "Image.h"
-#include <GLES3/gl3.h>
+#include <GL/glew.h>
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <time.h>

@@ -3,9 +3,9 @@
 #ifndef __snow__Library__
 #define __snow__Library__
 
-#include <GLES3/gl32.h>
 #include <mutex>
 #include <map>
+#include <GL/glew.h>
 #include <string>
 #include <vector>
 #include "font_types.h"

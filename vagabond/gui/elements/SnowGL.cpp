@@ -2,7 +2,6 @@
 
 #define SHADOW_DIM 1024
 
-#include <GLES3/gl3.h>
 #include <SDL2/SDL.h>
 #include "SnowGL.h"
 #include "Renderable.h"
