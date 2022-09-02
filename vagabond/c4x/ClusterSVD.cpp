@@ -96,17 +96,18 @@ void ClusterSVD<DG>::cluster()
 	reorderSVD(&_svd);
 
 	copyMatrix(this->_result, _svd.u);
+	this->_scaleFactor = 1 / _svd.w[0];
 
 	for (size_t i = 0; i < this->_result.cols; i++)
 	{
 		for (size_t j = 0; j < this->_result.rows; j++)
 		{
-			this->_result[j][i] *= _svd.w[0];
+			this->_result[j][i] /= this->_scaleFactor;
 		}
 		this->_total += _svd.w[i];
 	}
 	
-	this->_scaleFactor = 1 / _svd.w[0];
+	printMatrix(&(this->_result));
 	
 	_transpose = PCA::transpose(&this->_svd.u);
 

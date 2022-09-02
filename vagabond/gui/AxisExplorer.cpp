@@ -18,11 +18,14 @@
 
 #include "AxisExplorer.h"
 #include "Chain.h"
+
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/utils/FileReader.h>
 
+#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/c4x/Cluster.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/ConcertedBasis.h>
@@ -121,7 +124,7 @@ void AxisExplorer::submitJob(float prop)
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	submitJob(x);
+	submitJob(x * 4);
 }
 
 void AxisExplorer::setupSlider()

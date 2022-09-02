@@ -26,6 +26,11 @@
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Sampler.h>
 
+class MetadataGroup;
+
+template <class T>
+class Cluster;
+
 class Molecule;
 class BondCalculator;
 class ConcertedBasis;
@@ -41,6 +46,11 @@ public:
                         const std::vector<float> &values);
 
 	virtual ~StructureModification();
+	
+	void setCluster(Cluster<MetadataGroup> *cluster)
+	{
+		_cluster = cluster;
+	}
 
 	void makeCalculator(Atom *anchor, bool has_mol);
 	void startCalculator();
@@ -69,6 +79,7 @@ protected:
 	};
 	
 	std::vector<ResidueTorsionList> _torsionLists;
+	Cluster<MetadataGroup> *_cluster = nullptr;
 
 	int _num = 1;
 	int _dims = 1;

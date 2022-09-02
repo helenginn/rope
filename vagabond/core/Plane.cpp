@@ -70,6 +70,7 @@ void Plane::refresh()
 	_toIndex.clear();
 	
 	double sc = _cluster->scaleFactor();
+	sc = 1;
 
 	for (int j = -_counts[0]; j < _counts[1]; j++)
 	{

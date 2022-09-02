@@ -125,7 +125,6 @@ private:
 	int _refIdx = -1;
 
 	ForceField *_forceField = nullptr;
-	Cluster<MetadataGroup> *_cluster = nullptr;
 
 	void cleanupRun();
 	void cancelRun();

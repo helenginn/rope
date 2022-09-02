@@ -144,6 +144,7 @@ void Axes::loadAxisExplorer(int idx)
 	try
 	{
 		AxisExplorer *ae = new AxisExplorer(_scene, _molecule, list, vals);
+		ae->setCluster(_cluster);
 		ae->setFutureTitle(str);
 		ae->show();
 //		ae->setInformation(info);
