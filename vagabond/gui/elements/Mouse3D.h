@@ -33,9 +33,6 @@ public:
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
 
-	virtual void keyReleaseEvent(SDL_Keycode pressed);
-	virtual void keyPressEvent(SDL_Keycode pressed);
-
 	void setControls(const bool controls)
 	{
 		_controls = false;
@@ -49,7 +46,6 @@ protected:
 	}
 private:
 	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
-	void interpretControlKey(SDL_Keycode pressed, bool dir);
 
 	void updateSpinMatrix();
 	void updateSelectionBox();

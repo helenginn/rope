@@ -192,29 +192,6 @@ void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 	interpretMouseButton(button, false);
 }
 
-void Mouse3D::interpretControlKey(SDL_Keycode pressed, bool dir)
-{
-	if (pressed == SDLK_LCTRL)
-	{
-		_controlPressed = dir;
-	}
-
-	if (pressed == SDLK_LSHIFT)
-	{
-		_shiftPressed = dir;
-	}
-}
-
-void Mouse3D::keyPressEvent(SDL_Keycode pressed)
-{
-	interpretControlKey(pressed, true);
-}
-
-void Mouse3D::keyReleaseEvent(SDL_Keycode pressed)
-{
-	interpretControlKey(pressed, false);
-}
-
 void Mouse3D::updateSelectionBox()
 {
 	if (_box == nullptr)

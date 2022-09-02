@@ -290,8 +290,22 @@ void Scene::back(int num)
 	}
 }
 
+void Scene::interpretControlKey(SDL_Keycode pressed, bool dir)
+{
+	if (pressed == SDLK_LCTRL)
+	{
+		_controlPressed = dir;
+	}
+
+	if (pressed == SDLK_LSHIFT)
+	{
+		_shiftPressed = dir;
+	}
+}
+
 void Scene::keyPressEvent(SDL_Keycode pressed)
 {
+	interpretControlKey(pressed, true);
 	if (_keyResponder == nullptr)
 	{
 		HasRenderables::doAccessibilityThings(pressed, _shiftPressed);
@@ -324,4 +338,5 @@ void Scene::setInformation(std::string str)
 
 void Scene::keyReleaseEvent(SDL_Keycode pressed)
 {
+	interpretControlKey(pressed, false);
 }

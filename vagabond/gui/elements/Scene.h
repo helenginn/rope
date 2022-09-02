@@ -75,6 +75,7 @@ protected:
 	                              bool hover, bool arrow, bool left) {};
 	void setCentrePixels(Renderable *r, int x, int y);
 	void swapCursor(SDL_Cursor *newCursor);
+	void interpretControlKey(SDL_Keycode pressed, bool dir);
 	
 	std::string _title;
 
