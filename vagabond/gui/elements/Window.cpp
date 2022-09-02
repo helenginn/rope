@@ -55,6 +55,7 @@ Window::Window(int width, int height)
 
 	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);
 	_context = SDL_GL_CreateContext(_window);
+	glewInit();
 
 #ifdef __EMSCRIPTEN__
 	_renderer = SDL_CreateRenderer(_window, -1, 0);

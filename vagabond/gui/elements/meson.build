@@ -5,7 +5,7 @@ sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 
 if (links == [])
-  deps += [gl, glew, sdl2, sdl2image]
+  deps += [glew, gl, sdl2, sdl2image]
 endif
 
 guielementfiles = [
