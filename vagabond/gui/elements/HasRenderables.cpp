@@ -197,7 +197,7 @@ void HasRenderables::tab(bool shift)
 				it = _objects.end();
 			}
 
-			if (!r->isSelectable() || r->isDisabled())
+			if (r && (!r->isSelectable() || r->isDisabled()))
 			{
 				continue;
 			}
