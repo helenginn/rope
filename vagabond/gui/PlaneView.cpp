@@ -31,6 +31,12 @@ PlaneView::PlaneView(Cluster<MetadataGroup> *cluster, Molecule *m) : Renderable(
 	setFragmentShaderFile("assets/shaders/color_only.fsh");
 }
 
+PlaneView::~PlaneView()
+{
+	std::cout << "Deleting plane view" << std::endl;
+	delete _plane;
+}
+
 PlaneView::PlaneView(Plane *p) : Renderable()
 {
 	_plane = p;
