@@ -238,7 +238,9 @@ void ForceField::makeLookupTable()
 	_tableIndices.clear();
 	
 	std::map<Atom *, std::vector<LookupTable> > tmpMap;
-	_table.reserve(_restraints.size());
+	int count = 0;
+	int reserve = _restraints.size();
+	_table.reserve(reserve);
 
 	for (size_t i = 0; i < _group->size(); i++)
 	{
@@ -260,6 +262,13 @@ void ForceField::makeLookupTable()
 					}
 
 					_table.push_back(lt);
+					count++;
+					
+					if (count >= reserve)
+					{
+						reserve += _restraints.size();
+						_table.reserve(reserve);
+					}
 					
 					first = false;
 				}
