@@ -154,6 +154,9 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
                                           const std::vector<float> &values)
 {
 	std::vector<bool> found(list.size(), false);
+	
+	std::cout << "Adding " << molecule->id() << " axis " << axis << ", "
+	<< values.size() << " values" << std::endl;
 
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
@@ -161,7 +164,6 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 		
 		if (_idxs[i] < 0)
 		{
-			std::cout << "Missing " << t->atom(1)->desc() << " " << t->residueId().num << ":" << t->desc() << std::endl;
 			continue;
 		}
 
@@ -173,7 +175,7 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 			_missing.push_back(t);
 		}
 		
-		if (value > 30)
+		if (value > 30 && false)
 		{
 			std::cout << "Import " << t->atom(1)->desc() << " " << t->residueId().num << " " << t->desc() << " " << value << std::endl;
 		}
@@ -190,7 +192,7 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 		}
 	}
 
-	std::cout << std::endl;
+//	std::cout << std::endl;
 }
 
 void ConcertedBasis::prepare()
