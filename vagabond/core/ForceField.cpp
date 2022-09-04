@@ -281,6 +281,8 @@ void ForceField::makeLookupTable()
 void ForceField::updateRestraint(Restraint &r)
 {
 	r.current = NAN;
+	r.current_angle = NAN;
+
 	if (r.type == Restraint::Spring ||
 	    r.type == Restraint::VdW ||
 	    r.type == Restraint::HBond)
