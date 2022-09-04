@@ -87,8 +87,11 @@ void AxisExplorer::submitJob(float prop)
 		calc->submitJob(job);
 	}
 
+	double sum = 0;
+
 	for (BondCalculator *calc : _calculators)
 	{
+
 		Result *r = calc->acquireResult();
 
 		if (r == nullptr)
@@ -100,6 +103,7 @@ void AxisExplorer::submitJob(float prop)
 		{
 			r->transplantLastPosition();
 			std::cout << "Score: " << r->score << std::endl;
+			sum += r->score;
 		}
 	}
 	
