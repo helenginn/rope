@@ -141,6 +141,16 @@ public:
 	}
 	
 	void addAnchorExtension(Atom *atom, size_t bondCount = UINT_MAX);
+	
+	Atom *anchorAtom(int i)
+	{
+		return _atoms[i].atom;
+	}
+	
+	const size_t anchorAtomCount() const
+	{
+		return _atoms.size();
+	}
 
 	void setup();
 	void start();
