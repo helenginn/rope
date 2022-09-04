@@ -55,10 +55,6 @@ void PlaneView::recolour()
 		stdev = 1;
 	}
 	
-	std::cout << "First: " << first << std::endl;
-	std::cout << "Mean: " << ref << std::endl;
-	std::cout << "Stdev: " << stdev << std::endl;
-
 	for (int y = 0; y < ny; y++)
 	{
 		for (int x = 0; x < nx; x++)
