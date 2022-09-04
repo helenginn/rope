@@ -53,6 +53,9 @@ public:
 	void prepareMenu(HasMetadata *hm);
 	void reorientToMolecule(Molecule *mol);
 
+protected:
+	virtual void sendSelection(float t, float l, float b, float r);
+
 private:
 	enum Status
 	{

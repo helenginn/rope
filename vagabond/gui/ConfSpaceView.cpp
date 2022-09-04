@@ -482,3 +482,8 @@ void ConfSpaceView::reorientToMolecule(Molecule *mol)
 	
 	_axes->reorient(-1, mol);
 }
+
+void ConfSpaceView::sendSelection(float t, float l, float b, float r)
+{
+
+}
