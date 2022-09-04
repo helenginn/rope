@@ -30,17 +30,16 @@ Plane::Plane(Molecule *mol, Cluster<MetadataGroup> *cluster)
 {
 	_threads = 4;
 	_cluster = cluster;
-	_molecule->model()->load();
 	_pType = BondCalculator::PipelineForceField;
-	AtomContent *grp = _molecule->model()->currentAtoms();
+	AtomGroup *grp = _molecule->currentAtoms();
 	_fullAtoms = grp;
+	_fullAtoms->assignForceField(nullptr);
 	startCalculator();
-
-//	_scale /= _cluster->scaleFactor();
 }
 
 Plane::~Plane()
 {
+	_fullAtoms->assignForceField(nullptr);
 	_molecule->model()->unload();
 	cancelRun();
 }
@@ -68,9 +67,6 @@ void Plane::refresh()
 	_scoreMap.clear();
 	_points.clear();
 	_toIndex.clear();
-	
-	double sc = _cluster->scaleFactor();
-	sc = 1;
 
 	for (int j = -_counts[0]; j < _counts[1]; j++)
 	{
@@ -84,9 +80,7 @@ void Plane::refresh()
 				_refIdx = _points.size();
 			}
 
-			submitJob(x * sc, y * sc);
-			_points.push_back(glm::vec3(x, y, 0));
-			_scores.push_back(0);
+			submitJob(x, y);
 		}
 	}
 	
@@ -103,6 +97,7 @@ void Plane::submitJob(float x, float y)
 		{
 			continue;
 		}
+
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = x;
@@ -111,6 +106,9 @@ void Plane::submitJob(float x, float y)
 		int job_num = calc->submitJob(job);
 		_scoreMap[job_num] = _scores.size();
 	}
+
+	_points.push_back(glm::vec3(x, y, 0));
+	_scores.push_back(0);
 }
 
 void Plane::collectResults()
@@ -134,7 +132,6 @@ void Plane::collectResults()
 			int num = r->ticket;
 			if (r->requests & JobScoreStructure)
 			{
-				
 				if (_scoreMap.count(num))
 				{
 					int idx = _scoreMap[num];
