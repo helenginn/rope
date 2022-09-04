@@ -53,8 +53,8 @@ private:
 
 	void reportMissing();
 	
-	double _min = -5; 
-	double _max = 5; 
+	double _min = -1; 
+	double _max = 1; 
 	double _step = 0.001;
 
 	std::vector<ResidueTorsion> _list;

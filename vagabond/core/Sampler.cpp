@@ -66,8 +66,15 @@ void Sampler::establishRadius()
 	}
 	float ratio = (float)_n / volume;
 	float increase = pow(ratio, 1 / (float)_dims);
-
-	_radius = increase;
+	
+	if (_n == 1)
+	{
+		_radius = 1;
+	}
+	else
+	{
+		_radius = increase;
+	}
 	_max = ceil(_radius);
 }
 

@@ -124,7 +124,7 @@ void AxisExplorer::submitJob(float prop)
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	submitJob(x * 4);
+	submitJob(x);
 }
 
 void AxisExplorer::setupSlider()
