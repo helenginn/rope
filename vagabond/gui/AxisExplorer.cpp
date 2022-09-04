@@ -191,6 +191,11 @@ void AxisExplorer::reportMissing()
 
 void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 {
+	if (!has_mol)
+	{
+		return;
+	}
+
 	calc->setPipelineType(_pType);
 	FFProperties props;
 	props.group = _molecule->currentAtoms();
