@@ -23,6 +23,8 @@
 #include <vagabond/utils/extra_curl_utils.h>
 #endif
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include "AddEntity.h"
 #include "ChooseEntity.h"
 #include "CalculateMetadata.h"

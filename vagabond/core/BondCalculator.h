@@ -19,6 +19,8 @@
 #ifndef __vagabond__BondCalculator__
 #define __vagabond__BondCalculator__
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <climits>
 #include <vector>
 #include <queue>

@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/utils/FileReader.h>

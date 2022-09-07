@@ -19,6 +19,8 @@
 #ifndef __vagabond__Cluster__cpp__
 #define __vagabond__Cluster__cpp__
 
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <algorithm>
 #include "Cluster.h"
 #include <vagabond/utils/maths.h>
