@@ -348,7 +348,10 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 {
 	block.atom = atom;
-	block.nBonds = std::min(atom->bondLengthCount(), 4ul);
+//	block.nBonds = std::min(atom->bondLengthCount(), 4ul);
+    size_t blc = atom -> bondLengthCount();
+    size_t max = 4;
+    block.nBonds = std::min(blc, max);
 	block.wip = glm::mat4(0.);
 	block.target = atom->initialPosition();
 	block.torsion_idx = _atom2Graph[atom]->torsion_idx;
