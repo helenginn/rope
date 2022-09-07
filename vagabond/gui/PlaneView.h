@@ -32,7 +32,6 @@ class Cluster;
 class PlaneView : public Renderable, public Responder<Plane>
 {
 public:
-	PlaneView(Plane *p);
 	PlaneView(Cluster<MetadataGroup> *cluster, Molecule *mol);
 	virtual ~PlaneView();
 	

@@ -37,11 +37,6 @@ PlaneView::~PlaneView()
 	delete _plane;
 }
 
-PlaneView::PlaneView(Plane *p) : Renderable()
-{
-	_plane = p;
-}
-
 void PlaneView::recolour()
 {
 	int nx = _plane->num(0);
@@ -127,8 +122,8 @@ void PlaneView::populate()
 	}
 	
 	recolour();
-	rebufferVertexData();
-	rebufferIndexData();
+//	rebufferVertexData();
+//	rebufferIndexData();
 }
 
 void PlaneView::respond()
