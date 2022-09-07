@@ -27,6 +27,8 @@
 #include <iostream>
 #include <sstream>
 
+using std::isfinite;
+
 template <class Unit, class Header>
 DataGroup<Unit, Header>::DataGroup(int length)
 {
