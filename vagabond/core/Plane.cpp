@@ -138,13 +138,6 @@ void Plane::collectResults()
 					_scores[idx] += r->score;
 				}
 			}
-
-//			if (r->requests & JobExtractPositions)
-			{
-//				r->transplantLastPosition();
-//				_molecule->model()->write("set/point_" + std::to_string(num) + ".pdb");
-
-			}
 			
 			r->destroy();
 			
@@ -214,7 +207,6 @@ void Plane::customModifications(BondCalculator *calc, bool has_mol)
 	props.group = _molecule->currentAtoms();
 	props.t = FFProperties::CAlphaSeparation;
 	calc->setForceFieldProperties(props);
-
 }
 
 void Plane::cancelRun()

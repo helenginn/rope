@@ -331,7 +331,7 @@ float ForceField::valueForRestraint(const Restraint &r)
 		angle *= angle;
 		dist *= dist;
 
-		penalty += exp(-angle) + exp(-dist);
+//		penalty += 1 / (1 + angle + dist) - 1;
 	}
 	
 	return vdw + attract * penalty;

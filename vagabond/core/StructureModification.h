@@ -42,6 +42,11 @@ class StructureModification
 public:
 	StructureModification(Molecule *mol, int num, int dims);
 	
+	const int &dims() const
+	{
+		return _dims;
+	}
+	
 	void supplyTorsions(const std::vector<ResidueTorsion> &list,
                         const std::vector<float> &values);
 

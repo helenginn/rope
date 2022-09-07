@@ -17,10 +17,343 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PathFinder.h"
+#include "Molecule.h"
+#include "AtomGroup.h"
+#include <algorithm>
 
-PathFinder::PathFinder(Molecule *start, Molecule *end)
+PathFinder::PathFinder(Molecule *start, Cluster<MetadataGroup> *cluster, int dims)
+: StructureModification(start, 1, dims)
 {
 	_start = start;
-	_end = end;
+	_threads = 6;
+	_cluster = cluster;
+	_pType = BondCalculator::PipelineForceField;
+	AtomGroup *grp = _molecule->currentAtoms();
+	_fullAtoms = grp;
+	_fullAtoms->assignForceField(nullptr);
+	startCalculator();
 }
 
+void PathFinder::setTarget(Molecule *end)
+{
+	_end = end;
+	int idx = _cluster->dataGroup()->indexOfObject(end);
+	int start = _cluster->dataGroup()->indexOfObject(_molecule);
+	_aim = Placement(_dims, 0);
+
+	std::cout << "Aim: " << std::endl;
+	for (size_t i = 0; i < _cluster->rows() && i < _dims; i++)
+	{
+		_aim[i] = _cluster->value(idx, i);
+		_aim[i] -= _cluster->value(start, i);
+		std::cout << _aim[i] << " ";
+	}
+	std::cout << std::endl;
+}
+
+void PathFinder::setup()
+{
+	Placement start = Placement(_dims, 0);
+	submitJob(start);
+}
+
+int PathFinder::submitJob(Placement &n)
+{
+	assert(n.size() == _dims);
+	for (BondCalculator *calc : _calculators)
+	{
+		if (!(calc->pipelineType() & BondCalculator::PipelineForceField))
+		{
+			continue;
+		}
+
+		Job job{};
+		job.custom.allocate_vectors(1, _dims, _num);
+		for (size_t i = 0; i < _dims; i++)
+		{
+			job.custom.vecs[0].mean[i] = n[i];
+		}
+
+		job.requests = static_cast<JobType>(JobScoreStructure);
+		int job_num = calc->submitJob(job);
+		_scoreMap[job_num] = _nodes.size();
+	}
+
+	Node node{};
+
+	node.vec = n;
+	node.distance_from(_aim);
+	_nodes.push_back(node);
+	return _nodes.size() - 1;
+}
+
+void PathFinder::customModifications(BondCalculator *calc, bool has_mol)
+{
+	if (!has_mol)
+	{
+		return;
+	}
+
+	calc->setPipelineType(_pType);
+	FFProperties props;
+	props.group = _molecule->currentAtoms();
+	props.t = FFProperties::CAlphaSeparation;
+	calc->setForceFieldProperties(props);
+}
+
+void PathFinder::collectResults()
+{
+	int count = 0;
+	bool more = true;
+	while (more)
+	{
+		more = false;
+		for (BondCalculator *calc : _calculators)
+		{
+			Result *r = calc->acquireResult();
+
+			if (r == nullptr)
+			{
+				continue;
+			}
+
+			more = true;
+
+			int num = r->ticket;
+			if (r->requests & JobScoreStructure)
+			{
+				if (_scoreMap.count(num))
+				{
+					int idx = _scoreMap[num];
+					_nodes[idx].score += r->score;
+				}
+			}
+			
+			r->destroy();
+			
+			count++;
+		}
+	}
+
+	_lastCount = _nodes.size();
+}
+
+bool PathFinder::testDirection(Placement dir, int idx)
+{
+	if (_end == nullptr)
+	{
+		return true;
+	}
+
+	Node copy = _nodes[idx];
+	float before = copy.distance_from(_aim);
+
+	copy.add_to(dir);
+	float after = copy.distance_from(_aim, dir);
+	
+	return (after < before);
+}
+
+PathFinder::Placement PathFinder::generateDirection()
+{
+	Placement dir(_dims, 0);
+
+	for (size_t i = 0; i < _dims; i++)
+	{
+		float r = rand() / (double)RAND_MAX;
+		dir[i] = r * 2. - 1.;
+		dir[i] *= _scale;
+	}
+	
+	return dir;
+}
+
+void PathFinder::submitNode(Placement &dir, int idx)
+{
+	_nodes[idx].add_to(dir);
+	int ndx = submitJob(dir);
+	
+	_nodes[ndx].parent = idx;
+	_nodes[idx].next.push_back(ndx);
+}
+
+void PathFinder::extendNode(int idx)
+{
+	Placement dir = generateDirection();
+	int num = _heads;
+	if (idx == 0)
+	{
+		num = 10;
+	}
+	for (size_t i = 0; i < num; i++)
+	{
+		bool next = true;
+		int count = 0;
+		
+		while (next && count < 100)
+		{
+			dir = generateDirection();
+			next = (!testDirection(dir, idx));
+		}
+
+		submitNode(dir, idx);
+	}
+}
+
+bool PathFinder::doJobs()
+{
+	submitNextJobs();
+	collectResults();
+	triggerResponse();
+	bool finish = identifyNextLeads();
+	_cycles++;
+	return finish;
+}
+
+struct Candidate
+{
+	float score;
+	int idx;
+	
+	const bool operator<(const Candidate &b) const
+	{
+		return score < b.score;
+	}
+	
+	const bool operator>(const Candidate &b) const
+	{
+		return score > b.score;
+	}
+};
+
+void PathFinder::addFromAllNodes()
+{
+	std::vector<Candidate> tmp;
+	
+	int start = std::max((int)_nodes.size() - 1000, 0);
+
+	for (size_t i = 0; i < _nodes.size(); i++)
+	{
+		Candidate c{};
+		Node &n = _nodes[i];
+		if (n.score > _nodes[0].score + 0.5)
+		{
+			continue;
+		}
+		
+		if (n.next.size() > 0)
+		{
+			continue;
+		}
+		
+		c.score = n.score;
+		c.idx = i;
+		tmp.push_back(c);
+	}
+
+	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
+
+	for (size_t i = 0; i < tmp.size() && _list.size() < _heads * 8; i++)
+	{
+		if (std::find(_list.begin(), _list.end(), tmp[i].idx) != _list.end())
+		{
+			continue;
+		}
+
+		_list.push_back(tmp[i].idx);
+	}
+}
+
+bool PathFinder::identifyNextLeads()
+{
+	std::vector<Candidate> tmp;
+
+	_list.clear();
+
+	for (std::map<int, int>::iterator it = _scoreMap.begin(); 
+	     it != _scoreMap.end(); it++)
+	{
+		Candidate c{};
+		Node &n = _nodes[it->second];
+		n.distance_from(_aim);
+		float energy = n.distance;
+		if (energy > _nodes[0].score + 1.0)
+		{
+			continue;
+		}
+		c.idx = it->second;
+		c.score = energy;
+		tmp.push_back(c);
+	}
+	
+	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
+	tmp.resize(tmp.size() / 2);
+
+	for (size_t i = 0; i < tmp.size() && _end != nullptr; i++)
+	{
+		Node &n = _nodes[tmp[i].idx];
+		n.distance_from(_aim);
+		tmp[i].score = n.score;
+
+		float ratio = n.distance / _nodes[0].distance;
+		if (ratio < _toGo)
+		{
+			_toGo = ratio;
+			std::cout << "New best: " << _toGo *100 << "% to go" << std::endl;
+
+			if (_toGo < 0.05)
+			{
+				return true;
+			}
+		}
+	}
+	
+	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
+	
+	for (size_t i = 0; i < tmp.size() && i < 12; i++)
+	{
+		_list.push_back(tmp[i].idx);
+	}
+	
+	addFromAllNodes();
+
+	_scoreMap.clear();
+	return false;
+}
+
+void PathFinder::submitNextJobs()
+{
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		int idx = _list[i];
+		extendNode(idx);
+	}
+}
+
+void PathFinder::start()
+{
+	for (size_t i = 0; i < 500; i++)
+	{
+		bool done = doJobs();
+		
+		if (done)
+		{
+			break;
+		}
+	}
+	std::cout << "done" << std::endl;
+}
+
+void PathFinder::addAxis(std::vector<ResidueTorsion> &list, 
+                         std::vector<float> &values)
+{
+	if (_axis >= _dims)
+	{
+		throw std::runtime_error("Too many axes in plane");
+	}
+
+
+//	_torsions[_axis] = values;
+//	_cluster->dataGroup()->applyNormals(values);
+	supplyTorsions(list, values);
+}
