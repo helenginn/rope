@@ -19,6 +19,7 @@
 #ifndef __vagabond__Responder__
 #define __vagabond__Responder__
 
+#include <algorithm>
 #include <vector>
 #include <iostream>
 
