@@ -33,7 +33,6 @@ template <class Object>
 AddObject<Object>::AddObject(Scene *prev, Object *chosen) : Scene(prev), 
 _obj(*chosen)
 {
-	std::cout << "Pointer: " << chosen << std::endl;
 	_existing = true;
 }
 
