@@ -63,6 +63,9 @@ protected:
 #ifdef OS_WINDOWS
         return;
 #else
+#ifdef OS_LINUX
+        return;
+#else
 		std::chrono::system_clock::time_point n;
 		n = std::chrono::system_clock::now();
 		
@@ -78,6 +81,7 @@ protected:
 			_tStart = n;
 			_measured = true;
 		}
+#endif
 #endif
 	}
 	
