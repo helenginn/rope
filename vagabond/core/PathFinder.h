@@ -57,6 +57,16 @@ public:
 	{
 		return _nodes[i].vec;
 	}
+	
+	Molecule *begin()
+	{
+		return _start;
+	}
+	
+	Molecule *end()
+	{
+		return _end;
+	}
 
 	void addAxis(std::vector<ResidueTorsion> &list, 
 	             std::vector<float> &values);
@@ -73,6 +83,7 @@ private:
 	struct Node
 	{
 		Placement vec; /**< vector in RoPE space */
+		Placement last_dir;
 		float score = 0;
 		float distance = 0;
 
@@ -113,9 +124,10 @@ private:
 	std::map<int, int> _scoreMap;
 	std::vector<Node> _nodes;
 	std::vector<int> _list;
-	Placement generateDirection();
+	Placement generateDirection(int idx);
 	bool testDirection(Placement dir, int idx);
 	void addFromAllNodes();
+	void traceDone();
 
 	bool doJobs();
 	bool identifyNextLeads();
@@ -125,10 +137,13 @@ private:
 	
 	std::atomic<int> _lastCount{0};
 	Placement _aim;
+	Placement _absoluteDir;
 	float _scale = 0.10;
 	int _heads = 4;
 	float _toGo = FLT_MAX;
 	int _cycles = 0;
+	
+	std::vector<int> _arrivals;
 };
 
 #endif

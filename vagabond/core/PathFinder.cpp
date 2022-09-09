@@ -38,17 +38,24 @@ void PathFinder::setTarget(Molecule *end)
 {
 	_end = end;
 	int idx = _cluster->dataGroup()->indexOfObject(end);
-	int start = _cluster->dataGroup()->indexOfObject(_molecule);
+	int start = _cluster->dataGroup()->indexOfObject(_start);
 	_aim = Placement(_dims, 0);
+	_absoluteDir = Placement(_dims, 0);
 
-	std::cout << "Aim: " << std::endl;
+	float sum = 0;
 	for (size_t i = 0; i < _cluster->rows() && i < _dims; i++)
 	{
 		_aim[i] = _cluster->value(idx, i);
+		_absoluteDir[i] = _cluster->value(idx, i);
+		sum += _absoluteDir[i] * _absoluteDir[i];
 		_aim[i] -= _cluster->value(start, i);
-		std::cout << _aim[i] << " ";
 	}
-	std::cout << std::endl;
+
+	sum = sqrt(sum);
+	for (size_t i = 0; i < _dims; i++)
+	{
+		_absoluteDir[i] /= sum;
+	}
 }
 
 void PathFinder::setup()
@@ -154,15 +161,32 @@ bool PathFinder::testDirection(Placement dir, int idx)
 	return (after < before);
 }
 
-PathFinder::Placement PathFinder::generateDirection()
+PathFinder::Placement PathFinder::generateDirection(int idx)
 {
 	Placement dir(_dims, 0);
+	Placement shortest(_dims, 0);
 
+	float sum = 0;
+	float dist_to_dest = 0;
 	for (size_t i = 0; i < _dims; i++)
 	{
 		float r = rand() / (double)RAND_MAX;
 		dir[i] = r * 2. - 1.;
-		dir[i] *= _scale;
+		dir[i] *= _scale / (float)_dims;
+
+		shortest[i] = _aim[i];
+
+		dist_to_dest += shortest[i] * shortest[i];
+		sum += dir[i] * dir[i];
+	}
+
+	sum = sqrt(sum);
+	dist_to_dest = sqrt(dist_to_dest) / _nodes[idx].distance;
+
+	for (size_t i = 0; i < _dims; i++)
+	{
+		dir[i] *= _scale / sum;
+		dir[i] += shortest[i] / dist_to_dest * _scale;
 	}
 	
 	return dir;
@@ -170,29 +194,36 @@ PathFinder::Placement PathFinder::generateDirection()
 
 void PathFinder::submitNode(Placement &dir, int idx)
 {
+	Placement old = dir;
 	_nodes[idx].add_to(dir);
 	int ndx = submitJob(dir);
 	
+	_nodes[ndx].last_dir = old;
 	_nodes[ndx].parent = idx;
 	_nodes[idx].next.push_back(ndx);
 }
 
 void PathFinder::extendNode(int idx)
 {
-	Placement dir = generateDirection();
+	Placement dir;
 	int num = _heads;
+	dir = generateDirection(idx);
 	if (idx == 0)
 	{
 		num = 10;
 	}
-	for (size_t i = 0; i < num; i++)
+	else
+	{
+	}
+
+	for (size_t i = 0; i < num - 1; i++)
 	{
 		bool next = true;
 		int count = 0;
 		
 		while (next && count < 100)
 		{
-			dir = generateDirection();
+			dir = generateDirection(idx);
 			next = (!testDirection(dir, idx));
 		}
 
@@ -246,14 +277,14 @@ void PathFinder::addFromAllNodes()
 			continue;
 		}
 		
-		c.score = n.score;
+		c.score = n.distance;
 		c.idx = i;
 		tmp.push_back(c);
 	}
 
 	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
 
-	for (size_t i = 0; i < tmp.size() && _list.size() < _heads * 8; i++)
+	for (size_t i = 0; i < tmp.size() && _list.size() < 24; i++)
 	{
 		if (std::find(_list.begin(), _list.end(), tmp[i].idx) != _list.end())
 		{
@@ -276,29 +307,30 @@ bool PathFinder::identifyNextLeads()
 		Candidate c{};
 		Node &n = _nodes[it->second];
 		n.distance_from(_aim);
-		float energy = n.distance;
+		float energy = n.score;
 		if (energy > _nodes[0].score + 1.0)
 		{
 			continue;
 		}
 		c.idx = it->second;
-		c.score = energy;
+		c.score = n.distance;
 		tmp.push_back(c);
 	}
 	
 	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
-	tmp.resize(tmp.size() / 2);
+//	tmp.resize(tmp.size() / 2);
 
 	for (size_t i = 0; i < tmp.size() && _end != nullptr; i++)
 	{
 		Node &n = _nodes[tmp[i].idx];
 		n.distance_from(_aim);
+		n.distance /= _nodes[i].distance;
 		tmp[i].score = n.score;
 
-		float ratio = n.distance / _nodes[0].distance;
-		if (ratio < _toGo)
+		if (n.distance < _toGo)
 		{
-			_toGo = ratio;
+			_toGo = n.distance;
+			_arrivals.push_back(tmp[i].idx);
 			std::cout << "New best: " << _toGo *100 << "% to go" << std::endl;
 
 			if (_toGo < 0.05)
@@ -342,6 +374,16 @@ void PathFinder::start()
 		}
 	}
 	std::cout << "done" << std::endl;
+	
+	traceDone();
+}
+
+void PathFinder::traceDone()
+{
+	for (size_t i = 0; i < _arrivals.size(); i++)
+	{
+	}
+
 }
 
 void PathFinder::addAxis(std::vector<ResidueTorsion> &list, 
