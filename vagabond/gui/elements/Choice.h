@@ -18,6 +18,8 @@ public:
 
 	virtual void click(bool left = true);
 	void unclick();
+	void tick();
+	void untick();
 private:
 	void makeTick();
 	Scene *_scene;

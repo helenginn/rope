@@ -67,6 +67,8 @@ Window::Window(int width, int height)
     {
         std::cout << "GLEW Error: " << glewGetErrorString(err) << std::endl;
     }
+	
+	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
 #ifdef __EMSCRIPTEN__
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
@@ -191,9 +193,10 @@ bool Window::tick()
 
 	_myWindow->deleteQueued();
 	
+	SDL_Delay(20);
 	if (!_current->isAlwaysOn())
 	{
-		SDL_Delay(20);
+//		SDL_Delay(20);
 	}
 	
 	return true;

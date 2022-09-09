@@ -69,14 +69,18 @@ void Scene::removeModal()
 	resetMouseKeyboard();
 }
 
-void Scene::render()
+void Scene::doThings()
 {
 	if (_mustRefresh)
 	{
 		refresh();
 		_mustRefresh = false;
+		viewChanged();
 	}
+}
 
+void Scene::render()
+{
 	SnowGL::render();
 
 	if (_modal != NULL)

@@ -35,6 +35,7 @@
 #include <vagabond/core/Chain.h>
 
 #include <vagabond/gui/DistanceMaker.h>
+#include <vagabond/gui/FixIssuesView.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/SearchPDB.h>
 #include <vagabond/gui/SerialRefiner.h>
@@ -226,11 +227,11 @@ void AddEntity::setup()
 			b->resize(0.15);
 			b->setReturnTag("fix_issues");
 			b->setCentre(0.6, 0.6);
-			b->setInert(true);
+//			b->setInert(true);
 			b->setAlpha(-0.5);
-			Text *alt = new Text("not yet implemented");
-			alt->resize(0.5);
-			b->setHover(alt);
+//			Text *alt = new Text("not yet implemented");
+//			alt->resize(0.5);
+//			b->setHover(alt);
 			addObject(b);
 
 			Text *text = new Text("Fix issues");
@@ -304,6 +305,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		SerialRefiner *refiner = new SerialRefiner(this, &_obj);
 		refiner->setRefineAll(true);
 		refiner->show();
+		return;
+	}
+	else if (tag == "fix_issues")
+	{
+		FixIssuesView *fiv = new FixIssuesView(this, &_obj);
+		fiv->show();
 		return;
 	}
 	else if (tag == "create")

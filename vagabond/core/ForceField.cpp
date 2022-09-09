@@ -79,11 +79,7 @@ void ForceField::setupCAlphaSeparation()
 		Atom &ai = *atoms[i];
 		Atom *cai = _group->atomByIdName(ResidueId(ai.residueNumber()), "CA");
 		tmpReporters[atoms[i]] = cai;
-
-		if (cai != nullptr)
-		{
-			_reporters->add(cai);
-		}
+		_reporters->add(cai);
 	}
 
 	for (size_t i = 0; i < atoms.size() - 1; i++)
@@ -448,7 +444,11 @@ double ForceField::score()
 {
 	for (size_t i = 0; i < _group->size(); i++)
 	{
-		_tmpColours[(*_reporters)[i]] = 0.f;
+		Atom *reporter = (*_reporters)[i];
+		if (reporter)
+		{
+			_tmpColours[reporter] = 0.f;
+		}
 	}
 
 	double sum = 0;

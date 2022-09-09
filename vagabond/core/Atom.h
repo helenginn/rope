@@ -92,7 +92,7 @@ public:
 	}
 	
 	/** @returns residue number within chain */
-	const ResidueId &residueId()
+	const ResidueId &residueId() const
 	{
 		return _residueId;
 	}

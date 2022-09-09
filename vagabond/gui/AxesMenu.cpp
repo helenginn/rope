@@ -89,8 +89,6 @@ Renderable *AxesMenu::getLine(int i)
 		t->setLeft(0, 0);
 		b->addObject(t);
 		
-		std::cout << glm::to_string(t->vertex(0).pos) <<  std::endl;
-		
 		t->click();
 		if (!found)
 		{

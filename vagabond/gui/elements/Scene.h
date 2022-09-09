@@ -50,6 +50,7 @@ public:
 	void hideBackButton();
 	virtual void showSimple();
 	virtual void render();
+	virtual void doThings();
 
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);

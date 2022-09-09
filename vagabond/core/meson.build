@@ -27,6 +27,7 @@ vagafiles = [
 'Environment.cpp',
 'File.cpp',
 'FileManager.cpp',
+'FixIssues.cpp',
 'ForceField.cpp',
 'ForceFieldHandler.cpp',
 'GeometryTable.cpp',
