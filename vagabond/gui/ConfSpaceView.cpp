@@ -19,6 +19,7 @@
 #include "RulesMenu.h"
 #include "AxesMenu.h"
 #include "LineSeries.h"
+#include "PathView.h"
 #include "ConfSpaceView.h"
 #include "Axes.h"
 #include "ColourLegend.h"
@@ -321,6 +322,40 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		addGuiElements();
 	}
 	
+	if (tag == "path_from")
+	{
+		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		_from = m;
+	}
+	
+	if (tag == "explore_paths" || tag == "path_to")
+	{
+		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		Molecule *to = nullptr;
+		if (tag == "explore_paths")
+		{
+			_from = m;
+		}
+		else
+		{
+			to = m;
+		}
+
+		if (_from)
+		{
+			PathView *pv = new PathView(_view->cluster(), _from);
+			
+			if (to)
+			{
+				pv->setTarget(to);
+				_from = nullptr;
+			}
+
+			addObject(pv);
+			pv->start();
+		}
+	}
+	
 	if (tag == "view_model")
 	{
 		Molecule *m = static_cast<Molecule	*>(button->returnObject());
@@ -439,6 +474,15 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
 	m->addOption("view model", "view_model");
+	if (_from == nullptr)
+	{
+		m->addOption("explore paths", "explore_paths");
+		m->addOption("path from", "path_from");
+	}
+	else
+	{
+		m->addOption("path to", "path_to");
+	}
 	m->addOption("set as reference", "set_as_reference");
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
 	m->setup(x, y);

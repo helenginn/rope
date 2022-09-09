@@ -40,6 +40,7 @@ guifiles = [
 'MetadataView.cpp',
 'ModelMenu.cpp',
 'ModelMetadataView.cpp',
+'PathView.cpp',
 'PlaneView.cpp',
 'PlaneGrid.cpp',
 'ProgressView.cpp',

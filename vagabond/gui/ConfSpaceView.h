@@ -89,6 +89,8 @@ private:
 	ClusterView *_view = nullptr;
 	Axes *_axes = nullptr;
 	const Rule *_colourRule = nullptr;
+	
+	Molecule *_from = nullptr;
 
 	std::vector<HasMetadata *> _whiteList;
 	std::vector<Renderable *> _temps;
