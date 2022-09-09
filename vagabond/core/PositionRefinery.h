@@ -22,6 +22,7 @@
 #include "SimplexEngine.h"
 #include "TorsionBasis.h"
 #include <iostream>
+#include <climits>
 
 class AtomGroup;
 class BondCalculator;
