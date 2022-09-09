@@ -179,8 +179,10 @@ inline void from_json(const json &j, Model &value)
 	
 	try
 	{
-		value._chain2Entity = j.at("chain_to_entity");
-		value._molecules = j.at("molecules");
+        std::map<std::string, std::string> chain_to_entity = j.at("chain_to_entity");
+        value._chain2Entity = chain_to_entity;
+        std::list<Molecule> molecules = j.at("molecules");
+        value._molecules = molecules;
 		value._dataFile = j.at("dataFile");
 	}
 	catch (...)

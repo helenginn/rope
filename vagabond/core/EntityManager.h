@@ -81,7 +81,8 @@ inline void to_json(json &j, const EntityManager &value)
 
 inline void from_json(const json &j, EntityManager &value)
 {
-	value._objects = j.at("entities");
+    std::list<Entity> entities = j.at("entities");
+    value._objects = entities;
 }
 
 #endif

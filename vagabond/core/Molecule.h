@@ -174,7 +174,8 @@ inline void from_json(const json &j, Molecule &value)
 	try
 	{
 		value._refined = j.at("refined");
-		value._transforms = j.at("transforms");
+        std::map<std::string, glm::mat4x4> transforms = j.at("transforms");
+        value._transforms = transforms;
 	}
 	catch (...)
 	{

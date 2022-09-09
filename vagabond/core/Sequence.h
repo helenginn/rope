@@ -230,8 +230,10 @@ inline void to_json(json &j, const Sequence &value)
 /* sequence */
 inline void from_json(const json &j, Sequence &value)
 {
-	value._residues = j.at("residues");
-	value._master = j.at("master");
+    std::list<Residue> residues = j.at("residues");
+    value._residues = residues;
+    std::list<Residue> master = j.at("master");
+    value._master = master;
 	
 	value.housekeeping();
 }

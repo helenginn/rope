@@ -85,7 +85,8 @@ inline void from_json(const json &j, Ruler &value)
 {
 	try
 	{
-		value._rules = j.at("rules");
+        std::list<Rule> rules = j.at("rules");
+        value._rules = rules;
 	}
 	catch (const nlohmann::detail::out_of_range &err)
 	{
