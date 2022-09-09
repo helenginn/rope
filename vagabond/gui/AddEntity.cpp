@@ -160,10 +160,17 @@ void AddEntity::setup()
 		top += inc;
 
 		{
-			TextButton *t = new TextButton("Refine all", this);
-			t->setLeft(0.15, top);
-			t->setReturnTag("refine");
-			addObject(t);
+			ImageButton *button = new ImageButton("assets/images/us28.png", 
+			                                      this);
+			button->resize(0.12);
+			button->setReturnTag("refine");
+			button->setCentre(0.2, 0.6);
+			addObject(button);
+
+			Text *text = new Text("Refine all");
+			text->setCentre(0.2, 0.7);
+			text->resize(0.8);
+			addObject(text);
 		}
 
 		{

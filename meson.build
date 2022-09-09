@@ -117,6 +117,7 @@ install_data(
 'assets/images/torsion.png',
 'assets/images/tube_1.5ml.png',
 'assets/images/unit_cell.png',
+'assets/images/us28.png',
 install_dir : images)
 
 subdir('ccp4')
