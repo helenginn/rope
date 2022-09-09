@@ -188,12 +188,6 @@ void AddEntity::setup()
 		}
 
 		{
-			/*
-			TextButton *t = new TextButton("Add to metadata", this);
-			t->setLeft(0.15, top);
-			t->setReturnTag("metadata");
-			addObject(t);
-			*/
 			ImageButton *button = new ImageButton("assets/images/misc_data.png", 
 			                                      this);
 			button->resize(0.2);
@@ -207,6 +201,43 @@ void AddEntity::setup()
 			addObject(text);
 		}
 
+		{
+			ImageButton *button = new ImageButton("assets/images/eye.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("display_options");
+			button->setCentre(0.4, 0.6);
+			button->setInert(true);
+			button->setAlpha(-0.5);
+			Text *alt = new Text("not yet implemented");
+			alt->resize(0.5);
+			button->setHover(alt);
+			addObject(button);
+
+			Text *text = new Text("Display options");
+			text->setCentre(0.4, 0.7);
+			text->resize(0.8);
+			addObject(text);
+		}
+
+		{
+			ImageButton *b = new ImageButton("assets/images/phenylalanine.png", 
+			                                      this);
+			b->resize(0.15);
+			b->setReturnTag("fix_issues");
+			b->setCentre(0.6, 0.6);
+			b->setInert(true);
+			b->setAlpha(-0.5);
+			Text *alt = new Text("not yet implemented");
+			alt->resize(0.5);
+			b->setHover(alt);
+			addObject(b);
+
+			Text *text = new Text("Fix issues");
+			text->setCentre(0.6, 0.7);
+			text->resize(0.8);
+			addObject(text);
+		}
 	}
 
 	AddObject::setup();
