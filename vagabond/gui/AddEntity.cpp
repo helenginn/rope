@@ -39,6 +39,7 @@
 #include <vagabond/gui/SearchPDB.h>
 #include <vagabond/gui/SerialRefiner.h>
 
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -74,39 +75,58 @@ void AddEntity::setup()
 	float top = 0.3;
 	float inc = 0.08;
 
+	if (!_existing)
 	{
-		Text *t = new Text("Entity name:");
-		t->setLeft(0.15, top);
-		t->addAltTag("Unique identifier for entity");
-		addObject(t);
-	}
-	{
-		std::string file = _obj.name();
-		textOrChoose(file, "Enter...");
+		{
+			Text *t = new Text("Entity name:");
+			t->setLeft(0.15, top);
+			t->addAltTag("Unique identifier for entity");
+			addObject(t);
+		}
+		{
+			std::string file = _obj.name();
+			textOrChoose(file, "Enter...");
 
-		TextEntry *t = new TextEntry(file, this);
-		t->setReturnTag("enter_name");
-		t->setRight(0.85, top);
-		
-		if (_existing) { t->setInert(); }
+			TextEntry *t = new TextEntry(file, this);
+			t->setReturnTag("enter_name");
+			t->setRight(0.85, top);
 
-		_name = t;
-		addObject(t);
+			if (_existing) { t->setInert(); }
+
+			_name = t;
+			addObject(t);
+		}
 	}
 	
 	top += inc;
 
+	if (!_existing)
 	{
-		Text *t = new Text("Reference sequence:");
-		t->setLeft(0.15, top);
-		t->addAltTag("Models of this entity will align to this sequence");
-		addObject(t);
+		{
+			Text *t = new Text("Reference sequence:");
+			t->setLeft(0.15, top);
+			t->addAltTag("Models of this entity will align to this sequence");
+			addObject(t);
+		}
+		{
+			TextButton *t = SequenceView::button(_obj.sequence(), this);
+			t->setReturnTag("sequence");
+			t->setRight(0.85, top);
+			addObject(t);
+		}
 	}
+	else
 	{
-		TextButton *t = SequenceView::button(_obj.sequence(), this);
-		t->setReturnTag("sequence");
-		t->setRight(0.85, top);
-		addObject(t);
+		ImageButton *button = new ImageButton("assets/images/sequence.png", this);
+		button->resize(0.2);
+		button->setReturnTag("sequence");
+		button->setCentre(0.2, 0.3);
+		addObject(button);
+
+		Text *text = new Text("Sequence");
+		text->resize(0.8);
+		text->setCentre(0.2, 0.4);
+		addObject(text);
 	}
 	
 	top += inc;
@@ -117,16 +137,24 @@ void AddEntity::setup()
 			std::string str = i_to_str(_obj.modelCount()) + " models / ";
 			str += i_to_str(_obj.moleculeCount()) + " molecules";
 			Text *t = new Text(str);
-			t->setLeft(0.15, top);
-			t->addAltTag("Models may contain multiple molecules of this entity");
+			t->setCentre(0.5, 0.15);
+			t->resize(0.8);
+//			t->addAltTag("Models may contain multiple molecules of this entity");
 			addObject(t);
 		}
 
 		{
-			TextButton *t = new TextButton("View conformational space", this);
-			t->setRight(0.85, top);
-			t->setReturnTag("conf_space");
-			addObject(t);
+			ImageButton *button = new ImageButton("assets/images/confspace.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("conf_space");
+			button->setCentre(0.4, 0.3);
+			addObject(button);
+
+			Text *text = new Text("RoPE space");
+			text->setCentre(0.4, 0.4);
+			text->resize(0.8);
+			addObject(text);
 		}
 
 		top += inc;
@@ -138,23 +166,40 @@ void AddEntity::setup()
 			addObject(t);
 		}
 
-		top += inc;
+		{
+			ImageButton *button = new ImageButton("assets/images/search.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("search_pdb");
+			button->setCentre(0.6, 0.3);
+			addObject(button);
+
+			Text *text = new Text("Search PDB");
+			text->setCentre(0.6, 0.4);
+			text->resize(0.8);
+			addObject(text);
+		}
 
 		{
+			/*
 			TextButton *t = new TextButton("Add to metadata", this);
 			t->setLeft(0.15, top);
 			t->setReturnTag("metadata");
 			addObject(t);
+			*/
+			ImageButton *button = new ImageButton("assets/images/misc_data.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("metadata");
+			button->setCentre(0.8, 0.3);
+			addObject(button);
+
+			Text *text = new Text("Add metadata");
+			text->setCentre(0.8, 0.4);
+			text->resize(0.8);
+			addObject(text);
 		}
 
-		top += inc;
-
-		{
-			TextButton *t = new TextButton("Search PDB for entity", this);
-			t->setLeft(0.15, top);
-			t->setReturnTag("search_pdb");
-			addObject(t);
-		}
 	}
 
 	AddObject::setup();
