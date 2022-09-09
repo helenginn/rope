@@ -84,7 +84,7 @@ void MetadataView::setup()
 	}
 }
 
-void MetadataView::supplyCSV()
+void MetadataView::supplyCSV(std::string indicator)
 {
 	_csv = _md->asCSV();
 }

@@ -19,6 +19,7 @@
 #include "AxesMenu.h"
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/gui/elements/Choice.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
 
 AxesMenu::AxesMenu(Scene *prev) : ListView(prev)
@@ -107,10 +108,33 @@ Renderable *AxesMenu::getLine(int i)
 		b->addObject(t);
 	}
 	
+	{
+		ImageButton *fb = ImageButton::arrow(-90., this);
+		fb->setLeft(0.7, 0.0);
+		fb->setReturnTag("export_" + i_to_str(i));
+		b->addObject(fb);
+	}
+	
 	return b;
 }
 
-void AxesMenu::supplyCSV()
+void AxesMenu::supplySingleAxis(int i)
+{
+	_csv = "";
+
+	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+	std::vector<float> vals = _cluster->torsionVector(i);
+	_csv += "torsion_id,torsion(degrees)\n";
+	
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		_csv += list[i].desc() + ", " + std::to_string(vals[i]);
+		_csv += "\n";
+	}
+
+}
+
+void AxesMenu::supplyMainPlot()
 {
 	_csv = "";
 	MetadataGroup *mg = _cluster->dataGroup();
@@ -127,6 +151,20 @@ void AxesMenu::supplyCSV()
 		
 		_csv.pop_back();
 		_csv += "\n";
+	}
+
+}
+
+void AxesMenu::supplyCSV(std::string indicator)
+{
+	if (indicator == "")
+	{
+		supplyMainPlot();
+	}
+	else
+	{
+		int axis = atoi(indicator.c_str());
+		supplySingleAxis(axis);
 	}
 }
 

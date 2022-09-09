@@ -49,12 +49,14 @@ private:
 	Cluster<MetadataGroup> *_cluster = nullptr;
 	std::string _entity_id;
 
-	virtual void supplyCSV();
+	virtual void supplyCSV(std::string indicator = "");
 	virtual void supplyModal(Modal *m)
 	{
 		setModal(m);
 	}
 	
+	void supplySingleAxis(int i);
+	void supplyMainPlot();
 };
 
 #endif

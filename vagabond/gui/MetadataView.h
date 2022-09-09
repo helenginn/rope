@@ -38,7 +38,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 
 protected:
-	virtual void supplyCSV();
+	virtual void supplyCSV(std::string indicator = "");
 
 private:
 	Metadata *_md = nullptr;

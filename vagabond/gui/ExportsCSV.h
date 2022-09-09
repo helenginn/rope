@@ -36,7 +36,7 @@ protected:
 		_me = me;
 	}
 
-	virtual void supplyCSV() = 0;
+	virtual void supplyCSV(std::string indicator = "") = 0;
 	void askForFilename();
 	void exportCSVToFile(std::string filename);
 	std::string _csv;

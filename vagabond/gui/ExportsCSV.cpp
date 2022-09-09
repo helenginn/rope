@@ -20,6 +20,7 @@
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/Scene.h>
+#include <iostream>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -41,25 +42,31 @@ void ExportsCSV::askForFilename()
 
 void ExportsCSV::exportCSVToFile(std::string filename)
 {
+	std::cout << "I am here" << std::endl;
 	std::ofstream file;
 	file.open(filename);
+
+	_me->removeModal();
 
 	if (file.is_open())
 	{
 		file << _csv;
 		file.close();
+		std::cout << "Success" << std::endl;
 		BadChoice *bc = new BadChoice(_me, "Exported file");
 		_me->setModal(bc);
 	}
 	else
 	{
 		BadChoice *bc = new BadChoice(_me, "Failure writing file");
+		std::cout << "fail" << std::endl;
 		_me->setModal(bc);
 	}
 }
 
 void ExportsCSV::buttonPressed(std::string tag, Button *button)
 {
+	std::string end = Button::tagEnd(tag, "export_");
 	if (tag == "export")
 	{
 		supplyCSV();
@@ -70,6 +77,11 @@ void ExportsCSV::buttonPressed(std::string tag, Button *button)
 		TextEntry *te = static_cast<TextEntry *>(button);
 		std::string filename = te->scratch();
 		exportCSVToFile(filename);
+	}
+	else if (end.length())
+	{
+		supplyCSV(end);
+		askForFilename();
 	}
 }
 
