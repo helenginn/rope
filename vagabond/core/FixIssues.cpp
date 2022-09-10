@@ -58,12 +58,47 @@ void FixIssues::processModel(Model *m)
 		{
 			continue;
 		}
+		
+		if (&m == _reference)
+		{
+			continue;
+		}
 
 		Sequence *seq = m.sequence();
 		if (_options & FixPhenylalanine)
 		{
 			AtomVector phes = findAtoms(&m, "PHE", "CD1");
 			processAtoms(&m, phes, 180);
+		}
+		if (_options & FixTyrosine)
+		{
+			AtomVector tyrs = findAtoms(&m, "TYR", "CD1");
+			processAtoms(&m, tyrs, 180);
+		}
+		if (_options & FixGlutamate)
+		{
+			AtomVector glus = findAtoms(&m, "GLU", "OE1");
+			processAtoms(&m, glus, 180);
+		}
+		if (_options & FixAspartate)
+		{
+			AtomVector asps = findAtoms(&m, "ASP", "OD1");
+			processAtoms(&m, asps, 180);
+		}
+		if (_options & FixArginine)
+		{
+			AtomVector args = findAtoms(&m, "ARG", "NH1");
+			processAtoms(&m, args, 180);
+		}
+		if (_options & FixGlutamine)
+		{
+			AtomVector glns = findAtoms(&m, "GLU", "OE1");
+			processAtoms(&m, glns, 180);
+		}
+		if (_options & FixAsparagine)
+		{
+			AtomVector asns = findAtoms(&m, "ASN", "OD1");
+			processAtoms(&m, asns, 180);
 		}
 	}
 
@@ -137,13 +172,15 @@ void FixIssues::checkTorsions(Molecule *mol, Residue *local,
 		float diff = ref_angle - local_angle;
 		
 		float change = 0;
-		if (diff < -90 / 2)
+		while (diff < -90 / 2)
 		{
-			change = expected_diff;
+			change += expected_diff;
+			diff += expected_diff;
 		}
-		else if (diff > +90 / 2)
+		while (diff >= +90 / 2)
 		{
-			change = -expected_diff;
+			change -= expected_diff;
+			diff -= expected_diff;
 		}
 		
 		if (fabs(change) > 1)
@@ -173,6 +210,12 @@ void FixIssues::processAtoms(Molecule *mol, AtomVector &atoms, float degree_diff
 		ResidueId id = a->residueId();
 		// get the local residue
 		Residue *local = seq->residue(id);
+		
+		if (local == nullptr)
+		{
+			continue;
+		}
+
 		// turn this into the master residue
 		Residue *master = seq->master_residue(local);
 		

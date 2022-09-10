@@ -227,11 +227,6 @@ void AddEntity::setup()
 			b->resize(0.15);
 			b->setReturnTag("fix_issues");
 			b->setCentre(0.6, 0.6);
-//			b->setInert(true);
-			b->setAlpha(-0.5);
-//			Text *alt = new Text("not yet implemented");
-//			alt->resize(0.5);
-//			b->setHover(alt);
 			addObject(b);
 
 			Text *text = new Text("Fix issues");

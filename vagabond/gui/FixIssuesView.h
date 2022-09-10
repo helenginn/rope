@@ -20,10 +20,12 @@
 #define __vagabond__FixIssuesView__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/FixIssues.h>
 
 class Entity;
 class FixIssues;
 class Molecule;
+class ChoiceText;
 
 class FixIssuesView : public Scene
 {
@@ -34,11 +36,17 @@ public:
 	virtual void setup();
 	virtual void buttonPressed(std::string tag, Button *button);
 private:
+	void addOption(std::string name, std::string tag, float top,
+	               bool ticked);
+	FixIssues::Options options();
+
 	Entity *_entity = nullptr;
 	Molecule *_molecule = nullptr;
 
 	FixIssues *_fixer = nullptr;
 	std::thread *_worker = nullptr;
+	
+	std::vector<ChoiceText *> _options;
 };
 
 #endif

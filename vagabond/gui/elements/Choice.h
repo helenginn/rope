@@ -20,6 +20,11 @@ public:
 	void unclick();
 	void tick();
 	void untick();
+	
+	bool ticked()
+	{
+		return _ticked;
+	}
 private:
 	void makeTick();
 	Scene *_scene;

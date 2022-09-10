@@ -81,6 +81,7 @@ guifiles = [
 'EntityFromSequence.h',
 'FileLine.h',
 'FileView.h',
+'FixIssuesView.h',
 'GuiAtom.h',
 'GuiBond.h',
 'GuiDensity.h',

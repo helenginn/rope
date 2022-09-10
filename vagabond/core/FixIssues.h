@@ -50,6 +50,11 @@ public:
 		FixNone = 0 << 0,
 		FixPhenylalanine = 1 << 0,
 		FixTyrosine = 1 << 1,
+		FixGlutamate = 1 << 2,
+		FixAspartate = 1 << 3,
+		FixGlutamine = 1 << 4,
+		FixAsparagine = 1 << 5,
+		FixArginine = 1 << 6,
 	};
 	
 	void setOptions(Options opts)
