@@ -156,3 +156,21 @@ void GuiBalls::prepareAtomSpace(AtomGroup *ag)
 	_indices.reserve(indicesPerAtom() * ag->size());
 	unlockMutex();
 }
+
+void GuiBalls::addVisuals(Atom *a)
+{
+	int idx = _atomIndex[a];
+	
+	for (size_t i = idx; i < idx + verticesPerAtom(); i++)
+	{
+		_vertices[i].color[3] = 1.f;
+	}
+	
+	_bonds->addVisuals(a);
+}
+
+void GuiBalls::removeVisuals()
+{
+	GuiRepresentation::removeVisuals();
+	_bonds->removeVisuals();
+}

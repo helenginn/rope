@@ -209,15 +209,11 @@ public:
 		return this;
 	}
 	
-	bool isMainChain() const
-	{
-		return _mainChain;
-	}
+	bool isMainChain() const;
+	static bool isMainChain(std::string name);
 	
-	void setMainChain(bool mainChain)
-	{
-		_mainChain = mainChain;
-	}
+	bool isReporterAtom() const;
+	static bool isReporterAtom(std::string name);
 	
 	/** coordination matrix for BondSequence.
 	    @param isAnchor specifies if atom is first in sequence */

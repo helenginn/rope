@@ -53,6 +53,7 @@ public:
 		return _desc;
 	}
 	
+	/** dodgy */
 	const bool &isMain() const
 	{
 		return _main;
@@ -84,6 +85,7 @@ public:
 		return _desc < other._desc;
 	}
 
+	std::string atomName(int i);
 private:
 	std::string _desc;
 	std::string _reverse_desc;

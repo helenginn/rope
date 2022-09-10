@@ -63,6 +63,11 @@ struct ResidueId
 		}
 		return ss.str();
 	}
+	
+	const std::string str() const
+	{
+		return as_string();
+	}
 
 	const bool operator==(const ResidueId &o) const
 	{

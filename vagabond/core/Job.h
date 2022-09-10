@@ -181,7 +181,10 @@ struct Result
 			wp.samples = last;
 			wp.ave = last[0];
 			it->first->setDerivedPositions(wp);
-			it->first->setAddedColour(it->second.colour);
+			if (requests & JobScoreStructure)
+			{
+//				it->first->setAddedColour(it->second.colour);
+			}
 		}
 	}
 	

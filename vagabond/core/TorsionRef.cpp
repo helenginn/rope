@@ -18,6 +18,7 @@
 
 #include "TorsionRef.h"
 #include <sstream>
+#include <vagabond/utils/FileReader.h>
 
 TorsionRef::TorsionRef()
 {
@@ -71,4 +72,10 @@ void TorsionRef::organiseDescriptions()
 void TorsionRef::housekeeping()
 {
 	organiseDescriptions();
+}
+
+std::string TorsionRef::atomName(int i)
+{
+	std::vector<std::string> splits = split(_desc, '-');
+	return splits[i];
 }

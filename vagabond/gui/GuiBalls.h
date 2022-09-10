@@ -39,6 +39,9 @@ public:
 	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp);
 	
 	virtual void prepareAtomSpace(AtomGroup *ag);
+	virtual void addVisuals(Atom *a);
+
+	virtual void removeVisuals();
 private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();

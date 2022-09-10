@@ -153,4 +153,14 @@ void GuiBond::watchBonds(AtomGroup *a)
 	_num = 1;
 }
 
+void GuiBond::addVisuals(Atom *a)
+{
+	int idx = _atomIdx[a];
+	_vertices[idx].color[3] = 1.f;
+}
 
+
+void GuiBond::removeVisuals()
+{
+	setAlpha(0.f);
+}

@@ -52,6 +52,7 @@ private:
 	Slider *_rangeSlider = nullptr;
 
 	void reportMissing();
+	void setupColours();
 	
 	double _min = -1; 
 	double _max = 1; 

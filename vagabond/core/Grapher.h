@@ -45,7 +45,6 @@ public:
 	 * ending graph */
 	void generateGraphs(Atom *atom, size_t count = UINT_MAX);
 	void calculateMissingMaxDepths();
-	void assignMainChain();
 	void fillInParents();
 
 	void fillTorsionAngles(TorsionBasis *basis);

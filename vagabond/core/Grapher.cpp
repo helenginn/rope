@@ -51,30 +51,6 @@ Grapher::Grapher(Grapher &other)
 
 }
 
-void Grapher::assignMainChain()
-{
-	calculateMissingMaxDepths();
-	sortGraphChildren();
-	
-	for (size_t i = 0; i < _graphs.size(); i++)
-	{
-		_graphs[i]->atom->setMainChain(false);
-	}
-
-	AtomGraph *graph = _graphs[0];
-	while (graph != nullptr)
-	{
-		graph->atom->setMainChain(true);
-
-		if (graph->children.size() == 0)
-		{
-			break;
-		}
-		
-		graph = graph->children.back();
-	}
-}
-
 bool Grapher::preferredConnection(Atom *atom, Atom *next)
 {
 	// HARDCODE

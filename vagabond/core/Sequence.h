@@ -126,8 +126,8 @@ public:
 		return _residues.back().as_num();
 	}
 	
-	/** residue associated with a ResidueId 
-	 *  POSSIBLY DUPLICATE FUNCTION */
+	/** residue associated with a ResidueId - does not need to be an
+ * 	exact match */
 	Residue *residueLike(const ResidueId &other);
 	
 	/** string of one-letter codes for this sequence */

@@ -16,45 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__GuiRepresentation__
-#define __vagabond__GuiRepresentation__
+#ifndef __vagabond__BallAndStickOptions__
+#define __vagabond__BallAndStickOptions__
 
-#include <vagabond/gui/elements/Renderable.h>
-#include <vagabond/core/Atom.h>
+#include <vagabond/gui/elements/ListView.h>
 
-class AtomGroup;
-class GuiAtom;
+class VisualPreferences;
+class Entity;
 
-class GuiRepresentation : public Renderable
+class BallAndStickOptions : public ListView
 {
 public:
-	GuiRepresentation(GuiAtom *parent)
-	{
-		_parent = parent;
-	}
-	
-	virtual ~GuiRepresentation() {}
+	BallAndStickOptions(Scene *prev, Entity *ent);
 
-	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
-	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp) = 0;
-	virtual void watchAtom(Atom *a) = 0;
+	virtual void setup();
 
-	virtual void prepareAtomSpace(AtomGroup *ag) = 0;
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
 
-	virtual void removeVisuals()
-	{
-		setAlpha(0.f);
-	}
-
-	virtual void addVisuals(Atom *a) {};
-protected:
-	GuiAtom *parent()
-	{
-		return _parent;
-	}
+	virtual void buttonPressed(std::string tag, Button *button);
 private:
-	GuiAtom *_parent = nullptr;
+	void addResidueRange(std::string range);
+	bool addResidue(int res);
 
+	Entity *_entity = nullptr;
+	VisualPreferences *_preferences = nullptr;
 };
 
 #endif

@@ -69,35 +69,49 @@ void FixIssues::processModel(Model *m)
 		{
 			AtomVector phes = findAtoms(&m, "PHE", "CD1");
 			processAtoms(&m, phes, 180);
+			phes = findAtoms(&m, "PHE", "CD2");
+			processAtoms(&m, phes, 180);
 		}
 		if (_options & FixTyrosine)
 		{
 			AtomVector tyrs = findAtoms(&m, "TYR", "CD1");
+			processAtoms(&m, tyrs, 180);
+			tyrs = findAtoms(&m, "PHE", "CD2");
 			processAtoms(&m, tyrs, 180);
 		}
 		if (_options & FixGlutamate)
 		{
 			AtomVector glus = findAtoms(&m, "GLU", "OE1");
 			processAtoms(&m, glus, 180);
+			glus = findAtoms(&m, "GLU", "OE2");
+			processAtoms(&m, glus, 180);
 		}
 		if (_options & FixAspartate)
 		{
 			AtomVector asps = findAtoms(&m, "ASP", "OD1");
+			processAtoms(&m, asps, 180);
+			asps = findAtoms(&m, "ASP", "OE1");
 			processAtoms(&m, asps, 180);
 		}
 		if (_options & FixArginine)
 		{
 			AtomVector args = findAtoms(&m, "ARG", "NH1");
 			processAtoms(&m, args, 180);
+			args = findAtoms(&m, "ARG", "NH2");
+			processAtoms(&m, args, 180);
 		}
 		if (_options & FixGlutamine)
 		{
 			AtomVector glns = findAtoms(&m, "GLU", "OE1");
 			processAtoms(&m, glns, 180);
+			glns = findAtoms(&m, "GLU", "NE2");
+			processAtoms(&m, glns, 180);
 		}
 		if (_options & FixAsparagine)
 		{
 			AtomVector asns = findAtoms(&m, "ASN", "OD1");
+			processAtoms(&m, asns, 180);
+			asns = findAtoms(&m, "ASN", "ND2");
 			processAtoms(&m, asns, 180);
 		}
 	}

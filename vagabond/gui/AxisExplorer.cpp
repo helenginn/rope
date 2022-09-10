@@ -23,10 +23,12 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/maths.h>
 
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/c4x/Cluster.h>
 #include <vagabond/core/Molecule.h>
+#include <vagabond/core/Entity.h>
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/ConcertedBasis.h>
 #include <vagabond/core/AlignmentTool.h>
@@ -36,7 +38,7 @@ AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
                            const std::vector<float> &values) 
 : Scene(prev), Display(prev), StructureModification(mol, 1, 1)
 {
-	_pType = BondCalculator::PipelineForceField;
+//	_pType = BondCalculator::PipelineForceField;
 	_dims = 1;
 	_list = list;
 	_values = values;
@@ -69,8 +71,10 @@ void AxisExplorer::setup()
 	setupSlider();
 	
 	submitJob(0.0);
+	setupColours();
 	
-	_guiAtoms->setDisableRibbon(false);
+	VisualPreferences *vp = &_molecule->entity()->visualPreferences();
+	_guiAtoms->applyVisuals(vp);
 	
 	reportMissing();
 }
@@ -82,8 +86,8 @@ void AxisExplorer::submitJob(float prop)
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = prop;
-		job.requests = static_cast<JobType>(JobExtractPositions | 
-		                                    JobScoreStructure);
+		job.requests = static_cast<JobType>(JobExtractPositions); 
+//		                                    | JobScoreStructure);
 		calc->submitJob(job);
 	}
 
@@ -102,7 +106,6 @@ void AxisExplorer::submitJob(float prop)
 		if (r->requests & JobExtractPositions)
 		{
 			r->transplantLastPosition();
-			std::cout << "Score: " << r->score << std::endl;
 			sum += r->score;
 		}
 	}
@@ -205,5 +208,61 @@ void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 	props.group = _molecule->currentAtoms();
 	props.t = FFProperties::CAlphaSeparation;
 	calc->setForceFieldProperties(props);
+
+}
+
+void AxisExplorer::setupColours()
+{
+	CorrelData cd = empty_CD();
+	
+	for (Atom *a : _fullAtoms->atomVector())
+	{
+		a->setAddedColour(0.f);
+	}
+	
+	for (const float &val : _values)
+	{
+		float sqval = sqrt(val * val);
+		add_to_CD(&cd, sqval, sqval);
+	}
+	
+	double mean, stdev;
+	mean_stdev_CD(cd, &mean, &stdev);
+
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		TorsionRef tr = _list[i].torsion;
+		
+		if (!Atom::isMainChain(tr.atomName(0)) ||
+		    !Atom::isMainChain(tr.atomName(3)))
+		{
+			continue;
+		}
+
+		Residue *master = _list[i].residue;
+		if (master == nullptr)
+		{
+			continue;
+		}
+
+		Sequence *seq = _molecule->sequence();
+		Residue *local = seq->local_residue(master);
+		if (local == nullptr)
+		{
+			continue;
+		}
+		ResidueId id = local->id();
+		
+		Atom *atom = _fullAtoms->atomByIdName(id, "CA");
+		if (atom == nullptr)
+		{
+			continue;
+		}
+
+		float val = sqrt(_values[i] * _values[i]);
+		val -= mean;
+		val /= stdev * 2;
+		atom->addToColour(val);
+	}
 
 }

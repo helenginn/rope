@@ -16,45 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__GuiRepresentation__
-#define __vagabond__GuiRepresentation__
+#ifndef __vagabond__DisplayOptions__
+#define __vagabond__DisplayOptions__
 
-#include <vagabond/gui/elements/Renderable.h>
-#include <vagabond/core/Atom.h>
+#include <vagabond/gui/elements/Scene.h>
 
-class AtomGroup;
-class GuiAtom;
+class Entity;
+class VisualPreferences;
 
-class GuiRepresentation : public Renderable
+class DisplayOptions : public Scene
 {
 public:
-	GuiRepresentation(GuiAtom *parent)
-	{
-		_parent = parent;
-	}
-	
-	virtual ~GuiRepresentation() {}
+	DisplayOptions(Scene *prev, Entity *ent);
+	~DisplayOptions();
 
-	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
-	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp) = 0;
-	virtual void watchAtom(Atom *a) = 0;
-
-	virtual void prepareAtomSpace(AtomGroup *ag) = 0;
-
-	virtual void removeVisuals()
-	{
-		setAlpha(0.f);
-	}
-
-	virtual void addVisuals(Atom *a) {};
-protected:
-	GuiAtom *parent()
-	{
-		return _parent;
-	}
+	virtual void setup();
+	virtual void refresh();
+	virtual void buttonPressed(std::string tag, Button *button);
 private:
-	GuiAtom *_parent = nullptr;
-
+	Entity *_entity = nullptr;
+	VisualPreferences *_preferences = nullptr;
+	
+	std::vector<Button *> _basOptions;
 };
 
 #endif

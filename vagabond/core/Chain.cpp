@@ -149,7 +149,7 @@ void Chain::assignMainChain()
 		Atom *start = grps[i]->chosenAnchor();
 		Grapher gr;
 		gr.generateGraphs(start);
-		gr.assignMainChain();
+//		gr.assignMainChain();
 	}
 	
 	int count = 0;

@@ -39,6 +39,8 @@ public:
 	void updateAtom(Atom *a, glm::vec3 pos, int n = 0);
 	void updateAtoms(Atom *a, Atom::WithPos &wp);
 	
+	void addVisuals(Atom *a);
+	void removeVisuals();
 private:
 	void changeNetworks(int n);
 	void incrementNetworks(int n);

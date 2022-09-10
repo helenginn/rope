@@ -11,8 +11,9 @@ class Icosahedron;
 class GuiBond;
 class GuiBalls;
 class GuiRibbon;
-class GuiRepresentation;
 class AtomGroup;
+class GuiRepresentation;
+class VisualPreferences;
 
 class Atom;
 
@@ -47,6 +48,8 @@ public:
 	void setDisableRibbon(bool dis);
 
 	virtual void render(SnowGL *gl);
+
+	void applyVisuals(VisualPreferences *vp);
 private:
 	static void backgroundWatch(GuiAtom *what);
 	

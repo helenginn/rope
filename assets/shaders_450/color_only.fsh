@@ -8,6 +8,10 @@ out vec4 FragColor;
 
 void main()
 {
+	if (vColor.a <= 0.01)
+	{
+		discard;
+	}
 	vec4 result = vColor;
 	FragColor = result;
 }

@@ -11,14 +11,16 @@ out vec4 FragColor;
 
 void main()
 {
-//	vec4 result = texture(pic_tex, vTex);
 	vec4 result = vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	remaining *= 0.5;
 	vec3 unit = normalize(vNormal);
 	remaining *= abs(dot(unit, vec3(0, 0, 1)));
 	result.xyz += remaining;
-//	result.a = 1;
+	if (result.a <= 0.01)
+	{
+		discard;
+	}
 	FragColor = result;
 }
 

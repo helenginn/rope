@@ -26,6 +26,7 @@
 #include "Model.h"
 #include "MetadataGroup.h"
 #include "Responder.h"
+#include "VisualPreferences.h"
 #include "AtomRecall.h"
 
 #include <json/json.hpp>
@@ -99,6 +100,11 @@ public:
 	std::map<std::string, int> allMetadataHeaders();
 	
 	void clickTicker();
+	
+	VisualPreferences &visualPreferences()
+	{
+		return _visPrefs;
+	}
 
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);
@@ -107,6 +113,7 @@ private:
 
 	std::string _name;
 	Sequence _sequence;
+	VisualPreferences _visPrefs;
 	
 	Model *_currentModel = nullptr;
 
@@ -121,22 +128,17 @@ inline void to_json(json &j, const Entity &value)
 {
 	j["name"] = value._name;
 	j["sequence"] = value._sequence;
+	j["visuals"] = value._visPrefs;
 }
 
 inline void from_json(const json &j, Entity &value)
 {
-	try
-	{
-		value._name = j.at("name");
-	}
-	catch (...)
-	{
-		std::cout << "Error processing json, probably old version" << std::endl;
-	}
+	value._name = j.at("name");
+	value._sequence = j.at("sequence");
 
 	try
 	{
-		value._sequence = j.at("sequence");
+		value._visPrefs = j.at("visuals");
 	}
 	catch (...)
 	{

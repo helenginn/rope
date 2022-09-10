@@ -10,6 +10,10 @@ out vec4 FragColor;
 
 void main()
 {
+	if (vColor[3] <= 0.01)
+	{
+		discard;
+	}
 	vec4 result = vColor;
 	FragColor = result;
 }

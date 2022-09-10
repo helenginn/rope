@@ -28,9 +28,6 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	Text *t = new Text(text);
 	t->setCentre(0.5, 0.45);
 	addObject(t);
-
-	addTwoButtons("Cancel", "cancel", "OK", "ok");
-	setReturnTag(tag);
 	
 	TextEntry *te = new TextEntry("enter", scene);
 	te->setValidationType(v);
@@ -38,6 +35,9 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	te->setReturnTag("text");
 	_text = te;
 	addObject(te);
+
+	addTwoButtons("Cancel", "cancel", "OK", "ok");
+	setReturnTag(tag);
 	
 	setDismissible(true);
 }

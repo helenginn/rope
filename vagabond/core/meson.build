@@ -70,6 +70,7 @@ vagafiles = [
 'ThreadMapSummer.cpp',
 'TorsionBasis.cpp',
 'TorsionRef.cpp',
+'VisualPreferences.cpp',
 ]
 
 install_headers([
@@ -103,6 +104,7 @@ install_headers([
 'TorsionBasis.h',
 'Vagaphore.h',
 'matrix_functions.h',
+'VisualPreferences.h',
 ],
 subdir : 'vagabond/core')
 

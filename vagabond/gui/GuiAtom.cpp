@@ -26,6 +26,7 @@
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/VisualPreferences.h>
 
 #include <iostream>
 #include <thread>
@@ -210,4 +211,20 @@ void GuiAtom::setDisableRibbon(bool dis)
 void GuiAtom::setDisableBalls(bool dis)
 {
 	_balls->setDisabled(dis);
+}
+
+
+void GuiAtom::applyVisuals(VisualPreferences *vp)
+{
+	setDisableRibbon(!vp->cAlphaTrace());
+
+	std::vector<Atom *> av = vp->selectBallStickAtoms(_atoms);
+	
+	_balls->removeVisuals();
+	for (Atom *a : av)
+	{
+		_balls->addVisuals(a);
+	}
+
+	_balls->forceRender(true, false);
 }

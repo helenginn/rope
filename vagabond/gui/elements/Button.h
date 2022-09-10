@@ -41,9 +41,17 @@ public:
 	
 	/** Renders button unable to be highlighted and suppresses action when
 	 * pressed */
-	void setInert(bool inert = true)
+	void setInert(bool inert = true, bool alpha = false)
 	{
 		_inert = inert;
+		if (alpha && !_inert)
+		{
+			setAlpha(0.f);
+		}
+		else if (alpha && _inert)
+		{
+			setAlpha(-0.5f);
+		}
 	}
 
 	virtual void unMouseOver();

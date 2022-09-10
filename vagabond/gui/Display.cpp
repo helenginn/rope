@@ -293,3 +293,9 @@ void Display::buttonPressed(std::string tag, Button *button)
 	}
 }
 
+/*
+void Display::setVideoMode()
+{
+
+}
+*/

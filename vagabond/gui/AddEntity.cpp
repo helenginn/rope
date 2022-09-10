@@ -35,6 +35,7 @@
 #include <vagabond/core/Chain.h>
 
 #include <vagabond/gui/DistanceMaker.h>
+#include <vagabond/gui/DisplayOptions.h>
 #include <vagabond/gui/FixIssuesView.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/SearchPDB.h>
@@ -208,7 +209,7 @@ void AddEntity::setup()
 			button->resize(0.2);
 			button->setReturnTag("display_options");
 			button->setCentre(0.4, 0.6);
-			button->setInert(true);
+//			button->setInert(true);
 			button->setAlpha(-0.5);
 			Text *alt = new Text("not yet implemented");
 			alt->resize(0.5);
@@ -306,6 +307,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		FixIssuesView *fiv = new FixIssuesView(this, &_obj);
 		fiv->show();
+		return;
+	}
+	else if (tag == "display_options")
+	{
+		DisplayOptions *dov = new DisplayOptions(this, &_obj);
+		dov->show();
 		return;
 	}
 	else if (tag == "create")
