@@ -37,14 +37,15 @@ void FixIssues::findIssues()
 		return; // no issues found
 	}
 	
-	std::cout << "Finding issues" << std::endl;
 	_reference->model()->load();
+	std::cout << "Ref molecule: " << _reference->id() << std::endl;
 
 	for (Model *m : _models)
 	{
 		processModel(m);
 	}
 	
+	_reference->model()->unload();
 	_done = true;
 }
 
