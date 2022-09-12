@@ -55,6 +55,8 @@ public:
 		FixGlutamine = 1 << 4,
 		FixAsparagine = 1 << 5,
 		FixArginine = 1 << 6,
+		FixPeptideFlips = 1 << 7,
+		Fix360Rotations = 1 << 8,
 	};
 	
 	void setOptions(Options opts)
@@ -86,6 +88,11 @@ private:
 	void checkTorsions(Molecule *mol, Residue *local, TorsionRefPairs &trps, 
 	                   float expected_diff);
 
+	void residuesForAtom(Molecule *m, const Atom *a, 
+	                     Residue *&ref, Residue *&local);
+	
+	void fixPeptideFlips(Molecule *m);
+
 	std::vector<Model *> _models;
 	Options _options = FixNone;
 	bool _done = false;
@@ -108,6 +115,12 @@ private:
 			}
 
 			return str;
+		}
+		
+		const bool operator==(const Issue &other) const
+		{
+			return (mol == other.mol && local == other.local &&
+			        torsion == other.torsion);
 		}
 	};
 	

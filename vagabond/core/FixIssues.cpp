@@ -66,6 +66,11 @@ void FixIssues::processModel(Model *m)
 		}
 
 		Sequence *seq = m.sequence();
+		if (_options & Fix360Rotations)
+		{
+			AtomVector all = m.currentAtoms()->atomVector();
+			processAtoms(&m, all, 360);
+		}
 		if (_options & FixPhenylalanine)
 		{
 			AtomVector phes = findAtoms(&m, "PHE", "CD1");
@@ -77,7 +82,7 @@ void FixIssues::processModel(Model *m)
 		{
 			AtomVector tyrs = findAtoms(&m, "TYR", "CD1");
 			processAtoms(&m, tyrs, 180);
-			tyrs = findAtoms(&m, "PHE", "CD2");
+			tyrs = findAtoms(&m, "TYR", "CD2");
 			processAtoms(&m, tyrs, 180);
 		}
 		if (_options & FixGlutamate)
@@ -115,9 +120,132 @@ void FixIssues::processModel(Model *m)
 			asns = findAtoms(&m, "ASN", "ND2");
 			processAtoms(&m, asns, 180);
 		}
+		if (_options & FixPeptideFlips)
+		{
+			fixPeptideFlips(&m);
+		}
 	}
 
 	m->unload();
+}
+
+void check_phi_psi(float phi, float psi, float &dphi, float &dpsi)
+{
+	if (fabs(phi + psi) > 180)
+	{
+		while (phi < -90)
+		{
+			phi += 360; dphi += 360;
+			if (fabs(phi + psi) < 180) { return; }
+		}
+		while (phi >= +90)
+		{
+			phi -= 360; dphi -= 360;
+			if (fabs(phi + psi) < 180) { return; }
+		}
+		
+		while (psi < -90)
+		{
+			psi += 360; dpsi += 360;
+			if (fabs(phi + psi) < 180) { return; }
+		}
+		while (psi >= +90)
+		{
+			psi -= 360; dpsi -= 360;
+			if (fabs(phi + psi) < 180) { return; }
+		}
+	}
+}
+
+void FixIssues::fixPeptideFlips(Molecule *m)
+{
+	AtomVector cas = findAtoms(m, "", "CA");
+
+	for (Atom *ca : cas)
+	{
+		Atom *c = nullptr;
+		Atom *n = nullptr;
+		for (int i = 0; i < ca->bondLengthCount(); i++)
+		{
+			if (ca->connectedAtom(i)->atomName() == "C")
+			{
+				c = ca->connectedAtom(i);
+				break;
+			}
+		}
+		
+		if (!c) continue;
+		for (int i = 0; i < c->bondLengthCount(); i++)
+		{
+			if (c->connectedAtom(i)->atomName() == "N")
+			{
+				n = c->connectedAtom(i);
+				break;
+			}
+		}
+		if (!n) continue;
+		
+		Residue *local_c = nullptr; Residue *ref_c = nullptr;
+		residuesForAtom(m, c, local_c, ref_c);
+
+		Residue *local_n = nullptr; Residue *ref_n = nullptr;
+		residuesForAtom(m, n, local_n, ref_n);
+		
+		if (!local_c || !ref_c || !local_n || !ref_n)
+		{
+			continue;
+		}
+		
+		TorsionRefPairs c_trps = findMatchingTorsions(c, local_c, ref_c);
+		TorsionRefPairs n_trps = findMatchingTorsions(n, local_n, ref_n);
+		
+		TorsionRef *phi_ref = nullptr;
+		TorsionRef *psi_ref = nullptr;
+		TorsionRef *phi_local = nullptr;
+		TorsionRef *psi_local = nullptr;
+		
+		for (TorsionRefPair &pair : c_trps)
+		{
+			if (pair.first.atomName(0) == "C" && 
+			    pair.first.atomName(3) == "C")
+			{
+				phi_ref = &(pair.first);
+				phi_local = &(pair.second);
+			}
+		}
+		
+		for (TorsionRefPair &pair : n_trps)
+		{
+			if (pair.first.atomName(0) == "N" && 
+			    pair.first.atomName(3) == "N")
+			{
+				psi_ref = &(pair.first);
+				psi_local = &(pair.second);
+			}
+		}
+		
+		if (!phi_ref || !psi_ref || !phi_local || !psi_local)
+		{
+			continue;
+		}
+
+		float phi_diff = phi_ref->refinedAngle() - phi_local->refinedAngle();
+		float psi_diff = psi_ref->refinedAngle() - psi_local->refinedAngle();
+		float dphi = 0; float dpsi = 0;
+		
+		check_phi_psi(phi_diff, psi_diff, dphi, dpsi);
+
+		if (fabs(dphi) > 1)
+		{
+			addIssue(m, local_c, *phi_local, dphi, "peptide flip phi, change "\
+			         "by " + f_to_str(dphi, 0) + " degrees");
+		}
+		if (fabs(dpsi) > 1)
+		{
+			addIssue(m, local_n, *psi_local, dpsi, "peptide flip psi, change "\
+			         "by " + f_to_str(dpsi, 0) + " degrees");
+		}
+	}
 }
 
 AtomVector FixIssues::findAtoms(Molecule *m, std::string code, std::string atom)
@@ -129,7 +257,7 @@ AtomVector FixIssues::findAtoms(Molecule *m, std::string code, std::string atom)
 	
 	for (Atom *a : atoms)
 	{
-		if (a->code() != code)
+		if (a->code() != code && code.length() > 0)
 		{
 			continue;
 		}
@@ -207,49 +335,59 @@ void FixIssues::checkTorsions(Molecule *mol, Residue *local,
 
 }
 
-void FixIssues::processAtoms(Molecule *mol, AtomVector &atoms, float degree_diff)
+void FixIssues::residuesForAtom(Molecule *mol, const Atom *a, 
+                                Residue *&local, Residue *&ref)
 {
 	Sequence *seqref = _reference->sequence();
 	Sequence *seq = mol->sequence();
-	seq->remapFromMaster(mol->entity());
 
+	int ttc = a->terminalTorsionCount();
+	if (ttc < 1)
+	{
+		return;
+	}
+
+	ResidueId id = a->residueId();
+	// get the local residue
+	local = seq->residue(id);
+
+	if (local == nullptr)
+	{
+		return;
+	}
+
+	// turn this into the master residue
+	Residue *master = seq->master_residue(local);
+
+	if (master == nullptr)
+	{
+//		addIssue(mol, local, TorsionRef{}, 0, "missing residue in entity");
+		return;
+	}
+
+	// convert back to the local residue for the reference model
+	ref = seqref->local_residue(master);
+
+	if (ref == nullptr)
+	{
+		addIssue(mol, local, TorsionRef{}, 0, "missing residue in reference");
+		return;
+	}
+}
+
+void FixIssues::processAtoms(Molecule *mol, AtomVector &atoms, float degree_diff)
+{
 	for (const Atom *a : atoms)
 	{
-		int ttc = a->terminalTorsionCount();
-		if (ttc < 1)
-		{
-			std::cout << "Atom doesn't have any terminal torsions" << std::endl;
-			continue;
-		}
-
-		ResidueId id = a->residueId();
-		// get the local residue
-		Residue *local = seq->residue(id);
+		Residue *local = nullptr;
+		Residue *ref = nullptr;
+		residuesForAtom(mol, a, local, ref);
 		
-		if (local == nullptr)
+		if (!local || !ref)
 		{
 			continue;
 		}
-
-		// turn this into the master residue
-		Residue *master = seq->master_residue(local);
 		
-		if (master == nullptr)
-		{
-			addIssue(mol, local, TorsionRef{}, 0, "missing residue in entity");
-			continue;
-		}
-
-		// convert back to the local residue for the reference model
-		Residue *ref = seqref->local_residue(master);
-		
-		if (ref == nullptr)
-		{
-			addIssue(mol, local, TorsionRef{}, 0, "missing residue in reference");
-			continue;
-		}
-		
-		// not tryptophan
 		TorsionRefPairs trps = findMatchingTorsions(a, ref, local);
 		checkTorsions(mol, local, trps, degree_diff);
 	}
@@ -259,6 +397,17 @@ void FixIssues::addIssue(Molecule *mol, Residue *local, TorsionRef tref,
                          float change, std::string message)
 {
 	Issue issue{mol, local, tref, change, message};
+	
+	std::vector<Issue>::iterator it;
+	it = std::find(_issues.begin(), _issues.end(), issue);
+	
+	if (it != _issues.end()) 
+	{
+		*it = issue;
+		triggerResponse();
+		return;
+	}
+
 	_issues.push_back(issue);
 	triggerResponse();
 }
@@ -269,8 +418,11 @@ void FixIssues::fixIssue(int i)
 	
 	if (issue.torsion.desc().length() > 0)
 	{
+		std::cout << issue.fullMessage() << std::endl;
 		float angle = issue.torsion.refinedAngle();
+		std::cout << "angle " << angle << " ";
 		angle -= issue.change;
+		std::cout << " to " << angle << std::endl;
 		issue.torsion.setRefinedAngle(angle);
 		
 		issue.local->replaceTorsionRef(issue.torsion);
