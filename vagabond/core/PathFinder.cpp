@@ -159,11 +159,11 @@ PathFinder::Placement PathFinder::generateDirection(int idx)
 {
 	Placement dir(_dims, 0);
 
-	for (size_t i = 0; i < _dims; i++)
+	for (size_t i = 0; i < _dimsInUse; i++)
 	{
 		float r = rand() / (double)RAND_MAX;
 		dir[i] = r * 2. - 1.;
-		dir[i] *= _scale;// / sqrt(_dims);
+		dir[i] *= _scale / sqrt(_dimsInUse);
 	}
 	
 	return dir;

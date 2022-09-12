@@ -133,6 +133,7 @@ private:
 	int _heads = 4;
 	float _toGo = FLT_MAX;
 	int _cycles = 0;
+	int _dimsInUse = 0;
 	
 	std::vector<int> _arrivals;
 };
