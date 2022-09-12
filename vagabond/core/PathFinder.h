@@ -25,6 +25,7 @@
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/c4x/Cluster.h>
 
+class Route;
 class Molecule;
 
 class PathFinder : public StructureModification,
@@ -72,6 +73,13 @@ public:
 
 	void addAxis(std::vector<ResidueTorsion> &list, 
 	             std::vector<float> &values);
+	
+	size_t routeCount()
+	{
+		return _arrivals.size();
+	}
+
+	Route *route(int i);
 protected:
 	typedef std::vector<float> Placement;
 	int submitJob(Placement &n);

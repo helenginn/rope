@@ -53,6 +53,7 @@ vagafiles = [
 'PositionRefinery.cpp',
 'RefList.cpp',
 'Residue.cpp',
+'Route.cpp',
 'Rule.cpp',
 'Ruler.cpp',
 'Sampler.cpp',

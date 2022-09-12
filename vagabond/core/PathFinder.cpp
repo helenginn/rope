@@ -20,6 +20,7 @@
 #include "Molecule.h"
 #include "AtomGroup.h"
 #include <algorithm>
+#include "Route.h"
 
 PathFinder::PathFinder(Molecule *start, Cluster<MetadataGroup> *cluster, int dims)
 : StructureModification(start, 1, dims)
@@ -410,4 +411,28 @@ void PathFinder::findDistanceToAim(Node &n)
 	}
 	distance = sqrt(distance);
 	n.distance = distance;
+
+Route *PathFinder::route(int idx)
+{
+	int end = _arrivals[idx];
+	int next_node = end;
+
+	std::vector<int> list;
+
+	while (next_node >= 0)
+	{
+		list.push_back(next_node);
+		next_node = _nodes[next_node].parent;
+	}
+	
+	Route *route = new Route(_molecule, _cluster->dataGroup()->length());
+	route->supplyAxes(_torsionLists[0].list);
+
+	for (int i = (int)list.size() - 1; i >= 0; i++)
+	{
+		Placement torsion_list = nodeToTorsionList(_nodes[i]);
+		route->addPoint(torsion_list);
+	}
+
+	return route;
 }
