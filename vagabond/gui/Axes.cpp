@@ -18,6 +18,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <vagabond/utils/version.h>
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/utils/FileReader.h>
@@ -330,6 +331,7 @@ void Axes::interacted(int idx, bool hover, bool left)
 			m->addOption("reset", "reset");
 		}
 		
+#ifdef VERSION_NEXT
 		if (!startedPlane())
 		{
 			m->addOption("start plane", "start_plane");
@@ -347,6 +349,7 @@ void Axes::interacted(int idx, bool hover, bool left)
 			m->addOption("cancel plane", "cancel_plane");
 			m->addOption("plane options", "plane_options");
 		}
+#endif
 
 		double w = _scene->width();
 		double h = _scene->height();

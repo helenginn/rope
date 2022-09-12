@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "VagWindow.h"
-#include <GL/glew.h>
+#include <vagabond/utils/gl_import.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>

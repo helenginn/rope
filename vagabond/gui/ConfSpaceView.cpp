@@ -28,6 +28,7 @@
 #include "ClusterView.h"
 #include "AddModel.h"
 
+#include <vagabond/utils/version.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/ChooseRange.h>
@@ -76,7 +77,7 @@ void ConfSpaceView::setup()
 	}
 	else
 	{
-		addGuiElements();
+		refresh();
 	}
 	
 	{
@@ -318,7 +319,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "no_fold_in")
 	{
 		// show conf space
-		addGuiElements();
+		refresh();
 	}
 	
 	if (tag == "path_from")
@@ -396,7 +397,6 @@ void ConfSpaceView::refresh()
 {
 	if (_view == nullptr)
 	{
-		showClusters();
 		addGuiElements();
 	}
 
@@ -473,6 +473,7 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
 	m->addOption("view model", "view_model");
+#ifdef VERSION_NEXT
 	if (_from == nullptr)
 	{
 		m->addOption("explore paths", "explore_paths");
@@ -482,6 +483,7 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 	{
 		m->addOption("path to", "path_to");
 	}
+#endif
 	m->addOption("set as reference", "set_as_reference");
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
 	m->setup(x, y);

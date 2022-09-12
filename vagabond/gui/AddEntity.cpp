@@ -209,11 +209,6 @@ void AddEntity::setup()
 			button->resize(0.2);
 			button->setReturnTag("display_options");
 			button->setCentre(0.4, 0.6);
-//			button->setInert(true);
-			button->setAlpha(-0.5);
-			Text *alt = new Text("not yet implemented");
-			alt->resize(0.5);
-			button->setHover(alt);
 			addObject(button);
 
 			Text *text = new Text("Display options");

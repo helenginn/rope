@@ -18,6 +18,7 @@
 
 #include "FixIssuesView.h"
 #include <vagabond/core/Entity.h>
+#include <vagabond/utils/version.h>
 #include <vagabond/gui/ResolveIssues.h>
 #include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -88,8 +89,10 @@ void FixIssuesView::setup()
 	addOption("Fix asparagine", "asparagine", top, false);
 	top += inc;
 	addOption("Fix glutamine", "glutamine", top, false);
+#ifdef VERSION_NEXT
 	top += inc;
 	addOption("Fix peptide flips", "peptide_flips", top, false);
+#endif
 	
 	{
 		TextButton *t = new TextButton("Find issues", this);

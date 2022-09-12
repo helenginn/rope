@@ -87,8 +87,8 @@ void SerialRefiner::doThings()
 		_display->setOwnsAtoms(false);
 		_display->loadAtoms(atoms);
 		_display->show();
-		_display->guiAtoms()->setDisableRibbon(true);
-		_display->guiAtoms()->setDisableBalls(false);
+		_display->guiAtoms()->setDisableRibbon(false);
+		_display->guiAtoms()->setDisableBalls(true);
 	}
 	
 	_model = nullptr;
