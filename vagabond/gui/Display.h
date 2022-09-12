@@ -47,6 +47,11 @@ public:
 		_toLoad = grp;
 	}
 	
+	GuiAtom *guiAtoms()
+	{
+		return _guiAtoms;
+	}
+	
 	void densityFromDiffraction(Diffraction *diff);
 	
 	virtual void buttonPressed(std::string tag, Button *button);

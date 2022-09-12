@@ -104,6 +104,8 @@ public:
 	void recalculate();
 	void mechanics();
 	
+	glm::vec3 initialCentre();
+	
 	void setLastResidual(double last)
 	{
 		_lastResidual = last;

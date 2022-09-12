@@ -564,3 +564,17 @@ float AtomGroup::rmsd() const
 	sum = sqrt(sum / weights);
 	return sum;
 }
+
+glm::vec3 AtomGroup::initialCentre()
+{
+	glm::vec3 sum = glm::vec3(0.f);
+	double weight = 0;
+	for (Atom *a : _atoms)
+	{
+		sum += a->initialPosition();
+		weight++;
+	}
+
+	sum /= weight;
+	return sum;
+}

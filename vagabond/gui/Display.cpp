@@ -152,7 +152,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_guiDensity->setAtoms(_atoms);
 	addObject(_guiDensity);
 
-	_centre = _guiAtoms->getCentre();
+	_centre = _atoms->initialCentre();
 	_translation = -_centre;
 	_translation.z -= 240;
 
