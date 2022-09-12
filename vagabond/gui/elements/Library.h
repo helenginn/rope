@@ -5,7 +5,7 @@
 
 #include <mutex>
 #include <map>
-#include <GL/glew.h>
+#include <vagabond/utils/gl_import.h>
 #include <string>
 #include <vector>
 #include "font_types.h"

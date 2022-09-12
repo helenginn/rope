@@ -5,7 +5,7 @@
 
 #include <vagabond/utils/glm_import.h>
 
-#include <GL/glew.h>
+#include <vagabond/utils/gl_import.h>
 #include <mutex>
 #include <map>
 #include <atomic>

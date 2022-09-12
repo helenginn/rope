@@ -73,6 +73,8 @@ Window::Window(int width, int height)
 #ifdef __EMSCRIPTEN__
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
 #else
+	glewInit();
+
 	_renderer = NULL;
 	
 	if (IMG_Init(IMG_INIT_PNG) == 0) 

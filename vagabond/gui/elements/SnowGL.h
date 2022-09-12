@@ -5,7 +5,7 @@
 
 #include <vagabond/utils/glm_import.h>
 #include <mutex>
-#include <GL/glew.h>
+#include <vagabond/utils/gl_import.h>
 
 #include "HasRenderables.h"
 

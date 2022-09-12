@@ -6,7 +6,7 @@
 #include "TextButton.h"
 #include "Scene.h"
 #include "Image.h"
-#include <GL/glew.h>
+#include <vagabond/utils/gl_import.h>
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <time.h>
