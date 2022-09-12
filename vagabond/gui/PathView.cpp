@@ -25,7 +25,12 @@ PathView::PathView(Cluster<MetadataGroup> *cluster, Molecule *mol)
 {
 	setName("Path view");
 	_renderType = GL_LINES;
-	PathFinder *pf = new PathFinder(mol, cluster, 20);
+	int total = 20;
+	if (cluster->rows() < total)
+	{
+		total = cluster->rows();
+	}
+	PathFinder *pf = new PathFinder(mol, cluster, total);
 	_pathFinder = pf;
 	_cluster = cluster;
 	_molecule = mol;
@@ -42,7 +47,17 @@ PathView::~PathView()
 
 void PathView::start()
 {
-	for (size_t i = 0; i < _pathFinder->dims(); i++)
+	if (_pathFinder->end())
+	{
+		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+
+		int from = _cluster->dataGroup()->indexOfObject(_molecule);
+		int to = _cluster->dataGroup()->indexOfObject(_pathFinder->end());
+		std::vector<float> diffs = _cluster->rawVector(from, to);
+		_pathFinder->addAxis(list, diffs);
+	}
+
+	for (size_t i = 0; i < _pathFinder->dims() - 1; i++)
 	{
 		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
 		std::vector<float> vals = _cluster->torsionVector(i);
@@ -70,7 +85,8 @@ void PathView::addNewPoints()
 
 	for (size_t i = existing; i < full; i++)
 	{
-		std::vector<float> placement = _pathFinder->placement(i);
+		std::vector<float> placement = _pathFinder->mapNodeToRope(i);
+		// nope
 		glm::vec3 pos = _cluster->point(placement);
 		Vertex &v = addVertex(pos);
 		v.pos += centre;
