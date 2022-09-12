@@ -237,8 +237,6 @@ struct Candidate
 void PathFinder::addFromAllNodes()
 {
 	std::vector<Candidate> tmp;
-	
-	int start = std::max((int)_nodes.size() - 1000, 0);
 
 	for (size_t i = 0; i < _nodes.size(); i++)
 	{
