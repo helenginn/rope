@@ -74,7 +74,7 @@ void ForceField::setupCAlphaSeparation()
 	
 	std::map<Atom *, Atom *> tmpReporters;
 
-	for (size_t i = 0; i < atoms.size() - 1; i++)
+	for (size_t i = 0; i < atoms.size(); i++)
 	{
 		Atom &ai = *atoms[i];
 		Atom *cai = _group->atomByIdName(ResidueId(ai.residueNumber()), "CA");
@@ -442,7 +442,7 @@ void ForceField::prepareCalculation()
 
 double ForceField::score()
 {
-	for (size_t i = 0; i < _group->size(); i++)
+	for (size_t i = 0; i < _group->size() && i < _reporters->size(); i++)
 	{
 		Atom *reporter = (*_reporters)[i];
 		if (reporter)
