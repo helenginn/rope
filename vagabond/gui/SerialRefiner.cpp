@@ -18,6 +18,7 @@
 
 #include "SerialRefiner.h"
 #include "Display.h"
+#include "GuiAtom.h"
 #include <vagabond/core/Entity.h>
 #include <vagabond/gui/elements/Text.h>
 #include <sstream>
@@ -86,6 +87,8 @@ void SerialRefiner::doThings()
 		_display->setOwnsAtoms(false);
 		_display->loadAtoms(atoms);
 		_display->show();
+		_display->guiAtoms()->setDisableRibbon(true);
+		_display->guiAtoms()->setDisableBalls(false);
 	}
 	
 	_model = nullptr;

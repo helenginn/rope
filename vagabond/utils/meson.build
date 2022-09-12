@@ -14,6 +14,7 @@ install_headers([
 'glm_json.h',
 'seqalign.h',
 'maths.h',
+'version.h',
 'svd/PCA.h',
 ],
 subdir : 'vagabond/utils')
