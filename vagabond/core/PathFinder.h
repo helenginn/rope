@@ -72,7 +72,7 @@ public:
 	std::vector<float> mapNodeToRope(int i);
 
 	void addAxis(std::vector<ResidueTorsion> &list, 
-	             std::vector<float> &values);
+	             std::vector<float> &values, bool split_big = false);
 	
 	size_t routeCount()
 	{
@@ -110,6 +110,7 @@ private:
 	};
 
 	std::vector<float> mapNodeToRope(Node &n);
+	std::vector<float> nodeToTorsionList(Node &n);
 
 	std::map<int, int> _scoreMap;
 	std::vector<Node> _nodes;

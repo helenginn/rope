@@ -364,14 +364,27 @@ void PathFinder::traceDone()
 }
 
 void PathFinder::addAxis(std::vector<ResidueTorsion> &list, 
-                         std::vector<float> &values)
+                         std::vector<float> &values, bool split_big)
 {
-	if (_axis >= _dims)
+	if (split_big)
 	{
-//		throw std::runtime_error("Too many axes in plane");
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			if (fabs(values[i]) > 90.f)
+			{
+				std::vector<float> tmp = std::vector<float>(list.size(), 0);
+				tmp[i] = values[i];
+				values[i] = 0;
+
+				supplyTorsions(list, tmp);
+				_dimsInUse++;
+			}
+		}
+
 	}
 
 	supplyTorsions(list, values);
+	_dimsInUse++;
 }
 
 std::vector<float> PathFinder::mapNodeToRope(int i)
@@ -379,7 +392,7 @@ std::vector<float> PathFinder::mapNodeToRope(int i)
 	return mapNodeToRope(_nodes[i]);
 }
 
-std::vector<float> PathFinder::mapNodeToRope(Node &n)
+std::vector<float> PathFinder::nodeToTorsionList(Node &n)
 {
 	int l = _cluster->dataGroup()->length();
 	Placement pos(l, 0);
@@ -393,7 +406,13 @@ std::vector<float> PathFinder::mapNodeToRope(Node &n)
 			pos[j] += vals[j] * n.vec[i];
 		}
 	}
-	
+
+	return pos;
+}
+
+std::vector<float> PathFinder::mapNodeToRope(Node &n)
+{
+	Placement pos = nodeToTorsionList(n);
 	Placement place = _cluster->mapVector(pos);
 	
 	return place;
