@@ -318,7 +318,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "no_fold_in")
 	{
 		// show conf space
-		showClusters();
 		addGuiElements();
 	}
 	
