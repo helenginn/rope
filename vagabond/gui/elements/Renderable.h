@@ -459,6 +459,7 @@ private:
 	Alignment _align;
 	double _x = 0.0;
 	double _y = 0.0;
+	bool _setupBuffers = false;
 	int _currVertex = -1;
 	int _renderCount = 0;
 	static double _selectionResize;

@@ -273,6 +273,11 @@ void Renderable::rebindVBOBuffers()
 	}
 
 	checkErrors("vertex array attribute reenabling");
+	
+	if (!_setupBuffers)
+	{
+		setupVBOBuffers();
+	}
 }
 
 int Renderable::vaoForContext()
@@ -318,7 +323,8 @@ int Renderable::vaoForContext()
 
 void Renderable::rebufferIndexData()
 {
-	if (_bElements.count(_program) == 0)
+	// don't rebuffer if you haven't set up the buffers, will crash
+	if (_bElements.count(_program) == 0 || !_setupBuffers)
 	{
 		return;
 	}
@@ -336,11 +342,11 @@ void Renderable::rebufferIndexData()
 
 void Renderable::rebufferVertexData()
 {
-	if (_bVertices.count(_program) == 0)
+	if (_bVertices.count(_program) == 0 || !_setupBuffers)
 	{
 		return;
 	}
-
+	
 	GLuint bv = _bVertices[_program];
 	glBindBuffer(GL_ARRAY_BUFFER, bv);
 
@@ -354,7 +360,7 @@ void Renderable::rebufferVertexData()
 
 void Renderable::setupVBOBuffers()
 {
-	if (_program == 0)
+	if (_program == 0 || vPointer() == nullptr || iPointer() == nullptr)
 	{
 		return;
 	}
@@ -428,6 +434,7 @@ void Renderable::setupVBOBuffers()
 	checkErrors("vbo buffering");
 
 	glBindVertexArray(0);
+	_setupBuffers = true;
 	
 	if (_gl)
 	{
@@ -537,9 +544,13 @@ void Renderable::render(SnowGL *sender)
 			glUniform1i(uTex, 0);
 		}
 
-		checkErrors("before drawing elements");
-		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
-		checkErrors("drawing elements");
+		if (_setupBuffers)
+		{
+			checkErrors("before drawing elements");
+			glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
+			checkErrors("drawing elements");
+		}
+
 
 		glUseProgram(0);
 		unbindVBOBuffers();
@@ -1072,9 +1083,7 @@ void Renderable::setPosition(glm::vec3 pos)
 	glm::vec3 p = centroid();
 
 	glm::vec3 diff = pos - p;
-	lockMutex();
 	addToVertices(diff);
-	unlockMutex();
 	
 	positionChanged();
 }
