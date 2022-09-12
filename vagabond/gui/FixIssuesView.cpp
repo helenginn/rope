@@ -88,6 +88,8 @@ void FixIssuesView::setup()
 	addOption("Fix asparagine", "asparagine", top, false);
 	top += inc;
 	addOption("Fix glutamine", "glutamine", top, false);
+	top += inc;
+	addOption("Fix peptide flips", "peptide_flips", top, false);
 	
 	{
 		TextButton *t = new TextButton("Find issues", this);
@@ -135,6 +137,10 @@ FixIssues::Options FixIssuesView::options()
 		else if (tag == "arginine")
 		{
 			ret = (FixIssues::Options)(ret | FixIssues::FixArginine);
+		}
+		else if (tag == "peptide_flips")
+		{
+			ret = (FixIssues::Options)(ret | FixIssues::FixPeptideFlips);
 		}
 	}
 
