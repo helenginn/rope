@@ -67,6 +67,8 @@ public:
 	{
 		return _end;
 	}
+	
+	std::vector<float> mapNodeToRope(int i);
 
 	void addAxis(std::vector<ResidueTorsion> &list, 
 	             std::vector<float> &values);
@@ -97,33 +99,14 @@ private:
 				dir[i] += vec[i];
 			}
 		}
-		
-		float distance_from(Placement &aim)
-		{
-			distance = 0;
-			for (size_t i = 0; i < aim.size(); i++)
-			{
-				distance += (aim[i] - vec[i]) * (aim[i] - vec[i]);
-			}
-			distance = sqrt(distance);
-			return distance;
-		}
-
-		float distance_from(Placement &aim, Placement &dir)
-		{
-			distance = 0;
-			for (size_t i = 0; i < aim.size(); i++)
-			{
-				distance += (aim[i] - dir[i]) * (aim[i] - dir[i]);
-			}
-			distance = sqrt(distance);
-			return distance;
-		}
 	};
+
+	std::vector<float> mapNodeToRope(Node &n);
 
 	std::map<int, int> _scoreMap;
 	std::vector<Node> _nodes;
 	std::vector<int> _list;
+	void findDistanceToAim(Node &n);
 	Placement generateDirection(int idx);
 	bool testDirection(Placement dir, int idx);
 	void addFromAllNodes();

@@ -41,6 +41,11 @@ public:
 	 *  @param length fixed length of individual vector,
 	 *  made up of units */
 	DataGroup(int length);
+	
+	int length()
+	{
+		return _length;
+	}
 
 	virtual ~DataGroup();
 

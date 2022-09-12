@@ -51,9 +51,13 @@ public:
 	int bestAxisFit(std::vector<float> &vals);
 	
 	std::vector<float> torsionVector(int axis);
+	std::vector<float> rawVector(int from, int to);
 
 	/** implement by superclass to map new vector into existing space */
-	virtual void mapVector(std::vector<float> &vec) {};
+	virtual std::vector<float> mapVector(std::vector<float> &vec)
+	{
+		return std::vector<float>();
+	}
 	
 	size_t columns()
 	{

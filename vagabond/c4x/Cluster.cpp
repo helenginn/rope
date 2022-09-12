@@ -219,6 +219,22 @@ std::vector<float> Cluster<DG>::torsionVector(int axis)
 }
 
 template <class DG>
+std::vector<float> Cluster<DG>::rawVector(int from, int to)
+{
+	std::vector<float> my_vals, your_vals;
+	my_vals = dataGroup()->differenceVector(from);
+	your_vals = dataGroup()->differenceVector(to);
+
+	for (size_t i = 0; i < your_vals.size(); i++)
+	{
+		your_vals[i] -= my_vals[i];
+	}
+
+	dataGroup()->removeNormals(your_vals);
+	return your_vals;
+}
+
+template <class DG>
 float Cluster<DG>::weight(int axis) const
 {
 	float sum = 0;

@@ -34,7 +34,7 @@ public:
 	}
 
 	virtual void cluster();
-	virtual void mapVector(std::vector<float> &vec);
+	virtual std::vector<float> mapVector(std::vector<float> &vec);
 
 	virtual float weight(int axis) const
 	{
@@ -56,7 +56,7 @@ private:
 	PCA::Matrix matrix();
 
 	PCA::SVD _svd{};
-	PCA::Matrix _transpose{};
+	PCA::Matrix _rawToCluster{};
 	PCA::MatrixType _type = PCA::Correlation;
 };
 

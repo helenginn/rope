@@ -32,7 +32,6 @@ template <class DG>
 ClusterSVD<DG>::~ClusterSVD()
 {
 	freeSVD(&_svd);
-	freeMatrix(&_transpose);
 }
 
 template <class DG>
@@ -50,26 +49,11 @@ PCA::Matrix ClusterSVD<DG>::matrix()
 }
 
 template <class DG>
-void ClusterSVD<DG>::mapVector(std::vector<float> &vec)
+std::vector<float> ClusterSVD<DG>::mapVector(std::vector<float> &vec)
 {
-	std::vector<float> comparisons(this->rows(), 0);
-	
-	for (size_t i = 0; i < comparisons.size(); i++)
-	{
-		const typename DG::Array &v = this->_dg.differenceVector(i);
-		double cc = this->_dg.correlation_between(v, vec);
-		comparisons[i] = cc;
-	}
-	
-	multMatrix(this->_result, &comparisons[0]);
-	
-	vec.resize(comparisons.size());
-
-	for (size_t i = 0; i < comparisons.size(); i++)
-	{
-		vec[i] = comparisons[i];
-	}
-
+	std::vector<float> result(_rawToCluster.rows, 0);
+	multMatrix(this->_rawToCluster, &vec[0], &result[0]);
+	return result;
 }
 
 template <class DG>
@@ -107,9 +91,23 @@ void ClusterSVD<DG>::cluster()
 		this->_total += _svd.w[i];
 	}
 	
-	printMatrix(&(this->_result));
+	int l = this->_dg.length();
+	PCA::SVD tmp;
+	setupSVD(&tmp, l, mat.rows);
 	
-	_transpose = PCA::transpose(&this->_svd.u);
+	for (size_t i = 0; i < mat.rows; i++)
+	{
+		std::vector<float> torsions = this->torsionVector(i);
+		for (size_t j = 0; j < l; j++)
+		{
+			tmp.u[j][i] = torsions[j];
+		}
+	}
+	
+	invertSVD(&tmp);
+//	PCA::setupMatrix(&_rawToCluster, l, mat.rows);
+//	PCA::copyMatrix(_rawToCluster, tmp.u);
+	_rawToCluster = PCA::transpose(&tmp.u);
 
 	freeMatrix(&mat);
 }

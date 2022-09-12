@@ -89,7 +89,7 @@ int PathFinder::submitJob(Placement &n)
 	Node node{};
 
 	node.vec = n;
-	node.distance_from(_aim);
+	findDistanceToAim(node);
 	_nodes.push_back(node);
 	return _nodes.size() - 1;
 }
@@ -153,10 +153,13 @@ bool PathFinder::testDirection(Placement dir, int idx)
 	}
 
 	Node copy = _nodes[idx];
-	float before = copy.distance_from(_aim);
+	findDistanceToAim(copy);
+	float before = copy.distance;
 
 	copy.add_to(dir);
-	float after = copy.distance_from(_aim, dir);
+	copy.vec = dir;
+	findDistanceToAim(copy);
+	float after = copy.distance;
 	
 	return (after < before);
 }
@@ -164,29 +167,12 @@ bool PathFinder::testDirection(Placement dir, int idx)
 PathFinder::Placement PathFinder::generateDirection(int idx)
 {
 	Placement dir(_dims, 0);
-	Placement shortest(_dims, 0);
 
-	float sum = 0;
-	float dist_to_dest = 0;
 	for (size_t i = 0; i < _dims; i++)
 	{
 		float r = rand() / (double)RAND_MAX;
 		dir[i] = r * 2. - 1.;
-		dir[i] *= _scale / (float)_dims;
-
-		shortest[i] = _aim[i];
-
-		dist_to_dest += shortest[i] * shortest[i];
-		sum += dir[i] * dir[i];
-	}
-
-	sum = sqrt(sum);
-	dist_to_dest = sqrt(dist_to_dest) / _nodes[idx].distance;
-
-	for (size_t i = 0; i < _dims; i++)
-	{
-		dir[i] *= _scale / sum;
-		dir[i] += shortest[i] / dist_to_dest * _scale;
+		dir[i] *= _scale;// / sqrt(_dims);
 	}
 	
 	return dir;
@@ -306,7 +292,7 @@ bool PathFinder::identifyNextLeads()
 	{
 		Candidate c{};
 		Node &n = _nodes[it->second];
-		n.distance_from(_aim);
+		findDistanceToAim(n);
 		float energy = n.score;
 		if (energy > _nodes[0].score + 1.0)
 		{
@@ -323,7 +309,7 @@ bool PathFinder::identifyNextLeads()
 	for (size_t i = 0; i < tmp.size() && _end != nullptr; i++)
 	{
 		Node &n = _nodes[tmp[i].idx];
-		n.distance_from(_aim);
+		findDistanceToAim(n);
 		n.distance /= _nodes[i].distance;
 		tmp[i].score = n.score;
 
@@ -340,7 +326,7 @@ bool PathFinder::identifyNextLeads()
 		}
 	}
 	
-	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
+//	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
 	
 	for (size_t i = 0; i < tmp.size() && i < 12; i++)
 	{
@@ -391,11 +377,47 @@ void PathFinder::addAxis(std::vector<ResidueTorsion> &list,
 {
 	if (_axis >= _dims)
 	{
-		throw std::runtime_error("Too many axes in plane");
+//		throw std::runtime_error("Too many axes in plane");
 	}
 
-
-//	_torsions[_axis] = values;
-//	_cluster->dataGroup()->applyNormals(values);
 	supplyTorsions(list, values);
+}
+
+std::vector<float> PathFinder::mapNodeToRope(int i)
+{
+	return mapNodeToRope(_nodes[i]);
+}
+
+std::vector<float> PathFinder::mapNodeToRope(Node &n)
+{
+	int l = _cluster->dataGroup()->length();
+	Placement pos(l, 0);
+
+	for (size_t i = 0; i < _torsionLists.size(); i++)
+	{
+		const std::vector<float> &vals = _torsionLists[i].values;
+		
+		for (size_t j = 0; j < l; j++)
+		{
+			pos[j] += vals[j] * n.vec[i];
+		}
+	}
+	
+	Placement place = _cluster->mapVector(pos);
+	
+	return place;
+}
+
+void PathFinder::findDistanceToAim(Node &n)
+{
+	Placement rope_space = mapNodeToRope(n);
+
+	float distance = 0;
+	for (size_t i = 0; i < _aim.size(); i++)
+	{
+		float add = (_aim[i] - rope_space[i]);
+		distance += add * add;
+	}
+	distance = sqrt(distance);
+	n.distance = distance;
 }

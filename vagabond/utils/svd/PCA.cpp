@@ -172,37 +172,37 @@ void PCA::reorderSVD(SVD *cc)
 
 bool PCA::invertSVD(SVD *cc)
 {
-	int x = cc->u.rows; // e.g. 12
-	int y = cc->u.cols; // e.g. 1
+	int x = cc->u.rows; // e.g. 1904
+	int y = cc->u.cols; // e.g. 13
+	
+	std::cout << "rows: " << x << std::endl;
+	std::cout << "cols: " << y << std::endl;
 
 	bool success = runSVD(cc);
 	
-	for (size_t j = 0; j < y; j++)
+	for (size_t i = 0; i < x; i++)
 	{
-		for (size_t i = 0; i < x; i++)
+		for (size_t j = 0; j < y; j++)
 		{
-			cc->u[j][i] /= cc->w[j];
+			cc->u[i][j] /= cc->w[j];
+			if (cc->w[j] < 0.01)
+			{
+				cc->u[i][j] = 0;
+			}
 		}
 	}
 
 	Matrix tmp;
 	setupMatrix(&tmp, x, y);
 	
-	for (size_t j = 0; j < y; j++)
+	for (size_t i = 0; i < x; i++)
 	{
-		for (size_t i = 0; i < x; i++)
+		for (size_t j = 0; j < y; j++)
 		{
-			if (fabs(cc->w[j]) < 1e-6)
+			for (size_t k = 0; k < y; k++)
 			{
-				tmp.ptrs[i][j] = 0;
-			}
-			else
-			{
-				for (size_t k = 0; k < y; k++)
-				{
-					double add = cc->v.ptrs[j][k] * cc->u.ptrs[i][k];
-					tmp.ptrs[i][j] += add;
-				}
+				double add = cc->v[j][k] * cc->u[i][k];
+				tmp.ptrs[i][j] += add;
 			}
 		}
 	}

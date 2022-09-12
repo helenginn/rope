@@ -67,24 +67,15 @@ namespace PCA
 	void printMatrix(Matrix *mat);
 
 	template <class Float>
-	void multMatrix(Matrix &mat, Float *vector)
+	void multMatrix(Matrix &mat, Float *vector, Float *result)
 	{
-		double *ret = (double *)calloc(mat.cols, sizeof(double));
-
 		for (size_t j = 0; j < mat.rows; j++)
 		{
 			for (size_t i = 0; i < mat.cols; i++)
 			{
-				ret[j] += mat.ptrs[i][j] * vector[i];
+				result[j] += mat[j][i] * vector[i];
 			}
 		}
-
-		for (size_t i = 0; i < mat.cols; i++)
-		{
-			vector[i] = ret[i];
-		}
-
-		free(ret);
 	}
 
 	void copyMatrix(Matrix &dest, Matrix &source);

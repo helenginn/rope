@@ -92,6 +92,24 @@ std::vector<float> Axes::getMappedVector(int idx)
 
 std::vector<float> Axes::getTorsionVector(int idx)
 {
+	if (_targets[idx] != nullptr)
+	{
+		int mine = _cluster->dataGroup()->indexOfObject(_molecule);
+		int yours = _cluster->dataGroup()->indexOfObject(_targets[idx]);
+
+		std::vector<float> from_vals, to_vals;
+		from_vals = _cluster->dataGroup()->differenceVector(mine);
+		to_vals = _cluster->dataGroup()->differenceVector(yours);
+
+		for (size_t i = 0; i < to_vals.size(); i++)
+		{
+			to_vals[i] -= from_vals[i];
+		}
+		
+		_cluster->dataGroup()->removeNormals(to_vals);
+		return to_vals;
+	}
+
 	glm::vec3 dir = _dirs[idx];
 	
 	std::vector<float> sums;
