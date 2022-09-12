@@ -40,21 +40,11 @@ void PathFinder::setTarget(Molecule *end)
 	int idx = _cluster->dataGroup()->indexOfObject(end);
 	int start = _cluster->dataGroup()->indexOfObject(_start);
 	_aim = Placement(_dims, 0);
-	_absoluteDir = Placement(_dims, 0);
 
-	float sum = 0;
 	for (size_t i = 0; i < _cluster->rows() && i < _dims; i++)
 	{
 		_aim[i] = _cluster->value(idx, i);
-		_absoluteDir[i] = _cluster->value(idx, i);
-		sum += _absoluteDir[i] * _absoluteDir[i];
 		_aim[i] -= _cluster->value(start, i);
-	}
-
-	sum = sqrt(sum);
-	for (size_t i = 0; i < _dims; i++)
-	{
-		_absoluteDir[i] /= sum;
 	}
 }
 
