@@ -248,3 +248,8 @@ void Dictator::start()
 	_thread = new std::thread(&CmdWorker::start, _worker);
 }
 
+void Dictator::wait()
+{
+    _thread->join();
+}
+

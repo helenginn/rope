@@ -69,6 +69,7 @@ public:
 	}
 
 	void finish();
+    void wait();
 protected:
 	bool checkForFile(std::string &first, std::string &last);
 	bool sanityCheck(std::string &first, std::string &last);
