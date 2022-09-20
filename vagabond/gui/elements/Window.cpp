@@ -44,6 +44,11 @@ Window::Window(int width, int height)
     }
 
 	SDL_GetDisplayBounds(0, &_rect);
+    // Temporary fix for multiple displays
+    if (_rect.w > 1.6 * _rect.h)
+    {
+        _rect.w = 1.6 * _rect.h;
+    }
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
