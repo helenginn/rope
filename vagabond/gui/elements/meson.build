@@ -1,5 +1,6 @@
 glm = dependency('glm', required: false)
-gl = dependency('gl', method: 'system', required: true)
+# gl = dependency('gl', method: 'system', required: true)
+gl = dependency('gl', required: true)
 glew = dependency('glew', required: true)
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
