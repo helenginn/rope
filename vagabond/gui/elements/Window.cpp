@@ -60,7 +60,13 @@ Window::Window(int width, int height)
 
 	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);
 	_context = SDL_GL_CreateContext(_window);
-	glewInit();
+
+    const GLenum err = glewInit();
+
+    if (GLEW_OK != err)
+    {
+        std::cout << "GLEW Error: " << glewGetErrorString(err) << std::endl;
+    }
 
 #ifdef __EMSCRIPTEN__
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
