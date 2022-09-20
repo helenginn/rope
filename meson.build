@@ -7,6 +7,7 @@ gl = dependency('glew')
 curl = dependency('libcurl')
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
+thread_dep = dependency('threads')
 
 fftw_static = true
 if (links == [])
@@ -20,7 +21,7 @@ deps = [glm, fftw, json, gemmi]
 name = 'index.html'
 
 if (links == [])
-  deps += [gl, sdl2, sdl2image, curl]
+  deps += [gl, sdl2, sdl2image, curl, thread_dep]
   name = 'vagabond.gui'
 endif
 
