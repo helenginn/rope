@@ -146,6 +146,7 @@ deps += dep_ccp4
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
 subdir('vagabond/core')
+subdir('vagabond/cmd')
 
 subdir('vagabond/gui/elements')
 subdir('vagabond/gui')
@@ -163,6 +164,13 @@ if (links == []) # not emscripten
   link_args: [links],
   dependencies : deps, 
   install: true)
+
+  executable('rope', 'vagabond/cmd/main.cpp',
+    link_with : [core, cli],
+    cpp_args: ['-std=c++11'],
+    link_args: [links],
+    dependencies : deps,
+    install: true)
 else # emscripten
   start_cpp = 'vagabond/gui/main.cpp'
   executable(name, extrafiles, start_cpp,
