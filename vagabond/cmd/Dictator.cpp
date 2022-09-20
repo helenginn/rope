@@ -21,6 +21,7 @@
 #include "CmdWorker.h"
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/Environment.h>
+#include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Metadata.h>
 #include <iostream>
 #include <unistd.h>
@@ -42,6 +43,7 @@ void Dictator::makeCommands()
 	                          " matching at least 80% sequence and default names");
 	_commands["get-files-native-app"] = ("load files from three directories up in "
 	                                     "the Mac Rope app file");
+    _commands["hello_world"] = ("Prints hello world");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -180,6 +182,14 @@ void Dictator::processRequest(std::string &first, std::string &last)
 			"not metadata." << std::endl;
 		}
 	}
+
+    if (first == "hello_world")
+    {
+        std::cout << "Hi from RoPE!" << std::endl;
+        EntityManager *entity_manager = Environment::env().entityManager();
+        std::cout << "Number of entities: " << entity_manager->objectCount() << std::endl;
+        entity_manager->object(0)
+    }
 }
 
 bool Dictator::checkForFile(std::string &first, std::string &last)
