@@ -5,6 +5,7 @@ utilfiles = [
 'svd/PCA.cpp',
 'svd/matrix.cpp',
 'maths.cpp',
+'version.h',
 ]
 
 install_headers([
