@@ -2,6 +2,7 @@
 #define __practical__Window__
 
 #include <vagabond/utils/gl_import.h>
+#include <vagabond/gui/elements/HasRenderables.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #include <mutex>
@@ -22,7 +23,7 @@ class Renderable;
 struct SDL_Renderer;
 struct SDL_Window;
 
-class Window
+class Window : public HasRenderables
 {
 public:
 	Window(int width = BROWSER_WIDTH, int height = BROWSER_HEIGHT);

@@ -25,6 +25,7 @@
 
 
 #include "CandidateView.h"
+#include "VagWindow.h"
 #include <json/json.hpp>
 #include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/AskYesNo.h>
@@ -131,6 +132,8 @@ void CandidateView::download()
 		+ id + "_final.pdb";
 		_links.push_back(link);
 	}
+	
+	VagWindow::window()->prepareProgressBar(_ids.size());
 
 #ifndef __EMSCRIPTEN__
 	ThreadStuff *ts = new ThreadStuff("", &FileManager::acceptDownload, nullptr);

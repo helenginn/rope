@@ -109,6 +109,7 @@ install_data(
 'assets/images/protein.png',
 'assets/images/protractor.png',
 'assets/images/reflections.png',
+'assets/images/rope.png',
 'assets/images/ruler.png',
 'assets/images/sad_face.png',
 'assets/images/search.png',

@@ -241,6 +241,11 @@ void Window::render()
 	_current->checkErrors("before clear");
 
 	_current->render();
+	
+	for (size_t i = 0; i < _myWindow->objectCount(); i++)
+	{
+		_myWindow->object(i)->render(_current);
+	}
 
 	_current->checkErrors("after render from window");
 

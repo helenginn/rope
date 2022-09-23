@@ -22,6 +22,8 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/core/Environment.h>
+#include <vagabond/core/FileManager.h>
+#include <vagabond/core/ModelManager.h>
 
 Toolkit::Toolkit(Scene *scene) : ImageButton("assets/images/tools.png", scene)
 {
@@ -47,16 +49,30 @@ void Toolkit::click(bool left)
 	Button::click();
 }
 
+void Toolkit::prepareProgress(int ticks, std::string text)
+{
+	VagWindow::window()->prepareProgressBar(ticks, text);
+}
+
 void Toolkit::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "automodel")
 	{
 		VagWindow::addJob("automodel");
+
+		FileManager *fm = Environment::fileManager();
+		fm->setFilterType(File::MacroAtoms);
+		std::vector<std::string> list = fm->filteredList();
+		prepareProgress(list.size(), "Automodelling...");
+
 		return;
 	}
 	else if (tag == "rescan")
 	{
 		VagWindow::addJob("rescan");
+
+		ModelManager *mm = Environment::modelManager();
+		prepareProgress(mm->objectCount(), "Rescanning models...");
 		return;
 	}
 }

@@ -62,6 +62,12 @@ public:
 		sendResponse("tick", this);
 	}
 	
+	void finishTicker()
+	{
+		setResponder(Environment::env().progressResponder());
+		sendResponse("done", this);
+	}
+	
 	const int &ticks() const
 	{
 		return _ticks;

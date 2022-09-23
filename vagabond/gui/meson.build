@@ -46,6 +46,7 @@ guifiles = [
 'PathView.cpp',
 'PlaneView.cpp',
 'PlaneGrid.cpp',
+'ProgressBar.cpp',
 'ProgressView.cpp',
 'ProjectMenu.cpp',
 'ResolveIssues.cpp',

@@ -26,6 +26,7 @@
 
 #include "ProjectMenu.h"
 #include "ProgressView.h"
+#include "ProgressBar.h"
 #include "MainMenu.h"
 #include "ConfSpaceView.h"
 
@@ -48,7 +49,13 @@ void VagWindow::prepareProgressView()
 	ProgressView *pv = new ProgressView(_menu);
 	pv->attachToEnvironment();
 	pv->show();
+}
 
+void VagWindow::prepareProgressBar(int ticks, std::string text)
+{
+	ProgressBar *pb = new ProgressBar(text);
+	pb->setMaxTicks(ticks);
+	addObject(pb);
 }
 
 void VagWindow::setup(int argc, char **argv)

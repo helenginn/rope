@@ -16,24 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Toolkit__
-#define __vagabond__Toolkit__
+#ifndef __vagabond__ProgressBar__
+#define __vagabond__ProgressBar__
 
-#include <vagabond/gui/elements/ImageButton.h>
-#include <vagabond/gui/elements/ButtonResponder.h>
+#include <vagabond/gui/elements/Image.h>
+#include <vagabond/core/Progressor.h>
+#include <vagabond/core/Responder.h>
 
-class Scene;
-
-class Toolkit : public ImageButton, public ButtonResponder
+class ProgressBar : public Image,
+public Responder<Progressor>
 {
 public:
-	Toolkit(Scene *scene);
+	ProgressBar(std::string text = "");
+	~ProgressBar();
 
-	virtual void click(bool left = true);
-	virtual void buttonPressed(std::string tag, Button *button);
+	void finish();
+	void setMaxTicks(int count);
+	virtual void extraUniforms();
+	virtual void sendObject(std::string tag, void *object);
 private:
-	void prepareProgress(int ticks, std::string text);
-	Scene *_scene = nullptr;
+	int _maxTicks = 0;
+	int _ticks = 0;
 
 };
 

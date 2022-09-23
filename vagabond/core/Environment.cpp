@@ -124,12 +124,13 @@ void Environment::rescanModels()
 	
 	for (Model &m : mm->objects())
 	{
+		mm->clickTicker();
 		m.autoAssignEntities();
-
 	}
 
 	EntityManager *em = Environment::entityManager();
 	em->checkModelsForReferences(mm);
+	mm->finishTicker();
 }
 
 void Environment::autoModel()
@@ -138,6 +139,8 @@ void Environment::autoModel()
 	EntityManager *em = Environment::entityManager();
 	mm->autoModel();
 	em->checkModelsForReferences(mm);
+	
+	mm->finishTicker();
 }
 
 void Environment::purgeMolecule(Molecule *mol)

@@ -79,6 +79,7 @@ void ModelManager::autoModel()
 	
 	for (size_t i = 0; i < list.size(); i++)
 	{
+		clickTicker();
 		std::string filename = list[i];
 		Model model = Model::autoModel(filename);
 		try
