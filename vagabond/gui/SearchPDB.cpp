@@ -145,63 +145,8 @@ void SearchPDB::render()
 	Scene::render();
 }
 
-/*
 std::string SearchPDB::prepareQuery()
 {
-	nlohmann::ordered_json query_params;
-	query_params["target"] = "pdb_protein_sequence";
-	query_params["value"] = _entity->sequence()->str();
-	query_params["identity_cutoff"] = (float)_cutoff / 100.;
-	query_params["evalue_cutoff"] = 0.1;
-
-	nlohmann::ordered_json query;
-	query["type"] = "terminal";
-	query["service"] = "sequence";
-	query["parameters"] = query_params;
-
-	nlohmann::ordered_json ranking;
-	ranking["sort_by"] = "score";
-	ranking["direction"] = "asc";
-
-	nlohmann::ordered_json group_by;
-	group_by["aggregation_method"] = "sequence_identity";
-	group_by["similarity_cutoff"] = 50;
-	group_by["ranking_criteria_type"] = ranking;
-	
-	nlohmann::ordered_json request_options;
-	request_options["results_verbosity"] = "minimal";
-	request_options["group_by"] = group_by;
-	request_options["group_by_return_type"] = "groups";
-
-	nlohmann::ordered_json full;
-	full["query"] = query;
-	full["request_options"] = request_options;
-	full["return_type"] = "polymer_entity";
-
-	return to_string(full);
-}
-*/
-
-std::string SearchPDB::prepareQuery()
-{
-	/*
-	{
-  "query": {
-    "type": "terminal",
-    "service": "sequence",
-    "parameters": {
-      "evalue_cutoff": 1,
-      "identity_cutoff": 0.9,
-      "sequence_type": "protein",
-      "value": "MTEYKLVVVGAGGVGKSALTIQLIQNHFVDEYDPTIEDSYRKQVVIDGETCLLDILDTAGQEEYSAMRDQYMRTGEGFLCVFAINNTKSFEDIHQYREQIKRVKDSDDVPMVLVGNKCDLPARTVETRQAQDLARSYGIPYIETSAKTRQGVEDAFYTLVREIRQHKLRKLNPPDESGPGCMNCKCVIS"
-    }
-  },
-  "request_options": {
-    "scoring_strategy": "sequence"
-  },
-  "return_type": "polymer_entity"
-}
-*/
 	nlohmann::ordered_json query_params;
 	query_params["sequence_type"] = "protein";
 	query_params["value"] = _entity->sequence()->str();
