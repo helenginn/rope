@@ -24,9 +24,9 @@
 class Route : public StructureModification
 {
 public:
-	Route(Molecule *mol, int dims);
+	Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 
-	void supplyAxes(const std::vector<ResidueTorsion> &list);
+	void setup();
 	
 	typedef std::vector<float> Point;
 
@@ -38,6 +38,8 @@ public:
 	{
 		return _points.size();
 	}
+protected:
+	virtual void customModifications(BondCalculator *calc, bool has_mol);
 private:
 	std::vector<Point> _points;
 

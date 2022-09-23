@@ -36,9 +36,6 @@ int main (int argc, char **argv)
 #ifndef __EMSCRIPTEN__
 	curl_global_cleanup();
 #endif
-	
-	// for leaks
-//	fscanf(stdin, "c");
 
 	return 0;
 }

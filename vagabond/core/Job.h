@@ -183,7 +183,7 @@ struct Result
 			it->first->setDerivedPositions(wp);
 			if (requests & JobScoreStructure)
 			{
-//				it->first->setAddedColour(it->second.colour);
+				it->first->setAddedColour(it->second.colour);
 			}
 		}
 	}

@@ -127,7 +127,12 @@ void BondSequence::prepareTorsionBasis()
 {
 	if (_torsionBasis)
 	{
-		_torsionBasis->prepare();
+		int dimensions = 0;
+		if (_sampler)
+		{
+			dimensions = _sampler->dims();
+		}
+		_torsionBasis->prepare(dimensions + 1);
 	}
 }
 

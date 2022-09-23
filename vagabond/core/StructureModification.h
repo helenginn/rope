@@ -42,6 +42,11 @@ class StructureModification
 public:
 	StructureModification(Molecule *mol, int num, int dims);
 	
+	void setAtoms(AtomGroup *grp)
+	{
+		_fullAtoms = grp;
+	}
+	
 	const int &dims() const
 	{
 		return _dims;

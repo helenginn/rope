@@ -17,24 +17,32 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Route.h"
+#include "Molecule.h"
+#include "MetadataGroup.h"
+#include <vagabond/c4x/Cluster.h>
 
-Route::Route(Molecule *mol, int dims) : StructureModification(mol, 1, dims)
+Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims) 
+: StructureModification(mol, 1, dims)
 {
+	_cluster = cluster;
+	_pType = BondCalculator::PipelineForceField;
 
 }
 
-void Route::supplyAxes(const std::vector<ResidueTorsion> &list)
+void Route::setup()
 {
-	// basically same as a simple basis, massive identity matrix
-	std::vector<float> vals(list.size(), 0);
+	_fullAtoms = _molecule->currentAtoms();
+	startCalculator();
 
-	for (int i = 0; i < list.size(); i++)
+	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+
+	std::vector<float> vals(_dims, 0);
+	for (size_t i = 0; i < _dims; i++)
 	{
 		if (i > 0)
 		{
 			vals[i - 1] = 0;
 		}
-		
 		vals[i] = 1;
 		supplyTorsions(list, vals);
 	}
@@ -47,21 +55,24 @@ void Route::addPoint(Point &values)
 
 void Route::submitJob(int idx)
 {
+	if (idx >= _points.size() || idx < 0)
+	{
+		return;
+	}
+
 	for (BondCalculator *calc : _calculators)
 	{
-		if (!(calc->pipelineType() & BondCalculator::PipelineForceField))
-		{
-			continue;
-		}
-
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
+
 		for (size_t i = 0; i < _dims; i++)
 		{
 			job.custom.vecs[0].mean[i] = _points[idx][i];
 		}
 
-		job.requests = static_cast<JobType>(JobExtractPositions);
+		job.requests = static_cast<JobType>(JobExtractPositions |
+		                                    JobScoreStructure);
+		calc->submitJob(job);
 	}
 
 	for (BondCalculator *calc : _calculators)
@@ -75,10 +86,31 @@ void Route::submitJob(int idx)
 
 		if (r->requests & JobExtractPositions)
 		{
+			std::cout << "Grabbing positions" << std::endl;
 			r->transplantLastPosition();
+		}
+
+		if (r->requests & JobScoreStructure)
+		{
+			std::cout << r->score << std::endl;
+
 		}
 	}
 	
 	return;
+}
+
+void Route::customModifications(BondCalculator *calc, bool has_mol)
+{
+	if (!has_mol)
+	{
+		return;
+	}
+
+	calc->setPipelineType(_pType);
+	FFProperties props;
+	props.group = _molecule->currentAtoms();
+	props.t = FFProperties::CAlphaSeparation;
+	calc->setForceFieldProperties(props);
 }
 

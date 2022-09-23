@@ -65,7 +65,6 @@ float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
 		double svd = (_svd.u[contracted][i]);
 		const float &custom = vec[i];
 		
-		
 		sum += svd * custom;
 		total++;
 	}
@@ -112,9 +111,14 @@ void ConcertedBasis::setupAngleList()
 			_idxs.push_back(-1);
 		}
 	}
+	
+	if (_dims == 0)
+	{
+		_dims = _nActive;
+	}
 
 	freeSVD(&_svd);
-	setupSVD(&_svd, _nActive);
+	setupSVD(&_svd, _nActive, _dims);
 
 }
 
@@ -195,8 +199,9 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 //	std::cout << std::endl;
 }
 
-void ConcertedBasis::prepare()
+void ConcertedBasis::prepare(int dims)
 {
+	_dims = dims;
 	setupAngleList();
 	
 	if (!_custom)

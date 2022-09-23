@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Mouse3D.h>
 #include <vagabond/gui/elements/IndexResponseView.h>
+#include <vagabond/core/Responder.h>
 #include "ClusterView.h"
 
 class Entity;
@@ -29,8 +30,11 @@ class Rule;
 class Axes;
 class HasMetadata;
 class MetadataGroup;
+class RouteExplorer;
+class PathView;
 
-class ConfSpaceView : public Mouse3D, public IndexResponseView
+class ConfSpaceView : public Mouse3D, public IndexResponseView,
+public Responder<PathView>
 {
 public:
 	ConfSpaceView(Scene *prev, Entity *ent);
@@ -48,11 +52,13 @@ public:
 
 	virtual void setup();
 	virtual void refresh();
+	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	
 	void prepareMenu(HasMetadata *hm);
 	void reorientToMolecule(Molecule *mol);
 
+	void sendObject(std::string tag, void *object);
 protected:
 	virtual void sendSelection(float t, float l, float b, float r);
 
@@ -91,6 +97,7 @@ private:
 	const Rule *_colourRule = nullptr;
 	
 	Molecule *_from = nullptr;
+	RouteExplorer *_routeExplorer = nullptr;
 
 	std::vector<HasMetadata *> _whiteList;
 	std::vector<Renderable *> _temps;

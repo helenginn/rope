@@ -25,11 +25,8 @@ PathView::PathView(Cluster<MetadataGroup> *cluster, Molecule *mol)
 {
 	setName("Path view");
 	_renderType = GL_LINES;
-	int total = 20;
-	if (cluster->rows() < total)
-	{
-		total = cluster->rows();
-	}
+	int total = cluster->dataGroup()->length();
+
 	PathFinder *pf = new PathFinder(mol, cluster, total);
 	_pathFinder = pf;
 	_cluster = cluster;
@@ -54,10 +51,10 @@ void PathView::start()
 		int from = _cluster->dataGroup()->indexOfObject(_molecule);
 		int to = _cluster->dataGroup()->indexOfObject(_pathFinder->end());
 		std::vector<float> diffs = _cluster->rawVector(from, to);
-		_pathFinder->addAxis(list, diffs);
+		_pathFinder->addAxis(list, diffs, true);
 	}
 
-	for (size_t i = 0; i < _pathFinder->dims() - 1; i++)
+	for (size_t i = 0; i < _pathFinder->dims() && i < 10; i++)
 	{
 		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
 		std::vector<float> vals = _cluster->torsionVector(i);
@@ -120,3 +117,12 @@ void PathView::respond()
 	forceRender(true, true);
 }
 
+void PathView::sendObject(std::string tag, void *object)
+{
+	if (tag == "find_route")
+	{
+		std::cout << "Must find route through the mess" << std::endl;
+	}
+	
+	sendResponse("show_route", _pathFinder);
+}

@@ -41,7 +41,7 @@ public:
 	}
 
 	virtual float torsionForVector(int idx, const float *vec, int n);
-	virtual void prepare();
+	virtual void prepare(int dims = 0);
 	virtual void prepareRecalculation();
 
 	bool doesTorsionAffectRestraint(const ForceField::Restraint &r, 

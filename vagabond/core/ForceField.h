@@ -61,11 +61,13 @@ public:
 			Spring,
 			HBond,
 			VdW,
+			Momentum,
 		};
 
 		Type type;
 		float target = 0;
 		float current = 0;
+		float currsq = 0;
 		float deviation = 1;
 		float target_angle = 0;
 		float current_angle = 0;
@@ -144,6 +146,7 @@ public:
 
 private:
 	void setupContributions(MechanicalBasis *mb);
+	void setupVanDerWaals();
 	void setupCAlphaSeparation();
 	void updateRestraint(Restraint &r);
 	float gradientForRestraint(const Restraint &r);

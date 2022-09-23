@@ -25,6 +25,7 @@ struct FFProperties
 	{
 		NoTemplate = 0,
 		CAlphaSeparation = 1,
+		VdWContacts = 2,
 	};
 
 	AtomGroup *group = nullptr;

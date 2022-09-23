@@ -19,6 +19,7 @@
 #include "RulesMenu.h"
 #include "AxesMenu.h"
 #include "LineSeries.h"
+#include "RouteExplorer.h"
 #include "PathView.h"
 #include "ConfSpaceView.h"
 #include "Axes.h"
@@ -344,6 +345,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		if (_from)
 		{
 			PathView *pv = new PathView(_view->cluster(), _from);
+			pv->setResponder(this);
 			
 			if (to)
 			{
@@ -406,6 +408,11 @@ void ConfSpaceView::refresh()
 
 void ConfSpaceView::applyRule(const Rule &r)
 {
+	if (_view == nullptr)
+	{
+		return;
+	}
+
 	if (r.type() == Rule::LineSeries)
 	{
 		LineSeries *ls = new LineSeries(_view, r);
@@ -474,6 +481,7 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 	m->setReturnObject(hm);
 	m->addOption("view model", "view_model");
 #ifdef VERSION_NEXT
+#warning including next version tools
 	if (_from == nullptr)
 	{
 		m->addOption("explore paths", "explore_paths");
@@ -531,4 +539,24 @@ void ConfSpaceView::reorientToMolecule(Molecule *mol)
 void ConfSpaceView::sendSelection(float t, float l, float b, float r)
 {
 
+}
+
+void ConfSpaceView::sendObject(std::string tag, void *object)
+{
+	if (tag == "show_route")
+	{
+		PathFinder *pf = static_cast<PathFinder *>(object);
+		RouteExplorer *re = new RouteExplorer(this, pf, 0);
+		_routeExplorer = re;
+	}
+}
+
+void ConfSpaceView::doThings()
+{
+	if (_routeExplorer != nullptr)
+	{
+		std::cout << "Showing" << std::endl;
+		_routeExplorer->show();
+		_routeExplorer = nullptr;
+	}
 }

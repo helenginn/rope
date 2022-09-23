@@ -64,6 +64,16 @@ public:
 		return _derived.pos.ave;
 	}
 	
+	const void setOtherPosition(std::string tag, glm::vec3 val)
+	{
+		_others[tag].pos.ave = val;
+	}
+	
+	const glm::vec3 otherPosition(std::string tag)
+	{
+		return _others[tag].pos.ave;
+	}
+	
 	void setDerivedPosition(glm::vec3 &pos);
 	void setDerivedPositions(WithPos &pos);
 	
@@ -257,6 +267,8 @@ private:
 
 	AtomPlacement _initial{};
 	AtomPlacement _derived{};
+	
+	std::map<std::string, AtomPlacement> _others{};
 
 	bool _setupInitial = false;
 	bool _changedPosition = false;

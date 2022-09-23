@@ -26,7 +26,7 @@ PathFinder::PathFinder(Molecule *start, Cluster<MetadataGroup> *cluster, int dim
 : StructureModification(start, 1, dims)
 {
 	_start = start;
-	_threads = 6;
+	_threads = 8;
 	_cluster = cluster;
 	_pType = BondCalculator::PipelineForceField;
 	AtomGroup *grp = _molecule->currentAtoms();
@@ -47,12 +47,44 @@ void PathFinder::setTarget(Molecule *end)
 		_aim[i] = _cluster->value(idx, i);
 		_aim[i] -= _cluster->value(start, i);
 	}
+
+	Node m; m.vec = _aim;
 }
 
 void PathFinder::setup()
 {
+	for (BondCalculator *calc : _calculators)
+	{
+		Job job{};
+		job.custom.allocate_vectors(1, _dims, _num);
+		for (size_t i = 0; i < _dims; i++)
+		{
+			job.custom.vecs[0].mean[i] = _aim[i];
+		}
+
+		job.requests = static_cast<JobType>(JobExtractPositions);
+		calc->submitJob(job);
+	}
+
+	for (BondCalculator *calc : _calculators)
+	{
+		Result *r = calc->acquireResult();
+		if (r)
+		{
+			r->transplantPositions(); 
+			delete r;
+		}
+	}
+	
+	for (size_t i = 0; i < _fullAtoms->size(); i++)
+	{
+		glm::vec3 pos = (*_fullAtoms)[i]->derivedPosition();
+		(*_fullAtoms)[i]->setOtherPosition("alt", pos);
+	}
+	
 	Placement start = Placement(_dims, 0);
 	submitJob(start);
+	collectResults();
 }
 
 int PathFinder::submitJob(Placement &n)
@@ -72,7 +104,8 @@ int PathFinder::submitJob(Placement &n)
 			job.custom.vecs[0].mean[i] = n[i];
 		}
 
-		job.requests = static_cast<JobType>(JobScoreStructure);
+		job.requests = static_cast<JobType>(JobExtractPositions | 
+		                                    JobScoreStructure);
 		int job_num = calc->submitJob(job);
 		_scoreMap[job_num] = _nodes.size();
 	}
@@ -133,6 +166,10 @@ void PathFinder::collectResults()
 		}
 	}
 
+	if (_lastCount == 0)
+	{
+		std::cout << "Starting node score: " << _nodes[0].score << std::endl;
+	}
 	_lastCount = _nodes.size();
 }
 
@@ -164,6 +201,11 @@ PathFinder::Placement PathFinder::generateDirection(int idx)
 		float r = rand() / (double)RAND_MAX;
 		dir[i] = r * 2. - 1.;
 		dir[i] *= _scale / sqrt(_dimsInUse);
+		
+		if (i == _self)
+		{
+			dir[i] *= _toGo;
+		}
 	}
 	
 	return dir;
@@ -214,7 +256,7 @@ bool PathFinder::doJobs()
 	collectResults();
 	triggerResponse();
 	bool finish = identifyNextLeads();
-	_cycles++;
+	_cycles--;
 	return finish;
 }
 
@@ -242,7 +284,8 @@ void PathFinder::addFromAllNodes()
 	{
 		Candidate c{};
 		Node &n = _nodes[i];
-		if (n.score > _nodes[0].score + 0.5)
+//		if (n.score > _nodes[0].score + 0.5)
+		if (n.score > 0.5)
 		{
 			continue;
 		}
@@ -283,19 +326,25 @@ bool PathFinder::identifyNextLeads()
 		Node &n = _nodes[it->second];
 		findDistanceToAim(n);
 		float energy = n.score;
-		if (energy > _nodes[0].score + 1.0)
+		if (energy > 0.5)
 		{
 			continue;
 		}
+
 		c.idx = it->second;
 		c.score = n.distance;
 		tmp.push_back(c);
 	}
 	
 	std::sort(tmp.begin(), tmp.end(), std::less<Candidate>());
-//	tmp.resize(tmp.size() / 2);
+	if (_nodes.size() >= 100 && false)
+	{
+		_arrivals.push_back(99);
+		sendResponse("find_route", nullptr);
+		return true;
+	}
 
-	for (size_t i = 0; i < tmp.size() && _end != nullptr; i++)
+	for (size_t i = 0; i < tmp.size(); i++)
 	{
 		Node &n = _nodes[tmp[i].idx];
 		findDistanceToAim(n);
@@ -305,11 +354,22 @@ bool PathFinder::identifyNextLeads()
 		if (n.distance < _toGo)
 		{
 			_toGo = n.distance;
-			_arrivals.push_back(tmp[i].idx);
 			std::cout << "New best: " << _toGo *100 << "% to go" << std::endl;
-
-			if (_toGo < 0.05)
+			_candidate = tmp[i].idx;
+			if (_cycles < 100)
 			{
+				_cycles = 100;
+			}
+
+			if (_toGo < 0.15)
+			{
+				switchToAngleSpace();
+			}
+			
+			if (_toGo < 0.01)
+			{
+				_arrivals.push_back(tmp[i].idx);
+				sendResponse("find_route", nullptr);
 				return true;
 			}
 		}
@@ -339,7 +399,7 @@ void PathFinder::submitNextJobs()
 
 void PathFinder::start()
 {
-	for (size_t i = 0; i < 500; i++)
+	while (_cycles > 0)
 	{
 		bool done = doJobs();
 		
@@ -348,6 +408,8 @@ void PathFinder::start()
 			break;
 		}
 	}
+	_arrivals.push_back(_candidate);
+	sendResponse("find_route", nullptr);
 	std::cout << "done" << std::endl;
 	
 	traceDone();
@@ -366,22 +428,45 @@ void PathFinder::addAxis(std::vector<ResidueTorsion> &list,
 {
 	if (split_big)
 	{
+		for (size_t i = 0; i < values.size(); i++)
+		{
+			float s = sin(deg2rad(values[i]));
+			float c = cos(deg2rad(values[i]));
+			_goalTrig.push_back(std::pair<float, float>(s, c));
+			_goalAngles.push_back(values[i]);
+		}
+
+		_mask = std::vector<int>(values.size(), 1);
 		for (size_t i = 0; i < list.size(); i++)
 		{
+			if (!Atom::isMainChain(list[i].torsion.atomName(0)) ||
+			    !Atom::isMainChain(list[i].torsion.atomName(3)))
+			{
+				continue;
+			}
+
 			if (fabs(values[i]) > 90.f)
 			{
 				std::vector<float> tmp = std::vector<float>(list.size(), 0);
 				tmp[i] = values[i];
-				values[i] = 0;
+				_mask[i] = 0;
 
 				supplyTorsions(list, tmp);
 				_dimsInUse++;
 			}
 		}
-
+	}
+	
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		if (i < _mask.size())
+		{
+			values[i] *= _mask[i];
+		}
 	}
 
 	supplyTorsions(list, values);
+	_self = _dimsInUse;
 	_dimsInUse++;
 }
 
@@ -416,18 +501,73 @@ std::vector<float> PathFinder::mapNodeToRope(Node &n)
 	return place;
 }
 
+void PathFinder::switchToAngleSpace()
+{
+	if (!_ropeSpace)
+	{
+		return;
+	}
+
+	_ropeSpace = false;
+	for (Node &n : _nodes)
+	{
+		findDistanceToAim(n);
+	}
+	std::cout << "Switching to angle space" << std::endl;
+	_cycles += 500;
+	
+	_toGo = 1.;
+}
+
 void PathFinder::findDistanceToAim(Node &n)
 {
-	Placement rope_space = mapNodeToRope(n);
+	if (_ropeSpace)
+	{
+		findDistanceRopeSpace(n);
+	}
+	else
+	{
+		findDistanceAngleSpace(n);
+	}
+}
+
+void PathFinder::findDistanceAngleSpace(Node &n)
+{
+	Node m;
+	m.vec = _aim;
+	Placement torsion_space = nodeToTorsionList(n);
 
 	float distance = 0;
-	for (size_t i = 0; i < _aim.size(); i++)
+	for (size_t i = 0; i < _goalTrig.size(); i++)
 	{
-		float add = (_aim[i] - rope_space[i]);
-		distance += add * add;
+		float s = _goalTrig[i].first;
+		float c = _goalTrig[i].second;
+
+		float ns = sin(deg2rad(torsion_space[i]));
+		float nc = cos(deg2rad(torsion_space[i]));
+		float add = (s - ns) * (s - ns) + (c - nc) * (c - nc);
+		add *= fabs(_goalAngles[i]);
+		distance += add;
 	}
+
 	distance = sqrt(distance);
 	n.distance = distance;
+}
+
+void PathFinder::findDistanceRopeSpace(Node &n)
+{
+	Placement rope_space = mapNodeToRope(n);
+	float distance = 0;
+	
+	for (size_t i = 0; i < rope_space.size(); i++)
+	{
+		float add = rope_space[i] - _aim[i];
+		distance += add * add;
+	}
+
+	distance = sqrt(distance);
+	n.distance = distance;
+}
 
 Route *PathFinder::route(int idx)
 {
@@ -442,13 +582,14 @@ Route *PathFinder::route(int idx)
 		next_node = _nodes[next_node].parent;
 	}
 	
-	Route *route = new Route(_molecule, _cluster->dataGroup()->length());
-	route->supplyAxes(_torsionLists[0].list);
+	int l = _cluster->dataGroup()->length();
+	Route *route = new Route(_molecule, _cluster, l);
 
-	for (int i = (int)list.size() - 1; i >= 0; i++)
+	for (int i = (int)list.size() - 1; i >= 0; i--)
 	{
-		Placement torsion_list = nodeToTorsionList(_nodes[i]);
-		route->addPoint(torsion_list);
+//		Placement rope_space = mapNodeToRope(_nodes[list[i]]);
+		Placement torsion_space = nodeToTorsionList(_nodes[list[i]]);
+		route->addPoint(torsion_space);
 	}
 
 	return route;

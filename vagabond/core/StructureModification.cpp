@@ -130,6 +130,11 @@ void StructureModification::startCalculator()
 void StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
                                            const std::vector<float> &values)
 {
+	if (_axis >= _dims)
+	{
+		std::cout << "Too many axes; aborting torsion angle supply" << std::endl;
+		return;
+	}
 	for (BondCalculator *calc : _calculators)
 	{
 		TorsionBasis *basis = calc->sequenceHandler()->torsionBasis();

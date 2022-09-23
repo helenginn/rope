@@ -33,7 +33,7 @@ public:
 	~ConcertedBasis();
 
 	virtual float torsionForVector(int idx, const float *vec, int n);
-	virtual void prepare();
+	virtual void prepare(int dims = 0);
 
 	/** only the torsions available in the mask will be used for calculating
 	 *  principle axes of motion */
@@ -73,6 +73,7 @@ private:
 	 * where value < _nActive*/
 	std::vector<int> _idxs;
 	size_t _nActive;
+	int _dims;
 
 	std::vector<BondTorsion *> _filtered;
 	PCA::SVD _svd{};

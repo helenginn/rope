@@ -116,6 +116,10 @@ private:
 	std::vector<Node> _nodes;
 	std::vector<int> _list;
 	void findDistanceToAim(Node &n);
+	void findDistanceAngleSpace(Node &n);
+	void findDistanceRopeSpace(Node &n);
+	void switchToAngleSpace();
+
 	Placement generateDirection(int idx);
 	bool testDirection(Placement dir, int idx);
 	void addFromAllNodes();
@@ -129,14 +133,19 @@ private:
 	
 	std::atomic<int> _lastCount{0};
 	Placement _aim;
-	Placement _absoluteDir;
-	float _scale = 0.10;
+	Placement _goalAngles;
+	std::vector<int> _mask;
+	std::vector<std::pair<float, float> > _goalTrig;
+	float _scale = 0.01;
 	int _heads = 4;
 	float _toGo = FLT_MAX;
-	int _cycles = 0;
+	int _cycles = 100;
 	int _dimsInUse = 0;
+	int _self = 0;
+	bool _ropeSpace = true;
 	
 	std::vector<int> _arrivals;
+	int _candidate = 0;
 };
 
 #endif

@@ -46,7 +46,7 @@ ForceField::~ForceField()
 
 bool ForceField::isBackbone(Atom *a)
 {
-	return !a->hetatm();
+	return !a->hetatm() && a->elementSymbol() != "H";
 
 	if (a->atomName() == "CA" || a->atomName() == "N" || a->atomName() == "C"
 	    || a->atomName() == "O" || a->atomName() == "CB" || a->atomName() == "OXT")
@@ -56,6 +56,63 @@ bool ForceField::isBackbone(Atom *a)
 }
 
 void ForceField::setupCAlphaSeparation()
+{
+	std::cout << "Making restraints for " << this << std::endl;
+	AtomVector atoms = _group->atomsWithName("CA");
+	
+	int added = 0;
+	const double comp = 10;
+	
+	for (size_t i = 0; i < atoms.size(); i++)
+	{
+		_reporters->add(atoms[i]);
+	}
+
+	for (size_t i = 0; i < atoms.size() - 1; i++)
+	{
+		Atom &ai = *atoms[i];
+		if (ai.residueNumber() > 60 || ai.residueNumber() < 71)
+		{
+			continue;
+		}
+		Restraint r(Restraint::Momentum, 0, 4.);
+		r.atoms[0] = &ai;
+		r.reporters[0] = &ai;
+		_restraints.push_back(r);
+
+		continue;
+		for (size_t j = i + 1; j < atoms.size(); j++)
+		{
+			Atom &aj = *atoms[j];
+			
+			glm::vec3 diff = ai.initialPosition() - aj.initialPosition();
+			double l = glm::dot(diff, diff);
+			
+			if (l < (comp * comp))
+			{
+				double length = sqrt(l);
+				Restraint r(Restraint::Spring, length, 2.);
+				r.atoms[0] = &ai;
+				r.atoms[1] = &aj;
+				r.reporters[0] = &ai;
+				r.reporters[1] = &aj;
+				_restraints.push_back(r);
+
+				added += 2;
+				
+				if (added % 1000 == 0)
+				{
+					_restraints.reserve(_restraints.size() + 1000);
+				}
+			}
+		}
+	}
+	
+	std::cout << "Restraints: " << _restraints.size() << std::endl;
+
+}
+
+void ForceField::setupVanDerWaals()
 {
 	std::cout << "Making restraints for " << this << std::endl;
 	AtomVector atoms;
@@ -128,7 +185,7 @@ void ForceField::setupCAlphaSeparation()
 
 void ForceField::processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
 {
-	Restraint r(Restraint::VdW, 2.2, 0);
+	Restraint r(Restraint::VdW, 1.8, 0);
 	r.atoms[0] = a;
 	r.atoms[1] = b;
 	r.reporters[0] = report_a;
@@ -216,6 +273,10 @@ void ForceField::setup()
 	{
 		setupCAlphaSeparation();
 	}
+	else if (_t == FFProperties::VdWContacts)
+	{
+		setupVanDerWaals();
+	}
 	
 	makeLookupTable();
 	
@@ -287,6 +348,23 @@ void ForceField::updateRestraint(Restraint &r)
 		r.current = length;
 	}
 	
+	if (r.type == Restraint::Momentum)
+	{
+		glm::vec3 init = r.atoms[0]->initialPosition();
+		glm::vec3 other = r.atoms[0]->otherPosition("alt");
+
+		float l = glm::length(init - r.pos[0]);
+		float m = glm::length(other - r.pos[0]);
+		float dist = std::min(l, m) - 1;
+		if (dist < 0)
+		{
+			dist = 0;
+		}
+
+		r.current = dist;
+		r.current *= 1 / (1 + glm::length(init - other) / 5);
+	}
+	
 	if (r.type == Restraint::HBond)
 	{
 		glm::vec3 hbond =  (r.pos[1] - r.pos[0]);
@@ -310,7 +388,7 @@ float ForceField::valueForRestraint(const Restraint &r)
 	double attract = 0;
 	double penalty = 0;
 
-	if (r.type == Restraint::VdW || r.type == Restraint::HBond)
+	if (r.type == Restraint::VdW)
 	{
 		float weight = 0.2;
 		float ratio = r.target / r.current;
@@ -321,16 +399,33 @@ float ForceField::valueForRestraint(const Restraint &r)
 
 	if (r.type == Restraint::HBond)
 	{
-		attract = -20;
+//		attract = -20;
 		float angle = fabs(r.target_angle - r.current_angle) / r.dev_angle;
 		float dist = fabs(r.target - r.current) / r.deviation;
 		angle *= angle;
 		dist *= dist;
+	}
 
-//		penalty += 1 / (1 + angle + dist) - 1;
+	if (r.type == Restraint::Momentum)
+	{
+		float diff = r.current;
+		diff /= r.deviation;
+		penalty = diff * diff;
+		penalty *= 20;
+	}
+
+	if (r.type == Restraint::Spring)
+	{
+		if (r.current < 3.5)
+		{
+			return 1e4;
+		}
+		float diff = r.current - r.target;
+		diff /= r.deviation;
+		penalty = diff * diff;
 	}
 	
-	return vdw + attract * penalty;
+	return vdw + attract + penalty;
 }
 
 float ForceField::gradientForRestraint(const Restraint &r)
@@ -452,7 +547,7 @@ double ForceField::score()
 	}
 
 	double sum = 0;
-	double weights = _group->size();
+	double weights = 0;
 	for (Restraint &r : _restraints)
 	{
 		double val = valueForRestraint(r);
@@ -471,6 +566,7 @@ double ForceField::score()
 		}
 
 		sum += val;
+		weights++;
 	}
 
 	for (size_t i = 0; i < _reporters->size(); i++)

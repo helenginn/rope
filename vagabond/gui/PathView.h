@@ -29,7 +29,8 @@ class MetadataGroup;
 template <class DG>
 class Cluster;
 
-class PathView : public Renderable, public Responder<PathFinder>
+class PathView : public Renderable, public Responder<PathFinder>,
+public HasResponder<Responder<PathView>>
 {
 public:
 	PathView(Cluster<MetadataGroup> *cluster, Molecule *mol);
@@ -48,6 +49,7 @@ public:
 	void populate();
 	void addNewPoints();
 	virtual void respond();
+	virtual void sendObject(std::string tag, void *object);
 
 	void start();
 private:

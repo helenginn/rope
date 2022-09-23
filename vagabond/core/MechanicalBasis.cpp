@@ -85,7 +85,7 @@ bool MechanicalBasis::doesTorsionAffectRestraint(const ForceField::Restraint &r,
 	return (dist_between_targets - first_leg - second_leg == 0);
 }
 
-void MechanicalBasis::prepare()
+void MechanicalBasis::prepare(int dims)
 {
 	_angles.clear();
 	_mechAngles.clear();

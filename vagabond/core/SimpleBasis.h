@@ -27,7 +27,7 @@ public:
 	SimpleBasis();
 
 	virtual float torsionForVector(int idx, const float *vec, int n);
-	virtual void prepare();
+	virtual void prepare(int dims = 0);
 private:
 
 };

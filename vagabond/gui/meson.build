@@ -50,6 +50,7 @@ guifiles = [
 'ProgressView.cpp',
 'ProjectMenu.cpp',
 'ResolveIssues.cpp',
+'RouteExplorer.cpp',
 'RulesMenu.cpp',
 'SearchPDB.cpp',
 'SerialRefiner.cpp',

@@ -85,7 +85,7 @@ int TorsionBasis::addTorsion(BondTorsion *torsion)
 	return _torsions.size() - 1;
 }
 
-void TorsionBasis::prepare()
+void TorsionBasis::prepare(int dims)
 {
 
 }

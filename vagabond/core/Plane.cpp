@@ -205,7 +205,7 @@ void Plane::customModifications(BondCalculator *calc, bool has_mol)
 	calc->setPipelineType(_pType);
 	FFProperties props;
 	props.group = _molecule->currentAtoms();
-	props.t = FFProperties::CAlphaSeparation;
+	props.t = FFProperties::VdWContacts;
 	calc->setForceFieldProperties(props);
 }
 

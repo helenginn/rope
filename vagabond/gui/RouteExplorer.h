@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,49 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SimpleBasis.h"
-#include "BondTorsion.h"
+#ifndef __vagabond__RouteExplorer__
+#define __vagabond__RouteExplorer__
 
-SimpleBasis::SimpleBasis() : TorsionBasis()
+#include "Display.h"
+#include <vagabond/gui/elements/DragResponder.h>
+
+class PathFinder;
+class Molecule;
+class Slider;
+class Route;
+
+class RouteExplorer : public Display, public DragResponder
 {
+public:
+	RouteExplorer(Scene *prev, PathFinder *pf, int arrival_num);
 
-}
+	virtual void setup();
+	void setupSlider();
 
-float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
-{
-	if (idx < 0)
-	{
-		return 0;
-	}
-	
-	if (n >= idx && _angles.size() == 0)
-	{
-		prepare();
-	}
+	virtual void finishedDragging(std::string tag, double x, double y);
+private:
+	Route *_route = nullptr;
+	Molecule *_molecule;
 
-	TorsionAngle &ta = _angles[idx];
-	if (n == 0 || !ta.mask)
-	{
-		return ta.angle;
-	}
-	
-	if (idx < n)
-	{
-		return ta.angle + vec[idx];
-	}
-	
-	return ta.angle;
-}
+	Slider *_rangeSlider = nullptr;
+};
 
-void SimpleBasis::prepare(int dims)
-{
-	_angles.clear();
-
-	for (size_t i = 0; i < _torsions.size(); i++)
-	{
-		float start = _torsions[i]->startingAngle();
-		bool mask = !_torsions[i]->isConstrained();
-		TorsionAngle ta = {start, mask};
-		_angles.push_back(ta);
-	}
-}
+#endif
