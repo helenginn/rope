@@ -162,7 +162,7 @@ void FileManager::prepareDownload(void *me, void *data, int nbytes)
 void FileManager::acceptDownload(void *me, std::string contents)
 {
 	FileManager *fm = Environment::fileManager();
-	fm->clickTicker();
+//	fm->clickTicker();
 
 	std::string &link = *static_cast<std::string *>(me);
 	
