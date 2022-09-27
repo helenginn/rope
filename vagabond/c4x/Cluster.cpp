@@ -201,7 +201,7 @@ void Cluster<DG>::normaliseResults(float scale)
 }
 
 template <class DG>
-std::vector<float> Cluster<DG>::torsionVector(int axis)
+std::vector<float> Cluster<DG>::rawVector(int axis)
 {
 	std::vector<float> weights;
 	float sc = this->_scaleFactor;
@@ -214,7 +214,7 @@ std::vector<float> Cluster<DG>::torsionVector(int axis)
 	}
 	
 	std::vector<float> result = _dg.weightedDifferences(weights);
-
+	
 	return result;
 }
 

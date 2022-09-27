@@ -57,7 +57,7 @@ void PathView::start()
 	for (size_t i = 0; i < _pathFinder->dims() && i < 10; i++)
 	{
 		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-		std::vector<float> vals = _cluster->torsionVector(i);
+		std::vector<float> vals = _cluster->rawVector(i);
 		
 		_pathFinder->addAxis(list, vals);
 	}

@@ -97,10 +97,11 @@ void ClusterSVD<DG>::cluster()
 	
 	for (size_t i = 0; i < mat.rows; i++)
 	{
-		std::vector<float> torsions = this->torsionVector(i);
+		std::vector<float> raw = this->rawVector(i);
+
 		for (size_t j = 0; j < l; j++)
 		{
-			tmp.u[j][i] = torsions[j];
+			tmp.u[j][i] = raw[j];
 		}
 	}
 	

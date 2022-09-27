@@ -121,7 +121,7 @@ std::vector<float> Axes::getTorsionVector(int idx)
 			continue;
 		}
 		int axis = _cluster->axis(i);
-		std::vector<float> vals = _cluster->torsionVector(axis);
+		std::vector<float> vals = _cluster->rawVector(axis);
 
 		float &weight = dir[i];
 		

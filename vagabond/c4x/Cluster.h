@@ -50,7 +50,7 @@ public:
 	/** given a set of metadata values, find best-fitting axis */
 	int bestAxisFit(std::vector<float> &vals);
 	
-	std::vector<float> torsionVector(int axis);
+	std::vector<float> rawVector(int axis);
 	std::vector<float> rawVector(int from, int to);
 
 	/** implement by superclass to map new vector into existing space */

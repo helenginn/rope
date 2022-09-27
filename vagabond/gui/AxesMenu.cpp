@@ -121,7 +121,7 @@ void AxesMenu::supplySingleAxis(int i)
 	_csv = "";
 
 	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-	std::vector<float> vals = _cluster->torsionVector(i);
+	std::vector<float> vals = _cluster->rawVector(i);
 	_csv += "torsion_id,torsion(degrees)\n";
 	
 	for (size_t i = 0; i < list.size(); i++)
