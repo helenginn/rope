@@ -61,12 +61,14 @@ Window::Window(int width, int height)
 	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);
 	_context = SDL_GL_CreateContext(_window);
 
+#ifndef __EMSCRIPTEN__
     const GLenum err = glewInit();
 
     if (GLEW_OK != err)
     {
         std::cout << "GLEW Error: " << glewGetErrorString(err) << std::endl;
     }
+#endif
 	
 	std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
 
