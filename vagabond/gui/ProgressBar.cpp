@@ -20,6 +20,7 @@
 #include <vagabond/gui/elements/Text.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/Window.h>
+#include <vagabond/gui/elements/SnowGL.h>
 
 ProgressBar::ProgressBar(std::string text) : Image("assets/images/rope.png")
 {
@@ -47,10 +48,16 @@ ProgressBar::~ProgressBar()
 void ProgressBar::setMaxTicks(int count)
 {
 	_maxTicks = count;
+	
+	if (_maxTicks <= 0)
+	{
+		finish();
+	}
 }
 
 void ProgressBar::finish()
 {
+	setDisabled(true);
 	Window::window()->removeObject(this);
 	Window::setDelete(this);
 }
@@ -63,6 +70,11 @@ void ProgressBar::sendObject(std::string tag, void *object)
 		if (_ticks >= _maxTicks)
 		{
 			finish();
+		}
+		
+		if (_gl)
+		{
+			_gl->viewChanged();
 		}
 	}
 	else if (tag == "done")
