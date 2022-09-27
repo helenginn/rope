@@ -23,6 +23,7 @@
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/MetadataView.h>
+#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -194,27 +195,61 @@ void DistanceMaker::confirmAtom()
 	}
 }
 
-void DistanceMaker::calculateAngle()
+void DistanceMaker::prepareAngles()
 {
 	AtomRecall one(_aRes, _first);
 	AtomRecall two(_bRes, _second);
 	AtomRecall three(_cRes, _third);
 	Metadata *md = _entity->angleBetweenAtoms(one, two, three);
-	
-	MetadataView *mv = new MetadataView(this, md);
-	mv->show();
-	_stage = Nothing;
+	_result = md;
 }
 
-void DistanceMaker::calculateDistance()
+void DistanceMaker::prepareDistances()
 {
 	AtomRecall one(_aRes, _first);
 	AtomRecall two(_bRes, _second);
 	Metadata *md = _entity->distanceBetweenAtoms(one, two);
-	
-	MetadataView *mv = new MetadataView(this, md);
-	mv->show();
-	_stage = Nothing;
+	_result = md;
+}
+
+void DistanceMaker::stop()
+{
+	if (_worker != nullptr)
+	{
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
+	}
+}
+
+void DistanceMaker::calculateDistance()
+{
+	std::string title = "Calculating distances...";
+	VagWindow::window()->prepareProgressBar(_entity->modelCount(), title);
+	stop();
+
+	_worker = new std::thread(&DistanceMaker::prepareDistances, this);
+}
+
+void DistanceMaker::calculateAngle()
+{
+	std::string title = "Calculating angles...";
+	VagWindow::window()->prepareProgressBar(_entity->modelCount(), title);
+	stop();
+
+	_worker = new std::thread(&DistanceMaker::prepareAngles, this);
+}
+
+
+void DistanceMaker::doThings()
+{
+	if (_result != nullptr)
+	{
+		MetadataView *mv = new MetadataView(this, _result);
+		mv->show();
+		_stage = Nothing;
+		_result = nullptr;
+	}
 }
 
 void DistanceMaker::buttonPressed(std::string tag, Button *button)

@@ -52,7 +52,7 @@ public:
 	{
 	};
 	
-	virtual const std::string progressName() const = 0;
+	virtual const std::string progressName() const { return ""; }
 
 	void clickTicker()
 	{

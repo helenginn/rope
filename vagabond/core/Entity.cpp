@@ -74,6 +74,7 @@ Metadata *Entity::angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c)
 	for (Model *model : _models)
 	{
 		model->angleBetweenAtoms(this, new_a, new_b, new_c, header, md);
+		md->clickTicker();
 	}
 
 	return md;
@@ -96,6 +97,7 @@ Metadata *Entity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
 	for (Model *model : _models)
 	{
 		model->distanceBetweenAtoms(this, new_a, new_b, header, md);
+		md->clickTicker();
 	}
 
 	return md;

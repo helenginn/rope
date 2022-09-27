@@ -24,11 +24,12 @@
 #include <set>
 #include "Value.h"
 #include "Ruler.h"
+#include "Progressor.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
 
-class Metadata
+class Metadata : public Progressor
 {
 public:
 	Metadata();
