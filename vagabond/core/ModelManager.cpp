@@ -95,6 +95,7 @@ void ModelManager::autoModel()
 
 	fm->setFilterType(File::Nothing);
 	housekeeping();
+	finishTicker();
 }
 
 void ModelManager::purgeModel(Model *model)
