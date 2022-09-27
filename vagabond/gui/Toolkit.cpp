@@ -58,21 +58,22 @@ void Toolkit::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "automodel")
 	{
-		VagWindow::addJob("automodel");
-
 		FileManager *fm = Environment::fileManager();
 		fm->setFilterType(File::MacroAtoms);
 		std::vector<std::string> list = fm->filteredList();
 		prepareProgress(list.size(), "Automodelling...");
 
+		VagWindow::addJob("automodel");
+
 		return;
 	}
 	else if (tag == "rescan")
 	{
-		VagWindow::addJob("rescan");
-
 		ModelManager *mm = Environment::modelManager();
 		prepareProgress(mm->objectCount(), "Rescanning models...");
+
+		VagWindow::addJob("rescan");
+
 		return;
 	}
 }
