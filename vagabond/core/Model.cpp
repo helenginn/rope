@@ -552,6 +552,14 @@ void Model::throwOutEntity(Entity *ent)
 			std::cout << "Removing " << jt->first << " as instance of " << 
 			"entity " << ent->name() << " from " << name() << std::endl;
 			_chain2Entity.erase(jt);
+
+			jt = _chain2Entity.begin();
+			jt--;
+		}
+		
+		if (_chain2Entity.size() == 0)
+		{
+			break;
 		}
 	}
 
