@@ -105,8 +105,7 @@ void ClusterSVD<DG>::cluster()
 	}
 	
 	invertSVD(&tmp);
-//	PCA::setupMatrix(&_rawToCluster, l, mat.rows);
-//	PCA::copyMatrix(_rawToCluster, tmp.u);
+
 	_rawToCluster = PCA::transpose(&tmp.u);
 
 	freeMatrix(&mat);
