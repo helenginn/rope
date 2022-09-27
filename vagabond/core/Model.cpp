@@ -149,6 +149,8 @@ void Model::unload()
 
 void Model::createMolecules()
 {
+	bool was_loaded = loaded();
+
 	std::map<std::string, std::string>::iterator it;
 	int extra = 0;
 	
@@ -173,7 +175,10 @@ void Model::createMolecules()
 	
 	mergeAppropriateMolecules();
 	
-	unload();
+	if (!was_loaded)
+	{
+		unload();
+	}
 }
 
 std::set<Entity *> Model::entities()
