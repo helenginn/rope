@@ -50,11 +50,14 @@ public:
 	/** given a set of metadata values, find best-fitting axis */
 	int bestAxisFit(std::vector<float> &vals);
 	
+	/** raw vector which would correspond to given cluster axis */
 	std::vector<float> rawVector(int axis);
+
+	/* difference raw vector between dataset 'from' and 'to' */
 	std::vector<float> rawVector(int from, int to);
 
-	/** implement by superclass to map new vector into existing space */
-	virtual std::vector<float> mapVector(std::vector<float> &vec)
+	/** implement by superclass to map raw vector into clustered space */
+	virtual std::vector<float> mapVector(std::vector<float> &raw)
 	{
 		return std::vector<float>();
 	}
