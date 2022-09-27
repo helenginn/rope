@@ -414,6 +414,7 @@ PCA::Matrix DataGroup<Unit, Header>::correlationMatrix()
 	if (_diffs.size() == 0)
 	{
 		findDifferences();
+		normalise();
 	}
 	
 	return arbitraryMatrix(&DataGroup::correlation_between);
