@@ -39,6 +39,7 @@ private:
 	void addOption(std::string name, std::string tag, float top,
 	               bool ticked);
 	FixIssues::Options options();
+	void stop();
 
 	Entity *_entity = nullptr;
 	Molecule *_molecule = nullptr;

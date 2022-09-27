@@ -39,6 +39,10 @@ class FixIssues : public HasResponder<Responder<FixIssues> >
 {
 public:
 	FixIssues(Molecule *m);
+	
+	~FixIssues();
+	
+	void stop();
 
 	void setModels(const std::vector<Model *> &models)
 	{
@@ -96,6 +100,7 @@ private:
 	std::vector<Model *> _models;
 	Options _options = FixNone;
 	bool _done = false;
+	std::atomic<bool> _finish{false};
 	
 	struct Issue
 	{

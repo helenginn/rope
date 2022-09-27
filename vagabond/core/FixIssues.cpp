@@ -30,6 +30,11 @@ FixIssues::FixIssues(Molecule *m)
 
 }
 
+FixIssues::~FixIssues()
+{
+
+}
+
 void FixIssues::findIssues()
 {
 	if (_options == FixNone)
@@ -43,10 +48,20 @@ void FixIssues::findIssues()
 	for (Model *m : _models)
 	{
 		processModel(m);
+		
+		if (_finish)
+		{
+			break;
+		}
 	}
 	
 	_reference->model()->unload();
 	_done = true;
+}
+
+void FixIssues::stop()
+{
+	_finish = true;
 }
 
 void FixIssues::processModel(Model *m)

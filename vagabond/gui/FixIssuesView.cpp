@@ -30,12 +30,7 @@ FixIssuesView::FixIssuesView(Scene *prev, Entity *ent) : Scene(prev)
 
 FixIssuesView::~FixIssuesView()
 {
-	if (_worker != nullptr)
-	{
-		_worker->join();
-		delete _worker;
-		_worker = nullptr;
-	}
+	stop();
 
 	if (_fixer != nullptr)
 	{
@@ -150,6 +145,17 @@ FixIssues::Options FixIssuesView::options()
 	return ret;
 }
 
+void FixIssuesView::stop()
+{
+	if (_worker != nullptr)
+	{
+		_fixer->stop();
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
+	}
+}
+
 void FixIssuesView::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "find_issues")
@@ -168,8 +174,13 @@ void FixIssuesView::buttonPressed(std::string tag, Button *button)
 		_fixer->setResponder(ri);
 		ri->show();
 		
+		stop();
 		_worker = new std::thread(&FixIssues::findIssues, _fixer);
-//		_fixer->findIssues();
+	}
+	
+	if (tag == "back")
+	{
+		stop();
 	}
 
 	Scene::buttonPressed(tag, button);
