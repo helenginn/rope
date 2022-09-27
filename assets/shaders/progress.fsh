@@ -18,7 +18,7 @@ void main()
 	if (vTex.x < fraction)
 	{
 		result.rgb *= 0.5;
-		result.b = 1;
+		result.b = 1.;
 	}
 	FragColor = result;
 }
