@@ -2613,7 +2613,7 @@ _chem_comp_angle.description
  HIS      CB     CG     CD2     129.7      1.6   77  "HISE"
  HIS      CB     CG     CD2     130.8      3.1  242  "HISD"
  HIS      CB     CG     CD2     131.4      1.2  243  "HISH"
- HIS      CB     CG     ND1     121.4      1.3   70  "HISE"
+ HIS      CB     CG     ND1     121.5      1.3   70  "HISE"
  HIS      CB     CG     ND1     123.2      2.5  244  "HISD"
  HIS      CB     CG     ND1     122.5      1.3  245  "HISH"
  HIS      CE1    NE2    CD2     107.1      1.1   10  "HISE"
@@ -2818,7 +2818,7 @@ _chem_comp_angle.description
  PHE      CB     CG     CD1     120.8      0.7   66  .
  PHE      CB     CG     CD2     120.8      0.7   66  .
  PHE      CD1    CE1    CZ      120.1      1.2   84  .
- PHE      CD1    CG     CD2     118.3      1.3   82  .
+ PHE      CD1    CG     CD2     118.4      1.3   82  .
  PHE      CE1    CZ     CE2     120.0      1.8   61  .
  PHE      CG     CD1    CE1     120.8      1.1   86  .
  PHE      CG     CD2    CE2     120.8      1.1   86  .
@@ -2923,7 +2923,7 @@ _chem_comp_angle.description
  TRP      CB     CA     C       110.4      2.0   19  .
  TRP      CB     CG     CD1     127.0      1.3   76  .
  TRP      CB     CG     CD2     126.6      1.3   75  .
- TRP      CD1    CG     CD2     106.3      0.8    7  .
+ TRP      CD1    CG     CD2     106.4      0.8    7  .
  TRP      CD1    NE1    CE2     109.0      0.9   14  .
  TRP      CD2    CE2    CZ2     122.3      1.2   73  .
  TRP      CD2    CE3    CZ3     118.8      1.3   58  .
@@ -2966,7 +2966,7 @@ _chem_comp_angle.description
  TYR      CB     CG     CD1     121.0      0.6   67  .
  TYR      CB     CG     CD2     121.0      0.6   67  .
  TYR      CD1    CE1    CZ      119.8      0.9   60  .
- TYR      CD1    CG     CD2     117.9      1.1   55  .
+ TYR      CD1    CG     CD2     118.0      1.1   55  .
  TYR      CE1    CZ     CE2     119.8      1.6   60  .
  TYR      CE1    CZ     OH      120.1      2.7   85  .
  TYR      CG     CD1    CE1     121.3      0.8   69  .
