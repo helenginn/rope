@@ -67,6 +67,55 @@ bool Grapher::preferredConnection(Atom *atom, Atom *next)
 	return true;
 }
 
+void Grapher::extendGraphNormally(AtomGraph *current, 
+                                  std::vector<AtomGraph *> &todo,
+                                  AnchorExtension &ext)
+{
+	if (current->depth >= ext.count)
+	{
+		/* reached maximum bond number */
+		return;
+	}
+
+	Atom *atom = current->atom;
+
+	for (size_t i = 0; i < atom->bondLengthCount() && i < 4; i++)
+	{
+		Atom *next = atom->connectedAtom(i);
+		if (next == current->parent)
+		{
+			return;
+		}
+
+		if (_singleChain && !preferredConnection(atom, next))
+		{
+			return;
+		}
+
+		/* important not to go round in circles */
+		if (std::find(_atoms.begin() + _atomsDone, _atoms.end(), next) !=
+		    _atoms.end())
+		{
+			return;
+		}
+
+		AtomGraph *nextGraph = new AtomGraph();
+
+		nextGraph->grandparent = current->parent;
+		nextGraph->parent = current->atom;
+		nextGraph->atom = next;
+
+		nextGraph->depth = current->depth + 1;
+		nextGraph->maxDepth = -1;
+
+		current->children.push_back(nextGraph);
+
+		todo.push_back(nextGraph);
+
+		addGraph(nextGraph);
+	}
+}
+
 void Grapher::generateGraphs(AnchorExtension &ext)
 {
 	_anchors.push_back(ext.atom);
@@ -86,49 +135,7 @@ void Grapher::generateGraphs(AnchorExtension &ext)
 		AtomGraph *current = todo.back();
 		todo.pop_back();
 		
-		if (current->depth >= ext.count)
-		{
-			/* reached maximum bond number */
-			continue;
-		}
-
-		Atom *atom = current->atom;
-
-		for (size_t i = 0; i < atom->bondLengthCount() && i < 4; i++)
-		{
-			Atom *next = atom->connectedAtom(i);
-			if (next == current->parent)
-			{
-				continue;
-			}
-			
-			if (_singleChain && !preferredConnection(atom, next))
-			{
-				continue;
-			}
-			
-			/* important not to go round in circles */
-			if (std::find(_atoms.begin() + _atomsDone, _atoms.end(), next) !=
-			    _atoms.end())
-			{
-				continue;
-			}
-
-			AtomGraph *nextGraph = new AtomGraph();
-
-			nextGraph->grandparent = current->parent;
-			nextGraph->parent = current->atom;
-			nextGraph->atom = next;
-			
-			nextGraph->depth = current->depth + 1;
-			nextGraph->maxDepth = -1;
-
-			current->children.push_back(nextGraph);
-
-			todo.push_back(nextGraph);
-			
-			addGraph(nextGraph);
-		}
+		extendGraphNormally(current, todo, ext);
 	}
 }
 

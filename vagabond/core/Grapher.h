@@ -97,6 +97,9 @@ public:
 	AtomGraph *firstGraphNextResidue(AtomGraph *last);
 private:
 	void addGraph(AtomGraph *graph);
+	void extendGraphNormally(AtomGraph *current,
+	                         std::vector<AtomGraph *> &todo,
+	                         AnchorExtension &ext);
 	void fixBlockAsGhost(AtomBlock &block, Atom *anchor);
 	void assignAtomToBlock(AtomBlock &block, int idx, Atom *atom);
 	bool preferredConnection(Atom *atom, Atom *next);
