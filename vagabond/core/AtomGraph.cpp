@@ -85,9 +85,9 @@ std::string AtomGraph::desc() const
 	}
 
 	ss << " to " << g.atom->atomName() << " (this)" << std::endl;
-	
+
 	ss << indent << "Torsion: ";
-	
+
 	if (g.torsion)
 	{
 		ss << g.torsion->desc() << std::endl;
