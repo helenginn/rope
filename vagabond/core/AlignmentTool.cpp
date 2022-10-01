@@ -62,6 +62,12 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	{
 		glm::vec3 init = it->first->initialPosition();
 		glm::vec3 pos = it->second.ave;
+		
+		if (init.x != init.x || pos.x != pos.x)
+		{
+			continue;
+		}
+		
 		pose.addPositionPair(init, pos);
 	}
 	
