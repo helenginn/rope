@@ -96,16 +96,36 @@ std::string AtomGraph::desc() const
 	{
 		ss << "(null)" << std::endl;
 	}
-	
+
 	ss << indent << "Children: ";
-	
+
 	for (size_t i = 0; i < g.children.size(); i++)
 	{
 		ss << g.children[i]->atom->atomName() << " ";
 	}
-	
+
 	ss << std::endl;
 
 	return ss.str();
+}
+
+bool AtomGraph::operator<(const AtomGraph &other) const
+{
+	if (onlyHydrogens && !other.onlyHydrogens)
+	{
+		return false;
+	}
+	if (!onlyHydrogens && other.onlyHydrogens)
+	{
+		return true;
+	}
+
+	if (atom->elementSymbol() == other.atom->elementSymbol())
+	{
+		/* otherwise go for tinier branch points first */
+		return atom->atomNum() > other.atom->atomNum();
+	}
+
+	return atom->elementSymbol() == other.atom->elementSymbol();
 }
 
