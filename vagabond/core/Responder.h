@@ -94,6 +94,14 @@ public:
 		r->setParent(this);
 	}
 	
+	void clearResponders()
+	{
+		while (_responders.size() > 0)
+		{
+			removeResponder(_responders[0]);
+		}
+	}
+	
 	virtual void removeResponder(R *r)
 	{
 		for (size_t i = 0; i < _responders.size(); i++)
