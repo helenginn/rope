@@ -130,11 +130,7 @@ void ChooseEntity::buttonPressed(std::string tag, Button *button)
 void ChooseEntity::setEntity(std::string name)
 {
 	_model.setEntityForChain(_chain->id(), name);
-	_model.createMolecules();
-
-	Entity *ent = Environment::env().entityManager()->entity(name);
-	ent->checkModel(_model);
-
 	_caller->refreshInfo();
+
 	back();
 }
