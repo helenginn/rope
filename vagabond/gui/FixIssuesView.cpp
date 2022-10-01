@@ -84,7 +84,7 @@ void FixIssuesView::setup()
 	addOption("Fix asparagine", "asparagine", top, false);
 	top += inc;
 	addOption("Fix glutamine", "glutamine", top, false);
-#ifdef VERSION_NEXT
+#ifdef VERSION_FIX_PEPTIDE
 	top += inc;
 	addOption("Fix peptide flips", "peptide_flips", top, false);
 #endif

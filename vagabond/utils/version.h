@@ -20,5 +20,6 @@
 #define __ROPE__VERSION__H
 
 //#define VERSION_NEXT
+#define VERSION_FIX_PEPTIDE
 
 #endif
