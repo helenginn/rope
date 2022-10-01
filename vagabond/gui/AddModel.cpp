@@ -26,6 +26,7 @@
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/ModelManager.h>
+#include <vagabond/core/EntityManager.h>
 
 AddModel::AddModel(Scene *prev) :
 Scene(prev),
@@ -220,8 +221,10 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	{
 		try
 		{
-			_obj.createMolecules();
-			Environment::modelManager()->insertIfUnique(_obj);
+			ModelManager *mm = Environment::modelManager();
+			Model *model = mm->insertIfUnique(_obj);
+			model->createMolecules();
+			Environment::env().entityManager()->checkModelsForReferences(mm);
 			back();
 		}
 		catch (const std::runtime_error &err)
