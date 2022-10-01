@@ -231,10 +231,10 @@ void GuiDensity::extraUniforms()
 		centre = _gl->getCentre();
 	}
 
-	GLuint uCentre = glGetUniformLocation(_usingProgram, "centre");
+	GLuint uCentre = glGetUniformLocation(_program, "centre");
 	glUniform3f(uCentre, centre[0], centre[1], centre[2]);
 
-	GLuint uSlice = glGetUniformLocation(_usingProgram, "slice");
+	GLuint uSlice = glGetUniformLocation(_program, "slice");
 	glUniform1f(uSlice, _slice);
 	checkErrors("binding slice");
 }
