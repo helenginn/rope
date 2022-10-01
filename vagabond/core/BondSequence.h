@@ -29,6 +29,8 @@
 #include "BondTorsion.h"
 #include "AtomBlock.h"
 #include "Grapher.h"
+#include "TorsionBasis.h"
+#include "AnchorExtension.h"
 #include "Sampler.h"
 
 class Atom;
@@ -130,7 +132,7 @@ public:
 	/* extend the atom graph for bond sequence generation
 	 * 	@param atom beginning anchor atom
 	 * 	@param count maximum bond depth to consider */
-	void addToGraph(Atom *atom, size_t count = UINT_MAX);
+	void addToGraph(AnchorExtension &atom);
 	
 	void multiplyUpBySampleCount();
 	void reflagDepth(int min, int max, int sidemax);

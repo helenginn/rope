@@ -174,7 +174,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 
 	for (size_t j = 0; j < _atoms.size(); j++)
 	{
-		sequence->addToGraph(_atoms[j].atom, _atoms[j].count);
+		sequence->addToGraph(_atoms[j]);
 	}
 
 	sequence->multiplyUpBySampleCount();
@@ -196,7 +196,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	}
 }
 
-void BondSequenceHandler::addAnchorExtension(BondCalculator::AnchorExtension ext)
+void BondSequenceHandler::addAnchorExtension(AnchorExtension ext)
 {
 	_atoms.push_back(ext);
 }

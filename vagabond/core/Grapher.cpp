@@ -67,12 +67,12 @@ bool Grapher::preferredConnection(Atom *atom, Atom *next)
 	return true;
 }
 
-void Grapher::generateGraphs(Atom *atom, size_t count)
+void Grapher::generateGraphs(AnchorExtension &ext)
 {
-	_anchors.push_back(atom);
+	_anchors.push_back(ext.atom);
 
 	AtomGraph *graph = new AtomGraph();
-	graph->atom = atom;
+	graph->atom = ext.atom;
 	graph->parent = nullptr;
 	graph->depth = 0;
 	graph->maxDepth = -1;
@@ -86,7 +86,7 @@ void Grapher::generateGraphs(Atom *atom, size_t count)
 		AtomGraph *current = todo.back();
 		todo.pop_back();
 		
-		if (current->depth >= count)
+		if (current->depth >= ext.count)
 		{
 			/* reached maximum bond number */
 			continue;

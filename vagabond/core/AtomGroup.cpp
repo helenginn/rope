@@ -442,7 +442,8 @@ std::vector<AtomGroup *> &AtomGroup::connectedGroups()
 			continue;
 		}
 
-		grapher.generateGraphs(anchor);
+		AnchorExtension ext{anchor, UINT_MAX};
+		grapher.generateGraphs(ext);
 		
 		AtomGroup *next = new AtomGroup();
 		for (size_t i = 0; i < grapher.graphCount(); i++)

@@ -72,9 +72,9 @@ void BondSequence::makeTorsionBasis()
 	}
 }
 
-void BondSequence::addToGraph(Atom *atom, size_t count)
+void BondSequence::addToGraph(AnchorExtension &ext)
 {
-	_grapher.generateGraphs(atom, count);
+	_grapher.generateGraphs(ext);
 	_grapher.calculateMissingMaxDepths();
 	_grapher.fillInParents();
 

@@ -148,7 +148,8 @@ void Chain::assignMainChain()
 
 		Atom *start = grps[i]->chosenAnchor();
 		Grapher gr;
-		gr.generateGraphs(start);
+		AnchorExtension ext{start, UINT_MAX};
+		gr.generateGraphs(ext);
 //		gr.assignMainChain();
 	}
 	

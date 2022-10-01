@@ -20,6 +20,7 @@
 #define __vagabond__Grapher__
 
 #include "AtomGraph.h"
+#include "AnchorExtension.h"
 #include "AtomBlock.h"
 #include <vagabond/utils/svd/PCA.h>
 
@@ -43,7 +44,7 @@ public:
 	 * @param atom anchor point to start from
 	 * @param count how many bonds to trace through from anchor before 
 	 * ending graph */
-	void generateGraphs(Atom *atom, size_t count = UINT_MAX);
+	void generateGraphs(AnchorExtension &ext);
 	void calculateMissingMaxDepths();
 	void fillInParents();
 

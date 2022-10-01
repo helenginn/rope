@@ -105,7 +105,8 @@ void Sequence::findSequence()
 {
 	Grapher gr;
 	gr.setSingleChain(true);
-	gr.generateGraphs(_anchor);
+	AnchorExtension ext{_anchor, UINT_MAX};
+	gr.generateGraphs(ext);
 
 	int max = gr.graphCount();
 	

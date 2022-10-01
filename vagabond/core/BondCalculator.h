@@ -26,6 +26,7 @@
 #include <queue>
 #include "Handler.h"
 #include "TorsionBasis.h"
+#include "AnchorExtension.h"
 #include "FFProperties.h"
 
 class Atom;
@@ -192,11 +193,6 @@ public:
 		_props = props;
 	}
 	
-	struct AnchorExtension
-	{
-		Atom *atom;
-		size_t count;
-	};
 
 	Job *acquireJob();
 	Result *acquireResult();

@@ -21,8 +21,9 @@
 
 #include <thread>
 #include "Handler.h"
-#include "BondCalculator.h"
 #include "BondSequence.h"
+#include "TorsionBasis.h"
+#include "AnchorExtension.h"
 
 class Sampler;
 class BondSequence;
@@ -79,7 +80,7 @@ public:
 	
 	const size_t torsionCount() const;
 
-	void addAnchorExtension(BondCalculator::AnchorExtension ext);
+	void addAnchorExtension(AnchorExtension ext);
 	void setup();
 	
 	const BondSequence *sequence(int i) const
@@ -151,7 +152,7 @@ private:
 	std::map<SequenceState, Pool<BondSequence *> > _pools;
 	Pool<MiniJobSeq *> _miniJobPool;
 
-	std::vector<BondCalculator::AnchorExtension> _atoms;
+	std::vector<AnchorExtension> _atoms;
 
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
