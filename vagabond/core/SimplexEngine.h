@@ -57,7 +57,7 @@ protected:
 	typedef std::vector<float> Point;
 
 	const Point &bestPoint() const;
-	virtual int sendJob(const Point &trial);
+	virtual int sendJob(const Point &trial, bool force_update = false);
 	virtual int awaitResult(double *eval);
 	
 	const float bestScore() const

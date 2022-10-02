@@ -21,6 +21,7 @@
 #include "TorsionBasis.h"
 #include "Atom.h"
 #include <queue>
+#include <set>
 #include <sstream>
 
 Grapher::~Grapher()
@@ -174,6 +175,7 @@ void Grapher::calculateMissingMaxDepths()
 	for (size_t i = 0; i < _graphs.size(); i++)
 	{
 		AtomGraph *head = _graphs[i];
+		std::set<Atom *> previous;
 
 		/* assign this graph's depth up the entire chain, if higher */
 		if (head->children.size() == 0 && head->maxDepth < 0)
@@ -184,11 +186,12 @@ void Grapher::calculateMissingMaxDepths()
 			while (true)
 			{
 				Atom *p = curr->parent;
-				if (p == nullptr)
+				if (p == nullptr || previous.count(p))
 				{
 					break;
 				}
 
+				previous.insert(p);
 				AtomGraph *gp = _atom2Graph[p];
 				if (gp == nullptr)
 				{
@@ -275,7 +278,7 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 			}
 		}
 
-		int idx = basis->addTorsion(_graphs[i]->torsion);
+		int idx = basis->addTorsion(_graphs[i]->torsion, _graphs[i]->atom);
 		_graphs[i]->torsion_idx = idx;
 	}
 }

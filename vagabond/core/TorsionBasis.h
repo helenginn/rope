@@ -22,6 +22,7 @@
 #include <vector>
 
 class BondTorsion;
+class Atom;
 
 class TorsionBasis
 {
@@ -45,7 +46,7 @@ public:
 	
 	static TorsionBasis *newBasis(Type type);
 	
-	int addTorsion(BondTorsion *torsion);
+	int addTorsion(BondTorsion *torsion, Atom *atom = nullptr);
 	
 	/** provides modified torsion angle given custom vector.
 	 * @param idx index of torsion angle within full list of refined angles
@@ -54,7 +55,8 @@ public:
 	 * @returns torsion angle in degrees */
 	virtual float torsionForVector(int idx, const float *vec, int n) = 0;
 
-	virtual void absorbVector(const float *vec, int n);
+	virtual void absorbVector(const float *vec, int n, 
+	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};
 	
@@ -63,12 +65,19 @@ public:
 		return _torsions.size();
 	}
 	
+	Atom *atom(int i)
+	{
+		return _atoms[i];
+	}
+	
 	BondTorsion *torsion(int i)
 	{
 		return _torsions[i];
 	}
 protected:
 	std::vector<BondTorsion *> _torsions;
+	std::vector<Atom *> _atoms;
+
 	struct TorsionAngle
 	{
 		float angle;

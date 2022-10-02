@@ -70,6 +70,16 @@ public:
 	}
 	
 	/** returns reference to node index */
+	AtomGraph *graph(Atom *atom) const
+	{
+		if (_atom2Graph.count(atom) == 0)
+		{
+			return nullptr;
+		}
+		return _atom2Graph.at(atom);
+	}
+	
+	/** returns reference to node index */
 	AtomGraph *graph(int i) const
 	{
 		return _graphs[i];

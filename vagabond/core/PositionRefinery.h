@@ -23,6 +23,8 @@
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include <iostream>
+#include <queue>
+#include <set>
 #include <climits>
 
 class AtomGroup;
@@ -52,7 +54,7 @@ public:
 		return _ncalls;
 	}
 protected:
-	virtual int sendJob(const Point &trial);
+	virtual int sendJob(const Point &trial, bool force_update = false);
 	virtual int awaitResult(double *eval);
 private:
 	void refine(AtomGroup *group);
@@ -62,9 +64,16 @@ private:
 	void calculateActiveTorsions();
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
+	void testTransfer(AnchorExtension ext);
+	void stepRefine();
+//	std::vector<Atom *> generateAbsorptionMask(std::set<Atom *> done);
+	bool *generateAbsorptionMask(std::set<Atom *> done);
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
+
+	std::queue<Atom *> _atomQueue;
+	std::map<Atom *, AnchorExtension> _atom2Ext;
 
 	std::vector<float> _steps;
 	float _step = 1;

@@ -20,6 +20,7 @@
 #include "AtomGroup.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "BondSequence.h"
 #include "TorsionBasis.h"
 
 PositionRefinery::PositionRefinery(AtomGroup *group) : SimplexEngine()
@@ -142,6 +143,184 @@ void PositionRefinery::fullRefinement(AtomGroup *group)
 	refineBetween(0, _nBonds);
 }
 
+bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
+{
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	
+	bool *mask = new bool[_nActive];
+	
+	for (size_t i = 0; i < _nActive; i++)
+	{
+		mask[i] = done.count(basis->atom(i)) == 0;
+	}
+	
+	size_t i = 0;
+	for (i = 0; i < _nActive; i++)
+	{
+		if (!mask[i])
+		{
+			delete [] mask;
+			return nullptr;
+			for (size_t j = i; j < _nActive; j++)
+			{
+				mask[j] = false;
+			}
+
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < _nActive; i++)
+	{
+//		std::cout << mask[i];
+	}
+//	std::cout << std::endl;
+	
+	if (i == 0)
+	{
+		delete [] mask;
+		return nullptr;
+	}
+
+	return mask;
+}
+
+void PositionRefinery::stepRefine()
+{
+	std::set<Atom *> done, added;
+	Atom *first = _atomQueue.front();
+
+	while (_atomQueue.size())
+	{
+		_calculator->reset();
+
+		Atom *atom = _atomQueue.front();
+		AnchorExtension ext = _atom2Ext[atom];
+
+		_atomQueue.pop();
+		
+		if (done.count(atom) > 0)
+		{
+			continue;
+		}
+
+		std::cout << "Doing: " << atom->desc() << std::endl;
+		_calculator->addAnchorExtension(ext);
+		_calculator->setup();
+		_calculator->start();
+
+		calculateActiveTorsions();
+
+		if (_nActive == 0)
+		{
+			done.insert(atom);
+			_calculator->finish();
+			continue;
+		}
+
+		bool *mask = generateAbsorptionMask(done);
+		
+		if (!mask)
+		{
+			done.insert(atom);
+			continue;
+		}
+
+		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+		
+		BondTorsion *t = basis->torsion(0);
+		double diff = fabs(t->refinedAngle() - ext.block.torsion);
+		
+		if (diff > 1e-2)
+		{
+			std::cout << "WARNING! " << atom->desc() << " ";
+			std::cout << t->refinedAngle() << " " << ext.block.torsion << std::endl;
+		}
+
+		setDimensionCount(_nActive);
+		setMaxJobsPerVertex(1);
+		_steps = std::vector<float>(_nActive, _step);
+		chooseStepSizes(_steps);
+
+		bool improved = run();
+
+		const Point &trial = bestPoint();
+		basis->absorbVector(&trial[0], trial.size());
+		sendJob(trial, true);
+		
+		done.insert(atom);
+
+		const BondSequence *seq = _calculator->sequence();
+		const Grapher &g = seq->grapher();
+
+		for (size_t i = 0; i < seq->blockCount(); i++)
+		{
+			Atom *a = seq->atomForBlock(i);
+			if (!a)
+			{
+				continue;
+			}
+
+			AtomGraph *next = g.graph(a);
+			AnchorExtension ext = seq->getExtension(a);
+			ext.count = 8;
+			_atom2Ext[a] = ext;
+
+			if (!next->torsion)
+			{
+				continue;
+			}
+
+			next->torsion->setRefinedAngle(ext.block.torsion);
+
+			if (added.count(a))
+			{
+				continue;
+			}
+
+			std::cout << "Adding ";
+			std::cout << a->desc() << "!" << std::endl;
+
+			added.insert(a);
+			_atomQueue.push(a);
+		}
+
+		/*
+		for (size_t i = 0; i < graph->children.size(); i++)
+		{
+			AtomGraph *next = graph->children[i];
+			
+			if (!next->torsion)
+			{
+				continue;
+			}
+
+			Atom *atom = next->atom;
+
+			AnchorExtension ext = seq->getExtension(atom);
+			ext.count = 8;
+
+			_atom2Ext[atom] = ext;
+			if (added.count(atom))
+			{
+				continue;
+			}
+			added.insert(atom);
+			_atomQueue.push(atom);
+		}
+		*/
+
+		delete [] mask;
+	}
+
+	_calculator->reset();
+	AnchorExtension ext(first);
+	_calculator->addAnchorExtension(ext);
+	_calculator->setup();
+	_calculator->start();
+
+}
+
 void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 {
 	std::chrono::high_resolution_clock::time_point tstart;
@@ -149,15 +328,20 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 	
 	int nb = _calculator->sequence()->blockCount() + 1;
 
-	for (size_t i = 0; i < nb; i++)
+	if (false)
 	{
-		refineBetween(i, i + _depthRange);
-
-		if (_finish)
+		for (size_t i = 0; i < nb; i++)
 		{
-			break;
+			refineBetween(i, i + _depthRange);
+
+			if (_finish)
+			{
+				break;
+			}
 		}
 	}
+	
+	stepRefine();
 
 	std::chrono::high_resolution_clock::time_point tend;
 	tend = std::chrono::high_resolution_clock::now();
@@ -172,6 +356,25 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 	
 	_calculator->finish();
 
+}
+
+void PositionRefinery::testTransfer(AnchorExtension ext)
+{
+	_calculator = new BondCalculator();
+	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
+	_calculator->setMaxSimultaneousThreads(1);
+	_calculator->setTotalSamples(1);
+	_calculator->setTorsionBasisType(_type);
+	_calculator->addAnchorExtension(ext);
+	_calculator->setIgnoreHydrogens(true);
+	_calculator->setup();
+
+	double res = fullResidual();
+	std::cout << "Recalculate with new basis: " 
+	<< res << " Angstroms over " << _group->size() << " atoms." << std::endl;
+
+	delete _calculator;
+	_calculator = nullptr;
 }
 
 void PositionRefinery::refine(AtomGroup *group)
@@ -190,6 +393,9 @@ void PositionRefinery::refine(AtomGroup *group)
 	_nBonds = _calculator->maxCustomVectorSize();
 	
 	double res = fullResidual();
+	AnchorExtension ext(anchor, 8);
+	_atomQueue.push(anchor);
+	_atom2Ext[anchor] = ext;
 	
 	if (res < 0.3)
 	{
@@ -260,7 +466,7 @@ PositionRefinery::Point PositionRefinery::expandPoint(const Point &p)
 	return expanded;
 }
 
-int PositionRefinery::sendJob(const Point &trial)
+int PositionRefinery::sendJob(const Point &trial, bool force_update)
 {
 	Job job{};
 	job.requests = JobCalculateDeviations;
@@ -274,7 +480,7 @@ int PositionRefinery::sendJob(const Point &trial)
 		job.custom.vecs[0].mean[i] = expanded[i];
 	}
 
-	if (_ncalls % 200 == 0)
+	if (_ncalls % 200 == 0 || force_update)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
 		                                    JobExtractPositions);

@@ -368,7 +368,7 @@ bool SimplexEngine::awaitResults()
 	return changed;
 }
 
-int SimplexEngine::sendJob(const Point &trial)
+int SimplexEngine::sendJob(const Point &trial, bool force_update)
 {
 	// to be implemented downstream
 	return -1;

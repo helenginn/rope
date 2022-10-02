@@ -54,18 +54,24 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	return basis;
 }
 
-void TorsionBasis::absorbVector(const float *vec, int n)
+void TorsionBasis::absorbVector(const float *vec, int n, bool *mask)
 {
 	for (size_t i = 0; i < torsionCount(); i++)
 	{
+		if (mask && !mask[i])
+		{
+			continue;
+		}
+
 		float torsion = torsionForVector(i, vec, n);
 		_torsions[i]->setRefinedAngle(torsion);
 		_angles[i].angle = torsion;
+		std::cout << _atoms[i]->desc() << " is now " << torsion << std::endl;
 	}
 
 }
 
-int TorsionBasis::addTorsion(BondTorsion *torsion)
+int TorsionBasis::addTorsion(BondTorsion *torsion, Atom *atom)
 {
 	if (torsion == nullptr || torsion->isConstrained())
 	{
@@ -81,6 +87,7 @@ int TorsionBasis::addTorsion(BondTorsion *torsion)
 	}
 
 	_torsions.push_back(torsion);
+	_atoms.push_back(atom);
 
 	return _torsions.size() - 1;
 }
