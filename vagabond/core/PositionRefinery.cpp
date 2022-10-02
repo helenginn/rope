@@ -123,11 +123,13 @@ double PositionRefinery::fullResidual()
 	_calculator->start();
 
 	Job job{};
-	job.requests = JobCalculateDeviations;
+	job.requests = (JobType)(JobCalculateDeviations | JobExtractPositions);
 	_calculator->submitJob(job);
 
 	Result *result = _calculator->acquireResult();
 	float dev = result->deviation;
+	
+	result->transplantPositions();
 
 	_calculator->finish();
 	result->destroy();
@@ -145,7 +147,7 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 	std::chrono::high_resolution_clock::time_point tstart;
 	tstart = std::chrono::high_resolution_clock::now();
 	
-	int nb = _calculator->sequenceHandler()->sequence(0)->blockCount() + 1;
+	int nb = _calculator->sequence()->blockCount() + 1;
 
 	for (size_t i = 0; i < nb; i++)
 	{

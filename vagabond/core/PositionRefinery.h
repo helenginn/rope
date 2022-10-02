@@ -21,6 +21,7 @@
 
 #include "SimplexEngine.h"
 #include "TorsionBasis.h"
+#include "AnchorExtension.h"
 #include <iostream>
 #include <climits>
 

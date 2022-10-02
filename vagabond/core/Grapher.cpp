@@ -84,19 +84,19 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 		Atom *next = atom->connectedAtom(i);
 		if (next == current->parent)
 		{
-			return;
+			continue;
 		}
 
 		if (_singleChain && !preferredConnection(atom, next))
 		{
-			return;
+			continue;
 		}
 
 		/* important not to go round in circles */
 		if (std::find(_atoms.begin() + _atomsDone, _atoms.end(), next) !=
 		    _atoms.end())
 		{
-			return;
+			continue;
 		}
 
 		AtomGraph *nextGraph = new AtomGraph();
@@ -122,10 +122,16 @@ void Grapher::generateGraphs(AnchorExtension &ext)
 
 	AtomGraph *graph = new AtomGraph();
 	graph->atom = ext.atom;
-	graph->parent = nullptr;
+	graph->parent = ext.parent;
+	graph->grandparent = ext.grandparent;
 	graph->depth = 0;
 	graph->maxDepth = -1;
 	addGraph(graph);
+	
+	if (ext.isContinuation())
+	{
+		_atom2Transform[ext.atom] = ext.block;
+	}
 	
 	std::vector<AtomGraph *> todo;
 	todo.push_back(graph);
@@ -184,6 +190,11 @@ void Grapher::calculateMissingMaxDepths()
 				}
 
 				AtomGraph *gp = _atom2Graph[p];
+				if (gp == nullptr)
+				{
+					break;
+				}
+
 				if (gp->maxDepth < head->maxDepth)
 				{
 					gp->maxDepth = head->maxDepth;
@@ -203,7 +214,7 @@ void Grapher::fillInParents()
 		          AtomGraph::atomgraph_less_than);
 		
 		/* Fix children/grandchildren of anchor if needed */
-		if (_graphs[i]->depth == 0) 
+		if (_graphs[i]->depth == 0 && _graphs[i]->parent == nullptr) 
 		{
 			if (_graphs[i]->children.size() == 0)
 			{
@@ -321,24 +332,30 @@ void Grapher::sortGraphChildren()
 void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 {
 	block.atom = nullptr;
-	block.basis = glm::mat4(1.f);
-	block.coordination = anchor->transformation();
+	block.basis = anchor->transformation();
+//	block.coordination = anchor->transformation();
 	block.write_locs[0] = 1;
 	block.torsion = 0;
 }
 
-
 void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 {
-	block.atom = atom;
-//	block.nBonds = std::min(atom->bondLengthCount(), 4ul);
-    size_t blc = atom -> bondLengthCount();
-    size_t max = 4;
-    block.nBonds = std::min(blc, max);
-	block.wip = glm::mat4(0.);
-	block.target = atom->initialPosition();
+	if (_atom2Transform.count(atom))
+	{
+		AtomBlock &b = _atom2Transform[atom];
+		block = b;
+	}
+	else
+	{
+		block.atom = atom;
+		size_t blc = atom->bondLengthCount();
+		size_t max = 4;
+		block.nBonds = std::min(blc, max);
+		block.wip = glm::mat4(0.);
+		block.target = atom->initialPosition();
+	}
+
 	block.torsion_idx = _atom2Graph[atom]->torsion_idx;
-	
 	BondTorsion *torsion = _atom2Graph[atom]->torsion;
 	
 	if (torsion != nullptr)
@@ -364,6 +381,9 @@ std::vector<AtomBlock> Grapher::turnToBlocks()
 	int total = _atoms.size() + _anchors.size();
 	total -= _atomsDone + _anchorsDone;
 	int curr = 0;
+	/* if anchor associated with block fished from previous calculation,
+	 * there will be no ghost block */
+	total -= _atom2Transform.size();
 
 	std::vector<AtomBlock> blocks;
 	blocks.resize(total);
@@ -371,16 +391,21 @@ std::vector<AtomBlock> Grapher::turnToBlocks()
 	for (size_t i = _anchorsDone; i < _anchors.size(); i++)
 	{
 		Atom *anchor = _anchors[i];
+		bool prev = _atom2Transform.count(anchor);
 
 		std::queue<AtomGraph *> todo;
 		AtomGraph *anchorGraph = _atom2Graph[anchor];
 		todo.push(anchorGraph);
 
-		/* make very first ghost block */
-		assignAtomToBlock(blocks[curr], curr, anchor);
-		fixBlockAsGhost(blocks[curr], anchor);
-		blocks[curr].nBonds = anchorGraph->children.size();
-		curr++;
+		/* make very first ghost block if applicable */
+		
+		if (!prev)
+		{
+			assignAtomToBlock(blocks[curr], curr, anchor);
+			fixBlockAsGhost(blocks[curr], anchor);
+			blocks[curr].nBonds = anchorGraph->children.size();
+			curr++;
+		}
 		
 		while (!todo.empty())
 		{

@@ -142,6 +142,7 @@ public:
 	}
 	
 	void addAnchorExtension(Atom *atom, size_t bondCount = UINT_MAX);
+	void addAnchorExtension(AnchorExtension ext);
 	
 	Atom *anchorAtom(int i)
 	{
@@ -171,6 +172,8 @@ public:
 		return _sequenceHandler;
 	}
 	
+	const BondSequence *sequence() const;
+	
 	MapTransferHandler *mapHandler()
 	{
 		return _mapHandler;
@@ -196,6 +199,7 @@ public:
 
 	Job *acquireJob();
 	Result *acquireResult();
+	void reset();
 private:
 	void sanityCheckPipeline();
 	void sanityCheckThreads();

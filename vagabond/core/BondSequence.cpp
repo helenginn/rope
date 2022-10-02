@@ -183,6 +183,32 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
+AnchorExtension BondSequence::getExtension(Atom *atom) const
+{
+	AnchorExtension ext(atom);
+
+	for (size_t i = 0; i < _grapher.graphCount(); i++)
+	{
+		const AtomGraph *g = _grapher.graph(i);
+		
+		if (g->atom == atom)
+		{
+			ext.parent = g->parent;
+			ext.grandparent = g->grandparent;
+		}
+	}
+
+	for (const AtomBlock &b : _blocks)
+	{
+		if (b.atom == atom)
+		{
+			ext.block = b;
+		}
+	}
+
+	return ext;
+}
+
 void BondSequence::fetchTorsion(int idx)
 {
 	if (_blocks[idx].torsion_idx < 0)
@@ -268,7 +294,8 @@ int BondSequence::calculateBlock(int idx)
 		int nidx = idx + _blocks[idx].write_locs[0];
 		Atom *anchor = _blocks[nidx].atom;
 
-		_blocks[nidx].basis = anchor->transformation();
+		/* _blocks[idx].basis assigned originally by Grapher */
+		_blocks[nidx].basis = _blocks[idx].basis;
 		glm::mat4x4 wip = _blocks[nidx].basis * _blocks[nidx].coordination;
 
 		int nb = _blocks[idx].nBonds;
@@ -277,7 +304,7 @@ int BondSequence::calculateBlock(int idx)
 		{
 			_blocks[nidx].inherit = (wip[1]);
 		}
-		
+			
 		return 1;
 	}
 	

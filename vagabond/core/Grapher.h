@@ -70,7 +70,7 @@ public:
 	}
 	
 	/** returns reference to node index */
-	AtomGraph *graph(int i)
+	AtomGraph *graph(int i) const
 	{
 		return _graphs[i];
 	}
@@ -106,6 +106,7 @@ private:
 
 	std::vector<AtomGraph *> _graphs;
 	std::vector<Atom *> _atoms;
+	std::map<Atom *, AtomBlock> _atom2Transform;
 	std::vector<Atom *> _anchors;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 

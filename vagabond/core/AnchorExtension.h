@@ -19,10 +19,30 @@
 #ifndef __vagabond__AnchorExtension__
 #define __vagabond__AnchorExtension__
 
+#include <vagabond/utils/glm_import.h>
+#include <vagabond/core/AtomBlock.h>
+
+class Atom;
+
 struct AnchorExtension
 {
 	Atom *atom;
 	size_t count;
+	Atom *parent = nullptr;
+	Atom *grandparent = nullptr;
+	AtomBlock block{};
+	
+	AnchorExtension(Atom *atom_ = nullptr, size_t count_ = UINT_MAX)
+	{
+		atom = atom_;
+		count = count_;
+	}
+	
+	bool isContinuation()
+	{
+		return (parent != nullptr);
+	}
+	
 };
 
 #endif

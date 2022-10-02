@@ -113,19 +113,14 @@ bool AtomGraph::operator<(const AtomGraph &other) const
 {
 	if (onlyHydrogens && !other.onlyHydrogens)
 	{
-		return false;
+//		return false;
 	}
 	if (!onlyHydrogens && other.onlyHydrogens)
 	{
-		return true;
+//		return true;
 	}
 
-	if (atom->elementSymbol() == other.atom->elementSymbol())
-	{
-		/* otherwise go for tinier branch points first */
-		return atom->atomNum() > other.atom->atomNum();
-	}
-
-	return atom->elementSymbol() == other.atom->elementSymbol();
+	/* otherwise go for tinier branch points first */
+	return atom->atomNum() < other.atom->atomNum();
 }
 

@@ -176,6 +176,7 @@ public:
 	SequenceState state();
 	void signal(SequenceState newState);
 	
+	AnchorExtension getExtension(Atom *atom) const;
 private:
 
 	struct AtomBlockTodo

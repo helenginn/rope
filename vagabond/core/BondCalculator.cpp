@@ -38,14 +38,27 @@ BondCalculator::BondCalculator()
 
 BondCalculator::~BondCalculator()
 {
+	reset();
+}
+
+void BondCalculator::reset()
+{
 	finish();
-	delete _sequenceHandler;
-	delete _pointHandler;
-	delete _mapHandler;
-	delete _sumHandler;
+	delete _sequenceHandler; _sequenceHandler = nullptr;
+	delete _pointHandler; _pointHandler = nullptr;
+	delete _mapHandler; _mapHandler = nullptr;
+	delete _sumHandler; _sumHandler = nullptr;
+	delete _ffHandler; _ffHandler = nullptr;
 	_resultPool.cleanup();
 	_recyclePool.cleanup();
 	_jobPool.cleanup();
+
+	_running = 0;
+	_max_id = 0;
+	_minDepth = 0;
+	_maxDepth = INT_MAX;
+	_sideMax = INT_MAX;
+	_atoms.clear();
 }
 
 void BondCalculator::sanityCheckPipeline()
@@ -83,9 +96,14 @@ void BondCalculator::sanityCheckThreads()
 	}
 }
 
+void BondCalculator::addAnchorExtension(AnchorExtension ext)
+{
+	_atoms.push_back(ext);
+}
+
 void BondCalculator::addAnchorExtension(Atom *atom, size_t bondCount)
 {
-	AnchorExtension ext{};
+	AnchorExtension ext;
 	ext.atom = atom;
 	ext.count = bondCount;
 	_atoms.push_back(ext);
@@ -383,4 +401,17 @@ void BondCalculator::setSampler(Sampler *sampler)
 	_sampler = sampler;
 	sampler->setup();
 	setTotalSamples(_sampler->pointCount());
+}
+
+const BondSequence *BondCalculator::sequence() const
+{
+	if (_sequenceHandler)
+	{
+		if (_sequenceHandler->sequenceCount() > 0)
+		{
+			return _sequenceHandler->sequence(0);
+		}
+	}
+	
+	return nullptr;
 }
