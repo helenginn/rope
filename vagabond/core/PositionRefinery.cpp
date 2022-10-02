@@ -185,6 +185,53 @@ bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
 	return mask;
 }
 
+void PositionRefinery::measureAtoms()
+{
+	const Point &trial = bestPoint();
+	sendJob(trial, true);
+	double empty = 0;
+	awaitResult(&empty);
+
+	const BondSequence *seq = _calculator->sequence();
+	std::vector<Atom *> currAtoms = seq->addedAtoms();
+	
+	std::set<Atom *> check;
+	for (Atom *atom : currAtoms)
+	{
+		check.insert(atom);
+	}
+
+	std::set<BondTorsion *> total;
+
+	for (Atom *atom : currAtoms)
+	{
+		for (size_t i = 0; i < atom->bondTorsionCount(); i++)
+		{
+			BondTorsion *t = atom->bondTorsion(i);
+			
+			bool outside = false;
+			for (size_t n = 0; n < 4; n++)
+			{
+				if (!check.count(t->atom(n)))
+				{
+					outside = true;
+				}
+			}
+			
+			if (outside == false)
+			{
+				total.insert(t);
+			}
+		}
+	}
+	
+	for (BondTorsion *t : total)
+	{
+		float measured = t->measurement(BondTorsion::SourceDerived);
+		t->setRefinedAngle(measured);
+	}
+}
+
 void PositionRefinery::stepRefine()
 {
 	std::set<Atom *> done, added;

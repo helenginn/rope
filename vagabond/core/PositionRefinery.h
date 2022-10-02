@@ -68,6 +68,7 @@ private:
 	void stepRefine();
 //	std::vector<Atom *> generateAbsorptionMask(std::set<Atom *> done);
 	bool *generateAbsorptionMask(std::set<Atom *> done);
+	void measureAtoms();
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
