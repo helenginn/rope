@@ -448,9 +448,11 @@ bool CifFile::processLoopAsCompAtoms(Loop &loop)
 		Atom *a = new Atom();
 		a->setElementSymbol(ele);
 		a->setAtomName(name);
+		a->setAtomNum(_atomNum);
 		a->setInitialPosition(pos, 30);
 		a->setCode(code);
 		
+		_atomNum++;
 		_compAtoms->add(a);
 	}
 	

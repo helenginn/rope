@@ -54,6 +54,8 @@ private:
 
 	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
 	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);
+	
+	int _atomNum = 1; /* for chemical components */
 };
 
 #endif
