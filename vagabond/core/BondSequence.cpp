@@ -264,6 +264,11 @@ void BondSequence::printBlock(int idx)
 		glm::to_string(_blocks[idx].atom->initialPosition()) << std::endl;
 	}
 	std::cout << "Torsion: " << t << std::endl;
+	if (_blocks[idx].torsion_idx >= 0)
+	{
+		BondTorsion *torsion = _torsionBasis->torsion(_blocks[idx].torsion_idx);
+		std::cout << "Torsion desc: " << torsion->desc() << std::endl;
+	}
 	std::cout << "Coordination: " << glm::to_string(coord) << std::endl;
 	std::cout << "Basis: " << glm::to_string(basis) << std::endl;
 	std::cout << "wip: " << glm::to_string(wip) << std::endl;
