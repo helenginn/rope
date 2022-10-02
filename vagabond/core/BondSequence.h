@@ -58,7 +58,7 @@ public:
 	
 	std::map<std::string, int> elementList() const;
 	
-	Atom *atomForBlock(int i)
+	Atom *atomForBlock(int i) const
 	{
 		return _blocks[i].atom;
 	}
@@ -100,7 +100,7 @@ public:
 		_ignoreHydrogens = ignore;
 	}
 	
-	Grapher &grapher() 
+	const Grapher &grapher() const
 	{
 		return _grapher;
 	}
