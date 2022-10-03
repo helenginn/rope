@@ -426,6 +426,13 @@ std::string get_desc(std::string name)
 	return desc;
 }
 
+Residue *Molecule::localResidueForResidueTorsion(const ResidueTorsion &rt)
+{
+	Residue *master = rt.residue;
+	Residue *local = sequence()->local_residue(master);
+	return local;
+}
+
 float Molecule::valueForTorsionFromList(BondTorsion *bt,
                                         const std::vector<ResidueTorsion> &list,
                                         const std::vector<float> &values,

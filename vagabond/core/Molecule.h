@@ -126,6 +126,8 @@ public:
 	                              const std::vector<float> &values,
 	                              std::vector<bool> &found);
 
+	Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
+
 	virtual const Metadata::KeyValues metadata() const;
 
 	friend void to_json(json &j, const Molecule &value);

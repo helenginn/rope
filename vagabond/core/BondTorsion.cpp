@@ -139,8 +139,11 @@ double BondTorsion::measurement(BondTorsion::Source source)
 		putative = 0;
 	}
 	
-	_measured = true;
-	_measuredAngle = putative;
+	if (source == SourceInitial)
+	{
+		_measured = true;
+		_measuredAngle = putative;
+	}
 	
 	return putative;
 }

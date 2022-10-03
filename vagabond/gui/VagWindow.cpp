@@ -53,8 +53,15 @@ void VagWindow::prepareProgressView()
 
 void VagWindow::prepareProgressBar(int ticks, std::string text)
 {
+	if (_currentBar != nullptr)
+	{
+		removeObject(_currentBar);
+		delete _currentBar;
+	}
+
 	ProgressBar *pb = new ProgressBar(text);
 	pb->setMaxTicks(ticks);
+	_currentBar = pb;
 	addObject(pb);
 }
 

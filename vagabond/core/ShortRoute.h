@@ -16,42 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__RouteExplorer__
-#define __vagabond__RouteExplorer__
+#ifndef __vagabond__ShortRoute__
+#define __vagabond__ShortRoute__
 
-#include "Display.h"
-#include <vagabond/gui/elements/DragResponder.h>
+#include "Route.h"
 
-class PathFinder;
-class Molecule;
-class Slider;
-class Route;
+struct AtomGraph;
 
-class RouteExplorer : public Display, public DragResponder,
-public Responder<Route>
+class ShortRoute : public Route
 {
 public:
-	RouteExplorer(Scene *prev, PathFinder *pf, int arrival_num);
-	RouteExplorer(Scene *prev, Route *route);
+	ShortRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 
-	virtual void setup();
-	virtual void doThings();
-	void setupSlider();
-	
-	virtual void sendObject(std::string tag, void *object);
-
-	virtual void finishedDragging(std::string tag, double x, double y);
+	bool prepareSegment(Atom *atom);
 private:
-	Route *_route = nullptr;
-	Molecule *_molecule;
 
-	Slider *_rangeSlider = nullptr;
-	std::thread *_worker = nullptr;
-
-	std::atomic<bool> _watch{false};
-	
-	int _numTicks = -1;
-	std::string _progressName;
 };
 
 #endif

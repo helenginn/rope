@@ -21,5 +21,6 @@
 
 //#define VERSION_NEXT
 #define VERSION_FIX_PEPTIDE
+#define VERSION_SHORT_ROUTES
 
 #endif

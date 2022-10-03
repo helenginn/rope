@@ -314,7 +314,7 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers,
 	{
 		for (const TorsionRef &torsion : residue.torsions())
 		{
-			if (onlyMain && !torsion.isMain())
+			if (onlyMain && !torsion.coversMainChain())
 			{
 				continue;
 			}
@@ -358,7 +358,7 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals,
 		
 		for (const TorsionRef &torsion : master.torsions())
 		{
-			if (onlyMain && !torsion.isMain())
+			if (onlyMain && !torsion.coversMainChain())
 			{
 				continue;
 			}

@@ -46,9 +46,13 @@ public:
 		_custom = custom;
 	}
 	
-	void fillFromMoleculeList(Molecule *molecule, int axis,
+	bool fillFromMoleculeList(Molecule *molecule, int axis,
 	                          const std::vector<ResidueTorsion> &list,
 	                          const std::vector<float> &values);
+
+	bool reverseLookup(Molecule *mol, int axis,
+	                   const std::vector<ResidueTorsion> &list,
+	                   const std::vector<float> &values);
 
 	const std::vector<BondTorsion *> &missingBonds() const
 	{

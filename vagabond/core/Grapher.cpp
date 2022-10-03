@@ -497,6 +497,22 @@ std::string Grapher::desc() const
 	return ss.str();
 }
 
+AtomGraph *Grapher::deepestChild(AtomGraph *last)
+{
+	AtomGraph *chosen = nullptr;
+	int max = -1;
+	for (AtomGraph *graph : last->children)
+	{
+		if (graph->maxDepth > max)
+		{
+			max = graph->maxDepth;
+			chosen = graph;
+		}
+	}
+	
+	return chosen;
+}
+
 AtomGraph *Grapher::firstGraphNextResidue(AtomGraph *last)
 {
 	Atom *start = last->atom;

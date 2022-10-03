@@ -127,33 +127,37 @@ void StructureModification::startCalculator()
 	finishHetatmCalculator();
 }
 
-void StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
+bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
                                            const std::vector<float> &values)
 {
 	if (_axis >= _dims)
 	{
 		std::cout << "Too many axes; aborting torsion angle supply" << std::endl;
-		return;
+		return false;
 	}
+
+	bool success = false;
 	for (BondCalculator *calc : _calculators)
 	{
 		TorsionBasis *basis = calc->sequenceHandler()->torsionBasis();
 		ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
 
-		fillBasis(cb, list, values, _axis);
+		success |= fillBasis(cb, list, values, _axis);
 		_torsionLists.push_back(ResidueTorsionList{list, values});
 	}
 	
 	_axis++;
+	return success;
 }
 
-void StructureModification::fillBasis(ConcertedBasis *cb, 
+bool StructureModification::fillBasis(ConcertedBasis *cb, 
                                       const std::vector<ResidueTorsion> &list,
                                       const std::vector<float> &values,
                                       int axis)
 {
-	cb->fillFromMoleculeList(_molecule, axis, list, values);
+	bool result = cb->fillFromMoleculeList(_molecule, axis, list, values);
 	checkMissingBonds(cb);
+	return result;
 }
 
 void StructureModification::checkMissingBonds(ConcertedBasis *cb)
@@ -191,12 +195,7 @@ void StructureModification::changeMolecule(Molecule *m)
 	
 	bool hasCalc = _calculators.size() > 0;
 	
-	for (size_t i = 0; i < _calculators.size(); i++)
-	{
-		delete _calculators[i];
-	}
-
-	_calculators.clear();
+	clearCalculators();
 	
 	if (hasCalc)
 	{
@@ -212,3 +211,13 @@ void StructureModification::changeMolecule(Molecule *m)
 	}
 }
 
+void StructureModification::clearCalculators()
+{
+	
+	for (size_t i = 0; i < _calculators.size(); i++)
+	{
+		delete _calculators[i];
+	}
+
+	_calculators.clear();
+}

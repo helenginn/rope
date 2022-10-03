@@ -44,6 +44,7 @@ public:
 	virtual void click(bool left = true);
 	virtual bool mouseOver();
 	virtual void unmouseOver();
+	std::vector<float> directTorsionVector(int idx);
 
 	virtual size_t requestedIndices();
 	
@@ -62,6 +63,7 @@ private:
 	bool startedPlane();
 	bool finishedPlane();
 	void preparePlane();
+	void route(int idx);
 
 	std::vector<float> getTorsionVector(int axis);
 	void prepareAxes();

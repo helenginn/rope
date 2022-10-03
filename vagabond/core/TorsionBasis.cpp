@@ -66,7 +66,6 @@ void TorsionBasis::absorbVector(const float *vec, int n, bool *mask)
 		float torsion = torsionForVector(i, vec, n);
 		_torsions[i]->setRefinedAngle(torsion);
 		_angles[i].angle = torsion;
-		std::cout << _atoms[i]->desc() << " is now " << torsion << std::endl;
 	}
 
 }

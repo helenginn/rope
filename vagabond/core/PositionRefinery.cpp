@@ -159,8 +159,6 @@ bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
 	{
 		if (!mask[i])
 		{
-			delete [] mask;
-			return nullptr;
 			for (size_t j = i; j < _nActive; j++)
 			{
 				mask[j] = false;
@@ -170,12 +168,6 @@ bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
 		}
 	}
 
-	for (size_t i = 0; i < _nActive; i++)
-	{
-//		std::cout << mask[i];
-	}
-//	std::cout << std::endl;
-	
 	if (i == 0)
 	{
 		delete [] mask;
@@ -185,7 +177,7 @@ bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
 	return mask;
 }
 
-void PositionRefinery::measureAtoms()
+void PositionRefinery::measureAtoms(std::set<Atom *> done)
 {
 	const Point &trial = bestPoint();
 	sendJob(trial, true);
@@ -194,6 +186,10 @@ void PositionRefinery::measureAtoms()
 
 	const BondSequence *seq = _calculator->sequence();
 	std::vector<Atom *> currAtoms = seq->addedAtoms();
+	const Grapher &g = seq->grapher();
+	
+	Atom *parent = g.graph(0)->parent;
+	Atom *grandparent = g.graph(0)->grandparent;
 	
 	std::set<Atom *> check;
 	for (Atom *atom : currAtoms)
@@ -201,10 +197,33 @@ void PositionRefinery::measureAtoms()
 		check.insert(atom);
 	}
 
+	if (parent && grandparent)
+	{
+		check.insert(parent);
+		check.insert(grandparent);
+	}
+
+	for (Atom *atom : currAtoms)
+	{
+		check.insert(atom);
+	}
+	
+	/*
+	for (Atom *atom : check)
+	{
+		std::cout << atom->atomName() << " ";
+	}
+	std::cout << std::endl;
+	*/
+
 	std::set<BondTorsion *> total;
 
 	for (Atom *atom : currAtoms)
 	{
+		if (done.count(atom))
+		{
+			continue;
+		}
 		for (size_t i = 0; i < atom->bondTorsionCount(); i++)
 		{
 			BondTorsion *t = atom->bondTorsion(i);
@@ -212,6 +231,10 @@ void PositionRefinery::measureAtoms()
 			bool outside = false;
 			for (size_t n = 0; n < 4; n++)
 			{
+				if (false && done.count(t->atom(n)))
+				{
+					outside = true;
+				}
 				if (!check.count(t->atom(n)))
 				{
 					outside = true;
@@ -230,11 +253,13 @@ void PositionRefinery::measureAtoms()
 		float measured = t->measurement(BondTorsion::SourceDerived);
 		t->setRefinedAngle(measured);
 	}
+//	std::cout << std::endl;
 }
 
-void PositionRefinery::stepRefine()
+void PositionRefinery::stepRefine(AtomGroup *group)
 {
 	std::set<Atom *> done, added;
+	std::map<Atom *, int> history;
 	Atom *first = _atomQueue.front();
 
 	while (_atomQueue.size())
@@ -245,13 +270,13 @@ void PositionRefinery::stepRefine()
 		AnchorExtension ext = _atom2Ext[atom];
 
 		_atomQueue.pop();
+		added.erase(atom);
 		
 		if (done.count(atom) > 0)
 		{
 			continue;
 		}
 
-		std::cout << "Doing: " << atom->desc() << std::endl;
 		_calculator->addAnchorExtension(ext);
 		_calculator->setup();
 		_calculator->start();
@@ -260,7 +285,8 @@ void PositionRefinery::stepRefine()
 
 		if (_nActive == 0)
 		{
-			done.insert(atom);
+			history[atom]++;
+		if (history[atom] > 3) { done.insert(atom); }
 			_calculator->finish();
 			continue;
 		}
@@ -269,7 +295,8 @@ void PositionRefinery::stepRefine()
 		
 		if (!mask)
 		{
-			done.insert(atom);
+			history[atom]++;
+		if (history[atom] > 3) { done.insert(atom); }
 			continue;
 		}
 
@@ -292,10 +319,12 @@ void PositionRefinery::stepRefine()
 		bool improved = run();
 
 		const Point &trial = bestPoint();
-		basis->absorbVector(&trial[0], trial.size());
-		sendJob(trial, true);
+//		basis->absorbVector(&trial[0], trial.size());
+		measureAtoms(done);
 		
-		done.insert(atom);
+		history[atom]++;
+		
+		if (history[atom] > 3) { done.insert(atom); }
 
 		const BondSequence *seq = _calculator->sequence();
 		const Grapher &g = seq->grapher();
@@ -308,58 +337,54 @@ void PositionRefinery::stepRefine()
 				continue;
 			}
 
+			if (!mask[i])
+			{
+				break;
+			}
+
 			AtomGraph *next = g.graph(a);
 			AnchorExtension ext = seq->getExtension(a);
 			ext.count = 8;
 			_atom2Ext[a] = ext;
 
-			if (!next->torsion)
+			if (next->torsion)
 			{
-				continue;
+				float measured = next->torsion->startingAngle();
+				
+				next->torsion->setRefinedAngle(ext.block.torsion);
+				
+				while (measured < ext.block.torsion - 180)
+				{
+					measured += 360;
+				}
+				while (measured >= ext.block.torsion + 180)
+				{
+					measured -= 360;
+				}
+				
+				float diff = fabs(measured - ext.block.torsion);
+				
+				if (diff > 1e-2 && false)
+				{
+					std::cout << a->desc() << " ";
+					std::cout << next->torsion->desc() << " ";
+					std::cout << ext.block.torsion << " vs " << measured << 
+					std::endl;
+				}
 			}
-
-			next->torsion->setRefinedAngle(ext.block.torsion);
 
 			if (added.count(a))
 			{
 				continue;
 			}
 
-			std::cout << "Adding ";
-			std::cout << a->desc() << "!" << std::endl;
-
 			added.insert(a);
 			_atomQueue.push(a);
 		}
 
-		/*
-		for (size_t i = 0; i < graph->children.size(); i++)
-		{
-			AtomGraph *next = graph->children[i];
-			
-			if (!next->torsion)
-			{
-				continue;
-			}
-
-			Atom *atom = next->atom;
-
-			AnchorExtension ext = seq->getExtension(atom);
-			ext.count = 8;
-
-			_atom2Ext[atom] = ext;
-			if (added.count(atom))
-			{
-				continue;
-			}
-			added.insert(atom);
-			_atomQueue.push(atom);
-		}
-		*/
-
 		delete [] mask;
 	}
-
+	
 	_calculator->reset();
 	AnchorExtension ext(first);
 	_calculator->addAnchorExtension(ext);
@@ -375,7 +400,7 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 	
 	int nb = _calculator->sequence()->blockCount() + 1;
 
-	if (false)
+	if (true)
 	{
 		for (size_t i = 0; i < nb; i++)
 		{
@@ -388,7 +413,7 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 		}
 	}
 	
-	stepRefine();
+//	stepRefine(group);
 
 	std::chrono::high_resolution_clock::time_point tend;
 	tend = std::chrono::high_resolution_clock::now();

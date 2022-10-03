@@ -26,26 +26,28 @@ Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 {
 	_cluster = cluster;
 	_pType = BondCalculator::PipelineForceField;
-
 }
 
 void Route::setup()
 {
 	_fullAtoms = _molecule->currentAtoms();
+	_mask.clear();
 	startCalculator();
 
 	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
 
-	std::vector<float> vals(_dims, 0);
+	std::vector<float> vals(1, 1);
+	int count = 0;
 	for (size_t i = 0; i < _dims; i++)
 	{
-		if (i > 0)
-		{
-			vals[i - 1] = 0;
-		}
-		vals[i] = 1;
-		supplyTorsions(list, vals);
+		std::vector<ResidueTorsion> single(1, list[i]);
+		bool mask = supplyTorsions(single, vals);
+		_mask.push_back(mask);
+		count += (mask ? 1 : 0);
 	}
+	
+	std::cout << "Using " << count << " torsions for route out of "
+	<< _dims << " total." << std::endl;
 }
 
 void Route::addPoint(Point &values)
@@ -53,9 +55,19 @@ void Route::addPoint(Point &values)
 	_points.push_back(values);
 }
 
+void Route::addEmptyPoint()
+{
+	_points.push_back(Point(_dims, 0));
+}
+
+void Route::clearPoints()
+{
+	_points.clear();
+}
+
 void Route::submitJob(int idx)
 {
-	if (idx >= _points.size() || idx < 0)
+	if ((idx > 0 && idx >= _points.size()) || idx < 0)
 	{
 		return;
 	}
@@ -67,14 +79,22 @@ void Route::submitJob(int idx)
 
 		for (size_t i = 0; i < _dims; i++)
 		{
-			job.custom.vecs[0].mean[i] = _points[idx][i];
+			float value = 0;
+			if (_points.size() > 0)
+			{
+				value = _points[idx][i];
+			}
+			job.custom.vecs[0].mean[i] = value;
 		}
 
 		job.requests = static_cast<JobType>(JobExtractPositions |
-		                                    JobScoreStructure);
+		                                    JobCalculateDeviations);
+
 		calc->submitJob(job);
 	}
 
+	_score = 0;
+	double n = 0;
 	for (BondCalculator *calc : _calculators)
 	{
 		Result *r = calc->acquireResult();
@@ -86,15 +106,23 @@ void Route::submitJob(int idx)
 
 		if (r->requests & JobExtractPositions)
 		{
-			std::cout << "Grabbing positions" << std::endl;
 			r->transplantLastPosition();
 		}
-
-		if (r->requests & JobScoreStructure)
+		
+		if (r->requests & JobCalculateDeviations)
 		{
-			std::cout << r->score << std::endl;
-
+			if (r->deviation == r->deviation)
+			{
+				_score += r->deviation;
+				n++;
+			}
 		}
+	}
+	
+	_score /= n;
+	if (_score != _score)
+	{
+		_score = 0;
 	}
 	
 	return;

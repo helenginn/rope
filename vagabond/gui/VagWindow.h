@@ -23,6 +23,7 @@
 #include "MainMenu.h"
 
 class Dictator;
+class ProgressBar;
 
 class VagWindow : public Window//, public ProgressViewResponder
 {
@@ -52,6 +53,7 @@ private:
 	static Dictator *_dictator;
 	MainMenu *_menu = nullptr;
 	bool _resume = false;
+	ProgressBar *_currentBar = nullptr;
 
 };
 

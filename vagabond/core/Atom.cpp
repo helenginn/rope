@@ -402,8 +402,8 @@ const std::string Atom::desc() const
 bool Atom::isMainChain(std::string atomName)
 {
 	return (atomName == "CA" || atomName == "N" || atomName == "O"
-	        || atomName == "O" || atomName == "H" ||
-	        atomName == "HA");
+	        || atomName == "O" || atomName == "H" || atomName == "HA" 
+	        || atomName == "CB" || atomName == "C");
 }
 
 bool Atom::isReporterAtom(std::string atomName)

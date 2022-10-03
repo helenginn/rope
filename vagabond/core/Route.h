@@ -20,29 +20,76 @@
 #define __vagabond__Route__
 
 #include "StructureModification.h"
+#include "Responder.h"
 
-class Route : public StructureModification
+class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
 public:
 	Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 
-	void setup();
+	virtual void setup();
 	
+	/* typically referring to torsion angle values in order of cluster's
+	 * torsion angle headers */
 	typedef std::vector<float> Point;
 
+	/** add a point to the route.
+	 * @param values torsion angle values in the order of the cluster's 
+	 * 	torsion angle headers */
 	void addPoint(Point &values);
 
+	/** add an empty point to the route (starting position). */
+	void addEmptyPoint();
+
+	/** submit results to the bond calculator
+	 * @param idx produce results for idx-th point */
 	void submitJob(int idx);
 	
+	/** total number of points in the system */
 	size_t pointCount()
 	{
 		return _points.size();
 	}
+	
+	/* get rid of all points defined so far */
+	void clearPoints();
+
+	static void calculate(Route *me)
+	{
+		me->_calculating = true;
+		me->doCalculations();
+		me->_calculating = false;
+	}
+	
+	bool calculating()
+	{
+		return _calculating;
+	}
+	
+	void prepareCalculate()
+	{
+		_calculating = true;
+	}
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
+
+	virtual void doCalculations() {};
+	
+	float score()
+	{
+		return _score;
+	}
+	
+	bool usingTorsion(int i)
+	{
+		return _mask[i];
+	}
 private:
 	std::vector<Point> _points;
 
+	bool _calculating;
+	std::vector<bool> _mask;
+	float _score;
 };
 
 #endif

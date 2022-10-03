@@ -25,6 +25,8 @@
 #include <vagabond/gui/elements/Menu.h>
 #include "PlaneView.h"
 #include "AxisExplorer.h"
+#include "PlausibleRoute.h"
+#include "RouteExplorer.h"
 #include "Axes.h"
 
 Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()
@@ -90,8 +92,7 @@ std::vector<float> Axes::getMappedVector(int idx)
 	return vals;
 }
 
-
-std::vector<float> Axes::getTorsionVector(int idx)
+std::vector<float> Axes::directTorsionVector(int idx)
 {
 	if (_targets[idx] != nullptr)
 	{
@@ -111,6 +112,11 @@ std::vector<float> Axes::getTorsionVector(int idx)
 		return to_vals;
 	}
 
+	return getTorsionVector(idx);
+}
+
+std::vector<float> Axes::getTorsionVector(int idx)
+{
 	glm::vec3 dir = _dirs[idx];
 	
 	std::vector<float> sums;
@@ -174,6 +180,18 @@ void Axes::loadAxisExplorer(int idx)
 	{
 		std::cout << err.what() << std::endl;
 	}
+}
+
+void Axes::route(int idx)
+{
+	int l = _cluster->dataGroup()->length();
+	PlausibleRoute *pr = new PlausibleRoute(_molecule, _cluster, l);
+	
+	std::vector<float> values = directTorsionVector(idx);
+	pr->setDestination(values);
+
+	RouteExplorer *re = new RouteExplorer(_scene, pr);
+	re->show();
 
 }
 
@@ -194,6 +212,10 @@ void Axes::buttonPressed(std::string tag, Button *button)
 	else if (tag == "reset")
 	{
 		reorient(_lastIdx, nullptr);
+	}
+	else if (tag == "route")
+	{
+		route(_lastIdx);
 	}
 	else if (tag == "cancel_plane")
 	{
@@ -329,6 +351,9 @@ void Axes::interacted(int idx, bool hover, bool left)
 		if (_targets[idx] != nullptr)
 		{
 			m->addOption("reset", "reset");
+#ifdef VERSION_SHORT_ROUTES
+			m->addOption("find route", "route");
+#endif
 		}
 		
 #ifdef VERSION_NEXT

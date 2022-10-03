@@ -153,15 +153,68 @@ void ConcertedBasis::prepareSVD()
 	reorderSVD(&_svd);
 }
 
-void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
+bool ConcertedBasis::reverseLookup(Molecule *mol, int axis,
+                                   const std::vector<ResidueTorsion> &list,
+                                   const std::vector<float> &values)
+{
+	bool changed = false;
+
+	for (size_t j = 0; j < list.size(); j++)
+	{
+		for (size_t i = 0; i < _torsions.size(); i++)
+		{
+			BondTorsion *t = _torsions[i];
+
+			if (_idxs[i] < 0)
+			{
+				continue;
+			}
+
+//			float value = molecule->valueForTorsionFromList(t, list, values, found);
+			Residue *local = mol->localResidueForResidueTorsion(list[j]);
+			if (local->id() != t->residueId())
+			{
+				continue;
+			}
+			
+			const std::string &desc = list[j].torsion.desc();
+
+			if (desc != t->desc() && desc != t->reverse_desc())
+			{
+				continue;
+			}
+
+			float value = values[j];
+
+			if (value != value)
+			{
+				value = 0;
+			}
+
+			int idx = _idxs[i];
+			_svd.u[idx][axis] = value;
+			changed = true;
+		}
+	}
+
+	return changed;
+}
+
+bool ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
                                           const std::vector<ResidueTorsion> &list,
                                           const std::vector<float> &values)
 {
 	std::vector<bool> found(list.size(), false);
 	
+	if (values.size() == 1)
+	{
+		bool result = reverseLookup(molecule, axis, list, values);
+		return result;
+	}
+
 	std::cout << "Adding " << molecule->id() << " axis " << axis << ", "
 	<< values.size() << " values" << std::endl;
-
+	
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
 		BondTorsion *t = _torsions[i];
@@ -179,12 +232,7 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 			_missing.push_back(t);
 		}
 		
-		if (value > 30 && false)
-		{
-			std::cout << "Import " << t->atom(1)->desc() << " " << t->residueId().num << " " << t->desc() << " " << value << std::endl;
-		}
 		int idx = _idxs[i];
-
 		_svd.u[idx][axis] = value;
 	}
 	
@@ -195,8 +243,8 @@ void ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 			_unusedId = list[i].residue;
 		}
 	}
-
-//	std::cout << std::endl;
+	
+	return true;
 }
 
 void ConcertedBasis::prepare(int dims)

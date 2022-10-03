@@ -58,8 +58,6 @@ void ProgressBar::setMaxTicks(int count)
 void ProgressBar::finish()
 {
 	setDisabled(true);
-	Window::window()->removeObject(this);
-	Window::setDelete(this);
 }
 
 void ProgressBar::sendObject(std::string tag, void *object)

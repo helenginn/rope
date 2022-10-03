@@ -85,7 +85,7 @@ const size_t Residue::torsionCount(bool onlyMain) const
 	int count = 0;
 	for (const TorsionRef &t : _refs)
 	{
-		if (t.isMain())
+		if (t.coversMainChain())
 		{
 			count++;
 		}

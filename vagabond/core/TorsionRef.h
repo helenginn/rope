@@ -53,11 +53,7 @@ public:
 		return _desc;
 	}
 	
-	/** dodgy */
-	const bool &isMain() const
-	{
-		return _main;
-	}
+	bool coversMainChain() const;
 	
 	const bool valid() const
 	{
@@ -85,12 +81,11 @@ public:
 		return _desc < other._desc;
 	}
 
-	std::string atomName(int i);
+	std::string atomName(int i) const;
 private:
 	std::string _desc;
 	std::string _reverse_desc;
 	double _refinedAngle = 0;
-	bool _main = false;
 	BondTorsion *_torsion = nullptr;
 
 };
@@ -99,7 +94,6 @@ inline void to_json(json &j, const TorsionRef &value)
 {
 	j["desc"] = value._desc;
 	j["angle"] = value._refinedAngle;
-	j["main"] = value._main;
 }
 
 inline void from_json(const json &j, TorsionRef &value)
@@ -108,7 +102,6 @@ inline void from_json(const json &j, TorsionRef &value)
 	{
 		value._desc = j.at("desc");
 		value._refinedAngle = j.at("angle");
-		value._main = j.at("main");
 	}
 	catch (...)
 	{

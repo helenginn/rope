@@ -65,10 +65,10 @@ private:
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
 	void testTransfer(AnchorExtension ext);
-	void stepRefine();
+	void stepRefine(AtomGroup *group);
 //	std::vector<Atom *> generateAbsorptionMask(std::set<Atom *> done);
 	bool *generateAbsorptionMask(std::set<Atom *> done);
-	void measureAtoms();
+	void measureAtoms(std::set<Atom *> done);
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;

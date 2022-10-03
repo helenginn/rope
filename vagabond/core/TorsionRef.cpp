@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "TorsionRef.h"
+#include "Atom.h"
 #include <sstream>
 #include <vagabond/utils/FileReader.h>
 
@@ -33,7 +34,6 @@ TorsionRef::TorsionRef(BondTorsion *tmp)
 	}
 
 	_desc = tmp->desc();
-	_main = tmp->coversMainChain();
 	_torsion = tmp;
 	organiseDescriptions();
 }
@@ -74,8 +74,22 @@ void TorsionRef::housekeeping()
 	organiseDescriptions();
 }
 
-std::string TorsionRef::atomName(int i)
+std::string TorsionRef::atomName(int i) const
 {
 	std::vector<std::string> splits = split(_desc, '-');
 	return splits[i];
+}
+
+bool TorsionRef::coversMainChain() const
+{
+	for (size_t i = 0; i < 4; i++)
+	{
+		if (!Atom::isMainChain(atomName(i)))
+		{
+			return false;
+		}
+	}
+
+	return true;
+
 }

@@ -52,7 +52,7 @@ public:
 		return _dims;
 	}
 	
-	void supplyTorsions(const std::vector<ResidueTorsion> &list,
+	bool supplyTorsions(const std::vector<ResidueTorsion> &list,
                         const std::vector<float> &values);
 
 	virtual ~StructureModification();
@@ -66,10 +66,17 @@ public:
 	void startCalculator();
 	
 	void changeMolecule(Molecule *m);
+	
+	Molecule *molecule()
+	{
+		return _molecule;
+	}
+	
+	void clearCalculators();
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 
-	void fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
+	bool fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
 	               const std::vector<float> &values, int axis = 0);
 	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
