@@ -20,6 +20,7 @@
 #define __vagabond__AtomBlock__
 
 #include "../utils/glm_import.h"
+#include "Atom.h"
 
 class Atom;
 
@@ -32,6 +33,9 @@ struct AtomBlock
 	
 	/* position to aim for (e.g. initial position) in deviation calculations */
 	glm::vec3 target;
+
+	/* moving portion of the target */
+	glm::vec3 moving = glm::vec3(0.f);
 
 	/* relative arrangement of 4 consecutive atoms with current atom at origin */
 	glm::mat4x4 coordination;
@@ -66,6 +70,23 @@ struct AtomBlock
 	const glm::vec3 child_position(int i) const
 	{
 		return glm::vec3(wip[i]);
+	}
+
+	void printBlock()
+	{
+		std::cout << " ===== ATOM BLOCK =====" << std::endl;
+		if (atom != nullptr)
+		{
+			std::cout << "Atom: " << atom->atomName() << std::endl;
+			std::cout << "init pos: " << 
+			glm::to_string(atom->initialPosition()) << std::endl;
+		}
+		std::cout << "Torsion: " << torsion << std::endl;
+		std::cout << "Coordination: " << glm::to_string(coordination) << std::endl;
+		std::cout << "Basis: " << glm::to_string(basis) << std::endl;
+		std::cout << "wip: " << glm::to_string(wip) << std::endl;
+		std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
+		std::cout << std::endl;
 	}
 
 };

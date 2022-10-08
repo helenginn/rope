@@ -249,33 +249,6 @@ void BondSequence::fetchTorsion(int idx)
 	_blocks[idx].torsion = t;
 }
 
-void BondSequence::printBlock(int idx)
-{
-	float &t = _blocks[idx].torsion;
-	glm::mat4x4 &coord = _blocks[idx].coordination;
-	glm::mat4x4 &basis = _blocks[idx].basis;
-	glm::mat4x4 &wip = _blocks[idx].wip;
-	glm::vec3 &inherit = _blocks[idx].inherit;
-	std::cout << " ===== INDEX " << idx << "=====" << std::endl;
-	if (_blocks[idx].atom != nullptr)
-	{
-		std::cout << "Atom: " << _blocks[idx].atom->atomName() << std::endl;
-		std::cout << "init pos: " << 
-		glm::to_string(_blocks[idx].atom->initialPosition()) << std::endl;
-	}
-	std::cout << "Torsion: " << t << std::endl;
-	if (_blocks[idx].torsion_idx >= 0)
-	{
-		BondTorsion *torsion = _torsionBasis->torsion(_blocks[idx].torsion_idx);
-		std::cout << "Torsion desc: " << torsion->desc() << std::endl;
-	}
-	std::cout << "Coordination: " << glm::to_string(coord) << std::endl;
-	std::cout << "Basis: " << glm::to_string(basis) << std::endl;
-	std::cout << "wip: " << glm::to_string(wip) << std::endl;
-	std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
-	std::cout << std::endl;
-}
-
 int BondSequence::calculateBlock(int idx)
 {
 	fetchTorsion(idx);
@@ -509,7 +482,16 @@ double BondSequence::calculateDeviations()
 
 		glm::vec3 trial_pos = _blocks[i].my_position();
 
-		const glm::vec3 &target = _blocks[i].target;
+		glm::vec3 target = _blocks[i].target;
+		
+		float frac = job()->fraction;
+		if (frac > 1e-6)
+		{
+			glm::vec3 moving = _blocks[i].moving;
+			moving *= frac;
+			target += moving;
+		}
+
 		glm::vec3 diff = trial_pos - target;
 		
 		sum += glm::length(diff);

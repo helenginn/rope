@@ -68,6 +68,16 @@ public:
 	{
 		_others[tag].pos.ave = val;
 	}
+
+	bool hasOtherPosition(std::string tag)
+	{
+		return _others.count(tag);
+	}
+	
+	void removeOtherPosition(std::string tag)
+	{
+		_others.erase(tag);
+	}
 	
 	const glm::vec3 otherPosition(std::string tag)
 	{

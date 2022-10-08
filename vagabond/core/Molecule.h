@@ -53,7 +53,7 @@ public:
 		return _chain_ids;
 	}
 	
-	const bool has_chain_id(std::string id) const
+	const bool has_chain_id(const std::string id) const
 	{
 		return _chain_ids.count(id) > 0;
 	}

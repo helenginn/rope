@@ -342,7 +342,7 @@ void Scene::setInformation(std::string str)
 		_info = new TextButton(str, this);
 		_info->setReturnTag("remove_info");
 		_info->resize(0.6);
-		_info->setCentre(0.5, 0.25);
+		_info->setCentre(0.5, 0.16);
 		addObject(_info);
 	}
 

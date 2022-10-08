@@ -107,8 +107,8 @@ bool PositionRefinery::refineBetween(int start, int end, int side_max)
 
 	if (improved)
 	{
-		const Point &trial = bestPoint();
-		Point best = expandPoint(trial);
+		const SPoint &trial = bestPoint();
+		SPoint best = expandPoint(trial);
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
 		basis->absorbVector(&best[0], best.size());
 	}
@@ -179,7 +179,7 @@ bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
 
 void PositionRefinery::measureAtoms(std::set<Atom *> done)
 {
-	const Point &trial = bestPoint();
+	const SPoint &trial = bestPoint();
 	sendJob(trial, true);
 	double empty = 0;
 	awaitResult(&empty);
@@ -318,7 +318,7 @@ void PositionRefinery::stepRefine(AtomGroup *group)
 
 		bool improved = run();
 
-		const Point &trial = bestPoint();
+		const SPoint &trial = bestPoint();
 //		basis->absorbVector(&trial[0], trial.size());
 		measureAtoms(done);
 		
@@ -519,9 +519,9 @@ int PositionRefinery::awaitResult(double *eval)
 	}
 }
 
-PositionRefinery::Point PositionRefinery::expandPoint(const Point &p)
+PositionRefinery::SPoint PositionRefinery::expandPoint(const SPoint &p)
 {
-	Point expanded;
+	SPoint expanded;
 	expanded.reserve(_mask.size());
 	int num = 0;
 
@@ -538,14 +538,14 @@ PositionRefinery::Point PositionRefinery::expandPoint(const Point &p)
 	return expanded;
 }
 
-int PositionRefinery::sendJob(const Point &trial, bool force_update)
+int PositionRefinery::sendJob(const SPoint &trial, bool force_update)
 {
 	Job job{};
 	job.requests = JobCalculateDeviations;
 
 	job.custom.allocate_vectors(1, _mask.size(), 0);
 
-	Point expanded = expandPoint(trial);
+	SPoint expanded = expandPoint(trial);
 
 	for (size_t i = 0; i < _mask.size(); i++)
 	{

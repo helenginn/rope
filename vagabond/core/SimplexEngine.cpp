@@ -73,7 +73,7 @@ void SimplexEngine::findCentroid()
 	}
 }
 
-void SimplexEngine::printPoint(Point &point)
+void SimplexEngine::printPoint(SPoint &point)
 {
 	for (size_t i = 0; i < point.size(); i++)
 	{
@@ -87,10 +87,11 @@ void SimplexEngine::singleCycle()
 {
 	int count = 0;
 	int shrink_count = 0;
+	_changedParams = false;
 
 	while (true)
 	{
-		if (count > 500 || shrink_count >= 10 || _finish)
+		if (count > _maxJobRuns || shrink_count >= 10 || _finish)
 		{
 			break;
 		}
@@ -107,7 +108,7 @@ void SimplexEngine::singleCycle()
 		double best_score = best.eval;
 		
 		findCentroid();
-		Point trial = scaleThrough(worst.vertex, _centroid.vertex, -1);
+		SPoint trial = scaleThrough(worst.vertex, _centroid.vertex, -1);
 		sendJob(trial);
 
 		double eval = FLT_MAX;
@@ -116,15 +117,14 @@ void SimplexEngine::singleCycle()
 		
 		if (eval > best_score && eval < second_worst_score)
 		{
-//			std::cout << "R" << std::flush;
 			worst.vertex = trial;
 			worst.eval = eval;
 			continue;
 		}
 		if (eval < best_score)
 		{
-//			std::cout << "E" << std::flush;
-			Point expanded = scaleThrough(trial, _centroid.vertex, -2);
+			_changedParams = true;
+			SPoint expanded = scaleThrough(trial, _centroid.vertex, -2);
 			sendJob(expanded);
 			
 			double next = FLT_MAX;
@@ -136,7 +136,7 @@ void SimplexEngine::singleCycle()
 		}
 		else 
 		{
-			Point contracted;
+			SPoint contracted;
 			double compare;
 			if (eval > second_worst_score && eval < worst_score)
 			{
@@ -156,14 +156,12 @@ void SimplexEngine::singleCycle()
 			
 			if (next < compare)
 			{
-//				std::cout << "C" << std::flush;
 				worst.vertex = contracted;
 				worst.eval = next;
 				continue;
 			}
 			else
 			{
-//				std::cout << "S" << std::flush;
 				shrink_count++;
 				shrink();
 			}
@@ -186,7 +184,8 @@ void SimplexEngine::pickUpResults()
 		{
 			if (_points[i].tickets.count(ticket) > 0)
 			{
-				Point &p = _points[i].tickets[ticket];
+				SPoint &p = _points[i].tickets[ticket];
+				_points[i].eval = eval;
 				_points[i].vertex = p;
 			}
 		}
@@ -197,7 +196,7 @@ void SimplexEngine::shrink()
 {
 	for (size_t i = 0; i < _points.size(); i++)
 	{
-		Point trial = scaleThrough(_points[i].vertex, _centroid.vertex, 0.8);
+		SPoint trial = scaleThrough(_points[i].vertex, _centroid.vertex, 0.8);
 		int ticket = sendJob(trial);
 		_points[i].tickets[ticket] = trial;
 	}
@@ -215,48 +214,11 @@ void SimplexEngine::shrink()
 		{
 			if (_points[i].tickets.count(ticket) > 0)
 			{
-				Point &p = _points[i].tickets[ticket];
+				SPoint &p = _points[i].tickets[ticket];
 				_points[i].vertex = p;
 			}
 		}
 	}
-}
-
-void SimplexEngine::cycle()
-{
-	int count = 0;
-	int shrink_count = 0;
-	
-	while (true)
-	{
-		bool changed = awaitResults();
-		count++;
-		
-		if (count == 1)
-		{
-			for (size_t i = 0; i < _points.size(); i++)
-			{
-				_points[i].decision = ShouldReflect;
-			}
-		}
-		
-		if (count >= 300 || shrink_count >= 10 || _finish)
-		{
-			break;
-		}
-		
-		if (changed)
-		{
-			sendDecidedJobs();
-			shrink_count = 0;
-		}
-		else
-		{
-			sendShrinkJobs();
-			shrink_count++;
-		}
-	}
-
 }
 
 bool SimplexEngine::run()
@@ -368,7 +330,7 @@ bool SimplexEngine::awaitResults()
 	return changed;
 }
 
-int SimplexEngine::sendJob(const Point &trial, bool force_update)
+int SimplexEngine::sendJob(const SPoint &trial, bool force_update)
 {
 	// to be implemented downstream
 	return -1;
@@ -378,7 +340,7 @@ void SimplexEngine::sendStartingJobs()
 {
 	for (size_t i = 0; i < _points.size(); i++)
 	{
-		Point trial;
+		SPoint trial;
 		trial.resize(_dims);
 
 		for (size_t j = 0; j < _dims; j++)
@@ -401,9 +363,9 @@ void SimplexEngine::sendStartingJobs()
 	pickUpResults();
 }
 
-SimplexEngine::Point SimplexEngine::scaleThrough(Point &p, Point &q, float k)
+SimplexEngine::SPoint SimplexEngine::scaleThrough(SPoint &p, SPoint &q, float k)
 {
-	Point ret = Point(_dims, 0.);
+	SPoint ret = SPoint(_dims, 0.);
 
 	for (size_t i = 0; i < _dims; i++)
 	{
@@ -418,7 +380,7 @@ void SimplexEngine::sendReflectionJob(int i)
 	int num = 0;
 	for (size_t j = 0; j < i; j++)
 	{
-		Point trial = scaleThrough(_points[i].vertex, 
+		SPoint trial = scaleThrough(_points[i].vertex, 
 		                           _points[j].vertex, -1);
 		int ticket = sendJob(trial);
 		_points[i].tickets[ticket] = trial;
@@ -434,7 +396,7 @@ void SimplexEngine::sendReflectionJob(int i)
 	{
 		TestPoint &last = _points.back();
 
-		Point trial = scaleThrough(last.vertex, _centroid.vertex, -1.5);
+		SPoint trial = scaleThrough(last.vertex, _centroid.vertex, -1.5);
 		int ticket = sendJob(trial);
 		last.tickets[ticket] = trial;
 	}
@@ -444,7 +406,7 @@ void SimplexEngine::sendShrinkJobs()
 {
 	for (size_t i = 0; i < _points.size(); i++)
 	{
-		Point trial = scaleThrough(_points[i].vertex, _centroid.vertex, 0.8);
+		SPoint trial = scaleThrough(_points[i].vertex, _centroid.vertex, 0.8);
 		int ticket = sendJob(trial);
 		_points[i].tickets[ticket] = trial;
 
@@ -454,7 +416,7 @@ void SimplexEngine::sendShrinkJobs()
 
 void SimplexEngine::sendContractionJob(int i)
 {
-	Point trial = scaleThrough(_points[i].vertex, 
+	SPoint trial = scaleThrough(_points[i].vertex, 
 	                           _centroid.vertex, 0.8);
 	int ticket = sendJob(trial);
 	_points[i].tickets[ticket] = trial;
@@ -462,7 +424,7 @@ void SimplexEngine::sendContractionJob(int i)
 
 void SimplexEngine::sendExpansionJob(int i)
 {
-	Point trial = scaleThrough(_points[i].vertex, 
+	SPoint trial = scaleThrough(_points[i].vertex, 
 	                           _centroid.vertex, 1.5);
 	int ticket = sendJob(trial);
 	_points[i].tickets[ticket] = trial;
@@ -495,7 +457,7 @@ int SimplexEngine::awaitResult(double *eval)
 	return -1;
 }
 
-const SimplexEngine::Point &SimplexEngine::bestPoint() const
+const SimplexEngine::SPoint &SimplexEngine::bestPoint() const
 {
 	return _points[0].vertex;
 }

@@ -21,7 +21,6 @@
 
 #include "TorsionBasis.h"
 #include "../utils/svd/PCA.h"
-#include <vagabond/core/Residue.h>
 
 class Molecule;
 class Residue;

@@ -20,6 +20,7 @@
 #define __vagabond__TorsionBasis__
 
 #include <vector>
+#include "Residue.h"
 
 class BondTorsion;
 class Atom;
@@ -59,7 +60,7 @@ public:
 	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};
-	
+
 	const size_t torsionCount() const
 	{
 		return _torsions.size();

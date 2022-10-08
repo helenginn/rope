@@ -27,6 +27,7 @@ StructureModification::StructureModification(Molecule *mol, int num, int dims)
 	_molecule = mol;
 	_num = num;
 	_dims = dims;
+	_torsionType = TorsionBasis::TypeCustom;
 }
 
 StructureModification::~StructureModification()
@@ -46,7 +47,7 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	calc.setMaxSimultaneousThreads(_threads);
 	calc.setSampler(&_sampler);
 
-	calc.setTorsionBasisType(TorsionBasis::TypeCustom);
+	calc.setTorsionBasisType(_torsionType);
 	calc.addAnchorExtension(anchor);
 	calc.setIgnoreHydrogens(false);
 
@@ -130,6 +131,10 @@ void StructureModification::startCalculator()
 bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
                                            const std::vector<float> &values)
 {
+	if (_torsionType == TorsionBasis::TypeSimple)
+	{
+		throw std::runtime_error("Supplying torsions but not concerted basis");
+	}
 	if (_axis >= _dims)
 	{
 		std::cout << "Too many axes; aborting torsion angle supply" << std::endl;

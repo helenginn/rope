@@ -130,7 +130,6 @@ void BondSequenceHandler::signalThreads()
 	_pools[SequencePositionsReady].signalThreads();
 	_pools[SequenceCalculateReady].signalThreads();
 	_pools[SequenceIdle].signalThreads();
-	_miniJobPool.signalThreads();
 }
 
 void BondSequenceHandler::joinThreads()
@@ -139,9 +138,6 @@ void BondSequenceHandler::joinThreads()
 	_pools[SequenceCalculateReady].joinThreads();
 	_pools[SequenceIdle].joinThreads();
 	
-	_miniJobPool.joinThreads();
-	_miniJobPool.cleanup();
-
 	_pools[SequenceCalculateReady].cleanup();
 	_pools[SequencePositionsReady].cleanup();
 	_pools[SequenceIdle].cleanup();
@@ -152,14 +148,12 @@ void BondSequenceHandler::finish()
 	_pools[SequenceIdle].handout.lock();
 	_pools[SequencePositionsReady].handout.lock();
 	_pools[SequenceCalculateReady].handout.lock();
-	_miniJobPool.handout.lock();
 
 	_finish = true;
 
 	_pools[SequenceIdle].handout.unlock();
 	_pools[SequencePositionsReady].handout.unlock();
 	_pools[SequenceCalculateReady].handout.unlock();
-	_miniJobPool.handout.unlock();
 
 	signalThreads();
 }
@@ -219,28 +213,6 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 	BondSequence *seq = nullptr;
 	pool.acquireObject(seq, _finish);
 	return seq;
-}
-
-void BondSequenceHandler::generateMiniJobSeqs(Job *job)
-{
-	MiniJobSeq *mini = new MiniJobSeq();
-	mini->job = job;
-	mini->seq = nullptr;
-	job->miniJobs.push_back(mini);
-
-	_miniJobPool.pushObject(mini);
-}
-
-void BondSequenceHandler::signalFinishMiniJobSeq()
-{
-	_miniJobPool.sem.signal();
-}
-
-MiniJobSeq *BondSequenceHandler::acquireMiniJobSeq()
-{
-	MiniJobSeq *mini = nullptr;
-	_miniJobPool.acquireObject(mini, _finish);
-	return mini;
 }
 
 const size_t BondSequenceHandler::torsionCount() const

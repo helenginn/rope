@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,50 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SimpleBasis.h"
-#include "BondTorsion.h"
+#ifndef __vagabond__RouteSettings__
+#define __vagabond__RouteSettings__
 
-SimpleBasis::SimpleBasis() : TorsionBasis()
+class RouteSettings
 {
+public:
+	RouteSettings(PlausibleRoute *route);
 
-}
+private:
 
-float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
-{
-	if (idx < 0)
-	{
-		return 0;
-	}
-	
-	if (n >= idx && _angles.size() == 0)
-	{
-		prepare();
-	}
+};
 
-	TorsionAngle &ta = _angles[idx];
-	if (n == 0 || !ta.mask)
-	{
-		return ta.angle;
-	}
-	
-	if (idx < n)
-	{
-		return ta.angle + vec[idx];
-	}
-	
-	return ta.angle;
-}
-
-void SimpleBasis::prepare(int dims)
-{
-	_angles.clear();
-
-	for (size_t i = 0; i < _torsions.size(); i++)
-	{
-		float start = _torsions[i]->startingAngle();
-		bool mask = !_torsions[i]->isConstrained();
-		TorsionAngle ta = {start, mask};
-		_angles.push_back(ta);
-	}
-}
-
+#endif

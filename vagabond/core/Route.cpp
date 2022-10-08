@@ -26,6 +26,7 @@ Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 {
 	_cluster = cluster;
 	_pType = BondCalculator::PipelineForceField;
+	_torsionType = TorsionBasis::TypeSimple;
 }
 
 void Route::setup()
@@ -33,21 +34,6 @@ void Route::setup()
 	_fullAtoms = _molecule->currentAtoms();
 	_mask.clear();
 	startCalculator();
-
-	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-
-	std::vector<float> vals(1, 1);
-	int count = 0;
-	for (size_t i = 0; i < _dims; i++)
-	{
-		std::vector<ResidueTorsion> single(1, list[i]);
-		bool mask = supplyTorsions(single, vals);
-		_mask.push_back(mask);
-		count += (mask ? 1 : 0);
-	}
-	
-	std::cout << "Using " << count << " torsions for route out of "
-	<< _dims << " total." << std::endl;
 }
 
 void Route::addPoint(Point &values)
@@ -65,7 +51,18 @@ void Route::clearPoints()
 	_points.clear();
 }
 
-void Route::submitJob(int idx)
+float Route::submitJobAndRetrieve(int idx)
+{
+	_point2Score.clear();
+	_ticket2Point.clear();
+
+	submitJob(idx);
+	retrieve();
+	
+	return _point2Score[idx].scores;
+}
+
+void Route::submitJob(int idx, bool show)
 {
 	if ((idx > 0 && idx >= _points.size()) || idx < 0)
 	{
@@ -76,11 +73,12 @@ void Route::submitJob(int idx)
 	{
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
+		job.fraction = idx / (float)pointCount();
 
 		for (size_t i = 0; i < _dims; i++)
 		{
 			float value = 0;
-			if (_points.size() > 0)
+			if (_points.size() > 0 && _points[idx].size() > i)
 			{
 				value = _points[idx][i];
 			}
@@ -89,43 +87,68 @@ void Route::submitJob(int idx)
 
 		job.requests = static_cast<JobType>(JobExtractPositions |
 		                                    JobCalculateDeviations);
+		if (!show)
+		{
+			job.requests = JobCalculateDeviations;
+		}
 
-		calc->submitJob(job);
+		int t = calc->submitJob(job);
+		_ticket2Point[t] = idx;
 	}
 
-	_score = 0;
-	double n = 0;
-	for (BondCalculator *calc : _calculators)
+	_point2Score[idx] = Score{};
+}
+
+void Route::retrieve()
+{
+	bool found = true;
+
+	while (found)
 	{
-		Result *r = calc->acquireResult();
+		found = false;
 
-		if (r == nullptr)
+		for (BondCalculator *calc : _calculators)
 		{
-			return;
-		}
+			Result *r = calc->acquireResult();
 
-		if (r->requests & JobExtractPositions)
-		{
-			r->transplantLastPosition();
-		}
-		
-		if (r->requests & JobCalculateDeviations)
-		{
-			if (r->deviation == r->deviation)
+			if (r == nullptr)
 			{
-				_score += r->deviation;
-				n++;
+				continue;
 			}
+
+			found = true;
+			if (r->requests & JobExtractPositions)
+			{
+				r->transplantLastPosition();
+				
+				for (AtomPosMap::iterator it = r->aps.begin(); 
+				     it != r->aps.end(); it++)
+				{
+					Atom *atom = it->first;
+				}
+			}
+
+			if (r->requests & JobCalculateDeviations)
+			{
+				int t = r->ticket;
+				int idx = _ticket2Point[t];
+				if (r->deviation == r->deviation)
+				{
+					_point2Score[idx].scores += r->deviation;
+					_point2Score[idx].divs++;
+				}
+			}
+			
+			r->destroy();
 		}
 	}
 	
-	_score /= n;
-	if (_score != _score)
+	for (TicketScores::iterator it = _point2Score.begin();
+	     it != _point2Score.end(); it++)
 	{
-		_score = 0;
+		it->second.scores /= it->second.divs;
+		it->second.divs = 1;
 	}
-	
-	return;
 }
 
 void Route::customModifications(BondCalculator *calc, bool has_mol)

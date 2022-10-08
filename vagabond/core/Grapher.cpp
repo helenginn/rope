@@ -355,7 +355,20 @@ void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 		size_t max = 4;
 		block.nBonds = std::min(blc, max);
 		block.wip = glm::mat4(0.);
-		block.target = atom->initialPosition();
+
+		if (atom->hasOtherPosition("moving"))
+		{
+			block.moving = atom->otherPosition("moving");
+		}
+
+		if (atom->hasOtherPosition("target"))
+		{
+			block.target = atom->otherPosition("target");
+		}
+		else
+		{
+			block.target = atom->initialPosition();
+		}
 	}
 
 	block.torsion_idx = _atom2Graph[atom]->torsion_idx;
@@ -497,7 +510,7 @@ std::string Grapher::desc() const
 	return ss.str();
 }
 
-AtomGraph *Grapher::deepestChild(AtomGraph *last)
+AtomGraph *Grapher::deepestChild(AtomGraph *last) const
 {
 	AtomGraph *chosen = nullptr;
 	int max = -1;

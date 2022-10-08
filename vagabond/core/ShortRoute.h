@@ -19,17 +19,33 @@
 #ifndef __vagabond__ShortRoute__
 #define __vagabond__ShortRoute__
 
-#include "Route.h"
+#include "PlausibleRoute.h"
 
 struct AtomGraph;
+class Atom;
 
-class ShortRoute : public Route
+class ShortRoute : public PlausibleRoute
 {
 public:
 	ShortRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 
+	virtual void setup();
 	bool prepareSegment(Atom *atom);
+	
+	void setAtom(Atom *atom, int count)
+	{
+		_atom = atom;
+		_count = count;
+	}
+	
+	const BondSequence *sequence() const
+	{
+		return _sequence;
+	}
 private:
+	Atom *_atom = nullptr;
+	const BondSequence *_sequence = nullptr;
+	int _count = 10;
 
 };
 

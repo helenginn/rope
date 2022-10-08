@@ -22,15 +22,28 @@
 #include "BondSequence.h"
 
 ShortRoute::ShortRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
-: Route(mol, cluster, dims)
+: PlausibleRoute(mol, cluster, dims)
 {
+	_mainsOnly = false;
+	_flipTorsions = false;
+	_nudgeCount = 16;
+	_magnitudeThreshold = 90;
+	_maximumCycles = 6;
+	_minimumMagnitude = 5;
+	Progressor::_inert = true;
+}
 
+void ShortRoute::setup()
+{
+	Route::setup();
+	prepareSegment(_atom);
+	prepareDestination();
+	setTargets();
 }
 
 bool ShortRoute::prepareSegment(Atom *atom)
 {
-	setup();
-	submitJob(0);
+	submitJobAndRetrieve(0);
 
 	int keep = -1;
 	AnchorExtension ext{};
@@ -40,7 +53,7 @@ bool ShortRoute::prepareSegment(Atom *atom)
 		const BondSequence *seq = _calculators[i]->sequence();
 		ext = seq->getExtension(atom);
 
-		if (ext.parent != nullptr)
+		if (ext.block.atom == atom)
 		{
 			keep = i;
 			break; // stop looking
@@ -51,6 +64,7 @@ bool ShortRoute::prepareSegment(Atom *atom)
 
 	if (keep < 0)
 	{
+		std::cout << "Didn't find calculator" << std::endl;
 		return false;
 	}
 	
@@ -60,9 +74,15 @@ bool ShortRoute::prepareSegment(Atom *atom)
 	clearCalculators();
 	
 	chosen->reset();
+	ext.count = _count;
 	chosen->addAnchorExtension(ext);
 	chosen->setup();
 	chosen->start();
+
+	_sequence = chosen->sequence();
+	
+	_calculators.push_back(chosen);
 	
 	return true;
 }
+

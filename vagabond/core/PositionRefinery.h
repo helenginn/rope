@@ -54,13 +54,13 @@ public:
 		return _ncalls;
 	}
 protected:
-	virtual int sendJob(const Point &trial, bool force_update = false);
+	virtual int sendJob(const SPoint &trial, bool force_update = false);
 	virtual int awaitResult(double *eval);
 private:
 	void refine(AtomGroup *group);
 	bool refineBetween(int start, int end, int side_max = INT_MAX);
 	double fullResidual();
-	Point expandPoint(const Point &p);
+	SPoint expandPoint(const SPoint &p);
 	void calculateActiveTorsions();
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);

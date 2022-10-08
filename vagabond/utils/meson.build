@@ -6,6 +6,7 @@ utilfiles = [
 'svd/matrix.cpp',
 'maths.cpp',
 'version.h',
+'polyfit.h',
 ]
 
 install_headers([

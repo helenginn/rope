@@ -107,7 +107,7 @@ public:
 	AtomGraph *firstGraphNextResidue(AtomGraph *last);
 
 	/** find the child with the biggest maximum depth */
-	AtomGraph *deepestChild(AtomGraph *last);
+	AtomGraph *deepestChild(AtomGraph *last) const;
 private:
 	void addGraph(AtomGraph *graph);
 	void extendGraphNormally(AtomGraph *current,

@@ -56,14 +56,21 @@ public:
 
 	void clickTicker()
 	{
+		if (_inert) return;
 		_ticks++;
 		
 		setResponder(Environment::env().progressResponder());
 		sendResponse("tick", this);
 	}
 	
+	void disable()
+	{
+		_inert = true;
+	}
+	
 	void finishTicker()
 	{
+		if (_inert) return;
 		setResponder(Environment::env().progressResponder());
 		sendResponse("done", this);
 	}
@@ -73,6 +80,7 @@ public:
 		return _ticks;
 	}
 protected:
+	bool _inert = false;
 
 	int _ticks = 0;
 };

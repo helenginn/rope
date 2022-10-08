@@ -43,7 +43,10 @@ public:
 
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
-	void submitJob(int idx);
+	void submitJob(int idx, bool show = true);
+	void retrieve();
+
+	float submitJobAndRetrieve(int idx);
 	
 	/** total number of points in the system */
 	size_t pointCount()
@@ -70,26 +73,53 @@ public:
 	{
 		_calculating = true;
 	}
+	
+	virtual void prepareForAnalysis() {};
+	
+	virtual void finishRoute()
+	{
+		_finish = true;
+	}
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
 
 	virtual void doCalculations() {};
 	
-	float score()
+	float score(int idx)
 	{
-		return _score;
+		return _point2Score[idx].scores;
+	}
+	
+	void clearTickets()
+	{
+		_ticket2Point.clear();
+		_point2Score.clear();
 	}
 	
 	bool usingTorsion(int i)
 	{
 		return _mask[i];
 	}
-private:
+
+	std::atomic<bool> _finish{false};
+	std::vector<bool> _mask;
 	std::vector<Point> _points;
+private:
 
 	bool _calculating;
-	std::vector<bool> _mask;
 	float _score;
+	
+	struct Score
+	{
+		float scores = 0;
+		int divs = 0;
+	};
+	
+	typedef std::map<int, int> TicketPoint;
+	typedef std::map<int, Score> TicketScores;
+
+	TicketPoint _ticket2Point;
+	TicketScores _point2Score;
 };
 
 #endif

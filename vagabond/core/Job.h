@@ -118,40 +118,20 @@ struct Job
 {
 	CustomInfo custom;
 
+	float fraction = 0;
 	int ticket;
 	JobType requests;
 
 	Result *result = nullptr;
-	std::vector<MiniJob *> miniJobs;
 	
 	void destroy()
 	{
-		miniJobs.clear();
-		std::vector<MiniJob *>().swap(miniJobs);
 		custom.destroy_vectors();
 		delete this;
 	}
 };
 
-class MiniJob
-{
-public:
-	Job *job;
-	
-	void setJob(Job *j)
-	{
-		job = j;
-//		job->miniJobs.push_back(this);
-	}
-};
-
 class ElementSegment;
-
-class MiniJobSeq : public MiniJob
-{
-public:
-	BondSequence *seq;
-};
 
 struct Result
 {

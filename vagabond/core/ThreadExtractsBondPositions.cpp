@@ -179,15 +179,8 @@ void ThreadExtractsBondPositions::cleanupSequence(Job *job, BondSequence *seq)
 
 void ThreadExtractsBondPositions::returnResult(Job *job)
 {
-	if (job->miniJobs.size() == 0)
-	{
-		BondCalculator *calc = _seqHandler->calculator();
-		Result *r = job->result;
-		job->destroy();
-		calc->submitResult(r);
-	}
-	else
-	{
-		std::cout << "Oh, minijobs wasn't zero" << std::endl;
-	}
+	BondCalculator *calc = _seqHandler->calculator();
+	Result *r = job->result;
+	job->destroy();
+	calc->submitResult(r);
 }

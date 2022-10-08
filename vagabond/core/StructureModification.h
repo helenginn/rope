@@ -108,6 +108,7 @@ protected:
 	Residue *_unusedId{};
 	
 	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
+	TorsionBasis::Type _torsionType = TorsionBasis::TypeCustom;
 };
 
 #endif

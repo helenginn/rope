@@ -54,10 +54,10 @@ public:
 		return _done;
 	}
 protected:
-	typedef std::vector<float> Point;
+	typedef std::vector<float> SPoint;
 
-	const Point &bestPoint() const;
-	virtual int sendJob(const Point &trial, bool force_update = false);
+	const SPoint &bestPoint() const;
+	virtual int sendJob(const SPoint &trial, bool force_update = false);
 	virtual int awaitResult(double *eval);
 	
 	const float bestScore() const
@@ -65,9 +65,16 @@ protected:
 		return _points[0].eval;
 	}
 	
-	void printPoint(Point &point);
+	const bool &changedParams() const
+	{
+		return _changedParams;
+	}
+	
+	void printPoint(SPoint &point);
 	std::atomic<bool> _finish;
 	std::atomic<bool> _done{false};
+
+	int _maxJobRuns = 300;
 private:
 	
 	enum Decision
@@ -80,9 +87,9 @@ private:
 
 	struct TestPoint
 	{
-		Point vertex;
+		SPoint vertex;
 		double eval;
-		std::map<int, Point> tickets;
+		std::map<int, SPoint> tickets;
 		Decision decision;
 		
 		const bool operator<(TestPoint &other) const
@@ -94,7 +101,7 @@ private:
 	void allocateResources();
 	void resetVertex(TestPoint &point);
 	void reorderVertices();
-	Point scaleThrough(Point &p, Point &q, float k);
+	SPoint scaleThrough(SPoint &p, SPoint &q, float k);
 
 	bool awaitResults();
 
@@ -107,7 +114,6 @@ private:
 	void shrink();
 	void singleCycle();
 	void pickUpResults();
-	void cycle();
 	void findCentroid();
 
 	std::vector<TestPoint> _points;
@@ -115,6 +121,7 @@ private:
 
 	int _dims = 0;
 	int _maxJobs = 0;
+	bool _changedParams = false;
 	std::vector<float> _steps;
 };
 

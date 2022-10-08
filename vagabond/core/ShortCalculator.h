@@ -1,5 +1,5 @@
 // vagabond
-// Copyright (C) 2019 Helen Ginn
+// Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,50 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SimpleBasis.h"
-#include "BondTorsion.h"
+#ifndef __vagabond__ShortCalculator__
+#define __vagabond__ShortCalculator__
 
-SimpleBasis::SimpleBasis() : TorsionBasis()
+#include "ThreadWorker.h"
+
+class SplitRoute;
+
+class ShortCalculator : public ThreadWorker
 {
+public:
+	ShortCalculator(SplitRoute *master);
+	virtual ~ShortCalculator() {};
 
-}
-
-float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
-{
-	if (idx < 0)
-	{
-		return 0;
-	}
+	virtual void start();
 	
-	if (n >= idx && _angles.size() == 0)
+	virtual std::string type()
 	{
-		prepare();
+		return "Short route calculator";
 	}
+private:
+	SplitRoute *_master = nullptr;
 
-	TorsionAngle &ta = _angles[idx];
-	if (n == 0 || !ta.mask)
-	{
-		return ta.angle;
-	}
-	
-	if (idx < n)
-	{
-		return ta.angle + vec[idx];
-	}
-	
-	return ta.angle;
-}
+};
 
-void SimpleBasis::prepare(int dims)
-{
-	_angles.clear();
-
-	for (size_t i = 0; i < _torsions.size(); i++)
-	{
-		float start = _torsions[i]->startingAngle();
-		bool mask = !_torsions[i]->isConstrained();
-		TorsionAngle ta = {start, mask};
-		_angles.push_back(ta);
-	}
-}
-
+#endif

@@ -26,6 +26,7 @@
 #include "PlaneView.h"
 #include "AxisExplorer.h"
 #include "PlausibleRoute.h"
+#include "SplitRoute.h"
 #include "RouteExplorer.h"
 #include "Axes.h"
 
@@ -185,12 +186,13 @@ void Axes::loadAxisExplorer(int idx)
 void Axes::route(int idx)
 {
 	int l = _cluster->dataGroup()->length();
-	PlausibleRoute *pr = new PlausibleRoute(_molecule, _cluster, l);
+	SplitRoute *sr = new SplitRoute(_molecule, _cluster, l);
 	
 	std::vector<float> values = directTorsionVector(idx);
-	pr->setDestination(values);
+	sr->setDestination(values);
+	sr->setDestinationMolecule(_targets[idx]);
 
-	RouteExplorer *re = new RouteExplorer(_scene, pr);
+	RouteExplorer *re = new RouteExplorer(_scene, sr);
 	re->show();
 
 }

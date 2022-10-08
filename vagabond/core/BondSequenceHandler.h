@@ -107,10 +107,6 @@ public:
 	                     SequenceState old);
 
 	BondSequence *acquireSequence(SequenceState state);
-	
-	void generateMiniJobSeqs(Job *job);
-	MiniJobSeq *acquireMiniJobSeq();
-	void signalFinishMiniJobSeq();
 
 	/** Changes which atoms are included for calculation of position
 	 * deviation 
@@ -150,7 +146,6 @@ private:
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::map<SequenceState, Pool<BondSequence *> > _pools;
-	Pool<MiniJobSeq *> _miniJobPool;
 
 	std::vector<AnchorExtension> _atoms;
 

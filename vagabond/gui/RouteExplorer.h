@@ -22,6 +22,8 @@
 #include "Display.h"
 #include <vagabond/gui/elements/DragResponder.h>
 
+class PlausibleRoute;
+class TextButton;
 class PathFinder;
 class Molecule;
 class Slider;
@@ -32,7 +34,7 @@ public Responder<Route>
 {
 public:
 	RouteExplorer(Scene *prev, PathFinder *pf, int arrival_num);
-	RouteExplorer(Scene *prev, Route *route);
+	RouteExplorer(Scene *prev, PlausibleRoute *route);
 
 	virtual void setup();
 	virtual void doThings();
@@ -41,16 +43,23 @@ public:
 	virtual void sendObject(std::string tag, void *object);
 
 	virtual void finishedDragging(std::string tag, double x, double y);
+	virtual void buttonPressed(std::string tag, Button *button);
 private:
+	void setupSave();
+	void setupFinish();
+	void setupSettings();
 	Route *_route = nullptr;
-	Molecule *_molecule;
+	PlausibleRoute *_plausibleRoute = nullptr;
+	Molecule *_molecule = nullptr;
 
 	Slider *_rangeSlider = nullptr;
+	TextButton *_startPause = nullptr;
 	std::thread *_worker = nullptr;
 
 	std::atomic<bool> _watch{false};
 	
 	int _numTicks = -1;
+	float _newScore = NAN;
 	std::string _progressName;
 };
 
