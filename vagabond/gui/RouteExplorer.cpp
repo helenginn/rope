@@ -25,6 +25,7 @@
 
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/core/AlignmentTool.h>
+#include <vagabond/core/PathManager.h>
 #include <vagabond/core/PathFinder.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Molecule.h>
@@ -77,6 +78,7 @@ void RouteExplorer::setup()
 	VisualPreferences *vp = &_molecule->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
 	
+	_route->finishRoute();
 	_route->prepareCalculate();
 	_worker = new std::thread(Route::calculate, _route);
 	_watch = true;
@@ -89,8 +91,8 @@ void RouteExplorer::setupSave()
 		return;
 	}
 
-	TextButton *tb = new TextButton("Save route", this);
-	tb->setReturnTag("save");
+	TextButton *tb = new TextButton("Add & exit", this);
+	tb->setReturnTag("add");
 	tb->setRight(0.9, 0.1);
 	addObject(tb);
 }
@@ -190,17 +192,11 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		_startPause->setInert(true, true);
 		_route->finishRoute();
 	}
-	else if (tag == "save")
+	else if (tag == "add")
 	{
 		Path path(_plausibleRoute);
-
-		json data;
-		data["path"] = path;
-		std::string contents = data.dump();
-
-		PlausibleRoute *copy = path.toRoute();
-		RouteExplorer *re = new RouteExplorer(this, copy);
-		re->show();
+		Environment::env().pathManager()->insertIfUnique(path);
+		back();
 	}
 	else if (tag == "start" && _worker == nullptr)
 	{

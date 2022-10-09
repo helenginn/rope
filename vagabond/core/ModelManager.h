@@ -21,7 +21,6 @@
 
 #include <string>
 #include <vector>
-#include <list>
 #include "Model.h"
 #include "Manager.h"
 

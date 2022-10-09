@@ -20,6 +20,7 @@
 #include "FileManager.h"
 #include "Metadata.h"
 #include "Ruler.h"
+#include "PathManager.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
 
@@ -41,6 +42,7 @@ Environment::Environment()
 	_metadata->setSource("master");
 
 	_fileManager = new FileManager();
+	_pathManager = new PathManager();
 	_modelManager = new ModelManager();
 	_entityManager = new EntityManager();
 }
@@ -53,6 +55,7 @@ size_t Environment::entityCount()
 void Environment::save()
 {
 	json data;
+	data["path_manager"] = *_pathManager;
 	data["file_manager"] = *_fileManager;
 	data["model_manager"] = *_modelManager;
 	data["entity_manager"] = *_entityManager;
@@ -99,6 +102,7 @@ void Environment::load(std::string file)
 		 *_modelManager = data["model_manager"];
 		 *_entityManager = data["entity_manager"];
 		*_metadata = data["metadata"];
+		*_pathManager = data["pathManager"];
 	}
 	catch (const nlohmann::detail::type_error &err)
 	{
@@ -108,6 +112,7 @@ void Environment::load(std::string file)
 	_metadata->housekeeping();
 	_entityManager->housekeeping();
 	_modelManager->housekeeping();
+	_pathManager->housekeeping();
 	
 	_entityManager->checkModelsForReferences(_modelManager);
 	std::cout << "done." << std::endl;

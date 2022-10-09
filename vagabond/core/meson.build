@@ -47,6 +47,7 @@ vagafiles = [
 'MtzFile.cpp',
 'Path.cpp',
 'PathFinder.cpp',
+'PathManager.cpp',
 'PdbFile.cpp',
 'Plane.cpp',
 'PlausibleRoute.cpp',

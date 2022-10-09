@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "RulesMenu.h"
+#include "PathsMenu.h"
 #include "AxesMenu.h"
 #include "LineSeries.h"
 #include "RouteExplorer.h"
@@ -41,6 +42,7 @@
 
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Environment.h>
+#include <vagabond/core/PathManager.h>
 #include <vagabond/core/Metadata.h>
 
 ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
@@ -94,6 +96,7 @@ void ConfSpaceView::addGuiElements()
 	showClusters();
 	applyRules();
 	showRulesButton();
+	showPathsButton();
 	showAxesButton();
 }
 
@@ -136,26 +139,52 @@ void ConfSpaceView::showAxesButton()
 {
 	ImageButton *b = new ImageButton("assets/images/axes.png", this);
 	b->resize(0.1);
-	b->setRight(0.95, 0.22);
+	b->setRight(0.97, 0.22);
 	b->setReturnTag("axes");
 
 	Text *t = new Text("axes");
 	t->resize(0.6);
-	t->setRight(0.94, 0.28);
+	t->setRight(0.96, 0.28);
 	addObject(b);
 	addObject(t);
+}
+
+void ConfSpaceView::showPathsButton()
+{
+	if (_shownPaths)
+	{
+		return;
+	}
+	
+	if (Environment::env().pathManager()->objectCount() == 0)
+	{
+		return;
+	}
+
+	ImageButton *b = new ImageButton("assets/images/palette.png", this);
+	b->resize(0.1);
+	b->setRight(0.97, 0.35);
+	b->setReturnTag("paths");
+
+	Text *t = new Text("paths");
+	t->resize(0.6);
+	t->setRight(0.96, 0.41);
+	addObject(b);
+	addObject(t);
+	
+	_shownPaths = true;
 }
 
 void ConfSpaceView::showRulesButton()
 {
 	ImageButton *b = new ImageButton("assets/images/palette.png", this);
 	b->resize(0.1);
-	b->setRight(0.95, 0.09);
+	b->setRight(0.97, 0.09);
 	b->setReturnTag("rules");
 
 	Text *t = new Text("rules");
 	t->resize(0.6);
-	t->setRight(0.94, 0.15);
+	t->setRight(0.96, 0.15);
 	addObject(b);
 	addObject(t);
 }
@@ -376,6 +405,13 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		createReference(m);
 	}
 	
+	if (tag == "paths")
+	{
+		PathsMenu *menu = new PathsMenu(this);
+		menu->setEntityId(_entity->name());
+		menu->show();
+	}
+	
 	if (tag == "rules")
 	{
 		RulesMenu *menu = new RulesMenu(this);
@@ -404,6 +440,7 @@ void ConfSpaceView::refresh()
 
 	_view->refresh();
 	applyRules();
+	showPathsButton();
 }
 
 void ConfSpaceView::applyRule(const Rule &r)

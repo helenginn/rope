@@ -25,6 +25,7 @@
 class Path
 {
 public:
+	Path() {};
 	Path(PlausibleRoute *pr);
 
 	void getTorsionRef(int idx);
@@ -34,6 +35,8 @@ public:
 	
 	PlausibleRoute *toRoute();
 	void housekeeping();
+	
+	std::string desc();
 private:
 	std::string _startMolecule;
 	std::string _model_id;
@@ -71,6 +74,9 @@ inline void from_json(const json &j, PlausibleRoute::WayPoint &value)
 /* path */
 inline void to_json(json &j, const Path &value)
 {
+	j["model"] = value._model_id;
+	j["start"] = value._startMolecule;
+	j["end"] = value._endMolecule;
 	j["residues"] = value._residueIds;
 	j["torsions"] = value._torsionRefs;
 	j["flips"] = value._flips;

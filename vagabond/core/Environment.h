@@ -27,6 +27,7 @@ class Metadata;
 class Molecule;
 class Progressor;
 class FileManager;
+class PathManager;
 class ModelManager;
 class EntityManager;
 
@@ -41,6 +42,11 @@ public:
 	static Metadata *metadata()
 	{
 		return _environment._metadata;
+	}
+
+	static PathManager *pathManager()
+	{
+		return _environment._pathManager;
 	}
 
 	static ModelManager *modelManager()
@@ -94,6 +100,7 @@ private:
 	FileManager *_fileManager = nullptr;
 	ModelManager *_modelManager = nullptr;
 	EntityManager *_entityManager = nullptr;
+	PathManager *_pathManager = nullptr;
 	Metadata *_metadata = nullptr;
 	
 	Responder<Progressor> *_pg = nullptr;

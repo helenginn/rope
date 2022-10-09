@@ -143,3 +143,8 @@ PlausibleRoute *Path::toRoute()
 	
 	return pr;
 }
+
+std::string Path::desc()
+{
+	return _startMolecule + " to " + _endMolecule;
+}

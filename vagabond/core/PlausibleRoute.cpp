@@ -451,7 +451,11 @@ void PlausibleRoute::cycle()
 
 void PlausibleRoute::doCalculations()
 {
-	cycle();
+	if (!Route::_finish)
+	{
+		cycle();
+	}
+
 	
 	finishTicker();
 	prepareForAnalysis();

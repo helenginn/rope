@@ -79,6 +79,7 @@ private:
 	void executeSubset(float min, float max);
 	void showClusters();
 
+	void showPathsButton();
 	void showRulesButton();
 	void showAxesButton();
 	void showtSNE();
@@ -104,6 +105,7 @@ private:
 	
 	Status _status = Nothing;
 
+	bool _shownPaths = false;
 	bool _tsne = false;
 };
 

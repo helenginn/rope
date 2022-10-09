@@ -303,6 +303,11 @@ void SplitRoute::doCalculations()
 {
 	while (true)
 	{
+		if (Route::_finish)
+		{
+			break;
+		}
+
 		float begin = momentumScore(_nudgeCount);
 		std::cout << "Begin: " << begin << std::endl;
 		if (begin > 3)
@@ -324,10 +329,6 @@ void SplitRoute::doCalculations()
 			_minimumMagnitude = 0.5;
 		}
 
-		if (Route::_finish)
-		{
-			break;
-		}
 	}
 
 	finishTicker();
