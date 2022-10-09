@@ -22,6 +22,7 @@
 /** \class StructureModification will set up a calculator for editing a
  * Molecule in a structure */
 
+#include <vagabond/c4x/Angular.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Sampler.h>
@@ -53,7 +54,7 @@ public:
 	}
 	
 	bool supplyTorsions(const std::vector<ResidueTorsion> &list,
-                        const std::vector<float> &values);
+                        const std::vector<Angular> &values);
 
 	virtual ~StructureModification();
 	
@@ -77,7 +78,7 @@ protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 
 	bool fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
-	               const std::vector<float> &values, int axis = 0);
+	               const std::vector<Angular> &values, int axis = 0);
 	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
@@ -92,7 +93,7 @@ protected:
 	struct ResidueTorsionList
 	{
 		const std::vector<ResidueTorsion> list;
-		const std::vector<float> values;
+		const std::vector<Angular> values;
 	};
 	
 	std::vector<ResidueTorsionList> _torsionLists;

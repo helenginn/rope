@@ -34,7 +34,7 @@ public:
 	}
 
 	virtual void cluster();
-	virtual std::vector<float> mapVector(std::vector<float> &vec);
+	virtual std::vector<float> mapVector(typename DG::Array &vec);
 
 	virtual float weight(int axis) const
 	{
@@ -52,6 +52,8 @@ public:
 	{
 		return 3;
 	}
+
+	void recalculateResult();
 private:
 	PCA::Matrix matrix();
 

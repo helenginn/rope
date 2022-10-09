@@ -112,7 +112,12 @@ template <class Unit, class Header>
 void DataGroup<Unit, Header>::calculateAverage()
 {
 	prepareAverages();
-	std::vector<Array> counts = _averages;
+	std::vector<std::vector<float> > counts(_averages.size());
+	
+	for (size_t j = 0; j < _averages.size(); j++)
+	{
+		counts[j] = std::vector<float>(_averages[j].size());
+	}
 
 	for (size_t j = 0; j < _vectors.size(); j++)
 	{
@@ -122,7 +127,7 @@ void DataGroup<Unit, Header>::calculateAverage()
 		{
 			Unit &v = _vectors[j][i];
 
-			if (v != v || !isfinite(v))
+			if (v != v || !valid(v))
 			{
 				continue;
 			}
@@ -327,7 +332,7 @@ float DataGroup<Unit, Header>::correlation_between(const Array &v, const Array &
 			continue;
 		}
 		
-		if (!isfinite(v[n]) || !isfinite(w[n]))
+		if (!valid(v[n]) || !valid(w[n]))
 		{
 			continue;
 		}
@@ -462,7 +467,7 @@ DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 		normalise();
 	}
 	
-	Array vals = Array(_length, 0);
+	Array vals = Array(_length, Unit{});
 	
 	for (size_t j = 0; j < _length; j++)
 	{

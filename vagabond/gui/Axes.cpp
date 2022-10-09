@@ -93,14 +93,14 @@ std::vector<float> Axes::getMappedVector(int idx)
 	return vals;
 }
 
-std::vector<float> Axes::directTorsionVector(int idx)
+std::vector<Angular> Axes::directTorsionVector(int idx)
 {
 	if (_targets[idx] != nullptr)
 	{
 		int mine = _cluster->dataGroup()->indexOfObject(_molecule);
 		int yours = _cluster->dataGroup()->indexOfObject(_targets[idx]);
 
-		std::vector<float> from_vals, to_vals;
+		std::vector<Angular> from_vals, to_vals;
 		from_vals = _cluster->dataGroup()->differenceVector(mine);
 		to_vals = _cluster->dataGroup()->differenceVector(yours);
 
@@ -116,11 +116,11 @@ std::vector<float> Axes::directTorsionVector(int idx)
 	return getTorsionVector(idx);
 }
 
-std::vector<float> Axes::getTorsionVector(int idx)
+std::vector<Angular> Axes::getTorsionVector(int idx)
 {
 	glm::vec3 dir = _dirs[idx];
 	
-	std::vector<float> sums;
+	std::vector<Angular> sums;
 	for (size_t i = 0; i < 3; i++)
 	{
 		if (i >= _cluster->rows())
@@ -128,7 +128,7 @@ std::vector<float> Axes::getTorsionVector(int idx)
 			continue;
 		}
 		int axis = _cluster->axis(i);
-		std::vector<float> vals = _cluster->rawVector(axis);
+		std::vector<Angular> vals = _cluster->rawVector(axis);
 
 		float &weight = dir[i];
 		
@@ -150,7 +150,7 @@ void Axes::loadAxisExplorer(int idx)
 {
 	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
 
-	std::vector<float> vals = getTorsionVector(idx);
+	std::vector<Angular> vals = getTorsionVector(idx);
 	if (vals.size() == 0)
 	{
 		return;
@@ -188,7 +188,7 @@ void Axes::route(int idx)
 	int l = _cluster->dataGroup()->length();
 	SplitRoute *sr = new SplitRoute(_molecule, _cluster, l);
 	
-	std::vector<float> values = directTorsionVector(idx);
+	std::vector<Angular> values = directTorsionVector(idx);
 	sr->setDestination(values);
 	sr->setDestinationMolecule(_targets[idx]);
 
@@ -276,7 +276,7 @@ void Axes::preparePlane()
 		std::vector<float> mapped = getMappedVector(i);
 		
 		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-		std::vector<float> vals = getTorsionVector(i);
+		std::vector<Angular> vals = getTorsionVector(i);
 
 		plane->addAxis(list, vals, mapped);
 	}

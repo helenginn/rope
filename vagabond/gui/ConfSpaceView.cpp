@@ -156,7 +156,9 @@ void ConfSpaceView::showPathsButton()
 		return;
 	}
 	
-	if (Environment::env().pathManager()->objectCount() == 0)
+	int count = Environment::env().pathManager()->objectCount();
+	std::cout << "Path count: " << count << std::endl;
+	if (count == 0)
 	{
 		return;
 	}
@@ -358,35 +360,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		_from = m;
 	}
 	
-	if (tag == "explore_paths" || tag == "path_to")
-	{
-		Molecule *m = static_cast<Molecule	*>(button->returnObject());
-		Molecule *to = nullptr;
-		if (tag == "explore_paths")
-		{
-			_from = m;
-		}
-		else
-		{
-			to = m;
-		}
-
-		if (_from)
-		{
-			PathView *pv = new PathView(_view->cluster(), _from);
-			pv->setResponder(this);
-			
-			if (to)
-			{
-				pv->setTarget(to);
-				_from = nullptr;
-			}
-
-			addObject(pv);
-			pv->start();
-		}
-	}
-	
 	if (tag == "view_model")
 	{
 		Molecule *m = static_cast<Molecule	*>(button->returnObject());
@@ -517,18 +490,6 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
 	m->addOption("view model", "view_model");
-#ifdef VERSION_NEXT
-#warning including next version tools
-	if (_from == nullptr)
-	{
-		m->addOption("explore paths", "explore_paths");
-		m->addOption("path from", "path_from");
-	}
-	else
-	{
-		m->addOption("path to", "path_to");
-	}
-#endif
 	m->addOption("set as reference", "set_as_reference");
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
 	m->setup(x, y);
@@ -580,12 +541,7 @@ void ConfSpaceView::sendSelection(float t, float l, float b, float r)
 
 void ConfSpaceView::sendObject(std::string tag, void *object)
 {
-	if (tag == "show_route")
-	{
-		PathFinder *pf = static_cast<PathFinder *>(object);
-		RouteExplorer *re = new RouteExplorer(this, pf, 0);
-		_routeExplorer = re;
-	}
+
 }
 
 void ConfSpaceView::doThings()

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AxesMenu.h"
+#include <vagabond/c4x/Angular.h>
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -121,7 +122,7 @@ void AxesMenu::supplySingleAxis(int i)
 	_csv = "";
 
 	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-	std::vector<float> vals = _cluster->rawVector(i);
+	MetadataGroup::Array vals = _cluster->rawVector(i);
 	_csv += "torsion_id,torsion(degrees)\n";
 	
 	for (size_t i = 0; i < list.size(); i++)

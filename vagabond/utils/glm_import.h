@@ -12,8 +12,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/vector_angle.hpp>
 
-#define deg2rad(a) ((a)*M_PI/180)
-#define rad2deg(a) ((a) / M_PI * 180)
+#include "degrad.h"
 
 #endif
 

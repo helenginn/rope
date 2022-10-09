@@ -27,9 +27,14 @@ class HasMetadata
 public:
 	virtual ~HasMetadata() {};
 
-	virtual const Metadata::KeyValues metadata() const = 0;
+	virtual const Metadata::KeyValues metadata() const
+	{
+		return Metadata::KeyValues();
+	}
 	
 	virtual const std::string id() const = 0;
+	
+	virtual bool displayable() const = 0;
 
 	template <class C>
 	void appendIfMissing(std::vector<C *> &target)

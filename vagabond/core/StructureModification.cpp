@@ -129,7 +129,7 @@ void StructureModification::startCalculator()
 }
 
 bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
-                                           const std::vector<float> &values)
+                                           const std::vector<Angular> &values)
 {
 	if (_torsionType == TorsionBasis::TypeSimple)
 	{
@@ -157,7 +157,7 @@ bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &li
 
 bool StructureModification::fillBasis(ConcertedBasis *cb, 
                                       const std::vector<ResidueTorsion> &list,
-                                      const std::vector<float> &values,
+                                      const std::vector<Angular> &values,
                                       int axis)
 {
 	bool result = cb->fillFromMoleculeList(_molecule, axis, list, values);

@@ -24,7 +24,6 @@
 
 class PlausibleRoute;
 class TextButton;
-class PathFinder;
 class Molecule;
 class Slider;
 class Route;
@@ -33,7 +32,6 @@ class RouteExplorer : public Display, public DragResponder,
 public Responder<Route>
 {
 public:
-	RouteExplorer(Scene *prev, PathFinder *pf, int arrival_num);
 	RouteExplorer(Scene *prev, PlausibleRoute *route);
 
 	virtual void setup();

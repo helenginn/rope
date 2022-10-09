@@ -19,7 +19,6 @@
 #ifndef __ROPE__VERSION__H
 #define __ROPE__VERSION__H
 
-//#define VERSION_NEXT
 #define VERSION_FIX_PEPTIDE
 #define VERSION_SHORT_ROUTES
 

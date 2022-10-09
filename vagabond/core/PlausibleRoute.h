@@ -22,6 +22,7 @@
 #include "Route.h"
 #include "Progressor.h"
 #include "SimplexEngine.h"
+#include <vagabond/c4x/Angular.h>
 
 class Grapher;
 class Path;
@@ -32,7 +33,7 @@ class PlausibleRoute : public Route, public Progressor, public SimplexEngine
 public:
 	PlausibleRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 
-	void setDestination(Point dest)
+	void setDestination(std::vector<Angular> dest)
 	{
 		_rawDest = dest;
 	}
@@ -155,7 +156,7 @@ protected:
 	void maskTails();
 
 	std::vector<BondTorsion *> _torsions;
-	Point _rawDest;
+	std::vector<Angular> _rawDest;
 	bool _mainsOnly = true;
 	bool _flipTorsions = true;
 	int _nudgeCount = 16;

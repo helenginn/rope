@@ -19,6 +19,7 @@
 #ifndef __vagabond__Plane__
 #define __vagabond__Plane__
 
+#include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Cluster.h>
 #include "MetadataGroup.h"
 #include "StructureModification.h"
@@ -34,7 +35,8 @@ public:
 	
 	virtual ~Plane();
 
-	void addAxis(std::vector<ResidueTorsion> &list, std::vector<float> &values,
+	void addAxis(std::vector<ResidueTorsion> &list, 
+	             std::vector<Angular> &values,
 	             std::vector<float> &mapped);
 	
 	const float &score(int idx)
@@ -115,7 +117,7 @@ private:
 	std::vector<float> _scores;
 	std::map<int, int> _scoreMap;
 
-	std::vector<float> _torsions[2];
+	std::vector<Angular> _torsions[2];
 	std::vector<float> _axes[2];
 	int _counts[2] = {20, 20};
 	float _scale = 0.2;

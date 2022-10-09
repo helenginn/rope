@@ -19,6 +19,7 @@
 #ifndef __vagabond__AxisExplorer__
 #define __vagabond__AxisExplorer__
 
+#include <vagabond/c4x/Angular.h>
 #include <vagabond/gui/Display.h>
 #include <vagabond/core/StructureModification.h>
 #include <vagabond/gui/elements/DragResponder.h>
@@ -35,7 +36,7 @@ public StructureModification
 public:
 	AxisExplorer(Scene *prev, Molecule *mol, 
 	             const std::vector<ResidueTorsion> &list,
-	             const std::vector<float> &values);
+	             const std::vector<Angular> &values);
 	
 	~AxisExplorer();
 
@@ -59,7 +60,7 @@ private:
 	double _step = 0.001;
 
 	std::vector<ResidueTorsion> _list;
-	std::vector<float> _values;
+	std::vector<Angular> _values;
 	
 	int _dims = 1;
 	

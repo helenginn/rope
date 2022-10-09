@@ -37,3 +37,18 @@ void PathManager::housekeeping()
 {
 
 }
+
+std::vector<Path *> PathManager::pathsForMolecule(Molecule *mol)
+{
+	std::vector<Path *> paths;
+
+	for (Path &p : _objects)
+	{
+		if (p.startMolecule() == mol)
+		{
+			paths.push_back(&p);
+		}
+	}
+
+	return paths;
+}

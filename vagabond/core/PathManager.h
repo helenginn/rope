@@ -33,6 +33,8 @@ public:
 	{
 		return "paths";
 	}
+	
+	std::vector<Path *> pathsForMolecule(Molecule *mol);
 
 	void housekeeping();
 	
@@ -44,7 +46,7 @@ private:
 
 inline void to_json(json &j, const PathManager &value)
 {
-	j["models"] = value._objects;
+	j["paths"] = value._objects;
 }
 
 inline void from_json(const json &j, PathManager &value)

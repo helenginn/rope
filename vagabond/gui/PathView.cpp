@@ -19,18 +19,15 @@
 #include "PathView.h"
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/core/Molecule.h>
+#include <vagabond/core/Path.h>
 #include <vagabond/c4x/Cluster.h>
 
-PathView::PathView(Cluster<MetadataGroup> *cluster, Molecule *mol)
+PathView::PathView(Path &path, Cluster<MetadataGroup> *cluster) : _path(path)
 {
 	setName("Path view");
 	_renderType = GL_LINES;
-	int total = cluster->dataGroup()->length();
 
-	PathFinder *pf = new PathFinder(mol, cluster, total);
-	_pathFinder = pf;
 	_cluster = cluster;
-	_molecule = mol;
 
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
@@ -42,87 +39,54 @@ PathView::~PathView()
 
 }
 
-void PathView::start()
+void PathView::render(SnowGL *gl)
 {
-	if (_pathFinder->end())
-	{
-		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-
-		int from = _cluster->dataGroup()->indexOfObject(_molecule);
-		int to = _cluster->dataGroup()->indexOfObject(_pathFinder->end());
-		std::vector<float> diffs = _cluster->rawVector(from, to);
-		_pathFinder->addAxis(list, diffs, true);
-	}
-
-	for (size_t i = 0; i < _pathFinder->dims() && i < 10; i++)
-	{
-		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-		std::vector<float> vals = _cluster->rawVector(i);
-		
-		_pathFinder->addAxis(list, vals);
-	}
-	
-	if (_pathFinder->end())
-	{
-		std::cout << _pathFinder->begin()->id() << " to " << 
-		_pathFinder->end()->id() << std::endl;
-	}
-	
-	_pathFinder->setResponder(this);
-	_pathFinder->setup();
-	_worker = new std::thread(&PathFinder::start, _pathFinder);
+	Renderable::render(gl);
 }
 
-void PathView::addNewPoints()
+void PathView::populate()
 {
-	size_t existing = _vertices.size();
-	size_t full = _pathFinder->nodeCount();
-	int idx = _cluster->dataGroup()->indexOfObject(_molecule);
-	glm::vec3 centre = _cluster->point(idx);
-
-	for (size_t i = existing; i < full; i++)
+	if (_path.angleArraySize() == 0)
 	{
-		std::vector<float> placement = _pathFinder->mapNodeToRope(i);
-		// nope
-		glm::vec3 pos = _cluster->point(placement);
-		Vertex &v = addVertex(pos);
-		v.pos += centre;
+		_path.calculateArrays(_cluster->dataGroup());
+	}
 
-		float score = _pathFinder->score(i);
-		if (existing == 0)
+	const MetadataGroup::Array &average = _cluster->dataGroup()->average();
+	
+	MetadataGroup *dg = _cluster->dataGroup();
+	
+	for (size_t i = 0; i < _path.angleArraySize(); i++)
+	{
+		MetadataGroup::Array angles = _path.angleArray(i);
+		
+		for (size_t i = 0; i < angles.size() && i < 10; i++)
 		{
-			_first = score;
+			std::cout << angles[i] << " ";
 		}
+		std::cout << std::endl;
 
-		score -= _first;
-		val_to_cluster4x_colour(score, &v.color[0], &v.color[1], &v.color[2]);
-		v.color /= 255.f;
-		v.color[3] = 1.f;
+		dg->convertToDifferences(angles, &average);
+
+		std::vector<float> mapped = _cluster->mapVector(angles);
+		glm::vec3 point = _cluster->point(mapped);
+		std::cout << glm::to_string(point) << std::endl;
 		
-		int parent = _pathFinder->parentIndex(i);
-
-		if (parent == -1)
+		addVertex(point);
+		
+		if (i > 0)
 		{
-			continue;
+			addIndex(-2);
+			addIndex(-1);
 		}
-		
-		addIndex(parent);
-		addIndex(-1);
-	}
-}
-
-void PathView::respond()
-{
-	addNewPoints();
-	forceRender(true, true);
-}
-
-void PathView::sendObject(std::string tag, void *object)
-{
-	if (tag == "find_route")
-	{
-		std::cout << "Must find route through the mess" << std::endl;
 	}
 	
-	sendResponse("show_route", _pathFinder);
+	int idx = dg->indexOfObject(_path.endMolecule());
+	glm::vec3 end = _cluster->point(idx);
+
+	addVertex(end);
+	addIndex(-2);
+	addIndex(-1);
+
+	setAlpha(1.f);
 }
+

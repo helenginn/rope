@@ -26,7 +26,6 @@
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/core/AlignmentTool.h>
 #include <vagabond/core/PathManager.h>
-#include <vagabond/core/PathFinder.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/core/Entity.h>
@@ -38,15 +37,6 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 	_molecule = route->molecule();
 	_plausibleRoute = route;
 	_route = route;
-	_route->setResponder(this);
-	setOwnsAtoms(false);
-}
-
-RouteExplorer::RouteExplorer(Scene *prev, PathFinder *pf, int arrival_num)
-: Scene(prev)
-{
-	_molecule = pf->begin();
-	_route = pf->route(arrival_num);
 	_route->setResponder(this);
 	setOwnsAtoms(false);
 }

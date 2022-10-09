@@ -30,7 +30,7 @@ void DegreeDataGroup<Header>::matchDegrees(Array &next)
 {
 	for (size_t i = 0; i < _length; i++)
 	{
-		if (next[i] != next[i] || !isfinite(next[i]))
+		if (next[i] != next[i] || !valid(next[i]))
 		{
 			next[i] = NAN;
 			continue;
@@ -38,11 +38,11 @@ void DegreeDataGroup<Header>::matchDegrees(Array &next)
 		
 		size_t j = 0;
 		Array *master = &_vectors[j];
-		for (j = 0; j < DataGroup<float, Header>::vectorCount(); j++)
+		for (j = 0; j < DataGroup<Angular, Header>::vectorCount(); j++)
 		{
 			master = &_vectors[j];
 
-			if ((*master)[i] == (*master)[i] && isfinite((*master)[i]))
+			if ((*master)[i] == (*master)[i] && valid((*master)[i]))
 			{
 				break;
 			}
@@ -61,24 +61,6 @@ void DegreeDataGroup<Header>::matchDegrees(Array &next)
 }
 
 template <class Header>
-float DegreeDataGroup<Header>::difference(int m, int n, int j)
-{
-	float deg = (_diffs[n][j] - _diffs[m][j]) * _stdevs[j];
-
-	while (deg < -180)
-	{
-		deg += 360;
-	}
-
-	while (deg >= 180)
-	{
-		deg -= 360;
-	}
-	
-	return deg;
-}
-
-template <class Header>
 void DegreeDataGroup<Header>::addArray(std::string name, Array next)
 {
 	if (_vectors.size() > 0)
@@ -86,7 +68,7 @@ void DegreeDataGroup<Header>::addArray(std::string name, Array next)
 		matchDegrees(next);
 	}
 	
-	DataGroup<float, Header>::addArray(name, next);
+	DataGroup<Angular, Header>::addArray(name, next);
 
 	if (_vectors.size() <= 1)
 	{

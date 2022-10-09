@@ -46,7 +46,7 @@ vagafiles = [
 'Molecule.cpp',
 'MtzFile.cpp',
 'Path.cpp',
-'PathFinder.cpp',
+#'PathFinder.cpp',
 'PathManager.cpp',
 'PdbFile.cpp',
 'Plane.cpp',

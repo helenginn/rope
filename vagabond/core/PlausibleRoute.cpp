@@ -40,6 +40,8 @@ void PlausibleRoute::setup()
 
 	Route::setup();
 	prepareDestination();
+	
+	setTargets();
 }
 
 void PlausibleRoute::setTargets()
@@ -318,8 +320,8 @@ int PlausibleRoute::nudgeWaypoints()
 bool PlausibleRoute::flipTorsions(bool main)
 {
 	startTicker("Flipping torsions");
-	float best = momentumScore(8);
 	bool changed = false;
+	_bestScore = momentumScore(_nudgeCount);
 
 	for (size_t i = 0; i < dims(); i++)
 	{
@@ -342,12 +344,12 @@ bool PlausibleRoute::flipTorsions(bool main)
 		}
 		
 		_flips[i] = !_flips[i];
-		float candidate = momentumScore(8);
+		float candidate = momentumScore(_nudgeCount);
 
-		if ((_flipTorsions && candidate < best - 1e-6) ||
-		    (!_flipTorsions && candidate < best * 0.6))
+		if ((_flipTorsions && candidate < _bestScore - 1e-6) ||
+		    (!_flipTorsions && candidate < _bestScore * 0.6))
 		{
-			best = candidate;
+			_bestScore = candidate;
 			changed = true;
 		}
 		else
@@ -356,7 +358,6 @@ bool PlausibleRoute::flipTorsions(bool main)
 		}
 	}
 	
-	_bestScore = best;
 	postScore(_bestScore);
 	clearMask();
 
@@ -847,3 +848,4 @@ void PlausibleRoute::prepareForAnalysis()
 	postScore(result);
 	calculateProgression(200);
 }
+

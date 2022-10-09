@@ -21,45 +21,26 @@
 
 #include <thread>
 #include <vagabond/gui/elements/Renderable.h>
-#include <vagabond/core/PathFinder.h>
 
-class Molecule;
 class MetadataGroup;
+class Path;
 
 template <class DG>
 class Cluster;
+class Molecule;
 
-class PathView : public Renderable, public Responder<PathFinder>,
-public HasResponder<Responder<PathView>>
+class PathView : public Renderable
 {
 public:
-	PathView(Cluster<MetadataGroup> *cluster, Molecule *mol);
+	PathView(Path &path, Cluster<MetadataGroup> *cluster);
 	virtual ~PathView();
 
-	PathFinder *pathFinder()
-	{
-		return _pathFinder;
-	}
-	
-	void setTarget(Molecule *m)
-	{
-		_pathFinder->setTarget(m);
-	}
-
+	virtual void render(SnowGL *gl);
 	void populate();
-	void addNewPoints();
-	virtual void respond();
-	virtual void sendObject(std::string tag, void *object);
-
-	void start();
 private:
-	PathFinder *_pathFinder = nullptr;
 	Cluster<MetadataGroup> *_cluster = nullptr;
 	
-	std::thread *_worker = nullptr;
-	Molecule *_molecule = nullptr;
-
-	float _first = 0;
+	Path &_path;
 };
 
 #endif

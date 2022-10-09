@@ -338,7 +338,8 @@ bool Sequence::torsionByName(const std::string name, Residue **res)
 	return true;
 }
 
-void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals)
+void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
+                                  bool tmp_source)
 {
 	for (Residue &master : _residues)
 	{
@@ -353,14 +354,15 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals)
 			}
 
 			TorsionRef match = local->copyTorsionRef(torsion.desc());
-			float f = NAN;
+			Angular f = NAN;
 			
 			if (match.valid())
 			{
-				f = match.refinedAngle();
+				f = tmp_source ? match.tmpAngle() : match.refinedAngle();
 			}
 
 			vals.push_back(f);
 		}
 	}
 }
+

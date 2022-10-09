@@ -62,7 +62,7 @@ void Residue::replaceTorsionRef(TorsionRef &newRef)
 
 }
 
-bool Residue::supplyRefinedAngle(std::string desc, double angle)
+bool Residue::supplyRefinedAngle(std::string desc, double angle, bool tmp)
 {
 	TorsionRef copy = copyTorsionRef(desc);
 	if (!copy.valid())
@@ -70,23 +70,14 @@ bool Residue::supplyRefinedAngle(std::string desc, double angle)
 		return false;
 	}
 
-	copy.setRefinedAngle(angle);
+	tmp ? copy.setTmpAngle(angle) : copy.setRefinedAngle(angle);
 	replaceTorsionRef(copy);
 	return true;
 }
 
 const size_t Residue::torsionCount() const
 {
-	int count = 0;
-	for (const TorsionRef &t : _refs)
-	{
-		if (t.coversMainChain())
-		{
-			count++;
-		}
-	}
-	
-	return count;
+	return _refs.size();
 }
 
 void Residue::housekeeping()

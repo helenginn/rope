@@ -19,13 +19,16 @@
 #ifndef __vagabond__Molecule__
 #define __vagabond__Molecule__
 
+#include <vagabond/c4x/Angular.h>
 #include <vagabond/utils/glm_json.h>
 using nlohmann::json;
 
 #include <string>
 #include "AtomRecall.h"
 #include "HasMetadata.h"
+#include "MetadataGroup.h"
 
+class MetadataGroup;
 class AtomContent;
 class Entity;
 class Model;
@@ -65,6 +68,11 @@ public:
 		return model_chain_id();
 	}
 	
+	virtual bool displayable() const
+	{
+		return true;
+	}
+	
 	const std::string &model_id() const
 	{
 		return _model_id;
@@ -86,9 +94,12 @@ public:
 	}
 
 	void getTorsionRefs(Chain *ch);
-	void extractTorsionAngles(AtomContent *atoms);
+	void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
 	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
+	
+	MetadataGroup::Array grabTorsions(bool tmp = false);
+	void addTorsionsToGroup(MetadataGroup &group);
 
 	Atom *atomByIdName(const ResidueId &id, std::string name);
 
@@ -123,7 +134,7 @@ public:
 
 	float valueForTorsionFromList(BondTorsion *bt,
 	                              const std::vector<ResidueTorsion> &list,
-	                              const std::vector<float> &values,
+	                              const std::vector<Angular> &values,
 	                              std::vector<bool> &found);
 
 	Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);

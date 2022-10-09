@@ -36,12 +36,22 @@ public:
 		organiseDescriptions();
 	}
 
-	double refinedAngle()
+	float tmpAngle()
+	{
+		return _tmpAngle;
+	}
+	
+	void setTmpAngle(float angle)
+	{
+		_tmpAngle = angle;
+	}
+
+	float refinedAngle()
 	{
 		return _refinedAngle;
 	}
 	
-	void setRefinedAngle(double angle)
+	void setRefinedAngle(float angle)
 	{
 		_refinedAngle = angle;
 	}
@@ -85,7 +95,8 @@ public:
 private:
 	std::string _desc;
 	std::string _reverse_desc;
-	double _refinedAngle = 0;
+	float _refinedAngle = 0;
+	float _tmpAngle = 0;
 	BondTorsion *_torsion = nullptr;
 
 };

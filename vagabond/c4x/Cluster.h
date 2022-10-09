@@ -51,13 +51,13 @@ public:
 	int bestAxisFit(std::vector<float> &vals);
 	
 	/** raw vector which would correspond to given cluster axis */
-	std::vector<float> rawVector(int axis);
+	typename DG::Array rawVector(int axis);
 
 	/* difference raw vector between dataset 'from' and 'to' */
-	std::vector<float> rawVector(int from, int to);
+	typename DG::Array rawVector(int from, int to);
 
 	/** implement by superclass to map raw vector into clustered space */
-	virtual std::vector<float> mapVector(std::vector<float> &raw)
+	virtual std::vector<float> mapVector(typename DG::Array &raw)
 	{
 		return std::vector<float>();
 	}

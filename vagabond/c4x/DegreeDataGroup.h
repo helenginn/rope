@@ -20,30 +20,31 @@
 #define __vagabond__DegreeDataGroup__
 
 #include "DataGroup.h"
+#include "Angular.h"
 
 /** \class DegreeDataGroup
  * specialised class of DataGroup that takes degree values and ensures all
  * values match previous entries as closely as possible by adding or subtracting
  * multiple of 360 degrees */
 
+
 template <class Header>
-class DegreeDataGroup : public DataGroup<float, Header>
+class DegreeDataGroup : public DataGroup<Angular, Header>
 {
 public:
-	using Array = typename DataGroup<float, Header>::Array;
+	using Array = typename DataGroup<Angular, Header>::Array;
+	
+	DegreeDataGroup(int num) : DataGroup<Angular, Header>(num) {}
 
-	DegreeDataGroup(int num) : DataGroup<float, Header>(num) {}
-
+	void matchDegrees(Array &next);
 	virtual void addArray(std::string name, Array next);
-	virtual float difference(int m, int n, int j);
 protected:
-	using DataGroup<float, Header>::_length;
-	using DataGroup<float, Header>::_vectors;
-	using DataGroup<float, Header>::_diffs;
-	using DataGroup<float, Header>::_stdevs;
+	using DataGroup<Angular, Header>::_length;
+	using DataGroup<Angular, Header>::_vectors;
+	using DataGroup<Angular, Header>::_diffs;
+	using DataGroup<Angular, Header>::_stdevs;
 
 private:
-	void matchDegrees(Array &next);
 
 };
 

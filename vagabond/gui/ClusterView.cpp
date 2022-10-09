@@ -19,13 +19,15 @@
 #include "ClusterView.h"
 #include "ColourScheme.h"
 #include "ConfSpaceView.h"
-#include <vagabond/gui/elements/SnowGL.h>
+#include <vagabond/gui/PathView.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/PathManager.h>
+
 #include <iostream>
 
 ClusterView::ClusterView()
@@ -98,6 +100,7 @@ void ClusterView::refresh()
 	
 	rebufferVertexData();
 
+	addPaths();
 }
 
 void ClusterView::prioritiseMetadata(std::string key)
@@ -118,16 +121,18 @@ void ClusterView::makePoints()
 
 	for (size_t i = 0; i < count; i++)
 	{
+		if (!_cx->dataGroup()->object(i)->displayable())
+		{
+			continue;
+		}
+
 		glm::vec3 v = _cx->point(i);
+		_point2Index[vertexCount()] = i;
+
 		addPoint(v, 0);
 	}
 	
 	reindex();
-}
-
-void ClusterView::render(SnowGL *gl)
-{
-	Renderable::render(gl);
 }
 
 void ClusterView::setCluster(Cluster<MetadataGroup> *cx)
@@ -233,7 +238,7 @@ void ClusterView::unMouseOver()
 	interacted(-1, true);
 }
 
-void ClusterView::interacted(int idx, bool hover, bool left)
+void ClusterView::interacted(int rawidx, bool hover, bool left)
 {
 	if (_text != nullptr)
 	{
@@ -242,10 +247,12 @@ void ClusterView::interacted(int idx, bool hover, bool left)
 		_text = nullptr;
 	}
 	
-	if (idx < 0 || idx >= _vertices.size())
+	if (rawidx < 0 || rawidx >= _vertices.size())
 	{
 		return;
 	}
+	
+	int idx = _point2Index[rawidx];
 	
 	MetadataGroup &group = *_cx->dataGroup();
 
@@ -259,7 +266,7 @@ void ClusterView::interacted(int idx, bool hover, bool left)
 	std::string str = group.object(idx)->id();
 
 	FloatingText *ft = new FloatingText(str);
-	ft->setPosition(_vertices[idx].pos);
+	ft->setPosition(_vertices[rawidx].pos);
 
 	addObject(ft);
 	_text = ft;
@@ -267,5 +274,42 @@ void ClusterView::interacted(int idx, bool hover, bool left)
 	if (hover == false && !left) // click!
 	{
 		_confSpaceView->prepareMenu(group.object(idx));
+	}
+}
+
+void ClusterView::clearPaths()
+{
+	for (PathView *pv : _pathViews)
+	{
+		removeObject(pv);
+		delete pv;
+	}
+
+	_pathViews.clear();
+}
+
+void ClusterView::addPathView(PathView *pv)
+{
+	_pathViews.push_back(pv);
+	addObject(pv);
+}
+
+void ClusterView::addPaths()
+{
+	clearPaths();
+
+	PathManager *pm = Environment::env().pathManager();
+
+	for (Path &path : pm->objects())
+	{
+		if (!path.visible())
+		{
+			continue;
+		}
+
+		std::cout << "Adding path " << path.id() << std::endl;
+		PathView *pv = new PathView(path, _cx);
+		pv->populate();
+		addPathView(pv);
 	}
 }

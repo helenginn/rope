@@ -93,7 +93,7 @@ public:
 		return _atomNames;
 	}
 	
-	bool supplyRefinedAngle(std::string desc, double angle);
+	bool supplyRefinedAngle(std::string desc, double angle, bool tmp = false);
 	
 	const std::string desc() const;
 	

@@ -25,6 +25,8 @@ Path::Path(PlausibleRoute *pr)
 	_startMolecule = pr->molecule()->id();
 	_endMolecule = pr->endMolecule()->id();
 	_model_id = pr->molecule()->model()->id();
+	_molecule = pr->molecule();
+	_end = pr->endMolecule();
 
 	_wayPoints = pr->_wayPoints;
 	_flips = pr->_flips;
@@ -35,6 +37,8 @@ Path::Path(PlausibleRoute *pr)
 	{
 		getTorsionRef(i);
 	}
+	
+	_route = nullptr;
 }
 
 void Path::getTorsionRef(int idx)
@@ -61,6 +65,11 @@ void Path::housekeeping()
 
 PlausibleRoute *Path::toRoute()
 {
+	if (_route != nullptr)
+	{
+		return _route;
+	}
+
 	_model = Environment::env().modelManager()->model(_model_id);
 	
 	for (Molecule &m : _model->molecules())
@@ -140,11 +149,52 @@ PlausibleRoute *Path::toRoute()
 	}
 
 	pr->clearMask();
+	_route = pr;
 	
 	return pr;
 }
 
-std::string Path::desc()
+std::string Path::desc() const
 {
 	return _startMolecule + " to " + _endMolecule;
+}
+
+void Path::calculateArrays(MetadataGroup *group)
+{
+	const int total = 32;
+
+	_molecule->model()->load();
+	AtomContent *grp = _molecule->model()->currentAtoms();
+	PlausibleRoute *pr = toRoute();
+	pr->setup();
+	pr->calculateProgression(total);
+	
+	for (size_t i = 0; i < total; i++)
+	{
+		pr->submitJobAndRetrieve(i);
+		_molecule->extractTorsionAngles(grp, true);
+		MetadataGroup::Array vals = _molecule->grabTorsions(true);
+		group->matchDegrees(vals);
+		_angleArrays.push_back(vals);
+	}
+	
+	_molecule->model()->unload();
+
+}
+
+void Path::addTorsionsToGroup(MetadataGroup &group)
+{
+	if (_angleArrays.size() == 0)
+	{
+		calculateArrays(&group);
+	}
+	
+	if (_contributeSVD)
+	{
+		for (size_t i = 0; i < _angleArrays.size(); i++)
+		{
+			group.addMetadataArray(this, _angleArrays[i]);
+		}
+	}
+
 }

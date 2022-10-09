@@ -20,6 +20,7 @@
 #include "Environment.h"
 #include "EntityManager.h"
 #include "ModelManager.h"
+#include "PathManager.h"
 #include "Model.h"
 #include "Metadata.h"
 #include "AtomContent.h"
@@ -225,18 +226,19 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	
 	for (Molecule *mol : _molecules)
 	{
-		if (!mol->isRefined())
+		mol->addTorsionsToGroup(group);
+	}
+		
+	PathManager *pm = Environment::env().pathManager();
+
+	for (Molecule *mol : _molecules)
+	{
+		std::vector<Path *> paths = pm->pathsForMolecule(mol);
+
+		for (Path *path : paths)
 		{
-			continue;
+			path->addTorsionsToGroup(group);
 		}
-
-		Sequence *molseq = mol->sequence();
-		molseq->clearMaps();
-		molseq->remapFromMaster(this);
-		MetadataGroup::Array vals;
-
-		_sequence.torsionsFromMapped(molseq, vals);
-		group.addMetadataArray(mol, vals);
 	}
 	
 	return group;

@@ -19,10 +19,14 @@
 #ifndef __vagabond__Path__
 #define __vagabond__Path__
 
+#include "HasMetadata.h"
+#include "MetadataGroup.h"
 #include "PlausibleRoute.h"
 #include "Molecule.h"
 
-class Path
+class MetadataGroup;
+
+class Path : public HasMetadata
 {
 public:
 	Path() {};
@@ -30,13 +34,57 @@ public:
 
 	void getTorsionRef(int idx);
 
+	Molecule *startMolecule() const
+	{
+		return _molecule;
+	}
+	
+	Molecule *endMolecule()
+	{
+		return _end;
+	}
+
 	friend void to_json(json &j, const Path &value);
 	friend void from_json(const json &j, Path &value);
 	
 	PlausibleRoute *toRoute();
 	void housekeeping();
 	
-	std::string desc();
+	void setContributeToSVD(bool contrib)
+	{
+		_contributeSVD = contrib;
+	}
+	
+	void addTorsionsToGroup(MetadataGroup &group);
+	
+	std::string desc() const;
+
+	virtual const std::string id() const
+	{
+		return desc();
+	}
+
+	virtual bool displayable() const /* so these aren't points in the map */
+	{
+		return false;
+	}
+	
+	const bool &visible() const
+	{
+		return _visible;
+	}
+	
+	void calculateArrays(MetadataGroup *group);
+	
+	size_t angleArraySize()
+	{
+		return _angleArrays.size();
+	}
+	
+	MetadataGroup::Array angleArray(int i)
+	{
+		return _angleArrays[i];
+	}
 private:
 	std::string _startMolecule;
 	std::string _model_id;
@@ -44,9 +92,13 @@ private:
 	Molecule *_molecule = nullptr;
 	Model *_model = nullptr;
 	Molecule *_end = nullptr;
+	
+	bool _contributeSVD = false;
+	bool _visible = true;
 
 	std::map<int, PlausibleRoute::WayPoints> _wayPoints;
 	std::vector<bool> _flips;
+	std::vector<MetadataGroup::Array> _angleArrays;
 
 	PlausibleRoute::Point _destination;
 	PlausibleRoute::InterpolationType _type = PlausibleRoute::Polynomial;

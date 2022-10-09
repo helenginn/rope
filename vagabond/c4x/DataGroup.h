@@ -139,7 +139,7 @@ protected:
 
 	int _length;
 	std::vector<Array> _averages;
-	Array _stdevs;
+	std::vector<float> _stdevs;
 };
 
 #include "DataGroup.cpp"

@@ -35,7 +35,7 @@
 
 AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
                            const std::vector<ResidueTorsion> &list,
-                           const std::vector<float> &values) 
+                           const std::vector<Angular> &values) 
 : Scene(prev), Display(prev), StructureModification(mol, 1, 1)
 {
 //	_pType = BondCalculator::PipelineForceField;
@@ -220,7 +220,7 @@ void AxisExplorer::setupColours()
 		a->setAddedColour(0.f);
 	}
 	
-	for (const float &val : _values)
+	for (const Angular &val : _values)
 	{
 		float sqval = sqrt(val * val);
 		add_to_CD(&cd, sqval, sqval);

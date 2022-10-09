@@ -202,7 +202,7 @@ void Molecule::extractTransformedAnchors(AtomContent *atoms)
 
 }
 
-void Molecule::extractTorsionAngles(AtomContent *atoms)
+void Molecule::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 {
 	_sequence.remapFromMaster(entity());
 	for (const std::string &chain : _chain_ids)
@@ -226,11 +226,12 @@ void Molecule::extractTorsionAngles(AtomContent *atoms)
 
 			double angle = t->measurement(BondTorsion::SourceDerived);
 
-			bool success = local->supplyRefinedAngle(desc, angle);
+			bool success = local->supplyRefinedAngle(desc, angle, tmp_dest);
 			
 			if (!success)
 			{
-				success = local->supplyRefinedAngle(t->reverse_desc(), angle);
+				success = local->supplyRefinedAngle(t->reverse_desc(), angle, 
+				                                    tmp_dest);
 			}
 		}
 	}
@@ -435,7 +436,7 @@ Residue *Molecule::localResidueForResidueTorsion(const ResidueTorsion &rt)
 
 float Molecule::valueForTorsionFromList(BondTorsion *bt,
                                         const std::vector<ResidueTorsion> &list,
-                                        const std::vector<float> &values,
+                                        const std::vector<Angular> &values,
                                         std::vector<bool> &found)
 {
 	ResidueId target = bt->residueId();
@@ -505,4 +506,25 @@ void Molecule::unload()
 	delete _currentAtoms;
 	_currentAtoms = nullptr;
 
+}
+
+MetadataGroup::Array Molecule::grabTorsions(bool tmp)
+{
+	sequence()->clearMaps();
+	sequence()->remapFromMaster(entity());
+	MetadataGroup::Array vals;
+
+	entity()->sequence()->torsionsFromMapped(sequence(), vals, tmp);
+	return vals;
+}
+
+void Molecule::addTorsionsToGroup(MetadataGroup &group)
+{
+	if (!isRefined())
+	{
+		return;
+	}
+
+	MetadataGroup::Array vals = grabTorsions();
+	group.addMetadataArray(this, vals);
 }

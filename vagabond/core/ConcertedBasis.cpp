@@ -155,7 +155,7 @@ void ConcertedBasis::prepareSVD()
 
 bool ConcertedBasis::reverseLookup(Molecule *mol, int axis,
                                    const std::vector<ResidueTorsion> &list,
-                                   const std::vector<float> &values)
+                                   const std::vector<Angular> &values)
 {
 	bool changed = false;
 
@@ -202,7 +202,7 @@ bool ConcertedBasis::reverseLookup(Molecule *mol, int axis,
 
 bool ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
                                           const std::vector<ResidueTorsion> &list,
-                                          const std::vector<float> &values)
+                                          const std::vector<Angular> &values)
 {
 	std::vector<bool> found(list.size(), false);
 	

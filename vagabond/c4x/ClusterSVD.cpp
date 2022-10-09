@@ -49,10 +49,17 @@ PCA::Matrix ClusterSVD<DG>::matrix()
 }
 
 template <class DG>
-std::vector<float> ClusterSVD<DG>::mapVector(std::vector<float> &vec)
+std::vector<float> ClusterSVD<DG>::mapVector(typename DG::Array &vec)
 {
-	std::vector<float> result(_rawToCluster.rows, 0);
-	multMatrix(this->_rawToCluster, &vec[0], &result[0]);
+	std::vector<float> result;
+	std::vector<float> converted(vec.size(), 0);
+	
+	for (size_t i = 0; i < vec.size(); i++)
+	{
+		converted[i] = vec[i];
+	}
+	result.resize(_rawToCluster.rows);
+	multMatrix(this->_rawToCluster, &converted[0], &result[0]);
 	return result;
 }
 
@@ -97,7 +104,7 @@ void ClusterSVD<DG>::cluster()
 	
 	for (size_t i = 0; i < mat.rows; i++)
 	{
-		std::vector<float> raw = this->rawVector(i);
+		typename DG::Array raw = this->rawVector(i);
 
 		for (size_t j = 0; j < l; j++)
 		{
@@ -110,6 +117,25 @@ void ClusterSVD<DG>::cluster()
 	_rawToCluster = PCA::transpose(&tmp.u);
 
 	freeMatrix(&mat);
+	
+	recalculateResult();
+}
+
+template <class DG>
+void ClusterSVD<DG>::recalculateResult()
+{
+	for (size_t i = 0; i < this->dataGroup()->vectorCount(); i++)
+	{
+		MetadataGroup::Array arr = this->dataGroup()->differenceVector(i);
+		this->dataGroup()->removeNormals(arr);
+		std::vector<float> mapped = mapVector(arr);
+		
+		for (size_t j = 0; j < mapped.size(); j++)
+		{
+			this->_result[i][j] = mapped[j];
+		}
+	}
+
 }
 
 template <class DG>

@@ -60,6 +60,11 @@ public:
 
 	void autoAssignEntities(Entity *chosen = nullptr);
 	
+	virtual bool displayable() const
+	{
+		return false;
+	}
+	
 	std::set<std::string> ents() const;
 	
 	void setName(std::string name)

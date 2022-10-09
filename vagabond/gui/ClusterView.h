@@ -25,6 +25,7 @@
 #define POINT_TYPE_COUNT 8
 
 class Rule;
+class PathView;
 class HasMetadata;
 class FloatingText;
 class MetadataGroup;
@@ -72,7 +73,6 @@ public:
 
 	void applyRule(const Rule &r);
 
-	void render(SnowGL *gl);
 	void prioritiseMetadata(std::string key);
 	void reset();
 	
@@ -93,6 +93,10 @@ protected:
 	void customiseTexture(Snow::Vertex &vert);
 	float _size = 40;
 private:
+	void clearPaths();
+	void addPaths();
+	void addPathView(PathView *pv);
+
 	void applyVaryColour(const Rule &r);
 	void applyChangeIcon(const Rule &r);
 
@@ -101,6 +105,9 @@ private:
 	ConfSpaceView *_confSpaceView = nullptr;
 
 	std::map<const Rule *, std::vector<HasMetadata *>> _members;
+	std::map<int, int> _point2Index;
+	
+	std::vector<PathView *> _pathViews;
 };
 
 #endif

@@ -44,8 +44,9 @@ Plane::~Plane()
 	cancelRun();
 }
 
-void Plane::addAxis(std::vector<ResidueTorsion> &list, std::vector<float> &values,
-	             std::vector<float> &mapped)
+void Plane::addAxis(std::vector<ResidueTorsion> &list, 
+                    std::vector<Angular> &values,
+                    std::vector<float> &mapped)
 {
 	if (_axis >= 2)
 	{
@@ -171,7 +172,7 @@ glm::vec3 Plane::generateVertex(int i, int j)
 
 	MetadataGroup *group = _cluster->dataGroup();
 	int idx = group->indexOfObject(_molecule);
-	std::vector<float> mol = group->differenceVector(idx);
+	std::vector<Angular> mol = group->differenceVector(idx);
 
 	int pdx = _toIndex[i][j];
 	float mx = _points[pdx].x;

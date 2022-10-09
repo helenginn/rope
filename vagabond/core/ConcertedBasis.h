@@ -19,6 +19,7 @@
 #ifndef __vagabond__ConcertedBasis__
 #define __vagabond__ConcertedBasis__
 
+#include <vagabond/c4x/Angular.h>
 #include "TorsionBasis.h"
 #include "../utils/svd/PCA.h"
 
@@ -47,11 +48,11 @@ public:
 	
 	bool fillFromMoleculeList(Molecule *molecule, int axis,
 	                          const std::vector<ResidueTorsion> &list,
-	                          const std::vector<float> &values);
+	                          const std::vector<Angular> &values);
 
 	bool reverseLookup(Molecule *mol, int axis,
 	                   const std::vector<ResidueTorsion> &list,
-	                   const std::vector<float> &values);
+	                   const std::vector<Angular> &values);
 
 	const std::vector<BondTorsion *> &missingBonds() const
 	{

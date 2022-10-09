@@ -24,6 +24,7 @@
 #include <set>
 #include <sstream>
 #include "Residue.h"
+#include <vagabond/c4x/Angular.h>
 #include "IndexedSequence.h"
 
 class Atom;
@@ -203,9 +204,8 @@ public:
 
 	/** call on entity master sequence to get the corresponding torsion 
 	 * angles from a derived/mapped sequence */
-	void torsionsFromMapped(Sequence *seq, std::vector<float> &vals);
-	                        
-	
+	void torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
+	                        bool tmp_source = false);
 private:
 	void findSequence();
 	

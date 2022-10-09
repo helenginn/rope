@@ -201,7 +201,7 @@ void Cluster<DG>::normaliseResults(float scale)
 }
 
 template <class DG>
-std::vector<float> Cluster<DG>::rawVector(int axis)
+typename DG::Array Cluster<DG>::rawVector(int axis)
 {
 	std::vector<float> weights;
 	float sc = this->_scaleFactor;
@@ -213,15 +213,15 @@ std::vector<float> Cluster<DG>::rawVector(int axis)
 		weights.push_back(w);
 	}
 	
-	std::vector<float> result = _dg.weightedDifferences(weights);
+	typename DG::Array result = _dg.weightedDifferences(weights);
 	
 	return result;
 }
 
 template <class DG>
-std::vector<float> Cluster<DG>::rawVector(int from, int to)
+typename DG::Array Cluster<DG>::rawVector(int from, int to)
 {
-	std::vector<float> my_vals, your_vals;
+	typename DG::Array my_vals, your_vals;
 	my_vals = dataGroup()->differenceVector(from);
 	your_vals = dataGroup()->differenceVector(to);
 
