@@ -296,29 +296,23 @@ Residue *Sequence::residueLike(const ResidueId &other)
 	return nullptr;
 }
 
-const size_t Sequence::torsionCount(bool onlyMain) const
+const size_t Sequence::torsionCount() const
 {
 	size_t sum = 0;
 	for (const Residue &r : _residues)
 	{
-		sum += r.torsionCount(onlyMain);
+		sum += r.torsionCount();
 	}
 
 	return sum;
 }
 
-void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers, 
-                                  bool onlyMain)
+void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)
 {
 	for (Residue &residue : _residues)
 	{
 		for (const TorsionRef &torsion : residue.torsions())
 		{
-			if (onlyMain && !torsion.coversMainChain())
-			{
-				continue;
-			}
-
 			ResidueTorsion rt{};
 			rt.torsion = torsion;
 			rt.residue = &residue;
@@ -344,25 +338,14 @@ bool Sequence::torsionByName(const std::string name, Residue **res)
 	return true;
 }
 
-void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals,
-                                  bool onlyMain, float dummy)
+void Sequence::torsionsFromMapped(Sequence *seq, std::vector<float> &vals)
 {
 	for (Residue &master : _residues)
 	{
 		Residue *const local = seq->local_residue(&master);
 
-		if (dummy >= 0)
-		{
-			vals.push_back(dummy);
-		}
-		
 		for (const TorsionRef &torsion : master.torsions())
 		{
-			if (onlyMain && !torsion.coversMainChain())
-			{
-				continue;
-			}
-			
 			if (!local)
 			{
 				vals.push_back(NAN);

@@ -55,7 +55,7 @@ public:
 		return _sequence;
 	}
 	
-	const size_t torsionCount(bool onlyMain = false) const;
+	const size_t torsionCount() const;
 	
 	const std::set<TorsionRef> &torsions() const
 	{

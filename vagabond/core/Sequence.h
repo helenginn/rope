@@ -195,17 +195,16 @@ public:
 	}
 	
 	/** how many torsion angles have been referenced in the entire sequence? */
-	const size_t torsionCount(bool onlyMain = false) const;
+	const size_t torsionCount() const;
 	
 	/** torsion angle names in order of residue / reference, to be called
 	 * on the entity master sequence in the case of clustering */
-	void addResidueTorsions(std::vector<ResidueTorsion> &headers, 
-	                        bool onlyMain = false);
+	void addResidueTorsions(std::vector<ResidueTorsion> &headers);
 
 	/** call on entity master sequence to get the corresponding torsion 
 	 * angles from a derived/mapped sequence */
-	void torsionsFromMapped(Sequence *seq, std::vector<float> &vals,
-	                        bool onlyMain, float dummy = -1);
+	void torsionsFromMapped(Sequence *seq, std::vector<float> &vals);
+	                        
 	
 private:
 	void findSequence();

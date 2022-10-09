@@ -75,13 +75,8 @@ bool Residue::supplyRefinedAngle(std::string desc, double angle)
 	return true;
 }
 
-const size_t Residue::torsionCount(bool onlyMain) const
+const size_t Residue::torsionCount() const
 {
-	if (!onlyMain)
-	{
-		return _refs.size();
-	}
-
 	int count = 0;
 	for (const TorsionRef &t : _refs)
 	{

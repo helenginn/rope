@@ -216,11 +216,9 @@ void Entity::respond()
 
 MetadataGroup Entity::makeTorsionDataGroup()
 {
-	const bool only_main = false;
-	size_t num = _sequence.torsionCount(only_main);
-	std::cout << "Torsion count: " << num << std::endl;
+	size_t num = _sequence.torsionCount();
 	std::vector<ResidueTorsion> headers;
-	_sequence.addResidueTorsions(headers, only_main);
+	_sequence.addResidueTorsions(headers);
 
 	MetadataGroup group(num);
 	group.addHeaders(headers);
@@ -237,7 +235,7 @@ MetadataGroup Entity::makeTorsionDataGroup()
 		molseq->remapFromMaster(this);
 		MetadataGroup::Array vals;
 
-		_sequence.torsionsFromMapped(molseq, vals, only_main);
+		_sequence.torsionsFromMapped(molseq, vals);
 		group.addMetadataArray(mol, vals);
 	}
 	
