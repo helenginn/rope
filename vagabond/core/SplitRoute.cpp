@@ -68,6 +68,10 @@ void SplitRoute::addTorsionIndices(std::vector<int> &idxs, AtomGraph *gr)
 {
 	const Grapher &g = grapher();
 	AtomGraph *curr = gr;
+	if (!curr)
+	{
+		return;
+	}
 
 	for (size_t i = 0; i < half_quiet + 1; i++)
 	{
@@ -112,10 +116,21 @@ bool SplitRoute::optimiseConnections()
 			return false;
 		}
 
-		std::vector<int> idxs;
 		AtomGraph *g = _atoms[i].graph;
+
+		int idx = indexOfTorsion(g->torsion);
+		if (idx < 0)
+		{
+			continue;
+		}
+
+		std::vector<int> idxs;
+//		idxs = getTorsionSequence(idx, 6, false, 1.f);
 		addTorsionIndices(idxs, g);
-		result |= simplexCycle(idxs);
+		if (idxs.size())
+		{
+			result |= simplexCycle(idxs);
+		}
 	}
 
 	_maxJobRuns = 6;
@@ -237,9 +252,10 @@ void SplitRoute::prepareThreads()
 
 void SplitRoute::doShortRoutes()
 {
+	return;
 	if (_disable)
 	{
-		return;
+//		return;
 	}
 
 	makeShorts();
@@ -264,7 +280,6 @@ void SplitRoute::doShortRoutes()
 
 void SplitRoute::cycle()
 {
-
 	_magnitudeThreshold = 90;
 
 	if (Route::_finish)
@@ -272,20 +287,22 @@ void SplitRoute::cycle()
 		return;
 	}
 
+	setTargets();
+
 	switch (_stage)
 	{
 		case FlippingTorsions:
 		flipTorsionCycles();
-		_stage = DoingShorts;
-		break;
-		
-		case DoingShorts:
-		doShortRoutes();
 		_stage = OptimisingConnections;
 		break;
 		
 		case OptimisingConnections:
 		optimiseConnections();
+		_stage = DoingShorts;
+		break;
+		
+		case DoingShorts:
+		doShortRoutes();
 		_stage = NudgingWaypoints;
 		break;
 		
@@ -324,16 +341,16 @@ void SplitRoute::doCalculations()
 		
 		if (end > begin * 0.99)
 		{
-			_disable = true;
-			_maximumCycles = 1000;
-			_minimumMagnitude = 0.5;
+//			_disable = true;
+//			_maximumCycles = 1000;
+//			_minimumMagnitude = 0.5;
 		}
 
 	}
 
 	finishTicker();
 	Route::_finish = false;
-	calculateProgression(200);
+	prepareForAnalysis();
 }
 
 void SplitRoute::finishRoute()

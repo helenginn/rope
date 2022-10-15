@@ -135,9 +135,11 @@ void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
 	_sequenceHandler->setTotalSamples(_totalSamples);
-	_sequenceHandler->setMaxThreads(_maxThreads);
+	_sequenceHandler->setMaxSimultaneousThreads(_maxThreads);
 	_sequenceHandler->setTorsionBasisType(_basisType);
 	_sequenceHandler->setIgnoreHydrogens(_ignoreHydrogens);
+	_sequenceHandler->prepareToSkipSections(_skipSections);
+	_sequenceHandler->setSuperpose(_superpose);
 	_sequenceHandler->setSampler(_sampler);
 	
 	if (_mapHandler != nullptr)
@@ -403,13 +405,13 @@ void BondCalculator::setSampler(Sampler *sampler)
 	setTotalSamples(_sampler->pointCount());
 }
 
-const BondSequence *BondCalculator::sequence() const
+BondSequence *BondCalculator::sequence(int i) 
 {
 	if (_sequenceHandler)
 	{
-		if (_sequenceHandler->sequenceCount() > 0)
+		if (_sequenceHandler->sequenceCount() > i)
 		{
-			return _sequenceHandler->sequence(0);
+			return _sequenceHandler->sequence(i);
 		}
 	}
 	

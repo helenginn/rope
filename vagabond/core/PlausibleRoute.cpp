@@ -63,9 +63,14 @@ void PlausibleRoute::setTargets()
 	{
 		glm::vec3 d = atom->derivedPosition();
 		glm::vec3 s = atomStart[atom];
-		glm::vec3 diff = (s - d);
+		glm::vec3 diff = (d - s);
 		atom->setOtherPosition("moving", diff);
 		atom->setOtherPosition("target", s);
+	}
+
+	for (BondCalculator *calc : _calculators)
+	{
+		grapher().refreshTargets(calc);
 	}
 }
 
@@ -81,10 +86,10 @@ void PlausibleRoute::populateWaypoints()
 		wp.push_back(WayPoint::startPoint());
 		_flips.push_back(false);
 
-		if (getTorsionAngle(i) > 90.f && false)
+		if (fabs(_destination[i]) < 30)
 		{
 			wp.push_back(WayPoint(0.33, 0.33));
-			wp.push_back(WayPoint(0.67, 0.67));
+			wp.push_back(WayPoint(0.66, 0.66));
 		}
 		else
 		{
@@ -148,18 +153,18 @@ float PlausibleRoute::momentumScore(int steps)
 	clearTickets();
 
 	float cumulative = 0;
-	for (size_t i = 0; i < steps; i++)
+	for (size_t i = 0; i < pointCount(); i++)
 	{
-		float rnd = rand() / (float)RAND_MAX;
+		float rnd = rand() / (double)RAND_MAX;
 		submitJob(i, rnd < 0.05);
 	}
 	
 	retrieve();
-	
-	for (size_t i = 0; i < steps; i++)
+
+	for (size_t i = 0; i < pointCount(); i++)
 	{
 		float contribution = score(i);
-		float frac = i / (float)pointCount();
+		float frac = i / (float)(pointCount() - 1);
 		cumulative += contribution;
 	}
 	
@@ -227,6 +232,11 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 	
 	for (size_t i = 0; i < idxs.size(); i++)
 	{
+		if (idxs[i] < 0)
+		{
+			continue;
+		}
+
 		WayPoints &wps = _wayPoints[idxs[i]];
 		for (size_t j = 1; j < wps.size() - 1; j++)
 		{
@@ -249,7 +259,12 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 {
 	prepareAnglesForRefinement(torsionIdxs);
+	if (_paramPtrs.size() == 0)
+	{
+		return false;
+	}
 	run();
+
 	bool changed = false;
 
 	float bs = bestScore();
@@ -317,21 +332,188 @@ int PlausibleRoute::nudgeWaypoints()
 	return changed;
 }
 
+void PlausibleRoute::bringTorsionsToRange()
+{
+	for (size_t i = 0; i < dims(); i++)
+	{
+		while (_destination[i] >= 180)
+		{
+			_destination[i] -= 360;
+		}
+		while (_destination[i] < -180)
+		{
+			_destination[i] += 360;
+		}
+	}
+
+}
+
+void print(std::vector<bool> &flips)
+{
+	std::cout << flips.size() << ": ";
+	for (size_t j = 0; j < flips.size(); j++)
+	{
+		std::cout << (flips[j] ? "Y" : "n");
+	}
+
+}
+
+void addPermutation(std::vector<std::vector<bool> > &perms)
+{
+	std::vector<std::vector<bool> > orig = perms;
+	std::vector<std::vector<bool> > new_set;
+	
+	for (size_t i = 0; i < orig.size(); i++)
+	{
+		for (size_t j = 0; j < 2; j++)
+		{
+			std::vector<bool> copy = orig[i];
+			copy.push_back(j == 1 ? true : false);
+			new_set.push_back(copy);
+		}
+	}
+	
+	perms = new_set;
+}
+
+std::vector<std::vector<bool> > permutations(int count)
+{
+	std::vector<std::vector<bool> > perms;
+	perms.push_back(std::vector<bool>(1,false));
+	perms.push_back(std::vector<bool>(1,true));
+
+	for (int i = 0; i < count - 1; i++)
+	{
+		addPermutation(perms);
+	}
+
+	return perms;
+}
+
+void PlausibleRoute::setFlips(std::vector<int> &idxs, std::vector<bool> &fs)
+{
+	for (size_t j = 0; j < idxs.size(); j++)
+	{
+		_flips[idxs[j]] = fs[j];
+	}
+}
+
+std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max, 
+                                                    bool validate, float maxMag)
+{
+	AtomGraph *g = grapher().graph(_torsions[start]);
+	AtomGraph *orig = g;
+	if (!g) return std::vector<int>();
+
+	int count = 0;
+	std::vector<int> idxs;
+	idxs.push_back(start);
+	
+	while (count < max)
+	{
+		AtomGraph *next = nullptr;
+		for (size_t j = 0; j < g->children.size(); j++)
+		{
+			Atom *a = g->children[j]->atom;
+			AtomGraph *candidate = grapher().graph(a);
+			int n = indexOfTorsion(candidate->torsion);
+			if (n < 0)
+			{
+				continue;
+			}
+
+			if (candidate->torsion->coversMainChain())
+			{
+				next = candidate;
+			}
+			
+			if (validate && !validateMainTorsion(n))
+			{
+				continue;
+			}
+
+			if (fabs(_destination[n]) < maxMag)
+			{
+				continue;
+			}
+			
+			idxs.push_back(n);
+			count++;
+		}
+		
+		if (next == nullptr)
+		{
+			break;
+		}
+		
+		g = next;
+	}
+
+	return idxs;
+}
+
+
+bool PlausibleRoute::flipTorsion(int idx)
+{
+	std::vector<int> idxs = getTorsionSequence(idx, 3, true, 30.f);
+	
+	if (idxs.size() == 0)
+	{
+		return false;
+	}
+
+	std::vector<bool> best(idxs.size(), false);
+	for (size_t i = 0; i < idxs.size(); i++)
+	{
+		best[i] = _flips[idxs[i]];
+	}
+
+	std::vector<std::vector<bool> > putatives = permutations(idxs.size());
+	bool changed = false;
+	for (size_t i = 0; i < putatives.size(); i++)
+	{
+		setFlips(idxs, putatives[i]);
+
+		float candidate = momentumScore(_nudgeCount);
+
+		if (candidate < _bestScore - 1e-6)
+		{
+			_bestScore = candidate;
+			best = putatives[i];
+			changed = true;
+		}
+	}
+
+	setFlips(idxs, best);
+	postScore(_bestScore);
+//	print(best);
+//	std::cout << std::endl;
+	
+	return changed;
+}
+
 bool PlausibleRoute::flipTorsions(bool main)
 {
+	if (!_flipTorsions)
+	{
+		return false;
+	}
+
 	startTicker("Flipping torsions");
 	bool changed = false;
 	_bestScore = momentumScore(_nudgeCount);
-
+	
+	bringTorsionsToRange();
+	
 	for (size_t i = 0; i < dims(); i++)
 	{
-		clickTicker();
-		
-		if (!usingTorsion(i))
+		if (Route::_finish)
 		{
-			continue;
+			return false;
 		}
 
+		clickTicker();
+		
 		if (!validateMainTorsion(i))
 		{
 			continue;
@@ -343,24 +525,10 @@ bool PlausibleRoute::flipTorsions(bool main)
 			continue;
 		}
 		
-		_flips[i] = !_flips[i];
-		float candidate = momentumScore(_nudgeCount);
-
-		if ((_flipTorsions && candidate < _bestScore - 1e-6) ||
-		    (!_flipTorsions && candidate < _bestScore * 0.6))
-		{
-			_bestScore = candidate;
-			changed = true;
-		}
-		else
-		{
-			_flips[i] = !_flips[i];
-		}
+		flipTorsion(i);
 	}
 	
-	postScore(_bestScore);
 	clearMask();
-
 	finishTicker();
 
 	return changed;
@@ -418,12 +586,18 @@ void PlausibleRoute::nudgeWayPointCycles()
 			_stepSize = 0.01;
 		}
 		
+		if (_bestScore < 0.6)
+		{
+			_minimumMagnitude = 2;
+		}
+		
 		if (frac < 0.25 || total == 0)
 		{
 			_magnitudeThreshold /= 2;
 		}
 		
-		if (_magnitudeThreshold < _minimumMagnitude && frac < 0.25)
+		if (!Route::_finish && 
+		    _magnitudeThreshold < _minimumMagnitude && frac < 0.25)
 		{
 			_magnitudeThreshold = 90;
 			break;
@@ -433,6 +607,7 @@ void PlausibleRoute::nudgeWayPointCycles()
 
 void PlausibleRoute::cycle()
 {
+	setTargets();
 	flipTorsionCycles();
 
 	if (Route::_finish)
@@ -587,7 +762,7 @@ void PlausibleRoute::calculatePolynomialProgression(int steps)
 {
 	clearPoints();
 	float frac = 0;
-	float step = 1 / (float)(steps - 1);
+	float step = 1 / (float)steps;
 	std::vector<PolyFit> fits = polynomialFits();
 
 	for (size_t i = 0; i <= steps; i++)
@@ -609,7 +784,7 @@ void PlausibleRoute::calculateLinearProgression(int steps)
 {
 	clearPoints();
 	float frac = 0;
-	float step = 1 / (float)(steps - 1);
+	float step = 1 / (float)steps;
 
 	for (size_t i = 0; i <= steps; i++)
 	{
@@ -844,7 +1019,7 @@ void PlausibleRoute::maskTails()
 
 void PlausibleRoute::prepareForAnalysis()
 {
-	float result = momentumScore(16);
+	float result = momentumScore(_nudgeCount);
 	postScore(result);
 	calculateProgression(200);
 }

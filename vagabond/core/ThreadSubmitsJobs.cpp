@@ -44,7 +44,6 @@ void ThreadSubmitsJobs::start()
 
 		if (seq == nullptr)
 		{
-//			_handler->signalFinishMiniJobSeq();
 			break;
 		}
 

@@ -120,7 +120,7 @@ std::string CalculateMetadata::prepareQuery()
 	
 	std::string requests = "{ rcsb_id diffrn { ambient_temp } "\
 	"exptl_crystal_grow { pH } reflns { d_resolution_high } "\
-	"symmetry { space_group_name_H_M } }";
+	"symmetry { space_group_name_H_M } cell{length_a, length_b, length_c} }";
 	
 	std::string query = "{ " + entry_ids + requests + "}";
 	return query;
@@ -209,6 +209,17 @@ void CalculateMetadata::processResult(std::string result)
 			kv["Space group"] = spg;
 		}
 
+		for (size_t i = 0; i < 3; i++)
+		{
+			std::string d = (i == 0 ? "a" : (i == 1 ? "b" : "c"));
+
+			json &cell = entry["cell"];
+			if (!cell["length_" + d].is_null())
+			{
+				std::string a = f_to_str(cell["length_" + d], 2);
+				kv["Unit cell length " + d + " (A)"] = a;
+			}
+		}
 		
 		std::cout << "model: " << model << std::endl;
 		std::cout << "temp: " << temp << std::endl;

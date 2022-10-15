@@ -25,6 +25,7 @@
 #include <climits>
 #include "../utils/glm_import.h"
 #include "Atom.h"
+#include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
 #include "BondTorsion.h"
 #include "AtomBlock.h"
@@ -40,7 +41,7 @@ class BondSequenceHandler;
 class MiniJobSeq;
 
 
-class BondSequence
+class BondSequence: public HasBondSequenceCustomisation
 {
 public:
 	BondSequence(BondSequenceHandler *handler = nullptr);
@@ -93,11 +94,6 @@ public:
 	void setSampler(Sampler *sampler)
 	{
 		_sampler = sampler;
-	}
-	
-	void setIgnoreHydrogens(bool ignore)
-	{
-		_ignoreHydrogens = ignore;
 	}
 	
 	const Grapher &grapher() const
@@ -177,6 +173,11 @@ public:
 	void signal(SequenceState newState);
 	
 	AnchorExtension getExtension(Atom *atom) const;
+	
+	std::vector<AtomBlock> &blocks()
+	{
+		return _blocks;
+	}
 private:
 
 	struct AtomBlockTodo
@@ -218,7 +219,6 @@ private:
 	void printBlock(int idx);
 	
 	glm::mat4x4 _torsion_rot = glm::mat4(1.f);
-	bool _ignoreHydrogens = false;
 	bool _fullRecalc = true;
 	int _sampleNum = 0;
 	int _startCalc = 0;

@@ -19,8 +19,8 @@
 #ifndef __vagabond__DegreeDataGroup__
 #define __vagabond__DegreeDataGroup__
 
-#include "DataGroup.h"
 #include "Angular.h"
+#include "DataGroup.h"
 
 /** \class DegreeDataGroup
  * specialised class of DataGroup that takes degree values and ensures all
@@ -29,20 +29,20 @@
 
 
 template <class Header>
-class DegreeDataGroup : public DataGroup<Angular, Header>
+class DegreeDataGroup : public DataGroup<float, Header>
 {
 public:
-	using Array = typename DataGroup<Angular, Header>::Array;
+	using Array = typename DataGroup<float, Header>::Array;
 	
-	DegreeDataGroup(int num) : DataGroup<Angular, Header>(num) {}
+	DegreeDataGroup(int num) : DataGroup<float, Header>(num) {}
 
 	void matchDegrees(Array &next);
 	virtual void addArray(std::string name, Array next);
 protected:
-	using DataGroup<Angular, Header>::_length;
-	using DataGroup<Angular, Header>::_vectors;
-	using DataGroup<Angular, Header>::_diffs;
-	using DataGroup<Angular, Header>::_stdevs;
+	using DataGroup<float, Header>::_length;
+	using DataGroup<float, Header>::_vectors;
+	using DataGroup<float, Header>::_diffs;
+	using DataGroup<float, Header>::_stdevs;
 
 private:
 

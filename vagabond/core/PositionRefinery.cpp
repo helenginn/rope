@@ -430,25 +430,6 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 
 }
 
-void PositionRefinery::testTransfer(AnchorExtension ext)
-{
-	_calculator = new BondCalculator();
-	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
-	_calculator->setMaxSimultaneousThreads(1);
-	_calculator->setTotalSamples(1);
-	_calculator->setTorsionBasisType(_type);
-	_calculator->addAnchorExtension(ext);
-	_calculator->setIgnoreHydrogens(true);
-	_calculator->setup();
-
-	double res = fullResidual();
-	std::cout << "Recalculate with new basis: " 
-	<< res << " Angstroms over " << _group->size() << " atoms." << std::endl;
-
-	delete _calculator;
-	_calculator = nullptr;
-}
-
 void PositionRefinery::refine(AtomGroup *group)
 {
 	Atom *anchor = group->chosenAnchor();
@@ -458,6 +439,8 @@ void PositionRefinery::refine(AtomGroup *group)
 	_calculator->setMaxSimultaneousThreads(1);
 	_calculator->setTotalSamples(1);
 	_calculator->setTorsionBasisType(_type);
+	_calculator->setSuperpose(false);
+	_calculator->prepareToSkipSections(true);
 	_calculator->addAnchorExtension(anchor);
 	_calculator->setIgnoreHydrogens(true);
 	_calculator->setup();

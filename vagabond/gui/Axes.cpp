@@ -131,6 +131,7 @@ std::vector<Angular> Axes::getTorsionVector(int idx)
 		std::vector<Angular> vals = _cluster->rawVector(axis);
 
 		float &weight = dir[i];
+		std::cout << weight << std::endl;
 		
 		if (sums.size() == 0)
 		{

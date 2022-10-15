@@ -159,8 +159,9 @@ void AddRule::setup()
 	addHeaderButtons();
 	
 	{
-		Text *t = new Text("Options");
+		TextButton *t = new TextButton("Options", this);
 		t->setLeft(0.2, 0.55);
+		t->setReturnTag("options");
 		addObject(t);
 	}
 	{

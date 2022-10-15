@@ -25,6 +25,7 @@
 #include <vagabond/utils/svd/PCA.h>
 
 class TorsionBasis;
+class BondCalculator;
 
 /** \class Grapher
  * Constructs graphs from starting atoms tracing through the structure
@@ -68,6 +69,9 @@ public:
 	{
 		return _graphs.size();
 	}
+
+	void refreshTarget(AtomBlock &block) const;
+	void refreshTargets(BondCalculator *seq) const;
 	
 	/** returns reference to node index */
 	AtomGraph *graph(Atom *atom) const
@@ -77,6 +81,16 @@ public:
 			return nullptr;
 		}
 		return _atom2Graph.at(atom);
+	}
+	
+	/** returns reference to node index */
+	AtomGraph *graph(BondTorsion *t) const
+	{
+		if (_torsion2Graph.count(t) == 0)
+		{
+			return nullptr;
+		}
+		return _torsion2Graph.at(t);
 	}
 	
 	/** returns reference to node index */
@@ -122,6 +136,7 @@ private:
 	std::map<Atom *, AtomBlock> _atom2Transform;
 	std::vector<Atom *> _anchors;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
+	std::map<BondTorsion *, AtomGraph *> _torsion2Graph;
 
 	int _graphsDone = 0;
 	int _anchorsDone = 0;

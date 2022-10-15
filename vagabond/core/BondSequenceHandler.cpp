@@ -163,6 +163,8 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	BondSequence *sequence = new BondSequence(this);
 	sequence->setSampler(_sampler);
 	sequence->setIgnoreHydrogens(_ignoreHydrogens);
+	sequence->setSuperpose(_superpose);
+	sequence->prepareToSkipSections(_skipSections);
 	sequence->setSampleCount(_totalSamples);
 	sequence->setTorsionBasisType(_basisType);
 

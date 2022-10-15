@@ -19,6 +19,8 @@
 #include "Grapher.h"
 #include "BondTorsion.h"
 #include "TorsionBasis.h"
+#include "BondCalculator.h"
+#include "BondSequence.h"
 #include "Atom.h"
 #include <queue>
 #include <set>
@@ -43,6 +45,7 @@ Grapher::Grapher(Grapher &other)
 	_atoms = other._atoms;
 	_anchors = other._anchors;
 	_atom2Graph = other._atom2Graph;
+	_torsion2Graph = other._torsion2Graph;
 
 	_graphsDone = other._graphsDone;
 	_anchorsDone = other._anchorsDone;
@@ -279,6 +282,7 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 		}
 
 		int idx = basis->addTorsion(_graphs[i]->torsion, _graphs[i]->atom);
+		_torsion2Graph[_graphs[i]->torsion] = _graphs[i];
 		_graphs[i]->torsion_idx = idx;
 	}
 }
@@ -341,6 +345,51 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 	block.torsion = 0;
 }
 
+void Grapher::refreshTarget(AtomBlock &block) const
+{
+	Atom *atom = block.atom;
+	if (atom == nullptr)
+	{
+		return;
+	}
+
+	block.moving = glm::vec3(0.f);
+	if (atom->hasOtherPosition("moving"))
+	{
+		block.moving = atom->otherPosition("moving");
+	}
+
+	if (atom->hasOtherPosition("target"))
+	{
+		block.target = atom->otherPosition("target");
+	}
+	else
+	{
+		block.target = atom->initialPosition();
+	}
+}
+
+void Grapher::refreshTargets(BondCalculator *calc) const
+{
+	BondSequence *seq = nullptr;
+	int i = 0;
+	while (true)
+	{
+		seq = calc->sequence(i);
+		if (seq == nullptr)
+		{
+			break;
+		}
+
+		for (AtomBlock &block : seq->blocks())
+		{
+			refreshTarget(block);
+		}
+		i++;
+	}
+
+}
+
 void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 {
 	if (_atom2Transform.count(atom))
@@ -356,19 +405,7 @@ void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 		block.nBonds = std::min(blc, max);
 		block.wip = glm::mat4(0.);
 
-		if (atom->hasOtherPosition("moving"))
-		{
-			block.moving = atom->otherPosition("moving");
-		}
-
-		if (atom->hasOtherPosition("target"))
-		{
-			block.target = atom->otherPosition("target");
-		}
-		else
-		{
-			block.target = atom->initialPosition();
-		}
+		refreshTarget(block);
 	}
 
 	block.torsion_idx = _atom2Graph[atom]->torsion_idx;

@@ -19,6 +19,7 @@
 #ifndef __vagabond__DataGroup__cpp__
 #define __vagabond__DataGroup__cpp__
 
+#include "Angular.h"
 #include <vagabond/utils/os.h>
 #include "DataGroup.h"
 #include <vagabond/utils/svd/PCA.h>
@@ -127,7 +128,7 @@ void DataGroup<Unit, Header>::calculateAverage()
 		{
 			Unit &v = _vectors[j][i];
 
-			if (v != v || !valid(v))
+			if (v != v || !isfinite(v))
 			{
 				continue;
 			}

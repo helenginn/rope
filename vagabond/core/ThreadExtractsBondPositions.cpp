@@ -40,9 +40,9 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 	AtomPosMap aps = seq->extractPositions();
 
 	/* extend atom positions in the result */
-	r->handout.lock();
+//	r->handout.lock();
 	r->aps = aps;
-	r->handout.unlock();
+//	r->handout.unlock();
 }
 
 void ThreadExtractsBondPositions::transferToForceFields(Job *job,
@@ -119,34 +119,30 @@ void ThreadExtractsBondPositions::start()
 			}
 		}
 
-		bool sendBack = true;
-		if (job->requests & JobExtractPositions)
-		{
-			extractPositions(job, seq);
-		}
 		if (job->requests & JobCalculateDeviations)
 		{
 			calculateDeviation(job, seq);
+		}
+		if (job->requests & JobExtractPositions)
+		{
+			extractPositions(job, seq);
 		}
 		if (job->requests & JobUpdateMechanics ||
 		    job->requests & JobScoreStructure)
 		{
 			transferToForceFields(job, seq);
-			continue;
+			continue; // loses control of bond sequence
 		}
 		if (job->requests & JobCalculateMapSegment ||
 		    job->requests & JobCalculateMapCorrelation)
 		{
 			transferToMaps(job, seq);
-			continue;
+			continue; // loses control of bond sequence
 		}
 
 		cleanupSequence(job, seq);
 			
-		if (sendBack)
-		{
-			returnResult(job);
-		}
+		returnResult(job);
 
 		timeEnd();
 
@@ -156,24 +152,6 @@ void ThreadExtractsBondPositions::start()
 
 void ThreadExtractsBondPositions::cleanupSequence(Job *job, BondSequence *seq)
 {
-	/*
-	MiniJob *mini = seq->miniJob();
-
-	// don't submit the result unless all minijobs are done //
-	std::vector<MiniJob *>::iterator it;
-	it = std::find(job->miniJobs.begin(), job->miniJobs.end(), mini);
-
-	if (it == job->miniJobs.end())
-	{
-		throw std::runtime_error("MiniJobSeq received twice for "
-		                         + std::to_string(job->ticket) + "job list "
-		                         + "size = " + 
-		                         std::to_string(job->miniJobs.size()));
-	}
-
-	job->miniJobs.erase(it);
-	*/
-
 	seq->cleanUpToIdle();
 }
 

@@ -64,7 +64,6 @@ private:
 	void calculateActiveTorsions();
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
-	void testTransfer(AnchorExtension ext);
 	void stepRefine(AtomGroup *group);
 //	std::vector<Atom *> generateAbsorptionMask(std::set<Atom *> done);
 	bool *generateAbsorptionMask(std::set<Atom *> done);

@@ -23,6 +23,7 @@
 #include <math.h>
 
 
+/*
 struct Angular
 {
 	float angle;
@@ -88,10 +89,13 @@ struct Angular
 		return other;
 	}
 };
+*/
+
+typedef float Angular;
 
 inline bool valid(const Angular &a)
 {
-	return isfinite(a.angle);
+	return isfinite(a);
 }
 
 

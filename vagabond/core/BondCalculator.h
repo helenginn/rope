@@ -27,6 +27,7 @@
 #include "Handler.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
+#include "HasBondSequenceCustomisation.h"
 #include "FFProperties.h"
 
 class Atom;
@@ -44,7 +45,7 @@ class Sampler;
  * \image html vagabond/doc/bondcalculator_class_connections.png width=1200px
  */
 
-class BondCalculator : public Handler
+class BondCalculator : public Handler, public HasBondSequenceCustomisation
 {
 public:
 	BondCalculator();
@@ -107,11 +108,6 @@ public:
 	 *  vector directly affects an atom in provided depth range. */
 	std::vector<bool> depthLimitMask();
 	
-	void setTotalSamples(size_t total)
-	{
-		_totalSamples = total;
-	}
-	
 	void setPipelineType(PipelineType type)
 	{
 		_type = type;
@@ -120,13 +116,6 @@ public:
 	const PipelineType &pipelineType() const
 	{
 		return _type;
-	}
-	
-	/** ignored after setup() is called.
-	 * 	@param max must be explicitly specified as non-zero positive */
-	void setMaxSimultaneousThreads(size_t max)
-	{
-		_maxThreads = max;
 	}
 	
 	/** @param size UINT_MAX if unlimited, otherwise maximum bytes as limit 
@@ -159,20 +148,13 @@ public:
 	void finish();
 
 	const size_t maxCustomVectorSize() const;
-
-	/** set whether BondSequences should include hydrogen atoms.
-	 *  Ignored after setup() is called. */
-	void setIgnoreHydrogens(bool ignore)
-	{
-		_ignoreHydrogens = ignore;
-	}
 	
 	BondSequenceHandler *sequenceHandler()
 	{
 		return _sequenceHandler;
 	}
 	
-	const BondSequence *sequence() const;
+	BondSequence *sequence(int i = 0);
 	
 	MapTransferHandler *mapHandler()
 	{
@@ -195,7 +177,6 @@ public:
 	{
 		_props = props;
 	}
-	
 
 	Job *acquireJob();
 	Result *acquireResult();
@@ -213,15 +194,12 @@ private:
 	void prepareThreads();
 
 	PipelineType _type;
-	size_t _maxThreads = 0;
 	size_t _maxMemory = 0;
-	size_t _totalSamples = 0;
 	
 	int _minDepth = 0;
 	int _maxDepth = INT_MAX;
 	int _sideMax = INT_MAX;
 	bool _changedDepth = false;
-	bool _ignoreHydrogens = false;
 	
 	std::atomic<long int> _max_id;
 	std::atomic<long int> _running;

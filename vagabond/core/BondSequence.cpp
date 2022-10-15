@@ -354,13 +354,16 @@ void BondSequence::fastCalculate()
 	_custom = nullptr;
 	
 	_custom = &(_job->custom.vecs[0]);
-	if (_fullRecalc)
-	{
-		checkCustomVectorSizeFits();
-	}
 
 	int start = _startCalc;
 	int end = _endCalc;
+
+	if (_fullRecalc)
+	{
+		checkCustomVectorSizeFits();
+		start = 0;
+		end = _blocks.size();
+	}
 
 	for (size_t i = start; i < _blocks.size() && i < end; i++)
 	{
@@ -380,12 +383,12 @@ void BondSequence::fastCalculate()
 
 void BondSequence::superpose()
 {
-	if (_sampleCount <= 1)
+	if (!_superpose)
 	{
 		return;
 	}
 
-	for (size_t i = 1; i < _sampleCount; i++)
+	for (size_t i = 0; i < _sampleCount; i++)
 	{
 		Superpose pose;
 		pose.forceSameHand(true);
@@ -399,7 +402,7 @@ void BondSequence::superpose()
 				continue;
 			}
 
-			glm::vec3 p = _blocks[j].my_position();
+			glm::vec3 p = _blocks[n].target;
 			glm::vec3 q = _blocks[n].my_position();
 			pose.addPositionPair(p, q);
 		}
@@ -435,7 +438,7 @@ void BondSequence::calculate()
 		_torsionBasis->prepareRecalculation();
 	}
 
-	if (sampleCount() == 1 && !extract)
+	if (_skipSections)
 	{
 		fastCalculate();
 		return;
@@ -485,18 +488,29 @@ double BondSequence::calculateDeviations()
 		glm::vec3 target = _blocks[i].target;
 		
 		float frac = job()->fraction;
+		float weight = 1;
 		if (frac > 1e-6)
 		{
 			glm::vec3 moving = _blocks[i].moving;
 			moving *= frac;
 			target += moving;
+//			weight = 1 / (1 + glm::length(moving));
 		}
 
 		glm::vec3 diff = trial_pos - target;
 		
-		sum += glm::length(diff);
-		count++;
+		if (_blocks[i].atom->atomName() == "CG1" && false)
+		{
+			glm::vec3 &moving = _blocks[i].moving;
+			std::cout << glm::to_string(diff) << " " << glm::to_string(moving) << 
+			" " << frac << std::endl;
+		}
+		
+		sum += glm::length(diff) / weight;
+		count += weight;
 	}
+	
+//	std::cout << "Score: " << sum / count << std::endl;
 
 	return sum / count;
 }
@@ -544,6 +558,7 @@ std::vector<BondSequence::ElePos> BondSequence::extractForMap()
 
 void BondSequence::cleanUpToIdle()
 {
+	setJob(nullptr);
 	signal(SequenceIdle);
 }
 

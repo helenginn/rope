@@ -105,16 +105,19 @@ protected:
 	std::vector<bool> _mask;
 	std::vector<Point> _points;
 private:
-
 	bool _calculating;
 	float _score;
 	
 	struct Score
 	{
+		AtomPosMap map;
 		float scores = 0;
 		int divs = 0;
 	};
 	
+	void addToAtomPosMap(AtomPosMap &map, Result *r);
+	void calculateAtomDeviations(Score &score);
+
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
 

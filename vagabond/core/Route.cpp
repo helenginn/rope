@@ -73,7 +73,7 @@ void Route::submitJob(int idx, bool show)
 	{
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
-		job.fraction = idx / (float)pointCount();
+		job.fraction = idx / (float)(pointCount() - 1);
 
 		for (size_t i = 0; i < _dims; i++)
 		{

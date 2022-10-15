@@ -24,6 +24,7 @@
 #include "BondSequence.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
+#include "HasBondSequenceCustomisation.h"
 
 class Sampler;
 class BondSequence;
@@ -33,7 +34,7 @@ class PointStoreHandler;
 class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
 	
-class BondSequenceHandler : public Handler
+class BondSequenceHandler : public Handler, public HasBondSequenceCustomisation
 {
 public:
 	BondSequenceHandler(BondCalculator *calculator = nullptr);
@@ -54,21 +55,9 @@ public:
 		return _calculator;
 	}
 
-	void setMaxThreads(int total)
-	{
-		_maxThreads = total;
-	}
-	
 	void setSampler(Sampler *sampler)
 	{
 		_sampler = sampler;
-	}
-
-	void setTotalSamples(int total)
-	{
-		_totalSamples = total;
-		
-		_mode = (total == 1 ? SingleSample : MultiSample);
 	}
 
 	void setTorsionBasisType(TorsionBasis::Type type)
@@ -83,7 +72,7 @@ public:
 	void addAnchorExtension(AnchorExtension ext);
 	void setup();
 	
-	const BondSequence *sequence(int i) const
+	BondSequence *sequence(int i) 
 	{
 		return _sequences[i];
 	}
@@ -96,11 +85,6 @@ public:
 	int threadCount()
 	{
 		return _threads;
-	}
-	
-	void setIgnoreHydrogens(bool ignore)
-	{
-		_ignoreHydrogens = ignore;
 	}
 
 	void signalToHandler(BondSequence *seq, SequenceState state,
@@ -127,22 +111,10 @@ private:
 	void signalThreads();
 	void calculateThreads(int max);
 
-	size_t _threads = 0;
 	std::atomic<int> _run;
 
-	size_t _totalSamples = 1;
 	size_t _totalSequences = 0;
-	size_t _maxThreads = 0;
 
-	bool _ignoreHydrogens = false;
-	
-	enum SampleMode
-	{
-		SingleSample,
-		MultiSample,
-	};
-
-	SampleMode _mode = MultiSample;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	std::map<SequenceState, Pool<BondSequence *> > _pools;

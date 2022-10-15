@@ -203,7 +203,7 @@ private:
 	std::string _header;
 	std::string _headerValue;
 
-	int _pointType = 0;
+	int _pointType = 1;
 };
 
 inline void to_json(json &j, const Rule &value)

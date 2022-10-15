@@ -66,6 +66,11 @@ std::vector<float> ClusterSVD<DG>::mapVector(typename DG::Array &vec)
 template <class DG>
 void ClusterSVD<DG>::cluster()
 {
+	if (this->dataGroup()->vectorCount() == 0)
+	{
+		return;
+	}
+
 	PCA::Matrix mat = matrix();
 
 	setupSVD(&_svd, mat.rows, mat.cols);

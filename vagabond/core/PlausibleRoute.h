@@ -132,13 +132,16 @@ protected:
 	virtual int sendJob(const SPoint &trial, bool force_update = false);
 	virtual int awaitResult(double *eval);
 	void postScore(float score);
+	void setFlips(std::vector<int> &idxs, std::vector<bool> &fs);
 
 	virtual void doCalculations();
 	bool flipTorsions(bool main = false);
+	bool flipTorsion(int idx);
 	int nudgeWaypoints();
 	void nudgeWayPointCycles();
 	void prepareDestination();
 	void flipTorsionCycles();
+	void bringTorsionsToRange();
 	bool simplexCycle(std::vector<int> torsionIdxs);
 	float momentumScore(int steps);
 	void startTicker(std::string tag, int d = -1);
@@ -152,6 +155,9 @@ protected:
 	{
 		_mask = std::vector<bool>(_torsions.size(), true);
 	}
+
+	std::vector<int> getTorsionSequence(int start, int max, 
+	                                    bool validate, float maxMag);
 	
 	void maskTails();
 
@@ -196,6 +202,7 @@ private:
 
 	bool validateWayPoint(WayPoints &wps);
 	bool validateWayPoints();
+
 	
 	enum InterpolationType
 	{

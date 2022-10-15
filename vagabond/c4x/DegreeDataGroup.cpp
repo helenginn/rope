@@ -38,7 +38,7 @@ void DegreeDataGroup<Header>::matchDegrees(Array &next)
 		
 		size_t j = 0;
 		Array *master = &_vectors[j];
-		for (j = 0; j < DataGroup<Angular, Header>::vectorCount(); j++)
+		for (j = 0; j < DataGroup<float, Header>::vectorCount(); j++)
 		{
 			master = &_vectors[j];
 
@@ -68,7 +68,7 @@ void DegreeDataGroup<Header>::addArray(std::string name, Array next)
 		matchDegrees(next);
 	}
 	
-	DataGroup<Angular, Header>::addArray(name, next);
+	DataGroup<float, Header>::addArray(name, next);
 
 	if (_vectors.size() <= 1)
 	{

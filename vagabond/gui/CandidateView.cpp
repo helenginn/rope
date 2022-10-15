@@ -74,7 +74,7 @@ void CandidateView::setup()
 	if (lineCount() > 0)
 	{
 		TextButton *tb = new TextButton("Download", this);
-		tb->setRight(0.66, 0.8);
+		tb->setRight(0.9, 0.1);
 		tb->setReturnTag("download");
 		addObject(tb);
 	}

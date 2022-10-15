@@ -92,6 +92,12 @@ void ClusterView::reset()
 
 void ClusterView::refresh()
 {
+	if (_vertices.size() == 0 && _cx)
+	{
+		_cx->cluster();
+		makePoints();
+	}
+
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		glm::vec3 v = _cx->point(i);

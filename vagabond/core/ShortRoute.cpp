@@ -27,9 +27,9 @@ ShortRoute::ShortRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 	_mainsOnly = false;
 	_flipTorsions = false;
 	_nudgeCount = 16;
-	_magnitudeThreshold = 90;
+	_magnitudeThreshold = 5;
 	_maximumCycles = 6;
-	_minimumMagnitude = 5;
+	_minimumMagnitude = 1;
 	Progressor::_inert = true;
 }
 

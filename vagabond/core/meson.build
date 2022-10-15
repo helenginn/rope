@@ -98,6 +98,7 @@ vagafiles = [
 'GeometryTable.h',
 'Handler.h',
 'HasBondstraints.h',
+'HasBondSequenceCustomisation.h',
 'Knotter.h',
 'Path.h',
 'PositionRefinery.h',
