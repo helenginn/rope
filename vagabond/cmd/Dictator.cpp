@@ -22,6 +22,9 @@
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/EntityManager.h>
+#include <vagabond/core/ModelManager.h>
+#include <vagabond/core/Sequence.h>
+#include <vagabond/core/Model.h>
 #include <vagabond/core/Metadata.h>
 #include <iostream>
 #include <unistd.h>
@@ -44,6 +47,7 @@ void Dictator::makeCommands()
 	_commands["get-files-native-app"] = ("load files from three directories up in "
 	                                     "the Mac Rope app file");
     _commands["hello_world"] = ("Prints hello world");
+    _commands["report"] = ("Report various statistics on the existing environment. Useful for debugging.");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -188,7 +192,48 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "Hi from RoPE!" << std::endl;
         EntityManager *entity_manager = Environment::env().entityManager();
         std::cout << "Number of entities: " << entity_manager->objectCount() << std::endl;
-        entity_manager->object(0)
+        entity_manager->object(0);
+    }
+
+    if (first == "report")
+    {
+        std::cout << "Reading data from " << get_current_dir_name() << "/environment.json" << std::endl << std::endl;
+
+        std::cout << "ENTITIES" << std::endl;
+        std::cout << "========" << std::endl;
+        EntityManager *entity_manager = Environment::env().entityManager();
+        std::cout << "No. of entities: " << entity_manager->objectCount() << std::endl;
+        for (int i = 0; i < entity_manager->objectCount(); i++) {
+            Entity entity = entity_manager->object(i);
+            Sequence *sequence = entity.sequence();
+            std::cout << "Entity " << i << ": " << entity.name() << std::endl;
+            std::cout << "    No. of residues: " << sequence->str().length() << std::endl;
+            std::cout << "    Sequence: " << sequence->str() << std::endl;
+            std::cout << "    No. of models: " << entity.modelCount() << std::endl;
+            std::cout << "    Models: [index, name, no. of molecules]" << std::endl;
+            for (int m = 0; m < entity.modelCount(); m++) {
+                Model *model = entity.models()[m];
+                std::cout << "        Model " << m << ": " << model->name() << " (";
+                std::cout << model->moleculesForEntity(&entity).size() << ")" << std::endl;
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+
+        std::cout << "MODELS" << std::endl;
+        std::cout << "======" << std::endl;
+        ModelManager *model_manager = Environment::env().modelManager();
+        std::cout << "No. of models: " << model_manager->objectCount() << std::endl;
+        for (int i = 0; i < model_manager->objectCount(); i++) {
+            Model model = model_manager->object(i);
+            std::cout << "Model " << i << ": " << model.name() << std::endl;
+//            for (int e = 0; e < model.entities().size(); e++) {
+//                Entity entity = (std::vector<Entity>(model.entities().begin(), model.entities().end()))[e];
+//                std::cout << "    Entity " << e << ": " << std::vector<Molecule>(model.moleculesForEntity(&entity).begin(), model.moleculesForEntity(&entity).end())[0].model_chain_id() << std::endl;
+//            }
+        }
+
+
     }
 }
 
