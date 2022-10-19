@@ -81,7 +81,7 @@ public:
 		_indices.clear();
 	}
 	
-	void setImage(std::string imagename);
+	void setImage(std::string imagename, bool wrap = false);
 	void copyFrom(Renderable *s);
 
 	GLuint *iPointer()

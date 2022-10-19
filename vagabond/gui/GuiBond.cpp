@@ -151,6 +151,8 @@ void GuiBond::watchBonds(AtomGroup *a)
 	_copy->setAlpha(1.);
 	appendObject(_copy);
 	_num = 1;
+	
+	setColour(0.5, 0.5, 0.5);
 }
 
 void GuiBond::addVisuals(Atom *a)
@@ -163,4 +165,8 @@ void GuiBond::addVisuals(Atom *a)
 void GuiBond::removeVisuals()
 {
 	setAlpha(0.f);
+}
+
+void GuiBond::reindex()
+{
 }

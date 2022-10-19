@@ -21,9 +21,10 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <ostream>
+#include <vagabond/utils/degrad.h>
 
 
-/*
 struct Angular
 {
 	float angle;
@@ -43,19 +44,46 @@ struct Angular
 		return angle;
 	}
 
-	bool operator!=(const Angular &other) const
+	static size_t comparable_size()
 	{
-		return angle != other.angle;
+		return 2;
+	}
+
+	static Angular unit(const float *result)
+	{
+		float c = result[0];
+		float s = result[1] / c;
+
+		float angle = rad2deg(atan2(c, s));
+		return Angular(angle);
+	}
+
+	static void comparable(const Angular &a, float *result)
+	{
+		float s = sin(deg2rad(a - 90.f));
+		float c = cos(deg2rad(a - 90.f));
+
+		result[0] = c;
+		result[1] = s * c;
 	}
 	
-	bool operator==(const Angular &other) const
+	friend std::ostream &operator<<(std::ostream& stream, const Angular& a)
 	{
-		return angle == other.angle;
+		float s = sin(deg2rad(a - 90.f));
+		float c = cos(deg2rad(a - 90.f));
+		stream << "(" << s << ", " << s*c << ")";
+		return stream;
 	}
 
 	Angular &operator-=(float a)
 	{
 		angle -= a;
+		return *this;
+	}
+
+	Angular &operator+=(float a)
+	{
+		angle += a;
 		return *this;
 	}
 
@@ -70,33 +98,11 @@ struct Angular
 		angle *= a;
 		return *this;
 	}
-
-	Angular &operator+=(float a)
-	{
-		angle += a;
-		return *this;
-	}
-	
-	Angular &operator=(float a)
-	{
-		angle = a;
-		return *this;
-	}
-
-	Angular operator*(float a)
-	{
-		Angular other; other.angle = angle * a;
-		return other;
-	}
 };
-*/
-
-typedef float Angular;
 
 inline bool valid(const Angular &a)
 {
-	return isfinite(a);
+	return isfinite(a.angle);
 }
-
 
 #endif

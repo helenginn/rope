@@ -41,6 +41,11 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 	setOwnsAtoms(false);
 }
 
+RouteExplorer::~RouteExplorer()
+{
+	
+}
+
 void RouteExplorer::setup()
 {
 	_molecule->model()->load();
@@ -122,7 +127,7 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 	int num = (int)x;
 	if (!_route->calculating())
 	{
-		_route->submitJobAndRetrieve(num);
+		_route->submitJobAndRetrieve(num, true, true);
 	}
 }
 

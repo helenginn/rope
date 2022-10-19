@@ -33,6 +33,7 @@ public Responder<Route>
 {
 public:
 	RouteExplorer(Scene *prev, PlausibleRoute *route);
+	virtual ~RouteExplorer();
 
 	virtual void setup();
 	virtual void doThings();

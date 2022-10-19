@@ -58,18 +58,11 @@ void PathView::populate()
 	for (size_t i = 0; i < _path.angleArraySize(); i++)
 	{
 		MetadataGroup::Array angles = _path.angleArray(i);
-		
-		for (size_t i = 0; i < angles.size() && i < 10; i++)
-		{
-			std::cout << angles[i] << " ";
-		}
-		std::cout << std::endl;
 
 		dg->convertToDifferences(angles, &average);
 
 		std::vector<float> mapped = _cluster->mapVector(angles);
 		glm::vec3 point = _cluster->point(mapped);
-		std::cout << glm::to_string(point) << std::endl;
 		
 		addVertex(point);
 		
@@ -88,5 +81,8 @@ void PathView::populate()
 	addIndex(-1);
 
 	setAlpha(1.f);
+	
+	std::cout << "Loaded " << _path.id() << std::endl;
+	forceRender(true, true);
 }
 

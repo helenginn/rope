@@ -16,30 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PathsMenu__
-#define __vagabond__PathsMenu__
+#include "PathsDetail.h"
+#include <vagabond/core/Path.h>
 
-#include <vagabond/gui/elements/ListView.h>
-
-class PathsMenu : public ListView
+PathsDetail::PathsDetail(Scene *prev, Path *p) : 
+Scene(prev),
+AddObject<Path>(prev, p)
 {
-public:
-	PathsMenu(Scene *prev);
-	~PathsMenu();
-	
-	void setEntityId(std::string entity_id)
+
+}
+
+void PathsDetail::setup()
+{
+	addTitle("Path details");
+	AddObject::setup();
+}
+
+void PathsDetail::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "delete" && _deleteAllowed)
 	{
-		_entity_id = entity_id;
+		Environment::purgePath(_obj);
+		back();
 	}
 
-	virtual void setup();
-
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-private:
-	std::string _entity_id;
-
-};
-
-#endif
+	AddObject::buttonPressed(tag, button);
+}

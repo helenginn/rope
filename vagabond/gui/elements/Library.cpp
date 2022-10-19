@@ -39,7 +39,8 @@ Library::Library()
 
 }
 
-GLuint Library::getTexture(std::string filename, int *w, int *h)
+GLuint Library::getTexture(std::string filename, int *w, int *h,
+                           bool wrap)
 {
 	if (!Window::hasContext())
 	{
@@ -69,7 +70,7 @@ GLuint Library::getTexture(std::string filename, int *w, int *h)
 		return 0;
 	}
 
-	GLuint tex = loadSurface(image, filename);
+	GLuint tex = loadSurface(image, filename, wrap);
 	
 	_widths[filename] = image->w;
 	_heights[filename] = image->h;
@@ -192,7 +193,8 @@ GLuint Library::allocateEmptyTexture(int w, int h, std::string filename)
 
 }
 
-GLuint Library::loadSurface(SDL_Surface *image, std::string filename)
+GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
+                            bool wrap)
 {
 	GLuint texid;
 	glGenTextures(1, &texid);
@@ -214,9 +216,11 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename)
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	GLint wrap_param = wrap ? GL_REPEAT : GL_CLAMP_TO_EDGE;
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_param); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_param);  
 
 	if (filename.length() > 0)
 	{

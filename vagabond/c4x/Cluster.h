@@ -49,9 +49,14 @@ public:
 
 	/** given a set of metadata values, find best-fitting axis */
 	int bestAxisFit(std::vector<float> &vals);
+
+	std::vector<float> weights(int axis);
 	
 	/** raw vector which would correspond to given cluster axis */
 	typename DG::Array rawVector(int axis);
+	
+	/** raw comparable which would correspond to given cluster axis */
+	typename DG::Comparable rawComparable(int axis);
 
 	/* difference raw vector between dataset 'from' and 'to' */
 	typename DG::Array rawVector(int from, int to);

@@ -2,7 +2,6 @@
 
 in vec4 vPos;
 in vec4 vColor;
-in vec3 vNormal;
 in vec2 vTex;
 in vec4 vExtra;
 
@@ -13,20 +12,16 @@ layout (location = 1) out uint ValIndex;
 
 void main()
 {
-	vec4 result = texture(pic_tex, vTex);
-
-	if (result.a < 0.05)
+	vec2 frag = gl_PointCoord;
+	vec2 xy = vec2(frag[0], frag[1]);
+	vec4 tex = texture(pic_tex, xy);
+	if (tex.a < 0.2 || vColor.a < 0.01)
 	{
 		discard;
 	}
-	if (vColor.a < -0.99)
-	{
-		discard;
-	}
-	result += vColor;
+	tex *= vColor;
 	ValIndex = uint(vExtra.x);
-	FragColor = result;
+	FragColor = tex;
 }
-
 
 

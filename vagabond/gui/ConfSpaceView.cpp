@@ -85,7 +85,7 @@ void ConfSpaceView::setup()
 	
 	{
 		Text *text = new Text(_entity->name());
-		text->setCentre(0.5, 0.85);
+		text->setCentre(0.5, 0.80);
 		addObject(text);
 	}
 }

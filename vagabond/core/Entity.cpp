@@ -237,7 +237,10 @@ MetadataGroup Entity::makeTorsionDataGroup()
 
 		for (Path *path : paths)
 		{
-			path->addTorsionsToGroup(group);
+			if (path->contributesToSVD())
+			{
+				path->addTorsionsToGroup(group);
+			}
 		}
 	}
 	

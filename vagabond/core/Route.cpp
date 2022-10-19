@@ -51,22 +51,27 @@ void Route::clearPoints()
 	_points.clear();
 }
 
-float Route::submitJobAndRetrieve(int idx)
+float Route::submitJobAndRetrieve(int idx, bool show, bool forces)
 {
 	_point2Score.clear();
 	_ticket2Point.clear();
 
-	submitJob(idx);
+	submitJob(idx, show, forces);
 	retrieve();
 	
 	return _point2Score[idx].scores;
 }
 
-void Route::submitJob(int idx, bool show)
+void Route::submitJob(int idx, bool show, bool forces)
 {
 	if ((idx > 0 && idx >= _points.size()) || idx < 0)
 	{
 		return;
+	}
+	
+	if (forces)
+	{
+		show = true;
 	}
 
 	for (BondCalculator *calc : _calculators)
@@ -90,6 +95,11 @@ void Route::submitJob(int idx, bool show)
 		if (!show)
 		{
 			job.requests = JobCalculateDeviations;
+		}
+		
+		if (forces)
+		{
+			job.requests = (JobType)(JobScoreStructure | job.requests);
 		}
 
 		int t = calc->submitJob(job);
@@ -127,6 +137,11 @@ void Route::retrieve()
 					Atom *atom = it->first;
 				}
 			}
+			
+			if (r->requests & JobScoreStructure)
+			{
+				r->transplantColours();
+			}
 
 			if (r->requests & JobCalculateDeviations)
 			{
@@ -161,7 +176,7 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 	calc->setPipelineType(_pType);
 	FFProperties props;
 	props.group = _molecule->currentAtoms();
-	props.t = FFProperties::CAlphaSeparation;
+	props.t = FFProperties::VdWContacts;
 	calc->setForceFieldProperties(props);
 }
 

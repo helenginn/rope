@@ -134,13 +134,9 @@ void BondCalculator::setupMapSumHandler()
 void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
-	_sequenceHandler->setTotalSamples(_totalSamples);
-	_sequenceHandler->setMaxSimultaneousThreads(_maxThreads);
 	_sequenceHandler->setTorsionBasisType(_basisType);
-	_sequenceHandler->setIgnoreHydrogens(_ignoreHydrogens);
-	_sequenceHandler->prepareToSkipSections(_skipSections);
-	_sequenceHandler->setSuperpose(_superpose);
 	_sequenceHandler->setSampler(_sampler);
+	transferProperties(_sequenceHandler);
 	
 	if (_mapHandler != nullptr)
 	{

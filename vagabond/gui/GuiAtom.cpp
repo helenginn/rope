@@ -19,6 +19,7 @@
 #include "GuiAtom.h"
 #include "GuiBalls.h"
 #include "GuiRibbon.h"
+#include "GuiThickBond.h"
 
 #include <vagabond/gui/elements/SnowGL.h>
 #include <SDL2/SDL.h>
@@ -35,9 +36,11 @@ GuiAtom::GuiAtom() : Renderable()
 {
 	_balls = new GuiBalls(this);
 	_ribbon = new GuiRibbon(this);
+	_thickBonds = new GuiThickBond(this);
 	setDisableRibbon(true);
-	_representations.push_back(_balls);
 	_representations.push_back(_ribbon);
+	_representations.push_back(_thickBonds);
+	_representations.push_back(_balls);
 	_finish = false;
 }
 
@@ -48,6 +51,8 @@ GuiAtom::~GuiAtom()
 	_balls = nullptr;
 	delete _ribbon;
 	_ribbon = nullptr;
+	delete _thickBonds;
+	_thickBonds = nullptr;
 }
 
 void GuiAtom::stop()
@@ -76,15 +81,6 @@ void GuiAtom::render(SnowGL *gl)
 	glDisable(GL_DEPTH_TEST);
 }
 
-void GuiAtom::watchAtom(Atom *a)
-{
-	for (GuiRepresentation *&r : _representations)
-	{
-		r->watchAtom(a);
-	}
-	_atoms.push_back(a);
-}
-
 void GuiAtom::watchAtoms(AtomGroup *a)
 {
 	for (GuiRepresentation *&r : _representations)
@@ -93,14 +89,19 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	}
 
 	lockMutex();
-	for (size_t i = 0; i < a->size(); i++)
+	for (GuiRepresentation *&r : _representations)
 	{
-		watchAtom((*a)[i]);
+		r->watchAtomGroup(a);
+	}
+	
+	for (Atom *atom : a->atomVector())
+	{
+		_atoms.push_back(atom);
 	}
 	
 	_balls->watchBonds(a);
 	_ribbon->convert();
-
+	
 	checkAtoms();
 	unlockMutex();
 }
@@ -211,6 +212,7 @@ void GuiAtom::setDisableRibbon(bool dis)
 void GuiAtom::setDisableBalls(bool dis)
 {
 	_balls->setDisabled(dis);
+	_thickBonds->setDisabled(dis);
 }
 
 
@@ -220,11 +222,14 @@ void GuiAtom::applyVisuals(VisualPreferences *vp)
 
 	std::vector<Atom *> av = vp->selectBallStickAtoms(_atoms);
 	
+	_thickBonds->removeVisuals();
 	_balls->removeVisuals();
 	for (Atom *a : av)
 	{
 		_balls->addVisuals(a);
+		_thickBonds->addVisuals(a);
 	}
 
+	_thickBonds->forceRender(true, false);
 	_balls->forceRender(true, false);
 }

@@ -21,6 +21,7 @@
 
 #include <string>
 
+class Path;
 class Rule;
 class Entity;
 class Metadata;
@@ -93,6 +94,7 @@ public:
 	static void purgeModel(std::string name);
 	static void purgeEntity(std::string name);
 	static void purgeRule(Rule &rule);
+	static void purgePath(Path &path);
 	
 	void save();
 	void load(std::string file = "rope.json");

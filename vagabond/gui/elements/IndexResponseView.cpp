@@ -117,3 +117,4 @@ void IndexResponseView::removeResponder(IndexResponder *ir)
 		_responders[i]->reindex();
 	}
 }
+

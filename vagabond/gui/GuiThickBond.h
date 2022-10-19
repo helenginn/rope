@@ -16,51 +16,52 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__GuiRepresentation__
-#define __vagabond__GuiRepresentation__
+#ifndef __vagabond__GuiThickBond__
+#define __vagabond__GuiThickBond__
 
-#include <vagabond/gui/elements/IndexResponder.h>
-#include <vagabond/core/Atom.h>
+#include "GuiRepresentation.h"
 
-class AtomGroup;
 class GuiAtom;
 
-class GuiRepresentation : public IndexResponder
+class GuiThickBond : public GuiRepresentation
 {
 public:
-	GuiRepresentation(GuiAtom *parent)
-	{
-		_parent = parent;
-	}
+	GuiThickBond(GuiAtom *parent);
+	virtual ~GuiThickBond();
 
-	virtual size_t requestedIndices()
-	{
-		return 0;
-	}
-	
-	virtual ~GuiRepresentation() {}
-
-	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
-	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp) = 0;
-	virtual void watchAtom(Atom *a) = 0;
+	virtual void watchAtom(Atom *a) {}
 	virtual void watchAtomGroup(AtomGroup *ag);
 
-	virtual void prepareAtomSpace(AtomGroup *ag) = 0;
+	virtual void updateSinglePosition(Atom *a, glm::vec3 &p);
+	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp);
+	
+	virtual void prepareAtomSpace(AtomGroup *ag);
+	virtual void addVisuals(Atom *a);
 
-	virtual void removeVisuals()
-	{
-		setAlpha(0.f);
-	}
-
-	virtual void addVisuals(Atom *a) {};
-protected:
-	GuiAtom *parent()
-	{
-		return _parent;
-	}
+	virtual void removeVisuals();
 private:
-	GuiAtom *_parent = nullptr;
+	void addBond(Atom *left, Atom *right);
 
+	size_t verticesPer()
+	{
+		return 4;
+	}
+
+	size_t indicesPer()
+	{
+		return 6;
+	}
+	
+	struct AtomMarker
+	{
+		Atom *left;
+		Atom *right;
+		size_t idx;
+		int opaque_request;
+	};
+	
+	std::map<Atom *, std::vector<size_t> > _atom2Markers;
+	std::vector<AtomMarker> _markers;
 };
 
 #endif

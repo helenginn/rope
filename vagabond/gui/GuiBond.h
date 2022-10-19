@@ -29,6 +29,13 @@ class GuiBond : public Renderable
 public:
 	GuiBond();
 	~GuiBond();
+	
+	void interacted(int idx, bool hover, bool left) {}
+	void reindex();
+	size_t requestedIndices()
+	{
+		return 0;
+	}
 
 	void watchBonds(AtomGroup *a);
 	

@@ -12,6 +12,7 @@ class GuiBond;
 class GuiBalls;
 class GuiRibbon;
 class AtomGroup;
+class GuiThickBond;
 class GuiRepresentation;
 class VisualPreferences;
 
@@ -23,7 +24,6 @@ public:
 	GuiAtom();
 	~GuiAtom();
 	
-	void watchAtom(Atom *a);
 	void watchAtoms(AtomGroup *as);
 	
 	void checkAtoms();
@@ -55,6 +55,7 @@ private:
 	
 	GuiBalls *_balls = nullptr;
 	GuiRibbon *_ribbon = nullptr;
+	GuiThickBond *_thickBonds = nullptr;
 	
 	std::vector<GuiRepresentation *> _representations;
 

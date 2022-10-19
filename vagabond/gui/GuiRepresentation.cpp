@@ -16,30 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PathsMenu__
-#define __vagabond__PathsMenu__
+#include "GuiRepresentation.h"
+#include <vagabond/core/AtomGroup.h>
 
-#include <vagabond/gui/elements/ListView.h>
-
-class PathsMenu : public ListView
+void GuiRepresentation::watchAtomGroup(AtomGroup *ag)
 {
-public:
-	PathsMenu(Scene *prev);
-	~PathsMenu();
-	
-	void setEntityId(std::string entity_id)
+	for (size_t i = 0; i < ag->size(); i++)
 	{
-		_entity_id = entity_id;
+		watchAtom((*ag)[i]);
 	}
-
-	virtual void setup();
-
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-private:
-	std::string _entity_id;
-
-};
-
-#endif
+}

@@ -28,7 +28,6 @@ PlausibleRoute::PlausibleRoute(Molecule *mol, Cluster<MetadataGroup> *cluster,
 : Route(mol, cluster, dims)
 {
 	_maxJobRuns = 6;
-
 }
 
 void PlausibleRoute::setup()
@@ -156,7 +155,7 @@ float PlausibleRoute::momentumScore(int steps)
 	for (size_t i = 0; i < pointCount(); i++)
 	{
 		float rnd = rand() / (double)RAND_MAX;
-		submitJob(i, rnd < 0.05);
+		submitJob(i, rnd < 0.01);
 	}
 	
 	retrieve();
@@ -1022,5 +1021,13 @@ void PlausibleRoute::prepareForAnalysis()
 	float result = momentumScore(_nudgeCount);
 	postScore(result);
 	calculateProgression(200);
+	
+	for (size_t i = 0; i < pointCount(); i++)
+	{
+		submitJob(i, true, true);
+	}
+	
+	retrieve();
+	clearTickets();
 }
 

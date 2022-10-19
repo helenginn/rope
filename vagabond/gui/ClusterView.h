@@ -20,10 +20,13 @@
 #define __vagabond__ClusterView__
 
 #include <vagabond/gui/elements/IndexResponder.h>
+#include <vagabond/core/Progressor.h>
+#include <vagabond/core/Manager.h>
 #include <vagabond/c4x/Cluster.h>
 
 #define POINT_TYPE_COUNT 8
 
+class Path;
 class Rule;
 class PathView;
 class HasMetadata;
@@ -31,7 +34,9 @@ class FloatingText;
 class MetadataGroup;
 class ConfSpaceView;
 
-class ClusterView : public IndexResponder
+class ClusterView : public IndexResponder, 
+public Progressor,
+public Responder<Manager<Path>>
 {
 public:
 	ClusterView();
@@ -83,6 +88,7 @@ public:
 	}
 
 	virtual void reindex();
+	virtual void respond();
 
 	virtual bool mouseOver();
 	virtual void unMouseOver();
@@ -95,7 +101,11 @@ protected:
 private:
 	void clearPaths();
 	void addPaths();
+
 	void addPathView(PathView *pv);
+
+	static void populatePaths(ClusterView *me);
+	void wait();
 
 	void applyVaryColour(const Rule &r);
 	void applyChangeIcon(const Rule &r);
@@ -108,6 +118,8 @@ private:
 	std::map<int, int> _point2Index;
 	
 	std::vector<PathView *> _pathViews;
+	std::thread *_worker = nullptr;
+	std::atomic<bool> _finish{false};
 };
 
 #endif

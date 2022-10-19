@@ -23,6 +23,7 @@
 #include "Progressor.h"
 #include "Responder.h"
 
+
 template <class T>
 class Manager : public HasResponder<Responder<Manager<T>>>
 {
@@ -46,11 +47,26 @@ public:
 		for (size_t i = 0; i < idx; i++, it++) {};
 		return *it;
 	}
+	
+	bool remove(T &obj)
+	{
+		typename std::list<T>::iterator it = _objects.begin();
+		
+		for (; it != _objects.end(); it++)
+		{
+			if (&*it == &obj)
+			{
+				_objects.erase(it);
+				HasResponder<Responder<Manager<T>>>::triggerResponse();
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
 	virtual T *insertIfUnique(T &m) { return nullptr; };
 
-	friend void to_json(json &j, const Manager<T> &value);
-	friend void from_json(const json &j, Manager<T> &value);
 protected:
 
 	typename std::list<T> _objects;

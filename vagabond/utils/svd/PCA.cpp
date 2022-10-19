@@ -185,7 +185,7 @@ bool PCA::invertSVD(SVD *cc)
 		for (size_t j = 0; j < y; j++)
 		{
 			cc->u[i][j] /= cc->w[j];
-			if (cc->w[j] < 0.01)
+			if (cc->w[j] < 1e-6)
 			{
 				cc->u[i][j] = 0;
 			}

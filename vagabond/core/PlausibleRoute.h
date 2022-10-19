@@ -216,7 +216,7 @@ private:
 	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
 	
-	float _stepSize = 0.1;
+	float _stepSize = 0.02;
 
 	void flipTorsionCycle(bool main);
 	Molecule *_endMolecule = nullptr;

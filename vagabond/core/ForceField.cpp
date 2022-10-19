@@ -55,62 +55,6 @@ bool ForceField::isBackbone(Atom *a)
 	}
 }
 
-void ForceField::setupCAlphaSeparation()
-{
-	std::cout << "Making restraints for " << this << std::endl;
-	AtomVector atoms = _group->atomsWithName("CA");
-	
-	int added = 0;
-	const double comp = 10;
-	
-	for (size_t i = 0; i < atoms.size(); i++)
-	{
-		_reporters->add(atoms[i]);
-	}
-
-	for (size_t i = 0; i < atoms.size() - 1; i++)
-	{
-		Atom &ai = *atoms[i];
-		if (ai.residueNumber() > 60 || ai.residueNumber() < 71)
-		{
-			continue;
-		}
-		Restraint r(Restraint::Momentum, 0, 4.);
-		r.atoms[0] = &ai;
-		r.reporters[0] = &ai;
-		_restraints.push_back(r);
-
-		continue;
-		for (size_t j = i + 1; j < atoms.size(); j++)
-		{
-			Atom &aj = *atoms[j];
-			
-			glm::vec3 diff = ai.initialPosition() - aj.initialPosition();
-			double l = glm::dot(diff, diff);
-			
-			if (l < (comp * comp))
-			{
-				double length = sqrt(l);
-				Restraint r(Restraint::Spring, length, 2.);
-				r.atoms[0] = &ai;
-				r.atoms[1] = &aj;
-				r.reporters[0] = &ai;
-				r.reporters[1] = &aj;
-				_restraints.push_back(r);
-
-				added += 2;
-				
-				if (added % 1000 == 0)
-				{
-					_restraints.reserve(_restraints.size() + 1000);
-				}
-			}
-		}
-	}
-	
-	std::cout << "Restraints: " << _restraints.size() << std::endl;
-
-}
 
 void ForceField::setupVanDerWaals()
 {
@@ -144,7 +88,7 @@ void ForceField::setupVanDerWaals()
 		Atom &ai = *atoms[i];
 		Atom *cai = tmpReporters[&ai];
 
-		for (size_t j = i + 1; j < atoms.size(); j++)
+		for (size_t j = i + 5; j < atoms.size(); j++)
 		{
 			Atom &aj = *atoms[j];
 			bool skip = false;
@@ -191,8 +135,6 @@ void ForceField::processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
 	r.reporters[0] = report_a;
 	r.reporters[1] = report_b;
 	_restraints.push_back(r);
-	
-	testHydrogenBond(a, b, report_a, report_b);
 }
 
 void ForceField::testHydrogenBond(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
@@ -269,11 +211,7 @@ void ForceField::setup()
 {
 	_restraints.clear();
 
-	if (_t == FFProperties::CAlphaSeparation)
-	{
-		setupCAlphaSeparation();
-	}
-	else if (_t == FFProperties::VdWContacts)
+	if (_t == FFProperties::VdWContacts)
 	{
 		setupVanDerWaals();
 	}
@@ -348,23 +286,6 @@ void ForceField::updateRestraint(Restraint &r)
 		r.current = length;
 	}
 	
-	if (r.type == Restraint::Momentum)
-	{
-		glm::vec3 init = r.atoms[0]->initialPosition();
-		glm::vec3 other = r.atoms[0]->otherPosition("alt");
-
-		float l = glm::length(init - r.pos[0]);
-		float m = glm::length(other - r.pos[0]);
-		float dist = std::min(l, m) - 1;
-		if (dist < 0)
-		{
-			dist = 0;
-		}
-
-		r.current = dist;
-		r.current *= 1 / (1 + glm::length(init - other) / 5);
-	}
-	
 	if (r.type == Restraint::HBond)
 	{
 		glm::vec3 hbond =  (r.pos[1] - r.pos[0]);
@@ -406,20 +327,8 @@ float ForceField::valueForRestraint(const Restraint &r)
 		dist *= dist;
 	}
 
-	if (r.type == Restraint::Momentum)
-	{
-		float diff = r.current;
-		diff /= r.deviation;
-		penalty = diff * diff;
-		penalty *= 20;
-	}
-
 	if (r.type == Restraint::Spring)
 	{
-		if (r.current < 3.5)
-		{
-			return 1e4;
-		}
 		float diff = r.current - r.target;
 		diff /= r.deviation;
 		penalty = diff * diff;
@@ -516,7 +425,7 @@ void ForceField::prepareCalculation()
 				int ridx = lt.restraint_index;
 				int aidx = lt.atom_index;
 				
-				_restraints[ridx].pos[aidx] = _aps.at(a).samples[1];
+				_restraints[ridx].pos[aidx] = _aps.at(a).samples[0];
 				count++;
 				
 				next++;
@@ -537,7 +446,8 @@ void ForceField::prepareCalculation()
 
 double ForceField::score()
 {
-	for (size_t i = 0; i < _group->size() && i < _reporters->size(); i++)
+	_tmpColours.clear();
+	for (size_t i = 0; i < _reporters->size(); i++)
 	{
 		Atom *reporter = (*_reporters)[i];
 		if (reporter)
@@ -561,7 +471,7 @@ double ForceField::score()
 		{
 			if (r.reporters[i] != nullptr)
 			{
-				_tmpColours[r.reporters[i]] += val / 10.f;
+				_tmpColours[r.reporters[i]] += val;
 			}
 		}
 
@@ -571,7 +481,7 @@ double ForceField::score()
 
 	for (size_t i = 0; i < _reporters->size(); i++)
 	{
-		double tmp = _tmpColours[(*_reporters)[i]];
+		float &tmp = _tmpColours[(*_reporters)[i]];
 		if (tmp > 1)
 		{
 			tmp = log(tmp) + 1;

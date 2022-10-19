@@ -128,7 +128,7 @@ void DataGroup<Unit, Header>::calculateAverage()
 		{
 			Unit &v = _vectors[j][i];
 
-			if (v != v || !isfinite(v))
+			if (v != v || !valid(v))
 			{
 				continue;
 			}
@@ -163,10 +163,51 @@ void DataGroup<Unit, Header>::convertToDifferences(Array &arr, const Array *ave)
 }
 
 template <class Unit, class Header>
+void DataGroup<Unit, Header>::convertToUnits(const Comparable &comp, 
+                                             Array &diffs)
+{
+	diffs.resize(length());
+	int i = 0;
+
+	for (size_t j = 0; j < comparable_length(); j+= Unit::comparable_size())
+	{
+		const float *pos = &comp[i];
+		diffs[i] = Unit::unit(pos);
+		i++;
+	}
+}
+
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::convertToComparable(const Array &diff, 
+                                                  Comparable &end)
+{
+	end.resize(comparable_length());
+
+	int i = 0;
+
+	for (size_t j = 0; j < _length; j++)
+	{
+		float *pos = &end[i];
+		Unit::comparable(diff[j], pos);
+		
+		for (size_t k = 0; k < Unit::comparable_size(); k++)
+		{
+			if (pos[k] != pos[k] || !isfinite(pos[k]))
+			{
+				pos[k] = 0;
+			}
+		}
+
+		i += Unit::comparable_size();
+	}
+}
+
+template <class Unit, class Header>
 void DataGroup<Unit, Header>::findDifferences()
 {
 	_diffs.clear();
 	_diffs.resize(_vectors.size());
+	_comparables.resize(_vectors.size());
 
 	for (size_t i = 0; i < _vectors.size(); i++)
 	{
@@ -174,23 +215,30 @@ void DataGroup<Unit, Header>::findDifferences()
 		const Array *ave = &average(grp);
 
 		_diffs[i] = _vectors[i];
+
 		convertToDifferences(_diffs[i], ave);
+		convertToComparable(_diffs[i], _comparables[i]);
 	}
 }
 
 template <class Unit, class Header>
-void DataGroup<Unit, Header>::removeNormals(Array &arr)
+void DataGroup<Unit, Header>::removeNormals(Comparable &arr)
 {
-	for (size_t j = 0; j < _length; j++)
+	for (size_t j = 0; j < comparable_length(); j++)
 	{
 		arr[j] *= _stdevs[j];
+		
+		if (arr[j] != arr[j] || !isfinite(arr[j]))
+		{
+			arr[j] = 0;
+		}
 	}
 }
 
 template <class Unit, class Header>
-void DataGroup<Unit, Header>::applyNormals(Array &arr)
+void DataGroup<Unit, Header>::applyNormals(Comparable &arr)
 {
-	for (size_t j = 0; j < _length; j++)
+	for (size_t j = 0; j < comparable_length(); j++)
 	{
 		arr[j] /= _stdevs[j];
 	}
@@ -205,7 +253,39 @@ void DataGroup<Unit, Header>::normalise()
 	}
 	
 	_stdevs.clear();
+	
+	if (!should_normalise())
+	{
+		_stdevs = std::vector<float>(comparable_length(), 1.f);
+		return;
+	}
+
 	float n = _vectors.size();
+
+	for (size_t i = 0; i < length(); i++)
+	{
+		double x = 0; double xx = 0;
+		for (size_t j = 0; j < _vectors.size(); j++)
+		{
+			float v = _diffs[j][i];
+			x += v;
+			xx += v * v;
+		}
+		
+		double stdev = sqrt(xx - x * x / n);
+		
+		for (size_t j = 0; j < Unit::comparable_size(); j++)
+		{
+			_stdevs.push_back(stdev);
+		}
+	}
+
+	for (size_t i = 0; i < _comparables.size(); i++)
+	{
+		applyNormals(_comparables[i]);
+	}
+
+	return;
 
 	for (size_t i = 0; i < _length; i++)
 	{
@@ -302,8 +382,8 @@ float DataGroup<Unit, Header>::distance_between(int i, int j)
 		return 0;
 	}
 	
-	Array &v = _vectors[i];
-	Array &w = _vectors[j];
+	Comparable &v = _comparables[i];
+	Comparable &w = _comparables[j];
 	
 	float sq = 0;
 	
@@ -322,11 +402,12 @@ float DataGroup<Unit, Header>::distance_between(int i, int j)
 }
 
 template <class Unit, class Header>
-float DataGroup<Unit, Header>::correlation_between(const Array &v, const Array &w)
+float DataGroup<Unit, Header>::correlation_between(const Comparable &v, 
+                                                   const Comparable &w)
 {
-	Unit x{}, y{}, xx{}, yy{}, xy{}, s{};
+	float x{}, y{}, xx{}, yy{}, xy{}, s{};
 
-	for (size_t n = 0; n < _length; n++)
+	for (size_t n = 0; n < comparable_length(); n++)
 	{
 		if (v[n] != v[n] || w[n] != w[n])
 		{
@@ -337,18 +418,23 @@ float DataGroup<Unit, Header>::correlation_between(const Array &v, const Array &
 		{
 			continue;
 		}
+		
+		float vn = v[n];
+		float wn = w[n];
 
-		x += v[n]; 
-		xx += v[n] * v[n];
-		y += w[n];
-		yy += w[n] * w[n];
-		xy += w[n] * v[n];
+		x += vn;
+		xx += vn * vn;
+		y += wn;
+		yy += wn * wn;
+		xy += wn * vn;
 		s += 1;
 	}
 	
 	double top = s * xy - x * y;
 	double bottom_left = s * xx - x * x;
 	double bottom_right = s * yy - y * y;
+	
+	return xy / sqrt(xx * yy);
 	
 	double r = top / sqrt(bottom_left * bottom_right);
 	
@@ -364,8 +450,8 @@ float DataGroup<Unit, Header>::correlation_between(int i, int j)
 		return 1.0;
 	}
 	
-	Array &v = _diffs[i];
-	Array &w = _diffs[j];
+	Comparable &v = _comparables[i];
+	Comparable &w = _comparables[j];
 	
 	return correlation_between(v, w);
 }
@@ -380,6 +466,29 @@ PCA::Matrix DataGroup<Unit, Header>::arbitraryMatrix
 	int n = vectorCount();
 	
 	PCA::setupMatrix(&m, n, n);
+	
+	/*
+	for (size_t i = 0; i < _comparables.size(); i++)
+	{
+		int n = 0;
+		for (size_t k = 0; k < comparable_length(); k+= Unit::comparable_size())
+		{
+			std::cout << _diffs[i][n] << " = ";
+			std::cout << "(";
+			n++;
+			for (size_t j = 0; j < Unit::comparable_size(); j++)
+			{
+				std::cout << _comparables[i][k + j];
+				if (j < comparable_length() - 1)
+				{
+					std::cout << ", ";
+				}
+			}
+			std::cout << ") ";
+		}
+		std::cout << std::endl;
+	}
+	*/
 	
 	for (size_t j = 0; j < n; j++)
 	{
@@ -429,7 +538,7 @@ PCA::Matrix DataGroup<Unit, Header>::correlationMatrix()
 template <class Unit, class Header>
 Unit DataGroup<Unit, Header>::difference(int m, int n, int j)
 {
-	return (_diffs[n][j] - _diffs[m][j]) * _stdevs[j];
+	return (_diffs[n][j] - _diffs[m][j]);
 }
 
 template <class Unit, class Header>
@@ -453,6 +562,42 @@ DataGroup<Unit, Header>::differences(int m, int n)
 }
 
 template <class Unit, class Header>
+const typename DataGroup<Unit, Header>::Comparable
+DataGroup<Unit, Header>::weightedComparable(std::vector<float> weights)
+{
+	if (weights.size() != _vectors.size())
+	{
+		throw std::runtime_error("Weights for data group do not match number of"\
+		                         " data points");
+	}
+
+	if (_diffs.size() == 0)
+	{
+		findDifferences();
+		normalise();
+	}
+	
+	Comparable vals = Comparable(comparable_length(), float{});
+	
+	for (size_t j = 0; j < weights.size(); j++)
+	{
+		for (size_t i = 0; i < comparable_length(); i += Unit::comparable_size())
+		{
+			for (size_t k = 0; k < Unit::comparable_size(); k++)
+			{
+				double add = weights[j] * _comparables[j][i + k] * _stdevs[i + k];
+				if (add == add && isfinite(add))
+				{
+					vals[i + k] += add;
+				}
+			}
+		}
+	}
+	
+	return vals;
+}
+
+template <class Unit, class Header>
 const typename DataGroup<Unit, Header>::Array
 DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 {
@@ -468,30 +613,21 @@ DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 		normalise();
 	}
 	
-	Array vals = Array(_length, Unit{});
-	
-	for (size_t j = 0; j < _length; j++)
-	{
-		for (size_t i = 0; i < _diffs.size(); i++)
-		{
-			double add = weights[i] * _diffs[i][j] * _stdevs[j];
-			if (fabs(add) > 10 && false)
-			{
-				std::cout << _headers[j].desc() << ": ";
-				std::cout << "before, val = " << vals[j] << "; ";
-			}
+	Array array = Array(_length, Unit{});
 
-			vals[j] += add;
-			if (fabs(add) > 10 && false)
+	for (size_t j = 0; j < weights.size(); j++)
+	{
+		for (size_t i = 0; i < length(); i++)
+		{
+			double add = weights[j] * _diffs[j][i];
+			if (add == add && isfinite(add))
 			{
-				std::cout << "adding " << add << "(";
-				std::cout << weights[i] << " " << _diffs[i][j] << 
-				" " << _stdevs[j] << " " << ") = " << vals[j] << std::endl;
+				array[i] += add;
 			}
 		}
 	}
 	
-	return vals;
+	return array;
 }
 
 #endif

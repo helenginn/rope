@@ -46,11 +46,17 @@ public:
 	{
 		return _length;
 	}
+	
+	int comparable_length()
+	{
+		return Unit::comparable_size() * length();
+	}
 
 	virtual ~DataGroup();
 
 	/** Array is vector of type Unit */
 	typedef std::vector<Unit> Array;
+	typedef std::vector<float> Comparable;
 
 	/** Calculate average vector from individual vectors */
 	void calculateAverage();
@@ -64,12 +70,19 @@ public:
 	void findDifferences();
 	
 	void convertToDifferences(Array &arr, const Array *ave);
+	void convertToComparable(const Array &diff, Comparable &end);
+	void convertToUnits(const Comparable &comp, Array &diffs);
 
-	void applyNormals(Array &arr);
-	void removeNormals(Array &arr);
+	void applyNormals(Comparable &arr);
+	void removeNormals(Comparable &arr);
 	
 	/** Normalise differences for each unit (i.e. vector component) */
 	void normalise();
+	
+	virtual bool should_normalise()
+	{
+		return true;
+	}
 	
 	/** Return correlation matrix of size m*m where m = member size */
 	PCA::Matrix correlationMatrix();
@@ -92,11 +105,17 @@ public:
 		return _vectors.size();
 	}
 	
+	const Comparable &comparableVector(const int i) const
+	{
+		return _comparables[i];
+	}
+	
 	const Array &differenceVector(const int i) const
 	{
 		return _diffs[i];
 	}
 	
+	const Comparable weightedComparable(std::vector<float> weights);
 	const Array weightedDifferences(std::vector<float> weights);
 
 	const Array differences(int m, int n);
@@ -116,12 +135,15 @@ public:
 		return _headers;
 	}
 
-	float correlation_between(const Array &v, const Array &w);
+	float correlation_between(const Comparable &v, const Comparable &w);
 protected:
 	float correlation_between(int i, int j);
 	float distance_between(int i, int j);
+
 	std::vector<Array> _vectors;
 	std::vector<Array> _diffs;
+	std::vector<Comparable> _comparables;
+
 	std::vector<std::string> _unitNames;
 	std::vector<std::string> _vectorNames;
 	std::vector<Header> _headers;

@@ -23,7 +23,6 @@
 
 class GuiAtom;
 class GuiBond;
-class Icosahedron;
 
 class GuiBalls : public GuiRepresentation
 {
@@ -42,6 +41,8 @@ public:
 	virtual void addVisuals(Atom *a);
 
 	virtual void removeVisuals();
+protected:
+	virtual void extraUniforms();
 private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
@@ -49,11 +50,13 @@ private:
 	void colourByElement(std::string ele);
 	void setPosition(glm::vec3 position);
 
-	Icosahedron *_template = nullptr;
+	Renderable *_template = nullptr;
 	GuiBond *_bonds = nullptr;
 
 	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;
+	
+	float _size = 30;
 };
 
 #endif

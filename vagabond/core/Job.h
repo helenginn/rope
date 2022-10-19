@@ -161,10 +161,15 @@ struct Result
 			wp.samples = last;
 			wp.ave = last[0];
 			it->first->setDerivedPositions(wp);
-			if (requests & JobScoreStructure)
-			{
-				it->first->setAddedColour(it->second.colour);
-			}
+		}
+	}
+	
+	void transplantColours()
+	{
+		AtomPosMap::iterator it;
+		for (it = aps.begin(); it != aps.end(); it++)
+		{
+			it->first->setAddedColour(it->second.colour);
 		}
 	}
 	

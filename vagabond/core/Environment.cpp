@@ -55,10 +55,10 @@ size_t Environment::entityCount()
 void Environment::save()
 {
 	json data;
-	data["path_manager"] = *_pathManager;
 	data["file_manager"] = *_fileManager;
 	data["model_manager"] = *_modelManager;
 	data["entity_manager"] = *_entityManager;
+	data["path_manager"] = *_pathManager;
 	data["metadata"] = *_metadata;
 	std::string contents = data.dump();
 	
@@ -102,7 +102,7 @@ void Environment::load(std::string file)
 		 *_modelManager = data["model_manager"];
 		 *_entityManager = data["entity_manager"];
 		*_metadata = data["metadata"];
-		*_pathManager = data["pathManager"];
+		*_pathManager = data["path_manager"];
 	}
 	catch (const nlohmann::detail::type_error &err)
 	{
@@ -178,6 +178,11 @@ void Environment::purgeModel(std::string id)
 		entityManager()->purgeModel(model);
 		modelManager()->purgeModel(model);
 	}
+}
+
+void Environment::purgePath(Path &path)
+{
+	pathManager()->remove(path);
 }
 
 Environment::~Environment()

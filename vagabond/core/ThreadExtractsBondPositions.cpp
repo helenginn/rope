@@ -40,9 +40,9 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 	AtomPosMap aps = seq->extractPositions();
 
 	/* extend atom positions in the result */
-//	r->handout.lock();
+	r->handout.lock();
 	r->aps = aps;
-//	r->handout.unlock();
+	r->handout.unlock();
 }
 
 void ThreadExtractsBondPositions::transferToForceFields(Job *job,

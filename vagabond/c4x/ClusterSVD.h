@@ -34,6 +34,7 @@ public:
 	}
 
 	virtual void cluster();
+	virtual std::vector<float> mapComparable(typename DG::Comparable &vec);
 	virtual std::vector<float> mapVector(typename DG::Array &vec);
 
 	virtual float weight(int axis) const

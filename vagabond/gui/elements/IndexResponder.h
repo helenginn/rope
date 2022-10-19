@@ -32,10 +32,44 @@ public:
 		_view = irv;
 	}
 
-	virtual void interacted(int idx, bool hover, bool left) = 0;
-	virtual void reindex() = 0;
+	virtual void interacted(int idx, bool hover, bool left) {};
+	virtual void reindex() {};
 
 	virtual size_t requestedIndices() = 0;
+	
+	void addThickLine(glm::vec3 start, glm::vec3 dir)
+	{
+		{
+			Snow::Vertex &v = addVertex(start);
+			v.normal = dir;
+			v.tex[0] = -0.5;
+			v.tex[1] = 0;
+		}
+
+		{
+			Snow::Vertex &v = addVertex(start + dir);
+			v.normal = dir;
+			v.tex[0] = -0.5;
+			v.tex[1] = 1;
+		}
+
+		{
+			Snow::Vertex &v = addVertex(start);
+			v.normal = dir;
+			v.tex[0] = +0.5;
+			v.tex[1] = 0;
+		}
+
+		{
+			Snow::Vertex &v = addVertex(start + dir);
+			v.normal = dir;
+			v.tex[0] = +0.5;
+			v.tex[1] = 1;
+		}
+
+		addIndices(-4, -3, -2);
+		addIndices(-3, -2, -1);
+	}
 
 	virtual size_t indexOffset()
 	{

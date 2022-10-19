@@ -100,17 +100,8 @@ std::vector<Angular> Axes::directTorsionVector(int idx)
 		int mine = _cluster->dataGroup()->indexOfObject(_molecule);
 		int yours = _cluster->dataGroup()->indexOfObject(_targets[idx]);
 
-		std::vector<Angular> from_vals, to_vals;
-		from_vals = _cluster->dataGroup()->differenceVector(mine);
-		to_vals = _cluster->dataGroup()->differenceVector(yours);
-
-		for (size_t i = 0; i < to_vals.size(); i++)
-		{
-			to_vals[i] -= from_vals[i];
-		}
-		
-		_cluster->dataGroup()->removeNormals(to_vals);
-		return to_vals;
+		std::vector<Angular> vals = _cluster->rawVector(mine, yours);
+		return vals;
 	}
 
 	return getTorsionVector(idx);
@@ -127,6 +118,7 @@ std::vector<Angular> Axes::getTorsionVector(int idx)
 		{
 			continue;
 		}
+
 		int axis = _cluster->axis(i);
 		std::vector<Angular> vals = _cluster->rawVector(axis);
 
@@ -412,36 +404,21 @@ void Axes::refreshAxes()
 {
 	MetadataGroup *group = _cluster->dataGroup();
 	int idx = group->indexOfObject(_molecule);
-	glm::vec3 centre = _cluster->point(idx);
+	glm::vec3 start = _cluster->point(idx);
 
 	for (size_t i = 0; i < 3; i++)
 	{
 		glm::vec3 dir = _dirs[i];
-//		dir *= _cluster->scaleFactor();
-		
-		/*
-		if (_targets[i] != nullptr)
-		{
-			int tidx = group->indexOfObject(_targets[i]);
-			
-			if (tidx >= 0)
-			{
-				glm::vec3 diff = _cluster->point(tidx) - centre;
-				glm::vec3 norm = glm::normalize(diff);
-
-				dir = norm;
-			}
-		}
-		*/
+		glm::vec4 colour = glm::vec4(0., 0., 0., 0.);
+		colour[2] = (_planes[i] ? 1. : 0.);
 
 		for (size_t j = 0; j < 4; j++)
 		{
 			int index = i * 4 + j;
-			_vertices[index].pos = centre + (j % 2 == 1 ? dir : glm::vec3(0.f));
+			_vertices[index].pos = start + (j % 2 == 1 ? dir : glm::vec3(0.f));
 			_vertices[index].normal = dir;
-			
-			_vertices[index].color = glm::vec4(0., 0., 0., 0.);
-			_vertices[index].color[2] = (_planes[i] ? 1. : 0.);
+
+			_vertices[index].color = colour;
 		}
 	}
 
@@ -457,33 +434,7 @@ void Axes::prepareAxes()
 	for (size_t i = 0; i < _dirs.size(); i++)
 	{
 		glm::vec3 dir = _dirs[i];
-
-		{
-			Snow::Vertex &v = addVertex(centre);
-			v.tex[0] = -0.5;
-			v.tex[1] = 0;
-		}
-
-		{
-			Snow::Vertex &v = addVertex(centre + dir);
-			v.tex[0] = -0.5;
-			v.tex[1] = 1;
-		}
-
-		{
-			Snow::Vertex &v = addVertex(centre);
-			v.tex[0] = +0.5;
-			v.tex[1] = 0;
-		}
-
-		{
-			Snow::Vertex &v = addVertex(centre + dir);
-			v.tex[0] = +0.5;
-			v.tex[1] = 1;
-		}
-
-		addIndices(-4, -3, -2);
-		addIndices(-3, -2, -1);
+		addThickLine(centre, dir);
 	}
 	
 	refreshAxes();

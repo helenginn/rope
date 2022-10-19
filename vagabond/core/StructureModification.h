@@ -83,6 +83,7 @@ protected:
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
 	bool checkForMolecule(AtomGroup *grp);
+	void cleanup();
 	Molecule *_molecule = nullptr;
 
 	BondCalculator *_hetatmCalc = nullptr;

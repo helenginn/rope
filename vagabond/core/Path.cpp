@@ -56,21 +56,23 @@ void Path::getTorsionRef(int idx)
 void Path::housekeeping()
 {
 	_destination.clear();
+
 	for (TorsionRef &ref : _torsionRefs)
 	{
 		_destination.push_back(ref.refinedAngle());
 	}
 
-}
-
-PlausibleRoute *Path::toRoute()
-{
-	if (_route != nullptr)
+	if (_model && _molecule && _end)
 	{
-		return _route;
+		return;
 	}
 
 	_model = Environment::env().modelManager()->model(_model_id);
+
+	if (!_model)
+	{
+		return;
+	}
 	
 	for (Molecule &m : _model->molecules())
 	{
@@ -91,17 +93,21 @@ PlausibleRoute *Path::toRoute()
 			}
 		}
 	}
+}
+
+PlausibleRoute *Path::toRoute()
+{
+	housekeeping();
 	
-	if (!_molecule)
+	if (!_molecule || !_model)
 	{
-		throw std::runtime_error("Unable to find molecule in environment.");
+		throw std::runtime_error("Unable to find model/molecule in environment.");
 	}
 	
 	_model->load();
 	AtomGroup *group = _model->currentAtoms();
 
-	PlausibleRoute *pr = new PlausibleRoute(_molecule, nullptr, 
-	                                        _wayPoints.size());
+	SplitRoute *pr = new SplitRoute(_molecule, nullptr, _wayPoints.size());
 	pr->_destination = _destination;
 	pr->_type = _type;
 	pr->_flips = _flips;
@@ -161,7 +167,8 @@ std::string Path::desc() const
 
 void Path::calculateArrays(MetadataGroup *group)
 {
-	const int total = 32;
+	const int total = 12;
+	housekeeping();
 
 	_molecule->model()->load();
 	AtomContent *grp = _molecule->model()->currentAtoms();
@@ -177,9 +184,6 @@ void Path::calculateArrays(MetadataGroup *group)
 		group->matchDegrees(vals);
 		_angleArrays.push_back(vals);
 	}
-	
-	_molecule->model()->unload();
-
 }
 
 void Path::addTorsionsToGroup(MetadataGroup &group)
@@ -191,10 +195,20 @@ void Path::addTorsionsToGroup(MetadataGroup &group)
 	
 	if (_contributeSVD)
 	{
+		std::cout << "here!" << std::endl;
 		for (size_t i = 0; i < _angleArrays.size(); i++)
 		{
 			group.addMetadataArray(this, _angleArrays[i]);
 		}
 	}
 
+}
+
+void Path::cleanupRoute()
+{
+	if (_route)
+	{
+		delete _route;
+		_route = nullptr;
+	}
 }

@@ -17,9 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include "PathsMenu.h"
 #include "Environment.h"
+#include "RouteExplorer.h"
+#include "PlausibleRoute.h"
 #include "PathManager.h"
+#include "PathsDetail.h"
 
 PathsMenu::PathsMenu(Scene *prev) : ListView(prev)
 {
@@ -44,8 +48,54 @@ size_t PathsMenu::lineCount()
 
 Renderable *PathsMenu::getLine(int i)
 {
+	Box *b = new Box();
 	Path &path = Environment::env().pathManager()->object(i);
-	Text *t = new Text(path.desc());
-	return t;
+	
+	{
+		TextButton *t = new TextButton(path.desc(), this);
+		t->setReturnTag("path_" + std::to_string(i));
+		t->setLeft(0., 0.);
+		b->addObject(t);
+	}
+	
+	{
+		ImageButton *button = new ImageButton("assets/images/eye.png", 
+		                                      this);
+		button->resize(0.06);
+		button->setReturnTag("view_" + std::to_string(i));
+		button->setRight(0.6, 0.0);
+		b->addObject(button);
+	}
+
+	b->setLeft(0., 0.);
+
+	return b;
 }
 
+void PathsMenu::buttonPressed(std::string tag, Button *button)
+{
+	std::string end = Button::tagEnd(tag, "view_");
+
+	if (end.length())
+	{
+		int idx = atoi(end.c_str());
+		Path &path = Environment::env().pathManager()->object(idx);
+		PlausibleRoute *pr = path.toRoute();
+		RouteExplorer *re = new RouteExplorer(this, pr);
+		re->show();
+		return;
+	}
+	
+	end = Button::tagEnd(tag, "path_");
+
+	if (end.length())
+	{
+		int idx = atoi(end.c_str());
+		Path &path = Environment::env().pathManager()->object(idx);
+		PathsDetail *pd = new PathsDetail(this, &path);
+		pd->show();
+		return;
+	}
+	
+	ListView::buttonPressed(tag, button);
+}

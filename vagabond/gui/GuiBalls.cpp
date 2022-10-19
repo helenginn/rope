@@ -20,7 +20,6 @@
 #include "GuiBond.h"
 
 #include <vagabond/gui/elements/Icosahedron.h>
-#include <vagabond/gui/elements/SnowGL.h>
 
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
@@ -32,17 +31,18 @@
 GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 {
 	setUsesProjection(true);
-	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/lighting.fsh");
+	setVertexShaderFile("assets/shaders/simple_point.vsh");
+	setFragmentShaderFile("assets/shaders/simple_point.fsh");
+	setImage("assets/images/blob.png");
 	
-	_template = new Icosahedron();
-	_template->triangulate();
-	_template->setColour(0.5, 0.5, 0.5);
-	_template->resize(0.3);
-	_template->setAlpha(1.);
+	_template = new Renderable();
+	Snow::Vertex &vert = _template->addVertex(glm::vec3(0.f));
+	_template->addIndex(-1);
+	_template->setColour(1., 1., 1.);
 	
+	_renderType = GL_POINTS;
 	_bonds = new GuiBond();
-//	_bonds->setDisabled(true);
+	_bonds->setDisabled(true);
 }
 
 GuiBalls::~GuiBalls()
@@ -54,28 +54,36 @@ GuiBalls::~GuiBalls()
 	
 }
 
+void GuiBalls::extraUniforms()
+{
+	const char *uniform_name = "size";
+	GLuint u = glGetUniformLocation(_program, uniform_name);
+	glUniform1f(u, _size);
+	checkErrors("rebinding size");
+}
+
 void GuiBalls::colourByElement(std::string ele)
 {
 	glm::vec4 colour = glm::vec4(0.5, 0.5, 0.5, 1.);
 	if (ele == "O")
 	{
-		colour = glm::vec4(1.0, 0.2, 0.2, 1.);
+		colour = glm::vec4(1.4, 0.5, 0.5, 1.);
 	}
 	if (ele == "S")
 	{
-		colour = glm::vec4(1.0, 1.0, 0.2, 1.);
+		colour = glm::vec4(1.4, 1.4, 0.5, 1.);
 	}
 	if (ele == "P")
 	{
-		colour = glm::vec4(1.0, 0.2, 1.0, 1.);
+		colour = glm::vec4(1.4, 0.5, 1.4, 1.);
 	}
 	if (ele == "H")
 	{
-		colour = glm::vec4(0.8, 0.8, 0.8, 1.);
+		colour = glm::vec4(1.0, 1.0, 1.0, 1.);
 	}
 	if (ele == "N")
 	{
-		colour = glm::vec4(0.2, 0.2, 1.0, 1.);
+		colour = glm::vec4(0.5, 0.5, 1.4, 1.);
 	}
 
 	_template->setColour(colour.x, colour.y, colour.z);

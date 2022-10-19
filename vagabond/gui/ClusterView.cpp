@@ -20,6 +20,7 @@
 #include "ColourScheme.h"
 #include "ConfSpaceView.h"
 #include <vagabond/gui/PathView.h>
+#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/Rule.h>
@@ -46,6 +47,7 @@ ClusterView::ClusterView()
 
 ClusterView::~ClusterView()
 {
+	wait();
 	deleteObjects();
 }
 
@@ -300,8 +302,15 @@ void ClusterView::addPathView(PathView *pv)
 	addObject(pv);
 }
 
+void ClusterView::respond()
+{
+	wait();
+	clearPaths();
+}
+
 void ClusterView::addPaths()
 {
+	wait();
 	clearPaths();
 
 	PathManager *pm = Environment::env().pathManager();
@@ -313,9 +322,45 @@ void ClusterView::addPaths()
 			continue;
 		}
 
-		std::cout << "Adding path " << path.id() << std::endl;
 		PathView *pv = new PathView(path, _cx);
-		pv->populate();
 		addPathView(pv);
 	}
+	
+	VagWindow *window = VagWindow::window();
+	window->prepareProgressBar(_pathViews.size(), "Loading paths");
+	_worker = new std::thread(ClusterView::populatePaths, this);
+}
+
+void ClusterView::wait()
+{
+	if (_worker)
+	{
+		_finish = true;
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
+		_finish = false;
+	}
+}
+
+void ClusterView::populatePaths(ClusterView *me)
+{
+	for (PathView *pv : me->_pathViews)
+	{
+		pv->populate();
+		me->clickTicker();
+		if (me->_finish)
+		{
+			break;
+		}
+	}
+
+	PathManager *pm = Environment::env().pathManager();
+
+	for (Path &path : pm->objects())
+	{
+		path.cleanupRoute();
+	}
+
+	me->finishTicker();
 }

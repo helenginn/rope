@@ -29,20 +29,25 @@
 
 
 template <class Header>
-class DegreeDataGroup : public DataGroup<float, Header>
+class DegreeDataGroup : public DataGroup<Angular, Header>
 {
 public:
-	using Array = typename DataGroup<float, Header>::Array;
+	using Array = typename DataGroup<Angular, Header>::Array;
 	
-	DegreeDataGroup(int num) : DataGroup<float, Header>(num) {}
+	DegreeDataGroup(int num) : DataGroup<Angular, Header>(num) {}
 
 	void matchDegrees(Array &next);
 	virtual void addArray(std::string name, Array next);
+	
+	virtual bool should_normalise()
+	{
+		return true;
+	}
 protected:
-	using DataGroup<float, Header>::_length;
-	using DataGroup<float, Header>::_vectors;
-	using DataGroup<float, Header>::_diffs;
-	using DataGroup<float, Header>::_stdevs;
+	using DataGroup<Angular, Header>::_length;
+	using DataGroup<Angular, Header>::_vectors;
+	using DataGroup<Angular, Header>::_diffs;
+	using DataGroup<Angular, Header>::_stdevs;
 
 private:
 

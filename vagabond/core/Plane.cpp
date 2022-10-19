@@ -55,7 +55,7 @@ void Plane::addAxis(std::vector<ResidueTorsion> &list,
 
 
 	_torsions[_axis] = values;
-	_cluster->dataGroup()->applyNormals(_torsions[_axis]);
+//	_cluster->dataGroup()->applyNormals(_torsions[_axis]);
 
 	_axes[_axis] = mapped;
 

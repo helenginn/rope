@@ -57,6 +57,17 @@ public:
 	{
 		_threads = threads;
 	}
+	
+	void transferProperties(HasBondSequenceCustomisation *other)
+	{
+		other->_ignoreHydrogens = _ignoreHydrogens;
+		other->_superpose = _superpose;
+		other->_skipSections = _skipSections;
+		other->_totalSamples = _totalSamples;
+		other->_maxThreads = _maxThreads;
+		other->_threads = _threads;
+		other->_mode = _mode;
+	}
 protected:
 	bool _ignoreHydrogens = false;
 	bool _skipSections = false;

@@ -32,10 +32,18 @@ StructureModification::StructureModification(Molecule *mol, int num, int dims)
 
 StructureModification::~StructureModification()
 {
+	cleanup();
+}
+
+void StructureModification::cleanup()
+{
 	for (size_t i = 0; i < _calculators.size(); i++)
 	{
 		delete _calculators[i];
 	}
+
+	_calculators.clear();
+//	_molecule->model()->unload();
 }
 
 void StructureModification::makeCalculator(Atom *anchor, bool has_mol)

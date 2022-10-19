@@ -30,7 +30,8 @@ public:
 	
 	GLuint loadText(std::string text, int *w, int *h, 
 	                Font::Type type = Font::Thin);
-	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL);
+	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL,
+	                  bool wrap = false);
 	GLuint allocateEmptyTexture(int w, int h, std::string tag);
 	GLuint getProgram(std::string v, std::string g, std::string f);
 	void setProgram(Renderable *fl, std::string v, std::string g, std::string f);
@@ -53,7 +54,7 @@ private:
 		}
 	};
 
-	GLuint loadSurface(SDL_Surface *image, std::string filename);
+	GLuint loadSurface(SDL_Surface *image, std::string filename, bool wrap);
 	SDL_Surface *loadImage(std::string filename);
 	static Library *_library;
 	static std::string _nativePath;

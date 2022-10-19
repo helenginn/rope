@@ -21,7 +21,7 @@
 
 #include "HasMetadata.h"
 #include "MetadataGroup.h"
-#include "PlausibleRoute.h"
+#include "SplitRoute.h"
 #include "Molecule.h"
 
 class MetadataGroup;
@@ -31,6 +31,7 @@ class Path : public HasMetadata
 public:
 	Path() {};
 	Path(PlausibleRoute *pr);
+	void cleanupRoute();
 
 	void getTorsionRef(int idx);
 
@@ -53,6 +54,11 @@ public:
 	void setContributeToSVD(bool contrib)
 	{
 		_contributeSVD = contrib;
+	}
+	
+	const bool &contributesToSVD() const
+	{
+		return _contributeSVD;
 	}
 	
 	void addTorsionsToGroup(MetadataGroup &group);
@@ -152,8 +158,6 @@ inline void from_json(const json &j, Path &value)
 
     std::map<int, PlausibleRoute::WayPoints> wps = j.at("waypoints");
     value._wayPoints = wps;
-	
-	value.housekeeping();
 }
 
 #endif

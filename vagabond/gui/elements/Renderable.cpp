@@ -535,7 +535,7 @@ void Renderable::render(SnowGL *sender)
 
 		checkErrors("rebinding extras");
 
-		if (_texid > 0 && _gl->getOverrideProgram() == 0)
+		if (_texid > 0)
 		{
 			GLuint which = GL_TEXTURE_2D;
 			glActiveTexture(GL_TEXTURE0);
@@ -1145,9 +1145,10 @@ void Renderable::setShaderFile(std::string file, std::string *location,
 	}
 }
 
-void Renderable::setImage(std::string imagename)
+void Renderable::setImage(std::string imagename, bool wrap)
 {
-	GLuint tex = Library::getLibrary()->getTexture(imagename);
+	GLuint tex = Library::getLibrary()->getTexture(imagename, nullptr,
+	                                               nullptr, wrap);
 	_texid = tex;
 	_texture = imagename;
 }

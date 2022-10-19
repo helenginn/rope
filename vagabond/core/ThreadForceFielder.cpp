@@ -43,6 +43,8 @@ void ThreadForceFielder::start()
 		timeStart();
 		// do stuff
 		
+		Result *r = job->result;
+
 		if (job->requests & JobScoreStructure || 
 		    job->requests & JobUpdateMechanics)
 		{
@@ -54,11 +56,10 @@ void ThreadForceFielder::start()
 			double score = ff->score();
 			job->result->score = score;
 			
+			ff->getColours(r->aps);
 		}
 
 		BondCalculator *calc = _ffHandler->calculator();
-		Result *r = job->result;
-		ff->getColours(r->aps);
 
 		job->destroy();
 		calc->submitResult(r);

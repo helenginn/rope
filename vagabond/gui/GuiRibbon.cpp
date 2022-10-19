@@ -18,20 +18,24 @@
 
 #include "GuiRibbon.h"
 #include "GuiAtom.h"
+#include <vagabond/gui/elements/Library.h>
 #include <vagabond/utils/maths.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
 
 #define INDICES_PER_BEZIER_DIVISION (12)
 #define POINTS_PER_BEZIER (10)
-#define DIVISIONS_IN_CIRCLE (5)
+#define DIVISIONS_IN_CIRCLE (16)
 
 GuiRibbon::GuiRibbon(GuiAtom *parent) : GuiRepresentation(parent)
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/lighting.fsh");
+//	setFragmentShaderFile("assets/shaders/lighting.fsh");
+	setFragmentShaderFile("assets/shaders/pencil_shading.fsh");
 
+	std::string filename = "assets/images/pencil_shading.png";
+	setImage(filename, true);
 }
 
 GuiRibbon::~GuiRibbon()
@@ -366,27 +370,12 @@ void GuiRibbon::convert()
 
 void GuiRibbon::transplantCylinder(std::vector<Snow::Vertex> &cylinder, int start)
 {
-	int j = 0;
-
 	if (_vertices.size() <= start + cylinder.size())
 	{
 		_vertices.resize(start + cylinder.size());
 	}
 
 	std::copy(cylinder.begin(), cylinder.end(), _vertices.begin() + start);
-
-//	for (size_t i = start; i < start + cylinder.size(); i++)
-	{
-		/*
-		std::cout << glm::to_string(_vertices[i].pos) << " ";
-		std::cout << glm::to_string(cylinder[j].pos) << "\t";
-		std::cout << glm::length(_vertices[i].pos - cylinder[j].pos) << std::endl;
-		*/
-
-//		_vertices[i].pos = cylinder[j].pos;
-//		_vertices[i].normal = cylinder[j].normal;
-//		j++;
-	}
 }
 
 size_t GuiRibbon::indicesPerAtom()
@@ -438,11 +427,6 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 		convertToCylinder(&bez);
 		
 		float colour = a->addedColour();
-		if (colour > 1)
-		{
-//			colour = log(colour) + 1;
-		}
-//		std::cout << colour << std::endl;
 
 		glm::vec4 c = glm::vec4(0.f, 0.f, 0.f, 1.f);
 		val_to_cluster4x_colour(colour, &c[0], &c[1], &c[2]);

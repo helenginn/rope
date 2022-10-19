@@ -43,10 +43,10 @@ public:
 
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
-	void submitJob(int idx, bool show = true);
+	void submitJob(int idx, bool show = true, bool forces = false);
 	void retrieve();
 
-	float submitJobAndRetrieve(int idx);
+	float submitJobAndRetrieve(int idx, bool show = true, bool forces = false);
 	
 	/** total number of points in the system */
 	size_t pointCount()

@@ -201,19 +201,35 @@ void Cluster<DG>::normaliseResults(float scale)
 }
 
 template <class DG>
-typename DG::Array Cluster<DG>::rawVector(int axis)
+std::vector<float> Cluster<DG>::weights(int axis)
 {
-	std::vector<float> weights;
+	std::vector<float> ws;
 	float sc = this->_scaleFactor;
 	
 	for (size_t i = 0; i < _result.rows; i++)
 	{
 		/* confirmed (i, axis) using weird myoglobin set */
 		double w = weight(i, axis) * sc;
-		weights.push_back(w);
+		ws.push_back(w);
 	}
 	
-	typename DG::Array result = _dg.weightedDifferences(weights);
+	return ws;
+}
+
+template <class DG>
+typename DG::Array Cluster<DG>::rawVector(int axis)
+{
+	std::vector<float> ws = weights(axis);
+	typename DG::Array result = _dg.weightedDifferences(ws);
+	
+	return result;
+}
+
+template <class DG>
+typename DG::Comparable Cluster<DG>::rawComparable(int axis)
+{
+	std::vector<float> ws = weights(axis);
+	typename DG::Comparable result = _dg.weightedComparable(ws);
 	
 	return result;
 }
@@ -230,7 +246,7 @@ typename DG::Array Cluster<DG>::rawVector(int from, int to)
 		your_vals[i] -= my_vals[i];
 	}
 
-	dataGroup()->removeNormals(your_vals);
+//	dataGroup()->removeNormals(your_vals);
 	return your_vals;
 }
 
