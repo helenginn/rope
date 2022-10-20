@@ -37,17 +37,18 @@ void Dictator::makeCommands()
 	_commands["load"] = "Comma- or space-separated list of files to load";
 	_commands["exit"] = "Exit RoPE";
 	_commands["add"] = "Load metadata CSV file with 'model' or 'filename' column";
-	_commands["environment"] = ("Link to json file (usually rope.json) to"\
+	_commands["environment"] = ("Link to json file (usually rope.json) to "\
 	                            "restore RoPE environment");
 	_commands["automodel"] = ("Auto-model atom coordinate files according "\
 	                          "to existing entities matching at least 80% "
 	                          "sequence and default names");
 	_commands["rescan"] = ("Rescan existing models for existing entities"
 	                          " matching at least 80% sequence and default names");
-	_commands["get-files-native-app"] = ("load files from three directories up in "
+	_commands["get-files-native-app"] = ("Load files from three directories up in "
 	                                     "the Mac Rope app file");
     _commands["hello_world"] = ("Prints hello world");
     _commands["report"] = ("Report various statistics on the existing environment. Useful for debugging.");
+    _commands["--help"] = ("Displays available commands.");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -135,7 +136,12 @@ void Dictator::loadFiles(std::string &last)
 
 void Dictator::processRequest(std::string &first, std::string &last)
 {
-	if (first == "load" || first == "")
+	if (first == "--help") {
+        for (auto &i: _commands)
+            std::cout << "> " << i.first << std::endl << "     " << i.second << std::endl;
+    }
+
+    if (first == "load" || first == "")
 	{
 		loadFiles(last);
 	}
