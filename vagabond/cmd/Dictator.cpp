@@ -233,13 +233,24 @@ void Dictator::processRequest(std::string &first, std::string &last)
         for (int i = 0; i < model_manager->objectCount(); i++) {
             Model model = model_manager->object(i);
             std::cout << "Model " << i << ": " << model.name() << std::endl;
-//            for (int e = 0; e < model.entities().size(); e++) {
-//                Entity entity = (std::vector<Entity>(model.entities().begin(), model.entities().end()))[e];
-//                std::cout << "    Entity " << e << ": " << std::vector<Molecule>(model.moleculesForEntity(&entity).begin(), model.moleculesForEntity(&entity).end())[0].model_chain_id() << std::endl;
-//            }
+            for (int e = 0; e < entity_manager->objectCount(); e++)
+            {
+                Entity entity = entity_manager->object(e);
+                std::cout << "    Entity " << e << " (" << entity.name() <<  "): ";
+                std::set<Molecule *> molecules = model.moleculesForEntity(&entity);
+                std::set<Molecule *>::iterator m;
+                for (m = molecules.begin(); m != molecules.end(); m++)
+                {
+                    if (m == molecules.begin()) {
+                        std::cout << (*m)->id();
+                    }
+                    else {
+                        std::cout << ", " << (*m)->id();
+                    }
+                }
+                std::cout << std::endl;
+            }
         }
-
-
     }
 }
 
