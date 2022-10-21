@@ -238,15 +238,16 @@ void Dictator::processRequest(std::string &first, std::string &last)
                 Entity entity = entity_manager->object(e);
                 std::cout << "    Entity " << e << " (" << entity.name() <<  "): ";
                 std::set<Molecule *> molecules = model.moleculesForEntity(&entity);
-                std::set<Molecule *>::iterator m;
-                for (m = molecules.begin(); m != molecules.end(); m++)
+                int index = 0;
+                for (Molecule* m: molecules)
                 {
-                    if (m == molecules.begin()) {
-                        std::cout << (*m)->id();
+                    if (index == 0) {
+                        std::cout << m->id();
                     }
                     else {
-                        std::cout << ", " << (*m)->id();
+                        std::cout << ", " << m->id();
                     }
+                    index++;
                 }
                 std::cout << std::endl;
             }
@@ -257,12 +258,10 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "=========" << std::endl;
         for (int i = 0; i < model_manager->objectCount(); i++) {
             Model model = model_manager->object(i);
-            std::list<Molecule> molecules = model.molecules();
-            std::list<Molecule>::iterator m;
-            for (m = molecules.begin(); m != molecules.end(); m++)
+            for (Molecule &m: model.molecules())
             {
-                std::cout << (*m).id() << ": ";
-                if ((*m).isRefined()) {
+                std::cout << m.id() << ": ";
+                if (m.isRefined()) {
                     std::cout << "refined" << std::endl;
                 }
                 else {
