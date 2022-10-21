@@ -251,6 +251,25 @@ void Dictator::processRequest(std::string &first, std::string &last)
                 std::cout << std::endl;
             }
         }
+        std::cout << std::endl;
+
+        std::cout << "MOLECULES" << std::endl;
+        std::cout << "=========" << std::endl;
+        for (int i = 0; i < model_manager->objectCount(); i++) {
+            Model model = model_manager->object(i);
+            std::list<Molecule> molecules = model.molecules();
+            std::list<Molecule>::iterator m;
+            for (m = molecules.begin(); m != molecules.end(); m++)
+            {
+                std::cout << (*m).id() << ": ";
+                if ((*m).isRefined()) {
+                    std::cout << "refined" << std::endl;
+                }
+                else {
+                    std::cout << "not refined" << std::endl;
+                }
+            }
+        }
     }
 }
 
