@@ -31,15 +31,10 @@ public:
 	SplitRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 
 	virtual void setup();
-
-	virtual void finishRoute();
-	
-	ShortRoute *acquireRoute();
 private:
 	void cycle();
 	void makeShorts();
 	void prepareThreads();
-	void doShortRoutes();
 	bool collapseShorts();
 	void prepareShortRoutes();
 	void findAtomSequence();

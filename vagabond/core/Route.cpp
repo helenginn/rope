@@ -18,6 +18,7 @@
 
 #include "Route.h"
 #include "Molecule.h"
+#include "BondSequence.h"
 #include "MetadataGroup.h"
 #include <vagabond/c4x/Cluster.h>
 
@@ -31,6 +32,11 @@ Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 
 void Route::setup()
 {
+	if (_rawDest.size() == 0 && destinationSize() == 0)
+	{
+		throw std::runtime_error("No destination set for route");
+	}
+
 	_fullAtoms = _molecule->currentAtoms();
 	_mask.clear();
 	startCalculator();
@@ -180,3 +186,128 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 	calc->setForceFieldProperties(props);
 }
 
+const Grapher &Route::grapher() const
+{
+	const BondSequence *seq = _calculators[_grapherIdx]->sequence();
+	const Grapher &g = seq->grapher();
+
+	return g;
+}
+
+bool Route::incrementGrapher()
+{
+	_grapherIdx++;
+	if (_grapherIdx >= _calculators.size())
+	{
+		_grapherIdx = 0;
+		std::cout << "Grapher index now: " << _grapherIdx << std::endl;
+		return false;
+	}
+	
+	std::cout << "Grapher index now: " << _grapherIdx << std::endl;
+	return true;
+}
+
+void Route::setFlips(std::vector<int> &idxs, std::vector<bool> &fs)
+{
+	for (size_t j = 0; j < idxs.size(); j++)
+	{
+		setFlip(idxs[j], fs[j]);
+	}
+}
+
+
+void Route::bringTorsionsToRange()
+{
+	for (size_t i = 0; i < destinationSize(); i++)
+	{
+		while (destination(i) >= 180)
+		{
+			_destination[i] -= 360;
+		}
+		while (destination(i) < -180)
+		{
+			_destination[i] += 360;
+		}
+	}
+}
+
+void Route::clearWayPointFlips()
+{
+	_wayPoints.clear();
+	_flips.clear();
+}
+
+void Route::populateWaypoints()
+{
+	clearWayPointFlips();
+	_mask = std::vector<bool>(destinationSize(), true);
+	
+	for (size_t i = 0; i < destinationSize(); i++)
+	{
+		WayPoints wp;
+		wp.push_back(WayPoint::startPoint());
+		_flips.push_back(false);
+
+		if (fabs(destination(i)) < 30)
+		{
+			wp.push_back(WayPoint(0.33, 0.33));
+			wp.push_back(WayPoint(0.66, 0.66));
+		}
+		else
+		{
+			wp.push_back(WayPoint::midPoint());
+		}
+
+		wp.push_back(WayPoint::endPoint());
+
+		_wayPoints[i] = wp;
+	}
+
+}
+
+void Route::prepareDestination()
+{
+	if (_cluster == nullptr)
+	{
+		return;
+	}
+	
+	if (_rawDest.size() == 0)
+	{
+		throw std::runtime_error("Raw destination not set, trying to prepare"\
+		                         "destination");
+	}
+
+	const std::vector<ResidueTorsion> &list = _cluster->dataGroup()->headers();
+	std::vector<bool> found(list.size(), false);
+
+	_torsions.clear();
+	_destination.clear();
+
+	int count = 0;
+	for (BondCalculator *calc : _calculators)
+	{
+		TorsionBasis *basis = calc->sequence()->torsionBasis();
+		
+		for (size_t i = 0; i < basis->torsionCount(); i++)
+		{
+			BondTorsion *t = basis->torsion(i);
+			float v = _molecule->valueForTorsionFromList(t, list, _rawDest, found);
+			if (v != v)
+			{
+				v = 0;
+			}
+
+			_torsions.push_back(t);
+			_destination.push_back(v);
+			
+			/* each calculator will only be sensitive to a subset of our
+			 * destination, so we need to keep records */
+			_calc2Destination[calc].push_back(count);
+			count++;
+		}
+	}
+	
+	populateWaypoints();
+}

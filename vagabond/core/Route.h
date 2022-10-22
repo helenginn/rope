@@ -22,6 +22,8 @@
 #include "StructureModification.h"
 #include "Responder.h"
 
+class Grapher;
+
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
 public:
@@ -80,7 +82,131 @@ public:
 	{
 		_finish = true;
 	}
+
+	void setRawDestination(const std::vector<Angular> dest)
+	{
+		_rawDest = dest;
+	}
+	
+	const Point &destination() const
+	{
+		return _destination;
+	}
+	
+	void setDestination(Point &d)
+	{
+		_destination = d;
+	}
+	
+	struct WayPoint
+	{
+		float fraction = 0.5; /* fraction of route progression between 0 and 1 */
+		float progress = 0.5; /* proportion of progress to goal at WayPoint */
+
+		WayPoint()
+		{
+
+		}
+		
+		WayPoint(float f, float p)
+		{
+			fraction = f; progress = p;
+		}
+		
+		static WayPoint startPoint()
+		{
+			WayPoint wp;
+			wp.fraction = 0;
+			wp.progress = 0;
+			return wp;
+		}
+		
+		static WayPoint midPoint()
+		{
+			WayPoint wp;
+			wp.fraction = 0.5;
+			wp.progress = 0.5;
+			return wp;
+		}
+		
+		static WayPoint endPoint()
+		{
+			WayPoint wp;
+			wp.fraction = 1;
+			wp.progress = 1;
+			return wp;
+		}
+	};
+	
+	void setLinear()
+	{
+		_type = Linear;
+	}
+	
+	void setPolynomial()
+	{
+		_type = Polynomial;
+	}
+	
+	typedef std::vector<WayPoint> WayPoints;
+	
+	const std::map<int, WayPoints> &wayPoints() const
+	{
+		return _wayPoints;
+	}
+	
+	const size_t wayPointCount() const
+	{
+		return _wayPoints.size();
+	}
+	
+	void setWayPoints(const std::map<int, WayPoints> &wps) 
+	{
+		_wayPoints = wps;
+	}
+	
+	WayPoints &wayPoints(int idx)
+	{
+		return _wayPoints.at(idx);
+	}
+	
+	void setWayPoints(int idx, const WayPoints &wps) 
+	{
+		_wayPoints[idx] = wps;
+	}
+	
+	size_t torsionCount()
+	{
+		return _torsions.size();
+	}
+	
+	BondTorsion *torsion(int i)
+	{
+		return _torsions[i];
+	}
+	
+	void addTorsion(BondTorsion *t)
+	{
+		_torsions.push_back(t);
+	}
+	
+	const std::vector<bool> &flips() const
+	{
+		return _flips;
+	}
+
+	void setFlips(std::vector<int> &idxs, std::vector<bool> &fs);
+	
+	void clearWayPointFlips();
 protected:
+	const Grapher &grapher() const;
+	bool incrementGrapher();
+	
+	void clearMask()
+	{
+		_mask = std::vector<bool>(_torsions.size(), true);
+	}
+
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
 
 	virtual void doCalculations() {};
@@ -100,10 +226,56 @@ protected:
 	{
 		return _mask[i];
 	}
+	
+	size_t destinationSize()
+	{
+		return _destination.size();
+	}
+	
+	const float &destination(int i) const
+	{
+		return _destination[i];
+	}
+
+	void setFlips(const std::vector<bool> &flips) 
+	{
+		_flips = flips;
+	}
+	
+	void setFlip(int idx, bool flip)
+	{
+		_flips[idx] = flip;
+	}
+	
+	bool flip(int i) const
+	{
+		return _flips[i];
+	}
+
+	void bringTorsionsToRange();
+	
+	enum InterpolationType
+	{
+		Linear,
+		Polynomial,
+	};
+	
+	void setType(InterpolationType type)
+	{
+		_type = type;
+	}
+	
+	const InterpolationType &type() const
+	{
+		return _type;
+	}
 
 	std::atomic<bool> _finish{false};
 	std::vector<bool> _mask;
 	std::vector<Point> _points;
+
+	void populateWaypoints();
+	void prepareDestination();
 private:
 	bool _calculating;
 	float _score;
@@ -118,11 +290,26 @@ private:
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
 
+	std::vector<BondTorsion *> _torsions;
+
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
+	
+	size_t _grapherIdx = 0;
+
+	Point _destination;
+	std::vector<Angular> _rawDest;
+	
+	std::map<BondCalculator *, std::vector<int> > _calc2Destination;
 
 	TicketPoint _ticket2Point;
 	TicketScores _point2Score;
+	
+	InterpolationType _type = Polynomial;
+	
+	/* int: referring to torsion angle via _destination[int] */
+	std::map<int, WayPoints> _wayPoints;
+	std::vector<bool> _flips;
 };
 
 #endif

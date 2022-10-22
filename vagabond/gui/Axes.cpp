@@ -182,7 +182,7 @@ void Axes::route(int idx)
 	SplitRoute *sr = new SplitRoute(_molecule, _cluster, l);
 	
 	std::vector<Angular> values = directTorsionVector(idx);
-	sr->setDestination(values);
+	sr->setRawDestination(values);
 	sr->setDestinationMolecule(_targets[idx]);
 
 	RouteExplorer *re = new RouteExplorer(_scene, sr);

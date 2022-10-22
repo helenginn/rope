@@ -18,8 +18,8 @@
 
 #include "PlausibleRoute.h"
 #include "Molecule.h"
-#include "BondSequence.h"
 #include "MetadataGroup.h"
+#include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
 #include <vagabond/utils/polyfit.h>
 
@@ -32,11 +32,6 @@ PlausibleRoute::PlausibleRoute(Molecule *mol, Cluster<MetadataGroup> *cluster,
 
 void PlausibleRoute::setup()
 {
-	if (_rawDest.size() == 0 && _destination.size() == 0)
-	{
-		throw std::runtime_error("No destination set for route");
-	}
-
 	Route::setup();
 	prepareDestination();
 	
@@ -73,79 +68,6 @@ void PlausibleRoute::setTargets()
 	}
 }
 
-void PlausibleRoute::populateWaypoints()
-{
-	_wayPoints.clear();
-	_flips.clear();
-	_mask = std::vector<bool>(_destination.size(), true);
-	
-	for (size_t i = 0; i < _destination.size(); i++)
-	{
-		WayPoints wp;
-		wp.push_back(WayPoint::startPoint());
-		_flips.push_back(false);
-
-		if (fabs(_destination[i]) < 30)
-		{
-			wp.push_back(WayPoint(0.33, 0.33));
-			wp.push_back(WayPoint(0.66, 0.66));
-		}
-		else
-		{
-			wp.push_back(WayPoint::midPoint());
-		}
-
-		wp.push_back(WayPoint::endPoint());
-
-		_wayPoints[i] = wp;
-	}
-
-}
-
-void PlausibleRoute::prepareDestination()
-{
-	if (_cluster == nullptr)
-	{
-		return;
-	}
-
-	const std::vector<ResidueTorsion> &list = _cluster->dataGroup()->headers();
-	std::vector<bool> found(list.size(), false);
-	Point trial;
-
-	for (BondCalculator *calc : _calculators)
-	{
-		TorsionBasis *basis = calc->sequence()->torsionBasis();
-		trial = Point(basis->torsionCount(), 0);
-		
-		int count = 0;
-		_torsions.clear();
-		
-		for (size_t i = 0; i < basis->torsionCount(); i++)
-		{
-			BondTorsion *t = basis->torsion(i);
-			float v = _molecule->valueForTorsionFromList(t, list, _rawDest, found);
-			_torsions.push_back(t);
-			
-			if (v == v)
-			{
-				count++;
-				trial[i] = v;
-			}
-		}
-		
-		if (count > 0)
-		{
-			break;
-		}
-	}
-	
-	_destination = trial;
-	
-	populateWaypoints();
-
-}
-
 float PlausibleRoute::momentumScore(int steps)
 {
 	calculateProgression(steps);
@@ -176,7 +98,7 @@ void PlausibleRoute::startTicker(std::string tag, int d)
 {
 	if (d < 0)
 	{
-		d = dims();
+		d = destinationSize();
 	}
 
 	HasResponder<Responder<Route>>::sendResponse("progress_" + tag, 
@@ -190,7 +112,7 @@ void PlausibleRoute::postScore(float score)
 
 bool PlausibleRoute::validateMainTorsion(int i)
 {
-	if (_mainsOnly && !_torsions[i]->coversMainChain())
+	if (_mainsOnly && !torsion(i)->coversMainChain())
 	{
 		return false;
 	}
@@ -200,7 +122,7 @@ bool PlausibleRoute::validateMainTorsion(int i)
 		return false;
 	}
 
-	float magnitude = fabs(_destination[i]);
+	float magnitude = fabs(destination(i));
 	if (magnitude < _magnitudeThreshold)
 	{
 		return false;
@@ -212,7 +134,7 @@ bool PlausibleRoute::validateMainTorsion(int i)
 int PlausibleRoute::countTorsions()
 {
 	int count = 0;
-	for (size_t i = 0; i < dims(); i++)
+	for (size_t i = 0; i < destinationSize(); i++)
 	{
 		if (validateMainTorsion(i))
 		{
@@ -236,7 +158,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 			continue;
 		}
 
-		WayPoints &wps = _wayPoints[idxs[i]];
+		WayPoints &wps = wayPoints(idxs[i]);
 		for (size_t j = 1; j < wps.size() - 1; j++)
 		{
 			WayPoint &wp = wps[j];
@@ -288,7 +210,7 @@ int PlausibleRoute::nudgeWaypoints()
 	startTicker("Nudging waypoints (" + f_to_str(_magnitudeThreshold, 1)
 	            + " degrees +)");
 
-	for (size_t i = 0; i < dims(); i++)
+	for (size_t i = 0; i < destinationSize(); i++)
 	{
 		if (Route::_finish)
 		{
@@ -305,7 +227,8 @@ int PlausibleRoute::nudgeWaypoints()
 		std::vector<int> torsionIdxs;
 		torsionIdxs.push_back(i);
 		
-		for (size_t j = i + 1; j < dims() && torsionIdxs.size() < 1; j++)
+		for (size_t j = i + 1; j < destinationSize() 
+		     && torsionIdxs.size() < 1; j++)
 		{
 			if (!validateMainTorsion(j))
 			{
@@ -329,22 +252,6 @@ int PlausibleRoute::nudgeWaypoints()
 	finishTicker();
 
 	return changed;
-}
-
-void PlausibleRoute::bringTorsionsToRange()
-{
-	for (size_t i = 0; i < dims(); i++)
-	{
-		while (_destination[i] >= 180)
-		{
-			_destination[i] -= 360;
-		}
-		while (_destination[i] < -180)
-		{
-			_destination[i] += 360;
-		}
-	}
-
 }
 
 void print(std::vector<bool> &flips)
@@ -389,18 +296,10 @@ std::vector<std::vector<bool> > permutations(int count)
 	return perms;
 }
 
-void PlausibleRoute::setFlips(std::vector<int> &idxs, std::vector<bool> &fs)
-{
-	for (size_t j = 0; j < idxs.size(); j++)
-	{
-		_flips[idxs[j]] = fs[j];
-	}
-}
-
 std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max, 
                                                     bool validate, float maxMag)
 {
-	AtomGraph *g = grapher().graph(_torsions[start]);
+	AtomGraph *g = grapher().graph(torsion(start));
 	AtomGraph *orig = g;
 	if (!g) return std::vector<int>();
 
@@ -410,7 +309,6 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 	
 	while (count < max)
 	{
-		AtomGraph *next = nullptr;
 		for (size_t j = 0; j < g->children.size(); j++)
 		{
 			Atom *a = g->children[j]->atom;
@@ -421,17 +319,12 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 				continue;
 			}
 
-			if (candidate->torsion->coversMainChain())
-			{
-				next = candidate;
-			}
-			
 			if (validate && !validateMainTorsion(n))
 			{
 				continue;
 			}
 
-			if (fabs(_destination[n]) < maxMag)
+			if (fabs(destination(n)) < maxMag)
 			{
 				continue;
 			}
@@ -440,12 +333,21 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 			count++;
 		}
 		
-		if (next == nullptr)
+		int best = -1;
+		int depth = 0;
+		for (size_t j = 0; j < g->children.size(); j++)
 		{
-			break;
+			int maxdepth = g->children[j]->maxDepth;
+			if (maxdepth > depth)
+			{
+				best = j;
+				maxdepth = depth;
+			}
 		}
-		
-		g = next;
+
+		if (best < 0) break;
+
+		g = g->children[best];
 	}
 
 	return idxs;
@@ -454,17 +356,19 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 
 bool PlausibleRoute::flipTorsion(int idx)
 {
-	std::vector<int> idxs = getTorsionSequence(idx, 3, true, 30.f);
+	std::vector<int> idxs = getTorsionSequence(idx, 4, false, 30.f);
 	
 	if (idxs.size() == 0)
 	{
 		return false;
 	}
+	
+	std::cout << "Idx count: " << idxs.size() << std::endl;
 
 	std::vector<bool> best(idxs.size(), false);
 	for (size_t i = 0; i < idxs.size(); i++)
 	{
-		best[i] = _flips[idxs[i]];
+		best[i] = flip(idxs[i]);
 	}
 
 	std::vector<std::vector<bool> > putatives = permutations(idxs.size());
@@ -472,8 +376,10 @@ bool PlausibleRoute::flipTorsion(int idx)
 	for (size_t i = 0; i < putatives.size(); i++)
 	{
 		setFlips(idxs, putatives[i]);
+		print(putatives[i]);
 
 		float candidate = momentumScore(_nudgeCount);
+		std::cout << " - " << candidate << std::endl;
 
 		if (candidate < _bestScore - 1e-6)
 		{
@@ -504,7 +410,7 @@ bool PlausibleRoute::flipTorsions(bool main)
 	
 	bringTorsionsToRange();
 	
-	for (size_t i = 0; i < dims(); i++)
+	for (size_t i = 0; i < destinationSize(); i++)
 	{
 		if (Route::_finish)
 		{
@@ -518,13 +424,13 @@ bool PlausibleRoute::flipTorsions(bool main)
 			continue;
 		}
 
-		float magnitude = fabs(_destination[i]);
+		float magnitude = fabs(destination(i));
 		if (magnitude < 30.f)
 		{
 			continue;
 		}
 		
-		flipTorsion(i);
+		changed |= flipTorsion(i);
 	}
 	
 	clearMask();
@@ -551,8 +457,11 @@ void PlausibleRoute::flipTorsionCycle(bool main)
 
 void PlausibleRoute::flipTorsionCycles()
 {
-	flipTorsionCycle(true);
-	flipTorsionCycle(false);
+	do
+	{
+		flipTorsionCycle(true);
+	}
+	while (incrementGrapher());
 }
 
 void PlausibleRoute::nudgeWayPointCycles()
@@ -639,18 +548,18 @@ void PlausibleRoute::doCalculations()
 
 float PlausibleRoute::getTorsionAngle(int i)
 {
-	if (!_flips[i])
+	if (!flip(i))
 	{
-		return _destination[i];
+		return destination(i);
 	}
 	
-	if (_destination[i] > 0)
+	if (destination(i) > 0)
 	{
-		return _destination[i] - 360;
+		return destination(i) - 360;
 	}
 	else 
 	{
-		return _destination[i] + 360;
+		return destination(i) + 360;
 	}
 }
 
@@ -658,7 +567,7 @@ float PlausibleRoute::getLinearInterpolatedTorsion(int i, float frac)
 {
 	float angle = getTorsionAngle(i);
 
-	WayPoints wps = _wayPoints[i];
+	WayPoints wps = wayPoints(i);
 	WayPoint *start = nullptr;
 	WayPoint *end = nullptr;
 
@@ -685,9 +594,9 @@ float PlausibleRoute::getLinearInterpolatedTorsion(int i, float frac)
 
 void PlausibleRoute::addLinearInterpolatedPoint(float frac)
 {
-	Point point(dims(), 0);
+	Point point(destinationSize(), 0);
 
-	for (size_t i = 0; i < dims(); i++)
+	for (size_t i = 0; i < destinationSize(); i++)
 	{
 		float t = getLinearInterpolatedTorsion(i, frac);
 		point[i] = t;
@@ -724,15 +633,15 @@ std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 {
 	std::vector<PolyFit> fits;
 
-	for (size_t i = 0; i < dims(); i++)
+	for (size_t i = 0; i < destinationSize(); i++)
 	{
 		std::vector<float> xs, ys;
-		int n = _wayPoints[i].size() - 1;
+		int n = wayPoints(i).size() - 1;
 
 		for (int j = 0; j <= n; j++)
 		{
-			xs.push_back(_wayPoints[i][j].fraction);
-			ys.push_back(_wayPoints[i][j].progress);
+			xs.push_back(wayPoints(i)[j].fraction);
+			ys.push_back(wayPoints(i)[j].progress);
 		}
 
 		PolyFit pf = polyfit(xs, ys, n);
@@ -746,9 +655,9 @@ std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 void PlausibleRoute::addPolynomialInterpolatedPoint(std::vector<PolyFit> &fits,
                                                     float frac)
 {
-	Point point(dims(), 0);
+	Point point(destinationSize(), 0);
 
-	for (size_t i = 0; i < dims(); i++)
+	for (size_t i = 0; i < destinationSize(); i++)
 	{
 		float t = getPolynomialInterpolatedTorsion(fits[i], i, frac);
 		point[i] = t;
@@ -794,7 +703,7 @@ void PlausibleRoute::calculateLinearProgression(int steps)
 
 void PlausibleRoute::calculateProgression(int steps)
 {
-	switch (_type)
+	switch (type())
 	{
 		case Linear:
 		calculateLinearProgression(steps);
@@ -820,14 +729,14 @@ void PlausibleRoute::assignParameterValues(const SPoint &trial)
 	}
 }
 
-bool PlausibleRoute::validateWayPoint(WayPoints &wps)
+bool PlausibleRoute::validateWayPoint(const WayPoints &wps)
 {
 	float tolerance = 1 / (float)_nudgeCount;
 	tolerance *= 2;
 
 	for (size_t i = 0; i < wps.size() - 1; i++)
 	{
-		if (wps[i].progress > wps[i + 1].progress - tolerance)
+		if (wps.at(i).progress > wps.at(i + 1).progress - tolerance)
 		{
 			return false;
 		}
@@ -840,7 +749,7 @@ bool PlausibleRoute::validateWayPoints()
 {
 	for (size_t i = 0; i < _activeTorsions.size(); i++)
 	{
-		WayPoints &wps = _wayPoints[_activeTorsions[i]];
+		const WayPoints &wps = wayPoints(_activeTorsions[i]);
 		if (!validateWayPoint(wps))
 		{
 			return false;
@@ -884,9 +793,9 @@ int PlausibleRoute::awaitResult(double *eval)
 
 int PlausibleRoute::indexOfTorsion(BondTorsion *t)
 {
-	for (size_t i = 0; i < _torsions.size(); i++)
+	for (size_t i = 0; i < torsionCount(); i++)
 	{
-		if (_torsions[i] == t)
+		if (torsion(i) == t)
 		{
 			return i;
 		}
@@ -902,11 +811,8 @@ void PlausibleRoute::extractWayPoints(PlausibleRoute *other)
 		return;
 	}
 
-	const BondSequence *seq = _calculators[0]->sequence();
-	const Grapher &g = seq->grapher();
-
-	const BondSequence *otherseq = other->_calculators[0]->sequence();
-	const Grapher &h = otherseq->grapher();
+	const Grapher &g = grapher();
+	const Grapher &h = other->grapher();
 
 	for (size_t i = 0; i < g.graphCount(); i++)
 	{
@@ -941,8 +847,8 @@ void PlausibleRoute::extractWayPoints(PlausibleRoute *other)
 			
 			const WayPoints &wps = other->wayPoints(src);
 			setWayPoints(dest, wps);
-			bool flip = other->_flips[src];
-			_flips[dest] = flip;
+			bool flip = other->flip(src);
+			setFlip(dest, flip);
 		}
 	}
 }
@@ -950,27 +856,19 @@ void PlausibleRoute::extractWayPoints(PlausibleRoute *other)
 void PlausibleRoute::printWayPoints()
 {
 	std::cout << "Waypoints:" << std::endl;
-	for (size_t i = 0; i < _wayPoints.size(); i++)
+	for (size_t i = 0; i < wayPointCount(); i++)
 	{
-		std::cout << _torsions[i]->desc() << " ";
-		std::cout << " flip: " << (_flips[i] ? "yes" : "no") << "; ";
-		for (size_t j = 0; j < _wayPoints[i].size(); j++)
+		std::cout << torsion(i)->desc() << " ";
+		std::cout << " flip: " << (flip(i) ? "yes" : "no") << "; ";
+		for (size_t j = 0; j < wayPointCount(); j++)
 		{
-			std::cout << "(" << _wayPoints[i][j].progress << ", ";
-			std::cout << _wayPoints[i][j].fraction << ") ";
+			std::cout << "(" << wayPoints(i)[j].progress << ", ";
+			std::cout << wayPoints(i)[j].fraction << ") ";
 		}
 		std::cout << std::endl;
 	}
 
 	std::cout << std::endl;
-}
-
-const Grapher &PlausibleRoute::grapher() const
-{
-	const BondSequence *seq = _calculators[0]->sequence();
-	const Grapher &g = seq->grapher();
-
-	return g;
 }
 
 void PlausibleRoute::maskTails()

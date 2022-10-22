@@ -19,7 +19,6 @@
 #include "SplitRoute.h"
 #include "Molecule.h"
 #include "AtomGroup.h"
-#include "ShortCalculator.h"
 #include "BondSequence.h"
 #include "Grapher.h"
 #include "ShortRoute.h"
@@ -125,7 +124,6 @@ bool SplitRoute::optimiseConnections()
 		}
 
 		std::vector<int> idxs;
-//		idxs = getTorsionSequence(idx, 6, false, 1.f);
 		addTorsionIndices(idxs, g);
 		if (idxs.size())
 		{
@@ -222,61 +220,6 @@ void SplitRoute::prepareShortRoutes()
 	calculateFirstAnchors();
 }
 
-void SplitRoute::makeShorts()
-{
-	for (AtomInt ac : _atoms)
-	{
-		ShortRoute *sr = new ShortRoute(_molecule, _cluster, Route::_dims);
-		sr->setAtom(ac.atom, ac.count);
-		sr->setDestination(_rawDest);
-		sr->setup();
-		sr->extractWayPoints(this);
-
-		_splits.push_back(sr);
-		_pool.pushObject(sr);
-	}
-}
-
-void SplitRoute::prepareThreads()
-{
-	for (size_t i = 0; i < 4; i++)
-	{
-		/* several calculators */
-		ShortCalculator *worker = new ShortCalculator(this);
-		std::thread *thr = new std::thread(&ShortCalculator::start, worker);
-
-		_pool.threads.push_back(thr);
-		_pool.workers.push_back(worker);
-	}
-}
-
-void SplitRoute::doShortRoutes()
-{
-	return;
-	if (_disable)
-	{
-//		return;
-	}
-
-	makeShorts();
-	prepareThreads();
-	
-	std::string label = "Short routes (" + std::to_string(_splits.size()) + ")";
-	startTicker(label, _splits.size());
-
-	_pool.joinThreads();
-	
-	finishTicker();
-		
-	for (ShortRoute *sr : _splits)
-	{
-		extractWayPoints(sr);
-		delete sr;
-	}
-	
-	_splits.clear();
-	_pool.cleanup();
-}
 
 void SplitRoute::cycle()
 {
@@ -298,11 +241,6 @@ void SplitRoute::cycle()
 		
 		case OptimisingConnections:
 		optimiseConnections();
-		_stage = DoingShorts;
-		break;
-		
-		case DoingShorts:
-		doShortRoutes();
 		_stage = NudgingWaypoints;
 		break;
 		
@@ -338,43 +276,10 @@ void SplitRoute::doCalculations()
 		float end = momentumScore(_nudgeCount);
 		std::cout << "End: " << end << std::endl;
 		postScore(end);
-		
-		if (end > begin * 0.99)
-		{
-//			_disable = true;
-//			_maximumCycles = 1000;
-//			_minimumMagnitude = 0.5;
-		}
-
 	}
 
 	finishTicker();
 	Route::_finish = false;
 	prepareForAnalysis();
-}
-
-void SplitRoute::finishRoute()
-{
-	Route::finishRoute();
-	
-	for (ShortRoute *sr : _splits)
-	{
-		sr->finishRoute();
-	}
-}
-
-
-ShortRoute *SplitRoute::acquireRoute()
-{
-	if (Route::_finish)
-	{
-		return nullptr;
-	}
-
-	ShortRoute *sr = nullptr;
-	bool finish = true;
-	_pool.acquireObject(sr, finish);
-	
-	return sr;
 }
 

@@ -28,12 +28,12 @@ Path::Path(PlausibleRoute *pr)
 	_molecule = pr->molecule();
 	_end = pr->endMolecule();
 
-	_wayPoints = pr->_wayPoints;
-	_flips = pr->_flips;
-	_type = pr->_type;
-	_destination = pr->_destination;
+	_wayPoints = pr->wayPoints();
+	_flips = pr->flips();
+	_type = pr->type();
+	_destination = pr->destination();
 	
-	for (size_t i = 0; i < pr->_torsions.size(); i++)
+	for (size_t i = 0; i < pr->torsionCount(); i++)
 	{
 		getTorsionRef(i);
 	}
@@ -43,7 +43,7 @@ Path::Path(PlausibleRoute *pr)
 
 void Path::getTorsionRef(int idx)
 {
-	BondTorsion *t = _route->_torsions[idx];
+	BondTorsion *t = _route->torsion(idx);
 
 	ResidueId id = t->residueId();
 	TorsionRef rt = TorsionRef(t);
@@ -108,10 +108,10 @@ PlausibleRoute *Path::toRoute()
 	AtomGroup *group = _model->currentAtoms();
 
 	SplitRoute *pr = new SplitRoute(_molecule, nullptr, _wayPoints.size());
-	pr->_destination = _destination;
-	pr->_type = _type;
-	pr->_flips = _flips;
-	pr->_wayPoints = _wayPoints;
+	pr->setDestination(_destination);
+	pr->setType(_type);
+	pr->Route::setFlips(_flips);
+	pr->setWayPoints(_wayPoints);
 	pr->_endMolecule = _end;
 
 	for (size_t i = 0; i < _residueIds.size(); i++)
@@ -151,7 +151,7 @@ PlausibleRoute *Path::toRoute()
 			std::cout << "WARNING! null bond " << local->id().str() << std::endl;
 		}
 		
-		pr->_torsions.push_back(bt);
+		pr->addTorsion(bt);
 	}
 
 	pr->clearMask();

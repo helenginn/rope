@@ -106,7 +106,7 @@ private:
 	std::vector<bool> _flips;
 	std::vector<MetadataGroup::Array> _angleArrays;
 
-	PlausibleRoute::Point _destination;
+	Route::Point _destination;
 	PlausibleRoute::InterpolationType _type = PlausibleRoute::Polynomial;
 	
 	PlausibleRoute *_route = nullptr;
