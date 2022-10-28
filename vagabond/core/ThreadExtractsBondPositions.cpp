@@ -134,7 +134,7 @@ void ThreadExtractsBondPositions::start()
 			continue; // loses control of bond sequence
 		}
 		if (job->requests & JobCalculateMapSegment ||
-		    job->requests & JobCalculateMapCorrelation)
+		    job->requests & JobMapCorrelation)
 		{
 			transferToMaps(job, seq);
 			continue; // loses control of bond sequence

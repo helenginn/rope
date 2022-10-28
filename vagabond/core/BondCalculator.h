@@ -34,8 +34,10 @@ class Atom;
 class BondSequenceHandler;
 class ForceFieldHandler;
 class MapTransferHandler;
+class CorrelationHandler;
 class PointStoreHandler;
 class MapSumHandler;
+class Diffraction;
 class ForceField;
 class Sampler;
 
@@ -156,6 +158,11 @@ public:
 	
 	BondSequence *sequence(int i = 0);
 	
+	void setDiffractionData(Diffraction *diff)
+	{
+		_diffraction = diff;
+	}
+	
 	MapTransferHandler *mapHandler()
 	{
 		return _mapHandler;
@@ -212,10 +219,15 @@ private:
 	PointStoreHandler *_pointHandler = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
+	CorrelationHandler *_correlHandler = nullptr;
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	Sampler *_sampler = nullptr;
 	ForceFieldHandler *_ffHandler = nullptr;
 	FFProperties _props{};
+	
+	Diffraction *_diffraction = nullptr;
+
+	void setupCorrelationHandler();
 	
 	std::vector<AnchorExtension> _atoms;
 };

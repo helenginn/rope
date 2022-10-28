@@ -23,6 +23,7 @@
 #include "BondCalculator.h"
 
 class MiniJobMap;
+class CorrelationHandler;
 class AtomSegment;
 class AtomMap;
 
@@ -35,6 +36,11 @@ public:
 	void setMapHandler(MapTransferHandler *handler)
 	{
 		_mapHandler = handler;
+	}
+	
+	void setCorrelationHandler(CorrelationHandler *handler)
+	{
+		_correlHandler = handler;
 	}
 	
 	void setMapCount(int maps)
@@ -84,6 +90,7 @@ private:
 
 	BondCalculator *_calculator = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
+	CorrelationHandler *_correlHandler = nullptr;
 	
 	AtomMap *_template = nullptr;
 	int _threads = 1;

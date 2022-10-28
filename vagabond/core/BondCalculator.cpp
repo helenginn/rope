@@ -19,6 +19,7 @@
 #include "ThreadSubmitsJobs.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "CorrelationHandler.h"
 #include "ForceFieldHandler.h"
 #include "MapTransferHandler.h"
 #include "PointStoreHandler.h"
@@ -68,10 +69,10 @@ void BondCalculator::sanityCheckPipeline()
 		throw std::runtime_error("Bond calculator pipeline not specified");
 	}
 
-	if (_type == PipelineCorrelation)
+	if (_type == PipelineCorrelation && _diffraction == nullptr)
 	{
-		throw std::runtime_error("Correlation requested, but not yet "
-		                         "implemented");
+		throw std::runtime_error("Correlation requested, but no diffraction "
+		                         "to compare to");
 	}
 }
 
@@ -109,6 +110,18 @@ void BondCalculator::addAnchorExtension(Atom *atom, size_t bondCount)
 	_atoms.push_back(ext);
 }
 
+void BondCalculator::setupCorrelationHandler()
+{
+	if (!(_type & PipelineCorrelation))
+	{
+		return;
+	}
+
+	_correlHandler = new CorrelationHandler(this);
+	_correlHandler->setThreads(_threads);
+	_correlHandler->setDiffraction(_diffraction);
+}
+
 void BondCalculator::setupMapTransferHandler()
 {
 	if (!(_type & PipelineCalculatedMaps))
@@ -121,7 +134,8 @@ void BondCalculator::setupMapTransferHandler()
 
 void BondCalculator::setupMapSumHandler()
 {
-	if (!(_type & PipelineCalculatedMaps))
+	if (!(_type & PipelineCalculatedMaps) &&
+	    !(_type & PipelineCorrelation))
 	{
 		return;
 	}
@@ -129,6 +143,7 @@ void BondCalculator::setupMapSumHandler()
 	_sumHandler = new MapSumHandler(this);
 	_sumHandler->setThreads(_maxThreads);
 	_sumHandler->setMapCount(_maxThreads);
+	_sumHandler->setCorrelationHandler(_correlHandler);
 }
 
 void BondCalculator::setupSequenceHandler()
@@ -179,6 +194,7 @@ void BondCalculator::setup()
 	sanityCheckPipeline();
 	sanityCheckThreads();
 
+	setupCorrelationHandler();
 	setupMapSumHandler();
 	setupMapTransferHandler();
 	setupSequenceHandler();
@@ -205,6 +221,12 @@ void BondCalculator::setup()
 	if (_ffHandler != nullptr)
 	{
 		_ffHandler->setup();
+	}
+	
+	if (_correlHandler != nullptr)
+	{
+		_correlHandler->setMapSumHandler(_sumHandler);
+		_correlHandler->setup();
 	}
 }
 
@@ -292,7 +314,7 @@ void BondCalculator::submitResult(Result *r)
 void BondCalculator::sanityCheckJob(Job &job)
 {
 	if ((job.requests & JobCalculateMapSegment) || 
-	    (job.requests & JobCalculateMapCorrelation))
+	    (job.requests & JobMapCorrelation))
 	{
 		if (_type != PipelineCalculatedMaps)
 		{
@@ -397,6 +419,11 @@ const size_t BondCalculator::maxCustomVectorSize() const
 void BondCalculator::setSampler(Sampler *sampler)
 {
 	_sampler = sampler;
+	if (_sampler == nullptr)
+	{
+		setTotalSamples(1);
+		return;
+	}
 	sampler->setup();
 	setTotalSamples(_sampler->pointCount());
 }

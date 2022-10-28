@@ -19,6 +19,7 @@
 #include "MapSumHandler.h"
 #include "ElementSegment.h"
 #include "MapTransferHandler.h"
+#include "CorrelationHandler.h"
 #include "ThreadMapSummer.h"
 #include "AtomSegment.h"
 #include "Job.h"
@@ -174,12 +175,16 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 	{
 		r->map = new AtomMap(*_template);
 		r->map->copyData(*mj->segment);
-		returnSegment(mj->segment);
+		
+		if (!(job->requests & JobMapCorrelation))
+		{
+			returnSegment(mj->segment);
+		}
 	}
 	
-	if (job->requests & JobCalculateMapCorrelation)
+	if (job->requests & JobMapCorrelation)
 	{
-		// ... send onwards
+		_correlHandler->pushMap(mj->segment, job);
 	}
 	else
 	{

@@ -71,7 +71,7 @@ void ForceField::setupVanDerWaals()
 	}
 
 	int added = 0;
-	const double comp = 15;
+	const double comp = 10;
 	
 	std::map<Atom *, Atom *> tmpReporters;
 
