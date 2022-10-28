@@ -321,6 +321,11 @@ void ClusterView::addPaths()
 		{
 			continue;
 		}
+		
+		if (_confSpaceView->entity() != path.startMolecule()->entity())
+		{
+			continue;
+		}
 
 		PathView *pv = new PathView(path, _cx);
 		addPathView(pv);

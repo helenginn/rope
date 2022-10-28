@@ -21,13 +21,12 @@
 #include "AtomGroup.h"
 #include "BondSequence.h"
 #include "Grapher.h"
-#include "ShortRoute.h"
 
 SplitRoute::SplitRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 : PlausibleRoute(mol, cluster, dims)
 {
 	_threads = 2;
-	_maximumCycles = 20;
+	_maximumCycles = 5;
 }
 
 void SplitRoute::setup()
@@ -36,12 +35,6 @@ void SplitRoute::setup()
 	prepareShortRoutes();
 	
 	submitJob(0);
-
-	float begin = momentumScore(_nudgeCount);
-	if (begin < 1.f)
-	{
-		_disable = true;
-	}
 }
 
 void SplitRoute::findAtomSequence()
@@ -65,12 +58,21 @@ void SplitRoute::findAtomSequence()
 
 void SplitRoute::addTorsionIndices(std::vector<int> &idxs, AtomGraph *gr)
 {
-	const Grapher &g = grapher();
-	AtomGraph *curr = gr;
-	if (!curr)
+	if (!gr)
 	{
 		return;
 	}
+
+	bool found = incrementToAtomGraph(gr);
+	
+	if (!found)
+	{
+		return;
+	}
+
+	AtomGraph *curr = gr;
+
+	const Grapher &g = grapher();
 
 	for (size_t i = 0; i < half_quiet + 1; i++)
 	{
@@ -131,7 +133,7 @@ bool SplitRoute::optimiseConnections()
 		}
 	}
 
-	_maxJobRuns = 6;
+	_maxJobRuns = 20;
 	finishTicker();
 	return result;
 }
@@ -183,37 +185,6 @@ void SplitRoute::calculateFirstAnchors()
 	}
 }
 
-bool SplitRoute::collapseShorts()
-{
-	if (_atoms.size() <= 1)
-	{
-		return false;
-	}
-
-	int shortest_collapse = INT_MAX;
-	int idx = 0;
-
-	for (size_t i = 0; i < _atoms.size() - 1; i++)
-	{
-		int mine = _atoms[i].count;
-		int next = _atoms[i + 1].count;
-		
-		if (next + mine < shortest_collapse)
-		{
-			shortest_collapse = next + mine;
-			idx = i;
-		}
-	}
-	
-	/* merge idx and idx + 1 */
-	_atoms[idx].count += _atoms[idx + 1].count;
-	_atoms.erase(_atoms.begin() + idx + 1);
-	
-	std::cout << "Total anchors: " << _atoms.size() << std::endl;
-
-	return true;
-}
-
 void SplitRoute::prepareShortRoutes()
 {
 	findAtomSequence();
@@ -256,6 +227,8 @@ void SplitRoute::cycle()
 
 void SplitRoute::doCalculations()
 {
+	int stages = 0;
+
 	while (true)
 	{
 		if (Route::_finish)
@@ -263,19 +236,25 @@ void SplitRoute::doCalculations()
 			break;
 		}
 
-		float begin = momentumScore(_nudgeCount);
-		std::cout << "Begin: " << begin << std::endl;
-		if (begin > 3)
-		{
-			_disable = false;
-		}
+		float begin = routeScore(_nudgeCount);
 		postScore(begin);
 
 		cycle();
 
-		float end = momentumScore(_nudgeCount);
-		std::cout << "End: " << end << std::endl;
+		float end = routeScore(_nudgeCount);
 		postScore(end);
+
+		if (Route::_finish)
+		{
+			break;
+		}
+		
+		if (stages % 3 == 2 && end / begin > 0.95 && splitCount() < 1)
+		{
+			splitWaypoints();
+		}
+		
+		stages++;
 	}
 
 	finishTicker();

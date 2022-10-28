@@ -49,6 +49,11 @@ public:
 	{
 		_tsne = tsne;
 	}
+	
+	Entity *entity()
+	{
+		return _entity;
+	}
 
 	virtual void setup();
 	virtual void refresh();

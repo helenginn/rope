@@ -35,7 +35,6 @@ private:
 	void cycle();
 	void makeShorts();
 	void prepareThreads();
-	bool collapseShorts();
 	void prepareShortRoutes();
 	void findAtomSequence();
 	void calculateFirstAnchors();

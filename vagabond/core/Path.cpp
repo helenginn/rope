@@ -108,11 +108,11 @@ PlausibleRoute *Path::toRoute()
 	AtomGroup *group = _model->currentAtoms();
 
 	SplitRoute *pr = new SplitRoute(_molecule, nullptr, _wayPoints.size());
-	pr->setDestination(_destination);
+	pr->setDestinationMolecule(_end);
 	pr->setType(_type);
-	pr->Route::setFlips(_flips);
+	pr->setDestination(_destination);
 	pr->setWayPoints(_wayPoints);
-	pr->_endMolecule = _end;
+	pr->Route::setFlips(_flips);
 
 	for (size_t i = 0; i < _residueIds.size(); i++)
 	{

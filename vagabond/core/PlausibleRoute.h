@@ -32,27 +32,12 @@ class PlausibleRoute : public Route, public Progressor, public SimplexEngine
 public:
 	PlausibleRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
 	
-	void setDestinationMolecule(Molecule *mol)
-	{
-		_endMolecule = mol;
-	}
-	
-	Molecule *endMolecule()
-	{
-		return _endMolecule;
-	}
-	
 	void calculateProgression(int steps);
 
 	virtual void setup();
 
 	void setTargets();
 	
-	int indexOfTorsion(BondTorsion *t);
-	
-	void extractWayPoints(PlausibleRoute *other);
-	void printWayPoints();
-
 	virtual void prepareForAnalysis();
 protected:
 	virtual int sendJob(const SPoint &trial, bool force_update = false);
@@ -66,13 +51,11 @@ protected:
 	void nudgeWayPointCycles();
 	void flipTorsionCycles();
 	bool simplexCycle(std::vector<int> torsionIdxs);
-	float momentumScore(int steps);
+	float routeScore(int steps, bool forceField = false);
 	void startTicker(std::string tag, int d = -1);
 
 	std::vector<int> getTorsionSequence(int start, int max, 
 	                                    bool validate, float maxMag);
-	
-	void maskTails();
 	
 	bool _mainsOnly = true;
 	bool _flipTorsions = true;
@@ -82,7 +65,16 @@ protected:
 	float _maximumCycles = 100;
 
 	float _bestScore = FLT_MAX;
+	void splitWaypoints();
+	
+	const int &splitCount() const
+	{
+		return _splitCount;
+	}
 private:
+	void splitWaypoint(int i);
+
+	int _splitCount = 0;
 	void addLinearInterpolatedPoint(float frac);
 
 	void twoPointProgression();
@@ -93,20 +85,23 @@ private:
 
 	float getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
 	                                       float frac);
+	float getPolynomialInterpolatedFraction(PolyFit &fit, float frac);
+
 	void calculatePolynomialProgression(int steps);
 	void addPolynomialInterpolatedPoint(std::vector<PolyFit> &fits,
 	                                    float frac);
 
 	std::vector<PolyFit> polynomialFits();
+	PolyFit polynomialFit(int i);
 
-	bool validateMainTorsion(int i);
-	float getTorsionAngle(int i);
+	bool validateMainTorsion(int i, bool over_mag = true);
 	void prepareAnglesForRefinement(std::vector<int> &idxs);
 
 	int countTorsions();
 	void cycle();
 
 	void assignParameterValues(const SPoint &trial);
+	void printFit(PlausibleRoute::PolyFit &fit);
 
 	bool validateWayPoint(const WayPoints &wps);
 	bool validateWayPoints();
@@ -114,7 +109,6 @@ private:
 	float _stepSize = 0.02;
 
 	void flipTorsionCycle(bool main);
-	Molecule *_endMolecule = nullptr;
 	
 	std::vector<int> _activeTorsions;
 	std::vector<float *> _paramPtrs;

@@ -23,6 +23,7 @@
 #include "Responder.h"
 
 class Grapher;
+struct AtomGraph;
 
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
@@ -58,7 +59,18 @@ public:
 	
 	/* get rid of all points defined so far */
 	void clearPoints();
+	
+	void setDestinationMolecule(Molecule *mol)
+	{
+		_endMolecule = mol;
+	}
+	
+	Molecule *endMolecule()
+	{
+		return _endMolecule;
+	}
 
+	/* to be called on separate thread */
 	static void calculate(Route *me)
 	{
 		me->_calculating = true;
@@ -93,10 +105,7 @@ public:
 		return _destination;
 	}
 	
-	void setDestination(Point &d)
-	{
-		_destination = d;
-	}
+	void setDestination(Point &d);
 	
 	struct WayPoint
 	{
@@ -198,6 +207,12 @@ public:
 	void setFlips(std::vector<int> &idxs, std::vector<bool> &fs);
 	
 	void clearWayPointFlips();
+
+	int indexOfTorsion(BondTorsion *t);
+	
+	void extractWayPoints(Route *other);
+	void printWayPoints();
+
 protected:
 	const Grapher &grapher() const;
 	bool incrementGrapher();
@@ -214,6 +229,11 @@ protected:
 	float score(int idx)
 	{
 		return _point2Score[idx].scores;
+	}
+	
+	float deviation(int idx)
+	{
+		return _point2Score[idx].deviations;
 	}
 	
 	void clearTickets()
@@ -276,6 +296,12 @@ protected:
 
 	void populateWaypoints();
 	void prepareDestination();
+	void recalculateDestination();
+
+	bool incrementToAtomGraph(AtomGraph *ag);
+	AtomGraph *grapherForTorsionIndex(int idx);
+
+	float getTorsionAngle(int i);
 private:
 	bool _calculating;
 	float _score;
@@ -284,7 +310,9 @@ private:
 	{
 		AtomPosMap map;
 		float scores = 0;
+		float deviations = 0;
 		int divs = 0;
+		int sc_num = 0;
 	};
 	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
@@ -297,9 +325,12 @@ private:
 	
 	size_t _grapherIdx = 0;
 
+	Molecule *_endMolecule = nullptr;
+
 	Point _destination;
 	std::vector<Angular> _rawDest;
 	
+	std::map<BondCalculator *, int > _calc2Dims;
 	std::map<BondCalculator *, std::vector<int> > _calc2Destination;
 
 	TicketPoint _ticket2Point;

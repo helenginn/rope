@@ -83,15 +83,17 @@ void Route::submitJob(int idx, bool show, bool forces)
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
-		job.custom.allocate_vectors(1, _dims, _num);
+		int dims = _calc2Dims[calc];
+		job.custom.allocate_vectors(1, dims, _num);
 		job.fraction = idx / (float)(pointCount() - 1);
 
-		for (size_t i = 0; i < _dims; i++)
+		for (size_t i = 0; i < dims; i++)
 		{
 			float value = 0;
-			if (_points.size() > 0 && _points[idx].size() > i)
+			int calc_idx = _calc2Destination[calc][i];
+			if (_points.size() > idx && _points[idx].size() > calc_idx)
 			{
-				value = _points[idx][i];
+				value = _points[idx][calc_idx];
 			}
 			job.custom.vecs[0].mean[i] = value;
 		}
@@ -132,6 +134,9 @@ void Route::retrieve()
 				continue;
 			}
 
+			int t = r->ticket;
+			int idx = _ticket2Point[t];
+
 			found = true;
 			if (r->requests & JobExtractPositions)
 			{
@@ -147,15 +152,19 @@ void Route::retrieve()
 			if (r->requests & JobScoreStructure)
 			{
 				r->transplantColours();
+				
+				if (r->score == r->score)
+				{
+					_point2Score[idx].scores += r->score;
+					_point2Score[idx].sc_num++;
+				}
 			}
 
 			if (r->requests & JobCalculateDeviations)
 			{
-				int t = r->ticket;
-				int idx = _ticket2Point[t];
 				if (r->deviation == r->deviation)
 				{
-					_point2Score[idx].scores += r->deviation;
+					_point2Score[idx].deviations += r->deviation;
 					_point2Score[idx].divs++;
 				}
 			}
@@ -167,8 +176,10 @@ void Route::retrieve()
 	for (TicketScores::iterator it = _point2Score.begin();
 	     it != _point2Score.end(); it++)
 	{
-		it->second.scores /= it->second.divs;
+		it->second.scores /= it->second.sc_num;
+		it->second.deviations /= it->second.divs;
 		it->second.divs = 1;
+		it->second.sc_num = 1;
 	}
 }
 
@@ -184,6 +195,7 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 	props.group = _molecule->currentAtoms();
 	props.t = FFProperties::VdWContacts;
 	calc->setForceFieldProperties(props);
+	calc->setSampler(nullptr);
 }
 
 const Grapher &Route::grapher() const
@@ -194,17 +206,39 @@ const Grapher &Route::grapher() const
 	return g;
 }
 
+bool Route::incrementToAtomGraph(AtomGraph *ag)
+{
+	AtomGraph *comp = nullptr;
+	do
+	{
+		comp = grapher().graph(ag->atom);
+	}
+	while (!comp && incrementGrapher());
+	
+	return (comp != nullptr);
+}
+
+AtomGraph *Route::grapherForTorsionIndex(int idx)
+{
+	AtomGraph *ag = nullptr;
+	do
+	{
+		ag = grapher().graph(torsion(idx));
+	}
+	while (!ag && incrementGrapher());
+
+	return ag;
+}
+
 bool Route::incrementGrapher()
 {
 	_grapherIdx++;
 	if (_grapherIdx >= _calculators.size())
 	{
 		_grapherIdx = 0;
-		std::cout << "Grapher index now: " << _grapherIdx << std::endl;
 		return false;
 	}
 	
-	std::cout << "Grapher index now: " << _grapherIdx << std::endl;
 	return true;
 }
 
@@ -268,6 +302,12 @@ void Route::populateWaypoints()
 
 void Route::prepareDestination()
 {
+	if (_rawDest.size() == 0 && _destination.size() > 0)
+	{
+		recalculateDestination();
+		return;
+	}
+	
 	if (_cluster == nullptr)
 	{
 		return;
@@ -289,6 +329,7 @@ void Route::prepareDestination()
 	for (BondCalculator *calc : _calculators)
 	{
 		TorsionBasis *basis = calc->sequence()->torsionBasis();
+		int calc_count = 0;
 		
 		for (size_t i = 0; i < basis->torsionCount(); i++)
 		{
@@ -299,15 +340,151 @@ void Route::prepareDestination()
 				v = 0;
 			}
 
-			_torsions.push_back(t);
+			addTorsion(t);
 			_destination.push_back(v);
 			
 			/* each calculator will only be sensitive to a subset of our
 			 * destination, so we need to keep records */
 			_calc2Destination[calc].push_back(count);
 			count++;
+			calc_count++;
 		}
+		
+		std::cout << "Torsion angle count for calculator: " << calc_count << std::endl;
+		_calc2Dims[calc] = calc_count;
 	}
 	
 	populateWaypoints();
+}
+
+int Route::indexOfTorsion(BondTorsion *t)
+{
+	for (size_t i = 0; i < torsionCount(); i++)
+	{
+		if (torsion(i) == t)
+		{
+			return i;
+		}
+	}
+	
+	return -1;
+}
+
+void Route::extractWayPoints(Route *other)
+{
+	if (_calculators.size() == 0)
+	{
+		return;
+	}
+
+	const Grapher &g = grapher();
+	const Grapher &h = other->grapher();
+
+	for (size_t i = 0; i < g.graphCount(); i++)
+	{
+		AtomGraph *gr = g.graph(i);
+		
+		if (gr->torsion == nullptr)
+		{
+			continue;
+		}
+
+		for (size_t j = 0; j < h.graphCount(); j++)
+		{
+			AtomGraph *hr = h.graph(j);
+
+			if (hr->torsion == nullptr || gr->torsion != hr->torsion)
+			{
+				continue;
+			}
+			
+			if (gr->atom != hr->atom)
+			{
+				continue;
+			}
+			
+			int src = other->indexOfTorsion(hr->torsion);
+			int dest = indexOfTorsion(hr->torsion);
+			
+			if (src < 0 || dest < 0)
+			{
+				continue;
+			}
+			
+			const WayPoints &wps = other->wayPoints(src);
+			setWayPoints(dest, wps);
+			bool flip = other->flip(src);
+			setFlip(dest, flip);
+		}
+	}
+}
+
+void Route::printWayPoints()
+{
+	std::cout << "Waypoints:" << std::endl;
+	for (size_t i = 0; i < wayPointCount(); i++)
+	{
+		std::cout << torsion(i)->desc() << " ";
+		std::cout << " flip: " << (flip(i) ? "yes" : "no") << "; ";
+		for (size_t j = 0; j < wayPointCount(); j++)
+		{
+			std::cout << "(" << wayPoints(i)[j].progress << ", ";
+			std::cout << wayPoints(i)[j].fraction << ") ";
+		}
+		std::cout << std::endl;
+	}
+
+	std::cout << std::endl;
+}
+
+void Route::setDestination(Point &d)
+{
+	_destination = d;
+}
+
+void Route::recalculateDestination()
+{
+	int count = 0;
+	_torsions.clear();
+
+	for (BondCalculator *calc : _calculators)
+	{
+		TorsionBasis *basis = calc->sequence()->torsionBasis();
+		int calc_count = 0;
+		
+		for (size_t i = 0; i < basis->torsionCount(); i++)
+		{
+			BondTorsion *t = basis->torsion(i);
+			addTorsion(t);
+			
+			/* each calculator will only be sensitive to a subset of our
+			 * destination, so we need to keep records */
+			_calc2Destination[calc].push_back(count);
+			count++;
+			calc_count++;
+		}
+		
+		std::cout << "Calc count: " << calc_count << std::endl;
+		_calc2Dims[calc] = calc_count;
+	}
+	
+	std::cout << "Torsion count: " << torsionCount() << std::endl;
+	std::cout << "Recalculated count: " << count << std::endl;
+}
+
+float Route::getTorsionAngle(int i)
+{
+	if (!flip(i))
+	{
+		return destination(i);
+	}
+	
+	if (destination(i) > 0)
+	{
+		return destination(i) - 360;
+	}
+	else 
+	{
+		return destination(i) + 360;
+	}
 }
