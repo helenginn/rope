@@ -158,9 +158,9 @@ public:
 	
 	BondSequence *sequence(int i = 0);
 	
-	void setDiffractionData(Diffraction *diff)
+	void setReferenceDensity(OriginGrid<fftwf_complex> *dens)
 	{
-		_diffraction = diff;
+		_refDensity = dens;
 	}
 	
 	MapTransferHandler *mapHandler()
@@ -225,7 +225,7 @@ private:
 	ForceFieldHandler *_ffHandler = nullptr;
 	FFProperties _props{};
 	
-	Diffraction *_diffraction = nullptr;
+	OriginGrid<fftwf_complex> *_refDensity = nullptr;
 
 	void setupCorrelationHandler();
 	

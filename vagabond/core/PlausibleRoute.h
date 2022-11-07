@@ -66,6 +66,7 @@ protected:
 
 	float _bestScore = FLT_MAX;
 	void splitWaypoints();
+	void printWaypoints();
 	
 	const int &splitCount() const
 	{

@@ -27,7 +27,7 @@ CorrelationHandler::CorrelationHandler(BondCalculator *calc)
 
 CorrelationHandler::~CorrelationHandler()
 {
-	finish();
+
 }
 
 void CorrelationHandler::setup()
@@ -37,13 +37,13 @@ void CorrelationHandler::setup()
 
 void CorrelationHandler::createCorrelators()
 {
-	if (_diffraction == nullptr)
+	if (_refDensity == nullptr)
 	{
 		throw std::runtime_error("No diffraction data specified "\
 		                         "to correlate against");
 	}
 
-	Correlator *cc = new Correlator(_diffraction, _sumHandler);
+	Correlator *cc = new Correlator(_refDensity, _sumHandler);
 	cc->prepareList();
 	_correlPool.pushObject(cc);
 
@@ -62,7 +62,9 @@ void CorrelationHandler::start()
 void CorrelationHandler::joinThreads()
 {
 	_correlPool.joinThreads();
-	_mapPool.joinThreads();
+
+	_correlPool.cleanup();
+	_mapPool.cleanup();
 }
 
 void CorrelationHandler::signalThreads()
@@ -73,7 +75,7 @@ void CorrelationHandler::signalThreads()
 
 void CorrelationHandler::prepareThreads()
 {
-	for (size_t i = 0; i < _threads; i++)
+	for (size_t i = 0; i < _threads + 1; i++)
 	{
 		ThreadCorrelation *worker = new ThreadCorrelation(this);
 		worker->setMapSumHandler(_sumHandler);
@@ -92,9 +94,15 @@ void CorrelationHandler::pushMap(AtomSegment *seg, Job *job)
 
 AtomSegment *CorrelationHandler::acquireMap(Job **job)
 {
-	CorrelJob *cj;
+	CorrelJob *cj = nullptr;
 	_mapPool.acquireObject(cj, _finish);
 	
+	if (cj == nullptr)
+	{
+		*job = nullptr;
+		return nullptr;
+	}
+
 	*job = cj->job;
 	AtomSegment *ret = cj->map;
 

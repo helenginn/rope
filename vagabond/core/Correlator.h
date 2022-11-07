@@ -19,21 +19,36 @@
 #ifndef __vagabond__Correlator__
 #define __vagabond__Correlator__
 
-class Diffraction;
+#include <vagabond/utils/glm_import.h>
+#include <vector>
+#include <fftw3.h>
+
+template <class T>
+class OriginGrid;
+
 class MapSumHandler;
 class AtomSegment;
+class AtomMap;
 
 class Correlator
 {
 public:
-	Correlator(Diffraction *data, MapSumHandler *sumHandler);
+	Correlator(OriginGrid<fftwf_complex> *data, MapSumHandler *sumHandler);
 
 	void prepareList();
 	double correlation(AtomSegment *seg);
 private:
-	Diffraction *_diffraction = nullptr;
+	OriginGrid<fftwf_complex> *_density = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
+	
+	struct Comparison
+	{
+		glm::vec3 template_real_voxel;
+		float comparison_value;
+	};
 
+	std::vector<Comparison> _comparisons;
+	const AtomMap *_template = nullptr;
 };
 
 #endif

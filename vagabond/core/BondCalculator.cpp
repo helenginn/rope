@@ -46,6 +46,7 @@ void BondCalculator::reset()
 {
 	finish();
 	delete _sequenceHandler; _sequenceHandler = nullptr;
+	delete _correlHandler; _correlHandler = nullptr;
 	delete _pointHandler; _pointHandler = nullptr;
 	delete _mapHandler; _mapHandler = nullptr;
 	delete _sumHandler; _sumHandler = nullptr;
@@ -69,7 +70,7 @@ void BondCalculator::sanityCheckPipeline()
 		throw std::runtime_error("Bond calculator pipeline not specified");
 	}
 
-	if (_type == PipelineCorrelation && _diffraction == nullptr)
+	if (_type == PipelineCorrelation && _refDensity == nullptr)
 	{
 		throw std::runtime_error("Correlation requested, but no diffraction "
 		                         "to compare to");
@@ -117,14 +118,17 @@ void BondCalculator::setupCorrelationHandler()
 		return;
 	}
 
+	std::cout << "Setting up correlation handler" << std::endl;
 	_correlHandler = new CorrelationHandler(this);
 	_correlHandler->setThreads(_threads);
-	_correlHandler->setDiffraction(_diffraction);
+	_correlHandler->setReferenceDensity(_refDensity);
+	
+	std::cout << " = " << _correlHandler << std::endl;
 }
 
 void BondCalculator::setupMapTransferHandler()
 {
-	if (!(_type & PipelineCalculatedMaps))
+	if (!(_type & PipelineCalculatedMaps || _type & PipelineCorrelation))
 	{
 		return;
 	}
@@ -134,8 +138,7 @@ void BondCalculator::setupMapTransferHandler()
 
 void BondCalculator::setupMapSumHandler()
 {
-	if (!(_type & PipelineCalculatedMaps) &&
-	    !(_type & PipelineCorrelation))
+	if (!(_type & PipelineCalculatedMaps || _type & PipelineCorrelation))
 	{
 		return;
 	}
@@ -167,7 +170,7 @@ void BondCalculator::setupSequenceHandler()
 
 void BondCalculator::setupPointHandler()
 {
-	if (!(_type & PipelineCalculatedMaps))
+	if (!(_type & PipelineCalculatedMaps || _type & PipelineCorrelation))
 	{
 		return;
 	}
@@ -265,6 +268,10 @@ void BondCalculator::start()
 	{
 		_mapHandler->start();
 	}
+	if (_correlHandler != nullptr)
+	{
+		_correlHandler->start();
+	}
 	_sequenceHandler->start();
 
 	prepareThreads();
@@ -313,13 +320,21 @@ void BondCalculator::submitResult(Result *r)
 
 void BondCalculator::sanityCheckJob(Job &job)
 {
-	if ((job.requests & JobCalculateMapSegment) || 
-	    (job.requests & JobMapCorrelation))
+	if ((job.requests & JobCalculateMapSegment))
 	{
-		if (_type != PipelineCalculatedMaps)
+		if (!(_type == PipelineCalculatedMaps || _type == PipelineCorrelation))
 		{
-			throw std::runtime_error("Job asked for request not capable of this"
+			throw std::runtime_error("Job asked for map request not capable of this"
 			                         " BondCalculator's settings");
+		}
+	}
+
+	if ((job.requests & JobMapCorrelation))
+	{
+		if (_type != PipelineCorrelation)
+		{
+			throw std::runtime_error("Job asked for correlation request not "
+			                         "capable of this BondCalculator's settings");
 		}
 	}
 
@@ -365,6 +380,11 @@ void BondCalculator::finish()
 	{
 		_ffHandler->finish();
 	}
+	
+	if (_correlHandler != nullptr)
+	{
+		_correlHandler->finish();
+	}
 
 	if (_mapHandler != nullptr)
 	{
@@ -394,6 +414,11 @@ void BondCalculator::finish()
 	{
 		_sumHandler->joinThreads();
 		_mapHandler->joinThreads();
+	}
+
+	if (_correlHandler != nullptr)
+	{
+		_correlHandler->joinThreads();
 	}
 
 	if (_ffHandler != nullptr)

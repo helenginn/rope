@@ -69,7 +69,7 @@ glm::vec3 CubicGrid<T>::reciprocal(int h, int k, int l)
 }
 
 template <class T>
-glm::vec3 CubicGrid<T>::maxBound()
+glm::vec3 CubicGrid<T>::maxBound() const
 {
 	glm::vec3 sides = glm::vec3((float)this->nx() * _realDim,
 	                            (float)this->ny() * _realDim,
@@ -79,10 +79,20 @@ glm::vec3 CubicGrid<T>::maxBound()
 }
 
 template <class T>
-void CubicGrid<T>::real2Voxel(glm::vec3 &real)
+void CubicGrid<T>::real2Voxel(glm::vec3 &real) const
 {
 	real -= this->origin();
 	real *= _recipDim;
+}
+
+template <class T>
+glm::vec3 CubicGrid<T>::real(int h, int k, int l)
+{
+	glm::vec3 real(h, k, l);
+	real *= _realDim;
+	real += this->origin();
+
+	return real;
 }
 
 #endif

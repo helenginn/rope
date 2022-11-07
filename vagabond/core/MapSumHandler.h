@@ -64,6 +64,11 @@ public:
 		Job *job;
 		std::atomic<int> summed{0};
 	};
+	
+	const AtomMap *templateMap()
+	{
+		return _template;
+	}
 
 	ElementSegment *acquireElementSegment(MapJob *&mj);
 	void transferElementSegment(ElementSegment *seg);

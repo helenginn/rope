@@ -77,19 +77,19 @@ template <class T>
 glm::vec3 TransformedGrid<T>::real(int h, int k, int l)
 {
 	glm::vec3 v(h, k, l);
-	glm::vec3 next = _frac2Real * v;
+	glm::vec3 next = _voxel2Real * v;
 	return next;
 }
 
 template <class T>
-void TransformedGrid<T>::real2Voxel(glm::vec3 &real)
+void TransformedGrid<T>::real2Voxel(glm::vec3 &real) const
 {
 	real -= this->origin();
 	real = _voxel2Recip * real;
 }
 
 template <class T>
-glm::vec3 TransformedGrid<T>::maxBound()
+glm::vec3 TransformedGrid<T>::maxBound() const
 {
 	std::cout << "HERE!" << std::endl;
 	glm::vec3 max = glm::vec3(this->nx(), this->ny(), this->nz());

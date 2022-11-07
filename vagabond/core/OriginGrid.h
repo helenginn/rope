@@ -31,17 +31,18 @@ public:
 
 	OriginGrid() : Grid<T>(0, 0, 0) {};
 
-	virtual glm::vec3 minBound()
+	virtual const glm::vec3 &minBound() const
 	{
 		return _origin;
 	}
 
-	virtual glm::vec3 maxBound() = 0;
+	virtual glm::vec3 maxBound() const = 0;
 
 	float interpolate(glm::vec3 real);
 	virtual float resolution(int i, int j, int k) = 0;
 	virtual glm::vec3 reciprocal(int h, int k, int l) = 0;
-	virtual void real2Voxel(glm::vec3 &real) = 0;
+	virtual void real2Voxel(glm::vec3 &real) const = 0;
+	virtual glm::vec3 real(int i, int j, int k) = 0;
 
 	virtual float realValue(glm::vec3 real)
 	{

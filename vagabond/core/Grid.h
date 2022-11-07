@@ -109,14 +109,30 @@ public:
 	{
 		return 0;
 	}
+
+	/** Remove whole numbers and leave remainder between 0 and 1 for each
+	 * x, y, z fraction (i.e. remove unit cells) */
+	static void collapseFrac(glm::vec3 &frac)
+	{
+		for (size_t i = 0; i < 3; i++)
+		{
+			while (frac[i] < 0) frac[i] += 1;
+			while (frac[i] >= 1) frac[i] -= 1;
+		}
+	}
+
+	void index_to_fractional(glm::vec3 &vox)
+	{
+		index_to_fractional(vox.x, vox.y, vox.z);
+	}
+
+	void fractional_to_index(glm::vec3 &vox)
+	{
+		fractional_to_index(vox.x, vox.y, vox.z);
+	}
 protected:
 	void adjustNs();
 	virtual void prepareData();
-	
-	void collapse(glm::vec3 &vox)
-	{
-		collapse(vox.x, vox.y, vox.z);
-	}
 
 	template <typename V>
 	void collapse(V &x, V &y, V &z)
@@ -130,16 +146,26 @@ protected:
 		while (z < 0) z += (float)_nz;
 		while (z >= _nz) z -= (float)_nz;
 	}
-
-	/** Remove whole numbers and leave remainder between 0 and 1 for each
-	 * x, y, z fraction (i.e. remove unit cells) */
-	static void collapseFrac(glm::vec3 &frac)
+	
+	void collapse(glm::vec3 &vox)
 	{
-		for (size_t i = 0; i < 3; i++)
-		{
-			while (frac[i] < 0) frac[i] += 1;
-			while (frac[i] >= 1) frac[i] -= 1;
-		}
+		collapse(vox.x, vox.y, vox.z);
+	}
+
+	template <typename V>
+	void index_to_fractional(V &x, V &y, V &z)
+	{
+		x /= (float)_nx;
+		y /= (float)_ny;
+		z /= (float)_nz;
+	}
+
+	template <typename V>
+	void fractional_to_index(V &x, V &y, V &z)
+	{
+		x *= (float)_nx;
+		y *= (float)_ny;
+		z *= (float)_nz;
 	}
 
 	T *_data = nullptr;

@@ -35,11 +35,12 @@ public:
 		return _realDim;
 	}
 
-	virtual glm::vec3 maxBound();
+	virtual glm::vec3 maxBound() const;
 
 	virtual float resolution(int i, int j, int k);
-	virtual void real2Voxel(glm::vec3 &real);
+	virtual void real2Voxel(glm::vec3 &real) const;
 	virtual glm::vec3 reciprocal(int h, int k, int l);
+	virtual glm::vec3 real(int h, int k, int l);
 private:
 	float _realDim = 1;
 	float _recipDim = 1;

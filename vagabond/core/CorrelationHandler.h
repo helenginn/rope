@@ -24,7 +24,10 @@
 
 class BondCalculator;
 class MapSumHandler;
-class Diffraction;
+
+template<class T>
+class OriginGrid;
+
 class AtomSegment;
 class Correlator;
 
@@ -48,9 +51,9 @@ public:
 		_threads = threads;
 	}
 	
-	void setDiffraction(Diffraction *diff)
+	void setReferenceDensity(OriginGrid<fftwf_complex> *dens)
 	{
-		_diffraction = diff;
+		_refDensity = dens;
 	}
 	
 	BondCalculator *calculator()
@@ -70,7 +73,7 @@ private:
 
 	BondCalculator *_calculator = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
-	Diffraction *_diffraction = nullptr;
+	OriginGrid<fftwf_complex> *_refDensity = nullptr;
 	
 	struct CorrelJob
 	{
