@@ -16,7 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "../utils/FileReader.h"
+#include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/os.h>
 #include "Dictator.h"
 #include "CmdWorker.h"
 #include <vagabond/core/FileManager.h>
@@ -203,7 +204,9 @@ void Dictator::processRequest(std::string &first, std::string &last)
 
     if (first == "report")
     {
-        std::cout << "Reading data from " << get_current_dir_name() << "/environment.json" << std::endl << std::endl;
+#ifdef OS_WINDOWS
+        std::cout << "Reading data from " << get_current_dir_name() << "/rope.json" << std::endl << std::endl;
+#endif
 
         std::cout << "ENTITIES" << std::endl;
         std::cout << "========" << std::endl;
