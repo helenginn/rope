@@ -228,6 +228,7 @@ void SplitRoute::cycle()
 void SplitRoute::doCalculations()
 {
 	int stages = 0;
+	printWaypoints();
 
 	while (true)
 	{

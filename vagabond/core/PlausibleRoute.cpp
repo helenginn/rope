@@ -678,8 +678,6 @@ void PlausibleRoute::calculatePolynomialProgression(int steps)
 
 void PlausibleRoute::printFit(PlausibleRoute::PolyFit &fit)
 {
-	float prop = 0;
-	int mult = 1;
 	float powered = 0;
 	
 	for (size_t i = 0; i < fit.size(); i++)
@@ -877,4 +875,39 @@ void PlausibleRoute::splitWaypoint(int idx)
 void PlausibleRoute::splitWaypoints()
 {
 	_splitCount++;
+}
+
+void PlausibleRoute::printWaypoints()
+{
+	std::cout << ",";
+	for (size_t j = 0; j < 10; j++)
+	{
+		std::cout << "step_" << j << ",";
+	}
+	std::cout << std::endl;
+
+	for (size_t i = 0; i < torsionCount(); i++)
+	{
+		BondTorsion *t = torsion(i);
+		
+		if (!t->coversMainChain())
+		{
+			continue;
+		}
+		
+		std::cout << t->atom(1)->desc() << ":" << t->desc() << ",";
+		PolyFit fit = polynomialFit(i);
+		float step = 0.1;
+		float sum = 0;
+
+		for (size_t j = 0; j < 10; j++)
+		{
+			float progress = getPolynomialInterpolatedFraction(fit, sum);
+			std::cout << progress - sum << ",";
+			sum += step;
+		}
+		
+		std::cout << std::endl;
+	}
+
 }
