@@ -733,6 +733,17 @@ Vertex &Renderable::addVertex(float v1, float v2, float v3,
 	}
 }
 
+void Renderable::addIndicesToEnd(std::vector<GLuint> &indices)
+{
+	_indices.reserve(_indices.size() + indices.size());
+	int offset = _vertices.size();
+
+	for (const GLuint &idx : indices)
+	{
+		_indices.push_back(idx + offset);
+	}
+}
+
 void Renderable::addIndices(GLuint i1, GLuint i2, GLuint i3)
 {
 	addIndex(i1);
@@ -740,15 +751,21 @@ void Renderable::addIndices(GLuint i1, GLuint i2, GLuint i3)
 	addIndex(i3);
 }
 
-void Renderable::addIndex(GLint i)
+void Renderable::addIndex(std::vector<GLuint> &indices,
+                          std::vector<Snow::Vertex> &vertices, GLint i)
 {
 	if (i < 0)
 	{
-		_indices.push_back(_vertices.size() + i);
+		indices.push_back(vertices.size() + i);
 		return;
 	}
 
-	_indices.push_back(i);
+	indices.push_back(i);
+}
+
+void Renderable::addIndex(GLint i)
+{
+	addIndex(_indices, _vertices, i);
 }
 
 bool Renderable::index_behind_index(IndexTrio one, IndexTrio two)
@@ -1545,7 +1562,7 @@ void Renderable::forceRender(bool vert, bool idx)
 {
 	for (size_t i = 0; i < objectCount(); i++)
 	{
-		_objects[i]->forceRender();
+		_objects[i]->forceRender(vert, idx);
 	}
 
 	if (vert)

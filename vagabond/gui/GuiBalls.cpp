@@ -182,3 +182,19 @@ void GuiBalls::removeVisuals()
 	GuiRepresentation::removeVisuals();
 	_bonds->removeVisuals();
 }
+
+void GuiBalls::setMulti(bool m)
+{
+	if (m)
+	{
+		GuiRepresentation::removeVisuals();
+		_bonds->setDisabled(false);
+		_bonds->setAlpha(1.f);
+	}
+	else
+	{
+		setAlpha(1.f);
+		_bonds->setDisabled(true);
+	}
+
+}

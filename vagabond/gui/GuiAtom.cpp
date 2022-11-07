@@ -19,6 +19,7 @@
 #include "GuiAtom.h"
 #include "GuiBalls.h"
 #include "GuiRibbon.h"
+#include "GuiHelices.h"
 #include "GuiThickBond.h"
 
 #include <vagabond/gui/elements/SnowGL.h>
@@ -36,8 +37,10 @@ GuiAtom::GuiAtom() : Renderable()
 {
 	_balls = new GuiBalls(this);
 	_ribbon = new GuiRibbon(this);
+	_helices = new GuiHelices(this);
 	_thickBonds = new GuiThickBond(this);
 	setDisableRibbon(true);
+	_representations.push_back(_helices);
 	_representations.push_back(_ribbon);
 	_representations.push_back(_thickBonds);
 	_representations.push_back(_balls);
@@ -51,6 +54,8 @@ GuiAtom::~GuiAtom()
 	_balls = nullptr;
 	delete _ribbon;
 	_ribbon = nullptr;
+	delete _helices;
+	_helices = nullptr;
 	delete _thickBonds;
 	_thickBonds = nullptr;
 }
@@ -165,6 +170,14 @@ void GuiAtom::checkAtoms()
 			return;
 		}
 	}
+	
+	if (changed)
+	{
+		for (GuiRepresentation *&r : _representations)
+		{
+			r->finishUpdate();
+		}
+	}
 
 	if (changed && !_finish)
 	{
@@ -232,4 +245,11 @@ void GuiAtom::applyVisuals(VisualPreferences *vp)
 
 	_thickBonds->forceRender(true, false);
 	_balls->forceRender(true, false);
+}
+
+void GuiAtom::setMultiBond(bool multi)
+{
+	_multi = multi;
+	_balls->setMulti(_multi);
+	_thickBonds->setDisabled(_multi);
 }

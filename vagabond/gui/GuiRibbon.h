@@ -36,6 +36,10 @@ public:
 	
 	virtual void prepareAtomSpace(AtomGroup *ag);
 	void convert();
+
+protected:
+	virtual void extraUniforms();
+
 private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
@@ -44,9 +48,6 @@ private:
 	void insertAtom(Atom *a);
 
 	std::vector<Snow::Vertex> makeBezier(int index);
-	std::vector<Snow::Vertex> makeBezier(glm::vec3 p1, glm::vec3 p2,
-	                                     glm::vec3 p3, glm::vec3 p4,
-	                                     bool overwrite = false);
 	void transplantCylinder(std::vector<Snow::Vertex> &cylinder, int start);
 
 	void addCircle(std::vector<Snow::Vertex> &vertices, 

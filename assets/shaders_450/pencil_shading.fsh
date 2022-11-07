@@ -5,6 +5,7 @@ in vec4 vColor;
 in vec3 vNormal;
 in vec2 vTex;
 
+uniform float dot_threshold;
 uniform sampler2D pic_tex;
 
 out vec4 FragColor;
@@ -18,6 +19,11 @@ void main()
 	float light_mod = abs(dot_mod);
 	remaining *= 0.5 * light_mod;
 
+	if (dot_threshold < -1.0 && dot_mod < 0)
+	{
+		discard;
+	}
+
 	result.xyz += remaining;
 	result.xyz *= light_mod;
 
@@ -29,13 +35,14 @@ void main()
 	vec4 shading = texture(pic_tex, screen);
 	float val = (shading.x + shading.y + shading.z) / 3.;
 
-	result *= 0.8;
-	result += shading;
-	if (dot_mod < 0.3 && dot_mod > -0.5 && val > 0.10)
+	result.xyz *= 0.8;
+	result.xyz += shading.xyz;
+	if (dot_mod < dot_threshold && dot_mod > -0.5 && val > 0.10)
 	{
-		result *= 1.5 + val;
+		result.xyz *= 1.5 + val;
 	}
 
+	result.a = 1.;
 	FragColor = result;
 }
 

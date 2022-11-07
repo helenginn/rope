@@ -29,7 +29,7 @@ GuiRefls::GuiRefls() : Renderable()
 
 	_template = new Icosahedron();
 	_template->setColour(0.5, 0.5, 0.5);
-	_template->resize(0.3);
+	_template->resize(0.02);
 }
 
 void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
@@ -62,7 +62,7 @@ void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 				}
 
 				glm::vec3 v = diffraction->real(i, j, k);
-				v *= 25.;
+				v *= 250.;
 				float heat = log(amp) / log(10);
 				heat /= 6;
 				const float exposure = 1.2; const float gamma = 1.5;

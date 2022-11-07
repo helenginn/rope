@@ -24,7 +24,6 @@
 #include <vagabond/core/AtomGroup.h>
 
 #define INDICES_PER_BEZIER_DIVISION (12)
-#define POINTS_PER_BEZIER (10)
 #define DIVISIONS_IN_CIRCLE (16)
 
 GuiRibbon::GuiRibbon(GuiAtom *parent) : GuiRepresentation(parent)
@@ -43,63 +42,15 @@ GuiRibbon::~GuiRibbon()
 
 }
 
-float control_points(glm::vec3 *a, glm::vec3 b, glm::vec3 c, glm::vec3 *d)
+void GuiRibbon::extraUniforms()
 {
-	glm::vec3 ca = c - *a;
-	glm::vec3 bd = b - *d;
-	ca *= 0.4;
-	bd *= 0.4;
-	*a = b;
-	*d = c;
-	float ok = 0;
-	 
-	if (ca.x == ca.x)
-	{
-		*a += ca;
-	}
-	else
-	{
-		ok = -1;
-	}
-	
-	if (bd.x == bd.x)
-	{
-		*d += bd;
-	}
-	else
-	{
-		ok = +1;
-	}
-	
-	return ok;
+	const char *uniform_name = "dot_threshold";
+	GLuint u = glGetUniformLocation(_program, uniform_name);
+	float dot = 0.3;
+	glUniform1f(u, dot);
+	checkErrors("rebinding threshold");
 }
 
-glm::vec3 bezier(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, double t)
-{
-	double c1 = (1 - t) * (1 - t) * (1 - t);
-	double c2 = 3 * t * (1 - t) * (1 - t);
-	double c3 = 3 * t * t * (1 - t);
-	double c4 = t * t * t;
-
-	p2 *= c1;
-	p3 *= c4;
-	p1 *= c2;
-	p4 *= c3;
-
-	glm::vec3 add = p1 + p2;	
-	add += p3 + p4;
-	
-	return add;
-}
-
-Snow::Vertex new_vertex(glm::vec3 p)
-{
-	Snow::Vertex v;
-	memset(&v, 0, sizeof(Snow::Vertex));
-	v.pos = p;
-	v.color[3] = 1.;
-	return v;
-}
 
 void GuiRibbon::addCircle(std::vector<Snow::Vertex> &vertices, 
                           glm::vec3 centre, std::vector<glm::vec3> &circle)
@@ -115,29 +66,7 @@ void GuiRibbon::addCircle(std::vector<Snow::Vertex> &vertices,
 
 void GuiRibbon::addCylinderIndices(size_t num)
 {
-	int begin = - num * 2;
-	int half = num;
-
-	for (size_t i = 0; i < num - 1; i++)
-	{
-		addIndex(begin + 0);
-		addIndex(begin + 1);
-		addIndex(begin + half);
-		addIndex(begin + 1);
-		addIndex(begin + half);
-		addIndex(begin + half + 1);
-		begin++;
-
-	}
-
-	int one = num;
-	half -= num * 2 - 1;
-	addIndex(begin + 0);
-	addIndex(begin + half);
-	addIndex(begin + one);
-	addIndex(begin + half);
-	addIndex(begin + one);
-	addIndex(begin + 1);
+	GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
 }
 
 void GuiRibbon::convertToCylinder(std::vector<Snow::Vertex> *vertices)
@@ -238,36 +167,7 @@ std::vector<Snow::Vertex> GuiRibbon::makeBezier(int index)
 	glm::vec3 p3 = _idxPos[is[2]];
 	glm::vec3 p4 = _idxPos[is[3]];
 	
-	return makeBezier(p1, p2, p3, p4, true);
-}
-
-std::vector<Snow::Vertex> GuiRibbon::makeBezier(glm::vec3 p1, glm::vec3 p2,
-                                                glm::vec3 p3, glm::vec3 p4,
-                                                bool overwrite)
-{
-	std::vector<Snow::Vertex> vs;
-
-	float ok = control_points(&p1, p2, p3, &p4);
-
-	float limit = 0.95;
-	for (double t = 0; t <= limit; t += 1.0 / (float)POINTS_PER_BEZIER)
-	{
-		glm::vec3 p = bezier(p1, p2, p3, p4, t);
-		Snow::Vertex v = new_vertex(p);
-
-		if (ok < -0.5 && t < 0.05)
-		{
-			v.extra[0] = ok;
-		}
-		else if (ok > 0.5 && t > 0.75)
-		{
-			v.extra[0] = ok;
-		}
-		
-		vs.push_back(v);
-	}
-
-	return vs;
+	return GuiRepresentation::makeBezier(p1, p2, p3, p4, true);
 }
 
 void GuiRibbon::convertToBezier()
@@ -277,12 +177,7 @@ void GuiRibbon::convertToBezier()
 
 	for (int i = 1; i < (int)vs.size() - 2; i++)
 	{
-		glm::vec3 p1 = vs[i - 1].pos;
-		glm::vec3 p2 = vs[i + 0].pos;
-		glm::vec3 p3 = vs[i + 1].pos;
-		glm::vec3 p4 = vs[i + 2].pos;
-
-		std::vector<Snow::Vertex> next_set = makeBezier(p1, p2, p3, p4);
+		std::vector<Snow::Vertex> next_set = bezierFrom(vs, i);
 		_vertices.reserve(_vertices.size() + next_set.size());
 		_vertices.insert(_vertices.end(), next_set.begin(), next_set.end());
 	}

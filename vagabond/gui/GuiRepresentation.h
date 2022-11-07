@@ -22,6 +22,8 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/core/Atom.h>
 
+#define POINTS_PER_BEZIER (10)
+
 class AtomGroup;
 class GuiAtom;
 
@@ -41,11 +43,12 @@ public:
 	virtual ~GuiRepresentation() {}
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
+	virtual void finishUpdate() {};
 	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp) = 0;
 	virtual void watchAtom(Atom *a) = 0;
 	virtual void watchAtomGroup(AtomGroup *ag);
 
-	virtual void prepareAtomSpace(AtomGroup *ag) = 0;
+	virtual void prepareAtomSpace(AtomGroup *ag) {}
 
 	virtual void removeVisuals()
 	{
@@ -54,10 +57,22 @@ public:
 
 	virtual void addVisuals(Atom *a) {};
 protected:
+	std::vector<Snow::Vertex> bezierFrom(std::vector<Snow::Vertex> vs,
+	                                     int idx);
+
+	std::vector<Snow::Vertex> wireFrameToBezier(std::vector<Snow::Vertex> &vs,
+	                                            int buffer = 0);
 	GuiAtom *parent()
 	{
 		return _parent;
 	}
+
+	void addCylinderIndices(std::vector<Snow::Vertex> &vertices,
+	                        std::vector<GLuint> &indices, size_t num);
+	Snow::Vertex new_vertex(glm::vec3 p);
+	std::vector<Snow::Vertex> makeBezier(glm::vec3 p1, glm::vec3 p2,
+	                                     glm::vec3 p3, glm::vec3 p4,
+	                                     bool overwrite = false);
 private:
 	GuiAtom *_parent = nullptr;
 

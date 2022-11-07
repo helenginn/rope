@@ -275,6 +275,9 @@ public:
 	bool polygonIncludes(glm::vec3 point, GLuint *trio);
 	Vertex &addVertex(glm::vec3 v, std::vector<Vertex> *vec = NULL);
 	void addIndex(GLint i);
+	void addIndicesToEnd(std::vector<GLuint> &indices);
+	static void addIndex(std::vector<GLuint> &indices, 
+	                     std::vector<Snow::Vertex> &vertices, GLint i);
 	void addIndices(GLuint i1, GLuint i2, GLuint i3);
 	void maximalDim(double *min, double *max, int dim);
 	double maximalWidth();

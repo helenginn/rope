@@ -10,6 +10,7 @@
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AlignmentTool.h>
 #include <vagabond/core/ArbitraryMap.h>
+#include <vagabond/core/VisualPreferences.h>
 
 #include <SDL2/SDL.h>
 #include <iostream>
@@ -146,10 +147,16 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_guiAtoms = new GuiAtom();
 	_guiAtoms->watchAtoms(_atoms);
 	_guiAtoms->checkAtoms();
+	_guiAtoms->setDisableBalls(false);
+	_guiAtoms->setDisableRibbon(false);
 	_guiAtoms->startBackgroundWatch();
+
+	VisualPreferences vp = VisualPreferences::ballStickOnly();
+	_guiAtoms->applyVisuals(&vp);
 
 	_guiDensity = new GuiDensity();
 	_guiDensity->setAtoms(_atoms);
+
 	addObject(_guiDensity);
 
 	_centre = _atoms->initialCentre();
@@ -299,3 +306,8 @@ void Display::setVideoMode()
 
 }
 */
+
+void Display::setMultiBondMode(bool mode)
+{
+	_guiAtoms->setMultiBond(mode);
+}

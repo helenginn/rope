@@ -1,6 +1,6 @@
 #version 300 es
 
-precision float lowp;
+precision lowp float;
 
 in vec4 vPos;
 in vec4 vColor;
@@ -9,16 +9,18 @@ in vec4 vExtra;
 
 uniform sampler2D pic_tex;
 
-layout (location = 0) out vec4 FragColor;
-layout (location = 1) out uint ValIndex;
+out vec4 FragColor;
 
 void main()
 {
 	vec2 frag = gl_PointCoord;
 	vec2 xy = vec2(frag[0], frag[1]);
 	vec4 tex = texture(pic_tex, xy);
-	temp *= tex;
-	ValIndex = uint(vExtra.x);
+	if (tex.a < 0.2 || vColor.a < 0.01)
+	{
+		discard;
+	}
+	tex *= vColor;
 	FragColor = tex;
 }
 

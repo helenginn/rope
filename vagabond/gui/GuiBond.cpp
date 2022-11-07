@@ -110,12 +110,20 @@ void GuiBond::changeNetworks(int n)
 void GuiBond::updateAtoms(Atom *a, Atom::WithPos &wp)
 {
 	int n = wp.samples.size();
-	changeNetworks(n);
-
-	for (size_t i = 0; i < n; i++)
+	if (n > 0)
 	{
-		updateAtom(a, wp.samples[i], i);
+		changeNetworks(n);
+		for (size_t i = 0; i < n; i++)
+		{
+			updateAtom(a, wp.samples[i], i);
+		}
 	}
+	else
+	{
+		changeNetworks(1);
+		updateAtom(a, wp.ave, 0);
+	}
+
 }
 
 void GuiBond::watchBonds(AtomGroup *a)
@@ -169,4 +177,9 @@ void GuiBond::removeVisuals()
 
 void GuiBond::reindex()
 {
+}
+
+void GuiBond::render(SnowGL *gl)
+{
+	Renderable::render(gl);
 }

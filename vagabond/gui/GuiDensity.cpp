@@ -175,12 +175,19 @@ void GuiDensity::recalculate()
 	Sampler sampler(50, dims);
 
 	BondCalculator calculator;
-	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
+	if (_ref == nullptr)
+	{
+		calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
+	}
+	else
+	{
+		calculator.setPipelineType(BondCalculator::PipelineCorrelation);
+	}
+
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTorsionBasisType(TorsionBasis::TypeSimple);
 	calculator.setSampler(&sampler);
 	int num = sampler.pointCount();
-	std::cout << "Num: " << num << std::endl;
 
 	std::vector<AtomGroup *> subgroups = _atoms->connectedGroups();
 
@@ -195,6 +202,11 @@ void GuiDensity::recalculate()
 		}
 	}
 
+	if (_ref != nullptr)
+	{
+		calculator.setReferenceDensity(_ref);
+	}
+
 	calculator.setup();
 
 	calculator.start();
@@ -203,6 +215,11 @@ void GuiDensity::recalculate()
 	job.custom.allocate_vectors(1, dims, num);
 	job.requests = static_cast<JobType>(JobExtractPositions | 
 	                                    JobCalculateMapSegment);
+	if (_ref != nullptr)
+	{
+		job.requests = (JobType)(job.requests | JobMapCorrelation);
+	}
+
 	calculator.submitJob(job);
 
 	Result *result = calculator.acquireResult();
@@ -212,6 +229,7 @@ void GuiDensity::recalculate()
 	if (_ref != nullptr)
 	{
 		sampleFromOtherMap(_ref, map);
+		std::cout << "Correlation: " << result->correlation << std::endl;
 	}
 	else
 	{

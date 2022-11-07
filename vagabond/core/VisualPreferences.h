@@ -30,6 +30,13 @@ class VisualPreferences
 {
 public:
 	VisualPreferences();
+	
+	static VisualPreferences ballStickOnly()
+	{
+		VisualPreferences vp;
+		vp._cAlphaTrace = false;
+		return vp;
+	}
 
 	friend void to_json(json &j, const VisualPreferences &value);
 	friend void from_json(const json &j, VisualPreferences &value);

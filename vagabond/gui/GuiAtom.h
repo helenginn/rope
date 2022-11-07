@@ -12,6 +12,7 @@ class GuiBond;
 class GuiBalls;
 class GuiRibbon;
 class AtomGroup;
+class GuiHelices;
 class GuiThickBond;
 class GuiRepresentation;
 class VisualPreferences;
@@ -32,10 +33,7 @@ public:
 
 	glm::vec3 getCentre();
 
-	void setMulti(bool m)
-	{
-		_multi = m;
-	}
+	void setMultiBond(bool m);
 
 	void stop();
 	
@@ -55,6 +53,7 @@ private:
 	
 	GuiBalls *_balls = nullptr;
 	GuiRibbon *_ribbon = nullptr;
+	GuiHelices *_helices = nullptr;
 	GuiThickBond *_thickBonds = nullptr;
 	
 	std::vector<GuiRepresentation *> _representations;

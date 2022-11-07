@@ -75,8 +75,10 @@ Renderable *ModelMenu::getLine(int i)
 	}
 
 	{
-		TextButton *t = new TextButton("refine", this);
+		ImageButton *t = new ImageButton("assets/images/eye.png", 
+		                                      this);
 		t->setReturnTag("refine_" + m.name());
+		t->resize(0.06);
 		t->setRight(0.6, 0.0);
 		b->addObject(t);
 	}
@@ -108,6 +110,7 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 	name = Button::tagEnd(tag, "refine_");
 	if (name.length() > 0)
 	{
+		std::cout << "Refine model" << std::endl;
 		refineModel(name);
 	}
 }
@@ -123,6 +126,7 @@ void ModelMenu::refineModel(std::string name)
 	d->loadAtoms(atoms);
 	d->setOwnsAtoms(false);
 
+	std::cout << "Data file: " << model->dataFile() << std::endl;
 	if (model->dataFile().length())
 	{
 		File *file = File::loadUnknown(model->dataFile());
@@ -130,6 +134,7 @@ void ModelMenu::refineModel(std::string name)
 		
 		if (type & File::Reflections)
 		{
+			std::cout << "Density from diffraction" << std::endl;
 			d->densityFromDiffraction(file->diffractionData());
 		}
 		
@@ -137,6 +142,7 @@ void ModelMenu::refineModel(std::string name)
 	}
 
 	d->show();
+	d->setMultiBondMode(true);
 }
 
 void ModelMenu::refresh()

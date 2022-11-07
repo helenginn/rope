@@ -30,9 +30,10 @@ public:
 	GuiBalls(GuiAtom *parent);
 	virtual ~GuiBalls();
 
-	void setMulti(bool m);
 	virtual void watchAtom(Atom *a);
 	void watchBonds(AtomGroup *ag);
+
+	void setMulti(bool m);
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p);
 	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp);
@@ -56,7 +57,11 @@ private:
 	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;
 	
+#ifdef __EMSCRIPTEN__
+	float _size = 15;
+#else
 	float _size = 30;
+#endif
 };
 
 #endif

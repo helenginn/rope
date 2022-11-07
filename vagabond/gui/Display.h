@@ -37,6 +37,8 @@ public:
 	void densityButton();
 	void mechanicsButton();
 	
+	void setMultiBondMode(bool mode);
+	
 	void setOwnsAtoms(bool owns)
 	{
 		_owns = owns;
