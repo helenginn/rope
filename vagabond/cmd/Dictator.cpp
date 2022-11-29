@@ -230,7 +230,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
         EntityManager *entity_manager = Environment::env().entityManager();
         std::cout << "No. of entities: " << entity_manager->objectCount() << std::endl;
         for (int i = 0; i < entity_manager->objectCount(); i++) {
-            Entity entity = entity_manager->object(i);
+            Entity &entity = entity_manager->object(i);
             Sequence *sequence = entity.sequence();
             std::cout << "Entity " << i << ": " << entity.name() << std::endl;
             std::cout << "    No. of residues: " << sequence->str().length() << std::endl;
@@ -251,11 +251,11 @@ void Dictator::processRequest(std::string &first, std::string &last)
         ModelManager *model_manager = Environment::env().modelManager();
         std::cout << "No. of models: " << model_manager->objectCount() << std::endl;
         for (int i = 0; i < model_manager->objectCount(); i++) {
-            Model model = model_manager->object(i);
+            Model &model = model_manager->object(i);
             std::cout << "Model " << i << ": " << model.name() << std::endl;
             for (int e = 0; e < entity_manager->objectCount(); e++)
             {
-                Entity entity = entity_manager->object(e);
+                Entity &entity = entity_manager->object(e);
                 std::cout << "    Entity " << e << " (" << entity.name() <<  "): ";
                 std::set<Molecule *> molecules = model.moleculesForEntity(&entity);
                 int index = 0;
@@ -277,7 +277,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "MOLECULES" << std::endl;
         std::cout << "=========" << std::endl;
         for (int i = 0; i < model_manager->objectCount(); i++) {
-            Model model = model_manager->object(i);
+            Model &model = model_manager->object(i);
             for (Molecule &m: model.molecules())
             {
                 std::cout << m.id() << ": ";
