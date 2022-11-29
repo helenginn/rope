@@ -229,7 +229,8 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "========" << std::endl;
         EntityManager *entity_manager = Environment::env().entityManager();
         std::cout << "No. of entities: " << entity_manager->objectCount() << std::endl;
-        for (int i = 0; i < entity_manager->objectCount(); i++) {
+        for (int i = 0; i < entity_manager->objectCount(); i++)
+        {
             Entity &entity = entity_manager->object(i);
             Sequence *sequence = entity.sequence();
             std::cout << "Entity " << i << ": " << entity.name() << std::endl;
@@ -237,7 +238,8 @@ void Dictator::processRequest(std::string &first, std::string &last)
             std::cout << "    Sequence: " << sequence->str() << std::endl;
             std::cout << "    No. of models: " << entity.modelCount() << std::endl;
             std::cout << "    Models: [index, name, no. of molecules]" << std::endl;
-            for (int m = 0; m < entity.modelCount(); m++) {
+            for (int m = 0; m < entity.modelCount(); m++)
+            {
                 Model *model = entity.models()[m];
                 std::cout << "        Model " << m << ": " << model->name() << " (";
                 std::cout << model->moleculesForEntity(&entity).size() << ")" << std::endl;
@@ -251,7 +253,8 @@ void Dictator::processRequest(std::string &first, std::string &last)
         ModelManager *model_manager = Environment::env().modelManager();
         std::cout << "No. of models: " << model_manager->objectCount() << std::endl;
         std::cout << "[R: refined, NR: not refined]" << std::endl;
-        for (int i = 0; i < model_manager->objectCount(); i++) {
+        for (int i = 0; i < model_manager->objectCount(); i++)
+        {
             Model &model = model_manager->object(i);
             std::cout << "Model " << i << ": " << model.name() << std::endl;
             for (int e = 0; e < entity_manager->objectCount(); e++)
@@ -262,16 +265,20 @@ void Dictator::processRequest(std::string &first, std::string &last)
                 int index = 0;
                 for (Molecule* m: molecules)
                 {
-                    if (index == 0) {
+                    if (index == 0)
+                    {
                         std::cout << m->id();
                     }
-                    else {
+                    else
+                    {
                         std::cout << ", " << m->id();
                     }
-                    if (m->isRefined()) {
+                    if (m->isRefined())
+                    {
                         std::cout << " [R]";
                     }
-                    else {
+                    else
+                    {
                         std::cout << " [NR]";
                     }
                     index++;
