@@ -250,6 +250,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "======" << std::endl;
         ModelManager *model_manager = Environment::env().modelManager();
         std::cout << "No. of models: " << model_manager->objectCount() << std::endl;
+        std::cout << "[R: refined, NR: not refined]" << std::endl;
         for (int i = 0; i < model_manager->objectCount(); i++) {
             Model &model = model_manager->object(i);
             std::cout << "Model " << i << ": " << model.name() << std::endl;
@@ -267,6 +268,12 @@ void Dictator::processRequest(std::string &first, std::string &last)
                     else {
                         std::cout << ", " << m->id();
                     }
+                    if (m->isRefined()) {
+                        std::cout << " [R]";
+                    }
+                    else {
+                        std::cout << " [NR]";
+                    }
                     index++;
                 }
                 std::cout << std::endl;
@@ -274,21 +281,21 @@ void Dictator::processRequest(std::string &first, std::string &last)
         }
         std::cout << std::endl;
 
-        std::cout << "MOLECULES" << std::endl;
-        std::cout << "=========" << std::endl;
-        for (int i = 0; i < model_manager->objectCount(); i++) {
-            Model &model = model_manager->object(i);
-            for (Molecule &m: model.molecules())
-            {
-                std::cout << m.id() << ": ";
-                if (m.isRefined()) {
-                    std::cout << "refined" << std::endl;
-                }
-                else {
-                    std::cout << "not refined" << std::endl;
-                }
-            }
-        }
+//        std::cout << "MOLECULES" << std::endl;
+//        std::cout << "=========" << std::endl;
+//        for (int i = 0; i < model_manager->objectCount(); i++) {
+//            Model &model = model_manager->object(i);
+//            for (Molecule &m: model.molecules())
+//            {
+//                std::cout << m.id() << ": ";
+//                if (m.isRefined()) {
+//                    std::cout << "refined" << std::endl;
+//                }
+//                else {
+//                    std::cout << "not refined" << std::endl;
+//                }
+//            }
+//        }
     }
 }
 
