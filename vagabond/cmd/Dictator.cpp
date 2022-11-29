@@ -47,7 +47,6 @@ void Dictator::makeCommands()
 	                          " matching at least 80% sequence and default names");
 	_commands["get-files-native-app"] = ("Load files from three directories up in "
 	                                     "the Mac Rope app file");
-    _commands["hello_world"] = ("Prints hello world");
     _commands["report"] = ("Report various statistics on the existing environment. Useful for debugging.");
     _commands["--help"] = ("Displays available commands.");
     _commands["-h"] = ("Displays available commands.");
@@ -211,20 +210,11 @@ void Dictator::processRequest(std::string &first, std::string &last)
 		}
 	}
 
-    if (first == "hello_world")
-    {
-        std::cout << "Hi from RoPE!" << std::endl;
-        EntityManager *entity_manager = Environment::env().entityManager();
-        std::cout << "Number of entities: " << entity_manager->objectCount() << std::endl;
-        entity_manager->object(0);
-    }
-
     if (first == "report")
     {
 #ifdef OS_WINDOWS
         std::cout << "Reading data from " << get_current_dir_name() << "/rope.json" << std::endl << std::endl;
 #endif
-
         std::cout << "ENTITIES" << std::endl;
         std::cout << "========" << std::endl;
         EntityManager *entity_manager = Environment::env().entityManager();
