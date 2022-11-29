@@ -50,6 +50,8 @@ void Dictator::makeCommands()
     _commands["hello_world"] = ("Prints hello world");
     _commands["report"] = ("Report various statistics on the existing environment. Useful for debugging.");
     _commands["--help"] = ("Displays available commands.");
+    _commands["-h"] = ("Displays available commands.");
+    _commands["help"] = ("Displays available commands.");
 }
 
 void splitCommand(std::string command, std::string *first, std::string *last)
@@ -137,9 +139,24 @@ void Dictator::loadFiles(std::string &last)
 
 void Dictator::processRequest(std::string &first, std::string &last)
 {
-	if (first == "--help") {
-        for (auto &i: _commands)
-            std::cout << "> " << i.first << std::endl << "     " << i.second << std::endl;
+	if (first == "--help" || first == "-h" || first == "help")
+    {
+        std::map<std::string, std::string>::iterator i;
+        for (i = _commands.begin(); i != _commands.end(); i++)
+        {
+            if (i->first == "-h" || i->first == "help")
+            {
+                continue;
+            }
+            else if (i->first == "--help")
+            {
+                std::cout << i->first << ", -h, help" << std::endl << "     " << i->second << std::endl;
+            }
+            else
+            {
+                std::cout << i->first << std::endl << "     " << i->second << std::endl;
+            }
+        }
     }
 
     if (first == "load" || first == "")
