@@ -22,8 +22,10 @@
 #include "CmdWorker.h"
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
-#include <vagabond/core/Reporter.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/core/Model.h>
+#include <vagabond/core/ModelManager.h>
+#include <vagabond/core/Reporter.h>
 #include <iostream>
 #include <unistd.h>
 #include <algorithm>
@@ -46,6 +48,7 @@ void Dictator::makeCommands()
 	_commands["get-files-native-app"] = ("Load files from three directories up in "
 	                                     "the Mac Rope app file");
     _commands["report"] = ("Report various statistics on the existing environment. Useful for debugging.");
+    _commands["export"] = ("Export a model as a .pdb file");
     _commands["--help"] = ("Displays available commands.");
     _commands["-h"] = ("Displays available commands.");
     _commands["help"] = ("Displays available commands.");
@@ -208,6 +211,30 @@ void Dictator::processRequest(std::string &first, std::string &last)
 			"not metadata." << std::endl;
 		}
 	}
+
+    if (first == "export")
+    {
+        if (last == "all" || last == "")
+        {
+            std::cout << "Exporting all models..." << std::endl;
+        }
+        else
+        {
+            std::cout << "Exporting model " << last << std::endl;
+            ModelManager *model_manager = Environment::env().modelManager();
+
+            Model *model = model_manager->model(last);
+            if (model == nullptr)
+            {
+                to_lower(last);
+                std::cout << "No model named: " << last << std::endl;
+            }
+            else
+            {
+                std::cout << "MODEL FOUND!" << std::endl;
+            }
+        }
+    }
 
     if (first == "report")
     {
