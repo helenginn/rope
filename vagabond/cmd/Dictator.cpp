@@ -20,13 +20,9 @@
 #include <vagabond/utils/os.h>
 #include "Dictator.h"
 #include "CmdWorker.h"
-#include <vagabond/core/Reporter.h>
-#include <vagabond/core/FileManager.h>
 #include <vagabond/core/Environment.h>
-#include <vagabond/core/EntityManager.h>
-#include <vagabond/core/ModelManager.h>
-#include <vagabond/core/Sequence.h>
-#include <vagabond/core/Model.h>
+#include <vagabond/core/FileManager.h>
+#include <vagabond/core/Reporter.h>
 #include <vagabond/core/Metadata.h>
 #include <iostream>
 #include <unistd.h>
@@ -215,87 +211,8 @@ void Dictator::processRequest(std::string &first, std::string &last)
 
     if (first == "report")
     {
-#ifdef OS_WINDOWS
-        std::cout << "Reading data from " << get_current_dir_name() << "/rope.json" << std::endl << std::endl;
-#endif
-        std::cout << "ENTITIES" << std::endl;
-        std::cout << "========" << std::endl;
-        EntityManager *entity_manager = Environment::env().entityManager();
-        std::cout << "No. of entities: " << entity_manager->objectCount() << std::endl;
-        for (int i = 0; i < entity_manager->objectCount(); i++)
-        {
-            Entity &entity = entity_manager->object(i);
-            Sequence *sequence = entity.sequence();
-            std::cout << "Entity " << i << ": " << entity.name() << std::endl;
-            std::cout << "    No. of residues: " << sequence->str().length() << std::endl;
-            std::cout << "    Sequence: " << sequence->str() << std::endl;
-            std::cout << "    No. of models: " << entity.modelCount() << std::endl;
-            std::cout << "    Models: [index, name, no. of molecules]" << std::endl;
-            for (int m = 0; m < entity.modelCount(); m++)
-            {
-                Model *model = entity.models()[m];
-                std::cout << "        Model " << m << ": " << model->name() << " (";
-                std::cout << model->moleculesForEntity(&entity).size() << ")" << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-
-        std::cout << "MODELS" << std::endl;
-        std::cout << "======" << std::endl;
-        ModelManager *model_manager = Environment::env().modelManager();
-        std::cout << "No. of models: " << model_manager->objectCount() << std::endl;
-        std::cout << "[R: refined, NR: not refined]" << std::endl;
-        for (int i = 0; i < model_manager->objectCount(); i++)
-        {
-            Model &model = model_manager->object(i);
-            std::cout << "Model " << i << ": " << model.name() << std::endl;
-            for (int e = 0; e < entity_manager->objectCount(); e++)
-            {
-                Entity &entity = entity_manager->object(e);
-                std::cout << "    Entity " << e << " (" << entity.name() <<  "): ";
-                std::set<Molecule *> molecules = model.moleculesForEntity(&entity);
-                int index = 0;
-                for (Molecule* m: molecules)
-                {
-                    if (index == 0)
-                    {
-                        std::cout << m->id();
-                    }
-                    else
-                    {
-                        std::cout << ", " << m->id();
-                    }
-                    if (m->isRefined())
-                    {
-                        std::cout << " [R]";
-                    }
-                    else
-                    {
-                        std::cout << " [NR]";
-                    }
-                    index++;
-                }
-                std::cout << std::endl;
-            }
-        }
-        std::cout << std::endl;
-
-//        std::cout << "MOLECULES" << std::endl;
-//        std::cout << "=========" << std::endl;
-//        for (int i = 0; i < model_manager->objectCount(); i++) {
-//            Model &model = model_manager->object(i);
-//            for (Molecule &m: model.molecules())
-//            {
-//                std::cout << m.id() << ": ";
-//                if (m.isRefined()) {
-//                    std::cout << "refined" << std::endl;
-//                }
-//                else {
-//                    std::cout << "not refined" << std::endl;
-//                }
-//            }
-//        }
+        Reporter reporter;
+        reporter.report();
     }
 }
 
