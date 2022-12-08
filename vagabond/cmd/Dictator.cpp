@@ -156,6 +156,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
                 std::cout << i->first << std::endl << "     " << i->second << std::endl;
             }
         }
+        exit(0);
     }
 
     if (first == "load" || first == "")
