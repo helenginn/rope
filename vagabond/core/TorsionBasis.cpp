@@ -95,3 +95,17 @@ void TorsionBasis::prepare(int dims)
 {
 
 }
+
+int TorsionBasis::indexForTorsion(BondTorsion *bt)
+{
+	int i = 0;
+	for (BondTorsion *torsion : _torsions)
+	{
+		if (bt == torsion)
+		{
+			return i;
+		}
+		i++;
+	}
+	return -1;
+}

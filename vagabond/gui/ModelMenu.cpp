@@ -126,20 +126,7 @@ void ModelMenu::refineModel(std::string name)
 	d->loadAtoms(atoms);
 	d->setOwnsAtoms(false);
 
-	std::cout << "Data file: " << model->dataFile() << std::endl;
-	if (model->dataFile().length())
-	{
-		File *file = File::loadUnknown(model->dataFile());
-		File::Type type = file->cursoryLook();
-		
-		if (type & File::Reflections)
-		{
-			std::cout << "Density from diffraction" << std::endl;
-			d->densityFromDiffraction(file->diffractionData());
-		}
-		
-		delete file;
-	}
+	d->densityFromMap(model->map());
 
 	d->show();
 	d->setMultiBondMode(true);

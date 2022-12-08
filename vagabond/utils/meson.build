@@ -4,9 +4,13 @@ utilfiles = [
 'svd/svdcmp.cpp',
 'svd/PCA.cpp',
 'svd/matrix.cpp',
+'ProbDist.cpp',
+'Hypersphere.cpp',
 'maths.cpp',
 'version.h',
 'polyfit.h',
+'Hypersphere.h',
+'ProbDist.h',
 ]
 
 install_headers([

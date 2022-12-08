@@ -38,6 +38,7 @@ class File;
 class Chain;
 class Molecule;
 class AtomContent;
+class ArbitraryMap;
 
 class Model : public AtomGroupResponder, public HasResponder<Responder<Model>>,
 public HasMetadata
@@ -148,6 +149,9 @@ public:
 	void clickTicker();
 	void finishedRefinement();
 	void write(std::string filename);
+	
+	ArbitraryMap *map();
+	float comparisonWithData(ArbitraryMap *calc);
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();

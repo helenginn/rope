@@ -62,6 +62,11 @@ void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
 void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
                                     OriginGrid<fftwf_complex> *map)
 {
+	if (ref == nullptr || map == nullptr)
+	{
+		return;
+	}
+
 	glm::vec3 min = map->minBound();
 	glm::vec3 max = map->maxBound();
 	float step = 0.5;
@@ -163,7 +168,7 @@ void GuiDensity::render(SnowGL *gl)
 	glEnable(GL_DEPTH_TEST);
 	
 	_model = gl->getModel();
-	reorderIndices();
+//	reorderIndices();
 	Renderable::render(gl);
 
 	glDisable(GL_DEPTH_TEST);

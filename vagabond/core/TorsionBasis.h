@@ -66,6 +66,11 @@ public:
 		return _torsions.size();
 	}
 	
+	void setReferenceAngle(int i, float a)
+	{
+		_angles[i].angle = a;
+	}
+	
 	Atom *atom(int i)
 	{
 		return _atoms[i];
@@ -75,6 +80,8 @@ public:
 	{
 		return _torsions[i];
 	}
+	
+	int indexForTorsion(BondTorsion *bt);
 protected:
 	std::vector<BondTorsion *> _torsions;
 	std::vector<Atom *> _atoms;

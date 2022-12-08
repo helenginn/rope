@@ -1,4 +1,5 @@
 #include <sstream>
+#include <set>
 #include "matrix_functions.h"
 #include "Atom.h"
 #include "BondLength.h"
@@ -419,4 +420,45 @@ bool Atom::isMainChain() const
 bool Atom::isReporterAtom() const
 {
 	return isReporterAtom(atomName());
+}
+
+int Atom::bondsBetween(Atom *end, int maxBonds)
+{
+	std::set<Atom *> rejected;
+	std::vector<BondNum> bnums;
+	bnums.push_back({this, maxBonds});
+	rejected.insert(this);
+
+	while (bnums.size())
+	{
+		BondNum bn = bnums.back();
+		bnums.pop_back();
+		
+		if (bn.atom == end)
+		{
+			return maxBonds - bn.num;
+		}
+
+		if (bn.num == 0)
+		{
+			continue;
+		}
+
+		for (size_t i = 0; i < bn.atom->bondLengthCount(); i++)
+		{
+			BondLength *bl = bn.atom->bondLength(i);
+			Atom *other = bl->otherAtom(bn.atom);	
+
+			if (rejected.count(other))
+			{
+				continue;
+			}
+			
+			rejected.insert(other);
+			BondNum newBn{other, bn.num - 1};
+			bnums.push_back(newBn);
+		}
+	}
+	
+	return -1;
 }

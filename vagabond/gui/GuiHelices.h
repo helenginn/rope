@@ -64,7 +64,6 @@ private:
 	void extendNitrogensToCarbonylPairs(std::vector<Run> &runs);
 	Atom *jumpResidueOtherName(Atom *atom, std::string other, int jump);
 
-	int bondsBetween(Atom *start, Atom *end, int maxBonds);
 	void populateHelices();
 	Run sweepCandidates();
 	void pruneCandidates(Run &pairs);

@@ -1328,6 +1328,7 @@ void Renderable::setUsesProjection(bool usesProj)
 
 void Renderable::calculateNormals()
 {
+	lockMutex();
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		_vertices[i].normal = glm::vec3(0.);
@@ -1362,6 +1363,7 @@ void Renderable::calculateNormals()
 		glm::vec3 &norm = _vertices[i].normal;
 		norm = glm::normalize(norm);
 	}
+	unlockMutex();
 }
 
 void Renderable::triangulate()

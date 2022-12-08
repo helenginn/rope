@@ -40,6 +40,7 @@ public:
 	AtomSegment *acquireMap(Job **job);
 	Correlator *acquireCorrelator();
 	void pushMap(AtomSegment *seg, Job *job);
+	void returnCorrelator(Correlator *cc);
 
 	void setMapSumHandler(MapSumHandler *sumHandler)
 	{

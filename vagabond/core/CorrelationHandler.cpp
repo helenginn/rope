@@ -118,6 +118,11 @@ Correlator *CorrelationHandler::acquireCorrelator()
 	return cc;
 }
 
+void CorrelationHandler::returnCorrelator(Correlator *cc)
+{
+	_correlPool.pushObject(cc);
+}
+
 void CorrelationHandler::finish()
 {
 	_correlPool.handout.lock();

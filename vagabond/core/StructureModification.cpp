@@ -112,6 +112,11 @@ bool StructureModification::checkForMolecule(AtomGroup *grp)
 
 void StructureModification::startCalculator()
 {
+	if (_fullAtoms == nullptr)
+	{
+		_fullAtoms = _molecule->currentAtoms();
+	}
+
 	for (size_t i = 0; i < _fullAtoms->connectedGroups().size(); i++)
 	{
 		Atom *anchor = _fullAtoms->connectedGroups()[i]->chosenAnchor();

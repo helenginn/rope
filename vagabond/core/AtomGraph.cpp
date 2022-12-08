@@ -61,7 +61,7 @@ std::string AtomGraph::desc() const
 	{
 		indent += "  ";
 	}
-	ss << indent << "====== ATOMGRAPH " << g.atom->atomName() << " ======";
+	ss << indent << "====== ATOMGRAPH " << g.atom->desc() << " ======";
 	ss << std::endl;
 	ss << indent << "Inheritance: ";
 	if (g.grandparent == nullptr)

@@ -20,7 +20,11 @@
 #define __vagabond__GeometryTable__
 
 #include <string>
+#include <set>
 #include <map>
+
+struct ResidueId;
+class AtomGroup;
 
 class GeometryTable
 {
@@ -67,8 +71,16 @@ public:
 
 	int chirality(std::string code, std::string centre, std::string pName,
 	              std::string qName, std::string rName);
+
+	void filterPeptides(bool filter)
+	{
+		_filterPeptides = filter;
+	}
 	
 	const size_t codeEntries() const;
+	
+	AtomGroup *constructResidue(std::string code, const ResidueId &id, 
+	                            int *atomNum, int terminal = 0);
 private:
 	struct Value
 	{
@@ -162,6 +174,8 @@ private:
 		std::map<AtomQuartet, int> chirals;
 	};
 
+	std::set<std::string> allAtomNames(std::string &code);
+
 	double length(const GeometryMap &map, std::string pName, 
 	              std::string qName) const;
 
@@ -177,6 +191,8 @@ private:
 	
 	std::map<std::string, GeometryMap> _codes;
 	std::map<std::string, GeometryMap> _links;
+
+	bool _filterPeptides = false;
 };
 
 #endif

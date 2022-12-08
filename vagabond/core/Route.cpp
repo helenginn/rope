@@ -140,13 +140,7 @@ void Route::retrieve()
 			found = true;
 			if (r->requests & JobExtractPositions)
 			{
-				r->transplantLastPosition();
-				
-				for (AtomPosMap::iterator it = r->aps.begin(); 
-				     it != r->aps.end(); it++)
-				{
-					Atom *atom = it->first;
-				}
+				r->transplantPositions();
 			}
 			
 			if (r->requests & JobScoreStructure)

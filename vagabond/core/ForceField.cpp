@@ -88,20 +88,14 @@ void ForceField::setupVanDerWaals()
 		Atom &ai = *atoms[i];
 		Atom *cai = tmpReporters[&ai];
 
-		for (size_t j = i + 5; j < atoms.size(); j++)
+		for (size_t j = i + 1; j < atoms.size(); j++)
 		{
 			Atom &aj = *atoms[j];
 			bool skip = false;
 			
-			for (size_t k = 0; k < ai.bondLengthCount(); k++)
-			{
-				if (ai.connectedAtom(k) == &aj)
-				{
-					skip = true;
-				}
-			}
+			int num = atoms[i]->bondsBetween(atoms[j], 4);
 
-			if (skip)
+			if (num <= 2)
 			{
 				continue;
 			}
@@ -127,9 +121,50 @@ void ForceField::setupVanDerWaals()
 	std::cout << "Restraints: " << _restraints.size() << std::endl;
 }
 
+float ramachandranDistance(Atom *a, Atom *b)
+{
+	if (a->elementSymbol() == "C" && b->elementSymbol() == "C")
+	{
+		return 3.2;
+	}
+	else if ((a->elementSymbol() == "C" && b->elementSymbol() == "O") ||
+	         (a->elementSymbol() == "O" && b->elementSymbol() == "C"))
+	{
+		return 2.8;
+	}
+	else if ((a->elementSymbol() == "C" && b->elementSymbol() == "N") ||
+	         (a->elementSymbol() == "N" && b->elementSymbol() == "C"))
+	{
+		return 2.9;
+	}
+	else if ((a->elementSymbol() == "O" && b->elementSymbol() == "N") ||
+	         (a->elementSymbol() == "N" && b->elementSymbol() == "O"))
+	{
+		return 2.7;
+	}
+	else if ((a->elementSymbol() == "O" && b->elementSymbol() == "O") ||
+	         (a->elementSymbol() == "O" && b->elementSymbol() == "O"))
+	{
+		return 2.8;
+	}
+	else if ((a->elementSymbol() == "N" && b->elementSymbol() == "N") ||
+	         (a->elementSymbol() == "N" && b->elementSymbol() == "N"))
+	{
+		return 2.4;
+	}
+
+	return 1.8;
+}
+
 void ForceField::processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
 {
-	Restraint r(Restraint::VdW, 1.8, 0);
+	Restraint r(Restraint::VdW, 3.0, 0);
+	
+	if (_t == FFProperties::RamachandranContacts)
+	{
+		r.type = Restraint::HardLimit;
+		r.target = ramachandranDistance(a, b);
+	}
 	r.atoms[0] = a;
 	r.atoms[1] = b;
 	r.reporters[0] = report_a;
@@ -211,7 +246,8 @@ void ForceField::setup()
 {
 	_restraints.clear();
 
-	if (_t == FFProperties::VdWContacts)
+	if (_t == FFProperties::VdWContacts || 
+	    _t == FFProperties::RamachandranContacts)
 	{
 		setupVanDerWaals();
 	}
@@ -280,7 +316,8 @@ void ForceField::updateRestraint(Restraint &r)
 
 	if (r.type == Restraint::Spring ||
 	    r.type == Restraint::VdW ||
-	    r.type == Restraint::HBond)
+	    r.type == Restraint::HBond ||
+	    r.type == Restraint::HardLimit)
 	{
 		float length = glm::length(r.pos[0] - r.pos[1]);
 		r.current = length;
@@ -316,6 +353,14 @@ float ForceField::valueForRestraint(const Restraint &r)
 		float rat6 = ratio*ratio*ratio*ratio*ratio*ratio;
 		float rat12 = rat6*rat6;
 		vdw = weight * (rat12 - 2 * rat6);
+	}
+	
+	if (r.type == Restraint::HardLimit)
+	{
+		if (r.current > r.target) return 0;
+		float diff = r.current - r.target;
+		diff *= diff;
+		return diff;
 	}
 
 	if (r.type == Restraint::HBond)

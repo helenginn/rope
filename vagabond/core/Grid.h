@@ -130,12 +130,18 @@ public:
 	{
 		fractional_to_index(vox.x, vox.y, vox.z);
 	}
+
+	void collapse(glm::vec3 &vox) const
+	{
+		collapse(vox.x, vox.y, vox.z);
+	}
+
 protected:
 	void adjustNs();
 	virtual void prepareData();
 
 	template <typename V>
-	void collapse(V &x, V &y, V &z)
+	void collapse(V &x, V &y, V &z) const
 	{
 		while (x < 0) x += (float)_nx;
 		while (x >= _nx) x -= (float)_nx;
@@ -147,11 +153,6 @@ protected:
 		while (z >= _nz) z -= (float)_nz;
 	}
 	
-	void collapse(glm::vec3 &vox)
-	{
-		collapse(vox.x, vox.y, vox.z);
-	}
-
 	template <typename V>
 	void index_to_fractional(V &x, V &y, V &z)
 	{

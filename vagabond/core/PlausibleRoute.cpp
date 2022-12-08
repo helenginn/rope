@@ -45,6 +45,8 @@ void PlausibleRoute::setTargets()
 
 	twoPointProgression();
 	submitJobAndRetrieve(0);
+	
+	_molecule->model()->write("start.pdb");
 
 	for (Atom *atom : _fullAtoms->atomVector())
 	{
@@ -53,6 +55,7 @@ void PlausibleRoute::setTargets()
 	}
 
 	submitJobAndRetrieve(1);
+	_molecule->model()->write("finish.pdb");
 
 	for (Atom *atom : _fullAtoms->atomVector())
 	{
@@ -540,6 +543,8 @@ void PlausibleRoute::cycle()
 
 void PlausibleRoute::doCalculations()
 {
+	printWaypoints();
+
 	if (!Route::_finish)
 	{
 		cycle();
@@ -879,11 +884,7 @@ void PlausibleRoute::splitWaypoints()
 
 void PlausibleRoute::printWaypoints()
 {
-	std::cout << ",";
-	for (size_t j = 0; j < 10; j++)
-	{
-		std::cout << "step_" << j << ",";
-	}
+	std::cout << ",start,end,";
 	std::cout << std::endl;
 
 	for (size_t i = 0; i < torsionCount(); i++)
@@ -895,15 +896,27 @@ void PlausibleRoute::printWaypoints()
 			continue;
 		}
 		
+		float start = t->refinedAngle();
+		float diff = getTorsionAngle(i);
+		
 		std::cout << t->atom(1)->desc() << ":" << t->desc() << ",";
+		std::cout << start << "," << start + diff << ",";
+		
 		PolyFit fit = polynomialFit(i);
 		float step = 0.1;
 		float sum = 0;
+		
+		for (size_t j = 0; j < wayPoints(i).size(); j++)
+		{
+			std::cout << "(" << wayPoints(i)[j].fraction << ",";
+			std::cout << wayPoints(i)[j].progress << "),";
+		}
+		std::cout << std::endl;
 
-		for (size_t j = 0; j < 10; j++)
+		for (size_t j = 0; j <= 10 && false; j++)
 		{
 			float progress = getPolynomialInterpolatedFraction(fit, sum);
-			std::cout << progress - sum << ",";
+			std::cout << progress << ",";
 			sum += step;
 		}
 		

@@ -135,7 +135,11 @@ void GuiBalls::updateSinglePosition(Atom *a, glm::vec3 &p)
 	unlockMutex();
 
 	_atomPos[a] = p;
-	_bonds->updateAtom(a, p);
+
+	if (!_multi)
+	{
+		_bonds->updateAtom(a, p);
+	}
 }
 
 void GuiBalls::watchAtom(Atom *a)
@@ -185,6 +189,7 @@ void GuiBalls::removeVisuals()
 
 void GuiBalls::setMulti(bool m)
 {
+	_multi = m;
 	if (m)
 	{
 		GuiRepresentation::removeVisuals();
@@ -197,4 +202,9 @@ void GuiBalls::setMulti(bool m)
 		_bonds->setDisabled(true);
 	}
 
+}
+
+void GuiBalls::finishUpdate()
+{
+	_bonds->forceRender(true, true);
 }

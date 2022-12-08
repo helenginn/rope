@@ -65,7 +65,6 @@ private:
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
 	void stepRefine(AtomGroup *group);
-//	std::vector<Atom *> generateAbsorptionMask(std::set<Atom *> done);
 	bool *generateAbsorptionMask(std::set<Atom *> done);
 	void measureAtoms(std::set<Atom *> done);
 

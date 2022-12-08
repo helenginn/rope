@@ -71,6 +71,7 @@ public:
 	}
 	
 	bool coversMainChain();
+	bool isPeptideBond() const;
 
 	bool spansMultipleChains() const;
 	

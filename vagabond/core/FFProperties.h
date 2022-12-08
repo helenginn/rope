@@ -26,10 +26,11 @@ struct FFProperties
 		NoTemplate = 0,
 		CAlphaSeparation = 1,
 		VdWContacts = 2,
+		RamachandranContacts = 3,
 	};
 
 	AtomGroup *group = nullptr;
-	Template t;
+	Template t = NoTemplate;
 };
 
 

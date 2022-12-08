@@ -54,6 +54,7 @@ void ThreadCorrelation::start()
 		_sumHandler->returnSegment(seg);
 		job->destroy();
 		_correlHandler->calculator()->submitResult(result);
+		_correlHandler->returnCorrelator(cc);
 
 		timeEnd();
 	}

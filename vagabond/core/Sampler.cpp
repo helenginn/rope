@@ -19,6 +19,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "Sampler.h"
+#include <vagabond/utils/Hypersphere.h>
 #include <cmath>
 #include <iostream>
 
@@ -26,9 +27,39 @@ Sampler::Sampler(int n, int dims)
 {
 	_n = n;
 	_dims = dims;
+	setupMatrix(&_tensor, n, n);
 }
 
 void Sampler::setup()
+{
+	if (_fibonacci && _n > 1)
+	{
+		setupFibonacci();
+	}
+	else
+	{
+		setupGriddy();
+	}
+}
+
+void Sampler::setupFibonacci()
+{
+	Hypersphere hs(_dims + 1, _n);
+	hs.prepareFibonacci();
+	PCA::setupMatrix(&_points, _n, _dims);
+
+	for (size_t i = 0; i < hs.count(); i++)
+	{
+		std::vector<float> pt = hs.point(i);
+		pt.resize(_dims);
+		for (size_t j = 0; j < _dims; j++)
+		{
+			_points.ptrs[i][j] = pt[j];
+		}
+	}
+}
+
+void Sampler::setupGriddy()
 {
 	_tmpPoints.clear();
 	if (_points.rows > 0)
@@ -166,18 +197,34 @@ float Sampler::gamma()
 	return result;
 }
 
-void Sampler::multiplyVec(float *&vec, int sample_num)
+void Sampler::addToVec(float *&vec, float *tensor, int sample_num)
 {
-	float result[_dims];
-	memset(result, '\0', sizeof(float) * _dims);
-
-	for (size_t i = 0; i < _dims; i++)
+	double result[_dims];
+	memset(result, '\0', sizeof(double) * _dims);
+	
+	if (tensor != nullptr)
 	{
-		result[i] += _points.ptrs[sample_num][i] * vec[i];
+		for (size_t i = 0; i < _dims; i++)
+		{
+			for (size_t j = 0; j < _dims; j++)
+			{
+				_tensor[i][j] = tensor[i * _dims + j];
+			}
+		}
+		
+		multMatrix(_tensor, &_points[sample_num][0], &result[0]);
+	}
+	else
+	{
+		for (size_t i = 0; i < _dims; i++)
+		{
+			result[i] = _points[sample_num][i];
+		}
+
 	}
 	
 	for (size_t i = 0; i < _dims; i++)
 	{
-		vec[i] = result[i];
+		vec[i] += result[i];
 	}
 }

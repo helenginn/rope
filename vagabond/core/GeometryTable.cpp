@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "GeometryTable.h"
+#include "AtomGroup.h"
+#include "Knotter.h"
 #include "../utils/FileReader.h"
 #include <iostream>
 
@@ -174,7 +176,13 @@ double GeometryTable::length(std::string code, std::string pName,
 		return -1;
 	}
 
-	double l = length(_codes.at("."), pName, qName);
+	double l = -1;
+	if (_filterPeptides && 
+	    (!(pName == "N" && qName == "C") && 
+	     !(pName == "C" && qName == "N")))
+	{
+		l = length(_codes.at("."), pName, qName);
+	}
 	return l;
 }
 
@@ -408,4 +416,64 @@ double GeometryTable::checkLengthLinks(std::string code, std::string pName,
 	}
 
 	return -1;
+}
+
+std::set<std::string> GeometryTable::allAtomNames(std::string &code)
+{
+	std::set<std::string> atoms;
+	
+	const GeometryMap &map = _codes[code];
+	
+	for (auto it = map.lengths.begin(); it != map.lengths.end(); it++)
+	{
+		const AtomPair &ap = it->first;
+		atoms.insert(ap.p);
+		atoms.insert(ap.q);
+	}
+	
+	return atoms;
+}
+
+AtomGroup *GeometryTable::constructResidue(std::string code, 
+                                           const ResidueId &id, int *num,
+                                           int terminal)
+{
+	AtomGroup *ag = new AtomGroup();
+	std::set<std::string> names = allAtomNames(code);
+	
+	for (const std::string &name : names)
+	{
+		if ((terminal < 1 && name == "OXT"))
+		{
+			continue;
+		}
+
+		std::string ele = std::string();
+		ele += name[0];
+		// hacky, relying on the fact CNHOSP all have a single letter.
+		// not great.
+		
+		if (ele == "H")
+		{
+			continue;
+		}
+
+		Atom *a = new Atom();
+		a->setElementSymbol(ele);
+		a->setAtomName(name);
+		a->setAtomNum(*num);
+		a->setResidueId(id);
+		a->setInitialPosition(glm::vec3(0.f), 30);
+		a->setCode(code);
+		
+		*ag += a;
+		(*num)++;
+	}
+	
+	Knotter knot(ag, this);
+	knot.setDoAngles(false);
+	knot.setDoTorsions(false);
+	knot.knot();
+	
+	return ag;
 }

@@ -23,6 +23,7 @@
 #include "RouteExplorer.h"
 #include "PathView.h"
 #include "ConfSpaceView.h"
+#include "SetupRefinement.h"
 #include "Axes.h"
 #include "ColourLegend.h"
 #include "IconLegend.h"
@@ -98,6 +99,7 @@ void ConfSpaceView::addGuiElements()
 	showRulesButton();
 	showPathsButton();
 	showAxesButton();
+//	showtSNE();
 }
 
 void ConfSpaceView::showClusters()
@@ -196,7 +198,7 @@ void ConfSpaceView::showtSNE()
 	TextButton *t = new TextButton("t-SNE", this);
 	t->setReturnTag("tsne");
 	t->resize(0.6);
-	t->setRight(0.95, 0.22);
+	t->setRight(0.97, 0.8);
 	addObject(t);
 }
 
@@ -372,6 +374,15 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		}
 	}
 	
+	if (tag == "refinement_setup")
+	{
+		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		createReference(m);
+		SetupRefinement *sr = new SetupRefinement(this, *(m->model()));
+		sr->setAxes(_axes);
+		sr->show();
+	}
+	
 	if (tag == "set_as_reference")
 	{
 		Molecule *m = static_cast<Molecule	*>(button->returnObject());
@@ -491,6 +502,7 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 	m->setReturnObject(hm);
 	m->addOption("view model", "view_model");
 	m->addOption("set as reference", "set_as_reference");
+	m->addOption("refinement setup", "refinement_setup");
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
 	m->setup(x, y);
 

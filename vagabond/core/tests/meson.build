@@ -1,5 +1,8 @@
 boost_files = [
 'boost_tests.cpp',
+'test_molrefiner.cpp',
+'test_ramachandran.cpp',
+'test_atomsfromsequence.cpp',
 ]
 
 boost_unit_test = dependency('boost', modules: ['unit_test_framework'])

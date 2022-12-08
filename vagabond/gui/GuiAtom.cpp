@@ -220,6 +220,7 @@ glm::vec3 GuiAtom::getCentre()
 void GuiAtom::setDisableRibbon(bool dis)
 {
 	_ribbon->setDisabled(dis);
+	_helices->setDisabled(dis);
 }
 
 void GuiAtom::setDisableBalls(bool dis)

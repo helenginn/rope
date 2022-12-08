@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #define BOOST_TEST_MODULE test_core
-#include "include_boost.h"
+#include <vagabond/utils/include_boost.h>
 
 #include <vagabond/core/Complex.h>
 #include <vagabond/core/Entity.h>

@@ -122,6 +122,11 @@ void Display::densityButton()
 	addObject(density);
 }
 
+void Display::densityFromMap(ArbitraryMap *map)
+{
+	_guiDensity->populateFromMap(map);
+}
+
 void Display::densityFromDiffraction(Diffraction *diff)
 {
 	_map = new ArbitraryMap(*diff);

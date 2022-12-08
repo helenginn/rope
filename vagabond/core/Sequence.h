@@ -29,6 +29,7 @@
 
 class Atom;
 class Entity;
+class AtomGroup;
 class SequenceComparison;
 
 typedef std::map<Residue *, Residue *> ResidueMap;
@@ -206,6 +207,8 @@ public:
 	 * angles from a derived/mapped sequence */
 	void torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
 	                        bool tmp_source = false);
+	
+	AtomGroup *convertToAtoms();
 private:
 	void findSequence();
 	

@@ -209,18 +209,11 @@ AnchorExtension BondSequence::getExtension(Atom *atom) const
 	return ext;
 }
 
-void BondSequence::fetchTorsion(int idx)
+void BondSequence::calculateCustomVector()
 {
-	if (_blocks[idx].torsion_idx < 0)
+	if (_custom)
 	{
-		return;
-	}
-	
-	int n = 0;
-
-	if (_custom != nullptr)
-	{
-		n = _custom->size;
+		int n = _custom->size;
 
 		if (_sampler && _sampler->dims() != n)
 		{
@@ -239,9 +232,24 @@ void BondSequence::fetchTorsion(int idx)
 
 		if (_sampler != nullptr)
 		{
-			_sampler->multiplyVec(_currentVec, _sampleNum);
+			_sampler->addToVec(_currentVec, _custom->tensor, _sampleNum);
 		}
 	}
+}
+
+void BondSequence::fetchTorsion(int idx)
+{
+	if (_blocks[idx].torsion_idx < 0)
+	{
+		return;
+	}
+	
+	if (_skipSections || _currentVec == nullptr)
+	{
+		calculateCustomVector();
+	}
+	
+	int n = (_custom ? _custom->size : 0);
 
 	double t = _torsionBasis->torsionForVector(_blocks[idx].torsion_idx,
 	                                           _currentVec, n);
@@ -346,6 +354,7 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	}
 	
 	_custom = &j.custom.vecs[_customIdx];
+	calculateCustomVector();
 }
 
 void BondSequence::fastCalculate()

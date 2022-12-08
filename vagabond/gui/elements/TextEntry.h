@@ -16,6 +16,7 @@ public:
 	enum Validation
 	{
 		Numeric,
+		Alphabetic,
 		Id,
 		None
 	};

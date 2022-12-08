@@ -135,6 +135,16 @@ void ClusterView::makePoints()
 		}
 
 		glm::vec3 v = _cx->point(i);
+		
+		/*
+		for (size_t j = 0; j < 3; j++)
+		{
+			int axis = _cx->axis(j);
+			float weight = _cx->weight(axis);
+			v[j] *= weight;
+		}
+		*/
+
 		_point2Index[vertexCount()] = i;
 
 		addPoint(v, 0);

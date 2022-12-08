@@ -76,6 +76,14 @@ bool TextEntry::validateKey(char key)
 			return true;
 		}
 	}
+
+	if (_validation == Alphabetic)
+	{
+		if ((key >= 'a' && key <= 'z'))
+		{
+			return true;
+		}
+	}
 	
 	if (_validation == Id)
 	{

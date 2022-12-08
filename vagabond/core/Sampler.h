@@ -28,9 +28,12 @@ public:
 	Sampler(int n, int dims);
 
 	void setup();
+	
+	void useFibonacci(bool fib);
+
 	float hypersphereVolume(float radius);
 	
-	void multiplyVec(float *&vec, int num);
+	void addToVec(float *&vec, float *tensor, int num);
 	
 	int dims()
 	{
@@ -46,6 +49,8 @@ private:
 	void populateSamples();
 	void establishRadius();
 	void convertSamples();
+	void setupGriddy();
+	void setupFibonacci();
 
 	void addPointWithinRadius(std::vector<float> &point);
 	bool incrementPoint(std::vector<float> &point);
@@ -58,6 +63,9 @@ private:
 	
 	std::vector<std::vector<float> > _tmpPoints;
 	PCA::Matrix _points{};
+	PCA::Matrix _tensor;
+	
+	bool _fibonacci = true;
 };
 
 #endif

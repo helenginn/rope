@@ -56,6 +56,13 @@ void EntityFromSequence::setup()
 		tb->setLeft(0.2, 0.3);
 		addObject(tb);
 	}
+	
+	{
+		TextButton *tb = new TextButton("Type in sequence", this);
+		tb->setReturnTag("type");
+		tb->setLeft(0.2, 0.4);
+		addObject(tb);
+	}
 }
 
 void EntityFromSequence::handleError()
@@ -125,6 +132,16 @@ void EntityFromSequence::buttonPressed(std::string tag, Button *button)
 		setModal(aft);
 		return;
 	}
+	
+	if (tag == "type")
+	{
+		AskForText *aft = new AskForText(this, "Enter peptide sequence:",
+		                                 "peptide_sequence", this, 
+		                                 TextEntry::Alphabetic);
+		setModal(aft);
+		return;
+
+	}
 
 	if (tag == "uniprot_id")
 	{
@@ -134,7 +151,22 @@ void EntityFromSequence::buttonPressed(std::string tag, Button *button)
 
 	}
 
+	if (tag == "peptide_sequence")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string text = te->scratch();
+		makePeptide(text);
+	}
+
 	Scene::buttonPressed(tag, button);
+}
+
+void EntityFromSequence::makePeptide(std::string text)
+{
+	AddEntity *addEntity = new AddEntity(_previous, text);
+	back();
+	addEntity->show();
+
 }
 
 void EntityFromSequence::render()

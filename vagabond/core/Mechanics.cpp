@@ -74,7 +74,7 @@ void Mechanics::private_run()
 
 		if (r && r->requests & JobExtractPositions)
 		{
-			r->transplantLastPosition();
+			r->transplantPositions();
 		}
 		
 		if (r)

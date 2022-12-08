@@ -105,7 +105,7 @@ void AxisExplorer::submitJob(float prop)
 
 		if (r->requests & JobExtractPositions)
 		{
-			r->transplantLastPosition();
+			r->transplantPositions();
 			sum += r->score;
 		}
 	}

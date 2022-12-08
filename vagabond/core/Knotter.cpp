@@ -323,18 +323,17 @@ void Knotter::knot()
 	if (_doLengths)
 	{
 		findBondLengths();
+	}
 
-		if (_doAngles)
+	if (_doAngles)
+	{
+		findBondAngles();
+
+		if (_doTorsions)
 		{
-			findBondAngles();
-
-			if (_doTorsions)
-			{
-				findBondTorsions();
-				findChiralCentres();
-			}
+			findBondTorsions();
+			findChiralCentres();
 		}
-
 	}
 }
 

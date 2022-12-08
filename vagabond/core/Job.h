@@ -57,6 +57,7 @@ typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
 struct CustomVector
 {
 	float *mean = nullptr;
+	float *tensor = nullptr;
 	int sample_num = 0;
 	int size = 0;
 	
@@ -67,10 +68,18 @@ struct CustomVector
 		size = s;
 	}
 	
+	void allocate_tensor()
+	{
+		tensor = new float[size * size];
+		memset(tensor, '\0', size * size * sizeof(float));
+	}
+	
 	void destroy_vector()
 	{
 		delete [] mean;
 		mean = nullptr;
+		delete [] tensor;
+		tensor = nullptr;
 	}
 };
 
@@ -82,8 +91,9 @@ struct CustomInfo
 	 * @param n how many different types of perturbation (one 
 	 * 	per discrete conformer)
 	 * @param size how many dimensions does each vector have
-	 * @param sample_num number of samples per discrete perturbation */
-	void allocate_vectors(int n, int size, int sample_num)
+	 * @param sample_num number of samples per discrete perturbation 
+	 * @param include tensor allocation */
+	void allocate_vectors(int n, int size, int sample_num, bool tensor = false)
 	{
 		vecs.resize(n);
 		
@@ -91,6 +101,12 @@ struct CustomInfo
 		for (size_t i = 0; i < n; i++)
 		{
 			vecs[i].allocate_vector(size);
+
+			if (tensor)
+			{
+				vecs[i].allocate_tensor();
+			}
+
 			cumulative += sample_num;
 			vecs[i].sample_num = cumulative;
 		}
@@ -116,7 +132,7 @@ class MiniJob;
 
 struct Job
 {
-	CustomInfo custom;
+	CustomInfo custom{};
 
 	float fraction = 0;
 	int ticket;
@@ -150,19 +166,6 @@ struct Result
 		requests = job->requests;
 		ticket = job->ticket;
 		job->result = this;
-	}
-	
-	void transplantLastPosition()
-	{
-		AtomPosMap::iterator it;
-		for (it = aps.begin(); it != aps.end(); it++)
-		{
-			std::vector<glm::vec3> last(1, it->second.samples.back());
-			Atom::WithPos wp;
-			wp.samples = last;
-			wp.ave = last[0];
-			it->first->setDerivedPositions(wp);
-		}
 	}
 	
 	void transplantColours()

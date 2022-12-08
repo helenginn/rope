@@ -55,6 +55,7 @@ public:
 	}
 	
 	void densityFromDiffraction(Diffraction *diff);
+	void densityFromMap(ArbitraryMap *map);
 	
 	virtual void buttonPressed(std::string tag, Button *button);
 	void fftButton();

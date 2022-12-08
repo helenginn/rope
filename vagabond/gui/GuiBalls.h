@@ -42,6 +42,7 @@ public:
 	virtual void addVisuals(Atom *a);
 
 	virtual void removeVisuals();
+	virtual void finishUpdate();
 protected:
 	virtual void extraUniforms();
 private:
@@ -56,6 +57,8 @@ private:
 
 	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;
+	
+	bool _multi = false;
 	
 #ifdef __EMSCRIPTEN__
 	float _size = 15;

@@ -37,6 +37,9 @@ public:
 	virtual File::Type cursoryLook();
 	virtual void parse();
 	virtual void write(std::string filename);
+	void writeAtoms(AtomGroup *grp, std::string name);
+
+	void getAllGeometry();
 private:
 	struct AtomInfo
 	{
@@ -53,7 +56,6 @@ private:
 	void processAtom(gemmi::Atom &a, AtomInfo &ai, char conf);
 
 	void getStandardGeometry();
-	void getAllGeometry();
 	void parseFileContents();
 
 };

@@ -86,6 +86,13 @@ void CubicGrid<T>::real2Voxel(glm::vec3 &real) const
 }
 
 template <class T>
+void CubicGrid<T>::voxel2Real(glm::vec3 &voxel) const
+{
+	voxel *= _realDim;
+	voxel += this->origin();
+}
+
+template <class T>
 glm::vec3 CubicGrid<T>::real(int h, int k, int l)
 {
 	glm::vec3 real(h, k, l);

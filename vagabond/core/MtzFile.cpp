@@ -30,8 +30,16 @@ File::Type MtzFile::cursoryLook()
 {
 	std::string tmp = toFilename(_filename);
 	Type type = Nothing;
+	gemmi::Mtz mtz;
 
-	gemmi::Mtz mtz = gemmi::read_mtz_file(tmp);
+	try
+	{
+		gemmi::Mtz mtz = gemmi::read_mtz_file(tmp);
+	}
+	catch (std::system_error &err)
+	{
+		return type;
+	}
 	
 	if (mtz.columns.size())
 	{

@@ -81,7 +81,12 @@ bool BondTorsion::coversMainChain()
 bool BondTorsion::isConstrained() const
 {
 	return _constrained;
+}
 
+bool BondTorsion::isPeptideBond() const
+{
+	return ((_b->atomName() == "C" && _c->atomName() == "N") ||
+	        (_b->atomName() == "N" && _c->atomName() == "C"));
 }
 
 const std::string BondTorsion::reverse_desc() const

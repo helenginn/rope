@@ -782,7 +782,7 @@ File::Type CifFile::cursoryLook()
 	{
 		doc = read_file(tmp);
 	}
-	catch (std::runtime_error err)
+	catch (std::system_error &err)
 	{
 		std::cout << "Read fail" << std::endl;
 		return type;

@@ -161,16 +161,17 @@ public:
 
 	virtual Atom *atomIdentity() = 0;
 	void giveBondstraintOwnership(AtomGroup *which);
+
+	void setOwns(bool owns)
+	{
+		_owns = owns;
+	}
 protected:
 	void deleteBondstraints();
 	bool hasBondLength(BondLength *straint);
 	bool hasBondAngle(BondAngle *angle);
 	bool hasTorsion(BondTorsion *torsion);
 	bool hasChirality(Chirality *chir);
-	void setOwns(bool owns)
-	{
-		_owns = owns;
-	}
 private:
 	bool _owns = false;
 

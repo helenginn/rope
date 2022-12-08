@@ -42,6 +42,7 @@ public:
 	virtual float resolution(int i, int j, int k) = 0;
 	virtual glm::vec3 reciprocal(int h, int k, int l) = 0;
 	virtual void real2Voxel(glm::vec3 &real) const = 0;
+	virtual void voxel2Real(glm::vec3 &voxel) const = 0;
 	virtual glm::vec3 real(int i, int j, int k) = 0;
 
 	virtual float realValue(glm::vec3 real)

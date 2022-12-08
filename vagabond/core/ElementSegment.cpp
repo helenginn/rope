@@ -233,3 +233,13 @@ float ElementSegment::density(int i, int j)
 	float density = element(i).value[j];
 	return density;
 }
+
+
+void ElementSegment::clear()
+{
+	for (size_t i = 0; i < nn(); i++)
+	{
+		element(i).value[0] = 0;
+		element(i).value[1] = 0;
+	}
+}

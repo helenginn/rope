@@ -62,6 +62,7 @@ public:
 			HBond,
 			VdW,
 			Momentum,
+			HardLimit,
 		};
 
 		Type type;

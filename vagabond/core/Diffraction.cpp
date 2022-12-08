@@ -17,12 +17,20 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Diffraction.h"
+#include "ArbitraryMap.h"
 
 Diffraction::Diffraction(int nx, int ny, int nz) 
 : Grid<VoxelDiffraction>(nx, ny, nz),
 TransformedGrid<VoxelDiffraction>(nx, ny, nz)
 {
 
+}
+
+Diffraction::Diffraction(ArbitraryMap *map)
+: Grid<VoxelDiffraction>(map->nx(), map->ny(), map->nz()),
+TransformedGrid<VoxelDiffraction>(map->nx(), map->ny(), map->nz())
+{
+	
 }
 
 Diffraction::Diffraction(RefList &list) 
@@ -62,3 +70,4 @@ size_t Diffraction::reflectionCount()
 {
 	return _list->reflectionCount() * _list->symOpCount() * 2;
 }
+

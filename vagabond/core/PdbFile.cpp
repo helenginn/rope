@@ -181,6 +181,53 @@ void PdbFile::parseFileContents()
 	_values["cell.angle_gamma"] = st.cell.gamma;
 }
 
+void PdbFile::writeAtoms(AtomGroup *grp, std::string name)
+{
+	gemmi::Structure st;
+	st.models.push_back(gemmi::Model(name));
+	
+	gemmi::Model &m = st.models.front();
+	m.chains.push_back(gemmi::Chain("A"));
+	gemmi::Chain &c = m.chains.front();
+	
+	ResidueId prev("");
+	gemmi::Residue *last = nullptr;
+	for (size_t i = 0; i < grp->size(); i++)
+	{
+		Atom *atom = (*grp)[i];
+		const ResidueId &id = atom->residueId();
+		if (id != prev)
+		{
+			char insert = (id.insert.length() == 0 ? ' ' : id.insert[0]);
+			gemmi::ResidueId gemmi_id;
+			gemmi_id.seqid = gemmi::SeqId(id.num, insert);
+			gemmi_id.name = atom->code();
+			c.residues.push_back(gemmi::Residue(gemmi_id));
+			last = &(c.residues.back());
+			prev = id;
+		}
+		
+		if (last != nullptr)
+		{
+			last->atoms.push_back(gemmi::Atom());
+			gemmi::Atom &a = last->atoms.back();
+			glm::vec3 pos = atom->derivedPosition();
+			a.name = atom->atomName();
+			a.element = gemmi::Element(atom->elementSymbol());
+			a.pos.x = pos.x;
+			a.pos.y = pos.y;
+			a.pos.z = pos.z;
+		}
+	}
+
+	std::ofstream file;
+	file.open(_filename);
+	
+	gemmi::write_pdb(st, file);
+	
+	file.close();
+}
+
 void PdbFile::parse()
 {
 	parseFileContents();

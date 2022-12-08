@@ -24,6 +24,8 @@
 #include "Diffraction.h"
 #include "RefList.h"
 
+class ArbitraryMap;
+
 struct VoxelDiffraction
 {
 	fftwf_complex value;
@@ -53,6 +55,7 @@ class Diffraction : public TransformedGrid<VoxelDiffraction>
 public:
 	Diffraction(int nx, int ny, int nz);
 	Diffraction(RefList &list);
+	Diffraction(ArbitraryMap *map);
 
 	void populateReflections();
 	

@@ -9,6 +9,12 @@
 #include <mutex>
 #include <vector>
 
+struct BondNum
+{
+	Atom *atom;
+	int num;
+};
+
 class BondLength;
 
 class Atom : public HasBondstraints
@@ -248,6 +254,8 @@ public:
 	void setTransformation(glm::mat4x4 transform);
 	void setAbsoluteTransformation(glm::mat4x4 transform);
 	
+	int bondsBetween(Atom *end, int maxBonds);
+
 	const glm::mat4x4 &transformation() const
 	{
 		return _transform;

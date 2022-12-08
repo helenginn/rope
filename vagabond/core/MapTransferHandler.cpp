@@ -137,6 +137,7 @@ void MapTransferHandler::start()
 
 void MapTransferHandler::returnSegment(ElementSegment *segment)
 {
+	segment->clear();
 	std::string ele = segment->elementSymbol();
 	Pool<ElementSegment *> &pool = _pools[ele];
 	pool.pushObject(segment);

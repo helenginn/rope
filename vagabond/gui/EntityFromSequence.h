@@ -37,6 +37,7 @@ public:
 	virtual void processResult(std::string seq);
 	virtual void handleError();
 private:
+	void makePeptide(std::string text);
 	pthread_t _thread;
 
 	std::string _url;

@@ -36,7 +36,7 @@ ForceFieldHandler::~ForceFieldHandler()
 
 void ForceFieldHandler::fillDefaults()
 {
-	if (_props.group->size() == 0)
+	if (_props.group == nullptr || _props.group->size() == 0)
 	{
 		_props.group = new AtomGroup();
 		const BondSequence *bs = _calculator->sequenceHandler()->sequence(0);

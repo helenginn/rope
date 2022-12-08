@@ -58,6 +58,7 @@ public:
 	void addDensity(glm::vec3 real, float density);
 	float density(int i, int j);
 	void printMap();
+	void clear();
 	
 	void calculateMap();
 

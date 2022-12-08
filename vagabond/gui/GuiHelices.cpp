@@ -93,59 +93,12 @@ std::vector<GuiHelices::NOPair> GuiHelices::sweepCandidates()
 	return noPairs;
 }
 
-struct BondNum
-{
-	Atom *atom;
-	int num;
-};
-
-int GuiHelices::bondsBetween(Atom *start, Atom *end, int maxBonds)
-{
-	std::set<Atom *> rejected;
-	std::vector<BondNum> bnums;
-	bnums.push_back({start, maxBonds});
-	rejected.insert(start);
-
-	while (bnums.size())
-	{
-		BondNum bn = bnums.back();
-		bnums.pop_back();
-		
-		if (bn.atom == end)
-		{
-			return maxBonds - bn.num;
-		}
-
-		if (bn.num == 0)
-		{
-			continue;
-		}
-
-		for (size_t i = 0; i < bn.atom->bondLengthCount(); i++)
-		{
-			BondLength *bl = bn.atom->bondLength(i);
-			Atom *other = bl->otherAtom(bn.atom);	
-
-			if (rejected.count(other))
-			{
-				continue;
-			}
-			
-			rejected.insert(other);
-			BondNum newBn{other, bn.num - 1};
-			bnums.push_back(newBn);
-		}
-	}
-	
-	return -1;
-}
-
 void GuiHelices::pruneCandidates(std::vector<NOPair> &pairs)
 {
 	std::vector<NOPair> filtered;
 	for (NOPair &pair : pairs)
 	{
-		int separation = bondsBetween(pair.n, pair.o, 15);
+		int separation = pair.n->bondsBetween(pair.o, 15);
 		
 		if (separation == 11)
 		{
@@ -160,8 +113,8 @@ void GuiHelices::extendRun(Run &run, std::vector<NOPair> &pairs)
 {
 	for (size_t i = 0; i < pairs.size(); i++)
 	{
-		int to_begin = bondsBetween(run.front().n, pairs[i].n, 5);
-		int to_end = bondsBetween(run.back().n, pairs[i].n, 5);
+		int to_begin = run.front().n->bondsBetween(pairs[i].n, 5);
+		int to_end = run.back().n->bondsBetween(pairs[i].n, 5);
 		
 		if (to_begin < 0 && to_end < 0)
 		{
@@ -191,7 +144,7 @@ GuiHelices::findNitrogenRuns(std::vector<NOPair> &pairs)
 	{
 		for (int j = i + 1; j < (int)pairs.size(); j++)
 		{
-			int separation = bondsBetween(pairs[i].n, pairs[j].n, 5);
+			int separation = pairs[i].n->bondsBetween(pairs[j].n, 5);
 
 			if (separation < 0)
 			{
@@ -460,6 +413,13 @@ void GuiHelices::makeHelixSlab(Snow::Vertex &origin, Snow::Vertex &previous,
 		cross = glm::normalize(glm::cross(diff, dir));
 	}
 	
+	for (size_t i = verts.size() - total; i < verts.size(); i++)
+	{
+		glm::vec3 norm = helix_normals[i][0] * cross;
+		norm += helix_normals[i][1] * dir;
+		verts[i].normal += glm::normalize(norm);
+	}
+	
 	for (size_t i = 0; i < total; i++)
 	{
 		glm::vec3 sum = helix_cross_section[i][0] * cross;
@@ -547,7 +507,7 @@ void GuiHelices::mergeHelices()
 		Atom *last = prev.cAlphas.back();
 		Atom *first = curr.cAlphas.front();
 
-		int nbonds = bondsBetween(last, first, 4);
+		int nbonds = last->bondsBetween(first, 4);
 		
 		if (nbonds >= 0)
 		{
@@ -644,8 +604,9 @@ void GuiHelices::finishUpdate()
 		
 		for (size_t j = 0; j < full_verts.size(); j++)
 		{
-			_vertices[insertion + j].pos = full_verts[j].pos;
-			_vertices[insertion + j].normal = full_verts[j].normal;
+			Vertex &v = _vertices[insertion + j];
+			v.pos = full_verts[j].pos;
+			v.normal = glm::normalize(full_verts[j].normal);
 		}
 	}
 	

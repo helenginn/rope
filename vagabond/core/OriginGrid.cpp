@@ -30,7 +30,7 @@ float OriginGrid<T>::interpolate(glm::vec3 real)
 	glm::vec3 &vox000 = real;
 
 	/* vox000 has integer and real components */
-	this->collapse(vox000.x, vox000.y, vox000.z);
+	this->collapse(vox000);
 	
 	/* Pick out just the real components - this is faster
 	 * than modf */

@@ -187,6 +187,12 @@ void BondCalculator::setupForceFieldHandler()
 	}
 
 	_ffHandler = new ForceFieldHandler(this);
+	
+	if (_props.t == FFProperties::NoTemplate)
+	{
+		throw std::runtime_error("Need to set template for "\
+		                         "force field calculation");
+	}
 	_ffHandler->setFFProperties(_props);
 	_ffHandler->setThreads(_maxThreads);
 	_ffHandler->setForceFieldCount(_maxThreads);
@@ -256,6 +262,10 @@ void BondCalculator::start()
 		_changedDepth = false;
 	}
 
+	if (_correlHandler != nullptr)
+	{
+		_correlHandler->start();
+	}
 	if (_ffHandler != nullptr)
 	{
 		_ffHandler->start();
@@ -267,10 +277,6 @@ void BondCalculator::start()
 	if (_mapHandler != nullptr)
 	{
 		_mapHandler->start();
-	}
-	if (_correlHandler != nullptr)
-	{
-		_correlHandler->start();
 	}
 	_sequenceHandler->start();
 
@@ -361,7 +367,6 @@ int BondCalculator::submitJob(Job &original_job)
 	_jobPool.sem.signal();
 	job->ticket = ++_max_id;
 	_running++;
-	
 	return job->ticket;
 }
 

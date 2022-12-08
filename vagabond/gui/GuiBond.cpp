@@ -44,7 +44,7 @@ GuiBond::~GuiBond()
 
 void GuiBond::updateAtom(Atom *a, glm::vec3 pos, int n)
 {
-	size_t nvtx = _atomIdx.size();
+	size_t nvtx = _copy->vertexCount();
 	size_t offset = nvtx * n;
 
 	if (_atomIdx.count(a) == 0)
@@ -59,10 +59,7 @@ void GuiBond::updateAtom(Atom *a, glm::vec3 pos, int n)
 		return;
 	}
 
-	lockMutex();
 	_vertices[idx].pos = pos;
-	unlockMutex();
-	
 }
 
 void GuiBond::incrementNetworks(int n)
@@ -70,13 +67,17 @@ void GuiBond::incrementNetworks(int n)
 	for (size_t i = _num; i < n; i++)
 	{
 		appendObject(_copy);
+		_num++;
 	}
-
-	_num += n;
 }
 
 void GuiBond::truncateNetworks(int n)
 {
+	if (n == 0)
+	{
+		n = 1;
+	}
+
 	size_t nidx = _copy->indexCount();
 	size_t nvtx = _copy->vertexCount();
 	size_t isize = n * nidx;
@@ -105,29 +106,25 @@ void GuiBond::changeNetworks(int n)
 	{
 		truncateNetworks(n);
 	}
+
 }
 
 void GuiBond::updateAtoms(Atom *a, Atom::WithPos &wp)
 {
 	int n = wp.samples.size();
-	if (n > 0)
-	{
-		changeNetworks(n);
-		for (size_t i = 0; i < n; i++)
-		{
-			updateAtom(a, wp.samples[i], i);
-		}
-	}
-	else
-	{
-		changeNetworks(1);
-		updateAtom(a, wp.ave, 0);
-	}
+	changeNetworks(n);
 
+	for (size_t i = 0; i < n; i++)
+	{
+		updateAtom(a, wp.samples[i], i);
+	}
 }
 
 void GuiBond::watchBonds(AtomGroup *a)
 {
+	_copy->clearVertices();
+	clearVertices();
+
 	int v = 0;
 	for (size_t i = 0; i < a->size(); i++)
 	{
@@ -156,11 +153,11 @@ void GuiBond::watchBonds(AtomGroup *a)
 		_copy->addIndex(end_idx);
 	}
 	
+	_copy->setColour(0.5, 0.5, 0.5);
 	_copy->setAlpha(1.);
 	appendObject(_copy);
 	_num = 1;
 	
-	setColour(0.5, 0.5, 0.5);
 }
 
 void GuiBond::addVisuals(Atom *a)

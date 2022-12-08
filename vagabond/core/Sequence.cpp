@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SequenceComparison.h"
+#include "AtomsFromSequence.h"
 #include "Sequence.h"
 #include "Residue.h"
 #include "Grapher.h"
@@ -366,3 +367,9 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
 	}
 }
 
+AtomGroup *Sequence::convertToAtoms()
+{
+	AtomsFromSequence afs(*this);
+	AtomGroup *grp = afs.atoms();
+	return grp;
+}
