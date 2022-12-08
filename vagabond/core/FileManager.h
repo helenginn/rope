@@ -83,6 +83,11 @@ public:
 		_userDir = dir;
 	}
 
+    const std::string &userDirectory() const
+    {
+        return _userDir;
+    }
+
 	virtual const std::string progressName() const
 	{
 		return "files";
