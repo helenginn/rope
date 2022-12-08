@@ -40,6 +40,7 @@ public:
 	
 	Model *const model(std::string name) const
 	{
+        to_lower(name);
 		if (_name2Model.count(name) == 0)
 		{
 			return nullptr;

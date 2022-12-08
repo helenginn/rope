@@ -29,13 +29,12 @@ ModelManager::ModelManager() : Manager()
 
 Model *ModelManager::insertIfUnique(Model &m)
 {
-	for (Model &other : _objects)
-	{
-		if (other.name() == m.name())
-		{
-			throw std::runtime_error("Model with same name exists");
-		}
-	}
+    std::string model_name = m.name();
+    to_lower(model_name);
+    if (_name2Model.count(model_name) > 0)
+    {
+        throw std::runtime_error("Model with same name exists");
+    }
 	
 	if (m.name().length() == 0)
 	{
@@ -65,7 +64,9 @@ void ModelManager::housekeeping()
 {
 	for (Model &m : _objects)
 	{
-		_name2Model[m.name()] = &m;
+        std::string model_name = m.name();
+        to_lower(model_name);
+		_name2Model[model_name] = &m;
 	}
 	
 	connectionsToDatabase();
