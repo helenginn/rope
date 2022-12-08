@@ -1,5 +1,6 @@
 glm = dependency('glm', required: false)
-gl = dependency('gl', method: 'system', required: true)
+compiler = meson.get_compiler('cpp')
+gl = compiler.find_library('gl')
 glew = dependency('glew', required: true)
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
