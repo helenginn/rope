@@ -16,9 +16,9 @@ int main (int argc, char **argv)
 
     std::vector<std::string> args;
     // Skip loading the json file if the first argument isn't help
-    if (argc == 0 && (strcmp(argv[0], "help") != 0 &&
-                      strcmp(argv[0], "--help") != 0 &&
-                      strcmp(argv[0], "-h") != 0))
+    if (argc == 1 || (strcmp(argv[1], "help") != 0 &&
+                      strcmp(argv[1], "--help") != 0 &&
+                      strcmp(argv[1], "-h") != 0))
     {
         args.push_back("environment=rope.json");
     }
