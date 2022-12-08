@@ -26,6 +26,7 @@ void main()
 	}
 
 	float alpha = 1 - min(dist / 20, 1);
+	alpha = 1;
 
 //	vec4 result = texture(pic_tex, vTex);
 	vec4 result = vColor;
