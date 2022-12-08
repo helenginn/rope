@@ -20,6 +20,7 @@
 #include <vagabond/utils/os.h>
 #include "Dictator.h"
 #include "CmdWorker.h"
+#include <vagabond/core/Reporter.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/EntityManager.h>
@@ -29,6 +30,7 @@
 #include <vagabond/core/Metadata.h>
 #include <iostream>
 #include <unistd.h>
+#include <algorithm>
 
 std::map<std::string, std::string> Dictator::_properties;
 std::map<std::string, std::string> Dictator::_commands;

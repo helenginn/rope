@@ -69,6 +69,8 @@ vagafiles = [
 'PositionalGroup.cpp',
 'RefList.cpp',
 'Refinement.cpp',
+'Reporter.cpp',
+'Reporter.h',
 'Residue.cpp',
 'Route.cpp',
 'Rule.cpp',
