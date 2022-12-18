@@ -740,3 +740,25 @@ void Model::respond()
 {
 	extractTorsions();
 }
+
+void Model::export_refined(std::string prefix, std::string suffix)
+{
+    load();
+    _currentAtoms->recalculate();
+
+    std::string model_path = "";
+    if (!prefix.empty())
+    {
+        model_path += prefix + "_";
+    }
+    model_path += id();
+    if (!suffix.empty())
+    {
+        model_path += "_" + suffix;
+    }
+    model_path += ".pdb";
+    write(model_path);
+
+    unload();
+}
+

@@ -162,6 +162,8 @@ public:
 	}
 
 	virtual void respond();
+
+    void export_refined(std::string prefix = "rope", std::string suffix = "");
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();

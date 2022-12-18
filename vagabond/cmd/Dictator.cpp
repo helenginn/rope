@@ -214,15 +214,21 @@ void Dictator::processRequest(std::string &first, std::string &last)
 
     if (first == "export")
     {
+        ModelManager *model_manager = Environment::env().modelManager();
         if (last == "all" || last == "")
         {
             std::cout << "Exporting all models..." << std::endl;
+            for (int i = 0; i < model_manager->objectCount(); i++)
+            {
+                Model &model = model_manager->object(i);
+                std::cout << "Exporting model " << model.id() << "... " << std::endl;
+                model.export_refined();
+                std::cout << "Done." << std::endl;
+            }
         }
         else
         {
             std::cout << "Exporting model " << last << std::endl;
-            ModelManager *model_manager = Environment::env().modelManager();
-
             Model *model = model_manager->model(last);
             if (model == nullptr)
             {
@@ -231,7 +237,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
             }
             else
             {
-                std::cout << "MODEL FOUND!" << std::endl;
+                model->export_refined();
             }
         }
     }
