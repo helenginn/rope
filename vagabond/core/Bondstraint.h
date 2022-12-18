@@ -57,6 +57,10 @@ public:
 				{
 					return true;
 				}
+                if (other.atoms[i] > atoms[i])
+                {
+                    return false;
+                }
 			}
 			
 			return false;
