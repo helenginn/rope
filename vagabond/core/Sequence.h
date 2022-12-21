@@ -32,6 +32,15 @@ class Entity;
 class AtomGroup;
 class SequenceComparison;
 
+namespace rope
+{
+	enum TorsionType
+	{
+		RefinedTorsions,
+		TemporaryTorsions,
+	};
+}
+
 typedef std::map<Residue *, Residue *> ResidueMap;
 
 class Sequence : public IndexedSequence
@@ -206,7 +215,7 @@ public:
 	/** call on entity master sequence to get the corresponding torsion 
 	 * angles from a derived/mapped sequence */
 	void torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
-	                        bool tmp_source = false);
+	                        rope::TorsionType type = rope::RefinedTorsions);
 	
 	AtomGroup *convertToAtoms();
 private:

@@ -301,3 +301,36 @@ void Entity::clickTicker()
 {
 	Environment::entityManager()->clickTicker();
 }
+
+MetadataGroup Entity::makeTorsionDataGroup()
+{
+	size_t num = _sequence.torsionCount();
+	std::vector<ResidueTorsion> headers;
+	_sequence.addResidueTorsions(headers);
+
+	MetadataGroup group(num);
+	group.addHeaders(headers);
+	
+	for (Molecule *mol : _molecules)
+	{
+		mol->addTorsionsToGroup(group);
+	}
+		
+	PathManager *pm = Environment::env().pathManager();
+
+	for (Molecule *mol : _molecules)
+	{
+		std::vector<Path *> paths = pm->pathsForMolecule(mol);
+
+		for (Path *path : paths)
+		{
+			if (path->contributesToSVD())
+			{
+				path->addTorsionsToGroup(group);
+			}
+		}
+	}
+	
+	return group;
+}
+

@@ -98,8 +98,9 @@ public:
 	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 	
-	MetadataGroup::Array grabTorsions(bool tmp = false);
-	void addTorsionsToGroup(MetadataGroup &group);
+	MetadataGroup::Array grabTorsions(rope::TorsionType type 
+	                                  = rope::RefinedTorsions);
+	void addTorsionsToGroup(MetadataGroup &group, bool unrefined = false);
 
 	Atom *atomByIdName(const ResidueId &id, std::string name);
 

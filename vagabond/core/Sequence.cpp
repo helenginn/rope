@@ -340,7 +340,7 @@ bool Sequence::torsionByName(const std::string name, Residue **res)
 }
 
 void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
-                                  bool tmp_source)
+                                  rope::TorsionType type)
 {
 	for (Residue &master : _residues)
 	{
@@ -359,7 +359,25 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
 			
 			if (match.valid())
 			{
-				f = tmp_source ? match.tmpAngle() : match.refinedAngle();
+				switch (type)
+				{
+					case rope::RefinedTorsions:
+					f = match.refinedAngle();
+					break;
+
+					case rope::TemporaryTorsions:
+					f = match.tmpAngle();
+					break;
+					
+					default:
+					f = match.refinedAngle();
+					break;
+				}
+
+				if (!match.coversMainChain())
+				{
+					f = NAN;
+				}
 			}
 
 			vals.push_back(f);
