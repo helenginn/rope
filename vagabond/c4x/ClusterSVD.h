@@ -34,6 +34,27 @@ public:
 	}
 
 	virtual void cluster();
+	
+	virtual bool givesTorsionAngles()
+	{
+		return true;
+	}
+
+	virtual bool canMapVectors()
+	{
+		return true;
+	}
+
+	virtual void chooseBestAxes(std::vector<float> &vals)
+	{
+		this->bestAxisFit(vals);
+	}
+	
+	virtual glm::vec3 point_for_view(std::vector<float> &mapped)
+	{
+		return this->point(mapped);
+	}
+
 	virtual std::vector<float> mapComparable(typename DG::Comparable &vec);
 	virtual std::vector<float> mapVector(typename DG::Array &vec);
 

@@ -24,7 +24,7 @@ using namespace PCA;
 
 Superpose::Superpose()
 {
-	_transformation = glm::mat4(0.f);
+	_transformation = glm::mat4(1.f);
 }
 
 void Superpose::getAveragePositions(glm::vec3 &pm, glm::vec3 &qm)
@@ -166,5 +166,5 @@ float Superpose::rmsd()
 		sum += glm::dot(diff, diff);
 	}
 
-	return sum / (float)_pairs.size();
+	return sqrt(sum / (float)_pairs.size());
 }

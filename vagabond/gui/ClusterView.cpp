@@ -26,8 +26,10 @@
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Molecule.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/c4x/ClusterSVD.h>
+#include <vagabond/core/ObjectGroup.h>
 #include <vagabond/core/PathManager.h>
+#include <vagabond/core/RopeCluster.h>
 
 #include <iostream>
 
@@ -113,8 +115,8 @@ void ClusterView::refresh()
 
 void ClusterView::prioritiseMetadata(std::string key)
 {
-	std::vector<float> vals = _cx->dataGroup()->numbersForKey(key);
-	int idx = _cx->bestAxisFit(vals);
+	std::vector<float> vals = _cx->objectGroup()->numbersForKey(key);
+	_cx->chooseBestAxes(vals);
 
 	refresh();
 }
@@ -129,7 +131,7 @@ void ClusterView::makePoints()
 
 	for (size_t i = 0; i < count; i++)
 	{
-		if (!_cx->dataGroup()->object(i)->displayable())
+		if (!_cx->objectGroup()->object(i)->displayable())
 		{
 			continue;
 		}
@@ -153,7 +155,7 @@ void ClusterView::makePoints()
 	reindex();
 }
 
-void ClusterView::setCluster(Cluster<MetadataGroup> *cx)
+void ClusterView::setCluster(RopeCluster *cx)
 {
 	_cx = cx;
 
@@ -179,7 +181,7 @@ void ClusterView::applyVaryColour(const Rule &r)
 		return;
 	}
 
-	MetadataGroup &group = *_cx->dataGroup();
+	ObjectGroup &group = *_cx->objectGroup();
 	for (size_t i = 0; i < group.objectCount(); i++)
 	{
 		const Metadata::KeyValues data = group.object(i)->metadata();
@@ -207,7 +209,7 @@ void ClusterView::applyChangeIcon(const Rule &r)
 	int pt = r.pointType();
 	bool any_assigned = r.ifAssigned();
 
-	MetadataGroup &group = *_cx->dataGroup();
+	ObjectGroup &group = *_cx->objectGroup();
 	for (size_t i = 0; i < group.objectCount(); i++)
 	{
 		const Metadata::KeyValues data = group.object(i)->metadata();
@@ -272,7 +274,7 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	
 	int idx = _point2Index[rawidx];
 	
-	MetadataGroup &group = *_cx->dataGroup();
+	ObjectGroup &group = *_cx->objectGroup();
 
 	if (_confSpaceView->returnToView() && left && !hover)
 	{
@@ -322,8 +324,15 @@ void ClusterView::addPaths()
 {
 	wait();
 	clearPaths();
+	
+	if (_confSpaceView->confType() != ConfSpaceView::ConfTorsions)
+	{
+		return;
+	}
 
 	PathManager *pm = Environment::env().pathManager();
+	TorsionCluster *svd = nullptr;
+	svd = static_cast<TorsionCluster *>(_cx);
 
 	for (Path &path : pm->objects())
 	{
@@ -337,7 +346,7 @@ void ClusterView::addPaths()
 			continue;
 		}
 
-		PathView *pv = new PathView(path, _cx);
+		PathView *pv = new PathView(path, svd);
 		addPathView(pv);
 	}
 	

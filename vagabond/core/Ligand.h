@@ -16,40 +16,45 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#ifndef __vagabond__Ligand__
+#define __vagabond__Ligand__
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
+#include <string>
+#include "Comparable.h"
 
-class Rule;
-class ObjectGroup;
+class Substance;
+class AtomGroup;
 
-class LineSeries : public Renderable
+class Ligand : public Comparable
 {
 public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
+	Ligand();
+	Ligand(std::string model_id, AtomGroup *grp);
+	
+	void housekeeping();
 
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
-
-	struct OrderedIndex
+	virtual AtomGroup *currentAtoms()
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
+		if (_currentAtoms == nullptr)
 		{
-			return value < other.value;
+			housekeeping();
 		}
-	};
+		return _currentAtoms;
+	}
 
-	ObjectGroup *_group;
-	const Rule &_rule;
+	const std::string &substance_id() const
+	{
+		return _substance_id;
+	}
 
+	virtual std::string desc() const;
+	
+	Substance *const substance();
+private:
+	std::string _anchorDesc;
+
+	std::string _substance_id;
+	Substance *_substance = nullptr;
 };
 
 #endif

@@ -220,6 +220,20 @@ void Sequence::mapFromMaster(SequenceComparison *sc)
 	}
 }
 
+size_t Sequence::modelledResidueCount() const
+{
+	size_t count = 0;
+	for (const Residue &r : _residues)
+	{
+		if (!r.nothing())
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
 void Sequence::addBufferResidue()
 {
 	Residue res;
@@ -229,7 +243,7 @@ void Sequence::addBufferResidue()
 	_master.push_back(res);
 }
 
-Residue *const Sequence::local_residue(Residue *const master) const
+Residue *const Sequence::local_residue(Residue *master) const
 {
 	if (_map2Local.count(master) == 0)
 	{
@@ -306,6 +320,26 @@ const size_t Sequence::torsionCount() const
 	}
 
 	return sum;
+}
+
+void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers)
+{
+	for (Residue &residue : _residues)
+	{
+		if (residue.atomNames().size() == 0)
+		{
+			residue.housekeeping();
+		}
+
+		for (const std::string &name : residue.atomNames())
+		{
+			Atom3DPosition ap{};
+			ap.atomName = name;
+			ap.residue = &residue;
+			ap.entity = _entity;
+			headers.push_back(ap);
+		}
+	}
 }
 
 void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)

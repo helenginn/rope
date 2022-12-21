@@ -346,17 +346,36 @@ void update_score_if_better(Sequence *compare, Entity &ent,
 	delete sc;
 }
 
-void Model::autoAssignEntities(Entity *chosen)
+void Model::assignClutter()
+{
+	for (AtomGroup *grp : _currentAtoms->connectedGroups())
+	{
+		if (!grp->chosenAnchor()->hetatm())
+		{
+			continue;
+		}
+		
+		Ligand lig(_name, grp);
+		_ligands.push_back(lig);
+	}
+
+	std::cout << "Total ligands: " << _ligands.size() << std::endl;
+}
+
+void Model::assignSequencedMolecules(Entity *chosen)
 {
 	EntityManager *eManager = Environment::entityManager();
-	load(NoAngles);
-
 	for (size_t i = 0; i < _currentAtoms->chainCount(); i++)
 	{
 		float best_match = 0;
 		Entity *best_entity = nullptr;
 		Chain *ch = _currentAtoms->chain(i);
 		if (_chain2Entity.count(_currentAtoms->chain(i)->id()))
+		{
+			continue;
+		}
+		
+		if (ch->sequence()->size() <= 1)
 		{
 			continue;
 		}
@@ -392,6 +411,14 @@ void Model::autoAssignEntities(Entity *chosen)
 			<< " remains unassigned" << std::endl;
 		}
 	}
+}
+
+void Model::autoAssignEntities(Entity *chosen)
+{
+	load(NoAngles);
+
+	assignSequencedMolecules(chosen);
+	assignClutter();
 	
 	unload();
 	housekeeping();
@@ -434,6 +461,14 @@ void Model::housekeeping()
 	for (Entity *ent : ents)
 	{
 		ent->checkModel(*this);
+	}
+}
+
+void Model::findInteractions()
+{
+	if (_ligands.size() > 0 && _molecules.size() > 0)
+	{
+		_molecules.front().interfaceWithComparable(&_ligands.front());
 	}
 }
 

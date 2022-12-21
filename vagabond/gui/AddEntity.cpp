@@ -45,6 +45,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 
 AddEntity::AddEntity(Scene *prev, Chain *chain) : Scene(prev), AddObject(prev)
 {
@@ -259,8 +260,31 @@ void AddEntity::searchPdb()
 
 }
 
+void AddEntity::loadConfSpaceView(std::string suffix)
+{
+	ConfSpaceView *view = new ConfSpaceView(this, &_obj);
+	
+	if (suffix == "refined_torsions")
+	{
+		view->setMode(ConfSpaceView::ConfTorsions);
+	}
+	else if (suffix == "atom_positions")
+	{
+		view->setMode(ConfSpaceView::ConfPositional);
+	}
+
+	view->show();
+}
+
 void AddEntity::buttonPressed(std::string tag, Button *button)
 {
+	std::string suffix = Button::tagEnd(tag, "conf_space_");
+	
+	if (suffix.length() > 0)
+	{
+		loadConfSpaceView(suffix);
+	}
+
 	if (tag == "enter_name")
 	{
 		_obj.setName(_name->scratch());
@@ -277,10 +301,18 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		SequenceView *view = new SequenceView(this, _obj.sequence());
 		view->show();
 	}
-	else if (tag == "conf_space")
+	else if (tag == "conf_space" && button->left())
 	{
-		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
-		view->show();
+		loadConfSpaceView(tag);
+	}
+	else if (tag == "conf_space" && !button->left())
+	{
+		Menu *m = new Menu(this, this, "conf_space");
+		m->addOption("refined torsions", "refined_torsions");
+//		m->addOption("unrefined_torsions");
+		m->addOption("atom positions", "atom_positions");
+		m->setup(button);
+		setModal(m);
 	}
 	else if (tag == "search_pdb")
 	{

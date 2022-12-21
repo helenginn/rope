@@ -43,6 +43,7 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void loadConfSpaceView(std::string suffix);
 	void textOrChoose(std::string &file, std::string other);
 	void refreshInfo();
 	void searchPdb();

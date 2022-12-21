@@ -16,40 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#include "ObjectGroup.h"
+#include "HasMetadata.h"
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
-
-class Rule;
-class ObjectGroup;
-
-class LineSeries : public Renderable
+const int ObjectGroup::indexOfObject(HasMetadata *obj) const
 {
-public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
-
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
-
-	struct OrderedIndex
+	for (size_t i = 0; i < _objects.size(); i++)
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
+		if (obj == _objects[i])
 		{
-			return value < other.value;
+			return i;
 		}
-	};
+	}
+	
+	return -1;
+}
 
-	ObjectGroup *_group;
-	const Rule &_rule;
+std::vector<float> ObjectGroup::numbersForKey(std::string key)
+{
+	std::vector<float> vals;
+	for (HasMetadata *object : _objects)
+	{
+		Metadata::KeyValues kv = object->metadata();
 
-};
+		float val = NAN;
+		if (kv.count(key))
+		{
+			val = kv.at(key).number();
+		}
+		
+		vals.push_back(val);
+	}
 
-#endif
+	return vals;
+}
+
+void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)
+{
+
+}

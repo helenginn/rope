@@ -19,6 +19,7 @@ void Button::click(bool left)
 		return;
 	}
 
+	_left = left;
 	setHighlighted(false);
 	_sender->buttonPressed(_tag, this);
 }

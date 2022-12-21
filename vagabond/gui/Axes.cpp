@@ -268,7 +268,8 @@ void Axes::preparePlane()
 
 		std::vector<float> mapped = getMappedVector(i);
 		
-		std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+		std::vector<ResidueTorsion> list;
+		list = _cluster->dataGroup()->headers();
 		std::vector<Angular> vals = getTorsionVector(i);
 
 		plane->addAxis(list, vals, mapped);

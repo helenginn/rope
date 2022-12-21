@@ -23,22 +23,23 @@
 #include <vagabond/gui/elements/Renderable.h>
 
 class MetadataGroup;
+template <class DG>
+class ClusterSVD;
+
 class Path;
 
-template <class DG>
-class Cluster;
 class Molecule;
 
 class PathView : public Renderable
 {
 public:
-	PathView(Path &path, Cluster<MetadataGroup> *cluster);
+	PathView(Path &path, ClusterSVD<MetadataGroup> *cluster);
 	virtual ~PathView();
 
 	virtual void render(SnowGL *gl);
 	void populate();
 private:
-	Cluster<MetadataGroup> *_cluster = nullptr;
+	ClusterSVD<MetadataGroup> *_cluster = nullptr;
 	
 	Path &_path;
 };

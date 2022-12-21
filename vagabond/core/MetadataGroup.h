@@ -22,37 +22,28 @@
 #include <vagabond/c4x/DegreeDataGroup.h>
 #include <vagabond/core/TorsionRef.h>
 #include <vagabond/core/Residue.h>
+#include <vagabond/core/ObjectGroup.h>
 
 class Residue;
 
 class HasMetadata;
 
-class MetadataGroup : public DegreeDataGroup<ResidueTorsion>
+class MetadataGroup : public ObjectGroup, public DegreeDataGroup<ResidueTorsion>
 {
 public:
 	MetadataGroup(size_t length);
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
-
-	std::vector<float> numbersForKey(std::string key);
 	
-	void setWhiteList(std::vector<HasMetadata *> list);
-	void setSeparateAverage(std::vector<HasMetadata *> list);
+	virtual void setWhiteList(std::vector<HasMetadata *> list);
+	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
+
+	virtual const size_t headerCount() const
+	{
+		return headers().size();
+	}
 	
 	void clearAverages();
-	
-	const size_t objectCount() const
-	{
-		return _objects.size();
-	}
-	
-	const int indexOfObject(HasMetadata *obj) const;
-	
-	HasMetadata *const object(int i) 
-	{
-		return _objects[i];
-	}
 private:
-	std::vector<HasMetadata *> _objects;
 
 };
 

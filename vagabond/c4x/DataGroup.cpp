@@ -128,7 +128,7 @@ void DataGroup<Unit, Header>::calculateAverage()
 		{
 			Unit &v = _vectors[j][i];
 
-			if (v != v || !valid(v))
+			if (!valid(v))
 			{
 				continue;
 			}
@@ -154,9 +154,9 @@ void DataGroup<Unit, Header>::convertToDifferences(Array &arr, const Array *ave)
 	{
 		arr[j] -= ave->at(j);
 
-		if (arr[j] != arr[j] || ave->at(j) != ave->at(j))
+		if (!valid(arr[j]) || !valid(ave->at(j)))
 		{
-			arr[j] = 0;
+			arr[j] = {};
 		}
 	}
 
@@ -254,12 +254,6 @@ void DataGroup<Unit, Header>::normalise()
 	
 	_stdevs.clear();
 	
-	if (!should_normalise())
-	{
-		_stdevs = std::vector<float>(comparable_length(), 1.f);
-		return;
-	}
-
 	float n = _vectors.size();
 
 	for (size_t i = 0; i < length(); i++)
@@ -293,7 +287,12 @@ void DataGroup<Unit, Header>::normalise()
 		for (size_t j = 0; j < _vectors.size(); j++)
 		{
 			Unit &v = _diffs[j][i];
-			x += v;
+			float l = v;
+			if (l != l || !isfinite(l))
+			{
+				l = 0;
+			}
+			x += l * l;
 			xx += v * v;
 		}
 		
@@ -619,8 +618,10 @@ DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 	{
 		for (size_t i = 0; i < length(); i++)
 		{
-			double add = weights[j] * _diffs[j][i];
-			if (add == add && isfinite(add))
+			Unit add = _diffs[j][i];
+			add *= weights[j];
+
+			if (valid(add))
 			{
 				array[i] += add;
 			}

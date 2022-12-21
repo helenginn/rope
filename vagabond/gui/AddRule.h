@@ -24,7 +24,7 @@
 #include <vagabond/core/Responder.h>
 
 class RulesMenu;
-class MetadataGroup;
+class ObjectGroup;
 class ChooseHeader;
 
 class AddRule : public AddObject<Rule>, public Responder<ChooseHeader>
@@ -44,7 +44,7 @@ public:
 		_caller = rm;
 	}
 
-	void setData(MetadataGroup *group)
+	void setData(ObjectGroup *group)
 	{
 		_group = group;
 	}
@@ -63,7 +63,7 @@ private:
 	TextButton *_headerButton = nullptr;
 	std::string _entity_id;
 	RulesMenu *_caller = nullptr;
-	MetadataGroup *_group;
+	ObjectGroup *_group;
 };
 
 #endif

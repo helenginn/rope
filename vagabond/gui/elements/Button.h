@@ -53,6 +53,11 @@ public:
 			setAlpha(-0.5f);
 		}
 	}
+	
+	const bool &left() const
+	{
+		return _left;
+	}
 
 	virtual void unMouseOver();
 	virtual bool mouseOver();
@@ -70,6 +75,7 @@ protected:
 private:
 	void *_object = nullptr;
 	std::string _tag;
+	bool _left = true;
 
 };
 

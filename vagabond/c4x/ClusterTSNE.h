@@ -29,6 +29,27 @@ public:
 	~ClusterTSNE();
 
 	virtual void cluster();
+	
+	virtual bool givesTorsionAngles()
+	{
+		return false;
+	}
+	
+	virtual bool canMapVectors()
+	{
+		return false;
+	}
+
+	virtual std::vector<float> mapAnglesToVector(std::vector<Angular> 
+	                                             &angles)
+	{
+		return std::vector<float>();
+	}
+
+	virtual void chooseBestAxes(std::vector<float> &vals)
+	{
+		return;
+	}
 
 	virtual size_t displayableDimensions()
 	{

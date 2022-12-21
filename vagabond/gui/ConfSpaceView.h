@@ -33,6 +33,9 @@ class MetadataGroup;
 class RouteExplorer;
 class PathView;
 
+template <class DG>
+class Cluster;
+
 class ConfSpaceView : public Mouse3D, public IndexResponseView,
 public Responder<PathView>
 {
@@ -43,6 +46,22 @@ public:
 	void setWhiteList(std::vector<HasMetadata *> whiteList)
 	{
 		_whiteList = whiteList;
+	}
+	
+	enum ConfType
+	{
+		ConfPositional,
+		ConfTorsions,
+	};
+	
+	ConfType confType()
+	{
+		return _type;
+	}
+	
+	void setMode(ConfType type)
+	{
+		_type = type;
 	}
 	
 	void setTSNE(bool tsne)
@@ -99,6 +118,7 @@ private:
 	Entity *_entity = nullptr;
 	int _extra = 0;
 	ClusterView *_view = nullptr;
+	RopeCluster *_cluster = nullptr;
 	Axes *_axes = nullptr;
 	const Rule *_colourRule = nullptr;
 	
@@ -109,6 +129,7 @@ private:
 	std::vector<Renderable *> _temps;
 	
 	Status _status = Nothing;
+	ConfType _type = ConfTorsions;
 
 	bool _shownPaths = false;
 	bool _tsne = false;

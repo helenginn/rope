@@ -38,11 +38,6 @@ public:
 
 	void matchDegrees(Array &next);
 	virtual void addArray(std::string name, Array next);
-	
-	virtual bool should_normalise()
-	{
-		return true;
-	}
 protected:
 	using DataGroup<Angular, Header>::_length;
 	using DataGroup<Angular, Header>::_vectors;

@@ -20,9 +20,9 @@
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/core/Path.h>
-#include <vagabond/c4x/Cluster.h>
+#include <vagabond/c4x/ClusterSVD.h>
 
-PathView::PathView(Path &path, Cluster<MetadataGroup> *cluster) : _path(path)
+PathView::PathView(Path &path, ClusterSVD<MetadataGroup> *cluster) : _path(path)
 {
 	setName("Path view");
 	_renderType = GL_LINES;
@@ -46,14 +46,14 @@ void PathView::render(SnowGL *gl)
 
 void PathView::populate()
 {
+	MetadataGroup *dg = static_cast<MetadataGroup *>(_cluster->objectGroup());
+
 	if (_path.angleArraySize() == 0)
 	{
-		_path.calculateArrays(_cluster->dataGroup());
+		_path.calculateArrays(dg);
 	}
 
-	const MetadataGroup::Array &average = _cluster->dataGroup()->average();
-	
-	MetadataGroup *dg = _cluster->dataGroup();
+	const MetadataGroup::Array &average = dg->average();
 	
 	for (size_t i = 0; i < _path.angleArraySize(); i++)
 	{

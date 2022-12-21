@@ -94,6 +94,11 @@ public:
 		return nullptr;
 	}
 	
+	std::list<Residue> &residues()
+	{
+		return _residues;
+	}
+	
 	/** @return residue associated with a ResidueId */
 	Residue *residue(ResidueId &id)
 	{
@@ -108,7 +113,7 @@ public:
 	/** converts entity master residue to local residue
 	 * 	@param master pointer to the Entity master residue
 	 * 	@return pointer to the corresponding local residue */
-	Residue *const local_residue(Residue *const master) const;
+	Residue *const local_residue(Residue *master) const;
 
 	/** converts local residue to entity master residue
 	 * 	@param local pointer to the corresponding local residue 
@@ -208,6 +213,8 @@ public:
 	/** how many torsion angles have been referenced in the entire sequence? */
 	const size_t torsionCount() const;
 	
+	size_t modelledResidueCount() const;
+	
 	/** torsion angle names in order of residue / reference, to be called
 	 * on the entity master sequence in the case of clustering */
 	void addResidueTorsions(std::vector<ResidueTorsion> &headers);
@@ -218,6 +225,7 @@ public:
 	                        rope::TorsionType type = rope::RefinedTorsions);
 	
 	AtomGroup *convertToAtoms();
+	void addAtomPositionHeaders(std::vector<Atom3DPosition> &headers);
 private:
 	void findSequence();
 	

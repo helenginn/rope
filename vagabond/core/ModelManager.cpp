@@ -86,6 +86,7 @@ void ModelManager::autoModel()
 		{
 			Model *ptr = insertIfUnique(model);
 			ptr->autoAssignEntities();
+			ptr->findInteractions();
 		}
 		catch (const std::runtime_error &err)
 		{

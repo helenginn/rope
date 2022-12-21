@@ -38,7 +38,7 @@
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
-#include <vagabond/c4x/ClusterSVD.h>
+#include <vagabond/core/RopeCluster.h>
 #include <vagabond/c4x/ClusterTSNE.h>
 
 #include <vagabond/core/Entity.h>
@@ -104,28 +104,53 @@ void ConfSpaceView::addGuiElements()
 
 void ConfSpaceView::showClusters()
 {
-	MetadataGroup angles = _entity->makeTorsionDataGroup();
-	angles.setWhiteList(_whiteList);
-	angles.write(_entity->name() + ".csv");
-	angles.normalise();
-	
 	ClusterView *view = new ClusterView();
 	addIndexResponder(view);
 	view->setIndexResponseView(this);
 	view->setConfSpaceView(this);
+	
+	if (_type == ConfTorsions)
+	{
+		MetadataGroup angles = _entity->makeTorsionDataGroup();
+		angles.setWhiteList(_whiteList);
+		angles.write(_entity->name() + ".csv");
+		angles.normalise();
 
-	if (_tsne)
-	{
-		ClusterTSNE<MetadataGroup> *cx = new ClusterTSNE<MetadataGroup>(angles);
+		RopeCluster *cx = nullptr;
+		if (_tsne)
+		{
+//			cx = new ClusterTSNE<MetadataGroup>(angles);
+		}
+		else
+		{
+			cx = new TorsionCluster(angles);
+		}
+
+		_cluster = cx;
 		cx->cluster();
 		view->setCluster(cx);
 	}
-	else
+	
+	if (_type == ConfPositional)
 	{
-		ClusterSVD<MetadataGroup> *cx = new ClusterSVD<MetadataGroup>(angles);
+		PositionalGroup group = _entity->makePositionalDataGroup();
+		group.setWhiteList(_whiteList);
+
+		PositionalCluster *cx = nullptr;
+		if (_tsne)
+		{
+//			cx = new ClusterTSNE<PositionalGroup>(group);
+		}
+		else
+		{
+			cx = new PositionalCluster(group);
+		}
+
+		_cluster = cx;
 		cx->cluster();
 		view->setCluster(cx);
 	}
+
 
 	_centre = view->centroid();
 	_translation = -_centre;
@@ -204,7 +229,7 @@ void ConfSpaceView::showtSNE()
 
 void ConfSpaceView::chooseGroup(Rule *rule, bool inverse)
 {
-	MetadataGroup *mg = _view->cluster()->dataGroup();
+	ObjectGroup *mg = _view->cluster()->objectGroup();
 	std::vector<HasMetadata *> whiteList;
 
 	for (size_t i = 0; i < mg->objectCount(); i++)
@@ -248,13 +273,14 @@ void ConfSpaceView::chooseGroup(Rule *rule, bool inverse)
 	std::cout << "Collected " << whiteList.size() << " molecules." << std::endl;
 	
 	ConfSpaceView *view = new ConfSpaceView(this, _entity);
+	view->setMode(_type);
 	view->setWhiteList(whiteList);
 	view->show();
 }
 
 void ConfSpaceView::executeSubset(float min, float max)
 {
-	MetadataGroup *mg = _view->cluster()->dataGroup();
+	ObjectGroup *mg = _view->cluster()->objectGroup();
 	std::vector<HasMetadata *> whiteList;
 
 	for (size_t i = 0; i < mg->objectCount(); i++)
@@ -276,6 +302,7 @@ void ConfSpaceView::executeSubset(float min, float max)
 	std::cout << "Collected " << whiteList.size() << " molecules." << std::endl;
 	
 	ConfSpaceView *view = new ConfSpaceView(this, _entity);
+	view->setMode(_type);
 	view->setWhiteList(whiteList);
 	view->show();
 }
@@ -315,7 +342,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		Rule *rule = static_cast<Rule *>(button->returnObject());
 		std::vector<HasMetadata *> members = _view->membersForRule(rule);
-		MetadataGroup *mdg = _view->cluster()->dataGroup();
+		ObjectGroup *mdg = _cluster->objectGroup();
 		mdg->setSeparateAverage(members);
 		_view->cluster()->cluster();
 		refresh();
@@ -338,6 +365,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "tsne")
 	{
 		ConfSpaceView *view = new ConfSpaceView(this, _entity);
+		view->setMode(_type);
 		view->setWhiteList(_whiteList);
 		view->setTSNE(true);
 		view->show();
@@ -400,16 +428,19 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		RulesMenu *menu = new RulesMenu(this);
 		menu->setEntityId(_entity->name());
-		menu->setData(_view->cluster()->dataGroup());
+		menu->setData(_view->cluster()->objectGroup());
 		menu->show();
 	}
 	
 	if (tag == "axes")
 	{
-		AxesMenu *menu = new AxesMenu(this);
-		menu->setEntityId(_entity->name());
-		menu->setCluster(_view->cluster());
-		menu->show();
+		if (_cluster->canMapVectors())
+		{
+			AxesMenu *menu = new AxesMenu(this);
+			menu->setEntityId(_entity->name());
+			menu->setCluster(_cluster);
+			menu->show();
+		}
 	}
 
 	Scene::buttonPressed(tag, button);
@@ -511,14 +542,21 @@ void ConfSpaceView::prepareMenu(HasMetadata *hm)
 
 void ConfSpaceView::createReference(Molecule *m)
 {
+	if (_type != ConfTorsions)
+	{
+		return;
+	}
+
 	Axes *old = _axes;
 	if (_axes != nullptr)
 	{
 		removeObject(_axes);
 		removeResponder(_axes);
 	}
-		
-	_axes = new Axes(_view->cluster(), m);
+	
+	TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
+	
+	_axes = new Axes(tc, m);
 	_axes->setScene(this);
 	_axes->setIndexResponseView(this);
 	

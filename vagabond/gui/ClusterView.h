@@ -22,7 +22,6 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Manager.h>
-#include <vagabond/c4x/Cluster.h>
 
 #define POINT_TYPE_COUNT 8
 
@@ -32,6 +31,7 @@ class PathView;
 class HasMetadata;
 class FloatingText;
 class MetadataGroup;
+class RopeCluster;
 class ConfSpaceView;
 
 class ClusterView : public IndexResponder, 
@@ -42,7 +42,7 @@ public:
 	ClusterView();
 	~ClusterView();
 
-	void setCluster(Cluster<MetadataGroup> *cx);
+	void setCluster(RopeCluster *cx);
 	
 	void refresh();
 	
@@ -61,7 +61,7 @@ public:
 		return _members[r];
 	}
 	
-	Cluster<MetadataGroup> *cluster()
+	RopeCluster *cluster()
 	{
 		return _cx;
 	}
@@ -110,7 +110,7 @@ private:
 	void applyVaryColour(const Rule &r);
 	void applyChangeIcon(const Rule &r);
 
-	Cluster<MetadataGroup> *_cx = nullptr;
+	RopeCluster *_cx = nullptr;
 	FloatingText *_text = nullptr;
 	ConfSpaceView *_confSpaceView = nullptr;
 

@@ -16,40 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#ifndef __vagabond__Interaction__
+#define __vagabond__Interaction__
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
+#include <string>
+#include <vector>
 
-class Rule;
-class ObjectGroup;
+class Comparable;
+class Atom;
 
-class LineSeries : public Renderable
+class Interaction
 {
 public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
-
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
-
-	struct OrderedIndex
+	Interaction(Comparable *lm, Comparable *rm, Atom *la, Atom *ra);
+	
+	void setValue(const float value)
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
-		{
-			return value < other.value;
-		}
+		_value = value;
+	}
+
+	struct Side
+	{
+		std::string model_id;
+		std::string desc;
 	};
 
-	ObjectGroup *_group;
-	const Rule &_rule;
-
+	std::string desc();
+private:
+	std::vector<Side> _sides;
+	float _value;
 };
 
 #endif

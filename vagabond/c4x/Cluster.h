@@ -21,31 +21,30 @@
 
 #include "DataGroup.h"
 #include <vagabond/utils/glm_import.h>
+#include "ViewableCluster.h"
+
+class MetadataGroup;
 
 template <class DG>
-class Cluster
+class Cluster 
 {
 public:
 	Cluster(DG &dg);
 	
 	virtual ~Cluster() {};
 
-	/** perform appropriate calculations to generate clusters */
 	virtual void cluster() = 0;
-	
-	/** how many dimensions can be displayed simultaneously in a GUI */
-	virtual size_t displayableDimensions() = 0;
 	
 	/** fetch displayable vec3 coordinate in cluster
 	 * @param i index of point*/
-	glm::vec3 point(int i);
+	virtual glm::vec3 point(int i) const;
 	
 	/** fetch displayable vec3 coordinate in cluster from mapped vector
 	 * @param i index of point*/
-	glm::vec3 point(std::vector<float> &mapped);
+	glm::vec3 point(std::vector<float> &mapped) const;
 	
 	/** returns how many points to display or how many members in cluster */
-	const size_t pointCount() const;
+	virtual const size_t pointCount() const;
 
 	/** given a set of metadata values, find best-fitting axis */
 	int bestAxisFit(std::vector<float> &vals);
@@ -67,12 +66,12 @@ public:
 		return std::vector<float>();
 	}
 	
-	size_t columns()
+	size_t columns() const
 	{
 		return _result.cols;
 	}
 	
-	size_t rows()
+	virtual size_t rows() const
 	{
 		return _result.rows;
 	}
@@ -87,8 +86,14 @@ public:
 	{
 		return &_dg;
 	}
-	
-	const size_t &axis(int i) const
+
+	virtual ObjectGroup *objectGroup()
+	{
+		ObjectGroup *grp = dynamic_cast<ObjectGroup *>(this->dataGroup());
+		return grp;
+	}
+
+	virtual const size_t &axis(int i) const
 	{
 		return _axes[i];
 	}
@@ -103,7 +108,7 @@ public:
 		return _scaleFactor;
 	}
 	
-	void changeLastAxis(int axis);
+	virtual void changeLastAxis(int axis);
 protected:
 	void normaliseResults(float scale = 1);
 

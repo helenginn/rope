@@ -1,5 +1,6 @@
 boost_files = [
 'boost_tests.cpp',
+'test_molecule.cpp',
 'test_molrefiner.cpp',
 'test_ramachandran.cpp',
 'test_atomsfromsequence.cpp',

@@ -118,6 +118,15 @@ public:
 
 	std::vector<AtomGroup *> &connectedGroups();
 	
+	AtomGroup *connectedGroupToAnchor(Atom *anchor)
+	{
+		if (_anchor2Group.count(anchor) == 0)
+		{
+			return nullptr;
+		}
+		return _anchor2Group[anchor];
+	}
+	
 	const std::vector<Atom *> &transformedAnchors() const
 	{
 		return _transformedAnchors;
@@ -185,6 +194,8 @@ private:
 	
 	double _lastResidual = FLT_MAX;
 	std::vector<AtomGroup *> _connectedGroups;
+	
+	std::map<Atom *, AtomGroup *> _anchor2Group;
 	
 	Atom *_chosenAnchor = nullptr;
 	AtomGroupResponder *_responder = nullptr;

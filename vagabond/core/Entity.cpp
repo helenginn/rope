@@ -24,6 +24,7 @@
 #include "Model.h"
 #include "Metadata.h"
 #include "AtomContent.h"
+#include "PositionalGroup.h"
 
 Entity::Entity()
 {
@@ -215,38 +216,6 @@ void Entity::respond()
 	refineNextModel();
 }
 
-MetadataGroup Entity::makeTorsionDataGroup()
-{
-	size_t num = _sequence.torsionCount();
-	std::vector<ResidueTorsion> headers;
-	_sequence.addResidueTorsions(headers);
-
-	MetadataGroup group(num);
-	group.addHeaders(headers);
-	
-	for (Molecule *mol : _molecules)
-	{
-		mol->addTorsionsToGroup(group);
-	}
-		
-	PathManager *pm = Environment::env().pathManager();
-
-	for (Molecule *mol : _molecules)
-	{
-		std::vector<Path *> paths = pm->pathsForMolecule(mol);
-
-		for (Path *path : paths)
-		{
-			if (path->contributesToSVD())
-			{
-				path->addTorsionsToGroup(group);
-			}
-		}
-	}
-	
-	return group;
-}
-
 void Entity::throwOutModel(Model *model)
 {
 	size_t before = moleculeCount();
@@ -302,6 +271,25 @@ void Entity::clickTicker()
 	Environment::entityManager()->clickTicker();
 }
 
+Molecule *Entity::chooseRepresentativeMolecule()
+{
+	Molecule *best = nullptr;
+	size_t best_count = 0;
+
+	for (Molecule *m : _molecules)
+	{
+		size_t count = m->sequence()->modelledResidueCount();
+		
+		if (count > best_count)
+		{
+			best = m;
+			best_count = count;
+		}
+	}
+	
+	return best;
+}
+
 MetadataGroup Entity::makeTorsionDataGroup()
 {
 	size_t num = _sequence.torsionCount();
@@ -334,3 +322,41 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	return group;
 }
 
+PositionalGroup Entity::makePositionalDataGroup()
+{
+	std::vector<Atom3DPosition> headers;
+	_sequence.addAtomPositionHeaders(headers);
+	
+	PositionalGroup group(headers.size());
+	group.addHeaders(headers);
+
+	/* make a quick lookup table for the first residue in each */
+	std::map<ResidueId, int> resIdxs;
+	
+	Residue *last = nullptr;
+	for (size_t i = 0; i < headers.size(); i++)
+	{
+		if (headers[i].residue != last)
+		{
+			resIdxs[headers[i].residue->id()] = i;
+			last = headers[i].residue;
+		}
+	}
+	
+	Molecule *reference = chooseRepresentativeMolecule();
+	reference->currentAtoms()->recalculate();
+	
+	for (Model *m : _models)
+	{
+		for (Molecule &mm : m->molecules())
+		{
+			std::vector<Posular> vex = mm.atomPositionList(reference,
+			                                               headers, resIdxs);
+			group.addMetadataArray(&mm, vex);
+		}
+		
+		m->unload();
+	}
+
+	return group;
+}

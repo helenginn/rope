@@ -20,9 +20,9 @@
 #define __vagabond__AxesMenu__
 
 #include <vagabond/gui/elements/ListView.h>
-#include <vagabond/c4x/Cluster.h>
-#include <vagabond/core/MetadataGroup.h>
 #include "ExportsCSV.h"
+
+class RopeCluster;
 
 class AxesMenu : public ListView, public ExportsCSV
 {
@@ -34,7 +34,7 @@ public:
 		_entity_id = entity_id;
 	}
 
-	void setCluster(Cluster<MetadataGroup> *cluster)
+	void setCluster(RopeCluster *cluster)
 	{
 		_cluster = cluster;
 	}
@@ -46,7 +46,7 @@ public:
 
 	virtual void setup();
 private:
-	Cluster<MetadataGroup> *_cluster = nullptr;
+	RopeCluster *_cluster = nullptr;
 	std::string _entity_id;
 
 	virtual void supplyCSV(std::string indicator = "");

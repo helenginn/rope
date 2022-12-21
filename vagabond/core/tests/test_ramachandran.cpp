@@ -63,7 +63,6 @@ BOOST_AUTO_TEST_CASE(ramachandran_plot)
 	AtomGraph *gr_c = grapher.graph(c);
 	BondTorsion *t_phi = gr_ca->torsion;
 	BondTorsion *t_psi = gr_c->torsion;
-	std::cout << grapher.desc() << std::endl;
 
 	t_phi->setRefinedAngle(0.f);
 	t_psi->setRefinedAngle(0.f);

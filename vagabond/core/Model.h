@@ -27,6 +27,7 @@
 #include "Metadata.h"
 
 #include "Molecule.h"
+#include "Ligand.h"
 #include "Responder.h"
 #include "AtomGroup.h"
 #include "AtomRecall.h"
@@ -147,6 +148,7 @@ public:
 	virtual const Metadata::KeyValues metadata() const;
 	
 	void clickTicker();
+	void findInteractions();
 	void finishedRefinement();
 	void write(std::string filename);
 	
@@ -156,6 +158,9 @@ private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();
 	bool mergeMoleculesInSet(std::set<Molecule *> molecules);
+	void assignSequencedMolecules(Entity *chosen);
+	/* assign waters, ligands etc. */
+	void assignClutter();
 
 	void extractTorsions();
 	void insertTorsions();
@@ -167,6 +172,7 @@ private:
 	std::map<std::string, Molecule *> _chain2Molecule;
 
 	std::list<Molecule> _molecules;
+	std::list<Ligand> _ligands;
 
 	File *_currentFile = nullptr;
 	AtomContent *_currentAtoms = nullptr;

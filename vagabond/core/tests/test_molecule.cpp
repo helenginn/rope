@@ -16,40 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#include <vagabond/utils/include_boost.h>
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
+#define private public // evil but delicious
+#include <vagabond/core/Entity.h>
+#include <vagabond/core/EntityManager.h>
+#include <vagabond/core/Environment.h>
+#include <vagabond/c4x/ClusterSVD.h>
 
-class Rule;
-class ObjectGroup;
+namespace tt = boost::test_tools;
 
-class LineSeries : public Renderable
+BOOST_AUTO_TEST_CASE(molecule_map_molecule)
 {
-public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
+	Environment::env().load("rope.json");
+	Entity *ent = &Environment::entityManager()->object(0);
+	PositionalGroup group = ent->makePositionalDataGroup();
 
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
-
-	struct OrderedIndex
+	Cluster<PositionalGroup> *cx = new ClusterSVD<PositionalGroup>(group);
+	cx->cluster();
+	
+	for (size_t i = 0; i < cx->rows(); i++)
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
+		for (size_t j = 0; j < cx->columns(); j++)
 		{
-			return value < other.value;
+			std::cout << cx->dataGroup()->differenceVector(j)[i] << ", ";
 		}
-	};
-
-	ObjectGroup *_group;
-	const Rule &_rule;
-
-};
-
-#endif
+		std::cout << std::endl;
+	}
+}

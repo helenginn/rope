@@ -16,40 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#include "Interaction.h"
+#include "Model.h"
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
-
-class Rule;
-class ObjectGroup;
-
-class LineSeries : public Renderable
+Interaction::Interaction(Comparable *lm, Comparable *rm, Atom *la, Atom *ra)
 {
-public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
+	Side left{lm->model_id(), la->desc()};
+	Side right{rm->model_id(), ra->desc()};
 
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
+	_sides.push_back(left);
+	_sides.push_back(right);
+}
 
-	struct OrderedIndex
+std::string Interaction::desc()
+{
+	std::ostringstream ss;
+	
+	for (Side &side : _sides)
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
-		{
-			return value < other.value;
-		}
-	};
-
-	ObjectGroup *_group;
-	const Rule &_rule;
-
-};
-
-#endif
+		ss << side.desc << ":";
+	}
+	
+	ss << _value;
+	
+	return ss.str();
+}

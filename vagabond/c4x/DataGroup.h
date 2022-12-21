@@ -42,12 +42,12 @@ public:
 	 *  made up of units */
 	DataGroup(int length);
 	
-	int length()
+	virtual int length()
 	{
 		return _length;
 	}
 	
-	int comparable_length()
+	virtual int comparable_length()
 	{
 		return Unit::comparable_size() * length();
 	}
@@ -56,10 +56,11 @@ public:
 
 	/** Array is vector of type Unit */
 	typedef std::vector<Unit> Array;
+
 	typedef std::vector<float> Comparable;
 
 	/** Calculate average vector from individual vectors */
-	void calculateAverage();
+	virtual void calculateAverage();
 	
 	/** Gets stored average vector, calculating if not available */
 	const Array &average(int i = 0);
@@ -67,7 +68,7 @@ public:
 	/** Find differences between individual vectors and average.
 	 * @param average vector to use as average, or internal average if
 	 * nullptr */
-	void findDifferences();
+	virtual void findDifferences();
 	
 	void convertToDifferences(Array &arr, const Array *ave);
 	void convertToComparable(const Array &diff, Comparable &end);
@@ -77,21 +78,16 @@ public:
 	void removeNormals(Comparable &arr);
 	
 	/** Normalise differences for each unit (i.e. vector component) */
-	void normalise();
-	
-	virtual bool should_normalise()
-	{
-		return true;
-	}
+	virtual void normalise();
 	
 	/** Return correlation matrix of size m*m where m = member size */
-	PCA::Matrix correlationMatrix();
+	virtual PCA::Matrix correlationMatrix();
 	
 	/** Return distance matrix of size m*m where m = member size */
-	PCA::Matrix distanceMatrix();
+	virtual PCA::Matrix distanceMatrix();
 
 	/** write as CSV to filename */
-	void write(std::string filename);
+	virtual void write(std::string filename);
 
 	/** add an individual vector. Vector must have
 	 * same length as specified when constructing the DataGroup.
@@ -100,7 +96,7 @@ public:
 	virtual void addArray(std::string name, Array next);
 	
 	/** returns number of members of this group. */
-	const size_t vectorCount() const
+	virtual const size_t vectorCount() const
 	{
 		return _vectors.size();
 	}
@@ -108,6 +104,11 @@ public:
 	const Comparable &comparableVector(const int i) const
 	{
 		return _comparables[i];
+	}
+	
+	const Array &vector(const int i) const
+	{
+		return _vectors[i];
 	}
 	
 	const Array &differenceVector(const int i) const
@@ -123,7 +124,7 @@ public:
 	virtual Unit difference(int m, int n, int j);
 	
 	/** Add names of units. Total must not exceed length. */
-	void addHeaders(std::vector<Header> header);
+	virtual void addHeaders(std::vector<Header> header);
 	
 	const std::vector<std::string> &unitNames() const
 	{
@@ -135,7 +136,7 @@ public:
 		return _headers;
 	}
 
-	float correlation_between(const Comparable &v, const Comparable &w);
+	virtual float correlation_between(const Comparable &v, const Comparable &w);
 protected:
 	float correlation_between(int i, int j);
 	float distance_between(int i, int j);

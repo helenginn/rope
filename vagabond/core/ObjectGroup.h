@@ -16,39 +16,45 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#ifndef __vagabond__ObjectGroup__
+#define __vagabond__ObjectGroup__
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
+#include <vector>
+#include <string>
+#include <vagabond/c4x/Cluster.h>
 
-class Rule;
-class ObjectGroup;
+class HasMetadata;
 
-class LineSeries : public Renderable
+class ObjectGroup
 {
 public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
+	ObjectGroup() {};
+	virtual ~ObjectGroup() {};
 
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
+	std::vector<float> numbersForKey(std::string key);
+	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
 
-	struct OrderedIndex
+	virtual const size_t headerCount() const = 0;
+	virtual void setWhiteList(std::vector<HasMetadata *> list) = 0;
+
+	const size_t objectCount() const
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
-		{
-			return value < other.value;
-		}
-	};
-
-	ObjectGroup *_group;
-	const Rule &_rule;
+		return _objects.size();
+	}
+	
+	const int indexOfObject(HasMetadata *obj) const;
+	
+	HasMetadata *const object(int i) 
+	{
+		return _objects[i];
+	}
+	
+	const std::vector<HasMetadata *> &objects() const
+	{
+		return _objects;
+	}
+protected:
+	std::vector<HasMetadata *> _objects;
 
 };
 

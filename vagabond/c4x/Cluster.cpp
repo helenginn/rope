@@ -99,60 +99,16 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 	
 	std::sort(_pairs.begin(), _pairs.end(), std::greater<AxisCC>());
 	
-	/*
-	
-	int max = std::min(3, _result.cols);
-	PCA::Matrix covariance;
-	setupMatrix(&covariance, max, 1);
-	
-	for (size_t i = 0; i < _result.cols; i++)
-	{
-		for (size_t j = 0; j < max; j++)
-		{
-			if (vals[i] != vals[i])
-			{
-				continue;
-			}
-
-			covariance[j][0] += _result[i][j] * vals[i];
-		}
-	}
-	
-	printMatrix(&covariance);
-	
-	CorrelData cd = empty_CD();
-	for (size_t i = 0; i < _result.rows; i++)
-	{
-		float sum = 0;
-		for (size_t j = 0; j < max; j++)
-		{
-			std::cout << _result[i][j] << " ";
-			sum += covariance[j][0] * _result[i][j];
-		}
-		std::cout << std::endl;
-		
-		add_to_CD(&cd, sum, vals[i]);
-	}
-	
-//	freeMatrix(&covariance);
-	double cc = evaluate_CD(cd);
-	*/
-	
 	for (size_t i = 0; i < 3; i++)
 	{
 		_axes[i] = _pairs[i].axis;
 	}
 
-	/*
-	std::cout << "Best correlation in first " << max << " vectors: "
-	<< cc << std::endl;
-	*/
-
 	return 0;
 }
 
 template <class DG>
-glm::vec3 Cluster<DG>::point(std::vector<float> &mapped)
+glm::vec3 Cluster<DG>::point(std::vector<float> &mapped) const
 {
 	glm::vec3 v = glm::vec3(0.f);
 
@@ -169,7 +125,7 @@ glm::vec3 Cluster<DG>::point(std::vector<float> &mapped)
 }
 
 template <class DG>
-glm::vec3 Cluster<DG>::point(int idx)
+glm::vec3 Cluster<DG>::point(int idx) const
 {
 	glm::vec3 v = glm::vec3(0.f);
 

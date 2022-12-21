@@ -15,40 +15,32 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
+ 
+#ifndef __vagabond__Substance__
+#define __vagabond__Substance__
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#include <string>
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
-
-class Rule;
-class ObjectGroup;
-
-class LineSeries : public Renderable
+class Substance
 {
 public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
+	Substance() {};
+	virtual ~Substance() {};
 
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
-
-	struct OrderedIndex
+	void setName(std::string name)
 	{
-		size_t index;
-		float value;
-		
-		const bool operator<(const OrderedIndex &other) const
-		{
-			return value < other.value;
-		}
-	};
+		_name = name;
+	}
 
-	ObjectGroup *_group;
-	const Rule &_rule;
+	const std::string &name() const
+	{
+		return _name;
+	}
+
+	friend void to_json(json &j, const Entity &value);
+	friend void from_json(const json &j, Entity &value);
+private:
+	std::string _name;
 
 };
 

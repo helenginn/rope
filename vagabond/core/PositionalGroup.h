@@ -16,40 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LineSeries__
-#define __vagabond__LineSeries__
+#ifndef __vagabond__PositionalGroup__
+#define __vagabond__PositionalGroup__
 
-#include <vagabond/gui/elements/Renderable.h>
-#include "ClusterView.h"
+#include "Residue.h"
+#include <vagabond/c4x/Posular.h>
+#include <vagabond/c4x/DataGroup.h>
+#include <vagabond/core/ObjectGroup.h>
 
-class Rule;
-class ObjectGroup;
-
-class LineSeries : public Renderable
+class PositionalGroup : public ObjectGroup, 
+public DataGroup<Posular, Atom3DPosition>
 {
 public:
-	LineSeries(ClusterView *cv, const Rule &r);
-	virtual ~LineSeries();
-
-private:
-	void setup();
-	void addLabels();
-	void addLabel(int idx);
-
-	struct OrderedIndex
+	PositionalGroup(size_t length) : DataGroup<Posular, Atom3DPosition>(length)
 	{
-		size_t index;
-		float value;
 		
-		const bool operator<(const OrderedIndex &other) const
-		{
-			return value < other.value;
-		}
-	};
+	}
 
-	ObjectGroup *_group;
-	const Rule &_rule;
+	virtual void addMetadataArray(HasMetadata *hmd, Array next);
+	virtual void setWhiteList(std::vector<HasMetadata *> list);
+
+	virtual const size_t headerCount() const
+	{
+		return headers().size();
+	}
+private:
 
 };
+
 
 #endif

@@ -20,13 +20,13 @@
 #define __vagabond__Molecule__
 
 #include <vagabond/c4x/Angular.h>
-#include <vagabond/utils/glm_json.h>
-using nlohmann::json;
+#include <vagabond/c4x/Posular.h>
 
 #include <string>
 #include "AtomRecall.h"
 #include "HasMetadata.h"
 #include "MetadataGroup.h"
+#include "Comparable.h"
 
 class MetadataGroup;
 class AtomContent;
@@ -39,7 +39,7 @@ class Chain;
 /** \class Molecule
  * Molecule refers to a specific instance of an entity associated with a model */
 
-class Molecule : public HasMetadata
+class Molecule : public HasMetadata, public Comparable
 {
 public:
 	Molecule(std::string model_id, std::string chain_id,
@@ -63,6 +63,11 @@ public:
 	
 	const std::string model_chain_id() const;
 	
+	virtual std::string desc() const
+	{
+		return id();
+	}
+
 	virtual const std::string id() const
 	{
 		return model_chain_id();
@@ -71,11 +76,6 @@ public:
 	virtual bool displayable() const
 	{
 		return true;
-	}
-	
-	const std::string &model_id() const
-	{
-		return _model_id;
 	}
 	
 	const std::string &entity_id() const
@@ -101,6 +101,8 @@ public:
 	MetadataGroup::Array grabTorsions(rope::TorsionType type 
 	                                  = rope::RefinedTorsions);
 	void addTorsionsToGroup(MetadataGroup &group, bool unrefined = false);
+	void addPositionsToGroup(MetadataGroup &group,
+	                         std::map<Residue *, int> resIdxs);
 
 	Atom *atomByIdName(const ResidueId &id, std::string name);
 
@@ -114,13 +116,6 @@ public:
 	
 	void mergeWith(Molecule *b);
 	
-	Model *const model();
-	
-	void setModel(Model *model)
-	{
-		_model = model;
-	}
-	
 	Entity *entity();
 	
 	void setEntity(Entity *entity)
@@ -128,7 +123,8 @@ public:
 		_entity = entity;
 	}
 	
-	AtomGroup *currentAtoms();
+	virtual AtomGroup *currentAtoms();
+	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
 	void unload();
 	
 	void updateRmsdMetadata();
@@ -139,6 +135,9 @@ public:
 	                              std::vector<bool> &found);
 
 	Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
+	std::vector<Posular> atomPositionList(Molecule *reference,
+	                                      std::vector<Atom3DPosition> &headers,
+	                                      std::map<ResidueId, int> &resIdxs);
 
 	virtual const Metadata::KeyValues metadata() const;
 
@@ -147,14 +146,12 @@ public:
 private:
 	void harvestMutations(SequenceComparison *sc);
 
-	std::string _model_id;
 	std::string _entity_id;
 	std::set<std::string> _chain_ids;
 
+	std::map<Molecule *, std::vector<Posular> > _mol2Pos;
 	std::map<std::string, glm::mat4x4> _transforms;
 	Sequence _sequence;
-	AtomGroup *_currentAtoms = nullptr;
-	Model *_model = nullptr;
 	Entity *_entity = nullptr;
 	bool _refined = false;
 };

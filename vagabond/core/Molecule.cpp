@@ -20,6 +20,7 @@
 #include "Model.h"
 #include "Value.h"
 #include "Molecule.h"
+#include "Superpose.h"
 #include "AtomContent.h"
 #include "Environment.h"
 #include "ModelManager.h"
@@ -116,15 +117,6 @@ void Molecule::getTorsionRefs(Chain *ch)
 
 		master_res->addTorsionRef(ref);
 	}
-}
-
-Model *const Molecule::model()
-{
-	if (_model == nullptr)
-	{
-		_model = (Environment::modelManager()->model(_model_id));
-	}
-	return _model;
 }
 
 void Molecule::housekeeping()
@@ -487,6 +479,16 @@ AtomGroup *Molecule::currentAtoms()
 	
 	AtomGroup *tmp = new AtomGroup();
 	
+	for (size_t i = 0; i < ac->size(); i++)
+	{
+		Atom *candidate = (*ac)[i];
+		if (has_chain_id(candidate->chain()))
+		{
+			*tmp += candidate;
+		}
+	}
+
+	/*
 	for (size_t i = 0; i < ac->chainCount(); i++)
 	{
 		Chain *candidate = ac->chain(i);
@@ -495,6 +497,7 @@ AtomGroup *Molecule::currentAtoms()
 			tmp->add(candidate);
 		}
 	}
+	*/
 	
 	_currentAtoms = tmp;
 	
@@ -508,23 +511,121 @@ void Molecule::unload()
 
 }
 
-MetadataGroup::Array Molecule::grabTorsions(bool tmp)
+MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
 {
 	sequence()->clearMaps();
 	sequence()->remapFromMaster(entity());
 	MetadataGroup::Array vals;
 
-	entity()->sequence()->torsionsFromMapped(sequence(), vals, tmp);
+	entity()->sequence()->torsionsFromMapped(sequence(), vals, type);
 	return vals;
 }
 
-void Molecule::addTorsionsToGroup(MetadataGroup &group)
+void Molecule::addTorsionsToGroup(MetadataGroup &group, 
+                                  rope::TorsionType type)
 {
 	if (!isRefined())
 	{
 		return;
 	}
 
-	MetadataGroup::Array vals = grabTorsions();
+	MetadataGroup::Array vals = grabTorsions(type);
 	group.addMetadataArray(this, vals);
+}
+
+std::map<Atom *, Atom *> Molecule::mapAtoms(Molecule *other)
+{
+	std::map<Atom *, Atom *> map;
+	std::map<ResidueId, ResidueId> resMap;
+
+	for (Residue &r : sequence()->residues())
+	{
+		Residue *master = sequence()->master_residue(&r);
+		if (!master) continue;
+
+		Residue *local = other->sequence()->local_residue(master);
+		if (!local) continue;
+
+		resMap[r.id()] = local->id();
+	}
+	
+	AtomGroup *myAtoms = currentAtoms();
+	AtomGroup *otherAtoms = other->currentAtoms();
+	
+	for (Atom *a : myAtoms->atomVector())
+	{
+		if (a->hetatm())
+		{
+			continue;
+		}
+
+		ResidueId target = a->residueId();
+		ResidueId local = resMap[target];
+		
+		Atom *pair = otherAtoms->atomByIdName(local, a->atomName());
+		if (pair)
+		{
+			map[a] = pair;
+		}
+	}
+	
+	return map;
+}
+
+std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
+                           std::vector<Atom3DPosition> &headers,
+                           std::map<ResidueId, int> &resIdxs)
+{
+	if (_mol2Pos.count(reference))
+	{
+		return _mol2Pos[reference];
+	}
+
+	model()->load(Model::NoGeometry);
+
+	std::map<Atom *, Atom *> atomMap = reference->mapAtoms(this);
+
+	Superpose sp;
+	for (auto it = atomMap.begin(); it != atomMap.end(); it++)
+	{
+		glm::vec3 fixed = it->first->initialPosition();
+		glm::vec3 moving = it->second->initialPosition();
+
+		sp.addPositionPair(fixed, moving);
+	}
+
+	sp.superpose();
+	glm::mat4 tr = sp.transformation();
+
+	std::vector<Posular> vex(headers.size(), glm::vec3(0.f));
+	for (auto it = atomMap.begin(); it != atomMap.end(); it++)
+	{
+		Atom *moving = it->second;
+		glm::vec3 one = moving->initialPosition();
+		one = glm::vec3(tr * glm::vec4(one, 1.f));
+
+		ResidueId local_id = moving->residueId();
+		Residue *res = sequence()->residueLike(local_id);
+		if (!res) continue;
+		Residue *master = sequence()->master_residue(res);
+		if (!master) continue;
+		ResidueId id = master->id();
+
+		if (resIdxs.count(id) == 0) { continue; }
+
+		int start = resIdxs[id];
+		while (start < headers.size() && 
+		       headers[start].residue->id() == id)
+		{
+			if (moving->atomName() == headers[start].atomName)
+			{
+				vex[start] = one;
+			}
+			start++;
+		}
+	}
+
+	_mol2Pos[reference] = vex;
+
+	return vex;
 }

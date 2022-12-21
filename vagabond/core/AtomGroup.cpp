@@ -467,6 +467,7 @@ std::vector<AtomGroup *> &AtomGroup::connectedGroups()
 		}
 		
 		groups.push_back(next);
+		_anchor2Group[anchor] = next;
 	}
 
 	_connectedGroups = groups;

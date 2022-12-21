@@ -93,9 +93,9 @@ void ForceField::setupVanDerWaals()
 			Atom &aj = *atoms[j];
 			bool skip = false;
 			
-			int num = atoms[i]->bondsBetween(atoms[j], 4);
+			int num = atoms[i]->bondsBetween(atoms[j], 5);
 
-			if (num <= 2)
+			if (num <= 3)
 			{
 				continue;
 			}
@@ -158,7 +158,7 @@ float ramachandranDistance(Atom *a, Atom *b)
 
 void ForceField::processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b)
 {
-	Restraint r(Restraint::VdW, 3.0, 0);
+	Restraint r(Restraint::VdW, 1.8, 0);
 	
 	if (_t == FFProperties::RamachandranContacts)
 	{

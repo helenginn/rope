@@ -19,12 +19,13 @@
 #ifndef __vagabond__Entity__
 #define __vagabond__Entity__
 
-#include <string>
 #include <set>
 #include <map>
 #include "Sequence.h"
+#include "Substance.h"
 #include "Model.h"
 #include "MetadataGroup.h"
+#include "PositionalGroup.h"
 #include "Responder.h"
 #include "VisualPreferences.h"
 #include "AtomRecall.h"
@@ -34,7 +35,8 @@ using nlohmann::json;
 
 class Molecule;
 
-class Entity : public Responder<Model>, public HasResponder<Responder<Entity>>
+class Entity : public Substance, public Responder<Model>, 
+public HasResponder<Responder<Entity>>
 {
 public:
 	Entity();
@@ -49,16 +51,6 @@ public:
 		_sequence = *seq;
 	}
 	
-	void setName(std::string name)
-	{
-		_name = name;
-	}
-
-	const std::string &name() const
-	{
-		return _name;
-	}
-	
 	void checkModel(Model &m);
 
 	size_t checkForUnrefinedMolecules();
@@ -71,6 +63,8 @@ public:
 	virtual void respond();
 	
 	MetadataGroup makeTorsionDataGroup();
+	PositionalGroup makePositionalDataGroup();
+	Molecule *chooseRepresentativeMolecule();
 
 	const size_t moleculeCount() const
 	{
@@ -111,7 +105,6 @@ public:
 private:
 	std::set<Model *> unrefinedModels();
 
-	std::string _name;
 	Sequence _sequence;
 	VisualPreferences _visPrefs;
 	

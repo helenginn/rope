@@ -18,6 +18,8 @@
 
 #include "AxesMenu.h"
 #include <vagabond/core/HasMetadata.h>
+#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/RopeCluster.h>
 #include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -119,15 +121,11 @@ Renderable *AxesMenu::getLine(int i)
 void AxesMenu::supplySingleAxis(int i)
 {
 	_csv = "";
-
-	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-	MetadataGroup::Array vals = _cluster->rawVector(i);
-	_csv += "torsion_id,torsion(degrees)\n";
+	_csv += _cluster->csvFirstLine() + "\n";
 	
-	for (size_t i = 0; i < list.size(); i++)
+	for (size_t j = 0; j < _cluster->objectGroup()->headerCount(); j++)
 	{
-		_csv += list[i].desc() + ", " + std::to_string(vals[i]);
-		_csv += "\n";
+		_csv += _cluster->csvLine(i, j) + "\n";
 	}
 
 }
@@ -135,7 +133,7 @@ void AxesMenu::supplySingleAxis(int i)
 void AxesMenu::supplyMainPlot()
 {
 	_csv = "";
-	MetadataGroup *mg = _cluster->dataGroup();
+	ObjectGroup *mg = _cluster->objectGroup();
 	
 	for (size_t i = 0; i < mg->objectCount(); i++)
 	{
@@ -144,7 +142,7 @@ void AxesMenu::supplyMainPlot()
 		
 		for (size_t j = 0; j < _cluster->columns(); j++)
 		{
-			_csv += f_to_str(_cluster->value(i, j), 3) + ",";
+			_csv += _cluster->value_desc(i, j) + ",";
 		}
 		
 		_csv.pop_back();

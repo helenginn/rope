@@ -16,22 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "MetadataGroup.h"
-#include "Molecule.h"
+#include "PositionalGroup.h"
+#include "HasMetadata.h"
 
-MetadataGroup::MetadataGroup(size_t length) : DegreeDataGroup(length)
-{
-
-}
-
-void MetadataGroup::addMetadataArray(HasMetadata *hmd, Array next)
+void PositionalGroup::addMetadataArray(HasMetadata *hmd, Array next)
 {
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
-	DegreeDataGroup::addArray(name, next);
+	this->addArray(name, next);
 }
 
-void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
+void PositionalGroup::setWhiteList(std::vector<HasMetadata *> list)
 {
 	if (list.size() == 0)
 	{
@@ -61,42 +56,3 @@ void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
 	_diffs.clear();
 	_averages.clear();
 }
-
-void MetadataGroup::setSeparateAverage(std::vector<HasMetadata *> list)
-{
-	if (_groupMembership.size() != _vectors.size())
-	{
-		_groupMembership.resize(_vectors.size());
-	}
-	
-	if (list.size() == 0)
-	{
-		return;
-	}
-
-	_groupCount++;
-	int i = 0;
-	for (HasMetadata *object : _objects)
-	{
-		std::vector<HasMetadata *>::iterator it;
-		it = std::find(list.begin(), list.end(), object);
-		
-		if (it != list.end())
-		{
-			_groupMembership[i] = _groupCount;
-			_arrayToGroup[&_vectors[i]] = _groupCount;
-		}
-
-		i++;
-	}
-	
-	_diffs.clear();
-	_averages.clear();
-}
-
-void MetadataGroup::clearAverages()
-{
-	_groupCount = 0;
-	_groupMembership.clear();
-}
-

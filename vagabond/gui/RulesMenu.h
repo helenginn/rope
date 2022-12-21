@@ -24,7 +24,7 @@
 
 class AddRule;
 class Metadata;
-class MetadataGroup;
+class ObjectGroup;
 
 class RulesMenu : public ListView, public RulerResponder
 {
@@ -37,7 +37,7 @@ public:
 		_entity_id = entity_id;
 	}
 
-	void setData(MetadataGroup *group)
+	void setData(ObjectGroup *group)
 	{
 		_group = group;
 	}
@@ -57,7 +57,7 @@ private:
 	Metadata *_md = nullptr;
 	std::string _entity_id;
 	Rule *_lastRule = nullptr;
-	MetadataGroup *_group;
+	ObjectGroup *_group;
 
 };
 
