@@ -107,7 +107,7 @@ struct Angular
 
 inline bool valid(const Angular &a)
 {
-	return isfinite(a.angle);
+	return isfinite(a.angle) && a.angle == a.angle;
 }
 
 #endif
