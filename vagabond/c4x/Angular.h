@@ -38,6 +38,11 @@ struct Angular
 	{
 		angle = a;
 	}
+
+	std::string str() const
+	{
+		return std::to_string(angle);
+	}
 	
 	operator float() const
 	{
