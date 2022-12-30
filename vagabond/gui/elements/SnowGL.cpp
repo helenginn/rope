@@ -117,7 +117,6 @@ void SnowGL::preparePingPongBuffers(int w_over, int h_over)
 		glBindTexture(GL_TEXTURE_2D, _pingPongMap[i]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, w, h,
 		             0, GL_RGBA, GL_FLOAT, NULL);
-		std::cout << "Dimensions: " << w << " " << h << std::endl;
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);

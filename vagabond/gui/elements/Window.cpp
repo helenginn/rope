@@ -110,6 +110,8 @@ void Window::updateDimensions(int width, int height)
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
+	_width = w;
+	_height = h;
 #else
 	glViewport(0, 0, width, height);
 	_rect.w = width;
