@@ -104,7 +104,7 @@ void ClusterView::refresh()
 
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
-		glm::vec3 v = _cx->point(i);
+		glm::vec3 v = _cx->pointForDisplay(i);
 		_vertices[i].pos = v;
 	}
 	
@@ -136,7 +136,7 @@ void ClusterView::makePoints()
 			continue;
 		}
 
-		glm::vec3 v = _cx->point(i);
+		glm::vec3 v = _cx->pointForDisplay(i);
 		
 		/*
 		for (size_t j = 0; j < 3; j++)

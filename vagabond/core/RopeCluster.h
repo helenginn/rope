@@ -97,6 +97,21 @@ public:
 		return ClusterSVD<PositionalGroup>::weight(i);
 	}
 
+	virtual void reweight(glm::vec3 &point) const
+	{
+		ClusterSVD<PositionalGroup>::reweight(point);
+	}
+
+	virtual glm::vec3 pointForDisplay(int i) const
+	{
+		return ClusterSVD<PositionalGroup>::pointForDisplay(i);
+	}
+
+	virtual glm::vec3 pointForDisplay(std::vector<float> &mapped) const
+	{
+		return ClusterSVD<PositionalGroup>::pointForDisplay(mapped);
+	}
+
 	virtual glm::vec3 point(int i) const
 	{
 		return ClusterSVD<PositionalGroup>::point(i);
@@ -192,6 +207,21 @@ public:
 	virtual float weight(int i) const
 	{
 		return ClusterSVD<MetadataGroup>::weight(i);
+	}
+
+	virtual void reweight(glm::vec3 &point) const
+	{
+		ClusterSVD<MetadataGroup>::reweight(point);
+	}
+
+	virtual glm::vec3 pointForDisplay(int i) const
+	{
+		return ClusterSVD<MetadataGroup>::pointForDisplay(i);
+	}
+
+	virtual glm::vec3 pointForDisplay(std::vector<float> &mapped) const
+	{
+		return ClusterSVD<MetadataGroup>::pointForDisplay(mapped);
 	}
 
 	virtual glm::vec3 point(int i) const

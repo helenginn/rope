@@ -19,7 +19,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vagabond/utils/version.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/RopeCluster.h>
 #include <vagabond/core/Molecule.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -30,7 +30,7 @@
 #include "RouteExplorer.h"
 #include "Axes.h"
 
-Axes::Axes(Cluster<MetadataGroup> *group, Molecule *m) : IndexResponder()
+Axes::Axes(TorsionCluster *group, Molecule *m) : IndexResponder()
 {
 	setName("Axes");
 	setImage("assets/images/axis.png");
@@ -405,11 +405,13 @@ void Axes::refreshAxes()
 {
 	MetadataGroup *group = _cluster->dataGroup();
 	int idx = group->indexOfObject(_molecule);
-	glm::vec3 start = _cluster->point(idx);
+	glm::vec3 start = _cluster->pointForDisplay(idx);
 
 	for (size_t i = 0; i < 3; i++)
 	{
 		glm::vec3 dir = _dirs[i];
+		_cluster->reweight(dir);
+		
 		glm::vec4 colour = glm::vec4(0., 0., 0., 0.);
 		colour[2] = (_planes[i] ? 1. : 0.);
 
@@ -430,7 +432,7 @@ void Axes::prepareAxes()
 {
 	MetadataGroup *group = _cluster->dataGroup();
 	int idx = group->indexOfObject(_molecule);
-	glm::vec3 centre = _cluster->point(idx);
+	glm::vec3 centre = _cluster->pointForDisplay(idx);
 
 	for (size_t i = 0; i < _dirs.size(); i++)
 	{

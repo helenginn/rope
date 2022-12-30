@@ -135,7 +135,7 @@ void ClusterSVD<DG>::recalculateResult()
 {
 	for (size_t i = 0; i < this->dataGroup()->vectorCount(); i++)
 	{
-		MetadataGroup::Comparable comp = this->dataGroup()->comparableVector(i);
+		typename DG::Comparable comp = this->dataGroup()->comparableVector(i);
 		this->_dg.removeNormals(comp);
 
 		std::vector<float> mapped = mapComparable(comp);

@@ -49,10 +49,36 @@ public:
 	{
 		this->bestAxisFit(vals);
 	}
-	
-	virtual glm::vec3 point_for_view(std::vector<float> &mapped)
+
+	virtual void reweight(glm::vec3 &point) const
 	{
-		return this->point(mapped);
+		float ave = 0;
+		for (size_t i = 0; i < 3; i++)
+		{
+			float w = weight(this->axis(i));
+			point[i] *= w;
+			ave += w;
+		}
+		ave /= 3;
+
+		for (size_t i = 0; i < 3; i++)
+		{
+			point[i] /= ave;
+		}
+	}
+	
+	virtual glm::vec3 pointForDisplay(int i) const
+	{
+		glm::vec3 tmp = this->point(i);
+		reweight(tmp);
+		return tmp;
+	}
+	
+	virtual glm::vec3 pointForDisplay(std::vector<float> &mapped) const
+	{
+		glm::vec3 tmp = this->point(mapped);
+		reweight(tmp);
+		return tmp;
 	}
 
 	virtual std::vector<float> mapComparable(typename DG::Comparable &vec);

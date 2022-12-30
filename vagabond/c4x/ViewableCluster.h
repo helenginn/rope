@@ -41,6 +41,9 @@ public:
 	virtual const size_t pointCount() const = 0;
 	virtual glm::vec3 point(int i) const = 0;
 	virtual glm::vec3 point(std::vector<float> &mapped) const = 0;
+	virtual glm::vec3 pointForDisplay(std::vector<float> &mapped) const = 0;
+	virtual glm::vec3 pointForDisplay(int i) const = 0;
+	virtual void reweight(glm::vec3 &point) const = 0;
 	virtual float weight(int i) const = 0;
 	virtual const size_t &axis(int i) const = 0;
 

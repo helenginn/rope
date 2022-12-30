@@ -25,12 +25,12 @@
 class PlaneView;
 class Scene;
 class Molecule;
-class MetadataGroup;
+class TorsionCluster;
 
 class Axes : public IndexResponder, public ButtonResponder
 {
 public:
-	Axes(Cluster<MetadataGroup> *group, Molecule *m);
+	Axes(TorsionCluster *group, Molecule *m);
 	~Axes();
 	
 	void setScene(Scene *scene)
@@ -71,7 +71,7 @@ private:
 	void reflect(int i);
 	void loadAxisExplorer(int idx);
 
-	Cluster<MetadataGroup> *_cluster = nullptr;
+	TorsionCluster *_cluster = nullptr;
 	Molecule *_molecule = nullptr;
 	Scene *_scene = nullptr;
 	int _lastIdx = -1;
