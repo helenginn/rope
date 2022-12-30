@@ -220,21 +220,22 @@ void AxisExplorer::setupColours()
 		a->setAddedColour(0.f);
 	}
 	
+	float sum = 0;
 	for (const Angular &val : _values)
 	{
-		float sqval = sqrt(val * val);
-		add_to_CD(&cd, sqval, sqval);
+		float sqval = val * val;
+		sum += sqval;
 	}
 	
-	double mean, stdev;
-	mean_stdev_CD(cd, &mean, &stdev);
+	sum /= (float)(_values.size());
+	
+	float stdev = sqrt(sum);
 
 	for (size_t i = 0; i < _list.size(); i++)
 	{
 		TorsionRef tr = _list[i].torsion;
 		
-		if (!Atom::isMainChain(tr.atomName(0)) ||
-		    !Atom::isMainChain(tr.atomName(3)))
+		if (!tr.coversMainChain())
 		{
 			continue;
 		}
@@ -259,8 +260,7 @@ void AxisExplorer::setupColours()
 			continue;
 		}
 
-		float val = sqrt(_values[i] * _values[i]);
-		val -= mean;
+		float val = fabs(_values[i]);
 		val /= stdev * 2;
 		atom->addToColour(val);
 	}
