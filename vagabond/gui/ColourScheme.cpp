@@ -19,11 +19,12 @@
 #include <iostream>
 #include "ColourScheme.h"
 
-ColourScheme::ColourScheme(Scheme scheme)
+ColourScheme::ColourScheme(Scheme scheme, bool vert)
 : Image("assets/images/colour_scheme.png")
 {
 	clearVertices();
 	setFragmentShaderFile("assets/shaders/multiply.fsh");
+	_vert = vert;
 
 	if (scheme == BlueOrange)
 	{
@@ -31,8 +32,24 @@ ColourScheme::ColourScheme(Scheme scheme)
 		addFixedPoint(0.5, glm::vec4(0.6, 0.0, 0.09, 1.0));
 		addFixedPoint(1.0, glm::vec4(0.86, 0.63, 0.13, 1.0));
 		setScheme(BlueOrange);
-		setup();
 	}
+	else if (scheme == OrangeWhitePurple)
+	{
+		addFixedPoint(0.0, glm::vec4(0.73, 0.44, 0.09, 1.0));
+		addFixedPoint(0.5, glm::vec4(1.0, 1.0, 1.0, 1.0));
+		addFixedPoint(1.0, glm::vec4(0.44, 0.18, 0.53, 1.0));
+		setScheme(OrangeWhitePurple);
+	}
+	else if (scheme == Heat)
+	{
+		addFixedPoint(0.0, glm::vec4(0.05, 0.05, 0.05, 1.0));
+		addFixedPoint(0.3, glm::vec4(1.0, 0.05, 0.05, 1.0));
+		addFixedPoint(0.6, glm::vec4(1.0, 1.0, 0.05, 1.0));
+		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0));
+		setScheme(Heat);
+	}
+
+	setup();
 }
 
 ColourScheme::ColourScheme() : Image("assets/images/colour_scheme.png")
@@ -134,10 +151,12 @@ void ColourScheme::setup()
 		float orig = p;
 		stretch_p(p);
 
-		Snow::Vertex &lower = addVertex(p, -0.1, 0);
+		Snow::Vertex &lower = addVertex((_vert ? -0.1 : p), 
+		                                (_vert ? p : -0.1), 0);
 		lower.color = fp.colour;
 		lower.tex = glm::vec2(orig, 0.0);
-		Snow::Vertex &upper = addVertex(p, +0.1, 0);
+		Snow::Vertex &upper = addVertex((_vert ? +0.1 : p), 
+		                                (_vert ? p : +0.1), 0);
 		upper.color = fp.colour;
 		upper.tex = glm::vec2(orig, 1.0);
 	

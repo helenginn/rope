@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/core/Atom.h>
+#include "ColourScheme.h"
 
 #define POINTS_PER_BEZIER (10)
 
@@ -40,7 +41,10 @@ public:
 		return 0;
 	}
 	
-	virtual ~GuiRepresentation() {}
+	virtual ~GuiRepresentation()
+	{
+		delete _scheme;
+	}
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
 	virtual void finishUpdate() {};
@@ -73,6 +77,8 @@ protected:
 	std::vector<Snow::Vertex> makeBezier(glm::vec3 p1, glm::vec3 p2,
 	                                     glm::vec3 p3, glm::vec3 p4,
 	                                     bool overwrite = false);
+
+	ColourScheme *_scheme = new ColourScheme(Heat);
 private:
 	GuiAtom *_parent = nullptr;
 

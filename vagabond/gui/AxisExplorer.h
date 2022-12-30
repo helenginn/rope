@@ -54,16 +54,17 @@ private:
 
 	void reportMissing();
 	void setupColours();
+	void setupColourLegend();
 	
 	double _min = -1; 
 	double _max = 1; 
 	double _step = 0.001;
+	float _maxTorsion = 0;
 
 	std::vector<ResidueTorsion> _list;
 	std::vector<Angular> _values;
 	
 	int _dims = 1;
-	
 };
 
 #endif

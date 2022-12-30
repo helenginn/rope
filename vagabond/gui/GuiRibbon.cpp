@@ -321,16 +321,9 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 
 		convertToCylinder(&bez);
 		
-		float colour = a->addedColour();
+		float prop = a->addedColour();
+		glm::vec4 c = _scheme->colour(prop);
 
-		glm::vec4 c = glm::vec4(0.f, 0.f, 0.f, 1.f);
-		val_to_cluster4x_colour(colour, &c[0], &c[1], &c[2]);
-		
-		for (size_t j = 0; j < 3; j++)
-		{
-			c[j] /= 255.;
-		}
-		
 		for (Snow::Vertex &v : bez)
 		{
 			v.color = c;

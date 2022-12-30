@@ -28,7 +28,8 @@ using nlohmann::json;
 enum Scheme
 {
 	BlueOrange,
-	pHIndicator,
+	OrangeWhitePurple,
+	Heat,
 	Nothing = 0,
 };
 
@@ -37,7 +38,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
                              {
 	                            {Nothing, nullptr},
 	                            {BlueOrange, "blueorange"},
-	                            {pHIndicator, "phindicator"},
+	                            {OrangeWhitePurple, "orangewhitepurple"},
+	                            {Heat, "heat"},
                              })
 
 class Rule

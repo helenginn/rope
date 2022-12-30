@@ -27,7 +27,7 @@ class Scene;
 class ColourLegend : public ColourScheme, public ButtonResponder
 {
 public:
-	ColourLegend(Scheme scheme, Scene *responder);
+	ColourLegend(Scheme scheme, bool vert, Scene *responder);
 	~ColourLegend();
 
 	void setTitle(std::string title);

@@ -493,7 +493,7 @@ void ConfSpaceView::applyRule(const Rule &r)
 	
 	if (r.type() == Rule::VaryColour)
 	{
-		ColourLegend *legend = new ColourLegend(r.scheme(), this);
+		ColourLegend *legend = new ColourLegend(r.scheme(), false, this);
 		legend->setCentre(0.5, 0.1);
 		legend->setTitle(r.header());
 		legend->setLimits(r.min(), r.max());

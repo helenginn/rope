@@ -22,8 +22,8 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/utils/FileReader.h>
 
-ColourLegend::ColourLegend(Scheme scheme, Scene *r) 
-: ColourScheme(scheme)
+ColourLegend::ColourLegend(Scheme scheme, bool vert, Scene *r) 
+: ColourScheme(scheme, vert)
 {
 	resize(0.25);
 	_responder = r;
@@ -38,7 +38,8 @@ void ColourLegend::setTitle(std::string title)
 {
 	TextButton *text = new TextButton(title, this);
 	text->resize(0.6);
-	text->setCentre(0.5, 0.05);
+	text->setCentre((_vert ? 0.00 : 0.5), 
+	                (_vert ? -0.2 : 0.05));
 	text->setReturnTag("title");
 	addObject(text);
 }
@@ -64,14 +65,16 @@ void ColourLegend::setLimits(float min, float max)
 	{
 		Text *text = new Text(minstr);
 		text->resize(0.6);
-		text->setCentre(0.375, 0.15);
+		text->setCentre((_vert ? 0.04 : 0.375), 
+		                (_vert ? +0.1 : 0.15));
 		addObject(text);
 	}
 
 	{
 		Text *text = new Text(maxstr);
 		text->resize(0.6);
-		text->setCentre(0.625, 0.15);
+		text->setCentre((_vert ? 0.04 : 0.625), 
+		                (_vert ? -0.1 : 0.15));
 		addObject(text);
 	}
 }

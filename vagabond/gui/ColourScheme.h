@@ -27,8 +27,7 @@ class ColourScheme : public Image
 {
 public:
 	ColourScheme();
-	ColourScheme(Scheme scheme);
-	
+	ColourScheme(Scheme scheme, bool vert = false);
 
 	void addFixedPoint(float p, glm::vec4 colour);
 	
@@ -36,6 +35,8 @@ public:
 	
 	/* create vertices/indices to display colour scheme */
 	void setup();
+protected:
+	bool _vert = false;
 private:
 	bool sanitisePoints();
 	void setScheme(Scheme scheme)

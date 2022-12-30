@@ -18,6 +18,7 @@
 
 #include "AxisExplorer.h"
 #include "Chain.h"
+#include "ColourLegend.h"
 
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -72,6 +73,7 @@ void AxisExplorer::setup()
 	
 	submitJob(0.0);
 	setupColours();
+	setupColourLegend();
 	
 	VisualPreferences *vp = &_molecule->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
@@ -230,6 +232,7 @@ void AxisExplorer::setupColours()
 	sum /= (float)(_values.size());
 	
 	float stdev = sqrt(sum);
+	_maxTorsion = stdev * 4;
 
 	for (size_t i = 0; i < _list.size(); i++)
 	{
@@ -261,8 +264,18 @@ void AxisExplorer::setupColours()
 		}
 
 		float val = fabs(_values[i]);
-		val /= stdev * 2;
+		val /= _maxTorsion;
 		atom->addToColour(val);
 	}
+
+}
+
+void AxisExplorer::setupColourLegend()
+{
+	ColourLegend *legend = new ColourLegend(Heat, true, this);
+	legend->setTitle("Torsion deviation (deg)");
+	legend->setLimits(0.f, _maxTorsion);
+	legend->setCentre(0.9, 0.5);
+	addObject(legend);
 
 }

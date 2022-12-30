@@ -320,13 +320,8 @@ void GuiHelices::cAlphasToWireFrame(Helix &h, std::vector<Snow::Vertex> &vs,
 		if (ca)
 		{
 			glm::vec3 pos = ca->derivedPosition();
-			float colour = ca->addedColour();
-			glm::vec4 c = glm::vec4(0.f, 0.f, 0.f, 1.f);
-			val_to_cluster4x_colour(colour, &c[0], &c[1], &c[2]);
-			for (size_t j = 0; j < 3; j++)
-			{
-				c[j] /= 255.;
-			}
+			float prop = ca->addedColour();
+			glm::vec4 c = _scheme->colour(prop);
 
 			vs.push_back(new_vertex(pos));
 			vs.back().color = c;
