@@ -68,6 +68,12 @@ public:
 	}
 	
 	void setInformation(std::string str);
+	
+	void getLastCoords(double &lastX, double &lastY)
+	{
+		lastX = _lastX; lastY = _lastY;
+		convertToGLCoords(&lastX, &lastY);
+	}
 protected:
 	void reloadBackground();
 	virtual std::vector<Renderable *> &pertinentObjects();
