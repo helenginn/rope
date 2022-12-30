@@ -23,7 +23,7 @@ void Image::makeQuad()
 	glm::mat3x3 mat = glm::mat3(1.f);
 	mat[0][0] = 1;
 	mat[1][1] = (double)_h / (double)_w;
-	mat[0][0] /= (double)ASPECT_RATIO;
+	mat[0][0] *= (double)Window::aspect();
 
 	rotateRound(mat);
 }
