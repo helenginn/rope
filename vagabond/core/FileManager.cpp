@@ -109,7 +109,13 @@ void FileManager::setFilterType(File::Type type)
 
 bool FileManager::valid(std::string filename)
 {
+	if (_filename2Type.count(filename))
+	{
+		return (_type & _filename2Type[filename]);
+	}
+
 	File::Type type = File::typeUnknown(filename);
+	_filename2Type[filename] = type;
 
 	return (type & _type);
 }

@@ -380,6 +380,21 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	}
 	if (tag == "no_fold_in")
 	{
+		AskYesNo *askyn = new AskYesNo(this, "Use torsion angles without\n"
+		                               "refinement? (quick and dangerous)", 
+		                               "use_unrefined", this);
+		setModal(askyn);
+	}
+	if (tag == "yes_use_unrefined")
+	{
+		// refine extra molecules
+		SerialRefiner *refiner = new SerialRefiner(this, _entity);
+		refiner->setExtra(_extra);
+		refiner->setActuallyRefine(false);
+		refiner->show();
+	}
+	if (tag == "no_use_unrefined")
+	{
 		// show conf space
 		refresh();
 	}

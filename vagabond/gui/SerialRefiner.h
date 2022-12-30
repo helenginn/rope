@@ -38,6 +38,11 @@ public:
 		_extra = extra;
 	}
 	
+	void setActuallyRefine(bool refine)
+	{
+		_actuallyRefine = refine;
+	}
+	
 	void setRefineAll(bool all)
 	{
 		_all = all;
@@ -55,6 +60,7 @@ private:
 	int _count = 0;
 	bool _newModel = false;
 	bool _all = false;
+	bool _actuallyRefine = true;
 	Model *_model = nullptr;
 	Display *_display = nullptr;
 	Entity *_entity = nullptr;

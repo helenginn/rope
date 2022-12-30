@@ -38,8 +38,10 @@ SerialRefiner::~SerialRefiner()
 
 void SerialRefiner::setup()
 {
+	_entity->setActuallyRefine(true);
 	if (!_all)
 	{
+		_entity->setActuallyRefine(_actuallyRefine);
 		addTitle("Refining " + i_to_str(_extra) + " models...");
 		_entity->refineUnrefinedModels();
 	}

@@ -99,6 +99,11 @@ public:
 	{
 		return _visPrefs;
 	}
+	
+	void setActuallyRefine(bool refine)
+	{
+		_actuallyRefine = refine;
+	}
 
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);
@@ -111,6 +116,8 @@ private:
 	Model *_currentModel = nullptr;
 
 	void appendMolecule(Model &m);
+	
+	bool _actuallyRefine = true;
 	
 	std::set<Model *> _refineSet;
 	std::vector<Model *> _models;

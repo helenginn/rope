@@ -100,7 +100,7 @@ public:
 	
 	MetadataGroup::Array grabTorsions(rope::TorsionType type 
 	                                  = rope::RefinedTorsions);
-	void addTorsionsToGroup(MetadataGroup &group, bool unrefined = false);
+	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
 	void addPositionsToGroup(MetadataGroup &group,
 	                         std::map<Residue *, int> resIdxs);
 

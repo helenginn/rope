@@ -180,7 +180,8 @@ void Path::calculateArrays(MetadataGroup *group)
 	{
 		pr->submitJobAndRetrieve(i);
 		_molecule->extractTorsionAngles(grp, true);
-		MetadataGroup::Array vals = _molecule->grabTorsions(true);
+		MetadataGroup::Array vals;
+		vals = _molecule->grabTorsions(rope::TemporaryTorsions);
 		group->matchDegrees(vals);
 		_angleArrays.push_back(vals);
 	}

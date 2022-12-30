@@ -205,7 +205,14 @@ void Entity::refineNextModel()
 	
 	sendResponse("model", _currentModel);
 	
-	_currentModel->refine();
+	if (_actuallyRefine)
+	{
+		_currentModel->refine();
+	}
+	else
+	{
+		_currentModel->extractExisting();
+	}
 }
 
 void Entity::respond()
@@ -301,7 +308,7 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	
 	for (Molecule *mol : _molecules)
 	{
-		mol->addTorsionsToGroup(group);
+		mol->addTorsionsToGroup(group, rope::RefinedTorsions);
 	}
 		
 	PathManager *pm = Environment::env().pathManager();

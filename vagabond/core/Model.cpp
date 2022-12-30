@@ -531,6 +531,13 @@ void Model::refine()
 	_currentAtoms->refinePositions();
 }
 
+void Model::extractExisting()
+{
+	insertTorsions();
+	extractTorsions();
+	triggerResponse();
+}
+
 size_t Model::moleculeCountForEntity(std::string entity_id) const
 {
 	size_t count = 0;

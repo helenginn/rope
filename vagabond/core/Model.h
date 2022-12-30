@@ -154,6 +154,7 @@ public:
 	
 	ArbitraryMap *map();
 	float comparisonWithData(ArbitraryMap *calc);
+	void extractExisting();
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();

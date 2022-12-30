@@ -100,6 +100,8 @@ private:
 	std::set<std::string> _geometries;
 	static std::string _userDir;
 	static std::string _dataDir;
+	
+	std::map<std::string, File::Type> _filename2Type;
 
 	File::Type _type = File::Nothing;
 };
