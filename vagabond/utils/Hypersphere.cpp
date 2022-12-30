@@ -43,8 +43,6 @@ void Hypersphere::setup()
 
 void Hypersphere::setup_distribution_for_dim(int dim)
 {
-	assert(dim > 0);
-
 	ProbDist pd{};
 	if (dim == 1)
 	{
@@ -68,7 +66,6 @@ ProbDist Hypersphere::setup_distribution_for_first()
 
 ProbDist Hypersphere::setup_distribution_for_other(int dim)
 {
-	assert(dim > 1);
 	float numerator_gamma = tgamma((dim + 1) / 2);
 	float denominator_gamma = tgamma(dim / 2);
 	float scale = 1 / sqrt(M_PI);
