@@ -91,6 +91,12 @@ GuiRepresentation::bezierFrom(std::vector<Snow::Vertex> vs, int idx)
 
 	std::vector<Snow::Vertex> next_set;
 	next_set = GuiRepresentation::makeBezier(p1, p2, p3, p4);
+	
+	for (Snow::Vertex &v : next_set)
+	{
+		v.color = vs[idx].color;
+	}
+
 	return next_set;
 }
 

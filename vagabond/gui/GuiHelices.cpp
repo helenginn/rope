@@ -18,6 +18,7 @@
 
 #include "GuiHelices.h"
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/utils/maths.h>
 #include <vagabond/core/BondLength.h>
 
 GuiHelices::GuiHelices(GuiAtom *parent) : GuiRepresentation(parent)
@@ -319,7 +320,16 @@ void GuiHelices::cAlphasToWireFrame(Helix &h, std::vector<Snow::Vertex> &vs,
 		if (ca)
 		{
 			glm::vec3 pos = ca->derivedPosition();
+			float colour = ca->addedColour();
+			glm::vec4 c = glm::vec4(0.f, 0.f, 0.f, 1.f);
+			val_to_cluster4x_colour(colour, &c[0], &c[1], &c[2]);
+			for (size_t j = 0; j < 3; j++)
+			{
+				c[j] /= 255.;
+			}
+
 			vs.push_back(new_vertex(pos));
+			vs.back().color = c;
 		}
 		else
 		{
@@ -431,6 +441,7 @@ void GuiHelices::makeHelixSlab(Snow::Vertex &origin, Snow::Vertex &previous,
 		glm::vec3 norm = helix_normals[i][0] * cross;
 		norm += helix_normals[i][1] * dir;
 		v.normal = glm::normalize(norm);
+		v.color = origin.color;
 
 		verts.push_back(v);
 	}
@@ -567,9 +578,6 @@ void GuiHelices::populateHelices()
 		_vertices.reserve(_vertices.size() + full_verts.size());
 		_vertices.insert(_vertices.end(), full_verts.begin(), full_verts.end());
 	}
-	
-//	calculateNormals();
-	setColour(0.5, 0.5, 1.0);
 }
 
 void GuiHelices::updateSinglePosition(Atom *a, glm::vec3 &p)
@@ -606,6 +614,7 @@ void GuiHelices::finishUpdate()
 		{
 			Vertex &v = _vertices[insertion + j];
 			v.pos = full_verts[j].pos;
+			v.color = full_verts[j].color;
 			v.normal = glm::normalize(full_verts[j].normal);
 		}
 	}
