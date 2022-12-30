@@ -99,13 +99,22 @@ Window::~Window()
 
 }
 
-void Window::glSetup()
+void Window::updateDimensions(int width, int height)
 {
+#ifndef __EMSCRIPTEN
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
-	_width = w;
-	_height = h;
+#else
+	glViewport(0, 0, width, height);
+	_rect.w = width;
+	_rect.h = height;
+#endif
+}
+
+void Window::glSetup()
+{
+	updateDimensions(_rect.w, _rect.h);
 	glEnable(GL_BLEND);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

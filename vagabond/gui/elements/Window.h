@@ -77,6 +77,8 @@ public:
 	virtual void mainThreadActivities() {};
 	static bool tick();
 	static void window_tick();
+
+	void updateDimensions(int width, int height);
 	
 	static int height()
 	{
