@@ -28,14 +28,19 @@ std::set<Renderable *> Window::_deleteRenderables;
 
 KeyResponder *Window::_keyResponder = NULL;
 
+#ifdef __EMSCRIPTEN__
+EM_JS(int, get_canvas_height, (), { return window.innerHeight; });
+EM_JS(int, get_canvas_width, (), { return window.innerWidth; });
+#endif
+
 
 Window::Window(int width, int height)
 {
 	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
 	
 #ifdef __EMSCRIPTEN__
-	_rect.w = width;
-	_rect.h = height;
+	_rect.w = get_canvas_width();
+	_rect.h = get_canvas_height();
 #else
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) 
 	{
