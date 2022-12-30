@@ -268,17 +268,19 @@ public:
 	
 	float addedColour()
 	{
-		return _colour;
+		return _colour / (float)_count;
 	}
 	
 	void setAddedColour(float col)
 	{
 		_colour = col;
+		_count = 0;
 	}
 	
 	void addToColour(float add)
 	{
 		_colour += add;
+		_count++;
 	}
 private:
 	void changedPosition();
@@ -306,6 +308,7 @@ private:
 	std::mutex _mutex;
 
 	float _colour = 0;
+	int _count = 0;
 	glm::mat4x4 _transform = glm::mat4(1.f);
 };
 
