@@ -29,11 +29,7 @@ class FileManager;
 class FileViewResponder : public virtual Scene
 {
 public:
-	FileViewResponder(Scene *prev) : Scene(prev)
-	{
-		std::cout << "Prev: " << prev << std::endl;
-		std::cout << "_previous: " << _previous << std::endl;
-	}
+	FileViewResponder(Scene *prev) {}
 	virtual ~FileViewResponder() {};
 	virtual void fileChosen(std::string filename) = 0;
 };

@@ -27,6 +27,7 @@
 #include <vagabond/utils/FileReader.h>
 
 #include "EntityFromSequence.h"
+#include "FastaView.h"
 #include "AddEntity.h"
 
 #include <vagabond/gui/elements/TextEntry.h>
@@ -34,7 +35,8 @@
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
-EntityFromSequence::EntityFromSequence(Scene *prev) : Scene(prev)
+EntityFromSequence::EntityFromSequence(Scene *prev) : 
+Scene(prev), FileViewResponder(prev)
 {
 
 }
@@ -58,9 +60,16 @@ void EntityFromSequence::setup()
 	}
 	
 	{
+		TextButton *tb = new TextButton("From fasta file", this);
+		tb->setReturnTag("fasta");
+		tb->setLeft(0.2, 0.4);
+		addObject(tb);
+	}
+	
+	{
 		TextButton *tb = new TextButton("Type in sequence", this);
 		tb->setReturnTag("type");
-		tb->setLeft(0.2, 0.4);
+		tb->setLeft(0.2, 0.5);
 		addObject(tb);
 	}
 }
@@ -133,6 +142,13 @@ void EntityFromSequence::buttonPressed(std::string tag, Button *button)
 		return;
 	}
 	
+	if (tag == "fasta")
+	{
+		FileView *view = new FileView(this, true);
+		view->filterForTypes(File::Sequence);
+		view->show();
+	}
+	
 	if (tag == "type")
 	{
 		AskForText *aft = new AskForText(this, "Enter peptide sequence:",
@@ -179,4 +195,10 @@ void EntityFromSequence::render()
 		_result = "";
 		_process = false;
 	}
+}
+
+void EntityFromSequence::fileChosen(std::string filename)
+{
+	FastaView *fv = new FastaView(this, filename, true);
+	fv->show();
 }

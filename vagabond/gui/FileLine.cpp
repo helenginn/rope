@@ -120,4 +120,12 @@ void FileLine::setup()
 		addObject(image);
 	}
 
+	if (_type & File::Sequence)
+	{
+		Image *image = new Image("assets/images/sequence.png");
+		image->resize(0.06);
+		image->setCentre(0.7, 0);
+		image->addAltTag("has sequence info");
+		addObject(image);
+	}
 }

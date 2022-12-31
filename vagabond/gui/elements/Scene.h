@@ -8,10 +8,11 @@
 #include "ButtonResponder.h"
 
 class IndexResponder;
+class TextButton;
 class Renderable;
 class Button;
 class Modal;
-class TextButton;
+class Text;
 
 class Scene : public SnowGL, public ButtonResponder
 {
@@ -26,6 +27,11 @@ public:
 	void setBackScene(Scene *prev)
 	{
 		_previous = prev;
+	}
+	
+	Scene *const previous() const
+	{
+		return _previous;
 	}
 	
 	void removeModal();

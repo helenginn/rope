@@ -21,9 +21,10 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/gui/Fetcher.h>
+#include "FileView.h"
 #include <thread>
 
-class EntityFromSequence : public Scene, public Fetcher
+class EntityFromSequence : public Fetcher, public FileViewResponder
 {
 public:
 	EntityFromSequence(Scene *prev);
@@ -36,6 +37,7 @@ public:
 	virtual std::string toURL(std::string query);
 	virtual void processResult(std::string seq);
 	virtual void handleError();
+	virtual void fileChosen(std::string filename);
 private:
 	void makePeptide(std::string text);
 	pthread_t _thread;

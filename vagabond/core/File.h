@@ -62,6 +62,7 @@ public:
 		Reflections = 1 << 5, /**< found diffraction reflection data */
 		Meta = 1 << 6, /**< contains metadata on file or model names */
 		Json = 1 << 7, /**< json (environment?) file */
+		Sequence = 1 << 8, /**< sequence-containing file */
 	};
 
 	enum Flavour
@@ -71,7 +72,8 @@ public:
 		Pdb,
 		Cif,
 		Csv,
-		Jsn
+		Jsn,
+		Fasta
 	};
 	
 	static File *loadUnknown(std::string filename);
@@ -173,6 +175,11 @@ public:
 		_knot = kl;
 	}
 	
+	const std::map<std::string, std::string> &namedSequences() const
+	{
+		return _sequences;
+	}
+	
 	virtual void write(std::string filename) {}
 protected:
 
@@ -193,6 +200,7 @@ protected:
 	Metadata *_metadata = nullptr;
 	
 	std::map<std::string, std::string> _values;
+	std::map<std::string, std::string> _sequences;
 	std::vector<Reflection> _reflections;
 	
 	bool _accessedTable = false;

@@ -105,8 +105,8 @@ void FileView::handleFileWithoutChoice(std::string filename)
 
 void FileView::returnToResponder(std::string filename)
 {
-	_responder->fileChosen(filename);
 	Scene::back();
+	_responder->fileChosen(filename);
 }
 
 void FileView::buttonPressed(std::string tag, Button *button)

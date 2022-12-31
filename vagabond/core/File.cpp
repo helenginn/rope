@@ -24,6 +24,7 @@
 #include "CsvFile.h"
 #include "MtzFile.h"
 #include "PdbFile.h"
+#include "FastaFile.h"
 #include "Atom.h"
 #include "Diffraction.h"
 #include "AtomContent.h"
@@ -207,7 +208,7 @@ bool File::compare_file_ending(const std::string &filename,
 	}
 	if (filename.substr(l - comp.length(), comp.length()) == comp)
 	{
-		return Jsn;
+		return result;
 	}
 
 	return None;
@@ -220,6 +221,7 @@ File::Flavour File::flavour(std::string filename)
 	const std::string pdb = "pdb";
 	const std::string cif = "cif";
 	const std::string csv = "csv";
+	const std::string fasta = "fasta";
 	to_lower(filename);
 
 	if (compare_file_ending(filename, json, Jsn))
@@ -241,6 +243,10 @@ File::Flavour File::flavour(std::string filename)
 	if (compare_file_ending(filename, csv, Csv))
 	{
 		return Csv;
+	}
+	if (compare_file_ending(filename, fasta, Fasta))
+	{
+		return Fasta;
 	}
 
 	return None;
@@ -271,6 +277,10 @@ File *File::openUnknown(std::string filename)
 	else if (flav == Csv)
 	{
 		f = new CsvFile(filename);
+	}
+	else if (flav == Fasta)
+	{
+		f = new FastaFile(filename);
 	}
 	
 	return f;
@@ -321,6 +331,11 @@ File::Type File::typeUnknown(std::string filename, Flavour needed)
 	else if (flav == Csv)
 	{
 		CsvFile f = CsvFile(filename);
+		type = f.cursoryLook();
+	}
+	else if (flav == Fasta)
+	{
+		FastaFile f = FastaFile(filename);
 		type = f.cursoryLook();
 	}
 	
