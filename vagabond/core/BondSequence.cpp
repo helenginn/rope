@@ -19,7 +19,7 @@
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
-#include "MechanicalBasis.h"
+#include "engine/MechanicalBasis.h"
 #include "Superpose.h"
 #include "Atom.h"
 #include <iostream>

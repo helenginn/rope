@@ -21,7 +21,6 @@
 #include "Plane.h"
 #include <vagabond/utils/FileReader.h>
 #include "MetadataGroup.h"
-#include "ForceFieldHandler.h"
 #include "Molecule.h"
 #include <thread>
 

@@ -19,7 +19,7 @@
 #ifndef __vagabond__SplitRoute__
 #define __vagabond__SplitRoute__
 
-#include "Handler.h"
+#include "engine/Handler.h"
 #include "PlausibleRoute.h"
 
 class ShortRoute;

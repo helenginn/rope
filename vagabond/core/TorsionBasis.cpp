@@ -21,7 +21,7 @@
 #include "BondTorsion.h"
 #include "SimpleBasis.h"
 #include "ConcertedBasis.h"
-#include "MechanicalBasis.h"
+#include "engine/MechanicalBasis.h"
 
 TorsionBasis::TorsionBasis()
 {

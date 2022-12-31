@@ -16,11 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadCalculatesBondSequence.h"
-#include "ThreadExtractsBondPositions.h"
+#include "engine/workers/ThreadCalculatesBondSequence.h"
+#include "engine/workers/ThreadExtractsBondPositions.h"
 #include "BondSequenceHandler.h"
-#include "MapTransferHandler.h"
-#include "PointStoreHandler.h"
+#include "engine/MapTransferHandler.h"
+#include "engine/PointStoreHandler.h"
 #include "BondSequence.h"
 #include <thread>
 

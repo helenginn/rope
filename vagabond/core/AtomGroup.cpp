@@ -22,7 +22,7 @@
 #include "Grapher.h"
 #include "../utils/FileReader.h"
 #include "BondTorsion.h"
-#include "Mechanics.h"
+#include "engine/Mechanics.h"
 #include "TorsionBasis.h"
 #include "BondCalculator.h"
 #include "PositionRefinery.h"

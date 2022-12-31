@@ -16,14 +16,14 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadSubmitsJobs.h"
+#include "engine/workers/ThreadSubmitsJobs.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
-#include "CorrelationHandler.h"
-#include "ForceFieldHandler.h"
-#include "MapTransferHandler.h"
-#include "PointStoreHandler.h"
-#include "MapSumHandler.h"
+#include "engine/CorrelationHandler.h"
+#include "engine/ForceFieldHandler.h"
+#include "engine/MapTransferHandler.h"
+#include "engine/PointStoreHandler.h"
+#include "engine/MapSumHandler.h"
 #include "Sampler.h"
 
 BondCalculator::BondCalculator()

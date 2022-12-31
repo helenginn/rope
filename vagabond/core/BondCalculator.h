@@ -24,7 +24,7 @@
 #include <climits>
 #include <vector>
 #include <queue>
-#include "Handler.h"
+#include "engine/Handler.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"

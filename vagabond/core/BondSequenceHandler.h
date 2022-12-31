@@ -20,7 +20,7 @@
 #define __vagabond__BondSequenceHandler__
 
 #include <thread>
-#include "Handler.h"
+#include "engine/Handler.h"
 #include "BondSequence.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
