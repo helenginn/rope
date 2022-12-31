@@ -42,9 +42,10 @@ ColourScheme::ColourScheme(Scheme scheme, bool vert)
 	}
 	else if (scheme == Heat)
 	{
-		addFixedPoint(0.0, glm::vec4(0.05, 0.05, 0.05, 1.0));
-		addFixedPoint(0.3, glm::vec4(1.0, 0.05, 0.05, 1.0));
-		addFixedPoint(0.6, glm::vec4(1.0, 1.0, 0.05, 1.0));
+		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
+		addFixedPoint(0.1, glm::vec4(0.05, 0.05, 0.05, 1.0));
+		addFixedPoint(0.4, glm::vec4(1.0, 0.05, 0.05, 1.0));
+		addFixedPoint(0.7, glm::vec4(1.0, 1.0, 0.05, 1.0));
 		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0));
 		setScheme(Heat);
 	}
