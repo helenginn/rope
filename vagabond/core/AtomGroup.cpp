@@ -385,7 +385,7 @@ void AtomGroup::recalculate()
 	}
 }
 
-void AtomGroup::refinePositions()
+void AtomGroup::refinePositions(bool sameThread)
 {
 	if (_engine && !_engine->isDone())
 	{
@@ -397,8 +397,15 @@ void AtomGroup::refinePositions()
 	cancelRefinement();
 	cleanupRefinement();
 
-	_engine = refinery;
-	_refine = new std::thread(&PositionRefinery::backgroundRefine, refinery);
+	if (sameThread)
+	{
+		refinery->refine();
+	}
+	else
+	{
+		_engine = refinery;
+		_refine = new std::thread(&PositionRefinery::backgroundRefine, refinery);
+	}
 }
 
 void AtomGroup::organiseSamples(int n)

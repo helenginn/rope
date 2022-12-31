@@ -265,7 +265,7 @@ Residue *Sequence::master_residue(Residue *local) const
 
 void Sequence::remapFromMaster(Entity *entity)
 {
-	if (entity == nullptr)
+	if (entity == nullptr || _residues.size() == 0)
 	{
 		return;
 	}

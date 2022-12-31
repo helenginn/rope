@@ -35,8 +35,7 @@ using nlohmann::json;
 
 class Molecule;
 
-class Entity : public Substance, public Responder<Model>, 
-public HasResponder<Responder<Entity>>
+class Entity : public Substance, public HasResponder<Responder<Entity>>
 {
 public:
 	Entity();
@@ -53,14 +52,10 @@ public:
 	
 	void checkModel(Model &m);
 
+	std::set<Model *> unrefinedModels();
 	size_t checkForUnrefinedMolecules();
-	void refineUnrefinedModels();
-	void refineAllModels();
 	void throwOutMolecule(Molecule *mol);
 	void throwOutModel(Model *mol);
-	
-	void refineNextModel();
-	virtual void respond();
 	
 	MetadataGroup makeTorsionDataGroup();
 	PositionalGroup makePositionalDataGroup();
@@ -108,7 +103,6 @@ public:
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);
 private:
-	std::set<Model *> unrefinedModels();
 
 	Sequence _sequence;
 	VisualPreferences _visPrefs;

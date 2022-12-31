@@ -34,6 +34,7 @@
 #include <vagabond/utils/version.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -95,6 +96,7 @@ void ConfSpaceView::addGuiElements()
 {
 	removeRules();
 	showClusters();
+
 	applyRules();
 	showRulesButton();
 	showPathsButton();
@@ -375,7 +377,8 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		// refine extra molecules
 		SerialRefiner *refiner = new SerialRefiner(this, _entity);
-		refiner->setExtra(_extra);
+		refiner->setRefineList(_entity->unrefinedModels());
+		refiner->setJobType(rope::Refine);
 		refiner->show();
 	}
 	if (tag == "no_fold_in")
@@ -389,8 +392,8 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		// refine extra molecules
 		SerialRefiner *refiner = new SerialRefiner(this, _entity);
-		refiner->setExtra(_extra);
-		refiner->setActuallyRefine(false);
+		refiner->setRefineList(_entity->unrefinedModels());
+		refiner->setJobType(rope::SkipRefine);
 		refiner->show();
 	}
 	if (tag == "no_use_unrefined")
@@ -463,14 +466,24 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 
 void ConfSpaceView::refresh()
 {
-	if (_view == nullptr)
+	try
 	{
-		addGuiElements();
-	}
+		if (_view == nullptr)
+		{
+			addGuiElements();
+		}
 
-	_view->refresh();
-	applyRules();
-	showPathsButton();
+		_view->refresh();
+		applyRules();
+		showPathsButton();
+	}
+	catch (std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(_previous, err.what());
+		_previous->setModal(bc);
+		back();
+		return;
+	}
 }
 
 void ConfSpaceView::applyRule(const Rule &r)

@@ -133,7 +133,7 @@ public:
 	}
 
 	void alignAnchor();
-	void refinePositions();
+	void refinePositions(bool sameThread = false);
 	void organiseSamples(int n);
 	
 	void getLimitingResidues(int *min, int *max);

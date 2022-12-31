@@ -31,6 +31,7 @@
 
 class Model;
 class Entity;
+class ThreadWorksOnModel;
 
 class SerialJobResponder
 {
@@ -38,6 +39,7 @@ public:
 	virtual ~SerialJobResponder() {};
 	virtual void attachModel(Model *model) = 0;
 	virtual void detachModel(Model *model) = 0;
+	virtual void updateModel(Model *model, int idx) = 0;
 
 	virtual void finishedModels() = 0;
 };
@@ -66,6 +68,16 @@ public:
 		_threads = threads;
 	}
 	
+	size_t threadCount() const
+	{
+		return _threads;
+	}
+	
+	size_t modelCount() const
+	{
+		return _models.size();
+	}
+	
 	/** prepare all objects etc. ready to start */
 	void setup();
 	
@@ -75,10 +87,21 @@ public:
 	/** call when done, allowing serial job to clean up */
 	void waitToFinish();
 	
+	/** number of models finished */
+	size_t finishedCount()
+	{
+		return _finished;
+	}
+
+	friend ThreadWorksOnModel;
+protected: // thread works on model
 	Model *acquireModel();
 
 	void attachModel(Model *model);
 	void detachModel(Model *model);
+	void updateModel(Model *model, int idx);
+	
+	void incrementFinished();
 private:
 	void settings();
 	void prepareThreads();
@@ -88,8 +111,11 @@ private:
 	Entity *_entity = nullptr;
 	int _threads = 1;
 
+	std::mutex _mutex;
+
 	std::vector<Model *> _models;
 	
+	int _finished = 0;
 	Pool<Model *> _pool;
 };
 

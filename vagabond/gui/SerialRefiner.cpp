@@ -19,109 +19,256 @@
 #include "SerialRefiner.h"
 #include "Display.h"
 #include "GuiAtom.h"
-#include <vagabond/core/Entity.h>
-#include <vagabond/gui/elements/Text.h>
+#include <vagabond/core/Model.h>
+#include <vagabond/core/Environment.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ChooseRange.h>
 #include <sstream>
 
-SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev)
+SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev),
+Display(prev)
 {
-	_entity = entity;
-	_entity->setResponder(this);
-
+	_handler = new SerialJob(entity, this);
+	_handler->setThreads(1);
+	setOwnsAtoms(false);
+	setControls(false);
 }
 
 SerialRefiner::~SerialRefiner()
 {
-	std::cout << "Deleting serial refiner" << std::endl;
-	deleteObjects();
+
+}
+
+void SerialRefiner::start()
+{
+	_handler->setup();
+	size_t count = _handler->modelCount();
+	addTitle("Refining " + i_to_str(count) + " models...");
+	showThreads();
+	
+	_start = ::time(nullptr);
+	_handler->start();
+
+	hideBackButton();
+
 }
 
 void SerialRefiner::setup()
 {
-	_entity->setActuallyRefine(true);
-	if (!_all)
+#ifndef __EMSCRIPTEN__
+	std::string str = "Choose number of threads";
+	ChooseRange *cr = new ChooseRange(this, str, "choose_threads", this);
+	cr->setDefault(4);
+	cr->setRange(0, 32, 32);
+	setModal(cr);
+#else
+	start();
+#endif
+}
+
+void SerialRefiner::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "choose_threads")
 	{
-		_entity->setActuallyRefine(_actuallyRefine);
-		addTitle("Refining " + i_to_str(_extra) + " models...");
-		_entity->refineUnrefinedModels();
+		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
+		float num = cr->max();
+		int threads = lrint(num);
+		_handler->setThreads(threads);
+		start();
 	}
-	else if (_all)
+	else if (tag == "save_back")
 	{
-		addTitle("Refining all models...");
-		_extra = _entity->moleculeCount();
-		_entity->refineAllModels();
+		Environment::env().save();
+		back();
 	}
+	
+	Display::buttonPressed(tag, button);
+}
+
+void SerialRefiner::setRefineList(std::set<Model *> models)
+{
+	std::vector<Model *> vec;
+	
+	for (Model *m : models)
+	{
+		vec.push_back(m);
+	}
+
+	_handler->setModelList(vec);
+}
+
+void SerialRefiner::setJobType(rope::RopeJob job)
+{
+	_handler->setRopeJob(job);
 }
 
 void SerialRefiner::entityDone()
 {
+	time_t end = ::time(nullptr);
+	double diff = ::difftime(end, _start);
+	std::cout << "diff = " << diff << std::endl;
+	int mins = (int)(diff / 60);
+	int seconds = diff - (mins * 60);
 
+	std::ostringstream ss;
+	ss << mins << "m " << seconds << "s";
+
+	{
+		Text *text = new Text("Done!");
+		text->setLeft(0.3, 0.4);
+		addObject(text);
+	}
+	{
+		Text *text = new Text("Total time: " + ss.str());
+		text->setLeft(0.3, 0.5);
+		addObject(text);
+	}
+	
+	{
+		TextButton *text = new TextButton("Save and return", this);
+		text->setReturnTag("save_back");
+		text->setCentre(0.5, 0.6);
+		addObject(text);
+	}
+
+}
+
+void SerialRefiner::wait()
+{
+	std::unique_lock<std::mutex> lock(_mutex);
+	_cv.wait(lock);
+}
+
+void SerialRefiner::release()
+{
+	_cv.notify_all();
+}
+
+void SerialRefiner::addUpdate(Update up)
+{
+	_updateMutex.lock();
+	_updates.push_back(up);
+	_updateMutex.unlock();
+
+	wait(); /* will be released on main thread by doThings() */
+}
+
+void SerialRefiner::attachModel(Model *model)
+{
+	addUpdate(Update{Attach, model, 0});
+}
+
+void SerialRefiner::loadModelIntoDisplay(Model *model)
+{
+	AtomGroup *atoms = model->currentAtoms();
+
+	if (atoms)
+	{
+		int count = _handler->finishedCount() + 1;
+		int total = _handler->modelCount();
+
+		std::ostringstream ss;
+		ss << "Refining " << model->name() << " (" << count << "/" <<
+		total << ")" << std::endl;
+
+		addTitle(ss.str());
+		loadAtoms(atoms);
+		guiAtoms()->setDisableRibbon(false);
+		guiAtoms()->setDisableBalls(true);
+	}
+}
+
+void SerialRefiner::dismantleDisplay()
+{
+	stop();
+	_atoms = nullptr;
+}
+
+void SerialRefiner::showSummary()
+{
+	int total = _handler->modelCount();
+	addTitle("Refined " + std::to_string(total) + " models.");
+	entityDone();
+	showBackButton();
+}
+
+void SerialRefiner::updateText(Model *model, int idx)
+{
+	std::string text = "T#" + std::to_string(idx);
+	
+	if (model)
+	{
+		text += ": " + model->name();
+	}
+	else
+	{
+		text += ": idle";
+	}
+
+	_threadReporters[idx]->setText(text);
+}
+
+void SerialRefiner::processUpdate(Update &update)
+{
+	if (update.task == Attach)
+	{
+		loadModelIntoDisplay(update.model);
+	}
+	else if (update.task == Detach)
+	{
+		dismantleDisplay();
+	}
+	else if (update.task == Finish)
+	{
+		showSummary();
+	}
+	else if (update.task == UpdateText)
+	{
+		updateText(update.model, update.idx);
+	}
 }
 
 void SerialRefiner::doThings()
 {
 	std::lock_guard<std::mutex> lock(_mutex);
-	if (_newModel == false)
-	{
-		return;
-	}
-
-	_newModel = false;
 	
-	if (_model == nullptr)
+	for (Update &update : _updates)
 	{
-		return;
+		processUpdate(update);
 	}
 
-	AtomGroup *atoms = _model->currentAtoms();
+	_updateMutex.lock();
+	_updates.clear();
+	_updateMutex.unlock();
 
-	if (atoms)
-	{
-		_display = new Display(this);
-		_count += _model->moleculeCountForEntity(_entity->name());
-
-		std::ostringstream ss;
-		ss << "Refining " << _model->name() << " (" << _count << "/" <<
-		_extra << ")" << std::endl;
-
-		_display->addTitle(ss.str());
-		_display->setControls(false);
-		_display->setOwnsAtoms(false);
-		_display->loadAtoms(atoms);
-		_display->show();
-		_display->guiAtoms()->setDisableRibbon(false);
-		_display->guiAtoms()->setDisableBalls(true);
-	}
-	
-	_model = nullptr;
+	release(); /* releases worker threads to act on models */
 }
 
-void SerialRefiner::sendObject(std::string tag, void *object)
+void SerialRefiner::updateModel(Model *model, int idx)
 {
-	std::lock_guard<std::mutex> lock(_mutex);
-	if (tag == "model_done" && _display != nullptr)
-	{
-		_display->stop();
-		_display->back();
-		_display = nullptr;
-	}
-
-	if (tag != "model")
-	{
-		return;
-	}
-	
-	_model = static_cast<Model *>(object);
-	_newModel = true;
-	
+	addUpdate(Update{UpdateText, model, idx});
 }
 
-void SerialRefiner::respond()
+void SerialRefiner::detachModel(Model *model)
 {
-	{
-		Text *text = new Text("Done!", Font::Thin, true);
-		text->setCentre(0.5, 0.5);
-		addObject(text);
-	}
+	addUpdate(Update{Detach, model, 0});
+}
 
+void SerialRefiner::finishedModels()
+{
+	addUpdate(Update{Finish, nullptr, 0});
+}
+
+void SerialRefiner::showThreads()
+{
+	float top = 0.1;
+	float inc = 0.06;
+	for (size_t i = 0; i < _handler->threadCount(); i++)
+	{
+		Text *t = new Text("T#" + std::to_string(i));
+		t->setRight(0.9, top);
+		addObject(t);
+		top += inc;
+		_threadReporters.push_back(t);
+	}
 }

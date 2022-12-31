@@ -130,7 +130,7 @@ public:
 
 	}
 
-	void refine();
+	void refine(bool sameThread = false);
 	
 	AtomContent *const currentAtoms() const
 	{

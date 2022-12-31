@@ -83,6 +83,14 @@ std::set<std::string> &FileManager::geometryFiles()
 	return _geometries;
 }
 
+void FileManager::preFilter()
+{
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		valid(_list[i]);
+	}
+}
+
 void FileManager::setFilterType(File::Type type)
 {
 	_type = type;

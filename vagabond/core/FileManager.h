@@ -50,6 +50,8 @@ public:
 	static void acceptDownload(void *me, std::string contents);
 	bool acceptFile(std::string filename, bool force = false);
 	
+	void preFilter();
+
 	const size_t filteredCount() const
 	{
 		return _filtered.size();

@@ -41,8 +41,6 @@ void PositionRefinery::refine()
 		                         "group specified.");
 	}
 	
-	std::cout << "Refining" << std::endl;
-	
 	std::vector<AtomGroup *> units = _group->connectedGroups();
 
 	for (size_t i = 0; i < units.size(); i++)

@@ -19,52 +19,77 @@
 #ifndef __vagabond__SerialRefiner__
 #define __vagabond__SerialRefiner__
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/core/Entity.h>
-#include <vagabond/core/Responder.h>
+#include <vagabond/core/SerialJob.h>
+#include <vagabond/core/RopeJob.h>
+#include <time.h>
 #include <mutex>
+#include <set>
 
-class GuiAtom;
-class Display;
+#include "Display.h"
 
-class SerialRefiner : public Scene, public Responder<Entity>, 
-public Responder<Display>
+class Model;
+class Entity;
+class SerialJob;
+
+class SerialRefiner : public Display, public SerialJobResponder
 {
 public:
 	SerialRefiner(Scene *prev, Entity *entity);
-	
-	void setExtra(const int extra)
-	{
-		_extra = extra;
-	}
-	
-	void setActuallyRefine(bool refine)
-	{
-		_actuallyRefine = refine;
-	}
-	
-	void setRefineAll(bool all)
-	{
-		_all = all;
-	}
 
 	virtual ~SerialRefiner();
+	
+	void setJobType(rope::RopeJob job);
+	
+	void setRefineList(std::set<Model *> models);
 
 	virtual void setup();
-	virtual void respond();
+	virtual void buttonPressed(std::string tag, Button *button);
+
+	virtual void attachModel(Model *model);
+	virtual void detachModel(Model *model);
+	void updateModel(Model *model, int idx);
+
+	virtual void finishedModels();
+
 	virtual void doThings();
 	virtual void entityDone();
-	virtual void sendObject(std::string tag, void *object);
 private:
-	int _extra = 0;
-	int _count = 0;
-	bool _newModel = false;
-	bool _all = false;
-	bool _actuallyRefine = true;
-	Model *_model = nullptr;
-	Display *_display = nullptr;
-	Entity *_entity = nullptr;
+	void loadModelIntoDisplay(Model *model);
+	void dismantleDisplay();
+	void showThreads();
+	void wait();
+	void start();
+	void release();
+	void showSummary();
+	void updateText(Model *model, int idx);
+	
+	enum Task
+	{
+		Attach,
+		Detach,
+		Finish,
+		UpdateText,
+	};
+	
+	struct Update
+	{
+		Task task;
+		Model *model;
+		int idx;
+	};
+	
+	std::vector<Update> _updates;
+	void addUpdate(Update up);
+	void processUpdate(Update &update);
+	std::mutex _updateMutex;
+
+	SerialJob *_handler = nullptr;
+	std::vector<Text *> _threadReporters;
+
+
 	std::mutex _mutex;
+	std::condition_variable _cv;
+	time_t _start{};
 };
 
 #endif

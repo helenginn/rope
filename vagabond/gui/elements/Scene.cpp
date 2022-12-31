@@ -256,9 +256,17 @@ void Scene::showBackButton()
 
 void Scene::addTitle(std::string title)
 {
+	if (_titleText != nullptr)
+	{
+		removeObject(_titleText);
+		delete _titleText;
+		_titleText = nullptr;
+	}
+
 	Text *text = new Text(title, Font::Thick);
 	text->setCentre(0.5, 0.1);
 	addObject(text);
+	_titleText = text;
 }
 
 void Scene::buttonPressed(std::string tag, Button *button)

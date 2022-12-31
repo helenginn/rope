@@ -326,7 +326,6 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	else if (tag == "refine")
 	{
 		SerialRefiner *refiner = new SerialRefiner(this, &_obj);
-		refiner->setRefineAll(true);
 		refiner->show();
 		return;
 	}

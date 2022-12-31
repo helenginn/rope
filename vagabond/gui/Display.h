@@ -28,6 +28,8 @@ public:
 
 	void loadAtoms(AtomGroup *atoms);
 	void stop();
+	void cleanup();
+	void deleteAtoms();
 
 	void loadDiffraction(Diffraction *diff);
 	void makeMapFromDiffraction();
@@ -80,6 +82,7 @@ private:
 	
 	bool _owns = true;
 	bool _reciprocal = false;
+	bool _first = true;
 	std::atomic<bool> _finish{false};
 };
 

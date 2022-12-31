@@ -99,6 +99,7 @@ protected:
 	Scene *_previous = nullptr;
 	Button *_back = nullptr;
 	TextButton *_info = nullptr;
+	Text *_titleText = nullptr;
 	
 	SDL_Cursor *_cursor = nullptr;
 

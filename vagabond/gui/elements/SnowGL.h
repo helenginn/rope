@@ -181,7 +181,7 @@ protected:
 	float _time;
 	bool _invertZ;
 
-	glm::vec3 _centre;
+	glm::vec3 _centre = glm::vec3(0.f);
 	glm::vec3 _translation;
 	glm::vec3 _transOnly;
 	glm::vec3 _totalCentroid;

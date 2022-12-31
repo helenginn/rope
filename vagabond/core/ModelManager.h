@@ -50,6 +50,16 @@ public:
 	
 	void housekeeping();
 	void autoModel();
+	
+	bool tryLock()
+	{
+		return (_mutex->try_lock());
+	}
+	
+	void unlock()
+	{
+		_mutex->unlock();
+	}
 
 	void purgeMolecule(Molecule *mol);
 	void purgeEntity(Entity *ent);
@@ -65,7 +75,8 @@ public:
 	friend void from_json(const json &j, ModelManager &value);
 protected:
 	std::map<std::string, Model *> _name2Model;
-
+	
+	std::mutex *_mutex = nullptr;
 };
 
 inline void to_json(json &j, const ModelManager &value)

@@ -23,6 +23,7 @@
 
 ModelManager::ModelManager() : Manager()
 {
+	_mutex = new std::mutex();
 
 }
 
@@ -72,6 +73,7 @@ void ModelManager::housekeeping()
 
 void ModelManager::autoModel()
 {
+	_mutex->lock();
 	FileManager *fm = Environment::fileManager();
 	fm->setFilterType(File::MacroAtoms);
 	
@@ -97,6 +99,7 @@ void ModelManager::autoModel()
 	fm->setFilterType(File::Nothing);
 	housekeeping();
 	finishTicker();
+	_mutex->unlock();
 }
 
 void ModelManager::purgeModel(Model *model)

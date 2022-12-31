@@ -168,61 +168,6 @@ std::set<Model *> Entity::unrefinedModels()
 	return models;
 }
 
-void Entity::refineAllModels()
-{
-	_refineSet.clear();
-	
-	for (Model *m : _models)
-	{
-		_refineSet.insert(m);
-	}
-
-	std::cout << "Refine set size: " << _refineSet.size() << std::endl;
-	
-	refineNextModel();
-}
-
-void Entity::refineUnrefinedModels()
-{
-	_refineSet = unrefinedModels();
-	std::cout << "Refine set size: " << _refineSet.size() << std::endl;
-	
-	refineNextModel();
-}
-
-void Entity::refineNextModel()
-{
-	if (_refineSet.size() == 0)
-	{
-		triggerResponse();
-		return;
-	}
-
-	_currentModel = *_refineSet.begin();
-	_currentModel->setResponder(this);
-	_currentModel->load();
-	_refineSet.erase(_refineSet.begin());
-	
-	sendResponse("model", _currentModel);
-	
-	if (_actuallyRefine)
-	{
-		_currentModel->refine();
-	}
-	else
-	{
-		_currentModel->extractExisting();
-	}
-}
-
-void Entity::respond()
-{
-	sendResponse("model_done", nullptr);
-	_currentModel->removeResponder(this);
-	_currentModel->unload();
-	refineNextModel();
-}
-
 void Entity::throwOutModel(Model *model)
 {
 	size_t before = moleculeCount();
@@ -306,6 +251,11 @@ MetadataGroup Entity::makeTorsionDataGroup()
 	MetadataGroup group(num);
 	group.addHeaders(headers);
 	
+	if (!Environment::modelManager()->tryLock())
+	{
+		throw std::runtime_error("Busy modifying models, please wait");
+	}
+
 	for (Molecule *mol : _molecules)
 	{
 		mol->addTorsionsToGroup(group, rope::RefinedTorsions);
@@ -326,6 +276,7 @@ MetadataGroup Entity::makeTorsionDataGroup()
 		}
 	}
 	
+	Environment::modelManager()->unlock();
 	return group;
 }
 

@@ -25,8 +25,11 @@ Mouse3D(prev)
 
 Display::~Display()
 {
-	deleteObjects();
-	
+	cleanup();
+}
+
+void Display::deleteAtoms()
+{
 	if (_owns && _atoms != nullptr)
 	{
 		delete _atoms;
@@ -34,11 +37,20 @@ Display::~Display()
 	}
 }
 
+void Display::cleanup()
+{
+	stop();
+	deleteObjects();
+	deleteAtoms();
+}
+
 void Display::stop()
 {
 	if (_guiAtoms != nullptr)
 	{
 		_guiAtoms->stop();
+		removeObject(_guiAtoms);
+		_guiAtoms = nullptr;
 	}
 }
 
@@ -163,10 +175,25 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_guiDensity->setAtoms(_atoms);
 
 	addObject(_guiDensity);
-
+	
+	/*
 	_centre = _atoms->initialCentre();
 	_translation = -_centre;
 	_translation.z -= 240;
+	*/
+
+	glm::vec3 update = _atoms->initialCentre();
+	glm::vec3 diff = update - _centre;
+	_model = glm::mat4(1.f);
+	_centre += diff;
+	_translation = -diff;
+	
+	if (_first)
+	{
+		_translation.z -= 240;
+	}
+	
+	_first = false;
 
 	updateCamera();
 

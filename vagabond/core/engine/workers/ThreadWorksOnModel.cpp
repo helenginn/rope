@@ -29,21 +29,26 @@ void ThreadWorksOnModel::doJob(Model *model)
 {
 	model->load();
 	
-	if (_watch)
+	if (watching())
 	{
 		_handler->attachModel(model);
 	}
+	
+	_handler->updateModel(model, _num);
 
 	if (_job == rope::Refine)
 	{
-		model->refine();
+		model->refine(true);
 	}
 	else if (_job == rope::SkipRefine)
 	{
 		model->extractExisting();
 	}
 
-	if (_watch)
+	_handler->updateModel(nullptr, _num);
+	_handler->incrementFinished();
+
+	if (watching())
 	{
 		_handler->detachModel(model);
 	}

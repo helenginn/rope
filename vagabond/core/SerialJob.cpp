@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SerialJob.h"
+#include "Environment.h"
+#include "FileManager.h"
 #include "Entity.h"
 #include "engine/workers/ThreadWorksOnModel.h"
 
@@ -29,6 +31,7 @@ SerialJob::SerialJob(Entity *entity, SerialJobResponder *responder)
 void SerialJob::setup()
 {
 	settings();
+	Environment::fileManager()->preFilter();
 }
 
 void SerialJob::start()
@@ -58,7 +61,7 @@ void SerialJob::prepareThreads()
 		ThreadWorksOnModel *worker = new ThreadWorksOnModel(this);
 		std::thread *thr = new std::thread(&ThreadWorksOnModel::start, worker);
 		worker->setRopeJob(_job);
-		worker->setWatch(i == 0);
+		worker->setIndex(i);
 
 		_pool.threads.push_back(thr);
 		_pool.workers.push_back(worker);
@@ -95,10 +98,31 @@ void SerialJob::attachModel(Model *model)
 
 void SerialJob::waitToFinish()
 {
-	_pool.waitForThreads();
+	_pool.signalThreads();
 	
 	if (_responder)
 	{
 		_responder->finishedModels();
+	}
+}
+
+void SerialJob::incrementFinished()
+{
+	_mutex.lock();
+	_finished++;
+	
+	if (_finished == modelCount())
+	{
+		waitToFinish();
+	}
+	
+	_mutex.unlock();
+}
+
+void SerialJob::updateModel(Model *model, int idx)
+{
+	if (_responder)
+	{
+		_responder->updateModel(model, idx);
 	}
 }

@@ -35,9 +35,9 @@ public:
 		_job = job;
 	}
 	
-	void setWatch(bool watch)
+	void setIndex(int idx)
 	{
-		_watch = watch;
+		_num = idx;
 	}
 
 	virtual void start();
@@ -47,12 +47,16 @@ public:
 		return "ThreadWorksOnModel";
 	}
 private:
+	bool watching() const
+	{
+		return _num == 0;
+	}
 	void doJob(Model *model);
 
 	SerialJob *_handler = nullptr;
 
 	rope::RopeJob _job;
-	bool _watch = false;
+	int _num = 0;
 };
 
 #endif
