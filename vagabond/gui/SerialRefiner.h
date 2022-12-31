@@ -57,7 +57,6 @@ private:
 	void loadModelIntoDisplay(Model *model);
 	void dismantleDisplay();
 	void showThreads();
-	void wait();
 	void start();
 	void release();
 	void showSummary();
