@@ -25,6 +25,7 @@ guifiles = [
 'EntityMenu.cpp',
 'EntityFromSequence.cpp',
 'ExportsCSV.cpp',
+'FastaView.cpp',
 'FileLine.cpp',
 'FileView.cpp',
 'FileNavi.cpp',
