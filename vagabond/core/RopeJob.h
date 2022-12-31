@@ -16,34 +16,18 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadCorrelation__
-#define __vagabond__ThreadCorrelation__
+#ifndef __rope__RopeJob__
+#define __rope__RopeJob__
 
-#include "engine/workers/ThreadWorker.h"
-
-class CorrelationHandler;
-class MapSumHandler;
-
-class ThreadCorrelation : public ThreadWorker
+namespace rope
 {
-public:
-	ThreadCorrelation(CorrelationHandler *h);
-
-	void setMapSumHandler(MapSumHandler *h)
+	enum RopeJob
 	{
-		_sumHandler = h;
-	}
+		Refine, /**< positional refinement */
+		SkipRefine, /**< grab torsion angles without refinement */
+	};
 	
-	virtual void start();
-
-	virtual std::string type()
-	{
-		return "ThreadCorrelation";
-	}
-private:
-	CorrelationHandler *_correlHandler = nullptr;
-	MapSumHandler *_sumHandler = nullptr;
-
-};
+}
 
 #endif
+

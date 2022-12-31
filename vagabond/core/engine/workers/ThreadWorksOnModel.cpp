@@ -16,34 +16,56 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadCorrelation__
-#define __vagabond__ThreadCorrelation__
+#include "engine/workers/ThreadWorksOnModel.h"
+#include "SerialJob.h"
+#include "Model.h"
 
-#include "engine/workers/ThreadWorker.h"
-
-class CorrelationHandler;
-class MapSumHandler;
-
-class ThreadCorrelation : public ThreadWorker
+ThreadWorksOnModel::ThreadWorksOnModel(SerialJob *handler)
 {
-public:
-	ThreadCorrelation(CorrelationHandler *h);
+	_handler = handler;
+}
 
-	void setMapSumHandler(MapSumHandler *h)
+void ThreadWorksOnModel::doJob(Model *model)
+{
+	model->load();
+	
+	if (_watch)
 	{
-		_sumHandler = h;
+		_handler->attachModel(model);
+	}
+
+	if (_job == rope::Refine)
+	{
+		model->refine();
+	}
+	else if (_job == rope::SkipRefine)
+	{
+		model->extractExisting();
+	}
+
+	if (_watch)
+	{
+		_handler->detachModel(model);
 	}
 	
-	virtual void start();
+	model->unload();
+}
 
-	virtual std::string type()
+void ThreadWorksOnModel::start()
+{
+	do
 	{
-		return "ThreadCorrelation";
+		Model *model = _handler->acquireModel();
+		
+		if (model == nullptr)
+		{
+			break;
+		}
+		
+		timeStart();
+		doJob(model);
+		timeEnd();
+
 	}
-private:
-	CorrelationHandler *_correlHandler = nullptr;
-	MapSumHandler *_sumHandler = nullptr;
-
-};
-
-#endif
+	while (!_finish);
+}
