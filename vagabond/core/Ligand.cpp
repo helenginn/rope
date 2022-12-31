@@ -27,6 +27,8 @@ Ligand::Ligand(std::string model_id, AtomGroup *grp)
 	_model_id = model_id;
 	_currentAtoms = nullptr;
 	_anchorDesc = grp->chosenAnchor()->desc();
+	_nickname = grp->chosenAnchor()->code();
+	_chain = grp->chosenAnchor()->chain();
 }
 
 Ligand::Ligand()
@@ -36,7 +38,7 @@ Ligand::Ligand()
 
 std::string Ligand::desc() const
 {
-	return _model_id + "(" + _anchorDesc + ")";
+	return _model_id + "(" + _chain + "/" + _nickname + ")";
 }
 
 void Ligand::housekeeping()

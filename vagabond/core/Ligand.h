@@ -52,6 +52,8 @@ public:
 	Substance *const substance();
 private:
 	std::string _anchorDesc;
+	std::string _nickname;
+	std::string _chain;
 
 	std::string _substance_id;
 	Substance *_substance = nullptr;
