@@ -220,14 +220,10 @@ const ResidueId BondTorsion::residueId()
 		return _resId;
 	}
 
-	if (_b->atomName() < _c->atomName())
-	{
-		_resId = _b->residueId();
-	}
-	else
-	{
-		_resId = _c->residueId();
-	}
+	ResidueId bId = _b->residueId();
+	const ResidueId &cId = _c->residueId();
+
+	_resId = (bId < cId ? bId : cId);
 
 	return _resId;
 }
