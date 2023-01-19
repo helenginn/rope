@@ -53,7 +53,7 @@ public:
 	virtual void reweight(glm::vec3 &point) const
 	{
 		float ave = 0;
-		for (size_t i = 0; i < 3; i++)
+		for (size_t i = 0; i < 3 && i < this->rows(); i++)
 		{
 			float w = weight(this->axis(i));
 			point[i] *= w;
