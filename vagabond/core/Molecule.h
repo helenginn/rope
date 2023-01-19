@@ -97,6 +97,8 @@ public:
 	void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
 	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
+	virtual Atom *equivalentForAtom(Model *other, std::string desc);
+
 	
 	MetadataGroup::Array grabTorsions(rope::TorsionType type 
 	                                  = rope::RefinedTorsions);

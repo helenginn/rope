@@ -155,6 +155,12 @@ public:
 	ArbitraryMap *map();
 	float comparisonWithData(ArbitraryMap *calc);
 	void extractExisting();
+
+	Molecule *moleculeForChain(std::string ch) const
+	{
+		return _chain2Molecule.at(ch);
+	}
+
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();
