@@ -91,6 +91,8 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 			continue;
 		}
 
+		/* don't go down a sulphur-to-sulphur transition if we want
+		 * to know the sequence */
 		if (_singleChain && !preferredConnection(atom, next))
 		{
 			continue;
