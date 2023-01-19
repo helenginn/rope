@@ -130,6 +130,12 @@ void Model::write(std::string filename)
 
 void Model::unload()
 {
+	if (_loadCounter == 0) { return; }
+	_loadCounter--;
+//	std::cout << "Model " << name() << " load counter: " 
+//	<< _loadCounter << std::endl;
+	if (_loadCounter > 0) { return; }
+	
 	if (_currentFile)
 	{
 		delete _currentAtoms;
@@ -150,7 +156,7 @@ void Model::unload()
 
 void Model::createMolecules()
 {
-	bool was_loaded = loaded();
+	load();
 
 	std::map<std::string, std::string>::iterator it;
 	int extra = 0;
@@ -176,10 +182,7 @@ void Model::createMolecules()
 	
 	mergeAppropriateMolecules();
 	
-	if (!was_loaded)
-	{
-		unload();
-	}
+	unload();
 }
 
 std::set<Entity *> Model::entities()
@@ -466,34 +469,42 @@ void Model::housekeeping()
 
 void Model::findInteractions()
 {
-	if (_ligands.size() > 0 && _molecules.size() > 0)
+	if (_ligands.size() > 0)
 	{
-		_molecules.front().interfaceWithComparable(&_ligands.front());
+		_ligands.front().interfaceWithModel();
 	}
 }
 
 void Model::insertTorsions()
 {
+	load();
 	for (Molecule &mc : _molecules)
 	{
 		mc.insertTorsionAngles(_currentAtoms);
 	}
+	unload();
 }
 
 void Model::extractTorsions()
 {
 	std::cout << "Extracting torsions from model " << name() << std::endl;
+	load();
 	for (Molecule &mc : _molecules)
 	{
 		mc.extractTorsionAngles(_currentAtoms);
 		mc.extractTransformedAnchors(_currentAtoms);
 		mc.updateRmsdMetadata();
 	}
+	unload();
 }
 
 void Model::load(LoadOptions opts)
 {
-	if (_currentAtoms != nullptr)
+	_loadCounter++;
+//	std::cout << "Model " << name() << " load counter: " 
+//	<< _loadCounter << std::endl;
+
+	if (_loadCounter > 1)
 	{
 		return;
 	}

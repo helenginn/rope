@@ -302,6 +302,7 @@ PositionalGroup Entity::makePositionalDataGroup()
 	}
 	
 	Molecule *reference = chooseRepresentativeMolecule();
+	reference->load();
 	reference->currentAtoms()->recalculate();
 	
 	for (Model *m : _models)
@@ -312,9 +313,9 @@ PositionalGroup Entity::makePositionalDataGroup()
 			                                               headers, resIdxs);
 			group.addMetadataArray(&mm, vex);
 		}
-		
-		m->unload();
 	}
+
+	reference->unload();
 
 	return group;
 }

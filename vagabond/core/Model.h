@@ -175,6 +175,7 @@ private:
 	std::list<Molecule> _molecules;
 	std::list<Ligand> _ligands;
 
+	int _loadCounter = 0;
 	File *_currentFile = nullptr;
 	AtomContent *_currentAtoms = nullptr;
 };

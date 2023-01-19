@@ -463,19 +463,10 @@ float Molecule::valueForTorsionFromList(BondTorsion *bt,
 	return NAN;
 }
 
-AtomGroup *Molecule::currentAtoms()
+void Molecule::setAtomGroupSubset()
 {
-	if (_currentAtoms != nullptr)
-	{
-		return _currentAtoms;
-	}
-
-	if (!_model->loaded())
-	{
-		_model->load();
-	}
-
 	AtomContent *ac = _model->currentAtoms();
+	_motherAtoms = ac;
 	
 	AtomGroup *tmp = new AtomGroup();
 	
@@ -487,21 +478,38 @@ AtomGroup *Molecule::currentAtoms()
 			*tmp += candidate;
 		}
 	}
-
-	/*
-	for (size_t i = 0; i < ac->chainCount(); i++)
-	{
-		Chain *candidate = ac->chain(i);
-		if (has_chain_id(candidate->id()))
-		{
-			tmp->add(candidate);
-		}
-	}
-	*/
 	
 	_currentAtoms = tmp;
-	
-	return tmp;
+
+}
+
+void Molecule::load()
+{
+	_model->load();
+
+	if (_motherAtoms == _model->currentAtoms() && _currentAtoms != nullptr)
+	{
+		// return pre-calculated subset if model has not been reloaded
+		return;
+	}
+
+	setAtomGroupSubset();
+}
+
+AtomGroup *Molecule::currentAtoms()
+{
+	if (_model->currentAtoms() && _currentAtoms == nullptr)
+	{
+		setAtomGroupSubset();
+	}
+
+	if (_motherAtoms != _model->currentAtoms() && _currentAtoms != nullptr)
+	{
+		// recalculate subset as model atoms have changed
+		setAtomGroupSubset();
+	}
+
+	return _currentAtoms;
 }
 
 void Molecule::unload()
@@ -509,6 +517,7 @@ void Molecule::unload()
 	delete _currentAtoms;
 	_currentAtoms = nullptr;
 
+	_model->unload();
 }
 
 MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
@@ -626,6 +635,8 @@ std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
 	}
 
 	_mol2Pos[reference] = vex;
+
+	model()->unload();
 
 	return vex;
 }

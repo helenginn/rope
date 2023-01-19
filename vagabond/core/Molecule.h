@@ -125,6 +125,7 @@ public:
 	
 	virtual AtomGroup *currentAtoms();
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
+	void load();
 	void unload();
 	
 	void updateRmsdMetadata();
@@ -145,6 +146,7 @@ public:
 	friend void from_json(const json &j, Molecule &value);
 private:
 	void harvestMutations(SequenceComparison *sc);
+	void setAtomGroupSubset();
 
 	std::string _entity_id;
 	std::set<std::string> _chain_ids;
