@@ -26,11 +26,15 @@ class PlaneView;
 class Scene;
 class Molecule;
 class TorsionCluster;
+class PositionalCluster;
+class RopeCluster;
 
 class Axes : public IndexResponder, public ButtonResponder
 {
 public:
-	Axes(TorsionCluster *group, Molecule *m);
+	Axes(TorsionCluster *group, Molecule *m = nullptr);
+	Axes(PositionalCluster *group, Molecule *m = nullptr);
+	Axes(RopeCluster *group, Molecule *m = nullptr);
 	~Axes();
 	
 	void setScene(Scene *scene)
@@ -64,6 +68,7 @@ private:
 	bool finishedPlane();
 	void preparePlane();
 	void route(int idx);
+	void initialise();
 
 	std::vector<Angular> getTorsionVector(int axis);
 	void prepareAxes();
@@ -71,13 +76,17 @@ private:
 	void reflect(int i);
 	void loadAxisExplorer(int idx);
 
-	TorsionCluster *_cluster = nullptr;
+	RopeCluster *_cluster = nullptr;
+	TorsionCluster *_torsionCluster = nullptr;
+	PositionalCluster *_positionalCluster = nullptr;
 	Molecule *_molecule = nullptr;
 	Scene *_scene = nullptr;
 	int _lastIdx = -1;
 	
 	Molecule *_targets[3];
 	PlaneView *_pv = nullptr;
+	
+	bool _origin = false;
 
 	bool _planes[3];
 	std::vector<glm::vec3> _dirs;

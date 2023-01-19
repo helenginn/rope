@@ -79,12 +79,14 @@ public:
 	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	
-	void prepareMenu(HasMetadata *hm);
+	void prepareModelMenu(HasMetadata *hm);
 	void reorientToMolecule(Molecule *mol);
 
 	void sendObject(std::string tag, void *object);
 protected:
 	virtual void sendSelection(float t, float l, float b, float r);
+	virtual void interactedWithNothing(bool left);
+	void prepareEmptySpaceMenu();
 
 private:
 	enum Status
@@ -120,6 +122,7 @@ private:
 	ClusterView *_view = nullptr;
 	RopeCluster *_cluster = nullptr;
 	Axes *_axes = nullptr;
+	Axes *_origin = nullptr;
 	const Rule *_colourRule = nullptr;
 	
 	Molecule *_from = nullptr;

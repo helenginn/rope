@@ -32,11 +32,53 @@
 
 Axes::Axes(TorsionCluster *group, Molecule *m) : IndexResponder()
 {
+	initialise();
+
+	_cluster = group;
+	_torsionCluster = group;
+	_molecule = m;
+	
+	prepareAxes();
+
+#ifdef __EMSCRIPTEN__
+	if (m) { setSelectable(true); }
+#endif
+}
+
+Axes::Axes(PositionalCluster *group, Molecule *m) : IndexResponder()
+{
+	initialise();
+
+	_cluster = group;
+	_positionalCluster = group;
+	_molecule = m;
+	
+	prepareAxes();
+
+#ifdef __EMSCRIPTEN__
+	if (m) { setSelectable(true); }
+#endif
+}
+
+Axes::Axes(RopeCluster *group, Molecule *m) : IndexResponder()
+{
+	initialise();
+
+	_cluster = group;
+	_molecule = m;
+	
+	prepareAxes();
+
+#ifdef __EMSCRIPTEN__
+	if (m) { setSelectable(true); }
+#endif
+}
+
+void Axes::initialise()
+{
 	setName("Axes");
 	setImage("assets/images/axis.png");
 	setUsesProjection(true);
-	_cluster = group;
-	_molecule = m;
 	_searchType = Point;
 	
 	_dirs.push_back(glm::vec3(1., 0., 0.));
@@ -51,18 +93,11 @@ Axes::Axes(TorsionCluster *group, Molecule *m) : IndexResponder()
 		_targets[i] = nullptr;
 		_planes[i] = false;
 	}
-	
-	prepareAxes();
-
-#ifdef __EMSCRIPTEN__
-	setSelectable(true);
-#endif
 }
 
 Axes::~Axes()
 {
 	delete _pv;
-	_molecule->model()->unload();
 }
 
 bool Axes::mouseOver()
@@ -95,12 +130,17 @@ std::vector<float> Axes::getMappedVector(int idx)
 
 std::vector<Angular> Axes::directTorsionVector(int idx)
 {
+	if (_torsionCluster)
+	{
+		return std::vector<Angular>();
+	}
+
 	if (_targets[idx] != nullptr)
 	{
-		int mine = _cluster->dataGroup()->indexOfObject(_molecule);
-		int yours = _cluster->dataGroup()->indexOfObject(_targets[idx]);
+		int mine = _torsionCluster->dataGroup()->indexOfObject(_molecule);
+		int yours = _torsionCluster->dataGroup()->indexOfObject(_targets[idx]);
 
-		std::vector<Angular> vals = _cluster->rawVector(mine, yours);
+		std::vector<Angular> vals = _torsionCluster->rawVector(mine, yours);
 		return vals;
 	}
 
@@ -114,13 +154,13 @@ std::vector<Angular> Axes::getTorsionVector(int idx)
 	std::vector<Angular> sums;
 	for (size_t i = 0; i < 3; i++)
 	{
-		if (i >= _cluster->rows())
+		if (i >= _torsionCluster->rows())
 		{
 			continue;
 		}
 
-		int axis = _cluster->axis(i);
-		std::vector<Angular> vals = _cluster->rawVector(axis);
+		int axis = _torsionCluster->axis(i);
+		std::vector<Angular> vals = _torsionCluster->rawVector(axis);
 
 		float &weight = dir[i];
 		std::cout << weight << std::endl;
@@ -141,7 +181,7 @@ std::vector<Angular> Axes::getTorsionVector(int idx)
 
 void Axes::loadAxisExplorer(int idx)
 {
-	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+	std::vector<ResidueTorsion> list = _torsionCluster->dataGroup()->headers();
 
 	std::vector<Angular> vals = getTorsionVector(idx);
 	if (vals.size() == 0)
@@ -158,14 +198,14 @@ void Axes::loadAxisExplorer(int idx)
 	}
 	else
 	{
-		int axis = _cluster->axis(idx);
+		int axis = _torsionCluster->axis(idx);
 		str += " PCA axis " + i_to_str(axis);
 	}
 
 	try
 	{
 		AxisExplorer *ae = new AxisExplorer(_scene, _molecule, list, vals);
-		ae->setCluster(_cluster);
+		ae->setCluster(_torsionCluster);
 		ae->setFutureTitle(str);
 		ae->show();
 //		ae->setInformation(info);
@@ -178,8 +218,8 @@ void Axes::loadAxisExplorer(int idx)
 
 void Axes::route(int idx)
 {
-	int l = _cluster->dataGroup()->length();
-	SplitRoute *sr = new SplitRoute(_molecule, _cluster, l);
+	int l = _torsionCluster->dataGroup()->length();
+	SplitRoute *sr = new SplitRoute(_molecule, _torsionCluster, l);
 	
 	std::vector<Angular> values = directTorsionVector(idx);
 	sr->setRawDestination(values);
@@ -252,6 +292,7 @@ void Axes::takeOldAxes(Axes *old)
 
 void Axes::preparePlane()
 {
+	/*
 	std::cout << "preparing plane" << std::endl;
 
 	delete _pv; _pv = nullptr;
@@ -280,6 +321,7 @@ void Axes::preparePlane()
 	_pv->setPlanes(_planes);
 	_pv->populate();
 	addObject(_pv);
+	*/
 }
 
 void Axes::cancelPlane()
@@ -335,7 +377,7 @@ bool Axes::finishedPlane()
 
 void Axes::interacted(int idx, bool hover, bool left)
 {
-	if (!hover)
+	if (!hover && _molecule && _cluster)
 	{
 		_lastIdx = idx;
 
@@ -403,9 +445,14 @@ size_t Axes::requestedIndices()
 
 void Axes::refreshAxes()
 {
-	MetadataGroup *group = _cluster->dataGroup();
+	ObjectGroup *group = _cluster->objectGroup();
 	int idx = group->indexOfObject(_molecule);
-	glm::vec3 start = _cluster->pointForDisplay(idx);
+	glm::vec3 start = glm::vec3(0.f);
+	
+	if (idx >= 0)
+	{
+		start = _cluster->pointForDisplay(idx);
+	}
 
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -430,9 +477,14 @@ void Axes::refreshAxes()
 
 void Axes::prepareAxes()
 {
-	MetadataGroup *group = _cluster->dataGroup();
-	int idx = group->indexOfObject(_molecule);
-	glm::vec3 centre = _cluster->pointForDisplay(idx);
+	glm::vec3 centre = glm::vec3(0.f);
+	
+	if (_cluster && _molecule)
+	{
+		ObjectGroup *group = _cluster->objectGroup();
+		int idx = group->indexOfObject(_molecule);
+		centre = _cluster->pointForDisplay(idx);
+	}
 
 	for (size_t i = 0; i < _dirs.size(); i++)
 	{
@@ -468,7 +520,7 @@ void Axes::reorient(int i, Molecule *mol)
 		}
 	}
 
-	MetadataGroup *group = _cluster->dataGroup();
+	ObjectGroup *group = _cluster->objectGroup();
 	int idx = group->indexOfObject(_molecule);
 	glm::vec3 centre = _cluster->point(idx);
 

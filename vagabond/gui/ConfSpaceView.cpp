@@ -311,6 +311,18 @@ void ConfSpaceView::executeSubset(float min, float max)
 
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 {
+	if (tag == "show_origin")
+	{
+		delete _origin; _origin = nullptr;
+		Axes *axes = new Axes(_cluster);
+		addObject(axes);
+		_origin = axes;
+	}
+	if (tag == "hide_origin")
+	{
+		removeObject(_origin);
+		delete _origin; _origin = nullptr;
+	}
 	if (tag == "choose_reorient_molecule")
 	{
 		setInformation("choose molecule to reorient axis direction...");
@@ -555,7 +567,7 @@ void ConfSpaceView::applyRules()
 	_temps.push_back(il);
 }
 
-void ConfSpaceView::prepareMenu(HasMetadata *hm)
+void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 {
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
@@ -610,6 +622,35 @@ void ConfSpaceView::reorientToMolecule(Molecule *mol)
 	_status = Nothing;
 	
 	_axes->reorient(-1, mol);
+}
+
+void ConfSpaceView::prepareEmptySpaceMenu()
+{
+	Menu *m = new Menu(this);
+	
+	if (_origin == nullptr)
+	{
+		m->addOption("show origin", "show_origin");
+	}
+	else
+	{
+		m->addOption("hide origin", "hide_origin");
+	}
+
+	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
+	m->setup(x, y);
+
+	setModal(m);
+
+}
+
+void ConfSpaceView::interactedWithNothing(bool left)
+{
+	if (!left && !_moving)
+	{
+		prepareEmptySpaceMenu();
+	}
+
 }
 
 void ConfSpaceView::sendSelection(float t, float l, float b, float r)
