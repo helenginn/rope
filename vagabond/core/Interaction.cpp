@@ -17,27 +17,25 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Interaction.h"
-#include "Model.h"
+#include "Atom.h"
 
-Interaction::Interaction(Comparable *lm, Comparable *rm, Atom *la, Atom *ra)
+Interaction::Interaction(Atom *la, Atom *ra)
 {
-	Side left{lm->model_id(), la->desc()};
-	Side right{rm->model_id(), ra->desc()};
-
-	_sides.push_back(left);
-	_sides.push_back(right);
+	_sides.push_back(la->desc());
+	_sides.push_back(ra->desc());
 }
 
 std::string Interaction::desc()
 {
 	std::ostringstream ss;
 	
-	for (Side &side : _sides)
+	for (const std::string &side : _sides)
 	{
-		ss << side.desc << ":";
+		ss << side << ":";
 	}
 	
 	ss << _value;
 	
 	return ss.str();
 }
+

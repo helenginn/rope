@@ -17,12 +17,18 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Interface.h"
+#include "Model.h"
 #include <sstream>
 
-Interface::Interface(Comparable *left, Comparable *right)
+Interface::Interface(Model *left, Comparable *right)
 {
 	_left = left;
 	_right = right;
+}
+
+void Interface::loadModel()
+{
+	_left->load();
 }
 
 void Interface::addInteraction(Interaction &ia)
@@ -33,7 +39,7 @@ void Interface::addInteraction(Interaction &ia)
 std::string Interface::desc()
 {
 	std::ostringstream ss;
-	ss << _left->desc() << " to " << _right->desc() << ": ";
+	ss << _left->id() << " to " << _right->desc() << ": ";
 	
 	for (Interaction &ia : _interactions)
 	{
@@ -43,3 +49,10 @@ std::string Interface::desc()
 	ss << std::endl;
 	return ss.str();
 }
+
+Interface *Interface::expandedInterface(Interface *other)
+{
+	loadModel(); other->loadModel();
+
+}
+

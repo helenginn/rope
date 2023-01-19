@@ -26,15 +26,19 @@
 class Interface
 {
 public:
-	Interface(Comparable *left, Comparable *right);
+	Interface(Model *left, Comparable *right);
 	Interface() {};
+
+	Interface *expandedInterface(Interface *face);
 
 	void addInteraction(Interaction &ia);
 	std::string desc();
+	
+	void loadModel();
 private:
 	std::list<Interaction> _interactions;
 
-	Comparable *_left = nullptr;
+	Model *_left = nullptr;
 	Comparable *_right = nullptr;
 };
 

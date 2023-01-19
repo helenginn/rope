@@ -51,11 +51,19 @@ public:
 		return _model_id;
 	}
 	
+	virtual const std::string id() const { return ""; }
+	
 	virtual std::string desc() const { return ""; }
 	
-	Interface *interfaceWithComparable(Comparable *other);
-	void addToInterface(Interface *face, Comparable *other, 
-	                    double max, bool derived);
+	/** generate a simple interface between this comparable and its model
+	 *  with a tight cutoff distance */
+	Interface *interfaceWithModel();
+
+	void addToInterface(Interface *face, double max, bool derived);
+	virtual Atom *equivalentForAtom(Model *other, std::string desc)
+	{
+		return nullptr;
+	}
 	
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other)
 	{
@@ -69,6 +77,7 @@ protected:
 	Model *_model = nullptr;
 
 	AtomGroup *_currentAtoms = nullptr;
+	AtomGroup *_motherAtoms = nullptr;
 };
 
 #endif

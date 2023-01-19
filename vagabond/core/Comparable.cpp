@@ -28,12 +28,11 @@ Comparable::Comparable()
 
 }
 
-void Comparable::addToInterface(Interface *face, Comparable *other,
-                                double max, bool derived)
+void Comparable::addToInterface(Interface *face, double max, bool derived)
 {
 	model()->load();
 	AtomGroup *left = model()->currentAtoms();
-	AtomGroup *right = other->currentAtoms();
+	AtomGroup *right = currentAtoms();
 
 	for (Atom *l : left->atomVector())
 	{
@@ -56,7 +55,7 @@ void Comparable::addToInterface(Interface *face, Comparable *other,
 				continue;
 			}
 			
-			Interaction ia(this, other, l, r);
+			Interaction ia(l, r);
 			ia.setValue(length);
 			face->addInteraction(ia);
 		}
@@ -73,11 +72,12 @@ Model *const Comparable::model()
 }
 
 
-Interface *Comparable::interfaceWithComparable(Comparable *other)
+Interface *Comparable::interfaceWithModel()
 {
-	Interface *face = new Interface(this, other);
-	addToInterface(face, other, 4, false);
+	Interface *face = new Interface(model(), this);
+	addToInterface(face, 4, false);
 	std::cout << face->desc() << std::endl;
 
 	return face;
 }
+

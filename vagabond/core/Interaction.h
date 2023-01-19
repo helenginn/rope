@@ -23,28 +23,27 @@
 #include <vector>
 
 class Comparable;
+class Model;
 class Atom;
 
 class Interaction
 {
 public:
-	Interaction(Comparable *lm, Comparable *rm, Atom *la, Atom *ra);
+	Interaction(Atom *la, Atom *ra);
 	
 	void setValue(const float value)
 	{
 		_value = value;
 	}
 
-	struct Side
-	{
-		std::string model_id;
-		std::string desc;
-	};
-
 	std::string desc();
+	Interaction *expandedToFit(Interaction *other);
 private:
-	std::vector<Side> _sides;
+	std::vector<std::string> _sides;
 	float _value;
+	
+	Atom *_left = nullptr; /* from all model */
+	Atom *_right = nullptr; /* from comparable */
 };
 
 #endif
