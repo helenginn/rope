@@ -80,6 +80,18 @@ struct ResidueId
 	{
 		return !(o == *this);
 	}
+
+	const bool operator>(const ResidueId &o) const
+	{
+		if (num == o.num)
+		{
+			return insert > o.insert;
+		}
+		else
+		{
+			return num > o.num;
+		}
+	}
 	
 	const bool operator<(const ResidueId &o) const
 	{
