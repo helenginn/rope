@@ -292,12 +292,6 @@ bool Model::mergeMoleculesInSet(std::set<Molecule *> molecules)
 
 	if (best_a != nullptr && best_b != nullptr)
 	{
-		/*
-		std::cout << best_a->sequence()->firstNum() << "-" <<
-		best_a->sequence()->lastNum() << " to " << 
-		best_b->sequence()->firstNum() << "-" <<
-		best_b->sequence()->lastNum() << std::endl;
-		*/
 		best_a->mergeWith(best_b);
 		throwOutMolecule(best_b);
 		return true;
