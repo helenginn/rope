@@ -33,13 +33,6 @@ class Sequence;
 class File;
 class ForceField;
 
-class AtomGroupResponder
-{
-public:
-	virtual ~AtomGroupResponder() {}
-	virtual void finishedRefinement() = 0;
-};
-
 class AtomGroup : public HasBondstraints
 {
 public:
@@ -52,16 +45,6 @@ public:
 	void operator+=(Atom *a);
 	void operator-=(Atom *a);
 	
-	AtomGroupResponder *responder()
-	{
-		return _responder;
-	}
-	
-	void setResponder(AtomGroupResponder *responder)
-	{
-		_responder = responder;
-	}
-
 	AtomPtr operator[](int i) const;
 	AtomPtr operator[](std::string str) const;
 	
@@ -198,7 +181,6 @@ private:
 	std::map<Atom *, AtomGroup *> _anchor2Group;
 	
 	Atom *_chosenAnchor = nullptr;
-	AtomGroupResponder *_responder = nullptr;
 };
 
 #include "AtomContent.h"

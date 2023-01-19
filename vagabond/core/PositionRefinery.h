@@ -44,10 +44,7 @@ public:
 	void refine();
 	virtual void finish();
 	
-	static void backgroundRefine(PositionRefinery *ref)
-	{
-		ref->refine();
-	}
+	static void backgroundRefine(PositionRefinery *ref);
 	
 	size_t nCalls()
 	{

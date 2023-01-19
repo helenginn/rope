@@ -41,7 +41,7 @@ class Molecule;
 class AtomContent;
 class ArbitraryMap;
 
-class Model : public AtomGroupResponder, public HasResponder<Responder<Model>>,
+class Model : public HasResponder<Responder<Model>>,
 public HasMetadata
 {
 public:

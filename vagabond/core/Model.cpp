@@ -516,8 +516,6 @@ void Model::load(LoadOptions opts)
 	{
 		insertTorsions();
 	}
-
-	_currentAtoms->setResponder(this);
 }
 
 void Model::refine(bool sameThread)

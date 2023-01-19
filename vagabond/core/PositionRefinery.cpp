@@ -33,6 +33,11 @@ PositionRefinery::~PositionRefinery()
 
 }
 
+void PositionRefinery::backgroundRefine(PositionRefinery *ref)
+{
+	ref->refine();
+}
+
 void PositionRefinery::refine()
 {
 	if (_group == nullptr)
@@ -56,11 +61,6 @@ void PositionRefinery::refine()
 				std::cout << "Giving up: " << err.what() << std::endl;
 			}
 		}
-	}
-	
-	if (_group->responder() != nullptr)
-	{
-		_group->responder()->finishedRefinement();
 	}
 	
 	_done = true;
