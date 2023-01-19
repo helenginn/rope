@@ -42,6 +42,8 @@ public:
 protected:
 	virtual void checkIndexBuffer(double x, double y, bool hover, 
 	                              bool arrow, bool left);
+	
+	virtual void interactedWithNothing(bool left) {};
 
 private:
 	IndexResponder *getResponderForIndex(int &val);

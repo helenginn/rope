@@ -201,8 +201,8 @@ protected:
 
 	double _lastX; double _lastY;
 	double _shadowing;
-	bool _left;
-	bool _right;
+	bool _left = true;
+	bool _right = false;
 	bool _controlPressed = false;
 	bool _shiftPressed = false;
 	bool _acceptsFocus;

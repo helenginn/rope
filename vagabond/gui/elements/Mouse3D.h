@@ -56,10 +56,10 @@ private:
 	bool _makesSelections = false;
 	
 	bool _makingSelection = false;
-	float _top = 0;
-	float _left = 0;
-	float __right = 0;
-	float _bottom = 0;
+	float _topPos = 0;
+	float _leftPos = 0;
+	float _rightPos = 0;
+	float _bottomPos = 0;
 	
 	SelectionBox *_box = nullptr;
 };

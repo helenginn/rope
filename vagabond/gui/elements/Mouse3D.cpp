@@ -94,10 +94,10 @@ void Mouse3D::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	if (_shiftPressed && _makesSelections)
 	{
 		_makingSelection = true;
-		_left = x;
-		__right = x;
-		_top = y;
-		_bottom = y;
+		_leftPos = x;
+		_rightPos = x;
+		_topPos = y;
+		_bottomPos = y;
 		updateSelectionBox();
 	}
 
@@ -115,8 +115,8 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 
 	if (_makingSelection)
 	{
-		__right = x;
-		_bottom = y;
+		_rightPos = x;
+		_bottomPos = y;
 		updateSelectionBox();
 		return;
 	}
@@ -181,7 +181,7 @@ void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 		delete _box;
 		_box = nullptr;
 		
-		sendSelection(_top, _left, _bottom, __right);
+		sendSelection(_topPos, _leftPos, _bottomPos, _rightPos);
 	}
 
 	if (_modal != nullptr)
@@ -200,11 +200,11 @@ void Mouse3D::updateSelectionBox()
 		addObject(_box);
 	}
 
-	double x = _left; double y = _top;
+	double x = _leftPos; double y = _topPos;
 	convertToGLCoords(&x, &y);
 	_box->setTopLeft(y, x);
 
-	x = __right; y = _bottom;
+	x = _rightPos; y = _bottomPos;
 	convertToGLCoords(&x, &y);
 
 	_box->setBottomRight(y, x);

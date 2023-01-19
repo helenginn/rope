@@ -75,6 +75,10 @@ void IndexResponseView::checkIndexBuffer(double x, double y, bool hover,
 	{
 		ir->interacted(val, hover, left);
 	}
+	else if (!hover)
+	{
+		interactedWithNothing(left);
+	}
 	
 }
 

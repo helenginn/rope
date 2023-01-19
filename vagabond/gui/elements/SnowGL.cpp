@@ -33,7 +33,6 @@ SnowGL::SnowGL()
 	_model = glm::mat4(1.);
 	_shiftPressed = false;
 	_controlPressed = false;
-	_left = false;
 	_right = false;
 
 	_zNear = 1;
@@ -562,11 +561,8 @@ GLuint SnowGL::getOverrideProgram()
 
 void SnowGL::resetMouseKeyboard()
 {
-	_left = false;
 	_right = false;
 	_controlPressed = false;
 	_shiftPressed = false;
-	_lastX = -1;
-	_lastY = -1;
 
 }

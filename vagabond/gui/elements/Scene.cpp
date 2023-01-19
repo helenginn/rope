@@ -83,15 +83,15 @@ void Scene::render()
 {
 	SnowGL::render();
 
-	if (_modal != NULL)
+	if (_modal != nullptr)
 	{
 		_modal->render(this);
 	}
 	
-	if (_removeModal != NULL)
+	if (_removeModal != nullptr)
 	{
 		delete _removeModal;
-		_removeModal = NULL;
+		_removeModal = nullptr;
 	}
 }
 
@@ -111,7 +111,7 @@ void Scene::convertToGLCoords(double *x, double *y)
 
 std::vector<Renderable *> &Scene::pertinentObjects()
 {
-	if (_modal != NULL)
+	if (_modal != nullptr)
 	{
 		return _modal->objects();
 	}
@@ -121,28 +121,11 @@ std::vector<Renderable *> &Scene::pertinentObjects()
 
 void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
-	_mouseDown = false;
-	_dragged = NULL;
+	_dragged = nullptr;
 	convertToGLCoords(&x, &y);
+	_left = button.button == SDL_BUTTON_LEFT;
 
-	_moving = false;
-}
-
-void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
-{
-	_lastX = x;
-	_lastY = y;
-	convertToGLCoords(&x, &y);
-	_moving = false;
-	Renderable *chosen = findObject(x, y);
-	bool left = button.button == SDL_BUTTON_LEFT;
-
-	if (chosen != NULL)
-	{
-		chosen->click(left);
-	}
-	
-	if (_modal != NULL && chosen == NULL)
+	if (_modal != nullptr && _chosen == nullptr)
 	{
 		double z = -FLT_MAX;
 		bool hit = _modal->intersectsRay(x, y, &z);
@@ -153,13 +136,67 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 		}
 	}
 
-	if (hasIndexedObjects() > 0 && _modal == NULL && chosen == NULL)
+	if (hasIndexedObjects() > 0 && _modal == nullptr && _chosen == nullptr)
 	{
-		checkIndexBuffer(x, y, false, true, left);
+		checkIndexBuffer(x, y, false, true, _left);
 	}
 
-	
+	_mouseDown = false;
+	_moving = false;
+}
+
+void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
+{
+	_lastX = x;
+	_lastY = y;
+	convertToGLCoords(&x, &y);
+	_moving = false;
 	_mouseDown = true;
+
+	Renderable *chosen = findObject(x, y);
+	_left = (button.button == SDL_BUTTON_LEFT);
+	_chosen = chosen;
+
+	if (chosen != nullptr)
+	{
+		chosen->click(_left);
+		_dragged = chosen;
+	}
+}
+
+void Scene::mouseMoveEvent(double x, double y)
+{
+	double tx = x;
+	double ty = y;
+	convertToGLCoords(&tx, &ty);
+	_moving = true;
+
+	clearHighlights();
+	Renderable *chosen = findObject(tx, ty);
+
+	SDL_Cursor *cursor;
+	bool arrow = true;
+	if (chosen != nullptr && chosen->mouseOver())
+	{
+		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+		arrow = false;
+	}
+	else
+	{
+		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	}
+
+	if (_mouseDown && _dragged != nullptr && _dragged->isDraggable())
+	{
+		_dragged->drag(tx, ty);
+	}
+	
+	swapCursor(cursor);
+	
+	if (hasIndexedObjects() > 0 && _modal == nullptr)
+	{
+		checkIndexBuffer(tx, ty, true, arrow, true);
+	}
 }
 
 void Scene::swapCursor(SDL_Cursor *newCursor)
@@ -173,47 +210,6 @@ void Scene::swapCursor(SDL_Cursor *newCursor)
 	}
 
 	_cursor = newCursor;
-}
-
-void Scene::mouseMoveEvent(double x, double y)
-{
-	convertToGLCoords(&x, &y);
-	_moving = true;
-
-	clearHighlights();
-	Renderable *chosen = findObject(x, y);
-
-	SDL_Cursor *cursor;
-	bool arrow = true;
-	if (chosen != nullptr && chosen->mouseOver())
-	{
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-		arrow = false;
-	}
-	else
-	{
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-	}
-	
-	if (_mouseDown && chosen && chosen->isDraggable())
-	{
-		if (_dragged == NULL)
-		{
-			_dragged = chosen;
-		}
-	}
-
-	if (_dragged != NULL)
-	{
-		_dragged->drag(x, y);
-	}
-	
-	swapCursor(cursor);
-	
-	if (hasIndexedObjects() > 0 && _modal == nullptr)
-	{
-		checkIndexBuffer(x, y, true, arrow, true);
-	}
 }
 
 void Scene::showSimple()
@@ -241,7 +237,7 @@ void Scene::hideBackButton()
 
 void Scene::showBackButton()
 {
-	if (_previous == NULL)
+	if (_previous == nullptr)
 	{
 		return;
 	}
