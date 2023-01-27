@@ -19,6 +19,7 @@
 #include "ModelMenu.h"
 #include "AddModel.h"
 #include "Display.h"
+#include "GuiAtom.h"
 #include <vagabond/gui/Toolkit.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/core/Environment.h>
@@ -125,11 +126,12 @@ void ModelMenu::refineModel(std::string name)
 	Display *d = new Display(this);
 	d->loadAtoms(atoms);
 	d->setOwnsAtoms(false);
+	d->guiAtoms()->setDisableRibbon(false);
+	d->guiAtoms()->setDisableBalls(true);
 
 	d->densityFromMap(model->map());
 
 	d->show();
-	d->setMultiBondMode(true);
 }
 
 void ModelMenu::refresh()
