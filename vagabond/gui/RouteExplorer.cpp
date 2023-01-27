@@ -43,12 +43,12 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 
 RouteExplorer::~RouteExplorer()
 {
-	
+	_molecule->unload();
 }
 
 void RouteExplorer::setup()
 {
-	_molecule->model()->load();
+	_molecule->load();
 
 	AtomGroup *grp = _molecule->currentAtoms();
 	AlignmentTool tool(grp);
