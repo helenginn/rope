@@ -10,7 +10,7 @@ pkgconfig = 'pkg-config'
 [constants]
 sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread']
 threads = ['-pthread', '-s', 'USE_PTHREADS=1']
-optimisation = ['-O3']
+optimisation = ['-O2']
 exceptions = ['-s', 'NO_DISABLE_EXCEPTION_CATCHING']
 shell_file = ['--shell-file', '../../minimal_shell.html']
 preload = ['--use-preload-plugins', '--preload-file', 'assets/']
