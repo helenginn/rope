@@ -26,7 +26,7 @@
 
 class TextEntry;
 
-class AddModel : public AddObject<Model>, public FileViewResponder
+class AddModel : public AddObject<Model>, public Responder<FileView>
 {
 public:
 	AddModel(Scene *prev, Model *chosen);
@@ -42,7 +42,7 @@ public:
 
 	void refreshInfo();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual void fileChosen(std::string filename);
+	virtual void sendObject(std::string filename, void *object);
 private:
 	void fileTextOrChoose(std::string &file, std::string other = "Choose...");
 	TextButton *_initialFile = nullptr;

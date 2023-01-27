@@ -19,6 +19,7 @@
 #include "AddModel.h"
 #include "ChainAssignment.h"
 #include "ModelMetadataView.h"
+#include "FileView.h"
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -30,16 +31,14 @@
 
 AddModel::AddModel(Scene *prev) :
 Scene(prev),
-AddObject(prev),
-FileViewResponder(prev)
+AddObject(prev)
 {
 
 }
 
 AddModel::AddModel(Scene *prev, Model *chosen) :
 Scene(prev),
-AddObject(prev, chosen),
-FileViewResponder(prev)
+AddObject(prev, chosen)
 {
 
 }
@@ -183,13 +182,13 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	_lastTag = tag;
 	if (tag == "choose_initial_file")
 	{
-		FileView *view = new FileView(this, true);
+		FileView *view = new FileView(this, this, true);
 		view->filterForTypes(File::MacroAtoms);
 		view->show();
 	}
 	else if (tag == "choose_data_file")
 	{
-		FileView *view = new FileView(this, true);
+		FileView *view = new FileView(this, this, true);
 		view->filterForTypes(File::Reflections);
 		view->show();
 	}
@@ -247,7 +246,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	AddObject::buttonPressed(tag, button);
 }
 
-void AddModel::fileChosen(std::string filename)
+void AddModel::sendObject(std::string filename, void *object)
 {
 	if (_lastTag == "choose_initial_file")
 	{

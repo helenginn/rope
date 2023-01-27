@@ -23,9 +23,11 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/File.h>
+#include <vagabond/core/Responder.h>
 
 class FileManager;
 
+/*
 class FileViewResponder : public virtual Scene
 {
 public:
@@ -33,12 +35,14 @@ public:
 	virtual ~FileViewResponder() {};
 	virtual void fileChosen(std::string filename) = 0;
 };
+*/
 
-class FileView : public ListView, public Responder<FileManager>
+class FileView : public ListView, public Responder<FileManager>,
+public HasResponder<Responder<FileView> >
 {
 public:
 	FileView(Scene *prev);
-	FileView(FileViewResponder *prev, bool choose);
+	FileView(Scene *prev, Responder<FileView> *resp, bool choose);
 	
 	void filterForTypes(File::Type type);
 	
@@ -56,7 +60,6 @@ public:
 private:
 	void loadFilesFrom(int start, int num);
 	FileManager *_manager;
-	FileViewResponder *_responder = nullptr;
 };
 
 #endif

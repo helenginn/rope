@@ -32,6 +32,7 @@ class Fetcher
 {
 public:
 	Fetcher() {}
+
 	virtual ~Fetcher()
 	{
 
@@ -89,8 +90,8 @@ protected:
 	std::string _result;
 	bool _process = false;
 
-private:
 	pthread_t _thread;
+private:
 };
 
 #endif

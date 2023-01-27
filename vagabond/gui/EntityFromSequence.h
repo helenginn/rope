@@ -24,11 +24,12 @@
 #include "FileView.h"
 #include <thread>
 
-class EntityFromSequence : public Fetcher, public FileViewResponder
+class EntityFromSequence : public Scene, public Fetcher,
+public Responder<FileView>
 {
 public:
 	EntityFromSequence(Scene *prev);
-	virtual ~EntityFromSequence();
+	~EntityFromSequence();
 
 	virtual void setup();
 	virtual void render();
@@ -40,7 +41,6 @@ public:
 	virtual void fileChosen(std::string filename);
 private:
 	void makePeptide(std::string text);
-	pthread_t _thread;
 
 	std::string _url;
 

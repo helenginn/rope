@@ -36,7 +36,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 
 EntityFromSequence::EntityFromSequence(Scene *prev) : 
-Scene(prev), FileViewResponder(prev)
+Scene(prev), Fetcher()
 {
 
 }
@@ -44,8 +44,6 @@ Scene(prev), FileViewResponder(prev)
 EntityFromSequence::~EntityFromSequence()
 {
 	pthread_join(_thread, NULL);
-
-	deleteObjects();
 }
 
 void EntityFromSequence::setup()
@@ -144,7 +142,7 @@ void EntityFromSequence::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "fasta")
 	{
-		FileView *view = new FileView(this, true);
+		FileView *view = new FileView(this, this, true);
 		view->filterForTypes(File::Sequence);
 		view->show();
 	}
