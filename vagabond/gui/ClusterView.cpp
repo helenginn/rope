@@ -294,7 +294,7 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	
 	if (hover == false && !left) // click!
 	{
-		_confSpaceView->prepareMenu(group.object(idx));
+		_confSpaceView->prepareModelMenu(group.object(idx));
 	}
 }
 
