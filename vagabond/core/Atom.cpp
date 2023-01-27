@@ -424,6 +424,11 @@ bool Atom::isReporterAtom() const
 
 int Atom::bondsBetween(Atom *end, int maxBonds)
 {
+	if (chain() != end->chain())
+	{
+		return -1;
+	}
+
 	std::set<Atom *> rejected;
 	std::vector<BondNum> bnums;
 	bnums.push_back({this, maxBonds});
