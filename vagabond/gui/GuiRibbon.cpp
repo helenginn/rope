@@ -213,6 +213,21 @@ void GuiRibbon::insertAtom(Atom *a)
 	}
 }
 
+bool GuiRibbon::acceptableAtom(Atom *a)
+{
+	if (a->atomName() == "CA")
+	{
+		return true;
+	}
+
+	if (a->atomName() == "P")
+	{
+		return true;
+	}
+
+	return false;
+}
+
 void GuiRibbon::watchAtom(Atom *a)
 {
 	if (_vertices.size() == 0)
@@ -220,32 +235,24 @@ void GuiRibbon::watchAtom(Atom *a)
 		insertAtom(nullptr);
 	}
 	
-	// HARDCODE
-	if (a->atomName() != "CA")
+	if (!acceptableAtom(a))
 	{
 		return;
 	}
 	
 	Atom *prev = _cAlphas.back();
-	float l = FLT_MAX;
+	int separation = -1;
 
 	if (prev)
 	{
-		glm::vec3 ppos = prev->initialPosition();
-		glm::vec3 npos = a->initialPosition();
-		
-		l = glm::length(ppos - npos);
+		separation = a->bondsBetween(prev, 6);
 	}
 	
 	if (!prev)
 	{
 		insertAtom(a);
 	}
-	else if (a->residueId().num == prev->residueId().num + 1)
-	{
-		insertAtom(a);
-	}
-	else if (l < 3.9)
+	else if (separation <= 4 && separation >= 0)
 	{
 		insertAtom(a);
 	}
@@ -289,7 +296,7 @@ void GuiRibbon::prepareAtomSpace(AtomGroup *ag)
 	for (size_t i = 0; i < ag->size(); i++)
 	{
 		// HARDCODE
-		if ((*ag)[i]->atomName() == "CA")
+		if (acceptableAtom((*ag)[i]))
 		{
 			count++;
 		}

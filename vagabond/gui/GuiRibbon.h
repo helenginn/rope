@@ -43,6 +43,7 @@ protected:
 private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
+	bool acceptableAtom(Atom *a);
 	void convertToCylinder(std::vector<Snow::Vertex> *vertices = nullptr);
 	void convertToBezier();
 	void insertAtom(Atom *a);
