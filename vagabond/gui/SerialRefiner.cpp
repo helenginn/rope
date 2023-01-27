@@ -45,12 +45,11 @@ void SerialRefiner::start()
 	size_t count = _handler->modelCount();
 	addTitle("Refining " + i_to_str(count) + " models...");
 	showThreads();
+
+	hideBackButton();
 	
 	_start = ::time(nullptr);
 	_handler->start();
-
-	hideBackButton();
-
 }
 
 void SerialRefiner::setup()
