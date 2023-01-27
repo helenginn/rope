@@ -34,7 +34,7 @@ File::Type MtzFile::cursoryLook()
 
 	try
 	{
-		gemmi::Mtz mtz = gemmi::read_mtz_file(tmp);
+		mtz = gemmi::read_mtz_file(tmp);
 	}
 	catch (std::system_error &err)
 	{
