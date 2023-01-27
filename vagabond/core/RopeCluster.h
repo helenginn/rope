@@ -32,6 +32,7 @@ public:
 	virtual std::string value_desc(int i, int j) const = 0;
 
 	virtual void changeLastAxis(int axis) = 0;
+	virtual void calculateInverse() = 0;
 private:
 
 };
@@ -58,6 +59,11 @@ public:
 	virtual void cluster()
 	{
 		ClusterSVD<PositionalGroup>::cluster();
+	}
+
+	virtual void calculateInverse()
+	{
+		ClusterSVD<PositionalGroup>::calculateInverse();
 	}
 
 	virtual size_t displayableDimensions()
@@ -170,6 +176,12 @@ public:
 	virtual void cluster()
 	{
 		ClusterSVD<MetadataGroup>::cluster();
+	}
+
+
+	virtual void calculateInverse()
+	{
+		ClusterSVD<MetadataGroup>::calculateInverse();
 	}
 
 	virtual size_t displayableDimensions()

@@ -61,10 +61,12 @@ std::vector<float> ClusterSVD<DG>::mapVector(typename DG::Array &vec)
 template <class DG>
 std::vector<float> ClusterSVD<DG>::mapComparable(typename DG::Comparable &vec)
 {
+	_mutex.lock();
 	std::vector<float> result;
 	result.resize(_rawToCluster.rows);
 
 	multMatrix(this->_rawToCluster, &vec[0], &result[0]);
+	_mutex.unlock();
 	return result;
 }
 
@@ -107,12 +109,21 @@ void ClusterSVD<DG>::cluster()
 		}
 		this->_total += _svd.w[i];
 	}
+
+	freeMatrix(&mat);
 	
+//	recalculateResult();
+}
+
+template <class DG>
+void ClusterSVD<DG>::calculateInverse()
+{
+	_mutex.lock();
 	int l = this->_dg.comparable_length();
 	PCA::SVD tmp;
-	setupSVD(&tmp, l, mat.rows);
+	setupSVD(&tmp, l, _svd.u.rows);
 	
-	for (size_t i = 0; i < mat.rows; i++)
+	for (size_t i = 0; i < _svd.u.rows; i++)
 	{
 		typename DG::Comparable raw = this->rawComparable(i);
 
@@ -124,10 +135,7 @@ void ClusterSVD<DG>::cluster()
 	
 	invertSVD(&tmp);
 	_rawToCluster = PCA::transpose(&tmp.u);
-
-	freeMatrix(&mat);
-	
-	recalculateResult();
+	_mutex.unlock();
 }
 
 template <class DG>

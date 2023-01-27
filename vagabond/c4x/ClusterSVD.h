@@ -102,12 +102,14 @@ public:
 	}
 
 	void recalculateResult();
+	void calculateInverse();
 private:
 	PCA::Matrix matrix();
 
 	PCA::SVD _svd{};
 	PCA::Matrix _rawToCluster{};
 	PCA::MatrixType _type = PCA::Correlation;
+	std::mutex _mutex;
 };
 
 #include "ClusterSVD.cpp"
