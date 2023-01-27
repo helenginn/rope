@@ -109,6 +109,7 @@ void ClusterView::refresh()
 	}
 	
 	rebufferVertexData();
+	_invert = new std::thread(ClusterView::invertSVD, this);
 
 	addPaths();
 }
@@ -365,6 +366,15 @@ void ClusterView::wait()
 		_worker = nullptr;
 		_finish = false;
 	}
+}
+
+void ClusterView::invertSVD(ClusterView *me)
+{
+	if (me->_cx)
+	{
+		me->_cx->calculateInverse();
+	}
+
 }
 
 void ClusterView::populatePaths(ClusterView *me)

@@ -105,6 +105,7 @@ private:
 	void addPathView(PathView *pv);
 
 	static void populatePaths(ClusterView *me);
+	static void invertSVD(ClusterView *me);
 	void wait();
 
 	void applyVaryColour(const Rule &r);
@@ -119,6 +120,7 @@ private:
 	
 	std::vector<PathView *> _pathViews;
 	std::thread *_worker = nullptr;
+	std::thread *_invert = nullptr;
 	std::atomic<bool> _finish{false};
 };
 
