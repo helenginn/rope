@@ -69,6 +69,7 @@ void ForwardBackward::clearTemps()
 		removeObject(_temps[i]);
 		delete _temps[i];
 	}
+
 	_temps.clear();
 
 }

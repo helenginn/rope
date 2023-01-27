@@ -26,6 +26,11 @@ WatchRefinement::WatchRefinement(Scene *prev, Refinement *refine)
 	_refine = refine;
 }
 
+WatchRefinement::~WatchRefinement()
+{
+	_refine->model()->unload();
+}
+
 void WatchRefinement::setup()
 {
 	_refine->model()->load();

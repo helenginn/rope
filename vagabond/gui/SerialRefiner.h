@@ -58,7 +58,6 @@ private:
 	void dismantleDisplay();
 	void showThreads();
 	void start();
-	void release();
 	void showSummary();
 	void updateText(Model *model, int idx);
 	
@@ -80,11 +79,9 @@ private:
 	std::vector<Update> _updates;
 	void addUpdate(Update up);
 	void processUpdate(Update &update);
-	std::mutex _updateMutex;
 
 	SerialJob *_handler = nullptr;
 	std::vector<Text *> _threadReporters;
-
 
 	std::mutex _mutex;
 	std::condition_variable _cv;

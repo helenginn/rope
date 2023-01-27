@@ -133,17 +133,10 @@ void SerialRefiner::entityDone()
 
 }
 
-void SerialRefiner::release()
-{
-	_cv.notify_all();
-}
-
 void SerialRefiner::addUpdate(Update up)
 {
 	std::unique_lock<std::mutex> lock(_mutex);
-	_updateMutex.lock();
 	_updates.push_back(up);
-	_updateMutex.unlock();
 	/* will be released on main thread by doThings() */
 	_cv.wait(lock);
 }
@@ -227,11 +220,9 @@ void SerialRefiner::doThings()
 		processUpdate(update);
 	}
 
-	_updateMutex.lock();
 	_updates.clear();
 
-	release(); /* releases worker threads to act on models */
-	_updateMutex.unlock();
+	_cv.notify_all(); /* releases worker threads to act on models */
 }
 
 void SerialRefiner::attachModel(Model *model)

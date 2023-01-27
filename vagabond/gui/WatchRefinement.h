@@ -28,6 +28,7 @@ class WatchRefinement : public Display
 {
 public:
 	WatchRefinement(Scene *prev, Refinement *refine);
+	~WatchRefinement();
 
 	virtual void setup();
 	void start();
