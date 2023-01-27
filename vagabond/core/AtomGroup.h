@@ -20,6 +20,7 @@
 
 #include "Atom.h"
 #include "HasBondstraints.h"
+#include "Responder.h"
 #include <vector>
 #include <set>
 #include <thread>
@@ -33,7 +34,7 @@ class Sequence;
 class File;
 class ForceField;
 
-class AtomGroup : public HasBondstraints
+class AtomGroup : public HasResponder<Responder<AtomGroup> >, public HasBondstraints
 {
 public:
 	AtomGroup();
@@ -114,6 +115,8 @@ public:
 	{
 		return _transformedAnchors;
 	}
+	
+	void finishedRefining();
 
 	void alignAnchor();
 	void refinePositions(bool sameThread = false);

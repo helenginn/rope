@@ -588,3 +588,8 @@ glm::vec3 AtomGroup::initialCentre()
 	sum /= weight;
 	return sum;
 }
+
+void AtomGroup::finishedRefining()
+{
+	triggerResponse();
+}
