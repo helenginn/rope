@@ -11,6 +11,16 @@ void HasRenderables::deleteObjects()
 {
 	for (size_t i = 0; i < _objects.size(); i++)
 	{
+		if (_dragged == _objects[i])
+		{
+			_dragged = nullptr;
+		}
+
+		if (_chosen == _objects[i])
+		{
+			_chosen = nullptr;
+		}
+
 		delete _objects[i];
 	}
 
@@ -74,6 +84,11 @@ void HasRenderables::removeObject(Renderable *obj)
 	if (_chosen == obj)
 	{
 		_chosen = nullptr;
+	}
+
+	if (_dragged == obj)
+	{
+		_dragged = nullptr;
 	}
 
 	std::vector<Renderable *>::iterator it;
@@ -140,6 +155,10 @@ void HasRenderables::deleteTemps()
 {
 	for (Renderable *r : _temps)
 	{
+		if (_dragged == r)
+		{
+			_dragged = nullptr;
+		}
 		removeObject(r);
 		delete r;
 	}

@@ -23,6 +23,11 @@ Scene::Scene(Scene *prev) : SnowGL()
 	setBackground();
 }
 
+Scene::~Scene()
+{
+	deleteObjects();
+}
+
 void Scene::preSetup()
 {
 	showBackButton();
@@ -160,7 +165,10 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	if (chosen != nullptr)
 	{
 		chosen->click(_left);
-		_dragged = chosen;
+		if (chosen->isDraggable())
+		{
+			_dragged = chosen;
+		}
 	}
 }
 
@@ -174,7 +182,7 @@ void Scene::mouseMoveEvent(double x, double y)
 	clearHighlights();
 	Renderable *chosen = findObject(tx, ty);
 
-	SDL_Cursor *cursor;
+	SDL_Cursor *cursor = nullptr;
 	bool arrow = true;
 	if (chosen != nullptr && chosen->mouseOver())
 	{

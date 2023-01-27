@@ -18,6 +18,7 @@ class Scene : public SnowGL, public ButtonResponder
 {
 public:
 	Scene(Scene *prev = nullptr);
+	~Scene();
 	
 	void setModal(Modal *modal)
 	{
@@ -92,7 +93,6 @@ protected:
 	
 	std::string _title;
 
-	Renderable *_dragged = nullptr;
 	Renderable *_background = nullptr;
 	Modal *_modal = nullptr;
 	Modal *_removeModal = nullptr;

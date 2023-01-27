@@ -67,6 +67,7 @@ protected:
 	std::vector<Renderable *> _temps;
 
 	Renderable *_chosen = nullptr;
+	Renderable *_dragged = nullptr;
 };
 
 #endif
