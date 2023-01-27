@@ -29,6 +29,7 @@ class Route : public StructureModification, public HasResponder<Responder<Route>
 {
 public:
 	Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
+	~Route();
 
 	virtual void setup();
 	

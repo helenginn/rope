@@ -30,8 +30,15 @@ Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 	_torsionType = TorsionBasis::TypeSimple;
 }
 
+Route::~Route()
+{
+	molecule()->unload();
+}
+
 void Route::setup()
 {
+	molecule()->load();
+
 	if (_rawDest.size() == 0 && destinationSize() == 0)
 	{
 		throw std::runtime_error("No destination set for route");
