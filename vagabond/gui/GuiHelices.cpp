@@ -418,11 +418,13 @@ void GuiHelices::makeHelixSlab(Snow::Vertex &origin, Snow::Vertex &previous,
 		cross = glm::normalize(glm::cross(diff, dir));
 	}
 	
-	for (size_t i = verts.size() - total; i < verts.size(); i++)
+	int j = 0;
+	for (int i = verts.size() - total; i < verts.size(); i++)
 	{
-		glm::vec3 norm = helix_normals[i][0] * cross;
-		norm += helix_normals[i][1] * dir;
+		glm::vec3 norm = helix_normals[j][0] * cross;
+		norm += helix_normals[j][1] * dir;
 		verts[i].normal += glm::normalize(norm);
+		j++;
 	}
 	
 	for (size_t i = 0; i < total; i++)
@@ -512,6 +514,11 @@ void GuiHelices::mergeHelices()
 		
 		Atom *last = prev.cAlphas.back();
 		Atom *first = curr.cAlphas.front();
+		
+		if (!last || !first)
+		{
+			continue;
+		}
 
 		int nbonds = last->bondsBetween(first, 4);
 		
