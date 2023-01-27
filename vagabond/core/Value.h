@@ -91,6 +91,12 @@ public:
 	{
 		setText(_text);
 	}
+	
+	friend std::ostream &operator<<(std::ostream& stream, const Value& v)
+	{
+		stream << v.text();
+		return stream;
+	}
 
 	friend void to_json(json &j, const Value &value);
 	friend void from_json(const json &j, Value &value);
