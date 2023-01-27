@@ -74,6 +74,8 @@ struct Angular
 	
 	friend std::ostream &operator<<(std::ostream& stream, const Angular& a)
 	{
+		stream << a.str();
+		return stream;
 		float s = sin(deg2rad(a - 90.f));
 		float c = cos(deg2rad(a - 90.f));
 		stream << "(" << s << ", " << s*c << ")";
