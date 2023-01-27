@@ -106,6 +106,7 @@ protected:
 	int _lastIdx;
 
 	bool _moving = false;
+	bool _expired = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
 	

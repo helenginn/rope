@@ -126,6 +126,7 @@ std::vector<Renderable *> &Scene::pertinentObjects()
 
 void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
+	if (_expired) return;
 	_dragged = nullptr;
 	convertToGLCoords(&x, &y);
 	_left = button.button == SDL_BUTTON_LEFT;
@@ -152,6 +153,8 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 
 void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
+	if (_expired) return;
+
 	_lastX = x;
 	_lastY = y;
 	convertToGLCoords(&x, &y);
@@ -164,16 +167,22 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 
 	if (chosen != nullptr)
 	{
-		chosen->click(_left);
 		if (chosen->isDraggable())
 		{
+			std::cout  << "Draggable: " << chosen->name() << std::endl;
 			_dragged = chosen;
 		}
+
+		// warning: clicking the chosen object may result in its destruction
+		chosen->click(_left);
+		// don't use the pointer afterwards
 	}
 }
 
 void Scene::mouseMoveEvent(double x, double y)
 {
+	if (_expired) return;
+
 	double tx = x;
 	double ty = y;
 	convertToGLCoords(&tx, &ty);
@@ -304,6 +313,8 @@ void Scene::back(int num)
 			_previous->refresh();
 		}
 	}
+	
+	_expired = true;
 }
 
 void Scene::interpretControlKey(SDL_Keycode pressed, bool dir)
