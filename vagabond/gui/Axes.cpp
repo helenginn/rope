@@ -130,7 +130,7 @@ std::vector<float> Axes::getMappedVector(int idx)
 
 std::vector<Angular> Axes::directTorsionVector(int idx)
 {
-	if (_torsionCluster)
+	if (_torsionCluster == nullptr)
 	{
 		return std::vector<Angular>();
 	}
