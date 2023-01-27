@@ -48,13 +48,12 @@ AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
 
 AxisExplorer::~AxisExplorer()
 {
-
+	_molecule->unload();
 }
 
 void AxisExplorer::setup()
 {
-	_molecule->model()->load();
-
+	_molecule->load();
 	AtomGroup *grp = _molecule->currentAtoms();
 	AlignmentTool tool(grp);
 	tool.run();
