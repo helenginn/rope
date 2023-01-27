@@ -209,11 +209,11 @@ inline void from_json(const json &j, Model &value)
         value._chain2Entity = chain_to_entity;
         std::list<Molecule> molecules = j.at("molecules");
         value._molecules = molecules;
-		value._dataFile = j.at("dataFile");
+		value._dataFile = j.at("datafile");
 	}
 	catch (...)
 	{
-		std::cout << "Error processing json, probably old version" << std::endl;
+
 	}
 	
 	value.clickTicker();

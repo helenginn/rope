@@ -237,7 +237,7 @@ inline void from_json(const json &j, Rule &value)
 	}
 	catch (const nlohmann::detail::out_of_range &err)
 	{
-		std::cout << "Error processing json, probably old version" << std::endl;
+
 	}
 }
 

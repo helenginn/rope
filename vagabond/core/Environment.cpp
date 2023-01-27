@@ -106,7 +106,7 @@ void Environment::load(std::string file)
 	}
 	catch (const nlohmann::detail::type_error &err)
 	{
-		std::cout << "Error processing json, probably old version" << std::endl;
+
 	}
 	
 	_metadata->housekeeping();
