@@ -307,11 +307,24 @@ PositionalGroup Entity::makePositionalDataGroup()
 	
 	for (Model *m : _models)
 	{
+		bool loaded = false;
+		if (m->molecules().size() > 0 && 
+		    !(m->molecules()).front().hasAtomPositionList(reference))
+		{
+			m->load(Model::NoGeometry);
+			loaded = true;
+		}
+
 		for (Molecule &mm : m->molecules())
 		{
 			std::vector<Posular> vex = mm.atomPositionList(reference,
 			                                               headers, resIdxs);
 			group.addMetadataArray(&mm, vex);
+		}
+		
+		if (loaded)
+		{
+			m->unload();
 		}
 	}
 
