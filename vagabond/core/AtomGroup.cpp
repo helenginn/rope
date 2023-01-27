@@ -265,11 +265,17 @@ Atom *AtomGroup::atomByDesc(std::string desc) const
 
 }
 
-Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name) const
+Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name,
+                              std::string chain) const
 {
 	to_upper(name);
 	for (size_t i = 0; i < _atoms.size(); i++)
 	{
+		if (chain.length() > 0 && _atoms[i]->chain() != chain)
+		{
+			continue;
+		}
+
 		if (_atoms[i]->residueId() == id && name == "")
 		{
 			return _atoms[i];

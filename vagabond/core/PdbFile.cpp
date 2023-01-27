@@ -279,7 +279,7 @@ void PdbFile::write(std::string filename)
 			ResidueId id(r.seqid.num.str() + r.seqid.icode);
 			for (gemmi::Atom &a : r.atoms)
 			{
-				Atom *atom = _macroAtoms->atomByIdName(id, a.name);
+				Atom *atom = _macroAtoms->atomByIdName(id, a.name, c.name);
 				if (atom != nullptr)
 				{
 					glm::vec3 pos = atom->derivedPosition();

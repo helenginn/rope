@@ -80,7 +80,8 @@ public:
 		return nullptr;
 	}
 	
-	Atom *atomByIdName(const ResidueId &id, std::string name) const;
+	Atom *atomByIdName(const ResidueId &id, std::string name,
+	                   std::string chain = "") const;
 	Atom *atomByDesc(std::string desc) const;
 	AtomVector atomsWithName(std::string name) const;
 	Atom *firstAtomWithName(std::string name) const;
