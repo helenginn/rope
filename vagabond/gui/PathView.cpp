@@ -63,6 +63,7 @@ void PathView::populate()
 
 		std::vector<float> mapped = _cluster->mapVector(angles);
 		glm::vec3 point = _cluster->point(mapped);
+		_cluster->reweight(point);
 		
 		addVertex(point);
 		
@@ -75,6 +76,7 @@ void PathView::populate()
 	
 	int idx = dg->indexOfObject(_path.endMolecule());
 	glm::vec3 end = _cluster->point(idx);
+	_cluster->reweight(end);
 
 	addVertex(end);
 	addIndex(-2);
