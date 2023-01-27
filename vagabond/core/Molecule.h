@@ -26,7 +26,7 @@
 #include "AtomRecall.h"
 #include "HasMetadata.h"
 #include "MetadataGroup.h"
-#include "Comparable.h"
+#include "Instance.h"
 
 class MetadataGroup;
 class AtomContent;
@@ -39,7 +39,7 @@ class Chain;
 /** \class Molecule
  * Molecule refers to a specific instance of an entity associated with a model */
 
-class Molecule : public HasMetadata, public Comparable
+class Molecule : public HasMetadata, public Instance
 {
 public:
 	Molecule(std::string model_id, std::string chain_id,
@@ -125,10 +125,7 @@ public:
 		_entity = entity;
 	}
 	
-	virtual AtomGroup *currentAtoms();
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
-	void load();
-	void unload();
 	
 	void updateRmsdMetadata();
 
@@ -138,6 +135,8 @@ public:
 	                              std::vector<bool> &found);
 
 	Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
+
+	bool hasAtomPositionList(Molecule *reference);
 	std::vector<Posular> atomPositionList(Molecule *reference,
 	                                      std::vector<Atom3DPosition> &headers,
 	                                      std::map<ResidueId, int> &resIdxs);
@@ -146,6 +145,9 @@ public:
 
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
+	
+protected:
+	virtual bool atomBelongsToInstance(Atom *a);
 private:
 	void harvestMutations(SequenceComparison *sc);
 	void setAtomGroupSubset();

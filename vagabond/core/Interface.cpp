@@ -20,15 +20,10 @@
 #include "Model.h"
 #include <sstream>
 
-Interface::Interface(Model *left, Comparable *right)
+Interface::Interface(Instance *left, Instance *right)
 {
 	_left = left;
 	_right = right;
-}
-
-void Interface::loadModel()
-{
-	_left->load();
 }
 
 void Interface::addInteraction(Interaction &ia)
@@ -39,7 +34,7 @@ void Interface::addInteraction(Interaction &ia)
 std::string Interface::desc()
 {
 	std::ostringstream ss;
-	ss << _left->id() << " to " << _right->desc() << ": ";
+	ss << _left->desc() << " to " << _right->desc() << ": ";
 	
 	for (Interaction &ia : _interactions)
 	{
@@ -52,7 +47,7 @@ std::string Interface::desc()
 
 Interface *Interface::expandedInterface(Interface *other)
 {
-	loadModel(); other->loadModel();
 
+	return nullptr;
 }
 

@@ -16,11 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Comparable__
-#define __vagabond__Comparable__
+#ifndef __vagabond__Instance__
+#define __vagabond__Instance__
 
-/** \class Comparable group of atoms corresponding to a molecule or known ligand
- * which can be compared with one another or interfaces identified, etc. */
+/** \class Instance group of atoms corresponding to a concrete/observed
+ *  molecule from a structure */
 
 #include <vagabond/utils/glm_json.h>
 using nlohmann::json;
@@ -31,13 +31,11 @@ class Molecule;
 class Model;
 class Atom;
 
-class Comparable
+class Instance
 {
 public:
-	Comparable();
-	virtual ~Comparable() {};
-
-	virtual AtomGroup *currentAtoms() = 0;
+	Instance();
+	virtual ~Instance() {};
 	
 	Model *const model();
 
@@ -57,9 +55,10 @@ public:
 	
 	/** generate a simple interface between this comparable and its model
 	 *  with a tight cutoff distance */
-	Interface *interfaceWithModel();
+	Interface *interfaceWithOther(Instance *other);
 
-	void addToInterface(Interface *face, double max, bool derived);
+	void addToInterface(Instance *other, Interface *face, 
+	                    double max, bool derived);
 	virtual Atom *equivalentForAtom(Model *other, std::string desc)
 	{
 		return nullptr;
@@ -70,14 +69,23 @@ public:
 		return std::map<Atom *, Atom *>();
 	}
 	
+	void load();
+	virtual AtomGroup *currentAtoms();
+	void unload();
+	
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
 protected:
+	virtual bool atomBelongsToInstance(Atom *a) = 0;
+
 	std::string _model_id;
 	Model *_model = nullptr;
 
 	AtomGroup *_currentAtoms = nullptr;
 	AtomGroup *_motherAtoms = nullptr;
+	
+private:
+	void setAtomGroupSubset();
 };
 
 #endif

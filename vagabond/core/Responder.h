@@ -102,6 +102,11 @@ public:
 		}
 	}
 	
+	size_t responderCount() const
+	{
+		return _responders.size();
+	}
+	
 	virtual void removeResponder(R *r)
 	{
 		for (size_t i = 0; i < _responders.size(); i++)

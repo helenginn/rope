@@ -463,61 +463,9 @@ float Molecule::valueForTorsionFromList(BondTorsion *bt,
 	return NAN;
 }
 
-void Molecule::setAtomGroupSubset()
+bool Molecule::atomBelongsToInstance(Atom *a)
 {
-	AtomContent *ac = _model->currentAtoms();
-	_motherAtoms = ac;
-	
-	AtomGroup *tmp = new AtomGroup();
-	
-	for (size_t i = 0; i < ac->size(); i++)
-	{
-		Atom *candidate = (*ac)[i];
-		if (has_chain_id(candidate->chain()))
-		{
-			*tmp += candidate;
-		}
-	}
-	
-	_currentAtoms = tmp;
-
-}
-
-void Molecule::load()
-{
-	_model->load();
-
-	if (_motherAtoms == _model->currentAtoms() && _currentAtoms != nullptr)
-	{
-		// return pre-calculated subset if model has not been reloaded
-		return;
-	}
-
-	setAtomGroupSubset();
-}
-
-AtomGroup *Molecule::currentAtoms()
-{
-	if (_model->currentAtoms() && _currentAtoms == nullptr)
-	{
-		setAtomGroupSubset();
-	}
-
-	if (_motherAtoms != _model->currentAtoms() && _currentAtoms != nullptr)
-	{
-		// recalculate subset as model atoms have changed
-		setAtomGroupSubset();
-	}
-
-	return _currentAtoms;
-}
-
-void Molecule::unload()
-{
-	delete _currentAtoms;
-	_currentAtoms = nullptr;
-
-	_model->unload();
+	return (has_chain_id(a->chain()) && !a->hetatm());
 }
 
 MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
@@ -581,11 +529,16 @@ std::map<Atom *, Atom *> Molecule::mapAtoms(Molecule *other)
 	return map;
 }
 
+bool Molecule::hasAtomPositionList(Molecule *reference)
+{
+	return (_mol2Pos.count(reference) > 0);
+}
+
 std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
                            std::vector<Atom3DPosition> &headers,
                            std::map<ResidueId, int> &resIdxs)
 {
-	if (_mol2Pos.count(reference))
+	if (hasAtomPositionList(reference))
 	{
 		return _mol2Pos[reference];
 	}
@@ -606,7 +559,7 @@ std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
 	sp.superpose();
 	glm::mat4 tr = sp.transformation();
 
-	std::vector<Posular> vex(headers.size(), glm::vec3(0.f));
+	std::vector<Posular> vex(headers.size(), glm::vec3(NAN));
 	for (auto it = atomMap.begin(); it != atomMap.end(); it++)
 	{
 		Atom *moving = it->second;

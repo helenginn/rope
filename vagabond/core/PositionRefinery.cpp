@@ -63,6 +63,8 @@ void PositionRefinery::refine()
 		}
 	}
 	
+	_group->finishedRefining();
+	
 	_done = true;
 }
 

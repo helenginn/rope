@@ -41,7 +41,7 @@ class Molecule;
 class AtomContent;
 class ArbitraryMap;
 
-class Model : public HasResponder<Responder<Model>>,
+class Model : public HasResponder<Responder<Model>>, Responder<AtomGroup>,
 public HasMetadata
 {
 public:
@@ -161,6 +161,7 @@ public:
 		return _chain2Molecule.at(ch);
 	}
 
+	virtual void respond();
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriateMolecules();

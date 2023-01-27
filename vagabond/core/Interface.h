@@ -21,12 +21,12 @@
 
 #include <list>
 #include "Interaction.h"
-#include "Comparable.h"
+#include "Instance.h"
 
 class Interface
 {
 public:
-	Interface(Model *left, Comparable *right);
+	Interface(Instance *left, Instance *right);
 	Interface() {};
 
 	Interface *expandedInterface(Interface *face);
@@ -38,8 +38,8 @@ public:
 private:
 	std::list<Interaction> _interactions;
 
-	Model *_left = nullptr;
-	Comparable *_right = nullptr;
+	Instance *_left = nullptr;
+	Instance *_right = nullptr;
 };
 
 #endif

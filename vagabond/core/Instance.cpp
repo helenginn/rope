@@ -16,22 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Comparable.h"
+#include "Instance.h"
 #include "Interface.h"
 #include "AtomGroup.h"
 #include "Model.h"
 #include "Environment.h"
 #include "ModelManager.h"
 
-Comparable::Comparable()
+Instance::Instance()
 {
 
 }
 
-void Comparable::addToInterface(Interface *face, double max, bool derived)
+void Instance::addToInterface(Instance *other, Interface *face, 
+                              double max, bool derived)
 {
-	model()->load();
-	AtomGroup *left = model()->currentAtoms();
+	AtomGroup *left = other->currentAtoms();
 	AtomGroup *right = currentAtoms();
 
 	for (Atom *l : left->atomVector())
@@ -60,9 +60,40 @@ void Comparable::addToInterface(Interface *face, double max, bool derived)
 			face->addInteraction(ia);
 		}
 	}
+	
+	unload();
 }
 
-Model *const Comparable::model()
+void Instance::load()
+{
+	model()->load();
+
+	if (_motherAtoms == _model->currentAtoms() && _currentAtoms != nullptr)
+	{
+		// return pre-calculated subset if model has not been reloaded
+		return;
+	}
+
+	setAtomGroupSubset();
+}
+
+AtomGroup *Instance::currentAtoms()
+{
+	if (model()->currentAtoms() && _currentAtoms == nullptr)
+	{
+		setAtomGroupSubset();
+	}
+
+	if (_motherAtoms != model()->currentAtoms() && _currentAtoms != nullptr)
+	{
+		// recalculate subset as model atoms have changed
+		setAtomGroupSubset();
+	}
+
+	return _currentAtoms;
+}
+
+Model *const Instance::model()
 {
 	if (_model == nullptr)
 	{
@@ -71,13 +102,42 @@ Model *const Comparable::model()
 	return _model;
 }
 
-
-Interface *Comparable::interfaceWithModel()
+void Instance::unload()
 {
-	Interface *face = new Interface(model(), this);
-	addToInterface(face, 4, false);
+	delete _currentAtoms;
+	_currentAtoms = nullptr;
+
+	_model->unload();
+}
+
+
+Interface *Instance::interfaceWithOther(Instance *other)
+{
+	Interface *face = new Interface(other, this);
+	addToInterface(other, face, 4, false);
 	std::cout << face->desc() << std::endl;
 
 	return face;
+}
+
+void Instance::setAtomGroupSubset()
+{
+	AtomContent *ac = _model->currentAtoms();
+	_motherAtoms = ac;
+	
+	AtomGroup *tmp = new AtomGroup();
+	
+	for (size_t i = 0; i < ac->size(); i++)
+	{
+		Atom *candidate = (*ac)[i];
+		
+		if (atomBelongsToInstance(candidate))
+		{
+			*tmp += candidate;
+		}
+
+	}
+	
+	_currentAtoms = tmp;
 }
 

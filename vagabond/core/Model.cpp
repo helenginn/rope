@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/version.h>
 #include "Model.h"
 #include "ModelManager.h"
 #include "ArbitraryMap.h"
@@ -415,7 +416,10 @@ void Model::autoAssignEntities(Entity *chosen)
 	load(NoAngles);
 
 	assignSequencedMolecules(chosen);
+	
+#ifdef VERSION_LIGANDS
 	assignClutter();
+#endif
 	
 	unload();
 	housekeeping();
@@ -463,9 +467,9 @@ void Model::housekeeping()
 
 void Model::findInteractions()
 {
-	if (_ligands.size() > 0)
+	if (_ligands.size() > 0 && _molecules.size() > 0)
 	{
-		_ligands.front().interfaceWithModel();
+		_ligands.front().interfaceWithOther(&_molecules.front());
 	}
 }
 
@@ -521,6 +525,8 @@ void Model::load(LoadOptions opts)
 	{
 		insertTorsions();
 	}
+	
+	_currentAtoms->setResponder(this);
 }
 
 void Model::refine(bool sameThread)
@@ -729,3 +735,8 @@ float Model::comparisonWithData(ArbitraryMap *calc)
 	return 0;
 }
 
+
+void Model::respond()
+{
+	extractTorsions();
+}

@@ -20,27 +20,18 @@
 #define __vagabond__Ligand__
 
 #include <string>
-#include "Comparable.h"
+#include <set>
+#include "Instance.h"
+#include "ResidueId.h"
 
 class Substance;
 class AtomGroup;
 
-class Ligand : public Comparable
+class Ligand : public Instance
 {
 public:
 	Ligand();
 	Ligand(std::string model_id, AtomGroup *grp);
-	
-	void housekeeping();
-
-	virtual AtomGroup *currentAtoms()
-	{
-		if (_currentAtoms == nullptr)
-		{
-			housekeeping();
-		}
-		return _currentAtoms;
-	}
 
 	const std::string &substance_id() const
 	{
@@ -50,10 +41,13 @@ public:
 	virtual std::string desc() const;
 	
 	Substance *const substance();
+protected:
+	virtual bool atomBelongsToInstance(Atom *a);
 private:
 	std::string _anchorDesc;
 	std::string _nickname;
 	std::string _chain;
+	std::set<ResidueId> _resids;
 
 	std::string _substance_id;
 	Substance *_substance = nullptr;

@@ -29,6 +29,12 @@ Ligand::Ligand(std::string model_id, AtomGroup *grp)
 	_anchorDesc = grp->chosenAnchor()->desc();
 	_nickname = grp->chosenAnchor()->code();
 	_chain = grp->chosenAnchor()->chain();
+	
+	for (const Atom *a : grp->atomVector())
+	{
+		const ResidueId &id = a->residueId();
+		_resids.insert(id);
+	}
 }
 
 Ligand::Ligand()
@@ -41,32 +47,12 @@ std::string Ligand::desc() const
 	return _model_id + "(" + _chain + "/" + _nickname + ")";
 }
 
-void Ligand::housekeeping()
+bool Ligand::atomBelongsToInstance(Atom *a)
 {
-	if (_currentAtoms != nullptr)
+	if (_chain != a->chain())
 	{
-		return;
+		return false;
 	}
-	
-	ModelManager *mm = Environment::modelManager();
-	Model *m = mm->model(_model_id);
-	
-	if (!m)
-	{
-		return;
-	}
-	
-	bool isLoaded = m->loaded();
 
-	if (!isLoaded)
-	{
-		m->load();
-	}
-	
-	AtomGroup *contents = m->currentAtoms();
-	contents->connectedGroups();
-	Atom *anchor = contents->atomByDesc(_anchorDesc);
-	
-	AtomGroup *mine = contents->connectedGroupToAnchor(anchor);
-	_currentAtoms = mine;
+	return (_resids.count(a->residueId()) > 0);
 }
