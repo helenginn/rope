@@ -25,8 +25,6 @@ SnowGL::SnowGL()
 	_depthFbo = 0;
 	_sceneMapCount = 0;
 	memset(_sceneMap, '\0', sizeof(GLuint) * 8);
-	memset(_pingPongMap, '\0', sizeof(GLuint) * 2);
-	memset(_pingPongFbo, '\0', sizeof(GLuint) * 2);
 	_sceneFbo = 0;
 	_sceneDepth = 0;
 	_proj = glm::mat4(1.);

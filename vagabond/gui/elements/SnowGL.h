@@ -172,8 +172,8 @@ protected:
 	GLuint _sceneFbo;
 	size_t _sceneMapCount;
 	
-	GLuint _pingPongMap[2];
-	GLuint _pingPongFbo[2];
+	GLuint _pingPongMap[2] = {0, 0};
+	GLuint _pingPongFbo[2] = {0, 0};
 	
 	float _camAlpha, _camBeta, _camGamma;
 	float _zNear;
