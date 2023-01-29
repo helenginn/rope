@@ -149,10 +149,7 @@ void ModelManager::connectionsToDatabase()
 			mol.housekeeping();
 			std::string mol_id = mol.model_chain_id();
 			std::string mod_id = mol.model_id();
-			Environment::metadata()->setModelIdForMoleculeId(mol_id, mod_id);
-
+			Environment::metadata()->setModelIdForInstanceId(mol_id, mod_id);
 		}
 	}
-
-
 }

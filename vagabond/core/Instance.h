@@ -22,16 +22,20 @@
 /** \class Instance group of atoms corresponding to a concrete/observed
  *  molecule from a structure */
 
+#include "ResidueId.h"
+#include "HasMetadata.h"
 #include <vagabond/utils/glm_json.h>
 using nlohmann::json;
 
+class AtomContent;
 class Interface;
 class AtomGroup;
 class Molecule;
+class Entity;
 class Model;
 class Atom;
 
-class Instance
+class Instance : public HasMetadata 
 {
 public:
 	Instance();
@@ -49,6 +53,8 @@ public:
 		return _model_id;
 	}
 	
+	void housekeeping();
+	
 	virtual const std::string id() const { return ""; }
 	
 	virtual std::string desc() const { return ""; }
@@ -63,15 +69,41 @@ public:
 	{
 		return nullptr;
 	}
+
+	virtual const Metadata::KeyValues metadata() const;
+	void updateRmsdMetadata();
 	
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other)
 	{
 		return std::map<Atom *, Atom *>();
 	}
+
+	Atom *atomByIdName(const ResidueId &id, std::string name, 
+	                   std::string chain = "");
 	
 	void load();
 	virtual AtomGroup *currentAtoms();
 	void unload();
+
+	Entity *entity();
+	
+	void setEntity(Entity *entity)
+	{
+		_entity = entity;
+	}
+	
+	const std::string &entity_id() const
+	{
+		return _entity_id;
+	}
+	
+	const bool &isRefined() const
+	{
+		return _refined;
+	}
+
+	void insertTransforms(AtomContent *atoms);
+	void extractTransformedAnchors(AtomContent *atoms);
 	
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
@@ -79,13 +111,24 @@ protected:
 	virtual bool atomBelongsToInstance(Atom *a) = 0;
 
 	std::string _model_id;
+	std::string _entity_id;
+
 	Model *_model = nullptr;
+	Entity *_entity = nullptr;
 
 	AtomGroup *_currentAtoms = nullptr;
 	AtomGroup *_motherAtoms = nullptr;
 	
+	void setRefined(bool r)
+	{
+		_refined = r;
+	}
 private:
 	void setAtomGroupSubset();
+
+	bool _refined = false;
+	std::map<std::string, glm::mat4x4> _transforms;
+
 };
 
 #endif

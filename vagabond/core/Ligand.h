@@ -39,8 +39,11 @@ public:
 	}
 
 	virtual std::string desc() const;
-	
-	Substance *const substance();
+
+	virtual bool displayable() const
+	{
+		return true;
+	}
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
 private:
@@ -48,9 +51,6 @@ private:
 	std::string _nickname;
 	std::string _chain;
 	std::set<ResidueId> _resids;
-
-	std::string _substance_id;
-	Substance *_substance = nullptr;
 };
 
 #endif

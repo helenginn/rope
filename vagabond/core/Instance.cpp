@@ -16,12 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Model.h"
 #include "Instance.h"
 #include "Interface.h"
-#include "AtomGroup.h"
-#include "Model.h"
+#include "AtomContent.h"
 #include "Environment.h"
 #include "ModelManager.h"
+#include "EntityManager.h"
 
 Instance::Instance()
 {
@@ -141,3 +142,99 @@ void Instance::setAtomGroupSubset()
 	_currentAtoms = tmp;
 }
 
+Atom *Instance::atomByIdName(const ResidueId &id, std::string name,
+                             std::string chain)
+{
+	load();
+	AtomGroup *grp = currentAtoms();
+	Atom *p = grp->atomByIdName(id, name, chain);
+	unload();
+	
+	return p;
+}
+
+Entity *Instance::entity()
+{
+	if (_entity != nullptr)
+	{
+		return _entity;
+	}
+	
+	_entity = Environment::entityManager()->entity(_entity_id);
+	return _entity;
+}
+
+void Instance::insertTransforms(AtomContent *atoms)
+{
+	std::map<std::string, glm::mat4x4>::iterator it;
+	
+	for (it = _transforms.begin(); it != _transforms.end(); it++)
+	{
+		std::string desc = it->first;
+		glm::mat4x4 transform = it->second;
+		
+		Atom *a = atoms->atomByDesc(desc);
+		if (a == nullptr)
+		{
+			std::cout << "Warning! - missing anchor definition " 
+			<< desc << std::endl;
+			continue;
+		}
+		
+		a->setAbsoluteTransformation(transform);
+	}
+}
+
+void Instance::extractTransformedAnchors(AtomContent *atoms)
+{
+	for (const Atom *anchor : atoms->transformedAnchors())
+	{
+		std::string desc = anchor->desc();
+		glm::mat4x4 transform = anchor->transformation();
+		_transforms[desc] = transform;
+	}
+
+}
+
+const Metadata::KeyValues Instance::metadata() const
+{
+	Metadata::KeyValues mod = _model->metadata();
+	Metadata *md = Environment::metadata();
+
+	const Metadata::KeyValues *ptr = md->valuesForInstance(id());
+	Metadata::KeyValues mol;
+
+	if (ptr != nullptr)
+	{
+		mol = *ptr;
+	}
+
+	Metadata::KeyValues::const_iterator it;
+	
+	for (it = mol.cbegin(); it != mol.cend(); it++)
+	{
+		mod[it->first] = it->second;
+	}
+	
+	return mod;
+}
+
+void Instance::updateRmsdMetadata()
+{
+	load();
+	AtomGroup *atoms = currentAtoms();
+	float val = atoms->rmsd();
+
+	Metadata::KeyValues kv;
+	kv["molecule"] = id();
+	kv["rmsd"] = Value(f_to_str(val, 3));
+	Environment::metadata()->addKeyValues(kv, true);
+	unload();
+}
+
+void Instance::housekeeping()
+{
+	_model = (Environment::modelManager()->model(_model_id));
+	_entity = (Environment::entityManager()->entity(_entity_id));
+	
+}

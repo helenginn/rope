@@ -79,18 +79,7 @@ void Molecule::harvestMutations(SequenceComparison *sc)
 	Environment::metadata()->addKeyValues(kv, true);
 }
 
-void Molecule::updateRmsdMetadata()
-{
-	AtomGroup *atoms = currentAtoms();
-	float val = atoms->rmsd();
-
-	Metadata::KeyValues kv;
-	kv["molecule"] = id();
-	kv["rmsd"] = Value(f_to_str(val, 3));
-	Environment::metadata()->addKeyValues(kv, true);
-}
-
-void Molecule::getTorsionRefs(Chain *ch)
+void Molecule::putTorsionRefsInSequence(Chain *ch)
 {
 	_sequence.remapFromMaster(_entity);
 
@@ -121,15 +110,13 @@ void Molecule::getTorsionRefs(Chain *ch)
 
 void Molecule::housekeeping()
 {
-	_model = (Environment::modelManager()->model(_model_id));
-	_entity = (Environment::entityManager()->entity(_entity_id));
-	
+	Instance::housekeeping();
 	_sequence.remapFromMaster(_entity);
 }
 
 void Molecule::insertTorsionAngles(AtomContent *atoms)
 {
-	if (!_refined)
+	if (!isRefined())
 	{
 		return;
 	}
@@ -163,35 +150,8 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 			t->setRefinedAngle(angle);
 		}
 	}
-
-	std::map<std::string, glm::mat4x4>::iterator it;
 	
-	for (it = _transforms.begin(); it != _transforms.end(); it++)
-	{
-		std::string desc = it->first;
-		glm::mat4x4 transform = it->second;
-		
-		Atom *a = atoms->atomByDesc(desc);
-		if (a == nullptr)
-		{
-			std::cout << "Warning! - missing anchor definition " 
-			<< desc << std::endl;
-			continue;
-		}
-		
-		a->setAbsoluteTransformation(transform);
-	}
-}
-
-void Molecule::extractTransformedAnchors(AtomContent *atoms)
-{
-	for (const Atom *anchor : atoms->transformedAnchors())
-	{
-		std::string desc = anchor->desc();
-		glm::mat4x4 transform = anchor->transformation();
-		_transforms[desc] = transform;
-	}
-
+	insertTransforms(atoms);
 }
 
 void Molecule::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
@@ -200,7 +160,7 @@ void Molecule::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 	for (const std::string &chain : _chain_ids)
 	{
 		Chain *ch = atoms->chain(chain);
-		getTorsionRefs(ch);
+		putTorsionRefsInSequence(ch);
 
 		for (size_t i = 0; i < ch->bondTorsionCount(); i++)
 		{
@@ -228,65 +188,7 @@ void Molecule::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 		}
 	}
 
-	_refined = true;
-}
-
-const Metadata::KeyValues Molecule::metadata() const
-{
-	Metadata::KeyValues mod = _model->metadata();
-	Metadata *md = Environment::metadata();
-
-	const Metadata::KeyValues *ptr = md->valuesForMolecule(id());
-	Metadata::KeyValues mol;
-
-	if (ptr != nullptr)
-	{
-		mol = *ptr;
-	}
-
-	Metadata::KeyValues::const_iterator it;
-	
-	for (it = mol.cbegin(); it != mol.cend(); it++)
-	{
-		mod[it->first] = it->second;
-	}
-	
-	return mod;
-}
-
-Entity *Molecule::entity()
-{
-	if (_entity != nullptr)
-	{
-		return _entity;
-	}
-	
-	_entity = Environment::entityManager()->entity(_entity_id);
-	return _entity;
-}
-
-Atom *Molecule::atomByIdName(const ResidueId &id, std::string name)
-{
-	for (const std::string &chain : _chain_ids)
-	{
-		model();
-		
-		if (!_model)
-		{
-			return nullptr;
-		}
-
-		Chain *mine = model()->currentAtoms()->chain(chain);
-
-		Atom *p = mine->atomByIdName(id, name);
-		
-		if (p != nullptr)
-		{
-			return p;
-		}
-	}
-	
-	return nullptr;
+	setRefined(true);
 }
 
 Metadata::KeyValues Molecule::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
@@ -365,7 +267,7 @@ Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	double angle = rad2deg(glm::angle(p_vec, r_vec));
 	std::cout << angle << std::endl;
 	
-	kv["molecule"] = Value(id());
+	kv["instance"] = Value(id());
 	kv[header] = Value(f_to_str(angle, 2));
 
 	return kv;
@@ -396,13 +298,6 @@ void Molecule::mergeWith(Molecule *b)
 	for (const std::string &ch : b->chain_ids())
 	{
 		_chain_ids.insert(ch);
-	}
-	
-	std::map<std::string, glm::mat4x4>::iterator it;
-	
-	for (it = b->_transforms.begin(); it != b->_transforms.end(); it++)
-	{
-		_transforms[it->first] = it->second;
 	}
 }
 

@@ -44,7 +44,14 @@ Ligand::Ligand()
 
 std::string Ligand::desc() const
 {
-	return _model_id + "(" + _chain + "/" + _nickname + ")";
+	std::string d = _model_id + ":" + _chain + "/" + _nickname;
+	
+	if (_resids.size())
+	{
+		d += _resids.begin()->str();
+	}
+	
+	return d;
 }
 
 bool Ligand::atomBelongsToInstance(Atom *a)

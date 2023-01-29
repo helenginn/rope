@@ -35,7 +35,7 @@ using nlohmann::json;
 
 class Molecule;
 
-class Entity : public Substance, public HasResponder<Responder<Entity>>
+class Entity : public HasResponder<Responder<Entity>>
 {
 public:
 	Entity();
@@ -48,6 +48,16 @@ public:
 	void setSequence(Sequence *seq)
 	{
 		_sequence = *seq;
+	}
+
+	void setName(std::string name)
+	{
+		_name = name;
+	}
+
+	const std::string &name() const
+	{
+		return _name;
 	}
 	
 	void checkModel(Model &m);
@@ -112,6 +122,7 @@ private:
 	void appendMolecule(Model &m);
 	
 	bool _actuallyRefine = true;
+	std::string _name;
 	
 	std::set<Model *> _refineSet;
 	std::vector<Model *> _models;

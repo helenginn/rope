@@ -24,7 +24,6 @@
 
 #include <string>
 #include "AtomRecall.h"
-#include "HasMetadata.h"
 #include "MetadataGroup.h"
 #include "Instance.h"
 
@@ -39,7 +38,7 @@ class Chain;
 /** \class Molecule
  * Molecule refers to a specific instance of an entity associated with a model */
 
-class Molecule : public HasMetadata, public Instance
+class Molecule : public Instance
 {
 public:
 	Molecule(std::string model_id, std::string chain_id,
@@ -78,24 +77,13 @@ public:
 		return true;
 	}
 	
-	const std::string &entity_id() const
-	{
-		return _entity_id;
-	}
-	
-	const bool &isRefined() const
-	{
-		return _refined;
-	}
-	
 	Sequence *const sequence()
 	{
 		return &_sequence;
 	}
 
-	void getTorsionRefs(Chain *ch);
+	void putTorsionRefsInSequence(Chain *ch);
 	void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
-	void extractTransformedAnchors(AtomContent *atoms);
 	void insertTorsionAngles(AtomContent *atoms);
 	virtual Atom *equivalentForAtom(Model *other, std::string desc);
 
@@ -105,8 +93,6 @@ public:
 	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
 	void addPositionsToGroup(MetadataGroup &group,
 	                         std::map<Residue *, int> resIdxs);
-
-	Atom *atomByIdName(const ResidueId &id, std::string name);
 
 	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	                                         std::string header);
@@ -118,16 +104,7 @@ public:
 	
 	void mergeWith(Molecule *b);
 	
-	Entity *entity();
-	
-	void setEntity(Entity *entity)
-	{
-		_entity = entity;
-	}
-	
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
-	
-	void updateRmsdMetadata();
 
 	float valueForTorsionFromList(BondTorsion *bt,
 	                              const std::vector<ResidueTorsion> &list,
@@ -141,8 +118,6 @@ public:
 	                                      std::vector<Atom3DPosition> &headers,
 	                                      std::map<ResidueId, int> &resIdxs);
 
-	virtual const Metadata::KeyValues metadata() const;
-
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
 	
@@ -153,14 +128,10 @@ private:
 	void harvestMutations(SequenceComparison *sc);
 	void setAtomGroupSubset();
 
-	std::string _entity_id;
 	std::set<std::string> _chain_ids;
 
 	std::map<Molecule *, std::vector<Posular> > _mol2Pos;
-	std::map<std::string, glm::mat4x4> _transforms;
 	Sequence _sequence;
-	Entity *_entity = nullptr;
-	bool _refined = false;
 };
 
 inline void to_json(json &j, const Molecule &value)

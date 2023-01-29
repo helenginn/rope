@@ -116,7 +116,7 @@ Molecule *Model::moleculeFromChain(Chain *ch)
 	Molecule &ref = _molecules.back();
 
 	ref.addChain(ch->id());
-	ref.getTorsionRefs(ch);
+	ref.putTorsionRefsInSequence(ch);
 	
 	return &_molecules.back();
 }

@@ -27,20 +27,9 @@ public:
 	Substance() {};
 	virtual ~Substance() {};
 
-	void setName(std::string name)
-	{
-		_name = name;
-	}
-
-	const std::string &name() const
-	{
-		return _name;
-	}
-
 	friend void to_json(json &j, const Entity &value);
 	friend void from_json(const json &j, Entity &value);
 private:
-	std::string _name;
 
 };
 
