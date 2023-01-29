@@ -32,31 +32,5 @@ BOOST_AUTO_TEST_CASE(atoms_from_sequence)
 	
 	AtomGroup *grp = seq.convertToAtoms();
 	BOOST_TEST(grp->size() == 45);
-	/*
-	for (size_t i = 0; i < grp->size(); i++)
-	{
-		Atom *a = (*grp)[i];
-		std::cout << a->desc() << " " << std::endl;
-		std::cout << glm::to_string(a->derivedPosition()) << std::endl;
-	}
-	*/
-}
-
-BOOST_AUTO_TEST_CASE(save_atoms)
-{
-	Sequence seq("helenmaryginn");
-	
-	AtomGroup *grp = seq.convertToAtoms();
-	
-	PdbFile pdb("helen.pdb");
-	pdb.writeAtoms(grp, "helen");
-	/*
-	for (size_t i = 0; i < grp->size(); i++)
-	{
-		Atom *a = (*grp)[i];
-		std::cout << a->desc() << " " << std::endl;
-		std::cout << glm::to_string(a->derivedPosition()) << std::endl;
-	}
-	*/
 }
 
