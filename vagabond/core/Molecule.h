@@ -72,11 +72,6 @@ public:
 		return model_chain_id();
 	}
 	
-	virtual bool displayable() const
-	{
-		return true;
-	}
-	
 	Sequence *const sequence()
 	{
 		return &_sequence;

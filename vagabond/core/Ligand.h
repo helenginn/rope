@@ -33,17 +33,8 @@ public:
 	Ligand();
 	Ligand(std::string model_id, AtomGroup *grp);
 
-	const std::string &substance_id() const
-	{
-		return _substance_id;
-	}
-
 	virtual std::string desc() const;
 
-	virtual bool displayable() const
-	{
-		return true;
-	}
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
 private:

@@ -52,6 +52,11 @@ public:
 	{
 		return _model_id;
 	}
+
+	virtual bool displayable() const
+	{
+		return true;
+	}
 	
 	void housekeeping();
 	
