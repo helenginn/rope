@@ -254,7 +254,7 @@ float Instance::valueForTorsionFromList(BondTorsion *bt,
 	ResidueId target = bt->residueId();
 	Residue *master = equivalentMaster(target);
 	
-	if (master != nullptr)
+	if (master == nullptr)
 	{
 		return NAN;
 	}
