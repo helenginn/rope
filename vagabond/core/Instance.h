@@ -23,14 +23,20 @@
  *  molecule from a structure */
 
 #include "ResidueId.h"
+#include "RopeTypes.h"
 #include "HasMetadata.h"
+#include "MetadataGroup.h"
 #include <vagabond/utils/glm_json.h>
+#include <vagabond/c4x/Angular.h>
 using nlohmann::json;
 
+struct ResidueTorsion;
 class AtomContent;
+class BondTorsion;
 class Interface;
 class AtomGroup;
 class Molecule;
+class Residue;
 class Entity;
 class Model;
 class Atom;
@@ -70,10 +76,24 @@ public:
 
 	void addToInterface(Instance *other, Interface *face, 
 	                    double max, bool derived);
+
 	virtual Atom *equivalentForAtom(Model *other, std::string desc)
 	{
 		return nullptr;
 	}
+	
+	const Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
+	virtual Residue *const equivalentMaster(const ResidueId &local)
+	{ return nullptr; }
+	virtual Residue *const equivalentLocal(Residue *const master) const
+	{ return nullptr; }
+	virtual Residue *const equivalentLocal(const ResidueId &m_id) const
+	{ return nullptr; }
+
+	float valueForTorsionFromList(BondTorsion *bt,
+	                              const std::vector<ResidueTorsion> &list,
+	                              const std::vector<Angular> &values,
+	                              std::vector<bool> &found);
 
 	virtual const Metadata::KeyValues metadata() const;
 	void updateRmsdMetadata();
@@ -109,11 +129,18 @@ public:
 
 	void insertTransforms(AtomContent *atoms);
 	void extractTransformedAnchors(AtomContent *atoms);
+
+	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest) {}
 	
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
-protected:
+
 	virtual bool atomBelongsToInstance(Atom *a) = 0;
+	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type)
+	{
+		return MetadataGroup::Array();
+	}
+protected:
 
 	std::string _model_id;
 	std::string _entity_id;

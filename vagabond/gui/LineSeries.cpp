@@ -22,7 +22,7 @@
 
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/Polymer.h>
 #include <vagabond/core/RopeCluster.h>
 #include <vagabond/core/MetadataGroup.h>
 

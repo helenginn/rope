@@ -243,7 +243,7 @@ void Sequence::addBufferResidue()
 	_master.push_back(res);
 }
 
-Residue *const Sequence::local_residue(Residue *master) const
+Residue *const Sequence::local_residue(Residue *const master) const
 {
 	if (_map2Local.count(master) == 0)
 	{
@@ -253,7 +253,7 @@ Residue *const Sequence::local_residue(Residue *master) const
 	return _map2Local.at(master);
 }
 
-Residue *Sequence::master_residue(Residue *local) const
+Residue *Sequence::master_residue(Residue *const local) const
 {
 	if (_map2Master.count(local) == 0)
 	{
@@ -298,7 +298,7 @@ void Sequence::remapFromMaster(Entity *entity)
 	}
 }
 
-Residue *Sequence::residueLike(const ResidueId &other)
+Residue *Sequence::residueLike(const ResidueId &other) 
 {
 	for (Residue &r : _residues)
 	{

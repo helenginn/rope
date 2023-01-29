@@ -23,7 +23,7 @@
 #include "TorsionBasis.h"
 #include "../utils/svd/PCA.h"
 
-class Molecule;
+class Instance;
 class Residue;
 
 class ConcertedBasis : public TorsionBasis
@@ -46,11 +46,11 @@ public:
 		_custom = custom;
 	}
 	
-	bool fillFromMoleculeList(Molecule *molecule, int axis,
+	bool fillFromInstanceList(Instance *instance, int axis,
 	                          const std::vector<ResidueTorsion> &list,
 	                          const std::vector<Angular> &values);
 
-	bool reverseLookup(Molecule *mol, int axis,
+	bool reverseLookup(Instance *inst, int axis,
 	                   const std::vector<ResidueTorsion> &list,
 	                   const std::vector<Angular> &values);
 

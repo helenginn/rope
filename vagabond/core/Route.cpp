@@ -17,13 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Route.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include "BondSequence.h"
 #include "MetadataGroup.h"
 #include <vagabond/c4x/Cluster.h>
 
-Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims) 
-: StructureModification(mol, 1, dims)
+Route::Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims) 
+: StructureModification(inst, 1, dims)
 {
 	_cluster = cluster;
 	_pType = BondCalculator::PipelineForceField;
@@ -32,19 +32,19 @@ Route::Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
 
 Route::~Route()
 {
-	molecule()->unload();
+	instance()->unload();
 }
 
 void Route::setup()
 {
-	molecule()->load();
+	instance()->load();
 
 	if (_rawDest.size() == 0 && destinationSize() == 0)
 	{
 		throw std::runtime_error("No destination set for route");
 	}
 
-	_fullAtoms = _molecule->currentAtoms();
+	_fullAtoms = _instance->currentAtoms();
 	_mask.clear();
 	startCalculator();
 }
@@ -193,7 +193,7 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 
 	calc->setPipelineType(_pType);
 	FFProperties props;
-	props.group = _molecule->currentAtoms();
+	props.group = _instance->currentAtoms();
 	props.t = FFProperties::VdWContacts;
 	calc->setForceFieldProperties(props);
 	calc->setSampler(nullptr);
@@ -335,7 +335,7 @@ void Route::prepareDestination()
 		for (size_t i = 0; i < basis->torsionCount(); i++)
 		{
 			BondTorsion *t = basis->torsion(i);
-			float v = _molecule->valueForTorsionFromList(t, list, _rawDest, found);
+			float v = _instance->valueForTorsionFromList(t, list, _rawDest, found);
 			if (v != v)
 			{
 				v = 0;

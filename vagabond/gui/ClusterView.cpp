@@ -25,7 +25,7 @@
 
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/Polymer.h>
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/ObjectGroup.h>
 #include <vagabond/core/PathManager.h>
@@ -342,7 +342,7 @@ void ClusterView::addPaths()
 			continue;
 		}
 		
-		if (_confSpaceView->entity() != path.startMolecule()->entity())
+		if (_confSpaceView->entity() != path.startInstance()->entity())
 		{
 			continue;
 		}

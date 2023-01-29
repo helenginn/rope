@@ -28,7 +28,7 @@ struct AtomGraph;
 class SplitRoute : public PlausibleRoute, public Handler
 {
 public:
-	SplitRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
+	SplitRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
 
 	virtual void setup();
 private:

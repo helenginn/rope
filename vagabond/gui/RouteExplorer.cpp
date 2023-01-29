@@ -27,14 +27,14 @@
 #include <vagabond/core/AlignmentTool.h>
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/AtomGroup.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/Polymer.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Route.h>
 #include <vagabond/core/Path.h>
 
 RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 {
-	_molecule = route->molecule();
+	_instance = route->instance();
 	_plausibleRoute = route;
 	_route = route;
 	_route->setResponder(this);
@@ -43,14 +43,14 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 
 RouteExplorer::~RouteExplorer()
 {
-	_molecule->unload();
+	_instance->unload();
 }
 
 void RouteExplorer::setup()
 {
-	_molecule->load();
+	_instance->load();
 
-	AtomGroup *grp = _molecule->currentAtoms();
+	AtomGroup *grp = _instance->currentAtoms();
 	AlignmentTool tool(grp);
 	tool.run();
 	grp->recalculate();
@@ -70,7 +70,7 @@ void RouteExplorer::setup()
 	setupSave();
 	setupFinish();
 	
-	VisualPreferences *vp = &_molecule->entity()->visualPreferences();
+	VisualPreferences *vp = &_instance->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
 	
 	_route->finishRoute();

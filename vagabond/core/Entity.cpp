@@ -274,7 +274,7 @@ MetadataGroup Entity::makeTorsionDataGroup()
 
 	for (Molecule *mol : _molecules)
 	{
-		std::vector<Path *> paths = pm->pathsForMolecule(mol);
+		std::vector<Path *> paths = pm->pathsForInstance(mol);
 
 		for (Path *path : paths)
 		{

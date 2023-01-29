@@ -22,11 +22,11 @@
 Path::Path(PlausibleRoute *pr)
 {
 	_route = pr;
-	_startMolecule = pr->molecule()->id();
-	_endMolecule = pr->endMolecule()->id();
-	_model_id = pr->molecule()->model()->id();
-	_molecule = pr->molecule();
-	_end = pr->endMolecule();
+	_startInstance = pr->instance()->id();
+	_endInstance = pr->endInstance()->id();
+	_model_id = pr->instance()->model()->id();
+	_instance = pr->instance();
+	_end = pr->endInstance();
 
 	_wayPoints = pr->wayPoints();
 	_flips = pr->flips();
@@ -62,7 +62,7 @@ void Path::housekeeping()
 		_destination.push_back(ref.refinedAngle());
 	}
 
-	if (_model && _molecule && _end)
+	if (_model && _instance && _end)
 	{
 		return;
 	}
@@ -74,22 +74,22 @@ void Path::housekeeping()
 		return;
 	}
 	
-	for (Molecule &m : _model->molecules())
+	for (Instance &inst : _model->molecules())
 	{
-		if (m.id() == _startMolecule)
+		if (inst.id() == _startInstance)
 		{
-			_molecule = &m;
+			_instance = &inst;
 		}
 		
 	}
 	
 	for (Model &m : Environment::env().modelManager()->objects())
 	{
-		for (Molecule &mol : m.molecules())
+		for (Instance &inst : m.molecules())
 		{
-			if (mol.id() == _endMolecule)
+			if (inst.id() == _endInstance)
 			{
-				_end = &mol;
+				_end = &inst;
 			}
 		}
 	}
@@ -99,16 +99,16 @@ PlausibleRoute *Path::toRoute()
 {
 	housekeeping();
 	
-	if (!_molecule || !_model)
+	if (!_instance || !_model)
 	{
-		throw std::runtime_error("Unable to find model/molecule in environment.");
+		throw std::runtime_error("Unable to find model/instance in environment.");
 	}
 	
 	_model->load();
 	AtomGroup *group = _model->currentAtoms();
 
-	SplitRoute *pr = new SplitRoute(_molecule, nullptr, _wayPoints.size());
-	pr->setDestinationMolecule(_end);
+	SplitRoute *pr = new SplitRoute(_instance, nullptr, _wayPoints.size());
+	pr->setDestinationInstance(_end);
 	pr->setType(_type);
 	pr->setDestination(_destination);
 	pr->setWayPoints(_wayPoints);
@@ -116,7 +116,7 @@ PlausibleRoute *Path::toRoute()
 
 	for (size_t i = 0; i < _residueIds.size(); i++)
 	{
-		Residue *local = _molecule->sequence()->residueLike(_residueIds[i]);
+		Residue *local = _instance->equivalentLocal(_residueIds[i]);
 		BondTorsion *bt = nullptr;
 		
 		if (local)
@@ -125,8 +125,7 @@ PlausibleRoute *Path::toRoute()
 			{
 				BondTorsion *c = group->bondTorsion(j);
 				
-				const std::string &ch = c->atom(1)->chain();
-				if (!_molecule->has_chain_id(ch))
+				if (!_instance->atomBelongsToInstance(c->atom(1)))
 				{
 					continue;
 				}
@@ -162,7 +161,7 @@ PlausibleRoute *Path::toRoute()
 
 std::string Path::desc() const
 {
-	return _startMolecule + " to " + _endMolecule;
+	return _startInstance + " to " + _endInstance;
 }
 
 void Path::calculateArrays(MetadataGroup *group)
@@ -170,8 +169,8 @@ void Path::calculateArrays(MetadataGroup *group)
 	const int total = 12;
 	housekeeping();
 
-	_molecule->model()->load();
-	AtomContent *grp = _molecule->model()->currentAtoms();
+	_instance->load();
+	AtomContent *grp = _instance->model()->currentAtoms();
 	PlausibleRoute *pr = toRoute();
 	pr->setup();
 	pr->calculateProgression(total);
@@ -179,12 +178,14 @@ void Path::calculateArrays(MetadataGroup *group)
 	for (size_t i = 0; i < total; i++)
 	{
 		pr->submitJobAndRetrieve(i);
-		_molecule->extractTorsionAngles(grp, true);
+		_instance->extractTorsionAngles(grp, true);
 		MetadataGroup::Array vals;
-		vals = _molecule->grabTorsions(rope::TemporaryTorsions);
+		vals = _instance->grabTorsions(rope::TemporaryTorsions);
 		group->matchDegrees(vals);
 		_angleArrays.push_back(vals);
 	}
+	
+	_instance->unload();
 }
 
 void Path::addTorsionsToGroup(MetadataGroup &group)

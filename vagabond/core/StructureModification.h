@@ -20,7 +20,7 @@
 #define __vagabond__StructureModification__
 
 /** \class StructureModification will set up a calculator for editing a
- * Molecule in a structure */
+ * Instance in a structure */
 
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/core/BondCalculator.h>
@@ -32,7 +32,7 @@ class MetadataGroup;
 template <class T>
 class Cluster;
 
-class Molecule;
+class Instance;
 class BondCalculator;
 class ConcertedBasis;
 class AtomContent;
@@ -41,7 +41,7 @@ class Atom;
 class StructureModification
 {
 public:
-	StructureModification(Molecule *mol, int num, int dims);
+	StructureModification(Instance *mol, int num, int dims);
 	
 	void setAtoms(AtomGroup *grp)
 	{
@@ -66,11 +66,11 @@ public:
 	void makeCalculator(Atom *anchor, bool has_mol);
 	void startCalculator();
 	
-	void changeMolecule(Molecule *m);
+	void changeInstance(Instance *m);
 	
-	Molecule *molecule()
+	Instance *instance()
 	{
-		return _molecule;
+		return _instance;
 	}
 	
 	void clearCalculators();
@@ -82,9 +82,9 @@ protected:
 	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
-	bool checkForMolecule(AtomGroup *grp);
+	bool checkForInstance(AtomGroup *grp);
 	void cleanup();
-	Molecule *_molecule = nullptr;
+	Instance *_instance = nullptr;
 
 	BondCalculator *_hetatmCalc = nullptr;
 	std::vector<BondCalculator *> _calculators;

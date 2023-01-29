@@ -18,7 +18,7 @@
 
 #include "PathView.h"
 #include <vagabond/core/MetadataGroup.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/Polymer.h>
 #include <vagabond/core/Path.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
@@ -74,7 +74,7 @@ void PathView::populate()
 		}
 	}
 	
-	int idx = dg->indexOfObject(_path.endMolecule());
+	int idx = dg->indexOfObject(_path.endInstance());
 	glm::vec3 end = _cluster->point(idx);
 	_cluster->reweight(end);
 

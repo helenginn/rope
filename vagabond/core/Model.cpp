@@ -20,7 +20,7 @@
 #include "Model.h"
 #include "ModelManager.h"
 #include "ArbitraryMap.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include "Chain.h"
 #include "File.h"
 #include "AtomContent.h"

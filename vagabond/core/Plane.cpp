@@ -21,7 +21,7 @@
 #include "Plane.h"
 #include <vagabond/utils/FileReader.h>
 #include "MetadataGroup.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include <thread>
 
 Plane::Plane(Molecule *mol, Cluster<MetadataGroup> *cluster)
@@ -30,7 +30,7 @@ Plane::Plane(Molecule *mol, Cluster<MetadataGroup> *cluster)
 	_threads = 4;
 	_cluster = cluster;
 	_pType = BondCalculator::PipelineForceField;
-	AtomGroup *grp = _molecule->currentAtoms();
+	AtomGroup *grp = _instance->currentAtoms();
 	_fullAtoms = grp;
 	_fullAtoms->assignForceField(nullptr);
 	startCalculator();
@@ -39,7 +39,7 @@ Plane::Plane(Molecule *mol, Cluster<MetadataGroup> *cluster)
 Plane::~Plane()
 {
 	_fullAtoms->assignForceField(nullptr);
-	_molecule->model()->unload();
+	_instance->model()->unload();
 	cancelRun();
 }
 
@@ -170,7 +170,7 @@ glm::vec3 Plane::generateVertex(int i, int j)
 	j -= _counts[1];
 
 	MetadataGroup *group = _cluster->dataGroup();
-	int idx = group->indexOfObject(_molecule);
+	int idx = group->indexOfObject(_instance);
 	std::vector<Angular> mol = group->differenceVector(idx);
 
 	int pdx = _toIndex[i][j];
@@ -204,7 +204,7 @@ void Plane::customModifications(BondCalculator *calc, bool has_mol)
 
 	calc->setPipelineType(_pType);
 	FFProperties props;
-	props.group = _molecule->currentAtoms();
+	props.group = _instance->currentAtoms();
 	props.t = FFProperties::VdWContacts;
 	calc->setForceFieldProperties(props);
 }

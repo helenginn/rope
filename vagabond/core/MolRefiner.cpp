@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MolRefiner.h"
+#include "Polymer.h"
 #include "ArbitraryMap.h"
 #include "Sampler.h"
 #include "AxisNudger.h"

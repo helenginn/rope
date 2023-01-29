@@ -20,7 +20,7 @@
 #define __vagabond__FixIssues__
 
 #include <vector>
-#include "Molecule.h"
+#include "Polymer.h"
 #include "TorsionRef.h"
 #include "Residue.h"
 

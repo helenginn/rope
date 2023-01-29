@@ -16,40 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "PathManager.h"
+#ifndef __rope__types__
+#define __rope__types__
 
-PathManager::PathManager()
+namespace rope
 {
-
-}
-
-Path *PathManager::insertIfUnique(Path &p)
-{
-	_objects.push_back(p);
-	housekeeping();
-
-	Manager::triggerResponse();
-
-	return &_objects.back();
-}
-
-void PathManager::housekeeping()
-{
-
-}
-
-std::vector<Path *> PathManager::pathsForInstance(Instance *inst)
-{
-	std::vector<Path *> paths;
-
-	for (Path &p : _objects)
+	enum TorsionType
 	{
-		p.housekeeping();
-		if (p.startInstance() == inst)
-		{
-			paths.push_back(&p);
-		}
-	}
-
-	return paths;
+		RefinedTorsions,
+		TemporaryTorsions,
+	};
 }
+
+#endif
+

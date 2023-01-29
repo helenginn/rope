@@ -23,6 +23,7 @@
 #include <map>
 #include <set>
 #include <sstream>
+#include "RopeTypes.h"
 #include "Residue.h"
 #include <vagabond/c4x/Angular.h>
 #include "IndexedSequence.h"
@@ -31,15 +32,6 @@ class Atom;
 class Entity;
 class AtomGroup;
 class SequenceComparison;
-
-namespace rope
-{
-	enum TorsionType
-	{
-		RefinedTorsions,
-		TemporaryTorsions,
-	};
-}
 
 typedef std::map<Residue *, Residue *> ResidueMap;
 
@@ -113,12 +105,12 @@ public:
 	/** converts entity master residue to local residue
 	 * 	@param master pointer to the Entity master residue
 	 * 	@return pointer to the corresponding local residue */
-	Residue *const local_residue(Residue *master) const;
+	Residue *const local_residue(Residue *const master) const;
 
 	/** converts local residue to entity master residue
 	 * 	@param local pointer to the corresponding local residue 
 	 * 	@return pointer to the Entity master residue */
-	Residue *master_residue(Residue *local) const;
+	Residue *master_residue(Residue *const local) const;
 	
 	
 	/* returns fragment xxSxx where S is central residue ID and the

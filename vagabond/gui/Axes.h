@@ -24,7 +24,7 @@
 
 class PlaneView;
 class Scene;
-class Molecule;
+class Instance;
 class TorsionCluster;
 class PositionalCluster;
 class RopeCluster;
@@ -32,9 +32,9 @@ class RopeCluster;
 class Axes : public IndexResponder, public ButtonResponder
 {
 public:
-	Axes(TorsionCluster *group, Molecule *m = nullptr);
-	Axes(PositionalCluster *group, Molecule *m = nullptr);
-	Axes(RopeCluster *group, Molecule *m = nullptr);
+	Axes(TorsionCluster *group, Instance *m = nullptr);
+	Axes(PositionalCluster *group, Instance *m = nullptr);
+	Axes(RopeCluster *group, Instance *m = nullptr);
 	~Axes();
 	
 	void setScene(Scene *scene)
@@ -44,7 +44,7 @@ public:
 
 	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual void reindex();
-	virtual void reorient(int i, Molecule *mol);
+	virtual void reorient(int i, Instance *mol);
 	virtual void click(bool left = true);
 	virtual bool mouseOver();
 	virtual void unmouseOver();
@@ -79,11 +79,11 @@ private:
 	RopeCluster *_cluster = nullptr;
 	TorsionCluster *_torsionCluster = nullptr;
 	PositionalCluster *_positionalCluster = nullptr;
-	Molecule *_molecule = nullptr;
+	Instance *_instance = nullptr;
 	Scene *_scene = nullptr;
 	int _lastIdx = -1;
 	
-	Molecule *_targets[3];
+	Instance *_targets[3];
 	PlaneView *_pv = nullptr;
 	
 	bool _origin = false;

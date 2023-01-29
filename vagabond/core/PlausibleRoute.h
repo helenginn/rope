@@ -30,7 +30,7 @@ class PlausibleRoute : public Route, public Progressor, public SimplexEngine
 {
 	friend Path;
 public:
-	PlausibleRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
+	PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
 	
 	void calculateProgression(int steps);
 

@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MetadataGroup.h"
-#include "Molecule.h"
+#include "HasMetadata.h"
 
 MetadataGroup::MetadataGroup(size_t length) : DegreeDataGroup(length)
 {

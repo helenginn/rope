@@ -26,7 +26,7 @@
 #include "HasMetadata.h"
 #include "Metadata.h"
 
-#include "Molecule.h"
+#include "Polymer.h"
 #include "Ligand.h"
 #include "Responder.h"
 #include "AtomGroup.h"

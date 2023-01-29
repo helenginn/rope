@@ -26,7 +26,7 @@
 
 class Slider;
 class Residue;
-class Molecule;
+class Instance;
 class AtomContent;
 class ConcertedBasis;
 
@@ -34,7 +34,7 @@ class AxisExplorer : public Display, public DragResponder,
 public StructureModification
 {
 public:
-	AxisExplorer(Scene *prev, Molecule *mol, 
+	AxisExplorer(Scene *prev, Instance *mol, 
 	             const std::vector<ResidueTorsion> &list,
 	             const std::vector<Angular> &values);
 	

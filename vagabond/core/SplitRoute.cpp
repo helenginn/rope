@@ -17,13 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SplitRoute.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include "AtomGroup.h"
 #include "BondSequence.h"
 #include "Grapher.h"
 
-SplitRoute::SplitRoute(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims)
-: PlausibleRoute(mol, cluster, dims)
+SplitRoute::SplitRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims)
+: PlausibleRoute(inst, cluster, dims)
 {
 	_threads = 2;
 	_maximumCycles = 5;

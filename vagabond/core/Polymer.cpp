@@ -19,7 +19,7 @@
 #include "Chain.h"
 #include "Model.h"
 #include "Value.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include "Superpose.h"
 #include "AtomContent.h"
 #include "Environment.h"
@@ -314,48 +314,26 @@ std::string get_desc(std::string name)
 	return desc;
 }
 
-Residue *Molecule::localResidueForResidueTorsion(const ResidueTorsion &rt)
+Residue *const Molecule::equivalentMaster(const ResidueId &target)
 {
-	Residue *master = rt.residue;
-	Residue *local = sequence()->local_residue(master);
-	return local;
+	Sequence *seq = sequence();
+	Residue *local = seq->residueLike(target);
+	Residue *const master = seq->master_residue(local);
+
+	return master;
 }
 
-float Molecule::valueForTorsionFromList(BondTorsion *bt,
-                                        const std::vector<ResidueTorsion> &list,
-                                        const std::vector<Angular> &values,
-                                        std::vector<bool> &found)
+Residue *const Molecule::equivalentLocal(const ResidueId &m_id) const 
 {
-	ResidueId target = bt->residueId();
-	Residue *local = sequence()->residueLike(target);
-	Residue *master = sequence()->master_residue(local);
-	
-	for (size_t i = 0; i < list.size(); i++)
-	{
-		if (list[i].entity != _entity)
-		{
-			continue;
-		}
+	Residue *master = _entity->sequence()->residueLike(m_id);
+	return equivalentLocal(master);
+}
 
-		Residue *residue = list[i].residue;
-		
-		if (residue == nullptr || residue != master)
-		{
-			continue;
-		}
-
-		const std::string &desc = list[i].torsion.desc();
-		
-		if (desc != bt->desc() && desc != bt->reverse_desc())
-		{
-			continue;
-		}
-		
-		found[i] = true;
-		return values[i];
-	}
-
-	return NAN;
+Residue *const Molecule::equivalentLocal(Residue *const master) const 
+{
+	const Sequence *seq = const_sequence();
+	Residue *const local = seq->local_residue(master);
+	return local;
 }
 
 bool Molecule::atomBelongsToInstance(Atom *a)

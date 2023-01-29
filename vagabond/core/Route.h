@@ -28,7 +28,7 @@ struct AtomGraph;
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
 public:
-	Route(Molecule *mol, Cluster<MetadataGroup> *cluster, int dims);
+	Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
 	~Route();
 
 	virtual void setup();
@@ -61,14 +61,14 @@ public:
 	/* get rid of all points defined so far */
 	void clearPoints();
 	
-	void setDestinationMolecule(Molecule *mol)
+	void setDestinationInstance(Instance *inst)
 	{
-		_endMolecule = mol;
+		_endInstance = inst;
 	}
 	
-	Molecule *endMolecule()
+	Instance *endInstance()
 	{
-		return _endMolecule;
+		return _endInstance;
 	}
 
 	/* to be called on separate thread */
@@ -326,7 +326,7 @@ private:
 	
 	size_t _grapherIdx = 0;
 
-	Molecule *_endMolecule = nullptr;
+	Instance *_endInstance = nullptr;
 
 	Point _destination;
 	std::vector<Angular> _rawDest;

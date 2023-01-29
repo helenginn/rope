@@ -23,7 +23,7 @@
 #include <map>
 
 class Interface;
-class Molecule;
+class Instance;
 class Entity;
 
 class Complex
@@ -51,16 +51,16 @@ public:
 
 	bool nodeLikeNode(Node *one, Node *two);
 
-	Node *node(Molecule *mol) const;
+	Node *node(Instance *mol) const;
 
 	void addLink(Node *existing, Interface *interface, Node *other);
-	Node *addNode(Molecule *molecule);
+	Node *addNode(Instance *instance);
 private:
 	bool compatibleChildren(Node *one, Node *two) const;
 	bool compatibleNodes(Node *one, Node *two) const;
 
 	std::list<Node> _nodes;
-	std::map<Molecule *, Node *> _mole2Node;
+	std::map<Instance *, Node *> _inst2Node;
 
 };
 

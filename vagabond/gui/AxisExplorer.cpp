@@ -28,16 +28,16 @@
 
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/c4x/Cluster.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/Polymer.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/ConcertedBasis.h>
 #include <vagabond/core/AlignmentTool.h>
 
-AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
+AxisExplorer::AxisExplorer(Scene *prev, Instance *inst,
                            const std::vector<ResidueTorsion> &list,
                            const std::vector<Angular> &values) 
-: Scene(prev), Display(prev), StructureModification(mol, 1, 1)
+: Scene(prev), Display(prev), StructureModification(inst, 1, 1)
 {
 //	_pType = BondCalculator::PipelineForceField;
 	_dims = 1;
@@ -48,13 +48,13 @@ AxisExplorer::AxisExplorer(Scene *prev, Molecule *mol,
 
 AxisExplorer::~AxisExplorer()
 {
-	_molecule->unload();
+	_instance->unload();
 }
 
 void AxisExplorer::setup()
 {
-	_molecule->load();
-	AtomGroup *grp = _molecule->currentAtoms();
+	_instance->load();
+	AtomGroup *grp = _instance->currentAtoms();
 	AlignmentTool tool(grp);
 	tool.run();
 	grp->recalculate();
@@ -74,7 +74,7 @@ void AxisExplorer::setup()
 	setupColours();
 	setupColourLegend();
 	
-	VisualPreferences *vp = &_molecule->entity()->visualPreferences();
+	VisualPreferences *vp = &_instance->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
 	
 	reportMissing();
@@ -110,24 +110,6 @@ void AxisExplorer::submitJob(float prop)
 			sum += r->score;
 		}
 	}
-	
-	return;
-	
-	AtomGroup &ag = *_molecule->model()->currentAtoms();
-	Atom *fe = ag.firstAtomWithName("FE");
-	glm::vec3 ref = fe->initialPosition();
-	
-	for (size_t i = 0; i < ag.size(); i++)
-	{
-		Atom *a = ag[i];
-		glm::vec3 pos = a->derivedPosition();
-		glm::vec3 init = a->initialPosition();
-		double start = glm::length(init - ref);
-		double end = glm::length(pos - ref);
-		double diff = end - start;
-		a->setDerivedBFactor(diff);
-	}
-	_molecule->model()->write("bfactor.pdb");
 }
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
@@ -206,7 +188,7 @@ void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 
 	calc->setPipelineType(_pType);
 	FFProperties props;
-	props.group = _molecule->currentAtoms();
+	props.group = _instance->currentAtoms();
 	props.t = FFProperties::CAlphaSeparation;
 	calc->setForceFieldProperties(props);
 
@@ -248,8 +230,7 @@ void AxisExplorer::setupColours()
 			continue;
 		}
 
-		Sequence *seq = _molecule->sequence();
-		Residue *local = seq->local_residue(master);
+		Residue *local = _instance->equivalentLocal(master);
 		if (local == nullptr)
 		{
 			continue;

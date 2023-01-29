@@ -20,6 +20,7 @@
 #include "Instance.h"
 #include "Interface.h"
 #include "AtomContent.h"
+#include "BondTorsion.h"
 #include "Environment.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
@@ -238,3 +239,52 @@ void Instance::housekeeping()
 	_entity = (Environment::entityManager()->entity(_entity_id));
 	
 }
+
+const Residue *Instance::localResidueForResidueTorsion(const ResidueTorsion &rt)
+{
+	Residue *const master = rt.residue;
+	return equivalentLocal(master);
+}
+
+float Instance::valueForTorsionFromList(BondTorsion *bt,
+                                        const std::vector<ResidueTorsion> &list,
+                                        const std::vector<Angular> &values,
+                                        std::vector<bool> &found)
+{
+	ResidueId target = bt->residueId();
+	Residue *master = equivalentMaster(target);
+	
+	if (master != nullptr)
+	{
+		return NAN;
+	}
+	
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		if (list[i].entity != _entity)
+		{
+			continue;
+		}
+
+		Residue *residue = list[i].residue;
+		
+		if (residue == nullptr || residue != master)
+		{
+			continue;
+		}
+
+		const std::string &desc = list[i].torsion.desc();
+		
+		if (desc != bt->desc() && desc != bt->reverse_desc())
+		{
+			continue;
+		}
+		
+		found[i] = true;
+		return values[i];
+	}
+
+	return NAN;
+}
+
+

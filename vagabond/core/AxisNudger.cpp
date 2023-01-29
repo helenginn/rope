@@ -18,6 +18,7 @@
 
 #include "AxisNudger.h"
 #include "AtomGraph.h"
+#include "Polymer.h"
 #include "Grapher.h"
 
 class MetadataGroup;

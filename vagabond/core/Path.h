@@ -22,7 +22,7 @@
 #include "HasMetadata.h"
 #include "MetadataGroup.h"
 #include "SplitRoute.h"
-#include "Molecule.h"
+#include "Polymer.h"
 
 class MetadataGroup;
 
@@ -35,12 +35,12 @@ public:
 
 	void getTorsionRef(int idx);
 
-	Molecule *startMolecule() const
+	Instance *startInstance() const
 	{
-		return _molecule;
+		return _instance;
 	}
 	
-	Molecule *endMolecule()
+	Instance *endInstance()
 	{
 		return _end;
 	}
@@ -92,12 +92,12 @@ public:
 		return _angleArrays[i];
 	}
 private:
-	std::string _startMolecule;
+	std::string _startInstance;
 	std::string _model_id;
-	std::string _endMolecule;
-	Molecule *_molecule = nullptr;
+	std::string _endInstance;
+	Instance *_instance = nullptr;
 	Model *_model = nullptr;
-	Molecule *_end = nullptr;
+	Instance *_end = nullptr;
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
@@ -133,8 +133,8 @@ inline void from_json(const json &j, PlausibleRoute::WayPoint &value)
 inline void to_json(json &j, const Path &value)
 {
 	j["model"] = value._model_id;
-	j["start"] = value._startMolecule;
-	j["end"] = value._endMolecule;
+	j["start"] = value._startInstance;
+	j["end"] = value._endInstance;
 	j["residues"] = value._residueIds;
 	j["torsions"] = value._torsionRefs;
 	j["flips"] = value._flips;
@@ -144,8 +144,8 @@ inline void to_json(json &j, const Path &value)
 /* path */
 inline void from_json(const json &j, Path &value)
 {
-	value._startMolecule = j.at("start");
-	value._endMolecule = j.at("end");
+	value._startInstance = j.at("start");
+	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
 
     std::vector<ResidueId> residues = j.at("residues");

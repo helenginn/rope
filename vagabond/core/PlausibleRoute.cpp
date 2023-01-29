@@ -17,15 +17,15 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PlausibleRoute.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include "MetadataGroup.h"
 #include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
 #include <vagabond/utils/polyfit.h>
 
-PlausibleRoute::PlausibleRoute(Molecule *mol, Cluster<MetadataGroup> *cluster,
+PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
                                int dims)
-: Route(mol, cluster, dims)
+: Route(inst, cluster, dims)
 {
 	_maxJobRuns = 20;
 	_maximumCycles = 5;
@@ -46,7 +46,7 @@ void PlausibleRoute::setTargets()
 	twoPointProgression();
 	submitJobAndRetrieve(0);
 	
-	_molecule->model()->write("start.pdb");
+	_instance->model()->write("start.pdb");
 
 	for (Atom *atom : _fullAtoms->atomVector())
 	{
@@ -55,7 +55,7 @@ void PlausibleRoute::setTargets()
 	}
 
 	submitJobAndRetrieve(1);
-	_molecule->model()->write("finish.pdb");
+	_instance->model()->write("finish.pdb");
 
 	for (Atom *atom : _fullAtoms->atomVector())
 	{

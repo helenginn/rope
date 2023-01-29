@@ -20,7 +20,7 @@
 #include <math.h>
 #include <vagabond/utils/version.h>
 #include <vagabond/core/RopeCluster.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/Instance.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include "PlaneView.h"
@@ -30,13 +30,13 @@
 #include "RouteExplorer.h"
 #include "Axes.h"
 
-Axes::Axes(TorsionCluster *group, Molecule *m) : IndexResponder()
+Axes::Axes(TorsionCluster *group, Instance *m) : IndexResponder()
 {
 	initialise();
 
 	_cluster = group;
 	_torsionCluster = group;
-	_molecule = m;
+	_instance = m;
 	
 	prepareAxes();
 
@@ -45,13 +45,13 @@ Axes::Axes(TorsionCluster *group, Molecule *m) : IndexResponder()
 #endif
 }
 
-Axes::Axes(PositionalCluster *group, Molecule *m) : IndexResponder()
+Axes::Axes(PositionalCluster *group, Instance *m) : IndexResponder()
 {
 	initialise();
 
 	_cluster = group;
 	_positionalCluster = group;
-	_molecule = m;
+	_instance = m;
 	
 	prepareAxes();
 
@@ -60,12 +60,12 @@ Axes::Axes(PositionalCluster *group, Molecule *m) : IndexResponder()
 #endif
 }
 
-Axes::Axes(RopeCluster *group, Molecule *m) : IndexResponder()
+Axes::Axes(RopeCluster *group, Instance *m) : IndexResponder()
 {
 	initialise();
 
 	_cluster = group;
-	_molecule = m;
+	_instance = m;
 	
 	prepareAxes();
 
@@ -137,7 +137,7 @@ std::vector<Angular> Axes::directTorsionVector(int idx)
 
 	if (_targets[idx] != nullptr)
 	{
-		int mine = _torsionCluster->dataGroup()->indexOfObject(_molecule);
+		int mine = _torsionCluster->dataGroup()->indexOfObject(_instance);
 		int yours = _torsionCluster->dataGroup()->indexOfObject(_targets[idx]);
 
 		std::vector<Angular> vals = _torsionCluster->rawVector(mine, yours);
@@ -189,7 +189,7 @@ void Axes::loadAxisExplorer(int idx)
 		return;
 	}
 	
-	std::string str = "Reference " + _molecule->id();
+	std::string str = "Reference " + _instance->id();
 	std::string info;
 	
 	if (_targets[idx] != nullptr)
@@ -204,7 +204,7 @@ void Axes::loadAxisExplorer(int idx)
 
 	try
 	{
-		AxisExplorer *ae = new AxisExplorer(_scene, _molecule, list, vals);
+		AxisExplorer *ae = new AxisExplorer(_scene, _instance, list, vals);
 		ae->setCluster(_torsionCluster);
 		ae->setFutureTitle(str);
 		ae->show();
@@ -219,11 +219,11 @@ void Axes::loadAxisExplorer(int idx)
 void Axes::route(int idx)
 {
 	int l = _torsionCluster->dataGroup()->length();
-	SplitRoute *sr = new SplitRoute(_molecule, _torsionCluster, l);
+	SplitRoute *sr = new SplitRoute(_instance, _torsionCluster, l);
 	
 	std::vector<Angular> values = directTorsionVector(idx);
 	sr->setRawDestination(values);
-	sr->setDestinationMolecule(_targets[idx]);
+	sr->setDestinationInstance(_targets[idx]);
 
 	RouteExplorer *re = new RouteExplorer(_scene, sr);
 	re->show();
@@ -377,7 +377,7 @@ bool Axes::finishedPlane()
 
 void Axes::interacted(int idx, bool hover, bool left)
 {
-	if (!hover && _molecule && _cluster)
+	if (!hover && _instance && _cluster)
 	{
 		_lastIdx = idx;
 
@@ -446,7 +446,7 @@ size_t Axes::requestedIndices()
 void Axes::refreshAxes()
 {
 	ObjectGroup *group = _cluster->objectGroup();
-	int idx = group->indexOfObject(_molecule);
+	int idx = group->indexOfObject(_instance);
 	glm::vec3 start = glm::vec3(0.f);
 	
 	if (idx >= 0)
@@ -479,10 +479,10 @@ void Axes::prepareAxes()
 {
 	glm::vec3 centre = glm::vec3(0.f);
 	
-	if (_cluster && _molecule)
+	if (_cluster && _instance)
 	{
 		ObjectGroup *group = _cluster->objectGroup();
-		int idx = group->indexOfObject(_molecule);
+		int idx = group->indexOfObject(_instance);
 		centre = _cluster->pointForDisplay(idx);
 	}
 
@@ -501,7 +501,7 @@ void Axes::reflect(int i)
 	refreshAxes();
 }
 
-void Axes::reorient(int i, Molecule *mol)
+void Axes::reorient(int i, Instance *mol)
 {
 	if (i >= 0 && i <= 2)
 	{
@@ -521,7 +521,7 @@ void Axes::reorient(int i, Molecule *mol)
 	}
 
 	ObjectGroup *group = _cluster->objectGroup();
-	int idx = group->indexOfObject(_molecule);
+	int idx = group->indexOfObject(_instance);
 	glm::vec3 centre = _cluster->point(idx);
 
 	for (size_t i = 0; i < 3; i++)

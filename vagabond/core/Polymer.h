@@ -24,7 +24,6 @@
 
 #include <string>
 #include "AtomRecall.h"
-#include "MetadataGroup.h"
 #include "Instance.h"
 
 class MetadataGroup;
@@ -72,19 +71,25 @@ public:
 		return model_chain_id();
 	}
 	
+	const Sequence *const_sequence() const
+	{
+		return &_sequence;
+	}
+
 	Sequence *const sequence()
 	{
 		return &_sequence;
 	}
 
 	void putTorsionRefsInSequence(Chain *ch);
-	void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
+	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
 	void insertTorsionAngles(AtomContent *atoms);
 	virtual Atom *equivalentForAtom(Model *other, std::string desc);
 
 	
-	MetadataGroup::Array grabTorsions(rope::TorsionType type 
-	                                  = rope::RefinedTorsions);
+	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type 
+	                                          = rope::RefinedTorsions);
+
 	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
 	void addPositionsToGroup(MetadataGroup &group,
 	                         std::map<Residue *, int> resIdxs);
@@ -101,13 +106,6 @@ public:
 	
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
 
-	float valueForTorsionFromList(BondTorsion *bt,
-	                              const std::vector<ResidueTorsion> &list,
-	                              const std::vector<Angular> &values,
-	                              std::vector<bool> &found);
-
-	Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
-
 	bool hasAtomPositionList(Molecule *reference);
 	std::vector<Posular> atomPositionList(Molecule *reference,
 	                                      std::vector<Atom3DPosition> &headers,
@@ -116,6 +114,9 @@ public:
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
 	
+	virtual Residue *const equivalentMaster(const ResidueId &local);
+	virtual Residue *const equivalentLocal(Residue *const master) const;
+	virtual Residue *const equivalentLocal(const ResidueId &m_id) const;
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
 private:

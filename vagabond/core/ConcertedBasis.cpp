@@ -19,7 +19,7 @@
 #include <iostream>
 #include "ConcertedBasis.h"
 #include "BondTorsion.h"
-#include "Molecule.h"
+#include "Polymer.h"
 
 ConcertedBasis::ConcertedBasis() : TorsionBasis()
 {
@@ -153,7 +153,7 @@ void ConcertedBasis::prepareSVD()
 	reorderSVD(&_svd);
 }
 
-bool ConcertedBasis::reverseLookup(Molecule *mol, int axis,
+bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
                                    const std::vector<ResidueTorsion> &list,
                                    const std::vector<Angular> &values)
 {
@@ -170,8 +170,8 @@ bool ConcertedBasis::reverseLookup(Molecule *mol, int axis,
 				continue;
 			}
 
-//			float value = molecule->valueForTorsionFromList(t, list, values, found);
-			Residue *local = mol->localResidueForResidueTorsion(list[j]);
+//			float value = instance->valueForTorsionFromList(t, list, values, found);
+			const Residue *local = inst->localResidueForResidueTorsion(list[j]);
 			if (local->id() != t->residueId())
 			{
 				continue;
@@ -200,7 +200,7 @@ bool ConcertedBasis::reverseLookup(Molecule *mol, int axis,
 	return changed;
 }
 
-bool ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
+bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
                                           const std::vector<ResidueTorsion> &list,
                                           const std::vector<Angular> &values)
 {
@@ -208,11 +208,11 @@ bool ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 	
 	if (values.size() == 1)
 	{
-		bool result = reverseLookup(molecule, axis, list, values);
+		bool result = reverseLookup(instance, axis, list, values);
 		return result;
 	}
 
-	std::cout << "Adding " << molecule->id() << " axis " << axis << ", "
+	std::cout << "Adding " << instance->id() << " axis " << axis << ", "
 	<< values.size() << " values" << std::endl;
 	
 	for (size_t i = 0; i < _torsions.size(); i++)
@@ -224,7 +224,7 @@ bool ConcertedBasis::fillFromMoleculeList(Molecule *molecule, int axis,
 			continue;
 		}
 
-		float value = molecule->valueForTorsionFromList(t, list, values, found);
+		float value = instance->valueForTorsionFromList(t, list, values, found);
 		
 		if (value != value)
 		{

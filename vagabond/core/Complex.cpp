@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Molecule.h"
+#include "Instance.h"
 #include "Complex.h"
 
 Complex::Complex()
@@ -44,22 +44,22 @@ void Complex::addLink(Node *existing, Interface *interface,
 	other->connections.push_back(con_other);
 }
 
-Complex::Node *Complex::addNode(Molecule *molecule)
+Complex::Node *Complex::addNode(Instance *instance)
 {
-	Entity *entity = molecule->entity();
+	Entity *entity = instance->entity();
 	Node node;
 	node.entity = entity;
 	_nodes.push_back(node);
 	
-	_mole2Node[molecule] = &_nodes.back();
+	_inst2Node[instance] = &_nodes.back();
 	return &_nodes.back();
 }
 
-Complex::Node *Complex::node(Molecule *mol) const
+Complex::Node *Complex::node(Instance *instance) const
 {
-	if (_mole2Node.count(mol))
+	if (_inst2Node.count(instance))
 	{
-		return _mole2Node.at(mol);
+		return _inst2Node.at(instance);
 	}
 
 	return nullptr;

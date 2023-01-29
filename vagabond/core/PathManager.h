@@ -34,7 +34,7 @@ public:
 		return "paths";
 	}
 	
-	std::vector<Path *> pathsForMolecule(Molecule *mol);
+	std::vector<Path *> pathsForInstance(Instance *mol);
 
 	void housekeeping();
 	

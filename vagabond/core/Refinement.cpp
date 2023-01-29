@@ -18,7 +18,7 @@
 
 #include "Model.h"
 #include "Entity.h"
-#include "Molecule.h"
+#include "Polymer.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
 #include "MetadataGroup.h"
