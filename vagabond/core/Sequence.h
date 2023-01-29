@@ -120,6 +120,11 @@ public:
 	 * 	@return pointer to the Entity master residue */
 	Residue *master_residue(Residue *local) const;
 	
+	
+	/* returns fragment xxSxx where S is central residue ID and the
+     * 	number of x on either side is determined by buffer */
+	Sequence fragment(ResidueId central, int buffer);
+	
 	/** residue number of the first residue in the sequence */
 	int firstNum()
 	{
@@ -228,6 +233,14 @@ public:
 	void addAtomPositionHeaders(std::vector<Atom3DPosition> &headers);
 private:
 	void findSequence();
+
+	std::list<Residue>::iterator iterator(Residue &res)
+	{
+		return std::find_if(_residues.begin(), _residues.end(), 
+		                    [&res](const Residue &arg) { 
+                                           return arg.id() == res.id(); });
+	}
+	
 	
 	std::list<Residue> _residues;
 	std::list<Residue> _master;

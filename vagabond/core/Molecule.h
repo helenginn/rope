@@ -149,6 +149,7 @@ public:
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
 private:
+	void extractFragment(ResidueId res, int buffer, std::string name);
 	void harvestMutations(SequenceComparison *sc);
 	void setAtomGroupSubset();
 

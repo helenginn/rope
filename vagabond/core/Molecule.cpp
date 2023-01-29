@@ -626,3 +626,4 @@ Atom *Molecule::equivalentForAtom(Model *other, std::string desc)
 	Atom *chosen = myAtoms->atomByIdName(myLocal->id(), atom->atomName());
 	return chosen;
 }
+

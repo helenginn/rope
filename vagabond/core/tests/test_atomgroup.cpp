@@ -1,3 +1,4 @@
+
 // vagabond
 // Copyright (C) 2022 Helen Ginn
 // 
@@ -19,14 +20,23 @@
 #include <vagabond/utils/include_boost.h>
 
 #define private public // evil but delicious
-#include <vagabond/core/Entity.h>
-#include <vagabond/core/EntityManager.h>
-#include <vagabond/core/Environment.h>
-#include <vagabond/c4x/ClusterSVD.h>
+#include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/AtomsFromSequence.h>
+#include <vagabond/core/Sequence.h>
 
 namespace tt = boost::test_tools;
 
-BOOST_AUTO_TEST_CASE(molecule_map_molecule)
+BOOST_AUTO_TEST_CASE(atomgroup_gets_fragment)
 {
+	Sequence full("HAPPINESS");
+	AtomsFromSequence atoms2Seq(full);
 
+	AtomGroup *group = atoms2Seq.atoms();
+
+	Residue *r = full.residue(5);
+	Sequence fragment = full.fragment(r->id(), 2);
+	
+	AtomGroup mini = group->extractFragment(fragment);
+
+	BOOST_TEST(mini.size() == 38);
 }

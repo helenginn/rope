@@ -19,14 +19,17 @@
 #include <vagabond/utils/include_boost.h>
 
 #define private public // evil but delicious
-#include <vagabond/core/Entity.h>
-#include <vagabond/core/EntityManager.h>
-#include <vagabond/core/Environment.h>
-#include <vagabond/c4x/ClusterSVD.h>
+#include <vagabond/core/Sequence.h>
 
 namespace tt = boost::test_tools;
 
-BOOST_AUTO_TEST_CASE(molecule_map_molecule)
+BOOST_AUTO_TEST_CASE(sequence_gets_fragment)
 {
+	Sequence seq("HAPPINESS");
+	
+	Residue *r = seq.residue(5);
 
+	Sequence fragment = seq.fragment(r->id(), 2);
+	
+	BOOST_TEST(fragment.str() == "PINES");
 }

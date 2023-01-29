@@ -130,6 +130,8 @@ public:
 	 * AtomGroups of multiple connected molecules.
 	 * @return sequence object */
 	Sequence *sequence();
+
+	AtomGroup extractFragment(Sequence seq);
 	
 	float rmsd() const;
 	

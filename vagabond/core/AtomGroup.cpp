@@ -599,3 +599,21 @@ void AtomGroup::finishedRefining()
 {
 	triggerResponse();
 }
+
+AtomGroup AtomGroup::extractFragment(Sequence frag)
+{
+	AtomGroup select;
+	
+	for (Atom *a : _atoms)
+	{
+		for (const Residue &r : frag.residues())
+		{
+			if (a->residueId() == r.id())
+			{
+				select += a;
+			}
+		}
+	}
+
+	return select;
+}

@@ -426,7 +426,7 @@ AtomGroup *Sequence::convertToAtoms()
 	return grp;
 }
 
-Sequence Sequence::fragment(ResidueId central, int buffer)
+Sequence *Sequence::fragment(ResidueId central, int buffer)
 {
 	Residue *centre = residueLike(central);
 	std::list<Residue>::iterator start = iterator(*centre);

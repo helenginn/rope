@@ -226,7 +226,9 @@ void Entity::clickTicker()
 Molecule *Entity::chooseRepresentativeMolecule()
 {
 	Molecule *best = nullptr;
+	Molecule *highest = nullptr;
 	size_t best_count = 0;
+	float highest_res = FLT_MAX;
 
 	for (Molecule *m : _molecules)
 	{
@@ -238,6 +240,13 @@ Molecule *Entity::chooseRepresentativeMolecule()
 			best_count = count;
 		}
 	}
+	
+	if (highest != nullptr)
+	{
+		best = highest;
+	}
+	
+	std::cout << "Choosing reference: " << best->id() << std::endl;
 	
 	return best;
 }
