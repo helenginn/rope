@@ -28,7 +28,7 @@
 
 class MetadataGroup;
 class AtomContent;
-class Entity;
+class PolymerEntity;
 class Model;
 class Chain;
 
@@ -80,6 +80,8 @@ public:
 	{
 		return &_sequence;
 	}
+	
+	PolymerEntity *const polymerEntity() const;
 
 	void putTorsionRefsInSequence(Chain *ch);
 	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
@@ -90,7 +92,6 @@ public:
 	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type 
 	                                          = rope::RefinedTorsions);
 
-	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
 	void addPositionsToGroup(MetadataGroup &group,
 	                         std::map<Residue *, int> resIdxs);
 
@@ -108,7 +109,7 @@ public:
 
 	bool hasAtomPositionList(Molecule *reference);
 	std::vector<Posular> atomPositionList(Molecule *reference,
-	                                      std::vector<Atom3DPosition> &headers,
+	                                      const std::vector<Atom3DPosition> &headers,
 	                                      std::map<ResidueId, int> &resIdxs);
 
 	friend void to_json(json &j, const Molecule &value);

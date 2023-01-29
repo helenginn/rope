@@ -55,56 +55,6 @@ std::map<std::string, int> Entity::allMetadataHeaders()
 	return headers;
 }
 
-Metadata *Entity::angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c)
-{
-	Metadata *md = new Metadata();
-	
-	std::string header;
-	header += a.master->id().as_string() + a.atom_name;
-	header += " through ";
-	header += b.master->id().as_string() + b.atom_name;
-	header += " to ";
-	header += c.master->id().as_string() + c.atom_name;
-	
-	AtomRecall new_a = AtomRecall(_sequence.residueLike(a.master->id()),
-	                              a.atom_name);
-	AtomRecall new_b = AtomRecall(_sequence.residueLike(b.master->id()),
-	                              b.atom_name);
-	AtomRecall new_c = AtomRecall(_sequence.residueLike(c.master->id()),
-	                              c.atom_name);
-
-	for (Model *model : _models)
-	{
-		model->angleBetweenAtoms(this, new_a, new_b, new_c, header, md);
-		md->clickTicker();
-	}
-
-	return md;
-}
-
-Metadata *Entity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
-{
-	Metadata *md = new Metadata();
-	
-	std::string header;
-	header += a.master->id().as_string() + a.atom_name;
-	header += " to ";
-	header += b.master->id().as_string() + b.atom_name;
-	
-	AtomRecall new_a = AtomRecall(_sequence.residueLike(a.master->id()),
-	                              a.atom_name);
-	AtomRecall new_b = AtomRecall(_sequence.residueLike(b.master->id()),
-	                              b.atom_name);
-
-	for (Model *model : _models)
-	{
-		model->distanceBetweenAtoms(this, new_a, new_b, header, md);
-		md->clickTicker();
-	}
-
-	return md;
-}
-
 
 void Entity::checkModel(Model &m)
 {
@@ -132,16 +82,15 @@ const bool compare_id(const Molecule *a, const Molecule *b)
 void Entity::housekeeping()
 {
 	std::sort(_molecules.begin(), _molecules.end(), compare_id);
-	_sequence.setEntity(this);
 }
 
 size_t Entity::checkForUnrefinedMolecules()
 {
 	int count = 0;
 
-	for (const Molecule *mol : _molecules)
+	for (const Molecule *inst : molecules())
 	{
-		bool refined = mol->isRefined();
+		bool refined = inst->isRefined();
 		
 		if (!refined)
 		{
@@ -253,12 +202,7 @@ Molecule *Entity::chooseRepresentativeMolecule()
 
 MetadataGroup Entity::makeTorsionDataGroup()
 {
-	size_t num = _sequence.torsionCount();
-	std::vector<ResidueTorsion> headers;
-	_sequence.addResidueTorsions(headers);
-
-	MetadataGroup group(num);
-	group.addHeaders(headers);
+	MetadataGroup group = prepareTorsionGroup();
 	
 	if (!Environment::modelManager()->tryLock())
 	{
@@ -291,11 +235,8 @@ MetadataGroup Entity::makeTorsionDataGroup()
 
 PositionalGroup Entity::makePositionalDataGroup()
 {
-	std::vector<Atom3DPosition> headers;
-	_sequence.addAtomPositionHeaders(headers);
-	
-	PositionalGroup group(headers.size());
-	group.addHeaders(headers);
+	PositionalGroup group = preparePositionGroup();
+	const std::vector<Atom3DPosition> &headers = group.headers();
 
 	/* make a quick lookup table for the first residue in each */
 	std::map<ResidueId, int> resIdxs;

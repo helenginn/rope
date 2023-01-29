@@ -65,13 +65,13 @@ void CalculateMetadata::populateBoundEntities()
 
 	for (Model const *m : _entity->models())
 	{
-		EntityManager *em = Environment::entityManager();
+		PolymerEntityManager *em = Environment::entityManager();
 		int count = 0;
 
 		Metadata::KeyValues kv;
 		kv["model"] = m->id();
 
-		for (const Entity &e : em->objects())
+		for (const PolymerEntity &e : em->objects())
 		{
 			if (&e == _entity)
 			{

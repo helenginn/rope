@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/EntityManager.h>
 
-class EntityMenu : public ListView, public Responder<Manager<Entity>>
+class EntityMenu : public ListView, public Responder<Manager<PolymerEntity>>
 {
 public:
 	EntityMenu(Scene *prev);
@@ -39,7 +39,7 @@ public:
 private:
 	void addToolkit();
 
-	EntityManager *_manager;
+	PolymerEntityManager *_manager;
 
 };
 

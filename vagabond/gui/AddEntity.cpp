@@ -59,7 +59,8 @@ AddEntity::AddEntity(Scene *prev, std::string str) : Scene(prev), AddObject(prev
 	_obj.setSequence(seq);
 }
 
-AddEntity::AddEntity(Scene *prev, Entity *ent) : Scene(prev), AddObject(prev, ent)
+AddEntity::AddEntity(Scene *prev, PolymerEntity *ent) : 
+Scene(prev), AddObject(prev, ent)
 {
 
 }

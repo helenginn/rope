@@ -25,6 +25,7 @@
 #include "Environment.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
+#include "PolymerEntity.h"
 #include "SequenceComparison.h"
 
 Molecule::Molecule()
@@ -325,7 +326,7 @@ Residue *const Molecule::equivalentMaster(const ResidueId &target)
 
 Residue *const Molecule::equivalentLocal(const ResidueId &m_id) const 
 {
-	Residue *master = _entity->sequence()->residueLike(m_id);
+	Residue *master = polymerEntity()->sequence()->residueLike(m_id);
 	return equivalentLocal(master);
 }
 
@@ -347,20 +348,8 @@ MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
 	sequence()->remapFromMaster(entity());
 	MetadataGroup::Array vals;
 
-	entity()->sequence()->torsionsFromMapped(sequence(), vals, type);
+	polymerEntity()->sequence()->torsionsFromMapped(sequence(), vals, type);
 	return vals;
-}
-
-void Molecule::addTorsionsToGroup(MetadataGroup &group, 
-                                  rope::TorsionType type)
-{
-	if (!isRefined())
-	{
-		return;
-	}
-
-	MetadataGroup::Array vals = grabTorsions(type);
-	group.addMetadataArray(this, vals);
 }
 
 std::map<Atom *, Atom *> Molecule::mapAtoms(Molecule *other)
@@ -408,7 +397,7 @@ bool Molecule::hasAtomPositionList(Molecule *reference)
 }
 
 std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
-                           std::vector<Atom3DPosition> &headers,
+                           const std::vector<Atom3DPosition> &headers,
                            std::map<ResidueId, int> &resIdxs)
 {
 	if (hasAtomPositionList(reference))
@@ -500,3 +489,7 @@ Atom *Molecule::equivalentForAtom(Model *other, std::string desc)
 	return chosen;
 }
 
+PolymerEntity *const Molecule::polymerEntity() const
+{
+	return static_cast<PolymerEntity *>(_entity);
+}

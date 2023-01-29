@@ -20,15 +20,15 @@
 #include "ModelManager.h"
 #include "Environment.h"
 
-EntityManager::EntityManager() : Manager()
+PolymerEntityManager::PolymerEntityManager() : Manager()
 {
 	Progressor::setResponder(Environment::env().progressResponder());
 }
 
 
-Entity *EntityManager::insertIfUnique(Entity &ent)
+PolymerEntity *PolymerEntityManager::insertIfUnique(PolymerEntity &ent)
 {
-	for (Entity &other : _objects)
+	for (PolymerEntity &other : _objects)
 	{
 		if (other.name() == ent.name())
 		{
@@ -52,18 +52,18 @@ Entity *EntityManager::insertIfUnique(Entity &ent)
 	return &_objects.back();
 }
 
-void EntityManager::update(const Entity &e)
+void PolymerEntityManager::update(const PolymerEntity &e)
 {
-	Entity *old = entity(e.name());
+	PolymerEntity *old = entity(e.name());
 	(*old) = e;
 
 }
 
-void EntityManager::housekeeping()
+void PolymerEntityManager::housekeeping()
 {
 	_name2Entity.clear();
 
-	for (Entity &other : _objects)
+	for (PolymerEntity &other : _objects)
 	{
 		std::cout << other.name() << " " << &other << std::endl;
 		_name2Entity[other.name()] = &other;
@@ -72,25 +72,25 @@ void EntityManager::housekeeping()
 	}
 }
 
-void EntityManager::purgeModel(Model *model)
+void PolymerEntityManager::purgeModel(Model *model)
 {
 	model->unload();
 
-	for (Entity &other : _objects)
+	for (PolymerEntity &other : _objects)
 	{
 		other.throwOutModel(model);
 	}
 
 }
 
-void EntityManager::purgeEntity(Entity *ent)
+void PolymerEntityManager::purgeEntity(PolymerEntity *ent)
 {
-	std::list<Entity>::iterator it = _objects.begin();
+	std::list<PolymerEntity>::iterator it = _objects.begin();
 
 	std::string name = ent->name();
 	_name2Entity.erase(name);
 
-	for (Entity &other : _objects)
+	for (PolymerEntity &other : _objects)
 	{
 		if (ent == &other)
 		{
@@ -101,15 +101,15 @@ void EntityManager::purgeEntity(Entity *ent)
 	}
 }
 
-void EntityManager::purgeMolecule(Molecule *mol)
+void PolymerEntityManager::purgeMolecule(Molecule *mol)
 {
-	for (Entity &other : _objects)
+	for (PolymerEntity &other : _objects)
 	{
 		other.throwOutMolecule(mol);
 	}
 }
 
-void EntityManager::checkModelsForReferences(ModelManager *mm)
+void PolymerEntityManager::checkModelsForReferences(ModelManager *mm)
 {
 	for (size_t i = 0; i < mm->objectCount(); i++)
 	{
@@ -118,12 +118,12 @@ void EntityManager::checkModelsForReferences(ModelManager *mm)
 		
 		for (size_t j = 0; j < objectCount(); j++)
 		{
-			Entity &e = object(j);
+			PolymerEntity &e = object(j);
 			e.checkModel(m);
 		}
 	}
 
-	for (Entity &e : _objects)
+	for (PolymerEntity &e : _objects)
 	{
 		e.housekeeping();
 	}
@@ -131,7 +131,7 @@ void EntityManager::checkModelsForReferences(ModelManager *mm)
 	Manager::triggerResponse();
 }
 
-void EntityManager::respond()
+void PolymerEntityManager::respond()
 {
 	Manager::triggerResponse();
 }

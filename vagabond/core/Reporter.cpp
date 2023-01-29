@@ -36,15 +36,19 @@ void Reporter::report()
 {
     std::cout << "ENTITIES" << std::endl;
     std::cout << "========" << std::endl;
-    EntityManager *entity_manager = Environment::env().entityManager();
+    PolymerEntityManager *entity_manager = Environment::env().entityManager();
     std::cout << "No. of entities: " << entity_manager->objectCount() << std::endl;
     for (int i = 0; i < entity_manager->objectCount(); i++)
     {
         Entity &entity = entity_manager->object(i);
-        Sequence *sequence = entity.sequence();
         std::cout << "Entity " << i << ": " << entity.name() << std::endl;
-        std::cout << "    No. of residues: " << sequence->str().length() << std::endl;
-        std::cout << "    Sequence: " << sequence->str() << std::endl;
+
+		if (entity.hasSequence())
+		{
+			Sequence *sequence = entity.sequence();
+			std::cout << "    No. of residues: " << sequence->str().length() << std::endl;
+			std::cout << "    Sequence: " << sequence->str() << std::endl;
+		}
         std::cout << "    No. of models: " << entity.modelCount() << std::endl;
         std::cout << "    Models: [index, name, no. of molecules]" << std::endl;
         for (int m = 0; m < entity.modelCount(); m++)

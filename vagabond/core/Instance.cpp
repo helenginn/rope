@@ -287,4 +287,17 @@ float Instance::valueForTorsionFromList(BondTorsion *bt,
 	return NAN;
 }
 
+void Instance::addTorsionsToGroup(MetadataGroup &group, 
+                                  rope::TorsionType type)
+{
+	if (!isRefined())
+	{
+		return;
+	}
+
+	MetadataGroup::Array vals = grabTorsions(type);
+	group.addMetadataArray(this, vals);
+}
+
+
 

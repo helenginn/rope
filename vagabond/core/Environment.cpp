@@ -44,7 +44,7 @@ Environment::Environment()
 	_fileManager = new FileManager();
 	_pathManager = new PathManager();
 	_modelManager = new ModelManager();
-	_entityManager = new EntityManager();
+	_entityManager = new PolymerEntityManager();
 }
 
 size_t Environment::entityCount()
@@ -133,7 +133,7 @@ void Environment::rescanModels()
 		m.autoAssignEntities();
 	}
 
-	EntityManager *em = Environment::entityManager();
+	PolymerEntityManager *em = Environment::entityManager();
 	em->checkModelsForReferences(mm);
 	mm->finishTicker();
 }
@@ -141,7 +141,7 @@ void Environment::rescanModels()
 void Environment::autoModel()
 {
 	ModelManager *mm = Environment::modelManager();
-	EntityManager *em = Environment::entityManager();
+	PolymerEntityManager *em = Environment::entityManager();
 	mm->autoModel();
 	em->checkModelsForReferences(mm);
 	
@@ -156,7 +156,7 @@ void Environment::purgeMolecule(Molecule *mol)
 
 void Environment::purgeEntity(std::string id)
 {
-	Entity *ent = entityManager()->entity(id);
+	PolymerEntity *ent = entityManager()->entity(id);
 	if (ent)
 	{
 		modelManager()->purgeEntity(ent);

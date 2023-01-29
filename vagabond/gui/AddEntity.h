@@ -19,7 +19,7 @@
 #ifndef __vagabond__AddEntity__
 #define __vagabond__AddEntity__
 
-#include <vagabond/core/Entity.h>
+#include <vagabond/core/PolymerEntity.h>
 
 #include "AddModel.h"
 
@@ -27,12 +27,12 @@ class ChooseEntity;
 class TextEntry;
 class Chain;
 
-class AddEntity : public AddObject<Entity>
+class AddEntity : public AddObject<PolymerEntity>
 {
 public:
 	AddEntity(Scene *prev, Chain *chain);
 	AddEntity(Scene *prev, std::string seq);
-	AddEntity(Scene *prev, Entity *ent);
+	AddEntity(Scene *prev, PolymerEntity *ent);
 
 	void setCaller(ChooseEntity *caller)
 	{

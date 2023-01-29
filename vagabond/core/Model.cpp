@@ -362,7 +362,7 @@ void Model::assignClutter()
 
 void Model::assignSequencedMolecules(Entity *chosen)
 {
-	EntityManager *eManager = Environment::entityManager();
+	PolymerEntityManager *eManager = Environment::entityManager();
 	for (size_t i = 0; i < _currentAtoms->chainCount(); i++)
 	{
 		float best_match = 0;

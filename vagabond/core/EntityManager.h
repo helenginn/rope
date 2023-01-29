@@ -23,7 +23,7 @@
 #include <vector>
 #include <list>
 
-#include "Entity.h"
+#include "PolymerEntity.h"
 #include "Responder.h"
 #include "Manager.h"
 
@@ -33,18 +33,18 @@ using nlohmann::json;
 class Molecule;
 class ModelManager;
 
-class EntityManager : 
-public Manager<Entity>, 
+class PolymerEntityManager : 
+public Manager<PolymerEntity>, 
 public Responder<Entity>,
 public Progressor 
 {
 public:
-	EntityManager();
+	PolymerEntityManager();
 
-	virtual Entity *insertIfUnique(Entity &e);
-	virtual void update(const Entity &e);
+	virtual PolymerEntity *insertIfUnique(PolymerEntity &e);
+	virtual void update(const PolymerEntity &e);
 	
-	Entity *entity(std::string name)
+	PolymerEntity *entity(std::string name)
 	{
 		if (_name2Entity.count(name))
 		{
@@ -59,7 +59,7 @@ public:
 	void checkModelsForReferences(ModelManager *manager);
 
 	void purgeMolecule(Molecule *mol);
-	void purgeEntity(Entity *ent);
+	void purgeEntity(PolymerEntity *ent);
 	void purgeModel(Model *mol);
 
 	virtual const std::string progressName() const
@@ -67,21 +67,21 @@ public:
 		return "entities";
 	}
 
-	friend void to_json(json &j, const EntityManager &value);
-	friend void from_json(const json &j, EntityManager &value);
+	friend void to_json(json &j, const PolymerEntityManager &value);
+	friend void from_json(const json &j, PolymerEntityManager &value);
 private:
-	std::map<std::string, Entity *> _name2Entity;
+	std::map<std::string, PolymerEntity *> _name2Entity;
 
 };
 
-inline void to_json(json &j, const EntityManager &value)
+inline void to_json(json &j, const PolymerEntityManager &value)
 {
 	j["entities"] = value._objects;
 }
 
-inline void from_json(const json &j, EntityManager &value)
+inline void from_json(const json &j, PolymerEntityManager &value)
 {
-    std::list<Entity> entities = j.at("entities");
+    std::list<PolymerEntity> entities = j.at("entities");
     value._objects = entities;
 }
 

@@ -40,16 +40,13 @@ class Entity : public HasResponder<Responder<Entity>>
 public:
 	Entity();
 	
-	Sequence *sequence()
+	virtual bool hasSequence() { return false; }
+
+	virtual Sequence *sequence()
 	{
-		return &_sequence;
+		return nullptr;
 	}
 	
-	void setSequence(Sequence *seq)
-	{
-		_sequence = *seq;
-	}
-
 	void setName(std::string name)
 	{
 		_name = name;
@@ -61,8 +58,8 @@ public:
 	}
 	
 	void checkModel(Model &m);
-
 	std::set<Model *> unrefinedModels();
+
 	size_t checkForUnrefinedMolecules();
 	void throwOutMolecule(Molecule *mol);
 	void throwOutModel(Model *mol);
@@ -91,10 +88,17 @@ public:
 		return _models;
 	}
 	
-	void housekeeping();
+	virtual void housekeeping();
 	
-	Metadata *distanceBetweenAtoms(AtomRecall a, AtomRecall b);
-	Metadata *angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c);
+	virtual Metadata *distanceBetweenAtoms(AtomRecall a, AtomRecall b)
+	{
+		return nullptr;
+	}
+
+	virtual Metadata *angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c)
+	{
+		return nullptr;
+	}
 
 	std::map<std::string, int> allMetadataHeaders();
 	
@@ -110,11 +114,12 @@ public:
 		_actuallyRefine = refine;
 	}
 
-	friend void to_json(json &j, const Entity &value);
-	friend void from_json(const json &j, Entity &value);
-private:
+	friend void to_json(json &j, const PolymerEntity &value);
+	friend void from_json(const json &j, PolymerEntity &value);
+protected:
+	virtual MetadataGroup prepareTorsionGroup() = 0;
+	virtual PositionalGroup preparePositionGroup() = 0;
 
-	Sequence _sequence;
 	VisualPreferences _visPrefs;
 	
 	Model *_currentModel = nullptr;
@@ -128,29 +133,5 @@ private:
 	std::vector<Model *> _models;
 	std::vector<Molecule *> _molecules;
 };
-
-inline void to_json(json &j, const Entity &value)
-{
-	j["name"] = value._name;
-	j["sequence"] = value._sequence;
-	j["visuals"] = value._visPrefs;
-}
-
-inline void from_json(const json &j, Entity &value)
-{
-	value._name = j.at("name");
-	value._sequence = j.at("sequence");
-
-	try
-	{
-		value._visPrefs = j.at("visuals");
-	}
-	catch (...)
-	{
-		
-	}
-	
-	value.clickTicker();
-}
 
 #endif

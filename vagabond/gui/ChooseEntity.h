@@ -46,7 +46,7 @@ public:
 	void setEntity(std::string name);
 	void findAlignments();
 private:
-	EntityManager *_manager;
+	PolymerEntityManager *_manager;
 	Chain *_chain = nullptr;
 	ChainAssignment *_caller = nullptr;
 

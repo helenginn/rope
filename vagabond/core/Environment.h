@@ -30,7 +30,7 @@ class Progressor;
 class FileManager;
 class PathManager;
 class ModelManager;
-class EntityManager;
+class PolymerEntityManager;
 
 template <typename Progressor> class Responder;
 
@@ -57,7 +57,7 @@ public:
 
 	static size_t entityCount();
 
-	static EntityManager *entityManager()
+	static PolymerEntityManager *entityManager()
 	{
 		return _environment._entityManager;
 	}
@@ -101,7 +101,7 @@ public:
 private:
 	FileManager *_fileManager = nullptr;
 	ModelManager *_modelManager = nullptr;
-	EntityManager *_entityManager = nullptr;
+	PolymerEntityManager *_entityManager = nullptr;
 	PathManager *_pathManager = nullptr;
 	Metadata *_metadata = nullptr;
 	

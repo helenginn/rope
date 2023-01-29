@@ -48,7 +48,7 @@ void EntityMenu::buttonPressed(std::string tag, Button *button)
 	std::string id = Button::tagEnd(tag, "entity_");
 	if (id.length())
 	{
-		Entity *ent = _manager->entity(id);
+		PolymerEntity *ent = _manager->entity(id);
 		
 		AddEntity *view = new AddEntity(this, ent);
 		view->show();
@@ -71,7 +71,7 @@ Renderable *EntityMenu::getLine(int i)
 		t->setReturnTag("add_entity");
 		return t;
 	}
-	Entity &ent = _manager->object(i - 1);
+	PolymerEntity &ent = _manager->object(i - 1);
 
 	Box *b = new Box();
 	{

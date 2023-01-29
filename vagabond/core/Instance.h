@@ -140,6 +140,8 @@ public:
 	{
 		return MetadataGroup::Array();
 	}
+
+	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
 protected:
 
 	std::string _model_id;
