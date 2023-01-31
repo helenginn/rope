@@ -19,6 +19,8 @@
 #ifndef __vagabond__DistanceMaker__
 #define __vagabond__DistanceMaker__
 
+#include <thread>
+
 #include "SequenceView.h"
 #include <thread>
 

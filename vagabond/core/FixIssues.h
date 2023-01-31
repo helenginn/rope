@@ -19,6 +19,7 @@
 #ifndef __vagabond__FixIssues__
 #define __vagabond__FixIssues__
 
+#include <atomic>
 #include <vector>
 #include <atomic>
 #include "Polymer.h"

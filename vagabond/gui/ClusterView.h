@@ -19,10 +19,10 @@
 #ifndef __vagabond__ClusterView__
 #define __vagabond__ClusterView__
 
+#include <thread>
 #include "PointyView.h"
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Manager.h>
-#include <thread>
 
 class Path;
 class Rule;

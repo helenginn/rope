@@ -19,6 +19,8 @@
 #ifndef __vagabond__RouteExplorer__
 #define __vagabond__RouteExplorer__
 
+#include <thread>
+
 #include "Display.h"
 #include <vagabond/gui/elements/DragResponder.h>
 #include <thread>
