@@ -74,7 +74,7 @@ protected:
 	std::atomic<bool> _finish;
 	std::atomic<bool> _done{false};
 
-	int _maxJobRuns = 300;
+	int _maxJobRuns = 500;
 private:
 	
 	enum Decision

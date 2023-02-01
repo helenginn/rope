@@ -72,7 +72,7 @@ private:
 	std::map<Atom *, AnchorExtension> _atom2Ext;
 
 	std::vector<float> _steps;
-	float _step = 1;
+	float _step = 0.5;
 	int _ncalls = 0;
 	int _nBonds = 0;
 
