@@ -44,6 +44,7 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 
 AskForText::~AskForText()
 {
+	_sender->setKeyResponder(nullptr);
 	deleteObjects();
 }
 
