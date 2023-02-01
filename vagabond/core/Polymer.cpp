@@ -339,7 +339,7 @@ Residue *const Molecule::equivalentLocal(Residue *const master) const
 
 bool Molecule::atomBelongsToInstance(Atom *a)
 {
-	return (has_chain_id(a->chain()) && !a->hetatm());
+	return has_chain_id(a->chain()) && (a->code() != "HOH");
 }
 
 MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
