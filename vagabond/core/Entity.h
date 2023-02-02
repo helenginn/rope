@@ -121,8 +121,6 @@ protected:
 	virtual PositionalGroup preparePositionGroup() = 0;
 
 	VisualPreferences _visPrefs;
-	
-	Model *_currentModel = nullptr;
 
 	void appendMolecule(Model &m);
 	

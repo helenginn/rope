@@ -153,11 +153,6 @@ void Entity::throwOutModel(Model *model)
 	}
 
 	_refineSet.clear();
-	
-	if (_currentModel == model)
-	{
-		_currentModel = nullptr;
-	}
 
 	triggerResponse();
 }
