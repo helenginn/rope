@@ -55,9 +55,9 @@ void ChooseHeaderValue::setEntity(std::string name)
 		
 		if (values.size() == 0)
 		{
-			for (const Molecule *molecule : _entity->molecules())
+			for (const Instance *instance : _entity->instances())
 			{
-				const Metadata::KeyValues kv = molecule->metadata();
+				const Metadata::KeyValues kv = instance->metadata();
 
 				if (kv.count(header))
 				{

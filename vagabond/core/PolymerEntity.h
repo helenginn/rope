@@ -40,6 +40,26 @@ public:
 	{
 		_sequence = *seq;
 	}
+
+	virtual const std::vector<Instance *> instances() const;
+	
+	const std::vector<Molecule *> &molecules() const
+	{
+		return _molecules;
+	}
+
+	const size_t moleculeCount() const
+	{
+		return _molecules.size();
+	}
+
+	virtual const size_t instanceCount() const
+	{
+		return moleculeCount();
+	}
+
+	virtual void throwOutInstance(Molecule *mol);
+	virtual void appendIfMissing(Instance *mol);
 	
 	virtual void housekeeping();
 	
@@ -55,6 +75,7 @@ protected:
 
 private:
 	Sequence _sequence;
+	std::vector<Molecule *> _molecules;
 
 };
 

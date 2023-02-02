@@ -762,3 +762,21 @@ void Model::export_refined(std::string prefix, std::string suffix)
     unload();
 }
 
+std::vector<Instance *> Model::instances()
+{
+	std::vector<Instance *> instances;
+	instances.reserve(_molecules.size() + _ligands.size());
+
+	for (Molecule &m : _molecules)
+	{
+		instances.push_back(&m);
+	}
+
+	for (Ligand &l : _ligands)
+	{
+		instances.push_back(&l);
+	}
+	
+	return instances;
+}
+

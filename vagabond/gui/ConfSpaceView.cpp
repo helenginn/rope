@@ -73,7 +73,7 @@ void ConfSpaceView::setup()
 	setMakesSelections();
 	IndexResponseView::setup();
 
-	size_t extra = _entity->checkForUnrefinedMolecules();
+	size_t extra = _entity->unrefinedInstanceCount();
 
 	if (extra > 0)
 	{

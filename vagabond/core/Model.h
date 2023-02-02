@@ -108,6 +108,8 @@ public:
 	{
 		return _molecules;
 	}
+	
+	std::vector<Instance *> instances();
 
 	void housekeeping();
 	

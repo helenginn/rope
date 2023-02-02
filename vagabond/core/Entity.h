@@ -60,27 +60,23 @@ public:
 	void checkModel(Model &m);
 	std::set<Model *> unrefinedModels();
 
-	size_t checkForUnrefinedMolecules();
-	void throwOutMolecule(Molecule *mol);
+	size_t unrefinedInstanceCount();
 	void throwOutModel(Model *mol);
+
+	virtual void throwOutInstance(Molecule *mol) {};
+	virtual void appendIfMissing(Instance *mol) {};
 	
 	MetadataGroup makeTorsionDataGroup();
 	PositionalGroup makePositionalDataGroup();
-	Molecule *chooseRepresentativeMolecule();
+	Instance *chooseRepresentativeInstance();
+	
+	virtual const std::vector<Instance *> instances() const = 0;
 
-	const size_t moleculeCount() const
-	{
-		return _molecules.size();
-	}
+	virtual const size_t instanceCount() const = 0;
 
 	const size_t modelCount() const
 	{
 		return _models.size();
-	}
-	
-	const std::vector<Molecule *> &molecules() const
-	{
-		return _molecules;
 	}
 	
 	const std::vector<Model *> &models() const
@@ -129,7 +125,6 @@ protected:
 	
 	std::set<Model *> _refineSet;
 	std::vector<Model *> _models;
-	std::vector<Molecule *> _molecules;
 };
 
 #endif

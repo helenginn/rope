@@ -105,7 +105,7 @@ void PolymerEntityManager::purgeMolecule(Molecule *mol)
 {
 	for (PolymerEntity &other : _objects)
 	{
-		other.throwOutMolecule(mol);
+		other.throwOutInstance(mol);
 	}
 }
 

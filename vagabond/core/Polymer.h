@@ -88,6 +88,7 @@ public:
 	void insertTorsionAngles(AtomContent *atoms);
 	virtual Atom *equivalentForAtom(Model *other, std::string desc);
 
+	virtual const size_t completenessScore() const;
 	
 	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type 
 	                                          = rope::RefinedTorsions);
@@ -107,10 +108,11 @@ public:
 	
 	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
 
-	bool hasAtomPositionList(Molecule *reference);
-	std::vector<Posular> atomPositionList(Molecule *reference,
-	                                      const std::vector<Atom3DPosition> &headers,
-	                                      std::map<ResidueId, int> &resIdxs);
+	virtual std::vector<Posular> atomPositionList(Instance *reference,
+	                                              const std::vector<Atom3DPosition>
+	                                              &headers,
+	                                              std::map<ResidueId, int> 
+	                                              &resIdxs);
 
 	friend void to_json(json &j, const Molecule &value);
 	friend void from_json(const json &j, Molecule &value);
@@ -127,7 +129,6 @@ private:
 
 	std::set<std::string> _chain_ids;
 
-	std::map<Molecule *, std::vector<Posular> > _mol2Pos;
 	Sequence _sequence;
 };
 

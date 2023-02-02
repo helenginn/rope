@@ -391,18 +391,13 @@ std::map<Atom *, Atom *> Molecule::mapAtoms(Molecule *other)
 	return map;
 }
 
-bool Molecule::hasAtomPositionList(Molecule *reference)
-{
-	return (_mol2Pos.count(reference) > 0);
-}
-
-std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
+std::vector<Posular> Molecule::atomPositionList(Instance *reference,
                            const std::vector<Atom3DPosition> &headers,
                            std::map<ResidueId, int> &resIdxs)
 {
 	if (hasAtomPositionList(reference))
 	{
-		return _mol2Pos[reference];
+		return _inst2Pos[reference];
 	}
 
 	model()->load(Model::NoGeometry);
@@ -449,7 +444,7 @@ std::vector<Posular> Molecule::atomPositionList(Molecule *reference,
 		}
 	}
 
-	_mol2Pos[reference] = vex;
+	_inst2Pos[reference] = vex;
 
 	model()->unload();
 
@@ -492,4 +487,9 @@ Atom *Molecule::equivalentForAtom(Model *other, std::string desc)
 PolymerEntity *const Molecule::polymerEntity() const
 {
 	return static_cast<PolymerEntity *>(_entity);
+}
+
+const size_t Molecule::completenessScore() const
+{
+	return const_sequence()->modelledResidueCount();
 }

@@ -28,6 +28,7 @@
 #include "MetadataGroup.h"
 #include <vagabond/utils/glm_json.h>
 #include <vagabond/c4x/Angular.h>
+#include <vagabond/c4x/Posular.h>
 using nlohmann::json;
 
 struct ResidueTorsion;
@@ -129,6 +130,11 @@ public:
 
 	void insertTransforms(AtomContent *atoms);
 	void extractTransformedAnchors(AtomContent *atoms);
+	
+	virtual const size_t completenessScore() const
+	{
+		return 0;
+	}
 
 	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest) {}
 	
@@ -140,6 +146,20 @@ public:
 	{
 		return MetadataGroup::Array();
 	}
+
+	bool hasAtomPositionList(Instance *reference)
+	{
+		return (_inst2Pos.count(reference) > 0);
+	}
+
+	virtual std::vector<Posular> atomPositionList(Instance *reference,
+	                                              const std::vector<Atom3DPosition>
+	                                              &headers,
+	                                              std::map<ResidueId, int> 
+	                                              &resIdxs)
+	{
+		return std::vector<Posular>();
+	};
 
 	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
 protected:
@@ -157,12 +177,13 @@ protected:
 	{
 		_refined = r;
 	}
+
+	std::map<Instance *, std::vector<Posular> > _inst2Pos;
 private:
 	void setAtomGroupSubset();
 
 	bool _refined = false;
 	std::map<std::string, glm::mat4x4> _transforms;
-
 };
 
 #endif

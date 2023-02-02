@@ -75,9 +75,14 @@ Metadata *PolymerEntity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
 	return md;
 }
 
+const bool compare_id(const Molecule *a, const Molecule *b)
+{
+	return a->id() > b->id();
+}
 
 void PolymerEntity::housekeeping()
 {
+	std::sort(_molecules.begin(), _molecules.end(), compare_id);
 	Entity::housekeeping();
 	_sequence.setEntity(this);
 }
@@ -103,4 +108,28 @@ PositionalGroup PolymerEntity::preparePositionGroup()
 	group.addHeaders(headers);
 
 	return group;
+}
+
+void PolymerEntity::throwOutInstance(Molecule *mol)
+{
+	mol->eraseIfPresent(_molecules);
+}
+
+
+const std::vector<Instance *> PolymerEntity::instances() const
+{
+	std::vector<Instance *> instances;
+	instances.reserve(_molecules.size());
+	
+	for (Molecule *m : _molecules)
+	{
+		instances.push_back(m);
+	}
+	
+	return instances;
+}
+
+void PolymerEntity::appendIfMissing(Instance *inst)
+{
+	inst->appendIfMissing(_molecules);
 }
