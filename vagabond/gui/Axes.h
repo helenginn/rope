@@ -22,7 +22,6 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
 
-class PlaneView;
 class Scene;
 class Instance;
 class TorsionCluster;
@@ -52,21 +51,11 @@ public:
 
 	virtual size_t requestedIndices();
 	
-	PlaneView *planeView()
-	{
-		return _pv;
-	}
-	
 	void takeOldAxes(Axes *old);
 
 	void buttonPressed(std::string tag, Button *button);
 private:
-	void setAxisInPlane(int idx, bool plane);
 	std::vector<float> getMappedVector(int idx);
-	void cancelPlane();
-	bool startedPlane();
-	bool finishedPlane();
-	void preparePlane();
 	void route(int idx);
 	void initialise();
 
@@ -84,7 +73,6 @@ private:
 	int _lastIdx = -1;
 	
 	Instance *_targets[3];
-	PlaneView *_pv = nullptr;
 	
 	bool _origin = false;
 

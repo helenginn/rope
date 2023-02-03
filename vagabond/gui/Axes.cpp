@@ -23,7 +23,6 @@
 #include <vagabond/core/Instance.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
-#include "PlaneView.h"
 #include "AxisExplorer.h"
 #include "PlausibleRoute.h"
 #include "SplitRoute.h"
@@ -97,7 +96,7 @@ void Axes::initialise()
 
 Axes::~Axes()
 {
-	delete _pv;
+
 }
 
 bool Axes::mouseOver()
@@ -252,30 +251,10 @@ void Axes::buttonPressed(std::string tag, Button *button)
 	{
 		route(_lastIdx);
 	}
-	else if (tag == "cancel_plane")
-	{
-		cancelPlane();
-	}
-	else if (tag == "start_plane")
-	{
-		setAxisInPlane(_lastIdx, true);
-	} 
-	else if (tag == "make_plane")
-	{
-		setAxisInPlane(_lastIdx, true);
-		preparePlane();
-	}
 }
 
 void Axes::takeOldAxes(Axes *old)
 {
-	PlaneView *pv = old->planeView();
-
-	for (size_t i = 0; i < 3 && pv != nullptr; i++)
-	{
-		_planes[i] = pv->planes()[i];
-	}
-	
 	for (size_t i = 0; i < 3; i++)
 	{
 		_dirs[i] = old->_dirs[i];
@@ -283,96 +262,6 @@ void Axes::takeOldAxes(Axes *old)
 	}
 	
 	refreshAxes();
-	
-	if (pv != nullptr)
-	{
-		preparePlane();
-	}
-}
-
-void Axes::preparePlane()
-{
-	/*
-	std::cout << "preparing plane" << std::endl;
-
-	delete _pv; _pv = nullptr;
-	_pv = new PlaneView(_cluster, _molecule);
-	
-	Plane *plane = _pv->plane();
-	
-	for (size_t i = 0; i < 3; i++)
-	{
-		if (!_planes[i])
-		{
-			continue;
-		}
-
-		std::vector<float> mapped = getMappedVector(i);
-		
-		std::vector<ResidueTorsion> list;
-		list = _cluster->dataGroup()->headers();
-		std::vector<Angular> vals = getTorsionVector(i);
-
-		plane->addAxis(list, vals, mapped);
-	}
-	
-	plane->setResponder(_pv);
-	plane->refresh();
-	_pv->setPlanes(_planes);
-	_pv->populate();
-	addObject(_pv);
-	*/
-}
-
-void Axes::cancelPlane()
-{
-	for (size_t i = 0; i < 3; i++)
-	{
-		setAxisInPlane(i, false);
-	}
-
-	if (_pv != nullptr)
-	{
-		removeObject(_pv);
-		delete _pv;
-		_pv = nullptr;
-	}
-	
-	refreshAxes();
-}
-
-void Axes::setAxisInPlane(int idx, bool plane)
-{
-	_planes[idx] = plane;
-	refreshAxes();
-}
-
-bool Axes::startedPlane()
-{
-	for (size_t i = 0; i < 3; i++)
-	{
-		if (_planes[i])
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-bool Axes::finishedPlane()
-{
-	int count = 0;
-
-	for (size_t i = 0; i < 3; i++)
-	{
-		if (_planes[i])
-		{
-			count++;
-		}
-	}
-
-	return (count >= 2);
 }
 
 void Axes::interacted(int idx, bool hover, bool left)
@@ -394,26 +283,6 @@ void Axes::interacted(int idx, bool hover, bool left)
 #endif
 		}
 		
-#ifdef VERSION_NEXT
-		if (!startedPlane())
-		{
-			m->addOption("start plane", "start_plane");
-		}
-		else if (!finishedPlane() && !_planes[_lastIdx])
-		{
-			m->addOption("make plane", "make_plane");
-		}
-		else if (!finishedPlane())
-		{
-			m->addOption("cancel plane", "cancel_plane");
-		}
-		else if (finishedPlane())
-		{
-			m->addOption("cancel plane", "cancel_plane");
-			m->addOption("plane options", "plane_options");
-		}
-#endif
-
 		double w = _scene->width();
 		double h = _scene->height();
 		int lx = -1; int ly = -1;
