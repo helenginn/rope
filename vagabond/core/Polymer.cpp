@@ -466,14 +466,14 @@ Atom *Polymer::equivalentForAtom(Model *other, std::string desc)
 		return nullptr;
 	}
 	// get molecule out of model matching atom
-	Polymer *otherMol = other->polymerForChain(atom->chain());
-	if (otherMol == nullptr) return nullptr;
+	Polymer *otherPol = other->polymerForChain(atom->chain());
+	if (otherPol == nullptr) return nullptr;
 
 	// get local residue out of the sequence of that molecule
-	Residue *local = otherMol->sequence()->residueLike(atom->residueId());
+	Residue *local = otherPol->sequence()->residueLike(atom->residueId());
 	if (local == nullptr) return nullptr;
 	// convert into the master residue for the entity
-	Residue *master = otherMol->sequence()->master_residue(local);
+	Residue *master = otherPol->sequence()->master_residue(local);
 	if (master == nullptr) return nullptr;
 	// convert master residue into local entity for this molecule
 	Residue *myLocal = sequence()->local_residue(master);

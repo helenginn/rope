@@ -61,11 +61,11 @@ void Model::swapChainToEntity(std::string id, std::string entity)
 	std::cout << "Switching entity for polymer." << std::endl;
 	if (_chain2Polymer.count(id))
 	{
-		Polymer *mol = _chain2Polymer[id];
-		if (mol != nullptr)
+		Polymer *pol = _chain2Polymer[id];
+		if (pol != nullptr)
 		{
 			std::cout << "Found old polymer of entity " << 
-			mol->entity_id() << std::endl;
+			pol->entity_id() << std::endl;
 			std::cout << "Purging old polymer from environment" << std::endl;
 			_chain2Entity.erase(id);
 		}
@@ -442,11 +442,11 @@ const Metadata::KeyValues Model::metadata() const
 
 void Model::housekeeping()
 {
-	for (Polymer &mc : _polymers)
+	for (Polymer &pol : _polymers)
 	{
 		for (const std::string &ch : mc.chain_ids())
 		{
-			_chain2Polymer[ch] = &mc;
+			_chain2Polymer[ch] = &pol;
 		}
 
 		mc.setModel(this);
@@ -591,9 +591,9 @@ void Model::throwOutInstance(Instance *inst)
 	{
 		std::list<Polymer>::iterator it = _polymers.begin();
 
-		for (Polymer &m : _polymers)
+		for (Polymer &pol : _polymers)
 		{
-			if (inst->id() == m.id())
+			if (inst->id() == pol.id())
 			{
 				_polymers.erase(it);
 				return;

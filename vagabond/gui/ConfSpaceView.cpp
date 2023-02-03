@@ -611,7 +611,7 @@ void ConfSpaceView::createReference(Polymer *m)
 }
 
 
-void ConfSpaceView::reorientToPolymer(Polymer *mol)
+void ConfSpaceView::reorientToPolymer(Polymer *pol)
 {
 	if (_axes == nullptr)
 	{
@@ -621,7 +621,7 @@ void ConfSpaceView::reorientToPolymer(Polymer *mol)
 	setInformation("");
 	_status = Nothing;
 	
-	_axes->reorient(-1, mol);
+	_axes->reorient(-1, pol);
 }
 
 void ConfSpaceView::prepareEmptySpaceMenu()
