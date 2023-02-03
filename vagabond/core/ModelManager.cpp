@@ -124,11 +124,11 @@ void ModelManager::purgeModel(Model *model)
 	Manager::triggerResponse();
 }
 
-void ModelManager::purgeMolecule(Molecule *mol)
+void ModelManager::purgeInstance(Instance *inst)
 {
 	for (Model &m : _objects)
 	{
-		m.throwOutMolecule(mol);
+		m.throwOutInstance(inst);
 	}
 }
 
@@ -144,11 +144,12 @@ void ModelManager::connectionsToDatabase()
 {
 	for (Model &m : _objects)
 	{
-		for (Molecule &mol : m.molecules())
+		std::vector<Instance *> instances = m.instances();
+		for (Instance *inst : instances)
 		{
-			mol.housekeeping();
-			std::string mol_id = mol.model_chain_id();
-			std::string mod_id = mol.model_id();
+			inst->housekeeping();
+			std::string mol_id = inst->id();
+			std::string mod_id = inst->model_id();
 			Environment::metadata()->setModelIdForInstanceId(mol_id, mod_id);
 		}
 	}

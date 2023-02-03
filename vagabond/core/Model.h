@@ -57,7 +57,7 @@ public:
 	bool hasEntity(std::string entity) const;
 	size_t moleculeCountForEntity(std::string entity) const;
 
-	void throwOutMolecule(Molecule *mol);
+	void throwOutInstance(Instance *inst);
 	void throwOutEntity(Entity *ent);
 
 	void autoAssignEntities(Entity *chosen = nullptr);

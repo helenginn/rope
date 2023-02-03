@@ -493,3 +493,4 @@ const size_t Molecule::completenessScore() const
 {
 	return const_sequence()->modelledResidueCount();
 }
+

@@ -104,7 +104,7 @@ void AddEntity::setup()
 	
 	top += inc;
 
-	if (!_existing)
+	if (!_existing && _obj.hasSequence())
 	{
 		{
 			Text *t = new Text("Reference sequence:");
@@ -119,7 +119,7 @@ void AddEntity::setup()
 			addObject(t);
 		}
 	}
-	else
+	else if (_obj.hasSequence())
 	{
 		ImageButton *button = new ImageButton("assets/images/sequence.png", this);
 		button->resize(0.2);
@@ -143,7 +143,6 @@ void AddEntity::setup()
 			Text *t = new Text(str);
 			t->setCentre(0.5, 0.15);
 			t->resize(0.8);
-//			t->addAltTag("Models may contain multiple molecules of this entity");
 			addObject(t);
 		}
 
@@ -219,6 +218,7 @@ void AddEntity::setup()
 			addObject(text);
 		}
 
+		if (_obj.hasSequence())
 		{
 			ImageButton *b = new ImageButton("assets/images/phenylalanine.png", 
 			                                      this);

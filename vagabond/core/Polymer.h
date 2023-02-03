@@ -80,6 +80,11 @@ public:
 	{
 		return &_sequence;
 	}
+
+	virtual bool hasSequence() const
+	{
+		return true;
+	}
 	
 	PolymerEntity *const polymerEntity() const;
 

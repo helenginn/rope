@@ -294,7 +294,7 @@ bool Model::mergeMoleculesInSet(std::set<Molecule *> molecules)
 	if (best_a != nullptr && best_b != nullptr)
 	{
 		best_a->mergeWith(best_b);
-		throwOutMolecule(best_b);
+		throwOutInstance(best_b);
 		return true;
 	}
 
@@ -576,19 +576,35 @@ Model Model::autoModel(std::string filename)
 	return m;
 }
 
-void Model::throwOutMolecule(Molecule *mol)
+void Model::throwOutInstance(Instance *inst)
 {
-	std::list<Molecule>::iterator it = _molecules.begin();
-
-	for (Molecule &m : _molecules)
 	{
-		if (mol == &m)
+		std::list<Molecule>::iterator it = _molecules.begin();
+
+		for (Molecule &m : _molecules)
 		{
-			_molecules.erase(it);
-			return;
+			if (inst->id() == m.id())
+			{
+				_molecules.erase(it);
+				return;
+			}
+
+			it++;
 		}
-		
-		it++;
+	}
+
+	{
+		for (Ligand &l : _ligands)
+		{
+			std::list<Ligand>::iterator it = _ligands.begin();
+			if (inst->id() == l.id())
+			{
+				_ligands.erase(it);
+				return;
+			}
+
+			it++;
+		}
 	}
 }
 

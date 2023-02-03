@@ -101,11 +101,15 @@ void PolymerEntityManager::purgeEntity(PolymerEntity *ent)
 	}
 }
 
-void PolymerEntityManager::purgeMolecule(Molecule *mol)
+void PolymerEntityManager::purgeInstance(Instance *inst)
 {
-	for (PolymerEntity &other : _objects)
+	if (inst->hasSequence())
 	{
-		other.throwOutInstance(mol);
+		Molecule *mol = static_cast<Molecule *>(inst);
+		for (PolymerEntity &other : _objects)
+		{
+			other.throwOutInstance(mol);
+		}
 	}
 }
 

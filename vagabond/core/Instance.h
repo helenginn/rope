@@ -55,6 +55,8 @@ public:
 		_model = model;
 	}
 	
+	virtual bool hasSequence() const = 0;
+	
 	const std::string &model_id() const
 	{
 		return _model_id;

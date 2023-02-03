@@ -148,10 +148,10 @@ void Environment::autoModel()
 	mm->finishTicker();
 }
 
-void Environment::purgeMolecule(Molecule *mol)
+void Environment::purgeInstance(Instance *inst)
 {
-	entityManager()->purgeMolecule(mol);
-	modelManager()->purgeMolecule(mol);
+	entityManager()->purgeInstance(inst);
+	modelManager()->purgeInstance(inst);
 }
 
 void Environment::purgeEntity(std::string id)

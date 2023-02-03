@@ -58,7 +58,7 @@ public:
 	virtual void respond();
 	void checkModelsForReferences(ModelManager *manager);
 
-	void purgeMolecule(Molecule *mol);
+	void purgeInstance(Instance *inst);
 	void purgeEntity(PolymerEntity *ent);
 	void purgeModel(Model *mol);
 

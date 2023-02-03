@@ -25,7 +25,7 @@ class Path;
 class Rule;
 class Entity;
 class Metadata;
-class Molecule;
+class Instance;
 class Progressor;
 class FileManager;
 class PathManager;
@@ -90,7 +90,7 @@ public:
 	static void autoModel();
 	static void rescanModels();
 	
-	void purgeMolecule(Molecule *mol);
+	void purgeInstance(Instance *inst);
 	static void purgeModel(std::string name);
 	static void purgeEntity(std::string name);
 	static void purgeRule(Rule &rule);

@@ -35,6 +35,10 @@ public:
 
 	virtual std::string desc() const;
 
+	virtual bool hasSequence() const
+	{
+		return false;
+	}
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
 private:

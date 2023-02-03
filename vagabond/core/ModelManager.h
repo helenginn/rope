@@ -27,8 +27,6 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
-class Molecule;
-
 class ModelManager : public Manager<Model>,
 public Progressor
 {
@@ -62,7 +60,7 @@ public:
 		_mutex->unlock();
 	}
 
-	void purgeMolecule(Molecule *mol);
+	void purgeInstance(Instance *inst);
 	void purgeEntity(Entity *ent);
 	void purgeModel(Model *mol);
 	void connectionsToDatabase();
