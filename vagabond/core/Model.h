@@ -37,7 +37,7 @@ using nlohmann::json;
 
 class File;
 class Chain;
-class Molecule;
+class Polymer;
 class AtomContent;
 class ArbitraryMap;
 
@@ -55,7 +55,7 @@ public:
 	void setEntityForChain(std::string id, std::string entity);
 	
 	bool hasEntity(std::string entity) const;
-	size_t moleculeCountForEntity(std::string entity) const;
+	size_t instanceCountForEntity(std::string entity) const;
 
 	void throwOutInstance(Instance *inst);
 	void throwOutEntity(Entity *ent);
@@ -100,20 +100,20 @@ public:
 	}
 
 	std::set<Entity *> entities();
-	std::set<Molecule *> moleculesForEntity(Entity *ent);
+	std::set<Polymer *> polymersForEntity(Entity *ent);
 
-	Molecule *moleculeFromChain(Chain *ch);
+	Polymer *polymerFromChain(Chain *ch);
 	
-	std::list<Molecule> &molecules()
+	std::list<Polymer> &polymers()
 	{
-		return _molecules;
+		return _polymers;
 	}
 	
 	std::vector<Instance *> instances();
 
 	void housekeeping();
 	
-	void createMolecules();
+	void createPolymers();
 	
 	enum LoadOptions
 	{
@@ -158,9 +158,9 @@ public:
 	float comparisonWithData(ArbitraryMap *calc);
 	void extractExisting();
 
-	Molecule *moleculeForChain(std::string ch) const
+	Polymer *polymerForChain(std::string ch) const
 	{
-		return _chain2Molecule.at(ch);
+		return _chain2Polymer.at(ch);
 	}
 
 	virtual void respond();
@@ -168,9 +168,9 @@ public:
     void export_refined(std::string prefix = "rope", std::string suffix = "");
 private:
 	void swapChainToEntity(std::string id, std::string entity);
-	void mergeAppropriateMolecules();
-	bool mergeMoleculesInSet(std::set<Molecule *> molecules);
-	void assignSequencedMolecules(Entity *chosen);
+	void mergeAppropriatePolymers();
+	bool mergePolymersInSet(std::set<Polymer *> polymers);
+	void assignSequencedPolymers(Entity *chosen);
 	/* assign waters, ligands etc. */
 	void assignClutter();
 
@@ -181,9 +181,9 @@ private:
 	std::string _name;
 
 	std::map<std::string, std::string> _chain2Entity;
-	std::map<std::string, Molecule *> _chain2Molecule;
+	std::map<std::string, Polymer *> _chain2Polymer;
 
-	std::list<Molecule> _molecules;
+	std::list<Polymer> _polymers;
 	std::list<Ligand> _ligands;
 
 	int _loadCounter = 0;
@@ -196,7 +196,7 @@ inline void to_json(json &j, const Model &value)
 	j["name"] = value._name;
 	j["filename"] = value._filename;
 	j["chain_to_entity"] = value._chain2Entity;
-	j["molecules"] = value._molecules;
+	j["molecules"] = value._polymers;
 	j["datafile"] = value._dataFile;
 }
 
@@ -209,8 +209,8 @@ inline void from_json(const json &j, Model &value)
 	{
         std::map<std::string, std::string> chain_to_entity = j.at("chain_to_entity");
         value._chain2Entity = chain_to_entity;
-        std::list<Molecule> molecules = j.at("molecules");
-        value._molecules = molecules;
+        std::list<Polymer> molecules = j.at("molecules");
+        value._polymers = molecules;
 		value._dataFile = j.at("datafile");
 	}
 	catch (...)

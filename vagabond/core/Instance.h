@@ -36,7 +36,7 @@ class AtomContent;
 class BondTorsion;
 class Interface;
 class AtomGroup;
-class Molecule;
+class Polymer;
 class Residue;
 class Entity;
 class Model;
@@ -101,7 +101,7 @@ public:
 	virtual const Metadata::KeyValues metadata() const;
 	void updateRmsdMetadata();
 	
-	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other)
+	virtual std::map<Atom *, Atom *> mapAtoms(Polymer *other)
 	{
 		return std::map<Atom *, Atom *>();
 	}
@@ -138,10 +138,12 @@ public:
 		return 0;
 	}
 
-	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest) {}
+	virtual void insertTorsionAngles(AtomContent *atoms) {};
+	virtual void extractTorsionAngles(AtomContent *atoms, 
+	                                  bool tmp_dest = false) {}
 	
-	friend void to_json(json &j, const Molecule &value);
-	friend void from_json(const json &j, Molecule &value);
+	friend void to_json(json &j, const Polymer &value);
+	friend void from_json(const json &j, Polymer &value);
 
 	virtual bool atomBelongsToInstance(Atom *a) = 0;
 	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type)

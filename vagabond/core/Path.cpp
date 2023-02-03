@@ -74,7 +74,7 @@ void Path::housekeeping()
 		return;
 	}
 	
-	for (Instance &inst : _model->molecules())
+	for (Instance &inst : _model->polymers())
 	{
 		if (inst.id() == _startInstance)
 		{
@@ -85,7 +85,7 @@ void Path::housekeeping()
 	
 	for (Model &m : Environment::env().modelManager()->objects())
 	{
-		for (Instance &inst : m.molecules())
+		for (Instance &inst : m.polymers())
 		{
 			if (inst.id() == _endInstance)
 			{

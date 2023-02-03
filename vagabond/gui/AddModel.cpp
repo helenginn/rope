@@ -222,7 +222,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 		{
 			ModelManager *mm = Environment::modelManager();
 			Model *model = mm->insertIfUnique(_obj);
-			model->createMolecules();
+			model->createPolymers();
 			Environment::env().entityManager()->checkModelsForReferences(mm);
 			back();
 		}

@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Molecule__
-#define __vagabond__Molecule__
+#ifndef __vagabond__Polymer__
+#define __vagabond__Polymer__
 
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Posular.h>
@@ -34,15 +34,15 @@ class Chain;
 
 #include "Sequence.h"
 
-/** \class Molecule
- * Molecule refers to a specific instance of an entity associated with a model */
+/** \class Polymer
+ * Polymer refers to a specific instance of an entity associated with a model */
 
-class Molecule : public Instance
+class Polymer : public Instance
 {
 public:
-	Molecule(std::string model_id, std::string chain_id,
+	Polymer(std::string model_id, std::string chain_id,
 	         std::string entity_id, Sequence *derivative);
-	Molecule();
+	Polymer();
 
 	void addChain(std::string chain_id)
 	{
@@ -90,7 +90,7 @@ public:
 
 	void putTorsionRefsInSequence(Chain *ch);
 	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
-	void insertTorsionAngles(AtomContent *atoms);
+	virtual void insertTorsionAngles(AtomContent *atoms);
 	virtual Atom *equivalentForAtom(Model *other, std::string desc);
 
 	virtual const size_t completenessScore() const;
@@ -109,9 +109,9 @@ public:
 
 	void housekeeping();
 	
-	void mergeWith(Molecule *b);
+	void mergeWith(Polymer *b);
 	
-	virtual std::map<Atom *, Atom *> mapAtoms(Molecule *other);
+	virtual std::map<Atom *, Atom *> mapAtoms(Polymer *other);
 
 	virtual std::vector<Posular> atomPositionList(Instance *reference,
 	                                              const std::vector<Atom3DPosition>
@@ -119,8 +119,8 @@ public:
 	                                              std::map<ResidueId, int> 
 	                                              &resIdxs);
 
-	friend void to_json(json &j, const Molecule &value);
-	friend void from_json(const json &j, Molecule &value);
+	friend void to_json(json &j, const Polymer &value);
+	friend void from_json(const json &j, Polymer &value);
 	
 	virtual Residue *const equivalentMaster(const ResidueId &local);
 	virtual Residue *const equivalentLocal(Residue *const master) const;
@@ -137,7 +137,7 @@ private:
 	Sequence _sequence;
 };
 
-inline void to_json(json &j, const Molecule &value)
+inline void to_json(json &j, const Polymer &value)
 {
 	j["chain_ids"] = value._chain_ids;
 	j["entity_id"] = value._entity_id;
@@ -147,7 +147,7 @@ inline void to_json(json &j, const Molecule &value)
 	j["transforms"] = value._transforms;
 }
 
-inline void from_json(const json &j, Molecule &value)
+inline void from_json(const json &j, Polymer &value)
 {
 	if (j.count("chain_id") > 0)
 	{

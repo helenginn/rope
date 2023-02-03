@@ -279,8 +279,8 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 
 	if (_confSpaceView->returnToView() && left && !hover)
 	{
-		Molecule *mol = static_cast<Molecule *>(group.object(idx));
-		_confSpaceView->reorientToMolecule(mol);
+		Polymer *mol = static_cast<Polymer *>(group.object(idx));
+		_confSpaceView->reorientToPolymer(mol);
 		return;
 	}
 

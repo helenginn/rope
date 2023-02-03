@@ -70,7 +70,7 @@ void FixIssuesView::setup()
 	}
 	else
 	{
-		Molecule *m = static_cast<Molecule *>(_entity->instances()[0]);
+		Polymer *m = static_cast<Polymer *>(_entity->instances()[0]);
 		_molecule = m;
 	}
 	

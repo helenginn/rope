@@ -28,8 +28,6 @@ class ClusterSVD;
 
 class Path;
 
-class Molecule;
-
 class PathView : public Renderable
 {
 public:

@@ -75,7 +75,7 @@ Metadata *PolymerEntity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
 	return md;
 }
 
-const bool compare_id(const Molecule *a, const Molecule *b)
+const bool compare_id(const Polymer *a, const Polymer *b)
 {
 	return a->id() > b->id();
 }
@@ -110,7 +110,7 @@ PositionalGroup PolymerEntity::preparePositionGroup()
 	return group;
 }
 
-void PolymerEntity::throwOutInstance(Molecule *mol)
+void PolymerEntity::throwOutInstance(Polymer *mol)
 {
 	mol->eraseIfPresent(_molecules);
 }
@@ -121,7 +121,7 @@ const std::vector<Instance *> PolymerEntity::instances() const
 	std::vector<Instance *> instances;
 	instances.reserve(_molecules.size());
 	
-	for (Molecule *m : _molecules)
+	for (Polymer *m : _molecules)
 	{
 		instances.push_back(m);
 	}

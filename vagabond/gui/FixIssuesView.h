@@ -24,7 +24,7 @@
 
 class Entity;
 class FixIssues;
-class Molecule;
+class Polymer;
 class ChoiceText;
 
 class FixIssuesView : public Scene
@@ -42,7 +42,7 @@ private:
 	void stop();
 
 	Entity *_entity = nullptr;
-	Molecule *_molecule = nullptr;
+	Polymer *_molecule = nullptr;
 
 	FixIssues *_fixer = nullptr;
 	std::thread *_worker = nullptr;

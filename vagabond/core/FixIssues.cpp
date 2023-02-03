@@ -23,7 +23,7 @@
 #include "Residue.h"
 #include <unordered_map>
 
-FixIssues::FixIssues(Molecule *m)
+FixIssues::FixIssues(Polymer *m)
 {
 	_reference = m;
 	_reference->sequence()->remapFromMaster(m->entity());
@@ -68,7 +68,7 @@ void FixIssues::processModel(Model *m)
 {
 	m->load();
 	
-	for (Molecule &m : m->molecules())
+	for (Polymer &m : m->polymers())
 	{
 		if (m.entity_id() != _reference->entity_id() || !m.isRefined())
 		{
@@ -172,7 +172,7 @@ void check_phi_psi(float phi, float psi, float &dphi, float &dpsi)
 	}
 }
 
-void FixIssues::fixPeptideFlips(Molecule *m)
+void FixIssues::fixPeptideFlips(Polymer *m)
 {
 	AtomVector cas = findAtoms(m, "", "CA");
 
@@ -263,7 +263,7 @@ void FixIssues::fixPeptideFlips(Molecule *m)
 	}
 }
 
-AtomVector FixIssues::findAtoms(Molecule *m, std::string code, std::string atom)
+AtomVector FixIssues::findAtoms(Polymer *m, std::string code, std::string atom)
 {
 	AtomGroup *grp = m->currentAtoms();
 
@@ -319,7 +319,7 @@ TorsionRefPairs FixIssues::findMatchingTorsions(const Atom *a, Residue *ref,
 	return map;
 }
 
-void FixIssues::checkTorsions(Molecule *mol, Residue *local, 
+void FixIssues::checkTorsions(Polymer *mol, Residue *local, 
                               TorsionRefPairs &trps, float expected_diff)
 {
 	for (TorsionRefPair &pair : trps)
@@ -350,7 +350,7 @@ void FixIssues::checkTorsions(Molecule *mol, Residue *local,
 
 }
 
-void FixIssues::residuesForAtom(Molecule *mol, const Atom *a, 
+void FixIssues::residuesForAtom(Polymer *mol, const Atom *a, 
                                 Residue *&local, Residue *&ref)
 {
 	Sequence *seqref = _reference->sequence();
@@ -390,7 +390,7 @@ void FixIssues::residuesForAtom(Molecule *mol, const Atom *a,
 	}
 }
 
-void FixIssues::processAtoms(Molecule *mol, AtomVector &atoms, float degree_diff)
+void FixIssues::processAtoms(Polymer *mol, AtomVector &atoms, float degree_diff)
 {
 	for (const Atom *a : atoms)
 	{
@@ -408,7 +408,7 @@ void FixIssues::processAtoms(Molecule *mol, AtomVector &atoms, float degree_diff
 	}
 }
 
-void FixIssues::addIssue(Molecule *mol, Residue *local, TorsionRef tref, 
+void FixIssues::addIssue(Polymer *mol, Residue *local, TorsionRef tref, 
                          float change, std::string message)
 {
 	Issue issue{mol, local, tref, change, message};

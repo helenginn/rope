@@ -25,7 +25,7 @@
 #include "ClusterView.h"
 
 class Entity;
-class Molecule;
+class Polymer;
 class Rule;
 class Axes;
 class HasMetadata;
@@ -80,7 +80,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	
 	void prepareModelMenu(HasMetadata *hm);
-	void reorientToMolecule(Molecule *mol);
+	void reorientToPolymer(Polymer *mol);
 
 	void sendObject(std::string tag, void *object);
 protected:
@@ -114,7 +114,7 @@ private:
 	void applyRule(const Rule &r);
 	void applyRules();
 	void removeRules();
-	void createReference(Molecule *m);
+	void createReference(Polymer *m);
 
 	void askToFoldIn(int extra);
 	Entity *_entity = nullptr;
@@ -125,7 +125,7 @@ private:
 	Axes *_origin = nullptr;
 	const Rule *_colourRule = nullptr;
 	
-	Molecule *_from = nullptr;
+	Polymer *_from = nullptr;
 	RouteExplorer *_routeExplorer = nullptr;
 
 	std::vector<HasMetadata *> _whiteList;

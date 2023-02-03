@@ -43,7 +43,7 @@ public:
 
 	virtual const std::vector<Instance *> instances() const;
 	
-	const std::vector<Molecule *> &molecules() const
+	const std::vector<Polymer *> &molecules() const
 	{
 		return _molecules;
 	}
@@ -58,7 +58,7 @@ public:
 		return moleculeCount();
 	}
 
-	virtual void throwOutInstance(Molecule *mol);
+	virtual void throwOutInstance(Polymer *mol);
 	virtual void appendIfMissing(Instance *mol);
 	
 	virtual void housekeeping();
@@ -75,7 +75,7 @@ protected:
 
 private:
 	Sequence _sequence;
-	std::vector<Molecule *> _molecules;
+	std::vector<Polymer *> _molecules;
 
 };
 

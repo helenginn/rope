@@ -33,7 +33,7 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
-class Molecule;
+class Polymer;
 
 class Entity : public HasResponder<Responder<Entity>>
 {
@@ -63,7 +63,7 @@ public:
 	size_t unrefinedInstanceCount();
 	void throwOutModel(Model *mol);
 
-	virtual void throwOutInstance(Molecule *mol) {};
+	virtual void throwOutInstance(Polymer *mol) {};
 	virtual void appendIfMissing(Instance *mol) {};
 	
 	MetadataGroup makeTorsionDataGroup();
@@ -117,8 +117,6 @@ protected:
 	virtual PositionalGroup preparePositionGroup() = 0;
 
 	VisualPreferences _visPrefs;
-
-	void appendMolecule(Model &m);
 	
 	bool _actuallyRefine = true;
 	std::string _name;

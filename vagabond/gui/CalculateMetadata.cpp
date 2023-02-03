@@ -83,7 +83,7 @@ void CalculateMetadata::populateBoundEntities()
 				continue;
 			}
 			
-			std::string str = i_to_str(m->moleculeCountForEntity(e.name()));
+			std::string str = i_to_str(m->instanceCountForEntity(e.name()));
 			std::string header = "has_" + e.name();
 			
 			kv[header] = str;

@@ -27,7 +27,7 @@
 class Atom;
 class Model;
 class Residue;
-class Molecule;
+class Polymer;
 class Sequence;
 
 typedef std::vector<Atom *> AtomVector;
@@ -38,7 +38,7 @@ typedef std::vector<TorsionRefPair> TorsionRefPairs;
 class FixIssues : public HasResponder<Responder<FixIssues> >
 {
 public:
-	FixIssues(Molecule *m);
+	FixIssues(Polymer *m);
 	
 	~FixIssues();
 	
@@ -84,18 +84,18 @@ public:
 private:
 	void processModel(Model *m);
 
-	AtomVector findAtoms(Molecule *m, std::string code, std::string atom);
-	void processAtoms(Molecule *mol, AtomVector &atoms, float degree_diff);
+	AtomVector findAtoms(Polymer *m, std::string code, std::string atom);
+	void processAtoms(Polymer *mol, AtomVector &atoms, float degree_diff);
 
 	TorsionRefPairs findMatchingTorsions(const Atom *a, Residue *ref,
 	                                     Residue *local);
-	void checkTorsions(Molecule *mol, Residue *local, TorsionRefPairs &trps, 
+	void checkTorsions(Polymer *mol, Residue *local, TorsionRefPairs &trps, 
 	                   float expected_diff);
 
-	void residuesForAtom(Molecule *m, const Atom *a, 
+	void residuesForAtom(Polymer *m, const Atom *a, 
 	                     Residue *&ref, Residue *&local);
 	
-	void fixPeptideFlips(Molecule *m);
+	void fixPeptideFlips(Polymer *m);
 
 	std::vector<Model *> _models;
 	Options _options = FixNone;
@@ -104,7 +104,7 @@ private:
 	
 	struct Issue
 	{
-		Molecule *mol; 
+		Polymer *mol; 
 		Residue *local;
 		TorsionRef torsion;
 		float change;
@@ -129,11 +129,11 @@ private:
 		}
 	};
 	
-	void addIssue(Molecule *mol, Residue *local, TorsionRef tref, float change,
+	void addIssue(Polymer *mol, Residue *local, TorsionRef tref, float change,
 	              std::string message);
 	std::vector<Issue> _issues;
 	
-	Molecule *_reference = nullptr;
+	Polymer *_reference = nullptr;
 	
 public:
 	std::string issueMessage(int i)

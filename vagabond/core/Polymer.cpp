@@ -28,12 +28,12 @@
 #include "PolymerEntity.h"
 #include "SequenceComparison.h"
 
-Molecule::Molecule()
+Polymer::Polymer()
 {
 
 }
 
-Molecule::Molecule(std::string model_id, std::string chain_id,
+Polymer::Polymer(std::string model_id, std::string chain_id,
                    std::string entity_id, Sequence *derivative)
 {
 	_model_id = model_id;
@@ -53,7 +53,7 @@ Molecule::Molecule(std::string model_id, std::string chain_id,
 	housekeeping();
 }
 
-const std::string Molecule::model_chain_id() const
+const std::string Polymer::model_chain_id() const
 {
 	std::string full = _model_id + "_";
 
@@ -65,7 +65,7 @@ const std::string Molecule::model_chain_id() const
 	return full;
 }
 
-void Molecule::harvestMutations(SequenceComparison *sc)
+void Polymer::harvestMutations(SequenceComparison *sc)
 {
 	sc->calculateMutations();
 
@@ -80,7 +80,7 @@ void Molecule::harvestMutations(SequenceComparison *sc)
 	Environment::metadata()->addKeyValues(kv, true);
 }
 
-void Molecule::putTorsionRefsInSequence(Chain *ch)
+void Polymer::putTorsionRefsInSequence(Chain *ch)
 {
 	_sequence.remapFromMaster(_entity);
 
@@ -109,13 +109,13 @@ void Molecule::putTorsionRefsInSequence(Chain *ch)
 	}
 }
 
-void Molecule::housekeeping()
+void Polymer::housekeeping()
 {
 	Instance::housekeeping();
 	_sequence.remapFromMaster(_entity);
 }
 
-void Molecule::insertTorsionAngles(AtomContent *atoms)
+void Polymer::insertTorsionAngles(AtomContent *atoms)
 {
 	if (!isRefined())
 	{
@@ -155,7 +155,7 @@ void Molecule::insertTorsionAngles(AtomContent *atoms)
 	insertTransforms(atoms);
 }
 
-void Molecule::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
+void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 {
 	_sequence.remapFromMaster(entity());
 	for (const std::string &chain : _chain_ids)
@@ -192,7 +192,7 @@ void Molecule::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 	setRefined(true);
 }
 
-Metadata::KeyValues Molecule::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
+Metadata::KeyValues Polymer::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
                                                    std::string header) 
 {
 	_sequence.remapFromMaster(entity());
@@ -230,7 +230,7 @@ Metadata::KeyValues Molecule::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	return kv;
 }
 
-Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
+Metadata::KeyValues Polymer::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
                                                 AtomRecall &c, std::string header) 
 {
 	_sequence.remapFromMaster(entity());
@@ -274,14 +274,14 @@ Metadata::KeyValues Molecule::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	return kv;
 }
 
-void Molecule::mergeWith(Molecule *b)
+void Polymer::mergeWith(Polymer *b)
 {
 	if (_entity_id != b->_entity_id)
 	{
 		return;
 	}
 
-	std::cout << "Molecule " << id() << " would merge with molecule "
+	std::cout << "Polymer " << id() << " would merge with molecule "
 	<< b->id() << std::endl;
 	
 	int last = sequence()->lastNum();
@@ -315,7 +315,7 @@ std::string get_desc(std::string name)
 	return desc;
 }
 
-Residue *const Molecule::equivalentMaster(const ResidueId &target)
+Residue *const Polymer::equivalentMaster(const ResidueId &target)
 {
 	Sequence *seq = sequence();
 	Residue *local = seq->residueLike(target);
@@ -324,25 +324,25 @@ Residue *const Molecule::equivalentMaster(const ResidueId &target)
 	return master;
 }
 
-Residue *const Molecule::equivalentLocal(const ResidueId &m_id) const 
+Residue *const Polymer::equivalentLocal(const ResidueId &m_id) const 
 {
 	Residue *master = polymerEntity()->sequence()->residueLike(m_id);
 	return equivalentLocal(master);
 }
 
-Residue *const Molecule::equivalentLocal(Residue *const master) const 
+Residue *const Polymer::equivalentLocal(Residue *const master) const 
 {
 	const Sequence *seq = const_sequence();
 	Residue *const local = seq->local_residue(master);
 	return local;
 }
 
-bool Molecule::atomBelongsToInstance(Atom *a)
+bool Polymer::atomBelongsToInstance(Atom *a)
 {
 	return has_chain_id(a->chain()) && (a->code() != "HOH");
 }
 
-MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
+MetadataGroup::Array Polymer::grabTorsions(rope::TorsionType type)
 {
 	sequence()->clearMaps();
 	sequence()->remapFromMaster(entity());
@@ -352,7 +352,7 @@ MetadataGroup::Array Molecule::grabTorsions(rope::TorsionType type)
 	return vals;
 }
 
-std::map<Atom *, Atom *> Molecule::mapAtoms(Molecule *other)
+std::map<Atom *, Atom *> Polymer::mapAtoms(Polymer *other)
 {
 	std::map<Atom *, Atom *> map;
 	std::map<ResidueId, ResidueId> resMap;
@@ -391,7 +391,7 @@ std::map<Atom *, Atom *> Molecule::mapAtoms(Molecule *other)
 	return map;
 }
 
-std::vector<Posular> Molecule::atomPositionList(Instance *reference,
+std::vector<Posular> Polymer::atomPositionList(Instance *reference,
                            const std::vector<Atom3DPosition> &headers,
                            std::map<ResidueId, int> &resIdxs)
 {
@@ -451,7 +451,7 @@ std::vector<Posular> Molecule::atomPositionList(Instance *reference,
 	return vex;
 }
 
-Atom *Molecule::equivalentForAtom(Model *other, std::string desc)
+Atom *Polymer::equivalentForAtom(Model *other, std::string desc)
 {
 	AtomGroup *otherAtoms = other->currentAtoms();
 	AtomGroup *myAtoms = currentAtoms();
@@ -466,7 +466,7 @@ Atom *Molecule::equivalentForAtom(Model *other, std::string desc)
 		return nullptr;
 	}
 	// get molecule out of model matching atom
-	Molecule *otherMol = other->moleculeForChain(atom->chain());
+	Polymer *otherMol = other->polymerForChain(atom->chain());
 	if (otherMol == nullptr) return nullptr;
 
 	// get local residue out of the sequence of that molecule
@@ -484,12 +484,12 @@ Atom *Molecule::equivalentForAtom(Model *other, std::string desc)
 	return chosen;
 }
 
-PolymerEntity *const Molecule::polymerEntity() const
+PolymerEntity *const Polymer::polymerEntity() const
 {
 	return static_cast<PolymerEntity *>(_entity);
 }
 
-const size_t Molecule::completenessScore() const
+const size_t Polymer::completenessScore() const
 {
 	return const_sequence()->modelledResidueCount();
 }

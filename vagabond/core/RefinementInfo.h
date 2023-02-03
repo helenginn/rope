@@ -23,7 +23,7 @@
 #include "Residue.h"
 #include "TorsionRef.h"
 
-class Molecule;
+class Polymer;
 
 /** \class RefinementInfo
  *  \brief contains information about how to replicate refinement setup */
@@ -76,7 +76,7 @@ namespace Refine
 	struct Info
 	{
 		std::string mol_id;
-		Molecule *molecule = nullptr;
+		Polymer *molecule = nullptr;
 		std::vector<Axis> axes;
 		int samples = 120;
 		

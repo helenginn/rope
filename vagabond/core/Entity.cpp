@@ -132,7 +132,7 @@ void Entity::throwOutModel(Model *model)
 	}
 
 	size_t diff = before - instanceCount();
-	std::cout << "Removed " << diff << " molecules of model " << 
+	std::cout << "Removed " << diff << " polymers of model " << 
 	model->name() << "." << std::endl;
 
 	std::vector<Model *>::iterator jt = _models.begin();
@@ -243,14 +243,14 @@ PositionalGroup Entity::makePositionalDataGroup()
 	for (Model *m : _models)
 	{
 		bool loaded = false;
-		if (m->molecules().size() > 0 && 
-		    !(m->molecules()).front().hasAtomPositionList(reference))
+		if (m->polymers().size() > 0 && 
+		    !(m->polymers()).front().hasAtomPositionList(reference))
 		{
 			m->load(Model::NoGeometry);
 			loaded = true;
 		}
 
-		for (Molecule &mm : m->molecules())
+		for (Polymer &mm : m->polymers())
 		{
 			std::vector<Posular> vex = mm.atomPositionList(reference,
 			                                               headers, resIdxs);

@@ -34,7 +34,7 @@ void Refinement::setup()
 {
 	_model->load();
 
-	prepareMoleculeDetails();
+	preparePolymerDetails();
 	loadMap();
 	setupRefiners();
 }
@@ -44,11 +44,11 @@ void Refinement::loadMap()
 	_map = _model->map();
 }
 
-void Refinement::prepareMoleculeDetails()
+void Refinement::preparePolymerDetails()
 {
-	for (Molecule &mol : _model->molecules())
+	for (Polymer &mol : _model->polymers())
 	{
-		prepareMolecule(&mol);
+		preparePolymer(&mol);
 	}
 }
 
@@ -75,7 +75,7 @@ ECluster *Refinement::grabCluster(Entity *entity)
 	return cx;
 }
 
-void Refinement::prepareMolecule(Molecule *mol)
+void Refinement::preparePolymer(Polymer *mol)
 {
 	Refine::Info info;
 	info.molecule = mol;
@@ -115,7 +115,7 @@ void Refinement::prepareMolecule(Molecule *mol)
 
 void Refinement::setupRefiner(Refine::Info &info)
 {
-	Molecule *mol = info.molecule;
+	Polymer *mol = info.molecule;
 	ECluster *cluster = grabCluster(mol->entity());
 
 	int dims = info.axes.size();

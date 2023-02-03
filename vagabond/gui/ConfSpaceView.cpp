@@ -416,13 +416,13 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "path_from")
 	{
-		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		Polymer *m = static_cast<Polymer	*>(button->returnObject());
 		_from = m;
 	}
 	
 	if (tag == "view_model")
 	{
-		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		Polymer *m = static_cast<Polymer	*>(button->returnObject());
 		
 		if (m)
 		{
@@ -434,7 +434,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "refinement_setup")
 	{
-		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		Polymer *m = static_cast<Polymer	*>(button->returnObject());
 		createReference(m);
 		SetupRefinement *sr = new SetupRefinement(this, *(m->model()));
 		sr->setAxes(_axes);
@@ -443,7 +443,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "set_as_reference")
 	{
-		Molecule *m = static_cast<Molecule	*>(button->returnObject());
+		Polymer *m = static_cast<Polymer	*>(button->returnObject());
 		createReference(m);
 	}
 	
@@ -580,7 +580,7 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	setModal(m);
 }
 
-void ConfSpaceView::createReference(Molecule *m)
+void ConfSpaceView::createReference(Polymer *m)
 {
 	if (_type != ConfTorsions)
 	{
@@ -611,7 +611,7 @@ void ConfSpaceView::createReference(Molecule *m)
 }
 
 
-void ConfSpaceView::reorientToMolecule(Molecule *mol)
+void ConfSpaceView::reorientToPolymer(Polymer *mol)
 {
 	if (_axes == nullptr)
 	{

@@ -105,7 +105,7 @@ void PolymerEntityManager::purgeInstance(Instance *inst)
 {
 	if (inst->hasSequence())
 	{
-		Molecule *mol = static_cast<Molecule *>(inst);
+		Polymer *mol = static_cast<Polymer *>(inst);
 		for (PolymerEntity &other : _objects)
 		{
 			other.throwOutInstance(mol);

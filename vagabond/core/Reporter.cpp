@@ -55,7 +55,7 @@ void Reporter::report()
         {
             Model *model = entity.models()[m];
             std::cout << "        Model " << m << ": " << model->name() << " (";
-            std::cout << model->moleculesForEntity(&entity).size() << ")" << std::endl;
+            std::cout << model->instanceCountForEntity(entity.name()) << ")" << std::endl;
         }
         std::cout << std::endl;
     }
@@ -74,9 +74,9 @@ void Reporter::report()
         {
             Entity &entity = entity_manager->object(e);
             std::cout << "    Entity " << e << " (" << entity.name() <<  "): ";
-            std::set<Molecule *> molecules = model.moleculesForEntity(&entity);
+            std::set<Polymer *> polymers = model.polymersForEntity(&entity);
             int index = 0;
-            for (Molecule* m: molecules)
+            for (Polymer *m : polymers)
             {
                 if (index == 0)
                 {
