@@ -104,11 +104,16 @@ Model *const Instance::model()
 	return _model;
 }
 
-void Instance::unload()
+void Instance::wipeAtoms()
 {
 	delete _currentAtoms;
 	_currentAtoms = nullptr;
+	_motherAtoms = nullptr;
+}
 
+void Instance::unload()
+{
+	wipeAtoms();
 	_model->unload();
 }
 

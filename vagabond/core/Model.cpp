@@ -152,7 +152,7 @@ void Model::unload()
 	std::vector<Instance *> insts = instances();
 	for (Instance *inst : insts)
 	{
-		inst->unload();
+		inst->wipeAtoms();
 	}
 }
 

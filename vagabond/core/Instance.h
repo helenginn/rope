@@ -111,6 +111,7 @@ public:
 	
 	void load();
 	virtual AtomGroup *currentAtoms();
+	void wipeAtoms();
 	void unload();
 
 	Entity *entity();
