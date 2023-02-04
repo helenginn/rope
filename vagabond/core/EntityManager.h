@@ -30,7 +30,6 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
-class Molecule;
 class ModelManager;
 
 class PolymerEntityManager : 

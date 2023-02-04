@@ -444,12 +444,12 @@ void Model::housekeeping()
 {
 	for (Polymer &pol : _polymers)
 	{
-		for (const std::string &ch : mc.chain_ids())
+		for (const std::string &ch : pol.chain_ids())
 		{
 			_chain2Polymer[ch] = &pol;
 		}
 
-		mc.setModel(this);
+		pol.setModel(this);
 		
 	}
 	
