@@ -21,14 +21,18 @@
 
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
+#include <vagabond/core/Engine.h>
+#include <thread>
 
 class Scene;
 class Instance;
 class TorsionCluster;
 class PositionalCluster;
+class ChemotaxisEngine;
+class ConfSpaceView;
 class RopeCluster;
 
-class Axes : public IndexResponder, public ButtonResponder
+class Axes : public IndexResponder, public ButtonResponder, public RunsEngine
 {
 public:
 	Axes(TorsionCluster *group, Instance *m = nullptr);
@@ -36,7 +40,7 @@ public:
 	Axes(RopeCluster *group, Instance *m = nullptr);
 	~Axes();
 	
-	void setScene(Scene *scene)
+	void setScene(ConfSpaceView *scene)
 	{
 		_scene = scene;
 	}
@@ -54,8 +58,14 @@ public:
 	void takeOldAxes(Axes *old);
 
 	void buttonPressed(std::string tag, Button *button);
+	void backgroundPrioritise(std::string key);
+
+	virtual size_t parameterCount();
+	virtual int sendJob(std::vector<float> &all);
+	virtual float getResult(int *job_id);
 private:
 	std::vector<float> getMappedVector(int idx);
+	void prioritiseDirection(std::string key);
 	void route(int idx);
 	void initialise();
 
@@ -69,15 +79,23 @@ private:
 	TorsionCluster *_torsionCluster = nullptr;
 	PositionalCluster *_positionalCluster = nullptr;
 	Instance *_instance = nullptr;
-	Scene *_scene = nullptr;
+	ConfSpaceView *_scene = nullptr;
 	int _lastIdx = -1;
 	
 	Instance *_targets[3];
 	
 	bool _origin = false;
 
+	void stop();
+	std::thread *_worker = nullptr;
+	std::string _key;
+	int _issue = 0;
+	std::map<int, double> _scores;
+	ChemotaxisEngine *_engine = nullptr;
+
 	bool _planes[3];
 	std::vector<glm::vec3> _dirs;
+	
 };
 
 #endif

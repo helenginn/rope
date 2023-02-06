@@ -73,6 +73,11 @@ public:
 	{
 		return _entity;
 	}
+	
+	const Rule *colourRule() const
+	{
+		return _colourRule;
+	}
 
 	virtual void setup();
 	virtual void refresh();

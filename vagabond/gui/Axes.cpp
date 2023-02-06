@@ -20,10 +20,12 @@
 #include <math.h>
 #include <vagabond/utils/version.h>
 #include <vagabond/core/RopeCluster.h>
+#include <vagabond/core/ChemotaxisEngine.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include "AxisExplorer.h"
+#include "ConfSpaceView.h"
 #include "PlausibleRoute.h"
 #include "SplitRoute.h"
 #include "RouteExplorer.h"
@@ -94,9 +96,20 @@ void Axes::initialise()
 	}
 }
 
+void Axes::stop()
+{
+	if (_worker != nullptr)
+	{
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
+	}
+
+}
+
 Axes::~Axes()
 {
-
+	stop();
 }
 
 bool Axes::mouseOver()
@@ -239,6 +252,10 @@ void Axes::buttonPressed(std::string tag, Button *button)
 	{
 		_scene->buttonPressed("choose_reorient_molecule", nullptr);
 	}
+	else if (tag == "match_colour")
+	{
+		_scene->buttonPressed(tag, nullptr);
+	}
 	else if (tag == "reflect")
 	{
 		reflect(_lastIdx);
@@ -274,6 +291,11 @@ void Axes::interacted(int idx, bool hover, bool left)
 		m->addOption("explore axis", "explore_axis");
 		m->addOption("reorient", "reorient");
 		m->addOption("reflect", "reflect");
+		
+		if (_scene->colourRule() != nullptr)
+		{
+			m->addOption("match colour", "match_colour");
+		}
 		
 		if (_targets[idx] != nullptr)
 		{
@@ -341,7 +363,7 @@ void Axes::refreshAxes()
 		}
 	}
 
-	rebufferVertexData();
+	forceRender(true, false);
 }
 
 void Axes::prepareAxes()
@@ -412,3 +434,74 @@ void Axes::reorient(int i, Instance *mol)
 	
 	refreshAxes();
 }
+
+void Axes::backgroundPrioritise(std::string key)
+{
+	stop();
+	_worker = new std::thread(&Axes::prioritiseDirection, this, key);
+}
+
+size_t Axes::parameterCount()
+{
+	return 3;
+}
+
+int Axes::sendJob(std::vector<float> &all)
+{
+	std::vector<float> vals = _cluster->objectGroup()->numbersForKey(_key);
+	CorrelData cd = empty_CD();
+	glm::vec3 dir = glm::normalize(glm::vec3(all[0], all[1], all[2]));
+
+	for (int idx = 0; idx < _cluster->objectGroup()->objectCount(); idx++)
+	{
+		glm::vec3 centre = _cluster->point(idx);
+		float pos = glm::dot(dir, centre);
+		
+		add_to_CD(&cd, vals[idx], pos);
+	}
+	
+	_issue++;
+	float score = evaluate_CD(cd);
+
+	_dirs[_lastIdx] = dir;
+	
+	if (score != score)
+	{
+		score = FLT_MAX;
+	}
+
+	refreshAxes();
+
+	_scores[_issue] = -score;
+	return _issue;
+}
+
+float Axes::getResult(int *job_id)
+{
+	if (_scores.size() == 0)
+	{
+		*job_id = -1;
+		return 0;
+	}
+
+	*job_id = _scores.begin()->first;
+	float result = _scores.begin()->second;
+	_scores.erase(_scores.begin());
+
+	return result;
+}
+
+void Axes::prioritiseDirection(std::string key)
+{
+	std::cout << "Prioritising direction against " << key << std::endl;
+	_key = key;
+	_engine = new ChemotaxisEngine(this);
+	_engine->start();
+	
+	_key = "";
+	_issue = 0;
+	std::string score = std::to_string(_engine->bestScore());
+
+	_scene->setInformation("Correlation with colour: " + score);
+}
+

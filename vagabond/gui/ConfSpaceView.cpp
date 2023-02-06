@@ -362,6 +362,13 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		refresh();
 	}
 
+	if (tag == "match_colour")
+	{
+		std::cout << _axes << " " << _colourRule << std::endl;
+		std::string key = _colourRule->header();
+		_axes->backgroundPrioritise(key);
+	}
+
 	if (tag == "align_axes")
 	{
 		AskYesNo *askyn = new AskYesNo(this, "Prioritise PCA axes to best\n"

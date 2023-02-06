@@ -37,6 +37,11 @@ class Engine
 public:
 	Engine(RunsEngine *ref);
 
+	float bestScore()
+	{
+		return _best;
+	}
+	
 private:
 	struct TicketScore
 	{
@@ -55,11 +60,6 @@ protected:
 	void clearResults()
 	{
 		_scores.clear();
-	}
-	
-	float bestScore()
-	{
-		return _best;
 	}
 	
 	void setCurrent(std::vector<float> &chosen)
