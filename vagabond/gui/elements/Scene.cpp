@@ -356,13 +356,13 @@ void Scene::setInformation(std::string str)
 	if (_info != nullptr)
 	{
 		removeObject(_info);
-		delete _info;
+		Window::setDelete(_info);
 		_info = nullptr;
 	}
 
 	if (str.length())
 	{
-		_info = new TextButton(str, this);
+		_info = new TextButton(str, this, true);
 		_info->setReturnTag("remove_info");
 		_info->resize(0.6);
 		_info->setCentre(0.5, 0.16);
