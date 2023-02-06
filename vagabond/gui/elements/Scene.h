@@ -23,6 +23,8 @@ public:
 	void setModal(Modal *modal)
 	{
 		_modal = modal;
+		_left = false;
+		_right = false;
 	}
 	
 	void setBackScene(Scene *prev)

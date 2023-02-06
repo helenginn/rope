@@ -129,18 +129,19 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 	if (_expired) return;
 	_dragged = nullptr;
 	convertToGLCoords(&x, &y);
-	_left = button.button == SDL_BUTTON_LEFT;
 
 	if (_modal != nullptr && _chosen == nullptr)
 	{
 		double z = -FLT_MAX;
 		bool hit = _modal->intersectsRay(x, y, &z);
 
-		if (!hit)
+		if (!hit && _left)
 		{
 			_modal->dismiss();
 		}
 	}
+
+	_left = button.button == SDL_BUTTON_LEFT;
 
 	if (hasIndexedObjects() > 0 && _modal == nullptr && _chosen == nullptr)
 	{
