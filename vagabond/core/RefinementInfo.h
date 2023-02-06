@@ -40,7 +40,7 @@ namespace Refine
 		{
 			id = rt.residue->id();
 			torsion = rt.torsion;
-			float angle = 0;
+			angle = 0;
 		}
 		
 		static std::vector<RTA> vector_from_rts(std::vector<ResidueTorsion> &rts)
