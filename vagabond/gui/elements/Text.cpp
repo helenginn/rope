@@ -1,6 +1,7 @@
 // Copyright (C) 2021 Helen Ginn
 
 #include "Text.h"
+#include "TextManager.h"
 #include "Library.h"
 #include "Window.h"
 #include <SDL2/SDL.h>
@@ -16,6 +17,13 @@ Text::Text(std::string text, Font::Type type, bool delay) : Box()
 	if (text.length() > 0 && !_delay)
 	{
 		setInitialText(text);
+		makeQuad();
+	}
+	else if (text.length() > 0 && _delay)
+	{
+		png_byte *bytes = nullptr;
+		TextManager::text_malloc(&bytes, text, &_w, &_h, type);
+		makeQuad();
 	}
 	
 	setName(text);
@@ -44,7 +52,6 @@ void Text::setInitialText(std::string text)
 {
 	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h, _type);
 	_texid = tex;
-	makeQuad();
 }
 
 void Text::setText(std::string text, bool force)

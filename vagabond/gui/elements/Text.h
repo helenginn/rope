@@ -28,7 +28,8 @@ protected:
 private:
 	void setInitialText(std::string text);
 	virtual void makeQuad();
-	int _w, _h;
+	int _w = 0;
+	int _h = 0;
 
 	bool _delay = false;
 	bool _retext = false;
