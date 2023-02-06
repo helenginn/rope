@@ -373,6 +373,7 @@ bool Sequence::torsionByName(const std::string name, Residue **res)
 	return true;
 }
 
+/* called on the master sequence */
 void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
                                   rope::TorsionType type)
 {
