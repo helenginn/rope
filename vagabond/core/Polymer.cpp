@@ -53,15 +53,20 @@ Polymer::Polymer(std::string model_id, std::string chain_id,
 	housekeeping();
 }
 
-const std::string Polymer::model_chain_id() const
+const std::string Polymer::chain_id_str() const
 {
-	std::string full = _model_id + "_";
-
+	std::string full;
 	for (const std::string &id : _chain_ids)
 	{
 		full += id;
 	}
-	
+
+	return full;
+}
+
+const std::string Polymer::model_chain_id() const
+{
+	std::string full = _model_id + "_" + chain_id_str();
 	return full;
 }
 
@@ -71,6 +76,7 @@ void Polymer::harvestMutations(SequenceComparison *sc)
 
 	Metadata::KeyValues kv;
 	kv["molecule"] = id();
+	kv["chain"] = chain_id_str();
 	
 	for (const std::string &mutation : sc->mutations())
 	{

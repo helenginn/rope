@@ -59,6 +59,7 @@ public:
 		return _chain_ids.count(id) > 0;
 	}
 	
+	const std::string chain_id_str() const;
 	const std::string model_chain_id() const;
 	
 	virtual std::string desc() const
