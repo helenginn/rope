@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "VisualPreferences.h"
+#include "Instance.h"
 #include "Atom.h"
 
 VisualPreferences::VisualPreferences()
@@ -24,7 +25,7 @@ VisualPreferences::VisualPreferences()
 
 }
 
-bool VisualPreferences::isBallStickAtom(const Atom *a)
+bool VisualPreferences::isBallStickAtom(const Atom *a, Instance *inst)
 {
 	if (_ballAndStick)
 	{
@@ -39,9 +40,24 @@ bool VisualPreferences::isBallStickAtom(const Atom *a)
 	}
 
 	const ResidueId &id = a->residueId();
+	ResidueId chosen = id;
+	
+	if (inst)
+	{
+		Residue *local = inst->equivalentMaster(id);
+		if (local)
+		{
+			chosen = local->id();
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	for (const ResidueId &resId : _displayBallSticks)
 	{
-		if (resId == id)
+		if (resId == chosen)
 		{
 			return true;
 		}
@@ -51,13 +67,13 @@ bool VisualPreferences::isBallStickAtom(const Atom *a)
 }
 
 std::vector<Atom *> VisualPreferences::selectBallStickAtoms(std::vector<Atom *> 
-                                                            &av)
+                                                            &av, Instance *inst)
 {
 	std::vector<Atom *> subset;
 
 	for (Atom *a : av)
 	{
-		if (isBallStickAtom(a))
+		if (isBallStickAtom(a, inst))
 		{
 			subset.push_back(a);
 		}

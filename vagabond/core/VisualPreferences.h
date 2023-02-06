@@ -25,6 +25,7 @@
 using nlohmann::json;
 
 class Atom;
+class Instance;
 
 class VisualPreferences
 {
@@ -76,9 +77,10 @@ public:
 		_displayBallSticks.erase(_displayBallSticks.begin() + i);
 	}
 	
-	std::vector<Atom *> selectBallStickAtoms(std::vector<Atom *> &av);
+	std::vector<Atom *> selectBallStickAtoms(std::vector<Atom *> &av, 
+	                                         Instance *inst = nullptr);
 private:
-	bool isBallStickAtom(const Atom *a);
+	bool isBallStickAtom(const Atom *a, Instance *inst = nullptr);
 
 	bool _cAlphaTrace = true;
 	bool _ballAndStick = true;

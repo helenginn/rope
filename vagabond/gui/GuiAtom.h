@@ -7,12 +7,13 @@
 #include <vagabond/core/Atom.h>
 #include <atomic>
 
-class Icosahedron;
 class GuiBond;
 class GuiBalls;
+class Instance;
 class GuiRibbon;
 class AtomGroup;
 class GuiHelices;
+class Icosahedron;
 class GuiThickBond;
 class GuiRepresentation;
 class VisualPreferences;
@@ -47,7 +48,7 @@ public:
 
 	virtual void render(SnowGL *gl);
 
-	void applyVisuals(VisualPreferences *vp);
+	void applyVisuals(VisualPreferences *vp, Instance *inst = nullptr);
 private:
 	static void backgroundWatch(GuiAtom *what);
 	

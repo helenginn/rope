@@ -75,7 +75,7 @@ void AxisExplorer::setup()
 	setupColourLegend();
 	
 	VisualPreferences *vp = &_instance->entity()->visualPreferences();
-	_guiAtoms->applyVisuals(vp);
+	_guiAtoms->applyVisuals(vp, instance());
 	
 	reportMissing();
 }

@@ -230,11 +230,11 @@ void GuiAtom::setDisableBalls(bool dis)
 }
 
 
-void GuiAtom::applyVisuals(VisualPreferences *vp)
+void GuiAtom::applyVisuals(VisualPreferences *vp, Instance *inst)
 {
 	setDisableRibbon(!vp->cAlphaTrace());
 
-	std::vector<Atom *> av = vp->selectBallStickAtoms(_atoms);
+	std::vector<Atom *> av = vp->selectBallStickAtoms(_atoms, inst);
 	
 	_thickBonds->removeVisuals();
 	_balls->removeVisuals();
