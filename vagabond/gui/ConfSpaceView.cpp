@@ -322,6 +322,8 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		removeObject(_origin);
 		delete _origin; _origin = nullptr;
+		removeObject(_axes);
+		delete _axes; _axes = nullptr;
 	}
 	if (tag == "choose_reorient_molecule")
 	{
