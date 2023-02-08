@@ -37,7 +37,7 @@ public:
 	virtual File::Type cursoryLook();
 	virtual void parse();
 	virtual void write(std::string filename);
-	void writeAtoms(AtomGroup *grp, std::string name);
+	static void writeAtoms(AtomGroup *grp, std::string name);
 
 	void getAllGeometry();
 private:

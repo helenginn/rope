@@ -221,7 +221,7 @@ void PdbFile::writeAtoms(AtomGroup *grp, std::string name)
 	}
 
 	std::ofstream file;
-	file.open(_filename);
+	file.open(name);
 	
 	gemmi::write_pdb(st, file);
 	
