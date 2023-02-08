@@ -147,7 +147,7 @@ PlausibleRoute *Path::toRoute()
 		
 		if (bt == nullptr)
 		{
-			std::cout << "WARNING! null bond " << local->id().str() << std::endl;
+			std::cout << "WARNING! null bond " << _residueIds[i].str() << std::endl;
 		}
 		
 		pr->addTorsion(bt);
