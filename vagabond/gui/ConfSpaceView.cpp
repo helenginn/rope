@@ -580,9 +580,11 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 {
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
-	m->addOption("view model", "view_model");
+	m->addOption("view details", "view_model");
 	m->addOption("set as reference", "set_as_reference");
+#ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
+#endif
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
 	m->setup(x, y);
 
