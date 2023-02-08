@@ -643,7 +643,8 @@ void ConfSpaceView::prepareEmptySpaceMenu()
 	{
 		m->addOption("show origin", "show_origin");
 	}
-	else
+	
+	if (_origin != nullptr || _axes != nullptr)
 	{
 		m->addOption("hide origin", "hide_origin");
 	}
