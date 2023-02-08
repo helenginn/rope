@@ -24,6 +24,7 @@
 #ifndef __EMSCRIPTEN__
 #define VERSION_SHORT_ROUTES
 #define VERSION_LIGANDS
+#define VERSION_REFINEMENT
 #endif
 
 #endif
