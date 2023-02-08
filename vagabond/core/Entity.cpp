@@ -123,7 +123,9 @@ void Entity::throwOutModel(Model *model)
 
 		if (i->model_id() == model->name())
 		{
-			i->eraseIfPresent(insts);
+			Polymer *p = static_cast<Polymer *>(i);
+			insts.erase(it);
+			throwOutInstance(p);
 			it = insts.begin();
 			continue;
 		}
