@@ -19,6 +19,8 @@
 #include "Model.h"
 #include "Instance.h"
 #include "Interface.h"
+#include "PdbFile.h"
+#include "Superpose.h"
 #include "AtomContent.h"
 #include "BondTorsion.h"
 #include "Environment.h"
