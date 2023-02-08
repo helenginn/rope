@@ -457,32 +457,20 @@ std::vector<Posular> Polymer::atomPositionList(Instance *reference,
 	return vex;
 }
 
-Atom *Polymer::equivalentForAtom(Model *other, std::string desc)
+Atom *Polymer::equivalentForAtom(Polymer *other, Atom *atom)
 {
 	AtomGroup *otherAtoms = other->currentAtoms();
 	AtomGroup *myAtoms = currentAtoms();
-
-	// find atom matching description in foreign model
-	Atom *atom = otherAtoms->atomByDesc(desc);
-	if (atom == nullptr) return nullptr;
 	
-	if (atom->hetatm())
-	{
-		// no equivalent of a heteroatom in a protein chain
-		return nullptr;
-	}
-	// get molecule out of model matching atom
-	Polymer *otherPol = other->polymerForChain(atom->chain());
-	if (otherPol == nullptr) return nullptr;
-
 	// get local residue out of the sequence of that molecule
-	Residue *local = otherPol->sequence()->residueLike(atom->residueId());
-	if (local == nullptr) return nullptr;
+	Residue *local = other->sequence()->residueLike(atom->residueId());
+
 	// convert into the master residue for the entity
-	Residue *master = otherPol->sequence()->master_residue(local);
-	if (master == nullptr) return nullptr;
+	Residue *master = other->sequence()->master_residue(local);
+
 	// convert master residue into local entity for this molecule
 	Residue *myLocal = sequence()->local_residue(master);
+
 	if (myLocal == nullptr) return nullptr;
 	
 	// grab same atom name out of this molecule's atomgroup
@@ -499,4 +487,5 @@ const size_t Polymer::completenessScore() const
 {
 	return const_sequence()->modelledResidueCount();
 }
+
 

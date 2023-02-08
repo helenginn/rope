@@ -304,5 +304,60 @@ void Instance::addTorsionsToGroup(MetadataGroup &group,
 	group.addMetadataArray(this, vals);
 }
 
+void Instance::superposeOn(Instance *other)
+{
+	load();
+	other->load();
+	AtomGroup *otherAtoms = other->currentAtoms();
+	AtomGroup *myAtoms = currentAtoms();
+	myAtoms->recalculate();
+	
+	Superpose sp;
+	for (Atom *a : myAtoms->atomVector())
+	{
+		a->setOtherPosition("original", glm::vec3(NAN));
+	}
 
+	for (Atom *theirs : otherAtoms->atomVector())
+	{
+		Atom *mine = equivalentForAtom(other, theirs);
+		
+		if (mine)
+		{
+			glm::vec3 t = theirs->derivedPosition();
+			glm::vec3 d = mine->derivedPosition();
+			mine->setOtherPosition("original", t);
+			sp.addPositionPair(t, d);
+		}
+	}
 
+	sp.superpose();
+	glm::mat4 tr = sp.transformation();
+
+	for (Atom *a : myAtoms->atomVector())
+	{
+		glm::vec3 d = a->derivedPosition();
+		glm::vec3 update = glm::vec3(tr * glm::vec4(d, 1.f));
+		a->setDerivedPosition(update);
+	}
+
+	/* should (will?) superimpose using these target values */
+	PdbFile::writeAtoms(myAtoms, "test3.pdb");
+
+	other->unload();
+	unload();
+}
+
+Atom *Instance::equivalentForAtom(Instance *other, Atom *atom)
+{
+	if (other->hasSequence())
+	{
+		Polymer *p = static_cast<Polymer *>(other);	
+		return equivalentForAtom(p, atom);
+	}
+	else
+	{
+		Ligand *l = static_cast<Ligand *>(other);	
+		return equivalentForAtom(l, atom);
+	}
+}

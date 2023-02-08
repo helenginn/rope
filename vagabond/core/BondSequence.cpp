@@ -413,7 +413,11 @@ void BondSequence::superpose()
 
 			glm::vec3 p = _blocks[n].target;
 			glm::vec3 q = _blocks[n].my_position();
-			pose.addPositionPair(p, q);
+			
+			if (p.x == p.x)
+			{
+				pose.addPositionPair(p, q);
+			}
 		}
 
 		pose.superpose();
@@ -508,11 +512,9 @@ double BondSequence::calculateDeviations()
 
 		glm::vec3 diff = trial_pos - target;
 		
-		if (_blocks[i].atom->atomName() == "CG1" && false)
+		if (diff.x != diff.x)
 		{
-			glm::vec3 &moving = _blocks[i].moving;
-			std::cout << glm::to_string(diff) << " " << glm::to_string(moving) << 
-			" " << frac << std::endl;
+			continue;
 		}
 		
 		sum += glm::length(diff) / weight;

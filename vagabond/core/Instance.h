@@ -39,6 +39,7 @@ class AtomGroup;
 class Polymer;
 class Residue;
 class Entity;
+class Ligand;
 class Model;
 class Atom;
 
@@ -80,10 +81,17 @@ public:
 	void addToInterface(Instance *other, Interface *face, 
 	                    double max, bool derived);
 
-	virtual Atom *equivalentForAtom(Model *other, std::string desc)
+	Atom *equivalentForAtom(Instance *other, Atom *atom);
+	virtual Atom *equivalentForAtom(Polymer *other, Atom *atom)
 	{
 		return nullptr;
 	}
+	virtual Atom *equivalentForAtom(Ligand *other, Atom *atom)
+	{
+		return nullptr;
+	}
+	
+	void superposeOn(Instance *other);
 	
 	const Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
 	virtual Residue *const equivalentMaster(const ResidueId &local)
