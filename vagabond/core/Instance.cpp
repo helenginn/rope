@@ -115,8 +115,13 @@ void Instance::wipeAtoms()
 
 void Instance::unload()
 {
-	wipeAtoms();
-	_model->unload();
+	bool happened = _model->unload();
+	
+	if (happened)
+	{
+		wipeAtoms();
+
+	}
 }
 
 

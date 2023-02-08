@@ -129,13 +129,13 @@ void Model::write(std::string filename)
 	}
 }
 
-void Model::unload()
+bool Model::unload()
 {
-	if (_loadCounter == 0) { return; }
+	if (_loadCounter == 0) { return false; }
 	_loadCounter--;
 //	std::cout << "Model " << name() << " load counter: " 
 //	<< _loadCounter << std::endl;
-	if (_loadCounter > 0) { return; }
+	if (_loadCounter > 0) { return false; }
 	
 	if (_currentFile)
 	{
@@ -154,6 +154,8 @@ void Model::unload()
 	{
 		inst->wipeAtoms();
 	}
+
+	return true;
 }
 
 void Model::createPolymers()
@@ -503,6 +505,8 @@ void Model::extractTorsions()
 void Model::load(LoadOptions opts)
 {
 	_loadCounter++;
+//	std::cout << "Model " << name() << " load counter: " 
+//	<< _loadCounter << std::endl;
 
 	if (_loadCounter > 1)
 	{

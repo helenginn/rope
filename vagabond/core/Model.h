@@ -124,7 +124,7 @@ public:
 	};
 
 	void load(LoadOptions opts = Everything);
-	void unload();
+	bool unload();
 	
 	bool loaded() const
 	{
