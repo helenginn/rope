@@ -396,7 +396,7 @@ const std::string Atom::desc() const
 	{
 		str += _chain + "-";
 	}
-	str +=  code() + i_to_str(residueNumber()) + ":" + atomName();
+	str += code() + i_to_str(residueNumber()) + ":" + atomName();
 	return str;
 }
 
