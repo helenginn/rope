@@ -85,6 +85,7 @@ void Environment::loadEntitiesBackwardsCompatible(const json &data)
 	catch (const json::exception &err)
 	{
 		// old version of RoPE, before split between polymers and entities.
+		std::cout << "Trying to fix problem" << std::endl;
 		_entityManager = new EntityManager();
 		_entityManager->setPolymerEntityManager(data["entity_manager"]);
 	}

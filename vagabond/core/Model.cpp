@@ -357,8 +357,21 @@ void Model::assignClutter()
 			continue;
 		}
 		
-		Ligand lig(_name, grp);
-		_ligands.push_back(lig);
+		bool found = false;
+		for (Ligand &l : _ligands)
+		{
+			if (l.atomBelongsToInstance(grp->chosenAnchor()))
+			{
+				found = true;
+				break;
+			}
+		}
+		
+		if (!found)
+		{
+			Ligand lig(_name, grp);
+			_ligands.push_back(lig);
+		}
 	}
 
 	std::cout << "Total ligands: " << _ligands.size() << std::endl;
@@ -624,42 +637,43 @@ void Model::throwOutInstance(Instance *inst)
 
 void Model::throwOutEntity(Entity *ent)
 {
-	std::list<Polymer>::iterator it = _polymers.begin();
+	std::map<std::string, std::string> newMap;
 
-	std::map<std::string, std::string>::iterator jt;
-	for (jt = _chain2Entity.begin(); jt != _chain2Entity.end(); jt++)
+	for (auto jt = _chain2Entity.begin(); jt != _chain2Entity.end(); jt++)
 	{
 		if (jt->second == ent->name())
 		{
 			std::cout << "Removing " << jt->first << " as instance of " << 
 			"entity " << ent->name() << " from " << name() << std::endl;
-			_chain2Entity.erase(jt);
-
-			jt = _chain2Entity.begin();
-			jt--;
 		}
-		
-		if (_chain2Entity.size() == 0)
+		else
 		{
-			break;
+			newMap[jt->first] = jt->second;
 		}
 	}
+	
+	_chain2Entity = newMap;
 
-	for (Polymer &p : _polymers)
+//	std::list<Polymer>::iterator it = _polymers.begin();
+
+	for (auto it = _polymers.begin(); it != _polymers.end(); )
 	{
+		Polymer &p = *it;
+		std::cout << "Checking " << p.entity_id() << " name " << 
+		p.id() << std::endl;
 		if (p.entity_id() == ent->name())
 		{
 			for (const std::string &chain : p.chain_ids())
 			{
 				_chain2Polymer.erase(chain);
-				std::cout << "Found created polymer " << chain << " to remove "
+				std::cout << "Found polymer " << chain << " to remove "
 				"from " << name() << std::endl;
 			}
 
 			_polymers.erase(it);
-			return;
+			it = _polymers.begin();
+			continue;
 		}
-		
 		it++;
 	}
 }

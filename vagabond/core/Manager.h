@@ -36,18 +36,6 @@ public:
 		return _objects.size();
 	}
 	
-	std::list<T *> ptrs() 
-	{
-		std::list<T *> l;
-		
-		for (T obj : _objects)
-		{
-			l.push_back(&obj);
-		}
-
-		return l;
-	}
-	
 	std::list<T> &objects()
 	{
 		return _objects;

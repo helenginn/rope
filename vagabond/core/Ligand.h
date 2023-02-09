@@ -39,7 +39,7 @@ public:
 	{
 		return false;
 	}
-protected:
+
 	virtual bool atomBelongsToInstance(Atom *a);
 private:
 	std::string _anchorDesc;

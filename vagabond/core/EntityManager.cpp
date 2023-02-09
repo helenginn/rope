@@ -48,9 +48,9 @@ std::vector<Entity *> EntityManager::entities()
 {
 	std::vector<Entity *> ents;
 	
-	for (PolymerEntity *pe : _peManager.ptrs())
+	for (PolymerEntity &pe : _peManager.objects())
 	{
-		ents.push_back(pe);
+		ents.push_back(&pe);
 	}
 	
 	return ents;
@@ -58,8 +58,12 @@ std::vector<Entity *> EntityManager::entities()
 
 void EntityManager::housekeeping()
 {
+	_peManager.housekeeping();
+
 	_name2Entity.clear();
 
+	std::cout << std::endl;
+	std::cout << "All entities: " << std::endl;
 	std::vector<Entity *> ents = entities();
 	for (Entity *other : ents)
 	{
