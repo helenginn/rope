@@ -65,26 +65,27 @@ void CalculateMetadata::populateBoundEntities()
 
 	for (Model const *m : _entity->models())
 	{
-		PolymerEntityManager *em = Environment::entityManager();
+		EntityManager *em = Environment::entityManager();
 		int count = 0;
 
 		Metadata::KeyValues kv;
 		kv["model"] = m->id();
 
-		for (const PolymerEntity &e : em->objects())
+//		std::vector<Entity *> entities = em->entities();
+		for (const Entity *e : em->entities())
 		{
-			if (&e == _entity)
+			if (e == _entity)
 			{
 				continue;
 			}
 
-			if (!m->hasEntity(e.name()))
+			if (!m->hasEntity(e->name()))
 			{
 				continue;
 			}
 			
-			std::string str = i_to_str(m->instanceCountForEntity(e.name()));
-			std::string header = "has_" + e.name();
+			std::string str = i_to_str(m->instanceCountForEntity(e->name()));
+			std::string header = "has_" + e->name();
 			
 			kv[header] = str;
 			kv["has_other_entity"] = Value("true");

@@ -33,7 +33,7 @@
 ChooseEntity::ChooseEntity(Scene *prev, Model &model, Chain *chain) 
 : ListView(prev), _model(model)
 {
-	_manager = Environment::entityManager();
+	_manager = Environment::entityManager()->forPolymers();
 	_chain = chain;
 }
 

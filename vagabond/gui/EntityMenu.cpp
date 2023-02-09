@@ -26,8 +26,7 @@
 
 EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {
-	_manager = Environment::entityManager();
-//	_manager->checkModelsForReferences(Environment::modelManager());
+	_manager = Environment::entityManager()->forPolymers();
 	_manager->Manager::setResponder(this);
 }
 

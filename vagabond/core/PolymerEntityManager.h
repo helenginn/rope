@@ -16,32 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityManager__
-#define __vagabond__EntityManager__
+#ifndef __vagabond__PolymerEntityManager__
+#define __vagabond__PolymerEntityManager__
 
 #include <string>
 #include <vector>
 #include <list>
 
-#include "PolymerEntityManager.h"
+#include "PolymerEntity.h"
+#include "Responder.h"
+#include "Manager.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
 
 class ModelManager;
-class PolymerEntity;
+class Instance;
 class Model;
-class Entity;
 
-class EntityManager 
+class PolymerEntityManager : 
+public Manager<PolymerEntity>, 
+public Responder<PolymerEntity>,
+public Progressor 
 {
 public:
-	EntityManager();
+	PolymerEntityManager();
 
-	Entity *insertIfUnique(PolymerEntity &e);
-	void update(const PolymerEntity &e);
+	virtual PolymerEntity *insertIfUnique(PolymerEntity &e);
+	virtual void update(const PolymerEntity &e);
 	
-	Entity *entity(std::string name)
+	PolymerEntity *entity(std::string name)
 	{
 		if (_name2Entity.count(name))
 		{
@@ -50,47 +54,36 @@ public:
 		
 		return nullptr;
 	}
-	
-	std::vector<Entity *> entities();
-
-	
-	size_t objectCount();
-	Entity &object(int i);
 
 	void housekeeping();
-	void respond();
+	virtual void respond();
 	void checkModelsForReferences(ModelManager *manager);
 
 	void purgeInstance(Instance *inst);
-	void purgeEntity(Entity *ent);
+	void purgeEntity(PolymerEntity *ent);
 	void purgeModel(Model *mol);
-	
-	PolymerEntityManager *forPolymers()
+
+	virtual const std::string progressName() const
 	{
-		return &_peManager;
-	}
-	
-	void setPolymerEntityManager(const json &data)
-	{
-		_peManager = data;
+		return "polymer entities";
 	}
 
-	friend void to_json(json &j, const EntityManager &value);
-	friend void from_json(const json &j, EntityManager &value);
+	friend void to_json(json &j, const PolymerEntityManager &value);
+	friend void from_json(const json &j, PolymerEntityManager &value);
 private:
-	std::map<std::string, Entity *> _name2Entity;
-	PolymerEntityManager _peManager;
+	std::map<std::string, PolymerEntity *> _name2Entity;
 
 };
 
-inline void to_json(json &j, const EntityManager &value)
+inline void to_json(json &j, const PolymerEntityManager &value)
 {
-	j["polymer_entity_manager"] = value._peManager;
+	j["entities"] = value._objects;
 }
 
-inline void from_json(const json &j, EntityManager &value)
+inline void from_json(const json &j, PolymerEntityManager &value)
 {
-	value._peManager = j.at("polymer_entity_manager");
+    std::list<PolymerEntity> entities = j.at("entities");
+    value._objects = entities;
 }
 
 #endif

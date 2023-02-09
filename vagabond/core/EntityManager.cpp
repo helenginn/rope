@@ -20,122 +20,95 @@
 #include "ModelManager.h"
 #include "Environment.h"
 
-PolymerEntityManager::PolymerEntityManager() : Manager()
+EntityManager::EntityManager()
 {
-	Progressor::setResponder(Environment::env().progressResponder());
+
 }
 
 
-PolymerEntity *PolymerEntityManager::insertIfUnique(PolymerEntity &ent)
+Entity *EntityManager::insertIfUnique(PolymerEntity &ent)
 {
-	for (PolymerEntity &other : _objects)
+	PolymerEntity *ptr = _peManager.insertIfUnique(ent);
+	_name2Entity[ent.name()] = ptr;
+
+	return ptr;
+}
+
+void EntityManager::update(const PolymerEntity &e)
+{
+	_peManager.update(e);
+}
+
+size_t EntityManager::objectCount()
+{
+	return _peManager.objectCount();
+}
+
+std::vector<Entity *> EntityManager::entities() 
+{
+	std::vector<Entity *> ents;
+	
+	for (PolymerEntity *pe : _peManager.ptrs())
 	{
-		if (other.name() == ent.name())
-		{
-			throw std::runtime_error("Entity with same name exists");
-		}
+		ents.push_back(pe);
 	}
 	
-	if (ent.name().length() == 0)
-	{
-		throw std::runtime_error("Entity has no name");
-	}
-	
-	ent.setResponder(this);
-	_objects.push_back(ent);
-	_name2Entity[ent.name()] = &_objects.back();
-
-	Manager::triggerResponse();
-	
-	clickTicker();
-
-	return &_objects.back();
+	return ents;
 }
 
-void PolymerEntityManager::update(const PolymerEntity &e)
-{
-	PolymerEntity *old = entity(e.name());
-	(*old) = e;
-
-}
-
-void PolymerEntityManager::housekeeping()
+void EntityManager::housekeeping()
 {
 	_name2Entity.clear();
 
-	for (PolymerEntity &other : _objects)
+	std::vector<Entity *> ents = entities();
+	for (Entity *other : ents)
 	{
-		std::cout << other.name() << " " << &other << std::endl;
-		_name2Entity[other.name()] = &other;
-
-		other.setResponder(this);
+		std::cout << other->name() << " " << other << std::endl;
+		_name2Entity[other->name()] = other;
 	}
 }
 
-void PolymerEntityManager::purgeModel(Model *model)
+void EntityManager::purgeModel(Model *model)
 {
 	model->unload();
 
-	for (PolymerEntity &other : _objects)
+	std::vector<Entity *> ents = entities();
+	for (Entity *other : ents)
 	{
-		other.throwOutModel(model);
+		other->throwOutModel(model);
 	}
-
 }
 
-void PolymerEntityManager::purgeEntity(PolymerEntity *ent)
+void EntityManager::purgeEntity(Entity *ent)
 {
-	std::list<PolymerEntity>::iterator it = _objects.begin();
+	if (_peManager.entity(ent->name()))
+	{
+		PolymerEntity *pent = static_cast<PolymerEntity *>(ent);
+		_peManager.purgeEntity(pent);
+	}
 
 	std::string name = ent->name();
 	_name2Entity.erase(name);
-
-	for (PolymerEntity &other : _objects)
-	{
-		if (ent == &other)
-		{
-			_objects.erase(it);
-			return;
-		}
-		it++;
-	}
 }
 
-void PolymerEntityManager::purgeInstance(Instance *inst)
+void EntityManager::purgeInstance(Instance *inst)
 {
-	if (inst->hasSequence())
-	{
-		Polymer *mol = static_cast<Polymer *>(inst);
-		for (PolymerEntity &other : _objects)
-		{
-			other.throwOutInstance(mol);
-		}
-	}
+	_peManager.purgeInstance(inst);
 }
 
-void PolymerEntityManager::checkModelsForReferences(ModelManager *mm)
+void EntityManager::checkModelsForReferences(ModelManager *mm)
 {
-	for (size_t i = 0; i < mm->objectCount(); i++)
-	{
-		Model &m = mm->object(i);
-		m.housekeeping();
-		
-		for (size_t j = 0; j < objectCount(); j++)
-		{
-			PolymerEntity &e = object(j);
-			e.checkModel(m);
-		}
-	}
-
-	for (PolymerEntity &e : _objects)
-	{
-		e.housekeeping();
-	}
-
-	Manager::triggerResponse();
+	_peManager.checkModelsForReferences(mm);
 }
 
-void PolymerEntityManager::respond()
+Entity &EntityManager::object(int i)
 {
-	Manager::triggerResponse();
+	// in the future, return ligand entity
+	if (i >= _peManager.objectCount())
+	{
+		throw std::runtime_error("Asking for entity index beyond "
+		                         "what is available");
+	}
+
+	return _peManager.object(i);
 }

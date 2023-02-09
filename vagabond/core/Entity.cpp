@@ -156,7 +156,7 @@ void Entity::throwOutModel(Model *model)
 
 void Entity::clickTicker()
 {
-	Environment::entityManager()->clickTicker();
+	Environment::entityManager()->forPolymers()->clickTicker();
 }
 
 Instance *Entity::chooseRepresentativeInstance()

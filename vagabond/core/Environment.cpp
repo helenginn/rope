@@ -44,7 +44,7 @@ Environment::Environment()
 	_fileManager = new FileManager();
 	_pathManager = new PathManager();
 	_modelManager = new ModelManager();
-	_entityManager = new PolymerEntityManager();
+	_entityManager = new EntityManager();
 }
 
 size_t Environment::entityCount()
@@ -76,6 +76,20 @@ void Environment::save()
 #endif
 }
 
+void Environment::loadEntitiesBackwardsCompatible(const json &data)
+{
+	try
+	{
+		*_entityManager = data["entity_manager"];
+	}
+	catch (const json::exception &err)
+	{
+		// old version of RoPE, before split between polymers and entities.
+		_entityManager = new EntityManager();
+		_entityManager->setPolymerEntityManager(data["entity_manager"]);
+	}
+}
+
 void Environment::load(std::string file)
 {
 	if (!file_exists(file))
@@ -101,8 +115,10 @@ void Environment::load(std::string file)
 	try
 	{
 		*_fileManager = data["file_manager"];
-		 *_modelManager = data["model_manager"];
-		 *_entityManager = data["entity_manager"];
+		*_modelManager = data["model_manager"];
+
+		 loadEntitiesBackwardsCompatible(data);
+
 		*_metadata = data["metadata"];
 		*_pathManager = data["path_manager"];
 	}
@@ -135,7 +151,7 @@ void Environment::rescanModels()
 		m.autoAssignEntities();
 	}
 
-	PolymerEntityManager *em = Environment::entityManager();
+	EntityManager *em = Environment::entityManager();
 	em->checkModelsForReferences(mm);
 	mm->finishTicker();
 }
@@ -143,7 +159,7 @@ void Environment::rescanModels()
 void Environment::autoModel()
 {
 	ModelManager *mm = Environment::modelManager();
-	PolymerEntityManager *em = Environment::entityManager();
+	EntityManager *em = Environment::entityManager();
 	mm->autoModel();
 	em->checkModelsForReferences(mm);
 	
@@ -158,7 +174,7 @@ void Environment::purgeInstance(Instance *inst)
 
 void Environment::purgeEntity(std::string id)
 {
-	PolymerEntity *ent = entityManager()->entity(id);
+	Entity *ent = entityManager()->entity(id);
 	if (ent)
 	{
 		modelManager()->purgeEntity(ent);

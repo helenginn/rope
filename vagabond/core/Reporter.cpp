@@ -36,7 +36,7 @@ void Reporter::report()
 {
     std::cout << "ENTITIES" << std::endl;
     std::cout << "========" << std::endl;
-    PolymerEntityManager *entity_manager = Environment::env().entityManager();
+    EntityManager *entity_manager = Environment::env().entityManager();
     std::cout << "No. of entities: " << entity_manager->objectCount() << std::endl;
     for (int i = 0; i < entity_manager->objectCount(); i++)
     {

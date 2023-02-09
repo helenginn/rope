@@ -20,6 +20,8 @@
 #define __vagabond__Environment__
 
 #include <string>
+#include <json/json.hpp>
+using nlohmann::json;
 
 class Path;
 class Rule;
@@ -30,7 +32,7 @@ class Progressor;
 class FileManager;
 class PathManager;
 class ModelManager;
-class PolymerEntityManager;
+class EntityManager;
 
 template <typename Progressor> class Responder;
 
@@ -57,7 +59,7 @@ public:
 
 	static size_t entityCount();
 
-	static PolymerEntityManager *entityManager()
+	static EntityManager *entityManager()
 	{
 		return _environment._entityManager;
 	}
@@ -99,9 +101,11 @@ public:
 	void save();
 	void load(std::string file = "rope.json");
 private:
+	void loadEntitiesBackwardsCompatible(const json &data);
+
 	FileManager *_fileManager = nullptr;
 	ModelManager *_modelManager = nullptr;
-	PolymerEntityManager *_entityManager = nullptr;
+	EntityManager *_entityManager = nullptr;
 	PathManager *_pathManager = nullptr;
 	Metadata *_metadata = nullptr;
 	

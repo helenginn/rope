@@ -121,8 +121,10 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 
 void MetadataView::sendObject(std::string tag, void *object)
 {
+	std::cout << "Sent: " << tag << std::endl;
 	std::string key = Button::tagEnd(tag, "__del_");
 	
+	std::cout << "Key: " << key << std::endl;
 	if (key.length())
 	{
 		_md->purgeKey(key);

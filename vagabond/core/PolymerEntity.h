@@ -21,7 +21,7 @@
 
 #include "Entity.h"
 
-class PolymerEntity : public Entity
+class PolymerEntity : public Entity, public HasResponder<Responder<PolymerEntity> >
 {
 public:
 	PolymerEntity();
