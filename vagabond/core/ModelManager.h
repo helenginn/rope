@@ -49,6 +49,7 @@ public:
 	
 	void housekeeping();
 	void autoModel();
+	void rescan();
 	
 	bool tryLock()
 	{

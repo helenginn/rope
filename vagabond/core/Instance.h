@@ -86,6 +86,7 @@ public:
 	{
 		return nullptr;
 	}
+
 	virtual Atom *equivalentForAtom(Ligand *other, Atom *atom)
 	{
 		return nullptr;

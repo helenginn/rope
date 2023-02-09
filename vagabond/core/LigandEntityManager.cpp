@@ -16,18 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "PolymerEntityManager.h"
-#include "ModelManager.h"
-#include "Environment.h"
+#include "LigandEntityManager.h"
 
-PolymerEntityManager::PolymerEntityManager() : Manager()
+LigandEntityManager::LigandEntityManager() : Manager()
 {
 	Progressor::setResponder(Environment::env().progressResponder());
 }
 
-PolymerEntity *PolymerEntityManager::insertIfUnique(PolymerEntity &ent)
+LigandEntity *LigandEntityManager::insertIfUnique(LigandEntity &ent)
 {
-	for (PolymerEntity &other : _objects)
+	for (LigandEntity &other : _objects)
 	{
 		if (other.name() == ent.name())
 		{
@@ -40,7 +38,7 @@ PolymerEntity *PolymerEntityManager::insertIfUnique(PolymerEntity &ent)
 		throw std::runtime_error("Entity has no name");
 	}
 	
-	ent.HasResponder<Responder<PolymerEntity>>::setResponder(this);
+	ent.HasResponder<Responder<LigandEntity>>::setResponder(this);
 	_objects.push_back(ent);
 	_name2Entity[ent.name()] = &_objects.back();
 
@@ -51,33 +49,27 @@ PolymerEntity *PolymerEntityManager::insertIfUnique(PolymerEntity &ent)
 	return &_objects.back();
 }
 
-void PolymerEntityManager::update(const PolymerEntity &e)
-{
-	PolymerEntity *old = entity(e.name());
-	(*old) = e;
-}
-
-void PolymerEntityManager::housekeeping()
+void LigandEntityManager::housekeeping()
 {
 	_name2Entity.clear();
 
-	for (PolymerEntity &other : _objects)
+	for (LigandEntity &other : _objects)
 	{
 		std::cout << other.name() << " " << &other << std::endl;
 		_name2Entity[other.name()] = &other;
 
-		other.HasResponder<Responder<PolymerEntity>>::setResponder(this);
+		other.HasResponder<Responder<LigandEntity>>::setResponder(this);
 	}
 }
 
-void PolymerEntityManager::purgeEntity(PolymerEntity *ent)
+void LigandEntityManager::purgeEntity(LigandEntity *ent)
 {
-	std::list<PolymerEntity>::iterator it = _objects.begin();
+	std::list<LigandEntity>::iterator it = _objects.begin();
 
 	std::string name = ent->name();
 	_name2Entity.erase(name);
 
-	for (PolymerEntity &other : _objects)
+	for (LigandEntity &other : _objects)
 	{
 		if (ent == &other)
 		{
@@ -88,7 +80,14 @@ void PolymerEntityManager::purgeEntity(PolymerEntity *ent)
 	}
 }
 
-void PolymerEntityManager::respond()
+
+void LigandEntityManager::update(const LigandEntity &e)
+{
+	LigandEntity *old = entity(e.name());
+	(*old) = e;
+}
+
+void LigandEntityManager::respond()
 {
 	Manager::triggerResponse();
 }

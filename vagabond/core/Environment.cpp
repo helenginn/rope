@@ -145,15 +145,11 @@ void Environment::load(std::string file)
 void Environment::rescanModels()
 {
 	ModelManager *mm = Environment::modelManager();
-	
-	for (Model &m : mm->objects())
-	{
-		mm->clickTicker();
-		m.autoAssignEntities();
-	}
-
 	EntityManager *em = Environment::entityManager();
+	
+	mm->rescan();
 	em->checkModelsForReferences(mm);
+
 	mm->finishTicker();
 }
 

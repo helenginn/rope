@@ -24,6 +24,7 @@
 #include <list>
 
 #include "PolymerEntityManager.h"
+#include "LigandEntityManager.h"
 
 #include <json/json.hpp>
 using nlohmann::json;
@@ -80,17 +81,34 @@ public:
 private:
 	std::map<std::string, Entity *> _name2Entity;
 	PolymerEntityManager _peManager;
-
+	LigandEntityManager _leManager;
 };
 
 inline void to_json(json &j, const EntityManager &value)
 {
 	j["polymer_entity_manager"] = value._peManager;
+	
+	try
+	{
+		j["ligand_entity_manager"] = value._leManager;
+	}
+	catch (const json::exception &err)
+	{
+
+	}
 }
 
 inline void from_json(const json &j, EntityManager &value)
 {
 	value._peManager = j.at("polymer_entity_manager");
+	try
+	{
+		value._leManager = j.at("ligand_entity_manager");
+	}
+	catch (const json::exception &err)
+	{
+
+	}
 }
 
 #endif

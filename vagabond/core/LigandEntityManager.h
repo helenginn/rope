@@ -16,14 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PolymerEntityManager__
-#define __vagabond__PolymerEntityManager__
+#ifndef __vagabond__LigandEntityManager__
+#define __vagabond__LigandEntityManager__
 
-#include <string>
 #include <list>
-
-#include "PolymerEntity.h"
 #include "Responder.h"
+
+#include "LigandEntity.h"
 #include "Manager.h"
 
 #include <json/json.hpp>
@@ -33,18 +32,18 @@ class ModelManager;
 class Instance;
 class Model;
 
-class PolymerEntityManager : 
-public Manager<PolymerEntity>, 
-public Responder<PolymerEntity>,
+class LigandEntityManager : 
+public Manager<LigandEntity>, 
+public Responder<LigandEntity>,
 public Progressor 
 {
 public:
-	PolymerEntityManager();
-
-	virtual PolymerEntity *insertIfUnique(PolymerEntity &e);
-	virtual void update(const PolymerEntity &e);
+	LigandEntityManager();
 	
-	PolymerEntity *entity(std::string name)
+	virtual LigandEntity *insertIfUnique(LigandEntity &e);
+	virtual void update(const LigandEntity &e);
+	
+	LigandEntity *entity(std::string name)
 	{
 		if (_name2Entity.count(name))
 		{
@@ -58,28 +57,30 @@ public:
 	virtual void respond();
 	void checkModelsForReferences(ModelManager *manager);
 
-	void purgeEntity(PolymerEntity *ent);
+	void purgeInstance(Instance *inst);
+	void purgeEntity(LigandEntity *ent);
+	void purgeModel(Model *mol);
 
 	virtual const std::string progressName() const
 	{
-		return "polymer entities";
+		return "ligand entities";
 	}
 
-	friend void to_json(json &j, const PolymerEntityManager &value);
-	friend void from_json(const json &j, PolymerEntityManager &value);
+	friend void to_json(json &j, const LigandEntityManager &value);
+	friend void from_json(const json &j, LigandEntityManager &value);
 private:
-	std::map<std::string, PolymerEntity *> _name2Entity;
+	std::map<std::string, LigandEntity *> _name2Entity;
 
 };
 
-inline void to_json(json &j, const PolymerEntityManager &value)
+inline void to_json(json &j, const LigandEntityManager &value)
 {
 	j["entities"] = value._objects;
 }
 
-inline void from_json(const json &j, PolymerEntityManager &value)
+inline void from_json(const json &j, LigandEntityManager &value)
 {
-    std::list<PolymerEntity> entities = j.at("entities");
+    std::list<LigandEntity> entities = j.at("entities");
     value._objects = entities;
 }
 

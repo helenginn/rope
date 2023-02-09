@@ -72,6 +72,20 @@ void ModelManager::housekeeping()
 	connectionsToDatabase();
 }
 
+void ModelManager::rescan()
+{
+	_mutex->lock();
+
+	for (Model &m : objects())
+	{
+		clickTicker();
+		m.autoAssignEntities();
+	}
+
+	finishTicker();
+	_mutex->unlock();
+}
+
 void ModelManager::autoModel()
 {
 	_mutex->lock();

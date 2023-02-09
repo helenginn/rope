@@ -90,6 +90,11 @@ void EntityManager::purgeEntity(Entity *ent)
 		PolymerEntity *pent = static_cast<PolymerEntity *>(ent);
 		_peManager.purgeEntity(pent);
 	}
+	if (_leManager.entity(ent->name()))
+	{
+		LigandEntity *lent = static_cast<LigandEntity *>(ent);
+		_leManager.purgeEntity(lent);
+	}
 
 	std::string name = ent->name();
 	_name2Entity.erase(name);
@@ -97,21 +102,62 @@ void EntityManager::purgeEntity(Entity *ent)
 
 void EntityManager::purgeInstance(Instance *inst)
 {
-	_peManager.purgeInstance(inst);
+	if (inst->hasSequence())
+	{
+		Polymer *mol = static_cast<Polymer *>(inst);
+		for (PolymerEntity &other : _peManager.objects())
+		{
+			other.throwOutInstance(mol);
+		}
+	}
+	else
+	{
+		// ligand entities
+		Ligand *mol = static_cast<Ligand *>(inst);
+		for (LigandEntity &other : _leManager.objects())
+		{
+			other.throwOutInstance(mol);
+		}
+
+	}
 }
 
 void EntityManager::checkModelsForReferences(ModelManager *mm)
 {
-	_peManager.checkModelsForReferences(mm);
+	std::vector<Entity *> ents = entities();
+
+	for (size_t i = 0; i < mm->objectCount(); i++)
+	{
+		Model &m = mm->object(i);
+		m.housekeeping();
+		
+		for (size_t j = 0; j < ents.size(); j++)
+		{
+			Entity *e = ents[j];
+			e->checkModel(m);
+		}
+	}
+
+	for (Entity *e : ents)
+	{
+		e->housekeeping();
+	}
+
+	_peManager.respond();
+	_leManager.respond();
 }
 
 Entity &EntityManager::object(int i)
 {
 	// in the future, return ligand entity
-	if (i >= _peManager.objectCount())
+	if (i >= _peManager.objectCount() + _leManager.objectCount())
 	{
 		throw std::runtime_error("Asking for entity index beyond "
 		                         "what is available");
+	}
+	else if (i >= _peManager.objectCount())
+	{
+		return _leManager.object(i - _peManager.objectCount());
 	}
 
 	return _peManager.object(i);

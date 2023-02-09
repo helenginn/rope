@@ -64,6 +64,7 @@ public:
 	void throwOutModel(Model *mol);
 
 	virtual void throwOutInstance(Polymer *mol) {};
+	virtual void throwOutInstance(Ligand *mol) {};
 	virtual void appendIfMissing(Instance *mol) {};
 	
 	MetadataGroup makeTorsionDataGroup();
@@ -113,8 +114,8 @@ public:
 	friend void to_json(json &j, const PolymerEntity &value);
 	friend void from_json(const json &j, PolymerEntity &value);
 protected:
-	virtual MetadataGroup prepareTorsionGroup() = 0;
-	virtual PositionalGroup preparePositionGroup() = 0;
+	virtual MetadataGroup prepareTorsionGroup() { return MetadataGroup(0); }
+	virtual PositionalGroup preparePositionGroup() { return PositionalGroup(0); }
 
 	VisualPreferences _visPrefs;
 	

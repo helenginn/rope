@@ -115,15 +115,14 @@ void PolymerEntity::throwOutInstance(Polymer *mol)
 	mol->eraseIfPresent(_molecules);
 }
 
-
 const std::vector<Instance *> PolymerEntity::instances() const
 {
 	std::vector<Instance *> instances;
 	instances.reserve(_molecules.size());
 	
-	for (Polymer *m : _molecules)
+	for (Polymer *p : _molecules)
 	{
-		instances.push_back(m);
+		instances.push_back(p);
 	}
 	
 	return instances;

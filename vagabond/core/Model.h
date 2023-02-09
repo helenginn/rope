@@ -197,6 +197,14 @@ inline void to_json(json &j, const Model &value)
 	j["filename"] = value._filename;
 	j["chain_to_entity"] = value._chain2Entity;
 	j["molecules"] = value._polymers;
+	try
+	{
+		j["ligands"] = value._polymers;
+	}
+	catch (const json::exception &err)
+	{
+
+	}
 	j["datafile"] = value._dataFile;
 }
 
@@ -211,6 +219,8 @@ inline void from_json(const json &j, Model &value)
         value._chain2Entity = chain_to_entity;
         std::list<Polymer> molecules = j.at("molecules");
         value._polymers = molecules;
+        std::list<Ligand> ligands = j.at("ligands");
+        value._ligands = ligands;
 		value._dataFile = j.at("datafile");
 	}
 	catch (...)

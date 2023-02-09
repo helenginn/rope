@@ -27,7 +27,7 @@ Ligand::Ligand(std::string model_id, AtomGroup *grp)
 	_model_id = model_id;
 	_currentAtoms = nullptr;
 	_anchorDesc = grp->chosenAnchor()->desc();
-	_nickname = grp->chosenAnchor()->code();
+	_code = grp->chosenAnchor()->code();
 	_chain = grp->chosenAnchor()->chain();
 	
 	for (const Atom *a : grp->atomVector())
@@ -44,7 +44,7 @@ Ligand::Ligand()
 
 std::string Ligand::desc() const
 {
-	std::string d = _model_id + ":" + _chain + "/" + _nickname;
+	std::string d = _model_id + ":" + _chain + "/" + _code;
 	
 	if (_resids.size())
 	{
@@ -62,4 +62,10 @@ bool Ligand::atomBelongsToInstance(Atom *a)
 	}
 
 	return (_resids.count(a->residueId()) > 0);
+}
+
+
+const std::string Ligand::id() const
+{
+	return _anchorDesc;
 }
