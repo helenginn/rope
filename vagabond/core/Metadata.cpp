@@ -87,6 +87,14 @@ void Metadata::purgeKey(std::string key)
 		}
 	}
 
+	for (auto it = _headers.begin(); it != _headers.end(); it++)
+	{
+		if (*it == key)
+		{
+			_headers.erase(it);
+			break;
+		}
+	}
 }
 
 bool Metadata::addToList(KeyValues &edit, std::string &key,
