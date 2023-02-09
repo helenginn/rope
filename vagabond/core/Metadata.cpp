@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Environment.h"
 #include "Metadata.h"
 #include <sstream>
 
@@ -29,6 +30,10 @@ Metadata::~Metadata()
 
 }
 
+bool Metadata::isMaster()
+{
+	return (this == Environment::metadata());
+}
 
 const Metadata::KeyValues *Metadata::valuesForInstance(const std::string id)
 {

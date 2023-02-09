@@ -35,6 +35,8 @@ public:
 	Metadata();
 	~Metadata();
 	
+	bool isMaster();
+	
 	void setSource(std::string source)
 	{
 		_source = source;

@@ -35,8 +35,11 @@ MetadataView::~MetadataView()
 {
 	deleteObjects();
 
-	delete _md;
-	_md = nullptr;
+	if (!_md->isMaster())
+	{
+		delete _md;
+		_md = nullptr;
+	}
 }
 
 void MetadataView::setup()
