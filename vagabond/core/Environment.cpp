@@ -60,7 +60,9 @@ void Environment::save()
 	data["entity_manager"] = *_entityManager;
 	data["path_manager"] = *_pathManager;
 	data["metadata"] = *_metadata;
+#ifdef __EMSCRIPTEN__
 	std::string contents = data.dump();
+#endif
 	
 	std::ofstream file;
 	file.open("rope.json");
