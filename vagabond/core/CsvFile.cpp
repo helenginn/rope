@@ -151,3 +151,4 @@ void CsvFile::parse()
 {
 	parseFileContents();
 }
+
