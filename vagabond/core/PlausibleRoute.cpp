@@ -37,10 +37,9 @@ void PlausibleRoute::setup()
 	prepareDestination();
 	
 	setTargets();
-	validate();
 }
 
-void PlausibleRoute::validate()
+bool PlausibleRoute::validate()
 {
 	twoPointProgression();
 	submitJobAndRetrieve(1);
@@ -77,6 +76,8 @@ void PlausibleRoute::validate()
 	
 	endInstance()->unload();
 	instance()->unload();
+	
+	return (sum < 0.5);
 }
 
 void PlausibleRoute::setTargets()

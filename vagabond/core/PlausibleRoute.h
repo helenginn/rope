@@ -35,7 +35,7 @@ public:
 	void calculateProgression(int steps);
 
 	virtual void setup();
-	void validate();
+	bool validate();
 
 	void setTargets();
 	
