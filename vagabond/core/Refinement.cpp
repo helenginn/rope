@@ -123,7 +123,6 @@ void Refinement::setupRefiner(Refine::Info &info)
 
 	MolRefiner *mr = new MolRefiner(_map, &info, samples, dims);
 	mr->setCluster(cluster);
-	mr->nudgeAxis();
 	mr->startCalculator();
 
 	std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();

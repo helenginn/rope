@@ -36,7 +36,6 @@ public:
 	void retrieveJobs();
 	void runEngine();
 
-	void nudgeAxis();
 	virtual int sendJob(std::vector<float> &all);
 	virtual float getResult(int *job_id);
 	virtual size_t parameterCount();

@@ -20,7 +20,6 @@
 #include "Polymer.h"
 #include "ArbitraryMap.h"
 #include "Sampler.h"
-#include "AxisNudger.h"
 #include "ChemotaxisEngine.h"
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
@@ -221,14 +220,3 @@ void MolRefiner::runEngine()
 	engine->start();
 }
 
-void MolRefiner::nudgeAxis()
-{
-	for (size_t i = 0; i < _info->axes.size(); i++)
-	{
-		AxisNudger *an = new AxisNudger(_info, i, _cluster);
-		an->setup();
-		an->run();
-		an->addToInfo();
-		delete an;
-	}
-}
