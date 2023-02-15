@@ -1727,8 +1727,8 @@ PRO    CG    CD     SING N N 12    1.502    0.033   45 "trans"
 PRO    C     O      DOUB N N  7    1.228    0.020    1 .
 PRO    C     OXT    SING N N  8    1.229    0.019    5 .
 PRO    N     CA     SING N N  1    1.468    0.017   38 .
-#PRO    N     CD     SING N N  2    1.474    0.014   39 "cis"
-#PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
+PRO    N     CD     SING N N  2    1.474    0.014   39 "cis"
+PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
 PRO    N     H2     SING N N  3    0.860    0.020    0 .
 PRO    CA    HA     SING N N  6    0.980    0.020    0 .
 PRO    CB    HB2    SING N N 10    0.970    0.020    0 .
