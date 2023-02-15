@@ -73,10 +73,11 @@ void Engine::getResults()
 	do
 	{
 		float score = _ref->getResult(&job_id);
+		
 		_scores[job_id].score = score;
 		_scores[job_id].received = true;
 	}
-	while (job_id >= 0);
+	while (job_id != -1);
 }
 
 void Engine::sendJob(std::vector<float> &all)
