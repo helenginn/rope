@@ -26,7 +26,3 @@
 
 namespace tt = boost::test_tools;
 
-BOOST_AUTO_TEST_CASE(molecule_map_molecule)
-{
-
-}
