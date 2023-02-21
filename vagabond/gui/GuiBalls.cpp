@@ -123,6 +123,7 @@ void GuiBalls::updateSinglePosition(Atom *a, glm::vec3 &p)
 
 	if (!is_glm_vec_sane(diff))
 	{
+		_vertices[idx].color[3] = 0.2;
 		throw std::runtime_error("position contains nan or vec values");
 	}
 
