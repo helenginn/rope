@@ -38,6 +38,7 @@ public:
 	virtual void doThings();
 	virtual void respond();
 	virtual void updateInfo();
+	void scan();
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 
@@ -47,7 +48,6 @@ private:
 	CyclicView *_cyclic = nullptr;
 	Text *_angles = nullptr;
 	Text *_lengths = nullptr;
-	int _cycle = 0;
 
 	std::thread *_worker = nullptr;
 };
