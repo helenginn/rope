@@ -83,6 +83,11 @@ struct AtomBlock
 			std::cout << "init pos: " << 
 			glm::to_string(atom->initialPosition()) << std::endl;
 		}
+		else
+		{
+			std::cout << "Ghost block" << std::endl;
+		}
+		std::cout << "Program: " << program << ", flagged: " << flag << std::endl;
 		std::cout << "Torsion: " << torsion << std::endl;
 		std::cout << "Coordination: " << glm::to_string(coordination) << std::endl;
 		std::cout << "Basis: " << glm::to_string(basis) << std::endl;
