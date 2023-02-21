@@ -109,6 +109,7 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
                                 double alpha, double beta, double gamma)
 {
 	bool flipped = fix_unit_cell_angles(alpha, beta, gamma);
+	int mult = 1;
 
 	double cosA = cos(deg2rad(alpha));
 	double cosB = cos(deg2rad(beta));
@@ -123,13 +124,13 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
 	mat3x3 mat;
 	mat[0][0] = 0;
 	mat[0][1] = 0;
-	mat[0][2] = -a;
+	mat[0][2] = -a * mult;
 	mat[1][0] = -sinC * b;
 	mat[1][1] = 0;
-	mat[1][2] = -cosC * b;
+	mat[1][2] = -cosC * b * mult;
 	mat[2][0] = -c * (cosA - cosB * cosC) / sinC;
 	mat[2][1] = volume / (a * b * sinC);
-	mat[2][2] = -cosB * c;
+	mat[2][2] = -cosB * c * mult;
 
 	if (mat[2][1] != mat[2][1])
 	{
@@ -257,6 +258,90 @@ float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
 	double dD_by_dA = -pow(fx, -0.5) * dfx / 2;
 
 	return dD_by_dA;
+}
+
+mat3x3 unit_vec_rotation(vec3 axis, double radians)
+{
+	mat3x3 mat{};
+
+	float &x = axis.x;
+	float x2 = x * x;
+
+	float &y = axis.y;
+	float y2 = y * y;
+
+	float &z = axis.z;
+	float z2 = z * z;
+
+	float cosa = cos(radians);
+	float sina = sin(radians);
+	
+	mat[0][0] = cosa + x2 * (1 - cosa);
+	mat[1][0] = x * y * (1 - cosa) - z * sina;
+	mat[2][0] = x * z * (1 - cosa) + y * sina;
+
+	mat[0][1] = y * x * (1 - cosa) + z * sina;
+	mat[1][1] = cosa + y2 * (1 - cosa);
+	mat[2][1] = z * y * (1 - cosa) - x * sina;
+
+	mat[0][2] = z * x * (1 - cosa) - y * sina;
+	mat[1][2] = z * y * (1 - cosa) + x * sina;
+	mat[2][2] = cosa + z2 * (1 - cosa);
+
+	return mat;
+}
+
+/* Rotate vector (vec1) around axis (axis) by angle theta. Find value of
+* theta for which the angle between (vec1) and (vec2) is minimised. */
+mat3x3 closest_rot_mat(vec3 vec1, vec3 vec2, vec3 axis, float *best, bool unity)
+{
+	/* Let's have unit vectors */
+	
+	if (!unity)
+	{
+		vec1 = normalize(vec1);
+		vec2 = normalize(vec2);
+		axis = normalize(axis);
+	}
+
+	/* Redeclaring these to try and maintain readability and
+	* check-ability against the maths I wrote down */
+	float a = vec2.x; float b = vec2.y; float c = vec2.z;
+	float p = vec1.x; float q = vec1.y; float r = vec1.z;
+	float x = axis.x; float y = axis.y; float z = axis.z;
+
+	/* Components in handwritten maths online when I upload it */
+	float A = a*(p*x*x - p + x*y*q + x*z*r) +
+	b*(p*x*y + q*y*y - q + r*y*z) +
+	c*(p*x*z + q*y*z + r*z*z - r);
+
+	float B = a*(y*r - z*q) + b*(p*z - r*x) + c*(q*x - p*y);
+
+	float tan_theta = - B / A;
+	float theta = atan(tan_theta);
+	float &best_angle = theta;
+	
+	mat3x3 m = unit_vec_rotation(axis, best_angle);
+	vec3 rotated = m * vec1;
+	rotated -= vec2;
+	float rotated_sqdist = dot(rotated, rotated);
+
+	mat3x3 extra = unit_vec_rotation(axis, best_angle + M_PI);
+	vec3 extra_rot = extra * vec1;
+	extra_rot -= vec2;
+	float extra_sqdist = dot(extra_rot, extra_rot);
+	
+	bool other = (extra_sqdist < rotated_sqdist);
+	float addition = (other ? M_PI : 0);
+	
+	if (best)
+	{
+		*best = theta + addition;
+	}
+	
+	mat3x3 &chosen = (other ? extra : m);
+
+	return (other ? extra : m);
 }
 
 #endif

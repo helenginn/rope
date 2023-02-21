@@ -22,6 +22,13 @@ inline bool is_glm_vec_sane(T vec)
 float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
                                          const glm::vec3 &c, const glm::vec3 &d);
 
+glm::mat3x3 unit_vec_rotation(glm::vec3 axis, double radians);
+
+/** Rotate vector (vec1) around axis (axis) by angle theta. Find value of
+* theta for which the angle between (vec1) and (vec2) is minimised. */
+glm::mat3x3 closest_rot_mat(glm::vec3 vec1, glm::vec3 vec2, 
+                                   glm::vec3 axis, float *best, bool unity);
+
 double measure_bond_torsion(glm::vec3 positions[4]);
 
 /** matrix from three bond lengths and three bond angles, aligned with
