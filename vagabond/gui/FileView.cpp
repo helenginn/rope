@@ -158,3 +158,9 @@ void FileView::respond()
 	std::cout << "Triggered response" << std::endl;
 	refreshNextRender();
 }
+
+void FileView::refresh()
+{
+	filterForTypes(File::Nothing);
+	ListView::refresh();
+}

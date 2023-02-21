@@ -49,6 +49,7 @@ public:
 	virtual ~FileView();
 	virtual void setup();
 	
+	virtual void refresh();
 	virtual void respond();
 	void handleFileWithoutChoice(std::string filename);
 	void returnToResponder(std::string filename);
