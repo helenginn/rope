@@ -30,19 +30,34 @@ CyclicView::CyclicView(Cyclic *cyclic)
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
 	setFragmentShaderFile("assets/shaders/color_only.fsh");
-	_cyclic = cyclic;
-	populate();
-}
-
-
-CyclicView::CyclicView()
-{
-	setName("CyclicView");
-	_renderType = GL_LINES;
-	setUsesProjection(true);
-	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/color_only.fsh");
 	
+	if (cyclic)
+	{
+		_cyclic = cyclic;
+	}
+	else
+	{
+		_cyclic = new Cyclic();
+		_cyclic->addNextAtomName("N", 1.468,  109.05);
+		_cyclic->addNextAtomName("CA", 1.534, 103.43);
+		_cyclic->addNextAtomName("CB", 1.508, 103.51);
+		_cyclic->addNextAtomName("CG", 1.515, 104.50);
+		_cyclic->addNextAtomName("CD", 1.468, 105.70);
+		_cyclic->setResponder(this);
+
+		/*
+		_cyclic->addNextAtomName("N", 1.468,  111.7);
+		_cyclic->addNextAtomName("CA", 1.531, 103.3);
+		_cyclic->addNextAtomName("CB", 1.495, 104.8);
+		_cyclic->addNextAtomName("CG", 1.502, 106.5);
+		_cyclic->addNextAtomName("CD", 1.474, 103.2);
+		*/
+	}
+	
+	populate();
+	return;
+	
+	/*
 	std::string proline = "assets/geometry/proline.json";
 #ifndef __EMSCRIPTEN__
 	if (!file_exists(proline))
@@ -73,6 +88,7 @@ CyclicView::CyclicView()
 	}
 
 	populate();
+	*/
 }
 
 CyclicView::~CyclicView()
@@ -182,7 +198,6 @@ float CyclicView::score()
 
 void CyclicView::refine()
 {
-	/*
 	json data;
 	data["cyclic"] = *_cyclic;
 	
@@ -191,7 +206,6 @@ void CyclicView::refine()
 	file << data;
 	file << std::endl;
 	file.close();
-	*/
 
 	_cyclic->refine();
 }

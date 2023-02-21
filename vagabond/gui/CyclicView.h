@@ -30,8 +30,7 @@ class CyclicView : public Renderable, public Responder<Cyclic>,
 public HasResponder<Responder<CyclicView> >
 {
 public:
-	CyclicView(Cyclic *cyclic);
-	CyclicView();
+	CyclicView(Cyclic *cyclic = nullptr);
 	~CyclicView();
 
 	float score();
