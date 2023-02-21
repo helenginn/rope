@@ -31,7 +31,6 @@
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Residue.h>
-#include <vagabond/core/ConcertedBasis.h>
 #include <vagabond/core/AlignmentTool.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst,
