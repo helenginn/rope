@@ -4134,6 +4134,7 @@ _chem_comp_chir.volume_sign
  MSE      1  CA     N      CB     C         negativ
  PHE      1  CA     N      CB     C         negativ
  PRO      1  CA     N      CB     C         negativ
+ PRO      1  N      CD     C      CA        negativ
  SER      1  CA     N      CB     C         negativ
  THR      1  CA     N      CB     C         negativ
  THR      2  CB     CA     OG1    CG2       positiv
