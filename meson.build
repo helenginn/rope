@@ -38,6 +38,7 @@ install_dir : examples)
 
 install_data(
 'assets/geometry/standard_geometry.cif',
+'assets/geometry/proline.json',
 install_dir : geometry)
 
 install_data(
