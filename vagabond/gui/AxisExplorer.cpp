@@ -204,8 +204,16 @@ void AxisExplorer::setupColours()
 	}
 	
 	float sum = 0;
-	for (const Angular &val : _values)
+	for (size_t i = 0; i < _list.size(); i++)
 	{
+		TorsionRef tr = _list[i].torsion;
+		
+		if (!tr.coversMainChain())
+		{
+			continue;
+		}
+
+		const Angular &val = _values[i];
 		float sqval = val * val;
 		sum += sqval;
 	}
