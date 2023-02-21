@@ -38,22 +38,6 @@ install_dir : examples)
 
 install_data(
 'assets/geometry/standard_geometry.cif',
-'assets/geometry/D-ASP.cif',
-'assets/geometry/ACY.cif',
-'assets/geometry/ATP.cif',
-'assets/geometry/ASP.cif',
-'assets/geometry/CHX.cif',
-'assets/geometry/PO4.cif',
-'assets/geometry/CMO.cif',
-'assets/geometry/H2S.cif',
-'assets/geometry/HEX.cif',
-'assets/geometry/IPA.cif',
-'assets/geometry/GLY.cif',
-'assets/geometry/L2P.cif',
-'assets/geometry/LSD.cif',
-'assets/geometry/TCI.cif',
-'assets/geometry/TYR.cif',
-'assets/geometry/NH3.cif',
 install_dir : geometry)
 
 install_data(
