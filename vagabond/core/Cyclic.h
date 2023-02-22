@@ -60,6 +60,8 @@ public:
 		return _names;
 	}
 	
+	int indexOfName(std::string name) const;
+	
 	size_t atomCount()
 	{
 		return _num;

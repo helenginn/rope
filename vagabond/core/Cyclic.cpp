@@ -268,6 +268,19 @@ size_t Cyclic::parameterCount()
 	return count;
 }
 
+int Cyclic::indexOfName(std::string name) const
+{
+	for (size_t i = 0; i < atomNames().size(); i++)
+	{
+		if (name == atomNames()[i])
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 int Cyclic::sendJob(std::vector<float> &all)
 {
 	Parameters defs(_start);
