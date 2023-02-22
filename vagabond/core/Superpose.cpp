@@ -52,8 +52,6 @@ void Superpose::subtractPositions(const glm::vec3 &pm, const glm::vec3 &qm)
 		{
 			_pairs[i].p -= _pfm;
 			_pairs[i].q -= _qfm;
-			std::cout << glm::length(_pairs[i].p) << " vs " <<
-			glm::length(_pairs[i].q) << std::endl;
 		}
 		else
 		{

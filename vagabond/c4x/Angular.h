@@ -28,6 +28,7 @@
 struct Angular
 {
 	float angle;
+	bool hyper = false;
 	
 	Angular()
 	{

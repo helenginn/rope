@@ -35,6 +35,11 @@ public:
 	{
 		return false;
 	}
+	
+	virtual double empiricalMeasurement()
+	{
+		return value();
+	}
 
 	virtual bool isConstrained() const = 0;
 	virtual bool coversMainChain() = 0;

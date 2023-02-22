@@ -42,6 +42,11 @@ public:
 		SourceDerived
 	};
 	
+	virtual double empiricalMeasurement()
+	{
+		return measurement(BondTorsion::SourceDerived);
+	}
+
 	double measurement(BondTorsion::Source source);
 	double startingAngle();
 	

@@ -21,6 +21,7 @@
 #include "Value.h"
 #include "Polymer.h"
 #include "Superpose.h"
+#include "HyperValue.h"
 #include "AtomContent.h"
 #include "Environment.h"
 #include "ModelManager.h"
@@ -90,9 +91,9 @@ void Polymer::putTorsionRefsInSequence(Chain *ch)
 {
 	_sequence.remapFromMaster(_entity);
 
-	for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+	for (size_t i = 0; i < ch->parameterCount(); i++)
 	{
-		BondTorsion *t = ch->bondTorsion(i);
+		Parameter *t = ch->parameter(i);
 
 		ResidueId id = t->residueId();
 		TorsionRef ref = TorsionRef(t);
@@ -121,10 +122,64 @@ void Polymer::housekeeping()
 	_sequence.remapFromMaster(_entity);
 }
 
+void Polymer::estimateProlines(AtomContent *atoms)
+{
+	for (const std::string &chain : _chain_ids)
+	{
+		Chain *ch = atoms->chain(chain);
+
+		for (size_t i = 0; i < ch->hyperValueCount(); i++)
+		{
+			HyperValue *hv = ch->hyperValue(i);
+			if (hv->name() == "amplitude")
+			{
+				Atom *atom = hv->atom();
+
+				float x2 = +1; float x3 = -1; float ipsi = 0;
+				BondTorsion *x2_ = atom->findBondTorsion("CA-CB-CG-CD");
+				BondTorsion *x3_ = atom->findBondTorsion("N-CD-CG-CB");
+
+				Atom *ca = atoms->atomByIdName(atom->residueId(), "CA");
+				if (ca)
+				{
+					BondTorsion *psi = ca->findBondTorsion("C-N-CA-C");
+					if (psi)
+					{
+						ipsi = psi->measurement(BondTorsion::SourceInitial);
+					}
+				}
+				
+				if (x2_ && x3_)
+				{
+					x2 = x2_->measurement(BondTorsion::SourceDerived);
+					x3 = x3_->measurement(BondTorsion::SourceDerived);
+					BondTorsion *x1_ = atom->findBondTorsion("CG-CB-CA-N");
+
+					float ix1 = x1_->measurement(BondTorsion::SourceInitial);
+					float ix2 = x2_->measurement(BondTorsion::SourceInitial);
+					float ix3 = x3_->measurement(BondTorsion::SourceInitial);
+					
+					std::cout << "proline " << ipsi << " " << ix1 << " ";
+					std::cout << ix2 << " " << ix3 << std::endl;
+				}
+
+
+				int mult = (x3 > x2) ? 1 : -1;
+				hv->setValue(5.);
+			}
+			else if (hv->name() == "offset")
+			{
+				hv->setValue(1.);
+			}
+		}
+	}
+}
+
 void Polymer::insertTorsionAngles(AtomContent *atoms)
 {
 	if (!isRefined())
 	{
+		estimateProlines(atoms);
 		return;
 	}
 
@@ -134,14 +189,15 @@ void Polymer::insertTorsionAngles(AtomContent *atoms)
 	{
 		Chain *ch = atoms->chain(chain);
 
-		for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+		for (size_t i = 0; i < ch->parameterCount(); i++)
 		{
-			BondTorsion *t = ch->bondTorsion(i);
+			Parameter *p = ch->parameter(i);
 
-			ResidueId id = t->residueId();
-			std::string desc = t->desc();
+			ResidueId id = p->residueId();
+			std::string desc = p->desc();
 
 			Residue *local = _sequence.residue(id);
+
 			if (local == nullptr)
 			{
 				continue;
@@ -152,9 +208,14 @@ void Polymer::insertTorsionAngles(AtomContent *atoms)
 			{
 				continue;
 			}
-
+			
 			double angle = ref.refinedAngle();
-			t->setRefinedAngle(angle);
+			if (ref.isHyperParameter())
+			{
+//				std::cout << ref.desc() << " " << angle << std::endl;
+			}
+
+			p->setValue(angle);
 		}
 	}
 	
@@ -169,12 +230,12 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 		Chain *ch = atoms->chain(chain);
 		putTorsionRefsInSequence(ch);
 
-		for (size_t i = 0; i < ch->bondTorsionCount(); i++)
+		for (size_t i = 0; i < ch->parameterCount(); i++)
 		{
-			BondTorsion *t = ch->bondTorsion(i);
+			Parameter *p = ch->parameter(i);
 
-			ResidueId id = t->residueId();
-			std::string desc = t->desc();
+			ResidueId id = p->residueId();
+			std::string desc = p->desc();
 
 			Residue *local = _sequence.residue(id);
 
@@ -183,15 +244,9 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 				continue;
 			}
 
-			double angle = t->measurement(BondTorsion::SourceDerived);
+			double angle = p->empiricalMeasurement();
 
 			bool success = local->supplyRefinedAngle(desc, angle, tmp_dest);
-			
-			if (!success)
-			{
-				success = local->supplyRefinedAngle(t->reverse_desc(), angle, 
-				                                    tmp_dest);
-			}
 		}
 	}
 

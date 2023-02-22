@@ -19,6 +19,8 @@
 #include "matrix_functions.h"
 #include "RingProgram.h"
 #include "RingProgrammer.h"
+#include "HyperValue.h"
+#include "TorsionBasis.h"
 #include "AtomBlock.h"
 #include "BondLength.h"
 #include "BondAngle.h"
@@ -31,10 +33,25 @@ RingProgram::RingProgram()
 
 }
 
+RingProgram::~RingProgram()
+{
+	if (_atom)
+	{
+		_atom->setCyclic(nullptr);
+	}
+}
+
+void RingProgram::makeLinkToAtom()
+{
+	if (_atom)
+	{
+		_atom->setCyclic(&_cyclic);
+	}
+}
+
 RingProgram::RingProgram(RingProgrammer *parent)
 {
 	_cyclic = parent->cyclic();
-
 }
 
 void RingProgram::addAlignmentIndex(int idx, std::string atomName)
@@ -52,8 +69,6 @@ void RingProgram::addRingIndex(int idx, std::string atomName)
 void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 {
 	std::string atomName = atom->atomName();
-	std::cout << "Should add " << idx << " of atom " << atomName << 
-	" with grandparent " << grandparent << std::endl;
 
 	// the bases of these need adjusting.
 	// we can recalculate the bond direction and atom position.
@@ -123,7 +138,7 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	
 	// Now we should have all atoms...
 	
-	if (true)
+	if (false)
 	{
 		std::cout << atom->desc() << " primarily bonded to " << primary->desc() <<
 		" with grandparent as " << gp_atom->desc() << " and other atom as "
@@ -136,13 +151,9 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	l.gp_idx = _cyclic.indexOfName(gp_atom->atomName());
 	l.other_idx = _cyclic.indexOfName(other_atom->atomName());
 
-	l.lengths[0] = primary->findBondLength(atom, primary)->length();
-	l.lengths[1] = primary->findBondLength(other_atom, primary)->length();
-	l.lengths[2] = primary->findBondLength(gp_atom, primary)->length();
-	
-	l.angles[0] = primary->findBondAngle(atom, primary, other_atom)->angle();
-	l.angles[1] = primary->findBondAngle(other_atom, primary, gp_atom)->angle();
-	l.angles[2] = primary->findBondAngle(gp_atom, primary, atom)->angle();
+	l.length = primary->findBondLength(atom, primary)->length();
+	l.curr_to_gp = primary->findBondAngle(atom, primary, gp_atom)->angle();
+	l.curr_to_other = primary->findBondAngle(atom, primary, other_atom)->angle();
 	
 	Chirality *ch = primary->findChirality(primary, atom, gp_atom, other_atom);
 	Atom *tmp = nullptr;
@@ -152,9 +163,11 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	_branchMapping.push_back(l);
 }
 
-void RingProgram::run(std::vector<AtomBlock> &blocks, int rel)
+void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
+                      float *vec, int n)
 {
 	_idx = rel;
+	fetchParameters(vec, n);
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
 	alignBranchMembers(blocks);
@@ -178,65 +191,74 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 
 void RingProgram::alignBranchMembers(std::vector<AtomBlock> &blocks)
 {
-	glm::vec3 origin = glm::vec3(0.f);
 	for (Lookup &l : _branchMapping)
 	{
-		glm::mat3x3 align;
-		align = bond_aligned_matrix(l.lengths[0], l.lengths[1], l.lengths[2],
-		                            l.angles[0], l.angles[1], l.angles[2]);
-		
-		
 		glm::vec3 middle_pos = _cyclic.atomPos(l.middle_idx);
 		glm::vec3 gp_pos = _cyclic.atomPos(l.gp_idx);
 		glm::vec3 other_pos = _cyclic.atomPos(l.other_idx);
 		
-		glm::vec3 gp_diff = gp_pos - middle_pos;
-		glm::vec3 other_diff = other_pos - middle_pos;
-		glm::vec3 cross_target = glm::cross(gp_diff, other_diff);
+		glm::vec3 gp_norm = glm::normalize(gp_pos - middle_pos);
+		glm::vec3 other_norm = glm::normalize(other_pos - middle_pos);
 
-		glm::vec3 cross_moving = glm::cross(align[2], align[1]);
-		cross_moving = glm::normalize(cross_moving);
+		float gp_to_other = rad2deg(glm::angle(gp_norm, other_norm));
 
-		if (l.sign < 0)
+		glm::mat3x3 align = bond_aligned_matrix(/*gp*/1, /*other*/1, /*curr*/1,
+		                                        l.curr_to_other, l.curr_to_gp, 
+		                                        gp_to_other);
+
+		glm::vec3 &align_gp = align[0];
+		glm::vec3 &align_other = align[1];
+		glm::vec3 &align_curr = align[2];
+		
+		if (l.sign > 0)
 		{
 			for (size_t i = 0; i < 3; i++)
 			{
-				align[i][2] *= -1.f;
+				align[i][1] *= -1;
 			}
 		}
-
-		cross_target = glm::normalize(cross_target) + middle_pos;
-
-		Superpose pose;
-		pose.forceSameHand(true);
-		pose.setForcedMeans(middle_pos, origin);
-		pose.addPositionPair(middle_pos, origin);
-		pose.addPositionPair(gp_pos, align[2]);
-		pose.addPositionPair(other_pos, align[1]);
-
-		pose.superpose();
 		
-		glm::vec4 curr_pos = glm::vec4(align[0], 1.f);
+		glm::vec3 ortho = glm::normalize(glm::cross(align_other, other_norm));
+		float ang = glm::angle(align_other, other_norm);
+		glm::mat3x3 first = unit_vec_rotation(ortho, ang);
 
-		glm::mat4x4 trans = pose.transformation();
-		glm::vec4 updated = trans * curr_pos;
-		glm::vec4 middle4f = glm::vec4(middle_pos, 1.f);
-		glm::vec4 dir = glm::normalize(updated - middle4f);
-		dir *= l.lengths[0];
-		updated = middle4f + dir;
+		glm::vec3 rotated = first * align_gp;
+		
+		float best = 0;
+		glm::mat3x3 second = closest_rot_mat(rotated, gp_norm, other_norm, 
+		                                     &best, false);
+
+		glm::mat3x3 rot = glm::mat3x3(second) * glm::mat3x3(first);
+
+		glm::vec4 updated = glm::vec4(rot * align_curr, 0.f);
+		updated *= l.length;
+
+		float pre = glm::length(align_curr);
+		float length = glm::length(updated);
+
+		glm::vec4 middle4f = glm::vec4(middle_pos, 0.f);
+		updated += middle4f;
 		
 		int corrected = l.curr_idx + _idx;
 		
 		torsion_basis(blocks[corrected].basis, middle4f, gp_pos, updated);
-
 		blocks[corrected].inherit = middle_pos;
 	}
+}
 
+void RingProgram::setRingEntranceName(std::string atomName)
+{
+	_entranceName = atomName;
+	int cycle_idx = _cyclic.indexOfName(atomName);
+	_entranceCycleIdx = cycle_idx;
 }
 
 void RingProgram::alignCyclic(std::vector<AtomBlock> &blocks)
 {
-	Superpose pose;
+	_cyclic.setTransformation(glm::mat4(1.f));
+	std::vector<glm::vec3> realities, cycles;
+	std::vector<glm::vec3> real_norms, cycle_norms;
+	int ref = -1;
 	
 	for (auto it = _alignmentMapping.begin();
 	     it != _alignmentMapping.end(); it++)
@@ -247,11 +269,49 @@ void RingProgram::alignCyclic(std::vector<AtomBlock> &blocks)
 		glm::vec3 bpos = blocks[b_idx].my_position();
 		glm::vec3 cpos = _cyclic.atomPos(c_idx);
 		
-		pose.addPositionPair(bpos, cpos);
+		if (c_idx == _entranceCycleIdx)
+		{
+			ref = realities.size();
+		}
+		
+		realities.push_back(bpos);
+		cycles.push_back(cpos);
 	}
 	
-	pose.superpose();
-	glm::mat4x4 tr = pose.transformation();
+	if (realities.size() < 3)
+	{
+		throw std::runtime_error("Somehow don't have enough entry atoms to "\
+		                         "support proline refinement");
+	}
+	
+	for (size_t i = 0; i < realities.size(); i++)
+	{
+		if (i == ref)
+		{
+			continue;
+		}
+
+		glm::vec3 r = glm::normalize(realities[i] - realities[ref]);
+		glm::vec3 c = glm::normalize(cycles[i] - cycles[ref]);
+		
+		real_norms.push_back(r);
+		cycle_norms.push_back(c);
+	}
+	
+	glm::vec3 axis1 = glm::normalize(glm::cross(cycle_norms[0], real_norms[0]));
+	float ang = glm::angle(cycle_norms[0], real_norms[0]);
+	glm::mat3x3 first = unit_vec_rotation(axis1, ang);
+	glm::vec3 rotated = first * cycle_norms[1];
+
+	float best = 0;
+	glm::mat3x3 second = closest_rot_mat(rotated, real_norms[1], real_norms[0], 
+	                                     &best, false);
+	
+	glm::mat4x4 submat = glm::translate(-cycles[ref]);
+	glm::mat4x4 rot = glm::mat3x3(second) * glm::mat3x3(first);
+	glm::mat4x4 addmat = glm::translate(realities[ref]);
+
+	glm::mat4x4 tr = addmat * rot * submat;
 	_cyclic.setTransformation(tr);
 }
 
@@ -260,4 +320,27 @@ void RingProgram::addTransformation(const glm::mat4x4 &trans)
 	const glm::mat4x4 &m = _cyclic.transformation();
 	glm::mat4x4 combined = trans * m;
 	_cyclic.setTransformation(combined);
+}
+
+void RingProgram::setParameterFromBasis(int param_idx, HyperValue *hv)
+{
+	_valueMapping[hv] = param_idx;
+	_values.push_back(hv);
+}
+
+void RingProgram::fetchParameters(float *currentVec, int n)
+{
+	for (HyperValue *hv : _values)
+	{
+		int idx = _valueMapping[hv];
+		float t = _basis->parameterForVector(idx, currentVec, n);
+		_name2Value[hv->name()] = t;
+	}
+
+	float offset = _name2Value.at("offset");
+	float amplitude = _name2Value.at("amplitude");
+	
+	_cyclic.setOffset(offset);
+	_cyclic.setMagnitude(amplitude);
+	_cyclic.updateCurve();
 }

@@ -99,7 +99,7 @@ public:
 	 * 	@param sidemax maximum depth permitted for side branches */
 	void imposeDepthLimits(int min, int max, int sidemax);
 
-	std::vector<bool> depthLimitMask();
+	std::vector<bool> activeParameterMask(size_t *programs);
 
 	void start();
 	void finish();

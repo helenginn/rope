@@ -19,6 +19,7 @@
 #include "Grapher.h"
 #include "BondTorsion.h"
 #include "TorsionBasis.h"
+#include "RingProgram.h"
 #include "RingProgrammer.h"
 #include "BondCalculator.h"
 #include "BondSequence.h"
@@ -37,7 +38,7 @@ Grapher::~Grapher()
 
 Grapher::Grapher()
 {
-	setupProgrammers();
+
 }
 
 Grapher::Grapher(Grapher &other)
@@ -53,12 +54,21 @@ Grapher::Grapher(Grapher &other)
 	_atomsDone = other._atomsDone;
 
 	_original = false;
-	setupProgrammers();
 }
 
 void Grapher::setupProgrammers()
 {
-	_programmers = RingProgrammer::allProgrammers();
+	if (_programmers.size() > 0)
+	{
+		return;
+	}
+
+	std::vector<RingProgrammer *> all = *RingProgrammer::allProgrammers();
+	
+	for (RingProgrammer *p : all)
+	{
+		_programmers.push_back(*p);
+	}
 }
 
 bool Grapher::preferredConnection(Atom *atom, Atom *next)
@@ -437,8 +447,9 @@ void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 }
 
 
-std::vector<AtomBlock> Grapher::turnToBlocks()
+std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 {
+	setupProgrammers();
 	int total = _atoms.size() + _anchors.size();
 	total -= _atomsDone + _anchorsDone;
 	int curr = 0;
@@ -476,15 +487,17 @@ std::vector<AtomBlock> Grapher::turnToBlocks()
 			assignAtomToBlock(blocks[curr], curr, g->atom);
 
 			/* check for available programs */
-			for (RingProgrammer *programmer : *_programmers)
+			for (RingProgrammer &programmer : _programmers)
 			{
-				programmer->registerAtom(g, curr);
+				programmer.registerAtom(g, curr);
 				
-				if (programmer->areExitConditionsMet())
+				if (programmer.areExitConditionsMet())
 				{
-					programmer->makeProgram(blocks, programCount());
-					_programs.push_back(programmer->program());
-					programmer->reset();
+					programmer.makeProgram(blocks, programCount(),
+					                       basis);
+					RingProgram *prog = programmer.program();
+					_programs.push_back(prog);
+					programmer.reset();
 				}
 			}
 

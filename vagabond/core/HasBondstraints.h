@@ -24,6 +24,7 @@
 #include "Bondstraint.h"
 
 class BondLength;
+class Parameter;
 class BondAngle;
 class BondTorsion;
 class Chirality;
@@ -77,6 +78,7 @@ public:
 	HyperValue *findHyperValue(Atom *a);
 	BondLength *findBondLength(Atom *a, Atom *b);
 	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d);
+	BondTorsion *findBondTorsion(std::string desc);
 	Chirality *findChirality(Atom *cen, Atom *a, Atom *b, Atom *c);
 
 	/** @returns number of bond angles involved with given atom */
@@ -121,6 +123,19 @@ public:
 	BondAngle *terminalBondAngle(int i) const 
 	{
 		return _terminalBondAngles[i];
+	}
+
+	/** @returns number of parameters involved with given atom */
+	size_t parameterCount() const
+	{
+		return _parameters.size();
+	}
+	
+	/** @param i index
+	  * @returns specific bond torsions involving atom */
+	Parameter *parameter(int i) const 
+	{
+		return _parameters[i];
 	}
 
 	/** @returns number of bond torsions involved with given atom */
@@ -198,6 +213,7 @@ private:
 	std::vector<BondAngle *> _centralBondAngles;
 	std::vector<BondAngle *> _terminalBondAngles;
 	std::vector<HyperValue *> _hyperValues;
+	std::vector<Parameter *> _parameters;
 
 	std::vector<BondTorsion *> _torsions;
 	std::vector<BondTorsion *> _terminalTorsions;

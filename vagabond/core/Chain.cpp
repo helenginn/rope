@@ -43,6 +43,11 @@ void Chain::add(Atom *a)
 			addBondstraint(a->bondAngle(j));
 		}
 
+		for (size_t j = 0; j < a->hyperValueCount(); j++)
+		{
+			addBondstraint(a->hyperValue(j));
+		}
+
 		for (size_t j = 0; j < a->bondTorsionCount(); j++)
 		{
 			BondTorsion *b = a->bondTorsion(j);

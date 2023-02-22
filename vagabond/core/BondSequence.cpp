@@ -93,16 +93,18 @@ void BondSequence::addToGraph(AnchorExtension &ext)
 
 void BondSequence::generateBlocks()
 {
-	std::vector<AtomBlock> incoming = _grapher.turnToBlocks();
+	std::vector<AtomBlock> incoming = _grapher.turnToBlocks(_torsionBasis);
 	_grapher.fillMissingWriteLocations(incoming);
 
 	_blocks.reserve(_blocks.size() + incoming.size());
 	_blocks.insert(_blocks.end(), incoming.begin(), incoming.end());
 	_singleSequence = _blocks.size();
 	
-	_programs.reserve(_programs.size() + _grapher.programCount());
-	_programs.insert(_programs.end(), _grapher.programs().cbegin(),
-	                 _grapher.programs().cend());
+	for (size_t i = 0; i < _grapher.programCount(); i++)
+	{
+		_programs.push_back(*_grapher.programs()[i]);
+		_programs.back().makeLinkToAtom();
+	}
 }
 
 std::map<std::string, int> BondSequence::elementList() const
@@ -323,8 +325,9 @@ int BondSequence::calculateBlock(int idx)
 	int &progidx = _blocks[idx].program;
 	if (progidx >= 0 && _usingPrograms)
 	{
-		std::cout << "RUN!!" << std::endl;
-		_programs[progidx]->run(_blocks, idx);
+		int n = (_custom ? _custom->size : 0);
+
+		_programs[progidx].run(_blocks, idx, _currentVec, n);
 	}
 	
 	return 0;
@@ -443,9 +446,9 @@ void BondSequence::superpose()
 		pose.superpose();
 		const glm::mat4x4 &trans = pose.transformation();
 
-		for (RingProgram *program : _programs)
+		for (RingProgram &program : _programs)
 		{
-			program->addTransformation(trans);
+			program.addTransformation(trans);
 		}
 
 		for (size_t j = 0; j < _singleSequence; j++)
@@ -647,19 +650,27 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	}
 
 	std::queue<AtomBlockTodo> todo;
-	AtomBlockTodo minBlock = {&_blocks[min], min, min};
+	
+	// wind back if before a program
+	/* midway through program */
+//	while ((_blocks[min].program != -1) && min > 0 && _usingPrograms) 
+	{
+//		min--;
+	}
 	
 	if (min >= _blocks.size())
 	{
 		return;
 	}
 	
-	if (minBlock.block->atom == nullptr)
+	if (_blocks[min].atom == nullptr)
 	{
 		min++;
-		minBlock = {&_blocks[min], min, min};
 	}
 
+	// first min tracks the current 'depth' accounting for branches
+	// second min = the index number
+	AtomBlockTodo minBlock = {&_blocks[min], min, min};
 	todo.push(minBlock);
 	_startCalc = min;
 	int last = min;
@@ -722,76 +733,18 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	}
 
 	_fullRecalc = true;
-	_torsionBasis->supplyMask(atomMask());
+	size_t progs;
+	_torsionBasis->supplyMask(activeParameterMask(&progs));
 }
 
-void BondSequence::reflagDepthOld(int min, int max, int sidemax)
-{
-	bool found_first = false;
-	
-	_startCalc = 0;
-	_endCalc = INT_MAX;
 
-	for (size_t i = 0; i < _blocks.size(); i++)
-	{
-		AtomBlock &block = _blocks[i];
-
-		/* it's the beginning anchor atom, ignore */
-		if (block.atom == nullptr)
-		{
-			continue;
-		}
-
-		AtomGraph *graph = _atom2Graph[block.atom];
-		block.flag = (graph->depth >= min && graph->depth < max);
-		
-		bool inclusive = (graph->depth >= min - 1 && graph->depth <= max);
-		
-		if (inclusive && !found_first)
-		{
-			found_first = true;
-			_startCalc = i - 1;
-
-		}
-		if (inclusive)
-		{
-			_endCalc = i + 1;
-		}
-		
-		if (strcmp(block.element, "H") == 0 && _ignoreHydrogens)
-		{
-			block.flag = false;
-			continue;
-		}
-		
-		/* we always include the main chain no matter what sidemax is */
-		if (graph->priority == 0)
-		{
-			continue;
-		}
-		
-		int depth_to_go = graph->maxDepth - graph->depth;
-		
-		if (depth_to_go >= sidemax)
-		{
-			block.flag = false;
-		}
-	}
-	
-	if (_startCalc > 0 && _blocks[_startCalc - 1].atom == nullptr)
-	{
-		_startCalc--;
-	}
-
-	_fullRecalc = true;
-	_torsionBasis->supplyMask(atomMask());
-}
-
-std::vector<bool> BondSequence::atomMask()
+std::vector<bool> BondSequence::activeParameterMask(size_t *programs)
 {
 	std::vector<bool> mask = std::vector<bool>(_torsionBasis->torsionCount(),
 	                                           false);
 	
+	std::vector<RingProgram *> activePrograms;
+
 	for (AtomBlock &block : _blocks)
 	{
 		if (!block.flag)
@@ -804,7 +757,23 @@ std::vector<bool> BondSequence::atomMask()
 		{
 			mask[idx] = true;
 		}
+		
+		if (block.program >= 0)
+		{
+			activePrograms.push_back(&_programs[block.program]);
+		}
 	}
+	
+	for (RingProgram *p : activePrograms)
+	{
+		for (size_t i = 0; i < p->parameterCount(); i++)
+		{
+			int idx = p->parameterIndex(i);
+			mask[idx] = true;
+		}
+	}
+	
+	*programs = activePrograms.size();
 	
 	return mask;
 }

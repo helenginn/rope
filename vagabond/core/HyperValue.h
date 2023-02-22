@@ -60,9 +60,14 @@ public:
 		_constrained = constrained;
 	}
 
-	virtual const std::string desc() const
+	const std::string name() const
 	{
 		return _name;
+	}
+
+	virtual const std::string desc() const
+	{
+		return name();
 	}
 
 	virtual const size_t keyCount() const
@@ -73,6 +78,11 @@ public:
 	virtual const Key key(int i) const
 	{
 		return Key(_atom, nullptr, nullptr, nullptr);
+	}
+	
+	Atom *atom()
+	{
+		return _atom;
 	}
 private:
 	Atom *_atom = nullptr;

@@ -60,7 +60,7 @@ public:
 	PCA::Matrix distanceMatrix();
 	void fillDistances(PCA::Matrix &m);
 
-	std::vector<AtomBlock> turnToBlocks();
+	std::vector<AtomBlock> turnToBlocks(TorsionBasis *basis);
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);
 	
 	void setSingleChain(bool singleChain)
@@ -152,7 +152,7 @@ private:
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<BondTorsion *, AtomGraph *> _torsion2Graph;
 	
-	std::vector<RingProgrammer *> *_programmers = nullptr;
+	std::vector<RingProgrammer> _programmers;
 	std::vector<RingProgram *> _programs;
 
 	int _graphsDone = 0;

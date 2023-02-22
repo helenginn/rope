@@ -22,36 +22,70 @@
 #include <vagabond/core/Cyclic.h>
 #include "AtomBlock.h"
 
+class HyperValue;
+class TorsionBasis;
 class RingProgrammer;
 
 class RingProgram
 {
 public:
 	RingProgram();
+	~RingProgram();
 	RingProgram(RingProgrammer *parent);
 	
 	Cyclic &cyclic()
 	{
 		return _cyclic;
 	}
+	
+	/** for display purposes */
+	void setLinkedAtom(Atom *atom)
+	{
+		_atom = atom;
+	}
+	
+	size_t parameterCount() const
+	{
+		return _values.size();
+	}
+	
+	int parameterIndex(int i) const
+	{
+		return _valueMapping.at(_values[i]);
+	}
+	
+	void makeLinkToAtom();
+	
+	void setTorsionBasis(TorsionBasis *basis)
+	{
+		_basis = basis;
+	}
+	
+	void setParameterFromBasis(int param_idx, HyperValue *hv);
 
+	void setRingEntranceName(std::string atomName);
 	void addAlignmentIndex(int idx, std::string atomName);
 	void addRingIndex(int idx, std::string atomName);
 	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
 
-	void run(std::vector<AtomBlock> &blocks, int rel);
+	void run(std::vector<AtomBlock> &blocks, int rel, float *vec, int n);
 	
 	void addTransformation(const glm::mat4x4 &trans);
 private:
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
 	void alignBranchMembers(std::vector<AtomBlock> &blocks);
+	void fetchParameters(float *currentVec, int n);
 
 	Cyclic _cyclic;
+	TorsionBasis *_basis = nullptr;
 
 	// block is first, cyclic is second
 	std::map<int, int> _alignmentMapping;
 	std::map<int, int> _ringMapping;
+	std::map<HyperValue *, int> _valueMapping;
+	std::map<std::string, float> _name2Value;
+	std::vector<HyperValue *> _values;
 	
 	struct Lookup
 	{
@@ -60,16 +94,15 @@ private:
 		int gp_idx = -1;	 	// in cyclic index
 		int other_idx = -1;		// in cyclic index
 		int sign = 1;
-		
-		//								angles
-		// first: current - middle		(- other)
-		// second: other - middle		(- grandparent)
-		// third: grandparent - middle	(- current)
-		float angles[3] = {-1, -1, -1};
-		float lengths[3] = {-1, -1, -1};
+		float length = -1;
+		float curr_to_gp = -1;
+		float curr_to_other = -1;
 	};
 	
+	Atom *_atom = nullptr;
 	std::vector<Lookup> _branchMapping;
+	std::string _entranceName;
+	int _entranceCycleIdx = -1;
 	
 	int _idx = -1;
 };

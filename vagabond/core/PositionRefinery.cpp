@@ -71,7 +71,8 @@ void PositionRefinery::refine()
 void PositionRefinery::calculateActiveTorsions()
 {
 	_nActive = 0;
-	_mask = _calculator->sequenceHandler()->depthLimitMask();
+	_progs = 0;
+	_mask = _calculator->sequenceHandler()->activeParameterMask(&_progs);
 
 	for (size_t i = 0; i < _mask.size(); i++)
 	{
@@ -404,7 +405,10 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 	{
 		for (size_t i = 0; i < nb; i++)
 		{
-			refineBetween(i, i + _depthRange);
+			for (size_t j = 0; j < 2 * _progs + 1; j++)
+			{
+				refineBetween(i, i + _depthRange);
+			}
 
 			if (_finish)
 			{

@@ -61,6 +61,7 @@ void Cyclic::updateCurve()
 		v.y = cos(r);
 
 		v.z = rise;
+		v = glm::normalize(v);
 		v *= _pams.radius;
 
 		n++;
@@ -84,6 +85,8 @@ void Cyclic::addAtoms()
 		}
 		prop += _pams.offset;
 		prop += _offset;
+		
+		while (prop < 0) { prop += 1; }
 		
 		prop = fmod(prop, 1.f);
 		int idx = (int)lrint(prop * (float)pointCount());

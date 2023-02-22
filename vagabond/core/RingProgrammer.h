@@ -19,10 +19,12 @@
 #ifndef __vagabond__RingProgrammer__
 #define __vagabond__RingProgrammer__
 
+#include <mutex>
 #include <vagabond/core/Cyclic.h>
 #include <vagabond/core/AtomBlock.h>
 
 class Atom;
+class TorsionBasis;
 struct AtomGraph;
 class RingProgram;
 
@@ -86,7 +88,8 @@ public:
 
 	/* call in order to generate a RingProgram which will fill in the
 	 * corresponding atom blocks */
-	void makeProgram(std::vector<AtomBlock> &blocks, int prog_num);
+	void makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
+	                 TorsionBasis *basis);
 protected:
 	void setupProline();
 	
@@ -182,6 +185,7 @@ private:
 	
 	int _triggerIndex = -1;
 
+	static std::mutex _mutex;
 	static std::vector<RingProgrammer *> _rammers;
 };
 

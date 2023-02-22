@@ -19,12 +19,15 @@
 #include "RingProgrammer.h"
 #include "RingProgram.h"
 #include "FileManager.h"
+#include "TorsionBasis.h"
+#include "HyperValue.h"
 #include "AtomGraph.h"
 #include "Cyclic.h"
 
 #include <fstream>
 
 std::vector<RingProgrammer *> RingProgrammer::_rammers;
+std::mutex RingProgrammer::_mutex;
 
 RingProgrammer::RingProgrammer(std::string cyclicFile)
 {
@@ -140,12 +143,11 @@ void RingProgrammer::registerAtom(Atom *a, int idx)
 	if (triggered)
 	{
 		grabAtomLocation(a, idx);
-	}
-	
-	if (groupsComplete())
-	{
-		std::cout << "Exit conditions met" << std::endl;
-		_complete = true;
+
+		if (groupsComplete())
+		{
+			_complete = true;
+		}
 	}
 }
 
@@ -173,18 +175,28 @@ void RingProgrammer::grabAtomLocation(Atom *atom, int idx)
 
 	const std::vector<std::string> members = ringMembers();
 	std::string n = atom->atomName();
-
-	auto it = std::find(members.begin(), members.end(), n);
-
-	if (it != members.end())
+	std::string code = atom->code();
+	if (_code == code)
 	{
-		_atomLocs[n] = idx;
-		return;
+		auto it = std::find(members.begin(), members.end(), n);
+
+		if (it != members.end())
+		{
+			_atomLocs[n] = idx;
+			return;
+		}
 	}
 
 	for (size_t i = 0; i < atom->bondLengthCount(); i++)
 	{
 		std::string n = atom->connectedAtom(i)->atomName();
+		std::string code = atom->connectedAtom(i)->code();
+		
+		if (_code != code)
+		{
+			continue;
+		}
+
 		auto it = std::find(members.begin(), members.end(), n);
 
 		if (it != members.end())
@@ -285,8 +297,6 @@ bool RingProgrammer::isProgramTriggered()
 		// make sure all registered atoms get entered for program
 		findGroupLocations(i);
 
-		std::cout << "Triggered program!" << std::endl;
-		std::cout << status() << std::endl;
 		return true;
 	}
 	
@@ -315,15 +325,25 @@ void RingProgrammer::correctIndexOffset()
 	_triggerIndex = cidx;
 }
 
-void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num)
+void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
+                                 TorsionBasis *basis)
 {
 	correctIndexOffset();
-	std::cout << "Trigger index: " << _triggerIndex << std::endl;
 	
 	blocks[_triggerIndex].program = prog_num;
+	
+	for (size_t i = _triggerIndex + 1; i < blocks.size(); i++)
+	{
+		blocks[i].program = -2;
+	}
+	blocks[blocks.size() - 1].program = -3;
 
 	RingProgram *prog = new RingProgram(this);
+	std::string &name = _groups[_entrance].central()->name;
+	prog->setRingEntranceName(name);
+	prog->setLinkedAtom(blocks[_triggerIndex].atom);
 	blocks[_triggerIndex].atom->setCyclic(&prog->cyclic());
+	
 	
 	for (auto it = _atomLocs.begin(); it != _atomLocs.end(); it++)
 	{
@@ -341,13 +361,6 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num)
 			blocks[it->second].silenced = true;
 			prog->addRingIndex(corrected, it->first);
 		}
-	}
-	
-	std::cout << "Grandparents!" << std::endl;
-	for (auto it = _grandparents.begin(); it != _grandparents.end(); it++)
-	{
-		std::cout << it->first << " has grandparent " << it->second << std::endl;
-
 	}
 	
 	for (auto it = _branchLocs.begin(); it != _branchLocs.end(); it++)
@@ -371,13 +384,28 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num)
 		Atom *curr = blocks[it->second].atom;
 		prog->addBranchIndex(corrected, curr, gp);
 	}
+	
+	int pindx = _atomLocs[_pinnedAtom];
+	if (pindx >= 0)
+	{
+		Atom *pinned = blocks[pindx].atom;
+		
+		for (int i = 0; i < pinned->hyperValueCount(); i++)
+		{
+			HyperValue *hv = pinned->hyperValue(i);
+			int idx = basis->addParameter(hv, pinned);
+			// FIXME? add to parameter2Graph of Grapher, ugh
+			prog->setParameterFromBasis(idx, hv);
+		}
 
+	}
+
+	prog->setTorsionBasis(basis);
 	_program = prog;
 }
 
 void RingProgrammer::reset()
 {
-	std::cout << "PROGRAM RESET" << std::endl;
 	wipeFlagsExcept(-1);
 	_complete = false;
 	_entrance = -1;
@@ -412,6 +440,7 @@ std::string RingProgrammer::status()
 
 std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 {
+	std::lock_guard<std::mutex> lg(_mutex);
 	if (_rammers.size() > 0)
 	{
 		return &_rammers;

@@ -92,6 +92,7 @@ public:
 	void putTorsionRefsInSequence(Chain *ch);
 	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
 	virtual void insertTorsionAngles(AtomContent *atoms);
+	void estimateProlines(AtomContent *atoms);
 	virtual Atom *equivalentForAtom(Polymer *other, Atom *atom);
 
 	virtual const size_t completenessScore() const;

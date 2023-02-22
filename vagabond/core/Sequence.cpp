@@ -411,8 +411,14 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
 
 				if (!match.coversMainChain())
 				{
-					f = NAN;
+//					f = NAN;
 				}
+			}
+			
+			f.hyper = (match.isHyperParameter());
+			if (f.hyper)
+			{
+				std::cout << match.desc() << " " << f << std::endl;
 			}
 
 			vals.push_back(f);

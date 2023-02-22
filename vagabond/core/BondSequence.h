@@ -134,11 +134,10 @@ public:
 	
 	void multiplyUpBySampleCount();
 	void reflagDepth(int min, int max, int sidemax);
-	void reflagDepthOld(int min, int max, int sidemax);
 	
 	const size_t flagged() const;
 
-	std::vector<bool> atomMask();
+	std::vector<bool> activeParameterMask(size_t *programs);
 	
 	void prepareForIdle();
 	void prepareTorsionBasis();

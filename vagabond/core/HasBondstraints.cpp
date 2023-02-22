@@ -123,13 +123,19 @@ void HasBondstraints::addBondstraint(BondAngle *angle)
 
 void HasBondstraints::addBondstraint(HyperValue *hv)
 {
-	if (hasHyperValue(hv))
+	if (_hyperValueMap.count(hv->key(0)))
 	{
-		return;
+		HyperValue *check;
+		check = static_cast<HyperValue *>(_hyperValueMap[hv->key(0)]);
+		if (check->name() == hv->name())
+		{
+			return;
+		}
 	}
 	
 	_bondstraints.push_back(hv);
 	_hyperValues.push_back(hv);
+	_parameters.push_back(hv);
 
 	for (size_t i = 0; i < hv->keyCount(); i++)
 	{
@@ -146,6 +152,7 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 
 	_bondstraints.push_back(torsion);
 	_torsions.push_back(torsion);
+	_parameters.push_back(torsion);
 	
 	for (size_t i = 0; i < torsion->keyCount(); i++)
 	{
@@ -247,6 +254,19 @@ BondLength *HasBondstraints::findBondLength(Atom *a, Atom *b)
 		if (*_bondLengths[i] == bl)
 		{
 			return _bondLengths[i];
+		}
+	}
+
+	return nullptr;
+}
+
+BondTorsion *HasBondstraints::findBondTorsion(std::string desc)
+{
+	for (size_t i = 0; i < _torsions.size(); i++)
+	{
+		if (_torsions[i]->hasDesc(desc))
+		{
+			return _torsions[i];
 		}
 	}
 

@@ -79,6 +79,7 @@ private:
 	int _nActive = 0;
 	int _start = 0;
 	int _end = 0;
+	size_t _progs = 0;
 	
 	int _depthRange = 5;
 	

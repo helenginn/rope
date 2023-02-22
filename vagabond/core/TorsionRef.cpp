@@ -88,6 +88,11 @@ std::string TorsionRef::atomName(int i) const
 
 bool TorsionRef::coversMainChain() const
 {
+	if (isHyperParameter())
+	{
+		return true;
+	}
+
 	for (size_t i = 0; i < atomCount(); i++)
 	{
 		if (!Atom::isMainChain(atomName(i)))

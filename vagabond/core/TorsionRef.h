@@ -63,6 +63,11 @@ public:
 		return _desc;
 	}
 	
+	bool isHyperParameter() const
+	{
+		return (atomCount() == 1);
+	}
+	
 	bool coversMainChain() const;
 	
 	const bool valid() const
