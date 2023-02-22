@@ -152,7 +152,7 @@ private:
 	ChemotaxisEngine *_engine = nullptr;
 
 	int _num = 0;
-	float _offset = 0;
+	float _offset = 0.2;
 	int _sinMult = 2;
 	std::vector<int> _idxs;
 	std::vector<glm::vec3> _curve;
