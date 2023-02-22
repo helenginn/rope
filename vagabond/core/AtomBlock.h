@@ -27,6 +27,8 @@ class Atom;
 struct AtomBlock
 {
 	bool flag = true;
+	bool silenced = false;
+	int program = -1;
 	Atom *atom = nullptr;
 	char element[3] = "\0";
 	int nBonds;
