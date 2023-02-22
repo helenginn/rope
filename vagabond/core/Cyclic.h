@@ -28,6 +28,8 @@
 #include <json/json.hpp>
 using nlohmann::json;
 
+class CyclicView;
+
 class Cyclic : public RunsEngine, public HasResponder<Responder<Cyclic>>
 {
 public:
