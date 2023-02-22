@@ -24,6 +24,7 @@
 #include <thread>
 
 class Text;
+class Cyclic;
 class CyclicView;
 
 class SandboxView : public Display, public Responder<CyclicView>
@@ -41,6 +42,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
+	void addCyclicView(Cyclic *cyclic);
 private:
 	CyclicView *_cyclic = nullptr;
 	Text *_angles = nullptr;

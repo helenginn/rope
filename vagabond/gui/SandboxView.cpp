@@ -21,6 +21,7 @@
 #include <vagabond/gui/elements/Text.h>
 
 #include "SandboxView.h"
+#include "PdbFile.h"
 #include "Sequence.h"
 #include "AtomGroup.h"
 #include "AtomsFromSequence.h"
@@ -28,10 +29,11 @@
 
 SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 {
-	CyclicView *cyclic = new CyclicView();
-	cyclic->setResponder(this);
-	addObject(cyclic);
-	_cyclic = cyclic;
+	Sequence apa("APA");
+	AtomGroup *as = AtomsFromSequence(apa).atoms();
+	setAtoms(as);
+	as->recalculate();
+
 	_angles = new Text("angles", Font::Thin, true);
 	_angles->resize(0.6);
 	_angles->setLeft(0.2, 0.5);
@@ -42,10 +44,22 @@ SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 	_lengths->setLeft(0.05, 0.5);
 	addObject(_lengths);
 	
-	Sequence apa("APA");
-	AtomGroup *as = AtomsFromSequence(apa).atoms();
-	setAtoms(as);
-	as->recalculate();
+	for (size_t i = 0; i < as->size(); i++)
+	{
+		Atom *a = (*as)[i];
+		if (a->cyclic())
+		{
+			addCyclicView(a->cyclic());
+		}
+	}
+}
+
+void SandboxView::addCyclicView(Cyclic *cyclic)
+{
+	CyclicView *view = new CyclicView(cyclic);
+	view->setResponder(this);
+	addObject(view);
+	_cyclic = view;
 }
 
 SandboxView::~SandboxView()
@@ -57,10 +71,16 @@ void SandboxView::setup()
 {
 	addTitle("Proline sandbox");
 
-	_cyclic->increment();
+	if (_cyclic)
+	{
+		_cyclic->increment();
+	}
+
 	doThings();
 	
 	Display::setup();
+	
+	PdbFile::writeAtoms(_atoms, "apa.pdb");
 }
 
 void SandboxView::buttonPressed(std::string tag, Button *button)
