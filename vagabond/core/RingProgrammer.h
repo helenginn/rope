@@ -20,13 +20,23 @@
 #define __vagabond__RingProgrammer__
 
 #include <vagabond/core/Cyclic.h>
+#include <vagabond/core/AtomBlock.h>
 
 class Atom;
+struct AtomGraph;
+class RingProgram;
 
 class RingProgrammer
 {
 public:
 	RingProgrammer(std::string cyclicFile, std::string code);
+	
+	RingProgram *program()
+	{
+		return _program;
+	}
+	
+	void reset();
 	
 	const Cyclic &cyclic() const
 	{
@@ -45,7 +55,7 @@ public:
 	
 	/* call while converting atoms to blocks in order to substantiate
 	 * a program if the conditions for a program are met */
-	void registerAtom(Atom *a, int idx);
+	void registerAtom(AtomGraph *ag, int idx);
 	
 	/* ask after each atom registry if the program entry conditions
 	 * have been met */
@@ -53,11 +63,21 @@ public:
 	
 	/* once a program has been triggered, ask if exit conditions have
 	 * been met in order to conclude the program override */
-	bool areExitConditionsMet();
+	bool areExitConditionsMet()
+	{
+		return _complete;
+	}
+	
+	std::string status();
+
+	/* call in order to generate a RingProgram which will fill in the
+	 * corresponding atom blocks */
+	void makeProgram(std::vector<AtomBlock> &blocks, int prog_num);
 protected:
 	void setupProline();
 	
 private:
+	void registerAtom(Atom *a, int idx);
 	void wipeFlagsExcept(int idx);
 	bool proofSolution(int grp_idx);
 
@@ -83,6 +103,19 @@ private:
 			}
 
 			return nullptr;
+		}
+		
+		bool hasAtom(Atom *ptr)
+		{
+			for (Flaggable &f : atoms)
+			{
+				if (f.ptr == ptr)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 		
 		void addCentral(std::string name)
@@ -113,17 +146,24 @@ private:
 
 	void findGroupLocations(int grp_idx);
 	void grabAtomLocation(Atom *atom, int idx);
+	bool groupsComplete();
+	void correctIndexOffset();
 	
 	std::vector<ExitGroup> _groups;
 	std::map<std::string, int> _atomLocs;
 	std::map<std::string, int> _branchLocs;
+	std::map<std::string, std::string> _grandparents;
 
 	std::string _cyclicFile;
 
+	RingProgram *_program = nullptr;
 	Cyclic _cyclic;
 	std::string _code;
 
 	int _entrance = -1;
+	bool _complete = false;
+	
+	int _triggerIndex = -1;
 };
 
 #endif
