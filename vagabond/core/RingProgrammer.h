@@ -27,6 +27,11 @@ class RingProgrammer
 {
 public:
 	RingProgrammer(std::string cyclicFile, std::string code);
+	
+	const Cyclic &cyclic() const
+	{
+		return _cyclic;
+	}
 
 	const std::string &code() const
 	{
