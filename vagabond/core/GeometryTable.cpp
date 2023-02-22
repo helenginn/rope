@@ -19,7 +19,8 @@
 #include "GeometryTable.h"
 #include "AtomGroup.h"
 #include "Knotter.h"
-#include "../utils/FileReader.h"
+#include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/version.h>
 #include <iostream>
 
 GeometryTable::GeometryTable()
@@ -31,6 +32,14 @@ void GeometryTable::addGeometryLength(std::string code, std::string pName,
                                       std::string qName, double mean, 
                                       double stdev, bool link)
 {
+#ifndef VERSION_PROLINE
+	if (code == "PRO" && ((pName == "CD" && qName == "N") ||
+	                      (qName == "CD" && pName == "N")))
+	{
+		return;
+	}
+#endif
+
 	GeometryMap &map = _codes[code];
 	
 	Value value = {mean, stdev};

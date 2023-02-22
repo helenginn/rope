@@ -20,6 +20,7 @@
 #define __ROPE__VERSION__H
 
 #define VERSION_FIX_PEPTIDE
+//#define VERSION_PROLINE
 
 #ifndef __EMSCRIPTEN__
 #define VERSION_SHORT_ROUTES
