@@ -446,9 +446,12 @@ void BondSequence::superpose()
 		pose.superpose();
 		const glm::mat4x4 &trans = pose.transformation();
 
-		for (RingProgram &program : _programs)
+		if (_usingPrograms)
 		{
-			program.addTransformation(trans);
+			for (RingProgram &program : _programs)
+			{
+				program.addTransformation(trans);
+			}
 		}
 
 		for (size_t j = 0; j < _singleSequence; j++)
