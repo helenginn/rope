@@ -26,6 +26,7 @@
 
 class TorsionBasis;
 class BondCalculator;
+class RingProgram;
 
 /** \class Grapher
  * Constructs graphs from starting atoms tracing through the structure
