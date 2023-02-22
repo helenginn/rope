@@ -110,6 +110,14 @@ void GeometryTable::addGeometryChiral(std::string code, std::string centre,
                                       std::string pName, std::string qName, 
                                       std::string rName, int sign)
 {
+#ifndef VERSION_PROLINE
+	if (code == "PRO" && centre == "N")
+	{
+		std::cout << "giving up on proline" << std::endl;
+		return;
+	}
+#endif
+
 	GeometryMap &map = _codes[code];
 	
 	/* in the same direction as described */
