@@ -15,6 +15,7 @@ struct BondNum
 	int num;
 };
 
+class Cyclic;
 class BondLength;
 
 class Atom : public HasBondstraints
@@ -282,6 +283,16 @@ public:
 		_colour += add;
 		_count++;
 	}
+
+	void setCyclic(Cyclic *cyc)
+	{
+		_cyclic = cyc;
+	}
+	
+	Cyclic *cyclic()
+	{
+		return _cyclic;
+	}
 private:
 	void changedPosition();
 
@@ -310,6 +321,7 @@ private:
 	float _colour = 0;
 	int _count = 0;
 	glm::mat4x4 _transform = glm::mat4(1.f);
+	Cyclic *_cyclic = nullptr;
 };
 
 #endif
