@@ -22,7 +22,6 @@
 #include "engine/MechanicalBasis.h"
 #include "Superpose.h"
 #include "Atom.h"
-#include "RingProgram.h"
 #include <iostream>
 #include <vagabond/utils/FileReader.h>
 #include <queue>
