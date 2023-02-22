@@ -40,6 +40,17 @@ public:
 
 	void setup();
 	
+	void setTransformation(const glm::mat4x4 &mat)
+	{
+		_transform = mat;
+		triggerResponse();
+	}
+	
+	const glm::mat4x4 &transformation() const
+	{
+		return _transform;
+	}
+	
 	void increment();
 	
 	void addCurve();
@@ -154,6 +165,8 @@ private:
 	int _issue = 0;
 	float _step = 0.5;
 	float _magnitude = 1.;
+	
+	glm::mat4x4 _transform = glm::mat4(1.f);
 };
 
 inline void to_json(json &j, const Cyclic::Parameters &value)
