@@ -24,6 +24,7 @@
 #include <vector>
 #include <climits>
 #include "../utils/glm_import.h"
+#include <vagabond/utils/version.h>
 #include "Atom.h"
 #include "RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
@@ -237,6 +238,12 @@ private:
 	TorsionBasis *_torsionBasis = nullptr;
 	TorsionBasis::Type _basisType;
 	Sampler *_sampler = nullptr;
+	std::vector<RingProgram> _programs;
+#ifdef VERSION_PROLINE
+	bool _usingPrograms = true;
+#else
+	bool _usingPrograms = false;
+#endif
 	
 	float *_currentVec = nullptr;
 
