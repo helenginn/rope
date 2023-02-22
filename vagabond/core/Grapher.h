@@ -26,6 +26,7 @@
 
 class TorsionBasis;
 class BondCalculator;
+class RingProgrammer;
 class RingProgram;
 
 /** \class Grapher
@@ -41,6 +42,8 @@ public:
 
 	Grapher();
 	Grapher(Grapher &g);
+	
+	void setupProgrammers();
 
 	/** generation of atom graph.
 	 * @param atom anchor point to start from
@@ -149,6 +152,7 @@ private:
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<BondTorsion *, AtomGraph *> _torsion2Graph;
 	
+	std::vector<RingProgrammer *> _programmers;
 	std::vector<RingProgram *> _programs;
 
 	int _graphsDone = 0;

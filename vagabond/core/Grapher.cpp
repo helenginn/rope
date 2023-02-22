@@ -19,6 +19,7 @@
 #include "Grapher.h"
 #include "BondTorsion.h"
 #include "TorsionBasis.h"
+#include "RingProgrammer.h"
 #include "BondCalculator.h"
 #include "BondSequence.h"
 #include "Atom.h"
@@ -32,11 +33,18 @@ Grapher::~Grapher()
 	{
 		delete _graphs[i];
 	}
+	
+	for (RingProgrammer *p : _programmers)
+	{
+		delete p;
+	}
+	
+	_programmers.clear();
 }
 
 Grapher::Grapher()
 {
-
+	setupProgrammers();
 }
 
 Grapher::Grapher(Grapher &other)
@@ -52,7 +60,17 @@ Grapher::Grapher(Grapher &other)
 	_atomsDone = other._atomsDone;
 
 	_original = false;
+	setupProgrammers();
+}
 
+void Grapher::setupProgrammers()
+{
+	_programmers.clear();
+
+	RingProgrammer *prog = new RingProgrammer("assets/geometry/proline.json", 
+	                                          "PRO");
+
+	_programmers.push_back(prog);
 }
 
 bool Grapher::preferredConnection(Atom *atom, Atom *next)
@@ -468,6 +486,19 @@ std::vector<AtomBlock> Grapher::turnToBlocks()
 			todo.pop();
 
 			assignAtomToBlock(blocks[curr], curr, g->atom);
+
+			/* check for available programs */
+			for (RingProgrammer *programmer : _programmers)
+			{
+				programmer->registerAtom(g, curr);
+				
+				if (programmer->areExitConditionsMet())
+				{
+					programmer->makeProgram(blocks, programCount());
+					_programs.push_back(programmer->program());
+					programmer->reset();
+				}
+			}
 
 			curr++;
 			
