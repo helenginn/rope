@@ -313,6 +313,12 @@ float Cyclic::getResult(int *job_id)
 
 const glm::vec3 Cyclic::atomPos(int i) const
 {
-	glm::vec3 v = _curve[_idxs[i]];
+	glm::vec3 v = point(_idxs[i]);
 	return v;
+}
+
+glm::vec3 Cyclic::point(int i) const
+{
+	glm::vec4 tmp = _transform * glm::vec4(_curve[i], 1.f);
+	return glm::vec3(tmp);
 }

@@ -48,10 +48,7 @@ public:
 	std::string angles();
 	std::string lengths();
 	
-	const glm::vec3 &point(int i) const
-	{
-		return _curve[i];
-	}
+	glm::vec3 point(int i) const;
 	
 	const glm::vec3 atomPos(int i) const;
 	
