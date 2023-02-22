@@ -22,6 +22,7 @@
 #include "engine/MechanicalBasis.h"
 #include "Superpose.h"
 #include "Atom.h"
+#include "RingProgram.h"
 #include <iostream>
 #include <vagabond/utils/FileReader.h>
 #include <queue>
@@ -99,6 +100,10 @@ void BondSequence::generateBlocks()
 	_blocks.reserve(_blocks.size() + incoming.size());
 	_blocks.insert(_blocks.end(), incoming.begin(), incoming.end());
 	_singleSequence = _blocks.size();
+	
+	_programs.reserve(_programs.size() + _grapher.programCount());
+	_programs.insert(_programs.end(), _grapher.programs().cbegin(),
+	                 _grapher.programs().cend());
 }
 
 std::map<std::string, int> BondSequence::elementList() const
@@ -259,6 +264,12 @@ void BondSequence::fetchTorsion(int idx)
 
 int BondSequence::calculateBlock(int idx)
 {
+	if (_blocks[idx].silenced)
+	{
+		// this is part of a ring program.
+		return 0;
+	}
+
 	fetchTorsion(idx);
 	float t = deg2rad(_blocks[idx].torsion);
 	glm::mat4x4 &coord = _blocks[idx].coordination;
@@ -278,7 +289,6 @@ int BondSequence::calculateBlock(int idx)
 	if (_blocks[idx].atom == nullptr) // is anchor
 	{
 		int nidx = idx + _blocks[idx].write_locs[0];
-		Atom *anchor = _blocks[nidx].atom;
 
 		/* _blocks[idx].basis assigned originally by Grapher */
 		_blocks[nidx].basis = _blocks[idx].basis;
@@ -303,8 +313,19 @@ int BondSequence::calculateBlock(int idx)
 		}
 
 		int n = idx + _blocks[idx].write_locs[i];
+		// update CHILD's basis with CURRENT position, PARENT position and 
+		// CHILD's position
 		torsion_basis(_blocks[n].basis, basis[3], inherit, wip[i]);
+		
+		// update CHILD's inherited position with CURRENT position
 		_blocks[n].inherit = glm::vec3(basis[3]);
+	}
+
+	int &progidx = _blocks[idx].program;
+	if (progidx >= 0)
+	{
+		std::cout << "RUN!!" << std::endl;
+		_programs[progidx]->run(_blocks, idx);
 	}
 	
 	return 0;
@@ -422,6 +443,11 @@ void BondSequence::superpose()
 
 		pose.superpose();
 		const glm::mat4x4 &trans = pose.transformation();
+
+		for (RingProgram *program : _programs)
+		{
+			program->addTransformation(trans);
+		}
 
 		for (size_t j = 0; j < _singleSequence; j++)
 		{
