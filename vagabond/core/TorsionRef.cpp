@@ -74,6 +74,12 @@ void TorsionRef::housekeeping()
 	organiseDescriptions();
 }
 
+size_t TorsionRef::atomCount() const
+{
+	std::vector<std::string> splits = split(_desc, '-');
+	return splits.size();
+}
+
 std::string TorsionRef::atomName(int i) const
 {
 	std::vector<std::string> splits = split(_desc, '-');
@@ -82,7 +88,7 @@ std::string TorsionRef::atomName(int i) const
 
 bool TorsionRef::coversMainChain() const
 {
-	for (size_t i = 0; i < 4; i++)
+	for (size_t i = 0; i < atomCount(); i++)
 	{
 		if (!Atom::isMainChain(atomName(i)))
 		{
