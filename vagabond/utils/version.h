@@ -26,6 +26,7 @@
 #define VERSION_SHORT_ROUTES
 #define VERSION_LIGANDS
 #define VERSION_REFINEMENT
+#define VERSION_SANDBOX
 #endif
 
 #endif

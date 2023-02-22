@@ -4,6 +4,7 @@
 #include "ProgressView.h"
 #include "MetadataView.h"
 #include "DatasetMenu.h"
+#include "SandboxView.h"
 #include "EntityMenu.h"
 #include "ModelMenu.h"
 #include "MainMenu.h"
@@ -14,6 +15,7 @@
 #include <vagabond/gui/elements/Menu.h>
 
 #include <vagabond/core/Environment.h>
+#include <vagabond/utils/version.h>
 
 #include <iostream>
 
@@ -95,6 +97,20 @@ void MainMenu::setup()
 		text->setCentre(0.2, 0.80);
 		addObject(text);
 	}
+
+#ifdef VERSION_SANDBOX
+	{
+		ImageButton *button = new ImageButton("assets/images/tube_1.5ml.png", this);
+		button->resize(0.15);
+		button->setReturnTag("sandbox");
+		button->setCentre(0.8, 0.65);
+		addObject(button);
+
+		Text *text = new Text("Sandbox");
+		text->setCentre(0.8, 0.80);
+		addObject(text);
+	}
+#endif
 }
 
 void MainMenu::doThings()
@@ -188,6 +204,11 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	{
 		DatasetMenu *menu = new DatasetMenu(this);
 		menu->show();
+	}
+	else if (tag == "sandbox")
+	{
+		SandboxView *sb = new SandboxView(this);
+		sb->show();
 	}
 
 	Scene::buttonPressed(tag, button);
