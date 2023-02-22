@@ -112,6 +112,16 @@ public:
 		return _atoms;
 	}
 	
+	const int programCount() const
+	{
+		return _programs.size();
+	}
+	
+	const std::vector<RingProgram *> &programs() const
+	{
+		return _programs;
+	}
+	
 	std::string desc() const;
 
 	/** get the first graph of the next residue following along the nodes.
@@ -137,6 +147,8 @@ private:
 	std::vector<Atom *> _anchors;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<BondTorsion *, AtomGraph *> _torsion2Graph;
+	
+	std::vector<RingProgram *> _programs;
 
 	int _graphsDone = 0;
 	int _anchorsDone = 0;
