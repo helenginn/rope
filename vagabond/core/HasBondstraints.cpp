@@ -19,6 +19,7 @@
 #include <iostream>
 #include "HasBondstraints.h"
 #include "BondTorsion.h"
+#include "HyperValue.h"
 #include "BondLength.h"
 #include "BondAngle.h"
 #include "Chirality.h"
@@ -44,10 +45,16 @@ HasBondstraints::HasBondstraints(const HasBondstraints &other)
 	_centralBondAngles = other._centralBondAngles;
 	_terminalBondAngles = other._terminalBondAngles;
 	_torsions = other._torsions;
+	_hyperValues = other._hyperValues;
 	_terminalTorsions = other._terminalTorsions;
 	_centralTorsions = other._centralTorsions;
 	_chirals = other._chirals;
 
+}
+
+bool HasBondstraints::hasHyperValue(HyperValue *hv)
+{
+	return (_hyperValueMap.count(hv->key(0)));
 }
 
 bool HasBondstraints::hasBondAngle(BondAngle *angle)
@@ -111,6 +118,22 @@ void HasBondstraints::addBondstraint(BondAngle *angle)
 	for (size_t i = 0; i < angle->keyCount(); i++)
 	{
 		_angleMap[angle->key(i)] = angle;
+	}
+}
+
+void HasBondstraints::addBondstraint(HyperValue *hv)
+{
+	if (hasHyperValue(hv))
+	{
+		return;
+	}
+	
+	_bondstraints.push_back(hv);
+	_hyperValues.push_back(hv);
+
+	for (size_t i = 0; i < hv->keyCount(); i++)
+	{
+		_hyperValueMap[hv->key(i)] = hv;
 	}
 }
 
@@ -178,6 +201,18 @@ void HasBondstraints::deleteBondstraints()
 
 		_bondstraints.clear();
 	}
+}
+
+HyperValue *HasBondstraints::findHyperValue(Atom *atom)
+{
+	Bondstraint::Key key = Bondstraint::Key(atom);
+	if (_hyperValueMap.count(key))
+	{
+		HyperValue *hv = static_cast<HyperValue *>(_hyperValueMap[key]);
+		return hv;
+	}
+	
+	return nullptr;
 }
 
 BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right,

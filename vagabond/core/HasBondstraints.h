@@ -29,6 +29,7 @@ class BondTorsion;
 class Chirality;
 class Atom;
 class AtomGroup;
+class HyperValue;
 
 class HasBondstraints
 {
@@ -40,10 +41,24 @@ public:
 	void addBondstraint(BondAngle *straint);
 	void addBondstraint(BondTorsion *straint);
 	void addBondstraint(Chirality *straint);
+	void addBondstraint(HyperValue *straint);
 	
 	size_t bondstraintCount()
 	{
 		return _bondstraints.size();
+	}
+
+	/** @returns number of bond lengths involved with given atom */
+	size_t hyperValueCount() const
+	{
+		return _hyperValues.size();
+	}
+	
+	/** @param i index
+	  * @returns specific bond length involving atom */
+	HyperValue *hyperValue(int i) const 
+	{
+		return _hyperValues[i];
 	}
 
 	/** @returns number of bond lengths involved with given atom */
@@ -59,6 +74,7 @@ public:
 		return _bondLengths[i];
 	}
 	
+	HyperValue *findHyperValue(Atom *a);
 	BondLength *findBondLength(Atom *a, Atom *b);
 	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d);
 	Chirality *findChirality(Atom *cen, Atom *a, Atom *b, Atom *c);
@@ -172,6 +188,7 @@ protected:
 	bool hasBondAngle(BondAngle *angle);
 	bool hasTorsion(BondTorsion *torsion);
 	bool hasChirality(Chirality *chir);
+	bool hasHyperValue(HyperValue *hv);
 private:
 	bool _owns = false;
 
@@ -180,6 +197,7 @@ private:
 	std::vector<BondAngle *> _bondAngles;
 	std::vector<BondAngle *> _centralBondAngles;
 	std::vector<BondAngle *> _terminalBondAngles;
+	std::vector<HyperValue *> _hyperValues;
 
 	std::vector<BondTorsion *> _torsions;
 	std::vector<BondTorsion *> _terminalTorsions;
@@ -189,6 +207,7 @@ private:
 	std::map<Bondstraint::Key, Bondstraint *> _lengthMap;
 	std::map<Bondstraint::Key, Bondstraint *> _angleMap;
 	std::map<Bondstraint::Key, Bondstraint *> _chiralMap;
+	std::map<Bondstraint::Key, Bondstraint *> _hyperValueMap;
 
 	std::vector<Chirality *> _chirals;
 };
