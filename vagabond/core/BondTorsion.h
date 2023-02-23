@@ -23,11 +23,11 @@ class AtomGroup;
 class Atom;
 
 #include "Bondstraint.h"
-#include "ResidueId.h"
+#include "Parameter.h"
 #include "../utils/glm_import.h"
 #include <stdexcept>
 
-class BondTorsion : public Bondstraint
+class BondTorsion : public Parameter
 {
 public:
 	/** ownership is taken over by the AtomGroup after creation */
@@ -44,21 +44,36 @@ public:
 	
 	double measurement(BondTorsion::Source source);
 	double startingAngle();
+	
+	virtual bool isTorsion() const
+	{
+		return true;
+	}
 
 	double angle() const
 	{
 		return _angle;
 	}
 
-	void setRefinedAngle(double angle)
+	void setRefinedAngle(const double angle)
 	{
 		_refinedAngle = angle;
 		_refined = true;
 	}
 	
+	virtual void setValue(const double value)
+	{
+		setRefinedAngle(value);
+	}
+	
 	const double refinedAngle() const
 	{
 		return _refinedAngle;
+	}
+
+	virtual const double value()
+	{
+		return startingAngle();
 	}
 	
 	Atom *atom(int i) const
@@ -70,12 +85,12 @@ public:
 		throw std::runtime_error("asked for silly atom number from bond angle");
 	}
 	
-	bool coversMainChain();
+	virtual bool coversMainChain();
 	bool isPeptideBond() const;
 
 	bool spansMultipleChains() const;
 	
-	const ResidueId residueId();
+	virtual const ResidueId residueId();
 	
 	bool atomIsTerminal(Atom *a)
 	{
@@ -102,7 +117,7 @@ public:
 		else return Key(_d, _c, _b, _a);
 	}
 
-	bool isConstrained() const;
+	virtual bool isConstrained() const;
 	
 	void setConstrained(bool constrained)
 	{
@@ -115,6 +130,11 @@ public:
 	
 	virtual const std::string desc() const;
 	virtual const std::string reverse_desc() const;
+
+	virtual bool hasDesc(std::string d) const
+	{
+		return (d == desc() || d == reverse_desc());
+	}
 	
 	static double maxSeparation()
 	{
