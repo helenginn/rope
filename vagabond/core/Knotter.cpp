@@ -19,14 +19,17 @@
 #include <iostream>
 #include "Knotter.h"
 #include "BondAngle.h"
+#include "HyperValue.h"
 #include "BondTorsion.h"
 #include "BondLength.h"
 #include "Chirality.h"
 #include "AtomGroup.h"
 #include "Atom.h"
+#include "RingProgrammer.h"
 #include "GeometryTable.h"
 
-Knotter::Knotter(AtomGroup *group, GeometryTable *table)
+Knotter::Knotter(AtomGroup *group, GeometryTable *table) 
+: _programmers(*RingProgrammer::allProgrammers())
 {
 	_group = group;
 	_table = table;
@@ -160,7 +163,7 @@ void Knotter::createBondAngles(Atom *atom)
 				continue;
 			}
 
-			BondAngle *angle = new BondAngle(_group, start, atom, end, standard);
+			new BondAngle(_group, start, atom, end, standard);
 		}
 	}
 }
@@ -186,7 +189,15 @@ void Knotter::createBondTorsion(BondAngle *first, BondAngle *second)
 	{
 		torsion->setConstrained(true);
 	}
+}
 
+void Knotter::createHyperValues(Atom *atom, RingProgrammer *programmer)
+{
+	for (size_t i = 0; i < programmer->specialTorsionCount(); i++)
+	{
+		std::string name = programmer->specialTorsion(i);
+		new HyperValue(_group, atom, name, 0.f);
+	}
 }
 
 void Knotter::findBondTorsions()
@@ -221,6 +232,26 @@ void Knotter::findBondAngles()
 		if (atom->bondLengthCount() > 1)
 		{
 			createBondAngles(atom);
+		}
+	}
+}
+
+void Knotter::findHyperValues()
+{
+	AtomGroup &group = *_group;
+	for (size_t i = 0; i < group.size(); i++)
+	{
+		Atom *atom = group[i];
+		
+		for (RingProgrammer *programmer : _programmers)
+		{
+			const std::string &pin = programmer->pinnedAtom();
+			const std::string &code = programmer->code();
+
+			if (atom->atomName() == pin && atom->code() == code)
+			{
+				createHyperValues(atom, programmer);
+			}
 		}
 	}
 }
@@ -333,6 +364,7 @@ void Knotter::knot()
 		{
 			findBondTorsions();
 			findChiralCentres();
+			findHyperValues();
 		}
 	}
 }

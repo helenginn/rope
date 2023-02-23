@@ -22,6 +22,7 @@
 class Atom;
 class AtomGroup;
 class GeometryTable;
+class RingProgrammer;
 class BondAngle;
 
 #include <vector>
@@ -64,14 +65,17 @@ private:
 	void findBondAngles();
 	void findBondTorsions();
 	void findChiralCentres();
+	void findHyperValues();
 	void createBondAngles(Atom *atom);
 	void createBondTorsion(BondAngle *first, BondAngle *second);
 	void checkAtomChirality(Atom *atom, bool use_dictionary);
 	void checkAtoms(Atom *atom, int start);
+	void createHyperValues(Atom *atom, RingProgrammer *programmer);
 
 	AtomGroup *_group;
 	GeometryTable *_table;
 	std::vector<std::string> _warnings;
+	std::vector<RingProgrammer *> &_programmers;
 
 	bool _doLengths = true;
 	bool _doAngles = true;
