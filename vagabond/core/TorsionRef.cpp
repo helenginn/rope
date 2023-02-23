@@ -26,7 +26,7 @@ TorsionRef::TorsionRef()
 
 }
 
-TorsionRef::TorsionRef(BondTorsion *tmp)
+TorsionRef::TorsionRef(Parameter *tmp)
 {
 	if (tmp == nullptr)
 	{
@@ -34,7 +34,7 @@ TorsionRef::TorsionRef(BondTorsion *tmp)
 	}
 
 	_desc = tmp->desc();
-	_torsion = tmp;
+	_parameter = tmp;
 	organiseDescriptions();
 }
 
@@ -97,5 +97,4 @@ bool TorsionRef::coversMainChain() const
 	}
 
 	return true;
-
 }

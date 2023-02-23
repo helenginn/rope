@@ -56,7 +56,7 @@ public:
 		_refinedAngle = angle;
 	}
 
-	TorsionRef(BondTorsion *tmp);
+	TorsionRef(Parameter *tmp);
 	
 	const std::string &desc() const
 	{
@@ -99,7 +99,7 @@ private:
 	std::string _reverse_desc;
 	float _refinedAngle = 0;
 	float _tmpAngle = 0;
-	BondTorsion *_torsion = nullptr;
+	Parameter *_parameter = nullptr;
 };
 
 inline void to_json(json &j, const TorsionRef &value)
