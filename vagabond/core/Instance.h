@@ -33,7 +33,7 @@ using nlohmann::json;
 
 struct ResidueTorsion;
 class AtomContent;
-class BondTorsion;
+class Parameter;
 class Interface;
 class AtomGroup;
 class Polymer;
@@ -102,7 +102,7 @@ public:
 	virtual Residue *const equivalentLocal(const ResidueId &m_id) const
 	{ return nullptr; }
 
-	float valueForTorsionFromList(BondTorsion *bt,
+	float valueForTorsionFromList(Parameter *bt,
 	                              const std::vector<ResidueTorsion> &list,
 	                              const std::vector<Angular> &values,
 	                              std::vector<bool> &found);

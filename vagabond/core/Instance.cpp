@@ -22,7 +22,7 @@
 #include "PdbFile.h"
 #include "Superpose.h"
 #include "AtomContent.h"
-#include "BondTorsion.h"
+#include "Parameter.h"
 #include "Environment.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
@@ -258,12 +258,12 @@ const Residue *Instance::localResidueForResidueTorsion(const ResidueTorsion &rt)
 	return equivalentLocal(master);
 }
 
-float Instance::valueForTorsionFromList(BondTorsion *bt,
+float Instance::valueForTorsionFromList(Parameter *param,
                                         const std::vector<ResidueTorsion> &list,
                                         const std::vector<Angular> &values,
                                         std::vector<bool> &found)
 {
-	ResidueId target = bt->residueId();
+	ResidueId target = param->residueId();
 	Residue *master = equivalentMaster(target);
 	
 	if (master == nullptr)
@@ -287,7 +287,7 @@ float Instance::valueForTorsionFromList(BondTorsion *bt,
 
 		const std::string &desc = list[i].torsion.desc();
 		
-		if (desc != bt->desc() && desc != bt->reverse_desc())
+		if (param->hasDesc(desc))
 		{
 			continue;
 		}
