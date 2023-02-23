@@ -33,7 +33,7 @@ public:
 
 	virtual void setup();
 	
-	/* typically referring to torsion angle values in order of cluster's
+	/* typically referring to parameter angle values in order of cluster's
 	 * torsion angle headers */
 	typedef std::vector<float> Point;
 
@@ -185,19 +185,19 @@ public:
 		_wayPoints[idx] = wps;
 	}
 	
-	size_t torsionCount()
+	size_t parameterCount()
 	{
-		return _torsions.size();
+		return _parameters.size();
 	}
 	
-	BondTorsion *torsion(int i)
+	Parameter *parameter(int i)
 	{
-		return _torsions[i];
+		return _parameters[i];
 	}
 	
-	void addTorsion(BondTorsion *t)
+	void addParameter(Parameter *t)
 	{
-		_torsions.push_back(t);
+		_parameters.push_back(t);
 	}
 	
 	const std::vector<bool> &flips() const
@@ -220,7 +220,7 @@ protected:
 	
 	void clearMask()
 	{
-		_mask = std::vector<bool>(_torsions.size(), true);
+		_mask = std::vector<bool>(_parameters.size(), true);
 	}
 
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
@@ -319,7 +319,7 @@ private:
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
 
-	std::vector<BondTorsion *> _torsions;
+	std::vector<Parameter *> _parameters;
 
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
@@ -339,7 +339,7 @@ private:
 	
 	InterpolationType _type = Polynomial;
 	
-	/* int: referring to torsion angle via _destination[int] */
+	/* int: referring to parameter angle via _destination[int] */
 	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
 };

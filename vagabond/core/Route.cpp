@@ -323,7 +323,7 @@ void Route::prepareDestination()
 	const std::vector<ResidueTorsion> &list = _cluster->dataGroup()->headers();
 	std::vector<bool> found(list.size(), false);
 
-	_torsions.clear();
+	_parameters.clear();
 	_destination.clear();
 
 	int count = 0;
@@ -341,7 +341,7 @@ void Route::prepareDestination()
 				v = 0;
 			}
 
-			addTorsion(t);
+			addParameter(t);
 			_destination.push_back(v);
 			
 			/* each calculator will only be sensitive to a subset of our
@@ -360,9 +360,9 @@ void Route::prepareDestination()
 
 int Route::indexOfTorsion(BondTorsion *t)
 {
-	for (size_t i = 0; i < torsionCount(); i++)
+	for (size_t i = 0; i < parameterCount(); i++)
 	{
-		if (torsion(i) == t)
+		if (parameter(i) == t)
 		{
 			return i;
 		}
@@ -425,7 +425,7 @@ void Route::printWayPoints()
 	std::cout << "Waypoints:" << std::endl;
 	for (size_t i = 0; i < wayPointCount(); i++)
 	{
-		std::cout << torsion(i)->desc() << " ";
+		std::cout << parameter(i)->desc() << " ";
 		std::cout << " flip: " << (flip(i) ? "yes" : "no") << "; ";
 		for (size_t j = 0; j < wayPointCount(); j++)
 		{
@@ -446,7 +446,7 @@ void Route::setDestination(Point &d)
 void Route::recalculateDestination()
 {
 	int count = 0;
-	_torsions.clear();
+	_parameters.clear();
 
 	for (BondCalculator *calc : _calculators)
 	{
@@ -469,7 +469,7 @@ void Route::recalculateDestination()
 		_calc2Dims[calc] = calc_count;
 	}
 	
-	std::cout << "Torsion count: " << torsionCount() << std::endl;
+	std::cout << "Parameter count: " << parameterCount() << std::endl;
 	std::cout << "Recalculated count: " << count << std::endl;
 }
 

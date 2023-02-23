@@ -165,7 +165,7 @@ void PlausibleRoute::postScore(float score)
 
 bool PlausibleRoute::validateMainTorsion(int i, bool over_mag)
 {
-	if (_mainsOnly && !torsion(i)->coversMainChain())
+	if (_mainsOnly && !parameter(i)->coversMainChain())
 	{
 		return false;
 	}
@@ -928,19 +928,27 @@ void PlausibleRoute::printWaypoints()
 	std::cout << ",start,end,";
 	std::cout << std::endl;
 
-	for (size_t i = 0; i < torsionCount(); i++)
+	for (size_t i = 0; i < parameterCount(); i++)
 	{
-		BondTorsion *t = torsion(i);
+		Parameter *t = parameter(i);
 		
 		if (!t->coversMainChain())
 		{
 			continue;
 		}
 		
-		float start = t->refinedAngle();
+		float start = t->value();
 		float diff = getTorsionAngle(i);
 		
-		std::cout << t->atom(1)->desc() << ":" << t->desc() << ",";
+		if (t->isTorsion())
+		{
+			BondTorsion *tmp = static_cast<BondTorsion *>(t);
+			std::cout << tmp->atom(1)->desc() << ":" << tmp->desc() << ",";
+		}
+		else
+		{
+			std::cout << t->desc() << ",";
+		}
 		std::cout << start << "," << start + diff << ",";
 		
 		PolyFit fit = polynomialFit(i);
