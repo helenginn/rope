@@ -136,6 +136,7 @@ vagafiles = [
 'MolRefiner.h',
 'ObjectGroup.h',
 'Path.h',
+'Parameter.h',
 'PdbFile.h',
 'PolymerEntity.h',
 'PolymerEntityManager.h',
