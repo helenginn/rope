@@ -146,7 +146,7 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	
 	Chirality *ch = primary->findChirality(primary, atom, gp_atom, other_atom);
 	Atom *tmp = nullptr;
-	int sign = ch->get_sign(&atom, &gp_atom, &other_atom, &tmp);
+	int sign = ch->get_sign(&atom, &other_atom, &gp_atom, &tmp);
 	l.sign = sign;
 
 	_branchMapping.push_back(l);
@@ -182,7 +182,6 @@ void RingProgram::alignBranchMembers(std::vector<AtomBlock> &blocks)
 	for (Lookup &l : _branchMapping)
 	{
 		glm::mat3x3 align;
-		std::cout << "sign: " << l.sign << std::endl;
 		align = bond_aligned_matrix(l.lengths[0], l.lengths[1], l.lengths[2],
 		                            l.angles[0], l.angles[1], l.angles[2]);
 		
@@ -194,18 +193,26 @@ void RingProgram::alignBranchMembers(std::vector<AtomBlock> &blocks)
 		glm::vec3 gp_diff = gp_pos - middle_pos;
 		glm::vec3 other_diff = other_pos - middle_pos;
 		glm::vec3 cross_target = glm::cross(gp_diff, other_diff);
+
 		glm::vec3 cross_moving = glm::cross(align[2], align[1]);
+		cross_moving = glm::normalize(cross_moving);
+
 		if (l.sign < 0)
 		{
-			cross_target *= -1.f;
+			for (size_t i = 0; i < 3; i++)
+			{
+				align[i][2] *= -1.f;
+			}
 		}
+
+		cross_target = glm::normalize(cross_target) + middle_pos;
 
 		Superpose pose;
 		pose.forceSameHand(true);
+		pose.setForcedMeans(middle_pos, origin);
 		pose.addPositionPair(middle_pos, origin);
-		pose.addPositionPair(gp_pos, align[1]);
-		pose.addPositionPair(other_pos, align[2]);
-		pose.addPositionPair(cross_target, cross_moving);
+		pose.addPositionPair(gp_pos, align[2]);
+		pose.addPositionPair(other_pos, align[1]);
 
 		pose.superpose();
 		
@@ -214,6 +221,9 @@ void RingProgram::alignBranchMembers(std::vector<AtomBlock> &blocks)
 		glm::mat4x4 trans = pose.transformation();
 		glm::vec4 updated = trans * curr_pos;
 		glm::vec4 middle4f = glm::vec4(middle_pos, 1.f);
+		glm::vec4 dir = glm::normalize(updated - middle4f);
+		dir *= l.lengths[0];
+		updated = middle4f + dir;
 		
 		int corrected = l.curr_idx + _idx;
 		

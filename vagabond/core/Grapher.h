@@ -152,7 +152,7 @@ private:
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<BondTorsion *, AtomGraph *> _torsion2Graph;
 	
-	std::vector<RingProgrammer *> _programmers;
+	std::vector<RingProgrammer *> *_programmers = nullptr;
 	std::vector<RingProgram *> _programs;
 
 	int _graphsDone = 0;

@@ -24,10 +24,11 @@
 
 #include <fstream>
 
-RingProgrammer::RingProgrammer(std::string cyclicFile, std::string code)
+std::vector<RingProgrammer *> RingProgrammer::_rammers;
+
+RingProgrammer::RingProgrammer(std::string cyclicFile)
 {
 	_cyclicFile = cyclicFile;
-	_code = code;
 
 #ifndef __EMSCRIPTEN__
 	if (!file_exists(_cyclicFile))
@@ -49,6 +50,9 @@ RingProgrammer::RingProgrammer(std::string cyclicFile, std::string code)
 
 void RingProgrammer::setupProline()
 {
+	_code = "PRO";
+	_pinnedAtom = "CG";
+
 	{
 		ExitGroup grp;
 		grp.addCentral("N");
@@ -66,6 +70,14 @@ void RingProgrammer::setupProline()
 		grp.add("C");
 		_groups.push_back(grp);
 	}
+	
+	_specialTorsions.push_back("offset");
+	_specialTorsions.push_back("amplitude");
+}
+
+std::string RingProgrammer::specialTorsion(int i)
+{
+	return _specialTorsions[i];
 }
 
 void RingProgrammer::registerAtom(AtomGraph *ag, int idx)
@@ -396,4 +408,17 @@ std::string RingProgrammer::status()
 	
 
 	return ss.str();
+}
+
+std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
+{
+	if (_rammers.size() > 0)
+	{
+		return &_rammers;
+	}
+
+	RingProgrammer *prog = new RingProgrammer("assets/geometry/proline.json");
+	_rammers.push_back(prog);
+	
+	return &_rammers;
 }

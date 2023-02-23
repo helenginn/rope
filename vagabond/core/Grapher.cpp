@@ -65,12 +65,7 @@ Grapher::Grapher(Grapher &other)
 
 void Grapher::setupProgrammers()
 {
-	_programmers.clear();
-
-	RingProgrammer *prog = new RingProgrammer("assets/geometry/proline.json", 
-	                                          "PRO");
-
-	_programmers.push_back(prog);
+	_programmers = RingProgrammer::allProgrammers();
 }
 
 bool Grapher::preferredConnection(Atom *atom, Atom *next)
@@ -488,7 +483,7 @@ std::vector<AtomBlock> Grapher::turnToBlocks()
 			assignAtomToBlock(blocks[curr], curr, g->atom);
 
 			/* check for available programs */
-			for (RingProgrammer *programmer : _programmers)
+			for (RingProgrammer *programmer : *_programmers)
 			{
 				programmer->registerAtom(g, curr);
 				

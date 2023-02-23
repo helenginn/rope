@@ -29,8 +29,22 @@ class RingProgram;
 class RingProgrammer
 {
 public:
-	RingProgrammer(std::string cyclicFile, std::string code);
+	RingProgrammer(std::string cyclicFile);
 	
+	static std::vector<RingProgrammer *> *allProgrammers();
+	
+	std::string specialTorsion(int i);
+	
+	size_t specialTorsionCount() const
+	{
+		return _specialTorsions.size();
+	}
+	
+	const std::string &pinnedAtom() const
+	{
+		return _pinnedAtom;
+	}
+
 	RingProgram *program()
 	{
 		return _program;
@@ -149,6 +163,8 @@ private:
 	bool groupsComplete();
 	void correctIndexOffset();
 	
+	std::vector<std::string> _specialTorsions;
+	
 	std::vector<ExitGroup> _groups;
 	std::map<std::string, int> _atomLocs;
 	std::map<std::string, int> _branchLocs;
@@ -159,11 +175,14 @@ private:
 	RingProgram *_program = nullptr;
 	Cyclic _cyclic;
 	std::string _code;
+	std::string _pinnedAtom;
 
 	int _entrance = -1;
 	bool _complete = false;
 	
 	int _triggerIndex = -1;
+
+	static std::vector<RingProgrammer *> _rammers;
 };
 
 #endif
