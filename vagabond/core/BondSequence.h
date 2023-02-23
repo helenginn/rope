@@ -238,7 +238,7 @@ private:
 	TorsionBasis *_torsionBasis = nullptr;
 	TorsionBasis::Type _basisType;
 	Sampler *_sampler = nullptr;
-	std::vector<RingProgram *> _programs;
+	std::vector<RingProgram> _programs;
 #ifdef VERSION_PROLINE
 	bool _usingPrograms = true;
 #else
