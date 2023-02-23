@@ -33,7 +33,7 @@ Path::Path(PlausibleRoute *pr)
 	_type = pr->type();
 	_destination = pr->destination();
 	
-	for (size_t i = 0; i < pr->torsionCount(); i++)
+	for (size_t i = 0; i < pr->parameterCount(); i++)
 	{
 		getTorsionRef(i);
 	}
@@ -43,7 +43,7 @@ Path::Path(PlausibleRoute *pr)
 
 void Path::getTorsionRef(int idx)
 {
-	BondTorsion *t = _route->torsion(idx);
+	Parameter *t = _route->parameter(idx);
 
 	ResidueId id = t->residueId();
 	TorsionRef rt = TorsionRef(t);
@@ -150,7 +150,7 @@ PlausibleRoute *Path::toRoute()
 			std::cout << "WARNING! null bond " << _residueIds[i].str() << std::endl;
 		}
 		
-		pr->addTorsion(bt);
+		pr->addParameter(bt);
 	}
 
 	pr->clearMask();

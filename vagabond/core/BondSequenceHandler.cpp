@@ -215,14 +215,14 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 	return seq;
 }
 
-const size_t BondSequenceHandler::torsionCount() const
+const size_t BondSequenceHandler::parameterCount() const
 {
 	if (_sequences.size() == 0)
 	{
 		return 0;
 	}
 	
-	return _sequences[0]->torsionBasis()->torsionCount();
+	return _sequences[0]->torsionBasis()->parameterCount();
 }
 
 TorsionBasis *BondSequenceHandler::torsionBasis() const

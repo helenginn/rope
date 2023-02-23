@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include "ConcertedBasis.h"
-#include "BondTorsion.h"
+#include "Parameter.h"
 #include "Polymer.h"
 
 ConcertedBasis::ConcertedBasis() : TorsionBasis()
@@ -31,7 +31,7 @@ ConcertedBasis::~ConcertedBasis()
 	freeSVD(&_svd);
 }
 
-float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
+float ConcertedBasis::parameterForVector(int idx, const float *vec, int n)
 {
 	if (idx < 0)
 	{
@@ -69,7 +69,7 @@ float ConcertedBasis::torsionForVector(int idx, const float *vec, int n)
 		total++;
 	}
 	
-	BondTorsion *bt = _filtered[contracted];
+	Parameter *bt = _filtered[contracted];
 	
 	sum += ta.angle;
 
@@ -87,10 +87,10 @@ void ConcertedBasis::setupAngleList()
 	_idxs.clear();
 	_nActive = 0;
 
-	for (size_t i = 0; i < _torsions.size(); i++)
+	for (size_t i = 0; i < _params.size(); i++)
 	{
-		float start = _torsions[i]->startingAngle();
-		bool mask = !_torsions[i]->isConstrained();
+		float start = _params[i]->value();
+		bool mask = !_params[i]->isConstrained();
 		
 		if (i < _refineMask.size())
 		{
@@ -102,7 +102,7 @@ void ConcertedBasis::setupAngleList()
 		
 		if (mask)
 		{
-			_filtered.push_back(_torsions[i]);
+			_filtered.push_back(_params[i]);
 			_idxs.push_back(_nActive);
 			_nActive++;
 		}
@@ -131,10 +131,10 @@ void ConcertedBasis::prepareSVD()
 	{
 		for (size_t j = 0; j <= i; j++)
 		{
-			BondTorsion *a = _filtered[i];
-			BondTorsion *b = _filtered[j];
+			Parameter *a = _filtered[i];
+			Parameter *b = _filtered[j];
 			
-			float diff = a->similarityScore(b);
+			float diff = (i == j);
 
 			_svd.u.ptrs[i][j] = diff;
 			_svd.u.ptrs[j][i] = diff;
@@ -161,9 +161,9 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 
 	for (size_t j = 0; j < list.size(); j++)
 	{
-		for (size_t i = 0; i < _torsions.size(); i++)
+		for (size_t i = 0; i < _params.size(); i++)
 		{
-			BondTorsion *t = _torsions[i];
+			Parameter *t = _params[i];
 
 			if (_idxs[i] < 0)
 			{
@@ -179,7 +179,7 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 			
 			const std::string &desc = list[j].torsion.desc();
 
-			if (desc != t->desc() && desc != t->reverse_desc())
+			if (!t->hasDesc(desc))
 			{
 				continue;
 			}
@@ -215,9 +215,9 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 	std::cout << "Adding " << instance->id() << " axis " << axis << ", "
 	<< values.size() << " values" << std::endl;
 	
-	for (size_t i = 0; i < _torsions.size(); i++)
+	for (size_t i = 0; i < _params.size(); i++)
 	{
-		BondTorsion *t = _torsions[i];
+		Parameter *t = _params[i];
 		
 		if (_idxs[i] < 0)
 		{

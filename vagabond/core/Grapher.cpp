@@ -47,7 +47,7 @@ Grapher::Grapher(Grapher &other)
 	_atoms = other._atoms;
 	_anchors = other._anchors;
 	_atom2Graph = other._atom2Graph;
-	_torsion2Graph = other._torsion2Graph;
+	_parameter2Graph = other._parameter2Graph;
 
 	_graphsDone = other._graphsDone;
 	_anchorsDone = other._anchorsDone;
@@ -299,8 +299,8 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 			}
 		}
 
-		int idx = basis->addTorsion(_graphs[i]->torsion, _graphs[i]->atom);
-		_torsion2Graph[_graphs[i]->torsion] = _graphs[i];
+		int idx = basis->addParameter(_graphs[i]->torsion, _graphs[i]->atom);
+		_parameter2Graph[_graphs[i]->torsion] = _graphs[i];
 		_graphs[i]->torsion_idx = idx;
 	}
 }

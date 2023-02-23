@@ -257,8 +257,8 @@ void BondSequence::fetchTorsion(int idx)
 	
 	int n = (_custom ? _custom->size : 0);
 
-	double t = _torsionBasis->torsionForVector(_blocks[idx].torsion_idx,
-	                                           _currentVec, n);
+	double t = _torsionBasis->parameterForVector(_blocks[idx].torsion_idx,
+	                                             _currentVec, n);
 
 	_blocks[idx].torsion = t;
 }
@@ -740,7 +740,7 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 
 std::vector<bool> BondSequence::activeParameterMask(size_t *programs)
 {
-	std::vector<bool> mask = std::vector<bool>(_torsionBasis->torsionCount(),
+	std::vector<bool> mask = std::vector<bool>(_torsionBasis->parameterCount(),
 	                                           false);
 	
 	std::vector<RingProgram *> activePrograms;

@@ -32,7 +32,7 @@ public:
 	ConcertedBasis();
 	~ConcertedBasis();
 
-	virtual float torsionForVector(int idx, const float *vec, int n);
+	virtual float parameterForVector(int idx, const float *vec, int n);
 	virtual void prepare(int dims = 0);
 
 	/** only the torsions available in the mask will be used for calculating
@@ -54,7 +54,7 @@ public:
 	                   const std::vector<ResidueTorsion> &list,
 	                   const std::vector<Angular> &values);
 
-	const std::vector<BondTorsion *> &missingBonds() const
+	const std::vector<Parameter *> &missingBonds() const
 	{
 		return _missing;
 	}
@@ -68,7 +68,7 @@ private:
 	void setupAngleList();
 	std::vector<bool> _refineMask;
 
-	std::vector<BondTorsion *> _missing;
+	std::vector<Parameter *> _missing;
 	Residue *_unusedId{};
 
 	bool _custom = false;
@@ -79,7 +79,7 @@ private:
 	size_t _nActive;
 	int _dims;
 
-	std::vector<BondTorsion *> _filtered;
+	std::vector<Parameter *> _filtered;
 	PCA::SVD _svd{};
 };
 

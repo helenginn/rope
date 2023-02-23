@@ -428,18 +428,18 @@ void ForceField::setupContributions(MechanicalBasis *mb)
 	
 	/* allocate column vector of target gradients */
 	setupMatrix(&_targets, _restraints.size(), 1);
-	setupMatrix(&_weights, mb->torsionCount(), 1);
+	setupMatrix(&_weights, mb->parameterCount(), 1);
 
-	setupSVD(&_contributions, mb->torsionCount(), _restraints.size());
+	setupSVD(&_contributions, mb->parameterCount(), _restraints.size());
 
-	setupMatrix(&_validity, mb->torsionCount(), _restraints.size());
+	setupMatrix(&_validity, mb->parameterCount(), _restraints.size());
 	
-	for (size_t j = 0; j < mb->torsionCount(); j++)
+	for (size_t j = 0; j < mb->parameterCount(); j++)
 	{
 		int i = 0;
 		for (Restraint &r : _restraints)
 		{
-			bool valid = mb->doesTorsionAffectRestraint(r, mb->torsion(j));
+			bool valid = mb->doesTorsionAffectRestraint(r, mb->parameter(j));
 			_validity[j][i] = valid ? 1 : -1;
 			i++;
 		}
@@ -569,9 +569,9 @@ void ForceField::updateTargets(AtomPosMap &aps, MechanicalBasis *mb)
 		float val = gradientForRestraint(r);
 		_targets[idx][0] = val;
 
-		for (size_t i = 0; i < mb->torsionCount(); i++)
+		for (size_t i = 0; i < mb->parameterCount(); i++)
 		{
-			BondTorsion *t = mb->torsion(i);
+			Parameter *p = mb->parameter(i);
 
 			bool valid = _validity[i][idx] > 0;
 			
@@ -579,12 +579,18 @@ void ForceField::updateTargets(AtomPosMap &aps, MechanicalBasis *mb)
 			{
 				continue;
 			}
+			
+			if (p->isTorsion())
+			{
+				BondTorsion *t = static_cast<BondTorsion *>(p);
 
-			glm::vec3 cPos = aps.at(t->atom(1)).samples[1];
-			glm::vec3 dPos = aps.at(t->atom(2)).samples[1];
+				glm::vec3 cPos = aps.at(t->atom(1)).samples[1];
+				glm::vec3 dPos = aps.at(t->atom(2)).samples[1];
 
-			float con = contributionForRestraint(r, cPos, dPos);
-			_contributions.u[i][idx] = con;
+				float con = contributionForRestraint(r, cPos, dPos);
+				_contributions.u[i][idx] = con;
+			}
+
 		}
 
 		idx++;

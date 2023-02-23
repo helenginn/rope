@@ -178,7 +178,7 @@ bool StructureModification::fillBasis(ConcertedBasis *cb,
 
 void StructureModification::checkMissingBonds(ConcertedBasis *cb)
 {
-	for (BondTorsion *bt : cb->missingBonds())
+	for (Parameter *bt : cb->missingBonds())
 	{
 		if (bt->coversMainChain())
 		{

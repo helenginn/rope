@@ -224,7 +224,7 @@ AtomGraph *Route::grapherForTorsionIndex(int idx)
 	AtomGraph *ag = nullptr;
 	do
 	{
-		ag = grapher().graph(torsion(idx));
+		ag = grapher().graph(parameter(idx));
 	}
 	while (!ag && incrementGrapher());
 
@@ -332,9 +332,9 @@ void Route::prepareDestination()
 		TorsionBasis *basis = calc->sequence()->torsionBasis();
 		int calc_count = 0;
 		
-		for (size_t i = 0; i < basis->torsionCount(); i++)
+		for (size_t i = 0; i < basis->parameterCount(); i++)
 		{
-			BondTorsion *t = basis->torsion(i);
+			Parameter *t = basis->parameter(i);
 			float v = _instance->valueForTorsionFromList(t, list, _rawDest, found);
 			if (v != v)
 			{
@@ -453,10 +453,10 @@ void Route::recalculateDestination()
 		TorsionBasis *basis = calc->sequence()->torsionBasis();
 		int calc_count = 0;
 		
-		for (size_t i = 0; i < basis->torsionCount(); i++)
+		for (size_t i = 0; i < basis->parameterCount(); i++)
 		{
-			BondTorsion *t = basis->torsion(i);
-			addTorsion(t);
+			Parameter *t = basis->parameter(i);
+			addParameter(t);
 			
 			/* each calculator will only be sensitive to a subset of our
 			 * destination, so we need to keep records */

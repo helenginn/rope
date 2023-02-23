@@ -176,7 +176,7 @@ public:
 
 	/** name in style t<id>:<desc> to torsion angle (if available) */
 	bool torsionByName(const std::string name, Residue **res);
-
+	
 	friend void to_json(json &j, const Sequence &value);
 	friend void from_json(const json &j, Sequence &value);
 

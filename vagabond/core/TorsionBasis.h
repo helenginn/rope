@@ -22,7 +22,7 @@
 #include <vector>
 #include "Residue.h"
 
-class BondTorsion;
+class Parameter;
 class Atom;
 
 class TorsionBasis
@@ -47,23 +47,23 @@ public:
 	
 	static TorsionBasis *newBasis(Type type);
 	
-	int addTorsion(BondTorsion *torsion, Atom *atom = nullptr);
+	int addParameter(Parameter *param, Atom *atom = nullptr);
 	
 	/** provides modified torsion angle given custom vector.
-	 * @param idx index of torsion angle within full list of refined angles
+	 * @param idx index of parameter angle within full list of refined angles
 	 * @param vec custom vector of parameters
 	 * @param n total number of parameters in vec 
-	 * @returns torsion angle in degrees */
-	virtual float torsionForVector(int idx, const float *vec, int n) = 0;
+	 * @returns parameter angle in degrees */
+	virtual float parameterForVector(int idx, const float *vec, int n) = 0;
 
 	virtual void absorbVector(const float *vec, int n, 
 	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};
 
-	const size_t torsionCount() const
+	const size_t parameterCount() const
 	{
-		return _torsions.size();
+		return _params.size();
 	}
 	
 	void setReferenceAngle(int i, float a)
@@ -76,14 +76,14 @@ public:
 		return _atoms[i];
 	}
 	
-	BondTorsion *torsion(int i)
+	Parameter *parameter(int i)
 	{
-		return _torsions[i];
+		return _params[i];
 	}
 	
-	int indexForTorsion(BondTorsion *bt);
+	int indexForParameter(Parameter *param);
 protected:
-	std::vector<BondTorsion *> _torsions;
+	std::vector<Parameter *> _params;
 	std::vector<Atom *> _atoms;
 
 	struct TorsionAngle

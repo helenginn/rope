@@ -40,12 +40,12 @@ public:
 		_forceField = ff;
 	}
 
-	virtual float torsionForVector(int idx, const float *vec, int n);
+	virtual float parameterForVector(int idx, const float *vec, int n);
 	virtual void prepare(int dims = 0);
 	virtual void prepareRecalculation();
 
 	bool doesTorsionAffectRestraint(const ForceField::Restraint &r, 
-	                                const BondTorsion *t);
+	                                const Parameter *t);
 
 	void refreshMechanics(AtomPosMap &aps);
 private:

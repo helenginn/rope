@@ -25,6 +25,7 @@
 #include <vagabond/utils/svd/PCA.h>
 
 class TorsionBasis;
+class Parameter;
 class BondCalculator;
 class RingProgrammer;
 class RingProgram;
@@ -88,13 +89,13 @@ public:
 	}
 	
 	/** returns reference to node index */
-	AtomGraph *graph(BondTorsion *t) const
+	AtomGraph *graph(Parameter *t) const
 	{
-		if (_torsion2Graph.count(t) == 0)
+		if (_parameter2Graph.count(t) == 0)
 		{
 			return nullptr;
 		}
-		return _torsion2Graph.at(t);
+		return _parameter2Graph.at(t);
 	}
 	
 	/** returns reference to node index */
@@ -150,7 +151,7 @@ private:
 	std::map<Atom *, AtomBlock> _atom2Transform;
 	std::vector<Atom *> _anchors;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
-	std::map<BondTorsion *, AtomGraph *> _torsion2Graph;
+	std::map<Parameter *, AtomGraph *> _parameter2Graph;
 	
 	std::vector<RingProgrammer> _programmers;
 	std::vector<RingProgram *> _programs;

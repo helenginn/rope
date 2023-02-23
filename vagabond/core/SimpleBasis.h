@@ -26,7 +26,7 @@ class SimpleBasis : public TorsionBasis
 public:
 	SimpleBasis();
 
-	virtual float torsionForVector(int idx, const float *vec, int n);
+	virtual float parameterForVector(int idx, const float *vec, int n);
 	virtual void prepare(int dims = 0);
 private:
 

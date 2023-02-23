@@ -303,13 +303,13 @@ void PositionRefinery::stepRefine(AtomGroup *group)
 
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
 		
-		BondTorsion *t = basis->torsion(0);
-		double diff = fabs(t->refinedAngle() - ext.block.torsion);
+		Parameter *t = basis->parameter(0);
+		double diff = fabs(t->value() - ext.block.torsion);
 		
 		if (diff > 1e-2)
 		{
 			std::cout << "WARNING! " << atom->desc() << " ";
-			std::cout << t->refinedAngle() << " " << ext.block.torsion << std::endl;
+			std::cout << t->value() << " " << ext.block.torsion << std::endl;
 		}
 
 		setDimensionCount(_nActive);

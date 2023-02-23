@@ -67,7 +67,7 @@ public:
 	
 	TorsionBasis *torsionBasis() const;
 	
-	const size_t torsionCount() const;
+	const size_t parameterCount() const;
 
 	void addAnchorExtension(AnchorExtension ext);
 	void setup();

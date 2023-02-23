@@ -442,7 +442,7 @@ void BondCalculator::finish()
 
 const size_t BondCalculator::maxCustomVectorSize() const
 {
-	return _sequenceHandler->torsionCount();
+	return _sequenceHandler->parameterCount();
 }
 
 

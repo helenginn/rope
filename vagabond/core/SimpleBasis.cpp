@@ -24,7 +24,7 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 
 }
 
-float SimpleBasis::torsionForVector(int idx, const float *vec, int n)
+float SimpleBasis::parameterForVector(int idx, const float *vec, int n)
 {
 	if (idx < 0)
 	{
@@ -54,10 +54,10 @@ void SimpleBasis::prepare(int dims)
 {
 	_angles.clear();
 
-	for (size_t i = 0; i < _torsions.size(); i++)
+	for (size_t i = 0; i < _params.size(); i++)
 	{
-		float start = _torsions[i]->startingAngle();
-		bool mask = !_torsions[i]->isConstrained();
+		float start = _params[i]->value();
+		bool mask = !_params[i]->isConstrained();
 		TorsionAngle ta = {start, mask};
 		_angles.push_back(ta);
 	}

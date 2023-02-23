@@ -30,7 +30,7 @@ MechanicalBasis::MechanicalBasis()
 
 }
 
-float MechanicalBasis::torsionForVector(int idx, const float *vec, int n)
+float MechanicalBasis::parameterForVector(int idx, const float *vec, int n)
 {
 	if (idx >= 0 && idx < _mechAngles.size())
 	{
@@ -62,8 +62,15 @@ void MechanicalBasis::supplyDistances(PCA::Matrix &m, std::vector<Atom *> atoms)
 }
 
 bool MechanicalBasis::doesTorsionAffectRestraint(const ForceField::Restraint &r, 
-                                                 const BondTorsion *t)
+                                                 const Parameter *p)
 {
+	if (!p->isTorsion())
+	{
+		return true;
+	}
+	
+	const BondTorsion *t = static_cast<const BondTorsion *>(p);
+
 	Atom *a = nullptr;
 	Atom *b = nullptr;
 	r.terminalAtoms(&a, &b);
@@ -90,10 +97,10 @@ void MechanicalBasis::prepare(int dims)
 	_angles.clear();
 	_mechAngles.clear();
 
-	for (size_t i = 0; i < _torsions.size(); i++)
+	for (size_t i = 0; i < _params.size(); i++)
 	{
-		float start = _torsions[i]->startingAngle();
-		bool mask = !_torsions[i]->isConstrained();
+		float start = _params[i]->value();
+		bool mask = !_params[i]->isConstrained();
 		TorsionAngle ta = {start, mask};
 		_angles.push_back(ta);
 
@@ -107,7 +114,7 @@ void MechanicalBasis::checkForceField(AtomPosMap &aps)
 	_forceField->updateTargets(aps, this);
 	
 	for (size_t i = 0; (i < _forceField->weightCount() &&
-	                    i < torsionCount()); i++)
+	                    i < parameterCount()); i++)
 	{
 		_mechAngles[i].acceleration = _forceField->weight(i);
 	}
