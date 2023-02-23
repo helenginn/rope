@@ -333,7 +333,7 @@ void RingProgram::fetchParameters(float *currentVec, int n)
 	for (HyperValue *hv : _values)
 	{
 		int idx = _valueMapping[hv];
-		float t = _basis->torsionForVector(idx, currentVec, n);
+		float t = _basis->parameterForVector(idx, currentVec, n);
 		_name2Value[hv->name()] = t;
 	}
 

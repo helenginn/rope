@@ -393,9 +393,9 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		for (int i = 0; i < pinned->hyperValueCount(); i++)
 		{
 			HyperValue *hv = pinned->hyperValue(i);
-//			int idx = basis->addParameter(hv, pinned);
+			int idx = basis->addParameter(hv, pinned);
 			// FIXME? add to parameter2Graph of Grapher, ugh
-//			prog->setParameterFromBasis(idx, hv);
+			prog->setParameterFromBasis(idx, hv);
 		}
 
 	}
