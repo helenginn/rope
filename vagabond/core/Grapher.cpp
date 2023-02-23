@@ -33,13 +33,6 @@ Grapher::~Grapher()
 	{
 		delete _graphs[i];
 	}
-	
-	for (RingProgrammer *p : _programmers)
-	{
-		delete p;
-	}
-	
-	_programmers.clear();
 }
 
 Grapher::Grapher()
