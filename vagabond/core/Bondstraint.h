@@ -40,7 +40,7 @@ public:
 	
 	struct Key 
 	{
-		Key(Atom *a, Atom *b, Atom *c, Atom *d)
+		Key(Atom *a, Atom *b = nullptr, Atom *c = nullptr, Atom *d = nullptr)
 		{
 			atoms[0] = a;
 			atoms[1] = b;
