@@ -264,7 +264,7 @@ void BondSequence::fetchTorsion(int idx)
 
 int BondSequence::calculateBlock(int idx)
 {
-	if (_blocks[idx].silenced)
+	if (_blocks[idx].silenced && _usingPrograms)
 	{
 		// this is part of a ring program.
 		return 0;
@@ -322,7 +322,7 @@ int BondSequence::calculateBlock(int idx)
 	}
 
 	int &progidx = _blocks[idx].program;
-	if (progidx >= 0)
+	if (progidx >= 0 && _usingPrograms)
 	{
 		std::cout << "RUN!!" << std::endl;
 		_programs[progidx]->run(_blocks, idx);
