@@ -99,6 +99,10 @@ public:
 	
 	void housekeeping();
 	
+	bool hasTorsionRef(TorsionRef &ref);
+	
+	/* note that this will only update the current residue, and not affect
+	 * any associated master residues. */
 	void addTorsionRef(TorsionRef &ref);
 	TorsionRef copyTorsionRef(const std::string &desc);
 	void replaceTorsionRef(TorsionRef &newRef);
