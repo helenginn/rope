@@ -50,6 +50,13 @@ public:
 	void addPositionPair(glm::vec3 &p, glm::vec3 &q);
 	void addPositionPairs(std::vector<PosPair> &pairs);
 
+	void setForcedMeans(glm::vec3 pfm, glm::vec3 qfm)
+	{
+		_pfm = pfm;
+		_qfm = qfm;
+		_forcedTranslation = true;
+	}
+
 	void superpose();
 	float rmsd();
 	
@@ -79,6 +86,10 @@ private:
 	std::vector<PosPair> _pairs;
 	std::vector<PosPair> _originals;
 	bool _sameHand = false;
+	
+	glm::vec3 _pfm = glm::vec3(0.f);
+	glm::vec3 _qfm = glm::vec3(0.f);
+	bool _forcedTranslation = false;
 
 	glm::mat4x4 _transformation;
 	glm::mat3x3 _rotation;
