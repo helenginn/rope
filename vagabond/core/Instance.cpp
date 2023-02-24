@@ -287,7 +287,7 @@ float Instance::valueForTorsionFromList(Parameter *param,
 
 		const std::string &desc = list[i].torsion.desc();
 		
-		if (param->hasDesc(desc))
+		if (!param->hasDesc(desc))
 		{
 			continue;
 		}
