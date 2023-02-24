@@ -22,6 +22,7 @@
 #include <mutex>
 #include <vagabond/core/Cyclic.h>
 #include <vagabond/core/AtomBlock.h>
+#include <vagabond/core/Hyper2Torsion.h>
 
 class Atom;
 class TorsionBasis;
@@ -177,6 +178,7 @@ private:
 
 	RingProgram *_program = nullptr;
 	Cyclic _cyclic;
+	Hyper2Torsion _lookup;
 	std::string _code;
 	std::string _pinnedAtom;
 

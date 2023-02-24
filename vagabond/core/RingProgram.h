@@ -20,6 +20,8 @@
 #define __vagabond__RingProgram__
 
 #include <vagabond/core/Cyclic.h>
+#include <vagabond/core/Hyper2Torsion.h>
+#include <vagabond/utils/LookupTable.h>
 #include "AtomBlock.h"
 
 class HyperValue;
@@ -37,6 +39,8 @@ public:
 	{
 		return _cyclic;
 	}
+	
+	void setLookupMap(Hyper2Torsion &map);
 	
 	/** for display purposes */
 	void setLinkedAtom(Atom *atom)
@@ -94,6 +98,7 @@ private:
 	std::map<HyperValue *, int> _valueMapping;
 	std::map<std::string, float> _name2Value;
 	std::vector<HyperValue *> _values;
+	std::map<std::string, LookupTable> _lookupValues;
 	
 	struct Lookup
 	{

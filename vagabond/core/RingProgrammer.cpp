@@ -48,6 +48,7 @@ RingProgrammer::RingProgrammer(std::string cyclicFile)
 	f.close();
 	
 	_cyclic = data["cyclic"];
+	_lookup = data["lookup"];
 	
 	setupProline();
 }
@@ -340,6 +341,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 	blocks[blocks.size() - 1].program = -3;
 
 	RingProgram *prog = new RingProgram(this);
+	prog->setLookupMap(_lookup);
 	std::string &name = _groups[_entrance].central()->name;
 	prog->setRingEntranceName(name);
 	prog->setLinkedAtom(blocks[_triggerIndex].atom);
