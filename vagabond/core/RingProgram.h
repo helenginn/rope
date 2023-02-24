@@ -76,19 +76,12 @@ public:
 	void run(std::vector<AtomBlock> &blocks, int rel, float *vec, int n);
 	
 	void addTransformation(const glm::mat4x4 &trans);
-	void useExtractedPositions(const std::vector<AtomBlock> &blocks,
-	                           const std::map<Atom *, Atom::WithPos> &ex);
 private:
 	void fetchParameters(float *currentVec, int n);
-	void firstTimeFetchHyperValues(float *currentVec, int n);
 
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
 	void alignBranchMembers(std::vector<AtomBlock> &blocks);
-	bool checkParasiticIndex(const std::vector<AtomBlock> &blocks,
-	                         const std::map<Atom *, Atom::WithPos> &ex,
-	                         std::string name, std::string bond,
-	                         int idx, int i);
 
 	int lowestAlignment();
 	Cyclic _cyclic;
@@ -119,7 +112,6 @@ private:
 	std::vector<Lookup> _branchMapping;
 	std::string _entranceName;
 	int _entranceCycleIdx = -1;
-	std::vector<int> _parasiticIdxs;
 	
 	int _idx = -1;
 	bool _fetched = false;

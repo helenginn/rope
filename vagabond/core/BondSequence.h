@@ -204,7 +204,6 @@ private:
 	void fillTorsionAngles();
 	void fastCalculate();
 	void calculateCustomVector();
-	void supplyPositionsToPrograms();
 
 	int calculateBlock(int idx);
 	void fetchTorsion(int idx);

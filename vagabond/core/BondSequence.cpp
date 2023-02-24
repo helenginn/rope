@@ -507,22 +507,8 @@ void BondSequence::calculate()
 	_fullRecalc = false;
 	
 	superpose();
-	supplyPositionsToPrograms();
 
 	signal(SequencePositionsReady);
-}
-
-void BondSequence::supplyPositionsToPrograms()
-{
-	return;
-	const std::map<Atom *, Atom::WithPos> &extraction = extractPositions();
-
-	for (RingProgram &p : _programs)
-	{
-		p.useExtractedPositions(_blocks, extraction);
-	}
-
-	_programsInitialised = true;
 }
 
 double BondSequence::calculateDeviations()

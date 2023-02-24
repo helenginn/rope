@@ -196,10 +196,6 @@ void Polymer::insertTorsionAngles(AtomContent *atoms)
 			}
 			
 			double angle = ref.refinedAngle();
-			if (ref.isHyperParameter())
-			{
-//				std::cout << ref.desc() << " " << angle << std::endl;
-			}
 
 			p->setValue(angle);
 		}
