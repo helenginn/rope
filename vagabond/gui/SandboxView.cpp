@@ -27,6 +27,7 @@
 #include "Sequence.h"
 #include "AtomGroup.h"
 #include "AtomsFromSequence.h"
+#include "Cyclic.h"
 #include "CyclicView.h"
 
 SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
@@ -57,7 +58,7 @@ SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 	}
 	*/
 	
-//	addCyclicView(nullptr);
+	addCyclicView(nullptr);
 }
 
 void SandboxView::addCyclicView(Cyclic *cyclic)
@@ -161,26 +162,15 @@ void SandboxView::scan()
 		}
 	}
 	
-	std::ofstream proline;
-	proline.open("lookup.txt");
-	proline << "psi, x2, amp, offset" << std::endl;
-
-	for (auto it = results.begin(); it != results.end(); it++)
-	{
-		float f = it->first;
-		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-		{
-			float x2 = jt->first;
-			float amp = jt->second.first;
-			float off = jt->second.second;
-			proline << f << ", " << x2 << ", ";
-			proline << amp << ", " << off << ", ";
-			proline << std::endl;
-		}
-
-	}
+	json data;
+	data["cyclic"] = *_cyclic->cyclic();
+	data["lookup"] = results;
 	
-	proline.close();
+	std::ofstream file;
+	file.open("proline_lookup.json");
+	file << data;
+	file << std::endl;
+	file.close();
 }
 
 void SandboxView::buttonPressed(std::string tag, Button *button)
@@ -219,50 +209,7 @@ void SandboxView::respond()
 
 void SandboxView::doThings()
 {
-	/*
-	if (_atoms)
-	{
-		Atom *cg = _atoms->firstAtomWithName("CG");
-		HyperValue *hv = cg->hyperValue(0);
 
-		float val = hv->value();
-		val += 0.1;
-		hv->setValue(val);
-
-		_atoms->recalculate();
-
-		std::vector<Atom *> cas = _atoms->atomsWithName("CA");
-		std::vector<Atom *> cds = _atoms->atomsWithName("CD");
-		float f = 0; float x1 = 0; float x2 = 0; float x3 = 0;
-		
-		for (Atom *cd : cds)
-		{
-			if (cd->code() != "PRO")
-			{
-				continue;
-			}
-
-			BondTorsion *x3_ = cd->findBondTorsion("N-CD-CG-CB");
-			x3 = x3_->measurement(BondTorsion::SourceDerived);
-		}
-		
-		for (Atom *ca : cas)
-		{
-			if (ca->code() != "PRO")
-			{
-				continue;
-			}
-
-			BondTorsion *x1_ = ca->findBondTorsion("CG-CB-CA-N");
-			x1 = x1_->measurement(BondTorsion::SourceDerived);
-			BondTorsion *x2_ = ca->findBondTorsion("CA-CB-CG-CD");
-			x2 = x2_->measurement(BondTorsion::SourceDerived);
-		}
-
-		std::cout << "psi/x1/x2/x3 " << f << " " << x1 << " ";
-		std::cout << x2 << " " << x3 << std::endl;
-	}
-	*/
 }
 
 void SandboxView::updateInfo()
