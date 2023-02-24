@@ -138,7 +138,7 @@ void BondSequence::prepareTorsionBasis()
 		{
 			dimensions = _sampler->dims();
 		}
-		_torsionBasis->prepare(dimensions + 1);
+//		_torsionBasis->prepare(dimensions + 1);
 	}
 }
 
@@ -479,10 +479,10 @@ void BondSequence::calculate()
 	
 	if (_torsionBasis != nullptr)
 	{
-		_torsionBasis->prepareRecalculation();
+//		_torsionBasis->prepareRecalculation();
 	}
 
-	if (_skipSections)
+	if (_skipSections && !_fullRecalc)
 	{
 		fastCalculate();
 		return;
@@ -507,7 +507,21 @@ void BondSequence::calculate()
 	_fullRecalc = false;
 	
 	superpose();
+	supplyPositionsToPrograms();
+
 	signal(SequencePositionsReady);
+}
+
+void BondSequence::supplyPositionsToPrograms()
+{
+	const std::map<Atom *, Atom::WithPos> &extraction = extractPositions();
+
+	for (RingProgram &p : _programs)
+	{
+		p.useExtractedPositions(_blocks, extraction);
+	}
+
+	_programsInitialised = true;
 }
 
 double BondSequence::calculateDeviations()

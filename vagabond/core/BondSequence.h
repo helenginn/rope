@@ -204,6 +204,7 @@ private:
 	void fillTorsionAngles();
 	void fastCalculate();
 	void calculateCustomVector();
+	void supplyPositionsToPrograms();
 
 	int calculateBlock(int idx);
 	void fetchTorsion(int idx);
@@ -243,6 +244,8 @@ private:
 #else
 	bool _usingPrograms = false;
 #endif
+
+	bool _programsInitialised = false;
 	
 	float *_currentVec = nullptr;
 
