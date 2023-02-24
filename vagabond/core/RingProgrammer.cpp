@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/version.h>
 #include "RingProgrammer.h"
 #include "RingProgram.h"
 #include "FileManager.h"
@@ -441,6 +442,10 @@ std::string RingProgrammer::status()
 std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 {
 	std::lock_guard<std::mutex> lg(_mutex);
+#ifndef VERSION_PROLINE
+	return &_rammers;
+#endif
+
 	if (_rammers.size() > 0)
 	{
 		return &_rammers;
