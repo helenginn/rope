@@ -126,7 +126,6 @@ vagafiles = [
 'engine/Handler.h',
 'HasBondstraints.h',
 'HyperValue.h',
-'Hyper2Torsion.h',
 'HasBondSequenceCustomisation.h',
 'Knotter.h',
 'Interaction.h',

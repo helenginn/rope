@@ -1,7 +1,6 @@
 utilfiles = [
 'Canonical.cpp',
 'FileReader.cpp',
-'LookupTable.cpp',
 'SpecialTable.cpp',
 'svd/svdcmp.cpp',
 'svd/PCA.cpp',
@@ -12,7 +11,6 @@ utilfiles = [
 'version.h',
 'polyfit.h',
 'Hypersphere.h',
-'LookupTable.h',
 'SpecialTable.h',
 'ProbDist.h',
 ]

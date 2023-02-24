@@ -20,7 +20,6 @@
 
 #define private public // evil but delicious
 
-#include <vagabond/utils/LookupTable.h>
 #include <vagabond/utils/SpecialTable.h>
 
 namespace tt = boost::test_tools;
@@ -85,49 +84,3 @@ BOOST_AUTO_TEST_CASE(get_amp_and_offset_A)
 	BOOST_TEST(off == 0.1777, tt::tolerance(0.01));
 }
 
-BOOST_AUTO_TEST_CASE(uninterpolated_lookup_returns_value)
-{
-	LookupTable table = LookupTable::defaultTable();
-	
-	float val = table.interpolate(0.0f, 0.0f);
-	
-	BOOST_TEST(val == -2., tt::tolerance(0.001));
-}
-
-BOOST_AUTO_TEST_CASE(x_interpolated_lookup_returns_value)
-{
-	LookupTable table = LookupTable::defaultTable();
-	
-	float val = table.interpolate(0.5f, 0.0f);
-	
-	BOOST_TEST(val == -1., tt::tolerance(0.001));
-}
-
-/*
-BOOST_AUTO_TEST_CASE(y_interpolated_lookup_returns_value)
-{
-	LookupTable table = LookupTable::defaultTable();
-	
-	float val = table.interpolate(1.0f, 0.5f);
-	
-	BOOST_TEST(val == +3., tt::tolerance(0.001));
-}
-*/
-
-BOOST_AUTO_TEST_CASE(xy_interpolated_lookup_returns_value)
-{
-	LookupTable table = LookupTable::defaultTable();
-	
-	float val = table.interpolate(0.5f, 0.5f);
-	
-	BOOST_TEST(val == +2., tt::tolerance(0.001));
-}
-
-BOOST_AUTO_TEST_CASE(xy_interpolated_angle)
-{
-	LookupTable table = LookupTable::defaultAngular();
-	
-	float val = table.interpolate(0.5f, 0.0f);
-	
-	BOOST_TEST(val == +0., tt::tolerance(0.001));
-}

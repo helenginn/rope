@@ -41,8 +41,6 @@ public:
 		return _cyclic;
 	}
 	
-	void setLookupMap(Hyper2Torsion &map);
-	
 	/** for display purposes */
 	void setLinkedAtom(Atom *atom)
 	{
@@ -93,7 +91,6 @@ private:
 	std::map<HyperValue *, int> _valueMapping;
 	std::map<std::string, float> _name2Value;
 	std::vector<HyperValue *> _values;
-	std::map<std::string, LookupTable> _lookupValues;
 	SpecialTable _table;
 	
 	struct Lookup

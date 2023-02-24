@@ -42,29 +42,6 @@ RingProgram::~RingProgram()
 	}
 }
 
-void RingProgram::setLookupMap(Hyper2Torsion &map)
-{
-	if (_lookupValues.size() > 0)
-	{
-		return;
-	}
-
-	LookupMap amps, offsets;
-	
-	for (auto it = map.begin(); it != map.end(); it++)
-	{
-		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
-		{
-			amps[it->first][jt->first] = jt->second.first;
-			offsets[it->first][jt->first] = jt->second.second * 2;
-		}
-	}
-	
-	_lookupValues["amplitude"] = LookupTable(amps);
-	_lookupValues["offset"] = LookupTable(offsets);
-	_lookupValues["offset"].setAngle(true);
-}
-
 void RingProgram::makeLinkToAtom()
 {
 	if (_atom)
