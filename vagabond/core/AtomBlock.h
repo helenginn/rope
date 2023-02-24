@@ -28,6 +28,9 @@ struct AtomBlock
 {
 	bool flag = true;
 	bool silenced = false;
+	
+	// program = idx when program should start, -1 when not in use,
+	// -2 when in the middle of program and -3 when program is done
 	int program = -1;
 	Atom *atom = nullptr;
 	char element[3] = "\0";
