@@ -66,6 +66,11 @@ public:
 		return _params.size();
 	}
 	
+	const float &referenceAngle(int i) const
+	{
+		return _angles[i].angle;
+	}
+	
 	void setReferenceAngle(int i, float a)
 	{
 		_angles[i].angle = a;
