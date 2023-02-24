@@ -301,14 +301,18 @@ void Route::populateWaypoints()
 
 }
 
+void Route::reportFound()
+{
+	for (size_t i = 0; i < _missing.size(); i++)
+	{
+		std::cout << "Missing torsion " << _missing[i]->desc() << " for "
+		<< "residue " << _missing[i]->residueId().str() << std::endl;
+	}
+
+}
+
 void Route::prepareDestination()
 {
-	if (_rawDest.size() == 0 && _destination.size() > 0)
-	{
-		recalculateDestination();
-		return;
-	}
-	
 	if (_cluster == nullptr)
 	{
 		return;
@@ -324,6 +328,7 @@ void Route::prepareDestination()
 	std::vector<bool> found(list.size(), false);
 
 	_parameters.clear();
+	_missing.clear();
 	_destination.clear();
 
 	int count = 0;
@@ -338,6 +343,7 @@ void Route::prepareDestination()
 			float v = _instance->valueForTorsionFromList(t, list, _rawDest, found);
 			if (v != v)
 			{
+				_missing.push_back(t);
 				v = 0;
 			}
 
@@ -355,6 +361,8 @@ void Route::prepareDestination()
 		_calc2Dims[calc] = calc_count;
 	}
 	
+	reportFound();
+
 	populateWaypoints();
 }
 

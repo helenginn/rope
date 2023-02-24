@@ -317,9 +317,11 @@ private:
 	};
 	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
+	void reportFound();
 	void calculateAtomDeviations(Score &score);
 
 	std::vector<Parameter *> _parameters;
+	std::vector<Parameter *> _missing;
 
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
