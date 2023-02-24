@@ -54,6 +54,11 @@ public:
 		_rotate = !_rotate;
 	}
 	
+	Cyclic *cyclic()
+	{
+		return _cyclic;
+	}
+	
 	std::string angles();
 	std::string lengths();
 private:
