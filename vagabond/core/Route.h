@@ -297,7 +297,6 @@ protected:
 
 	void populateWaypoints();
 	void prepareDestination();
-	void recalculateDestination();
 
 	bool incrementToAtomGraph(AtomGraph *ag);
 	AtomGraph *grapherForTorsionIndex(int idx);

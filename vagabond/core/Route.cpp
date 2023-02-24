@@ -451,36 +451,6 @@ void Route::setDestination(Point &d)
 	_destination = d;
 }
 
-void Route::recalculateDestination()
-{
-	int count = 0;
-	_parameters.clear();
-
-	for (BondCalculator *calc : _calculators)
-	{
-		TorsionBasis *basis = calc->sequence()->torsionBasis();
-		int calc_count = 0;
-		
-		for (size_t i = 0; i < basis->parameterCount(); i++)
-		{
-			Parameter *t = basis->parameter(i);
-			addParameter(t);
-			
-			/* each calculator will only be sensitive to a subset of our
-			 * destination, so we need to keep records */
-			_calc2Destination[calc].push_back(count);
-			count++;
-			calc_count++;
-		}
-		
-		std::cout << "Calc count: " << calc_count << std::endl;
-		_calc2Dims[calc] = calc_count;
-	}
-	
-	std::cout << "Parameter count: " << parameterCount() << std::endl;
-	std::cout << "Recalculated count: " << count << std::endl;
-}
-
 float Route::getTorsionAngle(int i)
 {
 	if (!flip(i))
