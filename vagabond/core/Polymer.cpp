@@ -135,41 +135,27 @@ void Polymer::estimateProlines(AtomContent *atoms)
 			{
 				Atom *atom = hv->atom();
 
-				float x2 = +1; float x3 = -1; float ipsi = 0;
 				BondTorsion *x2_ = atom->findBondTorsion("CA-CB-CG-CD");
-				BondTorsion *x3_ = atom->findBondTorsion("N-CD-CG-CB");
+				if (x2_)
+				{
+					float x2 = x2_->measurement(BondTorsion::SourceDerived);
+					hv->setValue(x2);
+				}
 
+			}
+			else if (hv->name() == "offset")
+			{
+				Atom *atom = hv->atom();
 				Atom *ca = atoms->atomByIdName(atom->residueId(), "CA");
 				if (ca)
 				{
 					BondTorsion *psi = ca->findBondTorsion("C-N-CA-C");
 					if (psi)
 					{
-						ipsi = psi->measurement(BondTorsion::SourceInitial);
+						float ipsi = psi->measurement(BondTorsion::SourceInitial);
+						hv->setValue(ipsi);
 					}
 				}
-				
-				if (x2_ && x3_)
-				{
-					x2 = x2_->measurement(BondTorsion::SourceDerived);
-					x3 = x3_->measurement(BondTorsion::SourceDerived);
-					BondTorsion *x1_ = atom->findBondTorsion("CG-CB-CA-N");
-
-					float ix1 = x1_->measurement(BondTorsion::SourceInitial);
-					float ix2 = x2_->measurement(BondTorsion::SourceInitial);
-					float ix3 = x3_->measurement(BondTorsion::SourceInitial);
-					
-					std::cout << "proline " << ipsi << " " << ix1 << " ";
-					std::cout << ix2 << " " << ix3 << std::endl;
-				}
-
-
-				int mult = (x3 > x2) ? 1 : -1;
-				hv->setValue(5.);
-			}
-			else if (hv->name() == "offset")
-			{
-				hv->setValue(1.);
 			}
 		}
 	}

@@ -76,13 +76,14 @@ void RingProgrammer::setupProline()
 		_groups.push_back(grp);
 	}
 	
-	_specialTorsions.push_back("offset");
-	_specialTorsions.push_back("amplitude");
+	_specialTorsions.push_back(std::make_pair("offset", -77.1f));
+	_specialTorsions.push_back(std::make_pair("amplitude", 0.0f));
 }
 
-std::string RingProgrammer::specialTorsion(int i)
+std::string RingProgrammer::specialTorsion(int i, float *def)
 {
-	return _specialTorsions[i];
+	*def = _specialTorsions[i].second;
+	return _specialTorsions[i].first;
 }
 
 void RingProgrammer::registerAtom(AtomGraph *ag, int idx)

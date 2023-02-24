@@ -56,12 +56,13 @@ void RingProgram::setLookupMap(Hyper2Torsion &map)
 		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
 		{
 			amps[it->first][jt->first] = jt->second.first;
-			offsets[it->first][jt->first] = jt->second.second;
+			offsets[it->first][jt->first] = jt->second.second * 2;
 		}
 	}
 	
 	_lookupValues["amplitude"] = LookupTable(amps);
 	_lookupValues["offset"] = LookupTable(offsets);
+	_lookupValues["offset"].setAngle(true);
 }
 
 void RingProgram::makeLinkToAtom()
@@ -75,6 +76,11 @@ void RingProgram::makeLinkToAtom()
 RingProgram::RingProgram(RingProgrammer *parent)
 {
 	_cyclic = parent->cyclic();
+}
+
+int RingProgram::lowestAlignment()
+{
+	return _alignmentMapping.begin()->first;
 }
 
 void RingProgram::addAlignmentIndex(int idx, std::string atomName)
@@ -361,10 +367,6 @@ void RingProgram::firstTimeFetchHyperValues(float *currentVec, int n)
 	float offset = _name2Value.at("offset");
 	float amplitude = _name2Value.at("amplitude");
 	
-	_cyclic.setOffset(offset);
-	_cyclic.setMagnitude(amplitude);
-	_cyclic.updateCurve();
-
 	_fetched = true;
 }
 
@@ -378,9 +380,10 @@ void RingProgram::useExtractedPositions(const std::vector<AtomBlock> &blocks,
 
 	const int count = 2;
 
-	for (int i = _idx + 1; i < blocks.size(); i++)
+	const int start = _idx + lowestAlignment();
+	for (int i = start; i < blocks.size(); i++)
 	{
-		if (blocks[i].torsion_idx >= 0 && blocks[i].silenced)
+		if (blocks[i].torsion_idx >= 0 && blocks[i].program == -2)
 		{
 			_parasiticIdxs.push_back(i);
 		}
@@ -395,7 +398,7 @@ void RingProgram::useExtractedPositions(const std::vector<AtomBlock> &blocks,
 	{
 		return;
 	}
-
+	
 	for (auto it = _alignmentMapping.begin(); it != _alignmentMapping.end(); it++)
 	{
 		int idx = _idx + it->first;
@@ -420,6 +423,9 @@ bool RingProgram::checkParasiticIndex(const std::vector<AtomBlock> &blocks,
                                       std::string name, std::string bond,
                                       int idx, int i)
 {
+	float offset = _name2Value.at("offset");
+	float amplitude = _name2Value.at("amplitude");
+
 	if (blocks[idx].atom->atomName() == name)
 	{
 		Atom *atom = blocks[idx].atom;
@@ -434,6 +440,13 @@ bool RingProgram::checkParasiticIndex(const std::vector<AtomBlock> &blocks,
 			return false;
 		}
 
+		float angles[2] = {0.f, 0.f};
+		_table.toTorsions(&angles[0], &angles[1], amplitude, offset);
+
+		//	offset = 0;
+		//	amplitude = 0;
+
+		/*
 		glm::vec3 vs[4];
 		for (size_t j = 0; j < 4; j++)
 		{
@@ -446,9 +459,10 @@ bool RingProgram::checkParasiticIndex(const std::vector<AtomBlock> &blocks,
 
 			vs[j] = ex.at(a).ave;
 		}
+		*/
 
 		// calculate torsion angle
-		float t = measure_bond_torsion(vs);
+		float t = angles[i];
 
 		int tidx = blocks[_parasiticIdxs[i]].torsion_idx;
 		float old = _basis->referenceAngle(tidx);
@@ -464,11 +478,29 @@ void RingProgram::fetchParameters(float *currentVec, int n)
 	if (_parasiticIdxs.size() < 2)
 	{
 		firstTimeFetchHyperValues(currentVec, n);
-		return;
+//		return;
+	}
+
+	for (HyperValue *hv : _values)
+	{
+		int idx = _valueMapping[hv];
+		float t = _basis->parameterForVector(idx, currentVec, n);
+		_name2Value[hv->name()] = t;
 	}
 	
 	// if we've got this far, we have our parasitic torsion angles instead.
-	float psi = _basis->parameterForVector(_parasiticIdxs[0], currentVec, n);
-	float x2 = _basis->parameterForVector(_parasiticIdxs[1], currentVec, n);
+//	float psi = _basis->parameterForVector(_parasiticIdxs[0], currentVec, n);
+//	float x2 = _basis->parameterForVector(_parasiticIdxs[1], currentVec, n);
+	float psi = _name2Value["offset"];
+	float x2 = _name2Value["amplitude"];
+	
+	float offset = 0;
+	float amplitude = 0;
+	
+	_table.toAmpOffset(psi, x2, &amplitude, &offset);
+	
+	_cyclic.setOffset(offset);
+	_cyclic.setMagnitude(amplitude);
 
+	_cyclic.updateCurve();
 }

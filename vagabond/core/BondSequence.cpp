@@ -514,6 +514,7 @@ void BondSequence::calculate()
 
 void BondSequence::supplyPositionsToPrograms()
 {
+	return;
 	const std::map<Atom *, Atom::WithPos> &extraction = extractPositions();
 
 	for (RingProgram &p : _programs)

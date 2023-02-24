@@ -36,7 +36,7 @@ public:
 	
 	static std::vector<RingProgrammer *> *allProgrammers();
 	
-	std::string specialTorsion(int i);
+	std::string specialTorsion(int i, float *def);
 	
 	size_t specialTorsionCount() const
 	{
@@ -167,7 +167,7 @@ private:
 	bool groupsComplete();
 	void correctIndexOffset();
 	
-	std::vector<std::string> _specialTorsions;
+	std::vector<std::pair<std::string, float> > _specialTorsions;
 	
 	std::vector<ExitGroup> _groups;
 	std::map<std::string, int> _atomLocs;

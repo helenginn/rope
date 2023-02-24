@@ -16,36 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Lookup__
-#define __vagabond__Lookup__
+#ifndef __vagabond__SpecialTable__
+#define __vagabond__SpecialTable__
 
-#include <map>
+#include "glm_import.h"
 
-typedef std::map<int, std::map<int, float> > LookupMap;
-
-class LookupTable
+class SpecialTable
 {
 public:
-	LookupTable() {}
-	LookupTable(const LookupMap &map);
-	
-	// indication that the values are between 0 and 1 and wrap round.
-	void setAngle(bool angular)
-	{
-		_angular = angular;
-	}
-	
-	float interpolate(float x, float y);
-
-	static LookupTable defaultTable();
-	static LookupTable defaultAngular();
-	
+	void toAmpOffset(float x, float y, float *amp, float *offset);
+	void toTorsions(float *x, float *y, float amp, float offset);
 private:
-	void get_values(float x, float y, float *qs);
-	float interpolate(float x, float y, float qs[4]);
+	glm::vec2 _origin = glm::vec2(-71.4, 0.0);
+	glm::vec2 _a0 = glm::vec2(-85.44, 21.29);
+	glm::vec2 _b0 = glm::vec2(-103.4, -22.44);
+	glm::vec2 _amps = glm::vec2(0.771, 0.7925);
+	float _offset = -0.1082;
 
-	LookupMap _map;
-	bool _angular = false;
 };
 
 #endif

@@ -77,12 +77,13 @@ struct AtomBlock
 		return glm::vec3(wip[i]);
 	}
 
-	void printBlock()
+	void printBlock() const
 	{
 		std::cout << " ===== ATOM BLOCK =====" << std::endl;
 		if (atom != nullptr)
 		{
-			std::cout << "Atom: " << atom->atomName() << std::endl;
+			std::cout << "Atom: " << atom->atomName() << "\t" <<
+			atom->desc() << std::endl;
 			std::cout << "init pos: " << 
 			glm::to_string(atom->initialPosition()) << std::endl;
 		}
@@ -90,7 +91,8 @@ struct AtomBlock
 		{
 			std::cout << "Ghost block" << std::endl;
 		}
-		std::cout << "Program: " << program << ", flagged: " << flag << std::endl;
+		std::cout << "Program: " << program << ", flagged: " << flag << ", ";
+		std::cout << "silenced: " << silenced << std::endl;
 		std::cout << "Torsion: " << torsion << std::endl;
 		std::cout << "Coordination: " << glm::to_string(coordination) << std::endl;
 		std::cout << "Basis: " << glm::to_string(basis) << std::endl;

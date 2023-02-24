@@ -22,6 +22,7 @@
 #include <vagabond/core/Cyclic.h>
 #include <vagabond/core/Hyper2Torsion.h>
 #include <vagabond/utils/LookupTable.h>
+#include <vagabond/utils/SpecialTable.h>
 #include "AtomBlock.h"
 
 class HyperValue;
@@ -89,6 +90,7 @@ private:
 	                         std::string name, std::string bond,
 	                         int idx, int i);
 
+	int lowestAlignment();
 	Cyclic _cyclic;
 	TorsionBasis *_basis = nullptr;
 
@@ -99,6 +101,7 @@ private:
 	std::map<std::string, float> _name2Value;
 	std::vector<HyperValue *> _values;
 	std::map<std::string, LookupTable> _lookupValues;
+	SpecialTable _table;
 	
 	struct Lookup
 	{

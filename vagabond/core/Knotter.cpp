@@ -195,8 +195,9 @@ void Knotter::createHyperValues(Atom *atom, RingProgrammer *programmer)
 {
 	for (size_t i = 0; i < programmer->specialTorsionCount(); i++)
 	{
-		std::string name = programmer->specialTorsion(i);
-		new HyperValue(_group, atom, name, 0.f);
+		float def = 0;
+		std::string name = programmer->specialTorsion(i, &def);
+		new HyperValue(_group, atom, name, def);
 	}
 }
 

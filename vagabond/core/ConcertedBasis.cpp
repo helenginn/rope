@@ -204,6 +204,7 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
                                           const std::vector<ResidueTorsion> &list,
                                           const std::vector<Angular> &values)
 {
+	prepare();
 	std::vector<bool> found(list.size(), false);
 	
 	if (values.size() == 1)

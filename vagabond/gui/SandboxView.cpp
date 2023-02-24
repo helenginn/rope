@@ -123,7 +123,7 @@ void SandboxView::scan()
 	
 	float golden = (sqrt(5) + 1) / 2;
 	float headstart = 0;
-	for (float amp = 0; amp < 0.8; amp += 0.0005)
+	for (float amp = 0; amp < 1.5; amp += 0.0005)
 	{
 		float prop = amp * amp * 1000 + 10;
 		float step = 1 / prop;

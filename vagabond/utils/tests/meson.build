@@ -1,5 +1,6 @@
 boost_files = [
 'test_hypersphere.cpp',
+'test_lookuptable.cpp',
 ]
 
 boost_unit_test = dependency('boost', modules: ['unit_test_framework'])
