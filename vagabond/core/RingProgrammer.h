@@ -69,9 +69,10 @@ public:
 		return _cyclic.atomNames();
 	}
 	
-	/* call while converting atoms to blocks in order to substantiate
-	 * a program if the conditions for a program are met */
-	void registerAtom(AtomGraph *ag, int idx);
+	/** call while converting atoms to blocks in order to substantiate
+	 * a program if the conditions for a program are met
+	 * @returns whether condition was just met */
+	bool registerAtom(AtomGraph *ag, int idx);
 	
 	/* ask after each atom registry if the program entry conditions
 	 * have been met */

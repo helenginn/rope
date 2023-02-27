@@ -69,6 +69,11 @@ void Grapher::setupProgrammers()
 	{
 		_programmers.push_back(*p);
 	}
+	
+	for (size_t i = 0; i < _programmers.size(); i++)
+	{
+		_workingProggers[i].push_back(_programmers[i]);
+	}
 }
 
 bool Grapher::preferredConnection(Atom *atom, Atom *next)
@@ -446,6 +451,35 @@ void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 
 }
 
+void Grapher::sendAtomToProgrammers(AtomGraph *ag, int idx, 
+                                    std::vector<AtomBlock> &blocks, 
+                                    TorsionBasis *basis)
+{
+	for (size_t i = 0; i < _programmers.size(); i++)
+	{
+		for (size_t j = 0; j < _workingProggers[i].size(); j++)
+		{
+			RingProgrammer &programmer = _workingProggers[i][j];
+			bool just_triggered = programmer.registerAtom(ag, idx);
+			
+			if (just_triggered)
+			{
+				// push back a new programmer template to keep track
+				// of additional rings of the same type.
+				_workingProggers[i].push_back(_programmers[i]);
+			}
+
+			if (programmer.areExitConditionsMet())
+			{
+				programmer.makeProgram(blocks, programCount(), basis);
+				RingProgram *prog = programmer.program();
+				_programs.push_back(prog);
+				_workingProggers[i].erase(_workingProggers[i].begin() + j);
+			}
+		}
+	}
+
+}
 
 std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 {
@@ -487,19 +521,7 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 			assignAtomToBlock(blocks[curr], curr, g->atom);
 
 			/* check for available programs */
-			for (RingProgrammer &programmer : _programmers)
-			{
-				programmer.registerAtom(g, curr);
-				
-				if (programmer.areExitConditionsMet())
-				{
-					programmer.makeProgram(blocks, programCount(),
-					                       basis);
-					RingProgram *prog = programmer.program();
-					_programs.push_back(prog);
-					programmer.reset();
-				}
-			}
+			sendAtomToProgrammers(g, curr, blocks, basis);
 
 			curr++;
 			

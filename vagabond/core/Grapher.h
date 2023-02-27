@@ -23,6 +23,7 @@
 #include "AnchorExtension.h"
 #include "AtomBlock.h"
 #include <vagabond/utils/svd/PCA.h>
+#include <deque>
 
 class TorsionBasis;
 class Parameter;
@@ -145,6 +146,9 @@ private:
 	void fixBlockAsGhost(AtomBlock &block, Atom *anchor);
 	void assignAtomToBlock(AtomBlock &block, int idx, Atom *atom);
 	bool preferredConnection(Atom *atom, Atom *next);
+	void sendAtomToProgrammers(AtomGraph *ag, int idx, 
+	                           std::vector<AtomBlock> &blocks, 
+	                           TorsionBasis *basis);
 
 	std::vector<AtomGraph *> _graphs;
 	std::vector<Atom *> _atoms;
@@ -153,7 +157,11 @@ private:
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<Parameter *, AtomGraph *> _parameter2Graph;
 	
-	std::vector<RingProgrammer> _programmers;
+	typedef std::deque<RingProgrammer> RingProgrammers;
+
+	std::vector<RingProgrammer> _programmers; // copy of each type of prog
+	std::map<int, RingProgrammers> _workingProggers; // actual programmers at work
+
 	std::vector<RingProgram *> _programs;
 
 	int _graphsDone = 0;

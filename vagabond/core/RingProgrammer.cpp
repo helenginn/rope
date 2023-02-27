@@ -85,8 +85,9 @@ std::string RingProgrammer::specialTorsion(int i, float *def)
 	return _specialTorsions[i].first;
 }
 
-void RingProgrammer::registerAtom(AtomGraph *ag, int idx)
+bool RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 {
+	int before = _entrance; // -1 if not triggered
 	registerAtom(ag->atom, idx);
 	
 	// make sure we record all grandparents who branch off the ring
@@ -94,7 +95,7 @@ void RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 
 	if (!isProgramTriggered())
 	{
-		return;
+		return false;
 	}
 	
 	// if the program is complete, _branchLocs would have been emptied
@@ -109,6 +110,8 @@ void RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 
 		_grandparents[ag->atom->atomName()] = grand_name;
 	}
+	
+	return (_entrance != before); // true if only just triggered this time
 }
 
 void RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
