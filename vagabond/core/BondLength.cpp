@@ -54,7 +54,7 @@ bool BondLength::operator==(const BondLength &other) const
 	return false;
 }
 
-Atom *BondLength::otherAtom(Atom *a)
+Atom *BondLength::otherAtom(const Atom *a) const
 {
 	if (_a == a)
 	{

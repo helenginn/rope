@@ -224,7 +224,8 @@ public:
 	
 	void setCode(std::string code);
 	
-	Atom *connectedAtom(int i);
+	Atom *connectedAtom(int i) const;
+	bool isConnectedToAtom(Atom *a) const;
 	
 	const std::string &code() const
 	{

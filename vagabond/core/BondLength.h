@@ -65,7 +65,7 @@ public:
 		return !(*this == other);
 	}
 	
-	Atom *otherAtom(Atom *a);
+	Atom *otherAtom(const Atom *a) const;
 private:
 	Atom *_a;
 	Atom *_b;

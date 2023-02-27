@@ -143,7 +143,20 @@ void Atom::setCode(std::string code)
 	_code = code;
 }
 
-Atom *Atom::connectedAtom(int i)
+bool Atom::isConnectedToAtom(Atom *a) const
+{
+	for (size_t i = 0; i < bondLengthCount(); i++)
+	{
+		if (connectedAtom(i) == a)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+Atom *Atom::connectedAtom(int i) const
 {
 	return bondLength(i)->otherAtom(this);
 }
