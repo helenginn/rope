@@ -20,8 +20,6 @@
 #define __vagabond__RingProgram__
 
 #include <vagabond/core/Cyclic.h>
-#include <vagabond/core/Hyper2Torsion.h>
-#include <vagabond/utils/LookupTable.h>
 #include <vagabond/utils/SpecialTable.h>
 #include "AtomBlock.h"
 

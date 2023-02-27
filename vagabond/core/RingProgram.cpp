@@ -16,7 +16,6 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/utils/LookupTable.h>
 #include "matrix_functions.h"
 #include "RingProgram.h"
 #include "RingProgrammer.h"
