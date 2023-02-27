@@ -71,7 +71,7 @@ public:
 	
 	/** call while converting atoms to blocks in order to substantiate
 	 * a program if the conditions for a program are met
-	 * @returns whether condition was just met */
+	 * @returns whether programmer should now be duplicated */
 	bool registerAtom(AtomGraph *ag, int idx);
 	
 	/* ask after each atom registry if the program entry conditions
@@ -95,7 +95,7 @@ protected:
 	void setupProline();
 	
 private:
-	void registerAtom(Atom *a, int idx);
+	bool registerAtom(Atom *a, int idx);
 	void wipeFlagsExcept(int idx);
 	bool proofSolution(int grp_idx);
 
@@ -180,7 +180,7 @@ private:
 	void grabAtomLocation(Atom *atom, int idx);
 	bool groupsComplete();
 	void correctIndexOffset();
-	void registerWithGroup(ExitGroup &group, Atom *atom, int idx);
+	bool registerWithGroup(ExitGroup &group, Atom *atom, int idx);
 	
 	std::vector<std::pair<std::string, float> > _specialTorsions;
 	
@@ -197,6 +197,8 @@ private:
 	std::string _pinnedAtom;
 
 	int _entrance = -1;
+	bool _duplicated = false;
+	ResidueId _activeId{};
 	bool _complete = false;
 	
 	int _triggerIndex = -1;
