@@ -105,9 +105,23 @@ private:
 			std::string name;
 			int idx;
 			bool central;
-			bool diff_res;
+			bool entry;
 			Atom *ptr;
 		};
+		
+		Flaggable *entry()
+		{
+			for (Flaggable &f : atoms)
+			{
+				if (f.entry)
+				{
+					return &f;
+				}
+			}
+
+			return nullptr;
+
+		}
 		
 		Flaggable *central()
 		{
@@ -140,9 +154,9 @@ private:
 			atoms.push_back(Flaggable{name, -1, true, false, nullptr});
 		}
 
-		void add(std::string name, bool diff = false)
+		void add(std::string name, bool entry = false)
 		{
-			atoms.push_back(Flaggable{name, -1, false, diff, nullptr});
+			atoms.push_back(Flaggable{name, -1, false, entry, nullptr});
 		}
 		
 		bool allFlagged()
@@ -165,6 +179,7 @@ private:
 	void grabAtomLocation(Atom *atom, int idx);
 	bool groupsComplete();
 	void correctIndexOffset();
+	void registerWithGroup(ExitGroup &group, Atom *atom, int idx);
 	
 	std::vector<std::pair<std::string, float> > _specialTorsions;
 	

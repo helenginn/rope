@@ -62,7 +62,7 @@ void RingProgrammer::setupProline()
 		grp.addCentral("N");
 		grp.add("CA");
 		grp.add("CD");
-		grp.add("C", true); // C must come from different residue
+		grp.add("C", true); // C is the non-ring atom for this group
 		_groups.push_back(grp);
 	}
 
@@ -71,7 +71,7 @@ void RingProgrammer::setupProline()
 		grp.addCentral("CA");
 		grp.add("N");
 		grp.add("CB");
-		grp.add("C");
+		grp.add("C", true); // C is the non-ring atom for this group
 		_groups.push_back(grp);
 	}
 	
@@ -111,6 +111,60 @@ void RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 	}
 }
 
+void RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
+{
+	bool belongs = (a->code() == _code);
+	ExitGroup::Flaggable *c = grp.central();
+	ExitGroup::Flaggable *e = grp.entry();
+	bool found_centre = c->idx > 0;
+	bool found_entry = e->idx > 0;
+
+	// if we haven't found the centre or the entry point, try to update the
+	// entry point, but don't go any further
+	if (!found_entry)
+	{
+		if (e->name == a->atomName())
+		{
+			// by resetting the entry point we need to clear the other
+			// atoms
+			wipeFlagsExcept(-1);
+			e->idx = idx;
+			e->ptr = a;
+		}
+
+		return;
+	}
+	
+	// if we've found the entry point, we are allowed to look for the centre
+	if (!found_centre)
+	{
+		if (c->name == a->atomName() && e->ptr->isConnectedToAtom(a))
+		{
+			c->idx = idx;
+			c->ptr = a;
+		}
+
+		return;
+	}
+
+	// now we are allowed to search for the ring atoms
+	for (ExitGroup::Flaggable &atom : grp.atoms)
+	{
+		// obviously not one of these, we've already found them
+		if (atom.central || atom.entry)
+		{
+			continue;
+		}
+
+		if (atom.name == a->atomName() && c->ptr->isConnectedToAtom(a))
+		{
+			atom.idx = idx;
+			atom.ptr = a;
+		}
+	}
+
+}
+
 void RingProgrammer::registerAtom(Atom *a, int idx)
 {
 	if (a == nullptr)
@@ -118,7 +172,6 @@ void RingProgrammer::registerAtom(Atom *a, int idx)
 		return;
 	}
 
-	bool belongs = (a->code() == _code);
 	int curr = -1;
 
 	for (ExitGroup &grp : _groups)
@@ -130,14 +183,7 @@ void RingProgrammer::registerAtom(Atom *a, int idx)
 			continue;
 		}
 
-		for (ExitGroup::Flaggable &atom : grp.atoms)
-		{
-			if (atom.name == a->atomName() && (atom.diff_res || belongs))
-			{
-				atom.idx = idx;
-				atom.ptr = a;
-			}
-		}
+		registerWithGroup(grp, a, idx);
 	}
 	
 	bool triggered = isProgramTriggered();
@@ -167,6 +213,8 @@ bool RingProgrammer::groupsComplete()
 	return done;
 }
 
+// this only keeps track of atoms which need to have their position
+// replaced by the ring
 void RingProgrammer::grabAtomLocation(Atom *atom, int idx)
 {
 	// don't overwrite certain ring hits
