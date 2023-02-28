@@ -481,6 +481,7 @@ AtomGroup *GeometryTable::constructResidue(std::string code,
 		a->setAtomNum(*num);
 		a->setResidueId(id);
 		a->setInitialPosition(glm::vec3(0.f), 30);
+		a->setChain("A");
 		a->setCode(code);
 		
 		*ag += a;
