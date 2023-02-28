@@ -475,10 +475,12 @@ void Grapher::sendAtomToProgrammers(AtomGraph *ag, int idx,
 			}
 			else if (programmer.areExitConditionsMet())
 			{
-				std::cout << "finished programmer" << std::endl;
 				programmer.makeProgram(blocks, programCount(), basis);
 				RingProgram *prog = programmer.program();
-				_programs.push_back(prog);
+				if (prog && prog->isValid())
+				{
+					_programs.push_back(prog);
+				}
 				_workingProggers[i].erase(_workingProggers[i].begin() + j);
 			}
 		}
