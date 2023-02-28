@@ -328,7 +328,8 @@ void Display::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "mechanics")
 	{
-		_atoms->mechanics();
+		_atoms->writeToFile("tmp.pdb");
+//		_atoms->mechanics();
 	}
 }
 
