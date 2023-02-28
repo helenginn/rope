@@ -167,25 +167,6 @@ inline void from_json(const json &j, Residue &value)
 
 class Entity;
 
-struct ResidueTorsion
-{
-	TorsionRef torsion{};
-	Residue *residue = nullptr;
-	Entity *entity = nullptr;
-	
-	std::string desc() const
-	{
-		if (residue == nullptr)
-		{
-			std::string id = "t-null:" + torsion.desc();
-			return id;
-		}
-
-		std::string id = "t" + residue->id().as_string() + ":" + torsion.desc();
-		return id;
-	}
-};
-
 struct Atom3DPosition
 {
 	std::string atomName;
