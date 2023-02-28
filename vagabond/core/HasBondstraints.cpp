@@ -49,6 +49,7 @@ HasBondstraints::HasBondstraints(const HasBondstraints &other)
 	_terminalTorsions = other._terminalTorsions;
 	_centralTorsions = other._centralTorsions;
 	_chirals = other._chirals;
+	_parameters = other._parameters;
 
 }
 
