@@ -349,9 +349,10 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)
 		for (const TorsionRef &torsion : residue.torsions())
 		{
 			ResidueTorsion rt{};
-			rt.torsion = torsion;
-			rt.residue = &residue;
-			rt.entity = _entity;
+			rt.setTorsion(torsion);
+			rt.setResidue(&residue);
+			rt.setEntity(_entity);
+			rt.housekeeping();
 			headers.push_back(rt);
 		}
 	}

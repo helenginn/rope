@@ -22,6 +22,7 @@
 #include <vagabond/c4x/DegreeDataGroup.h>
 #include <vagabond/core/TorsionRef.h>
 #include <vagabond/core/Residue.h>
+#include <vagabond/core/ResidueTorsion.h>
 #include <vagabond/core/ObjectGroup.h>
 
 class Residue;

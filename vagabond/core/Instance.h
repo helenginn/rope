@@ -31,7 +31,7 @@
 #include <vagabond/c4x/Posular.h>
 using nlohmann::json;
 
-struct ResidueTorsion;
+class ResidueTorsion;
 class AtomContent;
 class Parameter;
 class Interface;

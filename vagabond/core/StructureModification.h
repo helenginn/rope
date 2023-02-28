@@ -107,7 +107,7 @@ protected:
 
 	int _sideMissing = 0;
 	int _mainMissing = 0;
-	Residue *_unusedId{};
+	const Residue *_unusedId{};
 	
 	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
 	TorsionBasis::Type _torsionType = TorsionBasis::TypeCustom;

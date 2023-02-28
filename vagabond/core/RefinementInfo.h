@@ -36,10 +36,10 @@ namespace Refine
 		TorsionRef torsion;
 		float angle;
 		
-		RTA(const ResidueTorsion &rt)
+		RTA(ResidueTorsion &rt)
 		{
-			id = rt.residue->id();
-			torsion = rt.torsion;
+			id = rt.id();
+			torsion = rt.torsion();
 			angle = 0;
 		}
 		
@@ -47,7 +47,7 @@ namespace Refine
 		{
 			std::vector<RTA> ret;
 			ret.reserve(rts.size());
-			for (const ResidueTorsion &rt : rts)
+			for (ResidueTorsion &rt : rts)
 			{
 				ret.push_back(rt);
 			}

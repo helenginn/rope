@@ -59,7 +59,7 @@ public:
 		return _missing;
 	}
 	
-	Residue *unusedTorsion()
+	const Residue *unusedTorsion()
 	{
 		return _unusedId;
 	}
@@ -69,7 +69,7 @@ private:
 	std::vector<bool> _refineMask;
 
 	std::vector<Parameter *> _missing;
-	Residue *_unusedId{};
+	const Residue *_unusedId{};
 
 	bool _custom = false;
 	

@@ -254,7 +254,7 @@ void Instance::housekeeping()
 
 const Residue *Instance::localResidueForResidueTorsion(const ResidueTorsion &rt)
 {
-	Residue *const master = rt.residue;
+	Residue *const master = rt.residue();
 	return equivalentLocal(master);
 }
 
@@ -273,19 +273,19 @@ float Instance::valueForTorsionFromList(Parameter *param,
 	
 	for (size_t i = 0; i < list.size(); i++)
 	{
-		if (list[i].entity != _entity)
+		if (list[i].entity() != _entity)
 		{
 			continue;
 		}
 
-		Residue *residue = list[i].residue;
+		Residue *const residue = list[i].residue();
 		
 		if (residue == nullptr || residue != master)
 		{
 			continue;
 		}
 
-		const std::string &desc = list[i].torsion.desc();
+		const std::string &desc = list[i].torsion().desc();
 		
 		if (!param->hasDesc(desc))
 		{

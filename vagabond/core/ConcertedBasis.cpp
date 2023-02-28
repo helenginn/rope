@@ -177,7 +177,7 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 				continue;
 			}
 			
-			const std::string &desc = list[j].torsion.desc();
+			const std::string &desc = list[j].torsion().desc();
 
 			if (!t->hasDesc(desc))
 			{
@@ -241,7 +241,7 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 	{
 		if (!found[i])
 		{
-			_unusedId = list[i].residue;
+			_unusedId = list[i].residue();
 		}
 	}
 	

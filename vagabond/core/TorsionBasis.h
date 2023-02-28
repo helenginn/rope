@@ -20,7 +20,7 @@
 #define __vagabond__TorsionBasis__
 
 #include <vector>
-#include "Residue.h"
+#include "ResidueTorsion.h"
 
 class Parameter;
 class Atom;
