@@ -117,15 +117,15 @@ PlausibleRoute *Path::toRoute()
 	for (size_t i = 0; i < _residueIds.size(); i++)
 	{
 		Residue *local = _instance->equivalentLocal(_residueIds[i]);
-		BondTorsion *bt = nullptr;
+		Parameter *p = nullptr;
 		
 		if (local)
 		{
-			for (size_t j = 0; j < group->bondTorsionCount(); j++)
+			for (size_t j = 0; j < group->parameterCount(); j++)
 			{
-				BondTorsion *c = group->bondTorsion(j);
+				Parameter *c = group->parameter(j);
 				
-				if (!_instance->atomBelongsToInstance(c->atom(1)))
+				if (!_instance->atomBelongsToInstance(c->anAtom()))
 				{
 					continue;
 				}
@@ -135,25 +135,24 @@ PlausibleRoute *Path::toRoute()
 					continue;
 				}
 				
-				if (c->desc() != _torsionRefs[i].desc() &&
-				    c->reverse_desc() != _torsionRefs[i].desc())
+				if (!c->hasDesc(_torsionRefs[i].desc()))
 				{
 					continue;
 				}
 				
-				bt = c;
+				p = c;
 			}
 		}
 		
-		if (bt == nullptr)
+		if (p == nullptr)
 		{
-			std::cout << "WARNING! null bond " << _residueIds[i].str() << std::endl;
+			std::cout << "WARNING! null parameter in " << _residueIds[i].str() << std::endl;
 		}
 		
-		pr->addParameter(bt);
+		pr->addParameter(p);
 	}
 
-	pr->clearMask();
+//	pr->clearMask();
 	_route = pr;
 	
 	return pr;
