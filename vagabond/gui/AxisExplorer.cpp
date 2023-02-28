@@ -205,7 +205,7 @@ void AxisExplorer::setupColours()
 	float sum = 0;
 	for (size_t i = 0; i < _list.size(); i++)
 	{
-		TorsionRef tr = _list[i].torsion;
+		TorsionRef tr = _list[i].torsion();
 		
 		if (!tr.coversMainChain())
 		{
@@ -224,14 +224,14 @@ void AxisExplorer::setupColours()
 
 	for (size_t i = 0; i < _list.size(); i++)
 	{
-		TorsionRef tr = _list[i].torsion;
+		TorsionRef tr = _list[i].torsion();
 		
 		if (!tr.coversMainChain())
 		{
 			continue;
 		}
 
-		Residue *master = _list[i].residue;
+		Residue *master = _list[i].residue();
 		if (master == nullptr)
 		{
 			continue;
