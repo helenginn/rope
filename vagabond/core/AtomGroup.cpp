@@ -27,6 +27,7 @@
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
 #include "Sequence.h"
+#include "PdbFile.h"
 
 #include <algorithm>
 #include <iostream>
@@ -35,6 +36,11 @@
 AtomGroup::AtomGroup() : HasBondstraints()
 {
 
+}
+
+void AtomGroup::writeToFile(std::string name)
+{
+	PdbFile::writeAtoms(this, name);
 }
 
 void AtomGroup::alignAnchor()

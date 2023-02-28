@@ -58,6 +58,7 @@ public:
 	void addTransformedAnchor(Atom *a, glm::mat4x4 transform);
 	void remove(AtomGroup *g);
 	
+	void writeToFile(std::string name);
 	
 	const AtomVector &atomVector() const
 	{
