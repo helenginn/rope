@@ -39,6 +39,16 @@ public:
 		return _cyclic;
 	}
 	
+	bool isValid() const
+	{
+		return !_invalid;
+	}
+	
+	void invalidate()
+	{
+		_invalid = true;
+	}
+	
 	/** for display purposes */
 	void setLinkedAtom(Atom *atom)
 	{
@@ -110,6 +120,7 @@ private:
 	
 	int _idx = -1;
 	bool _fetched = false;
+	bool _invalid = false;
 };
 
 #endif

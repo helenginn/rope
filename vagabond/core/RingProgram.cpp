@@ -103,6 +103,12 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 			break;
 		}
 	}
+	
+	if (!primary)
+	{
+		_invalid = true;
+		return;
+	}
 
 	// next, we can find the other two ring members, and assign them to
 	// 'other' or 'grandparent' as fitting the input parameter.
@@ -142,6 +148,12 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	}
 	
 	// Now we should have all atoms...
+	
+	if (!gp_atom || !other_atom)
+	{
+		_invalid = true;
+		return;
+	}
 	
 	if (false)
 	{

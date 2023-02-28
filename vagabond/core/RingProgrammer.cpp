@@ -494,12 +494,22 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 
 		Atom *curr = blocks[it->second].atom;
 		prog->addBranchIndex(corrected, curr, gp);
+		
+		if (!prog->isValid())
+		{
+			return;
+		}
 	}
 	
 	int pindx = _atomLocs[_pinnedAtom];
 	if (pindx >= 0)
 	{
 		Atom *pinned = blocks[pindx].atom;
+		if (!pinned)
+		{
+			prog->invalidate();
+			return;
+		}
 		
 		for (int i = 0; i < pinned->hyperValueCount(); i++)
 		{
