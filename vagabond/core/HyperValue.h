@@ -84,6 +84,11 @@ public:
 	{
 		return _atom;
 	}
+
+	virtual Atom *anAtom()
+	{
+		return atom();
+	}
 private:
 	Atom *_atom = nullptr;
 	bool _constrained = false;

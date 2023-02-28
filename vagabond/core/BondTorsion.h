@@ -55,6 +55,11 @@ public:
 		return true;
 	}
 
+	virtual Atom *anAtom()
+	{
+		return atom(1);
+	}
+
 	double angle() const
 	{
 		return _angle;

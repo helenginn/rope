@@ -31,6 +31,8 @@ public:
 	
 	virtual bool hasDesc(std::string desc) const = 0;
 	
+	virtual Atom *anAtom() = 0;
+	
 	virtual bool isTorsion() const
 	{
 		return false;
