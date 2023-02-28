@@ -87,7 +87,6 @@ std::string RingProgrammer::specialTorsion(int i, float *def)
 
 bool RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 {
-	std::cout << "Atom: " << ag->atom->desc() << std::endl;
 	bool found_central = registerAtom(ag->atom, idx);
 	
 	// make sure we record all grandparents who branch off the ring
@@ -137,7 +136,6 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 			// by resetting the entry point we need to clear the other
 			// atoms
 			
-			std::cout << "updating entry point to " << a->desc() << std::endl;
 			for (ExitGroup::Flaggable &f : grp.atoms)
 			{
 				f.idx = -1;
@@ -155,7 +153,6 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 		// obviously not one of these, we've already found them
 		if (atom.name == a->atomName() && belongs)
 		{
-			std::cout << "right name, right code" << std::endl;
 			if (atom.central)
 			{
 				bool connected = true;
@@ -165,22 +162,18 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 
 					if (other.ptr && !other.ptr->isConnectedToAtom(a))
 					{
-						std::cout << "Didn't connect " << a->desc() << 
-						" to " << other.ptr->desc() << std::endl;
 						connected = false;
 					}
 				}
 				
 				if (!connected)
 				{
-					std::cout << "not connected to others" << std::endl;
 					continue;
 				}
 			}
 			// any member of the ring must match the original
 			else if (!atom.entry && _duplicated && a->residueId() != _activeId)
 			{
-				std::cout << "not the right residue id" << std::endl;
 				continue;
 			}
 
@@ -216,30 +209,11 @@ bool RingProgrammer::registerAtom(Atom *a, int idx)
 
 		if (curr == _entrance)
 		{
-			std::cout << this << "\t" << " - sorted" << std::endl;
 			continue;
 		}
 
 		found_central |= registerWithGroup(grp, a, idx);
 		triggered |= isProgramTriggered();
-		
-		std::cout << "found_central: " << found_central << std::endl;
-		std::cout << this << "\t";
-		for (ExitGroup::Flaggable &atom : grp.atoms)
-		{
-			std::cout << (atom.idx >= 0 ? "1" : "0");
-		}
-		std::cout << " = ";
-		for (ExitGroup::Flaggable &atom : grp.atoms)
-		{
-			std::cout << atom.name << "-";
-		}
-		std::cout << " = ";
-		for (ExitGroup::Flaggable &atom : grp.atoms)
-		{
-			std::cout << (atom.ptr ? atom.ptr->desc() : "null") << "-";
-		}
-		std::cout << std::endl;
 	}
 	
 	if (triggered)
@@ -407,7 +381,6 @@ bool RingProgrammer::isProgramTriggered()
 		// make sure all registered atoms get entered for program
 		findGroupLocations(i);
 
-		std::cout << "TRIGGERED!" << std::endl;
 		return true;
 	}
 	
@@ -454,7 +427,6 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 	prog->setRingEntranceName(name);
 	prog->setLinkedAtom(blocks[_triggerIndex].atom);
 	blocks[_triggerIndex].atom->setCyclic(&prog->cyclic());
-	
 	
 	for (auto it = _atomLocs.begin(); it != _atomLocs.end(); it++)
 	{
