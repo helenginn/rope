@@ -459,13 +459,11 @@ void Grapher::sendAtomToProgrammers(AtomGraph *ag, int idx,
 	{
 		for (size_t j = 0; j < _workingProggers[i].size(); j++)
 		{
-			std::cout << "j = " << j << std::endl;
 			RingProgrammer &programmer = _workingProggers[i][j];
 			bool should_duplicate = programmer.registerAtom(ag, idx);
 			
 			if (should_duplicate)
 			{
-				std::cout << "Must duplicate a programmer!" << std::endl;
 				// push back a new programmer template to keep track
 				// of additional rings of the same type.
 				_workingProggers[i].push_back(_programmers[i]);

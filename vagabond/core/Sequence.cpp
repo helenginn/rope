@@ -417,10 +417,6 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
 			}
 			
 			f.hyper = (match.isHyperParameter());
-			if (f.hyper)
-			{
-				std::cout << match.desc() << " " << f << std::endl;
-			}
 
 			vals.push_back(f);
 		}
