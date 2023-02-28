@@ -32,7 +32,7 @@
 
 SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 {
-	Sequence apa("APA");
+	Sequence apa("PPPPPPPPPP");
 	AtomGroup *as = AtomsFromSequence(apa).atoms();
 	setAtoms(as);
 	as->recalculate();
@@ -89,7 +89,6 @@ void SandboxView::setup()
 	
 	if (_atoms)
 	{
-		PdbFile::writeAtoms(_atoms, "apa.pdb");
 		Atom *cg = _atoms->firstAtomWithName("CG");
 		HyperValue *hv = cg->hyperValue(1);
 		hv->setValue(7.0);
@@ -100,6 +99,7 @@ void SandboxView::setup()
 
 void SandboxView::scan()
 {
+	return;
 	Atom *cg = _atoms->firstAtomWithName("CG");
 	HyperValue *offset = cg->hyperValue(0);
 	HyperValue *amplitude = cg->hyperValue(1);
