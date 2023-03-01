@@ -50,6 +50,7 @@ HasBondstraints::HasBondstraints(const HasBondstraints &other)
 	_centralTorsions = other._centralTorsions;
 	_chirals = other._chirals;
 	_parameters = other._parameters;
+	_residue2Parameters = other._residue2Parameters;
 
 }
 
@@ -137,6 +138,7 @@ void HasBondstraints::addBondstraint(HyperValue *hv)
 	_bondstraints.push_back(hv);
 	_hyperValues.push_back(hv);
 	_parameters.push_back(hv);
+	_residue2Parameters[hv->residueId()].push_back(hv);
 
 	for (size_t i = 0; i < hv->keyCount(); i++)
 	{
@@ -154,6 +156,7 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 	_bondstraints.push_back(torsion);
 	_torsions.push_back(torsion);
 	_parameters.push_back(torsion);
+	_residue2Parameters[torsion->residueId()].push_back(torsion);
 	
 	for (size_t i = 0; i < torsion->keyCount(); i++)
 	{
@@ -260,6 +263,22 @@ BondLength *HasBondstraints::findBondLength(Atom *a, Atom *b)
 
 	return nullptr;
 }
+
+Parameter *HasBondstraints::findParameter(std::string desc, const ResidueId &id)
+{
+	std::vector<Parameter *> &params = _residue2Parameters[id];
+
+	for (Parameter *param : params)
+	{
+		if (param->hasDesc(desc) && param->residueId() == id)
+		{
+			return param;
+		}
+	}
+
+	return nullptr;
+}
+
 
 BondTorsion *HasBondstraints::findBondTorsion(std::string desc)
 {

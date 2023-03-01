@@ -31,7 +31,7 @@ const std::string Residue::one_letter_code() const
 	return gemmi::one_letter_code(std::vector<std::string>(1, _code));
 }
 
-bool Residue::hasTorsionRef(TorsionRef &ref)
+bool Residue::hasTorsionRef(TorsionRef &ref) const
 {
 	return _refs.count(ref) > 0;
 }

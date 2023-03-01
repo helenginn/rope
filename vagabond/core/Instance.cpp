@@ -258,10 +258,8 @@ const Residue *Instance::localResidueForResidueTorsion(const ResidueTorsion &rt)
 	return equivalentLocal(master);
 }
 
-float Instance::valueForTorsionFromList(Parameter *param,
-                                        const std::vector<ResidueTorsion> &list,
-                                        const std::vector<Angular> &values,
-                                        std::vector<bool> &found)
+int Instance::indexForParameterFromList(Parameter *param,
+                                        const std::vector<ResidueTorsion> &list)
 {
 	ResidueId target = param->residueId();
 	Residue *master = equivalentMaster(target);
@@ -292,11 +290,25 @@ float Instance::valueForTorsionFromList(Parameter *param,
 			continue;
 		}
 		
-		found[i] = true;
-		return values[i];
+		return i;
 	}
 
-	return NAN;
+	return -1;
+}
+
+float Instance::valueForTorsionFromList(Parameter *param,
+                                        const std::vector<ResidueTorsion> &list,
+                                        const std::vector<Angular> &values,
+                                        std::vector<bool> &found)
+{
+	int idx = indexForParameterFromList(param, list);
+	
+	if (idx < 0)
+	{
+		return NAN;
+	}
+
+	return values[idx];
 }
 
 void Instance::addTorsionsToGroup(MetadataGroup &group, 

@@ -373,6 +373,12 @@ Residue *const Polymer::equivalentLocal(const ResidueId &m_id) const
 	return equivalentLocal(master);
 }
 
+Residue *Polymer::localForLocalId(const ResidueId &l_id)
+{
+	Residue *local = sequence()->residueLike(l_id);
+	return local;
+}
+
 Residue *const Polymer::equivalentLocal(Residue *const master) const 
 {
 	const Sequence *seq = const_sequence();

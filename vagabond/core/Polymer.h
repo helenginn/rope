@@ -127,6 +127,7 @@ public:
 	virtual Residue *const equivalentMaster(const ResidueId &local);
 	virtual Residue *const equivalentLocal(Residue *const master) const;
 	virtual Residue *const equivalentLocal(const ResidueId &m_id) const;
+	virtual Residue *localForLocalId(const ResidueId &l_id);
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
 private:

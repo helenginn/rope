@@ -35,17 +35,34 @@ void ResidueTorsion::housekeeping()
 		_entity = ent;
 	}
 
-	if (_master && !_resSet)
+	if (_master && !_masterSet)
 	{
-		_resSet = true;
-		_id = _master->id();
+		_masterSet = true;
+		_masterId = _master->id();
 	}
 	
-	if (_resSet && !_master && _entity)
+	if (_masterSet && !_master && _entity)
 	{
 		Sequence *seq = _entity->sequence();
-		Residue *res = seq->residue(_id);
+		Residue *res = seq->residue(_masterId);
 		_master = res;
+	}
+
+	if (_local && !_localSet)
+	{
+		_localSet = true;
+		_localId = _local->id();
+	}
+	
+	if (_localSet && !_local && _instance)
+	{
+		Residue *res = _instance->localForLocalId(_localId);
+		_master = res;
+	}
+	
+	if (_instance && !_local)
+	{
+		_local = _instance->localResidueForResidueTorsion(*this);
 	}
 }
 
@@ -61,12 +78,45 @@ std::string ResidueTorsion::desc() const
 	return id;
 }
 
-const ResidueId &ResidueTorsion::id()
+const ResidueId &ResidueTorsion::local_id()
 {
-	if (!_resSet)
+	if (!_localSet)
 	{
 		housekeeping();
 	}
 
-	return _id;
+	return _localId;
+}
+
+const ResidueId &ResidueTorsion::id()
+{
+	if (!_masterSet)
+	{
+		housekeeping();
+	}
+
+	return _masterId;
+}
+
+Parameter *ResidueTorsion::parameter()
+{
+	if (!_instance)
+	{
+		throw std::runtime_error("Cannot find parameter for ResidueTorsion"\
+		                         " when the instance is not set.");
+	}
+
+	housekeeping();
+	
+	if (!_local || !_local->hasTorsionRef(_torsion)) 
+	{
+		return nullptr;
+	}
+
+	_instance->load();
+	AtomGroup *atoms = _instance->currentAtoms();
+	Parameter *p = atoms->findParameter(_torsion.desc(), _local->id());
+	_instance->unload();
+	
+	return p;
 }

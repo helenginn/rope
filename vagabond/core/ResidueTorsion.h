@@ -22,14 +22,17 @@
 #include "ResidueId.h"
 #include "TorsionRef.h"
 
+/** \class ResidueTorsion
+ *  holds the identity of a Residue/Torsion pair + entity and can interconvert
+ *  between master and local residue when supplied with an instance */
+
 class Entity;
 class Residue;
+class Instance;
 
 class ResidueTorsion
 {
 public:
-	ResidueTorsion();
-	
 	void housekeeping();
 	
 	const TorsionRef &torsion() const
@@ -47,12 +50,25 @@ public:
 		return _master;
 	}
 	
+	const Residue *local() const
+	{
+		return _local;
+	}
+	
 	void setResidue(Residue *residue)
 	{
 		_master = residue;
 	}
 	
+	void attachToInstance(Instance *inst, Residue *local = nullptr)
+	{
+		_instance = inst;
+		_local = local;
+		housekeeping();
+	}
+	
 	const ResidueId &id();
+	const ResidueId &local_id();
 	
 	Entity *entity() const
 	{
@@ -63,18 +79,24 @@ public:
 	{
 		_entity = entity;
 	}
+	
+	Parameter *parameter();
 
 	std::string desc() const;
 private:
 	TorsionRef _torsion{};
-	ResidueId _id{};
-	bool _resSet = false;
+	ResidueId _masterId{};
+	ResidueId _localId{};
+	bool _masterSet = false;
+	bool _localSet = false;
 
 	std::string _entityName;
 
 	Residue *_master = nullptr;
 	Entity *_entity = nullptr;
 
+	Instance *_instance = nullptr;
+	const Residue *_local = nullptr;
 };
 
 #endif

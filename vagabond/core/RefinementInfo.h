@@ -20,6 +20,7 @@
 #define __vagabond__RefinementInfo__
 
 #include <vagabond/c4x/Angular.h>
+#include "ResidueTorsion.h"
 #include "Residue.h"
 #include "TorsionRef.h"
 

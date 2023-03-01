@@ -298,7 +298,7 @@ void Sequence::remapFromMaster(Entity *entity)
 	}
 }
 
-Residue *Sequence::residueLike(const ResidueId &other) 
+Residue *Sequence::residueLike(const ResidueId &other)
 {
 	for (Residue &r : _residues)
 	{

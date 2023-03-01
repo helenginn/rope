@@ -99,7 +99,7 @@ public:
 	
 	void housekeeping();
 	
-	bool hasTorsionRef(TorsionRef &ref);
+	bool hasTorsionRef(TorsionRef &ref) const;
 	
 	/* note that this will only update the current residue, and not affect
 	 * any associated master residues. */

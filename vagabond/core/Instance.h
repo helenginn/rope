@@ -101,6 +101,11 @@ public:
 	{ return nullptr; }
 	virtual Residue *const equivalentLocal(const ResidueId &m_id) const
 	{ return nullptr; }
+	virtual Residue *localForLocalId(const ResidueId &l_id)
+	{ return nullptr; }
+
+	int indexForParameterFromList(Parameter *param,
+	                              const std::vector<ResidueTorsion> &list);
 
 	float valueForTorsionFromList(Parameter *bt,
 	                              const std::vector<ResidueTorsion> &list,

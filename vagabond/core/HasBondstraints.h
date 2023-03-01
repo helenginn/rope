@@ -22,6 +22,7 @@
 #include <vector>
 #include <map>
 #include "Bondstraint.h"
+#include "ResidueId.h"
 
 class BondLength;
 class Parameter;
@@ -79,6 +80,7 @@ public:
 	BondLength *findBondLength(Atom *a, Atom *b);
 	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d);
 	BondTorsion *findBondTorsion(std::string desc);
+	Parameter *findParameter(std::string desc, const ResidueId &id);
 	Chirality *findChirality(Atom *cen, Atom *a, Atom *b, Atom *c);
 
 	/** @returns number of bond angles involved with given atom */
@@ -213,7 +215,9 @@ private:
 	std::vector<BondAngle *> _centralBondAngles;
 	std::vector<BondAngle *> _terminalBondAngles;
 	std::vector<HyperValue *> _hyperValues;
+
 	std::vector<Parameter *> _parameters;
+	std::map<ResidueId, std::vector<Parameter *> > _residue2Parameters;
 
 	std::vector<BondTorsion *> _torsions;
 	std::vector<BondTorsion *> _terminalTorsions;
