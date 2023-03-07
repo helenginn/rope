@@ -100,7 +100,18 @@ public:
 	size_t possibleAnchorCount();
 	Atom *possibleAnchor(int i);
 	
-	Atom *chosenAnchor();
+	Atom *chosenAnchor(bool min = false);
+	Atom *sequenceAnchor()
+	{
+		Atom *atom = chosenAnchor(true);
+		_chosenAnchor = nullptr;
+		return atom;
+	}
+	
+	void setChosenAnchor(Atom *a)
+	{
+		_chosenAnchor = a;
+	}
 
 	std::vector<AtomGroup *> &connectedGroups();
 	

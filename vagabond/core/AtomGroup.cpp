@@ -326,7 +326,7 @@ Atom *AtomGroup::firstAtomWithName(std::string name) const
 	return nullptr;
 }
 
-Atom *AtomGroup::chosenAnchor()
+Atom *AtomGroup::chosenAnchor(bool min)
 {
 	if (_chosenAnchor != nullptr)
 	{
@@ -339,23 +339,15 @@ Atom *AtomGroup::chosenAnchor()
 		return nullptr;
 	}
 	
-	int min_res = INT_MAX;
-	std::string desc = "";
+	int found_res = (min ? INT_MAX : -INT_MAX);
 	
 	for (size_t i = 0; i < possibleAnchorCount(); i++)
 	{
 		int res = possibleAnchor(i)->residueNumber();
-		if (res < min_res)
+		if ((min && (res < found_res)) || (!min && (res > found_res)))
 		{
-			if (desc.length() > 0 && possibleAnchor(i)->desc() < desc)
-			{
-				continue;
-			}
-
 			_chosenAnchor = possibleAnchor(i);
-			min_res = res;
-			desc = possibleAnchor(i)->desc();
-			
+			found_res = res;
 		}
 	}
 

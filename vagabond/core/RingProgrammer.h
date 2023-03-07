@@ -64,6 +64,11 @@ public:
 		return _code;
 	}
 	
+	const int &triggerIndex() const
+	{
+		return _triggerIndex;
+	}
+	
 	const std::vector<std::string> &ringMembers() const
 	{
 		return _cyclic.atomNames();
@@ -197,6 +202,7 @@ private:
 	std::string _pinnedAtom;
 
 	int _entrance = -1;
+	// duplicated is set to TRUE when RingProgrammer spawns a second copy
 	bool _duplicated = false;
 	ResidueId _activeId{};
 	bool _complete = false;

@@ -94,18 +94,26 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 
 	for (size_t i = 0; i < atom->bondLengthCount(); i++)
 	{
-		std::string n = atom->connectedAtom(i)->atomName();
+		Atom *neighbour = atom->connectedAtom(i);
+		
+		if (neighbour->residueId() != _activeId)
+		{
+			continue;
+		}
+
+		std::string n = neighbour->atomName();
 		int idx = _cyclic.indexOfName(n);
 
 		if (idx >= 0)
 		{
-			primary = atom->connectedAtom(i);
+			primary = neighbour;
 			break;
 		}
 	}
 	
 	if (!primary)
 	{
+		std::cout << "Couldn't find primary" << std::endl;
 		_invalid = true;
 		return;
 	}
@@ -115,10 +123,13 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	
 	Atom *gp_atom = nullptr;
 	Atom *other_atom = nullptr;
+	
+	std::cout << "Branch: " << atom->desc() << std::endl;
 
 	for (size_t i = 0; i < primary->bondLengthCount(); i++)
 	{
 		Atom *a = primary->connectedAtom(i);
+		std::cout << a->desc() << std::endl;
 		if (a == atom)
 		{
 			continue; // easily avoid the branched atom.
@@ -136,9 +147,10 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 		{
 			gp_atom = a;
 		}
-		else
+		else 
 		{
 			other_atom = a;
+
 		}
 		
 		if (gp_atom && other_atom)
@@ -149,8 +161,10 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	
 	// Now we should have all atoms...
 	
+	
 	if (!gp_atom || !other_atom)
 	{
+		std::cout << gp_atom << " " << other_atom << std::endl;
 		_invalid = true;
 		return;
 	}

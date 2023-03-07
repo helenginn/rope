@@ -22,6 +22,7 @@
 #include <vagabond/core/Cyclic.h>
 #include <vagabond/utils/SpecialTable.h>
 #include "AtomBlock.h"
+#include "ResidueId.h"
 
 class HyperValue;
 class TorsionBasis;
@@ -72,6 +73,11 @@ public:
 		_basis = basis;
 	}
 	
+	void setActiveId(const ResidueId &id)
+	{
+		_activeId = id;
+	}
+	
 	void setParameterFromBasis(int param_idx, HyperValue *hv);
 
 	void setRingEntranceName(std::string atomName);
@@ -113,6 +119,7 @@ private:
 		float curr_to_other = -1;
 	};
 	
+	ResidueId _activeId{};
 	Atom *_atom = nullptr;
 	std::vector<Lookup> _branchMapping;
 	std::string _entranceName;

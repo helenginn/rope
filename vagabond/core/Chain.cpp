@@ -151,11 +151,10 @@ void Chain::assignMainChain()
 			continue;
 		}
 
-		Atom *start = grps[i]->chosenAnchor();
+		Atom *start = grps[i]->sequenceAnchor();
 		Grapher gr;
 		AnchorExtension ext(start, UINT_MAX);
 		gr.generateGraphs(ext);
-//		gr.assignMainChain();
 	}
 	
 	int count = 0;

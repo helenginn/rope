@@ -479,6 +479,11 @@ void Grapher::sendAtomToProgrammers(AtomGraph *ag, int idx,
 				{
 					_programs.push_back(prog);
 				}
+				else
+				{
+					int ti = programmer.triggerIndex();
+					blocks[ti].program = -1;
+				}
 				_workingProggers[i].erase(_workingProggers[i].begin() + j);
 			}
 		}
