@@ -24,6 +24,7 @@
 
 class Grapher;
 struct AtomGraph;
+class ResidueTorsion;
 
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
@@ -185,19 +186,26 @@ public:
 		_wayPoints[idx] = wps;
 	}
 	
-	size_t parameterCount()
+	size_t parameterCount() const
 	{
 		return _parameters.size();
 	}
 	
 	Parameter *parameter(int i)
 	{
-		return _parameters[i];
+		return _parameters[i].param;
 	}
 	
-	void addParameter(Parameter *t)
+	std::vector<ResidueTorsion> residueTorsions() const;
+
+	const ResidueTorsion &residueTorsion(int i) const
 	{
-		_parameters.push_back(t);
+		return _parameters[i].rt;
+	}
+	
+	void addParameter(const ResidueTorsion &rt, Parameter *p)
+	{
+		_parameters.push_back(ResidueTorsionParameter{p, rt});
 	}
 	
 	const std::vector<bool> &flips() const
@@ -318,8 +326,14 @@ private:
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void reportFound();
 	void calculateAtomDeviations(Score &score);
+	
+	struct ResidueTorsionParameter
+	{
+		Parameter *param;
+		ResidueTorsion rt;
+	};
 
-	std::vector<Parameter *> _parameters;
+	std::vector<ResidueTorsionParameter> _parameters;
 	std::vector<Parameter *> _missing;
 
 	typedef std::map<int, int> TicketPoint;

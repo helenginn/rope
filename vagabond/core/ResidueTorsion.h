@@ -83,6 +83,9 @@ public:
 	Parameter *parameter();
 
 	std::string desc() const;
+
+	friend void to_json(json &j, const ResidueTorsion &value);
+	friend void from_json(const json &j, ResidueTorsion &value);
 private:
 	TorsionRef _torsion{};
 	ResidueId _masterId{};
@@ -98,5 +101,41 @@ private:
 	Instance *_instance = nullptr;
 	const Residue *_local = nullptr;
 };
+
+inline void to_json(json &j, const ResidueTorsion &id)
+{
+	j["entity"] = id._entityName;
+	j["torsion"] = id._torsion;
+	
+	if (id._masterSet)
+	{
+		j["master"] = id._masterId;
+	}
+	
+	if (id._localSet)
+	{
+		j["local"] = id._localId;
+	}
+	
+}
+
+inline void from_json(const json &j, ResidueTorsion &id)
+{
+	j.at("entity").get_to(id._entityName);
+	j.at("master").get_to(id._masterId);
+	j.at("torsion").get_to(id._torsion);
+	
+	if (j.count("master"))
+	{
+		j.at("master").get_to(id._masterId);
+		id._masterSet = true;
+	}
+	
+	if (j.count("local"))
+	{
+		j.at("local").get_to(id._localId);
+		id._localSet = true;
+	}
+}
 
 #endif

@@ -339,15 +339,22 @@ void Route::prepareDestination()
 		
 		for (size_t i = 0; i < basis->parameterCount(); i++)
 		{
-			Parameter *t = basis->parameter(i);
-			float v = _instance->valueForTorsionFromList(t, list, _rawDest, found);
-			if (v != v)
+			Parameter *p = basis->parameter(i);
+			int idx = _instance->indexForParameterFromList(p, list);
+			float v = 0;
+			
+			if (idx < 0)
 			{
-				_missing.push_back(t);
-				v = 0;
+				_missing.push_back(p);
 			}
+			else
+			{
+				v = _rawDest[i];
+			}
+			
+			const ResidueTorsion &rt = list[i];
 
-			addParameter(t);
+			addParameter(rt, p);
 			_destination.push_back(v);
 			
 			/* each calculator will only be sensitive to a subset of our
@@ -466,4 +473,15 @@ float Route::getTorsionAngle(int i)
 	{
 		return destination(i) + 360;
 	}
+}
+
+std::vector<ResidueTorsion> Route::residueTorsions() const
+{
+	std::vector<ResidueTorsion> rts;
+	for (size_t i = 0; i < parameterCount(); i++)
+	{
+		rts.push_back(residueTorsion(i));
+	}
+
+	return rts;
 }

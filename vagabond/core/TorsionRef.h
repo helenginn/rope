@@ -46,7 +46,7 @@ public:
 		_tmpAngle = angle;
 	}
 
-	float refinedAngle()
+	const float &refinedAngle() const
 	{
 		return _refinedAngle;
 	}

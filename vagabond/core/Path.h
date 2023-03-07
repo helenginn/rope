@@ -102,6 +102,7 @@ private:
 	bool _contributeSVD = false;
 	bool _visible = true;
 
+	std::vector<ResidueTorsion> _rts;
 	std::map<int, PlausibleRoute::WayPoints> _wayPoints;
 	std::vector<bool> _flips;
 	std::vector<MetadataGroup::Array> _angleArrays;
@@ -110,9 +111,6 @@ private:
 	PlausibleRoute::InterpolationType _type = PlausibleRoute::Polynomial;
 	
 	PlausibleRoute *_route = nullptr;
-	
-	std::vector<ResidueId> _residueIds;
-	std::vector<TorsionRef> _torsionRefs;
 };
 
 /* waypoint */
@@ -135,8 +133,7 @@ inline void to_json(json &j, const Path &value)
 	j["model"] = value._model_id;
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
-	j["residues"] = value._residueIds;
-	j["torsions"] = value._torsionRefs;
+	j["parameters"] = value._rts;
 	j["flips"] = value._flips;
 	j["waypoints"] = value._wayPoints;
 }
@@ -148,10 +145,8 @@ inline void from_json(const json &j, Path &value)
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
 
-    std::vector<ResidueId> residues = j.at("residues");
-    value._residueIds = residues;
-    std::vector<TorsionRef> refs = j.at("torsions");
-    value._torsionRefs = refs;
+//    std::vector<ResidueId> residues = j.at("residues");
+//    value._residueIds = residues;
 
     std::vector<bool> flips = j.at("flips");
     value._flips = flips;

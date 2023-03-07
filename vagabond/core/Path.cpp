@@ -27,6 +27,7 @@ Path::Path(PlausibleRoute *pr)
 	_model_id = pr->instance()->model()->id();
 	_instance = pr->instance();
 	_end = pr->endInstance();
+	_rts = pr->residueTorsions();
 
 	_wayPoints = pr->wayPoints();
 	_flips = pr->flips();
@@ -48,18 +49,15 @@ void Path::getTorsionRef(int idx)
 	ResidueId id = t->residueId();
 	TorsionRef rt = TorsionRef(t);
 	rt.setRefinedAngle(_destination[idx]);
-
-	_residueIds.push_back(id);
-	_torsionRefs.push_back(rt);
 }
 
 void Path::housekeeping()
 {
 	_destination.clear();
 
-	for (TorsionRef &ref : _torsionRefs)
+	for (ResidueTorsion &rt : _rts)
 	{
-		_destination.push_back(ref.refinedAngle());
+		_destination.push_back(rt.torsion().refinedAngle());
 	}
 
 	if (_model && _instance && _end)
@@ -114,45 +112,20 @@ PlausibleRoute *Path::toRoute()
 	pr->setWayPoints(_wayPoints);
 	pr->Route::setFlips(_flips);
 
-	for (size_t i = 0; i < _residueIds.size(); i++)
+	for (size_t i = 0; i < _rts.size(); i++)
 	{
-		Residue *local = _instance->equivalentLocal(_residueIds[i]);
-		Parameter *p = nullptr;
-		
-		if (local)
-		{
-			for (size_t j = 0; j < group->parameterCount(); j++)
-			{
-				Parameter *c = group->parameter(j);
-				
-				if (!_instance->atomBelongsToInstance(c->anAtom()))
-				{
-					continue;
-				}
-				
-				if (c->residueId().str() != local->id().str())
-				{
-					continue;
-				}
-				
-				if (!c->hasDesc(_torsionRefs[i].desc()))
-				{
-					continue;
-				}
-				
-				p = c;
-			}
-		}
+		_rts[i].attachToInstance(_instance);
+		Parameter *p = _rts[i].parameter();
 		
 		if (p == nullptr)
 		{
-			std::cout << "WARNING! null parameter in " << _residueIds[i].str() << std::endl;
+			std::cout << "WARNING! null parameter in " << 
+			_rts[i].local_id().str() << std::endl;
 		}
 		
-		pr->addParameter(p);
+		pr->addParameter(_rts[i], p);
 	}
 
-//	pr->clearMask();
 	_route = pr;
 	
 	return pr;
