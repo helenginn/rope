@@ -112,11 +112,22 @@ void GuiBond::changeNetworks(int n)
 void GuiBond::updateAtoms(Atom *a, Atom::WithPos &wp)
 {
 	int n = wp.samples.size();
-	changeNetworks(n);
+	
+	if (n > _num)
+	{
+		changeNetworks(n);
+	}
 
 	for (size_t i = 0; i < n; i++)
 	{
-		updateAtom(a, wp.samples[i], i);
+		if (wp.samples.size() <= _num)
+		{
+			updateAtom(a, wp.samples[i], i);
+		}
+		else
+		{
+			updateAtom(a, wp.ave, i);
+		}
 	}
 }
 

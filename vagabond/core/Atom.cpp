@@ -435,7 +435,7 @@ bool Atom::isReporterAtom() const
 	return isReporterAtom(atomName());
 }
 
-int Atom::bondsBetween(Atom *end, int maxBonds)
+int Atom::bondsBetween(Atom *end, int maxBonds, bool long_way)
 {
 	if (chain() != end->chain())
 	{
@@ -451,10 +451,11 @@ int Atom::bondsBetween(Atom *end, int maxBonds)
 	{
 		BondNum bn = bnums.back();
 		bnums.pop_back();
+		int candidate = maxBonds - bn.num;
 		
 		if (bn.atom == end)
 		{
-			return maxBonds - bn.num;
+			return candidate;
 		}
 
 		if (bn.num == 0)
@@ -466,6 +467,11 @@ int Atom::bondsBetween(Atom *end, int maxBonds)
 		{
 			BondLength *bl = bn.atom->bondLength(i);
 			Atom *other = bl->otherAtom(bn.atom);	
+			
+			if (long_way && bn.atom == this && other == end)
+			{
+				continue;
+			}
 
 			if (rejected.count(other))
 			{

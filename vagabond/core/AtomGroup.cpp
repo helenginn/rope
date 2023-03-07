@@ -328,6 +328,7 @@ Atom *AtomGroup::firstAtomWithName(std::string name) const
 
 Atom *AtomGroup::chosenAnchor(bool min)
 {
+	min = true;
 	if (_chosenAnchor != nullptr)
 	{
 		return _chosenAnchor;

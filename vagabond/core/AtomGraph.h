@@ -38,6 +38,7 @@ struct AtomGraph
 	BondTorsion *torsion = nullptr;
 	int torsion_idx = -1;
 	std::vector<AtomGraph *> children;
+	AtomGraph *prior = nullptr;
 
 	bool childrenOnlyHydrogens();
 	bool checkAtomGraph() const;

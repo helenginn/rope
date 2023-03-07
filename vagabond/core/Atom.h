@@ -256,7 +256,7 @@ public:
 	void setTransformation(glm::mat4x4 transform);
 	void setAbsoluteTransformation(glm::mat4x4 transform);
 	
-	int bondsBetween(Atom *end, int maxBonds);
+	int bondsBetween(Atom *end, int maxBonds, bool long_way = false);
 
 	const glm::mat4x4 &transformation() const
 	{

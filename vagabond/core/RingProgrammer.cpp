@@ -88,7 +88,6 @@ std::string RingProgrammer::specialTorsion(int i, float *def)
 bool RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 {
 	bool found_central = registerAtom(ag->atom, idx);
-//	std::cout << status() << std::endl;
 	
 	// make sure we record all grandparents who branch off the ring
 	// but only when we're recording ring things
@@ -455,8 +454,6 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 	prog->setRingEntranceName(name);
 	prog->setLinkedAtom(blocks[_triggerIndex].atom);
 	blocks[_triggerIndex].atom->setCyclic(&prog->cyclic());
-	
-	std::cout << status() << std::endl;
 	
 	for (auto it = _atomLocs.begin(); it != _atomLocs.end(); it++)
 	{

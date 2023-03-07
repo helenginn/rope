@@ -59,6 +59,8 @@ public:
 	void markHydrogenGraphs();
 	void sortGraphChildren();
 	
+	bool beyondVisitLimit(Atom *atom);
+	
 	PCA::Matrix distanceMatrix();
 	void fillDistances(PCA::Matrix &m);
 
@@ -140,6 +142,7 @@ public:
 	AtomGraph *deepestChild(AtomGraph *last) const;
 private:
 	void addGraph(AtomGraph *graph);
+	int jumpsToAtom(AtomGraph *last, Atom *search, int max);
 	void extendGraphNormally(AtomGraph *current,
 	                         std::vector<AtomGraph *> &todo,
 	                         AnchorExtension &ext);
@@ -155,7 +158,12 @@ private:
 	std::map<Atom *, AtomBlock> _atom2Transform;
 	std::vector<Atom *> _anchors;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
+	std::map<int, AtomGraph *> _block2Graph;
 	std::map<Parameter *, AtomGraph *> _parameter2Graph;
+	
+	std::map<Atom *, int> _visits;
+	int _visitLimit = 1;
+	int _ringSizeLimit = 5;
 	
 	typedef std::deque<RingProgrammer> RingProgrammers;
 
