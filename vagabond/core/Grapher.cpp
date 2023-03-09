@@ -179,6 +179,14 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 		/* important not to go round in circles */
 		if (beyondVisitLimit(next))
 		{
+			// but if it's beyond the limit, it's a joint
+			
+			// we only care if the visit limit is not 1, though
+			if (_visitLimit > 1)
+			{
+				current->joint = true;
+			}
+
 			continue;
 		}
 		
@@ -244,6 +252,17 @@ void Grapher::addGraph(AtomGraph *graph)
 	if (_visits[graph->atom] == 0)
 	{
 		_atom2Graph[graph->atom] = graph;
+	}
+	// we only care about graph joints if the visit limit is greater than 1
+	// and if we actually have a parent atom
+	else if (graph->parent && _visitLimit > 1)
+	// normally, the upcoming visits would be one less than the current.
+	// however, if they're the same, that means it's become a loop join.
+	{
+		if (_visits[graph->atom] == _visits[graph->parent]))
+		{
+			graph->joint = true;
+		}
 	}
 
 	_visits[graph->atom]++;

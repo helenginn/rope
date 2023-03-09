@@ -39,6 +39,7 @@ struct AtomGraph
 	int torsion_idx = -1;
 	std::vector<AtomGraph *> children;
 	AtomGraph *prior = nullptr;
+	bool joint = false; // set to true when this went round a loop
 
 	bool childrenOnlyHydrogens();
 	bool checkAtomGraph() const;
