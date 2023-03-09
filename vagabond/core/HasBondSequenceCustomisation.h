@@ -58,6 +58,11 @@ public:
 		_threads = threads;
 	}
 	
+	void setMaximumLoopCount(size_t loops)
+	{
+		_loopCount = loops;
+	}
+	
 	void transferProperties(HasBondSequenceCustomisation *other)
 	{
 		other->_ignoreHydrogens = _ignoreHydrogens;
@@ -65,6 +70,7 @@ public:
 		other->_skipSections = _skipSections;
 		other->_totalSamples = _totalSamples;
 		other->_maxThreads = _maxThreads;
+		other->_loopCount = _loopCount;
 		other->_threads = _threads;
 		other->_mode = _mode;
 	}
@@ -72,6 +78,7 @@ protected:
 	bool _ignoreHydrogens = false;
 	bool _skipSections = false;
 	bool _superpose = true;
+	size_t _loopCount = 1;
 
 	size_t _totalSamples = 0;
 	size_t _maxThreads = 0;

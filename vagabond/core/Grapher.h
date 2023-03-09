@@ -130,8 +130,13 @@ public:
 		return _programs;
 	}
 	
+	void setVisitLimit(int limit)
+	{
+		_visitLimit = limit;
+	}
+	
 	std::string desc() const;
-
+	
 	/** get the first graph of the next residue following along the nodes.
 	 * If there is a choice, take the one with the lower residue number.
 	 * @param last current node 
