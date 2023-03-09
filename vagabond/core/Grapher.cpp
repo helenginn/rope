@@ -259,7 +259,7 @@ void Grapher::addGraph(AtomGraph *graph)
 	// normally, the upcoming visits would be one less than the current.
 	// however, if they're the same, that means it's become a loop join.
 	{
-		if (_visits[graph->atom] == _visits[graph->parent]))
+		if (_visits[graph->atom] == _visits[graph->parent])
 		{
 			graph->joint = true;
 		}
