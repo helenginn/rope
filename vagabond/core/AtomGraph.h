@@ -42,6 +42,13 @@ struct AtomGraph
 
 	bool childrenOnlyHydrogens();
 	bool checkAtomGraph() const;
+	
+	/** will return the torsion angle of the eldest sister, directly or
+	 * indirectly controlling this AtomGraph's position.
+	 * @return torsion angle if successful, null otherwise (beginning of
+	 * tree for example) */
+	BondTorsion *pertinentTorsion();
+
 	std::string desc() const;
 	
 	~AtomGraph()

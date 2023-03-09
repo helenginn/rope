@@ -124,3 +124,14 @@ bool AtomGraph::operator<(const AtomGraph &other) const
 	return atom->atomNum() < other.atom->atomNum();
 }
 
+
+BondTorsion *AtomGraph::pertinentTorsion()
+{
+	if (!prior || prior->children.size() == 0)
+	{
+		return nullptr;
+	}
+
+	AtomGraph *eldest = prior->children[0];
+	return eldest->torsion;
+}
