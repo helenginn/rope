@@ -163,7 +163,7 @@ private:
 	
 	std::map<Atom *, int> _visits;
 	int _visitLimit = 1;
-	int _ringSizeLimit = 5;
+	int _ringSizeLimit = 6;
 	
 	typedef std::deque<RingProgrammer> RingProgrammers;
 
