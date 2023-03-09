@@ -345,6 +345,7 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 	for (size_t i = _graphsDone; i < _graphs.size(); i++)
 	{
 		_graphs[i]->torsion_idx = -1;
+
 		if (_graphs[i]->children.size() == 0)
 		{
 			continue;
@@ -372,7 +373,7 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 				}
 			}
 		}
-
+		
 		int idx = basis->addParameter(_graphs[i]->torsion, _graphs[i]->atom);
 		_parameter2Graph[_graphs[i]->torsion] = _graphs[i];
 		_graphs[i]->torsion_idx = idx;
