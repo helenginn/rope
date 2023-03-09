@@ -61,9 +61,7 @@ private:
 	void calculateActiveTorsions();
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
-	void stepRefine(AtomGroup *group);
 	bool *generateAbsorptionMask(std::set<Atom *> done);
-	void measureAtoms(std::set<Atom *> done);
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
