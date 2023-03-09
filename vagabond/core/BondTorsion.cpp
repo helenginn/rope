@@ -242,3 +242,22 @@ bool BondTorsion::spansMultipleChains() const
 	
 	return false;
 }
+
+std::set<BondTorsion *> BondTorsion::relatedTorsions() const
+{
+	std::set<BondTorsion *> torsions;
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		Atom *a = atom(i);
+		
+		for (size_t j = 0; j < a->bondTorsionCount(); j++)
+		{
+			BondTorsion *t = a->bondTorsion(j);
+			
+			torsions.insert(t);
+		}
+	}
+	
+	return torsions;
+}

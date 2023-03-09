@@ -22,6 +22,7 @@
 class AtomGroup;
 class Atom;
 
+#include <set>
 #include "Bondstraint.h"
 #include "Parameter.h"
 #include "../utils/glm_import.h"
@@ -137,6 +138,7 @@ public:
 	glm::vec3 bondMidPoint() const;
 	glm::vec3 bondDirection() const;
 	double similarityScore(BondTorsion *const other) const;
+	std::set<BondTorsion *> relatedTorsions() const;
 	
 	virtual const std::string desc() const;
 	virtual const std::string reverse_desc() const;
