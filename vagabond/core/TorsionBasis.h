@@ -20,6 +20,7 @@
 #define __vagabond__TorsionBasis__
 
 #include <vector>
+#include <set>
 #include "ResidueTorsion.h"
 
 class Parameter;
@@ -60,6 +61,7 @@ public:
 	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};
+	void trimParametersToUsed(std::set<Parameter *> &params);
 
 	const size_t parameterCount() const
 	{

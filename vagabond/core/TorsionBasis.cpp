@@ -109,3 +109,24 @@ int TorsionBasis::indexForParameter(Parameter *p)
 	}
 	return -1;
 }
+
+void TorsionBasis::trimParametersToUsed(std::set<Parameter *> &params)
+{
+	bool again = true;
+	
+	while (again)
+	{
+		again = false;
+		for (Parameter *p : params)
+		{
+			int idx = indexForParameter(p);
+
+			if (idx < 0)
+			{
+				params.erase(p); // iterator could be invalidated
+				again = true; 
+				break;
+			}
+		}
+	}
+}
