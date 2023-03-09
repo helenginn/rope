@@ -243,9 +243,9 @@ bool BondTorsion::spansMultipleChains() const
 	return false;
 }
 
-std::set<BondTorsion *> BondTorsion::relatedTorsions() const
+std::set<Parameter *> BondTorsion::relatedTorsions() const
 {
-	std::set<BondTorsion *> torsions;
+	std::set<Parameter *> torsions;
 
 	for (size_t i = 0; i < 4; i++)
 	{
