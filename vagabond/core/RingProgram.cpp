@@ -124,13 +124,10 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 	
 	Atom *gp_atom = nullptr;
 	Atom *other_atom = nullptr;
-	
-	std::cout << "Branch: " << atom->desc() << std::endl;
 
 	for (size_t i = 0; i < primary->bondLengthCount(); i++)
 	{
 		Atom *a = primary->connectedAtom(i);
-		std::cout << a->desc() << std::endl;
 		if (a == atom)
 		{
 			continue; // easily avoid the branched atom.
