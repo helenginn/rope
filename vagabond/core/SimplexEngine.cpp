@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <iostream>
 
-SimplexEngine::SimplexEngine()
+SimplexEngine::SimplexEngine(RunsEngine *ref) : Engine(ref)
 {
 	_finish = false;
 }
@@ -34,7 +34,7 @@ void SimplexEngine::reorderVertices()
 
 void SimplexEngine::resetVertex(TestPoint &point)
 {
-	point.vertex.resize(_dims);
+	point.vertex.resize(n());
 	for (size_t i = 0; i < point.vertex.size(); i++)
 	{
 		point.vertex[i] = 0;
@@ -45,9 +45,9 @@ void SimplexEngine::resetVertex(TestPoint &point)
 
 void SimplexEngine::allocateResources()
 {
-	_points.resize(_dims + 1);
+	_points.resize(n() + 1);
 
-	for (size_t i = 0; i < _dims + 1; i++)
+	for (size_t i = 0; i < n() + 1; i++)
 	{
 		resetVertex(_points[i]);
 	}
@@ -59,17 +59,17 @@ void SimplexEngine::findCentroid()
 {
 	resetVertex(_centroid);
 
-	for (size_t j = 0; j < _dims; j++)
+	for (size_t j = 0; j < n(); j++)
 	{
-		for (size_t i = 0; i < _dims; i++)
+		for (size_t i = 0; i < n(); i++)
 		{
 			_centroid.vertex[i] += _points[j].vertex[i];
 		}
 	}
 
-	for (size_t i = 0; i < _dims; i++)
+	for (size_t i = 0; i < n(); i++)
 	{
-		_centroid.vertex[i] /= (float)_dims;
+		_centroid.vertex[i] /= (float)n();
 	}
 }
 
@@ -184,27 +184,31 @@ void SimplexEngine::singleCycle()
 	}
 }
 
-void SimplexEngine::pickUpResults()
+void SimplexEngine::collateResults()
 {
-	while (true)
+	for (auto it = _scores.begin(); it != _scores.end(); it++)
 	{
-		double eval = FLT_MAX;
-		int ticket = awaitResult(&eval);
-		if (ticket < 0)
-		{
-			break;
-		}
+		int ticket = it->first;
 
 		for (size_t i = 0; i < _points.size(); i++)
 		{
 			if (_points[i].tickets.count(ticket) > 0)
 			{
 				SPoint &p = _points[i].tickets[ticket];
-				_points[i].eval = eval;
-				_points[i].vertex = p;
+				_points[i].eval = it->second.score;
+				_points[i].vertex = it->second.vals;
 			}
 		}
 	}
+
+}
+
+void SimplexEngine::pickUpResults()
+{
+	getResults();
+	collateResults();
+	clearResults();
+	classifyResults();
 }
 
 void SimplexEngine::shrink()
@@ -215,30 +219,15 @@ void SimplexEngine::shrink()
 		int ticket = sendJob(trial);
 		_points[i].tickets[ticket] = trial;
 	}
-
-	while (true)
-	{
-		double eval = FLT_MAX;
-		int ticket = awaitResult(&eval);
-		if (ticket < 0)
-		{
-			break;
-		}
-
-		for (size_t i = 0; i < _points.size(); i++)
-		{
-			if (_points[i].tickets.count(ticket) > 0)
-			{
-				SPoint &p = _points[i].tickets[ticket];
-				_points[i].vertex = p;
-			}
-		}
-	}
+	
+	getResults();
+	collateResults();
+	clearResults();
 }
 
 bool SimplexEngine::run()
 {
-	if (_dims <= 0)
+	if (n() <= 0)
 	{
 		throw std::runtime_error("Nonsensical dimensions for SimplexEngine");
 	}
@@ -254,24 +243,26 @@ bool SimplexEngine::run()
 		throw std::runtime_error("No step sizes chosen for SimplexEngine");
 	}
 
-	std::vector<float> empty = std::vector<float>(_dims, 0);
+	std::vector<float> empty = std::vector<float>(n(), 0);
 	sendJob(empty);
 	
+	getResults();
 	double begin = FLT_MAX;
-	awaitResult(&begin);
+	findBestResult(&begin);
 
 	allocateResources();
 	sendStartingJobs();
 	singleCycle();
 	
 	sendJob(bestPoint());
+	getResults();
 	double end = FLT_MAX;
-	awaitResult(&end);
+	findBestResult(&end);
 	
 	return (end < begin);
 }
 
-bool SimplexEngine::awaitResults()
+bool SimplexEngine::classifyResults()
 {
 	bool changed = false;
 
@@ -279,54 +270,42 @@ bool SimplexEngine::awaitResults()
 	double second_worst = _points[_points.size() - 2].eval;
 	double best = _points[0].eval;
 
-	while (true)
+	for (size_t i = 0; i < _points.size(); i++)
 	{
-		double eval = FLT_MAX;
-		int ticket = awaitResult(&eval);
-		
-		if (ticket < 0)
+		if (_points[i].tickets.count(ticket) > 0)
 		{
-			break;
-		}
-		
+			Decision job = _points[i].decision;
 
-		for (size_t i = 0; i < _points.size(); i++)
-		{
-			if (_points[i].tickets.count(ticket) > 0)
+			/* no improvement on 2nd worst */
+			if (eval > worst)
 			{
-				Decision job = _points[i].decision;
-
-				/* no improvement on 2nd worst */
-				if (eval > worst)
-				{
-					_points[i].decision = ShouldReflect;
-				}
-				else if (eval > second_worst)
-				{
-					_points[i].decision = ShouldReflect;
-				}
-				else if (eval < second_worst)
-				{
-					changed = true;
-
-					TestPoint &w = _points[_points.size() - 1];
-					w.vertex = _points[i].tickets[ticket];
-					w.eval = eval;
-					
-					if (eval < best)
-					{
-						w.decision = ShouldExpand;
-					}
-					else 
-					{
-						w.decision = ShouldReflect;
-					}
-				}
-
-				reorderVertices();
-				_points[i].tickets.erase(ticket);
-				break;
+				_points[i].decision = ShouldReflect;
 			}
+			else if (eval > second_worst)
+			{
+				_points[i].decision = ShouldReflect;
+			}
+			else if (eval < second_worst)
+			{
+				changed = true;
+
+				TestPoint &w = _points[_points.size() - 1];
+				w.vertex = _points[i].tickets[ticket];
+				w.eval = eval;
+
+				if (eval < best)
+				{
+					w.decision = ShouldExpand;
+				}
+				else 
+				{
+					w.decision = ShouldReflect;
+				}
+			}
+
+			reorderVertices();
+			_points[i].tickets.erase(ticket);
+			break;
 		}
 	}
 
@@ -345,20 +324,14 @@ bool SimplexEngine::awaitResults()
 	return changed;
 }
 
-int SimplexEngine::sendJob(const SPoint &trial, bool force_update)
-{
-	// to be implemented downstream
-	return -1;
-}
-
 void SimplexEngine::sendStartingJobs()
 {
 	for (size_t i = 0; i < _points.size(); i++)
 	{
 		SPoint trial;
-		trial.resize(_dims);
+		trial.resize(n());
 
-		for (size_t j = 0; j < _dims; j++)
+		for (size_t j = 0; j < n(); j++)
 		{
 			float val = (i == j) ? _steps[i] : 0;
 			trial[j] = val;
@@ -380,9 +353,9 @@ void SimplexEngine::sendStartingJobs()
 
 SimplexEngine::SPoint SimplexEngine::scaleThrough(SPoint &p, SPoint &q, float k)
 {
-	SPoint ret = SPoint(_dims, 0.);
+	SPoint ret = SPoint(n(), 0.);
 
-	for (size_t i = 0; i < _dims; i++)
+	for (size_t i = 0; i < n(); i++)
 	{
 		ret[i] = q[i] + k * (p[i] - q[i]);
 	}
@@ -465,11 +438,6 @@ void SimplexEngine::sendDecidedJobs()
 		_points[i].decision = ShouldReflect;
 	}
 
-}
-
-int SimplexEngine::awaitResult(double *eval)
-{
-	return -1;
 }
 
 const SimplexEngine::SPoint &SimplexEngine::bestPoint() const

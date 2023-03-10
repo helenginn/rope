@@ -24,10 +24,12 @@
 #include <vector>
 #include <map>
 
-class SimplexEngine
+#include "Engine.h"
+
+class SimplexEngine : public Engine
 {
 public:
-	SimplexEngine();
+	SimplexEngine(RunsEngine *ref);
 	virtual ~SimplexEngine() {};
 
 	void setDimensionCount(int dims)
@@ -58,9 +60,7 @@ protected:
 	typedef std::vector<float> SPoint;
 
 	const SPoint &bestPoint() const;
-	virtual int sendJob(const SPoint &trial, bool force_update = false);
-	virtual int awaitResult(double *eval);
-	
+
 	const float bestScore() const
 	{
 		return _points[0].eval;
@@ -120,7 +120,8 @@ private:
 	void reorderVertices();
 	SPoint scaleThrough(SPoint &p, SPoint &q, float k);
 
-	bool awaitResults();
+	bool classifyResults();
+	void collateResults();
 
 	void sendStartingJobs();
 	void sendDecidedJobs();
