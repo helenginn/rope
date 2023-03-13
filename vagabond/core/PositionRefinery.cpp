@@ -18,6 +18,7 @@
 
 #include "PositionRefinery.h"
 #include "AtomGroup.h"
+#include "ChemotaxisEngine.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
@@ -46,20 +47,28 @@ void PositionRefinery::refine()
 		                         "group specified.");
 	}
 	
-	std::vector<AtomGroup *> units = _group->connectedGroups();
+	std::vector<AtomGroup *> units = _group->connectedGroups(false);
 
 	for (size_t i = 0; i < units.size(); i++)
 	{
-		if (units[i]->size() > 1)
+		if (units[i]->size() <= 1)
 		{
-			try
+			continue;
+		}
+
+		try
+		{
+			refine(units[i]);
+			
+			if (_thorough)
 			{
 				refine(units[i]);
+				loopyRefinement(units[i]);
 			}
-			catch (const std::runtime_error &err)
-			{
-				std::cout << "Giving up: " << err.what() << std::endl;
-			}
+		}
+		catch (const std::runtime_error &err)
+		{
+			std::cout << "Giving up: " << err.what() << std::endl;
 		}
 	}
 	
@@ -216,20 +225,81 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 
 }
 
-void PositionRefinery::refine(AtomGroup *group)
+void PositionRefinery::loopyRefinement(AtomGroup *group)
+{
+	setupCalculator(group, true);
+
+	// now grab the grapher, which will have information about loops
+	BondSequence *seq = _calculator->sequence();
+	const Grapher &grapher = seq->grapher();
+
+	int ovl = grapher.observedVisitLimit();
+	
+	// there are no loops to deal with
+	if (ovl == 1)
+	{
+		delete _calculator;
+		_calculator = nullptr;
+		return;
+	}
+	
+	_calculator->start();
+	std::vector<const AtomGraph *> joints = grapher.joints();
+	clearActiveIndices();
+	std::set<Parameter *> params;
+
+	for (const AtomGraph *graph : joints)
+	{
+		BondTorsion *t = graph->pertinentTorsion();
+		if (t)
+		{
+			params.insert(t);
+		}
+	}
+	
+	addActiveIndices(params);
+	wiggleBonds();
+	clearActiveIndices();
+	
+	for (const Parameter *param : params)
+	{
+		wiggleBond(param);
+	}
+
+	wiggleBonds();
+
+	delete _calculator;
+	_calculator = nullptr;
+	setupCalculator(group, false);
+
+	float res = fullResidual();
+	std::cout << "After loopy refinement: " << res << " Angstroms." << std::endl;
+
+	delete _calculator;
+	_calculator = nullptr;
+}
+
+void PositionRefinery::setupCalculator(AtomGroup *group, bool loopy)
 {
 	Atom *anchor = group->chosenAnchor();
-
 	_calculator = new BondCalculator();
 	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
 	_calculator->setMaxSimultaneousThreads(1);
 	_calculator->setTotalSamples(1);
+	_calculator->setMaximumLoopCount(loopy ? 5 : 1);
 	_calculator->setTorsionBasisType(_type);
 	_calculator->setSuperpose(false);
 	_calculator->prepareToSkipSections(true);
 	_calculator->addAnchorExtension(anchor);
 	_calculator->setIgnoreHydrogens(true);
 	_calculator->setup();
+
+}
+
+void PositionRefinery::refine(AtomGroup *group)
+{
+	setupCalculator(group, false);
+	Atom *anchor = group->chosenAnchor();
 
 	_nBonds = _calculator->maxCustomVectorSize();
 	
@@ -336,4 +406,130 @@ int PositionRefinery::sendJob(const SPoint &trial, bool force_update)
 void PositionRefinery::finish()
 {
 	SimplexEngine::finish();
+}
+
+void PositionRefinery::clearActiveIndices()
+{
+	_activeIndices.clear();
+	_parameters.clear();
+}
+
+void PositionRefinery::addActiveIndices(std::set<Parameter *> &params)
+{
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	std::vector<int> extra = basis->grabIndices(params);
+	
+	for (size_t i = 0; i < extra.size(); i++)
+	{
+		_activeIndices.insert(extra[i]);
+	}
+	
+	for (Parameter *param : params)
+	{
+		_parameters.insert(param);
+	}
+}
+
+void PositionRefinery::setMaskFromIndices()
+{
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	_mask = std::vector<bool>(basis->parameterCount(), false);
+
+	for (const int &idx : _activeIndices)
+	{
+		_mask[idx] = true;
+	}
+}
+
+void PositionRefinery::wiggleBonds()
+{
+	setMaskFromIndices();
+
+	if (_wiggler != nullptr)
+	{
+		delete _wiggler;
+		_wiggler = nullptr;
+	}
+
+	_wiggler = new ChemotaxisEngine(this);
+	_wiggler->start();
+
+	std::vector<float> best = _wiggler->bestResult();
+	std::vector<float> full(_mask.size(), 0);
+	
+	fullSizeVector(best, &full[0]);
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	basis->absorbVector(&full[0], full.size());
+}
+
+void PositionRefinery::wiggleBond(const Parameter *p)
+{
+	std::set<Parameter *> related = p->relatedParameters();
+	addActiveIndices(related);
+}
+
+size_t PositionRefinery::parameterCount()
+{
+	return _activeIndices.size();
+}
+
+void PositionRefinery::fullSizeVector(const std::vector<float> &all,
+                                      float *dest)
+{
+	int count = parameterCount();
+	int curr = 0;
+	for (const int &idx : _activeIndices)
+	{
+		dest[idx] = all[curr] * (float)count;
+		curr++;
+	}
+}
+
+// for wiggler
+int PositionRefinery::sendJob(std::vector<float> &all)
+{
+	Job job{};
+	
+	job.requests = JobCalculateDeviations;
+
+	if (_ncalls % 100 == 0)
+	{
+		job.requests = static_cast<JobType>(JobCalculateDeviations | 
+		                                    JobExtractPositions);
+	}
+
+	job.custom.allocate_vectors(1, _mask.size(), 0);
+
+	fullSizeVector(all, job.custom.vecs[0].mean);
+
+	_ncalls++;
+
+	int ticket = _calculator->submitJob(job);
+	return ticket;
+}
+
+float PositionRefinery::getResult(int *job_id)
+{
+	Result *result = _calculator->acquireResult();
+	if (result == nullptr)
+	{
+		*job_id = -1;
+		return FLT_MAX;
+	}
+
+	float score = FLT_MAX;
+
+	if (result->requests & JobExtractPositions)
+	{
+		result->transplantPositions();
+	}
+	if (result->requests & JobCalculateDeviations)
+	{
+		score = result->deviation;
+	}
+
+	int ticket = result->ticket;
+	result->destroy();
+	*job_id = ticket;
+	return score;
 }

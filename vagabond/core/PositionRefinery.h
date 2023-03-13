@@ -22,15 +22,17 @@
 #include "SimplexEngine.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
+#include "ChemotaxisEngine.h"
 #include <iostream>
 #include <queue>
 #include <set>
 #include <climits>
 
 class AtomGroup;
+class Parameter;
 class BondCalculator;
 
-class PositionRefinery : public SimplexEngine
+class PositionRefinery : public SimplexEngine, public RunsEngine
 {
 public:
 	PositionRefinery(AtomGroup *group = nullptr);
@@ -42,6 +44,11 @@ public:
 	}
 
 	void refine();
+	
+	void setThorough(bool th)
+	{
+		_thorough = true;
+	}
 	virtual void finish();
 	
 	static void backgroundRefine(PositionRefinery *ref);
@@ -53,8 +60,20 @@ public:
 protected:
 	virtual int sendJob(const SPoint &trial, bool force_update = false);
 	virtual int awaitResult(double *eval);
+
+	virtual size_t parameterCount();
+	virtual int sendJob(std::vector<float> &all);
+	virtual float getResult(int *job_id);
 private:
+	void fullSizeVector(const std::vector<float> &all,
+	                    float *dest);
 	void refine(AtomGroup *group);
+
+	void loopyRefinement(AtomGroup *group);
+	void wiggleBond(const Parameter *t);
+	void wiggleBonds();
+
+	void setupCalculator(AtomGroup *group, bool loopy);
 	bool refineBetween(int start, int end, int side_max = INT_MAX);
 	double fullResidual();
 	SPoint expandPoint(const SPoint &p);
@@ -62,6 +81,10 @@ private:
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
 	bool *generateAbsorptionMask(std::set<Atom *> done);
+
+	void addActiveIndices(std::set<Parameter *> &params);
+	void clearActiveIndices();
+	void setMaskFromIndices();
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
@@ -80,9 +103,13 @@ private:
 	size_t _progs = 0;
 	
 	int _depthRange = 5;
+	bool _thorough = false;
 	
 	TorsionBasis::Type _type = TorsionBasis::TypeSimple;
+	ChemotaxisEngine *_wiggler = nullptr;
 	
+	std::set<int> _activeIndices;
+	std::set<Parameter *> _parameters;
 	std::vector<bool> _mask;
 };
 
