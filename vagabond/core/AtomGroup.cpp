@@ -398,6 +398,7 @@ void AtomGroup::refinePositions(bool sameThread)
 	}
 
 	PositionRefinery *refinery = new PositionRefinery(this);
+	refinery->setThorough(true);
 
 	cancelRefinement();
 	cleanupRefinement();
