@@ -34,7 +34,7 @@ Path::Path(PlausibleRoute *pr)
 	_type = pr->type();
 	_destination = pr->destination();
 	
-	for (size_t i = 0; i < pr->parameterCount(); i++)
+	for (size_t i = 0; i < pr->Route::parameterCount(); i++)
 	{
 		getTorsionRef(i);
 	}

@@ -28,7 +28,7 @@ class RunsEngine
 public:
 	virtual ~RunsEngine() {};
 	virtual size_t parameterCount() = 0;
-	virtual int sendJob(std::vector<float> &all) = 0;
+	virtual int sendJob(const std::vector<float> &all) = 0;
 
 	virtual float getResult(int *job_id)
 	{
@@ -75,10 +75,19 @@ class Engine
 {
 public:
 	Engine(RunsEngine *ref);
+	virtual ~Engine() {};
+	
+	virtual void start();
+	virtual void run() = 0;
 
 	float bestScore()
 	{
-		return _best;
+		return _bestScore;
+	}
+	
+	const bool &improved() const
+	{
+		return _improved;
 	}
 	
 	const std::vector<float> &bestResult() const
@@ -94,7 +103,8 @@ private:
 		bool received = false;
 	};
 protected:
-	int sendJob(std::vector<float> &all);
+	int sendJob(const std::vector<float> &all);
+	std::vector<float> findBestResult(float *score);
 	
 	void getResults();
 	
@@ -103,7 +113,6 @@ protected:
 		return _current;
 	}
 	
-	std::vector<float> findBestResult(float *score);
 	void currentScore();
 	
 	void clearResults()
@@ -124,13 +133,18 @@ protected:
 	{
 		return _n;
 	}
+
+	bool _improved = false;
+	std::map<int, TicketScore> _scores;
 private:
 	RunsEngine *_ref = nullptr;
 
-	std::map<int, TicketScore> _scores;
 	std::vector<float> _current, _bestResult;
-	float _best = FLT_MAX;
 	int _n = 0;
+	float _bestScore = FLT_MAX;
+	float _startScore = FLT_MAX;
+	float _currentScore = FLT_MAX;
+	float _endScore = FLT_MAX;
 };
 
 #endif

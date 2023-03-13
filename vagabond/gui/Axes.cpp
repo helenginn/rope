@@ -446,7 +446,7 @@ size_t Axes::parameterCount()
 	return 3;
 }
 
-int Axes::sendJob(std::vector<float> &all)
+int Axes::sendJob(const std::vector<float> &all)
 {
 	std::vector<float> vals = _cluster->objectGroup()->numbersForKey(_key);
 	CorrelData cd = empty_CD();

@@ -99,7 +99,7 @@ public:
 	}
 
 	virtual size_t parameterCount();
-	virtual int sendJob(std::vector<float> &all);
+	virtual int sendJob(const std::vector<float> &all);
 	virtual float getResult(int *job_id);
 
 	friend void to_json(json &j, const Cyclic &value);
@@ -123,7 +123,7 @@ private:
 			return 3;
 		}
 		
-		void addFromVector(std::vector<float> &all)
+		void addFromVector(const std::vector<float> &all)
 		{
 			radius += all[0] / mult;
 			z_amplitude += all[1] / mult;

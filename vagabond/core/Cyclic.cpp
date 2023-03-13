@@ -284,7 +284,7 @@ int Cyclic::indexOfName(std::string name) const
 	return -1;
 }
 
-int Cyclic::sendJob(std::vector<float> &all)
+int Cyclic::sendJob(const std::vector<float> &all)
 {
 	Parameters defs(_start);
 	defs.addFromVector(all);

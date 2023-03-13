@@ -61,7 +61,7 @@ public:
 	void backgroundPrioritise(std::string key);
 
 	virtual size_t parameterCount();
-	virtual int sendJob(std::vector<float> &all);
+	virtual int sendJob(const std::vector<float> &all);
 private:
 	std::vector<float> getMappedVector(int idx);
 	void prioritiseDirection(std::string key);

@@ -26,7 +26,7 @@
 
 class Path;
 
-class PlausibleRoute : public Route, public Progressor, public SimplexEngine
+class PlausibleRoute : public Route, public Progressor, public RunsEngine
 {
 	friend Path;
 public:
@@ -41,8 +41,8 @@ public:
 	
 	virtual void prepareForAnalysis();
 protected:
-	virtual int sendJob(const SPoint &trial, bool force_update = false);
-	virtual int awaitResult(double *eval);
+	virtual int sendJob(const std::vector<float> &all);
+	virtual size_t parameterCount();
 	void postScore(float score);
 
 	virtual void doCalculations();
@@ -102,7 +102,7 @@ private:
 	int countTorsions();
 	void cycle();
 
-	void assignParameterValues(const SPoint &trial);
+	void assignParameterValues(const std::vector<float> &trial);
 	void printFit(PlausibleRoute::PolyFit &fit);
 
 	bool validateWayPoint(const WayPoints &wps);
@@ -117,6 +117,8 @@ private:
 	std::vector<float> _paramStarts;
 	int _jobNum = 0;
 	std::map<int, float> _results;
+	
+	SimplexEngine *_simplex = nullptr;
 };
 
 #endif

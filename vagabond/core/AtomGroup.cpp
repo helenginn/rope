@@ -59,18 +59,18 @@ void AtomGroup::alignAnchor()
 
 void AtomGroup::cancelRefinement()
 {
-	if (_engine != nullptr)
+	if (_refinery != nullptr)
 	{
-		_engine->finish();
+		_refinery->finish();
 	}
 }
 
 void AtomGroup::cleanupRefinement()
 {
-	if (_engine != nullptr)
+	if (_refinery != nullptr)
 	{
-		delete _engine;
-		_engine = nullptr;
+		delete _refinery;
+		_refinery = nullptr;
 	}
 	
 	if (_refine != nullptr)
@@ -392,7 +392,7 @@ void AtomGroup::recalculate()
 
 void AtomGroup::refinePositions(bool sameThread)
 {
-	if (_engine && !_engine->isDone())
+	if (_refinery)// && !_refinery->isDone())
 	{
 		return;
 	}
@@ -409,7 +409,7 @@ void AtomGroup::refinePositions(bool sameThread)
 	}
 	else
 	{
-		_engine = refinery;
+		_refinery = refinery;
 		_refine = new std::thread(&PositionRefinery::backgroundRefine, refinery);
 	}
 }

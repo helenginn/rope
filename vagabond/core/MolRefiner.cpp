@@ -84,7 +84,7 @@ std::vector<float> MolRefiner::findTensorAxes(std::vector<float> &triangle)
 	return tensor;
 }
 
-int MolRefiner::sendJob(std::vector<float> &all)
+int MolRefiner::sendJob(const std::vector<float> &all)
 {
 	std::vector<float> axis = all;
 	axis.resize(_info->axes.size());

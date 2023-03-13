@@ -27,7 +27,6 @@ PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
                                int dims)
 : Route(inst, cluster, dims)
 {
-	_maxJobRuns = 20;
 	_maximumCycles = 5;
 }
 
@@ -228,13 +227,26 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 		}
 	}
 	
-	setDimensionCount(_paramPtrs.size());
-	setMaxJobsPerVertex(1);
-	chooseStepSizes(steps);
+	_simplex->setMaxJobsPerVertex(1);
+	_simplex->setMaxJobRuns(20);
+	_simplex->chooseStepSizes(steps);
+}
+
+size_t PlausibleRoute::parameterCount()
+{
+	return _paramPtrs.size();
 }
 
 bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 {
+	if (_simplex)
+	{
+		delete _simplex;
+		_simplex = nullptr;
+	}
+	
+	_simplex = new SimplexEngine(this);
+
 	prepareAnglesForRefinement(torsionIdxs);
 	if (_paramPtrs.size() == 0)
 	{
@@ -242,11 +254,12 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 	}
 
 	_bestScore = routeScore(_nudgeCount);
-	run();
+
+	_simplex->run();
 
 	bool changed = false;
 
-	float bs = bestScore();
+	float bs = _simplex->bestScore();
 	if (bs < _bestScore - 1e-6)
 	{
 		_bestScore = bs;
@@ -785,7 +798,7 @@ void PlausibleRoute::calculateProgression(int steps)
 	}
 }
 
-void PlausibleRoute::assignParameterValues(const SPoint &trial)
+void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 {
 	assert(trial.size() == _paramPtrs.size());
 
@@ -826,9 +839,9 @@ bool PlausibleRoute::validateWayPoints()
 	return true;
 }
 
-int PlausibleRoute::sendJob(const SPoint &trial, bool force_update)
+int PlausibleRoute::sendJob(const std::vector<float> &all)
 {
-	assignParameterValues(trial);
+	assignParameterValues(all);
 	bool valid = validateWayPoints();
 	float result = FLT_MAX;
 	
@@ -837,25 +850,9 @@ int PlausibleRoute::sendJob(const SPoint &trial, bool force_update)
 		result = routeScore(_nudgeCount);
 	}
 	
-	_results[_jobNum] = result;
-	_jobNum++;
-	return (_jobNum - 1);
-}
-
-int PlausibleRoute::awaitResult(double *eval)
-{
-	if (_results.size() == 0)
-	{
-		return -1;
-	}
-
-	int val = _results.begin()->first;
-	float result = _results.begin()->second;
-	
-	_results.erase(_results.begin());
-
-	*eval = result;
-	return val;
+	int ticket = getNextTicket();
+	setScoreForTicket(ticket, result);
+	return ticket;
 }
 
 void PlausibleRoute::prepareForAnalysis()

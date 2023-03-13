@@ -27,13 +27,13 @@ class ChemotaxisEngine : public Engine
 {
 public:
 	ChemotaxisEngine(RunsEngine *ref);
-	~ChemotaxisEngine();
+	virtual ~ChemotaxisEngine();
 
-	void start();
+	virtual void run();
 	bool cycle();
 private:
 	bool tumble();
-	bool run();
+	bool runner();
 	float _step = 0.1;
 
 	Hypersphere *_hypersphere = nullptr;

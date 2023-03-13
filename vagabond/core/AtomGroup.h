@@ -28,7 +28,7 @@
 typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
 
-class SimplexEngine;
+class PositionRefinery;
 class Mechanics;
 class Sequence;
 class File;
@@ -187,7 +187,7 @@ private:
 	std::map<std::string, Atom *> _desc2Atom;
 
 	std::thread *_refine = nullptr;
-	SimplexEngine *_engine = nullptr;
+	PositionRefinery *_refinery = nullptr;
 	std::thread *_mechThread = nullptr;
 	Mechanics *_mech = nullptr;
 	ForceField *_forceField = nullptr;

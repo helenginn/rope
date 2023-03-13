@@ -46,9 +46,13 @@ public:
 	{
 		_maxJobs = maxJobs;
 	}
+	
+	void setMaxJobRuns(int maxRuns)
+	{
+		_maxJobRuns = maxRuns;
+	}
 
-	bool run();
-
+	void run();
 
 	virtual void finish();
 	
@@ -61,11 +65,6 @@ protected:
 
 	const SPoint &bestPoint() const;
 
-	const float bestScore() const
-	{
-		return _points[0].eval;
-	}
-	
 	const bool &changedParams() const
 	{
 		return _changedParams;
@@ -130,7 +129,7 @@ private:
 	void sendExpansionJob(int i);
 	void sendShrinkJobs();
 	void shrink();
-	void singleCycle();
+	void cycle();
 	void pickUpResults();
 	void findCentroid();
 

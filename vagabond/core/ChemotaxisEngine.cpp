@@ -31,16 +31,10 @@ ChemotaxisEngine::~ChemotaxisEngine()
 	_hypersphere = nullptr;
 }
 
-void ChemotaxisEngine::start()
+void ChemotaxisEngine::run()
 {
-	if (n() == 0)
-	{
-		return;
-	}
-
 	_hypersphere->prepareFibonacci();
 	
-	currentScore();
 	std::cout << "Start: " << -bestScore() << std::endl;
 	
 	while (cycle())
@@ -89,6 +83,8 @@ bool ChemotaxisEngine::cycle()
 
 bool ChemotaxisEngine::tumble()
 {
+	float current = bestScore();
+
 	for (size_t i = 0; i < _hypersphere->count(); i++)
 	{
 		std::vector<float> pt = _hypersphere->scaled_point(i, _step);
@@ -97,11 +93,9 @@ bool ChemotaxisEngine::tumble()
 	}
 
 	getResults();
-	
-	float current = bestScore();
+	float new_score = bestScore();
 
-	float new_score = 0;
-	std::vector<float> chosen = findBestResult(&new_score);
+	std::vector<float> chosen = bestResult();
 	std::vector<float> diff = difference_from(chosen);
 	
 	bool better = (new_score < current);
@@ -124,9 +118,11 @@ bool ChemotaxisEngine::tumble()
 	return false;
 }
 
-bool ChemotaxisEngine::run()
+bool ChemotaxisEngine::runner()
 {
+	float curr = bestScore();
 	std::vector<float> pt = current();
+
 	for (size_t i = 0; i < 10; i++)
 	{
 		add_to(pt, _direction);
@@ -134,11 +130,10 @@ bool ChemotaxisEngine::run()
 	}
 
 	getResults();
-	float new_score = 0;
-	std::vector<float> chosen = findBestResult(&new_score);
+	float new_score = bestScore();
+	std::vector<float> chosen = bestResult();
 	
-	float current = bestScore();
-	bool better = (new_score < current);
+	bool better = (new_score < curr);
 
 	if (better)
 	{

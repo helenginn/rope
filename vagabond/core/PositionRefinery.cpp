@@ -18,13 +18,14 @@
 
 #include "PositionRefinery.h"
 #include "AtomGroup.h"
-#include "ChemotaxisEngine.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
 #include "TorsionBasis.h"
+#include "SimplexEngine.h"
+#include "ChemotaxisEngine.h"
 
-PositionRefinery::PositionRefinery(AtomGroup *group) : SimplexEngine()
+PositionRefinery::PositionRefinery(AtomGroup *group)
 {
 	_group = group;
 }
@@ -109,16 +110,18 @@ bool PositionRefinery::refineBetween(int start, int end, int side_max)
 		return false;
 	}
 
-	setDimensionCount(_nActive);
-	chooseStepSizes(_steps);
-	setMaxJobsPerVertex(1);
+	reallocateEngine(Positions);
+	SimplexEngine *se = static_cast<SimplexEngine *>(_engine);
+	se->chooseStepSizes(_steps);
+	se->setMaxJobsPerVertex(1);
+	se->start();
 
-	bool improved = run();
+	bool improved = se->improved();
 
 	if (improved)
 	{
-		const SPoint &trial = bestPoint();
-		SPoint best = expandPoint(trial);
+		const std::vector<float> &trial = se->bestResult();
+		std::vector<float> best = expandPoint(trial);
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
 		basis->absorbVector(&best[0], best.size());
 	}
@@ -333,34 +336,29 @@ void PositionRefinery::refine(AtomGroup *group)
 	_calculator = nullptr;
 }
 
-int PositionRefinery::awaitResult(double *eval)
+float PositionRefinery::getResult(int *job_id)
 {
-	while (true)
+	Result *result = _calculator->acquireResult();
+	if (result == nullptr)
 	{
-		Result *result = _calculator->acquireResult();
-		if (result == nullptr)
-		{
-			return -1;
-		}
-
-		if (result->requests & JobExtractPositions)
-		{
-			result->transplantPositions();
-		}
-		if (result->requests & JobCalculateDeviations)
-		{
-			*eval = result->deviation;
-		}
-
-		int ticket = result->ticket;
-		result->destroy();
-		return ticket;
+		*job_id = -1;
+		return FLT_MAX;
 	}
+
+	if (result->requests & JobExtractPositions)
+	{
+		result->transplantPositions();
+	}
+
+	float score = result->deviation;
+	*job_id = result->ticket;
+	result->destroy();
+	return score;
 }
 
-PositionRefinery::SPoint PositionRefinery::expandPoint(const SPoint &p)
+std::vector<float> PositionRefinery::expandPoint(const std::vector<float> &p)
 {
-	SPoint expanded;
+	std::vector<float> expanded;
 	expanded.reserve(_mask.size());
 	int num = 0;
 
@@ -377,35 +375,41 @@ PositionRefinery::SPoint PositionRefinery::expandPoint(const SPoint &p)
 	return expanded;
 }
 
-int PositionRefinery::sendJob(const SPoint &trial, bool force_update)
+int PositionRefinery::sendJob(const std::vector<float> &trial)
 {
 	Job job{};
 	job.requests = JobCalculateDeviations;
-
 	job.custom.allocate_vectors(1, _mask.size(), 0);
 
-	SPoint expanded = expandPoint(trial);
-
-	for (size_t i = 0; i < _mask.size(); i++)
-	{
-		job.custom.vecs[0].mean[i] = expanded[i];
-	}
-
-	if (_ncalls % 200 == 0 || force_update)
+	if (_ncalls % 200 == 0)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
 		                                    JobExtractPositions);
 	}
-
-	int ticket = _calculator->submitJob(job);
 	_ncalls++;
+
+	if (_stage == Positions)
+	{
+		std::vector<float> expanded = expandPoint(trial);
+
+		for (size_t i = 0; i < _mask.size(); i++)
+		{
+			job.custom.vecs[0].mean[i] = expanded[i];
+		}
+
+	}
+	else if (_stage == Loopy)
+	{
+		fullSizeVector(trial, job.custom.vecs[0].mean);
+	}
 	
+	int ticket = _calculator->submitJob(job);
 	return ticket;
 }
 
 void PositionRefinery::finish()
 {
-	SimplexEngine::finish();
+	_finish = true;
 }
 
 void PositionRefinery::clearActiveIndices()
@@ -441,20 +445,38 @@ void PositionRefinery::setMaskFromIndices()
 	}
 }
 
-void PositionRefinery::wiggleBonds()
+void PositionRefinery::reallocateEngine(RefinementStage stage)
 {
-	setMaskFromIndices();
+	_stage = stage;
 
-	if (_wiggler != nullptr)
+	if (_engine != nullptr)
 	{
-		delete _wiggler;
-		_wiggler = nullptr;
+		delete _engine;
+		_engine = nullptr;
 	}
 
-	_wiggler = new ChemotaxisEngine(this);
-	_wiggler->start();
+	if (stage == None)
+	{
+		return;
+	}
 
-	std::vector<float> best = _wiggler->bestResult();
+	if (stage == Positions)
+	{
+		_engine = new SimplexEngine(this);
+	}
+	else if (stage == Loopy)
+	{
+		_engine = new ChemotaxisEngine(this);
+	}
+}
+
+void PositionRefinery::wiggleBonds()
+{
+	reallocateEngine(Loopy);
+	_engine->start();
+	setMaskFromIndices();
+
+	std::vector<float> best = _engine->bestResult();
 	std::vector<float> full(_mask.size(), 0);
 	
 	fullSizeVector(best, &full[0]);
@@ -470,7 +492,18 @@ void PositionRefinery::wiggleBond(const Parameter *p)
 
 size_t PositionRefinery::parameterCount()
 {
-	return _activeIndices.size();
+	if (_stage == Loopy)
+	{
+		return _activeIndices.size();
+	}
+	else if (_stage == Positions)
+	{
+		return _nActive;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 void PositionRefinery::fullSizeVector(const std::vector<float> &all,
@@ -485,51 +518,3 @@ void PositionRefinery::fullSizeVector(const std::vector<float> &all,
 	}
 }
 
-// for wiggler
-int PositionRefinery::sendJob(std::vector<float> &all)
-{
-	Job job{};
-	
-	job.requests = JobCalculateDeviations;
-
-	if (_ncalls % 100 == 0)
-	{
-		job.requests = static_cast<JobType>(JobCalculateDeviations | 
-		                                    JobExtractPositions);
-	}
-
-	job.custom.allocate_vectors(1, _mask.size(), 0);
-
-	fullSizeVector(all, job.custom.vecs[0].mean);
-
-	_ncalls++;
-
-	int ticket = _calculator->submitJob(job);
-	return ticket;
-}
-
-float PositionRefinery::getResult(int *job_id)
-{
-	Result *result = _calculator->acquireResult();
-	if (result == nullptr)
-	{
-		*job_id = -1;
-		return FLT_MAX;
-	}
-
-	float score = FLT_MAX;
-
-	if (result->requests & JobExtractPositions)
-	{
-		result->transplantPositions();
-	}
-	if (result->requests & JobCalculateDeviations)
-	{
-		score = result->deviation;
-	}
-
-	int ticket = result->ticket;
-	result->destroy();
-	*job_id = ticket;
-	return score;
-}

@@ -81,7 +81,7 @@ void SimplexEngine::printPoint(SPoint &point)
 	}
 }
 
-void SimplexEngine::singleCycle()
+void SimplexEngine::cycle()
 {
 	int count = 0;
 	int shrink_count = 0;
@@ -98,29 +98,33 @@ void SimplexEngine::singleCycle()
 		reorderVertices();
 
 		TestPoint &worst = _points[_points.size() - 1];
-		double worst_score = worst.eval;
+		float worst_score = worst.eval;
 
 		TestPoint &second_worst = _points[_points.size() - 2];
-		double second_worst_score = worst.eval;
+		float second_worst_score = worst.eval;
 
 		TestPoint &best = _points[0];
-		double best_score = best.eval;
+		float best_score = best.eval;
 		
 		std::cout << std::endl;
 		for (TestPoint &tp : _points)
 		{
 			std::cout << tp << std::endl;
 		}
+		
+		Engine::clearResults();
 
 		findCentroid();
 		SPoint trial = scaleThrough(worst.vertex, _centroid.vertex, -1);
 		sendJob(trial);
 
-		double eval = FLT_MAX;
-		awaitResult(&eval);
+		float eval = FLT_MAX;
+		getResults();
+		Engine::findBestResult(&eval);
 		std::cout << "new point ";
 		printPoint(trial);
 		std::cout << " evaluate: " << eval << std::endl;
+		clearResults();
 		count++;
 		
 		if (eval > best_score && eval < second_worst_score)
@@ -136,8 +140,10 @@ void SimplexEngine::singleCycle()
 			SPoint expanded = scaleThrough(trial, _centroid.vertex, -2);
 			sendJob(expanded);
 			
-			double next = FLT_MAX;
-			awaitResult(&next);
+			float next = FLT_MAX;
+			getResults();
+			Engine::findBestResult(&next);
+			clearResults();
 			
 			std::cout << "next: " << next << std::endl;
 			std::cout << (next < eval ? "yes expand" : "just trial") << std::endl;
@@ -148,7 +154,7 @@ void SimplexEngine::singleCycle()
 		else 
 		{
 			SPoint contracted;
-			double compare;
+			float compare;
 			if (eval > second_worst_score && eval < worst_score)
 			{
 				std::cout << "option three and a half" << std::endl;
@@ -164,9 +170,11 @@ void SimplexEngine::singleCycle()
 
 			sendJob(contracted);
 
-			double next = FLT_MAX;
-			awaitResult(&next);
-			
+			float next = FLT_MAX;
+			getResults();
+			Engine::findBestResult(&next);
+			clearResults();
+
 			if (next < compare)
 			{
 				std::cout << "option three and seven eighths" << std::endl;
@@ -208,7 +216,6 @@ void SimplexEngine::pickUpResults()
 	getResults();
 	collateResults();
 	clearResults();
-	classifyResults();
 }
 
 void SimplexEngine::shrink()
@@ -225,7 +232,7 @@ void SimplexEngine::shrink()
 	clearResults();
 }
 
-bool SimplexEngine::run()
+void SimplexEngine::run()
 {
 	if (n() <= 0)
 	{
@@ -247,79 +254,85 @@ bool SimplexEngine::run()
 	sendJob(empty);
 	
 	getResults();
-	double begin = FLT_MAX;
+	float begin = FLT_MAX;
 	findBestResult(&begin);
 
 	allocateResources();
 	sendStartingJobs();
-	singleCycle();
+	cycle();
 	
 	sendJob(bestPoint());
 	getResults();
-	double end = FLT_MAX;
-	findBestResult(&end);
-	
-	return (end < begin);
 }
 
 bool SimplexEngine::classifyResults()
 {
+	getResults();
+
 	bool changed = false;
 
-	double worst = _points[_points.size() - 1].eval;
-	double second_worst = _points[_points.size() - 2].eval;
-	double best = _points[0].eval;
-
-	for (size_t i = 0; i < _points.size(); i++)
+	for (auto it = _scores.begin(); it != _scores.end(); it++)
 	{
-		if (_points[i].tickets.count(ticket) > 0)
+		int ticket = it->first;
+		int eval = it->second.score;
+
+		float worst = _points[_points.size() - 1].eval;
+		float second_worst = _points[_points.size() - 2].eval;
+		float best = _points[0].eval;
+
+		for (size_t i = 0; i < _points.size(); i++)
 		{
-			Decision job = _points[i].decision;
-
-			/* no improvement on 2nd worst */
-			if (eval > worst)
+			if (_points[i].tickets.count(ticket) > 0)
 			{
-				_points[i].decision = ShouldReflect;
-			}
-			else if (eval > second_worst)
-			{
-				_points[i].decision = ShouldReflect;
-			}
-			else if (eval < second_worst)
-			{
-				changed = true;
+				Decision job = _points[i].decision;
 
-				TestPoint &w = _points[_points.size() - 1];
-				w.vertex = _points[i].tickets[ticket];
-				w.eval = eval;
-
-				if (eval < best)
+				/* no improvement on 2nd worst */
+				if (eval > worst)
 				{
-					w.decision = ShouldExpand;
+					_points[i].decision = ShouldReflect;
 				}
-				else 
+				else if (eval > second_worst)
 				{
-					w.decision = ShouldReflect;
+					_points[i].decision = ShouldReflect;
 				}
-			}
+				else if (eval < second_worst)
+				{
+					changed = true;
 
-			reorderVertices();
-			_points[i].tickets.erase(ticket);
-			break;
+					TestPoint &w = _points[_points.size() - 1];
+					w.vertex = _points[i].tickets[ticket];
+					w.eval = eval;
+
+					if (eval < best)
+					{
+						w.decision = ShouldExpand;
+					}
+					else 
+					{
+						w.decision = ShouldReflect;
+					}
+				}
+
+				reorderVertices();
+				_points[i].tickets.erase(ticket);
+				break;
+			}
+		}
+
+		float new_worst = _points[_points.size() - 1].eval;
+
+		if (new_worst >= worst)
+		{
+			_points[_points.size() - 1].decision = ShouldContract;
+		}
+
+		if (changed)
+		{
+			findCentroid();
 		}
 	}
-
-	double new_worst = _points[_points.size() - 1].eval;
 	
-	if (new_worst >= worst)
-	{
-		_points[_points.size() - 1].decision = ShouldContract;
-	}
-	
-	if (changed)
-	{
-		findCentroid();
-	}
+	clearResults();
 	
 	return changed;
 }
