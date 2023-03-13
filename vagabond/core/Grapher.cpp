@@ -175,6 +175,12 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 		{
 			continue;
 		}
+		
+		int between = jumpsToAtom(current, next, _ringSizeLimit + 1);
+		if (between >= 0 && between < _ringSizeLimit)
+		{
+			continue;
+		}
 
 		/* important not to go round in circles */
 		if (beyondVisitLimit(next))
@@ -189,13 +195,6 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 
 			continue;
 		}
-		
-		int between = jumpsToAtom(current, next, _ringSizeLimit + 1);
-		if (between >= 0 && between < _ringSizeLimit)
-		{
-			continue;
-		}
-
 
 		AtomGraph *nextGraph = new AtomGraph();
 
@@ -266,6 +265,11 @@ void Grapher::addGraph(AtomGraph *graph)
 	}
 
 	_visits[graph->atom]++;
+	
+	if (_visits[graph->atom] > _observedVisitLimit)
+	{
+		_observedVisitLimit = _visits[graph->atom];
+	}
 }
 
 bool AtomGraph::childrenOnlyHydrogens()
@@ -812,4 +816,18 @@ PCA::Matrix Grapher::distanceMatrix()
 	fillDistances(m);
 
 	return m;
+}
+
+std::vector<const AtomGraph *> Grapher::joints() const
+{
+	std::vector<const AtomGraph *> js;
+	for (const AtomGraph *graph : _graphs)
+	{
+		if (graph->joint)
+		{
+			js.push_back(graph);
+		}
+	}
+
+	return js;
 }

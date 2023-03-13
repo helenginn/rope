@@ -135,6 +135,11 @@ public:
 		_visitLimit = limit;
 	}
 	
+	const int &observedVisitLimit() const
+	{
+		return _observedVisitLimit;
+	}
+	
 	std::string desc() const;
 	
 	/** get the first graph of the next residue following along the nodes.
@@ -145,6 +150,12 @@ public:
 
 	/** find the child with the biggest maximum depth */
 	AtomGraph *deepestChild(AtomGraph *last) const;
+	
+	std::vector<const AtomGraph *> joints() const;
+	const std::vector<AtomGraph *> &graphs() const
+	{
+		return _graphs;
+	}
 private:
 	void addGraph(AtomGraph *graph);
 	int jumpsToAtom(AtomGraph *last, Atom *search, int max);
@@ -168,6 +179,7 @@ private:
 	
 	std::map<Atom *, int> _visits;
 	int _visitLimit = 1;
+	int _observedVisitLimit = 0;
 	int _ringSizeLimit = 6;
 	
 	typedef std::deque<RingProgrammer> RingProgrammers;
