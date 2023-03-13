@@ -83,7 +83,6 @@ bool ChemotaxisEngine::cycle()
 		std::cout << curr[i] << " ";
 	}
 	std::cout << std::endl;
-
 	
 	return true;
 }
@@ -106,10 +105,6 @@ bool ChemotaxisEngine::tumble()
 	std::vector<float> diff = difference_from(chosen);
 	
 	bool better = (new_score < current);
-
-	std::cout << "After tumbling: " << -new_score << " (";
-	std::cout << (better ? "improved" : "worse");
-	std::cout << ")" << std::endl;
 
 	if (better)
 	{
@@ -144,10 +139,6 @@ bool ChemotaxisEngine::run()
 	
 	float current = bestScore();
 	bool better = (new_score < current);
-
-	std::cout << "After running: " << -new_score << " (";
-	std::cout << (better ? "improved" : "worse");
-	std::cout << ")" << std::endl;
 
 	if (better)
 	{
