@@ -61,6 +61,7 @@ public:
 	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};
+	std::vector<int> grabIndices(const std::set<Parameter *> &params);
 	void trimParametersToUsed(std::set<Parameter *> &params);
 
 	const size_t parameterCount() const

@@ -130,3 +130,19 @@ void TorsionBasis::trimParametersToUsed(std::set<Parameter *> &params)
 		}
 	}
 }
+
+std::vector<int> TorsionBasis::grabIndices(const std::set<Parameter *> &params)
+{
+	std::vector<int> indices;
+	for (Parameter *p : params)
+	{
+		int idx = indexForParameter(p);
+		
+		if (idx >= 0)
+		{
+			indices.push_back(idx);
+		}
+	}
+	
+	return indices;
+}
