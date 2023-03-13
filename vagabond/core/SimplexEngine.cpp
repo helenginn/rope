@@ -79,8 +79,6 @@ void SimplexEngine::printPoint(SPoint &point)
 	{
 		std::cout << point[i] << " ";
 	}
-
-	std::cout << std::endl;
 }
 
 void SimplexEngine::singleCycle()
@@ -88,6 +86,7 @@ void SimplexEngine::singleCycle()
 	int count = 0;
 	int shrink_count = 0;
 	_changedParams = false;
+	std::cout << "Total dimensions: " << n() << std::endl;
 
 	while (true)
 	{
@@ -107,12 +106,21 @@ void SimplexEngine::singleCycle()
 		TestPoint &best = _points[0];
 		double best_score = best.eval;
 		
+		std::cout << std::endl;
+		for (TestPoint &tp : _points)
+		{
+			std::cout << tp << std::endl;
+		}
+
 		findCentroid();
 		SPoint trial = scaleThrough(worst.vertex, _centroid.vertex, -1);
 		sendJob(trial);
 
 		double eval = FLT_MAX;
 		awaitResult(&eval);
+		std::cout << "new point ";
+		printPoint(trial);
+		std::cout << " evaluate: " << eval << std::endl;
 		count++;
 		
 		if (eval > best_score && eval < second_worst_score)
@@ -123,6 +131,7 @@ void SimplexEngine::singleCycle()
 		}
 		if (eval < best_score)
 		{
+			std::cout << "option two, try expand" << std::endl;
 			_changedParams = true;
 			SPoint expanded = scaleThrough(trial, _centroid.vertex, -2);
 			sendJob(expanded);
@@ -130,6 +139,8 @@ void SimplexEngine::singleCycle()
 			double next = FLT_MAX;
 			awaitResult(&next);
 			
+			std::cout << "next: " << next << std::endl;
+			std::cout << (next < eval ? "yes expand" : "just trial") << std::endl;
 			worst.vertex = (next < eval ? expanded : trial);
 			worst.eval = (next < eval ? next : eval);
 			continue;
@@ -140,11 +151,13 @@ void SimplexEngine::singleCycle()
 			double compare;
 			if (eval > second_worst_score && eval < worst_score)
 			{
+				std::cout << "option three and a half" << std::endl;
 				contracted = scaleThrough(trial, _centroid.vertex, 0.5);
 				compare = eval;
 			}
 			else 
 			{
+				std::cout << "option three and three quarters" << std::endl;
 				contracted = scaleThrough(worst.vertex, _centroid.vertex, 0.5);
 				compare = worst_score;
 			}
@@ -156,12 +169,14 @@ void SimplexEngine::singleCycle()
 			
 			if (next < compare)
 			{
+				std::cout << "option three and seven eighths" << std::endl;
 				worst.vertex = contracted;
 				worst.eval = next;
 				continue;
 			}
 			else
 			{
+				std::cout << "option SHRINK!" << std::endl;
 				shrink_count++;
 				shrink();
 			}

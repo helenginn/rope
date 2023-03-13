@@ -20,6 +20,7 @@
 #define __vagabond__SimplexEngine__
 
 #include <atomic>
+#include <ostream>
 #include <vector>
 #include <map>
 
@@ -95,6 +96,22 @@ private:
 		const bool operator<(TestPoint &other) const
 		{
 			return (eval < other.eval);
+		}
+		
+		friend std::ostream &operator<<(std::ostream &ss, 
+		                                const TestPoint &tp)
+		{
+			ss << "Point: (";
+			const int max_ = 3;
+			int max = (tp.vertex.size() > max_ ? max_ : tp.vertex.size());
+			for (size_t i = 0; i < max; i++)
+			{
+				ss << tp.vertex[i] << (i < max - 1 ? ", " : "");
+			}
+			if (max > max_) ss << "...";
+			ss << "), eval: " << tp.eval;
+
+			return ss;
 		}
 	};
 
