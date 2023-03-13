@@ -86,6 +86,7 @@ void FileView::handleFileWithoutChoice(std::string filename)
 		{
 			Display *display = new Display(this);
 			display->loadAtoms(file->atoms());
+			display->setMultiBondMode(true);
 			display->show();
 		}
 	}

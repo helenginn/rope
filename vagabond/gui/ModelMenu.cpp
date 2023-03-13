@@ -126,8 +126,9 @@ void ModelMenu::refineModel(std::string name)
 	Display *d = new Display(this);
 	d->loadAtoms(atoms);
 	d->setOwnsAtoms(false);
+	d->setMultiBondMode(true);
 	d->guiAtoms()->setDisableRibbon(false);
-	d->guiAtoms()->setDisableBalls(true);
+//	d->guiAtoms()->setDisableBalls(true);
 
 	d->densityFromMap(model->map());
 
