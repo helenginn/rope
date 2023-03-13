@@ -48,7 +48,7 @@ struct AtomGraph
 	 * indirectly controlling this AtomGraph's position.
 	 * @return torsion angle if successful, null otherwise (beginning of
 	 * tree for example) */
-	BondTorsion *pertinentTorsion();
+	BondTorsion *pertinentTorsion() const;
 
 	std::string desc() const;
 	
