@@ -89,6 +89,7 @@ void SandboxView::setup()
 	
 	if (_atoms)
 	{
+		return;
 		Atom *cg = _atoms->firstAtomWithName("CG");
 		HyperValue *hv = cg->hyperValue(1);
 		hv->setValue(7.0);
