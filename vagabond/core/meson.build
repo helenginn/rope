@@ -57,6 +57,7 @@ vagafiles = [
 'MetadataGroup.cpp',
 'Model.cpp',
 'ModelManager.cpp',
+'Parameter.cpp',
 'Polymer.cpp',
 'MolRefiner.cpp',
 'MtzFile.cpp',

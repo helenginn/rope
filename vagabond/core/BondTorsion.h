@@ -51,6 +51,11 @@ public:
 	double measurement(BondTorsion::Source source);
 	double startingAngle();
 	
+	virtual size_t atomCount() const
+	{
+		return 4;
+	}
+	
 	virtual bool isTorsion() const
 	{
 		return true;
@@ -87,7 +92,7 @@ public:
 		return startingAngle();
 	}
 	
-	Atom *atom(int i) const
+	virtual Atom *atom(int i) const
 	{
 		if (i == 0) return _a;
 		if (i == 1) return _b;
@@ -138,7 +143,6 @@ public:
 	glm::vec3 bondMidPoint() const;
 	glm::vec3 bondDirection() const;
 	double similarityScore(BondTorsion *const other) const;
-	std::set<Parameter *> relatedTorsions() const;
 	
 	virtual const std::string desc() const;
 	virtual const std::string reverse_desc() const;

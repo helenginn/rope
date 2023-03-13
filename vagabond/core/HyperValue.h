@@ -79,7 +79,17 @@ public:
 	{
 		return Key(_atom, nullptr, nullptr, nullptr);
 	}
+
+	virtual Atom *atom(int i) const
+	{
+		return _atom;
+	}
 	
+	virtual size_t atomCount() const
+	{
+		return 1;
+	}
+
 	Atom *atom()
 	{
 		return _atom;

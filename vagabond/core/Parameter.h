@@ -19,6 +19,7 @@
 #ifndef __vagabond__Parameter__
 #define __vagabond__Parameter__
 
+#include <set>
 #include "ResidueId.h"
 #include "Bondstraint.h"
 
@@ -33,10 +34,14 @@ public:
 	
 	virtual Atom *anAtom() = 0;
 	
+	virtual Atom *atom(int i) const = 0;
+	
 	virtual bool isTorsion() const
 	{
 		return false;
 	}
+
+	virtual size_t atomCount() const = 0;
 	
 	virtual double empiricalMeasurement()
 	{
@@ -46,6 +51,8 @@ public:
 	virtual bool isConstrained() const = 0;
 	virtual bool coversMainChain() = 0;
 	virtual const ResidueId residueId() = 0;
+
+	std::set<Parameter *> relatedParameters() const;
 };
 
 #endif
