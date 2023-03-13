@@ -67,7 +67,7 @@ Sequence *Chain::fullSequence()
 	}
 
 	std::map<int, Sequence *> sequences;
-	std::vector<AtomGroup *> grps = connectedGroups();
+	std::vector<AtomGroup *> grps = connectedGroups(true);
 
 	for (size_t i = 0; i < grps.size(); i++)
 	{

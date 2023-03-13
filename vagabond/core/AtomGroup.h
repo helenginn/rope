@@ -113,7 +113,7 @@ public:
 		_chosenAnchor = a;
 	}
 
-	std::vector<AtomGroup *> &connectedGroups();
+	std::vector<AtomGroup *> &connectedGroups(bool forSequence = false);
 	
 	AtomGroup *connectedGroupToAnchor(Atom *anchor)
 	{
@@ -195,6 +195,7 @@ private:
 	
 	double _lastResidual = FLT_MAX;
 	std::vector<AtomGroup *> _connectedGroups;
+	bool _forSequence = false;
 	
 	std::map<Atom *, AtomGroup *> _anchor2Group;
 	

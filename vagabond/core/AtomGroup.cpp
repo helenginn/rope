@@ -434,12 +434,15 @@ void AtomGroup::add(AtomGroup *g)
 	}
 }
 
-std::vector<AtomGroup *> &AtomGroup::connectedGroups()
+std::vector<AtomGroup *> &AtomGroup::connectedGroups(bool forSequence)
 {
-	if (_connectedGroups.size())
+	if (_connectedGroups.size() && _forSequence == forSequence)
 	{
 		return _connectedGroups;
 	}
+
+	_forSequence = forSequence;
+	deleteConnectedGroups();
 
 	std::vector<AtomGroup *> groups;
 	AtomGroup total = AtomGroup(*this);
@@ -455,7 +458,12 @@ std::vector<AtomGroup *> &AtomGroup::connectedGroups()
 		}
 
 		AnchorExtension ext{anchor, UINT_MAX};
-		grapher.setSingleChain(true);
+		
+		if (forSequence)
+		{
+			grapher.setSingleChain(true);
+		}
+
 		grapher.generateGraphs(ext);
 		
 		AtomGroup *next = new AtomGroup();
