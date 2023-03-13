@@ -229,6 +229,7 @@ private:
 
 	void setupCorrelationHandler();
 	
+	bool _started = false;
 	std::vector<AnchorExtension> _atoms;
 };
 
