@@ -460,7 +460,7 @@ int Axes::sendJob(std::vector<float> &all)
 		add_to_CD(&cd, vals[idx], pos);
 	}
 	
-	_issue++;
+	int ticket = getNextTicket();
 	float score = evaluate_CD(cd);
 
 	_dirs[_lastIdx] = dir;
@@ -472,34 +472,23 @@ int Axes::sendJob(std::vector<float> &all)
 
 	refreshAxes();
 
-	_scores[_issue] = -score;
-	return _issue;
-}
-
-float Axes::getResult(int *job_id)
-{
-	if (_scores.size() == 0)
-	{
-		*job_id = -1;
-		return 0;
-	}
-
-	*job_id = _scores.begin()->first;
-	float result = _scores.begin()->second;
-	_scores.erase(_scores.begin());
-
-	return result;
+	setScoreForTicket(ticket, score);
+	return ticket;
 }
 
 void Axes::prioritiseDirection(std::string key)
 {
 	std::cout << "Prioritising direction against " << key << std::endl;
 	_key = key;
+	if (_engine != nullptr)
+	{
+		delete _engine;
+		_engine = nullptr;
+	}
 	_engine = new ChemotaxisEngine(this);
 	_engine->start();
 	
 	_key = "";
-	_issue = 0;
 	std::string score = std::to_string(_engine->bestScore());
 
 	_scene->setInformation("Correlation with colour: " + score);

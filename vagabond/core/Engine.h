@@ -29,7 +29,47 @@ public:
 	virtual ~RunsEngine() {};
 	virtual size_t parameterCount() = 0;
 	virtual int sendJob(std::vector<float> &all) = 0;
-	virtual float getResult(int *job_id) = 0;
+
+	virtual float getResult(int *job_id)
+	{
+		std::cout << "Oh no" << std::endl;
+		if (_scores.size() == 0)
+		{
+			*job_id = -1;
+			return 0;
+		}
+
+		*job_id = _scores.begin()->first;
+		float result = _scores.begin()->second;
+		_scores.erase(_scores.begin());
+
+		return result;
+	}
+
+	void resetTickets()
+	{
+		_ticket = 0;
+		_scores.clear();
+	}
+protected:
+	int getNextTicket()
+	{
+		return ++_ticket;
+	}
+	
+	const int &getLastTicket() const
+	{
+		return _ticket;
+	}
+	
+	
+	void setScoreForTicket(int ticket, double score)
+	{
+		_scores[ticket] = score;
+	}
+private:
+	int _ticket = 0;
+	std::map<int, double> _scores;
 };
 
 class Engine
@@ -42,6 +82,11 @@ public:
 		return _best;
 	}
 	
+	const std::vector<float> &bestResult() const
+	{
+		return _bestResult;
+	}
+	
 private:
 	struct TicketScore
 	{
@@ -50,9 +95,14 @@ private:
 		bool received = false;
 	};
 protected:
-	void sendJob(std::vector<float> &all);
+	int sendJob(std::vector<float> &all);
 	
 	void getResults();
+	
+	const std::vector<float> &current() const
+	{
+		return _current;
+	}
 	
 	std::vector<float> findBestResult(float *score);
 	void currentScore();
@@ -67,11 +117,6 @@ protected:
 		_current = chosen;
 	}
 	
-	const std::vector<float> &current() const
-	{
-		return _current;
-	}
-	
 	std::vector<float> difference_from(std::vector<float> &other);
 	void add_current_to(std::vector<float> &other);
 	void add_to(std::vector<float> &other, const std::vector<float> &add);
@@ -84,7 +129,7 @@ private:
 	RunsEngine *_ref = nullptr;
 
 	std::map<int, TicketScore> _scores;
-	std::vector<float> _current;
+	std::vector<float> _current, _bestResult;
 	float _best = FLT_MAX;
 	int _n = 0;
 };

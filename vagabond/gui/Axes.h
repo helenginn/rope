@@ -62,7 +62,6 @@ public:
 
 	virtual size_t parameterCount();
 	virtual int sendJob(std::vector<float> &all);
-	virtual float getResult(int *job_id);
 private:
 	std::vector<float> getMappedVector(int idx);
 	void prioritiseDirection(std::string key);
@@ -89,8 +88,6 @@ private:
 	void stop();
 	std::thread *_worker = nullptr;
 	std::string _key;
-	int _issue = 0;
-	std::map<int, double> _scores;
 	ChemotaxisEngine *_engine = nullptr;
 
 	bool _planes[3];

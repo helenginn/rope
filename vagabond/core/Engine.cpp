@@ -22,6 +22,7 @@
 Engine::Engine(RunsEngine *ref)
 {
 	_ref = ref;
+	_ref->resetTickets();
 	_n = ref->parameterCount();
 }
 
@@ -35,7 +36,7 @@ void Engine::currentScore()
 	clearResults();
 	sendJob(_current);
 	getResults();
-	findBestResult(&_best);
+	_bestResult = findBestResult(&_best);
 	clearResults();
 }
 
@@ -80,13 +81,14 @@ void Engine::getResults()
 	while (job_id != -1);
 }
 
-void Engine::sendJob(std::vector<float> &all)
+int Engine::sendJob(std::vector<float> &all)
 {
 	int ticket = _ref->sendJob(all);
 	TicketScore ts;
 	ts.vals = all;
 
 	_scores[ticket] = ts;
+	return ticket;
 }
 
 std::vector<float> Engine::difference_from(std::vector<float> &other)
