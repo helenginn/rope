@@ -22,7 +22,7 @@
 
 ChemotaxisEngine::ChemotaxisEngine(RunsEngine *ref) : Engine(ref)
 {
-	_hypersphere = new Hypersphere(n() - 1, n() * 5);
+	_hypersphere = new Hypersphere(n() - 1, n() * 10);
 }
 
 ChemotaxisEngine::~ChemotaxisEngine()
