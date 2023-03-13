@@ -32,7 +32,6 @@ public:
 
 	virtual float getResult(int *job_id)
 	{
-		std::cout << "Oh no" << std::endl;
 		if (_scores.size() == 0)
 		{
 			*job_id = -1;
