@@ -27,7 +27,7 @@
 #include "Sequence.h"
 #include "AtomGroup.h"
 #include "AtomsFromSequence.h"
-#include "Cyclic.h"
+#include <vagabond/core/programs/Cyclic.h>
 #include "CyclicView.h"
 
 SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)

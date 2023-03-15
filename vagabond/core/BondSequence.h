@@ -26,7 +26,7 @@
 #include "../utils/glm_import.h"
 #include <vagabond/utils/version.h>
 #include "Atom.h"
-#include "RingProgram.h"
+#include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
 #include "BondTorsion.h"

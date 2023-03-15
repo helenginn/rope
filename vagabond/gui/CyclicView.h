@@ -20,7 +20,7 @@
 #define __vagabond__CyclicView__
 
 #include <vagabond/gui/elements/Renderable.h>
-#include <vagabond/core/Cyclic.h>
+#include <vagabond/core/programs/Cyclic.h>
 #include <vagabond/core/Responder.h>
 
 class Icosahedron;

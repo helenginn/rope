@@ -25,7 +25,7 @@
 #include "Chirality.h"
 #include "AtomGroup.h"
 #include "Atom.h"
-#include "RingProgrammer.h"
+#include "programs/RingProgrammer.h"
 #include "GeometryTable.h"
 
 Knotter::Knotter(AtomGroup *group, GeometryTable *table) 

@@ -20,8 +20,8 @@
 #define __vagabond__RingProgrammer__
 
 #include <mutex>
-#include <vagabond/core/Cyclic.h>
-#include <vagabond/core/AtomBlock.h>
+#include "programs/Cyclic.h"
+#include "AtomBlock.h"
 
 class Atom;
 class TorsionBasis;

@@ -19,7 +19,7 @@
 #ifndef __vagabond__RingProgram__
 #define __vagabond__RingProgram__
 
-#include <vagabond/core/Cyclic.h>
+#include "programs/Cyclic.h"
 #include <vagabond/utils/SpecialTable.h>
 #include "AtomBlock.h"
 #include "ResidueId.h"

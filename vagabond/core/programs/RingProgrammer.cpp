@@ -17,13 +17,14 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/version.h>
-#include "RingProgrammer.h"
-#include "RingProgram.h"
+#include "programs/RingProgrammer.h"
+#include "programs/RingProgram.h"
+#include "programs/Cyclic.h"
+
 #include "FileManager.h"
 #include "TorsionBasis.h"
 #include "HyperValue.h"
 #include "AtomGraph.h"
-#include "Cyclic.h"
 
 #include <fstream>
 
