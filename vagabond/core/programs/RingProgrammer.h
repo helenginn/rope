@@ -21,6 +21,7 @@
 
 #include <mutex>
 #include "programs/Cyclic.h"
+#include "programs/ExitGroup.h"
 #include "AtomBlock.h"
 
 class Atom;
@@ -31,6 +32,7 @@ class RingProgram;
 class RingProgrammer
 {
 public:
+	RingProgrammer();
 	RingProgrammer(std::string cyclicFile);
 	
 	static std::vector<RingProgrammer *> *allProgrammers();
@@ -96,6 +98,9 @@ public:
 	 * corresponding atom blocks */
 	void makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 	                 TorsionBasis *basis);
+
+	friend void to_json(json &j, const RingProgrammer &value);
+	friend void from_json(const json &j, RingProgrammer &value);
 protected:
 	void setupProline();
 	
@@ -104,92 +109,20 @@ private:
 	void wipeFlagsExcept(int idx);
 	bool proofSolution(int grp_idx);
 
-	struct ExitGroup
-	{
-		struct Flaggable
-		{
-			std::string name;
-			int idx;
-			bool central;
-			bool entry;
-			Atom *ptr;
-		};
-		
-		Flaggable *entry()
-		{
-			for (Flaggable &f : atoms)
-			{
-				if (f.entry)
-				{
-					return &f;
-				}
-			}
-
-			return nullptr;
-
-		}
-		
-		Flaggable *central()
-		{
-			for (Flaggable &f : atoms)
-			{
-				if (f.central)
-				{
-					return &f;
-				}
-			}
-
-			return nullptr;
-		}
-		
-		bool hasAtom(Atom *ptr)
-		{
-			for (Flaggable &f : atoms)
-			{
-				if (f.ptr == ptr)
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
-		
-		void addCentral(std::string name)
-		{
-			atoms.push_back(Flaggable{name, -1, true, false, nullptr});
-		}
-
-		void add(std::string name, bool entry = false)
-		{
-			atoms.push_back(Flaggable{name, -1, false, entry, nullptr});
-		}
-		
-		bool allFlagged()
-		{
-			for (Flaggable &f : atoms)
-			{
-				if (f.idx < 0)
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-
-		std::vector<Flaggable> atoms;
-	};
-
 	void findGroupLocations(int grp_idx);
 	void grabAtomLocation(Atom *atom, int idx);
 	bool groupsComplete();
 	void correctIndexOffset();
-	bool registerWithGroup(ExitGroup &group, Atom *atom, int idx);
+	bool registerWithGroup(rope::ExitGroup &group, Atom *atom, int idx);
+
+	// this group are assigned from day one
+	std::vector<rope::ExitGroup> _groups;
+	Cyclic _cyclic;
+	std::string _code;
+	std::string _pinnedAtom;
 	
 	std::vector<std::pair<std::string, float> > _specialTorsions;
 	
-	std::vector<ExitGroup> _groups;
 	std::map<std::string, int> _atomLocs;
 	std::map<std::string, int> _branchLocs;
 	std::map<std::string, std::string> _grandparents;
@@ -197,9 +130,6 @@ private:
 	std::string _cyclicFile;
 
 	RingProgram *_program = nullptr;
-	Cyclic _cyclic;
-	std::string _code;
-	std::string _pinnedAtom;
 
 	int _entrance = -1;
 	// duplicated is set to TRUE when RingProgrammer spawns a second copy
@@ -212,5 +142,41 @@ private:
 	static std::mutex _mutex;
 	static std::vector<RingProgrammer *> _rammers;
 };
+
+inline void to_json(json &j, const RingProgrammer &value)
+{
+	j["cyclic"] = value._cyclic;
+	j["groups"] = value._groups;
+	j["code"] = value._code;
+	j["pinned"] = value._pinnedAtom;
+	j["parameters"] = value._specialTorsions;
+
+}
+
+inline void from_json(const json &j, RingProgrammer &value)
+{
+	value._cyclic = j["cyclic"];
+
+	if (j.count("groups"))
+	{
+		value._groups = j["groups"];
+	}
+
+	if (j.count("code"))
+	{
+		value._code = j["code"];
+	}
+
+	if (j.count("pinned"))
+	{
+		value._pinnedAtom = j["pinned"];
+	}
+
+	if (j.count("parameters"))
+	{
+		value._specialTorsions = j["parameters"];
+	}
+}
+
 
 #endif

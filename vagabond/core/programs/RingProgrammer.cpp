@@ -31,26 +31,40 @@
 std::vector<RingProgrammer *> RingProgrammer::_rammers;
 std::mutex RingProgrammer::_mutex;
 
+using namespace rope;
+
+RingProgrammer::RingProgrammer()
+{
+
+}
+
 RingProgrammer::RingProgrammer(std::string cyclicFile)
 {
-	_cyclicFile = cyclicFile;
-
 #ifndef __EMSCRIPTEN__
-	if (!file_exists(_cyclicFile))
+	if (!file_exists(cyclicFile))
 	{
-		FileManager::correctFilename(_cyclicFile);
+		FileManager::correctFilename(cyclicFile);
 	}
 #endif
 
 	json data;
 	std::ifstream f;
-	f.open(_cyclicFile);
+	f.open(cyclicFile);
 	f >> data;
 	f.close();
 	
 	_cyclic = data["cyclic"];
 	
 	setupProline();
+
+	json out;
+	out["ring"] = *this;
+
+	std::ofstream file;
+	file.open("_proline.json");
+	file << out;
+	file << std::endl;
+	file.close();
 }
 
 void RingProgrammer::setupProline()
