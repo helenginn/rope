@@ -594,9 +594,31 @@ std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 	{
 		return &_rammers;
 	}
+	
+	std::vector<std::string> rings;
+	rings.push_back("assets/geometry/proline.json");
 
-	RingProgrammer *prog = new RingProgrammer("assets/geometry/proline.json");
-	_rammers.push_back(prog);
+	for (size_t i = 0; i < rings.size(); i++)
+	{
+		#ifndef __EMSCRIPTEN__
+		if (!file_exists(rings[i]))
+		{
+			FileManager::correctFilename(rings[i]);
+		}
+		#endif
+		json data;
+		std::ifstream f;
+		f.open(rings[i]);
+		f >> data;
+		f.close();
+		
+		RingProgrammer tmp = data["ring"];
+		RingProgrammer *prog = new RingProgrammer(tmp);
+		_rammers.push_back(prog);
+	}
+
+//	RingProgrammer *prog = new RingProgrammer("assets/geometry/proline.json");
+//	_rammers.push_back(prog);
 	
 	return &_rammers;
 }
