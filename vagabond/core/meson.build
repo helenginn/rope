@@ -122,6 +122,7 @@ vagafiles = [
 'CifFile.h',
 'ConcertedBasis.h',
 'programs/Cyclic.h',
+'programs/ExitGroup.h',
 'Engine.h',
 'File.h',
 'GeometryTable.h',
