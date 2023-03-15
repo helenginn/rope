@@ -227,8 +227,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 		}
 	}
 	
-	_simplex->setMaxJobsPerVertex(1);
-	_simplex->setMaxJobRuns(20);
+	_simplex->setMaxRuns(20);
 	_simplex->chooseStepSizes(steps);
 }
 

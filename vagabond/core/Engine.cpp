@@ -23,17 +23,18 @@ Engine::Engine(RunsEngine *ref)
 {
 	_ref = ref;
 	_ref->resetTickets();
+	_n = _ref->parameterCount();
 }
 
 void Engine::currentScore()
 {
-	if (_current.size() == 0)
+	if (_bestResult.size() == 0)
 	{
-		_current = std::vector<float>(_n, 0);
+		_bestResult = std::vector<float>(_n, 0);
 	}
 
 	clearResults();
-	sendJob(_current);
+	sendJob(_bestResult);
 	getResults();
 	findBestResult(&_currentScore);
 	clearResults();
@@ -129,9 +130,13 @@ void Engine::add_current_to(std::vector<float> &other)
 void Engine::start()
 {
 	_n = _ref->parameterCount();
+	_current.clear();
+	_bestResult.clear();
+	_bestScore = FLT_MAX;
 
 	if (n() == 0)
 	{
+		std::cout << "No parameters" << std::endl;
 		return;
 	}
 
@@ -143,5 +148,5 @@ void Engine::start()
 	currentScore();
 	_endScore = _currentScore;
 	
-	_improved = (_endScore < _currentScore);
+	_improved = (_endScore < _startScore - 1e-6);
 }

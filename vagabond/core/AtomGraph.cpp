@@ -144,3 +144,22 @@ BondTorsion *AtomGraph::pertinentTorsion() const
 	
 	return nullptr;
 }
+
+BondTorsion *AtomGraph::controllingTorsion() const
+{
+	Atom *next = atom;
+	Atom *self = prior->atom;
+	Atom *grandparent = prior->grandparent;
+	Atom *parent = prior->parent;
+
+	if (next && self && parent && grandparent)
+	{
+		BondTorsion *torsion = self->findBondTorsion(next, self, 
+		                                             parent, 
+		                                             grandparent);
+
+		return torsion;
+	}
+
+	return nullptr;
+}

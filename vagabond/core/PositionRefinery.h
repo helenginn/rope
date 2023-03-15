@@ -24,6 +24,7 @@
 #include "Engine.h"
 #include <iostream>
 #include <queue>
+#include <atomic>
 #include <set>
 #include <climits>
 
@@ -56,6 +57,11 @@ public:
 	{
 		return _ncalls;
 	}
+	
+	bool isDone()
+	{
+		return _done;
+	}
 protected:
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
@@ -65,11 +71,9 @@ private:
 	                    float *dest);
 	void refine(AtomGroup *group);
 
-	void loopyRefinement(AtomGroup *group);
 	void wiggleBond(const Parameter *t);
-	void wiggleBonds();
 
-	void setupCalculator(AtomGroup *group, bool loopy);
+	void setupCalculator(AtomGroup *group, bool loopy, int jointLimit = -1);
 	bool refineBetween(int start, int end, int side_max = INT_MAX);
 	double fullResidual();
 	std::vector<float> expandPoint(const std::vector<float> &p);
@@ -81,6 +85,7 @@ private:
 	void addActiveIndices(std::set<Parameter *> &params);
 	void clearActiveIndices();
 	void setMaskFromIndices();
+	void updateAllTorsions();
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
@@ -100,8 +105,9 @@ private:
 	
 	int _depthRange = 5;
 	bool _thorough = false;
+	bool _reverse = false;
 	bool _finish = false;
-	bool _done = false;
+	std::atomic<bool> _done{false};
 	
 	TorsionBasis::Type _type = TorsionBasis::TypeSimple;
 	Engine *_engine = nullptr;
@@ -111,9 +117,12 @@ private:
 		None,
 		Positions,
 		Loopy,
+		CarefulLoopy,
 	};
 
 	void reallocateEngine(RefinementStage stage);
+	void loopyRefinement(AtomGroup *group, RefinementStage stage);
+	void wiggleBonds(RefinementStage stage);
 	RefinementStage _stage = None;
 	
 	std::set<int> _activeIndices;

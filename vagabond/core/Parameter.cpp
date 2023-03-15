@@ -27,6 +27,12 @@ std::set<Parameter *> Parameter::relatedParameters() const
 	{
 		Atom *a = atom(i);
 		
+		if (atomCount() > 1 && (i == 0 || i == 3))
+		{
+			// forget terminal atoms
+			continue;
+		}
+		
 		for (size_t j = 0; j < a->parameterCount(); j++)
 		{
 			Parameter *p = a->parameter(j);

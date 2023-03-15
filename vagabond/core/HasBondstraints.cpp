@@ -293,7 +293,8 @@ BondTorsion *HasBondstraints::findBondTorsion(std::string desc)
 	return nullptr;
 }
 
-BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d)
+BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, 
+                                              Atom *c, Atom *d) const
 {
 	BondTorsion bt(nullptr, a, b, c, d, 0);
 

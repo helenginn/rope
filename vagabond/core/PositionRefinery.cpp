@@ -40,6 +40,42 @@ void PositionRefinery::backgroundRefine(PositionRefinery *ref)
 	ref->refine();
 }
 
+void PositionRefinery::updateAllTorsions()
+{
+	size_t refined = 0;
+	size_t unrefined = 0;
+	
+	if (_calculator)
+	{
+		BondSequence *sequence = _calculator->sequence();
+		const Grapher &grapher = sequence->grapher();
+		grapher.passTorsionsToSisters(sequence);
+	}
+
+	for (size_t i = 0; i < _group->bondTorsionCount(); i++)
+	{
+		BondTorsion *t = _group->bondTorsion(i);
+		
+		if (t->anAtom()->code() == "PRO" && t->anAtom()->residueId().num == 34)
+		{
+			std::cout << t->desc() << " ";
+			std::cout << t->anAtom()->desc() << " ";
+			std::cout << t->isRefined() << " ";
+			std::cout << t->value() << std::endl;
+		}
+		
+		if (t->isRefined())
+		{
+			refined++;
+			continue;
+		}
+
+		unrefined++;
+	}
+	
+	std::cout << refined << " vs " << unrefined << std::endl;
+}
+
 void PositionRefinery::refine()
 {
 	if (_group == nullptr)
@@ -63,8 +99,15 @@ void PositionRefinery::refine()
 			
 			if (_thorough)
 			{
+				updateAllTorsions();
+				_reverse = true;
 				refine(units[i]);
-				loopyRefinement(units[i]);
+				updateAllTorsions();
+				_reverse = false;
+				refine(units[i]);
+				updateAllTorsions();
+//				loopyRefinement(units[i], Loopy);
+				loopyRefinement(units[i], CarefulLoopy);
 			}
 		}
 		catch (const std::runtime_error &err)
@@ -135,6 +178,7 @@ double PositionRefinery::fullResidual()
 {
 	_calculator->setMinMaxDepth(0, INT_MAX);
 	_calculator->start();
+	_ncalls = 0;
 
 	Job job{};
 	job.requests = (JobType)(JobCalculateDeviations | JobExtractPositions);
@@ -228,9 +272,9 @@ void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 
 }
 
-void PositionRefinery::loopyRefinement(AtomGroup *group)
+void PositionRefinery::loopyRefinement(AtomGroup *group, RefinementStage stage)
 {
-	setupCalculator(group, true);
+	setupCalculator(group, true, 1);
 
 	// now grab the grapher, which will have information about loops
 	BondSequence *seq = _calculator->sequence();
@@ -254,22 +298,15 @@ void PositionRefinery::loopyRefinement(AtomGroup *group)
 	for (const AtomGraph *graph : joints)
 	{
 		BondTorsion *t = graph->pertinentTorsion();
+		wiggleBond(t);
 		if (t)
 		{
-			params.insert(t);
+//			params.insert(t);
 		}
 	}
 	
 	addActiveIndices(params);
-	wiggleBonds();
-	clearActiveIndices();
-	
-	for (const Parameter *param : params)
-	{
-		wiggleBond(param);
-	}
-
-	wiggleBonds();
+	wiggleBonds(stage);
 
 	delete _calculator;
 	_calculator = nullptr;
@@ -277,23 +314,40 @@ void PositionRefinery::loopyRefinement(AtomGroup *group)
 
 	float res = fullResidual();
 	std::cout << "After loopy refinement: " << res << " Angstroms." << std::endl;
-
-	delete _calculator;
-	_calculator = nullptr;
 }
 
-void PositionRefinery::setupCalculator(AtomGroup *group, bool loopy)
+void PositionRefinery::setupCalculator(AtomGroup *group, bool loopy, 
+                                       int jointLimit)
 {
-	Atom *anchor = group->chosenAnchor();
+	if (_calculator)
+	{
+		delete _calculator;
+		_calculator = nullptr;
+	}
+
 	_calculator = new BondCalculator();
 	_calculator->setPipelineType(BondCalculator::PipelineAtomPositions);
 	_calculator->setMaxSimultaneousThreads(1);
 	_calculator->setTotalSamples(1);
-	_calculator->setMaximumLoopCount(loopy ? 5 : 1);
+	_calculator->setMaximumLoopCount(loopy ? 3 : 1);
+
+	if (loopy)
+	{
+		_calculator->setMaximumJointCount(jointLimit);
+	}
+	else
+	{
+		_calculator->prepareToSkipSections(true);
+		_calculator->setInSequence(true);
+	}
+
 	_calculator->setTorsionBasisType(_type);
 	_calculator->setSuperpose(false);
-	_calculator->prepareToSkipSections(true);
+
+	group->clearChosenAnchor();
+	Atom *anchor = group->chosenAnchor(!_reverse);
 	_calculator->addAnchorExtension(anchor);
+
 	_calculator->setIgnoreHydrogens(true);
 	_calculator->setup();
 
@@ -331,6 +385,8 @@ void PositionRefinery::refine(AtomGroup *group)
 	res = fullResidual();
 	std::cout << "Overall average distance after refinement: "
 	<< res << " Angstroms over " << group->size() << " atoms." << std::endl;
+	
+	updateAllTorsions();
 	
 	delete _calculator;
 	_calculator = nullptr;
@@ -398,7 +454,7 @@ int PositionRefinery::sendJob(const std::vector<float> &trial)
 		}
 
 	}
-	else if (_stage == Loopy)
+	else if (_stage == Loopy || _stage == CarefulLoopy)
 	{
 		fullSizeVector(trial, job.custom.vecs[0].mean);
 	}
@@ -460,9 +516,11 @@ void PositionRefinery::reallocateEngine(RefinementStage stage)
 		return;
 	}
 
-	if (stage == Positions)
+	if (stage == Positions || _stage == CarefulLoopy)
 	{
 		_engine = new SimplexEngine(this);
+		_engine->setStepSize(0.2);
+		
 	}
 	else if (stage == Loopy)
 	{
@@ -470,18 +528,32 @@ void PositionRefinery::reallocateEngine(RefinementStage stage)
 	}
 }
 
-void PositionRefinery::wiggleBonds()
+void PositionRefinery::wiggleBonds(RefinementStage stage)
 {
-	reallocateEngine(Loopy);
-	_engine->start();
+	reallocateEngine(stage);
 	setMaskFromIndices();
-
-	std::vector<float> best = _engine->bestResult();
-	std::vector<float> full(_mask.size(), 0);
+	std::cout << "Wiggling " << parameterCount() << " bonds" << std::endl;
+	int count = 0;
 	
-	fullSizeVector(best, &full[0]);
-	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-	basis->absorbVector(&full[0], full.size());
+	do
+	{
+		_engine->start();
+		std::vector<float> best = _engine->bestResult();
+		std::vector<float> full(_mask.size(), 0);
+
+		fullSizeVector(best, &full[0]);
+		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+		basis->absorbVector(&full[0], full.size());
+
+		std::cout << "Next: " << _engine->bestScore() << std::endl;
+		count++;
+		
+		if (count > 20)
+		{
+			break;
+		}
+	} while (_engine->improved());
+
 }
 
 void PositionRefinery::wiggleBond(const Parameter *p)
@@ -492,7 +564,7 @@ void PositionRefinery::wiggleBond(const Parameter *p)
 
 size_t PositionRefinery::parameterCount()
 {
-	if (_stage == Loopy)
+	if (_stage == Loopy || _stage == CarefulLoopy)
 	{
 		return _activeIndices.size();
 	}

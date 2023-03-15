@@ -32,6 +32,7 @@ public:
 	AlignmentTool(AtomGroup *group);
 
 	void run();
+	void run(Atom *anchor);
 private:
 	Result *resultForAnchor(Atom *anchor);
 	glm::mat4x4 superposition(Result *result);

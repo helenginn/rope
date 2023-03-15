@@ -328,7 +328,6 @@ Atom *AtomGroup::firstAtomWithName(std::string name) const
 
 Atom *AtomGroup::chosenAnchor(bool min)
 {
-	min = true;
 	if (_chosenAnchor != nullptr)
 	{
 		return _chosenAnchor;
@@ -350,6 +349,12 @@ Atom *AtomGroup::chosenAnchor(bool min)
 			_chosenAnchor = possibleAnchor(i);
 			found_res = res;
 		}
+	}
+	
+	if (!_chosenAnchor->isTransformed())
+	{
+		AlignmentTool tool(this);
+		tool.run(_chosenAnchor);
 	}
 
 	return _chosenAnchor;
@@ -392,7 +397,7 @@ void AtomGroup::recalculate()
 
 void AtomGroup::refinePositions(bool sameThread)
 {
-	if (_refinery)// && !_refinery->isDone())
+	if (_refinery && !_refinery->isDone())
 	{
 		return;
 	}
@@ -462,7 +467,7 @@ std::vector<AtomGroup *> &AtomGroup::connectedGroups(bool forSequence)
 		
 		if (forSequence)
 		{
-			grapher.setSingleChain(true);
+			grapher.setInSequence(true);
 		}
 
 		grapher.generateGraphs(ext);

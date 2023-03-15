@@ -46,20 +46,10 @@ public:
 	{
 		_maxJobs = maxJobs;
 	}
-	
-	void setMaxJobRuns(int maxRuns)
-	{
-		_maxJobRuns = maxRuns;
-	}
 
 	void run();
 
 	virtual void finish();
-	
-	bool isDone()
-	{
-		return _done;
-	}
 protected:
 	typedef std::vector<float> SPoint;
 
@@ -71,10 +61,8 @@ protected:
 	}
 	
 	void printPoint(SPoint &point);
-	std::atomic<bool> _finish;
-	std::atomic<bool> _done{false};
+	std::atomic<bool> _finish{false};
 
-	int _maxJobRuns = 500;
 private:
 	
 	enum Decision
@@ -134,10 +122,10 @@ private:
 	void findCentroid();
 
 	std::vector<TestPoint> _points;
-	TestPoint _centroid;
+	TestPoint _centroid{};
 
 	int _dims = 0;
-	int _maxJobs = 0;
+	int _maxJobs = 1;
 	bool _changedParams = false;
 	std::vector<float> _steps;
 };

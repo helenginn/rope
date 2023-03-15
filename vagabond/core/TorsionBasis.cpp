@@ -64,8 +64,13 @@ void TorsionBasis::absorbVector(const float *vec, int n, bool *mask)
 		}
 
 		float torsion = parameterForVector(i, vec, n);
+		
+//		std::cout << _params[i]->desc() << " " << torsion << std::endl;
+		
 		_params[i]->setValue(torsion);
 		_angles[i].angle = torsion;
+		
+		_params[i]->setRefined(true);
 	}
 
 }

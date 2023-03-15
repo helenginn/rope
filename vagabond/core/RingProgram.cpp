@@ -63,7 +63,7 @@ void RingProgram::addAlignmentIndex(int idx, std::string atomName)
 {
 	int cycle_idx = _cyclic.indexOfName(atomName);
 	_alignmentMapping[idx] = cycle_idx;
-	_ringMapping[idx] = cycle_idx;
+//	_ringMapping[idx] = cycle_idx; // this messes with torsion angle measurements
 }
 
 void RingProgram::addRingIndex(int idx, std::string atomName)

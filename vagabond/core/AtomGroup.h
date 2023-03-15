@@ -100,12 +100,17 @@ public:
 	size_t possibleAnchorCount();
 	Atom *possibleAnchor(int i);
 	
-	Atom *chosenAnchor(bool min = false);
+	Atom *chosenAnchor(bool min = true);
 	Atom *sequenceAnchor()
 	{
 		Atom *atom = chosenAnchor(true);
 		_chosenAnchor = nullptr;
 		return atom;
+	}
+	
+	void clearChosenAnchor()
+	{
+		_chosenAnchor = nullptr;
 	}
 	
 	void setChosenAnchor(Atom *a)

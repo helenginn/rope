@@ -74,7 +74,7 @@ public:
 	void setRefinedAngle(const double angle)
 	{
 		_refinedAngle = angle;
-		_refined = true;
+		_working = true;
 	}
 	
 	virtual void setValue(const double value)
@@ -167,9 +167,8 @@ private:
 	double _measuredAngle = 0;
 
 	bool _measured = false;
-	bool _refined = false;
 	bool _constrained = false;
-	bool _instrumental = false;
+	bool _working = false;
 	
 	ResidueId _resId;
 	bool _gotId = false;

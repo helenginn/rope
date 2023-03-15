@@ -445,6 +445,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 	for (size_t i = _triggerIndex + 1; i < blocks.size(); i++)
 	{
 		blocks[i].program = -2;
+		blocks[i].torsion_idx = -1;
 	}
 	blocks[blocks.size() - 1].program = -3;
 

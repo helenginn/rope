@@ -35,11 +35,11 @@ void ChemotaxisEngine::run()
 {
 	_hypersphere->prepareFibonacci();
 	
-	std::cout << "Start: " << -bestScore() << std::endl;
-	
-	while (cycle())
+	int count = 0;
+	while (count < _maxRuns)
 	{
-
+		cycle();
+		count++;
 	}
 
 	currentScore();
@@ -69,14 +69,7 @@ bool ChemotaxisEngine::cycle()
 
 	}
 	
-	std::cout << "Now: ";
 	const std::vector<float> &curr = current();
-	
-	for (size_t i = 0; i < curr.size(); i++)
-	{
-		std::cout << curr[i] << " ";
-	}
-	std::cout << std::endl;
 	
 	return true;
 }
@@ -84,10 +77,12 @@ bool ChemotaxisEngine::cycle()
 bool ChemotaxisEngine::tumble()
 {
 	float current = bestScore();
+	setCurrent(bestResult());
 
 	for (size_t i = 0; i < _hypersphere->count(); i++)
 	{
 		std::vector<float> pt = _hypersphere->scaled_point(i, _step);
+		
 		add_current_to(pt);
 		sendJob(pt);
 	}

@@ -61,7 +61,7 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	AtomPosMap::iterator it;
 	for (it = aps.begin(); it != aps.end(); it++)
 	{
-		glm::vec3 init = it->first->initialPosition();
+		glm::vec3 init = it->first->derivedPosition();
 		glm::vec3 pos = it->second.ave;
 		
 		if (init.x != init.x || pos.x != pos.x)
@@ -75,6 +75,15 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	pose.superpose();
 	
 	return pose.transformation();
+}
+
+void AlignmentTool::run(Atom *anchor)
+{
+	Result *result = resultForAnchor(anchor);
+	glm::mat4x4 transform = glm::mat4(1.);
+	transform = superposition(result);
+	result->destroy();
+	_group->addTransformedAnchor(anchor, transform);
 }
 
 void AlignmentTool::run()

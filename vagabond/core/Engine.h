@@ -79,6 +79,11 @@ public:
 	
 	virtual void start();
 	virtual void run() = 0;
+	
+	void setStepSize(float size)
+	{
+		_step = size;
+	}
 
 	float bestScore()
 	{
@@ -95,6 +100,10 @@ public:
 		return _bestResult;
 	}
 	
+	void setMaxRuns(int maxRuns)
+	{
+		_maxRuns = maxRuns;
+	}
 private:
 	struct TicketScore
 	{
@@ -120,7 +129,7 @@ protected:
 		_scores.clear();
 	}
 	
-	void setCurrent(std::vector<float> &chosen)
+	void setCurrent(const std::vector<float> &chosen)
 	{
 		_current = chosen;
 	}
@@ -135,6 +144,8 @@ protected:
 	}
 
 	bool _improved = false;
+	float _step = 1.0;
+	int _maxRuns = 500;
 	std::map<int, TicketScore> _scores;
 private:
 	RunsEngine *_ref = nullptr;

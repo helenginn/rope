@@ -25,6 +25,7 @@
 #include <vagabond/utils/svd/PCA.h>
 #include <deque>
 
+class BondSequence;
 class TorsionBasis;
 class Parameter;
 class BondCalculator;
@@ -67,9 +68,9 @@ public:
 	std::vector<AtomBlock> turnToBlocks(TorsionBasis *basis);
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);
 	
-	void setSingleChain(bool singleChain)
+	void setInSequence(bool inSequence)
 	{
-		_singleChain = singleChain;
+		_inSequence = inSequence;
 	}
 	
 	/** returns number of nodes */
@@ -135,6 +136,11 @@ public:
 		_visitLimit = limit;
 	}
 	
+	void setJointLimit(int limit)
+	{
+		_jointLimit = limit;
+	}
+	
 	const int &observedVisitLimit() const
 	{
 		return _observedVisitLimit;
@@ -156,9 +162,13 @@ public:
 	{
 		return _graphs;
 	}
+
+	void passTorsionsToSisters(BondSequence *sequence) const;
 private:
 	void addGraph(AtomGraph *graph);
 	int jumpsToAtom(AtomGraph *last, Atom *search, int max);
+	void passTorsionsToSisters(const std::vector<AtomBlock> &blocks,
+	                           int idx) const;
 	void extendGraphNormally(AtomGraph *current,
 	                         std::vector<AtomGraph *> &todo,
 	                         AnchorExtension &ext);
@@ -181,6 +191,8 @@ private:
 	int _visitLimit = 1;
 	int _observedVisitLimit = 0;
 	int _ringSizeLimit = 6;
+	int _jointLimit = -1;
+	int _joints = 0;
 	
 	typedef std::deque<RingProgrammer> RingProgrammers;
 
@@ -194,7 +206,7 @@ private:
 	int _atomsDone = 0;
 	
 	bool _original = true;
-	bool _singleChain = false; 
+	bool _inSequence = false; 
 };
 
 #endif

@@ -40,6 +40,16 @@ public:
 	{
 		return false;
 	}
+	
+	void setRefined(bool ref)
+	{
+		_refined = true;
+	}
+	
+	const bool &isRefined() const
+	{
+		return _refined;
+	}
 
 	virtual size_t atomCount() const = 0;
 	
@@ -53,6 +63,9 @@ public:
 	virtual const ResidueId residueId() = 0;
 
 	std::set<Parameter *> relatedParameters() const;
+
+public:
+	bool _refined = false;
 };
 
 #endif

@@ -105,7 +105,7 @@ Sequence &Sequence::operator+=(Residue &res)
 void Sequence::findSequence()
 {
 	Grapher gr;
-	gr.setSingleChain(true);
+	gr.setInSequence(true);
 	AnchorExtension ext(_anchor, UINT_MAX);
 	gr.generateGraphs(ext);
 

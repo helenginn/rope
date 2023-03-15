@@ -86,11 +86,10 @@ void SimplexEngine::cycle()
 	int count = 0;
 	int shrink_count = 0;
 	_changedParams = false;
-	std::cout << "Total dimensions: " << n() << std::endl;
 
 	while (true)
 	{
-		if (count > _maxJobRuns || shrink_count >= 10 || _finish)
+		if (count > _maxRuns || shrink_count >= 10 || _finish)
 		{
 			break;
 		}
@@ -101,16 +100,10 @@ void SimplexEngine::cycle()
 		float worst_score = worst.eval;
 
 		TestPoint &second_worst = _points[_points.size() - 2];
-		float second_worst_score = worst.eval;
+		float second_worst_score = second_worst.eval;
 
 		TestPoint &best = _points[0];
 		float best_score = best.eval;
-		
-		std::cout << std::endl;
-		for (TestPoint &tp : _points)
-		{
-			std::cout << tp << std::endl;
-		}
 		
 		Engine::clearResults();
 
@@ -121,9 +114,6 @@ void SimplexEngine::cycle()
 		float eval = FLT_MAX;
 		getResults();
 		Engine::findBestResult(&eval);
-		std::cout << "new point ";
-		printPoint(trial);
-		std::cout << " evaluate: " << eval << std::endl;
 		clearResults();
 		count++;
 		
@@ -135,7 +125,6 @@ void SimplexEngine::cycle()
 		}
 		if (eval < best_score)
 		{
-			std::cout << "option two, try expand" << std::endl;
 			_changedParams = true;
 			SPoint expanded = scaleThrough(trial, _centroid.vertex, -2);
 			sendJob(expanded);
@@ -145,8 +134,6 @@ void SimplexEngine::cycle()
 			Engine::findBestResult(&next);
 			clearResults();
 			
-			std::cout << "next: " << next << std::endl;
-			std::cout << (next < eval ? "yes expand" : "just trial") << std::endl;
 			worst.vertex = (next < eval ? expanded : trial);
 			worst.eval = (next < eval ? next : eval);
 			continue;
@@ -157,13 +144,11 @@ void SimplexEngine::cycle()
 			float compare;
 			if (eval > second_worst_score && eval < worst_score)
 			{
-				std::cout << "option three and a half" << std::endl;
 				contracted = scaleThrough(trial, _centroid.vertex, 0.5);
 				compare = eval;
 			}
 			else 
 			{
-				std::cout << "option three and three quarters" << std::endl;
 				contracted = scaleThrough(worst.vertex, _centroid.vertex, 0.5);
 				compare = worst_score;
 			}
@@ -177,14 +162,12 @@ void SimplexEngine::cycle()
 
 			if (next < compare)
 			{
-				std::cout << "option three and seven eighths" << std::endl;
 				worst.vertex = contracted;
 				worst.eval = next;
 				continue;
 			}
 			else
 			{
-				std::cout << "option SHRINK!" << std::endl;
 				shrink_count++;
 				shrink();
 			}
@@ -244,11 +227,13 @@ void SimplexEngine::run()
 		throw std::runtime_error("Nonsensical maximum job count per vertex"
 		                         "for SimplexEngine");
 	}
-
+	
 	if (_steps.size() == 0)
 	{
-		throw std::runtime_error("No step sizes chosen for SimplexEngine");
+		_steps = std::vector<float>(n(), _step);
 	}
+
+	clearResults();
 
 	std::vector<float> empty = std::vector<float>(n(), 0);
 	sendJob(empty);

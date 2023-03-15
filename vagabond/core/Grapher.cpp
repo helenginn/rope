@@ -171,7 +171,7 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 
 		/* don't go down a sulphur-to-sulphur transition if we want
 		 * to know the sequence */
-		if (_singleChain && !preferredConnection(atom, next))
+		if (_inSequence && !preferredConnection(atom, next))
 		{
 			continue;
 		}
@@ -190,7 +190,13 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 			// we only care if the visit limit is not 1, though
 			if (_visitLimit > 1)
 			{
+				if (_jointLimit < 0 && _joints > _jointLimit)
+				{
+					continue;
+				}
+
 				current->joint = true;
+				_joints++;
 			}
 
 			continue;
@@ -358,23 +364,19 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 		/* we need to find the child with the priority torsion */
 		for (size_t j = 0; j < _graphs[i]->children.size(); j++)
 		{
-			Atom *self = _graphs[i]->atom;
-			Atom *next = _graphs[i]->children[j]->atom;
-			Atom *grandparent = _graphs[i]->grandparent;
-			Atom *parent = _graphs[i]->parent;
+			AtomGraph *child = _graphs[i]->children[j];
+			BondTorsion *torsion = child->controllingTorsion();
 
-			if (next && self && parent && grandparent)
+			if (torsion == nullptr)
 			{
-				BondTorsion *torsion = self->findBondTorsion(next, self, 
-				                                             parent, 
-				                                             grandparent);
-				
-				/* assign something, but give priority to constraints */
-				if (torsion && (_graphs[i]->torsion == nullptr || 
-				                torsion->isConstrained()))
-				{
-					_graphs[i]->torsion = torsion;
-				}
+				continue;
+			}
+
+			/* assign something, but give priority to constraints */
+			if (torsion && (_graphs[i]->torsion == nullptr || 
+			                torsion->isConstrained()))
+			{
+				_graphs[i]->torsion = torsion;
 			}
 		}
 		
@@ -830,4 +832,54 @@ std::vector<const AtomGraph *> Grapher::joints() const
 	}
 
 	return js;
+}
+
+void Grapher::passTorsionsToSisters(BondSequence *sequence) const
+{
+	const std::vector<AtomBlock> &blocks = sequence->blocks();
+
+	for (size_t i = 0; i < blocks.size(); i++)
+	{
+		passTorsionsToSisters(blocks, i);
+	}
+}
+
+void Grapher::passTorsionsToSisters(const std::vector<AtomBlock> &blocks, 
+                                    int idx) const
+{
+	if (_block2Graph.count(idx) == 0)
+	{
+		return;
+	}
+
+	const AtomGraph *graph = _block2Graph.at(idx);
+
+	if (graph->torsion == nullptr) 
+	{
+		// isn't responsible for any torsion
+		return;
+	}
+	
+	float torsion = graph->torsion->value();
+	const AtomBlock &block = blocks[idx];
+	
+	if (block.program < -1)
+	{
+		// got turned into a program
+		return;
+	}
+
+	for (size_t i = 1; i < graph->children.size(); i++)
+	{
+		AtomGraph *gr = graph->children[i];
+		BondTorsion *t = gr->controllingTorsion();
+
+		glm::vec2 xy = glm::vec2(block.coordination[i]);
+		float add = rad2deg(atan2(xy.y, xy.x));
+		add -= 180;
+		
+		float estimate = torsion + add;
+		t->setValue(estimate);
+		t->setRefined(true);
+	}
 }

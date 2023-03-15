@@ -49,6 +49,13 @@ struct AtomGraph
 	 * @return torsion angle if successful, null otherwise (beginning of
 	 * tree for example) */
 	BondTorsion *pertinentTorsion() const;
+	
+	/** will return the bond torsion of the exact relationship of this
+	 * atom graph with the graph's atom as the terminal child.
+	 * This would normally be assigned to the parent, so this is not
+	 * equivalent to the torsion variable
+	 * @return torsion angle if successful, null otherwise */
+	BondTorsion *controllingTorsion() const;
 
 	std::string desc() const;
 	
