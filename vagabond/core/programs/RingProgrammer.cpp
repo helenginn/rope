@@ -76,8 +76,8 @@ void RingProgrammer::setupProline()
 		_groups.push_back(grp);
 	}
 	
-	_specialTorsions.push_back(std::make_pair("offset", -77.1f));
-	_specialTorsions.push_back(std::make_pair("amplitude", 0.0f));
+	_specialTorsions.push_back(std::make_pair("pseudo-psi", -77.1f));
+	_specialTorsions.push_back(std::make_pair("pseudo-x2", 0.0f));
 }
 
 std::string RingProgrammer::specialTorsion(int i, float *def)
