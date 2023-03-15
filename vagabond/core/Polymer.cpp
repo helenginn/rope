@@ -131,7 +131,7 @@ void Polymer::estimateProlines(AtomContent *atoms)
 		for (size_t i = 0; i < ch->hyperValueCount(); i++)
 		{
 			HyperValue *hv = ch->hyperValue(i);
-			if (hv->name() == "amplitude")
+			if (hv->name() == "pseudo-x2")
 			{
 				Atom *atom = hv->atom();
 
@@ -143,7 +143,7 @@ void Polymer::estimateProlines(AtomContent *atoms)
 				}
 
 			}
-			else if (hv->name() == "offset")
+			else if (hv->name() == "pseudo-psi" || hv->name() == "out-psi")
 			{
 				Atom *atom = hv->atom();
 				Atom *ca = atoms->atomByIdName(atom->residueId(), "CA");
@@ -154,6 +154,20 @@ void Polymer::estimateProlines(AtomContent *atoms)
 					{
 						float ipsi = psi->measurement(BondTorsion::SourceInitial);
 						hv->setValue(ipsi);
+					}
+				}
+			}
+			else if (hv->name() == "out-phi")
+			{
+				Atom *atom = hv->atom();
+				Atom *ca = atoms->atomByIdName(atom->residueId(), "CA");
+				if (ca)
+				{
+					BondTorsion *phi = ca->findBondTorsion("N-CA-C-N");
+					if (phi)
+					{
+						float iphi = phi->measurement(BondTorsion::SourceInitial);
+						hv->setValue(iphi);
 					}
 				}
 			}
