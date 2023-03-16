@@ -26,7 +26,7 @@
 #include "PolymerEntityManager.h"
 #include "LigandEntityManager.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class ModelManager;

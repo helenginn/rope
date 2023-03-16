@@ -23,7 +23,7 @@
 #include "ResidueId.h"
 
 #include <iostream>
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class TorsionRef

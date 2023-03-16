@@ -26,7 +26,7 @@
 #include "Ruler.h"
 #include "Progressor.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class Metadata : public Progressor

@@ -30,7 +30,7 @@
 #include "VisualPreferences.h"
 #include "AtomRecall.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class Polymer;

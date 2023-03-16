@@ -20,7 +20,7 @@
 #define __vagabond__Environment__
 
 #include <string>
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class Path;

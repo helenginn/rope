@@ -23,7 +23,7 @@
 #include <iostream>
 #include <string>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 struct ResidueId

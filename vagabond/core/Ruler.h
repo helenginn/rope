@@ -22,7 +22,7 @@
 #include <list>
 #include "Rule.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class RulerResponder

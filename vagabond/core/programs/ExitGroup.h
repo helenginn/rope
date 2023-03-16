@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 class Atom;
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 namespace rope

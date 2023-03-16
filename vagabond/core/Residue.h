@@ -24,7 +24,7 @@
 #include <vagabond/utils/FileReader.h>
 #include "TorsionRef.h"
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 class Sequence;
