@@ -1,7 +1,7 @@
 #pragma once
 
 #include "glm_import.h"
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace nlohmann
 {
