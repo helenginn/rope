@@ -1,4 +1,5 @@
 vagafiles = [
+cfile,
 'AlignmentTool.cpp',
 'ArbitraryMap.cpp',
 'Atom.cpp',
@@ -206,4 +207,4 @@ core = static_library('vag', vagafiles,
 	link_args: [links],
 	link_with: [vagutils, cluster4x],
     include_directories: ['../..'],
-	dependencies : deps, install: false)
+	dependencies : [deps], install: false)

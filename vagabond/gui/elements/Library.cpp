@@ -23,7 +23,7 @@
 #include "Library.h"
 #include "TextManager.h"
 #include "Renderable.h"
-#include "../../../commit.h"
+#include "config/config.h"
 
 #include <iostream>
 #include <SDL2/SDL.h>

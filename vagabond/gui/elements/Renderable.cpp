@@ -3,7 +3,7 @@
 #include "Renderable.h"
 #include "SnowGL.h"
 #include "Window.h"
-#include "../../../commit.h"
+#include "config/config.h"
 #include "Library.h"
 #include <vagabond/utils/FileReader.h>
 #include <float.h>

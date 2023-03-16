@@ -21,7 +21,7 @@
 #include "Environment.h"
 #include <fstream>
 #include <sstream>
-#include "commit.h"
+#include "config/config.h"
 
 
 std::string FileManager::_dataDir;

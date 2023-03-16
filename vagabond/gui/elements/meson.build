@@ -11,6 +11,7 @@ if (links == [])
 endif
 
 guielementfiles = [
+cfile,
 'AskYesNo.cpp',
 'AskForText.cpp',
 'BadChoice.cpp',
