@@ -101,7 +101,8 @@ inline void from_json(const json &j, VisualPreferences &value)
 {
 	value._cAlphaTrace = j["calpha"];
 	value._ballAndStick = j["ball_and_stick"];
-	value._displayBallSticks = j["bas_residues"];
+	std::vector<ResidueId> dbs = j["bas_residues"];
+	value._displayBallSticks = dbs;
 }
 
 #endif

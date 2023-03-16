@@ -64,7 +64,8 @@ inline void to_json(json &j, const Ligand &value)
 inline void from_json(const json &j, Ligand &value)
 {
 	value._chain = j.at("chain");
-	value._resids = j.at("residue_ids");
+	std::set<ResidueId> resids = j.at("residue_ids");
+	value._resids = resids;
 	value._anchorDesc = j.at("anchor_desc");
 	value._code = j.at("code");
 }

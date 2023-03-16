@@ -123,7 +123,8 @@ inline void to_json(json &j, const ExitGroup &value)
 
 inline void from_json(const json &j, ExitGroup &value)
 {
-	value.atoms = j.at("atoms");
+	std::vector<ExitGroup::Flaggable> atoms = j.at("atoms");
+	value.atoms = atoms;
 }
 
 };

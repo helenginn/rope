@@ -146,11 +146,15 @@ private:
 inline void to_json(json &j, const RingProgrammer &value)
 {
 	j["cyclic"] = value._cyclic;
+
 	j["groups"] = value._groups;
+
 	j["code"] = value._code;
 	j["pinned"] = value._pinnedAtom;
-	j["parameters"] = value._specialTorsions;
 
+	j["param_specs"] = value._paramSpecs;
+
+>>>>>>> 21a9606 (compiler leg up)
 }
 
 inline void from_json(const json &j, RingProgrammer &value)
@@ -159,7 +163,8 @@ inline void from_json(const json &j, RingProgrammer &value)
 
 	if (j.count("groups"))
 	{
-		value._groups = j["groups"];
+		std::vector<rope::ExitGroup> groups = j["groups"];
+		value._groups = groups;
 	}
 
 	if (j.count("code"))
@@ -174,7 +179,8 @@ inline void from_json(const json &j, RingProgrammer &value)
 
 	if (j.count("parameters"))
 	{
-		value._specialTorsions = j["parameters"];
+		std::vector<RingProgrammer::ParamSpec> paramSpecs = j["param_specs"];
+		value._paramSpecs = paramSpecs;
 	}
 }
 

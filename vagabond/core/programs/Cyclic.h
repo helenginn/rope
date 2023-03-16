@@ -199,7 +199,8 @@ inline void to_json(json &j, const Cyclic &value)
 
 inline void from_json(const json &j, Cyclic &value)
 {
-	value._names = j.at("names");
+	std::vector<std::string> names = j.at("names");
+	value._names = names;
 	value._num = j.at("num");
 	value._sinMult = j.at("sinmult");
 	std::vector<float> lengths = j.at("lengths");
