@@ -20,6 +20,7 @@
 #define __vagabond__DistanceMaker__
 
 #include "SequenceView.h"
+#include <thread>
 
 class Entity;
 class Metadata;
