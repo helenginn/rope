@@ -20,6 +20,7 @@
 #define __vagabond__ClusterSVD__
 
 #include "Cluster.h"
+#include <mutex>
 
 template <class DG>
 class ClusterSVD : public Cluster<DG>
