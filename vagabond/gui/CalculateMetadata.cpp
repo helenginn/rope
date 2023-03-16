@@ -26,7 +26,7 @@
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Environment.h>
 
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 using nlohmann::json;
 
 CalculateMetadata::CalculateMetadata(Scene *prev, Entity *ent) : Scene(prev)

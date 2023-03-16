@@ -20,7 +20,7 @@
 #include "SearchPDB.h"
 #include "CandidateView.h"
 #include <vagabond/core/Entity.h>
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
