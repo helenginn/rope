@@ -16,7 +16,7 @@ endif
 
 fftw = dependency('fftw3f', static: fftw_static)
 json = dependency('nlohmann_json')
-gemmi = dependency('gemmi')
+gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'])
 deps = [glm, fftw, json, gemmi]
 name = 'index.html'
 
