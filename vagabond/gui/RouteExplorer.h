@@ -21,6 +21,7 @@
 
 #include "Display.h"
 #include <vagabond/gui/elements/DragResponder.h>
+#include <thread>
 
 class PlausibleRoute;
 class TextButton;
