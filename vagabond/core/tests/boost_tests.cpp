@@ -20,13 +20,13 @@
 #include <vagabond/utils/include_boost.h>
 
 #include <vagabond/core/Complex.h>
-#include <vagabond/core/Entity.h>
-#include <vagabond/core/Molecule.h>
+#include <vagabond/core/PolymerEntity.h>
+#include <vagabond/core/Polymer.h>
 
 BOOST_AUTO_TEST_CASE(test_reciprocal_connection)
 {
 	Complex c;
-	Molecule mol_a, mol_b;
+	Polymer mol_a, mol_b;
 	Interface *interface{};
 	Complex::Node *a = c.addNode(&mol_a);
 	Complex::Node *b = c.addNode(&mol_b);
@@ -42,8 +42,8 @@ BOOST_AUTO_TEST_CASE(test_reciprocal_connection)
 BOOST_AUTO_TEST_CASE(simple_likeness_test)
 {
 	Complex cmplex;
-	Molecule mol_a, mol_b, mol_c;
-	Entity e;
+	Polymer mol_a, mol_b, mol_c;
+	PolymerEntity e;
 	mol_a.setEntity(&e);
 	mol_b.setEntity(&e);
 	mol_c.setEntity(&e);
@@ -68,8 +68,8 @@ BOOST_AUTO_TEST_CASE(simple_likeness_test)
 BOOST_AUTO_TEST_CASE(complicated_likeness_test)
 {
 	Complex cmplex;
-	Molecule mol_a, mol_b, mol_c, mol_d;
-	Entity e, f;
+	Polymer mol_a, mol_b, mol_c, mol_d;
+	PolymerEntity e, f;
 	mol_a.setEntity(&e);
 	mol_b.setEntity(&e);
 	mol_c.setEntity(&e);
