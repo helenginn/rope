@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Manager.h>
+#include <thread>
 
 #define POINT_TYPE_COUNT 8
 
