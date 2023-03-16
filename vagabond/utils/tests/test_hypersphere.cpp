@@ -18,6 +18,7 @@
 
 #define BOOST_TEST_MODULE core_hypersphere
 #include <vagabond/utils/include_boost.h>
+#include <cmath>
 
 #define private public // evil but delicious
 
