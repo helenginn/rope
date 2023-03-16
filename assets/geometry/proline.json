@@ -1,1 +1,122 @@
-{"ring":{"code":"PRO","cyclic":{"angles":[109.05000305175781,103.43000030517578,103.51000213623047,104.5,105.69999694824219],"lengths":[1.468000054359436,1.534000039100647,1.5080000162124634,1.5149999856948853,1.468000054359436],"names":["N","CA","CB","CG","CD"],"num":5,"params":{"nudges":[-0.004778964910656214,-0.011422179639339447,-0.009084906429052353,-0.01018307451158762,-0.003850889392197132],"offset":0.012415263801813126,"radius":1.2579377889633179,"z_amplitude":0.18640945851802826},"sinmult":2,"step":0.5},"groups":[{"atoms":[{"central":true,"entry":false,"name":"N"},{"central":false,"entry":false,"name":"CA"},{"central":false,"entry":false,"name":"CD"},{"central":false,"entry":true,"name":"C"}]},{"atoms":[{"central":true,"entry":false,"name":"CA"},{"central":false,"entry":false,"name":"N"},{"central":false,"entry":false,"name":"CB"},{"central":false,"entry":true,"name":"C"}]}],"parameters":[["pseudo-psi",-77.0999984741211],["pseudo-x2",0.0]],"pinned":"CG"}}
+{
+  "ring": {
+    "code": "PRO",
+    "cyclic": {
+      "angles": [
+        109.05000305175781,
+        103.43000030517578,
+        103.51000213623047,
+        104.5,
+        105.69999694824219
+      ],
+      "lengths": [
+        1.468000054359436,
+        1.534000039100647,
+        1.5080000162124634,
+        1.5149999856948853,
+        1.468000054359436
+      ],
+      "names": [
+        "N",
+        "CA",
+        "CB",
+        "CG",
+        "CD"
+      ],
+      "num": 5,
+      "params": {
+        "nudges": [
+          -0.004778964910656214,
+          -0.011422179639339447,
+          -0.009084906429052353,
+          -0.01018307451158762,
+          -0.003850889392197132
+        ],
+        "offset": 0.012415263801813126,
+        "radius": 1.2579377889633179,
+        "z_amplitude": 0.18640945851802826
+      },
+      "sinmult": 2,
+      "step": 0.5
+    },
+    "groups": [
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "N"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CA"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CD"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "name": "C"
+          }
+        ],
+        "exit_parameter": "out-psi"
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CA"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "N"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CB"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "name": "C"
+          }
+        ],
+        "exit_parameter": "out-psi"
+      }
+    ],
+    "param_specs": [
+      {
+        "param_name": "pseudo-psi",
+        "default_value": -77.0999984741211,
+        "access_atom": "CA",
+        "mirror_param": "C-N-CA-C"
+      },
+      {
+        "param_name": "pseudo-x2",
+        "default_value": 0,
+        "access_atom": "CG",
+        "mirror_param": "CA-CB-CG-CD"
+      },
+      {
+        "param_name": "out-phi",
+        "default_value": 0,
+        "access_atom": "CA",
+        "mirror_param": "C-N-CA-C"
+      },
+      {
+        "param_name": "out-psi",
+        "default_value": 0,
+        "access_atom": "CA",
+        "mirror_param": "C-N-CA-C"
+      }
+    ],
+    "pinned": "CG"
+  }
+}

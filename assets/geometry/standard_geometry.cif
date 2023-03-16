@@ -2931,7 +2931,7 @@ _chem_comp_angle.description
  TRP      CE2    CD2    CG      107.3      0.8   11  .
  TRP      CE3    CZ3    CH2     121.2      1.1   68  .
  TRP      CG     CD1    NE1     110.1      1.0   17  .
- TRP      CG     CD2    CE3     133.9      0.9   79  .
+ TRP      CG     CD2    CE3     134.0      0.9   79  .
  TRP      CH2    CZ2    CE2     117.4      1.0   54  .
  TRP      CZ3    CH2    CZ2     121.6      1.2   87  .
  TRP      N      CA     C       111.0      2.7   28  .
@@ -3850,9 +3850,9 @@ _chem_link_angle.link_id
      C    N    H      110.062    1.5    .
      C    N    H1     110.062    1.5    .
      C    N    CA     121.7      2.5    "NOT GLY PRO"
-     C    N    CA     122.0      4.2    PRO
+     C    N    CA     122.0      4.2    PRO-AVE
      C    N    CA     127.0      2.4    PRO-CIS
-     C    N    CA     119.3      1.5    PRO-TRANS
+     C    N    CA     119.3      1.5    PRO
      C    N    CA     122.3      2.1    GLY
      O3'  P    O5'    104.0      1.9    .
      O3'  P    O5'    104.0      1.9    "NA s"
@@ -3952,14 +3952,22 @@ _chem_comp_tor.period
  THR      hh2      CA     CB     CG2   HG23       60.0     30.0     3
  TRP      chi1     N      CA     CB     CG       180.0     15.0     3
  TRP      chi2     CA     CB     CG     CD1       90.0     20.0     2
- TRP      C01      CB     CG     CD1    NE1      180.0      0.0     0
+ TRP      C00      CB     CG     CD1    NE1      180.0      0.0     0
+ TRP      C01      CB     CG     CD2    NE2      180.0      0.0     0
  TRP      C02      CG     CD1    NE1    CE2        0.0      0.0     0
- TRP      C03      CD1    NE1    CE2    CD2        0.0      0.0     0
- TRP      C04      NE1    CE2    CD2    CE3      180.0      0.0     0
- TRP      C05      CE2    CD2    CE3    CZ3        0.0      0.0     0
- TRP      C06      CD2    CE3    CZ3    CH2        0.0      0.0     0
- TRP      C07      CE3    CZ3    CH2    CZ2        0.0      0.0     0
- TRP      C08      CZ3    CH2    CZ2    CE2        0.0      0.0     0
+ TRP      C03      CG     CD2    NE2    CD1        0.0      0.0     0
+ TRP      C04      CG     CD2    NE2    CZ2      180.0      0.0     0
+ TRP      C05      CG     CD2    CE2    NE1        0.0      0.0     0
+ TRP      C06      CG     CD2    CE3    CZ3      180.0      0.0     0
+ TRP      C07      CD1    NE1    CE2    CD2        0.0      0.0     0
+ TRP      C08      CD1    NE1    CE2    CZ2        0.0      0.0     0
+ TRP      C09      NE1    CE2    CD2    CE3      180.0      0.0     0
+ TRP      C10      NE1    CE2    CZ2    CH2      180.0      0.0     0
+ TRP      C11      CE2    CD2    CE3    CZ3        0.0      0.0     0
+ TRP      C12      CE2    CZ2    CH2    CZ3        0.0      0.0     0
+ TRP      C13      CD2    CE3    CZ3    CH2        0.0      0.0     0
+ TRP      C14      CE3    CZ3    CH2    CZ2        0.0      0.0     0
+ TRP      C15      CZ3    CH2    CZ2    CE2        0.0      0.0     0
  TYR      chi1     N      CA     CB     CG       180.0     15.0     3
  TYR      chi2     CA     CB     CG     CD1       90.0     20.0     2
  TYR      C01      CB     CG     CD1    CE1      180.0      0.0     0
@@ -4134,7 +4142,7 @@ _chem_comp_chir.volume_sign
  MSE      1  CA     N      CB     C         negativ
  PHE      1  CA     N      CB     C         negativ
  PRO      1  CA     N      CB     C         negativ
- PRO      1  N      CD     C      CA        negativ
+# PRO      1  N      CD     C      CA        negativ
  SER      1  CA     N      CB     C         negativ
  THR      1  CA     N      CB     C         negativ
  THR      2  CB     CA     OG1    CG2       positiv
