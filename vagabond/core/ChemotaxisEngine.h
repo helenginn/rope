@@ -35,6 +35,7 @@ private:
 	bool tumble();
 	bool runner();
 	float _step = 0.1;
+	float _original = 0.1;
 
 	Hypersphere *_hypersphere = nullptr;
 	std::vector<float> _direction;

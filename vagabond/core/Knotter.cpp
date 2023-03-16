@@ -193,11 +193,13 @@ void Knotter::createBondTorsion(BondAngle *first, BondAngle *second)
 
 void Knotter::createHyperValues(Atom *atom, RingProgrammer *programmer)
 {
-	for (size_t i = 0; i < programmer->specialTorsionCount(); i++)
+	for (size_t i = 0; i < programmer->paramSpecCount(); i++)
 	{
 		float def = 0;
-		std::string name = programmer->specialTorsion(i, &def);
-		new HyperValue(_group, atom, name, def);
+		std::string name = programmer->paramSpec(i, &def);
+		HyperValue *hv = new HyperValue(_group, atom, name, def);
+		
+		programmer->updateValue(_group, hv, i);
 	}
 }
 

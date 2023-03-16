@@ -76,31 +76,14 @@ struct AtomBlock
 	{
 		return glm::vec3(wip[i]);
 	}
+	
+	void silence();
+	void printBlock() const;
 
-	void printBlock() const
-	{
-		std::cout << " ===== ATOM BLOCK =====" << std::endl;
-		if (atom != nullptr)
-		{
-			std::cout << "Atom: " << atom->atomName() << "\t" <<
-			atom->desc() << std::endl;
-			std::cout << "init pos: " << 
-			glm::to_string(atom->initialPosition()) << std::endl;
-		}
-		else
-		{
-			std::cout << "Ghost block" << std::endl;
-		}
-		std::cout << "Program: " << program << ", flagged: " << flag << ", ";
-		std::cout << "silenced: " << silenced << std::endl;
-		std::cout << "Torsion: " << torsion << std::endl;
-		std::cout << "Coordination: " << glm::to_string(coordination) << std::endl;
-		std::cout << "Basis: " << glm::to_string(basis) << std::endl;
-		std::cout << "wip: " << glm::to_string(wip) << std::endl;
-		std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
-		std::cout << std::endl;
-	}
-
+	glm::mat4x4 prepareRotation() const;
+	
+	void writeToChildren(std::vector<AtomBlock> &context, int idx,
+	                     bool usingPrograms);
 };
 
 #endif

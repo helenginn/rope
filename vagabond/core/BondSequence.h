@@ -220,7 +220,6 @@ private:
 	void setJob(Job *job);
 	void printBlock(int idx);
 	
-	glm::mat4x4 _torsion_rot = glm::mat4(1.f);
 	bool _fullRecalc = true;
 	int _sampleNum = 0;
 	int _startCalc = 0;

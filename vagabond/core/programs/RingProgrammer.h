@@ -33,15 +33,15 @@ class RingProgrammer
 {
 public:
 	RingProgrammer();
-	RingProgrammer(std::string cyclicFile);
 	
 	static std::vector<RingProgrammer *> *allProgrammers();
+	std::string paramSpec(int i, float *def);
 	
-	std::string specialTorsion(int i, float *def);
+	void updateValue(AtomGroup *group, HyperValue *hv, int i);
 	
-	size_t specialTorsionCount() const
+	size_t paramSpecCount() const
 	{
-		return _specialTorsions.size();
+		return _paramSpecs.size();
 	}
 	
 	const std::string &pinnedAtom() const
@@ -102,12 +102,13 @@ public:
 	friend void to_json(json &j, const RingProgrammer &value);
 	friend void from_json(const json &j, RingProgrammer &value);
 protected:
-	void setupProline();
 	
 private:
 	bool registerAtom(Atom *a, int idx);
 	void wipeFlagsExcept(int idx);
 	bool proofSolution(int grp_idx);
+	void fixProgramIndices(std::vector<AtomBlock> &blocks,
+	                       int prog_num);
 
 	void findGroupLocations(int grp_idx);
 	void grabAtomLocation(Atom *atom, int idx);
@@ -121,10 +122,24 @@ private:
 	std::string _code;
 	std::string _pinnedAtom;
 	
-	std::vector<std::pair<std::string, float> > _specialTorsions;
+	struct ParamSpec
+	{
+		std::string param_name; /** name of this parameter */
+		float default_value; /** default value of this parameter */
+		std::string access_atom; /** atom with mirroring torsion angle */
+		std::string mirror_param; /** name of parameter with estimation value */
+	};
+
+	friend void from_json(const json &j, RingProgrammer::ParamSpec &value);
+	friend void to_json(json &j, const RingProgrammer::ParamSpec &value);
+
+	std::vector<ParamSpec> _paramSpecs;
 	
 	std::map<std::string, int> _atomLocs;
+	std::map<Atom *, int> _atomPtrLocs;
 	std::map<std::string, int> _branchLocs;
+	std::map<int, AtomGraph *> _idx2Graph;
+	std::map<AtomGraph *, int> _graph2Idx;
 	std::map<std::string, std::string> _grandparents;
 
 	std::string _cyclicFile;
@@ -143,6 +158,22 @@ private:
 	static std::vector<RingProgrammer *> _rammers;
 };
 
+inline void to_json(json &j, const RingProgrammer::ParamSpec &value)
+{
+	j["param_name"] = value.param_name;
+	j["default_value"] = value.default_value;
+	j["access_atom"] = value.access_atom;
+	j["mirror_param"] = value.mirror_param;
+}
+
+inline void from_json(const json &j, RingProgrammer::ParamSpec &value)
+{
+	value.param_name = j["param_name"];
+	value.default_value = j["default_value"];
+	value.access_atom = j["access_atom"];
+	value.mirror_param = j["mirror_param"];
+}
+
 inline void to_json(json &j, const RingProgrammer &value)
 {
 	j["cyclic"] = value._cyclic;
@@ -151,10 +182,7 @@ inline void to_json(json &j, const RingProgrammer &value)
 
 	j["code"] = value._code;
 	j["pinned"] = value._pinnedAtom;
-
 	j["param_specs"] = value._paramSpecs;
-
->>>>>>> 21a9606 (compiler leg up)
 }
 
 inline void from_json(const json &j, RingProgrammer &value)
@@ -177,7 +205,7 @@ inline void from_json(const json &j, RingProgrammer &value)
 		value._pinnedAtom = j["pinned"];
 	}
 
-	if (j.count("parameters"))
+	if (j.count("param_specs"))
 	{
 		std::vector<RingProgrammer::ParamSpec> paramSpecs = j["param_specs"];
 		value._paramSpecs = paramSpecs;

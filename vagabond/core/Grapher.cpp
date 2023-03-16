@@ -373,8 +373,7 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 			}
 
 			/* assign something, but give priority to constraints */
-			if (torsion && (_graphs[i]->torsion == nullptr || 
-			                torsion->isConstrained()))
+			if (_graphs[i]->torsion == nullptr || torsion->isConstrained())
 			{
 				_graphs[i]->torsion = torsion;
 			}
@@ -488,17 +487,17 @@ void Grapher::refreshTargets(BondCalculator *calc) const
 
 }
 
-void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
+void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
 {
-	if (_atom2Transform.count(atom))
+	if (_atom2Transform.count(gr->atom))
 	{
-		AtomBlock &b = _atom2Transform[atom];
+		AtomBlock &b = _atom2Transform[gr->atom];
 		block = b;
 	}
 	else
 	{
-		block.atom = atom;
-		size_t blc = atom->bondLengthCount();
+		block.atom = gr->atom;
+		size_t blc = gr->atom->bondLengthCount();
 		size_t max = 4;
 		block.nBonds = std::min(blc, max);
 		block.wip = glm::mat4(0.);
@@ -513,23 +512,20 @@ void Grapher::assignAtomToBlock(AtomBlock &block, int idx, Atom *atom)
 	
 	block.torsion_idx = -1;
 
-	if (atom)
+	if (gr->atom)
 	{
-		std::string symbol = atom->elementSymbol().substr(0, 2);
+		std::string symbol = gr->atom->elementSymbol().substr(0, 2);
 		const char *ele = symbol.c_str();
 		memcpy(block.element, ele, sizeof(char) * 2);
 	}
 
-	if (_block2Graph.count(idx))
-	{
-		block.torsion_idx = _block2Graph[idx]->torsion_idx;
-		BondTorsion *torsion = _block2Graph[idx]->torsion;
+	block.torsion_idx = gr->torsion_idx;
+	BondTorsion *torsion = gr->torsion;
 
-		if (torsion != nullptr)
-		{
-			double t = torsion->startingAngle();
-			block.torsion = t;
-		}
+	if (torsion != nullptr)
+	{
+		double t = torsion->startingAngle();
+		block.torsion = t;
 	}
 }
 
@@ -599,7 +595,7 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 		
 		if (!prev)
 		{
-			assignAtomToBlock(blocks[curr], curr, anchor);
+			assignAtomToBlock(blocks[curr], anchorGraph);
 			fixBlockAsGhost(blocks[curr], anchor);
 			blocks[curr].nBonds = anchorGraph->children.size();
 			curr++;
@@ -611,7 +607,7 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 			todo.pop();
 
 			_block2Graph[curr] = g;
-			assignAtomToBlock(blocks[curr], curr, g->atom);
+			assignAtomToBlock(blocks[curr], g);
 
 			/* check for available programs */
 			sendAtomToProgrammers(g, curr, blocks, basis);

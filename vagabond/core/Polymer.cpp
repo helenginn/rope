@@ -179,7 +179,6 @@ void Polymer::insertTorsionAngles(AtomContent *atoms)
 {
 	if (!isRefined())
 	{
-		estimateProlines(atoms);
 		return;
 	}
 

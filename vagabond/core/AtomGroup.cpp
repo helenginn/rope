@@ -350,12 +350,6 @@ Atom *AtomGroup::chosenAnchor(bool min)
 			found_res = res;
 		}
 	}
-	
-	if (!_chosenAnchor->isTransformed())
-	{
-		AlignmentTool tool(this);
-		tool.run(_chosenAnchor);
-	}
 
 	return _chosenAnchor;
 }

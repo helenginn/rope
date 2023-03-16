@@ -83,6 +83,8 @@ public:
 	void setRingEntranceName(std::string atomName);
 	void addAlignmentIndex(int idx, std::string atomName);
 	void addRingIndex(int idx, std::string atomName);
+	void addBranchIndex(int child, int self, int parent, int gp,
+	                    std::string param_name);
 	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
 
 	void run(std::vector<AtomBlock> &blocks, int rel, float *vec, int n);
@@ -94,6 +96,8 @@ private:
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
 	void alignBranchMembers(std::vector<AtomBlock> &blocks);
+	void alignRingExit(std::vector<AtomBlock> &blocks);
+	glm::vec3 originalPosition(std::vector<AtomBlock> &blocks, int idx);
 
 	int lowestAlignment();
 	Cyclic _cyclic;
@@ -102,6 +106,7 @@ private:
 	// block is first, cyclic is second
 	std::map<int, int> _alignmentMapping;
 	std::map<int, int> _ringMapping;
+	std::map<int, glm::vec3> _oldPositions;
 	std::map<HyperValue *, int> _valueMapping;
 	std::map<std::string, float> _name2Value;
 	std::vector<HyperValue *> _values;
@@ -119,9 +124,19 @@ private:
 		float curr_to_other = -1;
 	};
 	
+	struct TorsionGroup
+	{
+		int child;
+		int self;
+		int parent;
+		int gp;
+		std::string param_name;
+	};
+	
 	ResidueId _activeId{};
 	Atom *_atom = nullptr;
 	std::vector<Lookup> _branchMapping;
+	std::vector<TorsionGroup> _torsionGroups;
 	std::string _entranceName;
 	int _entranceCycleIdx = -1;
 	

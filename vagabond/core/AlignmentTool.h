@@ -34,6 +34,7 @@ public:
 	void run();
 	void run(Atom *anchor);
 private:
+	int calculateExtension(Atom *anchor);
 	Result *resultForAnchor(Atom *anchor);
 	glm::mat4x4 superposition(Result *result);
 

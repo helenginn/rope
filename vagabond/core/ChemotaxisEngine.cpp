@@ -48,6 +48,7 @@ void ChemotaxisEngine::run()
 bool ChemotaxisEngine::cycle()
 {
 	bool success = false;
+	_original = _step;
 	
 	while (!success)
 	{
@@ -56,6 +57,10 @@ bool ChemotaxisEngine::cycle()
 		if (!success)
 		{
 			_step /= 2;
+		}
+		else
+		{
+			_step = _original;
 		}
 		
 		if (_step < 0.01)

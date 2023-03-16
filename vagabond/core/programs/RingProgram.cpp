@@ -63,13 +63,20 @@ void RingProgram::addAlignmentIndex(int idx, std::string atomName)
 {
 	int cycle_idx = _cyclic.indexOfName(atomName);
 	_alignmentMapping[idx] = cycle_idx;
-//	_ringMapping[idx] = cycle_idx; // this messes with torsion angle measurements
+	_ringMapping[idx] = cycle_idx; // this messes with torsion angle measurements?
 }
 
 void RingProgram::addRingIndex(int idx, std::string atomName)
 {
 	int cycle_idx = _cyclic.indexOfName(atomName);
 	_ringMapping[idx] = cycle_idx;
+}
+
+void RingProgram::addBranchIndex(int child, int self, int parent, int gp,
+                                 std::string param_name)
+{
+	TorsionGroup tg{child, self, parent, gp, param_name};
+	_torsionGroups.push_back(tg);
 }
 
 void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
@@ -199,7 +206,38 @@ void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
 	fetchParameters(vec, n);
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
-	alignBranchMembers(blocks);
+//	alignBranchMembers(blocks);
+	alignRingExit(blocks);
+}
+
+glm::vec3 RingProgram::originalPosition(std::vector<AtomBlock> &blocks, int idx)
+{
+	if (_oldPositions.count(idx))
+	{
+		return _oldPositions.at(idx);
+	}
+
+	glm::vec3 v = blocks[idx].my_position();
+	return v;
+}
+
+void RingProgram::alignRingExit(std::vector<AtomBlock> &blocks)
+{
+	for (TorsionGroup &tg : _torsionGroups)
+	{
+		glm::vec4 self = glm::vec4(originalPosition(blocks, tg.self), 0);
+		glm::vec4 parent = glm::vec4(originalPosition(blocks, tg.parent), 0);
+		glm::vec3 gp = originalPosition(blocks, tg.gp);
+		
+		AtomBlock &mine = blocks[tg.self];
+		AtomBlock &child = blocks[tg.child];
+
+		torsion_basis(mine.basis, parent, gp, self);
+		child.inherit = parent;
+		
+		mine.writeToChildren(blocks, tg.self, true);
+	}
+
 }
 
 void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
@@ -211,6 +249,8 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 	{
 		int b_idx = it->first + _idx;
 		int c_idx = it->second;
+
+		_oldPositions[b_idx] = blocks[b_idx].my_position();
 
 		blocks[b_idx].basis[3] = glm::vec4(_cyclic.atomPos(c_idx), 1.f);
 	}

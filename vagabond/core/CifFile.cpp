@@ -161,7 +161,7 @@ void CifFile::parse()
 	{
 		parseFileContents("assets/geometry/standard_geometry.cif");
 	}
-	
+
 	if (_knot != KnotNone)
 	{
 		AtomGroup *ptr = (_macroAtoms->size() == 0 ? _compAtoms : _macroAtoms);

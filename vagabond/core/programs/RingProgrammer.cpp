@@ -38,71 +38,40 @@ RingProgrammer::RingProgrammer()
 
 }
 
-RingProgrammer::RingProgrammer(std::string cyclicFile)
+std::string RingProgrammer::paramSpec(int i, float *def)
 {
-#ifndef __EMSCRIPTEN__
-	if (!file_exists(cyclicFile))
-	{
-		FileManager::correctFilename(cyclicFile);
-	}
-#endif
-
-	json data;
-	std::ifstream f;
-	f.open(cyclicFile);
-	f >> data;
-	f.close();
-	
-	_cyclic = data["cyclic"];
-	
-	setupProline();
-
-	json out;
-	out["ring"] = *this;
-
-	std::ofstream file;
-	file.open("_proline.json");
-	file << out;
-	file << std::endl;
-	file.close();
+	*def = _paramSpecs[i].default_value;
+	return _paramSpecs[i].param_name;
 }
 
-void RingProgrammer::setupProline()
+void RingProgrammer::updateValue(AtomGroup *group, HyperValue *hv, int i)
 {
-	_code = "PRO";
-	_pinnedAtom = "CG";
+	ParamSpec &spec = _paramSpecs[i];
+	Atom *atom = hv->atom();
 
+	Atom *access = group->atomByIdName(atom->residueId(), spec.access_atom);
+	
+	if (!access)
 	{
-		ExitGroup grp;
-		grp.addCentral("N");
-		grp.add("CA");
-		grp.add("CD");
-		grp.add("C", true); // C is the non-ring atom for this group
-		_groups.push_back(grp);
+		return;
 	}
-
+	Parameter *mirror;
+	mirror = access->findBondTorsion(spec.mirror_param);
+	
+	if (!mirror)
 	{
-		ExitGroup grp;
-		grp.addCentral("CA");
-		grp.add("N");
-		grp.add("CB");
-		grp.add("C", true); // C is the non-ring atom for this group
-		_groups.push_back(grp);
+		return;
 	}
 	
-	_specialTorsions.push_back(std::make_pair("pseudo-psi", -77.1f));
-	_specialTorsions.push_back(std::make_pair("pseudo-x2", 0.0f));
-}
-
-std::string RingProgrammer::specialTorsion(int i, float *def)
-{
-	*def = _specialTorsions[i].second;
-	return _specialTorsions[i].first;
+	float f = mirror->empiricalMeasurement();
+	hv->setValue(f);
 }
 
 bool RingProgrammer::registerAtom(AtomGraph *ag, int idx)
 {
 	bool found_central = registerAtom(ag->atom, idx);
+	_idx2Graph[idx] = ag;
+	_graph2Idx[ag] = idx;
 	
 	// make sure we record all grandparents who branch off the ring
 	// but only when we're recording ring things
@@ -293,6 +262,7 @@ void RingProgrammer::grabAtomLocation(Atom *atom, int idx)
 		if (it != members.end())
 		{
 			_atomLocs[n] = idx;
+			_atomPtrLocs[atom] = idx;
 			return;
 		}
 	}
@@ -450,19 +420,46 @@ void RingProgrammer::correctIndexOffset()
 	_triggerIndex = cidx;
 }
 
+void RingProgrammer::fixProgramIndices(std::vector<AtomBlock> &blocks,
+                                       int prog_num)
+{
+	correctIndexOffset();
+
+	ExitGroup &stay = _groups[_entrance];
+	for (size_t i = 0; i < _groups.size(); i++)
+	{
+		if (_entrance == i)
+		{
+			continue;
+		}
+
+		ExitGroup &grp = _groups[i];
+
+		for (ExitGroup::Flaggable &f : grp.atoms)
+		{
+			if (!f.entry && f.idx >= 0 && !stay.hasAtom(f.ptr))
+			{
+				blocks[f.idx].silence();
+			}
+		}
+	}
+
+	for (auto it = _atomPtrLocs.begin(); it != _atomPtrLocs.end(); it++)
+	{
+		if (!stay.hasAtom(it->first))
+		{
+			blocks[it->second].silence();
+		}
+	}
+
+	blocks[_triggerIndex].program = prog_num;
+	blocks[blocks.size() - 1].program = -3;
+}
+
 void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
                                  TorsionBasis *basis)
 {
-	correctIndexOffset();
-	
-	blocks[_triggerIndex].program = prog_num;
-	
-	for (size_t i = _triggerIndex + 1; i < blocks.size(); i++)
-	{
-		blocks[i].program = -2;
-		blocks[i].torsion_idx = -1;
-	}
-	blocks[blocks.size() - 1].program = -3;
+	fixProgramIndices(blocks, prog_num);
 
 	RingProgram *prog = new RingProgram(this);
 	std::string &name = _groups[_entrance].central()->name;
@@ -489,6 +486,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		}
 	}
 	
+	/*
 	for (auto it = _branchLocs.begin(); it != _branchLocs.end(); it++)
 	{
 		int corrected = it->second - _triggerIndex;
@@ -499,8 +497,15 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 			continue;
 		}
 
-		/* make sure we do not execute the normal program */
-		std::string gp = _grandparents[it->first];
+		// make sure we do not execute the normal program
+		AtomGraph *gr = _idx2Graph[it->second];
+		AtomGraph *prior = gr->prior;
+		prior = prior->prior;
+		prior = prior->prior;
+		
+		int ancestor_idx = _graph2Idx[prior];
+
+		std::string gp = gr->grandparent->atomName();
 		
 		if (gp.length() == 0)
 		{
@@ -508,32 +513,80 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		}
 
 		Atom *curr = blocks[it->second].atom;
-		prog->addBranchIndex(corrected, curr, gp);
+//		prog->addBranchIndex(corrected, curr, gp, ancestor_idx);
 		
 		if (!prog->isValid())
 		{
 			return;
 		}
 	}
+	*/
 	
 	int pindx = _atomLocs[_pinnedAtom];
+	Atom *pinned = nullptr;
 	if (pindx >= 0)
 	{
-		Atom *pinned = blocks[pindx].atom;
+		pinned = blocks[pindx].atom;
 		if (!pinned)
 		{
 			prog->invalidate();
 			return;
 		}
-		
-		for (int i = 0; i < pinned->hyperValueCount(); i++)
-		{
-			HyperValue *hv = pinned->hyperValue(i);
-			int idx = basis->addParameter(hv, pinned);
-			// FIXME? add to parameter2Graph of Grapher, ugh
-			prog->setParameterFromBasis(idx, hv);
-		}
+	}
 
+	for (int i = 0; i < pinned->hyperValueCount(); i++)
+	{
+		HyperValue *hv = pinned->hyperValue(i);
+		int idx = basis->addParameter(hv, pinned);
+		// FIXME? add to parameter2Graph of Grapher, ugh
+		prog->setParameterFromBasis(idx, hv);
+	}
+
+	/*
+	std::string param_name = _groups[_entrance].exitParameter;
+	Parameter *p = pinned->findParameter(param_name, pinned->residueId());
+
+	if (!p)
+	{
+		std::cout << "WARNING! Cannot find " << param_name << " in "
+		<< pinned->desc() << std::endl;
+	}
+	*/
+
+	for (size_t i = 0; i < _groups.size(); i++)
+	{
+		if (i == _entrance)
+		{
+			continue;
+		}
+		ExitGroup &group = _groups[i];
+		ExitGroup::Flaggable &f = *group.entry();
+
+		int child = f.idx;
+		AtomGraph *gr = _idx2Graph[child];
+		AtomGraph *prior = gr->prior;
+		int self = _graph2Idx[prior];
+		prior = prior->prior;
+		int parent = _graph2Idx[prior];
+		prior = prior->prior;
+		int grandparent = _graph2Idx[prior];
+
+		std::string out = group.exitParameter;
+		Parameter *hv = pinned->findParameter(out, pinned->residueId());
+		int old = blocks[self].torsion_idx;
+
+//		blocks[self].torsion_idx = basis->indexForParameter(hv);
+/*
+		std::cout << old << " = ";
+		if (old > 0)
+		{
+			std::cout << basis->parameter(old)->desc() << ", ";
+			std::cout << basis->parameter(old)->value() << " vs ";
+			std::cout << hv->value() << " (" << hv->desc() << ")" << std::endl;
+		}
+		*/
+		
+		prog->addBranchIndex(child, self, parent, grandparent, out);
 	}
 
 	prog->setTorsionBasis(basis);

@@ -268,72 +268,30 @@ void BondSequence::fetchTorsion(int idx)
 
 int BondSequence::calculateBlock(int idx)
 {
-	if (_blocks[idx].silenced && _usingPrograms)
+	AtomBlock &b = _blocks[idx];
+
+	if (b.silenced && _usingPrograms)
 	{
 		// this is part of a ring program.
 		return 0;
 	}
 
 	fetchTorsion(idx);
-	float t = deg2rad(_blocks[idx].torsion);
-	glm::mat4x4 &coord = _blocks[idx].coordination;
-	glm::mat4x4 &basis = _blocks[idx].basis;
-	glm::mat4x4 &wip = _blocks[idx].wip;
-	glm::vec3 &inherit = _blocks[idx].inherit;
-
-	float sint = sin(t);
-	float cost = cos(t);
-	_torsion_rot[0][0] = cost;
-	_torsion_rot[1][0] = -sint;
-	_torsion_rot[0][1] = sint;
-	_torsion_rot[1][1] = cost;
-
-	wip = basis * _torsion_rot * coord;
-
-	if (_blocks[idx].atom == nullptr) // is anchor
-	{
-		int nidx = idx + _blocks[idx].write_locs[0];
-
-		/* _blocks[idx].basis assigned originally by Grapher */
-		_blocks[nidx].basis = _blocks[idx].basis;
-		glm::mat4x4 wip = _blocks[nidx].basis * _blocks[nidx].coordination;
-
-		int nb = _blocks[idx].nBonds;
-		_blocks[nidx].inherit = (wip[0]);
-		if (_blocks[idx].nBonds == 1)
-		{
-			_blocks[nidx].inherit = (wip[1]);
-		}
-			
-		return 1;
-	}
 	
-	// write locations!
-	for (size_t i = 0; i < _blocks[idx].nBonds; i++)
-	{
-		if (_blocks[idx].write_locs[i] < 0)
-		{
-			continue;
-		}
+	glm::mat4x4 rot = b.prepareRotation();
 
-		int n = idx + _blocks[idx].write_locs[i];
-		// update CHILD's basis with CURRENT position, PARENT position and 
-		// CHILD's position
-		torsion_basis(_blocks[n].basis, basis[3], inherit, wip[i]);
-		
-		// update CHILD's inherited position with CURRENT position
-		_blocks[n].inherit = glm::vec3(basis[3]);
-	}
+	b.wip = b.basis * rot * b.coordination;
 
-	int &progidx = _blocks[idx].program;
+	b.writeToChildren(_blocks, idx, _usingPrograms);
+
+	int &progidx = b.program;
 	if (progidx >= 0 && _usingPrograms)
 	{
 		int n = (_custom ? _custom->size : 0);
-
 		_programs[progidx].run(_blocks, idx, _currentVec, n);
 	}
-	
-	return 0;
+
+	return (b.atom == nullptr);
 }
 
 void BondSequence::checkCustomVectorSizeFits()

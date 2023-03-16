@@ -90,10 +90,6 @@ private:
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
 
-	std::queue<Atom *> _atomQueue;
-	std::map<Atom *, AnchorExtension> _atom2Ext;
-
-	std::vector<float> _steps;
 	float _step = 0.2;
 	int _ncalls = 0;
 	int _nBonds = 0;
@@ -124,6 +120,7 @@ private:
 	void loopyRefinement(AtomGroup *group, RefinementStage stage);
 	void wiggleBonds(RefinementStage stage);
 	RefinementStage _stage = None;
+	int _count = 0;
 	
 	std::set<int> _activeIndices;
 	std::set<Parameter *> _parameters;

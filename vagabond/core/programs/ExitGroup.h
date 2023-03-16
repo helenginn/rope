@@ -98,6 +98,7 @@ public:
 	}
 
 	std::vector<Flaggable> atoms;
+	std::string exitParameter;
 };
 
 inline void to_json(json &j, const ExitGroup::Flaggable &value)
@@ -119,12 +120,14 @@ inline void from_json(const json &j, ExitGroup::Flaggable &value)
 inline void to_json(json &j, const ExitGroup &value)
 {
 	j["atoms"] = value.atoms;
+	j["exit_parameter"] = value.exitParameter;
 }
 
 inline void from_json(const json &j, ExitGroup &value)
 {
 	std::vector<ExitGroup::Flaggable> atoms = j.at("atoms");
 	value.atoms = atoms;
+	value.exitParameter = j.at("exit_parameter");
 }
 
 };

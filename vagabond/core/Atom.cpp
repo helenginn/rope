@@ -354,6 +354,7 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		}
 		else if (count == 2)
 		{
+
 			insert_three_atoms(tmp, lengths, angles);
 		}
 		else if (count == 1)
@@ -362,7 +363,7 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		}
 
 		checkChirality(tmp, prev, children, count);
-		
+
 		for (size_t i = 0; i < 3; i++)
 		{
 			/* now remove the prev bond as we're not going backwards */

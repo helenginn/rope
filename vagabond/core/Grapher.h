@@ -173,7 +173,7 @@ private:
 	                         std::vector<AtomGraph *> &todo,
 	                         AnchorExtension &ext);
 	void fixBlockAsGhost(AtomBlock &block, Atom *anchor);
-	void assignAtomToBlock(AtomBlock &block, int idx, Atom *atom);
+	void assignAtomToBlock(AtomBlock &block, AtomGraph *gr);
 	bool preferredConnection(Atom *atom, Atom *next);
 	void sendAtomToProgrammers(AtomGraph *ag, int idx, 
 	                           std::vector<AtomBlock> &blocks, 

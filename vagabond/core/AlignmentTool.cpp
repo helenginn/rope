@@ -29,6 +29,32 @@ AlignmentTool::AlignmentTool(AtomGroup *group)
 	_group = group;
 }
 
+int AlignmentTool::calculateExtension(Atom *anchor)
+{
+	std::set<Atom *> atoms;
+	atoms.insert(anchor);
+	int count = 0;
+
+	while (atoms.size() < 8)
+	{
+		std::set<Atom *> next;
+		for (Atom *atom : atoms)
+		{
+			next.insert(atom);
+			
+			for (size_t j = 0; j < atom->bondLengthCount(); j++)
+			{
+				next.insert(atom->connectedAtom(j));
+			}
+		}
+		
+		atoms = next;
+		count++;
+	}
+	
+	return count;
+}
+
 Result *AlignmentTool::resultForAnchor(Atom *anchor)
 {
 	BondCalculator calculator;
@@ -36,7 +62,9 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTotalSamples(1);
 	calculator.setSuperpose(false);
-	calculator.addAnchorExtension(anchor, 2);
+	int jumps = calculateExtension(anchor);
+	std::cout << "Jumps needed: " << jumps << std::endl;
+	calculator.addAnchorExtension(anchor, jumps);
 	calculator.setup();
 
 	calculator.start();
