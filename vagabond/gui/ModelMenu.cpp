@@ -142,6 +142,7 @@ void ModelMenu::refresh()
 	if (_currModel != nullptr)
 	{
 		_currModel->unload();
+		_currModel = nullptr;
 	}
 
 	addAutomodelButton();
