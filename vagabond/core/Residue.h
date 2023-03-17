@@ -126,7 +126,11 @@ inline void to_json(json &j, const Residue &value)
 	j["id"] = value._id;
 	j["chain"] = value._chain;
 	j["code"] = value._code;
-	j["nout"] = value._nothing; // saves a lot of characters
+	
+	if (value._nothing)
+	{
+		j["nout"] = value._nothing; // saves a lot of characters
+	}
 	j["torsions"] = value._refs;
 }
 
@@ -137,6 +141,7 @@ inline void from_json(const json &j, Residue &value)
 	j.at("chain").get_to(value._chain);
 	j.at("code").get_to(value._code);
 	
+	value._nothing = false;
 	try
 	{
 		if (j.count("nothing"))
