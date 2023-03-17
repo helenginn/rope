@@ -146,7 +146,7 @@ private:
 	}
 
 	std::set<std::string> _chain_ids;
-	bool _prolined = false;
+	bool _prolined = true;
 
 	Sequence _sequence;
 };
@@ -181,6 +181,10 @@ inline void from_json(const json &j, Polymer &value)
 	if (j.count("prolined"))
 	{
 		value._prolined = j.at("prolined");
+	}
+	else
+	{
+		value._prolined = false;
 	}
 	
 	try
