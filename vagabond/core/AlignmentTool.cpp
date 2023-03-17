@@ -35,7 +35,7 @@ int AlignmentTool::calculateExtension(Atom *anchor)
 	atoms.insert(anchor);
 	int count = 0;
 
-	while (atoms.size() < 8)
+	while (atoms.size() < 4)
 	{
 		std::set<Atom *> next;
 		for (Atom *atom : atoms)
@@ -63,7 +63,6 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 	calculator.setTotalSamples(1);
 	calculator.setSuperpose(false);
 	int jumps = calculateExtension(anchor);
-	std::cout << "Jumps needed: " << jumps << std::endl;
 	calculator.addAnchorExtension(anchor, jumps);
 	calculator.setup();
 
@@ -84,7 +83,7 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	AtomPosMap &aps = result->aps;
 
 	Superpose pose;
-	pose.forceSameHand(true);
+	pose.forceSameHand(false);
 
 	AtomPosMap::iterator it;
 	for (it = aps.begin(); it != aps.end(); it++)
