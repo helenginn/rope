@@ -105,12 +105,6 @@
         "mirror_param": "CA-CB-CG-CD"
       },
       {
-        "param_name": "out-phi",
-        "default_value": 0,
-        "access_atom": "CA",
-        "mirror_param": "C-N-CA-C"
-      },
-      {
         "param_name": "out-psi",
         "default_value": 0,
         "access_atom": "CA",
