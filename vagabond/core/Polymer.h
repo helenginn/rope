@@ -43,6 +43,11 @@ public:
 	Polymer(std::string model_id, std::string chain_id,
 	         std::string entity_id, Sequence *derivative);
 	Polymer();
+	
+	virtual bool isProlined() const
+	{
+		return _prolined;
+	}
 
 	void addChain(std::string chain_id)
 	{
@@ -135,7 +140,13 @@ private:
 	void harvestMutations(SequenceComparison *sc);
 	void setAtomGroupSubset();
 
+	void setProlined(bool p)
+	{
+		_prolined = p;
+	}
+
 	std::set<std::string> _chain_ids;
+	bool _prolined = false;
 
 	Sequence _sequence;
 };
@@ -147,6 +158,7 @@ inline void to_json(json &j, const Polymer &value)
 	j["model_id"] = value._model_id;
 	j["sequence"] = value._sequence;
 	j["refined"] = value._refined;
+	j["prolined"] = value._prolined;
 	j["transforms"] = value._transforms;
 }
 
@@ -165,6 +177,11 @@ inline void from_json(const json &j, Polymer &value)
 	value._entity_id = j.at("entity_id");
 	value._model_id = j.at("model_id");
 	value._sequence = j.at("sequence");
+	
+	if (j.count("prolined"))
+	{
+		value._prolined = j.at("prolined");
+	}
 	
 	try
 	{

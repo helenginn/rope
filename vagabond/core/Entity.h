@@ -61,6 +61,7 @@ public:
 	std::set<Model *> unrefinedModels();
 
 	size_t unrefinedInstanceCount();
+	size_t unrefinedProlineCount();
 	void throwOutModel(Model *mol);
 
 	virtual void throwOutInstance(Polymer *mol) {};

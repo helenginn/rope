@@ -78,13 +78,31 @@ void Entity::housekeeping()
 
 }
 
+size_t Entity::unrefinedProlineCount()
+{
+	int count = 0;
+
+	for (const Instance *inst : instances())
+	{
+		bool refined = inst->isProlined() && !inst->isRefined();
+		
+		if (!refined)
+		{
+			count++;
+		}
+	}
+
+	return count;
+	
+}
+
 size_t Entity::unrefinedInstanceCount()
 {
 	int count = 0;
 
 	for (const Instance *inst : instances())
 	{
-		bool refined = inst->isRefined();
+		bool refined = inst->isRefined() && inst->isProlined();
 		
 		if (!refined)
 		{
@@ -100,7 +118,7 @@ std::set<Model *> Entity::unrefinedModels()
 	std::set<Model *> models;
 	for (Instance *inst : instances())
 	{
-		bool refined = inst->isRefined();
+		bool refined = inst->isRefined() && inst->isProlined();
 
 		if (!refined)
 		{

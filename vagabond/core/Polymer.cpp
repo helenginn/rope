@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/version.h>
 #include "Chain.h"
 #include "Model.h"
 #include "Value.h"
@@ -246,6 +247,9 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 	}
 
 	setRefined(true);
+#ifdef VERSION_PROLINE
+	setProlined(true);
+#endif
 }
 
 Metadata::KeyValues Polymer::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,

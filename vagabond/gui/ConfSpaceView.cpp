@@ -62,7 +62,17 @@ ConfSpaceView::~ConfSpaceView()
 
 void ConfSpaceView::askToFoldIn(int extra)
 {
-	std::string str = "Found " + i_to_str(extra) + " unrefined molecules.\n";
+	size_t prolines = _entity->unrefinedProlineCount();
+
+	std::string str = "Found " + i_to_str(extra) + " unrefined molecules";
+	if (prolines == 0)
+	{
+		str += ".\n";
+	}
+	else
+	{
+		str += "\nincluding " + std::to_string(prolines) + " with naughty prolines.\n";
+	}
 	str += "Refine torsion angles to atom positions\nnow?";
 	AskYesNo *askyn = new AskYesNo(this, str, "fold_in", this);
 	setModal(askyn);

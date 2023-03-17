@@ -139,6 +139,11 @@ public:
 	{
 		return _entity_id;
 	}
+
+	virtual bool isProlined() const
+	{
+		return true;
+	}
 	
 	const bool &isRefined() const
 	{
