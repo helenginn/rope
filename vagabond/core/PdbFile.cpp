@@ -139,7 +139,6 @@ void PdbFile::processModel(gemmi::Model &m)
 void PdbFile::parseFileContents()
 {
 	std::string path = toFilename(_filename);
-	std::cout << "Reading file " << path << std::endl;
 
 	gemmi::Structure st;
 	try

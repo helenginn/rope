@@ -45,15 +45,6 @@ void PositionRefinery::updateAllTorsions()
 {
 	size_t refined = 0;
 	size_t unrefined = 0;
-	
-	/*
-	if (_calculator)
-	{
-		BondSequence *sequence = _calculator->sequence();
-		const Grapher &grapher = sequence->grapher();
-		grapher.passTorsionsToSisters(sequence);
-	}
-	*/
 
 	for (size_t i = 0; i < _group->bondTorsionCount(); i++)
 	{
@@ -71,8 +62,6 @@ void PositionRefinery::updateAllTorsions()
 		float f = t->empiricalMeasurement();
 		t->setValue(f);
 	}
-	
-	std::cout << refined << " vs " << unrefined << std::endl;
 }
 
 void PositionRefinery::refine()
@@ -91,25 +80,10 @@ void PositionRefinery::refine()
 		{
 			continue;
 		}
-		
-		std::cout << "Unit size: " << units[i]->size() << std::endl;
 
 		try
 		{
 			refine(units[i]);
-			
-			if (_thorough)
-			{
-				_reverse = true;
-				refine(units[i]);
-				_reverse = false;
-				refine(units[i]);
-				_reverse = true;
-				refine(units[i]);
-				_reverse = false;
-				loopyRefinement(units[i], Loopy);
-//				loopyRefinement(units[i], CarefulLoopy);
-			}
 		}
 		catch (const std::runtime_error &err)
 		{
