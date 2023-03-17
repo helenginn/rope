@@ -111,15 +111,6 @@ std::string AtomGraph::desc() const
 
 bool AtomGraph::operator<(const AtomGraph &other) const
 {
-	if (onlyHydrogens && !other.onlyHydrogens)
-	{
-//		return false;
-	}
-	if (!onlyHydrogens && other.onlyHydrogens)
-	{
-//		return true;
-	}
-
 	/* otherwise go for tinier branch points first */
 	return atom->atomNum() < other.atom->atomNum();
 }
