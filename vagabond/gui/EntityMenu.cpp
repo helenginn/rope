@@ -22,12 +22,14 @@
 #include "Toolkit.h"
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Environment.h>
 
 EntityMenu::EntityMenu(Scene *prev) : ListView(prev)
 {
 	_manager = Environment::entityManager()->forPolymers();
-	_manager->Manager::setResponder(this);
+	
+	Environment::modelManager()->Manager::setResponder(this);
 }
 
 EntityMenu::~EntityMenu()
