@@ -94,10 +94,10 @@ void Polymer::putTorsionRefsInSequence(Chain *ch)
 
 	for (size_t i = 0; i < ch->parameterCount(); i++)
 	{
-		Parameter *t = ch->parameter(i);
+		Parameter *p = ch->parameter(i);
 
-		ResidueId id = t->residueId();
-		TorsionRef ref = TorsionRef(t);
+		ResidueId id = p->residueId();
+		TorsionRef ref = TorsionRef(p);
 
 		Residue *local_res = _sequence.residue(id);
 		if (local_res == nullptr)
