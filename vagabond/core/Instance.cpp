@@ -140,6 +140,7 @@ void Instance::setAtomGroupSubset()
 	_motherAtoms = ac;
 	
 	AtomGroup *tmp = new AtomGroup();
+	tmp->setGrabsBondstraints(true);
 	
 	for (size_t i = 0; i < ac->size(); i++)
 	{

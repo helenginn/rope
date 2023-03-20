@@ -333,3 +333,35 @@ void HasBondstraints::giveBondstraintOwnership(AtomGroup *which)
 
 	}
 }
+
+void HasBondstraints::addBondstraintsFrom(HasBondstraints *other)
+{
+	for (size_t j = 0; j < other->bondLengthCount(); j++)
+	{
+		addBondstraint(other->bondLength(j));
+	}
+
+	if (isGrabby())
+	{
+		for (size_t j = 0; j < other->bondAngleCount(); j++)
+		{
+			addBondstraint(other->bondAngle(j));
+		}
+
+		for (size_t j = 0; j < other->bondTorsionCount(); j++)
+		{
+			addBondstraint(other->bondTorsion(j));
+		}
+
+		for (size_t j = 0; j < other->hyperValueCount(); j++)
+		{
+			addBondstraint(other->hyperValue(j));
+		}
+
+		for (size_t j = 0; j < other->chiralityCount(); j++)
+		{
+			addBondstraint(other->chirality(j));
+		}
+	}
+
+}

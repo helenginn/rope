@@ -44,6 +44,12 @@ public:
 	void addBondstraint(BondTorsion *straint);
 	void addBondstraint(Chirality *straint);
 	void addBondstraint(HyperValue *straint);
+	void addBondstraintsFrom(HasBondstraints *other);
+	
+	void setGrabsBondstraints(bool grab)
+	{
+		_grabby = true;
+	}
 	
 	size_t bondstraintCount()
 	{
@@ -199,6 +205,11 @@ public:
 	{
 		_owns = owns;
 	}
+	
+	const bool &isGrabby() const
+	{
+		return _grabby;
+	}
 protected:
 	void deleteBondstraints();
 	bool hasBondLength(BondLength *straint);
@@ -208,6 +219,7 @@ protected:
 	bool hasHyperValue(HyperValue *hv);
 private:
 	bool _owns = false;
+	bool _grabby = false;
 
 	std::vector<Bondstraint *> _bondstraints;
 	std::vector<BondLength *> _bondLengths;

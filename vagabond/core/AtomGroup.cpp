@@ -127,11 +127,7 @@ void AtomGroup::add(Atom *a)
 	if (a != nullptr && !hasAtom(a))
 	{
 		_atoms.push_back(a);
-		
-		for (size_t j = 0; j < a->bondLengthCount(); j++)
-		{
-			addBondstraint(a->bondLength(j));
-		}
+		addBondstraintsFrom(a);
 		
 		_desc2Atom[a->desc()] = a;
 		_orderedPointers.insert(a);
