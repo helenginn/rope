@@ -409,11 +409,6 @@ void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
 					f = match.refinedAngle();
 					break;
 				}
-
-				if (!match.coversMainChain())
-				{
-//					f = NAN;
-				}
 			}
 			
 			f.hyper = (match.isHyperParameter());

@@ -70,6 +70,7 @@ void Residue::replaceTorsionRef(TorsionRef &newRef)
 bool Residue::supplyRefinedAngle(std::string desc, double angle, bool tmp)
 {
 	TorsionRef copy = copyTorsionRef(desc);
+
 	if (!copy.valid())
 	{
 		return false;
@@ -77,6 +78,7 @@ bool Residue::supplyRefinedAngle(std::string desc, double angle, bool tmp)
 
 	tmp ? copy.setTmpAngle(angle) : copy.setRefinedAngle(angle);
 	replaceTorsionRef(copy);
+
 	return true;
 }
 
