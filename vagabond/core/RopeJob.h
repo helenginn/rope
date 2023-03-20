@@ -24,6 +24,7 @@ namespace rope
 	enum RopeJob
 	{
 		Refine, /**< positional refinement */
+		ThoroughRefine, /**< forwards and backwards refinement */
 		SkipRefine, /**< grab torsion angles without refinement */
 	};
 	

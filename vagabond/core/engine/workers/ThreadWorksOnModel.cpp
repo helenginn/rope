@@ -40,6 +40,10 @@ void ThreadWorksOnModel::doJob(Model *model)
 	{
 		model->refine(true);
 	}
+	if (_job == rope::ThoroughRefine)
+	{
+		model->refine(true, true);
+	}
 	else if (_job == rope::SkipRefine)
 	{
 		model->extractExisting();

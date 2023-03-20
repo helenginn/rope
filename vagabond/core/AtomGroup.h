@@ -137,7 +137,7 @@ public:
 	void finishedRefining();
 
 	void alignAnchor();
-	void refinePositions(bool sameThread = false);
+	void refinePositions(bool sameThread = false, bool thorough = false);
 	void organiseSamples(int n);
 	
 	void getLimitingResidues(int *min, int *max);

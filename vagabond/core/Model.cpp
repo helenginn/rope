@@ -548,7 +548,7 @@ void Model::load(LoadOptions opts)
 	_currentAtoms->setResponder(this);
 }
 
-void Model::refine(bool sameThread)
+void Model::refine(bool sameThread, bool thorough)
 {
 	if (_currentAtoms == nullptr)
 	{
@@ -556,7 +556,7 @@ void Model::refine(bool sameThread)
 	}
 
 	_currentAtoms->alignAnchor();
-	_currentAtoms->refinePositions(sameThread);
+	_currentAtoms->refinePositions(sameThread, thorough);
 }
 
 void Model::extractExisting()

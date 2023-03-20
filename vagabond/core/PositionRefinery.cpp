@@ -84,6 +84,13 @@ void PositionRefinery::refine()
 		try
 		{
 			refine(units[i]);
+			
+			if (_thorough)
+			{
+				_reverse = true;
+				refine(units[i]);
+				_reverse = false;
+			}
 		}
 		catch (const std::runtime_error &err)
 		{
