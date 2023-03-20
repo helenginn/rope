@@ -51,6 +51,7 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	_calculators.push_back(new BondCalculator());
 	BondCalculator &calc = *_calculators.back();
 
+	calc.setInSequence(true);
 	calc.setPipelineType(BondCalculator::PipelineAtomPositions);
 	calc.setMaxSimultaneousThreads(_threads);
 	calc.setSampler(&_sampler);
