@@ -199,6 +199,14 @@ int PlausibleRoute::countTorsions()
 
 void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 {
+	if (_simplex)
+	{
+		delete _simplex;
+		_simplex = nullptr;
+	}
+	
+	_simplex = new SimplexEngine(this);
+
 	_activeTorsions = idxs;
 	_paramPtrs.clear();
 	_paramStarts.clear();
@@ -238,15 +246,8 @@ size_t PlausibleRoute::parameterCount()
 
 bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 {
-	if (_simplex)
-	{
-		delete _simplex;
-		_simplex = nullptr;
-	}
-	
-	_simplex = new SimplexEngine(this);
-
 	prepareAnglesForRefinement(torsionIdxs);
+
 	if (_paramPtrs.size() == 0)
 	{
 		return false;
@@ -254,7 +255,7 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 
 	_bestScore = routeScore(_nudgeCount);
 
-	_simplex->run();
+	_simplex->start();
 
 	bool changed = false;
 
