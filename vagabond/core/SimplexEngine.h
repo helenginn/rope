@@ -47,10 +47,10 @@ public:
 		_maxJobs = maxJobs;
 	}
 
-	void run();
-
 	virtual void finish();
 protected:
+	void run();
+
 	typedef std::vector<float> SPoint;
 
 	const SPoint &bestPoint() const;
