@@ -45,7 +45,7 @@ public:
 		_torsion = torsion;
 	}
 	
-	Residue *const residue() const
+	Residue *const master() const
 	{
 		return _master;
 	}
@@ -55,7 +55,7 @@ public:
 		return _local;
 	}
 	
-	void setResidue(Residue *residue)
+	void setMaster(Residue *residue)
 	{
 		_master = residue;
 	}

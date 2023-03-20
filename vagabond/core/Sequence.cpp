@@ -350,7 +350,7 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)
 		{
 			ResidueTorsion rt{};
 			rt.setTorsion(torsion);
-			rt.setResidue(&residue);
+			rt.setMaster(&residue);
 			rt.setEntity(_entity);
 			rt.housekeeping();
 			headers.push_back(rt);

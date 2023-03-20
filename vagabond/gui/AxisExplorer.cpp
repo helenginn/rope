@@ -231,7 +231,7 @@ void AxisExplorer::setupColours()
 			continue;
 		}
 
-		Residue *master = _list[i].residue();
+		Residue *master = _list[i].master();
 		if (master == nullptr)
 		{
 			continue;

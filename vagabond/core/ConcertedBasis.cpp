@@ -241,7 +241,7 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 	{
 		if (!found[i])
 		{
-			_unusedId = list[i].residue();
+			_unusedId = list[i].master();
 		}
 	}
 	

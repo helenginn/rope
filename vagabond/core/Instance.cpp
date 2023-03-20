@@ -255,7 +255,7 @@ void Instance::housekeeping()
 
 const Residue *Instance::localResidueForResidueTorsion(const ResidueTorsion &rt)
 {
-	Residue *const master = rt.residue();
+	Residue *const master = rt.master();
 	return equivalentLocal(master);
 }
 
@@ -278,7 +278,7 @@ int Instance::indexForParameterFromList(Parameter *param,
 			continue;
 		}
 
-		Residue *const residue = list[i].residue();
+		Residue *const residue = list[i].master();
 		
 		if (residue == nullptr || residue != master)
 		{
