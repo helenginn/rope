@@ -264,9 +264,14 @@ BondLength *HasBondstraints::findBondLength(Atom *a, Atom *b)
 	return nullptr;
 }
 
-Parameter *HasBondstraints::findParameter(std::string desc, const ResidueId &id)
+Parameter *HasBondstraints::findParameter(std::string desc, 
+                                          const ResidueId &id)
 {
-	std::vector<Parameter *> &params = _residue2Parameters[id];
+	if (_residue2Parameters.count(id) == 0)
+	{
+		return nullptr;
+	}
+	std::vector<Parameter *> &params = _residue2Parameters.at(id);
 
 	for (Parameter *param : params)
 	{
