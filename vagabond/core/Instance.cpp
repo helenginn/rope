@@ -263,11 +263,12 @@ int Instance::indexForParameterFromList(Parameter *param,
                                         const std::vector<ResidueTorsion> &list)
 {
 	ResidueId target = param->residueId();
-	Residue *master = equivalentMaster(target);
 	
+	Residue *master = equivalentMaster(target);
+
 	if (master == nullptr)
 	{
-		return NAN;
+		return -1;
 	}
 	
 	for (size_t i = 0; i < list.size(); i++)
