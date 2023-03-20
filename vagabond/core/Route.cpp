@@ -47,6 +47,7 @@ void Route::setup()
 	_fullAtoms = _instance->currentAtoms();
 	_mask.clear();
 	startCalculator();
+	connectParametersToDestination();
 }
 
 void Route::addPoint(Point &values)
@@ -90,7 +91,7 @@ void Route::submitJob(int idx, bool show, bool forces)
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
-		int dims = _calc2Dims[calc];
+		int dims = _calc2Destination[calc].size();
 		job.custom.allocate_vectors(1, dims, _num);
 		job.fraction = idx / (float)(pointCount() - 1);
 
@@ -98,6 +99,8 @@ void Route::submitJob(int idx, bool show, bool forces)
 		{
 			float value = 0;
 			int calc_idx = _calc2Destination[calc][i];
+			
+			if (calc_idx < 0) continue;
 			if (_points.size() > idx && _points[idx].size() > calc_idx)
 			{
 				value = _points[idx][calc_idx];
@@ -311,31 +314,18 @@ void Route::reportFound()
 
 }
 
-void Route::prepareDestination()
+void Route::getParametersFromBasis()
 {
-	if (_cluster == nullptr)
-	{
-		return;
-	}
-	
-	if (_rawDest.size() == 0)
-	{
-		throw std::runtime_error("Raw destination not set, trying to prepare"\
-		                         "destination");
-	}
-
-	const std::vector<ResidueTorsion> &list = _cluster->dataGroup()->headers();
-	std::vector<bool> found(list.size(), false);
-
 	_parameters.clear();
 	_missing.clear();
 	_destination.clear();
 
-	int count = 0;
+	const std::vector<ResidueTorsion> &list = _cluster->dataGroup()->headers();
+	std::vector<bool> found(list.size(), false);
+
 	for (BondCalculator *calc : _calculators)
 	{
 		TorsionBasis *basis = calc->sequence()->torsionBasis();
-		int calc_count = 0;
 		
 		for (size_t i = 0; i < basis->parameterCount(); i++)
 		{
@@ -349,27 +339,67 @@ void Route::prepareDestination()
 			}
 			else
 			{
-				v = _rawDest[i];
+				v = _rawDest[idx];
 			}
 			
-			const ResidueTorsion &rt = list[i];
+			const ResidueTorsion &rt = list[idx];
 
 			addParameter(rt, p);
 			_destination.push_back(v);
+		}
+	}
+}
+
+void Route::connectParametersToDestination()
+{
+	_calc2Destination.clear();
+
+	for (BondCalculator *calc : _calculators)
+	{
+		TorsionBasis *basis = calc->sequence()->torsionBasis();
+
+		for (size_t i = 0; i < basis->parameterCount(); i++)
+		{
+			Parameter *p = basis->parameter(i);
 			
-			/* each calculator will only be sensitive to a subset of our
-			 * destination, so we need to keep records */
-			_calc2Destination[calc].push_back(count);
-			count++;
-			calc_count++;
+			int chosen = -1;
+			for (int j = 0; j < _parameters.size(); j++)
+			{
+				std::cout << p << " " << _parameters[j].param << std::endl;
+				if (_parameters[j].param == p)
+				{
+					chosen = j;
+					break;
+				}
+			}
+			
+			_calc2Destination[calc].push_back(chosen);
 		}
 		
-		std::cout << "Torsion angle count for calculator: " << calc_count << std::endl;
-		_calc2Dims[calc] = calc_count;
+		for (size_t i = 0; i < _calc2Destination[calc].size(); i++)
+		{
+			std::cout << _calc2Destination[calc][i] << " ";
+		}
+		std::cout << std::endl;
+	}
+}
+
+void Route::prepareDestination()
+{
+	if (_cluster == nullptr)
+	{
+		return;
 	}
 	
+	if (_rawDest.size() == 0)
+	{
+		throw std::runtime_error("Raw destination not set, trying to prepare"\
+		                         "destination");
+	}
+	
+	getParametersFromBasis();
+	connectParametersToDestination();
 	reportFound();
-
 	populateWaypoints();
 }
 

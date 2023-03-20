@@ -305,6 +305,8 @@ protected:
 
 	void populateWaypoints();
 	void prepareDestination();
+	void getParametersFromBasis();
+	void connectParametersToDestination();
 
 	bool incrementToAtomGraph(AtomGraph *ag);
 	AtomGraph *grapherForTorsionIndex(int idx);
@@ -346,7 +348,6 @@ private:
 	Point _destination;
 	std::vector<Angular> _rawDest;
 	
-	std::map<BondCalculator *, int > _calc2Dims;
 	std::map<BondCalculator *, std::vector<int> > _calc2Destination;
 
 	TicketPoint _ticket2Point;
