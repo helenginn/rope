@@ -405,8 +405,8 @@ void RingProgram::fetchParameters(float *currentVec, int n)
 	}
 	
 	// if we've got this far, we have our parasitic torsion angles instead.
-	float psi = _name2Value["pseudo-psi"];
-	float x2 = _name2Value["pseudo-x2"];
+	float psi = _name2Value["pseudo_psi"];
+	float x2 = _name2Value["pseudo_x2"];
 	
 	float offset = 0;
 	float amplitude = 0;
