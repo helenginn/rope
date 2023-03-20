@@ -18,7 +18,8 @@
 
 #include "Route.h"
 #include "Polymer.h"
-#include "BondSequence.h"
+#include "Grapher.h"
+#include "TorsionBasis.h"
 #include "MetadataGroup.h"
 #include <vagabond/c4x/Cluster.h>
 
@@ -204,9 +205,7 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 
 const Grapher &Route::grapher() const
 {
-	const BondSequence *seq = _calculators[_grapherIdx]->sequence();
-	const Grapher &g = seq->grapher();
-
+	const Grapher &g = _calculators[_grapherIdx]->grapher();
 	return g;
 }
 
@@ -325,7 +324,7 @@ void Route::getParametersFromBasis()
 
 	for (BondCalculator *calc : _calculators)
 	{
-		TorsionBasis *basis = calc->sequence()->torsionBasis();
+		TorsionBasis *basis = calc->torsionBasis();
 		
 		for (size_t i = 0; i < basis->parameterCount(); i++)
 		{
@@ -356,7 +355,7 @@ void Route::connectParametersToDestination()
 
 	for (BondCalculator *calc : _calculators)
 	{
-		TorsionBasis *basis = calc->sequence()->torsionBasis();
+		TorsionBasis *basis = calc->torsionBasis();
 
 		for (size_t i = 0; i < basis->parameterCount(); i++)
 		{

@@ -232,11 +232,6 @@ void AxisExplorer::setupColours()
 		}
 
 		Residue *master = _list[i].master();
-		if (master == nullptr)
-		{
-			continue;
-		}
-
 		Residue *local = _instance->equivalentLocal(master);
 		if (local == nullptr)
 		{

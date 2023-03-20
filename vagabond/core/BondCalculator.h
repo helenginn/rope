@@ -30,7 +30,6 @@
 #include "HasBondSequenceCustomisation.h"
 #include "FFProperties.h"
 
-class Atom;
 class BondSequenceHandler;
 class ForceFieldHandler;
 class MapTransferHandler;
@@ -39,7 +38,9 @@ class PointStoreHandler;
 class MapSumHandler;
 class Diffraction;
 class ForceField;
+class Grapher;
 class Sampler;
+class Atom;
 
 /** \class BondCalculator
  *  Master class for the internal Vagabond engine.
@@ -157,6 +158,8 @@ public:
 	}
 	
 	BondSequence *sequence(int i = 0);
+	TorsionBasis *torsionBasis();
+	const Grapher &grapher() const;
 	
 	void setReferenceDensity(OriginGrid<fftwf_complex> *dens)
 	{

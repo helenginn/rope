@@ -477,3 +477,13 @@ BondSequence *BondCalculator::sequence(int i)
 	
 	return nullptr;
 }
+
+TorsionBasis *BondCalculator::torsionBasis()
+{
+	return sequenceHandler()->torsionBasis();
+}
+
+const Grapher &BondCalculator::grapher() const
+{
+	return _sequenceHandler->sequence(0)->grapher();
+}

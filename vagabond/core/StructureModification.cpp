@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "StructureModification.h"
-#include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/ConcertedBasis.h>
 
@@ -156,7 +155,7 @@ bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &li
 	bool success = false;
 	for (BondCalculator *calc : _calculators)
 	{
-		TorsionBasis *basis = calc->sequenceHandler()->torsionBasis();
+		TorsionBasis *basis = calc->torsionBasis();
 		ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
 
 		success |= fillBasis(cb, list, values, _axis);

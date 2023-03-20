@@ -245,7 +245,7 @@ void Sequence::addBufferResidue()
 
 Residue *const Sequence::local_residue(Residue *const master) const
 {
-	if (_map2Local.count(master) == 0)
+	if (!master || _map2Local.count(master) == 0)
 	{
 		return nullptr;
 	}
