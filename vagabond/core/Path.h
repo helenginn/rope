@@ -151,9 +151,6 @@ inline void from_json(const json &j, Path &value)
 	std::vector<ResidueTorsion> rts = j.at("parameters");
 	value._rts = rts;
 
-//    std::vector<ResidueId> residues = j.at("residues");
-//    value._residueIds = residues;
-
     std::vector<bool> flips = j.at("flips");
     value._flips = flips;
 
