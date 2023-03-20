@@ -134,6 +134,7 @@ inline void to_json(json &j, const Path &value)
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
 	j["parameters"] = value._rts;
+	j["destination"] = value._destination;
 	j["flips"] = value._flips;
 	j["waypoints"] = value._wayPoints;
 }
@@ -144,6 +145,11 @@ inline void from_json(const json &j, Path &value)
 	value._startInstance = j.at("start");
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
+	std::vector<float> dest = j.at("destination");
+	value._destination = dest;
+	
+	std::vector<ResidueTorsion> rts = j.at("parameters");
+	value._rts = rts;
 
 //    std::vector<ResidueId> residues = j.at("residues");
 //    value._residueIds = residues;

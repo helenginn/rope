@@ -83,6 +83,7 @@ public:
 	Parameter *parameter();
 
 	std::string desc() const;
+	std::string status() const;
 
 	friend void to_json(json &j, const ResidueTorsion &value);
 	friend void from_json(const json &j, ResidueTorsion &value);

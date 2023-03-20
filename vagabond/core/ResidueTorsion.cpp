@@ -20,6 +20,7 @@
 #include "ResidueTorsion.h"
 #include "Environment.h"
 #include "EntityManager.h"
+#include <sstream>
 
 void ResidueTorsion::housekeeping()
 {
@@ -57,13 +58,27 @@ void ResidueTorsion::housekeeping()
 	if (_localSet && !_local && _instance)
 	{
 		Residue *res = _instance->localForLocalId(_localId);
-		_master = res;
+		_local = res;
 	}
 	
 	if (_instance && !_local)
 	{
 		_local = _instance->localResidueForResidueTorsion(*this);
 	}
+}
+
+std::string ResidueTorsion::status() const
+{
+	std::ostringstream ss;
+	ss << "Desc: " << desc() << std::endl;
+	ss << "Local set: " << (_localSet ? "true" : "false") << std::endl;
+	ss << "Master set: " << (_masterSet ? "true" : "false") << std::endl;
+	ss << "Local ptr: " << _local << std::endl;
+	ss << "Master ptr: " << _master << std::endl;
+	ss << "Local ID: " << _localId.str() << std::endl;
+	ss << "Master ID: " << _masterId.str() << std::endl;
+
+	return ss.str();
 }
 
 std::string ResidueTorsion::desc() const
@@ -115,8 +130,9 @@ Parameter *ResidueTorsion::parameter()
 
 	_instance->load();
 	AtomGroup *atoms = _instance->currentAtoms();
-	Parameter *p = atoms->findParameter(_torsion.desc(), _local->id());
+	Parameter *p = atoms->findParameter(_torsion.desc(), _localId);
 	_instance->unload();
 	
 	return p;
 }
+
