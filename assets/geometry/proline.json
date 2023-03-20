@@ -63,7 +63,7 @@
             "name": "C"
           }
         ],
-        "exit_parameter": "out-psi"
+        "exit_parameter": "out_psi"
       },
       {
         "atoms": [
@@ -88,24 +88,24 @@
             "name": "C"
           }
         ],
-        "exit_parameter": "out-psi"
+        "exit_parameter": "out_psi"
       }
     ],
     "param_specs": [
       {
-        "param_name": "pseudo-psi",
+        "param_name": "pseudo_psi",
         "default_value": -77.0999984741211,
         "access_atom": "CA",
         "mirror_param": "C-N-CA-C"
       },
       {
-        "param_name": "pseudo-x2",
+        "param_name": "pseudo_x2",
         "default_value": 0,
         "access_atom": "CG",
         "mirror_param": "CA-CB-CG-CD"
       },
       {
-        "param_name": "out-psi",
+        "param_name": "out_psi",
         "default_value": 0,
         "access_atom": "CA",
         "mirror_param": "C-N-CA-C"
