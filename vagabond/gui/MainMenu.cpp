@@ -131,6 +131,7 @@ void MainMenu::checkForJson()
 	_checkFiles = false;
 
 	FileManager *fm = Environment::fileManager();
+	fm->setFilterType(File::Json);
 	int i = fm->filteredCount() - 1;
 	std::string newFile = fm->filtered(i);
 	File::Type type = File::typeUnknown(newFile);
