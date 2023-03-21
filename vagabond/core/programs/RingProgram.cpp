@@ -206,7 +206,6 @@ void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
 	fetchParameters(vec, n);
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
-//	alignBranchMembers(blocks);
 	alignRingExit(blocks);
 }
 
@@ -242,8 +241,6 @@ void RingProgram::alignRingExit(std::vector<AtomBlock> &blocks)
 
 void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 {
-	// must also fix bases...
-
 	for (auto it = _ringMapping.begin();
 	     it != _ringMapping.end(); it++)
 	{
@@ -253,63 +250,6 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 		_oldPositions[b_idx] = blocks[b_idx].my_position();
 
 		blocks[b_idx].basis[3] = glm::vec4(_cyclic.atomPos(c_idx), 1.f);
-	}
-}
-
-void RingProgram::alignBranchMembers(std::vector<AtomBlock> &blocks)
-{
-	for (Lookup &l : _branchMapping)
-	{
-		glm::vec3 middle_pos = _cyclic.atomPos(l.middle_idx);
-		glm::vec3 gp_pos = _cyclic.atomPos(l.gp_idx);
-		glm::vec3 other_pos = _cyclic.atomPos(l.other_idx);
-		
-		glm::vec3 gp_norm = glm::normalize(gp_pos - middle_pos);
-		glm::vec3 other_norm = glm::normalize(other_pos - middle_pos);
-
-		float gp_to_other = rad2deg(glm::angle(gp_norm, other_norm));
-
-		glm::mat3x3 align = bond_aligned_matrix(/*gp*/1, /*other*/1, /*curr*/1,
-		                                        l.curr_to_other, l.curr_to_gp, 
-		                                        gp_to_other);
-
-		glm::vec3 &align_gp = align[0];
-		glm::vec3 &align_other = align[1];
-		glm::vec3 &align_curr = align[2];
-		
-		if (l.sign > 0)
-		{
-			for (size_t i = 0; i < 3; i++)
-			{
-				align[i][1] *= -1;
-			}
-		}
-		
-		glm::vec3 ortho = glm::normalize(glm::cross(align_other, other_norm));
-		float ang = glm::angle(align_other, other_norm);
-		glm::mat3x3 first = unit_vec_rotation(ortho, ang);
-
-		glm::vec3 rotated = first * align_gp;
-		
-		float best = 0;
-		glm::mat3x3 second = closest_rot_mat(rotated, gp_norm, other_norm, 
-		                                     &best, false);
-
-		glm::mat3x3 rot = glm::mat3x3(second) * glm::mat3x3(first);
-
-		glm::vec4 updated = glm::vec4(rot * align_curr, 0.f);
-		updated *= l.length;
-
-		float pre = glm::length(align_curr);
-		float length = glm::length(updated);
-
-		glm::vec4 middle4f = glm::vec4(middle_pos, 0.f);
-		updated += middle4f;
-		
-		int corrected = l.curr_idx + _idx;
-		
-		torsion_basis(blocks[corrected].basis, middle4f, gp_pos, updated);
-		blocks[corrected].inherit = middle_pos;
 	}
 }
 

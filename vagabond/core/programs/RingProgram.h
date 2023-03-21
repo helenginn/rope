@@ -95,7 +95,6 @@ private:
 
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
-	void alignBranchMembers(std::vector<AtomBlock> &blocks);
 	void alignRingExit(std::vector<AtomBlock> &blocks);
 	glm::vec3 originalPosition(std::vector<AtomBlock> &blocks, int idx);
 
