@@ -84,7 +84,12 @@ size_t Entity::unrefinedProlineCount()
 
 	for (const Instance *inst : instances())
 	{
-		bool refined = inst->isProlined() && !inst->isRefined();
+		if (!inst->isRefined())
+		{
+			continue;
+		}
+
+		bool refined = inst->isProlined();
 		
 		if (!refined)
 		{
