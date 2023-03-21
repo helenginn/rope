@@ -29,6 +29,7 @@ Route::Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims)
 	_cluster = cluster;
 	_pType = BondCalculator::PipelineForceField;
 	_torsionType = TorsionBasis::TypeSimple;
+	instance()->load();
 }
 
 Route::~Route()
@@ -38,7 +39,6 @@ Route::~Route()
 
 void Route::setup()
 {
-	instance()->load();
 
 	if (_rawDest.size() == 0 && destinationSize() == 0)
 	{
