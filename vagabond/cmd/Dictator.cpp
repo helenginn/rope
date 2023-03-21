@@ -94,25 +94,8 @@ void Dictator::setup()
 
 void Dictator::getFilesNativeApp()
 {
-	std::vector<std::string> globs = glob_pattern("*");
-
 	FileManager *fm = Environment::fileManager();
-	for (std::string &g : globs)
-	{
-		loadFiles(g);
-	}
-}
-
-void escape_filename(std::string &file)
-{
-	for (size_t i = 0; i < file.size(); i++)
-	{
-		if (file[i] == ' ')
-		{
-			file.insert(i, "\\");
-			i++;
-		}
-	}
+	fm->loadGlobFiles();
 }
 
 void Dictator::loadFiles(std::string &last)

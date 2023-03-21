@@ -26,8 +26,10 @@
 
 #include "MetadataView.h"
 
-#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 
 #include <vagabond/core/File.h>
 #include <vagabond/core/FileManager.h>
@@ -70,9 +72,30 @@ void FileView::setup()
 		text->setReturnTag("add");
 		addObject(text);
 	}
+#else
+	{
+		ImageButton *image = new ImageButton("assets/images/refresh.png", this);
+		image->setCentre(0.9, 0.1);
+		image->resize(0.08);
+		image->setReturnTag("refresh");
+		addObject(image);
+	}
 #endif
 	
 	ListView::setup();
+}
+
+void FileView::handleFileOrError(std::string filename)
+{
+	try
+	{
+		handleFileWithoutChoice(filename);
+	}
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(this, err.what());
+		setModal(bc);
+	}
 }
 
 void FileView::handleFileWithoutChoice(std::string filename)
@@ -121,7 +144,7 @@ void FileView::buttonPressed(std::string tag, Button *button)
 	{
 		if (responderCount() == 0)
 		{
-			handleFileWithoutChoice(filename);
+			handleFileOrError(filename);
 		}
 		else
 		{
@@ -134,8 +157,28 @@ void FileView::buttonPressed(std::string tag, Button *button)
 	{
 		upload_file();
 	}
+#else
+	if (tag == "refresh")
+	{
+		_manager->loadGlobFiles();
+		int count = _manager->unloadMissingFiles();
+		
+		if (count > 0)
+		{
+			std::string str = std::to_string(count);
+			str += " non-existent files were found \nwhich are used in ";
+			str += "existing models.\nPurge models and filenames?";
+			AskYesNo *yn = new AskYesNo(this, str, "purge", this);
+			setModal(yn);
+		}
+	}
 #endif
-	
+
+	if (tag == "yes_purge")
+	{
+		_manager->unloadMissingFiles(true);
+	}
+
 	ListView::buttonPressed(tag, button);
 }
 
@@ -165,3 +208,4 @@ void FileView::refresh()
 	filterForTypes(File::Nothing);
 	ListView::refresh();
 }
+

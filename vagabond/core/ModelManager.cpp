@@ -117,6 +117,19 @@ void ModelManager::autoModel()
 	_mutex->unlock();
 }
 
+Model *ModelManager::modelUsingFilename(std::string &filename)
+{
+	for (Model &m : _objects)
+	{
+		if (m.filename() == filename)
+		{
+			return &m;
+		}
+	}
+
+	return nullptr;
+}
+
 void ModelManager::purgeModel(Model *model)
 {
 	std::list<Model>::iterator it = _objects.begin();

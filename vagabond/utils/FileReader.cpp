@@ -307,3 +307,16 @@ bool is_str_alphabetical(const std::string &str)
 	return true;
 }
 
+void escape_filename(std::string &file)
+{
+	for (size_t i = 0; i < file.size(); i++)
+	{
+		if (file[i] == ' ')
+		{
+			file.insert(i, "\\");
+			i++;
+		}
+	}
+}
+
+

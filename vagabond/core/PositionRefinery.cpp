@@ -327,7 +327,6 @@ void PositionRefinery::refine(AtomGroup *group)
 	_nBonds = _calculator->maxCustomVectorSize();
 	
 	double res = fullResidual();
-	_group->writeToFile("pre_ref_" + std::to_string(_count) + ".pdb");
 	_count++;
 	
 	_depthRange = 8.;

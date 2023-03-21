@@ -52,6 +52,7 @@ public:
 	virtual void refresh();
 	virtual void respond();
 	void handleFileWithoutChoice(std::string filename);
+	void handleFileOrError(std::string filename);
 	void returnToResponder(std::string filename);
 
 	virtual size_t lineCount();

@@ -65,6 +65,7 @@ public:
 	void purgeEntity(Entity *ent);
 	void purgeModel(Model *mol);
 	void connectionsToDatabase();
+	Model *modelUsingFilename(std::string &filename);
 
 	virtual const std::string progressName() const
 	{

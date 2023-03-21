@@ -19,6 +19,7 @@
 #include <vagabond/utils/FileReader.h>
 #include "FileManager.h"
 #include "Environment.h"
+#include "ModelManager.h"
 #include <fstream>
 #include <sstream>
 #include "config/config.h"
@@ -212,4 +213,60 @@ pthread_t &FileManager::thread()
 {
 	FileManager *fm = Environment::fileManager();
 	return fm->_thread;
+}
+
+void FileManager::loadGlobFiles()
+{
+	std::vector<std::string> globs = glob_pattern("*");
+
+	for (std::string &g : globs)
+	{
+		loadFile(g);
+	}
+}
+
+void FileManager::loadFile(std::string &file)
+{
+	escape_filename(file);
+	acceptFile(file);
+}
+
+int FileManager::unloadMissingFiles(bool wipeUsing)
+{
+	int count = 0;
+	int deleted = 0;
+	ModelManager *mm = Environment::modelManager();
+
+	for (size_t i = 0; i < _list.size(); i++)
+	{
+		std::string &file = _list[i];
+		if (file_exists(file))
+		{
+			continue;
+		}
+		
+		Model *aModel = mm->modelUsingFilename(file);
+		if (!wipeUsing && aModel)
+		{
+			count++;
+			continue;
+		}
+		
+		/* throw away all models which use this filename */
+		while (aModel)
+		{
+			mm->purgeModel(aModel);
+			aModel = mm->modelUsingFilename(file);
+		}
+		
+		_list.erase(_list.begin() + i);
+		i--;
+		deleted++;
+	}
+
+	std::cout << "Deleted " << deleted << " files" << std::endl;
+
+	setFilterType(File::Nothing);
+	HasResponder<Responder<FileManager>>::triggerResponse();
+	return count;
 }

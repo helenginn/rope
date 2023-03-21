@@ -49,6 +49,13 @@ public:
 	static void prepareDownload(void *me, void *data, int nbytes);
 	static void acceptDownload(void *me, std::string contents);
 	bool acceptFile(std::string filename, bool force = false);
+
+	void loadGlobFiles();
+	
+	/** go through list of files and remove any which are not used.
+	 * @param wipeUsing if false, files involved in existing models are spared.
+	 * @returns number of files which were missing but not wiped */
+	int unloadMissingFiles(bool wipeUsing = false);
 	
 	void preFilter();
 
@@ -68,9 +75,10 @@ public:
 	}
 
 	void addFile(std::string filename);
-
 	bool hasFile(std::string filename);
 	
+	/** ensures that the file name is correct for this installation of rope,
+	 * i.e. ensuring it is relative to the home path. */
 	static void correctFilename(std::string &filename);
 	
 	void setDataDirectory(std::string dir)
@@ -100,6 +108,7 @@ public:
 	friend void to_json(json &j, const FileManager &value);
 	friend void from_json(const json &j, FileManager &value);
 private:
+	void loadFile(std::string &file);
 	std::vector<std::string> _list;
 	std::vector<std::string> _filtered;
 	pthread_t _thread;
