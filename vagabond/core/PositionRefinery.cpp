@@ -41,14 +41,14 @@ void PositionRefinery::backgroundRefine(PositionRefinery *ref)
 	ref->refine();
 }
 
-void PositionRefinery::updateAllTorsions()
+void PositionRefinery::updateAllTorsions(AtomGroup *subset)
 {
 	size_t refined = 0;
 	size_t unrefined = 0;
 
-	for (size_t i = 0; i < _group->bondTorsionCount(); i++)
+	for (size_t i = 0; i < subset->bondTorsionCount(); i++)
 	{
-		BondTorsion *t = _group->bondTorsion(i);
+		BondTorsion *t = subset->bondTorsion(i);
 		
 		if (t->isRefined())
 		{
@@ -64,6 +64,39 @@ void PositionRefinery::updateAllTorsions()
 	}
 }
 
+void PositionRefinery::refineThroughEach(AtomGroup *subset)
+{
+	setupCalculator(subset, false);
+
+	_nBonds = _calculator->maxCustomVectorSize();
+	
+	double res = fullResidual();
+
+	_depthRange = 5;
+	refine(subset);
+
+	if (_thorough)
+	{
+		grabNewAnchor(subset);
+		_depthRange = 10;
+		refine(subset);
+	}
+
+	res = fullResidual();
+	std::cout << "Overall average distance after refinement: "
+	<< res << " Angstroms over " << subset->size() << " atoms." << std::endl;
+	
+	delete _calculator;
+	_calculator = nullptr;
+}
+
+void PositionRefinery::grabNewAnchor(AtomGroup *subset)
+{
+	Atom *anchor = subset->chosenAnchor();
+	AlignmentTool tool(subset);
+	tool.run(anchor, true);
+}
+
 void PositionRefinery::refine()
 {
 	if (_group == nullptr)
@@ -72,25 +105,18 @@ void PositionRefinery::refine()
 		                         "group specified.");
 	}
 	
-	std::vector<AtomGroup *> units = _group->connectedGroups(false);
+	std::vector<AtomGroup *> subsets = _group->connectedGroups(false);
 
-	for (size_t i = 0; i < units.size(); i++)
+	for (AtomGroup *subset : subsets)
 	{
-		if (units[i]->size() <= 1)
+		if (subset->size() <= 1)
 		{
 			continue;
 		}
 
 		try
 		{
-			refine(units[i]);
-			
-			if (_thorough)
-			{
-				_reverse = true;
-				refine(units[i]);
-				_reverse = false;
-			}
+			refineThroughEach(subset);
 		}
 		catch (const std::runtime_error &err)
 		{
@@ -137,6 +163,7 @@ bool PositionRefinery::refineBetween(int start, int end, int side_max)
 
 	reallocateEngine(Positions);
 	SimplexEngine *se = static_cast<SimplexEngine *>(_engine);
+	se->setStepSize(_step);
 	se->setMaxJobsPerVertex(1);
 	se->start();
 
@@ -306,12 +333,8 @@ void PositionRefinery::setupCalculator(AtomGroup *group, bool loopy,
 
 	group->clearChosenAnchor();
 	Atom *anchor = group->chosenAnchor(!_reverse);
-	
-	if (!loopy && _count > 0)
-	{
-		AlignmentTool tool(group);
-		tool.run(anchor);
-	}
+	AlignmentTool tool(group);
+	tool.run(anchor);
 
 	_calculator->addAnchorExtension(anchor);
 
@@ -322,25 +345,9 @@ void PositionRefinery::setupCalculator(AtomGroup *group, bool loopy,
 
 void PositionRefinery::refine(AtomGroup *group)
 {
-	setupCalculator(group, false);
-
-	_nBonds = _calculator->maxCustomVectorSize();
-	
-	double res = fullResidual();
-	_count++;
-	
-	_depthRange = 8.;
-
 	stepwiseRefinement(group);
+	updateAllTorsions(group);
 	
-	res = fullResidual();
-	std::cout << "Overall average distance after refinement: "
-	<< res << " Angstroms over " << group->size() << " atoms." << std::endl;
-	
-	updateAllTorsions();
-	
-	delete _calculator;
-	_calculator = nullptr;
 }
 
 float PositionRefinery::getResult(int *job_id)

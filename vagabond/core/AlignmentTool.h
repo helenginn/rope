@@ -32,11 +32,12 @@ public:
 	AlignmentTool(AtomGroup *group);
 
 	void run();
-	void run(Atom *anchor);
+	void run(Atom *anchor, bool force = false);
 private:
 	int calculateExtension(Atom *anchor);
-	Result *resultForAnchor(Atom *anchor);
-	glm::mat4x4 superposition(Result *result);
+	void updatePositions(Result *result, glm::mat4 transform);
+	Result *resultForAnchor(Atom *anchor, int jumps = 0);
+	glm::mat4x4 superposition(Result *result, bool derived);
 
 	AtomGroup *_group;
 };

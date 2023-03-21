@@ -176,7 +176,6 @@ cfile,
 ]
 
 install_headers([
-'AlignmentTool.h',
 'Atom.h',
 'AtomGroup.h',
 'AtomSegment.h',

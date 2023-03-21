@@ -136,7 +136,7 @@ public:
 	
 	void finishedRefining();
 
-	void alignAnchor();
+//	void alignAnchor();
 	void refinePositions(bool sameThread = false, bool thorough = false);
 	void organiseSamples(int n);
 	

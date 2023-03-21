@@ -555,7 +555,7 @@ void Model::refine(bool sameThread, bool thorough)
 		load();
 	}
 
-	_currentAtoms->alignAnchor();
+	_currentAtoms->recalculate();
 	_currentAtoms->refinePositions(sameThread, thorough);
 }
 

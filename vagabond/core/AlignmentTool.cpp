@@ -48,6 +48,12 @@ int AlignmentTool::calculateExtension(Atom *anchor)
 			}
 		}
 		
+		if (atoms.size() == next.size())
+		/* we're not getting any bigger */
+		{
+			break;
+		}
+
 		atoms = next;
 		count++;
 	}
@@ -55,14 +61,17 @@ int AlignmentTool::calculateExtension(Atom *anchor)
 	return count;
 }
 
-Result *AlignmentTool::resultForAnchor(Atom *anchor)
+Result *AlignmentTool::resultForAnchor(Atom *anchor, int jumps)
 {
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTotalSamples(1);
 	calculator.setSuperpose(false);
-	int jumps = calculateExtension(anchor);
+	if (jumps == 0)
+	{
+		jumps = calculateExtension(anchor);
+	}
 	calculator.addAnchorExtension(anchor, jumps);
 	calculator.setup();
 
@@ -78,7 +87,7 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor)
 	return result;
 }
 
-glm::mat4x4 AlignmentTool::superposition(Result *result)
+glm::mat4x4 AlignmentTool::superposition(Result *result, bool derived)
 {
 	AtomPosMap &aps = result->aps;
 
@@ -88,7 +97,16 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	AtomPosMap::iterator it;
 	for (it = aps.begin(); it != aps.end(); it++)
 	{
-		glm::vec3 init = it->first->derivedPosition();
+		glm::vec3 init;
+		if (derived)
+		{
+			init = it->first->derivedPosition();
+		}
+		else
+		{
+			init = it->first->initialPosition();
+		}
+
 		glm::vec3 pos = it->second.ave;
 		
 		if (init.x != init.x || pos.x != pos.x)
@@ -104,13 +122,38 @@ glm::mat4x4 AlignmentTool::superposition(Result *result)
 	return pose.transformation();
 }
 
-void AlignmentTool::run(Atom *anchor)
+void AlignmentTool::updatePositions(Result *result, glm::mat4 transform)
 {
-	Result *result = resultForAnchor(anchor);
-	glm::mat4x4 transform = glm::mat4(1.);
-	transform = superposition(result);
-	result->destroy();
-	_group->addTransformedAnchor(anchor, transform);
+	AtomPosMap &aps = result->aps;
+
+	AtomPosMap::iterator it;
+	for (it = aps.begin(); it != aps.end(); it++)
+	{
+		glm::vec4 pos = glm::vec4(it->second.ave, 1.);
+		pos = transform * pos;
+		glm::vec3 tmp = glm::vec3(pos);
+		it->first->setDerivedPosition(tmp);
+	}
+}
+
+void AlignmentTool::run(Atom *anchor, bool force)
+{
+	if (anchor->bondLengthCount() == 0)
+	{
+		glm::mat4x4 transform = glm::mat4(1.);
+		glm::vec3 init = anchor->initialPosition();
+		transform[3] = glm::vec4(init, 1.);
+		anchor->setAbsoluteTransformation(transform);
+		_group->addTransformedAnchor(anchor, glm::mat4(1.f));
+	}
+	else if (!anchor->isTransformed() || force)
+	{
+		Result *result = resultForAnchor(anchor);
+		glm::mat4x4 transform = superposition(result, anchor->isTransformed());
+		updatePositions(result, transform);
+		result->destroy();
+		_group->addTransformedAnchor(anchor, transform);
+	}
 }
 
 void AlignmentTool::run()
@@ -120,28 +163,7 @@ void AlignmentTool::run()
 	for (size_t i = 0; i < subgroups.size(); i++)
 	{
 		Atom *anchor = subgroups[i]->chosenAnchor();
-		if (anchor->isTransformed())
-		{
-			continue;
-		}
-
-		glm::mat4x4 transform = glm::mat4(1.);
-
-		if (subgroups[i]->size() <= 1)
-		{
-			glm::vec3 init = anchor->initialPosition();
-			transform[3] = glm::vec4(init, 1.);
-			anchor->setAbsoluteTransformation(transform);
-			_group->addTransformedAnchor(anchor, glm::mat4(1.f));
-		}
-		else
-		{
-			Result *result = resultForAnchor(anchor);
-			transform = superposition(result);
-			result->destroy();
-			_group->addTransformedAnchor(anchor, transform);
-		}
-
+		run(anchor);
 	}
 
 	_group->recalculate();

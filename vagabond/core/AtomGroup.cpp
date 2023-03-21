@@ -43,20 +43,6 @@ void AtomGroup::writeToFile(std::string name)
 	PdbFile::writeAtoms(this, name);
 }
 
-void AtomGroup::alignAnchor()
-{
-	try
-	{
-		AlignmentTool tool(this);
-		tool.run();
-		recalculate();
-	}
-	catch (const std::runtime_error &err)
-	{
-		std::cout << "Giving up: " << err.what() << std::endl;
-	}
-}
-
 void AtomGroup::cancelRefinement()
 {
 	if (_refinery != nullptr)
@@ -359,6 +345,12 @@ void AtomGroup::recalculate()
 		for (size_t i = 0; i < _connectedGroups.size(); i++)
 		{
 			Atom *anchor = _connectedGroups[i]->chosenAnchor();
+			
+			if (!anchor->isTransformed())
+			{
+				AlignmentTool tool(_connectedGroups[i]);
+				tool.run(anchor);
+			}
 
 			BondCalculator calculator;
 			calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
@@ -393,7 +385,7 @@ void AtomGroup::refinePositions(bool sameThread, bool thorough)
 	}
 
 	PositionRefinery *refinery = new PositionRefinery(this);
-	refinery->setThorough(true);
+	refinery->setThorough(thorough);
 
 	cancelRefinement();
 	cleanupRefinement();
@@ -463,6 +455,8 @@ std::vector<AtomGroup *> &AtomGroup::connectedGroups(bool forSequence)
 		grapher.generateGraphs(ext);
 		
 		AtomGroup *next = new AtomGroup();
+		next->setGrabsBondstraints(true);
+
 		for (size_t i = 0; i < grapher.graphCount(); i++)
 		{
 			Atom *a = grapher.graph(i)->atom;

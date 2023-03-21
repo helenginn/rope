@@ -47,7 +47,7 @@ public:
 	
 	void setThorough(bool th)
 	{
-		_thorough = true;
+		_thorough = th;
 	}
 	virtual void finish();
 	
@@ -70,6 +70,8 @@ private:
 	void fullSizeVector(const std::vector<float> &all,
 	                    float *dest);
 	void refine(AtomGroup *group);
+	void refineThroughEach(AtomGroup *subset);
+	void grabNewAnchor(AtomGroup *subset);
 
 	void wiggleBond(const Parameter *t);
 
@@ -85,7 +87,7 @@ private:
 	void addActiveIndices(std::set<Parameter *> &params);
 	void clearActiveIndices();
 	void setMaskFromIndices();
-	void updateAllTorsions();
+	void updateAllTorsions(AtomGroup *subset);
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
