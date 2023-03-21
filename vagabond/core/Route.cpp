@@ -46,7 +46,6 @@ void Route::setup()
 	}
 
 	_fullAtoms = _instance->currentAtoms();
-	_mask.clear();
 	startCalculator();
 	connectParametersToDestination();
 }
@@ -278,7 +277,6 @@ void Route::clearWayPointFlips()
 void Route::populateWaypoints()
 {
 	clearWayPointFlips();
-	_mask = std::vector<bool>(destinationSize(), true);
 	
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
@@ -364,7 +362,6 @@ void Route::connectParametersToDestination()
 			int chosen = -1;
 			for (int j = 0; j < _parameters.size(); j++)
 			{
-				std::cout << p << " " << _parameters[j].param << std::endl;
 				if (_parameters[j].param == p)
 				{
 					chosen = j;

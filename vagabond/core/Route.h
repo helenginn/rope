@@ -226,11 +226,6 @@ public:
 protected:
 	const Grapher &grapher() const;
 	bool incrementGrapher();
-	
-	void clearMask()
-	{
-		_mask = std::vector<bool>(_parameters.size(), true);
-	}
 
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
 
@@ -250,11 +245,6 @@ protected:
 	{
 		_ticket2Point.clear();
 		_point2Score.clear();
-	}
-	
-	bool usingTorsion(int i)
-	{
-		return _mask[i];
 	}
 	
 	size_t destinationSize()
@@ -301,7 +291,6 @@ protected:
 	}
 
 	std::atomic<bool> _finish{false};
-	std::vector<bool> _mask;
 	std::vector<Point> _points;
 
 	void populateWaypoints();

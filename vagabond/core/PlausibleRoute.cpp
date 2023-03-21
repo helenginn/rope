@@ -128,11 +128,6 @@ bool PlausibleRoute::validateMainTorsion(int i, bool over_mag)
 		return false;
 	}
 	
-	if (!usingTorsion(i))
-	{
-		return false;
-	}
-
 	float magnitude = fabs(destination(i));
 	if (over_mag && magnitude < _magnitudeThreshold)
 	{
@@ -379,14 +374,12 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 
 bool PlausibleRoute::flipTorsion(int idx)
 {
-	std::vector<int> idxs = getTorsionSequence(idx, 4, false, 30.f);
+	std::vector<int> idxs = getTorsionSequence(idx, 5, false, 30.f);
 	
 	if (idxs.size() == 0)
 	{
 		return false;
 	}
-	
-	std::cout << "Idx count: " << idxs.size() << std::endl;
 
 	std::vector<bool> best(idxs.size(), false);
 	for (size_t i = 0; i < idxs.size(); i++)
@@ -412,8 +405,6 @@ bool PlausibleRoute::flipTorsion(int idx)
 
 	setFlips(idxs, best);
 	postScore(_bestScore);
-//	print(best);
-//	std::cout << std::endl;
 	
 	return changed;
 }
@@ -454,7 +445,6 @@ bool PlausibleRoute::flipTorsions(bool main)
 		changed |= flipTorsion(i);
 	}
 	
-	clearMask();
 	finishTicker();
 
 	return changed;
@@ -496,10 +486,7 @@ void PlausibleRoute::nudgeWayPointCycles()
 		
 		int total = countTorsions();
 		int change = nudgeWaypoints();
-		/*
-		std::cout << "Changed: " << change << " / " << total << ", "
-		<< "score: " << _bestScore << std::endl;
-		*/
+
 		float frac = (float)change / (float)total;
 		count++;
 		big_count++;
