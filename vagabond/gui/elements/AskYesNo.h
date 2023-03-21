@@ -6,6 +6,11 @@
 #include "Modal.h"
 #include "ButtonResponder.h"
 
+/** AskYesNo: simple yes/no dialogue with a question and a tag {tag} for
+ * later identification.
+ * the responder will be returned a tag: "yes_{tag}" or "no_{tag}" depending
+ * on the user's answer */
+
 class AskYesNo : public Modal
 {
 public:
