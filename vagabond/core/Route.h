@@ -25,6 +25,7 @@
 class Grapher;
 struct AtomGraph;
 class ResidueTorsion;
+class RouteValidator;
 
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {

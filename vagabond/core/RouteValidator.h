@@ -19,15 +19,22 @@
 #ifndef __vagabond__RouteValidator__
 #define __vagabond__RouteValidator__
 
-class Route;
+class PlausibleRoute;
 
 class RouteValidator
 {
 public:
-	RouteValidator(Route &route);
+	RouteValidator(PlausibleRoute &route);
+	
+	/** does the start molecule produce something within 0.5 Angstroms of the
+	 * end molecule when we use the end molecule's torsion angles? */
+	bool validate();
 
+	/** how many gaps are there in the definition of the end instance 
+	 * 	molecule? */
+	int endInstanceGaps();
 private:
-	Route &_route;
+	PlausibleRoute &_route;
 
 };
 

@@ -38,47 +38,6 @@ void PlausibleRoute::setup()
 	setTargets();
 }
 
-bool PlausibleRoute::validate()
-{
-	twoPointProgression();
-	submitJobAndRetrieve(1);
-
-	endInstance()->load();
-	endInstance()->superposeOn(instance());
-	AtomGroup *grp = endInstance()->currentAtoms();
-
-	float sum = 0;
-	float weights = 0;
-
-	for (Atom *a : grp->atomVector())
-	{
-		if (!a->isMainChain())
-		{
-			continue;
-		}
-
-		glm::vec3 t = a->otherPosition("original");
-		if (t.x != t.x)
-		{
-			continue;
-		}
-		
-		glm::vec3 d = a->derivedPosition();
-
-		glm::vec3 diff = t - d;
-		float sqlength = glm::dot(diff, diff);
-		sum += sqlength;
-		weights++;
-	}
-
-	sum = sqrt(sum / weights);
-	
-	endInstance()->unload();
-	instance()->unload();
-	
-	return (sum < 0.5);
-}
-
 void PlausibleRoute::setTargets()
 {
 	std::map<Atom *, glm::vec3> atomStart;

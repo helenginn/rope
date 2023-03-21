@@ -28,6 +28,7 @@ class Path;
 
 class PlausibleRoute : public Route, public Progressor, public RunsEngine
 {
+	friend RouteValidator;
 	friend Path;
 public:
 	PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
@@ -35,7 +36,6 @@ public:
 	void calculateProgression(int steps);
 
 	virtual void setup();
-	bool validate();
 
 	void setTargets();
 	

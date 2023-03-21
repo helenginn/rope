@@ -17,9 +17,63 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "RouteValidator.h"
-#include "Route.h"
+#include "PlausibleRoute.h"
+#include "AtomGroup.h"
+#include "Instance.h"
 
-RouteValidator::RouteValidator(Route &route) : _route(route)
+RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 {
 
+}
+
+bool RouteValidator::validate()
+{
+	_route.twoPointProgression();
+	_route.submitJobAndRetrieve(1);
+
+	_route.endInstance()->load();
+	_route.endInstance()->superposeOn(_route.instance());
+	AtomGroup *grp = _route.endInstance()->currentAtoms();
+
+	float sum = 0;
+	float weights = 0;
+
+	for (Atom *a : grp->atomVector())
+	{
+		if (!a->isMainChain())
+		{
+			continue;
+		}
+
+		glm::vec3 t = a->otherPosition("original");
+		if (t.x != t.x)
+		{
+			continue;
+		}
+		
+		glm::vec3 d = a->derivedPosition();
+
+		glm::vec3 diff = t - d;
+		float sqlength = glm::dot(diff, diff);
+		sum += sqlength;
+		weights++;
+	}
+
+	sum = sqrt(sum / weights);
+	
+	_route.endInstance()->unload();
+	_route.instance()->unload();
+	
+	return (sum < 0.5);
+}
+
+int RouteValidator::endInstanceGaps()
+{
+	_route.endInstance()->load();
+	Instance *inst = _route.endInstance();
+	AtomGroup *atoms = inst->currentAtoms();
+	std::vector<AtomGroup *> grps = atoms->connectedGroups();
+	_route.endInstance()->unload();
+	
+	return grps.size() - 1;
 }
