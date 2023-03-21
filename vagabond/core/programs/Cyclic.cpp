@@ -43,11 +43,47 @@ void Cyclic::setup()
 	updateCurve();
 }
 
+void Cyclic::calculateSteps()
+{
+	_steps.clear();
+
+	if (!_quick)
+	{
+		for (float d = 0; d < 360; d += _step)
+		{
+			_steps.push_back(d);
+		}
+		return;
+	}
+
+	for (size_t i = 0; i < _num; i++)
+	{
+		float step = 1 / (float)_num;
+		float prop = step * i;
+		if (_pams.nudges.size() > i)
+		{
+			prop += _pams.nudges[i];
+		}
+		prop += _pams.offset;
+		prop += _offset;
+		while (prop < 0) { prop += 1; }
+		prop = fmod(prop, 1.f);
+
+		_steps.push_back(prop * 360.);
+	}
+}
+
 void Cyclic::updateCurve()
 {
-	int n = 0;
-	for (float d = 0; d < 360; d += _step)
+	if (_quick)
 	{
+		calculateSteps();
+	}
+
+	int n = 0;
+	for (size_t i = 0; i < _steps.size(); i++)
+	{
+		float d = _steps[i];
 		glm::vec3 &v = _curve[n];
 
 		float r = deg2rad(d);
@@ -67,18 +103,25 @@ void Cyclic::updateCurve()
 		n++;
 	}
 	
-	addAtoms();
+	if (!_quick)
+	{
+		addAtoms();
+	}
 }
 
 void Cyclic::addAtoms()
 {
 	_idxs.clear();
+	
+	for (size_t i = 0; i < _num && _quick; i++)
+	{
+		_idxs.push_back(i);
+	}
 
-	for (size_t i = 0; i < _num; i++)
+	for (size_t i = 0; i < _num && !_quick; i++)
 	{
 		float step = 1 / (float)_num;
 		float prop = step * i;
-		float r = prop * 2 * M_PI;
 		if (_pams.nudges.size() > i)
 		{
 			prop += _pams.nudges[i];
@@ -100,7 +143,13 @@ void Cyclic::addAtoms()
 void Cyclic::addCurve()
 {
 	_curve.clear();
-	for (float d = 0; d < 360; d+= _step)
+	
+	if (_steps.size() == 0)
+	{
+		calculateSteps();
+	}
+	
+	for (size_t i = 0; i < _steps.size(); i++)
 	{
 		_curve.push_back(glm::vec3{});
 	}

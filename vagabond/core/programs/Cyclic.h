@@ -143,6 +143,8 @@ private:
 		}
 
 	};
+	
+	void calculateSteps();
 
 	friend void to_json(json &j, const Parameters &value);
 	friend void from_json(const json &j, Parameters &value);
@@ -151,11 +153,19 @@ private:
 	Parameters _start{};
 	ChemotaxisEngine *_engine = nullptr;
 
+	// atom count
 	int _num = 0;
+
 	float _offset = 0.2;
 	int _sinMult = 2;
+	
+	// atom-to-index
 	std::vector<int> _idxs;
+
 	std::vector<glm::vec3> _curve;
+
+	std::vector<float> _steps; // calculated steps
+	float _step = 0.5; // default step
 
 	std::vector<std::string> _names;
 	std::vector<float> _lengths;
@@ -163,7 +173,7 @@ private:
 
 	std::map<int, double> _scores;
 	int _issue = 0;
-	float _step = 0.5;
+	bool _quick = false;
 	float _magnitude = 1.;
 	
 	glm::mat4x4 _transform = glm::mat4(1.f);
@@ -209,6 +219,7 @@ inline void from_json(const json &j, Cyclic &value)
 	value._angles = angles;
 	value._step = j.at("step");
 	value._pams = j.at("params");
+	value._quick = true;
 	
 	value.setup();
 }
