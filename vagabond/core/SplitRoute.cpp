@@ -50,9 +50,11 @@ void SplitRoute::findAtomSequence()
 
 		int idx = indexOfTorsion(t);
 		gr = g.deepestChild(gr);
-		float mag = fabs(destination(idx));
-
-		_atoms.push_back({anchor, gr, mag, 1});
+		if (idx > 0)
+		{
+			float mag = fabs(destination(idx));
+			_atoms.push_back({anchor, gr, mag, 1});
+		}
 	}
 }
 
