@@ -81,6 +81,8 @@ std::set<std::string> &FileManager::geometryFiles()
 		_geometries.insert(file);
 	}
 
+	setFilterType(File::Nothing);
+
 	return _geometries;
 }
 
