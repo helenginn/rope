@@ -205,7 +205,6 @@ void FileView::respond()
 
 void FileView::refresh()
 {
-	filterForTypes(File::Nothing);
 	ListView::refresh();
 }
 
