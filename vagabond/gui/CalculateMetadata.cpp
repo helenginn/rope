@@ -121,7 +121,8 @@ std::string CalculateMetadata::prepareQuery()
 	
 	std::string requests = "{ rcsb_id diffrn { ambient_temp } "\
 	"exptl_crystal_grow { pH } reflns { d_resolution_high } "\
-	"symmetry { space_group_name_H_M } cell{length_a, length_b, length_c} }";
+	"symmetry { space_group_name_H_M } cell{length_a, length_b, length_c} "\
+	"struct { title } }";
 	
 	std::string query = "{ " + entry_ids + requests + "}";
 	return query;
@@ -171,7 +172,7 @@ void CalculateMetadata::processResult(std::string result)
 	for (json &entry : entries)
 	{
 		Metadata::KeyValues kv;
-		std::string model, temp, ph, res, spg;
+		std::string model, temp, ph, res, spg, title;
 		if (entry.count("rcsb_id") == 0)
 		{
 			continue;
@@ -180,6 +181,13 @@ void CalculateMetadata::processResult(std::string result)
 		model = entry["rcsb_id"];
 		to_lower(model);
 		kv["model"] = model;
+
+		json &struct = entry["struct"];
+		if (!struct[0]["title"].is_null())
+		{
+			title = struct[0]["title"];
+			kv["title"] = title;
+		}
 
 		json &diffrn = entry["diffrn"];
 		if (!diffrn[0]["ambient_temp"].is_null())

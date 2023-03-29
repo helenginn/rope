@@ -60,6 +60,19 @@ void AddModel::setup()
 	float top = 0.3;
 	float inc = 0.08;
 
+	Metadata::KeyValues kv = _obj.metadata();
+	if (kv.count("title"))
+	{
+		Text *t = new Text(kv.at("title").text());
+		float w = t->maximalWidth();
+		if (w > 1.6)
+		{
+			t->resize(1.6 / w);
+		}
+		t->setCentre(0.5, 0.15);
+		addObject(t);
+	}
+
 	{
 		Text *t = new Text("Initialising file:");
 		t->setLeft(0.2, top);
