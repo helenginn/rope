@@ -138,6 +138,24 @@ void ConfSpaceView::displayTree()
 	addObject(_ropeTree);
 }
 
+void ConfSpaceView::proofRopeSpace()
+{
+	if (_selected != nullptr)
+	{
+		while (_selected->isDeleted())
+		{
+			std::cout << _selected->displayName() << std::endl;
+			_selected = static_cast<RopeSpaceItem *>(_selected->parent());
+			std::cout << _selected->displayName() << std::endl;
+		}
+	}
+	
+	if (_selected == nullptr)
+	{
+		_selected = _ropeSpace;
+	}
+}
+
 void ConfSpaceView::switchView()
 {
 	removeObject(_view);
@@ -147,6 +165,7 @@ void ConfSpaceView::switchView()
 	_axes = nullptr;
 
 	bool first = makeFirstCluster();
+	proofRopeSpace();
 	ClusterView *view = _selected->view();
 	glm::vec3 c = view->centroid();
 	float distance = first ? 10 : 0;
@@ -536,7 +555,8 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
 #endif
-	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
+	float x; float y;
+	getFractionalPos(x, y);
 	m->setup(x, y);
 
 	setModal(m);

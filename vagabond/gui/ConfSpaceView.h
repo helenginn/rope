@@ -80,6 +80,7 @@ public:
 	void prepareModelMenu(HasMetadata *hm);
 	void reorientToPolymer(Polymer *mol);
 
+	void showCurrentCluster();
 	void sendObject(std::string tag, void *object);
 protected:
 	virtual void sendSelection(float t, float l, float b, float r);
@@ -102,8 +103,8 @@ private:
 	bool makeFirstCluster();
 	void chooseGroup(Rule *rule, bool inverse);
 	void executeSubset(float min, float max);
-	void showCurrentCluster();
 	void switchView();
+	void proofRopeSpace();
 	void displayTree();
 
 	void showPathsButton();

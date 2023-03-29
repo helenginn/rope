@@ -23,6 +23,7 @@
 #include "Axes.h"
 #include "RopeCluster.h"
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/gui/elements/Menu.h>
 
 using namespace rope;
 
@@ -36,6 +37,11 @@ RopeSpaceItem::RopeSpaceItem(Entity *entity) : Item()
 RopeSpaceItem::~RopeSpaceItem()
 {
 	std::cout << "DELETING ROPE SPACE ITEM?" << std::endl;
+	_confView->removeResponder(_axes);
+	_confView->removeResponder(_view);
+	delete _view;
+	delete _cluster;
+	delete _axes;
 }
 
 void RopeSpaceItem::makeView(ConfSpaceView *attach)
@@ -236,8 +242,30 @@ void RopeSpaceItem::deleteAxes()
 {
 	if (_axes)
 	{
+		_confView->removeResponder(_axes);
 		_confView->removeObject(_axes);
 		delete _axes;
 		_axes = nullptr;
 	}
+}
+
+Menu *RopeSpaceItem::rightClickMenu()
+{
+	Menu *m = new Menu(_confView, this);
+	if (parent())
+	{
+		m->addOption("delete", "delete");
+	}
+	return m;
+}
+
+void RopeSpaceItem::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "delete")
+	{
+		deleteItem();
+		_confView->showCurrentCluster();
+	}
+
+	resolveDeletions();
 }

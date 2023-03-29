@@ -147,6 +147,12 @@ public:
 		lastX = _lastX;
 		lastY = _lastY;
 	}
+	
+	void getFractionalPos(float &x, float &y)
+	{
+		x = _lastX / (float)_w;
+		y = _lastY / (float)_h;
+	}
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();

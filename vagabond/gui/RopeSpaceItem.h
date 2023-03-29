@@ -20,8 +20,11 @@
 #define __vagabond__RopeSpaceItem__
 
 #include <vagabond/gui/elements/list/Item.h>
+#include <vagabond/gui/elements/ButtonResponder.h>
 #include <vagabond/core/ConfType.h>
 
+
+class ButtonResponder;
 class HasMetadata;
 class ClusterView;
 class RopeCluster;
@@ -32,7 +35,7 @@ class Rule;
 	
 class ConfSpaceView;
 
-class RopeSpaceItem : public Item
+class RopeSpaceItem : public Item, public ButtonResponder
 {
 public:
 	RopeSpaceItem(Entity *entity);
@@ -69,7 +72,10 @@ public:
 	RopeSpaceItem *branchFromRule(Rule *rule, bool inverse);
 	RopeSpaceItem *branchFromRuleRange(const Rule *rule, float min, float max);
 	
+	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();
+	virtual Menu *rightClickMenu();
+protected:
 private:
 	void allocateView(ConfSpaceView *view);
 	void inheritAxis(RopeSpaceItem *parent);

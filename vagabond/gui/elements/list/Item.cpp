@@ -114,7 +114,6 @@ bool Item::removeItem(Item *item)
 	}
 
 	_items.erase(it);
-	item->setParent(nullptr);
 	return true;
 }
 
@@ -147,7 +146,6 @@ void Item::deleteItem()
 	if (_parent)
 	{
 		_parent->removeItem(this);
-		setParent(nullptr);
 	}
 }
 

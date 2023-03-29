@@ -26,6 +26,7 @@
 
 class ButtonResponder;
 class Renderable;
+class Menu;
 
 class Item
 {
@@ -100,6 +101,11 @@ public:
 		return _collapsed;
 	}
 	
+	const bool &isDeleted() const
+	{
+		return _deleted;
+	}
+	
 	void unfold()
 	{
 		_collapsed = false;
@@ -126,10 +132,18 @@ public:
 	/** return renderable for Item. Default is display name.
 	 * Renderable should be top-left justified i.e. setLeft(0.0, 0.0); */
 	virtual Renderable *displayRenderable(ButtonResponder *parent) const;
+
+	/** to be overridden by derived classes: in the event of a right-click
+	 * menu. */
+	virtual Menu *rightClickMenu()
+	{
+		return nullptr;
+	}
 protected:
 	/** to be overridden by derived classes: to implement anything that needs
 	 * to be done before the final delete. */
 	virtual void lastRites() {};
+
 private:
 	void deleteSelf();
 	void deleteChildren();

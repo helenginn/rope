@@ -24,12 +24,13 @@
 #include "../ButtonResponder.h"
 
 class Item;
+class Scene;
 class ItemLine;
 
 class LineGroup : public ButtonResponder, public Button
 {
 public:
-	LineGroup(Item *item, ButtonResponder *sender = nullptr);
+	LineGroup(Item *item, Scene *sender = nullptr);
 
 	void setup();
 	virtual void buttonPressed(std::string tag, Button *button);
@@ -46,6 +47,7 @@ private:
 	
 	LineGroup *_topLevel = nullptr;
 	LineGroup *_parent = nullptr;
+	Scene *_scene = nullptr;
 
 	std::vector<LineGroup *> _groups;
 };

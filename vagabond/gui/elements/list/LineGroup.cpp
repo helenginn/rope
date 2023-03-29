@@ -20,11 +20,14 @@
 #include "ItemLine.h"
 #include "Item.h"
 #include "../Button.h"
+#include "../Menu.h"
 #include <iostream>
+#include "../Scene.h"
 
-LineGroup::LineGroup(Item *item, ButtonResponder *resp) 
+LineGroup::LineGroup(Item *item, Scene *resp) 
 : Button(resp)
 {
+	_scene = resp;
 	initialise(item, (LineGroup *)nullptr);
 }
 
@@ -45,6 +48,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 	else
 	{
 		_topLevel = _parent->_topLevel;
+		_scene = _parent->_scene;
 	}
 
 
@@ -129,6 +133,20 @@ void LineGroup::reorganiseGroups()
 
 void LineGroup::buttonPressed(std::string tag, Button *button) 
 {
+	if (!button->left()) // right click
+	{
+		Menu *menu = _item->rightClickMenu();
+		if (!menu)
+		{
+			return;
+		}
+
+		float x; float y;
+		_scene->getFractionalPos(x, y);
+		menu->setup(x, y);
+		_scene->setModal(menu);
+		return;
+	}
 	std::string toggle = Button::tagEnd(tag, "toggle_");
 
 	if (toggle.length() > 0)
