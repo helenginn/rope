@@ -278,7 +278,7 @@ void ConfSpaceView::executeSubset(float min, float max)
 
 void ConfSpaceView::grabSelection(bool inverse)
 {
-	RopeSpaceItem *subset = _selected->makeGroupFromSelected(false);
+	RopeSpaceItem *subset = _selected->makeGroupFromSelected(inverse);
 	_selected = subset;
 	showCurrentCluster();
 }
@@ -649,7 +649,7 @@ void ConfSpaceView::interactedWithNothing(bool left)
 		prepareEmptySpaceMenu();
 	}
 
-	if (_shiftPressed && left)
+	if (_shiftPressed && left && !_moving)
 	{
 		_view->deselect();
 		applyRules();
