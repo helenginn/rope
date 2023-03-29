@@ -170,7 +170,7 @@ void MolRefiner::retrieveJobs()
 			if (r->requests & JobMapCorrelation)
 			{
 				float cc = r->correlation;
-				setScoreForTicket(g, cc);
+				setScoreForTicket(g, -cc);
 			}
 			
 			r->destroy();
