@@ -333,6 +333,7 @@ void Route::getParametersFromBasis()
 			if (idx < 0)
 			{
 				_missing.push_back(p);
+				continue;
 			}
 			else
 			{
