@@ -85,6 +85,7 @@ install_data(
 'assets/images/files.png',
 'assets/images/happy_face.png',
 'assets/images/lemon.png',
+'assets/images/little_line.png',
 'assets/images/line.png',
 'assets/images/metadata.png',
 'assets/images/misc_data.png',
@@ -108,6 +109,7 @@ install_data(
 'assets/images/sequence.png',
 'assets/images/some_atoms.png',
 'assets/images/tick.png',
+'assets/images/triangle.png',
 'assets/images/tools.png',
 'assets/images/torsion.png',
 'assets/images/tube_1.5ml.png',
@@ -172,5 +174,6 @@ if (links == [])
   subdir('vagabond/utils/tests')
   subdir('vagabond/core/tests')
   subdir('vagabond/gui/tests')
+  subdir('vagabond/gui/elements/tests')
 endif
 

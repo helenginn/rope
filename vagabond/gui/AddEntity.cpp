@@ -267,11 +267,11 @@ void AddEntity::loadConfSpaceView(std::string suffix)
 	
 	if (suffix == "refined_torsions")
 	{
-		view->setMode(ConfSpaceView::ConfTorsions);
+		view->setMode(rope::ConfTorsions);
 	}
 	else if (suffix == "atom_positions")
 	{
-		view->setMode(ConfSpaceView::ConfPositional);
+		view->setMode(rope::ConfPositional);
 	}
 
 	view->show();

@@ -16,17 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __ROPE__VERSION__H
-#define __ROPE__VERSION__H
+#ifndef __vagabond__ItemLine__
+#define __vagabond__ItemLine__
 
-#define VERSION_FIX_PEPTIDE
-#define VERSION_LIGANDS
-#define VERSION_PROLINE
+#include "../Box.h"
 
-#ifndef __EMSCRIPTEN__
-#define VERSION_SHORT_ROUTES
-#define VERSION_REFINEMENT
-#define VERSION_SANDBOX
-#endif
+class LineGroup;
+class ImageButton;
+class Item;
+
+class ItemLine : public Box
+{
+public:
+	ItemLine(LineGroup *group, Item *item);
+
+	void update();
+private:
+	void addBranch();
+	void addArrow();
+	void turnArrow();
+	/** prepare content of box */
+	void setup();
+	
+	float _unitHeight = 0.;
+	
+	bool _displayCollapse = false;
+
+	Item *_item = nullptr;
+	LineGroup *_group = nullptr;
+	ImageButton *_triangle = nullptr;
+};
 
 #endif

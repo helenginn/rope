@@ -1,0 +1,17 @@
+{
+        "name": "nlohmann_json",
+        "buildsystem": "meson",
+        "sources": [
+                {
+                        "type": "git",
+                        "url": "https://www.github.com/nlohmann/json.git",
+			"tag": "v3.11.2"
+                }
+
+        ],
+        "cleanup": [
+                "/include",
+                "/lib/pkgconfig",
+                "/lib/*.a"
+        ]
+}

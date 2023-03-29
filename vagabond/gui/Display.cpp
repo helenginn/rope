@@ -180,6 +180,7 @@ void Display::loadAtoms(AtomGroup *atoms)
 	_translation.z -= 240;
 	*/
 
+	// FIXME: replace with SnowGL::shiftToCentre
 	glm::vec3 update = _atoms->initialCentre();
 	glm::vec3 diff = update - _centre;
 	_model = glm::mat4(1.f);

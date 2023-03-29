@@ -19,9 +19,12 @@
 #ifndef __vagabond__ConfSpaceView__
 #define __vagabond__ConfSpaceView__
 
+#include <vagabond/gui/elements/list/Item.h>
 #include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/core/Responder.h>
+#include <vagabond/core/ConfType.h>
 #include "ClusterView.h"
 
 class Entity;
@@ -31,6 +34,7 @@ class Axes;
 class HasMetadata;
 class MetadataGroup;
 class RouteExplorer;
+class RopeSpaceItem;
 class PathView;
 
 template <class DG>
@@ -43,23 +47,12 @@ public:
 	ConfSpaceView(Scene *prev, Entity *ent);
 	~ConfSpaceView();
 
-	void setWhiteList(std::vector<HasMetadata *> whiteList)
-	{
-		_whiteList = whiteList;
-	}
-	
-	enum ConfType
-	{
-		ConfPositional,
-		ConfTorsions,
-	};
-	
-	ConfType confType()
+	rope::ConfType confType()
 	{
 		return _type;
 	}
 	
-	void setMode(ConfType type)
+	void setMode(rope::ConfType type)
 	{
 		_type = type;
 	}
@@ -106,9 +99,12 @@ public:
 		return (_status == Reorienting);
 	}
 private:
+	bool makeFirstCluster();
 	void chooseGroup(Rule *rule, bool inverse);
 	void executeSubset(float min, float max);
-	void showClusters();
+	void showCurrentCluster();
+	void switchView();
+	void displayTree();
 
 	void showPathsButton();
 	void showRulesButton();
@@ -119,9 +115,14 @@ private:
 	void applyRule(const Rule &r);
 	void applyRules();
 	void removeRules();
-	void createReference(Polymer *m);
+	void createReference(Instance *i);
 
 	void askToFoldIn(int extra);
+	
+	RopeSpaceItem *_ropeSpace = nullptr;
+	RopeSpaceItem *_selected = nullptr;
+	LineGroup *_ropeTree = nullptr;
+
 	Entity *_entity = nullptr;
 	int _extra = 0;
 	ClusterView *_view = nullptr;
@@ -129,15 +130,12 @@ private:
 	Axes *_axes = nullptr;
 	Axes *_origin = nullptr;
 	const Rule *_colourRule = nullptr;
+	rope::ConfType _type = rope::ConfTorsions;
 	
 	Polymer *_from = nullptr;
 	RouteExplorer *_routeExplorer = nullptr;
-
-	std::vector<HasMetadata *> _whiteList;
-	std::vector<Renderable *> _temps;
 	
 	Status _status = Nothing;
-	ConfType _type = ConfTorsions;
 
 	bool _shownPaths = false;
 	bool _tsne = false;

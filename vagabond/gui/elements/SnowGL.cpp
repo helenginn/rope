@@ -564,3 +564,13 @@ void SnowGL::resetMouseKeyboard()
 	_shiftPressed = false;
 
 }
+
+void SnowGL::shiftToCentre(glm::vec3 &update, float distance)
+{
+	glm::vec3 diff = update - _centre;
+	_model = glm::mat4(1.f);
+	_centre += diff;
+	_translation = -diff;
+	_translation.z -= distance;
+	updateCamera();
+}

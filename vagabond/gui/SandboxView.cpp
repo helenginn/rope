@@ -20,6 +20,8 @@
 #include <fstream>
 #include <thread>
 #include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/list/Item.h>
+#include <vagabond/gui/elements/list/LineGroup.h>
 
 #include "SandboxView.h"
 #include "HyperValue.h"
@@ -37,6 +39,27 @@ SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 	setAtoms(as);
 	as->recalculate();
 
+	Item *first = new Item();
+	first->setDisplayName("cluster4x");
+	Item *second = new Item();
+	second->setDisplayName("is");
+//	second->collapse();
+	first->addItem(second);
+	Item *third = new Item();
+	third->setDisplayName("coming");
+	second->addItem(third);
+	Item *fourth = new Item();
+	fourth->setDisplayName("very");
+	second->addItem(fourth);
+	Item *fifth = new Item();
+	fifth->setDisplayName("soon");
+	first->addItem(fifth);
+
+	LineGroup *first_group = new LineGroup(first, this);
+	first_group->setLeft(0.2, 0.2);
+	addObject(first_group);
+
+	/*
 	_angles = new Text("angles", Font::Thin, true);
 	_angles->resize(0.6);
 	_angles->setLeft(0.2, 0.5);
@@ -46,6 +69,7 @@ SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 	_lengths->resize(0.6);
 	_lengths->setLeft(0.05, 0.5);
 	addObject(_lengths);
+	*/
 	
 	/*
 	for (size_t i = 0; i < as->size(); i++)
@@ -215,6 +239,7 @@ void SandboxView::doThings()
 
 void SandboxView::updateInfo()
 {
+	/*
 	std::string report = "angles\n";
 	report += _cyclic->angles();
 	_angles->setText(report);
@@ -225,5 +250,5 @@ void SandboxView::updateInfo()
 
 	float lsc = _cyclic->score();
 	setInformation("score: " + std::to_string(lsc));
-
+	*/
 }

@@ -1,0 +1,24 @@
+app-id: uk.co.hginn.rope
+runtime: org.freedesktop.Platform
+runtime-version: '22.08'
+sdk: org.freedesktop.Sdk
+command: rope
+modules:
+  - shared-libs/glu.json
+  - shared-libs/glew.json
+  - shared-libs/sdl2.json
+  - shared-libs/fftw3.json
+  - shared-libs/nlohmann.json
+  - shared-libs/gemmi.json
+  - shared-libs/boost.json
+  - shared-libs/glm.json
+  - name: rope
+    buildsystem: meson
+    #    build-options:
+    #  - env:
+    #      - PKG_CONFIG_PATH: "/app/lib/pkgconfig"
+    sources:
+      - type: git
+        url: https://www.github.com/helenginn/rope.git
+        branch: helen
+

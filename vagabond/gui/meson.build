@@ -55,6 +55,7 @@ guifiles = [
 'ProgressView.cpp',
 'ProjectMenu.cpp',
 'ResolveIssues.cpp',
+'RopeSpaceItem.cpp',
 'RouteExplorer.cpp',
 'RulesMenu.cpp',
 'SandboxView.cpp',

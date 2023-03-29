@@ -20,6 +20,7 @@
 #include <math.h>
 #include "Rule.h"
 #include <vagabond/utils/maths.h>
+#include <vagabond/utils/FileReader.h>
 
 Rule::Rule(Type type)
 {
@@ -37,15 +38,41 @@ const std::string Rule::desc() const
 		break;
 
 		case ChangeIcon:
-		desc += "Change icon by ";
+		desc += "Change icon if ";
 		break;
 
 		case VaryColour:
-		desc += "Vary colour by ";
+		desc += "Vary colour on ";
 		break;
 
 	}
-	return desc + _header;
+
+	return desc + exactDesc();
+}
+
+const std::string Rule::exactDesc() const
+{
+	if (_type == LineSeries)
+	{
+		return _header;
+	}
+
+	std::string rest = _header;
+
+	if (_type == VaryColour)
+	{
+		rest += " from " + f_to_str(min(), 1) + " to ";
+		rest += f_to_str(max(), 1);
+	}
+	else
+	{
+		if (!ifAssigned())
+		{
+			rest +=  " = " + headerValue();
+		}
+	}
+
+	return rest;
 }
 
 void Rule::setVals(std::vector<float> &vals)

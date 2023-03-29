@@ -13,9 +13,10 @@ public:
 	Image(filename), Button(sender) {};
 	
 	/** 90 for left-facing, -90 for right-facing */
-	static ImageButton *arrow(float deg, ButtonResponder *sender)
+	static ImageButton *arrow(float deg, ButtonResponder *sender,
+	                          std::string image = "assets/images/arrow.png")
 	{
-		ImageButton *b = new ImageButton("assets/images/arrow.png", sender);
+		ImageButton *b = new ImageButton(image, sender);
 		b->rescale(0.1, 0.03);
 		glm::mat3x3 rot;
 		rot = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(deg),

@@ -1172,19 +1172,31 @@ void Renderable::setImage(std::string imagename, bool wrap)
 
 void Renderable::maximalDim(double *min, double *max, int dim)
 {
-	for (size_t i = 0; i < _vertices.size(); i++)
+	if (isDisabled())
 	{
-		if (_vertices[i].pos[dim] > *max)
-		{
-			*max = _vertices[i].pos[dim];
-		}
-
-		if (_vertices[i].pos[dim] < *min)
-		{
-			*min = _vertices[i].pos[dim];
-		}
+		return;
 	}
 
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		float &f = _vertices[i].pos[dim];
+		
+		if (f != f)
+		{
+			continue;
+		}
+
+		if (f > *max)
+		{
+			*max = f;
+		}
+
+		if (f < *min)
+		{
+			*min = f;
+		}
+	}
+	
 	for (size_t i = 0; i < objectCount(); i++)
 	{
 		object(i)->maximalDim(min, max, dim);

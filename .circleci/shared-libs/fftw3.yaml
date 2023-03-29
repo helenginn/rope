@@ -1,0 +1,33 @@
+name: fftw3
+    build-options:
+    arch:
+      x86_64:
+        config-opts:
+          - --enable-sse2
+          - --enable-avx
+          - --enable-avx-128-fma
+          - --enable-avx2
+          - --enable-avx512
+      aarch64:
+        config-opts:
+          - --enable-neon
+    config-opts:
+      - --disable-static
+      - --disable-doc
+      - --enable-shared
+      - --enable-single
+      - --enable-threads
+      - --enable-fortran
+      - --with-our-malloc
+      - --with-combined-threads
+      - --with-incoming-stack-boundary=2
+    sources:
+      - type: archive
+        url: http://archive.ubuntu.com/ubuntu/pool/main/f/fftw3/fftw3_3.3.8.orig.tar.gz
+        sha256: 6113262f6e92c5bd474f2875fa1b01054c4ad5040f6b0da7c03c98821d9ae303
+      - type: archive
+        url: http://archive.ubuntu.com/ubuntu/pool/main/f/fftw3/fftw3_3.3.8-2ubuntu8.debian.tar.xz
+        sha256: 2bddf40b42383167b221d7adfc7937b102b366053c3e6055f3864fb7b98c3050
+      - type: shell
+        commands:
+          - for n in $(cat patches/series); do if [[ $n != "#"* ]]; then patch -Np1 -i "patches/$n" -d .; fi; done

@@ -92,7 +92,12 @@ public:
 	
 	static float aspect()
 	{
-		return (float)_rect.h / (float)_rect.w;
+		float aspect = (float)_rect.h / (float)_rect.w;
+		if (aspect != aspect)
+		{
+			aspect = 1;
+		}
+		return aspect;
 	}
 	
 	static bool hasContext()

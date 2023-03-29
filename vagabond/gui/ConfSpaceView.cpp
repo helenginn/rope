@@ -19,6 +19,7 @@
 #include "RulesMenu.h"
 #include "PathsMenu.h"
 #include "AxesMenu.h"
+#include "RopeSpaceItem.h"
 #include "LineSeries.h"
 #include "RouteExplorer.h"
 #include "PathView.h"
@@ -47,12 +48,28 @@
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/Metadata.h>
 
+using namespace rope;
+
 ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
 : Scene(prev),
 Mouse3D(prev),
 IndexResponseView(prev)
 {
 	_entity = ent;
+}
+
+bool ConfSpaceView::makeFirstCluster()
+{
+	if (_ropeSpace == nullptr)
+	{
+		_ropeSpace = new RopeSpaceItem(_entity);
+		_ropeSpace->setMode(_type);
+		_selected = _ropeSpace;
+		_selected->makeView(this);
+		return true;
+	}
+	
+	return false;
 }
 
 ConfSpaceView::~ConfSpaceView()
@@ -102,76 +119,63 @@ void ConfSpaceView::setup()
 	}
 }
 
+void ConfSpaceView::displayTree()
+{
+	if (_ropeTree)
+	{
+		removeObject(_ropeTree);
+		delete _ropeTree;
+		_ropeTree = nullptr;
+	}
+
+	if (_ropeSpace->itemCount() == 0)
+	{
+		return;
+	}
+
+	_ropeTree = new LineGroup(_ropeSpace, this);
+	_ropeTree->setLeft(0.02, 0.2);
+	addObject(_ropeTree);
+}
+
+void ConfSpaceView::switchView()
+{
+	removeObject(_view);
+	_view = nullptr;
+	
+	removeObject(_axes);
+	_axes = nullptr;
+
+	bool first = makeFirstCluster();
+	ClusterView *view = _selected->view();
+	glm::vec3 c = view->centroid();
+	float distance = first ? 10 : 0;
+	shiftToCentre(c, distance);
+	_cluster = view->cluster();
+
+	_axes = _selected->axes();
+	_view = view;
+
+	addObject(_axes);
+	addObject(view);
+
+
+}
+
 void ConfSpaceView::addGuiElements()
 {
-	removeRules();
-	showClusters();
-
-	applyRules();
+	showCurrentCluster();
 	showRulesButton();
 	showPathsButton();
 	showAxesButton();
-//	showtSNE();
 }
 
-void ConfSpaceView::showClusters()
+void ConfSpaceView::showCurrentCluster()
 {
-	ClusterView *view = new ClusterView();
-	addIndexResponder(view);
-	view->setIndexResponseView(this);
-	view->setConfSpaceView(this);
-	
-	if (_type == ConfTorsions)
-	{
-		MetadataGroup angles = _entity->makeTorsionDataGroup();
-		angles.setWhiteList(_whiteList);
-		angles.write(_entity->name() + ".csv");
-		angles.normalise();
-
-		RopeCluster *cx = nullptr;
-		if (_tsne)
-		{
-//			cx = new ClusterTSNE<MetadataGroup>(angles);
-		}
-		else
-		{
-			cx = new TorsionCluster(angles);
-		}
-
-		_cluster = cx;
-		cx->cluster();
-		view->setCluster(cx);
-	}
-	
-	if (_type == ConfPositional)
-	{
-		PositionalGroup group = _entity->makePositionalDataGroup();
-		group.setWhiteList(_whiteList);
-
-		PositionalCluster *cx = nullptr;
-		if (_tsne)
-		{
-//			cx = new ClusterTSNE<PositionalGroup>(group);
-		}
-		else
-		{
-			cx = new PositionalCluster(group);
-		}
-
-		_cluster = cx;
-		cx->cluster();
-		view->setCluster(cx);
-	}
-
-
-	_centre = view->centroid();
-	_translation = -_centre;
-	_translation.z -= 10;
-	updateCamera();
-
-	addObject(view);
-
-	_view = view;
+	removeRules();
+	switchView();
+	applyRules();
+	displayTree();
 }
 
 void ConfSpaceView::showAxesButton()
@@ -241,82 +245,17 @@ void ConfSpaceView::showtSNE()
 
 void ConfSpaceView::chooseGroup(Rule *rule, bool inverse)
 {
-	ObjectGroup *mg = _view->cluster()->objectGroup();
-	std::vector<HasMetadata *> whiteList;
-
-	for (size_t i = 0; i < mg->objectCount(); i++)
-	{
-		HasMetadata *hm = mg->object(i);
-		Metadata::KeyValues kv = hm->metadata();
-		std::string expected = rule->headerValue();
-		std::string value;
-		
-		if (kv.count(rule->header()) > 0)
-		{
-			value = kv.at(rule->header()).text();
-		}
-		else if (!rule->ifAssigned())
-		{
-			continue;
-		}
-
-		bool hit = false;
-
-		if (rule->ifAssigned() && value.length())
-		{
-			hit = true;
-		}
-		else if (!rule->ifAssigned())
-		{
-			hit = (value == expected);
-		}
-
-		if (inverse)
-		{
-			hit = !hit;
-		}
-
-		if (hit)
-		{
-			whiteList.push_back(hm);
-		}
-	}
-	
-	std::cout << "Collected " << whiteList.size() << " molecules." << std::endl;
-	
-	ConfSpaceView *view = new ConfSpaceView(this, _entity);
-	view->setMode(_type);
-	view->setWhiteList(whiteList);
-	view->show();
+	RopeSpaceItem *subset = _selected->branchFromRule(rule, inverse);
+	_selected = subset;
+	showCurrentCluster();
 }
 
 void ConfSpaceView::executeSubset(float min, float max)
 {
-	ObjectGroup *mg = _view->cluster()->objectGroup();
-	std::vector<HasMetadata *> whiteList;
-
-	for (size_t i = 0; i < mg->objectCount(); i++)
-	{
-		HasMetadata *hm = mg->object(i);
-		Metadata::KeyValues kv = hm->metadata();
-		
-		if (kv.count(_colourRule->header()) > 0)
-		{
-			float num = kv.at(_colourRule->header()).number();
-			
-			if (num >= min && num <= max)
-			{
-				whiteList.push_back(hm);
-			}
-		}
-	}
-	
-	std::cout << "Collected " << whiteList.size() << " molecules." << std::endl;
-	
-	ConfSpaceView *view = new ConfSpaceView(this, _entity);
-	view->setMode(_type);
-	view->setWhiteList(whiteList);
-	view->show();
+	RopeSpaceItem *subset = _selected->branchFromRuleRange(_colourRule, 
+	                                                       min, max);
+	_selected = subset;
+	showCurrentCluster();
 }
 
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
@@ -332,8 +271,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		removeObject(_origin);
 		delete _origin; _origin = nullptr;
-		removeObject(_axes);
-		delete _axes; _axes = nullptr;
+		_selected->deleteAxes();
 	}
 	if (tag == "choose_reorient_molecule")
 	{
@@ -395,6 +333,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		applyRules();
 	}
 	
+	/*
 	if (tag == "tsne")
 	{
 		ConfSpaceView *view = new ConfSpaceView(this, _entity);
@@ -403,6 +342,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		view->setTSNE(true);
 		view->show();
 	}
+	*/
 
 	if (tag == "yes_fold_in")
 	{
@@ -453,17 +393,17 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "refinement_setup")
 	{
-		Polymer *m = static_cast<Polymer	*>(button->returnObject());
-		createReference(m);
-		SetupRefinement *sr = new SetupRefinement(this, *(m->model()));
+		Instance *i = static_cast<Instance *>(button->returnObject());
+		createReference(i);
+		SetupRefinement *sr = new SetupRefinement(this, *(i->model()));
 		sr->setAxes(_axes);
 		sr->show();
 	}
 	
 	if (tag == "set_as_reference")
 	{
-		Polymer *m = static_cast<Polymer	*>(button->returnObject());
-		createReference(m);
+		Instance *i = static_cast<Instance *>(button->returnObject());
+		createReference(i);
 	}
 	
 	if (tag == "paths")
@@ -490,6 +430,16 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 			menu->setCluster(_cluster);
 			menu->show();
 		}
+	}
+	
+	std::string select = Button::tagEnd(tag, "select_");
+	
+	if (select.length())
+	{
+		Item *item = Item::itemForTag(select);
+		RopeSpaceItem *rsi = static_cast<RopeSpaceItem *>(item);
+		_selected = rsi;
+		showCurrentCluster();
 	}
 
 	Scene::buttonPressed(tag, button);
@@ -527,8 +477,7 @@ void ConfSpaceView::applyRule(const Rule &r)
 	if (r.type() == Rule::LineSeries)
 	{
 		LineSeries *ls = new LineSeries(_view, r);
-		addObject(ls);
-		_temps.push_back(ls);
+		addTempObject(ls);
 	}
 	else
 	{
@@ -541,8 +490,7 @@ void ConfSpaceView::applyRule(const Rule &r)
 		legend->setCentre(0.5, 0.1);
 		legend->setTitle(r.header());
 		legend->setLimits(r.min(), r.max());
-		addObject(legend);
-		_temps.push_back(legend);
+		addTempObject(legend);
 		_colourRule = &r;
 	}
 }
@@ -556,13 +504,7 @@ void ConfSpaceView::removeRules()
 		_view->clearRules();
 	}
 
-	for (size_t i = 0; i < _temps.size(); i++)
-	{
-		removeObject(_temps[i]);
-		delete _temps[i];
-	}
-
-	_temps.clear();
+	deleteTemps();
 }
 
 void ConfSpaceView::applyRules()
@@ -582,8 +524,7 @@ void ConfSpaceView::applyRules()
 	
 	il->makePoints();
 	il->setCentre(0.8, 0.5);
-	addObject(il);
-	_temps.push_back(il);
+	addTempObject(il);
 }
 
 void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
@@ -601,36 +542,10 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	setModal(m);
 }
 
-void ConfSpaceView::createReference(Polymer *m)
+void ConfSpaceView::createReference(Instance *i)
 {
-	if (_type != ConfTorsions)
-	{
-		return;
-	}
-
-	Axes *old = _axes;
-	if (_axes != nullptr)
-	{
-		removeObject(_axes);
-		removeResponder(_axes);
-	}
-	
-	TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
-	
-	_axes = new Axes(tc, m);
-	_axes->setScene(this);
-	_axes->setIndexResponseView(this);
-	
-	if (old)
-	{
-		_axes->takeOldAxes(old);
-		delete old;
-	}
-
-	addObject(_axes);
-	addIndexResponder(_axes);
+	_axes = _selected->createReference(i);
 }
-
 
 void ConfSpaceView::reorientToPolymer(Polymer *pol)
 {

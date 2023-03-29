@@ -387,10 +387,10 @@ protected:
 		return _y;
 	}
 	
-	void setAlignXY(Alignment &a, float x, float y)
+	void setAlignXY(const Alignment &a, float x, float y)
 	{
-		_x = x;
-		_y = y;
+		if (x == x) _x = x;
+		if (y == y) _y = y;
 		_align = a;
 	}
 

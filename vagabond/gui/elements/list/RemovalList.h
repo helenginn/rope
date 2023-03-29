@@ -16,17 +16,3 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __ROPE__VERSION__H
-#define __ROPE__VERSION__H
-
-#define VERSION_FIX_PEPTIDE
-#define VERSION_LIGANDS
-#define VERSION_PROLINE
-
-#ifndef __EMSCRIPTEN__
-#define VERSION_SHORT_ROUTES
-#define VERSION_REFINEMENT
-#define VERSION_SANDBOX
-#endif
-
-#endif

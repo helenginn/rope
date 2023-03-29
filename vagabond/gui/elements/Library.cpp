@@ -137,6 +137,14 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 
 	png_byte *bytes = nullptr;
 	TextManager::text_malloc(&bytes, text, w, h, type);
+	
+	/* just get the width/height sorted for tests */
+	if (!Window::hasContext())
+	{
+		TextManager::text_free(&bytes);
+		return 0;
+	}
+
 	GLuint texid = 0;
 	glGenTextures(1, &texid);
 	glBindTexture(GL_TEXTURE_2D, texid);

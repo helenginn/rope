@@ -81,6 +81,11 @@ Renderable *HasRenderables::findObject(double x, double y)
 
 void HasRenderables::removeObject(Renderable *obj)
 {
+	if (obj == nullptr)
+	{
+		return;
+	}
+
 	if (_chosen == obj)
 	{
 		_chosen = nullptr;
@@ -131,6 +136,11 @@ void HasRenderables::addObjectToFront(Renderable *r)
 
 void HasRenderables::addObject(Renderable *r)
 {
+	if (r == nullptr)
+	{
+		return;
+	}
+
 	std::vector<Renderable *>::iterator it;
 	
 	it = std::find(_objects.begin(), _objects.end(), r);

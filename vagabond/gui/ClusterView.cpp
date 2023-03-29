@@ -326,7 +326,7 @@ void ClusterView::addPaths()
 	wait();
 	clearPaths();
 	
-	if (_confSpaceView->confType() != ConfSpaceView::ConfTorsions)
+	if (_confSpaceView->confType() != rope::ConfTorsions)
 	{
 		return;
 	}

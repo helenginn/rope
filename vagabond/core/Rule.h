@@ -127,6 +127,7 @@ public:
 	
 	const std::string desc() const;
 	
+	const std::string exactDesc() const;
 	const float &max() const
 	{
 		return _maxVal;

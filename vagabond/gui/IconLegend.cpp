@@ -75,11 +75,7 @@ void IconLegend::makePoints()
 			continue;
 		}
 		
-		std::string str = rule->header();
-		if (!rule->ifAssigned())
-		{
-			str +=  " = " + rule->headerValue();
-		}
+		std::string str = rule->exactDesc();
 		
 		float y = (float)count * inc;
 

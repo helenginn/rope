@@ -59,6 +59,11 @@ public:
 
 	void buttonPressed(std::string tag, Button *button);
 	void backgroundPrioritise(std::string key);
+	
+	Instance *instance()
+	{
+		return _instance;
+	}
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
