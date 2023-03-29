@@ -35,18 +35,12 @@ RingProgram::RingProgram()
 
 RingProgram::~RingProgram()
 {
-	if (_atom)
-	{
-		_atom->setCyclic(nullptr);
-	}
+
 }
 
 void RingProgram::makeLinkToAtom()
 {
-	if (_atom)
-	{
-		_atom->setCyclic(&_cyclic);
-	}
+
 }
 
 RingProgram::RingProgram(RingProgrammer *parent)
