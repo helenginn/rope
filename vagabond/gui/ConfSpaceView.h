@@ -83,7 +83,8 @@ public:
 	void showCurrentCluster();
 	void sendObject(std::string tag, void *object);
 protected:
-	virtual void sendSelection(float t, float l, float b, float r);
+	virtual void sendSelection(float t, float l, float b, float r,
+	                           bool inverse);
 	virtual void interactedWithNothing(bool left);
 	void prepareEmptySpaceMenu();
 
@@ -102,6 +103,7 @@ public:
 private:
 	bool makeFirstCluster();
 	void chooseGroup(Rule *rule, bool inverse);
+	void grabSelection(bool inverse);
 	void executeSubset(float min, float max);
 	void switchView();
 	void proofRopeSpace();

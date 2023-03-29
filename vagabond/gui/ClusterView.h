@@ -62,6 +62,8 @@ public:
 		return _members[r];
 	}
 	
+	std::vector<HasMetadata *> selectedMembers();
+	
 	RopeCluster *cluster()
 	{
 		return _cx;
@@ -78,11 +80,13 @@ public:
 	virtual void click(bool left = true);
 
 	void applyRule(const Rule &r);
+	void applySelected();
 
 	void prioritiseMetadata(std::string key);
 	void reset();
 	
 	virtual void interacted(int idx, bool hover, bool left = true);
+	virtual void selected(int idx, bool inverse);
 	virtual size_t requestedIndices()
 	{
 		return _vertices.size();
@@ -94,7 +98,13 @@ public:
 	virtual bool mouseOver();
 	virtual void unMouseOver();
 	
+	virtual bool selectable() const
+	{
+		return true;
+	}
+	
 	void reselect();
+	void deselect();
 protected:
 	virtual void extraUniforms();
 	void customiseTexture(Snow::Vertex &vert);

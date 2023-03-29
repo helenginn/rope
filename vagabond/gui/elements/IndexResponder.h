@@ -33,7 +33,13 @@ public:
 	}
 
 	virtual void interacted(int idx, bool hover, bool left) {};
+	virtual void selected(int idx, bool inverse) {};
 	virtual void reindex() {};
+	
+	virtual bool selectable() const
+	{
+		return false;
+	}
 
 	virtual size_t requestedIndices() = 0;
 	

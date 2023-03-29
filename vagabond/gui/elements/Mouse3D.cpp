@@ -91,9 +91,18 @@ void Mouse3D::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	_lastX = x;
 	_lastY = y;
 
-	if (_shiftPressed && _makesSelections)
+	if ((_shiftPressed || _altPressed) && _makesSelections)
 	{
-		_makingSelection = true;
+		if (_shiftPressed)
+		{
+			_makingSelection = true;
+			_reducingSelection = false;
+		}
+		else if (_altPressed)
+		{
+			_makingSelection = false;
+			_reducingSelection = true;
+		}
 		_leftPos = x;
 		_rightPos = x;
 		_topPos = y;
@@ -113,7 +122,7 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 		return;
 	}
 
-	if (_makingSelection)
+	if (_makingSelection || _reducingSelection)
 	{
 		_rightPos = x;
 		_bottomPos = y;
@@ -174,14 +183,17 @@ void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mouseReleaseEvent(x, y, button);
 	
-	if (_makingSelection && _left)
+	if ((_reducingSelection || _makingSelection) && _left)
 	{
 		_makingSelection = false;
 		removeObject(_box);
 		delete _box;
 		_box = nullptr;
 		
-		sendSelection(_topPos, _leftPos, _bottomPos, _rightPos);
+		sendSelection(_topPos, _leftPos, _bottomPos, _rightPos, 
+		              _reducingSelection);
+		
+		_reducingSelection = false;
 	}
 
 	if (_modal != nullptr)
@@ -210,7 +222,8 @@ void Mouse3D::updateSelectionBox()
 	_box->setBottomRight(y, x);
 }
 
-void Mouse3D::sendSelection(float top, float left, float bottom, float right)
+void Mouse3D::sendSelection(float top, float left, float bottom, float right,
+                            bool inverse)
 {
 
 }

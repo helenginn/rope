@@ -48,7 +48,6 @@ SelectionBox::SelectionBox() : Renderable()
 
 void SelectionBox::setBottomRight(float bottom, float right)
 {
-	std::cout << bottom << " " << right << std::endl;
 	_vertices[1].pos.x = right;
 	_vertices[2].pos.x = right;
 	_vertices[2].pos.y = bottom;

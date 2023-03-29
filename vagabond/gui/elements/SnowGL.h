@@ -164,6 +164,7 @@ protected:
 
 	virtual void resizeGL(int w, int h);
 	void convertCoords(double *x, double *y);
+	void convertGLToHD(float &x, float &y) const;
 
 	virtual void changeProjectionForLight(int i) {};
 
@@ -212,6 +213,7 @@ protected:
 	bool _left = true;
 	bool _right = false;
 	bool _controlPressed = false;
+	bool _altPressed = false;
 	bool _shiftPressed = false;
 	bool _acceptsFocus;
 	
@@ -227,6 +229,7 @@ protected:
 	int _dh;
 	
 	int checkIndex(double x, double y) const;
+	int checkIndexInPixels(int x, int y) const;
 	
 	std::mutex _renderMutex;
 	

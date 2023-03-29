@@ -122,3 +122,37 @@ void IndexResponseView::removeResponder(IndexResponder *ir)
 	}
 }
 
+std::set<int> IndexResponseView::objectsInBox(float t, float l, 
+                                                 float b, float r)
+{
+	std::set<int> results;
+	
+	for (size_t y = b; y < t; y++)
+	{
+		for (size_t x = l; x < r; x++)
+		{
+			int val = checkIndexInPixels(x, y);
+			if (val >= 0)
+			{
+				results.insert(val);
+			}
+		}
+	}
+	
+	return results;
+}
+
+void IndexResponseView::selectIndices(std::set<int> &results, bool inverse)
+{
+	for (int r : results)
+	{
+		IndexResponder *responder = getResponderForIndex(r);
+
+		if (!responder->selectable())
+		{
+			continue;
+		}
+		
+		responder->selected(r, inverse);
+	}
+}

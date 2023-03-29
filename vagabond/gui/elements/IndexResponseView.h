@@ -20,6 +20,7 @@
 #define __vagabond__IndexResponseView__
 
 #include "Scene.h"
+#include <set>
 
 class IndexResponder;
 
@@ -39,6 +40,9 @@ public:
 	void removeResponder(IndexResponder *ir);
 
 	size_t indexOffset(IndexResponder *ir);
+	
+	std::set<int> objectsInBox(float t, float l, float b, float r);
+	void selectIndices(std::set<int> &results, bool inverse);
 protected:
 	virtual void checkIndexBuffer(double x, double y, bool hover, 
 	                              bool arrow, bool left);

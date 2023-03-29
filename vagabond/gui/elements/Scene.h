@@ -87,6 +87,7 @@ protected:
 	void reloadBackground();
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
+	void convertToGLCoords(float *x, float *y);
 	virtual void checkIndexBuffer(double x, double y, 
 	                              bool hover, bool arrow, bool left) {};
 	void setCentrePixels(Renderable *r, int x, int y);

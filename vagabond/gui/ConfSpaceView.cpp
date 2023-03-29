@@ -144,9 +144,7 @@ void ConfSpaceView::proofRopeSpace()
 	{
 		while (_selected->isDeleted())
 		{
-			std::cout << _selected->displayName() << std::endl;
 			_selected = static_cast<RopeSpaceItem *>(_selected->parent());
-			std::cout << _selected->displayName() << std::endl;
 		}
 	}
 	
@@ -166,6 +164,7 @@ void ConfSpaceView::switchView()
 
 	bool first = makeFirstCluster();
 	proofRopeSpace();
+	std::cout << _selected->displayName() << std::endl;
 	ClusterView *view = _selected->view();
 	glm::vec3 c = view->centroid();
 	float distance = first ? 10 : 0;
@@ -277,6 +276,13 @@ void ConfSpaceView::executeSubset(float min, float max)
 	showCurrentCluster();
 }
 
+void ConfSpaceView::grabSelection(bool inverse)
+{
+	RopeSpaceItem *subset = _selected->makeGroupFromSelected(false);
+	_selected = subset;
+	showCurrentCluster();
+}
+
 void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "show_origin")
@@ -291,6 +297,22 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		removeObject(_origin);
 		delete _origin; _origin = nullptr;
 		_selected->deleteAxes();
+	}
+	if (tag == "selection_group")
+	{
+		grabSelection(false);
+		return;
+	}
+	if (tag == "selection_inverse")
+	{
+		grabSelection(true);
+		return;
+	}
+	if (tag == "selection_clear")
+	{
+		_view->deselect();
+		applyRules();
+		return;
 	}
 	if (tag == "choose_reorient_molecule")
 	{
@@ -319,6 +341,15 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		Rule *rule = static_cast<Rule *>(button->returnObject());
 		chooseGroup(rule, (tag == "choose_inverse"));
+	}
+
+	if (tag == "selection_separate_average")
+	{
+		std::vector<HasMetadata *> members = _view->selectedMembers();
+		ObjectGroup *mdg = _cluster->objectGroup();
+		mdg->setSeparateAverage(members);
+		_view->cluster()->cluster();
+		refresh();
 	}
 
 	if (tag == "separate_average")
@@ -544,6 +575,8 @@ void ConfSpaceView::applyRules()
 	il->makePoints();
 	il->setCentre(0.8, 0.5);
 	addTempObject(il);
+	
+	_view->applySelected();
 }
 
 void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
@@ -593,6 +626,14 @@ void ConfSpaceView::prepareEmptySpaceMenu()
 	{
 		m->addOption("hide origin", "hide_origin");
 	}
+	
+	if (_selected->selectedCount() > 0)
+	{
+		m->addOption("select group", "selection_group");
+		m->addOption("select inverse", "selection_inverse");
+		m->addOption("separate average", "selection_separate_average");
+		m->addOption("clear", "selection_clear");
+	}
 
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
 	m->setup(x, y);
@@ -608,11 +649,26 @@ void ConfSpaceView::interactedWithNothing(bool left)
 		prepareEmptySpaceMenu();
 	}
 
+	if (_shiftPressed && left)
+	{
+		_view->deselect();
+		applyRules();
+	}
 }
 
-void ConfSpaceView::sendSelection(float t, float l, float b, float r)
+void ConfSpaceView::sendSelection(float t, float l, float b, float r,
+                                  bool inverse)
 {
+	convertToGLCoords(&l, &t);
+	convertToGLCoords(&r, &b);
+	convertGLToHD(l, t);
+	convertGLToHD(r, b);
 
+	std::set<int> results = objectsInBox(t, l, b, r);
+	
+	selectIndices(results, inverse);
+
+	applyRules();
 }
 
 void ConfSpaceView::sendObject(std::string tag, void *object)

@@ -67,6 +67,11 @@ public:
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
+	
+	virtual bool selectable() const
+	{
+		return false;
+	}
 private:
 	std::vector<float> getMappedVector(int idx);
 	void prioritiseDirection(std::string key);

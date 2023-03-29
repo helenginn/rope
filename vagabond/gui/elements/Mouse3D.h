@@ -38,7 +38,8 @@ public:
 		_controls = false;
 	}
 protected:
-	virtual void sendSelection(float t, float l, float b, float r);
+	virtual void sendSelection(float t, float l, float b, float r,
+	                           bool inverse);
 
 	void setMakesSelections(bool makes = true)
 	{
@@ -56,6 +57,7 @@ private:
 	bool _makesSelections = false;
 	
 	bool _makingSelection = false;
+	bool _reducingSelection = false;
 	float _topPos = 0;
 	float _leftPos = 0;
 	float _rightPos = 0;

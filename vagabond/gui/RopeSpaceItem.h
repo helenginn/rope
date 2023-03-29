@@ -71,7 +71,9 @@ public:
 	Axes *createReference(Instance *inst);
 	RopeSpaceItem *branchFromRule(Rule *rule, bool inverse);
 	RopeSpaceItem *branchFromRuleRange(const Rule *rule, float min, float max);
+	RopeSpaceItem *makeGroupFromSelected(bool inverse);
 	
+	size_t selectedCount();
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();
 	virtual Menu *rightClickMenu();

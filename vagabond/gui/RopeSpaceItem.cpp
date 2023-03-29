@@ -187,6 +187,36 @@ RopeSpaceItem *RopeSpaceItem::branchFromRule(Rule *rule, bool inverse)
 	return subset;
 }
 
+RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
+{
+	ObjectGroup *mg = _cluster->objectGroup();
+	std::vector<HasMetadata *> whiteList;
+
+	for (size_t i = 0; i < mg->objectCount(); i++)
+	{
+		HasMetadata *hm = mg->object(i);
+
+		if (hm->isSelected() == !inverse)
+		{
+			whiteList.push_back(hm);
+		}
+	}
+
+	std::string title = "hand selected ";
+	title += inverse ? "inverse (" : "(";
+	title += std::to_string(whiteList.size()) + ")";
+
+	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
+	subset->setWhiteList(whiteList);
+	subset->setDisplayName(title);
+	subset->makeView(_confView);
+	addItem(subset);
+
+	subset->inheritAxis(this);
+	
+	return subset;
+}
+
 void RopeSpaceItem::inheritAxis(RopeSpaceItem *parent)
 {
 	if (_type != ConfTorsions || !parent->axes())
@@ -268,4 +298,22 @@ void RopeSpaceItem::buttonPressed(std::string tag, Button *button)
 	}
 
 	resolveDeletions();
+}
+
+size_t RopeSpaceItem::selectedCount()
+{
+	ObjectGroup *mg = _cluster->objectGroup();
+	size_t count = 0;
+	
+	for (size_t i = 0; i < mg->objectCount(); i++)
+	{
+		HasMetadata *hm = mg->object(i);
+		
+		if (hm->isSelected())
+		{
+			count++;
+		}
+	}
+	
+	return count;
 }

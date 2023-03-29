@@ -243,28 +243,48 @@ void SnowGL::prepareDepthColourIndex()
 	_quad->setTextureID(_sceneMap[0]);
 }
 
-int SnowGL::checkIndex(double x, double y) const
+int SnowGL::checkIndexInPixels(int x, int y) const
 {
 	if (_indices == nullptr)
 	{
 		return -1;
 	}
 
-	x = 0.5 + x / 2;
-	y = 0.5 + y / 2;
-
-	x *= _dw;
-	y *= _dh;
-	
 	int idx = y * _dw + x;
 	
-	if (idx > _dw * _dh - 1)
+	if (idx > _dw * _dh - 1 || idx < 0)
 	{
 		return -1;
 	}
 
 	int val = _indices[idx];
 	return val - 1;
+}
+
+void SnowGL::convertGLToHD(float &x, float &y) const
+{
+	x = 0.5 + x / 2;
+	y = 0.5 + y / 2;
+
+	x *= _dw;
+	y *= _dh;
+
+}
+
+int SnowGL::checkIndex(double x, double y) const
+{
+	if (_indices == nullptr)
+	{
+		return -1;
+	}
+	
+	float hdx = x;
+	float hdy = y;
+	
+	convertGLToHD(hdx, hdy);
+	
+	int val = checkIndexInPixels(hdx, hdy);
+	return val;
 }
 
 void SnowGL::grabIndexBuffer()

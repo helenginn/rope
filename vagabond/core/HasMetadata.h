@@ -61,7 +61,19 @@ public:
 			target.erase(it);
 		}
 	}
+	
+	bool isSelected()
+	{
+		return _selected;
+	}
+	
+	void setSelected(bool select)
+	{
+		_selected = select;
+	}
 
+private:
+	bool _selected = false;
 };
 
 #endif

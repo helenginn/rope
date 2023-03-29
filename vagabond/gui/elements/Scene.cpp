@@ -108,6 +108,12 @@ void Scene::setCentrePixels(Renderable *r, int x, int y)
 	r->setPosition(glm::vec3(xf, -yf, 0));
 }
 
+void Scene::convertToGLCoords(float *x, float *y)
+{
+	*x = 2 * (float)*x / width() - 1;
+	*y = 1 - 2 * (float)*y / height();
+}
+
 void Scene::convertToGLCoords(double *x, double *y)
 {
 	*x = 2 * (double)*x / width() - 1;
@@ -323,6 +329,11 @@ void Scene::interpretControlKey(SDL_Keycode pressed, bool dir)
 	if (pressed == SDLK_LCTRL)
 	{
 		_controlPressed = dir;
+	}
+
+	if (pressed == SDLK_LGUI || pressed == SDLK_LALT)
+	{
+		_altPressed = dir;
 	}
 
 	if (pressed == SDLK_LSHIFT)

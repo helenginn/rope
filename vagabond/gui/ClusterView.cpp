@@ -171,6 +171,21 @@ void ClusterView::extraUniforms()
 	checkErrors("rebinding size");
 }
 
+void ClusterView::applySelected()
+{
+	ObjectGroup &group = *_cx->objectGroup();
+	for (size_t i = 0; i < group.objectCount(); i++)
+	{
+		HasMetadata *hm = group.object(i);
+		if (hm->isSelected())
+		{
+			_vertices[i].color = glm::vec4(1.0, 1.0, 0.1, 1.0);
+		}
+	}
+	
+	forceRender();
+}
+
 void ClusterView::applyVaryColour(const Rule &r)
 {
 	std::string header = r.header();
@@ -397,4 +412,51 @@ void ClusterView::populatePaths(ClusterView *me)
 	}
 
 	me->finishTicker();
+}
+
+void ClusterView::selected(int rawidx, bool inverse)
+{
+	if (rawidx < 0 || rawidx >= _vertices.size())
+	{
+		return;
+	}
+	
+	int idx = _point2Index[rawidx];
+	
+	ObjectGroup &group = *_cx->objectGroup();
+	HasMetadata *hm = static_cast<HasMetadata *>(group.object(idx));
+
+	if (hm)
+	{
+		hm->setSelected(!inverse);
+	}
+}
+
+void ClusterView::deselect()
+{
+	ObjectGroup &group = *_cx->objectGroup();
+
+	for (size_t i = 0; i < group.objectCount(); i++)
+	{
+		HasMetadata *hm = static_cast<HasMetadata *>(group.object(i));
+		hm->setSelected(false);
+	}
+}
+
+std::vector<HasMetadata *> ClusterView::selectedMembers()
+{
+	std::vector<HasMetadata *> hms;
+
+	ObjectGroup &group = *_cx->objectGroup();
+
+	for (size_t i = 0; i < group.objectCount(); i++)
+	{
+		HasMetadata *hm = static_cast<HasMetadata *>(group.object(i));
+		if (hm->isSelected())
+		{
+			hms.push_back(hm);
+		}
+	}
+	
+	return hms;
 }
