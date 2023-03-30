@@ -13,6 +13,10 @@ utilfiles = [
 'Hypersphere.h',
 'SpecialTable.h',
 'ProbDist.h',
+'brain/Layer.cpp',
+'brain/Layer.h',
+'brain/InputLayer.cpp',
+'brain/InputLayer.h',
 ]
 
 install_headers([

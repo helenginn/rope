@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define BOOST_TEST_MODULE core_hypersphere
+#define BOOST_TEST_MODULE utils
 #include <vagabond/utils/include_boost.h>
 #include <cmath>
 
