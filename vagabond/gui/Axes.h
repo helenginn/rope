@@ -93,8 +93,6 @@ private:
 	
 	Instance *_targets[3];
 	
-	bool _origin = false;
-
 	void stop();
 	std::thread *_worker = nullptr;
 	std::string _key;
