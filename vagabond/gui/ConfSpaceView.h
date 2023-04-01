@@ -122,6 +122,8 @@ private:
 
 	void askToFoldIn(int extra);
 	
+	static std::map<Entity *, RopeSpaceItem *> _savedSpaces;
+	
 	RopeSpaceItem *_ropeSpace = nullptr;
 	RopeSpaceItem *_selected = nullptr;
 	LineGroup *_ropeTree = nullptr;

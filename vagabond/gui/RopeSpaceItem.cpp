@@ -51,13 +51,27 @@ void RopeSpaceItem::makeView(ConfSpaceView *attach)
 	calculateCluster();
 }
 
+void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
+{
+	_confView = attach;
+
+	attach->addIndexResponder(_view);
+	_view->setIndexResponseView(attach);
+	_view->setConfSpaceView(attach);
+	
+	if (_axes)
+	{
+		_axes->setScene(attach);
+		attach->addIndexResponder(_axes);
+		_axes->setIndexResponseView(attach);
+	}
+}
+
 void RopeSpaceItem::allocateView(ConfSpaceView *attach)
 {
 	ClusterView *view = new ClusterView();
-	attach->addIndexResponder(view);
-	view->setIndexResponseView(attach);
-	view->setConfSpaceView(attach);
 	_view = view;
+	attachExisting(attach);
 }
 
 void RopeSpaceItem::calculateCluster()

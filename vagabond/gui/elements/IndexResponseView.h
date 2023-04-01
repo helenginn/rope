@@ -39,6 +39,8 @@ public:
 	void addIndexResponder(IndexResponder *ir);
 	void removeResponder(IndexResponder *ir);
 
+	void clearResponders();
+
 	size_t indexOffset(IndexResponder *ir);
 	
 	std::set<int> objectsInBox(float t, float l, float b, float r);

@@ -62,6 +62,7 @@ public:
 	}
 	
 	void makeView(ConfSpaceView *attach);
+	void attachExisting(ConfSpaceView *attach);
 	
 	Axes *axes()
 	{

@@ -102,8 +102,14 @@ size_t IndexResponseView::indexOffset(IndexResponder *ir)
 
 void IndexResponseView::addIndexResponder(IndexResponder *ir)
 {
+	ir->setIndexResponseView(this);
 	ir->reindex();
 	_responders.push_back(ir);
+}
+
+void IndexResponseView::clearResponders()
+{
+	_responders.clear();
 }
 
 void IndexResponseView::removeResponder(IndexResponder *ir)

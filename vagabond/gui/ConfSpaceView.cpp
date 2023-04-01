@@ -49,6 +49,7 @@
 #include <vagabond/core/Metadata.h>
 
 using namespace rope;
+std::map<Entity *, RopeSpaceItem *> ConfSpaceView::_savedSpaces;
 
 ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
 : Scene(prev),
@@ -60,21 +61,36 @@ IndexResponseView(prev)
 
 bool ConfSpaceView::makeFirstCluster()
 {
-	if (_ropeSpace == nullptr)
+	if (_ropeSpace != nullptr)
+	{
+		return false;
+	}
+	
+	if (_savedSpaces.count(_entity) > 0)
+	{
+		_ropeSpace = _savedSpaces[_entity];
+		_ropeSpace->attachExisting(this);
+	}
+	else
 	{
 		_ropeSpace = new RopeSpaceItem(_entity);
 		_ropeSpace->setMode(_type);
-		_selected = _ropeSpace;
-		_selected->makeView(this);
-		return true;
+		_ropeSpace->makeView(this);
+		_savedSpaces[_entity] = _ropeSpace;
 	}
-	
-	return false;
+
+	_selected = _ropeSpace;
+
+	return true;
 }
 
 ConfSpaceView::~ConfSpaceView()
 {
+	removeObject(_axes);
+	removeObject(_view);
 	deleteObjects();
+
+	Item::resolveDeletions();
 }
 
 void ConfSpaceView::askToFoldIn(int extra)
@@ -161,6 +177,8 @@ void ConfSpaceView::switchView()
 	
 	removeObject(_axes);
 	_axes = nullptr;
+	
+	clearResponders();
 
 	bool first = makeFirstCluster();
 	proofRopeSpace();
@@ -177,7 +195,7 @@ void ConfSpaceView::switchView()
 	addObject(_axes);
 	addObject(view);
 
-
+	_selected->attachExisting(this);
 }
 
 void ConfSpaceView::addGuiElements()
