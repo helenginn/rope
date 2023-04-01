@@ -88,3 +88,29 @@ void Layer::sanityCheck() const
 	
 	furtherChecks();
 }
+
+Layer *Layer::connectedLayer(int idx)
+{
+	return _layerConnections.at(idx);
+}
+
+void Layer::back()
+{
+	backwardTasks();
+}
+
+void Layer::run()
+{
+	forwardTasks();
+}
+
+void Layer::learn()
+{
+	learnTasks();
+}
+
+void Layer::setStartPtr(float *ptr)
+{
+	_startPtr = ptr;
+	setupIfNeeded();
+}

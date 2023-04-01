@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <map>
+#include "Locs.h"
 
 class Layer
 {
@@ -33,6 +34,11 @@ public:
 		_nNeurons = n;
 	}
 	
+	void setAlpha(float alpha)
+	{
+		_alpha = alpha;
+	}
+	
 	std::vector<int> wantedLayers() const;
 	
 	void supplyLayer(int idx, Layer *other);
@@ -41,34 +47,52 @@ public:
 	 * by layer etc. */
 	virtual size_t requestedEntries() = 0;
 	
-	void setStartPtr(float *ptr)
-	{
-		_startPtr = ptr;
-	}
+	void setStartPtr(float *ptr);
+	virtual void connect() {};
 
 	const size_t &neuronCount() const
 	{
 		return _nNeurons;
 	}
+
+	virtual const VectorLoc &outputLayerInfo() const = 0;
+
+	virtual const MatrixLoc &weightInfo() const
+	{
+		return _nullMat;
+	}
+
+	virtual const VectorLoc &sensitivityInfo() const
+	{
+		return _nullVec;
+	}
+	
+	void run();
+	void back();
+	void learn();
 protected:
 	void addLayerRequest(int idx);
+	virtual void forwardTasks() {};
+	virtual void backwardTasks() {};
+	virtual void learnTasks() {};
+	void setupIfNeeded();
+
+	Layer *connectedLayer(int idx);
 
 	virtual void furtherChecks() const {};
 	void sanityCheck() const;
 
 	virtual void setup() = 0;
-	void setupIfNeeded();
 	
 	float *const startPtr() const
 	{
 		return _startPtr;
 	}
-	
-	struct VectorLoc
-	{
-		float *ptr;
-		size_t size;
-	};
+
+	const VectorLoc _nullVec = {nullptr, 0};
+	const MatrixLoc _nullMat = {nullptr, 0, 0};
+
+	float _alpha = 0.1;
 private:
 	std::map<int, Layer *> _layerConnections;
 

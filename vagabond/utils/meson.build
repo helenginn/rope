@@ -17,6 +17,20 @@ utilfiles = [
 'brain/Layer.h',
 'brain/InputLayer.cpp',
 'brain/InputLayer.h',
+'brain/CalcLayer.cpp',
+'brain/CalcLayer.h',
+'brain/HiddenLayer.cpp',
+'brain/HiddenLayer.h',
+'brain/Function.cpp',
+'brain/Function.h',
+'brain/LogSigmoid.cpp',
+'brain/LogSigmoid.h',
+'brain/PureLinear.cpp',
+'brain/PureLinear.h',
+'brain/NeuralNet.cpp',
+'brain/NeuralNet.h',
+'brain/OutputLayer.cpp',
+'brain/OutputLayer.h',
 ]
 
 install_headers([

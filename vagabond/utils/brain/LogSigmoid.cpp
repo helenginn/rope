@@ -16,31 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__InputLayer__
-#define __vagabond__InputLayer__
+#include "LogSigmoid.h"
 
-#include "Layer.h"
-
-class InputLayer : public Layer
+void LogSigmoid::evaluate(VectorLoc &input, VectorLoc &output) const
 {
-public:
-	InputLayer();
-
-	virtual size_t requestedEntries();
-
-	void enterInput(float *first);
-	
-	virtual const VectorLoc &outputLayerInfo() const
+	for (size_t i = 0; i < output.size; i++)
 	{
-		return _input;
+		output[i] = 1 / (1 + exp(-input[i]));
 	}
-protected:
-	virtual void setup();
-	virtual void connect() {};
+}
 
-	VectorLoc _input = {nullptr, 0};
-private:
-
-};
-
-#endif
+void LogSigmoid::gradient(VectorLoc &input, VectorLoc &output) const
+{
+	for (size_t i = 0; i < output.size; i++)
+	{
+		output[i] = (1 - input[i]) * input[i];
+	}
+}

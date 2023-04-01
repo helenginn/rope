@@ -16,31 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__InputLayer__
-#define __vagabond__InputLayer__
+#ifndef __vagabond__OutputLayer__
+#define __vagabond__OutputLayer__
 
-#include "Layer.h"
+#include "CalcLayer.h"
 
-class InputLayer : public Layer
+class OutputLayer : public CalcLayer
 {
 public:
-	InputLayer();
+	OutputLayer();
+
+	friend std::ostream &operator<<(std::ostream &ss, const OutputLayer *h);
+
+	void expectOutput(float *first);
+	
+	const float &residual() const
+	{
+		return _residual;
+	}
 
 	virtual size_t requestedEntries();
-
-	void enterInput(float *first);
-	
-	virtual const VectorLoc &outputLayerInfo() const
-	{
-		return _input;
-	}
 protected:
 	virtual void setup();
-	virtual void connect() {};
-
-	VectorLoc _input = {nullptr, 0};
+	virtual void forwardTasks();
+	virtual void backwardTasks();
 private:
-
+	void calculateResidual();
+	virtual float *allocateLocations();
+	
+	VectorLoc _targets = {nullptr, 0};
+	float _residual = 0;
 };
 
 #endif

@@ -16,31 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__InputLayer__
-#define __vagabond__InputLayer__
+#ifndef __vagabond__HiddenLayer__
+#define __vagabond__HiddenLayer__
 
-#include "Layer.h"
+#include "CalcLayer.h"
 
-class InputLayer : public Layer
+class HiddenLayer : public CalcLayer
 {
 public:
-	InputLayer();
+	HiddenLayer();
+	
+	friend std::ostream &operator<<(std::ostream &ss, const HiddenLayer *l);
 
 	virtual size_t requestedEntries();
-
-	void enterInput(float *first);
-	
-	virtual const VectorLoc &outputLayerInfo() const
-	{
-		return _input;
-	}
 protected:
 	virtual void setup();
-	virtual void connect() {};
-
-	VectorLoc _input = {nullptr, 0};
+	virtual void connect();
+	virtual void forwardTasks();
+	virtual void backwardTasks();
 private:
-
+	VectorLoc _nextSensitivities = {nullptr, 0};
+	MatrixLoc _nextWeights = {nullptr, 0, 0};
 };
 
 #endif

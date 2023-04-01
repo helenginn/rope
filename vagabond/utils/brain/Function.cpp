@@ -16,31 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__InputLayer__
-#define __vagabond__InputLayer__
+#include "Function.h"
+#include "PureLinear.h"
+#include "LogSigmoid.h"
 
-#include "Layer.h"
-
-class InputLayer : public Layer
+Function *Function::functionFromType(FunctionType type)
 {
-public:
-	InputLayer();
-
-	virtual size_t requestedEntries();
-
-	void enterInput(float *first);
-	
-	virtual const VectorLoc &outputLayerInfo() const
+	if (type == FPureLinear)
 	{
-		return _input;
+		return new PureLinear();
 	}
-protected:
-	virtual void setup();
-	virtual void connect() {};
 
-	VectorLoc _input = {nullptr, 0};
-private:
+	if (type == FLogSigmoid)
+	{
+		return new LogSigmoid();
+	}
 
-};
-
-#endif
+	return nullptr;
+}

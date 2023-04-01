@@ -16,29 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__InputLayer__
-#define __vagabond__InputLayer__
+#ifndef __vagabond__Function__
+#define __vagabond__Function__
 
-#include "Layer.h"
+#include "Locs.h"
 
-class InputLayer : public Layer
+class Function
 {
 public:
-	InputLayer();
+	virtual ~Function() {};
 
-	virtual size_t requestedEntries();
-
-	void enterInput(float *first);
+	virtual void evaluate(VectorLoc &input, VectorLoc &output) const = 0;
+	virtual void gradient(VectorLoc &input, VectorLoc &output) const = 0;
 	
-	virtual const VectorLoc &outputLayerInfo() const
-	{
-		return _input;
-	}
-protected:
-	virtual void setup();
-	virtual void connect() {};
-
-	VectorLoc _input = {nullptr, 0};
+	static Function *functionFromType(FunctionType type);
 private:
 
 };

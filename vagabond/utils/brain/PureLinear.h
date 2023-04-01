@@ -16,29 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__InputLayer__
-#define __vagabond__InputLayer__
+#ifndef __vagabond__PureLinear__
+#define __vagabond__PureLinear__
 
-#include "Layer.h"
+#include "Function.h"
 
-class InputLayer : public Layer
+class PureLinear : public Function
 {
 public:
-	InputLayer();
-
-	virtual size_t requestedEntries();
-
-	void enterInput(float *first);
-	
-	virtual const VectorLoc &outputLayerInfo() const
-	{
-		return _input;
-	}
-protected:
-	virtual void setup();
-	virtual void connect() {};
-
-	VectorLoc _input = {nullptr, 0};
+	virtual void evaluate(VectorLoc &input, VectorLoc &output) const;
+	virtual void gradient(VectorLoc &input, VectorLoc &output) const;
 private:
 
 };
