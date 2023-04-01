@@ -23,7 +23,80 @@
 
 RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 {
+	_route.instance()->load();
+}
 
+float RouteValidator::dotLastTwoVectors()
+{
+	float dots = 0;
+	float count = 0;
+	AtomGroup *grp = _route.instance()->currentAtoms();
+	for (Atom *a : grp->atomVector())
+	{
+		if (!a->isMainChain())
+		{
+			continue;
+		}
+
+		glm::vec3 curr = a->derivedPosition();
+		glm::vec3 parent = a->otherPosition("parent");
+		glm::vec3 grandparent = a->otherPosition("grandparent");
+		
+		glm::vec3 first = glm::normalize(curr - parent);
+		glm::vec3 second = glm::normalize(parent - grandparent);
+		
+		float dot = glm::dot(first, second);
+		
+		dots += dot * dot;
+		count++;
+	}
+	
+	dots = sqrt(dots / count);
+	return dots;
+}
+
+void RouteValidator::savePreviousPositions()
+{
+	AtomGroup *grp = _route.instance()->currentAtoms();
+	for (Atom *a : grp->atomVector())
+	{
+		if (!a->isMainChain())
+		{
+			continue;
+		}
+
+		glm::vec3 curr = a->derivedPosition();
+		glm::vec3 parent = (a->hasOtherPosition("parent") ?
+		                    a->otherPosition("parent") : curr);
+		
+		a->setOtherPosition("grandparent", parent);
+		a->setOtherPosition("parent", curr);
+	}
+}
+
+float RouteValidator::linearityRatio()
+{
+	_route.calculateLinearProgression(32);
+	float ave = 0;
+	float count = 0;
+
+	for (size_t i = 0; i < _route.pointCount(); i++)
+	{
+		_route.submitJobAndRetrieve(i);
+		
+		if (i > 1)
+		{
+			float contribution = dotLastTwoVectors();
+			ave += contribution;
+			count++;
+			// compare
+		}
+		
+		savePreviousPositions();
+	}
+	
+	ave /= count;
+	return ave;
 }
 
 bool RouteValidator::validate()
@@ -62,7 +135,6 @@ bool RouteValidator::validate()
 	sum = sqrt(sum / weights);
 	
 	_route.endInstance()->unload();
-	_route.instance()->unload();
 	
 	return (sum < 0.5);
 }

@@ -29,11 +29,17 @@ public:
 	/** does the start molecule produce something within 0.5 Angstroms of the
 	 * end molecule when we use the end molecule's torsion angles? */
 	bool validate();
+	
+	/** returns average curvature per atom for a linear torsion angle trajectory */
+	float linearityRatio();
 
 	/** how many gaps are there in the definition of the end instance 
 	 * 	molecule? */
 	int endInstanceGaps();
 private:
+	float dotLastTwoVectors();
+	void savePreviousPositions();
+
 	PlausibleRoute &_route;
 
 };
