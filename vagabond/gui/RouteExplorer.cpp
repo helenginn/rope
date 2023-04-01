@@ -24,6 +24,7 @@
 #include <vagabond/gui/VagWindow.h>
 
 #include <vagabond/core/PlausibleRoute.h>
+#include <vagabond/core/RouteValidator.h>
 #include <vagabond/core/AlignmentTool.h>
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/AtomGroup.h>
@@ -75,8 +76,18 @@ void RouteExplorer::setup()
 	
 	_route->finishRoute();
 	_route->prepareCalculate();
+
+	
+	RouteValidator rv(*_plausibleRoute);
+	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;
+	bool isValid = rv.validate();
+	
+	std::cout << "Route validator says: " << (isValid ? "route valid" :
+	                                          "route not valid") << std::endl;
+
 	_worker = new std::thread(Route::calculate, _route);
 	_watch = true;
+
 }
 
 void RouteExplorer::setupSave()
