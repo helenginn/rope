@@ -51,6 +51,8 @@ private:
 	void updateSpinMatrix();
 	void updateSelectionBox();
 	
+	void regulariseBox();
+	
 	glm::mat3x3 _spin;
 
 	bool _controls = true;

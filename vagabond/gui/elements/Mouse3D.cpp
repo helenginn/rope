@@ -179,6 +179,23 @@ void Mouse3D::mouseMoveEvent(double x, double y)
 	_lastY = y;
 }
 
+void Mouse3D::regulariseBox()
+{
+	if (_leftPos > _rightPos)
+	{
+		float tmp = _leftPos;
+		_leftPos = _rightPos;
+		_rightPos = tmp;
+	}
+
+	if (_topPos > _bottomPos)
+	{
+		float tmp = _topPos;
+		_topPos = _bottomPos;
+		_bottomPos = tmp;
+	}
+}
+
 void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mouseReleaseEvent(x, y, button);
@@ -189,6 +206,8 @@ void Mouse3D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 		removeObject(_box);
 		delete _box;
 		_box = nullptr;
+		
+		regulariseBox();
 		
 		sendSelection(_topPos, _leftPos, _bottomPos, _rightPos, 
 		              _reducingSelection);
