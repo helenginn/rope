@@ -104,17 +104,15 @@ void ItemLine::addArrow()
 
 	if (arrow)
 	{
-		float angle = (_displayCollapse ? -90. : 0.);
+		float angle = 0.;
 		ImageButton *b = new ImageButton("assets/images/triangle.png", _group);
 		b->rescale(0.025, 0.025);
-		glm::mat3x3 rot;
-		rot = glm::mat3x3(glm::rotate(glm::mat4(1.), (float)deg2rad(angle),
-		                              glm::vec3(0., 0., -1.)));
-		b->rotateRoundCentre(rot);
 		b->setLeft(start_indent, 0.0);
 		b->setReturnTag("toggle_" + _item->tag());
 		addObject(b);
+		_displayCollapse = false;
 		_triangle = b;
+		turnArrow();
 	}
 }
 
