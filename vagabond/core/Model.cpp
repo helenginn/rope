@@ -714,8 +714,6 @@ void Model::angleBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
 void Model::distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
                                  std::string header, Metadata *md)
 {
-	Metadata::KeyValues kv;
-	
 	if (!hasEntity(ent->name()))
 	{
 		return;
