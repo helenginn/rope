@@ -22,8 +22,11 @@
 #include "Instance.h"
 #include "Axes.h"
 #include "RopeCluster.h"
+#include "MetadataView.h"
+#include <vagabond/core/Metadata.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/AskForText.h>
 
 using namespace rope;
 
@@ -299,12 +302,25 @@ Menu *RopeSpaceItem::rightClickMenu()
 	if (parent())
 	{
 		m->addOption("delete", "delete");
+		m->addOption("set metadata", "set_metadata");
 	}
 	return m;
 }
 
 void RopeSpaceItem::buttonPressed(std::string tag, Button *button)
 {
+	std::string meta = Button::tagEnd(tag, "metadata_");
+	
+	if (meta.length())
+	{
+		handleMetadataTag(meta, button);
+	}
+	
+	if (tag == "set_metadata")
+	{
+		changeMetadata();
+	}
+
 	if (tag == "delete")
 	{
 		deleteItem();
@@ -336,4 +352,54 @@ int RopeSpaceItem::separateAverageCount()
 {
 	ObjectGroup *mg = _cluster->objectGroup();
 	return mg->groupCount();
+}
+
+void RopeSpaceItem::handleMetadataTag(std::string tag, Button *button)
+{
+	TextEntry *entry = static_cast<TextEntry *>(button);
+	if (tag == "key")
+	{
+		_tmpKey = entry->scratch();
+		AskForText *aft = new AskForText(_confView, "Metadata value to enter:",
+		                                 "metadata_value", this);
+
+		_confView->setModal(aft);
+	}
+	else if (tag == "value")
+	{
+		_tmpValue = entry->scratch();
+		setMetadata(_tmpKey, _tmpValue);
+		_tmpValue = "";
+		_tmpKey = "";
+	}
+
+}
+
+void RopeSpaceItem::setMetadata(std::string key, std::string value)
+{
+	Metadata *md = new Metadata();
+	ObjectGroup *mg = _cluster->objectGroup();
+	size_t count = 0;
+	
+	for (size_t i = 0; i < mg->objectCount(); i++)
+	{
+		HasMetadata *hm = mg->object(i);
+		Metadata::KeyValues kv;
+
+		kv["molecule"] = Value(hm->id());
+		kv[_tmpKey] = Value(_tmpValue);
+
+		md->addKeyValues(kv, true);
+	}
+
+	MetadataView *mv = new MetadataView(_confView, md);
+	mv->show();
+}
+
+void RopeSpaceItem::changeMetadata()
+{
+	AskForText *aft = new AskForText(_confView, "Metadata key to enter:",
+	                                 "metadata_key", this);
+
+	_confView->setModal(aft);
 }

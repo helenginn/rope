@@ -61,6 +61,8 @@ public:
 		_type = type;
 	}
 	
+	void changeMetadata();
+	
 	int separateAverageCount();
 	
 	void makeView(ConfSpaceView *attach);
@@ -85,6 +87,8 @@ private:
 	void allocateView(ConfSpaceView *view);
 	void inheritAxis(RopeSpaceItem *parent);
 	void calculateCluster();
+	void handleMetadataTag(std::string tag, Button *button);
+	void setMetadata(std::string key, std::string value);
 
 	std::vector<HasMetadata *> _whiteList;
 	ClusterView *_view = nullptr;
@@ -92,6 +96,8 @@ private:
 	Axes *_axes = nullptr;
 	Entity *_entity = nullptr;
 	ConfSpaceView *_confView = nullptr;
+	
+	std::string _tmpKey, _tmpValue;
 
 	rope::ConfType _type = rope::ConfTorsions;
 };
