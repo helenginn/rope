@@ -23,6 +23,7 @@
 
 class LineGroup;
 class ImageButton;
+class Menu;
 class Item;
 
 class ItemLine : public Box
@@ -31,6 +32,11 @@ public:
 	ItemLine(LineGroup *group, Item *item);
 
 	void update();
+	
+	/** return renderable for Item. Default is display name.
+	 * Renderable should be top-left justified i.e. setLeft(0.0, 0.0); */
+	virtual Renderable *displayRenderable(ButtonResponder *parent) const;
+
 private:
 	void addBranch();
 	void addArrow();

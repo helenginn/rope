@@ -17,10 +17,12 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
+#include <vagabond/gui/elements/TextEntry.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include "../ImageButton.h"
 #include "../Window.h"
 #include "ItemLine.h"
-#include "Item.h"
+#include <vagabond/core/Item.h>
 #include "LineGroup.h"
 
 ItemLine::ItemLine(LineGroup *group, Item *item) : Box()
@@ -118,7 +120,7 @@ void ItemLine::addArrow()
 
 void ItemLine::setup()
 {
-	Renderable *content = _item->displayRenderable(_group);
+	Renderable *content = displayRenderable(_group);
 	_unitHeight = content->maximalHeight() / 4;
 
 	size_t depth = _item->depth();
@@ -135,4 +137,27 @@ void ItemLine::setup()
 	{
 		addBranch();
 	}
+}
+
+Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
+{
+	Text *text = nullptr;
+	if (_item->isEditable())
+	{
+		text = new TextEntry(_item->displayName(), parent);
+	}
+	else if (_item->isSelectable())
+	{
+		TextButton *tb = new TextButton(_item->displayName(), parent);
+		tb->setReturnTag("select_" + _item->tag());
+		text = tb;
+	}
+	else if (!_item->isSelectable())
+	{
+		text = new Text(_item->displayName());
+	}
+
+	text->resize(0.5);
+	text->setName("content: " + _item->displayName());
+	return text;
 }

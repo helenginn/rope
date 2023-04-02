@@ -20,7 +20,7 @@
 #include <fstream>
 #include <thread>
 #include <vagabond/gui/elements/Text.h>
-#include <vagabond/gui/elements/list/Item.h>
+#include <vagabond/core/Item.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 
 #include "SandboxView.h"

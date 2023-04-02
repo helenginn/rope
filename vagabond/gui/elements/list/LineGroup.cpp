@@ -18,7 +18,7 @@
 
 #include "LineGroup.h"
 #include "ItemLine.h"
-#include "Item.h"
+#include <vagabond/core/Item.h>
 #include "../Button.h"
 #include "../Menu.h"
 #include <iostream>
@@ -131,11 +131,34 @@ void LineGroup::reorganiseGroups()
 	forceRender();
 }
 
+Menu *LineGroup::prepareMenu()
+{
+	Menu *menu = _item->rightClickMenu();
+	if (!menu)
+	{
+		menu = new Menu(_scene);
+		std::map<std::string, std::string> options = _item->menuOptions();
+		
+		if (options.size() == 0)
+		{
+			return nullptr;
+		}
+		
+		for (auto it = options.begin(); it != options.end(); it++)
+		{
+			menu->addOption(it->first, it->second);
+		}
+	}
+
+	return menu;
+
+}
+
 void LineGroup::buttonPressed(std::string tag, Button *button) 
 {
 	if (!button->left()) // right click
 	{
-		Menu *menu = _item->rightClickMenu();
+		Menu *menu = prepareMenu();
 		if (!menu)
 		{
 			return;

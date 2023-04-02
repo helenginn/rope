@@ -19,7 +19,6 @@
 #ifndef __vagabond__ConfSpaceView__
 #define __vagabond__ConfSpaceView__
 
-#include <vagabond/gui/elements/list/Item.h>
 #include <vagabond/gui/elements/Mouse3D.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/IndexResponseView.h>

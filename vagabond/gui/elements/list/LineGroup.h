@@ -24,6 +24,7 @@
 #include "../ButtonResponder.h"
 
 class Item;
+class Menu;
 class Scene;
 class ItemLine;
 
@@ -37,6 +38,7 @@ public:
 private:
 	LineGroup(Item *item, LineGroup *topLevel);
 	void initialise(Item *item, LineGroup *top);
+	Menu *prepareMenu();
 	void setupGroups();
 	void reorganiseHeights();
 	void reorganiseGroups();

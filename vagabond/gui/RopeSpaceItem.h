@@ -19,7 +19,7 @@
 #ifndef __vagabond__RopeSpaceItem__
 #define __vagabond__RopeSpaceItem__
 
-#include <vagabond/gui/elements/list/Item.h>
+#include <vagabond/core/Item.h>
 #include <vagabond/gui/elements/ButtonResponder.h>
 #include <vagabond/core/ConfType.h>
 
