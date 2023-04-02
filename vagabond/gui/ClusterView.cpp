@@ -220,23 +220,12 @@ void ClusterView::applyVaryColour(const Rule &r)
 
 void ClusterView::applyChangeIcon(const Rule &r)
 {
-	std::string header = r.header();
-	std::string value = r.headerValue();
 	int pt = r.pointType();
-	bool any_assigned = r.ifAssigned();
 
 	ObjectGroup &group = *_cx->objectGroup();
 	for (size_t i = 0; i < group.objectCount(); i++)
 	{
-		const Metadata::KeyValues data = group.object(i)->metadata();
-		
-		if (data.count(header) == 0)
-		{
-			continue;
-		}
-		
-		if ((data.count(header) && any_assigned) || 
-		    (data.at(header).text() == value))
+		if (r.appliesToObject(group.object(i)))
 		{
 			setPointType(i, pt);
 			_members[&r].push_back(group.object(i));

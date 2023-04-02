@@ -19,6 +19,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "Rule.h"
+#include "HasMetadata.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/utils/FileReader.h>
 
@@ -79,4 +80,22 @@ void Rule::setVals(std::vector<float> &vals)
 {
 	_vals = vals;
 	limits(vals, _minVal, _maxVal);
+}
+
+bool Rule::appliesToObject(HasMetadata *hm) const
+{
+	const Metadata::KeyValues data = hm->metadata();
+
+	if (data.count(_header) == 0)
+	{
+		return false;
+	}
+
+	if ((data.count(_header) && ifAssigned()) || 
+	    (data.at(_header).text() == _headerValue))
+	{
+		return true;
+	}
+
+	return false;
 }

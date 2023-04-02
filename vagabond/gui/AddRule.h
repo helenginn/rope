@@ -63,7 +63,7 @@ private:
 	TextButton *_headerButton = nullptr;
 	std::string _entity_id;
 	RulesMenu *_caller = nullptr;
-	ObjectGroup *_group;
+	ObjectGroup *_group = nullptr;
 };
 
 #endif

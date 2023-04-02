@@ -24,6 +24,7 @@
 #include <vagabond/c4x/Cluster.h>
 
 class HasMetadata;
+class Rule;
 
 class ObjectGroup
 {
@@ -33,6 +34,7 @@ public:
 
 	std::vector<float> numbersForKey(std::string key);
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
+	std::vector<HasMetadata *> subsetFromRule(const Rule &r);
 
 	virtual const size_t headerCount() const = 0;
 	virtual const int groupCount() const = 0;

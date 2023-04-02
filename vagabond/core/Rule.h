@@ -42,6 +42,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
 	                            {Heat, "heat"},
                              })
 
+class HasMetadata;
+
 class Rule
 {
 public:
@@ -189,6 +191,8 @@ public:
 	{
 		_label = l;
 	}
+	
+	bool appliesToObject(HasMetadata *hm) const;
 
 	friend void to_json(json &j, const Rule &value);
 	friend void from_json(const json &j, Rule &value);

@@ -27,6 +27,7 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/BadChoice.h>
 
 using namespace rope;
 
@@ -360,6 +361,14 @@ void RopeSpaceItem::handleMetadataTag(std::string tag, Button *button)
 	if (tag == "key")
 	{
 		_tmpKey = entry->scratch();
+		if (_tmpKey.length() == 0)
+		{
+			std::string msg = ("Metadata key is blank, cannot assign.");
+			BadChoice *bc = new BadChoice(_confView, msg);
+			_confView->setModal(bc);
+			return;
+		}
+
 		AskForText *aft = new AskForText(_confView, "Metadata value to enter:",
 		                                 "metadata_value", this);
 
@@ -368,6 +377,13 @@ void RopeSpaceItem::handleMetadataTag(std::string tag, Button *button)
 	else if (tag == "value")
 	{
 		_tmpValue = entry->scratch();
+		if (_tmpValue.length() == 0)
+		{
+			std::string msg = ("Metadata value is blank, cannot assign.");
+			BadChoice *bc = new BadChoice(_confView, msg);
+			_confView->setModal(bc);
+			return;
+		}
 		setMetadata(_tmpKey, _tmpValue);
 		_tmpValue = "";
 		_tmpKey = "";

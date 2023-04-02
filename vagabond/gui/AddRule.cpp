@@ -233,7 +233,7 @@ void AddRule::buttonPressed(std::string tag, Button *button)
 			setModal(bad);
 		}
 	}
-	else if (tag == "back" && _existing)
+	else if (tag == "back" && _existing && _caller)
 	{
 		_caller->replaceRule(_obj);
 	}

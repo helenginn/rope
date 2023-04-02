@@ -51,6 +51,21 @@ std::vector<float> ObjectGroup::numbersForKey(std::string key)
 	return vals;
 }
 
+std::vector<HasMetadata *> ObjectGroup::subsetFromRule(const Rule &r)
+{
+	std::vector<HasMetadata *> list;
+
+	for (HasMetadata *object : _objects)
+	{
+		if (r.appliesToObject(object))
+		{
+			list.push_back(object);
+		}
+	}
+
+	return list;
+}
+
 void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 {
 
