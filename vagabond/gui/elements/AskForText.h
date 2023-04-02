@@ -25,6 +25,9 @@
 
 class TextEntry;
 
+/** will call buttonPressed(tag, _text) - text is available through
+ * casting to TextEntry and calling the scratch() geter */
+
 class AskForText : public Modal, public Button
 {
 public:
