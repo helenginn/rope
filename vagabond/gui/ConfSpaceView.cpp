@@ -360,6 +360,14 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		Rule *rule = static_cast<Rule *>(button->returnObject());
 		chooseGroup(rule, (tag == "choose_inverse"));
 	}
+	
+	if (tag == "average_clear")
+	{
+		ObjectGroup *mdg = _cluster->objectGroup();
+		mdg->clearAverages();
+		_view->cluster()->cluster();
+		refresh();
+	}
 
 	if (tag == "selection_separate_average")
 	{
@@ -650,7 +658,11 @@ void ConfSpaceView::prepareEmptySpaceMenu()
 		m->addOption("select group", "selection_group");
 		m->addOption("select inverse", "selection_inverse");
 		m->addOption("separate average", "selection_separate_average");
-		m->addOption("clear", "selection_clear");
+	}
+
+	if (_selected->separateAverageCount() > 0)
+	{
+		m->addOption("clear averages", "average_clear");
 	}
 
 	double x = _lastX / (double)_w; double y = _lastY / (double)_h;

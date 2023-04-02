@@ -61,6 +61,8 @@ public:
 		_type = type;
 	}
 	
+	int separateAverageCount();
+	
 	void makeView(ConfSpaceView *attach);
 	void attachExisting(ConfSpaceView *attach);
 	

@@ -38,12 +38,20 @@ public:
 	virtual void setWhiteList(std::vector<HasMetadata *> list);
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
 
+	virtual const int groupCount() const
+	{
+		return DegreeDataGroup<ResidueTorsion>::groupCount();
+	}
+
 	virtual const size_t headerCount() const
 	{
 		return headers().size();
 	}
 	
-	void clearAverages();
+	virtual void clearAverages()
+	{
+		return DegreeDataGroup<ResidueTorsion>::clearAverages();
+	}
 private:
 
 };

@@ -62,7 +62,7 @@ void DataGroup<Unit, Header>::addArray(std::string name, Array next)
 template <class Unit, class Header>
 const typename DataGroup<Unit, Header>::Array &DataGroup<Unit, Header>::average(int i)
 {
-	if (_averages.size() != _groupCount + 1)
+	if (_averages.size() == 0 || _averages.size() != _groupCount + 1)
 	{
 		calculateAverage();
 	}
@@ -77,6 +77,15 @@ const typename DataGroup<Unit, Header>::Array &DataGroup<Unit, Header>::average(
 	}
 	
 	return _averages[i];
+}
+
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::clearAverages()
+{
+	_groupCount = 0;
+	_groupMembership.clear();
+	_arrayToGroup.clear();
+	_averages.clear();
 }
 
 template <class Unit, class Header>
@@ -525,7 +534,7 @@ PCA::Matrix DataGroup<Unit, Header>::distanceMatrix()
 template <class Unit, class Header>
 PCA::Matrix DataGroup<Unit, Header>::correlationMatrix()
 {
-	if (_diffs.size() == 0)
+	if (_diffs.size() == 0 || _averages.size() == 0)
 	{
 		findDifferences();
 		normalise();

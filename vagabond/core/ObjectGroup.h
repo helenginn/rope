@@ -35,6 +35,9 @@ public:
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
 
 	virtual const size_t headerCount() const = 0;
+	virtual const int groupCount() const = 0;
+	virtual void clearAverages() = 0;
+
 	virtual void setWhiteList(std::vector<HasMetadata *> list) = 0;
 
 	const size_t objectCount() const

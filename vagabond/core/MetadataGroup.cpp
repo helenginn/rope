@@ -94,9 +94,4 @@ void MetadataGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 	_averages.clear();
 }
 
-void MetadataGroup::clearAverages()
-{
-	_groupCount = 0;
-	_groupMembership.clear();
-}
 

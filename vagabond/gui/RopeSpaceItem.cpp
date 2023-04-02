@@ -331,3 +331,9 @@ size_t RopeSpaceItem::selectedCount()
 	
 	return count;
 }
+
+int RopeSpaceItem::separateAverageCount()
+{
+	ObjectGroup *mg = _cluster->objectGroup();
+	return mg->groupCount();
+}

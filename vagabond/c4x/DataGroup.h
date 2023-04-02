@@ -135,6 +135,13 @@ public:
 	{
 		return _headers;
 	}
+	
+	const int &groupCount() const
+	{
+		return _groupCount;
+	}
+	
+	void clearAverages();
 
 	virtual float correlation_between(const Comparable &v, const Comparable &w);
 protected:

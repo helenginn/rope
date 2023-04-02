@@ -36,9 +36,19 @@ public:
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 	virtual void setWhiteList(std::vector<HasMetadata *> list);
 
+	virtual const int groupCount() const
+	{
+		return DataGroup<Posular, Atom3DPosition>::groupCount();
+	}
+
 	virtual const size_t headerCount() const
 	{
 		return headers().size();
+	}
+
+	virtual void clearAverages()
+	{
+		return DataGroup<Posular, Atom3DPosition>::clearAverages();
 	}
 private:
 
