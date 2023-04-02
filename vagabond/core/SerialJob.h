@@ -23,37 +23,39 @@
 #include "RopeJob.h"
 
 /** \class SerialJob
- *  will organise multi-threaded refinement on models according to
+ *  will organise multi-threaded refinement on objects according to
  *  a particular job type. Caller should be a sublcass of SerialJobResponder
  *  in which case the models associated with the first thread will be 
  *  sent to the caller before refinement and again before unloading,
  *  for monitoring purposes */
 
 class Model;
-class Entity;
-class ThreadWorksOnModel;
 
+template <class Obj>
 class SerialJobResponder
 {
 public:
 	virtual ~SerialJobResponder() {};
-	virtual void attachModel(Model *model) = 0;
-	virtual void detachModel(Model *model) = 0;
-	virtual void updateModel(Model *model, int idx) = 0;
+	virtual void attachObject(Obj object) = 0;
+	virtual void detachObject(Obj object) = 0;
+	virtual void updateObject(Obj object, int idx) = 0;
 
-	virtual void finishedModels() = 0;
+	virtual void finishedObjects() = 0;
 };
 
+template <class Obj, class Thr>
 class SerialJob : public Handler
 {
 public:
-	SerialJob(Entity *entity, SerialJobResponder *responder = nullptr);
+	SerialJob(SerialJobResponder<Obj> *responder = nullptr);
+	
+	virtual ~SerialJob();
 
 	/** set white list of models to refine. If not set/empty vector,
 	 * will refine all models associated with entity */
-	void setModelList(std::vector<Model *> models)
+	void setObjectList(std::vector<Obj> objects)
 	{
-		_models = models;
+		_objects = objects;
 	}
 	
 	/** set type of job to do on models */
@@ -73,9 +75,9 @@ public:
 		return _threads;
 	}
 	
-	size_t modelCount() const
+	size_t objectCount() const
 	{
-		return _models.size();
+		return _objects.size();
 	}
 	
 	/** prepare all objects etc. ready to start */
@@ -87,36 +89,37 @@ public:
 	/** call when done, allowing serial job to clean up */
 	void waitToFinish();
 	
-	/** number of models finished */
+	/** number of objects finished */
 	size_t finishedCount()
 	{
 		return _finished;
 	}
 
-	friend ThreadWorksOnModel;
-protected: // thread works on model
-	Model *acquireModel();
+	Obj acquireObject();
 
-	void attachModel(Model *model);
-	void detachModel(Model *model);
-	void updateModel(Model *model, int idx);
-	
+	void attachObject(Obj object);
+	void detachObject(Obj object);
+	void updateObject(Obj object, int idx);
 	void incrementFinished();
+protected: 
+	rope::RopeJob _job = rope::Refine;
+	std::vector<Obj> _objects;
+	
 private:
-	void settings();
+	virtual void settings() = 0;
+	void loadObjectsIntoPool();
 	void prepareThreads();
 
-	SerialJobResponder *_responder = nullptr;
-	rope::RopeJob _job = rope::Refine;
-	Entity *_entity = nullptr;
+	SerialJobResponder<Obj> *_responder = nullptr;
+
 	int _threads = 1;
 
 	std::mutex _mutex;
-
-	std::vector<Model *> _models;
 	
 	int _finished = 0;
-	Pool<Model *> _pool;
+	Pool<Obj> _pool;
 };
+
+#include "SerialJob.cpp"
 
 #endif

@@ -16,53 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnModel__
-#define __vagabond__ThreadWorksOnModel__
+#ifndef __vagabond__SerialRefineJob__
+#define __vagabond__SerialRefineJob__
 
 #include "engine/workers/ThreadWorksOnModel.h"
 #include "SerialJob.h"
-#include "Model.h"
+class Entity;
 
-ThreadWorksOnModel::ThreadWorksOnModel(SerialJob<Model *, ThreadWorksOnModel> 
-                                       *handler)
-: ThreadWorksOnObject<ThreadWorksOnModel, Model *>(handler)
+class SerialRefineJob : public SerialJob<Model *, ThreadWorksOnModel>
 {
+public:
+	SerialRefineJob(Entity *entity, SerialJobResponder<Model *> *responder);
 
-}
+	virtual void settings();
+private:
+	Entity *_entity = nullptr;
 
-void ThreadWorksOnModel::doJob(Model *model)
-{
-	model->load();
-	
-	if (watching())
-	{
-		_handler->attachObject(model);
-	}
-	
-	_handler->updateObject(model, _num);
-
-	if (_job == rope::Refine)
-	{
-		model->refine(true);
-	}
-	if (_job == rope::ThoroughRefine)
-	{
-		model->refine(true, true);
-	}
-	else if (_job == rope::SkipRefine)
-	{
-		model->extractExisting();
-	}
-
-	_handler->updateObject(nullptr, _num);
-	_handler->incrementFinished();
-
-	if (watching())
-	{
-		_handler->detachObject(model);
-	}
-	
-	model->unload();
-}
+};
 
 #endif
+

@@ -27,11 +27,12 @@
 
 #include "Display.h"
 
+class SerialRefineJob;
+
 class Model;
 class Entity;
-class SerialJob;
 
-class SerialRefiner : public Display, public SerialJobResponder
+class SerialRefiner : public Display, public SerialJobResponder<Model *>
 {
 public:
 	SerialRefiner(Scene *prev, Entity *entity);
@@ -45,11 +46,11 @@ public:
 	virtual void setup();
 	virtual void buttonPressed(std::string tag, Button *button);
 
-	virtual void attachModel(Model *model);
-	virtual void detachModel(Model *model);
-	void updateModel(Model *model, int idx);
+	virtual void attachObject(Model *model);
+	virtual void detachObject(Model *model);
+	void updateObject(Model *model, int idx);
 
-	virtual void finishedModels();
+	virtual void finishedObjects();
 
 	virtual void doThings();
 	virtual void entityDone();
@@ -80,7 +81,7 @@ private:
 	void addUpdate(Update up);
 	void processUpdate(Update &update);
 
-	SerialJob *_handler = nullptr;
+	SerialRefineJob *_handler = nullptr;
 	std::vector<Text *> _threadReporters;
 
 	std::mutex _mutex;

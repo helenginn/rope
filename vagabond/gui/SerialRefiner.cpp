@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/core/SerialRefineJob.h>
 #include "SerialRefiner.h"
 #include "Display.h"
 #include "GuiAtom.h"
@@ -28,7 +29,7 @@
 SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev),
 Display(prev)
 {
-	_handler = new SerialJob(entity, this);
+	_handler = new SerialRefineJob(entity, this);
 	_handler->setThreads(1);
 	setOwnsAtoms(false);
 	setControls(false);
@@ -42,7 +43,7 @@ SerialRefiner::~SerialRefiner()
 void SerialRefiner::start()
 {
 	_handler->setup();
-	size_t count = _handler->modelCount();
+	size_t count = _handler->objectCount();
 	addTitle("Refining " + i_to_str(count) + " models...");
 	showThreads();
 
@@ -93,7 +94,7 @@ void SerialRefiner::setRefineList(std::set<Model *> models)
 		vec.push_back(m);
 	}
 
-	_handler->setModelList(vec);
+	_handler->setObjectList(vec);
 }
 
 void SerialRefiner::setJobType(rope::RopeJob job)
@@ -147,7 +148,7 @@ void SerialRefiner::loadModelIntoDisplay(Model *model)
 	if (atoms)
 	{
 		int count = _handler->finishedCount() + 1;
-		int total = _handler->modelCount();
+		int total = _handler->objectCount();
 
 		std::ostringstream ss;
 		ss << "Refining " << model->name() << " (" << count << "/" <<
@@ -168,7 +169,7 @@ void SerialRefiner::dismantleDisplay()
 
 void SerialRefiner::showSummary()
 {
-	int total = _handler->modelCount();
+	int total = _handler->objectCount();
 	addTitle("Refined " + std::to_string(total) + " models.");
 	entityDone();
 	showBackButton();
@@ -224,22 +225,22 @@ void SerialRefiner::doThings()
 	_cv.notify_all(); /* releases worker threads to act on models */
 }
 
-void SerialRefiner::attachModel(Model *model)
+void SerialRefiner::attachObject(Model *model)
 {
 	addUpdate(Update{Attach, model, 0});
 }
 
-void SerialRefiner::updateModel(Model *model, int idx)
+void SerialRefiner::updateObject(Model *model, int idx)
 {
 	addUpdate(Update{UpdateText, model, idx});
 }
 
-void SerialRefiner::detachModel(Model *model)
+void SerialRefiner::detachObject(Model *model)
 {
 	addUpdate(Update{Detach, model, 0});
 }
 
-void SerialRefiner::finishedModels()
+void SerialRefiner::finishedObjects()
 {
 	addUpdate(Update{Finish, nullptr, 0});
 }

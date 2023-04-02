@@ -16,50 +16,50 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SerialJob.h"
-#include "Environment.h"
-#include "FileManager.h"
-#include "Entity.h"
-#include "engine/workers/ThreadWorksOnModel.h"
+#ifndef __vagabond__SerialJob__cpp__
+#define __vagabond__SerialJob__cpp__
 
-SerialJob::SerialJob(Entity *entity, SerialJobResponder *responder)
+template <class Obj, class Thr>
+SerialJob<Obj, Thr>::SerialJob(SerialJobResponder<Obj> *responder)
 {
-	_entity = entity;
 	_responder = responder;
 }
 
-void SerialJob::setup()
+template <class Obj, class Thr>
+SerialJob<Obj, Thr>::~SerialJob()
+{
+	_pool.cleanup();
+}
+
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::setup()
 {
 	settings();
-	Environment::fileManager()->preFilter();
+	loadObjectsIntoPool();
 }
 
-void SerialJob::start()
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::loadObjectsIntoPool()
 {
-	prepareThreads();
-}
-
-void SerialJob::settings()
-{
-	_entity->setActuallyRefine(_job != rope::SkipRefine);
-
-	if (_models.size() == 0)
-	{
-		_models = _entity->models();
-	}
-	
-	for (Model *m : _models)
+	for (Obj m : _objects)
 	{
 		_pool.pushObject(m);
 	}
 }
 
-void SerialJob::prepareThreads()
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::start()
+{
+	prepareThreads();
+}
+
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::prepareThreads()
 {
 	for (size_t i = 0; i < _threads; i++)
 	{
-		ThreadWorksOnModel *worker = new ThreadWorksOnModel(this);
-		std::thread *thr = new std::thread(&ThreadWorksOnModel::start, worker);
+		Thr *worker = new Thr(this);
+		std::thread *thr = new std::thread(&Thr::start, worker);
 		worker->setRopeJob(_job);
 		worker->setIndex(i);
 
@@ -68,50 +68,55 @@ void SerialJob::prepareThreads()
 	}
 }
 
-Model *SerialJob::acquireModel()
+template <class Obj, class Thr>
+Obj SerialJob<Obj, Thr>::acquireObject()
 {
-	Model *m = nullptr;
+	Obj m = nullptr;
 	_pool.acquireObject(m, _finish);
 	return m;
 
 }
 
-void SerialJob::detachModel(Model *model)
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::detachObject(Obj obj)
 {
 	if (!_responder)
 	{
 		return;
 	}
 
-	_responder->detachModel(model);
+	_responder->detachObject(obj);
 }
 
-void SerialJob::attachModel(Model *model)
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::attachObject(Obj obj)
 {
 	if (!_responder)
 	{
 		return;
 	}
 
-	_responder->attachModel(model);
+	_responder->attachObject(obj);
 }
 
-void SerialJob::waitToFinish()
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::waitToFinish()
 {
 	_pool.signalThreads();
 	
 	if (_responder)
 	{
-		_responder->finishedModels();
+		_responder->finishedObjects();
 	}
 }
 
-void SerialJob::incrementFinished()
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::incrementFinished()
 {
 	_mutex.lock();
 	_finished++;
 	
-	if (_finished == modelCount())
+	if (_finished == objectCount())
 	{
 		waitToFinish();
 	}
@@ -119,10 +124,13 @@ void SerialJob::incrementFinished()
 	_mutex.unlock();
 }
 
-void SerialJob::updateModel(Model *model, int idx)
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::updateObject(Obj obj, int idx)
 {
 	if (_responder)
 	{
-		_responder->updateModel(model, idx);
+		_responder->updateObject(obj, idx);
 	}
 }
+
+#endif

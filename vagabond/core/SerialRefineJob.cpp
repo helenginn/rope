@@ -16,20 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "engine/workers/ThreadWorksOnObject.h"
-#include "RopeJob.h"
+#ifndef __vagabond__SerialRefineJob__cpp__
+#define __vagabond__SerialRefineJob__cpp__
 
-class Model;
+#include "SerialRefineJob.h"
+#include "Environment.h"
+#include "FileManager.h"
+#include "Entity.h"
 
-class ThreadWorksOnModel : public ThreadWorksOnObject<ThreadWorksOnModel, Model *>
+SerialRefineJob::SerialRefineJob(Entity *entity,
+                                 SerialJobResponder<Model *> *responder) :
+SerialJob<Model *, ThreadWorksOnModel>(responder)
 {
-public:
-	ThreadWorksOnModel(SerialJob<Model *, ThreadWorksOnModel> *handler);
+	_entity = entity;
+}
 
-	virtual std::string type()
+void SerialRefineJob::settings()
+{
+	_entity->setActuallyRefine(_job != rope::SkipRefine);
+
+	if (_objects.size() == 0)
 	{
-		return "ThreadWorksOnModel";
+		_objects = _entity->models();
 	}
-private:
-	virtual void doJob(Model *model);
-};
+
+	Environment::fileManager()->preFilter();
+}
+
+#endif
