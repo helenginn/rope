@@ -87,6 +87,7 @@ install_data(
 'assets/images/lemon.png',
 'assets/images/little_line.png',
 'assets/images/line.png',
+'assets/images/map.png',
 'assets/images/metadata.png',
 'assets/images/misc_data.png',
 'assets/images/model.png',

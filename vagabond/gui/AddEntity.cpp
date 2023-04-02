@@ -24,6 +24,7 @@
 #endif
 
 #define _USE_MATH_DEFINES
+#include <vagabond/utils/version.h>
 #include <math.h>
 #include "AddEntity.h"
 #include "ChooseEntity.h"
@@ -40,6 +41,7 @@
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/SearchPDB.h>
 #include <vagabond/gui/SerialRefiner.h>
+#include <vagabond/gui/PathFinding.h>
 
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -232,6 +234,22 @@ void AddEntity::setup()
 			text->resize(0.8);
 			addObject(text);
 		}
+
+#ifdef VERSION_SHORT_ROUTES
+		if (_obj.hasSequence())
+		{
+			ImageButton *b = new ImageButton("assets/images/map.png", this);
+			b->resize(0.15);
+			b->setReturnTag("path_finding");
+			b->setCentre(0.8, 0.6);
+			addObject(b);
+
+			Text *text = new Text("Pathfinding");
+			text->setCentre(0.8, 0.7);
+			text->resize(0.8);
+			addObject(text);
+		}
+#endif
 	}
 
 	AddObject::setup();
@@ -341,6 +359,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		DisplayOptions *dov = new DisplayOptions(this, &_obj);
 		dov->show();
+		return;
+	}
+	else if (tag == "path_finding")
+	{
+		PathFinding *pf = new PathFinding(this, &_obj);
+		pf->show();
 		return;
 	}
 	else if (tag == "create")
