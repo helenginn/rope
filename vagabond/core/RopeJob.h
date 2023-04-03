@@ -26,6 +26,7 @@ namespace rope
 		Refine, /**< positional refinement */
 		ThoroughRefine, /**< forwards and backwards refinement */
 		SkipRefine, /**< grab torsion angles without refinement */
+		PathCalculation, /**< some kind of path task? */
 	};
 	
 }

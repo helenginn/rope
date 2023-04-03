@@ -21,6 +21,7 @@ Text::Text(std::string text, Font::Type type, bool delay) : Box()
 	}
 	else if (text.length() > 0 && _delay)
 	{
+		_retext = true;
 		png_byte *bytes = nullptr;
 		TextManager::text_malloc(&bytes, text, &_w, &_h, type);
 		makeQuad();
@@ -36,6 +37,8 @@ void Text::render(SnowGL *gl)
 		if (_texid == 0)
 		{
 			setInitialText(_text);
+			realign();
+			rebufferVertexData();
 		}
 		else
 		{

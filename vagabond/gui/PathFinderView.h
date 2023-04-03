@@ -16,52 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__
-#define __vagabond__ThreadWorksOnObject__
+#ifndef __vagabond__PathFinderView__
+#define __vagabond__PathFinderView__
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Responder.h>
 
-class Model;
+class PathFinder;
+class LineGroup;
+class Summary;
+class Box;
 
-template <class Thr, class Obj>
-class SerialJob;
-
-template <class Thr, class Obj>
-class ThreadWorksOnObject : public ThreadWorker
+class PathFinderView : public Scene, Responder<PathFinder *>
 {
 public:
-	ThreadWorksOnObject(SerialJob<Obj, Thr> *handler);
+	PathFinderView(Scene *scene);
 	
-	void setRopeJob(rope::RopeJob job)
+	PathFinder *pathFinder() const
 	{
-		_job = job;
-	}
-	
-	void setIndex(int idx)
-	{
-		_num = idx;
+		return _pf;
 	}
 
-	virtual void start();
-
-	virtual std::string type()
-	{
-		return "ThreadWorksOnObject";
-	}
+	virtual void setup();
+	virtual void doThings();
 protected:
-	bool watching() const
-	{
-		return _num == 0;
-	}
-	virtual bool doJob(Obj object) = 0;
-
-	SerialJob<Obj, Thr> *_handler = nullptr;
-
-	rope::RopeJob _job;
-	int _num = 0;
+	virtual void respond();
+private:
+	void overviewButtons();
+	void makeTaskTree();
+	void updateSummary();
+	void makeSummary();
+	PathFinder *_pf = nullptr;
+	LineGroup *_taskTree = nullptr;
+	Box *_summaryBox = nullptr;
+	Summary *_summary = nullptr;
+	
+	bool _updateNext = false;
 };
-
-#include "ThreadWorksOnObject.cpp"
 
 #endif

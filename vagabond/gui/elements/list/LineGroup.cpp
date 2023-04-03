@@ -198,5 +198,17 @@ void LineGroup::reorganiseHeights()
 
 	reorganiseGroups();
 	setArbitrary(tmp.x, tmp.y, Left);
+	
+	if (_scroll)
+	{
+		assessBounds();
+	}
+	
+	_maxHeight = maximalHeight() / 2;
 }
 
+void LineGroup::finishedDragging(std::string tag, double x, double y)
+{
+	float hx = x * _maxHeight;
+	updateScrollOffset(hx);
+}

@@ -16,52 +16,40 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__
-#define __vagabond__ThreadWorksOnObject__
+#include "Summary.h"
+#include "PathTask.h"
+#include <sstream>
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
-
-class Model;
-
-template <class Thr, class Obj>
-class SerialJob;
-
-template <class Thr, class Obj>
-class ThreadWorksOnObject : public ThreadWorker
+Summary::Summary(PathTask *top)
 {
-public:
-	ThreadWorksOnObject(SerialJob<Obj, Thr> *handler);
-	
-	void setRopeJob(rope::RopeJob job)
+	_top = top;
+}
+
+std::string Summary::text()
+{
+	std::ostringstream ss;
+	std::vector<PathTask *> tasks;
+	_top->gatherTasks(tasks);
+	std::map<PathTask::TaskType, int> complete;
+	std::map<PathTask::TaskType, int> counts;
+
+	for (PathTask *pt : tasks)
 	{
-		_job = job;
+		counts[pt->type()]++;
+		
+		if (pt->complete())
+		{
+			complete[pt->type()]++;
+		}
 	}
 	
-	void setIndex(int idx)
-	{
-		_num = idx;
-	}
-
-	virtual void start();
-
-	virtual std::string type()
-	{
-		return "ThreadWorksOnObject";
-	}
-protected:
-	bool watching() const
-	{
-		return _num == 0;
-	}
-	virtual bool doJob(Obj object) = 0;
-
-	SerialJob<Obj, Thr> *_handler = nullptr;
-
-	rope::RopeJob _job;
-	int _num = 0;
-};
-
-#include "ThreadWorksOnObject.cpp"
-
-#endif
+	std::string val_counts = std::to_string(counts[PathTask::Validation]);
+	std::string val_done = std::to_string(complete[PathTask::Validation]);
+	
+	ss <<  "Validation tasks: " << val_done << " / " << val_counts;
+	ss << std::endl;
+	ss <<  "Other tasks: ...";
+	ss << std::endl;
+	
+	return ss.str();
+}

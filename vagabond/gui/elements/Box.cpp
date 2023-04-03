@@ -2,12 +2,132 @@
 
 #include "Box.h"
 #include "Text.h"
+#include "Slider.h"
+#include <iostream>
 
 Box::Box() : Renderable()
 {
 	setFragmentShaderFile("assets/shaders/box.fsh");
 	setVertexShaderFile("assets/shaders/box.vsh");
 
+}
+
+void Box::setToScrollShaders()
+{
+	_scroll = true;
+	setFragmentShaderFile("assets/shaders/scrollbox.fsh");
+
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		Box *box = dynamic_cast<Box *>(object(i)); // blergh
+		
+		if (box)
+		{
+			box->setToScrollShaders();
+		}
+	}
+}
+
+glm::vec4 bounds2GL(glm::vec4 bounds)
+{
+	glm::vec4 forGL = glm::vec4(0.f);
+	forGL[0] = 1 - 2 * bounds[0];
+	forGL[1] = 2 * bounds[1] - 1;
+	forGL[2] = 1 - 2 * bounds[2];
+	forGL[3] = 2 * bounds[3] - 1;
+
+	return forGL;
+}
+
+void Box::setScrollBox(glm::vec4 bounds)
+{
+	glm::vec4 forGL = bounds2GL(bounds);
+	
+	updateScrollBox(forGL);
+	_bounds = bounds;
+	
+	assessBounds();
+}
+
+void Box::deleteSlider()
+{
+	removeObject(_slider);
+	delete _slider;
+	_slider = nullptr;
+}
+
+void Box::drawSlider()
+{
+	deleteSlider();
+
+	Slider *slider = new Slider();
+	slider->setDragResponder(_dragResponder);
+	slider->setVertical(true);
+	slider->resize(_bounds[2] - _bounds[0]);
+	slider->setup("", 0, 0.99, 0.01);
+	slider->setCentre(_bounds[3], (_bounds[2] + _bounds[0]) / 2);
+	_slider = slider;
+	addObject(slider);
+}
+
+void Box::assessBounds()
+{
+	float actual = _scrollBox[2] - _scrollBox[0];
+	if (maximalHeight() * 2 > actual)
+	{
+		drawSlider();
+	}
+	else
+	{
+		deleteSlider();
+	}
+}
+
+void Box::updateScrollBox(glm::vec4 bounds)
+{
+	_scrollBox = bounds;
+
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		Box *box = dynamic_cast<Box *>(object(i)); // blergh
+		
+		if (box)
+		{
+			box->updateScrollBox(bounds);
+		}
+	}
+}
+
+void Box::updateScrollOffset(float new_offset)
+{
+	float diff = new_offset - _scrollOffset;
+	
+	for (Renderable *r : objects())
+	{
+		if (r != _slider)
+		{
+			r->addAlign(0, -diff);
+			r->forceRender();
+		}
+	}
+
+	_scrollOffset = new_offset;
+}
+
+void Box::copyScrolling(const Box *other)
+{
+	if (other->_scroll)
+	{
+		_scroll = other->_scroll;
+		setToScrollShaders();
+		updateScrollBox(other->_scrollBox);
+	}
+}
+
+void Box::switchToScrolling(DragResponder *resp)
+{
+	setToScrollShaders();
+	_dragResponder = resp;
 }
 
 void Box::addSplitQuad(double z)
@@ -101,4 +221,18 @@ void Box::unMouseOver()
 	}
 	
 	Renderable::unMouseOver();
+}
+
+void Box::extraUniforms()
+{
+	if (!_scroll)
+	{
+		return;
+	}
+
+	{
+		GLuint u = glGetUniformLocation(_program, "box");
+		glUniform4f(u, _scrollBox.x, _scrollBox.y, _scrollBox.z, _scrollBox.w);
+		checkErrors("rebinding box");
+	}
 }

@@ -68,7 +68,7 @@ void Draggable::drag(double x, double y)
 	double ymod = 1. / (double)_ystep;
 	
 	x = (x + 1) / 2;
-	y = (y + 1) / 2;
+	y = (1 - y) / 2;
 
 	glm::vec3 pos = glm::vec3(x, y, 0);
 	/* top left corner */

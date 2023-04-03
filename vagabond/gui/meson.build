@@ -50,6 +50,7 @@ guifiles = [
 'ModelMetadataView.cpp',
 'PathsDetail.cpp',
 'PathFinding.cpp',
+'PathFinderView.cpp',
 'PathView.cpp',
 'PathsMenu.cpp',
 'ProgressBar.cpp',

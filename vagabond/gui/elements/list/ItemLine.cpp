@@ -43,6 +43,8 @@ ItemLine::ItemLine(LineGroup *group, Item *item) : Box()
 	setName(item->displayName() + " line");
 	
 	setup();
+	
+	_item->setResponder(this);
 }
 
 void ItemLine::addBranch()
@@ -94,6 +96,7 @@ void ItemLine::turnArrow()
 void ItemLine::update()
 {
 	turnArrow();
+	replaceContent();
 }
 
 void ItemLine::addArrow()
@@ -106,7 +109,6 @@ void ItemLine::addArrow()
 
 	if (arrow)
 	{
-		float angle = 0.;
 		ImageButton *b = new ImageButton("assets/images/triangle.png", _group);
 		b->rescale(0.025, 0.025);
 		b->setLeft(start_indent, 0.0);
@@ -118,21 +120,44 @@ void ItemLine::addArrow()
 	}
 }
 
-void ItemLine::setup()
+void ItemLine::replaceContent()
 {
-	Renderable *content = displayRenderable(_group);
-	_unitHeight = content->maximalHeight() / 4;
+	glm::vec2 xy{};
+	bool reuse_old = false;
+
+	if (_content)
+	{
+		xy = _content->xy();
+		reuse_old = true;
+
+		removeObject(_content);
+		Window::setDelete(_content);
+		_content = nullptr;
+	}
+
+	_content = displayRenderable(_group);
+	_unitHeight = _content->maximalHeight() / 4;
 
 	size_t depth = _item->depth();
 	
-	bool arrow = (_item->itemCount() > 0);
 	float start_indent = (float)(depth + 1) * _unitHeight;
 
-	content->setLeft(start_indent, 0.0);
-	addObject(content);
+	_content->setLeft(start_indent, 0.0);
+	if (reuse_old)
+	{
+		_content->setArbitrary(xy.x, xy.y, Alignment::Left);
+	}
+
+	addObject(_content);
+}
+
+void ItemLine::setup()
+{
+	replaceContent();
 	
 	addArrow();
 	
+	bool arrow = (_item->itemCount() > 0);
 	if (!arrow)
 	{
 		addBranch();
@@ -154,10 +179,19 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	}
 	else if (!_item->isSelectable())
 	{
-		text = new Text(_item->displayName());
+		text = new Text(_item->displayName(), Font::Thin, true);
 	}
 
 	text->resize(0.5);
 	text->setName("content: " + _item->displayName());
+	
+	text->copyScrolling(this);
+
 	return text;
+}
+
+
+void ItemLine::respond()
+{
+	update();
 }

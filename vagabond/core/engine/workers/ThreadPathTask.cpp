@@ -16,52 +16,40 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__
-#define __vagabond__ThreadWorksOnObject__
+#include "ThreadPathTask.h"
+#include "paths/PathTask.h"
+#include "SerialJob.h"
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
-
-class Model;
-
-template <class Thr, class Obj>
-class SerialJob;
-
-template <class Thr, class Obj>
-class ThreadWorksOnObject : public ThreadWorker
+ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
+: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
 {
-public:
-	ThreadWorksOnObject(SerialJob<Obj, Thr> *handler);
+
+}
+
+void ThreadPathTask::doTask(PathTask *pt)
+{
+	_handler->updateObject(pt, _num);
+
+	pt->run();
+	pt->unlockAll();
+
+	_handler->updateObject(nullptr, _num);
+}
+
+bool ThreadPathTask::doJob(PathTask *pt)
+{
+	bool success = pt->tryLock();
 	
-	void setRopeJob(rope::RopeJob job)
+	if (!success)
 	{
-		_job = job;
+		_failCount++;
+		_handler->handBackToIncomplete(pt);
 	}
-	
-	void setIndex(int idx)
+	else
 	{
-		_num = idx;
+		_failCount = 0;
+		doTask(pt);
 	}
 
-	virtual void start();
-
-	virtual std::string type()
-	{
-		return "ThreadWorksOnObject";
-	}
-protected:
-	bool watching() const
-	{
-		return _num == 0;
-	}
-	virtual bool doJob(Obj object) = 0;
-
-	SerialJob<Obj, Thr> *_handler = nullptr;
-
-	rope::RopeJob _job;
-	int _num = 0;
-};
-
-#include "ThreadWorksOnObject.cpp"
-
-#endif
+	return true; // we want another one
+}

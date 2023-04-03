@@ -115,7 +115,7 @@ void Route::submitJob(int idx, bool show, bool forces)
 			job.requests = JobCalculateDeviations;
 		}
 		
-		if (forces)
+		if (forces && _pType == BondCalculator::PipelineForceField)
 		{
 			job.requests = (JobType)(JobScoreStructure | job.requests);
 		}
@@ -187,6 +187,19 @@ void Route::retrieve()
 	}
 }
 
+void Route::useForceField(bool use)
+{
+	if (!use)
+	{
+		_pType = BondCalculator::PipelineAtomPositions;
+
+	}
+	else
+	{
+		_pType = BondCalculator::PipelineForceField;
+	}
+}
+
 void Route::customModifications(BondCalculator *calc, bool has_mol)
 {
 	if (!has_mol)
@@ -195,10 +208,15 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 	}
 
 	calc->setPipelineType(_pType);
-	FFProperties props;
-	props.group = _instance->currentAtoms();
-	props.t = FFProperties::VdWContacts;
-	calc->setForceFieldProperties(props);
+	
+	if (_pType == BondCalculator::PipelineForceField)
+	{
+		FFProperties props;
+		props.group = _instance->currentAtoms();
+		props.t = FFProperties::VdWContacts;
+		calc->setForceFieldProperties(props);
+	}
+
 	calc->setSampler(nullptr);
 }
 
@@ -303,6 +321,7 @@ void Route::populateWaypoints()
 
 void Route::reportFound()
 {
+	return;
 	for (size_t i = 0; i < _missing.size(); i++)
 	{
 		std::cout << "Missing torsion " << _missing[i]->desc() << " for "
@@ -372,12 +391,6 @@ void Route::connectParametersToDestination()
 			
 			_calc2Destination[calc].push_back(chosen);
 		}
-		
-		for (size_t i = 0; i < _calc2Destination[calc].size(); i++)
-		{
-			std::cout << _calc2Destination[calc][i] << " ";
-		}
-		std::cout << std::endl;
 	}
 }
 

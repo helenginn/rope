@@ -17,7 +17,9 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PathFinding.h"
+#include "PathFinderView.h"
 #include <vagabond/core/Entity.h>
+#include <vagabond/core/PathFinder.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include "AddRule.h"
@@ -54,6 +56,7 @@ void PathFinding::setup()
 	
 	{
 		TextButton *start = new TextButton("Start", this);
+		start->setReturnTag("start");
 		start->setRight(0.8, 0.8);
 		addObject(start);
 	}
@@ -88,6 +91,21 @@ void PathFinding::buttonPressed(std::string tag, Button *button)
 	else if (tag == "delete_rule")
 	{
 		deleteRule();
+	}
+	else if (tag == "start")
+	{
+		PathFinderView *pfv = new PathFinderView(this);
+		PathFinder *pf = pfv->pathFinder();
+		pf->setEntity(_entity);
+		
+		if (_rule)
+		{
+			pf->setWhiteList(_all.subsetFromRule(*_rule));
+		}
+
+		pfv->show();
+
+		return;
 	}
 
 	Scene::buttonPressed(tag, button);

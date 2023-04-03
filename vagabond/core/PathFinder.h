@@ -19,12 +19,76 @@
 #ifndef __vagabond__PathFinder__
 #define __vagabond__PathFinder__
 
-class PathFinder
+#include <vector>
+#include <mutex>
+#include <map>
+#include "SerialJob.h"
+#include "Responder.h"
+
+class TorsionCluster;
+class HasMetadata;
+class PathTask;
+class PathJob;
+class Entity;
+class Model;
+
+class PathFinder : public SerialJobResponder<PathTask *>,
+public HasResponder<Responder<PathFinder *> >
 {
 public:
-	PathFinder(Entity *entity);
+	PathFinder();
+	~PathFinder();
 
+	void setEntity(Entity *entity)
+	{
+		_entity = entity;
+	}
+
+	void setWhiteList(const std::vector<HasMetadata *> &whiteList)
+	{
+		_whiteList = whiteList;
+	}
+	
+	PathTask *topTask()
+	{
+		return _tasks;
+	}
+	
+	bool tryLockModel(Model *wanted);
+	void unlockModel(Model *wanted);
+	
+	void setup();
+	void start();
+
+	virtual void attachObject(PathTask *object);
+	virtual void detachObject(PathTask *object);
+	virtual void updateObject(PathTask *object, int idx);
+
+	virtual void finishedObjects();
+	
+	TorsionCluster *cluster() const
+	{
+		return _cluster;
+	}
 private:
+	void prepareObjects();
+	void prepareMutexList();
+	void prepareTaskBins();
+	void prepareValidationTasks();
+	void setupSerialJob();
+	void setupTorsionCluster();
+
+	std::vector<HasMetadata *> _whiteList;
+	Entity *_entity = nullptr;
+	
+	PathTask *_tasks = nullptr;
+	PathTask *_validations = nullptr;
+	
+	PathJob *_handler = nullptr;
+	
+	std::map<Model *, std::mutex *> _resourceLocks;
+	
+	TorsionCluster *_cluster = nullptr;
 };
 
 #endif

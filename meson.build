@@ -49,6 +49,7 @@ install_data(
 'assets/shaders_450/quad.fsh',
 'assets/shaders_450/box.vsh',
 'assets/shaders_450/box.fsh',
+'assets/shaders_450/scrollbox.fsh',
 'assets/shaders_450/shade.fsh',
 'assets/shaders_450/floating_box.vsh',
 'assets/shaders_450/with_matrix.vsh',

@@ -16,52 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__
-#define __vagabond__ThreadWorksOnObject__
+#ifndef __vagabond__Summary__
+#define __vagabond__Summary__
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
+class PathTask;
+#include <string>
 
-class Model;
-
-template <class Thr, class Obj>
-class SerialJob;
-
-template <class Thr, class Obj>
-class ThreadWorksOnObject : public ThreadWorker
+class Summary
 {
 public:
-	ThreadWorksOnObject(SerialJob<Obj, Thr> *handler);
-	
-	void setRopeJob(rope::RopeJob job)
-	{
-		_job = job;
-	}
-	
-	void setIndex(int idx)
-	{
-		_num = idx;
-	}
+	Summary(PathTask *top);
 
-	virtual void start();
+	std::string text();
+private:
+	PathTask *_top = nullptr;
 
-	virtual std::string type()
-	{
-		return "ThreadWorksOnObject";
-	}
-protected:
-	bool watching() const
-	{
-		return _num == 0;
-	}
-	virtual bool doJob(Obj object) = 0;
-
-	SerialJob<Obj, Thr> *_handler = nullptr;
-
-	rope::RopeJob _job;
-	int _num = 0;
 };
-
-#include "ThreadWorksOnObject.cpp"
 
 #endif

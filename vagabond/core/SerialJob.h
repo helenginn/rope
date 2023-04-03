@@ -96,6 +96,7 @@ public:
 	}
 
 	Obj acquireObject();
+	void handBackToIncomplete(Obj &failedLock);
 
 	void attachObject(Obj object);
 	void detachObject(Obj object);
@@ -105,8 +106,13 @@ protected:
 	rope::RopeJob _job = rope::Refine;
 	std::vector<Obj> _objects;
 	
+	// subclasses should return false if jobs can be temporarily rejected.
+	virtual bool canSelfFinish()
+	{
+		return true;
+	}
 private:
-	virtual void settings() = 0;
+	virtual void settings() {};
 	void loadObjectsIntoPool();
 	void prepareThreads();
 

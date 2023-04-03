@@ -23,10 +23,11 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <vagabond/core/Responder.h>
 
 class Menu;
 
-class Item
+class Item : public HasResponder<Responder<Item> >
 {
 public:
 	Item();
@@ -70,6 +71,7 @@ public:
 	void setDisplayName(const std::string &name)
 	{
 		_name = name;
+		triggerResponse();
 	}
 	
 	static size_t deletedCount()

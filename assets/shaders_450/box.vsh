@@ -17,6 +17,7 @@ void main()
 	gl_Position = pos;
 	gl_PointSize = 80;
 	vTex = tex;
+	vPos = pos;
 	vColor = color;
 	vExtra = extra;
 }

@@ -39,6 +39,12 @@ void SerialJob<Obj, Thr>::setup()
 }
 
 template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::handBackToIncomplete(Obj &failedLock)
+{
+	_pool.pushObject(failedLock);
+}
+
+template <class Obj, class Thr>
 void SerialJob<Obj, Thr>::loadObjectsIntoPool()
 {
 	for (Obj m : _objects)
@@ -116,7 +122,7 @@ void SerialJob<Obj, Thr>::incrementFinished()
 	_mutex.lock();
 	_finished++;
 	
-	if (_finished == objectCount())
+	if (_finished == objectCount() && canSelfFinish())
 	{
 		waitToFinish();
 	}

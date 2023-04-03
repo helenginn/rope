@@ -23,7 +23,7 @@
 
 RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 {
-	_route.instance()->load();
+
 }
 
 float RouteValidator::dotLastTwoVectors()

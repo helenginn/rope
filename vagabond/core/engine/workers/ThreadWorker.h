@@ -36,6 +36,21 @@ public:
 	{
 
 	}
+	
+	virtual bool requiresMutexLock()
+	{
+		return false;
+	}
+	
+	virtual void waitOnMutexLock()
+	{
+
+	}
+	
+	virtual bool tryMutexLock()
+	{
+		return true;
+	}
 
 	virtual void start() = 0;
 

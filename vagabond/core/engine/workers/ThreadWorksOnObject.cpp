@@ -40,7 +40,13 @@ void ThreadWorksOnObject<Thr, Obj>::start()
 		}
 		
 		timeStart();
-		doJob(t);
+		bool result = doJob(t);
+		
+		if (!result)
+		{
+			break;
+		}
+
 		timeEnd();
 
 	}

@@ -167,8 +167,8 @@ void PdbFile::parseFileContents()
 		processModel(st.models[i]);
 	}
 	
-	std::cout << "This file " << _filename << " has " << atomCount() 
-	<< " atoms.\n";
+//	std::cout << "This file " << _filename << " has " << atomCount() 
+//	<< " atoms.\n";
 	std::string spgname = st.spacegroup_hm;
 	_values["_symmetry.space_group_name_H-M"] = spgname;
 

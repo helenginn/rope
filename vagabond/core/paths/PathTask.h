@@ -16,52 +16,60 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__
-#define __vagabond__ThreadWorksOnObject__
+#ifndef __vagabond__PathTask__
+#define __vagabond__PathTask__
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
+#include "../Item.h"
+#include <atomic>
 
+class PathFinder;
+class HasMetadata;
 class Model;
 
-template <class Thr, class Obj>
-class SerialJob;
-
-template <class Thr, class Obj>
-class ThreadWorksOnObject : public ThreadWorker
+class PathTask : public Item
 {
 public:
-	ThreadWorksOnObject(SerialJob<Obj, Thr> *handler);
+	PathTask(PathFinder *pf);
+
+	bool tryLock();
+	void unlockAll();
+
+	bool tryLockModel(Model *m);
 	
-	void setRopeJob(rope::RopeJob job)
+	virtual void run();
+	virtual bool runnable()
 	{
-		_job = job;
-	}
-	
-	void setIndex(int idx)
-	{
-		_num = idx;
+		return false;
 	}
 
-	virtual void start();
-
-	virtual std::string type()
+	enum TaskType
 	{
-		return "ThreadWorksOnObject";
+		None,
+		Validation,
+	};
+	
+	virtual TaskType type()
+	{
+		return None;
 	}
+	
+	bool complete() const
+	{
+		return _complete;
+	}
+
+	static Model *modelForHasMetadata(HasMetadata *wanted);
+	void gatherTasks(std::vector<PathTask *> &collection);
 protected:
-	bool watching() const
-	{
-		return _num == 0;
-	}
-	virtual bool doJob(Obj object) = 0;
+	virtual void specificTasks() {};
 
-	SerialJob<Obj, Thr> *_handler = nullptr;
-
-	rope::RopeJob _job;
-	int _num = 0;
+	std::set<Model *> _needs;
+	std::set<Model *> _locks;
+	PathFinder *_pf = nullptr;
+private:
+	std::atomic<bool> _complete{false};
 };
 
-#include "ThreadWorksOnObject.cpp"
-
 #endif
+
+

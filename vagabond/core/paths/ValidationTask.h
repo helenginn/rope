@@ -16,52 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__
-#define __vagabond__ThreadWorksOnObject__
+#ifndef __vagabond__ValidationTask__
+#define __vagabond__ValidationTask__
 
-#include "engine/workers/ThreadWorker.h"
-#include "RopeJob.h"
+#include "PathTask.h"
 
-class Model;
+class HasMetadata;
 
-template <class Thr, class Obj>
-class SerialJob;
-
-template <class Thr, class Obj>
-class ThreadWorksOnObject : public ThreadWorker
+class ValidationTask : public PathTask
 {
 public:
-	ThreadWorksOnObject(SerialJob<Obj, Thr> *handler);
-	
-	void setRopeJob(rope::RopeJob job)
+	ValidationTask(PathFinder *pf, HasMetadata *from, HasMetadata *to);
+
+	virtual TaskType type()
 	{
-		_job = job;
-	}
-	
-	void setIndex(int idx)
-	{
-		_num = idx;
+		return Validation;
 	}
 
-	virtual void start();
-
-	virtual std::string type()
+	virtual bool runnable()
 	{
-		return "ThreadWorksOnObject";
+		return true;
 	}
 protected:
-	bool watching() const
-	{
-		return _num == 0;
-	}
-	virtual bool doJob(Obj object) = 0;
+	virtual void specificTasks();
+private:
+	HasMetadata *_from = nullptr;
+	HasMetadata *_to = nullptr;
 
-	SerialJob<Obj, Thr> *_handler = nullptr;
-
-	rope::RopeJob _job;
-	int _num = 0;
 };
-
-#include "ThreadWorksOnObject.cpp"
 
 #endif

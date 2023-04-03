@@ -223,6 +223,7 @@ public:
 	void extractWayPoints(Route *other);
 	void printWayPoints();
 
+	void useForceField(bool use);
 protected:
 	const Grapher &grapher() const;
 	bool incrementGrapher();
@@ -302,6 +303,7 @@ protected:
 	AtomGraph *grapherForTorsionIndex(int idx);
 
 	float getTorsionAngle(int i);
+	
 private:
 	bool _calculating;
 	float _score;

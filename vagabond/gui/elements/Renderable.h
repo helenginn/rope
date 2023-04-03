@@ -179,6 +179,19 @@ public:
 	
 	void realign();
 	void realign(double x, double y);
+	void addAlign(float x, float y)
+	{
+		_x += x;
+		_y += y;
+
+		for (size_t i = 0; i < objectCount(); i++)
+		{
+			object(i)->addAlign(x, y);
+		}
+
+		realign();
+	}
+
 	
 	void changeMidPoint(double x, double y);
 	void setHighlighted(bool highlighted);
@@ -392,19 +405,6 @@ protected:
 		if (x == x) _x = x;
 		if (y == y) _y = y;
 		_align = a;
-	}
-
-	void addAlign(float x, float y)
-	{
-		_x += x;
-		_y += y;
-
-		for (size_t i = 0; i < objectCount(); i++)
-		{
-			object(i)->addAlign(x, y);
-		}
-
-		realign();
 	}
 
 	const int &currentVertex() const

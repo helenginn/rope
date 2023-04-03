@@ -20,13 +20,14 @@
 #define __vagabond__ItemLine__
 
 #include "../Box.h"
+#include <vagabond/core/Responder.h>
 
 class LineGroup;
 class ImageButton;
 class Menu;
 class Item;
 
-class ItemLine : public Box
+class ItemLine : public Box, public Responder<Item>
 {
 public:
 	ItemLine(LineGroup *group, Item *item);
@@ -37,10 +38,13 @@ public:
 	 * Renderable should be top-left justified i.e. setLeft(0.0, 0.0); */
 	virtual Renderable *displayRenderable(ButtonResponder *parent) const;
 
+protected:
+	virtual void respond();
 private:
 	void addBranch();
 	void addArrow();
 	void turnArrow();
+	void replaceContent();
 	/** prepare content of box */
 	void setup();
 	
@@ -51,6 +55,7 @@ private:
 	Item *_item = nullptr;
 	LineGroup *_group = nullptr;
 	ImageButton *_triangle = nullptr;
+	Renderable *_content = nullptr;
 };
 
 #endif

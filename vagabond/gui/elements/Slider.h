@@ -19,6 +19,11 @@ public:
 	{
 		_responder = next;
 	}
+	
+	void setVertical(bool v)
+	{
+		_vert = v;
+	}
 
 	void setup(std::string text, double min, double max, double step);
 
@@ -50,6 +55,7 @@ private:
 
 	std::string _prefix;
 	std::string _suffix;
+	bool _vert = false;
 	
 	DraggableImage *_dot = nullptr;
 	DragResponder *_responder = nullptr;

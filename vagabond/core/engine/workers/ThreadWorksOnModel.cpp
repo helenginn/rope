@@ -19,7 +19,7 @@
 #ifndef __vagabond__ThreadWorksOnModel__
 #define __vagabond__ThreadWorksOnModel__
 
-#include "engine/workers/ThreadWorksOnModel.h"
+#include "ThreadWorksOnModel.h"
 #include "SerialJob.h"
 #include "Model.h"
 
@@ -30,7 +30,7 @@ ThreadWorksOnModel::ThreadWorksOnModel(SerialJob<Model *, ThreadWorksOnModel>
 
 }
 
-void ThreadWorksOnModel::doJob(Model *model)
+bool ThreadWorksOnModel::doJob(Model *model)
 {
 	model->load();
 	
@@ -63,6 +63,7 @@ void ThreadWorksOnModel::doJob(Model *model)
 	}
 	
 	model->unload();
+	return true;
 }
 
 #endif

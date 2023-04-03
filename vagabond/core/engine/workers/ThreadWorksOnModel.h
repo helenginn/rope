@@ -31,5 +31,5 @@ public:
 		return "ThreadWorksOnModel";
 	}
 private:
-	virtual void doJob(Model *model);
+	virtual bool doJob(Model *model);
 };
