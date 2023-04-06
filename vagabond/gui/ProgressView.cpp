@@ -36,6 +36,7 @@ void ProgressView::setup()
 
 ProgressView::~ProgressView()
 {
+	deleteObjects(true);
 
 }
 

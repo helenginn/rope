@@ -16,40 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#ifndef __vagabond__ReporterTask__
+#define __vagabond__ReporterTask__
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+#include "PathTask.h"
+
+class ReporterTask : public PathTask
 {
+public:
+	ReporterTask(PathFinder *pf);
 
-}
-
-void ThreadPathTask::doTask(PathTask *pt)
-{
-	_handler->updateObject(pt, _num);
-
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
-	
-	if (!success)
+	virtual TaskType type()
 	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
+		return Validation;
 	}
 
-	return true; // we want another one
-}
+	virtual bool runnable()
+	{
+		return false;
+	}
+
+	virtual std::string displayName() const;
+private:
+
+};
+
+#endif

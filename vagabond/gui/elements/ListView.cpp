@@ -29,7 +29,7 @@ ListView::ListView(Scene *prev) : ForwardBackward(prev)
 
 ListView::~ListView()
 {
-	deleteObjects();
+	
 }
 
 void ListView::setup()
@@ -49,7 +49,7 @@ void ListView::refresh()
 
 void ListView::loadFilesFrom(int start, int num)
 {
-	clearTemps();
+	deleteTemps();
 
 	int count = lineCount();
 	int npages = ceil((float)count / (float)LINES_PER_PAGE);
@@ -60,8 +60,7 @@ void ListView::loadFilesFrom(int start, int num)
 		Renderable *line = getLine(i);
 		line->setLeft(0.2, pos);
 		pos += 0.06;
-		addObject(line);
-		_temps.push_back(line);
+		addTempObject(line);
 	}
 	
 	if (npages > 1)
@@ -71,8 +70,7 @@ void ListView::loadFilesFrom(int start, int num)
 		ss << "(" << mypage + 1 << " / " << npages << ")";
 		Text *pageNo = new Text(ss.str());
 		pageNo->setCentre(0.5, 0.8);
-		addObject(pageNo);
-		_temps.push_back(pageNo);
+		addTempObject(pageNo);
 
 	}
 	

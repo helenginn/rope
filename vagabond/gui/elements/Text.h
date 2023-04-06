@@ -13,6 +13,8 @@ class Text : virtual public Box
 public:
 	/** @param delay delay creation of text until back on the main thread */
 	Text(std::string, Font::Type type = Font::Thin, bool delay = false);
+	
+	~Text();
 
 	void setText(std::string text, bool force = false);
 	

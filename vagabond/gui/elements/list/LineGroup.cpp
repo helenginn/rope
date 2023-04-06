@@ -51,7 +51,6 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 		_scene = _parent->_scene;
 	}
 
-
 	if (item == nullptr)
 	{
 		throw std::runtime_error("Cannot make LineGroup from nullptr Item.");
@@ -60,7 +59,11 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 	_line = new ItemLine(this, item);
 	addObject(_line);
 	
-	setupGroups();
+	if (item->canUnfold())
+	{
+		setupGroups();
+	}
+
 	setName(item->displayName() + " group");
 	
 	if (!top)

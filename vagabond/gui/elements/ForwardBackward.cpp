@@ -24,6 +24,11 @@ ForwardBackward::ForwardBackward(Scene *prev) : Scene(prev)
 
 }
 
+ForwardBackward::~ForwardBackward()
+{
+	deleteObjects(true);
+}
+
 void ForwardBackward::buttonPressed(std::string tag, Button *button)
 {	
 	if (tag == "scroll_forward")
@@ -49,8 +54,7 @@ void ForwardBackward::scrollBackButton()
 	ImageButton *bb = ImageButton::arrow(+90., this);
 	bb->setCentre(0.1, 0.8);
 	bb->setReturnTag("scroll_back");
-	addObject(bb);
-	_temps.push_back(bb);
+	addTempObject(bb);
 }
 
 void ForwardBackward::scrollForwardButton()
@@ -58,18 +62,6 @@ void ForwardBackward::scrollForwardButton()
 	ImageButton *fb = ImageButton::arrow(-90., this);
 	fb->setCentre(0.9, 0.8);
 	fb->setReturnTag("scroll_forward");
-	addObject(fb);
-	_temps.push_back(fb);
+	addTempObject(fb);
 }
 
-void ForwardBackward::clearTemps()
-{
-	for (size_t i = 0; i < _temps.size(); i++)
-	{
-		removeObject(_temps[i]);
-		delete _temps[i];
-	}
-
-	_temps.clear();
-
-}

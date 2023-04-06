@@ -89,6 +89,8 @@ public:
 	/** call when done, allowing serial job to clean up */
 	void waitToFinish();
 	
+	void stop();
+	
 	/** number of objects finished */
 	size_t finishedCount()
 	{
@@ -96,7 +98,7 @@ public:
 	}
 
 	Obj acquireObject();
-	void handBackToIncomplete(Obj &failedLock);
+	void pushObject(Obj &obj);
 
 	void attachObject(Obj object);
 	void detachObject(Obj object);

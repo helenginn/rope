@@ -16,18 +16,12 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ClusterTSNE__cpp__
-#define __vagabond__ClusterTSNE__cpp__
-
 #include "ClusterTSNE.h"
 #include "ClusterSVD.h"
 
-template <class DG>
-ClusterTSNE<DG>::ClusterTSNE(DG &dg) : Cluster<DG>(dg)
+ClusterTSNE::ClusterTSNE(PCA::Matrix &distances, PCA::Matrix *start)
 {
-	ClusterSVD<DG> svd(dg);
-	svd.cluster();
-	_distances = svd.distanceMatrix();
+	_distances = distances;
 	
 	prepareResults(1);
 
@@ -35,20 +29,29 @@ ClusterTSNE<DG>::ClusterTSNE(DG &dg) : Cluster<DG>(dg)
 	{
 		for (size_t j = 0; j < this->_result.cols && j < 3; j++)
 		{
-			glm::vec3 v = svd.point(i);
-			this->_result[i][j] = v[j];
+			if (!start)
+			{
+				this->_result[i][j] = (*start)[i][j];
+			}
+			else
+			{
+				this->_result[i][j] = rand() / (float)RAND_MAX;
+			}
 		}
-	}
 	
-	this->normaliseResults(100);
+		this->normaliseResults(6);
+	}
 
 	copyMatrix(_lastResult, this->_result);
 }
 
-template <class DG>
-ClusterTSNE<DG>::~ClusterTSNE()
+ClusterTSNE::~ClusterTSNE()
 {
-
+	freeMatrix(&_result);
+	freeMatrix(&_lastResult);
+	freeMatrix(&_distances);
+	freeMatrix(&_ps);
+	freeMatrix(&_tmp);
 }
 
 void normalise_row(PCA::Matrix &m, int row)
@@ -56,7 +59,10 @@ void normalise_row(PCA::Matrix &m, int row)
 	double add = 0;
 	for (size_t j = 0; j < m.cols; j++)
 	{
-		add += m[row][j];
+		if (m[row][j] == m[row][j])
+		{
+			add += m[row][j];
+		}
 	}
 
 	for (size_t j = 0; j < m.cols; j++)
@@ -75,7 +81,10 @@ void normalise_matrix(PCA::Matrix &m)
 	double add = 0;
 	for (size_t j = 0; j < m.cols * m.rows; j++)
 	{
-		add += m.vals[j];
+		if (m.vals[j] == m.vals[j])
+		{
+			add += m.vals[j];
+		}
 	}
 
 	for (size_t j = 0; j < m.cols * m.rows; j++)
@@ -89,12 +98,16 @@ void normalise_matrix(PCA::Matrix &m)
 	}
 }
 
-template <class DG>
-PCA::Matrix ClusterTSNE<DG>::probabilityMatrix(int i, float s)
+PCA::Matrix ClusterTSNE::probabilityMatrix(int i, float s)
 {
 	PCA::Matrix &dm = _distances;
 	PCA::Matrix prob;
 	setupMatrix(&prob, 1, dm.cols);
+
+	if (s != s)
+	{
+		return prob;
+	}
 
 	for (size_t j = 0; j < dm.cols; j++)
 	{
@@ -120,8 +133,7 @@ PCA::Matrix ClusterTSNE<DG>::probabilityMatrix(int i, float s)
 	return prob;
 }
 
-template <class DG>
-PCA::Matrix ClusterTSNE<DG>::probabilityMatrix(PCA::Matrix &sigmas)
+PCA::Matrix ClusterTSNE::probabilityMatrix(PCA::Matrix &sigmas)
 {
 	PCA::Matrix &dm = _distances;
 
@@ -156,8 +168,7 @@ PCA::Matrix ClusterTSNE<DG>::probabilityMatrix(PCA::Matrix &sigmas)
 	return prob;
 }
 
-template <class DG>
-float ClusterTSNE<DG>::perplexity(PCA::Matrix &m)
+float ClusterTSNE::perplexity(PCA::Matrix &m)
 {
 	float entropy = 0;
 
@@ -170,7 +181,7 @@ float ClusterTSNE<DG>::perplexity(PCA::Matrix &m)
 				continue;
 			}
 			
-			if (m[i][j] <= 1e-6)
+			if (m[i][j] <= 1e-6 || m[i][j] != m[i][j])
 			{
 				continue;
 			}
@@ -185,54 +196,68 @@ float ClusterTSNE<DG>::perplexity(PCA::Matrix &m)
 	return perp;
 }
 
-template <class DG>
-float ClusterTSNE<DG>::startingSigma()
+float ClusterTSNE::startingSigma()
 {
 	double sum = 0;
+	double count = 0;
 	PCA::Matrix &dm = _distances;
 
 	for (size_t i = 0; i < dm.rows * dm.cols; i++)
 	{
-		sum += dm.vals[i];
+		if (dm.vals[i] == dm.vals[i])
+		{
+			sum += dm.vals[i];
+			count++;
+		}
 	}
 
-	sum /= (float)(dm.rows * dm.cols);
+	sum /= count;
 
 	return sum / 10;
 }
 
 
-template <class DG>
-float ClusterTSNE<DG>::findSigma(int row, float target)
+float ClusterTSNE::findSigma(int row, float target)
 {
 	float s = startingSigma();
+	if (s != s)
+	{
+		return 0;
+	}
+
 	float step = s / 2;
 	float last_dir = 0;
 	float guess = s;
+	int count = 0;
 	
-	while (step > s / 1000)
+	while (step > s / 1000 && count < 100)
 	{
 		PCA::Matrix prob = probabilityMatrix(row, guess);
 		float measured = perplexity(prob);
-
+		freeMatrix(&prob);
+		
 		float dir = (measured - target > 0 ? -1 : 1);
 		
 		if (dir * last_dir <= -0.5)
 		{
 			step /= 2;
 		}
+		
+		if (fabs(measured - target) < 0.5)
+		{
+			break;
+		}
 
 		guess += dir * step;
 
 		last_dir = dir;
-		freeMatrix(&prob);
+		count++;
 	}
 	
 	return guess;
 }
 
-template <class DG>
-PCA::Matrix ClusterTSNE<DG>::findSigmas(float target)
+PCA::Matrix ClusterTSNE::findSigmas(float target)
 {
 	PCA::Matrix sigmas;
 	setupMatrix(&sigmas, 1, _distances.cols);
@@ -246,8 +271,7 @@ PCA::Matrix ClusterTSNE<DG>::findSigmas(float target)
 	return sigmas;
 }
 
-template <class DG>
-float ClusterTSNE<DG>::qDistanceValue(int i, int j)
+float ClusterTSNE::qDistanceValue(int i, int j)
 {
 	float distsq = 0;
 	for (size_t k = 0; k < displayableDimensions(); k++)
@@ -260,8 +284,7 @@ float ClusterTSNE<DG>::qDistanceValue(int i, int j)
 	return nom;
 }
 
-template <class DG>
-PCA::Matrix ClusterTSNE<DG>::qMatrix()
+PCA::Matrix ClusterTSNE::qMatrix()
 {
 	PCA::Matrix prob;
 	setupMatrix(&prob, _distances.rows, _distances.cols);
@@ -281,7 +304,10 @@ PCA::Matrix ClusterTSNE<DG>::qMatrix()
 			}
 
 			float nom = qDistanceValue(i, j);
-			prob[i][j] = nom;
+			if (nom == nom)
+			{
+				prob[i][j] = nom;
+			}
 		}
 		
 		normalise_row(prob, i);
@@ -290,8 +316,7 @@ PCA::Matrix ClusterTSNE<DG>::qMatrix()
 	return prob;
 }
 
-template <class DG>
-void ClusterTSNE<DG>::prepareResults(float s)
+void ClusterTSNE::prepareResults(float s)
 {
 	setupMatrix(&this->_result, _distances.rows, displayableDimensions());
 	setupMatrix(&_lastResult, _distances.rows, displayableDimensions());
@@ -310,8 +335,7 @@ void ClusterTSNE<DG>::prepareResults(float s)
 }
 
 // eq 5 from paper vandermaaten08a
-template <class DG>
-PCA::Matrix ClusterTSNE<DG>::gradients(PCA::Matrix &ps)
+PCA::Matrix ClusterTSNE::gradients(PCA::Matrix &ps)
 {
 	PCA::Matrix grads;
 	setupMatrix(&grads, _distances.rows, displayableDimensions());
@@ -346,8 +370,7 @@ PCA::Matrix ClusterTSNE<DG>::gradients(PCA::Matrix &ps)
 	return grads;
 }
 
-template <class DG>
-float ClusterTSNE<DG>::averagePQDiff()
+float ClusterTSNE::averagePQDiff()
 {
 	PCA::Matrix qs = qMatrix();
 
@@ -364,8 +387,7 @@ float ClusterTSNE<DG>::averagePQDiff()
 	return sum;
 }
 
-template <class DG>
-float ClusterTSNE<DG>::incrementResult(float &scale, float &learning)
+float ClusterTSNE::incrementResult(float &scale, float &learning)
 {
 	copyMatrix(_tmp, this->_result);
 
@@ -387,13 +409,32 @@ float ClusterTSNE<DG>::incrementResult(float &scale, float &learning)
 	freeMatrix(&grads);
 	
 	float val = averagePQDiff();
-//	std::cout << "Target: " << val << std::endl;
+	std::cout << "Target: " << val << std::endl;
 	return val;
 }
 
+void ClusterTSNE::normaliseResults(float scale)
+{
+	float sum = 0;
+	for (size_t i = 0; i < _result.rows; i++)
+	{
+		for (size_t j = 0; j < displayableDimensions(); j++)
+		{
+			sum += _result[i][j] * _result[i][j];
+		}
+	}
 
-template <class DG>
-void ClusterTSNE<DG>::cluster()
+	float mag = sqrt(sum);
+	
+	for (size_t i = 0; i < _result.rows * _result.cols; i++)
+	{
+		_result.vals[i] /= mag;
+		_result.vals[i] *= scale;
+	}
+}
+
+
+void ClusterTSNE::cluster()
 {
 	float perp = 30;
 	
@@ -406,7 +447,7 @@ void ClusterTSNE<DG>::cluster()
 	_ps = probabilityMatrix(sigmas);
 	freeMatrix(&sigmas);
 	
-	float scale = 0.5;
+	float scale = 10;
 	float learning = 200;
 	std::vector<float> results;
 	int count = 0;
@@ -443,4 +484,22 @@ void ClusterTSNE<DG>::cluster()
 	freeMatrix(&_ps);
 }
 
-#endif
+glm::vec3 ClusterTSNE::pointForDisplay(int j)
+{
+	glm::vec3 v{};
+	
+	for (size_t i = 0; i < 3 && i < _result.cols; i++)
+	{
+		v[i] = _result[j][i];
+	}
+
+	return v;
+}
+
+PCA::Matrix ClusterTSNE::result()
+{
+	PCA::Matrix m;
+	setupMatrix(&m, _result.rows, _result.cols);
+	copyMatrix(m, _result);
+	return m;
+}

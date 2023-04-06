@@ -22,8 +22,10 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Responder.h>
 
+class MatrixPlot;
 class PathFinder;
 class LineGroup;
+class TSNEView;
 class Summary;
 class Box;
 
@@ -31,6 +33,7 @@ class PathFinderView : public Scene, Responder<PathFinder *>
 {
 public:
 	PathFinderView(Scene *scene);
+	~PathFinderView();
 	
 	PathFinder *pathFinder() const
 	{
@@ -39,17 +42,35 @@ public:
 
 	virtual void setup();
 	virtual void doThings();
+	virtual void buttonPressed(std::string tag, Button *button);
 protected:
 	virtual void respond();
 private:
+	void switchToSummary();
+	void switchToMatrix();
+	void switchToGraph();
+
 	void overviewButtons();
 	void makeTaskTree();
+
 	void updateSummary();
+	void updateMatrixBox();
+	void updateGraphBox();
+
 	void makeSummary();
+	void makeMatrixBox();
+	void makeGraphBox();
+
 	PathFinder *_pf = nullptr;
 	LineGroup *_taskTree = nullptr;
+
 	Box *_summaryBox = nullptr;
+	Box *_matrixBox = nullptr;
+	Box *_graphBox = nullptr;
+
 	Summary *_summary = nullptr;
+	MatrixPlot *_plot = nullptr;
+	TSNEView *_view = nullptr;
 	
 	bool _updateNext = false;
 };

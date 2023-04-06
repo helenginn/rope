@@ -25,16 +25,14 @@ class ForwardBackward : public Scene
 {
 public:
 	ForwardBackward(Scene *prev);
+	virtual ~ForwardBackward();
 
 	virtual void refresh() = 0;
 	virtual size_t unitsPerPage() = 0;
 	virtual void buttonPressed(std::string tag, Button *button = NULL);
 protected:
-	void clearTemps();
 	void scrollBackButton();
 	void scrollForwardButton();
-
-	std::vector<Renderable *> _temps;
 
 	int _start = 0;
 

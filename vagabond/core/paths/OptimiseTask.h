@@ -16,40 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#ifndef __vagabond__OptimiseTask__
+#define __vagabond__OptimiseTask__
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+#include "FromToTask.h"
+
+class OptimiseTask : public FromToTask
 {
+public:
+	OptimiseTask(PathFinder *pf, HasMetadata *from, HasMetadata *to);
 
-}
+	virtual TaskType type()
+	{
+		return Optimisation;
+	}
 
-void ThreadPathTask::doTask(PathTask *pt)
-{
-	_handler->updateObject(pt, _num);
-
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
+	virtual bool runnable()
+	{
+		return true;
+	}
 	
-	if (!success)
-	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
-	}
+protected:
+	virtual void specificTasks();
+private:
+};
 
-	return true; // we want another one
-}
+#endif

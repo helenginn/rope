@@ -16,40 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#ifndef __vagabond__MatrixPlot__
+#define __vagabond__MatrixPlot__
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+#include <vagabond/utils/svd/PCA.h>
+#include <vagabond/gui/elements/Image.h>
+
+class MatrixPlot : public Image
 {
+public:
+	MatrixPlot(PCA::Matrix &mat);
 
-}
+	virtual void update();
+private:
+	glm::vec4 colourForValue(float val);
+	void prepareSmallVertices();
+	void updateColours();
+	void setup();
 
-void ThreadPathTask::doTask(PathTask *pt)
-{
-	_handler->updateObject(pt, _num);
+	PCA::Matrix &_mat;
 
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
+	float _xProp = 1;
+	float _yProp = 1;
 	
-	if (!success)
-	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
-	}
+	std::map<int, int> _index2Vertex;
+};
 
-	return true; // we want another one
-}
+#endif

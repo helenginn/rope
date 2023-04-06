@@ -33,14 +33,9 @@
 
 #include <iostream>
 
-ClusterView::ClusterView()
+ClusterView::ClusterView() : PointyView()
 {
-	setUsesProjection(true);
 	setName("ClusterView");
-	_renderType = GL_POINTS;
-	setFragmentShaderFile("assets/shaders/point.fsh");
-	setVertexShaderFile("assets/shaders/point.vsh");
-	setImage("assets/images/points.png");
 	
 #ifdef __EMSCRIPTEN__
 	setSelectable(true);
@@ -53,64 +48,18 @@ ClusterView::~ClusterView()
 	deleteObjects();
 }
 
-void ClusterView::customiseTexture(Snow::Vertex &vert)
+void ClusterView::updatePoints()
 {
-	vert.tex.x = pointTypeCount(); /* number of points */
-	vert.tex.y = 0.; /* point index */
-	vert.color[3] = 1;
-}
-
-void ClusterView::setPointType(int idx, int type)
-{
-	_vertices[idx].tex.y = type; /* point index */
-}
-
-void ClusterView::addPoint(glm::vec3 pos, int pointType)
-{
-	Snow::Vertex &vert = addVertex(pos);
-	customiseTexture(vert);
-	setPointType(_vertices.size() - 1, pointType);
-
-	addIndex(-1);
-}
-
-void ClusterView::reindex()
-{
-	size_t offset = indexOffset();
-	for (size_t i = 0; i < vertexCount(); i++)
-	{
-		/* in the case of multiple responders */
-		_vertices[i].extra[0] = i + offset + 1.5;
-	}
-}
-
-void ClusterView::reset()
-{
-	for (size_t i = 0; i < vertexCount(); i++)
-	{
-		Snow::Vertex &vert = _vertices[i];
-		vert.tex.y = 0.; /* point index */
-		vert.color = glm::vec4(0., 0., 0., 1.);
-	}
-}
-
-void ClusterView::refresh()
-{
-	if (_vertices.size() == 0 && _cx)
-	{
-		_cx->cluster();
-		makePoints();
-	}
-
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		glm::vec3 v = _cx->pointForDisplay(i);
 		_vertices[i].pos = v;
 	}
-	
-	rebufferVertexData();
-	_invert = new std::thread(ClusterView::invertSVD, this);
+}
 
+void ClusterView::additionalJobs()
+{
+	_invert = new std::thread(ClusterView::invertSVD, this);
 	addPaths();
 }
 
@@ -124,6 +73,12 @@ void ClusterView::prioritiseMetadata(std::string key)
 
 void ClusterView::makePoints()
 {
+	if (_cx == nullptr)
+	{
+		return;
+	}
+
+	_cx->cluster();
 	clearVertices();
 	
 	size_t count = _cx->pointCount();
@@ -138,15 +93,6 @@ void ClusterView::makePoints()
 		}
 
 		glm::vec3 v = _cx->pointForDisplay(i);
-		
-		/*
-		for (size_t j = 0; j < 3; j++)
-		{
-			int axis = _cx->axis(j);
-			float weight = _cx->weight(axis);
-			v[j] *= weight;
-		}
-		*/
 
 		_point2Index[vertexCount()] = i;
 
@@ -161,14 +107,6 @@ void ClusterView::setCluster(RopeCluster *cx)
 	_cx = cx;
 
 	makePoints();
-}
-
-void ClusterView::extraUniforms()
-{
-	const char *uniform_name = "size";
-	GLuint u = glGetUniformLocation(_program, uniform_name);
-	glUniform1f(u, _size);
-	checkErrors("rebinding size");
 }
 
 void ClusterView::applySelected()
@@ -250,17 +188,6 @@ void ClusterView::applyRule(const Rule &r)
 void ClusterView::click(bool left)
 {
 	interacted(currentVertex(), false, left);
-}
-
-bool ClusterView::mouseOver()
-{
-	interacted(currentVertex(), true);
-	return (currentVertex() >= 0);
-}
-
-void ClusterView::unMouseOver()
-{
-	interacted(-1, true);
 }
 
 void ClusterView::interacted(int rawidx, bool hover, bool left)

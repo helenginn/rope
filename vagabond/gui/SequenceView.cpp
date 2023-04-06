@@ -75,7 +75,7 @@ void SequenceView::getLineLimits()
 
 void SequenceView::loadLines()
 {
-	clearTemps();
+	deleteTemps();
 
 	double pos = 0.3;
 	int rows = _sequence->rowCount() + 1;
@@ -88,8 +88,7 @@ void SequenceView::loadLines()
 		line->setup();
 		line->setLeft(0.2, pos);
 		pos += 0.06 * rows;
-		addObject(line);
-		_temps.push_back(line);
+		addTempObject(line);
 	}
 	
 	if (_start + _residuesPerPage < _sequence->entryCount())

@@ -16,40 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#include "TSNEView.h"
+#include <vagabond/c4x/ClusterTSNE.h>
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+TSNEView::TSNEView() : PointyView()
 {
+	setName("TSNE View");
 
 }
 
-void ThreadPathTask::doTask(PathTask *pt)
+void TSNEView::updatePoints()
 {
-	_handler->updateObject(pt, _num);
-
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		glm::vec3 v = _cluster->pointForDisplay(i);
+		_vertices[i].pos = v;
+	}
 }
 
-bool ThreadPathTask::doJob(PathTask *pt)
+void TSNEView::makePoints()
 {
-	bool success = pt->tryLock();
+	if (_cluster == nullptr)
+	{
+		return;
+	}
+
+	clearVertices();
 	
-	if (!success)
-	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
-	}
+	size_t count = _cluster->pointCount();
+	_vertices.reserve(count);
+	_indices.reserve(count);
 
-	return true; // we want another one
+	for (size_t i = 0; i < count; i++)
+	{
+		glm::vec3 v = _cluster->pointForDisplay(i);
+		addPoint(v, 0);
+	}
+	
+	reindex();
+	forceRender();
 }

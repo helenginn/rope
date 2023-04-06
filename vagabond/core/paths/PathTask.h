@@ -22,8 +22,10 @@
 #include "../Item.h"
 #include <atomic>
 
+class PlausibleRoute;
 class PathFinder;
 class HasMetadata;
+class Instance;
 class Model;
 
 class PathTask : public Item
@@ -45,7 +47,9 @@ public:
 	enum TaskType
 	{
 		None,
+		Reporter,
 		Validation,
+		Optimisation,
 	};
 	
 	virtual TaskType type()
@@ -60,12 +64,16 @@ public:
 
 	static Model *modelForHasMetadata(HasMetadata *wanted);
 	void gatherTasks(std::vector<PathTask *> &collection);
+	
+	PathTask *task(int i) const;
 protected:
 	virtual void specificTasks() {};
 
 	std::set<Model *> _needs;
 	std::set<Model *> _locks;
 	PathFinder *_pf = nullptr;
+	
+	void setComplete();
 private:
 	std::atomic<bool> _complete{false};
 };

@@ -19,11 +19,12 @@
 #ifndef __vagabond__ValidationTask__
 #define __vagabond__ValidationTask__
 
-#include "PathTask.h"
+#include "FromToTask.h"
 
 class HasMetadata;
+class Instance;
 
-class ValidationTask : public PathTask
+class ValidationTask : public FromToTask
 {
 public:
 	ValidationTask(PathFinder *pf, HasMetadata *from, HasMetadata *to);
@@ -37,11 +38,10 @@ public:
 	{
 		return true;
 	}
+	
 protected:
 	virtual void specificTasks();
 private:
-	HasMetadata *_from = nullptr;
-	HasMetadata *_to = nullptr;
 
 };
 

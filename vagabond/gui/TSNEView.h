@@ -16,40 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#ifndef __vagabond__TSNEView__
+#define __vagabond__TSNEView__
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+#include "PointyView.h"
+
+class ClusterTSNE;
+
+class TSNEView : public PointyView
 {
-
-}
-
-void ThreadPathTask::doTask(PathTask *pt)
-{
-	_handler->updateObject(pt, _num);
-
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
+public:
+	TSNEView();
 	
-	if (!success)
+	void setCluster(ClusterTSNE *tsne)
 	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
+		_cluster = tsne;
 	}
 
-	return true; // we want another one
-}
+	virtual void makePoints();
+	virtual void updatePoints();
+private:
+	ClusterTSNE *_cluster = nullptr;
+
+};
+
+#endif

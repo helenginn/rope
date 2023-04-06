@@ -34,6 +34,11 @@ Grapher::~Grapher()
 	{
 		delete _graphs[i];
 	}
+
+	for (size_t i = 0; i < _programs.size(); i++)
+	{
+		delete _programs[i];
+	}
 }
 
 Grapher::Grapher()

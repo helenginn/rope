@@ -63,7 +63,7 @@ public:
 		return _tag;
 	}
 
-	const std::string &displayName() const
+	virtual std::string displayName() const
 	{
 		return _name;
 	}
@@ -91,7 +91,7 @@ public:
 		return _items;
 	}
 	
-	Item *item(size_t idx)
+	Item *item(size_t idx) const
 	{
 		return _items[idx];
 	}
@@ -100,6 +100,8 @@ public:
 	{
 		return _parent;
 	}
+	
+	void childChanged();
 	
 	void toggleCollapsed()
 	{
@@ -119,6 +121,16 @@ public:
 	void unfold()
 	{
 		_collapsed = false;
+	}
+	
+	void permanentCollapse()
+	{
+		_neverUnfold = true;
+	}
+	
+	bool canUnfold()
+	{
+		return !_neverUnfold;
 	}
 	
 	void collapse()
@@ -155,6 +167,10 @@ protected:
 	 * to be done before the final delete. */
 	virtual void lastRites() {};
 
+	const std::string &name() const
+	{
+		return _name;
+	}
 private:
 	void deleteSelf();
 	void deleteChildren();
@@ -179,6 +195,7 @@ private:
 	bool _selectable = false;
 	bool _deleted = false;
 	bool _collapsed = false;
+	bool _neverUnfold = false;
 
 	std::string _name;
 	

@@ -19,7 +19,10 @@
 #ifndef __vagabond__RouteValidator__
 #define __vagabond__RouteValidator__
 
+#include <map>
+
 class PlausibleRoute;
+class Atom;
 
 class RouteValidator
 {
@@ -38,10 +41,13 @@ public:
 	int endInstanceGaps();
 private:
 	float dotLastTwoVectors();
+	void populateDistances();
 	void savePreviousPositions();
 
 	PlausibleRoute &_route;
+	std::map<Atom *, float> _distances;
 
+	int _steps = 32;
 };
 
 #endif

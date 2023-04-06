@@ -18,15 +18,27 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
+#include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/gui/TSNEView.h>
 #include <vagabond/core/paths/PathTask.h>
+#include <vagabond/core/RopeCluster.h>
 #include "PathFinderView.h"
 #include "paths/Summary.h"
+#include "paths/Monitor.h"
 #include "PathFinder.h"
 
 PathFinderView::PathFinderView(Scene *prev) : Scene(prev)
 {
 	_pf = new PathFinder();
 	_pf->setResponder(this);
+	_translation.x += 2;
+	_translation.z -= 100;
+}
+
+PathFinderView::~PathFinderView()
+{
+	deleteObjects(true);
+	delete _pf;
 }
 
 void PathFinderView::makeTaskTree()
@@ -45,6 +57,9 @@ void PathFinderView::setup()
 	overviewButtons();
 	makeTaskTree();
 	makeSummary();
+	makeMatrixBox();
+	makeGraphBox();
+	switchToSummary();
 	_pf->start();
 }
 
@@ -54,6 +69,20 @@ void PathFinderView::overviewButtons()
 		TextButton *tb = new TextButton("Summary", this);
 		tb->setLeft(0.33, 0.1);
 		tb->setReturnTag("summary");
+		addObject(tb);
+	}
+
+	{
+		TextButton *tb = new TextButton("Plot", this);
+		tb->setLeft(0.55, 0.1);
+		tb->setReturnTag("plot");
+		addObject(tb);
+	}
+
+	{
+		TextButton *tb = new TextButton("Map", this);
+		tb->setLeft(0.77, 0.1);
+		tb->setReturnTag("map");
 		addObject(tb);
 	}
 }
@@ -69,6 +98,35 @@ void PathFinderView::updateSummary()
 
 }
 
+void PathFinderView::updateGraphBox()
+{
+	if (_view->vertexCount() > 0)
+	{
+		return;
+	}
+
+	return;
+	/*
+	ClusterTSNE *tsne = _pf->monitor()->availableTSNE();
+	if (!tsne)
+	{
+		return;
+	}
+	_view->setCluster(tsne);
+	_view->makePoints();
+	
+	glm::vec3 c = _view->centroid();
+	shiftToCentre(c, 0);
+	*/
+}
+
+void PathFinderView::updateMatrixBox()
+{
+	MatrixPlot *mp = new MatrixPlot(_pf->monitor()->matrix());
+	_plot = mp;
+	_matrixBox->addObject(mp);
+}
+
 void PathFinderView::makeSummary()
 {
 	if (_summaryBox == nullptr)
@@ -79,6 +137,70 @@ void PathFinderView::makeSummary()
 	}
 	
 	updateSummary();
+}
+
+void PathFinderView::makeGraphBox()
+{
+	if (_graphBox == nullptr)
+	{
+		_graphBox = new Box();
+		addObject(_graphBox);
+		_view = new TSNEView();
+		_graphBox->addObject(_view);
+	}
+	
+	updateMatrixBox();
+}
+
+void PathFinderView::makeMatrixBox()
+{
+	if (_matrixBox == nullptr)
+	{
+		_matrixBox = new Box();
+		addObject(_matrixBox);
+	}
+	
+	updateMatrixBox();
+}
+
+void PathFinderView::switchToGraph()
+{
+	_matrixBox->setDisabled(true);
+	_summaryBox->setDisabled(true);
+	_graphBox->setDisabled(false);
+	updateGraphBox();
+}
+
+void PathFinderView::switchToMatrix()
+{
+	_matrixBox->setDisabled(false);
+	_summaryBox->setDisabled(true);
+	_graphBox->setDisabled(true);
+}
+
+void PathFinderView::switchToSummary()
+{
+	_matrixBox->setDisabled(true);
+	_summaryBox->setDisabled(false);
+	_graphBox->setDisabled(true);
+}
+
+void PathFinderView::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "summary")
+	{
+		switchToSummary();
+	}
+	else if (tag == "plot")
+	{
+		switchToMatrix();
+	}
+	else if (tag == "map")
+	{
+		switchToGraph();
+	}
+	
+	Scene::buttonPressed(tag, button);
 }
 
 void PathFinderView::doThings()
@@ -98,5 +220,15 @@ void PathFinderView::doThings()
 void PathFinderView::respond()
 {
 	_updateNext = true;
-
+	
+	if (_plot)
+	{
+		_plot->update();
+	}
+	
+	if (_view)
+	{
+		updateGraphBox();
+	}
 }
+

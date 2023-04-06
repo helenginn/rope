@@ -7,8 +7,13 @@
 #include "HasRenderables.h"
 #include "Renderable.h"
 
-void HasRenderables::deleteObjects()
+void HasRenderables::deleteObjects(bool recursive)
 {
+	for (size_t i = 0; i < objectCount() && recursive; i++)
+	{
+		object(i)->deleteObjects();
+	}
+
 	for (size_t i = 0; i < _objects.size(); i++)
 	{
 		if (_dragged == _objects[i])
@@ -21,6 +26,7 @@ void HasRenderables::deleteObjects()
 			_chosen = nullptr;
 		}
 
+		removeObject(_objects[i]);
 		delete _objects[i];
 	}
 
@@ -114,7 +120,7 @@ void HasRenderables::transferObjectToOther(Renderable *r, HasRenderables *h)
 
 HasRenderables::~HasRenderables()
 {
-
+	deleteObjects();
 }
 
 void HasRenderables::addObjectToFront(Renderable *r)
@@ -169,8 +175,9 @@ void HasRenderables::deleteTemps()
 		{
 			_dragged = nullptr;
 		}
+
+		r->deleteObjects(true);
 		removeObject(r);
-		delete r;
 	}
 
 	_temps.clear();

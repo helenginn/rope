@@ -16,40 +16,48 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#ifndef __vagabond__PointyView__
+#define __vagabond__PointyView__
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+#include <vagabond/gui/elements/IndexResponder.h>
+
+#define POINT_TYPE_COUNT 8
+
+class PointyView : public IndexResponder 
 {
-
-}
-
-void ThreadPathTask::doTask(PathTask *pt)
-{
-	_handler->updateObject(pt, _num);
-
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
+public:
+	PointyView();
 	
-	if (!success)
+	void refresh();
+
+	void addPoint(glm::vec3 pos, int pointType);
+	void setPointType(int idx, int type);
+	
+	const size_t pointTypeCount() const
 	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
+		return POINT_TYPE_COUNT;
 	}
 
-	return true; // we want another one
-}
+	virtual size_t requestedIndices()
+	{
+		return _vertices.size();
+	}
+
+	void reset();
+	virtual void reindex();
+
+	virtual bool mouseOver();
+	virtual void unMouseOver();
+
+	virtual void makePoints() = 0;
+	virtual void updatePoints() = 0;
+	virtual void additionalJobs() {};
+protected:
+	virtual void extraUniforms();
+	void customiseTexture(Snow::Vertex &vert);
+private:
+	float _size = 40;
+
+};
+
+#endif

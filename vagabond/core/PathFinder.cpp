@@ -24,20 +24,45 @@
 #include "RopeCluster.h"
 #include "Environment.h"
 #include "FileManager.h"
+
+#include "paths/Monitor.h"
 #include "paths/ValidationTask.h"
+#include "paths/ReporterTask.h"
+#include "paths/OptimiseTask.h"
 
 PathFinder::PathFinder()
 {
-	Environment::fileManager()->geometryFiles();
+	std::set<std::string> set = Environment::fileManager()->geometryFiles();
 }
 
 PathFinder::~PathFinder()
 {
+	_handler->stop();
+	_handler->waitToFinish();
+
 	for (auto it = _resourceLocks.begin(); it != _resourceLocks.end(); it++)
 	{
 		delete it->second;
 	}
+
 	_resourceLocks.clear();
+
+	_tasks->deleteItem(); // covers validations
+	Item::resolveDeletions();
+	
+	delete _cluster;
+	
+	delete _monitor;
+	delete _handler;
+}
+
+void PathFinder::setWhiteList(const std::vector<HasMetadata *> &whiteList)
+{
+	_whiteList.clear();
+	for (HasMetadata *hm : whiteList)
+	{
+		_whiteList.push_back(static_cast<Instance *>(hm));
+	}
 }
 
 void PathFinder::prepareObjects()
@@ -45,7 +70,7 @@ void PathFinder::prepareObjects()
 	if (_whiteList.size() == 0)
 	{
 		MetadataGroup group = _entity->makeTorsionDataGroup();
-		_whiteList = group.objects();
+		setWhiteList(group.objects());
 	}
 }
 
@@ -54,19 +79,28 @@ void PathFinder::prepareTaskBins()
 	_tasks = new PathTask(this);
 	_tasks->setDisplayName("All tasks");
 
-	_validations = new PathTask(this);
+	_validations = new ReporterTask(this);
+	_validations->permanentCollapse();
 	_validations->setDisplayName("Path validation");
-	
 	_tasks->addItem(_validations);
 
+	_optimisePaths = new ReporterTask(this);
+	_optimisePaths->permanentCollapse();
+	_optimisePaths->setDisplayName("Optimise paths");
+	_tasks->addItem(_optimisePaths);
 }
 
 void PathFinder::prepareValidationTasks()
 {
-	for (size_t i = 0; i < _whiteList.size() - 1; i++)
+	for (size_t i = 0; i < _whiteList.size(); i++)
 	{
-		for (size_t j = i + 1; j < _whiteList.size(); j++)
+		for (size_t j = 0; j < _whiteList.size(); j++)
 		{
+			if (i == j)
+			{
+				continue;
+			}
+
 			ValidationTask *task = new ValidationTask(this, _whiteList[i],
 			                                          _whiteList[j]);
 			_validations->addItem(task);
@@ -103,11 +137,23 @@ void PathFinder::prepareMutexList()
 
 void PathFinder::setupTorsionCluster()
 {
+	std::vector<HasMetadata *> hms;
+	for (Instance *inst : _whiteList)
+	{
+		hms.push_back(inst);
+	}
+
 	MetadataGroup angles = _entity->makeTorsionDataGroup();
-	angles.setWhiteList(_whiteList);
+	angles.setWhiteList(hms);
 	angles.normalise();
 
 	_cluster = new TorsionCluster(angles);
+	_cluster->cluster();
+}
+
+void PathFinder::prepareMonitor()
+{
+	_monitor = new Monitor(this, _whiteList);
 }
 
 void PathFinder::setupSerialJob()
@@ -129,6 +175,7 @@ void PathFinder::setup()
 	setupTorsionCluster();
 	prepareMutexList();
 	prepareTaskBins();
+	prepareMonitor();
 	prepareValidationTasks();
 }
 
@@ -156,3 +203,40 @@ void PathFinder::finishedObjects()
 {
 
 }
+
+void PathFinder::sendValidationResult(FromToTask *task, bool valid, 
+                                      float linearity)
+{
+	_monitor->addValidation(task->from(), task->to(), valid, linearity);
+}
+
+Path *PathFinder::existingPath(FromToTask *task)
+{
+	_monitor->existingPath(task->from(), task->to()); 
+}
+
+void PathFinder::sendUpdatedPath(Path &path, FromToTask *task)
+{
+	_monitor->updatePath(task->from(), task->to(), path);
+}
+
+void PathFinder::addTask(ValidationTask *task)
+{
+	PathTask *cast = static_cast<PathTask *>(task);
+	_validations->addItem(task);
+	_validations->childChanged();
+	_handler->pushObject(cast);
+}
+
+
+void PathFinder::addTask(OptimiseTask *task)
+{
+	std::cout << "Adding task: " << task->displayName() << std::endl;
+	
+	PathTask *cast = static_cast<PathTask *>(task);
+
+	_optimisePaths->addItem(task);
+	_optimisePaths->childChanged();
+	_handler->pushObject(cast);
+}
+

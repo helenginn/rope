@@ -24,10 +24,16 @@ Text::Text(std::string text, Font::Type type, bool delay) : Box()
 		_retext = true;
 		png_byte *bytes = nullptr;
 		TextManager::text_malloc(&bytes, text, &_w, &_h, type);
+		TextManager::text_free(&bytes);
 		makeQuad();
 	}
 	
 	setName(text);
+}
+
+Text::~Text()
+{
+
 }
 
 void Text::render(SnowGL *gl)

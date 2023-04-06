@@ -26,10 +26,13 @@ RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 
 }
 
-float RouteValidator::dotLastTwoVectors()
+void RouteValidator::populateDistances()
 {
-	float dots = 0;
-	float count = 0;
+	if (_distances.size() > 0)
+	{
+		return;
+	}
+	
 	AtomGroup *grp = _route.instance()->currentAtoms();
 	for (Atom *a : grp->atomVector())
 	{
@@ -38,20 +41,56 @@ float RouteValidator::dotLastTwoVectors()
 			continue;
 		}
 
+		glm::vec3 moving = a->otherPosition("moving");
+		moving /= (float)_steps;
+		_distances[a] = glm::length(moving);
+	}
+}
+
+float RouteValidator::dotLastTwoVectors()
+{
+	float dots = 0;
+	float count = 0;
+
+	AtomGroup *grp = _route.instance()->currentAtoms();
+	for (Atom *a : grp->atomVector())
+	{
+		if (!a->isMainChain() || _distances.count(a) == 0)
+		{
+			continue;
+		}
+
 		glm::vec3 curr = a->derivedPosition();
 		glm::vec3 parent = a->otherPosition("parent");
 		glm::vec3 grandparent = a->otherPosition("grandparent");
+
+		glm::vec3 vec1 = curr - parent;
+		glm::vec3 vec2 = parent - grandparent;
 		
-		glm::vec3 first = glm::normalize(curr - parent);
-		glm::vec3 second = glm::normalize(parent - grandparent);
+		glm::vec3 first = glm::normalize(vec1);
+		glm::vec3 second = glm::normalize(vec2);
 		
 		float dot = glm::dot(first, second);
+		float mag = sqrt(glm::length(vec1) * glm::length(vec2));
+		float norm = _distances[a];
+		float tolerance = 0.1;
 		
-		dots += dot * dot;
-		count++;
+		dot *= (norm + tolerance) / (mag + tolerance);
+		
+		if (dot < 0)
+		{
+			dot = 0;
+		}
+		
+		if (dot == dot)
+		{
+			dots += dot;
+			count++;
+		}
+		
 	}
 	
-	dots = sqrt(dots / count);
+	dots /= count;
 	return dots;
 }
 
@@ -76,7 +115,12 @@ void RouteValidator::savePreviousPositions()
 
 float RouteValidator::linearityRatio()
 {
-	_route.calculateLinearProgression(32);
+	populateDistances();
+	_route.shouldUpdateAtoms(true);
+
+	_route.calculatePolynomialProgression(32);
+	_steps = _route.pointCount();
+
 	float ave = 0;
 	float count = 0;
 
@@ -87,9 +131,12 @@ float RouteValidator::linearityRatio()
 		if (i > 1)
 		{
 			float contribution = dotLastTwoVectors();
-			ave += contribution;
-			count++;
-			// compare
+			
+			if (contribution == contribution)
+			{
+				ave += contribution;
+				count++;
+			}
 		}
 		
 		savePreviousPositions();
@@ -101,6 +148,7 @@ float RouteValidator::linearityRatio()
 
 bool RouteValidator::validate()
 {
+	_route.shouldUpdateAtoms(true);
 	_route.twoPointProgression();
 	_route.submitJobAndRetrieve(1);
 

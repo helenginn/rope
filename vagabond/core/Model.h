@@ -126,6 +126,11 @@ public:
 	void load(LoadOptions opts = Everything);
 	bool unload();
 	
+	int loadCount() const
+	{
+		return _loadCounter;
+	}
+	
 	bool loaded() const
 	{
 		return (_currentAtoms != nullptr);

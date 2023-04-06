@@ -139,13 +139,13 @@ bool Model::unload()
 	
 	if (_currentFile)
 	{
-		delete _currentAtoms;
+		delete _currentFile;
 		_currentFile = nullptr;
 	}
 	
 	if (_currentAtoms)
 	{
-		delete _currentFile;
+		delete _currentAtoms;
 		_currentAtoms = nullptr;
 	}
 	

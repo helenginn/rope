@@ -59,6 +59,17 @@ public:
 	{
 		return _points.size();
 	}
+
+	void shouldUpdateAtoms(bool update)
+	{
+		_updateAtoms = update;
+	}
+	
+	void setCycles(int cycles)
+	{
+		_cycles = cycles;
+	}
+	
 	
 	/* get rid of all points defined so far */
 	void clearPoints();
@@ -219,6 +230,8 @@ public:
 	void clearWayPointFlips();
 
 	int indexOfTorsion(BondTorsion *t);
+
+	void bringTorsionsToRange();
 	
 	void extractWayPoints(Route *other);
 	void printWayPoints();
@@ -272,8 +285,6 @@ protected:
 	{
 		return _flips[i];
 	}
-
-	void bringTorsionsToRange();
 	
 	enum InterpolationType
 	{
@@ -304,6 +315,11 @@ protected:
 
 	float getTorsionAngle(int i);
 	
+	int cycles()
+	{
+		return _cycles;
+	}
+
 private:
 	bool _calculating;
 	float _score;
@@ -334,6 +350,7 @@ private:
 	typedef std::map<int, Score> TicketScores;
 	
 	size_t _grapherIdx = 0;
+	bool _updateAtoms = true;
 
 	Instance *_endInstance = nullptr;
 
@@ -350,6 +367,7 @@ private:
 	/* int: referring to parameter angle via _destination[int] */
 	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
+	int _cycles = -1;
 };
 
 #endif

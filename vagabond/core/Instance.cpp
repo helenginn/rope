@@ -382,3 +382,8 @@ Atom *Instance::equivalentForAtom(Instance *other, Atom *atom)
 		return equivalentForAtom(l, atom);
 	}
 }
+
+int Instance::loadCount()
+{
+	return model()->loadCount();
+}

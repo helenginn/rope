@@ -21,40 +21,54 @@
 
 #include "Cluster.h"
 
-template <class DG>
-class ClusterTSNE : public Cluster<DG>
+class ClusterTSNE 
 {
 public:
-	ClusterTSNE(DG &dg);
+	ClusterTSNE(PCA::Matrix &distances, PCA::Matrix *start);
 	~ClusterTSNE();
 
-	virtual void cluster();
+	void cluster();
 	
-	virtual bool givesTorsionAngles()
+	size_t pointCount() const
+	{
+		return _result.rows;
+	}
+	
+	bool givesTorsionAngles()
 	{
 		return false;
 	}
 	
-	virtual bool canMapVectors()
+	bool canMapVectors()
 	{
 		return false;
 	}
+	
+	glm::vec3 pointForDisplay(int i);
 
-	virtual std::vector<float> mapAnglesToVector(std::vector<Angular> 
+	std::vector<float> mapAnglesToVector(std::vector<Angular> 
 	                                             &angles)
 	{
 		return std::vector<float>();
 	}
 
-	virtual void chooseBestAxes(std::vector<float> &vals)
+	void chooseBestAxes(std::vector<float> &vals)
 	{
 		return;
 	}
-
-	virtual size_t displayableDimensions()
+	
+	void setDisplayableDimensions(int dims)
 	{
-		return 3;
+		_dims = dims;
 	}
+
+	size_t displayableDimensions()
+	{
+		return _dims;
+	}
+	
+	PCA::Matrix result();
+	void normaliseResults(float scale = 1);
 private:
 	PCA::Matrix probabilityMatrix(int i, float sigma);
 	PCA::Matrix probabilityMatrix(PCA::Matrix &sigmas);
@@ -73,12 +87,13 @@ private:
 	void prepareResults(float s);
 	float averagePQDiff();
 
-	PCA::Matrix _distances;
-	PCA::Matrix _ps;
-	PCA::Matrix _lastResult;
-	PCA::Matrix _tmp;
+	PCA::Matrix _distances{};
+	PCA::Matrix _ps{};
+	PCA::Matrix _lastResult{};
+	PCA::Matrix _result{};
+	PCA::Matrix _tmp{};
+	
+	int _dims = 3;
 };
-
-#include "ClusterTSNE.cpp"
 
 #endif

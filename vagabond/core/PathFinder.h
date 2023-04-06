@@ -25,12 +25,18 @@
 #include "SerialJob.h"
 #include "Responder.h"
 
+class ValidationTask;
 class TorsionCluster;
+class OptimiseTask;
 class HasMetadata;
+class FromToTask;
+class Instance;
 class PathTask;
+class Monitor;
 class PathJob;
 class Entity;
 class Model;
+class Path;
 
 class PathFinder : public SerialJobResponder<PathTask *>,
 public HasResponder<Responder<PathFinder *> >
@@ -44,10 +50,7 @@ public:
 		_entity = entity;
 	}
 
-	void setWhiteList(const std::vector<HasMetadata *> &whiteList)
-	{
-		_whiteList = whiteList;
-	}
+	void setWhiteList(const std::vector<HasMetadata *> &whiteList);
 	
 	PathTask *topTask()
 	{
@@ -59,6 +62,13 @@ public:
 	
 	void setup();
 	void start();
+	
+	void sendValidationResult(FromToTask *task, bool valid, float linearity);
+	void sendUpdatedPath(Path &path, FromToTask *task);
+	Path *existingPath(FromToTask *task);
+	
+	void addTask(OptimiseTask *task);
+	void addTask(ValidationTask *task);
 
 	virtual void attachObject(PathTask *object);
 	virtual void detachObject(PathTask *object);
@@ -70,21 +80,29 @@ public:
 	{
 		return _cluster;
 	}
+	
+	Monitor *monitor()
+	{
+		return _monitor;
+	}
 private:
 	void prepareObjects();
 	void prepareMutexList();
 	void prepareTaskBins();
+	void prepareMonitor();
 	void prepareValidationTasks();
 	void setupSerialJob();
 	void setupTorsionCluster();
 
-	std::vector<HasMetadata *> _whiteList;
+	std::vector<Instance *> _whiteList;
 	Entity *_entity = nullptr;
 	
 	PathTask *_tasks = nullptr;
 	PathTask *_validations = nullptr;
+	PathTask *_optimisePaths = nullptr;
 	
 	PathJob *_handler = nullptr;
+	Monitor *_monitor = nullptr;
 	
 	std::map<Model *, std::mutex *> _resourceLocks;
 	

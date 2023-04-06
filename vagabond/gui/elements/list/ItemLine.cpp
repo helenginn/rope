@@ -154,11 +154,14 @@ void ItemLine::replaceContent()
 void ItemLine::setup()
 {
 	replaceContent();
+
+	bool arrow = (_item->itemCount() > 0) && _item->canUnfold();
 	
-	addArrow();
-	
-	bool arrow = (_item->itemCount() > 0);
-	if (!arrow)
+	if (arrow)
+	{
+		addArrow();
+	}
+	else
 	{
 		addBranch();
 	}
@@ -194,4 +197,5 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 void ItemLine::respond()
 {
 	update();
+	forceRender();
 }

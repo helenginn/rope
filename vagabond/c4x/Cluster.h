@@ -102,6 +102,11 @@ public:
 	{
 		return _result[i][j];
 	}
+
+	const PCA::Matrix &results() const
+	{
+		return _result;
+	}
 	
 	const float &scaleFactor() const
 	{

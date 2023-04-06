@@ -63,7 +63,7 @@ void FileManager::correctFilename(std::string &filename)
 
 std::set<std::string> &FileManager::geometryFiles()
 {
-	if (_geometries.size())
+	if (_foundGeometries)
 	{
 		return _geometries;
 	}
@@ -82,6 +82,7 @@ std::set<std::string> &FileManager::geometryFiles()
 	}
 
 	setFilterType(File::Nothing);
+	_foundGeometries = true;
 
 	return _geometries;
 }

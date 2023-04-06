@@ -30,6 +30,12 @@ Sampler::Sampler(int n, int dims)
 	setupMatrix(&_tensor, n, n);
 }
 
+Sampler::~Sampler()
+{
+	freeMatrix(&_tensor);
+	freeMatrix(&_points);
+}
+
 void Sampler::setup()
 {
 	if (_fibonacci && _n > 1)

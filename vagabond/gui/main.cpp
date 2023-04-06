@@ -37,5 +37,8 @@ int main (int argc, char **argv)
 	curl_global_cleanup();
 #endif
 
+	// https://stackoverflow.com/questions/59122213/how-to-use-leaks-command-line-tool-to-find-memory-leaks
+//	fscanf(stdin, "c"); 
+
 	return 0;
 }

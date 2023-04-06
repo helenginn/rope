@@ -18,7 +18,7 @@ class Scene : public SnowGL, public ButtonResponder
 {
 public:
 	Scene(Scene *prev = nullptr);
-	~Scene();
+	virtual ~Scene();
 	
 	void setModal(Modal *modal)
 	{

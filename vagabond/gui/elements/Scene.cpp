@@ -25,7 +25,7 @@ Scene::Scene(Scene *prev) : SnowGL()
 
 Scene::~Scene()
 {
-	deleteObjects();
+	
 }
 
 void Scene::preSetup()

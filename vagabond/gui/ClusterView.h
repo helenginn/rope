@@ -19,12 +19,10 @@
 #ifndef __vagabond__ClusterView__
 #define __vagabond__ClusterView__
 
-#include <vagabond/gui/elements/IndexResponder.h>
+#include "PointyView.h"
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Manager.h>
 #include <thread>
-
-#define POINT_TYPE_COUNT 8
 
 class Path;
 class Rule;
@@ -35,7 +33,7 @@ class MetadataGroup;
 class RopeCluster;
 class ConfSpaceView;
 
-class ClusterView : public IndexResponder, 
+class ClusterView : public PointyView,
 public Progressor,
 public Responder<Manager<Path>>
 {
@@ -44,8 +42,6 @@ public:
 	~ClusterView();
 
 	void setCluster(RopeCluster *cx);
-	
-	void refresh();
 	
 	void clearRules()
 	{
@@ -68,35 +64,21 @@ public:
 	{
 		return _cx;
 	}
-	
-	const size_t pointTypeCount() const
-	{
-		return POINT_TYPE_COUNT;
-	}
 
-	void addPoint(glm::vec3 pos, int pointType);
-	void setPointType(int idx, int type);
 	virtual void makePoints();
+	virtual void updatePoints();
+	virtual void additionalJobs();
 	virtual void click(bool left = true);
 
 	void applyRule(const Rule &r);
 	void applySelected();
 
 	void prioritiseMetadata(std::string key);
-	void reset();
 	
 	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual void selected(int idx, bool inverse);
-	virtual size_t requestedIndices()
-	{
-		return _vertices.size();
-	}
 
-	virtual void reindex();
 	virtual void respond();
-
-	virtual bool mouseOver();
-	virtual void unMouseOver();
 	
 	virtual bool selectable() const
 	{
@@ -106,9 +88,7 @@ public:
 	void reselect();
 	void deselect();
 protected:
-	virtual void extraUniforms();
-	void customiseTexture(Snow::Vertex &vert);
-	float _size = 40;
+
 private:
 	void clearPaths();
 	void addPaths();

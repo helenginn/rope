@@ -16,40 +16,39 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#include "ReporterTask.h"
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+ReporterTask::ReporterTask(PathFinder *pf) : PathTask(pf)
 {
 
 }
 
-void ThreadPathTask::doTask(PathTask *pt)
+std::string ReporterTask::displayName() const
 {
-	_handler->updateObject(pt, _num);
+	std::string total = name();
 
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
+	if (itemCount() == 0)
+	{
+		total += " (0)";
+		return total;
+	}
 	
-	if (!success)
+	int num = 0;
+	int done = 0;
+	
+	for (size_t i = 0; i < itemCount(); i++)
 	{
-		_failCount++;
-		_handler->pushObject(pt);
+		PathTask *t = task(i);
+		if (t->runnable())
+		{
+			num++;
+			if (t->complete())
+			{
+				done++;
+			}
+		}
 	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
-	}
-
-	return true; // we want another one
+	
+	total += " (" + std::to_string(done) + " / " + std::to_string(num) + ")";
+	return total;
 }

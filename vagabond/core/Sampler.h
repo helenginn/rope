@@ -26,6 +26,7 @@ class Sampler
 {
 public:
 	Sampler(int n, int dims);
+	~Sampler();
 
 	void setup();
 	
@@ -63,7 +64,7 @@ private:
 	
 	std::vector<std::vector<float> > _tmpPoints;
 	PCA::Matrix _points{};
-	PCA::Matrix _tensor;
+	PCA::Matrix _tensor{};
 	
 	bool _fibonacci = true;
 };

@@ -95,7 +95,6 @@ bool Item::removeItem(Item *item)
 void Item::deleteSelf()
 {
 	_deleted = true;
-
 	_deletedItems.insert(this);
 }
 
@@ -107,7 +106,8 @@ void Item::deleteChildren()
 		bool success = removeItem(item);
 		if (!success)
 		{
-			throw std::runtime_error("Removing a child was unsuccessful");
+//			throw std::runtime_error("Removing a child was unsuccessful: "
+//			                         + item->displayName());
 		}
 	}
 
@@ -158,4 +158,9 @@ size_t Item::depth() const
 	}
 	
 	return d;
+}
+
+void Item::childChanged()
+{
+	triggerResponse();
 }

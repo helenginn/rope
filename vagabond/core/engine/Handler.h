@@ -77,6 +77,18 @@ protected:
 			joinThreads();
 		}
 
+		void clearQueue()
+		{
+			handout.lock();
+
+			while (members.size())
+			{
+				members.pop();
+			}
+
+			handout.unlock();
+		}
+
 		void acquireObject(Object &obj, bool &finish)
 		{
 			sem.wait();

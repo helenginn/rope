@@ -91,7 +91,6 @@ void RopeSpaceItem::calculateCluster()
 		cx = new TorsionCluster(angles);
 
 		_cluster = cx;
-		cx->cluster();
 		_view->setCluster(cx);
 	}
 	
@@ -104,7 +103,6 @@ void RopeSpaceItem::calculateCluster()
 		cx = new PositionalCluster(group);
 
 		_cluster = cx;
-		cx->cluster();
 		_view->setCluster(cx);
 	}
 

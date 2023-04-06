@@ -40,6 +40,7 @@ public:
 	void setTargets();
 	
 	virtual void prepareForAnalysis();
+	float routeScore(int steps, bool forceField = false);
 protected:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();
@@ -52,7 +53,6 @@ protected:
 	void nudgeWayPointCycles();
 	void flipTorsionCycles();
 	bool simplexCycle(std::vector<int> torsionIdxs);
-	float routeScore(int steps, bool forceField = false);
 	void startTicker(std::string tag, int d = -1);
 
 	std::vector<int> getTorsionSequence(int start, int max, 
@@ -100,7 +100,7 @@ private:
 	void prepareAnglesForRefinement(std::vector<int> &idxs);
 
 	int countTorsions();
-	void cycle();
+	virtual void cycle();
 
 	void assignParameterValues(const std::vector<float> &trial);
 	void printFit(PlausibleRoute::PolyFit &fit);

@@ -181,12 +181,6 @@ void SplitRoute::calculateFirstAnchors()
 	}
 
 	_atoms = tmp;
-
-	for (AtomInt &ai : _atoms)
-	{
-		std::cout << "Anchor: " << ai.atom->desc() << " length " << ai.count 
-		<< std::endl;
-	}
 }
 
 void SplitRoute::prepareShortRoutes()
@@ -240,7 +234,7 @@ void SplitRoute::doCalculations()
 		{
 			break;
 		}
-
+		
 		float begin = routeScore(_nudgeCount);
 		postScore(begin);
 
@@ -260,6 +254,11 @@ void SplitRoute::doCalculations()
 		}
 		
 		stages++;
+		
+		if (stages == cycles())
+		{
+			break;
+		}
 	}
 
 	finishTicker();

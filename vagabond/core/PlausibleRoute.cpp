@@ -36,6 +36,8 @@ void PlausibleRoute::setup()
 	prepareDestination();
 	
 	setTargets();
+	
+	bringTorsionsToRange();
 }
 
 void PlausibleRoute::setTargets()
@@ -214,7 +216,7 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 	bool changed = false;
 
 	float bs = _simplex->bestScore();
-	if (bs < _bestScore - 1e-6)
+	if (bs < _bestScore - 1e-3)
 	{
 		_bestScore = bs;
 		postScore(bs);
@@ -419,8 +421,6 @@ bool PlausibleRoute::flipTorsions(bool main)
 	startTicker("Flipping torsions");
 	bool changed = false;
 	_bestScore = routeScore(_nudgeCount);
-	
-	bringTorsionsToRange();
 	
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
@@ -868,6 +868,7 @@ void PlausibleRoute::splitWaypoints()
 
 void PlausibleRoute::printWaypoints()
 {
+	return;
 	std::cout << ",start,end,";
 	std::cout << std::endl;
 

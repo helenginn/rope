@@ -20,7 +20,7 @@
 #include "PathFinder.h"
 #include "../Instance.h"
 #include <unistd.h>
-
+#include "../Path.h"
 
 PathTask::PathTask(PathFinder *pf)
 {
@@ -80,7 +80,7 @@ void PathTask::run()
 	
 	specificTasks();
 	
-	_complete = true;
+	setComplete();
 }
 
 void PathTask::gatherTasks(std::vector<PathTask *> &collection)
@@ -97,3 +97,14 @@ void PathTask::gatherTasks(std::vector<PathTask *> &collection)
 	}
 }
 
+
+PathTask *PathTask::task(int i) const
+{
+	return static_cast<PathTask *>(item(i));
+}
+
+void PathTask::setComplete()
+{
+	_complete = true;
+	parent()->childChanged();
+}

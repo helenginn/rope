@@ -114,6 +114,8 @@ private:
 	pthread_t _thread;
 	
 	std::set<std::string> _geometries;
+	bool _foundGeometries = false;
+
 	static std::string _userDir;
 	static std::string _dataDir;
 	

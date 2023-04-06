@@ -18,7 +18,7 @@ public:
 		_objects.clear();
 	}
 	
-	void deleteObjects();
+	void deleteObjects(bool recursive = false);
 	
 	void addObject(Renderable *r);
 	void addTempObject(Renderable *r);

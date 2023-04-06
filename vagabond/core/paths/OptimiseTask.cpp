@@ -16,41 +16,45 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ValidationTask.h"
 #include "OptimiseTask.h"
-#include "../PathFinder.h"
-#include "../RouteValidator.h"
-#include "../MetadataGroup.h"
-#include "../Instance.h"
-#include "../PlausibleRoute.h"
+#include "Instance.h"
+#include "PlausibleRoute.h"
+#include "ValidationTask.h"
+#include "PathFinder.h"
+#include "RouteValidator.h"
+#include "Path.h"
 
-ValidationTask::ValidationTask(PathFinder *pf, HasMetadata *from, 
-                               HasMetadata *to)
+OptimiseTask::OptimiseTask(PathFinder *pf, HasMetadata *from, HasMetadata *to)
 : FromToTask(pf, from, to)
 {
-	setDisplayName(_from->id() + " to " + _to->id());
+	setDisplayName("optimise " + _from->id() + " to " + _to->id());
 }
 
-void ValidationTask::specificTasks()
+void OptimiseTask::specificTasks()
 {
 	_from->load();
 	_to->load();
+	
+	std::string result = displayName() + ": ";
+	std::cout << "Running " << displayName() << std::endl;
 
 	PlausibleRoute *pr = findOrMakeRoute();
-	RouteValidator rv(*pr);
+	pr->shouldUpdateAtoms(false);
+	pr->setCycles(3);
 
-	bool isValid = rv.validate();
-	float linearRatio = rv.linearityRatio();
+	result += std::to_string(pr->routeScore(12));
+	PlausibleRoute::calculate(pr);
+	result += " to " + std::to_string(pr->routeScore(12));
 	
+	std::cout << result << std::endl;
+
+	Path path(pr);
+	_pf->sendUpdatedPath(path, this);
+
 	delete pr;
 	_from->unload();
 	_to->unload();
 	
-	_pf->sendValidationResult(this, isValid, linearRatio);
-	
-	if (isValid && linearRatio < 0.8)
-	{
-		OptimiseTask *ot = new OptimiseTask(_pf, _from, _to);
-		_pf->addTask(ot);
-	}
+	ValidationTask *ot = new ValidationTask(_pf, _from, _to);
+	_pf->addTask(ot);
 }

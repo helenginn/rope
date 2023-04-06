@@ -28,6 +28,7 @@ SerialJob<Obj, Thr>::SerialJob(SerialJobResponder<Obj> *responder)
 template <class Obj, class Thr>
 SerialJob<Obj, Thr>::~SerialJob()
 {
+	_pool.joinThreads();
 	_pool.cleanup();
 }
 
@@ -39,9 +40,9 @@ void SerialJob<Obj, Thr>::setup()
 }
 
 template <class Obj, class Thr>
-void SerialJob<Obj, Thr>::handBackToIncomplete(Obj &failedLock)
+void SerialJob<Obj, Thr>::pushObject(Obj &obj)
 {
-	_pool.pushObject(failedLock);
+	_pool.pushObject(obj);
 }
 
 template <class Obj, class Thr>
@@ -109,11 +110,6 @@ template <class Obj, class Thr>
 void SerialJob<Obj, Thr>::waitToFinish()
 {
 	_pool.signalThreads();
-	
-	if (_responder)
-	{
-		_responder->finishedObjects();
-	}
 }
 
 template <class Obj, class Thr>
@@ -125,6 +121,11 @@ void SerialJob<Obj, Thr>::incrementFinished()
 	if (_finished == objectCount() && canSelfFinish())
 	{
 		waitToFinish();
+
+		if (_responder)
+		{
+			_responder->finishedObjects();
+		}
 	}
 	
 	_mutex.unlock();
@@ -138,5 +139,12 @@ void SerialJob<Obj, Thr>::updateObject(Obj obj, int idx)
 		_responder->updateObject(obj, idx);
 	}
 }
+
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::stop()
+{
+	_pool.clearQueue();
+}
+
 
 #endif

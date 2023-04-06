@@ -16,40 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ThreadPathTask.h"
-#include "paths/PathTask.h"
-#include "SerialJob.h"
+#ifndef __vagabond__FromToTask__
+#define __vagabond__FromToTask__
 
-ThreadPathTask::ThreadPathTask(SerialJob<PathTask *, ThreadPathTask> *handler)
-: ThreadWorksOnObject<ThreadPathTask, PathTask *>(handler)
+#include "PathTask.h"
+
+class Path;
+
+class FromToTask : public PathTask
 {
+public:
+	FromToTask(PathFinder *pf, HasMetadata *from, HasMetadata *to);
 
-}
+	PlausibleRoute *findOrMakeRoute();
 
-void ThreadPathTask::doTask(PathTask *pt)
-{
-	_handler->updateObject(pt, _num);
-
-	pt->run();
-	pt->unlockAll();
-
-	_handler->updateObject(nullptr, _num);
-}
-
-bool ThreadPathTask::doJob(PathTask *pt)
-{
-	bool success = pt->tryLock();
+	Instance *from()
+	{
+		return _from;
+	}
 	
-	if (!success)
+	Instance *to()
 	{
-		_failCount++;
-		_handler->pushObject(pt);
+		return _to;
 	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
-	}
+protected:
+	PlausibleRoute *makeRoute(Path &path);
+	PlausibleRoute *makeNewRoute();
 
-	return true; // we want another one
-}
+	Instance *_from = nullptr;
+	Instance *_to = nullptr;
+
+};
+
+#endif

@@ -32,7 +32,7 @@ public:
 
 	virtual void setup();
 private:
-	void cycle();
+	virtual void cycle();
 	void makeShorts();
 	void prepareThreads();
 	void prepareShortRoutes();
