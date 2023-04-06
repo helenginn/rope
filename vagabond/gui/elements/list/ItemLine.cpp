@@ -66,7 +66,7 @@ void ItemLine::addBranch()
 
 void ItemLine::turnArrow()
 {
-	if (_item->collapsed() == _displayCollapse)
+	if (_item->collapsed() == _displayCollapse || _triangle == nullptr)
 	{
 		return;
 	}

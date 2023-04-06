@@ -119,7 +119,7 @@ protected:
 		}
 	};
 
-	bool _finish;
+	bool _finish = false;
 private:
 
 };

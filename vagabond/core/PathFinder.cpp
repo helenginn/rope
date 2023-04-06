@@ -232,7 +232,7 @@ void PathFinder::incrementStageIfNeeded()
 		sendContentsToHandler(_flipTorsions);
 		_stage = FlipTorsions;
 	}
-	else if (_stage == FlipTorsions && _validations->incomplete() == 0)
+	else if (_stage == FlipTorsions && _flipTorsions->incomplete() == 0)
 	{
 		sendContentsToHandler(_secondValidations);
 		_stage = SecondValidation;
@@ -243,10 +243,10 @@ void PathFinder::incrementStageIfNeeded()
 		sendContentsToHandler(_fullOptimisations);
 		_stage = FullOptimisation;
 	}
-	else if (_stage == FullOptimisation && _validations->incomplete() == 0)
+	else if (_stage == FullOptimisation && _fullOptimisations->incomplete() == 0)
 	{
 		sendContentsToHandler(_fullValidations);
-		_stage = FullOptimisation;
+		_stage = FullValidation;
 	}
 
 }
@@ -291,7 +291,6 @@ void PathFinder::addTask(ValidationTask *task)
 
 void PathFinder::addTask(OptimiseTask *task)
 {
-	std::cout << "Adding task: " << task->displayName() << std::endl;
 	
 	PathTask *cast = static_cast<PathTask *>(task);
 

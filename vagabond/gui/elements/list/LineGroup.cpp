@@ -59,10 +59,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 	_line = new ItemLine(this, item);
 	addObject(_line);
 	
-	if (item->canUnfold())
-	{
-		setupGroups();
-	}
+	setupGroups();
 
 	setName(item->displayName() + " group");
 	
@@ -75,7 +72,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 
 void LineGroup::setupGroups()
 {
-	if (_item->itemCount() == 0)
+	if (_item->itemCount() == 0 || !_item->canUnfold())
 	{
 		return;
 	}

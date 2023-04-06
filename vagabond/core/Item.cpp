@@ -61,6 +61,10 @@ bool Item::hasAncestor(Item *item)
 
 void Item::addItem(Item *item)
 {
+	if (item == nullptr)
+	{
+		throw std::runtime_error("item is null");
+	}
 	if (hasAncestor(item))
 	{
 		throw std::runtime_error("Circular item tree.");

@@ -108,7 +108,7 @@ public:
 		_collapsed = !_collapsed;
 	}
 	
-	const bool &collapsed() const
+	bool collapsed() const
 	{
 		return _collapsed || _neverUnfold;
 	}

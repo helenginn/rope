@@ -20,6 +20,7 @@
 #define __vagabond__PathFinder__
 
 #include <vector>
+#include <ostream>
 #include <mutex>
 #include <map>
 #include "SerialJob.h"
@@ -121,6 +122,31 @@ private:
 		FullOptimisation,
 		FullValidation,
 	};
+	
+	friend std::ostream &operator<<(std::ostream &ss, const Stage &s)
+	{
+		switch (s)
+		{
+			case FirstValidation:
+			ss << "FirstValidation";
+			break;
+			case FlipTorsions:
+			ss << "FlipTorsions";
+			break;
+			case SecondValidation:
+			ss << "SecondValidation";
+			break;
+			case FullOptimisation:
+			ss << "FullOptimisation";
+			break;
+			case FullValidation:
+			ss << "FullValidation";
+			break;
+			default:
+			break;
+		}
+		return ss;
+	}
 	
 	Stage _stage = FirstValidation;
 	TorsionCluster *_cluster = nullptr;
