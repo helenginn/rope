@@ -20,6 +20,7 @@
 
 ReporterTask::ReporterTask(PathFinder *pf) : PathTask(pf)
 {
+	permanentCollapse();
 
 }
 
@@ -51,4 +52,22 @@ std::string ReporterTask::displayName() const
 	
 	total += " (" + std::to_string(done) + " / " + std::to_string(num) + ")";
 	return total;
+}
+
+size_t ReporterTask::incomplete() const
+{
+	size_t result = 0;
+	for (size_t i = 0; i < itemCount(); i++)
+	{
+		PathTask *t = task(i);
+		if (t->runnable())
+		{
+			if (!t->complete())
+			{
+				result++;
+			}
+		}
+	}
+
+	return result;
 }

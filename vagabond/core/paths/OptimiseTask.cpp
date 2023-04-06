@@ -32,15 +32,12 @@ OptimiseTask::OptimiseTask(PathFinder *pf, HasMetadata *from, HasMetadata *to)
 
 void OptimiseTask::specificTasks()
 {
-	_from->load();
-	_to->load();
-	
 	std::string result = displayName() + ": ";
 	std::cout << "Running " << displayName() << std::endl;
 
 	PlausibleRoute *pr = findOrMakeRoute();
 	pr->shouldUpdateAtoms(false);
-	pr->setCycles(3);
+	pr->setCycles(_cycles);
 
 	result += std::to_string(pr->routeScore(12));
 	PlausibleRoute::calculate(pr);
@@ -48,12 +45,10 @@ void OptimiseTask::specificTasks()
 	
 	std::cout << result << std::endl;
 
-	Path path(pr);
+	Path *path = new Path(pr);
 	_pf->sendUpdatedPath(path, this);
 
 	delete pr;
-	_from->unload();
-	_to->unload();
 	
 	ValidationTask *ot = new ValidationTask(_pf, _from, _to);
 	_pf->addTask(ot);

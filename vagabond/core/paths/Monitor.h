@@ -21,10 +21,8 @@
 
 #include <map>
 #include <vector>
-#include <thread>
 #include <mutex>
 #include <vagabond/utils/svd/PCA.h>
-#include <vagabond/c4x/ClusterTSNE.h>
 #include "Path.h"
 
 class PathFinder;
@@ -39,14 +37,10 @@ public:
 	PCA::Matrix &matrix();
 	void addValidation(Instance *first, Instance *second, bool valid,
 	                   float linearity);
-	void updatePath(Instance *first, Instance *second, Path &path);
+	void updatePath(Instance *first, Instance *second, Path *path);
 	Path *existingPath(Instance *first, Instance *second);
-	
-	ClusterTSNE *availableTSNE();
 private:
 	void setup();
-	static void cluster(Monitor *monitor);
-	void clusterInBackground();
 	
 	struct RouteResults
 	{
@@ -61,13 +55,11 @@ private:
 	std::map<Instance *, std::map<Instance *, RouteResults> > _results;
 	std::vector<Instance *> _instances;
 	PCA::Matrix _matrix{};
-	std::thread *_worker = nullptr;
 	
 	std::atomic<bool> _running{false};
-	ClusterTSNE *_tsne = nullptr;
 	PCA::Matrix _lastResult{};
 	
-	std::vector<Path> _paths;
+	std::vector<Path *> _paths;
 	
 	std::mutex _mutex;
 };

@@ -108,20 +108,31 @@ Model *const Instance::model()
 
 void Instance::wipeAtoms()
 {
-	delete _currentAtoms;
-	_currentAtoms = nullptr;
-	_motherAtoms = nullptr;
+	if (_currentAtoms)
+	{
+		delete _currentAtoms;
+		_currentAtoms = nullptr;
+		_motherAtoms = nullptr;
+	}
 }
 
-void Instance::unload()
+bool Instance::unload()
 {
 	bool happened = _model->unload();
 	
 	if (happened)
 	{
 		wipeAtoms();
-
 	}
+	
+	return happened;
+}
+
+void Instance::reload()
+{
+	_model->reload();
+	wipeAtoms();
+	setAtomGroupSubset();
 }
 
 
@@ -327,11 +338,8 @@ void Instance::addTorsionsToGroup(MetadataGroup &group,
 
 void Instance::superposeOn(Instance *other)
 {
-	load();
-	other->load();
 	AtomGroup *otherAtoms = other->currentAtoms();
 	AtomGroup *myAtoms = currentAtoms();
-	myAtoms->recalculate();
 	
 	Superpose sp;
 	for (Atom *a : myAtoms->atomVector())
@@ -364,9 +372,6 @@ void Instance::superposeOn(Instance *other)
 
 	/* should (will?) superimpose using these target values */
 	PdbFile::writeAtoms(myAtoms, "test3.pdb");
-
-	other->unload();
-	unload();
 }
 
 Atom *Instance::equivalentForAtom(Instance *other, Atom *atom)

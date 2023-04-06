@@ -127,7 +127,8 @@ public:
 	int loadCount();
 	virtual AtomGroup *currentAtoms();
 	void wipeAtoms();
-	void unload();
+	bool unload();
+	void reload();
 
 	Entity *entity();
 	

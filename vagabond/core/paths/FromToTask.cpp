@@ -36,7 +36,11 @@ FromToTask::FromToTask(PathFinder *pf, HasMetadata *from, HasMetadata *to)
 
 PlausibleRoute *FromToTask::makeRoute(Path &path)
 {
-	return path.toRoute();
+	PlausibleRoute *pr = path.toRoute();
+	pr->useForceField(false);
+	pr->setAtoms(from()->currentAtoms());
+	pr->setup();
+	return pr;
 }
 
 PlausibleRoute *FromToTask::makeNewRoute()

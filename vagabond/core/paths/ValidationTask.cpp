@@ -19,6 +19,7 @@
 #include "ValidationTask.h"
 #include "OptimiseTask.h"
 #include "../PathFinder.h"
+#include "../Path.h"
 #include "../RouteValidator.h"
 #include "../MetadataGroup.h"
 #include "../Instance.h"
@@ -33,19 +34,12 @@ ValidationTask::ValidationTask(PathFinder *pf, HasMetadata *from,
 
 void ValidationTask::specificTasks()
 {
-	_from->load();
-	_to->load();
-
 	PlausibleRoute *pr = findOrMakeRoute();
 	RouteValidator rv(*pr);
 
 	bool isValid = rv.validate();
 	float linearRatio = rv.linearityRatio();
-	
-	delete pr;
-	_from->unload();
-	_to->unload();
-	
+
 	_pf->sendValidationResult(this, isValid, linearRatio);
 	
 	if (isValid && linearRatio < 0.8)

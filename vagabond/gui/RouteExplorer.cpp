@@ -65,7 +65,6 @@ void RouteExplorer::setup()
 	loadAtoms(grp);
 	
 	_route->setup();
-	
 	_route->submitJobAndRetrieve(0);
 	
 	setupSave();
@@ -76,7 +75,6 @@ void RouteExplorer::setup()
 	
 	_route->finishRoute();
 	_route->prepareCalculate();
-
 	
 	RouteValidator rv(*_plausibleRoute);
 	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;

@@ -36,9 +36,14 @@ public:
 		return true;
 	}
 	
+	void setCycles(int cycles)
+	{
+		_cycles = cycles;
+	}
 protected:
 	virtual void specificTasks();
 private:
+	int _cycles = 1;
 };
 
 #endif

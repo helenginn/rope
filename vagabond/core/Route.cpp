@@ -91,7 +91,7 @@ void Route::submitJob(int idx, bool show, bool forces)
 	{
 		show = false;
 	}
-
+	
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};

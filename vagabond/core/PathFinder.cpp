@@ -80,14 +80,28 @@ void PathFinder::prepareTaskBins()
 	_tasks->setDisplayName("All tasks");
 
 	_validations = new ReporterTask(this);
-	_validations->permanentCollapse();
-	_validations->setDisplayName("Path validation");
+	_validations->setDisplayName("First validation");
 	_tasks->addItem(_validations);
 
-	_optimisePaths = new ReporterTask(this);
-	_optimisePaths->permanentCollapse();
-	_optimisePaths->setDisplayName("Optimise paths");
-	_tasks->addItem(_optimisePaths);
+	_flipTorsions = new ReporterTask(this);
+	_flipTorsions->setDisplayName("Flip torsions");
+	_tasks->addItem(_flipTorsions);
+
+	_secondValidations = new ReporterTask(this);
+	_secondValidations->setDisplayName("Second validation");
+	_tasks->addItem(_secondValidations);
+
+	PathTask *cycling = new PathTask(this);
+	cycling->setDisplayName("Optimisation iterations");
+	_tasks->addItem(cycling);
+
+	_fullOptimisations = new ReporterTask(this);
+	_fullOptimisations->setDisplayName("Full optimisation cycles");
+	cycling->addItem(_fullOptimisations);
+
+	_fullValidations = new ReporterTask(this);
+	_fullValidations->setDisplayName("Validations");
+	cycling->addItem(_fullValidations);
 }
 
 void PathFinder::prepareValidationTasks()
@@ -197,6 +211,44 @@ void PathFinder::detachObject(PathTask *obj)
 void PathFinder::updateObject(PathTask *obj, int idx)
 {
 	triggerResponse();
+	incrementStageIfNeeded();
+}
+
+void PathFinder::sendContentsToHandler(PathTask *bin)
+{
+	std::vector<PathTask *> next;
+	bin->gatherTasks(next);
+
+	for (PathTask *task : next)
+	{
+		_handler->pushObject(task);
+	}
+}
+
+void PathFinder::incrementStageIfNeeded()
+{
+	if (_stage == FirstValidation && _validations->incomplete() == 0)
+	{
+		sendContentsToHandler(_flipTorsions);
+		_stage = FlipTorsions;
+	}
+	else if (_stage == FlipTorsions && _validations->incomplete() == 0)
+	{
+		sendContentsToHandler(_secondValidations);
+		_stage = SecondValidation;
+	}
+	else if ((_stage == SecondValidation && _secondValidations->incomplete() == 0)
+	         || (_stage == FullValidation && _fullValidations->incomplete() == 0))
+	{
+		sendContentsToHandler(_fullOptimisations);
+		_stage = FullOptimisation;
+	}
+	else if (_stage == FullOptimisation && _validations->incomplete() == 0)
+	{
+		sendContentsToHandler(_fullValidations);
+		_stage = FullOptimisation;
+	}
+
 }
 
 void PathFinder::finishedObjects()
@@ -212,10 +264,10 @@ void PathFinder::sendValidationResult(FromToTask *task, bool valid,
 
 Path *PathFinder::existingPath(FromToTask *task)
 {
-	_monitor->existingPath(task->from(), task->to()); 
+	return _monitor->existingPath(task->from(), task->to()); 
 }
 
-void PathFinder::sendUpdatedPath(Path &path, FromToTask *task)
+void PathFinder::sendUpdatedPath(Path *path, FromToTask *task)
 {
 	_monitor->updatePath(task->from(), task->to(), path);
 }
@@ -223,9 +275,17 @@ void PathFinder::sendUpdatedPath(Path &path, FromToTask *task)
 void PathFinder::addTask(ValidationTask *task)
 {
 	PathTask *cast = static_cast<PathTask *>(task);
-	_validations->addItem(task);
-	_validations->childChanged();
-	_handler->pushObject(cast);
+	
+	if (_stage == FlipTorsions)
+	{
+		_secondValidations->addItem(task);
+		_secondValidations->childChanged();
+	}
+	else if (_stage == FullOptimisation)
+	{
+		_fullValidations->addItem(task);
+		_fullValidations->childChanged();
+	}
 }
 
 
@@ -235,8 +295,16 @@ void PathFinder::addTask(OptimiseTask *task)
 	
 	PathTask *cast = static_cast<PathTask *>(task);
 
-	_optimisePaths->addItem(task);
-	_optimisePaths->childChanged();
-	_handler->pushObject(cast);
+	if (_stage == FirstValidation)
+	{
+		_flipTorsions->addItem(task);
+		_flipTorsions->childChanged();
+	}
+	else if (_stage == SecondValidation || _stage == FullValidation)
+	{
+		task->setCycles(3);
+		_fullOptimisations->addItem(task);
+		_fullOptimisations->childChanged();
+	}
 }
 

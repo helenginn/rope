@@ -33,8 +33,6 @@ public:
 	Path(PlausibleRoute *pr);
 	void cleanupRoute();
 
-	void getTorsionRef(int idx);
-
 	Instance *startInstance() const
 	{
 		return _instance;

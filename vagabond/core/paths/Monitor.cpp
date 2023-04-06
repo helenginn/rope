@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Monitor.h"
+#include "PathManager.h"
+#include "Environment.h"
 #include <iostream>
 
 Monitor::Monitor(PathFinder *pf, std::vector<Instance *> list)
@@ -86,76 +88,25 @@ void Monitor::addValidation(Instance *first, Instance *second,
 	_results[first][second].linearity = linearity;
 	
 	matrix();
-	clusterInBackground();
 }
 
-void Monitor::clusterInBackground()
+void Monitor::updatePath(Instance *first, Instance *second, Path *path)
 {
-	if (_worker && _running)
-	{
-		return;
-	}
-	else if (_worker && !_running)
-	{
-		_worker->join();
-		delete _worker;
-		_worker = nullptr;
-	}
-
-	return;
-	_running = true;
-	_worker = new std::thread(Monitor::cluster, this);
-}
-
-void Monitor::cluster(Monitor *m)
-{
-	PCA::Matrix *last = nullptr;
-	if (m->_lastResult.rows > 0)
-	{
-		last = &m->_lastResult;
-	}
-
-	ClusterTSNE *tsne = new ClusterTSNE(m->_matrix, last);
-	tsne->cluster();
-	m->_lastResult = tsne->result();
-	tsne->normaliseResults(6);
-
-	m->_running = false;
-	
-	m->_mutex.lock();
-	m->_tsne = tsne;
-	m->_mutex.unlock();
-}
-
-ClusterTSNE *Monitor::availableTSNE()
-{
-	if (!_mutex.try_lock())
-	{
-		return nullptr;
-	}
-
-	if (!_tsne)
-	{
-		_mutex.unlock();
-		return nullptr;
-	}
-
-	ClusterTSNE *tsne = _tsne;
-	_tsne = nullptr;
-	_mutex.unlock();
-
-	return tsne;
-}
-
-void Monitor::updatePath(Instance *first, Instance *second, Path &path)
-{
+	_mutex.lock();
 	_paths.push_back(path);
 	RouteResults &rr = _results[first][second];
-	rr.path = &_paths.back();
+	if (rr.path)
+	{
+		delete rr.path;
+	}
+	rr.path = path;
+	Environment::env().pathManager()->insertIfUnique(*path);
+	_mutex.unlock();
 }
 
 Path *Monitor::existingPath(Instance *first, Instance *second)
 {
+	std::lock_guard<std::mutex> lg(_mutex);
 	RouteResults &rr = _results[first][second];
 	return rr.path;
 }

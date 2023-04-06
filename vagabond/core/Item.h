@@ -110,7 +110,7 @@ public:
 	
 	const bool &collapsed() const
 	{
-		return _collapsed;
+		return _collapsed || _neverUnfold;
 	}
 	
 	const bool &isDeleted() const

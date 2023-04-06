@@ -27,6 +27,7 @@
 
 class ValidationTask;
 class TorsionCluster;
+class ReporterTask;
 class OptimiseTask;
 class HasMetadata;
 class FromToTask;
@@ -64,7 +65,7 @@ public:
 	void start();
 	
 	void sendValidationResult(FromToTask *task, bool valid, float linearity);
-	void sendUpdatedPath(Path &path, FromToTask *task);
+	void sendUpdatedPath(Path *path, FromToTask *task);
 	Path *existingPath(FromToTask *task);
 	
 	void addTask(OptimiseTask *task);
@@ -93,19 +94,35 @@ private:
 	void prepareValidationTasks();
 	void setupSerialJob();
 	void setupTorsionCluster();
+	void incrementStageIfNeeded();
 
 	std::vector<Instance *> _whiteList;
 	Entity *_entity = nullptr;
 	
 	PathTask *_tasks = nullptr;
-	PathTask *_validations = nullptr;
-	PathTask *_optimisePaths = nullptr;
+	ReporterTask *_validations = nullptr;
+	ReporterTask *_flipTorsions = nullptr;
+	ReporterTask *_secondValidations = nullptr;
+	ReporterTask *_fullOptimisations = nullptr;
+	ReporterTask *_fullValidations = nullptr;
+
+	void sendContentsToHandler(PathTask *bin);
 	
 	PathJob *_handler = nullptr;
 	Monitor *_monitor = nullptr;
 	
 	std::map<Model *, std::mutex *> _resourceLocks;
 	
+	enum Stage
+	{
+		FirstValidation,
+		FlipTorsions,
+		SecondValidation,
+		FullOptimisation,
+		FullValidation,
+	};
+	
+	Stage _stage = FirstValidation;
 	TorsionCluster *_cluster = nullptr;
 };
 

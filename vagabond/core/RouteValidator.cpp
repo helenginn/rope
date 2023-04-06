@@ -148,11 +148,14 @@ float RouteValidator::linearityRatio()
 
 bool RouteValidator::validate()
 {
+	_route.endInstance()->load();
+	_route.instance()->currentAtoms()->recalculate();
+	_route.endInstance()->currentAtoms()->recalculate();
+
 	_route.shouldUpdateAtoms(true);
 	_route.twoPointProgression();
-	_route.submitJobAndRetrieve(1);
+	_route.submitJobAndRetrieve(1, true);
 
-	_route.endInstance()->load();
 	_route.endInstance()->superposeOn(_route.instance());
 	AtomGroup *grp = _route.endInstance()->currentAtoms();
 
@@ -174,6 +177,7 @@ bool RouteValidator::validate()
 		
 		glm::vec3 d = a->derivedPosition();
 
+
 		glm::vec3 diff = t - d;
 		float sqlength = glm::dot(diff, diff);
 		sum += sqlength;
@@ -182,18 +186,17 @@ bool RouteValidator::validate()
 
 	sum = sqrt(sum / weights);
 	
-	_route.endInstance()->unload();
-	
+	bool unloaded = _route.endInstance()->unload();
 	return (sum < 0.5);
 }
 
 int RouteValidator::endInstanceGaps()
 {
-	_route.endInstance()->load();
 	Instance *inst = _route.endInstance();
+	inst->load();
 	AtomGroup *atoms = inst->currentAtoms();
 	std::vector<AtomGroup *> grps = atoms->connectedGroups();
-	_route.endInstance()->unload();
+	inst->unload();
 	
 	return grps.size() - 1;
 }

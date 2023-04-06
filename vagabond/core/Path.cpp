@@ -34,21 +34,7 @@ Path::Path(PlausibleRoute *pr)
 	_type = pr->type();
 	_destination = pr->destination();
 	
-	for (size_t i = 0; i < pr->Route::parameterCount(); i++)
-	{
-		getTorsionRef(i);
-	}
-	
 	_route = nullptr;
-}
-
-void Path::getTorsionRef(int idx)
-{
-	Parameter *t = _route->parameter(idx);
-
-	ResidueId id = t->residueId();
-	TorsionRef rt = TorsionRef(t);
-	rt.setRefinedAngle(_destination[idx]);
 }
 
 void Path::housekeeping()
@@ -95,7 +81,6 @@ PlausibleRoute *Path::toRoute()
 		throw std::runtime_error("Unable to find model/instance in environment.");
 	}
 	
-	_instance->load();
 	AtomGroup *group = _model->currentAtoms();
 
 	SplitRoute *pr = new SplitRoute(_instance, nullptr, _wayPoints.size());
@@ -120,7 +105,6 @@ PlausibleRoute *Path::toRoute()
 	}
 
 	_route = pr;
-	_instance->unload();
 	
 	return pr;
 }

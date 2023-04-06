@@ -125,6 +125,7 @@ public:
 
 	void load(LoadOptions opts = Everything);
 	bool unload();
+	void reload();
 	
 	int loadCount() const
 	{

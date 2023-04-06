@@ -35,6 +35,8 @@ public:
 	{
 		return false;
 	}
+	
+	size_t incomplete() const;
 
 	virtual std::string displayName() const;
 private:

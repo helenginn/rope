@@ -129,9 +129,26 @@ void Model::write(std::string filename)
 	}
 }
 
+void Model::reload()
+{
+	if (loaded())
+	{
+		int last = _loadCounter;
+		_loadCounter = 1;
+		unload();
+		load();
+		_loadCounter = last;
+	}
+	else
+	{
+		load();
+	}
+
+}
+
 bool Model::unload()
 {
-	if (_loadCounter == 0) { return false; }
+	if (_loadCounter == 0) { return false; } // don't unload twice!
 	_loadCounter--;
 //	std::cout << "Model " << name() << " load counter: " 
 //	<< _loadCounter << std::endl;
