@@ -25,7 +25,6 @@
 class MatrixPlot;
 class PathFinder;
 class LineGroup;
-class TSNEView;
 class Summary;
 class Box;
 
@@ -42,6 +41,7 @@ public:
 
 	virtual void setup();
 	virtual void doThings();
+	void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 protected:
 	virtual void respond();
@@ -70,9 +70,9 @@ private:
 
 	Summary *_summary = nullptr;
 	MatrixPlot *_plot = nullptr;
-	TSNEView *_view = nullptr;
 	
 	bool _updateNext = false;
+	bool _updateTree = false;
 };
 
 #endif

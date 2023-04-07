@@ -101,7 +101,7 @@ private:
 	bool _visible = true;
 
 	std::vector<ResidueTorsion> _rts;
-	std::map<int, PlausibleRoute::WayPoints> _wayPoints;
+	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
 	std::vector<MetadataGroup::Array> _angleArrays;
 
@@ -110,20 +110,6 @@ private:
 	
 	PlausibleRoute *_route = nullptr;
 };
-
-/* waypoint */
-inline void to_json(json &j, const PlausibleRoute::WayPoint &value)
-{
-	j["p"] = value.progress;
-	j["f"] = value.fraction;
-}
-
-/* waypoint */
-inline void from_json(const json &j, PlausibleRoute::WayPoint &value)
-{
-    value.progress = j.at("p");
-    value.fraction = j.at("f");
-}
 
 /* path */
 inline void to_json(json &j, const Path &value)
@@ -152,7 +138,7 @@ inline void from_json(const json &j, Path &value)
     std::vector<bool> flips = j.at("flips");
     value._flips = flips;
 
-    std::map<int, PlausibleRoute::WayPoints> wps = j.at("waypoints");
+    std::map<int, WayPoints> wps = j.at("waypoints");
     value._wayPoints = wps;
 }
 

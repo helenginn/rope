@@ -16,35 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MatrixPlot__
-#define __vagabond__MatrixPlot__
+#ifndef __vagabond__PathPlot__
+#define __vagabond__PathPlot__
 
-#include <vagabond/utils/svd/PCA.h>
-#include <vagabond/gui/elements/Image.h>
+#include "MatrixPlot.h"
+#include "Responder.h"
+#include <mutex>
 
-class MatrixPlot : public Image
+class Monitor;
+class Image;
+
+class PathPlot : public MatrixPlot, public Responder<Monitor>
 {
 public:
-	MatrixPlot(PCA::Matrix &mat);
+	PathPlot(Monitor *monitor);
 
-	virtual void update();
-
-	const PCA::Matrix &mat() const
-	{
-		return _mat;
-	}
+	virtual void sendObject(std::string tag, void *object);
+	
 protected:
-	std::map<int, int> _index2Vertex;
+	void makeImage(int idx, glm::vec3 pos, std::string image);
+	void clearImage(int idx);
 private:
-	glm::vec4 colourForValue(float val);
-	void prepareSmallVertices();
-	void updateColours();
-	void setup();
+	Monitor *_monitor = nullptr;
 
-	PCA::Matrix &_mat;
-
-	float _xProp = 1;
-	float _yProp = 1;
+	std::mutex _mutex;
+	std::map<int, Image *> _images;
 };
 
 #endif

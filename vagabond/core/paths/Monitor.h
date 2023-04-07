@@ -23,13 +23,14 @@
 #include <vector>
 #include <mutex>
 #include <vagabond/utils/svd/PCA.h>
-#include "Path.h"
+#include "TaskType.h"
+#include "Responder.h"
 
 class PathFinder;
 class Instance;
 class Path;
 
-class Monitor
+class Monitor : public HasResponder<Responder<Monitor> >
 {
 public:
 	Monitor(PathFinder *pf, std::vector<Instance *> list);
@@ -38,12 +39,21 @@ public:
 	void addValidation(Instance *first, Instance *second, bool valid,
 	                   float linearity);
 	void updatePath(Instance *first, Instance *second, Path *path);
+	void setStatus(Instance *first, Instance *second, TaskType type);
 	Path *existingPath(Instance *first, Instance *second);
+
+	struct StatusInfo
+	{
+		int x;
+		int y;
+		TaskType status;
+	};
 private:
 	void setup();
 	
 	struct RouteResults
 	{
+		TaskType status = None;
 		int passes = 0;
 		bool valid = false;
 		float linearity = 1.0;
@@ -54,6 +64,7 @@ private:
 	
 	std::map<Instance *, std::map<Instance *, RouteResults> > _results;
 	std::vector<Instance *> _instances;
+	std::map<Instance *, int> _inst2Index;
 	PCA::Matrix _matrix{};
 	
 	std::atomic<bool> _running{false};

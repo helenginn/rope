@@ -21,7 +21,6 @@
 #include "MetadataGroup.h"
 #include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
-#include <vagabond/utils/polyfit.h>
 
 PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
                                int dims)
@@ -180,11 +179,11 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 		{
 			WayPoint &wp = wps[j];
 			
-			_paramStarts.push_back(wp.fraction);
-			_paramStarts.push_back(wp.progress);
+			_paramStarts.push_back(wp.fraction());
+			_paramStarts.push_back(wp.progress());
 
-			_paramPtrs.push_back(&wp.fraction);
-			_paramPtrs.push_back(&wp.progress);
+			_paramPtrs.push_back(&wp.fraction_var());
+			_paramPtrs.push_back(&wp.progress_var());
 			
 			steps.push_back(_stepSize);
 			steps.push_back(_stepSize);
@@ -376,7 +375,7 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 
 bool PlausibleRoute::flipTorsion(int idx)
 {
-	std::vector<int> idxs = getTorsionSequence(idx, 5, false, 30.f);
+	std::vector<int> idxs = getTorsionSequence(idx, 4, false, 30.f);
 	
 	if (idxs.size() == 0)
 	{
@@ -395,7 +394,7 @@ bool PlausibleRoute::flipTorsion(int idx)
 	{
 		setFlips(idxs, putatives[i]);
 
-		float candidate = routeScore(_nudgeCount);
+		float candidate = routeScore(_nudgeCount * 2);
 
 		if (candidate < _bestScore - 1e-6)
 		{
@@ -569,17 +568,17 @@ float PlausibleRoute::getLinearInterpolatedTorsion(int i, float frac)
 		start = &wps[j - 1];
 		end = &wps[j];
 
-		if (wps[j].fraction > frac)
+		if (wps[j].fraction() > frac)
 		{
 			break;
 		}
 	}
 
-	float progress = start->progress;
-	float proportion = ((frac - start->fraction) / 
-	                    (end->fraction - start->fraction));
+	float progress = start->progress();
+	float proportion = ((frac - start->fraction()) / 
+	                    (end->fraction() - start->fraction()));
 
-	float diff = (end->progress - start->progress) * proportion + progress;
+	float diff = (end->progress() - start->progress()) * proportion + progress;
 	float angle_diff = angle * diff;
 
 	return angle_diff;
@@ -626,23 +625,13 @@ float PlausibleRoute::getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
 
 PlausibleRoute::PolyFit PlausibleRoute::polynomialFit(int i)
 {
-	std::vector<float> xs, ys;
-	int n = wayPoints(i).size() - 1;
-
-	for (int j = 0; j <= n; j++)
-	{
-		xs.push_back(wayPoints(i)[j].fraction);
-		ys.push_back(wayPoints(i)[j].progress);
-	}
-
-	PolyFit pf = polyfit(xs, ys, n);
-
-	return pf;
+	return wayPoints(i).polyFit();
 }
 
 std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 {
 	std::vector<PolyFit> fits;
+	fits.reserve(destinationSize());
 
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
@@ -673,6 +662,7 @@ void PlausibleRoute::calculatePolynomialProgression(int steps)
 	float frac = 0;
 	float step = 1 / (float)steps;
 	std::vector<PolyFit> fits = polynomialFits();
+	fits.reserve(steps);
 
 	for (size_t i = 0; i <= steps; i++)
 	{
@@ -762,7 +752,7 @@ bool PlausibleRoute::validateWayPoint(const WayPoints &wps)
 
 	for (size_t i = 0; i < wps.size() - 1; i++)
 	{
-		if (wps.at(i).progress > wps.at(i + 1).progress - tolerance)
+		if (wps.at(i).progress() > wps.at(i + 1).progress() - tolerance)
 		{
 			return false;
 		}
@@ -901,8 +891,8 @@ void PlausibleRoute::printWaypoints()
 		
 		for (size_t j = 0; j < wayPoints(i).size(); j++)
 		{
-			std::cout << "(" << wayPoints(i)[j].fraction << ",";
-			std::cout << wayPoints(i)[j].progress << "),";
+			std::cout << "(" << wayPoints(i)[j].fraction() << ",";
+			std::cout << wayPoints(i)[j].progress() << "),";
 		}
 		std::cout << std::endl;
 

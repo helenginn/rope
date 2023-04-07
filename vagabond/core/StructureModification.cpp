@@ -42,7 +42,6 @@ void StructureModification::cleanup()
 	}
 
 	_calculators.clear();
-//	_molecule->model()->unload();
 }
 
 void StructureModification::makeCalculator(Atom *anchor, bool has_mol)

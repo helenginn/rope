@@ -26,9 +26,10 @@
 class Handler
 {
 protected:
-	template <class Object>
-	struct Pool
+	template <class Object, class Sem>
+	class CustomPool
 	{
+	public:
 		std::queue<Object> members;
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
@@ -117,6 +118,12 @@ protected:
 
 			handout.unlock();
 		}
+	};
+
+	template <class Object>
+	class Pool : public CustomPool<Object, Semaphore>
+	{
+
 	};
 
 	bool _finish = false;

@@ -16,35 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MatrixPlot__
-#define __vagabond__MatrixPlot__
+#include "WayPoint.h"
+#include <vagabond/utils/polyfit.h>
 
-#include <vagabond/utils/svd/PCA.h>
-#include <vagabond/gui/elements/Image.h>
-
-class MatrixPlot : public Image
+std::vector<float> WayPoints::polyFit()
 {
-public:
-	MatrixPlot(PCA::Matrix &mat);
-
-	virtual void update();
-
-	const PCA::Matrix &mat() const
+	bool changed = false;
+	
+	for (const WayPoint &wp : _wps)
 	{
-		return _mat;
+		if (wp.changed())
+		{
+			changed = true;
+			break;
+		}
 	}
-protected:
-	std::map<int, int> _index2Vertex;
-private:
-	glm::vec4 colourForValue(float val);
-	void prepareSmallVertices();
-	void updateColours();
-	void setup();
 
-	PCA::Matrix &_mat;
+	if (!changed)
+	{
+		return _polyFit;
+	}
 
-	float _xProp = 1;
-	float _yProp = 1;
-};
+	int n = _wps.size() - 1;
+	
+	if (_xs.size() != n + 1)
+	{
+		_xs.resize(n + 1);
+		_ys.resize(n + 1);
+	}
 
-#endif
+	for (int j = 0; j <= n; j++)
+	{
+		_xs[j] = _wps[j].fraction();
+		_ys[j] = _wps[j].progress();
+	}
+
+	std::vector<float> pf = polyfit(_xs, _ys, n);
+
+	return pf;
+}

@@ -488,8 +488,8 @@ void Route::printWayPoints()
 		std::cout << " flip: " << (flip(i) ? "yes" : "no") << "; ";
 		for (size_t j = 0; j < wayPointCount(); j++)
 		{
-			std::cout << "(" << wayPoints(i)[j].progress << ", ";
-			std::cout << wayPoints(i)[j].fraction << ") ";
+			std::cout << "(" << wayPoints(i)[j].progress() << ", ";
+			std::cout << wayPoints(i)[j].fraction() << ") ";
 		}
 		std::cout << std::endl;
 	}

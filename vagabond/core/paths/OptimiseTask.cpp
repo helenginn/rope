@@ -32,6 +32,8 @@ OptimiseTask::OptimiseTask(PathFinder *pf, HasMetadata *from, HasMetadata *to)
 
 void OptimiseTask::specificTasks()
 {
+	_pf->setStatus(this, type());
+
 	std::string result = displayName() + ": ";
 	std::cout << "Running " << displayName() << std::endl;
 
@@ -39,17 +41,30 @@ void OptimiseTask::specificTasks()
 	pr->shouldUpdateAtoms(false);
 	pr->setCycles(_cycles);
 
-	result += std::to_string(pr->routeScore(12));
+	result += std::to_string(pr->routeScore(16));
 	PlausibleRoute::calculate(pr);
-	result += " to " + std::to_string(pr->routeScore(12));
+	result += " to " + std::to_string(pr->routeScore(16));
 	
 	std::cout << result << std::endl;
+
+	RouteValidator rv(*pr);
+
+	bool isValid = rv.validate();
+	float linearRatio = rv.linearityRatio();
+	std::cout << "Linearity ratio: " << linearRatio << std::endl;
+
+	_pf->sendValidationResult(this, isValid, linearRatio);
 
 	Path *path = new Path(pr);
 	_pf->sendUpdatedPath(path, this);
 
 	delete pr;
 	
-	ValidationTask *ot = new ValidationTask(_pf, _from, _to);
-	_pf->addTask(ot);
+	if (linearRatio < _pf->linearityThreshold())
+	{
+		OptimiseTask *ot = new OptimiseTask(_pf, _from, _to);
+		_pf->addTask(ot);
+	}
+
+	_pf->setStatus(this, None);
 }

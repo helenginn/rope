@@ -20,6 +20,8 @@
 #define __vagabond__PathTask__
 
 #include "../Item.h"
+#include "TaskType.h"
+
 #include <atomic>
 
 class PlausibleRoute;
@@ -43,14 +45,6 @@ public:
 	{
 		return false;
 	}
-
-	enum TaskType
-	{
-		None,
-		Reporter,
-		Validation,
-		Optimisation,
-	};
 	
 	virtual TaskType type()
 	{

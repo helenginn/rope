@@ -21,6 +21,7 @@
 
 #include "StructureModification.h"
 #include "Responder.h"
+#include "WayPoint.h"
 
 class Grapher;
 struct AtomGraph;
@@ -31,7 +32,7 @@ class Route : public StructureModification, public HasResponder<Responder<Route>
 {
 public:
 	Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
-	~Route();
+	virtual ~Route();
 
 	virtual void setup();
 	
@@ -121,46 +122,6 @@ public:
 	
 	void setDestination(Point &d);
 	
-	struct WayPoint
-	{
-		float fraction = 0.5; /* fraction of route progression between 0 and 1 */
-		float progress = 0.5; /* proportion of progress to goal at WayPoint */
-
-		WayPoint()
-		{
-
-		}
-		
-		WayPoint(float f, float p)
-		{
-			fraction = f; progress = p;
-		}
-		
-		static WayPoint startPoint()
-		{
-			WayPoint wp;
-			wp.fraction = 0;
-			wp.progress = 0;
-			return wp;
-		}
-		
-		static WayPoint midPoint()
-		{
-			WayPoint wp;
-			wp.fraction = 0.5;
-			wp.progress = 0.5;
-			return wp;
-		}
-		
-		static WayPoint endPoint()
-		{
-			WayPoint wp;
-			wp.fraction = 1;
-			wp.progress = 1;
-			return wp;
-		}
-	};
-	
 	void setLinear()
 	{
 		_type = Linear;
@@ -170,8 +131,6 @@ public:
 	{
 		_type = Polynomial;
 	}
-	
-	typedef std::vector<WayPoint> WayPoints;
 	
 	const std::map<int, WayPoints> &wayPoints() const
 	{

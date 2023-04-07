@@ -34,6 +34,8 @@ ValidationTask::ValidationTask(PathFinder *pf, HasMetadata *from,
 
 void ValidationTask::specificTasks()
 {
+	_pf->setStatus(this, type());
+
 	PlausibleRoute *pr = findOrMakeRoute();
 	RouteValidator rv(*pr);
 
@@ -42,9 +44,12 @@ void ValidationTask::specificTasks()
 
 	_pf->sendValidationResult(this, isValid, linearRatio);
 	
-	if (isValid && linearRatio < 0.8)
+	if (isValid && linearRatio < _pf->linearityThreshold())
 	{
 		OptimiseTask *ot = new OptimiseTask(_pf, _from, _to);
 		_pf->addTask(ot);
 	}
+
+	_pf->setStatus(this, None);
+	delete pr;
 }

@@ -88,7 +88,7 @@ void PathTask::gatherTasks(std::vector<PathTask *> &collection)
 	for (Item *next : items())
 	{
 		PathTask *cast = static_cast<PathTask *>(next);
-		if (cast->runnable())
+		if (cast->runnable() && !cast->complete())
 		{
 			collection.push_back(cast);
 		}

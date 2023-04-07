@@ -30,8 +30,8 @@ std::string Summary::text()
 	std::ostringstream ss;
 	std::vector<PathTask *> tasks;
 	_top->gatherTasks(tasks);
-	std::map<PathTask::TaskType, int> complete;
-	std::map<PathTask::TaskType, int> counts;
+	std::map<TaskType, int> complete;
+	std::map<TaskType, int> counts;
 
 	for (PathTask *pt : tasks)
 	{
@@ -43,8 +43,8 @@ std::string Summary::text()
 		}
 	}
 	
-	std::string val_counts = std::to_string(counts[PathTask::Validation]);
-	std::string val_done = std::to_string(complete[PathTask::Validation]);
+	std::string val_counts = std::to_string(counts[Validation]);
+	std::string val_done = std::to_string(complete[Validation]);
 	
 	ss <<  "Validation tasks: " << val_done << " / " << val_counts;
 	ss << std::endl;

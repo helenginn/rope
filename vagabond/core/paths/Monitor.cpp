@@ -25,6 +25,11 @@ Monitor::Monitor(PathFinder *pf, std::vector<Instance *> list)
 {
 	_pf = pf;
 	_instances = list;
+	for (size_t i = 0; i < _instances.size(); i++)
+	{
+		_inst2Index[_instances[i]] = i;
+	}
+
 	setupMatrix(&_matrix, _instances.size(), _instances.size());
 	setup();
 }
@@ -68,7 +73,7 @@ PCA::Matrix &Monitor::matrix()
 			}
 			else if (rr.passes == 0)
 			{
-				_matrix[i][j] = 2;
+				_matrix[i][j] = -1;
 			}
 			else
 			{
@@ -88,6 +93,14 @@ void Monitor::addValidation(Instance *first, Instance *second,
 	_results[first][second].linearity = linearity;
 	
 	matrix();
+}
+
+void Monitor::setStatus(Instance *first, Instance *second, TaskType type)
+{
+	_results[first][second].status = type;
+	StatusInfo info{_inst2Index[first], _inst2Index[second], type};
+
+	sendResponse("status", &info);
 }
 
 void Monitor::updatePath(Instance *first, Instance *second, Path *path)

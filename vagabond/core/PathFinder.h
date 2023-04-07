@@ -25,6 +25,7 @@
 #include <map>
 #include "SerialJob.h"
 #include "Responder.h"
+#include "paths/TaskType.h"
 
 class ValidationTask;
 class TorsionCluster;
@@ -67,6 +68,7 @@ public:
 	
 	void sendValidationResult(FromToTask *task, bool valid, float linearity);
 	void sendUpdatedPath(Path *path, FromToTask *task);
+	void setStatus(FromToTask *task, TaskType type);
 	Path *existingPath(FromToTask *task);
 	
 	void addTask(OptimiseTask *task);
@@ -77,6 +79,11 @@ public:
 	virtual void updateObject(PathTask *object, int idx);
 
 	virtual void finishedObjects();
+	
+	const float &linearityThreshold() const
+	{
+		return _linearityThreshold;
+	}
 	
 	TorsionCluster *cluster() const
 	{
@@ -103,9 +110,15 @@ private:
 	PathTask *_tasks = nullptr;
 	ReporterTask *_validations = nullptr;
 	ReporterTask *_flipTorsions = nullptr;
-	ReporterTask *_secondValidations = nullptr;
+	PathTask *_cyclingTasks = nullptr;
 	ReporterTask *_fullOptimisations = nullptr;
-	ReporterTask *_fullValidations = nullptr;
+	std::vector<ReporterTask *> _fulls;
+
+	int _fullCycle = 0;
+	int _currentCycle = 0;
+	void makeFullCycle();
+	
+	std::mutex _cycleMutex;
 
 	void sendContentsToHandler(PathTask *bin);
 	
@@ -118,9 +131,7 @@ private:
 	{
 		FirstValidation,
 		FlipTorsions,
-		SecondValidation,
 		FullOptimisation,
-		FullValidation,
 	};
 	
 	friend std::ostream &operator<<(std::ostream &ss, const Stage &s)
@@ -133,14 +144,8 @@ private:
 			case FlipTorsions:
 			ss << "FlipTorsions";
 			break;
-			case SecondValidation:
-			ss << "SecondValidation";
-			break;
 			case FullOptimisation:
 			ss << "FullOptimisation";
-			break;
-			case FullValidation:
-			ss << "FullValidation";
 			break;
 			default:
 			break;
@@ -150,6 +155,8 @@ private:
 	
 	Stage _stage = FirstValidation;
 	TorsionCluster *_cluster = nullptr;
+	
+	float _linearityThreshold = 0.7;
 };
 
 #endif

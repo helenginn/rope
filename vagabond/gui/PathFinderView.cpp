@@ -18,8 +18,8 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
-#include <vagabond/gui/MatrixPlot.h>
-#include <vagabond/gui/TSNEView.h>
+#include <vagabond/gui/elements/Window.h>
+#include <vagabond/gui/PathPlot.h>
 #include <vagabond/core/paths/PathTask.h>
 #include <vagabond/core/RopeCluster.h>
 #include "PathFinderView.h"
@@ -33,6 +33,7 @@ PathFinderView::PathFinderView(Scene *prev) : Scene(prev)
 	_pf->setResponder(this);
 	_translation.x += 2;
 	_translation.z -= 100;
+	_alwaysOn = true;
 }
 
 PathFinderView::~PathFinderView()
@@ -43,19 +44,36 @@ PathFinderView::~PathFinderView()
 
 void PathFinderView::makeTaskTree()
 {
-	_pf->setup();
+	if (_taskTree)
+	{
+		removeObject(_taskTree);
+		Window::setDelete(_taskTree);
+		_taskTree = nullptr;
+	}
 
 	_taskTree = new LineGroup(_pf->topTask(), this);
 	_taskTree->setLeft(0.02, 0.1);
 	_taskTree->switchToScrolling(_taskTree);
 	_taskTree->setScrollBox(glm::vec4(0.07, 0.02, 0.8, 0.3));
 	addObject(_taskTree);
+	
+	_updateTree = false;
+}
+
+void PathFinderView::sendObject(std::string tag, void *object)
+{
+	if (tag == "task_tree")
+	{
+		_updateTree = true;
+	}
 }
 
 void PathFinderView::setup()
 {
 	overviewButtons();
-	makeTaskTree();
+
+	_pf->setup();
+
 	makeSummary();
 	makeMatrixBox();
 	makeGraphBox();
@@ -100,29 +118,12 @@ void PathFinderView::updateSummary()
 
 void PathFinderView::updateGraphBox()
 {
-	if (_view->vertexCount() > 0)
-	{
-		return;
-	}
-
 	return;
-	/*
-	ClusterTSNE *tsne = _pf->monitor()->availableTSNE();
-	if (!tsne)
-	{
-		return;
-	}
-	_view->setCluster(tsne);
-	_view->makePoints();
-	
-	glm::vec3 c = _view->centroid();
-	shiftToCentre(c, 0);
-	*/
 }
 
 void PathFinderView::updateMatrixBox()
 {
-	MatrixPlot *mp = new MatrixPlot(_pf->monitor()->matrix());
+	MatrixPlot *mp = new PathPlot(_pf->monitor());
 	_plot = mp;
 	_matrixBox->addObject(mp);
 }
@@ -145,8 +146,6 @@ void PathFinderView::makeGraphBox()
 	{
 		_graphBox = new Box();
 		addObject(_graphBox);
-		_view = new TSNEView();
-		_graphBox->addObject(_view);
 	}
 	
 	updateMatrixBox();
@@ -205,12 +204,12 @@ void PathFinderView::buttonPressed(std::string tag, Button *button)
 
 void PathFinderView::doThings()
 {
-	if (!_updateNext)
+	if (_updateTree)
 	{
-		return;
+		makeTaskTree();
 	}
 
-	if (_summaryBox && !_summaryBox->isDisabled())
+	if (_updateNext && _summaryBox && !_summaryBox->isDisabled())
 	{
 		updateSummary();
 	}
@@ -226,9 +225,9 @@ void PathFinderView::respond()
 		_plot->update();
 	}
 	
-	if (_view)
+//	if (_view)
 	{
-		updateGraphBox();
+//		updateGraphBox();
 	}
 }
 

@@ -60,7 +60,7 @@ protected:
 	
 	bool _mainsOnly = true;
 	bool _flipTorsions = true;
-	int _nudgeCount = 16;
+	int _nudgeCount = 8;
 	float _magnitudeThreshold = 90.f;
 	float _minimumMagnitude = 5.f;
 	float _maximumCycles = 100;
@@ -119,6 +119,8 @@ private:
 	std::map<int, float> _results;
 	
 	SimplexEngine *_simplex = nullptr;
+	
+	std::vector<float> _xPolys, _yPolys;
 };
 
 #endif

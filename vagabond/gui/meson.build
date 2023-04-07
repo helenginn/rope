@@ -52,6 +52,8 @@ guifiles = [
 'PathsDetail.cpp',
 'PathFinding.cpp',
 'PathFinderView.cpp',
+'PathPlot.cpp',
+'PathPlot.h',
 'PathView.cpp',
 'PathsMenu.cpp',
 'PointyView.cpp',

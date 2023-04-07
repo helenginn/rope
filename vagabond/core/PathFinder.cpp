@@ -61,8 +61,10 @@ void PathFinder::setWhiteList(const std::vector<HasMetadata *> &whiteList)
 	_whiteList.clear();
 	for (HasMetadata *hm : whiteList)
 	{
+		std::cout << hm->id() << ", ";
 		_whiteList.push_back(static_cast<Instance *>(hm));
 	}
+	std::cout << std::endl;
 }
 
 void PathFinder::prepareObjects()
@@ -87,21 +89,22 @@ void PathFinder::prepareTaskBins()
 	_flipTorsions->setDisplayName("Flip torsions");
 	_tasks->addItem(_flipTorsions);
 
-	_secondValidations = new ReporterTask(this);
-	_secondValidations->setDisplayName("Second validation");
-	_tasks->addItem(_secondValidations);
+	_cyclingTasks = new PathTask(this);
+	_cyclingTasks->setDisplayName("Optimisation iterations");
+	_tasks->addItem(_cyclingTasks);
 
-	PathTask *cycling = new PathTask(this);
-	cycling->setDisplayName("Optimisation iterations");
-	_tasks->addItem(cycling);
+	makeFullCycle();
+}
 
-	_fullOptimisations = new ReporterTask(this);
-	_fullOptimisations->setDisplayName("Full optimisation cycles");
-	cycling->addItem(_fullOptimisations);
-
-	_fullValidations = new ReporterTask(this);
-	_fullValidations->setDisplayName("Validations");
-	cycling->addItem(_fullValidations);
+void PathFinder::makeFullCycle()
+{
+	ReporterTask *full = new ReporterTask(this);
+	full->setDisplayName("Cycle: " + std::to_string(_fullCycle));
+	_cyclingTasks->addItem(full);
+	_fulls.push_back(full);
+	_fullCycle++;
+	
+	sendResponse("task_tree", nullptr);
 }
 
 void PathFinder::prepareValidationTasks()
@@ -227,28 +230,43 @@ void PathFinder::sendContentsToHandler(PathTask *bin)
 
 void PathFinder::incrementStageIfNeeded()
 {
-	if (_stage == FirstValidation && _validations->incomplete() == 0)
+	ReporterTask *salient = nullptr;
+	ReporterTask *next = nullptr;
+	
+	switch (_stage)
 	{
-		sendContentsToHandler(_flipTorsions);
-		_stage = FlipTorsions;
+		case FirstValidation:
+		salient = _validations;
+		next = _flipTorsions; break;
+		case FlipTorsions:
+		salient = _flipTorsions;
+		next = _fulls[_currentCycle]; break;
+		case FullOptimisation:
+		salient = _fulls[_currentCycle - 1];
+		next = _fulls[_currentCycle]; break;
+		default: break;
 	}
-	else if (_stage == FlipTorsions && _flipTorsions->incomplete() == 0)
+	
+	if (salient->incomplete() > 0)
 	{
-		sendContentsToHandler(_secondValidations);
-		_stage = SecondValidation;
-	}
-	else if ((_stage == SecondValidation && _secondValidations->incomplete() == 0)
-	         || (_stage == FullValidation && _fullValidations->incomplete() == 0))
-	{
-		sendContentsToHandler(_fullOptimisations);
-		_stage = FullOptimisation;
-	}
-	else if (_stage == FullOptimisation && _fullOptimisations->incomplete() == 0)
-	{
-		sendContentsToHandler(_fullValidations);
-		_stage = FullValidation;
+		return;
 	}
 
+	sendContentsToHandler(next);
+
+	if (_stage == FirstValidation)
+	{
+		_stage = FlipTorsions;
+	}
+	else if (_stage == FlipTorsions || 
+	         (_stage == FullOptimisation && _currentCycle == _fullCycle - 1))
+	{
+		_cycleMutex.lock();
+		makeFullCycle();
+		_stage = FullOptimisation;
+		_currentCycle++;
+		_cycleMutex.unlock();
+	}
 }
 
 void PathFinder::finishedObjects()
@@ -274,20 +292,13 @@ void PathFinder::sendUpdatedPath(Path *path, FromToTask *task)
 
 void PathFinder::addTask(ValidationTask *task)
 {
-	PathTask *cast = static_cast<PathTask *>(task);
 	
-	if (_stage == FlipTorsions)
-	{
-		_secondValidations->addItem(task);
-		_secondValidations->childChanged();
-	}
-	else if (_stage == FullOptimisation)
-	{
-		_fullValidations->addItem(task);
-		_fullValidations->childChanged();
-	}
 }
 
+void PathFinder::setStatus(FromToTask *task, TaskType type)
+{
+	_monitor->setStatus(task->from(), task->to(), type);
+}
 
 void PathFinder::addTask(OptimiseTask *task)
 {
@@ -299,11 +310,13 @@ void PathFinder::addTask(OptimiseTask *task)
 		_flipTorsions->addItem(task);
 		_flipTorsions->childChanged();
 	}
-	else if (_stage == SecondValidation || _stage == FullValidation)
+	else if (_stage == FlipTorsions || _stage == FullOptimisation)
 	{
 		task->setCycles(3);
-		_fullOptimisations->addItem(task);
-		_fullOptimisations->childChanged();
+		_cycleMutex.lock();
+		_fulls.back()->addItem(task);
+		_fulls.back()->childChanged();
+		_cycleMutex.unlock();
 	}
 }
 

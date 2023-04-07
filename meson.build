@@ -134,6 +134,8 @@ subdir('config')
 #                       build_by_default: true,
 #                        build_always_stale: false)
 
+compile_args += ['-DNDEBUG', '-DBOOST_UBLAS_NDEBUG']
+
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
 subdir('vagabond/core')

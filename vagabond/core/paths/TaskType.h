@@ -16,35 +16,15 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MatrixPlot__
-#define __vagabond__MatrixPlot__
+#ifndef __vagabond__TaskType__
+#define __vagabond__TaskType__
 
-#include <vagabond/utils/svd/PCA.h>
-#include <vagabond/gui/elements/Image.h>
-
-class MatrixPlot : public Image
+enum TaskType
 {
-public:
-	MatrixPlot(PCA::Matrix &mat);
-
-	virtual void update();
-
-	const PCA::Matrix &mat() const
-	{
-		return _mat;
-	}
-protected:
-	std::map<int, int> _index2Vertex;
-private:
-	glm::vec4 colourForValue(float val);
-	void prepareSmallVertices();
-	void updateColours();
-	void setup();
-
-	PCA::Matrix &_mat;
-
-	float _xProp = 1;
-	float _yProp = 1;
+	None,
+	Reporter,
+	Validation,
+	Optimisation,
 };
 
 #endif
