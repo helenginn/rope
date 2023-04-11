@@ -128,6 +128,7 @@ protected:
 				members.pop();
 			}
 
+			// semaphore was signalled with empty object array
 			if (finish)
 			{
 				sem.signal();
@@ -148,7 +149,11 @@ protected:
 	};
 
 	template <class Object>
-	class Pool : public CustomPool<Object, Semaphore>
+	class Pool : public CustomPool<Object, SimplePhore>
+	{
+
+	};
+
 	{
 
 	};

@@ -16,27 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <atomic>
-#include <mutex>
-#include <string>
-#include <iostream>
-
-#include <mutex>
-#include <condition_variable>
+#ifndef __vagabond__Vagaphore__
+#define __vagabond__Vagaphore__
         
+#include <string>
+
 class Semaphore
 {
 public:
-	Semaphore(int n = 0)
+	Semaphore()
 	{
-		_n = n;
+
 	}
 	
-	void reset()
+	virtual ~Semaphore()
 	{
-		_n = 0;
-		_mutex.unlock();
+
 	}
+	
+	virtual void reset() = 0;
 	
 	void setName(std::string name)
 	{
@@ -45,39 +43,11 @@ public:
 	
 	Semaphore(const Semaphore &) = delete;
 	
-	bool tryWait()
-	{
-		return (_mutex.try_lock());
-	}
-	
-	void unlock()
-	{
-		_mutex.unlock();
-	}
+	virtual void wait() = 0;
+	virtual void signal() = 0;
 
-	void wait()
-	{
-		std::unique_lock<std::mutex> lock(_mutex);
-
-		while (_n == 0)
-		{
-			_cv.wait(lock);
-		}
-
-		_n--;
-	}
-	
-	void signal()
-	{
-		std::unique_lock<std::mutex> lock(_mutex);
-		_n++;
-		_cv.notify_one();
-	}
-
-private:
-	std::atomic<int> _n;
-	std::condition_variable _cv;
+protected:
 	std::string _name;
-	std::mutex _mutex;
 };
 
+#endif
