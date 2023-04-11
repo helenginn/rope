@@ -241,10 +241,10 @@ void BondCalculator::setup()
 
 void BondCalculator::prepareThreads()
 {
-	/* minijob submission, just the one */
 	ThreadSubmitsJobs *worker = new ThreadSubmitsJobs(this);
 	std::thread *thr = new std::thread(&ThreadSubmitsJobs::start, worker);
 	Pool<Job *> &pool = _jobPool;
+	pool.setName("Job pool");
 
 	pool.threads.push_back(thr);
 	pool.workers.push_back(worker);

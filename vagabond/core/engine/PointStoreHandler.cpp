@@ -63,7 +63,7 @@ void PointStoreHandler::allocateStores()
 			PointStore *ps = new PointStore();
 			_emptyPool.pushObject(ps);
 		}
-		_loadedPool[_elements[i]].sem.setName("loaded");
+		_loadedPool[_elements[i]].setName("loaded");
 	}
 
 }

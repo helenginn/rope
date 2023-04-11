@@ -29,8 +29,8 @@ BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 	_run = 0;
 	_finish = false;
 	_totalSamples = 1;
-	_pools[SequencePositionsReady].sem.setName("handle positions");
-	_pools[SequenceCalculateReady].sem.setName("calculate bonds");
+	_pools[SequencePositionsReady].setName("handle positions");
+	_pools[SequenceCalculateReady].setName("calculate bonds");
 	_calculator = calc;
 }
 

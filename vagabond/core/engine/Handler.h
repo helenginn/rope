@@ -36,6 +36,11 @@ protected:
 		Semaphore sem;
 		std::mutex handout;
 		
+		void setName(std::string name)
+		{
+			sem.setName(name);
+		}
+
 		void cleanup()
 		{
 			for (size_t i = 0; i < threads.size(); i++)
