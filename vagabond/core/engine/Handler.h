@@ -19,7 +19,8 @@
 #ifndef __vagabond__Handler__
 #define __vagabond__Handler__
 
-#include "engine/Vagaphore.h"
+#include "engine/SimplePhore.h"
+#include "engine/ExpectantPhore.h"
 #include "engine/workers/ThreadWorker.h"
 #include "Job.h"
 
