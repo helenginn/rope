@@ -134,18 +134,25 @@ protected:
 			{
 				sem.signal();
 			}
-
+			
 			handout.unlock();
 		}
 		
-		void pushObject(Object &obj)
+		int pushObject(Object &obj)
 		{
 			handout.lock();
+			int next = 0;
+			
+			sem.lock();
+			_id++;
+			next = _id;
 
 			members.push(obj);
-			sem.signal();
+			sem.signal_one();
 
 			handout.unlock();
+
+			return next;
 		}
 	};
 
