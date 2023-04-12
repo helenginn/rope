@@ -18,6 +18,7 @@
 
 #include "engine/workers/ThreadExtractsBondPositions.h"
 #include "BondSequenceHandler.h"
+#include "engine/SurfaceAreaHandler.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/ForceFieldHandler.h"
 #include "engine/MechanicalBasis.h"
@@ -43,6 +44,17 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 	r->handout.lock();
 	r->aps = aps;
 	r->handout.unlock();
+}
+
+void ThreadExtractsBondPositions::transferToSurfaceHandler(Job *job,
+                                                           BondSequence *seq)
+{
+	AtomPosMap aps = seq->extractPositions();
+	SurfaceAreaHandler *handler = _seqHandler->calculator()->surfaceHandler();
+	
+	handler->sendJobForCalculation(job, aps);
+	timeEnd();
+	cleanupSequence(job, seq);
 }
 
 void ThreadExtractsBondPositions::transferToForceFields(Job *job,
@@ -109,8 +121,16 @@ void ThreadExtractsBondPositions::start()
 		{
 			extractPositions(job, seq);
 		}
-		if (job->requests & JobUpdateMechanics ||
-		    job->requests & JobScoreStructure)
+
+		/* if the solvent area is requested, this will be done before
+		 * force field measurement, and passed onto force field later by
+		 * ThreadSurfacer */
+		if (job->requests & JobSolventSurfaceArea)
+		{
+			transferToSurfaceHandler(job, seq);
+			continue; // loses control of bond sequence
+		}
+		else if (job->requests & JobScoreStructure)
 		{
 			transferToForceFields(job, seq);
 			continue; // loses control of bond sequence

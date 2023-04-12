@@ -22,6 +22,8 @@
 #include "engine/workers/ThreadWorker.h"
 
 class SurfaceAreaHandler;
+class AreaMeasurer;
+struct Job;
 
 class ThreadSurfacer : public ThreadWorker
 {
@@ -29,6 +31,8 @@ public:
 	ThreadSurfacer(SurfaceAreaHandler *h);
 
 	virtual void start();
+	
+	void sendToNext(Job *job, AreaMeasurer *measurer);
 	
 	virtual std::string type()
 	{

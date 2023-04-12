@@ -182,6 +182,11 @@ public:
 	
 	void setSampler(Sampler *sampler);
 	
+	SurfaceAreaHandler *surfaceHandler()
+	{
+		return _surfaceHandler;
+	}
+	
 	ForceFieldHandler *const forceFieldHandler() const
 	{
 		return _ffHandler;

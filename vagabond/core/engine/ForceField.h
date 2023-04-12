@@ -119,7 +119,7 @@ public:
 		return _weights[i][0];
 	}
 	
-	void copyAtomMap(AtomPosMap &aps)
+	void copyAtomMap(const AtomPosMap &aps)
 	{
 		_aps = aps;
 	}

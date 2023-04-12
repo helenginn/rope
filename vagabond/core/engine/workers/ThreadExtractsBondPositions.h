@@ -52,6 +52,7 @@ private:
 	void transferToMaps(Job *job, BondSequence *seq);
 	void updateMechanics(Job *job, BondSequence *seq);
 	void transferToForceFields(Job *job, BondSequence *seq);
+	void transferToSurfaceHandler(Job *job, BondSequence *seq);
 	
 	void cleanupSequence(Job *job, BondSequence *seq);
 	void returnResult(Job *job);

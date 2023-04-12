@@ -27,26 +27,23 @@ SurfaceAreaHandler::SurfaceAreaHandler(BondCalculator *calculator)
 
 void SurfaceAreaHandler::createMeasurers()
 {
-
-}
-
-void SurfaceAreaHandler::setup()
-{
 	for (size_t i = 0; i < _measureNum; i++)
 	{
 		AreaMeasurer *area = new AreaMeasurer(this);
 		_idlePool.pushObject(area);
 	}
+
+}
+
+void SurfaceAreaHandler::setup()
+{
+	createMeasurers();
 }
 
 void SurfaceAreaHandler::start()
 {
+	prepareThreads();
 
-}
-
-void SurfaceAreaHandler::finish()
-{
-	_areaPool.finish();
 }
 
 void SurfaceAreaHandler::prepareThreads()
@@ -58,6 +55,12 @@ void SurfaceAreaHandler::prepareThreads()
 
 		_areaPool.addWorker(worker, thr);
 	}
+}
+
+void SurfaceAreaHandler::finish()
+{
+	_areaPool.finish();
+	_idlePool.finish();
 }
 
 void SurfaceAreaHandler::sendJobForCalculation(Job *job, AtomPosMap &aps)

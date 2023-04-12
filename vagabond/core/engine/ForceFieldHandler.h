@@ -31,7 +31,7 @@ public:
 	ForceFieldHandler(BondCalculator *calculator = nullptr);
 	~ForceFieldHandler();
 
-	void atomMapToForceField(Job *j, AtomPosMap &aps);
+	void atomMapToForceField(Job *j, const AtomPosMap &aps);
 	
 	void setFFProperties(FFProperties &props)
 	{

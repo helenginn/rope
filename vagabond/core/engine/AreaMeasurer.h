@@ -45,6 +45,11 @@ public:
 		_posMap = posMap;
 	}
 	
+	const AtomPosMap &atomPosMap() const
+	{
+		return _posMap;
+	}
+	
 	/** calculates surface area of previously copied atom map in Angstroms. */
 	float surfaceArea();
 private:

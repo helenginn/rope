@@ -156,6 +156,7 @@ struct Result
 	double deviation;
 	double score;
 	double correlation;
+	float surface_area;
 	AtomMap *map = nullptr;
 
 	std::mutex handout;

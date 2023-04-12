@@ -67,7 +67,7 @@ void ForceFieldHandler::createForceFields()
 
 }
 
-void ForceFieldHandler::atomMapToForceField(Job *j, AtomPosMap &aps)
+void ForceFieldHandler::atomMapToForceField(Job *j, const AtomPosMap &aps)
 {
 	/* copy over atom map, in order that the BondSequence can be released for
 	 * the next calculation. */
