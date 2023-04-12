@@ -89,17 +89,15 @@ protected:
 
 		void clearQueue()
 		{
-			lock();
+			std::unique_lock<std::mutex> l = lock();
 
 			while (members.size())
 			{
 				members.pop();
 			}
-
-			unlock();
 		}
 		
-		void lock()
+		std::unique_lock<std::mutex> lock()
 		{
 			handout.lock();
 		}
@@ -112,9 +110,8 @@ protected:
 		size_t objectCount()
 		{
 			size_t result = 0;
-			lock();
+			std::unique_lock<std::mutex> l = lock();
 			result = members.size();
-			unlock();
 			
 			return result;
 		}
