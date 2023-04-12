@@ -117,7 +117,6 @@ protected:
 		void acquireObject(Object &obj, std::atomic<bool> &finish)
 		{
 			sem.wait();
-			lock();
 
 			if (members.size())
 			{
@@ -131,13 +130,10 @@ protected:
 				obj = nullptr;
 				sem.signal();
 			}
-			
-			unlock();
 		}
 		
 		int pushObject(Object &obj)
 		{
-			lock();
 			int next = 0;
 			
 			std::unique_lock<std::mutex> lock(sem.mutex());
@@ -146,8 +142,6 @@ protected:
 
 			members.push(obj);
 			sem.signal_one();
-
-			unlock();
 
 			return next;
 		}
@@ -176,7 +170,6 @@ protected:
 		void acquireObjectOrNull(Object &obj)
 		{
 			this->sem.wait();
-			this->lock();
 
 			if (this->members.size())
 			{
@@ -187,8 +180,6 @@ protected:
 			{
 				obj = nullptr;
 			}
-
-			this->unlock();
 		}
 	};
 
