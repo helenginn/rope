@@ -55,7 +55,7 @@ public:
 	
 	size_t segmentCount()
 	{
-		return _mapPool.members.size();
+		return _mapPool.objectCount();
 	}
 	
 	struct MapJob

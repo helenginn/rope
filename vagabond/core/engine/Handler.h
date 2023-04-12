@@ -105,6 +105,16 @@ protected:
 			handout.unlock();
 		}
 
+		size_t objectCount()
+		{
+			size_t result = 0;
+			handout.lock();
+			result = members.size();
+			handout.unlock();
+			
+			return result;
+		}
+
 		void acquireObject(Object &obj, bool &finish)
 		{
 			sem.wait();
