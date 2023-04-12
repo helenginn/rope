@@ -59,9 +59,9 @@ protected:
 			threads.clear();
 			workers.clear();
 			
-			handout.lock();
+			lock();
 			std::queue<Object>().swap(members);
-			handout.unlock();
+			unlock();
 
 			sem.reset();
 		}
@@ -88,14 +88,14 @@ protected:
 
 		void clearQueue()
 		{
-			handout.lock();
+			lock();
 
 			while (members.size())
 			{
 				members.pop();
 			}
 
-			handout.unlock();
+			unlock();
 		}
 		
 		void lock()
@@ -111,9 +111,9 @@ protected:
 		size_t objectCount()
 		{
 			size_t result = 0;
-			handout.lock();
+			lock();
 			result = members.size();
-			handout.unlock();
+			unlock();
 			
 			return result;
 		}
@@ -121,7 +121,7 @@ protected:
 		void acquireObject(Object &obj, bool &finish)
 		{
 			sem.wait();
-			handout.lock();
+			lock();
 
 			if (members.size())
 			{
@@ -136,7 +136,7 @@ protected:
 				sem.signal();
 			}
 			
-			handout.unlock();
+			unlock();
 		}
 		
 		int pushObject(Object &obj)
