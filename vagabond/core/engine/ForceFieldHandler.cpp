@@ -136,11 +136,11 @@ void ForceFieldHandler::joinThreads()
 
 void ForceFieldHandler::finish()
 {
-	_calculatePool.handout.lock();
+	_calculatePool.lock();
 
 	_finish = true;
 
-	_calculatePool.handout.unlock();
+	_calculatePool.unlock();
 
 	signalThreads();
 }

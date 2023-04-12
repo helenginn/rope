@@ -125,13 +125,13 @@ void CorrelationHandler::returnCorrelator(Correlator *cc)
 
 void CorrelationHandler::finish()
 {
-	_correlPool.handout.lock();
-	_mapPool.handout.lock();
+	_correlPool.lock();
+	_mapPool.lock();
 
 	_finish = true;
 
-	_correlPool.handout.unlock();
-	_mapPool.handout.unlock();
+	_correlPool.unlock();
+	_mapPool.unlock();
 
 	signalThreads();
 }

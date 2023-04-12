@@ -176,14 +176,14 @@ void MapTransferHandler::finish()
 {
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_pools[_elements[i]].handout.lock();
+		_pools[_elements[i]].lock();
 	}
 	
 	_finish = true;
 
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_pools[_elements[i]].handout.unlock();
+		_pools[_elements[i]].unlock();
 	}
 
 	signalThreads();

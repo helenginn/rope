@@ -126,19 +126,19 @@ void PointStoreHandler::finish()
 	
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_loadedPool[_elements[i]].handout.lock();
+		_loadedPool[_elements[i]].lock();
 	}
 	
-	_emptyPool.handout.lock();
+	_emptyPool.lock();
 
 	_finish = true;
 
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_loadedPool[_elements[i]].handout.unlock();
+		_loadedPool[_elements[i]].unlock();
 	}
 
-	_emptyPool.handout.unlock();
+	_emptyPool.unlock();
 
 	signalThreads();
 }

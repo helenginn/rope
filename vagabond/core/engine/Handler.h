@@ -29,12 +29,13 @@ protected:
 	template <class Object, class Sem>
 	class CustomPool
 	{
+	protected:
+		std::mutex handout;
 	public:
 		std::queue<Object> members;
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
 		Semaphore sem;
-		std::mutex handout;
 		
 		void setName(std::string name)
 		{
@@ -92,6 +93,16 @@ protected:
 				members.pop();
 			}
 
+			handout.unlock();
+		}
+		
+		void lock()
+		{
+			handout.lock();
+		}
+		
+		void unlock()
+		{
 			handout.unlock();
 		}
 

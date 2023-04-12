@@ -145,15 +145,15 @@ void BondSequenceHandler::joinThreads()
 
 void BondSequenceHandler::finish()
 {
-	_pools[SequenceIdle].handout.lock();
-	_pools[SequencePositionsReady].handout.lock();
-	_pools[SequenceCalculateReady].handout.lock();
+	_pools[SequenceIdle].lock();
+	_pools[SequencePositionsReady].lock();
+	_pools[SequenceCalculateReady].lock();
 
 	_finish = true;
 
-	_pools[SequenceIdle].handout.unlock();
-	_pools[SequencePositionsReady].handout.unlock();
-	_pools[SequenceCalculateReady].handout.unlock();
+	_pools[SequenceIdle].unlock();
+	_pools[SequencePositionsReady].unlock();
+	_pools[SequenceCalculateReady].unlock();
 
 	signalThreads();
 }

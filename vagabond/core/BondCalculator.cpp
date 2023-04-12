@@ -410,11 +410,11 @@ void BondCalculator::finish()
 		_sequenceHandler->finish();
 	}
 	
-	_resultPool.handout.lock();
-	_jobPool.handout.lock();
+	_resultPool.lock();
+	_jobPool.lock();
 	_finish = true;
-	_jobPool.handout.unlock();
-	_resultPool.handout.unlock();
+	_jobPool.unlock();
+	_resultPool.unlock();
 
 	_jobPool.waitForThreads();
 	_resultPool.waitForThreads();

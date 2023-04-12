@@ -214,13 +214,13 @@ void MapSumHandler::joinThreads()
 
 void MapSumHandler::finish()
 {
-	_mapPool.handout.lock();
-	_segmentPool.handout.lock();
+	_mapPool.lock();
+	_segmentPool.lock();
 
 	_finish = true;
 
-	_mapPool.handout.unlock();
-	_segmentPool.handout.unlock();
+	_mapPool.unlock();
+	_segmentPool.unlock();
 
 	signalThreads();
 }
