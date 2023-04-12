@@ -55,7 +55,6 @@ public:
 
 	void start();
 	void finish();
-	void joinThreads();
 	
 	BondCalculator *calculator() const
 	{
@@ -63,7 +62,6 @@ public:
 	}
 private:
 	void prepareThreads();
-	void signalThreads();
 
 	void createForceFields();
 	void fillDefaults();

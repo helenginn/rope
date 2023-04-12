@@ -59,20 +59,6 @@ void CorrelationHandler::start()
 	prepareThreads();
 }
 
-void CorrelationHandler::joinThreads()
-{
-	_correlPool.joinThreads();
-
-	_correlPool.cleanup();
-	_mapPool.cleanup();
-}
-
-void CorrelationHandler::signalThreads()
-{
-	_correlPool.signalThreads();
-	_mapPool.signalThreads();
-}
-
 void CorrelationHandler::prepareThreads()
 {
 	for (size_t i = 0; i < _threads + 1; i++)
@@ -81,8 +67,7 @@ void CorrelationHandler::prepareThreads()
 		worker->setMapSumHandler(_sumHandler);
 		std::thread *thr = new std::thread(&ThreadCorrelation::start, worker);
 
-		_correlPool.threads.push_back(thr);
-		_correlPool.workers.push_back(worker);
+		_correlPool.addWorker(worker, thr);
 	}
 }
 
@@ -95,7 +80,7 @@ void CorrelationHandler::pushMap(AtomSegment *seg, Job *job)
 AtomSegment *CorrelationHandler::acquireMap(Job **job)
 {
 	CorrelJob *cj = nullptr;
-	_mapPool.acquireObject(cj, _finish);
+	_mapPool.acquireObject(cj);
 	
 	if (cj == nullptr)
 	{
@@ -113,7 +98,7 @@ AtomSegment *CorrelationHandler::acquireMap(Job **job)
 Correlator *CorrelationHandler::acquireCorrelator()
 {
 	Correlator *cc;
-	_correlPool.acquireObject(cc, _finish);
+	_correlPool.acquireObject(cc);
 
 	return cc;
 }
@@ -125,13 +110,6 @@ void CorrelationHandler::returnCorrelator(Correlator *cc)
 
 void CorrelationHandler::finish()
 {
-	_correlPool.lock();
-	_mapPool.lock();
-
-	_finish = true;
-
-	_correlPool.unlock();
-	_mapPool.unlock();
-
-	signalThreads();
+	_correlPool.finish();
+	_mapPool.finish();
 }

@@ -37,6 +37,11 @@ public:
 		setName("Simple semaphore");
 	}
 	
+	const std::string &name() const
+	{
+		return _name;
+	}
+	
 	virtual ~SimplePhore()
 	{
 

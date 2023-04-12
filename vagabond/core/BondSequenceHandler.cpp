@@ -27,8 +27,8 @@
 BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 {
 	_run = 0;
-	_finish = false;
 	_totalSamples = 1;
+	_pools[SequenceIdle].setName("idle sequences");
 	_pools[SequencePositionsReady].setName("handle positions");
 	_pools[SequenceCalculateReady].setName("calculate bonds");
 	_calculator = calc;
@@ -49,11 +49,6 @@ BondSequenceHandler::~BondSequenceHandler()
 	}
 	
 	std::map<SequenceState, Pool<BondSequence *> >::iterator it;
-	
-	for (it = _pools.begin(); it != _pools.end(); it++)
-	{
-		it->second.cleanup();
-	}
 }
 
 void BondSequenceHandler::calculateThreads(int max)
@@ -77,20 +72,8 @@ void BondSequenceHandler::sanityCheckThreads()
 
 typedef ThreadCalculatesBondSequence CalcWorker;
 typedef ThreadExtractsBondPositions ExtrWorker;
-//typedef ThreadMiniJobForSequence SJobWorker;
 void BondSequenceHandler::prepareThreads()
 {
-	for (size_t i = 0; i < _totalSequences; i++)
-	{
-		/* several calculators */
-		CalcWorker *worker = new CalcWorker(this);
-		std::thread *thr = new std::thread(&CalcWorker::start, worker);
-		Pool<BondSequence *> &pool = _pools[SequenceCalculateReady];
-
-		pool.threads.push_back(thr);
-		pool.workers.push_back(worker);
-	}
-
 	for (size_t i = 0; i < _threads; i++)
 	{
 		ExtrWorker *worker = new ExtrWorker(this);
@@ -98,9 +81,19 @@ void BondSequenceHandler::prepareThreads()
 		std::thread *thr = new std::thread(&ExtrWorker::start, worker);
 		Pool<BondSequence *> &pool = _pools[SequencePositionsReady];
 
-		pool.threads.push_back(thr);
-		pool.workers.push_back(worker);
+		pool.addWorker(worker, thr);
 	}
+
+	for (size_t i = 0; i < _totalSequences; i++)
+	{
+		/* several calculators */
+		CalcWorker *worker = new CalcWorker(this);
+		std::thread *thr = new std::thread(&CalcWorker::start, worker);
+		Pool<BondSequence *> &pool = _pools[SequenceCalculateReady];
+
+		pool.addWorker(worker, thr);
+	}
+
 }
 
 void BondSequenceHandler::setup()
@@ -112,8 +105,6 @@ void BondSequenceHandler::setup()
 
 void BondSequenceHandler::start()
 {
-	_finish = false;
-
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
 		_sequences[i]->reset();
@@ -125,37 +116,11 @@ void BondSequenceHandler::start()
 	prepareThreads();
 }
 
-void BondSequenceHandler::signalThreads()
-{
-	_pools[SequencePositionsReady].signalThreads();
-	_pools[SequenceCalculateReady].signalThreads();
-	_pools[SequenceIdle].signalThreads();
-}
-
-void BondSequenceHandler::joinThreads()
-{
-	_pools[SequencePositionsReady].joinThreads();
-	_pools[SequenceCalculateReady].joinThreads();
-	_pools[SequenceIdle].joinThreads();
-	
-	_pools[SequenceCalculateReady].cleanup();
-	_pools[SequencePositionsReady].cleanup();
-	_pools[SequenceIdle].cleanup();
-}
-
 void BondSequenceHandler::finish()
 {
-	_pools[SequenceIdle].lock();
-	_pools[SequencePositionsReady].lock();
-	_pools[SequenceCalculateReady].lock();
-
-	_finish = true;
-
-	_pools[SequenceIdle].unlock();
-	_pools[SequencePositionsReady].unlock();
-	_pools[SequenceCalculateReady].unlock();
-
-	signalThreads();
+	_pools[SequenceIdle].finish();
+	_pools[SequencePositionsReady].finish();
+	_pools[SequenceCalculateReady].finish();
 }
 
 void BondSequenceHandler::prepareSequenceBlocks()
@@ -195,8 +160,7 @@ void BondSequenceHandler::addAnchorExtension(AnchorExtension ext)
 	_atoms.push_back(ext);
 }
 
-void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state,
-                                          SequenceState old)
+void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state)
 {
 	if (state == SequenceCalculateReady)
 	{
@@ -212,7 +176,7 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 	Pool<BondSequence *> &pool = _pools[state];
 	BondSequence *seq = nullptr;
 	
-	pool.acquireObject(seq, _finish);
+	pool.acquireObject(seq);
 	return seq;
 }
 

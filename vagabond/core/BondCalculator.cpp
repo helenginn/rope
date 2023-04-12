@@ -31,9 +31,6 @@ BondCalculator::BondCalculator()
 	_maxThreads = 0;
 	_maxMemory = 0;
 	_sequenceHandler = nullptr;
-	_max_id = -1;
-	_running = 0;
-	_finish = false;
 	_totalSamples = 1;
 }
 
@@ -51,12 +48,7 @@ void BondCalculator::reset()
 	delete _mapHandler; _mapHandler = nullptr;
 	delete _sumHandler; _sumHandler = nullptr;
 	delete _ffHandler; _ffHandler = nullptr;
-	_resultPool.cleanup();
-	_recyclePool.cleanup();
-	_jobPool.cleanup();
 
-	_running = 0;
-	_max_id = 0;
 	_minDepth = 0;
 	_maxDepth = INT_MAX;
 	_sideMax = INT_MAX;
@@ -246,16 +238,13 @@ void BondCalculator::prepareThreads()
 	Pool<Job *> &pool = _jobPool;
 	pool.setName("Job pool");
 
-	pool.threads.push_back(thr);
-	pool.workers.push_back(worker);
+	pool.addWorker(worker, thr);
 }
 
 void BondCalculator::start()
 {
 	_started = true;
 	sanityCheckDepthLimits();
-
-	_finish = false;
 
 	if (_changedDepth)
 	{
@@ -354,7 +343,7 @@ int BondCalculator::submitJob(Job &original_job)
 Job *BondCalculator::acquireJob()
 {
 	Job *job = nullptr;
-	_jobPool.acquireObject(job, _finish);
+	_jobPool.acquireObject(job);
 	
 	return job;
 
@@ -386,41 +375,8 @@ void BondCalculator::finish()
 		_sequenceHandler->finish();
 	}
 	
-	_resultPool.lock();
-	_jobPool.lock();
-	_finish = true;
-	_jobPool.unlock();
-	_resultPool.unlock();
-
-	_jobPool.waitForThreads();
-	_resultPool.waitForThreads();
-
-	_resultPool.cleanup();
-	_jobPool.cleanup();
-	
-	if (_mapHandler != nullptr)
-	{
-		_sumHandler->joinThreads();
-		_mapHandler->joinThreads();
-	}
-
-	if (_correlHandler != nullptr)
-	{
-		_correlHandler->joinThreads();
-	}
-
-	if (_ffHandler != nullptr)
-	{
-		_ffHandler->joinThreads();
-	}
-
-	if (_sequenceHandler != nullptr)
-	{
-		_sequenceHandler->joinThreads();
-	}
-	
-	_running = 0;
-	_max_id = 0;
+	_resultPool.finish();
+	_jobPool.finish();
 }	
 
 const size_t BondCalculator::maxCustomVectorSize() const

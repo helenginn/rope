@@ -68,7 +68,6 @@ public:
 	void finish();
 	void joinThreads();
 private:
-	void signalThreads();
 	void prepareThreads();
 	void createCorrelators();
 

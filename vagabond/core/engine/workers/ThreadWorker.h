@@ -116,7 +116,7 @@ protected:
 		}
 	}
 
-	std::atomic<bool> _finish;
+	std::atomic<bool> _finish{false};
 
 	int _timeWait = 0;
 	int _timeWork = 0;

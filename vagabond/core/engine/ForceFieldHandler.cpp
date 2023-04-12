@@ -73,7 +73,7 @@ void ForceFieldHandler::atomMapToForceField(Job *j, AtomPosMap &aps)
 	 * the next calculation. */
 
 	ForceField *ff = nullptr;
-	_emptyPool.acquireObject(ff, _finish);
+	_emptyPool.acquireObject(ff);
 
 	if (ff == nullptr)
 	{
@@ -94,7 +94,7 @@ void ForceFieldHandler::returnEmptyForceField(ForceField *ff)
 ForceField *ForceFieldHandler::acquireForceFieldToCalculate()
 {
 	ForceField *ff = nullptr;
-	_calculatePool.acquireObject(ff, _finish);
+	_calculatePool.acquireObject(ff);
 	return ff;
 }
 
@@ -111,8 +111,7 @@ void ForceFieldHandler::prepareThreads()
 		ThreadForceFielder *worker = new ThreadForceFielder(this);
 		std::thread *thr = new std::thread(&ThreadForceFielder::start, worker);
 
-		_calculatePool.threads.push_back(thr);
-		_calculatePool.workers.push_back(worker);
+		_calculatePool.addWorker(worker, thr);
 	}
 }
 
@@ -121,26 +120,7 @@ void ForceFieldHandler::start()
 	prepareThreads();
 }
 
-void ForceFieldHandler::signalThreads()
-{
-	_calculatePool.signalThreads();
-}
-
-void ForceFieldHandler::joinThreads()
-{
-	_calculatePool.joinThreads();
-
-	_calculatePool.cleanup();
-
-}
-
 void ForceFieldHandler::finish()
 {
-	_calculatePool.lock();
-
-	_finish = true;
-
-	_calculatePool.unlock();
-
-	signalThreads();
+	_calculatePool.finish();
 }

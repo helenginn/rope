@@ -32,19 +32,30 @@ protected:
 	{
 	private:
 		std::atomic<int> _id{0};
+		std::atomic<bool> _finish{false};
 	protected:
-		std::mutex handout;
 		std::queue<Object> members;
-		Sem sem;
-	public:
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
+		Sem sem;
+	public:
+		
+		virtual ~CustomPool()
+		{
+
+		}
 		
 		void setName(std::string name)
 		{
 			sem.setName(name);
 		}
-
+		
+		void addWorker(ThreadWorker *worker, std::thread *thr)
+		{
+			workers.push_back(worker);
+			threads.push_back(thr);
+		}
+		
 		void cleanup()
 		{
 			for (size_t i = 0; i < threads.size(); i++)
@@ -59,9 +70,11 @@ protected:
 			
 			threads.clear();
 			workers.clear();
-			
-			std::queue<Object>().swap(members);
+			std::queue<Object> tmp;
+			members.swap(tmp); // shouldn't be necessary...
 
+			_finish = false;
+			_id = 0;
 			sem.reset();
 		}
 		
@@ -74,20 +87,15 @@ protected:
 			}
 		}
 		
-		void signalThreads()
-		{
-			sem.signal();
-		}
-		
 		void waitForThreads()
 		{
-			signalThreads();
+			sem.signal();
 			joinThreads();
 		}
 
-		void clearQueue()
+		virtual void clearQueue()
 		{
-			std::unique_lock<std::mutex> l = lock();
+			std::unique_lock<std::mutex> lock(sem.mutex());
 
 			while (members.size())
 			{
@@ -95,55 +103,59 @@ protected:
 			}
 		}
 		
-		std::unique_lock<std::mutex> lock()
+		void finish()
 		{
-			return std::unique_lock<std::mutex>(sem.mutex());
-		}
-		
-		void unlock()
-		{
-//			handout.unlock();
+			clearQueue();
+			std::unique_lock<std::mutex> lock(sem.mutex());
+			_finish = true;
+			lock.unlock();
+			waitForThreads();
+			cleanup();
 		}
 
 		size_t objectCount()
 		{
 			size_t result = 0;
-			std::unique_lock<std::mutex> l = lock();
+			std::unique_lock<std::mutex> lock(sem.mutex());
 			result = members.size();
 			
 			return result;
 		}
 
-		void acquireObject(Object &obj, std::atomic<bool> &finish)
+		void acquireObject(Object &obj)
 		{
+			obj = nullptr;
 			sem.wait();
+			std::unique_lock<std::mutex> lock(sem.mutex());
 
 			if (members.size())
 			{
 				obj = members.front();
 				members.pop();
 			}
+			else if (!_finish)
+			{
+				std::cout << "Warning: " << sem.name() << " was waiting for nothing"
+				<< std::endl;
+			}
+			
+			lock.unlock();
 
 			// semaphore was signalled with empty object array
-			if (finish)
+			if (_finish)
 			{
-				obj = nullptr;
 				sem.signal();
 			}
 		}
 		
 		int pushObject(Object &obj)
 		{
-			int next = 0;
-			
 			std::unique_lock<std::mutex> lock(sem.mutex());
 			_id++;
-			next = _id;
-
 			members.push(obj);
 			sem.signal_one();
 
-			return next;
+			return _id;
 		}
 	};
 
@@ -169,21 +181,24 @@ protected:
 
 		void acquireObjectOrNull(Object &obj)
 		{
+			obj = nullptr;
 			this->sem.wait();
+			std::unique_lock<std::mutex> lock(this->sem.mutex());
 
 			if (this->members.size())
 			{
 				obj = this->members.front();
 				this->members.pop();
 			}
-			else
-			{
-				obj = nullptr;
-			}
+		}
+
+		virtual void clearQueue()
+		{
+			CustomPool<Object, ExpectantPhore>::clearQueue();
+			this->sem.expect_none();
 		}
 	};
-
-	std::atomic<bool> _finish{false};
+	
 private:
 
 };

@@ -122,16 +122,13 @@ void MapTransferHandler::prepareThreads()
 			worker->setPointStoreHandler(_pointHandler);
 			std::thread *thr = new std::thread(&ThreadMapTransfer::start, worker);
 
-			pool.threads.push_back(thr);
-			pool.workers.push_back(worker);
+			pool.addWorker(worker, thr);
 		}
 	}
 }
 
 void MapTransferHandler::start()
 {
-	_finish = false;
-
 	prepareThreads();
 }
 
@@ -147,44 +144,14 @@ ElementSegment *MapTransferHandler::acquireSegment(std::string ele)
 {
 	Pool<ElementSegment *> &pool = _pools[ele];
 	ElementSegment *seg = nullptr;
-	pool.acquireObject(seg, _finish);
+	pool.acquireObject(seg);
 	return seg;
-}
-
-void MapTransferHandler::signalThreads()
-{
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_pools[_elements[i]].signalThreads();
-	}
-}
-
-void MapTransferHandler::joinThreads()
-{
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_pools[_elements[i]].joinThreads();
-	}
-
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_pools[_elements[i]].cleanup();
-	}
 }
 
 void MapTransferHandler::finish()
 {
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_pools[_elements[i]].lock();
+		_pools[_elements[i]].finish();
 	}
-	
-	_finish = true;
-
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_pools[_elements[i]].unlock();
-	}
-
-	signalThreads();
 }

@@ -56,24 +56,6 @@ void ThreadExtractsBondPositions::transferToForceFields(Job *job,
 	cleanupSequence(job, seq);
 }
 
-/*
-void ThreadExtractsBondPositions::updateMechanics(Job *job, BondSequence *seq)
-{
-	AtomPosMap aps = seq->extractPositions();
-	TorsionBasis *tb = seq->torsionBasis();
-	
-	MechanicalBasis *mb = dynamic_cast<MechanicalBasis *>(tb);
-	
-	if (!mb)
-	{
-		throw std::runtime_error("Trying to update mechanics without operating "
-		                         "on a mechanical basis.");
-	}
-	
-	mb->refreshMechanics(aps);
-}
-*/
-
 void ThreadExtractsBondPositions::calculateDeviation(Job *job, BondSequence *seq)
 {
 	Result *r = job->result;

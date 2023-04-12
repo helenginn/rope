@@ -78,9 +78,7 @@ public:
 
 	void start();
 	void finish();
-	void joinThreads();
 private:
-	void signalThreads();
 	void createSegments();
 	void prepareThreads();
 

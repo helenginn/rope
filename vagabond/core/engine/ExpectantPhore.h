@@ -37,6 +37,11 @@ public:
 		setName("Expecting semaphore");
 	}
 
+	const std::string &name() const
+	{
+		return _name;
+	}
+	
 	virtual ~ExpectantPhore()
 	{
 
@@ -95,6 +100,15 @@ public:
 		// let one thread through the bottleneck.
 		_e--;
 		_cv.notify_one();
+	}
+	
+	virtual void expect_none()
+	{
+		// when this is locked, this prevents threads dripping 
+		// through the filter
+		std::unique_lock<std::mutex> lock(_mutex);
+		// let one thread through the bottleneck.
+		_e--;
 	}
 	
 	virtual void expect_one()

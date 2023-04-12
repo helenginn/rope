@@ -70,8 +70,7 @@ void SerialJob<Obj, Thr>::prepareThreads()
 		worker->setRopeJob(_job);
 		worker->setIndex(i);
 
-		_pool.threads.push_back(thr);
-		_pool.workers.push_back(worker);
+		_pool.addWorker(worker, thr);
 	}
 }
 
@@ -79,7 +78,7 @@ template <class Obj, class Thr>
 Obj SerialJob<Obj, Thr>::acquireObject()
 {
 	Obj m = nullptr;
-	_pool.acquireObject(m, _finish);
+	_pool.acquireObject(m);
 	return m;
 
 }
@@ -109,7 +108,7 @@ void SerialJob<Obj, Thr>::attachObject(Obj obj)
 template <class Obj, class Thr>
 void SerialJob<Obj, Thr>::waitToFinish()
 {
-	_pool.signalThreads();
+	_pool.finish();
 }
 
 template <class Obj, class Thr>

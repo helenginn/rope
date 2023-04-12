@@ -76,14 +76,14 @@ void PointStoreHandler::setup()
 
 void PointStoreHandler::start()
 {
-	_finish = false;
+
 }
 
 PointStore *PointStoreHandler::acquireEmptyStore()
 {
 	Pool<PointStore *> &pool = _emptyPool;
 	PointStore *ps = nullptr;
-	pool.acquireObject(ps, _finish);
+	pool.acquireObject(ps);
 
 	return ps;
 
@@ -93,7 +93,7 @@ PointStore *PointStoreHandler::acquireFilledStore(std::string ele)
 {
 	Pool<PointStore *> &pool = _loadedPool[ele];
 	PointStore *ps = nullptr;
-	pool.acquireObject(ps, _finish);
+	pool.acquireObject(ps);
 
 	return ps;
 }
@@ -110,35 +110,14 @@ void PointStoreHandler::returnEmptyStore(PointStore *ps)
 	_emptyPool.pushObject(ps);
 }
 
-void PointStoreHandler::signalThreads()
-{
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		Pool<PointStore *> &pool = _loadedPool[_elements[i]];
-		pool.signalThreads();
-		_emptyPool.signalThreads();
-	}
-}
-
 void PointStoreHandler::finish()
 {
 	// join threads
 	
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
-		_loadedPool[_elements[i]].lock();
+		_loadedPool[_elements[i]].finish();
 	}
 	
-	_emptyPool.lock();
-
-	_finish = true;
-
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_loadedPool[_elements[i]].unlock();
-	}
-
-	_emptyPool.unlock();
-
-	signalThreads();
+	_emptyPool.finish();
 }

@@ -87,8 +87,7 @@ public:
 		return _threads;
 	}
 
-	void signalToHandler(BondSequence *seq, SequenceState state,
-	                     SequenceState old);
+	void signalToHandler(BondSequence *seq, SequenceState state);
 
 	BondSequence *acquireSequence(SequenceState state);
 
@@ -103,12 +102,10 @@ public:
 
 	void start();
 	void finish();
-	void joinThreads();
 private:
 	void sanityCheckThreads();
 	void prepareSequenceBlocks();
 	void prepareThreads();
-	void signalThreads();
 	void calculateThreads(int max);
 
 	std::atomic<int> _run;

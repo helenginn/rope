@@ -73,8 +73,7 @@ void MapSumHandler::prepareThreads()
 		worker->setMapHandler(_mapHandler);
 		std::thread *thr = new std::thread(&ThreadMapSummer::start, worker);
 
-		_mapPool.threads.push_back(thr);
-		_mapPool.workers.push_back(worker);
+		_mapPool.addWorker(worker, thr);
 	}
 
 }
@@ -95,7 +94,7 @@ MapSumHandler::MapJob *MapSumHandler::acquireMapJob(Job *job)
 	}
 
 	AtomSegment *seg;
-	_mapPool.acquireObject(seg, _finish);
+	_mapPool.acquireObject(seg);
 
 	MapJob *mj = new MapJob();
 	mj->segment = seg;
@@ -114,7 +113,7 @@ void MapSumHandler::transferElementSegment(ElementSegment *segment)
 ElementSegment *MapSumHandler::acquireElementSegment(MapJob *&mj)
 {
 	ElementSegment *seg = nullptr;
-	_segmentPool.acquireObject(seg, _finish);
+	_segmentPool.acquireObject(seg);
 
 	if (seg == nullptr)
 	{
@@ -196,31 +195,8 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 	delete mj;
 }
 
-void MapSumHandler::signalThreads()
-{
-	_mapPool.signalThreads();
-	_segmentPool.signalThreads();
-}
-
-void MapSumHandler::joinThreads()
-{
-	_mapPool.joinThreads();
-	_segmentPool.joinThreads();
-
-	_mapPool.cleanup();
-	_segmentPool.cleanup();
-
-}
-
 void MapSumHandler::finish()
 {
-	_mapPool.lock();
-	_segmentPool.lock();
-
-	_finish = true;
-
-	_mapPool.unlock();
-	_segmentPool.unlock();
-
-	signalThreads();
+	_mapPool.finish();
+	_segmentPool.finish();
 }

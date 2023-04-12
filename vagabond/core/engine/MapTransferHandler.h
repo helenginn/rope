@@ -97,7 +97,6 @@ public:
 private:
 	void allocateSegments();
 	void prepareThreads();
-	void signalThreads();
 	void getRealDimensions(std::vector<Atom *> &sub);
 
 	std::vector<Atom *> _all;

@@ -162,14 +162,8 @@ void BondSequence::prepareForIdle()
 
 void BondSequence::signal(SequenceState newState)
 {
-	SequenceState old = _state;
-	if (old == SequenceInPreparation && newState != SequenceIdle)
-	{
-		// probably testing without entire BondCalculator structure involved */
-		return;
-	}
 	_state = newState;
-	_handler->signalToHandler(this, newState, old);
+	_handler->signalToHandler(this, newState);
 }
 
 SequenceState BondSequence::state()
