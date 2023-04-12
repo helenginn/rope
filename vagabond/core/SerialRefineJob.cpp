@@ -40,7 +40,7 @@ void SerialRefineJob::settings()
 		_objects = _entity->models();
 	}
 
-	Environment::fileManager()->preFilter();
+	Environment::fileManager()->geometryFiles();
 }
 
 #endif
