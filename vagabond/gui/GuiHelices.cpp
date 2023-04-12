@@ -593,7 +593,7 @@ void GuiHelices::updateSinglePosition(Atom *a, glm::vec3 &p)
 	_helicesToUpdate.insert(idx);
 }
 
-void GuiHelices::updateMultiPositions(Atom *a, Atom::WithPos &wp)
+void GuiHelices::updateMultiPositions(Atom *a, WithPos &wp)
 {
 	updateSinglePosition(a, wp.ave);
 

@@ -524,7 +524,7 @@ AtomPosMap &BondSequence::extractPositions()
 			continue;
 		}
 		
-		Atom::WithPos &ap = _posAtoms[_blocks[i].atom];
+		WithPos &ap = _posAtoms[_blocks[i].atom];
 		glm::vec3 mypos = _blocks[i].my_position();
 		ap.ave += mypos;
 		ap.samples.push_back(mypos);

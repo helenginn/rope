@@ -44,7 +44,7 @@ public:
 	 * @param pos new position in space
 	 * @param n conformer number within ensemble */
 	void updateAtom(Atom *a, glm::vec3 pos, int n = 0);
-	void updateAtoms(Atom *a, Atom::WithPos &wp);
+	void updateAtoms(Atom *a, WithPos &wp);
 	
 	void addVisuals(Atom *a);
 	void removeVisuals();

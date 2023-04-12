@@ -36,7 +36,7 @@ public:
 	void setMulti(bool m);
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p);
-	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp);
+	virtual void updateMultiPositions(Atom *a, WithPos &wp);
 	
 	virtual void prepareAtomSpace(AtomGroup *ag);
 	virtual void addVisuals(Atom *a);

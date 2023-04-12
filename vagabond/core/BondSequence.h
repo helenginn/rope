@@ -25,7 +25,7 @@
 #include <climits>
 #include "../utils/glm_import.h"
 #include <vagabond/utils/version.h>
-#include "Atom.h"
+#include "AtomPosMap.h"
 #include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
@@ -149,7 +149,7 @@ public:
 
 	void calculate();
 	void superpose();
-	std::map<Atom *, Atom::WithPos> &extractPositions();
+	AtomPosMap &extractPositions();
 	
 	struct ElePos
 	{
@@ -247,7 +247,7 @@ private:
 	
 	float *_currentVec = nullptr;
 
-	std::map<Atom *, Atom::WithPos> _posAtoms;
+	AtomPosMap _posAtoms;
 };
 
 #endif

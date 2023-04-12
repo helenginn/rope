@@ -107,7 +107,7 @@ void GuiBond::changeNetworks(int n)
 
 }
 
-void GuiBond::updateAtoms(Atom *a, Atom::WithPos &wp)
+void GuiBond::updateAtoms(Atom *a, WithPos &wp)
 {
 	int n = wp.samples.size();
 	

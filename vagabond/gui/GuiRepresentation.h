@@ -20,7 +20,7 @@
 #define __vagabond__GuiRepresentation__
 
 #include <vagabond/gui/elements/IndexResponder.h>
-#include <vagabond/core/Atom.h>
+#include <vagabond/core/AtomPosMap.h>
 #include "ColourScheme.h"
 
 #define POINTS_PER_BEZIER (10)
@@ -48,7 +48,7 @@ public:
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
 	virtual void finishUpdate() {};
-	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp) = 0;
+	virtual void updateMultiPositions(Atom *a, WithPos &wp) = 0;
 	virtual void watchAtom(Atom *a) = 0;
 	virtual void watchAtomGroup(AtomGroup *ag);
 

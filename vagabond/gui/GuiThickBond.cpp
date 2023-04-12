@@ -60,7 +60,7 @@ void GuiThickBond::updateSinglePosition(Atom *a, glm::vec3 &p)
 	}
 }
 
-void GuiThickBond::updateMultiPositions(Atom *a, Atom::WithPos &wp)
+void GuiThickBond::updateMultiPositions(Atom *a, WithPos &wp)
 {
 	updateSinglePosition(a, wp.ave);
 }

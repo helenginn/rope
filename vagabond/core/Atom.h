@@ -5,6 +5,7 @@
 #include <math.h>
 #include "../utils/glm_import.h"
 #include "HasBondstraints.h"
+#include "AtomPosMap.h"
 #include "ResidueId.h"
 #include <mutex>
 #include <vector>
@@ -23,13 +24,6 @@ class Atom : public HasBondstraints
 public:
 	Atom();
 	Atom(std::string code, std::string name);
-	
-	struct WithPos
-	{
-		std::vector<glm::vec3> samples{};
-		glm::vec3 ave = glm::vec3(0.f);
-		float colour = 0;
-	};
 
 	/** summary (average) of atom placement */
 	struct AtomPlacement
@@ -325,6 +319,5 @@ private:
 	Cyclic *_cyclic = nullptr;
 };
 
-typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
 
 #endif

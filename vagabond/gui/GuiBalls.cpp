@@ -109,7 +109,7 @@ size_t GuiBalls::verticesPerAtom()
 	return _template->vertexCount();
 }
 
-void GuiBalls::updateMultiPositions(Atom *a, Atom::WithPos &wp)
+void GuiBalls::updateMultiPositions(Atom *a, WithPos &wp)
 {
 	_bonds->updateAtoms(a, wp);
 }

@@ -132,7 +132,7 @@ bool GuiAtom::checkAtom(Atom *a)
 	}
 	else
 	{
-		Atom::WithPos wp;
+		WithPos wp;
 		if (a->positionChanged() && a->fishPositions(&wp))
 		{
 			for (GuiRepresentation *&r : _representations)

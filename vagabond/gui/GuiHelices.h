@@ -20,6 +20,7 @@
 #define __vagabond__GuiHelices__
 
 #include "GuiRepresentation.h"
+#include "Atom.h"
 #include <set>
 
 class GuiHelices : public GuiRepresentation
@@ -32,7 +33,7 @@ public:
 	virtual void watchAtomGroup(AtomGroup *ag);
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p);
-	virtual void updateMultiPositions(Atom *a, Atom::WithPos &wp);
+	virtual void updateMultiPositions(Atom *a, WithPos &wp);
 	
 	virtual void finishUpdate();
 protected:

@@ -344,7 +344,7 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 	
 }
 
-void GuiRibbon::updateMultiPositions(Atom *a, Atom::WithPos &wp)
+void GuiRibbon::updateMultiPositions(Atom *a, WithPos &wp)
 {
 	updateSinglePosition(a, wp.ave);
 }
