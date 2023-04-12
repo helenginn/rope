@@ -148,7 +148,6 @@ protected:
 
 			members.push(obj);
 			sem.signal_one();
-			lock.unlock();
 
 			unlock();
 
