@@ -19,6 +19,7 @@
 #include "AddModel.h"
 #include "ChainAssignment.h"
 #include "ModelMetadataView.h"
+#include "ConfSpaceView.h"
 #include "FileView.h"
 
 #include <vagabond/gui/elements/BadChoice.h>
@@ -247,6 +248,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "delete" && _existing && _deleteAllowed)
 	{
+		ConfSpaceView::deleteClusterForEntity(nullptr);
 		Environment::purgeModel(_obj.name());
 		back();
 	}
