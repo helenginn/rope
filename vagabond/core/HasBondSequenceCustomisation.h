@@ -99,8 +99,8 @@ protected:
 	int _jointLimit = -1;
 
 	size_t _totalSamples = 0;
-	size_t _maxThreads = 0;
-	size_t _threads = 0;
+	size_t _maxThreads = 1;
+	size_t _threads = 1;
 
 	enum SampleMode
 	{

@@ -29,7 +29,6 @@
 
 BondCalculator::BondCalculator()
 {
-	_maxThreads = 0;
 	_maxMemory = 0;
 	_sequenceHandler = nullptr;
 	_totalSamples = 1;
