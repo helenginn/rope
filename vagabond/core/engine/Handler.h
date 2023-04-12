@@ -34,9 +34,9 @@ protected:
 	public:
 		std::mutex handout;
 		std::queue<Object> members;
+		Sem sem;
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
-		Semaphore sem;
 		
 		void setName(std::string name)
 		{
