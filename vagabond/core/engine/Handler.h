@@ -145,12 +145,13 @@ protected:
 			lock();
 			int next = 0;
 			
-			sem.lock();
+			std::unique_lock<std::mutex> lock(sem.mutex());
 			_id++;
 			next = _id;
 
 			members.push(obj);
 			sem.signal_one();
+			lock.unlock();
 
 			unlock();
 

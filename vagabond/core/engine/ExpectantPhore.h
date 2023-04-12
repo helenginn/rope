@@ -70,12 +70,16 @@ public:
 	{
 		_n++;
 		_cv.notify_one();
-		unlock();
 	}
 	
 	virtual void lock()
 	{
 		_mutex.lock();
+	}
+	
+	std::mutex &mutex()
+	{
+		return _mutex;
 	}
 	
 	virtual void unlock()
@@ -87,28 +91,26 @@ public:
 	{
 		// when this is locked, this prevents threads dripping 
 		// through the filter
-		lock();
+		std::unique_lock<std::mutex> lock(_mutex);
 		// let one thread through the bottleneck.
 		_e--;
 		_cv.notify_one();
-		unlock();
 	}
 	
 	virtual void expect_one()
 	{
 		// when this is locked, this prevents threads dripping 
 		// through the filter
-		lock();
+		std::unique_lock<std::mutex> lock(_mutex);
 		// let one thread through the bottleneck.
 		_e++;
-		unlock();
 	}
 	
 	virtual void signal()
 	{
 		// when this is locked, this prevents threads dripping 
 		// through the filter
-		lock();
+		std::unique_lock<std::mutex> lock(_mutex);
 
 		// let one thread through the bottleneck.
 		signal_one();
