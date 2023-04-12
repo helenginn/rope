@@ -37,6 +37,7 @@ Display(prev)
 
 SerialRefiner::~SerialRefiner()
 {
+	delete _handler;
 
 }
 

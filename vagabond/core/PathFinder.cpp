@@ -37,9 +37,6 @@ PathFinder::PathFinder()
 
 PathFinder::~PathFinder()
 {
-	_handler->stop();
-	_handler->waitToFinish();
-
 	for (auto it = _resourceLocks.begin(); it != _resourceLocks.end(); it++)
 	{
 		delete it->second;

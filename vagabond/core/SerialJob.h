@@ -87,9 +87,7 @@ public:
 	void start();
 	
 	/** call when done, allowing serial job to clean up */
-	void waitToFinish();
-	
-	void stop();
+	void finish();
 	
 	/** number of objects finished */
 	size_t finishedCount()
