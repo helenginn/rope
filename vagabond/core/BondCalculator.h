@@ -72,6 +72,9 @@ public:
 		/** return after calculating correlation of calculated 3D map with 
 		 * reference 3D map */
 		PipelineCorrelation = 1 << 3,
+
+		/** returns solvent-accessible surface area calculation in Angstroms^2 */
+		PipelineSolventSurfaceArea = 1 << 4,
 	};
 	
 	int submitJob(Job &job);

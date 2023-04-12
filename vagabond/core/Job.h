@@ -50,6 +50,7 @@ enum JobType
 	JobMapCorrelation =          1 << 3,
 	JobScoreStructure =          1 << 4,
 	JobUpdateMechanics =         1 << 5,
+	JobSolventSurfaceArea =      1 << 6,
 };
 
 typedef std::map<Atom *, Atom::WithPos> AtomPosMap;

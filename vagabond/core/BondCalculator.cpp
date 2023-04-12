@@ -310,6 +310,16 @@ void BondCalculator::sanityCheckJob(Job &job)
 		}
 	}
 
+	if (job.requests & JobSolventSurfaceArea)
+	{
+		if (_type != PipelineSolventSurfaceArea)
+		{
+			throw std::runtime_error("Job asked for solvent surface area, request"
+			                         " not capable of this BondCalculator's "
+			                         "settings");
+		}
+	}
+
 	if ((job.requests & JobUpdateMechanics) ||
 	    (job.requests & JobScoreStructure))
 	{
