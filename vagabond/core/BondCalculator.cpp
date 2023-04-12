@@ -367,12 +367,8 @@ int BondCalculator::submitJob(Job &original_job)
 	sanityCheckJob(original_job);
 
 	Job *job = new Job(original_job);
-
-	std::lock_guard<std::mutex> lg(_jobPool.handout);
-	_jobPool.members.push(job);
-	_jobPool.sem.signal();
-	job->ticket = ++_max_id;
 	_running++;
+	job->ticket = _jobPool.pushObject(job);
 	return job->ticket;
 }
 
