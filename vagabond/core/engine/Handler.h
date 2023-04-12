@@ -60,9 +60,7 @@ protected:
 			threads.clear();
 			workers.clear();
 			
-			lock();
 			std::queue<Object>().swap(members);
-			unlock();
 
 			sem.reset();
 		}
