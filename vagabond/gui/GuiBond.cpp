@@ -23,8 +23,6 @@
 #include <vagabond/core/AtomGroup.h>
 #include <iostream>
 
-typedef std::map<Atom *, glm::vec3> AtomPosMap;
-
 GuiBond::GuiBond() : Renderable()
 {
 	setName("GuiBond");

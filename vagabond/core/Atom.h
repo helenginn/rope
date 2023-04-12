@@ -325,4 +325,6 @@ private:
 	Cyclic *_cyclic = nullptr;
 };
 
+typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
+
 #endif

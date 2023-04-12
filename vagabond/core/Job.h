@@ -53,8 +53,6 @@ enum JobType
 	JobSolventSurfaceArea =      1 << 6,
 };
 
-typedef std::map<Atom *, Atom::WithPos> AtomPosMap;
-
 struct CustomVector
 {
 	float *mean = nullptr;
