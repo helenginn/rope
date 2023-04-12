@@ -114,7 +114,7 @@ protected:
 			return result;
 		}
 
-		void acquireObject(Object &obj, bool &finish)
+		void acquireObject(Object &obj, std::atomic<bool> &finish)
 		{
 			sem.wait();
 			lock();
@@ -192,7 +192,7 @@ protected:
 		}
 	};
 
-	bool _finish = false;
+	std::atomic<bool> _finish{false};
 private:
 
 };
