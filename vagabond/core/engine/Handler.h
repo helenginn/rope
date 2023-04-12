@@ -102,7 +102,7 @@ protected:
 		
 		void unlock()
 		{
-			handout.unlock();
+//			handout.unlock();
 		}
 
 		size_t objectCount()
