@@ -211,6 +211,7 @@ BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
 {
 	Pool<BondSequence *> &pool = _pools[state];
 	BondSequence *seq = nullptr;
+	
 	pool.acquireObject(seq, _finish);
 	return seq;
 }

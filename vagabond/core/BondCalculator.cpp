@@ -279,6 +279,7 @@ void BondCalculator::start()
 	{
 		_mapHandler->start();
 	}
+
 	_sequenceHandler->start();
 
 	prepareThreads();
