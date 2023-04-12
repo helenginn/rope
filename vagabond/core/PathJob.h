@@ -30,10 +30,7 @@ public:
 	PathJob(SerialJobResponder<PathTask *> *responder) :
 	SerialJob<PathTask *, ThreadPathTask>(responder) {};
 protected:
-	virtual bool canSelfFinish()
-	{
-		return false;
-	}
+
 private:
 
 };

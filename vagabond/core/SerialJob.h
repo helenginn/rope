@@ -106,11 +106,6 @@ protected:
 	rope::RopeJob _job = rope::Refine;
 	std::vector<Obj> _objects;
 	
-	// subclasses should return false if jobs can be temporarily rejected.
-	virtual bool canSelfFinish()
-	{
-		return true;
-	}
 private:
 	virtual void settings() {};
 	void loadObjectsIntoPool();
