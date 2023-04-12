@@ -19,6 +19,7 @@
 #include "engine/workers/ThreadSubmitsJobs.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "engine/SurfaceAreaHandler.h"
 #include "engine/CorrelationHandler.h"
 #include "engine/ForceFieldHandler.h"
 #include "engine/MapTransferHandler.h"
@@ -190,6 +191,19 @@ void BondCalculator::setupForceFieldHandler()
 	_ffHandler->setForceFieldCount(_maxThreads);
 }
 
+void BondCalculator::setupSurfaceAreaHandler()
+{
+	if (!(_type & PipelineSolventSurfaceArea))
+	{
+		return;
+	}
+
+	_surfaceHandler = new SurfaceAreaHandler(this);
+	_surfaceHandler->setThreads(1);
+	_surfaceHandler->setMeasurerCount(1);
+
+}
+
 void BondCalculator::setup()
 {
 	sanityCheckPipeline();
@@ -200,6 +214,7 @@ void BondCalculator::setup()
 	setupMapTransferHandler();
 	setupSequenceHandler();
 	setupPointHandler();
+
 	setupForceFieldHandler();
 	
 	if (_mapHandler != nullptr)

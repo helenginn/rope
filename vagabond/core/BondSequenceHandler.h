@@ -70,8 +70,16 @@ public:
 	const size_t parameterCount() const;
 
 	void addAnchorExtension(AnchorExtension ext);
+	
+	/** set up resources which are needed for calculations */
 	void setup();
 	
+	/** set up workers and corresponding threads, begin calculations */
+	void start();
+	
+	/** stop all work, join up threads and delete threads/workers */
+	void finish();
+
 	BondSequence *sequence(int i) 
 	{
 		return _sequences[i];
@@ -100,8 +108,6 @@ public:
 
 	std::vector<bool> activeParameterMask(size_t *programs);
 
-	void start();
-	void finish();
 private:
 	void sanityCheckThreads();
 	void prepareSequenceBlocks();

@@ -31,6 +31,7 @@
 #include "FFProperties.h"
 
 class BondSequenceHandler;
+class SurfaceAreaHandler;
 class ForceFieldHandler;
 class MapTransferHandler;
 class CorrelationHandler;
@@ -204,6 +205,7 @@ private:
 	void setupMapTransferHandler();
 	void setupMapSumHandler();
 	void setupForceFieldHandler();
+	void setupSurfaceAreaHandler();
 	void prepareThreads();
 
 	PipelineType _type;
@@ -229,6 +231,7 @@ private:
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	Sampler *_sampler = nullptr;
 	ForceFieldHandler *_ffHandler = nullptr;
+	SurfaceAreaHandler *_surfaceHandler = nullptr;
 	FFProperties _props{};
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
