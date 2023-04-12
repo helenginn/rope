@@ -97,7 +97,7 @@ protected:
 		
 		std::unique_lock<std::mutex> lock()
 		{
-			handout.lock();
+			return std::unique_lock<std::mutex>(sem.mutex());
 		}
 		
 		void unlock()
