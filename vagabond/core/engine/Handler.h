@@ -32,10 +32,11 @@ protected:
 	{
 	private:
 		std::atomic<int> _id{0};
-	public:
+	protected:
 		std::mutex handout;
 		std::queue<Object> members;
 		Sem sem;
+	public:
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
 		
