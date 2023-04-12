@@ -215,7 +215,7 @@ private:
 	std::atomic<long int> _running;
 	
 	Pool<Job *> _jobPool;
-	Pool<Result *> _resultPool;
+	ExpectantPool<Result *> _resultPool;
 	Pool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler = nullptr;

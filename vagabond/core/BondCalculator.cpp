@@ -287,43 +287,18 @@ void BondCalculator::start()
 
 Result *BondCalculator::acquireResult()
 {
-	_resultPool.handout.lock();
-	_jobPool.handout.lock();
-
-	if (_running == 0 && _resultPool.members.size() == 0)
-	{
-		_jobPool.handout.unlock();
-		_resultPool.handout.unlock();
-		return nullptr;
-	}
-	_jobPool.handout.unlock();
-	_resultPool.handout.unlock();
-
-	_resultPool.sem.wait();
-
-	std::lock_guard<std::mutex> lg(_resultPool.handout);
 	Result *result = nullptr;
-
-	if (_resultPool.members.size())
-	{
-		result = _resultPool.members.front();
-		_resultPool.members.pop();
-	}
-
+	_resultPool.acquireObjectOrNull(result);
 	return result;
 }
 
 void BondCalculator::submitResult(Result *r)
 {
-	_resultPool.handout.lock();
-	_resultPool.members.push(r);
-	_resultPool.sem.signal();
+	_resultPool.pushObject(r);
 
-	_jobPool.handout.lock();
-	_running--;
-	_jobPool.handout.unlock();
-
-	_resultPool.handout.unlock();
+	// an extra signal because we trapped this semaphore when submitting
+	// the corresponding job.
+	_resultPool.one_arrived();
 }
 
 void BondCalculator::sanityCheckJob(Job &job)
@@ -364,7 +339,11 @@ int BondCalculator::submitJob(Job &original_job)
 	{
 		std::cout << "Warning! BondCalculator not started yet" << std::endl;
 	}
+
 	sanityCheckJob(original_job);
+	
+	// make sure we cannot return a 'result' when a job is underway
+	_resultPool.expect_one();
 
 	Job *job = new Job(original_job);
 	_running++;
