@@ -163,6 +163,37 @@ protected:
 
 	};
 
+	template <class Object>
+	class ExpectantPool : public CustomPool<Object, ExpectantPhore>
+	{
+	public:
+		void expect_one()
+		{
+			this->sem.expect_one();
+		}
+
+		void one_arrived()
+		{
+			this->sem.one_arrived();
+		}
+
+		void acquireObjectOrNull(Object &obj)
+		{
+			this->sem.wait();
+
+			if (this->members.size())
+			{
+				obj = this->members.front();
+				this->members.pop();
+			}
+			else
+			{
+				obj = nullptr;
+			}
+
+		}
+	};
+
 	bool _finish = false;
 private:
 
