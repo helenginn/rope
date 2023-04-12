@@ -29,7 +29,8 @@ namespace tt = boost::test_tools;
 BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 {
 	// oxygen atom Van der Waals radius is 1.52 Ang according to Google.
-	// 4/3 * pi * r^3 is therefore 14.7 Ang.
+	// volume: 4/3 * pi * r^3 is 14.7 Ang^3.
+	// surface: 4 * pi * r^2 is 29.0333 Ang^2.
 
 	Atom a;
 	a.setElementSymbol("O");
@@ -52,5 +53,5 @@ BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 	Result *r = calc.acquireResult();
 	
 	float area = r->surface_area;
-	BOOST_TEST(area == 14.7102, tt::tolerance(1e-2));
+	BOOST_TEST(area == 29.0333, tt::tolerance(1e-2));
 }
