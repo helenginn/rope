@@ -28,6 +28,7 @@ class SurfaceAreaHandler : public Handler
 {
 public:
 	SurfaceAreaHandler(BondCalculator *calculator);
+	~SurfaceAreaHandler();
 
 	void setThreads(const int threads)
 	{
@@ -72,6 +73,7 @@ private:
 	Pool<AreaMeasurer *> _idlePool;
 
 	BondCalculator *_calculator = nullptr;
+	std::vector<AreaMeasurer *> _toDelete;
 };
 
 #endif

@@ -29,6 +29,7 @@ class AreaMeasurer
 {
 public:
 	AreaMeasurer(SurfaceAreaHandler *handler);
+	~AreaMeasurer();
 	
 	void setJob(Job *j)
 	{

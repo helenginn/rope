@@ -22,7 +22,18 @@
 
 SurfaceAreaHandler::SurfaceAreaHandler(BondCalculator *calculator)
 {
+	_calculator = calculator;
 
+}
+
+SurfaceAreaHandler::~SurfaceAreaHandler()
+{
+	for (AreaMeasurer *am : _toDelete)
+	{
+		delete am;
+	}
+
+	_toDelete.clear();
 }
 
 void SurfaceAreaHandler::createMeasurers()
@@ -31,6 +42,7 @@ void SurfaceAreaHandler::createMeasurers()
 	{
 		AreaMeasurer *area = new AreaMeasurer(this);
 		_idlePool.pushObject(area);
+		_toDelete.push_back(area);
 	}
 
 }

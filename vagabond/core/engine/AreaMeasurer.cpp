@@ -25,12 +25,17 @@ AreaMeasurer::AreaMeasurer(SurfaceAreaHandler *handler)
 	_contacts = new ContactSheet();
 }
 
+AreaMeasurer::~AreaMeasurer()
+{
+	delete _contacts;
+}
+
 float AreaMeasurer::surfaceArea()
 {
 	_contacts->updateSheet(_posMap);
 
 	// calculate
-	float area = 0;
+	float area = 10;
 
 	return area;
 }

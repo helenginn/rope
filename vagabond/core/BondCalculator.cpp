@@ -43,6 +43,7 @@ void BondCalculator::reset()
 {
 	finish();
 	delete _sequenceHandler; _sequenceHandler = nullptr;
+	delete _surfaceHandler; _surfaceHandler = nullptr;
 	delete _correlHandler; _correlHandler = nullptr;
 	delete _pointHandler; _pointHandler = nullptr;
 	delete _mapHandler; _mapHandler = nullptr;
@@ -213,7 +214,7 @@ void BondCalculator::setup()
 	setupMapTransferHandler();
 	setupSequenceHandler();
 	setupPointHandler();
-
+	setupSurfaceAreaHandler();
 	setupForceFieldHandler();
 	
 	if (_mapHandler != nullptr)
@@ -236,6 +237,11 @@ void BondCalculator::setup()
 	if (_ffHandler != nullptr)
 	{
 		_ffHandler->setup();
+	}
+	
+	if (_surfaceHandler != nullptr)
+	{
+		_surfaceHandler->setup();
 	}
 	
 	if (_correlHandler != nullptr)
@@ -269,6 +275,10 @@ void BondCalculator::start()
 	if (_correlHandler != nullptr)
 	{
 		_correlHandler->start();
+	}
+	if (_surfaceHandler != nullptr)
+	{
+		_surfaceHandler->start();
 	}
 	if (_ffHandler != nullptr)
 	{
@@ -326,7 +336,7 @@ void BondCalculator::sanityCheckJob(Job &job)
 
 	if (job.requests & JobSolventSurfaceArea)
 	{
-		if (_type != PipelineSolventSurfaceArea)
+		if (!(_type & PipelineSolventSurfaceArea))
 		{
 			throw std::runtime_error("Job asked for solvent surface area, request"
 			                         " not capable of this BondCalculator's "
@@ -359,7 +369,6 @@ int BondCalculator::submitJob(Job &original_job)
 	_resultPool.expect_one();
 
 	Job *job = new Job(original_job);
-	_running++;
 	job->ticket = _jobPool.pushObject(job);
 	return job->ticket;
 }

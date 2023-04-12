@@ -221,9 +221,6 @@ private:
 	int _sideMax = INT_MAX;
 	bool _changedDepth = false;
 	
-	std::atomic<long int> _max_id;
-	std::atomic<long int> _running;
-	
 	Pool<Job *> _jobPool;
 	ExpectantPool<Result *> _resultPool;
 	Pool<Result *> _recyclePool;

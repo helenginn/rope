@@ -27,7 +27,7 @@ Route::Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims)
 : StructureModification(inst, 1, dims)
 {
 	_cluster = cluster;
-	_pType = BondCalculator::PipelineForceField;
+	useForceField(true);
 	_torsionType = TorsionBasis::TypeSimple;
 	instance()->load();
 }
@@ -119,9 +119,10 @@ void Route::submitJob(int idx, bool show, bool forces)
 			job.requests = JobCalculateDeviations;
 		}
 		
-		if (forces && _pType == BondCalculator::PipelineForceField)
+		if (forces && _pType & BondCalculator::PipelineForceField)
 		{
-			job.requests = (JobType)(JobScoreStructure | job.requests);
+			job.requests = (JobType)(JobScoreStructure |
+			                         job.requests);
 		}
 
 		int t = calc->submitJob(job);
@@ -155,6 +156,10 @@ void Route::retrieve()
 			if (r->requests & JobExtractPositions)
 			{
 				r->transplantPositions();
+			}
+			if (r->requests & JobSolventSurfaceArea)
+			{
+				std::cout << r->surface_area << std::endl;
 			}
 			
 			if (r->requests & JobScoreStructure)
@@ -213,7 +218,7 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 
 	calc->setPipelineType(_pType);
 	
-	if (_pType == BondCalculator::PipelineForceField)
+	if (_pType & BondCalculator::PipelineForceField)
 	{
 		FFProperties props;
 		props.group = _instance->currentAtoms();
