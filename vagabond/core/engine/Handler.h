@@ -132,6 +132,7 @@ protected:
 			// semaphore was signalled with empty object array
 			if (finish)
 			{
+				obj = nullptr;
 				sem.signal();
 			}
 			
