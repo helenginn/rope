@@ -155,10 +155,6 @@ protected:
 
 	};
 
-	{
-
-	};
-
 	bool _finish = false;
 private:
 
