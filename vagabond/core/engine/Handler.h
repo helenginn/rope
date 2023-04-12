@@ -29,6 +29,8 @@ protected:
 	template <class Object, class Sem>
 	class CustomPool
 	{
+	private:
+		std::atomic<int> _id{0};
 	public:
 		std::mutex handout;
 		std::queue<Object> members;
