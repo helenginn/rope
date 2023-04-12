@@ -180,6 +180,7 @@ protected:
 		void acquireObjectOrNull(Object &obj)
 		{
 			this->sem.wait();
+			this->lock();
 
 			if (this->members.size())
 			{
@@ -191,6 +192,7 @@ protected:
 				obj = nullptr;
 			}
 
+			this->unlock();
 		}
 	};
 
