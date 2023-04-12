@@ -29,9 +29,8 @@ protected:
 	template <class Object, class Sem>
 	class CustomPool
 	{
-	protected:
-		std::mutex handout;
 	public:
+		std::mutex handout;
 		std::queue<Object> members;
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
