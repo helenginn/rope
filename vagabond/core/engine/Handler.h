@@ -142,7 +142,7 @@ protected:
 		
 		int pushObject(Object &obj)
 		{
-			handout.lock();
+			lock();
 			int next = 0;
 			
 			sem.lock();
@@ -152,7 +152,7 @@ protected:
 			members.push(obj);
 			sem.signal_one();
 
-			handout.unlock();
+			unlock();
 
 			return next;
 		}
