@@ -16,47 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__cpp__
-#define __vagabond__ThreadWorksOnObject__cpp__
+#include "engine/Handler.h"
+#include "PathResources.h"
 
-#include "SerialJob.h"
-
-template <class Thr, class Obj>
-ThreadWorksOnObject<Thr, Obj>::ThreadWorksOnObject(SerialJob<Obj, Thr> *handler)
+Handler::PathPool::PathPool()
 {
-	_handler = handler;
+	_resource = new PathResources();
 }
 
-template <class Thr, class Obj>
-void ThreadWorksOnObject<Thr, Obj>::start()
+void Handler::PathPool::setup(PathFinder *pf)
 {
-	do
+	_resource->setup(pf);
+}
+
+void Handler::PathPool::pluckFromQueue(PathTask *&task)
+{
+	PathTask *chosen =_resource->chooseTaskFromQueue(members);
+	
+	if (!chosen)
 	{
-		Obj t = _handler->acquireObject();
-		
-		if (t == nullptr && _handler->finishing())
-		{
-			break;
-		}
-		else if (t == nullptr)
-		{
-			continue;
-		}
-		
-		timeStart();
-		bool result = doJob(t);
-		
-		if (!result)
-		{
-			break;
-		}
-
-		timeEnd();
-
-		_handler->finishedObject(t);
+		_lost++;
 	}
-	while (!_finish);
+
+	task = chosen;
 }
 
-
-#endif
+void Handler::PathPool::notifyFinishedObject(PathTask *&task)
+{
+	_resource->notifyTaskCompleted(task);
+	
+	if (_lost)
+	{
+		_lost--;
+		sem.signal();
+	}
+}

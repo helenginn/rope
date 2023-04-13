@@ -16,47 +16,10 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__cpp__
-#define __vagabond__ThreadWorksOnObject__cpp__
+#include "PathPhore.h"
 
-#include "SerialJob.h"
-
-template <class Thr, class Obj>
-ThreadWorksOnObject<Thr, Obj>::ThreadWorksOnObject(SerialJob<Obj, Thr> *handler)
+PathPhore::PathPhore() : public Semaphore
 {
-	_handler = handler;
+	_n = 0;
+	setName("Path task semaphore");
 }
-
-template <class Thr, class Obj>
-void ThreadWorksOnObject<Thr, Obj>::start()
-{
-	do
-	{
-		Obj t = _handler->acquireObject();
-		
-		if (t == nullptr && _handler->finishing())
-		{
-			break;
-		}
-		else if (t == nullptr)
-		{
-			continue;
-		}
-		
-		timeStart();
-		bool result = doJob(t);
-		
-		if (!result)
-		{
-			break;
-		}
-
-		timeEnd();
-
-		_handler->finishedObject(t);
-	}
-	while (!_finish);
-}
-
-
-#endif

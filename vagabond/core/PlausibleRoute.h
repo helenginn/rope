@@ -34,8 +34,20 @@ public:
 	PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
 	
 	void calculateProgression(int steps);
+	void calculateLinearProgression(int steps);
+	void calculatePolynomialProgression(int steps);
 
 	virtual void setup();
+	
+	void setMinimumMagnitude(float mag)
+	{
+		_minimumMagnitude = mag;
+	}
+	
+	const float &bestScore() const
+	{
+		return _bestScore;
+	}
 
 	void setTargets();
 	
@@ -60,7 +72,12 @@ protected:
 	
 	bool _mainsOnly = true;
 	bool _flipTorsions = true;
-	int _nudgeCount = 8;
+	int _nudgeCount = 12;
+	
+	int flipNudgeCount()
+	{
+		return _nudgeCount * 1;
+	}
 	float _magnitudeThreshold = 90.f;
 	float _minimumMagnitude = 5.f;
 	float _maximumCycles = 100;
@@ -80,16 +97,15 @@ private:
 	void addLinearInterpolatedPoint(float frac);
 
 	void twoPointProgression();
-	void calculateLinearProgression(int steps);
 	float getLinearInterpolatedTorsion(int i, float frac);
 
+	void activateWaypoints(bool all = false);
 	typedef std::vector<float> PolyFit;
 
 	float getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
 	                                       float frac);
 	float getPolynomialInterpolatedFraction(PolyFit &fit, float frac);
 
-	void calculatePolynomialProgression(int steps);
 	void addPolynomialInterpolatedPoint(std::vector<PolyFit> &fits,
 	                                    float frac);
 

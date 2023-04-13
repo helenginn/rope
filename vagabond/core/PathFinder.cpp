@@ -56,6 +56,7 @@ PathFinder::~PathFinder()
 void PathFinder::setWhiteList(const std::vector<HasMetadata *> &whiteList)
 {
 	_whiteList.clear();
+	_rawWhiteList = whiteList;
 	for (HasMetadata *hm : whiteList)
 	{
 		std::cout << hm->id() << ", ";
@@ -173,11 +174,12 @@ void PathFinder::prepareMonitor()
 void PathFinder::setupSerialJob()
 {
 	_handler = new PathJob(this);
-	_handler->setThreads(4);
+	_handler->setThreads(6);
 	
 	std::vector<PathTask *> all;
 	_tasks->gatherTasks(all);
 
+	_handler->pathPool().setup(this);
 	_handler->setObjectList(all);
 	_handler->setup();
 	_handler->start();
@@ -227,6 +229,7 @@ void PathFinder::sendContentsToHandler(PathTask *bin)
 
 void PathFinder::incrementStageIfNeeded()
 {
+	std::unique_lock<std::mutex> lock(_cycleMutex);
 	ReporterTask *salient = nullptr;
 	ReporterTask *next = nullptr;
 	
@@ -258,11 +261,9 @@ void PathFinder::incrementStageIfNeeded()
 	else if (_stage == FlipTorsions || 
 	         (_stage == FullOptimisation && _currentCycle == _fullCycle - 1))
 	{
-		_cycleMutex.lock();
 		makeFullCycle();
 		_stage = FullOptimisation;
 		_currentCycle++;
-		_cycleMutex.unlock();
 	}
 }
 
@@ -309,7 +310,9 @@ void PathFinder::addTask(OptimiseTask *task)
 	}
 	else if (_stage == FlipTorsions || _stage == FullOptimisation)
 	{
-		task->setCycles(3);
+		int passes = _monitor->passesForPath(task->from(), task->to());
+		task->setPassNum(passes++);
+
 		_cycleMutex.lock();
 		_fulls.back()->addItem(task);
 		_fulls.back()->childChanged();

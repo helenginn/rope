@@ -83,6 +83,12 @@ struct Angular
 		return stream;
 	}
 
+	Angular &operator-=(Angular &a)
+	{
+		angle -= a.angle;
+		return *this;
+	}
+
 	Angular &operator-=(float a)
 	{
 		angle -= a;

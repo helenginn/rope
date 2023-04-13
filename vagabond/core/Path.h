@@ -59,6 +59,7 @@ public:
 		return _contributeSVD;
 	}
 	
+	void addDeviationsToGroup(MetadataGroup &group);
 	void addTorsionsToGroup(MetadataGroup &group);
 	
 	std::string desc() const;
@@ -85,11 +86,18 @@ public:
 		return _angleArrays.size();
 	}
 	
+	void setStepCount(int steps)
+	{
+		_steps = steps;
+	}
+	
 	MetadataGroup::Array angleArray(int i)
 	{
 		return _angleArrays[i];
 	}
 private:
+	void calculateDeviations(MetadataGroup *group);
+
 	std::string _startInstance;
 	std::string _model_id;
 	std::string _endInstance;
@@ -104,6 +112,8 @@ private:
 	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
 	std::vector<MetadataGroup::Array> _angleArrays;
+	std::vector<MetadataGroup::Array> _deviationArrays;
+	int _steps = 12;
 
 	Route::Point _destination;
 	PlausibleRoute::InterpolationType _type = PlausibleRoute::Polynomial;

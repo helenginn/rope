@@ -16,47 +16,37 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__cpp__
-#define __vagabond__ThreadWorksOnObject__cpp__
+#ifndef __vagabond__StarView__
+#define __vagabond__StarView__
 
-#include "SerialJob.h"
+#include "PointyView.h"
 
-template <class Thr, class Obj>
-ThreadWorksOnObject<Thr, Obj>::ThreadWorksOnObject(SerialJob<Obj, Thr> *handler)
+class TorsionCluster;
+class Line;
+
+class StarView : public PointyView
 {
-	_handler = handler;
-}
-
-template <class Thr, class Obj>
-void ThreadWorksOnObject<Thr, Obj>::start()
-{
-	do
+public:
+	StarView();
+	
+	void setCluster(TorsionCluster *cluster);
+	
+	void setSteps(int steps)
 	{
-		Obj t = _handler->acquireObject();
-		
-		if (t == nullptr && _handler->finishing())
-		{
-			break;
-		}
-		else if (t == nullptr)
-		{
-			continue;
-		}
-		
-		timeStart();
-		bool result = doJob(t);
-		
-		if (!result)
-		{
-			break;
-		}
-
-		timeEnd();
-
-		_handler->finishedObject(t);
+		_steps = steps;
 	}
-	while (!_finish);
-}
 
+	virtual void updatePoints();
+	virtual void makePoints();
+private:
+	void colourVertex(Vertex &v);
+	void incrementColour();
+
+	TorsionCluster *_cluster = nullptr;
+	Line *_line = nullptr;
+
+	int _steps = 12;
+	float hue = 0;
+};
 
 #endif

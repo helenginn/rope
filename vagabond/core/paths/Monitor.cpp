@@ -19,6 +19,9 @@
 #include "Monitor.h"
 #include "PathManager.h"
 #include "Environment.h"
+#include "PathFinder.h"
+#include "RopeCluster.h"
+#include "Entity.h"
 #include <iostream>
 
 Monitor::Monitor(PathFinder *pf, std::vector<Instance *> list)
@@ -105,21 +108,45 @@ void Monitor::setStatus(Instance *first, Instance *second, TaskType type)
 
 void Monitor::updatePath(Instance *first, Instance *second, Path *path)
 {
-	_mutex.lock();
-	_paths.push_back(path);
+	std::unique_lock<std::mutex> lock(_mutex);
+	_paths.insert(path);
 	RouteResults &rr = _results[first][second];
 	if (rr.path)
 	{
+		_paths.erase(rr.path);
 		delete rr.path;
 	}
 	rr.path = path;
-	Environment::env().pathManager()->insertIfUnique(*path);
-	_mutex.unlock();
+}
+
+int Monitor::passesForPath(Instance *first, Instance *second)
+{
+	std::unique_lock<std::mutex> lock(_mutex);
+	RouteResults &rr = _results[first][second];
+	return rr.passes;
 }
 
 Path *Monitor::existingPath(Instance *first, Instance *second)
 {
-	std::lock_guard<std::mutex> lg(_mutex);
+	std::unique_lock<std::mutex> lock(_mutex);
 	RouteResults &rr = _results[first][second];
 	return rr.path;
+}
+
+TorsionCluster *Monitor::torsionClusterForPathDeviations(int steps)
+{
+	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup();
+
+	std::unique_lock<std::mutex> lock(_mutex);
+	for (Path *path : _paths)
+	{
+		path->setStepCount(steps);
+		path->addDeviationsToGroup(angles);
+	}
+	lock.unlock();
+
+	TorsionCluster *cluster = new TorsionCluster(angles);
+	cluster->setSubtractAverage(false);
+	std::cout << "Objects: " << cluster->objectGroup()->objectCount() << std::endl;
+	return cluster;
 }

@@ -177,7 +177,11 @@ public:
 	{
 		ClusterSVD<MetadataGroup>::cluster();
 	}
-
+	
+	virtual void setSubtractAverage(bool subtract)
+	{
+		ClusterSVD<MetadataGroup>::objectGroup()->setSubtractAverage(subtract);
+	}
 
 	virtual void calculateInverse()
 	{

@@ -34,18 +34,24 @@ void OptimiseTask::specificTasks()
 {
 	_pf->setStatus(this, type());
 
-	std::string result = displayName() + ": ";
-	std::cout << "Running " << displayName() << std::endl;
-
 	PlausibleRoute *pr = findOrMakeRoute();
 	pr->shouldUpdateAtoms(false);
-	pr->setCycles(_cycles);
-
-	result += std::to_string(pr->routeScore(16));
-	PlausibleRoute::calculate(pr);
-	result += " to " + std::to_string(pr->routeScore(16));
+	pr->setCycles(1);
 	
-	std::cout << result << std::endl;
+	if (_cycles > 1)
+	{
+		pr->setCycles(3);
+	}
+	if (_cycles < 3)
+	{
+		pr->setMinimumMagnitude(10);
+	}
+	if (_cycles > 4)
+	{
+		pr->setMinimumMagnitude(2);
+	}
+
+	PlausibleRoute::calculate(pr);
 
 	RouteValidator rv(*pr);
 

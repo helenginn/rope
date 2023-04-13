@@ -37,6 +37,7 @@ public:
 	std::vector<HasMetadata *> subsetFromRule(const Rule &r);
 
 	virtual const size_t headerCount() const = 0;
+	virtual void setSubtractAverage(bool subtract) = 0;
 	virtual const int groupCount() const = 0;
 	virtual void clearAverages() = 0;
 

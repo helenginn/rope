@@ -125,6 +125,7 @@ public:
 	
 	void load();
 	int loadCount();
+	void setAtomGroupSubset();
 	virtual AtomGroup *currentAtoms();
 	void wipeAtoms();
 	bool unload();
@@ -206,7 +207,6 @@ protected:
 
 	std::map<Instance *, std::vector<Posular> > _inst2Pos;
 private:
-	void setAtomGroupSubset();
 
 	bool _refined = false;
 	std::map<std::string, glm::mat4x4> _transforms;

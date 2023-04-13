@@ -46,6 +46,11 @@ public:
 		return headers().size();
 	}
 
+	virtual void setSubtractAverage(bool subtract)
+	{
+		_subtractAverage = subtract;
+	}
+
 	virtual void clearAverages()
 	{
 		return DataGroup<Posular, Atom3DPosition>::clearAverages();

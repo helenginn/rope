@@ -39,6 +39,11 @@ public:
 	{
 		return _to;
 	}
+	
+	virtual bool needsResources()
+	{
+		return true;
+	}
 protected:
 	PlausibleRoute *makeRoute(Path &path);
 	PlausibleRoute *makeNewRoute();

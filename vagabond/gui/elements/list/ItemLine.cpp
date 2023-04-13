@@ -95,8 +95,12 @@ void ItemLine::turnArrow()
 
 void ItemLine::update()
 {
-	turnArrow();
-	replaceContent();
+	if (_update)
+	{
+		turnArrow();
+		replaceContent();
+		_update = false;
+	}
 }
 
 void ItemLine::addArrow()
@@ -196,6 +200,11 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 
 void ItemLine::respond()
 {
+	_update = true;
+}
+
+void ItemLine::doThings()
+{
 	update();
-	forceRender();
+
 }

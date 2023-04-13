@@ -52,8 +52,23 @@ public:
 	{
 		_entity = entity;
 	}
+	
+	Entity *entity() const
+	{
+		return _entity;
+	}
 
 	void setWhiteList(const std::vector<HasMetadata *> &whiteList);
+	
+	const std::vector<Instance *> &instanceList() const
+	{
+		return _whiteList;
+	}
+
+	const std::vector<HasMetadata *> &whiteList() const
+	{
+		return _rawWhiteList;
+	}
 	
 	PathTask *topTask()
 	{
@@ -105,13 +120,13 @@ private:
 	void incrementStageIfNeeded();
 
 	std::vector<Instance *> _whiteList;
+	std::vector<HasMetadata *> _rawWhiteList;
 	Entity *_entity = nullptr;
 	
 	PathTask *_tasks = nullptr;
 	ReporterTask *_validations = nullptr;
 	ReporterTask *_flipTorsions = nullptr;
 	PathTask *_cyclingTasks = nullptr;
-	ReporterTask *_fullOptimisations = nullptr;
 	std::vector<ReporterTask *> _fulls;
 
 	int _fullCycle = 0;
@@ -156,7 +171,7 @@ private:
 	Stage _stage = FirstValidation;
 	TorsionCluster *_cluster = nullptr;
 	
-	float _linearityThreshold = 0.7;
+	float _linearityThreshold = 0.8;
 };
 
 #endif

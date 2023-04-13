@@ -84,6 +84,7 @@ PlausibleRoute *Path::toRoute()
 	AtomGroup *group = _model->currentAtoms();
 
 	SplitRoute *pr = new SplitRoute(_instance, nullptr, _wayPoints.size());
+	pr->useForceField(false);
 	pr->setDestinationInstance(_end);
 	pr->setType(_type);
 	pr->setDestination(_destination);
@@ -114,9 +115,48 @@ std::string Path::desc() const
 	return _startInstance + " to " + _endInstance;
 }
 
+void Path::calculateDeviations(MetadataGroup *group)
+{
+	if (_deviationArrays.size() == _steps)
+	{
+		return;
+	}
+
+	const int total = _steps;
+	calculateArrays(group);
+	_deviationArrays = _angleArrays;
+
+	_instance->load();
+	AtomContent *grp = _instance->model()->currentAtoms();
+	PlausibleRoute *pr = toRoute();
+	pr->setup();
+	pr->calculateLinearProgression(total);
+	
+	for (size_t i = 0; i < total; i++)
+	{
+		pr->submitJobAndRetrieve(i);
+		_instance->extractTorsionAngles(grp, true);
+		MetadataGroup::Array vals;
+		vals = _instance->grabTorsions(rope::TemporaryTorsions);
+		group->matchDegrees(vals);
+		
+		for (size_t j = 0; j < vals.size(); j++)
+		{
+			_deviationArrays[i][j] -= vals[j];
+		}
+	}
+	
+	_instance->unload();
+}
+
 void Path::calculateArrays(MetadataGroup *group)
 {
-	const int total = 12;
+	if (_angleArrays.size() == _steps)
+	{
+		return;
+	}
+
+	const int total = _steps;
 	housekeeping();
 
 	_instance->load();
@@ -138,22 +178,27 @@ void Path::calculateArrays(MetadataGroup *group)
 	_instance->unload();
 }
 
+void Path::addDeviationsToGroup(MetadataGroup &group)
+{
+	calculateDeviations(&group);
+	
+	for (size_t i = 0; i < _deviationArrays.size(); i++)
+	{
+		group.addMetadataArray(this, _deviationArrays[i]);
+	}
+}
+
 void Path::addTorsionsToGroup(MetadataGroup &group)
 {
-	if (_angleArrays.size() == 0)
-	{
-		calculateArrays(&group);
-	}
+	calculateArrays(&group);
 	
 	if (_contributeSVD)
 	{
-		std::cout << "here!" << std::endl;
 		for (size_t i = 0; i < _angleArrays.size(); i++)
 		{
 			group.addMetadataArray(this, _angleArrays[i]);
 		}
 	}
-
 }
 
 void Path::cleanupRoute()

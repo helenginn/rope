@@ -68,7 +68,7 @@ public:
 	virtual void throwOutInstance(Ligand *mol) {};
 	virtual void appendIfMissing(Instance *mol) {};
 	
-	MetadataGroup makeTorsionDataGroup();
+	MetadataGroup makeTorsionDataGroup(bool empty = false);
 	PositionalGroup makePositionalDataGroup();
 	Instance *chooseRepresentativeInstance();
 	

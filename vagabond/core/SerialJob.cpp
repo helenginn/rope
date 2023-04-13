@@ -41,7 +41,7 @@ void SerialJob<Obj, Thr>::setup()
 template <class Obj, class Thr>
 void SerialJob<Obj, Thr>::pushObject(Obj &obj)
 {
-	_pool.pushObject(obj);
+	pool().pushObject(obj);
 }
 
 template <class Obj, class Thr>
@@ -49,7 +49,7 @@ void SerialJob<Obj, Thr>::loadObjectsIntoPool()
 {
 	for (Obj m : _objects)
 	{
-		_pool.pushObject(m);
+		pool().pushObject(m);
 	}
 }
 
@@ -69,7 +69,7 @@ void SerialJob<Obj, Thr>::prepareThreads()
 		worker->setRopeJob(_job);
 		worker->setIndex(i);
 
-		_pool.addWorker(worker, thr);
+		pool().addWorker(worker, thr);
 	}
 }
 
@@ -77,9 +77,14 @@ template <class Obj, class Thr>
 Obj SerialJob<Obj, Thr>::acquireObject()
 {
 	Obj m = nullptr;
-	_pool.acquireObject(m);
+	pool().acquireObject(m);
 	return m;
+}
 
+template <class Obj, class Thr>
+void SerialJob<Obj, Thr>::finishedObject(Obj obj)
+{
+	pool().notifyFinishedObject(obj);
 }
 
 template <class Obj, class Thr>
@@ -107,24 +112,22 @@ void SerialJob<Obj, Thr>::attachObject(Obj obj)
 template <class Obj, class Thr>
 void SerialJob<Obj, Thr>::finish()
 {
-	_pool.finish();
+	pool().finish();
 }
 
 template <class Obj, class Thr>
 void SerialJob<Obj, Thr>::incrementFinished()
 {
-	_mutex.lock();
-	_finished++;
+	std::unique_lock<std::mutex> lock(_mutex);
 	
-	if (_finished == objectCount())
+	_finished++;
+	if (objectCount() == _finished)
 	{
 		if (_responder)
 		{
 			_responder->finishedObjects();
 		}
 	}
-	
-	_mutex.unlock();
 }
 
 template <class Obj, class Thr>

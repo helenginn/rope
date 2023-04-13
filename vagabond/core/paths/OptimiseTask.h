@@ -36,7 +36,7 @@ public:
 		return true;
 	}
 	
-	void setCycles(int cycles)
+	void setPassNum(int cycles)
 	{
 		_cycles = cycles;
 	}

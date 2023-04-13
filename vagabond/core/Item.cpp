@@ -104,14 +104,16 @@ void Item::deleteSelf()
 
 void Item::deleteChildren()
 {
-	for (Item *item : _items)
+	while (_items.size())
 	{
+		Item *item = _items.back();
 		item->deleteChildren();
+
 		bool success = removeItem(item);
 		if (!success)
 		{
-//			throw std::runtime_error("Removing a child was unsuccessful: "
-//			                         + item->displayName());
+			throw std::runtime_error("Removing a child was unsuccessful: "
+			                         + item->displayName());
 		}
 	}
 

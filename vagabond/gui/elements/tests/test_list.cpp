@@ -19,7 +19,7 @@
 #define private public // evil but delicious
 
 #include <vagabond/utils/include_boost.h>
-#include <vagabond/gui/elements/list/Item.h>
+#include <vagabond/core/Item.h>
 #include <vagabond/gui/elements/list/ItemLine.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 

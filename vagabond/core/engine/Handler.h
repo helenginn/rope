@@ -24,6 +24,10 @@
 #include "engine/workers/ThreadWorker.h"
 #include "Job.h"
 
+class PathResources;
+class PathTask;
+class PathFinder;
+
 class Handler
 {
 protected:
@@ -112,6 +116,11 @@ protected:
 			waitForThreads();
 			cleanup();
 		}
+		
+		bool finishing()
+		{
+			return _finish;
+		}
 
 		size_t objectCount()
 		{
@@ -121,23 +130,25 @@ protected:
 			
 			return result;
 		}
+		
+		virtual void notifyFinishedObject(Object &obj) {};
+		
+		virtual void pluckFromQueue(Object &obj)
+		{
+			if (members.size())
+			{
+				obj = members.front();
+				members.pop();
+			}
+		}
 
 		void acquireObject(Object &obj)
 		{
 			obj = nullptr;
 			sem.wait();
 			std::unique_lock<std::mutex> lock(sem.mutex());
-
-			if (members.size())
-			{
-				obj = members.front();
-				members.pop();
-			}
-			else if (!_finish)
-			{
-				std::cout << "Warning: " << sem.name() << " was waiting for nothing"
-				<< std::endl;
-			}
+			
+			pluckFromQueue(obj);
 			
 			lock.unlock();
 
@@ -162,6 +173,22 @@ protected:
 	template <class Object>
 	class Pool : public CustomPool<Object, SimplePhore>
 	{
+
+	};
+	
+	class PathPool : public Pool<PathTask *>
+	{
+	private:
+		PathResources *_resource = nullptr;
+		int _lost = 0;
+	
+	public:
+		PathPool();
+		
+		void setup(PathFinder *pf);
+
+		virtual void pluckFromQueue(PathTask *&task);
+		virtual void notifyFinishedObject(PathTask *&task);
 
 	};
 

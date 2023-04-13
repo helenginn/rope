@@ -225,7 +225,11 @@ void DataGroup<Unit, Header>::findDifferences()
 
 		_diffs[i] = _vectors[i];
 
-		convertToDifferences(_diffs[i], ave);
+		if (_subtractAverage)
+		{
+			convertToDifferences(_diffs[i], ave);
+		}
+
 		convertToComparable(_diffs[i], _comparables[i]);
 	}
 }

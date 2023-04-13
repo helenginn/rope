@@ -19,6 +19,7 @@
 #ifndef __vagabond__WayPoint__
 #define __vagabond__WayPoint__
 
+#include <iostream>
 #include <vector>
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -94,10 +95,23 @@ public:
 		return wp;
 	}
 	
+	friend std::ostream &operator<<(std::ostream &ss, const WayPoint &wp)
+	{
+		ss << "(" << wp._fraction << ", " << wp._progress << "), ";
+		ss << (wp._changed ? "*" : "");
+		return ss;
+	}
+	
 	const bool &changed() const
 	{
 		return _changed;
 	}
+	
+	void setChanged(bool changed)
+	{
+		_changed = changed;
+	}
+
 	std::vector<float> polyFit();
 
 	friend void to_json(json &j, const WayPoint &value);
@@ -136,7 +150,6 @@ struct WayPoints
 	}
 	
 	std::vector<float> _polyFit;
-	std::vector<float> _xs, _ys;
 };
 
 /* waypoint */

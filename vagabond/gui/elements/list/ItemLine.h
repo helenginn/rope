@@ -37,6 +37,8 @@ public:
 	/** return renderable for Item. Default is display name.
 	 * Renderable should be top-left justified i.e. setLeft(0.0, 0.0); */
 	virtual Renderable *displayRenderable(ButtonResponder *parent) const;
+	
+	virtual void doThings();
 
 protected:
 	virtual void respond();
@@ -51,6 +53,7 @@ private:
 	float _unitHeight = 0.;
 	
 	bool _displayCollapse = false;
+	std::atomic<bool> _update{false};
 
 	Item *_item = nullptr;
 	LineGroup *_group = nullptr;

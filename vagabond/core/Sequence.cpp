@@ -269,6 +269,12 @@ void Sequence::remapFromMaster(Entity *entity)
 	{
 		return;
 	}
+	
+	//already done
+	if (_map2Master.size() > 0 && _map2Local.size() > 0)
+	{
+		return;
+	}
 
 	std::list<Residue>::iterator local;
 	local = _residues.begin();

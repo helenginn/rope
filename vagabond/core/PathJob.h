@@ -28,10 +28,24 @@ class PathJob : public SerialJob<PathTask *, ThreadPathTask>
 {
 public:
 	PathJob(SerialJobResponder<PathTask *> *responder) :
-	SerialJob<PathTask *, ThreadPathTask>(responder) {};
+	SerialJob<PathTask *, ThreadPathTask>(responder) 
+	{
+
+	};
+
+	virtual PathPool &pathPool()
+	{
+		return _pathPool;
+	}
+
+	virtual Pool<PathTask *> &pool()
+	{
+		return _pathPool;
+	}
 protected:
 
 private:
+	PathPool _pathPool;
 
 };
 

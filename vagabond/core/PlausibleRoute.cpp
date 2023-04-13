@@ -138,6 +138,35 @@ bool PlausibleRoute::validateMainTorsion(int i, bool over_mag)
 	return true;
 }
 
+void PlausibleRoute::activateWaypoints(bool all)
+{
+	for (int idx : _activeTorsions)
+	{
+		if (idx < 0)
+		{
+			continue;
+		}
+
+		WayPoints &wps = wayPoints(idx);
+		for (size_t j = 1; j < wps.size() - 1; j++)
+		{
+			wps[j].setChanged(true);
+		}
+	}
+	
+	if (all)
+	{
+		for (size_t i = 0; i < wayPointCount(); i++)
+		{
+			WayPoints &wps = wayPoints(i);
+			for (size_t j = 1; j < wps.size() - 1; j++)
+			{
+				wps[j].setChanged(true);
+			}
+		}
+	}
+}
+
 int PlausibleRoute::countTorsions()
 {
 	int count = 0;
@@ -184,7 +213,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 
 			_paramPtrs.push_back(&wp.fraction_var());
 			_paramPtrs.push_back(&wp.progress_var());
-			
+
 			steps.push_back(_stepSize);
 			steps.push_back(_stepSize);
 		}
@@ -208,6 +237,7 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 		return false;
 	}
 
+	activateWaypoints(true);
 	_bestScore = routeScore(_nudgeCount);
 
 	_simplex->start();
@@ -375,7 +405,7 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 
 bool PlausibleRoute::flipTorsion(int idx)
 {
-	std::vector<int> idxs = getTorsionSequence(idx, 4, false, 30.f);
+	std::vector<int> idxs = getTorsionSequence(idx, 5, false, 30.f);
 	
 	if (idxs.size() == 0)
 	{
@@ -394,9 +424,9 @@ bool PlausibleRoute::flipTorsion(int idx)
 	{
 		setFlips(idxs, putatives[i]);
 
-		float candidate = routeScore(_nudgeCount * 2);
+		float candidate = routeScore(flipNudgeCount());
 
-		if (candidate < _bestScore - 1e-6)
+		if (candidate < _bestScore - 1e-3)
 		{
 			_bestScore = candidate;
 			best = putatives[i];
@@ -416,10 +446,10 @@ bool PlausibleRoute::flipTorsions(bool main)
 	{
 		return false;
 	}
-
+	
 	startTicker("Flipping torsions");
 	bool changed = false;
-	_bestScore = routeScore(_nudgeCount);
+	_bestScore = routeScore(flipNudgeCount());
 	
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
@@ -499,12 +529,7 @@ void PlausibleRoute::nudgeWayPointCycles()
 			_stepSize = 0.01;
 		}
 		
-		if (_bestScore < 0.6)
-		{
-			_minimumMagnitude = 2;
-		}
-		
-		std::cout << count << " / " << _maximumCycles << std::endl;
+//		std::cout << count << " / " << _maximumCycles << std::endl;
 		if (frac < 0.25 || total == 0 || count >= _maximumCycles)
 		{
 			_magnitudeThreshold /= 2;
@@ -632,6 +657,7 @@ std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 {
 	std::vector<PolyFit> fits;
 	fits.reserve(destinationSize());
+	activateWaypoints();
 
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
@@ -662,7 +688,6 @@ void PlausibleRoute::calculatePolynomialProgression(int steps)
 	float frac = 0;
 	float step = 1 / (float)steps;
 	std::vector<PolyFit> fits = polynomialFits();
-	fits.reserve(steps);
 
 	for (size_t i = 0; i <= steps; i++)
 	{

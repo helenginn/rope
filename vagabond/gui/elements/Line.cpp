@@ -16,47 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ThreadWorksOnObject__cpp__
-#define __vagabond__ThreadWorksOnObject__cpp__
+#include "Line.h"
 
-#include "SerialJob.h"
-
-template <class Thr, class Obj>
-ThreadWorksOnObject<Thr, Obj>::ThreadWorksOnObject(SerialJob<Obj, Thr> *handler)
+Line::Line() : Renderable()
 {
-	_handler = handler;
+	setName("Line");
+	_renderType = GL_LINES;
+
+	setUsesProjection(true);
+	setVertexShaderFile("assets/shaders/with_matrix.vsh");
+	setFragmentShaderFile("assets/shaders/color_only.fsh");
 }
 
-template <class Thr, class Obj>
-void ThreadWorksOnObject<Thr, Obj>::start()
+Snow::Vertex &Line::addPoint(glm::vec3 p)
 {
-	do
+	Vertex &v = addVertex(p);
+	
+	v.color = glm::vec4(0., 0., 0., 1.);
+	if (vertexCount() > 1)
 	{
-		Obj t = _handler->acquireObject();
-		
-		if (t == nullptr && _handler->finishing())
-		{
-			break;
-		}
-		else if (t == nullptr)
-		{
-			continue;
-		}
-		
-		timeStart();
-		bool result = doJob(t);
-		
-		if (!result)
-		{
-			break;
-		}
-
-		timeEnd();
-
-		_handler->finishedObject(t);
+		addIndex(-2);
+		addIndex(-1);
 	}
-	while (!_finish);
+	
+	return v;
 }
-
-
-#endif

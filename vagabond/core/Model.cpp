@@ -31,7 +31,7 @@
 
 Model::Model()
 {
-
+	_loadMutex = new std::mutex();
 }
 
 void Model::setFilename(std::string file)
@@ -509,13 +509,11 @@ void Model::findInteractions()
 
 void Model::insertTorsions()
 {
-	load();
 	std::vector<Instance *> insts = instances();
 	for (Instance *inst : insts)
 	{
 		inst->insertTorsionAngles(_currentAtoms);
 	}
-	unload();
 }
 
 void Model::extractTorsions()
@@ -534,6 +532,8 @@ void Model::extractTorsions()
 
 void Model::load(LoadOptions opts)
 {
+	std::unique_lock<std::mutex> lock(*_loadMutex);
+
 	_loadCounter++;
 //	std::cout << "Model " << name() << " load counter: " 
 //	<< _loadCounter << std::endl;
@@ -556,13 +556,20 @@ void Model::load(LoadOptions opts)
 
 	_currentFile->parse();
 	_currentAtoms = _currentFile->atoms();
+	_currentAtoms->setResponder(this);
 	
 	if (opts == Everything)
 	{
 		insertTorsions();
 	}
 	
-	_currentAtoms->setResponder(this);
+	std::vector<Instance *> insts = instances();
+	for (Instance *inst : insts)
+	{
+		inst->setAtomGroupSubset();
+	}
+
+	lock.unlock();
 }
 
 void Model::refine(bool sameThread, bool thorough)

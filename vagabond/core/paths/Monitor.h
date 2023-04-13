@@ -20,12 +20,14 @@
 #define __vagabond__Monitor__
 
 #include <map>
+#include <set>
 #include <vector>
 #include <mutex>
 #include <vagabond/utils/svd/PCA.h>
 #include "TaskType.h"
 #include "Responder.h"
 
+class TorsionCluster;
 class PathFinder;
 class Instance;
 class Path;
@@ -41,6 +43,9 @@ public:
 	void updatePath(Instance *first, Instance *second, Path *path);
 	void setStatus(Instance *first, Instance *second, TaskType type);
 	Path *existingPath(Instance *first, Instance *second);
+	TorsionCluster *torsionClusterForPathDeviations(int steps);
+	
+	int passesForPath(Instance *first, Instance *second);
 
 	struct StatusInfo
 	{
@@ -70,7 +75,7 @@ private:
 	std::atomic<bool> _running{false};
 	PCA::Matrix _lastResult{};
 	
-	std::vector<Path *> _paths;
+	std::set<Path *> _paths;
 	
 	std::mutex _mutex;
 };

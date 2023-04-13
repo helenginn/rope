@@ -14,20 +14,21 @@ void HasRenderables::deleteObjects(bool recursive)
 		object(i)->deleteObjects();
 	}
 
-	for (size_t i = 0; i < _objects.size(); i++)
+	for (int i = _objects.size() - 1; i >= 0; i--)
 	{
-		if (_dragged == _objects[i])
+		Renderable *r = _objects[i];
+		if (_dragged == r)
 		{
 			_dragged = nullptr;
 		}
 
-		if (_chosen == _objects[i])
+		if (_chosen == r)
 		{
 			_chosen = nullptr;
 		}
 
-		removeObject(_objects[i]);
-		delete _objects[i];
+		_objects.erase(_objects.begin() + i);
+		delete r;
 	}
 
 	clearObjects();

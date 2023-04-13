@@ -37,21 +37,24 @@ std::vector<float> WayPoints::polyFit()
 		return _polyFit;
 	}
 
-	int n = _wps.size() - 1;
+	int n = size();
+	std::vector<float> xs, ys;
 	
-	if (_xs.size() != n + 1)
+	xs.resize(n);
+	ys.resize(n);
+
+	for (int j = 0; j < n; j++)
 	{
-		_xs.resize(n + 1);
-		_ys.resize(n + 1);
+		xs[j] = _wps[j].fraction();
+		ys[j] = _wps[j].progress();
 	}
 
-	for (int j = 0; j <= n; j++)
+	_polyFit = polyfit(xs, ys, n);
+
+	for (WayPoint &wp : _wps)
 	{
-		_xs[j] = _wps[j].fraction();
-		_ys[j] = _wps[j].progress();
+		wp.setChanged(false);
 	}
 
-	std::vector<float> pf = polyfit(_xs, _ys, n);
-
-	return pf;
+	return _polyFit;
 }

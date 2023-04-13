@@ -19,16 +19,17 @@
 #ifndef __vagabond__PathFinderView__
 #define __vagabond__PathFinderView__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Mouse3D.h>
 #include <vagabond/core/Responder.h>
 
 class MatrixPlot;
 class PathFinder;
 class LineGroup;
+class StarView;
 class Summary;
 class Box;
 
-class PathFinderView : public Scene, Responder<PathFinder *>
+class PathFinderView : public Mouse3D, Responder<PathFinder *>
 {
 public:
 	PathFinderView(Scene *scene);
@@ -49,6 +50,7 @@ private:
 	void switchToSummary();
 	void switchToMatrix();
 	void switchToGraph();
+	void switchToStar();
 
 	void overviewButtons();
 	void makeTaskTree();
@@ -56,10 +58,12 @@ private:
 	void updateSummary();
 	void updateMatrixBox();
 	void updateGraphBox();
+	void updateStarBox();
 
 	void makeSummary();
 	void makeMatrixBox();
 	void makeGraphBox();
+	void makeStarBox();
 
 	PathFinder *_pf = nullptr;
 	LineGroup *_taskTree = nullptr;
@@ -67,9 +71,12 @@ private:
 	Box *_summaryBox = nullptr;
 	Box *_matrixBox = nullptr;
 	Box *_graphBox = nullptr;
+	Box *_starBox = nullptr;
+	std::vector<Box *> _boxes;
 
 	Summary *_summary = nullptr;
 	MatrixPlot *_plot = nullptr;
+	StarView *_starView = nullptr;
 	
 	bool _updateNext = false;
 	bool _updateTree = false;

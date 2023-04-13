@@ -19,13 +19,15 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/Window.h>
-#include <vagabond/gui/PathPlot.h>
 #include <vagabond/core/paths/PathTask.h>
 #include <vagabond/core/RopeCluster.h>
+#include <vagabond/core/PathFinder.h>
+#include <vagabond/core/paths/Summary.h>
+#include <vagabond/core/paths/Monitor.h>
+
 #include "PathFinderView.h"
-#include "paths/Summary.h"
-#include "paths/Monitor.h"
-#include "PathFinder.h"
+#include "PathPlot.h"
+#include "StarView.h"
 
 PathFinderView::PathFinderView(Scene *prev) : Scene(prev)
 {
@@ -77,6 +79,7 @@ void PathFinderView::setup()
 	makeSummary();
 	makeMatrixBox();
 	makeGraphBox();
+	makeStarBox();
 	switchToSummary();
 	_pf->start();
 }
@@ -92,14 +95,21 @@ void PathFinderView::overviewButtons()
 
 	{
 		TextButton *tb = new TextButton("Plot", this);
-		tb->setLeft(0.55, 0.1);
+		tb->setLeft(0.50, 0.1);
 		tb->setReturnTag("plot");
 		addObject(tb);
 	}
 
 	{
+		TextButton *tb = new TextButton("Star", this);
+		tb->setLeft(0.67, 0.1);
+		tb->setReturnTag("star");
+		addObject(tb);
+	}
+
+	{
 		TextButton *tb = new TextButton("Map", this);
-		tb->setLeft(0.77, 0.1);
+		tb->setLeft(0.84, 0.1);
 		tb->setReturnTag("map");
 		addObject(tb);
 	}
@@ -123,9 +133,37 @@ void PathFinderView::updateGraphBox()
 
 void PathFinderView::updateMatrixBox()
 {
+	if (_plot)
+	{
+		return;
+	}
+
 	MatrixPlot *mp = new PathPlot(_pf->monitor());
 	_plot = mp;
 	_matrixBox->addObject(mp);
+}
+
+void PathFinderView::updateStarBox()
+{
+	int steps = 24;
+	TorsionCluster *tc = _pf->monitor()->torsionClusterForPathDeviations(steps);
+	tc->cluster();
+	
+	std::cout << "Top weights: " << std::endl;
+	for (int i = 0; i < tc->objectGroup()->objectCount(); i++)
+	{
+		std::cout << tc->weight(i) << ", ";
+	}
+	std::cout << std::endl;
+
+	bool first = _starView->vertexCount() == 0;
+
+	_starView->setCluster(tc);
+	_starView->setSteps(steps);
+	_starView->makePoints();
+	glm::vec3 c = _starView->centroid();
+	float distance = first ? 10 : 0;
+	shiftToCentre(c, distance);
 }
 
 void PathFinderView::makeSummary()
@@ -134,6 +172,7 @@ void PathFinderView::makeSummary()
 	{
 		_summaryBox = new Box();
 		_summary = new Summary(_pf->topTask());
+		_boxes.push_back(_summaryBox);
 		addObject(_summaryBox);
 	}
 	
@@ -145,10 +184,25 @@ void PathFinderView::makeGraphBox()
 	if (_graphBox == nullptr)
 	{
 		_graphBox = new Box();
+		_boxes.push_back(_graphBox);
 		addObject(_graphBox);
 	}
 	
 	updateMatrixBox();
+}
+
+void PathFinderView::makeStarBox()
+{
+	if (_starBox == nullptr)
+	{
+		_starBox = new Box();
+		_boxes.push_back(_starBox);
+		addObject(_starBox);
+		_starView = new StarView();
+		_starBox->addObject(_starView);
+	}
+	
+	updateStarBox();
 }
 
 void PathFinderView::makeMatrixBox()
@@ -156,32 +210,53 @@ void PathFinderView::makeMatrixBox()
 	if (_matrixBox == nullptr)
 	{
 		_matrixBox = new Box();
+		_boxes.push_back(_matrixBox);
 		addObject(_matrixBox);
 	}
 	
 	updateMatrixBox();
 }
 
+void PathFinderView::switchToStar()
+{
+	for (Box *box : _boxes)
+	{
+		box->setDisabled(true);
+	}
+
+	_starBox->setDisabled(false);
+	updateStarBox();
+}
+
 void PathFinderView::switchToGraph()
 {
-	_matrixBox->setDisabled(true);
-	_summaryBox->setDisabled(true);
+	for (Box *box : _boxes)
+	{
+		box->setDisabled(true);
+	}
+
 	_graphBox->setDisabled(false);
 	updateGraphBox();
 }
 
 void PathFinderView::switchToMatrix()
 {
+	for (Box *box : _boxes)
+	{
+		box->setDisabled(true);
+	}
+
 	_matrixBox->setDisabled(false);
-	_summaryBox->setDisabled(true);
-	_graphBox->setDisabled(true);
 }
 
 void PathFinderView::switchToSummary()
 {
-	_matrixBox->setDisabled(true);
+	for (Box *box : _boxes)
+	{
+		box->setDisabled(true);
+	}
+
 	_summaryBox->setDisabled(false);
-	_graphBox->setDisabled(true);
 }
 
 void PathFinderView::buttonPressed(std::string tag, Button *button)
@@ -197,6 +272,10 @@ void PathFinderView::buttonPressed(std::string tag, Button *button)
 	else if (tag == "map")
 	{
 		switchToGraph();
+	}
+	else if (tag == "star")
+	{
+		switchToStar();
 	}
 	
 	Scene::buttonPressed(tag, button);
@@ -223,11 +302,6 @@ void PathFinderView::respond()
 	if (_plot)
 	{
 		_plot->update();
-	}
-	
-//	if (_view)
-	{
-//		updateGraphBox();
 	}
 }
 

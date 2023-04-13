@@ -27,7 +27,18 @@ TSNEView::TSNEView() : PointyView()
 
 void TSNEView::updatePoints()
 {
-	for (size_t i = 0; i < _vertices.size(); i++)
+	for (size_t i = vertexCount(); i < _cluster->pointCount(); i++)
+	{
+		glm::vec3 v = _cluster->pointForDisplay(i);
+		addPoint(v, 0);
+	}
+	
+	if (vertexCount() > _cluster->pointCount())
+	{
+		_vertices.resize(_cluster->pointCount());
+	}
+
+	for (size_t i = 0; i < vertexCount(); i++)
 	{
 		glm::vec3 v = _cluster->pointForDisplay(i);
 		_vertices[i].pos = v;

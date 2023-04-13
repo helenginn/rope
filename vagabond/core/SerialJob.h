@@ -74,10 +74,15 @@ public:
 	{
 		return _threads;
 	}
-	
+
 	size_t objectCount() const
 	{
 		return _objects.size();
+	}
+	
+	bool finishing()
+	{
+		return pool().finishing();
 	}
 	
 	/** prepare all objects etc. ready to start */
@@ -101,11 +106,17 @@ public:
 	void attachObject(Obj object);
 	void detachObject(Obj object);
 	void updateObject(Obj object, int idx);
+
+	void finishedObject(Obj object);
 	void incrementFinished();
 protected: 
 	rope::RopeJob _job = rope::Refine;
 	std::vector<Obj> _objects;
 	
+	virtual Pool<Obj> &pool()
+	{
+		return _pool;
+	}
 private:
 	virtual void settings() {};
 	void loadObjectsIntoPool();

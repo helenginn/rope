@@ -72,12 +72,6 @@ void Instance::load()
 {
 	model()->load();
 
-	if (_motherAtoms == _model->currentAtoms() && _currentAtoms != nullptr)
-	{
-		// return pre-calculated subset if model has not been reloaded
-		return;
-	}
-
 	setAtomGroupSubset();
 }
 
@@ -147,7 +141,13 @@ Interface *Instance::interfaceWithOther(Instance *other)
 
 void Instance::setAtomGroupSubset()
 {
-	AtomContent *ac = _model->currentAtoms();
+	if (_motherAtoms == model()->currentAtoms() && _currentAtoms != nullptr)
+	{
+		// return pre-calculated subset if model has not been reloaded
+		return;
+	}
+
+	AtomContent *ac = model()->currentAtoms();
 	_motherAtoms = ac;
 	
 	AtomGroup *tmp = new AtomGroup();

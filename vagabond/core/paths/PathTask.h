@@ -56,6 +56,11 @@ public:
 		return _complete;
 	}
 
+	virtual bool needsResources()
+	{
+		return false;
+	}
+
 	static Model *modelForHasMetadata(HasMetadata *wanted);
 	void gatherTasks(std::vector<PathTask *> &collection);
 	

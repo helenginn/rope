@@ -31,25 +31,13 @@ void ThreadPathTask::doTask(PathTask *pt)
 	_handler->updateObject(pt, _num);
 
 	pt->run();
-	pt->unlockAll();
+//	pt->unlockAll();
 
 	_handler->updateObject(nullptr, _num);
 }
 
 bool ThreadPathTask::doJob(PathTask *pt)
 {
-	bool success = pt->tryLock();
-	
-	if (!success)
-	{
-		_failCount++;
-		_handler->pushObject(pt);
-	}
-	else
-	{
-		_failCount = 0;
-		doTask(pt);
-	}
-
-	return true; // we want another one
+	doTask(pt);
+	return true;
 }

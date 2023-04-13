@@ -210,9 +210,14 @@ Instance *Entity::chooseRepresentativeInstance()
 	return best;
 }
 
-MetadataGroup Entity::makeTorsionDataGroup()
+MetadataGroup Entity::makeTorsionDataGroup(bool empty)
 {
 	MetadataGroup group = prepareTorsionGroup();
+	
+	if (empty)
+	{
+		return group;
+	}
 	
 	if (!Environment::modelManager()->tryLock())
 	{

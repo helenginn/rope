@@ -168,6 +168,7 @@ protected:
 	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit, Header>::*comparison)(int, int));
 
 	int _length;
+	bool _subtractAverage = true;
 	std::vector<Array> _averages;
 	std::vector<float> _stdevs;
 };

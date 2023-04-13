@@ -21,6 +21,7 @@
 
 #include <string>
 #include <list>
+#include <mutex>
 #include <iostream>
 
 #include "HasMetadata.h"
@@ -193,6 +194,7 @@ private:
 	std::list<Ligand> _ligands;
 
 	int _loadCounter = 0;
+	std::mutex *_loadMutex = nullptr;
 	File *_currentFile = nullptr;
 	AtomContent *_currentAtoms = nullptr;
 };

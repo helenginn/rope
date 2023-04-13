@@ -63,7 +63,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 
 	setName(item->displayName() + " group");
 	
-	if (!top)
+	if (!top)  // if top doesn't exist i.e. if we are top
 	{
 		setup();
 	}
@@ -194,6 +194,7 @@ void LineGroup::setup()
 void LineGroup::reorganiseHeights()
 {
 	glm::vec2 tmp = xy();
+	std::cout << std::endl;
 	resetGroups();
 
 	reorganiseGroups();
