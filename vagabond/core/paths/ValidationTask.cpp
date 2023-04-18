@@ -43,6 +43,9 @@ void ValidationTask::specificTasks()
 	float linearRatio = rv.linearityRatio();
 
 	_pf->sendValidationResult(this, isValid, linearRatio);
+
+	Path *path = new Path(pr);
+	_pf->sendUpdatedPath(path, this);
 	
 	if (isValid && linearRatio < _pf->linearityThreshold())
 	{

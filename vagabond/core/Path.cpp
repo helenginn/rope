@@ -209,3 +209,14 @@ void Path::cleanupRoute()
 		_route = nullptr;
 	}
 }
+
+bool Path::operator==(const Path &other) const
+{
+	if (_startInstance == other._startInstance &&
+	    _endInstance == other._endInstance)
+	{
+		return true;
+	}
+
+	return false;
+}

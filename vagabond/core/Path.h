@@ -95,6 +95,8 @@ public:
 	{
 		return _angleArrays[i];
 	}
+	
+	bool operator==(const Path &other) const;
 private:
 	void calculateDeviations(MetadataGroup *group);
 

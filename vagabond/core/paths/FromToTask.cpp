@@ -59,7 +59,6 @@ PlausibleRoute *FromToTask::makeNewRoute()
 
 	sr->setAtoms(from()->currentAtoms());
 	sr->setup();
-	sr->bringTorsionsToRange();
 
 	return sr;
 }

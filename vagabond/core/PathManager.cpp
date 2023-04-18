@@ -20,17 +20,28 @@
 
 PathManager::PathManager()
 {
-
+	_addMutex = new std::mutex();
 }
 
-Path *PathManager::insertIfUnique(Path &p)
+Path *PathManager::insertOrReplace(Path &p)
 {
-	_objects.push_back(p);
+	std::unique_lock<std::mutex> lock(*_addMutex);
+	auto it = std::find(_objects.begin(), _objects.end(), p);
+
+	if (it == _objects.end())
+	{
+		_objects.push_back(p);
+	}
+	else
+	{
+		*it = p;
+	}
+
 	housekeeping();
 
 	Manager::triggerResponse();
 
-	return &_objects.back();
+	return &*it;
 }
 
 void PathManager::housekeeping()

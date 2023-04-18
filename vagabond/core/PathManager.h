@@ -27,7 +27,7 @@ class PathManager : public Manager<Path>
 public:
 	PathManager();
 
-	virtual Path *insertIfUnique(Path &p);
+	virtual Path *insertOrReplace(Path &p);
 
 	virtual const std::string progressName() const
 	{
@@ -41,6 +41,7 @@ public:
 	friend void to_json(json &j, const PathManager &value);
 	friend void from_json(const json &j, PathManager &value);
 private:
+	std::mutex *_addMutex = nullptr;
 
 };
 
