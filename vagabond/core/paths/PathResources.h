@@ -34,19 +34,24 @@ public:
 	PathResources();
 
 	void setup(PathFinder *pf);
-	PathTask *chooseTaskFromQueue(std::queue<PathTask *> &tasks);
+	PathTask *chooseTaskFromQueue(std::deque<PathTask *> &tasks);
 	
 	void notifyTaskCompleted(PathTask *pt);
 private:
 	void loadModelsFor(PathTask *pt);
 	void loadInstance(Instance *inst);
+	void unloadModel(Instance *inst);
 	void unloadInstance(Instance *inst);
 	bool startingIsAllowed(FromToTask *task);
 	void prepareModelList();
 	int extraLoadsForTask(FromToTask *task);
+	void cleanupModels();
+	void cleanupInstances();
 
 	std::map<Model *, int> _loaded;
 	std::map<Instance *, int> _instances;
+	
+	std::queue<FromToTask *> _cleanupInstances, _cleanupModels;
 	PathFinder *_pf = nullptr;
 	std::mutex _mutex;
 };

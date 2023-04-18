@@ -56,19 +56,23 @@ void PathResources::loadInstance(Instance *inst)
 
 	_loaded[model]++;
 	_instances[inst]++;
-	inst->load();
 }
 
-void PathResources::unloadInstance(Instance *inst)
+void PathResources::unloadModel(Instance *inst)
 {
 	Model *model = PathTask::modelForHasMetadata(inst);
 	_loaded[model]--;
-	_instances[inst]--;
 
 	if (_loaded[model] == 0)
 	{
 		model->unload();
 	}
+}
+
+void PathResources::unloadInstance(Instance *inst)
+{
+	Model *model = PathTask::modelForHasMetadata(inst);
+	_instances[inst]--;
 }
 
 void PathResources::loadModelsFor(PathTask *pt)
@@ -96,8 +100,32 @@ void PathResources::notifyTaskCompleted(PathTask *pt)
 
 	FromToTask *task = static_cast<FromToTask *>(pt);
 
-	unloadInstance(task->from());
-	unloadInstance(task->to());
+	_cleanupModels.push(task);
+	_cleanupInstances.push(task);
+}
+
+void PathResources::cleanupInstances()
+{
+	while (_cleanupInstances.size())
+	{
+		FromToTask *task = _cleanupInstances.front();
+		_cleanupInstances.pop();
+
+		unloadInstance(task->from());
+		unloadInstance(task->to());
+	}
+}
+
+void PathResources::cleanupModels()
+{
+	if (_cleanupModels.size() > _pf->threadCount())
+	{
+		FromToTask *task = _cleanupModels.front();
+		_cleanupModels.pop();
+
+		unloadModel(task->from());
+		unloadModel(task->to());
+	}
 }
 
 void PathResources::prepareModelList()
@@ -113,22 +141,26 @@ void PathResources::prepareModelList()
 	}
 }
 
-PathTask *PathResources::chooseTaskFromQueue(std::queue<PathTask *> &tasks)
+PathTask *PathResources::chooseTaskFromQueue(std::deque<PathTask *> &tasks)
 {
-	std::unique_lock<std::mutex> lock(_mutex);
 	int best = INT_MAX;
-	std::queue<PathTask *> other;
 	PathTask *chosen = nullptr;
+	std::deque<PathTask *>::iterator ch_it;
 
-	while (tasks.size())
+	std::unique_lock<std::mutex> lock(_mutex);
+
+	cleanupInstances();
+//	std::cout << "Checking out " << tasks.size() << " tasks" << std::endl;
+	int disallowed = 0;
+
+	for (auto it = tasks.begin(); it != tasks.end(); it++)
 	{
-		PathTask *pt = tasks.front();
-		tasks.pop();
-		other.push(pt);
+		PathTask *pt = *it;
 		
 		if (!pt->needsResources())
 		{
 			chosen = pt;
+			ch_it = it;
 			break;
 		}
 		
@@ -136,32 +168,39 @@ PathTask *PathResources::chooseTaskFromQueue(std::queue<PathTask *> &tasks)
 		
 		if (!startingIsAllowed(ft))
 		{
+			disallowed++;
 			continue;
 		}
 
 		int extra = extraLoadsForTask(ft);
-		
+
 		if (extra < best)
 		{
 			chosen = ft;
 			best = extra;
+			ch_it = it;
+			
+			if (best == 0)
+			{
+				break;
+			}
 		}
 	}
 	
-	while (other.size())
-	{
-		PathTask *discarded = other.front();
-		other.pop();
-		
-		if (discarded != chosen)
-		{
-			tasks.push(discarded);
-		}
-	}
+//	std::cout << "Chosen " << (chosen ? chosen->displayName() : ": none")
+//	<< std::endl;
+//	std::cout << "Disallowed: " << disallowed << std::endl;
+//	std::cout << "Best score: " << best << std::endl;
 	
 	if (chosen)
 	{
+		tasks.erase(ch_it);
 		loadModelsFor(chosen);
+	}
+	
+	if (chosen || tasks.size() < _pf->threadCount())
+	{
+		cleanupModels();
 	}
 	
 	return chosen;

@@ -31,7 +31,7 @@ void Handler::PathPool::setup(PathFinder *pf)
 
 void Handler::PathPool::pluckFromQueue(PathTask *&task)
 {
-	PathTask *chosen =_resource->chooseTaskFromQueue(members);
+	PathTask *chosen = _resource->chooseTaskFromQueue(members);
 	
 	if (!chosen)
 	{
@@ -45,7 +45,7 @@ void Handler::PathPool::notifyFinishedObject(PathTask *&task)
 {
 	_resource->notifyTaskCompleted(task);
 	
-	if (_lost)
+	while (_lost > 0)
 	{
 		_lost--;
 		sem.signal();

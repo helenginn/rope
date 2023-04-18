@@ -151,7 +151,6 @@ void MainMenu::checkForJson()
 
 void MainMenu::buttonPressed(std::string tag, Button *button)
 {
-	std::cout << tag << std::endl;
 	if (tag == "files")
 	{
 		FileView *fileview = new FileView(this);

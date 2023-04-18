@@ -136,6 +136,7 @@ private:
 
 	static std::set<Scene *> _toDelete;
 	static std::mutex _deleteMutex;
+	static std::mutex _switchMutex;
 	static std::set<Renderable *> _deleteRenderables;
 	
 	static KeyResponder *_keyResponder;

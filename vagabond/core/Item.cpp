@@ -23,15 +23,18 @@
 int Item::_tagNum = 0;
 std::map<std::string, Item *> Item::_tag2Item{};
 std::set<Item *> Item::_deletedItems;
+std::mutex Item::_tagMutex;
 
 Item::Item()
 {
+	std::unique_lock<std::mutex> lock(_tagMutex);
 	_tag = issueNextTag();
 	_tag2Item[_tag] = this;
 }
 
 Item::~Item()
 {
+	std::unique_lock<std::mutex> lock(_tagMutex);
 	_tag2Item.erase(_tag);
 }
 

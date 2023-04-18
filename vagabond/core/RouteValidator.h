@@ -47,6 +47,7 @@ private:
 	PlausibleRoute &_route;
 	std::map<Atom *, float> _distances;
 
+	float _tolerance = 0.02;
 	int _steps = 32;
 };
 

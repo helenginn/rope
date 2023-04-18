@@ -33,10 +33,7 @@ void PlausibleRoute::setup()
 {
 	Route::setup();
 	prepareDestination();
-	
 	setTargets();
-	
-	bringTorsionsToRange();
 }
 
 void PlausibleRoute::setTargets()
@@ -45,8 +42,6 @@ void PlausibleRoute::setTargets()
 
 	twoPointProgression();
 	submitJobAndRetrieve(0);
-	
-	_instance->model()->write("start.pdb");
 
 	for (Atom *atom : _fullAtoms->atomVector())
 	{
@@ -55,7 +50,6 @@ void PlausibleRoute::setTargets()
 	}
 
 	submitJobAndRetrieve(1);
-	_instance->model()->write("finish.pdb");
 
 	for (Atom *atom : _fullAtoms->atomVector())
 	{
@@ -522,10 +516,6 @@ void PlausibleRoute::nudgeWayPointCycles()
 
 		if (_magnitudeThreshold < 40)
 		{
-			if (_nudgeCount < 12)
-			{
-				_nudgeCount = 12;
-			}
 			_stepSize = 0.01;
 		}
 		

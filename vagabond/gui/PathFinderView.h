@@ -42,6 +42,7 @@ public:
 
 	virtual void setup();
 	virtual void doThings();
+	void updateNames();
 	void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 protected:
@@ -78,8 +79,8 @@ private:
 	MatrixPlot *_plot = nullptr;
 	StarView *_starView = nullptr;
 	
-	bool _updateNext = false;
-	bool _updateTree = false;
+	std::atomic<bool> _updateNext{false};
+	std::atomic<bool> _updateTree{false};
 };
 
 #endif

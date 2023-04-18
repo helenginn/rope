@@ -21,7 +21,9 @@
 
 #include "MatrixPlot.h"
 #include "Responder.h"
+#include <vagabond/core/paths/Monitor.h>
 #include <mutex>
+#include <queue>
 
 class Monitor;
 class Image;
@@ -33,14 +35,18 @@ public:
 
 	virtual void sendObject(std::string tag, void *object);
 	
+	virtual void doThings();
 protected:
 	void makeImage(int idx, glm::vec3 pos, std::string image);
 	void clearImage(int idx);
 private:
+	void processStatusChange(Monitor::StatusInfo &info);
 	Monitor *_monitor = nullptr;
 
 	std::mutex _mutex;
 	std::map<int, Image *> _images;
+	
+	std::queue<Monitor::StatusInfo> _changes;
 };
 
 #endif

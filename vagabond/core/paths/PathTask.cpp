@@ -35,43 +35,6 @@ Model *PathTask::modelForHasMetadata(HasMetadata *wanted)
 	return model;
 }
 
-bool PathTask::tryLockModel(Model *m)
-{
-	if (_pf->tryLockModel(m))
-	{
-		_locks.insert(m);
-		return true;
-	}
-
-	return false;
-}
-
-void PathTask::unlockAll()
-{
-	for (Model *m : _locks)
-	{
-		_pf->unlockModel(m);
-	}
-
-	_locks.clear();
-}
-
-bool PathTask::tryLock()
-{
-	for (Model *m : _needs)
-	{
-		bool ok = tryLockModel(m);
-		
-		if (!ok)
-		{
-			unlockAll();
-			return false;
-		}
-	}
-
-	return true;
-}
-
 void PathTask::run()
 {
 	std::string name = displayName();
@@ -106,5 +69,5 @@ PathTask *PathTask::task(int i) const
 void PathTask::setComplete()
 {
 	_complete = true;
-	parent()->childChanged();
+	_pf->triggerResponse();
 }

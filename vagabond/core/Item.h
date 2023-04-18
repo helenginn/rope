@@ -55,6 +55,7 @@ public:
 	
 	static Item *const itemForTag(const std::string &tag)
 	{
+		std::unique_lock<std::mutex> lock(_tagMutex);
 		return _tag2Item[tag];
 	}
 
@@ -189,6 +190,7 @@ private:
 	
 	static int _tagNum;
 	static std::map<std::string, Item *> _tag2Item;
+	static std::mutex _tagMutex;
 	static std::set<Item *> _deletedItems;
 
 	bool _editable = false;

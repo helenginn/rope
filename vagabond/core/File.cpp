@@ -47,7 +47,7 @@ File::~File()
 	delete _compAtoms;
 	delete _macroAtoms;
 	delete _metadata;
-
+	
 	if (!_accessedTable)
 	{
 		delete _table;

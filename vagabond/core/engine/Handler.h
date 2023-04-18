@@ -19,6 +19,7 @@
 #ifndef __vagabond__Handler__
 #define __vagabond__Handler__
 
+#include <deque>
 #include "engine/SimplePhore.h"
 #include "engine/ExpectantPhore.h"
 #include "engine/workers/ThreadWorker.h"
@@ -38,7 +39,7 @@ protected:
 		std::atomic<int> _id{0};
 		std::atomic<bool> _finish{false};
 	protected:
-		std::queue<Object> members;
+		std::deque<Object> members;
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
 		Sem sem;
@@ -74,7 +75,7 @@ protected:
 			
 			threads.clear();
 			workers.clear();
-			std::queue<Object> tmp;
+			std::deque<Object> tmp;
 			members.swap(tmp); // shouldn't be necessary...
 
 			_finish = false;
@@ -103,7 +104,7 @@ protected:
 
 			while (members.size())
 			{
-				members.pop();
+				members.pop_front();
 			}
 		}
 		
@@ -122,6 +123,11 @@ protected:
 			return _finish;
 		}
 
+		size_t threadCount()
+		{
+			return threads.size();
+		}
+
 		size_t objectCount()
 		{
 			size_t result = 0;
@@ -138,7 +144,7 @@ protected:
 			if (members.size())
 			{
 				obj = members.front();
-				members.pop();
+				members.pop_front();
 			}
 		}
 
@@ -159,14 +165,17 @@ protected:
 			}
 		}
 		
-		int pushObject(Object &obj)
+		void pushObject(Object &obj, int *ticket = nullptr)
 		{
 			std::unique_lock<std::mutex> lock(sem.mutex());
 			_id++;
-			members.push(obj);
+			members.push_back(obj);
 			sem.signal_one();
 
-			return _id;
+			if (ticket != nullptr)
+			{
+				*ticket = _id;
+			}
 		}
 	};
 
@@ -180,7 +189,7 @@ protected:
 	{
 	private:
 		PathResources *_resource = nullptr;
-		int _lost = 0;
+		std::atomic<int> _lost{0};
 	
 	public:
 		PathPool();
@@ -215,7 +224,7 @@ protected:
 			if (this->members.size())
 			{
 				obj = this->members.front();
-				this->members.pop();
+				this->members.pop_front();
 			}
 		}
 

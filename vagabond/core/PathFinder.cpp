@@ -37,20 +37,21 @@ PathFinder::PathFinder()
 
 PathFinder::~PathFinder()
 {
-	for (auto it = _resourceLocks.begin(); it != _resourceLocks.end(); it++)
-	{
-		delete it->second;
-	}
+	delete _handler;
 
-	_resourceLocks.clear();
-
+	std::cout << "Deleting tasks" << std::endl;
 	_tasks->deleteItem(); // covers validations
-	Item::resolveDeletions();
-	
-	delete _cluster;
 	
 	delete _monitor;
-	delete _handler;
+	delete _cluster;
+
+	Item::resolveDeletions();
+}
+
+void PathFinder::stop()
+{
+	_handler->finish();
+
 }
 
 void PathFinder::setWhiteList(const std::vector<HasMetadata *> &whiteList)
@@ -59,10 +60,8 @@ void PathFinder::setWhiteList(const std::vector<HasMetadata *> &whiteList)
 	_rawWhiteList = whiteList;
 	for (HasMetadata *hm : whiteList)
 	{
-		std::cout << hm->id() << ", ";
 		_whiteList.push_back(static_cast<Instance *>(hm));
 	}
-	std::cout << std::endl;
 }
 
 void PathFinder::prepareObjects()
@@ -92,6 +91,8 @@ void PathFinder::prepareTaskBins()
 	_tasks->addItem(_cyclingTasks);
 
 	makeFullCycle();
+	
+	updateNames();
 }
 
 void PathFinder::makeFullCycle()
@@ -124,30 +125,10 @@ void PathFinder::prepareValidationTasks()
 
 }
 
-void PathFinder::unlockModel(Model *wanted)
+std::unique_lock<std::mutex> PathFinder::tryLockLists()
 {
-	_resourceLocks.at(wanted)->unlock();
-}
-
-bool PathFinder::tryLockModel(Model *wanted)
-{
-	return _resourceLocks.at(wanted)->try_lock();
-}
-
-void PathFinder::prepareMutexList()
-{
-	for (size_t i = 0; i < _whiteList.size(); i++)
-	{
-		Model *model = PathTask::modelForHasMetadata(_whiteList[i]);
-		
-		if (_resourceLocks.count(model))
-		{
-			continue;
-		}
-
-		std::mutex *m = new std::mutex();
-		_resourceLocks[model] = m;
-	}
+	std::unique_lock<std::mutex> lock(_cycleMutex, std::try_to_lock);
+	return lock;
 }
 
 void PathFinder::setupTorsionCluster()
@@ -174,7 +155,7 @@ void PathFinder::prepareMonitor()
 void PathFinder::setupSerialJob()
 {
 	_handler = new PathJob(this);
-	_handler->setThreads(6);
+	_handler->setThreads(_threads);
 	
 	std::vector<PathTask *> all;
 	_tasks->gatherTasks(all);
@@ -187,12 +168,17 @@ void PathFinder::setupSerialJob()
 
 void PathFinder::setup()
 {
+	std::unique_lock<std::mutex> lock(_cycleMutex);
 	prepareObjects();
 	setupTorsionCluster();
-	prepareMutexList();
+	lock.unlock();
+
 	prepareTaskBins();
+
+	lock.lock();
 	prepareMonitor();
 	prepareValidationTasks();
+	lock.unlock();
 }
 
 void PathFinder::start()
@@ -214,6 +200,22 @@ void PathFinder::updateObject(PathTask *obj, int idx)
 {
 	triggerResponse();
 	incrementStageIfNeeded();
+}
+
+void PathFinder::updateNames()
+{
+	std::unique_lock<std::mutex> lock(_cycleMutex);
+
+	_validations->updateName();
+	_flipTorsions->updateName();
+
+	for (ReporterTask *task : _fulls)
+	{
+		task->updateName();
+	}
+	
+	lock.unlock();
+	triggerResponse();
 }
 
 void PathFinder::sendContentsToHandler(PathTask *bin)
@@ -300,11 +302,11 @@ void PathFinder::setStatus(FromToTask *task, TaskType type)
 
 void PathFinder::addTask(OptimiseTask *task)
 {
-	
 	PathTask *cast = static_cast<PathTask *>(task);
 
 	if (_stage == FirstValidation)
 	{
+		std::unique_lock<std::mutex> lock(_cycleMutex);
 		_flipTorsions->addItem(task);
 		_flipTorsions->childChanged();
 	}
@@ -313,10 +315,9 @@ void PathFinder::addTask(OptimiseTask *task)
 		int passes = _monitor->passesForPath(task->from(), task->to());
 		task->setPassNum(passes++);
 
-		_cycleMutex.lock();
+		std::unique_lock<std::mutex> lock(_cycleMutex);
 		_fulls.back()->addItem(task);
 		_fulls.back()->childChanged();
-		_cycleMutex.unlock();
 	}
 }
 

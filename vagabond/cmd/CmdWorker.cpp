@@ -31,10 +31,8 @@ void CmdWorker::start()
 	{
 		while (_dictator->nextJob())
 		{
-			std::cout << "Next job" << std::endl;
 
 		}
-		std::cout << "Ran out of jobs!" << std::endl;
 
 		_dictator->workerLock();
 		

@@ -40,8 +40,9 @@ PathFinderView::PathFinderView(Scene *prev) : Scene(prev)
 
 PathFinderView::~PathFinderView()
 {
-	deleteObjects(true);
+	_pf->stop();
 	delete _pf;
+	deleteObjects(true);
 }
 
 void PathFinderView::makeTaskTree()
@@ -188,7 +189,7 @@ void PathFinderView::makeGraphBox()
 		addObject(_graphBox);
 	}
 	
-	updateMatrixBox();
+	updateGraphBox();
 }
 
 void PathFinderView::makeStarBox()
@@ -287,10 +288,22 @@ void PathFinderView::doThings()
 	{
 		makeTaskTree();
 	}
+	
+	if (!_updateNext)
+	{
+		return;
+	}
+	
+	_pf->updateNames();
 
-	if (_updateNext && _summaryBox && !_summaryBox->isDisabled())
+	if (_summaryBox && !_summaryBox->isDisabled())
 	{
 		updateSummary();
+	}
+	
+	if (_plot)
+	{
+		_plot->update();
 	}
 
 }
@@ -298,10 +311,5 @@ void PathFinderView::doThings()
 void PathFinderView::respond()
 {
 	_updateNext = true;
-	
-	if (_plot)
-	{
-		_plot->update();
-	}
 }
 

@@ -285,7 +285,6 @@ private:
 	
 	struct Score
 	{
-		AtomPosMap map;
 		float scores = 0;
 		float deviations = 0;
 		int divs = 0;

@@ -20,7 +20,8 @@
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/core/paths/Monitor.h>
 
-PathPlot::PathPlot(Monitor *monitor) : MatrixPlot(monitor->matrix())
+PathPlot::PathPlot(Monitor *monitor) : MatrixPlot(monitor->matrix(),
+                                                  monitor->matMutex())
 {
 	_monitor = monitor;
 	_monitor->setResponder(this);
@@ -33,19 +34,14 @@ void PathPlot::makeImage(int idx, glm::vec3 pos, std::string str)
 	image->resize(0.05);
 	image->setPosition(pos);
 
-	_mutex.lock();
 	addObject(image);
 	_images[idx] = image;
-	_mutex.unlock();
 }
 
 void PathPlot::clearImage(int idx)
 {
-	_mutex.lock();
-	
 	if (_images.count(idx) == 0)
 	{
-		_mutex.unlock();
 		return;
 	}
 
@@ -53,14 +49,39 @@ void PathPlot::clearImage(int idx)
 	removeObject(toGo);
 	Window::setDelete(toGo);
 	_images.erase(idx);
-
-	_mutex.unlock();
 }
 
 void PathPlot::sendObject(std::string tag, void *object)
 {
 	Monitor::StatusInfo info = *static_cast<Monitor::StatusInfo *>(object);
+	std::unique_lock<std::mutex> lock(_mutex);
+	_changes.push(info);
+}
 
+void PathPlot::doThings()
+{
+	Monitor::StatusInfo info{};
+
+	while (true)
+	{
+		std::unique_lock<std::mutex> lock(_mutex);
+		if (_changes.size() == 0)
+		{
+			break;
+		}
+
+		info = _changes.front();
+		_changes.pop();
+
+		lock.unlock();
+
+		processStatusChange(info);
+	}
+
+}
+
+void PathPlot::processStatusChange(Monitor::StatusInfo &info)
+{
 	int full = mat().cols * info.x + info.y;
 
 	if (info.status == TaskType::None)

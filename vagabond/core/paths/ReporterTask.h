@@ -39,7 +39,9 @@ public:
 	size_t incomplete() const;
 
 	virtual std::string displayName() const;
+	void updateName();
 private:
+	std::string _cache;
 
 };
 

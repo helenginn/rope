@@ -24,6 +24,7 @@ int Window::_height = 0;
 
 std::set<Scene *> Window::_toDelete;
 std::mutex Window::_deleteMutex;
+std::mutex Window::_switchMutex;
 std::set<Renderable *> Window::_deleteRenderables;
 
 KeyResponder *Window::_keyResponder = NULL;
@@ -150,7 +151,6 @@ void Window::window_tick()
 
 bool Window::tick()
 {
-	_current->checkErrors("before sdl events");
 	_myWindow->mainThreadActivities();
 
 	SDL_Event event;
@@ -214,10 +214,6 @@ bool Window::tick()
 	_myWindow->deleteQueued();
 	
 	SDL_Delay(20);
-	if (!_current->isAlwaysOn())
-	{
-//		SDL_Delay(20);
-	}
 	
 	return true;
 }
@@ -244,6 +240,7 @@ void Window::deleteQueued()
 
 void Window::render()
 {
+	std::unique_lock<std::mutex> lock(_switchMutex);
 	_current->doThingsCircuit();
 
 	if (!_current->isViewChanged())
@@ -251,12 +248,9 @@ void Window::render()
 		return;
 	}
 
-	_current->checkErrors("before viewport");
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
-
-	_current->checkErrors("before clear");
 
 	_current->render();
 	
@@ -265,13 +259,14 @@ void Window::render()
 		_myWindow->object(i)->render(_current);
 	}
 
-	_current->checkErrors("after render from window");
+	lock.unlock();
 
 	SDL_GL_SwapWindow(_window);
 }
 
 void Window::setCurrentScene(Scene *scene)
 {
+	std::unique_lock<std::mutex> lock(_switchMutex);
 	if (_current != nullptr)
 	{
 		_current->resetMouseKeyboard();
@@ -283,6 +278,7 @@ void Window::setCurrentScene(Scene *scene)
 
 void Window::reloadScene(Scene *scene)
 {
+	std::unique_lock<std::mutex> lock(_switchMutex);
 	_current = scene;
 	_current->refresh();
 }

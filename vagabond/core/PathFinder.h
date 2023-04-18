@@ -75,11 +75,11 @@ public:
 		return _tasks;
 	}
 	
-	bool tryLockModel(Model *wanted);
-	void unlockModel(Model *wanted);
-	
 	void setup();
 	void start();
+	void stop();
+
+	std::unique_lock<std::mutex> tryLockLists();
 	
 	void sendValidationResult(FromToTask *task, bool valid, float linearity);
 	void sendUpdatedPath(Path *path, FromToTask *task);
@@ -93,11 +93,17 @@ public:
 	virtual void detachObject(PathTask *object);
 	virtual void updateObject(PathTask *object, int idx);
 
+	void updateNames();
 	virtual void finishedObjects();
 	
 	const float &linearityThreshold() const
 	{
 		return _linearityThreshold;
+	}
+	
+	const int &threadCount() const
+	{
+		return _threads;
 	}
 	
 	TorsionCluster *cluster() const
@@ -111,7 +117,6 @@ public:
 	}
 private:
 	void prepareObjects();
-	void prepareMutexList();
 	void prepareTaskBins();
 	void prepareMonitor();
 	void prepareValidationTasks();
@@ -139,8 +144,6 @@ private:
 	
 	PathJob *_handler = nullptr;
 	Monitor *_monitor = nullptr;
-	
-	std::map<Model *, std::mutex *> _resourceLocks;
 	
 	enum Stage
 	{
@@ -172,6 +175,7 @@ private:
 	TorsionCluster *_cluster = nullptr;
 	
 	float _linearityThreshold = 0.8;
+	int _threads = 8;
 };
 
 #endif

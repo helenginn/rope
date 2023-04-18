@@ -148,6 +148,8 @@ void Model::reload()
 
 bool Model::unload()
 {
+	std::unique_lock<std::mutex> lock(*_loadMutex);
+
 	if (_loadCounter == 0) { return false; } // don't unload twice!
 	_loadCounter--;
 //	std::cout << "Model " << name() << " load counter: " 
@@ -535,8 +537,6 @@ void Model::load(LoadOptions opts)
 	std::unique_lock<std::mutex> lock(*_loadMutex);
 
 	_loadCounter++;
-//	std::cout << "Model " << name() << " load counter: " 
-//	<< _loadCounter << std::endl;
 
 	if (_loadCounter > 1)
 	{

@@ -19,7 +19,9 @@
 #ifndef __vagabond__GeometryTable__
 #define __vagabond__GeometryTable__
 
+#include <vector>
 #include <string>
+#include <mutex>
 #include <set>
 #include <map>
 
@@ -30,6 +32,13 @@ class GeometryTable
 {
 public:
 	GeometryTable();
+	
+	static GeometryTable &table()
+	{
+		return _loadedGeometry;
+	}
+	
+	static GeometryTable &getAllGeometry();
 
 	void addGeometryLength(std::string code, std::string pName,
 	                       std::string qName, double mean, double stdev, 
@@ -51,7 +60,7 @@ public:
 	bool lengthExists(std::string code, std::string pName, std::string qName);
 
 	double length(std::string code, std::string pName, std::string qName, 
-	              bool links = false) const;
+	              bool links = false);
 
 	double length_stdev(std::string code, std::string pName, std::string qName);
 
@@ -82,6 +91,7 @@ public:
 	AtomGroup *constructResidue(std::string code, const ResidueId &id, 
 	                            int *atomNum, int terminal = 0);
 private:
+	void loadExtraGeometries(std::set<std::string> &files);
 	struct Value
 	{
 		double mean;
@@ -183,14 +193,18 @@ private:
 	                        std::string qName) const;
 
 	double checkAngleLinks(std::string code, std::string pName,
-	                       std::string qName, std::string rName);
+	                       std::string qName, std::string rName) const;
 
 	bool linkCodeMatches(std::string code, std::string query) const;
-	double angle(GeometryMap &map, std::string pName,
-	             std::string qName, std::string rName);
+	double angle(const GeometryMap &map, std::string pName,
+	             std::string qName, std::string rName) const;
 	
 	std::map<std::string, GeometryMap> _codes;
 	std::map<std::string, GeometryMap> _links;
+	
+	static GeometryTable _loadedGeometry;
+	std::set<std::string> _loadedFiles;
+	std::mutex *_mutex = nullptr;
 
 	bool _filterPeptides = false;
 };

@@ -18,14 +18,49 @@
 
 #include "GeometryTable.h"
 #include "AtomGroup.h"
+#include "CifFile.h"
 #include "Knotter.h"
+#include "Environment.h"
+#include "FileManager.h"
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/version.h>
 #include <iostream>
 
+GeometryTable GeometryTable::_loadedGeometry;
+
 GeometryTable::GeometryTable()
 {
+	_mutex = new std::mutex();
 
+}
+
+void GeometryTable::loadExtraGeometries(std::set<std::string> &files)
+{
+	std::unique_lock<std::mutex> lock(*_mutex);
+	
+	for (const std::string &file : files)
+	{
+		if (_loadedFiles.count(file))
+		{
+			continue;
+		}
+
+		CifFile cf(file);
+		cf.setGeometryTable(this);
+		cf.parse();
+		_loadedFiles.insert(file);
+	}
+}
+
+
+GeometryTable &GeometryTable::getAllGeometry()
+{
+	FileManager *fm = Environment::fileManager();
+	std::set<std::string> files = fm->geometryFiles();
+	files.insert("assets/geometry/standard_geometry.cif");
+
+	_loadedGeometry.loadExtraGeometries(files);
+	return _loadedGeometry;
 }
 
 void GeometryTable::addGeometryLength(std::string code, std::string pName,
@@ -166,7 +201,7 @@ double GeometryTable::length(const GeometryMap &map, std::string pName,
 }
 
 double GeometryTable::length(std::string code, std::string pName,
-                             std::string qName, bool links) const
+                             std::string qName, bool links) 
 {
 	if (_codes.count(code))
 	{
@@ -220,8 +255,8 @@ bool GeometryTable::angleExists(std::string code, std::string pName,
 	return angle(code, pName, qName, rName) >= 0;
 }
 
-double GeometryTable::angle(GeometryMap &map, std::string pName,
-                            std::string qName, std::string rName)
+double GeometryTable::angle(const GeometryMap &map, std::string pName,
+                            std::string qName, std::string rName) const
 {
 	AtomTriplet trio = {pName, qName, rName};
 	if (map.angles.count(trio) == 0)
@@ -229,7 +264,7 @@ double GeometryTable::angle(GeometryMap &map, std::string pName,
 		return -1;
 	}
 
-	Value &v = map.angles[trio];
+	const Value &v = map.angles.at(trio);
 
 	return v.mean;
 }
@@ -382,11 +417,11 @@ bool GeometryTable::linkCodeMatches(std::string code, std::string query) const
 }
 
 double GeometryTable::checkAngleLinks(std::string code, std::string pName,
-                                      std::string qName, std::string rName)
+                                      std::string qName, std::string rName) const
 {
-	std::map<std::string, GeometryMap>::iterator it;
+	std::map<std::string, GeometryMap>::const_iterator it;
 	
-	for (it = _links.begin(); it != _links.end(); it++)
+	for (it = _links.cbegin(); it != _links.cend(); it++)
 	{
 		std::string q = it->first;
 		bool match = linkCodeMatches(code, q);
@@ -396,7 +431,7 @@ double GeometryTable::checkAngleLinks(std::string code, std::string pName,
 			continue;
 		}
 		
-		GeometryMap &map = it->second;
+		const GeometryMap &map = it->second;
 		double a = angle(map, pName, qName, rName);
 
 		if (a >= 0)

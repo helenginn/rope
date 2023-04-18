@@ -37,6 +37,11 @@ public:
 	{
 		return _pathPool;
 	}
+	
+	void reportThreads()
+	{
+		std::cout << "Path threads: " << pool().threadCount() << std::endl;
+	}
 
 	virtual Pool<PathTask *> &pool()
 	{

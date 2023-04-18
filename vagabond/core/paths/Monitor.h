@@ -38,6 +38,11 @@ public:
 	Monitor(PathFinder *pf, std::vector<Instance *> list);
 
 	PCA::Matrix &matrix();
+	std::mutex &matMutex()
+	{
+		return _matrixMutex;
+	}
+
 	void addValidation(Instance *first, Instance *second, bool valid,
 	                   float linearity);
 	void updatePath(Instance *first, Instance *second, Path *path);
@@ -77,7 +82,8 @@ private:
 	
 	std::set<Path *> _paths;
 	
-	std::mutex _mutex;
+	std::mutex _mapMutex;
+	std::mutex _matrixMutex;
 };
 
 #endif

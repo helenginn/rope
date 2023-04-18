@@ -21,11 +21,12 @@
 
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/gui/elements/Image.h>
+#include <mutex>
 
 class MatrixPlot : public Image
 {
 public:
-	MatrixPlot(PCA::Matrix &mat);
+	MatrixPlot(PCA::Matrix &mat, std::mutex &mutex);
 
 	virtual void update();
 
@@ -42,6 +43,7 @@ private:
 	void setup();
 
 	PCA::Matrix &_mat;
+	std::mutex &_mutex;
 
 	float _xProp = 1;
 	float _yProp = 1;

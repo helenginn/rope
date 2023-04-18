@@ -33,7 +33,11 @@ Monitor::Monitor(PathFinder *pf, std::vector<Instance *> list)
 		_inst2Index[_instances[i]] = i;
 	}
 
-	setupMatrix(&_matrix, _instances.size(), _instances.size());
+	{
+		std::unique_lock<std::mutex> lock(_matrixMutex);
+		setupMatrix(&_matrix, _instances.size(), _instances.size());
+	}
+
 	setup();
 }
 
@@ -56,6 +60,7 @@ void Monitor::setup()
 
 PCA::Matrix &Monitor::matrix()
 {
+	std::unique_lock<std::mutex> lock(_matrixMutex);
 	for (int i = 0; i < _instances.size(); i++)
 	{
 		for (int j = 0; j < _instances.size(); j++)
@@ -91,9 +96,11 @@ PCA::Matrix &Monitor::matrix()
 void Monitor::addValidation(Instance *first, Instance *second, 
                             bool valid, float linearity)
 {
+	std::unique_lock<std::mutex> lock(_matrixMutex);
 	_results[first][second].passes++;
 	_results[first][second].valid = valid;
 	_results[first][second].linearity = linearity;
+	lock.unlock();
 	
 	matrix();
 }
@@ -108,7 +115,7 @@ void Monitor::setStatus(Instance *first, Instance *second, TaskType type)
 
 void Monitor::updatePath(Instance *first, Instance *second, Path *path)
 {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_mapMutex);
 	_paths.insert(path);
 	RouteResults &rr = _results[first][second];
 	if (rr.path)
@@ -121,14 +128,14 @@ void Monitor::updatePath(Instance *first, Instance *second, Path *path)
 
 int Monitor::passesForPath(Instance *first, Instance *second)
 {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_mapMutex);
 	RouteResults &rr = _results[first][second];
 	return rr.passes;
 }
 
 Path *Monitor::existingPath(Instance *first, Instance *second)
 {
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_mapMutex);
 	RouteResults &rr = _results[first][second];
 	return rr.path;
 }
@@ -137,7 +144,7 @@ TorsionCluster *Monitor::torsionClusterForPathDeviations(int steps)
 {
 	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup();
 
-	std::unique_lock<std::mutex> lock(_mutex);
+	std::unique_lock<std::mutex> lock(_mapMutex);
 	for (Path *path : _paths)
 	{
 		path->setStepCount(steps);

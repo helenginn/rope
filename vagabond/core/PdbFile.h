@@ -55,7 +55,6 @@ private:
 	void processResidue(gemmi::Residue &r, AtomInfo &ai);
 	void processAtom(gemmi::Atom &a, AtomInfo &ai, char conf);
 
-	void getStandardGeometry();
 	void parseFileContents();
 
 };

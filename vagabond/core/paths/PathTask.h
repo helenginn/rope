@@ -35,11 +35,6 @@ class PathTask : public Item
 public:
 	PathTask(PathFinder *pf);
 
-	bool tryLock();
-	void unlockAll();
-
-	bool tryLockModel(Model *m);
-	
 	virtual void run();
 	virtual bool runnable()
 	{

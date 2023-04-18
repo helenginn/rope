@@ -73,9 +73,8 @@ float RouteValidator::dotLastTwoVectors()
 		float dot = glm::dot(first, second);
 		float mag = sqrt(glm::length(vec1) * glm::length(vec2));
 		float norm = _distances[a];
-		float tolerance = 0.1;
 		
-		dot *= (norm + tolerance) / (mag + tolerance);
+		dot *= (norm + _tolerance) / (mag + _tolerance);
 		
 		if (dot < 0)
 		{

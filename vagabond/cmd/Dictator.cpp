@@ -261,12 +261,12 @@ bool Dictator::sanityCheck(std::string &first, std::string &last)
 
 void Dictator::processNextArg(std::string arg)
 {
-	std::cout << std::endl;
-	std::cout << "Processing next arg: " << "\"" << arg << 
-	"\"" << std::endl;
+//	std::cout << std::endl;
+//	std::cout << "Processing next arg: " << "\"" << arg << 
+//	"\"" << std::endl;
 	std::string first, last;
 	splitCommand(arg, &first, &last);
-	std::cout << first << " " << last << std::endl;
+//	std::cout << first << " " << last << std::endl;
 	
 	if (checkForFile(first, last))
 	{

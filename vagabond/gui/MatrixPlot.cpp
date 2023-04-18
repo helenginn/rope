@@ -20,8 +20,8 @@
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/utils/maths.h>
 
-MatrixPlot::MatrixPlot(PCA::Matrix &mat) 
-: Image("assets/images/pencil_shading.png"), _mat(mat)
+MatrixPlot::MatrixPlot(PCA::Matrix &mat, std::mutex &mutex) 
+: Image("assets/images/pencil_shading.png"), _mat(mat), _mutex(mutex)
 {
 	clearVertices();
 	setup();
@@ -51,7 +51,12 @@ glm::vec4 MatrixPlot::colourForValue(float val)
 
 void MatrixPlot::update()
 {
-	updateColours();
+	std::unique_lock<std::mutex> lock(_mutex, std::defer_lock);
+	
+	if (lock.try_lock())
+	{
+		updateColours();
+	}
 }
 
 void MatrixPlot::updateColours()
@@ -72,6 +77,7 @@ void MatrixPlot::updateColours()
 
 void MatrixPlot::prepareSmallVertices()
 {
+	std::unique_lock<std::mutex> lock(_mutex);
 	_index2Vertex.clear();
 	int matNum = 0;
 	int vertNum = 0;

@@ -36,6 +36,7 @@ void OptimiseTask::specificTasks()
 
 	PlausibleRoute *pr = findOrMakeRoute();
 	pr->shouldUpdateAtoms(false);
+	pr->setTargets();
 	pr->setCycles(1);
 	
 	if (_cycles > 1)
@@ -51,7 +52,13 @@ void OptimiseTask::specificTasks()
 		pr->setMinimumMagnitude(2);
 	}
 
+	float something = pr->routeScore(12);
+	float before = pr->routeScore(12);
 	PlausibleRoute::calculate(pr);
+	float after = pr->routeScore(12);
+	
+	std::cout << displayName() <<  ": from " << before << 
+	" to " << after << std::endl;
 
 	RouteValidator rv(*pr);
 

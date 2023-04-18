@@ -21,8 +21,6 @@
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>
 #include <fstream>
-#include "Environment.h"
-#include "FileManager.h"
 #include "PdbFile.h"
 #include "CifFile.h"
 #include "AtomGroup.h"
@@ -36,31 +34,7 @@ PdbFile::PdbFile(std::string filename) : File(filename)
 
 void PdbFile::getAllGeometry()
 {
-	getStandardGeometry();
-
-	FileManager *fm = Environment::fileManager();
-	std::set<std::string> geometries = fm->geometryFiles();
-
-	for (const std::string &file : geometries)
-	{
-		CifFile cf(file);
-		cf.setGeometryTable(_table);
-		cf.parse();
-	}
-}
-
-void PdbFile::getStandardGeometry()
-{
-	CifFile cf("assets/geometry/standard_geometry.cif");
-	cf.parse();
-
-	if (_table != nullptr)
-	{
-		delete _table;
-		_table = nullptr;
-	}
-
-	_table = cf.geometryTable();
+	_table = new GeometryTable(GeometryTable::getAllGeometry());
 }
 
 void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)

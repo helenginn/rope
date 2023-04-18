@@ -196,7 +196,7 @@ protected:
 
 	AtomGroup *_compAtoms = new AtomGroup();
 	AtomGroup *_macroAtoms = new AtomGroup();
-	GeometryTable *_table = new GeometryTable();
+	GeometryTable *_table = nullptr;
 	Metadata *_metadata = nullptr;
 	
 	std::map<std::string, std::string> _values;

@@ -369,9 +369,6 @@ void Instance::superposeOn(Instance *other)
 		glm::vec3 update = glm::vec3(tr * glm::vec4(d, 1.f));
 		a->setDerivedPosition(update);
 	}
-
-	/* should (will?) superimpose using these target values */
-	PdbFile::writeAtoms(myAtoms, "test3.pdb");
 }
 
 Atom *Instance::equivalentForAtom(Instance *other, Atom *atom)

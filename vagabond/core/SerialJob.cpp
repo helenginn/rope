@@ -23,6 +23,7 @@ template <class Obj, class Thr>
 SerialJob<Obj, Thr>::SerialJob(SerialJobResponder<Obj> *responder)
 {
 	_responder = responder;
+	pool().setName("main pool");
 }
 
 template <class Obj, class Thr>

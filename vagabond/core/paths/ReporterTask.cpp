@@ -24,14 +24,14 @@ ReporterTask::ReporterTask(PathFinder *pf) : PathTask(pf)
 
 }
 
-std::string ReporterTask::displayName() const
+void ReporterTask::updateName()
 {
-	std::string total = name();
+	_cache = name();
 
 	if (itemCount() == 0)
 	{
-		total += " (0)";
-		return total;
+		_cache += " (0)";
+		return;
 	}
 	
 	int num = 0;
@@ -50,8 +50,13 @@ std::string ReporterTask::displayName() const
 		}
 	}
 	
-	total += " (" + std::to_string(done) + " / " + std::to_string(num) + ")";
-	return total;
+	_cache += " (" + std::to_string(done) + " / " + std::to_string(num) + ")";
+	triggerResponse();
+}
+
+std::string ReporterTask::displayName() const
+{
+	return _cache;
 }
 
 size_t ReporterTask::incomplete() const

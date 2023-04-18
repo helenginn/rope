@@ -669,9 +669,6 @@ std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 		RingProgrammer *prog = new RingProgrammer(tmp);
 		_rammers.push_back(prog);
 	}
-
-//	RingProgrammer *prog = new RingProgrammer("assets/geometry/proline.json");
-//	_rammers.push_back(prog);
 	
 	return &_rammers;
 }

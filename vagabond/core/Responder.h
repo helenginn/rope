@@ -118,6 +118,14 @@ public:
 			}
 		}
 	}
+
+	virtual void triggerResponse()
+	{
+		for (R *responder : _responders)
+		{
+			responder->respond();
+		}
+	}
 protected:
 
 	virtual void sendResponse(std::string tag, void *object)
@@ -127,15 +135,6 @@ protected:
 			responder->sendObject(tag, object);
 		}
 	}
-
-	virtual void triggerResponse()
-	{
-		for (R *responder : _responders)
-		{
-			responder->respond();
-		}
-	}
-
 private:
 	std::vector<R *> _responders;
 
