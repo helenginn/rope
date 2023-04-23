@@ -24,6 +24,7 @@
 
 class LineGroup;
 class ImageButton;
+class Image;
 class Menu;
 class Item;
 
@@ -46,6 +47,8 @@ private:
 	void addBranch();
 	void addArrow();
 	void turnArrow();
+	
+	bool shouldHaveArrow();
 	void replaceContent();
 	/** prepare content of box */
 	void setup();
@@ -58,6 +61,7 @@ private:
 	Item *_item = nullptr;
 	LineGroup *_group = nullptr;
 	ImageButton *_triangle = nullptr;
+	Image *_dot = nullptr;
 	Renderable *_content = nullptr;
 };
 

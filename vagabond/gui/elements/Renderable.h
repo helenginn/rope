@@ -280,7 +280,7 @@ public:
 
 	void addToVertexArray(glm::vec3 add, std::vector<Vertex> *vs);
 	
-	static void changeSelectionResize(double resize)
+	void changeSelectionResize(double resize)
 	{
 		_selectionResize = resize;
 	}
@@ -380,6 +380,7 @@ protected:
 	GLfloat _focalPos[3];
 
 	glm::mat4x4 _model = glm::mat4(1.);
+	glm::mat4x4 _myModel = glm::mat4(1.);
 	glm::mat4x4 _proj = glm::mat4(1.);
 	glm::mat4x4 _unproj = glm::mat4(1.);
 	GLuint _texid = 0;
@@ -422,7 +423,9 @@ protected:
 	};
 	
 	RaySearch _searchType = Default;
+	double _selectionResize = 1.1;
 private:
+	glm::mat4x4 getModel();
 	void deleteTextures();
 	void rebindVBOBuffers();
 	void unbindVBOBuffers();
@@ -465,7 +468,6 @@ private:
 	bool _setupBuffers = false;
 	int _currVertex = -1;
 	int _renderCount = 0;
-	static double _selectionResize;
 };
 
 #endif

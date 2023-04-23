@@ -25,7 +25,9 @@
 #include <set>
 #include <vagabond/core/Responder.h>
 
+class ButtonResponder;
 class Menu;
+class Box;
 
 class Item : public HasResponder<Responder<Item> >
 {
@@ -87,7 +89,7 @@ public:
 		return _items.size();
 	}
 	
-	std::vector<Item *> &items()
+	const std::vector<Item *> &items() const
 	{
 		return _items;
 	}
@@ -107,6 +109,7 @@ public:
 	void toggleCollapsed()
 	{
 		_collapsed = !_collapsed;
+		triggerResponse();
 	}
 	
 	bool collapsed() const
@@ -151,6 +154,23 @@ public:
 	
 	/** pushes an item to the end of the list */
 	void addItem(Item *item);
+	
+	/** pushes an item to a specific point in the list */
+	void addItemAfter(Item *item, Item *after);
+	
+	void setSelected(bool selected)
+	{
+		_selected = selected;
+		triggerResponse();
+	}
+	
+	const bool &isSelected() const
+	{
+		return _selected;
+	}
+	
+	size_t selectedInTree() const;
+	void deselectAll();
 
 	/** to be overridden by derived classes: in the event of a right-click
 	 * menu. If a non-GUI item, add options instead. */
@@ -159,10 +179,20 @@ public:
 		return nullptr;
 	}
 	
+	virtual Box *customRenderable(ButtonResponder *parent)
+	{
+		return nullptr;
+	}
+	
 	virtual std::map<std::string, std::string> menuOptions() const
 	{
 		return std::map<std::string, std::string>();
 	}
+
+	void readdress();
+	
+	Item *previousItem();
+	Item *nextItem();
 protected:
 	/** to be overridden by derived classes: to implement anything that needs
 	 * to be done before the final delete. */
@@ -173,18 +203,25 @@ protected:
 		return _name;
 	}
 private:
+	void sanityCheckItem(Item *item);
 	void deleteSelf();
 	void deleteChildren();
 
 	void resolveDeletion();
 	
+	void readdressParents();
 	bool hasAncestor(Item *item);
-	static std::string issueNextTag();
+	std::string issueNextTag();
 	
 	void setParent(Item *item)
 	{
 		_parent = item;
 	}
+	
+	Item *topLevel();
+	const Item *constTopLevel() const;
+	void addToSelectedCount(size_t &count) const;
+	void deselectAllCascade();
 	
 	std::string _tag;
 	
@@ -198,6 +235,8 @@ private:
 	bool _deleted = false;
 	bool _collapsed = false;
 	bool _neverUnfold = false;
+	
+	bool _selected = false;
 
 	std::string _name;
 	

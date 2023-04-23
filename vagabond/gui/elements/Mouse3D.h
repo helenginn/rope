@@ -19,53 +19,16 @@
 #ifndef __vagabond__Mouse3D__
 #define __vagabond__Mouse3D__
 
-#include "Scene.h"
+#include "Mouse2D.h"
 
 class SelectionBox;
 
-class Mouse3D : virtual public Scene
+class Mouse3D : virtual public Mouse2D
 {
 public:
 	Mouse3D(Scene *prev = nullptr);
-	virtual ~Mouse3D();
 
 	virtual void mouseMoveEvent(double x, double y);
-	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
-	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
-
-	void setControls(const bool controls)
-	{
-		_controls = false;
-	}
-protected:
-	virtual void sendSelection(float t, float l, float b, float r,
-	                           bool inverse);
-
-	void setMakesSelections(bool makes = true)
-	{
-		_makesSelections = makes;
-	}
-private:
-	void interpretMouseButton(SDL_MouseButtonEvent button, bool dir);
-
-	void updateSpinMatrix();
-	void updateSelectionBox();
-	
-	void regulariseBox();
-	
-	glm::mat3x3 _spin;
-
-	bool _controls = true;
-	bool _makesSelections = false;
-	
-	bool _makingSelection = false;
-	bool _reducingSelection = false;
-	float _topPos = 0;
-	float _leftPos = 0;
-	float _rightPos = 0;
-	float _bottomPos = 0;
-	
-	SelectionBox *_box = nullptr;
 };
 
 #endif

@@ -62,6 +62,7 @@ void ItemLine::addBranch()
 	image->resize(0.01);
 	image->setLeft(branch_indent, 0.0);
 	addObject(image);
+	_dot = image;
 }
 
 void ItemLine::turnArrow()
@@ -91,23 +92,37 @@ void ItemLine::turnArrow()
 	                              glm::vec3(0., 0., -1.)));
 	_triangle->rotateRoundCentre(rot);
 	_triangle->rotateRoundCentre(mat);
+
+	forceRender();
 }
 
 void ItemLine::update()
 {
 	if (_update)
 	{
+		if (shouldHaveArrow() && !_triangle)
+		{
+			addArrow();
+		}
+
 		turnArrow();
 		replaceContent();
+		_group->refreshGroups();
 		_update = false;
 	}
+}
+
+bool ItemLine::shouldHaveArrow()
+{
+	bool arrow = (_item->itemCount() > 0) && _item->canUnfold();
+	return arrow;
 }
 
 void ItemLine::addArrow()
 {
 	size_t depth = _item->depth();
 	
-	bool arrow = (_item->itemCount() > 0);
+	bool arrow = shouldHaveArrow();
 	float start_indent = (float)depth * _unitHeight;
 	_displayCollapse = _item->collapsed();
 
@@ -115,12 +130,19 @@ void ItemLine::addArrow()
 	{
 		ImageButton *b = new ImageButton("assets/images/triangle.png", _group);
 		b->rescale(0.025, 0.025);
-		b->setLeft(start_indent, 0.0);
+		b->setLeft(start_indent + xy().x, 0.0 + xy().y);
 		b->setReturnTag("toggle_" + _item->tag());
 		addObject(b);
 		_displayCollapse = false;
 		_triangle = b;
 		turnArrow();
+	}
+	
+	if (_dot)
+	{
+		removeObject(_dot);
+		delete _dot;
+		_dot = nullptr;
 	}
 }
 
@@ -159,7 +181,7 @@ void ItemLine::setup()
 {
 	replaceContent();
 
-	bool arrow = (_item->itemCount() > 0) && _item->canUnfold();
+	bool arrow = shouldHaveArrow();
 	
 	if (arrow)
 	{
@@ -173,18 +195,20 @@ void ItemLine::setup()
 
 Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 {
-	Text *text = nullptr;
-	if (_item->isEditable())
+	Box *text = nullptr;
+	text = _item->customRenderable(parent);
+
+	if (!text && _item->isEditable())
 	{
 		text = new TextEntry(_item->displayName(), parent);
 	}
-	else if (_item->isSelectable())
+	else if (!text && _item->isSelectable())
 	{
 		TextButton *tb = new TextButton(_item->displayName(), parent);
 		tb->setReturnTag("select_" + _item->tag());
 		text = tb;
 	}
-	else if (!_item->isSelectable())
+	else if (!text && !_item->isSelectable())
 	{
 		text = new Text(_item->displayName(), Font::Thin, true);
 	}

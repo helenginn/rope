@@ -82,7 +82,17 @@ public:
 		return _proj;
 	}
 
+	glm::mat4x4 unProjection()
+	{
+		return _unproj;
+	}
+
 	void saveImage(std::string filename);
+	
+	const bool &shiftPressed() const
+	{
+		return _shiftPressed;
+	}
 
 	glm::vec3 transformPosByModel(glm::vec3 pos)
 	{

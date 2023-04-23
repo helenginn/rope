@@ -40,6 +40,7 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	setReturnTag(tag);
 	
 	setDismissible(true);
+	te->click(true);
 }
 
 AskForText::~AskForText()

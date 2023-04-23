@@ -27,9 +27,7 @@ std::mutex Item::_tagMutex;
 
 Item::Item()
 {
-	std::unique_lock<std::mutex> lock(_tagMutex);
-	_tag = issueNextTag();
-	_tag2Item[_tag] = this;
+	issueNextTag();
 }
 
 Item::~Item()
@@ -40,8 +38,11 @@ Item::~Item()
 
 std::string Item::issueNextTag()
 {
+	std::unique_lock<std::mutex> lock(_tagMutex);
 	_tagNum++;
 	std::string tag = "tag_" + std::to_string(_tagNum);
+	_tag = tag;
+	_tag2Item[_tag] = this;
 	return tag;
 }
 
@@ -62,7 +63,7 @@ bool Item::hasAncestor(Item *item)
 	return false;
 }
 
-void Item::addItem(Item *item)
+void Item::sanityCheckItem(Item *item)
 {
 	if (item == nullptr)
 	{
@@ -82,8 +83,40 @@ void Item::addItem(Item *item)
 		throw std::runtime_error("Item already has a parent.");
 	}
 
+}
+
+void Item::addItemAfter(Item *item, Item *after)
+{
+	if (after == nullptr)
+	{
+		addItem(item);
+		return;
+	}
+
+	sanityCheckItem(item);
+	
+	auto it = std::find(_items.begin(), _items.end(), after);
+	
+	if (it == _items.end())
+	{
+		throw std::runtime_error("Cannot add item after another, isn't here");
+	}
+
+	it++;
+
+	item->setParent(this);
+	_items.insert(it, item);
+	childChanged();
+}
+
+
+void Item::addItem(Item *item)
+{
+	sanityCheckItem(item);
+
 	item->setParent(this);
 	_items.push_back(item);
+	childChanged();
 }
 
 bool Item::removeItem(Item *item)
@@ -130,7 +163,9 @@ void Item::deleteItem()
 	if (_parent)
 	{
 		_parent->removeItem(this);
+		_parent->childChanged();
 	}
+	
 }
 
 void Item::resolveDeletion()
@@ -172,4 +207,138 @@ size_t Item::depth() const
 void Item::childChanged()
 {
 	triggerResponse();
+}
+
+Item *Item::previousItem()
+{
+	if (!_parent)
+	{
+		return nullptr;
+	}
+	
+	std::vector<Item *> siblings = _parent->items();
+
+	auto it = std::find(siblings.begin(), siblings.end(), this);
+	
+	if (it == siblings.end())
+	{
+		throw std::runtime_error("Can't find self in parent");
+	}
+	
+	// first item, so return parent as previous item
+	if (it == siblings.begin())
+	{
+		return _parent;
+	}
+
+	it--;
+	return *it;
+}
+
+Item *Item::nextItem()
+{
+	if (itemCount() == 0)
+	{
+		std::vector<Item *> siblings = _parent->items();
+		auto it = std::find(siblings.begin(), siblings.end(), this);
+
+		if (it == siblings.end())
+		{
+			throw std::runtime_error("Can't find self in parent");
+		}
+
+		it++;
+
+		// last item, so return next item of parent
+		if (it == siblings.end())
+		{
+			return _parent->nextItem();
+		}
+
+		return *it;
+	}
+
+	return _items.front();
+
+}
+
+void Item::readdress()
+{
+	_tag2Item.clear();
+	_tagNum = 0;
+
+	readdressParents();
+}
+
+void Item::readdressParents()
+{
+	issueNextTag();
+
+	for (Item *item : _items)
+	{
+		item->setParent(this);
+		item->readdressParents();
+	}
+
+}
+
+const Item *Item::constTopLevel() const
+{
+	const Item *top = this;
+	
+	while (top->parent())
+	{
+		top = top->parent();
+	}
+
+	return top;
+}
+
+Item *Item::topLevel() 
+{
+	Item *top = this;
+	
+	while (top->parent())
+	{
+		top = top->parent();
+	}
+
+	return top;
+}
+
+size_t Item::selectedInTree() const
+{
+	size_t count = 0;
+	const Item *top = constTopLevel();
+
+	top->addToSelectedCount(count);
+	return count;
+}
+
+void Item::addToSelectedCount(size_t &count) const
+{
+	for (Item *item : _items)
+	{
+		item->addToSelectedCount(count);
+	}
+
+	count += (_selected ? 1 : 0);
+}
+
+void Item::deselectAll()
+{
+	topLevel()->deselectAllCascade();
+
+}
+
+void Item::deselectAllCascade()
+{
+	for (Item *next : _items)
+	{
+		next->deselectAllCascade();
+	}
+	
+	_selected = false;
+	triggerResponse();
+
 }

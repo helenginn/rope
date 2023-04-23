@@ -56,7 +56,7 @@ Renderable *HasRenderables::findObject(double x, double y)
 		objs[i]->unMouseOver();
 	}
 
-	for (size_t i = 0; i < objs.size(); i++)
+	for (int i = objs.size() - 1; i >= 0; i--)
 	{
 		Renderable *r = objs[i];
 
@@ -154,6 +154,7 @@ void HasRenderables::addObject(Renderable *r)
 	
 	if (it == _objects.end())
 	{
+		modify(r);
 		_objects.push_back(r);
 	}
 	else
@@ -177,8 +178,14 @@ void HasRenderables::deleteTemps()
 			_dragged = nullptr;
 		}
 
-		r->deleteObjects(true);
+		if (_chosen == r)
+		{
+			_chosen = nullptr;
+		}
+
 		removeObject(r);
+		r->deleteObjects(true);
+		delete r;
 	}
 
 	_temps.clear();

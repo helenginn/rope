@@ -34,6 +34,8 @@ public:
 	LineGroup(Item *item, Scene *sender = nullptr);
 
 	void setup();
+	void refreshGroups();
+
 	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void finishedDragging(std::string tag, double x, double y);
 private:

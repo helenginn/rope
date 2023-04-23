@@ -43,6 +43,8 @@ cfile,
 'Menu.cpp',
 'Modal.cpp',
 'Mouse3D.cpp',
+'Mouse2D.cpp',
+'Mouse2D.h',
 'Quad.cpp',
 'Renderable.cpp',
 'Scene.cpp',
@@ -89,7 +91,7 @@ cfile,
 'Window.h',
 ]
 
-#install_headers([
+install_headers([
 #'AskYesNo.h',
 #'AskForText.h',
 #'BadChoice.h',
@@ -120,13 +122,21 @@ cfile,
 #'TextEntry.h',
 #'TextManager.h',
 #'upload.h',
-#'Window.h',
-#],
-#subdir : 'vagabond/gui/elements')
+'Window.h',
+],
+subdir : 'vagabond/gui/elements')
+
+pkg = import('pkgconfig')
 
 guielements = static_library('vagguielements', guielementfiles,
 	cpp_args: ['-std=c++11', compile_args],
 	include_directories: ['../../..'],
 	link_args: [links],
-	dependencies : deps, install: false)
+	dependencies : deps, install: true)
 
+pkg.generate([guielements],
+             subdirs : [''],
+             version : '1.0',
+             name : 'guielements',
+             filebase : 'guielements',
+             description : 'Library for helen guielements')

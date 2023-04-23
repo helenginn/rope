@@ -52,7 +52,7 @@ private:
 	glm::vec3 bottomRightLimit();
 	glm::vec3 boxLimit();
 
-	glm::vec3 _centre;
+	glm::vec3 _centre = glm::vec3{};
 	std::string _tag;
 	double _xspan;
 	double _yspan;

@@ -16,8 +16,6 @@
 #include <SDL2/SDL.h>
 #include <vagabond/core/matrix_functions.h>
 
-double Renderable::_selectionResize = 1.1;
-
 void Renderable::addToVertexArray(glm::vec3 add, std::vector<Vertex> *vs)
 {
 	for (size_t i = 0; i < vs->size(); i++)
@@ -492,6 +490,11 @@ bool Renderable::checkErrors(std::string what)
 	return (err != 0);
 }
 
+glm::mat4x4 Renderable::getModel()
+{
+	return _myModel * _gl->getModel();
+}
+
 void Renderable::render(SnowGL *sender)
 {
 	if (_disabled)
@@ -519,7 +522,7 @@ void Renderable::render(SnowGL *sender)
 		rebindVBOBuffers();
 		checkErrors("rebinding program");
 
-		_model = sender->getModel();
+		_model = getModel();
 		_uModel = glGetUniformLocation(_program, "model");
 		_glModel = glm::transpose(model());
 		glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
@@ -916,7 +919,7 @@ bool Renderable::intersectsPolygon(double x, double y, double *z)
 
 		for (int j = 0; j < 3; j++)
 		{
-			projs[j] = _vertices[_indices[i+j]].pos;
+			projs[j] = _myModel * glm::vec4(_vertices[_indices[i+j]].pos, 1.);
 		}
 
 		bool passes = nPolygon(target, projs, 2);

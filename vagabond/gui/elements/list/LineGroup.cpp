@@ -18,6 +18,7 @@
 
 #include "LineGroup.h"
 #include "ItemLine.h"
+#include "../Slider.h"
 #include <vagabond/core/Item.h>
 #include "../Button.h"
 #include "../Menu.h"
@@ -68,6 +69,36 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 		setup();
 	}
 
+}
+
+void LineGroup::refreshGroups()
+{
+	bool same = (_groups.size() == _item->itemCount());
+
+	for (size_t i = 0; i < _groups.size() && same; i++)
+	{
+		if (_groups[i]->_item != _item->item(i))
+		{
+			same = false;
+		}
+	}
+
+	if (same)
+	{
+		return;
+	}
+
+	for (LineGroup *grp : _groups)
+	{
+		removeObject(grp);
+		delete grp;
+	}
+
+	_groups.clear();
+	setupGroups();
+	reorganiseGroups();
+
+	_topLevel->reorganiseHeights();
 }
 
 void LineGroup::setupGroups()
@@ -137,6 +168,7 @@ Menu *LineGroup::prepareMenu()
 	if (!menu)
 	{
 		menu = new Menu(_scene);
+		menu->setReturnObject(_item);
 		std::map<std::string, std::string> options = _item->menuOptions();
 		
 		if (options.size() == 0)
@@ -193,6 +225,7 @@ void LineGroup::setup()
 
 void LineGroup::reorganiseHeights()
 {
+	removeObject(_slider);
 	glm::vec2 tmp = xy();
 	std::cout << std::endl;
 	resetGroups();

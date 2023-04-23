@@ -21,6 +21,7 @@ public:
 	void deleteObjects(bool recursive = false);
 	
 	void addObject(Renderable *r);
+	virtual void modify(Renderable *r) {};
 	void addTempObject(Renderable *r);
 	
 	void deleteTemps();
@@ -54,7 +55,7 @@ public:
 	virtual void doThingsCircuit();
 	virtual void doThings() {};
 
-	Renderable *findObject(double x, double y);
+	virtual Renderable *findObject(double x, double y);
 	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
 protected:
 	void clearHighlights();
