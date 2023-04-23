@@ -169,7 +169,7 @@ Menu *LineGroup::prepareMenu()
 	{
 		menu = new Menu(_scene);
 		menu->setReturnObject(_item);
-		std::map<std::string, std::string> options = _item->menuOptions();
+		std::unordered_map<std::string, std::string> options = _item->menuOptions();
 		
 		if (options.size() == 0)
 		{

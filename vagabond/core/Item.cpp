@@ -165,7 +165,20 @@ void Item::deleteItem()
 		_parent->removeItem(this);
 		_parent->childChanged();
 	}
+}
+
+void Item::removeSelf(bool null_parent)
+{
+	if (_parent)
+	{
+		_parent->removeItem(this);
+		_parent->childChanged();
+	}
 	
+	if (null_parent)
+	{
+		_parent = nullptr;
+	}
 }
 
 void Item::resolveDeletion()
@@ -340,5 +353,27 @@ void Item::deselectAllCascade()
 	
 	_selected = false;
 	triggerResponse();
+}
 
+std::vector<Item *> Item::selectedItems()
+{
+	std::vector<Item *> results;
+	Item *top = topLevel();
+	top->addSelectedToList(results);
+	return results;
+}
+
+void Item::addSelectedToList(std::vector<Item *> &list)
+{
+	if (_selected)
+	{
+		list.push_back(this);
+	}
+	else
+	{
+		for (Item *next : _items)
+		{
+			next->addSelectedToList(list);
+		}
+	}
 }

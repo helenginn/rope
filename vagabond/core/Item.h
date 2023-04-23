@@ -21,6 +21,7 @@
 
 #include <string>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <set>
 #include <vagabond/core/Responder.h>
@@ -171,6 +172,8 @@ public:
 	}
 	
 	size_t selectedInTree() const;
+	std::vector<Item *> selectedItems();
+	void removeSelf(bool null_parent);
 	void deselectAll();
 
 	/** to be overridden by derived classes: in the event of a right-click
@@ -185,9 +188,9 @@ public:
 		return nullptr;
 	}
 	
-	virtual std::map<std::string, std::string> menuOptions() const
+	virtual std::unordered_map<std::string, std::string> menuOptions() const
 	{
-		return std::map<std::string, std::string>();
+		return std::unordered_map<std::string, std::string>();
 	}
 
 	void readdress();
@@ -222,6 +225,7 @@ private:
 	Item *topLevel();
 	const Item *constTopLevel() const;
 	void addToSelectedCount(size_t &count) const;
+	void addSelectedToList(std::vector<Item *> &list);
 	void deselectAllCascade();
 	
 	std::string _tag;
