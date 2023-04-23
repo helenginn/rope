@@ -444,7 +444,6 @@ bool PlausibleRoute::flipTorsions(bool main)
 	startTicker("Flipping torsions");
 	bool changed = false;
 
-	bringTorsionsToRange();
 	_bestScore = routeScore(flipNudgeCount());
 	
 	for (size_t i = 0; i < destinationSize(); i++)

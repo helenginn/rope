@@ -124,7 +124,7 @@ void Monitor::updatePath(Instance *first, Instance *second, Path *path)
 		delete rr.path;
 	}
 	rr.path = path;
-	path->setContributeToSVD(true);
+//	path->setContributeToSVD(true);
 	Environment::pathManager()->insertOrReplace(*path);
 }
 

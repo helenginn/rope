@@ -19,6 +19,8 @@
 #include "FromToTask.h"
 #include "PathFinder.h"
 #include "../Path.h"
+#include "../PathManager.h"
+#include "../Environment.h"
 #include "../Instance.h"
 #include "../RopeCluster.h"
 #include "../SplitRoute.h"
@@ -43,6 +45,21 @@ PlausibleRoute *FromToTask::makeRoute(Path &path)
 	return pr;
 }
 
+PlausibleRoute *FromToTask::findRouteOrMakeNew()
+{
+	std::vector<Path *> paths;
+	paths = Environment::pathManager()->pathsBetweenInstances(_from, _to);
+
+	if (paths.size() == 0)
+	{
+		return makeNewRoute();
+	}
+	else
+	{
+		return makeRoute(*paths[0]);
+	}
+}
+
 PlausibleRoute *FromToTask::makeNewRoute()
 {
 	int l = _pf->cluster()->dataGroup()->length();
@@ -59,6 +76,7 @@ PlausibleRoute *FromToTask::makeNewRoute()
 
 	sr->setAtoms(from()->currentAtoms());
 	sr->setup();
+	sr->bringTorsionsToRange();
 
 	return sr;
 }
@@ -69,7 +87,7 @@ PlausibleRoute *FromToTask::findOrMakeRoute()
 
 	if (!path)
 	{
-		return makeNewRoute();
+		return findRouteOrMakeNew();
 	}
 	else
 	{

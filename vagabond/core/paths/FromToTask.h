@@ -46,6 +46,7 @@ public:
 	}
 protected:
 	PlausibleRoute *makeRoute(Path &path);
+	PlausibleRoute *findRouteOrMakeNew();
 	PlausibleRoute *makeNewRoute();
 
 	Instance *_from = nullptr;

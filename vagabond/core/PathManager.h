@@ -35,6 +35,8 @@ public:
 	}
 	
 	std::vector<Path *> pathsForInstance(Instance *mol);
+	std::vector<Path *> pathsBetweenInstances(Instance *first, 
+	                                          Instance *second);
 
 	void housekeeping();
 	

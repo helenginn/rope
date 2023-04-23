@@ -64,3 +64,20 @@ std::vector<Path *> PathManager::pathsForInstance(Instance *inst)
 
 	return paths;
 }
+
+std::vector<Path *> PathManager::pathsBetweenInstances(Instance *first,
+                                                       Instance *second)
+{
+	std::vector<Path *> paths;
+
+	for (Path &p : _objects)
+	{
+		p.housekeeping();
+		if (p.startInstance() == first && p.endInstance() == second)
+		{
+			paths.push_back(&p);
+		}
+	}
+
+	return paths;
+}
