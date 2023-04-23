@@ -8,6 +8,7 @@ class Image : virtual public Box
 {
 public:
 	Image(std::string filename);
+	Image(int texid);
 	
 	void changeImage(std::string filename);
 

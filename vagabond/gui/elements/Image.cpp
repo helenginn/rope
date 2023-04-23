@@ -16,6 +16,16 @@ Image::Image(std::string filename) : Box()
 	makeQuad();
 }
 
+Image::Image(int texid) : Box()
+{
+	_texid = texid;
+	Library::getLibrary()->textureDetails(texid, &_w, &_h);
+	setFragmentShaderFile("assets/shaders/box.fsh");
+	setVertexShaderFile("assets/shaders/box.vsh");
+	setName("Image texid: " + std::to_string(_texid));
+	makeQuad();
+}
+
 void Image::makeQuad()
 {
 	Box::makeQuad();

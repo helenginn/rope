@@ -35,6 +35,8 @@ public:
 	GLuint allocateEmptyTexture(int w, int h, std::string tag);
 	GLuint getProgram(std::string v, std::string g, std::string f);
 	void setProgram(Renderable *fl, std::string v, std::string g, std::string f);
+	GLuint bindBytes(unsigned char *bytes, int w, int h);
+	void textureDetails(GLuint id, int *w, int *h);
 
 	void dropTexture(GLuint tex);
 	static void correctFilename(std::string &filename);
@@ -56,14 +58,16 @@ private:
 
 	GLuint loadSurface(SDL_Surface *image, std::string filename, bool wrap);
 	SDL_Surface *loadImage(std::string filename);
+	bool hasTexture(std::string key, GLuint &id, int *w, int *h);
+	void registerTexture(std::string key, GLuint &id, int w, int h);
 	static Library *_library;
 	static std::string _nativePath;
 
 	std::vector<GLuint> _texids;
 	std::map<GLuint, int> _counts;
 	std::map<std::string, GLuint> _textures;
-	std::map<std::string, int> _widths;
-	std::map<std::string, int> _heights;
+	std::map<GLuint, int> _widths;
+	std::map<GLuint, int> _heights;
 	std::map<ShaderTrio, GLuint> _trios;
 };
 

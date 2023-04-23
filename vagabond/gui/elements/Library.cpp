@@ -47,20 +47,10 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 		return 0;
 	}
 
-	if (filename.length() > 0 && _textures.count(filename) > 0)
+	GLuint existing;
+	if (hasTexture(filename, existing, w, h))
 	{
-		if (w != NULL)
-		{
-			*w = _widths[filename];
-		}
-		if (h != NULL)
-		{
-			*h = _heights[filename];
-		}
-
-		_counts[_textures[filename]]++;
-
-		return _textures[filename];
+		return existing;
 	}
 
 	SDL_Surface *image = loadImage(filename);
@@ -72,8 +62,8 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 
 	GLuint tex = loadSurface(image, filename, wrap);
 	
-	_widths[filename] = image->w;
-	_heights[filename] = image->h;
+	_widths[tex] = image->w;
+	_heights[tex] = image->h;
 	
 	if (w != NULL)
 	{
@@ -128,6 +118,29 @@ SDL_Surface *Library::loadImage(std::string filename)
 	return surface;
 }
 
+GLuint Library::bindBytes(unsigned char *bytes, int w, int h)
+{
+	GLuint texid = 0;
+	glGenTextures(1, &texid);
+	glBindTexture(GL_TEXTURE_2D, texid);
+
+	GLint intform = GL_RGBA;
+	GLenum myform = GL_RGBA;
+
+	glTexImage2D(GL_TEXTURE_2D, 0, intform, w, h,
+	             0, myform, GL_UNSIGNED_BYTE, bytes);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
+
+	registerTexture("", texid, w, h);
+
+	return texid;
+}
+
 GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 {
 	if (text == "")
@@ -144,22 +157,8 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 		TextManager::text_free(&bytes);
 		return 0;
 	}
-
-	GLuint texid = 0;
-	glGenTextures(1, &texid);
-	glBindTexture(GL_TEXTURE_2D, texid);
-
-	GLint intform = GL_RGBA;
-	GLenum myform = GL_RGBA;
-
-	glTexImage2D(GL_TEXTURE_2D, 0, intform, *w, *h,
-	             0, myform, GL_UNSIGNED_BYTE, bytes);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
+	
+	GLuint texid = bindBytes(bytes, *w, *h);
 
 	TextManager::text_free(&bytes);
 
@@ -230,11 +229,7 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_param); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_param);  
 
-	if (filename.length() > 0)
-	{
-		_textures[filename] = texid;
-		_counts[texid] = 1;
-	}
+	registerTexture(filename, texid, image->w, image->h);
 	
 	return texid;
 }
@@ -291,4 +286,51 @@ void Library::dropTexture(GLuint tex)
 	{
 		_counts[tex]--;
 	}
+}
+
+void Library::textureDetails(GLuint id, int *w, int *h)
+{
+	if (w != NULL)
+	{
+		*w = _widths[id];
+	}
+	if (h != NULL)
+	{
+		*h = _heights[id];
+	}
+}
+
+bool Library::hasTexture(std::string key, GLuint &id, int *w, int *h)
+{
+	if (key.length() > 0 && _textures.count(key) > 0)
+	{
+		id = _textures[key];
+
+		if (w != NULL)
+		{
+			*w = _widths[id];
+		}
+		if (h != NULL)
+		{
+			*h = _heights[id];
+		}
+
+		_counts[_textures[key]]++;
+
+		return true;
+	}
+	
+	return false;
+}
+
+void Library::registerTexture(std::string key, GLuint &id, int w, int h)
+{
+	_widths[id] = w;
+	_heights[id] = h;
+	if (key.length() > 0)
+	{
+		_textures[key] = id;
+	}
+
+	_counts[id]++;
 }
