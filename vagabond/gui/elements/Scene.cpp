@@ -346,7 +346,7 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 {
 	interpretControlKey(pressed, true);
 
-	if (_keyResponder == nullptr)
+	if (!keyResponder())
 	{
 		if (_modal)
 		{
@@ -359,7 +359,7 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 		return;
 	}
 
-	_keyResponder->keyPressed(pressed);
+	keyResponder()->keyPressed(pressed);
 }
 
 

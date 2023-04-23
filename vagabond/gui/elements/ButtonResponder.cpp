@@ -16,38 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __practical__KeyResponder__
-#define __practical__KeyResponder__
-
-#include <string>
-#include <SDL2/SDL.h>
-
-class KeyResponder;
-
 #include "ButtonResponder.h"
+#include "KeyResponder.h"
 
-class KeyResponder
+void ButtonResponder::setKeyResponder(KeyResponder *kr)
 {
-public:
-	KeyResponder() {};
-	virtual ~KeyResponder()
+	_keyResponders.push_back(kr);
+	kr->setButtonResponder(this);
+}
+
+void ButtonResponder::unsetKeyResponder(KeyResponder *kr)
+{
+	auto it = std::find(_keyResponders.begin(), _keyResponders.end(), kr);
+	if (it != _keyResponders.end())
 	{
-		if (_br)
-		{
-			_br->unsetKeyResponder(this);
-		}
+		_keyResponders.erase(it);
+		kr->setButtonResponder(nullptr);
 	}
-	virtual void keyPressed(char key) = 0;
-	virtual void keyPressed(SDL_Keycode other) = 0;
-	virtual void setButtonResponder(ButtonResponder *br)
-	{
-		_br = br;
-	}
-	virtual void finish() {};
-protected:
-	ButtonResponder *_br = nullptr;
-};
-
-
-#endif
-
+}

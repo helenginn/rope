@@ -124,7 +124,7 @@ void TextEntry::keyPressed(char key)
 
 void TextEntry::finish()
 {
-	_sender->setKeyResponder(nullptr);
+	_sender->unsetKeyResponder(this);
 	_active = false;
 	showInsert();
 	Button::click();
