@@ -106,6 +106,7 @@ void Item::addItemAfter(Item *item, Item *after)
 
 	item->setParent(this);
 	_items.insert(it, item);
+	item->itemAdded();
 	childChanged();
 }
 
@@ -116,6 +117,7 @@ void Item::addItem(Item *item)
 
 	item->setParent(this);
 	_items.push_back(item);
+	item->itemAdded();
 	childChanged();
 }
 
@@ -222,22 +224,32 @@ void Item::childChanged()
 	triggerResponse();
 }
 
-Item *Item::previousItem()
+Item *Item::previousItem(bool enter_set)
 {
-	if (!_parent)
+	if (!_parent && !enter_set)
 	{
 		return nullptr;
 	}
 	
+	if (enter_set && itemCount() > 0)
+	{
+		return item(itemCount() - 1);
+	}
+	
+	if (enter_set && itemCount() == 0)
+	{
+		return this;
+	}
+
 	std::vector<Item *> siblings = _parent->items();
 
 	auto it = std::find(siblings.begin(), siblings.end(), this);
-	
+
 	if (it == siblings.end())
 	{
 		throw std::runtime_error("Can't find self in parent");
 	}
-	
+
 	// first item, so return parent as previous item
 	if (it == siblings.begin())
 	{
@@ -245,12 +257,12 @@ Item *Item::previousItem()
 	}
 
 	it--;
-	return *it;
+	return (*it)->previousItem(true);
 }
 
-Item *Item::nextItem()
+Item *Item::nextItem(bool enter_set)
 {
-	if (itemCount() == 0)
+	if ((itemCount() == 0 || !enter_set) && _parent)
 	{
 		std::vector<Item *> siblings = _parent->items();
 		auto it = std::find(siblings.begin(), siblings.end(), this);
@@ -265,10 +277,20 @@ Item *Item::nextItem()
 		// last item, so return next item of parent
 		if (it == siblings.end())
 		{
-			return _parent->nextItem();
+			return _parent->nextItem(false);
 		}
 
 		return *it;
+	}
+	
+	if (!enter_set && !_parent)
+	{
+		return nullptr;
+	}
+	
+	if (itemCount() == 0)
+	{
+		return nullptr;
 	}
 
 	return _items.front();
@@ -277,9 +299,6 @@ Item *Item::nextItem()
 
 void Item::readdress()
 {
-	_tag2Item.clear();
-	_tagNum = 0;
-
 	readdressParents();
 }
 

@@ -12,6 +12,26 @@ Box::Box() : Renderable()
 
 }
 
+void Box::modify(Renderable *r)
+{
+	if (!_scroll)
+	{
+		return;
+	}
+	
+	if (!dynamic_cast<Slider *>(r))
+	{
+		r->setFragmentShaderFile("assets/shaders/scrollbox.fsh");
+		r->setScroll(true);
+		
+		Box *box = dynamic_cast<Box *>(r);
+		if (box)
+		{
+			box->_bounds = _bounds;
+		}
+	}
+}
+
 void Box::setToScrollShaders()
 {
 	_scroll = true;

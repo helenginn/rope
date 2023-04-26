@@ -142,7 +142,7 @@ void LineGroup::reorganiseGroups()
 	bool hidden = _item->collapsed();
 
 	float y = 0;
-	_line->update();
+//	_line->update();
 	Renderable *line = _line;
 	for (Renderable *object : objects())
 	{
@@ -198,7 +198,7 @@ void LineGroup::buttonPressed(std::string tag, Button *button)
 
 		float x; float y;
 		_scene->getFractionalPos(x, y);
-		menu->setup(x, y);
+		menu->setup(x, y, 0.6);
 		_scene->setModal(menu);
 		return;
 	}
@@ -227,7 +227,6 @@ void LineGroup::reorganiseHeights()
 {
 	removeObject(_slider);
 	glm::vec2 tmp = xy();
-	std::cout << std::endl;
 	resetGroups();
 
 	reorganiseGroups();

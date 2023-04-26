@@ -198,6 +198,7 @@ public:
 	
 	virtual void unMouseOver();
 	virtual bool mouseOver() { return false; };
+	virtual void undrag() {};
 
 	void reorderIndices();
 	void boundaries(glm::vec3 *min, glm::vec3 *max);
@@ -254,7 +255,8 @@ public:
 		recolour(red, green, blue, &_unselectedVertices);
 	}
 
-	void resize(double scale, bool unselected = false);
+	void resize(double scale, bool unselected = false,
+	            bool realign = false);
 	
 	void changeVertexShader(std::string v);
 	void changeFragmentShader(std::string f);
@@ -345,6 +347,17 @@ public:
 	{
 		_currVertex = i;
 	}
+	
+	void setScroll(bool scroll)
+	{
+		_scroll = true;
+	}
+
+	void setResizeScale(float scale)
+	{
+		_resizeScale = scale;
+	}
+	
 protected:
 	void rebindToProgram();
 	bool intersectsPolygon(double x, double y, double *z);
@@ -363,9 +376,15 @@ protected:
 	std::vector<GLuint> _indices;
 	std::vector<Vertex> _unselectedVertices;
 
+	bool _scroll = false;
 	double _red;
 	double _green;
 	double _blue;
+	
+	const float &resizeScale() const
+	{
+		return _resizeScale;
+	}
 
 	bool _backToFront = false;
 	GLuint _renderType = GL_TRIANGLES;
@@ -431,6 +450,8 @@ private:
 	void unbindVBOBuffers();
 	int vaoForContext();
 	void deletePrograms();
+	void resize_around_centre(double scale, glm::vec3 v, bool unselected = false,
+	                          bool realign = false);
 	GLuint addShaderFromString(GLuint program, GLenum type, std::string str);
 
 	static bool index_behind_index(IndexTrio one, IndexTrio two);
@@ -465,6 +486,7 @@ private:
 	Alignment _align;
 	double _x = 0.0;
 	double _y = 0.0;
+	float _resizeScale = 1.f;
 	bool _setupBuffers = false;
 	int _currVertex = -1;
 	int _renderCount = 0;

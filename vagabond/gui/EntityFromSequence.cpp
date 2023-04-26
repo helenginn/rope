@@ -183,10 +183,8 @@ void EntityFromSequence::makePeptide(std::string text)
 
 }
 
-void EntityFromSequence::render()
+void EntityFromSequence::doThings()
 {
-	Scene::render();
-
 	if (_process)
 	{
 		processResult(_result);

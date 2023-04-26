@@ -56,7 +56,6 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 	SDL_Surface *image = loadImage(filename);
 	if (image == NULL)
 	{
-		std::cout << "Trouble loading " << filename << std::endl;
 		return 0;
 	}
 
@@ -111,7 +110,6 @@ SDL_Surface *Library::loadImage(std::string filename)
 	
 	if (surface == nullptr)
 	{
-		std::cout << "Could not load " << filename << std::endl;
 		return NULL;
 	}
 
@@ -147,6 +145,25 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 	{
 		text = " ";
 	}
+	
+	std::string t = "";
+	
+	switch (type)
+	{
+		case Font::Thin:
+		t = "_thin__";
+		break;
+		case Font::Thick:
+		t = "_thick__";
+		break;
+		default: break;
+	}
+
+	GLuint candidate = 0;
+	if (hasTexture(t + text, candidate, w, h))
+	{
+		return candidate;
+	}
 
 	png_byte *bytes = nullptr;
 	TextManager::text_malloc(&bytes, text, w, h, type);
@@ -161,8 +178,8 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 	GLuint texid = bindBytes(bytes, *w, *h);
 
 	TextManager::text_free(&bytes);
+	registerTexture(t + text, texid, *w, *h);
 
-	_counts[texid] = 1;
 	return texid;
 }
 
@@ -191,7 +208,7 @@ GLuint Library::allocateEmptyTexture(int w, int h, std::string filename)
 	if (filename.length() > 0)
 	{
 		_textures[filename] = texid;
-		_counts[texid] = 1;
+		_counts[texid]++;
 	}
 	
 	free(bytes);

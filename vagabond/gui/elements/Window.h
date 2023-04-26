@@ -59,16 +59,12 @@ public:
 	
 	static void setDelete(Scene *sc)
 	{
-		_deleteMutex.lock();
 		_toDelete.insert(sc);
-		_deleteMutex.unlock();
 	}
 	
 	static void setDelete(Renderable *r)
 	{
-		_deleteMutex.lock();
 		_deleteRenderables.insert(r);
-		_deleteMutex.unlock();
 	}
 
 	void glSetup();

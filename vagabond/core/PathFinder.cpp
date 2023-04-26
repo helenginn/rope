@@ -231,6 +231,11 @@ void PathFinder::sendContentsToHandler(PathTask *bin)
 
 void PathFinder::incrementStageIfNeeded()
 {
+	if (!_canAdd)
+	{
+		return;
+	}
+
 	std::unique_lock<std::mutex> lock(_cycleMutex);
 	ReporterTask *salient = nullptr;
 	ReporterTask *next = nullptr;

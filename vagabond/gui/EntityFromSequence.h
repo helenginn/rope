@@ -32,13 +32,14 @@ public:
 	~EntityFromSequence();
 
 	virtual void setup();
-	virtual void render();
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	virtual std::string toURL(std::string query);
 	virtual void processResult(std::string seq);
 	virtual void handleError();
 	virtual void fileChosen(std::string filename);
+	
+	virtual void doThings();
 private:
 	void makePeptide(std::string text);
 

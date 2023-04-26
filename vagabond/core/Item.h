@@ -193,14 +193,19 @@ public:
 		return std::unordered_map<std::string, std::string>();
 	}
 
+	bool hasAncestor(Item *item);
+
 	void readdress();
 	
-	Item *previousItem();
-	Item *nextItem();
+	Item *previousItem(bool enter_set = false);
+	Item *nextItem(bool enter_set = true);
 protected:
 	/** to be overridden by derived classes: to implement anything that needs
 	 * to be done before the final delete. */
 	virtual void lastRites() {};
+	Item *topLevel();
+	
+	virtual void itemAdded() {};
 
 	const std::string &name() const
 	{
@@ -214,7 +219,6 @@ private:
 	void resolveDeletion();
 	
 	void readdressParents();
-	bool hasAncestor(Item *item);
 	std::string issueNextTag();
 	
 	void setParent(Item *item)
@@ -222,7 +226,6 @@ private:
 		_parent = item;
 	}
 	
-	Item *topLevel();
 	const Item *constTopLevel() const;
 	void addToSelectedCount(size_t &count) const;
 	void addSelectedToList(std::vector<Item *> &list);

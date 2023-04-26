@@ -220,7 +220,7 @@ bool Window::tick()
 
 void Window::deleteQueued()
 {
-	_deleteMutex.lock();
+	std::unique_lock<std::mutex> dellock(_deleteMutex);
 
 	for (Scene *del : _toDelete)
 	{
@@ -240,18 +240,26 @@ void Window::deleteQueued()
 
 void Window::render()
 {
-	std::unique_lock<std::mutex> lock(_switchMutex);
-	_current->doThingsCircuit();
+	std::unique_lock<std::mutex> switchlock(_switchMutex);
+	std::unique_lock<std::mutex> dellock(_deleteMutex);
 
-	if (!_current->isViewChanged())
+	Scene *curr = _current;
+	switchlock.unlock();
+
+	curr->doThingsCircuit();
+
+	if (!curr->isViewChanged())
 	{
 		return;
 	}
+
+	dellock.unlock();
 
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
 
+	switchlock.lock();
 	_current->render();
 	
 	for (size_t i = 0; i < _myWindow->objectCount(); i++)
@@ -259,7 +267,7 @@ void Window::render()
 		_myWindow->object(i)->render(_current);
 	}
 
-	lock.unlock();
+	switchlock.unlock();
 
 	SDL_GL_SwapWindow(_window);
 }

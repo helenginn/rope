@@ -89,6 +89,16 @@ public:
 
 	void saveImage(std::string filename);
 	
+	const bool &altPressed() const
+	{
+		return _altPressed;
+	}
+	
+	const bool &controlPressed() const
+	{
+		return _controlPressed;
+	}
+	
 	const bool &shiftPressed() const
 	{
 		return _shiftPressed;

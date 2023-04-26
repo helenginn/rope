@@ -139,6 +139,7 @@ void ConfSpaceView::displayTree()
 {
 	if (_ropeTree)
 	{
+		return;
 		removeObject(_ropeTree);
 		delete _ropeTree;
 		_ropeTree = nullptr;

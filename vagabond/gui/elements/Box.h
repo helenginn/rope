@@ -26,6 +26,7 @@ public:
 	
 	virtual bool mouseOver();
 	virtual void unMouseOver();
+	virtual void modify(Renderable *r);
 	
 	void addAltTag(std::string text);
 	void updateScrollBox(glm::vec4 bounds);
@@ -37,7 +38,6 @@ protected:
 	void drawSlider();
 	void setToScrollShaders();
 
-	bool _scroll = false;
 	float _scrollOffset = 0;
 	glm::vec4 _scrollBox = glm::vec4(0.f);
 	glm::vec4 _bounds = glm::vec4(0.f);

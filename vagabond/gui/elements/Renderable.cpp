@@ -596,10 +596,9 @@ void Renderable::recolour(double red, double green, double blue,
 	}
 }
 
-void Renderable::resize(double scale, bool unselected)
+void Renderable::resize_around_centre(double scale, glm::vec3 centre, 
+                                      bool unselected, bool realign)
 {
-	glm::vec3 centre = centroid();
-	
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		glm::vec3 &pos = _vertices[i].pos;
@@ -608,21 +607,39 @@ void Renderable::resize(double scale, bool unselected)
 		pos += centre;
 	}
 	
+	if (realign)
+	{
+		_x -= centre.x; _x *= scale; _x += centre.x;
+		_y -= centre.y; _y *= scale; _y += centre.y;
+	}
+	
 	rebufferVertexData();
 	
 	if (!unselected)
 	{
 		resized(scale);
-		return;
 	}
-	
-	for (size_t i = 0; i < _unselectedVertices.size(); i++)
+	else
 	{
-		glm::vec3 &pos = _unselectedVertices[i].pos;
-		pos -= centre;
-		pos *= scale;
-		pos += centre;
+		for (size_t i = 0; i < _unselectedVertices.size(); i++)
+		{
+			glm::vec3 &pos = _unselectedVertices[i].pos;
+			pos -= centre;
+			pos *= scale;
+			pos += centre;
+		}
 	}
+
+	for (size_t i = 0; i < objectCount(); i++)
+	{
+		object(i)->resize_around_centre(scale, centre, unselected, realign);
+	}
+}
+
+void Renderable::resize(double scale, bool unselected, bool realign)
+{
+	glm::vec3 centre = centroid();
+	resize_around_centre(scale, centre, unselected, realign);
 }
 
 double Renderable::averageRadius()
@@ -1471,6 +1488,9 @@ void Renderable::setArbitrary(double x, double y, Alignment a)
 
 	double heightmult = (a & Top ? 1 : (a & Bottom ? -1 : 0));
 	yf += heightmult * maximalHeight() / 2;
+	
+	if (xf != xf) xf = 0;
+	if (yf != yf) yf = 0;
 
 	setPosition(glm::vec3(xf, -yf, 0));
 	

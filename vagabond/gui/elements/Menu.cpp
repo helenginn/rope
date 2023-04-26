@@ -34,10 +34,10 @@ Menu::~Menu()
 	deleteObjects();
 }
 
-void Menu::setup(Renderable *r)
+void Menu::setup(Renderable *r, double resize)
 {
 	glm::vec2 c = r->xy();
-	setup(c.x, c.y);
+	setup(c.x, c.y, resize);
 }
 
 void Menu::optionLimits(double &width, double &height)
@@ -55,7 +55,7 @@ void Menu::optionLimits(double &width, double &height)
 	}
 }
 
-void Menu::setup(double x, double y)
+void Menu::setup(double x, double y, double scale)
 {
 	double width = 0;
 	double height = 0;
@@ -88,6 +88,8 @@ void Menu::setup(double x, double y)
 		addObject(_options[i]);
 	}
 
+	setArbitrary(x, y, Renderable::Alignment(horizontal | vertical));
+	resize(scale, false, true);
 	setArbitrary(x, y, Renderable::Alignment(horizontal | vertical));
 }
 

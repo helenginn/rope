@@ -49,6 +49,7 @@ void PathFinderView::makeTaskTree()
 {
 	if (_taskTree)
 	{
+		return;
 		removeObject(_taskTree);
 		Window::setDelete(_taskTree);
 		_taskTree = nullptr;
@@ -277,6 +278,10 @@ void PathFinderView::buttonPressed(std::string tag, Button *button)
 	else if (tag == "star")
 	{
 		switchToStar();
+	}
+	else if (tag == "back")
+	{
+		_pf->setCanAddNewJobs(false);
 	}
 	
 	Scene::buttonPressed(tag, button);

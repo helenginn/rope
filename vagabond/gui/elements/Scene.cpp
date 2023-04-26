@@ -133,6 +133,16 @@ std::vector<Renderable *> &Scene::pertinentObjects()
 void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	if (_expired) return;
+	
+	if (_dragged && _moving)
+	{
+		_dragged->undrag();
+	}
+	else if (_dragged)
+	{
+		_dragged->click(button.button == SDL_BUTTON_LEFT);
+	}
+
 	_dragged = nullptr;
 	convertToGLCoords(&x, &y);
 
@@ -179,10 +189,13 @@ void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 			std::cout  << "Draggable: " << chosen->name() << std::endl;
 			_dragged = chosen;
 		}
+		else
+		{
+			// warning: clicking the chosen object may result in its destruction
+			chosen->click(_left);
+			// don't use the pointer afterwards
+		}
 
-		// warning: clicking the chosen object may result in its destruction
-		chosen->click(_left);
-		// don't use the pointer afterwards
 	}
 }
 

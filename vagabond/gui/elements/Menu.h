@@ -33,8 +33,8 @@ public:
 	~Menu();
 
 	TextButton *addOption(std::string text, std::string tag = "");
-	void setup(double x, double y);
-	void setup(Renderable *r);
+	void setup(double x, double y, double resize = 1);
+	void setup(Renderable *r, double resize = 1);
 	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void optionLimits(double &width, double &height);
