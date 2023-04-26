@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "OutputLayer.h"
+#include <cmath>
 
 OutputLayer::OutputLayer() : CalcLayer()
 {

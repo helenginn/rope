@@ -19,6 +19,7 @@
 #ifndef __vagabond__PathFinderView__
 #define __vagabond__PathFinderView__
 
+#include <atomic>
 #include <vagabond/gui/elements/Mouse3D.h>
 #include <vagabond/core/Responder.h>
 

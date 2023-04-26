@@ -24,6 +24,7 @@
 #include <vector>
 #include <set>
 #include <vagabond/core/Responder.h>
+#include <mutex>
 
 class ButtonResponder;
 class Menu;

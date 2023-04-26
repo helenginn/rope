@@ -23,6 +23,7 @@
 #include <set>
 #include <vector>
 #include <mutex>
+#include <atomic>
 #include <vagabond/utils/svd/PCA.h>
 #include "TaskType.h"
 #include "Responder.h"

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "LogSigmoid.h"
+#include <cmath>
 
 void LogSigmoid::evaluate(VectorLoc &input, VectorLoc &output) const
 {

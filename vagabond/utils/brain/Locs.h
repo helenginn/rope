@@ -21,6 +21,7 @@
 
 #include <ostream>
 #include <iostream>
+#include <cstring>
 
 enum FunctionType
 {
