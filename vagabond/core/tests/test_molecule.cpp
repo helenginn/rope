@@ -18,7 +18,6 @@
 
 #include <vagabond/utils/include_boost.h>
 
-#define private public // evil but delicious
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Environment.h>

@@ -16,8 +16,6 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define private public // evil but delicious
-
 #include <vagabond/utils/include_boost.h>
 #include <vagabond/core/Item.h>
 #include <vagabond/gui/elements/list/ItemLine.h>

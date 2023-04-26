@@ -19,7 +19,6 @@
 
 #include <vagabond/utils/include_boost.h>
 
-#define private public // evil but delicious
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/AtomsFromSequence.h>
 #include <vagabond/core/Sequence.h>

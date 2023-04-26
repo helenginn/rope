@@ -19,8 +19,6 @@
 #include <vagabond/utils/include_boost.h>
 #include <fstream>
 
-#define private public // evil but delicious
-
 #include <vagabond/core/PdbFile.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Sequence.h>

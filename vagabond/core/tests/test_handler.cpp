@@ -18,9 +18,6 @@
 
 #include <vagabond/utils/include_boost.h>
 
-#define protected public // evil but delicious
-#define private public // evil but delicious
-
 #include <vagabond/core/engine/Handler.h>
 namespace tt = boost::test_tools;
 

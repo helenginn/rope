@@ -18,9 +18,6 @@
 
 #include <vagabond/utils/include_boost.h>
 
-#define protected public // evil but delicious
-#define private public // evil but delicious
-
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/BondCalculator.h>
 

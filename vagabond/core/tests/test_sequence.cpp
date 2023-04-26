@@ -18,7 +18,6 @@
 
 #include <vagabond/utils/include_boost.h>
 
-#define private public // evil but delicious
 #include <vagabond/core/Sequence.h>
 
 namespace tt = boost::test_tools;

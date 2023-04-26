@@ -18,7 +18,6 @@
 
 #include <vagabond/utils/include_boost.h>
 
-#define private public
 #include <vagabond/core/MolRefiner.h>
 
 namespace tt = boost::test_tools;
