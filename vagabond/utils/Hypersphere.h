@@ -30,9 +30,11 @@ public:
 	 *  @param n number of points to generate */
 	Hypersphere(int dims, int n);
 
-	void setup();
+	/** call this before retrieving points of Fibonacci lattice */
 	void prepareFibonacci();
 
+	/** how many points in total do we have (may not be exactly same as
+	 * entry */
 	int count() const
 	{
 		return _points.size();
@@ -45,6 +47,7 @@ public:
 	
 	std::vector<float> scaled_point(int idx, float scale) const;
 private:
+	void setup();
 	void setup_distribution_for_dim(int dim);
 	ProbDist setup_distribution_for_other(int dim);
 	ProbDist setup_distribution_for_first();
