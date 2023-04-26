@@ -16,10 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef boosting
-#define boosting
-
-#define BOOST_TEST_DYN_LINK 1
-#include <boost/test/unit_test.hpp>
-
-#endif
+#define BOOST_TEST_MODULE test_core
+#include "test_atomgroup.cpp"
+#include "test_atomsfromsequence.cpp"
+#include "test_handler.cpp"
+#include "test_list.cpp"
+#include "test_molecule.cpp"
+#include "test_molrefiner.cpp"
+#include "test_ramachandran.cpp"
+#include "test_sequence.cpp"
+#include "test_surface.cpp"
