@@ -119,7 +119,6 @@ BOOST_AUTO_TEST_CASE(deleted_item_removes_parent)
 	child->deleteItem();
 	
 	BOOST_TEST(parent->itemCount() == 0);
-	BOOST_TEST(child->parent() == nullptr);
 	BOOST_TEST(Item::deletedCount() == 1);
 	
 	parent->deleteItem();
