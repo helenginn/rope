@@ -25,6 +25,9 @@
 class Hypersphere
 {
 public:
+	/** Generate new hyperspherical set of points
+	 *  @param dims number of dimensions of the hypersphere
+	 *  @param n number of points to generate */
 	Hypersphere(int dims, int n);
 
 	void setup();
