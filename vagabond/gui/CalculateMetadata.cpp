@@ -182,10 +182,10 @@ void CalculateMetadata::processResult(std::string result)
 		to_lower(model);
 		kv["model"] = model;
 
-		json &structure = entry["structure"];
-		if (!structure[0]["title"].is_null())
+		json &structure = entry["struct"];
+		if (!structure["title"].is_null())
 		{
-			title = structure[0]["title"];
+			title = structure["title"];
 			kv["title"] = title;
 		}
 
