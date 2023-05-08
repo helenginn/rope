@@ -279,6 +279,7 @@ protected:
 		return _cycles;
 	}
 
+	bool _updateAtoms = true;
 private:
 	bool _calculating;
 	float _score;
@@ -308,7 +309,6 @@ private:
 	typedef std::map<int, Score> TicketScores;
 	
 	size_t _grapherIdx = 0;
-	bool _updateAtoms = true;
 
 	Instance *_endInstance = nullptr;
 
