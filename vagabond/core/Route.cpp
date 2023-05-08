@@ -147,6 +147,7 @@ void Route::retrieve()
 
 			int t = r->ticket;
 			int idx = _ticket2Point[t];
+			Score &score = _point2Score[idx];
 
 			found = true;
 			if (r->requests & JobExtractPositions)
@@ -164,8 +165,8 @@ void Route::retrieve()
 				
 				if (r->score == r->score)
 				{
-					_point2Score[idx].scores += r->score;
-					_point2Score[idx].sc_num++;
+					score.scores += r->score;
+					score.sc_num++;
 				}
 			}
 
@@ -173,8 +174,8 @@ void Route::retrieve()
 			{
 				if (r->deviation == r->deviation)
 				{
-					_point2Score[idx].deviations += r->deviation;
-					_point2Score[idx].divs++;
+					score.deviations += r->deviation;
+					score.divs++;
 				}
 			}
 			
