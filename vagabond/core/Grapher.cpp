@@ -311,9 +311,9 @@ void Grapher::calculateMissingMaxDepths()
 
 		for (AtomGraph *child : head->children)
 		{
-			if (child->depth > head->maxDepth)
+			if (child->maxDepth > head->maxDepth)
 			{
-				head->maxDepth = child->depth;
+				head->maxDepth = child->maxDepth;
 			}
 		}
 	}
