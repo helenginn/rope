@@ -251,34 +251,6 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
 	return texid;
 }
 
-GLuint Library::getProgram(std::string v, std::string g, std::string f)
-{
-	ShaderTrio trio;
-	trio.v = v;
-	trio.g = g;
-	trio.f = f;
-	
-	if (_trios.count(trio))
-	{
-		return _trios[trio];
-	}
-
-	return 0;
-}
-
-void Library::setProgram(Renderable *fl, std::string v, 
-                         std::string g, std::string f)
-{
-	GLuint p = fl->getProgram();
-
-	ShaderTrio trio;
-	trio.v = v;
-	trio.g = g;
-	trio.f = f;
-	
-	_trios[trio] = p;
-}
-
 void Library::dropTexture(GLuint tex)
 {
 	int counts = _counts[tex];
@@ -351,3 +323,167 @@ void Library::registerTexture(std::string key, GLuint &id, int w, int h)
 
 	_counts[id]++;
 }
+
+/*********************************/
+/******   PROGRAM SHADERS  *******/
+/*********************************/
+
+GLuint addShaderFromString(GLuint program, GLenum type, std::string str)
+{
+	GLint length = str.length();
+	
+	if (length == 0)
+	{
+		return 0;
+	}
+
+	const char *cstr = str.c_str();
+	GLuint shader = glCreateShader(type);
+	bool error = checkErrors("create shader");
+	
+	if (error)
+	{
+		switch (type)
+		{
+			case GL_GEOMETRY_SHADER:
+			std::cout <<  "geometry" << std::endl;
+			break;
+			
+			case GL_VERTEX_SHADER:
+			std::cout <<  "vertex" << std::endl;
+			break;
+			
+			case GL_FRAGMENT_SHADER:
+			std::cout <<  "fragment" << std::endl;
+
+			default:
+			std::cout << "Other" << std::endl;
+			break;
+		}
+	}
+
+	glShaderSource(shader, 1, &cstr, &length);
+	checkErrors("sourcing shader");
+	
+	glCompileShader(shader);
+	checkErrors("compiling shader");
+
+	GLint result;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+
+	if (result == GL_FALSE)
+	{
+		char *log;
+
+		/* get the shader info log */
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+		log = (char *)malloc(length);
+		glGetShaderInfoLog(shader, length, &result, log);
+
+		/* print an error message and the info log */
+		std::cout << "Shader: unable to compile: " << std::endl;
+		std::cout << str << std::endl;
+		std::cout << log << std::endl;
+		free(log);
+
+		glDeleteShader(shader);
+		return 0;
+	}
+
+	glAttachShader(program, shader);
+	return shader;
+}
+
+GLuint Library::makeProgram(std::string vString, std::string vFile,
+                            std::string fString, std::string fFile)
+{
+	if (vString.length() == 0 || fString.length() == 0)
+	{
+		return 0;
+	}
+
+	GLint result;
+
+	/* create program object and attach shaders */
+	GLuint program = glCreateProgram();
+	checkErrors("create new program");
+
+	addShaderFromString(program, GL_VERTEX_SHADER, vString);
+	checkErrors("adding vshader");
+	
+	addShaderFromString(program, GL_FRAGMENT_SHADER, fString);
+	checkErrors("adding fshader");
+
+	glBindAttribLocation(program, 0, "position");
+	glBindAttribLocation(program, 1, "normal");
+	glBindAttribLocation(program, 2, "color");
+	glBindAttribLocation(program, 3, "extra");
+	glBindAttribLocation(program, 4, "tex");
+
+	checkErrors("binding attributions");
+
+	/* link the program and make sure that there were no errors */
+	glLinkProgram(program);
+	glGetProgramiv(program, GL_LINK_STATUS, &result);
+	checkErrors("linking program");
+
+	if (result == GL_FALSE)
+	{
+		std::cout << "sceneInit(): Program linking failed." << std::endl;
+
+		GLint length = 256;
+		char *log = (char *)malloc(length);
+		/* get the shader info log */
+		glGetProgramInfoLog(program, GL_INFO_LOG_LENGTH, &length, log);
+
+		/* print an error message and the info log */
+		std::cout << log << std::endl;
+		/* delete the program */
+		glDeleteProgram(program);
+		program = 0;
+	}
+
+	_shaderCounts[program]++;
+	
+	return program;
+}
+
+GLuint Library::getProgram(std::string vString, std::string vFile,
+                           std::string fString, std::string fFile)
+{
+	ShaderDuo duo;
+	duo.v = vFile;
+	duo.f = fFile;
+	
+	if (_duos.count(duo))
+	{
+		GLuint program = _duos[duo];
+		_shaderCounts[program]++;
+		return _duos[duo];
+	}
+
+	GLuint program = makeProgram(vString, vFile, fString, fFile);
+	_duos[duo] = program;
+	return program;
+}
+
+void Library::endProgram(std::string vFile, std::string fFile)
+{
+	ShaderDuo duo;
+	duo.v = vFile;
+	duo.f = fFile;
+	
+	if (_duos.count(duo))
+	{
+		GLuint program = _duos[duo];
+		_shaderCounts[program]--;
+		
+		if (_shaderCounts[program] == 0)
+		{
+			glDeleteProgram(program);
+			_shaderCounts.erase(program);
+			_duos.erase(duo);
+		}
+	}
+}
+

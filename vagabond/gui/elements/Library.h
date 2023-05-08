@@ -8,6 +8,7 @@
 #include <vagabond/utils/gl_import.h>
 #include <string>
 #include <vector>
+#include <iostream>
 #include "font_types.h"
 
 struct SDL_Surface;
@@ -33,26 +34,30 @@ public:
 	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL,
 	                  bool wrap = false);
 	GLuint allocateEmptyTexture(int w, int h, std::string tag);
-	GLuint getProgram(std::string v, std::string g, std::string f);
-	void setProgram(Renderable *fl, std::string v, std::string g, std::string f);
+
+	GLuint getProgram(std::string vString, std::string vFile,
+	                  std::string fString, std::string fFile);
+
+	void endProgram(std::string vFile, std::string fFile);
+
 	GLuint bindBytes(unsigned char *bytes, int w, int h);
 	void textureDetails(GLuint id, int *w, int *h);
 
 	void dropTexture(GLuint tex);
 	static void correctFilename(std::string &filename);
 private:
+	GLuint makeProgram(std::string vString, std::string vFile,
+	                   std::string fString, std::string fFile);
 
-	struct ShaderTrio
+	struct ShaderDuo
 	{
 		std::string v;
-		std::string g;
 		std::string f;
 
-		bool const operator< (const ShaderTrio &t2) const
+		bool const operator< (const ShaderDuo &t2) const
 		{
-			if (v < t2.v) return true;
-			if (g < t2.g) return true;
-			return (f < t2.f);
+			if (v == t2.v) return (f < t2.f);
+			return (v < t2.v);
 		}
 	};
 
@@ -68,7 +73,58 @@ private:
 	std::map<std::string, GLuint> _textures;
 	std::map<GLuint, int> _widths;
 	std::map<GLuint, int> _heights;
-	std::map<ShaderTrio, GLuint> _trios;
+	std::map<ShaderDuo, GLuint> _duos;
+	std::map<GLuint, size_t> _shaderCounts;
 };
+
+inline bool checkErrors(std::string what)
+{
+	if (SDL_GL_GetCurrentContext() == NULL)
+	{
+		return 0;
+	}
+
+	GLenum err = glGetError();
+
+	if (err != 0)
+	{
+		std::cout << "Error doing " << what << ":" 
+		<< err << std::endl;
+		
+		switch (err)
+		{
+			case GL_INVALID_ENUM:
+			std::cout << "Invalid enumeration" << std::endl;
+			break;
+
+			case GL_STACK_OVERFLOW:
+			std::cout << "Stack overflow" << std::endl;
+			break;
+
+			case GL_STACK_UNDERFLOW:
+			std::cout << "Stack underflow" << std::endl;
+			break;
+
+			case GL_OUT_OF_MEMORY:
+			std::cout << "Out of memory" << std::endl;
+			break;
+
+			case GL_INVALID_FRAMEBUFFER_OPERATION:
+			std::cout << "Invalid framebuffer op" << std::endl;
+			break;
+
+			case GL_INVALID_VALUE:
+			std::cout << "Invalid value" << std::endl;
+			break;
+
+			case GL_INVALID_OPERATION:
+			std::cout << "Invalid operation" << std::endl;
+			break;
+
+		}
+	}
+	
+	return (err != 0);
+}
 
 #endif
