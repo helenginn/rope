@@ -455,7 +455,6 @@ void GuiHelices::extraUniforms()
 	GLuint u = glGetUniformLocation(_program, uniform_name);
 	float dot = -2.0;
 	glUniform1f(u, dot);
-	checkErrors("rebinding threshold");
 }
 
 void GuiHelices::makeHelixSlabs(std::vector<Snow::Vertex> &bez,

@@ -59,7 +59,6 @@ void GuiBalls::extraUniforms()
 	const char *uniform_name = "size";
 	GLuint u = glGetUniformLocation(_program, uniform_name);
 	glUniform1f(u, _size);
-	checkErrors("rebinding size");
 }
 
 void GuiBalls::colourByElement(std::string ele)

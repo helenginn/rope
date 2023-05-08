@@ -16,6 +16,56 @@
 #include <SDL2/SDL.h>
 #include <vagabond/core/matrix_functions.h>
 
+bool checkErrors(std::string what)
+{
+	if (SDL_GL_GetCurrentContext() == NULL)
+	{
+		return 0;
+	}
+
+	GLenum err = glGetError();
+
+	if (err != 0)
+	{
+		std::cout << "Error doing " << what << ":" 
+		<< err << std::endl;
+		
+		switch (err)
+		{
+			case GL_INVALID_ENUM:
+			std::cout << "Invalid enumeration" << std::endl;
+			break;
+
+			case GL_STACK_OVERFLOW:
+			std::cout << "Stack overflow" << std::endl;
+			break;
+
+			case GL_STACK_UNDERFLOW:
+			std::cout << "Stack underflow" << std::endl;
+			break;
+
+			case GL_OUT_OF_MEMORY:
+			std::cout << "Out of memory" << std::endl;
+			break;
+
+			case GL_INVALID_FRAMEBUFFER_OPERATION:
+			std::cout << "Invalid framebuffer op" << std::endl;
+			break;
+
+			case GL_INVALID_VALUE:
+			std::cout << "Invalid value" << std::endl;
+			break;
+
+			case GL_INVALID_OPERATION:
+			std::cout << "Invalid operation" << std::endl;
+			break;
+
+		}
+	}
+	
+	return (err != 0);
+}
+
 void Renderable::addToVertexArray(glm::vec3 add, std::vector<Vertex> *vs)
 {
 	for (size_t i = 0; i < vs->size(); i++)
@@ -72,8 +122,7 @@ Renderable::~Renderable()
 	}
 }
 
-GLuint Renderable::addShaderFromString(GLuint program, GLenum type, 
-                                       std::string str)
+GLuint addShaderFromString(GLuint program, GLenum type, std::string str)
 {
 	GLint length = str.length();
 	
@@ -135,7 +184,7 @@ GLuint Renderable::addShaderFromString(GLuint program, GLenum type,
 		return 0;
 	}
 
-	glAttachShader(_program, shader);
+	glAttachShader(program, shader);
 	return shader;
 }
 
@@ -153,27 +202,11 @@ void Renderable::rebindToProgram()
 
 }
 
-void Renderable::initialisePrograms(std::string *v, std::string *f,
-                                    std::string *g)
+void Renderable::initialisePrograms()
 {
 	if (_program != 0)
 	{
 		return;
-	}
-
-	if (v == NULL)
-	{
-		v = &_vString;
-	}
-
-	if (f == NULL)
-	{
-		f = &_fString;
-	}
-
-	if (g == NULL)
-	{
-		g = &_gString;
 	}
 	
 	if (_vString.length() == 0 || _fString.length() == 0)
@@ -187,16 +220,16 @@ void Renderable::initialisePrograms(std::string *v, std::string *f,
 	_program = glCreateProgram();
 	checkErrors("create new program");
 
-	addShaderFromString(_program, GL_VERTEX_SHADER, *v);
+	addShaderFromString(_program, GL_VERTEX_SHADER, _vString);
 	checkErrors("adding vshader");
 	
-	if (g->length() > 0)
+	if (_gString.length() > 0)
 	{
-		addShaderFromString(_program, GL_GEOMETRY_SHADER, *g);
+		addShaderFromString(_program, GL_GEOMETRY_SHADER, _gString);
 		checkErrors("adding gshader");
 	}
 
-	addShaderFromString(_program, GL_FRAGMENT_SHADER, *f);
+	addShaderFromString(_program, GL_FRAGMENT_SHADER, _fString);
 	checkErrors("adding fshader");
 
 	glBindAttribLocation(_program, 0, "position");
@@ -438,56 +471,6 @@ void Renderable::setupVBOBuffers()
 	{
 		_gl->viewChanged();
 	}
-}
-
-bool Renderable::checkErrors(std::string what)
-{
-	if (SDL_GL_GetCurrentContext() == NULL)
-	{
-		return 0;
-	}
-
-	GLenum err = glGetError();
-
-	if (err != 0)
-	{
-		std::cout << "Error as " << _name << " was doing " << what << ":" 
-		<< err << std::endl;
-		
-		switch (err)
-		{
-			case GL_INVALID_ENUM:
-			std::cout << "Invalid enumeration" << std::endl;
-			break;
-
-			case GL_STACK_OVERFLOW:
-			std::cout << "Stack overflow" << std::endl;
-			break;
-
-			case GL_STACK_UNDERFLOW:
-			std::cout << "Stack underflow" << std::endl;
-			break;
-
-			case GL_OUT_OF_MEMORY:
-			std::cout << "Out of memory" << std::endl;
-			break;
-
-			case GL_INVALID_FRAMEBUFFER_OPERATION:
-			std::cout << "Invalid framebuffer op" << std::endl;
-			break;
-
-			case GL_INVALID_VALUE:
-			std::cout << "Invalid value" << std::endl;
-			break;
-
-			case GL_INVALID_OPERATION:
-			std::cout << "Invalid operation" << std::endl;
-			break;
-
-		}
-	}
-	
-	return (err != 0);
 }
 
 glm::mat4x4 Renderable::getModel()

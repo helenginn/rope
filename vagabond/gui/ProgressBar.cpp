@@ -87,6 +87,5 @@ void ProgressBar::extraUniforms()
 	const char *uniform_name = "fraction";
 	GLuint u = glGetUniformLocation(_program, uniform_name);
 	glUniform1f(u, fraction);
-	checkErrors("rebinding fraction");
 }
 

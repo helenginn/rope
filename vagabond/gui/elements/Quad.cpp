@@ -103,8 +103,6 @@ void Quad::extraUniforms()
 		*/
 	}
 
-	checkErrors("single num uniforms");
-
 	GLint uTex = glGetUniformLocation(_program, "pic_tex");
 	if (uTex >= 0)
 	{
@@ -120,8 +118,6 @@ void Quad::extraUniforms()
 		glBindTexture(GL_TEXTURE_2D, _textures[1]);
 		glUniform1i(uTex, 1);
 	}
-
-	checkErrors("uniform add texture");
 }
 
 void Quad::bindTextures()

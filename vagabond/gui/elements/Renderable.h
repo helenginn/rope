@@ -39,9 +39,7 @@ class Renderable : public HasRenderables
 public:
 	Renderable() {}
 	virtual ~Renderable();
-	virtual void initialisePrograms(std::string *v = NULL, 
-	                                std::string *f = NULL,
-	                                std::string *g = NULL);
+	virtual void initialisePrograms();
 	virtual void render(SnowGL *sender);
 	void deleteOnMainThread();
 	
@@ -243,7 +241,7 @@ public:
 		_fString = o->_fString;
 	}
 
-	bool checkErrors(std::string what = "");
+//	bool checkErrors(std::string what = "");
 	void deleteVBOBuffers();
 
 	void setColour(double red, double green, double blue)
@@ -452,7 +450,7 @@ private:
 	void deletePrograms();
 	void resize_around_centre(double scale, glm::vec3 v, bool unselected = false,
 	                          bool realign = false);
-	GLuint addShaderFromString(GLuint program, GLenum type, std::string str);
+//	GLuint addShaderFromString(GLuint program, GLenum type, std::string str);
 
 	static bool index_behind_index(IndexTrio one, IndexTrio two);
 	static bool index_in_front_of_index(IndexTrio one, IndexTrio two);

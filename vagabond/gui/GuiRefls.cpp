@@ -96,5 +96,4 @@ void GuiRefls::extraUniforms()
 {
 	GLuint uSlice = glGetUniformLocation(_usingProgram, "slice");
 	glUniform1f(uSlice, _slice);
-	checkErrors("binding slice");
 }

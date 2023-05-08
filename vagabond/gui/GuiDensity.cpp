@@ -259,6 +259,5 @@ void GuiDensity::extraUniforms()
 
 	GLuint uSlice = glGetUniformLocation(_program, "slice");
 	glUniform1f(uSlice, _slice);
-	checkErrors("binding slice");
 }
 

@@ -559,12 +559,12 @@ void SnowGL::shadowProgram()
 	
 //	std::string v = vShadow();
 //	std::string f = fShadow();
-	std::string v, f;
+//	std::string v, f;
 	
-	_shadowObj = new Renderable();
-	_shadowObj->initialisePrograms(&v, &f);
+//	_shadowObj = new Renderable();
+//	_shadowObj->initialisePrograms(&v, &f);
 
-	_shadowProgram = _shadowObj->getProgram();
+//	_shadowProgram = _shadowObj->getProgram();
 }
 
 GLuint SnowGL::getOverrideProgram()

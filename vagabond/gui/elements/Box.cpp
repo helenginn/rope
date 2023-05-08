@@ -253,6 +253,5 @@ void Box::extraUniforms()
 	{
 		GLuint u = glGetUniformLocation(_program, "box");
 		glUniform4f(u, _scrollBox.x, _scrollBox.y, _scrollBox.z, _scrollBox.w);
-		checkErrors("rebinding box");
 	}
 }

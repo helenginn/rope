@@ -48,7 +48,6 @@ void GuiRibbon::extraUniforms()
 	GLuint u = glGetUniformLocation(_program, uniform_name);
 	float dot = 0.3;
 	glUniform1f(u, dot);
-	checkErrors("rebinding threshold");
 }
 
 
