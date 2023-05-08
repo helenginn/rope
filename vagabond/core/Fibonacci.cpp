@@ -53,7 +53,7 @@ void Fibonacci::generateLattice(int num, double radius)
 		double x = cos(phi) * r;
 		double z = sin(phi) * r;
 
-		vec3 point = make_vec3(x * radius, y * radius, z * radius);
+		glm::vec3 point = glm::vec3(x * radius, y * radius, z * radius);
 
 		_points.push_back(point);
 	}

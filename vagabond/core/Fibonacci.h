@@ -19,7 +19,7 @@
 #ifndef __vagabond__Fibonacci__
 #define __vagabond__Fibonacci__
 
-#include "vec3.h"
+#include <vagabond/utils/glm_import.h>
 #include <vector>
 
 class Fibonacci
@@ -30,12 +30,12 @@ public:
 
 	void generateLattice(int num, double radius);
 
-	std::vector<vec3> &getPoints()
+	std::vector<glm::vec3> &getPoints()
 	{
 		return _points;
 	}
 private:
-	std::vector<vec3> _points;
+	std::vector<glm::vec3> _points;
 
 };
 
