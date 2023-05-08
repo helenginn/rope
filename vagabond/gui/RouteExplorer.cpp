@@ -52,13 +52,9 @@ void RouteExplorer::setup()
 	_instance->load();
 
 	AtomGroup *grp = _instance->currentAtoms();
-	AlignmentTool tool(grp);
-	tool.run();
 	grp->recalculate();
-	_atoms = grp;
 
-	recalculateAtoms();
-	
+	_atoms = grp;
 	_route->setAtoms(grp);
 
 	Display::setup();

@@ -74,9 +74,12 @@ PlausibleRoute *FromToTask::makeNewRoute()
 	sr->setRawDestination(vals);
 	sr->setDestinationInstance(to());
 
-	sr->setAtoms(from()->currentAtoms());
+	to()->currentAtoms()->recalculate();
+	AtomGroup *grp = from()->currentAtoms();
+	grp->recalculate();
+
+	sr->setAtoms(grp);
 	sr->setup();
-	sr->bringTorsionsToRange();
 
 	return sr;
 }

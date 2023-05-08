@@ -35,7 +35,6 @@ void OptimiseTask::specificTasks()
 	_pf->setStatus(this, type());
 
 	PlausibleRoute *pr = findOrMakeRoute();
-	pr->shouldUpdateAtoms(false);
 	pr->setTargets();
 	pr->setCycles(1);
 	
@@ -52,10 +51,11 @@ void OptimiseTask::specificTasks()
 		pr->setMinimumMagnitude(2);
 	}
 
-	float something = pr->routeScore(12);
-	float before = pr->routeScore(12);
+	pr->shouldUpdateAtoms(false);
+
+	float before = pr->routeScore(16);
 	PlausibleRoute::calculate(pr);
-	float after = pr->routeScore(12);
+	float after = pr->routeScore(16);
 	
 	std::cout << displayName() <<  ": from " << before << 
 	" to " << after << std::endl;
