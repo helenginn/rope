@@ -33,7 +33,7 @@ public:
 
 	virtual void setup();
 	virtual void refresh();
-	virtual void render();
+	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button);
 
 protected:

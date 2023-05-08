@@ -133,7 +133,7 @@ void SearchPDB::handleError()
 	this->setModal(bc);
 }
 
-void SearchPDB::render()
+void SearchPDB::doThings()
 {
 	if (_process)
 	{
@@ -141,8 +141,6 @@ void SearchPDB::render()
 		_process = false;
 		_result = "";
 	}
-
-	Scene::render();
 }
 
 std::string SearchPDB::prepareQuery()
