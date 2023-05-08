@@ -25,7 +25,7 @@
 SplitRoute::SplitRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims)
 : PlausibleRoute(inst, cluster, dims)
 {
-	_threads = 2;
+	_threads = 4;
 	_maximumCycles = 5;
 }
 
