@@ -638,8 +638,20 @@ void Renderable::resize_around_centre(double scale, glm::vec3 centre,
 
 void Renderable::resize(double scale, bool unselected, bool realign)
 {
+	bool dis = _hover ? _hover->isDisabled() : true;
+	
+	if (!dis)
+	{
+		_hover->setDisabled(true);
+	}
+
 	glm::vec3 centre = centroid();
 	resize_around_centre(scale, centre, unselected, realign);
+	
+	if (!dis)
+	{
+		_hover->setDisabled(false);
+	}
 }
 
 double Renderable::averageRadius()
