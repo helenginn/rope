@@ -106,11 +106,9 @@ void SplitRoute::addTorsionIndices(std::vector<int> &idxs, AtomGraph *gr)
 
 bool SplitRoute::optimiseConnections()
 {
-	/*
 	startTicker("Optimising connections", _atoms.size());
 
 	bool result = false;
-	_maxJobRuns = 60;
 	for (size_t i = 1; i < _atoms.size(); i++)
 	{
 		clickTicker();
@@ -136,9 +134,7 @@ bool SplitRoute::optimiseConnections()
 		}
 	}
 
-	_maxJobRuns = 20;
 	finishTicker();
-	*/
 	return false;
 }
 
@@ -179,6 +175,7 @@ void SplitRoute::calculateFirstAnchors()
 		
 		i = j;
 	}
+	
 
 	_atoms = tmp;
 }
