@@ -76,6 +76,8 @@ float PlausibleRoute::routeScore(int steps, bool forceField)
 	{
 		float rnd = rand() / (double)RAND_MAX;
 		
+		if (!_updateAtoms) rnd = 1.; // don't show
+
 		if (!forceField)
 		{
 			submitJob(i, rnd < 0.01);

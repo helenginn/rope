@@ -87,10 +87,6 @@ void Route::submitJob(int idx, bool show, bool forces)
 	{
 		show = true;
 	}
-	else if (!_updateAtoms)
-	{
-		show = false;
-	}
 	
 	for (BondCalculator *calc : _calculators)
 	{
