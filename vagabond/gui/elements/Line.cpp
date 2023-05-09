@@ -18,7 +18,7 @@
 
 #include "Line.h"
 
-Line::Line() : Renderable()
+Line::Line() : SimplePolygon()
 {
 	setName("Line");
 	_renderType = GL_LINES;

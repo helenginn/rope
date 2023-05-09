@@ -26,6 +26,7 @@ class PathManager : public Manager<Path>
 {
 public:
 	PathManager();
+	virtual ~PathManager();
 
 	virtual Path *insertOrReplace(Path &p);
 

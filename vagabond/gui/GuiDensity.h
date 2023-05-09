@@ -19,7 +19,7 @@
 #ifndef __vagabond__GuiDensity__
 #define __vagabond__GuiDensity__
 
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 #include <vagabond/core/OriginGrid.h>
 #include <fftw3.h>
 
@@ -32,7 +32,7 @@ namespace MC
 	struct mcMesh;
 };
 
-class GuiDensity : public Renderable
+class GuiDensity : public SimplePolygon
 {
 public:
 	GuiDensity();
@@ -61,6 +61,7 @@ private:
 	void objectFromMesh(MC::mcMesh &mesh);
 	AtomGroup *_atoms = nullptr;
 	OriginGrid<fftwf_complex> *_ref = nullptr;
+	OriginGrid<fftwf_complex> *_map = nullptr;
 
 	int _slice = 0;
 };

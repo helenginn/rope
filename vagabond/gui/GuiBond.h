@@ -19,12 +19,12 @@
 #ifndef __vagabond__GuiBond__
 #define __vagabond__GuiBond__
 
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 #include <vagabond/core/Atom.h>
 
 class AtomGroup;
 
-class GuiBond : public Renderable
+class GuiBond : public SimplePolygon
 {
 public:
 	GuiBond();

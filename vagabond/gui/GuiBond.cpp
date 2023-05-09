@@ -23,11 +23,11 @@
 #include <vagabond/core/AtomGroup.h>
 #include <iostream>
 
-GuiBond::GuiBond() : Renderable()
+GuiBond::GuiBond() : SimplePolygon()
 {
 	setName("GuiBond");
 	_renderType = GL_LINES;
-	_copy = new Renderable();
+	_copy = new SimplePolygon();
 
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");

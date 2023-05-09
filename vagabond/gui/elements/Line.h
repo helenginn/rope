@@ -19,9 +19,9 @@
 #ifndef __vagabond__Line__
 #define __vagabond__Line__
 
-#include "Renderable.h"
+#include "SimplePolygon.h"
 
-class Line : public Renderable
+class Line : public SimplePolygon
 {
 public:
 	Line();

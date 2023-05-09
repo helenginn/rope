@@ -19,9 +19,9 @@
 #ifndef __vagabond__SelectionBox__
 #define __vagabond__SelectionBox__
 
-#include "Renderable.h"
+#include "SimplePolygon.h"
 
-class SelectionBox : public Renderable
+class SelectionBox : public SimplePolygon
 {
 public:
 	SelectionBox();

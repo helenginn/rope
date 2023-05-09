@@ -16,30 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PathView__
-#define __vagabond__PathView__
+#ifndef __vagabond__Vertex__
+#define __vagabond__Vertex__
 
-#include <thread>
-#include <vagabond/gui/elements/SimplePolygon.h>
+#include <vagabond/utils/glm_import.h>
 
-class MetadataGroup;
-template <class DG>
-class ClusterSVD;
-
-class Path;
-
-class PathView : public SimplePolygon
+namespace Snow
 {
-public:
-	PathView(Path &path, ClusterSVD<MetadataGroup> *cluster);
-	virtual ~PathView();
+	struct Vertex
+	{
+		glm::vec3 pos;
+		glm::vec3 normal;
+		glm::vec4 color;
+		glm::vec4 extra;
+		glm::vec2 tex;
+	};
+}
 
-	virtual void render(SnowGL *gl);
-	void populate();
-private:
-	ClusterSVD<MetadataGroup> *_cluster = nullptr;
-	
-	Path &_path;
-};
+using namespace Snow;
+
 
 #endif

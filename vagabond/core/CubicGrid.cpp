@@ -43,6 +43,8 @@ void CubicGrid<T>::setRealDim(float dim)
 	                  1 / (float)Grid<T>::ny(), 
 	                  1 / (float)Grid<T>::nz());
 	_dims *= _recipDim;
+
+	_real = glm::mat3(_realDim);
 }
 
 template <class T>
@@ -100,6 +102,12 @@ glm::vec3 CubicGrid<T>::real(int h, int k, int l)
 	real += this->origin();
 
 	return real;
+}
+
+template <class T>
+const glm::mat3x3 &CubicGrid<T>::realMatrix() const
+{
+	return _real;
 }
 
 #endif

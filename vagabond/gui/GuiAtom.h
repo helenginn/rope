@@ -3,7 +3,7 @@
 #define __vagabond__GuiAtom__
 
 #include <thread>
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 #include <vagabond/core/Atom.h>
 #include <atomic>
 
@@ -20,7 +20,7 @@ class VisualPreferences;
 
 class Atom;
 
-class GuiAtom : public Renderable
+class GuiAtom : public SimplePolygon
 {
 public:
 	GuiAtom();

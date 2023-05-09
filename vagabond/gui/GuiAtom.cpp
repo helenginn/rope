@@ -33,7 +33,7 @@
 #include <iostream>
 #include <thread>
 
-GuiAtom::GuiAtom() : Renderable()
+GuiAtom::GuiAtom() : SimplePolygon()
 {
 	_balls = new GuiBalls(this);
 	_ribbon = new GuiRibbon(this);

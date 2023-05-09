@@ -19,7 +19,7 @@
 #include "SelectionBox.h"
 #include <iostream>
 
-SelectionBox::SelectionBox() : Renderable()
+SelectionBox::SelectionBox() : SimplePolygon()
 {
 	_renderType = GL_LINES;
 	setFragmentShaderFile("assets/shaders/color_only.fsh");

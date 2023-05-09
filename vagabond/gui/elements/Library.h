@@ -6,6 +6,7 @@
 #include <mutex>
 #include <map>
 #include <vagabond/utils/gl_import.h>
+#include <SDL2/SDL.h>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -33,11 +34,11 @@ public:
 	                Font::Type type = Font::Thin);
 	GLuint getTexture(std::string filename, int *w = NULL, int *h = NULL,
 	                  bool wrap = false);
-	GLuint allocateEmptyTexture(int w, int h, std::string tag);
 
 	GLuint getProgram(std::string vString, std::string vFile,
-	                  std::string fString, std::string fFile);
+	                  std::string fString, std::string fFile, bool &old);
 
+	void checkProgram(GLuint program);
 	void endProgram(std::string vFile, std::string fFile);
 
 	GLuint bindBytes(unsigned char *bytes, int w, int h);

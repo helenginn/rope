@@ -16,30 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PathView__
-#define __vagabond__PathView__
+#ifndef __vagabond__SimplePolygon__
+#define __vagabond__SimplePolygon__
 
-#include <thread>
-#include <vagabond/gui/elements/SimplePolygon.h>
+#include "ShaderGetsVertices.h"
+#include "Renderable.h"
 
-class MetadataGroup;
-template <class DG>
-class ClusterSVD;
-
-class Path;
-
-class PathView : public SimplePolygon
+class SimplePolygon : public Renderable
 {
 public:
-	PathView(Path &path, ClusterSVD<MetadataGroup> *cluster);
-	virtual ~PathView();
+	SimplePolygon() : Renderable()
+	{
+		_shaderGets = new ShaderGetsVertices(this);
+	}
 
-	virtual void render(SnowGL *gl);
-	void populate();
-private:
-	ClusterSVD<MetadataGroup> *_cluster = nullptr;
-	
-	Path &_path;
+	virtual void test() {}
 };
 
 #endif

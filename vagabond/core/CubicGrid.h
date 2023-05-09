@@ -37,6 +37,8 @@ public:
 
 	virtual glm::vec3 maxBound() const;
 
+	virtual const glm::mat3x3 &realMatrix() const;
+
 	virtual float resolution(int i, int j, int k);
 	virtual void real2Voxel(glm::vec3 &real) const;
 	virtual void voxel2Real(glm::vec3 &voxel) const;
@@ -47,6 +49,8 @@ private:
 	float _recipDim = 1;
 
 	glm::vec3 _dims;
+	
+	glm::mat3x3 _real = glm::mat3(1.f);
 };
 
 #include "CubicGrid.cpp"

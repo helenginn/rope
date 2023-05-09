@@ -21,7 +21,7 @@
 #include "GuiRefls.h"
 #include <vagabond/gui/elements/Icosahedron.h>
 
-GuiRefls::GuiRefls() : Renderable()
+GuiRefls::GuiRefls() : SimplePolygon()
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");

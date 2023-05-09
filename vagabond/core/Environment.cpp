@@ -47,6 +47,11 @@ Environment::Environment()
 	_entityManager = new EntityManager();
 }
 
+Environment::~Environment()
+{
+
+}
+
 size_t Environment::entityCount()
 {
 	return Environment::entityManager()->objectCount();
@@ -200,7 +205,3 @@ void Environment::purgePath(Path &path)
 	pathManager()->remove(path);
 }
 
-Environment::~Environment()
-{
-
-}

@@ -28,7 +28,7 @@
 
 #include <algorithm>
 
-LineSeries::LineSeries(ClusterView *cv, const Rule &r) : Renderable(),
+LineSeries::LineSeries(ClusterView *cv, const Rule &r) : SimplePolygon(),
 _rule(r)
 {
 	setName("Line series");

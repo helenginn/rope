@@ -202,7 +202,5 @@ float Grid<T>::mean()
 	return sum() / (float)nn();
 }
 
-
-
 #endif
 

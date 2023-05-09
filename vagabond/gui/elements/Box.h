@@ -3,13 +3,13 @@
 #ifndef __practical__Box__
 #define __practical__Box__
 
-#include "Renderable.h"
+#include "SimplePolygon.h"
 #include "DragResponder.h"
 #include "ButtonResponder.h"
 
 class Slider;
 
-class Box : public Renderable
+class Box : public SimplePolygon
 {
 public:
 	Box();

@@ -22,7 +22,8 @@
 #include <vagabond/core/Path.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
-PathView::PathView(Path &path, ClusterSVD<MetadataGroup> *cluster) : _path(path)
+PathView::PathView(Path &path, ClusterSVD<MetadataGroup> *cluster) 
+: SimplePolygon(), _path(path)
 {
 	setName("Path view");
 	_renderType = GL_LINES;

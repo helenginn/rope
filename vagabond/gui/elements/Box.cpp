@@ -5,7 +5,7 @@
 #include "Slider.h"
 #include <iostream>
 
-Box::Box() : Renderable()
+Box::Box() : SimplePolygon()
 {
 	setFragmentShaderFile("assets/shaders/box.fsh");
 	setVertexShaderFile("assets/shaders/box.vsh");

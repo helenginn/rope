@@ -23,6 +23,11 @@ PathManager::PathManager()
 	_addMutex = new std::mutex();
 }
 
+PathManager::~PathManager()
+{
+	
+}
+
 Path *PathManager::insertOrReplace(Path &p)
 {
 	std::unique_lock<std::mutex> lock(*_addMutex);

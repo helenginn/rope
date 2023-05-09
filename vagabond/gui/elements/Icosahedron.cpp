@@ -19,7 +19,7 @@
 #include "Icosahedron.h"
 #include <iostream>
 
-Icosahedron::Icosahedron() : Renderable()
+Icosahedron::Icosahedron() : SimplePolygon()
 {
 	makeIco();
 	calculateNormals();

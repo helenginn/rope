@@ -19,13 +19,13 @@
 #ifndef __vagabond__LineSeries__
 #define __vagabond__LineSeries__
 
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 #include "ClusterView.h"
 
 class Rule;
 class ObjectGroup;
 
-class LineSeries : public Renderable
+class LineSeries : public SimplePolygon
 {
 public:
 	LineSeries(ClusterView *cv, const Rule &r);

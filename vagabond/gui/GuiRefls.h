@@ -19,12 +19,12 @@
 #ifndef __vagabond__GuiRefls__
 #define __vagabond__GuiRefls__
 
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 
 class Diffraction;
 class Icosahedron;
 
-class GuiRefls : public Renderable
+class GuiRefls : public SimplePolygon
 {
 public:
 	GuiRefls();

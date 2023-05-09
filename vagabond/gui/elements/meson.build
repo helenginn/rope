@@ -57,6 +57,10 @@ cfile,
 'TextManager.cpp',
 'Window.cpp',
 
+'ShaderGetsVertices.cpp',
+'ShaderGetsVertices.h',
+'ShaderGets.h',
+
 'AskYesNo.h',
 'AskForText.h',
 'BadChoice.h',

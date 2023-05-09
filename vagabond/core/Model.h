@@ -229,11 +229,15 @@ inline void from_json(const json &j, Model &value)
         value._polymers = molecules;
         std::list<Ligand> ligands = j.at("ligands");
         value._ligands = ligands;
-		value._dataFile = j.at("datafile");
 	}
 	catch (...)
 	{
 
+	}
+
+	if (j.count("datafile"))
+	{
+		value._dataFile = j.at("datafile");
 	}
 	
 	value.clickTicker();

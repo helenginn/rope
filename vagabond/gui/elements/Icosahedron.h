@@ -19,9 +19,9 @@
 #ifndef __abmap__Icosahedron__
 #define __abmap__Icosahedron__
 
-#include "Renderable.h"
+#include "SimplePolygon.h"
 
-class Icosahedron : public virtual Renderable
+class Icosahedron : public virtual SimplePolygon
 {
 public:
 	Icosahedron();

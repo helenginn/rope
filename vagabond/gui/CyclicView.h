@@ -19,14 +19,14 @@
 #ifndef __vagabond__CyclicView__
 #define __vagabond__CyclicView__
 
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 #include <vagabond/core/programs/Cyclic.h>
 #include <vagabond/core/Responder.h>
 
 class Icosahedron;
 class Cyclic;
 
-class CyclicView : public Renderable, public Responder<Cyclic>,
+class CyclicView : public SimplePolygon, public Responder<Cyclic>,
 public HasResponder<Responder<CyclicView> >
 {
 public:

@@ -3,27 +3,12 @@
 #ifndef __Slip_Renderable__
 #define __Slip_Renderable__
 
-#include <vagabond/utils/glm_import.h>
-
 #include <vagabond/utils/gl_import.h>
 #include <mutex>
 #include <map>
 #include <atomic>
 #include "HasRenderables.h"
-
-namespace Snow
-{
-	struct Vertex
-	{
-		glm::vec3 pos;
-		glm::vec3 normal;
-		glm::vec4 color;
-		glm::vec4 extra;
-		glm::vec2 tex;
-	};
-}
-
-using namespace Snow;
+#include "ShaderGets.h"
 
 typedef struct
 {
@@ -43,14 +28,11 @@ public:
 	virtual void render(SnowGL *sender);
 	void deleteOnMainThread();
 	
+	virtual void test() = 0;
+	
 	GLuint renderType()
 	{
 		return _renderType;
-	}
-	
-	Vertex *vPointer()
-	{
-		return &_vertices[0];
 	}
 	
 	Vertex vertex(size_t idx)
@@ -63,14 +45,14 @@ public:
 		return _vertices.size();
 	}
 	
+	virtual const std::vector<Vertex> &vertices() const
+	{
+		return _vertices;
+	}
+	
 	void setVertex(size_t idx, Vertex v)
 	{
 		_vertices[idx] = v;
-	}
-
-	size_t vSize()
-	{
-		return sizeof(Vertex) * _vertices.size();
 	}
 
 	void clearVertices()
@@ -356,8 +338,18 @@ public:
 		_resizeScale = scale;
 	}
 	
+	virtual GLuint program()
+	{
+		return _program;
+	}
+
+	virtual bool hasTexture() const
+	{
+		return (_texid > 0);
+	}
+
+	int vaoForContext();
 protected:
-	void rebindToProgram();
 	bool intersectsPolygon(double x, double y, double *z);
 	int intersectsPoint(double x, double y, double *z);
 	double intersects(glm::vec3 pos, glm::vec3 dir);
@@ -441,12 +433,13 @@ protected:
 	
 	RaySearch _searchType = Default;
 	double _selectionResize = 1.1;
+	
+	ShaderGets *_shaderGets = nullptr;
 private:
 	glm::mat4x4 getModel();
 	void deleteTextures();
 	void rebindVBOBuffers();
 	void unbindVBOBuffers();
-	int vaoForContext();
 	void deletePrograms();
 	void resize_around_centre(double scale, glm::vec3 v, bool unselected = false,
 	                          bool realign = false);
@@ -455,8 +448,6 @@ private:
 	static bool index_behind_index(IndexTrio one, IndexTrio two);
 	static bool index_in_front_of_index(IndexTrio one, IndexTrio two);
 
-	std::map<GLuint, GLuint> _bVertices;
-	std::map<GLuint, GLuint> _bElements;
 	std::map<GLuint, GLuint> _vaoMap;
 	GLuint _uModel = 0;
 	GLuint _uProj = 0;
@@ -488,6 +479,7 @@ private:
 	bool _setupBuffers = false;
 	int _currVertex = -1;
 	int _renderCount = 0;
+	
 };
 
 #endif

@@ -19,10 +19,10 @@
 #ifndef __vagabond__IndexResponder__
 #define __vagabond__IndexResponder__
 
-#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 #include "IndexResponseView.h"
 
-class IndexResponder : public Renderable
+class IndexResponder : public SimplePolygon
 {
 public:
 	virtual ~IndexResponder() {};

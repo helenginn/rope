@@ -183,40 +183,6 @@ GLuint Library::loadText(std::string text, int *w, int *h, Font::Type type)
 	return texid;
 }
 
-GLuint Library::allocateEmptyTexture(int w, int h, std::string filename)
-{
-	GLuint texid;
-	glGenTextures(1, &texid);
-	glBindTexture(GL_TEXTURE_2D, texid);
-
-	GLint intform = GL_RGBA;
-	GLenum myform = GL_RGBA;
-	
-	int size = w * h * 4 * sizeof(unsigned char);
-	unsigned char *bytes = (unsigned char *)malloc(size);
-	memset(bytes, '\0', size);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, intform, w, h, 0, myform, 
-	             GL_UNSIGNED_BYTE, bytes);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
-
-	if (filename.length() > 0)
-	{
-		_textures[filename] = texid;
-		_counts[texid]++;
-	}
-	
-	free(bytes);
-	
-	return texid;
-
-}
-
 GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
                             bool wrap)
 {
@@ -253,12 +219,16 @@ GLuint Library::loadSurface(SDL_Surface *image, std::string filename,
 
 void Library::dropTexture(GLuint tex)
 {
-	int counts = _counts[tex];
+	if (tex == 0)
+	{
+		return;
+	}
 
-	if (counts <= 1)
+	_counts[tex]--;
+
+	if (_counts[tex] == 0)
 	{
 		glDeleteTextures(1, &tex);
-
 		_counts.erase(tex);
 
 		for (std::map<std::string, GLuint>::iterator it = _textures.begin();
@@ -271,10 +241,7 @@ void Library::dropTexture(GLuint tex)
 			}
 		}
 	}
-	else
-	{
-		_counts[tex]--;
-	}
+
 }
 
 void Library::textureDetails(GLuint id, int *w, int *h)
@@ -319,9 +286,8 @@ void Library::registerTexture(std::string key, GLuint &id, int w, int h)
 	if (key.length() > 0)
 	{
 		_textures[key] = id;
+		_counts[id]++;
 	}
-
-	_counts[id]++;
 }
 
 /*********************************/
@@ -402,7 +368,6 @@ GLuint Library::makeProgram(std::string vString, std::string vFile,
 		return 0;
 	}
 
-	GLint result;
 
 	/* create program object and attach shaders */
 	GLuint program = glCreateProgram();
@@ -414,12 +379,14 @@ GLuint Library::makeProgram(std::string vString, std::string vFile,
 	addShaderFromString(program, GL_FRAGMENT_SHADER, fString);
 	checkErrors("adding fshader");
 
-	glBindAttribLocation(program, 0, "position");
-	glBindAttribLocation(program, 1, "normal");
-	glBindAttribLocation(program, 2, "color");
-	glBindAttribLocation(program, 3, "extra");
-	glBindAttribLocation(program, 4, "tex");
+	_shaderCounts[program]++;
+	
+	return program;
+}
 
+void Library::checkProgram(GLuint program)
+{
+	GLint result;
 	checkErrors("binding attributions");
 
 	/* link the program and make sure that there were no errors */
@@ -442,14 +409,10 @@ GLuint Library::makeProgram(std::string vString, std::string vFile,
 		glDeleteProgram(program);
 		program = 0;
 	}
-
-	_shaderCounts[program]++;
-	
-	return program;
 }
 
 GLuint Library::getProgram(std::string vString, std::string vFile,
-                           std::string fString, std::string fFile)
+                           std::string fString, std::string fFile, bool &old)
 {
 	ShaderDuo duo;
 	duo.v = vFile;
@@ -459,11 +422,13 @@ GLuint Library::getProgram(std::string vString, std::string vFile,
 	{
 		GLuint program = _duos[duo];
 		_shaderCounts[program]++;
+		old = true;
 		return _duos[duo];
 	}
 
 	GLuint program = makeProgram(vString, vFile, fString, fFile);
 	_duos[duo] = program;
+	old = false;
 	return program;
 }
 
@@ -481,6 +446,16 @@ void Library::endProgram(std::string vFile, std::string fFile)
 		if (_shaderCounts[program] == 0)
 		{
 			glDeleteProgram(program);
+
+			GLsizei count;
+			GLuint shaders[3];
+			glGetAttachedShaders(program, 3, &count, shaders);
+			
+			for (size_t i = 0; i < count; i++)
+			{
+				glDeleteShader(shaders[i]);
+			}
+
 			_shaderCounts.erase(program);
 			_duos.erase(duo);
 		}

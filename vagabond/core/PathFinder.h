@@ -182,7 +182,7 @@ private:
 	bool _canAdd = true; // sort me out
 	
 	float _linearityThreshold = 0.8;
-	int _threads = 4;
+	int _threads = 8;
 };
 
 #endif

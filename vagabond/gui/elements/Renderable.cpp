@@ -47,10 +47,12 @@ void Renderable::deleteOnMainThread()
 
 Renderable::~Renderable()
 {
-	deletePrograms();
+	delete _shaderGets;
+
 	deleteVBOBuffers();
+	deletePrograms();
 	deleteTextures();
-	
+
 	_vString = "";
 	_fString = "";
 	_gString = "";
@@ -79,28 +81,28 @@ void Renderable::deletePrograms()
 	_program = 0;
 }
 
-void Renderable::rebindToProgram()
-{
-
-}
-
 void Renderable::initialisePrograms()
 {
 	if (_program != 0)
 	{
 		return;
 	}
-	
+
+	bool old = true;
 	_program = Library::getLibrary()->getProgram(_vString, _vFile, 
-	                                             _fString, _fFile);
+	                                             _fString, _fFile, old);
+	
+	if (!old)
+	{
+		_shaderGets->extraVariables();
+		Library::getLibrary()->checkProgram(_program);
+	}
 }
 
 void Renderable::deleteTextures()
 {
-	if (_texid > 0)
-	{
-		Library::getLibrary()->dropTexture(_texid);
-	}
+	Library::getLibrary()->dropTexture(_texid);
+	_texid = 0;
 }
 
 void Renderable::unbindVBOBuffers()
@@ -182,16 +184,7 @@ int Renderable::vaoForContext()
 
 void Renderable::rebufferIndexData()
 {
-	// don't rebuffer if you haven't set up the buffers, will crash
-	if (_bElements.count(_program) == 0 || !_setupBuffers)
-	{
-		return;
-	}
-
-	GLuint be = _bElements[_program];
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, be);
-
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
+	_shaderGets->rebufferIndexData();
 	
 	if (_gl)
 	{
@@ -201,15 +194,7 @@ void Renderable::rebufferIndexData()
 
 void Renderable::rebufferVertexData()
 {
-	if (_bVertices.count(_program) == 0 || !_setupBuffers)
-	{
-		return;
-	}
-	
-	GLuint bv = _bVertices[_program];
-	glBindBuffer(GL_ARRAY_BUFFER, bv);
-
-	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
+	_shaderGets->rebufferVertexData();
 	
 	if (_gl)
 	{
@@ -219,80 +204,7 @@ void Renderable::rebufferVertexData()
 
 void Renderable::setupVBOBuffers()
 {
-	if (_program == 0 || vPointer() == nullptr || iPointer() == nullptr)
-	{
-		return;
-	}
-
-	int vao = vaoForContext();
-	
-	if (vao == 0)
-	{
-		return;
-	}
-
-	glBindVertexArray(vao);
-
-	GLuint bv = 0;
-	glGenBuffers(1, &bv);
-	_bVertices[_program] = bv;
-
-	glBindBuffer(GL_ARRAY_BUFFER, bv);
-	checkErrors("binding array buffer");
-	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_DYNAMIC_DRAW);
-
-	checkErrors("rebuffering data buffer");
-
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
-
-	if (_texid > 0)
-	{
-		glEnableVertexAttribArray(4); 
-	}
-
-	/* Vertices */
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
-	                      (void *)(0 * sizeof(float)));
-	checkErrors("binding vertices");
-
-	/* Normals */
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-	                      (void *)(3 * sizeof(float)));
-	checkErrors("binding indices");
-
-	/* Colours */
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), 
-	                      (void *)(6 * sizeof(float)));
-
-	glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex),
-	                      (void *)(10 * sizeof(float)));
-
-	checkErrors("binding attributes");
-
-	if (_texid > 0)
-	{
-		glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(14 * sizeof(float)));
-
-		checkErrors("rebinding texture attributes");
-	}
-
-	GLuint be = 0;
-	glGenBuffers(1, &be);
-	_bElements[_program] = be;
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _bElements[_program]);
-	checkErrors("index array binding");
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
-	checkErrors("index array buffering");
-	glBindBuffer(GL_ARRAY_BUFFER, _bVertices[_program]);
-	checkErrors("vbo binding");
-	glBufferData(GL_ARRAY_BUFFER, vSize(), vPointer(), GL_STATIC_DRAW);
-	checkErrors("vbo buffering");
-
-	glBindVertexArray(0);
+	_shaderGets->setupVBOBuffers();
 	_setupBuffers = true;
 	
 	if (_gl)
@@ -325,53 +237,54 @@ void Renderable::render(SnowGL *sender)
 		initialisePrograms();
 	}
 
-	if (_program > 0)
+	if (_program == 0)
 	{
-		glUseProgram(_program);
-
-		checkErrors("use program");
-		rebindVBOBuffers();
-		checkErrors("rebinding program");
-
-		_model = getModel();
-		_uModel = glGetUniformLocation(_program, "model");
-		_glModel = glm::transpose(model());
-		glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
-		checkErrors("rebinding model");
-
-		_proj = sender->getProjection();
-		_uProj = glGetUniformLocation(_program, "projection");
-		_glProj = glm::transpose(projection());
-		glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
-		checkErrors("rebinding projection");
-
-		extraUniforms();
-
-		checkErrors("rebinding extras");
-
-		if (_texid > 0)
-		{
-			GLuint which = GL_TEXTURE_2D;
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(which, _texid);
-			GLuint uTex = glGetUniformLocation(_program, "pic_tex");
-			glUniform1i(uTex, 0);
-		}
-
-		if (_setupBuffers)
-		{
-			checkErrors("before drawing elements");
-			glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
-			checkErrors("drawing elements");
-		}
-
-
-		glUseProgram(0);
-		unbindVBOBuffers();
-
-		_renderCount++;
+		return;
 	}
-	
+
+	glUseProgram(_program);
+
+	checkErrors("use program");
+	rebindVBOBuffers();
+	checkErrors("rebinding program");
+
+	_model = getModel();
+	_uModel = glGetUniformLocation(_program, "model");
+	_glModel = glm::transpose(model());
+	glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
+	checkErrors("rebinding model");
+
+	_proj = sender->getProjection();
+	_uProj = glGetUniformLocation(_program, "projection");
+	_glProj = glm::transpose(projection());
+	glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
+	checkErrors("rebinding projection");
+
+	extraUniforms();
+
+	checkErrors("rebinding extras");
+
+	if (hasTexture())
+	{
+		GLuint which = GL_TEXTURE_2D;
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(which, _texid);
+		GLuint uTex = glGetUniformLocation(_program, "pic_tex");
+		glUniform1i(uTex, 0);
+	}
+
+	if (_setupBuffers)
+	{
+		checkErrors("before drawing elements");
+		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
+		checkErrors("drawing elements");
+	}
+
+
+	glUseProgram(0);
+	unbindVBOBuffers();
+
+	_renderCount++;
 
 	for (size_t i = 0; i < objectCount(); i++)
 	{

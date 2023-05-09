@@ -27,7 +27,7 @@
 #define MC_IMPLEM_ENABLE
 #include "MC.h"
 
-GuiDensity::GuiDensity() : Renderable()
+GuiDensity::GuiDensity() : SimplePolygon()
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/density.vsh");
@@ -110,6 +110,9 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 	float mean = ref->mean();
 	float sigma = ref->sigma();
 	float thresh = mean + sigma;
+	
+	_ref = ref;
+	_map = map;
 
 	MC::mcMesh mesh;
 	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
@@ -259,5 +262,14 @@ void GuiDensity::extraUniforms()
 
 	GLuint uSlice = glGetUniformLocation(_program, "slice");
 	glUniform1f(uSlice, _slice);
-}
+	
+	glm::mat3x3 uc = glm::mat3(1.f);
+	
+	if (_map)
+	{
+		uc = _map->realMatrix();
+	}
 
+	GLuint uCell = glGetUniformLocation(_program, "unit_cell");
+	glUniformMatrix3fv(uCell, 1, GL_FALSE, &uc[0][0]);
+}
