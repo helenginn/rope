@@ -27,12 +27,13 @@
 #define MC_IMPLEM_ENABLE
 #include "MC.h"
 
-GuiDensity::GuiDensity() : SimplePolygon()
+GuiDensity::GuiDensity() : CullablePrimitives()
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/density.vsh");
 	setFragmentShaderFile("assets/shaders/density.fsh");
 	setDisabled(true);
+	setName("Gui density");
 }
 
 void GuiDensity::objectFromMesh(MC::mcMesh &mesh)

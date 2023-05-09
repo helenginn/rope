@@ -35,6 +35,12 @@ inline std::ostream &operator<<(std::ostream& stream, const glm::mat3x3& a)
 	return stream;
 }
 
+inline std::ostream &operator<<(std::ostream& stream, const glm::vec2& a)
+{
+	stream << glm::to_string(a);
+	return stream;
+}
+
 inline std::ostream &operator<<(std::ostream& stream, const glm::vec3& a)
 {
 	stream << glm::to_string(a);

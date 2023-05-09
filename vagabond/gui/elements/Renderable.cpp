@@ -95,6 +95,8 @@ void Renderable::initialisePrograms()
 	if (!old)
 	{
 		_shaderGets->extraVariables();
+		
+		checkErrors("before check program");
 		Library::getLibrary()->checkProgram(_program);
 	}
 }
@@ -273,11 +275,15 @@ void Renderable::render(SnowGL *sender)
 		glUniform1i(uTex, 0);
 	}
 
-	if (_setupBuffers)
+	if (_setupBuffers && indexCount())
 	{
 		checkErrors("before drawing elements");
 		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
-		checkErrors("drawing elements");
+		
+		if (checkErrors("drawing elements"))
+		{
+			std::cout << "... " << name() << std::endl;
+		}
 	}
 
 
@@ -468,14 +474,11 @@ Vertex &Renderable::addVertex(glm::vec3 v, std::vector<Vertex> *vec)
 Vertex &Renderable::addVertex(float v1, float v2, float v3,
                            std::vector<Vertex> *vec)
 {
-	Vertex v;
-	memset(&v, 0, sizeof(Vertex));
+	Vertex v{};
 
 	v.color[2] = 0.;
 	v.color[3] = 0.;
-	v.pos[0] = v1;
-	v.pos[1] = v2;
-	v.pos[2] = v3;
+	v.pos = glm::vec3(v1, v2, v3);
 
 	if (vec == NULL)
 	{

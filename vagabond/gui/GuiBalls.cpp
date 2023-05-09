@@ -43,6 +43,7 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 	_renderType = GL_POINTS;
 	_bonds = new GuiBond();
 	_bonds->setDisabled(true);
+	setName("Gui balls");
 }
 
 GuiBalls::~GuiBalls()

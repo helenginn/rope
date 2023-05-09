@@ -1,29 +1,32 @@
 #version 330 core
 
-in vec3 normal;
 in vec3 position;
+in vec3 second;
+in vec3 third;
+in vec3 normal;
 in vec4 color;
-in vec4 extra;
-in vec2 tex;
 
 uniform mat4 projection;
 uniform mat4 model;
 uniform vec3 centre;
 uniform mat3x3 unit_cell;
 
-out vec4 vPos;
 out vec3 dPos;
 out vec4 vColor;
 out vec3 vNormal;
-out vec2 vTex;
+out float jump;
 
-void main()
+mat3x3 inv_rot = inverse(mat3(model));
+mat3x3 inv_cell = inverse(mat3(unit_cell));
+
+ivec3 round_movement(vec3 v)
 {
-    vec4 pos = vec4(position[0], position[1], position[2], 1.0);
+    vec4 pos = vec4(v, 1.0);
 	vec3 diff = vec3(model * pos) - centre;
-	diff = inverse(mat3(model)) * diff;
+	diff = inv_rot * diff;
 
-	vec3 basis_diff = inverse(unit_cell) * diff;
+	vec3 basis_diff = inv_cell * diff;
+	ivec3 ret;
 
 	for (int i = 0; i < 3; i++)
 	{
@@ -38,19 +41,55 @@ void main()
 		}
 
 		round *= sign;
+		ret[i] = round;
+	}
 
-		vec3 axis = round * unit_cell[i];
+	return ret;
+}
+
+vec4 move_vertex(vec3 v)
+{
+	vec3 round = round_movement(v);
+    vec4 pos = vec4(v, 1.0);
+
+	for (int i = 0; i < 3; i++)
+	{
+		vec3 axis = round[i] * unit_cell[i];
 		pos -= vec4(axis, 0.f);
 	}
+
+	pos.w = 1;
+	return pos;
+}
+
+bool bad_length(vec3 v)
+{
+	vec4 pos = move_vertex(v);
+	float dist = length(vec3(model * pos) - centre);
+	if (dist > 15)
+	{
+		jump = -1;
+		return true;
+	}
+
+	return false;
+}
+
+void main()
+{
+	jump = 0;
+	if (bad_length(position) || bad_length(second) || bad_length(third))
+	{
+		return;
+	}
+
+	vec4 pos = move_vertex(position);
+	dPos = vec3(model * pos) - centre;
 
 	gl_Position = projection * model * pos;
 	mat3 rot = mat3(model);
 	vNormal = rot * normal;
-	vTex = tex;
 	vColor = color;
-	vColor = vec4(basis_diff, 1.f);
-	vPos = vec4(rot * vec3(extra), 1.);
-	dPos = vec3(model * pos) - centre;
 }
 
 

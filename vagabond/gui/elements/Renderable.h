@@ -73,6 +73,12 @@ public:
 	{
 		return sizeof(GLuint) * _indices.size();
 	}
+
+	virtual const std::vector<GLuint> &indices() const
+	{
+		return _indices;
+	}
+	
 	
 	GLuint texture()
 	{

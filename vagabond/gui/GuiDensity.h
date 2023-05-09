@@ -19,7 +19,7 @@
 #ifndef __vagabond__GuiDensity__
 #define __vagabond__GuiDensity__
 
-#include <vagabond/gui/elements/SimplePolygon.h>
+#include <vagabond/gui/elements/CullablePrimitives.h>
 #include <vagabond/core/OriginGrid.h>
 #include <fftw3.h>
 
@@ -32,7 +32,7 @@ namespace MC
 	struct mcMesh;
 };
 
-class GuiDensity : public SimplePolygon
+class GuiDensity : public CullablePrimitives
 {
 public:
 	GuiDensity();

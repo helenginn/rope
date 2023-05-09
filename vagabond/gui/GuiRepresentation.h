@@ -34,6 +34,7 @@ public:
 	GuiRepresentation(GuiAtom *parent)
 	{
 		_parent = parent;
+		setName("Gui representation");
 	}
 
 	virtual size_t requestedIndices()

@@ -16,36 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Vertex__
-#define __vagabond__Vertex__
+#ifndef __vagabond__CullablePrimitives__
+#define __vagabond__CullablePrimitives__
 
-#include <vagabond/utils/glm_import.h>
-#include <iostream>
+#include "ShaderGetsPrimitives.h"
+#include "Renderable.h"
 
-namespace Snow
+class CullablePrimitives : public Renderable
 {
-	struct Vertex
+public:
+	CullablePrimitives() : Renderable()
 	{
-		glm::vec3 pos;
-		glm::vec3 normal;
-		glm::vec4 color;
-		glm::vec4 extra;
-		glm::vec2 tex;
-	};
-	
-}
+		_shaderGets = new ShaderGetsPrimitives(this);
+	}
 
-using namespace Snow;
+	virtual void test() {}
+private:
 
-inline std::ostream &operator<<(std::ostream &ss, const Vertex &v)
-{
-	ss << "Pos: " << v.pos << std::endl;
-	ss << "Normal: " << v.normal << std::endl;
-	ss << "Color: " << v.color << std::endl;
-	ss << "Extra: " << v.extra << std::endl;
-	ss << "Tex: " << v.tex << std::endl;
-	return ss;
-}
-
+};
 
 #endif

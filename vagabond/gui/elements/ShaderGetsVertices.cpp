@@ -170,7 +170,6 @@ void *ShaderGetsVertices::iPointer()
 	return _parent->iPointer();
 }
 
-
 void ShaderGetsVertices::rebufferIndexData()
 {
 	GLuint program = _parent->program();

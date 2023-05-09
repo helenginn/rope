@@ -59,6 +59,8 @@ cfile,
 
 'ShaderGetsVertices.cpp',
 'ShaderGetsVertices.h',
+'ShaderGetsPrimitives.cpp',
+'ShaderGetsPrimitives.h',
 'ShaderGets.h',
 
 'AskYesNo.h',

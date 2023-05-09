@@ -1,10 +1,9 @@
 #version 330 core
 
-in vec4 vPos;
 in vec4 vColor;
 in vec3 vNormal;
-in vec2 vTex;
 in vec3 dPos;
+in float jump;
 
 uniform sampler2D pic_tex;
 uniform float slice;
@@ -15,7 +14,12 @@ out vec4 FragColor;
 
 void main()
 {
-	if (slice > 0. && vPos.z > 0.) discard;
+	if (slice > 0.) discard;
+
+	if (jump < 0)
+	{
+		discard;
+	}
 
 	float dist = length(dPos);
 	if (dist > 20. || dPos.z > 15)
