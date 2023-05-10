@@ -56,11 +56,12 @@ void Correlator::prepareList()
 				/* convert to fractional in the space of the big map */
 				_density->real2Voxel(relative_pos);
 				std::cout << "to voxel: " << relative_pos << std::endl;
+//				_density->index_to_fractional(relative_pos);
 				
-				Grid<fftwf_complex>::collapseFrac(relative_pos);
+//				Grid<fftwf_complex>::collapseFrac(relative_pos);
 
 				/* new position in the space closest to the template box */
-				_density->fractional_to_index(relative_pos);
+//				_density->fractional_to_index(relative_pos);
 				_density->voxel2Real(relative_pos);
 				std::cout << "to real: " << relative_pos << std::endl;
 				std::cout << std::endl;
