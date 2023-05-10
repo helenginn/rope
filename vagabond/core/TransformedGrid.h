@@ -30,7 +30,7 @@ public:
 	
 	void setRecipMatrix(glm::mat3x3 mat);
 
-	virtual const glm::mat3x3 &realMatrix() const
+	virtual const glm::mat3x3 &frac2Real() const
 	{
 		return _frac2Real;
 	}

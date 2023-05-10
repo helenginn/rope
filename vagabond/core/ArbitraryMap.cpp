@@ -65,7 +65,7 @@ void ArbitraryMap::setup()
 	fft();
 	
 	glm::mat3x3 recip = _diff->recipMatrix();
-	glm::mat3x3 real = _diff->realMatrix();
+	glm::mat3x3 real = _diff->frac2Real();
 	setRealMatrix(real);
 	/*
 	std::cout << nx() << " " << ny() << " " << nz() << std::endl;

@@ -268,7 +268,7 @@ void GuiDensity::extraUniforms()
 	
 	if (_map)
 	{
-		uc = _map->realMatrix();
+		uc = _map->frac2Real();
 	}
 
 	GLuint uCell = glGetUniformLocation(_program, "unit_cell");

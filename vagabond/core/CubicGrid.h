@@ -37,7 +37,7 @@ public:
 
 	virtual glm::vec3 maxBound() const;
 
-	virtual const glm::mat3x3 &realMatrix() const;
+	virtual const glm::mat3x3 &frac2Real() const;
 
 	virtual float resolution(int i, int j, int k);
 	virtual void real2Voxel(glm::vec3 &real) const;

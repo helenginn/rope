@@ -39,7 +39,7 @@ class AtomSegment : public FFTCubicGrid<Density>
 {
 public:
 	AtomSegment();
-	
+
 	template <class T>
 	void getDimensionsFrom(const FFTCubicGrid<T> &other)
 	{

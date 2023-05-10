@@ -54,7 +54,7 @@ public:
 	void setDimensions(int nx, int ny, int nz, bool adjust = true);
 	bool withinBounds(int i, int j, int k);
 
-	virtual const glm::mat3x3 &realMatrix() const = 0;
+	virtual const glm::mat3x3 &frac2Real() const = 0;
 	
 	int reciprocalLimitIndex(int dim);
 	

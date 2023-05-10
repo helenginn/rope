@@ -105,7 +105,7 @@ glm::vec3 CubicGrid<T>::real(int h, int k, int l)
 }
 
 template <class T>
-const glm::mat3x3 &CubicGrid<T>::realMatrix() const
+const glm::mat3x3 &CubicGrid<T>::frac2Real() const
 {
 	return _real;
 }
