@@ -85,7 +85,7 @@ template <class T>
 void TransformedGrid<T>::voxel2Real(glm::vec3 &voxel) const
 {
 	voxel = _voxel2Real * voxel;
-	voxel -= this->origin();
+	voxel += this->origin();
 }
 
 template <class T>
