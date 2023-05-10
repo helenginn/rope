@@ -51,6 +51,7 @@ std::vector<float> Engine::findBestResult(float *score)
 		if (it->second.received && it->second.score < best)
 		{
 			best = it->second.score;
+			std::cout << -best << std::endl;
 			ts = &(it->second);
 		}
 
