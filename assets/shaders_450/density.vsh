@@ -66,7 +66,7 @@ bool bad_length(vec3 v)
 {
 	vec4 pos = move_vertex(v);
 	float dist = length(vec3(model * pos) - centre);
-	if (dist > 15)
+	if (dist > 19)
 	{
 		jump = -1;
 		return true;
@@ -77,13 +77,24 @@ bool bad_length(vec3 v)
 
 void main()
 {
-	jump = 0;
+	jump = -1;
 	if (bad_length(position) || bad_length(second) || bad_length(third))
 	{
 		return;
 	}
 
-	vec4 pos = move_vertex(position);
+	vec4 ref1 = move_vertex(position);
+	vec4 ref2 = move_vertex(second);
+	vec4 ref3 = move_vertex(second);
+
+	if (length(ref3 - ref2) > 19 || length(ref2 - ref1) > 19 ||
+		length(ref1 - ref3) > 19)
+	{
+		return;
+	}
+
+	jump = 1;
+	vec4 pos = ref1;
 	dPos = vec3(model * pos) - centre;
 
 	gl_Position = projection * model * pos;

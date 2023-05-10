@@ -22,7 +22,7 @@ void main()
 	}
 
 	float dist = length(dPos);
-	if (dist > 20. || dPos.z > 15)
+	if (dist > 20. || dPos.z > 10)
 	{
 		discard;
 	}
