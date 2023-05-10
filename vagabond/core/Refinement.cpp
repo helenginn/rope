@@ -88,7 +88,7 @@ void Refinement::preparePolymer(Polymer *mol)
 	
 	int max = 5;
 	
-	/* get three top axes from cluster */
+	/* get max top axes from cluster */
 	for (size_t i = 0; i < max && i < cluster->rows(); i++)
 	{
 		std::vector<Angular> vals = cluster->rawVector(i);
