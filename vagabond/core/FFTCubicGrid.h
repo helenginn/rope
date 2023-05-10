@@ -29,8 +29,8 @@ class FFTCubicGrid : virtual public CubicGrid<T>, virtual public FFT<T>
 public:
 	FFTCubicGrid() : CubicGrid<T>(0, 0, 0), FFT<T>() {}
 	FFTCubicGrid(int nx, int ny, int nz) : 
-	CubicGrid<T>(nx, ny, nz)
-	, FFT<T>() {};
+	CubicGrid<T>(nx, ny, nz),
+	FFT<T>() {};
 
 private:
 
