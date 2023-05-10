@@ -103,7 +103,8 @@ int MolRefiner::sendJob(const std::vector<float> &all)
 float MolRefiner::getResult(int *job_id)
 {
 	retrieveJobs();
-	return RunsEngine::getResult(job_id);
+	float res = RunsEngine::getResult(job_id);
+	return res;
 }
 
 void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
