@@ -45,7 +45,6 @@ void Correlator::prepareList()
 		{
 			for (size_t i = 0; i < _density->nx(); i++)
 			{
-				bool test = (j == 79 && k == 83);
 				glm::vec3 real_pos = _density->real(i, j, k);
 
 				/* find point relative to the minimum of template */
