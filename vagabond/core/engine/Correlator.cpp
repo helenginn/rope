@@ -51,15 +51,19 @@ void Correlator::prepareList()
 				glm::vec3 relative_pos = real_pos;
 				relative_pos -= min;
 				
+				std::cout << "origin: " << _density->origin() << std::endl;
+				std::cout << "start: " << relative_pos << std::endl;
 				/* convert to fractional in the space of the big map */
 				_density->real2Voxel(relative_pos);
-				_density->index_to_fractional(relative_pos);
+				std::cout << "to voxel: " << relative_pos << std::endl;
 				
 				Grid<fftwf_complex>::collapseFrac(relative_pos);
 
 				/* new position in the space closest to the template box */
 				_density->fractional_to_index(relative_pos);
 				_density->voxel2Real(relative_pos);
+				std::cout << "to real: " << relative_pos << std::endl;
+				std::cout << std::endl;
 
 				relative_pos += min;
 				all++;
