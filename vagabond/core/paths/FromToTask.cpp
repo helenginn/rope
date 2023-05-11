@@ -23,7 +23,7 @@
 #include "../Environment.h"
 #include "../Instance.h"
 #include "../RopeCluster.h"
-#include "../SplitRoute.h"
+#include "../PlausibleRoute.h"
 
 FromToTask::FromToTask(PathFinder *pf, HasMetadata *from, HasMetadata *to)
 : PathTask(pf)
@@ -63,7 +63,7 @@ PlausibleRoute *FromToTask::findRouteOrMakeNew()
 PlausibleRoute *FromToTask::makeNewRoute()
 {
 	int l = _pf->cluster()->dataGroup()->length();
-	SplitRoute *sr = new SplitRoute(from(), _pf->cluster(), l);
+	PlausibleRoute *sr = new PlausibleRoute(from(), _pf->cluster(), l);
 	sr->useForceField(false);
 
 	int mine = _pf->cluster()->dataGroup()->indexOfObject(from());

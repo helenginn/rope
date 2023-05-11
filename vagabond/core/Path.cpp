@@ -83,7 +83,7 @@ PlausibleRoute *Path::toRoute()
 	
 	AtomGroup *group = _model->currentAtoms();
 
-	SplitRoute *pr = new SplitRoute(_instance, nullptr, _wayPoints.size());
+	PlausibleRoute *pr = new PlausibleRoute(_instance, nullptr, _wayPoints.size());
 	pr->useForceField(false);
 	pr->setDestinationInstance(_end);
 	pr->setType(_type);

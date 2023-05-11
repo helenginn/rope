@@ -26,6 +26,7 @@ PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
                                int dims)
 : Route(inst, cluster, dims)
 {
+	_threads = 4;
 	_maximumCycles = 5;
 }
 

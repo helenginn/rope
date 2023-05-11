@@ -27,7 +27,6 @@
 #include "AxisExplorer.h"
 #include "ConfSpaceView.h"
 #include "PlausibleRoute.h"
-#include "SplitRoute.h"
 #include "RouteExplorer.h"
 #include "Axes.h"
 
@@ -231,7 +230,7 @@ void Axes::loadAxisExplorer(int idx)
 void Axes::route(int idx)
 {
 	int l = _torsionCluster->dataGroup()->length();
-	SplitRoute *sr = new SplitRoute(_instance, _torsionCluster, l);
+	PlausibleRoute *sr = new PlausibleRoute(_instance, _torsionCluster, l);
 	
 	std::vector<Angular> values = directTorsionVector(idx);
 	sr->setRawDestination(values);
