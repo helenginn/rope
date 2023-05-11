@@ -154,3 +154,19 @@ BondTorsion *AtomGraph::controllingTorsion() const
 
 	return nullptr;
 }
+
+AtomGraph *AtomGraph::deepestChild() const
+{
+	AtomGraph *chosen = nullptr;
+	int max = -1;
+	for (AtomGraph *graph : children)
+	{
+		if (graph->maxDepth > max)
+		{
+			max = graph->maxDepth;
+			chosen = graph;
+		}
+	}
+	
+	return chosen;
+}

@@ -153,9 +153,6 @@ public:
 	 * @param last current node 
 	 * @return node of beginning of next residue */
 	AtomGraph *firstGraphNextResidue(AtomGraph *last);
-
-	/** find the child with the biggest maximum depth */
-	AtomGraph *deepestChild(AtomGraph *last) const;
 	
 	std::vector<const AtomGraph *> joints() const;
 	const std::vector<AtomGraph *> &graphs() const

@@ -57,6 +57,9 @@ struct AtomGraph
 	 * @return torsion angle if successful, null otherwise */
 	BondTorsion *controllingTorsion() const;
 
+	/** find the child with the biggest maximum depth */
+	AtomGraph *deepestChild() const;
+
 	std::string desc() const;
 	
 	~AtomGraph()
