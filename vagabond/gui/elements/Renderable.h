@@ -351,7 +351,7 @@ public:
 
 	virtual bool hasTexture() const
 	{
-		return (_texid > 0);
+		return (_texid > 0 || _expectingTexture);
 	}
 
 	int vaoForContext();
@@ -373,6 +373,7 @@ protected:
 	std::vector<Vertex> _unselectedVertices;
 
 	bool _scroll = false;
+	bool _expectingTexture = false;
 	double _red;
 	double _green;
 	double _blue;
@@ -482,7 +483,6 @@ private:
 	double _x = 0.0;
 	double _y = 0.0;
 	float _resizeScale = 1.f;
-	bool _setupBuffers = false;
 	int _currVertex = -1;
 	int _renderCount = 0;
 	

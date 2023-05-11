@@ -25,6 +25,12 @@ ShaderGetsVertices::ShaderGetsVertices(Renderable *parent) : ShaderGets(parent)
 
 }
 
+bool ShaderGetsVertices::buffered()
+{
+	GLuint program = _parent->program();
+	return _bElements.count(program) && _bVertices.count(program);
+}
+
 ShaderGetsVertices::~ShaderGetsVertices()
 {
 	for (auto it = _bVertices.begin(); it != _bVertices.end(); it++)
@@ -40,29 +46,33 @@ ShaderGetsVertices::~ShaderGetsVertices()
 	}
 }
 
-void ShaderGetsVertices::setupVBOBuffers()
+bool ShaderGetsVertices::setupVBOBuffers()
 {
+	if (buffered())
+	{
+		return false;
+	}
+
 	prepareBuffers();
 	
 	GLuint program = _parent->program();
 
 	if (program == 0 || vPointer() == nullptr || iPointer() == nullptr)
 	{
-		return;
+		return false;
 	}
 
 	int vao = _parent->vaoForContext();
 	
 	if (vao == 0)
 	{
-		return;
+		return false;
 	}
 
 	glBindVertexArray(vao);
 
 	GLuint bv = 0;
 	glGenBuffers(1, &bv);
-	_bVertices[program] = bv;
 
 	glBindBuffer(GL_ARRAY_BUFFER, bv);
 	checkErrors("binding array buffer");
@@ -78,15 +88,18 @@ void ShaderGetsVertices::setupVBOBuffers()
 	// indices
 	GLuint be = 0;
 	glGenBuffers(1, &be);
-	_bElements[program] = be;
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _bElements[program]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, be);
 	checkErrors("index array binding");
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, iSize(), iPointer(), GL_STATIC_DRAW);
 	checkErrors("index array buffering");
 
 	glBindVertexArray(0);
 
+	_bVertices[program] = bv;
+	_bElements[program] = be;
+
+	return true;
 }
 
 void ShaderGetsVertices::prepareBuffers()
@@ -103,7 +116,7 @@ void ShaderGetsVertices::extraVariables()
 	glBindAttribLocation(program, 2, "color");
 	glBindAttribLocation(program, 3, "extra");
 
-	if (_parent->hasTexture())
+//	if (_parent->hasTexture())
 	{
 		glBindAttribLocation(program, 4, "tex");
 	}
@@ -157,6 +170,11 @@ size_t ShaderGetsVertices::vSize()
 
 void *ShaderGetsVertices::vPointer()
 {
+	if (_parent->vertexCount() == 0)
+	{
+		return nullptr;
+	}
+
 	return (void *)&_parent->vertices()[0];
 }
 
@@ -167,6 +185,11 @@ size_t ShaderGetsVertices::iSize()
 
 void *ShaderGetsVertices::iPointer()
 {
+	if (_parent->indexCount() == 0)
+	{
+		return nullptr;
+	}
+
 	return _parent->iPointer();
 }
 
@@ -177,6 +200,7 @@ void ShaderGetsVertices::rebufferIndexData()
 	// don't rebuffer if you haven't set up the buffers, will crash
 	if (_bElements.count(program) == 0)
 	{
+		setupVBOBuffers();
 		return;
 	}
 
@@ -192,6 +216,7 @@ void ShaderGetsVertices::rebufferVertexData()
 	GLuint program = _parent->program();
 	if (_bVertices.count(program) == 0)
 	{
+		setupVBOBuffers();
 		return;
 	}
 	

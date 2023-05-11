@@ -13,6 +13,7 @@ Text::Text(std::string text, Font::Type type, bool delay) : Box()
 	_retext = delay;
 	_text = text;
 	_type = type;
+	_expectingTexture = true;
 
 	if (text.length() > 0 && !_delay)
 	{

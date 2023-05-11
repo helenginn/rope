@@ -27,8 +27,9 @@ class ShaderGetsVertices : public ShaderGets
 public:
 	ShaderGetsVertices(Renderable *r);
 	virtual ~ShaderGetsVertices();
-	virtual void setupVBOBuffers();
+	virtual bool setupVBOBuffers();
 	virtual void prepareBuffers();
+	virtual bool buffered();
 
 	virtual void enablePointers();
 

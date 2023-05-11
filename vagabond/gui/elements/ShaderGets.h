@@ -34,7 +34,9 @@ public:
 	}
 
 	virtual ~ShaderGets() {};
-	virtual void setupVBOBuffers() = 0;
+	virtual bool setupVBOBuffers() = 0;
+	
+	virtual bool buffered() = 0;
 
 	virtual void prepareBuffers() = 0;
 

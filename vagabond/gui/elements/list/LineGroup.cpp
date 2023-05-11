@@ -26,7 +26,7 @@
 #include "../Scene.h"
 
 LineGroup::LineGroup(Item *item, Scene *resp) 
-: Button(resp)
+: Box(), Button(resp)
 {
 	_scene = resp;
 	initialise(item, (LineGroup *)nullptr);

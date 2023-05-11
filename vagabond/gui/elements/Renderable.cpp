@@ -137,7 +137,7 @@ void Renderable::rebindVBOBuffers()
 
 	checkErrors("vertex array attribute reenabling");
 	
-	if (!_setupBuffers)
+	if (!_shaderGets->buffered())
 	{
 		setupVBOBuffers();
 	}
@@ -150,7 +150,7 @@ int Renderable::vaoForContext()
 		GLuint vao = _vaoMap[_program];
 		return vao;
 	}
-	else if (_vaoMap.count(_program) && (_forceVertices || _forceIndices))
+	if (_vaoMap.count(_program) && (_forceVertices || _forceIndices))
 	{
 		if (!tryLockMutex())
 		{
@@ -207,9 +207,8 @@ void Renderable::rebufferVertexData()
 void Renderable::setupVBOBuffers()
 {
 	_shaderGets->setupVBOBuffers();
-	_setupBuffers = true;
 	
-	if (_gl)
+	if (_shaderGets->buffered() && _gl)
 	{
 		_gl->viewChanged();
 	}
@@ -227,11 +226,6 @@ void Renderable::render(SnowGL *sender)
 		return;
 	}
 	
-//	if (!tryLockMutex())
-	{
-//		return;
-	}
-
 	_gl = sender;
 	
 	if (_program == 0)
@@ -275,15 +269,24 @@ void Renderable::render(SnowGL *sender)
 		glUniform1i(uTex, 0);
 	}
 
-	if (_setupBuffers && indexCount())
+	if (_shaderGets->buffered())
 	{
+		if (!tryLockMutex())
+		{
+			return;
+		}
+
 		checkErrors("before drawing elements");
 		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
 		
 		if (checkErrors("drawing elements"))
 		{
+			std::cout << _shaderGets->buffered() << " " << this << std::endl;
+			std::cout << indexCount() << " + " << vertexCount() << " ";
 			std::cout << "... " << name() << std::endl;
 		}
+		
+		unlockMutex();
 	}
 
 
@@ -362,6 +365,11 @@ void Renderable::resize_around_centre(double scale, glm::vec3 centre,
 
 	for (size_t i = 0; i < objectCount(); i++)
 	{
+		if (object(i)->isDisabled())
+		{
+			continue;
+		}
+
 		object(i)->resize_around_centre(scale, centre, unselected, realign);
 	}
 }
