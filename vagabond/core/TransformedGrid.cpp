@@ -45,12 +45,12 @@ void TransformedGrid<T>::setRecipMatrix(glm::mat3x3 mat)
 	
 	_voxel2Real = mat;
 	_voxel2Recip = inv;
-
+	
 	for (size_t i = 0; i < 3; i++)
 	{
 		for (size_t j = 0; j < 3; j++)
 		{
-			_voxel2Real[j][i] /= (float)this->dim(i);
+			_voxel2Real[i][j] /= (float)this->dim(i);
 			_voxel2Recip[j][i] *= (float)this->dim(i);
 		}
 	}
@@ -84,15 +84,17 @@ glm::vec3 TransformedGrid<T>::real(int h, int k, int l)
 template <class T>
 void TransformedGrid<T>::voxel2Real(glm::vec3 &voxel) const
 {
-	voxel = _voxel2Real * voxel;
-	voxel += this->origin();
+	glm::vec3 ret = _voxel2Real * voxel;
+	ret += this->origin();
+	voxel = ret;
 }
 
 template <class T>
 void TransformedGrid<T>::real2Voxel(glm::vec3 &real) const
 {
 	real -= this->origin();
-	real = _voxel2Recip * real;
+	glm::vec3 ret = _voxel2Recip * real;
+	real = ret;
 }
 
 template <class T>
