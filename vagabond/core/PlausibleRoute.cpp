@@ -300,7 +300,6 @@ int PlausibleRoute::nudgeWaypoints()
 		single.push_back(indexOfParameter(centre));
 		
 		std::vector<int> torsionIdxs = getIndices(related);
-//		torsionIdxs = getTorsionSequence(i, total, false, 2.0);
 		
 		bool result = simplexCycle(single);
 		result |= simplexCycle(torsionIdxs);
@@ -326,7 +325,6 @@ void print(std::vector<bool> &flips)
 	{
 		std::cout << (flips[j] ? "Y" : "n");
 	}
-
 }
 
 void addPermutation(std::vector<std::vector<bool> > &perms)
@@ -362,59 +360,33 @@ std::vector<std::vector<bool> > permutations(int count)
 }
 
 std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max, 
-                                                    bool validate, float maxMag)
+                                                    float maxMag)
 {
 	AtomGraph *g = grapherForTorsionIndex(start);
 
-	if (!g) return std::vector<int>();
-
-	AtomGraph *orig = g;
+	std::vector<int> idxs;
+	if (!g) return idxs;
 
 	int count = 0;
-	std::vector<int> idxs;
 	idxs.push_back(start);
 	
-	while (count < max)
+	while (g && count < max)
 	{
 		for (size_t j = 0; j < g->children.size(); j++)
 		{
 			Atom *a = g->children[j]->atom;
 			AtomGraph *candidate = grapher().graph(a);
 			int n = indexOfParameter(candidate->torsion);
-			if (n < 0)
+			if ((n < 0) || !validateMainTorsion(n, true))
 			{
 				continue;
 			}
 
-			if (validate && !validateMainTorsion(n, validate))
-			{
-				continue;
-			}
-
-			if (fabs(destination(n)) < maxMag)
-			{
-				continue;
-			}
-			
 			idxs.push_back(n);
 			count++;
 		}
-		
-		int best = -1;
-		int depth = 0;
-		for (size_t j = 0; j < g->children.size(); j++)
-		{
-			int maxdepth = g->children[j]->maxDepth;
-			if (maxdepth > depth)
-			{
-				best = j;
-				maxdepth = depth;
-			}
-		}
 
-		if (best < 0) break;
-
-		g = g->children[best];
+		g = g->deepestChild();
 	}
 
 	return idxs;
@@ -423,7 +395,7 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 
 bool PlausibleRoute::flipTorsion(int idx)
 {
-	std::vector<int> idxs = getTorsionSequence(idx, 5, false, 30.f);
+	std::vector<int> idxs = getTorsionSequence(idx, 5, 30.f);
 	
 	if (idxs.size() == 0)
 	{
@@ -598,30 +570,11 @@ void PlausibleRoute::doCalculations()
 float PlausibleRoute::getLinearInterpolatedTorsion(int i, float frac)
 {
 	float angle = getTorsionAngle(i);
+	float progress = wayPoints(i).progress(frac);
 
-	WayPoints wps = wayPoints(i);
-	WayPoint *start = nullptr;
-	WayPoint *end = nullptr;
+	float new_angle = angle * progress;
 
-	for (size_t j = 1; j < wps.size(); j++)
-	{
-		start = &wps[j - 1];
-		end = &wps[j];
-
-		if (wps[j].fraction() > frac)
-		{
-			break;
-		}
-	}
-
-	float progress = start->progress();
-	float proportion = ((frac - start->fraction()) / 
-	                    (end->fraction() - start->fraction()));
-
-	float diff = (end->progress() - start->progress()) * proportion + progress;
-	float angle_diff = angle * diff;
-
-	return angle_diff;
+	return new_angle;
 }
 
 void PlausibleRoute::addLinearInterpolatedPoint(float frac)
@@ -637,35 +590,13 @@ void PlausibleRoute::addLinearInterpolatedPoint(float frac)
 	addPoint(point);
 }
 
-float PlausibleRoute::getPolynomialInterpolatedFraction(PolyFit &fit, float frac)
-{
-	float sum = 0;
-	int mult = 1;
-	float powered = 1;
-	
-	for (size_t i = 0; i < fit.size(); i++)
-	{
-		sum += fit[i] * powered;
-
-		/* to make the next x^2, x^3 etc. */
-		powered *= frac;
-	}
-
-	return sum;
-}
-
 float PlausibleRoute::getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
                                                        float frac)
 {
 	float angle = getTorsionAngle(i);
-	float prop = getPolynomialInterpolatedFraction(fit, frac);
+	float prop = WayPoints::getPolynomialInterpolatedFraction(fit, frac);
 	
 	return angle * prop;
-}
-
-PlausibleRoute::PolyFit PlausibleRoute::polynomialFit(int i)
-{
-	return wayPoints(i).polyFit();
 }
 
 std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
@@ -676,7 +607,7 @@ std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
-		PolyFit pf = polynomialFit(i);
+		PolyFit pf = wayPoints(i).polyFit();
 		fits.push_back(pf);
 	}
 	
@@ -709,31 +640,6 @@ void PlausibleRoute::calculatePolynomialProgression(int steps)
 		addPolynomialInterpolatedPoint(fits, frac);
 		frac += step;
 	}
-}
-
-void PlausibleRoute::printFit(PlausibleRoute::PolyFit &fit)
-{
-	float powered = 0;
-	
-	for (size_t i = 0; i < fit.size(); i++)
-	{
-		if (i == 0)
-		{
-			std::cout << fit[i] << " + ";
-		}
-		else if (i != fit.size() - 1)
-		{
-			std::cout << fit[i] << "x^" << powered << " + ";
-		}
-		else 
-		{
-			std::cout << fit[i] << "x^" << powered;
-		}
-		
-		powered++;
-	}
-	std::cout << std::endl;
-
 }
 
 void PlausibleRoute::twoPointProgression()
@@ -848,46 +754,15 @@ void PlausibleRoute::prepareForAnalysis()
 void PlausibleRoute::splitWaypoint(int idx)
 {
 	WayPoints &wps = wayPoints(idx);
-	PolyFit fit = polynomialFit(idx);
-
 	int count = wps.size();
 	
 	if (count > _splitCount + 2)
 	{
 		return;
 	}
-
-	float prog = 1 / (float)count; // should equal one more!
-	float sum = 0;
-	bool print = fabs(getTorsionAngle(idx)) > 45;
-
-	WayPoints newPoints;
-	for (size_t i = 0; i < count + 1; i++)
-	{
-		float progress = getPolynomialInterpolatedFraction(fit, sum);
-		WayPoint wp(sum, progress);
-
-		newPoints.push_back(wp);
-		sum += prog;
-	}
 	
-	setWayPoints(idx, newPoints);
-
-	PolyFit new_fit = polynomialFit(idx);
-	
-	if (!print)
-	{
-		return;
-	}
-	sum = 0;
-
-	for (size_t i = 0; i < count + 1; i++)
-	{
-		float frac = getPolynomialInterpolatedFraction(new_fit, sum);
-		sum += prog;
-
-	}
-	
+	wps.split();
+	return;
 }
 
 void PlausibleRoute::splitWaypoints()
@@ -930,7 +805,7 @@ void PlausibleRoute::printWaypoints()
 		}
 		std::cout << start << "," << start + diff << ",";
 		
-		PolyFit fit = polynomialFit(i);
+		PolyFit fit = wayPoints(i).polyFit();
 		float step = 0.1;
 		float sum = 0;
 		
@@ -939,15 +814,6 @@ void PlausibleRoute::printWaypoints()
 			std::cout << "(" << wayPoints(i)[j].fraction() << ",";
 			std::cout << wayPoints(i)[j].progress() << "),";
 		}
-		std::cout << std::endl;
-
-		for (size_t j = 0; j <= 10 && false; j++)
-		{
-			float progress = getPolynomialInterpolatedFraction(fit, sum);
-			std::cout << progress << ",";
-			sum += step;
-		}
-		
 		std::cout << std::endl;
 	}
 

@@ -128,6 +128,15 @@ struct WayPoints
 	std::vector<WayPoint> _wps;
 
 	std::vector<float> polyFit();
+
+	static void printFit(std::vector<float> &fit);
+	
+	void split();
+	
+	float progress(float frac);
+
+	static float getPolynomialInterpolatedFraction(std::vector<float> &fit, 
+	                                               float frac);
 	
 	const WayPoint &at(int i) const
 	{

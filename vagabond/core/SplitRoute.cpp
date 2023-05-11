@@ -49,7 +49,7 @@ void SplitRoute::findAtomSequence()
 		BondTorsion *t = gr->torsion;
 
 		int idx = indexOfParameter(t);
-		gr = g.deepestChild(gr);
+		gr = gr->deepestChild();
 		if (idx > 0)
 		{
 			float mag = fabs(destination(idx));
@@ -95,7 +95,7 @@ void SplitRoute::addTorsionIndices(std::vector<int> &idxs, AtomGraph *gr)
 			idxs.push_back(idx);
 		}
 		
-		curr = g.deepestChild(curr);
+		curr = curr->deepestChild();
 		
 		if (curr == nullptr)
 		{

@@ -68,8 +68,7 @@ protected:
 	bool simplexCycle(std::vector<int> torsionIdxs);
 	void startTicker(std::string tag, int d = -1);
 
-	std::vector<int> getTorsionSequence(int start, int max, 
-	                                    bool validate, float maxMag);
+	std::vector<int> getTorsionSequence(int start, int max, float maxMag);
 	
 	bool _mainsOnly = true;
 	bool _flipTorsions = true;
@@ -105,13 +104,11 @@ private:
 
 	float getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
 	                                       float frac);
-	float getPolynomialInterpolatedFraction(PolyFit &fit, float frac);
 
 	void addPolynomialInterpolatedPoint(std::vector<PolyFit> &fits,
 	                                    float frac);
 
 	std::vector<PolyFit> polynomialFits();
-	PolyFit polynomialFit(int i);
 
 	bool validateMainTorsion(int i, bool over_mag = true);
 	void prepareAnglesForRefinement(std::vector<int> &idxs);
@@ -120,7 +117,6 @@ private:
 	virtual void cycle();
 
 	void assignParameterValues(const std::vector<float> &trial);
-	void printFit(PlausibleRoute::PolyFit &fit);
 
 	bool validateWayPoint(const WayPoints &wps);
 	bool validateWayPoints();

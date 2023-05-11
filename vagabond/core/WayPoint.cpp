@@ -18,6 +18,7 @@
 
 #include "WayPoint.h"
 #include <vagabond/utils/polyfit.h>
+#include <iostream>
 
 std::vector<float> WayPoints::polyFit()
 {
@@ -58,3 +59,93 @@ std::vector<float> WayPoints::polyFit()
 
 	return _polyFit;
 }
+
+float WayPoints::getPolynomialInterpolatedFraction(std::vector<float> &fit, 
+                                                   float frac)
+{
+	float sum = 0;
+	int mult = 1;
+	float powered = 1;
+	
+	for (size_t i = 0; i < fit.size(); i++)
+	{
+		sum += fit[i] * powered;
+
+		/* to make the next x^2, x^3 etc. */
+		powered *= frac;
+	}
+
+	return sum;
+}
+
+
+void WayPoints::split()
+{
+	std::vector<float> fit = polyFit();
+
+	float prog = 1 / (float)size();
+	float sum = 0;
+
+	WayPoints newPoints;
+	for (size_t i = 0; i < size() + 1; i++)
+	{
+		float progress = getPolynomialInterpolatedFraction(fit, sum);
+		WayPoint wp(sum, progress);
+
+		newPoints.push_back(wp);
+		sum += prog;
+	}
+	
+	*this = newPoints;
+}
+
+float WayPoints::progress(float frac)
+{
+	const WayPoint *start = nullptr;
+	const WayPoint *end = nullptr;
+
+	for (size_t j = 1; j < size(); j++)
+	{
+		start = &at(j - 1);
+		end = &at(j);
+
+		if (at(j).fraction() > frac)
+		{
+			break;
+		}
+	}
+
+	float progress = start->progress();
+	float proportion = ((frac - start->fraction()) / 
+	                    (end->fraction() - start->fraction()));
+
+	float diff = (end->progress() - start->progress()) * proportion + progress;
+
+	return diff;
+}
+
+void WayPoints::printFit(std::vector<float> &fit)
+{
+	float powered = 0;
+	
+	for (size_t i = 0; i < fit.size(); i++)
+	{
+		if (i == 0)
+		{
+			std::cout << fit[i] << " + ";
+		}
+		else if (i != fit.size() - 1)
+		{
+			std::cout << fit[i] << "x^" << powered << " + ";
+		}
+		else 
+		{
+			std::cout << fit[i] << "x^" << powered;
+		}
+		
+		powered++;
+	}
+
+	std::cout << std::endl;
+}
+
