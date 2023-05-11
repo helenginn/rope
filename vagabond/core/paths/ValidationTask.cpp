@@ -48,10 +48,7 @@ void ValidationTask::specificTasks()
 	{
 		Path *path = new Path(pr);
 		_pf->sendUpdatedPath(path, this);
-	}
-	
-	if (isValid && linearRatio < _pf->linearityThreshold())
-	{
+
 		OptimiseTask *ot = new OptimiseTask(_pf, _from, _to);
 		_pf->addTask(ot);
 	}

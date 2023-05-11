@@ -147,7 +147,7 @@ void PathFinderView::updateMatrixBox()
 
 void PathFinderView::updateStarBox()
 {
-	int steps = 24;
+	int steps = 16;
 	TorsionCluster *tc = _pf->monitor()->torsionClusterForPathDeviations(steps);
 	tc->cluster();
 	

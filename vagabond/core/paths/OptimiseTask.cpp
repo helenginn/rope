@@ -73,7 +73,7 @@ void OptimiseTask::specificTasks()
 
 	delete pr;
 	
-	if (linearRatio < _pf->linearityThreshold())
+	if (_cycles == 1 || linearRatio < _pf->linearityThreshold())
 	{
 		OptimiseTask *ot = new OptimiseTask(_pf, _from, _to);
 		_pf->addTask(ot);

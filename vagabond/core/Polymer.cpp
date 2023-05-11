@@ -357,7 +357,6 @@ bool Polymer::atomBelongsToInstance(Atom *a)
 
 MetadataGroup::Array Polymer::grabTorsions(rope::TorsionType type)
 {
-	sequence()->clearMaps();
 	sequence()->remapFromMaster(entity());
 	MetadataGroup::Array vals;
 

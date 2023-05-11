@@ -144,7 +144,7 @@ Path *Monitor::existingPath(Instance *first, Instance *second)
 
 TorsionCluster *Monitor::torsionClusterForPathDeviations(int steps)
 {
-	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup();
+	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup(true);
 
 	std::unique_lock<std::mutex> lock(_mapMutex);
 	for (Path *path : _paths)
