@@ -47,33 +47,15 @@ void Renderable::deleteOnMainThread()
 
 Renderable::~Renderable()
 {
-	delete _shaderGets;
+	if (_shaderGets != nullptr)
+	{
+		delete _shaderGets;
+	}
 
 	deleteVBOBuffers();
 	deletePrograms();
 	deleteTextures();
-
-	_vString = "";
-	_fString = "";
-	_gString = "";
-	_unselectedVertices.clear();
-	_vertices.clear();
-	_indices.clear();
-	std::vector<Vertex>().swap(_unselectedVertices);
-	std::vector<Vertex>().swap(_vertices);
-	std::vector<GLuint>().swap(_indices);
-	
-	for (size_t i = 0; i < _objects.size(); i++)
-	{
-		if (_objects[i] == _hover)
-		{
-			removeObject(_hover);
-			delete _hover;
-			_hover = nullptr;
-		}
-	}
 }
-
 
 void Renderable::deletePrograms()
 {
