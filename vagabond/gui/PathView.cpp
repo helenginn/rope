@@ -40,11 +40,6 @@ PathView::~PathView()
 
 }
 
-void PathView::render(SnowGL *gl)
-{
-	Renderable::render(gl);
-}
-
 void PathView::populate()
 {
 	MetadataGroup *dg = static_cast<MetadataGroup *>(_cluster->objectGroup());
@@ -56,6 +51,7 @@ void PathView::populate()
 
 	const MetadataGroup::Array &average = dg->average();
 	
+	lockMutex();
 	for (size_t i = 0; i < _path.angleArraySize(); i++)
 	{
 		MetadataGroup::Array angles = _path.angleArray(i);
@@ -82,6 +78,7 @@ void PathView::populate()
 	addVertex(end);
 	addIndex(-2);
 	addIndex(-1);
+	unlockMutex();
 
 	setAlpha(1.f);
 	

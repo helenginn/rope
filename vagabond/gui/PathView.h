@@ -34,7 +34,6 @@ public:
 	PathView(Path &path, ClusterSVD<MetadataGroup> *cluster);
 	virtual ~PathView();
 
-	virtual void render(SnowGL *gl);
 	void populate();
 private:
 	ClusterSVD<MetadataGroup> *_cluster = nullptr;
