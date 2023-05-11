@@ -256,12 +256,29 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 	return changed;
 }
 
+std::vector<int> PlausibleRoute::getIndices(const std::set<Parameter *> &related)
+{
+	std::vector<int> idxs;
+	
+	for (Parameter *p : related)
+	{
+		int idx = indexOfParameter(p);
+		if (idx >= 0 && validateMainTorsion(idx))
+		{
+			idxs.push_back(idx);
+		}
+	}
+
+	return idxs;
+}
+
 int PlausibleRoute::nudgeWaypoints()
 {
 	int changed = 0;
 	startTicker("Nudging waypoints (" + f_to_str(_magnitudeThreshold, 1)
 	            + " degrees +)");
 	int total = 1;
+	float start = routeScore(flipNudgeCount());
 
 	for (size_t i = 0; i < destinationSize(); i++)
 	{
@@ -277,22 +294,27 @@ int PlausibleRoute::nudgeWaypoints()
 			continue;
 		}
 		
-		std::vector<int> torsionIdxs;
-		torsionIdxs = getTorsionSequence(i, total, false, 2.0);
+		Parameter *centre = parameter(i);
+		std::set<Parameter *> related = centre->relatedParameters();
+		std::vector<int> single;
+		single.push_back(indexOfParameter(centre));
 		
-		if (torsionIdxs.size() < 1)
-		{
-			continue;
-		}
+		std::vector<int> torsionIdxs = getIndices(related);
+//		torsionIdxs = getTorsionSequence(i, total, false, 2.0);
 		
-		splitWaypoint(i);
-		bool result = simplexCycle(torsionIdxs);
+		bool result = simplexCycle(single);
+		result |= simplexCycle(torsionIdxs);
 		
 		changed += (result ? 1 : 0);
 	}
 
 	postScore(_bestScore);
 	finishTicker();
+	
+	if (_magnitudeThreshold < 6 && _bestScore / start > 0.9 && splitCount() < 2)
+	{
+		splitWaypoints();
+	}
 
 	return changed;
 }
@@ -358,7 +380,7 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max,
 		{
 			Atom *a = g->children[j]->atom;
 			AtomGraph *candidate = grapher().graph(a);
-			int n = indexOfTorsion(candidate->torsion);
+			int n = indexOfParameter(candidate->torsion);
 			if (n < 0)
 			{
 				continue;
@@ -766,7 +788,6 @@ void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 bool PlausibleRoute::validateWayPoint(const WayPoints &wps)
 {
 	float tolerance = 1 / (float)_nudgeCount;
-	tolerance *= 2;
 
 	for (size_t i = 0; i < wps.size() - 1; i++)
 	{
@@ -872,6 +893,12 @@ void PlausibleRoute::splitWaypoint(int idx)
 void PlausibleRoute::splitWaypoints()
 {
 	_splitCount++;
+	
+	for (size_t i = 0; i < wayPointCount(); i++)
+	{
+		splitWaypoint(i);
+
+	}
 }
 
 void PlausibleRoute::printWaypoints()

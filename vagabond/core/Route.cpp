@@ -419,7 +419,7 @@ void Route::prepareDestination()
 	populateWaypoints();
 }
 
-int Route::indexOfTorsion(BondTorsion *t)
+int Route::indexOfParameter(Parameter *t)
 {
 	for (size_t i = 0; i < parameterCount(); i++)
 	{
@@ -465,8 +465,8 @@ void Route::extractWayPoints(Route *other)
 				continue;
 			}
 			
-			int src = other->indexOfTorsion(hr->torsion);
-			int dest = indexOfTorsion(hr->torsion);
+			int src = other->indexOfParameter(hr->torsion);
+			int dest = indexOfParameter(hr->torsion);
 			
 			if (src < 0 || dest < 0)
 			{

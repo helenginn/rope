@@ -188,7 +188,7 @@ public:
 	
 	void clearWayPointFlips();
 
-	int indexOfTorsion(BondTorsion *t);
+	int indexOfParameter(Parameter *t);
 
 	void bringTorsionsToRange();
 	

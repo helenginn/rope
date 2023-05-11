@@ -48,7 +48,7 @@ void SplitRoute::findAtomSequence()
 		Atom *anchor = gr->atom;
 		BondTorsion *t = gr->torsion;
 
-		int idx = indexOfTorsion(t);
+		int idx = indexOfParameter(t);
 		gr = g.deepestChild(gr);
 		if (idx > 0)
 		{
@@ -89,7 +89,7 @@ void SplitRoute::addTorsionIndices(std::vector<int> &idxs, AtomGraph *gr)
 	for (size_t i = 0; i < quiet_size + 1; i++)
 	{
 		BondTorsion *bt = curr->torsion;
-		int idx = indexOfTorsion(bt);
+		int idx = indexOfParameter(bt);
 		if (idx >= 0)
 		{
 			idxs.push_back(idx);
@@ -106,6 +106,7 @@ void SplitRoute::addTorsionIndices(std::vector<int> &idxs, AtomGraph *gr)
 
 bool SplitRoute::optimiseConnections()
 {
+	return false;
 	startTicker("Optimising connections", _atoms.size());
 
 	bool result = false;
@@ -120,7 +121,7 @@ bool SplitRoute::optimiseConnections()
 
 		AtomGraph *g = _atoms[i].graph;
 
-		int idx = indexOfTorsion(g->torsion);
+		int idx = indexOfParameter(g->torsion);
 		if (idx < 0)
 		{
 			continue;
@@ -245,7 +246,7 @@ void SplitRoute::doCalculations()
 			break;
 		}
 		
-		if (stages % 3 == 2 && end / begin > 0.95 && splitCount() < 1)
+		if (stages % 3 == 2 && end / begin > 0.95 && splitCount() < 2)
 		{
 			splitWaypoints();
 		}

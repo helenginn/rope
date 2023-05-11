@@ -54,6 +54,7 @@ public:
 	virtual void prepareForAnalysis();
 	float routeScore(int steps, bool forceField = false);
 protected:
+	std::vector<int> getIndices(const std::set<Parameter *> &related);
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();
 	void postScore(float score);
