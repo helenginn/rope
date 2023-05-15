@@ -50,25 +50,9 @@ float ConcertedBasis::parameterForVector(int idx, const float *vec, int n)
 		return ta.angle;
 	}
 
-	float sum = 0;
-	float total = 0;
-
-	int contracted = _idxs[idx];
-
-	for (size_t i = 0; i < n; i++)
-	{
-		if (contracted < 0 || contracted > _svd.u.rows || i > _svd.u.rows)
-		{
-			continue;
-		}
-
-		double svd = (_svd.u[contracted][i]);
-		const float &custom = vec[i];
-		
-		sum += svd * custom;
-		total++;
-	}
+	float sum = fullContribution(idx, vec, n);
 	
+	int contracted = _idxs[idx];
 	Parameter *bt = _filtered[contracted];
 	
 	sum += ta.angle;
@@ -262,5 +246,39 @@ void ConcertedBasis::prepare(int dims)
 size_t ConcertedBasis::activeBonds()
 {
 	return _nActive;
+}
+
+float ConcertedBasis::fullContribution(int idx, const float *vec, int n)
+{
+	int contracted = _idxs[idx];
+	
+	if (contracted < 0 || contracted > _svd.u.rows)
+	{
+		return 0;
+	}
+
+	float ret = 0;
+
+	// each n is an axis
+	for (size_t a = 0; a < n; a++)
+	{
+		float add = contributionForAxis(a, idx, vec);
+		ret += add;
+	}
+
+	return ret;
+}
+
+float ConcertedBasis::contributionForAxis(int axis, int i, const float *vec)
+{
+	if (i > _svd.u.rows)
+	{
+		return 0;
+	}
+
+	double svd = (_svd.u[axis][i]);
+	const float &custom = vec[i];
+	float add = svd * custom;
+	return add;
 }
 

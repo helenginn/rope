@@ -63,6 +63,9 @@ public:
 	{
 		return _unusedId;
 	}
+protected:
+	float fullContribution(int idx, const float *vec, int n);
+	virtual float contributionForAxis(int axis, int i, const float *vec);
 private:
 	void prepareSVD();
 	void setupAngleList();
