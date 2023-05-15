@@ -19,6 +19,7 @@
 #include "StarView.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/core/RopeCluster.h>
+#include <vagabond/core/Path.h>
 #include <vagabond/gui/elements/Line.h>
 
 StarView::StarView()
@@ -28,6 +29,21 @@ StarView::StarView()
 	addObject(_line);
 }
 
+void StarView::setPaths(std::set<Path *> &paths)
+{
+	for (Path *path : _paths)
+	{
+		delete path;
+	}
+
+	_paths.clear();
+
+	for (Path *path : paths)
+	{
+		_paths.insert(new Path(*path));
+	}
+}
+
 void StarView::updatePoints()
 {
 
@@ -35,7 +51,7 @@ void StarView::updatePoints()
 
 void StarView::colourVertex(Vertex &v)
 {
-	glm::vec3 hsv = glm::vec3(hue * 360, 100, 100);
+	glm::vec3 hsv = glm::vec3(hue * 360, 100, 80);
 	glm::vec3 rgb = hsv;
 	hsv_to_rgb(rgb.r, rgb.g, rgb.b);
 
@@ -63,24 +79,34 @@ void StarView::makePoints()
 	_line->clearVertices();
 	
 	size_t count = _cluster->pointCount();
-	size_t paths = count / _steps;
+	MetadataGroup *dg = static_cast<MetadataGroup *>(_cluster->objectGroup());
+
 	_vertices.reserve(count);
 	_indices.reserve(count);
 	addPoint(glm::vec3{}, 0);
 	
 	// first vertex is 0,0,0 for drawing lines
 
-	for (size_t i = 0; i < paths; i++)
+	for (Path *path : _paths)
 	{
 		Vertex &vert = _line->addPoint(glm::vec3{0});
 		colourVertex(vert);
-		for (size_t j = 0; j < _steps; j++)
+		path->setStepCount(_steps);
+		path->calculateDeviations(dg, false);
+
+		for (size_t i = 0; i < path->angleArraySize(); i++)
 		{
-			size_t k = i * _steps + j;
-			glm::vec3 v = _cluster->pointForDisplay(k);
-			Vertex &vert = _line->addPoint(v);
+			MetadataGroup::Array angles = path->deviation(i);
+			
+			std::vector<float> mapped = _cluster->mapVector(angles);
+			glm::vec3 point = _cluster->pointForDisplay(mapped);
+			
+			float l = glm::length(point);
+
+			Vertex &vert = _line->addPoint(point);
 			colourVertex(vert);
 		}
+
 		Vertex &wert = _line->addPoint(glm::vec3{0});
 		colourVertex(wert);
 		incrementColour();
@@ -93,10 +119,5 @@ void StarView::makePoints()
 
 void StarView::setCluster(TorsionCluster *cluster)
 {
-	if (_cluster)
-	{
-		delete _cluster;
-	}
-	
 	_cluster = cluster;
 }

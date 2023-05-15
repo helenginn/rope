@@ -585,7 +585,7 @@ void SnowGL::resetMouseKeyboard()
 
 }
 
-void SnowGL::shiftToCentre(glm::vec3 &update, float distance)
+void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
 {
 	glm::vec3 diff = update - _centre;
 	_model = glm::mat4(1.f);

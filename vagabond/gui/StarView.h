@@ -22,6 +22,7 @@
 #include "PointyView.h"
 
 class TorsionCluster;
+class Path;
 class Line;
 
 class StarView : public PointyView
@@ -35,6 +36,8 @@ public:
 	{
 		_steps = steps;
 	}
+	
+	void setPaths(std::set<Path *> &paths);
 
 	virtual void updatePoints();
 	virtual void makePoints();
@@ -47,6 +50,8 @@ private:
 
 	int _steps = 12;
 	float hue = 0;
+	
+	std::set<Path *> _paths;
 };
 
 #endif

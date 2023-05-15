@@ -243,6 +243,7 @@ void ClusterView::clearPaths()
 void ClusterView::addPathView(PathView *pv)
 {
 	_pathViews.push_back(pv);
+	_path2View[pv->path()] = pv;
 	addObject(pv);
 }
 
@@ -252,34 +253,62 @@ void ClusterView::respond()
 	clearPaths();
 }
 
+void ClusterView::addPath(Path *path, bool populate)
+{
+	if (!path->visible())
+	{
+		return;
+	}
+
+	if (_confSpaceView && _confSpaceView->entity() 
+	    != path->startInstance()->entity())
+	{
+		return;
+	}
+
+	TorsionCluster *svd = nullptr;
+	svd = static_cast<TorsionCluster *>(_cx);
+	
+	for (auto it = _path2View.begin(); it != _path2View.end(); it++)
+	{
+		if (it->first->sameRouteAsPath(path))
+		{
+			PathView *old = it->second;
+			auto jt = std::find(_pathViews.begin(), _pathViews.end(), old);
+			_pathViews.erase(jt);
+
+			removeObject(old);
+			Window::setDelete(old);
+			_path2View.erase(it);
+			break;
+		}
+	}
+
+	PathView *pv = new PathView(*path, svd);
+	
+	if (populate)
+	{
+		pv->populate();
+	}
+
+	addPathView(pv);
+}
+
 void ClusterView::addPaths()
 {
 	wait();
 	clearPaths();
 	
-	if (_confSpaceView->confType() != rope::ConfTorsions)
+	if (_confSpaceView && _confSpaceView->confType() != rope::ConfTorsions)
 	{
 		return;
 	}
 
 	PathManager *pm = Environment::env().pathManager();
-	TorsionCluster *svd = nullptr;
-	svd = static_cast<TorsionCluster *>(_cx);
 
 	for (Path &path : pm->objects())
 	{
-		if (!path.visible())
-		{
-			continue;
-		}
-		
-		if (_confSpaceView->entity() != path.startInstance()->entity())
-		{
-			continue;
-		}
-
-		PathView *pv = new PathView(path, svd);
-		addPathView(pv);
+		addPath(&path, false);
 	}
 	
 	VagWindow *window = VagWindow::window();
@@ -313,6 +342,7 @@ void ClusterView::populatePaths(ClusterView *me)
 	for (PathView *pv : me->_pathViews)
 	{
 		pv->populate();
+		
 		me->clickTicker();
 		if (me->_finish)
 		{
@@ -324,7 +354,7 @@ void ClusterView::populatePaths(ClusterView *me)
 
 	for (Path &path : pm->objects())
 	{
-		path.cleanupRoute();
+//		path.cleanupRoute();
 	}
 
 	me->finishTicker();

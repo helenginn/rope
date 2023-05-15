@@ -52,6 +52,8 @@ void PathView::populate()
 	const MetadataGroup::Array &average = dg->average();
 	
 	lockMutex();
+	clearVertices();
+
 	for (size_t i = 0; i < _path.angleArraySize(); i++)
 	{
 		MetadataGroup::Array angles = _path.angleArray(i);
@@ -62,12 +64,27 @@ void PathView::populate()
 		glm::vec3 point = _cluster->point(mapped);
 		_cluster->reweight(point);
 		
-		addVertex(point);
+		Vertex &v = addVertex(point);
 		
 		if (i > 0)
 		{
 			addIndex(-2);
 			addIndex(-1);
+		}
+		
+		float weight = _path.getOutOfPlane(i);
+		v.color = glm::vec4(0, 0, weight, 1.);
+		
+		if (v.color.b > 1)
+		{
+			v.color.r = v.color.b - 1;
+			v.color.b = 1;
+		}
+		
+		if (v.color.r > 1)
+		{
+			v.color.g = v.color.r - 1;
+			v.color.r = 1;
 		}
 	}
 	

@@ -114,6 +114,7 @@ private:
 	void prepareAnglesForRefinement(std::vector<int> &idxs);
 
 	int countTorsions();
+	virtual void doCycle();
 	virtual void cycle();
 
 	void assignParameterValues(const std::vector<float> &trial);

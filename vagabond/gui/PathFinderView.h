@@ -28,9 +28,12 @@ class PathFinder;
 class LineGroup;
 class StarView;
 class Summary;
+class Warper;
+class ClusterView;
 class Box;
 
-class PathFinderView : public Mouse3D, Responder<PathFinder *>
+class PathFinderView : public Mouse3D, Responder<PathFinder *>, 
+Responder<Warper *>
 {
 public:
 	PathFinderView(Scene *scene);
@@ -69,6 +72,7 @@ private:
 
 	PathFinder *_pf = nullptr;
 	LineGroup *_taskTree = nullptr;
+	Warper *_warper = nullptr;
 
 	Box *_summaryBox = nullptr;
 	Box *_matrixBox = nullptr;
@@ -78,10 +82,12 @@ private:
 
 	Summary *_summary = nullptr;
 	MatrixPlot *_plot = nullptr;
+	ClusterView *_map = nullptr;
 	StarView *_starView = nullptr;
 	
 	std::atomic<bool> _updateNext{false};
 	std::atomic<bool> _updateTree{false};
+	std::atomic<bool> _updateStar{false};
 };
 
 #endif

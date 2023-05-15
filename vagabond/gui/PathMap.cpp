@@ -16,16 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "TSNEView.h"
-#include <vagabond/c4x/ClusterTSNE.h>
+#include "PathMap.h"
+#include <vagabond/core/RopeCluster.h>
 
-TSNEView::TSNEView() : PointyView()
+PathMap::PathMap(TorsionCluster *cluster) : PointyView()
 {
+	_cluster = cluster;
 	setName("TSNE View");
 
 }
 
-void TSNEView::updatePoints()
+void PathMap::updatePoints()
 {
 	for (size_t i = vertexCount(); i < _cluster->pointCount(); i++)
 	{
@@ -45,7 +46,7 @@ void TSNEView::updatePoints()
 	}
 }
 
-void TSNEView::makePoints()
+void PathMap::makePoints()
 {
 	if (_cluster == nullptr)
 	{
@@ -61,6 +62,7 @@ void TSNEView::makePoints()
 	for (size_t i = 0; i < count; i++)
 	{
 		glm::vec3 v = _cluster->pointForDisplay(i);
+		std::cout << v << std::endl;
 		addPoint(v, 0);
 	}
 	

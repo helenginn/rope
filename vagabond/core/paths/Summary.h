@@ -19,18 +19,41 @@
 #ifndef __vagabond__Summary__
 #define __vagabond__Summary__
 
-class PathTask;
 #include <string>
+#include <vagabond/core/Responder.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
 
-class Summary
+class PathTask;
+class Text;
+class Image;
+
+class Summary : public SimplePolygon, public HasResponder<Responder<Summary *> >
 {
 public:
 	Summary(PathTask *top);
 
 	std::string text();
+	
+	void setup();
+	void finishPathFinding();
 private:
 	PathTask *_top = nullptr;
 
+	struct TickLine
+	{
+		Text *text;
+		Image *running;
+		Image *tick;
+		Image *cross;
+		
+		void disableAll();
+	};
+
+	Image *prepareImage(std::string image, float top);
+	TickLine makeLine(float top, std::string words);
+	
+	TickLine _pathFinding;
+	TickLine _warping;
 };
 
 #endif

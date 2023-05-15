@@ -280,6 +280,7 @@ protected:
 	}
 
 	bool _updateAtoms = true;
+	int _cycles = -1;
 private:
 	bool _calculating;
 	float _score;
@@ -325,7 +326,6 @@ private:
 	/* int: referring to parameter angle via _destination[int] */
 	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
-	int _cycles = -1;
 };
 
 #endif

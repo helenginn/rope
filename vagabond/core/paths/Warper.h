@@ -16,44 +16,59 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FromToTask__
-#define __vagabond__FromToTask__
+#ifndef __vagabond__Warper__
+#define __vagabond__Warper__
 
-#include "PathTask.h"
+#include <vagabond/core/Responder.h>
+#include <thread>
+#include <set>
 
+class Monitor;
+class Entity;
 class Path;
 
-class FromToTask : public PathTask
+class Warper : public HasResponder<Responder<Warper *> >
 {
 public:
-	FromToTask(PathFinder *pf, HasMetadata *from, HasMetadata *to);
+	Warper(Monitor *monitor);
 
-	PlausibleRoute *findOrMakeRoute();
-
-	Instance *from()
+	void setEntity(Entity *entity)
 	{
-		return _from;
+		_entity = entity;
 	}
 	
-	Instance *to()
+	Entity *entity() const
 	{
-		return _to;
+		return _entity;
 	}
 	
-	virtual bool needsResources()
+	void setMainCluster(TorsionCluster *cluster)
 	{
-		return true;
+		_mainCluster = cluster;
 	}
 	
-	void sortPathDeviations(Path *path);
-protected:
-	PlausibleRoute *makeRoute(Path &path);
-	PlausibleRoute *findRouteOrMakeNew();
-	PlausibleRoute *makeNewRoute();
+	TorsionCluster *pathCluster()
+	{
+		return _pathCluster;
+	}
 
-	Instance *_from = nullptr;
-	Instance *_to = nullptr;
+	void setup();
+private:
+	static void doJobs(Warper *self);
 
+	void run();
+	void wait();
+
+	TorsionCluster *torsionClusterForPathDeviations(int steps);
+
+	Monitor *_monitor = nullptr;
+	Entity *_entity = nullptr;
+
+	TorsionCluster *_mainCluster = nullptr;
+	TorsionCluster *_pathCluster = nullptr;
+	
+	std::set<Path *> _paths;
+	std::thread *_worker = nullptr;
 };
 
 #endif

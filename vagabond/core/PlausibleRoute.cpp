@@ -533,21 +533,33 @@ void PlausibleRoute::nudgeWayPointCycles()
 	}
 }
 
-void PlausibleRoute::cycle()
+void PlausibleRoute::doCycle()
 {
-	setTargets();
-	flipTorsionCycles();
+	if (_jobNum == 0)
+	{
+		flipTorsionCycles();
+	}
+	else
+	{
+		nudgeWayPointCycles();
+	}
+	
+	_jobNum++;
+	_cycles--;
 
 	if (Route::_finish)
 	{
 		return;
 	}
-	
-	nudgeWayPointCycles();
+}
 
-	if (Route::_finish)
+void PlausibleRoute::cycle()
+{
+	setTargets();
+	
+	while (_cycles != 0)
 	{
-		return;
+		doCycle();
 	}
 
 	flipTorsionCycle(false);

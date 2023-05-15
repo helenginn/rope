@@ -201,20 +201,8 @@ glm::mat4x4 Renderable::getModel()
 	return _myModel * _gl->getModel();
 }
 
-void Renderable::render(SnowGL *sender)
+void Renderable::runProgram()
 {
-	if (_disabled)
-	{
-		return;
-	}
-	
-	_gl = sender;
-	
-	if (_program == 0)
-	{
-		initialisePrograms();
-	}
-
 	if (_program == 0)
 	{
 		return;
@@ -232,7 +220,7 @@ void Renderable::render(SnowGL *sender)
 	glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
 	checkErrors("rebinding model");
 
-	_proj = sender->getProjection();
+	_proj = _gl->getProjection();
 	_uProj = glGetUniformLocation(_program, "projection");
 	_glProj = glm::transpose(projection());
 	glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
@@ -260,20 +248,36 @@ void Renderable::render(SnowGL *sender)
 
 		checkErrors("before drawing elements");
 		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
-		
+
 		if (checkErrors("drawing elements"))
 		{
 			std::cout << _shaderGets->buffered() << " " << this << std::endl;
 			std::cout << indexCount() << " + " << vertexCount() << " ";
 			std::cout << "... " << name() << std::endl;
 		}
-		
+
 		unlockMutex();
 	}
 
-
 	glUseProgram(0);
 	unbindVBOBuffers();
+}
+
+void Renderable::render(SnowGL *sender)
+{
+	if (_disabled)
+	{
+		return;
+	}
+	
+	_gl = sender;
+	
+	if (_program == 0)
+	{
+		initialisePrograms();
+	}
+
+	runProgram();
 
 	_renderCount++;
 

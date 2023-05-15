@@ -25,6 +25,7 @@
 #include "Environment.h"
 #include "FileManager.h"
 
+#include "paths/Warper.h"
 #include "paths/Monitor.h"
 #include "paths/ValidationTask.h"
 #include "paths/ReporterTask.h"
@@ -145,6 +146,7 @@ void PathFinder::setupTorsionCluster()
 
 	_cluster = new TorsionCluster(angles);
 	_cluster->cluster();
+	_cluster->calculateInverse();
 }
 
 void PathFinder::prepareMonitor()
@@ -227,6 +229,21 @@ void PathFinder::sendContentsToHandler(PathTask *bin)
 	{
 		_handler->pushObject(task);
 	}
+	
+	if (next.size() == 0)
+	{
+		naturalConclusion();
+	}
+}
+
+void PathFinder::naturalConclusion()
+{
+	Warper *warper = new Warper(_monitor);
+	warper->setEntity(_entity);
+	warper->setMainCluster(_cluster);
+	sendResponse("finished_paths", warper);
+
+	warper->setup();
 }
 
 void PathFinder::incrementStageIfNeeded()
@@ -292,6 +309,11 @@ Path *PathFinder::existingPath(FromToTask *task)
 
 void PathFinder::sendUpdatedPath(Path *path, FromToTask *task)
 {
+	if (path != nullptr)
+	{
+		sendResponse("update_path", path);
+	}
+
 	_monitor->updatePath(task->from(), task->to(), path);
 }
 

@@ -16,43 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FromToTask__
-#define __vagabond__FromToTask__
+#ifndef __vagabond__PathMap__
+#define __vagabond__PathMap__
 
-#include "PathTask.h"
+#include "PointyView.h"
 
-class Path;
+class TorsionCluster;
 
-class FromToTask : public PathTask
+class PathMap : public PointyView
 {
 public:
-	FromToTask(PathFinder *pf, HasMetadata *from, HasMetadata *to);
-
-	PlausibleRoute *findOrMakeRoute();
-
-	Instance *from()
-	{
-		return _from;
-	}
+	PathMap(TorsionCluster *cluster);
 	
-	Instance *to()
-	{
-		return _to;
-	}
-	
-	virtual bool needsResources()
-	{
-		return true;
-	}
-	
-	void sortPathDeviations(Path *path);
-protected:
-	PlausibleRoute *makeRoute(Path &path);
-	PlausibleRoute *findRouteOrMakeNew();
-	PlausibleRoute *makeNewRoute();
-
-	Instance *_from = nullptr;
-	Instance *_to = nullptr;
+	virtual void makePoints();
+	virtual void updatePoints();
+private:
+	TorsionCluster *_cluster = nullptr;
 
 };
 

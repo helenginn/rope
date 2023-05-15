@@ -128,6 +128,7 @@ private:
 	void setupSerialJob();
 	void setupTorsionCluster();
 	void incrementStageIfNeeded();
+	void naturalConclusion();
 
 	std::vector<Instance *> _whiteList;
 	std::vector<HasMetadata *> _rawWhiteList;

@@ -75,7 +75,7 @@ public:
 		return _centre;
 	}
 	
-	void shiftToCentre(glm::vec3 &centre, float distance);
+	void shiftToCentre(const glm::vec3 &centre, float distance);
 	
 	glm::mat4x4 getProjection()
 	{

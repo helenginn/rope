@@ -68,10 +68,14 @@ public:
 	virtual void makePoints();
 	virtual void updatePoints();
 	virtual void additionalJobs();
+	
+	void addPath(Path *path, bool populate);
+
 	virtual void click(bool left = true);
 
 	void applyRule(const Rule &r);
 	void applySelected();
+	static void populatePaths(ClusterView *me);
 
 	void prioritiseMetadata(std::string key);
 	
@@ -95,7 +99,6 @@ private:
 
 	void addPathView(PathView *pv);
 
-	static void populatePaths(ClusterView *me);
 	static void invertSVD(ClusterView *me);
 	void wait();
 
@@ -109,6 +112,7 @@ private:
 	std::map<const Rule *, std::vector<HasMetadata *>> _members;
 	std::map<int, int> _point2Index;
 	
+	std::map<Path *, PathView *> _path2View;
 	std::vector<PathView *> _pathViews;
 	std::thread *_worker = nullptr;
 	std::thread *_invert = nullptr;

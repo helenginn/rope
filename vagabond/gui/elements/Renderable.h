@@ -447,6 +447,7 @@ private:
 	void deleteTextures();
 	void rebindVBOBuffers();
 	void unbindVBOBuffers();
+	void runProgram();
 	void deletePrograms();
 	void resize_around_centre(double scale, glm::vec3 v, bool unselected = false,
 	                          bool realign = false);

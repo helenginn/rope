@@ -16,27 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__TSNEView__
-#define __vagabond__TSNEView__
+#ifndef __vagabond__OnPathBasis__
+#define __vagabond__OnPathBasis__
 
-#include "PointyView.h"
+#include "ConcertedBasis.h"
 
-class ClusterTSNE;
-
-class TSNEView : public PointyView
+class OnPathBasis : public ConcertedBasis
 {
 public:
-	TSNEView();
-	
-	void setCluster(ClusterTSNE *tsne)
-	{
-		_cluster = tsne;
-	}
+	OnPathBasis();
 
-	virtual void makePoints();
-	virtual void updatePoints();
+	void setPath(Path *path)
+	{
+		_path = path;
+	}
 private:
-	ClusterTSNE *_cluster = nullptr;
+	Path *_path = nullptr;
 
 };
 

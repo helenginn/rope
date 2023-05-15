@@ -58,13 +58,13 @@ void OptimiseTask::specificTasks()
 	float after = pr->routeScore(16);
 	
 	std::cout << displayName() <<  ": from " << before << 
-	" to " << after << std::endl;
+	" to " << after << ", ";
 
 	RouteValidator rv(*pr);
 
 	bool isValid = rv.validate();
 	float linearRatio = rv.linearityRatio();
-	std::cout << "Linearity ratio: " << linearRatio << std::endl;
+	std::cout << "linearity ratio: " << linearRatio << std::endl;
 
 	_pf->sendValidationResult(this, isValid, linearRatio);
 

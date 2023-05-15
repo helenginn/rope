@@ -30,6 +30,7 @@ class Path : public HasMetadata
 {
 public:
 	Path() {};
+	~Path();
 	Path(PlausibleRoute *pr);
 	void cleanupRoute();
 
@@ -42,6 +43,8 @@ public:
 	{
 		return _end;
 	}
+	
+	bool sameRouteAsPath(Path *other);
 
 	friend void to_json(json &j, const Path &value);
 	friend void from_json(const json &j, Path &value);
@@ -83,7 +86,7 @@ public:
 	
 	size_t angleArraySize()
 	{
-		return _angleArrays.size();
+		return _step2Angles[_steps].size();
 	}
 	
 	void setStepCount(int steps)
@@ -91,14 +94,34 @@ public:
 		_steps = steps;
 	}
 	
+	MetadataGroup::Array deviation(int i)
+	{
+		return _step2Deviations[_steps][i];
+	}
+	
 	MetadataGroup::Array angleArray(int i)
 	{
-		return _angleArrays[i];
+		return _step2Angles[_steps][i];
 	}
 	
 	bool operator==(const Path &other) const;
+	void calculateDeviations(MetadataGroup *group, bool force);
+	
+	float getOutOfPlane(int idx)
+	{
+		if (_outOfPlanes[_steps].size() > idx)
+		{
+			return _outOfPlanes[_steps][idx];
+		}
+
+		return 0;
+	}
+	
+	void setOutOfPlanes(std::vector<float> &out)
+	{
+		_outOfPlanes[_steps] = out;
+	}
 private:
-	void calculateDeviations(MetadataGroup *group);
 
 	std::string _startInstance;
 	std::string _model_id;
@@ -113,8 +136,9 @@ private:
 	std::vector<ResidueTorsion> _rts;
 	std::map<int, WayPoints> _wayPoints;
 	std::vector<bool> _flips;
-	std::vector<MetadataGroup::Array> _angleArrays;
-	std::vector<MetadataGroup::Array> _deviationArrays;
+	std::map<int, std::vector<MetadataGroup::Array> > _step2Angles;
+	std::map<int, std::vector<MetadataGroup::Array> > _step2Deviations;
+	std::map<int, std::vector<float> > _outOfPlanes;
 	int _steps = 12;
 
 	Route::Point _destination;

@@ -142,20 +142,3 @@ Path *Monitor::existingPath(Instance *first, Instance *second)
 	return rr.path;
 }
 
-TorsionCluster *Monitor::torsionClusterForPathDeviations(int steps)
-{
-	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup(true);
-
-	std::unique_lock<std::mutex> lock(_mapMutex);
-	for (Path *path : _paths)
-	{
-		path->setStepCount(steps);
-		path->addDeviationsToGroup(angles);
-	}
-	lock.unlock();
-
-	TorsionCluster *cluster = new TorsionCluster(angles);
-	cluster->setSubtractAverage(false);
-	std::cout << "Objects: " << cluster->objectGroup()->objectCount() << std::endl;
-	return cluster;
-}

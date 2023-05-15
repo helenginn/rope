@@ -18,38 +18,64 @@
 
 #include "Summary.h"
 #include "PathTask.h"
+#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/Image.h>
 #include <sstream>
 
-Summary::Summary(PathTask *top)
+Summary::Summary(PathTask *top) : SimplePolygon()
 {
 	_top = top;
+	setName("Summary");
+	
+	setup();
 }
 
-std::string Summary::text()
+Image *Summary::prepareImage(std::string file, float top)
 {
-	std::ostringstream ss;
-	std::vector<PathTask *> tasks;
-	_top->gatherTasks(tasks);
-	std::map<TaskType, int> complete;
-	std::map<TaskType, int> counts;
+	Image *image = new Image(file);
+	image->resize(0.05);
+	image->setLeft(0.4, top);
+	image->setDisabled(true);
+	addObject(image);
 
-	for (PathTask *pt : tasks)
-	{
-		counts[pt->type()]++;
-		
-		if (pt->complete())
-		{
-			complete[pt->type()]++;
-		}
-	}
+	return image;
+}
+
+Summary::TickLine Summary::makeLine(float top, std::string words)
+{
+	Text *text = new Text(words);
+	text->setLeft(0.45, top);
+	addObject(text);
+
+	Image *tools = prepareImage("assets/images/tools.png", top);
+	Image *tick = prepareImage("assets/images/tick.png", top);
+	Image *cross = prepareImage("assets/images/cross.png", top);
 	
-	std::string val_counts = std::to_string(counts[Validation]);
-	std::string val_done = std::to_string(complete[Validation]);
+	TickLine tl{text, tools, tick, cross};
 	
-	ss <<  "Validation tasks: " << val_done << " / " << val_counts;
-	ss << std::endl;
-	ss <<  "Other tasks: ...";
-	ss << std::endl;
-	
-	return ss.str();
+	return tl;
+}
+
+void Summary::setup()
+{
+	_pathFinding = makeLine(0.3, "Finding sensible paths");
+	_pathFinding.running->setDisabled(false);
+
+	_warping = makeLine(0.36, "Warping linear space");
+}
+
+void Summary::finishPathFinding()
+{
+	_pathFinding.disableAll();
+	_pathFinding.tick->setDisabled(false);
+
+	_warping.disableAll();
+	_warping.running->setDisabled(false);
+}
+
+void Summary::TickLine::disableAll()
+{
+	running->setDisabled(true);
+	tick->setDisabled(true);
+	cross->setDisabled(true);
 }

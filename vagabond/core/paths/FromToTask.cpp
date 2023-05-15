@@ -18,6 +18,7 @@
 
 #include "FromToTask.h"
 #include "PathFinder.h"
+#include "../Entity.h"
 #include "../Path.h"
 #include "../PathManager.h"
 #include "../Environment.h"
@@ -97,4 +98,14 @@ PlausibleRoute *FromToTask::findOrMakeRoute()
 		return makeRoute(*path);
 	}
 
+}
+
+void FromToTask::sortPathDeviations(Path *path)
+{
+	return;
+	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup(true);
+	path->setStepCount(4);
+	path->calculateDeviations(&angles, true);
+	path->setStepCount(32);
+	path->calculateDeviations(&angles, true);
 }

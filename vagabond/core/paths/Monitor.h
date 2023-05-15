@@ -43,13 +43,17 @@ public:
 	{
 		return _matrixMutex;
 	}
+	
+	std::set<Path *> &paths() 
+	{
+		return _paths;
+	}
 
 	void addValidation(Instance *first, Instance *second, bool valid,
 	                   float linearity);
 	void updatePath(Instance *first, Instance *second, Path *path);
 	void setStatus(Instance *first, Instance *second, TaskType type);
 	Path *existingPath(Instance *first, Instance *second);
-	TorsionCluster *torsionClusterForPathDeviations(int steps);
 	
 	int passesForPath(Instance *first, Instance *second);
 

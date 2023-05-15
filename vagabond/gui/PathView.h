@@ -33,6 +33,11 @@ class PathView : public SimplePolygon
 public:
 	PathView(Path &path, ClusterSVD<MetadataGroup> *cluster);
 	virtual ~PathView();
+	
+	Path *path()
+	{
+		return &_path;
+	}
 
 	void populate();
 private:

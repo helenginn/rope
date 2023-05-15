@@ -26,7 +26,6 @@ StructureModification::StructureModification(Instance *mol, int num, int dims)
 	_instance = mol;
 	_num = num;
 	_dims = dims;
-	_torsionType = TorsionBasis::TypeCustom;
 }
 
 StructureModification::~StructureModification()
