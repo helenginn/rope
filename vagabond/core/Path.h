@@ -27,7 +27,7 @@
 class MetadataGroup;
 class Trajectory;
 
-class Path : public HasMetadata
+class Path : public HasMetadata, Responder<HasMetadata>
 {
 public:
 	Path() {};
@@ -102,6 +102,7 @@ public:
 	
 	float angleForFraction(float frac, int idx);
 	
+	virtual void sendObject(std::string tag, void *object);
 private:
 	std::string _startInstance;
 	std::string _model_id;

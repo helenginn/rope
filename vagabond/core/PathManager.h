@@ -29,6 +29,8 @@ public:
 	virtual ~PathManager();
 
 	virtual Path *insertOrReplace(Path &p);
+	
+	void purgePath(Path *path);
 
 	virtual const std::string progressName() const
 	{

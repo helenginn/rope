@@ -86,3 +86,17 @@ std::vector<Path *> PathManager::pathsBetweenInstances(Instance *first,
 
 	return paths;
 }
+
+void PathManager::purgePath(Path *path)
+{
+	for (auto it = _objects.begin(); it != _objects.end(); it++)
+	{
+		Path *ptr = &*it;
+		if (ptr == path)
+		{
+			_objects.erase(it);
+			return;
+		}
+	}
+
+}

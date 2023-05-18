@@ -18,6 +18,7 @@
 
 #include "Path.h"
 #include "ModelManager.h"
+#include "PathManager.h"
 #include "Trajectory.h"
 #include "RTMultiple.h"
 
@@ -38,7 +39,7 @@ Path::Path(PlausibleRoute *pr)
 
 Path::~Path()
 {
-
+	
 }
 
 void Path::housekeeping()
@@ -74,6 +75,9 @@ void Path::housekeeping()
 			}
 		}
 	}
+	
+	_instance->setResponder(this);
+	_end->setResponder(this);
 }
 
 PlausibleRoute *Path::toRoute()
@@ -200,3 +204,13 @@ bool Path::sameRouteAsPath(Path *other)
 	return (startInstance() == other->startInstance() &&
 	        endInstance() == other->endInstance());
 }
+
+void Path::sendObject(std::string tag, void *object)
+{
+	if (tag == "purge")
+	{
+		Environment::pathManager()->purgePath(this);
+	}
+
+}
+
