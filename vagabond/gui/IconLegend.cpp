@@ -31,7 +31,7 @@ IconLegend::IconLegend(Scene *responder) : ClusterPointDemo()
 
 IconLegend::~IconLegend()
 {
-	deleteObjects();
+	
 }
 
 void IconLegend::addRule(const Rule *r)

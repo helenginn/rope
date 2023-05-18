@@ -40,7 +40,6 @@ void Display::deleteAtoms()
 void Display::cleanup()
 {
 	stop();
-	deleteObjects();
 	deleteAtoms();
 }
 

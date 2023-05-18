@@ -31,7 +31,7 @@ Button(br == nullptr ? scene : br)
 
 Menu::~Menu()
 {
-	deleteObjects();
+
 }
 
 void Menu::setup(Renderable *r, double resize)

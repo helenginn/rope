@@ -42,7 +42,7 @@ FileLine::FileLine(FileView *view, std::string filename, std::string display)
 
 FileLine::~FileLine()
 {
-	deleteObjects();
+
 }
 
 void FileLine::queryFile()

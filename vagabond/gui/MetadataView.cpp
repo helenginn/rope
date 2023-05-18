@@ -33,8 +33,6 @@ MetadataView::MetadataView(Scene *prev, Metadata *md) : Scene(prev)
 
 MetadataView::~MetadataView()
 {
-	deleteObjects();
-
 	if (!_md->isMaster())
 	{
 		delete _md;

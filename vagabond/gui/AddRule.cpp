@@ -49,7 +49,7 @@ AddObject(prev)
 
 AddRule::~AddRule()
 {
-	deleteObjects();
+	
 }
 
 void AddRule::addTypeButtons()

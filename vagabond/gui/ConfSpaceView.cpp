@@ -86,7 +86,6 @@ void ConfSpaceView::makeFirstCluster()
 ConfSpaceView::~ConfSpaceView()
 {
 	assignRopeSpace(nullptr);
-	deleteObjects();
 
 	Item::resolveDeletions();
 }

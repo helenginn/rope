@@ -32,7 +32,7 @@ ChooseHeader::ChooseHeader(Scene *prev, bool choose) : ListView(prev)
 
 ChooseHeader::~ChooseHeader()
 {
-	deleteObjects(true);
+
 }
 
 void ChooseHeader::setup()

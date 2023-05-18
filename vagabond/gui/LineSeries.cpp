@@ -46,7 +46,7 @@ _rule(r)
 
 LineSeries::~LineSeries()
 {
-	deleteObjects();
+	
 }
 
 void LineSeries::addLabel(int idx)

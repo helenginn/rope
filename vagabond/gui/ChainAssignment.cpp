@@ -47,7 +47,6 @@ ChainAssignment::ChainAssignment(Scene *prev, Model &model)
 ChainAssignment::~ChainAssignment()
 {
 	_model.unload();
-	deleteObjects();
 }
 
 void ChainAssignment::setup()

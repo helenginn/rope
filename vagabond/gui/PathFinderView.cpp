@@ -45,7 +45,7 @@ PathFinderView::~PathFinderView()
 {
 	_pf->stop();
 	delete _pf;
-	deleteObjects(true);
+	_pf = nullptr;
 }
 
 void PathFinderView::makeTaskTree()

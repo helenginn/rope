@@ -32,7 +32,6 @@ ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
 
 ModelMenu::~ModelMenu()
 {
-	deleteObjects();
 
 }
 

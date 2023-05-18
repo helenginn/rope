@@ -46,7 +46,7 @@ AddObject(prev, chosen)
 
 AddModel::~AddModel()
 {
-	deleteObjects();
+
 }
 
 void AddModel::setup()

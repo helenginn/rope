@@ -242,7 +242,7 @@ public:
 	}
 
 	void resize(double scale, bool unselected = false,
-	            bool realign = false);
+	            bool realign = false, bool recursive = true);
 	
 	void changeVertexShader(std::string v);
 	void changeFragmentShader(std::string f);
@@ -449,8 +449,8 @@ private:
 	void unbindVBOBuffers();
 	void runProgram();
 	void deletePrograms();
-	void resize_around_centre(double scale, glm::vec3 v, bool unselected = false,
-	                          bool realign = false);
+	void resize_around_centre(double scale, glm::vec3 v, std::vector<Vertex> &vs,
+	                          bool realign = false, bool recursive = true);
 //	GLuint addShaderFromString(GLuint program, GLenum type, std::string str);
 
 	static bool index_behind_index(IndexTrio one, IndexTrio two);

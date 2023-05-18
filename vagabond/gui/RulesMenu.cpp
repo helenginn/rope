@@ -32,7 +32,6 @@ RulesMenu::RulesMenu(Scene *prev) : ListView(prev)
 RulesMenu::~RulesMenu()
 {
 	_md->ruler().setResponder(nullptr);
-	deleteObjects();
 }
 
 void RulesMenu::setup()

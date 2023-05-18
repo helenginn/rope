@@ -313,11 +313,12 @@ void Renderable::recolour(double red, double green, double blue,
 }
 
 void Renderable::resize_around_centre(double scale, glm::vec3 centre, 
-                                      bool unselected, bool realign)
+                                      std::vector<Vertex> &vs, bool realign, 
+                                      bool recursive)
 {
-	for (size_t i = 0; i < _vertices.size(); i++)
+	for (size_t i = 0; i < vs.size(); i++)
 	{
-		glm::vec3 &pos = _vertices[i].pos;
+		glm::vec3 &pos = vs[i].pos;
 		pos -= centre;
 		pos *= scale;
 		pos += centre;
@@ -331,48 +332,28 @@ void Renderable::resize_around_centre(double scale, glm::vec3 centre,
 	
 	rebufferVertexData();
 	
-	if (!unselected)
+	if (&vs == &_vertices)
 	{
 		resized(scale);
 	}
-	else
-	{
-		for (size_t i = 0; i < _unselectedVertices.size(); i++)
-		{
-			glm::vec3 &pos = _unselectedVertices[i].pos;
-			pos -= centre;
-			pos *= scale;
-			pos += centre;
-		}
-	}
 
-	for (size_t i = 0; i < objectCount(); i++)
+	for (size_t i = 0; i < objectCount() && recursive; i++)
 	{
 		if (object(i)->isDisabled())
 		{
 			continue;
 		}
 
-		object(i)->resize_around_centre(scale, centre, unselected, realign);
+		object(i)->resize_around_centre(scale, centre, vs, realign, recursive);
 	}
 }
 
-void Renderable::resize(double scale, bool unselected, bool realign)
+void Renderable::resize(double scale, bool unselected, 
+                        bool realign, bool recursive)
 {
-	bool dis = _hover ? _hover->isDisabled() : true;
-	
-	if (!dis)
-	{
-		_hover->setDisabled(true);
-	}
-
+	std::vector<Vertex> &vs = unselected ? _unselectedVertices : _vertices;
 	glm::vec3 centre = centroid();
-	resize_around_centre(scale, centre, unselected, realign);
-	
-	if (!dis)
-	{
-		_hover->setDisabled(false);
-	}
+	resize_around_centre(scale, centre, vs, realign, recursive);
 }
 
 double Renderable::averageRadius()
@@ -776,7 +757,7 @@ void Renderable::setHighlighted(bool selected)
 	{
 		_unselectedVertices = _vertices;
 		recolour(0.2, 0.2, 0.2);
-		resize(_selectionResize);
+		resize(_selectionResize, false, false, false);
 	}
 	
 	if (_selected && !selected)

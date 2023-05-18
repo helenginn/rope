@@ -18,7 +18,7 @@ public:
 		_objects.clear();
 	}
 	
-	void deleteObjects(bool recursive = false);
+	void deleteObjects(bool recursive = true);
 	
 	void addObject(Renderable *r);
 	virtual void modify(Renderable *r) {};

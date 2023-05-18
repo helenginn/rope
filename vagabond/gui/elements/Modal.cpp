@@ -61,8 +61,6 @@ void Modal::dismiss()
 
 Modal::~Modal()
 {
-	deleteObjects();
-	
 	delete _darker;
 	_darker = NULL;
 }

@@ -33,7 +33,7 @@ MainMenu::MainMenu() : Scene()
 
 MainMenu::~MainMenu()
 {
-	deleteObjects();
+	
 }
 
 void MainMenu::setup()

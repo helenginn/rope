@@ -26,7 +26,7 @@ ForwardBackward::ForwardBackward(Scene *prev) : Scene(prev)
 
 ForwardBackward::~ForwardBackward()
 {
-	deleteObjects(true);
+
 }
 
 void ForwardBackward::buttonPressed(std::string tag, Button *button)

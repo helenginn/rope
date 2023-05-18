@@ -45,7 +45,6 @@ ClusterView::ClusterView() : PointyView()
 ClusterView::~ClusterView()
 {
 	wait();
-	deleteObjects();
 }
 
 void ClusterView::updatePoints()

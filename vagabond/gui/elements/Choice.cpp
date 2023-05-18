@@ -9,11 +9,12 @@ Choice::Choice(ButtonResponder *sender, Scene *scene) : Button(sender)
 	_tick = NULL;
 	_scene = scene;
 	_ticked = false;
+	setName("Choice");
 }
 
 Choice::~Choice()
 {
-	deleteObjects();
+	
 }
 
 void Choice::makeTick()
@@ -34,13 +35,14 @@ void Choice::click(bool left)
 		return;
 	}
 
+	bool send = false;
 	if (!_ticked)
 	{
 		Button::click();
 	}
 	else
 	{
-		_sender->buttonPressed(tag(), this);
+		send = true;
 	}
 	
 	if (!_tickable)
@@ -55,6 +57,11 @@ void Choice::click(bool left)
 
 	_ticked = !_ticked;
 	_tick->setDisabled(!_ticked);
+	
+	if (send) // in case it is deleted in the process, run this last
+	{
+		_sender->buttonPressed(tag(), this);
+	}
 }
 
 void Choice::untick()

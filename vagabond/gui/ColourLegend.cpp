@@ -31,7 +31,7 @@ ColourLegend::ColourLegend(Scheme scheme, bool vert, Scene *r)
 
 ColourLegend::~ColourLegend()
 {
-	deleteObjects();
+
 }
 
 void ColourLegend::setTitle(std::string title)

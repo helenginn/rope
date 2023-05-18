@@ -9,29 +9,19 @@
 
 void HasRenderables::deleteObjects(bool recursive)
 {
-	for (size_t i = 0; i < objectCount() && recursive; i++)
+	if (objectCount() == 0)
 	{
-		object(i)->deleteObjects();
+		return;
 	}
 
 	for (int i = _objects.size() - 1; i >= 0; i--)
 	{
 		Renderable *r = _objects[i];
-		if (_dragged == r)
-		{
-			_dragged = nullptr;
-		}
-
-		if (_chosen == r)
-		{
-			_chosen = nullptr;
-		}
-
-		_objects.erase(_objects.begin() + i);
+		removeObject(r);
 		delete r;
 	}
-
-	clearObjects();
+	
+	_temps.clear();
 }
 
 void HasRenderables::clearHighlights()
@@ -105,6 +95,13 @@ void HasRenderables::removeObject(Renderable *obj)
 
 	std::vector<Renderable *>::iterator it;
 	
+	it = std::find(_temps.begin(), _temps.end(), obj);
+	
+	if (it != _temps.end())
+	{
+		_temps.erase(it);
+	}
+	
 	it = std::find(_objects.begin(), _objects.end(), obj);
 	
 	if (it != _objects.end())
@@ -171,24 +168,11 @@ void HasRenderables::addTempObject(Renderable *r)
 
 void HasRenderables::deleteTemps()
 {
-	for (Renderable *r : _temps)
+	while (_temps.size() > 0)
 	{
-		if (_dragged == r)
-		{
-			_dragged = nullptr;
-		}
-
-		if (_chosen == r)
-		{
-			_chosen = nullptr;
-		}
-
-		removeObject(r);
-		r->deleteObjects(true);
-		delete r;
+		delete _temps[0];
+		removeObject(_temps[0]);
 	}
-
-	_temps.clear();
 }
 
 void HasRenderables::doThingsCircuit()

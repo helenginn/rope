@@ -104,5 +104,5 @@ void ChooseRange::buttonPressed(std::string tag, Button *button)
 
 ChooseRange::~ChooseRange()
 {
-	deleteObjects();
+	
 }

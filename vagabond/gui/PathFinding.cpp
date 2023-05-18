@@ -32,7 +32,7 @@ _all(ent->makeTorsionDataGroup())
 
 PathFinding::~PathFinding()
 {
-	deleteObjects();
+	
 }
 
 void PathFinding::setup()
