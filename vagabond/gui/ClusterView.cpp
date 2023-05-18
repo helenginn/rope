@@ -237,6 +237,7 @@ void ClusterView::clearPaths()
 		delete pv;
 	}
 
+	_path2View.clear();
 	_pathViews.clear();
 }
 
@@ -275,7 +276,11 @@ void ClusterView::addPath(Path *path, bool populate)
 		{
 			PathView *old = it->second;
 			auto jt = std::find(_pathViews.begin(), _pathViews.end(), old);
-			_pathViews.erase(jt);
+			
+			if (jt != _pathViews.end())
+			{
+				_pathViews.erase(jt);
+			}
 
 			removeObject(old);
 			Window::setDelete(old);

@@ -23,6 +23,7 @@
 #include "ResidueTorsion.h"
 #include "Residue.h"
 #include "TorsionRef.h"
+#include "RTAngles.h"
 
 class Polymer;
 
@@ -31,55 +32,12 @@ class Polymer;
 
 namespace Refine
 {
-	struct RTA
-	{
-		ResidueId id;
-		TorsionRef torsion;
-		float angle;
-		
-		RTA(ResidueTorsion &rt)
-		{
-			id = rt.id();
-			torsion = rt.torsion();
-			angle = 0;
-		}
-		
-		static std::vector<RTA> vector_from_rts(std::vector<ResidueTorsion> &rts)
-		{
-			std::vector<RTA> ret;
-			ret.reserve(rts.size());
-			for (ResidueTorsion &rt : rts)
-			{
-				ret.push_back(rt);
-			}
-			
-			return ret;
-		}
-		
-		static std::vector<Angular> angulars_from_rts(std::vector<RTA> &rtas)
-		{
-			std::vector<Angular> angles;
-
-			for (const Refine::RTA &rta : rtas)
-			{
-				angles.push_back(rta.angle);
-			}
-			
-			return angles;
-		}
-	};
-
-	struct Axis
-	{
-		std::vector<RTA> angles;
-	};
-
 	struct Info
 	{
 		std::string mol_id;
 		Polymer *molecule = nullptr;
-		std::vector<Axis> axes;
-		int samples = 120;
+		std::vector<RTAngles> axes;
+		int samples = 50;
 		
 		std::vector<float> mean;
 	};

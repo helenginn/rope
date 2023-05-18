@@ -20,6 +20,7 @@
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/Path.h>
+#include <vagabond/core/Trajectory.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
 PathView::PathView(Path &path, ClusterSVD<MetadataGroup> *cluster) 
@@ -44,19 +45,21 @@ void PathView::populate()
 {
 	MetadataGroup *dg = static_cast<MetadataGroup *>(_cluster->objectGroup());
 
-	if (_path.angleArraySize() == 0)
-	{
-		_path.calculateArrays(dg);
-	}
-
+	Trajectory *traj = _path.calculateTrajectory(16);
 	const MetadataGroup::Array &average = dg->average();
 	
 	lockMutex();
 	clearVertices();
 
-	for (size_t i = 0; i < _path.angleArraySize(); i++)
+	for (size_t i = 0; i < traj->size(); i++)
 	{
-		MetadataGroup::Array angles = _path.angleArray(i);
+		MetadataGroup::Array angles = traj->nakedTrajectory(i).storage_only();
+		
+		for (size_t j = 0; j < angles.size() && j < 20; j++)
+		{
+//			std::cout << angles[j] << " ";
+		}
+//		std::cout << std::endl;
 
 		dg->convertToDifferences(angles, &average);
 
@@ -70,21 +73,6 @@ void PathView::populate()
 		{
 			addIndex(-2);
 			addIndex(-1);
-		}
-		
-		float weight = _path.getOutOfPlane(i);
-		v.color = glm::vec4(0, 0, weight, 1.);
-		
-		if (v.color.b > 1)
-		{
-			v.color.r = v.color.b - 1;
-			v.color.b = 1;
-		}
-		
-		if (v.color.r > 1)
-		{
-			v.color.g = v.color.r - 1;
-			v.color.r = 1;
 		}
 	}
 	

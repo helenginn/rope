@@ -27,7 +27,7 @@ Sampler::Sampler(int n, int dims)
 {
 	_n = n;
 	_dims = dims;
-	setupMatrix(&_tensor, n, n);
+	setupMatrix(&_tensor, _dims, _dims);
 }
 
 Sampler::~Sampler()
@@ -60,7 +60,7 @@ void Sampler::setupFibonacci()
 		pt.resize(_dims);
 		for (size_t j = 0; j < _dims; j++)
 		{
-			_points.ptrs[i][j] = pt[j];
+			_points.ptrs[i][j] = pt[j] * 0.2;
 		}
 	}
 }
@@ -216,7 +216,7 @@ void Sampler::addToVec(float *&vec, float *tensor, int sample_num)
 				_tensor[i][j] = tensor[i * _dims + j];
 			}
 		}
-		
+
 		multMatrix(_tensor, &_points[sample_num][0], &result[0]);
 	}
 	else

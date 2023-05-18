@@ -94,6 +94,7 @@ bool ChemotaxisEngine::tumble()
 
 	getResults();
 	float new_score = bestScore();
+	std::cout << new_score << std::endl;
 
 	std::vector<float> chosen = bestResult();
 	std::vector<float> diff = difference_from(chosen);

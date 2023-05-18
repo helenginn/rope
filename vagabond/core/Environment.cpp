@@ -71,7 +71,7 @@ void Environment::save()
 	
 	std::ofstream file;
 	file.open("rope.json");
-	file << data;
+	file << data.dump(1);
 	file << std::endl;
 	file.close();
 
@@ -117,22 +117,13 @@ void Environment::load(std::string file)
 	f.open(file);
 	f >> data;
 	f.close();
-
-	try
-	{
-		*_fileManager = data["file_manager"];
-		*_modelManager = data["model_manager"];
-
-		 loadEntitiesBackwardsCompatible(data);
-
-		*_metadata = data["metadata"];
-		*_pathManager = data["path_manager"];
-	}
-	catch (const nlohmann::detail::type_error &err)
-	{
-
-	}
 	
+	*_fileManager = data["file_manager"];
+	 *_modelManager = data["model_manager"];
+	loadEntitiesBackwardsCompatible(data);
+	*_metadata = data["metadata"];
+	*_pathManager = data["path_manager"];
+
 	_metadata->housekeeping();
 	_entityManager->housekeeping();
 	_modelManager->housekeeping();

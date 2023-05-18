@@ -142,6 +142,8 @@ public:
 	}
 	
 	void clearAverages();
+	
+	void purge(int i);
 
 	virtual float correlation_between(const Comparable &v, const Comparable &w);
 protected:
@@ -151,9 +153,9 @@ protected:
 	std::vector<Array> _vectors;
 	std::vector<Array> _diffs;
 	std::vector<Comparable> _comparables;
+	std::vector<std::string> _vectorNames;
 
 	std::vector<std::string> _unitNames;
-	std::vector<std::string> _vectorNames;
 	std::vector<Header> _headers;
 
 	void prepareAverages();

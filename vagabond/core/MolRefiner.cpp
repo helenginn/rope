@@ -19,6 +19,9 @@
 #include "MolRefiner.h"
 #include "Polymer.h"
 #include "ArbitraryMap.h"
+#include "PathManager.h"
+#include "OnPathBasis.h"
+#include "Trajectory.h"
 #include "Sampler.h"
 #include "ChemotaxisEngine.h"
 
@@ -27,6 +30,7 @@ MolRefiner::MolRefiner(ArbitraryMap *comparison,
 StructureModification(info->molecule, num, dims)
 {
 	_pType = BondCalculator::PipelineCorrelation;
+	_torsionType = TorsionBasis::TypeOnPath;
 	_map = comparison;
 	_info = info;
 }
@@ -77,7 +81,7 @@ std::vector<float> MolRefiner::findTensorAxes(std::vector<float> &triangle)
 	{
 		for (size_t j = 0; j < n; j++)
 		{
-			tensor[i * n + j] = _svd.u[i][j] * _svd.w[i];;
+			tensor[i * n + j] = _svd.u[i][j] * _svd.w[i];
 		}
 	}
 	
@@ -181,10 +185,22 @@ void MolRefiner::retrieveJobs()
 	_ticket2Group.clear();
 }
 
-void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
+void MolRefiner::torsionBasisMods(TorsionBasis *tb)
 {
-	calc->setReferenceDensity(_map);
-	calc->setPipelineType(_pType);
+	OnPathBasis *opb = static_cast<OnPathBasis *>(tb);
+
+	PathManager *pm = Environment::pathManager();
+	Path *p = &pm->object(0);
+	p->startInstance()->load();
+
+	Trajectory *traj = p->calculateTrajectory(32);
+	std::cout << "here I am" << std::endl;
+	traj->attachInstance(_instance);
+	traj->filterAngles(opb->parameters());
+	traj->relativeToFirst();
+
+	std::cout << "Path: " << p->motionCount() << std::endl;
+	opb->setTrajectory(traj);
 }
 
 size_t MolRefiner::parameterCount()
@@ -206,7 +222,13 @@ void MolRefiner::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 
-	ChemotaxisEngine *engine = new ChemotaxisEngine(this);
+	SimplexEngine *engine = new SimplexEngine(this);
+	engine->setStepSize(0.2);
 	engine->start();
 }
 
+void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
+{
+	calc->setReferenceDensity(_map);
+	calc->setPipelineType(_pType);
+}

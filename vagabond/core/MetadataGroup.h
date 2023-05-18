@@ -24,6 +24,7 @@
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/ResidueTorsion.h>
 #include <vagabond/core/ObjectGroup.h>
+#include "RTAngles.h"
 
 class Residue;
 
@@ -34,6 +35,7 @@ class MetadataGroup : public ObjectGroup, public DegreeDataGroup<ResidueTorsion>
 public:
 	MetadataGroup(size_t length);
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
+	virtual void addMetadataArray(HasMetadata *hmd, RTAngles next);
 	
 	virtual void setWhiteList(std::vector<HasMetadata *> list);
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
@@ -42,6 +44,8 @@ public:
 	{
 		return DegreeDataGroup<ResidueTorsion>::groupCount();
 	}
+	
+	const RTAngles &emptyAngles();
 
 	virtual const size_t headerCount() const
 	{
@@ -58,7 +62,13 @@ public:
 	{
 		return DegreeDataGroup<ResidueTorsion>::clearAverages();
 	}
+	
+	virtual void purge(int i)
+	{
+		DegreeDataGroup<ResidueTorsion>::purge(i);
+	}
 private:
+	RTAngles _empty;
 
 };
 

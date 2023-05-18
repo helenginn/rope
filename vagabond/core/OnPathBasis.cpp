@@ -16,28 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__OnPathBasis__
-#define __vagabond__OnPathBasis__
+#include "OnPathBasis.h"
+#include "Trajectory.h"
 
-#include "ConcertedBasis.h"
-
-class Trajectory;
-
-class OnPathBasis : public ConcertedBasis
+OnPathBasis::OnPathBasis() : ConcertedBasis()
 {
-public:
-	OnPathBasis();
 
-	void setTrajectory(Trajectory *traj)
+}
+
+float OnPathBasis::contributionForAxis(int tidx, int axis, 
+                                       const float *vec)
+{
+	if (axis != 0 || _traj == nullptr) // iterating over non-zero axis
 	{
-		_traj = traj;
+		return ConcertedBasis::contributionForAxis(tidx, axis, vec);
 	}
 
-	virtual float contributionForAxis(int tidx, int i, 
-	                                  const float *vec);
-private:
-	Trajectory *_traj = nullptr;
+	float weight = vec[axis];
 
-};
+	float angle = _traj->angleForFraction(weight, tidx);
 
-#endif
+	return angle;
+}

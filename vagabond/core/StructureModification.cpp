@@ -49,7 +49,7 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	BondCalculator &calc = *_calculators.back();
 
 	calc.setInSequence(true);
-	calc.setPipelineType(BondCalculator::PipelineAtomPositions);
+	calc.setPipelineType(_pType);
 	calc.setMaxSimultaneousThreads(_threads);
 	calc.setSampler(&_sampler);
 
@@ -60,7 +60,10 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	customModifications(&calc, has_mol);
 
 	calc.setup();
+	torsionBasisMods(calc.torsionBasis());
+
 	calc.start();
+	
 
 	_num = _sampler.pointCount();
 }
@@ -72,7 +75,7 @@ void StructureModification::addToHetatmCalculator(Atom *anchor)
 		_hetatmCalc = new BondCalculator();
 		_calculators.push_back(_hetatmCalc);
 
-		_hetatmCalc->setPipelineType(BondCalculator::PipelineAtomPositions);
+		_hetatmCalc->setPipelineType(_pType);
 		_hetatmCalc->setMaxSimultaneousThreads(1);
 		_hetatmCalc->setSampler(&_sampler);
 

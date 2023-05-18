@@ -56,11 +56,6 @@ public:
 		_type = type;
 	}
 	
-	void setTSNE(bool tsne)
-	{
-		_tsne = tsne;
-	}
-	
 	Entity *entity()
 	{
 		return _entity;
@@ -82,6 +77,8 @@ public:
 	static void deleteClusterForEntity(Entity *ent);
 	void showCurrentCluster();
 	void sendObject(std::string tag, void *object);
+
+	void assignRopeSpace(RopeSpaceItem *item);
 protected:
 	virtual void sendSelection(float t, float l, float b, float r,
 	                           bool inverse);
@@ -112,7 +109,6 @@ private:
 	void showPathsButton();
 	void showRulesButton();
 	void showAxesButton();
-	void showtSNE();
 	void addGuiElements();
 
 	void applyRule(const Rule &r);
@@ -143,7 +139,6 @@ private:
 	Status _status = Nothing;
 
 	bool _shownPaths = false;
-	bool _tsne = false;
 };
 
 #endif

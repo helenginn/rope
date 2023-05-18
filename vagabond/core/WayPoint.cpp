@@ -20,6 +20,13 @@
 #include <vagabond/utils/polyfit.h>
 #include <iostream>
 
+WayPoints::WayPoints()
+{
+	_wps.push_back(WayPoint::startPoint());
+	_wps.push_back(WayPoint::midPoint());
+	_wps.push_back(WayPoint::endPoint());
+}
+
 std::vector<float> WayPoints::polyFit()
 {
 	bool changed = false;
@@ -86,17 +93,18 @@ void WayPoints::split()
 	float prog = 1 / (float)size();
 	float sum = 0;
 
-	WayPoints newPoints;
+	std::vector<WayPoint> newPoints;
 	for (size_t i = 0; i < size() + 1; i++)
 	{
 		float progress = getPolynomialInterpolatedFraction(fit, sum);
 		WayPoint wp(sum, progress);
+		wp.setChanged(true);
 
 		newPoints.push_back(wp);
 		sum += prog;
 	}
 	
-	*this = newPoints;
+	_wps = newPoints;
 }
 
 float WayPoints::progress(float frac)

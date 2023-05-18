@@ -31,6 +31,13 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, Array next)
 	DegreeDataGroup::addArray(name, next);
 }
 
+void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
+{
+	_objects.push_back(hmd);
+	std::string name = hmd->id();
+	DegreeDataGroup::addArray(name, next.storage_according_to(emptyAngles()));
+}
+
 void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
 {
 	if (list.size() == 0)
@@ -94,4 +101,13 @@ void MetadataGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 	_averages.clear();
 }
 
-
+const RTAngles &MetadataGroup::emptyAngles() 
+{
+	if (_empty.size() == 0)
+	{
+		std::vector<ResidueTorsion> hs = headers();
+		_empty.vector_from(hs);
+	}
+	
+	return _empty;
+}

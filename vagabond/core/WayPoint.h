@@ -125,7 +125,7 @@ private:
 	
 struct WayPoints
 {
-	std::vector<WayPoint> _wps;
+	WayPoints();
 
 	std::vector<float> polyFit();
 
@@ -158,6 +158,7 @@ struct WayPoints
 		return _wps.size();
 	}
 	
+	std::vector<WayPoint> _wps;
 	std::vector<float> _polyFit;
 };
 

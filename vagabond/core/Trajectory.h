@@ -16,28 +16,46 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__OnPathBasis__
-#define __vagabond__OnPathBasis__
+#ifndef __vagabond__Trajectory__
+#define __vagabond__Trajectory__
 
-#include "ConcertedBasis.h"
+#include "RTAngles.h"
 
-class Trajectory;
+class MetadataGroup;
+class Path;
+class RTMultiple;
 
-class OnPathBasis : public ConcertedBasis
+class Trajectory
 {
 public:
-	OnPathBasis();
+	Trajectory(const RTMultiple &angles, Path *origin);
+	~Trajectory();
+	
+	size_t size() const;
+	
+	RTAngles nakedTrajectory(int idx) const;
 
-	void setTrajectory(Trajectory *traj)
-	{
-		_traj = traj;
-	}
+	void subtract(Trajectory *other);
+	
+	void attachInstance(Instance *inst);
+	
+	void addToMetadataGroup(MetadataGroup &group);
+	
+	float angleForFraction(float frac, int idx);
+	RTAngles anglesForFraction(float frac);
+	void relativeToFirst();
 
-	virtual float contributionForAxis(int tidx, int i, 
-	                                  const float *vec);
+	void filterAngles(const std::vector<Parameter *> &ps);
 private:
-	Trajectory *_traj = nullptr;
+	void calculateLengths();
+	
+	int priorStep(float frac);
 
+	RTMultiple *_traj = nullptr;
+	std::vector<float> _steps;
+	Path *_path = nullptr;
+
+	float _step = 1;
 };
 
 #endif

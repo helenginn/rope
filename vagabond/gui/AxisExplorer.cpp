@@ -195,8 +195,6 @@ void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 
 void AxisExplorer::setupColours()
 {
-	CorrelData cd = empty_CD();
-	
 	for (Atom *a : _fullAtoms->atomVector())
 	{
 		a->setAddedColour(0.f);

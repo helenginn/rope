@@ -194,6 +194,11 @@ public:
 	}
 
 	bool hasAncestor(Item *item);
+	
+	bool isTopLevelItem()
+	{
+		return _parent == nullptr;
+	}
 
 	void readdress();
 	

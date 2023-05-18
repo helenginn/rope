@@ -55,16 +55,9 @@ inline void to_json(json &j, const PathManager &value)
 
 inline void from_json(const json &j, PathManager &value)
 {
-	try
-	{
-		std::list<Path> paths = j.at("paths");
-		value._objects = paths;
-	}
-	catch (...)
-	{
+	std::list<Path> paths = j.at("paths");
+	value._objects = paths;
 
-	}
-	
 	for (Path &p : value._objects)
 	{
 		p.housekeeping();

@@ -84,23 +84,15 @@ void Refinement::preparePolymer(Polymer *mol)
 	ECluster *cluster = grabCluster(mol->entity());
 
 	std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();
-	std::vector<Refine::RTA> rtas = Refine::RTA::vector_from_rts(list);
 	
-	int max = 5;
+	int max = 1;
 	
 	/* get max top axes from cluster */
 	for (size_t i = 0; i < max && i < cluster->rows(); i++)
 	{
 		std::vector<Angular> vals = cluster->rawVector(i);
-		std::vector<Refine::RTA> copy = rtas;
 		
-		for (size_t j = 0; j < vals.size(); j++)
-		{
-			copy[j].angle = vals[j];
-		}
-		
-		Refine::Axis axis;
-		axis.angles = copy;
+		RTAngles axis = RTAngles::angles_from(list, vals);
 		info.axes.push_back(axis);
 	}
 	
@@ -130,10 +122,10 @@ void Refinement::setupRefiner(Refine::Info &info)
 	for (size_t i = 0; i < info.axes.size(); i++)
 	{
 		std::vector<Angular> convert;
-		const Refine::Axis &axis = info.axes[i];
-		for (size_t j = 0; j < axis.angles.size(); j++)
+		const RTAngles &axis = info.axes[i];
+		for (size_t j = 0; j < axis.size(); j++)
 		{
-			float angle = axis.angles[j].angle;
+			float angle = axis.angle(j);
 			convert.push_back(Angular(angle / 2.f));
 		}
 		

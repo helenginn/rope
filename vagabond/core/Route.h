@@ -21,7 +21,7 @@
 
 #include "StructureModification.h"
 #include "Responder.h"
-#include "WayPoint.h"
+#include "RTMotion.h"
 
 class Grapher;
 struct AtomGraph;
@@ -115,13 +115,6 @@ public:
 		_rawDest = dest;
 	}
 	
-	const Point &destination() const
-	{
-		return _destination;
-	}
-	
-	void setDestination(Point &d);
-	
 	void setLinear()
 	{
 		_type = Linear;
@@ -132,70 +125,71 @@ public:
 		_type = Polynomial;
 	}
 	
+	/*
 	const std::map<int, WayPoints> &wayPoints() const
 	{
 		return _wayPoints;
 	}
+	*/
 	
 	const size_t wayPointCount() const
 	{
-		return _wayPoints.size();
+		return _motions.size();
 	}
 	
+	/*
 	void setWayPoints(const std::map<int, WayPoints> &wps) 
 	{
 		_wayPoints = wps;
 	}
+	*/
 	
 	WayPoints &wayPoints(int idx)
 	{
-		return _wayPoints.at(idx);
+		return _motions.storage(idx).wp;
 	}
 	
 	void setWayPoints(int idx, const WayPoints &wps) 
 	{
-		_wayPoints[idx] = wps;
+		_motions.storage(idx).wp = wps;
 	}
 	
-	size_t parameterCount() const
+	size_t motionCount() const
 	{
-		return _parameters.size();
+		return _motions.size();
 	}
 	
 	Parameter *parameter(int i)
 	{
-		return _parameters[i].param;
+		return _motions.rt(i).parameter();
 	}
 	
-	std::vector<ResidueTorsion> residueTorsions() const;
+	std::vector<ResidueTorsion> residueTorsions();
 
-	const ResidueTorsion &residueTorsion(int i) const
+	ResidueTorsion &residueTorsion(int i)
 	{
-		return _parameters[i].rt;
+		return _motions.rt(i);
 	}
 	
-	void addParameter(const ResidueTorsion &rt, Parameter *p)
-	{
-		_parameters.push_back(ResidueTorsionParameter{p, rt});
-	}
-	
-	const std::vector<bool> &flips() const
-	{
-		return _flips;
-	}
-
 	void setFlips(std::vector<int> &idxs, std::vector<bool> &fs);
 	
-	void clearWayPointFlips();
-
 	int indexOfParameter(Parameter *t);
 
 	void bringTorsionsToRange();
 	
-	void extractWayPoints(Route *other);
 	void printWayPoints();
 
 	void useForceField(bool use);
+	
+	const RTMotion &motions() const
+	{
+		return _motions;
+	}
+	
+	void setMotions(const RTMotion &motions)
+	{
+		_motions = motions;
+	}
 protected:
 	const Grapher &grapher() const;
 	bool incrementGrapher();
@@ -220,29 +214,19 @@ protected:
 		_point2Score.clear();
 	}
 	
-	size_t destinationSize()
+	float &destination(int i)
 	{
-		return _destination.size();
-	}
-	
-	const float &destination(int i) const
-	{
-		return _destination[i];
-	}
-
-	void setFlips(const std::vector<bool> &flips) 
-	{
-		_flips = flips;
+		return _motions.storage(i).angle;
 	}
 	
 	void setFlip(int idx, bool flip)
 	{
-		_flips[idx] = flip;
+		_motions.storage(idx).flip = flip;
 	}
 	
 	bool flip(int i) const
 	{
-		return _flips[i];
+		return _motions.c_storage(i).flip;
 	}
 	
 	enum InterpolationType
@@ -264,7 +248,6 @@ protected:
 	std::atomic<bool> _finish{false};
 	std::vector<Point> _points;
 
-	void populateWaypoints();
 	void prepareDestination();
 	void getParametersFromBasis();
 	void connectParametersToDestination();
@@ -296,14 +279,7 @@ private:
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void reportFound();
 	void calculateAtomDeviations(Score &score);
-	
-	struct ResidueTorsionParameter
-	{
-		Parameter *param;
-		ResidueTorsion rt;
-	};
 
-	std::vector<ResidueTorsionParameter> _parameters;
 	std::vector<Parameter *> _missing;
 
 	typedef std::map<int, int> TicketPoint;
@@ -313,7 +289,6 @@ private:
 
 	Instance *_endInstance = nullptr;
 
-	Point _destination;
 	std::vector<Angular> _rawDest;
 	
 	std::map<BondCalculator *, std::vector<int> > _calc2Destination;
@@ -323,9 +298,7 @@ private:
 	
 	InterpolationType _type = Polynomial;
 	
-	/* int: referring to parameter angle via _destination[int] */
-	std::map<int, WayPoints> _wayPoints;
-	std::vector<bool> _flips;
+	RTMotion _motions;
 };
 
 #endif

@@ -241,10 +241,7 @@ void Renderable::runProgram()
 
 	if (_shaderGets->buffered())
 	{
-		if (!tryLockMutex())
-		{
-			return;
-		}
+		lockMutex();
 
 		checkErrors("before drawing elements");
 		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);

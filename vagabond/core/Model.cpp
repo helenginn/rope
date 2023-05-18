@@ -587,7 +587,7 @@ void Model::extractExisting()
 {
 	insertTorsions();
 	extractTorsions();
-	triggerResponse();
+	HasResponder<Responder<Model>>::triggerResponse();
 }
 
 size_t Model::instanceCountForEntity(std::string entity_id) const
@@ -616,7 +616,7 @@ size_t Model::instanceCountForEntity(std::string entity_id) const
 void Model::finishedRefinement()
 {
 	extractTorsions();
-	triggerResponse();
+	HasResponder<Responder<Model>>::triggerResponse();
 }
 
 Model Model::autoModel(std::string filename)

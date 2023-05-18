@@ -103,9 +103,4 @@ PlausibleRoute *FromToTask::findOrMakeRoute()
 void FromToTask::sortPathDeviations(Path *path)
 {
 	return;
-	MetadataGroup angles = _pf->entity()->makeTorsionDataGroup(true);
-	path->setStepCount(4);
-	path->calculateDeviations(&angles, true);
-	path->setStepCount(32);
-	path->calculateDeviations(&angles, true);
 }

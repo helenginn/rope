@@ -70,3 +70,17 @@ void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 {
 
 }
+
+bool ObjectGroup::purge(HasMetadata *hm)
+{
+	for (size_t i = 0; i < _objects.size(); i++)
+	{
+		if (_objects[i] == hm)
+		{
+			purge(i);
+			return true;
+		}
+	}
+
+	return false;
+}

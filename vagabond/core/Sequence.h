@@ -31,6 +31,7 @@
 
 class Atom;
 class Entity;
+class RTAngles;
 class AtomGroup;
 class SequenceComparison;
 
@@ -219,7 +220,7 @@ public:
 
 	/** call on entity master sequence to get the corresponding torsion 
 	 * angles from a derived/mapped sequence */
-	void torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
+	void torsionsFromMapped(RTAngles &angles, 
 	                        rope::TorsionType type = rope::RefinedTorsions);
 	
 	AtomGroup *convertToAtoms();

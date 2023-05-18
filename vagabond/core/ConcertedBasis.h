@@ -64,8 +64,11 @@ public:
 		return _unusedId;
 	}
 protected:
-	float fullContribution(int idx, const float *vec, int n);
-	virtual float contributionForAxis(int axis, int i, const float *vec);
+	float fullContribution(int tidx, const float *vec, int n);
+	virtual float contributionForAxis(int tidx, int i, 
+	                                  const float *vec);
+
+	std::vector<Parameter *> _filtered;
 private:
 	void prepareSVD();
 	void setupAngleList();
@@ -82,7 +85,6 @@ private:
 	size_t _nActive;
 	int _dims;
 
-	std::vector<Parameter *> _filtered;
 	PCA::SVD _svd{};
 };
 

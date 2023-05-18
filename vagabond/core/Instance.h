@@ -36,6 +36,7 @@ class AtomContent;
 class Parameter;
 class Interface;
 class AtomGroup;
+class RTAngles;
 class Polymer;
 class Residue;
 class Entity;
@@ -168,11 +169,13 @@ public:
 	friend void to_json(json &j, const Polymer &value);
 	friend void from_json(const json &j, Polymer &value);
 
-	virtual bool atomBelongsToInstance(Atom *a) = 0;
-	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type)
+	virtual std::vector<ResidueTorsion> residueTorsionList()
 	{
-		return MetadataGroup::Array();
+		return std::vector<ResidueTorsion>();
 	}
+	virtual bool atomBelongsToInstance(Atom *a) = 0;
+	virtual void grabTorsions(RTAngles &angles,
+	                          rope::TorsionType type = rope::RefinedTorsions) {}
 
 	bool hasAtomPositionList(Instance *reference)
 	{

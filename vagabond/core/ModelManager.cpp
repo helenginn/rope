@@ -147,6 +147,13 @@ void ModelManager::purgeModel(Model *model)
 
 		it++;
 	}
+	
+	std::vector<Instance *> insts = model->instances();
+	
+	for (Instance *inst : insts)
+	{
+		inst->flagPurge();
+	}
 
 	Manager::triggerResponse();
 }

@@ -32,8 +32,10 @@ PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
 
 void PlausibleRoute::setup()
 {
+	std::cout << "motions: " << motions().size() << std::endl;
 	Route::setup();
 	prepareDestination();
+	connectParametersToDestination();
 	setTargets();
 }
 
@@ -107,7 +109,7 @@ void PlausibleRoute::startTicker(std::string tag, int d)
 {
 	if (d < 0)
 	{
-		d = destinationSize();
+		d = motionCount();
 	}
 
 	HasResponder<Responder<Route>>::sendResponse("progress_" + tag, 
@@ -167,7 +169,7 @@ void PlausibleRoute::activateWaypoints(bool all)
 int PlausibleRoute::countTorsions()
 {
 	int count = 0;
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		if (validateMainTorsion(i))
 		{
@@ -281,7 +283,7 @@ int PlausibleRoute::nudgeWaypoints()
 	int total = 1;
 	float start = routeScore(flipNudgeCount());
 
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		if (Route::_finish)
 		{
@@ -303,7 +305,7 @@ int PlausibleRoute::nudgeWaypoints()
 		std::vector<int> torsionIdxs = getIndices(related);
 		
 		bool result = simplexCycle(single);
-		result |= simplexCycle(torsionIdxs);
+//		result |= simplexCycle(torsionIdxs);
 		
 		changed += (result ? 1 : 0);
 	}
@@ -443,7 +445,7 @@ bool PlausibleRoute::flipTorsions(bool main)
 
 	_bestScore = routeScore(flipNudgeCount());
 	
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		if (Route::_finish)
 		{
@@ -560,6 +562,11 @@ void PlausibleRoute::cycle()
 	while (_cycles != 0)
 	{
 		doCycle();
+
+		if (Route::_finish)
+		{
+			return;
+		}
 	}
 
 	flipTorsionCycle(false);
@@ -592,9 +599,9 @@ float PlausibleRoute::getLinearInterpolatedTorsion(int i, float frac)
 
 void PlausibleRoute::addLinearInterpolatedPoint(float frac)
 {
-	Point point(destinationSize(), 0);
+	Point point(motionCount(), 0);
 
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		float t = getLinearInterpolatedTorsion(i, frac);
 		point[i] = t;
@@ -615,10 +622,10 @@ float PlausibleRoute::getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
 std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 {
 	std::vector<PolyFit> fits;
-	fits.reserve(destinationSize());
+	fits.reserve(motionCount());
 	activateWaypoints();
 
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		PolyFit pf = wayPoints(i).polyFit();
 		fits.push_back(pf);
@@ -630,9 +637,9 @@ std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
 void PlausibleRoute::addPolynomialInterpolatedPoint(std::vector<PolyFit> &fits,
                                                     float frac)
 {
-	Point point(destinationSize(), 0);
+	Point point(motionCount(), 0);
 
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		float t = getPolynomialInterpolatedTorsion(fits[i], i, frac);
 		point[i] = t;
@@ -795,7 +802,7 @@ void PlausibleRoute::printWaypoints()
 	std::cout << ",start,end,";
 	std::cout << std::endl;
 
-	for (size_t i = 0; i < parameterCount(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		Parameter *t = parameter(i);
 		

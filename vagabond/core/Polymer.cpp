@@ -21,6 +21,7 @@
 #include "Model.h"
 #include "Value.h"
 #include "Polymer.h"
+#include "RTAngles.h"
 #include "Superpose.h"
 #include "HyperValue.h"
 #include "AtomContent.h"
@@ -355,13 +356,22 @@ bool Polymer::atomBelongsToInstance(Atom *a)
 	return has_chain_id(a->chain()) && (a->code() != "HOH");
 }
 
-MetadataGroup::Array Polymer::grabTorsions(rope::TorsionType type)
+void Polymer::grabTorsions(RTAngles &angles, rope::TorsionType type)
 {
 	sequence()->remapFromMaster(entity());
-	MetadataGroup::Array vals;
+	sequence()->torsionsFromMapped(angles, type);
+}
 
-	polymerEntity()->sequence()->torsionsFromMapped(sequence(), vals, type);
-	return vals;
+std::vector<ResidueTorsion> Polymer::residueTorsionList()
+{
+	std::vector<ResidueTorsion> rts;
+	polymerEntity()->sequence()->addResidueTorsions(rts);
+	
+	for (ResidueTorsion &rt : rts)
+	{
+		rt.attachToInstance(this);
+	}
+	return rts;
 }
 
 std::map<Atom *, Atom *> Polymer::mapAtoms(Polymer *other)

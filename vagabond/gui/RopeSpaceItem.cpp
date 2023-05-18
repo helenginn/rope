@@ -57,7 +57,14 @@ void RopeSpaceItem::makeView(ConfSpaceView *attach)
 
 void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 {
+	if (_mustCluster)
+	{
+		_cluster = _cluster->cluster();
+		_mustCluster = false;
+	}
+
 	_confView = attach;
+	_confView->assignRopeSpace(this);
 
 	attach->addIndexResponder(_view);
 	_view->setIndexResponseView(attach);
@@ -78,8 +85,46 @@ void RopeSpaceItem::allocateView(ConfSpaceView *attach)
 	attachExisting(attach);
 }
 
+void RopeSpaceItem::purgeHasMetadata(HasMetadata *hm)
+{
+	ObjectGroup *grp = _cluster->objectGroup();
+	bool found = grp->purge(hm);
+	
+	if (found)
+	{
+		setMustCluster();
+	}
+}
+
+void RopeSpaceItem::sendObject(std::string tag, void *object)
+{
+	if (tag == "purge")
+	{
+		HasMetadata *hm = static_cast<HasMetadata *>(object);
+		purgeHasMetadata(hm);
+	}
+
+}
+
+void RopeSpaceItem::setResponders()
+{
+	if (!isTopLevelItem())
+	{
+		return;
+	}
+
+	std::vector<Instance *> insts = _entity->instances();
+	
+	for (Instance *inst : insts)
+	{
+		inst->setResponder(this);
+	}
+}
+
 void RopeSpaceItem::calculateCluster()
 {
+	setResponders();
+
 	if (_type == ConfTorsions)
 	{
 		MetadataGroup angles = _entity->makeTorsionDataGroup();

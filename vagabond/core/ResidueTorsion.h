@@ -55,6 +55,12 @@ public:
 		return _local;
 	}
 	
+	const bool operator==(const ResidueTorsion &other) const
+	{
+		return (_master == other._master && _torsion == other._torsion
+		        && _entityName == other._entityName);
+	}
+	
 	void setMaster(Residue *residue)
 	{
 		_master = residue;

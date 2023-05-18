@@ -31,29 +31,31 @@ ConcertedBasis::~ConcertedBasis()
 	freeSVD(&_svd);
 }
 
-float ConcertedBasis::parameterForVector(int idx, const float *vec, int n)
+// tidx: torsion angle
+// vec/n: vector you have to generate torsion angle
+float ConcertedBasis::parameterForVector(int tidx, const float *vec, int n)
 {
-	if (idx < 0)
+	if (tidx < 0)
 	{
 		return 0;
 	}
 
-	if (n >= idx && _angles.size() == 0)
+	if (n >= tidx && _angles.size() == 0)
 	{
 		prepare();
 	}
 
-	TorsionAngle &ta = _angles[idx];
+	TorsionAngle &ta = _angles[tidx];
 
 	if (n == 0 || !ta.mask)
 	{
 		return ta.angle;
 	}
-
-	float sum = fullContribution(idx, vec, n);
 	
-	int contracted = _idxs[idx];
-	Parameter *bt = _filtered[contracted];
+	int contracted_tidx = _idxs[tidx];
+	float sum = fullContribution(tidx, vec, n);
+	
+	Parameter *bt = _filtered[contracted_tidx];
 	
 	sum += ta.angle;
 
@@ -115,9 +117,6 @@ void ConcertedBasis::prepareSVD()
 	{
 		for (size_t j = 0; j <= i; j++)
 		{
-			Parameter *a = _filtered[i];
-			Parameter *b = _filtered[j];
-			
 			float diff = (i == j);
 
 			_svd.u.ptrs[i][j] = diff;
@@ -248,11 +247,9 @@ size_t ConcertedBasis::activeBonds()
 	return _nActive;
 }
 
-float ConcertedBasis::fullContribution(int idx, const float *vec, int n)
+float ConcertedBasis::fullContribution(int tidx, const float *vec, int n)
 {
-	int contracted = _idxs[idx];
-	
-	if (contracted < 0 || contracted > _svd.u.rows)
+	if (tidx < 0 || tidx > _svd.u.rows)
 	{
 		return 0;
 	}
@@ -260,23 +257,23 @@ float ConcertedBasis::fullContribution(int idx, const float *vec, int n)
 	float ret = 0;
 
 	// each n is an axis
-	for (size_t a = 0; a < n; a++)
+	for (size_t i = 0; i < n; i++)
 	{
-		float add = contributionForAxis(a, idx, vec);
+		float add = contributionForAxis(tidx, i, vec);
 		ret += add;
 	}
 
 	return ret;
 }
 
-float ConcertedBasis::contributionForAxis(int axis, int i, const float *vec)
+float ConcertedBasis::contributionForAxis(int tidx, int i, const float *vec)
 {
 	if (i > _svd.u.rows)
 	{
 		return 0;
 	}
 
-	double svd = (_svd.u[axis][i]);
+	double svd = (_svd.u[tidx][i]);
 	const float &custom = vec[i];
 	float add = svd * custom;
 	return add;

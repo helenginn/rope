@@ -332,8 +332,9 @@ void Instance::addTorsionsToGroup(MetadataGroup &group,
 		return;
 	}
 
-	MetadataGroup::Array vals = grabTorsions(type);
-	group.addMetadataArray(this, vals);
+	RTAngles angles = group.emptyAngles();
+	grabTorsions(angles, type);
+	group.addMetadataArray(this, angles);
 }
 
 void Instance::superposeOn(Instance *other)

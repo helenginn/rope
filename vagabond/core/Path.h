@@ -25,6 +25,7 @@
 #include "Polymer.h"
 
 class MetadataGroup;
+class Trajectory;
 
 class Path : public HasMetadata
 {
@@ -57,6 +58,11 @@ public:
 		_contributeSVD = contrib;
 	}
 	
+	size_t motionCount() const
+	{
+		return _motions.size();
+	}
+	
 	const bool &contributesToSVD() const
 	{
 		return _contributeSVD;
@@ -82,66 +88,34 @@ public:
 		return _visible;
 	}
 	
-	void calculateArrays(MetadataGroup *group);
-	
-	size_t angleArraySize()
-	{
-		return _step2Angles[_steps].size();
-	}
+	Trajectory *calculateTrajectory(int steps);
 	
 	void setStepCount(int steps)
 	{
 		_steps = steps;
 	}
 	
-	MetadataGroup::Array deviation(int i)
-	{
-		return _step2Deviations[_steps][i];
-	}
-	
-	MetadataGroup::Array angleArray(int i)
-	{
-		return _step2Angles[_steps][i];
-	}
-	
 	bool operator==(const Path &other) const;
-	void calculateDeviations(MetadataGroup *group, bool force);
+	Trajectory *calculateDeviations(int steps);
 	
-	float getOutOfPlane(int idx)
-	{
-		if (_outOfPlanes[_steps].size() > idx)
-		{
-			return _outOfPlanes[_steps][idx];
-		}
-
-		return 0;
-	}
+	void filterAngles(MetadataGroup *group);
 	
-	void setOutOfPlanes(std::vector<float> &out)
-	{
-		_outOfPlanes[_steps] = out;
-	}
+	float angleForFraction(float frac, int idx);
+	
 private:
-
 	std::string _startInstance;
 	std::string _model_id;
 	std::string _endInstance;
 	Instance *_instance = nullptr;
 	Model *_model = nullptr;
 	Instance *_end = nullptr;
+	RTMotion _motions;
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
 
-	std::vector<ResidueTorsion> _rts;
-	std::map<int, WayPoints> _wayPoints;
-	std::vector<bool> _flips;
-	std::map<int, std::vector<MetadataGroup::Array> > _step2Angles;
-	std::map<int, std::vector<MetadataGroup::Array> > _step2Deviations;
-	std::map<int, std::vector<float> > _outOfPlanes;
 	int _steps = 12;
-
-	Route::Point _destination;
+	
 	PlausibleRoute::InterpolationType _type = PlausibleRoute::Polynomial;
 	
 	PlausibleRoute *_route = nullptr;
@@ -153,10 +127,14 @@ inline void to_json(json &j, const Path &value)
 	j["model"] = value._model_id;
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
+	j["motions"] = value._motions;
+
+	/*
 	j["parameters"] = value._rts;
 	j["destination"] = value._destination;
 	j["flips"] = value._flips;
 	j["waypoints"] = value._wayPoints;
+	*/
 }
 
 /* path */
@@ -165,17 +143,23 @@ inline void from_json(const json &j, Path &value)
 	value._startInstance = j.at("start");
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
-	std::vector<float> dest = j.at("destination");
-	value._destination = dest;
-	
-	std::vector<ResidueTorsion> rts = j.at("parameters");
-	value._rts = rts;
 
-    std::vector<bool> flips = j.at("flips");
-    value._flips = flips;
+	if (j.count("destination"))
+	{
+		std::vector<float> dest = j.at("destination");
+		std::vector<ResidueTorsion> rts = j.at("parameters");
+		std::vector<bool> flips = j.at("flips");
+		std::map<int, WayPoints> wps = j.at("waypoints");
 
-    std::map<int, WayPoints> wps = j.at("waypoints");
-    value._wayPoints = wps;
+		value._motions.vector_from(rts);
+		value._motions.motion_angles_from(dest);
+		value._motions.waypoints_from(wps);
+		value._motions.flips_from(flips);
+	}
+	else if (j.count("motions"))
+	{
+		value._motions = j.at("motions");
+	}
 }
 
 #endif

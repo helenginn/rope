@@ -92,6 +92,7 @@ void StarView::makePoints()
 		Vertex &vert = _line->addPoint(glm::vec3{0});
 		colourVertex(vert);
 		path->setStepCount(_steps);
+		/*
 		path->calculateDeviations(dg, false);
 
 		for (size_t i = 0; i < path->angleArraySize(); i++)
@@ -110,6 +111,7 @@ void StarView::makePoints()
 		Vertex &wert = _line->addPoint(glm::vec3{0});
 		colourVertex(wert);
 		incrementColour();
+		*/
 	}
 	
 	reindex();

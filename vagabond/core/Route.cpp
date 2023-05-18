@@ -39,15 +39,13 @@ Route::~Route()
 
 void Route::setup()
 {
-
-	if (_rawDest.size() == 0 && destinationSize() == 0)
+	if (_rawDest.size() == 0 && motionCount() == 0)
 	{
-		throw std::runtime_error("No destination set for route");
+		throw std::runtime_error("No destination or prior set for route");
 	}
 
 	_fullAtoms = _instance->currentAtoms();
 	startCalculator();
-	connectParametersToDestination();
 }
 
 void Route::addPoint(Point &values)
@@ -279,50 +277,17 @@ void Route::setFlips(std::vector<int> &idxs, std::vector<bool> &fs)
 
 void Route::bringTorsionsToRange()
 {
-	for (size_t i = 0; i < destinationSize(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		while (destination(i) >= 180)
 		{
-			_destination[i] -= 360;
+			destination(i) -= 360;
 		}
 		while (destination(i) < -180)
 		{
-			_destination[i] += 360;
+			destination(i) += 360;
 		}
 	}
-}
-
-void Route::clearWayPointFlips()
-{
-	_wayPoints.clear();
-	_flips.clear();
-}
-
-void Route::populateWaypoints()
-{
-	clearWayPointFlips();
-	
-	for (size_t i = 0; i < destinationSize(); i++)
-	{
-		WayPoints wp;
-		wp.push_back(WayPoint::startPoint());
-		_flips.push_back(false);
-
-		if (fabs(destination(i)) < 30)
-		{
-			wp.push_back(WayPoint(0.33, 0.33));
-			wp.push_back(WayPoint(0.66, 0.66));
-		}
-		else
-		{
-			wp.push_back(WayPoint::midPoint());
-		}
-
-		wp.push_back(WayPoint::endPoint());
-
-		_wayPoints[i] = wp;
-	}
-
 }
 
 void Route::reportFound()
@@ -338,12 +303,25 @@ void Route::reportFound()
 
 void Route::getParametersFromBasis()
 {
-	_parameters.clear();
-	_missing.clear();
-	_destination.clear();
+	if (_motions.size() > 0)
+	{
+		std::cout << "skipping" << std::endl;
+		return;
+	}
 
-	const std::vector<ResidueTorsion> &list = _cluster->dataGroup()->headers();
+	_missing.clear();
+
+	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
+	
+	for (ResidueTorsion &rt : list)
+	{
+		rt.attachToInstance(_instance);
+	}
+
 	std::vector<bool> found(list.size(), false);
+
+	std::vector<Motion> motions;
+	std::vector<ResidueTorsion> torsions;
 
 	for (BondCalculator *calc : _calculators)
 	{
@@ -353,24 +331,27 @@ void Route::getParametersFromBasis()
 		{
 			Parameter *p = basis->parameter(i);
 			int idx = _instance->indexForParameterFromList(p, list);
-			float v = 0;
 			
 			if (idx < 0)
 			{
 				_missing.push_back(p);
 				continue;
 			}
-			else
-			{
-				v = _rawDest[idx];
-			}
-			
-			const ResidueTorsion &rt = list[idx];
 
-			addParameter(rt, p);
-			_destination.push_back(v);
+			float final_angle = _rawDest[idx];
+			
+			ResidueTorsion rt = list[idx];
+			Parameter *other = rt.parameter();
+			
+			assert(other == p);
+
+			torsions.push_back(rt);
+			motions.push_back(Motion{WayPoints(), false, final_angle});
 		}
 	}
+
+	_motions = RTMotion::motions_from(torsions, motions);
+	connectParametersToDestination();
 }
 
 void Route::connectParametersToDestination()
@@ -386,9 +367,9 @@ void Route::connectParametersToDestination()
 			Parameter *p = basis->parameter(i);
 			
 			int chosen = -1;
-			for (int j = 0; j < _parameters.size(); j++)
+			for (int j = 0; j < motionCount(); j++)
 			{
-				if (_parameters[j].param == p)
+				if (parameter(j) == p)
 				{
 					chosen = j;
 					break;
@@ -414,14 +395,12 @@ void Route::prepareDestination()
 	}
 	
 	getParametersFromBasis();
-	connectParametersToDestination();
 	reportFound();
-	populateWaypoints();
 }
 
 int Route::indexOfParameter(Parameter *t)
 {
-	for (size_t i = 0; i < parameterCount(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		if (parameter(i) == t)
 		{
@@ -430,55 +409,6 @@ int Route::indexOfParameter(Parameter *t)
 	}
 	
 	return -1;
-}
-
-void Route::extractWayPoints(Route *other)
-{
-	if (_calculators.size() == 0)
-	{
-		return;
-	}
-
-	const Grapher &g = grapher();
-	const Grapher &h = other->grapher();
-
-	for (size_t i = 0; i < g.graphCount(); i++)
-	{
-		AtomGraph *gr = g.graph(i);
-		
-		if (gr->torsion == nullptr)
-		{
-			continue;
-		}
-
-		for (size_t j = 0; j < h.graphCount(); j++)
-		{
-			AtomGraph *hr = h.graph(j);
-
-			if (hr->torsion == nullptr || gr->torsion != hr->torsion)
-			{
-				continue;
-			}
-			
-			if (gr->atom != hr->atom)
-			{
-				continue;
-			}
-			
-			int src = other->indexOfParameter(hr->torsion);
-			int dest = indexOfParameter(hr->torsion);
-			
-			if (src < 0 || dest < 0)
-			{
-				continue;
-			}
-			
-			const WayPoints &wps = other->wayPoints(src);
-			setWayPoints(dest, wps);
-			bool flip = other->flip(src);
-			setFlip(dest, flip);
-		}
-	}
 }
 
 void Route::printWayPoints()
@@ -499,11 +429,6 @@ void Route::printWayPoints()
 	std::cout << std::endl;
 }
 
-void Route::setDestination(Point &d)
-{
-	_destination = d;
-}
-
 float Route::getTorsionAngle(int i)
 {
 	if (!flip(i))
@@ -521,10 +446,10 @@ float Route::getTorsionAngle(int i)
 	}
 }
 
-std::vector<ResidueTorsion> Route::residueTorsions() const
+std::vector<ResidueTorsion> Route::residueTorsions()
 {
 	std::vector<ResidueTorsion> rts;
-	for (size_t i = 0; i < parameterCount(); i++)
+	for (size_t i = 0; i < motionCount(); i++)
 	{
 		rts.push_back(residueTorsion(i));
 	}

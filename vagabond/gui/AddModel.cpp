@@ -248,7 +248,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "delete" && _existing && _deleteAllowed)
 	{
-		ConfSpaceView::deleteClusterForEntity(nullptr);
+//		ConfSpaceView::deleteClusterForEntity(nullptr);
 		Environment::purgeModel(_obj.name());
 		back();
 	}

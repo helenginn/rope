@@ -381,46 +381,47 @@ bool Sequence::torsionByName(const std::string name, Residue **res)
 }
 
 /* called on the master sequence */
-void Sequence::torsionsFromMapped(Sequence *seq, std::vector<Angular> &vals,
-                                  rope::TorsionType type)
+void Sequence::torsionsFromMapped(RTAngles &angles, rope::TorsionType type)
 {
-	for (Residue &master : _residues)
+	for (int i = 0; i < angles.size(); i++)
 	{
-		Residue *const local = seq->local_residue(&master);
+		const ResidueTorsion &rt = angles.rt(i);
 
-		for (const TorsionRef &torsion : master.torsions())
+		Residue *const master = rt.master();
+		const TorsionRef &tref = rt.torsion();
+
+		Residue *const local = local_residue(master);
+		
+		if (!local)
 		{
-			if (!local)
-			{
-				vals.push_back(NAN);
-				continue;
-			}
-
-			TorsionRef match = local->copyTorsionRef(torsion.desc());
-			Angular f = NAN;
-			
-			if (match.valid())
-			{
-				switch (type)
-				{
-					case rope::RefinedTorsions:
-					f = match.refinedAngle();
-					break;
-
-					case rope::TemporaryTorsions:
-					f = match.tmpAngle();
-					break;
-					
-					default:
-					f = match.refinedAngle();
-					break;
-				}
-			}
-			
-			f.hyper = (match.isHyperParameter());
-
-			vals.push_back(f);
+			continue;
 		}
+
+		TorsionRef match = local->copyTorsionRef(tref.desc());
+
+		Angular f = NAN;
+
+		if (match.valid())
+		{
+			switch (type)
+			{
+				case rope::RefinedTorsions:
+				f = match.refinedAngle();
+				break;
+
+				case rope::TemporaryTorsions:
+				f = match.tmpAngle();
+				break;
+
+				default:
+				f = match.refinedAngle();
+				break;
+			}
+		}
+
+		f.hyper = (match.isHyperParameter());
+
+		angles.storage(i) = f;
 	}
 }
 

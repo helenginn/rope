@@ -76,6 +76,7 @@ public:
 	void clearCalculators();
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
+	virtual void torsionBasisMods(TorsionBasis *tb) {};
 
 	bool fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
 	               const std::vector<Angular> &values, int axis = 0);

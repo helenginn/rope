@@ -33,6 +33,7 @@ public:
 	{
 		TypeSimple,
 		TypeCustom,
+		TypeOnPath,
 		TypeConcerted,
 		TypeMechanical,
 	};
@@ -67,6 +68,11 @@ public:
 	const size_t parameterCount() const
 	{
 		return _params.size();
+	}
+	
+	const std::vector<Parameter *> &parameters() const
+	{
+		return _params;
 	}
 	
 	const float &referenceAngle(int i) const

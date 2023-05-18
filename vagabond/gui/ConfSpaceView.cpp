@@ -57,6 +57,7 @@ Mouse3D(prev),
 IndexResponseView(prev)
 {
 	_entity = ent;
+	shiftToCentre(glm::vec3(0.f), 10);
 }
 
 bool ConfSpaceView::makeFirstCluster()
@@ -171,30 +172,33 @@ void ConfSpaceView::proofRopeSpace()
 	}
 }
 
-void ConfSpaceView::switchView()
+void ConfSpaceView::assignRopeSpace(RopeSpaceItem *item)
 {
 	removeObject(_view);
 	_view = nullptr;
 	
 	removeObject(_axes);
 	_axes = nullptr;
-	
+
+	_cluster = item->cluster();
+	_axes = item->axes();
+	_view = item->view();
+
+	addObject(_axes);
+	addObject(_view);
+}
+
+void ConfSpaceView::switchView()
+{
 	clearResponders();
 
 	bool first = makeFirstCluster();
 	proofRopeSpace();
 	std::cout << _selected->displayName() << std::endl;
+
 	ClusterView *view = _selected->view();
 	glm::vec3 c = view->centroid();
-	float distance = first ? 10 : 0;
-	shiftToCentre(c, distance);
-	_cluster = view->cluster();
-
-	_axes = _selected->axes();
-	_view = view;
-
-	addObject(_axes);
-	addObject(view);
+	shiftToCentre(c, 0);
 
 	_selected->attachExisting(this);
 }
@@ -268,15 +272,6 @@ void ConfSpaceView::showRulesButton()
 	t->resize(0.6);
 	t->setRight(0.96, 0.15);
 	addObject(b);
-	addObject(t);
-}
-
-void ConfSpaceView::showtSNE()
-{
-	TextButton *t = new TextButton("t-SNE", this);
-	t->setReturnTag("tsne");
-	t->resize(0.6);
-	t->setRight(0.97, 0.8);
 	addObject(t);
 }
 
@@ -375,6 +370,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		std::vector<HasMetadata *> members = _view->selectedMembers();
 		ObjectGroup *mdg = _cluster->objectGroup();
 		mdg->setSeparateAverage(members);
+//		_selected->setMustCluster();
 		_view->cluster()->cluster();
 		refresh();
 	}
@@ -410,17 +406,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		applyRules();
 	}
 	
-	/*
-	if (tag == "tsne")
-	{
-		ConfSpaceView *view = new ConfSpaceView(this, _entity);
-		view->setMode(_type);
-		view->setWhiteList(_whiteList);
-		view->setTSNE(true);
-		view->show();
-	}
-	*/
-
 	if (tag == "yes_fold_in")
 	{
 		// refine extra molecules

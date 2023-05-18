@@ -35,7 +35,8 @@ class Rule;
 	
 class ConfSpaceView;
 
-class RopeSpaceItem : public Item, public ButtonResponder
+class RopeSpaceItem : public Item, public ButtonResponder, 
+public Responder<HasMetadata>
 {
 public:
 	RopeSpaceItem(Entity *entity);
@@ -49,6 +50,11 @@ public:
 	ClusterView *view()
 	{
 		return _view;
+	}
+	
+	RopeCluster *cluster()
+	{
+		return _cluster;
 	}
 	
 	rope::ConfType confType()
@@ -73,12 +79,18 @@ public:
 		return _axes;
 	}
 	
+	void setMustCluster()
+	{
+		_mustCluster = true;
+	}
+	
 	Axes *createReference(Instance *inst);
 	RopeSpaceItem *branchFromRule(Rule *rule, bool inverse);
 	RopeSpaceItem *branchFromRuleRange(const Rule *rule, float min, float max);
 	RopeSpaceItem *makeGroupFromSelected(bool inverse);
 	
 	size_t selectedCount();
+	virtual void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();
 	virtual Menu *rightClickMenu();
@@ -87,8 +99,10 @@ private:
 	void allocateView(ConfSpaceView *view);
 	void inheritAxis(RopeSpaceItem *parent);
 	void calculateCluster();
+	void setResponders();
 	void handleMetadataTag(std::string tag, Button *button);
 	void setMetadata(std::string key, std::string value);
+	void purgeHasMetadata(HasMetadata *hm);
 
 	std::vector<HasMetadata *> _whiteList;
 	ClusterView *_view = nullptr;
@@ -98,6 +112,7 @@ private:
 	ConfSpaceView *_confView = nullptr;
 	
 	std::string _tmpKey, _tmpValue;
+	bool _mustCluster = true;
 
 	rope::ConfType _type = rope::ConfTorsions;
 };

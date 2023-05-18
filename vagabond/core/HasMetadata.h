@@ -20,9 +20,10 @@
 #define __vagabond__HasMetadata__
 
 #include "Metadata.h"
+#include "Responder.h"
 #include <algorithm>
 
-class HasMetadata
+class HasMetadata : public HasResponder<Responder<HasMetadata>>
 {
 public:
 	virtual ~HasMetadata() {};
@@ -60,6 +61,11 @@ public:
 			}
 			target.erase(it);
 		}
+	}
+	
+	void flagPurge()
+	{
+		sendResponse("purge", this);
 	}
 	
 	bool isSelected()

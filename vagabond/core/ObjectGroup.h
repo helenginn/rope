@@ -59,6 +59,10 @@ public:
 	{
 		return _objects;
 	}
+	
+	bool purge(HasMetadata *hm);
+	
+	virtual void purge(int idx) = 0;
 protected:
 	std::vector<HasMetadata *> _objects;
 

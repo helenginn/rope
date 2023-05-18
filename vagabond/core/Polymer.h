@@ -101,11 +101,13 @@ public:
 
 	virtual const size_t completenessScore() const;
 	
-	virtual MetadataGroup::Array grabTorsions(rope::TorsionType type 
-	                                          = rope::RefinedTorsions);
+	virtual std::vector<ResidueTorsion> residueTorsionList();
+	virtual void grabTorsions(RTAngles &angles,
+	                              rope::TorsionType type = rope::RefinedTorsions);
 
 	void addPositionsToGroup(MetadataGroup &group,
 	                         std::map<Residue *, int> resIdxs);
+
 
 	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
 	                                         std::string header);

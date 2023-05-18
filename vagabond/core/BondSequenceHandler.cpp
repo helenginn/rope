@@ -148,7 +148,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 
 	_sequences.push_back(sequence);
 
-	for (size_t i = 1; i < _totalSequences; i++)
+	for (size_t i = 0; i < _totalSequences; i++)
 	{
 		BondSequence *copy = new BondSequence(*sequence);
 		_sequences.push_back(copy);

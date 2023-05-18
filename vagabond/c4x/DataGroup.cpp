@@ -644,4 +644,15 @@ DataGroup<Unit, Header>::weightedDifferences(std::vector<float> weights)
 	return array;
 }
 
+template <class Unit, class Header>
+void DataGroup<Unit, Header>::purge(int i)
+{
+	_vectorNames.erase(_vectorNames.begin() + i);
+	_vectors.erase(_vectors.begin() + i);
+	_diffs.erase(_diffs.begin() + i);
+	_comparables.erase(_comparables.begin() + i);
+
+	clearAverages();
+}
+
 #endif

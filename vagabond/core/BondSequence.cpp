@@ -232,7 +232,7 @@ void BondSequence::calculateCustomVector()
 		}
 
 		memcpy(_currentVec, _custom->mean, sizeof(float) * n);
-
+		
 		if (_sampler != nullptr)
 		{
 			_sampler->addToVec(_currentVec, _custom->tensor, _sampleNum);
@@ -389,7 +389,7 @@ void BondSequence::superpose()
 				continue;
 			}
 
-			glm::vec3 p = _blocks[n].target;
+			glm::vec3 p = _blocks[j].target;
 			glm::vec3 q = _blocks[n].my_position();
 			
 			if (p.x == p.x)

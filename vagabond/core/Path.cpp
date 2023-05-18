@@ -18,6 +18,8 @@
 
 #include "Path.h"
 #include "ModelManager.h"
+#include "Trajectory.h"
+#include "RTMultiple.h"
 
 Path::Path(PlausibleRoute *pr)
 {
@@ -27,12 +29,9 @@ Path::Path(PlausibleRoute *pr)
 	_model_id = pr->instance()->model()->id();
 	_instance = pr->instance();
 	_end = pr->endInstance();
-	_rts = pr->residueTorsions();
-
-	_wayPoints = pr->wayPoints();
-	_flips = pr->flips();
 	_type = pr->type();
-	_destination = pr->destination();
+
+	_motions = pr->motions();
 	
 	_route = nullptr;
 }
@@ -88,27 +87,13 @@ PlausibleRoute *Path::toRoute()
 	
 	_model->currentAtoms();
 
-	PlausibleRoute *pr = new PlausibleRoute(_instance, nullptr, _wayPoints.size());
+	_motions.attachInstance(_instance);
+
+	PlausibleRoute *pr = new PlausibleRoute(_instance, nullptr, _motions.size());
 	pr->useForceField(false);
 	pr->setDestinationInstance(_end);
 	pr->setType(_type);
-	pr->setDestination(_destination);
-	pr->setWayPoints(_wayPoints);
-	pr->Route::setFlips(_flips);
-
-	for (size_t i = 0; i < _rts.size(); i++)
-	{
-		_rts[i].attachToInstance(_instance);
-		Parameter *p = _rts[i].parameter();
-		
-		if (p == nullptr)
-		{
-			std::cout << "WARNING! null parameter in " << 
-			_rts[i].local_id().str() << std::endl;
-		}
-		
-		pr->addParameter(_rts[i], p);
-	}
+	pr->setMotions(_motions);
 
 	_route = pr;
 	
@@ -120,100 +105,74 @@ std::string Path::desc() const
 	return _startInstance + " to " + _endInstance;
 }
 
-void Path::calculateDeviations(MetadataGroup *group, bool force)
+Trajectory *Path::calculateDeviations(int steps)
 {
-	if (force)
-	{
-		_step2Angles.erase(_steps);
-		_step2Deviations.erase(_steps);
-	}
+	Trajectory *straight = calculateTrajectory(2);
+	Trajectory *curvy = calculateTrajectory(steps);
 	
-	if (_step2Deviations.count(_steps) &&
-	    _step2Deviations.at(_steps).size() == _steps)
-	{
-		return;
-	}
-	
-	calculateArrays(group);
-	_step2Deviations[_steps] = _step2Angles[_steps];
-
-	_instance->load();
-	AtomContent *grp = _instance->model()->currentAtoms();
-	PlausibleRoute *pr = toRoute();
-	pr->setup();
-	pr->calculateLinearProgression(_steps);
-	
-	for (size_t i = 0; i < _steps; i++)
-	{
-		pr->submitJobAndRetrieve(i);
-		_instance->extractTorsionAngles(grp, true);
-		MetadataGroup::Array vals;
-		vals = _instance->grabTorsions(rope::TemporaryTorsions);
-		
-		for (size_t j = 0; j < vals.size(); j++)
-		{
-			_step2Deviations[_steps][i][j] -= vals[j];
-		}
-
-		group->matchDegrees(_step2Deviations[_steps][i]);
-	}
-	
-	_instance->unload();
-	
-	cleanupRoute();
+	curvy->subtract(straight);
+	return curvy;
 }
 
-void Path::calculateArrays(MetadataGroup *group)
+Trajectory *Path::calculateTrajectory(int steps)
 {
-	if (_step2Angles.count(_steps) &&
-	    _step2Angles.at(_steps).size() == _steps)
-	{
-		return;
-	}
-
 	housekeeping();
 
 	_instance->load();
 	AtomContent *grp = _instance->model()->currentAtoms();
 	PlausibleRoute *pr = toRoute();
 	pr->setup();
-	pr->calculatePolynomialProgression(_steps);
 	
-	for (size_t i = 0; i < _steps; i++)
+	pr->calculatePolynomialProgression(steps);
+	
+	std::vector<ResidueTorsion> polymer_rts = _instance->residueTorsionList();
+	std::cout << "instance list: " << polymer_rts.size() << std::endl;
+	RTMultiple list; list.vector_from(polymer_rts);
+	RTAngles angles; angles.vector_from(polymer_rts);
+	RTAngles first;
+	
+	for (size_t i = 0; i < steps; i++)
 	{
 		pr->submitJobAndRetrieve(i);
 		_instance->extractTorsionAngles(grp, true);
-		MetadataGroup::Array vals;
-		vals = _instance->grabTorsions(rope::TemporaryTorsions);
-		group->matchDegrees(vals);
-		_step2Angles[_steps].push_back(vals);
+		_instance->grabTorsions(angles, rope::TemporaryTorsions);
+		
+		if (i == 0)
+		{
+			first = angles;
+		}
+
+		angles.match_degrees_to(first);
+		
+		first = angles;
+
+		list.add_angles_from(angles);
 	}
 	
 	_instance->unload();
 	cleanupRoute();
+	
+	Trajectory *traj = new Trajectory(list, this);
+	return traj;
 }
 
 void Path::addDeviationsToGroup(MetadataGroup &group)
 {
-	calculateDeviations(&group, false);
-	
-	for (size_t i = 0; i < _step2Deviations[_steps].size(); i++)
-	{
-		group.addMetadataArray(this, _step2Deviations[_steps][i]);
-	}
+	Trajectory *traj = calculateDeviations(_steps);
+	traj->addToMetadataGroup(group);
+	delete traj;
 }
 
 void Path::addTorsionsToGroup(MetadataGroup &group)
 {
-	calculateArrays(&group);
-	
-	if (_contributeSVD)
+	if (!_contributeSVD)
 	{
-		for (size_t i = 0; i < _step2Angles[_steps].size(); i++)
-		{
-			group.addMetadataArray(this, _step2Angles[_steps][i]);
-		}
+		return;
 	}
+
+	Trajectory *traj = calculateTrajectory(_steps);
+	traj->addToMetadataGroup(group);
+	delete traj;
 }
 
 void Path::cleanupRoute()
