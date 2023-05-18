@@ -55,6 +55,11 @@ public:
 	{
 		return DataGroup<Posular, Atom3DPosition>::clearAverages();
 	}
+
+	virtual void purge(int i)
+	{
+		DataGroup<Posular, Atom3DPosition>::purge(i);
+	}
 private:
 
 };
