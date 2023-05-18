@@ -78,6 +78,7 @@ bool ObjectGroup::purge(HasMetadata *hm)
 		if (_objects[i] == hm)
 		{
 			purge(i);
+			_objects.erase(_objects.begin() + i);
 			return true;
 		}
 	}

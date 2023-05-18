@@ -26,6 +26,11 @@ IndexResponseView::IndexResponseView(Scene *prev) : Scene(prev)
 
 }
 
+IndexResponseView::~IndexResponseView()
+{
+	clearResponders();
+}
+
 void IndexResponseView::setup()
 {
 #ifndef __EMSCRIPTEN__
@@ -109,6 +114,11 @@ void IndexResponseView::addIndexResponder(IndexResponder *ir)
 
 void IndexResponseView::clearResponders()
 {
+	for (IndexResponder *r : _responders)
+	{
+		r->clearView();
+	}
+
 	_responders.clear();
 }
 
@@ -118,6 +128,7 @@ void IndexResponseView::removeResponder(IndexResponder *ir)
 	{
 		if (_responders[i] == ir)
 		{
+			ir->clearView();
 			_responders.erase(_responders.begin() + i);
 		}
 	}

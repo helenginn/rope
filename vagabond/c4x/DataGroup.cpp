@@ -479,29 +479,6 @@ PCA::Matrix DataGroup<Unit, Header>::arbitraryMatrix
 	
 	PCA::setupMatrix(&m, n, n);
 	
-	/*
-	for (size_t i = 0; i < _comparables.size(); i++)
-	{
-		int n = 0;
-		for (size_t k = 0; k < comparable_length(); k+= Unit::comparable_size())
-		{
-			std::cout << _diffs[i][n] << " = ";
-			std::cout << "(";
-			n++;
-			for (size_t j = 0; j < Unit::comparable_size(); j++)
-			{
-				std::cout << _comparables[i][k + j];
-				if (j < comparable_length() - 1)
-				{
-					std::cout << ", ";
-				}
-			}
-			std::cout << ") ";
-		}
-		std::cout << std::endl;
-	}
-	*/
-	
 	for (size_t j = 0; j < n; j++)
 	{
 		for (size_t i = 0; i < n; i++)

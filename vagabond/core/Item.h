@@ -195,7 +195,7 @@ public:
 
 	bool hasAncestor(Item *item);
 	
-	bool isTopLevelItem()
+	bool isTopLevelItem() const
 	{
 		return _parent == nullptr;
 	}

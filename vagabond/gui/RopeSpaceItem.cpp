@@ -34,13 +34,12 @@ using namespace rope;
 RopeSpaceItem::RopeSpaceItem(Entity *entity) : Item()
 {
 	_entity = entity;
-	setDisplayName("All molecules in " + entity->name());
+	_fixedTitle = "All molecules in " + entity->name();
 	Item::setSelectable(true);
 }
 
 RopeSpaceItem::~RopeSpaceItem()
 {
-	std::cout << "DELETING ROPE SPACE ITEM?" << std::endl;
 	_confView->removeResponder(_axes);
 	_confView->removeResponder(_view);
 	delete _view;
@@ -53,17 +52,28 @@ void RopeSpaceItem::makeView(ConfSpaceView *attach)
 	_confView = attach;
 	allocateView(attach);
 	calculateCluster();
+	attachExisting(attach);
+}
+
+void RopeSpaceItem::clusterIfNeeded()
+{
+	if (!_mustCluster)
+	{
+		return;
+	}
+
+	_confView->assignRopeSpace(nullptr);
+
+	_cluster->cluster();
+	_view->makePoints();
+
+	_mustCluster = false;
 }
 
 void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 {
-	if (_mustCluster)
-	{
-		_cluster = _cluster->cluster();
-		_mustCluster = false;
-	}
-
 	_confView = attach;
+	clusterIfNeeded();
 	_confView->assignRopeSpace(this);
 
 	attach->addIndexResponder(_view);
@@ -82,7 +92,6 @@ void RopeSpaceItem::allocateView(ConfSpaceView *attach)
 {
 	ClusterView *view = new ClusterView();
 	_view = view;
-	attachExisting(attach);
 }
 
 void RopeSpaceItem::purgeHasMetadata(HasMetadata *hm)
@@ -93,6 +102,19 @@ void RopeSpaceItem::purgeHasMetadata(HasMetadata *hm)
 	if (found)
 	{
 		setMustCluster();
+	}
+	
+	auto it = std::find(_whiteList.begin(), _whiteList.end(), hm);
+	
+	if (it != _whiteList.end())
+	{
+		_whiteList.erase(it);
+	}
+	
+	for (int i = 0; i < itemCount(); i++)
+	{
+		RopeSpaceItem *rsi = ropeSpaceItem(i);
+		rsi->purgeHasMetadata(hm);
 	}
 }
 
@@ -177,11 +199,10 @@ RopeSpaceItem *RopeSpaceItem::branchFromRuleRange(const Rule *rule, float min,
 
 	std::string title = rule->header();
 	title += " from " + f_to_str(min, 1) + " to " + f_to_str(max, 1);
-	title += " (" + std::to_string(whiteList.size()) + ")";
 
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
+	subset->setFixedTitle(title);
 	subset->setWhiteList(whiteList);
-	subset->setDisplayName(title);
 	subset->makeView(_confView);
 	addItem(subset);
 
@@ -234,18 +255,29 @@ RopeSpaceItem *RopeSpaceItem::branchFromRule(Rule *rule, bool inverse)
 	}
 
 	std::string title = (inverse ? "NOT " : "");
-	title += rule->exactDesc() + " (";
-	title += std::to_string(whiteList.size()) + ")";
+	title += rule->exactDesc();
 
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
+	subset->setFixedTitle(title);
 	subset->setWhiteList(whiteList);
-	subset->setDisplayName(title);
 	subset->makeView(_confView);
 	addItem(subset);
 	
 	subset->inheritAxis(this);
 	
 	return subset;
+}
+
+std::string RopeSpaceItem::displayName() const
+{
+	std::string title = _fixedTitle;
+	
+	if (!isTopLevelItem())
+	{
+		title += " (" + std::to_string(_whiteList.size()) + ")";
+	}
+
+	return title;
 }
 
 RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
@@ -263,13 +295,12 @@ RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
 		}
 	}
 
-	std::string title = "hand selected ";
-	title += inverse ? "inverse (" : "(";
-	title += std::to_string(whiteList.size()) + ")";
+	std::string title = "hand selected";
+	title += inverse ? " inverse" : "";
 
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
+	subset->setFixedTitle(title);
 	subset->setWhiteList(whiteList);
-	subset->setDisplayName(title);
 	subset->makeView(_confView);
 	addItem(subset);
 
@@ -461,4 +492,9 @@ void RopeSpaceItem::changeMetadata()
 	                                 "metadata_key", this);
 
 	_confView->setModal(aft);
+}
+
+RopeSpaceItem *RopeSpaceItem::ropeSpaceItem(int idx)
+{
+	return static_cast<RopeSpaceItem *>(item(idx));
 }

@@ -184,8 +184,15 @@ void Environment::purgeRule(Rule &rule)
 void Environment::purgeModel(std::string id)
 {
 	Model *model = modelManager()->model(id);
+
 	if (model)
 	{
+		std::vector<Instance *> insts = model->instances();
+		for (Instance *inst : insts)
+		{
+			inst->flagPurge();
+		}
+
 		entityManager()->purgeModel(model);
 		modelManager()->purgeModel(model);
 	}

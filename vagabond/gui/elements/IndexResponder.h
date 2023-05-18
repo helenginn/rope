@@ -31,6 +31,11 @@ public:
 	{
 		_view = irv;
 	}
+	
+	void clearView()
+	{
+		_view = nullptr;
+	}
 
 	virtual void interacted(int idx, bool hover, bool left) {};
 	virtual void selected(int idx, bool inverse) {};

@@ -28,6 +28,7 @@ class IndexResponseView : virtual public Scene
 {
 public:
 	IndexResponseView(Scene *prev);
+	virtual ~IndexResponseView();
 
 	virtual void setup();
 

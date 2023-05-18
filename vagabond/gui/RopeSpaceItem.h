@@ -67,6 +67,8 @@ public:
 		_type = type;
 	}
 	
+	virtual std::string displayName() const;
+	
 	void changeMetadata();
 	
 	int separateAverageCount();
@@ -96,6 +98,11 @@ public:
 	virtual Menu *rightClickMenu();
 protected:
 private:
+	void setFixedTitle(const std::string &title)
+	{
+		_fixedTitle = title;
+	}
+
 	void allocateView(ConfSpaceView *view);
 	void inheritAxis(RopeSpaceItem *parent);
 	void calculateCluster();
@@ -103,6 +110,9 @@ private:
 	void handleMetadataTag(std::string tag, Button *button);
 	void setMetadata(std::string key, std::string value);
 	void purgeHasMetadata(HasMetadata *hm);
+	void clusterIfNeeded();
+	
+	RopeSpaceItem *ropeSpaceItem(int idx);
 
 	std::vector<HasMetadata *> _whiteList;
 	ClusterView *_view = nullptr;
@@ -113,6 +123,7 @@ private:
 	
 	std::string _tmpKey, _tmpValue;
 	bool _mustCluster = true;
+	std::string _fixedTitle;
 
 	rope::ConfType _type = rope::ConfTorsions;
 };

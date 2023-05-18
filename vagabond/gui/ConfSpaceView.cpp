@@ -60,11 +60,11 @@ IndexResponseView(prev)
 	shiftToCentre(glm::vec3(0.f), 10);
 }
 
-bool ConfSpaceView::makeFirstCluster()
+void ConfSpaceView::makeFirstCluster()
 {
 	if (_ropeSpace != nullptr)
 	{
-		return false;
+		return;
 	}
 	
 	if (_savedSpaces.count(_entity) > 0)
@@ -81,14 +81,11 @@ bool ConfSpaceView::makeFirstCluster()
 	}
 
 	_selected = _ropeSpace;
-
-	return true;
 }
 
 ConfSpaceView::~ConfSpaceView()
 {
-	removeObject(_axes);
-	removeObject(_view);
+	assignRopeSpace(nullptr);
 	deleteObjects();
 
 	Item::resolveDeletions();
@@ -175,10 +172,17 @@ void ConfSpaceView::proofRopeSpace()
 void ConfSpaceView::assignRopeSpace(RopeSpaceItem *item)
 {
 	removeObject(_view);
+	removeResponder(_view);
 	_view = nullptr;
 	
 	removeObject(_axes);
+	removeResponder(_axes);
 	_axes = nullptr;
+	
+	if (!item)
+	{
+		return;
+	}
 
 	_cluster = item->cluster();
 	_axes = item->axes();
@@ -192,7 +196,7 @@ void ConfSpaceView::switchView()
 {
 	clearResponders();
 
-	bool first = makeFirstCluster();
+	makeFirstCluster();
 	proofRopeSpace();
 	std::cout << _selected->displayName() << std::endl;
 
@@ -361,7 +365,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		ObjectGroup *mdg = _cluster->objectGroup();
 		mdg->clearAverages();
-		_view->cluster()->cluster();
+		_selected->setMustCluster();
 		refresh();
 	}
 
@@ -370,8 +374,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		std::vector<HasMetadata *> members = _view->selectedMembers();
 		ObjectGroup *mdg = _cluster->objectGroup();
 		mdg->setSeparateAverage(members);
-//		_selected->setMustCluster();
-		_view->cluster()->cluster();
+		_selected->setMustCluster();
 		refresh();
 	}
 
@@ -381,7 +384,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		std::vector<HasMetadata *> members = _view->membersForRule(rule);
 		ObjectGroup *mdg = _cluster->objectGroup();
 		mdg->setSeparateAverage(members);
-		_view->cluster()->cluster();
+		_selected->setMustCluster();
 		refresh();
 	}
 
@@ -479,7 +482,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		RulesMenu *menu = new RulesMenu(this);
 		menu->setEntityId(_entity->name());
-		menu->setData(_view->cluster()->objectGroup());
+		menu->setData(_selected->cluster()->objectGroup());
 		menu->show();
 	}
 	
@@ -516,6 +519,7 @@ void ConfSpaceView::refresh()
 			addGuiElements();
 		}
 
+		_selected->attachExisting(this);
 		_view->refresh();
 		applyRules();
 		showPathsButton();
@@ -543,6 +547,7 @@ void ConfSpaceView::applyRule(const Rule &r)
 	}
 	else
 	{
+#warning Force all _view things to go via RopeSpaceItem, so that the purging may occur
 		_view->applyRule(r);
 	}
 	

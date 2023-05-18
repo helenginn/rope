@@ -98,7 +98,7 @@ public:
 		return (_status == Reorienting);
 	}
 private:
-	bool makeFirstCluster();
+	void makeFirstCluster();
 	void chooseGroup(Rule *rule, bool inverse);
 	void grabSelection(bool inverse);
 	void executeSubset(float min, float max);

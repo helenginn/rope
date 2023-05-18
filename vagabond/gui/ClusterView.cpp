@@ -99,6 +99,8 @@ void ClusterView::makePoints()
 		addPoint(v, 0);
 	}
 	
+	std::cout << "Vertices: " << vertexCount() << std::endl;
+	
 	reindex();
 }
 
@@ -411,3 +413,5 @@ std::vector<HasMetadata *> ClusterView::selectedMembers()
 	
 	return hms;
 }
+
+
