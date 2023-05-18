@@ -35,8 +35,6 @@ void PointyView::refresh()
 	}
 
 	rebufferVertexData();
-	
-	additionalJobs();
 }
 
 void PointyView::customiseTexture(Snow::Vertex &vert)

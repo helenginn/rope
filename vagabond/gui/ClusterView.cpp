@@ -79,6 +79,7 @@ void ClusterView::makePoints()
 
 	_cx->cluster();
 	clearVertices();
+	clearPaths();
 	
 	size_t count = _cx->pointCount();
 	_vertices.reserve(count);
@@ -255,55 +256,81 @@ void ClusterView::respond()
 	clearPaths();
 }
 
-void ClusterView::addPath(Path *path, bool populate)
+void ClusterView::clearOldPathView(PathView *pv)
 {
-	if (!path->visible())
+	auto jt = std::find(_pathViews.begin(), _pathViews.end(), pv);
+	auto it = _path2View.find(pv->path());
+
+	if (jt != _pathViews.end())
+	{
+		_pathViews.erase(jt);
+	}
+
+	removeObject(pv);
+	Window::setDelete(pv);
+	_path2View.erase(it);
+}
+
+bool ClusterView::coversPath(Path *path)
+{
+	ObjectGroup *obj = _cx->objectGroup();
+
+	if (_confSpaceView && (_confSpaceView->entity() 
+	                       != path->startInstance()->entity()))
+	{
+		return false;
+	}
+
+	return (obj->indexOfObject(path->startInstance()) >= 0 &&
+	        obj->indexOfObject(path->endInstance()) >= 0);
+}
+
+void ClusterView::addPath(Path *path, std::vector<PathView *> *refreshers)
+{
+	if (!path->visible() || !coversPath(path))
 	{
 		return;
 	}
 
-	if (_confSpaceView && _confSpaceView->entity() 
-	    != path->startInstance()->entity())
-	{
-		return;
-	}
 
 	TorsionCluster *svd = nullptr;
 	svd = static_cast<TorsionCluster *>(_cx);
 	
+	PathView *pv = nullptr;
+
 	for (auto it = _path2View.begin(); it != _path2View.end(); it++)
 	{
-		if (it->first->sameRouteAsPath(path))
+		if (it->first == path)
 		{
-			PathView *old = it->second;
-			auto jt = std::find(_pathViews.begin(), _pathViews.end(), old);
-			
-			if (jt != _pathViews.end())
-			{
-				_pathViews.erase(jt);
-			}
-
-			removeObject(old);
-			Window::setDelete(old);
-			_path2View.erase(it);
+			pv = it->second; // no need to entirely destroy this thing
+			break;
+		}
+		else if (it->first->sameRouteAsPath(path))
+		{
+			clearOldPathView(it->second);
 			break;
 		}
 	}
 
-	PathView *pv = new PathView(*path, svd);
-	
-	if (populate)
+	if (pv == nullptr)
+	{
+		pv = new PathView(*path, svd);
+		addPathView(pv);
+	}
+
+	if (refreshers == nullptr && !pv->isPopulated())
 	{
 		pv->populate();
 	}
-
-	addPathView(pv);
+	else if (refreshers && !pv->isPopulated())
+	{
+		refreshers->push_back(pv);
+	}
 }
 
 void ClusterView::addPaths()
 {
 	wait();
-	clearPaths();
 	
 	if (_confSpaceView && _confSpaceView->confType() != rope::ConfTorsions)
 	{
@@ -311,59 +338,128 @@ void ClusterView::addPaths()
 	}
 
 	PathManager *pm = Environment::env().pathManager();
+	
+	std::vector<PathView *> pvs;
 
 	for (Path &path : pm->objects())
 	{
-		addPath(&path, false);
+		addPath(&path, &pvs);
 	}
 	
-	VagWindow *window = VagWindow::window();
-	window->prepareProgressBar(_pathViews.size(), "Loading paths");
-	_worker = new std::thread(ClusterView::populatePaths, this);
+	std::cout << "Total paths to populate: " << pvs.size() << std::endl;
+	
+	_running = true;
+	_worker = new std::thread(ClusterView::populatePaths, this, pvs);
+}
+
+void ClusterView::waitForInvert()
+{
+	if (_invert)
+	{
+		_invert->join();
+		delete _invert;
+		_invert = nullptr;
+	}
 }
 
 void ClusterView::wait()
 {
 	if (_worker)
 	{
-		_finish = true;
+		passiveWait();
 		_worker->join();
 		delete _worker;
 		_worker = nullptr;
-		_finish = false;
+		_cv.notify_all();
 	}
+}
+
+void ClusterView::setFinish(bool finish)
+{
+	std::unique_lock<std::mutex> lock(_lockPopulating);
+	_finish = finish;
+}
+	
+void ClusterView::passiveWait()
+{
+	std::unique_lock<std::mutex> lock(_lockPopulating);
+	if (!_running)
+	{
+		return;
+	}
+
+	_finish = true;
+	_cv.wait(lock);
 }
 
 void ClusterView::invertSVD(ClusterView *me)
 {
 	if (me->_cx)
 	{
-		me->_cx->calculateInverse();
+		int myVersion = me->_clusterVersion;
+		me->_clusterVersion = me->_cx->version();
+		
+		if (myVersion < me->_clusterVersion)
+		{
+			me->_cx->calculateInverse();
+		}
 	}
 
 }
 
-void ClusterView::populatePaths(ClusterView *me)
+void ClusterView::privatePopulatePaths(std::vector<PathView *> pvs)
 {
-	for (PathView *pv : me->_pathViews)
+	if (pvs.size() == 0)
+	{
+		return;
+	}
+
+	waitForInvert();
+
+	for (PathView *pv : pvs)
 	{
 		pv->populate();
-		
-		me->clickTicker();
-		if (me->_finish)
+
+		if (_finish)
 		{
 			break;
 		}
+		
+		clickTicker();
 	}
 
 	PathManager *pm = Environment::env().pathManager();
 
 	for (Path &path : pm->objects())
 	{
-//		path.cleanupRoute();
+		path.cleanupRoute();
 	}
 
-	me->finishTicker();
+	finishTicker();
+	_finish = false;
+}
+
+void ClusterView::populatePaths(ClusterView *me, std::vector<PathView *> pvs)
+{
+	VagWindow *window = VagWindow::window();
+	
+	if (me->_inherit && me->_inherit != me)
+	{
+		me->_inherit->passiveWait();
+	}
+
+	window->requestProgressBar(pvs.size(), "Loading paths");
+	
+	me->privatePopulatePaths(pvs);
+
+	window->removeProgressBar();
+
+	{
+		std::unique_lock<std::mutex> lock(me->_lockPopulating);
+		me->_running = false;
+	}
+
+	me->_cv.notify_all();
 }
 
 void ClusterView::selected(int rawidx, bool inverse)

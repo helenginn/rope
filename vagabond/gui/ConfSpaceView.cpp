@@ -178,6 +178,8 @@ void ConfSpaceView::assignRopeSpace(RopeSpaceItem *item)
 	removeResponder(_axes);
 	_axes = nullptr;
 	
+	clearResponders();
+
 	if (!item)
 	{
 		return;
@@ -193,11 +195,13 @@ void ConfSpaceView::assignRopeSpace(RopeSpaceItem *item)
 
 void ConfSpaceView::switchView()
 {
-	clearResponders();
-
 	makeFirstCluster();
 	proofRopeSpace();
-	std::cout << _selected->displayName() << std::endl;
+
+	if (_selected && _view == _selected->view())
+	{
+		return;
+	}
 
 	ClusterView *view = _selected->view();
 	glm::vec3 c = view->centroid();
@@ -517,9 +521,12 @@ void ConfSpaceView::refresh()
 		{
 			addGuiElements();
 		}
+		else
+		{
+			_selected->attachExisting(this);
+			_view->refresh();
+		}
 
-		_selected->attachExisting(this);
-		_view->refresh();
 		applyRules();
 		showPathsButton();
 	}

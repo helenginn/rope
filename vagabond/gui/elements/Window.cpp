@@ -246,6 +246,7 @@ void Window::render()
 	Scene *curr = _current;
 	switchlock.unlock();
 
+	dellock.unlock();
 	curr->doThingsCircuit();
 
 	if (!curr->isViewChanged())
@@ -253,21 +254,16 @@ void Window::render()
 		return;
 	}
 
-	dellock.unlock();
-
 	int w, h;
 	SDL_GL_GetDrawableSize(_window, &w, &h);
 	glViewport(0, 0, w, h);
 
-	switchlock.lock();
-	_current->render();
+	curr->render();
 	
 	for (size_t i = 0; i < _myWindow->objectCount(); i++)
 	{
 		_myWindow->object(i)->render(_current);
 	}
-
-	switchlock.unlock();
 
 	SDL_GL_SwapWindow(_window);
 }

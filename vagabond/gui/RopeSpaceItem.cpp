@@ -63,18 +63,19 @@ void RopeSpaceItem::clusterIfNeeded()
 	}
 
 	_confView->assignRopeSpace(nullptr);
-
 	_cluster->cluster();
-	_view->makePoints();
 
 	_mustCluster = false;
 }
 
 void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 {
+	ClusterView *oldView = _confView->view();
+
 	_confView = attach;
 	clusterIfNeeded();
 	_confView->assignRopeSpace(this);
+
 
 	attach->addIndexResponder(_view);
 	_view->setIndexResponseView(attach);
@@ -86,6 +87,9 @@ void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 		attach->addIndexResponder(_axes);
 		_axes->setIndexResponseView(attach);
 	}
+
+	_view->setInherit(oldView);
+	_view->additionalJobs();
 }
 
 void RopeSpaceItem::allocateView(ConfSpaceView *attach)
@@ -200,13 +204,7 @@ RopeSpaceItem *RopeSpaceItem::branchFromRuleRange(const Rule *rule, float min,
 	std::string title = rule->header();
 	title += " from " + f_to_str(min, 1) + " to " + f_to_str(max, 1);
 
-	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
-	subset->setFixedTitle(title);
-	subset->setWhiteList(whiteList);
-	subset->makeView(_confView);
-	addItem(subset);
-
-	subset->inheritAxis(this);
+	RopeSpaceItem *subset = newFrom(whiteList, title);
 	
 	return subset;
 }
@@ -257,14 +255,7 @@ RopeSpaceItem *RopeSpaceItem::branchFromRule(Rule *rule, bool inverse)
 	std::string title = (inverse ? "NOT " : "");
 	title += rule->exactDesc();
 
-	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
-	subset->setFixedTitle(title);
-	subset->setWhiteList(whiteList);
-	subset->makeView(_confView);
-	addItem(subset);
-	
-	subset->inheritAxis(this);
-	
+	RopeSpaceItem *subset = newFrom(whiteList, title);
 	return subset;
 }
 
@@ -298,14 +289,21 @@ RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
 	std::string title = "hand selected";
 	title += inverse ? " inverse" : "";
 
+	RopeSpaceItem *subset = newFrom(whiteList, title);
+	return subset;
+}
+
+RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
+                                      std::string title)
+{
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
 	subset->setFixedTitle(title);
 	subset->setWhiteList(whiteList);
-	subset->makeView(_confView);
 	addItem(subset);
+	subset->makeView(_confView);
 
 	subset->inheritAxis(this);
-	
+
 	return subset;
 }
 

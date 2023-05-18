@@ -22,6 +22,7 @@
 #include "DataGroup.h"
 #include <vagabond/utils/glm_import.h>
 #include "ViewableCluster.h"
+#include <atomic>
 
 class MetadataGroup;
 
@@ -113,6 +114,11 @@ public:
 		return _scaleFactor;
 	}
 	
+	int version() const
+	{
+		return _clusterVersion;
+	}
+	
 	virtual void changeLastAxis(int axis);
 protected:
 	void normaliseResults(float scale = 1);
@@ -123,6 +129,8 @@ protected:
 	PCA::Matrix _result{};
 	size_t _axes[3] = {0, 1, 2};
 	double _total = 0;
+	
+	std::atomic<int> _clusterVersion{0};
 };
 
 #include "Cluster.cpp"

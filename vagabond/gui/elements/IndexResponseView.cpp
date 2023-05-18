@@ -165,7 +165,7 @@ void IndexResponseView::selectIndices(std::set<int> &results, bool inverse)
 	{
 		IndexResponder *responder = getResponderForIndex(r);
 
-		if (!responder->selectable())
+		if (!responder || !responder->selectable())
 		{
 			continue;
 		}

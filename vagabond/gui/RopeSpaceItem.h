@@ -103,6 +103,9 @@ private:
 		_fixedTitle = title;
 	}
 
+	RopeSpaceItem *newFrom(std::vector<HasMetadata *> &whiteList,
+	                       std::string title);
+
 	void allocateView(ConfSpaceView *view);
 	void inheritAxis(RopeSpaceItem *parent);
 	void calculateCluster();

@@ -20,6 +20,7 @@
 #define __vagabond__ClusterView__
 
 #include <thread>
+#include <mutex>
 #include "PointyView.h"
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Manager.h>
@@ -69,13 +70,18 @@ public:
 	virtual void updatePoints();
 	virtual void additionalJobs();
 	
-	void addPath(Path *path, bool populate);
+	void setInherit(ClusterView *cv)
+	{
+		_inherit = cv;
+	}
+	
+	void addPath(Path *path, std::vector<PathView *> *refreshers = nullptr);
 
 	virtual void click(bool left = true);
 
 	void applyRule(const Rule &r);
 	void applySelected();
-	static void populatePaths(ClusterView *me);
+	static void populatePaths(ClusterView *me, std::vector<PathView *> pvs);
 
 	void prioritiseMetadata(std::string key);
 	
@@ -96,14 +102,23 @@ protected:
 private:
 	void clearPaths();
 	void addPaths();
+	void privatePopulatePaths(std::vector<PathView *> pvs);
+	bool coversPath(Path *path);
 
 	void addPathView(PathView *pv);
+	void clearOldPathView(PathView *pv);
 
 	static void invertSVD(ClusterView *me);
 	void wait();
+	void passiveWait();
+	void waitForInvert();
 
 	void applyVaryColour(const Rule &r);
 	void applyChangeIcon(const Rule &r);
+	
+	bool _updatingProgressBar = false;
+	
+	void setFinish(bool finish);
 
 	RopeCluster *_cx = nullptr;
 	FloatingText *_text = nullptr;
@@ -116,7 +131,14 @@ private:
 	std::vector<PathView *> _pathViews;
 	std::thread *_worker = nullptr;
 	std::thread *_invert = nullptr;
-	std::atomic<bool> _finish{false};
+
+	std::atomic<bool> _finish{false}, _running{false};
+	std::condition_variable _cv;
+	
+	ClusterView *_inherit = nullptr;
+	std::mutex _lockPopulating;
+	
+	int _clusterVersion = 0;
 };
 
 #endif

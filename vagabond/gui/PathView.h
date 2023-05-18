@@ -20,6 +20,7 @@
 #define __vagabond__PathView__
 
 #include <thread>
+#include <atomic>
 #include <vagabond/gui/elements/SimplePolygon.h>
 
 class MetadataGroup;
@@ -40,10 +41,16 @@ public:
 	}
 
 	void populate();
+	
+	bool isPopulated() const
+	{
+		return _populated;
+	}
 private:
 	ClusterSVD<MetadataGroup> *_cluster = nullptr;
 	
 	Path &_path;
+	std::atomic<bool> _populated{false};
 };
 
 #endif

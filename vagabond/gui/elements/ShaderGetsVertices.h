@@ -46,6 +46,7 @@ public:
 	virtual void *iPointer();
 private:
 	std::vector<Vertex> _vertexCopy;
+	std::vector<GLuint> _indexCopy;
 
 	std::map<GLuint, GLuint> _bVertices;
 	std::map<GLuint, GLuint> _bElements;

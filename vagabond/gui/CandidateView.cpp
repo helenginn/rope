@@ -133,7 +133,7 @@ void CandidateView::download()
 		_links.push_back(link);
 	}
 	
-//	VagWindow::window()->prepareProgressBar(_ids.size());
+//	VagWindow::window()->requestProgressBar(_ids.size());
 
 #ifndef __EMSCRIPTEN__
 	ThreadStuff *ts = new ThreadStuff("", &FileManager::acceptDownload, nullptr);

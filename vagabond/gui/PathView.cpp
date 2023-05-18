@@ -54,18 +54,10 @@ void PathView::populate()
 	for (size_t i = 0; i < traj->size(); i++)
 	{
 		MetadataGroup::Array angles = traj->nakedTrajectory(i).storage_only();
-		
-		for (size_t j = 0; j < angles.size() && j < 20; j++)
-		{
-//			std::cout << angles[j] << " ";
-		}
-//		std::cout << std::endl;
-
 		dg->convertToDifferences(angles, &average);
 
 		std::vector<float> mapped = _cluster->mapVector(angles);
-		glm::vec3 point = _cluster->point(mapped);
-		_cluster->reweight(point);
+		glm::vec3 point = _cluster->pointForDisplay(mapped);
 		
 		Vertex &v = addVertex(point);
 		
@@ -89,5 +81,6 @@ void PathView::populate()
 	
 	std::cout << "Loaded " << _path.id() << std::endl;
 	forceRender(true, true);
+	_populated = true;
 }
 

@@ -27,6 +27,8 @@
 #include <vagabond/utils/extra_curl_utils.h>
 #endif
 
+#include <atomic>
+
 
 class Fetcher
 {
@@ -88,7 +90,7 @@ public:
 	}
 protected:
 	std::string _result;
-	bool _process = false;
+	std::atomic<bool> _process{false};
 
 	pthread_t _thread;
 private:

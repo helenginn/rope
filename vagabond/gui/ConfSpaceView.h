@@ -65,6 +65,11 @@ public:
 	{
 		return _colourRule;
 	}
+	
+	ClusterView *view()
+	{
+		return _view;
+	}
 
 	virtual void setup();
 	virtual void refresh();

@@ -77,7 +77,7 @@ void PathFinderView::sendObject(std::string tag, void *object)
 	if (false && tag == "update_path")
 	{
 		Path *path = static_cast<Path *>(object);
-		_map->addPath(path, true);
+		_map->addPath(path);
 	}
 	
 	if (tag == "finished_paths")

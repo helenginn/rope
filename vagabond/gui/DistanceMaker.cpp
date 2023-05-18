@@ -225,7 +225,7 @@ void DistanceMaker::stop()
 void DistanceMaker::calculateDistance()
 {
 	std::string title = "Calculating distances...";
-	VagWindow::window()->prepareProgressBar(_entity->modelCount(), title);
+	VagWindow::window()->requestProgressBar(_entity->modelCount(), title);
 	stop();
 
 	_worker = new std::thread(&DistanceMaker::prepareDistances, this);
@@ -234,7 +234,7 @@ void DistanceMaker::calculateDistance()
 void DistanceMaker::calculateAngle()
 {
 	std::string title = "Calculating angles...";
-	VagWindow::window()->prepareProgressBar(_entity->modelCount(), title);
+	VagWindow::window()->requestProgressBar(_entity->modelCount(), title);
 	stop();
 
 	_worker = new std::thread(&DistanceMaker::prepareAngles, this);

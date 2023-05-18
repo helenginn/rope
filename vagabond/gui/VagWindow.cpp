@@ -51,18 +51,40 @@ void VagWindow::prepareProgressView()
 	pv->show();
 }
 
-void VagWindow::prepareProgressBar(int ticks, std::string text)
+void VagWindow::removeProgressBar()
 {
-	if (_currentBar != nullptr)
+	if (_bar.ptr)
 	{
-		removeObject(_currentBar);
-		delete _currentBar;
+		removeObject(_bar.ptr);
+		Environment::env().setProgressResponder(nullptr);
+		Window::setDelete(_bar.ptr);
+		_bar = BarDetails{};
+	}
+}
+
+void VagWindow::requestProgressBar(int ticks, std::string text)
+{
+	_bar.ticks = ticks;
+	_bar.text = text;
+}
+
+void VagWindow::prepareProgressBar()
+{
+	if (_bar.ticks == 0)
+	{
+		return;
 	}
 
-	ProgressBar *pb = new ProgressBar(text);
-	pb->setMaxTicks(ticks);
-	_currentBar = pb;
+	removeProgressBar();
+
+	ProgressBar *pb = new ProgressBar(_bar.text);
+	Environment::env().setProgressResponder(pb);
+	pb->setMaxTicks(_bar.ticks);
+	_bar.ptr = pb;
 	addObject(pb);
+	
+	_bar.ticks = 0;
+	_bar.text = "";
 }
 
 void VagWindow::setup(int argc, char **argv)
@@ -109,6 +131,8 @@ void VagWindow::mainThreadActivities()
 	{
 		_resume = false;
 	}
+	
+	prepareProgressBar();
 }
 
 void VagWindow::resume()

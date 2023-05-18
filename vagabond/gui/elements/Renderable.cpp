@@ -121,7 +121,11 @@ void Renderable::rebindVBOBuffers()
 	
 	if (!_shaderGets->buffered())
 	{
-		setupVBOBuffers();
+		if (tryLockMutex())
+		{
+			setupVBOBuffers();
+			unlockMutex();
+		}
 	}
 }
 
@@ -239,17 +243,16 @@ void Renderable::runProgram()
 		glUniform1i(uTex, 0);
 	}
 
-	if (_shaderGets->buffered())
+	if (_shaderGets->buffered() && _shaderGets->iSize() > 0)
 	{
 		lockMutex();
 
 		checkErrors("before drawing elements");
-		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
+		glDrawElements(_renderType, _shaderGets->iSize(), GL_UNSIGNED_INT, 0);
 
 		if (checkErrors("drawing elements"))
 		{
-			std::cout << _shaderGets->buffered() << " " << this << std::endl;
-			std::cout << indexCount() << " + " << vertexCount() << " ";
+			std::cout << indexCount() << " + " << _shaderGets->iSize() / sizeof(GLuint) << " ";
 			std::cout << "... " << name() << std::endl;
 		}
 
@@ -313,9 +316,10 @@ void Renderable::recolour(double red, double green, double blue,
 }
 
 void Renderable::resize_around_centre(double scale, glm::vec3 centre, 
-                                      std::vector<Vertex> &vs, bool realign, 
+                                      bool unselected, bool realign, 
                                       bool recursive)
 {
+	std::vector<Vertex> &vs = (unselected ? _unselectedVertices : _vertices);
 	for (size_t i = 0; i < vs.size(); i++)
 	{
 		glm::vec3 &pos = vs[i].pos;
@@ -339,21 +343,16 @@ void Renderable::resize_around_centre(double scale, glm::vec3 centre,
 
 	for (size_t i = 0; i < objectCount() && recursive; i++)
 	{
-		if (object(i)->isDisabled())
-		{
-			continue;
-		}
-
-		object(i)->resize_around_centre(scale, centre, vs, realign, recursive);
+		object(i)->resize_around_centre(scale, centre, unselected, 
+		                                realign, recursive);
 	}
 }
 
 void Renderable::resize(double scale, bool unselected, 
                         bool realign, bool recursive)
 {
-	std::vector<Vertex> &vs = unselected ? _unselectedVertices : _vertices;
 	glm::vec3 centre = centroid();
-	resize_around_centre(scale, centre, vs, realign, recursive);
+	resize_around_centre(scale, centre, unselected, realign, recursive);
 }
 
 double Renderable::averageRadius()

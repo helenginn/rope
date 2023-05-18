@@ -130,7 +130,6 @@ Trajectory *Path::calculateTrajectory(int steps)
 	pr->calculatePolynomialProgression(steps);
 	
 	std::vector<ResidueTorsion> polymer_rts = _instance->residueTorsionList();
-	std::cout << "instance list: " << polymer_rts.size() << std::endl;
 	RTMultiple list; list.vector_from(polymer_rts);
 	RTAngles angles; angles.vector_from(polymer_rts);
 	RTAngles first;

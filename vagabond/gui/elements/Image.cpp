@@ -8,8 +8,12 @@
 
 Image::Image(std::string filename) : Box()
 {
-	GLuint tex = Library::getLibrary()->getTexture(filename, &_w, &_h);
+	_imageFilename = filename;
+
+	GLuint tex = Library::getLibrary()->getTexture(_imageFilename, 
+	                                               &_w, &_h);
 	_texid = tex;
+
 	setFragmentShaderFile("assets/shaders/box.fsh");
 	setVertexShaderFile("assets/shaders/box.vsh");
 	setName("Image: " + filename);
@@ -25,6 +29,7 @@ Image::Image(int texid) : Box()
 	setName("Image texid: " + std::to_string(_texid));
 	makeQuad();
 }
+
 
 void Image::makeQuad()
 {

@@ -33,6 +33,7 @@ public:
 
 	virtual void changeLastAxis(int axis) = 0;
 	virtual void calculateInverse() = 0;
+	virtual int version() = 0;
 private:
 
 };
@@ -54,6 +55,11 @@ public:
 		return (dataGroup()->headers()[j].desc() + ", " 
 		        + poz[j].str() + ", "
 		        + std::to_string((float)poz[j]));
+	}
+
+	virtual int version()
+	{
+		return ClusterSVD<PositionalGroup>::version();
 	}
 	
 	virtual void cluster()
@@ -176,6 +182,11 @@ public:
 	virtual void cluster()
 	{
 		ClusterSVD<MetadataGroup>::cluster();
+	}
+
+	virtual int version()
+	{
+		return ClusterSVD<MetadataGroup>::version();
 	}
 	
 	virtual void setSubtractAverage(bool subtract)

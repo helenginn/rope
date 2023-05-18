@@ -51,7 +51,7 @@ void Toolkit::click(bool left)
 
 void Toolkit::prepareProgress(int ticks, std::string text)
 {
-	VagWindow::window()->prepareProgressBar(ticks, text);
+	VagWindow::window()->requestProgressBar(ticks, text);
 }
 
 void Toolkit::buttonPressed(std::string tag, Button *button)

@@ -449,7 +449,7 @@ private:
 	void unbindVBOBuffers();
 	void runProgram();
 	void deletePrograms();
-	void resize_around_centre(double scale, glm::vec3 v, std::vector<Vertex> &vs,
+	void resize_around_centre(double scale, glm::vec3 v, bool unselected,
 	                          bool realign = false, bool recursive = true);
 //	GLuint addShaderFromString(GLuint program, GLenum type, std::string str);
 

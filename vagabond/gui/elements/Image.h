@@ -17,6 +17,7 @@ protected:
 	int _w;
 	int _h;
 
+	std::string _imageFilename;
 };
 
 #endif

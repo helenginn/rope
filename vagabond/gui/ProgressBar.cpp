@@ -18,8 +18,7 @@
 
 #include "ProgressBar.h"
 #include <vagabond/gui/elements/Text.h>
-#include <vagabond/core/Environment.h>
-#include <vagabond/gui/elements/Window.h>
+#include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/SnowGL.h>
 
 ProgressBar::ProgressBar(std::string text) : Image("assets/images/rope.png")
@@ -31,18 +30,18 @@ ProgressBar::ProgressBar(std::string text) : Image("assets/images/rope.png")
 	{
 		text = "Loading...";
 	}
-	Text *t = new Text(text);
+	Text *t = new Text(text, Font::Thin, true);
 	t->resize(0.4);
 	t->setCentre(0.0, -0.03);
 	addObject(t);
 
 	setCentre(0.5, 0.88);
-	Environment::env().setProgressResponder(this);
+	setName("Progress bar");
 }
 
 ProgressBar::~ProgressBar()
 {
-	Environment::env().setProgressResponder(nullptr);
+
 }
 
 void ProgressBar::setMaxTicks(int count)
@@ -58,6 +57,7 @@ void ProgressBar::setMaxTicks(int count)
 void ProgressBar::finish()
 {
 	setDisabled(true);
+	VagWindow::window()->removeProgressBar();
 }
 
 void ProgressBar::sendObject(std::string tag, void *object)
@@ -65,6 +65,7 @@ void ProgressBar::sendObject(std::string tag, void *object)
 	if (tag == "tick")
 	{
 		_ticks++;
+		std::cout << _ticks << " / " << _maxTicks << std::endl;
 		if (_ticks >= _maxTicks)
 		{
 			finish();

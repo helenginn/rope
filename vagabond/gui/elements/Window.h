@@ -59,11 +59,13 @@ public:
 	
 	static void setDelete(Scene *sc)
 	{
+		std::unique_lock<std::mutex> dellock(_deleteMutex);
 		_toDelete.insert(sc);
 	}
 	
 	static void setDelete(Renderable *r)
 	{
+		std::unique_lock<std::mutex> dellock(_deleteMutex);
 		_deleteRenderables.insert(r);
 	}
 

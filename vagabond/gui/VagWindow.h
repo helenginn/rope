@@ -20,6 +20,7 @@
 #define __vagabond__VagWindow__
 
 #include <vagabond/gui/elements/Window.h>
+#include <atomic>
 #include "MainMenu.h"
 
 class Dictator;
@@ -48,12 +49,27 @@ public:
 
 	void prepareProgressView();
 	
-	void prepareProgressBar(int ticks, std::string text = "");
+	bool hasProgressBar()
+	{
+		return (_bar.ptr != nullptr);
+	}
+	
+	void requestProgressBar(int ticks, std::string text);
+	void prepareProgressBar();
+	void removeProgressBar();
 private:
 	static Dictator *_dictator;
 	MainMenu *_menu = nullptr;
 	bool _resume = false;
-	ProgressBar *_currentBar = nullptr;
+	struct BarDetails
+	{
+		int ticks = 0;
+		std::string text = "";
+		ProgressBar *ptr = nullptr;
+		Progressor *caller = nullptr;
+	};
+	
+	BarDetails _bar;
 
 };
 

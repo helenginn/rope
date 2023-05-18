@@ -111,8 +111,7 @@ void ClusterSVD<DG>::cluster()
 	}
 
 	freeMatrix(&mat);
-	
-//	recalculateResult();
+	this->_clusterVersion++;
 }
 
 template <class DG>

@@ -32,7 +32,6 @@ PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
 
 void PlausibleRoute::setup()
 {
-	std::cout << "motions: " << motions().size() << std::endl;
 	Route::setup();
 	prepareDestination();
 	connectParametersToDestination();

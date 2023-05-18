@@ -89,7 +89,7 @@ void Menu::setup(double x, double y, double scale)
 	}
 
 	setArbitrary(x, y, Renderable::Alignment(horizontal | vertical));
-	resize(scale, false, true);
+	resize(scale, false, true, true);
 	setArbitrary(x, y, Renderable::Alignment(horizontal | vertical));
 }
 

@@ -154,7 +154,7 @@ void RouteExplorer::doThings()
 	
 	if (_numTicks > 0)
 	{
-		VagWindow::window()->prepareProgressBar(_numTicks, _progressName);
+		VagWindow::window()->requestProgressBar(_numTicks, _progressName);
 		_numTicks = -1;
 		_progressName = "";
 	}
