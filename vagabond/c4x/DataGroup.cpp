@@ -515,7 +515,7 @@ PCA::Matrix DataGroup<Unit, Header>::distanceMatrix()
 template <class Unit, class Header>
 PCA::Matrix DataGroup<Unit, Header>::correlationMatrix()
 {
-	if (_diffs.size() == 0 || _averages.size() == 0)
+	if (_diffs.size() != _vectors.size() || _averages.size() == 0)
 	{
 		findDifferences();
 		normalise();
