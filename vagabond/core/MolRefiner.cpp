@@ -223,6 +223,7 @@ void MolRefiner::runEngine()
 	}
 
 	SimplexEngine *engine = new SimplexEngine(this);
+	engine->setVerbose(true);
 	engine->setStepSize(0.2);
 	engine->start();
 }

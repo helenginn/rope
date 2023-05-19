@@ -83,10 +83,25 @@ void Engine::getResults()
 		_scores[job_id].score = score;
 		_scores[job_id].received = true;
 		
+		if (_verbose)
+		{
+			std::cout << score;
+		}
+		
 		if (score < _bestScore)
 		{
+			if (_verbose)
+			{
+				std::cout << " - best";
+			}
+
 			_bestScore = score;
 			_bestResult = _scores[job_id].vals;
+		}
+		
+		if (_verbose)
+		{
+			std::cout << std::endl;
 		}
 	}
 	while (true);

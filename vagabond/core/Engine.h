@@ -105,6 +105,11 @@ public:
 	{
 		_maxRuns = maxRuns;
 	}
+	
+	void setVerbose(bool verb)
+	{
+		_verbose = verb;
+	}
 private:
 	struct TicketScore
 	{
@@ -150,6 +155,7 @@ protected:
 	std::map<int, TicketScore> _scores;
 private:
 	RunsEngine *_ref = nullptr;
+	bool _verbose = false;
 
 	std::vector<float> _current, _bestResult;
 	int _n = 0;
