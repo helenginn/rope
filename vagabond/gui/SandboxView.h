@@ -46,8 +46,6 @@ public:
 	void addCyclicView(Cyclic *cyclic);
 private:
 	CyclicView *_cyclic = nullptr;
-	Text *_angles = nullptr;
-	Text *_lengths = nullptr;
 
 	std::thread *_worker = nullptr;
 };

@@ -126,12 +126,7 @@ void PathFinderView::updateGraphBox()
 		return;
 	}
 
-	glm::vec3 c = _map->centroid();
 	shiftToCentre(glm::vec3(0.f), 0);
-	
-//	ClusterView::populatePaths(_map);
-
-	return;
 }
 
 void PathFinderView::updateMatrixBox()
@@ -148,7 +143,6 @@ void PathFinderView::updateMatrixBox()
 
 void PathFinderView::updateStarBox()
 {
-	int steps = 4;
 	TorsionCluster *tc = _warper->pathCluster();
 	
 	_starView->setCluster(tc);

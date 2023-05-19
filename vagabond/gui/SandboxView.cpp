@@ -58,29 +58,6 @@ SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
 	LineGroup *first_group = new LineGroup(first, this);
 	first_group->setLeft(0.2, 0.2);
 	addObject(first_group);
-
-	/*
-	_angles = new Text("angles", Font::Thin, true);
-	_angles->resize(0.6);
-	_angles->setLeft(0.2, 0.5);
-	addObject(_angles);
-
-	_lengths = new Text("lengths", Font::Thin, true);
-	_lengths->resize(0.6);
-	_lengths->setLeft(0.05, 0.5);
-	addObject(_lengths);
-	*/
-	
-	/*
-	for (size_t i = 0; i < as->size(); i++)
-	{
-		Atom *a = (*as)[i];
-		if (a->cyclic())
-		{
-			addCyclicView(a->cyclic());
-		}
-	}
-	*/
 	
 	addCyclicView(nullptr);
 }

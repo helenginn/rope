@@ -36,7 +36,7 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 	setImage("assets/images/blob.png");
 	
 	_template = new SimplePolygon();
-	Snow::Vertex &vert = _template->addVertex(glm::vec3(0.f));
+	_template->addVertex(glm::vec3(0.f));
 	_template->addIndex(-1);
 	_template->setColour(1., 1., 1.);
 	

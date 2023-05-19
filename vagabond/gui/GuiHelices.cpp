@@ -602,7 +602,6 @@ void GuiHelices::finishUpdate()
 {
 	std::vector<Snow::Vertex> full_verts;
 	std::vector<GLuint> full_idxs;
-	int update = _helicesToUpdate.size();
 
 	for (int idx : _helicesToUpdate)
 	{

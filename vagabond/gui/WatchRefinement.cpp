@@ -28,6 +28,7 @@ WatchRefinement::WatchRefinement(Scene *prev, Refinement *refine)
 
 WatchRefinement::~WatchRefinement()
 {
+#warning Refinement crashes upon exit, debug to find out why
 	_refine->model()->unload();
 }
 
