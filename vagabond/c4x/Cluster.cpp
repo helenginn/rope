@@ -234,6 +234,7 @@ void Cluster<DG>::changeLastAxis(int axis)
 	_axes[0] = _axes[1];
 	_axes[1] = _axes[2];
 	_axes[2] = axis;
+	_clusterVersion++;
 }
 
 #endif
