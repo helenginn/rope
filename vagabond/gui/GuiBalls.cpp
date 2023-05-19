@@ -128,12 +128,12 @@ void GuiBalls::updateSinglePosition(Atom *a, glm::vec3 &p)
 	}
 
 	int end = idx + verticesPerAtom(); 
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	for (size_t j = idx; j < end; j++)
 	{
 		_vertices[j].pos += diff;
 	}
-	unlockMutex();
+	lock.unlock();
 
 	_atomPos[a] = p;
 
@@ -164,10 +164,9 @@ void GuiBalls::watchBonds(AtomGroup *ag)
 
 void GuiBalls::prepareAtomSpace(AtomGroup *ag)
 {
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	_vertices.reserve(verticesPerAtom() * ag->size());
 	_indices.reserve(indicesPerAtom() * ag->size());
-	unlockMutex();
 }
 
 void GuiBalls::addVisuals(Atom *a)

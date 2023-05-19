@@ -81,10 +81,9 @@ void GuiBond::truncateNetworks(int n)
 	size_t isize = n * nidx;
 	size_t vsize = n * nvtx;
 	
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	_vertices.resize(vsize);
 	_indices.resize(isize);
-	unlockMutex();
 	
 	_num = n;
 }

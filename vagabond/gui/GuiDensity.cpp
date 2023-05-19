@@ -118,14 +118,14 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 	MC::mcMesh mesh;
 	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
 	
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	objectFromMesh(mesh);
 	rotateByMatrix(glm::mat3(step));
 	addToVertices(min);
 	setDisabled(false);
+	lock.unlock();
 	rebufferVertexData();
 	rebufferIndexData();
-	unlockMutex();
 }
 
 void GuiDensity::fromMap(AtomMap *map)
@@ -151,15 +151,14 @@ void GuiDensity::fromMap(AtomMap *map)
 	MC::mcMesh mesh;
 	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
 
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	objectFromMesh(mesh);
 	rotateByMatrix(glm::mat3(real));
 	addToVertices(origin);
 	setDisabled(false);
+	lock.unlock();
 	rebufferVertexData();
 	rebufferIndexData();
-	unlockMutex();
-
 }
 
 void GuiDensity::populateFromMap(OriginGrid<fftwf_complex> *map)

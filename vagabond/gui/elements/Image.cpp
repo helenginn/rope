@@ -8,10 +8,7 @@
 
 Image::Image(std::string filename) : Box()
 {
-	_imageFilename = filename;
-
-	GLuint tex = Library::getLibrary()->getTexture(_imageFilename, 
-	                                               &_w, &_h);
+	GLuint tex = Library::getLibrary()->getTexture(filename, &_w, &_h);
 	_texid = tex;
 
 	setFragmentShaderFile("assets/shaders/box.fsh");

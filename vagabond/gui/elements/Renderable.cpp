@@ -121,11 +121,7 @@ void Renderable::rebindVBOBuffers()
 	
 	if (!_shaderGets->buffered())
 	{
-		if (tryLockMutex())
-		{
-			setupVBOBuffers();
-			unlockMutex();
-		}
+		setupVBOBuffers();
 	}
 }
 
@@ -138,7 +134,10 @@ int Renderable::vaoForContext()
 	}
 	if (_vaoMap.count(_program) && (_forceVertices || _forceIndices))
 	{
-		if (!tryLockMutex())
+		std::unique_lock<std::mutex> buffers(_buffLock, std::try_to_lock);
+		std::unique_lock<std::mutex> verts(_vertLock, std::try_to_lock);
+
+		if (!verts.owns_lock() || !buffers.owns_lock())
 		{
 			GLuint vao = _vaoMap[_program];
 			return vao;
@@ -156,16 +155,16 @@ int Renderable::vaoForContext()
 		}
 
 		GLuint vao = _vaoMap[_program];
-		unlockMutex();
 		return vao;
 	}
 	
-	lockMutex();
+	std::unique_lock<std::mutex> buffers(_buffLock);
+	std::unique_lock<std::mutex> verts(_vertLock);
+
 	GLuint vao = 0;
 	glGenVertexArrays(1, &vao);
 	_vaoMap[_program] = vao;
 	setupVBOBuffers();
-	unlockMutex();
 	
 	return vao;
 }
@@ -243,20 +242,18 @@ void Renderable::runProgram()
 		glUniform1i(uTex, 0);
 	}
 
-	if (_shaderGets->buffered() && _shaderGets->iSize() > 0)
+	if (_shaderGets->buffered())
 	{
-		lockMutex();
+		std::unique_lock<std::mutex> buffers(_buffLock);
 
 		checkErrors("before drawing elements");
-		glDrawElements(_renderType, _shaderGets->iSize(), GL_UNSIGNED_INT, 0);
+		glDrawElements(_renderType, indexCount(), GL_UNSIGNED_INT, 0);
 
 		if (checkErrors("drawing elements"))
 		{
 			std::cout << indexCount() << " + " << _shaderGets->iSize() / sizeof(GLuint) << " ";
 			std::cout << "... " << name() << std::endl;
 		}
-
-		unlockMutex();
 	}
 
 	glUseProgram(0);
@@ -955,7 +952,7 @@ double Renderable::maximalWidth()
 
 void Renderable::appendObject(Renderable *object)
 {
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	int add = _vertices.size();
 	_vertices.reserve(_vertices.size() + object->vertexCount());
 	_indices.reserve(_indices.size() + object->indexCount());
@@ -968,7 +965,6 @@ void Renderable::appendObject(Renderable *object)
 		long idx = object->_indices[i] + add;
 		_indices.push_back(idx);
 	}
-	unlockMutex();
 }
 
 glm::vec3 Renderable::rayTraceToPlane(glm::vec3 point, GLuint *trio, 
@@ -1070,7 +1066,7 @@ void Renderable::setUsesProjection(bool usesProj)
 
 void Renderable::calculateNormals()
 {
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		_vertices[i].normal = glm::vec3(0.);
@@ -1105,7 +1101,6 @@ void Renderable::calculateNormals()
 		glm::vec3 &norm = _vertices[i].normal;
 		norm = glm::normalize(norm);
 	}
-	unlockMutex();
 }
 
 void Renderable::triangulate()
@@ -1115,7 +1110,7 @@ void Renderable::triangulate()
 		return;
 	}
 	
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 
 	std::map<std::pair<GLuint, GLuint>, GLuint> lines;
 	std::map<std::pair<GLuint, GLuint>, GLuint>::iterator linesit;
@@ -1178,8 +1173,6 @@ void Renderable::triangulate()
 		addIndices(i13, i23, i3);
 		addIndices(i23, i12, i2);
 	}
-	
-	unlockMutex();
 	
 	calculateNormals();
 }

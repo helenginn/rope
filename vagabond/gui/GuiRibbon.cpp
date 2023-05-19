@@ -336,9 +336,9 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 		}
 
 		int start = i * verticesPerAtom();
-		lockMutex();
+
+		std::unique_lock<std::mutex> lock(_vertLock);
 		transplantCylinder(bez, start);
-		unlockMutex();
 	}
 	
 }

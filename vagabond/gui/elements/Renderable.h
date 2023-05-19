@@ -130,21 +130,6 @@ public:
 	
 	void setUsesProjection(bool usesProj);
 	
-	void lockMutex()
-	{
-		_mut.lock();
-	}
-	
-	bool tryLockMutex()
-	{
-		return _mut.try_lock();
-	}
-	
-	void unlockMutex()
-	{
-		_mut.unlock();
-	}
-	
 	void setDisabled(bool dis);
 	
 	void addToVertices(glm::vec3 add);
@@ -442,6 +427,8 @@ protected:
 	double _selectionResize = 1.1;
 	
 	ShaderGets *_shaderGets = nullptr;
+	std::mutex _vertLock;
+	std::mutex _buffLock;
 private:
 	glm::mat4x4 getModel();
 	void deleteTextures();
@@ -461,7 +448,6 @@ private:
 	GLuint _uProj = 0;
 	std::vector<IndexTrio> _temp; // stores with model mat
 	std::string _name = "generic object";
-	std::mutex _mut;
 	
 	glm::mat4x4 _glLightMat;
 	glm::mat4x4 _glProj;

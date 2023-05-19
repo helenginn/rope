@@ -93,7 +93,7 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 		r->prepareAtomSpace(a);
 	}
 
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	for (GuiRepresentation *&r : _representations)
 	{
 		r->watchAtomGroup(a);
@@ -108,7 +108,6 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 	_ribbon->convert();
 	
 	checkAtoms();
-	unlockMutex();
 }
 
 bool GuiAtom::checkAtom(Atom *a)

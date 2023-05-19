@@ -67,11 +67,10 @@ void GuiThickBond::updateMultiPositions(Atom *a, WithPos &wp)
 
 void GuiThickBond::prepareAtomSpace(AtomGroup *ag)
 {
-	lockMutex();
+	std::unique_lock<std::mutex> lock(_vertLock);
 	_vertices.reserve(verticesPer() * ag->bondLengthCount());
 	_indices.reserve(indicesPer() * ag->bondLengthCount());
 	_markers.reserve(ag->bondLengthCount());
-	unlockMutex();
 }
 
 void GuiThickBond::addBond(Atom *left, Atom *right)

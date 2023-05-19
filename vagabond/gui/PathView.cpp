@@ -48,7 +48,6 @@ void PathView::populate()
 	Trajectory *traj = _path.calculateTrajectory(16);
 	const MetadataGroup::Array &average = dg->average();
 	
-	lockMutex();
 	clearVertices();
 
 	for (size_t i = 0; i < traj->size(); i++)
@@ -71,11 +70,11 @@ void PathView::populate()
 	int idx = dg->indexOfObject(_path.endInstance());
 	glm::vec3 end = _cluster->point(idx);
 	_cluster->reweight(end);
+	_version = _cluster->version();
 
 	addVertex(end);
 	addIndex(-2);
 	addIndex(-1);
-	unlockMutex();
 
 	setAlpha(1.f);
 	
