@@ -98,9 +98,11 @@ void PathManager::purgePath(Path *path)
 		if (ptr == path)
 		{
 			_objects.erase(it);
-			return;
+			break;
 		}
 	}
+	
+	sendResponse("purged_path", path);
 }
 
 void PathManager::addPathsToMetadataGroup(MetadataGroup *grp)

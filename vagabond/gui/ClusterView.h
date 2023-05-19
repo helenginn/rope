@@ -98,11 +98,11 @@ public:
 	void reselect();
 	void deselect();
 protected:
+	virtual void sendObject(std::string tag, void *object);
 
 private:
-	void clearPaths();
+	void clearPath(Path *path);
 	void addPaths();
-	void removeMissingPaths(std::vector<PathView *> *refreshers);
 	void privatePopulatePaths(std::vector<PathView *> pvs);
 
 	void addPathView(PathView *pv);

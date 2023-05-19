@@ -40,6 +40,8 @@ ClusterView::ClusterView() : PointyView()
 #ifdef __EMSCRIPTEN__
 	setSelectable(true);
 #endif
+
+	Environment::pathManager()->setResponder(this);
 }
 
 ClusterView::~ClusterView()
@@ -230,16 +232,35 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	}
 }
 
-void ClusterView::clearPaths()
+void ClusterView::sendObject(std::string tag, void *object)
 {
-	for (PathView *pv : _pathViews)
+	if (tag == "purged_path")
 	{
-		removeObject(pv);
-		delete pv;
+		Path *p = static_cast<Path *>(object);
+		clearPath(p);
 	}
 
-	_path2View.clear();
-	_pathViews.clear();
+}
+
+void ClusterView::clearPath(Path *path)
+{
+	if (_path2View.count(path) == 0)
+	{
+		return;
+	}
+
+	PathView *pv = _path2View[path];
+	removeObject(pv);
+	_path2View.erase(path);
+	
+	auto it = std::find(_pathViews.begin(), _pathViews.end(), pv);
+	
+	if (it != _pathViews.end())
+	{
+		_pathViews.erase(it);
+	}
+
+	delete pv;
 }
 
 void ClusterView::addPathView(PathView *pv)
@@ -316,25 +337,6 @@ void ClusterView::addPath(Path *path, std::vector<PathView *> *refreshers)
 	
 }
 
-void ClusterView::removeMissingPaths(std::vector<PathView *> *refreshers)
-{
-	std::vector<PathView *> tmp;
-	for (PathView *pv : _pathViews)
-	{
-		auto it = std::find(refreshers->begin(), refreshers->end(), pv);
-		if (it == refreshers->end())
-		{
-			_path2View.erase(pv->path());
-		}
-		else
-		{
-			tmp.push_back(pv);
-		}
-	}
-	_pathViews = tmp;
-
-}
-
 void ClusterView::addPaths()
 {
 	wait();
@@ -356,7 +358,6 @@ void ClusterView::addPaths()
 	}
 	
 	std::cout << "Total paths to populate: " << pvs.size() << std::endl;
-	removeMissingPaths(&pvs);
 	
 	if (pvs.size() > 0)
 	{

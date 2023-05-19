@@ -199,6 +199,6 @@ void Environment::purgeModel(std::string id)
 
 void Environment::purgePath(Path &path)
 {
-	pathManager()->remove(path);
+	pathManager()->purgePath(&path);
 }
 
