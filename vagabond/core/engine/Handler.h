@@ -165,17 +165,20 @@ protected:
 			}
 		}
 		
-		void pushObject(Object &obj, int *ticket = nullptr)
+		int pushObject(Object &obj, int *ticket = nullptr)
 		{
 			std::unique_lock<std::mutex> lock(sem.mutex());
-			_id++;
-			members.push_back(obj);
-			sem.signal_one();
 
 			if (ticket != nullptr)
 			{
-				*ticket = _id;
+				*ticket = ++_id;
 			}
+
+			int mine = _id;
+			members.push_back(obj);
+			sem.signal_one();
+			
+			return mine;
 		}
 	};
 

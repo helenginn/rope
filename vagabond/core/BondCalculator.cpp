@@ -369,8 +369,8 @@ int BondCalculator::submitJob(Job &original_job)
 	_resultPool.expect_one();
 
 	Job *job = new Job(original_job);
-	_jobPool.pushObject(job, &(job->ticket));
-	return job->ticket;
+	int ticket = _jobPool.pushObject(job, &(job->ticket));
+	return ticket;
 }
 
 Job *BondCalculator::acquireJob()

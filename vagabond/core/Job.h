@@ -134,7 +134,7 @@ struct Job
 	CustomInfo custom{};
 
 	float fraction = 0;
-	int ticket;
+	int ticket = -1;
 	JobType requests;
 
 	Result *result = nullptr;
