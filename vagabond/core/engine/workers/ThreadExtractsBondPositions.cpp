@@ -22,6 +22,7 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/ForceFieldHandler.h"
 #include "engine/MechanicalBasis.h"
+#include "BondCalculator.h"
 #include "engine/PointStoreHandler.h"
 #include "BondSequence.h"
 #include <iostream>
@@ -78,6 +79,13 @@ void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
 {
 	std::vector<BondSequence::ElePos> epos = seq->extractForMap();
 	_pointHandler->loadMixedPositions(job, epos);
+	
+	if (job->requests & JobSolventMask)
+	{
+		AtomPosMap aps = seq->extractPositions();
+//		_solventHandler->loadAtomPosMap(aps);
+	}
+
 	timeEnd();
 	cleanupSequence(job, seq);
 }

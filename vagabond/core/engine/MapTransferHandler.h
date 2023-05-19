@@ -20,11 +20,12 @@
 #define __vagabond__MapTransferHandler__
 
 #include "engine/Handler.h"
-#include "BondCalculator.h"
 #include "BondSequence.h"
 
 class AtomGroup;
+class MapSumHandler;
 class ElementSegment;
+class PointStoreHandler;
 
 /**
  * \class MapTransferHandler

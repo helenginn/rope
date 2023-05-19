@@ -24,6 +24,7 @@
 #include "engine/ForceFieldHandler.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/PointStoreHandler.h"
+#include "engine/SolventHandler.h"
 #include "engine/MapSumHandler.h"
 #include "Sampler.h"
 
@@ -44,6 +45,7 @@ void BondCalculator::reset()
 	finish();
 	delete _sequenceHandler; _sequenceHandler = nullptr;
 	delete _surfaceHandler; _surfaceHandler = nullptr;
+	delete _solventHandler; _solventHandler = nullptr;
 	delete _correlHandler; _correlHandler = nullptr;
 	delete _pointHandler; _pointHandler = nullptr;
 	delete _mapHandler; _mapHandler = nullptr;
@@ -142,6 +144,18 @@ void BondCalculator::setupMapSumHandler()
 	_sumHandler->setCorrelationHandler(_correlHandler);
 }
 
+void BondCalculator::setupSolventHandler()
+{
+	if (!(_type & PipelineSolventMask))
+	{
+		return;
+	}
+
+	_solventHandler = new SolventHandler(this);
+	_solventHandler->setThreads(_maxThreads);
+	_solventHandler->setMaskCount(_maxThreads);
+}
+
 void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
@@ -201,7 +215,6 @@ void BondCalculator::setupSurfaceAreaHandler()
 	_surfaceHandler = new SurfaceAreaHandler(this);
 	_surfaceHandler->setThreads(1);
 	_surfaceHandler->setMeasurerCount(1);
-
 }
 
 void BondCalculator::setup()

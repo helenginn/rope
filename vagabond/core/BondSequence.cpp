@@ -515,7 +515,10 @@ double BondSequence::calculateDeviations()
 
 AtomPosMap &BondSequence::extractPositions()
 {
-	_posAtoms.clear();
+	for (auto it = _posAtoms.begin(); it != _posAtoms.end(); it++)
+	{
+		it->second = WithPos{};
+	}
 
 	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
@@ -599,6 +602,8 @@ const size_t BondSequence::flagged() const
 
 void BondSequence::reflagDepth(int min, int max, int sidemax)
 {
+	_posAtoms.clear();
+
 	_startCalc = 0;
 	_endCalc = INT_MAX;
 

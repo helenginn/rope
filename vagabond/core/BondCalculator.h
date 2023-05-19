@@ -36,6 +36,7 @@ class ForceFieldHandler;
 class MapTransferHandler;
 class CorrelationHandler;
 class PointStoreHandler;
+class SolventHandler;
 class MapSumHandler;
 class Diffraction;
 class ForceField;
@@ -76,6 +77,9 @@ public:
 
 		/** returns solvent-accessible surface area calculation in Angstroms^2 */
 		PipelineSolventSurfaceArea = 1 << 4,
+
+		/** calculates a solvent mask for maps */
+		PipelineSolventMask = 1 << 5,
 	};
 	
 	int submitJob(Job &job);
@@ -207,6 +211,7 @@ private:
 	void sanityCheckDepthLimits();
 	void setupSequenceHandler();
 	void setupPointHandler();
+	void setupSolventHandler();
 	void setupMapTransferHandler();
 	void setupMapSumHandler();
 	void setupForceFieldHandler();
@@ -226,14 +231,16 @@ private:
 	Pool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler = nullptr;
-	PointStoreHandler *_pointHandler = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
-	MapSumHandler *_sumHandler = nullptr;
 	CorrelationHandler *_correlHandler = nullptr;
+	SurfaceAreaHandler *_surfaceHandler = nullptr;
+	PointStoreHandler *_pointHandler = nullptr;
+	ForceFieldHandler *_ffHandler = nullptr;
+	SolventHandler *_solventHandler = nullptr;
+	MapSumHandler *_sumHandler = nullptr;
+
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	Sampler *_sampler = nullptr;
-	ForceFieldHandler *_ffHandler = nullptr;
-	SurfaceAreaHandler *_surfaceHandler = nullptr;
 	FFProperties _props{};
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;

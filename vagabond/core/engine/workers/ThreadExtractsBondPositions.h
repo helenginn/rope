@@ -28,6 +28,7 @@ class BondCalculator;
 class BondSequence;
 struct Job;
 class MiniJobSeq;
+class SolventHandler;
 
 class ThreadExtractsBondPositions : public ThreadWorker
 {
@@ -42,10 +43,16 @@ public:
 		return "Bond position extractor";
 	}
 
+	void setSolventHandler(SolventHandler *handler)
+	{
+		_solventHandler = handler;
+	}
+
 	void setPointStoreHandler(PointStoreHandler *handler)
 	{
 		_pointHandler = handler;
 	}
+
 private:
 	void extractPositions(Job *job, BondSequence *seq);
 	void calculateDeviation(Job *job, BondSequence *seq);
@@ -53,12 +60,14 @@ private:
 	void updateMechanics(Job *job, BondSequence *seq);
 	void transferToForceFields(Job *job, BondSequence *seq);
 	void transferToSurfaceHandler(Job *job, BondSequence *seq);
+	void transferToSolventMask(Job *job, BondSequence *seq);
 	
 	void cleanupSequence(Job *job, BondSequence *seq);
 	void returnResult(Job *job);
 
-	BondSequenceHandler *_seqHandler;
-	PointStoreHandler *_pointHandler;
+	BondSequenceHandler *_seqHandler = nullptr;
+	PointStoreHandler *_pointHandler = nullptr;
+	SolventHandler *_solventHandler = nullptr;
 
 };
 

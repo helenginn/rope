@@ -51,6 +51,7 @@ enum JobType
 	JobScoreStructure =          1 << 4,
 	JobUpdateMechanics =         1 << 5,
 	JobSolventSurfaceArea =      1 << 6,
+	JobSolventMask =      		 1 << 7,
 };
 
 struct CustomVector
