@@ -23,6 +23,7 @@
 #include "PathJob.h"
 #include "RopeCluster.h"
 #include "Environment.h"
+#include "PathManager.h"
 #include "FileManager.h"
 
 #include "paths/Warper.h"
@@ -34,6 +35,8 @@
 PathFinder::PathFinder()
 {
 	std::set<std::string> set = Environment::fileManager()->geometryFiles();
+
+	Environment::pathManager()->housekeeping();
 }
 
 PathFinder::~PathFinder()

@@ -18,6 +18,7 @@
 
 #include "ObjectGroup.h"
 #include "HasMetadata.h"
+#include "Path.h"
 
 const int ObjectGroup::indexOfObject(HasMetadata *obj) const
 {
@@ -84,4 +85,12 @@ bool ObjectGroup::purge(HasMetadata *hm)
 	}
 
 	return false;
+}
+
+bool ObjectGroup::coversPath(Path *path)
+{
+	int start = indexOfObject(path->startInstance());
+	int end   = indexOfObject(path->endInstance());
+
+	return (start >= 0 && end >= 0);
 }

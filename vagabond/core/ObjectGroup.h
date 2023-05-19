@@ -25,6 +25,7 @@
 
 class HasMetadata;
 class Rule;
+class Path;
 
 class ObjectGroup
 {
@@ -35,6 +36,8 @@ public:
 	std::vector<float> numbersForKey(std::string key);
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
 	std::vector<HasMetadata *> subsetFromRule(const Rule &r);
+	
+	bool coversPath(Path *path);
 
 	virtual const size_t headerCount() const = 0;
 	virtual void setSubtractAverage(bool subtract) = 0;

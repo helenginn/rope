@@ -127,7 +127,6 @@ void Environment::load(std::string file)
 	_metadata->housekeeping();
 	_entityManager->housekeeping();
 	_modelManager->housekeeping();
-	_pathManager->housekeeping();
 	
 	_entityManager->checkModelsForReferences(_modelManager);
 	std::cout << "done." << std::endl;

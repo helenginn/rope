@@ -35,7 +35,8 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
 {
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
-	DegreeDataGroup::addArray(name, next.storage_according_to(emptyAngles()));
+	std::vector<Angular> filtered = next.storage_according_to(emptyAngles());
+	DegreeDataGroup::addArray(name, filtered);
 }
 
 void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)

@@ -51,7 +51,10 @@ Path *PathManager::insertOrReplace(Path &p)
 
 void PathManager::housekeeping()
 {
-
+	for (Path &p : _objects)
+	{
+		p.housekeeping();
+	}
 }
 
 std::vector<Path *> PathManager::pathsForInstance(Instance *inst)
@@ -98,5 +101,21 @@ void PathManager::purgePath(Path *path)
 			return;
 		}
 	}
+}
 
+void PathManager::addPathsToMetadataGroup(MetadataGroup *grp)
+{
+	std::vector<HasMetadata *> objs = grp->objects();
+
+	for (Path &path : _objects)
+	{
+		path.housekeeping();
+
+		if (!grp->coversPath(&path))
+		{
+			continue;
+		}
+
+		path.addTorsionsToGroup(*grp);
+	}
 }

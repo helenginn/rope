@@ -20,7 +20,6 @@
 #include "Environment.h"
 #include "EntityManager.h"
 #include "ModelManager.h"
-#include "PathManager.h"
 #include "Model.h"
 #include "Metadata.h"
 #include "AtomContent.h"
@@ -229,21 +228,6 @@ MetadataGroup Entity::makeTorsionDataGroup(bool empty)
 		inst->addTorsionsToGroup(group, rope::RefinedTorsions);
 	}
 		
-	PathManager *pm = Environment::env().pathManager();
-
-	for (Instance *inst : instances())
-	{
-		std::vector<Path *> paths = pm->pathsForInstance(inst);
-
-		for (Path *path : paths)
-		{
-			if (path->contributesToSVD())
-			{
-				path->addTorsionsToGroup(group);
-			}
-		}
-	}
-	
 	Environment::modelManager()->unlock();
 	return group;
 }
