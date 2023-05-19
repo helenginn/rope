@@ -50,7 +50,7 @@ void ValidationTask::specificTasks()
 		_pf->sendUpdatedPath(path, this);
 
 		OptimiseTask *ot = new OptimiseTask(_pf, _from, _to);
-//		_pf->addTask(ot);
+		_pf->addTask(ot);
 	}
 
 	_pf->setStatus(this, None);
