@@ -102,8 +102,8 @@ protected:
 private:
 	void clearPaths();
 	void addPaths();
+	void removeMissingPaths(std::vector<PathView *> *refreshers);
 	void privatePopulatePaths(std::vector<PathView *> pvs);
-	bool coversPath(Path *path);
 
 	void addPathView(PathView *pv);
 	void clearOldPathView(PathView *pv);

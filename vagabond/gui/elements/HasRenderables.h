@@ -21,6 +21,7 @@ public:
 	void deleteObjects(bool recursive = true);
 	
 	void addObject(Renderable *r);
+	bool hasObject(Renderable *r);
 	virtual void modify(Renderable *r) {};
 	void addTempObject(Renderable *r);
 	

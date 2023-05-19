@@ -160,6 +160,14 @@ void HasRenderables::addObject(Renderable *r)
 	}
 }
 
+bool HasRenderables::hasObject(Renderable *r)
+{
+	std::vector<Renderable *>::iterator it;
+	it = std::find(_objects.begin(), _objects.end(), r);
+
+	return (it != _objects.end());
+}
+
 void HasRenderables::addTempObject(Renderable *r)
 {
 	addObject(r);

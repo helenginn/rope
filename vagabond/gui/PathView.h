@@ -42,6 +42,8 @@ public:
 
 	void populate();
 	
+	bool needsUpdate();
+	
 	bool isPopulated() const
 	{
 		return _populated;
@@ -51,6 +53,7 @@ private:
 	
 	Path &_path;
 	std::atomic<bool> _populated{false};
+	int _version = -1;
 };
 
 #endif

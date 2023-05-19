@@ -65,7 +65,6 @@ void ProgressBar::sendObject(std::string tag, void *object)
 	if (tag == "tick")
 	{
 		_ticks++;
-		std::cout << _ticks << " / " << _maxTicks << std::endl;
 		if (_ticks >= _maxTicks)
 		{
 			finish();

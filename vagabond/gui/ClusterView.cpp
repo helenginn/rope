@@ -79,7 +79,6 @@ void ClusterView::makePoints()
 
 	_cx->cluster();
 	clearVertices();
-	clearPaths();
 	
 	size_t count = _cx->pointCount();
 	_vertices.reserve(count);
@@ -245,15 +244,17 @@ void ClusterView::clearPaths()
 
 void ClusterView::addPathView(PathView *pv)
 {
-	_pathViews.push_back(pv);
-	_path2View[pv->path()] = pv;
-	addObject(pv);
+	if (!hasObject(pv))
+	{
+		_pathViews.push_back(pv);
+		_path2View[pv->path()] = pv;
+		addObject(pv);
+	}
 }
 
 void ClusterView::respond()
 {
 	wait();
-	clearPaths();
 }
 
 void ClusterView::clearOldPathView(PathView *pv)
@@ -271,23 +272,9 @@ void ClusterView::clearOldPathView(PathView *pv)
 	_path2View.erase(it);
 }
 
-bool ClusterView::coversPath(Path *path)
-{
-	ObjectGroup *obj = _cx->objectGroup();
-
-	if (_confSpaceView && (_confSpaceView->entity() 
-	                       != path->startInstance()->entity()))
-	{
-		return false;
-	}
-
-	return (obj->indexOfObject(path->startInstance()) >= 0 &&
-	        obj->indexOfObject(path->endInstance()) >= 0);
-}
-
 void ClusterView::addPath(Path *path, std::vector<PathView *> *refreshers)
 {
-	if (!path->visible() || !coversPath(path))
+	if (!path->visible() || !_cx->objectGroup()->coversPath(path))
 	{
 		return;
 	}
@@ -315,17 +302,37 @@ void ClusterView::addPath(Path *path, std::vector<PathView *> *refreshers)
 	if (pv == nullptr)
 	{
 		pv = new PathView(*path, svd);
-		addPathView(pv);
 	}
 
-	if (refreshers == nullptr && !pv->isPopulated())
+	if (refreshers == nullptr && pv->needsUpdate())
 	{
 		pv->populate();
+		addPathView(pv);
 	}
-	else if (refreshers && !pv->isPopulated())
+	else if (refreshers && pv->needsUpdate())
 	{
 		refreshers->push_back(pv);
 	}
+	
+}
+
+void ClusterView::removeMissingPaths(std::vector<PathView *> *refreshers)
+{
+	std::vector<PathView *> tmp;
+	for (PathView *pv : _pathViews)
+	{
+		auto it = std::find(refreshers->begin(), refreshers->end(), pv);
+		if (it == refreshers->end())
+		{
+			_path2View.erase(pv->path());
+		}
+		else
+		{
+			tmp.push_back(pv);
+		}
+	}
+	_pathViews = tmp;
+
 }
 
 void ClusterView::addPaths()
@@ -341,15 +348,21 @@ void ClusterView::addPaths()
 	
 	std::vector<PathView *> pvs;
 
+	waitForInvert();
+
 	for (Path &path : pm->objects())
 	{
 		addPath(&path, &pvs);
 	}
 	
 	std::cout << "Total paths to populate: " << pvs.size() << std::endl;
+	removeMissingPaths(&pvs);
 	
-	_running = true;
-	_worker = new std::thread(ClusterView::populatePaths, this, pvs);
+	if (pvs.size() > 0)
+	{
+		_running = true;
+		_worker = new std::thread(ClusterView::populatePaths, this, pvs);
+	}
 }
 
 void ClusterView::waitForInvert()
@@ -414,11 +427,10 @@ void ClusterView::privatePopulatePaths(std::vector<PathView *> pvs)
 		return;
 	}
 
-	waitForInvert();
-
 	for (PathView *pv : pvs)
 	{
 		pv->populate();
+		addPathView(pv);
 
 		if (_finish)
 		{

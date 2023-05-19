@@ -84,3 +84,7 @@ void PathView::populate()
 	_populated = true;
 }
 
+bool PathView::needsUpdate()
+{
+	return (_version < _cluster->version() || !isPopulated());
+}

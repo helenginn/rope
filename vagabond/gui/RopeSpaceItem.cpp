@@ -23,6 +23,7 @@
 #include "Axes.h"
 #include "RopeCluster.h"
 #include "MetadataView.h"
+#include "PathManager.h"
 #include <vagabond/core/Metadata.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -151,31 +152,28 @@ void RopeSpaceItem::calculateCluster()
 {
 	setResponders();
 
+	RopeCluster *cx = nullptr;
 	if (_type == ConfTorsions)
 	{
 		MetadataGroup angles = _entity->makeTorsionDataGroup();
 		angles.setWhiteList(_whiteList);
 		angles.write(_entity->name() + ".csv");
+
+		Environment::pathManager()->addPathsToMetadataGroup(&angles);
 		angles.normalise();
 
-		RopeCluster *cx = nullptr;
 		cx = new TorsionCluster(angles);
-
-		_cluster = cx;
-		_view->setCluster(cx);
 	}
-	
-	if (_type == ConfPositional)
+	else if (_type == ConfPositional)
 	{
 		PositionalGroup group = _entity->makePositionalDataGroup();
 		group.setWhiteList(_whiteList);
 
-		PositionalCluster *cx = nullptr;
 		cx = new PositionalCluster(group);
-
-		_cluster = cx;
-		_view->setCluster(cx);
 	}
+
+	_cluster = cx;
+	_view->setCluster(cx);
 
 }
 
