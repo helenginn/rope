@@ -181,7 +181,7 @@ void *ShaderGetsVertices::vPointer()
 
 size_t ShaderGetsVertices::iSize()
 {
-	return sizeof(GLuint) * _indexCopy.size();
+	return sizeof(GLuint) * _parent->indexCount();
 }
 
 void *ShaderGetsVertices::iPointer()
@@ -191,7 +191,7 @@ void *ShaderGetsVertices::iPointer()
 		return nullptr;
 	}
 
-	return &_indexCopy[0];
+	return _parent->iPointer();
 }
 
 void ShaderGetsVertices::rebufferIndexData()
@@ -204,8 +204,6 @@ void ShaderGetsVertices::rebufferIndexData()
 		setupVBOBuffers();
 		return;
 	}
-	
-	prepareBuffers();
 
 	GLuint be = _bElements[program];
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, be);
