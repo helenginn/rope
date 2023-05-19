@@ -199,7 +199,11 @@ protected:
 
 	};
 
+	friend void to_json(json &j, const RTValue &value);
+	friend void from_json(const json &j, RTValue &value);
+
 	std::vector<RTValue> _rtValues;
 };
+
 
 #endif

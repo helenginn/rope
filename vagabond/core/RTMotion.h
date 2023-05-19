@@ -88,19 +88,40 @@ private:
 
 };
 
+inline void to_json(json &j, const RTVector<Motion>::RTValue &id)
+{
+	j["rt"] = id.rt;
+	j["storage"] = id.storage;
+
+}
+
+inline void from_json(const json &j, RTVector<Motion>::RTValue &id)
+{
+	id.rt = j.at("rt");
+	id.storage = j.at("storage");
+}
+
 inline void to_json(json &j, const RTMotion &id)
 {
-	j["rts"] = id.rts_only();
-	j["vals"] = id.storage_only();
+	j["motions"] = id._rtValues;
 
 }
 
 inline void from_json(const json &j, RTMotion &id)
 {
-	std::vector<ResidueTorsion> rts = j.at("rts");
-	std::vector<Motion> motions = j.at("vals");
-	
-	id.vector_from(rts, motions);
+//	j["rts"] = id.rts_only();
+//	j["vals"] = id.storage_only();
+
+	if (j.count("motions") == 0)
+	{
+		std::vector<ResidueTorsion> rts = j.at("rts");
+		std::vector<Motion> motions = j.at("vals");
+		id.vector_from(rts, motions);
+	}
+	else
+	{
+		id._rtValues = j.at("motions");
+	}
 }
 
 
