@@ -465,7 +465,6 @@ void RopeSpaceItem::setMetadata(std::string key, std::string value)
 {
 	Metadata *md = new Metadata();
 	ObjectGroup *mg = _cluster->objectGroup();
-	size_t count = 0;
 	
 	for (size_t i = 0; i < mg->objectCount(); i++)
 	{

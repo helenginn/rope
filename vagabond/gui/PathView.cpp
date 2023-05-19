@@ -58,7 +58,7 @@ void PathView::populate()
 		std::vector<float> mapped = _cluster->mapVector(angles);
 		glm::vec3 point = _cluster->pointForDisplay(mapped);
 		
-		Vertex &v = addVertex(point);
+		addVertex(point);
 		
 		if (i > 0)
 		{

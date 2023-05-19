@@ -79,7 +79,6 @@ void StarView::makePoints()
 	_line->clearVertices();
 	
 	size_t count = _cluster->pointCount();
-	MetadataGroup *dg = static_cast<MetadataGroup *>(_cluster->objectGroup());
 
 	_vertices.reserve(count);
 	_indices.reserve(count);

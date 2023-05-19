@@ -332,8 +332,6 @@ void PathFinder::setStatus(FromToTask *task, TaskType type)
 
 void PathFinder::addTask(OptimiseTask *task)
 {
-	PathTask *cast = static_cast<PathTask *>(task);
-
 	if (_stage == FirstValidation)
 	{
 		std::unique_lock<std::mutex> lock(_cycleMutex);

@@ -95,7 +95,6 @@ float PlausibleRoute::routeScore(int steps, bool forceField)
 	for (size_t i = 0; i < pointCount(); i++)
 	{
 		float contribution = (forceField ? score(i) : deviation(i));
-		float frac = i / (float)(pointCount() - 1);
 		cumulative += contribution;
 	}
 	
@@ -279,7 +278,7 @@ int PlausibleRoute::nudgeWaypoints()
 	int changed = 0;
 	startTicker("Nudging waypoints (" + f_to_str(_magnitudeThreshold, 1)
 	            + " degrees +)");
-	int total = 1;
+
 	float start = routeScore(flipNudgeCount());
 
 	for (size_t i = 0; i < motionCount(); i++)
@@ -825,8 +824,6 @@ void PlausibleRoute::printWaypoints()
 		std::cout << start << "," << start + diff << ",";
 		
 		PolyFit fit = wayPoints(i).polyFit();
-		float step = 0.1;
-		float sum = 0;
 		
 		for (size_t j = 0; j < wayPoints(i).size(); j++)
 		{

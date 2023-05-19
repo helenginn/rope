@@ -341,9 +341,6 @@ void Route::getParametersFromBasis()
 			float final_angle = _rawDest[idx];
 			
 			ResidueTorsion rt = list[idx];
-			Parameter *other = rt.parameter();
-			
-			assert(other == p);
 
 			torsions.push_back(rt);
 			motions.push_back(Motion{WayPoints(), false, final_angle});
