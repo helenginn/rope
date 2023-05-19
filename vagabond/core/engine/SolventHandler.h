@@ -37,6 +37,12 @@ public:
 	{
 		_maskCount = masks;
 	}
+	
+	void loadAtomPosMap(const AtomPosMap &aps)
+	{
+
+	}
+
 private:
 	BondCalculator *_calculator = nullptr;
 	

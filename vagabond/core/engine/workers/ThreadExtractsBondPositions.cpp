@@ -22,6 +22,7 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/ForceFieldHandler.h"
 #include "engine/MechanicalBasis.h"
+#include "engine/SolventHandler.h"
 #include "BondCalculator.h"
 #include "engine/PointStoreHandler.h"
 #include "BondSequence.h"
@@ -39,7 +40,7 @@ void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 {
 	Result *r = job->result;
 
-	AtomPosMap aps = seq->extractPositions();
+	const AtomPosMap &aps = seq->extractPositions();
 
 	/* extend atom positions in the result */
 	r->handout.lock();
@@ -61,7 +62,7 @@ void ThreadExtractsBondPositions::transferToSurfaceHandler(Job *job,
 void ThreadExtractsBondPositions::transferToForceFields(Job *job,
                                                         BondSequence *seq)
 {
-	AtomPosMap aps = seq->extractPositions();
+	const AtomPosMap &aps = seq->extractPositions();
 	ForceFieldHandler *ffHandler = _seqHandler->calculator()->forceFieldHandler();
 	
 	ffHandler->atomMapToForceField(job, aps);
@@ -82,8 +83,8 @@ void ThreadExtractsBondPositions::transferToMaps(Job *job, BondSequence *seq)
 	
 	if (job->requests & JobSolventMask)
 	{
-		AtomPosMap aps = seq->extractPositions();
-//		_solventHandler->loadAtomPosMap(aps);
+		const AtomPosMap &aps = seq->extractPositions();
+		_solventHandler->loadAtomPosMap(aps);
 	}
 
 	timeEnd();

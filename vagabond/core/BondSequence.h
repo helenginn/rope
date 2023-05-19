@@ -149,7 +149,7 @@ public:
 
 	void calculate();
 	void superpose();
-	AtomPosMap &extractPositions();
+	const AtomPosMap &extractPositions();
 	
 	struct ElePos
 	{

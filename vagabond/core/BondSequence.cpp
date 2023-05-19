@@ -513,7 +513,7 @@ double BondSequence::calculateDeviations()
 	return sum / count;
 }
 
-AtomPosMap &BondSequence::extractPositions()
+const AtomPosMap &BondSequence::extractPositions()
 {
 	for (auto it = _posAtoms.begin(); it != _posAtoms.end(); it++)
 	{
