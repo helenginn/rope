@@ -34,8 +34,8 @@ namespace PCA
 	{
 		double *vals = nullptr;
 		double **ptrs = nullptr;
-		int rows = 0;
-		int cols = 0;
+		int rows = 0; // slow
+		int cols = 0; // fast
 		
 		double *operator[](const int i) const
 		{
@@ -66,8 +66,8 @@ namespace PCA
 	void zeroMatrix(Matrix *mat);
 	void printMatrix(Matrix *mat);
 
-	template <class Float>
-	void multMatrix(Matrix &mat, Float *vector, Float *result)
+	template <class Float1, class Float2>
+	void multMatrix(Matrix &mat, Float1 *vector, Float2 *result)
 	{
 		for (size_t j = 0; j < mat.rows; j++)
 		{

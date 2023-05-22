@@ -23,24 +23,61 @@
 #define private public // evil but delicious
 #define protected public // evil but delicious
 
+#include <vagabond/utils/Face.h>
 #include <vagabond/utils/Simplex.h>
 namespace tt = boost::test_tools;
 
-BOOST_AUTO_TEST_CASE(make_simplex)
+BOOST_AUTO_TEST_CASE(make_face)
 {
-	float p[] = {0.05f, 0.7f};
-	Face<0, 2> p1(p), p2, p3, p4, p5;
+	Face<0, 2> p1, p2, p3, p4, p5;
 	
 	Face<1, 2> l12(p1, p2);
 
 	Face<2, 2> t123(l12, p3);
 
 	Face<3, 2> tetra(t123, p4);
-	std::cout << tetra << std::endl;
 
 	Face<4, 2> fiveCell(tetra, p5);
 	
-	BOOST_TEST(t123.faceCount() == 3);
-	BOOST_TEST(tetra.faceCount() == 4);
 	BOOST_TEST(fiveCell.faceCount() == 5);
+	BOOST_TEST(t123.pointCount() == 3);
+}
+
+BOOST_AUTO_TEST_CASE(point_on_triangle_to_barycentric)
+{
+	float p1[] = {0.f, 0.f};
+	float q1[] = {0.0f, 2.0f};
+	float r1[] = {2.0f, 0.0f};
+
+	float m[] = {0.5f, 0.5f};
+
+	Face<0, 2> p(p1), q(q1), r(r1);
+	Point<2> middle(m);
+	
+	Simplex<1, 2> line(p, q);
+	Simplex<2, 2> triangle(line, r);
+	
+	std::vector<float> weights = triangle.point_to_barycentric(middle);
+
+	BOOST_TEST(weights[0] == 0.5f);
+	BOOST_TEST(weights[1] == 0.25f);
+	BOOST_TEST(weights[2] == 0.25f);
+}
+
+BOOST_AUTO_TEST_CASE(point_on_line_to_barycentric)
+{
+	float p1[] = {0.f, 0.f};
+	float q1[] = {0.0f, 2.0f};
+
+	float m[] = {0.5f, 0.5f};
+
+	Face<0, 2> p(p1), q(q1);
+	Point<2> middle(m);
+	
+	Simplex<1, 2> line(p, q);
+	
+	std::vector<float> weights = line.point_to_barycentric(middle);
+
+	BOOST_TEST(weights[0] == 0.75f);
+	BOOST_TEST(weights[1] == 0.25f);
 }

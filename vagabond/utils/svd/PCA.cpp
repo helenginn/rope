@@ -175,9 +175,6 @@ bool PCA::invertSVD(SVD *cc)
 	int x = cc->u.rows; // e.g. 1904
 	int y = cc->u.cols; // e.g. 13
 	
-	std::cout << "rows: " << x << std::endl;
-	std::cout << "cols: " << y << std::endl;
-
 	bool success = runSVD(cc);
 	
 	for (size_t i = 0; i < x; i++)
