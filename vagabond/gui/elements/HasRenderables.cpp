@@ -5,6 +5,7 @@
 #include <cfloat>
 #include <iostream>
 #include "HasRenderables.h"
+#include "Window.h"
 #include "Renderable.h"
 
 void HasRenderables::deleteObjects(bool recursive)
@@ -178,7 +179,7 @@ void HasRenderables::deleteTemps()
 {
 	while (_temps.size() > 0)
 	{
-		delete _temps[0];
+		Window::setDelete(_temps[0]);
 		removeObject(_temps[0]);
 	}
 }

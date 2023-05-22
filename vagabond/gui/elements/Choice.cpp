@@ -45,6 +45,11 @@ void Choice::click(bool left)
 		send = true;
 	}
 	
+	if (send) // in case it is deleted in the process, use Window::setDelete
+	{
+		_sender->buttonPressed(tag(), this);
+	}
+	
 	if (!_tickable)
 	{
 		return;
@@ -57,11 +62,6 @@ void Choice::click(bool left)
 
 	_ticked = !_ticked;
 	_tick->setDisabled(!_ticked);
-	
-	if (send) // in case it is deleted in the process, run this last
-	{
-		_sender->buttonPressed(tag(), this);
-	}
 }
 
 void Choice::untick()
