@@ -67,26 +67,6 @@ void Trajectory::calculateLengths()
 	}
 }
 
-int Trajectory::priorStep(float frac)
-{
-	if (_steps.size() == 0) return -1;
-
-	int n = 0;
-	while (_steps[n] < frac && n < _steps.size() - 1)
-	{
-		n++;
-	}
-	
-	n--; // back one to get the pre-step
-	
-	if (n >= _steps.size() - 1)
-	{
-		return -1;
-	}
-
-	return n;
-}
-
 float Trajectory::angleForFraction(float frac, int idx)
 {
 	if (frac < 0) { frac = 0; }
@@ -178,3 +158,9 @@ void Trajectory::attachInstance(Instance *inst)
 	_traj->attachInstance(inst);
 }
 
+std::vector<Angular> Trajectory::anglesForIndex(int idx)
+{
+	RTAngles sample = _traj->angles_for_index(idx);
+	std::vector<Angular> fs = sample.storage_only();
+	return fs;
+}

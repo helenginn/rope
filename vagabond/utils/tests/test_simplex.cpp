@@ -24,7 +24,6 @@
 #define protected public // evil but delicious
 
 #include <vagabond/utils/Face.h>
-#include <vagabond/utils/Simplex.h>
 namespace tt = boost::test_tools;
 
 BOOST_AUTO_TEST_CASE(make_face)
@@ -54,8 +53,8 @@ BOOST_AUTO_TEST_CASE(point_on_triangle_to_barycentric)
 	Face<0, 2> p(p1), q(q1), r(r1);
 	Point<2> middle(m);
 	
-	Simplex<1, 2> line(p, q);
-	Simplex<2, 2> triangle(line, r);
+	Face<1, 2> line(p, q);
+	Face<2, 2> triangle(line, r);
 	
 	std::vector<float> weights = triangle.point_to_barycentric(middle);
 
@@ -74,10 +73,58 @@ BOOST_AUTO_TEST_CASE(point_on_line_to_barycentric)
 	Face<0, 2> p(p1), q(q1);
 	Point<2> middle(m);
 	
-	Simplex<1, 2> line(p, q);
+	Face<1, 2> line(p, q);
 	
 	std::vector<float> weights = line.point_to_barycentric(middle);
 
 	BOOST_TEST(weights[0] == 0.75f);
 	BOOST_TEST(weights[1] == 0.25f);
+}
+
+BOOST_AUTO_TEST_CASE(interpolate_variable)
+{
+	std::vector<float> vals = {0, 2, 1};
+	std::vector<float> steps = {0, 0.5, 1};
+	std::vector<float> weights = {0.8, 0.2};
+	
+	Variable v(vals, steps);
+	float res = v.interpolate_weights(weights);
+
+	BOOST_TEST(res == 1.2, tt::tolerance(10e-5));
+}
+
+BOOST_AUTO_TEST_CASE(interpolate_subfaces)
+{
+	std::vector<float> vals = {0, 1};
+	std::vector<float> steps = {0, 1};
+	Variable v(vals, steps);
+
+	vals = {1, 2}; steps = {0, 1};
+	Variable w(vals, steps);
+
+	vals = {2, 0}; steps = {0, 1};
+	Variable x(vals, steps);
+	
+	Variable *vs[] = {&v, &w, &x};
+
+	float p1s[] = {0., 0.};
+	float p2s[] = {0., 1.};
+	float p3s[] = {1., 0.};
+
+	Face<0, 2> p1(p1s), p2(p2s), p3(p3s);
+	Face<1, 2> p12(p1, p2);
+	
+	Face<2, 2> triangle(p12, p3);
+	
+	int i = 0;
+	for (SharedFace<1, 2> *f : triangle.subs())
+	{
+		f->setVariable(vs[i]);
+		i++;
+	}
+	
+	float pt[] = {0.5, 0.5};
+	float point = triangle.value_for_point(Point<2>(pt));
+	
+	BOOST_TEST(point == 0.5);
 }

@@ -19,6 +19,9 @@
 #ifndef __vagabond__Face__
 #define __vagabond__Face__
 
+#include "svd/PCA.h"
+#include "Variable.h"
+
 template <unsigned int D>
 class Point
 {
@@ -76,11 +79,136 @@ private:
 };
 
 template <int N, unsigned int D>
-class SharedFace
+class SharedFace;
+
+template <int N, unsigned int D>
+class Interpolatable
+{
+public:
+	Interpolatable()
+	{
+		setupMatrix(&_vec, D + 1, 1);
+		setupSVD(&_svd, D+1, 0);
+
+	}
+	
+	virtual ~Interpolatable()
+	{
+
+	}
+	
+	void setVariable(Variable *var)
+	{
+		_variable = var;
+	}
+
+	virtual SharedFace<N - 1, D> *faceExcluding(const SharedFace<0, D> &point)
+	{
+		return nullptr;
+	}
+
+	float interpolate_subfaces(Point<D> &cart)
+	{
+		std::vector<float> weights = point_to_barycentric(cart);
+
+		float total = 0; float count = 0;
+		for (int i = 0; i < pointCount(); i++)
+		{
+			SharedFace<N - 1, D> *ls = faceExcluding(point(i));
+
+			if (!ls) { continue; }
+
+			float init = point(i).value();
+			float end = ls->value_for_point(cart);
+			float w = weights[i]; // weight of point
+			float r = 1 - weights[i]; // weight of simplex
+			
+			float res = (w * init + r * end) / (w + r);
+			total += res;
+			count++;
+		}
+		
+		return total / count;
+	}
+
+	virtual float value_for_point(Point<D> cart)
+	{
+		if (_variable)
+		{
+			return interpolate_variable(cart);
+		}
+		else
+		{
+			return interpolate_subfaces(cart);
+		}
+	}
+
+private:
+
+	std::vector<float> point_to_barycentric(Point<D> &middle)
+	{
+		std::vector<float> results(pointCount());
+		
+		for (size_t i = 0; i < D; i++)
+		{
+			_vec[i][0] = middle.p()[i];
+		}
+
+		_vec[D][0] = 1;
+		
+		if (_svd.u.cols != pointCount())
+		{
+			freeSVD(&_svd);
+			setupSVD(&_svd, D+1, pointCount());
+		}
+		
+		for (size_t row = 0; row < D; row++)
+		{
+			for (size_t col = 0; col < pointCount(); col++)
+			{
+				_svd.u[row][col] = point(col).scalar(row);
+			}
+		}
+
+		for (size_t col = 0; col < pointCount(); col++)
+		{
+			_svd.u[D][col] = 1;
+		}
+		
+		invertSVD(&_svd);
+		PCA::Matrix tr = transpose(&_svd.u);
+
+		multMatrix(tr, _vec[0], &results[0]);
+
+		return results;
+	}
+
+	float interpolate_variable(Point<D> &cart)
+	{
+		std::vector<float> weights = point_to_barycentric(cart);
+		float val = _variable->interpolate_weights(weights);
+		return val;
+	}
+	
+
+	virtual size_t pointCount() const = 0;
+	virtual const SharedFace<0, D> &point(int idx) const = 0;
+protected:
+	PCA::Matrix _vec;
+	PCA::SVD _svd;
+
+	Variable *_variable = nullptr;
+};
+
+
+template <int N, unsigned int D>
+class SharedFace : public Interpolatable<N, D>
 {
 public:
 	typedef SharedFace<N - 1, D> LowerFace;
 	typedef SharedFace<N, D> SameFace;
+	
+	virtual ~SharedFace<N, D>() {}
 
 	SharedFace(LowerFace *face, SharedFace<0, D> &point) :
 	SharedFace<N, D>(*face, point) {}
@@ -99,12 +227,38 @@ public:
 		this->_points.push_back(&point);
 	}
 	
-	const SharedFace<0, D> &point(int idx) const
+	LowerFace *faceExcluding(const SharedFace<0, D> &point)
+	{
+		for (auto &f : c_subs())
+		{
+			if (!f->hasPoint(point))
+			{
+				return f;
+			}
+		}
+		
+		return nullptr;
+	}
+	
+	virtual const SharedFace<0, D> &point(int idx) const
 	{
 		return *_points[idx];
 	}
+	
+	bool hasPoint(const SharedFace<0, D> &point) const
+	{
+		for (SharedFace<0, D> *p : _points)
+		{
+			if (p == &point)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
-	size_t pointCount()
+	virtual size_t pointCount() const
 	{
 		return _points.size();
 	}
@@ -135,6 +289,7 @@ public:
 		}
 		return ss;
 	}
+
 protected:
 	SharedFace() {};
 
@@ -146,13 +301,16 @@ protected:
 };
 
 template <unsigned int D>
-class SharedFace<1, D>
+class SharedFace<1, D> : public Interpolatable<1, D>
 {
 public:
 	typedef SharedFace<1, D> SameFace;
 
 	SharedFace(SharedFace<0, D> *face, SharedFace<0, D> &point) :
 	SharedFace<1, D>(*face, point) {}
+
+	SharedFace<1, D>() {}
+	virtual ~SharedFace<1, D>() {}
 
 	SharedFace(SharedFace<0, D> &face, SharedFace<0, D> &point)
 	{
@@ -167,7 +325,7 @@ public:
 		return _points.size();
 	}
 	
-	const SharedFace<0, D> &point(int idx) const
+	virtual const SharedFace<0, D> &point(int idx) const
 	{
 		return *_points[idx];
 	}
@@ -180,6 +338,24 @@ public:
 	const std::vector<SharedFace<0, D> *> &c_subs() const
 	{
 		return _subs;
+	}
+
+	std::vector<SharedFace<0, D> *> &subs() 
+	{
+		return _subs;
+	}
+
+	bool hasPoint(const SharedFace<0, D> &point) const
+	{
+		for (SharedFace<0, D> *p : _points)
+		{
+			if (p == &point)
+			{
+				return true;
+			}
+		}
+		
+		return false;
 	}
 
 
@@ -210,7 +386,14 @@ public:
 	SharedFace(float *p, float val) : Point<D>(p, val) {};
 	SharedFace(SharedFace<0, D> &face, SharedFace<0, D> &other) {};
 
-	size_t pointCount()
+	virtual float value_for_point(Point<D> cart)
+	{
+		return this->value();
+	}
+
+	virtual ~SharedFace<0, D>() {}
+
+	virtual size_t pointCount() const
 	{
 		return 0;
 	}
@@ -220,9 +403,9 @@ public:
 		return 0;
 	}
 
-	const std::vector<SharedFace<0, D>> c_subs() const
+	const std::vector<SharedFace<0, D> *> c_subs() const
 	{
-		return std::vector<SharedFace<0, D>>();
+		return std::vector<SharedFace<0, D> *>();
 	}
 private:
 	int _n = 0;
@@ -238,8 +421,10 @@ public:
 	typedef Face<N, D> SameFace;
 
 	Face(LowerFace &face, Face<0, D> &point) :
-	SharedFace<N, D>(face, point) {}
+	SharedFace<N, D>(face, point) {};
 	
+	Face<N, D>() {}
+
 private:
 
 };
@@ -253,6 +438,7 @@ public:
 	Face(const Face<0, D> &face, const Face<0, D> &other) {};
 
 private:
+	std::vector<SharedFace<0, D> *> _points;
 
 };
 

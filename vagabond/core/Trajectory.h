@@ -20,12 +20,13 @@
 #define __vagabond__Trajectory__
 
 #include "RTAngles.h"
+#include <vagabond/utils/Stepped.h>
 
 class MetadataGroup;
 class Path;
 class RTMultiple;
 
-class Trajectory
+class Trajectory : public Stepped
 {
 public:
 	Trajectory(const RTMultiple &angles, Path *origin);
@@ -43,16 +44,16 @@ public:
 	
 	float angleForFraction(float frac, int idx);
 	RTAngles anglesForFraction(float frac);
+	
+	std::vector<Angular> anglesForIndex(float idx);
+
 	void relativeToFirst();
 
 	void filterAngles(const std::vector<Parameter *> &ps);
 private:
 	void calculateLengths();
-	
-	int priorStep(float frac);
 
 	RTMultiple *_traj = nullptr;
-	std::vector<float> _steps;
 	Path *_path = nullptr;
 
 	float _step = 1;
