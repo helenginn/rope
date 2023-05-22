@@ -50,10 +50,20 @@ RopeSpaceItem::~RopeSpaceItem()
 
 void RopeSpaceItem::makeView(ConfSpaceView *attach)
 {
-	_confView = attach;
-	allocateView(attach);
+	setConfView(attach);
+	allocateView();
 	calculateCluster();
 	attachExisting(attach);
+}
+
+void RopeSpaceItem::setConfView(ConfSpaceView *attach)
+{
+	for (size_t i = 0; i < itemCount(); i++)
+	{
+		ropeSpaceItem(i)->setConfView(attach);
+	}
+	
+	_confView = attach;
 }
 
 void RopeSpaceItem::clusterIfNeeded()
@@ -73,7 +83,7 @@ void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 {
 	ClusterView *oldView = _confView->view();
 
-	_confView = attach;
+	setConfView(attach);
 	clusterIfNeeded();
 	_confView->assignRopeSpace(this);
 
@@ -93,7 +103,7 @@ void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 	_view->additionalJobs();
 }
 
-void RopeSpaceItem::allocateView(ConfSpaceView *attach)
+void RopeSpaceItem::allocateView()
 {
 	ClusterView *view = new ClusterView();
 	_view = view;

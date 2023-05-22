@@ -90,6 +90,7 @@ public:
 	RopeSpaceItem *branchFromRule(Rule *rule, bool inverse);
 	RopeSpaceItem *branchFromRuleRange(const Rule *rule, float min, float max);
 	RopeSpaceItem *makeGroupFromSelected(bool inverse);
+	void setConfView(ConfSpaceView *attach);
 	
 	size_t selectedCount();
 	virtual void sendObject(std::string tag, void *object);
@@ -106,7 +107,7 @@ private:
 	RopeSpaceItem *newFrom(std::vector<HasMetadata *> &whiteList,
 	                       std::string title);
 
-	void allocateView(ConfSpaceView *view);
+	void allocateView();
 	void inheritAxis(RopeSpaceItem *parent);
 	void calculateCluster();
 	void setResponders();

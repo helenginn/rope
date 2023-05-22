@@ -524,6 +524,10 @@ void ConfSpaceView::refresh()
 		}
 		else
 		{
+			if (_ropeSpace)
+			{
+				_ropeSpace->setConfView(this);
+			}
 			_selected->attachExisting(this);
 			_view->refresh();
 		}
