@@ -20,34 +20,27 @@
 #define __vagabond__SandboxView__
 
 #include <vagabond/gui/Display.h>
+#include <vagabond/utils/Mapping.h>
 #include <vagabond/core/Responder.h>
 #include <thread>
 
-class Text;
-class Cyclic;
-class CyclicView;
+class MappingToMatrix;
 
-class SandboxView : public Display, public Responder<CyclicView>
+class SandboxView : public Scene
 {
 public:
 	SandboxView(Scene *prev);
-
-	void stop();
 	virtual ~SandboxView();
+
+	void makeTriangles();
 	virtual void setup();
-	virtual void doThings();
-	virtual void respond();
-	virtual void updateInfo();
-	void scan();
-
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-
-	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
-	void addCyclicView(Cyclic *cyclic);
 private:
-	CyclicView *_cyclic = nullptr;
+	void makeMapping();
 
-	std::thread *_worker = nullptr;
+	Mapping<2, float> _mapped;
+	MappingToMatrix *_mat2Map = nullptr;
+	std::mutex _mutex;
+
 };
 
 #endif

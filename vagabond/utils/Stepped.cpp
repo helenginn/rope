@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Stepped.h"
+#include <iostream>
 
 int Stepped::priorStep(float frac)
 {
@@ -30,7 +31,7 @@ int Stepped::priorStep(float frac)
 	
 	n--; // back one to get the pre-step
 	
-	if (n >= _steps.size() - 1)
+	if (n >= (int)_steps.size() - 1)
 	{
 		return -1;
 	}

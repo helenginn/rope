@@ -45,7 +45,7 @@ public:
 	float angleForFraction(float frac, int idx);
 	RTAngles anglesForFraction(float frac);
 	
-	std::vector<Angular> anglesForIndex(float idx);
+	std::vector<Angular> anglesForIndex(int idx);
 
 	void relativeToFirst();
 

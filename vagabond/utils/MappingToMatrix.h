@@ -16,41 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Variable.h"
+#ifndef __vagabond__MappingToMatrix__
+#define __vagabond__MappingToMatrix__
 
-Variable::Variable(const std::vector<float> &points, Stepped *other)
+#include "svd/PCA.h"
+template <typename Type> class Mapped;
+
+class MappingToMatrix
 {
-	_points = points;
-	_steps = other->steps();
-}
+public:
+	MappingToMatrix(Mapped<float> &mapped);
 
-Variable::Variable(const std::vector<float> &points, 
-                   const std::vector<float> &steps)
-{
-	_points = points;
-	_steps = steps;
-}
-
-float Variable::interpolate_weights(const std::vector<float> &weights)
-{
-	assert(weights.size() == 2);
-	float frac = weights[1];
-
-	int n = priorStep(frac);
-	if (n < 0)
+	PCA::Matrix &matrix() 
 	{
-		return NAN;
+		return _matrix;
 	}
 
-	float tot = frac - _steps[n];
-	tot *= (float)_steps.size();
+	void calculate();
+private:
 
-	float angle = _points[n];
-	float next = _points[n + 1];
+	Mapped<float> &_mapped;
+	PCA::Matrix _matrix{};
 
-	float diff = next - angle;
-	diff *= tot;
-	float ret = angle + diff;
-	
-	return ret;
-}
+};
+
+#endif

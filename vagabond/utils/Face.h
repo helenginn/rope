@@ -19,15 +19,36 @@
 #ifndef __vagabond__Face__
 #define __vagabond__Face__
 
+#include <iostream>
 #include "svd/PCA.h"
 #include "Variable.h"
 
-template <unsigned int D>
+template <unsigned int D, typename Type>
 class Point
 {
 public:
 	Point() {}
-	Point(float *p, float value = 0)
+	Point(const float *p, Type value = 0)
+	{
+		for (unsigned int i = 0; i < D; i++)
+		{
+			_p[i] = p[i];
+		}
+		
+		_value = value;
+	}
+	
+	operator std::vector<float>()
+	{
+		std::vector<float> res(D);
+		for (int i = 0; i < D; i++)
+		{
+			res[i] = _p[i];
+		}
+		return res;
+	}
+	
+	Point(const std::vector<float> &p, Type value = 0)
 	{
 		for (unsigned int i = 0; i < D; i++)
 		{
@@ -52,13 +73,13 @@ public:
 		return _p;
 	}
 	
-	const float &value() const
+	const Type &value() const
 	{
 		return _value;
 	}
 private:
 	float _p[D]{};
-	float _value{};
+	Type _value{};
 
 	unsigned int _d = D;
 
@@ -73,16 +94,30 @@ private:
 				ss << ", ";
 			}
 		}
-		ss << ")" << std::endl;
+		ss << ") = " << p._value << std::endl;
 		return ss;
 	}
 };
 
-template <int N, unsigned int D>
+template <class Type>
+class Mappable
+{
+public:
+	virtual Type interpolate_subfaces(const std::vector<float> &cart) = 0;
+	virtual std::vector<float> point_to_barycentric(const std::vector<float> &m) = 0;
+
+	virtual ~Mappable()
+	{
+
+	}
+
+};
+
+template <int N, unsigned int D, typename Type>
 class SharedFace;
 
-template <int N, unsigned int D>
-class Interpolatable
+template <int N, unsigned int D, typename Type>
+class Interpolatable : public Mappable<Type>
 {
 public:
 	Interpolatable()
@@ -97,41 +132,61 @@ public:
 
 	}
 	
-	void setVariable(Variable *var)
+	void setVariable(Variable<Type> *var)
 	{
 		_variable = var;
 	}
 
-	virtual SharedFace<N - 1, D> *faceExcluding(const SharedFace<0, D> &point)
+	virtual SharedFace<N-1, D, Type> *faceExcluding(const 
+	                                                SharedFace<0, D, Type> *point)
 	{
 		return nullptr;
 	}
 
-	float interpolate_subfaces(Point<D> &cart)
+	virtual Type interpolate_subfaces(const std::vector<float> &cart)
 	{
 		std::vector<float> weights = point_to_barycentric(cart);
+		std::vector<float> final_weights(weights.size(), 1);
+		
+		for (int i = 0; i < weights.size(); i++)
+		{
+			for (int j = 0; j < weights.size(); j++)
+			{
+				if (i == j)
+				{
+					continue;
+				}
 
-		float total = 0; float count = 0;
+				final_weights[i] *= weights[j];
+			}
+		}
+
+		Type total{}; float count = 0;
+
 		for (int i = 0; i < pointCount(); i++)
 		{
-			SharedFace<N - 1, D> *ls = faceExcluding(point(i));
+			SharedFace<N - 1, D, Type> *ls = faceExcluding(point(i));
 
-			if (!ls) { continue; }
+			if (!ls) 
+			{ 
+				continue;
+			}
 
-			float init = point(i).value();
-			float end = ls->value_for_point(cart);
+			Type init = point(i)->value();
+			Type end = ls->value_for_point(cart);
 			float w = weights[i]; // weight of point
 			float r = 1 - weights[i]; // weight of simplex
+			float fw = final_weights[i];
 			
-			float res = (w * init + r * end) / (w + r);
-			total += res;
-			count++;
+			Type res = (w * init + r * end);
+			total += res * fw;
+			count += fw;
 		}
 		
 		return total / count;
 	}
 
-	virtual float value_for_point(Point<D> cart)
+	virtual Type value_for_point(const std::vector<float> &cart)
 	{
 		if (_variable)
 		{
@@ -143,15 +198,13 @@ public:
 		}
 	}
 
-private:
-
-	std::vector<float> point_to_barycentric(Point<D> &middle)
+	virtual std::vector<float> point_to_barycentric(const std::vector<float> &m)
 	{
 		std::vector<float> results(pointCount());
 		
 		for (size_t i = 0; i < D; i++)
 		{
-			_vec[i][0] = middle.p()[i];
+			_vec[i][0] = m.at(i);
 		}
 
 		_vec[D][0] = 1;
@@ -166,7 +219,7 @@ private:
 		{
 			for (size_t col = 0; col < pointCount(); col++)
 			{
-				_svd.u[row][col] = point(col).scalar(row);
+				_svd.u[row][col] = point(col)->scalar(row);
 			}
 		}
 
@@ -183,40 +236,57 @@ private:
 		return results;
 	}
 
-	float interpolate_variable(Point<D> &cart)
+private:
+
+	Type interpolate_variable(const std::vector<float> &cart)
 	{
 		std::vector<float> weights = point_to_barycentric(cart);
-		float val = _variable->interpolate_weights(weights);
+		Type val = _variable->interpolate_weights(weights);
 		return val;
 	}
-	
 
 	virtual size_t pointCount() const = 0;
-	virtual const SharedFace<0, D> &point(int idx) const = 0;
+	virtual const SharedFace<0, D, Type> *point(int idx) const = 0;
 protected:
 	PCA::Matrix _vec;
 	PCA::SVD _svd;
 
-	Variable *_variable = nullptr;
+	Variable<Type> *_variable = nullptr;
 };
 
-
-template <int N, unsigned int D>
-class SharedFace : public Interpolatable<N, D>
+template <unsigned int D, typename Type>
+class Interpolatable<0, D, Type> : public Mappable<Type>
 {
 public:
-	typedef SharedFace<N - 1, D> LowerFace;
-	typedef SharedFace<N, D> SameFace;
+	virtual Type exact_value() = 0;
+
+	virtual Type interpolate_subfaces(const std::vector<float> &cart)
+	{
+		return exact_value();
+	}
 	
-	virtual ~SharedFace<N, D>() {}
+	virtual Type value_for_point(const std::vector<float> &cart)
+	{
+		return exact_value();
+	}
+};
 
-	SharedFace(LowerFace *face, SharedFace<0, D> &point) :
-	SharedFace<N, D>(*face, point) {}
+template <int N, unsigned int D, typename Type>
+class SharedFace : public Interpolatable<N, D, Type>
+{
+public:
+	typedef SharedFace<N - 1, D, Type> LowerFace;
+	typedef SharedFace<N, D, Type> SameFace;
+	
+	virtual ~SharedFace<N, D, Type>() {}
 
-	SharedFace(LowerFace &face, SharedFace<0, D> &point)
+	SharedFace(LowerFace *face, SharedFace<0, D, Type> &point) :
+	SharedFace<N, D, Type>(*face, point) {}
+
+	SharedFace(LowerFace &face, SharedFace<0, D, Type> &point)
 	{
 		this->subs().push_back(&face);
-		_points = face._points;
+		_points = face.points();
 		
 		for (auto &lf : face.c_subs())
 		{
@@ -227,11 +297,11 @@ public:
 		this->_points.push_back(&point);
 	}
 	
-	LowerFace *faceExcluding(const SharedFace<0, D> &point)
+	virtual LowerFace *faceExcluding(const SharedFace<0, D, Type> *point)
 	{
 		for (auto &f : c_subs())
 		{
-			if (!f->hasPoint(point))
+			if (!f->hasPoint(*point))
 			{
 				return f;
 			}
@@ -240,14 +310,19 @@ public:
 		return nullptr;
 	}
 	
-	virtual const SharedFace<0, D> &point(int idx) const
+	virtual const SharedFace<0, D, Type> *point(int idx) const
+	{
+		return _points[idx];
+	}
+	
+	virtual SharedFace<0, D, Type> &v_point(int idx) const
 	{
 		return *_points[idx];
 	}
-	
-	bool hasPoint(const SharedFace<0, D> &point) const
+
+	bool hasPoint(const SharedFace<0, D, Type> &point) const
 	{
-		for (SharedFace<0, D> *p : _points)
+		for (SharedFace<0, D, Type> *p : _points)
 		{
 			if (p == &point)
 			{
@@ -256,6 +331,11 @@ public:
 		}
 		
 		return false;
+	}
+
+	std::vector<SharedFace<0, D, Type> *> &points()
+	{
+		return _points;
 	}
 
 	virtual size_t pointCount() const
@@ -294,25 +374,25 @@ protected:
 	SharedFace() {};
 
 	std::vector<LowerFace *> _subs;
-	std::vector<SharedFace<0, D> *> _points;
+	std::vector<SharedFace<0, D, Type> *> _points;
 
 	int _n = N;
 	int _d = D;
 };
 
-template <unsigned int D>
-class SharedFace<1, D> : public Interpolatable<1, D>
+template <unsigned int D, typename Type>
+class SharedFace<1, D, Type> : public Interpolatable<1, D, Type>
 {
 public:
-	typedef SharedFace<1, D> SameFace;
+	typedef SharedFace<1, D, Type> SameFace;
 
-	SharedFace(SharedFace<0, D> *face, SharedFace<0, D> &point) :
-	SharedFace<1, D>(*face, point) {}
+	SharedFace(SharedFace<0, D, Type> *face, SharedFace<0, D, Type> &point) :
+	SharedFace<1, D, Type>(*face, point) {}
 
-	SharedFace<1, D>() {}
-	virtual ~SharedFace<1, D>() {}
+	SharedFace<1, D, Type>() {}
+	virtual ~SharedFace<1, D, Type>() {}
 
-	SharedFace(SharedFace<0, D> &face, SharedFace<0, D> &point)
+	SharedFace(SharedFace<0, D, Type> &face, SharedFace<0, D, Type> &point)
 	{
 		_subs.push_back(&face);
 		_subs.push_back(&point);
@@ -325,9 +405,33 @@ public:
 		return _points.size();
 	}
 	
-	virtual const SharedFace<0, D> &point(int idx) const
+	std::vector<SharedFace<0, D, Type> *> &points()
+	{
+		return _points;
+	}
+	
+	virtual const SharedFace<0, D, Type> *point(int idx) const
+	{
+		return _points[idx];
+	}
+
+	virtual SharedFace<0, D, Type> &v_point(int idx) const
 	{
 		return *_points[idx];
+	}
+
+	virtual SharedFace<0, D, Type> *faceExcluding(const SharedFace<0, D, Type> 
+	                                              *point)
+	{
+		for (SharedFace<0, D, Type> *f : c_subs())
+		{
+			if (f != point)
+			{
+				return f;
+			}
+		}
+		
+		return nullptr;
 	}
 
 	size_t faceCount() const
@@ -335,19 +439,19 @@ public:
 		return _subs.size();
 	}
 
-	const std::vector<SharedFace<0, D> *> &c_subs() const
+	const std::vector<SharedFace<0, D, Type> *> &c_subs() const
 	{
 		return _subs;
 	}
 
-	std::vector<SharedFace<0, D> *> &subs() 
+	std::vector<SharedFace<0, D, Type> *> &subs() 
 	{
 		return _subs;
 	}
 
-	bool hasPoint(const SharedFace<0, D> &point) const
+	bool hasPoint(const SharedFace<0, D, Type> &point) const
 	{
-		for (SharedFace<0, D> *p : _points)
+		for (SharedFace<0, D, Type> *p : _points)
 		{
 			if (p == &point)
 			{
@@ -371,27 +475,36 @@ public:
 		return ss;
 	}
 private:
-	std::vector<SharedFace<0, D> *> _subs;
-	std::vector<SharedFace<0, D> *> _points;
+	std::vector<SharedFace<0, D, Type> *> _subs;
+	std::vector<SharedFace<0, D, Type> *> _points;
 
 	int _n = 0;
 	int _d = D;
 };
 
-template <unsigned int D>
-class SharedFace<0, D> : public Point<D>
+template <unsigned int D, typename Type>
+class SharedFace<0, D, Type> : public Interpolatable<0, D, Type>, 
+public Point<D, Type>
 {
 public:
-	SharedFace() : Point<D>() {};
-	SharedFace(float *p, float val) : Point<D>(p, val) {};
-	SharedFace(SharedFace<0, D> &face, SharedFace<0, D> &other) {};
+	SharedFace() : Point<D, Type>() {};
+	SharedFace(const std::vector<float> &p, Type value = 0) :
+	Point<D, Type>(p, value) {}
+	SharedFace(float *p, Type val) : Point<D, Type>(p, val) {};
+	SharedFace(Point<D, Type> &p) : Point<D, Type>(p) {};
+	SharedFace(SharedFace<0, D, Type> &face, SharedFace<0, D, Type> &other) {};
 
-	virtual float value_for_point(Point<D> cart)
+	virtual std::vector<float> point_to_barycentric(const std::vector<float> &m)
+	{
+		return std::vector<float>(1, 0);
+	}
+
+	virtual ~SharedFace<0, D, Type>() {}
+
+	virtual Type exact_value()
 	{
 		return this->value();
 	}
-
-	virtual ~SharedFace<0, D>() {}
 
 	virtual size_t pointCount() const
 	{
@@ -403,9 +516,19 @@ public:
 		return 0;
 	}
 
-	const std::vector<SharedFace<0, D> *> c_subs() const
+	std::vector<SharedFace<0, D, Type> *> points()
 	{
-		return std::vector<SharedFace<0, D> *>();
+		return std::vector<SharedFace<0, D, Type>>();
+	}
+	
+	const std::vector<SharedFace<0, D, Type> *> c_subs() const
+	{
+		return std::vector<SharedFace<0, D, Type> *>();
+	}
+
+	virtual const SharedFace<0, D, Type> *point(int idx) const
+	{
+		return nullptr;
 	}
 private:
 	int _n = 0;
@@ -413,32 +536,35 @@ private:
 };
 
 
-template <int N, unsigned int D>
-class Face : public SharedFace<N, D>
+template <int N, unsigned int D, typename Type>
+class Face : public SharedFace<N, D, Type>
 {
 public:
-	typedef Face<N - 1, D> LowerFace;
-	typedef Face<N, D> SameFace;
+	typedef Face<N - 1, D, Type> LowerFace;
+	typedef Face<N, D, Type> SameFace;
 
-	Face(LowerFace &face, Face<0, D> &point) :
-	SharedFace<N, D>(face, point) {};
+	Face(LowerFace &face, Face<0, D, Type> &point) :
+	SharedFace<N, D, Type>(face, point) {};
 	
-	Face<N, D>() {}
+	Face<N, D, Type>() {}
 
 private:
 
 };
 
-template <int D>
-class Face<0, D> : public SharedFace<0, D>
+template <int D, typename Type>
+class Face<0, D, Type> : public SharedFace<0, D, Type>
 {
 public:
-	Face() : SharedFace<0, D>() {};
-	Face(float *p, float val = 0) : SharedFace<0, D>(p, val) {};
-	Face(const Face<0, D> &face, const Face<0, D> &other) {};
+	Face() : SharedFace<0, D, Type>() {};
+	Face(const std::vector<float> &p, Type value = 0) : 
+	SharedFace<0, D, Type>(p, value) {};
+	Face(float *p, Type val = Type{}) : SharedFace<0, D, Type>(p, val) {};
+	Face(Point<D, Type> &p) : SharedFace<0, D, Type>(p) {};
+	Face(const Face<0, D, Type> &face, const Face<0, D, Type> &other) {};
 
 private:
-	std::vector<SharedFace<0, D> *> _points;
+	std::vector<SharedFace<0, D, Type> *> _points;
 
 };
 

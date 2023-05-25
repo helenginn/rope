@@ -22,16 +22,48 @@
 #include <vector>
 #include "Stepped.h"
 
+template <class Type>
 class Variable : public Stepped
 {
 public:
-	Variable(const std::vector<float> &points, Stepped *other);
-	Variable(const std::vector<float> &points, 
-	         const std::vector<float> &steps);
+	Variable(const std::vector<Type> &points, Stepped *other)
+	{
+		_points = points;
+		_steps = other->steps();
+	}
 
-	float interpolate_weights(const std::vector<float> &weights);
+	Variable(const std::vector<Type> &points, 
+	         const std::vector<float> &steps)
+	{
+		_points = points;
+		_steps = steps;
+	}
+
+	Type interpolate_weights(const std::vector<float> &weights)
+	{
+		assert(weights.size() == 2);
+		float frac = weights[1];
+
+		int n = priorStep(frac);
+		if (n < 0)
+		{
+			return Type{};
+		}
+
+		float tot = frac - _steps[n];
+		tot *= (float)_steps.size();
+
+		Type angle = _points[n];
+		Type next = _points[n + 1];
+
+		Type diff = next - angle;
+		diff *= tot;
+		Type ret = angle + diff;
+
+		return ret;
+	}
 private:
-	std::vector<float> _points;
+	std::vector<Type> _points;
 
 };
 

@@ -19,213 +19,46 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <vagabond/gui/elements/Text.h>
-#include <vagabond/core/Item.h>
-#include <vagabond/gui/elements/list/LineGroup.h>
+#include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/utils/MappingToMatrix.h>
 
 #include "SandboxView.h"
-#include "HyperValue.h"
-#include "PdbFile.h"
-#include "Sequence.h"
-#include "AtomGroup.h"
-#include "AtomsFromSequence.h"
-#include <vagabond/core/programs/Cyclic.h>
-#include "CyclicView.h"
 
-SandboxView::SandboxView(Scene *prev) : Scene(prev), Display(prev)
+SandboxView::SandboxView(Scene *prev) : Scene(prev)
 {
-	Sequence apa("PPPPPPPPPP");
-	AtomGroup *as = AtomsFromSequence(apa).atoms();
-	setAtoms(as);
-	as->recalculate();
 
-	Item *first = new Item();
-	first->setDisplayName("cluster4x");
-	Item *second = new Item();
-	second->setDisplayName("is");
-//	second->collapse();
-	first->addItem(second);
-	Item *third = new Item();
-	third->setDisplayName("coming");
-	second->addItem(third);
-	Item *fourth = new Item();
-	fourth->setDisplayName("very");
-	second->addItem(fourth);
-	Item *fifth = new Item();
-	fifth->setDisplayName("soon");
-	first->addItem(fifth);
-
-	LineGroup *first_group = new LineGroup(first, this);
-	first_group->setLeft(0.2, 0.2);
-	addObject(first_group);
-	
-	addCyclicView(nullptr);
-}
-
-void SandboxView::addCyclicView(Cyclic *cyclic)
-{
-	CyclicView *view = new CyclicView(cyclic);
-	view->setResponder(this);
-	addObject(view);
-	_cyclic = view;
 }
 
 SandboxView::~SandboxView()
 {
-	stop();
+
 }
 
 void SandboxView::setup()
 {
-	addTitle("Proline sandbox");
-
-	if (_cyclic)
-	{
-		_cyclic->increment();
-	}
-
-	doThings();
-	
-	Display::setup();
-	
-	if (_atoms)
-	{
-		return;
-		Atom *cg = _atoms->firstAtomWithName("CG");
-		HyperValue *hv = cg->hyperValue(1);
-		hv->setValue(7.0);
-	}
-	
-	scan();
+	makeMapping();
+	makeTriangles();
+	addTitle("Triangle mayhem");
 }
 
-void SandboxView::scan()
+void SandboxView::makeMapping()
 {
-	return;
-	Atom *cg = _atoms->firstAtomWithName("CG");
-	HyperValue *offset = cg->hyperValue(0);
-	HyperValue *amplitude = cg->hyperValue(1);
+	Face<0, 2, float> *p1 = new Face<0, 2, float>({0.f, -0.1f}, 0.2);
+	Face<0, 2, float> *p2 = new Face<0, 2, float>({0.f, 1.f}, 0.8);
+	Face<0, 2, float> *p3 = new Face<0, 2, float>({1.0f, 0.0f}, 1.8);
+	Face<0, 2, float> *p4 = new Face<0, 2, float>({0.75f, 0.78f}, -0.5);
+	Face<0, 2, float> *p5 = new Face<0, 2, float>({2.0f, 0.5}, -0.5);
 
-	std::vector<Atom *> cas = _atoms->atomsWithName("CA");
-	Atom *ca = nullptr;
-
-	for (Atom *candidate : cas)
-	{
-		if (candidate->code() != "PRO")
-		{
-			continue;
-		}
-		
-		ca = candidate;
-		break;
-	}
-	
-	std::map<int, std::map<int, std::pair<float, float> > > rounds;
-	std::map<int, std::map<int, std::pair<float, float> > > results;
-	
-	float golden = (sqrt(5) + 1) / 2;
-	float headstart = 0;
-	for (float amp = 0; amp < 1.5; amp += 0.0005)
-	{
-		float prop = amp * amp * 1000 + 10;
-		float step = 1 / prop;
-		headstart += golden; 
-
-		for (float off = headstart; off < 0.5f + headstart; off += step)
-		{
-			float val = fmod(off, 0.5);
-			offset->setValue(val);
-			amplitude->setValue(amp);
-			_atoms->recalculate();
-
-			BondTorsion *psi = ca->findBondTorsion("C-N-CA-C");
-			float f = psi->measurement(BondTorsion::SourceDerived);
-			BondTorsion *x2_ = ca->findBondTorsion("CA-CB-CG-CD");
-			float x2 = x2_->measurement(BondTorsion::SourceDerived);
-			
-			int f_round = (long)lrint(floor(f));
-			int x2_round = (long)lrint(floor(x2));
-			float rf = f - (float)f_round;
-			float rx2 = x2 - (float)x2_round;
-
-			std::pair<float, float> pair(amp, val);
-			
-			if (rounds[f_round][x2_round].first > -rf)
-			{
-				rounds[f_round][x2_round].first = -rf;
-				results[f_round][x2_round].first = amp;
-			}
-			
-			if (rounds[f_round][x2_round].second > -rx2)
-			{
-				rounds[f_round][x2_round].second = -rx2;
-				results[f_round][x2_round].second = val;
-			}
-		}
-	}
-	
-	json data;
-	data["cyclic"] = *_cyclic->cyclic();
-	data["lookup"] = results;
-	
-	std::ofstream file;
-	file.open("proline_lookup.json");
-	file << data;
-	file << std::endl;
-	file.close();
-}
-
-void SandboxView::buttonPressed(std::string tag, Button *button)
-{
-	Display::buttonPressed(tag, button);
-}
-
-void SandboxView::stop()
-{
-	if (_worker != nullptr)
-	{
-		_worker->join();
-		delete _worker;
-		_worker = nullptr;
-	}
+	_mapped.addTriangle(p1, p2, p3);
+	_mapped.addTriangle(p2, p3, p4);
+	_mapped.addTriangle(p3, p4, p5);
 
 }
 
-void SandboxView::mouseReleaseEvent(double x, double y,
-                                    SDL_MouseButtonEvent button)
+void SandboxView::makeTriangles()
 {
-	Mouse3D::mouseReleaseEvent(x, y, button);
-
-	if (_cyclic && !_moving && _shiftPressed)
-	{
-		stop();
-		updateInfo();
-		_worker = new std::thread(&CyclicView::refine, _cyclic);
-	}
-}
-
-void SandboxView::respond()
-{
-
-}
-
-void SandboxView::doThings()
-{
-
-}
-
-void SandboxView::updateInfo()
-{
-	/*
-	std::string report = "angles\n";
-	report += _cyclic->angles();
-	_angles->setText(report);
-
-	report = "lengths\n";
-	report += _cyclic->lengths();
-	_lengths->setText(report);
-
-	float lsc = _cyclic->score();
-	setInformation("score: " + std::to_string(lsc));
-	*/
+	_mat2Map = new MappingToMatrix(_mapped);
+	MatrixPlot *mp = new MatrixPlot(_mat2Map->matrix(), _mutex);
+	mp->update();
+	addObject(mp);
 }
