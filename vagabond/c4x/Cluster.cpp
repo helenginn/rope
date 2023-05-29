@@ -182,6 +182,20 @@ typename DG::Array Cluster<DG>::rawVector(int axis)
 }
 
 template <class DG>
+std::vector<float> Cluster<DG>::mappedVector(int axis) const
+{
+	std::vector<float> fs;
+	fs.reserve(_result.rows);
+	
+	for (int i = 0; i < rows(); i++)
+	{
+		fs[i] = _result[i][axis];
+	}
+	
+	return fs;
+}
+
+template <class DG>
 typename DG::Comparable Cluster<DG>::rawComparable(int axis)
 {
 	std::vector<float> ws = weights(axis);

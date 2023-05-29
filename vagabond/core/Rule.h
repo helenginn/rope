@@ -21,6 +21,7 @@
 
 #include <string>
 #include <iostream>
+#include <vagabond/utils/glm_import.h>
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -43,6 +44,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
                              })
 
 class HasMetadata;
+class ObjectGroup;
 
 class Rule
 {
@@ -151,6 +153,8 @@ public:
 	}
 	
 	void setVals(std::vector<float> &vals);
+	
+	std::vector<float> valuesForObjects(ObjectGroup *group) const;
 	
 	void convert_value(float &val) const
 	{

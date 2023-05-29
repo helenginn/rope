@@ -407,6 +407,10 @@ float DataGroup<Unit, Header>::distance_between(int i, int j)
 		}
 
 		float add = (v[n] - w[n]) * (v[n] - w[n]);
+		if (add != add || !std::isfinite(add))
+		{
+			continue;
+		}
 		sq += add;
 	}
 	

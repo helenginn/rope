@@ -223,5 +223,37 @@ inline void val_to_cluster4x_colour(double val, T *red, T *green, T *blue)
 
 }
 
+inline void addPermutation(std::vector<std::vector<bool> > &perms)
+{
+	std::vector<std::vector<bool> > orig = perms;
+	std::vector<std::vector<bool> > new_set;
+	
+	for (size_t i = 0; i < orig.size(); i++)
+	{
+		for (size_t j = 0; j < 2; j++)
+		{
+			std::vector<bool> copy = orig[i];
+			copy.push_back(j == 1 ? true : false);
+			new_set.push_back(copy);
+		}
+	}
+	
+	perms = new_set;
+}
+
+inline std::vector<std::vector<bool> > permutations(int count)
+{
+	std::vector<std::vector<bool> > perms;
+	perms.push_back(std::vector<bool>(1,false));
+	perms.push_back(std::vector<bool>(1,true));
+
+	for (int i = 0; i < count - 1; i++)
+	{
+		addPermutation(perms);
+	}
+
+	return perms;
+}
+
 #endif /* defined(__vagabond__maths__) */
 

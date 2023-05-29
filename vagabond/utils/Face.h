@@ -20,6 +20,7 @@
 #define __vagabond__Face__
 
 #include <iostream>
+#include <set>
 #include "svd/PCA.h"
 #include "Variable.h"
 
@@ -38,7 +39,49 @@ public:
 		_value = value;
 	}
 	
-	operator std::vector<float>()
+	bool is_within_hypersphere(const std::vector<float> &centre, const float &rad)
+	{
+		float sum = 0;
+		for (int i = 0; i < centre.size(); i++)
+		{
+			float add = centre[i] - _p[i];
+			sum += add * add;
+		}
+
+		return (sum < rad * rad);
+	}
+	
+	float sqlength() const
+	{
+		float sum = 0;
+		for (int i = 0; i < D; i++)
+		{
+			sum += _p[i] * _p[i];
+		}
+		return sum;
+	}
+	
+	Point operator*(const Point &other) const
+	{
+		Point p;
+		for (int i = 0; i < D; i++)
+		{
+			p._p[i] = _p[i] * other._p[i];
+		}
+		return p;
+	}
+	
+	Point operator-(const Point &other) const
+	{
+		Point p;
+		for (int i = 0; i < D; i++)
+		{
+			p._p[i] = _p[i] - other._p[i];
+		}
+		return p;
+	}
+	
+	operator std::vector<float>() const
 	{
 		std::vector<float> res(D);
 		for (int i = 0; i < D; i++)
@@ -77,6 +120,11 @@ public:
 	{
 		return _value;
 	}
+	
+	void setValue(const Type &val)
+	{
+		_value = val;
+	}
 private:
 	float _p[D]{};
 	Type _value{};
@@ -110,7 +158,6 @@ public:
 	{
 
 	}
-
 };
 
 template <int N, unsigned int D, typename Type>
@@ -283,6 +330,17 @@ public:
 	SharedFace(LowerFace *face, SharedFace<0, D, Type> &point) :
 	SharedFace<N, D, Type>(*face, point) {}
 
+	SharedFace(const SameFace &face)
+	{
+		_points = face._points;
+		
+		for (auto &lf : face.c_subs())
+		{
+			LowerFace *nf = new LowerFace(*lf);
+			this->subs().push_back(nf);
+		}
+	}
+
 	SharedFace(LowerFace &face, SharedFace<0, D, Type> &point)
 	{
 		this->subs().push_back(&face);
@@ -310,6 +368,52 @@ public:
 		return nullptr;
 	}
 	
+	virtual std::vector<float> cartesian_circumcenter(float *radius = nullptr)
+	{
+		PCA::SVD mat; PCA::Matrix vect;
+		setupSVD(&mat, pointCount(), D);
+		setupMatrix(&vect, pointCount(), 1);
+		std::vector<float> result(D);
+
+		for (int i = 0; i < pointCount(); i++)
+		{
+			int n = (i == pointCount() ? 0 : i);
+			int m = (i == pointCount() - 1 ? 1 : n + 1);
+
+			Point<D, Type> *vm = _points[m];
+			Point<D, Type> *vn = _points[n];
+			Point<D, Type> diff = *vm - *vn;
+			float l = vm->sqlength() - vn->sqlength();
+			vect[i][0] = l;
+			
+			for (int j = 0; j < D; j++)
+			{
+				mat.u[i][j] = diff[j] * 2;
+			}
+		}
+		
+		invertSVD(&mat);
+		PCA::Matrix tr = transpose(&mat.u);
+		multMatrix(tr, vect[0], &result[0]);
+
+		freeSVD(&mat);
+		freeMatrix(&vect);
+		
+		if (pointCount() > 0 && radius != nullptr)
+		{
+			std::vector<float> v0 = *_points[0];
+			float sum = 0;
+			for (size_t i = 0; i < v0.size(); i++)
+			{
+				float add = (v0[i] - result[i]);
+				sum += add * add;
+			}
+			*radius = sqrt(sum);
+		}
+		
+		return result;
+	}
+	
 	virtual const SharedFace<0, D, Type> *point(int idx) const
 	{
 		return _points[idx];
@@ -331,6 +435,76 @@ public:
 		}
 		
 		return false;
+	}
+
+	SharedFace<0, D, Type> *point_not_in(SameFace *other)
+	{
+		for (SharedFace<0, D, Type> *p : _points)
+		{
+			if (!other->hasPoint(*p))
+			{
+				return p;
+			}
+		}
+
+		return nullptr;
+	}
+	
+	std::set<SharedFace<0, D, Type> *> shared_points(SameFace *other)
+	{
+		std::set<SharedFace<0, D, Type> *> ps;
+
+		for (SharedFace<0, D, Type> *p : _points)
+		{
+			bool has = other->hasPoint(*p);
+			if (has)
+			{
+				ps.insert(p);
+			}
+		}
+
+		for (SharedFace<0, D, Type> *p : other->_points)
+		{
+			bool has = hasPoint(*p);
+			if (has)
+			{
+				ps.insert(p);
+			}
+		}
+		
+		return ps;
+	}
+	
+	void swap_point(SharedFace<0, D, Type> *out,
+	                SharedFace<0, D, Type> *in)
+	{
+		for (LowerFace *face : _subs)
+		{
+			face->swap_point(out, in);
+		}
+
+		for (auto it = _points.begin(); it != _points.end(); it++)
+		{
+			if (*it == out)
+			{
+				*it = in;
+			}
+		}
+	}
+	
+	int shared_point_count(SameFace *other)
+	{
+		int total = 0;
+
+		for (SharedFace<0, D, Type> *p : _points)
+		{
+			for (SharedFace<0, D, Type> *q : other->_points)
+			{
+				total += (p == q) ? 1 : 0;
+			}
+		}
+		
+		return total;
 	}
 
 	std::vector<SharedFace<0, D, Type> *> &points()
@@ -396,8 +570,13 @@ public:
 	{
 		_subs.push_back(&face);
 		_subs.push_back(&point);
-		_points.push_back(&face);
-		_points.push_back(&point);
+		_points = _subs;
+	}
+
+	SharedFace(const SameFace &face)
+	{
+		_points = face._points;
+		_subs = _points;
 	}
 
 	size_t pointCount() const
@@ -432,6 +611,26 @@ public:
 		}
 		
 		return nullptr;
+	}
+
+	void swap_point(SharedFace<0, D, Type> *out,
+	                SharedFace<0, D, Type> *in)
+	{
+		for (int i = 0; i < _subs.size(); i++)
+		{
+			if (_subs[i] == out)
+			{
+				_subs[i] = in;
+			}
+		}
+
+		for (auto it = _points.begin(); it != _points.end(); it++)
+		{
+			if (*it == out)
+			{
+				*it = in;
+			}
+		}
 	}
 
 	size_t faceCount() const
@@ -488,7 +687,7 @@ public Point<D, Type>
 {
 public:
 	SharedFace() : Point<D, Type>() {};
-	SharedFace(const std::vector<float> &p, Type value = 0) :
+	SharedFace(const std::vector<float> &p, Type value = Type{}) :
 	Point<D, Type>(p, value) {}
 	SharedFace(float *p, Type val) : Point<D, Type>(p, val) {};
 	SharedFace(Point<D, Type> &p) : Point<D, Type>(p) {};
@@ -540,10 +739,10 @@ template <int N, unsigned int D, typename Type>
 class Face : public SharedFace<N, D, Type>
 {
 public:
-	typedef Face<N - 1, D, Type> LowerFace;
-	typedef Face<N, D, Type> SameFace;
+	typedef SharedFace<N - 1, D, Type> LowerFace;
+	typedef SharedFace<N, D, Type> SameFace;
 
-	Face(LowerFace &face, Face<0, D, Type> &point) :
+	Face(LowerFace &face, SharedFace<0, D, Type> &point) :
 	SharedFace<N, D, Type>(face, point) {};
 	
 	Face<N, D, Type>() {}

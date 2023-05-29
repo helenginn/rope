@@ -25,6 +25,7 @@
 #include <thread>
 
 class MappingToMatrix;
+class Network;
 
 class SandboxView : public Scene
 {
@@ -37,8 +38,9 @@ public:
 private:
 	void makeMapping();
 
-	Mapping<2, float> _mapped;
+	Mapped<float> *_mapped = nullptr;
 	MappingToMatrix *_mat2Map = nullptr;
+	Network *_network = nullptr;
 	std::mutex _mutex;
 
 };

@@ -21,6 +21,11 @@
 #include <thread>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/MappingToMatrix.h>
+#include <vagabond/core/Network.h>
+#include <vagabond/core/Environment.h>
+#include <vagabond/core/PolymerEntityManager.h>
+#include <vagabond/core/EntityManager.h>
+#include <vagabond/core/PolymerEntity.h>
 
 #include "SandboxView.h"
 
@@ -43,21 +48,19 @@ void SandboxView::setup()
 
 void SandboxView::makeMapping()
 {
-	Face<0, 2, float> *p1 = new Face<0, 2, float>({0.f, -0.1f}, 0.2);
-	Face<0, 2, float> *p2 = new Face<0, 2, float>({0.f, 1.f}, 0.8);
-	Face<0, 2, float> *p3 = new Face<0, 2, float>({1.0f, 0.0f}, 1.8);
-	Face<0, 2, float> *p4 = new Face<0, 2, float>({0.75f, 0.78f}, -0.5);
-	Face<0, 2, float> *p5 = new Face<0, 2, float>({2.0f, 0.5}, -0.5);
+	Entity *e = &Environment::entityManager()->forPolymers()->object(0);
+	std::vector<Instance *> insts = e->instances();
+	
+	Network *net = new Network(e, insts);
+	_network = net;
+	net->setup();
 
-	_mapped.addTriangle(p1, p2, p3);
-	_mapped.addTriangle(p2, p3, p4);
-	_mapped.addTriangle(p3, p4, p5);
-
+	_mapped = _network->blueprint();
 }
 
 void SandboxView::makeTriangles()
 {
-	_mat2Map = new MappingToMatrix(_mapped);
+	_mat2Map = new MappingToMatrix(*_mapped);
 	MatrixPlot *mp = new MatrixPlot(_mat2Map->matrix(), _mutex);
 	mp->update();
 	addObject(mp);

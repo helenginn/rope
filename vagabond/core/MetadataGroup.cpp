@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MetadataGroup.h"
-#include "HasMetadata.h"
+#include "Instance.h"
 
 MetadataGroup::MetadataGroup(size_t length) : DegreeDataGroup(length)
 {
@@ -37,6 +37,20 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
 	std::string name = hmd->id();
 	std::vector<Angular> filtered = next.storage_according_to(emptyAngles());
 	DegreeDataGroup::addArray(name, filtered);
+}
+
+
+void MetadataGroup::setWhiteList(std::vector<Instance *> list)
+{
+	std::vector<HasMetadata *> hms;
+	hms.reserve(list.size());
+
+	for (Instance *inst : list)
+	{
+		hms.push_back(inst);
+	}
+	
+	setWhiteList(hms);
 }
 
 void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)

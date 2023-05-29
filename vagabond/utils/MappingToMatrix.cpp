@@ -18,6 +18,7 @@
 
 #include "Mapping.h"
 #include "MappingToMatrix.h"
+#include "maths.h"
 
 MappingToMatrix::MappingToMatrix(Mapped<float> &mapped) : _mapped(mapped)
 {
@@ -42,6 +43,7 @@ void MappingToMatrix::calculate()
 	PCA::freeMatrix(&_matrix);
 	PCA::setupMatrix(&_matrix, total, total);
 
+	CorrelData cd = empty_CD();
 	int i = 0; int j = 0;
 	for (float x = 0; x < 1; x += step)
 	{
@@ -59,6 +61,7 @@ void MappingToMatrix::calculate()
 			{
 				float res = _mapped.interpolate_variable(val);
 				_matrix[i][j] = res;
+				add_to_CD(&cd, res, res);
 			}
 
 			j++;
@@ -74,6 +77,18 @@ void MappingToMatrix::calculate()
 		if (i >= total)
 		{
 			break;
+		}
+	}
+	
+	double mean, stdev;
+	mean_stdev_CD(cd, &mean, &stdev);
+	
+	for (size_t i = 0; i < _matrix.rows; i++)
+	{
+		for (size_t j = 0; j < _matrix.cols; j++)
+		{
+			_matrix[i][j] = (_matrix[i][j] - mean) / stdev;
+			_matrix[i][j] += 0.5;
 		}
 	}
 }

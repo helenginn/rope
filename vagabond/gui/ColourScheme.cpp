@@ -87,6 +87,11 @@ glm::vec4 colour_between(glm::vec4 last, glm::vec4 curr, float frac)
 
 glm::vec4 ColourScheme::colour(float p)
 {
+	if (p != p)
+	{
+		return glm::vec4(0.5, 0.5, 0.5, 0.2);
+	}
+
 	// check for boundaries //
 	const FixedPoint *last = nullptr;
 

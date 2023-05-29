@@ -19,6 +19,7 @@
 #include "PlausibleRoute.h"
 #include "Polymer.h"
 #include "MetadataGroup.h"
+#include <vagabond/utils/maths.h>
 #include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
 
@@ -328,37 +329,6 @@ void print(std::vector<bool> &flips)
 	}
 }
 
-void addPermutation(std::vector<std::vector<bool> > &perms)
-{
-	std::vector<std::vector<bool> > orig = perms;
-	std::vector<std::vector<bool> > new_set;
-	
-	for (size_t i = 0; i < orig.size(); i++)
-	{
-		for (size_t j = 0; j < 2; j++)
-		{
-			std::vector<bool> copy = orig[i];
-			copy.push_back(j == 1 ? true : false);
-			new_set.push_back(copy);
-		}
-	}
-	
-	perms = new_set;
-}
-
-std::vector<std::vector<bool> > permutations(int count)
-{
-	std::vector<std::vector<bool> > perms;
-	perms.push_back(std::vector<bool>(1,false));
-	perms.push_back(std::vector<bool>(1,true));
-
-	for (int i = 0; i < count - 1; i++)
-	{
-		addPermutation(perms);
-	}
-
-	return perms;
-}
 
 std::vector<int> PlausibleRoute::getTorsionSequence(int start, int max, 
                                                     float maxMag)

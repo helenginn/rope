@@ -138,19 +138,12 @@ void ClusterView::applyVaryColour(const Rule &r)
 		return;
 	}
 
-	ObjectGroup &group = *_cx->objectGroup();
-	for (size_t i = 0; i < group.objectCount(); i++)
+	ObjectGroup *group = _cx->objectGroup();
+	std::vector<float> values = r.valuesForObjects(group);
+
+	for (size_t i = 0; i < values.size(); i++)
 	{
-		const Metadata::KeyValues data = group.object(i)->metadata();
-		
-		if (data.count(header) == 0 || !data.at(header).hasNumber())
-		{
-			_vertices[i].color = glm::vec4(0.5, 0.5, 0.5, 0.2);
-			continue;
-		}
-		float val = data.at(header).number();
-		r.convert_value(val);
-		glm::vec4 colour = cs->colour(val);
+		glm::vec4 colour = cs->colour(values[i]);
 		_vertices[i].color = colour;
 	}
 	

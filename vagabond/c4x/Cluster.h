@@ -61,6 +61,9 @@ public:
 	/* difference raw vector between dataset 'from' and 'to' */
 	typename DG::Array rawVector(int from, int to);
 
+	/* raw vector for a single dataset */
+	std::vector<float> mappedVector(int idx) const;
+
 	/** implement by superclass to map raw vector into clustered space */
 	virtual std::vector<float> mapVector(typename DG::Array &raw)
 	{

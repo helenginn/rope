@@ -19,17 +19,19 @@
 #include "ClusterTSNE.h"
 #include "ClusterSVD.h"
 
-ClusterTSNE::ClusterTSNE(PCA::Matrix &distances, PCA::Matrix *start)
+ClusterTSNE::ClusterTSNE(const PCA::Matrix &distances, const PCA::Matrix *start,
+                         int dims)
 {
+	setDisplayableDimensions(dims);
 	_distances = distances;
 	
 	prepareResults(1);
 
 	for (size_t i = 0; i < this->_result.rows; i++)
 	{
-		for (size_t j = 0; j < this->_result.cols && j < 3; j++)
+		for (size_t j = 0; j < this->_result.cols && j < dims; j++)
 		{
-			if (!start)
+			if (start)
 			{
 				this->_result[i][j] = (*start)[i][j];
 			}
@@ -222,7 +224,7 @@ float ClusterTSNE::findSigma(int row, float target)
 	float s = startingSigma();
 	if (s != s)
 	{
-		return 0;
+		return 1;
 	}
 
 	float step = s / 2;
@@ -321,17 +323,6 @@ void ClusterTSNE::prepareResults(float s)
 	setupMatrix(&this->_result, _distances.rows, displayableDimensions());
 	setupMatrix(&_lastResult, _distances.rows, displayableDimensions());
 	setupMatrix(&_tmp, _distances.rows, displayableDimensions());
-
-	for (size_t i = 0; i < this->_result.rows; i++)
-	{
-		for (size_t j = 0; j < this->_result.cols; j++)
-		{
-			this->_result[i][j] = rand() / (double)RAND_MAX - 0.5;
-			this->_result[i][j] *= s;
-		}
-	}
-
-	copyMatrix(_lastResult, this->_result);
 }
 
 // eq 5 from paper vandermaaten08a
@@ -409,7 +400,6 @@ float ClusterTSNE::incrementResult(float &scale, float &learning)
 	freeMatrix(&grads);
 	
 	float val = averagePQDiff();
-	std::cout << "Target: " << val << std::endl;
 	return val;
 }
 
@@ -447,15 +437,24 @@ void ClusterTSNE::cluster()
 	_ps = probabilityMatrix(sigmas);
 	freeMatrix(&sigmas);
 	
-	float scale = 10;
-	float learning = 200;
+	float scale = 0.5;
+	float learning = 50;
 	std::vector<float> results;
 	int count = 0;
 	const int period = 20;
+	
+	float first = -1;
+	float last = -1;
 
 	while (true)
 	{
 		float score = incrementResult(scale, learning);
+		if (first < 0)
+		{
+			first = score;
+		}
+
+		last = score;
 		results.push_back(score);
 		count++;
 		
@@ -479,9 +478,23 @@ void ClusterTSNE::cluster()
 		}
 	}
 	
+	std::cout << "Target: from " << first << " to " << last << std::endl;
+	
 	this->normaliseResults(4);
 
 	freeMatrix(&_ps);
+}
+
+std::vector<float> ClusterTSNE::point(int j)
+{
+	std::vector<float> ret(_dims);
+
+	for (int i = 0; i < _dims; i++)
+	{
+		ret[i] = _result[j][i];
+	}
+	
+	return ret;
 }
 
 glm::vec3 ClusterTSNE::pointForDisplay(int j)

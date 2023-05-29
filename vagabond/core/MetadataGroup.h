@@ -38,6 +38,7 @@ public:
 	virtual void addMetadataArray(HasMetadata *hmd, RTAngles next);
 	
 	virtual void setWhiteList(std::vector<HasMetadata *> list);
+	virtual void setWhiteList(std::vector<Instance *> list);
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
 
 	virtual const int groupCount() const

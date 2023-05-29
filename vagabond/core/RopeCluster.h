@@ -98,6 +98,11 @@ public:
 		ss << this->value(i, j);
 		return ss.str();
 	}
+	
+	virtual std::vector<float> mappedVector(int idx) const
+	{
+		return Cluster::mappedVector(idx);
+	}
 
 	virtual const size_t &axis(int i) const
 	{

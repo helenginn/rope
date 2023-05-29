@@ -178,8 +178,8 @@ BOOST_AUTO_TEST_CASE(mapping_counts_points)
 	Face<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
 
 	Mapping<2, float> map;
-	map.addTriangle(&p1, &p2, &p3);
-	map.addTriangle(&p1, &p2, &p4);
+	map.add_triangle(&p1, &p2, &p3);
+	map.add_triangle(&p1, &p2, &p4);
 
 	BOOST_TEST(map.pointCount() == 4);
 }
@@ -190,8 +190,8 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_from_triangle)
 	Face<0, 2, float> p4({2.f, 2.f}, -2);
 
 	Mapping<2, float> map;
-	map.addTriangle(&p1, &p2, &p3);
-	map.addTriangle(&p2, &p3, &p4);
+	map.add_triangle(&p1, &p2, &p3);
+	map.add_triangle(&p2, &p3, &p4);
 
 	float f = map.interpolate_variable({0.5f, 0.5f});
 	BOOST_TEST(f == 2);
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_float)
 	Face<0, 2, float> p3({2.f, 0.f}, 0);
 
 	Mapping<2, float> map;
-	map.addTriangle(&p1, &p2, &p3);
+	map.add_triangle(&p1, &p2, &p3);
 
 	float f = map.interpolate_variable({0.1f, 0.1f});
 	BOOST_TEST(f == 1.80486476, tt::tolerance(1e-3));
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_vec3)
 	Face<0, 2, glm::vec3> p3({2.f, 0.f}, glm::vec3(0., 1., 0.));
 
 	Mapping<2, glm::vec3> map;
-	map.addTriangle(&p1, &p2, &p3);
+	map.add_triangle(&p1, &p2, &p3);
 
 	glm::vec3 f = map.interpolate_variable({0.5f, 0.5f});
 	BOOST_TEST(f.x == 0.0);
@@ -233,8 +233,8 @@ BOOST_AUTO_TEST_CASE(mapping_finds_bounds)
 	Face<0, 2, float> p4({3.f, 2.f}, -2);
 
 	Mapping<2, float> map;
-	map.addTriangle(&p1, &p2, &p3);
-	map.addTriangle(&p2, &p3, &p4);
+	map.add_triangle(&p1, &p2, &p3);
+	map.add_triangle(&p2, &p3, &p4);
 
 	std::vector<float> min, max;
 	map.bounds(min, max);
@@ -243,5 +243,31 @@ BOOST_AUTO_TEST_CASE(mapping_finds_bounds)
 	BOOST_TEST(min[1] == 0.0);
 	BOOST_TEST(max[0] == 3.0);
 	BOOST_TEST(max[1] == 2.0);
+}
 
+BOOST_AUTO_TEST_CASE(circumcentre)
+{
+	Face<0, 2, float> p1({0.f, 0.f}, 2.f), p2({0.f, 1.f}, 2.f), p3({1.f, 0.f}, 2.f);
+
+	Mapping<2, float> map;
+	Face<2, 2, float> *triangle = map.add_triangle(&p1, &p2, &p3);
+
+	float rad = 0;
+	std::vector<float> cc = triangle->cartesian_circumcenter(&rad);
+	
+	BOOST_TEST(cc[0] == 0.5);
+	BOOST_TEST(cc[1] == 0.5);
+	BOOST_TEST(rad == 0.70710, tt::tolerance(1e-4));
+}
+
+BOOST_AUTO_TEST_CASE(point_within_distance)
+{
+	Face<0, 2, float> p1({0.f, 0.f}, 2.f);
+	std::vector<float> centre = {0.5, 0.5};
+	
+	bool outside = p1.is_within_hypersphere(centre, 0.707f);
+	bool inside  = p1.is_within_hypersphere(centre, 0.708f);
+
+	BOOST_TEST(inside == true);
+	BOOST_TEST(outside == false);
 }

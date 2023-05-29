@@ -24,7 +24,8 @@
 class ClusterTSNE 
 {
 public:
-	ClusterTSNE(PCA::Matrix &distances, PCA::Matrix *start);
+	ClusterTSNE(const PCA::Matrix &distances, const PCA::Matrix *start,
+	            int dims = 3);
 	~ClusterTSNE();
 
 	void cluster();
@@ -45,6 +46,8 @@ public:
 	}
 	
 	glm::vec3 pointForDisplay(int i);
+	
+	std::vector<float> point(int i);
 
 	std::vector<float> mapAnglesToVector(std::vector<Angular> 
 	                                             &angles)

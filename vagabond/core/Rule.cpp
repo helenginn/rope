@@ -20,6 +20,7 @@
 #include <math.h>
 #include "Rule.h"
 #include "HasMetadata.h"
+#include "ObjectGroup.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/utils/FileReader.h>
 
@@ -98,4 +99,25 @@ bool Rule::appliesToObject(HasMetadata *hm) const
 	}
 
 	return false;
+}
+
+std::vector<float> Rule::valuesForObjects(ObjectGroup *group) const
+{
+	std::vector<float> values;
+
+	for (size_t i = 0; i < group->objectCount(); i++)
+	{
+		const Metadata::KeyValues data = group->object(i)->metadata();
+		
+		if (data.count(header()) == 0 || !data.at(header()).hasNumber())
+		{
+			values.push_back(NAN);
+		}
+		else
+		{
+			float val = data.at(header()).number();
+			convert_value(val);
+			values.push_back(val);
+		}
+	}
 }

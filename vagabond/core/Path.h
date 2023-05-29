@@ -112,7 +112,7 @@ private:
 	Instance *_end = nullptr;
 	RTMotion _motions;
 	
-	bool _contributeSVD = false;
+	bool _contributeSVD = true;
 	bool _visible = true;
 
 	int _steps = 12;
