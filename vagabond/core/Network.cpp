@@ -67,6 +67,7 @@ void Network::preparePoints()
 		point.resize(_dims);
 		int last = _blueprint->add_point(point);
 		_point2Instance[last] = instance;
+		_instance2Point[instance] = last;
 	}
 }
 
@@ -98,7 +99,6 @@ void Network::removeBounds()
 	{
 		_blueprint->remove_point(_blueprint->pointCount() - 1);
 	}
-
 }
 
 void Network::makeBlueprintMapping()
