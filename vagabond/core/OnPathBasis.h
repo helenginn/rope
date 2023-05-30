@@ -22,6 +22,7 @@
 #include "ConcertedBasis.h"
 
 class Trajectory;
+class BondCalculator;
 
 class OnPathBasis : public ConcertedBasis
 {
@@ -33,8 +34,8 @@ public:
 		_traj = traj;
 	}
 
-	virtual float contributionForAxis(int tidx, int i, 
-	                                  const float *vec);
+	float contributionForAxis(BondCalculator *bc, int tidx, int axis, 
+	                          const float *vec);
 private:
 	Trajectory *_traj = nullptr;
 

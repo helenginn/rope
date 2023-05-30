@@ -32,7 +32,8 @@ public:
 	ConcertedBasis();
 	~ConcertedBasis();
 
-	virtual float parameterForVector(int idx, const float *vec, int n);
+	virtual float parameterForVector(BondCalculator *calculator,
+	                                 int idx, const float *vec, int n);
 	virtual void prepare(int dims = 0);
 
 	/** only the torsions available in the mask will be used for calculating
@@ -64,8 +65,9 @@ public:
 		return _unusedId;
 	}
 protected:
-	float fullContribution(int tidx, const float *vec, int n);
-	virtual float contributionForAxis(int tidx, int i, 
+	float fullContribution(BondCalculator *calculator, int tidx, 
+	                       const float *vec, int n);
+	virtual float contributionForAxis(BondCalculator *calc, int tidx, int i, 
 	                                  const float *vec);
 
 	std::vector<Parameter *> _filtered;

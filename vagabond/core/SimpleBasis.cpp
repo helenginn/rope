@@ -24,7 +24,8 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 
 }
 
-float SimpleBasis::parameterForVector(int idx, const float *vec, int n)
+float SimpleBasis::parameterForVector(BondCalculator *calculator,
+                                      int idx, const float *vec, int n)
 {
 	if (idx < 0)
 	{

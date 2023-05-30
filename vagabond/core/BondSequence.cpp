@@ -253,14 +253,12 @@ void BondSequence::fetchTorsion(int idx)
 		return;
 	}
 	
-	if (_skipSections || _currentVec == nullptr)
-	{
-		calculateCustomVector();
-	}
+	calculateCustomVector();
 	
 	int n = (_custom ? _custom->size : 0);
 
-	double t = _torsionBasis->parameterForVector(_blocks[idx].torsion_idx,
+	BondCalculator *bc = _handler->calculator();
+	double t = _torsionBasis->parameterForVector(bc, _blocks[idx].torsion_idx,
 	                                             _currentVec, n);
 
 	_blocks[idx].torsion = t;
