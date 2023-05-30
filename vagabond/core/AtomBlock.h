@@ -22,8 +22,8 @@
 #include "../utils/glm_import.h"
 #include "Atom.h"
 
-template<typename Type> class Mapped;
 class Atom;
+class PositionSampler;
 
 struct AtomBlock
 {
@@ -45,7 +45,7 @@ struct AtomBlock
 	
 	/* mapping to pass Sampler coordinates to for target atom position, overriding
 	 * target and "moving" */
-	Mapped<glm::vec3> *mapping = nullptr;
+	PositionSampler *posSampler = nullptr;
 
 	/* relative arrangement of 4 consecutive atoms with current atom at origin */
 	glm::mat4x4 coordination;

@@ -37,6 +37,11 @@ class Network
 public:
 	Network(Entity *entity, std::vector<Instance *> &instances);
 	
+	const static int &dims()
+	{
+		return _dims;
+	}
+	
 	glm::vec3 point(int idx)
 	{
 		return _tsne->pointForDisplay(idx);
@@ -52,6 +57,16 @@ public:
 
 	void setup();
 	void convertToTSNE();
+	
+	const std::vector<Instance *> &instances() const
+	{
+		return _instances;
+	}
+	
+	const int &indexForInstance(Instance *inst)
+	{
+		return _instance2Point[inst];
+	}
 private:
 	const static int _dims = 2;
 
@@ -72,6 +87,7 @@ private:
 	Entity *_entity = nullptr;
 	
 	std::map<int, Instance *> _point2Instance;
+	std::map<Instance *, int> _instance2Point;
 };
 
 #endif

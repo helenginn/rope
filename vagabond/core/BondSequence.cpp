@@ -19,6 +19,7 @@
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
+#include "PositionSampler.h"
 #include "engine/MechanicalBasis.h"
 #include "Superpose.h"
 #include "Atom.h"
@@ -214,6 +215,11 @@ AnchorExtension BondSequence::getExtension(Atom *atom) const
 
 void BondSequence::calculateCustomVector()
 {
+	if (!_skipSections && _currentVec)
+	{
+		return;
+	}
+
 	if (_custom)
 	{
 		int n = _custom->size;
@@ -260,6 +266,24 @@ void BondSequence::fetchTorsion(int idx)
 	_blocks[idx].torsion = t;
 }
 
+void BondSequence::fetchAtomTarget(int idx)
+{
+	PositionSampler *ps = _blocks[idx].posSampler;
+
+	if (ps == nullptr)
+	{
+		return;
+	}
+
+	calculateCustomVector();
+	BondCalculator *bc = _handler->calculator();
+
+	int n = (_custom ? _custom->size : 0);
+	glm::vec3 v = ps->positionForIndex(bc, idx, _currentVec, n);
+	
+	_blocks[idx].target = v;
+}
+
 int BondSequence::calculateBlock(int idx)
 {
 	AtomBlock &b = _blocks[idx];
@@ -271,6 +295,7 @@ int BondSequence::calculateBlock(int idx)
 	}
 
 	fetchTorsion(idx);
+	fetchAtomTarget(idx);
 	
 	glm::mat4x4 rot = b.prepareRotation();
 

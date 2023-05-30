@@ -207,6 +207,7 @@ private:
 
 	int calculateBlock(int idx);
 	void fetchTorsion(int idx);
+	void fetchAtomTarget(int idx);
 
 	Grapher _grapher;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
