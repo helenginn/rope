@@ -34,6 +34,7 @@ public:
 		TypeSimple,
 		TypeCustom,
 		TypeOnPath,
+		TypeNetwork,
 		TypeConcerted,
 		TypeMechanical,
 	};

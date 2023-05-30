@@ -22,6 +22,7 @@
 #include "SimpleBasis.h"
 #include "ConcertedBasis.h"
 #include "OnPathBasis.h"
+#include "NetworkBasis.h"
 #include "engine/MechanicalBasis.h"
 
 TorsionBasis::TorsionBasis()
@@ -47,7 +48,11 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	{
 		OnPathBasis *cb = new OnPathBasis();
 		basis = cb;
-
+	}
+	else if (type == TorsionBasis::TypeNetwork)
+	{
+		NetworkBasis *nb = new NetworkBasis();
+		basis = nb;
 	}
 	else if (type == TorsionBasis::TypeConcerted)
 	{
