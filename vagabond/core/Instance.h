@@ -82,6 +82,7 @@ public:
 	void addToInterface(Instance *other, Interface *face, 
 	                    double max, bool derived);
 
+	/* gets atoms from MY atoms corresponding to other's atom */
 	Atom *equivalentForAtom(Instance *other, Atom *atom);
 	virtual Atom *equivalentForAtom(Polymer *other, Atom *atom)
 	{
