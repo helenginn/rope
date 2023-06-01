@@ -36,7 +36,6 @@ void Cartographer::setup()
 	makeMapping();
 
 	_mat2Map = new MappingToMatrix(*_mapped);
-	_mat2Map->rasterNetwork(_specified);
 }
 
 void Cartographer::makeMapping()
@@ -50,40 +49,87 @@ void Cartographer::makeMapping()
 	_specified->setResponder(this);
 }
 
+void Cartographer::assessSplits(int idx)
+{
+	SquareSplitter sqsp(_distMat);
+	std::vector<int> splits = sqsp.splits();
+	
+	for (size_t i = 0; i < splits.size(); i++)
+	{
+		Atom *atom = _atoms[splits[i]];
+		
+		for (size_t j = 0; j < atom->parameterCount(); j++)
+		{
+			Parameter *p = atom->parameter(j);
+			if (p->coversMainChain())
+			{
+				BondCalculator *bc = nullptr;
+				int idx = _specified->detailsForParam(p, &bc);
+				
+				if (idx > 0)
+				{
+					_faceBits[idx].problems.push_back({bc, idx});
+				}
+			}
+		}
+	}
+}
+
 void Cartographer::checkTriangles()
 {
 	for (size_t i = 0; i < _mapped->faceCount(); i++)
 	{
+		preparePoints(i);
 		scoreForTriangle(i);
+		assessSplits(i);
 	}
+
+	_mat2Map->normalise();
+	sendResponse("update_map", nullptr);
+	
+}
+
+void Cartographer::preparePoints(int idx)
+{
+	std::vector<std::vector<float>> points = _mat2Map->carts_for_triangle(idx);
+
+	_faceBits[idx].points = points;
 }
 
 void Cartographer::scoreForTriangle(int idx)
 {
-	std::vector<std::vector<float>> points = _mat2Map->carts_for_triangle(idx);
-	
+	Points &points = _faceBits[idx].points;
+
 	if (_distMat.rows > 0)
 	{
 		zeroMatrix(&_distMat);
 	}
 
-	std::vector<int> tickets;
+	struct TicketPoint
+	{
+		int ticket;
+		std::vector<float> point;
+	};
+
+	std::vector<TicketPoint> tickets;
 	for (std::vector<float> &p : points)
 	{
 		int ticket = _specified->submitJob(true, p);
-		tickets.push_back(ticket);
+		tickets.push_back({ticket, p});
 	}
 	
 	_specified->retrieve();
 	
 	float total = 0; float count = 0;
-	for (int &ticket : tickets)
+	for (TicketPoint &tp : tickets)
 	{
-		float sc = _specified->deviation(ticket);
+		float sc = _specified->deviation(tp.ticket);
+		_mat2Map->insertScore(sc, tp.point);
 		total += sc; count++;
 	}
 	
 	total /= count;
+	_faceBits[idx].score = total;
 	std::cout << "Total for " << idx << ": " << total << " over " << 
 	count << std::endl;
 	
@@ -92,6 +138,7 @@ void Cartographer::scoreForTriangle(int idx)
 		_distMat.vals[i] /= (float)points.size();
 	}
 
+	sendResponse("update_map", nullptr);
 }
 
 void Cartographer::sendObject(std::string tag, void *object)
@@ -107,6 +154,7 @@ void Cartographer::sendObject(std::string tag, void *object)
 		if (_distMat.rows == 0)
 		{
 			_distMat = contrib;
+			_atoms = cd.atoms();
 		}
 		else
 		{
@@ -121,4 +169,10 @@ void Cartographer::sendObject(std::string tag, void *object)
 PCA::Matrix &Cartographer::matrix()
 {
 	return _mat2Map->matrix();
+}
+
+void Cartographer::run(Cartographer *cg)
+{
+	cg->checkTriangles();
+
 }

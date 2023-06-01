@@ -34,6 +34,7 @@ public:
 		return _atoms;
 	}
 private:
+	bool acceptable(Atom *atom);
 	AtomPosMap &_aps;
 
 	std::vector<Atom *> _atoms;

@@ -20,17 +20,21 @@
 #define __vagabond__Cartographer__
 
 #include <vector>
+#include <map>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Responder.h>
 
+class Atom;
 class Entity;
 class Instance;
 class Network;
+class BondCalculator;
 class SpecificNetwork;
 class MappingToMatrix;
 template <typename Type> class Mapped;
 
-class Cartographer : public Responder<SpecificNetwork>
+class Cartographer : public Responder<SpecificNetwork>,
+public HasResponder<Responder<Cartographer>>
 {
 public:
 	Cartographer(Entity *entity, std::vector<Instance *> instances);
@@ -57,9 +61,13 @@ public:
 
 	void scoreForTriangle(int idx);
 	void checkTriangles();
+	static void run(Cartographer *cg);
 protected:
 	virtual void sendObject(std::string tag, void *object);
 private:
+	void assessSplits(int face_idx);
+	void preparePoints(int idx);
+
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;
 	std::vector<Instance *> _instances;
@@ -68,7 +76,25 @@ private:
 	MappingToMatrix *_mat2Map = nullptr;
 	PCA::Matrix _distMat{};
 	std::mutex _mDist;
+	
+	typedef std::vector<std::vector<float>> Points;
+	
+	struct FaceBits
+	{
+		struct BondCalcInt
+		{
+			BondCalculator *calculator;
+			int idx;
+		};
 
+		Points points;
+		std::vector<BondCalcInt> problems;
+		float score;
+	};
+	
+	std::map<int, FaceBits> _faceBits;
+	
+	std::vector<Atom *> _atoms;
 };
 
 #endif

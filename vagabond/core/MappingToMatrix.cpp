@@ -27,6 +27,19 @@ MappingToMatrix::MappingToMatrix(Mapped<float> &mapped) : _mapped(mapped)
 	calculate();
 }
 
+void MappingToMatrix::insertScore(float score, std::vector<float> point)
+{
+	int D = _min.size();
+	std::vector<float> val(D);
+
+	_mapped.real_to_fraction(point, _min, _max);
+	int x = point[0] * _steps + 0.5;
+	int y = point[1] * _steps + 0.5;
+
+	_matrix[x][y] = score;
+}
+
+
 float MappingToMatrix::simpleValue(float x, float y)
 {
 	int D = _min.size();
@@ -127,7 +140,7 @@ void MappingToMatrix::loop(float(MappingToMatrix::*get_value)(float, float))
 		throw std::runtime_error("Dimension less than 2, cannot make matrix");
 	}
 	
-	int total = 50;
+	int total = _steps;
 	const float step = 1 / (float)total;
 	PCA::freeMatrix(&_matrix);
 	PCA::setupMatrix(&_matrix, total, total);
@@ -183,7 +196,7 @@ void MappingToMatrix::rasterNetwork(SpecificNetwork *sn)
 		throw std::runtime_error("Dimension less than 2, cannot make matrix");
 	}
 	
-	int total = 50;
+	int total = _steps;
 	const float step = 1 / (float)total;
 	PCA::freeMatrix(&_matrix);
 	PCA::setupMatrix(&_matrix, total, total);

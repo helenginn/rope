@@ -28,6 +28,9 @@ StructureModification(inst, 1, network->dims())
 {
 	_torsionType = TorsionBasis::TypeNetwork;
 	_threads = 6;
+	_mutex = new std::mutex();
+	_posMutex = new std::mutex();
+	_torsMutex = new std::mutex();
 
 	_instance = inst;
 	_network = network;
@@ -237,26 +240,32 @@ void SpecificNetwork::prewarnAtoms(BondSequence *seq,
 	bool accept = false;
 	BondCalculator *bc = seq->calculator();
 	PosMapping *pm = _atomDetails[bc];
+	std::unique_lock<std::mutex> plock(*_posMutex);
 	Vec3s positions = pm->interpolate_variable(vals, &accept);
+	plock.unlock();
 
+	std::unique_lock<std::mutex> lock(*_mutex);
 	_prewarnedResults[seq].positions = positions;
 	_prewarnedResults[seq].acceptable = accept;
 }
 
 void SpecificNetwork::prewarnParameters(BondSequence *seq,
-                                   const std::vector<float> &vals)
+                                        const std::vector<float> &vals)
 {
 	BondCalculator *bc = seq->calculator();
 	CalcDetails &cd = _calcDetails[bc];
 	std::vector<float> angles;
 
+	std::unique_lock<std::mutex> tlock(*_torsMutex);
 	for (int idx = 0; idx < cd.torsions.size(); idx++)
 	{
 		Mapped<float> *const map = cd.torsions.at(idx).mapping;
 		float angle = map->interpolate_variable(vals);
 		angles.push_back(angle);
 	}
+	tlock.unlock();
 	
+	std::unique_lock<std::mutex> lock(*_mutex);
 	_prewarnedResults[seq].torsions = angles;
 }
 
@@ -274,6 +283,7 @@ void SpecificNetwork::prewarnPosition(BondSequence *seq, float *vec, int n)
 
 glm::vec3 SpecificNetwork::positionForIndex(BondSequence *seq, int idx) const
 {
+	std::unique_lock<std::mutex> lock(*_mutex);
 	const PrewarnResults &ar = _prewarnedResults.at(seq);
 
 	if (!ar.acceptable)
@@ -287,6 +297,7 @@ glm::vec3 SpecificNetwork::positionForIndex(BondSequence *seq, int idx) const
 float SpecificNetwork::torsionForIndex(BondSequence *seq,
                                        int idx, const float *vec) const
 {
+	std::unique_lock<std::mutex> lock(*_mutex);
 	const PrewarnResults &ar = _prewarnedResults.at(seq);
 	
 	return ar.torsions.at(idx);
@@ -307,3 +318,23 @@ void SpecificNetwork::handleAtomMap(AtomPosMap &aps)
 	sendResponse("atom_map", &aps);
 
 }
+
+int SpecificNetwork::detailsForParam(Parameter *parameter, BondCalculator **calc)
+{
+	*calc = nullptr;
+
+	for (BondCalculator *bc : _calculators)
+	{
+		CalcDetails &cd = _calcDetails[bc];
+		int idx = cd.index_for_param(parameter);
+		
+		if (idx >= 0)
+		{
+			*calc = bc;
+			return idx;
+		}
+	}
+
+	return -1;
+}
+

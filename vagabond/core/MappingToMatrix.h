@@ -32,6 +32,7 @@ public:
 	void rasterNetwork(SpecificNetwork *sn);
 	
 	void fraction_to_cart(std::vector<float> &vals);
+	void insertScore(float score, std::vector<float> point);
 	
 	std::vector<std::vector<float>> carts_for_triangle(int idx, int steps = 50);
 
@@ -41,11 +42,11 @@ public:
 	}
 
 	void calculate();
+	void normalise();
 private:
 	float simpleValue(float x, float y);
 	float deviationScore(float x, float y);
 	void loop(float(MappingToMatrix::*get_value)(float, float));
-	void normalise();
 	SpecificNetwork *_specified;
 
 	Mapped<float> &_mapped;
@@ -53,6 +54,7 @@ private:
 
 	std::vector<float> _min, _max;
 	std::map<int, double *> _ticket2Mat;
+	int _steps = 50;
 };
 
 #endif

@@ -35,7 +35,7 @@ private:
 	void split();
 	void next_split();
 	bool valid(int i, int j, const std::vector<int> &after);
-	float score_to_split(int i);
+	float score_to_split(int i, float threshold);
 
 	PCA::Matrix &_mat;
 

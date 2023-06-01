@@ -33,11 +33,17 @@ MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances)
 : Display(prev)
 {
 	_cartographer = new Cartographer(entity, instances);
+	_cartographer->setResponder(this);
 }
 
 MapView::~MapView()
 {
-
+	if (_worker)
+	{
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
+	}
 }
 
 void MapView::setup()
@@ -51,7 +57,7 @@ void MapView::setup()
 	inst->currentAtoms()->recalculate();
 	loadAtoms(inst->currentAtoms());
 	
-	_cartographer->checkTriangles();
+	_worker = new std::thread(Cartographer::run, _cartographer);
 }
 
 void MapView::makeTriangles()
@@ -129,20 +135,18 @@ void MapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 
 void MapView::sendObject(std::string tag, void *object)
 {
-	if (tag == "atom_map")
+	if (tag == "update_map")
 	{
-		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
-		CompareDistances cd(*aps);
-		_distMat = cd.matrix();
-
-		if (_distances == nullptr)
-		{
-			_distances = new MatrixPlot(_distMat, _mutex);
-			_distances->resize(0.8);
-			_distances->setCentre(0.85, 0.5);
-			addObject(_distances);
-		}
-
-		_distances->update();
+		_updatePlot = true;
 	}
+}
+
+void MapView::doThings()
+{
+	if (_updatePlot)
+	{
+		_plot->update();
+		_updatePlot = false;
+	}
+
 }

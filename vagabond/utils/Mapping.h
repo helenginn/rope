@@ -35,6 +35,10 @@ public:
 	virtual Type interpolate_variable(const std::vector<float> &cart,
 	                                  bool *acceptable = nullptr) = 0;
 
+	virtual void real_to_fraction(std::vector<float> &val,
+	                              const std::vector<float> &min, 
+	                              const std::vector<float> &max) = 0;
+
 	virtual void fraction_to_real(std::vector<float> &val,
 	                              const std::vector<float> &min, 
 	                              const std::vector<float> &max) = 0;
@@ -267,6 +271,20 @@ public:
 		}
 	}
 	
+	virtual void real_to_fraction(std::vector<float> &val,
+	                              const std::vector<float> &min, 
+	                              const std::vector<float> &max)
+	{
+		assert(min.size() == D);
+		assert(max.size() == D);
+		std::vector<float> res(D);
+		for (int i = 0; i < D; i++)
+		{
+			float old = val[i];
+			val[i] = (old - min.at(i)) / (max.at(i) - min.at(i));
+		}
+	}
+
 	virtual void fraction_to_real(std::vector<float> &val,
 	                              const std::vector<float> &min, 
 	                              const std::vector<float> &max)

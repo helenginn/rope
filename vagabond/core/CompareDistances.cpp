@@ -25,6 +25,11 @@ CompareDistances::CompareDistances(AtomPosMap &aps) : _aps(aps)
 
 }
 
+bool CompareDistances::acceptable(Atom *atom)
+{
+	return atom->isReporterAtom();
+}
+
 PCA::Matrix CompareDistances::matrix()
 {
 	PCA::Matrix mat{};
@@ -32,7 +37,7 @@ PCA::Matrix CompareDistances::matrix()
 	int count = 0;
 	for (auto it = _aps.begin(); it != _aps.end(); it++)
 	{
-		if (it->first->atomName() == "CA")
+		if (acceptable(it->first))
 		{
 			_atoms.push_back(it->first);
 			count++;
@@ -44,7 +49,7 @@ PCA::Matrix CompareDistances::matrix()
 	
 	for (auto it = _aps.begin(); it != _aps.end(); it++)
 	{
-		if (it->first->atomName() != "CA")
+		if (!acceptable(it->first))
 		{
 			continue;
 		}

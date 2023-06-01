@@ -54,6 +54,8 @@ public:
 	virtual void torsionBasisMods(TorsionBasis *tb);
 
 	int submitJob(bool show, std::vector<float> vals);
+	
+	int detailsForParam(Parameter *parameter, BondCalculator **calc);
 	void zeroVertices();
 	void setup();
 protected:
@@ -66,6 +68,9 @@ private:
 
 	Instance *_instance = nullptr;
 	Network *_network = nullptr;
+	std::mutex *_mutex = nullptr;
+	std::mutex *_posMutex = nullptr;
+	std::mutex *_torsMutex = nullptr;
 
 	struct TorsionMapping
 	{
@@ -77,6 +82,16 @@ private:
 	struct CalcDetails
 	{
 		std::vector<TorsionMapping> torsions;
+		
+		int index_for_param(Parameter *p)
+		{
+			for (size_t i = 0; i < torsions.size(); i++)
+			{
+				if (torsions[i].param == p) return i;
+			}
+
+			return -1;
+		}
 	};
 	
 	typedef Mapped<Vec3s> PosMapping;

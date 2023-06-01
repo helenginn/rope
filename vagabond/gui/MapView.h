@@ -30,7 +30,7 @@ class Cartographer;
 class MatrixPlot;
 class Network;
 
-class MapView : public Display
+class MapView : public Display, public Responder<Cartographer>
 {
 public:
 	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances);
@@ -38,6 +38,7 @@ public:
 
 	void makeTriangles();
 	virtual void setup();
+	virtual void doThings();
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void sendObject(std::string, void *object);
@@ -47,6 +48,7 @@ private:
 	bool _editing = false;
 
 	MatrixPlot *_plot = nullptr;
+	std::atomic<bool> _updatePlot{false};
 
 	Cartographer *_cartographer = nullptr;
 	SpecificNetwork *_specified = nullptr;
@@ -54,6 +56,8 @@ private:
 
 	MatrixPlot *_distances = nullptr;
 	PCA::Matrix _distMat{};
+
+	std::thread *_worker = nullptr;
 };
 
 #endif

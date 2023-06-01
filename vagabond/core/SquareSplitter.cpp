@@ -43,8 +43,9 @@ bool SquareSplitter::valid(int i, int j, const std::vector<int> &after)
 	return false;
 }
 
-float SquareSplitter::score_to_split(int spl)
+float SquareSplitter::score_to_split(int spl, float threshold)
 {
+	threshold *= threshold;
 	std::vector<int> copy = _after;
 	copy.push_back(spl);
 	std::sort(copy.begin(), copy.end());
@@ -57,6 +58,11 @@ float SquareSplitter::score_to_split(int spl)
 			if (valid(i, j, copy))
 			{
 				score += _mat[i][j] * _mat[i][j];
+				
+				if (score > threshold)
+				{
+					return FLT_MAX;
+				}
 			}
 		}
 	}
@@ -72,7 +78,7 @@ void SquareSplitter::next_split()
 
 	for (size_t i = 0; i < _mat.rows - 1; i++)
 	{
-		float score = score_to_split(i);
+		float score = score_to_split(i, lowest);
 		
 		if (score < lowest)
 		{
