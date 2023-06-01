@@ -87,8 +87,8 @@ void MatrixPlot::prepareSmallVertices()
 		for (int j = 0; j < _mat.cols; j++)
 		{
 			glm::vec3 pos{};
-			pos.x = j * _xProp;
-			pos.y = i * _yProp;
+			pos.x = i * _xProp;
+			pos.y = j * _yProp;
 			
 			for (int m = 0; m < 2; m++)
 			{

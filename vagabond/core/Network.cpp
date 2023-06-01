@@ -20,6 +20,7 @@
 #include "Entity.h"
 #include "MetadataGroup.h"
 #include "RopeCluster.h"
+#include "SpecificNetwork.h"
 #include <vagabond/c4x/ClusterTSNE.h>
 #include <vagabond/utils/Mapping.h>
 
@@ -54,7 +55,7 @@ void Network::convertToTSNE()
 	PCA::Matrix distances = _cluster->dataGroup()->distanceMatrix();
 	const PCA::Matrix *start = &_cluster->results();
 
-	_tsne = new ClusterTSNE(distances, start, _dims);
+	_tsne = new ClusterTSNE(distances, start, NETWORK_DIMS);
 	_tsne->cluster();
 }
 
@@ -64,14 +65,14 @@ void Network::preparePoints()
 	{
 		int idx = _cluster->dataGroup()->indexOfObject(instance);
 		std::vector<float> point = _tsne->point(idx);
-		point.resize(_dims);
+		point.resize(NETWORK_DIMS);
 		int last = _blueprint->add_point(point);
 		_point2Instance[last] = instance;
 		_instance2Point[instance] = last;
 	}
 }
 
-void Network::addBounds(Mapping<_dims, float> *map)
+void Network::addBounds(Mapping<NETWORK_DIMS, float> *map)
 {
 	std::vector<float> min, max;
 	map->bounds(min, max);
@@ -82,7 +83,7 @@ void Network::addBounds(Mapping<_dims, float> *map)
 		max[i] *= 2;
 	}
 	
-	const int D = _dims;
+	const int D = NETWORK_DIMS;
 
 	Face<0, D, float> *mm = new Face<0, D, float>({min[0], min[1]}, -1.0);
 	Face<0, D, float> *mM = new Face<0, D, float>({min[0], max[1]}, -1.0);
@@ -103,7 +104,7 @@ void Network::removeBounds()
 
 void Network::makeBlueprintMapping()
 {
-	Mapping<_dims, float> *map = new Mapping<_dims, float>();
+	Mapping<NETWORK_DIMS, float> *map = new Mapping<NETWORK_DIMS, float>();
 	_blueprint = map;
 
 	preparePoints();
@@ -139,12 +140,37 @@ void Network::delaunay()
 
 Mapped<float> *Network::blueprint_scalar_copy()
 {
-	Mapping<_dims, float> *copy = new Mapping<_dims, float>(*_blueprint);
+	Mapping<NETWORK_DIMS, float> *copy = new Mapping<NETWORK_DIMS, float>(*_blueprint);
 	return copy;
 }
 
 Mapped<glm::vec3> *Network::blueprint_vec3_copy()
 {
-	Mapping<_dims, glm::vec3> *copy = new Mapping<_dims, glm::vec3>(*_blueprint);
+	Mapping<NETWORK_DIMS, glm::vec3> *copy = new Mapping<NETWORK_DIMS, glm::vec3>(*_blueprint);
 	return copy;
+}
+
+Mapped<Vec3s> *Network::blueprint_vec3s_copy()
+{
+	Mapping<NETWORK_DIMS, Vec3s> *copy = new Mapping<NETWORK_DIMS, Vec3s>(*_blueprint);
+	return copy;
+}
+
+SpecificNetwork *Network::specificForInstance(Instance *instance)
+{
+	SpecificNetwork *sn = new SpecificNetwork(this, instance);
+	return sn;
+}
+
+std::vector<float> Network::pointForInstance(Instance *instance)
+{
+	int idx = indexForInstance(instance);
+	std::vector<float> cart = _blueprint->point_vector(idx);
+	return cart;
+}
+
+bool Network::valid_position(const std::vector<float> &vals)
+{
+	return _blueprint->acceptable_coordinate(vals);
+
 }

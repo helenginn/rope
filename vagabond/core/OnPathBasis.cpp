@@ -24,13 +24,13 @@ OnPathBasis::OnPathBasis() : ConcertedBasis()
 
 }
 
-float OnPathBasis::contributionForAxis(BondCalculator *bc, int tidx, int axis, 
+float OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis, 
                                        const float *vec)
 {
-	if (bc == nullptr || axis != 0 
+	if (seq == nullptr || axis != 0 
 	    || _traj == nullptr) // iterating over non-zero axis
 	{
-		return ConcertedBasis::contributionForAxis(bc, tidx, axis, vec);
+		return ConcertedBasis::contributionForAxis(seq, tidx, axis, vec);
 	}
 
 	float weight = vec[axis];

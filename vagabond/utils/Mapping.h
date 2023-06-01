@@ -32,7 +32,8 @@ public:
 
 	}
 	virtual void bounds(std::vector<float> &min, std::vector<float> &max) = 0;
-	virtual Type interpolate_variable(const std::vector<float> &cart) = 0;
+	virtual Type interpolate_variable(const std::vector<float> &cart,
+	                                  bool *acceptable = nullptr) = 0;
 
 	virtual void fraction_to_real(std::vector<float> &val,
 	                              const std::vector<float> &min, 
@@ -40,13 +41,17 @@ public:
 
 	virtual bool acceptable_coordinate(const std::vector<float> &cart) = 0;
 	virtual void crack_existing_face(int idx) = 0;
+	virtual int face_index_for_point(const std::vector<float> &point) = 0;
+	virtual bool face_has_point(int idx, const std::vector<float> &point) = 0;
 	
 	// returns index of added point
 	virtual int add_point(const std::vector<float> &cart) = 0;
 	virtual std::vector<float> point_vector(int i) = 0;
 	virtual size_t pointCount() const = 0;
+	virtual size_t faceCount() const = 0;
 	virtual void remove_point(int idx) = 0;
 	virtual void alter_value(int idx, Type value) = 0;
+	virtual Type &get_value(int idx) = 0;
 	virtual void delaunay_refine() = 0;
 };
 
@@ -211,15 +216,24 @@ public:
 		return (face_for_point(cart) != nullptr);
 	}
 	
-	Type interpolate_variable(const std::vector<float> &cart)
+	Type interpolate_variable(const std::vector<float> &cart, 
+	                          bool *acceptable = nullptr)
 	{
 		Mappable<Type> *f = face_for_point(cart);
 		if (f == nullptr)
 		{
+			if (acceptable != nullptr)
+			{
+				*acceptable = false;
+			}
 			return Type{};
 		}
 		
 		Type t = f->interpolate_subfaces(cart);
+		if (acceptable != nullptr)
+		{
+			*acceptable = true;
+		}
 		return t;
 	}
 	
@@ -267,9 +281,21 @@ public:
 		}
 	}
 
+	virtual Type &get_value(int idx)
+	{
+		return _points[idx]->v_value();
+	}
+
 	virtual void alter_value(int idx, Type value)
 	{
 		_points[idx]->setValue(value);
+		
+		std::vector<HyperTriangle *> triangles = _members[_points[idx]];
+		
+		for (HyperTriangle *tr : triangles)
+		{
+			tr->changed();
+		}
 	}
 
 	virtual int add_point(const std::vector<float> &cart)
@@ -466,16 +492,55 @@ public:
 
 		return false;
 	}
+	
+	virtual bool face_has_point(int idx, const std::vector<float> &point)
+	{
+		HyperTriangle *face = _mapped[idx];
+
+		if (!face->point_in_bounds(point))
+		{
+			return false;
+		}
+
+		const std::vector<float> &bcp = face->point_to_barycentric(point);
+		for (const float &f : bcp)
+		{
+			if (f < -1e-6)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	virtual int face_index_for_point(const std::vector<float> &point)
+	{
+		for (int i = 0; i < _mapped.size(); i++)
+		{
+			if (face_has_point(i, point))
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
 protected:
 	HyperTriangle *face_for_point(const std::vector<float> &point)
 	{
 		for (HyperTriangle *face : _mapped)
 		{
-			std::vector<float> bcp = face->point_to_barycentric(point);
-			bool positive = true;
-			for (float &f : bcp)
+			if (!face->point_in_bounds(point))
 			{
-				if (f < 0)
+				continue;
+			}
+
+			const std::vector<float> &bcp = face->point_to_barycentric(point);
+			bool positive = true;
+			for (const float &f : bcp)
+			{
+				if (f < -1e-6)
 				{
 					positive = false;
 				}

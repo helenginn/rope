@@ -16,28 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__NetworkBasis__
-#define __vagabond__NetworkBasis__
+#ifndef __vagabond__MappingToMatrix__
+#define __vagabond__MappingToMatrix__
 
-#include "ConcertedBasis.h"
+#include "svd/PCA.h"
+template <typename Type> class Mapped;
 
 class SpecificNetwork;
 
-class NetworkBasis : public ConcertedBasis
+class MappingToMatrix
 {
 public:
-	NetworkBasis();
+	MappingToMatrix(Mapped<float> &mapped);
+	
+	void rasterNetwork(SpecificNetwork *sn);
+	
+	void fraction_to_cart(std::vector<float> &vals);
+	
+	std::vector<std::vector<float>> carts_for_triangle(int idx, int steps = 50);
 
-	float contributionForAxis(BondSequence *seq,
-	                          int tidx, int i, const float *vec);
-
-	void setSpecificNetwork(SpecificNetwork *sn)
+	PCA::Matrix &matrix() 
 	{
-		_sn = sn;
+		return _matrix;
 	}
-private:
-	SpecificNetwork *_sn = nullptr;
 
+	void calculate();
+private:
+	float simpleValue(float x, float y);
+	float deviationScore(float x, float y);
+	void loop(float(MappingToMatrix::*get_value)(float, float));
+	void normalise();
+	SpecificNetwork *_specified;
+
+	Mapped<float> &_mapped;
+	PCA::Matrix _matrix{};
+
+	std::vector<float> _min, _max;
+	std::map<int, double *> _ticket2Mat;
 };
 
 #endif

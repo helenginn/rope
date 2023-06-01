@@ -133,19 +133,6 @@ std::map<std::string, int> BondSequence::elementList() const
 	return elements;
 }
 
-void BondSequence::prepareTorsionBasis()
-{
-	if (_torsionBasis)
-	{
-		int dimensions = 0;
-		if (_sampler)
-		{
-			dimensions = _sampler->dims();
-		}
-//		_torsionBasis->prepare(dimensions + 1);
-	}
-}
-
 void BondSequence::prepareForIdle()
 {
 	if (_state != SequenceInPreparation)
@@ -187,39 +174,8 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
-AnchorExtension BondSequence::getExtension(Atom *atom) const
-{
-	AnchorExtension ext(atom);
-
-	for (size_t i = 0; i < _grapher.graphCount(); i++)
-	{
-		const AtomGraph *g = _grapher.graph(i);
-		
-		if (g->atom == atom)
-		{
-			ext.parent = g->parent;
-			ext.grandparent = g->grandparent;
-		}
-	}
-
-	for (const AtomBlock &b : _blocks)
-	{
-		if (b.atom == atom)
-		{
-			ext.block = b;
-		}
-	}
-
-	return ext;
-}
-
 void BondSequence::calculateCustomVector()
 {
-	if (!_skipSections && _currentVec)
-	{
-		return;
-	}
-
 	if (_custom)
 	{
 		int n = _custom->size;
@@ -253,31 +209,44 @@ void BondSequence::fetchTorsion(int idx)
 		return;
 	}
 	
-	calculateCustomVector();
+	if (_skipSections || _currentVec == nullptr)
+	{
+		calculateCustomVector();
+	}
 	
 	int n = (_custom ? _custom->size : 0);
 
-	BondCalculator *bc = _handler->calculator();
-	double t = _torsionBasis->parameterForVector(bc, _blocks[idx].torsion_idx,
+	double t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
 	                                             _currentVec, n);
 
 	_blocks[idx].torsion = t;
 }
 
-void BondSequence::fetchAtomTarget(int idx)
+// ensures that the position sampler can pre-calculate all the necessary atom
+// positions 
+void BondSequence::prewarnPositionSampler()
 {
-	PositionSampler *ps = _blocks[idx].posSampler;
+	PositionSampler *ps = posSampler();
 
-	if (ps == nullptr)
+	if (ps == nullptr) { return; }
+
+	if (_skipSections || _currentVec == nullptr)
 	{
-		return;
+		calculateCustomVector();
 	}
 
-	calculateCustomVector();
-	BondCalculator *bc = _handler->calculator();
-
 	int n = (_custom ? _custom->size : 0);
-	glm::vec3 v = ps->positionForIndex(bc, idx, _currentVec, n);
+	ps->prewarnPosition(this, _currentVec, n);
+
+}
+
+void BondSequence::fetchAtomTarget(int idx)
+{
+	PositionSampler *ps = posSampler();
+
+	if (ps == nullptr) { return; }
+
+	glm::vec3 v = ps->positionForIndex(this, idx);
 	
 	_blocks[idx].target = v;
 }
@@ -470,6 +439,8 @@ void BondSequence::calculate()
 	_custom = nullptr;
 	
 	int sampleNum = 0;
+	acquireCustomVector(sampleNum);
+	prewarnPositionSampler();
 	
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
@@ -478,6 +449,7 @@ void BondSequence::calculate()
 		if (i % _singleSequence == 0)
 		{
 			acquireCustomVector(sampleNum);
+			prewarnPositionSampler();
 			sampleNum++;
 		}
 	}
@@ -553,6 +525,7 @@ const AtomPosMap &BondSequence::extractPositions()
 		WithPos &ap = _posAtoms[_blocks[i].atom];
 		glm::vec3 mypos = _blocks[i].my_position();
 		ap.ave += mypos;
+		ap.target += _blocks[i].target;
 		ap.samples.push_back(mypos);
 	}
 	
@@ -590,19 +563,6 @@ void BondSequence::beginJob(Job *job)
 {
 	setJob(job);
 	signal(SequenceCalculateReady);
-}
-
-int BondSequence::firstBlockForAtom(Atom *atom)
-{
-	for (size_t i = 0; i < blockCount(); i++)
-	{
-		if (_blocks[i].atom == atom)
-		{
-			return i;
-		}
-	}
-	
-	return -1;
 }
 
 const size_t BondSequence::flagged() const
@@ -763,4 +723,9 @@ std::vector<bool> BondSequence::activeParameterMask(size_t *programs)
 	*programs = activePrograms.size();
 	
 	return mask;
+}
+
+BondCalculator *BondSequence::calculator()
+{
+	return _handler->calculator();
 }

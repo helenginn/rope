@@ -54,6 +54,7 @@ void PCA::setupSVD(SVD *cc, int rows, int cols)
 	setupMatrix(&cc->u, rows, cols);
 	setupMatrix(&cc->v, cols, cols);
 	cc->w = (double *)calloc(cols, sizeof(double));
+	cc->N = (double *)calloc(cols, sizeof(double));
 }
 
 void PCA::zeroMatrix(Matrix *mat)
@@ -102,7 +103,7 @@ void PCA::printMatrix(Matrix *mat)
 bool PCA::runSVD(SVD *cc)
 {
 	svdcmp((mat)cc->u.ptrs, cc->u.rows, cc->u.cols, (vect) cc->w, 
-	                     (mat) cc->v.ptrs);
+	                     (mat) cc->v.ptrs, (vect *) &(cc->N));
 
 	return true;
 }
@@ -236,6 +237,12 @@ void PCA::freeSVD(SVD *cc)
 		free(cc->w);
 	}
 	cc->w = nullptr;
+
+	if (cc->N != nullptr)
+	{
+		free(cc->N);
+	}
+	cc->N = nullptr;
 }
 
 PCA::Matrix PCA::distancesFrom(Matrix &m)

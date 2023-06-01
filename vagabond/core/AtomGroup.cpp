@@ -614,3 +614,34 @@ AtomGroup AtomGroup::extractFragment(Sequence frag)
 
 	return select;
 }
+
+float AtomGroup::residualAgainst(std::string pos_tag)
+{
+	float sum = 0;
+	float weights = 0;
+
+	for (Atom *a : _atoms)
+	{
+		if (!a->isMainChain())
+		{
+			continue;
+		}
+
+		glm::vec3 t = a->otherPosition(pos_tag);
+		if (t.x != t.x)
+		{
+			continue;
+		}
+		
+		glm::vec3 d = a->derivedPosition();
+		glm::vec3 diff = t - d;
+		float sqlength = glm::dot(diff, diff);
+		sum += sqlength;
+		weights++;
+	}
+
+	sum = sqrt(sum / weights);
+	
+	return sum;
+
+}

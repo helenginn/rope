@@ -67,6 +67,7 @@ public:
 	void startCalculator();
 	
 	void changeInstance(Instance *m);
+	virtual void retrieve();
 	
 	Instance *instance()
 	{
@@ -74,7 +75,22 @@ public:
 	}
 	
 	void clearCalculators();
+	
+	float deviation(int idx)
+	{
+		return _point2Score[idx].deviations;
+	}
+
+	void clearTickets()
+	{
+		_ticket2Point.clear();
+		_point2Score.clear();
+	}
+	
 protected:
+	
+	virtual void handleAtomMap(AtomPosMap &aps) {};
+
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 	virtual void torsionBasisMods(TorsionBasis *tb) {};
 
@@ -109,6 +125,21 @@ protected:
 	int _sideMissing = 0;
 	int _mainMissing = 0;
 	const Residue *_unusedId{};
+
+	struct Score
+	{
+		float scores = 0;
+		float deviations = 0;
+		int divs = 0;
+		int sc_num = 0;
+	};
+	
+
+	typedef std::map<int, int> TicketPoint;
+	typedef std::map<int, Score> TicketScores;
+
+	TicketPoint _ticket2Point;
+	TicketScores _point2Score;
 	
 	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
 	TorsionBasis::Type _torsionType = TorsionBasis::TypeCustom;

@@ -109,6 +109,7 @@ public:
 	std::vector<bool> activeParameterMask(size_t *programs);
 
 private:
+	void prewarnPositionSampler();
 	void sanityCheckThreads();
 	void prepareSequenceBlocks();
 	void prepareThreads();

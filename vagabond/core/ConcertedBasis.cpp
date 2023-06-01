@@ -33,7 +33,7 @@ ConcertedBasis::~ConcertedBasis()
 
 // tidx: torsion angle
 // vec/n: vector you have to generate torsion angle
-float ConcertedBasis::parameterForVector(BondCalculator *calculator,
+float ConcertedBasis::parameterForVector(BondSequence *seq,
                                          int tidx, const float *vec, int n)
 {
 	if (tidx < 0)
@@ -54,7 +54,7 @@ float ConcertedBasis::parameterForVector(BondCalculator *calculator,
 	}
 	
 	int contracted_tidx = _idxs[tidx];
-	float sum = fullContribution(calculator, tidx, vec, n);
+	float sum = fullContribution(seq, tidx, vec, n);
 	
 	Parameter *bt = _filtered[contracted_tidx];
 	
@@ -248,7 +248,7 @@ size_t ConcertedBasis::activeBonds()
 	return _nActive;
 }
 
-float ConcertedBasis::fullContribution(BondCalculator *calculator, int tidx, 
+float ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
                                        const float *vec, int n)
 {
 	if (tidx < 0 || tidx > _svd.u.rows)
@@ -261,14 +261,14 @@ float ConcertedBasis::fullContribution(BondCalculator *calculator, int tidx,
 	// each n is an axis
 	for (size_t i = 0; i < n; i++)
 	{
-		float add = contributionForAxis(calculator, tidx, i, vec);
+		float add = contributionForAxis(seq, tidx, i, vec);
 		ret += add;
 	}
 
 	return ret;
 }
 
-float ConcertedBasis::contributionForAxis(BondCalculator *calc,
+float ConcertedBasis::contributionForAxis(BondSequence *seq,
                                           int tidx, int i, const float *vec)
 {
 	if (i > _svd.u.rows)

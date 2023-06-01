@@ -30,7 +30,7 @@ MechanicalBasis::MechanicalBasis()
 
 }
 
-float MechanicalBasis::parameterForVector(BondCalculator *calculator,
+float MechanicalBasis::parameterForVector(BondSequence *seq,
                                           int idx, const float *vec, int n)
 {
 	if (idx >= 0 && idx < _mechAngles.size())

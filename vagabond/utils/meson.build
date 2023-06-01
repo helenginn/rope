@@ -10,8 +10,6 @@ utilfiles = [
 'ProbDist.cpp',
 'Hypersphere.cpp',
 'Mapping.h',
-'MappingToMatrix.cpp',
-'MappingToMatrix.h',
 'Variable.h',
 'maths.cpp',
 'version.h',

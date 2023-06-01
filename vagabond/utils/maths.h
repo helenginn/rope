@@ -255,5 +255,18 @@ inline std::vector<std::vector<bool> > permutations(int count)
 	return perms;
 }
 
+inline void matchDegree(const float &ref, float &change)
+{
+	while (change < ref - 180.f)
+	{
+		change += 360.f;
+	}
+
+	while (change >= ref + 180.f)
+	{
+		change -= 360.f;
+	}
+}
+
 #endif /* defined(__vagabond__maths__) */
 

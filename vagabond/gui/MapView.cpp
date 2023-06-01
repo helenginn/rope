@@ -20,73 +20,56 @@
 #include <fstream>
 #include <thread>
 #include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/MappingToMatrix.h>
-#include <vagabond/core/Network.h>
-#include <vagabond/core/Environment.h>
-#include <vagabond/core/PolymerEntityManager.h>
-#include <vagabond/core/EntityManager.h>
 #include <vagabond/core/SpecificNetwork.h>
+#include <vagabond/core/Cartographer.h>
 #include <vagabond/core/PolymerEntity.h>
 #include <vagabond/core/CompareDistances.h>
 
-#include "SandboxView.h"
+#include "MapView.h"
 
-SandboxView::SandboxView(Scene *prev) : Display(prev)
+MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances) 
+: Display(prev)
+{
+	_cartographer = new Cartographer(entity, instances);
+}
+
+MapView::~MapView()
 {
 
 }
 
-SandboxView::~SandboxView()
+void MapView::setup()
 {
-
-}
-
-void SandboxView::setup()
-{
-	makeMapping();
+	_cartographer->setup();
 	makeTriangles();
 	addTitle("Triangle mayhem");
 
+	_specified = _cartographer->specified();
 	Instance *inst = _specified->instance();
 	inst->currentAtoms()->recalculate();
 	loadAtoms(inst->currentAtoms());
-}
-
-void SandboxView::makeMapping()
-{
-	Entity *e = &Environment::entityManager()->forPolymers()->object(0);
-	std::vector<Instance *> insts = e->instances();
 	
-	Network *net = new Network(e, insts);
-	_network = net;
-	net->setup();
-
-	_mapped = _network->blueprint();
-	_specified = _network->specificForInstance(insts[0]);
-	_specified->setResponder(this);
+	_cartographer->checkTriangles();
 }
 
-void SandboxView::makeTriangles()
+void MapView::makeTriangles()
 {
-	_mat2Map = new MappingToMatrix(*_mapped);
-
-	std::cout << "Rastering..." << std::endl;
-	_mat2Map->rasterNetwork(_specified);
-	MatrixPlot *mp = new MatrixPlot(_mat2Map->matrix(), _mutex);
+	MatrixPlot *mp = new MatrixPlot(_cartographer->matrix(), _mutex);
 	mp->resize(0.8);
-	mp->setCentre(0.2, 0.5);
+	mp->setCentre(0.15, 0.5);
 	mp->update();
 	addObject(mp);
 	_plot = mp;
 }
 
-bool SandboxView::sampleFromPlot(double x, double y)
+bool MapView::sampleFromPlot(double x, double y)
 {
 	double tx = x;
 	double ty = y;
 	convertToGLCoords(&tx, &ty);
 
-	double z = -FLT_MAX;
 	glm::vec3 v = glm::vec3(tx, ty, 0);
 	glm::vec3 min, max;
 	_plot->boundaries(&min, &max);
@@ -98,7 +81,7 @@ bool SandboxView::sampleFromPlot(double x, double y)
 	if ((v.x > 0 && v.x < 1) && (v.y > 0 && v.y < 1))
 	{
 		std::vector<float> vals = {v.x, v.y};
-		_mat2Map->fraction_to_cart(vals);
+		_cartographer->map2Matrix()->fraction_to_cart(vals);
 		int num = _specified->submitJob(true, vals);
 		_specified->retrieve();
 		float score = _specified->deviation(num);
@@ -117,7 +100,7 @@ bool SandboxView::sampleFromPlot(double x, double y)
 	return false;
 }
 
-void SandboxView::mouseMoveEvent(double x, double y)
+void MapView::mouseMoveEvent(double x, double y)
 {
 	if (_left)
 	{
@@ -136,7 +119,7 @@ void SandboxView::mouseMoveEvent(double x, double y)
 	}
 }
 
-void SandboxView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
+void MapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	sampleFromPlot(x, y);
 	_editing = false;
@@ -144,7 +127,7 @@ void SandboxView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	Display::mousePressEvent(x, y, button);
 }
 
-void SandboxView::sendObject(std::string tag, void *object)
+void MapView::sendObject(std::string tag, void *object)
 {
 	if (tag == "atom_map")
 	{
@@ -156,7 +139,7 @@ void SandboxView::sendObject(std::string tag, void *object)
 		{
 			_distances = new MatrixPlot(_distMat, _mutex);
 			_distances->resize(0.8);
-			_distances->setCentre(0.8, 0.5);
+			_distances->setCentre(0.85, 0.5);
 			addObject(_distances);
 		}
 

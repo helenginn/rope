@@ -23,7 +23,7 @@
 #include <set>
 #include "ResidueTorsion.h"
 
-class BondCalculator;
+class BondSequence;
 class Parameter;
 class Atom;
 
@@ -58,7 +58,7 @@ public:
 	 * @param vec custom vector of parameters
 	 * @param n total number of parameters in vec 
 	 * @returns parameter angle in degrees */
-	virtual float parameterForVector(BondCalculator *calculator,
+	virtual float parameterForVector(BondSequence *seq,
 	                                 int idx, const float *vec, int n) = 0;
 
 	virtual void absorbVector(const float *vec, int n, 

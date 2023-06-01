@@ -120,4 +120,6 @@ std::vector<float> Rule::valuesForObjects(ObjectGroup *group) const
 			values.push_back(val);
 		}
 	}
+	
+	return values;
 }

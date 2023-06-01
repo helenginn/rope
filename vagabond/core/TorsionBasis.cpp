@@ -52,6 +52,7 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	else if (type == TorsionBasis::TypeNetwork)
 	{
 		NetworkBasis *nb = new NetworkBasis();
+		nb->setCustom(true);
 		basis = nb;
 	}
 	else if (type == TorsionBasis::TypeConcerted)

@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__SandboxView__
-#define __vagabond__SandboxView__
+#ifndef __vagabond__MapView__
+#define __vagabond__MapView__
 
 #include <vagabond/gui/Display.h>
 #include <vagabond/utils/Mapping.h>
@@ -26,14 +26,15 @@
 
 class MappingToMatrix;
 class SpecificNetwork;
+class Cartographer;
 class MatrixPlot;
 class Network;
 
-class SandboxView : public Display, public Responder<SpecificNetwork>
+class MapView : public Display
 {
 public:
-	SandboxView(Scene *prev);
-	virtual ~SandboxView();
+	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances);
+	virtual ~MapView();
 
 	void makeTriangles();
 	virtual void setup();
@@ -45,15 +46,14 @@ private:
 	bool sampleFromPlot(double x, double y);
 	bool _editing = false;
 
-	Mapped<float> *_mapped = nullptr;
-	MappingToMatrix *_mat2Map = nullptr;
 	MatrixPlot *_plot = nullptr;
-	Network *_network = nullptr;
+
+	Cartographer *_cartographer = nullptr;
 	SpecificNetwork *_specified = nullptr;
 	std::mutex _mutex;
 
 	MatrixPlot *_distances = nullptr;
-	PCA::Matrix _distMat;
+	PCA::Matrix _distMat{};
 };
 
 #endif

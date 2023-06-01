@@ -27,6 +27,7 @@
 #include "AtomMap.h"
 
 class ThreadWorker;
+class PositionSampler;
 class BondSequence;
 class MapTransfer;
 struct Result;
@@ -137,6 +138,7 @@ struct Job
 	float fraction = 0;
 	int ticket = -1;
 	JobType requests;
+	PositionSampler *pos_sampler = nullptr;
 
 	Result *result = nullptr;
 	

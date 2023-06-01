@@ -29,6 +29,7 @@ struct WithPos
 {
 	std::vector<glm::vec3> samples{};
 	glm::vec3 ave = glm::vec3(0.f);
+	glm::vec3 target = glm::vec3(0.f);
 	float colour = 0;
 };
 

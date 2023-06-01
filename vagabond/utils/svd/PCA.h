@@ -48,6 +48,7 @@ namespace PCA
 		Matrix u{};
 		Matrix v{};
 		double *w = nullptr;
+		double *N = nullptr;
 	};
 
 	struct OrderW
@@ -71,6 +72,7 @@ namespace PCA
 	{
 		for (size_t j = 0; j < mat.rows; j++)
 		{
+			result[j] = 0;
 			for (size_t i = 0; i < mat.cols; i++)
 			{
 				result[j] += mat[j][i] * vector[i];

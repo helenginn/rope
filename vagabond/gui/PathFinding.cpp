@@ -23,6 +23,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include "AddRule.h"
+#include "MapView.h"
 
 PathFinding::PathFinding(Scene *prev, Entity *ent) : Scene(prev),
 _all(ent->makeTorsionDataGroup())
@@ -94,18 +95,42 @@ void PathFinding::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "start")
 	{
-		PathFinderView *pfv = new PathFinderView(this);
-		PathFinder *pf = pfv->pathFinder();
-		pf->setEntity(_entity);
-		
-		if (_rule)
+		if (false)
 		{
-			pf->setWhiteList(_all.subsetFromRule(*_rule));
+			PathFinderView *pfv = new PathFinderView(this);
+			PathFinder *pf = pfv->pathFinder();
+			pf->setEntity(_entity);
+
+			if (_rule)
+			{
+				pf->setWhiteList(_all.subsetFromRule(*_rule));
+			}
+
+			pfv->show();
+
+			return;
 		}
+		else
+		{
+			std::vector<Instance *> instances;
+			
+			if (_rule)
+			{
+				std::vector<HasMetadata *> hms = _all.subsetFromRule(*_rule);
 
-		pfv->show();
-
-		return;
+				for (HasMetadata *hm : hms)
+				{
+					instances.push_back(static_cast<Instance *>(hm));
+				}
+			}
+			else
+			{
+				instances = _entity->instances();
+			}
+			
+			MapView *mv = new MapView(this, _entity, instances);
+			mv->show();
+		}
 	}
 
 	Scene::buttonPressed(tag, button);

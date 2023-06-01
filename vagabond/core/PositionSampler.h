@@ -22,8 +22,8 @@
 class PositionSampler
 {
 public:
-	virtual glm::vec3 positionForIndex(BondCalculator *bc,
-	                                   int idx, float *vec, int n) const = 0;
+	virtual void prewarnPosition(BondSequence *seq, float *vec, int n) = 0;
+	virtual glm::vec3 positionForIndex(BondSequence *seq, int idx) const = 0;
 	virtual ~PositionSampler() {};
 
 };

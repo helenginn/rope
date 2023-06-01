@@ -9,6 +9,7 @@
 
 #include "matrix.h"
 
-void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V);
+void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V, 
+            vect *Nstore = nullptr);
 
 #endif /*SVDCMP_H_*/

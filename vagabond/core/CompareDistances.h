@@ -16,28 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__NetworkBasis__
-#define __vagabond__NetworkBasis__
+#ifndef __vagabond__CompareDistances__
+#define __vagabond__CompareDistances__
 
-#include "ConcertedBasis.h"
+namespace PCA { struct Matrix; };
+#include "AtomPosMap.h"
 
-class SpecificNetwork;
-
-class NetworkBasis : public ConcertedBasis
+class CompareDistances
 {
 public:
-	NetworkBasis();
+	CompareDistances(AtomPosMap &aps);
 
-	float contributionForAxis(BondSequence *seq,
-	                          int tidx, int i, const float *vec);
-
-	void setSpecificNetwork(SpecificNetwork *sn)
+	PCA::Matrix matrix();
+	
+	const std::vector<Atom *> &atoms() const
 	{
-		_sn = sn;
+		return _atoms;
 	}
 private:
-	SpecificNetwork *_sn = nullptr;
+	AtomPosMap &_aps;
 
+	std::vector<Atom *> _atoms;
 };
 
 #endif

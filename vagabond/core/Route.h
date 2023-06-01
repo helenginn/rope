@@ -51,7 +51,6 @@ public:
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
 	void submitJob(int idx, bool show = true, bool forces = false);
-	void retrieve();
 
 	float submitJobAndRetrieve(int idx, bool show = true, bool forces = false);
 	
@@ -203,17 +202,6 @@ protected:
 		return _point2Score[idx].scores;
 	}
 	
-	float deviation(int idx)
-	{
-		return _point2Score[idx].deviations;
-	}
-	
-	void clearTickets()
-	{
-		_ticket2Point.clear();
-		_point2Score.clear();
-	}
-	
 	float &destination(int i)
 	{
 		return _motions.storage(i).angle;
@@ -268,22 +256,11 @@ private:
 	bool _calculating;
 	float _score;
 	
-	struct Score
-	{
-		float scores = 0;
-		float deviations = 0;
-		int divs = 0;
-		int sc_num = 0;
-	};
-	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void reportFound();
 	void calculateAtomDeviations(Score &score);
 
 	std::vector<Parameter *> _missing;
-
-	typedef std::map<int, int> TicketPoint;
-	typedef std::map<int, Score> TicketScores;
 	
 	size_t _grapherIdx = 0;
 
@@ -292,9 +269,6 @@ private:
 	std::vector<Angular> _rawDest;
 	
 	std::map<BondCalculator *, std::vector<int> > _calc2Destination;
-
-	TicketPoint _ticket2Point;
-	TicketScores _point2Score;
 	
 	InterpolationType _type = Polynomial;
 	

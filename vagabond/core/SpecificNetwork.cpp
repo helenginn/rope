@@ -24,12 +24,16 @@
 #include "BondSequence.h"
 
 SpecificNetwork::SpecificNetwork(Network *network, Instance *inst) :
-StructureModification(inst, 120, network->dims())
+StructureModification(inst, 1, network->dims())
 {
-	_torsionType = TorsionBasis::TypeOnPath;
+	_torsionType = TorsionBasis::TypeNetwork;
+	_threads = 6;
 
 	_instance = inst;
 	_network = network;
+	
+	_instance->load();
+	_instance->currentAtoms()->recalculate();
 
 	setup();
 }
@@ -38,44 +42,117 @@ void SpecificNetwork::setup()
 {
 	startCalculator();
 	processCalculatorDetails();
+	zeroVertices();
 }
 
-void SpecificNetwork::completeAtomMaps(CalcDetails &cd)
+void SpecificNetwork::zeroVertices()
 {
 	std::vector<Instance *> others = _network->instances();
-	
 	for (Instance *other : others)
 	{
 		int idx = _network->indexForInstance(other);
-		other->model()->load(Model::NoGeometry);
-		
-		AtomGroup *grp = other->currentAtoms();
-		
-		for (AtomMapping &am : cd.atoms)
+
+		std::vector<float> cart = _network->pointForInstance(other);
+		int num = submitJob(true, cart);
+		retrieve();
+		float dev = deviation(num);
+		std::cout << other->id() << ": " << dev << ", ";
+
+		updateAtomsFromDerived(idx);
+
+		other->model()->load();
+
+		if (other != _instance)
 		{
-			Atom *search = am.atom;
+			other->currentAtoms()->recalculate();
+			other->superposeOn(_instance);
+			float diff = other->currentAtoms()->residualAgainst("original");
+			std::cout << diff << std::endl;
+			other->model()->unload();
+		}
+
+	}
+}
+
+void SpecificNetwork::updateAtomsFromDerived(int idx)
+{
+	for (BondCalculator *calc : _calculators)
+	{
+		BondSequence *seq = calc->sequence();
+		PosMapping *pm = _atomDetails[calc];
+
+		const std::vector<AtomBlock> &blocks = seq->blocks();
+		Vec3s &list = pm->get_value(idx);
+
+		for (int i = 0; i < blocks.size(); i++)
+		{
+			Atom *search = blocks[i].atom;
 			if (!search)
 			{
 				continue;
 			}
 
-			Atom *equiv = other->equivalentForAtom(_instance, search);
-			
-			if (equiv)
-			{
-				glm::vec3 pos = equiv->initialPosition();
-				am.mapping->alter_value(idx, pos);
-			}
-		}
-		
-		if (other != _instance)
-		{
-			other->model()->unload();
+			glm::vec3 pos = search->derivedPosition();
+			list[i] = pos;
 		}
 	}
 }
 
-void SpecificNetwork::completeMap(TorsionMapping &map)
+int SpecificNetwork::submitJob(bool show, std::vector<float> vals)
+{
+	Job job{};
+	job.custom.allocate_vectors(1, _network->dims(), _num);
+	job.pos_sampler = this;
+
+	for (size_t i = 0; i < vals.size(); i++)
+	{
+		job.custom.vecs[0].mean[i] = vals[i];
+	}
+
+	job.requests = static_cast<JobType>(JobExtractPositions |
+	                                    JobCalculateDeviations);
+	if (!show)
+	{
+		job.requests = JobCalculateDeviations;
+	}
+
+	for (BondCalculator *calc : _calculators)
+	{
+		int t = calc->submitJob(job);
+		_ticket2Point[t] = _jobNum;
+	}
+
+	_point2Score[_jobNum] = Score{};
+	_jobNum++;
+	return _jobNum - 1;
+}
+
+void SpecificNetwork::prepareAtomMaps(BondSequence *seq, PosMapping *pm)
+{
+	const std::vector<AtomBlock> &blocks = seq->blocks();
+	std::vector<Instance *> others = _network->instances();
+	
+	for (Instance *other : others)
+	{
+		int idx = _network->indexForInstance(other);
+		Vec3s &list = pm->get_value(idx);
+
+		for (int i = 0; i < blocks.size(); i++)
+		{
+			Atom *search = blocks[i].atom;
+			glm::vec3 pos = glm::vec3(NAN, NAN, NAN);
+			
+			if (search)
+			{
+				pos = search->derivedPosition();
+			}
+
+			list.push_back(pos);
+		}
+	}
+}
+
+void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 {
 	const ResidueId id = map.param->residueId();
 	Residue *master_res = _instance->equivalentMaster(id);
@@ -91,25 +168,17 @@ void SpecificNetwork::completeMap(TorsionMapping &map)
 		}
 		
 		int idx = _network->indexForInstance(other);
-		map.mapping->alter_value(idx, map.param->value());
-	}
-}
+		float val = map.param->value();
 
-void SpecificNetwork::getAtomDetails(BondSequence *seq, CalcDetails &cd)
-{
-	const std::vector<AtomBlock> &blocks = seq->blocks();
-	
-	for (int i = 0; i < blocks.size(); i++)
-	{
-		AtomMapping am{};
-		am.atom = blocks[i].atom;
-		
-		if (am.atom != nullptr)
+		TorsionRef ref = other_res->copyTorsionRef(map.param->desc());
+		if (ref.valid())
 		{
-			am.mapping = _network->blueprint_vec3_copy();
+			float tmp = ref.refinedAngle();
+			matchDegree(val, tmp);
+			val = tmp;
 		}
-		
-		cd.atoms.push_back(am);
+
+		map.mapping->alter_value(idx, val);
 	}
 }
 
@@ -120,10 +189,12 @@ void SpecificNetwork::getTorsionDetails(TorsionBasis *tb, CalcDetails &cd)
 		Parameter *pm = tb->parameter(i);
 		TorsionMapping tm{};
 		tm.param = pm;
+		tm.mutex = new std::mutex();
+
 		if (pm && !pm->isConstrained())
 		{
 			tm.mapping = _network->blueprint_scalar_copy();
-			completeMap(tm);
+			completeTorsionMap(tm);
 		}
 		
 		cd.torsions.push_back(tm);
@@ -135,13 +206,15 @@ void SpecificNetwork::getDetails(BondCalculator *bc)
 	CalcDetails cd{};
 
 	BondSequence *seq = bc->sequence();
-	getAtomDetails(seq, cd);
-	completeAtomMaps(cd);
+	PosMapping *pm = _network->blueprint_vec3s_copy();
+
+	prepareAtomMaps(seq, pm);
 
 	TorsionBasis *tb = bc->torsionBasis();
 	getTorsionDetails(tb, cd);
 	
 	_calcDetails[bc] = cd;
+	_atomDetails[bc] = pm;
 }
 
 void SpecificNetwork::processCalculatorDetails()
@@ -158,8 +231,36 @@ void SpecificNetwork::torsionBasisMods(TorsionBasis *tb)
 	nb->setSpecificNetwork(this);
 }
 
-glm::vec3 SpecificNetwork::positionForIndex(BondCalculator *bc,
-                                            int idx, float *vec, int n) const
+void SpecificNetwork::prewarnAtoms(BondSequence *seq, 
+                                   const std::vector<float> &vals)
+{
+	bool accept = false;
+	BondCalculator *bc = seq->calculator();
+	PosMapping *pm = _atomDetails[bc];
+	Vec3s positions = pm->interpolate_variable(vals, &accept);
+
+	_prewarnedResults[seq].positions = positions;
+	_prewarnedResults[seq].acceptable = accept;
+}
+
+void SpecificNetwork::prewarnParameters(BondSequence *seq,
+                                   const std::vector<float> &vals)
+{
+	BondCalculator *bc = seq->calculator();
+	CalcDetails &cd = _calcDetails[bc];
+	std::vector<float> angles;
+
+	for (int idx = 0; idx < cd.torsions.size(); idx++)
+	{
+		Mapped<float> *const map = cd.torsions.at(idx).mapping;
+		float angle = map->interpolate_variable(vals);
+		angles.push_back(angle);
+	}
+	
+	_prewarnedResults[seq].torsions = angles;
+}
+
+void SpecificNetwork::prewarnPosition(BondSequence *seq, float *vec, int n)
 {
 	std::vector<float> vals(n);
 	for (int i = 0; i < n; i++)
@@ -167,8 +268,42 @@ glm::vec3 SpecificNetwork::positionForIndex(BondCalculator *bc,
 		vals[i] = vec[i];
 	}
 
-	const CalcDetails &cd = _calcDetails.at(bc);
-	Mapped<glm::vec3> *const map = cd.atoms.at(idx).mapping;
-	glm::vec3 pos = map->interpolate_variable(vals);
-	return pos;
+	prewarnAtoms(seq, vals);
+	prewarnParameters(seq, vals);
+}
+
+glm::vec3 SpecificNetwork::positionForIndex(BondSequence *seq, int idx) const
+{
+	const PrewarnResults &ar = _prewarnedResults.at(seq);
+
+	if (!ar.acceptable)
+	{
+		return glm::vec3(NAN, NAN, NAN);
+	}
+
+	return ar.positions.at(idx);
+}
+
+float SpecificNetwork::torsionForIndex(BondSequence *seq,
+                                       int idx, const float *vec) const
+{
+	const PrewarnResults &ar = _prewarnedResults.at(seq);
+	
+	return ar.torsions.at(idx);
+}
+
+void SpecificNetwork::customModifications(BondCalculator *calc, bool has_mol)
+{
+	calc->setPositionSampler(this);
+}
+
+bool SpecificNetwork::valid_position(const std::vector<float> &vals)
+{
+	return _network->valid_position(vals);
+}
+
+void SpecificNetwork::handleAtomMap(AtomPosMap &aps)
+{
+	sendResponse("atom_map", &aps);
+
 }

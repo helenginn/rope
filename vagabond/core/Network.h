@@ -22,6 +22,9 @@
 #include <vector>
 #include <vagabond/c4x/ClusterTSNE.h>
 #include <vagabond/utils/Mapping.h>
+#include <vagabond/utils/Vec3s.h>
+
+#define NETWORK_DIMS (2)
 
 template <typename Type> class Mapped;
 template <unsigned int D, typename Type> class Mapping;
@@ -31,15 +34,16 @@ class Entity;
 class Instance;
 class TorsionCluster;
 class ClusterTSNE;
+class SpecificNetwork;
 
 class Network
 {
 public:
 	Network(Entity *entity, std::vector<Instance *> &instances);
 	
-	const static int &dims()
+	const static int dims()
 	{
-		return _dims;
+		return NETWORK_DIMS;
 	}
 	
 	glm::vec3 point(int idx)
@@ -54,6 +58,12 @@ public:
 	
 	Mapped<float> *blueprint_scalar_copy();
 	Mapped<glm::vec3> *blueprint_vec3_copy();
+	Mapped<Vec3s> *blueprint_vec3s_copy();
+	
+	std::vector<float> pointForInstance(Instance *instance);
+	bool valid_position(const std::vector<float> &vals);
+	
+	SpecificNetwork *specificForInstance(Instance *instance);
 
 	void setup();
 	void convertToTSNE();
@@ -68,12 +78,10 @@ public:
 		return _instance2Point[inst];
 	}
 private:
-	const static int _dims = 2;
-
 	void makeCluster();
 	void makeBlueprintMapping();
 	void preparePoints();
-	void addBounds(Mapping<_dims, float> *map);
+	void addBounds(Mapping<NETWORK_DIMS, float> *map);
 	void crackPoints();
 	void delaunay();
 	void removeBounds();
@@ -81,8 +89,8 @@ private:
 	std::vector<Instance *> _instances;
 	TorsionCluster *_cluster = nullptr;
 	ClusterTSNE *_tsne = nullptr;
-	Mapping<_dims, float> *_blueprint = nullptr;
-	std::vector<Face<0, _dims, float> *> _toDelete;
+	Mapping<NETWORK_DIMS, float> *_blueprint = nullptr;
+	std::vector<Face<0, NETWORK_DIMS, float> *> _toDelete;
 
 	Entity *_entity = nullptr;
 	

@@ -38,6 +38,8 @@ class CorrelationHandler;
 class PointStoreHandler;
 class SolventHandler;
 class MapSumHandler;
+
+class PositionSampler;
 class Diffraction;
 class ForceField;
 class Grapher;

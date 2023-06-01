@@ -16,44 +16,59 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__SandboxView__
-#define __vagabond__SandboxView__
+#ifndef __vagabond__Cartographer__
+#define __vagabond__Cartographer__
 
-#include <vagabond/gui/Display.h>
-#include <vagabond/utils/Mapping.h>
+#include <vector>
+#include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Responder.h>
-#include <thread>
 
-class MappingToMatrix;
-class SpecificNetwork;
-class MatrixPlot;
+class Entity;
+class Instance;
 class Network;
+class SpecificNetwork;
+class MappingToMatrix;
+template <typename Type> class Mapped;
 
-class SandboxView : public Display, public Responder<SpecificNetwork>
+class Cartographer : public Responder<SpecificNetwork>
 {
 public:
-	SandboxView(Scene *prev);
-	virtual ~SandboxView();
+	Cartographer(Entity *entity, std::vector<Instance *> instances);
+	
+	SpecificNetwork *specified()
+	{
+		return _specified;
+	}
+	
+	PCA::Matrix &matrix();
+	
+	Mapped<float> *mapped()
+	{
+		return _mapped;
+	}
+	
+	MappingToMatrix *map2Matrix()
+	{
+		return _mat2Map;
+	}
 
-	void makeTriangles();
-	virtual void setup();
-	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
-	virtual void mouseMoveEvent(double x, double y);
-	virtual void sendObject(std::string, void *object);
-private:
 	void makeMapping();
-	bool sampleFromPlot(double x, double y);
-	bool _editing = false;
+	void setup();
 
+	void scoreForTriangle(int idx);
+	void checkTriangles();
+protected:
+	virtual void sendObject(std::string tag, void *object);
+private:
+	SpecificNetwork *_specified = nullptr;
+	Network *_network = nullptr;
+	std::vector<Instance *> _instances;
+	Entity *_entity = nullptr;
 	Mapped<float> *_mapped = nullptr;
 	MappingToMatrix *_mat2Map = nullptr;
-	MatrixPlot *_plot = nullptr;
-	Network *_network = nullptr;
-	SpecificNetwork *_specified = nullptr;
-	std::mutex _mutex;
+	PCA::Matrix _distMat{};
+	std::mutex _mDist;
 
-	MatrixPlot *_distances = nullptr;
-	PCA::Matrix _distMat;
 };
 
 #endif

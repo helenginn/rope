@@ -49,6 +49,8 @@ public:
 	BondSequence(BondSequenceHandler *handler = nullptr);
 	~BondSequence();
 	
+	BondCalculator *calculator();
+	
 	const size_t addedAtomsCount() const
 	{
 		return _grapher.atoms().size();
@@ -75,8 +77,6 @@ public:
 	{
 		return _blocks.size();
 	}
-	
-	int firstBlockForAtom(Atom *atom);
 	
 	glm::vec3 positionForPreviousBlock(int i)
 	{
@@ -140,7 +140,6 @@ public:
 	std::vector<bool> activeParameterMask(size_t *programs);
 	
 	void prepareForIdle();
-	void prepareTorsionBasis();
 
 	void reset()
 	{
@@ -173,8 +172,6 @@ public:
 	SequenceState state();
 	void signal(SequenceState newState);
 	
-	AnchorExtension getExtension(Atom *atom) const;
-	
 	std::vector<AtomBlock> &blocks()
 	{
 		return _blocks;
@@ -204,6 +201,7 @@ private:
 	void fillTorsionAngles();
 	void fastCalculate();
 	void calculateCustomVector();
+	void prewarnPositionSampler();
 
 	int calculateBlock(int idx);
 	void fetchTorsion(int idx);

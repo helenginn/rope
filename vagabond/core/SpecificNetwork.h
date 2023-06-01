@@ -21,6 +21,8 @@
 
 #include "StructureModification.h"
 #include "PositionSampler.h"
+#include <vagabond/utils/Vec3s.h>
+#include <vagabond/core/Responder.h>
 #include <list>
 
 template <typename Type> class Mapped;
@@ -30,48 +32,73 @@ class Network;
 class TorsionBasis;
 class BondSequence;
 
-class SpecificNetwork : public StructureModification, public PositionSampler
+class SpecificNetwork : public StructureModification, public PositionSampler,
+public HasResponder<Responder<SpecificNetwork>>
 {
 public:
 	SpecificNetwork(Network *network, Instance *inst);
 	
-	virtual glm::vec3 positionForIndex(BondCalculator *bc,
-	                                   int idx, float *vec, int n) const;
+	Instance *instance()
+	{
+		return _instance;
+	}
+	
+	virtual void prewarnPosition(BondSequence *bc, float *vec, int n);
+	virtual glm::vec3 positionForIndex(BondSequence *bc, int idx) const;
+	
+	bool valid_position(const std::vector<float> &vals);
+
+	virtual float torsionForIndex(BondSequence *bc,
+	                              int tidx, const float *vec) const;
 
 	virtual void torsionBasisMods(TorsionBasis *tb);
+
+	int submitJob(bool show, std::vector<float> vals);
+	void zeroVertices();
 	void setup();
+protected:
+	virtual void handleAtomMap(AtomPosMap &aps);
 private:
 	void getDetails(BondCalculator *bc);
+	void customModifications(BondCalculator *calc, bool has_mol);
 	void processCalculatorDetails();
+	void updateAtomsFromDerived(int idx);
 
 	Instance *_instance = nullptr;
 	Network *_network = nullptr;
 
-	struct AtomMapping
-	{
-		Atom *atom;
-		Mapped<glm::vec3> *mapping;
-	};
-
 	struct TorsionMapping
 	{
 		Parameter *param;
+		std::mutex *mutex;
 		Mapped<float> *mapping;
 	};
 	
 	struct CalcDetails
 	{
-		std::vector<AtomMapping> atoms;
 		std::vector<TorsionMapping> torsions;
 	};
 	
-	void getAtomDetails(BondSequence *seq, CalcDetails &cd);
+	typedef Mapped<Vec3s> PosMapping;
+
 	void getTorsionDetails(TorsionBasis *tb, CalcDetails &cd);
 
-	void completeAtomMaps(CalcDetails &cd);
-	void completeMap(TorsionMapping &map);
+	void prepareAtomMaps(BondSequence *seq, PosMapping *pm);
+	void completeTorsionMap(TorsionMapping &map);
+	void prewarnAtoms(BondSequence *bc, const std::vector<float> &vals);
+	void prewarnParameters(BondSequence *bc, const std::vector<float> &vals);
+	
+	struct PrewarnResults
+	{
+		Vec3s positions;
+		std::vector<float> torsions;
+		bool acceptable;
+	};
 
 	std::map<BondCalculator *, CalcDetails> _calcDetails;
+	std::map<BondCalculator *, PosMapping *> _atomDetails;
+	std::map<BondSequence *, PrewarnResults> _prewarnedResults;
+	int _jobNum = 0;
 };
 
 #endif

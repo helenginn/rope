@@ -44,6 +44,8 @@ guifiles = [
 'IconLegend.cpp',
 'LineSeries.cpp',
 'LineSeriesOptions.cpp',
+'MapView.cpp',
+'MapView.h',
 'MainMenu.cpp',
 'MatrixPlot.cpp',
 'MetadataView.cpp',

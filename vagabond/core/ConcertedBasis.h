@@ -24,6 +24,7 @@
 #include "../utils/svd/PCA.h"
 
 class Instance;
+class BondSequence;
 class Residue;
 
 class ConcertedBasis : public TorsionBasis
@@ -32,7 +33,7 @@ public:
 	ConcertedBasis();
 	~ConcertedBasis();
 
-	virtual float parameterForVector(BondCalculator *calculator,
+	virtual float parameterForVector(BondSequence *seq,
 	                                 int idx, const float *vec, int n);
 	virtual void prepare(int dims = 0);
 
@@ -65,9 +66,9 @@ public:
 		return _unusedId;
 	}
 protected:
-	float fullContribution(BondCalculator *calculator, int tidx, 
+	float fullContribution(BondSequence *seq, int tidx, 
 	                       const float *vec, int n);
-	virtual float contributionForAxis(BondCalculator *calc, int tidx, int i, 
+	virtual float contributionForAxis(BondSequence *seq, int tidx, int i, 
 	                                  const float *vec);
 
 	std::vector<Parameter *> _filtered;

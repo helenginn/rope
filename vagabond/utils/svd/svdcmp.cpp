@@ -23,7 +23,7 @@
  * be filled up to square with zero rows.
  */
 
-void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V)
+void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V, vect *Nstore)
 {
 	/* Householder reduction to bidiagonal form. */
 	int NM = 0;
@@ -45,10 +45,19 @@ void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V)
 	int jj = 0;
 	int k = 0;
 	int l = 0;
-	vect rv1;
 
+	vect ptr;
+	if (!Nstore || *Nstore == nullptr)
+	{
+		ptr = vect_create(N);
+		
+		if (Nstore)
+		{
+			*Nstore = ptr;
+		}
+	}
 
-	rv1 = vect_create(N);
+	vect &rv1 = (!Nstore ? ptr : *Nstore);
 
 	if( M < N )
 	{
@@ -315,5 +324,9 @@ void svdcmp(mat A, unsigned int M, unsigned int N, vect W, mat V)
 			W[k] = X;
 		}
 	}
-	vect_delete(rv1);
+	
+	if (!Nstore)
+	{
+		vect_delete(ptr);
+	}
 }

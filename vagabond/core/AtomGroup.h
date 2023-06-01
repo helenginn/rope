@@ -97,6 +97,8 @@ public:
 		_lastResidual = last;
 	}
 	
+	float residualAgainst(std::string pos_tag);
+	
 	size_t possibleAnchorCount();
 	Atom *possibleAnchor(int i);
 	

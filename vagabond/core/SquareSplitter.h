@@ -16,28 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MappingToMatrix__
-#define __vagabond__MappingToMatrix__
+#ifndef __vagabond__SquareSplitter__
+#define __vagabond__SquareSplitter__
 
-#include "svd/PCA.h"
-template <typename Type> class Mapped;
+namespace PCA { struct Matrix; };
+#include <vector>
 
-class MappingToMatrix
+class SquareSplitter
 {
 public:
-	MappingToMatrix(Mapped<float> &mapped);
+	SquareSplitter(PCA::Matrix &mat);
 
-	PCA::Matrix &matrix() 
+	const std::vector<int> &splits() const
 	{
-		return _matrix;
+		return _after;
 	}
-
-	void calculate();
 private:
+	void split();
+	void next_split();
+	bool valid(int i, int j, const std::vector<int> &after);
+	float score_to_split(int i);
 
-	Mapped<float> &_mapped;
-	PCA::Matrix _matrix{};
+	PCA::Matrix &_mat;
 
+	std::vector<int> _after;
 };
 
 #endif

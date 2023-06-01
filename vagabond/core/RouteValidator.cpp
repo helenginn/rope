@@ -158,35 +158,9 @@ bool RouteValidator::validate()
 	_route.endInstance()->superposeOn(_route.instance());
 	AtomGroup *grp = _route.endInstance()->currentAtoms();
 
-	float sum = 0;
-	float weights = 0;
-
-	for (Atom *a : grp->atomVector())
-	{
-		if (!a->isMainChain())
-		{
-			continue;
-		}
-
-		glm::vec3 t = a->otherPosition("original");
-		if (t.x != t.x)
-		{
-			continue;
-		}
-		
-		glm::vec3 d = a->derivedPosition();
-
-
-		glm::vec3 diff = t - d;
-		float sqlength = glm::dot(diff, diff);
-		sum += sqlength;
-		weights++;
-	}
-
-	sum = sqrt(sum / weights);
-	
+	float diff = grp->residualAgainst("original");
 	bool unloaded = _route.endInstance()->unload();
-	return (sum < 0.5);
+	return (diff < 0.5);
 }
 
 int RouteValidator::endInstanceGaps()

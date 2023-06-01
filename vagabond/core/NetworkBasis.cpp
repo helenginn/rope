@@ -17,8 +17,25 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "NetworkBasis.h"
+#include "SpecificNetwork.h"
 
 NetworkBasis::NetworkBasis() : ConcertedBasis()
 {
 
+}
+
+float NetworkBasis::contributionForAxis(BondSequence *seq,
+                                        int tidx, int i, const float *vec)
+{
+	if (seq == nullptr)
+	{
+		return ConcertedBasis::contributionForAxis(seq, tidx, i, vec);
+	}
+	float t_all = _sn->torsionForIndex(seq, tidx, vec);
+
+	// remove average, it'll be added back on
+	float torsion = t_all - _angles[tidx].angle; 
+	torsion /= 2;
+
+	return torsion;
 }

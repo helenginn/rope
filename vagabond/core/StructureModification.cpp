@@ -238,3 +238,69 @@ void StructureModification::clearCalculators()
 
 	_calculators.clear();
 }
+
+void StructureModification::retrieve()
+{
+	bool found = true;
+
+	while (found)
+	{
+		found = false;
+
+		for (BondCalculator *calc : _calculators)
+		{
+			Result *r = calc->acquireResult();
+
+			if (r == nullptr)
+			{
+				continue;
+			}
+
+			int t = r->ticket;
+			int idx = _ticket2Point[t];
+			Score &score = _point2Score[idx];
+
+			found = true;
+			if (r->requests & JobExtractPositions)
+			{
+				handleAtomMap(r->aps);
+				r->transplantPositions();
+			}
+			if (r->requests & JobSolventSurfaceArea)
+			{
+				std::cout << r->surface_area << std::endl;
+			}
+			
+			if (r->requests & JobScoreStructure)
+			{
+				r->transplantColours();
+				
+				if (r->score == r->score)
+				{
+					score.scores += r->score;
+					score.sc_num++;
+				}
+			}
+
+			if (r->requests & JobCalculateDeviations)
+			{
+				if (r->deviation == r->deviation)
+				{
+					score.deviations += r->deviation;
+					score.divs++;
+				}
+			}
+			
+			r->destroy();
+		}
+	}
+	
+	for (TicketScores::iterator it = _point2Score.begin();
+	     it != _point2Score.end(); it++)
+	{
+		it->second.scores /= it->second.sc_num;
+		it->second.deviations /= it->second.divs;
+		it->second.divs = 1;
+		it->second.sc_num = 1;
+	}
+}
