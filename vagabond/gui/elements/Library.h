@@ -82,6 +82,7 @@ inline bool checkErrors(std::string what)
 {
 	if (SDL_GL_GetCurrentContext() == NULL)
 	{
+		std::cout << "No context for " << what << std::endl;
 		return 0;
 	}
 

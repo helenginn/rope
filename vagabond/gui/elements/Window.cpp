@@ -1,6 +1,7 @@
 #include "Window.h"
 #include "Scene.h"
 #include "Renderable.h"
+#include "Library.h"
 
 #include <iostream>
 #include <SDL2/SDL_image.h>
@@ -34,8 +35,7 @@ EM_JS(int, get_canvas_height, (), { return window.innerHeight; });
 EM_JS(int, get_canvas_width, (), { return window.innerWidth; });
 #endif
 
-
-Window::Window(int width, int height)
+void Window::instateWindow()
 {
 	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
 	
@@ -66,7 +66,10 @@ Window::Window(int width, int height)
 
 	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);
 	_context = SDL_GL_CreateContext(_window);
+}
 
+void Window::instateGlew()
+{
 #ifndef __EMSCRIPTEN__
     const GLenum err = glewInit();
 
@@ -91,9 +94,30 @@ Window::Window(int width, int height)
 		exit(1);
 	}
 #endif
+}
+
+void Window::giveUpOpenGL()
+{
+//	std::cout << "Killing context" << std::endl;
+//	Library::dropEverything();
+//	SDL_GL_DeleteContext(_context);
+}
+
+void Window::reinstateOpenGL()
+{
+	SDL_GL_MakeCurrent(_window, _context);
+
+	SDL_GLContext context = SDL_GL_GetCurrentContext();
+
+	checkErrors("reinstated");
+}
+
+Window::Window()
+{
+	instateWindow();
+	instateGlew();
 
 	glSetup();
-
 	
 	_myWindow = this;
 	_current = NULL;
@@ -151,6 +175,8 @@ void Window::window_tick()
 
 bool Window::tick()
 {
+	SDL_GLContext context = SDL_GL_GetCurrentContext();
+
 	_myWindow->mainThreadActivities();
 
 	SDL_Event event;
@@ -253,10 +279,13 @@ void Window::render()
 	{
 		return;
 	}
-
+	
 	int w, h;
+	checkErrors("before drawable_size");
 	SDL_GL_GetDrawableSize(_window, &w, &h);
+	checkErrors("after drawable_size");
 	glViewport(0, 0, w, h);
+	checkErrors("after viewpport");
 
 	curr->render();
 	

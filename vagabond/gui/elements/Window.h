@@ -26,7 +26,7 @@ struct SDL_Window;
 class Window : public HasRenderables
 {
 public:
-	Window(int width = BROWSER_WIDTH, int height = BROWSER_HEIGHT);
+	Window();
 	virtual ~Window();
 	
 	static SDL_Renderer *renderer()
@@ -115,7 +115,16 @@ public:
 		char *native = getenv("MAC_NATIVE_APP");
 		return (native != nullptr);
 	}
+	
+	static SDL_Window *sdl_window()
+	{
+		return _window;
+	}
 
+	void instateWindow();
+	void giveUpOpenGL();
+	void instateGlew();
+	void reinstateOpenGL();
 protected:
 	static Scene *_current;
 	static Scene *_next;
