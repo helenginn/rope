@@ -18,6 +18,11 @@
 
 #include "AreaMeasurer.h"
 #include "ContactSheet.h"
+#include "vagabond/core/Fibonacci.h"
+#include <string>
+#include <iostream>
+#include <gemmi/elem.hpp>
+
 
 AreaMeasurer::AreaMeasurer(SurfaceAreaHandler *handler)
 {
@@ -36,6 +41,51 @@ float AreaMeasurer::surfaceArea()
 
 	// calculate
 	float area = 10;
+	//fibonacci points test
+	Fibonacci test_fibonacci;
+	test_fibonacci.generateLattice(500,1.0);
+	std::vector<glm::vec3> points = test_fibonacci.getPoints();
+
+
+  //loop through points and check that each point has magnitude 1:
+	for (int i = 0; i < points.size(); i++)
+	{
+		float magnitude = sqrt(pow(points[i].x,2) + pow(points[i].y,2) + pow(points[i].z,2));
+		if (fabs(magnitude - 1) > 0.0001)
+		{
+			std::cout << "Error: magnitude of point " << i << " is not 1" << std::endl;
+		}
+	}
+	//end fibonacci points test
 
 	return area;
+}
+
+float AreaMeasurer::fibExposureSingleAtom(Atom *atom, int n_points)
+{
+	Fibonacci fib_lattice;
+	float radius = 1.0;
+	fib_lattice.generateLattice(n_points, radius);
+	std::vector<glm::vec3> points = fib_lattice.getPoints();
+	std::vector<glm::vec3> points_in_overlap;
+
+	//for each lattice point in fibonacci lattice
+	for (const glm::vec3 &point : points)
+	{
+		// for every other atom in posmap
+		for (auto &other_atom : _posMap)
+		{
+			if (other_atom.first != atom)
+			{
+				// check if point in overlap
+				float radius = 1.0;
+				if (glm::length(point - other_atom.second.ave) <= radius)
+				{
+					points_in_overlap.push_back(point);
+				}
+			}
+		}
+	}
+	// return percentage of points not in overlap
+	return 1 - ((float) points_in_overlap.size() / points.size());
 }
