@@ -21,6 +21,7 @@
 
 #include <set>
 #include "Atom.h"
+#include "../utils/glm_import.h"
 
 /** \class ContactSheet
  * \brief class to pre-calculate and then query inter-atomic contacts
@@ -38,9 +39,10 @@ public:
 	 * atom positions will be closely related. */
 	void updateSheet(AtomPosMap &newPositions);
 	
+	/** return set of near atoms within the specified radius*/
 	std::set<Atom *> atomsNear(Atom *centre, float radius);
 private:
-
+	AtomPosMap _posMap;
 };
 
 #endif
