@@ -53,6 +53,8 @@ public:
 	
 	/** calculates surface area of previously copied atom map in Angstroms. */
 	float surfaceArea();
+	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
+	float fibExposureSingleAtom(Atom *atom, int n_points = 100);
 private:
 	Job *_job = nullptr;
 	AtomPosMap _posMap;

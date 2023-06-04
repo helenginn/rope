@@ -25,11 +25,20 @@ ContactSheet::ContactSheet()
 void ContactSheet::updateSheet(AtomPosMap &newPositions)
 {
 	// update any existing scratch calculations...
-
+	//loop through newPositions and update _posMap:
+	_posMap = newPositions;
 }
 
 std::set<Atom *> ContactSheet::atomsNear(Atom *centre, float radius)
 {
 	// replace empty set with nearby atoms
-	return std::set<Atom *>();
+	std::set<Atom *> nearAtomsSet;
+  for (auto &atom : _posMap)
+	{
+		if (glm::length(atom.second.ave - centre->derivedPosition()) <= radius && atom.first != centre)
+		{
+			nearAtomsSet.insert(atom.first);
+		}
+	}
+	return nearAtomsSet;
 }
