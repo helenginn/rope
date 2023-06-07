@@ -86,10 +86,39 @@ BOOST_AUTO_TEST_CASE(vdw_radii)
 	gemmi::Element n_gemmi("N");
 	gemmi::Element s_gemmi("S");
 
-	BOOST_TEST(o_gemmi.vdw_r() == 1.52, tt::tolerance(1e-2));
-	BOOST_TEST(c_gemmi.vdw_r() == 1.70, tt::tolerance(1e-2));
-	BOOST_TEST(n_gemmi.vdw_r() == 1.55, tt::tolerance(1e-2));
-	BOOST_TEST(s_gemmi.vdw_r() == 1.80, tt::tolerance(1e-2));
+	BOOST_TEST(o_gemmi.vdw_r() == 1.52f, tt::tolerance(1e-2f));
+	BOOST_TEST(c_gemmi.vdw_r() == 1.70f, tt::tolerance(1e-2f));
+	BOOST_TEST(n_gemmi.vdw_r() == 1.55f, tt::tolerance(1e-2f));
+	BOOST_TEST(s_gemmi.vdw_r() == 1.80f, tt::tolerance(1e-2f));
+}
+
+// check areaFromExposure returns correct area
+BOOST_AUTO_TEST_CASE(area_from_exposure)
+{
+	Atom a1, a2, a3, a4;
+	float exp1, exp2, exp3, exp4,
+	      area1, area2, area3, area4,
+				calcArea1, calcArea2, calcArea3, calcArea4;
+	a1.setElementSymbol("O");
+	a2.setElementSymbol("C");
+	a3.setElementSymbol("N");
+	a4.setElementSymbol("S");
+	exp1 = 0.0;
+	exp2 = 1.0;
+	exp3 = 0.3;
+	exp4 = 0.8;
+	area1 = (4 * M_PI * 1.52 * 1.52) * exp1;
+	area2 = (4 * M_PI * 1.70 * 1.70) * exp2;
+	area3 = (4 * M_PI * 1.55 * 1.55) * exp3;
+	area4 = (4 * M_PI * 1.80 * 1.80) * exp4;
+	calcArea1 = areaFromExposure(exp1, &a1);
+	calcArea2 = areaFromExposure(exp2, &a2);
+	calcArea3 = areaFromExposure(exp3, &a3);
+	calcArea4 = areaFromExposure(exp4, &a4);
+	BOOST_TEST(calcArea1 == area1, tt::tolerance(1e-2f));
+	BOOST_TEST(calcArea2 == area2, tt::tolerance(1e-2f));
+	BOOST_TEST(calcArea3 == area3, tt::tolerance(1e-2f));
+	BOOST_TEST(calcArea4 == area4, tt::tolerance(1e-2f));
 }
 
 // check atom exposure for no neighbours
@@ -285,7 +314,7 @@ BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
 	// calculate the exposure of the atom
 	float exposure = AM.fibExposureSingleAtom(&atom);
 	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
-	BOOST_TEST(exposure == 0.0, tt::tolerance(1e-2));
+	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
 	calc.finish();
 }
 
@@ -322,5 +351,5 @@ BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 	calc.finish();
 	
 	float area = r->surface_area;
-	BOOST_TEST(area == 29.0333, tt::tolerance(1e-2));
+	BOOST_TEST(area == 29.0333f, tt::tolerance(1e-2f));
 }

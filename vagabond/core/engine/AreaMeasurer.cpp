@@ -89,3 +89,18 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom, int n_points)
 	// return percentage of points not in overlap
 	return 1 - ((float) points_in_overlap.size() / points.size());
 }
+
+float areaFromExposure(float exposure, Atom *atom)
+{
+	float radius = getVdWRadius(atom);
+	float area = exposure * 4 * M_PI * pow(radius,2);
+	return area;
+}
+
+float getVdWRadius(Atom *atom)
+{
+	std::string elementSymbol = atom->elementSymbol();
+	gemmi::Element elem(elementSymbol);
+	float radius = elem.vdw_r();
+	return radius;
+}
