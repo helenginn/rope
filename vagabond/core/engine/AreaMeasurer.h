@@ -55,6 +55,7 @@ public:
 	float surfaceArea();
 	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
 	float fibExposureSingleAtom(Atom *atom, int n_points = 100);
+
 private:
 	Job *_job = nullptr;
 	AtomPosMap _posMap;
@@ -62,5 +63,11 @@ private:
 	SurfaceAreaHandler *_handler = nullptr;
 	ContactSheet *_contacts = nullptr;
 };
+
+/** calculates the exposed area from atom's lattice exposure and  vdw radius*/
+float areaFromExposure(float exposure, Atom *atom);
+
+/** get VdWRadius from an atom*/
+float getVdWRadius(Atom *atom);
 
 #endif
