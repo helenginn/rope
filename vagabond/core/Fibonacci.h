@@ -30,12 +30,16 @@ public:
 
 	void generateLattice(int num, double radius);
 
+  /** changes the radius of the Fibonacci lattice points to the atom's VdW Radius*/
+	void changeLatticeRadius(Atom *atom);
+
 	std::vector<glm::vec3> &getPoints()
 	{
 		return _points;
 	}
 private:
 	std::vector<glm::vec3> _points;
+	double _radius;
 
 };
 
