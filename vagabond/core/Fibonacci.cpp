@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Fibonacci.h"
+#include "vagabond/core/engine/AreaMeasurer.h"
 
 Fibonacci::Fibonacci()
 {
@@ -56,6 +57,19 @@ void Fibonacci::generateLattice(int num, double radius)
 		glm::vec3 point = glm::vec3(x * radius, y * radius, z * radius);
 
 		_points.push_back(point);
+		_radius = radius;
 	}
 }
 
+void Fibonacci::changeLatticeRadius(Atom *atom)
+{
+	const float radius = getVdWRadius(atom);
+	if (radius != _radius)
+	{
+		for (int i = 0; i < _points.size(); i++)
+		{
+			_points[i] *= radius / _radius;
+		}
+		_radius = radius;
+	}
+}
