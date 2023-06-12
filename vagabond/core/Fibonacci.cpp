@@ -54,9 +54,12 @@ void Fibonacci::generateLattice(int num, double radius)
 		double x = cos(phi) * r;
 		double z = sin(phi) * r;
 
-		glm::vec3 point = glm::vec3(x * radius, y * radius, z * radius);
+    glm::vec3 point = glm::vec3(x, y, z);
+		_unitPoints.push_back(point);
 
+		point = glm::vec3(x * radius, y * radius, z * radius);
 		_points.push_back(point);
+
 		_radius = radius;
 	}
 }
@@ -66,9 +69,9 @@ void Fibonacci::changeLatticeRadius(Atom *atom)
 	const float radius = getVdWRadius(atom);
 	if (radius != _radius)
 	{
-		for (int i = 0; i < _points.size(); i++)
+		for (int i = 0; i < _unitPoints.size(); i++)
 		{
-			_points[i] *= radius / _radius;
+			_points[i] = _unitPoints[i] * radius;
 		}
 		_radius = radius;
 	}
