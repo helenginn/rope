@@ -20,6 +20,7 @@
 #define __vagabond__AreaMeasurer__
 
 #include "AtomPosMap.h"
+#include "vagabond/core/Fibonacci.h"
 
 class SurfaceAreaHandler;
 class ContactSheet;
@@ -28,7 +29,7 @@ struct Job;
 class AreaMeasurer
 {
 public:
-	AreaMeasurer(SurfaceAreaHandler *handler);
+	AreaMeasurer(SurfaceAreaHandler *handler, int n_points = 200);
 	~AreaMeasurer();
 	
 	void setJob(Job *j)
@@ -54,11 +55,12 @@ public:
 	/** calculates surface area of previously copied atom map in Angstroms. */
 	float surfaceArea();
 	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
-	float fibExposureSingleAtom(Atom *atom, int n_points = 100);
+	float fibExposureSingleAtom(Atom *atom);
 
 private:
 	Job *_job = nullptr;
 	AtomPosMap _posMap;
+	Fibonacci _lattice;
 
 	SurfaceAreaHandler *_handler = nullptr;
 	ContactSheet *_contacts = nullptr;

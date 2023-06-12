@@ -163,9 +163,9 @@ BOOST_AUTO_TEST_CASE(atom_far_neighbour)
 	Atom atom, atom2;
 	glm::vec3 pos, pos2;
 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(2.0f, 4.0f, 5.0f);
-	atom.setElementSymbol("O"); // chosen arbitrarily
-	atom2.setElementSymbol("H");
+	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
+	atom.setElementSymbol("O");
+	atom2.setElementSymbol("O");
 	atom.setDerivedPosition(pos);
 	atom2.setDerivedPosition(pos2);
 	WithPos withPos, withPos2;
@@ -203,10 +203,10 @@ BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
 	// initialise 2 atoms with overlap but more distant positions 
 	Atom atom, atom2;
 	glm::vec3 pos, pos2;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f); // chosen arbitrarily
-	pos2 = glm::vec3(1.5f, 0.5f, 0.0f);
+	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	pos2 = glm::vec3(2.28f, 0.76f, 0.0f);
 	atom.setElementSymbol("O");
-	atom2.setElementSymbol("H");
+	atom2.setElementSymbol("O");
 	atom.setDerivedPosition(pos);
 	atom2.setDerivedPosition(pos2);
 	WithPos withPos, withPos2;
@@ -244,9 +244,9 @@ BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
 	Atom atom, atom2;
 	glm::vec3 pos, pos2;
 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(0.1f, 0.1f, 0.0f);
+	pos2 = glm::vec3(0.152f, 0.152f, 0.0f);
 	atom.setElementSymbol("O"); // chosen arbitrarily
-	atom2.setElementSymbol("H");
+	atom2.setElementSymbol("O");
 	atom.setDerivedPosition(pos);
 	atom2.setDerivedPosition(pos2);
 	WithPos withPos, withPos2;
@@ -285,8 +285,8 @@ BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
 	glm::vec3 pos, pos2;
 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
 	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
-	atom.setElementSymbol("O"); // chosen arbitrarily
-	atom2.setElementSymbol("H");
+	atom.setElementSymbol("O");
+	atom2.setElementSymbol("O");
 	atom.setDerivedPosition(pos);
 	atom2.setDerivedPosition(pos2);
 	WithPos withPos, withPos2;

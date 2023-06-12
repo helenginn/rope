@@ -24,10 +24,12 @@
 #include <gemmi/elem.hpp>
 
 
-AreaMeasurer::AreaMeasurer(SurfaceAreaHandler *handler)
+AreaMeasurer::AreaMeasurer(SurfaceAreaHandler *handler, int n_points)
 {
 	_handler = handler;
 	_contacts = new ContactSheet();
+	_lattice = Fibonacci();
+  _lattice.generateLattice(n_points, 1.0);
 }
 
 AreaMeasurer::~AreaMeasurer()
@@ -38,13 +40,11 @@ AreaMeasurer::~AreaMeasurer()
 float AreaMeasurer::surfaceArea()
 {
 	_contacts->updateSheet(_posMap);
-
+	
 	// calculate
 	float area = 10;
 	//fibonacci points test
-	Fibonacci test_fibonacci;
-	test_fibonacci.generateLattice(500,1.0);
-	std::vector<glm::vec3> points = test_fibonacci.getPoints();
+	std::vector<glm::vec3> points = _lattice.getPoints();
 
 
   //loop through points and check that each point has magnitude 1:
@@ -53,7 +53,7 @@ float AreaMeasurer::surfaceArea()
 		float magnitude = sqrt(pow(points[i].x,2) + pow(points[i].y,2) + pow(points[i].z,2));
 		if (fabs(magnitude - 1) > 0.0001)
 		{
-			std::cout << "Error: magnitude of point " << i << " is not 1" << std::endl;
+			std::cout << "Error: magnitude of point " << i << " is not 1, is " << magnitude << std::endl;
 		}
 	}
 	//end fibonacci points test
@@ -61,12 +61,10 @@ float AreaMeasurer::surfaceArea()
 	return area;
 }
 
-float AreaMeasurer::fibExposureSingleAtom(Atom *atom, int n_points)
+float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 {
-	Fibonacci fib_lattice;
-	float radius = 1.0;
-	fib_lattice.generateLattice(n_points, radius);
-	std::vector<glm::vec3> points = fib_lattice.getPoints();
+	_lattice.changeLatticeRadius(atom);
+	std::vector<glm::vec3> points = _lattice.getPoints();
 	std::vector<glm::vec3> points_in_overlap;
 
 	//for each lattice point in fibonacci lattice
@@ -78,8 +76,8 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom, int n_points)
 			if (other_atom.first != atom)
 			{
 				// check if point in overlap
-				float radius = 1.0;
-				if (glm::length(point - other_atom.second.ave) <= radius)
+				const float radius = getVdWRadius(other_atom.first);
+				if (glm::length(point - other_atom.second.ave) <= radius + 1e-6f)
 				{
 					points_in_overlap.push_back(point);
 				}
