@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/glm_import.h>
 #include <vector>
+#include "vagabond/core/Atom.h"
 
 class Fibonacci
 {
@@ -38,6 +39,7 @@ public:
 		return _points;
 	}
 private:
+	std::vector<glm::vec3> _unitPoints;
 	std::vector<glm::vec3> _points;
 	double _radius;
 
