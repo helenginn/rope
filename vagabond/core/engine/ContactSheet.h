@@ -38,11 +38,20 @@ public:
 	 * advantage of any partially-sorted existing sheet calculations as updated
 	 * atom positions will be closely related. */
 	void updateSheet(AtomPosMap &newPositions);
+
+	/** calculate zSliceMap for relevant atom neighbours*/
+	void calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms);
 	
+	std::map<Atom *, std::map<Atom *, std::pair<float, float> > > getZSliceMap() const
+	{
+		return _zSliceMap;
+	}
+
 	/** return set of near atoms within the specified radius*/
 	std::set<Atom *> atomsNear(Atom *centre, float radius);
 private:
 	AtomPosMap _posMap;
+	std::map<Atom *, std::map<Atom *, std::pair<float, float> > > _zSliceMap;
 };
 
 #endif
