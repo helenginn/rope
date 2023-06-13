@@ -56,6 +56,8 @@ public:
 	float surfaceArea();
 	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
 	float fibExposureSingleAtom(Atom *atom);
+	/** more efficiently calculates exposure of atom, i.e. the percentage of points not in the overlap with other atoms within a specified radius */
+	float fibExposureSingleAtomZSlice(Atom *atom, float radius);
 
 private:
 	Job *_job = nullptr;
