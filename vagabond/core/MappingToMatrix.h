@@ -19,7 +19,7 @@
 #ifndef __vagabond__MappingToMatrix__
 #define __vagabond__MappingToMatrix__
 
-#include "svd/PCA.h"
+#include <vagabond/utils/svd/PCA.h>
 template <typename Type> class Mapped;
 
 class SpecificNetwork;
@@ -46,6 +46,7 @@ public:
 private:
 	float simpleValue(float x, float y);
 	float deviationScore(float x, float y);
+	void normalise(double &val);
 	void loop(float(MappingToMatrix::*get_value)(float, float));
 	SpecificNetwork *_specified;
 
@@ -54,6 +55,8 @@ private:
 
 	std::vector<float> _min, _max;
 	std::map<int, double *> _ticket2Mat;
+	double _mean = 1;
+	double _stdev = 1;
 	int _steps = 50;
 };
 

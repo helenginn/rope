@@ -28,7 +28,7 @@ class Menu;
 class Scene;
 class ItemLine;
 
-class LineGroup : public ButtonResponder, public Button, public DragResponder
+class LineGroup : public ButtonResponder, public Button
 {
 public:
 	LineGroup(Item *item, Scene *sender = nullptr);
@@ -37,8 +37,8 @@ public:
 	void refreshGroups();
 
 	virtual void buttonPressed(std::string tag, Button *button);
-	virtual void finishedDragging(std::string tag, double x, double y);
 private:
+	void fixUpperCorner(Renderable *r, float x = 0, float y = 0);
 	LineGroup(Item *item, LineGroup *topLevel);
 	void initialise(Item *item, LineGroup *top);
 	Menu *prepareMenu();
@@ -53,8 +53,6 @@ private:
 	LineGroup *_topLevel = nullptr;
 	LineGroup *_parent = nullptr;
 	Scene *_scene = nullptr;
-	
-	float _maxHeight = 0;
 
 	std::vector<LineGroup *> _groups;
 };

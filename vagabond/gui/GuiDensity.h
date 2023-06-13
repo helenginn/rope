@@ -54,6 +54,11 @@ public:
 	{
 		_atoms = atoms;
 	}
+	
+	void setTracking(bool track)
+	{
+		_tracking = track ? 1 : 0;
+	}
 
 	void fromMap(AtomMap *map);
 	virtual void extraUniforms();
@@ -63,7 +68,9 @@ private:
 	OriginGrid<fftwf_complex> *_ref = nullptr;
 	OriginGrid<fftwf_complex> *_map = nullptr;
 
+	float _step = 0.5;
 	int _slice = 0;
+	int _tracking = 1;
 };
 
 #endif

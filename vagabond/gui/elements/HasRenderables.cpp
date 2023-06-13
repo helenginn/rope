@@ -8,6 +8,12 @@
 #include "Window.h"
 #include "Renderable.h"
 
+void HasRenderables::deleteLater(Renderable *r)
+{
+	removeObject(r);
+	Window::setDelete(r);
+}
+
 void HasRenderables::deleteObjects(bool recursive)
 {
 	if (objectCount() == 0)
@@ -122,6 +128,18 @@ HasRenderables::~HasRenderables()
 	deleteObjects();
 }
 
+void HasRenderables::insertObject(Renderable *r, 
+                                  std::vector<Renderable *>::iterator it)
+{
+	_objects.insert(it, r);
+
+	Renderable *responsible = delegate();
+	if (responsible)
+	{
+		r->setDelegate(responsible);
+	}
+}
+
 void HasRenderables::addObjectToFront(Renderable *r)
 {
 	std::vector<Renderable *>::iterator it;
@@ -130,7 +148,7 @@ void HasRenderables::addObjectToFront(Renderable *r)
 	
 	if (it == _objects.end())
 	{
-		_objects.insert(_objects.begin(), r);
+		insertObject(r, _objects.begin());
 	}
 	else
 	{
@@ -153,7 +171,7 @@ void HasRenderables::addObject(Renderable *r)
 	if (it == _objects.end())
 	{
 		modify(r);
-		_objects.push_back(r);
+		insertObject(r, _objects.end());
 	}
 	else
 	{

@@ -35,6 +35,11 @@ public:
 	virtual Atom *anAtom() = 0;
 	
 	virtual Atom *atom(int i) const = 0;
+
+	virtual bool atomIsCentral(Atom *a)
+	{
+		return (a == anAtom());
+	}
 	
 	virtual bool isTorsion() const
 	{

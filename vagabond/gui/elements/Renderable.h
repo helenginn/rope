@@ -61,6 +61,13 @@ public:
 		_indices.clear();
 	}
 	
+	void setDelegate(Renderable *r);
+	
+	virtual Renderable *delegate()
+	{
+		return _delegate;
+	}
+	
 	void setImage(std::string imagename, bool wrap = false);
 	void copyFrom(Renderable *s);
 
@@ -265,6 +272,7 @@ public:
 	static void addIndex(std::vector<GLuint> &indices, 
 	                     std::vector<Snow::Vertex> &vertices, GLint i);
 	void addIndices(GLuint i1, GLuint i2, GLuint i3);
+	void addIndices(GLuint i1, GLuint i2);
 	void maximalDim(double *min, double *max, int dim);
 	double maximalWidth();
 	double maximalHeight();
@@ -426,6 +434,8 @@ protected:
 	RaySearch _searchType = Default;
 	double _selectionResize = 1.1;
 	
+	// override for program + shaders + extra uniforms
+	Renderable *_delegate = nullptr;
 	ShaderGets *_shaderGets = nullptr;
 	std::mutex _vertLock;
 	std::mutex _buffLock;

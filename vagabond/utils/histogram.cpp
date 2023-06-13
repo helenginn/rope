@@ -16,32 +16,45 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MtzFile__
-#define __vagabond__MtzFile__
+#include "histogram.h"
 
-#include "File.h"
-
-class Diffraction;
-class ArbitraryMap;
-
-class MtzFile : public File
+void get_histogram_limits(const std::vector<float> &vals, Histogram &hist)
 {
-public:
-	MtzFile(std::string filename = "");
-	
-	void setMap(Diffraction *diffraction)
+	for (const float &val : vals)
 	{
-		_map = diffraction;
+		hist.max = std::max(val, hist.max);
+		hist.min = std::min(val, hist.min);
+	}
+}
+
+void histogram(const std::vector<float> &vals, Histogram &hist)
+{
+	get_histogram_limits(vals, hist);
+
+	std::vector<int> &freqs = hist.freqs;
+		
+	for (const float &val : vals)
+	{
+		int bin = (val - hist.min + hist.step / 2) / hist.step;
+		if (freqs.size() < bin + 1)
+		{
+			freqs.resize(bin + 1);
+		}
+
+		freqs[bin]++;
+		if (freqs.at(bin) > hist.highest)
+		{
+			hist.highest = freqs.at(bin);
+		}
 	}
 
-	void setMap(ArbitraryMap *map);
+	for (const int &freq : hist.freqs)
+	{
+		if (freq < hist.lowest)
+		{
+			hist.lowest = freq;
+		}
 
-	std::string write_to_string(float max_res = -1);
-	virtual File::Type cursoryLook();
-	virtual void parse();
-private:
-	Diffraction *_map = nullptr;
+	}
+}
 
-};
-
-#endif

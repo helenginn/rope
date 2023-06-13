@@ -39,6 +39,11 @@ public:
 		Reciprocal
 	};
 	
+	const Status &status() const
+	{
+		return _status;
+	}
+	
 	void setStatus(Status status)
 	{
 		_status = status;

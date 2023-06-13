@@ -16,32 +16,37 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MtzFile__
-#define __vagabond__MtzFile__
+#include <vagabond/utils/include_boost.h>
 
-#include "File.h"
+#include <vagabond/core/ArbitraryMap.h>
+#include <vagabond/core/MtzFile.h>
+#include <vagabond/core/matrix_functions.h>
+namespace tt = boost::test_tools;
 
-class Diffraction;
-class ArbitraryMap;
-
-class MtzFile : public File
+ArbitraryMap *quickMap()
 {
-public:
-	MtzFile(std::string filename = "");
+	int nx = 10; int ny = 10; int nz = 10;
+	ArbitraryMap *map = new ArbitraryMap();
+	map->setDimensions(nx, ny, nz);
+
+	glm::mat3x3 uc = mat3x3_from_unit_cell(10, 10, 10, 90, 90, 90);
+	map->setRealMatrix(uc);
+
+	return map;
+}
+
+BOOST_AUTO_TEST_CASE(test_grid_adds_other)
+{
+	ArbitraryMap *map = quickMap();
+	ArbitraryMap *second = quickMap();
 	
-	void setMap(Diffraction *diffraction)
-	{
-		_map = diffraction;
-	}
+	*map += *second;
+	map->element(0)[0] = 1;
+	map->element(4)[0] = 1;
+	
+	MtzFile test("test");
+	test.setMap(map);
 
-	void setMap(ArbitraryMap *map);
-
-	std::string write_to_string(float max_res = -1);
-	virtual File::Type cursoryLook();
-	virtual void parse();
-private:
-	Diffraction *_map = nullptr;
-
-};
-
-#endif
+	std::string str = test.write_to_string();
+	std::cout << str[0] << std::endl;
+}

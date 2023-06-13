@@ -33,7 +33,56 @@ TransformedGrid<fftwf_complex>(0, 0, 0)
 	
 }
 
-void ArbitraryMap::setup()
+void multiply_voxels(fftwf_complex &modify, const fftwf_complex &constant,
+                     const float &interpolated_value)
+{
+	modify[0] *= interpolated_value;
+}
+
+void subtract_from_voxel(fftwf_complex &modify, const fftwf_complex &constant,
+                  const float &interpolated_value)
+{
+	modify[0] -= interpolated_value;
+}
+
+void divide_by_voxel(fftwf_complex &modify, const fftwf_complex &constant,
+                  const float &interpolated_value)
+{
+	modify[0] /= interpolated_value;
+}
+
+void add_to_voxel(fftwf_complex &modify, const fftwf_complex &constant,
+                  const float &interpolated_value)
+{
+	modify[0] += interpolated_value;
+}
+
+ArbitraryMap &ArbitraryMap::operator*=(const ArbitraryMap &other)
+{
+	this->operation(other, &multiply_voxels);
+	return *this;
+}
+
+ArbitraryMap &ArbitraryMap::operator/=(const ArbitraryMap &other)
+{
+	this->operation(other, &divide_by_voxel);
+	return *this;
+}
+
+ArbitraryMap &ArbitraryMap::operator-=(const ArbitraryMap &other)
+{
+	this->operation(other, &subtract_from_voxel);
+	return *this;
+}
+
+ArbitraryMap &ArbitraryMap::operator+=(const ArbitraryMap &other)
+{
+	this->operation(other, &add_to_voxel);
+	return *this;
+}
+
+
+void ArbitraryMap::setupFromDiffraction()
 {
 	if (_diff == nullptr)
 	{

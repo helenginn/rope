@@ -59,12 +59,23 @@ Renderable::~Renderable()
 
 void Renderable::deletePrograms()
 {
+	if (_delegate)
+	{
+		return;
+	}
+
 	Library::getLibrary()->endProgram(_vString, _fString);
 	_program = 0;
 }
 
 void Renderable::initialisePrograms()
 {
+	if (_delegate && _delegate != this)
+	{
+		setVertexShaderFile(_delegate->_vFile);
+		setFragmentShaderFile(_delegate->_fFile);
+	}
+
 	if (_program != 0)
 	{
 		return;
@@ -211,8 +222,13 @@ void Renderable::runProgram()
 		return;
 	}
 
-	glUseProgram(_program);
+	if (_delegate)
+	{
+		_delegate->_program = _program;
+	}
 
+	glUseProgram(_program);
+	
 	checkErrors("use program");
 	rebindVBOBuffers();
 	checkErrors("rebinding program");
@@ -228,6 +244,11 @@ void Renderable::runProgram()
 	_glProj = glm::transpose(projection());
 	glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
 	checkErrors("rebinding projection");
+
+	if (_delegate && _delegate != this)
+	{
+		_delegate->extraUniforms();
+	}
 
 	extraUniforms();
 
@@ -469,6 +490,12 @@ void Renderable::addIndicesToEnd(std::vector<GLuint> &indices)
 	{
 		_indices.push_back(idx + offset);
 	}
+}
+
+void Renderable::addIndices(GLuint i1, GLuint i2)
+{
+	addIndex(i1);
+	addIndex(i2);
 }
 
 void Renderable::addIndices(GLuint i1, GLuint i2, GLuint i3)
@@ -937,6 +964,11 @@ double Renderable::maximalHeight()
 	
 	maximalDim(&min, &max, 1);
 	
+	if (max == -FLT_MAX || min == FLT_MAX)
+	{
+		return 0;
+	}
+	
 	return max - min;
 }
 
@@ -946,6 +978,11 @@ double Renderable::maximalWidth()
 	double min = FLT_MAX;
 	
 	maximalDim(&min, &max, 0);
+	
+	if (max == -FLT_MAX || min == FLT_MAX)
+	{
+		return 0;
+	}
 	
 	return max - min;
 }
@@ -1304,6 +1341,11 @@ void Renderable::forceRender(bool vert, bool idx)
 	{
 		_objects[i]->forceRender(vert, idx);
 	}
+	
+	if (!_shaderGets->buffered())
+	{
+		return;
+	}
 
 	if (vert)
 	{
@@ -1321,5 +1363,15 @@ void Renderable::unMouseOver()
 	for (size_t i = 0; i < objectCount(); i++)
 	{
 		object(i)->unMouseOver();
+	}
+}
+
+void Renderable::setDelegate(Renderable *r)
+{
+	_delegate = r;
+	
+	for (int i = 0; i < objectCount(); i++)
+	{
+		object(i)->setDelegate(r);
 	}
 }

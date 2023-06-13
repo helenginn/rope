@@ -24,7 +24,7 @@
 /* 11-point interpolation - attempted transcription from Dave's function
  * from GAP */
 template <class T>
-float OriginGrid<T>::interpolate(glm::vec3 real)
+float OriginGrid<T>::interpolate(glm::vec3 real) const
 {
 	real2Voxel(real);
 	glm::vec3 &vox000 = real;

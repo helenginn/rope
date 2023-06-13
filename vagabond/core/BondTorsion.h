@@ -113,7 +113,7 @@ public:
 		return (_d == a || _a == a) && (_b != a && _c != a);
 	}
 	
-	bool atomIsCentral(Atom *a)
+	virtual bool atomIsCentral(Atom *a)
 	{
 		return _b == a || _c == a;
 	}

@@ -89,6 +89,8 @@ void VagWindow::prepareProgressBar()
 
 void VagWindow::setup(int argc, char **argv)
 {
+	windowSetup();
+
 	MainMenu *menu = new MainMenu();
 	setCurrentScene(menu);
 	_current = menu;

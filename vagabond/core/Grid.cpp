@@ -191,7 +191,7 @@ float Grid<T>::sigma()
 	}
 	
 	float mean = val / n;
-	float sigma = sqrt(valsq / n) - mean * mean;
+	float sigma = sqrt(valsq / n - mean * mean);
 	
 	return sigma;
 }

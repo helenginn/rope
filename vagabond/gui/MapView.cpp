@@ -72,6 +72,11 @@ void MapView::makeTriangles()
 
 bool MapView::sampleFromPlot(double x, double y)
 {
+	if (!_refined)
+	{
+		return false;
+	}
+
 	double tx = x;
 	double ty = y;
 	convertToGLCoords(&tx, &ty);
@@ -133,11 +138,46 @@ void MapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 	Display::mousePressEvent(x, y, button);
 }
 
+void MapView::displayDistances(PCA::Matrix &dist)
+{
+	_distMat = dist;
+
+	if (_distances == nullptr)
+	{
+		_distances = new MatrixPlot(_distMat, _mutex);
+		_distances->resize(0.8);
+		_distances->setCentre(0.85, 0.5);
+		addObject(_distances);
+	}
+
+	_distances->update();
+}
+
 void MapView::sendObject(std::string tag, void *object)
 {
 	if (tag == "update_map")
 	{
 		_updatePlot = true;
+	}
+
+	if (tag == "atom_matrix")
+	{
+		PCA::Matrix *dist = static_cast<PCA::Matrix *>(object);
+		displayDistances(*dist);
+	}
+
+	if (tag == "atom_map")
+	{
+		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
+		CompareDistances cd(*aps);
+		PCA::Matrix dist = cd.matrix();
+		displayDistances(dist);
+	}
+
+	else if (tag == "refined")
+	{
+		_refined = true;
+		_specified->setResponder(this);
 	}
 }
 

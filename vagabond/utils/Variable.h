@@ -41,7 +41,6 @@ public:
 
 	Type interpolate_weights(const std::vector<float> &weights)
 	{
-		assert(weights.size() == 2);
 		float frac = weights[1];
 
 		int n = priorStep(frac);

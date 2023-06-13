@@ -38,12 +38,12 @@ public:
 
 	virtual glm::vec3 maxBound() const = 0;
 
-	float interpolate(glm::vec3 real);
-	virtual float resolution(int i, int j, int k) = 0;
-	virtual glm::vec3 reciprocal(int h, int k, int l) = 0;
+	float interpolate(glm::vec3 real) const;
+	virtual float resolution(int i, int j, int k) const = 0;
+	virtual glm::vec3 reciprocal(int h, int k, int l) const = 0;
 	virtual void real2Voxel(glm::vec3 &real) const = 0;
 	virtual void voxel2Real(glm::vec3 &voxel) const = 0;
-	virtual glm::vec3 real(int i, int j, int k) = 0;
+	virtual glm::vec3 real(int i, int j, int k) const = 0;
 
 	virtual const glm::mat3x3 &frac2Real() const = 0;
 

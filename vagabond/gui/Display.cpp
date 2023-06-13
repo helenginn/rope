@@ -139,7 +139,7 @@ void Display::densityFromMap(ArbitraryMap *map)
 void Display::densityFromDiffraction(Diffraction *diff)
 {
 	_map = new ArbitraryMap(*diff);
-	_map->setup();
+	_map->setupFromDiffraction();
 
 	_guiDensity->setReferenceDensity(_map);
 }
@@ -238,7 +238,7 @@ void Display::makeMapFromDiffraction()
 	if (_diff)
 	{
 		_map = new ArbitraryMap(*_diff);
-		_map->setup();
+		_map->setupFromDiffraction();
 		_guiDensity = new GuiDensity();
 		_guiDensity->populateFromMap(_map);
 		addObject(_guiDensity);

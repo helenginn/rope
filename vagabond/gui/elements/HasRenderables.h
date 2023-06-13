@@ -26,6 +26,7 @@ public:
 	void addTempObject(Renderable *r);
 	
 	void deleteTemps();
+	void deleteLater(Renderable *r);
 
 	void addObjectToFront(Renderable *r);
 
@@ -37,6 +38,11 @@ public:
 	Renderable *object(int i)
 	{
 		return _objects[i];
+	}
+
+	virtual Renderable *delegate()
+	{
+		return nullptr;
 	}
 	
 	std::vector<Renderable *> &objects()
@@ -60,6 +66,8 @@ public:
 	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
 protected:
 	void clearHighlights();
+
+	void insertObject(Renderable *r, std::vector<Renderable *>::iterator it);
 
 	/** accessibility */
 	Renderable *tab(bool shift);

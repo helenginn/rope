@@ -1,6 +1,3 @@
-#ifndef __matrix__functions__
-#define __matrix__functions__
-
 #include "matrix_functions.h"
 #include <iostream>
 
@@ -71,10 +68,27 @@ void torsion_basis(mat4x4 &target, const vec4 &self,
 	target[3][3] = 1;
 }
 
+float mat3x3_volume(const mat3x3 &mat)
+{
+	double ucs[6];
+	unit_cell_from_mat3x3(mat, ucs);
+
+	double cosA = cos(deg2rad(ucs[3]));
+	double cosB = cos(deg2rad(ucs[4]));
+	double cosC = cos(deg2rad(ucs[5]));
+
+	double sinC = sin(deg2rad(ucs[5]));
+	
+	double vol_bit = 1 - cosA * cosA - cosB * cosB - cosC * cosC;
+	vol_bit += 2 * cosA * cosB * cosC;
+	float volume = ucs[0] * ucs[1] * ucs[2] * sqrt(vol_bit);
+	return volume;
+}
+
 mat3x3 mat3x3_from_unit_cell(double a, double b, double c, 
                              double alpha, double beta, double gamma)
 {
-	bool flipped = fix_unit_cell_angles(alpha, beta, gamma);
+	fix_unit_cell_angles(alpha, beta, gamma);
 
 	double cosA = cos(deg2rad(alpha));
 	double cosB = cos(deg2rad(beta));
@@ -108,7 +122,7 @@ mat3x3 mat3x3_from_unit_cell(double a, double b, double c,
 glm::mat3x3 bond_aligned_matrix(double a, double b, double c, 
                                 double alpha, double beta, double gamma)
 {
-	bool flipped = fix_unit_cell_angles(alpha, beta, gamma);
+	fix_unit_cell_angles(alpha, beta, gamma);
 	int mult = 1;
 
 	double cosA = cos(deg2rad(alpha));
@@ -339,11 +353,28 @@ mat3x3 closest_rot_mat(vec3 vec1, vec3 vec2, vec3 axis, float *best, bool unity)
 		*best = theta + addition;
 	}
 	
-	mat3x3 &chosen = (other ? extra : m);
-
 	return (other ? extra : m);
 }
 
-#endif
+void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr)
+{
+	for (size_t i = 0; i < 3; i++)
+	{
+		uc_ptr[i] = glm::length(mat[i]);
+	}
+	
+	for (int i = 0; i < 3; i++)
+	{
+		int j = (i + 1) % 3;
+		int k = (j + 1) % 3;
+
+		float rad = glm::angle(glm::normalize(mat[i]), 
+		                       glm::normalize(mat[j]));
+		
+		float deg = rad2deg(rad);
+		uc_ptr[3 + k] = deg;
+	}
+}
+
 
 

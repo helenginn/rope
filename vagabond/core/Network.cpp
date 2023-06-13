@@ -79,8 +79,8 @@ void Network::addBounds(Mapping<NETWORK_DIMS, float> *map)
 	
 	for (int i = 0; i < min.size(); i++)
 	{
-		min[i] *= 2;
-		max[i] *= 2;
+		min[i] *= 5;
+		max[i] *= 5;
 	}
 	
 	const int D = NETWORK_DIMS;
@@ -118,6 +118,7 @@ void Network::setup()
 	makeBlueprintMapping();
 	crackPoints();
 	removeBounds();
+	_blueprint->update();
 }
 
 void Network::crackPoints()

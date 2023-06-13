@@ -16,32 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MtzFile__
-#define __vagabond__MtzFile__
+#ifndef __vagabond__AlterFloatView__
+#define __vagabond__AlterFloatView__
 
-#include "File.h"
+#include <vagabond/gui/elements/Scene.h>
+#include "Entry.h"
 
-class Diffraction;
-class ArbitraryMap;
-
-class MtzFile : public File
+template <class Thing>
+class AlterFloatView : public Scene
 {
 public:
-	MtzFile(std::string filename = "");
-	
-	void setMap(Diffraction *diffraction)
-	{
-		_map = diffraction;
-	}
+	AlterFloatView(Scene *scene, Thing &thing);
 
-	void setMap(ArbitraryMap *map);
-
-	std::string write_to_string(float max_res = -1);
-	virtual File::Type cursoryLook();
-	virtual void parse();
+	virtual void setup();
+	void buttonPressed(std::string tag, Button *button);
+protected:
+	Thing &_thing;
 private:
-	Diffraction *_map = nullptr;
+	void alterValue(TextEntry *te);
+	void prepareEntries();
 
+	std::vector<Entry> _entries;
 };
+
+#include "AlterFloatView.cpp"
 
 #endif

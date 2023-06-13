@@ -38,7 +38,8 @@ void Correlator::prepareList()
 	int all = 0;
 	int rejected = 0;
 
-	/* loop through each point in the reference map */
+	/* loop through each point in the map "density" which are within the
+	 * 	bounds of "template" */
 	for (size_t k = 0; k < _density->nz(); k++)
 	{
 		for (size_t j = 0; j < _density->ny(); j++)
@@ -51,7 +52,6 @@ void Correlator::prepareList()
 				glm::vec3 relative_pos = real_pos;
 				relative_pos -= min;
 				
-//				std::cout << "start: " << relative_pos << std::endl;
 				/* convert to fractional in the space of the big map */
 				_density->real2Voxel(relative_pos);
 				_density->index_to_fractional(relative_pos);

@@ -215,9 +215,18 @@ void BondSequence::fetchTorsion(int idx)
 	}
 	
 	int n = (_custom ? _custom->size : 0);
+	
+	double t = 0;
+	if (posSampler())
+	{
+		t = _torsionAngles[_blocks[idx].torsion_idx];
+	}
+	else
+	{
+		t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
+		                                      _currentVec, n);
+	}
 
-	double t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
-	                                             _currentVec, n);
 
 	_blocks[idx].torsion = t;
 }
@@ -236,8 +245,15 @@ void BondSequence::prewarnPositionSampler()
 	}
 
 	int n = (_custom ? _custom->size : 0);
-	ps->prewarnPosition(this, _currentVec, n);
 
+	std::vector<float> vals(n);
+	for (int i = 0; i < n; i++)
+	{
+		vals[i] = _currentVec[i];
+	}
+	
+	_acceptablePositions = ps->prewarnAtoms(this, vals, _atomPositions);
+	ps->prewarnAngles(this, vals, _torsionAngles);
 }
 
 void BondSequence::fetchAtomTarget(int idx)
@@ -246,9 +262,15 @@ void BondSequence::fetchAtomTarget(int idx)
 
 	if (ps == nullptr) { return; }
 
-	glm::vec3 v = ps->positionForIndex(this, idx);
-	
-	_blocks[idx].target = v;
+	if (_acceptablePositions)
+	{
+		_blocks[idx].target = _atomPositions[idx];
+	}
+
+	else
+	{
+		_blocks[idx].target = glm::vec3(NAN, NAN, NAN);
+	}
 }
 
 int BondSequence::calculateBlock(int idx)

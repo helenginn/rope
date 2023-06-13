@@ -22,21 +22,28 @@
 #include "Modal.h"
 #include "Button.h"
 #include "TextEntry.h"
+#include "KeyResponder.h"
 
 class TextEntry;
 
 /** will call buttonPressed(tag, _text) - text is available through
  * casting to TextEntry and calling the scratch() geter */
 
-class AskForText : public Modal, public Button
+class AskForText : public Modal, public Button, public KeyResponder,
+public Responder<TextEntry>
 {
 public:
 	AskForText(Scene *scene, std::string text, 
 	           std::string tag, ButtonResponder *sender,
 	           TextEntry::Validation v = TextEntry::None);
+	
+	void allowCapitals(bool capitals);
+	virtual void respond();
 
 	virtual ~AskForText();
 	virtual void buttonPressed(std::string tag, Button *button);
+	virtual void keyPressed(SDL_Keycode other);
+	virtual void keyPressed(char key);
 private:
 	TextEntry *_text;
 

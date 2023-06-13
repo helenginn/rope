@@ -72,14 +72,33 @@ void Slider::setup(std::string text, double min, double max, double step)
 void Slider::setStart(double x, double y)
 {
 	_dot->setProportion(x, y);
-	finishedDragging("dot", x * _numsteps, y);
+	finishedDragging("dot", x * _numsteps, y * _numsteps);
 
 	if (_display)
 	{
 		double w = _width;
-		double wl = -w / 2 + w * x;
+		double wl = -w / 2 + w * (_vert ? y : x);
 		_display->setCentre(wl / 2, +0.08);
 	}
+}
+
+void Slider::updateDisplay(double val)
+{
+	if (_display)
+	{
+		_display->setText(_prefix + f_to_str(val, 0) + _suffix);
+		_display->resize(0.6);
+	}
+}
+
+void Slider::setStep(double val)
+{
+	double disp = val;
+	val = val - _min;
+	val /= _numsteps;
+
+	_dot->setProportion((_vert ? 0 : val), (_vert ? val : 0));
+	updateDisplay(disp);
 }
 
 void Slider::finishedDragging(std::string tag, double x, double y)
@@ -91,11 +110,7 @@ void Slider::finishedDragging(std::string tag, double x, double y)
 		val = _max;
 	}
 
-	if (_display)
-	{
-		_display->setText(_prefix + f_to_str(val, 0) + _suffix);
-		_display->resize(0.6);
-	}
+	updateDisplay(val);
 
 	_val = val;
 	
@@ -109,4 +124,9 @@ void Slider::setCentre(double x, double y)
 {
 	_dot->setDragCentre(x, y);
 	Image::setCentre(x, y);
+}
+
+void Slider::setReturnTag(std::string tag)
+{
+	_dot->setReturnTag(tag);
 }

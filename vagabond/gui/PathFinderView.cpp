@@ -60,8 +60,6 @@ void PathFinderView::makeTaskTree()
 
 	_taskTree = new LineGroup(_pf->topTask(), this);
 	_taskTree->setLeft(0.02, 0.1);
-	_taskTree->switchToScrolling(_taskTree);
-	_taskTree->setScrollBox(glm::vec4(0.07, 0.02, 0.8, 0.3));
 	addObject(_taskTree);
 	
 	_updateTree = false;

@@ -215,8 +215,6 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 
 	text->resize(0.5);
 	text->setName("content: " + _item->displayName());
-	
-	text->copyScrolling(this);
 
 	return text;
 }

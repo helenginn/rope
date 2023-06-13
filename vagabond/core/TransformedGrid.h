@@ -28,6 +28,10 @@ class TransformedGrid : public OriginGrid<T>
 public:
 	TransformedGrid(int nx, int ny, int nz);
 	
+	void operation(const TransformedGrid<T> &other,
+	               void(*op_function)(T &element, const T &other,
+	               const float &value));
+
 	void setRecipMatrix(glm::mat3x3 mat);
 
 	virtual const glm::mat3x3 &frac2Real() const
@@ -42,18 +46,24 @@ public:
 
 	void setRealMatrix(glm::mat3x3 mat);
 
-	virtual float resolution(int i, int j, int k);
+	virtual float resolution(int i, int j, int k) const;
 	virtual void real2Voxel(glm::vec3 &real) const;
 	virtual void voxel2Real(glm::vec3 &voxel) const;
-	virtual glm::vec3 reciprocal(int h, int k, int l);
-	virtual glm::vec3 real(int h, int k, int l);
+	virtual glm::vec3 reciprocal(int h, int k, int l) const;
+	virtual glm::vec3 real(int h, int k, int l) const;
 
 	virtual glm::vec3 maxBound() const;
-protected:
+
+	const glm::mat3x3 &voxel2Real() const
+	{
+		return _voxel2Real;
+	}
+
 	const glm::mat3x3 &real2Voxel() const
 	{
 		return _voxel2Recip;
 	}
+protected:
 private:
 	void setFrac2Real(glm::mat3x3 mat)
 	{

@@ -63,6 +63,7 @@ void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
 void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
                                     OriginGrid<fftwf_complex> *map)
 {
+	std::cout << "Sample" << std::endl;
 	if (ref == nullptr || map == nullptr)
 	{
 		return;
@@ -70,47 +71,50 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 
 	glm::vec3 min = map->minBound();
 	glm::vec3 max = map->maxBound();
-	float step = 0.5;
+	float step = FLT_MAX;
+	
+	for (size_t i = 0; i < 3; i++)
+	{
+		glm::vec3 test = glm::vec3({i % 3 == 0, i % 3 == 1, i % 3 == 2});
+		map->voxel2Real(test);
+		test -= min;
+		float l = glm::length(test) / 2;
+		if (step > l)
+		{
+			step = l;
+		}
+	}
+
+	glm::vec3 limits = max - min;
+
 	float num_per_ang_cubed = 1 / (step * step * step);
-	float lx = (max.x - min.x);
-	float ly = (max.y - min.y);
-	float lz = (max.z - min.z);
-	float vol = lx * ly * lz;
+	float vol = limits.x * limits.y * limits.z;
 
 	std::vector<float> vals;
 	vals.reserve((int)(num_per_ang_cubed * vol));
 
-	for (float z = min.z; z < max.z - step / 2; z += step)
+	for (float z = 0; z < limits.z - step / 2; z += step)
 	{
-		for (float y = min.y; y < max.y - step / 2; y += step)
+		for (float y = 0; y < limits.y - step / 2; y += step)
 		{
-			for (float x = min.x; x < max.x - step / 2; x += step)
+			for (float x = 0; x < limits.x - step / 2; x += step)
 			{
-				glm::vec3 real(x, y, z);
+				glm::vec3 real = glm::vec3(x, y, z) + min;
 				float val = ref->realValue(real);
 				vals.push_back(val);
 			}
 		}
 	}
 	
-	unsigned int ns[3] = {0, 0, 0};
-	
-	for (size_t i = 0; i < 3; i++)
-	{
-		for (float j = min[i]; j < max[i] - step / 2; j += step)
-		{
-			ns[i]++;
-		}
-	}
-	
-	unsigned int nx = (int)lrint(lx / step);
-	unsigned int ny = (int)lrint(ly / step);
-	unsigned int nz = (int)lrint(lz / step);
+	unsigned int nx = (int)lrint(limits.x / step);
+	unsigned int ny = (int)lrint(limits.y / step);
+	unsigned int nz = (int)lrint(limits.z / step);
 
 	const float *ptr = &vals[0];
 	float mean = ref->mean();
 	float sigma = ref->sigma();
 	float thresh = mean + sigma;
+	std::cout << "Mean/sigma: " << mean << " " << sigma << std::endl;
 	
 	_ref = ref;
 	_map = map;
@@ -138,12 +142,6 @@ void GuiDensity::fromMap(AtomMap *map)
 	unsigned int nx = map->nx();
 	unsigned int ny = map->ny();
 	unsigned int nz = map->nz();
-	
-	for (size_t i = 0; i < 10; i++)
-	{
-		std::cout << ptr[i] << " ";
-	}
-	std::cout << std::endl;
 
 	float real = map->realDim();
 	glm::vec3 origin = map->origin();
@@ -256,6 +254,11 @@ void GuiDensity::extraUniforms()
 	{
 		centre = _gl->getCentre();
 	}
+	
+	GLuint uTrack = glGetUniformLocation(_program, "track");
+	glUniform1i(uTrack, _tracking);
+	uTrack = glGetUniformLocation(_program, "track_frag");
+	glUniform1i(uTrack, _tracking);
 
 	GLuint uCentre = glGetUniformLocation(_program, "centre");
 	glUniform3f(uCentre, centre[0], centre[1], centre[2]);

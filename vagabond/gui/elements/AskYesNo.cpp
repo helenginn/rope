@@ -2,7 +2,6 @@
 
 #include "AskYesNo.h"
 #include "TextButton.h"
-#include "Text.h"
 
 AskYesNo::AskYesNo(Scene *scene, std::string text, std::string tag,
                    ButtonResponder *sender) : 

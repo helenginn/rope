@@ -28,6 +28,8 @@ class Window : public HasRenderables
 public:
 	Window();
 	virtual ~Window();
+
+	void windowSetup();
 	
 	static SDL_Renderer *renderer()
 	{
@@ -43,6 +45,8 @@ public:
 	{
 		_keyResponder = NULL;
 	}
+	
+	virtual void extraWindowFlags(unsigned int &flags) = 0;
 	
 	static void setCurrentScene(Scene *scene);
 	static void setNextScene(Scene *scene)
@@ -103,6 +107,11 @@ public:
 		return _context;
 	}
 	
+	static int millisecondsPerTick()
+	{
+		return _milliseconds;
+	}
+	
 	static Window *window()
 	{
 		return _myWindow;
@@ -147,6 +156,7 @@ private:
 	static std::set<Renderable *> _deleteRenderables;
 	
 	static KeyResponder *_keyResponder;
+	static int _milliseconds;
 };
 
 #endif

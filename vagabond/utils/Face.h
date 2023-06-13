@@ -20,6 +20,7 @@
 #define __vagabond__Face__
 
 #include <iostream>
+#include <mutex>
 #include <set>
 #include <float.h>
 #include "svd/PCA.h"
@@ -158,8 +159,9 @@ class Mappable
 {
 public:
 	virtual Type interpolate_subfaces(const std::vector<float> &cart) = 0;
-	virtual const std::vector<float> &point_to_barycentric(const std::vector<float> &m) = 0;
-	virtual bool point_in_bounds(const std::vector<float> &m) = 0;
+	virtual std::vector<float> 
+	point_to_barycentric(const std::vector<float> &m) const = 0;
+	virtual bool point_in_bounds(const std::vector<float> &m) const = 0;
 
 	virtual ~Mappable()
 	{
@@ -176,8 +178,6 @@ class Interpolatable : public Mappable<Type>
 public:
 	Interpolatable()
 	{
-		setupMatrix(&_vec, D + 1, 1);
-		setupSVD(&_svd, D+1, 0);
 
 	}
 	
@@ -199,12 +199,11 @@ public:
 
 	virtual Type interpolate_subfaces(const std::vector<float> &cart)
 	{
-		const std::vector<float> &weights = point_to_barycentric(cart);
-		_inverseWeights.resize(weights.size());
+		std::vector<float> weights = point_to_barycentric(cart);
+		std::vector<float> inverseWeights(weights.size(), 1);
 		
 		for (int i = 0; i < weights.size(); i++)
 		{
-			_inverseWeights[i] = 1;
 			for (int j = 0; j < weights.size(); j++)
 			{
 				if (i == j)
@@ -212,7 +211,7 @@ public:
 					continue;
 				}
 
-				_inverseWeights[i] *= weights[j];
+				inverseWeights[i] *= weights[j];
 			}
 		}
 
@@ -221,7 +220,7 @@ public:
 		for (int i = 0; i < pointCount(); i++)
 		{
 			Type init = point(i)->value();
-			const float &fw = _inverseWeights[i];
+			const float &fw = inverseWeights[i];
 
 			SharedFace<N - 1, D, Type> *ls = faceExcluding(point(i));
 
@@ -254,38 +253,31 @@ public:
 		}
 	}
 	
-	void update_inversion()
+	void get_inversion()
 	{
-		if (!_changed) { return; }
+		PCA::SVD svd;
+		setupSVD(&svd, D+1, pointCount());
 
-		if (_svd.u.cols != pointCount())
-		{
-			freeSVD(&_svd);
-			setupSVD(&_svd, D+1, pointCount());
-		}
-		
 		for (size_t row = 0; row < D; row++)
 		{
 			for (size_t col = 0; col < pointCount(); col++)
 			{
-				_svd.u[row][col] = point(col)->scalar(row);
+				svd.u[row][col] = point(col)->scalar(row);
 			}
 		}
 
 		for (size_t col = 0; col < pointCount(); col++)
 		{
-			_svd.u[D][col] = 1;
+			svd.u[D][col] = 1;
 		}
 		
-		invertSVD(&_svd);
-		_tr = transpose(&_svd.u);
+		invertSVD(&svd);
+		_tr = transpose(&svd.u);
 		
-		bounds(_min, _max);
-		
-		_changed = false;
+		freeSVD(&svd);
 	}
 
-	virtual void bounds(std::vector<float> &min, std::vector<float> &max)
+	virtual void bounds(std::vector<float> &min, std::vector<float> &max) const
 	{
 		min = std::vector<float>(D, FLT_MAX);
 		max = std::vector<float>(D, -FLT_MAX);
@@ -294,18 +286,19 @@ public:
 			std::vector<float> p = *point(i);
 			for (int i = 0; i < p.size(); i++)
 			{
-				if (min[i] > p[i]) { min[i] = p[i]; }
-				if (max[i] < p[i]) { max[i] = p[i]; }
+				if (min[i] > p.at(i)) { min[i] = p.at(i); }
+				if (max[i] < p.at(i)) { max[i] = p.at(i); }
 			}
 		}
 	}
 
-	virtual bool point_in_bounds(const std::vector<float> &m) 
+	virtual bool point_in_bounds(const std::vector<float> &m) const
 	{
-		update_inversion();
+		std::vector<float> min, max;
+		bounds(min, max);
 		for (int j = 0; j < m.size(); j++)
 		{
-			if (m[j] < _min[j] || m[j] > _max[j])
+			if (m[j] < min[j] || m[j] > max[j])
 			{
 				return false;
 			}
@@ -314,33 +307,28 @@ public:
 		return true;
 	}
 
-	virtual const std::vector<float> &point_to_barycentric(const 
-	                                                       std::vector<float> &m)
+	virtual std::vector<float> 
+	point_to_barycentric(const std::vector<float> &m) const
 	{
-		_weights.resize(pointCount());
+		std::vector<float> weights(pointCount());
+		float vec[D + 1];
 		
 		for (size_t i = 0; i < D; i++)
 		{
-			_vec[i][0] = m.at(i);
+			vec[i] = m.at(i);
 		}
 
-		_vec[D][0] = 1;
+		vec[D] = 1;
 		
-		update_inversion();
-		multMatrix(_tr, _vec[0], &_weights[0]);
+		multMatrix(_tr, vec, &weights[0]);
 
-		return _weights;
-	}
-
-	void changed()
-	{
-		_changed = true;
+		return weights;
 	}
 private:
 
 	Type interpolate_variable(const std::vector<float> &cart)
 	{
-		const std::vector<float> &weights = point_to_barycentric(cart);
+		std::vector<float> weights = point_to_barycentric(cart);
 		Type val = _variable->interpolate_weights(weights);
 		return val;
 	}
@@ -348,11 +336,7 @@ private:
 	virtual size_t pointCount() const = 0;
 	virtual const SharedFace<0, D, Type> *point(int idx) const = 0;
 protected:
-	PCA::Matrix _vec;
 	PCA::Matrix _tr;
-	PCA::SVD _svd;
-	bool _changed = true;
-	std::vector<float> _weights, _inverseWeights;
 	std::vector<float> _min, _max;
 
 	Variable<Type> *_variable = nullptr;
@@ -363,6 +347,8 @@ class Interpolatable<0, D, Type> : public Mappable<Type>
 {
 public:
 	virtual Type exact_value() = 0;
+
+	virtual void changed() {};
 
 	virtual Type interpolate_subfaces(const std::vector<float> &cart)
 	{
@@ -385,7 +371,10 @@ public:
 	virtual ~SharedFace<N, D, Type>() {}
 
 	SharedFace(LowerFace *face, SharedFace<0, D, Type> &point) :
-	SharedFace<N, D, Type>(*face, point) {}
+	SharedFace<N, D, Type>(*face, point)
+	{
+		this->changed();
+	}
 
 	SharedFace(const SameFace &face)
 	{
@@ -396,6 +385,7 @@ public:
 			LowerFace *nf = new LowerFace(*lf);
 			this->subs().push_back(nf);
 		}
+		this->changed();
 	}
 
 	SharedFace(LowerFace &face, SharedFace<0, D, Type> &point)
@@ -410,6 +400,17 @@ public:
 		}
 		
 		this->_points.push_back(&point);
+		this->changed();
+	}
+
+	virtual void changed()
+	{
+		this->get_inversion();
+		
+		for (int i = 0; i < subs().size(); i++)
+		{
+			subs()[i]->changed();
+		}
 	}
 	
 	virtual LowerFace *faceExcluding(const SharedFace<0, D, Type> *point)
@@ -636,6 +637,11 @@ public:
 		_subs = _points;
 	}
 
+	virtual void changed()
+	{
+		this->get_inversion();
+	}
+
 	size_t pointCount() const
 	{
 		return _points.size();
@@ -750,15 +756,16 @@ public:
 	SharedFace(Point<D, Type> &p) : Point<D, Type>(p) {};
 	SharedFace(SharedFace<0, D, Type> &face, SharedFace<0, D, Type> &other) {};
 
-	virtual bool point_in_bounds(const std::vector<float> &m) 
+	virtual bool point_in_bounds(const std::vector<float> &m) const
 	{
 		return false;
 	}
 
 
-	virtual const std::vector<float> &point_to_barycentric(const std::vector<float> &m)
+	virtual std::vector<float> 
+	point_to_barycentric(const std::vector<float> &m) const
 	{
-		return _weights;
+		return std::vector<float>(1, 0);
 	}
 
 	virtual ~SharedFace<0, D, Type>() {}
@@ -796,7 +803,6 @@ private:
 	int _n = 0;
 	int _d = D;
 	
-	std::vector<float> _weights = std::vector<float>(1, 0);
 };
 
 

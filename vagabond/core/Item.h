@@ -202,8 +202,29 @@ public:
 
 	void readdress();
 	
+	bool isHidden()
+	{
+		return _hidden;
+	}
+	
+	void setHidden(bool hide)
+	{
+		bool change = (!_hidden && hide) || (!hide && _hidden);
+		_hidden = hide;
+		
+		if (change)
+		{
+			triggerResponse();
+		}
+	}
+	
 	Item *previousItem(bool enter_set = false);
 	Item *nextItem(bool enter_set = true);
+
+	void clearParent()
+	{
+		_parent = nullptr;
+	}
 protected:
 	/** to be overridden by derived classes: to implement anything that needs
 	 * to be done before the final delete. */
@@ -216,6 +237,7 @@ protected:
 	{
 		return _name;
 	}
+	
 private:
 	void sanityCheckItem(Item *item);
 	void deleteSelf();
@@ -248,6 +270,7 @@ private:
 	bool _deleted = false;
 	bool _collapsed = false;
 	bool _neverUnfold = false;
+	bool _hidden = false;
 	
 	bool _selected = false;
 

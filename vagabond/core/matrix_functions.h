@@ -1,3 +1,6 @@
+#ifndef __matrix__functions__
+#define __matrix__functions__
+
 #include "../utils/glm_import.h"
 
 using std::isfinite;
@@ -16,6 +19,8 @@ inline bool is_glm_vec_sane(T vec)
 	
 	return true;
 }
+
+float mat3x3_volume(const glm::mat3x3 &mat);
 
 /** returns the gradient of the distance of length CD when C is rotated
  *  by [angle] around bond AB */
@@ -56,6 +61,9 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
 glm::mat3x3 mat3x3_from_unit_cell(double a, double b, double c, 
                                   double alpha, double beta, double gamma);
 
+/** unit cell dimensions from supplied matrix */
+void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr);
+
 /** updates torsion basis matrix based on real space atom positions
  * @param target matrix to update
  * @param self current atom's position
@@ -80,3 +88,6 @@ void insert_four_atoms(glm::mat4x4 &ret, float *lengths, float *angles);
 void insert_three_atoms(glm::mat4x4 &ret, float *lengths, float *angles);
 void insert_two_atoms(glm::mat4x4 &ret, float *lengths, float angle);
 void insert_one_atom(glm::mat4x4 &ret, float length);
+
+#endif
+

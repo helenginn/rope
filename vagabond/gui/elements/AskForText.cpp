@@ -29,11 +29,13 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	t->setCentre(0.5, 0.45);
 	addObject(t);
 	
+	_scene = scene;
 	TextEntry *te = new TextEntry("enter", scene);
 	te->setValidationType(v);
 	te->setCentre(0.5, 0.5);
 	te->setReturnTag("text");
 	_text = te;
+	_text->HasResponder<Responder<TextEntry>>::setResponder(this);
 	addObject(te);
 
 	addTwoButtons("Cancel", "cancel", "OK", "ok");
@@ -43,10 +45,19 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	te->click(true);
 }
 
+void AskForText::allowCapitals(bool capitals)
+{
+	_text->allowCapitals(capitals);
+}
+
 AskForText::~AskForText()
 {
-	_sender->unsetKeyResponder(_text);
-	deleteObjects();
+
+}
+
+void AskForText::respond()
+{
+	buttonPressed("ok", nullptr);
 }
 
 void AskForText::buttonPressed(std::string tag, Button *button)
@@ -61,4 +72,17 @@ void AskForText::buttonPressed(std::string tag, Button *button)
 		hide();
 		_sender->buttonPressed(AskForText::tag(), _text);
 	}
+}
+
+void AskForText::keyPressed(SDL_Keycode other)
+{
+	if (other == SDLK_RETURN)
+	{
+		buttonPressed("ok", nullptr);
+	}
+}
+
+void AskForText::keyPressed(char key)
+{
+
 }

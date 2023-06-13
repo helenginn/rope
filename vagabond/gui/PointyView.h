@@ -55,8 +55,9 @@ public:
 protected:
 	virtual void extraUniforms();
 	void customiseTexture(Snow::Vertex &vert);
-private:
+
 	float _size = 40;
+private:
 
 };
 

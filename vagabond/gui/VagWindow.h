@@ -54,6 +54,7 @@ public:
 		return (_bar.ptr != nullptr);
 	}
 	
+	virtual void extraWindowFlags(unsigned int &flags) {};
 	void requestProgressBar(int ticks, std::string text);
 	void prepareProgressBar();
 	void removeProgressBar();

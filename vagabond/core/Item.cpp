@@ -30,6 +30,14 @@ Item::Item()
 	issueNextTag();
 }
 
+/*
+Item::Item(const Item &other) : HasResponder<Responder<Item>>(other)
+{
+	issueNextTag();
+	_name = other._name;
+}
+*/
+
 Item::~Item()
 {
 	std::unique_lock<std::mutex> lock(_tagMutex);
@@ -272,14 +280,13 @@ Item *Item::nextItem(bool enter_set)
 			throw std::runtime_error("Can't find self in parent");
 		}
 
-		it++;
-
 		// last item, so return next item of parent
-		if (it == siblings.end())
+		if (this == siblings.back())
 		{
 			return _parent->nextItem(false);
 		}
 
+		it++;
 		return *it;
 	}
 	

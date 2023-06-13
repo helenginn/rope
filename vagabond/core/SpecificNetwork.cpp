@@ -27,7 +27,7 @@ SpecificNetwork::SpecificNetwork(Network *network, Instance *inst) :
 StructureModification(inst, 1, network->dims())
 {
 	_torsionType = TorsionBasis::TypeNetwork;
-	_threads = 6;
+	_threads = 2;
 	_mutex = new std::mutex();
 	_posMutex = new std::mutex();
 	_torsMutex = new std::mutex();
@@ -101,7 +101,7 @@ void SpecificNetwork::updateAtomsFromDerived(int idx)
 	}
 }
 
-int SpecificNetwork::submitJob(bool show, std::vector<float> vals)
+int SpecificNetwork::submitJob(bool show, const std::vector<float> vals)
 {
 	Job job{};
 	job.custom.allocate_vectors(1, _network->dims(), _num);
@@ -159,6 +159,7 @@ void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 {
 	const ResidueId id = map.param->residueId();
 	Residue *master_res = _instance->equivalentMaster(id);
+	_param2Map[map.param] = map.mapping;
 
 	std::vector<Instance *> others = _network->instances();
 
@@ -234,73 +235,51 @@ void SpecificNetwork::torsionBasisMods(TorsionBasis *tb)
 	nb->setSpecificNetwork(this);
 }
 
-void SpecificNetwork::prewarnAtoms(BondSequence *seq, 
-                                   const std::vector<float> &vals)
+void SpecificNetwork::prewarnAngles(BondSequence *seq, 
+                                   const std::vector<float> &vals,
+                                   std::vector<float> &angles)
+{
+	angles.clear();
+	BondCalculator *bc = seq->calculator();
+	const CalcDetails &cd = _calcDetails.at(bc);
+	
+	for (int i = 0; i < cd.torsions.size(); i++)
+	{
+		Mapped<float> *pm = cd.torsions[i].mapping;
+		float angle = pm->interpolate_variable(vals);
+		angles.push_back(angle);
+	}
+}
+
+bool SpecificNetwork::prewarnAtoms(BondSequence *seq, 
+                                   const std::vector<float> &vals,
+                                   Vec3s &positions)
 {
 	bool accept = false;
 	BondCalculator *bc = seq->calculator();
 	PosMapping *pm = _atomDetails[bc];
-	std::unique_lock<std::mutex> plock(*_posMutex);
-	Vec3s positions = pm->interpolate_variable(vals, &accept);
-	plock.unlock();
-
-	std::unique_lock<std::mutex> lock(*_mutex);
-	_prewarnedResults[seq].positions = positions;
-	_prewarnedResults[seq].acceptable = accept;
-}
-
-void SpecificNetwork::prewarnParameters(BondSequence *seq,
-                                        const std::vector<float> &vals)
-{
-	BondCalculator *bc = seq->calculator();
-	CalcDetails &cd = _calcDetails[bc];
-	std::vector<float> angles;
-
-	std::unique_lock<std::mutex> tlock(*_torsMutex);
-	for (int idx = 0; idx < cd.torsions.size(); idx++)
-	{
-		Mapped<float> *const map = cd.torsions.at(idx).mapping;
-		float angle = map->interpolate_variable(vals);
-		angles.push_back(angle);
-	}
-	tlock.unlock();
+	positions = pm->interpolate_variable(vals, &accept);
 	
-	std::unique_lock<std::mutex> lock(*_mutex);
-	_prewarnedResults[seq].torsions = angles;
-}
-
-void SpecificNetwork::prewarnPosition(BondSequence *seq, float *vec, int n)
-{
-	std::vector<float> vals(n);
-	for (int i = 0; i < n; i++)
-	{
-		vals[i] = vec[i];
-	}
-
-	prewarnAtoms(seq, vals);
-	prewarnParameters(seq, vals);
-}
-
-glm::vec3 SpecificNetwork::positionForIndex(BondSequence *seq, int idx) const
-{
-	std::unique_lock<std::mutex> lock(*_mutex);
-	const PrewarnResults &ar = _prewarnedResults.at(seq);
-
-	if (!ar.acceptable)
-	{
-		return glm::vec3(NAN, NAN, NAN);
-	}
-
-	return ar.positions.at(idx);
+	return accept;
 }
 
 float SpecificNetwork::torsionForIndex(BondSequence *seq,
                                        int idx, const float *vec) const
 {
-	std::unique_lock<std::mutex> lock(*_mutex);
-	const PrewarnResults &ar = _prewarnedResults.at(seq);
-	
-	return ar.torsions.at(idx);
+	std::vector<float> vals(_network->dims());
+	for (int i = 0; i < _network->dims(); i++)
+	{
+		vals[i] = vec[i];
+	}
+
+	BondCalculator *bc = seq->calculator();
+	const CalcDetails &cd = _calcDetails.at(bc);
+
+	const TorsionMapping &tm = cd.torsions.at(idx);
+	Mapped<float> *const map = tm.mapping;
+	float angle = map->interpolate_variable(vals);
+
+	return angle;
 }
 
 void SpecificNetwork::customModifications(BondCalculator *calc, bool has_mol)

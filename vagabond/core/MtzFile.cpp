@@ -17,7 +17,10 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MtzFile.h"
+#define GEMMI_WRITE_IMPLEMENTATION
 #include <gemmi/mtz.hpp>
+#include <vagabond/core/matrix_functions.h>
+#include <vagabond/core/Diffraction.h>
 
 //using namespace gemmi::Mtz;
 
@@ -59,6 +62,23 @@ File::Type MtzFile::cursoryLook()
 	return type;
 }
 
+gemmi::Mtz::Column *find_phi_column(gemmi::Mtz &mtz)
+{
+	const std::vector<std::string> list = {"PHWT", "PHIC", "PHIF", "P"};
+
+	gemmi::Mtz::Column *ret = nullptr;
+	for (const std::string &trial : list)
+	{
+		ret = mtz.column_with_label(trial);
+		if (ret)
+		{
+			return ret;
+		}
+	}
+	
+	return nullptr;
+}
+
 void MtzFile::parse()
 {
 	std::string tmp = toFilename(_filename);
@@ -96,12 +116,7 @@ void MtzFile::parse()
 		csf = mtz.column_with_label("SIGFP");
 	}
 
-	gemmi::Mtz::Column *cph = mtz.column_with_label("PHWT");
-	if (cph == nullptr)
-	{
-		cph = mtz.column_with_label("PHWT");
-	}
-
+	gemmi::Mtz::Column *cph = find_phi_column(mtz);
 	gemmi::Mtz::Column *cfree = mtz.rfree_column();
 
 	int num = mtz.columns.size();
@@ -128,4 +143,60 @@ void MtzFile::parse()
 		
 		_reflections.push_back(refl);
 	}
+}
+
+void MtzFile::setMap(ArbitraryMap *map)
+{
+	_map = new Diffraction(map);
+}
+
+std::string MtzFile::write_to_string(float max_res)
+{
+	gemmi::Mtz mtz = gemmi::Mtz(true);
+	mtz.spacegroup = gemmi::find_spacegroup_by_name("P 1");
+
+	glm::mat3x3 frac2Real = _map->frac2Real();
+	std::array<double, 6> uc_dims;
+	unit_cell_from_mat3x3(frac2Real, &uc_dims[0]);
+
+	gemmi::UnitCell uc(uc_dims);
+	mtz.set_cell_for_all(uc);
+	mtz.add_dataset("_filename");
+
+	mtz.add_column("FWT", 'F', 0, 3, false);
+	mtz.add_column("PHWT", 'P', 0, 4, false);
+
+	std::vector<float> data;
+	std::vector<float> line(5);
+
+	//	CCP4SPG *spg = ccp4spg_load_by_ccp4_num(1);
+
+	for (int k = -_map->nz() / 2; k < _map->nz() / 2; k++)
+	{
+		for (int j = -_map->ny() / 2; j < _map->ny() / 2; j++)
+		{
+			for (int i = -_map->nx() / 2; i < _map->nx() / 2; i++)
+			{
+				bool f000 = (i == 0 && j == 0 && k == 0);
+
+				if (_map->resolution(i, j, k) < max_res)
+				{
+					continue;
+				}
+
+				float f = _map->element(i, j, k).amplitude();
+				float p = _map->element(i, j, k).phase();
+
+				line = {(float)i, (float)j, (float)k, f, p};
+
+				data.reserve(data.size() + line.size());
+				data.insert(data.end(), line.begin(), line.end());
+			}
+		}
+	}
+
+	mtz.set_data(&data[0], data.size());
+	std::string contents;
+	mtz.write_to_string(contents);
+	return contents;
 }

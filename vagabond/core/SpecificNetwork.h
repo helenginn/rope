@@ -43,17 +43,29 @@ public:
 		return _instance;
 	}
 	
-	virtual void prewarnPosition(BondSequence *bc, float *vec, int n);
-	virtual glm::vec3 positionForIndex(BondSequence *bc, int idx) const;
+	Mapped<float> *mapForParameter(Parameter *p) const
+	{
+		if (_param2Map.count(p) == 0)
+		{
+			return nullptr;
+		}
+		return _param2Map.at(p);
+	}
+
+	float torsionForIndex(BondSequence *seq,
+	                      int idx, const float *vec) const;
 	
 	bool valid_position(const std::vector<float> &vals);
 
-	virtual float torsionForIndex(BondSequence *bc,
-	                              int tidx, const float *vec) const;
-
 	virtual void torsionBasisMods(TorsionBasis *tb);
 
-	int submitJob(bool show, std::vector<float> vals);
+	int submitJob(bool show, const std::vector<float> vals);
+
+	virtual void prewarnAngles(BondSequence *seq, 
+	                           const std::vector<float> &vals,
+	                           std::vector<float> &angles);
+	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
+	                  Vec3s &positions);
 	
 	int detailsForParam(Parameter *parameter, BondCalculator **calc);
 	void zeroVertices();
@@ -100,7 +112,6 @@ private:
 
 	void prepareAtomMaps(BondSequence *seq, PosMapping *pm);
 	void completeTorsionMap(TorsionMapping &map);
-	void prewarnAtoms(BondSequence *bc, const std::vector<float> &vals);
 	void prewarnParameters(BondSequence *bc, const std::vector<float> &vals);
 	
 	struct PrewarnResults
@@ -113,7 +124,9 @@ private:
 	std::map<BondCalculator *, CalcDetails> _calcDetails;
 	std::map<BondCalculator *, PosMapping *> _atomDetails;
 	std::map<BondSequence *, PrewarnResults> _prewarnedResults;
+	std::map<Parameter *, Mapped<float> *> _param2Map;
 	int _jobNum = 0;
+	std::atomic<bool> _writing{false};
 };
 
 #endif

@@ -6,12 +6,22 @@
 #include "Text.h"
 #include "Button.h"
 #include "KeyResponder.h"
+#include <vagabond/core/Responder.h>
 
-class TextEntry : public Text, public Button, public KeyResponder
+class TextEntry : public Text, public Button, public KeyResponder,
+public HasResponder<Responder<TextEntry>>
 {
 public:
-	TextEntry(std::string text, ButtonResponder *sender) :
-	Text(text), Button(sender) {};
+	TextEntry(std::string text, ButtonResponder *sender, 
+	          ButtonResponder *scene = nullptr) :
+	Text(text), Button(sender)
+	{
+		_scene = scene;
+		if (_scene == nullptr)
+		{
+			_scene = sender;
+		}
+	}
 	
 	enum Validation
 	{
@@ -24,6 +34,11 @@ public:
 	void setValidationType(Validation v)
 	{
 		_validation = v;
+	}
+	
+	void allowCapitals(bool allow)
+	{
+		_capitals = allow;
 	}
 
 	virtual void keyPressed(char key);
@@ -46,10 +61,13 @@ public:
 	float as_num() const;
 private:
 	void showInsert();
+	void shiftKey(char &key);
 
 	std::string _scratch;
 	bool _active = false;
+	bool _capitals = false;
 	Validation _validation = None;
+	ButtonResponder *_scene = nullptr;
 };
 
 #endif

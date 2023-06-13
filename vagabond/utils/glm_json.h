@@ -64,3 +64,17 @@ namespace nlohmann
 	};
 
 }
+
+namespace glm
+{
+	inline void to_json(nlohmann::json& j, const glm::vec2& P)
+	{
+		j = { { "x", P.x }, { "y", P.y } };
+	};
+
+	inline void from_json(const nlohmann::json& j, glm::vec2& P)
+	{
+		P.x = j.at("x").get<double>();
+		P.y = j.at("y").get<double>();
+	}
+};

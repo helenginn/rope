@@ -19,13 +19,19 @@
 #ifndef __vagabond__PositionSampler__
 #define __vagabond__PositionSampler__
 
+#include <vagabond/utils/Vec3s.h>
+
 class PositionSampler
 {
 public:
-	virtual void prewarnPosition(BondSequence *seq, float *vec, int n) = 0;
-	virtual glm::vec3 positionForIndex(BondSequence *seq, int idx) const = 0;
 	virtual ~PositionSampler() {};
 
+	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
+	                          Vec3s &positions) = 0;
+
+	virtual void prewarnAngles(BondSequence *seq, 
+	                           const std::vector<float> &vals,
+	                           std::vector<float> &angles) = 0;
 };
 
 #endif

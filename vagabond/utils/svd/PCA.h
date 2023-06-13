@@ -68,7 +68,7 @@ namespace PCA
 	void printMatrix(Matrix *mat);
 
 	template <class Float1, class Float2>
-	void multMatrix(Matrix &mat, Float1 *vector, Float2 *result)
+	void multMatrix(const Matrix &mat, Float1 *vector, Float2 *result)
 	{
 		for (size_t j = 0; j < mat.rows; j++)
 		{

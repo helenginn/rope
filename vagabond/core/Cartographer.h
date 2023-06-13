@@ -28,7 +28,7 @@ class Atom;
 class Entity;
 class Instance;
 class Network;
-class BondCalculator;
+class Parameter;
 class SpecificNetwork;
 class MappingToMatrix;
 template <typename Type> class Mapped;
@@ -59,14 +59,23 @@ public:
 	void makeMapping();
 	void setup();
 
-	void scoreForTriangle(int idx);
-	void checkTriangles();
+	float scoreForTriangle(int idx, bool wide = false, 
+	                       bool identify_torsions = true);
+	void checkTriangles(bool identify_torsions = true);
 	static void run(Cartographer *cg);
 protected:
 	virtual void sendObject(std::string tag, void *object);
 private:
 	void assessSplits(int face_idx);
 	void preparePoints(int idx);
+	
+	typedef std::vector<std::vector<float>> Points;
+	float scoreForPoints(const Points &points, bool identify_torsions);
+
+	void flipTriangles();
+	void flipTriangle(int idx);
+	bool flipTriangleTorsion(Mapped<float> *map, int idx);
+	void flipPoint(Mapped<float> *map, int idx, int num_360s);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;
@@ -77,24 +86,17 @@ private:
 	PCA::Matrix _distMat{};
 	std::mutex _mDist;
 	
-	typedef std::vector<std::vector<float>> Points;
-	
 	struct FaceBits
 	{
-		struct BondCalcInt
-		{
-			BondCalculator *calculator;
-			int idx;
-		};
-
 		Points points;
-		std::vector<BondCalcInt> problems;
-		float score;
+		Points wider;
+		std::vector<Parameter *> problems;
 	};
 	
 	std::map<int, FaceBits> _faceBits;
 	
 	std::vector<Atom *> _atoms;
+	int _received = 0;
 };
 
 #endif

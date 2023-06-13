@@ -30,7 +30,8 @@ class Cartographer;
 class MatrixPlot;
 class Network;
 
-class MapView : public Display, public Responder<Cartographer>
+class MapView : public Display, public Responder<Cartographer>,
+public Responder<SpecificNetwork>
 {
 public:
 	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances);
@@ -44,11 +45,13 @@ public:
 	virtual void sendObject(std::string, void *object);
 private:
 	void makeMapping();
+	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
 	bool _editing = false;
 
 	MatrixPlot *_plot = nullptr;
 	std::atomic<bool> _updatePlot{false};
+	std::atomic<bool> _refined{false};
 
 	Cartographer *_cartographer = nullptr;
 	SpecificNetwork *_specified = nullptr;

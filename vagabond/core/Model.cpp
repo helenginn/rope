@@ -783,7 +783,7 @@ ArbitraryMap *Model::map()
 			}
 
 			ArbitraryMap *map = new ArbitraryMap(*diff);
-			map->setup();
+			map->setupFromDiffraction();
 			
 			delete file;
 			return map;

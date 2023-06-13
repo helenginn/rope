@@ -18,6 +18,7 @@
 
 #include "TextEntry.h"
 #include "ButtonResponder.h"
+#include "SnowGL.h"
 #include <iostream>
 
 void TextEntry::click(bool left)
@@ -27,15 +28,10 @@ void TextEntry::click(bool left)
 		return;
 	}
 
-	if (_sender->keyResponder() != nullptr)
-	{
-		_sender->keyResponder()->finish();
-	}
-
 	_active = true;
 	showInsert();
 
-	_sender->setKeyResponder(this);
+	_scene->setKeyResponder(this);
 }
 
 void TextEntry::showInsert()
@@ -109,10 +105,42 @@ float TextEntry::as_num() const
 	return f;
 }
 
+void TextEntry::shiftKey(char &key)
+{
+	if (!_capitals || (_gl && !_gl->shiftPressed()))
+	{
+		return;
+	}
+	
+	if (key == '=') { key = '+'; }
+	
+	if (key == '0') { key = ')'; };
+	if (key == '1') { key = '!'; };
+	if (key == '2') { key = '@'; };
+	if (key == '3') { key = '#'; };
+	if (key == '4') { key = '$'; };
+	if (key == '5') { key = '%'; };
+	if (key == '6') { key = '^'; };
+	if (key == '7') { key = '&'; };
+	if (key == '8') { key = '*'; };
+	if (key == '9') { key = '('; };
+
+	if ((key >= 'a' && key <= 'z'))
+	{
+		key -= 32;
+	}
+
+	if (key == '.') { key = '>'; };
+	if (key == ',') { key = '<'; };
+	if (key == '/') { key = '?'; };
+}
+
 void TextEntry::keyPressed(char key)
 {
 	if (_active)
 	{
+		shiftKey(key);
+
 		if (validateKey(key))
 		{
 			_scratch += key;
@@ -124,25 +152,22 @@ void TextEntry::keyPressed(char key)
 
 void TextEntry::finish()
 {
-	_sender->unsetKeyResponder(this);
+	_scene->unsetKeyResponder(this);
 	_active = false;
 	showInsert();
 	Button::click();
+	HasResponder<Responder<TextEntry>>::triggerResponse();
 }
 
 void TextEntry::keyPressed(SDL_Keycode other)
 {
 	if (other == SDLK_BACKSPACE)
 	{
-		if (_scratch.size() > 0)
+		if (_scratch.length() > 0)
 		{
 			_scratch.pop_back();
 			showInsert();
 		}
-	}
-	else if (other == SDLK_LSHIFT || other == SDLK_RSHIFT)
-	{
-
 	}
 	else if (other == SDLK_RETURN)
 	{

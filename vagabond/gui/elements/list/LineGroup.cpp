@@ -85,7 +85,7 @@ void LineGroup::refreshGroups()
 
 	if (same)
 	{
-		return;
+//		return;
 	}
 
 	for (LineGroup *grp : _groups)
@@ -118,7 +118,7 @@ void LineGroup::setupGroups()
 
 void LineGroup::resetGroups()
 {
-	setArbitrary(0., 0., Left);
+	fixUpperCorner(this);
 
 	for (LineGroup *group : _groups)
 	{
@@ -127,8 +127,13 @@ void LineGroup::resetGroups()
 
 	for (Renderable *object : objects())
 	{
-		object->setArbitrary(0., 0., Left);
+		fixUpperCorner(object);
 	}
+}
+
+void LineGroup::fixUpperCorner(Renderable *r, float x, float y)
+{
+	r->setArbitrary(x, y, Renderable::Alignment(Left | Top));
 }
 
 void LineGroup::reorganiseGroups()
@@ -138,24 +143,31 @@ void LineGroup::reorganiseGroups()
 		group->reorganiseGroups();
 	}
 	
-	_line->setArbitrary(0., 0., Left);
-	bool hidden = _item->collapsed();
+	fixUpperCorner(_line);
+	bool hide_children = _item->collapsed();
 
 	float y = 0;
-//	_line->update();
 	Renderable *line = _line;
+	bool hide_self = _item->isHidden();
+	line->setDisabled(hide_self);
+
 	for (Renderable *object : objects())
 	{
-		if (!hidden || object == line)
+		if (!hide_children && object != line)
 		{
 			object->setDisabled(false);
-			object->setArbitrary(0., y, Left);
+			fixUpperCorner(object, 0., y);
 			float height = object->maximalHeight() / 2;
 			y += height;
 		}
-		else
+		else if (object != line)
 		{
 			object->setDisabled(true);
+		}
+		else if (object == line && !object->isDisabled())
+		{
+			float height = object->maximalHeight() / 2;
+			y += height;
 		}
 	}
 	
@@ -225,23 +237,8 @@ void LineGroup::setup()
 
 void LineGroup::reorganiseHeights()
 {
-	removeObject(_slider);
 	glm::vec2 tmp = xy();
 	resetGroups();
-
 	reorganiseGroups();
-	setArbitrary(tmp.x, tmp.y, Left);
-	
-	if (_scroll)
-	{
-		assessBounds();
-	}
-	
-	_maxHeight = maximalHeight() / 2;
-}
-
-void LineGroup::finishedDragging(std::string tag, double x, double y)
-{
-	float hx = x * _maxHeight;
-	updateScrollOffset(hx);
+	fixUpperCorner(this, tmp.x, tmp.y);
 }

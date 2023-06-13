@@ -1,34 +1,109 @@
 #version 300 es
 precision lowp float;
 
-in vec3 normal;
 in vec3 position;
+in vec3 second;
+in vec3 third;
+in vec3 normal;
 in vec4 color;
-in vec4 extra;
-in vec2 tex;
 
 uniform mat4 projection;
 uniform mat4 model;
 uniform vec3 centre;
+uniform mat3x3 unit_cell;
 
-out vec4 vPos;
 out vec3 dPos;
 out vec4 vColor;
 out vec3 vNormal;
-out vec2 vTex;
+out float jump;
+
+mat3x3 inv_rot = mat3(1.);
+mat3x3 inv_cell = mat3(1.);
+
+ivec3 round_movement(vec3 v)
+{
+    vec4 pos = vec4(v, 1.);
+	vec3 diff = vec3(model * pos) - centre;
+	diff = inv_rot * diff;
+
+	vec3 basis_diff = inv_cell * diff;
+	ivec3 ret;
+
+	for (int i = 0; i < 3; i++)
+	{
+		int sign = (basis_diff[i] > 0. ? 1 : -1);
+		float abs_diff = abs(basis_diff[i]);
+		int round = 0;
+
+		while (abs_diff > 0.5)
+		{
+			abs_diff -= 1.;
+			round++;
+		}
+
+		round *= sign;
+		ret[i] = round;
+	}
+
+	return ret;
+}
+
+vec4 move_vertex(vec3 v)
+{
+	vec3 round = vec3(round_movement(v));
+    vec4 pos = vec4(v, 1.);
+
+	for (int i = 0; i < 3; i++)
+	{
+		vec3 axis = round[i] * unit_cell[i];
+		pos -= vec4(axis, 0.);
+	}
+
+	pos.w = 1.;
+	return pos;
+}
+
+bool bad_length(vec3 v)
+{
+	vec4 pos = move_vertex(v);
+	float dist = length(vec3(model * pos) - centre);
+	if (dist > 19.)
+	{
+		jump = -1.;
+		return true;
+	}
+
+	return false;
+}
 
 void main()
 {
-    vec4 pos = vec4(position[0], position[1], position[2], 1.0);
+	inv_rot = inverse(mat3(model));
+	inv_cell = inverse(mat3(unit_cell));
+	jump = -1.;
+	if (bad_length(position) || bad_length(second) || bad_length(third))
+	{
+		return;
+	}
+
+	vec4 ref1 = move_vertex(position);
+	vec4 ref2 = move_vertex(second);
+	vec4 ref3 = move_vertex(second);
+
+	if (length(ref3 - ref2) > 19. || length(ref2 - ref1) > 19. ||
+		length(ref1 - ref3) > 19.)
+	{
+		return;
+	}
+
+	jump = 1.;
+	vec4 pos = ref1;
+	dPos = vec3(model * pos) - centre;
+
 	gl_Position = projection * model * pos;
 	mat3 rot = mat3(model);
 	vNormal = rot * normal;
-	vTex = tex;
 	vColor = color;
-	vPos = vec4(mat3(model[0][0], model[0][1], model[0][2],
-				model[1][0], model[1][1], model[1][2],
-				model[2][0], model[2][1], model[2][2]) * vec3(extra), 1.);
-	dPos = vec3(model * pos) - centre;
 }
 
 

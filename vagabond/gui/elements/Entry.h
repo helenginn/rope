@@ -16,32 +16,19 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MtzFile__
-#define __vagabond__MtzFile__
+#ifndef __vagabond__Entry__
+#define __vagabond__Entry__
 
-#include "File.h"
+#include <string>
+#include <vector>
 
-class Diffraction;
-class ArbitraryMap;
+class TextEntry;
 
-class MtzFile : public File
+struct Entry
 {
-public:
-	MtzFile(std::string filename = "");
-	
-	void setMap(Diffraction *diffraction)
-	{
-		_map = diffraction;
-	}
-
-	void setMap(ArbitraryMap *map);
-
-	std::string write_to_string(float max_res = -1);
-	virtual File::Type cursoryLook();
-	virtual void parse();
-private:
-	Diffraction *_map = nullptr;
-
+	float *value;
+	std::string name;
+	TextEntry *tEntry;
 };
 
 #endif

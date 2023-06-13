@@ -38,7 +38,7 @@ public:
 
 	float *arrayPtr();
 
-	virtual float elementValue(long i)
+	virtual float elementValue(long i) const
 	{
 		return _data[i][0];
 	}

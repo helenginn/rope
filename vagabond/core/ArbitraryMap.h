@@ -32,8 +32,13 @@ virtual public FFT<fftwf_complex>
 public:
 	ArbitraryMap();
 	ArbitraryMap(Diffraction &diff);
+	
+	ArbitraryMap &operator+=(const ArbitraryMap &other);
+	ArbitraryMap &operator-=(const ArbitraryMap &other);
+	ArbitraryMap &operator/=(const ArbitraryMap &other);
+	ArbitraryMap &operator*=(const ArbitraryMap &other);
 
-	void setup();
+	void setupFromDiffraction();
 
 	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
 	
@@ -42,8 +47,13 @@ public:
 	{
 		return interpolate(real);
 	}
+	
+	void setReal(const long &i, const float &val)
+	{
+		_data[i][0] = val;
+	}
 
-	virtual float elementValue(long i)
+	virtual float elementValue(long i) const
 	{
 		return _data[i][0];
 	}

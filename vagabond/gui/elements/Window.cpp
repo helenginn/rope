@@ -21,6 +21,7 @@ Scene *Window::_next = nullptr;
 Window *Window::_myWindow = nullptr;
 
 int Window::_width = 0;
+int Window::_milliseconds = 20;
 int Window::_height = 0;
 
 std::set<Scene *> Window::_toDelete;
@@ -37,7 +38,9 @@ EM_JS(int, get_canvas_width, (), { return window.innerWidth; });
 
 void Window::instateWindow()
 {
-	unsigned int WindowFlags = SDL_WINDOW_OPENGL;
+	unsigned int windowFlags = SDL_WINDOW_OPENGL;
+	SDL_SetHintWithPriority(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "1",
+	                        SDL_HINT_OVERRIDE);
 	
 #ifdef __EMSCRIPTEN__
 	_rect.w = get_canvas_width();
@@ -60,11 +63,13 @@ void Window::instateWindow()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
 	                    SDL_GL_CONTEXT_PROFILE_CORE);
-	WindowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
+	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
+	
+	extraWindowFlags(windowFlags);
 //	WindowFlags += SDL_WINDOW_FULLSCREEN;
 #endif
 
-	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, WindowFlags);
+	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, windowFlags);
 	_context = SDL_GL_CreateContext(_window);
 }
 
@@ -112,7 +117,7 @@ void Window::reinstateOpenGL()
 	checkErrors("reinstated");
 }
 
-Window::Window()
+void Window::windowSetup()
 {
 	instateWindow();
 	instateGlew();
@@ -122,6 +127,11 @@ Window::Window()
 	_myWindow = this;
 	_current = NULL;
 	_keyResponder = NULL;
+}
+
+Window::Window()
+{
+
 }
 
 Window::~Window()
@@ -239,7 +249,7 @@ bool Window::tick()
 
 	_myWindow->deleteQueued();
 	
-	SDL_Delay(20);
+	SDL_Delay(_milliseconds);
 	
 	return true;
 }

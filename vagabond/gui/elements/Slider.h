@@ -29,6 +29,8 @@ public:
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 	
+	void setReturnTag(std::string tag);
+	
 	void setPrefixSuffix(std::string prefix, std::string suffix)
 	{
 		_prefix = prefix;
@@ -41,9 +43,11 @@ public:
 	}
 
 	virtual void setCentre(double x, double y);
+	virtual void setStep(double val);
 
 	void setStart(double x, double y);
 private:
+	void updateDisplay(double val);
 	double _min;
 	double _max;
 	double _step;

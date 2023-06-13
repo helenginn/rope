@@ -72,6 +72,9 @@ void Scene::removeModal()
 	_removeModal = _modal;
 	_modal = nullptr;
 	resetMouseKeyboard();
+	_mouseDown = false;
+	_moving = false;
+	_left = false;
 }
 
 void Scene::doThings()

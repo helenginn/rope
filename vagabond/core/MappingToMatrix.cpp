@@ -18,6 +18,7 @@
 
 #include <vagabond/utils/Mapping.h>
 #include <vagabond/utils/maths.h>
+#include <sstream>
 #include "MappingToMatrix.h"
 #include "SpecificNetwork.h"
 
@@ -36,7 +37,15 @@ void MappingToMatrix::insertScore(float score, std::vector<float> point)
 	int x = point[0] * _steps + 0.5;
 	int y = point[1] * _steps + 0.5;
 
+	if (x >= _matrix.rows || x < 0 || y >= _matrix.cols || y < 0)
+	{
+		std::ostringstream ss;
+		ss << "x/y " << x << " " << y << " for matrix size " <<
+		_matrix.rows << " x " << _matrix.cols;
+		throw std::runtime_error(ss.str());
+	}
 	_matrix[x][y] = score;
+	normalise(_matrix[x][y]);
 }
 
 
@@ -77,6 +86,12 @@ float MappingToMatrix::deviationScore(float x, float y)
 	return dev;
 }
 
+void MappingToMatrix::normalise(double &val)
+{
+	val = (val - _mean) / _stdev;
+	val += 0.5;
+}
+
 void MappingToMatrix::normalise()
 {
 	CorrelData cd = empty_CD();
@@ -86,13 +101,11 @@ void MappingToMatrix::normalise()
 		add_to_CD(&cd, val, val);
 	}
 
-	double mean, stdev;
-	mean_stdev_CD(cd, &mean, &stdev);
+	mean_stdev_CD(cd, &_mean, &_stdev);
 	
 	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
 	{
-		_matrix.vals[i] = (_matrix.vals[i] - mean) / stdev;
-		_matrix.vals[i] += 0.5;
+		normalise(_matrix.vals[i]);
 	}
 }
 

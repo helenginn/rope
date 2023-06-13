@@ -61,7 +61,7 @@ public:
 	
 	size_t reflectionCount();
 
-	virtual float elementValue(long i)
+	virtual float elementValue(long i) const
 	{
 		return _data[i].amplitude();
 	}

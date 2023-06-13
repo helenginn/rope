@@ -9,19 +9,19 @@ sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 thread_dep = dependency('threads')
 
-fftw_static = true
+fftw_req = false
 if (links == [])
-  fftw_static = false
+  fftw_req = true
 endif
 
-fftw = dependency('fftw3f', static: fftw_static)
+fftw = dependency('fftw3f', required: fftw_req)
 json = dependency('nlohmann_json')
 gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'])
-deps = [glm, fftw, json, gemmi]
+deps = [glm, json]
 name = 'index.html'
 
 if (links == [])
-  deps += [gl, sdl2, sdl2image, curl, thread_dep]
+  deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw]
   name = 'vagabond.gui'
 endif
 
@@ -162,7 +162,7 @@ if (links == []) # not emscripten
     link_with : [core, cli],
     cpp_args: ['-std=c++11'],
     link_args: [links],
-    dependencies : deps,
+    dependencies : [fftw, json, gemmi, thread_dep, curl],
     install: true)
 else # emscripten
   start_cpp = 'vagabond/gui/main.cpp'

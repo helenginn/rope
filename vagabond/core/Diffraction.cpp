@@ -30,7 +30,25 @@ Diffraction::Diffraction(ArbitraryMap *map)
 : Grid<VoxelDiffraction>(map->nx(), map->ny(), map->nz()),
 TransformedGrid<VoxelDiffraction>(map->nx(), map->ny(), map->nz())
 {
+	bool flip = (map->status() == ArbitraryMap::Real);
+	std::cout << "Flipping? " << flip << std::endl;
 	
+	if (flip)
+	{
+		map->fft();
+	}
+	for (size_t i = 0; i < nn(); i++)
+	{
+		element(i).value[0] = map->element(i)[0];
+		element(i).value[1] = map->element(i)[1];
+	}
+	
+	if (flip)
+	{
+		map->fft();
+	}
+	
+	setRealMatrix(map->frac2Real());
 }
 
 Diffraction::Diffraction(RefList &list) 

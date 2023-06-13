@@ -27,7 +27,12 @@ CompareDistances::CompareDistances(AtomPosMap &aps) : _aps(aps)
 
 bool CompareDistances::acceptable(Atom *atom)
 {
-	return atom->isReporterAtom();
+	return atom->atomName() == "CA";
+}
+
+bool resi_num_comp(const Atom *a, const Atom *b)
+{
+	return (a->residueId().as_num() < b->residueId().as_num());
 }
 
 PCA::Matrix CompareDistances::matrix()
@@ -44,28 +49,23 @@ PCA::Matrix CompareDistances::matrix()
 		}
 	}
 	
+	std::sort(_atoms.begin(), _atoms.end(), resi_num_comp);
+	
 	setupMatrix(&mat, count, count);
 	int i = 0; int j = 0;
 	
-	for (auto it = _aps.begin(); it != _aps.end(); it++)
+	for (Atom *atom : _atoms)
 	{
-		if (!acceptable(it->first))
+		WithPos &wp = _aps[atom];
+		glm::vec3 x = wp.ave;
+		glm::vec3 p = wp.target;
+
+		for (Atom *atom : _atoms)
 		{
-			continue;
-		}
+			WithPos &yp = _aps[atom];
 
-		glm::vec3 x = it->second.ave;
-		glm::vec3 p = it->second.target;
-
-		for (auto jt = _aps.begin(); jt != _aps.end(); jt++)
-		{
-			if (it == jt || jt->first->atomName() != "CA")
-			{
-				continue;
-			}
-
-			glm::vec3 y = jt->second.ave;
-			glm::vec3 q = jt->second.target;
+			glm::vec3 y = yp.ave;
+			glm::vec3 q = yp.target;
 
 			float expected = glm::length(p - q);
 			float acquired = glm::length(x - y);

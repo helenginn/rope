@@ -29,6 +29,7 @@
 #include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
+#include <vagabond/utils/Vec3s.h>
 #include "BondTorsion.h"
 #include "AtomBlock.h"
 #include "Grapher.h"
@@ -243,6 +244,10 @@ private:
 #endif
 
 	bool _programsInitialised = false;
+	
+	bool _acceptablePositions = false;
+	Vec3s _atomPositions;
+	std::vector<float> _torsionAngles;
 	
 	float *_currentVec = nullptr;
 

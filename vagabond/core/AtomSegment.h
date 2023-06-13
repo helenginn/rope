@@ -57,7 +57,7 @@ public:
 	
 	void clear();
 
-	virtual float elementValue(long i)
+	virtual float elementValue(long i) const
 	{
 		return _data[i].value[0] / (float)FIXED_MULTIPLY;
 	}

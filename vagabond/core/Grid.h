@@ -75,20 +75,41 @@ public:
 		return 0;
 	}
 	
-	long index(long x, long y, long z)
+	long index(long x, long y, long z) const
 	{
 		collapse(x, y, z);
 		return x + _nx*y + (_nx*_ny)*z;
 	}
 
-	long index(glm::vec3 xyz)
+	long index(glm::vec3 xyz) const
 	{
 		return index(xyz.x, xyz.y, xyz.z);
 	}
 
+	const T &element(long i) const
+	{
+		return _data[i];
+	}
+	
 	T &element(long i)
 	{
 		return _data[i];
+	}
+	
+	const T &element(const glm::vec3 &vox) const
+	{
+		long idx = index((long)lrint(vox.x), 
+		                 (long)lrint(vox.y), 
+		                 (long)lrint(vox.z));
+		return element(idx);
+	}
+	
+	T &element(const glm::vec3 &vox)
+	{
+		long idx = index((long)lrint(vox.x), 
+		                 (long)lrint(vox.y), 
+		                 (long)lrint(vox.z));
+		return element(idx);
 	}
 	
 	T &element(long nx, long ny, long nz)
@@ -107,7 +128,7 @@ public:
 	virtual float mean();
 	virtual float sigma();
 
-	virtual float elementValue(long i)
+	virtual float elementValue(long i) const
 	{
 		return 0;
 	}

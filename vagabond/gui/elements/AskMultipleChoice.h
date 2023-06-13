@@ -16,31 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MtzFile__
-#define __vagabond__MtzFile__
+#ifndef __vagabond__AskMultipleChoice__
+#define __vagabond__AskMultipleChoice__
 
-#include "File.h"
+#include "Modal.h"
+#include "ButtonResponder.h"
 
-class Diffraction;
-class ArbitraryMap;
-
-class MtzFile : public File
+class AskMultipleChoice : public Modal
 {
 public:
-	MtzFile(std::string filename = "");
+	AskMultipleChoice(Scene *scene, std::string text, std::string tag, 
+	                  ButtonResponder *sender);
 	
-	void setMap(Diffraction *diffraction)
-	{
-		_map = diffraction;
-	}
+	void addChoice(std::string text, std::string tag);
+	
+	virtual ~AskMultipleChoice() {};
 
-	void setMap(ArbitraryMap *map);
+	virtual void buttonPressed(std::string tag, Button *button);
 
-	std::string write_to_string(float max_res = -1);
-	virtual File::Type cursoryLook();
-	virtual void parse();
 private:
-	Diffraction *_map = nullptr;
+	ButtonResponder *_sender;
+	std::string _tag;
+
+	float _top = 0.43;
 
 };
 
