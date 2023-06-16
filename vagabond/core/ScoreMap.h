@@ -19,19 +19,67 @@
 #ifndef __vagabond__ScoreMap__
 #define __vagabond__ScoreMap__
 
+#include <vagabond/core/Responder.h>
+#include <vagabond/core/CompareDistances.h>
+
+class Atom;
 class SpecificNetwork;
 template <typename Type> class Mapped;
 
-class ScoreMap
+typedef std::vector<std::vector<float>> Points;
+
+class ScoreMap : public Responder<SpecificNetwork>
 {
 public:
 	ScoreMap(Mapped<float> *mapped, SpecificNetwork *specified);
 
+	void setIndividualHandler(std::function<void(float, std::vector<float> &)> f)
+	{
+		_eachHandler = f;
+	}
+
+	float scoreForPoints(const Points &points);
+	
+	void setFilters(bool(*left)(Atom *const &), bool(*right)(Atom *const &));
+	
+	bool hasMatrix();
+	
+	std::vector<Atom *> atoms();
+	
+	PCA::Matrix matrix();
+	
+	enum Mode
+	{
+		Unset,
+		Basic,
+		Distance,
+		AssessSplits,
+	};
+
+	void setMode(Mode mode)
+	{
+		_mode = mode;
+	}
+protected:
+	virtual void sendObject(std::string tag, void *object);
 private:
+	float processPoints(const Points &points, bool make_aps);
+
+	float submitJobs(const Points &points, bool make_aps);
+
 	Mapped<float> *_mapped = nullptr;
 	SpecificNetwork *_specified = nullptr;
 
 	CompareDistances _comparer;
+
+	std::function<void(float, std::vector<float> &)> _eachHandler;
+	
+	bool modeNeedsAPS(const Mode &mode)
+	{
+		return (mode == Distance || mode == AssessSplits);
+	}
+	
+	Mode _mode = Unset;
 };
 
 #endif

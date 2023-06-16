@@ -23,6 +23,7 @@
 #include <map>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Responder.h>
+#include "ScoreMap.h"
 
 class Atom;
 class Entity;
@@ -66,38 +67,19 @@ public:
 
 	void makeMapping();
 	void setup();
-	
-	enum ScoreMode
-	{
-		Simple,
-		DisplayMatrix,
-		AssessSplits,
-		DistanceScore,
-	};
 
-	void checkTriangles(ScoreMode mode = Simple);
+	void checkTriangles(ScoreMap::Mode mode = ScoreMap::Basic);
 	void bootstrapToTriangle();
 	int bestStartingPoint();
 	static void run(Cartographer *cg);
-protected:
-	virtual void sendObject(std::string tag, void *object);
 private:
-	float scoreForTriangle(int idx, ScoreMode mode = Simple);
-	float scoreForPoints(const Cartographer::Points &points, 
-	                     std::function<float(float)> score_func);
-	void displayDistances();
-	void divideDistances(const size_t &num_points);
+	float scoreForTriangle(int idx, ScoreMap::Mode mode = ScoreMap::Basic);
 	void assessSplits(int face_idx);
 	void preparePoints(int idx);
 	Mappable<float> *bootstrapFace(std::vector<int> &pidxs);
 	
 	float scoreForPoints(const Cartographer::Points &points, 
-	                     Cartographer::ScoreMode options);
-
-	float processScores(const Cartographer::Points &points, 
-	                    bool grab_positions,
-	                    std::function<float(float)> process);
-
+	                     ScoreMap::Mode options);
 
 	void flipPoints();
 	void flipPoint(int pidx);
@@ -107,19 +89,15 @@ private:
 	void permute(std::vector<Mapped<float> *> &maps, 
 	             std::function<float()> score, int pidx);
 
-	float distanceScore(float total);
 	std::vector<std::pair<Parameter *, Mapped<float> *>> torsionMapsFor(int pidx);
 	Points cartesiansForFace(Mappable<float> *face);
 	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
-	std::function<float(float)> limitedDistanceScore();
 	ParamMapGroups splitParameters(const ParamMapGroup &list);
 
 	void setPoints(std::vector<Mapped<float> *> &maps,
 	               const std::vector<float> &values, int pidx);
 	void getPoints(std::vector<Mapped<float> *> &maps,
 	               std::vector<float> &values, int pidx);
-
-	std::function<float(float)> score_func(Cartographer::ScoreMode options);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;
@@ -128,16 +106,14 @@ private:
 	Mapped<float> *_mapped = nullptr;
 	MappingToMatrix *_mat2Map = nullptr;
 	PCA::Matrix _distMat{};
-	std::mutex _mDist;
 	
-	struct FaceBits
+	struct ProblemsInTriangle
 	{
 		Points points;
-		Points wider;
 		std::vector<Parameter *> problems;
 	};
 	
-	std::map<int, FaceBits> _faceBits;
+	std::map<int, ProblemsInTriangle> _problemsInTriangles;
 	
 	std::vector<Atom *> _atoms;
 	int _received = 0;

@@ -22,5 +22,96 @@
 
 ScoreMap::ScoreMap(Mapped<float> *mapped, SpecificNetwork *specified)
 {
+	_specified = specified;
+	_mapped = mapped;
+}
 
+void ScoreMap::sendObject(std::string tag, void *object)
+{
+	if (tag == "atom_map")
+	{
+		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
+		_comparer.process(*aps);
+	}
+}
+
+float ScoreMap::submitJobs(const Points &points, bool make_aps)
+{
+	struct TicketPoint
+	{
+		int ticket;
+		std::vector<float> point;
+	};
+
+	std::vector<TicketPoint> tickets;
+	for (const std::vector<float> &p : points)
+	{
+		int ticket = _specified->submitJob(make_aps, p);
+		tickets.push_back({ticket, p});
+	}
+	
+	_specified->setResponder(this);
+	_specified->retrieve();
+	_specified->removeResponder(this);
+	
+	float total = 0; float count = 0;
+	for (TicketPoint &tp : tickets)
+	{
+		float sc = _specified->deviation(tp.ticket);
+		total += sc; count++;
+		
+		if (_eachHandler)
+		{
+			_eachHandler(sc, tp.point);
+		}
+	}
+	
+	total /= count;
+
+	return total;
+}
+
+float ScoreMap::scoreForPoints(const Points &points)
+{
+	if (_mode == Unset)
+	{
+		throw std::runtime_error("Score mode is not set");
+	}
+
+	float value = processPoints(points, modeNeedsAPS(_mode));
+
+	if (_mode == Distance)
+	{
+		value = _comparer.quickScore();
+	}
+	
+	return value;
+}
+
+float ScoreMap::processPoints(const Points &points, bool make_aps)
+{
+	float basic_score = submitJobs(points, make_aps);
+	return basic_score;
+}
+
+
+void ScoreMap::setFilters(bool(*left)(Atom *const &), bool(*right)(Atom *const &))
+{
+	_comparer.setLeftFilter(left);
+	_comparer.setRightFilter(right);
+}
+
+bool ScoreMap::hasMatrix()
+{
+	return _comparer.receivedCount() > 0;
+}
+
+std::vector<Atom *> ScoreMap::atoms()
+{
+	return _comparer.leftAtoms();
+}
+
+PCA::Matrix ScoreMap::matrix()
+{
+	return _comparer.matrix();
 }

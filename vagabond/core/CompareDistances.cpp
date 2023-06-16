@@ -57,7 +57,7 @@ void CompareDistances::filter(const AtomPosMap &aps)
 		{
 			_leftAtoms.push_back(it->first);
 		}
-		else if (!_right || _right(it->first))
+		if (!_right || _right(it->first))
 		{
 			_rightAtoms.push_back(it->first);
 		}
@@ -85,17 +85,19 @@ void CompareDistances::process(const AtomPosMap &aps)
 float CompareDistances::quickScore()
 {
 	float sum = 0;
-	for (int i = 0; i < _matrix.cols * _matrix.rows; i++)
+	int size = _matrix.cols * _matrix.rows;
+	for (int i = 0; i < size; i++)
 	{
 		sum += _matrix.vals[i];
 	}
 
-	return sum;
+	return sum / (float)(size * _counter);
 }
 
 void CompareDistances::addToMatrix(const AtomPosMap &aps)
 {
 	int i = 0; int j = 0;
+	_counter++;
 	
 	for (Atom *atom : _leftAtoms)
 	{
@@ -125,15 +127,29 @@ void CompareDistances::addToMatrix(const AtomPosMap &aps)
 	}
 }
 
+void CompareDistances::reset()
+{
+	_leftAtoms.clear(); _rightAtoms.clear();
+	freeMatrix(&_matrix);
+	_counter = 0;
+}
+
 PCA::Matrix CompareDistances::matrix()
 {
 	PCA::Matrix copy;
 	PCA::setupMatrix(&copy, _leftAtoms.size(), _rightAtoms.size());
 	copyMatrix(copy, _matrix);
+	
+	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
+	{
+		copy.vals[i] /= (float)_counter;
+	}
+
 	return copy;
 }
 
 void CompareDistances::clearMatrix()
 {
 	zeroMatrix(&_matrix);
+	_counter = 0;
 }

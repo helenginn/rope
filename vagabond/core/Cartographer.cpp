@@ -16,14 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Cartographer.h"
 #include <vagabond/utils/Mapping.h>
 #include <vagabond/utils/Hypersphere.h>
-#include <vagabond/core/Network.h>
-#include <vagabond/core/CompareDistances.h>
-#include <vagabond/core/MappingToMatrix.h>
-#include <vagabond/core/SpecificNetwork.h>
-#include <vagabond/core/SquareSplitter.h>
+#include "Network.h"
+#include "MappingToMatrix.h"
+#include "SpecificNetwork.h"
+#include "SquareSplitter.h"
+#include "Cartographer.h"
 
 Cartographer::Cartographer(Entity *entity, std::vector<Instance *> instances)
 {
@@ -47,7 +46,6 @@ void Cartographer::makeMapping()
 
 	_mapped = _network->blueprint();
 	_specified = _network->specificForInstance(_instances[0]);
-	_specified->setResponder(this);
 }
 
 void Cartographer::assessSplits(int idx)
@@ -55,7 +53,7 @@ void Cartographer::assessSplits(int idx)
 	SquareSplitter sqsp(_distMat);
 	std::vector<int> splits = sqsp.splits();
 	
-	_faceBits[idx].problems.clear();
+	_problemsInTriangles[idx].problems.clear();
 	
 	for (size_t i = 0; i < splits.size(); i++)
 	{
@@ -73,22 +71,22 @@ void Cartographer::assessSplits(int idx)
 				Parameter *p = atom->parameter(j);
 				if (p->hasAtom(atom) && p->coversMainChain())
 				{
-					_faceBits[idx].problems.push_back(p);
+					_problemsInTriangles[idx].problems.push_back(p);
 				}
 			}
 		}
 	}
 }
 
-void Cartographer::checkTriangles(ScoreMode mode)
+void Cartographer::checkTriangles(ScoreMap::Mode mode)
 {
 	_mapped->update();
 	for (size_t i = 0; i < _mapped->faceCount(); i++)
 	{
 		preparePoints(i);
-		scoreForTriangle(i, mode);
+		scoreForPoints(_problemsInTriangles[i].points, mode);
 		
-		if (mode == AssessSplits)
+		if (mode == ScoreMap::AssessSplits)
 		{
 			assessSplits(i);
 		}
@@ -102,175 +100,40 @@ void Cartographer::checkTriangles(ScoreMode mode)
 void Cartographer::preparePoints(int idx)
 {
 	std::vector<std::vector<float>> points = _mat2Map->carts_for_triangle(idx);
-	std::cout << "face " << idx << " points: " << points.size() << std::endl;
-	_faceBits[idx].points = points;
-	
-	std::vector<int> all_triangles;
-	_mapped->face_indices_for_point(idx, all_triangles);
-	
-	for (const int &tidx : all_triangles)
-	{
-		Points points = _mat2Map->carts_for_triangle(tidx);
-	}
-
+	_problemsInTriangles[idx].points = points;
 }
 
-float Cartographer::scoreForTriangle(int idx, ScoreMode mode)
+float Cartographer::scoreForTriangle(int idx, ScoreMap::Mode mode)
 {
-	float score = scoreForPoints(_faceBits[idx].points, mode);
+	float score = scoreForPoints(_problemsInTriangles[idx].points, mode);
 	return score;
 }
 
-template <class Class>
-float submitJobs(const Cartographer::Points &points,
-                 bool grab_pos, SpecificNetwork *specific,
-                 Class *handler, void(Class::*handle)(float, std::vector<float> &))
+float Cartographer::scoreForPoints(const Points &points, ScoreMap::Mode options)
 {
-	struct TicketPoint
+	ScoreMap scorer(_mapped, _specified);
+	
+	MappingToMatrix *m2m = _mat2Map;
+	auto handle = [m2m](float s, std::vector<float> &ps)
 	{
-		int ticket;
-		std::vector<float> point;
+		m2m->insertScore(s, ps);
 	};
 
-	std::vector<TicketPoint> tickets;
-	for (const std::vector<float> &p : points)
-	{
-		int ticket = specific->submitJob(grab_pos, p);
-		tickets.push_back({ticket, p});
-	}
-	
-	specific->retrieve();
-	
-	float total = 0; float count = 0;
-	for (TicketPoint &tp : tickets)
-	{
-		float sc = specific->deviation(tp.ticket);
-		total += sc; count++;
-		
-		(handler->*handle)(sc, tp.point);
-	}
-	
-	total /= count;
+	scorer.setIndividualHandler(handle);
+	scorer.setMode(options);
 
-	return total;
-}
-
-void Cartographer::displayDistances()
-{
-	sendResponse("atom_matrix", &_distMat);
-
-}
-
-void Cartographer::divideDistances(const size_t &num_points)
-{
-	for (size_t i = 0; i < _distMat.rows * _distMat.cols; i++)
-	{
-		_distMat.vals[i] /= (float)num_points;
-	}
-	_received = 0;
-}
-
-float Cartographer::distanceScore(float total)
-{
-	const float nn = _distMat.rows * _distMat.cols;
-	float sum = 0;
-	for (size_t i = 0; i < nn; i++)
-	{
-		sum += fabs(_distMat.vals[i]);
-	}
-
-	return sum / nn;
-}
-
-float Cartographer::scoreForPoints(const Cartographer::Points &points, 
-                                   std::function<float(float)> score_func)
-{
-	return processScores(points, true, score_func);
-}
-
-std::function<float(float)> Cartographer::limitedDistanceScore()
-{
-	std::function<float(float)> func;
-
-	return func;
-}
-
-std::function<float(float)> Cartographer::score_func(Cartographer::ScoreMode 
-                                                     options)
-{
-	std::function<float(float)> func = [](float simple_score)
-	{
-		return simple_score;
-	};
-
-	if (options == DistanceScore)
-	{
-		func = [this](float simple_score)
-		{
-			return this->distanceScore(simple_score);
-		};
-	}
-
-	return func;
-}
-
-float Cartographer::scoreForPoints(const Cartographer::Points &points, 
-                                  Cartographer::ScoreMode options)
-{
-	std::function<float(float)> func = score_func(options);
-	return processScores(points, true, func);
-}
-
-float Cartographer::processScores(const Cartographer::Points &points, 
-                                  bool grab_positions,
-                                  std::function<float(float)> process)
-{
-	if (_distMat.rows > 0)
-	{
-		zeroMatrix(&_distMat);
-	}
-
-	float total = submitJobs(points, grab_positions, _specified,
-	                         _mat2Map, &MappingToMatrix::insertScore);
-	
-	if (grab_positions)
-	{
-		this->divideDistances(points.size());
-		this->displayDistances();
-		total = process(total);
-	}
-
+	float result = scorer.scoreForPoints(points);
 
 	sendResponse("update_map", nullptr);
 
-	return total;
-}
-
-void Cartographer::sendObject(std::string tag, void *object)
-{
-	if (tag == "atom_map")
+	if (scorer.hasMatrix())
 	{
-		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
-		CompareDistances cd;
-		cd.process(*aps);
-		PCA::Matrix contrib = cd.matrix();
-		
-		std::unique_lock<std::mutex> lock(_mDist);
-		
-		if (_distMat.rows == 0)
-		{
-			_distMat = contrib;
-			_atoms = cd.leftAtoms();
-		}
-		else
-		{
-			for (size_t i = 0; i < _distMat.rows * _distMat.cols; i++)
-			{
-				_distMat.vals[i] += contrib.vals[i];
-			}
-			_received++;
-		}
+		_distMat = scorer.matrix();
+		_atoms = scorer.atoms();
+		sendResponse("atom_matrix", &_distMat);
 	}
+
+	return result;
 }
 
 PCA::Matrix &Cartographer::matrix()
@@ -280,9 +143,9 @@ PCA::Matrix &Cartographer::matrix()
 
 void Cartographer::run(Cartographer *cg)
 {
-	cg->checkTriangles(AssessSplits);
+	cg->checkTriangles(ScoreMap::AssessSplits);
 	cg->flipPoints();
-	cg->checkTriangles(DisplayMatrix);
+	cg->checkTriangles(ScoreMap::Distance);
 	
 	cg->sendResponse("refined", nullptr);
 }
@@ -396,7 +259,7 @@ void Cartographer::flipPoints()
 		flipPointsFor(face, todo);
 	}
 
-	checkTriangles(DisplayMatrix);
+	checkTriangles(ScoreMap::Distance);
 
 	int t = -1;
 	while (true)
@@ -408,7 +271,7 @@ void Cartographer::flipPoints()
 		}
 
 		flipPointsFor(face, todo);
-		scoreForTriangle(t, DisplayMatrix);
+		scoreForTriangle(t, ScoreMap::Distance);
 	}
 }
 
@@ -580,7 +443,7 @@ std::vector<Cartographer::ParamMap> Cartographer::torsionMapsFor(int pidx)
 
 	for (int &idx : tridxs)
 	{
-		FaceBits &fb = _faceBits[idx];
+		ProblemsInTriangle &fb = _problemsInTriangles[idx];
 		for (Parameter *problem : fb.problems)
 		{
 			Mapped<float> *map = _specified->mapForParameter(problem);
@@ -658,8 +521,6 @@ void Cartographer::permute(std::vector<Mapped<float> *> &maps,
 
 			for (size_t i = start; i < end; i++)
 			{
-				const float diff = old_vals[i];
-
 				float flipped = lmb(perm[n]) + old_vals[i];
 				new_vals[i] = flipped;
 
@@ -693,7 +554,7 @@ void Cartographer::permute(std::vector<Mapped<float> *> &maps,
 
 	std::function<float()> score = [this, all_points]()
 	{
-		return this->scoreForPoints(all_points, Simple);
+		return this->scoreForPoints(all_points, ScoreMap::Basic);
 	};
 	
 	permute(maps, score, pidx);

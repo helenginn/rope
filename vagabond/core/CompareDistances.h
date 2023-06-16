@@ -54,9 +54,15 @@ public:
 
 	PCA::Matrix matrix();
 	
-	void clearMatrix();
-	
 	float quickScore();
+	
+	int receivedCount()
+	{
+		return _counter;
+	}
+
+	void clearMatrix();
+	void reset();
 private:
 	void filter(const AtomPosMap &aps);
 	void setupMatrix();
@@ -71,6 +77,7 @@ private:
 	bool (*_defaultFilter)(Atom *const &atom) = nullptr;
 	
 	PCA::Matrix _matrix;
+	int _counter = 0;
 };
 
 #endif
