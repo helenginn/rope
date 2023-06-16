@@ -43,13 +43,7 @@ SandboxView::~SandboxView()
 
 void SandboxView::setup()
 {
-	makeMapping();
-	makeTriangles();
-	addTitle("Triangle mayhem");
 
-	Instance *inst = _specified->instance();
-	inst->currentAtoms()->recalculate();
-	loadAtoms(inst->currentAtoms());
 }
 
 void SandboxView::makeMapping()
@@ -71,7 +65,6 @@ void SandboxView::makeTriangles()
 	_mat2Map = new MappingToMatrix(*_mapped);
 
 	std::cout << "Rastering..." << std::endl;
-	_mat2Map->rasterNetwork(_specified);
 	MatrixPlot *mp = new MatrixPlot(_mat2Map->matrix(), _mutex);
 	mp->resize(0.8);
 	mp->setCentre(0.2, 0.5);
@@ -138,28 +131,10 @@ void SandboxView::mouseMoveEvent(double x, double y)
 
 void SandboxView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
-	sampleFromPlot(x, y);
-	_editing = false;
-	
-	Display::mousePressEvent(x, y, button);
+
 }
 
 void SandboxView::sendObject(std::string tag, void *object)
 {
-	if (tag == "atom_map")
-	{
-		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
-		CompareDistances cd(*aps);
-		_distMat = cd.matrix();
 
-		if (_distances == nullptr)
-		{
-			_distances = new MatrixPlot(_distMat, _mutex);
-			_distances->resize(0.8);
-			_distances->setCentre(0.8, 0.5);
-			addObject(_distances);
-		}
-
-		_distances->update();
-	}
 }

@@ -170,7 +170,7 @@ public:
 		return _motions.rt(i);
 	}
 	
-	void setFlips(std::vector<int> &idxs, std::vector<bool> &fs);
+	void setFlips(std::vector<int> &idxs, std::vector<int> &fs);
 	
 	int indexOfParameter(Parameter *t);
 

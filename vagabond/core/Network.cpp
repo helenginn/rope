@@ -79,8 +79,8 @@ void Network::addBounds(Mapping<NETWORK_DIMS, float> *map)
 	
 	for (int i = 0; i < min.size(); i++)
 	{
-		min[i] *= 5;
-		max[i] *= 5;
+		min[i] *= 2;
+		max[i] *= 2;
 	}
 	
 	const int D = NETWORK_DIMS;
@@ -90,8 +90,8 @@ void Network::addBounds(Mapping<NETWORK_DIMS, float> *map)
 	Face<0, D, float> *Mm = new Face<0, D, float>({max[0], min[1]}, -1.0);
 	Face<0, D, float> *MM = new Face<0, D, float>({max[0], max[1]}, -1.0);
 	
-	map->add_triangle(mm, mM, Mm);
-	map->add_triangle(mM, Mm, MM);
+	map->add_simplex({mm, mM, Mm});
+	map->add_simplex({mM, Mm, MM});
 }
 
 void Network::removeBounds()

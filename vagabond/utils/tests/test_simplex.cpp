@@ -44,6 +44,19 @@ BOOST_AUTO_TEST_CASE(make_face)
 	BOOST_TEST(t123.pointCount() == 3);
 }
 
+BOOST_AUTO_TEST_CASE(make_face_from_list)
+{
+	Face<0, 2, float> p1, p2, p3, p4;
+	std::vector<SharedFace<0, 2, float> *> points = {&p1, &p2, &p3, &p4};
+	
+	std::map<int, std::set<MappedInDim<2, float> *>> bins;
+
+	SharedFace<3, 2, float> *face = SharedFace<3, 2, float>::make_next(points);
+	face->add_to_bins(bins);
+	
+	BOOST_TEST(bins[0].size() == 4);
+}
+
 BOOST_AUTO_TEST_CASE(point_on_triangle_to_barycentric)
 {
 	float p1[] = {0.f, 0.f};
@@ -179,10 +192,38 @@ BOOST_AUTO_TEST_CASE(mapping_counts_points)
 	Face<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
 
 	Mapping<2, float> map;
-	map.add_triangle(&p1, &p2, &p3);
-	map.add_triangle(&p1, &p2, &p4);
+	map.add_simplex({&p1, &p2, &p3});
+	map.add_simplex({&p1, &p2, &p4});
 
 	BOOST_TEST(map.pointCount() == 4);
+}
+
+BOOST_AUTO_TEST_CASE(mapping_makes_copy)
+{
+	float p1s[] = {0., 0.};
+	float p2s[] = {0., 1.};
+	float p3s[] = {1., 0.};
+	float p4s[] = {0., -1.};
+
+	Face<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
+
+	Mapping<2, float> map;
+	map.add_simplex({&p1, &p2, &p3});
+	map.add_simplex({&p1, &p2, &p4});
+	
+	Mapping<2, glm::vec3> copy(map);
+	
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (MappedInDim<2, glm::vec3> *item : copy.bin(1))
+		{
+			bool has = item->hasPoint(*copy.point(i));
+			std::cout << has << " ";
+		}
+		std::cout << std::endl;
+	}
+
+	BOOST_TEST(copy.pointCount() == 4);
 }
 
 BOOST_AUTO_TEST_CASE(mapping_interpolates_from_triangle)
@@ -191,8 +232,8 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_from_triangle)
 	Face<0, 2, float> p4({2.f, 2.f}, -2);
 
 	Mapping<2, float> map;
-	map.add_triangle(&p1, &p2, &p3);
-	map.add_triangle(&p2, &p3, &p4);
+	map.add_simplex({&p1, &p2, &p3});
+	map.add_simplex({&p1, &p2, &p4});
 
 	float f = map.interpolate_variable({0.5f, 0.5f});
 	BOOST_TEST(f == 2);
@@ -207,7 +248,7 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_float)
 	Face<0, 2, float> p3({2.f, 0.f}, 0);
 
 	Mapping<2, float> map;
-	map.add_triangle(&p1, &p2, &p3);
+	map.add_simplex({&p1, &p2, &p3});
 
 	float f = map.interpolate_variable({0.1f, 0.1f});
 	BOOST_TEST(f == 1.80486476, tt::tolerance(1e-3));
@@ -220,7 +261,7 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_vec3)
 	Face<0, 2, glm::vec3> p3({2.f, 0.f}, glm::vec3(0., 1., 0.));
 
 	Mapping<2, glm::vec3> map;
-	map.add_triangle(&p1, &p2, &p3);
+	map.add_simplex({&p1, &p2, &p3});
 
 	glm::vec3 f = map.interpolate_variable({0.5f, 0.5f});
 	BOOST_TEST(f.x == 0.0);
@@ -234,8 +275,8 @@ BOOST_AUTO_TEST_CASE(mapping_finds_bounds)
 	Face<0, 2, float> p4({3.f, 2.f}, -2);
 
 	Mapping<2, float> map;
-	map.add_triangle(&p1, &p2, &p3);
-	map.add_triangle(&p2, &p3, &p4);
+	map.add_simplex({&p1, &p2, &p3});
+	map.add_simplex({&p1, &p2, &p4});
 
 	std::vector<float> min, max;
 	map.bounds(min, max);
@@ -251,7 +292,7 @@ BOOST_AUTO_TEST_CASE(circumcentre)
 	Face<0, 2, float> p1({0.f, 0.f}, 2.f), p2({0.f, 1.f}, 2.f), p3({1.f, 0.f}, 2.f);
 
 	Mapping<2, float> map;
-	Face<2, 2, float> *triangle = map.add_triangle(&p1, &p2, &p3);
+	SharedFace<2, 2, float> *triangle = map.add_simplex({&p1, &p2, &p3});
 
 	float rad = 0;
 	std::vector<float> cc = triangle->cartesian_circumcenter(&rad);

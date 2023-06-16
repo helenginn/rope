@@ -54,7 +54,12 @@ public:
 		return (_bar.ptr != nullptr);
 	}
 	
-	virtual void extraWindowFlags(unsigned int &flags) {};
+	virtual void extraWindowFlags(unsigned int &flags)
+	{
+		flags += SDL_WINDOW_FULLSCREEN_DESKTOP;
+		flags += SDL_WINDOW_RESIZABLE;
+	}
+
 	void requestProgressBar(int ticks, std::string text);
 	void prepareProgressBar();
 	void removeProgressBar();

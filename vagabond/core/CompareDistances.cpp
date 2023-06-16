@@ -17,17 +17,22 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CompareDistances.h"
-#include <vagabond/utils/svd/PCA.h>
 #include "Atom.h"
 
-CompareDistances::CompareDistances(AtomPosMap &aps) : _aps(aps)
-{
-
-}
-
-bool CompareDistances::acceptable(Atom *atom)
+bool acceptable(Atom *const &atom)
 {
 	return atom->atomName() == "CA";
+}
+
+CompareDistances::~CompareDistances()
+{
+	freeMatrix(&_matrix);
+}
+
+CompareDistances::CompareDistances()
+{
+	_defaultFilter = &acceptable;
+
 }
 
 bool resi_num_comp(const Atom *a, const Atom *b)
@@ -35,49 +40,100 @@ bool resi_num_comp(const Atom *a, const Atom *b)
 	return (a->residueId().as_num() < b->residueId().as_num());
 }
 
-PCA::Matrix CompareDistances::matrix()
+void CompareDistances::filter(const AtomPosMap &aps)
 {
-	PCA::Matrix mat{};
+	if (_leftAtoms.size() > 0 && _rightAtoms.size() > 0) { return; }
 	
-	int count = 0;
-	for (auto it = _aps.begin(); it != _aps.end(); it++)
+	_leftAtoms.clear(); _rightAtoms.clear();
+
+	for (auto it = aps.begin(); it != aps.end(); it++)
 	{
-		if (acceptable(it->first))
+		if (!_defaultFilter(it->first))
 		{
-			_atoms.push_back(it->first);
-			count++;
+			continue;
+		}
+		
+		if (!_left || _left(it->first))
+		{
+			_leftAtoms.push_back(it->first);
+		}
+		else if (!_right || _right(it->first))
+		{
+			_rightAtoms.push_back(it->first);
 		}
 	}
-	
-	std::sort(_atoms.begin(), _atoms.end(), resi_num_comp);
-	
-	setupMatrix(&mat, count, count);
+
+	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
+	std::sort(_rightAtoms.begin(), _rightAtoms.end(), resi_num_comp);
+}
+
+void CompareDistances::setupMatrix()
+{
+	if (_matrix.rows == 0 || _matrix.cols == 0)
+	{
+		PCA::setupMatrix(&_matrix, _leftAtoms.size(), _rightAtoms.size());
+	}
+}
+
+void CompareDistances::process(const AtomPosMap &aps)
+{
+	filter(aps);
+	setupMatrix();
+	addToMatrix(aps);
+}
+
+float CompareDistances::quickScore()
+{
+	float sum = 0;
+	for (int i = 0; i < _matrix.cols * _matrix.rows; i++)
+	{
+		sum += _matrix.vals[i];
+	}
+
+	return sum;
+}
+
+void CompareDistances::addToMatrix(const AtomPosMap &aps)
+{
 	int i = 0; int j = 0;
 	
-	for (Atom *atom : _atoms)
+	for (Atom *atom : _leftAtoms)
 	{
-		WithPos &wp = _aps[atom];
-		glm::vec3 x = wp.ave;
-		glm::vec3 p = wp.target;
+		if (aps.count(atom) == 0) continue;
+		const WithPos &wp = aps.at(atom);
+		const glm::vec3 &x = wp.ave;
+		const glm::vec3 &p = wp.target;
 
-		for (Atom *atom : _atoms)
+		for (Atom *atom : _rightAtoms)
 		{
-			WithPos &yp = _aps[atom];
+			if (aps.count(atom) == 0) continue;
+			const WithPos &yp = aps.at(atom);
 
-			glm::vec3 y = yp.ave;
-			glm::vec3 q = yp.target;
+			const glm::vec3 &y = yp.ave;
+			const glm::vec3 &q = yp.target;
 
 			float expected = glm::length(p - q);
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
-			mat[i][j] = diff;
-			mat[j][i] = diff;
+			_matrix[i][j] += diff;
+			_matrix[j][i] += diff;
 			j++;
 		}
 		i++;
 		j = 0;
 	}
-	
-	return mat;
+}
+
+PCA::Matrix CompareDistances::matrix()
+{
+	PCA::Matrix copy;
+	PCA::setupMatrix(&copy, _leftAtoms.size(), _rightAtoms.size());
+	copyMatrix(copy, _matrix);
+	return copy;
+}
+
+void CompareDistances::clearMatrix()
+{
+	zeroMatrix(&_matrix);
 }

@@ -28,9 +28,6 @@ StructureModification(inst, 1, network->dims())
 {
 	_torsionType = TorsionBasis::TypeNetwork;
 	_threads = 2;
-	_mutex = new std::mutex();
-	_posMutex = new std::mutex();
-	_torsMutex = new std::mutex();
 
 	_instance = inst;
 	_network = network;
@@ -193,7 +190,6 @@ void SpecificNetwork::getTorsionDetails(TorsionBasis *tb, CalcDetails &cd)
 		Parameter *pm = tb->parameter(i);
 		TorsionMapping tm{};
 		tm.param = pm;
-		tm.mutex = new std::mutex();
 
 		if (pm && !pm->isConstrained())
 		{

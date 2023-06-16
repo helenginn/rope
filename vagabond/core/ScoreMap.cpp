@@ -16,23 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomPosMap__
-#define __vagabond__AtomPosMap__
+#include "ScoreMap.h"
+#include <vagabond/core/SpecificNetwork.h>
+#include <vagabond/utils/Mapping.h>
 
-#include <vagabond/utils/glm_import.h>
-#include <unordered_map>
-#include <vector>
-
-class Atom;
-
-struct WithPos
+ScoreMap::ScoreMap(Mapped<float> *mapped, SpecificNetwork *specified)
 {
-	std::vector<glm::vec3> samples{};
-	glm::vec3 ave = glm::vec3(0.f);
-	glm::vec3 target = glm::vec3(0.f);
-	float colour = 0;
-};
 
-typedef std::unordered_map<Atom *, WithPos> AtomPosMap;
-
-#endif
+}

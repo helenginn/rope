@@ -223,17 +223,17 @@ inline void val_to_cluster4x_colour(double val, T *red, T *green, T *blue)
 
 }
 
-inline void addPermutation(std::vector<std::vector<bool> > &perms)
+inline void addPermutation(std::vector<std::vector<int> > &perms, int base = 2)
 {
-	std::vector<std::vector<bool> > orig = perms;
-	std::vector<std::vector<bool> > new_set;
+	std::vector<std::vector<int> > orig = perms;
+	std::vector<std::vector<int> > new_set;
 	
 	for (size_t i = 0; i < orig.size(); i++)
 	{
-		for (size_t j = 0; j < 2; j++)
+		for (size_t j = 0; j < base; j++)
 		{
-			std::vector<bool> copy = orig[i];
-			copy.push_back(j == 1 ? true : false);
+			std::vector<int> copy = orig[i];
+			copy.push_back(j);
 			new_set.push_back(copy);
 		}
 	}
@@ -241,15 +241,18 @@ inline void addPermutation(std::vector<std::vector<bool> > &perms)
 	perms = new_set;
 }
 
-inline std::vector<std::vector<bool> > permutations(int count)
+inline std::vector<std::vector<int> > permutations(int count, int base = 2)
 {
-	std::vector<std::vector<bool> > perms;
-	perms.push_back(std::vector<bool>(1,false));
-	perms.push_back(std::vector<bool>(1,true));
+	std::vector<std::vector<int> > perms;
+
+	for (size_t j = 0; j < base; j++)
+	{
+		perms.push_back(std::vector<int>(1,j));
+	}
 
 	for (int i = 0; i < count - 1; i++)
 	{
-		addPermutation(perms);
+		addPermutation(perms, base);
 	}
 
 	return perms;

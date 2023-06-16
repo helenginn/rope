@@ -201,7 +201,7 @@ bool Route::incrementGrapher()
 	return true;
 }
 
-void Route::setFlips(std::vector<int> &idxs, std::vector<bool> &fs)
+void Route::setFlips(std::vector<int> &idxs, std::vector<int> &fs)
 {
 	for (size_t j = 0; j < idxs.size(); j++)
 	{

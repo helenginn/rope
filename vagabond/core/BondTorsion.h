@@ -61,6 +61,11 @@ public:
 		return true;
 	}
 
+	virtual bool hasAtom(Atom *a)
+	{
+		return (_a == a || _b == a || _c == a || _d == a);
+	}
+
 	virtual Atom *anAtom()
 	{
 		return atom(1);

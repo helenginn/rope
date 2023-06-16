@@ -217,15 +217,8 @@ void BondSequence::fetchTorsion(int idx)
 	int n = (_custom ? _custom->size : 0);
 	
 	double t = 0;
-	if (posSampler())
-	{
-		t = _torsionAngles[_blocks[idx].torsion_idx];
-	}
-	else
-	{
-		t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
-		                                      _currentVec, n);
-	}
+	t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
+	                                      _currentVec, n);
 
 
 	_blocks[idx].torsion = t;
@@ -253,7 +246,6 @@ void BondSequence::prewarnPositionSampler()
 	}
 	
 	_acceptablePositions = ps->prewarnAtoms(this, vals, _atomPositions);
-	ps->prewarnAngles(this, vals, _torsionAngles);
 }
 
 void BondSequence::fetchAtomTarget(int idx)

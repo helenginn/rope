@@ -92,7 +92,7 @@ void SquareSplitter::next_split()
 
 void SquareSplitter::split()
 {
-	for (size_t i = 0; i < 3; i++)
+	for (size_t i = 0; i < 6; i++)
 	{
 		next_split();
 	}

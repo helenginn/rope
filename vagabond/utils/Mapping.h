@@ -50,6 +50,13 @@ public:
 	virtual bool face_has_point(int idx, const std::vector<float> &point) = 0;
 	virtual void point_indices_for_face(int idx, std::vector<int> &points) = 0;
 	virtual void update(int idx) = 0;
+	virtual void redo_bins() = 0;
+	
+	virtual int n() = 0;
+
+	virtual std::vector<Mappable<Type> *> simplicesForPointDim(int index, 
+	                                                           int dimension) = 0;
+	virtual Mappable<Type> * simplex_for_points(std::vector<int> &points) = 0;
 
 	void update()
 	{
@@ -74,10 +81,16 @@ public:
 	typedef SharedFace<D, D, Type> HyperTriangle;
 	typedef SharedFace<D - 1, D, Type> HyperLine;
 	typedef SharedFace<0, D, Type> HyperPoint;
+	typedef std::set<MappedInDim<D, Type> *> SimplexVector;
 	
 	Mapping()
 	{
 
+	}
+
+	virtual int n()
+	{
+		return D;
 	}
 
 	template <class Other>
@@ -107,7 +120,7 @@ public:
 				points.push_back(hp);
 			}
 			
-			add_triangle(points[0], points[1], points[2]);
+			add_simplex(points);
 		}
 	}
 
@@ -115,14 +128,34 @@ public:
 	{
 
 	}
-	Face<2, D, Type> *add_triangle(HyperPoint *p, HyperPoint *q,
-	                               HyperPoint *r)
-	{
-		Face<1, D, Type> *pq = new Face<1, D, Type>(*p, *q);
-		Face<2, D, Type> *pqr = new Face<2, D, Type>(*pq, *r);
 
-		add_face(pqr);
-		return pqr;
+	template <int N>
+	Face<N + 1, D, Type> *next_simplex(SharedFace<N, D, Type> *last, 
+	                                        HyperPoint *next)
+	{
+		Face<N + 1, D, Type> *combine;
+		combine = new Face<N + 1, D, Type>(*last, *next);
+		return combine;
+	}
+	
+	virtual void redo_bins()
+	{
+		_simplices.clear();
+		for (HyperTriangle *triangle : _mapped)
+		{
+			triangle->add_to_bins(_simplices);
+		}
+	}
+	
+	HyperTriangle *add_simplex(const std::vector<HyperPoint *> &ps)
+	{
+		SharedFace<D, D, Type> *last;
+		last = SharedFace<D, D, Type>::make_next(ps);
+		last->add_to_bins(_simplices);
+		
+		HyperTriangle *tr = static_cast<HyperTriangle *>(last);
+		add_face(tr);
+		return tr;
 	}
 
 	void add_face(HyperTriangle *face)
@@ -230,7 +263,7 @@ public:
 	Type interpolate_variable(const std::vector<float> &cart, 
 	                          bool *acceptable = nullptr) const
 	{
-		Mappable<Type> *f = face_for_point(cart);
+		MappedInDim<D, Type> *f = face_for_point(cart);
 		if (f == nullptr)
 		{
 			if (acceptable != nullptr)
@@ -261,6 +294,11 @@ public:
 	virtual size_t faceCount() const
 	{
 		return _mapped.size();
+	}
+	
+	SimplexVector &bin(int i)
+	{
+		return _simplices[i];
 	}
 	
 	virtual void bounds(std::vector<float> &min, std::vector<float> &max)
@@ -568,6 +606,46 @@ public:
 			_mapped[i]->changed();
 		}
 	}
+	
+	virtual Mappable<Type> * simplex_for_points(std::vector<int> &points)
+	{
+		int dimension = points.size() - 1;
+		for (MappedInDim<D, Type> *simplex : bin(dimension))
+		{
+			bool found = true;
+			for (const int &idx : points)
+			{
+				if (!simplex->hasPoint(*_points[idx]))
+				{
+					found = false;
+					continue;
+				}
+			}
+			
+			if (found)
+			{
+				return simplex;
+			}
+		}
+
+		return nullptr;
+	}
+	
+	std::vector<Mappable<Type> *> simplicesForPointDim(int index, int dimension)
+	{
+		std::vector<Mappable<Type> *> ret;
+		
+		HyperPoint *needle = _points[index];
+		for (MappedInDim<D, Type> *simplex : bin(dimension))
+		{
+			if (simplex->hasPoint(*needle))
+			{
+				ret.push_back(simplex);
+			}
+		}
+
+		return ret;
+	}
 protected:
 	HyperTriangle *face_for_point(const std::vector<float> &point) const
 	{
@@ -601,6 +679,7 @@ private:
 	std::vector<HyperTriangle *> _mapped;
 
 	std::map<HyperPoint *, std::vector<HyperTriangle *>> _members;
+	std::map<int, SimplexVector> _simplices;
 };
 
 #endif

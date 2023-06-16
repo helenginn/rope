@@ -40,6 +40,11 @@ public:
 	{
 		return (a == anAtom());
 	}
+
+	virtual bool hasAtom(Atom *a)
+	{
+		return (a == anAtom());
+	}
 	
 	virtual bool isTorsion() const
 	{

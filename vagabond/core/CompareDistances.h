@@ -19,25 +19,58 @@
 #ifndef __vagabond__CompareDistances__
 #define __vagabond__CompareDistances__
 
-namespace PCA { struct Matrix; };
+#include <vagabond/utils/svd/PCA.h>
 #include "AtomPosMap.h"
+
+class Atom;
 
 class CompareDistances
 {
 public:
-	CompareDistances(AtomPosMap &aps);
+	CompareDistances();
+	~CompareDistances();
+	
+	void process(const AtomPosMap &aps);
+
+	void setLeftFilter(bool(*filter)(Atom *const &))
+	{
+		_left = filter;
+	}
+
+	void setRightFilter(bool(*filter)(Atom *const &))
+	{
+		_right = filter;
+	}
+	
+	const std::vector<Atom *> &leftAtoms() const
+	{
+		return _leftAtoms;
+	}
+	
+	const std::vector<Atom *> &rightAtoms() const
+	{
+		return _rightAtoms;
+	}
 
 	PCA::Matrix matrix();
 	
-	const std::vector<Atom *> &atoms() const
-	{
-		return _atoms;
-	}
+	void clearMatrix();
+	
+	float quickScore();
 private:
-	bool acceptable(Atom *atom);
-	AtomPosMap &_aps;
+	void filter(const AtomPosMap &aps);
+	void setupMatrix();
+	void addToMatrix(const AtomPosMap &aps);
 
-	std::vector<Atom *> _atoms;
+	std::vector<Atom *> _leftAtoms;
+	std::vector<Atom *> _rightAtoms;
+
+	bool(*_left)(Atom *const &atom) = nullptr;
+	bool(*_right)(Atom *const &atom) = nullptr;
+	
+	bool (*_defaultFilter)(Atom *const &atom) = nullptr;
+	
+	PCA::Matrix _matrix;
 };
 
 #endif

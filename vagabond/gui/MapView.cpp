@@ -169,7 +169,8 @@ void MapView::sendObject(std::string tag, void *object)
 	if (tag == "atom_map")
 	{
 		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
-		CompareDistances cd(*aps);
+		CompareDistances cd;
+		cd.process(*aps);
 		PCA::Matrix dist = cd.matrix();
 		displayDistances(dist);
 	}

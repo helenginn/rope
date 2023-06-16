@@ -29,12 +29,10 @@ class MappingToMatrix
 public:
 	MappingToMatrix(Mapped<float> &mapped);
 	
-	void rasterNetwork(SpecificNetwork *sn);
-	
 	void fraction_to_cart(std::vector<float> &vals);
-	void insertScore(float score, std::vector<float> point);
+	void insertScore(float score, std::vector<float> &point);
 	
-	std::vector<std::vector<float>> carts_for_triangle(int idx, int steps = 50);
+	std::vector<std::vector<float>> carts_for_triangle(int idx, int steps = -1);
 
 	PCA::Matrix &matrix() 
 	{
@@ -46,6 +44,7 @@ public:
 private:
 	float simpleValue(float x, float y);
 	float deviationScore(float x, float y);
+
 	void normalise(double &val);
 	void loop(float(MappingToMatrix::*get_value)(float, float));
 	SpecificNetwork *_specified;
@@ -57,7 +56,7 @@ private:
 	std::map<int, double *> _ticket2Mat;
 	double _mean = 1;
 	double _stdev = 1;
-	int _steps = 50;
+	int _steps = 100;
 };
 
 #endif

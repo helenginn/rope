@@ -80,14 +80,10 @@ private:
 
 	Instance *_instance = nullptr;
 	Network *_network = nullptr;
-	std::mutex *_mutex = nullptr;
-	std::mutex *_posMutex = nullptr;
-	std::mutex *_torsMutex = nullptr;
 
 	struct TorsionMapping
 	{
 		Parameter *param;
-		std::mutex *mutex;
 		Mapped<float> *mapping;
 	};
 	

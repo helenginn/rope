@@ -320,7 +320,7 @@ int PlausibleRoute::nudgeWaypoints()
 	return changed;
 }
 
-void print(std::vector<bool> &flips)
+void print(std::vector<int> &flips)
 {
 	std::cout << flips.size() << ": ";
 	for (size_t j = 0; j < flips.size(); j++)
@@ -373,13 +373,13 @@ bool PlausibleRoute::flipTorsion(int idx)
 		return false;
 	}
 
-	std::vector<bool> best(idxs.size(), false);
+	std::vector<int> best(idxs.size(), false);
 	for (size_t i = 0; i < idxs.size(); i++)
 	{
 		best[i] = flip(idxs[i]);
 	}
 
-	std::vector<std::vector<bool> > putatives = permutations(idxs.size());
+	std::vector<std::vector<int> > putatives = permutations(idxs.size());
 	bool changed = false;
 	for (size_t i = 0; i < putatives.size(); i++)
 	{

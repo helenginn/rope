@@ -28,17 +28,18 @@ MappingToMatrix::MappingToMatrix(Mapped<float> &mapped) : _mapped(mapped)
 	calculate();
 }
 
-void MappingToMatrix::insertScore(float score, std::vector<float> point)
+void MappingToMatrix::insertScore(float score, std::vector<float> &point)
 {
 	int D = _min.size();
 	std::vector<float> val(D);
 
 	_mapped.real_to_fraction(point, _min, _max);
-	int x = point[0] * _steps + 0.5;
-	int y = point[1] * _steps + 0.5;
+	int x = lrint(point[0] * _steps);
+	int y = lrint(point[1] * _steps);
 
 	if (x >= _matrix.rows || x < 0 || y >= _matrix.cols || y < 0)
 	{
+		return;
 		std::ostringstream ss;
 		ss << "x/y " << x << " " << y << " for matrix size " <<
 		_matrix.rows << " x " << _matrix.cols;
@@ -112,11 +113,14 @@ void MappingToMatrix::normalise()
 std::vector<std::vector<float>> MappingToMatrix::carts_for_triangle(int idx, 
                                                                     int steps)
 {
+	if (steps < 0)
+	{
+		steps = _steps;
+	}
 	std::vector<std::vector<float>> res;
 	const float step = 1 / (float)steps;
 
 	int D = _min.size();
-	int i = 0; int j = 0;
 	for (float x = 0; x < 1; x += step)
 	{
 		for (float y = 0; y < 1; y += step)
@@ -195,69 +199,3 @@ void MappingToMatrix::calculate()
 	loop(&MappingToMatrix::simpleValue);
 }
 
-void MappingToMatrix::rasterNetwork(SpecificNetwork *sn)
-{
-	_specified = sn;
-	loop(&MappingToMatrix::deviationScore);
-	return;
-	_mapped.bounds(_min, _max);
-	
-	int D = _min.size();
-	
-	if (D < 2)
-	{
-		throw std::runtime_error("Dimension less than 2, cannot make matrix");
-	}
-	
-	int total = _steps;
-	const float step = 1 / (float)total;
-	PCA::freeMatrix(&_matrix);
-	PCA::setupMatrix(&_matrix, total, total);
-	std::vector<float> val(D);
-
-	int i = 0; int j = 0;
-	for (float x = 0; x < 1; x += step)
-	{
-		for (float y = 0; y < 1; y += step)
-		{
-			val[0] = x; val[1] = y;
-
-			_mapped.fraction_to_real(val, _min, _max);
-			if (!_mapped.acceptable_coordinate(val))
-			{
-				_matrix[i][j] = NAN;
-			}
-			else
-			{
-				int ticket = _specified->submitJob(false, val);
-				_ticket2Mat[ticket] = &_matrix[i][j];
-			}
-
-
-			j++;
-			if (j >= total)
-			{
-				break;
-			}
-		}
-		
-		i++;
-		j = 0;
-		
-		if (i >= total)
-		{
-			break;
-		}
-	}
-	
-	_specified->retrieve();
-	
-	for (auto it = _ticket2Mat.begin(); it != _ticket2Mat.end(); it++)
-	{
-		float dev = _specified->deviation(it->first);
-		std::cout << " = " << dev << std::endl;
-		*it->second = dev;
-	}
-	
-	normalise();
-}

@@ -64,6 +64,12 @@ struct ResidueId
 		return ss.str();
 	}
 	
+	friend std::ostream &operator<<(std::ostream &ss, const ResidueId &id)
+	{
+		ss << id.as_string();
+		return ss;
+	}
+	
 	const std::string str() const
 	{
 		return as_string();

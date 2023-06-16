@@ -32,11 +32,19 @@ class Parameter;
 class SpecificNetwork;
 class MappingToMatrix;
 template <typename Type> class Mapped;
+template <typename Type> class Mappable;
 
 class Cartographer : public Responder<SpecificNetwork>,
 public HasResponder<Responder<Cartographer>>
 {
 public:
+	typedef std::vector<std::vector<float>> Points;
+	typedef std::pair<Parameter *, Mapped<float> *> ParamMap;
+	typedef std::vector<Parameter *> ParameterGroup;
+	typedef std::vector<ParameterGroup> ParameterGroups;
+	typedef std::vector<ParamMap> ParamMapGroup;
+	typedef std::vector<ParamMapGroup> ParamMapGroups;
+
 	Cartographer(Entity *entity, std::vector<Instance *> instances);
 	
 	SpecificNetwork *specified()
@@ -58,24 +66,60 @@ public:
 
 	void makeMapping();
 	void setup();
+	
+	enum ScoreMode
+	{
+		Simple,
+		DisplayMatrix,
+		AssessSplits,
+		DistanceScore,
+	};
 
-	float scoreForTriangle(int idx, bool wide = false, 
-	                       bool identify_torsions = true);
-	void checkTriangles(bool identify_torsions = true);
+	void checkTriangles(ScoreMode mode = Simple);
+	void bootstrapToTriangle();
+	int bestStartingPoint();
 	static void run(Cartographer *cg);
 protected:
 	virtual void sendObject(std::string tag, void *object);
 private:
+	float scoreForTriangle(int idx, ScoreMode mode = Simple);
+	float scoreForPoints(const Cartographer::Points &points, 
+	                     std::function<float(float)> score_func);
+	void displayDistances();
+	void divideDistances(const size_t &num_points);
 	void assessSplits(int face_idx);
 	void preparePoints(int idx);
+	Mappable<float> *bootstrapFace(std::vector<int> &pidxs);
 	
-	typedef std::vector<std::vector<float>> Points;
-	float scoreForPoints(const Points &points, bool identify_torsions);
+	float scoreForPoints(const Cartographer::Points &points, 
+	                     Cartographer::ScoreMode options);
 
-	void flipTriangles();
-	void flipTriangle(int idx);
-	bool flipTriangleTorsion(Mapped<float> *map, int idx);
-	void flipPoint(Mapped<float> *map, int idx, int num_360s);
+	float processScores(const Cartographer::Points &points, 
+	                    bool grab_positions,
+	                    std::function<float(float)> process);
+
+
+	void flipPoints();
+	void flipPoint(int pidx);
+	void flipPointsFor(Mappable<float> *face, const std::vector<int> &points);
+	void permute(std::vector<Mapped<float> *> &maps_only, Points all_points,
+	             int pidx);
+	void permute(std::vector<Mapped<float> *> &maps, 
+	             std::function<float()> score, int pidx);
+
+	float distanceScore(float total);
+	std::vector<std::pair<Parameter *, Mapped<float> *>> torsionMapsFor(int pidx);
+	Points cartesiansForFace(Mappable<float> *face);
+	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
+	std::function<float(float)> limitedDistanceScore();
+	ParamMapGroups splitParameters(const ParamMapGroup &list);
+
+	void setPoints(std::vector<Mapped<float> *> &maps,
+	               const std::vector<float> &values, int pidx);
+	void getPoints(std::vector<Mapped<float> *> &maps,
+	               std::vector<float> &values, int pidx);
+
+	std::function<float(float)> score_func(Cartographer::ScoreMode options);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;
