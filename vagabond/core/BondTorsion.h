@@ -111,7 +111,8 @@ public:
 
 	bool spansMultipleChains() const;
 	
-	virtual const ResidueId residueId();
+	virtual ResidueId residueId();
+	virtual const ResidueId &residueId() const;
 	
 	bool atomIsTerminal(Atom *a)
 	{

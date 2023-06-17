@@ -213,7 +213,20 @@ glm::vec3 BondTorsion::bondMidPoint() const
 	return sum;
 }
 
-const ResidueId BondTorsion::residueId() 
+const ResidueId &BondTorsion::residueId() const
+{
+	if (_gotId)
+	{
+		return _resId;
+	}
+
+	const ResidueId &bId = _b->residueId();
+	const ResidueId &cId = _c->residueId();
+
+	return (bId < cId ? bId : cId);
+}
+
+ResidueId BondTorsion::residueId() 
 {
 	if (_gotId)
 	{

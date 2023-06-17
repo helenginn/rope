@@ -80,7 +80,7 @@ float ScoreMap::scoreForPoints(const Points &points)
 
 	float value = processPoints(points, modeNeedsAPS(_mode));
 
-	if (_mode == Distance)
+	if (_mode == Distance || _mode == AssessSplits)
 	{
 		value = _comparer.quickScore();
 	}
@@ -95,7 +95,7 @@ float ScoreMap::processPoints(const Points &points, bool make_aps)
 }
 
 
-void ScoreMap::setFilters(bool(*left)(Atom *const &), bool(*right)(Atom *const &))
+void ScoreMap::setFilters(AtomFilter &left, AtomFilter &right)
 {
 	_comparer.setLeftFilter(left);
 	_comparer.setRightFilter(right);

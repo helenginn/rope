@@ -39,6 +39,7 @@ protected:
 private:
 	glm::vec4 colourForValue(float val);
 	void prepareSmallVertices();
+	void checkDimensions();
 	void updateColours();
 	void setup();
 
@@ -47,6 +48,9 @@ private:
 
 	float _xProp = 1;
 	float _yProp = 1;
+	
+	int _rows = 0;
+	int _cols = 0;
 };
 
 #endif

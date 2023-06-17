@@ -33,6 +33,8 @@ class ScoreMap : public Responder<SpecificNetwork>
 public:
 	ScoreMap(Mapped<float> *mapped, SpecificNetwork *specified);
 
+	typedef std::function<bool(Atom *const &atom)> AtomFilter;
+
 	void setIndividualHandler(std::function<void(float, std::vector<float> &)> f)
 	{
 		_eachHandler = f;
@@ -40,7 +42,7 @@ public:
 
 	float scoreForPoints(const Points &points);
 	
-	void setFilters(bool(*left)(Atom *const &), bool(*right)(Atom *const &));
+	void setFilters(AtomFilter &left, AtomFilter &right);
 	
 	bool hasMatrix();
 	
@@ -52,6 +54,7 @@ public:
 	{
 		Unset,
 		Basic,
+		Display,
 		Distance,
 		AssessSplits,
 	};
@@ -76,7 +79,7 @@ private:
 	
 	bool modeNeedsAPS(const Mode &mode)
 	{
-		return (mode == Distance || mode == AssessSplits);
+		return (mode == Distance || mode == AssessSplits || mode == Display);
 	}
 	
 	Mode _mode = Unset;

@@ -20,6 +20,7 @@
 #define __vagabond__Cartographer__
 
 #include <vector>
+#include <atomic>
 #include <map>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Responder.h>
@@ -30,6 +31,7 @@ class Entity;
 class Instance;
 class Network;
 class Parameter;
+class ProblemPrep;
 class SpecificNetwork;
 class MappingToMatrix;
 template <typename Type> class Mapped;
@@ -40,11 +42,6 @@ public HasResponder<Responder<Cartographer>>
 {
 public:
 	typedef std::vector<std::vector<float>> Points;
-	typedef std::pair<Parameter *, Mapped<float> *> ParamMap;
-	typedef std::vector<Parameter *> ParameterGroup;
-	typedef std::vector<ParameterGroup> ParameterGroups;
-	typedef std::vector<ParamMap> ParamMapGroup;
-	typedef std::vector<ParamMapGroup> ParamMapGroups;
 
 	Cartographer(Entity *entity, std::vector<Instance *> instances);
 	
@@ -64,35 +61,46 @@ public:
 	{
 		return _mat2Map;
 	}
+	
+	void stopASAP()
+	{
+		_stop = true;
+	}
+	
+	void skipCurrentJob()
+	{
+		_skip = true;
+	}
 
 	void makeMapping();
 	void setup();
 
+	static void flip(Cartographer *cg);
+	static void assess(Cartographer *cg);
+private:
 	void checkTriangles(ScoreMap::Mode mode = ScoreMap::Basic);
 	void bootstrapToTriangle();
-	int bestStartingPoint();
-	static void run(Cartographer *cg);
-private:
+	int bestStartingPoint(std::vector<int> &ruled_out);
+
 	float scoreForTriangle(int idx, ScoreMap::Mode mode = ScoreMap::Basic);
-	void assessSplits(int face_idx);
 	void preparePoints(int idx);
 	Mappable<float> *bootstrapFace(std::vector<int> &pidxs);
 	
 	float scoreForPoints(const Cartographer::Points &points, 
 	                     ScoreMap::Mode options);
+	float scoreWithScorer(const Points &points, ScoreMap scorer);
+	ScoreMap basicScorer(ScoreMap::Mode options);
 
 	void flipPoints();
 	void flipPoint(int pidx);
 	void flipPointsFor(Mappable<float> *face, const std::vector<int> &points);
-	void permute(std::vector<Mapped<float> *> &maps_only, Points all_points,
-	             int pidx);
-	void permute(std::vector<Mapped<float> *> &maps, 
+	void flipGroup(Mappable<float> *face, int g, int pidx);
+	void permute(std::vector<Parameter *> &params, 
 	             std::function<float()> score, int pidx);
 
 	std::vector<std::pair<Parameter *, Mapped<float> *>> torsionMapsFor(int pidx);
-	Points cartesiansForFace(Mappable<float> *face);
+	Points cartesiansForFace(Mappable<float> *face, int paramCount);
 	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
-	ParamMapGroups splitParameters(const ParamMapGroup &list);
 
 	void setPoints(std::vector<Mapped<float> *> &maps,
 	               const std::vector<float> &values, int pidx);
@@ -107,16 +115,18 @@ private:
 	MappingToMatrix *_mat2Map = nullptr;
 	PCA::Matrix _distMat{};
 	
-	struct ProblemsInTriangle
+	struct PointsInTriangle
 	{
 		Points points;
-		std::vector<Parameter *> problems;
 	};
 	
-	std::map<int, ProblemsInTriangle> _problemsInTriangles;
+	std::map<int, PointsInTriangle> _pointsInTriangles;
+	ProblemPrep *_prepwork = nullptr;
 	
 	std::vector<Atom *> _atoms;
 	int _received = 0;
+	std::atomic<bool> _stop{false};
+	std::atomic<bool> _skip{false};
 };
 
 #endif

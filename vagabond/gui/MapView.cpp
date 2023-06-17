@@ -21,11 +21,13 @@
 #include <thread>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/utils/FileReader.h>
 #include <vagabond/core/MappingToMatrix.h>
 #include <vagabond/core/SpecificNetwork.h>
 #include <vagabond/core/Cartographer.h>
 #include <vagabond/core/PolymerEntity.h>
 #include <vagabond/core/CompareDistances.h>
+#include <vagabond/gui/elements/TextButton.h>
 
 #include "MapView.h"
 
@@ -34,6 +36,7 @@ MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances)
 {
 	_cartographer = new Cartographer(entity, instances);
 	_cartographer->setResponder(this);
+	setOwnsAtoms(false);
 }
 
 MapView::~MapView()
@@ -56,8 +59,77 @@ void MapView::setup()
 	Instance *inst = _specified->instance();
 	inst->currentAtoms()->recalculate();
 	loadAtoms(inst->currentAtoms());
-	
-	_worker = new std::thread(Cartographer::run, _cartographer);
+
+	_worker = new std::thread(Cartographer::assess, _cartographer);
+}
+
+void MapView::addButtons()
+{
+	if (_command)
+	{
+		removeObject(_command);
+		delete _command;
+		removeObject(_second);
+		delete _second;
+	}
+
+	{
+		TextButton *command = new TextButton("Flip torsions", this);
+		command->setCentre(0.35, 0.9);
+		command->setReturnTag("flip");
+		addObject(command);
+		_command = command;
+	}
+
+	{
+		TextButton *command = new TextButton("[empty]", this);
+		command->setCentre(0.65, 0.9);
+		command->setReturnTag("none");
+		addObject(command);
+		_second = command;
+	}
+}
+
+void MapView::stopWorker()
+{
+	_worker->detach();
+	_command->setReturnTag("none");
+	_command->setInert(true);
+	_cartographer->stopASAP();
+}
+
+void MapView::skipJob()
+{
+	_cartographer->skipCurrentJob();
+}
+
+void MapView::cleanupPause()
+{
+	_refined = true;
+	_specified->setResponder(this);
+
+	if (_worker)
+	{
+		delete _worker;
+		_worker = nullptr;
+	}
+
+	_command->setInert(false);
+	_command->setText("Flip torsions");
+	_command->setReturnTag("flip");
+}
+void MapView::startFlips()
+{
+	_specified->removeResponder(this);
+	_refined = false;
+
+	_command->setText("Pause");
+	_command->setReturnTag("pause");
+
+	_second->setText("Skip");
+	_second->setReturnTag("skip");
+
+	_worker = new std::thread(Cartographer::flip, _cartographer);
 }
 
 void MapView::makeTriangles()
@@ -130,6 +202,26 @@ void MapView::mouseMoveEvent(double x, double y)
 	}
 }
 
+void MapView::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "flip")
+	{
+		startFlips();
+	}
+
+	if (tag == "pause")
+	{
+		stopWorker();
+	}
+
+	if (tag == "skip")
+	{
+		skipJob();
+	}
+
+	Display::buttonPressed(tag, button);
+}
+
 void MapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	sampleFromPlot(x, y);
@@ -160,6 +252,12 @@ void MapView::sendObject(std::string tag, void *object)
 		_updatePlot = true;
 	}
 
+	if (tag == "update_score")
+	{
+		float current = *static_cast<float *>(object);
+		setInformation(f_to_str(current, 3));
+	}
+
 	if (tag == "atom_matrix")
 	{
 		PCA::Matrix *dist = static_cast<PCA::Matrix *>(object);
@@ -175,11 +273,18 @@ void MapView::sendObject(std::string tag, void *object)
 		displayDistances(dist);
 	}
 
-	else if (tag == "refined")
+	else if (tag == "done")
 	{
 		_refined = true;
 		_specified->setResponder(this);
+		_updateButtons = true;
 	}
+
+	else if (tag == "paused")
+	{
+		_cleanupPause = true;
+	}
+
 }
 
 void MapView::doThings()
@@ -190,4 +295,15 @@ void MapView::doThings()
 		_updatePlot = false;
 	}
 
+	if (_cleanupPause)
+	{
+		cleanupPause();
+		_cleanupPause = false;
+	}
+
+	if (_updateButtons)
+	{
+		addButtons();
+		_updateButtons = false;
+	}
 }

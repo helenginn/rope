@@ -51,8 +51,9 @@ glm::vec4 MatrixPlot::colourForValue(float val)
 
 void MatrixPlot::update()
 {
+	checkDimensions();
+
 	std::unique_lock<std::mutex> lock(_mutex, std::defer_lock);
-	
 	if (lock.try_lock())
 	{
 		updateColours();
@@ -118,14 +119,43 @@ void MatrixPlot::prepareSmallVertices()
 		}
 	}
 
+	forceRender(true, true);
 }
 
 void MatrixPlot::setup()
 {
-	_xProp = 1 / (float)_mat.cols;
-	_yProp = 1 / (float)_mat.rows;
+	_cols = _mat.cols;
+	_rows = _mat.rows;
+	
+	_xProp = 1 / (float)_rows;
+	_yProp = 1 / (float)_cols;
+	
+	if (_cols > _rows)
+	{
+		_xProp *= _rows / (float)_cols;
+	}
+	else if (_rows > _cols)
+	{
+		_yProp *= _cols / (float)_rows;
+	}
 	
 	prepareSmallVertices();
 
 	rescale(Window::aspect(), 1.);
+}
+
+void MatrixPlot::checkDimensions()
+{
+	if (_cols == _mat.cols && _rows == _mat.rows)
+	{
+		return;
+	}
+
+	clearVertices();
+	setup();
+	realign();
+	
+	float scale = resizeScale();
+	resize(scale);
+	setResizeScale(scale);
 }

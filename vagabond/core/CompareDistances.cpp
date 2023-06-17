@@ -118,8 +118,7 @@ void CompareDistances::addToMatrix(const AtomPosMap &aps)
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
-			_matrix[i][j] += diff;
-			_matrix[j][i] += diff;
+			_matrix[i][j] += fabs(diff);
 			j++;
 		}
 		i++;

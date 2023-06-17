@@ -352,7 +352,7 @@ void Renderable::resize_around_centre(double scale, glm::vec3 centre,
 		_y -= centre.y; _y *= scale; _y += centre.y;
 	}
 	
-	rebufferVertexData();
+	forceRender(true, false);
 	
 	if (&vs == &_vertices)
 	{
@@ -371,6 +371,7 @@ void Renderable::resize(double scale, bool unselected,
 {
 	glm::vec3 centre = centroid();
 	resize_around_centre(scale, centre, unselected, realign, recursive);
+	_resizeScale *= scale;
 }
 
 double Renderable::averageRadius()

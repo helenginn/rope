@@ -45,7 +45,12 @@ HyperValue::HyperValue(AtomGroup *owner, Atom *atom, std::string name,
 	}
 }
 
-const ResidueId HyperValue::residueId()
+ResidueId HyperValue::residueId()
+{
+	return _atom->residueId();
+}
+
+const ResidueId &HyperValue::residueId() const
 {
 	return _atom->residueId();
 }

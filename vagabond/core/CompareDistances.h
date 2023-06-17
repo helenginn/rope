@@ -29,15 +29,17 @@ class CompareDistances
 public:
 	CompareDistances();
 	~CompareDistances();
+
+	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 	
 	void process(const AtomPosMap &aps);
 
-	void setLeftFilter(bool(*filter)(Atom *const &))
+	void setLeftFilter(AtomFilter &filter)
 	{
 		_left = filter;
 	}
 
-	void setRightFilter(bool(*filter)(Atom *const &))
+	void setRightFilter(AtomFilter &filter)
 	{
 		_right = filter;
 	}
@@ -71,10 +73,10 @@ private:
 	std::vector<Atom *> _leftAtoms;
 	std::vector<Atom *> _rightAtoms;
 
-	bool(*_left)(Atom *const &atom) = nullptr;
-	bool(*_right)(Atom *const &atom) = nullptr;
+	AtomFilter _left = nullptr;
+	AtomFilter _right = nullptr;
 	
-	bool (*_defaultFilter)(Atom *const &atom) = nullptr;
+	AtomFilter _defaultFilter = nullptr;
 	
 	PCA::Matrix _matrix;
 	int _counter = 0;

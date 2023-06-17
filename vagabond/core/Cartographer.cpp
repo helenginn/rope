@@ -19,9 +19,9 @@
 #include <vagabond/utils/Mapping.h>
 #include <vagabond/utils/Hypersphere.h>
 #include "Network.h"
+#include "ProblemPrep.h"
 #include "MappingToMatrix.h"
 #include "SpecificNetwork.h"
-#include "SquareSplitter.h"
 #include "Cartographer.h"
 
 Cartographer::Cartographer(Entity *entity, std::vector<Instance *> instances)
@@ -46,36 +46,7 @@ void Cartographer::makeMapping()
 
 	_mapped = _network->blueprint();
 	_specified = _network->specificForInstance(_instances[0]);
-}
-
-void Cartographer::assessSplits(int idx)
-{
-	SquareSplitter sqsp(_distMat);
-	std::vector<int> splits = sqsp.splits();
-	
-	_problemsInTriangles[idx].problems.clear();
-	
-	for (size_t i = 0; i < splits.size(); i++)
-	{
-		if (splits[i] == 0)
-		{
-			continue;
-		}
-
-		for (size_t k = 0; k < 2; k++)
-		{
-			Atom *atom = _atoms[splits[i] - k];
-
-			for (size_t j = 0; j < atom->parameterCount(); j++)
-			{
-				Parameter *p = atom->parameter(j);
-				if (p->hasAtom(atom) && p->coversMainChain())
-				{
-					_problemsInTriangles[idx].problems.push_back(p);
-				}
-			}
-		}
-	}
+	_prepwork = new ProblemPrep(_specified, _mapped);
 }
 
 void Cartographer::checkTriangles(ScoreMap::Mode mode)
@@ -84,11 +55,11 @@ void Cartographer::checkTriangles(ScoreMap::Mode mode)
 	for (size_t i = 0; i < _mapped->faceCount(); i++)
 	{
 		preparePoints(i);
-		scoreForPoints(_problemsInTriangles[i].points, mode);
+		scoreForPoints(_pointsInTriangles[i].points, mode);
 		
 		if (mode == ScoreMap::AssessSplits)
 		{
-			assessSplits(i);
+			_prepwork->processMatrixForTriangle(i, _distMat, _atoms);
 		}
 	}
 
@@ -100,16 +71,16 @@ void Cartographer::checkTriangles(ScoreMap::Mode mode)
 void Cartographer::preparePoints(int idx)
 {
 	std::vector<std::vector<float>> points = _mat2Map->carts_for_triangle(idx);
-	_problemsInTriangles[idx].points = points;
+	_pointsInTriangles[idx].points = points;
 }
 
 float Cartographer::scoreForTriangle(int idx, ScoreMap::Mode mode)
 {
-	float score = scoreForPoints(_problemsInTriangles[idx].points, mode);
+	float score = scoreForPoints(_pointsInTriangles[idx].points, mode);
 	return score;
 }
 
-float Cartographer::scoreForPoints(const Points &points, ScoreMap::Mode options)
+ScoreMap Cartographer::basicScorer(ScoreMap::Mode options)
 {
 	ScoreMap scorer(_mapped, _specified);
 	
@@ -122,6 +93,17 @@ float Cartographer::scoreForPoints(const Points &points, ScoreMap::Mode options)
 	scorer.setIndividualHandler(handle);
 	scorer.setMode(options);
 
+	return scorer;
+}
+
+float Cartographer::scoreForPoints(const Points &points, ScoreMap::Mode options)
+{
+	ScoreMap scorer = basicScorer(options);
+	return scoreWithScorer(points, scorer);
+}
+
+float Cartographer::scoreWithScorer(const Points &points, ScoreMap scorer)
+{
 	float result = scorer.scoreForPoints(points);
 
 	sendResponse("update_map", nullptr);
@@ -134,6 +116,7 @@ float Cartographer::scoreForPoints(const Points &points, ScoreMap::Mode options)
 	}
 
 	return result;
+
 }
 
 PCA::Matrix &Cartographer::matrix()
@@ -141,13 +124,28 @@ PCA::Matrix &Cartographer::matrix()
 	return _mat2Map->matrix();
 }
 
-void Cartographer::run(Cartographer *cg)
+void Cartographer::assess(Cartographer *cg)
 {
 	cg->checkTriangles(ScoreMap::AssessSplits);
-	cg->flipPoints();
-	cg->checkTriangles(ScoreMap::Distance);
-	
-	cg->sendResponse("refined", nullptr);
+	cg->sendResponse("done", nullptr);
+}
+
+void Cartographer::flip(Cartographer *cg)
+{
+	try
+	{
+		cg->flipPoints();
+		cg->checkTriangles(ScoreMap::Distance);
+		cg->sendResponse("done", nullptr);
+	}
+	catch (const int &ret)
+	{
+		// stopping
+		assess(cg);
+		cg->_stop = false;
+		cg->sendResponse("paused", nullptr);
+	}
+
 }
 
 Mappable<float> *Cartographer::extendFace(std::vector<int> &pidxs, int &tidx)
@@ -212,24 +210,40 @@ Mappable<float> *Cartographer::bootstrapFace(std::vector<int> &pidxs)
 	return nullptr;
 }
 
-int Cartographer::bestStartingPoint()
+int Cartographer::bestStartingPoint(std::vector<int> &ruled_out)
 {
 	int best = -1;
 	int score = INT_MAX;
+	std::vector<int> random_trials;
+
 	for (size_t i = 0; i < _mapped->pointCount(); i++)
 	{
+		random_trials.push_back(i);
+	}
+	
+	std::random_shuffle(random_trials.begin(), random_trials.end());
+
+	for (size_t i = 0; i < _mapped->pointCount(); i++)
+	{
+		int idx = random_trials[i];
+
+		if (std::find(ruled_out.begin(), ruled_out.end(), idx) != ruled_out.end())
+		{
+			continue;
+		}
+
 		std::vector<Mappable<float> *> simplices;
-		simplices = _mapped->simplicesForPointDim(i, 1);
+		simplices = _mapped->simplicesForPointDim(idx, 1);
 		if ((int)simplices.size() >= score)
 		{
 			continue;
 		}
 		std::vector<int> tridxs;
-		_mapped->face_indices_for_point(i, tridxs);
+		_mapped->face_indices_for_point(idx, tridxs);
 		if (tridxs.size() > 0)
 		{
 			score = simplices.size();
-			best = i;
+			best = idx;
 		}
 	}
 
@@ -239,12 +253,25 @@ int Cartographer::bestStartingPoint()
 void Cartographer::flipPoints()
 {
 	_mapped->redo_bins();
-	int best_start = bestStartingPoint();
-	std::cout << "best start: " << best_start << std::endl;
-
-	std::vector<int> todo(1, best_start);
+	std::vector<int> bad;
+	std::vector<int> todo;
 	
-	Mappable<float> *face = bootstrapFace(todo);
+	Mappable<float> *face = nullptr;
+	while (true)
+	{
+		int best_start = bestStartingPoint(bad);
+		todo = std::vector<int>(1, best_start);
+
+		face = bootstrapFace(todo);
+		if (face)
+		{
+			break;
+		}
+
+		// got a bad vertex
+		bad.push_back(best_start);
+	}
+
 	flipPointsFor(face, todo);
 	
 	while (face->n() < _mapped->n())
@@ -258,8 +285,6 @@ void Cartographer::flipPoints()
 
 		flipPointsFor(face, todo);
 	}
-
-	checkTriangles(ScoreMap::Distance);
 
 	int t = -1;
 	while (true)
@@ -275,85 +300,59 @@ void Cartographer::flipPoints()
 	}
 }
 
-Parameter *get_param(Cartographer::ParamMap pair)
+void Cartographer::flipGroup(Mappable<float> *face, int g, int pidx)
 {
-	return pair.first;
-};
-
-Mapped<float> *get_map(Cartographer::ParamMap pair)
-{
-	return pair.second;
-};
-
-template <typename T, typename P, typename Q>
-std::vector<T> extract(std::vector<std::pair<P, Q>> pairs, 
-                       T(*extract_method)(std::pair<P, Q>))
-{
-	std::vector<T> bits_only; bits_only.reserve(pairs.size());
+	std::vector<Parameter *> params = _prepwork->paramsFor(pidx, g);
+	Points points = cartesiansForFace(face, params.size());
 	
-	for (std::pair<P, Q> pair : pairs)
+	std::function<bool(Atom *const &atom)> left, right;
+	_prepwork->setFilters(pidx, g, left, right);
+
+	ScoreMap scorer = basicScorer(ScoreMap::Distance);
+	scorer.setFilters(left, right);
+
+	std::function<float()> score = [this, scorer, points]()
 	{
-		bits_only.push_back(extract_method(pair));
+		return this->scoreWithScorer(points, scorer);
+	};
+
+	std::cout << "Number of parameters to permute: " << params.size() << std::endl;
+	std::cout << "Number of points to test: " << points.size() << std::endl;
+
+	float start = score();
+	std::cout << "Start: " << start << std::endl;
+	if (start < 0.1)
+	{
+		return;
 	}
-
-	return bits_only;
-}
-
-Cartographer::ParamMapGroups 
-Cartographer::splitParameters(const ParamMapGroup &list)
-{
-	ParamMapGroups ret;
-	ParamMapGroup current;
 	
-	for (const Cartographer::ParamMap &pair : list)
-	{
-		Parameter *param = pair.first;
-
-		if (current.size() == 0)
-		{
-			current.push_back(pair);
-		}
-		else if (param->residueId().as_num() -
-		         current.back().first->residueId().as_num() < 5)
-		{
-			current.push_back(pair);
-		}
-		else
-		{
-			ret.push_back(current);
-			current.clear();
-		}
-	}
-
-	ret.push_back(current);
-	return ret;
+	permute(params, score, pidx);
 }
 
 void Cartographer::flipPointsFor(Mappable<float> *face,
                                  const std::vector<int> &pIndices)
 {
 	int pidx = pIndices.back();
-	Points test_points = cartesiansForFace(face);
-	std::vector<ParamMap> param_maps;
-	param_maps = torsionMapsFor(pidx);
+	
+	size_t grpCount = _prepwork->groupCount(pidx);
+	std::cout << "Number of groups: " << grpCount << std::endl;
+	
+	for (size_t g = 0; g < grpCount; g++)
+	{
+		flipGroup(face, g, pidx);
+	}
 
-	ParamMapGroups groups = splitParameters(param_maps);
-	std::vector<Parameter *> params = extract(param_maps, &get_param);
-	std::cout << "Parameter number: " << params.size() << std::endl;
-	std::cout << "Parameter groups: " << groups.size() << std::endl;
-
-	std::vector<Mapped<float> *> maps = extract(param_maps, &get_map);
-	permute(maps, test_points, pidx);
 }
 
-Cartographer::Points Cartographer::cartesiansForFace(Mappable<float> *face)
+Cartographer::Points Cartographer::cartesiansForFace(Mappable<float> *face,
+                                                     int paramCount)
 {
 	Points carts;
 	const int dims = face->n();
 	
 	if (dims == 1)
 	{
-		float steps = 10;
+		float steps = paramCount * 2;
 		for (size_t i = 0; i < steps; i++)
 		{
 			float frac = (float)i / float(steps);
@@ -365,7 +364,7 @@ Cartographer::Points Cartographer::cartesiansForFace(Mappable<float> *face)
 	}
 	else if (dims > 1)
 	{
-		int num = 2 * (dims + 2) * (dims + 2);
+		int num = paramCount * (dims + 2) * 2;
 		Hypersphere sph(dims, num);
 		sph.prepareFibonacci();
 		
@@ -413,88 +412,33 @@ void Cartographer::setPoints(std::vector<Mapped<float> *> &maps,
 	}
 }
 
-bool check_indices(int tridx, Mapped<float> *const &map, 
-                   float &ave)
+std::vector<Mapped<float> *> parametersToMaps(SpecificNetwork *sn, 
+                                              std::vector<Parameter *> &params)
 {
-	std::vector<int> pIndices;
-	map->point_indices_for_face(tridx, pIndices);
+	std::vector<Mapped<float> *> maps;
 
-	float min = FLT_MAX; float max = -FLT_MAX;
-
-	ave = 0;
-	for (const int &pidx : pIndices) 
+	for (Parameter *p : params)
 	{
-		float next = map->get_value(pidx);
-		min = std::min(min, next);
-		max = std::max(max, next);
-		ave += next;
+		maps.push_back(sn->mapForParameter(p));
 	}
-	
-	ave /= (float)pIndices.size();
 
-	return (max - min) > 30;
-}
-
-std::vector<Cartographer::ParamMap> Cartographer::torsionMapsFor(int pidx)
-{
-	std::vector<int> tridxs;
-	_mapped->face_indices_for_point(pidx, tridxs);
-	std::vector<ParamMap> maps; 
-
-	for (int &idx : tridxs)
-	{
-		ProblemsInTriangle &fb = _problemsInTriangles[idx];
-		for (Parameter *problem : fb.problems)
-		{
-			Mapped<float> *map = _specified->mapForParameter(problem);
-			if (!map)
-			{
-				continue;
-			}
-			
-			float average = 0;
-			bool ok = check_indices(idx, map, average);
-			
-			if (!ok) { continue; }
-			
-			auto comp = [map](const ParamMap &pair) -> bool
-			{
-				return (pair.second == map);
-			};
-
-			if (std::find_if(maps.begin(), maps.end(), comp) == maps.end())
-			{
-				maps.push_back(std::make_pair(problem, map));
-			}
-		}
-	}
-	
-	auto sort_by_res = [](const ParamMap &a, const ParamMap &b)
-	{
-		if (a.first->residueId().as_num() == b.first->residueId().as_num())
-		{
-			return a.first->desc() < b.first->desc();
-		}
-
-		return a.first->residueId().as_num() < b.first->residueId().as_num();
-	};
-	
-	std::sort(maps.begin(), maps.end(), sort_by_res);
 	return maps;
 }
 
-void Cartographer::permute(std::vector<Mapped<float> *> &maps, 
+void Cartographer::permute(std::vector<Parameter *> &params, 
                            std::function<float()> score, int pidx)
 {
-	
+	std::vector<Mapped<float> *> maps = parametersToMaps(_specified, params);
+
 	std::vector<std::vector<int>> perms;
 	int perm_length = std::min(5, (int)maps.size());
 	perms = permutations(perm_length, 3);
+	std::random_shuffle(perms.begin(), perms.end());
 
 	std::vector<float> old_vals; 
 	getPoints(maps, old_vals, pidx);
 	float current = score();
-	std::cout << "starting: " << current << std::endl;
+	sendResponse("update_score", &current);
 	std::vector<float> best = old_vals;
 	
 	int start = 0;
@@ -533,29 +477,28 @@ void Cartographer::permute(std::vector<Mapped<float> *> &maps,
 
 			if (current > next)
 			{
-				std::cout << "IMPROVEMENT" << std::endl;
-				std::cout << "next: " << next << std::endl;
+				std::cout << "IMPROVEMENT " << next << std::endl;
 				current = next;
+				sendResponse("update_score", &current);
 				best = new_vals;
+			}
+			
+			if (_skip)
+			{
+				setPoints(maps, best, pidx);
+				_skip = false;
+				return;
+			}
+			
+			if (_stop)
+			{
+				setPoints(maps, best, pidx);
+				throw 0;
 			}
 		}
 		start++;
 	}
 
 	setPoints(maps, best, pidx);
-
 }
 
-void Cartographer::permute(std::vector<Mapped<float> *> &maps,
-                           Points all_points, int pidx)
-{
-	std::cout << "Number of parameters: " << maps.size() << std::endl;
-	std::cout << "Number of points to test: " << all_points.size() << std::endl;
-
-	std::function<float()> score = [this, all_points]()
-	{
-		return this->scoreForPoints(all_points, ScoreMap::Basic);
-	};
-	
-	permute(maps, score, pidx);
-}

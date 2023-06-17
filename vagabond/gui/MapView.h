@@ -28,6 +28,7 @@ class MappingToMatrix;
 class SpecificNetwork;
 class Cartographer;
 class MatrixPlot;
+class TextButton;
 class Network;
 
 class MapView : public Display, public Responder<Cartographer>,
@@ -43,11 +44,19 @@ public:
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void sendObject(std::string, void *object);
+
+	void buttonPressed(std::string tag, Button *button);
 private:
 	void makeMapping();
+	void startFlips();
+	void stopWorker();
+	void skipJob();
 	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
 	bool _editing = false;
+
+	void addButtons();
+	void cleanupPause();
 
 	MatrixPlot *_plot = nullptr;
 	std::atomic<bool> _updatePlot{false};
@@ -59,8 +68,13 @@ private:
 
 	MatrixPlot *_distances = nullptr;
 	PCA::Matrix _distMat{};
+	
+	TextButton *_command = nullptr;
+	TextButton *_second = nullptr;
 
 	std::thread *_worker = nullptr;
+	bool _updateButtons = false;
+	std::atomic<bool> _cleanupPause{false};
 };
 
 #endif

@@ -33,7 +33,8 @@ public:
 		return _determinesChain;
 	}
 
-	virtual const ResidueId residueId();
+	virtual ResidueId residueId();
+	virtual const ResidueId &residueId() const;
 
 	virtual bool hasDesc(std::string d) const
 	{
