@@ -86,6 +86,12 @@ float CompareDistances::quickScore()
 {
 	float sum = 0;
 	int size = _matrix.cols * _matrix.rows;
+	
+	if (size == 0)
+	{
+		return 0;
+	}
+
 	for (int i = 0; i < size; i++)
 	{
 		sum += _matrix.vals[i];

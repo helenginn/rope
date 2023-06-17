@@ -42,8 +42,10 @@ public:
 
 	void setFilters(int pidx, int grp, AtomFilter &left, AtomFilter &right);
 
-	Parameters paramsFor(int pidx, int grp);
-	size_t groupCount(int pidx);
+	Parameters paramsForPoint(int pidx, int grp);
+	Parameters paramsForTriangle(int tidx, int grp);
+	size_t groupCountForPoint(int pidx);
+	size_t groupCountForTriangle(int pidx);
 private:
 
 	ParamSet problemParams(PCA::Matrix &m, const std::vector<Atom *> &atoms);
@@ -86,9 +88,10 @@ private:
 		}
 	};
 	
-	void regroup(int pidx);
+	void regroup(Problems &problems);
 
 	std::map<int, Problems> _problemsForPoints;
+	std::map<int, Problems> _problemsForTriangles;
 
 	SpecificNetwork *_specified = nullptr;
 	Mapped<float> *_mapped = nullptr;

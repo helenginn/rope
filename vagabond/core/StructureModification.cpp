@@ -263,8 +263,10 @@ void StructureModification::retrieve()
 			found = true;
 			if (r->requests & JobExtractPositions)
 			{
-				handleAtomMap(r->aps);
-				r->transplantPositions();
+				if (handleAtomMap(r->aps))
+				{
+					r->transplantPositions();
+				}
 			}
 			if (r->requests & JobSolventSurfaceArea)
 			{

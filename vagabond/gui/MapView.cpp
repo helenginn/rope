@@ -82,9 +82,9 @@ void MapView::addButtons()
 	}
 
 	{
-		TextButton *command = new TextButton("[empty]", this);
+		TextButton *command = new TextButton("Nudge", this);
 		command->setCentre(0.65, 0.9);
-		command->setReturnTag("none");
+		command->setReturnTag("nudge");
 		addObject(command);
 		_second = command;
 	}
@@ -117,9 +117,15 @@ void MapView::cleanupPause()
 	_command->setInert(false);
 	_command->setText("Flip torsions");
 	_command->setReturnTag("flip");
+
+	_second->setInert(false);
+	_second->setText("Nudge");
+	_second->setReturnTag("nudge");
 }
-void MapView::startFlips()
+
+void MapView::makePausable()
 {
+	_specified->setDisplayInterval(100);
 	_specified->removeResponder(this);
 	_refined = false;
 
@@ -129,6 +135,17 @@ void MapView::startFlips()
 	_second->setText("Skip");
 	_second->setReturnTag("skip");
 
+}
+
+void MapView::startNudges()
+{
+	makePausable();
+	_worker = new std::thread(Cartographer::nudge, _cartographer);
+}
+
+void MapView::startFlips()
+{
+	makePausable();
 	_worker = new std::thread(Cartographer::flip, _cartographer);
 }
 
@@ -209,6 +226,11 @@ void MapView::buttonPressed(std::string tag, Button *button)
 		startFlips();
 	}
 
+	if (tag == "nudge")
+	{
+		startNudges();
+	}
+
 	if (tag == "pause")
 	{
 		stopWorker();
@@ -276,6 +298,7 @@ void MapView::sendObject(std::string tag, void *object)
 	else if (tag == "done")
 	{
 		_refined = true;
+		_specified->setDisplayInterval(1);
 		_specified->setResponder(this);
 		_updateButtons = true;
 	}

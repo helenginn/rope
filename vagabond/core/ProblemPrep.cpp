@@ -87,14 +87,24 @@ void addAtomToParams(ProblemPrep::ParamSet &params, const Atom *atom)
 	}
 }
 
-size_t ProblemPrep::groupCount(int pidx)
+size_t ProblemPrep::groupCountForTriangle(int tidx)
+{
+	return _problemsForTriangles[tidx].grouped.size();
+}
+
+size_t ProblemPrep::groupCountForPoint(int pidx)
 {
 	return _problemsForPoints[pidx].grouped.size();
 }
 
-ProblemPrep::Parameters ProblemPrep::paramsFor(int pidx, int grp)
+ProblemPrep::Parameters ProblemPrep::paramsForPoint(int pidx, int grp)
 {
 	return _problemsForPoints[pidx].grouped[grp];
+}
+
+ProblemPrep::Parameters ProblemPrep::paramsForTriangle(int tidx, int grp)
+{
+	return _problemsForTriangles[tidx].grouped[grp];
 }
 
 
@@ -218,7 +228,7 @@ void ProblemPrep::sort(Parameters &params)
 {
 	auto sort_by_res = [](const Parameter *a, const Parameter *b)
 	{
-		if (a->residueId().as_num() == b->residueId().as_num())
+		if (a->residueId() == b->residueId())
 		{
 			return a->desc() < b->desc();
 		}
@@ -235,6 +245,8 @@ void ProblemPrep::processMatrixForTriangle(int tidx, PCA::Matrix &m,
 {
 	ParamSet unfiltered = problemParams(m, atoms);
 	ParamSet filtered = filter(unfiltered, tidx);
+	_problemsForTriangles[tidx].filtered = filtered;
+	regroup(_problemsForTriangles[tidx]);
 	
 	std::vector<int> pIndices;
 	_mapped->point_indices_for_face(tidx, pIndices);
@@ -242,14 +254,14 @@ void ProblemPrep::processMatrixForTriangle(int tidx, PCA::Matrix &m,
 	for (const int &p : pIndices)
 	{
 		_problemsForPoints[p].addSet(filtered);
-		regroup(p);
+		regroup(_problemsForPoints[p]);
 	}
 }
 
-void ProblemPrep::regroup(int pidx)
+void ProblemPrep::regroup(Problems &problems)
 {
-	ParamSet &src = _problemsForPoints[pidx].filtered;
-	std::vector<Parameters> &groups = _problemsForPoints[pidx].grouped;
+	ParamSet &src = problems.filtered;
+	std::vector<Parameters> &groups = problems.grouped;
 
 	Parameters all;
 
@@ -257,6 +269,8 @@ void ProblemPrep::regroup(int pidx)
 	{
 		all.push_back(p);
 	}
+	
+	sort(all);
 
 	groups.clear();
 	Parameters current;
@@ -283,8 +297,8 @@ void ProblemPrep::regroup(int pidx)
 	{
 		groups.push_back(current);
 	}
-	
-	std::cout << "Regrouped, point " << pidx << std::endl;
+
+	/*
 	for (Parameters &vec : groups)
 	{
 		std::cout << "Group of " << vec.size() << std::endl;
@@ -297,6 +311,7 @@ void ProblemPrep::regroup(int pidx)
 		}
 
 	}
+	*/
 }
 
 

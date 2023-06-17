@@ -32,12 +32,14 @@ class Instance;
 class Network;
 class Parameter;
 class ProblemPrep;
+class AltersNetwork;
 class SpecificNetwork;
 class MappingToMatrix;
 template <typename Type> class Mapped;
 template <typename Type> class Mappable;
 
-class Cartographer : public Responder<SpecificNetwork>,
+class Cartographer : public Responder<SpecificNetwork>, 
+public Responder<AltersNetwork>,
 public HasResponder<Responder<Cartographer>>
 {
 public:
@@ -76,36 +78,36 @@ public:
 	void setup();
 
 	static void flip(Cartographer *cg);
+	static void nudge(Cartographer *cg);
 	static void assess(Cartographer *cg);
-private:
-	void checkTriangles(ScoreMap::Mode mode = ScoreMap::Basic);
-	void bootstrapToTriangle();
-	int bestStartingPoint(std::vector<int> &ruled_out);
 
-	float scoreForTriangle(int idx, ScoreMap::Mode mode = ScoreMap::Basic);
-	void preparePoints(int idx);
+protected:
+	void sendObject(std::string tag, void *object);
+private:
+	int bestStartingPoint(std::vector<int> &ruled_out);
 	Mappable<float> *bootstrapFace(std::vector<int> &pidxs);
+
+	void preparePoints(int idx);
+	float scoreForTriangle(int idx, ScoreMap::Mode mode = ScoreMap::Basic);
+	void checkTriangles(ScoreMap::Mode mode = ScoreMap::Basic);
 	
 	float scoreForPoints(const Cartographer::Points &points, 
 	                     ScoreMap::Mode options);
-	float scoreWithScorer(const Points &points, ScoreMap scorer);
 	ScoreMap basicScorer(ScoreMap::Mode options);
+	float scoreWithScorer(const Points &points, ScoreMap scorer);
 
 	void flipPoints();
-	void flipPoint(int pidx);
 	void flipPointsFor(Mappable<float> *face, const std::vector<int> &points);
 	void flipGroup(Mappable<float> *face, int g, int pidx);
+
 	void permute(std::vector<Parameter *> &params, 
 	             std::function<float()> score, int pidx);
 
-	std::vector<std::pair<Parameter *, Mapped<float> *>> torsionMapsFor(int pidx);
-	Points cartesiansForFace(Mappable<float> *face, int paramCount);
-	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
+	void nudgePoints();
+	void splitFace(Parameter *param, int tidx);
 
-	void setPoints(std::vector<Mapped<float> *> &maps,
-	               const std::vector<float> &values, int pidx);
-	void getPoints(std::vector<Mapped<float> *> &maps,
-	               std::vector<float> &values, int pidx);
+	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
+	Points cartesiansForFace(Mappable<float> *face, int paramCount);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;
@@ -118,13 +120,13 @@ private:
 	struct PointsInTriangle
 	{
 		Points points;
+		float score;
 	};
 	
 	std::map<int, PointsInTriangle> _pointsInTriangles;
 	ProblemPrep *_prepwork = nullptr;
 	
 	std::vector<Atom *> _atoms;
-	int _received = 0;
 	std::atomic<bool> _stop{false};
 	std::atomic<bool> _skip{false};
 };

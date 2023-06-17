@@ -150,7 +150,7 @@ private:
 				ss << ", ";
 			}
 		}
-		ss << ") = " << p._value << std::endl;
+		ss << ") = " << p._value << " (this=" << &p << ")" << std::endl;
 		return ss;
 	}
 };
@@ -330,7 +330,7 @@ public:
 	virtual std::vector<float> 
 	barycentric_to_point(const std::vector<float> &b) const
 	{
-		std::vector<float> vec(D);
+		std::vector<float> vec(D, 0);
 		
 		for (size_t j = 0; j < pointCount(); j++)
 		{

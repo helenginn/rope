@@ -89,7 +89,10 @@ public:
 	
 protected:
 	
-	virtual void handleAtomMap(AtomPosMap &aps) {};
+	virtual bool handleAtomMap(AtomPosMap &aps)
+	{
+		return true;
+	}
 
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 	virtual void torsionBasisMods(TorsionBasis *tb) {};

@@ -70,8 +70,15 @@ public:
 	int detailsForParam(Parameter *parameter, BondCalculator **calc);
 	void zeroVertices();
 	void setup();
+
+	int splitFace(Parameter *parameter, int tidx);
+	
+	void setDisplayInterval(int interval)
+	{
+		_displayInterval = interval;
+	}
 protected:
-	virtual void handleAtomMap(AtomPosMap &aps);
+	virtual bool handleAtomMap(AtomPosMap &aps);
 private:
 	void getDetails(BondCalculator *bc);
 	void customModifications(BondCalculator *calc, bool has_mol);
@@ -122,6 +129,8 @@ private:
 	std::map<BondSequence *, PrewarnResults> _prewarnedResults;
 	std::map<Parameter *, Mapped<float> *> _param2Map;
 	int _jobNum = 0;
+	int _display = 0;
+	int _displayInterval = 100;
 	std::atomic<bool> _writing{false};
 };
 

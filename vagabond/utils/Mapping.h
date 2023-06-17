@@ -45,11 +45,12 @@ public:
 
 	virtual bool acceptable_coordinate(const std::vector<float> &cart) = 0;
 	virtual void crack_existing_face(int idx) = 0;
+	virtual std::vector<float> middle_of_face(int tidx) = 0;
 	virtual void face_indices_for_point(const int &pidx, 
 	std::vector<int> &idxs) = 0;
 	virtual bool face_has_point(int idx, const std::vector<float> &point) = 0;
 	virtual void point_indices_for_face(int idx, std::vector<int> &points) = 0;
-	virtual void update(int idx) = 0;
+	virtual void update(int point_idx) = 0;
 	virtual void redo_bins() = 0;
 	
 	virtual int n() = 0;
@@ -160,12 +161,6 @@ public:
 
 	void add_face(HyperTriangle *face)
 	{
-		if (std::find(_mapped.begin(), _mapped.end(), face) !=
-		    _mapped.end())
-		{
-			return;
-		}
-
 		for (size_t i = 0; i < face->pointCount(); i++)
 		{
 			HyperPoint *hp = &face->v_point(i);
@@ -173,6 +168,12 @@ public:
 			_members[hp].push_back(face);
 		}
 		
+		if (std::find(_mapped.begin(), _mapped.end(), face) !=
+		    _mapped.end())
+		{
+			return;
+		}
+
 		_mapped.push_back(face);
 	}
 	
@@ -235,6 +236,7 @@ public:
 		HyperTriangle *face = face_for_point(pos);
 		if (!face)
 		{
+			std::cout << "no face found to crack" << std::endl;
 			return;
 		}
 
@@ -353,8 +355,11 @@ public:
 	virtual int add_point(const std::vector<float> &cart)
 	{
 		HyperPoint *point = new HyperPoint(cart);
-		add_point(point);
-		return pointCount() - 1;
+		if (add_point(point))
+		{
+			return pointCount() - 1;
+		}
+		return -1;
 	}
 
 	virtual bool add_point(HyperPoint *point)
@@ -473,6 +478,7 @@ public:
 				{
 					remove_face(next); remove_face(pair);
 					add_face(renext); add_face(repair);
+
 					delete next; delete pair;
 					return true;
 				}
@@ -597,7 +603,10 @@ public:
 	{
 		if (idx >= 0)
 		{
-			_mapped[idx]->changed();
+			for (HyperTriangle *ht : _members[_points[idx]])
+			{
+				ht->changed();
+			}
 			return;
 		}
 
@@ -629,6 +638,13 @@ public:
 		}
 
 		return nullptr;
+	}
+
+	virtual std::vector<float> middle_of_face(int tidx)
+	{
+		float pc = pointCount();
+		std::vector<float> bc(pc, 1 / pc);
+		return _mapped[tidx]->barycentric_to_point(bc);
 	}
 	
 	std::vector<Mappable<Type> *> simplicesForPointDim(int index, int dimension)

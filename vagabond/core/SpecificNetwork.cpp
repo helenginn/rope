@@ -288,10 +288,12 @@ bool SpecificNetwork::valid_position(const std::vector<float> &vals)
 	return _network->valid_position(vals);
 }
 
-void SpecificNetwork::handleAtomMap(AtomPosMap &aps)
+bool SpecificNetwork::handleAtomMap(AtomPosMap &aps)
 {
 	sendResponse("atom_map", &aps);
+	_display++;
 
+	return (_display % _displayInterval) == 0;
 }
 
 int SpecificNetwork::detailsForParam(Parameter *parameter, BondCalculator **calc)
@@ -313,3 +315,26 @@ int SpecificNetwork::detailsForParam(Parameter *parameter, BondCalculator **calc
 	return -1;
 }
 
+int SpecificNetwork::splitFace(Parameter *parameter, int tidx)
+{
+	for (BondCalculator *bc : _calculators)
+	{
+		CalcDetails &cd = _calcDetails[bc];
+		int idx = cd.index_for_param(parameter);
+
+		if (idx < 0)
+		{
+			continue;
+		}
+		
+		Mapped<float> *map = cd.torsions[idx].mapping;
+		std::vector<float> new_point = map->middle_of_face(tidx);
+		int new_idx = map->add_point(new_point);
+		map->crack_existing_face(new_idx);
+		map->delaunay_refine();
+		map->update(new_idx);
+		return new_idx;
+	}
+
+	return -1;
+}

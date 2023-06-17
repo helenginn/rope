@@ -49,10 +49,12 @@ public:
 private:
 	void makeMapping();
 	void startFlips();
+	void startNudges();
 	void stopWorker();
 	void skipJob();
 	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
+	void makePausable();
 	bool _editing = false;
 
 	void addButtons();
