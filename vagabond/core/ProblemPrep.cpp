@@ -22,8 +22,7 @@
 #include "SquareSplitter.h"
 #include "Atom.h"
 
-bool check_indices(int tridx, Mapped<float> *const &map,
-                   float threshold = 30)
+float check_indices(int tridx, Mapped<float> *const &map)
 {
 	if (!map) { return false; }
 	std::vector<int> pIndices;
@@ -42,7 +41,7 @@ bool check_indices(int tridx, Mapped<float> *const &map,
 	
 	ave /= (float)pIndices.size();
 
-	return (max - min) > threshold;
+	return (max - min);
 }
 
 ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
@@ -50,11 +49,19 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 	_specified = sn;
 	_mapped = mapped;
 
+	_flex = [sn](Parameter *problem, int tridx) -> float
+	{
+		Mapped<float> *map = sn->mapForParameter(problem);
+		float ave = check_indices(tridx, map);
+		return ave;
+	};
+
 	std::function<bool(Parameter *, int)> variation;
 	variation = [sn](Parameter *problem, int tridx) -> bool
 	{
 		Mapped<float> *map = sn->mapForParameter(problem);
-		return check_indices(tridx, map);
+		float ave = check_indices(tridx, map);
+		return (ave > 30);
 	};
 
 	_filter = [variation](Parameter *problem, int tridx) -> bool
@@ -237,24 +244,58 @@ void ProblemPrep::sort(Parameters &params)
 	};
 	
 	std::sort(params.begin(), params.end(), sort_by_res);
-
 }
 
 void ProblemPrep::processMatrixForTriangle(int tidx, PCA::Matrix &m,
                                            const std::vector<Atom *> &atoms)
 {
 	ParamSet unfiltered = problemParams(m, atoms);
-	ParamSet filtered = filter(unfiltered, tidx);
-	_problemsForTriangles[tidx].filtered = filtered;
+	_problemsForTriangles[tidx].filtered = unfiltered;
 	regroup(_problemsForTriangles[tidx]);
-	
+
 	std::vector<int> pIndices;
 	_mapped->point_indices_for_face(tidx, pIndices);
+	
+	ParamSet filtered = filter(unfiltered, tidx);
 
 	for (const int &p : pIndices)
 	{
 		_problemsForPoints[p].addSet(filtered);
 		regroup(_problemsForPoints[p]);
+	}
+	
+	getFlexes();
+}
+
+float ProblemPrep::updateFlex(Parameter *problem, const std::vector<float> &pos)
+{
+	Mapped<float> *map = _specified->mapForParameter(problem);
+	int tidx = map->face_idx_for_point(pos);
+	
+	if (tidx < 0)
+	{
+		return _flexResults[problem];
+	}
+
+	float val = _flex(problem, tidx);
+	_flexResults[problem] = std::max(val, _flexResults[problem]);
+	return val;
+}
+
+void ProblemPrep::getFlexes()
+{
+	_flexResults.clear();
+	std::map<int, Problems> &src = _problemsForTriangles;
+	
+	for (auto it = src.begin(); it != src.end(); it++)
+	{
+		Problems &probs = it->second;
+		
+		for (Parameter *p : probs.filtered)
+		{
+			float val = _flex(p, it->first);
+			_flexResults[p] = std::max(val, _flexResults[p]);
+		}
 	}
 }
 

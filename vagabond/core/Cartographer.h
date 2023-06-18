@@ -26,6 +26,7 @@
 #include <vagabond/core/Responder.h>
 #include "ScoreMap.h"
 
+
 class Atom;
 class Entity;
 class Instance;
@@ -103,11 +104,14 @@ private:
 	void permute(std::vector<Parameter *> &params, 
 	             std::function<float()> score, int pidx);
 
+	void refineFace(Parameter *param, int tidx);
 	void nudgePoints();
-	void splitFace(Parameter *param, int tidx);
 
 	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
 	Points cartesiansForFace(Mappable<float> *face, int paramCount);
+	Points cartesiansForPoint(int pidx, int paramCount);
+	void cartesiansForTriangle(int tidx, int paramCount,
+	                           Cartographer::Points &carts);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;
@@ -123,6 +127,7 @@ private:
 		float score;
 	};
 	
+	int worstTriangleScore();
 	std::map<int, PointsInTriangle> _pointsInTriangles;
 	ProblemPrep *_prepwork = nullptr;
 	

@@ -46,7 +46,15 @@ public:
 	Parameters paramsForTriangle(int tidx, int grp);
 	size_t groupCountForPoint(int pidx);
 	size_t groupCountForTriangle(int pidx);
+	
+	float flexForParameter(Parameter *p)
+	{
+		return _flexResults[p];
+	}
+
+	float updateFlex(Parameter *problem, const std::vector<float> &pos);
 private:
+	void getFlexes();
 
 	ParamSet problemParams(PCA::Matrix &m, const std::vector<Atom *> &atoms);
 	ParamSet filter(const ParamSet &other, int tidx);
@@ -95,7 +103,11 @@ private:
 
 	SpecificNetwork *_specified = nullptr;
 	Mapped<float> *_mapped = nullptr;
+
 	std::function<bool(Parameter *, int)> _filter;
+	std::function<float(Parameter *, int)> _flex;
+	
+	std::map<Parameter *, float> _flexResults;
 };
 
 #endif

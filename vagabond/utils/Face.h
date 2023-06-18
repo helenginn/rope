@@ -19,6 +19,9 @@
 #ifndef __vagabond__Face__
 #define __vagabond__Face__
 
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+
 #include <iostream>
 #include <mutex>
 #include <map>
@@ -94,6 +97,15 @@ public:
 		return res;
 	}
 	
+	template <typename T>
+	void set_vector(const T &p)
+	{
+		for (unsigned int i = 0; i < D; i++)
+		{
+			_p[i] = p[i];
+		}
+	}
+	
 	Point(const std::vector<float> &p, Type value = 0)
 	{
 		for (unsigned int i = 0; i < D; i++)
@@ -129,10 +141,13 @@ public:
 		return _value;
 	}
 	
-	void setValue(const Type &val)
+	void set_value(const Type &val)
 	{
 		_value = val;
 	}
+
+	friend void to_json(json &j, const Point<D, Type> &value);
+	friend void from_json(const json &j, Point<D, Type> &value);
 private:
 	float _p[D]{};
 	Type _value{};
@@ -374,8 +389,6 @@ private:
 	virtual const SharedFace<0, D, Type> *point(int idx) const = 0;
 protected:
 	PCA::Matrix _tr;
-	std::vector<float> _min, _max;
-
 	Variable<Type> *_variable = nullptr;
 };
 
@@ -665,6 +678,8 @@ public:
 		return ss;
 	}
 
+	friend void to_json(json &j, const SharedFace<N, D, Type> &face);
+	friend void from_json(const json &j, SharedFace<N, D, Type> &face);
 protected:
 	SharedFace() {};
 
@@ -819,6 +834,9 @@ public:
 		}
 		return ss;
 	}
+
+	friend void to_json(json &j, const SharedFace<1, D, Type> &face);
+	friend void from_json(const json &j, SharedFace<1, D, Type> &face);
 private:
 	std::vector<SharedFace<0, D, Type> *> _subs;
 	std::vector<SharedFace<0, D, Type> *> _points;
@@ -942,5 +960,28 @@ private:
 	std::vector<SharedFace<0, D, Type> *> _points;
 
 };
+
+inline void to_json(json &j, const Point<2, float> &point)
+{
+	std::vector<float> coords = point;
+	float value = point.value();
+
+	j["coords"] = coords;
+	j["val"] = value;
+}
+
+inline void from_json(const json &j, Point<2, float> &point)
+{
+	if (j.count("coords"))
+	{
+		std::vector<float> coords = j.at("coords");
+		point.set_vector(coords);
+	}
+
+	if (j.count("val"))
+	{
+		point.set_value(j.at("val"));
+	}
+}
 
 #endif

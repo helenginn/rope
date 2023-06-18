@@ -22,6 +22,7 @@
 #include "NetworkBasis.h"
 #include "Model.h"
 #include "BondSequence.h"
+#include <vagabond/utils/Mapping.h>
 
 SpecificNetwork::SpecificNetwork(Network *network, Instance *inst) :
 StructureModification(inst, 1, network->dims())
@@ -315,6 +316,24 @@ int SpecificNetwork::detailsForParam(Parameter *parameter, BondCalculator **calc
 	return -1;
 }
 
+int SpecificNetwork::pointCount(Parameter *parameter)
+{
+	for (BondCalculator *bc : _calculators)
+	{
+		CalcDetails &cd = _calcDetails[bc];
+		int idx = cd.index_for_param(parameter);
+		if (idx < 0)
+		{
+			continue;
+		}
+
+		Mapped<float> *map = cd.torsions[idx].mapping;
+		return map->pointCount();
+	}
+	
+	return -1;
+}
+
 int SpecificNetwork::splitFace(Parameter *parameter, int tidx)
 {
 	for (BondCalculator *bc : _calculators)
@@ -328,8 +347,11 @@ int SpecificNetwork::splitFace(Parameter *parameter, int tidx)
 		}
 		
 		Mapped<float> *map = cd.torsions[idx].mapping;
+		map->update();
 		std::vector<float> new_point = map->middle_of_face(tidx);
+		float value = map->interpolate_variable(new_point);
 		int new_idx = map->add_point(new_point);
+		map->alter_value(new_idx, value);
 		map->crack_existing_face(new_idx);
 		map->delaunay_refine();
 		map->update(new_idx);
@@ -337,4 +359,24 @@ int SpecificNetwork::splitFace(Parameter *parameter, int tidx)
 	}
 
 	return -1;
+}
+
+void SpecificNetwork::setJsonForParameter(Parameter *p, const json &j)
+{
+	typedef Mapping<NETWORK_DIMS, float> Concrete;
+	Mapped<float> *tmp = mapForParameter(p);
+	Concrete *map = static_cast<Concrete *>(tmp);
+
+	*map = j["map"];
+}
+
+json SpecificNetwork::jsonForParameter(Parameter *p) const
+{
+	typedef Mapping<NETWORK_DIMS, float> Concrete;
+	Mapped<float> *tmp = mapForParameter(p);
+	Concrete *map = static_cast<Concrete *>(tmp);
+
+	json j;
+	j["map"] = *map;
+	return j;
 }

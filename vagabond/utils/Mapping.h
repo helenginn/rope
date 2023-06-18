@@ -23,6 +23,10 @@
 #include <map>
 #include <float.h>
 
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+
+
 template <typename Type>
 class Mapped
 {
@@ -49,7 +53,8 @@ public:
 	virtual void face_indices_for_point(const int &pidx, 
 	std::vector<int> &idxs) = 0;
 	virtual bool face_has_point(int idx, const std::vector<float> &point) = 0;
-	virtual void point_indices_for_face(int idx, std::vector<int> &points) = 0;
+	virtual int face_idx_for_point(const std::vector<float> &point) = 0;
+	virtual void point_indices_for_face(int idx, std::vector<int> &points) const = 0;
 	virtual void update(int point_idx) = 0;
 	virtual void redo_bins() = 0;
 	
@@ -58,6 +63,7 @@ public:
 	virtual std::vector<Mappable<Type> *> simplicesForPointDim(int index, 
 	                                                           int dimension) = 0;
 	virtual Mappable<Type> * simplex_for_points(std::vector<int> &points) = 0;
+	virtual Mappable<Type> * face_for_index(int i) = 0;
 
 	void update()
 	{
@@ -67,6 +73,7 @@ public:
 	// returns index of added point
 	virtual int add_point(const std::vector<float> &cart) = 0;
 	virtual std::vector<float> point_vector(int i) = 0;
+	virtual void set_point_vector(int i, const float *coords) = 0;
 	virtual size_t pointCount() const = 0;
 	virtual size_t faceCount() const = 0;
 	virtual void remove_point(int idx) = 0;
@@ -252,6 +259,11 @@ public:
 		}
 	}
 
+	virtual void set_point_vector(int i, const float *coords)
+	{
+		_points[i]->set_vector(coords);
+	}
+
 	virtual std::vector<float> point_vector(int i)
 	{
 		return *_points[i];
@@ -283,6 +295,11 @@ public:
 		return t;
 	}
 	
+	HyperPoint *const &point(int idx) const
+	{
+		return _points[idx];
+	}
+
 	HyperPoint *point(int idx)
 	{
 		return _points[idx];
@@ -349,7 +366,7 @@ public:
 
 	virtual void alter_value(int idx, Type value)
 	{
-		_points[idx]->setValue(value);
+		_points[idx]->set_value(value);
 	}
 
 	virtual int add_point(const std::vector<float> &cart)
@@ -550,6 +567,19 @@ public:
 
 		return false;
 	}
+
+	virtual int face_idx_for_point(const std::vector<float> &point)
+	{
+		for (size_t i = 0; i < _mapped.size(); i++)
+		{
+			if (face_has_point(i, point))
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
 	
 	virtual bool face_has_point(int idx, const std::vector<float> &point)
 	{
@@ -572,7 +602,7 @@ public:
 		return true;
 	}
 
-	virtual void point_indices_for_face(int idx, std::vector<int> &points)
+	virtual void point_indices_for_face(int idx, std::vector<int> &points) const
 	{
 		for (int i = 0; i < pointCount(); i++)
 		{
@@ -646,6 +676,11 @@ public:
 		std::vector<float> bc(pc, 1 / pc);
 		return _mapped[tidx]->barycentric_to_point(bc);
 	}
+
+	virtual Mappable<Type> *face_for_index(int i)
+	{
+		return _mapped[i];
+	}
 	
 	std::vector<Mappable<Type> *> simplicesForPointDim(int index, int dimension)
 	{
@@ -662,6 +697,9 @@ public:
 
 		return ret;
 	}
+
+	friend void to_json(json &j, const Mapping<D, Type> &face);
+	friend void from_json(const json &j, Mapping<D, Type> &face);
 protected:
 	HyperTriangle *face_for_point(const std::vector<float> &point) const
 	{
@@ -697,5 +735,55 @@ private:
 	std::map<HyperPoint *, std::vector<HyperTriangle *>> _members;
 	std::map<int, SimplexVector> _simplices;
 };
+
+inline void to_json(json &j, const Mapping<2, float> &map)
+{
+	typedef SharedFace<0, 2, float> HyperPoint;
+	std::vector<HyperPoint> points;
+	for (auto p : map._points)
+	{
+		points.push_back(*p);
+	}
+	j["points"] = points;
+
+	for (int i = 0; i < map._mapped.size(); i++)
+	{
+		std::vector<int> tIndices;
+		map.point_indices_for_face(i, tIndices);
+		j["face"][i] = tIndices;
+	}
+
+}
+
+inline void from_json(const json &j, Mapping<2, float> &map)
+{
+	typedef SharedFace<0, 2, float> HyperPoint;
+	if (j.count("points"))
+	{
+		for (HyperPoint p : j.at("points"))
+		{
+			HyperPoint *hp = new HyperPoint(p);
+			map.add_point(hp);
+		}
+	}
+	
+	if (j.count("face"))
+	{
+		for (std::vector<int> idxs : j.at("face"))
+		{
+			std::vector<HyperPoint *> points;
+			
+			for (const int &idx : idxs)
+			{
+				points.push_back(map.point(idx));
+			}
+
+			map.add_simplex(points);
+		}
+	}
+	
+	map.update();
+	map.redo_bins();
+}
 
 #endif

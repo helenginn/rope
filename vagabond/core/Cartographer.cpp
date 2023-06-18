@@ -21,6 +21,7 @@
 #include "Network.h"
 #include "SpecificNetwork.h"
 #include "Permuter.h"
+#include "Nudger.h"
 #include "ProblemPrep.h"
 #include "MappingToMatrix.h"
 #include "Cartographer.h"
@@ -364,6 +365,38 @@ void Cartographer::flipPointsFor(Mappable<float> *face,
 
 }
 
+Cartographer::Points Cartographer::cartesiansForPoint(int pidx, int paramCount)
+{
+	std::vector<int> tIndices;
+	_mapped->face_indices_for_point(pidx, tIndices);
+
+	Points carts;
+
+	for (const int &t : tIndices)
+	{
+		Mappable<float> *face = _mapped->face_for_index(t);
+		Points extra = cartesiansForFace(face, paramCount);
+		carts.reserve(carts.size() + extra.size());
+		carts.insert(carts.end(), extra.begin(), extra.end());
+	}
+	
+	return carts;
+}
+
+void Cartographer::cartesiansForTriangle(int tidx, int paramCount,
+                                         Cartographer::Points &carts)
+{
+	std::vector<int> pIndices;
+	_mapped->point_indices_for_face(tidx, pIndices);
+
+	for (const int &p : pIndices)
+	{
+		Points extra = cartesiansForPoint(p, paramCount);
+		carts.reserve(carts.size() + extra.size());
+		carts.insert(carts.end(), extra.begin(), extra.end());
+	}
+}
+
 Cartographer::Points Cartographer::cartesiansForFace(Mappable<float> *face,
                                                      int paramCount)
 {
@@ -420,14 +453,134 @@ void Cartographer::permute(std::vector<Parameter *> &params,
 	permuter.permute(score);
 }
 
-void Cartographer::splitFace(Parameter *param, int tidx)
+void add_triangle_indices(int pidx, std::set<int> &tidxs, Mapped<float> *map)
 {
-	int i = _specified->splitFace(param, tidx);
+	std::vector<int> tIndices;
+	map->face_indices_for_point(pidx, tIndices);
+
+	for (const int &t : tIndices)
+	{
+		tidxs.insert(t);
+	}
+}
+
+void Cartographer::refineFace(Parameter *param, int tidx)
+{
+	if (!param->coversMainChain() || _specified->pointCount(param) <= 0)
+	{
+		return;
+	}
+
+	float flex = _prepwork->flexForParameter(param);
+	std::cout << "Refining " << param->residueId() << ":" <<
+	param->desc() << ", flex = " << flex << std::endl;
+
+	int normal_points = _mapped->pointCount();
+	int param_points = _specified->pointCount(param);
+
+	std::set<int> more_tidxs;
+
+	std::vector<int> pIndices;
+	_mapped->point_indices_for_face(tidx, pIndices);
+
+	for (int pidx : pIndices)
+	{
+		add_triangle_indices(pidx, more_tidxs, _mapped);
+	}
+	
+	Points points;
+	for (const int &t : more_tidxs)
+	{
+		cartesiansForTriangle(t, 6, points);
+	}
+
+	ScoreMap scorer = basicScorer(ScoreMap::Basic);
+	std::function<float()> score = [this, scorer, points]()
+	{
+		return this->scoreWithScorer(points, scorer);
+	};
+
+	float begin = score();
+	int pidx = normal_points;
+	json info = _specified->jsonForParameter(param);
+
+	if (param_points <= normal_points)
+	{
+		std::cout << "Score before splitting triangle: " << begin << std::endl;
+		pidx = _specified->splitFace(param, tidx);
+		if (pidx <= 0)
+		{
+			return;
+		}
+		std::cout << "Score after splitting triangle: " << score() << std::endl;
+	}
+
+	std::vector<Parameter *> params(1, param);
+
+	Nudger nudge(_specified, _mapped, _stop, _skip);
+	nudge.setResponder(this);
+	nudge.bindPoint(pidx, params, false);
+	nudge.nudge(flex, score);
+
+	float end = score();
+	std::cout << "Score after refining triangle: " << score();
+	
+	if (end < begin)
+	{
+		std::cout << " :D :D :D" << std::endl;
+		sendResponse("update_score", &end);
+	}
+	else
+	{
+		std::cout << " :( restore from backup" << std::endl;
+		_specified->setJsonForParameter(param, info);
+	}
+
+	std::cout << std::endl;
+}
+
+int Cartographer::worstTriangleScore()
+{
+	float worst = 0;
+	int idx = -1;
+	for (auto it = _pointsInTriangles.begin(); 
+	     it != _pointsInTriangles.end(); it++)
+	{
+		if (it->second.score > worst)
+		{
+			worst = it->second.score;
+			idx = it->first;
+		}
+	}
+
+	return idx;
 }
 
 void Cartographer::nudgePoints()
 {
-	std::vector<Parameter *> params = _prepwork->paramsForTriangle(0, 0);
-	splitFace(params[0], 0);
-//	checkTriangles(ScoreMap::AssessSplits);
+	int worst = worstTriangleScore();
+	int grps = _prepwork->groupCountForTriangle(worst);
+
+	for (int i = 0; i < grps; i++)
+	{
+		ProblemPrep *prep = _prepwork;
+		std::vector<Parameter *> params = _prepwork->paramsForTriangle(worst, i);
+		
+		std::sort(params.begin(), params.end(), [prep](Parameter *const &p,
+		                                               Parameter *const &q)
+		{
+			return prep->flexForParameter(p) > prep->flexForParameter(q);
+		});
+
+		for (Parameter *p : params)
+		{
+			refineFace(p, worst);
+		}
+		
+		if (_skip)
+		{
+			_skip = false;
+			return;
+		}
+	}
 }

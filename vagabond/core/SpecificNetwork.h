@@ -42,6 +42,9 @@ public:
 	{
 		return _instance;
 	}
+
+	nlohmann::json jsonForParameter(Parameter *p) const;
+	void setJsonForParameter(Parameter *p, const nlohmann::json &j);
 	
 	Mapped<float> *mapForParameter(Parameter *p) const
 	{
@@ -68,6 +71,7 @@ public:
 	                  Vec3s &positions);
 	
 	int detailsForParam(Parameter *parameter, BondCalculator **calc);
+	int pointCount(Parameter *parameter);
 	void zeroVertices();
 	void setup();
 
