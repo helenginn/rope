@@ -201,7 +201,6 @@ private:
 	void makeTorsionBasis();
 	void fillTorsionAngles();
 	void fastCalculate();
-	void calculateCustomVector();
 	void prewarnPositionSampler();
 
 	int calculateBlock(int idx);
@@ -232,6 +231,7 @@ private:
 	void checkCustomVectorSizeFits();
 	
 	std::function<float(int idx)> _acquireCoord;
+	int _nCoord = 0;
 
 	Job *_job = nullptr;
 	BondSequenceHandler *_handler = nullptr;

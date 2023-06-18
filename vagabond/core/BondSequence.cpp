@@ -174,34 +174,6 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
-void BondSequence::calculateCustomVector()
-{
-	if (_custom)
-	{
-		int n = _custom->size;
-
-		if (_sampler && _sampler->dims() != n)
-		{
-			throw std::runtime_error("Sampler dimension does not match"\
-			                         " custom vector dimension: "
-			                         + i_to_str(n) + " vs " 
-			                         + i_to_str(_sampler->dims()));
-		}
-
-		if (_currentVec == nullptr)
-		{
-			_currentVec = new float[n];
-		}
-
-		memcpy(_currentVec, _custom->mean, sizeof(float) * n);
-		
-		if (_sampler != nullptr)
-		{
-			_sampler->addToVec(_currentVec, _custom->tensor, _sampleNum);
-		}
-	}
-}
-
 void BondSequence::fetchTorsion(int idx)
 {
 	if (_blocks[idx].torsion_idx < 0)
@@ -209,16 +181,9 @@ void BondSequence::fetchTorsion(int idx)
 		return;
 	}
 	
-	if (_skipSections || _currentVec == nullptr)
-	{
-		calculateCustomVector();
-	}
-	
-	int n = (_custom ? _custom->size : 0);
-	
 	double t = 0;
 	t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
-	                                      _acquireCoord, n);
+	                                      _acquireCoord, _nCoord);
 
 
 	_blocks[idx].torsion = t;
@@ -232,12 +197,7 @@ void BondSequence::prewarnPositionSampler()
 
 	if (ps == nullptr) { return; }
 
-	if (_skipSections || _currentVec == nullptr)
-	{
-		calculateCustomVector();
-	}
-
-	int n = (_custom ? _custom->size : 0);
+	int n = _nCoord;
 
 	std::vector<float> vals(n);
 	for (int i = 0; i < n; i++)
@@ -287,8 +247,7 @@ int BondSequence::calculateBlock(int idx)
 	int &progidx = b.program;
 	if (progidx >= 0 && _usingPrograms)
 	{
-		int n = (_custom ? _custom->size : 0);
-		_programs[progidx].run(_blocks, idx, _acquireCoord, n);
+		_programs[progidx].run(_blocks, idx, _acquireCoord, _nCoord);
 	}
 
 	return (b.atom == nullptr);
@@ -326,7 +285,6 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	Job &j = *job();
 	if (j.custom.vector_count() == 0)
 	{
-		_custom = nullptr;
 		return;
 	}
 
@@ -338,10 +296,10 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	}
 	
 	CustomVector *custom = &j.custom.vecs[_customIdx];
-	_custom = custom;
 	Sampler *sampler = _sampler;
 	float *tensor = custom->tensor;
 	float *vec = custom->mean;
+	_nCoord = custom->size;
 	
 	_acquireCoord = [tensor, vec, sampler, sampleNum](const int idx) -> float
 	{
@@ -352,19 +310,16 @@ void BondSequence::acquireCustomVector(int sampleNum)
 		}
 		return val;
 	};
-
-	calculateCustomVector();
 }
 
 void BondSequence::fastCalculate()
 {
 	_customIdx = 0;
-	_custom = nullptr;
-	
-	_custom = &(_job->custom.vecs[0]);
 
 	int start = _startCalc;
 	int end = _endCalc;
+	
+	acquireCustomVector(0);
 
 	if (_fullRecalc)
 	{
@@ -452,11 +407,6 @@ void BondSequence::calculate()
 	{
 		extract = (job()->requests & JobExtractPositions);
 	}
-	
-	if (_torsionBasis != nullptr)
-	{
-//		_torsionBasis->prepareRecalculation();
-	}
 
 	if (_skipSections && !_fullRecalc)
 	{
@@ -465,7 +415,6 @@ void BondSequence::calculate()
 	}
 
 	_customIdx = 0;
-	_custom = nullptr;
 	
 	int sampleNum = 0;
 	acquireCustomVector(sampleNum);
