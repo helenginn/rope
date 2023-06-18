@@ -56,7 +56,7 @@ public:
 	}
 
 	float torsionForIndex(BondSequence *seq,
-	                      int idx, const float *vec) const;
+	                      int idx, const TorsionBasis::AcquireCoord &coord) const;
 	
 	bool valid_position(const std::vector<float> &vals);
 
@@ -81,6 +81,9 @@ public:
 	{
 		_displayInterval = interval;
 	}
+
+	
+	void invalidatePrecalculations();
 protected:
 	virtual bool handleAtomMap(AtomPosMap &aps);
 private:

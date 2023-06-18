@@ -218,7 +218,7 @@ void BondSequence::fetchTorsion(int idx)
 	
 	double t = 0;
 	t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
-	                                      _currentVec, n);
+	                                      _acquireCoord, n);
 
 
 	_blocks[idx].torsion = t;
@@ -288,7 +288,7 @@ int BondSequence::calculateBlock(int idx)
 	if (progidx >= 0 && _usingPrograms)
 	{
 		int n = (_custom ? _custom->size : 0);
-		_programs[progidx].run(_blocks, idx, _currentVec, n);
+		_programs[progidx].run(_blocks, idx, _acquireCoord, n);
 	}
 
 	return (b.atom == nullptr);
@@ -337,7 +337,22 @@ void BondSequence::acquireCustomVector(int sampleNum)
 		_customIdx++;
 	}
 	
-	_custom = &j.custom.vecs[_customIdx];
+	CustomVector *custom = &j.custom.vecs[_customIdx];
+	_custom = custom;
+	Sampler *sampler = _sampler;
+	float *tensor = custom->tensor;
+	float *vec = custom->mean;
+	
+	_acquireCoord = [tensor, vec, sampler, sampleNum](const int idx) -> float
+	{
+		float val = vec[idx];
+		if (sampler)
+		{
+			sampler->add_to_vec_index(val, idx, tensor, sampleNum);
+		}
+		return val;
+	};
+
 	calculateCustomVector();
 }
 

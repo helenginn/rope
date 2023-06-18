@@ -25,7 +25,8 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 }
 
 float SimpleBasis::parameterForVector(BondSequence *seq,
-                                      int idx, const float *vec, int n)
+                                      int idx, const AcquireCoord &coordinate, 
+                                      int n)
 {
 	if (idx < 0)
 	{
@@ -45,7 +46,7 @@ float SimpleBasis::parameterForVector(BondSequence *seq,
 	
 	if (idx < n)
 	{
-		return ta.angle + vec[idx];
+		return ta.angle + coordinate(idx);
 	}
 	
 	return ta.angle;

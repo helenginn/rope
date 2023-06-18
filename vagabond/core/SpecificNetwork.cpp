@@ -99,6 +99,15 @@ void SpecificNetwork::updateAtomsFromDerived(int idx)
 	}
 }
 
+void SpecificNetwork::invalidatePrecalculations()
+{
+	for (BondCalculator *calc : _calculators)
+	{
+		calc->wipeCalculations();
+	}
+
+}
+
 int SpecificNetwork::submitJob(bool show, const std::vector<float> vals)
 {
 	Job job{};
@@ -260,13 +269,13 @@ bool SpecificNetwork::prewarnAtoms(BondSequence *seq,
 	return accept;
 }
 
-float SpecificNetwork::torsionForIndex(BondSequence *seq,
-                                       int idx, const float *vec) const
+float SpecificNetwork::torsionForIndex(BondSequence *seq, int idx, 
+                                       const TorsionBasis::AcquireCoord &coord) const
 {
 	std::vector<float> vals(_network->dims());
 	for (int i = 0; i < _network->dims(); i++)
 	{
-		vals[i] = vec[i];
+		vals[i] = coord(i);
 	}
 
 	BondCalculator *bc = seq->calculator();

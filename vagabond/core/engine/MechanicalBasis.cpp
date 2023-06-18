@@ -31,13 +31,14 @@ MechanicalBasis::MechanicalBasis()
 }
 
 float MechanicalBasis::parameterForVector(BondSequence *seq,
-                                          int idx, const float *vec, int n)
+                                          int idx, const AcquireCoord &coordinate, 
+                                          int n)
 {
 	if (idx >= 0 && idx < _mechAngles.size())
 	{
 		if (n > 0)
 		{
-			float change = _mechAngles[idx].change * vec[0];
+			float change = _mechAngles[idx].change * coordinate(0);
 			change *= _mechAngles[idx].mask ? 1 : 0;
 			return _mechAngles[idx].start + change;
 		}

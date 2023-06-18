@@ -67,8 +67,8 @@ protected:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual float getResult(int *job_id);
 private:
-	void fullSizeVector(const std::vector<float> &all,
-	                    float *dest);
+	std::function<float(int idx)> acquireFromVector(const std::vector<float> &all);
+	void fullSizeVector(const std::vector<float> &all, float *dest);
 	void refine(AtomGroup *group);
 	void refineThroughEach(AtomGroup *subset);
 	void grabNewAnchor(AtomGroup *subset);

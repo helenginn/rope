@@ -173,8 +173,9 @@ bool PositionRefinery::refineBetween(int start, int end, int side_max)
 	{
 		const std::vector<float> &trial = se->bestResult();
 		std::vector<float> best = expandPoint(trial);
+		TorsionBasis::AcquireCoord get = acquireFromVector(best);
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-		basis->absorbVector(&best[0], best.size());
+		basis->absorbVector(get, best.size());
 	}
 
 	_calculator->finish();
@@ -410,11 +411,6 @@ int PositionRefinery::sendJob(const std::vector<float> &trial)
 		{
 			job.custom.vecs[0].mean[i] = expanded[i];
 		}
-
-	}
-	else if (_stage == Loopy || _stage == CarefulLoopy)
-	{
-		fullSizeVector(trial, job.custom.vecs[0].mean);
 	}
 	
 	int ticket = _calculator->submitJob(job);
@@ -505,8 +501,9 @@ void PositionRefinery::wiggleBonds(RefinementStage stage)
 		std::vector<float> full(_mask.size(), 0);
 
 		fullSizeVector(best, &full[0]);
+		TorsionBasis::AcquireCoord get = acquireFromVector(full);
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-		basis->absorbVector(&full[0], full.size());
+		basis->absorbVector(get, full.size());
 
 		std::cout << "Next: " << _engine->bestScore() << std::endl;
 		count++;
@@ -542,8 +539,7 @@ size_t PositionRefinery::parameterCount()
 	}
 }
 
-void PositionRefinery::fullSizeVector(const std::vector<float> &all,
-                                      float *dest)
+void PositionRefinery::fullSizeVector(const std::vector<float> &all, float *dest)
 {
 	int count = parameterCount();
 	int curr = 0;
@@ -552,5 +548,17 @@ void PositionRefinery::fullSizeVector(const std::vector<float> &all,
 		dest[idx] = all[curr] * (float)count;
 		curr++;
 	}
+}
+
+std::function<float(int idx)> 
+PositionRefinery::acquireFromVector(const std::vector<float> &all)
+{
+	int count = parameterCount();
+	std::function<float(int idx)> get = [all, count](int idx)
+	{
+		return all[idx];
+	};
+	
+	return get;
 }
 

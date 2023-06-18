@@ -29,12 +29,14 @@ public:
 	NetworkBasis();
 
 	float contributionForAxis(BondSequence *seq,
-	                          int tidx, int i, const float *vec);
+	                          int tidx, int i, const AcquireCoord &coordinate);
 
 	void setSpecificNetwork(SpecificNetwork *sn)
 	{
 		_sn = sn;
 	}
+
+	virtual void wipe();
 private:
 	SpecificNetwork *_sn = nullptr;
 

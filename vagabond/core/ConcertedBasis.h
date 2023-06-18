@@ -34,7 +34,8 @@ public:
 	~ConcertedBasis();
 
 	virtual float parameterForVector(BondSequence *seq,
-	                                 int idx, const float *vec, int n);
+	                                 int tidx, const AcquireCoord &coordinate, 
+	                                 int n);
 	virtual void prepare(int dims = 0);
 
 	/** only the torsions available in the mask will be used for calculating
@@ -67,9 +68,9 @@ public:
 	}
 protected:
 	float fullContribution(BondSequence *seq, int tidx, 
-	                       const float *vec, int n);
+	                       const AcquireCoord &coordinate, int n);
 	virtual float contributionForAxis(BondSequence *seq, int tidx, int i, 
-	                                  const float *vec);
+	                                  const AcquireCoord &coordinate);
 
 	std::vector<Parameter *> _filtered;
 private:

@@ -40,6 +40,8 @@ public:
 		TypeMechanical,
 	};
 
+	typedef std::function<float(int idx)> AcquireCoord;
+
 	TorsionBasis();
 	virtual ~TorsionBasis() { };
 	virtual void prepare(int dims);
@@ -59,9 +61,10 @@ public:
 	 * @param n total number of parameters in vec 
 	 * @returns parameter angle in degrees */
 	virtual float parameterForVector(BondSequence *seq,
-	                                 int idx, const float *vec, int n) = 0;
+	                                 int idx, const AcquireCoord &coordinate, 
+	                                 int n) = 0;
 
-	virtual void absorbVector(const float *vec, int n, 
+	virtual void absorbVector(const AcquireCoord &coordinate, int n, 
 	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};
@@ -97,6 +100,8 @@ public:
 	{
 		return _params[i];
 	}
+	
+	virtual void wipe();
 	
 	int indexForParameter(Parameter *param);
 protected:

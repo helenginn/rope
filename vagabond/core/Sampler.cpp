@@ -202,6 +202,27 @@ float Sampler::gamma()
 	return result;
 }
 
+void Sampler::add_to_vec_index(float &value, const int &idx, 
+                               const float *tensor, const int sample_num) const
+{
+	float mean = _points[sample_num][idx];
+	float result = 0;
+	
+	if (tensor != nullptr)
+	{
+		for (size_t j = 0; j < _dims; j++)
+		{
+			result += tensor[idx * _dims + j] * mean;
+		}
+	}
+	else
+	{
+		result = mean;
+	}
+	
+	value += result;
+}
+
 void Sampler::addToVec(float *&vec, float *tensor, int sample_num)
 {
 	double result[_dims];

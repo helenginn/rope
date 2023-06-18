@@ -34,7 +34,7 @@ public:
 	}
 
 	float contributionForAxis(BondSequence *seq, int tidx, int axis, 
-	                          const float *vec);
+	                          const AcquireCoord &coordinate);
 private:
 	Trajectory *_traj = nullptr;
 

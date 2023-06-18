@@ -230,6 +230,8 @@ private:
 	int _singleSequence = 0;
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
+	
+	std::function<float(int idx)> _acquireCoord;
 
 	Job *_job = nullptr;
 	BondSequenceHandler *_handler = nullptr;
@@ -237,6 +239,7 @@ private:
 	TorsionBasis::Type _basisType;
 	Sampler *_sampler = nullptr;
 	std::vector<RingProgram> _programs;
+
 #ifdef VERSION_PROLINE
 	bool _usingPrograms = true;
 #else
@@ -247,7 +250,6 @@ private:
 	
 	bool _acceptablePositions = false;
 	Vec3s _atomPositions;
-	std::vector<float> _torsionAngles;
 	
 	float *_currentVec = nullptr;
 

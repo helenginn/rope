@@ -465,3 +465,8 @@ const Grapher &BondCalculator::grapher() const
 {
 	return _sequenceHandler->sequence(0)->grapher();
 }
+
+void BondCalculator::wipeCalculations()
+{
+	torsionBasis()->wipe();
+}

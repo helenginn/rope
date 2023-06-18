@@ -25,15 +25,15 @@ OnPathBasis::OnPathBasis() : ConcertedBasis()
 }
 
 float OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis, 
-                                       const float *vec)
+                                       const AcquireCoord &coordinate)
 {
 	if (seq == nullptr || axis != 0 
 	    || _traj == nullptr) // iterating over non-zero axis
 	{
-		return ConcertedBasis::contributionForAxis(seq, tidx, axis, vec);
+		return ConcertedBasis::contributionForAxis(seq, tidx, axis, coordinate);
 	}
 
-	float weight = vec[axis];
+	float weight = coordinate(axis);
 
 	float angle = _traj->angleForFraction(weight, tidx);
 

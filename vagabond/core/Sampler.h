@@ -35,6 +35,8 @@ public:
 	float hypersphereVolume(float radius);
 	
 	void addToVec(float *&vec, float *tensor, int num);
+	void add_to_vec_index(float &value, const int &idx, 
+	                      const float *tensor, const int sample_num) const;
 	
 	int dims()
 	{

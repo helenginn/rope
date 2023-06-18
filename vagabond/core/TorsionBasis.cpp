@@ -67,7 +67,7 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	return basis;
 }
 
-void TorsionBasis::absorbVector(const float *vec, int n, bool *mask)
+void TorsionBasis::absorbVector(const AcquireCoord &coordinate, int n, bool *mask)
 {
 	for (size_t i = 0; i < parameterCount(); i++)
 	{
@@ -76,7 +76,7 @@ void TorsionBasis::absorbVector(const float *vec, int n, bool *mask)
 			continue;
 		}
 
-		float torsion = parameterForVector(nullptr, i, vec, n);
+		float torsion = parameterForVector(nullptr, i, coordinate, n);
 		
 //		std::cout << _params[i]->desc() << " " << torsion << std::endl;
 		
@@ -163,4 +163,9 @@ std::vector<int> TorsionBasis::grabIndices(const std::set<Parameter *> &params)
 	}
 	
 	return indices;
+}
+
+void TorsionBasis::wipe()
+{
+
 }

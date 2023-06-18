@@ -34,6 +34,8 @@ public:
 	RingProgram();
 	~RingProgram();
 	RingProgram(RingProgrammer *parent);
+
+	typedef std::function<float(int idx)> AcquireCoord;
 	
 	Cyclic &cyclic()
 	{
@@ -87,11 +89,12 @@ public:
 	                    std::string param_name);
 	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
 
-	void run(std::vector<AtomBlock> &blocks, int rel, float *vec, int n);
+	void run(std::vector<AtomBlock> &blocks, int rel, 
+	         const AcquireCoord &coord, int n);
 	
 	void addTransformation(const glm::mat4x4 &trans);
 private:
-	void fetchParameters(float *currentVec, int n);
+	void fetchParameters(const AcquireCoord &coord, int n);
 
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
