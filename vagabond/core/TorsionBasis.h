@@ -22,6 +22,7 @@
 #include <vector>
 #include <set>
 #include "ResidueTorsion.h"
+#include <vagabond/utils/AcquireCoord.h>
 
 class BondSequence;
 class Parameter;
@@ -39,8 +40,6 @@ public:
 		TypeConcerted,
 		TypeMechanical,
 	};
-
-	typedef std::function<float(int idx)> AcquireCoord;
 
 	TorsionBasis();
 	virtual ~TorsionBasis() { };
@@ -61,10 +60,10 @@ public:
 	 * @param n total number of parameters in vec 
 	 * @returns parameter angle in degrees */
 	virtual float parameterForVector(BondSequence *seq,
-	                                 int idx, const AcquireCoord &coordinate, 
+	                                 int idx, const Coord::Get &coordinate, 
 	                                 int n) = 0;
 
-	virtual void absorbVector(const AcquireCoord &coordinate, int n, 
+	virtual void absorbVector(const Coord::Get &coordinate, int n, 
 	                          bool *mask = nullptr);
 
 	virtual void prepareRecalculation() {};

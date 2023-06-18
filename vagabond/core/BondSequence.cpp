@@ -41,7 +41,7 @@ void BondSequence::setJob(Job *job)
 
 BondSequence::~BondSequence()
 {
-	delete [] _currentVec;
+
 }
 
 
@@ -197,12 +197,10 @@ void BondSequence::prewarnPositionSampler()
 
 	if (ps == nullptr) { return; }
 
-	int n = _nCoord;
-
-	std::vector<float> vals(n);
-	for (int i = 0; i < n; i++)
+	std::vector<float> vals(_nCoord);
+	for (int i = 0; i < _nCoord; i++)
 	{
-		vals[i] = _currentVec[i];
+		vals[i] = _acquireCoord(i);
 	}
 	
 	_acceptablePositions = ps->prewarnAtoms(this, vals, _atomPositions);

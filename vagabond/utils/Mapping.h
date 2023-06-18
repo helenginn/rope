@@ -35,9 +35,13 @@ public:
 	{
 
 	}
+
 	virtual void bounds(std::vector<float> &min, std::vector<float> &max) = 0;
 	virtual Type interpolate_variable(const std::vector<float> &cart,
 	                                  bool *acceptable = nullptr) const = 0;
+
+	virtual Coord::Interpolate<Type>
+	interpolate_variable(const Coord::Get &coordinate) const = 0;
 
 	virtual void real_to_fraction(std::vector<float> &val,
 	                              const std::vector<float> &min, 
@@ -272,6 +276,24 @@ public:
 	virtual bool acceptable_coordinate(const std::vector<float> &cart)
 	{
 		return (face_for_point(cart) != nullptr);
+	}
+
+	virtual Coord::Interpolate<Type> 
+	interpolate_variable(const Coord::Get &coordinate) const
+	{
+		std::vector<float> cart;
+		for (size_t i = 0; i < D; i++)
+		{
+			cart.push_back(coordinate(i));
+		}
+
+		MappedInDim<D, Type> *f = face_for_point(cart);
+		if (f == nullptr)
+		{
+			return Coord::Interpolate<Type>{};
+		}
+
+		return Coord::Interpolate<Type>{};
 	}
 	
 	Type interpolate_variable(const std::vector<float> &cart, 

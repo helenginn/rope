@@ -29,7 +29,7 @@ public:
 	NetworkBasis();
 
 	float contributionForAxis(BondSequence *seq,
-	                          int tidx, int i, const AcquireCoord &coordinate);
+	                          int tidx, int i, const Coord::Get &coordinate);
 
 	void setSpecificNetwork(SpecificNetwork *sn)
 	{

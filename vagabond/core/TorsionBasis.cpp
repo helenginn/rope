@@ -67,7 +67,7 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	return basis;
 }
 
-void TorsionBasis::absorbVector(const AcquireCoord &coordinate, int n, bool *mask)
+void TorsionBasis::absorbVector(const Coord::Get &coordinate, int n, bool *mask)
 {
 	for (size_t i = 0; i < parameterCount(); i++)
 	{

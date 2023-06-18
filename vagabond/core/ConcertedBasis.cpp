@@ -34,7 +34,7 @@ ConcertedBasis::~ConcertedBasis()
 // tidx: torsion angle
 // vec/n: vector you have to generate torsion angle
 float ConcertedBasis::parameterForVector(BondSequence *seq,
-                                         int tidx, const AcquireCoord &coordinate, 
+                                         int tidx, const Coord::Get &coordinate, 
                                          int n)
 {
 	if (tidx < 0)
@@ -250,7 +250,7 @@ size_t ConcertedBasis::activeBonds()
 }
 
 float ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
-                                       const AcquireCoord &coordinate, int n)
+                                       const Coord::Get &coordinate, int n)
 {
 	if (tidx < 0 || tidx > _svd.u.rows)
 	{
@@ -270,7 +270,7 @@ float ConcertedBasis::fullContribution(BondSequence *seq, int tidx,
 }
 
 float ConcertedBasis::contributionForAxis(BondSequence *seq,
-                                          int tidx, int i, const AcquireCoord &coordinate)
+                                          int tidx, int i, const Coord::Get &coordinate)
 {
 	if (i > _svd.u.rows)
 	{

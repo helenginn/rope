@@ -19,6 +19,7 @@
 #ifndef __vagabond__RingProgram__
 #define __vagabond__RingProgram__
 
+#include <vagabond/utils/AcquireCoord.h>
 #include "programs/Cyclic.h"
 #include <vagabond/utils/SpecialTable.h>
 #include "AtomBlock.h"
@@ -34,8 +35,6 @@ public:
 	RingProgram();
 	~RingProgram();
 	RingProgram(RingProgrammer *parent);
-
-	typedef std::function<float(int idx)> AcquireCoord;
 	
 	Cyclic &cyclic()
 	{
@@ -90,11 +89,11 @@ public:
 	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
 
 	void run(std::vector<AtomBlock> &blocks, int rel, 
-	         const AcquireCoord &coord, int n);
+	         const Coord::Get &coord, int n);
 	
 	void addTransformation(const glm::mat4x4 &trans);
 private:
-	void fetchParameters(const AcquireCoord &coord, int n);
+	void fetchParameters(const Coord::Get &coord, int n);
 
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);

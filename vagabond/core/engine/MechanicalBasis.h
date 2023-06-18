@@ -41,7 +41,7 @@ public:
 	}
 
 	virtual float parameterForVector(BondSequence *seq, 
-	                                 int tidx, const AcquireCoord &coordinate, 
+	                                 int tidx, const Coord::Get &coordinate, 
 	                                 int n);
 	virtual void prepare(int dims = 0);
 	virtual void prepareRecalculation();

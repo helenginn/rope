@@ -28,10 +28,6 @@ public:
 
 	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
 	                          Vec3s &positions) = 0;
-
-	virtual void prewarnAngles(BondSequence *seq, 
-	                           const std::vector<float> &vals,
-	                           std::vector<float> &angles) = 0;
 };
 
 #endif

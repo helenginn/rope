@@ -56,7 +56,7 @@ public:
 	}
 
 	float torsionForIndex(BondSequence *seq,
-	                      int idx, const TorsionBasis::AcquireCoord &coord) const;
+	                      int idx, const Coord::Get &coord) const;
 	
 	bool valid_position(const std::vector<float> &vals);
 
@@ -64,9 +64,6 @@ public:
 
 	int submitJob(bool show, const std::vector<float> vals);
 
-	virtual void prewarnAngles(BondSequence *seq, 
-	                           const std::vector<float> &vals,
-	                           std::vector<float> &angles);
 	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
 	                  Vec3s &positions);
 	

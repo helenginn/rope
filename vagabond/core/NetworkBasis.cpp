@@ -25,7 +25,7 @@ NetworkBasis::NetworkBasis() : ConcertedBasis()
 }
 
 float NetworkBasis::contributionForAxis(BondSequence *seq, int tidx, int i, 
-                                        const AcquireCoord &coordinate)
+                                        const Coord::Get &coordinate)
 {
 	if (seq == nullptr)
 	{

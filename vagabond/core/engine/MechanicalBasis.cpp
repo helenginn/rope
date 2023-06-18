@@ -31,7 +31,7 @@ MechanicalBasis::MechanicalBasis()
 }
 
 float MechanicalBasis::parameterForVector(BondSequence *seq,
-                                          int idx, const AcquireCoord &coordinate, 
+                                          int idx, const Coord::Get &coordinate, 
                                           int n)
 {
 	if (idx >= 0 && idx < _mechAngles.size())

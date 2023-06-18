@@ -16,28 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__OnPathBasis__
-#define __vagabond__OnPathBasis__
+#ifndef __vagabond__AcquireCoord__
+#define __vagabond__AcquireCoord__
 
-#include "ConcertedBasis.h"
+#include <vector>
 
-class Trajectory;
-
-class OnPathBasis : public ConcertedBasis
+namespace Coord
 {
-public:
-	OnPathBasis();
+	typedef std::function<float(int idx)> Get;
 
-	void setTrajectory(Trajectory *traj)
+	template <typename Type> 
+	using Interpolate = std::function<Type(const Coord::Get &)>;
+
+	template <typename Type>
+	Get fromVector(const std::vector<Type> &all)
 	{
-		_traj = traj;
+		Get get = [all](int idx)
+		{
+			return all[idx];
+		};
+
+		return get;
 	}
 
-	float contributionForAxis(BondSequence *seq, int tidx, int axis, 
-	                          const Coord::Get &coordinate);
-private:
-	Trajectory *_traj = nullptr;
-
-};
+}
 
 #endif

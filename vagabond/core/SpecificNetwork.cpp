@@ -241,22 +241,6 @@ void SpecificNetwork::torsionBasisMods(TorsionBasis *tb)
 	nb->setSpecificNetwork(this);
 }
 
-void SpecificNetwork::prewarnAngles(BondSequence *seq, 
-                                   const std::vector<float> &vals,
-                                   std::vector<float> &angles)
-{
-	angles.clear();
-	BondCalculator *bc = seq->calculator();
-	const CalcDetails &cd = _calcDetails.at(bc);
-	
-	for (int i = 0; i < cd.torsions.size(); i++)
-	{
-		Mapped<float> *pm = cd.torsions[i].mapping;
-		float angle = pm->interpolate_variable(vals);
-		angles.push_back(angle);
-	}
-}
-
 bool SpecificNetwork::prewarnAtoms(BondSequence *seq, 
                                    const std::vector<float> &vals,
                                    Vec3s &positions)
@@ -270,7 +254,7 @@ bool SpecificNetwork::prewarnAtoms(BondSequence *seq,
 }
 
 float SpecificNetwork::torsionForIndex(BondSequence *seq, int idx, 
-                                       const TorsionBasis::AcquireCoord &coord) const
+                                       const Coord::Get &coord) const
 {
 	std::vector<float> vals(_network->dims());
 	for (int i = 0; i < _network->dims(); i++)

@@ -25,7 +25,7 @@ OnPathBasis::OnPathBasis() : ConcertedBasis()
 }
 
 float OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis, 
-                                       const AcquireCoord &coordinate)
+                                       const Coord::Get &coordinate)
 {
 	if (seq == nullptr || axis != 0 
 	    || _traj == nullptr) // iterating over non-zero axis

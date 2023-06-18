@@ -25,7 +25,7 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 }
 
 float SimpleBasis::parameterForVector(BondSequence *seq,
-                                      int idx, const AcquireCoord &coordinate, 
+                                      int idx, const Coord::Get &coordinate, 
                                       int n)
 {
 	if (idx < 0)

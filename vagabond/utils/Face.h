@@ -22,6 +22,7 @@
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 
+#include <vagabond/utils/AcquireCoord.h>
 #include <iostream>
 #include <mutex>
 #include <map>
@@ -177,9 +178,15 @@ template <class Type>
 class Mappable
 {
 public:
+	virtual Coord::Interpolate<Type> interpolate_subfaces(const Coord::Get &coord) = 0;
+
 	virtual Type interpolate_subfaces(const std::vector<float> &cart) = 0;
+
 	virtual std::vector<float> 
 	point_to_barycentric(const std::vector<float> &m) const = 0;
+
+	virtual std::vector<float> 
+	point_to_barycentric(const Coord::Get &coord) const = 0;
 
 	virtual std::vector<float> 
 	barycentric_to_point(const std::vector<float> &b) const = 0;
@@ -220,16 +227,16 @@ public:
 	{
 
 	}
-	
-	void setVariable(Variable<Type> *var)
-	{
-		_variable = var;
-	}
 
 	virtual SharedFace<N-1, D, Type> *faceExcluding(const 
 	                                                SharedFace<0, D, Type> *point)
 	{
 		return nullptr;
+	}
+
+	virtual Coord::Interpolate<Type> interpolate_subfaces(const Coord::Get &coord)
+	{
+		return Coord::Interpolate<Type>{};
 	}
 
 	virtual Type interpolate_subfaces(const std::vector<float> &cart)
@@ -278,14 +285,7 @@ public:
 
 	virtual Type value_for_point(const std::vector<float> &cart)
 	{
-		if (_variable)
-		{
-			return interpolate_variable(cart);
-		}
-		else
-		{
-			return interpolate_subfaces(cart);
-		}
+		return interpolate_subfaces(cart);
 	}
 	
 	void get_inversion()
@@ -362,12 +362,18 @@ public:
 	virtual std::vector<float> 
 	point_to_barycentric(const std::vector<float> &m) const
 	{
+		return point_to_barycentric(Coord::fromVector(m));
+	}
+
+	virtual std::vector<float> 
+	point_to_barycentric(const Coord::Get &coord) const
+	{
 		std::vector<float> weights(pointCount());
 		float vec[D + 1];
 		
 		for (size_t i = 0; i < D; i++)
 		{
-			vec[i] = m.at(i);
+			vec[i] = coord(i);
 		}
 
 		vec[D] = 1;
@@ -377,19 +383,10 @@ public:
 		return weights;
 	}
 private:
-
-	Type interpolate_variable(const std::vector<float> &cart)
-	{
-		std::vector<float> weights = point_to_barycentric(cart);
-		Type val = _variable->interpolate_weights(weights);
-		return val;
-	}
-
 	virtual size_t pointCount() const = 0;
 	virtual const SharedFace<0, D, Type> *point(int idx) const = 0;
 protected:
 	PCA::Matrix _tr;
-	Variable<Type> *_variable = nullptr;
 };
 
 template <unsigned int D, typename Type>
@@ -867,6 +864,16 @@ public:
 		return false;
 	}
 
+	virtual Coord::Interpolate<Type> interpolate_subfaces(const Coord::Get &coord)
+	{
+		Coord::Interpolate<Type> ret;
+		ret = [this](const Coord::Get &)
+		{
+			return this->exact_value();
+		};
+		return ret;
+	}
+
 	virtual Type interpolate_subfaces(const std::vector<float> &cart)
 	{
 		return exact_value();
@@ -877,6 +884,12 @@ public:
 	{
 		std::vector<float> p = *this;
 		return p;
+	}
+
+	virtual std::vector<float> 
+	point_to_barycentric(const Coord::Get &coord) const
+	{
+		return std::vector<float>(1, 0);
 	}
 
 	virtual std::vector<float> 

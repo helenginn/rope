@@ -173,7 +173,7 @@ bool PositionRefinery::refineBetween(int start, int end, int side_max)
 	{
 		const std::vector<float> &trial = se->bestResult();
 		std::vector<float> best = expandPoint(trial);
-		TorsionBasis::AcquireCoord get = acquireFromVector(best);
+		Coord::Get get = acquireFromVector(best);
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
 		basis->absorbVector(get, best.size());
 	}
@@ -501,7 +501,7 @@ void PositionRefinery::wiggleBonds(RefinementStage stage)
 		std::vector<float> full(_mask.size(), 0);
 
 		fullSizeVector(best, &full[0]);
-		TorsionBasis::AcquireCoord get = acquireFromVector(full);
+		Coord::Get get = acquireFromVector(full);
 		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
 		basis->absorbVector(get, full.size());
 
@@ -553,8 +553,7 @@ void PositionRefinery::fullSizeVector(const std::vector<float> &all, float *dest
 std::function<float(int idx)> 
 PositionRefinery::acquireFromVector(const std::vector<float> &all)
 {
-	int count = parameterCount();
-	std::function<float(int idx)> get = [all, count](int idx)
+	std::function<float(int idx)> get = [all](int idx)
 	{
 		return all[idx];
 	};

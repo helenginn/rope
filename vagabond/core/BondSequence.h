@@ -250,8 +250,6 @@ private:
 	
 	bool _acceptablePositions = false;
 	Vec3s _atomPositions;
-	
-	float *_currentVec = nullptr;
 
 	AtomPosMap _posAtoms;
 };
