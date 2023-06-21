@@ -32,6 +32,7 @@ class ScoreMap : public Responder<SpecificNetwork>
 {
 public:
 	ScoreMap(Mapped<float> *mapped, SpecificNetwork *specified);
+	~ScoreMap();
 
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 

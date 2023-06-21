@@ -42,6 +42,11 @@ public:
 	{
 		return _instance;
 	}
+	
+	Network *network()
+	{
+		return _network;
+	}
 
 	nlohmann::json jsonForParameter(Parameter *p) const;
 	void setJsonForParameter(Parameter *p, const nlohmann::json &j);
@@ -55,14 +60,14 @@ public:
 		return _param2Map.at(p);
 	}
 
-	float torsionForIndex(BondSequence *seq,
-	                      int idx, const Coord::Get &coord) const;
+	Coord::Interpolate<float> torsion(BondSequence *seq, int idx,
+	                                  const Coord::Get &coord) const;
 	
 	bool valid_position(const std::vector<float> &vals);
 
 	virtual void torsionBasisMods(TorsionBasis *tb);
 
-	int submitJob(bool show, const std::vector<float> vals);
+	int submitJob(bool show, const std::vector<float> vals, int save_id = -1);
 
 	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
 	                  Vec3s &positions);
@@ -72,7 +77,7 @@ public:
 	void zeroVertices();
 	void setup();
 
-	int splitFace(Parameter *parameter, int tidx);
+	int splitFace(Parameter *parameter, const std::vector<float> &point);
 	
 	void setDisplayInterval(int interval)
 	{
@@ -80,7 +85,11 @@ public:
 	}
 
 	
-	void invalidatePrecalculations();
+	Coord::NeedsUpdate needsUpdate(BondSequence *seq, int idx, 
+	                               const Coord::Get &coord);
+
+	friend inline void to_json(json &j, const SpecificNetwork &sn);
+	friend inline void from_json(const json &j, SpecificNetwork &sn);
 protected:
 	virtual bool handleAtomMap(AtomPosMap &aps);
 private:
@@ -88,6 +97,7 @@ private:
 	void customModifications(BondCalculator *calc, bool has_mol);
 	void processCalculatorDetails();
 	void updateAtomsFromDerived(int idx);
+	void refresh(Parameter *p);
 
 	Instance *_instance = nullptr;
 	Network *_network = nullptr;
@@ -137,5 +147,23 @@ private:
 	int _displayInterval = 100;
 	std::atomic<bool> _writing{false};
 };
+
+inline void to_json(json &j, const SpecificNetwork &sn)
+{
+	for (auto it = sn._param2Map.begin(); it != sn._param2Map.end(); it++)
+	{
+		nlohmann::json param;
+		param["resid"] = it->first->residueId();
+		param["desc"] = it->first->desc();
+		param["map"] = sn.jsonForParameter(it->first);
+
+		j["maps"].push_back(param);
+	}
+}
+
+inline void from_json(const json &j, SpecificNetwork &sn)
+{
+
+}
 
 #endif

@@ -43,7 +43,6 @@ public:
 	void normalise();
 private:
 	float simpleValue(float x, float y);
-	float deviationScore(float x, float y);
 
 	void normalise(double &val);
 	void loop(float(MappingToMatrix::*get_value)(float, float));
@@ -51,10 +50,11 @@ private:
 
 	Mapped<float> &_mapped;
 	PCA::Matrix _matrix{};
+	PCA::Matrix _unnorm{};
 
 	std::vector<float> _min, _max;
 	std::map<int, double *> _ticket2Mat;
-	double _mean = 1;
+	double _mean = 0;
 	double _stdev = 1;
 	int _steps = 100;
 };

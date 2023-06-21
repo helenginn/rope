@@ -17,12 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/Mapping.h>
+#include <vagabond/utils/maths.h>
 #include "ProblemPrep.h"
 #include "SpecificNetwork.h"
 #include "SquareSplitter.h"
 #include "Atom.h"
 
-float check_indices(int tridx, Mapped<float> *const &map)
+float check_indices(int tridx, Mapped<float> *const &map, float *average = nullptr)
 {
 	if (!map) { return false; }
 	std::vector<int> pIndices;
@@ -40,6 +41,11 @@ float check_indices(int tridx, Mapped<float> *const &map)
 	}
 	
 	ave /= (float)pIndices.size();
+	
+	if (average)
+	{
+		*average = ave;
+	}
 
 	return (max - min);
 }
@@ -68,6 +74,54 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 	{
 		return (problem->coversMainChain() && variation(problem, tridx));
 	};
+}
+
+std::function<float(int &)> ProblemPrep::flipFunction(Parameter *param, int pidx)
+{
+	Mapped<float> *map = _specified->mapForParameter(param);
+
+	std::vector<int> tIndices;
+	_mapped->face_indices_for_point(pidx, tIndices);
+
+	float mine = map->get_value(pidx);
+	float ave = 0;
+	float count = 0;
+
+	for (const int &tidx : tIndices)
+	{
+		std::vector<int> pIndices;
+		map->point_indices_for_face(tidx, pIndices);
+
+		for (const int &idx : pIndices) 
+		{
+			float next = map->get_value(idx);
+			ave += next;
+			count++;
+		}
+	}
+	ave /= (float)count;
+
+	std::function<float(int &)> direction = [mine, ave](int &idx) -> float
+	{
+		if (idx == 0)
+		{
+			return mine;
+		}
+		else if (idx == 1)
+		{
+			return (mine < ave ? mine + 360 : mine - 360);
+		}
+		else
+		{
+			if (fabs(mine - ave) > 45)
+			{
+				idx = -1;
+			}
+			return (mine > ave ? mine + 360 : mine - 360);
+		}
+	};
+	
+	return direction;
 }
 
 const Atom *atomFrom( const std::vector<Atom *> &atoms, int idx)
@@ -178,14 +232,14 @@ void ProblemPrep::setFilters(int pidx, int grp,
 	{
 		std::cout << "Left: " << std::endl;
 		Parameter *start = probs.less_than_lower_bound(grp);
-		Parameter *end = probs.less_than_upper_bound(grp);
+		Parameter *end = probs.more_than_lower_bound(grp);
 		left = chain_and(left, residue_boundary(false, start));
 		left = chain_and(left, residue_boundary(true, end));
 	}
 
 	{
 		std::cout << "Right: " << std::endl;
-		Parameter *start = probs.more_than_lower_bound(grp);
+		Parameter *start = probs.less_than_upper_bound(grp);
 		Parameter *end = probs.more_than_upper_bound(grp);
 		right = chain_and(right, residue_boundary(false, start));
 		right = chain_and(right, residue_boundary(true, end));

@@ -334,7 +334,7 @@ void RingProgram::fetchParameters(const Coord::Get &coord, int n)
 	for (HyperValue *hv : _values)
 	{
 		int idx = _valueMapping[hv];
-		float t = _basis->parameterForVector(nullptr, idx, coord, n);
+		float t = _basis->valueForParameter(_seq, idx, coord, n)(coord);
 		_name2Value[hv->name()] = t;
 	}
 	

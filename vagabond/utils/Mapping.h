@@ -40,8 +40,8 @@ public:
 	virtual Type interpolate_variable(const std::vector<float> &cart,
 	                                  bool *acceptable = nullptr) const = 0;
 
-	virtual Coord::Interpolate<Type>
-	interpolate_variable(const Coord::Get &coordinate) const = 0;
+	virtual Coord::Interpolate<Type> interpolate_function(const Coord::Get &get) 
+	const = 0;
 
 	virtual void real_to_fraction(std::vector<float> &val,
 	                              const std::vector<float> &min, 
@@ -142,11 +142,11 @@ public:
 	}
 
 	template <int N>
-	Face<N + 1, D, Type> *next_simplex(SharedFace<N, D, Type> *last, 
+	SharedFace<N + 1, D, Type> *next_simplex(SharedFace<N, D, Type> *last, 
 	                                        HyperPoint *next)
 	{
-		Face<N + 1, D, Type> *combine;
-		combine = new Face<N + 1, D, Type>(*last, *next);
+		SharedFace<N + 1, D, Type> *combine;
+		combine = new SharedFace<N + 1, D, Type>(*last, *next);
 		return combine;
 	}
 	
@@ -185,6 +185,7 @@ public:
 			return;
 		}
 
+		face->changed();
 		_mapped.push_back(face);
 	}
 	
@@ -195,6 +196,8 @@ public:
 	
 	void remove_face(HyperTriangle *face)
 	{
+		face->invalidate();
+
 		for (int i = 0; i < face->pointCount(); i++)
 		{
 			HyperPoint *hp = &face->v_point(i);
@@ -245,20 +248,36 @@ public:
 		HyperPoint *point = _points[idx];
 		std::vector<float> pos = *point;
 		HyperTriangle *face = face_for_point(pos);
+
 		if (!face)
 		{
-			std::cout << "no face found to crack" << std::endl;
 			return;
 		}
 
+		std::vector<float> weights = face->point_to_barycentric(pos);
 		remove_face(face);
+		
+		int away = -1;
+		
+		for (size_t i = 0; i < weights.size(); i++)
+		{
+			if (weights[i] < 1e-3)
+			{
+				away = i;
+				break;
+			}
+		}
 		
 		for (int i = 0; i < face->pointCount(); i++)
 		{
+			if (away == i)
+			{
+//				continue; // don't make the thin sliver
+			}
 			HyperLine *sf = face->faceExcluding(face->point(i));
 			SharedFace<D - 1, D, Type> *f;
 			f = static_cast<SharedFace<1, D, Type> *>(sf);
-			HyperTriangle *replace = new Face<2, D, Type>(*f, *point);
+			HyperTriangle *replace = new SharedFace<2, D, Type>(*f, *point);
 			add_face(replace);
 		}
 	}
@@ -278,13 +297,13 @@ public:
 		return (face_for_point(cart) != nullptr);
 	}
 
-	virtual Coord::Interpolate<Type> 
-	interpolate_variable(const Coord::Get &coordinate) const
+	virtual Coord::Interpolate<Type> interpolate_function(const Coord::Get &get) 
+	const
 	{
 		std::vector<float> cart;
 		for (size_t i = 0; i < D; i++)
 		{
-			cart.push_back(coordinate(i));
+			cart.push_back(get(i));
 		}
 
 		MappedInDim<D, Type> *f = face_for_point(cart);
@@ -293,7 +312,7 @@ public:
 			return Coord::Interpolate<Type>{};
 		}
 
-		return Coord::Interpolate<Type>{};
+		return f->interpolate_function();
 	}
 	
 	Type interpolate_variable(const std::vector<float> &cart, 
@@ -517,8 +536,6 @@ public:
 				{
 					remove_face(next); remove_face(pair);
 					add_face(renext); add_face(repair);
-
-					delete next; delete pair;
 					return true;
 				}
 				else
@@ -694,9 +711,7 @@ public:
 
 	virtual std::vector<float> middle_of_face(int tidx)
 	{
-		float pc = pointCount();
-		std::vector<float> bc(pc, 1 / pc);
-		return _mapped[tidx]->barycentric_to_point(bc);
+		return _mapped[tidx]->middle_of_face();
 	}
 
 	virtual Mappable<Type> *face_for_index(int i)

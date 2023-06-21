@@ -75,6 +75,8 @@ guifiles = [
 'SetupRefinement.cpp',
 'SequenceView.cpp',
 'SequenceLine.cpp',
+'ShowMap.cpp',
+'ShowMap.h',
 'StarView.cpp',
 'StarView.h',
 'Toolkit.cpp',

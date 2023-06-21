@@ -79,8 +79,9 @@ public:
 	void setup();
 
 	static void flip(Cartographer *cg);
-	static void nudge(Cartographer *cg);
+	static void nudge(Cartographer *cg, const std::vector<float> &point);
 	static void assess(Cartographer *cg);
+	static void flipIdx(Cartographer *cg, int i, int j);
 
 protected:
 	void sendObject(std::string tag, void *object);
@@ -96,22 +97,29 @@ private:
 	                     ScoreMap::Mode options);
 	ScoreMap basicScorer(ScoreMap::Mode options);
 	float scoreWithScorer(const Points &points, ScoreMap scorer);
+	std::function<float()> scorerForNudge(int tidx);
 
 	void flipPoints();
+	void flipPoint(int i, int j);
 	void flipPointsFor(Mappable<float> *face, const std::vector<int> &points);
 	void flipGroup(Mappable<float> *face, int g, int pidx);
 
 	void permute(std::vector<Parameter *> &params, 
 	             std::function<float()> score, int pidx);
 
-	void refineFace(Parameter *param, int tidx);
-	void nudgePoints();
+	void refineFace(Parameter *param, const std::vector<float> &point,
+	                const std::function<float()> &score);
+	void nudgePoints(const std::vector<float> &point);
 
+	bool nudgePoint(float begin, Parameter *param, const int &pidx,
+	                const std::function<float()> &score, bool old);
 	Mappable<float> *extendFace(std::vector<int> &pidxs, int &tidx);
 	Points cartesiansForFace(Mappable<float> *face, int paramCount);
 	Points cartesiansForPoint(int pidx, int paramCount);
 	void cartesiansForTriangle(int tidx, int paramCount,
 	                           Cartographer::Points &carts);
+	int pointToWork(Parameter *param, const std::vector<float> &point,
+	                int last_idx);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;

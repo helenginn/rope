@@ -19,6 +19,8 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <vagabond/gui/ShowMap.h>
+#include <vagabond/gui/GuiAtom.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/FileReader.h>
@@ -60,7 +62,23 @@ void MapView::setup()
 	inst->currentAtoms()->recalculate();
 	loadAtoms(inst->currentAtoms());
 
+	VisualPreferences *vp = &inst->entity()->visualPreferences();
+	_guiAtoms->applyVisuals(vp);
+
 	_worker = new std::thread(Cartographer::assess, _cartographer);
+
+	TextButton *command = new TextButton("Save model", this);
+	command->setCentre(0.9, 0.9);
+	command->setReturnTag("save_model");
+	addObject(command);
+}
+
+void MapView::showMap()
+{
+	ShowMap *show = new ShowMap(this, _specified);
+	show->setCartographer(_cartographer);
+	show->setMapView(this);
+	show->show();
 }
 
 void MapView::addButtons()
@@ -71,6 +89,8 @@ void MapView::addButtons()
 		delete _command;
 		removeObject(_second);
 		delete _second;
+		removeObject(_showMap);
+		delete _showMap;
 	}
 
 	{
@@ -87,6 +107,14 @@ void MapView::addButtons()
 		command->setReturnTag("nudge");
 		addObject(command);
 		_second = command;
+	}
+
+	{
+		TextButton *command = new TextButton("Examine", this);
+		command->setCentre(0.15, 0.75);
+		command->setReturnTag("show_map");
+		addObject(command);
+		_showMap = command;
 	}
 }
 
@@ -121,6 +149,9 @@ void MapView::cleanupPause()
 	_second->setInert(false);
 	_second->setText("Nudge");
 	_second->setReturnTag("nudge");
+
+	_showMap->setText("Examine");
+	_showMap->setReturnTag("show_map");
 }
 
 void MapView::makePausable()
@@ -129,18 +160,33 @@ void MapView::makePausable()
 	_specified->removeResponder(this);
 	_refined = false;
 
-	_command->setText("Pause");
+	_command->setText("Stop");
 	_command->setReturnTag("pause");
 
 	_second->setText("Skip");
 	_second->setReturnTag("skip");
 
+	_showMap->setText(" ");
+	_showMap->setReturnTag("none");
 }
 
-void MapView::startNudges()
+void MapView::askForNudgePoint()
+{
+	setInformation("Click on point to nudge");
+	_waitingForNudge = true;
+}
+
+void MapView::startNudges(std::vector<float> point)
+{
+	_cartographer->map2Matrix()->fraction_to_cart(point);
+	makePausable();
+	_worker = new std::thread(Cartographer::nudge, _cartographer, point);
+}
+
+void MapView::startFlip(int i, int j)
 {
 	makePausable();
-	_worker = new std::thread(Cartographer::nudge, _cartographer);
+	_worker = new std::thread(Cartographer::flipIdx, _cartographer, i, j);
 }
 
 void MapView::startFlips()
@@ -152,11 +198,35 @@ void MapView::startFlips()
 void MapView::makeTriangles()
 {
 	MatrixPlot *mp = new MatrixPlot(_cartographer->matrix(), _mutex);
-	mp->resize(0.8);
 	mp->setCentre(0.15, 0.5);
+	mp->resize(0.8);
 	mp->update();
 	addObject(mp);
 	_plot = mp;
+}
+
+bool MapView::plotPosition(float x, float y)
+{
+	if ((x < 0 || x > 1) || (y < 0 || y > 1))
+	{
+		return false;
+	}
+
+	std::vector<float> vals = {x, y};
+	_cartographer->map2Matrix()->fraction_to_cart(vals);
+	int num = _specified->submitJob(true, vals);
+	_specified->retrieve();
+	float score = _specified->deviation(num);
+	std::string str = std::to_string(score);
+	bool valid = _specified->valid_position(vals);
+
+	if (!valid)
+	{
+		str += " - invalid";
+	}
+
+	setInformation(str);
+	return true;
 }
 
 bool MapView::sampleFromPlot(double x, double y)
@@ -178,22 +248,14 @@ bool MapView::sampleFromPlot(double x, double y)
 	v /= (max - min);
 	v.z = 0;
 	
-	if ((v.x > 0 && v.x < 1) && (v.y > 0 && v.y < 1))
+	if (!_waitingForNudge)
 	{
-		std::vector<float> vals = {v.x, v.y};
-		_cartographer->map2Matrix()->fraction_to_cart(vals);
-		int num = _specified->submitJob(true, vals);
-		_specified->retrieve();
-		float score = _specified->deviation(num);
-		std::string str = std::to_string(score);
-		bool valid = _specified->valid_position(vals);
-		
-		if (!valid)
-		{
-			str += " - invalid";
-		}
-
-		setInformation(str);
+		return plotPosition(v.x, v.y);
+	}
+	else
+	{
+		_waitingForNudge = false;
+		startNudges({v.x, v.y});
 		return true;
 	}
 
@@ -226,9 +288,19 @@ void MapView::buttonPressed(std::string tag, Button *button)
 		startFlips();
 	}
 
+	if (tag == "show_map")
+	{
+		showMap();
+	}
+
+	if (tag == "save_model")
+	{
+		_atoms->writeToFile("tmp.pdb");
+	}
+
 	if (tag == "nudge")
 	{
-		startNudges();
+		askForNudgePoint();
 	}
 
 	if (tag == "pause")

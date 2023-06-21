@@ -28,15 +28,17 @@ class NetworkBasis : public ConcertedBasis
 public:
 	NetworkBasis();
 
-	float contributionForAxis(BondSequence *seq,
-	                          int tidx, int i, const Coord::Get &coordinate);
+	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, int tidx, 
+	                                                    const Coord::Get &coord,
+	                                                    int n);
 
 	void setSpecificNetwork(SpecificNetwork *sn)
 	{
 		_sn = sn;
 	}
 
-	virtual void wipe();
+	virtual Coord::NeedsUpdate needsUpdate(BondSequence *seq,
+	                                       const Coord::Get &coord, int idx);
 private:
 	SpecificNetwork *_sn = nullptr;
 

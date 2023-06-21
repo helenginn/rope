@@ -28,6 +28,10 @@ public:
 	         std::atomic<bool> &stop, std::atomic<bool> &skip);
 
 	void permute(std::function<float()> score);
+	void bindFlips(std::vector<std::function<float(int &)>> &flips);
+private:
+	std::vector<std::function<float(int &)>> _flips;
+	
 };
 
 #endif

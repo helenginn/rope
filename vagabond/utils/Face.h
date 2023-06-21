@@ -29,147 +29,8 @@ using nlohmann::json;
 #include <set>
 #include <float.h>
 #include "svd/PCA.h"
-#include "Variable.h"
+#include "Point.h"
 
-template <unsigned int D, typename Type>
-class Point
-{
-public:
-	Point() {}
-	Point(const float *p, Type value = 0)
-	{
-		for (unsigned int i = 0; i < D; i++)
-		{
-			_p[i] = p[i];
-		}
-		
-		_value = value;
-	}
-	
-	bool is_within_hypersphere(const std::vector<float> &centre, const float &rad)
-	{
-		float sum = 0;
-		for (int i = 0; i < centre.size(); i++)
-		{
-			float add = centre[i] - _p[i];
-			sum += add * add;
-		}
-
-		return (sum < rad * rad);
-	}
-	
-	float sqlength() const
-	{
-		float sum = 0;
-		for (int i = 0; i < D; i++)
-		{
-			sum += _p[i] * _p[i];
-		}
-		return sum;
-	}
-	
-	Point operator*(const Point &other) const
-	{
-		Point p;
-		for (int i = 0; i < D; i++)
-		{
-			p._p[i] = _p[i] * other._p[i];
-		}
-		return p;
-	}
-	
-	Point operator-(const Point &other) const
-	{
-		Point p;
-		for (int i = 0; i < D; i++)
-		{
-			p._p[i] = _p[i] - other._p[i];
-		}
-		return p;
-	}
-	
-	operator std::vector<float>() const
-	{
-		std::vector<float> res(D);
-		for (int i = 0; i < D; i++)
-		{
-			res[i] = _p[i];
-		}
-		return res;
-	}
-	
-	template <typename T>
-	void set_vector(const T &p)
-	{
-		for (unsigned int i = 0; i < D; i++)
-		{
-			_p[i] = p[i];
-		}
-	}
-	
-	Point(const std::vector<float> &p, Type value = 0)
-	{
-		for (unsigned int i = 0; i < D; i++)
-		{
-			_p[i] = p[i];
-		}
-		
-		_value = value;
-	}
-	
-	const float &scalar(int idx) const
-	{
-		return _p[idx];
-	}
-	
-	float &operator[](int idx)
-	{
-		return _p[idx];
-	}
-	
-	float *p()
-	{
-		return _p;
-	}
-	
-	Type &v_value()
-	{
-		return _value;
-	}
-	
-	const Type &value() const
-	{
-		return _value;
-	}
-	
-	void set_value(const Type &val)
-	{
-		_value = val;
-	}
-
-	friend void to_json(json &j, const Point<D, Type> &value);
-	friend void from_json(const json &j, Point<D, Type> &value);
-private:
-	float _p[D]{};
-	Type _value{};
-
-	unsigned int _d = D;
-
-	friend std::ostream &operator<<(std::ostream &ss, const Point &p)
-	{
-		ss << "(";
-		for (size_t i = 0; i < p._d; i++)
-		{
-			ss << p._p[i];
-			if (i < p._d - 1)
-			{
-				ss << ", ";
-			}
-		}
-		ss << ") = " << p._value << " (this=" << &p << ")" << std::endl;
-		return ss;
-	}
-};
 
 template <int N, unsigned int D, typename Type>
 class SharedFace;
@@ -178,7 +39,7 @@ template <class Type>
 class Mappable
 {
 public:
-	virtual Coord::Interpolate<Type> interpolate_subfaces(const Coord::Get &coord) = 0;
+	virtual Coord::Interpolate<Type> interpolate_function() = 0;
 
 	virtual Type interpolate_subfaces(const std::vector<float> &cart) = 0;
 
@@ -193,6 +54,9 @@ public:
 
 	virtual bool point_in_bounds(const std::vector<float> &m) const = 0;
 	
+	virtual size_t version() = 0;
+	virtual void invalidate() {};
+	virtual bool valid() {return true;};
 	virtual int n() = 0;
 
 	virtual ~Mappable()
@@ -234,15 +98,27 @@ public:
 		return nullptr;
 	}
 
-	virtual Coord::Interpolate<Type> interpolate_subfaces(const Coord::Get &coord)
+	virtual Coord::Interpolate<Type> interpolate_function()
 	{
-		return Coord::Interpolate<Type>{};
+		if (!_interpolate)
+		{
+			recalculate_interpolation();
+		}
+
+		return _interpolate;
+	}
+
+	virtual std::vector<float> middle_of_face()
+	{
+		float pc = pointCount();
+		std::vector<float> bc(pc, 1 / pc);
+		return barycentric_to_point(bc);
 	}
 
 	virtual Type interpolate_subfaces(const std::vector<float> &cart)
 	{
 		std::vector<float> weights = point_to_barycentric(cart);
-		std::vector<float> inverseWeights(weights.size(), 1);
+		std::vector<float> inverse(weights.size(), 1);
 		
 		for (int i = 0; i < weights.size(); i++)
 		{
@@ -253,7 +129,7 @@ public:
 					continue;
 				}
 
-				inverseWeights[i] *= weights[j];
+				inverse[i] *= weights[j];
 			}
 		}
 
@@ -262,7 +138,7 @@ public:
 		for (int i = 0; i < pointCount(); i++)
 		{
 			Type init = point(i)->value();
-			const float &fw = inverseWeights[i];
+			const float &fw = inverse[i];
 
 			SharedFace<N - 1, D, Type> *ls = faceExcluding(point(i));
 
@@ -286,6 +162,68 @@ public:
 	virtual Type value_for_point(const std::vector<float> &cart)
 	{
 		return interpolate_subfaces(cart);
+	}
+	
+	void recalculate_interpolation()
+	{
+		struct PointStuff
+		{
+			const SharedFace<0, D, Type> *point;
+			Coord::Interpolate<Type> interp_face;
+		};
+		
+		std::vector<PointStuff> prep;
+		for (int i = 0; i < this->pointCount(); i++)
+		{
+			PointStuff stuff;
+			stuff.point = this->point(i);
+
+			SharedFace<N - 1, D, Type> *ls = this->faceExcluding(stuff.point);
+			if (!ls) { continue; }
+
+			stuff.interp_face = ls->interpolate_function();
+			prep.push_back(stuff);
+		}
+
+		Coord::Interpolate<Type> func = 
+		[this, prep](const Coord::Get &coord)
+		{
+			std::vector<float> weights = this->point_to_barycentric(coord);
+			std::vector<float> inverse(weights.size(), 1);
+
+			for (int i = 0; i < weights.size(); i++)
+			{
+				for (int j = 0; j < weights.size(); j++)
+				{
+					if (i == j)
+					{
+						continue;
+					}
+
+					inverse[i] *= weights[j];
+				}
+			}
+
+			Type total{}; float count = 0;
+			for (int i = 0; i < prep.size(); i++)
+			{
+				const PointStuff &stuff = prep[i];
+
+				Type init = stuff.point->value();
+				const float &fw = inverse[i];
+				Type end = stuff.interp_face(coord);
+				const float &w = weights[i]; // weight of point
+				const float &r = 1 - w; // weight of simplex
+
+				Type res = (init * w + end * r);
+				total += res * fw;
+				count += fw;
+			}
+
+			return total / count;
+		};
+
+		_interpolate = func;
 	}
 	
 	void get_inversion()
@@ -387,6 +325,7 @@ private:
 	virtual const SharedFace<0, D, Type> *point(int idx) const = 0;
 protected:
 	PCA::Matrix _tr;
+	Coord::Interpolate<Type> _interpolate;
 };
 
 template <unsigned int D, typename Type>
@@ -475,15 +414,25 @@ public:
 		combine = new SharedFace<N, D, Type>(*LowerFace::make_next(src), *src[N]);
 		return combine;
 	}
+	
+	virtual void invalidate()
+	{
+		_valid = false;
+	}
+
+	virtual bool valid() {return _valid;};
 
 	virtual void changed()
 	{
+		_version++;
 		this->get_inversion();
 		
 		for (int i = 0; i < subs().size(); i++)
 		{
 			subs()[i]->changed();
 		}
+
+		this->recalculate_interpolation();
 	}
 	
 	virtual LowerFace *faceExcluding(const SharedFace<0, D, Type> *point)
@@ -497,6 +446,11 @@ public:
 		}
 		
 		return nullptr;
+	}
+
+	virtual size_t version()
+	{
+		return _version;
 	}
 	
 	virtual std::vector<float> cartesian_circumcenter(float *radius = nullptr)
@@ -683,6 +637,8 @@ protected:
 	std::vector<LowerFace *> _subs;
 	std::vector<SharedFace<0, D, Type> *> _points;
 
+	size_t _version = 0;
+	bool _valid = true;
 	int _n = N;
 	int _d = D;
 };
@@ -702,6 +658,11 @@ public:
 	virtual int n()
 	{
 		return 1;
+	}
+
+	virtual size_t version()
+	{
+		return _version;
 	}
 
 	SharedFace(SharedFace<0, D, Type> &face, SharedFace<0, D, Type> &point)
@@ -734,6 +695,7 @@ public:
 
 	virtual void changed()
 	{
+		_version++;
 		this->get_inversion();
 	}
 
@@ -840,6 +802,7 @@ private:
 
 	int _n = 0;
 	int _d = D;
+	size_t _version = 0;
 };
 
 template <unsigned int D, typename Type>
@@ -859,12 +822,17 @@ public:
 		return 0;
 	}
 
+	virtual size_t version()
+	{
+		return 0;
+	}
+
 	virtual bool point_in_bounds(const std::vector<float> &m) const
 	{
 		return false;
 	}
 
-	virtual Coord::Interpolate<Type> interpolate_subfaces(const Coord::Get &coord)
+	virtual Coord::Interpolate<Type> interpolate_function()
 	{
 		Coord::Interpolate<Type> ret;
 		ret = [this](const Coord::Get &)
@@ -940,61 +908,5 @@ private:
 	int _d = D;
 	
 };
-
-
-template <int N, unsigned int D, typename Type>
-class Face : public SharedFace<N, D, Type>
-{
-public:
-	typedef SharedFace<N - 1, D, Type> LowerFace;
-	typedef SharedFace<N, D, Type> SameFace;
-
-	Face(LowerFace &face, SharedFace<0, D, Type> &point) :
-	SharedFace<N, D, Type>(face, point) {};
-	
-	Face<N, D, Type>() {}
-
-private:
-
-};
-
-template <int D, typename Type>
-class Face<0, D, Type> : public SharedFace<0, D, Type>
-{
-public:
-	Face() : SharedFace<0, D, Type>() {};
-	Face(const std::vector<float> &p, Type value = 0) : 
-	SharedFace<0, D, Type>(p, value) {};
-	Face(float *p, Type val = Type{}) : SharedFace<0, D, Type>(p, val) {};
-	Face(Point<D, Type> &p) : SharedFace<0, D, Type>(p) {};
-	Face(const Face<0, D, Type> &face, const Face<0, D, Type> &other) {};
-
-private:
-	std::vector<SharedFace<0, D, Type> *> _points;
-
-};
-
-inline void to_json(json &j, const Point<2, float> &point)
-{
-	std::vector<float> coords = point;
-	float value = point.value();
-
-	j["coords"] = coords;
-	j["val"] = value;
-}
-
-inline void from_json(const json &j, Point<2, float> &point)
-{
-	if (j.count("coords"))
-	{
-		std::vector<float> coords = j.at("coords");
-		point.set_vector(coords);
-	}
-
-	if (j.count("val"))
-	{
-		point.set_value(j.at("val"));
-	}
-}
 
 #endif

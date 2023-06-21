@@ -59,9 +59,16 @@ public:
 	 * @param vec custom vector of parameters
 	 * @param n total number of parameters in vec 
 	 * @returns parameter angle in degrees */
-	virtual float parameterForVector(BondSequence *seq,
-	                                 int idx, const Coord::Get &coordinate, 
-	                                 int n) = 0;
+	virtual float parameterForVector(BondSequence *seq, int idx, 
+	                                 const Coord::Get &coord, int n) = 0;
+	
+	virtual Coord::NeedsUpdate needsUpdate(BondSequence *seq, 
+	                                       const Coord::Get &coord, int idx);
+
+	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
+	                                                    int tidx,
+	                                                    const Coord::Get &coord,
+	                                                    int n);
 
 	virtual void absorbVector(const Coord::Get &coordinate, int n, 
 	                          bool *mask = nullptr);
@@ -99,8 +106,6 @@ public:
 	{
 		return _params[i];
 	}
-	
-	virtual void wipe();
 	
 	int indexForParameter(Parameter *param);
 protected:

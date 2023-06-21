@@ -26,6 +26,10 @@ ScoreMap::ScoreMap(Mapped<float> *mapped, SpecificNetwork *specified)
 	_mapped = mapped;
 }
 
+ScoreMap::~ScoreMap()
+{
+}
+
 void ScoreMap::sendObject(std::string tag, void *object)
 {
 	if (tag == "atom_map")
@@ -44,10 +48,12 @@ float ScoreMap::submitJobs(const Points &points, bool make_aps)
 	};
 
 	std::vector<TicketPoint> tickets;
+	int save_id = 0;
 	for (const std::vector<float> &p : points)
 	{
-		int ticket = _specified->submitJob(make_aps, p);
+		int ticket = _specified->submitJob(make_aps, p, save_id);
 		tickets.push_back({ticket, p});
+		save_id++;
 	}
 	
 	_specified->setResponder(this);

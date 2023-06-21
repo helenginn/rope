@@ -30,15 +30,15 @@ namespace tt = boost::test_tools;
 
 BOOST_AUTO_TEST_CASE(make_face)
 {
-	Face<0, 2, float> p1, p2, p3, p4, p5;
+	SharedFace<0, 2, float> p1, p2, p3, p4, p5;
 	
-	Face<1, 2, float> l12(p1, p2);
+	SharedFace<1, 2, float> l12(p1, p2);
 
-	Face<2, 2, float> t123(l12, p3);
+	SharedFace<2, 2, float> t123(l12, p3);
 
-	Face<3, 2, float> tetra(t123, p4);
+	SharedFace<3, 2, float> tetra(t123, p4);
 
-	Face<4, 2, float> fiveCell(tetra, p5);
+	SharedFace<4, 2, float> fiveCell(tetra, p5);
 	
 	BOOST_TEST(fiveCell.faceCount() == 5);
 	BOOST_TEST(t123.pointCount() == 3);
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(make_face)
 
 BOOST_AUTO_TEST_CASE(make_face_from_list)
 {
-	Face<0, 2, float> p1, p2, p3, p4;
+	SharedFace<0, 2, float> p1, p2, p3, p4;
 	std::vector<SharedFace<0, 2, float> *> points = {&p1, &p2, &p3, &p4};
 	
 	std::map<int, std::set<MappedInDim<2, float> *>> bins;
@@ -63,10 +63,10 @@ BOOST_AUTO_TEST_CASE(point_on_triangle_to_barycentric)
 	float q1[] = {0.0f, 2.0f};
 	float r1[] = {2.0f, 0.0f};
 
-	Face<0, 2, float> p(p1), q(q1), r(r1);
+	SharedFace<0, 2, float> p(p1), q(q1), r(r1);
 	
-	Face<1, 2, float> line(p, q);
-	Face<2, 2, float> triangle(line, r);
+	SharedFace<1, 2, float> line(p, q);
+	SharedFace<2, 2, float> triangle(line, r);
 	
 	std::vector<float> weights = triangle.point_to_barycentric({0.5f, 0.5f});
 
@@ -82,10 +82,10 @@ BOOST_AUTO_TEST_CASE(point_on_line_to_barycentric)
 
 	float m[] = {0.5f, 0.5f};
 
-	Face<0, 2, float> p(p1), q(q1);
+	SharedFace<0, 2, float> p(p1), q(q1);
 	Point<2, float> middle(m);
 	
-	Face<1, 2, float> line(p, q);
+	SharedFace<1, 2, float> line(p, q);
 	
 	std::vector<float> weights = line.point_to_barycentric(middle);
 
@@ -124,10 +124,10 @@ BOOST_AUTO_TEST_CASE(interpolate_triangle_subfaces)
 	float p2s[] = {0., 1.};
 	float p3s[] = {1., 0.};
 
-	Face<0, 2, float> p1(p1s), p2(p2s), p3(p3s);
-	Face<1, 2, float> p12(p1, p2);
+	SharedFace<0, 2, float> p1(p1s), p2(p2s), p3(p3s);
+	SharedFace<1, 2, float> p12(p1, p2);
 	
-	Face<2, 2, float> triangle(p12, p3);
+	SharedFace<2, 2, float> triangle(p12, p3);
 	
 	int i = 0;
 	for (SharedFace<1, 2, float> *f : triangle.subs())
@@ -161,10 +161,10 @@ BOOST_AUTO_TEST_CASE(interpolate_tetrahedron_subfaces)
 	float p3s[] = { 1, -1,  1};
 	float p4s[] = {-1,  1, -1};
 
-	Face<0, 3, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
-	Face<1, 3, float> p12(p1, p2);
-	Face<2, 3, float> triangle(p12, p3);
-	Face<3, 3, float> tetra(triangle, p4);
+	SharedFace<0, 3, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
+	SharedFace<1, 3, float> p12(p1, p2);
+	SharedFace<2, 3, float> triangle(p12, p3);
+	SharedFace<3, 3, float> tetra(triangle, p4);
 	
 	int i = 0;
 	for (SharedFace<2, 3, float> *f : tetra.subs())
@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(mapping_counts_points)
 	float p3s[] = {1., 0.};
 	float p4s[] = {0., -1.};
 
-	Face<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
+	SharedFace<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
 
 	Mapping<2, float> map;
 	map.add_simplex({&p1, &p2, &p3});
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(mapping_makes_copy)
 	float p3s[] = {1., 0.};
 	float p4s[] = {0., -1.};
 
-	Face<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
+	SharedFace<0, 2, float> p1(p1s), p2(p2s), p3(p3s), p4(p4s);
 
 	Mapping<2, float> map;
 	map.add_simplex({&p1, &p2, &p3});
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(mapping_makes_copy)
 	
 	for (size_t i = 0; i < 4; i++)
 	{
-		for (MappedInDim<2, glm::vec3> *item : copy.bin(1))
+		for (	MappedInDim<2, glm::vec3> *item : copy.bin(1))
 		{
 			bool has = item->hasPoint(*copy.point(i));
 			std::cout << has << " ";
@@ -228,8 +228,8 @@ BOOST_AUTO_TEST_CASE(mapping_makes_copy)
 
 BOOST_AUTO_TEST_CASE(mapping_interpolates_from_triangle)
 {
-	Face<0, 2, float> p1({0.f, 0.f}, 2), p2({0.f, 1.f}, 2), p3({1.f, 0.f}, 2);
-	Face<0, 2, float> p4({2.f, 2.f}, -2);
+	SharedFace<0, 2, float> p1({0.f, 0.f}, 2), p2({0.f, 1.f}, 2), p3({1.f, 0.f}, 2);
+	SharedFace<0, 2, float> p4({2.f, 2.f}, -2);
 
 	Mapping<2, float> map;
 	map.add_simplex({&p1, &p2, &p3});
@@ -243,9 +243,9 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_from_triangle)
 
 BOOST_AUTO_TEST_CASE(mapping_interpolates_float)
 {
-	Face<0, 2, float> p1({0.f, 0.f}, 2);
-	Face<0, 2, float> p2({0.f, 2.f}, 0);
-	Face<0, 2, float> p3({2.f, 0.f}, 0);
+	SharedFace<0, 2, float> p1({0.f, 0.f}, 2);
+	SharedFace<0, 2, float> p2({0.f, 2.f}, 0);
+	SharedFace<0, 2, float> p3({2.f, 0.f}, 0);
 
 	Mapping<2, float> map;
 	map.add_simplex({&p1, &p2, &p3});
@@ -256,9 +256,9 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_float)
 
 BOOST_AUTO_TEST_CASE(mapping_interpolates_vec3)
 {
-	Face<0, 2, glm::vec3> p1({0.f, 0.f}, glm::vec3(0., 0., 0.));
-	Face<0, 2, glm::vec3> p2({0.f, 2.f}, glm::vec3(0., 0., 1.));
-	Face<0, 2, glm::vec3> p3({2.f, 0.f}, glm::vec3(0., 1., 0.));
+	SharedFace<0, 2, glm::vec3> p1({0.f, 0.f}, glm::vec3(0., 0., 0.));
+	SharedFace<0, 2, glm::vec3> p2({0.f, 2.f}, glm::vec3(0., 0., 1.));
+	SharedFace<0, 2, glm::vec3> p3({2.f, 0.f}, glm::vec3(0., 1., 0.));
 
 	Mapping<2, glm::vec3> map;
 	map.add_simplex({&p1, &p2, &p3});
@@ -271,8 +271,8 @@ BOOST_AUTO_TEST_CASE(mapping_interpolates_vec3)
 
 BOOST_AUTO_TEST_CASE(mapping_finds_bounds)
 {
-	Face<0, 2, float> p1({0.f, 0.f}, 2), p2({0.f, 1.f}, 2), p3({1.f, 0.f}, 2);
-	Face<0, 2, float> p4({3.f, 2.f}, -2);
+	SharedFace<0, 2, float> p1({0.f, 0.f}, 2), p2({0.f, 1.f}, 2), p3({1.f, 0.f}, 2);
+	SharedFace<0, 2, float> p4({3.f, 2.f}, -2);
 
 	Mapping<2, float> map;
 	map.add_simplex({&p1, &p2, &p3});
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(mapping_finds_bounds)
 
 BOOST_AUTO_TEST_CASE(circumcentre)
 {
-	Face<0, 2, float> p1({0.f, 0.f}, 2.f), p2({0.f, 1.f}, 2.f), p3({1.f, 0.f}, 2.f);
+	SharedFace<0, 2, float> p1({0.f, 0.f}, 2.f), p2({0.f, 1.f}, 2.f), p3({1.f, 0.f}, 2.f);
 
 	Mapping<2, float> map;
 	SharedFace<2, 2, float> *triangle = map.add_simplex({&p1, &p2, &p3});
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(circumcentre)
 
 BOOST_AUTO_TEST_CASE(point_within_distance)
 {
-	Face<0, 2, float> p1({0.f, 0.f}, 2.f);
+	SharedFace<0, 2, float> p1({0.f, 0.f}, 2.f);
 	std::vector<float> centre = {0.5, 0.5};
 	
 	bool outside = p1.is_within_hypersphere(centre, 0.707f);

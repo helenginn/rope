@@ -444,7 +444,6 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 	block.atom = nullptr;
 	block.basis = anchor->transformation();
 	block.write_locs[0] = 1;
-	block.torsion = 0;
 }
 
 void Grapher::refreshTarget(AtomBlock &block) const
@@ -525,13 +524,6 @@ void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
 	}
 
 	block.torsion_idx = gr->torsion_idx;
-	BondTorsion *torsion = gr->torsion;
-
-	if (torsion != nullptr)
-	{
-		double t = torsion->startingAngle();
-		block.torsion = t;
-	}
 }
 
 void Grapher::sendAtomToProgrammers(AtomGraph *ag, int idx, 

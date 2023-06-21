@@ -85,10 +85,11 @@ void Network::addBounds(Mapping<NETWORK_DIMS, float> *map)
 	
 	const int D = NETWORK_DIMS;
 
-	Face<0, D, float> *mm = new Face<0, D, float>({min[0], min[1]}, -1.0);
-	Face<0, D, float> *mM = new Face<0, D, float>({min[0], max[1]}, -1.0);
-	Face<0, D, float> *Mm = new Face<0, D, float>({max[0], min[1]}, -1.0);
-	Face<0, D, float> *MM = new Face<0, D, float>({max[0], max[1]}, -1.0);
+	SharedFace<0, D, float> *mm, *mM, *Mm, *MM;
+	mm = new SharedFace<0, D, float>({min[0], min[1]}, -1.0);
+	mM = new SharedFace<0, D, float>({min[0], max[1]}, -1.0);
+	Mm = new SharedFace<0, D, float>({max[0], min[1]}, -1.0);
+	MM = new SharedFace<0, D, float>({max[0], max[1]}, -1.0);
 	
 	map->add_simplex({mm, mM, Mm});
 	map->add_simplex({mM, Mm, MM});

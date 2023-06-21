@@ -24,20 +24,38 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 
 }
 
-float SimpleBasis::parameterForVector(BondSequence *seq,
-                                      int idx, const Coord::Get &coordinate, 
-                                      int n)
+Coord::Interpolate<float> 
+SimpleBasis::valueForParameter(BondSequence *seq, int tidx,
+                               const Coord::Get &coord, int n)
+{
+	if (tidx < 0)
+	{
+		return [](const Coord::Get &coord) { return 0; };
+	}
+	
+	TorsionAngle &ta = _angles[tidx];
+	float &angle = ta.angle;
+	if (n == 0 || tidx >= n || !ta.mask)
+	{
+		return [angle](const Coord::Get &coord) { return angle; };
+	}
+	else
+	{
+		return [angle, tidx](const Coord::Get &coord)
+		{
+			return angle + coord(tidx);
+		};
+	}
+}
+
+float SimpleBasis::parameterForVector(BondSequence *seq, int idx,
+                                      const Coord::Get &coord, int n)
 {
 	if (idx < 0)
 	{
 		return 0;
 	}
 	
-	if (n >= idx && _angles.size() == 0)
-	{
-		prepare();
-	}
-
 	TorsionAngle &ta = _angles[idx];
 	if (n == 0 || !ta.mask)
 	{
@@ -46,7 +64,7 @@ float SimpleBasis::parameterForVector(BondSequence *seq,
 	
 	if (idx < n)
 	{
-		return ta.angle + coordinate(idx);
+		return ta.angle + coord(idx);
 	}
 	
 	return ta.angle;

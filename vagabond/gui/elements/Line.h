@@ -24,9 +24,9 @@
 class Line : public SimplePolygon
 {
 public:
-	Line();
+	Line(bool proj = true);
 
-	Snow::Vertex &addPoint(glm::vec3 p);
+	Snow::Vertex &addPoint(glm::vec3 p, bool connect_to_last = true);
 private:
 
 };

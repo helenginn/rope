@@ -51,6 +51,8 @@ public:
 	{
 		return _flexResults[p];
 	}
+	
+	std::function<float(int &)> flipFunction(Parameter *param, int pidx);
 
 	float updateFlex(Parameter *problem, const std::vector<float> &pos);
 private:

@@ -57,20 +57,6 @@ void BondSequence::removeTorsionBasis()
 void BondSequence::makeTorsionBasis()
 {
 	_torsionBasis = TorsionBasis::newBasis(_basisType);
-	
-	if (_basisType == TorsionBasis::TypeMechanical && false)
-	{
-		/* mechanical basis needs to understand atom connectivity */
-		// FIXME
-		/*
-		PCA::Matrix m = _grapher.distanceMatrix();
-		std::vector<Atom *> atoms = _grapher.atoms();
-		MechanicalBasis *mb = dynamic_cast<MechanicalBasis *>(_torsionBasis);
-		mb->supplyDistances(m, atoms);
-		ForceField *ff = _handler->calculator()->forceFieldHandler();
-		mb->supplyForceField(ff);
-		*/
-	}
 }
 
 void BondSequence::addToGraph(AnchorExtension &ext)
@@ -174,19 +160,45 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
-void BondSequence::fetchTorsion(int idx)
+Coord::Interpolate<float> BondSequence::getTorsionFunction(int idx)
 {
-	if (_blocks[idx].torsion_idx < 0)
+	AtomBlock &b = _blocks[idx];
+
+	if (b.torsion_idx < 0)
 	{
-		return;
+		return Coord::Interpolate<float>();
 	}
-	
-	double t = 0;
-	t = _torsionBasis->parameterForVector(this, _blocks[idx].torsion_idx,
-	                                      _acquireCoord, _nCoord);
 
+	if (b.get_torsion && (!b.needs_update || !b.needs_update(_acquireCoord)))
+	{
+		return b.get_torsion;
+	}
+	else
+	{
+		b.get_torsion = torsionBasis()->valueForParameter(this, b.torsion_idx, 
+		                                                  _acquireCoord, 
+		                                                  _nCoord);
+		return b.get_torsion;
+	}
+}
 
-	_blocks[idx].torsion = t;
+float BondSequence::fetchTorsion(int idx)
+{
+	auto f = getTorsionFunction(idx);
+	if (f)
+	{
+		return f(_acquireCoord);
+	}
+
+	return 0;
+}
+
+void BondSequence::wipe()
+{
+	for (AtomBlock &block : _blocks)
+	{
+		block.get_torsion = Coord::Interpolate<float>{};
+	}
 }
 
 // ensures that the position sampler can pre-calculate all the necessary atom
@@ -233,19 +245,22 @@ int BondSequence::calculateBlock(int idx)
 		return 0;
 	}
 
-	fetchTorsion(idx);
+	float t = fetchTorsion(idx);
 	fetchAtomTarget(idx);
 	
-	glm::mat4x4 rot = b.prepareRotation();
+	glm::mat4x4 rot = b.prepareRotation(t);
 
 	b.wip = b.basis * rot * b.coordination;
 
 	b.writeToChildren(_blocks, idx, _usingPrograms);
 
 	int &progidx = b.program;
+	Coord::Get coord_copy = _acquireCoord;
+
 	if (progidx >= 0 && _usingPrograms)
 	{
-		_programs[progidx].run(_blocks, idx, _acquireCoord, _nCoord);
+		_programs[progidx].setSequence(this);
+		_programs[progidx].run(_blocks, idx, coord_copy, _nCoord);
 	}
 
 	return (b.atom == nullptr);
@@ -562,6 +577,7 @@ const size_t BondSequence::flagged() const
 void BondSequence::reflagDepth(int min, int max, int sidemax)
 {
 	_posAtoms.clear();
+	wipe();
 
 	_startCalc = 0;
 	_endCalc = INT_MAX;
@@ -573,13 +589,6 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	}
 
 	std::queue<AtomBlockTodo> todo;
-	
-	// wind back if before a program
-	/* midway through program */
-//	while ((_blocks[min].program != -1) && min > 0 && _usingPrograms) 
-	{
-//		min--;
-	}
 	
 	if (min >= _blocks.size())
 	{

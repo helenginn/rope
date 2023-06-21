@@ -45,6 +45,8 @@ void MappingToMatrix::insertScore(float score, std::vector<float> &point)
 		_matrix.rows << " x " << _matrix.cols;
 		throw std::runtime_error(ss.str());
 	}
+
+	_unnorm[x][y] = score;
 	_matrix[x][y] = score;
 	normalise(_matrix[x][y]);
 }
@@ -68,25 +70,6 @@ float MappingToMatrix::simpleValue(float x, float y)
 	}
 }
 
-float MappingToMatrix::deviationScore(float x, float y)
-{
-	int D = _min.size();
-	std::vector<float> val(D);
-	val[0] = x; val[1] = y;
-
-	_mapped.fraction_to_real(val, _min, _max);
-	if (!_mapped.acceptable_coordinate(val))
-	{
-		return NAN;
-	}
-	
-	int num = _specified->submitJob(false, val);
-	_specified->retrieve();
-	float dev = _specified->deviation(num);
-	_specified->clearTickets();
-	return dev;
-}
-
 void MappingToMatrix::normalise(double &val)
 {
 	val = (val - _mean) / _stdev;
@@ -96,9 +79,9 @@ void MappingToMatrix::normalise(double &val)
 void MappingToMatrix::normalise()
 {
 	CorrelData cd = empty_CD();
-	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
+	for (size_t i = 0; i < _unnorm.rows * _unnorm.cols; i++)
 	{
-		float val = _matrix.vals[i];
+		float val = _unnorm.vals[i];
 		add_to_CD(&cd, val, val);
 	}
 
@@ -106,6 +89,7 @@ void MappingToMatrix::normalise()
 	
 	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
 	{
+		_matrix.vals[i] = _unnorm.vals[i];
 		normalise(_matrix.vals[i]);
 	}
 }
@@ -160,7 +144,9 @@ void MappingToMatrix::loop(float(MappingToMatrix::*get_value)(float, float))
 	int total = _steps;
 	const float step = 1 / (float)total;
 	PCA::freeMatrix(&_matrix);
+	PCA::freeMatrix(&_unnorm);
 	PCA::setupMatrix(&_matrix, total, total);
+	PCA::setupMatrix(&_unnorm, total, total);
 
 	int i = 0; int j = 0;
 	for (float x = 0; x < 1; x += step)
@@ -169,6 +155,7 @@ void MappingToMatrix::loop(float(MappingToMatrix::*get_value)(float, float))
 		{
 			float val = (this->*get_value)(x, y);
 			_matrix[i][j] = val;
+			_unnorm[i][j] = val;
 
 			j++;
 			if (j >= total)

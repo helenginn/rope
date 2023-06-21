@@ -306,3 +306,4 @@ void StructureModification::retrieve()
 		it->second.sc_num = 1;
 	}
 }
+

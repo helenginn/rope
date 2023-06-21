@@ -54,19 +54,26 @@ void Permuter::permute(std::function<float()> score)
 			std::vector<float> new_vals = best;
 
 			int n = 0;
-			auto lmb = [](const int &p) -> float
-			{
-				if (p == 0) return 0;
-				if (p == 1) return -360;
-				else return 360;
-			};
 
+			bool skip = false;
 			for (size_t i = start; i < end; i++)
 			{
-				float flipped = lmb(perm[n]) + old_vals[i];
+				int p = perm[n];
+				float flipped = _flips[i](p);
+				
+				if (p < 0)
+				{
+					skip = true;
+					break;
+				}
 				new_vals[i] = flipped;
 
 				n++;
+			}
+			
+			if (skip)
+			{
+				continue;
 			}
 			
 			_setPoints(new_vals);
@@ -98,4 +105,9 @@ void Permuter::permute(std::function<float()> score)
 	}
 
 	_setPoints(best);
+}
+
+void Permuter::bindFlips(std::vector<std::function<float(int &)>> &flips)
+{
+	_flips = flips;
 }

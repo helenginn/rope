@@ -79,6 +79,8 @@ public:
 		return _blocks.size();
 	}
 	
+	void wipe();
+	
 	glm::vec3 positionForPreviousBlock(int i)
 	{
 		return _blocks[i].parent_position();
@@ -194,18 +196,15 @@ private:
 
 	void generateBlocks();
 	void acquireCustomVector(int sampleNum);
-	void assignAtomToBlock(int idx, Atom *atom);
-	void assignAtomsToBlocks();
-	void fillMissingWriteLocations();
-	void fixBlockAsGhost(int idx, Atom *anchor);
 	void makeTorsionBasis();
-	void fillTorsionAngles();
 	void fastCalculate();
 	void prewarnPositionSampler();
+	void prewarnTorsions();
 
 	int calculateBlock(int idx);
-	void fetchTorsion(int idx);
+	float fetchTorsion(int idx);
 	void fetchAtomTarget(int idx);
+	Coord::Interpolate<float> getTorsionFunction(int idx);
 
 	Grapher _grapher;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
@@ -230,7 +229,7 @@ private:
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
 	
-	std::function<float(int idx)> _acquireCoord;
+	Coord::Get _acquireCoord;
 	int _nCoord = 0;
 
 	Job *_job = nullptr;
@@ -252,6 +251,13 @@ private:
 	Vec3s _atomPositions;
 
 	AtomPosMap _posAtoms;
+	
+	struct Torsioner
+	{
+		Coord::Interpolate<float> get_torsion;
+		Coord::NeedsUpdate needs_update;
+	};
+	std::map<int, std::map<int, Torsioner>> _saveIdxFunc;
 };
 
 #endif

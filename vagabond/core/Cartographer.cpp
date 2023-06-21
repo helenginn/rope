@@ -137,11 +137,12 @@ void Cartographer::assess(Cartographer *cg)
 	cg->sendResponse("done", nullptr);
 }
 
-void Cartographer::nudge(Cartographer *cg)
+void Cartographer::nudge(Cartographer *cg, const std::vector<float> &point)
 {
 	try
 	{
-		cg->nudgePoints();
+		std::cout << "Nudging..." << std::endl;
+		cg->nudgePoints(point);
 		cg->checkTriangles(ScoreMap::Distance);
 		cg->sendResponse("done", nullptr);
 	}
@@ -153,6 +154,39 @@ void Cartographer::nudge(Cartographer *cg)
 		cg->sendResponse("paused", nullptr);
 	}
 
+}
+
+void Cartographer::flipPoint(int i, int j)
+{
+	std::vector<int> todo{i, j};
+	std::cout << "Trying to flip torsions " << i << " to " << j << std::endl;
+	_mapped->redo_bins();
+	Mappable<float> *face = _mapped->simplex_for_points(todo);
+	if (!face)
+	{
+		std::cout << "Didn't find it, are these even connected?" << std::endl;
+		return;
+	}
+
+	flipPointsFor(face, todo);
+
+}
+
+void Cartographer::flipIdx(Cartographer *cg, int i, int j)
+{
+	try
+	{
+		cg->flipPoint(i, j);
+		cg->checkTriangles(ScoreMap::Basic);
+		cg->sendResponse("done", nullptr);
+	}
+	catch (const int &ret)
+	{
+		// stopping
+		assess(cg);
+		cg->_stop = false;
+		cg->sendResponse("paused", nullptr);
+	}
 }
 
 void Cartographer::flip(Cartographer *cg)
@@ -228,6 +262,14 @@ Mappable<float> *Cartographer::bootstrapFace(std::vector<int> &pidxs)
 		if (!map) continue;
 
 		pidxs = copy;
+		
+		if (pidxs.size() == 2)
+		{
+			int tmp = pidxs[0];
+			pidxs[0] = pidxs[1];
+			pidxs[1] = tmp;
+		}
+
 		return map;
 	}
 	
@@ -325,7 +367,7 @@ void Cartographer::flipPoints()
 void Cartographer::flipGroup(Mappable<float> *face, int g, int pidx)
 {
 	std::vector<Parameter *> params = _prepwork->paramsForPoint(pidx, g);
-	Points points = cartesiansForFace(face, params.size());
+	Points points = cartesiansForFace(face, 10);
 	
 	std::function<bool(Atom *const &atom)> left, right;
 	_prepwork->setFilters(pidx, g, left, right);
@@ -450,6 +492,20 @@ void Cartographer::permute(std::vector<Parameter *> &params,
 	Permuter permuter(_specified, _mapped, _stop, _skip);
 	permuter.setResponder(this);
 	permuter.bindPoint(pidx, params);
+	
+	std::vector<std::function<float(int &)>> flips;
+	std::vector<Mapped<float> *> maps;
+	for (size_t i = 0; i < params.size(); i++)
+	{
+		if (!_specified->mapForParameter(params[i]))
+		{
+			continue;
+		}
+		
+		flips.push_back(_prepwork->flipFunction(params[i], pidx));
+	}
+
+	permuter.bindFlips(flips);
 	permuter.permute(score);
 }
 
@@ -464,67 +520,98 @@ void add_triangle_indices(int pidx, std::set<int> &tidxs, Mapped<float> *map)
 	}
 }
 
-void Cartographer::refineFace(Parameter *param, int tidx)
+std::function<float()> Cartographer::scorerForNudge(int tidx)
 {
-	if (!param->coversMainChain() || _specified->pointCount(param) <= 0)
-	{
-		return;
-	}
-
-	float flex = _prepwork->flexForParameter(param);
-	std::cout << "Refining " << param->residueId() << ":" <<
-	param->desc() << ", flex = " << flex << std::endl;
-
-	int normal_points = _mapped->pointCount();
-	int param_points = _specified->pointCount(param);
-
-	std::set<int> more_tidxs;
-
-	std::vector<int> pIndices;
-	_mapped->point_indices_for_face(tidx, pIndices);
-
-	for (int pidx : pIndices)
-	{
-		add_triangle_indices(pidx, more_tidxs, _mapped);
-	}
-	
 	Points points;
-	for (const int &t : more_tidxs)
-	{
-		cartesiansForTriangle(t, 6, points);
-	}
+	cartesiansForTriangle(tidx, 6, points);
 
 	ScoreMap scorer = basicScorer(ScoreMap::Basic);
 	std::function<float()> score = [this, scorer, points]()
 	{
 		return this->scoreWithScorer(points, scorer);
 	};
+	
+	return score;
 
-	float begin = score();
-	int pidx = normal_points;
-	json info = _specified->jsonForParameter(param);
+}
 
-	if (param_points <= normal_points)
+int Cartographer::pointToWork(Parameter *param, const std::vector<float> &point,
+                              int last_idx)
+{
+	int normal_points = _mapped->pointCount();
+	int param_points = _specified->pointCount(param);
+	Mapped<float> *pmap = _specified->mapForParameter(param);
+
+	int tidx = _mapped->face_idx_for_point(point);
+	
+	if (last_idx < normal_points)
 	{
-		std::cout << "Score before splitting triangle: " << begin << std::endl;
-		pidx = _specified->splitFace(param, tidx);
-		if (pidx <= 0)
+		last_idx = normal_points;
+	}
+	
+	for (size_t i = last_idx; i < param_points; i++)
+	{
+		std::vector<float> p = pmap->point_vector(i);
+		if (_mapped->face_has_point(tidx, p))
 		{
-			return;
+			std::cout << "Grabbing " << i << std::endl;
+			return i;
 		}
-		std::cout << "Score after splitting triangle: " << score() << std::endl;
+	}
+	
+	return -1;
+	
+}
+
+void Cartographer::refineFace(Parameter *param, const std::vector<float> &point,
+                              const std::function<float()> &score)
+{
+	if (!param->coversMainChain() || 
+	    _specified->pointCount(param) <= 0)
+	{
+		return;
 	}
 
-	std::vector<Parameter *> params(1, param);
+	std::cout << param->residueId() << " " << param->desc() << std::endl;
+	int pidx = pointToWork(param, point, 0);
 
-	Nudger nudge(_specified, _mapped, _stop, _skip);
-	nudge.setResponder(this);
-	nudge.bindPoint(pidx, params, false);
-	nudge.nudge(flex, score);
+	json info = _specified->jsonForParameter(param);
+	
+	bool had_success = false;
+	float begin = score();
+	while (true)
+	{
+		if (pidx >= 0)
+		{
+			std::cout << "Score before refining point " << pidx << ": " 
+			<< begin << std::endl;
+			had_success |= nudgePoint(begin, param, pidx, score, true);
+			pidx = pointToWork(param, point, pidx+1);
+		}
+
+		if (pidx < 0 && !had_success)
+		{
+			std::cout << "Score before splitting triangle: " << begin << std::endl;
+			int pidx = _specified->splitFace(param, point);
+			std::cout << "Score after splitting triangle: " << score() << std::endl;
+
+			if (pidx < 0)
+			{
+				return;
+			}
+
+			had_success |= nudgePoint(begin, param, pidx, score, false);
+			break;
+		}
+		else if (pidx < 0)
+		{
+			break;
+		}
+	}
 
 	float end = score();
 	std::cout << "Score after refining triangle: " << score();
-	
+
 	if (end < begin)
 	{
 		std::cout << " :D :D :D" << std::endl;
@@ -536,51 +623,69 @@ void Cartographer::refineFace(Parameter *param, int tidx)
 		_specified->setJsonForParameter(param, info);
 	}
 
-	std::cout << std::endl;
 }
 
-int Cartographer::worstTriangleScore()
+bool Cartographer::nudgePoint(float begin, Parameter *param, const int &pidx,
+                              const std::function<float()> &score, bool old)
 {
-	float worst = 0;
-	int idx = -1;
-	for (auto it = _pointsInTriangles.begin(); 
-	     it != _pointsInTriangles.end(); it++)
+	float flex = _prepwork->flexForParameter(param);
+	std::cout << "Refining " << param->residueId() << ":" <<
+	param->desc() << ", flex = " << flex << std::endl;
+
+	std::vector<Parameter *> params(1, param);
+
+	Nudger nudge(_specified, _mapped, _stop, _skip);
+	nudge.setBest(begin);
+	nudge.setResponder(this);
+	nudge.bindPoint(pidx, params, old);
+	nudge.nudge(flex, score);
+
+	return true;
+}
+
+void Cartographer::nudgePoints(const std::vector<float> &point)
+{
+	int tidx = _mapped->face_idx_for_point(point);
+	std::cout << "tidx: " << tidx << std::endl;
+	if (tidx < 0)
 	{
-		if (it->second.score > worst)
-		{
-			worst = it->second.score;
-			idx = it->first;
-		}
+		std::cout << "give up" << std::endl;
+		return;
 	}
-
-	return idx;
-}
-
-void Cartographer::nudgePoints()
-{
-	int worst = worstTriangleScore();
-	int grps = _prepwork->groupCountForTriangle(worst);
+	int grps = _prepwork->groupCountForTriangle(tidx);
+	std::cout << "group count: " << grps << std::endl;
+	
+	std::function<float()> score = scorerForNudge(tidx);
 
 	for (int i = 0; i < grps; i++)
 	{
 		ProblemPrep *prep = _prepwork;
-		std::vector<Parameter *> params = _prepwork->paramsForTriangle(worst, i);
+		std::vector<Parameter *> params = _prepwork->paramsForTriangle(tidx, i);
 		
 		std::sort(params.begin(), params.end(), [prep](Parameter *const &p,
 		                                               Parameter *const &q)
 		{
-			return prep->flexForParameter(p) > prep->flexForParameter(q);
+			return prep->flexForParameter(p) < prep->flexForParameter(q);
 		});
+
+		std::cout << "Parameters for triangle: " << std::endl;
+		for (Parameter *p : params)
+		{
+			std::cout << p->residueId() << " " << p->desc() << std::endl;
+		}
 
 		for (Parameter *p : params)
 		{
-			refineFace(p, worst);
+			refineFace(p, point, score);
+
+			if (_skip)
+			{
+				std::cout << "Skipping rest of loop" << std::endl;
+				_skip = false;
+				break;
+			}
 		}
 		
-		if (_skip)
-		{
-			_skip = false;
-			return;
-		}
+		scoreForTriangle(tidx, ScoreMap::Distance);
 	}
 }

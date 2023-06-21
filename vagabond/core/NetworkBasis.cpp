@@ -24,23 +24,32 @@ NetworkBasis::NetworkBasis() : ConcertedBasis()
 
 }
 
-float NetworkBasis::contributionForAxis(BondSequence *seq, int tidx, int i, 
-                                        const Coord::Get &coordinate)
+Coord::Interpolate<float>
+NetworkBasis::valueForParameter(BondSequence *seq, int tidx, 
+                                const Coord::Get &coord, int n)
 {
-	if (seq == nullptr)
+	TorsionAngle &ta = _angles[tidx];
+	if (!ta.mask)
 	{
-		return ConcertedBasis::contributionForAxis(seq, tidx, i, coordinate);
+		Coord::Interpolate<float> ret = [ta](const Coord::Get &)
+		{
+			return ta.angle;
+		};
+
+		return ret;
 	}
-	float t_all = _sn->torsionForIndex(seq, tidx, coordinate);
+	else
+	{
+		Coord::Interpolate<float> interpolate = _sn->torsion(seq, tidx, coord);
 
-	// remove average, it'll be added back on
-	float torsion = t_all - _angles[tidx].angle; 
-	torsion /= 2;
-
-	return torsion;
+		return interpolate;
+	}
+	
 }
 
-void NetworkBasis::wipe()
+Coord::NeedsUpdate NetworkBasis::needsUpdate(BondSequence *seq,
+                                                const Coord::Get &coord, int idx)
 {
-
+	SpecificNetwork *sn = _sn;
+	return sn->needsUpdate(seq, idx, coord);
 }

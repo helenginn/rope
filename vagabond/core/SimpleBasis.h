@@ -26,9 +26,13 @@ class SimpleBasis : public TorsionBasis
 public:
 	SimpleBasis();
 
-	virtual float parameterForVector(BondSequence *seq,
-	                                 int tidx, const Coord::Get &coordinate, 
-	                                 int n);
+	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
+	                                                    int tidx,
+	                                                    const Coord::Get &coord,
+	                                                    int n);
+
+	virtual float parameterForVector(BondSequence *seq, int tidx, 
+	                                 const Coord::Get &coord, int n);
 	virtual void prepare(int dims = 0);
 private:
 

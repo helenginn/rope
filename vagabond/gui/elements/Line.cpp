@@ -18,22 +18,30 @@
 
 #include "Line.h"
 
-Line::Line() : SimplePolygon()
+Line::Line(bool proj) : SimplePolygon()
 {
 	setName("Line");
 	_renderType = GL_LINES;
 
-	setUsesProjection(true);
-	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-	setFragmentShaderFile("assets/shaders/color_only.fsh");
+	if (proj)
+	{
+		setUsesProjection(true);
+		setVertexShaderFile("assets/shaders/with_matrix.vsh");
+		setFragmentShaderFile("assets/shaders/color_only.fsh");
+	}
+	else
+	{
+		setFragmentShaderFile("assets/shaders/color_only.fsh");
+		setVertexShaderFile("assets/shaders/box.vsh");
+	}
 }
 
-Snow::Vertex &Line::addPoint(glm::vec3 p)
+Snow::Vertex &Line::addPoint(glm::vec3 p, bool connect_to_last)
 {
 	Vertex &v = addVertex(p);
 	
 	v.color = glm::vec4(0., 0., 0., 1.);
-	if (vertexCount() > 1)
+	if (vertexCount() > 1 && connect_to_last)
 	{
 		addIndex(-2);
 		addIndex(-1);

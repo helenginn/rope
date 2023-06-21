@@ -16,40 +16,47 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__SandboxView__
-#define __vagabond__SandboxView__
+#ifndef __vagabond__ShowMap__
+#define __vagabond__ShowMap__
 
-#include <vagabond/gui/Display.h>
-#include <vagabond/utils/Mapping.h>
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Line.h>
 #include <vagabond/core/Responder.h>
-#include <thread>
 
-class MappingToMatrix;
+class MapView;
+class Parameter;
+class Cartographer;
 class SpecificNetwork;
-class MatrixPlot;
-class Network;
+template <typename Type> class Mapped;
 
-class SandboxView : public Display, public Responder<SpecificNetwork>
+class ShowMap : public Scene, public Responder<SpecificNetwork>
 {
 public:
-	SandboxView(Scene *prev);
-	virtual ~SandboxView();
+	ShowMap(Scene *scene, SpecificNetwork *sn);
 
-	void makeTriangles();
 	virtual void setup();
+	void update(Parameter *param);
+	virtual void buttonPressed(std::string tag, Button *button);
+	
+	void setCartographer(Cartographer *cg)
+	{
+		_cartographer = cg;
+	}
+	void setMapView(MapView *mv)
+	{
+		_view = mv;
+	}
 private:
-	void makeMapping();
-	bool _editing = false;
+	void updateFromMap(Mapped<float> *map);
 
-	Mapped<float> *_mapped = nullptr;
-	MappingToMatrix *_mat2Map = nullptr;
-	MatrixPlot *_plot = nullptr;
-	Network *_network = nullptr;
-	SpecificNetwork *_specified = nullptr;
-	std::mutex _mutex;
-
-	MatrixPlot *_distances = nullptr;
-	PCA::Matrix _distMat;
+	SpecificNetwork *_sn = nullptr;
+	Line *_line = nullptr;
+	Parameter *_parameter = nullptr;
+	Cartographer *_cartographer = nullptr;
+	MapView *_view = nullptr;
+	
+	int _first = -1;
+	int _second = -1;
 };
 
 #endif

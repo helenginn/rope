@@ -31,11 +31,9 @@ ConcertedBasis::~ConcertedBasis()
 	freeSVD(&_svd);
 }
 
-// tidx: torsion angle
-// vec/n: vector you have to generate torsion angle
-float ConcertedBasis::parameterForVector(BondSequence *seq,
-                                         int tidx, const Coord::Get &coordinate, 
-                                         int n)
+Coord::Interpolate<float>
+ConcertedBasis::valueForParameter(BondSequence *seq, int tidx,
+                                  const Coord::Get &coord, int n)
 {
 	if (tidx < 0)
 	{
@@ -51,17 +49,44 @@ float ConcertedBasis::parameterForVector(BondSequence *seq,
 
 	if (n == 0 || !ta.mask)
 	{
-		return ta.angle;
+		Coord::Interpolate<float> ret = [ta](const Coord::Get &)
+		{
+			return ta.angle;
+		};
+
+		return ret;
 	}
 	
 	int contracted_tidx = _idxs[tidx];
-	float sum = fullContribution(seq, tidx, coordinate, n);
+	Coord::Interpolate<float> sum = fullContribution(seq, tidx, coord, n);
 	
-	Parameter *bt = _filtered[contracted_tidx];
+	Coord::Interpolate<float> add_angle_back;
+	add_angle_back = [ta, sum](const Coord::Get &coord)
+	{
+		float ret = ta.angle;
+		if (sum)
+		{
+			ret += sum(coord);
+		}
+		return ret;
+	};
 	
-	sum += ta.angle;
+	return add_angle_back;
+}
 
-	return sum;
+// tidx: torsion angle
+// vec/n: vector you have to generate torsion angle
+float ConcertedBasis::parameterForVector(BondSequence *seq,
+                                         int tidx, const Coord::Get &coord, 
+                                         int n)
+{
+	Coord::Interpolate<float> get_angle = valueForParameter(seq, tidx, coord, n);
+	if (!get_angle)
+	{
+		return 0;
+	}
+
+	return get_angle(coord);
 }
 
 void ConcertedBasis::supplyMask(std::vector<bool> mask)
@@ -249,37 +274,62 @@ size_t ConcertedBasis::activeBonds()
 	return _nActive;
 }
 
-float ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
-                                       const Coord::Get &coordinate, int n)
+Coord::Interpolate<float> 
+ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
+                                 const Coord::Get &coord, int n)
 {
 	if (tidx < 0 || tidx > _svd.u.rows)
 	{
-		return 0;
+		return Coord::Interpolate<float>();
 	}
 
-	float ret = 0;
-
-	// each n is an axis
-	for (size_t i = 0; i < n; i++)
+	std::vector<Coord::Interpolate<float>> funcs;
+	
+	for (size_t axis = 0; axis < n; axis++)
 	{
-		float add = contributionForAxis(seq, tidx, i, coordinate);
-		ret += add;
+		Coord::Interpolate<float> add = contributionForAxis(seq, tidx, axis, coord);
+		if (add)
+		{
+			funcs.push_back(add);
+		}
 	}
 
-	return ret;
+	Coord::Interpolate<float> all;
+	all = [funcs](const Coord::Get &coord)
+	{
+		float ret = 0;
+		// each n is an axis
+		for (size_t i = 0; i < funcs.size(); i++)
+		{
+			ret += funcs[i](coord);
+		}
+
+		return ret;
+	};
+	
+	return all;
+
 }
 
-float ConcertedBasis::contributionForAxis(BondSequence *seq,
-                                          int tidx, int i, const Coord::Get &coordinate)
+Coord::Interpolate<float> 
+ConcertedBasis::contributionForAxis(BondSequence *seq, 
+                                    int tidx, int axis, 
+                                    const Coord::Get &coord) const
 {
-	if (i > _svd.u.rows)
+	if (axis > _svd.u.rows)
 	{
 		return 0;
 	}
 
-	double svd = (_svd.u[tidx][i]);
-	const float &custom = coordinate(i);
-	float add = svd * custom;
-	return add;
+	Coord::Interpolate<float> grab_angle;
+	grab_angle = [this, tidx, axis](const Coord::Get &coord)
+	{
+		double svd = (_svd.u[tidx][axis]);
+		const float &custom = coord(axis);
+		float add = svd * custom;
+		return add;
+	};
+	
+	return grab_angle;
 }
 

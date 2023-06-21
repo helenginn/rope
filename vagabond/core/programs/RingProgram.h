@@ -27,6 +27,7 @@
 
 class HyperValue;
 class TorsionBasis;
+class BondSequence;
 class RingProgrammer;
 
 class RingProgram
@@ -92,6 +93,10 @@ public:
 	         const Coord::Get &coord, int n);
 	
 	void addTransformation(const glm::mat4x4 &trans);
+	void setSequence(BondSequence *seq)
+	{
+		_seq = seq;
+	}
 private:
 	void fetchParameters(const Coord::Get &coord, int n);
 
@@ -103,6 +108,7 @@ private:
 	int lowestAlignment();
 	Cyclic _cyclic;
 	TorsionBasis *_basis = nullptr;
+	BondSequence *_seq = nullptr;
 
 	// block is first, cyclic is second
 	std::map<int, int> _alignmentMapping;

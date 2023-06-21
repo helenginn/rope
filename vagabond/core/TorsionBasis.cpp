@@ -67,7 +67,7 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	return basis;
 }
 
-void TorsionBasis::absorbVector(const Coord::Get &coordinate, int n, bool *mask)
+void TorsionBasis::absorbVector(const Coord::Get &coord, int n, bool *mask)
 {
 	for (size_t i = 0; i < parameterCount(); i++)
 	{
@@ -76,7 +76,7 @@ void TorsionBasis::absorbVector(const Coord::Get &coordinate, int n, bool *mask)
 			continue;
 		}
 
-		float torsion = parameterForVector(nullptr, i, coordinate, n);
+		float torsion = valueForParameter(nullptr, i, coord, n)(coord);
 		
 //		std::cout << _params[i]->desc() << " " << torsion << std::endl;
 		
@@ -90,7 +90,7 @@ void TorsionBasis::absorbVector(const Coord::Get &coordinate, int n, bool *mask)
 
 int TorsionBasis::addParameter(Parameter *param, Atom *atom)
 {
-	if (param == nullptr || param->isConstrained())
+	if (param == nullptr)
 	{
 		return -1;
 	}
@@ -165,7 +165,21 @@ std::vector<int> TorsionBasis::grabIndices(const std::set<Parameter *> &params)
 	return indices;
 }
 
-void TorsionBasis::wipe()
+Coord::Interpolate<float> TorsionBasis::valueForParameter(BondSequence *seq, 
+                                                          int tidx,
+                                                          const Coord::Get &coord,
+                                                          int n)
 {
+	Coord::Interpolate<float> ret = [this, seq, tidx, n](const Coord::Get &coord)
+	{
+		return parameterForVector(seq, tidx, coord, n);
+	};
 
+	return ret;
+}
+
+Coord::NeedsUpdate TorsionBasis::needsUpdate(BondSequence *seq,
+                                             const Coord::Get &coord, int idx)
+{
+	return Coord::NeedsUpdate();
 }

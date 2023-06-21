@@ -29,6 +29,7 @@ class SpecificNetwork;
 class Cartographer;
 class MatrixPlot;
 class TextButton;
+class ShowMap;
 class Network;
 
 class MapView : public Display, public Responder<Cartographer>,
@@ -46,14 +47,19 @@ public:
 	virtual void sendObject(std::string, void *object);
 
 	void buttonPressed(std::string tag, Button *button);
+	void startFlip(int i, int j);
 private:
 	void makeMapping();
 	void startFlips();
-	void startNudges();
+	void startNudges(std::vector<float> point);
 	void stopWorker();
 	void skipJob();
+	void showMap();
+	void askForNudgePoint();
+	void adjustToLeft(Renderable *r);
 	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
+	bool plotPosition(float x, float y);
 	void makePausable();
 	bool _editing = false;
 
@@ -73,8 +79,10 @@ private:
 	
 	TextButton *_command = nullptr;
 	TextButton *_second = nullptr;
+	TextButton *_showMap = nullptr;
 
 	std::thread *_worker = nullptr;
+	bool _waitingForNudge = false;
 	bool _updateButtons = false;
 	std::atomic<bool> _cleanupPause{false};
 };

@@ -28,6 +28,8 @@ namespace Coord
 	template <typename Type> 
 	using Interpolate = std::function<Type(const Coord::Get &)>;
 
+	using NeedsUpdate = std::function<bool(const Coord::Get &)>;
+
 	template <typename Type>
 	Get fromVector(const std::vector<Type> &all)
 	{

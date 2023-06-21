@@ -19,7 +19,8 @@
 #ifndef __vagabond__AtomBlock__
 #define __vagabond__AtomBlock__
 
-#include "../utils/glm_import.h"
+#include <vagabond/utils/glm_import.h>
+#include <vagabond/utils/AcquireCoord.h>
 #include "Atom.h"
 
 class Atom;
@@ -50,7 +51,8 @@ struct AtomBlock
 	glm::vec3 inherit;
 
 	int torsion_idx;
-	float torsion;
+	Coord::Interpolate<float> get_torsion{};
+	Coord::NeedsUpdate needs_update{};
 	
 	/* rotation and translation to move the atom into the right place;
 	 * previous bond is in Z direction */
@@ -81,7 +83,7 @@ struct AtomBlock
 	void silence();
 	void printBlock() const;
 
-	glm::mat4x4 prepareRotation() const;
+	glm::mat4x4 prepareRotation(float t) const;
 	
 	void writeToChildren(std::vector<AtomBlock> &context, int idx,
 	                     bool usingPrograms);

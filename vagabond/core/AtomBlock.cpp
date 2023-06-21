@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "BondSequence.h"
 #include "AtomBlock.h"
 #include "matrix_functions.h"
 
@@ -42,7 +43,6 @@ void AtomBlock::printBlock() const
 	}
 	std::cout << "Program: " << program << ", flagged: " << flag << ", ";
 	std::cout << "silenced: " << silenced << std::endl;
-	std::cout << "Torsion: " << torsion << std::endl;
 	std::cout << "Coordination: " << glm::to_string(coordination) << std::endl;
 	std::cout << "Basis: " << glm::to_string(basis) << std::endl;
 	std::cout << "wip: " << glm::to_string(wip) << std::endl;
@@ -51,7 +51,7 @@ void AtomBlock::printBlock() const
 
 }
 
-glm::mat4x4 AtomBlock::prepareRotation() const
+glm::mat4x4 AtomBlock::prepareRotation(float torsion) const
 {
 	float t = deg2rad(torsion);
 
@@ -111,3 +111,4 @@ void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx,
 		context[n].inherit = glm::vec3(basis[3]);
 	}
 }
+

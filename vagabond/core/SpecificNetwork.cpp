@@ -44,21 +44,26 @@ void SpecificNetwork::setup()
 	startCalculator();
 	processCalculatorDetails();
 	zeroVertices();
+	_displayInterval = 100;
 }
 
 void SpecificNetwork::zeroVertices()
 {
 	std::vector<Instance *> others = _network->instances();
+	_displayInterval = 1;
+
 	for (Instance *other : others)
 	{
 		int idx = _network->indexForInstance(other);
 
 		std::vector<float> cart = _network->pointForInstance(other);
+
 		int num = submitJob(true, cart);
 		retrieve();
 		float dev = deviation(num);
 		std::cout << other->id() << ": " << dev << ", ";
 
+		_fullAtoms->writeToFile("mimic_" + other->id() + ".pdb");
 		updateAtomsFromDerived(idx);
 
 		other->model()->load();
@@ -71,8 +76,9 @@ void SpecificNetwork::zeroVertices()
 			std::cout << diff << std::endl;
 			other->model()->unload();
 		}
-
 	}
+	
+	triggerResponse();
 }
 
 void SpecificNetwork::updateAtomsFromDerived(int idx)
@@ -99,16 +105,8 @@ void SpecificNetwork::updateAtomsFromDerived(int idx)
 	}
 }
 
-void SpecificNetwork::invalidatePrecalculations()
-{
-	for (BondCalculator *calc : _calculators)
-	{
-		calc->wipeCalculations();
-	}
-
-}
-
-int SpecificNetwork::submitJob(bool show, const std::vector<float> vals)
+int SpecificNetwork::submitJob(bool show, const std::vector<float> vals, 
+                               int save_id)
 {
 	Job job{};
 	job.custom.allocate_vectors(1, _network->dims(), _num);
@@ -191,6 +189,8 @@ void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 
 		map.mapping->alter_value(idx, val);
 	}
+	
+	map.mapping->update();
 }
 
 void SpecificNetwork::getTorsionDetails(TorsionBasis *tb, CalcDetails &cd)
@@ -253,8 +253,62 @@ bool SpecificNetwork::prewarnAtoms(BondSequence *seq,
 	return accept;
 }
 
-float SpecificNetwork::torsionForIndex(BondSequence *seq, int idx, 
-                                       const Coord::Get &coord) const
+Coord::NeedsUpdate SpecificNetwork::needsUpdate(BondSequence *seq, int idx,
+                                         const Coord::Get &coord)
+{
+	Coord::NeedsUpdate definitely = [](const Coord::Get &coord) { return true; };
+
+	std::vector<float> vals(_network->dims());
+	for (int i = 0; i < _network->dims(); i++)
+	{
+		vals[i] = coord(i);
+	}
+
+	BondCalculator *bc = seq->calculator();
+	const CalcDetails &cd = _calcDetails.at(bc);
+
+	const TorsionMapping &tm = cd.torsions.at(idx);
+	Mapped<float> *const map = tm.mapping;
+	
+	if (!map)
+	{
+		return definitely;
+	}
+
+	int fidx = map->face_idx_for_point(vals);
+	
+	if (fidx < 0)
+	{
+		return definitely;
+	}
+	
+	Mappable<float> *face = map->face_for_index(fidx);
+	int version = map->face_for_index(fidx)->version();
+	Coord::NeedsUpdate update;
+	update = [face, version](const Coord::Get &coord) -> bool
+	{
+		if (!face || !face->valid() || face->version() != version)
+		{
+			return true;
+		}
+
+		std::vector<float> weights = face->point_to_barycentric(coord);
+		for (float &f : weights)
+		{
+			if (f < 0)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	};
+	
+	return update;
+}
+
+Coord::Interpolate<float> SpecificNetwork::torsion(BondSequence *seq, int idx, 
+                                                   const Coord::Get &coord) const
 {
 	std::vector<float> vals(_network->dims());
 	for (int i = 0; i < _network->dims(); i++)
@@ -267,9 +321,14 @@ float SpecificNetwork::torsionForIndex(BondSequence *seq, int idx,
 
 	const TorsionMapping &tm = cd.torsions.at(idx);
 	Mapped<float> *const map = tm.mapping;
-	float angle = map->interpolate_variable(vals);
+	if (!map)
+	{
+		return Coord::Interpolate<float>();
+	}
 
-	return angle;
+	Coord::Interpolate<float> interpolate = map->interpolate_function(coord);
+	
+	return interpolate;
 }
 
 void SpecificNetwork::customModifications(BondCalculator *calc, bool has_mol)
@@ -327,7 +386,8 @@ int SpecificNetwork::pointCount(Parameter *parameter)
 	return -1;
 }
 
-int SpecificNetwork::splitFace(Parameter *parameter, int tidx)
+int SpecificNetwork::splitFace(Parameter *parameter, 
+                               const std::vector<float> &point)
 {
 	for (BondCalculator *bc : _calculators)
 	{
@@ -340,18 +400,23 @@ int SpecificNetwork::splitFace(Parameter *parameter, int tidx)
 		}
 		
 		Mapped<float> *map = cd.torsions[idx].mapping;
-		map->update();
-		std::vector<float> new_point = map->middle_of_face(tidx);
-		float value = map->interpolate_variable(new_point);
-		int new_idx = map->add_point(new_point);
+		float value = map->interpolate_variable(point);
+		int new_idx = map->add_point(point);
 		map->alter_value(new_idx, value);
 		map->crack_existing_face(new_idx);
 		map->delaunay_refine();
-		map->update(new_idx);
+		refresh(parameter);
+
 		return new_idx;
 	}
 
 	return -1;
+}
+
+void SpecificNetwork::refresh(Parameter *p)
+{
+	json info = jsonForParameter(p);
+	setJsonForParameter(p, info);
 }
 
 void SpecificNetwork::setJsonForParameter(Parameter *p, const json &j)
@@ -373,3 +438,4 @@ json SpecificNetwork::jsonForParameter(Parameter *p) const
 	j["map"] = *map;
 	return j;
 }
+

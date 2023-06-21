@@ -32,10 +32,17 @@ public:
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
+	
+	void setBest(float b)
+	{
+		_best = b;
+	}
 private:
 	SimplexEngine *_engine = nullptr;
 	std::function<float()> _score;
 	std::vector<float> _start; 
+	
+	float _best = FLT_MAX;
 };
 
 #endif

@@ -33,6 +33,12 @@ size_t Nudger::parameterCount()
 
 int Nudger::sendJob(const std::vector<float> &all)
 {
+	if (_skip)
+	{
+		int ticket = getNextTicket();
+		setScoreForTicket(ticket, FLT_MAX);
+		return ticket;
+	}
 	if (_stop)
 	{
 		throw 0;
@@ -44,9 +50,21 @@ int Nudger::sendJob(const std::vector<float> &all)
 		mod.push_back(f + _start[i]);
 		i++;
 	}
-
+	
 	_setPoints(mod);
 	float sc = _score();
+
+	if (sc < _best)
+	{
+		_best = sc;
+		std::cout << "+";
+	}
+	else
+	{
+		std::cout << ".";
+	}
+	std::cout << std::flush;
+
 	int ticket = getNextTicket();
 	setScoreForTicket(ticket, sc);
 	return ticket;
