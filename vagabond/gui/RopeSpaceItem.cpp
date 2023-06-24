@@ -167,7 +167,7 @@ void RopeSpaceItem::calculateCluster()
 	{
 		MetadataGroup angles = _entity->makeTorsionDataGroup();
 		angles.setWhiteList(_whiteList);
-		angles.write(_entity->name() + ".csv");
+		angles.write(_entity->name() + "_torsions.csv");
 
 		Environment::pathManager()->addPathsToMetadataGroup(&angles);
 		angles.normalise();
@@ -178,6 +178,7 @@ void RopeSpaceItem::calculateCluster()
 	{
 		PositionalGroup group = _entity->makePositionalDataGroup();
 		group.setWhiteList(_whiteList);
+		group.write(_entity->name() + "_atoms.csv");
 
 		cx = new PositionalCluster(group);
 	}
@@ -309,6 +310,7 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 	subset->setWhiteList(whiteList);
 	addItem(subset);
 	subset->makeView(_confView);
+	subset->setMode(_type);
 
 	subset->inheritAxis(this);
 

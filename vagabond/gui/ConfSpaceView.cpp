@@ -49,7 +49,8 @@
 #include <vagabond/core/Metadata.h>
 
 using namespace rope;
-std::map<Entity *, RopeSpaceItem *> ConfSpaceView::_savedSpaces;
+std::map<Entity *, std::map<rope::ConfType, RopeSpaceItem *>> 
+	ConfSpaceView::_savedSpaces;
 
 ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
 : Scene(prev),
@@ -67,9 +68,10 @@ void ConfSpaceView::makeFirstCluster()
 		return;
 	}
 	
-	if (_savedSpaces.count(_entity) > 0)
+	RopeSpaceItem *saved = savedSpace();
+	if (saved)
 	{
-		_ropeSpace = _savedSpaces[_entity];
+		_ropeSpace = saved;
 		_ropeSpace->attachExisting(this);
 	}
 	else
@@ -77,7 +79,7 @@ void ConfSpaceView::makeFirstCluster()
 		_ropeSpace = new RopeSpaceItem(_entity);
 		_ropeSpace->setMode(_type);
 		_ropeSpace->makeView(this);
-		_savedSpaces[_entity] = _ropeSpace;
+		setSavedSpace(_ropeSpace);
 	}
 
 	_selected = _ropeSpace;
@@ -114,6 +116,7 @@ void ConfSpaceView::setup()
 	IndexResponseView::setup();
 
 	size_t extra = _entity->unrefinedInstanceCount();
+	std::cout << "Entity " << _entity->name() << ": " << extra << std::endl;
 
 	if (extra > 0)
 	{
@@ -188,6 +191,7 @@ void ConfSpaceView::assignRopeSpace(RopeSpaceItem *item)
 	_cluster = item->cluster();
 	_axes = item->axes();
 	_view = item->view();
+	_view->updatePoints();
 
 	addObject(_axes);
 	addObject(_view);
@@ -248,7 +252,6 @@ void ConfSpaceView::showPathsButton()
 	}
 	
 	int count = Environment::env().pathManager()->objectCount();
-	std::cout << "Path count: " << count << std::endl;
 	if (count == 0)
 	{
 		return;

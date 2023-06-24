@@ -51,6 +51,11 @@ ClusterView::~ClusterView()
 
 void ClusterView::updatePoints()
 {
+	if (vertexCount() > _cx->objectGroup()->objectCount())
+	{
+		_vertices.resize(_cx->objectGroup()->objectCount());
+	}
+
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{
 		glm::vec3 v = _cx->pointForDisplay(i);

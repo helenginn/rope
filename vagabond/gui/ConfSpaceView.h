@@ -122,7 +122,24 @@ private:
 
 	void askToFoldIn(int extra);
 	
-	static std::map<Entity *, RopeSpaceItem *> _savedSpaces;
+	RopeSpaceItem *const savedSpace() const
+	{
+		if (_savedSpaces.count(_entity) == 0 ||
+		    _savedSpaces.at(_entity).count(_type) == 0)
+		{
+			return nullptr;
+		}
+
+		return _savedSpaces.at(_entity).at(_type);
+	}
+	
+	void setSavedSpace(RopeSpaceItem *item)
+	{
+		_savedSpaces[_entity][_type] = item;
+	}
+	
+	static std::map<Entity *, 
+	std::map<rope::ConfType, RopeSpaceItem *>> _savedSpaces;
 	
 	RopeSpaceItem *_ropeSpace = nullptr;
 	RopeSpaceItem *_selected = nullptr;
