@@ -337,6 +337,10 @@ void ClusterView::addPath(Path *path, std::vector<PathView *> *refreshers)
 
 void ClusterView::addPaths()
 {
+#ifndef VERSION_SHORT_ROUTES
+	return;
+#endif
+
 	wait();
 	
 	if (_confSpaceView && _confSpaceView->confType() != rope::ConfTorsions)

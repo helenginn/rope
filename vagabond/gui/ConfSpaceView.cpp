@@ -256,6 +256,10 @@ void ConfSpaceView::showPathsButton()
 	{
 		return;
 	}
+	
+#ifndef VERSION_SHORT_ROUTES
+	return;
+#endif
 
 	ImageButton *b = new ImageButton("assets/images/palette.png", this);
 	b->resize(0.1);
