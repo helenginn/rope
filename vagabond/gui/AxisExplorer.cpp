@@ -132,46 +132,10 @@ void AxisExplorer::setupSlider()
 
 void AxisExplorer::reportMissing()
 {
-	if (_mainMissing == 0 && _sideMissing == 0 && _unusedId == nullptr)
-	{
-		return;
-	}
-	
-	std::string main = i_to_str(_mainMissing);
-	std::string side = i_to_str(_sideMissing);
-
-	std::string str;
-	if (_mainMissing == 0 && _sideMissing > 0)
-	{
-		str = "Note: missing torsion angles for\n" + side + 
-		" side chain torsions.";
-	}
-	else if (_sideMissing == 0 && _mainMissing > 0)
-	{
-		str = "Warning: missing torsion angles for\n" + main + 
-		" main chain torsions. This is likely to strongly\n" +
-		"disturb the result.";
-	}
-	else if (_sideMissing > 0 && _mainMissing > 0)
-	{
-		str = "Warning: missing torsion angles for\n" + main + 
-		" main chain and " + side + " side chain torsions.\n" +
-		"This is likely to strongly disturb the result.";
-	}
-	
-	if (_unusedId != nullptr)
-	{
-		if (str.length())
-		{
-			str += "\nOther torsion angles from reference not used.";
-		}
-		else
-		{
-			str = "Torsion angles from second structure\n"\
-			"(e.g. " + _unusedId->desc() + ") have no equivalent \n"\
-			"in reference. This may disturb the result.";
-		}
-	}
+	std::string str = "Note that this slider linearly interpolates the\n"
+	"torsion angle motions. This is rarely valid. Use only\n"
+	"as a guide to where the boundaries between rigid domains\n"
+	"are, not the motions themselves.";
 	
 	BadChoice *bc = new BadChoice(this, str);
 	setModal(bc);

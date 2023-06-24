@@ -22,6 +22,7 @@
 #include "GuiAtom.h"
 #include <vagabond/gui/Toolkit.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/core/Environment.h>
 
 ModelMenu::ModelMenu(Scene *prev) : ListView(prev)
@@ -117,21 +118,26 @@ void ModelMenu::buttonPressed(std::string tag, Button *button)
 
 void ModelMenu::refineModel(std::string name)
 {
-	Model *model = _manager->model(name);
-	model->load();
-	_currModel = model;
-	AtomContent *atoms = model->currentAtoms();
+	try
+	{
+		Model *model = _manager->model(name);
+		model->load();
+		_currModel = model;
+		AtomContent *atoms = model->currentAtoms();
 
-	Display *d = new Display(this);
-	d->loadAtoms(atoms);
-	d->setOwnsAtoms(false);
-	d->setMultiBondMode(true);
-	d->guiAtoms()->setDisableRibbon(false);
-//	d->guiAtoms()->setDisableBalls(true);
-
-	d->densityFromMap(model->map());
-
-	d->show();
+		Display *d = new Display(this);
+		d->loadAtoms(atoms);
+		d->setOwnsAtoms(false);
+		d->setMultiBondMode(true);
+		d->guiAtoms()->setDisableRibbon(false);
+		d->densityFromMap(model->map());
+		d->show();
+	}
+	catch (std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(this, err.what());
+		setModal(bc);
+	}
 }
 
 void ModelMenu::refresh()

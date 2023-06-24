@@ -24,6 +24,8 @@
 #include <vagabond/core/Instance.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include "VagWindow.h"
 #include "AxisExplorer.h"
 #include "ConfSpaceView.h"
 #include "PlausibleRoute.h"
@@ -223,7 +225,8 @@ void Axes::loadAxisExplorer(int idx)
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << err.what() << std::endl;
+		BadChoice *bc = new BadChoice(Window::currentScene(), err.what());
+		Window::currentScene()->setModal(bc);
 	}
 }
 

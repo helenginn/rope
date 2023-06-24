@@ -292,7 +292,15 @@ void AddEntity::loadConfSpaceView(std::string suffix)
 		view->setMode(rope::ConfPositional);
 	}
 
-	view->show();
+	try
+	{
+		view->show();
+	}
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(this, err.what());
+		setModal(bc);
+	}
 }
 
 void AddEntity::buttonPressed(std::string tag, Button *button)

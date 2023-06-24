@@ -423,9 +423,12 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	}
 	if (tag == "no_fold_in")
 	{
-		AskYesNo *askyn = new AskYesNo(this, "Use torsion angles without\n"
-		                               "refinement? (quick and dangerous)", 
-		                               "use_unrefined", this);
+		std::string str = 
+		"Use torsion angles without refinement? These torsion angles cannot \n"\
+		"be used to recalculate structures. This will invalidate any \n"\
+		"downstream processing but give a sneak peak of the RoPE space.";
+
+		AskYesNo *askyn = new AskYesNo(this, str, "use_unrefined", this);
 		setModal(askyn);
 	}
 	if (tag == "yes_use_unrefined")
