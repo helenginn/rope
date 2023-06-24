@@ -60,11 +60,7 @@ private:
 	
 	bool _multi = false;
 	
-#ifdef __EMSCRIPTEN__
-	float _size = 15;
-#else
 	float _size = 30;
-#endif
 };
 
 #endif

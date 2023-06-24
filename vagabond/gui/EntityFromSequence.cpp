@@ -43,7 +43,9 @@ Scene(prev), Fetcher()
 
 EntityFromSequence::~EntityFromSequence()
 {
+#ifndef __EMSCRIPTEN__
 	pthread_join(_thread, NULL);
+#endif
 }
 
 void EntityFromSequence::setup()

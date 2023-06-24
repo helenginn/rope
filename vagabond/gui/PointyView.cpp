@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PointyView.h"
+#include "VagWindow.h"
 
 PointyView::PointyView()
 {
@@ -25,6 +26,8 @@ PointyView::PointyView()
 	setFragmentShaderFile("assets/shaders/point.fsh");
 	setVertexShaderFile("assets/shaders/point.vsh");
 	setImage("assets/images/points.png");
+	
+	_size *= Window::ratio();
 }
 
 void PointyView::refresh()

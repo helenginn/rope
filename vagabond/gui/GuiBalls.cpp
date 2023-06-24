@@ -24,6 +24,7 @@
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
+#include "VagWindow.h"
 
 #include <iostream>
 #include <thread>
@@ -44,6 +45,8 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 	_bonds = new GuiBond();
 	_bonds->setDisabled(true);
 	setName("Gui balls");
+
+	_size *= Window::ratio();
 }
 
 GuiBalls::~GuiBalls()

@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ClusterPointDemo.h"
+#include "VagWindow.h"
 #include <iostream>
 
 ClusterPointDemo::ClusterPointDemo() : ClusterView()
@@ -25,10 +26,8 @@ ClusterPointDemo::ClusterPointDemo() : ClusterView()
 	setSelectable(false);
 	setVertexShaderFile("assets/shaders/box.vsh");
 	setName("ClusterPointDemo");
-	
-#ifdef __EMSCRIPTEN__
-	_size = 20;
-#endif
+
+	_size *= Window::ratio();
 }
 
 void ClusterPointDemo::makePoints()
@@ -53,3 +52,4 @@ void ClusterPointDemo::makePoints()
 	}
 
 }
+

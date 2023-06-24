@@ -76,7 +76,7 @@ void GuiAtom::render(SnowGL *gl)
 	gl->viewChanged();
 	glEnable(GL_DEPTH_TEST);
 	
-	Renderable::render(gl);
+//	Renderable::render(gl); // I don't have...?
 
 	for (GuiRepresentation *&r : _representations)
 	{
