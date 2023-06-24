@@ -154,6 +154,7 @@ void ModelManager::purgeModel(Model *model)
 	std::list<Model>::iterator it = _objects.begin();
 
 	std::string name = model->name();
+    to_lower(name);
 	_name2Model.erase(name);
 
 	for (Model &m : _objects)
