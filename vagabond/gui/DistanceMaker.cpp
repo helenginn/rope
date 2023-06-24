@@ -115,7 +115,7 @@ void DistanceMaker::handleResidue(Button *button, Residue *r)
 		m->addOption(name);
 	}
 
-	m->setup(button);
+	m->setup(button, 0.6);
 	setModal(m);
 }
 
