@@ -21,6 +21,7 @@
 #include "MetadataGroup.h"
 #include "RopeCluster.h"
 #include "SpecificNetwork.h"
+#include "ModelManager.h"
 #include <vagabond/c4x/ClusterTSNE.h>
 #include <vagabond/utils/Mapping.h>
 
@@ -107,18 +108,21 @@ void Network::makeBlueprintMapping()
 {
 	Mapping<NETWORK_DIMS, float> *map = new Mapping<NETWORK_DIMS, float>();
 	_blueprint = map;
-
 	preparePoints();
 	addBounds(map);
+	crackPoints();
+	removeBounds();
 }
 
 void Network::setup()
 {
-	makeCluster();
-	convertToTSNE();
-	makeBlueprintMapping();
-	crackPoints();
-	removeBounds();
+	if (!_blueprint)
+	{
+		makeCluster();
+		convertToTSNE();
+		makeBlueprintMapping();
+	}
+
 	_blueprint->update();
 }
 
@@ -175,4 +179,32 @@ bool Network::valid_position(const std::vector<float> &vals)
 {
 	return _blueprint->acceptable_coordinate(vals);
 
+}
+
+void Network::add_info(nlohmann::json &json)
+{
+	json["entity"] = _entity->name();
+	json["blueprint"] = *_blueprint;
+
+	for (Instance *inst : _instances)
+	{
+		json["instances"].push_back(inst->id());
+
+		int idx = _instance2Point[inst];
+		json["indices"][inst->id()] = idx;
+	}
+}
+
+void Network::get_info(nlohmann::json &json)
+{
+	_blueprint = new Mapping<NETWORK_DIMS, float>(json["blueprint"]);
+
+	for (std::string id : json["instances"])
+	{
+		Instance *instance = ModelManager::manager()->instance(id);
+		int idx = json["indices"][id];
+		
+		_point2Instance[idx] = instance;
+		_instance2Point[instance] = idx;
+	}
 }

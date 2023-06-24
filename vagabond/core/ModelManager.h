@@ -32,9 +32,12 @@ public Progressor
 {
 public:
 	ModelManager();
+	static ModelManager *manager();
 
 	virtual Model *insertIfUnique(Model &m);
 	void update(const Model &m);
+	
+	Instance *instance(std::string name);
 	
 	Model *const model(std::string name) const
 	{

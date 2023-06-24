@@ -178,6 +178,8 @@ Coord::Interpolate<float> BondSequence::getTorsionFunction(int idx)
 		b.get_torsion = torsionBasis()->valueForParameter(this, b.torsion_idx, 
 		                                                  _acquireCoord, 
 		                                                  _nCoord);
+		b.needs_update = torsionBasis()->needsUpdate(this, _acquireCoord,
+		                                             b.torsion_idx);
 		return b.get_torsion;
 	}
 }
@@ -298,6 +300,10 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	Job &j = *job();
 	if (j.custom.vector_count() == 0)
 	{
+		_acquireCoord = [](const int idx) -> float
+		{
+			return 0;
+		};
 		return;
 	}
 
@@ -497,6 +503,28 @@ double BondSequence::calculateDeviations()
 //	std::cout << "Score: " << sum / count << std::endl;
 
 	return sum / count;
+}
+
+const AtomPosList &BondSequence::extractVector()
+{
+	_posList.clear();
+
+	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
+	{
+		if (_blocks[i].atom == nullptr)
+		{
+			continue;
+		}
+		
+		WithPos ap{};
+		glm::vec3 mypos = _blocks[i].my_position();
+		ap.ave = mypos;
+		ap.target = _blocks[i].target;
+		ap.samples.push_back(mypos);
+		_posList.push_back({_blocks[i].atom, ap});
+	}
+	
+	return _posList;
 }
 
 const AtomPosMap &BondSequence::extractPositions()

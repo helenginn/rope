@@ -31,6 +31,11 @@ public:
 	{
 		return _after;
 	}
+
+	const std::vector<float> &drops() const
+	{
+		return _drops;
+	}
 private:
 	void split();
 	void next_split();
@@ -40,6 +45,7 @@ private:
 	PCA::Matrix &_mat;
 
 	std::vector<int> _after;
+	std::vector<float> _drops;
 };
 
 #endif

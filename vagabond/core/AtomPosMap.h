@@ -33,6 +33,13 @@ struct WithPos
 	float colour = 0;
 };
 
+struct AtomWithPos
+{
+	Atom *atom;
+	WithPos wp;
+};
+
 typedef std::unordered_map<Atom *, WithPos> AtomPosMap;
+typedef std::vector<AtomWithPos> AtomPosList;
 
 #endif

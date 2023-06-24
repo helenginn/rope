@@ -75,7 +75,7 @@ void Atom::setAtomNum(int num)
 	_atomNum = num;
 }
 
-void Atom::setDerivedPosition(glm::vec3 &pos)
+void Atom::setDerivedPosition(const glm::vec3 &pos)
 {
 	lockMutex();
 	_derived.pos.ave = pos;

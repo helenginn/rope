@@ -41,13 +41,14 @@ class Mappable
 public:
 	virtual Coord::Interpolate<Type> interpolate_function() = 0;
 
-	virtual Type interpolate_subfaces(const std::vector<float> &cart) = 0;
+	virtual Type interpolate_subfaces(const std::vector<float> &cart 
+	                                  = {}) const = 0;
 
 	virtual std::vector<float> 
 	point_to_barycentric(const std::vector<float> &m) const = 0;
 
-	virtual std::vector<float> 
-	point_to_barycentric(const Coord::Get &coord) const = 0;
+	virtual void
+	point_to_barycentric(const Coord::Get &coord, std::vector<float> &w) const = 0;
 
 	virtual std::vector<float> 
 	barycentric_to_point(const std::vector<float> &b) const = 0;
@@ -92,8 +93,8 @@ public:
 
 	}
 
-	virtual SharedFace<N-1, D, Type> *faceExcluding(const 
-	                                                SharedFace<0, D, Type> *point)
+	virtual SharedFace<N-1, D, Type> *
+	faceExcluding(const SharedFace<0, D, Type> *point) const
 	{
 		return nullptr;
 	}
@@ -107,7 +108,7 @@ public:
 
 		return _interpolate;
 	}
-
+	
 	virtual std::vector<float> middle_of_face()
 	{
 		float pc = pointCount();
@@ -115,7 +116,7 @@ public:
 		return barycentric_to_point(bc);
 	}
 
-	virtual Type interpolate_subfaces(const std::vector<float> &cart)
+	virtual Type interpolate_subfaces(const std::vector<float> &cart = {}) const
 	{
 		std::vector<float> weights = point_to_barycentric(cart);
 		std::vector<float> inverse(weights.size(), 1);
@@ -164,36 +165,57 @@ public:
 		return interpolate_subfaces(cart);
 	}
 	
-	void recalculate_interpolation()
+	struct PointStuff
 	{
-		struct PointStuff
-		{
-			const SharedFace<0, D, Type> *point;
-			Coord::Interpolate<Type> interp_face;
-		};
-		
-		std::vector<PointStuff> prep;
-		for (int i = 0; i < this->pointCount(); i++)
-		{
-			PointStuff stuff;
-			stuff.point = this->point(i);
+		const SharedFace<0, D, Type> *point;
+		const SharedFace<N - 1, D, Type> *face;
+		Coord::Interpolate<Type> interp_face;
+	};
 
-			SharedFace<N - 1, D, Type> *ls = this->faceExcluding(stuff.point);
-			if (!ls) { continue; }
+	Type interpolate_for_n_equal_1(const Coord::Get &coord) const
+	{
+		std::vector<float> weights(pointCount());
+		this->point_to_barycentric(coord, weights);
 
-			stuff.interp_face = ls->interpolate_function();
-			prep.push_back(stuff);
+		Type total{}; float count = 0;
+		for (int i = 0; i < pointCount(); i++)
+		{
+			Type init = point(i)->value();
+			Type end = point(1 - i)->value();
+			const float &w = weights[i]; // weight of point
+			const float &r = 1 - w; // weight of simplex
+
+			Type res = (init * w + end * r);
+			total += res * w;
+			count += w;
 		}
 
+		return total / count;
+	}
+
+	void interpolate_for_n_equal_1(std::vector<PointStuff> &prep)
+	{
+		Coord::Interpolate<Type> func = 
+		[this](const Coord::Get &coord)
+		{
+			return interpolate_for_n_equal_1(coord);
+		};
+		
+		_interpolate = func;
+	}
+
+	void interpolate_for_n_gt_1(std::vector<PointStuff> &prep)
+	{
 		Coord::Interpolate<Type> func = 
 		[this, prep](const Coord::Get &coord)
 		{
-			std::vector<float> weights = this->point_to_barycentric(coord);
+			std::vector<float> weights(pointCount());
+			this->point_to_barycentric(coord, weights);
 			std::vector<float> inverse(weights.size(), 1);
 
-			for (int i = 0; i < weights.size(); i++)
+			for (int i = 0; i < pointCount(); i++)
 			{
-				for (int j = 0; j < weights.size(); j++)
+				for (int j = 0; j < pointCount(); j++)
 				{
 					if (i == j)
 					{
@@ -211,7 +233,15 @@ public:
 
 				Type init = stuff.point->value();
 				const float &fw = inverse[i];
-				Type end = stuff.interp_face(coord);
+				Type end{};
+				if (N == 2)
+				{
+					end = stuff.face->interpolate_for_n_equal_1(coord);
+				}
+				else
+				{
+					end = stuff.interp_face(coord);
+				}
 				const float &w = weights[i]; // weight of point
 				const float &r = 1 - w; // weight of simplex
 
@@ -224,6 +254,32 @@ public:
 		};
 
 		_interpolate = func;
+	}
+	
+	void recalculate_interpolation()
+	{
+		std::vector<PointStuff> prep;
+		for (int i = 0; i < this->pointCount(); i++)
+		{
+			PointStuff stuff;
+			stuff.point = this->point(i);
+
+			SharedFace<N - 1, D, Type> *ls = this->faceExcluding(stuff.point);
+			if (!ls) { continue; }
+
+			stuff.face = ls;
+			stuff.interp_face = ls->interpolate_function();
+			prep.push_back(stuff);
+		}
+
+		if (N > 1)
+		{
+			interpolate_for_n_gt_1(prep);
+		}
+		else if (N == 1)
+		{
+			interpolate_for_n_equal_1(prep);
+		}
 	}
 	
 	void get_inversion()
@@ -300,13 +356,15 @@ public:
 	virtual std::vector<float> 
 	point_to_barycentric(const std::vector<float> &m) const
 	{
-		return point_to_barycentric(Coord::fromVector(m));
+		std::vector<float> weights(pointCount());
+		point_to_barycentric(Coord::fromVector(m), weights);
+		return weights;
 	}
 
-	virtual std::vector<float> 
-	point_to_barycentric(const Coord::Get &coord) const
+	virtual void
+	point_to_barycentric(const Coord::Get &coord,
+	                     std::vector<float> &weights) const
 	{
-		std::vector<float> weights(pointCount());
 		float vec[D + 1];
 		
 		for (size_t i = 0; i < D; i++)
@@ -317,9 +375,8 @@ public:
 		vec[D] = 1;
 		
 		multMatrix(_tr, vec, &weights[0]);
-
-		return weights;
 	}
+
 private:
 	virtual size_t pointCount() const = 0;
 	virtual const SharedFace<0, D, Type> *point(int idx) const = 0;
@@ -332,11 +389,15 @@ template <unsigned int D, typename Type>
 class Interpolatable<0, D, Type> : public Mappable<Type>
 {
 public:
-	virtual Type exact_value() = 0;
+	virtual Type exact_value() const = 0;
+	Type interpolate_for_n_equal_1(const Coord::Get &coord) const
+	{
+		return exact_value();
+	}
 
 	virtual void changed() {};
 
-	virtual Type interpolate_subfaces(const std::vector<float> &cart)
+	virtual Type interpolate_subfaces(const std::vector<float> &cart = {}) const
 	{
 		return exact_value();
 	}
@@ -435,7 +496,7 @@ public:
 		this->recalculate_interpolation();
 	}
 	
-	virtual LowerFace *faceExcluding(const SharedFace<0, D, Type> *point)
+	virtual LowerFace *faceExcluding(const SharedFace<0, D, Type> *point) const
 	{
 		for (auto &f : c_subs())
 		{
@@ -681,7 +742,8 @@ public:
 		}
 	}
 
-	static SharedFace<1, D, Type> *make_next(std::vector<SharedFace<0, D, Type> *> src)
+	static SharedFace<1, D, Type> *
+	make_next(std::vector<SharedFace<0, D, Type> *> src)
 	{
 		SharedFace<1, D, Type> *line = new SharedFace<1, D, Type>(*src[0], *src[1]);
 		return line;
@@ -720,7 +782,7 @@ public:
 	}
 
 	virtual SharedFace<0, D, Type> *faceExcluding(const SharedFace<0, D, Type> 
-	                                              *point)
+	                                              *point) const
 	{
 		for (SharedFace<0, D, Type> *f : c_subs())
 		{
@@ -837,12 +899,12 @@ public:
 		Coord::Interpolate<Type> ret;
 		ret = [this](const Coord::Get &)
 		{
-			return this->exact_value();
+			return this->value();
 		};
 		return ret;
 	}
 
-	virtual Type interpolate_subfaces(const std::vector<float> &cart)
+	virtual Type interpolate_subfaces(const std::vector<float> &cart = {}) const
 	{
 		return exact_value();
 	}
@@ -854,10 +916,11 @@ public:
 		return p;
 	}
 
-	virtual std::vector<float> 
-	point_to_barycentric(const Coord::Get &coord) const
+	virtual void
+	point_to_barycentric(const Coord::Get &coord,
+	                     std::vector<float> &weights) const
 	{
-		return std::vector<float>(1, 0);
+
 	}
 
 	virtual std::vector<float> 
@@ -868,7 +931,7 @@ public:
 
 	virtual ~SharedFace<0, D, Type>() {}
 
-	virtual Type exact_value()
+	virtual Type exact_value() const
 	{
 		return this->value();
 	}
@@ -903,6 +966,7 @@ public:
 	{
 		return nullptr;
 	}
+
 private:
 	int _n = 0;
 	int _d = D;

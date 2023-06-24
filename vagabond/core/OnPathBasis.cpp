@@ -24,9 +24,8 @@ OnPathBasis::OnPathBasis() : ConcertedBasis()
 
 }
 
-Coord::Interpolate<float>
-OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis, 
-                                  const Coord::Get &coord) const
+float OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis, 
+                                       const Coord::Get &coord) const
 {
 	if (seq == nullptr || axis != 0 
 	    || _traj == nullptr) // iterating over non-zero axis
@@ -34,13 +33,7 @@ OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis,
 		return ConcertedBasis::contributionForAxis(seq, tidx, axis, coord);
 	}
 
-	Coord::Interpolate<float> grab_angle;
-	grab_angle = [this, tidx, axis](const Coord::Get &coord)
-	{
-		float weight = coord(axis);
-		float angle = _traj->angleForFraction(weight, tidx);
-		return angle;
-	};
-	
-	return grab_angle;
+	float weight = coord(axis);
+	float angle = _traj->angleForFraction(weight, tidx);
+	return angle;
 }

@@ -75,6 +75,7 @@ void SquareSplitter::next_split()
 {
 	int best = 0;
 	float lowest = FLT_MAX;
+	float original = score_to_split(-1, lowest);
 
 	for (size_t i = 0; i < _mat.rows - 1; i++)
 	{
@@ -88,6 +89,7 @@ void SquareSplitter::next_split()
 	}
 	
 	_after.push_back(best);
+	_drops.push_back(original - best);
 }
 
 void SquareSplitter::split()

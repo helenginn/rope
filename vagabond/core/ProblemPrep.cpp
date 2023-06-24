@@ -70,10 +70,26 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 		return (ave > 30);
 	};
 
-	_filter = [variation](Parameter *problem, int tridx) -> bool
+	std::function<bool(const Parameter *)> ramaFilter;
+	ramaFilter = [variation](const Parameter *problem) -> bool
 	{
-		return (problem->coversMainChain() && variation(problem, tridx));
+		return (problem->coversMainChain() && 
+		        !problem->isPeptideBond());
 	};
+	_ramaFilter = ramaFilter;
+
+	_filter = [variation, ramaFilter](Parameter *problem, int tridx) -> bool
+	{
+		return (ramaFilter(problem) &&
+		        variation(problem, tridx));
+	};
+}
+
+void ProblemPrep::filterParameters(Parameters &params)
+{
+	Parameters redo;
+	std::copy_if(params.begin(), params.end(), redo.begin(), _ramaFilter);
+
 }
 
 std::function<float(int &)> ProblemPrep::flipFunction(Parameter *param, int pidx)
@@ -134,7 +150,8 @@ const Atom *atomFrom( const std::vector<Atom *> &atoms, int idx)
 	return atoms.at(idx);
 }
 
-void addAtomToParams(ProblemPrep::ParamSet &params, const Atom *atom)
+void ProblemPrep::addAtomToParams(ProblemPrep::ParamSet &params, const Atom *atom, 
+                                  float drop)
 {
 	if (atom == nullptr)
 	{
@@ -145,6 +162,7 @@ void addAtomToParams(ProblemPrep::ParamSet &params, const Atom *atom)
 	{
 		Parameter *p = atom->parameter(j);
 		params.insert(p);
+		_splitDrop[p] = drop;
 	}
 }
 
@@ -254,6 +272,7 @@ ProblemPrep::ParamSet ProblemPrep::problemParams(PCA::Matrix &m,
 	ParamSet params;
 	SquareSplitter sqsp(m);
 	std::vector<int> splits = sqsp.splits();
+	std::vector<float> drops = sqsp.drops();
 	
 	for (size_t i = 0; i < splits.size(); i++)
 	{
@@ -263,7 +282,7 @@ ProblemPrep::ParamSet ProblemPrep::problemParams(PCA::Matrix &m,
 		{
 			int include = split_idx + k;
 			const Atom *atom = atomFrom(atoms, include);
-			addAtomToParams(params, atom);
+			addAtomToParams(params, atom, drops[i]);
 		}
 	}
 
@@ -393,20 +412,28 @@ void ProblemPrep::regroup(Problems &problems)
 		groups.push_back(current);
 	}
 
-	/*
-	for (Parameters &vec : groups)
+	std::sort(groups.begin(), groups.end(), [this](const Parameters &a,
+	                                               const Parameters &b)
 	{
-		std::cout << "Group of " << vec.size() << std::endl;
-		
-		for (Parameter *param : vec)
+		float sum_a = 0; float sum_b = 0;
+		float count_a = 0; float count_b = 0;
+
+		for (Parameter *p : a)
 		{
-			std::cout << "\t";
-			std::cout << param->residueId() << " ";
-			std::cout << param->desc() << std::endl;
+			sum_a += _splitDrop[p];
+			count_a++;
 		}
 
-	}
-	*/
+		for (Parameter *p : b)
+		{
+			sum_b += _splitDrop[p];
+			count_b++;
+		}
+
+		sum_a /= count_a;
+		sum_b /= count_b;
+		return sum_a > sum_b;
+	});
 }
 
 

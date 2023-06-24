@@ -40,26 +40,32 @@ bool resi_num_comp(const Atom *a, const Atom *b)
 	return (a->residueId().as_num() < b->residueId().as_num());
 }
 
-void CompareDistances::filter(const AtomPosMap &aps)
+void CompareDistances::filter(const AtomPosList &apl)
 {
 	if (_leftAtoms.size() > 0 && _rightAtoms.size() > 0) { return; }
 	
 	_leftAtoms.clear(); _rightAtoms.clear();
+	_leftIdxs.clear(); _rightIdxs.clear();
 
-	for (auto it = aps.begin(); it != aps.end(); it++)
+	int i = -1;
+	for (const AtomWithPos &awp : apl)
 	{
-		if (!_defaultFilter(it->first))
+		i++;
+
+		if (!_defaultFilter(awp.atom))
 		{
 			continue;
 		}
 		
-		if (!_left || _left(it->first))
+		if (!_left || _left(awp.atom))
 		{
-			_leftAtoms.push_back(it->first);
+			_leftAtoms.push_back(awp.atom);
+			_leftIdxs.push_back(i);
 		}
-		if (!_right || _right(it->first))
+		if (!_right || _right(awp.atom))
 		{
-			_rightAtoms.push_back(it->first);
+			_rightAtoms.push_back(awp.atom);
+			_rightIdxs.push_back(i);
 		}
 	}
 
@@ -75,11 +81,11 @@ void CompareDistances::setupMatrix()
 	}
 }
 
-void CompareDistances::process(const AtomPosMap &aps)
+void CompareDistances::process(const AtomPosList &apl)
 {
-	filter(aps);
+	filter(apl);
 	setupMatrix();
-	addToMatrix(aps);
+	addToMatrix(apl);
 }
 
 float CompareDistances::quickScore()
@@ -100,25 +106,23 @@ float CompareDistances::quickScore()
 	return sum / (float)(size * _counter);
 }
 
-void CompareDistances::addToMatrix(const AtomPosMap &aps)
+void CompareDistances::addToMatrix(const AtomPosList &apl)
 {
 	int i = 0; int j = 0;
 	_counter++;
 	
-	for (Atom *atom : _leftAtoms)
+	AtomPosList lefts, rights;
+
+
+	for (const int &m : _leftIdxs)
 	{
-		if (aps.count(atom) == 0) continue;
-		const WithPos &wp = aps.at(atom);
-		const glm::vec3 &x = wp.ave;
-		const glm::vec3 &p = wp.target;
+		const glm::vec3 &x = apl[m].wp.ave;
+		const glm::vec3 &p = apl[m].wp.target;
 
-		for (Atom *atom : _rightAtoms)
+		for (const int &n : _rightIdxs)
 		{
-			if (aps.count(atom) == 0) continue;
-			const WithPos &yp = aps.at(atom);
-
-			const glm::vec3 &y = yp.ave;
-			const glm::vec3 &q = yp.target;
+			const glm::vec3 &y = apl[n].wp.ave;
+			const glm::vec3 &q = apl[n].wp.target;
 
 			float expected = glm::length(p - q);
 			float acquired = glm::length(x - y);

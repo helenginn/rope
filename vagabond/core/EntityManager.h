@@ -39,6 +39,8 @@ class EntityManager
 public:
 	EntityManager();
 
+	static EntityManager *manager();
+
 	Entity *insertIfUnique(PolymerEntity &e);
 	void update(const PolymerEntity &e);
 	

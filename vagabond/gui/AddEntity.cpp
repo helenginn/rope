@@ -235,7 +235,7 @@ void AddEntity::setup()
 			addObject(text);
 		}
 
-#ifdef VERSION_SHORT_ROUTES
+#ifdef VERSION_TRIANGLES
 		if (_obj.hasSequence())
 		{
 			ImageButton *b = new ImageButton("assets/images/map.png", this);

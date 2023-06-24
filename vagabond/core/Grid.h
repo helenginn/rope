@@ -83,7 +83,7 @@ public:
 
 	long index(glm::vec3 xyz) const
 	{
-		return index(xyz.x, xyz.y, xyz.z);
+		return index((long)lrint(xyz.x), (long)lrint(xyz.y), (long)lrint(xyz.z));
 	}
 
 	const T &element(long i) const

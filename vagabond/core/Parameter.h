@@ -69,9 +69,13 @@ public:
 	}
 
 	virtual bool isConstrained() const = 0;
-	virtual bool coversMainChain() = 0;
+	virtual bool coversMainChain() const = 0;
 	virtual ResidueId residueId() = 0;
 	virtual const ResidueId &residueId() const = 0;
+	virtual bool isPeptideBond() const
+	{
+		return false;
+	}
 
 	std::set<Parameter *> relatedParameters() const;
 

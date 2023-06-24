@@ -106,8 +106,8 @@ public:
 		throw std::runtime_error("asked for silly atom number from bond angle");
 	}
 	
-	virtual bool coversMainChain();
-	bool isPeptideBond() const;
+	virtual bool coversMainChain() const;
+	virtual bool isPeptideBond() const;
 
 	bool spansMultipleChains() const;
 	

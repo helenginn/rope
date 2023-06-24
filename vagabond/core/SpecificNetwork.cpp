@@ -17,12 +17,79 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SpecificNetwork.h"
+#include "EntityManager.h"
 #include "Network.h"
 #include "Instance.h"
 #include "NetworkBasis.h"
 #include "Model.h"
 #include "BondSequence.h"
+#include "ModelManager.h"
 #include <vagabond/utils/Mapping.h>
+
+SpecificNetwork::SpecificNetwork(json &j) :
+StructureModification(j.at("model"), j.at("main_instance"), 1, 2)
+{
+	std::string ent = j["entity"];
+	std::string modid = j["model"];
+	std::string main_inst = j["main_instance"];
+
+	Entity *entity = EntityManager::manager()->entity(ent);
+	if (entity == nullptr)
+	{
+		throw std::runtime_error("Entity by name not found in this RoPE: " + ent);
+	}
+
+	Instance *main = ModelManager::manager()->instance(main_inst);
+	if (main == nullptr)
+	{
+		throw std::runtime_error("Main instance " + main_inst + " not found.");
+	}
+	_instance = main;
+
+	std::vector<Instance *> instances;
+	for (std::string id : j["instances"])
+	{
+		Instance *instance = ModelManager::manager()->instance(id);
+		if (instance == nullptr)
+		{
+			throw std::runtime_error("Instance " + id + " not found.");
+		}
+		instances.push_back(instance);
+	}
+
+	_network = new Network(entity, instances);
+	_network->get_info(j);
+	
+	_torsionType = TorsionBasis::TypeNetwork;
+	_threads = 2;
+	_instance->load();
+	_instance->currentAtoms()->recalculate();
+	
+	grabParamMaps(j);
+}
+
+void SpecificNetwork::grabParamMaps(json &j)
+{
+	AtomGroup *atoms = _instance->currentAtoms();
+	typedef Mapping<NETWORK_DIMS, float> Concrete;
+
+	for (json &entry : j["maps"])
+	{
+		ResidueId id = entry["param"]["res"];
+		std::string desc = entry["param"]["desc"];
+		Parameter *param = _instance->currentAtoms()->findParameter(desc, id);
+		
+		if (!param)
+		{
+			throw std::runtime_error("Could not find vital parameter " + 
+			                         id.as_string() + " " + desc);
+		}
+
+		json &tmp = entry["map"];
+		_param2Map[param] = new Concrete();
+		setJsonForParameter(param, tmp);
+	}
+}
 
 SpecificNetwork::SpecificNetwork(Network *network, Instance *inst) :
 StructureModification(inst, 1, network->dims())
@@ -117,7 +184,7 @@ int SpecificNetwork::submitJob(bool show, const std::vector<float> vals,
 		job.custom.vecs[0].mean[i] = vals[i];
 	}
 
-	job.requests = static_cast<JobType>(JobExtractPositions |
+	job.requests = static_cast<JobType>(JobPositionVector |
 	                                    JobCalculateDeviations);
 	if (!show)
 	{
@@ -162,6 +229,13 @@ void SpecificNetwork::prepareAtomMaps(BondSequence *seq, PosMapping *pm)
 
 void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 {
+	if (_param2Map.count(map.param) > 0)
+	{
+		map.mapping = _param2Map[map.param];
+		return;
+//		return;
+	}
+
 	const ResidueId id = map.param->residueId();
 	Residue *master_res = _instance->equivalentMaster(id);
 	_param2Map[map.param] = map.mapping;
@@ -284,18 +358,20 @@ Coord::NeedsUpdate SpecificNetwork::needsUpdate(BondSequence *seq, int idx,
 	
 	Mappable<float> *face = map->face_for_index(fidx);
 	int version = map->face_for_index(fidx)->version();
+	int pc = map->point_count_for_face(fidx);
 	Coord::NeedsUpdate update;
-	update = [face, version](const Coord::Get &coord) -> bool
+	update = [face, version, pc](const Coord::Get &coord) -> bool
 	{
 		if (!face || !face->valid() || face->version() != version)
 		{
 			return true;
 		}
 
-		std::vector<float> weights = face->point_to_barycentric(coord);
+		std::vector<float> weights(pc);
+		face->point_to_barycentric(coord, weights);
 		for (float &f : weights)
 		{
-			if (f < 0)
+			if (f < -1e-6 || f > 1+1e-6)
 			{
 				return true;
 			}
@@ -323,7 +399,7 @@ Coord::Interpolate<float> SpecificNetwork::torsion(BondSequence *seq, int idx,
 	Mapped<float> *const map = tm.mapping;
 	if (!map)
 	{
-		return Coord::Interpolate<float>();
+		return [](const Coord::Get &) { return 0;};
 	}
 
 	Coord::Interpolate<float> interpolate = map->interpolate_function(coord);
@@ -339,6 +415,14 @@ void SpecificNetwork::customModifications(BondCalculator *calc, bool has_mol)
 bool SpecificNetwork::valid_position(const std::vector<float> &vals)
 {
 	return _network->valid_position(vals);
+}
+
+bool SpecificNetwork::handleAtomList(AtomPosList &apl)
+{
+	sendResponse("atom_list", &apl);
+	_display++;
+
+	return (_display % _displayInterval) == 0;
 }
 
 bool SpecificNetwork::handleAtomMap(AtomPosMap &aps)
@@ -425,6 +509,7 @@ void SpecificNetwork::setJsonForParameter(Parameter *p, const json &j)
 	Mapped<float> *tmp = mapForParameter(p);
 	Concrete *map = static_cast<Concrete *>(tmp);
 
+	map->invalidate();
 	*map = j["map"];
 }
 

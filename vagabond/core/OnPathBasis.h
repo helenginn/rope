@@ -33,9 +33,8 @@ public:
 		_traj = traj;
 	}
 
-	virtual Coord::Interpolate<float> 
-	contributionForAxis(BondSequence *seq, int tidx, int i, 
-	                    const Coord::Get &coord) const;
+	virtual float contributionForAxis(BondSequence *seq, int tidx, int i, 
+	                                  const Coord::Get &coord) const;
 private:
 	Trajectory *_traj = nullptr;
 

@@ -62,10 +62,9 @@ File::Type MtzFile::cursoryLook()
 	return type;
 }
 
-gemmi::Mtz::Column *find_phi_column(gemmi::Mtz &mtz)
+gemmi::Mtz::Column *find_column(gemmi::Mtz &mtz, 
+                                const std::vector<std::string> &list)
 {
-	const std::vector<std::string> list = {"PHWT", "PHIC", "PHIF", "P"};
-
 	gemmi::Mtz::Column *ret = nullptr;
 	for (const std::string &trial : list)
 	{
@@ -77,6 +76,18 @@ gemmi::Mtz::Column *find_phi_column(gemmi::Mtz &mtz)
 	}
 	
 	return nullptr;
+}
+
+gemmi::Mtz::Column *find_phi_column(gemmi::Mtz &mtz)
+{
+	const std::vector<std::string> list = {"PHWT", "PHIC", "PHIF", "P"};
+	return find_column(mtz, list);
+}
+
+gemmi::Mtz::Column *find_f_column(gemmi::Mtz &mtz)
+{
+	const std::vector<std::string> list = {"FWT", "F", "FP", "Fobs"};
+	return find_column(mtz, list);
 }
 
 void MtzFile::parse()
@@ -103,12 +114,7 @@ void MtzFile::parse()
 	gemmi::Mtz::Column *ch = mtz.column_with_label("H");
 	gemmi::Mtz::Column *ck = mtz.column_with_label("K");
 	gemmi::Mtz::Column *cl = mtz.column_with_label("L");
-	gemmi::Mtz::Column *cf = mtz.column_with_label("F");
-	if (cf == nullptr)
-	{
-		std::cout << "checking for FP" << std::endl;
-		cf = mtz.column_with_label("FP");
-	}
+	gemmi::Mtz::Column *cf = find_f_column(mtz);
 
 	gemmi::Mtz::Column *csf = mtz.column_with_label("SIGF");
 	if (csf == nullptr)
@@ -171,7 +177,7 @@ std::string MtzFile::write_to_string(float max_res)
 
 	//	CCP4SPG *spg = ccp4spg_load_by_ccp4_num(1);
 
-	for (int k = -_map->nz() / 2; k < _map->nz() / 2; k++)
+	for (int k = 0; k < _map->nz() / 2; k++)
 	{
 		for (int j = -_map->ny() / 2; j < _map->ny() / 2; j++)
 		{

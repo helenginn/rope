@@ -32,7 +32,7 @@ public:
 
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 	
-	void process(const AtomPosMap &aps);
+	void process(const AtomPosList &apl);
 
 	void setLeftFilter(AtomFilter &filter)
 	{
@@ -66,12 +66,15 @@ public:
 	void clearMatrix();
 	void reset();
 private:
-	void filter(const AtomPosMap &aps);
+	void filter(const AtomPosList &apl);
 	void setupMatrix();
-	void addToMatrix(const AtomPosMap &aps);
+	void addToMatrix(const AtomPosList &apl);
 
 	std::vector<Atom *> _leftAtoms;
 	std::vector<Atom *> _rightAtoms;
+
+	std::vector<int> _leftIdxs;
+	std::vector<int> _rightIdxs;
 
 	AtomFilter _left = nullptr;
 	AtomFilter _right = nullptr;

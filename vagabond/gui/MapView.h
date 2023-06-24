@@ -37,6 +37,7 @@ public Responder<SpecificNetwork>
 {
 public:
 	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances);
+	MapView(Scene *prev, SpecificNetwork *spec);
 	virtual ~MapView();
 
 	void makeTriangles();
@@ -45,6 +46,8 @@ public:
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void sendObject(std::string, void *object);
+	
+	void supplyExisting(SpecificNetwork *spec);
 
 	void buttonPressed(std::string tag, Button *button);
 	void startFlip(int i, int j);
@@ -52,6 +55,7 @@ private:
 	void makeMapping();
 	void startFlips();
 	void startNudges(std::vector<float> point);
+	void loadSpace(std::string filename);
 	void stopWorker();
 	void skipJob();
 	void showMap();
@@ -65,6 +69,8 @@ private:
 
 	void addButtons();
 	void cleanupPause();
+	void saveSpace(std::string filename);
+	void askForFilename();
 
 	MatrixPlot *_plot = nullptr;
 	std::atomic<bool> _updatePlot{false};

@@ -42,6 +42,7 @@ class StructureModification
 {
 public:
 	StructureModification(Instance *mol, int num, int dims);
+	StructureModification(std::string model, std::string inst, int num, int dims);
 	
 	void setAtoms(AtomGroup *grp)
 	{
@@ -90,6 +91,11 @@ public:
 protected:
 	
 	virtual bool handleAtomMap(AtomPosMap &aps)
+	{
+		return true;
+	}
+
+	virtual bool handleAtomList(AtomPosList &apl)
 	{
 		return true;
 	}

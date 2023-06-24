@@ -72,9 +72,9 @@ public:
 	}
 protected:
 	Coord::Interpolate<float> fullContribution(BondSequence *seq, int tidx, 
-	                                           const Coord::Get &coordinate, int n);
+	                                           const Coord::Get &coord, int n);
 
-	virtual Coord::Interpolate<float> 
+	virtual float
 	contributionForAxis(BondSequence *seq, 
 	                    int tidx, int axis, 
 	                    const Coord::Get &coordinate) const;

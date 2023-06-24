@@ -85,7 +85,7 @@ public:
 		return _others[tag].pos.ave;
 	}
 	
-	void setDerivedPosition(glm::vec3 &pos);
+	void setDerivedPosition(const glm::vec3 &pos);
 	void setDerivedPositions(WithPos &pos);
 	
 	void setDerivedBFactor(double b)

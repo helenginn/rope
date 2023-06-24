@@ -11,6 +11,7 @@ uniform mat4 projection;
 uniform mat4 model;
 uniform vec3 centre;
 uniform mat3x3 unit_cell;
+uniform int track;
 
 out vec3 dPos;
 out vec4 vColor;
@@ -78,22 +79,31 @@ bool bad_length(vec3 v)
 
 void main()
 {
-	inv_rot = inverse(mat3(model));
-	inv_cell = inverse(mat3(unit_cell));
-	jump = -1.;
-	if (bad_length(position) || bad_length(second) || bad_length(third))
-	{
-		return;
-	}
 
 	vec4 ref1 = move_vertex(position);
-	vec4 ref2 = move_vertex(second);
-	vec4 ref3 = move_vertex(second);
 
-	if (length(ref3 - ref2) > 19. || length(ref2 - ref1) > 19. ||
-		length(ref1 - ref3) > 19.)
+	if (track == 1)
 	{
-		return;
+		inv_rot = inverse(mat3(model));
+		inv_cell = inverse(mat3(unit_cell));
+		jump = -1.;
+		if (bad_length(position) || bad_length(second) || bad_length(third))
+		{
+			return;
+		}
+
+		vec4 ref2 = move_vertex(second);
+		vec4 ref3 = move_vertex(second);
+
+		if (length(ref3 - ref2) > 19. || length(ref2 - ref1) > 19. ||
+				length(ref1 - ref3) > 19.)
+		{
+			return;
+		}
+	}
+	else
+	{
+		ref1 = vec4(position, 1.);
 	}
 
 	jump = 1.;

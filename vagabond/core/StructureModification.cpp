@@ -19,11 +19,24 @@
 #include "StructureModification.h"
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/ConcertedBasis.h>
+#include "EntityManager.h"
+#include "ModelManager.h"
 
 StructureModification::StructureModification(Instance *mol, int num, int dims)
 : _sampler(num, dims)
 {
 	_instance = mol;
+	_num = num;
+	_dims = dims;
+}
+
+StructureModification::StructureModification(std::string modid, std::string inst, 
+                                             int num, int dims)
+: _sampler(num, dims)
+{
+	Model *model = ModelManager::manager()->model(modid);
+	Instance *instance = model->instanceWithId(inst);
+	_instance = instance;
 	_num = num;
 	_dims = dims;
 }
@@ -263,7 +276,11 @@ void StructureModification::retrieve()
 			found = true;
 			if (r->requests & JobExtractPositions)
 			{
-				if (handleAtomMap(r->aps))
+				handleAtomMap(r->aps);
+			}
+			if (r->requests & JobPositionVector)
+			{
+				if (handleAtomList(r->apl))
 				{
 					r->transplantPositions();
 				}

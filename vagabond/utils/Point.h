@@ -116,6 +116,11 @@ public:
 		return _p[idx];
 	}
 	
+	const float &operator[](int idx) const
+	{
+		return _p[idx];
+	}
+	
 	float &operator[](int idx)
 	{
 		return _p[idx];

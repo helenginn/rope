@@ -152,6 +152,7 @@ public:
 	void calculate();
 	void superpose();
 	const AtomPosMap &extractPositions();
+	const AtomPosList &extractVector();
 	
 	struct ElePos
 	{
@@ -251,6 +252,7 @@ private:
 	Vec3s _atomPositions;
 
 	AtomPosMap _posAtoms;
+	AtomPosList _posList;
 	
 	struct Torsioner
 	{

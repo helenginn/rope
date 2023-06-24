@@ -30,8 +30,6 @@
 ShowMap::ShowMap(Scene *scene, SpecificNetwork *sn) : Scene(scene)
 {
 	_sn = sn;
-	_line = new Line(false);
-	addObject(_line);
 	update(nullptr);
 }
 
@@ -42,8 +40,6 @@ void ShowMap::setup()
 
 void ShowMap::updateFromMap(Mapped<float> *map)
 {
-	_line->clearVertices();
-
 	if (!map)
 	{
 		return;
@@ -62,6 +58,7 @@ void ShowMap::updateFromMap(Mapped<float> *map)
 	Network *net = _sn->network();
 	
 	Box *box = new Box();
+	Line *line = new Line(false);
 	for (size_t i = 0; i < map->pointCount(); i++)
 	{
 		std::vector<float> vec = map->point_vector(i);
@@ -84,9 +81,10 @@ void ShowMap::updateFromMap(Mapped<float> *map)
 		image->addAltTag(id);
 		box->addObject(image);
 		
-		_line->addPoint(image->centroid());
+		line->addPoint(image->centroid());
 	}
 	
+	box->addObject(line);
 	box->setCentre(0.5, 0.5);
 	addObject(box);
 	
@@ -97,16 +95,13 @@ void ShowMap::updateFromMap(Mapped<float> *map)
 
 		for (size_t j = 1; j < pIndices.size(); j++)
 		{
-			_line->addIndex(pIndices[j - 1]);
-			_line->addIndex(pIndices[j]);
+			line->addIndex(pIndices[j - 1]);
+			line->addIndex(pIndices[j]);
 		}
 
-		_line->addIndex(pIndices.front());
-		_line->addIndex(pIndices.back());
+		line->addIndex(pIndices.front());
+		line->addIndex(pIndices.back());
 	}
-	
-	_line->setCentre(0.5, 0.5);
-	_line->forceRender(true, true);
 }
 
 void ShowMap::update(Parameter *param)

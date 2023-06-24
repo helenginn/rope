@@ -20,7 +20,10 @@
 #define __vagabond__SpecificNetwork__
 
 #include "StructureModification.h"
+#include "Instance.h"
+#include "Model.h"
 #include "PositionSampler.h"
+#include "Network.h"
 #include <vagabond/utils/Vec3s.h>
 #include <vagabond/core/Responder.h>
 #include <list>
@@ -36,6 +39,7 @@ class SpecificNetwork : public StructureModification, public PositionSampler,
 public HasResponder<Responder<SpecificNetwork>>
 {
 public:
+	SpecificNetwork(json &j);
 	SpecificNetwork(Network *network, Instance *inst);
 	
 	Instance *instance()
@@ -92,6 +96,7 @@ public:
 	friend inline void from_json(const json &j, SpecificNetwork &sn);
 protected:
 	virtual bool handleAtomMap(AtomPosMap &aps);
+	virtual bool handleAtomList(AtomPosList &apl);
 private:
 	void getDetails(BondCalculator *bc);
 	void customModifications(BondCalculator *calc, bool has_mol);
@@ -125,6 +130,7 @@ private:
 	
 	typedef Mapped<Vec3s> PosMapping;
 
+	void grabParamMaps(json &json);
 	void getTorsionDetails(TorsionBasis *tb, CalcDetails &cd);
 
 	void prepareAtomMaps(BondSequence *seq, PosMapping *pm);
@@ -150,20 +156,19 @@ private:
 
 inline void to_json(json &j, const SpecificNetwork &sn)
 {
+	j["model"] = sn._instance->model()->id();
+	j["main_instance"] = sn._instance->id();
+	sn._network->add_info(j);
+
 	for (auto it = sn._param2Map.begin(); it != sn._param2Map.end(); it++)
 	{
 		nlohmann::json param;
-		param["resid"] = it->first->residueId();
-		param["desc"] = it->first->desc();
+		param["param"]["res"] = it->first->residueId();
+		param["param"]["desc"] = it->first->desc();
 		param["map"] = sn.jsonForParameter(it->first);
 
 		j["maps"].push_back(param);
 	}
-}
-
-inline void from_json(const json &j, SpecificNetwork &sn)
-{
-
 }
 
 #endif

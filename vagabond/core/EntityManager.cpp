@@ -25,6 +25,10 @@ EntityManager::EntityManager()
 
 }
 
+EntityManager *EntityManager::manager()
+{
+	return Environment::entityManager();
+}
 
 Entity *EntityManager::insertIfUnique(PolymerEntity &ent)
 {

@@ -32,10 +32,10 @@ ScoreMap::~ScoreMap()
 
 void ScoreMap::sendObject(std::string tag, void *object)
 {
-	if (tag == "atom_map")
+	if (tag == "atom_list")
 	{
-		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
-		_comparer.process(*aps);
+		AtomPosList *apl = static_cast<AtomPosList *>(object);
+		_comparer.process(*apl);
 	}
 }
 

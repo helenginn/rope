@@ -101,6 +101,11 @@ void FileView::handleFileOrError(std::string filename)
 void FileView::handleFileWithoutChoice(std::string filename)
 {
 	File *file = File::loadUnknown(filename);
+	if (!file)
+	{
+		throw std::runtime_error("File is not of known type");
+	}
+
 	File::Type type = file->cursoryLook();
 
 	if (type & File::CompAtoms || type & File::MacroAtoms)

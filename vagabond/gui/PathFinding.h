@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/MetadataGroup.h>
 
+class SpecificNetwork;
 class ObjectGroup;
 class Entity;
 class Rule;
@@ -38,10 +39,14 @@ public:
 private:
 	void deleteRule();
 	void makeRule();
+	void findJson();
+	void loadSpace(std::string filename);
+	void start();
 
 	Entity *_entity = nullptr;
 	MetadataGroup _all;
 	Rule *_rule = nullptr;
+	SpecificNetwork *_prior = nullptr;
 };
 
 #endif

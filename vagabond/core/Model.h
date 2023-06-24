@@ -110,7 +110,8 @@ public:
 		return _polymers;
 	}
 	
-	std::vector<Instance *> instances();
+	std::vector<Instance *> instances(); // do not attempt to make const!
+	Instance *instanceWithId(std::string id);
 
 	void housekeeping();
 	

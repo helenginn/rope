@@ -28,7 +28,7 @@ public:
 	           double value);
 	virtual ~HyperValue() {};
 	
-	virtual bool coversMainChain() 
+	virtual bool coversMainChain() const
 	{
 		return _determinesChain;
 	}

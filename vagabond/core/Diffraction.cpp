@@ -31,7 +31,6 @@ Diffraction::Diffraction(ArbitraryMap *map)
 TransformedGrid<VoxelDiffraction>(map->nx(), map->ny(), map->nz())
 {
 	bool flip = (map->status() == ArbitraryMap::Real);
-	std::cout << "Flipping? " << flip << std::endl;
 	
 	if (flip)
 	{

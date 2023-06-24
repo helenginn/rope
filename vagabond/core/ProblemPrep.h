@@ -47,6 +47,8 @@ public:
 	size_t groupCountForPoint(int pidx);
 	size_t groupCountForTriangle(int pidx);
 	
+	void filterParameters(Parameters &params);
+	
 	float flexForParameter(Parameter *p)
 	{
 		return _flexResults[p];
@@ -59,6 +61,8 @@ private:
 	void getFlexes();
 
 	ParamSet problemParams(PCA::Matrix &m, const std::vector<Atom *> &atoms);
+	void addAtomToParams(ProblemPrep::ParamSet &params, const Atom *atom, 
+	                     float drop);
 	ParamSet filter(const ParamSet &other, int tidx);
 	void sort(Parameters &params);
 
@@ -107,9 +111,11 @@ private:
 	Mapped<float> *_mapped = nullptr;
 
 	std::function<bool(Parameter *, int)> _filter;
+	std::function<bool(const Parameter *)> _ramaFilter;
 	std::function<float(Parameter *, int)> _flex;
 	
 	std::map<Parameter *, float> _flexResults;
+	std::map<Parameter *, float> _splitDrop;
 };
 
 #endif

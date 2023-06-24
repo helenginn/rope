@@ -22,6 +22,8 @@
 #include <vagabond/core/PathFinder.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include "SpecificNetwork.h"
 #include "AddRule.h"
 #include "MapView.h"
 
@@ -55,12 +57,46 @@ void PathFinding::setup()
 		addObject(t);
 	}
 	
+	top += 0.2;
+
+	{
+		Text *t = new Text("or start from existing saved space:");
+		t->setLeft(0.2, top);
+		t->addAltTag("Find a previously saved json file");
+		addObject(t);
+	}
+	{
+		ImageButton *t = ImageButton::arrow(-90., this);
+		t->setReturnTag("find_json");
+		t->setCentre(0.8, top);
+		addObject(t);
+	}
+	
 	{
 		TextButton *start = new TextButton("Start", this);
 		start->setReturnTag("start");
 		start->setRight(0.8, 0.8);
 		addObject(start);
 	}
+}
+
+void PathFinding::findJson()
+{
+	AskForText *aft = new AskForText(this, "Enter json filename to open", 
+	                                 "json_filename", this);
+	setModal(aft);
+}
+
+void PathFinding::loadSpace(std::string filename)
+{
+	json data;
+	std::ifstream f;
+	f.open(filename);
+	f >> data;
+	f.close();
+
+	SpecificNetwork *spec = new SpecificNetwork(data);
+	_prior = spec;
 }
 
 void PathFinding::makeRule()
@@ -83,6 +119,36 @@ void PathFinding::deleteRule()
 	refresh();
 }
 
+void PathFinding::start()
+{
+	if (_prior)
+	{
+		MapView *mv = new MapView(this, _prior);
+		mv->show();
+		return;
+	}
+
+	std::vector<Instance *> instances;
+
+	if (_rule)
+	{
+		std::vector<HasMetadata *> hms = _all.subsetFromRule(*_rule);
+
+		for (HasMetadata *hm : hms)
+		{
+			instances.push_back(static_cast<Instance *>(hm));
+		}
+	}
+	else
+	{
+		instances = _entity->instances();
+	}
+
+	MapView *mv = new MapView(this, _entity, instances);
+	mv->show();
+
+}
+
 void PathFinding::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "make_rule")
@@ -95,42 +161,17 @@ void PathFinding::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "start")
 	{
-		if (false)
-		{
-			PathFinderView *pfv = new PathFinderView(this);
-			PathFinder *pf = pfv->pathFinder();
-			pf->setEntity(_entity);
-
-			if (_rule)
-			{
-				pf->setWhiteList(_all.subsetFromRule(*_rule));
-			}
-
-			pfv->show();
-
-			return;
-		}
-		else
-		{
-			std::vector<Instance *> instances;
-			
-			if (_rule)
-			{
-				std::vector<HasMetadata *> hms = _all.subsetFromRule(*_rule);
-
-				for (HasMetadata *hm : hms)
-				{
-					instances.push_back(static_cast<Instance *>(hm));
-				}
-			}
-			else
-			{
-				instances = _entity->instances();
-			}
-			
-			MapView *mv = new MapView(this, _entity, instances);
-			mv->show();
-		}
+		start();
+	}
+	else if (tag == "find_json")
+	{
+		findJson();
+	}
+	else if (tag == "json_filename")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string text = te->scratch();
+		loadSpace(text);
 	}
 
 	Scene::buttonPressed(tag, button);

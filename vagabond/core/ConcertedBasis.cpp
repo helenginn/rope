@@ -37,18 +37,14 @@ ConcertedBasis::valueForParameter(BondSequence *seq, int tidx,
 {
 	if (tidx < 0)
 	{
-		return 0;
-	}
-
-	if (n >= tidx && _angles.size() == 0)
-	{
-		prepare();
+		return [](const Coord::Get &) { return 0;};
 	}
 
 	TorsionAngle &ta = _angles[tidx];
 
 	if (n == 0 || !ta.mask)
 	{
+
 		Coord::Interpolate<float> ret = [ta](const Coord::Get &)
 		{
 			return ta.angle;
@@ -57,21 +53,9 @@ ConcertedBasis::valueForParameter(BondSequence *seq, int tidx,
 		return ret;
 	}
 	
-	int contracted_tidx = _idxs[tidx];
 	Coord::Interpolate<float> sum = fullContribution(seq, tidx, coord, n);
-	
-	Coord::Interpolate<float> add_angle_back;
-	add_angle_back = [ta, sum](const Coord::Get &coord)
-	{
-		float ret = ta.angle;
-		if (sum)
-		{
-			ret += sum(coord);
-		}
-		return ret;
-	};
-	
-	return add_angle_back;
+
+	return sum;
 }
 
 // tidx: torsion angle
@@ -278,41 +262,33 @@ Coord::Interpolate<float>
 ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
                                  const Coord::Get &coord, int n)
 {
-	if (tidx < 0 || tidx > _svd.u.rows)
+	int contr_idx = _idxs[tidx];
+	if (contr_idx < 0 || contr_idx > _svd.u.rows)
 	{
-		return Coord::Interpolate<float>();
+		return [](const Coord::Get &) { return 0;};
 	}
 
-	std::vector<Coord::Interpolate<float>> funcs;
-	
-	for (size_t axis = 0; axis < n; axis++)
-	{
-		Coord::Interpolate<float> add = contributionForAxis(seq, tidx, axis, coord);
-		if (add)
-		{
-			funcs.push_back(add);
-		}
-	}
 
 	Coord::Interpolate<float> all;
-	all = [funcs](const Coord::Get &coord)
+	float angle = _angles[tidx].angle;
+	all = [seq, angle, contr_idx, n, this](const Coord::Get &coord)
 	{
 		float ret = 0;
-		// each n is an axis
-		for (size_t i = 0; i < funcs.size(); i++)
+		for (size_t axis = 0; axis < n; axis++)
 		{
-			ret += funcs[i](coord);
+			float add = this->contributionForAxis(seq, contr_idx, 
+			                                      axis, coord);
+			ret += add;
 		}
 
-		return ret;
+		return ret + angle;
 	};
 	
 	return all;
 
 }
 
-Coord::Interpolate<float> 
-ConcertedBasis::contributionForAxis(BondSequence *seq, 
+float ConcertedBasis::contributionForAxis(BondSequence *seq, 
                                     int tidx, int axis, 
                                     const Coord::Get &coord) const
 {
@@ -321,15 +297,10 @@ ConcertedBasis::contributionForAxis(BondSequence *seq,
 		return 0;
 	}
 
-	Coord::Interpolate<float> grab_angle;
-	grab_angle = [this, tidx, axis](const Coord::Get &coord)
-	{
-		double svd = (_svd.u[tidx][axis]);
-		const float &custom = coord(axis);
-		float add = svd * custom;
-		return add;
-	};
+	double svd = (_svd.u[tidx][axis]);
+	const float &custom = coord(axis);
+	float add = svd * custom;
 	
-	return grab_angle;
+	return add;
 }
 

@@ -83,11 +83,13 @@ public:
 	static void assess(Cartographer *cg);
 	static void flipIdx(Cartographer *cg, int i, int j);
 
+	void supplyExisting(SpecificNetwork *spec);
 protected:
 	void sendObject(std::string tag, void *object);
 private:
 	int bestStartingPoint(std::vector<int> &ruled_out);
 	Mappable<float> *bootstrapFace(std::vector<int> &pidxs);
+	void hookReferences();
 
 	void preparePoints(int idx);
 	float scoreForTriangle(int idx, ScoreMap::Mode mode = ScoreMap::Basic);

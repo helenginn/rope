@@ -53,6 +53,7 @@ enum JobType
 	JobUpdateMechanics =         1 << 5,
 	JobSolventSurfaceArea =      1 << 6,
 	JobSolventMask =      		 1 << 7,
+	JobPositionVector =          1 << 8,
 };
 
 struct CustomVector
@@ -157,6 +158,7 @@ struct Result
 	int ticket;
 	JobType requests;
 	AtomPosMap aps{};
+	AtomPosList apl{};
 	double deviation;
 	double score;
 	double correlation;
@@ -183,17 +185,28 @@ struct Result
 	
 	void transplantPositions()
 	{
-		AtomPosMap::iterator it;
-		for (it = aps.begin(); it != aps.end(); it++)
+		if (apl.size() > 0)
 		{
-			it->second.ave /= (float)it->second.samples.size();
-			it->first->setDerivedPositions(it->second);
+			for (const AtomWithPos &awp : apl)
+			{
+				awp.atom->setDerivedPosition(awp.wp.ave);
+			}
+		}
+		else if (aps.size() > 0)
+		{
+			AtomPosMap::iterator it;
+			for (it = aps.begin(); it != aps.end(); it++)
+			{
+				it->second.ave /= (float)it->second.samples.size();
+				it->first->setDerivedPositions(it->second);
+			}
 		}
 	}
 	
 	void destroy()
 	{
 		aps.clear();
+		apl.clear();
 		delete map;
 
 		delete this;

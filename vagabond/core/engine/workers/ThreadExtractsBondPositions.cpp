@@ -36,16 +36,20 @@ ThreadExtractsBondPositions::ThreadExtractsBondPositions(BondSequenceHandler *h)
 	_finish = false;
 }
 
+void ThreadExtractsBondPositions::extractVector(Job *job, BondSequence *seq)
+{
+	Result *r = job->result;
+
+	const AtomPosList &apl = seq->extractVector();
+	r->apl = apl;
+}
+
 void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)
 {
 	Result *r = job->result;
 
 	const AtomPosMap &aps = seq->extractPositions();
-
-	/* extend atom positions in the result */
-	r->handout.lock();
 	r->aps = aps;
-	r->handout.unlock();
 }
 
 void ThreadExtractsBondPositions::transferToSurfaceHandler(Job *job,
@@ -129,6 +133,10 @@ void ThreadExtractsBondPositions::start()
 		if (job->requests & JobExtractPositions)
 		{
 			extractPositions(job, seq);
+		}
+		if (job->requests & JobPositionVector)
+		{
+			extractVector(job, seq);
 		}
 
 		/* if the solvent area is requested, this will be done before

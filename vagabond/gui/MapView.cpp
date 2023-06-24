@@ -30,6 +30,8 @@
 #include <vagabond/core/PolymerEntity.h>
 #include <vagabond/core/CompareDistances.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/BadChoice.h>
 
 #include "MapView.h"
 
@@ -39,6 +41,17 @@ MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances)
 	_cartographer = new Cartographer(entity, instances);
 	_cartographer->setResponder(this);
 	setOwnsAtoms(false);
+}
+
+MapView::MapView(Scene *prev, SpecificNetwork *spec) : Display(prev)
+{
+	_cartographer = new Cartographer(spec->network()->entity(), 
+	                                 spec->network()->instances());
+	_cartographer->setResponder(this);
+	setOwnsAtoms(false);
+
+	_specified = spec;
+	_cartographer->supplyExisting(spec);
 }
 
 MapView::~MapView()
@@ -54,10 +67,11 @@ MapView::~MapView()
 void MapView::setup()
 {
 	_cartographer->setup();
+	_specified = _cartographer->specified();
+
 	makeTriangles();
 	addTitle("Triangle mayhem");
 
-	_specified = _cartographer->specified();
 	Instance *inst = _specified->instance();
 	inst->currentAtoms()->recalculate();
 	loadAtoms(inst->currentAtoms());
@@ -67,9 +81,9 @@ void MapView::setup()
 
 	_worker = new std::thread(Cartographer::assess, _cartographer);
 
-	TextButton *command = new TextButton("Save model", this);
-	command->setCentre(0.9, 0.9);
-	command->setReturnTag("save_model");
+	TextButton *command = new TextButton("Save space", this);
+	command->setCentre(0.9, 0.1);
+	command->setReturnTag("save_space");
 	addObject(command);
 }
 
@@ -207,11 +221,6 @@ void MapView::makeTriangles()
 
 bool MapView::plotPosition(float x, float y)
 {
-	if ((x < 0 || x > 1) || (y < 0 || y > 1))
-	{
-		return false;
-	}
-
 	std::vector<float> vals = {x, y};
 	_cartographer->map2Matrix()->fraction_to_cart(vals);
 	int num = _specified->submitJob(true, vals);
@@ -247,6 +256,12 @@ bool MapView::sampleFromPlot(double x, double y)
 	v -= min;
 	v /= (max - min);
 	v.z = 0;
+
+	if ((v.x < 0 || v.x > 1) || (v.y < 0 || v.y > 1))
+	{
+		return false;
+	}
+
 	
 	if (!_waitingForNudge)
 	{
@@ -256,7 +271,6 @@ bool MapView::sampleFromPlot(double x, double y)
 	{
 		_waitingForNudge = false;
 		startNudges({v.x, v.y});
-		return true;
 	}
 
 	return false;
@@ -281,16 +295,53 @@ void MapView::mouseMoveEvent(double x, double y)
 	}
 }
 
+void MapView::saveSpace(std::string filename)
+{
+	if (filename == "rope.json")
+	{
+		BadChoice *bc = new BadChoice(this, "rope.json is a reserved filename");
+		setModal(bc);
+		return;
+	}
+
+	json j = *_specified;
+
+	std::ofstream file;
+	file.open(filename);
+	file << j.dump(1);
+	file << std::endl;
+	file.close();
+}
+
+void MapView::askForFilename()
+{
+	AskForText *aft = new AskForText(this, "Enter json filename to save", 
+	                                 "json_filename", this);
+	setModal(aft);
+}
+
 void MapView::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "flip")
 	{
 		startFlips();
 	}
+	
+	if (tag == "json_filename")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string text = te->scratch();
+		saveSpace(text);
+	}
 
 	if (tag == "show_map")
 	{
 		showMap();
+	}
+
+	if (tag == "save_space")
+	{
+		askForFilename();
 	}
 
 	if (tag == "save_model")
@@ -358,11 +409,11 @@ void MapView::sendObject(std::string tag, void *object)
 		displayDistances(*dist);
 	}
 
-	if (tag == "atom_map")
+	if (tag == "atom_list")
 	{
-		AtomPosMap *aps = static_cast<AtomPosMap *>(object);
+		AtomPosList *apl = static_cast<AtomPosList *>(object);
 		CompareDistances cd;
-		cd.process(*aps);
+		cd.process(*apl);
 		PCA::Matrix dist = cd.matrix();
 		displayDistances(dist);
 	}

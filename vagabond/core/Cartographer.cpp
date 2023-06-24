@@ -33,10 +33,32 @@ Cartographer::Cartographer(Entity *entity, std::vector<Instance *> instances)
 
 }
 
+void Cartographer::supplyExisting(SpecificNetwork *spec)
+{
+	_specified = spec;
+	_network = _specified->network();
+	_instances = _network->instances();
+	_entity = _network->entity();
+}
+
 void Cartographer::setup()
 {
-	makeMapping();
+	if (!_network || !_specified)
+	{
+		makeMapping();
+	}
+	else
+	{
+		hookReferences();
+		_specified->setup();
+	}
+}
 
+void Cartographer::hookReferences()
+{
+	_network->setup();
+	_mapped = _network->blueprint();
+	_prepwork = new ProblemPrep(_specified, _mapped);
 	_mat2Map = new MappingToMatrix(*_mapped);
 }
 
@@ -44,11 +66,10 @@ void Cartographer::makeMapping()
 {
 	Network *net = new Network(_entity, _instances);
 	_network = net;
-	net->setup();
+	_network->setup();
 
-	_mapped = _network->blueprint();
 	_specified = _network->specificForInstance(_instances[0]);
-	_prepwork = new ProblemPrep(_specified, _mapped);
+	hookReferences();
 }
 
 void Cartographer::checkTriangles(ScoreMap::Mode mode)
@@ -525,7 +546,7 @@ std::function<float()> Cartographer::scorerForNudge(int tidx)
 	Points points;
 	cartesiansForTriangle(tidx, 6, points);
 
-	ScoreMap scorer = basicScorer(ScoreMap::Basic);
+	ScoreMap scorer = basicScorer(ScoreMap::Distance);
 	std::function<float()> score = [this, scorer, points]()
 	{
 		return this->scoreWithScorer(points, scorer);
@@ -577,36 +598,46 @@ void Cartographer::refineFace(Parameter *param, const std::vector<float> &point,
 
 	json info = _specified->jsonForParameter(param);
 	
+	bool stopped = false;
 	bool had_success = false;
 	float begin = score();
-	while (true)
+	try
 	{
-		if (pidx >= 0)
+		while (true)
 		{
-			std::cout << "Score before refining point " << pidx << ": " 
-			<< begin << std::endl;
-			had_success |= nudgePoint(begin, param, pidx, score, true);
-			pidx = pointToWork(param, point, pidx+1);
-		}
-
-		if (pidx < 0 && !had_success)
-		{
-			std::cout << "Score before splitting triangle: " << begin << std::endl;
-			int pidx = _specified->splitFace(param, point);
-			std::cout << "Score after splitting triangle: " << score() << std::endl;
-
-			if (pidx < 0)
+			if (pidx >= 0)
 			{
-				return;
+				std::cout << "Score before refining point " << pidx << ": " 
+				<< begin << std::endl;
+				had_success |= nudgePoint(begin, param, pidx, score, true);
+				pidx = pointToWork(param, point, pidx+1);
 			}
 
-			had_success |= nudgePoint(begin, param, pidx, score, false);
-			break;
+			if (pidx < 0 && !had_success)
+			{
+				std::cout << "Score before splitting triangle: " << 
+				begin << std::endl;
+				int pidx = _specified->splitFace(param, point);
+				std::cout << "Score after splitting triangle: " << 
+				score() << std::endl;
+
+				if (pidx < 0)
+				{
+					return;
+				}
+
+				had_success |= nudgePoint(begin, param, pidx, score, false);
+				break;
+			}
+			else if (pidx < 0)
+			{
+				break;
+			}
 		}
-		else if (pidx < 0)
-		{
-			break;
-		}
+	}
+	catch (int &i)
+	{
+		stopped = true;
 	}
 
 	float end = score();
@@ -623,6 +654,10 @@ void Cartographer::refineFace(Parameter *param, const std::vector<float> &point,
 		_specified->setJsonForParameter(param, info);
 	}
 
+	if (stopped)
+	{
+		throw 0;
+	}
 }
 
 bool Cartographer::nudgePoint(float begin, Parameter *param, const int &pidx,

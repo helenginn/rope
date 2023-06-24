@@ -19,12 +19,31 @@
 #include "ModelManager.h"
 #include "FileManager.h"
 #include "Environment.h"
+#include "Model.h"
 #include <iostream>
 
 ModelManager::ModelManager() : Manager()
 {
 	_mutex = new std::mutex();
+}
 
+ModelManager *ModelManager::manager()
+{
+	return Environment::modelManager();
+}
+
+Instance *ModelManager::instance(std::string name) 
+{
+	for (Model &obj : _objects)
+	{
+		Instance *inst = obj.instanceWithId(name);
+		if (inst)
+		{
+			return inst;
+		}
+	}
+	
+	return nullptr;
 }
 
 Model *ModelManager::insertIfUnique(Model &m)

@@ -194,9 +194,11 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 
 			shift = shift - floor(shift);
 			float phase = s * (_refls[refl].phi + shift * 360.);
+			const float &f = _refls[refl].f;
+			std::cout << f << " " << phase << std::endl;
 
 			VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
-			v.setAmplitudePhase(_refls[refl].f, phase);
+			v.setAmplitudePhase(f, phase);
 		}
 	}
 }

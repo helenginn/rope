@@ -26,6 +26,9 @@
 
 #define NETWORK_DIMS (2)
 
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+
 template <typename Type> class Mapped;
 template <unsigned int D, typename Type> class Mapping;
 template <int N, unsigned int D, typename Type> class Face;
@@ -60,6 +63,9 @@ public:
 	Mapped<glm::vec3> *blueprint_vec3_copy();
 	Mapped<Vec3s> *blueprint_vec3s_copy();
 	
+	void add_info(nlohmann::json &json);
+	void get_info(nlohmann::json &json);
+	
 	std::vector<float> pointForInstance(Instance *instance);
 	bool valid_position(const std::vector<float> &vals);
 	
@@ -71,6 +77,11 @@ public:
 	const std::vector<Instance *> &instances() const
 	{
 		return _instances;
+	}
+	
+	Entity *const &entity() const
+	{
+		return _entity;
 	}
 	
 	const int &indexForInstance(Instance *inst)

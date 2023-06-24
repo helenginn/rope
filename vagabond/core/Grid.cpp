@@ -186,6 +186,10 @@ float Grid<T>::sigma()
 	float n = nn();
 	for (size_t i = 0; i < nn(); i++)
 	{
+		if (elementValue(i) != elementValue(i))
+		{
+			continue;
+		}
 		val += elementValue(i);
 		valsq += elementValue(i) * elementValue(i);
 	}

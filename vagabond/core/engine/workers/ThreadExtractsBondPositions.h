@@ -54,6 +54,7 @@ public:
 	}
 
 private:
+	void extractVector(Job *job, BondSequence *seq);
 	void extractPositions(Job *job, BondSequence *seq);
 	void calculateDeviation(Job *job, BondSequence *seq);
 	void transferToMaps(Job *job, BondSequence *seq);

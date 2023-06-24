@@ -177,6 +177,19 @@ bool Model::unload()
 	return true;
 }
 
+Instance *Model::instanceWithId(std::string id)
+{
+	for (Instance *inst : instances())
+	{
+		if (inst->id() == id)
+		{
+			return inst;
+		}
+	}
+
+	return nullptr;
+}
+
 void Model::createPolymers()
 {
 	load();

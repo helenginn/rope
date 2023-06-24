@@ -50,7 +50,6 @@ private:
 	void updateFromMap(Mapped<float> *map);
 
 	SpecificNetwork *_sn = nullptr;
-	Line *_line = nullptr;
 	Parameter *_parameter = nullptr;
 	Cartographer *_cartographer = nullptr;
 	MapView *_view = nullptr;

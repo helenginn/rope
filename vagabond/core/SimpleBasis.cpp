@@ -35,7 +35,7 @@ SimpleBasis::valueForParameter(BondSequence *seq, int tidx,
 	
 	TorsionAngle &ta = _angles[tidx];
 	float &angle = ta.angle;
-	if (n == 0 || tidx >= n || !ta.mask)
+	if (!ta.mask)
 	{
 		return [angle](const Coord::Get &coord) { return angle; };
 	}

@@ -56,10 +56,12 @@ public:
 	virtual std::vector<float> middle_of_face(int tidx) = 0;
 	virtual void face_indices_for_point(const int &pidx, 
 	std::vector<int> &idxs) = 0;
-	virtual bool face_has_point(int idx, const std::vector<float> &point) = 0;
+	virtual bool face_has_point(int idx, const std::vector<float> &point) const = 0;
 	virtual int face_idx_for_point(const std::vector<float> &point) = 0;
 	virtual void point_indices_for_face(int idx, std::vector<int> &points) const = 0;
+	virtual size_t point_count_for_face(int idx) const = 0;
 	virtual void update(int point_idx) = 0;
+	virtual void invalidate() = 0;
 	virtual void redo_bins() = 0;
 	
 	virtual int n() = 0;
@@ -193,6 +195,14 @@ public:
 	{
 		return _mapped[idx];
 	}
+
+	virtual void invalidate()
+	{
+		for (HyperTriangle *tr : _mapped)
+		{
+			tr->invalidate();
+		}
+	}
 	
 	void remove_face(HyperTriangle *face)
 	{
@@ -309,7 +319,7 @@ public:
 		MappedInDim<D, Type> *f = face_for_point(cart);
 		if (f == nullptr)
 		{
-			return Coord::Interpolate<Type>{};
+			return [](const Coord::Get &) { return Type{};};
 		}
 
 		return f->interpolate_function();
@@ -619,10 +629,40 @@ public:
 
 		return -1;
 	}
-	
-	virtual bool face_has_point(int idx, const std::vector<float> &point)
+
+	template <typename Vec, typename Wec>
+	float sign(const Vec &p1, const Wec &p2, const Wec &p3) const
+	{
+		return ((p1[0] - p3[0]) * (p2[1] - p3[1]) - 
+		        (p2[0] - p3[0]) * (p1[1] - p3[1]));
+	}
+
+	template <typename Vec>
+	bool point_in_triangle(const std::vector<float> &pt, 
+	                       const Vec &v1, const Vec &v2, const Vec &v3) const
+	{
+		float d1, d2, d3;
+		bool has_neg, has_pos;
+
+		d1 = sign(pt, v1, v2);
+		d2 = sign(pt, v2, v3);
+		d3 = sign(pt, v3, v1);
+
+		has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+		has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+		return !(has_neg && has_pos);
+	}
+
+	virtual bool face_has_point(int idx, const std::vector<float> &point) const
 	{
 		HyperTriangle *face = _mapped[idx];
+		
+		if (D == 2)
+		{
+			return point_in_triangle(point, *face->point(0), *face->point(1),
+			                         *face->point(2));
+		}
 
 		if (!face->point_in_bounds(point))
 		{
@@ -639,6 +679,33 @@ public:
 		}
 
 		return true;
+	}
+	
+	HyperTriangle *face_for_point(const std::vector<float> &point) const
+	{
+		for (int i = 0; i < _mapped.size(); i++)
+		{
+			if (face_has_point(i, point))
+			{
+				return _mapped[i];
+			}
+		}
+
+		return nullptr;
+	}
+
+	virtual size_t point_count_for_face(int idx) const
+	{
+		size_t n = 0;
+		for (int i = 0; i < pointCount(); i++)
+		{
+			if (_mapped[idx]->hasPoint(*point(i)))
+			{
+				n++;
+			}
+		}
+
+		return n;
 	}
 
 	virtual void point_indices_for_face(int idx, std::vector<int> &points) const
@@ -738,33 +805,6 @@ public:
 	friend void to_json(json &j, const Mapping<D, Type> &face);
 	friend void from_json(const json &j, Mapping<D, Type> &face);
 protected:
-	HyperTriangle *face_for_point(const std::vector<float> &point) const
-	{
-		for (HyperTriangle *face : _mapped)
-		{
-			if (!face->point_in_bounds(point))
-			{
-				continue;
-			}
-
-			const std::vector<float> &bcp = face->point_to_barycentric(point);
-			bool positive = true;
-			for (const float &f : bcp)
-			{
-				if (f < -1e-6)
-				{
-					positive = false;
-				}
-			}
-			
-			if (positive)
-			{
-				return face;
-			}
-		}
-
-		return nullptr;
-	}
 private:
 	std::vector<HyperPoint *> _points;
 	std::vector<HyperTriangle *> _mapped;
