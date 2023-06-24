@@ -38,8 +38,9 @@ public:
 		_slice = (slice ? 1 : -1);
 	}
 private:
-	Icosahedron *_template;
 	GLfloat _slice = -1;
+
+	float _size = 10;
 };
 
 #endif

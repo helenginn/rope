@@ -19,26 +19,27 @@
 #include <iostream>
 #include <vagabond/core/Diffraction.h>
 #include "GuiRefls.h"
+#include "VagWindow.h"
+#include <vagabond/utils/maths.h>
 #include <vagabond/gui/elements/Icosahedron.h>
 
 GuiRefls::GuiRefls() : SimplePolygon()
 {
 	setUsesProjection(true);
-	setVertexShaderFile("assets/shaders/with_matrix.vsh");
+	setVertexShaderFile("assets/shaders/simple_point.vsh");
 	setFragmentShaderFile("assets/shaders/reflections.fsh");
+	setImage("assets/images/blob.png");
+	_renderType = GL_POINTS;
+	setName("Gui refls");
 
-	_template = new Icosahedron();
-	_template->setColour(0.5, 0.5, 0.5);
-	_template->resize(0.02);
+	_size *= Window::ratio();
 }
 
 void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 {
 	size_t rfln = diffraction->reflectionCount();
-	size_t vSize = _template->vertexCount();
-	size_t iSize = _template->indexCount();
-	_vertices.reserve(vSize * rfln);
-	_indices.reserve(iSize * rfln);
+	_vertices.reserve(rfln);
+	_indices.reserve(rfln);
 
 	int limits[3] = {0, 0, 0};
 	for (size_t i = 0; i < 3; i++)
@@ -46,7 +47,9 @@ void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 		limits[i] = diffraction->reciprocalLimitIndex(i);
 	}
 
-	int count = 0;
+	
+	float ave = diffraction->mean();
+	std::cout << "average: " << ave << std::endl;
 
 	for (int k = -limits[2]; k < limits[2]; k++)
 	{
@@ -60,23 +63,25 @@ void GuiRefls::populateFromDiffraction(Diffraction *diffraction)
 				{
 					continue;
 				}
+				
+				amp /= ave;
 
-				glm::vec3 v = diffraction->real(i, j, k);
-				v *= 250.;
-				float heat = log(amp) / log(10);
-				heat /= 6;
-				const float exposure = 1.2; const float gamma = 1.5;
+				glm::vec3 v = diffraction->reciprocal(i, j, k);
+				v *= 10;
+				float heat = log(amp);
+
+				const float exposure = 1.0; const float gamma = 2.0;
 				float tmp = 1 - exp(-heat * heat * exposure);
-				float tone = 3 * pow(tmp, 1.0 / gamma);
-				float red = std::min(tone, 1.f);
-				float green = std::min(tone, 2.f) - 1;
-				float blue = std::min(tone, 3.f) - 2;
+				float tone = 3 * pow(tmp, 1.0 / gamma) - 1;
+				
+				float red = 0; float green = 0; float blue = 0;
+				val_to_cluster4x_colour(tone, &red, &green, &blue);
+				red /= 255.f; green /= 255.f; blue /= 255.f;
 
-				_template->recolour(red, green, blue);
-				_template->setPosition(v);
-				_template->setExtra(glm::vec4(v, 1.));
-				appendObject(_template);
-				count++;
+				Vertex &vert = addVertex(v);
+				vert.color = {red, green, blue, 1.f};
+				vert.extra = glm::vec4(v, 1.f);
+				addIndex(-1);
 			}
 		}
 	}
@@ -94,6 +99,10 @@ void GuiRefls::render(SnowGL *gl)
 
 void GuiRefls::extraUniforms()
 {
-	GLuint uSlice = glGetUniformLocation(_usingProgram, "slice");
+	GLuint uSlice = glGetUniformLocation(_program, "slice");
 	glUniform1f(uSlice, _slice);
+
+	const char *uniform_name = "size";
+	GLuint u = glGetUniformLocation(_program, uniform_name);
+	glUniform1f(u, _size);
 }
