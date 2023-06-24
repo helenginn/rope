@@ -109,7 +109,7 @@ void MtzFile::parse()
 	_values["_cell.angle_beta"]  = f_to_str(uc.beta, 4);
 	_values["_cell.angle_gamma"] = f_to_str(uc.gamma, 4);
 	
-	_values["_symmetry.space_group_name_H-M"] = mtz.spacegroup->hm;
+	_values["_symmetry.space_group_name_H-M"] = mtz.spacegroup_name;
 
 	gemmi::Mtz::Column *ch = mtz.column_with_label("H");
 	gemmi::Mtz::Column *ck = mtz.column_with_label("K");
