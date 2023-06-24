@@ -378,6 +378,7 @@ std::map<Atom *, Atom *> Polymer::mapAtoms(Polymer *other)
 {
 	std::map<Atom *, Atom *> map;
 	std::map<ResidueId, ResidueId> resMap;
+	sequence()->remapFromMaster(_entity);
 
 	for (Residue &r : sequence()->residues())
 	{
@@ -423,6 +424,7 @@ std::vector<Posular> Polymer::atomPositionList(Instance *reference,
 	}
 
 	model()->load(Model::NoGeometry);
+	sequence()->remapFromMaster(_entity);
 
 	std::map<Atom *, Atom *> atomMap = reference->mapAtoms(this);
 
