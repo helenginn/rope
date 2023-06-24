@@ -382,7 +382,6 @@ protected:
 	std::string _fString;
 	std::string _gString;
 	GLuint _program = 0;
-	GLuint _usingProgram = 0;
 
 	GLfloat _lightPos[3];
 	GLfloat _xAxis[3];
