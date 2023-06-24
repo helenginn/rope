@@ -41,12 +41,16 @@ void ColourLegend::setTitle(std::string title)
 	text->setCentre((_vert ? 0.00 : 0.5), 
 	                (_vert ? -0.2 : 0.05));
 	text->setReturnTag("title");
+	if (!_buttons)
+	{
+		text->setInert(true);
+	}
 	addObject(text);
 }
 
 void ColourLegend::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "title")
+	if (tag == "title" && _buttons)
 	{
 		Menu *m = new Menu(_responder);
 		m->addOption("prioritise axes", "align_axes");

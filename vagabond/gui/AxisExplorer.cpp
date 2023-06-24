@@ -217,6 +217,7 @@ void AxisExplorer::setupColours()
 void AxisExplorer::setupColourLegend()
 {
 	ColourLegend *legend = new ColourLegend(Heat, true, this);
+	legend->disableButtons();
 	legend->setTitle("Torsion deviation (deg)");
 	legend->setLimits(0.f, _maxTorsion);
 	legend->setCentre(0.9, 0.5);

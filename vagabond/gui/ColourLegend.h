@@ -30,12 +30,18 @@ public:
 	ColourLegend(Scheme scheme, bool vert, Scene *responder);
 	~ColourLegend();
 
+	void disableButtons()
+	{
+		_buttons = false;
+	}
+
 	void setTitle(std::string title);
 	void setLimits(float min, float max);
 	virtual void buttonPressed(std::string tag, Button *button);
 
 private:
 	Scene *_responder = nullptr;
+	bool _buttons = true;
 
 };
 
