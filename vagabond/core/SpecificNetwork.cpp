@@ -130,7 +130,6 @@ void SpecificNetwork::zeroVertices()
 		float dev = deviation(num);
 		std::cout << other->id() << ": " << dev << ", ";
 
-		_fullAtoms->writeToFile("mimic_" + other->id() + ".pdb");
 		updateAtomsFromDerived(idx);
 
 		other->model()->load();
