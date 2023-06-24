@@ -193,7 +193,7 @@ void EntityFromSequence::doThings()
 	}
 }
 
-void EntityFromSequence::fileChosen(std::string filename)
+void EntityFromSequence::sendObject(std::string filename, void *object)
 {
 	FastaView *fv = new FastaView(this, filename, true);
 	fv->show();

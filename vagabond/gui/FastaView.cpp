@@ -109,8 +109,7 @@ void FastaView::buttonPressed(std::string tag, Button *button)
 	if (end.length() > 0)
 	{
 		Scene *before = _previous->previous();
-		AddEntity *addEntity = new AddEntity(before, _sequences[end]);
-		back(1);
+		AddEntity *addEntity = new AddEntity(this, _sequences[end]);
 		addEntity->show();
 	}
 }

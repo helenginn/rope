@@ -37,9 +37,10 @@ public:
 	virtual std::string toURL(std::string query);
 	virtual void processResult(std::string seq);
 	virtual void handleError();
-	virtual void fileChosen(std::string filename);
 	
 	virtual void doThings();
+protected:
+	virtual void sendObject(std::string tag, void *object);
 private:
 	void makePeptide(std::string text);
 
