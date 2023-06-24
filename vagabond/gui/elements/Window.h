@@ -125,6 +125,11 @@ public:
 		return (native != nullptr);
 	}
 	
+	static double ratio()
+	{
+		return _ratio; // will be 1 on non-emscripten systems
+	}
+	
 	static SDL_Window *sdl_window()
 	{
 		return _window;
@@ -149,6 +154,7 @@ private:
 
 	static int _width;
 	static int _height;
+	static double _ratio;
 
 	static std::set<Scene *> _toDelete;
 	static std::mutex _deleteMutex;

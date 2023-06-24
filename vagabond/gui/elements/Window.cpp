@@ -23,6 +23,7 @@ Window *Window::_myWindow = nullptr;
 int Window::_width = 0;
 int Window::_milliseconds = 20;
 int Window::_height = 0;
+double Window::_ratio = 1.;
 
 std::set<Scene *> Window::_toDelete;
 std::mutex Window::_deleteMutex;
@@ -43,6 +44,7 @@ void Window::instateWindow()
 	                        SDL_HINT_OVERRIDE);
 	
 #ifdef __EMSCRIPTEN__
+	_ratio = emscripten_get_device_pixel_ratio();
 	_rect.w = get_canvas_width();
 	_rect.h = get_canvas_height();
 #else
@@ -63,13 +65,14 @@ void Window::instateWindow()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 
 	                    SDL_GL_CONTEXT_PROFILE_CORE);
-	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
 	
 	extraWindowFlags(windowFlags);
 //	WindowFlags += SDL_WINDOW_FULLSCREEN;
 #endif
+	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
 
-	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w, _rect.h, windowFlags);
+	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w * _ratio,
+	                           _rect.h * _ratio, windowFlags);
 	_context = SDL_GL_CreateContext(_window);
 }
 
@@ -148,7 +151,7 @@ void Window::updateDimensions(int width, int height)
 	_width = w;
 	_height = h;
 #else
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, width * _ratio, height * _ratio);
 	_rect.w = width;
 	_rect.h = height;
 #endif
@@ -190,8 +193,12 @@ bool Window::tick()
 	_myWindow->mainThreadActivities();
 
 	SDL_Event event;
+	
 	while (SDL_PollEvent(&event))
 	{
+		glm::vec2 motion = {event.motion.x, event.motion.y};
+		motion /= _ratio;
+
 		switch (event.type)
 		{
 			case SDL_KEYDOWN:
@@ -209,16 +216,16 @@ bool Window::tick()
 			break;
 
 			case SDL_MOUSEMOTION:
-			_current->mouseMoveEvent(event.motion.x, event.motion.y);
+			_current->mouseMoveEvent(motion.x, motion.y);
 			break;
 
 			case SDL_MOUSEBUTTONDOWN:
-			_current->mousePressEvent(event.motion.x, event.motion.y, 
+			_current->mousePressEvent(motion.x, motion.y, 
 			                          event.button);
 			break;
 
 			case SDL_MOUSEBUTTONUP:
-			_current->mouseReleaseEvent(event.motion.x, event.motion.y, 
+			_current->mouseReleaseEvent(motion.x, motion.y, 
 			                            event.button);
 			break;
 
