@@ -216,7 +216,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	{
 		try
 		{
-			ChainAssignment *view = new ChainAssignment(this, _obj);
+			ChainAssignment *view = new ChainAssignment(this, _obj, _existing);
 			view->show();
 		}
 		catch (const std::runtime_error &err)
@@ -237,7 +237,7 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 			ModelManager *mm = Environment::modelManager();
 			Model *model = mm->insertIfUnique(_obj);
 			model->createPolymers();
-			Environment::env().entityManager()->checkModelsForReferences(mm);
+			EntityManager::manager()->checkModelsForReferences(mm);
 			back();
 		}
 		catch (const std::runtime_error &err)

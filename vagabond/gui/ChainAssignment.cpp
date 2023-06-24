@@ -28,10 +28,13 @@
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/Model.h>
 
+#include <vagabond/core/ModelManager.h>
+#include <vagabond/core/EntityManager.h>
+
 #include <vagabond/utils/FileReader.h>
 
-ChainAssignment::ChainAssignment(Scene *prev, Model &model) 
-: ListView(prev), _model(model) 
+ChainAssignment::ChainAssignment(Scene *prev, Model &model, const bool &existing) 
+: ListView(prev), _model(model), _existing(existing) 
 {
 	std::string file = _model.filename();
 	
@@ -152,5 +155,10 @@ void ChainAssignment::buttonPressed(std::string tag, Button *button)
 
 void ChainAssignment::refreshInfo()
 {
+	if (_existing)
+	{
+		ModelManager *mm = ModelManager::manager();
+		EntityManager::manager()->checkModelsForReferences(mm);
+	}
 	refresh();
 }

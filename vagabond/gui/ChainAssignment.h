@@ -27,7 +27,7 @@ class AtomContent;
 class ChainAssignment : public ListView
 {
 public:
-	ChainAssignment(Scene *prev, Model &model);
+	ChainAssignment(Scene *prev, Model &model, const bool &existing);
 	virtual ~ChainAssignment();
 
 	void setup();
@@ -39,6 +39,7 @@ public:
 private:
 	AtomContent *_contents = nullptr;
 	Model &_model;
+	const bool &_existing;
 };
 
 #endif
