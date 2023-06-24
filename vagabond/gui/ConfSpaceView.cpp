@@ -719,14 +719,3 @@ void ConfSpaceView::doThings()
 		_routeExplorer = nullptr;
 	}
 }
-
-void ConfSpaceView::deleteClusterForEntity(Entity *ent)
-{
-	for (auto it = _savedSpaces.begin(); it != _savedSpaces.end(); it++)
-	{
-		_savedSpaces[it->first]->deleteItem();
-	}
-
-	_savedSpaces.clear();
-	Item::resolveDeletions();
-}

@@ -79,7 +79,6 @@ public:
 	void prepareModelMenu(HasMetadata *hm);
 	void reorientToPolymer(Polymer *mol);
 
-	static void deleteClusterForEntity(Entity *ent);
 	void showCurrentCluster();
 	void sendObject(std::string tag, void *object);
 
