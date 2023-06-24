@@ -49,6 +49,8 @@ Metadata *PolymerEntity::angleBetweenAtoms(AtomRecall a, AtomRecall b,
 		md->clickTicker();
 	}
 
+	md->finishTicker();
+
 	return md;
 }
 
@@ -71,6 +73,8 @@ Metadata *PolymerEntity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
 		model->distanceBetweenAtoms(this, new_a, new_b, header, md);
 		md->clickTicker();
 	}
+
+	md->finishTicker();
 
 	return md;
 }
