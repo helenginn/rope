@@ -70,6 +70,8 @@ void RefList::extractSymops()
 
 		_trans[i] = glm::vec3(s.trn[0], s.trn[1], s.trn[2]);
 	}
+	
+	ccp4spg_print_recip_ops(_spg);
 }
 
 Reflection::HKL RefList::symHKL(Reflection::HKL orig, int symop)
@@ -81,7 +83,7 @@ Reflection::HKL RefList::symHKL(Reflection::HKL orig, int symop)
 		for (size_t j = 0; j < 3; j++)
 		{
 			float &mv = _rots[symop][i][j];
-			hkl[i] += orig[j] * (long)lrint(mv);
+			hkl[j] += orig[i] * (long)lrint(mv);
 		}
 	}
 
@@ -182,9 +184,9 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 	for (size_t i = 0; i < symOpCount(); i++)
 	{
         Reflection::HKL next = symHKL(refl, i);
-		int &h = next.h;
-		int &k = next.k;
-		int &l = next.l;
+		const int &h = next.h;
+		const int &k = next.k;
+		const int &l = next.l;
 
 		for (int s = -1; s <= 1; s += 2)
 		{
@@ -195,7 +197,6 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 			shift = shift - floor(shift);
 			float phase = s * (_refls[refl].phi + shift * 360.);
 			const float &f = _refls[refl].f;
-			std::cout << f << " " << phase << std::endl;
 
 			VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
 			v.setAmplitudePhase(f, phase);
