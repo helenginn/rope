@@ -90,7 +90,7 @@ void main()
 		}
 
 		vec4 ref2 = move_vertex(second);
-		vec4 ref3 = move_vertex(second);
+		vec4 ref3 = move_vertex(third);
 
 		if (length(ref3 - ref2) > 19. || length(ref2 - ref1) > 19. ||
 				length(ref1 - ref3) > 19.)
