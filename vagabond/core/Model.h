@@ -208,7 +208,7 @@ inline void to_json(json &j, const Model &value)
 	j["molecules"] = value._polymers;
 	try
 	{
-		j["ligands"] = value._polymers;
+		j["ligands"] = value._ligands;
 	}
 	catch (const json::exception &err)
 	{
