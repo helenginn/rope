@@ -121,7 +121,7 @@ template <class T>
 float TransformedGrid<T>::resolution(int i, int j, int k) const
 {
 	glm::vec3 ijk = glm::vec3(i, j, k);
-	ijk = _real2Frac * ijk;
+	ijk = glm::transpose(_real2Frac) * ijk;
 
 	return 1 / glm::length(ijk);
 }
@@ -130,7 +130,7 @@ template <class T>
 glm::vec3 TransformedGrid<T>::reciprocal(int h, int k, int l) const
 {
 	glm::vec3 v(h, k, l);
-	glm::vec3 next = _real2Frac * v;
+	glm::vec3 next = glm::transpose(_real2Frac) * v;
 	return next;
 }
 
