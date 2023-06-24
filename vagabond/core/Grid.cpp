@@ -172,6 +172,10 @@ float Grid<T>::sum()
 	float val = 0;
 	for (size_t i = 0; i < nn(); i++)
 	{
+		if (elementValue(i) != elementValue(i))
+		{
+			continue;
+		}
 		val += elementValue(i);
 	}
 	
