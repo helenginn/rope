@@ -57,6 +57,7 @@ void FixIssues::findIssues()
 	
 	_reference->model()->unload();
 	_done = true;
+	triggerResponse();
 }
 
 void FixIssues::stop()
@@ -127,6 +128,13 @@ void FixIssues::processModel(Model *m)
 			processAtoms(&m, glns, 180);
 			glns = findAtoms(&m, "GLU", "NE2");
 			processAtoms(&m, glns, 180);
+		}
+		if (_options & FixHistidine)
+		{
+			AtomVector hiss = findAtoms(&m, "HIS", "ND1");
+			processAtoms(&m, hiss, 180);
+			hiss = findAtoms(&m, "HIS", "CD2");
+			processAtoms(&m, hiss, 180);
 		}
 		if (_options & FixAsparagine)
 		{
@@ -355,6 +363,8 @@ void FixIssues::residuesForAtom(Polymer *mol, const Atom *a,
 {
 	Sequence *seqref = _reference->sequence();
 	Sequence *seq = mol->sequence();
+	seq->remapFromMaster(mol->entity());
+	seqref->remapFromMaster(mol->entity());
 
 	int ttc = a->terminalTorsionCount();
 	if (ttc < 1)

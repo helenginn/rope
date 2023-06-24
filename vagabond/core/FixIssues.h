@@ -63,6 +63,7 @@ public:
 		FixArginine = 1 << 6,
 		FixPeptideFlips = 1 << 7,
 		Fix360Rotations = 1 << 8,
+		FixHistidine = 1 << 9,
 	};
 	
 	void setOptions(Options opts)

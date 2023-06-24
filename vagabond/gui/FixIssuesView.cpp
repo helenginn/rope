@@ -75,7 +75,7 @@ void FixIssuesView::setup()
 	}
 	
 	float inc = 0.06;
-	float top = 0.3;
+	float top = 0.2;
 	addOption("Fix phenylalanines", "phenylalanine", top, true);
 	top += inc;
 	addOption("Fix tyrosines", "tyrosine", top, true);
@@ -89,6 +89,8 @@ void FixIssuesView::setup()
 	addOption("Fix asparagine", "asparagine", top, false);
 	top += inc;
 	addOption("Fix glutamine", "glutamine", top, false);
+	top += inc;
+	addOption("Fix histidine", "histidine", top, false);
 #ifdef VERSION_FIX_PEPTIDE
 	top += inc;
 	addOption("Fix peptide flips", "peptide_flips", top, false);
@@ -140,6 +142,10 @@ FixIssues::Options FixIssuesView::options()
 		else if (tag == "arginine")
 		{
 			ret = (FixIssues::Options)(ret | FixIssues::FixArginine);
+		}
+		else if (tag == "histidine")
+		{
+			ret = (FixIssues::Options)(ret | FixIssues::FixHistidine);
 		}
 		else if (tag == "peptide_flips")
 		{
