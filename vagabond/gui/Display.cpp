@@ -95,14 +95,14 @@ void Display::fftButton()
 
 void Display::wedgeButtons()
 {
-	ImageButton *lemon = new ImageButton("assets/images/lemon.png", this);
+	ImageButton *lemon = new ImageButton("assets/images/orange.png", this);
 	lemon->resize(0.16);
 	lemon->setCentre(0.9, 0.1);
 	lemon->setReturnTag("half_wedge");
 	addObject(lemon);
 	_halfWedge = lemon;
 
-	ImageButton *orange = new ImageButton("assets/images/orange.png", this);
+	ImageButton *orange = new ImageButton("assets/images/lemon.png", this);
 	orange->resize(0.16);
 	orange->setCentre(0.9, 0.1);
 	orange->setReturnTag("full_wedge");
