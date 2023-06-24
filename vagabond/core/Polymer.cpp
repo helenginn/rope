@@ -396,11 +396,6 @@ std::map<Atom *, Atom *> Polymer::mapAtoms(Polymer *other)
 	
 	for (Atom *a : myAtoms->atomVector())
 	{
-		if (a->hetatm())
-		{
-			continue;
-		}
-
 		ResidueId target = a->residueId();
 		ResidueId local = resMap[target];
 		
