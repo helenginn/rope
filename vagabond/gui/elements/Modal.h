@@ -30,6 +30,8 @@ public:
 	                   std::string right, std::string rtag);
 
 	void dismiss();
+	
+	void squeezeToWidth(Renderable *r);
 protected:
 	Scene *_scene;
 private:

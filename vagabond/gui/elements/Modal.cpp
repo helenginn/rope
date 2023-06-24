@@ -83,3 +83,14 @@ void Modal::addTwoButtons(std::string left, std::string ltag,
 	}
 
 }
+
+void Modal::squeezeToWidth(Renderable *r)
+{
+	float width = r->maximalWidth() / 2;
+	if (width > _width)
+	{
+		r->resize(0.9 * _width / width);
+	}
+
+
+}

@@ -4,14 +4,17 @@
 #include "TextButton.h"
 #include "Text.h"
 
+#define DEFAULT_WIDTH 0.6
+
 BadChoice::BadChoice(Scene *scene, std::string details) :
-Modal(scene, 0.6, 0.4)
+Modal(scene, DEFAULT_WIDTH, 0.4)
 {
 	Text *text = new Text(details);
-	text->setLeft(0.20, 0.5);
-	text->resize(0.8);
+	text->setCentre(0.5, 0.5);
+	text->resize(1.0);
 	addObject(text);
-
+	
+	squeezeToWidth(text);
 
 	{
 		TextButton *button = new TextButton("OK", this);
