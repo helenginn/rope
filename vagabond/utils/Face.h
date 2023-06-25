@@ -175,7 +175,29 @@ public:
 	{
 		std::vector<float> weights(pointCount());
 		this->point_to_barycentric(coord, weights);
+		
+		Type s = point(0)->value();
+		Type t = point(1)->value();
 
+		if (weights[0] <= 0) return s;
+		
+		std::array<float, D> dir = point(0)->difference(*point(1));
+		
+		// polynomial:
+		// y = (t-s)x + s + (x_0 + s - t)(x-1)^2x + (x_1+s-t)(x-1)x^2
+		
+		Type x0 = point(0)->gradient_in_direction(dir);
+		Type x1 = point(1)->gradient_in_direction(dir) * -1.f;
+		
+		float x = weights[1];
+
+		Type y = ((t - s) * x + s
+		          + (x0 + s - t) * (x - 1) * (x - 1) * x
+		          + (x1 + s - t) * (x - 1) * x*x);
+
+		return y;
+		
+		/*
 		Type total{}; float count = 0;
 		for (int i = 0; i < pointCount(); i++)
 		{
@@ -190,6 +212,7 @@ public:
 		}
 
 		return total / count;
+		*/
 	}
 
 	void interpolate_for_n_equal_1(std::vector<PointStuff> &prep)
