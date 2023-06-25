@@ -143,6 +143,7 @@ protected:
 		int sc_num = 0;
 	};
 	
+	bool _displayTargets = false;
 
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;

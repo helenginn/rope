@@ -31,7 +31,6 @@ using nlohmann::json;
 #include "svd/PCA.h"
 #include "Point.h"
 
-
 template <int N, unsigned int D, typename Type>
 class SharedFace;
 

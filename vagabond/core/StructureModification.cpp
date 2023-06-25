@@ -282,7 +282,7 @@ void StructureModification::retrieve()
 			{
 				if (handleAtomList(r->apl))
 				{
-					r->transplantPositions();
+					r->transplantPositions(_displayTargets);
 				}
 			}
 			if (r->requests & JobSolventSurfaceArea)
