@@ -62,6 +62,7 @@ public:
 	Mapped<float> *blueprint_scalar_copy();
 	Mapped<glm::vec3> *blueprint_vec3_copy();
 	Mapped<Vec3s> *blueprint_vec3s_copy();
+	Mapped<Floats> *blueprint_floats_copy();
 	
 	void add_info(nlohmann::json &json);
 	void get_info(nlohmann::json &json);

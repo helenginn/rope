@@ -146,21 +146,32 @@ void Network::delaunay()
 
 Mapped<float> *Network::blueprint_scalar_copy()
 {
-	Mapping<NETWORK_DIMS, float> *copy = new Mapping<NETWORK_DIMS, float>(*_blueprint);
+	Mapping<NETWORK_DIMS, float> *copy;
+	copy = new Mapping<NETWORK_DIMS, float>(*_blueprint);
 	return copy;
 }
 
 Mapped<glm::vec3> *Network::blueprint_vec3_copy()
 {
-	Mapping<NETWORK_DIMS, glm::vec3> *copy = new Mapping<NETWORK_DIMS, glm::vec3>(*_blueprint);
+	Mapping<NETWORK_DIMS, glm::vec3> *copy;
+	copy = new Mapping<NETWORK_DIMS, glm::vec3>(*_blueprint);
 	return copy;
 }
 
 Mapped<Vec3s> *Network::blueprint_vec3s_copy()
 {
-	Mapping<NETWORK_DIMS, Vec3s> *copy = new Mapping<NETWORK_DIMS, Vec3s>(*_blueprint);
+	Mapping<NETWORK_DIMS, Vec3s> *copy;
+	copy = new Mapping<NETWORK_DIMS, Vec3s>(*_blueprint);
 	return copy;
 }
+
+Mapped<Floats> *Network::blueprint_floats_copy()
+{
+	Mapping<NETWORK_DIMS, Floats> *copy;
+	copy = new Mapping<NETWORK_DIMS, Floats>(*_blueprint);
+	return copy;
+}
+
 
 SpecificNetwork *Network::specificForInstance(Instance *instance)
 {
