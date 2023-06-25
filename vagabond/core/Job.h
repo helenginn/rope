@@ -183,13 +183,19 @@ struct Result
 		}
 	}
 	
-	void transplantPositions()
+	void transplantPositions(bool displayTargets = false)
 	{
 		if (apl.size() > 0)
 		{
 			for (const AtomWithPos &awp : apl)
 			{
-				awp.atom->setDerivedPosition(awp.wp.ave);
+				glm::vec3 disp = displayTargets ? awp.wp.target : awp.wp.ave;
+				if (disp.x != disp.x)
+				{
+					continue;
+				}
+
+				awp.atom->setDerivedPosition(disp);
 			}
 		}
 		else if (aps.size() > 0)
