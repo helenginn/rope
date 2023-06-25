@@ -71,6 +71,15 @@ void PointyView::reindex()
 	}
 }
 
+bool PointyView::index_in_range(int idx, float t, float l, float b, float r)
+{
+	glm::vec4 v = glm::vec4(_vertices[idx].pos, 1.);
+	glm::vec4 tr = _proj * _model * v;
+	tr /= tr[3];
+	
+	return (tr.x > l && tr.x < r && tr.y > b && tr.y < t);
+}
+
 void PointyView::reset()
 {
 	for (size_t i = 0; i < vertexCount(); i++)

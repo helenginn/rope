@@ -144,6 +144,7 @@ std::set<int> IndexResponseView::objectsInBox(float t, float l,
 {
 	std::set<int> results;
 	
+#ifndef __EMSCRIPTEN__
 	for (size_t y = b; y < t; y++)
 	{
 		for (size_t x = l; x < r; x++)
@@ -155,6 +156,18 @@ std::set<int> IndexResponseView::objectsInBox(float t, float l,
 			}
 		}
 	}
+#else
+	for (IndexResponder *ir : _responders)
+	{
+		for (size_t idx = 0; idx < ir->requestedIndices(); idx++)
+		{
+			if (ir->index_in_range(idx, t, l, b, r))
+			{
+				results.insert(idx + ir->indexOffset());
+			}
+		}
+	}
+#endif
 	
 	return results;
 }

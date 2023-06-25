@@ -38,6 +38,8 @@ public:
 		return POINT_TYPE_COUNT;
 	}
 
+	virtual bool index_in_range(int idx, float t, float l, float b, float r);
+
 	virtual size_t requestedIndices()
 	{
 		return _vertices.size();

@@ -48,6 +48,11 @@ public:
 
 	virtual size_t requestedIndices() = 0;
 	
+	virtual bool index_in_range(int idx, float t, float l, float b, float r)
+	{
+		return false;
+	}
+	
 	void addThickLine(glm::vec3 start, glm::vec3 dir)
 	{
 		{

@@ -702,8 +702,11 @@ void ConfSpaceView::sendSelection(float t, float l, float b, float r,
 {
 	convertToGLCoords(&l, &t);
 	convertToGLCoords(&r, &b);
+
+#ifndef __EMSCRIPTEN__
 	convertGLToHD(l, t);
 	convertGLToHD(r, b);
+#endif
 
 	std::set<int> results = objectsInBox(t, l, b, r);
 	
