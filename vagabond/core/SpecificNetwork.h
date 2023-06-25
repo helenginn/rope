@@ -129,11 +129,13 @@ private:
 	};
 	
 	typedef Mapped<Vec3s> PosMapping;
+	typedef Mapped<Floats> BondMapping;
 
 	void grabParamMaps(json &json);
 	void getTorsionDetails(TorsionBasis *tb, CalcDetails &cd);
 
 	void prepareAtomMaps(BondSequence *seq, PosMapping *pm);
+	void prepareBondMaps(BondSequence *seq, BondMapping *pm);
 	void completeTorsionMap(TorsionMapping &map);
 	void prewarnParameters(BondSequence *bc, const std::vector<float> &vals);
 	
@@ -145,7 +147,9 @@ private:
 	};
 
 	std::map<BondCalculator *, CalcDetails> _calcDetails;
+
 	std::map<BondCalculator *, PosMapping *> _atomDetails;
+	std::map<BondCalculator *, BondMapping *> _bondDetails;
 	std::map<BondSequence *, PrewarnResults> _prewarnedResults;
 	std::map<Parameter *, Mapped<float> *> _param2Map;
 	int _jobNum = 0;

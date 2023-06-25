@@ -226,6 +226,46 @@ void SpecificNetwork::prepareAtomMaps(BondSequence *seq, PosMapping *pm)
 	}
 }
 
+void SpecificNetwork::prepareBondMaps(BondSequence *seq, BondMapping *pm)
+{
+	const std::vector<AtomBlock> &blocks = seq->blocks();
+	TorsionBasis *basis = seq->torsionBasis();
+	
+	std::vector<Parameter *> params = basis->parameters();
+	std::vector<Instance *> others = _network->instances();
+	
+	for (Instance *other : others)
+	{
+		int idx = _network->indexForInstance(other);
+		Floats &list = pm->get_value(idx);
+
+		for (int i = 0; i < params.size(); i++)
+		{
+			const ResidueId id = params[i]->residueId();
+			Residue *master_res = _instance->equivalentMaster(id);
+			Residue *other_res = other->equivalentLocal(master_res);
+
+			if (!other_res)
+			{
+				continue;
+			}
+
+			int idx = _network->indexForInstance(other);
+			float val = params[i]->value();
+
+			TorsionRef ref = other_res->copyTorsionRef(params[i]->desc());
+			if (ref.valid())
+			{
+				float tmp = ref.refinedAngle();
+				matchDegree(val, tmp);
+				val = tmp;
+			}
+
+			list.push_back(val);
+		}
+	}
+}
+
 void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 {
 	if (_param2Map.count(map.param) > 0)
@@ -289,12 +329,15 @@ void SpecificNetwork::getDetails(BondCalculator *bc)
 
 	BondSequence *seq = bc->sequence();
 	PosMapping *pm = _network->blueprint_vec3s_copy();
+	BondMapping *bm = _network->blueprint_floats_copy();
 
 	prepareAtomMaps(seq, pm);
+	prepareBondMaps(seq, bm);
 
 	TorsionBasis *tb = bc->torsionBasis();
 	getTorsionDetails(tb, cd);
 	
+	_bondDetails[bc] = bm;
 	_calcDetails[bc] = cd;
 	_atomDetails[bc] = pm;
 }
