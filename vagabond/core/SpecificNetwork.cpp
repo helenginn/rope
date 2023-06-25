@@ -232,7 +232,6 @@ void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 	{
 		map.mapping = _param2Map[map.param];
 		return;
-//		return;
 	}
 
 	const ResidueId id = map.param->residueId();
