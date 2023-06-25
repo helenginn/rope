@@ -72,6 +72,16 @@ public:
 		return p;
 	}
 	
+	std::array<float, D> difference(const Point &other) const
+	{
+		std::array<float, D> p;
+		for (int i = 0; i < D; i++)
+		{
+			p[i] = _p[i] - other._p[i];
+		}
+		return p;
+	}
+	
 	Point operator-(const Point &other) const
 	{
 		Point p;
@@ -91,9 +101,21 @@ public:
 		}
 		return res;
 	}
+
+	void set_gradient(int dim, const Type &t)
+	{
+		_grads[dim] = t;
+	}
 	
-	template <typename T>
-	void set_vector(const T &p)
+	
+	template <typename P>
+	Type gradient_in_direction(const P &p) const
+	{
+		return _grads[0];
+	}
+	
+	template <typename P>
+	void set_vector(const P &p)
 	{
 		for (unsigned int i = 0; i < D; i++)
 		{
@@ -101,7 +123,8 @@ public:
 		}
 	}
 	
-	Point(const std::vector<float> &p, Type value = 0)
+	template <typename P>
+	Point(const P &p, Type value = Type{})
 	{
 		for (unsigned int i = 0; i < D; i++)
 		{
@@ -151,6 +174,7 @@ public:
 private:
 	float _p[D]{};
 	Type _value{};
+	Type _grads[D]{};
 
 	unsigned int _d = D;
 
@@ -177,6 +201,7 @@ inline void to_json(json &j, const Point<2, float> &point)
 
 	j["coords"] = coords;
 	j["val"] = value;
+	j["grad"] = point._grads;
 }
 
 inline void from_json(const json &j, Point<2, float> &point)
@@ -190,6 +215,15 @@ inline void from_json(const json &j, Point<2, float> &point)
 	if (j.count("val"))
 	{
 		point.set_value(j.at("val"));
+	}
+
+	if (j.count("grad"))
+	{
+		std::vector<float> grads = j.at("grad");
+		for (size_t i = 0; i < grads.size(); i++)
+		{
+			point._grads[i] = grads[i];
+		}
 	}
 }
 
