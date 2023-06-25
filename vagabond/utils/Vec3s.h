@@ -21,85 +21,11 @@
 
 #include "glm_json.h"
 #include "Mapping.h"
+#include "OpVec.h"
 #include "Point.h"
 
-class Vec3s : public std::vector<glm::vec3>
-{
-public:
-	Vec3s operator/(const float &other) const
-	{
-		Vec3s ret;
-		for (const glm::vec3 &v : *this)
-		{
-			ret.push_back(v / other);
-		}
-
-		return ret;
-	}
-
-	Vec3s operator*(const float &other) const
-	{
-		Vec3s ret;
-		for (const glm::vec3 &v : *this)
-		{
-			ret.push_back(v * other);
-		}
-
-		return ret;
-	}
-
-	Vec3s operator+(const Vec3s &other) const
-	{
-		Vec3s ret;
-		for (size_t i = 0; i < size(); i++)
-		{
-			ret.push_back(this->at(i) + other.at(i));
-		}
-
-		return ret;
-	}
-
-	Vec3s operator-(const Vec3s &other) const
-	{
-		Vec3s ret;
-		for (size_t i = 0; i < size(); i++)
-		{
-			ret.push_back(this->at(i) - other.at(i));
-		}
-
-		return ret;
-	}
-
-	Vec3s &operator*=(const float &other)
-	{
-		for (size_t i = 0; i < size(); i++)
-		{
-			(*this)[i] *= other;
-		}
-
-		return *this;
-	}
-
-	Vec3s &operator+=(const Vec3s &other)
-	{
-		resize(other.size());
-
-		for (size_t i = 0; i < size(); i++)
-		{
-			(*this)[i] += other[i];
-		}
-
-		return *this;
-	}
-	
-	friend std::ostream &operator<<(std::ostream &ss, const Vec3s &vs)
-	{
-		std::cout << "vec3s(" << vs.size() << ")" << std::endl;
-		return ss;
-	}
-private:
-
-};
+typedef OpVec<glm::vec3> Vec3s;
+typedef OpVec<float> Floats;
 
 inline void to_json(json &j, const Point<2, Vec3s> &point)
 {
