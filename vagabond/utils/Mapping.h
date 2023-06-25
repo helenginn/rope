@@ -30,7 +30,7 @@ using nlohmann::json;
 template <typename Type>
 class Mapped
 {
-public:
+public: // this was a silly decision, all this virtual = no inlining = slow
 	virtual ~Mapped()
 	{
 
