@@ -658,7 +658,7 @@ public:
 	{
 		HyperTriangle *face = _mapped[idx];
 		
-		if (D == 2)
+		if (D == 2 && false)
 		{
 			return point_in_triangle(point, *face->point(0), *face->point(1),
 			                         *face->point(2));
