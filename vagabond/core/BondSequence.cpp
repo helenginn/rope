@@ -160,47 +160,35 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
-Coord::Interpolate<float> BondSequence::getTorsionFunction(int idx)
+float BondSequence::fetchTorsion(int torsion_idx)
 {
-	AtomBlock &b = _blocks[idx];
-
-	if (b.torsion_idx < 0)
+	if (_bondTorsions.size() > torsion_idx)
 	{
-		return Coord::Interpolate<float>();
+		return _bondTorsions[torsion_idx];
 	}
+	
+	auto func = torsionBasis()->valueForParameter(this, torsion_idx, 
+	                                              _acquireCoord, _nCoord);
 
-	if (b.get_torsion && (!b.needs_update || !b.needs_update(_acquireCoord)))
+	if (func)
 	{
-		return b.get_torsion;
-	}
-	else
-	{
-		b.get_torsion = torsionBasis()->valueForParameter(this, b.torsion_idx, 
-		                                                  _acquireCoord, 
-		                                                  _nCoord);
-		b.needs_update = torsionBasis()->needsUpdate(this, _acquireCoord,
-		                                             b.torsion_idx);
-		return b.get_torsion;
-	}
-}
-
-float BondSequence::fetchTorsion(int idx)
-{
-	auto f = getTorsionFunction(idx);
-	if (f)
-	{
-		return f(_acquireCoord);
+		return func(_acquireCoord);
 	}
 
 	return 0;
 }
 
+float BondSequence::fetchTorsionForBlock(int block_idx)
+{
+	AtomBlock &b = _blocks[block_idx];
+	int torsion_idx = b.torsion_idx;
+	
+	return fetchTorsion(torsion_idx);
+}
+
 void BondSequence::wipe()
 {
-	for (AtomBlock &block : _blocks)
-	{
-		block.get_torsion = Coord::Interpolate<float>{};
-	}
+
 }
 
 // ensures that the position sampler can pre-calculate all the necessary atom
@@ -210,14 +198,9 @@ void BondSequence::prewarnPositionSampler()
 	PositionSampler *ps = posSampler();
 
 	if (ps == nullptr) { return; }
-
-	std::vector<float> vals(_nCoord);
-	for (int i = 0; i < _nCoord; i++)
-	{
-		vals[i] = _acquireCoord(i);
-	}
 	
-	_acceptablePositions = ps->prewarnAtoms(this, vals, _atomPositions);
+	_acceptablePositions = ps->prewarnAtoms(this, _acquireCoord, _atomPositions);
+	ps->prewarnBonds(this, _acquireCoord, _bondTorsions);
 }
 
 void BondSequence::fetchAtomTarget(int idx)
@@ -247,7 +230,7 @@ int BondSequence::calculateBlock(int idx)
 		return 0;
 	}
 
-	float t = fetchTorsion(idx);
+	float t = fetchTorsionForBlock(idx);
 	fetchAtomTarget(idx);
 	
 	glm::mat4x4 rot = b.prepareRotation(t);

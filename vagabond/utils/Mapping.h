@@ -37,11 +37,10 @@ public: // this was a silly decision, all this virtual = no inlining = slow
 	}
 
 	virtual void bounds(std::vector<float> &min, std::vector<float> &max) = 0;
-	virtual Type interpolate_variable(const std::vector<float> &cart,
-	                                  bool *acceptable = nullptr) const = 0;
+	virtual Type linear_value(const Coord::Get &get,
+	                          bool *acceptable = nullptr) const = 0;
 
-	virtual Coord::Interpolate<Type> interpolate_function(const Coord::Get &get) 
-	const = 0;
+	virtual Type interpolate_position(const Coord::Get &get) const = 0;
 
 	virtual void real_to_fraction(std::vector<float> &val,
 	                              const std::vector<float> &min, 
@@ -56,11 +55,11 @@ public: // this was a silly decision, all this virtual = no inlining = slow
 	virtual std::vector<float> middle_of_face(int tidx) = 0;
 	virtual void face_indices_for_point(const int &pidx, 
 	std::vector<int> &idxs) = 0;
-	virtual bool face_has_point(int idx, const std::vector<float> &point) const = 0;
+	virtual bool face_has_point(int idx, const Coord::Get &get) const = 0;
+	virtual bool face_has_point(int idx, int pidx) const = 0;
 	virtual int face_idx_for_point(const std::vector<float> &point) = 0;
 	virtual void point_indices_for_face(int idx, std::vector<int> &points) const = 0;
 	virtual size_t point_count_for_face(int idx) const = 0;
-	virtual void update(int point_idx) = 0;
 	virtual void invalidate() = 0;
 	virtual void redo_bins() = 0;
 	
@@ -70,11 +69,6 @@ public: // this was a silly decision, all this virtual = no inlining = slow
 	                                                           int dimension) = 0;
 	virtual Mappable<Type> * simplex_for_points(std::vector<int> &points) = 0;
 	virtual Mappable<Type> * face_for_index(int i) = 0;
-
-	void update()
-	{
-		update(-1);
-	}
 	
 	// returns index of added point
 	virtual int add_point(const std::vector<float> &cart) = 0;
@@ -85,6 +79,8 @@ public: // this was a silly decision, all this virtual = no inlining = slow
 	virtual void remove_point(int idx) = 0;
 	virtual void alter_value(int idx, Type value) = 0;
 	virtual Type &get_value(int idx) = 0;
+	virtual Type &get_gradients(int idx, int dim) = 0;
+	virtual void set_gradients(int idx, int dim, const Type &type) = 0;
 	virtual void delaunay_refine() = 0;
 };
 
@@ -187,7 +183,6 @@ public:
 			return;
 		}
 
-		face->changed();
 		_mapped.push_back(face);
 	}
 	
@@ -307,8 +302,7 @@ public:
 		return (face_for_point(cart) != nullptr);
 	}
 
-	virtual Coord::Interpolate<Type> interpolate_function(const Coord::Get &get) 
-	const
+	virtual Type interpolate_position(const Coord::Get &get) const
 	{
 		std::vector<float> cart;
 		for (size_t i = 0; i < D; i++)
@@ -319,16 +313,16 @@ public:
 		MappedInDim<D, Type> *f = face_for_point(cart);
 		if (f == nullptr)
 		{
-			return [](const Coord::Get &) { return Type{};};
+			return Type{};
 		}
 
-		return f->interpolate_function();
+		return f->interpolate_position(get);
 	}
 	
-	Type interpolate_variable(const std::vector<float> &cart, 
-	                          bool *acceptable = nullptr) const
+	Type linear_value(const Coord::Get &get,
+	                  bool *acceptable = nullptr) const
 	{
-		MappedInDim<D, Type> *f = face_for_point(cart);
+		MappedInDim<D, Type> *f = face_for_point(get);
 		if (f == nullptr)
 		{
 			if (acceptable != nullptr)
@@ -338,7 +332,7 @@ public:
 			return Type{};
 		}
 		
-		Type t = f->interpolate_subfaces(cart);
+		Type t = f->linear_value(get);
 		if (acceptable != nullptr)
 		{
 			*acceptable = true;
@@ -408,6 +402,16 @@ public:
 			float old = val[i];
 			val[i] = old * (max.at(i) - min.at(i)) + min.at(i);
 		}
+	}
+
+	virtual Type &get_gradients(int idx, int dim)
+	{
+		return _points[idx]->get_gradient(dim);
+	}
+
+	virtual void set_gradients(int idx, int dim, const Type &type)
+	{
+		_points[idx]->get_gradient(dim) = type;
 	}
 
 	virtual Type &get_value(int idx)
@@ -654,25 +658,31 @@ public:
 		return !(has_neg && has_pos);
 	}
 
-	virtual bool face_has_point(int idx, const std::vector<float> &point) const
+	virtual bool face_has_point(int idx, const std::vector<float> &cart) const
+	{
+		Coord::Get get = Coord::fromVector(cart);
+		return face_has_point(idx, get);
+	}
+
+	virtual bool face_has_point(int idx, int pidx) const
+	{
+		return face_has_point(idx, *_points[pidx]);
+	}
+
+	virtual bool face_has_point(int idx, const Coord::Get &get) const
 	{
 		HyperTriangle *face = _mapped[idx];
 		
-		if (D == 2 && false)
-		{
-			return point_in_triangle(point, *face->point(0), *face->point(1),
-			                         *face->point(2));
-		}
-
-		if (!face->point_in_bounds(point))
+		if (!face->point_in_bounds(get))
 		{
 			return false;
 		}
 
-		const std::vector<float> &bcp = face->point_to_barycentric(point);
+		std::vector<float> bcp(face->pointCount());
+		face->point_to_barycentric(get, bcp);
 		for (const float &f : bcp)
 		{
-			if (f < -1e-6)
+			if (f < -1e-6 || f > (1+1e-6))
 			{
 				return false;
 			}
@@ -680,12 +690,18 @@ public:
 
 		return true;
 	}
+
+	HyperTriangle *face_for_point(const std::vector<float> &cart) const
+	{
+		Coord::Get get = Coord::fromVector(cart);
+		return face_for_point(get);
+	}
 	
-	HyperTriangle *face_for_point(const std::vector<float> &point) const
+	HyperTriangle *face_for_point(const Coord::Get &get) const
 	{
 		for (int i = 0; i < _mapped.size(); i++)
 		{
-			if (face_has_point(i, point))
+			if (face_has_point(i, get))
 			{
 				return _mapped[i];
 			}
@@ -723,35 +739,13 @@ public:
 	{
 		for (int i = 0; i < _mapped.size(); i++)
 		{
-			if (face_has_point(i, *point(pidx)))
+			if (face_has_point(i, pidx))
 			{
 				idxs.push_back(i);
 			}
 		}
 	}
 
-	void update()
-	{
-		update(-1);
-	}
-
-	virtual void update(int idx)
-	{
-		if (idx >= 0)
-		{
-			for (HyperTriangle *ht : _members[_points[idx]])
-			{
-				ht->changed();
-			}
-			return;
-		}
-
-		for (int i = 0; i < _mapped.size(); i++)
-		{
-			_mapped[i]->changed();
-		}
-	}
-	
 	virtual Mappable<Type> * simplex_for_points(std::vector<int> &points)
 	{
 		int dimension = points.size() - 1;
@@ -859,7 +853,6 @@ inline void from_json(const json &j, Mapping<2, float> &map)
 		}
 	}
 	
-	map.update();
 	map.redo_bins();
 }
 

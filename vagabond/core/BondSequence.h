@@ -180,6 +180,8 @@ public:
 	{
 		return _blocks;
 	}
+
+	float fetchTorsion(int idx);
 private:
 
 	struct AtomBlockTodo
@@ -203,9 +205,8 @@ private:
 	void prewarnTorsions();
 
 	int calculateBlock(int idx);
-	float fetchTorsion(int idx);
+	float fetchTorsionForBlock(int idx);
 	void fetchAtomTarget(int idx);
-	Coord::Interpolate<float> getTorsionFunction(int idx);
 
 	Grapher _grapher;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
@@ -250,6 +251,7 @@ private:
 	
 	bool _acceptablePositions = false;
 	Vec3s _atomPositions;
+	Floats _bondTorsions;
 
 	AtomPosMap _posAtoms;
 	AtomPosList _posList;

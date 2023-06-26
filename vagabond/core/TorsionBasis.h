@@ -77,6 +77,11 @@ public:
 	std::vector<int> grabIndices(const std::set<Parameter *> &params);
 	void trimParametersToUsed(std::set<Parameter *> &params);
 
+	virtual void supplyCalculatedTorsions(const std::vector<float> &floats)
+	{
+
+	}
+
 	const size_t parameterCount() const
 	{
 		return _params.size();

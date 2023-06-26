@@ -20,7 +20,6 @@
 #include <vagabond/utils/maths.h>
 #include <sstream>
 #include "MappingToMatrix.h"
-#include "SpecificNetwork.h"
 
 MappingToMatrix::MappingToMatrix(Mapped<float> &mapped) : _mapped(mapped)
 {
@@ -65,7 +64,8 @@ float MappingToMatrix::simpleValue(float x, float y)
 	}
 	else
 	{
-		float res = _mapped.interpolate_variable(val);
+		Coord::Get get = Coord::fromVector(val);
+		float res = _mapped.interpolate_position(get);
 		return res;
 	}
 }
@@ -118,7 +118,8 @@ std::vector<std::vector<float>> MappingToMatrix::carts_for_triangle(int idx,
 				continue;
 			}
 
-			bool has = _mapped.face_has_point(idx, val);
+			Coord::Get get = Coord::fromVector(val);
+			bool has = _mapped.face_has_point(idx, get);
 			
 			if (has)
 			{

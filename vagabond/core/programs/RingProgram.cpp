@@ -21,6 +21,7 @@
 #include "RingProgrammer.h"
 #include "HyperValue.h"
 #include "TorsionBasis.h"
+#include "BondSequence.h"
 #include "AtomBlock.h"
 #include "BondLength.h"
 #include "BondAngle.h"
@@ -334,7 +335,7 @@ void RingProgram::fetchParameters(const Coord::Get &coord, int n)
 	for (HyperValue *hv : _values)
 	{
 		int idx = _valueMapping[hv];
-		float t = _basis->valueForParameter(_seq, idx, coord, n)(coord);
+		float t = _seq->fetchTorsion(idx);
 		_name2Value[hv->name()] = t;
 	}
 	

@@ -70,13 +70,14 @@ int Nudger::sendJob(const std::vector<float> &all)
 	return ticket;
 }
 
-void Nudger::nudge(float flex, std::function<float()> score)
+void Nudger::nudge(std::vector<float> &flex, std::function<float()> score)
 {
 	_score = score;
 	_getPoints(_start);
 
-	std::vector<float> steps = {flex / 2};
-	_engine->chooseStepSizes(steps);
+	_engine->chooseStepSizes(flex);
 	_engine->setMaxRuns(10);
 	_engine->start();
+	
+	std::cout << "- end " << _score() << std::endl;
 }

@@ -33,8 +33,8 @@ public:
 	AltersNetwork(SpecificNetwork *sn, Mapped<float> *mapped,
 	std::atomic<bool> &stop, std::atomic<bool> &skip);
 
-	void bindPoint(int pidx, std::vector<Parameter *> &params,
-	               bool with_positions = false);
+	void bindPointValues(int pidx, std::vector<Parameter *> &params);
+	void bindPointGradients(int pidx, std::vector<Parameter *> &params);
 protected:
 	Mapped<float> *_mapped = nullptr;
 	SpecificNetwork *_specified = nullptr;

@@ -25,6 +25,27 @@ using nlohmann::json;
 #include <iostream>
 #include <set>
 
+template <typename P, typename Type>
+Type gradient_in_direction(int d, const P &dir, Type *const grads)
+{
+	float length = 0;
+	for (size_t i = 0; i < d; i++)
+	{
+		length += dir[i] * dir[i];
+	}
+	length = sqrt(length);
+
+	Type sum{};
+	for (size_t i = 0; i < d; i++)
+	{
+		float scale = dir[i] / length;
+		Type type = grads[i] * scale;
+		sum += type;
+	}
+
+	return sum;
+}
+	
 template <unsigned int D, typename Type>
 class Point
 {
@@ -82,12 +103,13 @@ public:
 		return p;
 	}
 	
-	Point operator-(const Point &other) const
+	template <class Other>
+	Point operator-(const Other &other) const
 	{
 		Point p;
 		for (int i = 0; i < D; i++)
 		{
-			p._p[i] = _p[i] - other._p[i];
+			p._p[i] = _p[i] - other[i];
 		}
 		return p;
 	}
@@ -106,12 +128,36 @@ public:
 	{
 		_grads[dim] = t;
 	}
+
+	const Type &get_gradient(int dim) const
+	{
+		return _grads[dim];
+	}
 	
+	Type &get_gradient(int dim)
+	{
+		return _grads[dim];
+	}
 	
 	template <typename P>
 	Type gradient_in_direction(const P &p) const
 	{
-		return _grads[0];
+		float length = 0;
+		for (size_t i = 0; i < D; i++)
+		{
+			length += p[i] * p[i];
+		}
+		length = sqrt(length);
+
+		Type sum{};
+		for (size_t i = 0; i < D; i++)
+		{
+			float scale = p[i] / length;
+			Type type = _grads[i] * scale;
+			sum += type;
+		}
+
+		return sum;
 	}
 	
 	template <typename P>

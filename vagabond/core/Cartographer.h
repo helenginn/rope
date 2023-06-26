@@ -99,7 +99,7 @@ private:
 	                     ScoreMap::Mode options);
 	ScoreMap basicScorer(ScoreMap::Mode options);
 	float scoreWithScorer(const Points &points, ScoreMap scorer);
-	std::function<float()> scorerForNudge(int tidx);
+	std::function<float()> scorerForNudge(int tidx, size_t paramCount);
 
 	void flipPoints();
 	void flipPoint(int i, int j);
@@ -108,9 +108,9 @@ private:
 
 	void permute(std::vector<Parameter *> &params, 
 	             std::function<float()> score, int pidx);
+	void nudger(std::vector<Parameter *> &params, 
+	           std::function<float()> score, int pidx);
 
-	void refineFace(Parameter *param, const std::vector<float> &point,
-	                const std::function<float()> &score);
 	void nudgePoints(const std::vector<float> &point);
 
 	bool nudgePoint(float begin, Parameter *param, const int &pidx,
@@ -120,8 +120,6 @@ private:
 	Points cartesiansForPoint(int pidx, int paramCount);
 	void cartesiansForTriangle(int tidx, int paramCount,
 	                           Cartographer::Points &carts);
-	int pointToWork(Parameter *param, const std::vector<float> &point,
-	                int last_idx);
 
 	SpecificNetwork *_specified = nullptr;
 	Network *_network = nullptr;

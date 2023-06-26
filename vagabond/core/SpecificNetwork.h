@@ -55,6 +55,22 @@ public:
 	nlohmann::json jsonForParameter(Parameter *p) const;
 	void setJsonForParameter(Parameter *p, const nlohmann::json &j);
 	
+	void writeBondMaps();
+	
+	bool hasBondMappingFor(const Parameter *p) const
+	{
+		return (_param2BondMap.count(p) > 0);
+	}
+	
+	std::pair<Mapped<Floats> *, int> bondMappingFor(const Parameter *p) const
+	{
+		if (_param2BondMap.count(p) == 0)
+		{
+			return std::make_pair(nullptr, -1);
+		}
+		return _param2BondMap.at(p);
+	}
+	
 	Mapped<float> *mapForParameter(Parameter *p) const
 	{
 		if (_param2Map.count(p) == 0)
@@ -73,24 +89,19 @@ public:
 
 	int submitJob(bool show, const std::vector<float> vals, int save_id = -1);
 
-	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
-	                  Vec3s &positions);
+	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
+	                          Vec3s &positions);
+	void prewarnBonds(BondSequence *seq, const Coord::Get &get, Floats &torsions);
 	
 	int detailsForParam(Parameter *parameter, BondCalculator **calc);
 	int pointCount(Parameter *parameter);
 	void zeroVertices();
 	void setup();
-
-	int splitFace(Parameter *parameter, const std::vector<float> &point);
 	
 	void setDisplayInterval(int interval)
 	{
 		_displayInterval = interval;
 	}
-
-	
-	Coord::NeedsUpdate needsUpdate(BondSequence *seq, int idx, 
-	                               const Coord::Get &coord);
 
 	friend inline void to_json(json &j, const SpecificNetwork &sn);
 	friend inline void from_json(const json &j, SpecificNetwork &sn);
@@ -152,6 +163,7 @@ private:
 	std::map<BondCalculator *, BondMapping *> _bondDetails;
 	std::map<BondSequence *, PrewarnResults> _prewarnedResults;
 	std::map<Parameter *, Mapped<float> *> _param2Map;
+	std::map<const Parameter *, std::pair<Mapped<Floats> *, int>> _param2BondMap;
 	int _jobNum = 0;
 	int _display = 0;
 	int _displayInterval = 100;

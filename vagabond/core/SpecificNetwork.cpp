@@ -61,7 +61,7 @@ StructureModification(j.at("model"), j.at("main_instance"), 1, 2)
 	_network->get_info(j);
 	
 	_torsionType = TorsionBasis::TypeNetwork;
-	_threads = 2;
+	_threads = 1;
 	_instance->load();
 	_instance->currentAtoms()->recalculate();
 	
@@ -238,6 +238,7 @@ void SpecificNetwork::prepareBondMaps(BondSequence *seq, BondMapping *pm)
 	{
 		int idx = _network->indexForInstance(other);
 		Floats &list = pm->get_value(idx);
+		Floats grad_zero;
 
 		for (int i = 0; i < params.size(); i++)
 		{
@@ -245,23 +246,28 @@ void SpecificNetwork::prepareBondMaps(BondSequence *seq, BondMapping *pm)
 			Residue *master_res = _instance->equivalentMaster(id);
 			Residue *other_res = other->equivalentLocal(master_res);
 
-			if (!other_res)
-			{
-				continue;
-			}
-
 			int idx = _network->indexForInstance(other);
 			float val = params[i]->value();
 
-			TorsionRef ref = other_res->copyTorsionRef(params[i]->desc());
-			if (ref.valid())
+			if (other_res)
 			{
-				float tmp = ref.refinedAngle();
-				matchDegree(val, tmp);
-				val = tmp;
+				TorsionRef ref = other_res->copyTorsionRef(params[i]->desc());
+				if (ref.valid())
+				{
+					float tmp = ref.refinedAngle();
+					matchDegree(val, tmp);
+					val = tmp;
+				}
 			}
 
+			_param2BondMap[params[i]] = make_pair(pm, i);
 			list.push_back(val);
+			grad_zero.push_back(0);
+		}
+		
+		for (size_t d = 0; d < pm->n(); d++)
+		{
+			pm->set_gradients(idx, d, grad_zero);
 		}
 	}
 }
@@ -301,8 +307,6 @@ void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
 
 		map.mapping->alter_value(idx, val);
 	}
-	
-	map.mapping->update();
 }
 
 void SpecificNetwork::getTorsionDetails(TorsionBasis *tb, CalcDetails &cd)
@@ -356,72 +360,24 @@ void SpecificNetwork::torsionBasisMods(TorsionBasis *tb)
 	nb->setSpecificNetwork(this);
 }
 
+void SpecificNetwork::prewarnBonds(BondSequence *seq, const Coord::Get &get,
+                                   Floats &torsions)
+{
+	BondCalculator *bc = seq->calculator();
+	BondMapping *bm = _bondDetails[bc];
+	torsions = bm->interpolate_position(get);
+}
+
 bool SpecificNetwork::prewarnAtoms(BondSequence *seq, 
-                                   const std::vector<float> &vals,
+                                   const Coord::Get &get,
                                    Vec3s &positions)
 {
 	bool accept = false;
 	BondCalculator *bc = seq->calculator();
 	PosMapping *pm = _atomDetails[bc];
-	positions = pm->interpolate_variable(vals, &accept);
+	positions = pm->linear_value(get, &accept);
 	
 	return accept;
-}
-
-Coord::NeedsUpdate SpecificNetwork::needsUpdate(BondSequence *seq, int idx,
-                                         const Coord::Get &coord)
-{
-	Coord::NeedsUpdate definitely = [](const Coord::Get &coord) { return true; };
-
-	std::vector<float> vals(_network->dims());
-	for (int i = 0; i < _network->dims(); i++)
-	{
-		vals[i] = coord(i);
-	}
-
-	BondCalculator *bc = seq->calculator();
-	const CalcDetails &cd = _calcDetails.at(bc);
-
-	const TorsionMapping &tm = cd.torsions.at(idx);
-	Mapped<float> *const map = tm.mapping;
-	
-	if (!map)
-	{
-		return definitely;
-	}
-
-	int fidx = map->face_idx_for_point(vals);
-	
-	if (fidx < 0)
-	{
-		return definitely;
-	}
-	
-	Mappable<float> *face = map->face_for_index(fidx);
-	int version = map->face_for_index(fidx)->version();
-	int pc = map->point_count_for_face(fidx);
-	Coord::NeedsUpdate update;
-	update = [face, version, pc](const Coord::Get &coord) -> bool
-	{
-		if (!face || !face->valid() || face->version() != version)
-		{
-			return true;
-		}
-
-		std::vector<float> weights(pc);
-		face->point_to_barycentric(coord, weights);
-		for (float &f : weights)
-		{
-			if (f < -1e-6 || f > 1+1e-6)
-			{
-				return true;
-			}
-		}
-		
-		return false;
-	};
-	
-	return update;
 }
 
 Coord::Interpolate<float> SpecificNetwork::torsion(BondSequence *seq, int idx, 
@@ -443,7 +399,7 @@ Coord::Interpolate<float> SpecificNetwork::torsion(BondSequence *seq, int idx,
 		return [](const Coord::Get &) { return 0;};
 	}
 
-	Coord::Interpolate<float> interpolate = map->interpolate_function(coord);
+	Coord::Interpolate<float> interpolate;// = map->interpolate_function(coord);
 	
 	return interpolate;
 }
@@ -511,31 +467,14 @@ int SpecificNetwork::pointCount(Parameter *parameter)
 	return -1;
 }
 
-int SpecificNetwork::splitFace(Parameter *parameter, 
-                               const std::vector<float> &point)
+void SpecificNetwork::writeBondMaps()
 {
-	for (BondCalculator *bc : _calculators)
+	for (auto it = _param2BondMap.begin(); it != _param2BondMap.end(); it++)
 	{
-		CalcDetails &cd = _calcDetails[bc];
-		int idx = cd.index_for_param(parameter);
-
-		if (idx < 0)
-		{
-			continue;
-		}
-		
-		Mapped<float> *map = cd.torsions[idx].mapping;
-		float value = map->interpolate_variable(point);
-		int new_idx = map->add_point(point);
-		map->alter_value(new_idx, value);
-		map->crack_existing_face(new_idx);
-		map->delaunay_refine();
-		refresh(parameter);
-
-		return new_idx;
+		std::cout << it->first->residueId() << " " << it->first->desc() << std::endl;
+		std::cout << "points: " << it->second.first->pointCount() << std::endl;
 	}
 
-	return -1;
 }
 
 void SpecificNetwork::refresh(Parameter *p)

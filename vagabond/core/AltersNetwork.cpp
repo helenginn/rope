@@ -68,50 +68,89 @@ void AltersNetwork::functionsForPositions(std::vector<Mapped<float> *> &maps,
 			// will get ignored after D in Point
 			maps[i]->set_point_vector(pidx, &values[n]);
 			n += maps[i]->n(); // n coordinates per point to set
-			maps[i]->update(pidx);
 		}
 	};
-
 }
 
 
-void AltersNetwork::bindPoint(int pidx, std::vector<Parameter *> &params,
-                              bool with_positions)
+void AltersNetwork::bindPointGradients(int pidx, std::vector<Parameter *> &params)
 {
-	std::vector<Mapped<float> *> maps = parametersToMaps(_specified, params);
+	SpecificNetwork *sn = _specified;
 	
-	Getter get_coords; Setter set_coords;
-	if (with_positions)
-	{
-		functionsForPositions(maps, pidx, get_coords, set_coords);
-	}
-
-	_getPoints = [pidx, maps, get_coords](std::vector<float> &values)
+	_getPoints = [pidx, sn, params](std::vector<float> &values)
 	{
 		values.clear();
-		for (size_t i = 0; i < maps.size(); i++)
+		for (size_t i = 0; i < params.size(); i++)
 		{
-			if (maps[i] == nullptr) continue;
-			const float &new_val = maps[i]->get_value(pidx);
-			values.push_back(new_val);
-		}
-		if (get_coords)
-		{
-			get_coords(values);
+			auto map_idx = sn->bondMappingFor(params[i]);
+			Mapped<Floats> *bonds = map_idx.first;
+			int idx = map_idx.second;
+			if (idx < 0) continue;
+
+			for (int d = 0; d < bonds->n(); d++)
+			{
+				const Floats &grads = bonds->get_gradients(pidx, d);
+				values.push_back(grads[idx]);
+			}
 		}
 	};
 
-	_setPoints = [pidx, maps, set_coords](const std::vector<float> &values)
+	_setPoints = [pidx, sn, params](const std::vector<float> &src)
 	{
-		for (size_t i = 0; i < maps.size(); i++)
+		int n = 0;
+		for (size_t i = 0; i < params.size(); i++)
 		{
-			if (maps[i] == nullptr) continue;
-			const float &new_val = values[i];
-			maps[i]->alter_value(pidx, new_val);
+			auto map_idx = sn->bondMappingFor(params[i]);
+			Mapped<Floats> *bonds = map_idx.first;
+			int idx = map_idx.second;
+			if (idx < 0) continue;
+
+			for (int d = 0; d < bonds->n(); d++)
+			{
+				const float &new_val = src[n + d];
+				Floats &dest = bonds->get_gradients(pidx, d);
+				dest[idx] = new_val;
+			}
+			
+			n += bonds->n();
 		}
-		if (set_coords)
+	};
+}
+
+void AltersNetwork::bindPointValues(int pidx, std::vector<Parameter *> &params)
+{
+
+	SpecificNetwork *sn = _specified;
+	
+	_getPoints = [pidx, sn, params](std::vector<float> &values)
+	{
+		values.clear();
+		for (size_t i = 0; i < params.size(); i++)
 		{
-			set_coords(values);
+			auto map_idx = sn->bondMappingFor(params[i]);
+			Mapped<Floats> *bonds = map_idx.first;
+			int idx = map_idx.second;
+
+			if (idx < 0) continue;
+
+			const Floats &vals = bonds->get_value(pidx);
+			values.push_back(vals[idx]);
+		}
+	};
+
+	_setPoints = [pidx, sn, params](const std::vector<float> &src)
+	{
+		for (size_t i = 0; i < src.size(); i++)
+		{
+			auto map_idx = sn->bondMappingFor(params[i]);
+			Mapped<Floats> *bonds = map_idx.first;
+			int idx = map_idx.second;
+
+			if (idx < 0) continue;
+
+			const float &new_val = src[i];
+			Floats &dest = bonds->get_value(pidx);
+			dest[idx] = new_val;
 		}
 	};
 }

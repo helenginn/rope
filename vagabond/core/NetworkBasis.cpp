@@ -18,6 +18,7 @@
 
 #include "NetworkBasis.h"
 #include "SpecificNetwork.h"
+#include <vagabond/utils/Vec3s.h>
 
 NetworkBasis::NetworkBasis() : ConcertedBasis()
 {
@@ -29,7 +30,6 @@ NetworkBasis::valueForParameter(BondSequence *seq, int tidx,
                                 const Coord::Get &coord, int n)
 {
 	TorsionAngle &ta = _angles[tidx];
-	if (!ta.mask)
 	{
 		Coord::Interpolate<float> ret = [ta](const Coord::Get &)
 		{
@@ -38,18 +38,4 @@ NetworkBasis::valueForParameter(BondSequence *seq, int tidx,
 
 		return ret;
 	}
-	else
-	{
-		Coord::Interpolate<float> interpolate = _sn->torsion(seq, tidx, coord);
-
-		return interpolate;
-	}
-	
-}
-
-Coord::NeedsUpdate NetworkBasis::needsUpdate(BondSequence *seq,
-                                                const Coord::Get &coord, int idx)
-{
-	SpecificNetwork *sn = _sn;
-	return sn->needsUpdate(seq, idx, coord);
 }

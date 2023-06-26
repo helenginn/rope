@@ -20,36 +20,17 @@
 #define __vagabond__SandboxView__
 
 #include <vagabond/gui/Display.h>
-#include <vagabond/utils/Mapping.h>
 #include <vagabond/core/Responder.h>
 #include <thread>
 
-class MappingToMatrix;
-class SpecificNetwork;
-class MatrixPlot;
-class Network;
-
-class SandboxView : public Display, public Responder<SpecificNetwork>
+class SandboxView : public Display
 {
 public:
 	SandboxView(Scene *prev);
 	virtual ~SandboxView();
 
-	void makeTriangles();
 	virtual void setup();
 private:
-	void makeMapping();
-	bool _editing = false;
-
-	Mapped<float> *_mapped = nullptr;
-	MappingToMatrix *_mat2Map = nullptr;
-	MatrixPlot *_plot = nullptr;
-	Network *_network = nullptr;
-	SpecificNetwork *_specified = nullptr;
-	std::mutex _mutex;
-
-	MatrixPlot *_distances = nullptr;
-	PCA::Matrix _distMat;
 };
 
 #endif

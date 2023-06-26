@@ -71,10 +71,13 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 	};
 
 	std::function<bool(const Parameter *)> ramaFilter;
-	ramaFilter = [variation](const Parameter *problem) -> bool
+	ramaFilter = [sn](const Parameter *problem) -> bool
 	{
-		return (problem->coversMainChain() && 
-		        !problem->isPeptideBond());
+		if (sn->bondMappingFor(problem).second < 0)
+		{
+			return false;
+		}
+		return (problem->coversMainChain() && !problem->isPeptideBond());
 	};
 	_ramaFilter = ramaFilter;
 
@@ -88,8 +91,16 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 void ProblemPrep::filterParameters(Parameters &params)
 {
 	Parameters redo;
-	std::copy_if(params.begin(), params.end(), redo.begin(), _ramaFilter);
+	
+	for (Parameter *param : params)
+	{
+		if (_ramaFilter(param))
+		{
+			redo.push_back(param);
+		}
+	}
 
+	params = redo;
 }
 
 std::function<float(int &)> ProblemPrep::flipFunction(Parameter *param, int pidx)
@@ -278,7 +289,7 @@ ProblemPrep::ParamSet ProblemPrep::problemParams(PCA::Matrix &m,
 	{
 		int split_idx = splits[i];
 
-		for (int k = -2; k <= 2; k++)
+		for (int k = -1; k <= 1; k++)
 		{
 			int include = split_idx + k;
 			const Atom *atom = atomFrom(atoms, include);

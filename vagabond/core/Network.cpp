@@ -122,8 +122,6 @@ void Network::setup()
 		convertToTSNE();
 		makeBlueprintMapping();
 	}
-
-	_blueprint->update();
 }
 
 void Network::crackPoints()

@@ -26,8 +26,11 @@ class PositionSampler
 public:
 	virtual ~PositionSampler() {};
 
-	virtual bool prewarnAtoms(BondSequence *bc, const std::vector<float> &vals,
+	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
 	                          Vec3s &positions) = 0;
+
+	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
+	                          Floats &torsions) = 0;
 };
 
 #endif

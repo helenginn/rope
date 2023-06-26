@@ -37,10 +37,9 @@ public:
 		_sn = sn;
 	}
 
-	virtual Coord::NeedsUpdate needsUpdate(BondSequence *seq,
-	                                       const Coord::Get &coord, int idx);
 private:
 	SpecificNetwork *_sn = nullptr;
+	std::vector<float> _torsions;
 
 };
 

@@ -22,8 +22,6 @@
 #include <vagabond/utils/svd/PCA.h>
 template <typename Type> class Mapped;
 
-class SpecificNetwork;
-
 class MappingToMatrix
 {
 public:
@@ -46,7 +44,6 @@ private:
 
 	void normalise(double &val);
 	void loop(float(MappingToMatrix::*get_value)(float, float));
-	SpecificNetwork *_specified;
 
 	Mapped<float> &_mapped;
 	PCA::Matrix _matrix{};

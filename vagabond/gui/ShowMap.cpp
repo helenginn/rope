@@ -84,8 +84,9 @@ void ShowMap::updateFromMap(Mapped<float> *map)
 		line->addPoint(image->centroid());
 	}
 	
-	box->addObject(line);
+	line->setCentre(0.5, 0.5);
 	box->setCentre(0.5, 0.5);
+	box->addObject(line);
 	addObject(box);
 	
 	for (size_t i = 0; i < map->faceCount(); i++)

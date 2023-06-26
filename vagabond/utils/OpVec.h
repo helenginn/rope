@@ -93,7 +93,7 @@ public:
 	
 	friend std::ostream &operator<<(std::ostream &ss, const OpVec<Type> &vs)
 	{
-		std::cout << "vec3s(" << vs.size() << ")";
+		std::cout << "opvec(" << vs.size() << ")";
 		if (vs.size() > 0)
 		{
 			std::cout << ", [0] = " << vs[0];

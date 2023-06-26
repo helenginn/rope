@@ -28,7 +28,7 @@ public:
 	Nudger(SpecificNetwork *sn, Mapped<float> *mapped,
 	         std::atomic<bool> &stop, std::atomic<bool> &skip);
 
-	void nudge(float flex, std::function<float()> score);
+	void nudge(std::vector<float> &flex, std::function<float()> score);
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
