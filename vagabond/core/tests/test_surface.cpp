@@ -27,8 +27,8 @@
 #include <iomanip>
 #include "vagabond/utils/glm_import.h"
 #include "Atom.h"
-#include "CifFile.h"
-#include "PdbFile.h"
+#include <vagabond/core/files/CifFile.h>
+#include <vagabond/core/files/PdbFile.h>
 
 
 namespace tt = boost::test_tools;
@@ -349,11 +349,6 @@ BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
 	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
 	calc.finish();
 }
-
-// BOOST_AUTO_TEST_CASE(failing_Test)
-// {
-// 	BOOST_TEST(1 == 2);
-// }
 
 BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 {
