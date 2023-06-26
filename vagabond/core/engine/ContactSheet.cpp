@@ -30,29 +30,29 @@ void ContactSheet::updateSheet(AtomPosMap &newPositions)
 	_posMap = newPositions;
 }
 
+// Algorithm from:
+// ICM - a new method for protein modelling and design: applications to docking
+// and structure prediction from the distorted native conformation.
+// Abagyan et al, Journal of Computational Chemistry 15:5 488-506 (1994).
+
 void ContactSheet::calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms)
 {
-	for (const auto &atom : nearAtoms)
+	for (Atom *const &atom : nearAtoms)
 	{
-		float R_A, R_B, d_AB, x_a, x_b, y_a, y_b, z_a, z_b, Z_b, Z_c, Z_l, Z_u, r_b_sq, delta;
+		const glm::vec3 &a = centre->derivedPosition();
+		const glm::vec3 &b = atom->derivedPosition();
+		const float &R_A = getVdWRadius(centre);
+		const float &R_B = getVdWRadius(atom);
+		const float &d_AB = glm::length(centre->derivedPosition() - atom->derivedPosition());
+		const float &Z_b = b.z - a.z;
+		const float &r_b_sq = (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y);
+		const float &Z_c = 0.5 * Z_b * (((R_A*R_A - R_B*R_B) / (d_AB*d_AB)) - 1);
+		const float &delta = sqrt(r_b_sq * (((R_B*R_B)/(d_AB*d_AB)) - ((Z_c*Z_c)/(Z_b*Z_b))));
+		const float &Z_l = (r_b_sq*(Z_c/Z_b) + delta*Z_b) > 0 ? Z_c - delta : - R_A;
+		const float &Z_u = (r_b_sq*(Z_c/Z_b) - delta*Z_b) <= 0 ? R_A : Z_c + delta;
 
-		R_A = getVdWRadius(centre);
-		R_B = getVdWRadius(atom);
-		d_AB = glm::length(centre->derivedPosition() - atom->derivedPosition());
-		x_a = centre->derivedPosition().x;
-		x_b = atom->derivedPosition().x;
-		y_a = centre->derivedPosition().y;
-		y_b = atom->derivedPosition().y;
-		z_a = centre->derivedPosition().z;
-		z_b = atom->derivedPosition().z;
-		Z_b = z_b - z_a;
-		r_b_sq = (x_a - x_b)*(x_a - x_b) + (y_a - y_b)*(y_a - y_b);
-		Z_c = 0.5 * Z_b * (((R_A*R_A - R_B*R_B) / (d_AB*d_AB)) - 1);
-		delta = sqrt(r_b_sq * (((R_B*R_B)/(d_AB*d_AB)) - ((Z_c*Z_c)/(Z_b*Z_b))));
-		Z_l = (r_b_sq*(Z_c/Z_b) + delta*Z_b) > 0 ? Z_c - delta : - R_A;
-		Z_u = (r_b_sq*(Z_c/Z_b) - delta*Z_b) <= 0 ? R_A : Z_c + delta;
 		_zSliceMap[centre][atom] = {Z_l, Z_u};
-		_zSliceMap[atom][centre] = {Z_l - Z_b, Z_u - Z_b};
+		_zSliceMap[atom][centre] = {std::max(-R_B, a.z + Z_l - b.z), std::min(R_B, a.z + Z_u - b.z)};
 	}
 }
 
