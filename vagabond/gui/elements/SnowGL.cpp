@@ -94,19 +94,15 @@ void checkFrameBuffers()
 	}
 }
 
-void SnowGL::preparePingPongBuffers(int w_over, int h_over)
+void SnowGL::preparePingPongBuffers()
 {
+	prepareDepthColourIndex(true);
+
 	glGenFramebuffers(2, _pingPongFbo);
 	glGenTextures(2, _pingPongMap);
 
-	int w = width();
-	int h = height();
-	
-	if (w_over > 0 && h_over > 0)
-	{
-		w = w_over;
-		h = h_over;
-	}
+	int w = Window::width();
+	int h = Window::height();
 
 	for (unsigned int i = 0; i < 2; i++)
 	{
@@ -125,43 +121,12 @@ void SnowGL::preparePingPongBuffers(int w_over, int h_over)
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	_quad = new Quad();
+	_quad->setTextureID(0, _sceneMap[0]);
 }
 
-void SnowGL::resizeTextures(int w_over, int h_over)
-{
-	int w = width();
-	int h = height();
-	
-	if (w_over > 0 && h_over > 0)
-	{
-		w = w_over;
-		h = h_over;
-	}
-
-	glBindTexture(GL_TEXTURE_2D, _sceneDepth);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
-	             w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-	for (size_t i = 0; i < _sceneMapCount; i++)
-	{
-		/* wrong, if you bring this into action */
-		glBindTexture(GL_TEXTURE_2D, _sceneMap[i]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 
-		             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
-	}
-	
-	if (_pingPongFbo[0] > 0)
-	{
-		for (size_t i = 0; i < 2; i++)
-		{
-			glBindTexture(GL_TEXTURE_2D, _pingPongMap[i]);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 
-			             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
-		}
-	}
-}
-
-void SnowGL::prepareDepthColourIndex()
+void SnowGL::prepareDepthColourIndex(bool bright)
 {
 	/* generate new frame buffer for additional targets */
 	glGenFramebuffers(1, &_sceneFbo);
@@ -169,12 +134,12 @@ void SnowGL::prepareDepthColourIndex()
 	/* bind it! */
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _sceneFbo);
 
+	_sceneMapCount = 2 + (bright ? 1 : 0);
+
 	/* generate a texture for each target */
-	glGenTextures(2, _sceneMap);
+	glGenTextures(_sceneMapCount, _sceneMap);
 	/* generate a single depth buffer as well */
 	glGenTextures(1, &_sceneDepth);
-
-	_sceneMapCount = 2;
 
 	int w = Window::width();
 	int h = Window::height();
@@ -193,10 +158,10 @@ void SnowGL::prepareDepthColourIndex()
 	                       GL_TEXTURE_2D, _sceneDepth, 0);
 	checkFrameBuffers();
 
-	unsigned int attachments[2];
+	unsigned int attachments[_sceneMapCount];
 	
 	/* additional attachments */
-	for (size_t i = 0; i < 2; i++)
+	for (size_t i = 0; i < _sceneMapCount; i++)
 	{
 		/* bind next texture */
 		glActiveTexture(GL_TEXTURE0 + i + 1);
@@ -204,7 +169,7 @@ void SnowGL::prepareDepthColourIndex()
 		glBindTexture(GL_TEXTURE_2D, _sceneMap[i]);
 		checkErrors("Binding texture");
 
-		if (i == 0) /* suitable for colours */
+		if (i != 1) /* suitable for colours */
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 
 			             w, h, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -214,7 +179,7 @@ void SnowGL::prepareDepthColourIndex()
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		}
-		else if (i == 1)
+		else if (i == 1) /* suitable for writing index */
 		{
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, w, h, 0, 
 			             GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
@@ -232,7 +197,7 @@ void SnowGL::prepareDepthColourIndex()
 		attachments[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 	
-	glDrawBuffers(2, attachments); 
+	glDrawBuffers(_sceneMapCount, attachments); 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	_indices = new GLuint[_dw * _dh];
@@ -240,7 +205,7 @@ void SnowGL::prepareDepthColourIndex()
 	
 	_quad = new Quad();
 	_quad->prepareTextures(this);
-	_quad->setTextureID(_sceneMap[0]);
+	_quad->setTextureID(0, _sceneMap[0]);
 }
 
 int SnowGL::checkIndexInPixels(int x, int y) const
@@ -421,7 +386,16 @@ void SnowGL::render()
 	if (_sceneFbo > 0)
 	{
 		grabIndexBuffer();
-		_quad->render(this);
+
+		int mode = 3;
+		if (_pingPongFbo[0] > 0)
+		{
+			specialQuadRender();
+			mode = 2;
+		}
+
+		_quad->setMode(mode);
+		renderQuad();
 	}
 
 	_viewChanged = false;
@@ -592,4 +566,34 @@ void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
 	_translation = -diff;
 	_translation.z -= distance;
 	updateCamera();
+}
+
+void SnowGL::renderQuad()
+{
+	glClearColor(_r, _g, _b, _a);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	_quad->render(this);
+}
+
+void SnowGL::specialQuadRender()
+{
+	int amount = 16;
+	int mode = 0;
+	_quad->setTextureID(0, _sceneMap[0]); 
+
+	for (unsigned int i = 0; i < amount; i++)
+	{
+		// contents of this render is going into 'mode'
+		glBindFramebuffer(GL_FRAMEBUFFER, _pingPongFbo[mode]); 
+		checkErrors("ping pong frame bind");
+		_quad->setMode(mode);
+		_quad->setTextureID(1, (i == 0) ?  _sceneMap[2] : _pingPongMap[!mode]); 
+		renderQuad();
+		checkErrors("rendered quad");
+		mode = !mode;
+	}
+
+	_quad->setMode(2);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); 
+	_quad->setTextureID(1, _pingPongMap[mode]); 
 }

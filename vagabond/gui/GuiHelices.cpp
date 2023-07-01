@@ -324,7 +324,9 @@ void GuiHelices::cAlphasToWireFrame(Helix &h, std::vector<Snow::Vertex> &vs,
 			glm::vec4 c = _scheme->colour(prop);
 
 			vs.push_back(new_vertex(pos));
+
 			vs.back().color = c;
+			vs.back().extra[3] = prop * 3;
 		}
 		else
 		{

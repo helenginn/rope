@@ -176,9 +176,8 @@ public:
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();
-	void preparePingPongBuffers(int w_over = -1, int h_over = -1);
-	void prepareDepthColourIndex();
-	void resizeTextures(int w_over = -1, int h_over = -1);
+	void preparePingPongBuffers();
+	void prepareDepthColourIndex(bool bright = false);
 	void renderShadows();
 	void renderScene();
 
@@ -225,6 +224,8 @@ protected:
 	Renderable *_shadowObj;
 	
 	Quad *_quad = nullptr;
+	void renderQuad();
+	void specialQuadRender();
 
 	double _a; double _r; double _g; double _b;
 

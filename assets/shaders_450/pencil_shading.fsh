@@ -2,13 +2,39 @@
 
 in vec4 vPos;
 in vec4 vColor;
+in vec4 vExtra;
 in vec3 vNormal;
 in vec2 vTex;
 
 uniform float dot_threshold;
 uniform sampler2D pic_tex;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
+
+vec4 get_base_colour(vec4 c)
+{
+	vec4 colour;
+	colour.r = c.r > 1. ? 1. : c.r;
+	colour.g = c.g > 1. ? 1. : c.g;
+	colour.b = c.b > 1. ? 1. : c.b;
+	colour.a = 1;
+	return colour;
+}
+
+vec4 get_glow(float prop)
+{
+	vec4 colour;
+	colour.r = prop > 1 ? prop - 1 : 0;
+	colour.g = colour.r > 1 ? colour.r - 1 : 0;
+	colour.b = colour.g > 1 ? colour.g - 1 : 0;
+	colour.r = min(colour.r, 1.);
+	colour.g = min(colour.g, 1.);
+	colour.b = min(colour.b, 1.);
+	colour.a = 1;
+	return colour;
+}
 
 void main()
 {
@@ -43,7 +69,8 @@ void main()
 	}
 
 	result.a = 1.;
-	FragColor = result;
+	FragColor = get_base_colour(result);
+	BrightColor = get_glow(vExtra[3]);
 }
 
 

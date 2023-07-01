@@ -15,6 +15,5 @@ void main()
     vec2 tex = pos.xy + vec2(1., 1.);
 	tex /= 2.;
 	vTex = tex;
-	vTex.y = 1. - vTex.y;
 }
 

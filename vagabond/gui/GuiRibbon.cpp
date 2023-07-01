@@ -333,6 +333,7 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 		for (Snow::Vertex &v : bez)
 		{
 			v.color = c;
+			v.extra[3] = prop * 3;
 		}
 
 		int start = i * verticesPerAtom();

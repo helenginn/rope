@@ -13,6 +13,7 @@ out vec4 vPos;
 out vec4 vColor;
 out vec3 vNormal;
 out vec2 vTex;
+out vec4 vExtra;
 
 void main()
 {
@@ -23,6 +24,7 @@ void main()
 	vTex = tex;
 	vColor = color;
 	vPos = vec4(mat3(model) * vec3(extra), 1.);
+	vExtra = extra;
 }
 
 

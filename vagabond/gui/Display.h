@@ -38,6 +38,10 @@ public:
 	void wedgeButtons();
 	void densityButton();
 	void mechanicsButton();
+	void setPingPong(bool pp)
+	{
+		_pingPong = pp;
+	}
 	
 	void setMultiBondMode(bool mode);
 	
@@ -83,6 +87,7 @@ private:
 	bool _owns = true;
 	bool _reciprocal = false;
 	bool _first = true;
+	bool _pingPong = false;
 	std::atomic<bool> _finish{false};
 };
 

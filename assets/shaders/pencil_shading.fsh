@@ -38,6 +38,7 @@ void main()
 		result *= 1.5 + val;
 	}
 
+	result.a = 1.;
 	FragColor = result;
 }
 

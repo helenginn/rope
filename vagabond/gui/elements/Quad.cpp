@@ -26,6 +26,8 @@ Quad::Quad() : Box()
 	_threshold = 0;
 	_other = 0;
 	addQuad(0);
+	setVertexShaderFile("assets/shaders/quad.vsh");
+	setFragmentShaderFile("assets/shaders/quad.fsh");
 	
 	for (size_t i = 0; i < _vertices.size(); i++)
 	{

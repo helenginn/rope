@@ -43,10 +43,10 @@ ColourScheme::ColourScheme(Scheme scheme, bool vert)
 	else if (scheme == Heat)
 	{
 		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
-		addFixedPoint(0.1, glm::vec4(0.05, 0.05, 0.05, 1.0));
-		addFixedPoint(0.4, glm::vec4(1.0, 0.05, 0.05, 1.0));
-		addFixedPoint(0.7, glm::vec4(1.0, 1.0, 0.05, 1.0));
-		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0));
+		addFixedPoint(0.1, glm::vec4(0.05, 0.05, 0.05, 1.0), 0.3);
+		addFixedPoint(0.4, glm::vec4(1.0, 0.05, 0.05, 1.0), 1.2);
+		addFixedPoint(0.7, glm::vec4(1.0, 1.0, 0.05, 1.0), 2.1);
+		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0), 3.0);
 		setScheme(Heat);
 	}
 
@@ -60,14 +60,14 @@ ColourScheme::ColourScheme() : Image("assets/images/colour_scheme.png")
 
 }
 
-void ColourScheme::addFixedPoint(float p, glm::vec4 colour)
+void ColourScheme::addFixedPoint(float p, glm::vec4 colour, float glow)
 {
 	if (p < 0 || p > 1)
 	{
 		throw std::runtime_error("Fixed point proportion out of range 0-1");
 	}
 
-	FixedPoint fp{p, colour};
+	FixedPoint fp{p, colour, glow};
 	_points.push_back(fp);
 	
 	std::sort(_points.begin(), _points.end());
@@ -161,10 +161,12 @@ void ColourScheme::setup()
 		                                (_vert ? p : -0.1), 0);
 		lower.color = fp.colour;
 		lower.tex = glm::vec2(orig, 0.0);
+		lower.extra[3] = fp.glow;
 		Snow::Vertex &upper = addVertex((_vert ? +0.1 : p), 
 		                                (_vert ? p : +0.1), 0);
 		upper.color = fp.colour;
 		upper.tex = glm::vec2(orig, 1.0);
+		upper.extra[3] = fp.glow;
 	
 		if (vertexCount() < 4)
 		{

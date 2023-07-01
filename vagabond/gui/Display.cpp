@@ -255,6 +255,13 @@ void Display::setup()
 		loadAtoms(_toLoad);
 		_toLoad = nullptr;
 	}
+	
+#ifndef __EMSCRIPTEN__
+	if (_pingPong)
+	{
+		preparePingPongBuffers();
+	}
+#endif
 }
 
 void Display::buttonPressed(std::string tag, Button *button)

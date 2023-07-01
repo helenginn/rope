@@ -58,9 +58,14 @@ public:
 
 	void prepareTextures(SnowGL *sender);
 	
-	void setTextureID(GLuint val)
+	void setTextureID(int idx, GLuint val)
 	{
-		_texid = val;
+		if (_textures.size() <= idx)
+		{
+			_textures.resize(idx + 1);
+		}
+
+		_textures[idx] = val;
 	}
 
 	virtual void render(SnowGL *sender);
@@ -72,7 +77,7 @@ private:
 	void prepareNormalDist();
 	
 	std::vector<GLuint> _textures;
-	GLint _mode;
+	GLint _mode = 3;
 	GLfloat _threshold;
 	GLfloat _other;
 	GLfloat _dist[20];

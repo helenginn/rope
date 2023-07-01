@@ -29,7 +29,7 @@ public:
 	ColourScheme();
 	ColourScheme(Scheme scheme, bool vert = false);
 
-	void addFixedPoint(float p, glm::vec4 colour);
+	void addFixedPoint(float p, glm::vec4 colour, float glow = 0);
 	
 	glm::vec4 colour(float p);
 	
@@ -48,6 +48,7 @@ private:
 	{
 		float proportion;
 		glm::vec4 colour;
+		float glow;
 		
 		const bool operator<(const FixedPoint &other) const
 		{

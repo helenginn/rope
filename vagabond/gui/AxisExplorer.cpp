@@ -42,6 +42,7 @@ AxisExplorer::AxisExplorer(Scene *prev, Instance *inst,
 	_dims = 1;
 	_list = list;
 	_values = values;
+	setPingPong(true);
 	setOwnsAtoms(false);
 }
 
