@@ -59,10 +59,16 @@ public:
 	{
 		_rtValues.clear();
 		_rtValues.reserve(rts.size());
-		assert(rts.size() == storage.size());
 		for (int i = 0; i < rts.size(); i++)
 		{
-			addResidueTorsion(rts.at(i), storage.at(i));
+			if (storage.size() > i)
+			{
+				addResidueTorsion(rts.at(i), storage.at(i));
+			}
+			else
+			{
+				addResidueTorsion(rts.at(i), Storage{});
+			}
 		}
 	}
 	

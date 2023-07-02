@@ -268,6 +268,7 @@ void Route::getParametersFromBasis()
 			}
 
 			ResidueTorsion rt = list.c_rt(idx);
+			rt.attachToInstance(_instance);
 			float final_angle = _rawDest[idx];
 
 			torsions.push_back(rt);
