@@ -21,6 +21,7 @@
 
 #include "FFTCubicGrid.h"
 
+class ArbitraryMap;
 class AtomSegment;
 
 class AtomMap : public FFTCubicGrid<fftwf_complex>
@@ -28,6 +29,7 @@ class AtomMap : public FFTCubicGrid<fftwf_complex>
 public:
 	AtomMap(AtomSegment &other);
 	AtomMap(AtomMap &other);
+	ArbitraryMap *operator()();
 	~AtomMap();
 
 	virtual void multiply(float scale);

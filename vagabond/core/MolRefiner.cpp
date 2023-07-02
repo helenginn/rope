@@ -19,6 +19,7 @@
 #include "MolRefiner.h"
 #include "Polymer.h"
 #include "ArbitraryMap.h"
+#include "AtomMap.h"
 #include "PathManager.h"
 #include "OnPathBasis.h"
 #include "Trajectory.h"
@@ -138,10 +139,52 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 		{
 			job.requests = JobMapCorrelation;
 		}
+		if (_getSegment)
+		{
+			job.requests = static_cast<JobType>(job.requests | 
+			                                    JobCalculateMapSegment);
+		}
 
 		int ticket = calc->submitJob(job);
 		group.push_back(ticket);
 		_ticket2Group[ticket] = grpTicket;
+	}
+}
+
+void MolRefiner::addToMap(ArbitraryMap *map)
+{
+	std::cout << "Adding " << _instance->id() << " to map" << std::endl;
+	if (_best.size() == 0)
+	{
+		_best.resize(parameterCount());
+	}
+
+	_getSegment = true;
+	sendJob(_best);
+	_getSegment = false;
+
+	for (BondCalculator *calc : _calculators)
+	{
+		Result *r = calc->acquireResult();
+
+		if (r == nullptr)
+		{
+			continue;
+		}
+
+		if (r->requests & JobMapCorrelation)
+		{
+			AtomMap &atoms = *r->map;
+			std::cout << "Atoms: " << atoms.nn() << std::endl;
+			ArbitraryMap *bit = atoms();
+			std::cout << "Bit: " << bit->nn() << std::endl;
+			std::cout << atoms.minBound() << " to " << atoms.maxBound() << std::endl;
+			std::cout << bit->minBound() << " to " << bit->maxBound() << std::endl;
+			*map += *bit;
+			delete bit;
+		}
+
+		r->destroy();
 	}
 }
 
@@ -226,6 +269,8 @@ void MolRefiner::runEngine()
 	engine->setVerbose(true);
 	engine->setStepSize(0.2);
 	engine->start();
+	
+	_best = engine->bestResult();
 }
 
 void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)

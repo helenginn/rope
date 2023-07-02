@@ -156,7 +156,7 @@ void MtzFile::setMap(ArbitraryMap *map)
 	_map = new Diffraction(map);
 }
 
-std::string MtzFile::write_to_string(float max_res)
+gemmi::Mtz MtzFile::prep_gemmi_mtz(float max_res)
 {
 	gemmi::Mtz mtz = gemmi::Mtz(true);
 	mtz.spacegroup = gemmi::find_spacegroup_by_name("P 1");
@@ -174,6 +174,7 @@ std::string MtzFile::write_to_string(float max_res)
 
 	std::vector<float> data;
 	std::vector<float> line(5);
+	data.reserve(_map->nn() * 5);
 
 	//	CCP4SPG *spg = ccp4spg_load_by_ccp4_num(1);
 
@@ -200,9 +201,21 @@ std::string MtzFile::write_to_string(float max_res)
 			}
 		}
 	}
-
+	
 	mtz.set_data(&data[0], data.size());
+	return mtz;
+}
+
+std::string MtzFile::write_to_string(float max_res)
+{
+	gemmi::Mtz mtz = prep_gemmi_mtz(max_res);
 	std::string contents;
 	mtz.write_to_string(contents);
 	return contents;
+}
+
+void MtzFile::write_to_file(std::string filename, float max_res)
+{
+	gemmi::Mtz mtz = prep_gemmi_mtz(max_res);
+	mtz.write_to_file(filename);
 }

@@ -39,6 +39,7 @@ public:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual float getResult(int *job_id);
 	virtual size_t parameterCount();
+	void addToMap(ArbitraryMap *map);
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
 	virtual void torsionBasisMods(TorsionBasis *tb);
@@ -51,7 +52,10 @@ private:
 	std::map<int, int> _ticket2Group;
 	std::map<int, float> _group2Scores;
 	int _groupTicketCount = 0;
+	
+	std::vector<float> _best;
 
+	bool _getSegment = false;
 	PCA::SVD _svd;
 };
 

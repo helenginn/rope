@@ -30,7 +30,16 @@ ArbitraryMap::ArbitraryMap(Diffraction &diff) :
 TransformedGrid<fftwf_complex>(0, 0, 0)
 {
 	_diff = &diff;
-	
+}
+
+ArbitraryMap::ArbitraryMap(OriginGrid &other) : 
+TransformedGrid<fftwf_complex>(0, 0, 0)
+{
+	setDimensions(other.nx(), other.ny(), other.nz(), false);
+	makePlans();
+	setOrigin(other.origin());
+	setStatus(ArbitraryMap::Real);
+	setRealMatrix(other.frac2Real());
 }
 
 void multiply_voxels(fftwf_complex &modify, const fftwf_complex &constant,

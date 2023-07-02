@@ -22,8 +22,13 @@
 #include "MolRefiner.h"
 #include "Refinement.h"
 #include "MetadataGroup.h"
+#include "ArbitraryMap.h"
+
+#include "Diffraction.h"
+#include "MtzFile.h"
 
 #include <vagabond/c4x/ClusterSVD.h>
+#include <fstream>
 
 Refinement::Refinement()
 {
@@ -134,6 +139,7 @@ void Refinement::setupRefiner(Refine::Info &info)
 
 void Refinement::play()
 {
+	calculatedMapAtoms();
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.molecule];
@@ -145,7 +151,24 @@ void Refinement::play()
 
 ArbitraryMap *Refinement::calculatedMapAtoms()
 {
-	return nullptr;
+	ArbitraryMap *arb = new ArbitraryMap(*_map);
+	
+	for (Refine::Info &info  : _molDetails)
+	{
+		MolRefiner *mr = _molRefiners[info.molecule];
+		mr->addToMap(arb);
+		std::cout << "Mean now: " << arb->mean() << std::endl;
+	}
+	
+	// delete me later
+	Diffraction *diff = new Diffraction(arb);
+
+	MtzFile file("");
+	file.setMap(diff);
+	file.write_to_file("test.mtz", 1.5);
+	
+	return arb;
+
 }
 
 float Refinement::comparisonWithData()

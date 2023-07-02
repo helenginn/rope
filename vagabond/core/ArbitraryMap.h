@@ -24,14 +24,17 @@
 #include "FFT.h"
 
 class Diffraction;
+class AtomMap;
 
 class ArbitraryMap : 
 virtual public TransformedGrid<fftwf_complex>,
 virtual public FFT<fftwf_complex>
 {
 public:
+	friend AtomMap;
 	ArbitraryMap();
 	ArbitraryMap(Diffraction &diff);
+	ArbitraryMap(OriginGrid &other);
 	
 	ArbitraryMap &operator+=(const ArbitraryMap &other);
 	ArbitraryMap &operator-=(const ArbitraryMap &other);

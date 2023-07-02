@@ -24,6 +24,11 @@
 class Diffraction;
 class ArbitraryMap;
 
+namespace gemmi
+{
+	struct Mtz;
+}
+
 class MtzFile : public File
 {
 public:
@@ -37,11 +42,13 @@ public:
 	void setMap(ArbitraryMap *map);
 
 	std::string write_to_string(float max_res = -1);
+	void write_to_file(std::string filename, float max_res = -1);
 	virtual File::Type cursoryLook();
 	virtual void parse();
 private:
-	Diffraction *_map = nullptr;
+	gemmi::Mtz prep_gemmi_mtz(float max);
 
+	Diffraction *_map = nullptr;
 };
 
 #endif

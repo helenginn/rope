@@ -18,6 +18,7 @@
 
 #include "AtomMap.h"
 #include "AtomSegment.h"
+#include "ArbitraryMap.h"
 
 AtomMap::AtomMap(AtomSegment &other)
 : Grid<fftwf_complex>(other.nx(), other.ny(), other.nz())
@@ -67,9 +68,20 @@ AtomMap::AtomMap(AtomMap &other)
 	setRealDim(other.realDim());
 	
 	_realOnly = new float[nn()];
-//	setStatus(AtomMap::Reciprocal);
 	_plan = other._plan;
+}
 
+ArbitraryMap *AtomMap::operator()()
+{
+	ArbitraryMap *arb = new ArbitraryMap(*this);
+	
+	for (size_t i = 0; i < nn(); i++)
+	{
+		arb->_data[i][0] = this->_data[i][0];
+		arb->_data[i][1] = this->_data[i][1];
+	}
+
+	return arb;
 }
 
 void AtomMap::multiply(float scale)

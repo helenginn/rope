@@ -45,6 +45,9 @@ void CubicGrid<T>::setRealDim(float dim)
 	_dims *= _recipDim;
 
 	_real = glm::mat3(_realDim);
+	_real[0] *= this->nx();
+	_real[1] *= this->ny();
+	_real[2] *= this->nz();
 }
 
 template <class T>

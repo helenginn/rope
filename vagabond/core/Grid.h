@@ -124,6 +124,14 @@ public:
 		_data[idx] = value;
 	}
 
+	template <typename F>
+	void do_op_on_each(const F &func)
+	{
+		for (int i = 0; i < nn(); i++)
+		{
+			func(_data[i]);
+		}
+	}
 	virtual float sum();
 	virtual float mean();
 	virtual float sigma();
