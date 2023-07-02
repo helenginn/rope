@@ -60,13 +60,20 @@ struct atompos
 		}
 	}
 
-	template <class F>
-	AtomWithPos operator()(const std::vector<Posular> &vals, const F &op)
+	AtomWithPos operator()()
 	{
 		AtomWithPos awp;
 		awp.atom = _atom;
-		awp.wp.ave = _atom->initialPosition() + op(vals[_idx]);
+		awp.wp.ave = _atom->initialPosition();
 		awp.wp.target = _atom->initialPosition();
+		return awp;
+	}
+
+	template <class F>
+	AtomWithPos operator()(const std::vector<Posular> &vals, const F &op)
+	{
+		AtomWithPos awp = (*this)();
+		awp.wp.ave += op(vals[_idx]);
 		return awp;
 	}
 
@@ -254,9 +261,14 @@ void Atom2AtomExplorer::sampleFromPlot(double x, double y)
 		return;
 	}
 
-	int x_idx = v.x * _list.size();
-	int y_idx = v.y * _list.size();
+	fillable<atompos> positions = (*_atom2Vec)();
+
+	int x_idx = v.x * positions.size();
+	int y_idx = v.y * positions.size();
+
+	Atom *a = positions[x_idx]().atom;
+	Atom *b = positions[y_idx]().atom;
 	
-	setInformation(_list[x_idx].desc() + ", " + _list[y_idx].desc());
+	setInformation(a->desc() + ", " + b->desc());
 }
 
