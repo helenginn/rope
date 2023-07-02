@@ -123,13 +123,28 @@ public:
 		long idx = index(x, y, z);
 		_data[idx] = value;
 	}
+	
+	template <typename F>
+	void do_op_on_basic_index(F func)
+	{
+		for (size_t k = 0; k < this->nz(); k++)
+		{
+			for (size_t j = 0; j < this->ny(); j++)
+			{
+				for (size_t i = 0; i < this->nx(); i++)
+				{
+					func(i, j, k);
+				}
+			}
+		}
+	}
 
 	template <typename F>
-	void do_op_on_each(const F &func)
+	void do_op_on_each(F func)
 	{
 		for (int i = 0; i < nn(); i++)
 		{
-			func(_data[i]);
+			func(elementValue(i));
 		}
 	}
 	virtual float sum();

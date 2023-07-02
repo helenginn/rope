@@ -48,45 +48,50 @@ void multiply_voxels(fftwf_complex &modify, const fftwf_complex &constant,
 	modify[0] *= interpolated_value;
 }
 
-void subtract_from_voxel(fftwf_complex &modify, const fftwf_complex &constant,
-                  const float &interpolated_value)
-{
-	modify[0] -= interpolated_value;
-}
-
 void divide_by_voxel(fftwf_complex &modify, const fftwf_complex &constant,
                   const float &interpolated_value)
 {
 	modify[0] /= interpolated_value;
 }
 
-void add_to_voxel(fftwf_complex &modify, const fftwf_complex &constant,
-                  const float &interpolated_value)
-{
-	modify[0] += interpolated_value;
-}
-
 ArbitraryMap &ArbitraryMap::operator*=(const ArbitraryMap &other)
 {
-	this->operation(other, &multiply_voxels);
+	this->operation_on_other(other, [](fftwf_complex &modify, 
+	                         const float &interpolated_value)
+	{
+		modify[0] *= interpolated_value;
+	});
 	return *this;
 }
 
 ArbitraryMap &ArbitraryMap::operator/=(const ArbitraryMap &other)
 {
-	this->operation(other, &divide_by_voxel);
+	this->operation_on_other(other, [](fftwf_complex &modify, 
+	                         const float &interpolated_value)
+	{
+		modify[0] /= interpolated_value;
+	});
 	return *this;
 }
 
 ArbitraryMap &ArbitraryMap::operator-=(const ArbitraryMap &other)
 {
-	this->operation(other, &subtract_from_voxel);
+	this->operation_on_other(other, [](fftwf_complex &modify, 
+	                         const float &interpolated_value)
+	{
+		modify[0] -= interpolated_value;
+	});
 	return *this;
 }
 
 ArbitraryMap &ArbitraryMap::operator+=(const ArbitraryMap &other)
 {
-	this->operation(other, &add_to_voxel);
+	this->operation_on_other(other, [](fftwf_complex &modify, 
+	                         const float &interpolated_value)
+	{
+		modify[0] += interpolated_value;
+	});
+
 	return *this;
 }
 

@@ -28,9 +28,9 @@ class TransformedGrid : public OriginGrid<T>
 public:
 	TransformedGrid(int nx, int ny, int nz);
 	
-	void operation(const TransformedGrid<T> &other,
-	               void(*op_function)(T &element, const T &other,
-	               const float &value));
+	template <class Func>
+	void operation_on_other(const TransformedGrid<T> &other,
+	                        Func op_function);
 
 	void setRecipMatrix(glm::mat3x3 mat);
 

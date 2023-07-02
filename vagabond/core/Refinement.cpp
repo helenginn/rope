@@ -157,7 +157,6 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 	{
 		MolRefiner *mr = _molRefiners[info.molecule];
 		mr->addToMap(arb);
-		std::cout << "Mean now: " << arb->mean() << std::endl;
 	}
 	
 	// delete me later

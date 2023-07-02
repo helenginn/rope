@@ -30,9 +30,9 @@ TransformedGrid<T>::TransformedGrid(int nx, int ny, int nz)
 }
 
 template <class T>
-void TransformedGrid<T>::operation(const TransformedGrid<T> &other,
-                                   void(*op_function)(T &ele1, const T &ele2,
-                                  					   const float &value))
+template <class Func>
+void TransformedGrid<T>::operation_on_other(const TransformedGrid<T> &other,
+                                            Func op_function)
 {
 	/* loop through modify's density points which are within the bounds of 
 	 * "other" */
@@ -40,51 +40,42 @@ void TransformedGrid<T>::operation(const TransformedGrid<T> &other,
 	glm::vec3 min = other.minBound();
 	glm::vec3 max = other.maxBound();
 
-	for (size_t k = 0; k < this->nz(); k++)
+	auto lmb = [this, &min, &max, &other, &op_function](int i, int j, int k)
 	{
-		for (size_t j = 0; j < this->ny(); j++)
+		/* my real position */
+		glm::vec3 relative_pos = real(i, j, k);
+		/* find point relative to the minimum "other" */
+		relative_pos -= min;
+
+		/* convert my position to fractional */
+		real2Voxel(relative_pos);
+		this->index_to_fractional(relative_pos);
+
+		Grid<fftwf_complex>::collapseFrac(relative_pos);
+
+		/* new position in the space closest to the template box */
+		this->fractional_to_index(relative_pos);
+		voxel2Real(relative_pos);
+
+		relative_pos += min;
+
+		if (relative_pos.x > max.x || relative_pos.y > max.y
+		    || relative_pos.z > max.z)
 		{
-			for (size_t i = 0; i < this->nx(); i++)
-			{
-				/* my real position */
-				glm::vec3 relative_pos = real(i, j, k);
-				/* find point relative to the minimum "other" */
-				relative_pos -= min;
-				
-				/* convert my position to fractional */
-				real2Voxel(relative_pos);
-				this->index_to_fractional(relative_pos);
-				
-				Grid<fftwf_complex>::collapseFrac(relative_pos);
-
-				/* new position in the space closest to the template box */
-				this->fractional_to_index(relative_pos);
-				voxel2Real(relative_pos);
-				
-				relative_pos += min;
-
-				if (relative_pos.x > max.x || relative_pos.y > max.y
-				    || relative_pos.z > max.z)
-				{
-					continue;
-				}
-
-				/* other's interpolated value */
-				float val = other.interpolate(relative_pos);
-
-				/* other's element */
-				glm::vec3 other_vox = relative_pos;
-				other.real2Voxel(other_vox);
-				const T &ele_other = other.element(other_vox);
-				
-				/* my element */
-				T &ele_mine = this->element(i, j, k);
-
-				/* do the operation */
-				(*op_function)(ele_mine, ele_other, val);
-			}
+			return;
 		}
-	}
+
+		/* other's interpolated value */
+		float val = other.interpolate(relative_pos);
+
+		/* my element */
+		T &ele_mine = this->element(i, j, k);
+
+		/* do the operation */
+		op_function(ele_mine, val);
+	};
+	
+	this->do_op_on_basic_index(lmb);
 }
 
 

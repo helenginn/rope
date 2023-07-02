@@ -169,37 +169,33 @@ void Grid<T>::limits(int &mx, int &my, int &mz)
 template <class T>
 float Grid<T>::sum()
 {
-	float val = 0;
-	for (size_t i = 0; i < nn(); i++)
-	{
-		if (elementValue(i) != elementValue(i))
-		{
-			continue;
-		}
-		val += elementValue(i);
-	}
-	
-	return val;
+	float sum = 0;
+	do_op_on_each([&sum](const float &value) 
+	              { 
+		             if (value == value) { sum += value; }
+	              });
+	return sum;
 }
 
 template <class T>
 float Grid<T>::sigma()
 {
-	float val = 0;
-	float valsq = 0;
-	float n = nn();
-	for (size_t i = 0; i < nn(); i++)
-	{
-		if (elementValue(i) != elementValue(i))
-		{
-			continue;
-		}
-		val += elementValue(i);
-		valsq += elementValue(i) * elementValue(i);
-	}
+	float sum = 0; float sumsq = 0;
 	
-	float mean = val / n;
-	float sigma = sqrt(valsq / n - mean * mean);
+	auto func = [&sum, &sumsq](const float &value) 
+	{ 
+		if (value == value)
+		{
+			sum += value;
+			sumsq += value * value;
+		}
+	};
+
+	do_op_on_each(func);
+	float n = nn();
+
+	float mean = sum / n;
+	float sigma = sqrt(sumsq / n - mean * mean);
 	
 	return sigma;
 }
