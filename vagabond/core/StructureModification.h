@@ -26,6 +26,7 @@
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Sampler.h>
+#include "RTAngles.h"
 
 class MetadataGroup;
 
@@ -54,8 +55,7 @@ public:
 		return _dims;
 	}
 	
-	bool supplyTorsions(const std::vector<ResidueTorsion> &list,
-                        const std::vector<Angular> &values);
+	bool supplyTorsions(const RTAngles &angles);
 
 	virtual ~StructureModification();
 	
@@ -103,8 +103,9 @@ protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 	virtual void torsionBasisMods(TorsionBasis *tb) {};
 
-	bool fillBasis(ConcertedBasis *cb, const std::vector<ResidueTorsion> &list,
-	               const std::vector<Angular> &values, int axis = 0);
+	bool fillBasis(ConcertedBasis *cb, const RTAngles &angles, int axis = 0);
+	void supplyTorsionLists();
+
 	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
@@ -117,13 +118,7 @@ protected:
 	AtomGroup *_fullAtoms = nullptr;
 	Sampler _sampler;
 	
-	struct ResidueTorsionList
-	{
-		const std::vector<ResidueTorsion> list;
-		const std::vector<Angular> values;
-	};
-	
-	std::vector<ResidueTorsionList> _torsionLists;
+	std::vector<RTAngles> _torsionLists;
 	Cluster<MetadataGroup> *_cluster = nullptr;
 
 	int _num = 1;

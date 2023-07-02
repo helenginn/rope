@@ -246,14 +246,8 @@ void Route::getParametersFromBasis()
 
 	_missing.clear();
 
-	std::vector<ResidueTorsion> list = _cluster->dataGroup()->headers();
-	
-	for (ResidueTorsion &rt : list)
-	{
-		rt.attachToInstance(_instance);
-	}
-
-	std::vector<bool> found(list.size(), false);
+	std::vector<ResidueTorsion> headers = _cluster->dataGroup()->headers();
+	RTAngles list = RTAngles::angles_from(headers, {});
 
 	std::vector<Motion> motions;
 	std::vector<ResidueTorsion> torsions;
@@ -273,9 +267,8 @@ void Route::getParametersFromBasis()
 				continue;
 			}
 
+			ResidueTorsion rt = list.c_rt(idx);
 			float final_angle = _rawDest[idx];
-			
-			ResidueTorsion rt = list[idx];
 
 			torsions.push_back(rt);
 			motions.push_back(Motion{WayPoints(), false, final_angle});

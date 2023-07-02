@@ -113,6 +113,31 @@ const ResidueId &ResidueTorsion::id()
 	return _masterId;
 }
 
+bool ResidueTorsion::fitsParameter(Parameter *other, Instance *from) const
+{
+	if (entity() != from->entity())
+	{
+		return false;
+	}
+
+	ResidueId target = other->residueId();
+	Residue *expected = from->equivalentMaster(target);
+
+	if (expected == nullptr || expected != master())
+	{
+		return false;
+	}
+
+	const std::string &desc = torsion().desc();
+
+	if (!other->hasDesc(desc))
+	{
+		return false;
+	}
+
+	return true;
+}
+
 Parameter *ResidueTorsion::parameter()
 {
 	if (!_instance)

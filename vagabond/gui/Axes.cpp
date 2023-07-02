@@ -247,22 +247,17 @@ void Axes::loadAtom2AtomExplorer(int idx)
 void Axes::loadAxisExplorer(int idx)
 {
 	std::vector<ResidueTorsion> list = _torsionCluster->dataGroup()->headers();
-
 	std::vector<Angular> vals = getTorsionVector(idx);
-	if (vals.size() == 0)
-	{
-		return;
-	}
+	RTAngles angles = RTAngles::angles_from(list, vals);
 	
 	std::string str = titleForAxis(idx);
 
 	try
 	{
-		AxisExplorer *ae = new AxisExplorer(_scene, _instance, list, vals);
+		AxisExplorer *ae = new AxisExplorer(_scene, _instance, angles);
 		ae->setCluster(_torsionCluster);
 		ae->setFutureTitle(str);
 		ae->show();
-//		ae->setInformation(info);
 	}
 	catch (const std::runtime_error &err)
 	{

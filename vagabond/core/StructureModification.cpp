@@ -153,8 +153,7 @@ void StructureModification::startCalculator()
 	finishHetatmCalculator();
 }
 
-bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &list,
-                                           const std::vector<Angular> &values)
+bool StructureModification::supplyTorsions(const RTAngles &angles)
 {
 	if (_torsionType == TorsionBasis::TypeSimple)
 	{
@@ -172,8 +171,8 @@ bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &li
 		TorsionBasis *basis = calc->torsionBasis();
 		ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
 
-		success |= fillBasis(cb, list, values, _axis);
-		_torsionLists.push_back(ResidueTorsionList{list, values});
+		success |= fillBasis(cb, angles, _axis);
+		_torsionLists.push_back(angles);
 	}
 	
 	_axis++;
@@ -181,11 +180,9 @@ bool StructureModification::supplyTorsions(const std::vector<ResidueTorsion> &li
 }
 
 bool StructureModification::fillBasis(ConcertedBasis *cb, 
-                                      const std::vector<ResidueTorsion> &list,
-                                      const std::vector<Angular> &values,
-                                      int axis)
+                                      const RTAngles &angles, int axis)
 {
-	bool result = cb->fillFromInstanceList(_instance, axis, list, values);
+	bool result = cb->fillFromInstanceList(_instance, axis, angles);
 	checkMissingBonds(cb);
 	return result;
 }
@@ -232,18 +229,23 @@ void StructureModification::changeInstance(Instance *m)
 		startCalculator();
 	}
 
-	std::vector<ResidueTorsionList> lists = _torsionLists;
+	supplyTorsionLists();
+}
+
+void StructureModification::supplyTorsionLists()
+{
+	std::vector<RTAngles> lists = _torsionLists;
 	_torsionLists.clear();
-	
-	for (ResidueTorsionList &rtl : lists)
+
+	for (const RTAngles &rta : lists)
 	{
-		supplyTorsions(rtl.list, rtl.values);
+		supplyTorsions(rta);
 	}
 }
 
 void StructureModification::clearCalculators()
 {
-	
+
 	for (size_t i = 0; i < _calculators.size(); i++)
 	{
 		delete _calculators[i];

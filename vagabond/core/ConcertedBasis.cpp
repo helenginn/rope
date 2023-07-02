@@ -135,32 +135,31 @@ void ConcertedBasis::prepareSVD()
 }
 
 bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
-                                   const std::vector<ResidueTorsion> &list,
-                                   const std::vector<Angular> &values)
+                                   const RTAngles &angles)
 {
 	bool changed = false;
 
-	for (size_t j = 0; j < list.size(); j++)
+	for (size_t j = 0; j < angles.size(); j++)
 	{
 		for (size_t i = 0; i < _params.size(); i++)
 		{
 			Parameter *t = _params[i];
 
-//			float value = instance->valueForTorsionFromList(t, list, values, found);
-			const Residue *local = inst->localResidueForResidueTorsion(list[j]);
+			const ResidueTorsion &rt = angles.c_rt(j);
+			const Residue *local = inst->localResidueForResidueTorsion(rt);
 			if (local->id() != t->residueId())
 			{
 				continue;
 			}
 			
-			const std::string &desc = list[j].torsion().desc();
+			const std::string &desc = rt.torsion().desc();
 
 			if (!t->hasDesc(desc))
 			{
 				continue;
 			}
 
-			float value = values[j];
+			float value = angles.c_storage(j);
 
 			if (value != value)
 			{
@@ -176,26 +175,24 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 }
 
 bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
-                                          const std::vector<ResidueTorsion> &list,
-                                          const std::vector<Angular> &values)
+                                          const RTAngles &angles)
 {
 	prepare();
-	std::vector<bool> found(list.size(), false);
 	
-	if (values.size() == 1)
+	if (angles.size() == 1)
 	{
-		bool result = reverseLookup(instance, axis, list, values);
+		bool result = reverseLookup(instance, axis, angles);
 		return result;
 	}
 
 	std::cout << "Adding " << instance->id() << " axis " << axis << ", "
-	<< values.size() << " values" << std::endl;
+	<< angles.size() << " angles" << std::endl;
 	
 	for (size_t i = 0; i < _params.size(); i++)
 	{
 		Parameter *t = _params[i];
 		
-		float value = instance->valueForTorsionFromList(t, list, values, found);
+		float value = instance->valueForTorsionFromList(t, angles);
 		
 		if (value != value)
 		{
@@ -204,14 +201,6 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 		}
 		
 		_svd.u[i][axis] = value;
-	}
-	
-	for (size_t i = 0; i < found.size(); i++)
-	{
-		if (!found[i])
-		{
-			_unusedId = list[i].master();
-		}
 	}
 	
 	return true;

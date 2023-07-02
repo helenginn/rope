@@ -108,13 +108,8 @@ public:
 	virtual Residue *localForLocalId(const ResidueId &l_id)
 	{ return nullptr; }
 
-	int indexForParameterFromList(Parameter *param,
-	                              const std::vector<ResidueTorsion> &list);
-
-	float valueForTorsionFromList(Parameter *bt,
-	                              const std::vector<ResidueTorsion> &list,
-	                              const std::vector<Angular> &values,
-	                              std::vector<bool> &found);
+	int indexForParameterFromList(Parameter *param, const RTAngles &list);
+	float valueForTorsionFromList(Parameter *bt, const RTAngles &list);
 
 	virtual const Metadata::KeyValues metadata() const;
 	void updateRmsdMetadata();

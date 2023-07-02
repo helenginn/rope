@@ -126,9 +126,7 @@ void Refinement::setupRefiner(Refine::Info &info)
 			          ang.angle /= 2;
 			         });
 
-		std::vector<Angular> angles = axis.storage_only();
-
-		mr->supplyTorsions(list, angles);
+		mr->supplyTorsions(axis);
 	}
 
 	_molRefiners[mol] = mr;

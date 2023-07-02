@@ -19,7 +19,7 @@
 #ifndef __vagabond__ConcertedBasis__
 #define __vagabond__ConcertedBasis__
 
-#include <vagabond/c4x/Angular.h>
+#include "RTAngles.h"
 #include "TorsionBasis.h"
 #include "../utils/svd/PCA.h"
 
@@ -54,12 +54,10 @@ public:
 	}
 	
 	bool fillFromInstanceList(Instance *instance, int axis,
-	                          const std::vector<ResidueTorsion> &list,
-	                          const std::vector<Angular> &values);
+	                          const RTAngles &angles);
 
 	bool reverseLookup(Instance *inst, int axis,
-	                   const std::vector<ResidueTorsion> &list,
-	                   const std::vector<Angular> &values);
+	                   const RTAngles &angles);
 
 	const std::vector<Parameter *> &missingBonds() const
 	{

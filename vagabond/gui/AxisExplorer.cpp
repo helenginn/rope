@@ -33,15 +33,12 @@
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/AlignmentTool.h>
 
-AxisExplorer::AxisExplorer(Scene *prev, Instance *inst,
-                           const std::vector<ResidueTorsion> &list,
-                           const std::vector<Angular> &values) 
+AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst, 1, 1)
 {
 //	_pType = BondCalculator::PipelineForceField;
 	_dims = 1;
-	_list = list;
-	_values = values;
+	_torsionLists.push_back(angles);
 	setPingPong(true);
 	setOwnsAtoms(false);
 }
@@ -67,7 +64,7 @@ void AxisExplorer::setup()
 	Display::setup();
 	
 	startCalculator();
-	supplyTorsions(_list, _values);
+	supplyTorsionLists();
 	setupSlider();
 	
 	submitJob(0.0);
@@ -158,43 +155,39 @@ void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 
 }
 
-void AxisExplorer::setupColours()
+void AxisExplorer::setupColoursForList(RTAngles &angles)
 {
-	for (Atom *a : _fullAtoms->atomVector())
-	{
-		a->setAddedColour(0.f);
-	}
-	
 	float sum = 0;
-	for (size_t i = 0; i < _list.size(); i++)
+	for (size_t i = 0; i < angles.size(); i++)
 	{
-		TorsionRef tr = _list[i].torsion();
+		const ResidueTorsion &rt = angles.c_rt(i);
 		
-		if (!tr.coversMainChain())
+		if (!rt.torsion().coversMainChain())
 		{
 			continue;
 		}
 
-		const Angular &val = _values[i];
+		const Angular &val = angles.c_storage(i);
 		float sqval = val * val;
 		sum += sqval;
 	}
 	
-	sum /= (float)(_values.size());
+	sum /= (float)(angles.size());
 	
 	float stdev = sqrt(sum);
 	_maxTorsion = stdev * 4;
 
-	for (size_t i = 0; i < _list.size(); i++)
+	for (size_t i = 0; i < angles.size(); i++)
 	{
-		TorsionRef tr = _list[i].torsion();
+		const ResidueTorsion &rt = angles.c_rt(i);
+		const TorsionRef &tr = rt.torsion();
 		
 		if (!tr.coversMainChain())
 		{
 			continue;
 		}
 
-		Residue *master = _list[i].master();
+		Residue *master = rt.master();
 		Residue *local = _instance->equivalentLocal(master);
 		if (local == nullptr)
 		{
@@ -208,11 +201,23 @@ void AxisExplorer::setupColours()
 			continue;
 		}
 
-		float val = fabs(_values[i]);
+		float val = fabs(angles.c_storage(i));
 		val /= _maxTorsion;
 		atom->addToColour(val);
 	}
+}
 
+void AxisExplorer::setupColours()
+{
+	for (Atom *a : _fullAtoms->atomVector())
+	{
+		a->setAddedColour(0.f);
+	}
+	
+	if (_torsionLists.size())
+	{
+		setupColoursForList(_torsionLists[0]);
+	}
 }
 
 void AxisExplorer::setupColourLegend()

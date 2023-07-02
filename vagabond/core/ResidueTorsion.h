@@ -87,6 +87,8 @@ public:
 	}
 	
 	Parameter *parameter();
+	
+	bool fitsParameter(Parameter *other, Instance *from) const;
 
 	std::string desc() const;
 	std::string status() const;

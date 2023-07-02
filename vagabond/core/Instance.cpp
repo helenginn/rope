@@ -271,11 +271,9 @@ const Residue *Instance::localResidueForResidueTorsion(const ResidueTorsion &rt)
 	return equivalentLocal(master);
 }
 
-int Instance::indexForParameterFromList(Parameter *param,
-                                        const std::vector<ResidueTorsion> &list)
+int Instance::indexForParameterFromList(Parameter *param, const RTAngles &list)
 {
 	ResidueId target = param->residueId();
-	
 	Residue *master = equivalentMaster(target);
 
 	if (master == nullptr)
@@ -285,21 +283,8 @@ int Instance::indexForParameterFromList(Parameter *param,
 	
 	for (size_t i = 0; i < list.size(); i++)
 	{
-		if (list[i].entity() != _entity)
-		{
-			continue;
-		}
-
-		Residue *const residue = list[i].master();
-		
-		if (residue == nullptr || residue != master)
-		{
-			continue;
-		}
-
-		const std::string &desc = list[i].torsion().desc();
-		
-		if (!param->hasDesc(desc))
+		const ResidueTorsion &rt = list.c_rt(i);
+		if (!rt.fitsParameter(param, this))
 		{
 			continue;
 		}
@@ -310,10 +295,7 @@ int Instance::indexForParameterFromList(Parameter *param,
 	return -1;
 }
 
-float Instance::valueForTorsionFromList(Parameter *param,
-                                        const std::vector<ResidueTorsion> &list,
-                                        const std::vector<Angular> &values,
-                                        std::vector<bool> &found)
+float Instance::valueForTorsionFromList(Parameter *param, const RTAngles &list)
 {
 	int idx = indexForParameterFromList(param, list);
 	
@@ -322,7 +304,7 @@ float Instance::valueForTorsionFromList(Parameter *param,
 		return NAN;
 	}
 
-	return values[idx];
+	return list.c_storage(idx);
 }
 
 void Instance::addTorsionsToGroup(MetadataGroup &group, 

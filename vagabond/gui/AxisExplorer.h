@@ -34,10 +34,7 @@ class AxisExplorer : public Display, public DragResponder,
 public StructureModification
 {
 public:
-	AxisExplorer(Scene *prev, Instance *mol, 
-	             const std::vector<ResidueTorsion> &list,
-	             const std::vector<Angular> &values);
-	
+	AxisExplorer(Scene *prev, Instance *mol, const RTAngles &angles);
 	~AxisExplorer();
 
 	virtual void setup();
@@ -49,6 +46,7 @@ public:
 	virtual void finishedDragging(std::string tag, double x, double y);
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
+	void setupColoursForList(RTAngles &angles);
 private:
 	Slider *_rangeSlider = nullptr;
 
@@ -60,9 +58,6 @@ private:
 	double _max = 1; 
 	double _step = 0.001;
 	float _maxTorsion = 0;
-
-	std::vector<ResidueTorsion> _list;
-	std::vector<Angular> _values;
 	
 	int _dims = 1;
 };
