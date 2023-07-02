@@ -121,15 +121,14 @@ void Refinement::setupRefiner(Refine::Info &info)
 
 	for (size_t i = 0; i < info.axes.size(); i++)
 	{
-		std::vector<Angular> convert;
-		const RTAngles &axis = info.axes[i];
-		for (size_t j = 0; j < axis.size(); j++)
-		{
-			float angle = axis.angle(j);
-			convert.push_back(Angular(angle / 2.f));
-		}
-		
-		mr->supplyTorsions(list, convert);
+		RTAngles axis = info.axes[i];
+		axis.do_op([](Angular &ang) {
+			          ang.angle /= 2;
+			         });
+
+		std::vector<Angular> angles = axis.storage_only();
+
+		mr->supplyTorsions(list, angles);
 	}
 
 	_molRefiners[mol] = mr;

@@ -221,7 +221,7 @@ void MolRefiner::runEngine()
 	{
 		throw std::runtime_error("Map provided to refinement is null");
 	}
-
+	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
 	engine->setStepSize(0.2);

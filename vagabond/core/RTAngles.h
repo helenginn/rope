@@ -45,6 +45,15 @@ public:
 		return ss;
 	}
 	
+	template <typename F>
+	void do_op(const F &func)
+	{
+		for (int i = 0; i < size(); i++)
+		{
+			func(storage(i));
+		}
+	}
+	
 	void match_degrees_to(RTAngles &other)
 	{
 		for (int i = 0; i < size(); i++)

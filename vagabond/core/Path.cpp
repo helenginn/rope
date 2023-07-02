@@ -146,7 +146,6 @@ Trajectory *Path::calculateTrajectory(int steps)
 		}
 
 		angles.match_degrees_to(first);
-		
 		first = angles;
 
 		list.add_angles_from(angles);

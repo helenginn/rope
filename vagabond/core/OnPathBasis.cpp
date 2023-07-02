@@ -30,7 +30,7 @@ float OnPathBasis::contributionForAxis(BondSequence *seq, int tidx, int axis,
 	if (seq == nullptr || axis != 0 
 	    || _traj == nullptr) // iterating over non-zero axis
 	{
-		return ConcertedBasis::contributionForAxis(seq, tidx, axis, coord);
+		return 0;
 	}
 
 	float weight = coord(axis);

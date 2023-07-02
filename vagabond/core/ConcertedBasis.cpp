@@ -81,8 +81,6 @@ void ConcertedBasis::supplyMask(std::vector<bool> mask)
 void ConcertedBasis::setupAngleList()
 {
 	_angles.clear();
-	_idxs.clear();
-	_nActive = 0;
 
 	for (size_t i = 0; i < _params.size(); i++)
 	{
@@ -96,35 +94,24 @@ void ConcertedBasis::setupAngleList()
 
 		TorsionAngle ta = {start, mask};
 		_angles.push_back(ta);
-		
-		if (mask)
-		{
-			_filtered.push_back(_params[i]);
-			_idxs.push_back(_nActive);
-			_nActive++;
-		}
-		else
-		{
-			_idxs.push_back(-1);
-		}
 	}
 	
 	if (_dims == 0)
 	{
-		_dims = _nActive;
+		_dims = parameterCount();
 	}
 
 	freeSVD(&_svd);
-	setupSVD(&_svd, _nActive, _dims);
+	setupSVD(&_svd, parameterCount(), _dims);
 
 }
 
 void ConcertedBasis::prepareSVD()
 {
 	freeSVD(&_svd);
-	setupSVD(&_svd, _nActive);
+	setupSVD(&_svd, parameterCount());
 
-	for (size_t i = 0; i < _nActive; i++)
+	for (size_t i = 0; i < parameterCount(); i++)
 	{
 		for (size_t j = 0; j <= i; j++)
 		{
@@ -159,11 +146,6 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 		{
 			Parameter *t = _params[i];
 
-			if (_idxs[i] < 0)
-			{
-				continue;
-			}
-
 //			float value = instance->valueForTorsionFromList(t, list, values, found);
 			const Residue *local = inst->localResidueForResidueTorsion(list[j]);
 			if (local->id() != t->residueId())
@@ -185,8 +167,7 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 				value = 0;
 			}
 
-			int idx = _idxs[i];
-			_svd.u[idx][axis] = value;
+			_svd.u[i][axis] = value;
 			changed = true;
 		}
 	}
@@ -214,11 +195,6 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 	{
 		Parameter *t = _params[i];
 		
-		if (_idxs[i] < 0)
-		{
-			continue;
-		}
-
 		float value = instance->valueForTorsionFromList(t, list, values, found);
 		
 		if (value != value)
@@ -227,8 +203,7 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 			_missing.push_back(t);
 		}
 		
-		int idx = _idxs[i];
-		_svd.u[idx][axis] = value;
+		_svd.u[i][axis] = value;
 	}
 	
 	for (size_t i = 0; i < found.size(); i++)
@@ -255,29 +230,30 @@ void ConcertedBasis::prepare(int dims)
 
 size_t ConcertedBasis::activeBonds()
 {
-	return _nActive;
+	return parameterCount();
 }
 
 Coord::Interpolate<float> 
 ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
                                  const Coord::Get &coord, int n)
 {
-	int contr_idx = _idxs[tidx];
-	if (contr_idx < 0 || contr_idx > _svd.u.rows)
+	// tidx = parameter in _params vector
+	// contr_idx = parameter in the svd matrix, excluding constrained
+
+	if (tidx < 0 || tidx > _params.size())
 	{
 		return [](const Coord::Get &) { return 0;};
 	}
 
-
 	Coord::Interpolate<float> all;
 	float angle = _angles[tidx].angle;
-	all = [seq, angle, contr_idx, n, this](const Coord::Get &coord)
+
+	all = [seq, angle, tidx, n, this](const Coord::Get &coord)
 	{
 		float ret = 0;
 		for (size_t axis = 0; axis < n; axis++)
 		{
-			float add = this->contributionForAxis(seq, contr_idx, 
-			                                      axis, coord);
+			float add = this->contributionForAxis(seq, tidx, axis, coord);
 			ret += add;
 		}
 

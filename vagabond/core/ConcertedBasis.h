@@ -75,11 +75,8 @@ protected:
 	                                           const Coord::Get &coord, int n);
 
 	virtual float
-	contributionForAxis(BondSequence *seq, 
-	                    int tidx, int axis, 
+	contributionForAxis(BondSequence *seq, int tidx, int axis, 
 	                    const Coord::Get &coordinate) const;
-
-	std::vector<Parameter *> _filtered;
 private:
 	void prepareSVD();
 	void setupAngleList();
@@ -92,7 +89,6 @@ private:
 	
 	/* one idx per every torsion angle; >=0 if refined, -1 if not refined 
 	 * where value < _nActive*/
-	std::vector<int> _idxs;
 	size_t _nActive;
 	int _dims;
 
