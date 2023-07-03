@@ -170,10 +170,10 @@ template <class T>
 float Grid<T>::sum()
 {
 	float sum = 0;
-	do_op_on_each([&sum](const float &value) 
-	              { 
-		             if (value == value) { sum += value; }
-	              });
+	do_op_on_each_value([&sum](const float &value) 
+	                    { 
+		                   if (value == value) { sum += value; }
+	                    });
 	return sum;
 }
 
@@ -191,7 +191,7 @@ float Grid<T>::sigma()
 		}
 	};
 
-	do_op_on_each(func);
+	do_op_on_each_value(func);
 	float n = nn();
 
 	float mean = sum / n;
