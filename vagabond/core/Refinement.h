@@ -27,6 +27,8 @@ class Model;
 class ArbitraryMap;
 class MetadataGroup;
 class MolRefiner;
+struct ccp4_spacegroup_;
+typedef ccp4_spacegroup_ CCP4SPG;
 
 template <class T>
 class ClusterSVD;
@@ -72,6 +74,7 @@ private:
 
 	Model *_model = nullptr;
 	ArbitraryMap *_map = nullptr;
+	CCP4SPG *_spg = nullptr;
 
 	std::list<Refine::Info> _molDetails;
 	std::map<Entity *, ECluster *> _entity2Cluster;

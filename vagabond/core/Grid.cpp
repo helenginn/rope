@@ -104,7 +104,7 @@ void Grid<T>::setDimensions(int nx, int ny, int nz, bool adjust)
 		adjustNs();
 	}
 	_nn = _nx * _ny * _nz;
-	eleSize = sizeof(T);
+	_eleSize = sizeof(T);
 	
 	prepareData();
 }
@@ -123,8 +123,8 @@ Grid<T>::Grid(int nx, int ny, int nz)
 template <class T>
 void Grid<T>::prepareData()
 {
-	_data = (T *)malloc(_nn * eleSize);
-	memset(_data, 0, _nn * eleSize);
+	_data = (T *)malloc(_nn * _eleSize);
+	memset(_data, 0, _nn * _eleSize);
 
 }
 
@@ -205,6 +205,7 @@ float Grid<T>::mean()
 {
 	return sum() / (float)nn();
 }
+
 
 #endif
 

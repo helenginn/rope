@@ -304,7 +304,6 @@ int PlausibleRoute::nudgeWaypoints()
 		std::vector<int> torsionIdxs = getIndices(related);
 		
 		bool result = simplexCycle(single);
-//		result |= simplexCycle(torsionIdxs);
 		
 		changed += (result ? 1 : 0);
 	}

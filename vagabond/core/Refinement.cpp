@@ -21,8 +21,9 @@
 #include "Polymer.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
-#include "MetadataGroup.h"
 #include "ArbitraryMap.h"
+#include "MetadataGroup.h"
+#include "SymmetryExpansion.h"
 
 #include "Diffraction.h"
 #include "MtzFile.h"
@@ -38,6 +39,7 @@ Refinement::Refinement()
 void Refinement::setup()
 {
 	_model->load();
+	_spg = _model->spaceGroup();
 
 	preparePolymerDetails();
 	loadMap();
@@ -152,6 +154,7 @@ void Refinement::play()
 ArbitraryMap *Refinement::calculatedMapAtoms()
 {
 	ArbitraryMap *arb = new ArbitraryMap(*_map);
+	arb->clear();
 	
 	for (Refine::Info &info  : _molDetails)
 	{
@@ -164,7 +167,9 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 
 	MtzFile file("");
 	file.setMap(diff);
-	file.write_to_file("test.mtz", 1.5);
+	file.write_to_file("spg1.mtz", 1.5);
+	SymmetryExpansion::apply(diff, _spg, 1.5);
+	file.write_to_file("symm.mtz", 1.5);
 	
 	return arb;
 

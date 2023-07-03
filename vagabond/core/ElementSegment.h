@@ -58,11 +58,11 @@ public:
 	void addDensity(glm::vec3 real, float density);
 	float density(int i, int j);
 	void printMap();
-	void clear();
 	
 	void calculateMap();
 
 	virtual float sum();
+	void clear();
 	virtual void multiply(float scale);
 
 	static void findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,

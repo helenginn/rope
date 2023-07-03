@@ -37,6 +37,13 @@ struct VoxelDiffraction
 		value[1] = amp * sin(deg2rad(ph));
 	}
 	
+	void addAmplitudePhase(float amp, float ph)
+	{
+		amp += amplitude();
+		ph += phase();
+		setAmplitudePhase(amp, ph);
+	}
+	
 	const float phase() const
 	{
 		double rad = atan2(value[1], value[0]);

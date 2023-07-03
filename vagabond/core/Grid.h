@@ -134,6 +134,8 @@ public:
 		{
 			func(i - nx, j - ny, k - nz);
 		};
+		
+		do_op_on_basic_index(wrap);
 	}
 	
 	template <typename F>
@@ -154,6 +156,15 @@ public:
 	template <typename F>
 	void do_op_on_each_element(F func)
 	{
+		do_op_on_each_1d_index([this, func](int i) 
+		                       {
+			                      func(element(i));
+		                       });
+	}
+
+	template <typename F>
+	void do_op_on_each_1d_index(F func)
+	{
 		for (int i = 0; i < nn(); i++)
 		{
 			func(i);
@@ -163,10 +174,10 @@ public:
 	template <typename F>
 	void do_op_on_each_value(F func)
 	{
-		do_op_on_each_element([this, func](int i) 
-		                    {
-			                   func(elementValue(i));
-		                    });
+		do_op_on_each_1d_index([this, func](int i) 
+		                       {
+			                      func(elementValue(i));
+		                       });
 	}
 
 	virtual float sum();
@@ -204,6 +215,10 @@ public:
 		collapse(vox.x, vox.y, vox.z);
 	}
 
+	const size_t &eleSize() const
+	{
+		return _eleSize;
+	}
 protected:
 	void adjustNs();
 	virtual void prepareData();
@@ -244,7 +259,7 @@ private:
 	int _nx = 0;
 	int _ny = 0;
 	int _nz = 0;
-	size_t eleSize = 0;
+	size_t _eleSize = 0;
 	
 	/* number of voxels in a single map */
 	long _nn = 0;

@@ -199,11 +199,11 @@ void ElementSegment::multiply(float scale)
 float ElementSegment::sum()
 {
 	float val = 0;
-	for (size_t i = 0; i < nn(); i++)
+	do_op_on_each_element([&val](VoxelElement &ve)
 	{
-		val += _data[i].value[0];
-		val += _data[i].value[1];
-	}
+		val += ve.value[0];
+		val += ve.value[1];
+	});
 	
 	return val;
 }
@@ -228,9 +228,9 @@ float ElementSegment::density(int i, int j)
 
 void ElementSegment::clear()
 {
-	for (size_t i = 0; i < nn(); i++)
+	do_op_on_each_element([](VoxelElement &ve)
 	{
-		element(i).value[0] = 0;
-		element(i).value[1] = 0;
-	}
+		ve.value[0] = 0;
+		ve.value[1] = 0;
+	});
 }
