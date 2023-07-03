@@ -88,7 +88,6 @@ public:
 	Atom *firstAtomWithName(std::string name) const;
 	
 	void recalculate();
-	void mechanics();
 	
 	glm::vec3 initialCentre();
 	

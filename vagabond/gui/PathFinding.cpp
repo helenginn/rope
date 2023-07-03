@@ -17,9 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PathFinding.h"
-#include "PathFinderView.h"
 #include <vagabond/core/Entity.h>
-#include <vagabond/core/PathFinder.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskForText.h>

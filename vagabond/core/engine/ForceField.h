@@ -25,7 +25,6 @@
 
 class Atom;
 class AtomGroup;
-class MechanicalBasis;
 
 #include "FFProperties.h"
 
@@ -124,8 +123,6 @@ public:
 		_aps = aps;
 	}
 
-	void updateTargets(AtomPosMap &aps, MechanicalBasis *mb);
-	
 	void prepareCalculation();
 	double score();
 	void getColours(AtomPosMap &aps);
@@ -146,7 +143,6 @@ public:
 	void processAtoms(Atom *a, Atom *b, Atom *report_a, Atom *report_b);
 
 private:
-	void setupContributions(MechanicalBasis *mb);
 	void setupVanDerWaals();
 	void setupCAlphaSeparation();
 	void updateRestraint(Restraint &r);

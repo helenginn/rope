@@ -21,7 +21,6 @@
 #include "engine/SurfaceAreaHandler.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/ForceFieldHandler.h"
-#include "engine/MechanicalBasis.h"
 #include "engine/SolventHandler.h"
 #include "BondCalculator.h"
 #include "engine/PointStoreHandler.h"

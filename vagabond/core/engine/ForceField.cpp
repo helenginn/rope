@@ -20,7 +20,6 @@
 #include <math.h>
 #include "BondTorsion.h"
 #include "engine/ForceField.h"
-#include "engine/MechanicalBasis.h"
 #include "ResidueId.h"
 #include "AtomGroup.h"
 #include "matrix_functions.h"
@@ -418,34 +417,6 @@ float ForceField::contributionForRestraint(const Restraint &r, glm::vec3 start,
 	return con;
 }
 
-void ForceField::setupContributions(MechanicalBasis *mb)
-{
-	if (_contributions.u.rows > 0 &&
-	    _contributions.u.cols > 0)
-	{
-		return;
-	}
-	
-	/* allocate column vector of target gradients */
-	setupMatrix(&_targets, _restraints.size(), 1);
-	setupMatrix(&_weights, mb->parameterCount(), 1);
-
-	setupSVD(&_contributions, mb->parameterCount(), _restraints.size());
-
-	setupMatrix(&_validity, mb->parameterCount(), _restraints.size());
-	
-	for (size_t j = 0; j < mb->parameterCount(); j++)
-	{
-		int i = 0;
-		for (Restraint &r : _restraints)
-		{
-			bool valid = mb->doesTorsionAffectRestraint(r, mb->parameter(j));
-			_validity[j][i] = valid ? 1 : -1;
-			i++;
-		}
-	}
-}
-
 void ForceField::prepareCalculation()
 {
 	AtomPosMap::iterator it;
@@ -554,60 +525,5 @@ void ForceField::getColours(AtomPosMap &aps)
 		}
 	}
 
-}
-
-void ForceField::updateTargets(AtomPosMap &aps, MechanicalBasis *mb)
-{
-	setupContributions(mb);
-	zeroMatrix(&_targets);
-	zeroMatrix(&_contributions.u);
-
-	int idx = 0;
-	for (Restraint &r : _restraints)
-	{
-		updateRestraint(r);
-		float val = gradientForRestraint(r);
-		_targets[idx][0] = val;
-
-		for (size_t i = 0; i < mb->parameterCount(); i++)
-		{
-			Parameter *p = mb->parameter(i);
-
-			bool valid = _validity[i][idx] > 0;
-			
-			if (!valid)
-			{
-				continue;
-			}
-			
-			if (p->isTorsion())
-			{
-				BondTorsion *t = static_cast<BondTorsion *>(p);
-
-				glm::vec3 cPos = aps.at(t->atom(1)).samples[1];
-				glm::vec3 dPos = aps.at(t->atom(2)).samples[1];
-
-				float con = contributionForRestraint(r, cPos, dPos);
-				_contributions.u[i][idx] = con;
-			}
-
-		}
-
-		idx++;
-	}
-	
-	invertSVD(&_contributions);
-	zeroMatrix(&_weights);
-	
-	for (size_t i = 0; i < _weights.rows; i++)
-	{
-		for (size_t j = 0; j < _contributions.u.cols; j++)
-		{
-			for (size_t i = 0; i < _contributions.u.rows; i++)
-			{
-				_weights[i][0] += _contributions.u[i][j] * _targets[j][0];
-			}
-		}
-	}
 }
 

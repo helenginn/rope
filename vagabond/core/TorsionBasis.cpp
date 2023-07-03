@@ -23,7 +23,6 @@
 #include "ConcertedBasis.h"
 #include "OnPathBasis.h"
 #include "NetworkBasis.h"
-#include "engine/MechanicalBasis.h"
 
 TorsionBasis::TorsionBasis()
 {
@@ -58,10 +57,6 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	else if (type == TorsionBasis::TypeConcerted)
 	{
 		basis = new ConcertedBasis();
-	}
-	else
-	{
-		basis = new MechanicalBasis();
 	}
 
 	return basis;

@@ -22,7 +22,6 @@
 #include "Grapher.h"
 #include "../utils/FileReader.h"
 #include "BondTorsion.h"
-#include "engine/Mechanics.h"
 #include "TorsionBasis.h"
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
@@ -536,17 +535,6 @@ Sequence *AtomGroup::sequence()
 
 	Sequence *sequence = new Sequence(best);
 	return sequence;
-}
-
-void AtomGroup::mechanics()
-{
-	cancelRefinement();
-	cleanupRefinement();
-
-	Mechanics *m = new Mechanics(this);
-	_mech = m;
-
-	_mechThread = new std::thread(&Mechanics::run, _mech);
 }
 
 void AtomGroup::addTransformedAnchor(Atom *a, glm::mat4x4 transform)
