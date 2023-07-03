@@ -60,6 +60,15 @@ public:
 	{
 		return _data[i][0];
 	}
+	
+
+	void clear()
+	{
+		do_op_on_each_element([](fftwf_complex &ele)
+		{
+			ele[0] = 0; ele[1] = 0;
+		});
+	}
 
 	bool withinReal(int i, int j, int k)
 	{
