@@ -37,7 +37,7 @@ void ElementSegment::setElement(std::string element)
 	ElementLibrary &library = ElementLibrary::library();
 	const float *factors = library.getElementFactors(element);
 
-	do_op_on_basic_index([this, &library, factors](int i, int j, int k)
+	do_op_on_centred_index([this, &library, factors](int i, int j, int k)
 	{
 		float res = 1 / resolution(i, j, k);
 		float val = library.valueForResolution(res, factors);
