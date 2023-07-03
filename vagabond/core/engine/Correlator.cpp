@@ -40,49 +40,46 @@ void Correlator::prepareList()
 
 	/* loop through each point in the map "density" which are within the
 	 * 	bounds of "template" */
-	for (size_t k = 0; k < _density->nz(); k++)
+	auto find_comparison = [this, min, max, &all, &rejected](int i, int j, int k)
 	{
-		for (size_t j = 0; j < _density->ny(); j++)
+		glm::vec3 real_pos = _density->real(i, j, k);
+
+		/* find point relative to the minimum of template */
+		glm::vec3 relative_pos = real_pos;
+		relative_pos -= min;
+
+		/* convert to fractional in the space of the big map */
+		_density->real2Voxel(relative_pos);
+		_density->index_to_fractional(relative_pos);
+
+		Grid<fftwf_complex>::collapseFrac(relative_pos);
+
+		/* new position in the space closest to the template box */
+		_density->fractional_to_index(relative_pos);
+		_density->voxel2Real(relative_pos);
+
+		relative_pos += min;
+		all++;
+
+		/* * store the reference density value of the voxel */
+		float value = _density->realValue(real_pos);
+		float check = _density->realValue(relative_pos);
+
+		/* establish if each point falls within the box 
+		 * and throw out if not */
+		if (relative_pos.x > max.x || relative_pos.y > max.y
+		    || relative_pos.z > max.z)
 		{
-			for (size_t i = 0; i < _density->nx(); i++)
-			{
-				glm::vec3 real_pos = _density->real(i, j, k);
-
-				/* find point relative to the minimum of template */
-				glm::vec3 relative_pos = real_pos;
-				relative_pos -= min;
-				
-				/* convert to fractional in the space of the big map */
-				_density->real2Voxel(relative_pos);
-				_density->index_to_fractional(relative_pos);
-				
-				Grid<fftwf_complex>::collapseFrac(relative_pos);
-
-				/* new position in the space closest to the template box */
-				_density->fractional_to_index(relative_pos);
-				_density->voxel2Real(relative_pos);
-
-				relative_pos += min;
-				all++;
-
-				/* * store the reference density value of the voxel */
-				float value = _density->realValue(real_pos);
-				float check = _density->realValue(relative_pos);
-
-				/* establish if each point falls within the box 
-				 * and throw out if not */
-				if (relative_pos.x > max.x || relative_pos.y > max.y
-				    || relative_pos.z > max.z)
-				{
-					rejected++;
-					continue;
-				}
-				
-				Comparison comp{relative_pos, value};
-				_comparisons.push_back(comp);
-			}
+			rejected++;
+			return;
 		}
-	}
+
+		Comparison comp{relative_pos, value};
+		_comparisons.push_back(comp);
+
+	};
+	
+	_density->do_op_on_basic_index(find_comparison);
 }
 
 double Correlator::correlation(AtomSegment *seg)
