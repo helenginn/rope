@@ -37,23 +37,14 @@ void ElementSegment::setElement(std::string element)
 	ElementLibrary &library = ElementLibrary::library();
 	const float *factors = library.getElementFactors(element);
 
-	int nx, ny, nz;
-	limits(nx, ny, nz);
-
-	for (int k = -nz; k <= nz; k++)
+	do_op_on_basic_index([this, &library, factors](int i, int j, int k)
 	{
-		for (int j = -ny; j <= ny; j++)
-		{
-			for (int i = -nx; i <= nx; i++)
-			{
-				float res = 1 / resolution(i, j, k);
-				float val = library.valueForResolution(res, factors);
-				
-				VoxelElement &ve = this->element(i, j, k);
-				ve.scatter = val;
-			}
-		}
-	}
+		float res = 1 / resolution(i, j, k);
+		float val = library.valueForResolution(res, factors);
+
+		VoxelElement &ve = this->element(i, j, k);
+		ve.scatter = val;
+	});
 }
 
 void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)

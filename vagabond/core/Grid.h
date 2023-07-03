@@ -123,6 +123,18 @@ public:
 		long idx = index(x, y, z);
 		_data[idx] = value;
 	}
+
+	template <typename F>
+	void do_op_on_centred_index(F func)
+	{
+		int nx, ny, nz;
+		limits(nx, ny, nz);
+
+		auto wrap = [func, nx, ny, nz](int i, int j, int k)
+		{
+			func(i - nx, j - ny, k - nz);
+		};
+	}
 	
 	template <typename F>
 	void do_op_on_basic_index(F func)
@@ -140,13 +152,23 @@ public:
 	}
 
 	template <typename F>
-	void do_op_on_each(F func)
+	void do_op_on_each_element(F func)
 	{
 		for (int i = 0; i < nn(); i++)
 		{
-			func(elementValue(i));
+			func(i);
 		}
 	}
+
+	template <typename F>
+	void do_op_on_each_value(F func)
+	{
+		do_op_on_each_element([this, func](int i) 
+		                    {
+			                   func(elementValue(i));
+		                    });
+	}
+
 	virtual float sum();
 	virtual float mean();
 	virtual float sigma();

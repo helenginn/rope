@@ -36,6 +36,7 @@ TransformedGrid<VoxelDiffraction>(map->nx(), map->ny(), map->nz())
 	{
 		map->fft();
 	}
+
 	for (size_t i = 0; i < nn(); i++)
 	{
 		element(i).value[0] = map->element(i)[0];
