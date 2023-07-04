@@ -25,8 +25,7 @@ SimpleBasis::SimpleBasis() : TorsionBasis()
 }
 
 Coord::Interpolate<float> 
-SimpleBasis::valueForParameter(BondSequence *seq, int tidx,
-                               const Coord::Get &coord, int n)
+SimpleBasis::valueForParameter(BondSequence *seq, int tidx)
 {
 	if (tidx < 0)
 	{
@@ -48,8 +47,8 @@ SimpleBasis::valueForParameter(BondSequence *seq, int tidx,
 	}
 }
 
-float SimpleBasis::parameterForVector(BondSequence *seq, int idx,
-                                      const Coord::Get &coord, int n)
+/*
+float SimpleBasis::parameterForVector(BondSequence *seq, int idx)
 {
 	if (idx < 0)
 	{
@@ -69,6 +68,7 @@ float SimpleBasis::parameterForVector(BondSequence *seq, int idx,
 	
 	return ta.angle;
 }
+*/
 
 void SimpleBasis::prepare(int dims)
 {

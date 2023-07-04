@@ -28,9 +28,7 @@ class NetworkBasis : public ConcertedBasis
 public:
 	NetworkBasis();
 
-	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, int tidx, 
-	                                                    const Coord::Get &coord,
-	                                                    int n);
+	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, int tidx);
 
 	void setSpecificNetwork(SpecificNetwork *sn)
 	{

@@ -171,8 +171,7 @@ float BondSequence::fetchTorsion(int torsion_idx)
 		return _bondTorsions[torsion_idx];
 	}
 	
-	auto func = torsionBasis()->valueForParameter(this, torsion_idx, 
-	                                              _acquireCoord, _nCoord);
+	auto func = torsionBasis()->valueForParameter(this, torsion_idx);
 
 	if (func)
 	{

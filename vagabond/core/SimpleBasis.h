@@ -27,12 +27,8 @@ public:
 	SimpleBasis();
 
 	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
-	                                                    int tidx,
-	                                                    const Coord::Get &coord,
-	                                                    int n);
+	                                                    int tidx);
 
-	virtual float parameterForVector(BondSequence *seq, int tidx, 
-	                                 const Coord::Get &coord, int n);
 	virtual void prepare(int dims = 0);
 private:
 

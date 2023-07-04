@@ -35,7 +35,7 @@ namespace Refine
 	struct Info
 	{
 		std::string mol_id;
-		Polymer *molecule = nullptr;
+		Instance *instance = nullptr;
 		std::vector<RTAngles> axes;
 		int samples = 120;
 		

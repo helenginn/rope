@@ -33,7 +33,7 @@ public:
 		_traj = traj;
 	}
 
-	virtual float contributionForAxis(BondSequence *seq, int tidx, int i, 
+	virtual float contributionForAxis(BondSequence *seq, int tidx, int axis, 
 	                                  const Coord::Get &coord) const;
 private:
 	Trajectory *_traj = nullptr;

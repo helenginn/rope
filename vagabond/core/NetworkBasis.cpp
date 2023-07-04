@@ -26,8 +26,7 @@ NetworkBasis::NetworkBasis() : ConcertedBasis()
 }
 
 Coord::Interpolate<float>
-NetworkBasis::valueForParameter(BondSequence *seq, int tidx, 
-                                const Coord::Get &coord, int n)
+NetworkBasis::valueForParameter(BondSequence *seq, int tidx)
 {
 	if (tidx < 0)
 	{

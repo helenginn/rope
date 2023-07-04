@@ -105,6 +105,7 @@ void StructureModification::finishHetatmCalculator()
 		return;
 	}
 
+	customModifications(_hetatmCalc, false);
 	_hetatmCalc->setup();
 	_hetatmCalc->start();
 }
@@ -132,17 +133,22 @@ void StructureModification::startCalculator()
 	for (size_t i = 0; i < _fullAtoms->connectedGroups().size(); i++)
 	{
 		Atom *anchor = _fullAtoms->connectedGroups()[i]->chosenAnchor();
-		
-		if (anchor->hetatm())
+
+		if (!_instance->atomBelongsToInstance(anchor))
 		{
 			continue;
 		}
 		
-		bool has_mol = checkForInstance(_fullAtoms->connectedGroups()[i]);
+		if (anchor->hetatm() && _instance->hasSequence())
+		{
+			continue;
+		}
 		
+		std::cout << _instance->id() << " owns " << anchor->desc() << std::endl;
+
 		if (!anchor->hetatm())
 		{
-			makeCalculator(anchor, has_mol);
+			makeCalculator(anchor, true);
 		}
 		else
 		{
@@ -169,10 +175,13 @@ bool StructureModification::supplyTorsions(const RTAngles &angles)
 	for (BondCalculator *calc : _calculators)
 	{
 		TorsionBasis *basis = calc->torsionBasis();
-		ConcertedBasis *cb = static_cast<ConcertedBasis *>(basis);
+		ConcertedBasis *cb = dynamic_cast<ConcertedBasis *>(basis);
 
-		success |= fillBasis(cb, angles, _axis);
-		_torsionLists.push_back(angles);
+		if (cb)
+		{
+			success |= fillBasis(cb, angles, _axis);
+			_torsionLists.push_back(angles);
+		}
 	}
 	
 	_axis++;

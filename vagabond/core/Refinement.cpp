@@ -18,7 +18,7 @@
 
 #include "Model.h"
 #include "Entity.h"
-#include "Polymer.h"
+#include "Instance.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
 #include "ArbitraryMap.h"
@@ -41,7 +41,7 @@ void Refinement::setup()
 	_model->load();
 	_spg = _model->spaceGroup();
 
-	preparePolymerDetails();
+	prepareInstanceDetails();
 	loadMap();
 	setupRefiners();
 }
@@ -51,11 +51,12 @@ void Refinement::loadMap()
 	_map = _model->map();
 }
 
-void Refinement::preparePolymerDetails()
+void Refinement::prepareInstanceDetails()
 {
-	for (Polymer &mol : _model->polymers())
+	std::vector<Instance *> instances = _model->instances();
+	for (Instance *inst : instances)
 	{
-		preparePolymer(&mol);
+		prepareInstance(inst);
 	}
 }
 
@@ -82,49 +83,54 @@ ECluster *Refinement::grabCluster(Entity *entity)
 	return cx;
 }
 
-void Refinement::preparePolymer(Polymer *mol)
+void Refinement::prepareInstance(Instance *mol)
 {
 	Refine::Info info;
-	info.molecule = mol;
+	info.instance = mol;
 	info.mol_id = mol->id();
 
-	ECluster *cluster = grabCluster(mol->entity());
+	if (mol->hasSequence())
+	{
+		ECluster *cluster = grabCluster(mol->entity());
 
-	std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();
-	
-	int max = 1;
-	
-	/* get max top axes from cluster */
-	for (size_t i = 0; i < max && i < cluster->rows(); i++)
-	{
-		std::vector<Angular> vals = cluster->rawVector(i);
-		
-		RTAngles axis = RTAngles::angles_from(list, vals);
-		info.axes.push_back(axis);
+		std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();
+
+		int max = 1;
+
+		/* get max top axes from cluster */
+		for (size_t i = 0; i < max && i < cluster->rows(); i++)
+		{
+			std::vector<Angular> vals = cluster->rawVector(i);
+
+			RTAngles axis = RTAngles::angles_from(list, vals);
+			info.axes.push_back(axis);
+		}
+
+		/* set mean = 0 */
+		for (size_t i = 0; i < info.axes.size(); i++)
+		{
+			info.mean.push_back(0);
+		}
 	}
-	
-	/* set mean = 0 */
-	for (size_t i = 0; i < info.axes.size(); i++)
-	{
-		info.mean.push_back(0);
-	}
-	
+
 	_molDetails.push_back(info);
 }
 
 void Refinement::setupRefiner(Refine::Info &info)
 {
-	Polymer *mol = info.molecule;
-	ECluster *cluster = grabCluster(mol->entity());
-
+	Instance *mol = info.instance;
+	
 	int dims = info.axes.size();
+	
+	if (dims == 0)
+	{
+		dims = 1;
+	}
+
 	int samples = info.samples;
 
 	MolRefiner *mr = new MolRefiner(_map, &info, samples, dims);
-	mr->setCluster(cluster);
 	mr->startCalculator();
-
-	std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();
 
 	for (size_t i = 0; i < info.axes.size(); i++)
 	{
@@ -144,7 +150,7 @@ void Refinement::play()
 	calculatedMapAtoms();
 	for (Refine::Info &info  : _molDetails)
 	{
-		MolRefiner *mr = _molRefiners[info.molecule];
+		MolRefiner *mr = _molRefiners[info.instance];
 		mr->runEngine();
 	}
 	
@@ -158,7 +164,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 	
 	for (Refine::Info &info  : _molDetails)
 	{
-		MolRefiner *mr = _molRefiners[info.molecule];
+		MolRefiner *mr = _molRefiners[info.instance];
 		mr->addToMap(arb);
 	}
 	

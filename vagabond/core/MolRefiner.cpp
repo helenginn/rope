@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MolRefiner.h"
-#include "Polymer.h"
+#include "Instance.h"
 #include "ArbitraryMap.h"
 #include "AtomMap.h"
 #include "PathManager.h"
@@ -28,10 +28,17 @@
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
                        Refine::Info *info, int num, int dims) :
-StructureModification(info->molecule, num, dims)
+StructureModification(info->instance, num, dims)
 {
-	_pType = BondCalculator::PipelineCorrelation;
-	_torsionType = TorsionBasis::TypeOnPath;
+	_pType = BondCalculator::PipelineCalculatedMaps;
+	_torsionType = TorsionBasis::TypeConcerted;
+
+	if (info->instance->hasSequence())
+	{
+		_torsionType = TorsionBasis::TypeOnPath;
+		_pType = BondCalculator::PipelineCorrelation;
+	}
+
 	_map = comparison;
 	_info = info;
 }
@@ -141,7 +148,7 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 		}
 		if (_getSegment)
 		{
-			job.requests = static_cast<JobType>(job.requests | 
+			job.requests = static_cast<JobType>(JobExtractPositions |
 			                                    JobCalculateMapSegment);
 		}
 
@@ -172,12 +179,10 @@ void MolRefiner::addToMap(ArbitraryMap *map)
 			continue;
 		}
 
-		if (r->requests & JobMapCorrelation)
+		if (r->requests)
 		{
 			AtomMap &atoms = *r->map;
-			std::cout << "Atoms: " << atoms.nn() << std::endl;
 			ArbitraryMap *bit = atoms();
-			std::cout << "Bit: " << bit->nn() << std::endl;
 			std::cout << atoms.minBound() << " to " << atoms.maxBound() << std::endl;
 			std::cout << bit->minBound() << " to " << bit->maxBound() << std::endl;
 			*map += *bit;
@@ -186,6 +191,8 @@ void MolRefiner::addToMap(ArbitraryMap *map)
 
 		r->destroy();
 	}
+
+	_ticket2Group.clear();
 }
 
 void MolRefiner::retrieveJobs()
@@ -237,7 +244,6 @@ void MolRefiner::torsionBasisMods(TorsionBasis *tb)
 	p->startInstance()->load();
 
 	Trajectory *traj = p->calculateTrajectory(32);
-	std::cout << "here I am" << std::endl;
 	traj->attachInstance(_instance);
 	traj->filterAngles(opb->parameters());
 	traj->relativeToFirst();
@@ -260,6 +266,11 @@ size_t MolRefiner::parameterCount()
 
 void MolRefiner::runEngine()
 {
+	if (!_info->instance->hasSequence())
+	{
+		return;
+	}
+
 	if (_map == nullptr)
 	{
 		throw std::runtime_error("Map provided to refinement is null");

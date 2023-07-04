@@ -33,14 +33,13 @@ public:
 	ConcertedBasis();
 	~ConcertedBasis();
 
-	float parameterForVector(BondSequence *seq, int idx,
-	                         const Coord::Get &coord, int n);
+	/*
+	virtual float parameterForVector(BondSequence *seq, int idx);
+	*/
 	virtual void prepare(int dims = 0);
 
 	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
-	                                                    int tidx,
-	                                                    const Coord::Get &coord, 
-	                                                    int n);
+	                                                    int tidx);
 
 	/** only the torsions available in the mask will be used for calculating
 	 *  principle axes of motion */
@@ -69,12 +68,10 @@ public:
 		return _unusedId;
 	}
 protected:
-	Coord::Interpolate<float> fullContribution(BondSequence *seq, int tidx, 
-	                                           const Coord::Get &coord, int n);
+	Coord::Interpolate<float> fullContribution(BondSequence *seq, int tidx);
 
-	virtual float
-	contributionForAxis(BondSequence *seq, int tidx, int axis, 
-	                    const Coord::Get &coordinate) const;
+	virtual float contributionForAxis(BondSequence *seq, int tidx, int axis, 
+	                                  const Coord::Get &coord) const;
 private:
 	void prepareSVD();
 	void setupAngleList();

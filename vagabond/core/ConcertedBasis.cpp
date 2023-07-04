@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include "ConcertedBasis.h"
+#include "BondSequence.h"
 #include "Parameter.h"
 #include "Polymer.h"
 
@@ -32,8 +33,7 @@ ConcertedBasis::~ConcertedBasis()
 }
 
 Coord::Interpolate<float>
-ConcertedBasis::valueForParameter(BondSequence *seq, int tidx,
-                                  const Coord::Get &coord, int n)
+ConcertedBasis::valueForParameter(BondSequence *seq, int tidx)
 {
 	if (tidx < 0)
 	{
@@ -42,7 +42,7 @@ ConcertedBasis::valueForParameter(BondSequence *seq, int tidx,
 
 	TorsionAngle &ta = _angles[tidx];
 
-	if (n == 0 || !ta.mask)
+	if (!ta.mask)
 	{
 
 		Coord::Interpolate<float> ret = [ta](const Coord::Get &)
@@ -53,18 +53,17 @@ ConcertedBasis::valueForParameter(BondSequence *seq, int tidx,
 		return ret;
 	}
 	
-	Coord::Interpolate<float> sum = fullContribution(seq, tidx, coord, n);
+	Coord::Interpolate<float> sum = fullContribution(seq, tidx);
 
 	return sum;
 }
 
 // tidx: torsion angle
 // vec/n: vector you have to generate torsion angle
-float ConcertedBasis::parameterForVector(BondSequence *seq,
-                                         int tidx, const Coord::Get &coord, 
-                                         int n)
+/*
+float ConcertedBasis::parameterForVector(BondSequence *seq, int tidx)
 {
-	Coord::Interpolate<float> get_angle = valueForParameter(seq, tidx, coord, n);
+	Coord::Interpolate<float> get_angle = valueForParameter(seq, tidx);
 	if (!get_angle)
 	{
 		return 0;
@@ -72,6 +71,7 @@ float ConcertedBasis::parameterForVector(BondSequence *seq,
 
 	return get_angle(coord);
 }
+*/
 
 void ConcertedBasis::supplyMask(std::vector<bool> mask)
 {
@@ -223,8 +223,7 @@ size_t ConcertedBasis::activeBonds()
 }
 
 Coord::Interpolate<float> 
-ConcertedBasis::fullContribution(BondSequence *seq, int tidx, 
-                                 const Coord::Get &coord, int n)
+ConcertedBasis::fullContribution(BondSequence *seq, int tidx)
 {
 	// tidx = parameter in _params vector
 	// contr_idx = parameter in the svd matrix, excluding constrained
@@ -237,10 +236,10 @@ ConcertedBasis::fullContribution(BondSequence *seq, int tidx,
 	Coord::Interpolate<float> all;
 	float angle = _angles[tidx].angle;
 
-	all = [seq, angle, tidx, n, this](const Coord::Get &coord)
+	all = [seq, angle, tidx, this](const Coord::Get &coord)
 	{
 		float ret = 0;
-		for (size_t axis = 0; axis < n; axis++)
+		for (size_t axis = 0; axis < seq->nCoords(); axis++)
 		{
 			float add = this->contributionForAxis(seq, tidx, axis, coord);
 			ret += add;
@@ -254,8 +253,8 @@ ConcertedBasis::fullContribution(BondSequence *seq, int tidx,
 }
 
 float ConcertedBasis::contributionForAxis(BondSequence *seq, 
-                                    int tidx, int axis, 
-                                    const Coord::Get &coord) const
+                                          int tidx, int axis, 
+                                          const Coord::Get &coord) const
 {
 	if (axis > _svd.u.rows)
 	{

@@ -71,7 +71,7 @@ void TorsionBasis::absorbVector(const Coord::Get &coord, int n, bool *mask)
 			continue;
 		}
 
-		float torsion = valueForParameter(nullptr, i, coord, n)(coord);
+		float torsion = valueForParameter(nullptr, i)(coord);
 		
 //		std::cout << _params[i]->desc() << " " << torsion << std::endl;
 		
@@ -161,15 +161,9 @@ std::vector<int> TorsionBasis::grabIndices(const std::set<Parameter *> &params)
 }
 
 Coord::Interpolate<float> TorsionBasis::valueForParameter(BondSequence *seq, 
-                                                          int tidx,
-                                                          const Coord::Get &coord,
-                                                          int n)
+                                                          int tidx)
 {
-	Coord::Interpolate<float> ret = [this, seq, tidx, n](const Coord::Get &coord)
-	{
-		return parameterForVector(seq, tidx, coord, n);
-	};
-
+	Coord::Interpolate<float> ret{};
 	return ret;
 }
 

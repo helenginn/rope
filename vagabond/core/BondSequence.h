@@ -182,6 +182,11 @@ public:
 	}
 
 	float fetchTorsion(int idx);
+	
+	const int &nCoords() const
+	{
+		return _nCoord;
+	}
 private:
 
 	struct AtomBlockTodo

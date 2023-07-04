@@ -353,7 +353,7 @@ Residue *const Polymer::equivalentLocal(Residue *const master) const
 
 bool Polymer::atomBelongsToInstance(Atom *a)
 {
-	return has_chain_id(a->chain()) && (a->code() != "HOH");
+	return has_chain_id(a->chain()) && localForLocalId(a->residueId());
 }
 
 void Polymer::grabTorsions(RTAngles &angles, rope::TorsionType type)

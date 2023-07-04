@@ -65,8 +65,8 @@ public:
 	void setup();
 	void play();
 private:
-	void preparePolymerDetails();
-	void preparePolymer(Polymer *mol);
+	void prepareInstanceDetails();
+	void prepareInstance(Instance *mol);
 	ECluster *grabCluster(Entity *entity);
 	void setupRefiners();
 	void setupRefiner(Refine::Info &info);
@@ -79,7 +79,7 @@ private:
 	std::list<Refine::Info> _molDetails;
 	std::map<Entity *, ECluster *> _entity2Cluster;
 	
-	std::map<Polymer *, MolRefiner *> _molRefiners;
+	std::map<Instance *, MolRefiner *> _molRefiners;
 };
 
 #endif

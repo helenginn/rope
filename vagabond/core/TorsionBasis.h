@@ -53,22 +53,12 @@ public:
 	static TorsionBasis *newBasis(Type type);
 	
 	int addParameter(Parameter *param, Atom *atom = nullptr);
-	
-	/** provides modified torsion angle given custom vector.
-	 * @param idx index of parameter angle within full list of refined angles
-	 * @param vec custom vector of parameters
-	 * @param n total number of parameters in vec 
-	 * @returns parameter angle in degrees */
-	virtual float parameterForVector(BondSequence *seq, int idx, 
-	                                 const Coord::Get &coord, int n) = 0;
-	
+
 	virtual Coord::NeedsUpdate needsUpdate(BondSequence *seq, 
 	                                       const Coord::Get &coord, int idx);
 
 	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
-	                                                    int tidx,
-	                                                    const Coord::Get &coord,
-	                                                    int n);
+	                                                    int tidx) = 0;
 
 	virtual void absorbVector(const Coord::Get &coordinate, int n, 
 	                          bool *mask = nullptr);
