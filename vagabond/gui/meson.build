@@ -74,8 +74,6 @@ guifiles = [
 'SequenceLine.cpp',
 'ShowMap.cpp',
 'ShowMap.h',
-'StarView.cpp',
-'StarView.h',
 'Toolkit.cpp',
 'VagWindow.cpp',
 'VaryColourOptions.cpp',
