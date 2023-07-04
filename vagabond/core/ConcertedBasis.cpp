@@ -58,26 +58,6 @@ ConcertedBasis::valueForParameter(BondSequence *seq, int tidx)
 	return sum;
 }
 
-// tidx: torsion angle
-// vec/n: vector you have to generate torsion angle
-/*
-float ConcertedBasis::parameterForVector(BondSequence *seq, int tidx)
-{
-	Coord::Interpolate<float> get_angle = valueForParameter(seq, tidx);
-	if (!get_angle)
-	{
-		return 0;
-	}
-
-	return get_angle(coord);
-}
-*/
-
-void ConcertedBasis::supplyMask(std::vector<bool> mask)
-{
-	_refineMask = mask;
-}
-
 void ConcertedBasis::setupAngleList()
 {
 	_angles.clear();
@@ -87,11 +67,6 @@ void ConcertedBasis::setupAngleList()
 		float start = _params[i]->value();
 		bool mask = !_params[i]->isConstrained();
 		
-		if (i < _refineMask.size())
-		{
-			mask &= _refineMask[i];
-		}
-
 		TorsionAngle ta = {start, mask};
 		_angles.push_back(ta);
 	}
@@ -217,17 +192,9 @@ void ConcertedBasis::prepare(int dims)
 	}
 }
 
-size_t ConcertedBasis::activeBonds()
-{
-	return parameterCount();
-}
-
 Coord::Interpolate<float> 
 ConcertedBasis::fullContribution(BondSequence *seq, int tidx)
 {
-	// tidx = parameter in _params vector
-	// contr_idx = parameter in the svd matrix, excluding constrained
-
 	if (tidx < 0 || tidx > _params.size())
 	{
 		return [](const Coord::Get &) { return 0;};

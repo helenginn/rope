@@ -47,29 +47,6 @@ SimpleBasis::valueForParameter(BondSequence *seq, int tidx)
 	}
 }
 
-/*
-float SimpleBasis::parameterForVector(BondSequence *seq, int idx)
-{
-	if (idx < 0)
-	{
-		return 0;
-	}
-	
-	TorsionAngle &ta = _angles[idx];
-	if (n == 0 || !ta.mask)
-	{
-		return ta.angle;
-	}
-	
-	if (idx < n)
-	{
-		return ta.angle + coord(idx);
-	}
-	
-	return ta.angle;
-}
-*/
-
 void SimpleBasis::prepare(int dims)
 {
 	_angles.clear();

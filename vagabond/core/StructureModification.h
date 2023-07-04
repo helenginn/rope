@@ -128,7 +128,6 @@ protected:
 
 	int _sideMissing = 0;
 	int _mainMissing = 0;
-	const Residue *_unusedId{};
 
 	struct Score
 	{

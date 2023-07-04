@@ -209,11 +209,6 @@ void StructureModification::checkMissingBonds(ConcertedBasis *cb)
 			_sideMissing++;
 		}
 	}
-	
-	if (_unusedId == nullptr)
-	{
-		_unusedId = cb->unusedTorsion();
-	}
 }
 
 void StructureModification::changeInstance(Instance *m)
@@ -221,7 +216,6 @@ void StructureModification::changeInstance(Instance *m)
 	_instance = m;
 	_sideMissing = 0;
 	_mainMissing = 0;
-	_unusedId = nullptr;
 	_axis = 0;
 	if (m != nullptr)
 	{
