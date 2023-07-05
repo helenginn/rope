@@ -343,10 +343,7 @@ void BondSequence::superpose()
 			glm::vec3 p = _blocks[j].target;
 			glm::vec3 q = _blocks[n].my_position();
 			
-			if (p.x == p.x)
-			{
-				pose.addPositionPair(p, q);
-			}
+			pose.addPositionPair(p, q);
 		}
 
 		pose.superpose();

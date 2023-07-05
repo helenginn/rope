@@ -179,7 +179,7 @@ double PositionRefinery::fullResidual()
 	_ncalls = 0;
 
 	Job job{};
-	job.requests = (JobType)(JobCalculateDeviations | JobExtractPositions);
+	job.requests = (JobType)(JobCalculateDeviations | JobPositionVector);
 	_calculator->submitJob(job);
 
 	Result *result = _calculator->acquireResult();
@@ -307,7 +307,7 @@ float PositionRefinery::getResult(int *job_id)
 		return FLT_MAX;
 	}
 
-	if (result->requests & JobExtractPositions)
+	if (result->requests & JobPositionVector)
 	{
 		result->transplantPositions();
 	}
@@ -333,7 +333,7 @@ int PositionRefinery::sendJob(const std::vector<float> &trial, bool absorb)
 	if (_ncalls % 200 == 0 || absorb)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
-		                                    JobExtractPositions);
+		                                    JobPositionVector);
 	}
 	_ncalls++;
 

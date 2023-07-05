@@ -113,6 +113,10 @@ glm::mat3x3 Superpose::getRotation(SVD &svd)
 
 void Superpose::addPositionPair(glm::vec3 &p, glm::vec3 &q)
 {
+	if (p.x != p.x || q.x != q.x)
+	{
+		return;
+	}
 	PosPair pair{};
 	pair.p = p;
 	pair.q = q;
