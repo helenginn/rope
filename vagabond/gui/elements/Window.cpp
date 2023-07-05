@@ -209,7 +209,7 @@ bool Window::tick()
 			if (event.key.keysym.sym == SDLK_ESCAPE)
 			{
 #ifndef __EMSCRIPTEN__
-				return false;
+				_current->askToQuit();
 #endif
 			}
 			_current->keyReleaseEvent(event.key.keysym.sym);

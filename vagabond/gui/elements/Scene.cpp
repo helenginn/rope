@@ -5,6 +5,7 @@
 #include "IndexResponder.h"
 #include "TextButton.h"
 #include "Scene.h"
+#include "AskYesNo.h"
 #include "Image.h"
 #include <vagabond/utils/gl_import.h>
 #include <iostream>
@@ -305,12 +306,24 @@ void Scene::addTitle(std::string title)
 	_titleText = text;
 }
 
+void Scene::askToQuit()
+{
+	AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to quit?",
+	                             "quit", this);
+	setModal(ayn);
+	viewChanged();
+}
+
 void Scene::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")
 	{
 		_previous->showSimple();
 		Window::setDelete(this);
+	}
+	else if (tag == "yes_quit")
+	{
+		exit(0);
 	}
 	if (tag == "remove_info" && _info != nullptr)
 	{

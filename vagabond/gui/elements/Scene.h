@@ -46,6 +46,8 @@ public:
 	{
 		_mustRefresh = true;
 	}
+
+	void askToQuit();
 	void setBackground();
 	void addTitle(std::string);
 	void setFutureTitle(std::string title)
