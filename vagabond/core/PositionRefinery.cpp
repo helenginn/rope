@@ -193,21 +193,13 @@ double PositionRefinery::fullResidual()
 	return dev;
 }
 
-void PositionRefinery::fullRefinement(AtomGroup *group)
-{
-	refineBetween(0, _nBonds);
-}
-
 void PositionRefinery::stepwiseRefinement(AtomGroup *group)
 {
 	int nb = _calculator->sequence()->blockCount() + 1;
 
 	for (size_t i = 0; i < nb; i++)
 	{
-		for (size_t j = 0; j < 2 * _progs + 1; j++)
-		{
-			refineBetween(i, i + _depthRange);
-		}
+		refineBetween(i, i + _depthRange);
 
 		if (_finish)
 		{
@@ -472,16 +464,5 @@ size_t PositionRefinery::parameterCount()
 	{
 		return 0;
 	}
-}
-
-std::function<float(int idx)> 
-PositionRefinery::acquireFromVector(const std::vector<float> &all)
-{
-	std::function<float(int idx)> get = [all](int idx)
-	{
-		return all[idx];
-	};
-	
-	return get;
 }
 

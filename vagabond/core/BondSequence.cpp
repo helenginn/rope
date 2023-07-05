@@ -319,43 +319,6 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	};
 }
 
-void BondSequence::fastCalculate()
-{
-	_customIdx = 0;
-
-	int start = _startCalc;
-	int end = _endCalc;
-	
-	acquireCustomVector(0);
-
-	if (_fullRecalc)
-	{
-		checkCustomVectorSizeFits();
-		start = 0;
-		end = _blocks.size();
-	}
-
-	for (size_t i = start; i < _blocks.size() && i < end; i++)
-	{
-		if (!_blocks[i].flag && !_fullRecalc && _blocks[i].atom != nullptr)
-		{
-			continue;
-		}
-
-		calculateBlock(i);
-	}
-	
-	_fullRecalc = false;
-	
-	if (job()->absorb)
-	{
-		_torsionBasis->absorbVector(_acquireCoord);
-	}
-
-	signal(SequencePositionsReady);
-
-}
-
 void BondSequence::superpose()
 {
 	if (!_superpose)
@@ -413,18 +376,7 @@ void BondSequence::superpose()
 
 void BondSequence::calculate()
 {
-	bool extract = true;
-	
-	if (job())
-	{
-		extract = (job()->requests & JobExtractPositions);
-	}
-
-	if (_skipSections && !_fullRecalc)
-	{
-		fastCalculate();
-		return;
-	}
+	bool extract = (job()->requests & JobExtractPositions);
 
 	_customIdx = 0;
 	
@@ -432,7 +384,14 @@ void BondSequence::calculate()
 	acquireCustomVector(sampleNum);
 	prewarnPositionSampler();
 	
-	for (size_t i = 0; i < _blocks.size(); i++)
+	int start = 0; int end = _blocks.size();
+	if (_skipSections && !_fullRecalc)
+	{
+		start = _startCalc;
+		end = _endCalc;
+	}
+	
+	for (size_t i = start; i < end && i < _blocks.size(); i++)
 	{
 		calculateBlock(i);
 		
@@ -447,6 +406,11 @@ void BondSequence::calculate()
 	_fullRecalc = false;
 	
 	superpose();
+
+	if (job()->absorb)
+	{
+		_torsionBasis->absorbVector(_acquireCoord);
+	}
 
 	signal(SequencePositionsReady);
 }
@@ -479,7 +443,6 @@ double BondSequence::calculateDeviations()
 			glm::vec3 moving = _blocks[i].moving;
 			moving *= frac;
 			target += moving;
-//			weight = 1 / (1 + glm::length(moving));
 		}
 
 		glm::vec3 diff = trial_pos - target;

@@ -207,7 +207,6 @@ private:
 	void generateBlocks();
 	void acquireCustomVector(int sampleNum);
 	void makeTorsionBasis();
-	void fastCalculate();
 	void prewarnPositionSampler();
 	void prewarnTorsions();
 

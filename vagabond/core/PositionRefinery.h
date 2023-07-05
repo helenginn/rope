@@ -68,7 +68,6 @@ protected:
 	int sendJob(const std::vector<float> &trial, bool absorb);
 	virtual float getResult(int *job_id);
 private:
-	std::function<float(int idx)> acquireFromVector(const std::vector<float> &all);
 	void refine(AtomGroup *group);
 	void refineThroughEach(AtomGroup *subset);
 	void grabNewAnchor(AtomGroup *subset);
@@ -79,7 +78,6 @@ private:
 	bool refineBetween(int start, int end);
 	double fullResidual();
 	void calculateActiveTorsions();
-	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
 
 	void addActiveIndices(std::set<Parameter *> &params);
