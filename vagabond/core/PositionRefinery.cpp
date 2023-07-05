@@ -131,26 +131,15 @@ void PositionRefinery::refine()
 
 void PositionRefinery::calculateActiveTorsions()
 {
-	_nActive = 0;
-	_progs = 0;
-	_mask = _calculator->sequenceHandler()->activeParameterMask(&_progs);
-
-	for (size_t i = 0; i < _mask.size(); i++)
-	{
-		if (_mask[i])
-		{
-			_nActive++;
-		}
-	}
+	_nActive = _calculator->sequenceHandler()->activeTorsions();
 }
 
-bool PositionRefinery::refineBetween(int start, int end, int side_max)
+bool PositionRefinery::refineBetween(int start, int end)
 {
 	_start = start;
 	_end = end;
 
 	_calculator->setMinMaxDepth(_start, _end);
-	_calculator->setMaxSideDepth(side_max);
 	_calculator->start();
 
 	calculateActiveTorsions();
@@ -172,10 +161,10 @@ bool PositionRefinery::refineBetween(int start, int end, int side_max)
 	if (improved)
 	{
 		const std::vector<float> &trial = se->bestResult();
-		std::vector<float> best = expandPoint(trial);
-		Coord::Get get = acquireFromVector(best);
-		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-		basis->absorbVector(get, best.size());
+		sendJob(trial, true);
+		Result *result = _calculator->acquireResult();
+		result->transplantPositions();
+		result->destroy();
 	}
 
 	_calculator->finish();
@@ -207,40 +196,6 @@ double PositionRefinery::fullResidual()
 void PositionRefinery::fullRefinement(AtomGroup *group)
 {
 	refineBetween(0, _nBonds);
-}
-
-bool *PositionRefinery::generateAbsorptionMask(std::set<Atom *> done)
-{
-	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-	
-	bool *mask = new bool[_nActive];
-	
-	for (size_t i = 0; i < _nActive; i++)
-	{
-		mask[i] = done.count(basis->atom(i)) == 0;
-	}
-	
-	size_t i = 0;
-	for (i = 0; i < _nActive; i++)
-	{
-		if (!mask[i])
-		{
-			for (size_t j = i; j < _nActive; j++)
-			{
-				mask[j] = false;
-			}
-
-			break;
-		}
-	}
-
-	if (i == 0)
-	{
-		delete [] mask;
-		return nullptr;
-	}
-
-	return mask;
 }
 
 void PositionRefinery::stepwiseRefinement(AtomGroup *group)
@@ -371,32 +326,19 @@ float PositionRefinery::getResult(int *job_id)
 	return score;
 }
 
-std::vector<float> PositionRefinery::expandPoint(const std::vector<float> &p)
-{
-	std::vector<float> expanded;
-	expanded.reserve(_mask.size());
-	int num = 0;
-
-	for (size_t i = 0; i < _mask.size(); i++)
-	{
-		expanded.push_back(_mask[i] ? p[num] : 0);
-		
-		if (_mask[i])
-		{
-			num++;
-		}
-	}
-	
-	return expanded;
-}
-
 int PositionRefinery::sendJob(const std::vector<float> &trial)
 {
-	Job job{};
-	job.requests = JobCalculateDeviations;
-	job.custom.allocate_vectors(1, _mask.size(), 0);
+	return sendJob(trial, false);
+}
 
-	if (_ncalls % 200 == 0)
+int PositionRefinery::sendJob(const std::vector<float> &trial, bool absorb)
+{
+	Job job{};
+	job.absorb = absorb;
+	job.requests = JobCalculateDeviations;
+	job.custom.allocate_vectors(1, trial.size(), 0);
+
+	if (_ncalls % 200 == 0 || absorb)
 	{
 		job.requests = static_cast<JobType>(JobCalculateDeviations | 
 		                                    JobExtractPositions);
@@ -405,11 +347,9 @@ int PositionRefinery::sendJob(const std::vector<float> &trial)
 
 	if (_stage == Positions)
 	{
-		std::vector<float> expanded = expandPoint(trial);
-
-		for (size_t i = 0; i < _mask.size(); i++)
+		for (size_t i = 0; i < trial.size(); i++)
 		{
-			job.custom.vecs[0].mean[i] = expanded[i];
+			job.custom.vecs[0].mean[i] = trial[i];
 		}
 	}
 	
@@ -498,12 +438,7 @@ void PositionRefinery::wiggleBonds(RefinementStage stage)
 		}
 		_engine->start();
 		std::vector<float> best = _engine->bestResult();
-		std::vector<float> full(_mask.size(), 0);
-
-		fullSizeVector(best, &full[0]);
-		Coord::Get get = acquireFromVector(full);
-		TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
-		basis->absorbVector(get, full.size());
+		sendJob(best, true);
 
 		std::cout << "Next: " << _engine->bestScore() << std::endl;
 		count++;
@@ -536,17 +471,6 @@ size_t PositionRefinery::parameterCount()
 	else
 	{
 		return 0;
-	}
-}
-
-void PositionRefinery::fullSizeVector(const std::vector<float> &all, float *dest)
-{
-	int count = parameterCount();
-	int curr = 0;
-	for (const int &idx : _activeIndices)
-	{
-		dest[idx] = all[curr] * (float)count;
-		curr++;
 	}
 }
 

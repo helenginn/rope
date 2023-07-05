@@ -138,7 +138,7 @@ struct Job
 
 	float fraction = 0;
 	int ticket = -1;
-	int save_id = -1;
+	bool absorb = false;
 	JobType requests;
 	PositionSampler *pos_sampler = nullptr;
 

@@ -60,8 +60,7 @@ public:
 	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
 	                                                    int tidx) = 0;
 
-	virtual void absorbVector(const Coord::Get &coordinate, int n, 
-	                          bool *mask = nullptr);
+	virtual void absorbVector(const Coord::Get &coord);
 
 	virtual void prepareRecalculation() {};
 	std::vector<int> grabIndices(const std::set<Parameter *> &params);

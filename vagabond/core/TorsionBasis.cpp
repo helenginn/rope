@@ -62,22 +62,14 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	return basis;
 }
 
-void TorsionBasis::absorbVector(const Coord::Get &coord, int n, bool *mask)
+void TorsionBasis::absorbVector(const Coord::Get &coord)
 {
 	for (size_t i = 0; i < parameterCount(); i++)
 	{
-		if (mask && !mask[i])
-		{
-			continue;
-		}
-
-		float torsion = valueForParameter(nullptr, i)(coord);
+		float torsion = coord(i);
 		
-//		std::cout << _params[i]->desc() << " " << torsion << std::endl;
-		
-		_params[i]->setValue(torsion);
-		_angles[i].angle = torsion;
-		
+		_angles[i].angle += torsion;
+		_params[i]->setValue(_angles[i].angle);
 		_params[i]->setRefined(true);
 	}
 

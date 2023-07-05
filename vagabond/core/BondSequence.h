@@ -25,6 +25,7 @@
 #include <climits>
 #include "../utils/glm_import.h"
 #include <vagabond/utils/version.h>
+#include <vagabond/utils/ConvertIndex.h>
 #include "AtomPosMap.h"
 #include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
@@ -113,6 +114,8 @@ public:
 		return _maxDepth;
 	}
 	
+	int activeTorsions() const;
+	
 	void setTorsionBasisType(TorsionBasis::Type type)
 	{
 		_basisType = type;
@@ -134,11 +137,7 @@ public:
 	void addToGraph(AnchorExtension &atom);
 	
 	void multiplyUpBySampleCount();
-	void reflagDepth(int min, int max, int sidemax);
-	
-	const size_t flagged() const;
-
-	std::vector<bool> activeParameterMask(size_t *programs);
+	void reflagDepth(int min, int max);
 	
 	void prepareForIdle();
 
@@ -184,6 +183,11 @@ public:
 	const int &nCoords() const
 	{
 		return _nCoord;
+	}
+
+	const Coord::Get &acquireCoord() const
+	{
+		return _acquireCoord;
 	}
 private:
 
@@ -255,16 +259,12 @@ private:
 	bool _acceptablePositions = false;
 	Vec3s _atomPositions;
 	Floats _bondTorsions;
+	
+	Index::Convert _convertIndex = Index::identity();
+	int _activeTorsions = 0;
 
 	AtomPosMap _posAtoms;
 	AtomPosList _posList;
-	
-	struct Torsioner
-	{
-		Coord::Interpolate<float> get_torsion;
-		Coord::NeedsUpdate needs_update;
-	};
-	std::map<int, std::map<int, Torsioner>> _saveIdxFunc;
 };
 
 #endif

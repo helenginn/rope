@@ -65,10 +65,10 @@ public:
 protected:
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
+	int sendJob(const std::vector<float> &trial, bool absorb);
 	virtual float getResult(int *job_id);
 private:
 	std::function<float(int idx)> acquireFromVector(const std::vector<float> &all);
-	void fullSizeVector(const std::vector<float> &all, float *dest);
 	void refine(AtomGroup *group);
 	void refineThroughEach(AtomGroup *subset);
 	void grabNewAnchor(AtomGroup *subset);
@@ -76,13 +76,11 @@ private:
 	void wiggleBond(const Parameter *t);
 
 	void setupCalculator(AtomGroup *group, bool loopy, int jointLimit = -1);
-	bool refineBetween(int start, int end, int side_max = INT_MAX);
+	bool refineBetween(int start, int end);
 	double fullResidual();
-	std::vector<float> expandPoint(const std::vector<float> &p);
 	void calculateActiveTorsions();
 	void fullRefinement(AtomGroup *group);
 	void stepwiseRefinement(AtomGroup *group);
-	bool *generateAbsorptionMask(std::set<Atom *> done);
 
 	void addActiveIndices(std::set<Parameter *> &params);
 	void clearActiveIndices();

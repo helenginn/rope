@@ -17,6 +17,8 @@ utilfiles = [
 'Hypersphere.h',
 'SpecialTable.h',
 'ProbDist.h',
+'AcquireCoord.h',
+'ConvertIndex.h',
 'histogram.h',
 'histogram.cpp',
 'brain/Layer.cpp',

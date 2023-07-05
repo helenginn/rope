@@ -205,24 +205,15 @@ TorsionBasis *BondSequenceHandler::torsionBasis() const
 	return _sequences[0]->torsionBasis();
 }
 
-void BondSequenceHandler::imposeDepthLimits(int min, int max, int sidemax)
+void BondSequenceHandler::imposeDepthLimits(int min, int max)
 {
 	for (BondSequence *sequence : _sequences)
 	{
-		sequence->reflagDepth(min, max, sidemax);
+		sequence->reflagDepth(min, max);
 	}
 }
 
-std::vector<bool> BondSequenceHandler::activeParameterMask(size_t *programs) 
+int BondSequenceHandler::activeTorsions()
 {
-	std::vector<bool> mask;
-
-	if (_sequences.size() == 0)
-	{
-		return mask;
-	}
-	
-	mask = _sequences[0]->activeParameterMask(programs);
-
-	return mask;
+	return sequence(0)->activeTorsions();
 }

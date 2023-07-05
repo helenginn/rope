@@ -238,12 +238,11 @@ int BondSequence::calculateBlock(int idx)
 	b.writeToChildren(_blocks, idx, _usingPrograms);
 
 	int &progidx = b.program;
-	Coord::Get coord_copy = _acquireCoord;
 
 	if (progidx >= 0 && _usingPrograms)
 	{
 		_programs[progidx].setSequence(this);
-		_programs[progidx].run(_blocks, idx, coord_copy, _nCoord);
+		_programs[progidx].run(_blocks, idx, _acquireCoord, _nCoord);
 	}
 
 	return (b.atom == nullptr);
@@ -301,12 +300,20 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	float *vec = custom->mean;
 	_nCoord = custom->size;
 	
-	_acquireCoord = [tensor, vec, sampler, sampleNum](const int idx) -> float
+	const Index::Convert &convert = _convertIndex;
+	_acquireCoord = [tensor, vec, sampler, 
+	                 sampleNum, &convert](const int idx) -> float
 	{
-		float val = vec[idx];
+		int true_idx = convert(idx);
+		if (true_idx < 0)
+		{
+			return 0;
+		}
+
+		float val = vec[true_idx];
 		if (sampler)
 		{
-			sampler->add_to_vec_index(val, idx, tensor, sampleNum);
+			sampler->add_to_vec_index(val, true_idx, tensor, sampleNum);
 		}
 		return val;
 	};
@@ -340,6 +347,11 @@ void BondSequence::fastCalculate()
 	
 	_fullRecalc = false;
 	
+	if (job()->absorb)
+	{
+		_torsionBasis->absorbVector(_acquireCoord);
+	}
+
 	signal(SequencePositionsReady);
 
 }
@@ -563,26 +575,14 @@ void BondSequence::beginJob(Job *job)
 	signal(SequenceCalculateReady);
 }
 
-const size_t BondSequence::flagged() const
+void BondSequence::reflagDepth(int min, int max)
 {
-	size_t count = 0;
-
-	for (size_t i = 0; i < _blocks.size(); i++)
+	bool clear = false;
+	if (min == 0 && max == INT_MAX)
 	{
-		const AtomBlock &block = _blocks[i];
-
-		/* it's the beginning anchor atom, ignore */
-		if (block.atom != nullptr && block.flag)
-		{
-			count++;
-		}
+		clear = true;
 	}
 
-	return count;
-}
-
-void BondSequence::reflagDepth(int min, int max, int sidemax)
-{
 	_posAtoms.clear();
 
 	_startCalc = 0;
@@ -591,15 +591,16 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
 		AtomBlock &block = _blocks[i];
-		block.flag = false;
+		block.flag = clear;
 	}
 
-	std::queue<AtomBlockTodo> todo;
-	
-	if (min >= _blocks.size())
+	if (clear || min >= _blocks.size())
 	{
+		_convertIndex = Index::identity();
 		return;
 	}
+	
+	std::queue<AtomBlockTodo> todo;
 	
 	if (_blocks[min].atom == nullptr)
 	{
@@ -613,6 +614,8 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	_startCalc = min;
 	int last = min;
 	int count = 0;
+	
+	std::vector<int> torsion_idxs{};
 
 	while (todo.size() > 0)
 	{
@@ -634,6 +637,21 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 		}
 		
 		block.flag = true;
+		
+		if (block.torsion_idx >= 0)
+		{
+			torsion_idxs.push_back(block.torsion_idx);
+		}
+
+		if (block.program >= 0)
+		{
+			RingProgram *p = &_programs[block.program];
+			for (size_t i = 0; i < p->parameterCount(); i++)
+			{
+				int idx = p->parameterIndex(i);
+				torsion_idxs.push_back(idx);
+			}
+		}
 		
 		if (num >= max)
 		{
@@ -669,54 +687,19 @@ void BondSequence::reflagDepth(int min, int max, int sidemax)
 	{
 		_startCalc--;
 	}
+	
+	_convertIndex = Index::from_list(torsion_idxs);
+	_activeTorsions = torsion_idxs.size();
 
 	_fullRecalc = true;
-	size_t progs;
-	_torsionBasis->supplyMask(activeParameterMask(&progs));
-}
-
-
-std::vector<bool> BondSequence::activeParameterMask(size_t *programs)
-{
-	std::vector<bool> mask = std::vector<bool>(_torsionBasis->parameterCount(),
-	                                           false);
-	
-	std::vector<RingProgram *> activePrograms;
-
-	for (AtomBlock &block : _blocks)
-	{
-		if (!block.flag)
-		{
-			continue;
-		}
-
-		int idx = block.torsion_idx;
-		if (idx >= 0)
-		{
-			mask[idx] = true;
-		}
-		
-		if (block.program >= 0)
-		{
-			activePrograms.push_back(&_programs[block.program]);
-		}
-	}
-	
-	for (RingProgram *p : activePrograms)
-	{
-		for (size_t i = 0; i < p->parameterCount(); i++)
-		{
-			int idx = p->parameterIndex(i);
-			mask[idx] = true;
-		}
-	}
-	
-	*programs = activePrograms.size();
-	
-	return mask;
 }
 
 BondCalculator *BondSequence::calculator()
 {
 	return _handler->calculator();
+}
+
+int BondSequence::activeTorsions() const
+{
+	return _activeTorsions;
 }

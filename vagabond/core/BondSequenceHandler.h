@@ -102,12 +102,10 @@ public:
 	/** Changes which atoms are included for calculation of position
 	 * deviation 
 	 * 	@param min minimum depth from anchor position
-	 * 	@param max maximum depth from anchor position 
-	 * 	@param sidemax maximum depth permitted for side branches */
-	void imposeDepthLimits(int min, int max, int sidemax);
+	 * 	@param max maximum depth from anchor position  */
+	void imposeDepthLimits(int min, int max);
 
-	std::vector<bool> activeParameterMask(size_t *programs);
-
+	int activeTorsions();
 private:
 	void prewarnPositionSampler();
 	void sanityCheckThreads();

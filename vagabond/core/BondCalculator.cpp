@@ -54,7 +54,6 @@ void BondCalculator::reset()
 
 	_minDepth = 0;
 	_maxDepth = INT_MAX;
-	_sideMax = INT_MAX;
 	_atoms.clear();
 }
 
@@ -281,7 +280,7 @@ void BondCalculator::start()
 
 	if (_changedDepth)
 	{
-		_sequenceHandler->imposeDepthLimits(_minDepth, _maxDepth, _sideMax);
+		_sequenceHandler->imposeDepthLimits(_minDepth, _maxDepth);
 		_changedDepth = false;
 	}
 

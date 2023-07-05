@@ -16,50 +16,45 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AcquireCoord__
-#define __vagabond__AcquireCoord__
+#ifndef __vagabond__ConvertIndex__
+#define __vagabond__ConvertIndex__
 
-#include <vector>
-#include <functional>
+#include <iostream>
 
-namespace Coord
+namespace Index
 {
-	typedef std::function<float(int idx)> Get;
+	typedef std::function<int(const int &idx)> Convert;
 
-	template <typename Type> 
-	using Interpolate = std::function<Type(const Coord::Get &)>;
-
-	using NeedsUpdate = std::function<bool(const Coord::Get &)>;
-	
-	template <typename Type>
-	Get fromConversionAndVector(const std::vector<Type> &all,
-	                            std::function<int(const int &idx)> &convert)
+	inline Convert identity()
 	{
-		Get get = [all, convert](int idx)
+		Convert conv = [](int idx)
 		{
-			if (idx < 0)
+			return idx;
+		};
+
+		return conv;
+	}
+
+	inline Convert from_list(const std::vector<int> &mapped)
+	{
+		std::map<int, int> lookup;
+		for (size_t i = 0; i < mapped.size(); i++)
+		{
+			lookup[mapped[i]] = i;
+		}
+
+		Convert conv = [lookup](int idx)
+		{
+			if (lookup.count(idx) == 0)
 			{
-				return 0;
+				return -1;
 			}
-
-			return all[convert(idx)];
+			
+			return lookup.at(idx);
 		};
 
-		return get;
-
+		return conv;
 	}
-
-	template <typename Type>
-	Get fromVector(const std::vector<Type> &all)
-	{
-		Get get = [all](int idx)
-		{
-			return all[idx];
-		};
-
-		return get;
-	}
-
 }
 
 #endif
