@@ -42,7 +42,7 @@ float AreaMeasurer::surfaceArea()
 	_contacts->updateSheet(_posMap);
 	
 	// calculate
-	float area = 10;
+	float area = 0;
 	//fibonacci points test
 	std::vector<glm::vec3> points = _lattice.getPoints();
 
@@ -57,6 +57,13 @@ float AreaMeasurer::surfaceArea()
 		}
 	}
 	//end fibonacci points test
+
+  for (std::pair<Atom *const, WithPos> atom : _posMap)
+	{
+    const float &exposure = AreaMeasurer::fibExposureSingleAtom(atom.first);
+		const float &area_atom = areaFromExposure(exposure, atom.first);
+		area += area_atom;
+	}
 
 	return area;
 }
