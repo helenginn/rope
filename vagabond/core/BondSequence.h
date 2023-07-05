@@ -79,8 +79,6 @@ public:
 		return _blocks.size();
 	}
 	
-	void wipe();
-	
 	glm::vec3 positionForPreviousBlock(int i)
 	{
 		return _blocks[i].parent_position();

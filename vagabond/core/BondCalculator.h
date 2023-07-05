@@ -171,8 +171,6 @@ public:
 	TorsionBasis *torsionBasis();
 	const Grapher &grapher() const;
 	
-	void wipeCalculations();
-	
 	void setReferenceDensity(OriginGrid<fftwf_complex> *dens)
 	{
 		_refDensity = dens;

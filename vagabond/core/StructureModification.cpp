@@ -192,30 +192,12 @@ bool StructureModification::fillBasis(ConcertedBasis *cb,
                                       const RTAngles &angles, int axis)
 {
 	bool result = cb->fillFromInstanceList(_instance, axis, angles);
-	checkMissingBonds(cb);
 	return result;
-}
-
-void StructureModification::checkMissingBonds(ConcertedBasis *cb)
-{
-	for (Parameter *bt : cb->missingBonds())
-	{
-		if (bt->coversMainChain())
-		{
-			_mainMissing++;
-		}
-		else
-		{
-			_sideMissing++;
-		}
-	}
 }
 
 void StructureModification::changeInstance(Instance *m)
 {
 	_instance = m;
-	_sideMissing = 0;
-	_mainMissing = 0;
 	_axis = 0;
 	if (m != nullptr)
 	{

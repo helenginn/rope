@@ -48,11 +48,6 @@ public:
 
 	bool reverseLookup(Instance *inst, int axis,
 	                   const RTAngles &angles);
-
-	const std::vector<Parameter *> &missingBonds() const
-	{
-		return _missing;
-	}
 protected:
 	Coord::Interpolate<float> fullContribution(BondSequence *seq, int tidx);
 
@@ -62,14 +57,8 @@ private:
 	void prepareSVD();
 	void setupAngleList();
 
-	std::vector<Parameter *> _missing;
-
 	bool _custom = false;
-	
-	/* one idx per every torsion angle; >=0 if refined, -1 if not refined 
-	 * where value < _nActive*/
-	size_t _nActive;
-	int _dims;
+	int _dims = 0;
 
 	PCA::SVD _svd{};
 };

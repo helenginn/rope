@@ -106,7 +106,6 @@ protected:
 	bool fillBasis(ConcertedBasis *cb, const RTAngles &angles, int axis = 0);
 	void supplyTorsionLists();
 
-	void checkMissingBonds(ConcertedBasis *cb);
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
 	bool checkForInstance(AtomGroup *grp);
@@ -125,9 +124,6 @@ protected:
 	int _dims = 1;
 	int _threads = 1;
 	int _axis = 0;
-
-	int _sideMissing = 0;
-	int _mainMissing = 0;
 
 	struct Score
 	{

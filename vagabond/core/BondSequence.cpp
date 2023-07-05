@@ -189,11 +189,6 @@ float BondSequence::fetchTorsionForBlock(int block_idx)
 	return fetchTorsion(torsion_idx);
 }
 
-void BondSequence::wipe()
-{
-
-}
-
 // ensures that the position sampler can pre-calculate all the necessary atom
 // positions 
 void BondSequence::prewarnPositionSampler()
@@ -485,8 +480,6 @@ double BondSequence::calculateDeviations()
 		sum += glm::length(diff) / weight;
 		count += weight;
 	}
-	
-//	std::cout << "Score: " << sum / count << std::endl;
 
 	return sum / count;
 }
@@ -591,7 +584,6 @@ const size_t BondSequence::flagged() const
 void BondSequence::reflagDepth(int min, int max, int sidemax)
 {
 	_posAtoms.clear();
-	wipe();
 
 	_startCalc = 0;
 	_endCalc = INT_MAX;

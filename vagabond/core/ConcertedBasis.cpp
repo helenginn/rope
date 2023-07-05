@@ -172,7 +172,6 @@ bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
 		if (value != value)
 		{
 			value = 0;
-			_missing.push_back(t);
 		}
 		
 		_svd.u[i][axis] = value;

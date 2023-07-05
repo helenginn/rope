@@ -466,11 +466,3 @@ const Grapher &BondCalculator::grapher() const
 	return _sequenceHandler->sequence(0)->grapher();
 }
 
-void BondCalculator::wipeCalculations()
-{
-	for (int i = 0; i < _sequenceHandler->sequenceCount(); i++)
-	{
-		sequence(i)->wipe();
-	}
-
-}
