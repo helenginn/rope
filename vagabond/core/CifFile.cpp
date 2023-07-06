@@ -155,6 +155,7 @@ void CifFile::parseFileContents(std::string file)
 
 void CifFile::parse()
 {
+	geometryTable();
 	parseFileContents(_filename);
 	
 	if (_knot != KnotNone && _macroAtoms->size() > 0)
@@ -165,7 +166,7 @@ void CifFile::parse()
 	if (_knot != KnotNone)
 	{
 		AtomGroup *ptr = (_macroAtoms->size() == 0 ? _compAtoms : _macroAtoms);
-		Knotter knotter(ptr, _table);
+		Knotter knotter(ptr, geometryTable());
 		
 		if (_knot == KnotAngles)
 		{

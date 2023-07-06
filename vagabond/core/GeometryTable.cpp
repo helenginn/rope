@@ -530,3 +530,14 @@ AtomGroup *GeometryTable::constructResidue(std::string code,
 	
 	return ag;
 }
+
+GeometryTable *File::geometryTable()
+{
+	if (!_table)
+	{
+		_table = new GeometryTable();
+	}
+
+	return _table;
+}
+

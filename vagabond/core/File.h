@@ -131,13 +131,8 @@ public:
 		return _reflections.size();
 	}
 	
-	/** Warning: passes ownership of the Table onto the caller.
-	 * @returns GeometryTable containing all geometry found in file */
-	GeometryTable *geometryTable()
-	{
-		_accessedTable = true;
-		return _table;
-	}
+	/** @returns GeometryTable containing all geometry found in file */
+	GeometryTable *geometryTable();
 	
 	void setGeometryTable(GeometryTable *other)
 	{
