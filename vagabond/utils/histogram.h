@@ -2,6 +2,7 @@
 #define __vagabond__histogram__
 
 #include <vector>
+#include <climits>
 #include <float.h>
 #include <climits>
 

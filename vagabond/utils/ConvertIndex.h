@@ -20,6 +20,7 @@
 #define __vagabond__ConvertIndex__
 
 #include <iostream>
+#include <functional>
 
 namespace Index
 {
