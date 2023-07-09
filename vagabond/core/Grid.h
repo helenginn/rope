@@ -179,6 +179,8 @@ public:
 			                      func(elementValue(i));
 		                       });
 	}
+	
+	void copy_data_from(Grid<T> *other);
 
 	virtual float sum();
 	virtual float mean();

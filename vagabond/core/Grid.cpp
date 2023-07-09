@@ -167,6 +167,17 @@ void Grid<T>::limits(int &mx, int &my, int &mz)
 }
 
 template <class T>
+void Grid<T>::copy_data_from(Grid<T> *other)
+{
+	if (other->nn() != nn())
+	{
+		throw std::runtime_error("Mismatch in data sizes");
+	}
+
+	memcpy(_data, other->_data, other->nn() * other->eleSize());
+}
+
+template <class T>
 float Grid<T>::sum()
 {
 	float sum = 0;
