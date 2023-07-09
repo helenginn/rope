@@ -18,7 +18,7 @@ Modal::Modal(Scene *scene, double width, double height) : Box()
 	_darker->setFragmentShaderFile("assets/shaders/shade.fsh");
 
 	addQuad(0.9);
-	setColour(0.1, 0.1, 0.1);
+	setColour(0.0, 0.0, 0.0);
 	rescale(width, height);
 	setImage("assets/images/box.png");
 	
