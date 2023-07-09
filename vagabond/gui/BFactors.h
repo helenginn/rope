@@ -16,44 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AddEntity__
-#define __vagabond__AddEntity__
+#ifndef __vagabond__BFactors__
+#define __vagabond__BFactors__
 
-#include <vagabond/core/PolymerEntity.h>
+#include <vagabond/gui/elements/Scene.h>
 
-#include "AddModel.h"
+class Entity;
 
-class ChooseEntity;
-class TextEntry;
-class Chain;
-
-class AddEntity : public AddObject<PolymerEntity>
+class BFactors : public Scene
 {
 public:
-	AddEntity(Scene *prev, Chain *chain);
-	AddEntity(Scene *prev, std::string seq);
-	AddEntity(Scene *prev, PolymerEntity *ent);
-
-	void setCaller(ChooseEntity *caller)
-	{
-		_caller = caller;
-	}
+	BFactors(Scene *prev, Entity *entity);
 
 	virtual void setup();
-
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	void loadConfSpaceView(std::string suffix);
-	void serialRefinement();
-	void textOrChoose(std::string &file, std::string other);
-	void showFirstPage();
-	void showSecondPage();
-	void refreshInfo();
-	void searchPdb();
+	Entity *_entity = nullptr;
 
-	Chain *_chain = nullptr;
-	TextEntry *_name;
-	ChooseEntity *_caller = nullptr;
 };
 
 #endif

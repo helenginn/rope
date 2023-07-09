@@ -8,6 +8,8 @@ guifiles = [
 'AxesMenu.cpp',
 'AxisExplorer.cpp',
 'BallAndStickOptions.cpp',
+'BFactors.cpp',
+'BFactors.h',
 'CalculateMetadata.cpp',
 'CandidateView.cpp',
 'ChainAssignment.cpp',

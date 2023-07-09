@@ -44,6 +44,7 @@
 #include <vagabond/gui/SearchPDB.h>
 #include <vagabond/gui/SerialRefiner.h>
 #include <vagabond/gui/PathFinding.h>
+#include <vagabond/gui/BFactors.h>
 
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -66,6 +67,193 @@ AddEntity::AddEntity(Scene *prev, std::string str) : Scene(prev), AddObject(prev
 AddEntity::AddEntity(Scene *prev, PolymerEntity *ent) : 
 Scene(prev), AddObject(prev, ent)
 {
+
+}
+
+void AddEntity::showFirstPage()
+{
+	float top = 0.3;
+	float inc = 0.08;
+
+	deleteTemps();
+
+	if (!_existing && _obj.hasSequence())
+	{
+		{
+			Text *t = new Text("Reference sequence:");
+			t->setLeft(0.15, top);
+			t->addAltTag("Models of this entity will align to this sequence");
+			addObject(t);
+		}
+		{
+			TextButton *t = SequenceView::button(_obj.sequence(), this);
+			t->setReturnTag("sequence");
+			t->setRight(0.85, top);
+			addObject(t);
+		}
+	}
+	else if (_obj.hasSequence())
+	{
+		ImageButton *button = new ImageButton("assets/images/sequence.png", this);
+		button->resize(0.2);
+		button->setReturnTag("sequence");
+		button->setCentre(0.2, 0.3);
+		addTempObject(button);
+
+		Text *text = new Text("Sequence");
+		text->resize(0.8);
+		text->setCentre(0.2, 0.4);
+		addTempObject(text);
+	}
+	
+	top += inc;
+
+	if (_existing)
+	{
+		{
+			std::string str = i_to_str(_obj.modelCount()) + " models / ";
+			str += i_to_str(_obj.moleculeCount()) + " molecules";
+			Text *t = new Text(str);
+			t->setCentre(0.5, 0.15);
+			t->resize(0.8);
+			addTempObject(t);
+		}
+
+		{
+			ImageButton *button = new ImageButton("assets/images/confspace.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("conf_space");
+			button->setCentre(0.4, 0.3);
+			addTempObject(button);
+
+			Text *text = new Text("RoPE space");
+			text->setCentre(0.4, 0.4);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+
+		top += inc;
+
+		{
+			ImageButton *button = new ImageButton("assets/images/us28.png", 
+			                                      this);
+			button->resize(0.12);
+			button->setReturnTag("refine");
+			button->setCentre(0.2, 0.6);
+			addTempObject(button);
+
+			Text *text = new Text("Refine all");
+			text->setCentre(0.2, 0.7);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+
+		{
+			ImageButton *button = new ImageButton("assets/images/search.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("search_pdb");
+			button->setCentre(0.6, 0.3);
+			addTempObject(button);
+
+			Text *text = new Text("Search PDB");
+			text->setCentre(0.6, 0.4);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+
+		{
+			ImageButton *button = new ImageButton("assets/images/misc_data.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("metadata");
+			button->setCentre(0.8, 0.3);
+			addTempObject(button);
+
+			Text *text = new Text("Add metadata");
+			text->setCentre(0.8, 0.4);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+
+		{
+			ImageButton *button = new ImageButton("assets/images/eye.png", 
+			                                      this);
+			button->resize(0.2);
+			button->setReturnTag("display_options");
+			button->setCentre(0.4, 0.6);
+			addTempObject(button);
+
+			Text *text = new Text("Display options");
+			text->setCentre(0.4, 0.7);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+
+		if (_obj.hasSequence())
+		{
+			ImageButton *b = new ImageButton("assets/images/phenylalanine.png", 
+			                                      this);
+			b->resize(0.15);
+			b->setReturnTag("fix_issues");
+			b->setCentre(0.6, 0.6);
+			addTempObject(b);
+
+			Text *text = new Text("Fix issues");
+			text->setCentre(0.6, 0.7);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+		
+		{
+			ImageButton *button = new ImageButton("assets/images/bee.png", 
+			                                      this);
+			button->resize(0.19);
+			button->setReturnTag("b_factors");
+			button->setCentre(0.79, 0.58);
+			addTempObject(button);
+
+			Text *text = new Text("B factors");
+			text->setCentre(0.8, 0.7);
+			text->resize(0.8);
+			addTempObject(text);
+		}
+
+#ifdef VERSION_TRIANGLES
+		ImageButton *button = ImageButton::arrow(-90, this,
+		                                         "assets/images/big_button.png");
+		button->setCentre(0.92, 0.5);
+		button->resize(3.f);
+		button->setReturnTag("second_page");
+		addTempObject(button);
+#endif
+	}
+}
+
+void AddEntity::showSecondPage()
+{
+	deleteTemps();
+	if (_obj.hasSequence())
+	{
+		ImageButton *b = new ImageButton("assets/images/map.png", this);
+		b->resize(0.15);
+		b->setReturnTag("path_finding");
+		b->setCentre(0.2, 0.3);
+		addTempObject(b);
+
+		Text *text = new Text("Pathfinding");
+		text->setCentre(0.2, 0.4);
+		text->resize(0.8);
+		addTempObject(text);
+	}
+
+	ImageButton *button = ImageButton::arrow(90, this,
+	                                         "assets/images/big_button.png");
+	button->resize(3.f);
+	button->setCentre(0.08, 0.5);
+	button->setReturnTag("first_page");
+	addTempObject(button);
 
 }
 
@@ -106,153 +294,7 @@ void AddEntity::setup()
 		}
 	}
 	
-	top += inc;
-
-	if (!_existing && _obj.hasSequence())
-	{
-		{
-			Text *t = new Text("Reference sequence:");
-			t->setLeft(0.15, top);
-			t->addAltTag("Models of this entity will align to this sequence");
-			addObject(t);
-		}
-		{
-			TextButton *t = SequenceView::button(_obj.sequence(), this);
-			t->setReturnTag("sequence");
-			t->setRight(0.85, top);
-			addObject(t);
-		}
-	}
-	else if (_obj.hasSequence())
-	{
-		ImageButton *button = new ImageButton("assets/images/sequence.png", this);
-		button->resize(0.2);
-		button->setReturnTag("sequence");
-		button->setCentre(0.2, 0.3);
-		addObject(button);
-
-		Text *text = new Text("Sequence");
-		text->resize(0.8);
-		text->setCentre(0.2, 0.4);
-		addObject(text);
-	}
-	
-	top += inc;
-
-	if (_existing)
-	{
-		{
-			std::string str = i_to_str(_obj.modelCount()) + " models / ";
-			str += i_to_str(_obj.moleculeCount()) + " molecules";
-			Text *t = new Text(str);
-			t->setCentre(0.5, 0.15);
-			t->resize(0.8);
-			addObject(t);
-		}
-
-		{
-			ImageButton *button = new ImageButton("assets/images/confspace.png", 
-			                                      this);
-			button->resize(0.2);
-			button->setReturnTag("conf_space");
-			button->setCentre(0.4, 0.3);
-			addObject(button);
-
-			Text *text = new Text("RoPE space");
-			text->setCentre(0.4, 0.4);
-			text->resize(0.8);
-			addObject(text);
-		}
-
-		top += inc;
-
-		{
-			ImageButton *button = new ImageButton("assets/images/us28.png", 
-			                                      this);
-			button->resize(0.12);
-			button->setReturnTag("refine");
-			button->setCentre(0.2, 0.6);
-			addObject(button);
-
-			Text *text = new Text("Refine all");
-			text->setCentre(0.2, 0.7);
-			text->resize(0.8);
-			addObject(text);
-		}
-
-		{
-			ImageButton *button = new ImageButton("assets/images/search.png", 
-			                                      this);
-			button->resize(0.2);
-			button->setReturnTag("search_pdb");
-			button->setCentre(0.6, 0.3);
-			addObject(button);
-
-			Text *text = new Text("Search PDB");
-			text->setCentre(0.6, 0.4);
-			text->resize(0.8);
-			addObject(text);
-		}
-
-		{
-			ImageButton *button = new ImageButton("assets/images/misc_data.png", 
-			                                      this);
-			button->resize(0.2);
-			button->setReturnTag("metadata");
-			button->setCentre(0.8, 0.3);
-			addObject(button);
-
-			Text *text = new Text("Add metadata");
-			text->setCentre(0.8, 0.4);
-			text->resize(0.8);
-			addObject(text);
-		}
-
-		{
-			ImageButton *button = new ImageButton("assets/images/eye.png", 
-			                                      this);
-			button->resize(0.2);
-			button->setReturnTag("display_options");
-			button->setCentre(0.4, 0.6);
-			addObject(button);
-
-			Text *text = new Text("Display options");
-			text->setCentre(0.4, 0.7);
-			text->resize(0.8);
-			addObject(text);
-		}
-
-		if (_obj.hasSequence())
-		{
-			ImageButton *b = new ImageButton("assets/images/phenylalanine.png", 
-			                                      this);
-			b->resize(0.15);
-			b->setReturnTag("fix_issues");
-			b->setCentre(0.6, 0.6);
-			addObject(b);
-
-			Text *text = new Text("Fix issues");
-			text->setCentre(0.6, 0.7);
-			text->resize(0.8);
-			addObject(text);
-		}
-
-#ifdef VERSION_TRIANGLES
-		if (_obj.hasSequence())
-		{
-			ImageButton *b = new ImageButton("assets/images/map.png", this);
-			b->resize(0.15);
-			b->setReturnTag("path_finding");
-			b->setCentre(0.8, 0.6);
-			addObject(b);
-
-			Text *text = new Text("Pathfinding");
-			text->setCentre(0.8, 0.7);
-			text->resize(0.8);
-			addObject(text);
-		}
-#endif
-	}
+	showFirstPage();
 
 	AddObject::setup();
 }
@@ -343,6 +385,14 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		_obj.setName(_name->scratch());
 		refreshInfo();
 	}
+	else if (tag == "second_page" && _existing)
+	{
+		showSecondPage();
+	}
+	else if (tag == "first_page" && _existing)
+	{
+		showFirstPage();
+	}
 	else if (tag == "sequence" && _existing)
 	{
 		DistanceMaker *view = new DistanceMaker(this, _obj.sequence());
@@ -371,6 +421,11 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		m->addOption("atom positions", "atom_positions");
 		m->setup(button);
 		setModal(m);
+	}
+	else if (tag == "b_factors")
+	{
+		BFactors *bf = new BFactors(this, &_obj);
+		bf->show();
 	}
 	else if (tag == "search_pdb")
 	{
