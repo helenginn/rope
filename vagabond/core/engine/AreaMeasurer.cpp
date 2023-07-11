@@ -63,6 +63,8 @@ float AreaMeasurer::surfaceArea()
     const float &exposure = AreaMeasurer::fibExposureSingleAtom(atom.first);
 		const float &area_atom = areaFromExposure(exposure, atom.first);
 		area += area_atom;
+		std::cout << "Exposure of " << atom.first->elementSymbol() << " is " << exposure << std::endl;
+		std::cout << "Area of " << atom.first->elementSymbol() << " is " << area_atom << std::endl;
 	}
 
 	return area;
@@ -87,6 +89,7 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 				if (glm::length(point - other_atom.second.ave) <= radius + 1.52f) // + O-radius to account for solvent molecule size
 				{
 					points_in_overlap.push_back(point);
+					break;
 				}
 			}
 		}
@@ -121,6 +124,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 				if (glm::length(point - other_atom->derivedPosition()) <= radius + 1.52f) // + O-radius to account for solvent molecule size
 				{
 					points_in_overlap.push_back(point);
+					break;
 				}
 			}
 		}
