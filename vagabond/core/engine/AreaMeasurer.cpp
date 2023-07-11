@@ -40,6 +40,8 @@ AreaMeasurer::~AreaMeasurer()
 float AreaMeasurer::surfaceArea()
 {
 	_contacts->updateSheet(_posMap);
+
+	AreaMeasurer::setProbeRadius(1.35);
 	
 	// calculate
 	float area = 0;
@@ -61,7 +63,7 @@ float AreaMeasurer::surfaceArea()
   for (std::pair<Atom *const, WithPos> atom : _posMap)
 	{
     const float &exposure = AreaMeasurer::fibExposureSingleAtom(atom.first);
-		const float &area_atom = areaFromExposure(exposure, atom.first);
+		const float &area_atom = areaFromExposure(exposure, atom.first, _probeRadius);
 		area += area_atom;
 		std::cout << "Exposure of " << atom.first->elementSymbol() << " is " << exposure << std::endl;
 		std::cout << "Area of " << atom.first->elementSymbol() << " is " << area_atom << std::endl;
@@ -72,9 +74,10 @@ float AreaMeasurer::surfaceArea()
 
 float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 {
-	_lattice.changeLatticeRadius(atom);
+	_lattice.changeLatticeRadius(atom, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
 	std::vector<glm::vec3> points_in_overlap;
+	const glm::vec3 pos = atom->derivedPosition();
 
 	//for each lattice point in fibonacci lattice
 	for (const glm::vec3 &point : points)
@@ -86,23 +89,27 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 			{
 				// check if point in overlap
 				const float radius = getVdWRadius(other_atom.first);
-				if (glm::length(point - other_atom.second.ave) <= radius + 1.52f) // + O-radius to account for solvent molecule size
+				if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap.push_back(point);
 					break;
 				}
 			}
+			// std::cout << "Other atom " << other_atom.first->elementSymbol() << "points in overlap: " << points_in_overlap.size() << std::endl;
 		}
 	}
+	std::cout <<  "points in overlap: " << points_in_overlap.size() << std::endl;
+	std::cout << "percentage of points not in overlap: " << 1 - ((float) points_in_overlap.size() / points.size()) << std::endl;
 	// return percentage of points not in overlap
 	return 1 - ((float) points_in_overlap.size() / points.size());
 }
 
 float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 {
-	_lattice.changeLatticeRadius(atom);
+	_lattice.changeLatticeRadius(atom, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
 	std::vector<glm::vec3> points_in_overlap;
+	const glm::vec3 pos = atom->derivedPosition();
 
 	std::set<Atom *> nearAtoms = _contacts->atomsNear(atom, radius);
 	_contacts->calculateZSliceMap(atom, nearAtoms);
@@ -121,7 +128,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 			{
 				// check if point in overlap
 				const float radius = getVdWRadius(other_atom);
-				if (glm::length(point - other_atom->derivedPosition()) <= radius + 1.52f) // + O-radius to account for solvent molecule size
+				if (glm::length(point + pos - other_atom->derivedPosition()) <= radius + _probeRadius) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap.push_back(point);
 					break;
@@ -133,10 +140,10 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 	return 1 - ((float) points_in_overlap.size() / points.size());
 }
 
-float areaFromExposure(float exposure, Atom *atom)
+float areaFromExposure(float exposure, Atom *atom, double probeRadius)
 {
-	float radius = getVdWRadius(atom);
-	float area = exposure * 4 * M_PI * pow(radius,2);
+	const float radius = getVdWRadius(atom) + probeRadius;
+	const float area = exposure * 4 * M_PI * pow(radius,2);
 	return area;
 }
 
@@ -144,6 +151,6 @@ float getVdWRadius(Atom *atom)
 {
 	std::string elementSymbol = atom->elementSymbol();
 	gemmi::Element elem(elementSymbol);
-	float radius = elem.vdw_r();
+	const float radius = elem.vdw_r();
 	return radius;
 }
