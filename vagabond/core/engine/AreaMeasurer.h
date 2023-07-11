@@ -51,6 +51,12 @@ public:
 	{
 		return _posMap;
 	}
+
+  /** set probe radius used for calculating solvent accesible surface*/
+	void setProbeRadius(float radius)
+	{
+		_probeRadius = radius;
+	}
 	
 	/** calculates surface area of previously copied atom map in Angstroms. */
 	float surfaceArea();
@@ -63,13 +69,14 @@ private:
 	Job *_job = nullptr;
 	AtomPosMap _posMap;
 	Fibonacci _lattice;
+	double _probeRadius = 1.4;
 
 	SurfaceAreaHandler *_handler = nullptr;
 	ContactSheet *_contacts = nullptr;
 };
 
 /** calculates the exposed area from atom's lattice exposure and  vdw radius*/
-float areaFromExposure(float exposure, Atom *atom);
+float areaFromExposure(float exposure, Atom *atom, double probeRadius = 0.0);
 
 /** get VdWRadius from an atom*/
 float getVdWRadius(Atom *atom);
