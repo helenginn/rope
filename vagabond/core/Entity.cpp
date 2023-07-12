@@ -256,24 +256,11 @@ PositionalGroup Entity::makePositionalDataGroup()
 	
 	for (Model *m : _models)
 	{
-		bool loaded = false;
-		if (m->polymers().size() > 0 && 
-		    !(m->polymers()).front().hasAtomPositionList(reference))
-		{
-			m->load(Model::NoGeometry);
-			loaded = true;
-		}
-
 		for (Polymer &mm : m->polymers())
 		{
 			std::vector<Posular> vex = mm.atomPositionList(reference,
 			                                               headers, resIdxs);
 			group.addMetadataArray(&mm, vex);
-		}
-		
-		if (loaded)
-		{
-			m->unload();
 		}
 	}
 
