@@ -20,6 +20,7 @@
 #define __vagabond__CompareDistances__
 
 #include <vagabond/utils/svd/PCA.h>
+#include <functional>
 #include "AtomPosMap.h"
 #include <functional>
 
