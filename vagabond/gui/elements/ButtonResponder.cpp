@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <algorithm>
 #include "ButtonResponder.h"
 #include "KeyResponder.h"
 #include <algorithm>
