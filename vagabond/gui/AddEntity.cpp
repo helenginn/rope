@@ -74,6 +74,7 @@ void AddEntity::showFirstPage()
 {
 	float top = 0.3;
 	float inc = 0.08;
+	top += inc;
 
 	deleteTemps();
 
