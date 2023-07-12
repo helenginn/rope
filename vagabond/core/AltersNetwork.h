@@ -22,6 +22,7 @@
 #include "Responder.h"
 #include <functional>
 #include <atomic>
+#include <functional>
 
 class Parameter;
 class SpecificNetwork;
