@@ -70,6 +70,8 @@ install_data(
 'assets/images/arrow.png',
 'assets/images/axes.png',
 'assets/images/axis.png',
+'assets/images/bee.png',
+'assets/images/big_button.png',
 'assets/images/blank.png',
 'assets/images/blob.png',
 'assets/images/bond.png',
