@@ -418,7 +418,6 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	{
 		Menu *m = new Menu(this, this, "conf_space");
 		m->addOption("refined torsions", "refined_torsions");
-//		m->addOption("unrefined_torsions");
 		m->addOption("atom positions", "atom_positions");
 		m->setup(button);
 		setModal(m);
