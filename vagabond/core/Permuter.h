@@ -20,6 +20,7 @@
 #define __vagabond__Permuter__
 
 #include "AltersNetwork.h"
+#include <functional>
 
 class Permuter : public AltersNetwork
 {
