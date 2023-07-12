@@ -22,6 +22,7 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <condition_variable>
 #include "PointyView.h"
 #include <vagabond/core/Progressor.h>
 #include <vagabond/core/Manager.h>
