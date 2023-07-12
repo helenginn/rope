@@ -20,18 +20,38 @@
 #define __vagabond__BFactors__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Responder.h>
+#include <mutex>
 
 class Entity;
+class MatrixPlot;
+class ChooseHeader;
 
-class BFactors : public Scene
+class BFactors : public Scene, public Responder<ChooseHeader>
 {
 public:
 	BFactors(Scene *prev, Entity *entity);
 
 	virtual void setup();
-private:
-	Entity *_entity = nullptr;
+	virtual void buttonPressed(std::string tag, Button *button);
+	virtual void refresh();
 
+	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
+protected:
+	virtual void sendObject(std::string tag, void *object);
+private:
+	void sampleFromPlot(double x, double y);
+	void drawPlot();
+
+	Entity *_entity = nullptr;
+	Text *_headText = nullptr;
+	MatrixPlot *_plot = nullptr;
+
+	std::string _header;
+	std::vector<std::pair<Instance *, std::string> > _mapping;
+	
+	std::mutex _mutex;
+	PCA::Matrix _results{};
 };
 
 #endif
