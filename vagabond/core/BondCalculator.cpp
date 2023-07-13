@@ -398,6 +398,11 @@ void BondCalculator::finish()
 {
 	_started = false;
 
+	if (_surfaceHandler != nullptr)
+	{
+		_surfaceHandler->finish();
+	}
+
 	if (_ffHandler != nullptr)
 	{
 		_ffHandler->finish();
