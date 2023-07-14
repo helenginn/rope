@@ -145,7 +145,7 @@ public:
 	
 	void purge(int i);
 
-	virtual float correlation_between(const Comparable &v, const Comparable &w);
+	static float correlation_between(const Comparable &v, const Comparable &w);
 protected:
 	float correlation_between(int i, int j);
 	float distance_between(int i, int j);

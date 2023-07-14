@@ -423,7 +423,7 @@ float DataGroup<Unit, Header>::correlation_between(const Comparable &v,
 {
 	float x{}, y{}, xx{}, yy{}, xy{}, s{};
 
-	for (size_t n = 0; n < comparable_length(); n++)
+	for (size_t n = 0; n < v.size(); n++)
 	{
 		if (v[n] != v[n] || w[n] != w[n])
 		{
