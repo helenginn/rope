@@ -23,10 +23,28 @@ Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster)
 {
 	_entity = entity;
 	_tCluster = cluster;
-	_pCluster = entity->makeTorsionDataGroup(_tCluster->asInstances());
+	std::vector<Instance *> instances = _tCluster->dataGroup()->asInstances();
+	PositionalGroup group = entity->makePositionalDataGroup(instances);
+	_pCluster = new PositionalCluster(group);
 }
 
 RAMovement Torsion2Atomic::convertAngles(const RTAngles &angles)
 {
+	MetadataGroup *grp = _tCluster->dataGroup();
+	RTAngles master = grp->emptyAngles();
 
+	std::vector<Angular> sorted = angles.storage_according_to(master);
+
+	std::vector<float> compare;
+	grp->convertToComparable(sorted, compare);
+	
+	for (size_t i = 0; i < grp->vectorCount(); i++)
+	{
+		Instance *instance = grp->object(i);
+		std::vector<float> entry = grp->comparableVector(i);
+		float cc = MetadataGroup::correlation_between(compare, entry);
+		std::cout << "instance " << instance->id() << " cc = " << cc << std::endl;
+	}
+
+	return RAMovement{};
 }
