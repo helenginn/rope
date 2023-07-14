@@ -24,6 +24,7 @@
 #include <vagabond/c4x/Cluster.h>
 
 class HasMetadata;
+class Instance;
 class Rule;
 class Path;
 
@@ -62,6 +63,8 @@ public:
 	{
 		return _objects;
 	}
+	
+	std::vector<Instance *> asInstances() const;
 	
 	bool purge(HasMetadata *hm);
 	

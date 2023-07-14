@@ -234,6 +234,21 @@ MetadataGroup Entity::makeTorsionDataGroup(bool empty)
 
 PositionalGroup Entity::makePositionalDataGroup()
 {
+	std::vector<Instance *> polymers;
+	for (Model *m : _models)
+	{
+		for (Instance &mm : m->polymers())
+		{
+			polymers.push_back(&mm);
+		}
+	}
+
+	return makePositionalDataGroup(polymers);
+}
+
+PositionalGroup Entity::makePositionalDataGroup(std::vector<Instance *> 
+                                                &polymers)
+{
 	PositionalGroup group = preparePositionGroup();
 	const std::vector<Atom3DPosition> &headers = group.headers();
 
@@ -254,14 +269,11 @@ PositionalGroup Entity::makePositionalDataGroup()
 	reference->load();
 	reference->currentAtoms()->recalculate();
 	
-	for (Model *m : _models)
+	for (Instance *mm : polymers)
 	{
-		for (Polymer &mm : m->polymers())
-		{
-			std::vector<Posular> vex = mm.atomPositionList(reference,
-			                                               headers, resIdxs);
-			group.addMetadataArray(&mm, vex);
-		}
+		std::vector<Posular> vex = mm->atomPositionList(reference,
+		                                               headers, resIdxs);
+		group.addMetadataArray(mm, vex);
 	}
 
 	reference->unload();

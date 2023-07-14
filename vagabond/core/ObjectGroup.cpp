@@ -18,6 +18,7 @@
 
 #include "ObjectGroup.h"
 #include "HasMetadata.h"
+#include "Instance.h"
 #include "Path.h"
 
 const int ObjectGroup::indexOfObject(HasMetadata *obj) const
@@ -65,6 +66,19 @@ std::vector<HasMetadata *> ObjectGroup::subsetFromRule(const Rule &r)
 	}
 
 	return list;
+}
+
+std::vector<Instance *> ObjectGroup::asInstances() const
+{
+	std::vector<Instance *> list;
+
+	for (HasMetadata *object : _objects)
+	{
+		list.push_back(static_cast<Instance *>(object));
+	}
+
+	return list;
+
 }
 
 void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)

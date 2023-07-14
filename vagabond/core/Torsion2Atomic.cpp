@@ -17,9 +17,16 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Torsion2Atomic.h"
+#include "Entity.h"
 
 Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster)
 {
 	_entity = entity;
-	_cluster = cluster;
+	_tCluster = cluster;
+	_pCluster = entity->makeTorsionDataGroup(_tCluster->asInstances());
+}
+
+RAMovement Torsion2Atomic::convertAngles(const RTAngles &angles)
+{
+
 }

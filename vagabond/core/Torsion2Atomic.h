@@ -20,16 +20,21 @@
 #define __vagabond__Torsion2Atomic__
 
 #include "RopeCluster.h"
+#include "RAMovement.h"
 #include "Entity.h"
+
+class RTAngles;
 
 class Torsion2Atomic
 {
 public:
 	Torsion2Atomic(Entity *entity, TorsionCluster *cluster);
 
+	RAMovement convertAngles(const RTAngles &angles);
 private:
 	Entity *_entity = nullptr;
-	TorsionCluster *_cluster = nullptr;
+	TorsionCluster *_tCluster = nullptr;
+	PositionalCluster *_pCluster = nullptr;
 
 };
 

@@ -70,6 +70,9 @@ public:
 	
 	MetadataGroup makeTorsionDataGroup(bool empty = false);
 	PositionalGroup makePositionalDataGroup();
+	PositionalGroup makePositionalDataGroup(std::vector<Instance *> 
+	                                        &polymers);
+
 	Instance *chooseRepresentativeInstance();
 	
 	virtual const std::vector<Instance *> instances() const = 0;
