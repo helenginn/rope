@@ -23,12 +23,21 @@ template <typename Header, typename Storage>
 class HeadedVector
 {
 public:
+	template <typename F>
+	void do_op(const F &func)
+	{
+		for (int i = 0; i < size(); i++)
+		{
+			func(storage(i));
+		}
+	}
+
 	const size_t size() const
 	{
 		return _pairs.size();
 	}
 
-	std::vector<ResidueTorsion> headers_only() const
+	std::vector<Header> headers_only() const
 	{
 		std::vector<Header> headers;
 		headers.reserve(_pairs.size());

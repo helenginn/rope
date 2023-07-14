@@ -455,7 +455,7 @@ std::vector<Posular> Polymer::atomPositionList(Instance *reference,
 		while (start < headers.size() && 
 		       headers[start].master()->id() == id)
 		{
-			if (moving->atomName() == headers[start].atomName)
+			if (moving->atomName() == headers[start].atomName())
 			{
 				vex[start] = one;
 			}

@@ -23,6 +23,7 @@
 #include "CompareDistances.h"
 #include <vagabond/utils/svd/PCA.h>
 #include "AtomGroup.h"
+#include "RAMovement.h"
 
 struct prepare_atom_list;
 struct Posular;
@@ -31,15 +32,13 @@ class Slider;
 class Instance;
 class MatrixPlot;
 class ColourLegend;
-class Atom3DPosition;
 class PositionalCluster;
 
 class Atom2AtomExplorer : public Scene, public DragResponder
 {
 public:
 	Atom2AtomExplorer(Scene *scene, Instance *instance,
-	                  const std::vector<Atom3DPosition> &list,
-	                  const std::vector<Posular> &vals);
+	                  const RAMovement &movements);
 	
 	void setCluster(PositionalCluster *const &cluster)
 	{
@@ -64,8 +63,7 @@ private:
 	void addPlot();
 
 
-	const std::vector<Posular> _vals;
-	const std::vector<Atom3DPosition> _list;
+	const RAMovement _movement;
 	float _motionScale = 1;
 	float _colourScale = 1;
 	

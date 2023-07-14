@@ -16,59 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__RTAngles__
-#define __vagabond__RTAngles__
+#ifndef __vagabond__RAMovement__
+#define __vagabond__RAMovement__
 
-#include "RTVector.h"
-#include <vagabond/c4x/Angular.h>
+#include "RAVector.h"
+#include <vagabond/c4x/Posular.h>
 #include <sstream>
 
-class RTAngles : public RTVector<Angular>
+class RAMovement : public RAVector<Posular>
 {
 public:
-	static RTAngles angles_from(const std::vector<ResidueTorsion> &rts,
-	                            const std::vector<Angular> &angles)
+	static RAMovement movements_from(const std::vector<Atom3DPosition> &ras,
+	                                 const std::vector<Posular> &ps)
 	{
-		RTAngles res;
-		res.vector_from(rts, angles);
+		RAMovement res;
+		res.vector_from(ras, ps);
 		return res;
 	}
 	
 	friend std::ostream &operator<<(std::ostream &ss, 
-	                                const RTAngles &angles)
+	                                const RAMovement &movements)
 	{
-		for (int i = 0; i < angles.size() && i < 20; i++)
+		for (int i = 0; i < movements.size() && i < 20; i++)
 		{
-			ss << angles.storage(i) << ", ";
+			ss << movements.storage(i) << ", ";
 		}
 		ss << "...";
 		return ss;
 	}
 	
-	void match_degrees_to(RTAngles &other)
-	{
-		for (int i = 0; i < size(); i++)
-		{
-			const float &ref = other.storage(i);
 
-			while (storage(i) < ref - 180.f)
-			{
-				storage(i) += 360.f;
-			}
-
-			while (storage(i) >= ref + 180.f)
-			{
-				storage(i) -= 360.f;
-			}
-		}
-	}
-	
-	const Angular &angle(int i) const
-	{
-		return this->storage(i);
-	}
 private:
-
+	
 };
 
 #endif

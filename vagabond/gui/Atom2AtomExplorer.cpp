@@ -20,6 +20,7 @@
 #include <vagabond/gui/ColourLegend.h>
 #include "Atom2AtomExplorer.h"
 #include "Atom3DPosition.h"
+#include "RAMovement.h"
 #include "AtomPosMap.h"
 #include "MatrixPlot.h"
 #include "Sequence.h"
@@ -41,21 +42,18 @@ struct multiply_by
 
 struct atompos
 {
-	atompos(Atom *atom, const std::vector<Atom3DPosition> &list,
-	        Sequence *sequence) : _atom(atom)
+	atompos(Atom *atom, const RAMovement &movements,
+	        Instance *instance) : _atom(atom)
 	{
 		int idx = -1;
-		for (const Atom3DPosition &pos : list)
+		std::vector<Atom3DPosition> headers = movements.headers_only();
+		for (const Atom3DPosition &pos : headers)
 		{
 			idx++;
-			if (pos.atomName == _atom->atomName())
+			if (pos.fitsAtom(_atom, instance))
 			{
-				Residue *compare = sequence->local_residue(pos.master());
-				if (compare && _atom->residueId() == compare->id())
-				{
-					_idx = idx;
-					break;
-				}
+				_idx = idx;
+				break;
 			}
 		}
 	}
@@ -102,10 +100,10 @@ struct fillable : public std::vector<T>
 struct prepare_atom_list
 {
 	prepare_atom_list(AtomGroup *const &group, 
-	                  const std::vector<Atom3DPosition> &list,
+	                  const RAMovement &movement,
 	                  CompareDistances::AtomFilter &filter,
-	                  Sequence *const &sequence)
-	: _group(group), _list(list), _filter(filter), _sequence(sequence)
+	                  Instance *const &instance)
+	: _group(group), _movement(movement), _filter(filter), _instance(instance)
 	{
 
 	}
@@ -126,7 +124,7 @@ struct prepare_atom_list
 			
 			if (!_filter || _filter(atom))
 			{
-				atoms.push_back(atompos(atom, _list, _sequence));
+				atoms.push_back(atompos(atom, _movement, _instance));
 			}
 		}
 
@@ -137,15 +135,14 @@ struct prepare_atom_list
 	fillable<atompos> _filled;
 
 	AtomGroup *const &_group;
-	const std::vector<Atom3DPosition> &_list;
+	const RAMovement &_movement;
 	CompareDistances::AtomFilter _filter;
-	Sequence *const _sequence;
+	Instance *const _instance;
 };
 
 Atom2AtomExplorer::Atom2AtomExplorer(Scene *scene, Instance *instance,
-                                     const std::vector<Atom3DPosition> &list,
-                                     const std::vector<Posular> &vals)
-: Scene(scene), _vals(vals), _list(list), _cd(false)
+                                     const RAMovement &movements)
+: Scene(scene), _movement(movements), _cd(false)
 {
 	_instance = instance;
 	_instance->load();
@@ -158,9 +155,9 @@ Atom2AtomExplorer::Atom2AtomExplorer(Scene *scene, Instance *instance,
 	
 	if (_instance->hasSequence())
 	{
-		Sequence *seq = static_cast<Polymer *>(_instance)->sequence();
-		seq->remapFromMaster(instance->entity());
-		_atom2Vec = new prepare_atom_list(_atoms, list, _filter, seq);
+		Polymer *pol = static_cast<Polymer *>(_instance);
+		pol->sequence()->remapFromMaster(instance->entity());
+		_atom2Vec = new prepare_atom_list(_atoms, _movement, _filter, _instance);
 	}
 
 }
@@ -171,7 +168,8 @@ void Atom2AtomExplorer::update()
 	fillable<atompos> positions = prep();
 
 	_cd.clearMatrix();
-	AtomPosList posList = positions(_vals, multiply_by<glm::vec3>(_motionScale));
+	std::vector<Posular> vals = _movement.storage_only();
+	AtomPosList posList = positions(vals, multiply_by<glm::vec3>(_motionScale));
 
 	_cd.process(posList);
 

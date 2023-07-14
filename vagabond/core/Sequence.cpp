@@ -342,7 +342,7 @@ void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers)
 		{
 			Atom3DPosition ap{};
 			ap.setMaster(&residue);
-			ap.atomName = name;
+			ap.setAtomName(name);
 			ap.setEntity(_entity);
 			headers.push_back(ap);
 		}

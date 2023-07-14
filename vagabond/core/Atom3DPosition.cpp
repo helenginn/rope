@@ -16,50 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Atom3DPosition__
-#define __vagabond__Atom3DPosition__
+#include "Atom3DPosition.h"
+#include "Instance.h"
+#include "Atom.h"
 
-#include "BitIdentifier.h"
-#include "Residue.h"
-
-class Atom3DPosition : public BitIdentifier
+bool Atom3DPosition::fitsAtom(Atom *other, Instance *from) const
 {
-public:
-	const std::string &atomName() const
+	if (entity() != from->entity())
 	{
-		return _atomName;
-	}
-	
-	void setAtomName(std::string name)
-	{
-		_atomName = name;
-	}
-	
-	std::string desc() const
-	{
-		if (_master == nullptr)
-		{
-			std::string id = "p-null:" + atomName();
-			return id;
-		}
-
-		std::string id = "p" + _master->id().as_string() + ":" + atomName();
-		return id;
-	}
-	
-	bool fitsAtom(Atom *other, Instance *from) const;
-
-	inline friend std::ostream &operator<<(std::ostream &ss, 
-	                                       const Atom3DPosition &p)
-	{
-		ss << p.desc();
-		return ss;
+		return false;
 	}
 
-private:
-	std::string _atomName;
-	
-};
+	ResidueId target = other->residueId();
+	Residue *expected = from->equivalentMaster(target);
 
-#endif
+	if (expected == nullptr || expected != master())
+	{
+		return false;
+	}
 
+	const std::string &atom_name = atomName();
+
+	return (other->atomName() == atom_name);
+}

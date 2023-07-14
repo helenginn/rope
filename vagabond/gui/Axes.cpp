@@ -22,6 +22,7 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/RopeCluster.h>
 #include <vagabond/core/ChemotaxisEngine.h>
+#include <vagabond/core/RAMovement.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -235,10 +236,12 @@ void Axes::loadAtom2AtomExplorer(int idx)
 	{
 		return;
 	}
+	
+	RAMovement movement = RAMovement::movements_from(list, vals);
 
 	std::string str = titleForAxis(idx);
 
-	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(_scene, _instance, list, vals);
+	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(_scene, _instance, movement);
 	a2a->setCluster(_positionalCluster);
 	a2a->setFutureTitle(str);
 	a2a->show();
