@@ -134,7 +134,7 @@ bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
 				continue;
 			}
 
-			float value = angles.c_storage(j);
+			float value = angles.storage(j);
 
 			if (value != value)
 			{

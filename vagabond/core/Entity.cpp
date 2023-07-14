@@ -243,10 +243,10 @@ PositionalGroup Entity::makePositionalDataGroup()
 	Residue *last = nullptr;
 	for (size_t i = 0; i < headers.size(); i++)
 	{
-		if (headers[i].residue != last)
+		if (headers[i].master() != last)
 		{
-			resIdxs[headers[i].residue->id()] = i;
-			last = headers[i].residue;
+			resIdxs[headers[i].master()->id()] = i;
+			last = headers[i].master();
 		}
 	}
 	

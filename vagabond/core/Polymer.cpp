@@ -453,7 +453,7 @@ std::vector<Posular> Polymer::atomPositionList(Instance *reference,
 
 		int start = resIdxs[id];
 		while (start < headers.size() && 
-		       headers[start].residue->id() == id)
+		       headers[start].master()->id() == id)
 		{
 			if (moving->atomName() == headers[start].atomName)
 			{

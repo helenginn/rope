@@ -94,7 +94,7 @@ float Trajectory::angleForFraction(float frac, int idx)
 
 RTAngles Trajectory::anglesForFraction(float frac)
 {
-	RTAngles ret; ret.vector_from(_traj->rts_only());
+	RTAngles ret; ret.vector_from(_traj->headers_only());
 
 	if (frac < 0 || frac > 1)
 	{

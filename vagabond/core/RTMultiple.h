@@ -37,8 +37,8 @@ public:
 	
 	size_t steps()
 	{
-		if (_rtValues.size() == 0) return 0;
-		return _rtValues[0].storage.size();
+		if (_pairs.size() == 0) return 0;
+		return _pairs[0].storage.size();
 	}
 
 	float angle_for_index(int inst_idx, int tors_idx)
@@ -73,10 +73,10 @@ public:
 		
 		for (int i = 0; i < size(); i++)
 		{
-			angles.push_back(c_storage(i)[idx]);
+			angles.push_back(storage(i)[idx]);
 		}
 		
-		RTAngles ret; ret.vector_from(rts_only(), angles);
+		RTAngles ret; ret.vector_from(headers_only(), angles);
 		return ret;
 	}
 private:

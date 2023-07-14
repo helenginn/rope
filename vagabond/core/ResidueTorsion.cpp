@@ -18,49 +18,14 @@
 
 #include "Residue.h"
 #include "ResidueTorsion.h"
-#include "Environment.h"
-#include "EntityManager.h"
+#include "Instance.h"
+#include "AtomGroup.h"
 #include <sstream>
 
 void ResidueTorsion::housekeeping()
 {
-	if (_entity && _entityName.length() == 0)
-	{
-		_entityName = _entity->name();
-	}
-	
-	if (_entityName.length() > 0 && !_entity)
-	{
-		EntityManager *em = Environment::entityManager();
-		Entity *ent = em->entity(_entityName);
-		_entity = ent;
-	}
+	BitIdentifier::housekeeping();
 
-	if (_master && !_masterSet)
-	{
-		_masterSet = true;
-		_masterId = _master->id();
-	}
-	
-	if (_masterSet && !_master && _entity)
-	{
-		Sequence *seq = _entity->sequence();
-		Residue *res = seq->residue(_masterId);
-		_master = res;
-	}
-
-	if (_local && !_localSet)
-	{
-		_localSet = true;
-		_localId = _local->id();
-	}
-	
-	if (_localSet && !_local && _instance)
-	{
-		Residue *res = _instance->localForLocalId(_localId);
-		_local = res;
-	}
-	
 	if (_instance && !_local)
 	{
 		_local = _instance->localResidueForResidueTorsion(*this);
@@ -70,7 +35,7 @@ void ResidueTorsion::housekeeping()
 std::string ResidueTorsion::status() const
 {
 	std::ostringstream ss;
-	ss << "Desc: " << desc() << std::endl;
+	ss << "ResidueTorsion: " << desc() << std::endl;
 	ss << "Local set: " << (_localSet ? "true" : "false") << std::endl;
 	ss << "Master set: " << (_masterSet ? "true" : "false") << std::endl;
 	ss << "Local ptr: " << _local << std::endl;
@@ -91,26 +56,6 @@ std::string ResidueTorsion::desc() const
 
 	std::string id = "t" + _master->id().as_string() + ":" + _torsion.desc();
 	return id;
-}
-
-const ResidueId &ResidueTorsion::local_id()
-{
-	if (!_localSet)
-	{
-		housekeeping();
-	}
-
-	return _localId;
-}
-
-const ResidueId &ResidueTorsion::id()
-{
-	if (!_masterSet)
-	{
-		housekeeping();
-	}
-
-	return _masterId;
 }
 
 bool ResidueTorsion::fitsParameter(Parameter *other, Instance *from) const

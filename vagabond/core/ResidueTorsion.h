@@ -19,21 +19,18 @@
 #ifndef __vagabond__ResidueTorsion__
 #define __vagabond__ResidueTorsion__
 
-#include "ResidueId.h"
+#include "BitIdentifier.h"
 #include "TorsionRef.h"
 
 /** \class ResidueTorsion
  *  holds the identity of a Residue/Torsion pair + entity and can interconvert
  *  between master and local residue when supplied with an instance */
 
-class Entity;
-class Residue;
-class Instance;
-
-class ResidueTorsion
+class ResidueTorsion : public BitIdentifier
 {
 public:
-	void housekeeping();
+	virtual ~ResidueTorsion() {};
+	virtual void housekeeping();
 	
 	const TorsionRef &torsion() const
 	{
@@ -45,45 +42,10 @@ public:
 		_torsion = torsion;
 	}
 	
-	Residue *const master() const
-	{
-		return _master;
-	}
-	
-	const Residue *local() const
-	{
-		return _local;
-	}
-	
 	const bool operator==(const ResidueTorsion &other) const
 	{
 		return (_master == other._master && _torsion == other._torsion
 		        && _entityName == other._entityName);
-	}
-	
-	void setMaster(Residue *residue)
-	{
-		_master = residue;
-	}
-	
-	void attachToInstance(Instance *inst, Residue *local = nullptr)
-	{
-		_instance = inst;
-		_local = local;
-		housekeeping();
-	}
-	
-	const ResidueId &id();
-	const ResidueId &local_id();
-	
-	Entity *entity() const
-	{
-		return _entity;
-	}
-	
-	void setEntity(Entity *entity)
-	{
-		_entity = entity;
 	}
 	
 	Parameter *parameter();
@@ -97,18 +59,6 @@ public:
 	friend void from_json(const json &j, ResidueTorsion &value);
 private:
 	TorsionRef _torsion{};
-	ResidueId _masterId{};
-	ResidueId _localId{};
-	bool _masterSet = false;
-	bool _localSet = false;
-
-	std::string _entityName;
-
-	Residue *_master = nullptr;
-	Entity *_entity = nullptr;
-
-	Instance *_instance = nullptr;
-	const Residue *_local = nullptr;
 };
 
 inline void to_json(json &j, const ResidueTorsion &id)

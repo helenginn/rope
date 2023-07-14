@@ -50,7 +50,7 @@ struct atompos
 			idx++;
 			if (pos.atomName == _atom->atomName())
 			{
-				Residue *compare = sequence->local_residue(pos.residue);
+				Residue *compare = sequence->local_residue(pos.master());
 				if (compare && _atom->residueId() == compare->id())
 				{
 					_idx = idx;

@@ -214,7 +214,7 @@ protected:
 	
 	bool flip(int i) const
 	{
-		return _motions.c_storage(i).flip;
+		return _motions.storage(i).flip;
 	}
 	
 	enum InterpolationType

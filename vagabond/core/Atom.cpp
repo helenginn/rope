@@ -416,14 +416,25 @@ const std::string Atom::desc() const
 
 bool Atom::isMainChain(std::string atomName)
 {
+	return (isCoreMainChain(atomName) || atomName == "CB");
+}
+
+bool Atom::isCoreMainChain(std::string atomName)
+{
 	return (atomName == "CA" || atomName == "N" || atomName == "O"
 	        || atomName == "O" || atomName == "H" || atomName == "HA" 
-	        || atomName == "CB" || atomName == "C");
+	        || atomName == "C");
+
 }
 
 bool Atom::isReporterAtom(std::string atomName)
 {
 	return atomName == "CA";
+}
+
+bool Atom::isCoreMainChain() const
+{
+	return isCoreMainChain(atomName());
 }
 
 bool Atom::isMainChain() const

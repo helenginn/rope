@@ -46,6 +46,7 @@ void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)
 
 	Atom *vagatom = new Atom();
 	vagatom->setElementSymbol(a.element.name());
+	vagatom->setAtomNum(_num);
 	vagatom->setAtomName(a.name);
 	vagatom->setResidueId(ai.resid);
 	vagatom->setChain(ai.chain);
@@ -54,6 +55,7 @@ void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)
 	glm::vec3 pos = glm::vec3(a.pos.x, a.pos.y, a.pos.z);
 	vagatom->setInitialPosition(pos, a.b_iso);
 	
+	_num++;
 	*_macroAtoms += vagatom;
 }
 

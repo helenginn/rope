@@ -16,48 +16,10 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PdbFile__
-#define __vagabond__PdbFile__
+#include "Torsion2Atomic.h"
 
-#include "File.h"
-
-namespace gemmi
+Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster)
 {
-	struct Model;
-	struct Residue;
-	struct Chain;
-	struct Atom;
+	_entity = entity;
+	_cluster = cluster;
 }
-
-class PdbFile : public File
-{
-public:
-	PdbFile(std::string filename = "");
-
-	virtual File::Type cursoryLook();
-	virtual void parse();
-	virtual void write(std::string filename);
-	static void writeAtoms(AtomGroup *grp, std::string name);
-
-	void getAllGeometry();
-private:
-	struct AtomInfo
-	{
-		std::string chain;
-		std::string resid;
-		std::string res;
-		std::string seqstr;
-		bool isHetatm;
-
-	};
-
-	void processModel(gemmi::Model &m);
-	void processResidue(gemmi::Residue &r, AtomInfo &ai);
-	void processAtom(gemmi::Atom &a, AtomInfo &ai, char conf);
-
-	void parseFileContents();
-
-	int _num = 1;
-};
-
-#endif

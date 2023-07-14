@@ -39,7 +39,7 @@ public:
 	{
 		for (int i = 0; i < angles.size() && i < 20; i++)
 		{
-			ss << angles.c_storage(i) << ", ";
+			ss << angles.storage(i) << ", ";
 		}
 		ss << "...";
 		return ss;
@@ -58,7 +58,7 @@ public:
 	{
 		for (int i = 0; i < size(); i++)
 		{
-			const float &ref = other.c_storage(i);
+			const float &ref = other.storage(i);
 
 			while (storage(i) < ref - 180.f)
 			{
@@ -74,7 +74,7 @@ public:
 	
 	const Angular &angle(int i) const
 	{
-		return this->c_storage(i);
+		return this->storage(i);
 	}
 private:
 

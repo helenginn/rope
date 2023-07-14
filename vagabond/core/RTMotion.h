@@ -56,11 +56,11 @@ public:
 
 	void flips_from(const std::vector<bool> &flips)
 	{
-		assert(flips.size() == _rtValues.size());
+		assert(flips.size() == _pairs.size());
 		
 		for (int i = 0; i < flips.size(); i++)
 		{
-			_rtValues[i].storage.flip = flips[i];
+			_pairs[i].storage.flip = flips[i];
 		}
 	}
 
@@ -68,17 +68,17 @@ public:
 	{
 		for (auto it = wps.begin(); it != wps.end(); it++)
 		{
-			_rtValues[it->first].storage.wp = it->second;
+			_pairs[it->first].storage.wp = it->second;
 		}
 	}
 
 	void motion_angles_from(const std::vector<float> &dest)
 	{
-		assert(dest.size() == _rtValues.size());
+		assert(dest.size() == _pairs.size());
 		
 		for (int i = 0; i < dest.size(); i++)
 		{
-			_rtValues[i].storage.angle = dest[i];
+			_pairs[i].storage.angle = dest[i];
 		}
 	}
 
@@ -90,28 +90,25 @@ private:
 
 inline void to_json(json &j, const RTVector<Motion>::RTValue &id)
 {
-	j["rt"] = id.rt;
+	j["rt"] = id.header;
 	j["storage"] = id.storage;
 
 }
 
 inline void from_json(const json &j, RTVector<Motion>::RTValue &id)
 {
-	id.rt = j.at("rt");
+	id.header = j.at("rt");
 	id.storage = j.at("storage");
 }
 
 inline void to_json(json &j, const RTMotion &id)
 {
-	j["motions"] = id._rtValues;
+	j["motions"] = id._pairs;
 
 }
 
 inline void from_json(const json &j, RTMotion &id)
 {
-//	j["rts"] = id.rts_only();
-//	j["vals"] = id.storage_only();
-
 	if (j.count("motions") == 0)
 	{
 		std::vector<ResidueTorsion> rts = j.at("rts");
@@ -121,7 +118,7 @@ inline void from_json(const json &j, RTMotion &id)
 	else
 	{
 		std::vector<RTMotion::RTValue> values = j.at("motions");
-		id._rtValues = values;
+		id._pairs = values;
 	}
 }
 

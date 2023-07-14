@@ -167,7 +167,7 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 			continue;
 		}
 
-		const Angular &val = angles.c_storage(i);
+		const Angular &val = angles.storage(i);
 		float sqval = val * val;
 		sum += sqval;
 	}
@@ -201,7 +201,7 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 			continue;
 		}
 
-		float val = fabs(angles.c_storage(i));
+		float val = fabs(angles.storage(i));
 		val /= _maxTorsion;
 		atom->addToColour(val);
 	}

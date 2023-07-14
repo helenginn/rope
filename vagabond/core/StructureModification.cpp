@@ -143,8 +143,6 @@ void StructureModification::startCalculator()
 		{
 			continue;
 		}
-		
-		std::cout << _instance->id() << " owns " << anchor->desc() << std::endl;
 
 		if (!anchor->hetatm())
 		{

@@ -304,7 +304,7 @@ float Instance::valueForTorsionFromList(Parameter *param, const RTAngles &list)
 		return NAN;
 	}
 
-	return list.c_storage(idx);
+	return list.storage(idx);
 }
 
 void Instance::addTorsionsToGroup(MetadataGroup &group, 

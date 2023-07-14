@@ -341,9 +341,9 @@ void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers)
 		for (const std::string &name : residue.atomNames())
 		{
 			Atom3DPosition ap{};
+			ap.setMaster(&residue);
 			ap.atomName = name;
-			ap.residue = &residue;
-			ap.entity = _entity;
+			ap.setEntity(_entity);
 			headers.push_back(ap);
 		}
 	}

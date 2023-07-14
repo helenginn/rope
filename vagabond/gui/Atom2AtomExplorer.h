@@ -25,13 +25,13 @@
 #include "AtomGroup.h"
 
 struct prepare_atom_list;
-struct Atom3DPosition;
 struct Posular;
 
 class Slider;
 class Instance;
 class MatrixPlot;
 class ColourLegend;
+class Atom3DPosition;
 class PositionalCluster;
 
 class Atom2AtomExplorer : public Scene, public DragResponder

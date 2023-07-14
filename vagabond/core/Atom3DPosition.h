@@ -19,25 +19,23 @@
 #ifndef __vagabond__Atom3DPosition__
 #define __vagabond__Atom3DPosition__
 
+#include "BitIdentifier.h"
 #include "Residue.h"
 
-class Entity;
-
-struct Atom3DPosition
+class Atom3DPosition : public BitIdentifier
 {
+public:
 	std::string atomName;
-	Residue *residue = nullptr;
-	Entity *entity = nullptr;
 	
 	std::string desc() const
 	{
-		if (residue == nullptr)
+		if (_master == nullptr)
 		{
 			std::string id = "p-null:" + atomName;
 			return id;
 		}
 
-		std::string id = "p" + residue->id().as_string() + ":" + atomName;
+		std::string id = "p" + _master->id().as_string() + ":" + atomName;
 		return id;
 	}
 	

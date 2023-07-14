@@ -232,7 +232,9 @@ public:
 	}
 	
 	bool isMainChain() const;
+	bool isCoreMainChain() const;
 	static bool isMainChain(std::string name);
+	static bool isCoreMainChain(std::string atomName);
 	
 	bool isReporterAtom() const;
 	static bool isReporterAtom(std::string name);
@@ -300,7 +302,6 @@ private:
 	bool _changedPosition = false;
 
 	bool _transformed = false;
-	bool _mainChain = false;
 	bool _hetatm = false;
 	float _occupancy = 1.;
 	ResidueId _residueId = {1};

@@ -112,7 +112,27 @@ std::string AtomGraph::desc() const
 bool AtomGraph::operator<(const AtomGraph &other) const
 {
 	/* otherwise go for tinier branch points first */
-	return atom->atomNum() < other.atom->atomNum();
+	if (atom->isCoreMainChain() && !other.atom->isCoreMainChain())
+	{
+		return true;
+	}
+
+	if (!atom->isCoreMainChain() && other.atom->isCoreMainChain())
+	{
+		return false;
+	}
+	
+	if (atom->elementSymbol() != "H" && other.atom->elementSymbol() == "H")
+	{
+		return true;
+	}
+
+	if (atom->elementSymbol() == "H" && other.atom->elementSymbol() != "H")
+	{
+		return false;
+	}
+
+	return atom->atomNum() > other.atom->atomNum();
 }
 
 
