@@ -29,7 +29,7 @@ struct Job;
 class AreaMeasurer
 {
 public:
-	AreaMeasurer(SurfaceAreaHandler *handler, int n_points = 300);
+	AreaMeasurer(SurfaceAreaHandler *handler, int n_points = 400);
 	~AreaMeasurer();
 	
 	void setJob(Job *j)

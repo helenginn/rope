@@ -40,6 +40,8 @@ AreaMeasurer::~AreaMeasurer()
 float AreaMeasurer::surfaceArea()
 {
 	_contacts->updateSheet(_posMap);
+	_lattice.resetLatticeRadius();
+	// std::cout << _posMap.size() << std::endl;
 
 	AreaMeasurer::setProbeRadius(1.35);
 	
@@ -65,8 +67,14 @@ float AreaMeasurer::surfaceArea()
     const float &exposure = AreaMeasurer::fibExposureSingleAtom(atom.first);
 		const float &area_atom = areaFromExposure(exposure, atom.first, _probeRadius);
 		area += area_atom;
-		std::cout << "Exposure of " << atom.first->elementSymbol() << " is " << exposure << std::endl;
-		std::cout << "Area of " << atom.first->elementSymbol() << " is " << area_atom << std::endl;
+		// const float radius = getVdWRadius(atom.first);
+    // if (radius < 1.0)
+		// {
+		// 	std::cout << "Error: radius of atom " << atom.first->elementSymbol() << " is " << radius << std::endl;
+		// 	std::cout << "Area of " << atom.first->elementSymbol() << " is " << area_atom << std::endl;
+		// }
+		// std::cout << "Exposure of " << atom.first->elementSymbol() << " is " << exposure << std::endl;
+		// std::cout << "Area of " << atom.first->elementSymbol() << " is " << area_atom << std::endl;
 	}
 
 	return area;
@@ -89,7 +97,7 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 			{
 				// check if point in overlap
 				const float radius = getVdWRadius(other_atom.first);
-				if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius) // + probe radius to account for solvent molecule size
+				if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap.push_back(point);
 					break;
@@ -98,8 +106,8 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 			// std::cout << "Other atom " << other_atom.first->elementSymbol() << "points in overlap: " << points_in_overlap.size() << std::endl;
 		}
 	}
-	std::cout <<  "points in overlap: " << points_in_overlap.size() << std::endl;
-	std::cout << "percentage of points not in overlap: " << 1 - ((float) points_in_overlap.size() / points.size()) << std::endl;
+	// std::cout <<  "points in overlap: " << points_in_overlap.size() << std::endl;
+	// std::cout << "percentage of points not in overlap: " << 1 - ((float) points_in_overlap.size() / points.size()) << std::endl;
 	// return percentage of points not in overlap
 	return 1 - ((float) points_in_overlap.size() / points.size());
 }
