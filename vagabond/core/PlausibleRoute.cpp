@@ -23,7 +23,7 @@
 #include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
 
-PlausibleRoute::PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster,
+PlausibleRoute::PlausibleRoute(Instance *inst, TorsionCluster *cluster,
                                int dims)
 : Route(inst, cluster, dims)
 {

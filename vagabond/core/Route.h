@@ -26,12 +26,13 @@
 class Grapher;
 struct AtomGraph;
 class ResidueTorsion;
+class TorsionCluster;
 class RouteValidator;
 
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
 public:
-	Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
+	Route(Instance *inst, TorsionCluster *cluster, int dims);
 	virtual ~Route();
 
 	virtual void setup();

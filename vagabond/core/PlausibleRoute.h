@@ -31,7 +31,7 @@ class PlausibleRoute : public Route, public Progressor, public RunsEngine
 	friend RouteValidator;
 	friend Path;
 public:
-	PlausibleRoute(Instance *inst, Cluster<MetadataGroup> *cluster, int dims);
+	PlausibleRoute(Instance *inst, TorsionCluster *cluster, int dims);
 	
 	void calculateProgression(int steps);
 	void calculateLinearProgression(int steps);

@@ -33,6 +33,7 @@ class MetadataGroup;
 template <class T>
 class Cluster;
 
+class TorsionCluster;
 class Instance;
 class BondCalculator;
 class ConcertedBasis;
@@ -59,7 +60,7 @@ public:
 
 	virtual ~StructureModification();
 	
-	void setCluster(Cluster<MetadataGroup> *cluster)
+	void setCluster(TorsionCluster *cluster)
 	{
 		_cluster = cluster;
 	}
@@ -118,7 +119,7 @@ protected:
 	Sampler _sampler;
 	
 	std::vector<RTAngles> _torsionLists;
-	Cluster<MetadataGroup> *_cluster = nullptr;
+	TorsionCluster *_cluster = nullptr;
 
 	int _num = 1;
 	int _dims = 1;

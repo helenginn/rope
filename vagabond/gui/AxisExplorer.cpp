@@ -22,21 +22,23 @@
 
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
 
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/c4x/Cluster.h>
+#include <vagabond/core/BondSequence.h>
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/AlignmentTool.h>
+#include <vagabond/core/Torsion2Atomic.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst, 1, 1)
 {
-//	_pType = BondCalculator::PipelineForceField;
 	_dims = 1;
 	_torsionLists.push_back(angles);
 	setPingPong(true);
@@ -74,7 +76,7 @@ void AxisExplorer::setup()
 	VisualPreferences *vp = &_instance->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp, instance());
 	
-	reportMissing();
+	askForAtomMotions();
 }
 
 void AxisExplorer::submitJob(float prop)
@@ -84,8 +86,7 @@ void AxisExplorer::submitJob(float prop)
 		Job job{};
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = prop;
-		job.requests = static_cast<JobType>(JobExtractPositions); 
-//		                                    | JobScoreStructure);
+		job.requests = static_cast<JobType>(JobPositionVector); 
 		calc->submitJob(job);
 	}
 
@@ -101,9 +102,9 @@ void AxisExplorer::submitJob(float prop)
 			return;
 		}
 
-		if (r->requests & JobExtractPositions)
+		if (r->requests & JobPositionVector)
 		{
-			r->transplantPositions();
+			r->transplantPositions(_displayTargets);
 			sum += r->score;
 		}
 	}
@@ -116,29 +117,53 @@ void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 
 void AxisExplorer::setupSlider()
 {
-	{
-		Slider *s = new Slider();
-		s->setDragResponder(this);
-		s->resize(0.5);
-		s->setup("Extent of motion", _min, _max, _step);
-		s->setStart(0.5, 0.);
-		s->setCentre(0.5, 0.85);
-		_rangeSlider = s;
-		addObject(s);
-	}
+	Slider *s = new Slider();
+	s->setDragResponder(this);
+	s->resize(0.5);
+	s->setup("Extent of motion", _min, _max, _step);
+	s->setStart(0.5, 0.);
+	s->setCentre(0.5, 0.85);
+	_rangeSlider = s;
+	addObject(s);
 }
 
-void AxisExplorer::reportMissing()
+void AxisExplorer::adjustTorsions()
 {
-	std::string str = "Note that this slider linearly interpolates the\n"
-	"torsion angle motions. This is rarely valid. Use only\n"
-	"as a guide to where the boundaries between rigid domains\n"
-	"are, not the motions themselves.";
-	
-	BadChoice *bc = new BadChoice(this, str);
-	setModal(bc);
+	std::cout << "Torsion to atomic: " << std::endl;
+	Entity *entity = _instance->entity();
+	Torsion2Atomic t2a(entity, _cluster);
+	_movement = t2a.convertAngles(_torsionLists[0]);
 }
 
+void AxisExplorer::askForAtomMotions()
+{
+	std::string str = "Would you like to see the atom motions associated\n"
+	"with this torsion angle motion?";
+	
+	AskYesNo *ayn = new AskYesNo(this, str, "adjust", this);
+	setModal(ayn);
+}
+
+void AxisExplorer::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "yes_adjust")
+	{
+		_displayTargets = true;
+		adjustTorsions();
+	}
+	else
+	{
+		std::string str = "Note that this slider linearly interpolates the\n"
+		"torsion angle motions. This is rarely valid. Use only\n"
+		"as a guide to where the boundaries between rigid domains\n"
+		"are, not the motions themselves.";
+
+		BadChoice *bc = new BadChoice(this, str);
+		setModal(bc);
+	}
+
+	Display::buttonPressed(tag, button);
+}
 
 void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 {
@@ -153,6 +178,7 @@ void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 	props.t = FFProperties::CAlphaSeparation;
 	calc->setForceFieldProperties(props);
 
+	calc->setPositionSampler(this);
 }
 
 void AxisExplorer::setupColoursForList(RTAngles &angles)
@@ -228,5 +254,63 @@ void AxisExplorer::setupColourLegend()
 	legend->setLimits(0.f, _maxTorsion);
 	legend->setCentre(0.9, 0.5);
 	addObject(legend);
+}
 
+int findAtom(RAMovement &movement, Atom *search, Instance *instance)
+{
+	for (size_t i = 0; i < movement.size(); i++)
+	{
+		if (movement.header(i).fitsAtom(search, instance))
+		{
+			return i;
+		}
+	}
+	
+	return -1;
+}
+
+bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
+                                Vec3s &positions)
+{
+	if (_movement.size() == 0)
+	{
+		return false;
+	}
+
+	const std::vector<AtomBlock> &blocks = seq->blocks();
+	positions.resize(blocks.size());
+
+	for (int i = 0; i < blocks.size(); i++)
+	{
+		Atom *search = blocks[i].atom;
+		if (!search)
+		{
+			continue;
+		}
+		
+		glm::vec3 pos = search->initialPosition();
+		int movement_idx = _mapping(seq, i);
+		
+		if (movement_idx < 0)
+		{
+			int idx = findAtom(_movement, search, _instance);
+			_mapping.setSeqBlockIdx(seq, i, idx);
+			
+			if (idx < 0)
+			{
+				idx = _movement.size();
+			}
+
+			movement_idx = idx;
+		}
+		else if (movement_idx >= _movement.size())
+		{
+			continue;
+		}
+
+		glm::vec3 extra = _movement.storage(movement_idx) * get(0);
+		positions[i] = pos + extra;
+	}
+
+	return true;
 }

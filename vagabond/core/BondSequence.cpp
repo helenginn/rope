@@ -207,7 +207,7 @@ void BondSequence::fetchAtomTarget(int idx)
 
 	if (ps == nullptr) { return; }
 
-	if (_acceptablePositions)
+	if (positionsAvailable())
 	{
 		_blocks[idx].target = _atomPositions[idx];
 	}

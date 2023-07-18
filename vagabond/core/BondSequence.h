@@ -213,6 +213,11 @@ private:
 	int calculateBlock(int idx);
 	float fetchTorsionForBlock(int idx);
 	void fetchAtomTarget(int idx);
+	
+	bool positionsAvailable()
+	{
+		return (_posSampler && _atomPositions.size() && _acceptablePositions);
+	}
 
 	Grapher _grapher;
 	std::map<Atom *, AtomGraph *> _atom2Graph;

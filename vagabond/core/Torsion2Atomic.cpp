@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <functional>
 #include "Torsion2Atomic.h"
 #include "Entity.h"
 
@@ -25,12 +26,21 @@ Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster)
 	_tCluster = cluster;
 	std::vector<Instance *> instances = _tCluster->dataGroup()->asInstances();
 	PositionalGroup group = entity->makePositionalDataGroup(instances);
+	group.findDifferences();
 	_pCluster = new PositionalCluster(group);
 }
 
-RAMovement Torsion2Atomic::convertAngles(const RTAngles &angles)
+struct weights
 {
-	MetadataGroup *grp = _tCluster->dataGroup();
+	std::map<Instance *, float> scores;
+	float operator()(Instance *inst)
+	{
+		return scores[inst];
+	}
+};
+
+weights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
+{
 	RTAngles master = grp->emptyAngles();
 
 	std::vector<Angular> sorted = angles.storage_according_to(master);
@@ -38,13 +48,63 @@ RAMovement Torsion2Atomic::convertAngles(const RTAngles &angles)
 	std::vector<float> compare;
 	grp->convertToComparable(sorted, compare);
 	
+	weights weight;
+	
 	for (size_t i = 0; i < grp->vectorCount(); i++)
 	{
-		Instance *instance = grp->object(i);
+		Instance *instance = static_cast<Instance *>(grp->object(i));
 		std::vector<float> entry = grp->comparableVector(i);
 		float cc = MetadataGroup::correlation_between(compare, entry);
 		std::cout << "instance " << instance->id() << " cc = " << cc << std::endl;
+		weight.scores[instance] = cc;
 	}
 
-	return RAMovement{};
+	return weight;
+}
+
+RAMovement Torsion2Atomic::convertAngles(const RTAngles &angles)
+{
+	MetadataGroup *grp = _tCluster->dataGroup();
+	weights weight = obtain_weights(grp, angles);
+	
+	PositionalGroup *group = _pCluster->dataGroup();
+
+	std::vector<Atom3DPosition> atomIds = group->headers();
+	RAMovement motions;
+	motions.vector_from(atomIds);
+	
+	for (size_t j = 0; j < atomIds.size(); j++)
+	{
+		Atom3DPosition &a3p = atomIds[j];
+		CorrelData cd[3]{};
+		glm::vec3 xy{};
+		glm::vec3 xx{};
+
+		for (size_t i = 0; i < group->vectorCount(); i++)
+		{
+			Instance *instance = static_cast<Instance *>(group->object(i));
+			glm::vec3 dir = group->differenceVector(i)[j];
+			float cc = weight(instance);
+			
+			for (size_t k = 0; k < 3; k++)
+			{
+				add_to_CD(&cd[k], dir[k], cc);
+				xx[k] += cc * cc;
+				xy[k] += dir[k] * cc;
+			}
+		}
+
+		glm::vec3 slopes{};
+		glm::vec3 results{};
+		for (size_t k = 0; k < 3; k++)
+		{
+			results[k] = fabs(evaluate_CD(cd[k]));
+			slopes[k] = xy[k] / xx[k];
+			results[k] *= slopes[k];
+		}
+		
+		motions.storage(j) = results;
+	}
+
+	return motions;
 }

@@ -21,9 +21,9 @@
 #include "Grapher.h"
 #include "TorsionBasis.h"
 #include "MetadataGroup.h"
-#include <vagabond/c4x/Cluster.h>
+#include "RopeCluster.h"
 
-Route::Route(Instance *inst, Cluster<MetadataGroup> *cluster, int dims) 
+Route::Route(Instance *inst, TorsionCluster *cluster, int dims) 
 : StructureModification(inst, 1, dims)
 {
 	_cluster = cluster;

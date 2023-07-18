@@ -22,6 +22,8 @@
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/gui/Display.h>
 #include <vagabond/core/StructureModification.h>
+#include <vagabond/core/PositionSampler.h>
+#include <vagabond/core/RAMovement.h>
 #include <vagabond/gui/elements/DragResponder.h>
 
 class Slider;
@@ -31,7 +33,7 @@ class AtomContent;
 class ConcertedBasis;
 
 class AxisExplorer : public Display, public DragResponder, 
-public StructureModification
+public StructureModification, public PositionSampler
 {
 public:
 	AxisExplorer(Scene *prev, Instance *mol, const RTAngles &angles);
@@ -43,21 +45,54 @@ public:
 	void setupSlider();
 	void submitJob(float prop);
 
+	void adjustTorsions();
+
+	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void finishedDragging(std::string tag, double x, double y);
+
+	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
+	                          Vec3s &positions);
+
+	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
+	                          Floats &torsions) {};
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 	void setupColoursForList(RTAngles &angles);
 private:
 	Slider *_rangeSlider = nullptr;
 
-	void reportMissing();
+	void askForAtomMotions();
 	void setupColours();
 	void setupColourLegend();
+	
+	struct mapping
+	{
+		int operator()(BondSequence *seq, int block)
+		{
+			if (map.count(seq) && map.at(seq).count(block))
+			{
+				return map[seq][block];
+			}
+
+			return -1;
+		}
+		
+		void setSeqBlockIdx(BondSequence *seq, int block, int move_idx)
+		{
+			map[seq][block] = move_idx;
+		}
+
+		std::map<BondSequence *, std::map<int, int>> map;
+	};
+	
+	mapping _mapping;
 	
 	double _min = -1; 
 	double _max = 1; 
 	double _step = 0.001;
 	float _maxTorsion = 0;
+
+	RAMovement _movement;
 	
 	int _dims = 1;
 };
