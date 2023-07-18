@@ -34,6 +34,8 @@
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/Chain.h>
+#include <vagabond/core/Entity.h>
+
 
 #include <vagabond/gui/DistanceMaker.h>
 #include <vagabond/gui/DisplayOptions.h>
@@ -281,26 +283,38 @@ void AddEntity::searchPdb()
 
 void AddEntity::loadConfSpaceView(std::string suffix)
 {
-	ConfSpaceView *view = new ConfSpaceView(this, &_obj);
-	
-	if (suffix == "refined_torsions")
-	{
-		view->setMode(rope::ConfTorsions);
-	}
-	else if (suffix == "atom_positions")
-	{
-		view->setMode(rope::ConfPositional);
-	}
+        try
+        {
+                if (_obj.modelCount()==0)
+                {
+                        throw std::invalid_argument("No models detected, have you modeled your entities?");
+                }
 
-	try
-	{
-		view->show();
-	}
-	catch (const std::runtime_error &err)
-	{
-		BadChoice *bc = new BadChoice(this, err.what());
-		setModal(bc);
-	}
+                ConfSpaceView *view = new ConfSpaceView(this, &_obj);
+                if (suffix == "refined_torsions")
+                {
+                        view->setMode(rope::ConfTorsions);
+                }
+                else if (suffix == "atom_positions")
+                {
+                        view->setMode(rope::ConfPositional);
+                }
+                        try
+                {
+                        view->show();
+                }
+                catch (const std::runtime_error &err)
+                {
+                        BadChoice *bc = new BadChoice(this, err.what());
+                        setModal(bc);
+                }
+        }
+        catch(std::invalid_argument &err)
+        {
+                BadChoice *brr = new BadChoice(this, err.what());
+                setModal(brr);
+                return;
+        }
 }
 
 void AddEntity::buttonPressed(std::string tag, Button *button)
@@ -352,10 +366,24 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "refine")
 	{
-		SerialRefiner *refiner = new SerialRefiner(this, &_obj);
-		refiner->setJobType(rope::ThoroughRefine);
-		refiner->show();
-		return;
+                try
+                {
+                        if (_obj.modelCount()==0)
+                        {
+                                throw std::invalid_argument("No models detected, have you modeled your sequences?");
+                        }
+                        SerialRefiner *refiner = new SerialRefiner(this, &_obj);
+                        refiner->setJobType(rope::ThoroughRefine);
+                        refiner->show();
+                        return;
+
+                }
+                catch(std::invalid_argument &err)
+                {
+                        BadChoice *brr = new BadChoice(this, err.what());
+                        setModal(brr);
+                        return;
+                }
 	}
 	else if (tag == "fix_issues")
 	{
