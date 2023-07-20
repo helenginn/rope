@@ -25,7 +25,9 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <sstream>
-
+#include "Model.h"
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/core/EntityManager.h>
 SerialRefiner::SerialRefiner(Scene *prev, Entity *entity) : Scene(prev),
 Display(prev)
 {
@@ -49,7 +51,6 @@ void SerialRefiner::start()
 	showThreads();
 
 	hideBackButton();
-	
 	_start = ::time(nullptr);
 	_handler->start();
 }

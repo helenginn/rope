@@ -53,7 +53,7 @@ private:
 
 	void addCircle(std::vector<Snow::Vertex> &vertices, 
 	               glm::vec3 centre, std::vector<glm::vec3> &circle);
-	void addCylinderIndices(size_t num);
+	void addCylinderIndices(size_t num, Atom *a=nullptr);
 
 	bool previousPositionValid();
 

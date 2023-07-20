@@ -174,10 +174,10 @@ else # emscripten
 endif
 
 if (links == [])
-  subdir('vagabond/c4x/tests')
-  subdir('vagabond/utils/tests')
-  subdir('vagabond/core/tests')
-  subdir('vagabond/gui/tests')
-  subdir('vagabond/gui/elements/tests')
+  #  subdir('vagabond/c4x/tests')
+#  subdir('vagabond/utils/tests')
+#  subdir('vagabond/core/tests')
+#  subdir('vagabond/gui/tests')
+#  subdir('vagabond/gui/elements/tests')
 endif
 

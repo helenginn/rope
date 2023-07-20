@@ -278,6 +278,22 @@ Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name,
 	return nullptr;
 }
 
+bool AtomGroup::isAtomAA(const ResidueId &id) const
+{
+	for (Atom *Atoms : _atoms)
+	{
+		if (Atoms->atomName()=="CA" || Atoms->atomName()=="N" ||Atoms->atomName()=="C")
+		{
+			return true;
+		}
+		else
+		{
+			continue;
+		}
+	return false;
+
+	}
+}
 AtomVector AtomGroup::atomsWithName(std::string name) const
 {
 	to_upper(name);

@@ -63,9 +63,16 @@ void GuiRibbon::addCircle(std::vector<Snow::Vertex> &vertices,
 	}
 }
 
-void GuiRibbon::addCylinderIndices(size_t num)
+void GuiRibbon::addCylinderIndices(size_t num,Atom *a)
 {
-	GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
+	if (AtomGroup().isAtomAA(a->residueId()))
+	{
+		GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
+	}
+	else
+	{
+		GuiRepresentation::addCylinderIndices(_vertices, _indices, num*20);
+	}
 }
 
 void GuiRibbon::convertToCylinder(std::vector<Snow::Vertex> *vertices)
@@ -229,39 +236,74 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-	if (_vertices.size() == 0)
+	if (AtomGroup().isAtomAA(a->residueId()))
 	{
-		insertAtom(nullptr);
-	}
+		if (_vertices.size() == 0)
+		{
+			insertAtom(nullptr);
+		}
 	
-	if (!acceptableAtom(a))
-	{
-		return;
-	}
+		if (!a->isReporterAtom())
+		{
+			return;
+		}
 	
-	Atom *prev = _cAlphas.back();
-	int separation = -1;
+		Atom *prev = _cAlphas.back();
+		int separation = -1;
 
-	if (prev)
-	{
-		separation = a->bondsBetween(prev, 6);
-	}
-	
-	if (!prev)
-	{
-		insertAtom(a);
-	}
-	else if (separation <= 4 && separation >= 0)
-	{
-		insertAtom(a);
+		if (prev)
+		{
+			separation = a->bondsBetween(prev, 6);
+		}
+		
+		if (!prev)
+		{
+			insertAtom(a);
+		}
+		else if (separation <= 4 && separation >= 0)
+		{
+			insertAtom(a);
+		}
+		else 
+		{
+			insertAtom(nullptr);
+		}
 	}
 	else 
 	{
-		insertAtom(nullptr);
-	}
-	
-}
+                if (_vertices.size() == 0)
+                {
+                        insertAtom(nullptr);
+                }
 
+                if (!a->isReporterAtom())
+                {
+                        return;
+                }
+
+                Atom *prev = _cAlphas.back();
+                int separation = -1;
+
+                if (prev)
+                {
+                        separation = a->bondsBetween(prev, 6);
+                }
+
+                if (!prev)
+                {
+                        insertAtom(a);
+                }
+                else if (separation <= 6 && separation >= 0)
+                {
+                        insertAtom(a);
+                }
+                else
+                {
+                        insertAtom(nullptr);
+                }
+
+	}
+}
 void GuiRibbon::convert()
 {
 	insertAtom(nullptr);
@@ -295,7 +337,7 @@ void GuiRibbon::prepareAtomSpace(AtomGroup *ag)
 	for (size_t i = 0; i < ag->size(); i++)
 	{
 		// HARDCODE
-		if (acceptableAtom((*ag)[i]))
+		if (((*ag)[i])->isReporterAtom())
 		{
 			count++;
 		}
