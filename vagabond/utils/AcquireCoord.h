@@ -20,6 +20,7 @@
 #define __vagabond__AcquireCoord__
 
 #include <vector>
+#include <functional>
 
 namespace Coord
 {
