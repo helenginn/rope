@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/svd/PCA.h>
 #include "AtomPosMap.h"
+#include <functional>
 
 class Atom;
 
