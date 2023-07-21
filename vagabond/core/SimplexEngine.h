@@ -31,11 +31,6 @@ class SimplexEngine : public Engine
 public:
 	SimplexEngine(RunsEngine *ref);
 	virtual ~SimplexEngine() {};
-
-	void setDimensionCount(int dims)
-	{
-		_dims = dims;
-	}
 	
 	void chooseStepSizes(std::vector<float> &steps)
 	{
@@ -49,7 +44,7 @@ public:
 
 	virtual void finish();
 protected:
-	void run();
+	virtual void run();
 
 	typedef std::vector<float> SPoint;
 
@@ -124,7 +119,6 @@ private:
 	std::vector<TestPoint> _points;
 	TestPoint _centroid{};
 
-	int _dims = 0;
 	int _maxJobs = 1;
 	bool _changedParams = false;
 	std::vector<float> _steps;

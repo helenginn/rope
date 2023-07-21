@@ -25,8 +25,6 @@
 #include <vagabond/core/BondSequence.h>
 #include <vagabond/core/BondCalculator.h>
 
-namespace tt = boost::test_tools;
-
 BOOST_AUTO_TEST_CASE(ramachandran_plot)
 {
 	return;

@@ -16,18 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define BOOST_TEST_MODULE test_core
-#include <vagabond/utils/include_boost.h>
-namespace tt = boost::test_tools;
+#ifndef __vagabond__test_lbfgs__
+#define __vagabond__test_lbfgs__
 
-#include "test_atomgroup.cpp"
-#include "test_atomsfromsequence.cpp"
-#include "test_handler.cpp"
-#include "test_list.cpp"
-#include "test_molecule.cpp"
-#include "test_molrefiner.cpp"
-#include "test_ramachandran.cpp"
-#include "test_sequence.cpp"
-#include "test_surface.cpp"
-#include "test_lbfgs.cpp"
-#include "test_grid.cpp"
+
+#endif

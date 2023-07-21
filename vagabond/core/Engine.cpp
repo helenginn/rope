@@ -165,3 +165,23 @@ void Engine::start()
 	
 	_improved = (_endScore < _startScore - 1e-6);
 }
+
+void Engine::getTrueGradients()
+{
+
+}
+
+void Engine::estimateGradients()
+{
+
+}
+
+void Engine::grabGradients(float *g)
+{
+	if (_ref->returnsGradients())
+	{
+		getTrueGradients();
+	}
+
+	estimateGradients();
+}

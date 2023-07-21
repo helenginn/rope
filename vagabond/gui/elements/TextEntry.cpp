@@ -124,6 +124,8 @@ void TextEntry::shiftKey(char &key)
 	if (key == '7') { key = '&'; };
 	if (key == '8') { key = '*'; };
 	if (key == '9') { key = '('; };
+	if (key == ';') { key = ':'; };
+	if (key == '\'') { key = '"'; };
 
 	if ((key >= 'a' && key <= 'z'))
 	{

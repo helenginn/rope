@@ -314,3 +314,4 @@ bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
 
 	return true;
 }
+

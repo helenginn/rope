@@ -23,6 +23,7 @@
 #include <map>
 #include <cstddef>
 #include <cfloat>
+#include <functional>
 
 class RunsEngine
 {
@@ -51,6 +52,11 @@ public:
 		_ticket = 0;
 		_scores.clear();
 	}
+	
+	bool returnsGradients()
+	{
+		return (!!_gradient);
+	}
 protected:
 	int getNextTicket()
 	{
@@ -62,6 +68,11 @@ protected:
 		return _ticket;
 	}
 	
+	void setGradientFunction(const std::function<std::vector<float>(int)>
+	                         &gradient)
+	{
+		_gradient = gradient;
+	}
 	
 	void setScoreForTicket(int ticket, double score)
 	{
@@ -70,6 +81,7 @@ protected:
 private:
 	int _ticket = 0;
 	std::map<int, double> _scores;
+	std::function<std::vector<float>(int)> _gradient{};
 };
 
 class Engine
@@ -118,10 +130,12 @@ private:
 		bool received = false;
 	};
 protected:
+
 	int sendJob(const std::vector<float> &all);
 	std::vector<float> findBestResult(float *score);
 	
 	void getResults();
+	void grabGradients(float *g);
 	
 	const std::vector<float> &current() const
 	{
@@ -154,6 +168,9 @@ protected:
 	int _maxRuns = 500;
 	std::map<int, TicketScore> _scores;
 private:
+	void getTrueGradients();
+	void estimateGradients();
+
 	RunsEngine *_ref = nullptr;
 	bool _verbose = false;
 
