@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <float.h>
+#include <climits>
 
 struct Histogram
 {
