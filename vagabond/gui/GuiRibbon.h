@@ -62,6 +62,7 @@ private:
 	std::map<int, glm::vec3> _idxPos;
 
 	std::vector<Atom *> _cAlphas;
+	AtomGroup * _group;
 };
 
 #endif

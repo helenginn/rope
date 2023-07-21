@@ -26,6 +26,12 @@ namespace rope
 		RefinedTorsions,
 		TemporaryTorsions,
 	};
+	enum MonomerType
+	{
+		IsAminoAcid,
+		IsNucleicAcid,
+		IsOther,
+	};
 }
 
 #endif

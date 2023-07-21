@@ -65,7 +65,7 @@ void GuiRibbon::addCircle(std::vector<Snow::Vertex> &vertices,
 
 void GuiRibbon::addCylinderIndices(size_t num,Atom *a)
 {
-	if (AtomGroup().isAtomAA(a->residueId()))
+	if (_group->isAtomAA(a->residueId()))
 	{
 		GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
 	}
@@ -236,7 +236,7 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-	if (AtomGroup().isAtomAA(a->residueId()))
+	if (_group->isAtomAA(a->residueId()))
 	{
 		if (_vertices.size() == 0)
 		{
@@ -334,6 +334,7 @@ size_t GuiRibbon::verticesPerAtom()
 void GuiRibbon::prepareAtomSpace(AtomGroup *ag)
 {
 	int count = 0;
+	_group=ag;
 	for (size_t i = 0; i < ag->size(); i++)
 	{
 		// HARDCODE
