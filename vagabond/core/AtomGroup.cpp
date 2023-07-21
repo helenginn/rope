@@ -278,16 +278,23 @@ Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name,
 	return nullptr;
 }
 
-bool AtomGroup::isAtomAA(const ResidueId &id) const
+int AtomGroup::isAtomAA(const ResidueId &id)
 {
 	for (Atom *atom : _atoms)
 	{
 		if (atom->atomName()=="CA" || atom->atomName()=="N" ||atom->atomName()=="C" && atom->residueId()==id)
 		{
-			return true;
+			return rope::IsAminoAcid;
+		}
+		else if (atom->atomName()=="O5\'" ||atom->atomName()=="C5\'" ||atom->atomName()=="C4\'" ||atom->atomName()=="C3\'" ||atom->atomName()=="O3\'")
+		{
+			return rope::IsNucleicAcid;
+		}
+		else
+		{
+			return rope::IsOther;
 		}
 	}
-	return false;
 }
 AtomVector AtomGroup::atomsWithName(std::string name) const
 {

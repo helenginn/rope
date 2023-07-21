@@ -22,6 +22,7 @@
 #include <vagabond/utils/maths.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/RopeTypes.h>
 
 #define INDICES_PER_BEZIER_DIVISION (12)
 #define DIVISIONS_IN_CIRCLE (16)
@@ -65,11 +66,11 @@ void GuiRibbon::addCircle(std::vector<Snow::Vertex> &vertices,
 
 void GuiRibbon::addCylinderIndices(size_t num,Atom *a)
 {
-	if (_group->isAtomAA(a->residueId()))
+	if (_group->isAtomAA(a->residueId())==rope::IsAminoAcid)
 	{
 		GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
 	}
-	else
+	else if(_group->isAtomAA(a->residueId())==rope::IsNucleicAcid) 
 	{
 		GuiRepresentation::addCylinderIndices(_vertices, _indices, num*20);
 	}
@@ -236,72 +237,76 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-	if (_group->isAtomAA(a->residueId()))
+	for (int i :a->residueId())
 	{
-		if (_vertices.size() == 0)
+		if (_group->isAtomAA(a->residueId())==rope::IsAminoAcid)
 		{
-			insertAtom(nullptr);
-		}
+			if (_vertices.size() == 0)
+			{
+				insertAtom(nullptr);
+			}
 	
-		if (!a->isReporterAtom())
-		{
-			return;
-		}
+			if (!a->isReporterAtom())
+			{
+				return;
+			}
 	
-		Atom *prev = _cAlphas.back();
-		int separation = -1;
+			Atom *prev = _cAlphas.back();
+			int separation = -1;
 
-		if (prev)
-		{
-			separation = a->bondsBetween(prev, 6);
-		}
+			if (prev)
+			{
+				separation = a->bondsBetween(prev, 6);
+			}
 		
-		if (!prev)
-		{
-			insertAtom(a);
+			if (!prev)
+			{
+				insertAtom(a);
+			}
+			else if (separation <= 4 && separation >= 0)
+			{
+				insertAtom(a);
+			}
+			else 
+			{
+				insertAtom(nullptr);
+			}
 		}
-		else if (separation <= 4 && separation >= 0)
+
+		else if (_group->isAtomAA(a->residueId())==rope::IsNucleicAcid)
 		{
-			insertAtom(a);
+        	if (_vertices.size() == 0)
+            {
+            	insertAtom(nullptr);
+            }
+
+            if (!a->isReporterAtom())
+            {
+            	return;
+            }
+
+            Atom *prev = _cAlphas.back();
+            int separation = -1;
+
+            if (prev)
+            {
+            	separation = a->bondsBetween(prev, 6);
+            }
+
+            if (!prev)
+            {
+            	insertAtom(a);
+            }
+            else if (separation <= 6 && separation >= 0)
+            {
+            	insertAtom(a);
+            }
+            else
+            {
+            	insertAtom(nullptr);
+            }
+
 		}
-		else 
-		{
-			insertAtom(nullptr);
-		}
-	}
-	else 
-	{
-                if (_vertices.size() == 0)
-                {
-                        insertAtom(nullptr);
-                }
-
-                if (!a->isReporterAtom())
-                {
-                        return;
-                }
-
-                Atom *prev = _cAlphas.back();
-                int separation = -1;
-
-                if (prev)
-                {
-                        separation = a->bondsBetween(prev, 6);
-                }
-
-                if (!prev)
-                {
-                        insertAtom(a);
-                }
-                else if (separation <= 6 && separation >= 0)
-                {
-                        insertAtom(a);
-                }
-                else
-                {
-                        insertAtom(nullptr);
-                }
-
 	}
 }
 void GuiRibbon::convert()
