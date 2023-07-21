@@ -166,22 +166,50 @@ void Engine::start()
 	_improved = (_endScore < _startScore - 1e-6);
 }
 
-void Engine::getTrueGradients()
+void Engine::trueGradients(float *g, const float *x)
 {
 
 }
 
-void Engine::estimateGradients()
+void Engine::estimateGradients(float *g, const float *x)
 {
+	std::vector<float> vals(n());
+	memcpy(&vals[0], x, n() * sizeof(float));
 
+	int *high_tickets = new int[n()];
+	int *low_tickets = new int[n()];
+	float interval = (_step / 500);
+	
+	for (size_t i = 0; i < n(); i++)
+	{
+		float orig = vals[i];
+		vals[i] = orig - interval / 2;
+		low_tickets[i] = sendJob(vals);
+		vals[i] = orig + interval / 2;
+		high_tickets[i] = sendJob(vals);
+		vals[i] = orig;
+	}
+	
+	getResults();
+
+	for (size_t i = 0; i < n(); i++)
+	{
+		float upper = _scores[high_tickets[i]].score;
+		float lower = _scores[low_tickets[i]].score;
+		float diff = (upper - lower) / interval;
+		g[i] = diff;
+	}
+	
+	delete [] high_tickets;
+	delete [] low_tickets;
 }
 
-void Engine::grabGradients(float *g)
+void Engine::grabGradients(float *g, const float *x)
 {
 	if (_ref->returnsGradients())
 	{
-		getTrueGradients();
+		trueGradients(g, x);
 	}
 
-	estimateGradients();
+	estimateGradients(g, x);
 }

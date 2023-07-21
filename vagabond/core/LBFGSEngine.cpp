@@ -59,7 +59,7 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 	sendJob(vals);
 	Engine::findBestResult(&eval);
 
-	Engine::grabGradients(g);
+	Engine::grabGradients(g, x);
 
 	clearResults();
 

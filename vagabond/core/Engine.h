@@ -135,7 +135,7 @@ protected:
 	std::vector<float> findBestResult(float *score);
 	
 	void getResults();
-	void grabGradients(float *g);
+	void grabGradients(float *g, const float *x);
 	
 	const std::vector<float> &current() const
 	{
@@ -168,8 +168,8 @@ protected:
 	int _maxRuns = 500;
 	std::map<int, TicketScore> _scores;
 private:
-	void getTrueGradients();
-	void estimateGradients();
+	void trueGradients(float *g, const float *x);
+	void estimateGradients(float *g, const float *x);
 
 	RunsEngine *_ref = nullptr;
 	bool _verbose = false;
