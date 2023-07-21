@@ -298,20 +298,14 @@ void AddEntity::loadConfSpaceView(std::string suffix)
                 else if (suffix == "atom_positions")
                 {
                         view->setMode(rope::ConfPositional);
-                }
-                        try
-                {
-                        view->show();
-                }
-                catch (const std::runtime_error &err)
-                {
-                        BadChoice *bc = new BadChoice(this, err.what());
-                        setModal(bc);
-                }
+		}
+		view->show();
+                
         }
-        catch(std::invalid_argument &err)
+        catch(std::exception &err)
         {
-                BadChoice *brr = new BadChoice(this, err.what());
+                
+		BadChoice *brr = new BadChoice(this, err.what());
                 setModal(brr);
                 return;
         }
