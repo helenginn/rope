@@ -20,6 +20,7 @@
 #define __vagabond__AltersNetwork__
 
 #include "Responder.h"
+#include <functional>
 
 class Parameter;
 class SpecificNetwork;
