@@ -339,6 +339,7 @@ void Window::setCurrentScene(Scene *scene)
 	}
 	_current = scene;
 	_current->setDims(_rect.w, _rect.h);
+	_switchMutex.unlock();
 	_current->preSetup();
 }
 
