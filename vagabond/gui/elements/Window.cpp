@@ -186,6 +186,18 @@ void Window::window_tick()
 	tick();
 }
 
+void Window::handleWindowEvent(SDL_Event &event)
+{
+	if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+	{
+		_rect.w = event.window.data1;
+		_rect.h = event.window.data2;
+		glSetup();
+		_current->setDims(_rect.w, _rect.h);
+	}
+
+}
+
 bool Window::tick()
 {
 	SDL_GLContext context = SDL_GL_GetCurrentContext();
@@ -201,6 +213,10 @@ bool Window::tick()
 
 		switch (event.type)
 		{
+			case SDL_WINDOWEVENT:
+			_myWindow->handleWindowEvent(event);
+			break;
+
 			case SDL_KEYDOWN:
 			_current->keyPressEvent(event.key.keysym.sym);
 			break;

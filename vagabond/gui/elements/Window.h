@@ -145,6 +145,7 @@ protected:
 
 	static Window *_myWindow;
 private:
+	void handleWindowEvent(SDL_Event &event);
 	void deleteQueued();
 
 	static SDL_Renderer *_renderer;

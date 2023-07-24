@@ -56,7 +56,6 @@ public:
 	
 	virtual void extraWindowFlags(unsigned int &flags)
 	{
-		flags += SDL_WINDOW_FULLSCREEN_DESKTOP;
 		flags += SDL_WINDOW_RESIZABLE;
 	}
 
