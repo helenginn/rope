@@ -106,7 +106,7 @@ void Route::submitJob(int idx, bool show, bool forces)
 			job.custom.vecs[0].mean[i] = value;
 		}
 
-		job.requests = static_cast<JobType>(JobExtractPositions |
+		job.requests = static_cast<JobType>(JobPositionVector |
 		                                    JobCalculateDeviations);
 		if (!show)
 		{

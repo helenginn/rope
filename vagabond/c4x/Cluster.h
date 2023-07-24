@@ -32,7 +32,7 @@ class Cluster
 public:
 	Cluster(DG &dg);
 	
-	virtual ~Cluster() {};
+	virtual ~Cluster();
 
 	virtual void cluster() = 0;
 	

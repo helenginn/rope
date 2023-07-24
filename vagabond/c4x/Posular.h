@@ -115,6 +115,13 @@ struct Posular
 		return *this;
 	}
 
+	Posular operator*(const float &a)
+	{
+		Posular ret;
+		ret.pos = pos * a;
+		return ret;
+	}
+
 	float operator*(const Posular &a)
 	{
 		return glm::dot(pos, a.pos);

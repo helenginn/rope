@@ -27,6 +27,7 @@ ColourLegend::ColourLegend(Scheme scheme, bool vert, Scene *r)
 {
 	resize(0.25);
 	_responder = r;
+	setCentre(0., 0.);
 }
 
 ColourLegend::~ColourLegend()
@@ -65,20 +66,20 @@ void ColourLegend::setLimits(float min, float max)
 {
 	std::string minstr = f_to_str(min, 2);
 	std::string maxstr = f_to_str(max, 2);
+	
+	deleteTemps();
 
 	{
 		Text *text = new Text(minstr);
 		text->resize(0.6);
-		text->setCentre((_vert ? 0.04 : 0.375), 
-		                (_vert ? +0.1 : 0.15));
-		addObject(text);
+		text->setCentre(_vert ? 0.04 : 0.375, _vert ? +0.1 : 0.15);
+		addTempObject(text);
 	}
 
 	{
 		Text *text = new Text(maxstr);
 		text->resize(0.6);
-		text->setCentre((_vert ? 0.04 : 0.625), 
-		                (_vert ? -0.1 : 0.15));
-		addObject(text);
+		text->setCentre(_vert ? 0.04 : 0.625, _vert ? -0.1 : 0.15);
+		addTempObject(text);
 	}
 }

@@ -37,7 +37,7 @@ namespace Refine
 		std::string mol_id;
 		Polymer *molecule = nullptr;
 		std::vector<RTAngles> axes;
-		int samples = 50;
+		int samples = 120;
 		
 		std::vector<float> mean;
 	};

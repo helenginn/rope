@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/IndexResponder.h>
 #include <vagabond/c4x/Cluster.h>
 #include <vagabond/core/Engine.h>
+#include <vagabond/c4x/Posular.h>
 #include <thread>
 
 class Scene;
@@ -78,11 +79,15 @@ private:
 	void route(int idx);
 	void initialise();
 
+	std::string titleForAxis(int idx);
 	std::vector<Angular> getTorsionVector(int axis);
+	std::vector<Posular> getPositionalVector(int idx);
 	void prepareAxes();
 	void refreshAxes();
 	void reflect(int i);
+
 	void loadAxisExplorer(int idx);
+	void loadAtom2AtomExplorer(int idx);
 
 	RopeCluster *_cluster = nullptr;
 	TorsionCluster *_torsionCluster = nullptr;

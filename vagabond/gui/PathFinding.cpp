@@ -23,7 +23,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskForText.h>
-//#include "SpecificNetwork.h"
+#include "SpecificNetwork.h"
 #include "AddRule.h"
 #include "MapView.h"
 
@@ -95,8 +95,8 @@ void PathFinding::loadSpace(std::string filename)
 	f >> data;
 	f.close();
 
-//	SpecificNetwork *spec = new SpecificNetwork(data);
-//	_prior = spec;
+	SpecificNetwork *spec = new SpecificNetwork(data);
+	_prior = spec;
 }
 
 void PathFinding::makeRule()

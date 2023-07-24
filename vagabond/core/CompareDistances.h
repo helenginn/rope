@@ -28,7 +28,7 @@ class Atom;
 class CompareDistances
 {
 public:
-	CompareDistances();
+	CompareDistances(bool magnitude = true);
 	~CompareDistances();
 
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
@@ -84,6 +84,7 @@ private:
 	
 	PCA::Matrix _matrix;
 	int _counter = 0;
+	bool _magnitude = true;
 };
 
 #endif

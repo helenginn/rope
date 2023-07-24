@@ -35,6 +35,8 @@ class RTAngles;
 class AtomGroup;
 class SequenceComparison;
 
+struct Atom3DPosition;
+
 typedef std::map<Residue *, Residue *> ResidueMap;
 
 class Sequence : public IndexedSequence

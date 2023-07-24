@@ -110,7 +110,6 @@ void ThreadExtractsBondPositions::start()
 		timeStart();
 
 		Job *job = seq->job();
-
 		Result *r = nullptr;
 
 		if (job->result)
@@ -178,6 +177,7 @@ void ThreadExtractsBondPositions::returnResult(Job *job)
 {
 	BondCalculator *calc = _seqHandler->calculator();
 	Result *r = job->result;
+	
 	job->destroy();
 	calc->submitResult(r);
 }

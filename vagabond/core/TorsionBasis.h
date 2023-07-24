@@ -107,7 +107,7 @@ public:
 		return _atoms[i];
 	}
 	
-	Parameter *parameter(int i)
+	Parameter *const parameter(int i) const
 	{
 		return _params[i];
 	}

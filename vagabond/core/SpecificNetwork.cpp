@@ -56,7 +56,7 @@ StructureModification(j.at("model"), j.at("main_instance"), 1, 2)
 		}
 		instances.push_back(instance);
 	}
-
+	
 	_network = new Network(entity, instances);
 	_network->get_info(j);
 	
@@ -64,8 +64,11 @@ StructureModification(j.at("model"), j.at("main_instance"), 1, 2)
 	_threads = 1;
 	_instance->load();
 	_instance->currentAtoms()->recalculate();
-	
+	_fromJson = true;
+
 	grabParamMaps(j);
+	
+	setup();
 }
 
 void SpecificNetwork::grabParamMaps(json &j)
@@ -73,7 +76,7 @@ void SpecificNetwork::grabParamMaps(json &j)
 	AtomGroup *atoms = _instance->currentAtoms();
 	typedef Mapping<NETWORK_DIMS, float> Concrete;
 
-	for (json &entry : j["maps"])
+	for (json &entry : j["params"])
 	{
 		ResidueId id = entry["param"]["res"];
 		std::string desc = entry["param"]["desc"];
@@ -85,9 +88,18 @@ void SpecificNetwork::grabParamMaps(json &j)
 			                         id.as_string() + " " + desc);
 		}
 
-		json &tmp = entry["map"];
-		_param2Map[param] = new Concrete();
-		setJsonForParameter(param, tmp);
+		_parameters.insert(param);
+		int map_idx = entry["param"]["map_idx"];
+		int bond_idx = entry["param"]["bond_idx"];
+		_param2BondMap[param] = std::make_pair(map_idx, bond_idx);
+	}
+	
+	std::cout << "bond maps: " << j["bondmaps"].size() << std::endl;
+	for (json &entry : j["bondmaps"])
+	{
+		typedef Mapping<NETWORK_DIMS, Floats> Concrete;
+		Concrete *map = new Concrete(entry["map"]);
+		_bondMaps.push_back(map);
 	}
 }
 
@@ -174,24 +186,24 @@ void SpecificNetwork::updateAtomsFromDerived(int idx)
 int SpecificNetwork::submitJob(bool show, const std::vector<float> vals, 
                                int save_id)
 {
-	Job job{};
-	job.custom.allocate_vectors(1, _network->dims(), _num);
-	job.pos_sampler = this;
-
-	for (size_t i = 0; i < vals.size(); i++)
-	{
-		job.custom.vecs[0].mean[i] = vals[i];
-	}
-
-	job.requests = static_cast<JobType>(JobPositionVector |
-	                                    JobCalculateDeviations);
-	if (!show)
-	{
-		job.requests = JobCalculateDeviations;
-	}
-
 	for (BondCalculator *calc : _calculators)
 	{
+		Job job{};
+		job.custom.allocate_vectors(1, _network->dims(), _num);
+		job.pos_sampler = this;
+
+		for (size_t i = 0; i < vals.size(); i++)
+		{
+			job.custom.vecs[0].mean[i] = vals[i];
+		}
+
+		job.requests = static_cast<JobType>(JobPositionVector |
+		                                    JobCalculateDeviations);
+		if (!show)
+		{
+			job.requests = JobCalculateDeviations;
+		}
+
 		int t = calc->submitJob(job);
 		_ticket2Point[t] = _jobNum;
 	}
@@ -233,6 +245,7 @@ void SpecificNetwork::prepareBondMaps(BondSequence *seq, BondMapping *pm)
 	
 	std::vector<Parameter *> params = basis->parameters();
 	std::vector<Instance *> others = _network->instances();
+	std::cout << "running prepareBondMaps" << std::endl;
 	
 	for (Instance *other : others)
 	{
@@ -251,16 +264,20 @@ void SpecificNetwork::prepareBondMaps(BondSequence *seq, BondMapping *pm)
 
 			if (other_res)
 			{
+				std::cout << id << " " << params[i]->desc() << ": ";
 				TorsionRef ref = other_res->copyTorsionRef(params[i]->desc());
 				if (ref.valid())
 				{
 					float tmp = ref.refinedAngle();
+					std::cout << val << " " << tmp;
 					matchDegree(val, tmp);
+					std::cout << " -> " << tmp << std::endl;
 					val = tmp;
 				}
 			}
 
-			_param2BondMap[params[i]] = make_pair(pm, i);
+			_parameters.insert(params[i]);
+			_param2BondMap[params[i]] = std::make_pair(_bondMaps.size(), i);
 			list.push_back(val);
 			grad_zero.push_back(0);
 		}
@@ -272,85 +289,39 @@ void SpecificNetwork::prepareBondMaps(BondSequence *seq, BondMapping *pm)
 	}
 }
 
-void SpecificNetwork::completeTorsionMap(TorsionMapping &map)
-{
-	if (_param2Map.count(map.param) > 0)
-	{
-		map.mapping = _param2Map[map.param];
-		return;
-	}
-
-	const ResidueId id = map.param->residueId();
-	Residue *master_res = _instance->equivalentMaster(id);
-	_param2Map[map.param] = map.mapping;
-
-	std::vector<Instance *> others = _network->instances();
-
-	for (Instance *other : others)
-	{
-		Residue *other_res = other->equivalentLocal(master_res);
-		if (!other_res)
-		{
-			continue;
-		}
-		
-		int idx = _network->indexForInstance(other);
-		float val = map.param->value();
-
-		TorsionRef ref = other_res->copyTorsionRef(map.param->desc());
-		if (ref.valid())
-		{
-			float tmp = ref.refinedAngle();
-			matchDegree(val, tmp);
-			val = tmp;
-		}
-
-		map.mapping->alter_value(idx, val);
-	}
-}
-
-void SpecificNetwork::getTorsionDetails(TorsionBasis *tb, CalcDetails &cd)
-{
-	for (size_t i = 0; i < tb->parameterCount(); i++)
-	{
-		Parameter *pm = tb->parameter(i);
-		TorsionMapping tm{};
-		tm.param = pm;
-
-		if (pm && !pm->isConstrained())
-		{
-			tm.mapping = _network->blueprint_scalar_copy();
-			completeTorsionMap(tm);
-		}
-		
-		cd.torsions.push_back(tm);
-	}
-}
-
 void SpecificNetwork::getDetails(BondCalculator *bc)
 {
-	CalcDetails cd{};
-
 	BondSequence *seq = bc->sequence();
+
 	PosMapping *pm = _network->blueprint_vec3s_copy();
-	BondMapping *bm = _network->blueprint_floats_copy();
-
 	prepareAtomMaps(seq, pm);
-	prepareBondMaps(seq, bm);
-
-	TorsionBasis *tb = bc->torsionBasis();
-	getTorsionDetails(tb, cd);
-	
-	_bondDetails[bc] = bm;
-	_calcDetails[bc] = cd;
 	_atomDetails[bc] = pm;
+	
+	if (!_fromJson)
+	{
+		BondMapping *bm = _network->blueprint_floats_copy();
+		prepareBondMaps(seq, bm);
+		_bondMaps.push_back(bm);
+		_bondDetails[bc] = bm;
+	}
 }
 
 void SpecificNetwork::processCalculatorDetails()
 {
+	int i = 0;
+	std::cout << "bondmapsize " << _bondMaps.size() << std::endl;
+	std::cout << "calcsize " << _calculators.size() << std::endl;
 	for (BondCalculator *calc : _calculators)
 	{
 		getDetails(calc);
+
+		if (_fromJson)
+		{
+			std::cout << "setting " << i << std::endl;
+			std::cout << _bondMaps[i]->pointCount() << std::endl;
+			_bondDetails[calc] = _bondMaps[i];
+		}
+		i++;
 	}
 }
 
@@ -380,30 +351,6 @@ bool SpecificNetwork::prewarnAtoms(BondSequence *seq,
 	return accept;
 }
 
-Coord::Interpolate<float> SpecificNetwork::torsion(BondSequence *seq, int idx, 
-                                                   const Coord::Get &coord) const
-{
-	std::vector<float> vals(_network->dims());
-	for (int i = 0; i < _network->dims(); i++)
-	{
-		vals[i] = coord(i);
-	}
-
-	BondCalculator *bc = seq->calculator();
-	const CalcDetails &cd = _calcDetails.at(bc);
-
-	const TorsionMapping &tm = cd.torsions.at(idx);
-	Mapped<float> *const map = tm.mapping;
-	if (!map)
-	{
-		return [](const Coord::Get &) { return 0;};
-	}
-
-	Coord::Interpolate<float> interpolate;// = map->interpolate_function(coord);
-	
-	return interpolate;
-}
-
 void SpecificNetwork::customModifications(BondCalculator *calc, bool has_mol)
 {
 	calc->setPositionSampler(this);
@@ -430,77 +377,23 @@ bool SpecificNetwork::handleAtomMap(AtomPosMap &aps)
 	return (_display % _displayInterval) == 0;
 }
 
-int SpecificNetwork::detailsForParam(Parameter *parameter, BondCalculator **calc)
-{
-	*calc = nullptr;
-
-	for (BondCalculator *bc : _calculators)
-	{
-		CalcDetails &cd = _calcDetails[bc];
-		int idx = cd.index_for_param(parameter);
-		
-		if (idx >= 0)
-		{
-			*calc = bc;
-			return idx;
-		}
-	}
-
-	return -1;
-}
-
-int SpecificNetwork::pointCount(Parameter *parameter)
-{
-	for (BondCalculator *bc : _calculators)
-	{
-		CalcDetails &cd = _calcDetails[bc];
-		int idx = cd.index_for_param(parameter);
-		if (idx < 0)
-		{
-			continue;
-		}
-
-		Mapped<float> *map = cd.torsions[idx].mapping;
-		return map->pointCount();
-	}
-	
-	return -1;
-}
-
-void SpecificNetwork::writeBondMaps()
-{
-	for (auto it = _param2BondMap.begin(); it != _param2BondMap.end(); it++)
-	{
-		std::cout << it->first->residueId() << " " << it->first->desc() << std::endl;
-		std::cout << "points: " << it->second.first->pointCount() << std::endl;
-	}
-
-}
-
-void SpecificNetwork::refresh(Parameter *p)
-{
-	json info = jsonForParameter(p);
-	setJsonForParameter(p, info);
-}
-
 void SpecificNetwork::setJsonForParameter(Parameter *p, const json &j)
 {
 	typedef Mapping<NETWORK_DIMS, float> Concrete;
-	Mapped<float> *tmp = mapForParameter(p);
-	Concrete *map = static_cast<Concrete *>(tmp);
+//	Mapped<float> *tmp = mapForParameter(p);
+//	Concrete *map = static_cast<Concrete *>(tmp);
 
-	map->invalidate();
-	*map = j["map"];
+//	*map = j["map"];
 }
 
-json SpecificNetwork::jsonForParameter(Parameter *p) const
+json SpecificNetwork::jsonForBondMap(int idx) const
 {
-	typedef Mapping<NETWORK_DIMS, float> Concrete;
-	Mapped<float> *tmp = mapForParameter(p);
-	Concrete *map = static_cast<Concrete *>(tmp);
+	typedef Mapping<NETWORK_DIMS, Floats> Concrete;
+	BondMapping *tmp = _bondMaps[idx];
+	Concrete *conc = static_cast<Concrete *>(tmp);
 
 	json j;
-	j["map"] = *map;
+	j["map"] = *conc;
 	return j;
 }
 

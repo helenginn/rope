@@ -172,24 +172,4 @@ inline void from_json(const json &j, Residue &value)
 
 class Entity;
 
-struct Atom3DPosition
-{
-	std::string atomName;
-	Residue *residue = nullptr;
-	Entity *entity = nullptr;
-	
-	std::string desc() const
-	{
-		if (residue == nullptr)
-		{
-			std::string id = "p-null:" + atomName;
-			return id;
-		}
-
-		std::string id = "p" + residue->id().as_string() + ":" + atomName;
-		return id;
-	}
-	
-};
-
 #endif

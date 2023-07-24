@@ -40,7 +40,8 @@ public:
 	                              const std::vector<Atom *> &atoms);
 	
 
-	void setFilters(int pidx, int grp, AtomFilter &left, AtomFilter &right);
+	void setFilters(int pidx, int grp, AtomFilter &left, AtomFilter &right,
+	                bool ends = true);
 
 	Parameters paramsForPoint(int pidx, int grp);
 	Parameters paramsForTriangle(int tidx, int grp);
@@ -57,6 +58,10 @@ public:
 	std::function<float(int &)> flipFunction(Parameter *param, int pidx);
 
 	float updateFlex(Parameter *problem, const std::vector<float> &pos);
+	Parameters sortedByDescendingFlex();
+
+	void startAssessment();
+	void finishAssessment();
 private:
 	void getFlexes();
 
@@ -81,23 +86,27 @@ private:
 
 		Parameter *more_than_lower_bound(int pidx)
 		{
+			if (grouped[pidx].size() == 0) return nullptr;
 			return grouped[pidx].back();
 		}
 		
 		Parameter *more_than_upper_bound(int pidx)
 		{
 			if (pidx >= grouped.size() - 1) return nullptr;
+			if (grouped[pidx + 1].size() == 0) return nullptr;
 			return grouped[pidx + 1].front();
 		}
 		
 		Parameter *less_than_upper_bound(int pidx)
 		{
+			if (grouped[pidx].size() == 0) return nullptr;
 			return grouped[pidx].front();
 		}
 		
 		Parameter *less_than_lower_bound(int pidx)
 		{
 			if (pidx <= 0) return nullptr;
+			if (grouped[pidx - 1].size() == 0) return nullptr;
 			return grouped[pidx - 1].back();
 		}
 	};
@@ -106,10 +115,13 @@ private:
 
 	std::map<int, Problems> _problemsForPoints;
 	std::map<int, Problems> _problemsForTriangles;
+	
+	ParamSet _all;
 
 	SpecificNetwork *_specified = nullptr;
 	Mapped<float> *_mapped = nullptr;
 
+	std::function<bool(Parameter *, float)> _flexFilter;
 	std::function<bool(Parameter *, int)> _filter;
 	std::function<bool(const Parameter *)> _ramaFilter;
 	std::function<float(Parameter *, int)> _flex;

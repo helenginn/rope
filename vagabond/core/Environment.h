@@ -32,6 +32,7 @@ class Progressor;
 class FileManager;
 class PathManager;
 class ModelManager;
+class GlobalOptions;
 class EntityManager;
 
 template <typename Progressor> class Responder;
@@ -98,8 +99,20 @@ public:
 	static void purgeRule(Rule &rule);
 	static void purgePath(Path &path);
 	
+	static std::string matrixBackgroundFilename()
+	{
+		return environment()._matrixBackgroundFilename;
+	}
+	
+	static std::string colourSchemeFilename()
+	{
+		return environment()._colourSchemeFilename;
+	}
+	
 	void save();
 	void load(std::string file = "rope.json");
+	friend GlobalOptions;
+
 private:
 	void loadEntitiesBackwardsCompatible(const json &data);
 
@@ -112,6 +125,8 @@ private:
 	Responder<Progressor> *_pg = nullptr;
 
 	static Environment _environment;
+	std::string _matrixBackgroundFilename = "assets/images/pencil_shading.png";
+	std::string _colourSchemeFilename = "assets/images/colour_scheme.png";
 };
 
 #endif

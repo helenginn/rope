@@ -112,10 +112,6 @@ void ShowMap::update(Parameter *param)
 	{
 		map = _sn->network()->blueprint();
 	}
-	else
-	{
-		map = _sn->mapForParameter(param);
-	}
 
 	std::cout << map << std::endl;
 	_parameter = param;

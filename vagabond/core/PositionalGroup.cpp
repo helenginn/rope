@@ -26,6 +26,11 @@ void PositionalGroup::addMetadataArray(HasMetadata *hmd, Array next)
 	this->addArray(name, next);
 }
 
+PositionalGroup::~PositionalGroup()
+{
+	
+}
+
 void PositionalGroup::setWhiteList(std::vector<HasMetadata *> list)
 {
 	if (list.size() == 0)

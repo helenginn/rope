@@ -19,10 +19,11 @@
 #ifndef __vagabond__PositionalGroup__
 #define __vagabond__PositionalGroup__
 
-#include "Residue.h"
 #include <vagabond/c4x/Posular.h>
 #include <vagabond/c4x/DataGroup.h>
-#include <vagabond/core/ObjectGroup.h>
+#include "Atom3DPosition.h"
+#include "ObjectGroup.h"
+#include "Residue.h"
 
 class PositionalGroup : public ObjectGroup, 
 public DataGroup<Posular, Atom3DPosition>
@@ -32,6 +33,8 @@ public:
 	{
 		
 	}
+	
+	virtual ~PositionalGroup();
 
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 	virtual void setWhiteList(std::vector<HasMetadata *> list);

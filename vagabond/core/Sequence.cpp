@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SequenceComparison.h"
+#include "Atom3DPosition.h"
 #include "AtomsFromSequence.h"
 #include "Sequence.h"
 #include "Residue.h"

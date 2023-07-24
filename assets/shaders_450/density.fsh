@@ -41,7 +41,7 @@ void main()
 
 	if (unit.z < 0.)
 	{
-		unit.z *= -1.;
+		discard;
 	}
 	remaining *= max(0., dot(unit, vec3(0., 0., 1.)));
 	result.xyz += remaining;

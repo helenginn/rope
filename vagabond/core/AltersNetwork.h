@@ -34,7 +34,8 @@ public:
 	std::atomic<bool> &stop, std::atomic<bool> &skip);
 
 	void bindPointValues(int pidx, std::vector<Parameter *> &params);
-	void bindPointGradients(int pidx, std::vector<Parameter *> &params);
+	void bindPointGradients(const std::vector<int> &idxs, 
+	                        std::vector<Parameter *> &params);
 protected:
 	Mapped<float> *_mapped = nullptr;
 	SpecificNetwork *_specified = nullptr;
@@ -42,9 +43,6 @@ protected:
 	typedef std::function<void(std::vector<float> &values)> Getter;
 	typedef std::function<void(const std::vector<float> &values)> Setter;
 
-	void functionsForPositions(std::vector<Mapped<float> *> &maps,
-	                           int idx, Getter &getter, Setter &setter);
-	
 	Getter _getPoints;
 	Setter _setPoints;
 

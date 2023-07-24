@@ -79,6 +79,15 @@ namespace PCA
 			}
 		}
 	}
+	
+	template <typename Func>
+	void do_op(Matrix &mat, const Func &func)
+	{
+		for (size_t i = 0; i < mat.rows * mat.cols; i++)
+		{
+			mat.vals[i] = func(mat.vals[i]);
+		}
+	}
 
 	void copyMatrix(Matrix &dest, Matrix &source);
 	void reorderSVD(SVD *cc);

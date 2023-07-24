@@ -99,7 +99,8 @@ private:
 	                     ScoreMap::Mode options);
 	ScoreMap basicScorer(ScoreMap::Mode options);
 	float scoreWithScorer(const Points &points, ScoreMap scorer);
-	std::function<float()> scorerForNudge(int tidx, size_t paramCount);
+	std::function<float()> scorerForNudge(int tidx, int g, int pidx, 
+	                                      size_t paramCount);
 
 	void flipPoints();
 	void flipPoint(int i, int j);

@@ -2,6 +2,8 @@ guifiles = [
 'AddEntity.cpp',
 'AddModel.cpp',
 'AddRule.cpp',
+'Atom2AtomExplorer.cpp',
+'Atom2AtomExplorer.h',
 'Axes.cpp',
 'AxesMenu.cpp',
 'AxisExplorer.cpp',

@@ -26,6 +26,7 @@
 #include "Environment.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
+#include "Atom3DPosition.h"
 
 Instance::Instance()
 {

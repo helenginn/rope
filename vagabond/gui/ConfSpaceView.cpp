@@ -422,7 +422,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "yes_fold_in")
 	{
 		// refine extra molecules
-#warning set a flag, check on flag for refresh and recalculate top cluster
 		SerialRefiner *refiner = new SerialRefiner(this, _entity);
 		refiner->setRefineList(_entity->unrefinedModels());
 		refiner->setJobType(rope::Refine);

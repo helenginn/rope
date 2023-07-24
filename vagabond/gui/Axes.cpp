@@ -19,10 +19,10 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <vagabond/utils/version.h>
+#include <vagabond/utils/FileReader.h>
 #include <vagabond/core/RopeCluster.h>
 #include <vagabond/core/ChemotaxisEngine.h>
 #include <vagabond/core/Instance.h>
-#include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include "VagWindow.h"
@@ -30,6 +30,7 @@
 #include "ConfSpaceView.h"
 #include "PlausibleRoute.h"
 #include "RouteExplorer.h"
+#include "Atom2AtomExplorer.h"
 #include "Axes.h"
 
 Axes::Axes(TorsionCluster *group, Instance *m) : IndexResponder()
@@ -160,23 +161,21 @@ std::vector<Angular> Axes::directTorsionVector(int idx)
 	return getTorsionVector(idx);
 }
 
-std::vector<Angular> Axes::getTorsionVector(int idx)
+template <typename Type, class ClusterType>
+std::vector<Type> vectorFrom(glm::vec3 dir, ClusterType *cluster)
 {
-	glm::vec3 dir = _dirs[idx];
-	
-	std::vector<Angular> sums;
+	std::vector<Type> sums;
 	for (size_t i = 0; i < 3; i++)
 	{
-		if (i >= _torsionCluster->rows())
+		if (i >= cluster->rows())
 		{
 			continue;
 		}
 
-		int axis = _torsionCluster->axis(i);
-		std::vector<Angular> vals = _torsionCluster->rawVector(axis);
+		int axis = cluster->axis(i);
+		std::vector<Type> vals = cluster->rawVector(axis);
 
 		float &weight = dir[i];
-		std::cout << weight << std::endl;
 		
 		if (sums.size() == 0)
 		{
@@ -192,6 +191,59 @@ std::vector<Angular> Axes::getTorsionVector(int idx)
 	return sums;
 }
 
+std::vector<Angular> Axes::getTorsionVector(int idx)
+{
+	glm::vec3 dir = _dirs[idx];
+	
+	std::vector<Angular> vec = vectorFrom<Angular>(dir, _torsionCluster);
+	return vec;
+}
+
+std::vector<Posular> Axes::getPositionalVector(int idx)
+{
+	glm::vec3 dir = _dirs[idx];
+	
+	std::vector<Posular> vec = vectorFrom<Posular>(dir, _positionalCluster);
+	return vec;
+}
+
+std::string Axes::titleForAxis(int idx)
+{
+	std::string str = "Reference " + _instance->id();
+	std::string info;
+	
+	if (_targets[idx] != nullptr)
+	{
+		str += " axis to target " + _targets[idx]->id();
+	}
+	else
+	{
+		int axis = _cluster->axis(idx);
+		str += " PCA axis " + i_to_str(axis);
+	}
+
+	return str;
+}
+
+void Axes::loadAtom2AtomExplorer(int idx)
+{
+	std::vector<Atom3DPosition> list;
+	list = _positionalCluster->dataGroup()->headers();
+
+	std::vector<Posular> vals = getPositionalVector(idx);
+	if (vals.size() == 0)
+	{
+		return;
+	}
+
+	std::string str = titleForAxis(idx);
+
+	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(_scene, _instance, list, vals);
+	a2a->setCluster(_positionalCluster);
+	a2a->setFutureTitle(str);
+	a2a->show();
+}
+
 void Axes::loadAxisExplorer(int idx)
 {
 	std::vector<ResidueTorsion> list = _torsionCluster->dataGroup()->headers();
@@ -202,18 +254,7 @@ void Axes::loadAxisExplorer(int idx)
 		return;
 	}
 	
-	std::string str = "Reference " + _instance->id();
-	std::string info;
-	
-	if (_targets[idx] != nullptr)
-	{
-		str += " axis to target " + _targets[idx]->id();
-	}
-	else
-	{
-		int axis = _torsionCluster->axis(idx);
-		str += " PCA axis " + i_to_str(axis);
-	}
+	std::string str = titleForAxis(idx);
 
 	try
 	{
@@ -248,7 +289,14 @@ void Axes::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "explore_axis")
 	{
-		loadAxisExplorer(_lastIdx);
+		if (_torsionCluster)
+		{
+			loadAxisExplorer(_lastIdx);
+		}
+		else if (_positionalCluster)
+		{
+			loadAtom2AtomExplorer(_lastIdx);
+		}
 	}
 	else if (tag == "reorient")
 	{

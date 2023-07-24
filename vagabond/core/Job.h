@@ -211,10 +211,7 @@ struct Result
 	
 	void destroy()
 	{
-		aps.clear();
-		apl.clear();
 		delete map;
-
 		delete this;
 	}
 };

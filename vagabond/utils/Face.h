@@ -38,13 +38,9 @@ template <class Type>
 class Mappable
 {
 public:
-	virtual Coord::Interpolate<Type> interpolate_function() = 0;
 	virtual Type interpolate_position(const Coord::Get &get) const = 0;
 
 	virtual Type linear_value(const Coord::Get &) const = 0;
-
-	virtual std::vector<float> 
-	point_to_barycentric(const std::vector<float> &m) const = 0;
 
 	virtual void
 	point_to_barycentric(const Coord::Get &coord, std::vector<float> &w) const = 0;
@@ -54,8 +50,6 @@ public:
 
 	virtual bool point_in_bounds(const Coord::Get &get) const = 0;
 	
-	virtual void invalidate() {};
-	virtual bool valid() {return true;};
 	virtual int n() = 0;
 
 	virtual ~Mappable()
@@ -97,13 +91,6 @@ public:
 		return nullptr;
 	}
 
-	virtual std::vector<float> middle_of_face()
-	{
-		float pc = pointCount();
-		std::vector<float> bc(pc, 1 / pc);
-		return barycentric_to_point(bc);
-	}
-
 	virtual std::vector<Type> linear_gradients(const Coord::Get &get) const
 	{
 		std::vector<Type> gs;
@@ -116,7 +103,6 @@ public:
 
 		return gs;
 	}
-	
 
 	virtual Type linear_gradient(const Coord::Get &get, int dim) const
 	{
@@ -204,17 +190,15 @@ public:
 		return ave;
 	}
 
-	virtual Coord::Interpolate<Type> interpolate_function()
+	Type linear(Type s, Type t, float x) const
 	{
-		return [this](const Coord::Get &get)
-		{
-			return this->interpolate_position(get);
-		};
+		Type y = (t - s) * x + s;
+		return y;
 	}
-	
+
 	Type cubic(Type s, Type t, Type x0, Type x1, float x) const
 	{
-		Type y = ((t - s) * x + s
+		Type y = (linear(s, t, x)
 		          + (x0 + s - t) * (x - 1) * (x - 1) * x
 		          + (x1 + s - t) * (x - 1) * x*x);
 
@@ -235,7 +219,7 @@ public:
 		// y = (t-s)x + s + (x_0 + s - t)(x-1)^2x + (x_1+s-t)(x-1)x^2
 		
 		Type x0 = point(0)->gradient_in_direction(dir);
-		Type x1 = point(1)->gradient_in_direction(dir) * -1.f;
+		Type x1 = point(1)->gradient_in_direction(dir);
 		
 		float x = weights[1] / (weights[1] + weights[0]);
 
@@ -268,15 +252,13 @@ public:
 			if (!ls) { continue; }
 
 			Type init = this->point(i)->value();
-			std::vector<float> dir = *this->point(i) - average();
+			std::vector<float> dir = average();
 			dir = std::vector<float>(D, 0.5);
 
 			Type g0 = this->point(i)->gradient_in_direction(dir);
 			std::vector<Type> gs = this->point(i)->linear_gradients(coord);
 			Type g1 = gradient_in_direction(D, dir, &gs[0]);
 			
-			g1 *= -1.f;
-
 			const float &fw = inverse[i];
 			Type end{};
 
@@ -292,7 +274,7 @@ public:
 			const float &w = weights[i]; // weight of point
 			const float &r = 1 - w; // weight of simplex
 
-			Type res = cubic(init, end, g1, g0, r);
+			Type res = cubic(init, end, g0, g1, r);
 			total += res * fw;
 			count += fw;
 		}
@@ -383,15 +365,6 @@ public:
 		}
 
 		return vec;
-	}
-
-	virtual std::vector<float> 
-	point_to_barycentric(const std::vector<float> &m) const
-	{
-		std::vector<float> weights(pointCount());
-		point_to_barycentric(Coord::fromVector(m), weights);
-
-		return weights;
 	}
 
 	virtual void
@@ -519,13 +492,6 @@ public:
 		return combine;
 	}
 	
-	virtual void invalidate()
-	{
-		_valid = false;
-	}
-
-	virtual bool valid() {return _valid;};
-
 	virtual LowerFace *faceExcluding(const SharedFace<0, D, Type> *point) const
 	{
 		for (auto &f : c_subs())
@@ -723,7 +689,6 @@ protected:
 	std::vector<LowerFace *> _subs;
 	std::vector<SharedFace<0, D, Type> *> _points;
 
-	bool _valid = true;
 	int _n = N;
 	int _d = D;
 };
@@ -918,16 +883,6 @@ public:
 		return to_handle(this);
 	}
 
-	virtual Coord::Interpolate<Type> interpolate_function()
-	{
-		Coord::Interpolate<Type> ret;
-		ret = [this](const Coord::Get &)
-		{
-			return this->value();
-		};
-		return ret;
-	}
-
 	virtual Type interpolate_position(const Coord::Get &get) const
 	{
 		return exact_value();
@@ -962,12 +917,6 @@ public:
 	                     std::vector<float> &weights) const
 	{
 
-	}
-
-	virtual std::vector<float> 
-	point_to_barycentric(const std::vector<float> &m) const
-	{
-		return std::vector<float>(1, 0);
 	}
 
 	virtual ~SharedFace<0, D, Type>() {}

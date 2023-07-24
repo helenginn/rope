@@ -16,36 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "NetworkBasis.h"
-#include "SpecificNetwork.h"
-#include <vagabond/utils/Vec3s.h>
+#ifndef __vagabond__Atom3DPosition__
+#define __vagabond__Atom3DPosition__
 
-NetworkBasis::NetworkBasis() : ConcertedBasis()
+#include "Residue.h"
+
+class Entity;
+
+struct Atom3DPosition
 {
-
-}
-
-Coord::Interpolate<float>
-NetworkBasis::valueForParameter(BondSequence *seq, int tidx, 
-                                const Coord::Get &coord, int n)
-{
-	if (tidx < 0)
+	std::string atomName;
+	Residue *residue = nullptr;
+	Entity *entity = nullptr;
+	
+	std::string desc() const
 	{
-		Coord::Interpolate<float> ret = [](const Coord::Get &)
+		if (residue == nullptr)
 		{
-			return 0;
-		};
+			std::string id = "p-null:" + atomName;
+			return id;
+		}
 
-		return ret;
-
+		std::string id = "p" + residue->id().as_string() + ":" + atomName;
+		return id;
 	}
-	TorsionAngle &ta = _angles[tidx];
+	
+	inline friend std::ostream &operator<<(std::ostream &ss, 
+	                                       const Atom3DPosition &p)
 	{
-		Coord::Interpolate<float> ret = [ta](const Coord::Get &)
-		{
-			return ta.angle;
-		};
-
-		return ret;
+		ss << p.desc();
+		return ss;
 	}
-}
+};
+
+#endif
+

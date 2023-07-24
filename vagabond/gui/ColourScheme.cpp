@@ -16,11 +16,12 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/core/Environment.h>
 #include <iostream>
 #include "ColourScheme.h"
 
 ColourScheme::ColourScheme(Scheme scheme, bool vert)
-: Image("assets/images/colour_scheme.png")
+: Image(Environment::colourSchemeFilename())
 {
 	clearVertices();
 	setFragmentShaderFile("assets/shaders/multiply.fsh");
@@ -49,8 +50,23 @@ ColourScheme::ColourScheme(Scheme scheme, bool vert)
 		addFixedPoint(1.0, glm::vec4(1.0, 1.0, 1.0, 1.0), 3.0);
 		setScheme(Heat);
 	}
+	else if (scheme == Cluster4x)
+	{
+		addFixedPoint(-1.0, glm::vec4(0.0, 0.0, 0.0, 1.0));
+		addFixedPoint(0.0, glm::vec4(0.0, 0.0, 1.0, 1.0));
+		addFixedPoint(0.5, glm::vec4(1.0, 1.0, 1.0, 1.0));
+		addFixedPoint(1.0, glm::vec4(1.0, 0.0, 0.0, 1.0));
+		addFixedPoint(2.0, glm::vec4(1.0, 1.0, 0.0, 1.0));
+		setScheme(Cluster4x);
+	}
 
 	setup();
+}
+
+void ColourScheme::limits(float &min, float &max)
+{
+	min = _points.front().proportion;
+	max = _points.back().proportion;
 }
 
 ColourScheme::ColourScheme() : Image("assets/images/colour_scheme.png")
@@ -64,7 +80,7 @@ void ColourScheme::addFixedPoint(float p, glm::vec4 colour, float glow)
 {
 	if (p < 0 || p > 1)
 	{
-		throw std::runtime_error("Fixed point proportion out of range 0-1");
+//		throw std::runtime_error("Fixed point proportion out of range 0-1");
 	}
 
 	FixedPoint fp{p, colour, glow};
@@ -125,16 +141,6 @@ bool ColourScheme::sanitisePoints()
 	{
 		return false;
 	}
-
-	if (_points.front().proportion > 0)
-	{
-		_points.front().proportion = 0;
-	}
-
-	if (_points.back().proportion < 1)
-	{
-		_points.back().proportion = 1;
-	}
 	
 	return true;
 }
@@ -151,10 +157,15 @@ void ColourScheme::setup()
 		return;
 	}
 
+	float min, max;
+	limits(min, max);
+
 	for (const FixedPoint &fp : _points)
 	{
 		float p = fp.proportion;
+		p = (p - min) / (max - min);
 		float orig = p;
+
 		stretch_p(p);
 
 		Snow::Vertex &lower = addVertex((_vert ? -0.1 : p), 

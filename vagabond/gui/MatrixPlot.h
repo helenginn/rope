@@ -23,6 +23,8 @@
 #include <vagabond/gui/elements/Image.h>
 #include <mutex>
 
+class ColourLegend;
+
 class MatrixPlot : public Image
 {
 public:
@@ -33,6 +35,11 @@ public:
 	const PCA::Matrix &mat() const
 	{
 		return _mat;
+	}
+	
+	ColourLegend *const legend() const
+	{
+		return _legend;
 	}
 protected:
 	std::map<int, int> _index2Vertex;
@@ -51,6 +58,8 @@ private:
 	
 	int _rows = 0;
 	int _cols = 0;
+	
+	ColourLegend *_legend{};
 };
 
 #endif

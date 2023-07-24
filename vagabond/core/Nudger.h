@@ -41,7 +41,9 @@ private:
 	SimplexEngine *_engine = nullptr;
 	std::function<float()> _score;
 	std::vector<float> _start; 
+	std::vector<float> _improved; 
 	
+	int _counter = 0;
 	float _best = FLT_MAX;
 };
 

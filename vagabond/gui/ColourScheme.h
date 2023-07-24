@@ -33,6 +33,13 @@ public:
 	
 	glm::vec4 colour(float p);
 	
+	void limits(float &min, float &max);
+	
+	const Scheme &scheme() const
+	{
+		return _scheme;
+	}
+	
 	/* create vertices/indices to display colour scheme */
 	void setup();
 protected:

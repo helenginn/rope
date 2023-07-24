@@ -130,6 +130,11 @@ void MapView::addButtons()
 		addObject(command);
 		_showMap = command;
 	}
+		
+		Text *info = new Text("C-alpha trajectory off-linear course plot");
+		info->resize(0.4);
+		info->setCentre(0.85, 0.22);
+		addObject(info);
 }
 
 void MapView::stopWorker()
@@ -400,7 +405,7 @@ void MapView::sendObject(std::string tag, void *object)
 	if (tag == "update_score")
 	{
 		float current = *static_cast<float *>(object);
-		setInformation(f_to_str(current, 3));
+		setInformation(f_to_str(current, 5));
 	}
 
 	if (tag == "atom_matrix")

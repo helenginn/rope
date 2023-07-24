@@ -162,6 +162,11 @@ void BondSequence::multiplyUpBySampleCount()
 
 float BondSequence::fetchTorsion(int torsion_idx)
 {
+	if (torsion_idx < 0)
+	{
+		return 0;
+	}
+
 	if (_bondTorsions.size() > torsion_idx)
 	{
 		return _bondTorsions[torsion_idx];

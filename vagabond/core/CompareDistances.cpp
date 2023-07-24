@@ -29,10 +29,10 @@ CompareDistances::~CompareDistances()
 	freeMatrix(&_matrix);
 }
 
-CompareDistances::CompareDistances()
+CompareDistances::CompareDistances(bool magnitude)
 {
 	_defaultFilter = &acceptable;
-
+	_magnitude = magnitude;
 }
 
 bool resi_num_comp(const Atom *a, const Atom *b)
@@ -111,9 +111,6 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 	int i = 0; int j = 0;
 	_counter++;
 	
-	AtomPosList lefts, rights;
-
-
 	for (const int &m : _leftIdxs)
 	{
 		const glm::vec3 &x = apl[m].wp.ave;
@@ -130,7 +127,7 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 			float diff = expected - acquired;
 			if (diff == diff)
 			{
-				_matrix[i][j] += fabs(diff);
+				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
 				j++;
 			}
 		}

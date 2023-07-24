@@ -108,6 +108,8 @@ inline void to_json(json &j, const Point<2, Floats> &point)
 
 	j["coords"] = coords;
 	j["val"] = value;
+	
+	j["grad"] = point._grads;
 }
 
 inline void from_json(const json &j, Point<2, Floats> &point)
@@ -122,6 +124,21 @@ inline void from_json(const json &j, Point<2, Floats> &point)
 	{
 		const Floats &vs = j.at("val");
 		point.set_value(vs);
+
+		Floats grads; grads.resize(vs.size());
+		for (size_t i = 0; i < 2; i++)
+		{
+			point._grads[i] = grads;
+		}
+	}
+
+	if (j.count("grad"))
+	{
+		std::vector<Floats> grads = j.at("grad");
+		for (size_t i = 0; i < 2; i++)
+		{
+			point._grads[i] = grads[i];
+		}
 	}
 }
 

@@ -34,6 +34,12 @@ Cluster<DG>::Cluster(DG &dg) : _dg(dg)
 }
 
 template <class DG>
+Cluster<DG>::~Cluster()
+{
+	
+}
+
+template <class DG>
 const size_t Cluster<DG>::pointCount() const
 {
 	return _result.rows;

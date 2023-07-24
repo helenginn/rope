@@ -31,6 +31,7 @@ enum Scheme
 	BlueOrange,
 	OrangeWhitePurple,
 	Heat,
+	Cluster4x,
 	Nothing = 0,
 };
 
@@ -40,6 +41,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
 	                            {Nothing, nullptr},
 	                            {BlueOrange, "blueorange"},
 	                            {OrangeWhitePurple, "orangewhitepurple"},
+	                            {Cluster4x, "cluster4x"},
 	                            {Heat, "heat"},
                              })
 

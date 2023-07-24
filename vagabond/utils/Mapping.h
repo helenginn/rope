@@ -60,7 +60,6 @@ public: // this was a silly decision, all this virtual = no inlining = slow
 	virtual int face_idx_for_point(const std::vector<float> &point) = 0;
 	virtual void point_indices_for_face(int idx, std::vector<int> &points) const = 0;
 	virtual size_t point_count_for_face(int idx) const = 0;
-	virtual void invalidate() = 0;
 	virtual void redo_bins() = 0;
 	
 	virtual int n() = 0;
@@ -191,18 +190,8 @@ public:
 		return _mapped[idx];
 	}
 
-	virtual void invalidate()
-	{
-		for (HyperTriangle *tr : _mapped)
-		{
-			tr->invalidate();
-		}
-	}
-	
 	void remove_face(HyperTriangle *face)
 	{
-		face->invalidate();
-
 		for (int i = 0; i < face->pointCount(); i++)
 		{
 			HyperPoint *hp = &face->v_point(i);
@@ -259,26 +248,10 @@ public:
 			return;
 		}
 
-		std::vector<float> weights = face->point_to_barycentric(pos);
 		remove_face(face);
-		
-		int away = -1;
-		
-		for (size_t i = 0; i < weights.size(); i++)
-		{
-			if (weights[i] < 1e-3)
-			{
-				away = i;
-				break;
-			}
-		}
 		
 		for (int i = 0; i < face->pointCount(); i++)
 		{
-			if (away == i)
-			{
-//				continue; // don't make the thin sliver
-			}
 			HyperLine *sf = face->faceExcluding(face->point(i));
 			SharedFace<D - 1, D, Type> *f;
 			f = static_cast<SharedFace<1, D, Type> *>(sf);
@@ -772,7 +745,7 @@ public:
 
 	virtual std::vector<float> middle_of_face(int tidx)
 	{
-		return _mapped[tidx]->middle_of_face();
+		return _mapped[tidx]->average();
 	}
 
 	virtual Mappable<Type> *face_for_index(int i)

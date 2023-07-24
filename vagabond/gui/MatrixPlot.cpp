@@ -19,33 +19,22 @@
 #include "MatrixPlot.h"
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/utils/maths.h>
+#include <vagabond/gui/ColourLegend.h>
+#include <vagabond/core/Environment.h>
 
 MatrixPlot::MatrixPlot(PCA::Matrix &mat, std::mutex &mutex) 
-: Image("assets/images/pencil_shading.png"), _mat(mat), _mutex(mutex)
+: Image(Environment::matrixBackgroundFilename()), _mat(mat), _mutex(mutex)
 {
+	_legend = new ColourLegend(Cluster4x, true, nullptr);
+	_legend->disableButtons();
+
 	clearVertices();
 	setup();
 }
 
 glm::vec4 MatrixPlot::colourForValue(float val)
 {
-	glm::vec4 v{};
-	v.w = 1.0;
-
-	if (val == val)
-	{
-		val_to_cluster4x_colour(val, &v[0], &v[1], &v[2]);
-
-		for (size_t i = 0; i < 3; i++)
-		{
-			v[i] /= 255.;
-		}
-	}
-	else
-	{
-		v[0] = 0.5; v[1] = 0.5; v[2] = 0.5;
-	}
-
+	glm::vec4 v = _legend->colour(val);
 	return v;
 }
 

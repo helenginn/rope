@@ -19,6 +19,7 @@
 #include "GlobalOptions.h"
 #include <vagabond/gui/elements/ChoiceGroup.h>
 #include <vagabond/gui/elements/Choice.h>
+#include <vagabond/core/Environment.h>
 
 GlobalOptions::GlobalOptions(Scene *prev) : Scene(prev)
 {
@@ -46,11 +47,19 @@ void GlobalOptions::buttonPressed(std::string tag, Button *button)
 	if (tag == "bg_paper")
 	{
 		Scene::_defaultBg = "assets/images/paper.jpg";
+		Environment::environment()._matrixBackgroundFilename 
+		= "assets/images/pencil_shading.png";
+		Environment::environment()._colourSchemeFilename 
+		= "assets/images/colour_scheme.png";
 		reloadBackground();
 	}
 	else if (tag == "bg_white")
 	{
 		Scene::_defaultBg = "assets/images/blank.png";
+		Environment::environment()._matrixBackgroundFilename 
+		= "assets/images/black.png";
+		Environment::environment()._colourSchemeFilename 
+		= "assets/images/black.png";
 		reloadBackground();
 	}
 

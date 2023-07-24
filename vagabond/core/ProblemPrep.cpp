@@ -23,9 +23,10 @@
 #include "SquareSplitter.h"
 #include "Atom.h"
 
-float check_indices(int tridx, Mapped<float> *const &map, float *average = nullptr)
+float check_indices(int tridx, Mapped<Floats> *const &map, int idx,
+                    float *average = nullptr)
 {
-	if (!map) { return false; }
+	if (!map) { return 0; }
 	std::vector<int> pIndices;
 	map->point_indices_for_face(tridx, pIndices);
 
@@ -34,7 +35,7 @@ float check_indices(int tridx, Mapped<float> *const &map, float *average = nullp
 	float ave = 0;
 	for (const int &pidx : pIndices) 
 	{
-		float next = map->get_value(pidx);
+		float next = map->get_value(pidx)[idx];
 		min = std::min(min, next);
 		max = std::max(max, next);
 		ave += next;
@@ -55,19 +56,21 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 	_specified = sn;
 	_mapped = mapped;
 
-	_flex = [sn](Parameter *problem, int tridx) -> float
+	auto flex = [sn](Parameter *problem, int tridx) -> float
 	{
-		Mapped<float> *map = sn->mapForParameter(problem);
-		float ave = check_indices(tridx, map);
+		auto pair = sn->bondMappingFor(problem);
+		Mapped<Floats> *map = pair.first;
+		int idx = pair.second;
+		float ave = check_indices(tridx, map, idx);
 		return ave;
 	};
+	_flex = flex;
 
-	std::function<bool(Parameter *, int)> variation;
-	variation = [sn](Parameter *problem, int tridx) -> bool
+	auto variation = [flex](Parameter *problem, int tridx) -> bool
 	{
-		Mapped<float> *map = sn->mapForParameter(problem);
-		float ave = check_indices(tridx, map);
-		return (ave > 30);
+		float ave = flex(problem, tridx);
+		bool ret = (ave > 30);
+		return ret;
 	};
 
 	std::function<bool(const Parameter *)> ramaFilter;
@@ -77,14 +80,14 @@ ProblemPrep::ProblemPrep(SpecificNetwork *sn, Mapped<float> *mapped)
 		{
 			return false;
 		}
-		return (problem->coversMainChain() && !problem->isPeptideBond());
+		return problem->coversMainChain() && !problem->isPeptideBond();
 	};
 	_ramaFilter = ramaFilter;
 
-	_filter = [variation, ramaFilter](Parameter *problem, int tridx) -> bool
+	_filter = [sn, ramaFilter](Parameter *problem, int tridx) -> bool
 	{
-		return (ramaFilter(problem) &&
-		        variation(problem, tridx));
+		bool answer = (ramaFilter(problem));
+		return answer;
 	};
 }
 
@@ -105,13 +108,16 @@ void ProblemPrep::filterParameters(Parameters &params)
 
 std::function<float(int &)> ProblemPrep::flipFunction(Parameter *param, int pidx)
 {
-	Mapped<float> *map = _specified->mapForParameter(param);
+	auto pair = _specified->bondMappingFor(param);
+	Mapped<Floats> *map = pair.first;
+	int idx = pair.second;
 
 	std::vector<int> tIndices;
 	_mapped->face_indices_for_point(pidx, tIndices);
 
-	float mine = map->get_value(pidx);
+	float mine = map->get_value(pidx)[idx];
 	float ave = 0;
+	float sq = 0;
 	float count = 0;
 
 	for (const int &tidx : tIndices)
@@ -119,32 +125,32 @@ std::function<float(int &)> ProblemPrep::flipFunction(Parameter *param, int pidx
 		std::vector<int> pIndices;
 		map->point_indices_for_face(tidx, pIndices);
 
-		for (const int &idx : pIndices) 
+		for (const int &pidx : pIndices) 
 		{
-			float next = map->get_value(idx);
+			float next = map->get_value(pidx)[idx];
 			ave += next;
+			sq += next * next;
 			count++;
 		}
 	}
 	ave /= (float)count;
+	float stdev = sqrt(sq / count - ave * ave);
 
 	std::function<float(int &)> direction = [mine, ave](int &idx) -> float
 	{
+		float ret = mine;
+		matchDegree(ave, ret);
 		if (idx == 0)
 		{
-			return mine;
+			return ret;
 		}
 		else if (idx == 1)
 		{
-			return (mine < ave ? mine + 360 : mine - 360);
+			return ret < ave ? ret + 360 : ret - 360;
 		}
 		else
 		{
-			if (fabs(mine - ave) > 45)
-			{
-				idx = -1;
-			}
-			return (mine > ave ? mine + 360 : mine - 360);
+			return ret > ave ? ret + 360 : ret - 360;
 		}
 	};
 	
@@ -244,23 +250,36 @@ ProblemPrep::AtomFilter residue_boundary(bool less, Parameter *param)
 
 void ProblemPrep::setFilters(int pidx, int grp,
                              ProblemPrep::AtomFilter &left,
-                             ProblemPrep::AtomFilter &right)
+                             ProblemPrep::AtomFilter &right, bool ends)
 {
 	ProblemPrep::AtomFilter all = [](Atom *const &atom) { return true; };
 	left = all; right = all;
 
+	if (_problemsForPoints.size() <= pidx)
+	{
+		throw std::runtime_error("Problem: beyong end of point problem array");
+	}
+
 	Problems &probs = _problemsForPoints[pidx];
 	
-	std::cout << "Starting group: " << grp << std::endl;
+	std::cout << "Starting group: " << grp << " for point " << pidx << std::endl;
 	for (size_t i = 0; i < probs.grouped[grp].size(); i++)
 	{
-		std::cout << probs.grouped[grp][i]->residueId() << " ";
-		std::cout << probs.grouped[grp][i]->desc() << std::endl;
+		Parameter *&p = probs.grouped[grp][i];
+		std::cout << p->residueId() << " ";
+		std::cout << p->desc() << " ";
+		std::cout << _flexResults[p] << std::endl;
+	}
+	
+	if (probs.grouped[grp].size() == 0)
+	{
+		return;
 	}
 
 	{
 		std::cout << "Left: " << std::endl;
 		Parameter *start = probs.less_than_lower_bound(grp);
+		if (!ends) start = nullptr;
 		Parameter *end = probs.more_than_lower_bound(grp);
 		left = chain_and(left, residue_boundary(false, start));
 		left = chain_and(left, residue_boundary(true, end));
@@ -270,6 +289,7 @@ void ProblemPrep::setFilters(int pidx, int grp,
 		std::cout << "Right: " << std::endl;
 		Parameter *start = probs.less_than_upper_bound(grp);
 		Parameter *end = probs.more_than_upper_bound(grp);
+		if (!ends) end = nullptr;
 		right = chain_and(right, residue_boundary(false, start));
 		right = chain_and(right, residue_boundary(true, end));
 	}
@@ -289,7 +309,7 @@ ProblemPrep::ParamSet ProblemPrep::problemParams(PCA::Matrix &m,
 	{
 		int split_idx = splits[i];
 
-		for (int k = -1; k <= 1; k++)
+		for (int k = -2; k <= 2; k++)
 		{
 			int include = split_idx + k;
 			const Atom *atom = atomFrom(atoms, include);
@@ -345,15 +365,33 @@ void ProblemPrep::processMatrixForTriangle(int tidx, PCA::Matrix &m,
 	for (const int &p : pIndices)
 	{
 		_problemsForPoints[p].addSet(filtered);
-		regroup(_problemsForPoints[p]);
+	}
+}
+
+void ProblemPrep::startAssessment()
+{
+	_problemsForPoints.clear();
+	_problemsForTriangles.clear();
+	_flexResults.clear();
+}
+	
+void ProblemPrep::finishAssessment()
+{
+	for (size_t i = 0; i < _mapped->pointCount(); i++)
+	{
+		regroup(_problemsForPoints[i]);
 	}
 	
+	_all = _specified->parameters();
+
 	getFlexes();
 }
 
 float ProblemPrep::updateFlex(Parameter *problem, const std::vector<float> &pos)
 {
-	Mapped<float> *map = _specified->mapForParameter(problem);
+	auto pair = _specified->bondMappingFor(problem);
+	Mapped<Floats> *map = pair.first;
+
 	int tidx = map->face_idx_for_point(pos);
 	
 	if (tidx < 0)
@@ -369,17 +407,22 @@ float ProblemPrep::updateFlex(Parameter *problem, const std::vector<float> &pos)
 void ProblemPrep::getFlexes()
 {
 	_flexResults.clear();
-	std::map<int, Problems> &src = _problemsForTriangles;
 	
-	for (auto it = src.begin(); it != src.end(); it++)
+	for (Parameter *p : _all)
 	{
-		Problems &probs = it->second;
-		
-		for (Parameter *p : probs.filtered)
+		auto pair = _specified->bondMappingFor(p);
+		Mapped<Floats> *map = pair.first;
+		int bondidx = pair.second;
+		float min = FLT_MAX; float max = -FLT_MAX;
+
+		for (size_t i = 0; i < map->pointCount(); i++)
 		{
-			float val = _flex(p, it->first);
-			_flexResults[p] = std::max(val, _flexResults[p]);
+			float val = map->get_value(i)[bondidx];
+			if (val < min) min = val;
+			if (val > max) max = val;
 		}
+
+		_flexResults[p] = max - min;
 	}
 }
 
@@ -415,6 +458,7 @@ void ProblemPrep::regroup(Problems &problems)
 		{
 			groups.push_back(current);
 			current.clear();
+			current.push_back(param);
 		}
 	}
 	
@@ -422,29 +466,23 @@ void ProblemPrep::regroup(Problems &problems)
 	{
 		groups.push_back(current);
 	}
-
-	std::sort(groups.begin(), groups.end(), [this](const Parameters &a,
-	                                               const Parameters &b)
-	{
-		float sum_a = 0; float sum_b = 0;
-		float count_a = 0; float count_b = 0;
-
-		for (Parameter *p : a)
-		{
-			sum_a += _splitDrop[p];
-			count_a++;
-		}
-
-		for (Parameter *p : b)
-		{
-			sum_b += _splitDrop[p];
-			count_b++;
-		}
-
-		sum_a /= count_a;
-		sum_b /= count_b;
-		return sum_a > sum_b;
-	});
 }
 
+ProblemPrep::Parameters ProblemPrep::sortedByDescendingFlex()
+{
+	Parameters ret;
+	
+	for (Parameter *p : _all)
+	{
+		ret.push_back(p);
+	}
 
+	std::sort(ret.begin(), ret.end(), 
+	          [this](Parameter *const &a,
+	          Parameter *const &b)
+	{
+		return this->_flexResults[a] > this->_flexResults[b];
+	});
+	
+	return ret;
+}

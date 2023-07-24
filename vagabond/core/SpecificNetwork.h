@@ -52,10 +52,8 @@ public:
 		return _network;
 	}
 
-	nlohmann::json jsonForParameter(Parameter *p) const;
+	nlohmann::json jsonForBondMap(int idx) const;
 	void setJsonForParameter(Parameter *p, const nlohmann::json &j);
-	
-	void writeBondMaps();
 	
 	bool hasBondMappingFor(const Parameter *p) const
 	{
@@ -68,18 +66,17 @@ public:
 		{
 			return std::make_pair(nullptr, -1);
 		}
-		return _param2BondMap.at(p);
+		std::pair<Mapped<Floats> *, int> ret;
+		ret.first = _bondMaps[_param2BondMap.at(p).first];
+		ret.second = _param2BondMap.at(p).second;
+		return ret;
 	}
 	
-	Mapped<float> *mapForParameter(Parameter *p) const
+	const std::set<Parameter *> &parameters() const
 	{
-		if (_param2Map.count(p) == 0)
-		{
-			return nullptr;
-		}
-		return _param2Map.at(p);
+		return _parameters;
 	}
-
+	
 	Coord::Interpolate<float> torsion(BondSequence *seq, int idx,
 	                                  const Coord::Get &coord) const;
 	
@@ -93,8 +90,6 @@ public:
 	                          Vec3s &positions);
 	void prewarnBonds(BondSequence *seq, const Coord::Get &get, Floats &torsions);
 	
-	int detailsForParam(Parameter *parameter, BondCalculator **calc);
-	int pointCount(Parameter *parameter);
 	void zeroVertices();
 	void setup();
 	
@@ -113,7 +108,6 @@ private:
 	void customModifications(BondCalculator *calc, bool has_mol);
 	void processCalculatorDetails();
 	void updateAtomsFromDerived(int idx);
-	void refresh(Parameter *p);
 
 	Instance *_instance = nullptr;
 	Network *_network = nullptr;
@@ -143,12 +137,9 @@ private:
 	typedef Mapped<Floats> BondMapping;
 
 	void grabParamMaps(json &json);
-	void getTorsionDetails(TorsionBasis *tb, CalcDetails &cd);
 
 	void prepareAtomMaps(BondSequence *seq, PosMapping *pm);
 	void prepareBondMaps(BondSequence *seq, BondMapping *pm);
-	void completeTorsionMap(TorsionMapping &map);
-	void prewarnParameters(BondSequence *bc, const std::vector<float> &vals);
 	
 	struct PrewarnResults
 	{
@@ -157,16 +148,17 @@ private:
 		bool acceptable;
 	};
 
-	std::map<BondCalculator *, CalcDetails> _calcDetails;
-
 	std::map<BondCalculator *, PosMapping *> _atomDetails;
 	std::map<BondCalculator *, BondMapping *> _bondDetails;
-	std::map<BondSequence *, PrewarnResults> _prewarnedResults;
-	std::map<Parameter *, Mapped<float> *> _param2Map;
-	std::map<const Parameter *, std::pair<Mapped<Floats> *, int>> _param2BondMap;
+
+	std::map<const Parameter *, std::pair<int, int>> _param2BondMap;
+	std::vector<BondMapping *> _bondMaps;
+	std::set<Parameter *> _parameters;
+
 	int _jobNum = 0;
 	int _display = 0;
 	int _displayInterval = 100;
+	bool _fromJson = false;
 	std::atomic<bool> _writing{false};
 };
 
@@ -176,14 +168,20 @@ inline void to_json(json &j, const SpecificNetwork &sn)
 	j["main_instance"] = sn._instance->id();
 	sn._network->add_info(j);
 
-	for (auto it = sn._param2Map.begin(); it != sn._param2Map.end(); it++)
+	for (int i = 0; i < sn._bondMaps.size(); i++)
+	{
+		j["bondmaps"][i] = sn.jsonForBondMap(i);
+	}
+
+	for (auto it = sn._param2BondMap.begin(); it != sn._param2BondMap.end(); it++)
 	{
 		nlohmann::json param;
 		param["param"]["res"] = it->first->residueId();
 		param["param"]["desc"] = it->first->desc();
-		param["map"] = sn.jsonForParameter(it->first);
+		param["param"]["map_idx"] = it->second.first;
+		param["param"]["bond_idx"] = it->second.second;
 
-		j["maps"].push_back(param);
+		j["params"].push_back(param);
 	}
 }
 

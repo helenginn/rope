@@ -39,6 +39,8 @@ GuiAtom::GuiAtom() : SimplePolygon()
 	_ribbon = new GuiRibbon(this);
 	_helices = new GuiHelices(this);
 	_thickBonds = new GuiThickBond(this);
+	setVertexShaderFile("assets/shaders/simple_point.vsh");
+	setFragmentShaderFile("assets/shaders/simple_point.fsh");
 	setDisableRibbon(true);
 	_representations.push_back(_helices);
 	_representations.push_back(_ribbon);
@@ -76,7 +78,7 @@ void GuiAtom::render(SnowGL *gl)
 	gl->viewChanged();
 	glEnable(GL_DEPTH_TEST);
 	
-//	Renderable::render(gl); // I don't have...?
+	Renderable::render(gl); // I don't have...?
 
 	for (GuiRepresentation *&r : _representations)
 	{
