@@ -281,34 +281,46 @@ void AddEntity::searchPdb()
 
 }
 
-void AddEntity::loadConfSpaceView(std::string suffix)
+template <class Func>
+void runFunctionIfModelsExist(Entity *entity, AddEntity *add, const Func &func)
 {
 	try
 	{
-		if (_obj.modelCount()==0)
+		if (entity->modelCount()==0)
 		{
-			throw std::invalid_argument("No models detected, have you modeled"\
+			throw std::invalid_argument("No models detected, have you modelled"\
 			" your entities?");
 		}
 
-		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
-		if (suffix == "refined_torsions")
-		{
-			view->setMode(rope::ConfTorsions);
-		}
-		else if (suffix == "atom_positions")
-		{
-			view->setMode(rope::ConfPositional);
-		}
-		view->show();
-                
+		func();
 	}
 	catch(std::exception &err)
 	{
-		BadChoice *brr = new BadChoice(this, err.what());
-		setModal(brr);
-		return;
+		BadChoice *brr = new BadChoice(add, err.what());
+		add->setModal(brr);
 	}
+}
+
+void AddEntity::loadConfSpaceView(std::string suffix)
+{
+	ConfSpaceView *view = new ConfSpaceView(this, &_obj);
+	if (suffix == "refined_torsions")
+	{
+		view->setMode(rope::ConfTorsions);
+	}
+	else if (suffix == "atom_positions")
+	{
+		view->setMode(rope::ConfPositional);
+	}
+
+	view->show();
+}
+
+void AddEntity::serialRefinement()
+{
+	SerialRefiner *refiner = new SerialRefiner(this, &_obj);
+	refiner->setJobType(rope::ThoroughRefine);
+	refiner->show();
 }
 
 void AddEntity::buttonPressed(std::string tag, Button *button)
@@ -317,7 +329,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	
 	if (suffix.length() > 0)
 	{
-		loadConfSpaceView(suffix);
+		auto load_confs = [this, suffix]()
+		{
+			loadConfSpaceView(suffix);
+		};
+		
+		runFunctionIfModelsExist(&_obj, this, load_confs);
 	}
 
 	if (tag == "enter_name")
@@ -338,7 +355,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "conf_space" && button->left())
 	{
-		loadConfSpaceView(tag);
+		auto load_confs = [this, tag]()
+		{
+			loadConfSpaceView(tag);
+		};
+		
+		runFunctionIfModelsExist(&_obj, this, load_confs);
 	}
 	else if (tag == "conf_space" && !button->left())
 	{
@@ -360,24 +382,12 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "refine")
 	{
-		try
+		auto refine_models = [this]()
 		{
-			if (_obj.modelCount()==0)
-			{
-				throw std::invalid_argument("No models detected, have you mode"\
-						"led your sequences?");
-			}
-		}
-		catch(std::exception &err)
-		{
-			BadChoice *brr = new BadChoice(this, err.what());
-			setModal(brr);
-			return;
-		} 
-		SerialRefiner *refiner = new SerialRefiner(this, &_obj);
-		refiner->setJobType(rope::ThoroughRefine);
-		refiner->show();
-		return;
+			serialRefinement();
+		};
+
+		runFunctionIfModelsExist(&_obj, this, refine_models);
 	}
 	else if (tag == "fix_issues")
 	{
