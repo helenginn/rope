@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "LBFGSEngine.h"
+#include <stdio>
 
 LBFGSEngine::LBFGSEngine(RunsEngine *ref) : Engine(ref)
 {
