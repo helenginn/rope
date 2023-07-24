@@ -23,6 +23,7 @@
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/RopeTypes.h>
+#include <vagabond/core/ResidueId.h>
 
 #define INDICES_PER_BEZIER_DIVISION (12)
 #define DIVISIONS_IN_CIRCLE (16)
@@ -237,76 +238,76 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-	for (int i :a->residueId())
+    rope::MonomerType type = isAtomAA(a->residueId());
+    std::cout << type << std::endl;
+
+	if (_group->isAtomAA(a->residueId())==rope::IsAminoAcid)
 	{
-		if (_group->isAtomAA(a->residueId())==rope::IsAminoAcid)
+		if (_vertices.size() == 0)
 		{
-			if (_vertices.size() == 0)
-			{
-				insertAtom(nullptr);
-			}
-	
-			if (!a->isReporterAtom())
-			{
-				return;
-			}
-	
-			Atom *prev = _cAlphas.back();
-			int separation = -1;
-
-			if (prev)
-			{
-				separation = a->bondsBetween(prev, 6);
-			}
-		
-			if (!prev)
-			{
-				insertAtom(a);
-			}
-			else if (separation <= 4 && separation >= 0)
-			{
-				insertAtom(a);
-			}
-			else 
-			{
-				insertAtom(nullptr);
-			}
+			insertAtom(nullptr);
 		}
 
-		else if (_group->isAtomAA(a->residueId())==rope::IsNucleicAcid)
+		if (!a->isReporterAtom())
 		{
-        	if (_vertices.size() == 0)
-            {
-            	insertAtom(nullptr);
-            }
-
-            if (!a->isReporterAtom())
-            {
-            	return;
-            }
-
-            Atom *prev = _cAlphas.back();
-            int separation = -1;
-
-            if (prev)
-            {
-            	separation = a->bondsBetween(prev, 6);
-            }
-
-            if (!prev)
-            {
-            	insertAtom(a);
-            }
-            else if (separation <= 6 && separation >= 0)
-            {
-            	insertAtom(a);
-            }
-            else
-            {
-            	insertAtom(nullptr);
-            }
-
+			return;
 		}
+
+		Atom *prev = _cAlphas.back();
+		int separation = -1;
+
+		if (prev)
+		{
+			separation = a->bondsBetween(prev, 6);
+		}
+	
+		if (!prev)
+		{
+			insertAtom(a);
+		}
+		else if (separation <= 4 && separation >= 0)
+		{
+			insertAtom(a);
+		}
+		else 
+		{
+			insertAtom(nullptr);
+		}
+	}
+
+	if (_group->isAtomAA(a->residueId())==rope::IsNucleicAcid)
+	{
+       	if (_vertices.size() == 0)
+        {
+	       	insertAtom(nullptr);
+		}
+
+        if (!a->isReporterAtom())
+        {
+	      	return;
+        }
+
+        Atom *prev = _cAlphas.back();
+        int separation = -1;
+
+        if (prev)
+        {
+        	separation = a->bondsBetween(prev, 6);
+        }
+
+        if (!prev)
+        {
+        	insertAtom(a);
+        }
+        else if (separation <= 6 && separation >= 0)
+        {
+        	insertAtom(a);
+        }
+        else
+        {
+        	insertAtom(nullptr);
+        }
+
 	}
 }
 void GuiRibbon::convert()
