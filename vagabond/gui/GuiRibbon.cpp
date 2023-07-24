@@ -238,7 +238,7 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-    rope::MonomerType type = isAtomAA(a->residueId());
+    int type = (_group->isAtomAA(a->residueId()));
     std::cout << type << std::endl;
 
 	if (_group->isAtomAA(a->residueId())==rope::IsAminoAcid)
