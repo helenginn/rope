@@ -59,11 +59,16 @@ inline void to_json(json &j, const Ligand &value)
 	j["residue_ids"] = value._resids;
 	j["anchor_desc"] = value._anchorDesc;
 	j["code"] = value._code;
+	j["model_id"] = value._model_id;
 }
 
 inline void from_json(const json &j, Ligand &value)
 {
 	value._chain = j.at("chain");
+	if (j.count("model_id"))
+	{
+		value._model_id = j.at("model_id");
+	}
 	std::set<ResidueId> resids = j.at("residue_ids");
 	value._resids = resids;
 	value._anchorDesc = j.at("anchor_desc");
