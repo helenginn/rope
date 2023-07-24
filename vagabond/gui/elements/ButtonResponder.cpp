@@ -18,6 +18,7 @@
 
 #include "ButtonResponder.h"
 #include "KeyResponder.h"
+#include <algorithm>
 
 void ButtonResponder::setKeyResponder(KeyResponder *kr)
 {
