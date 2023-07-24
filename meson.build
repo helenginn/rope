@@ -57,6 +57,7 @@ install_data(
 'assets/shaders_450/density.fsh',
 'assets/shaders_450/multiply.fsh',
 'assets/shaders_450/pencil_shading.fsh',
+'assets/shaders_450/progress.fsh',
 'assets/shaders_450/point.vsh',
 'assets/shaders_450/point.fsh',
 'assets/shaders_450/simple_point.fsh',
