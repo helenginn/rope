@@ -20,6 +20,7 @@
 #define __vagabond__ClusterView__
 
 #include <thread>
+#include <condition_variable>
 #include <mutex>
 #include "PointyView.h"
 #include <vagabond/core/Progressor.h>
