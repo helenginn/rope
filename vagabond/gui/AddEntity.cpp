@@ -287,8 +287,8 @@ void AddEntity::loadConfSpaceView(std::string suffix)
 	{
 		if (_obj.modelCount()==0)
 		{
-			throw std::invalid_argument("No models detected, have you mode\
-			led your entities?");
+			throw std::invalid_argument("No models detected, have you modeled"\
+			" your entities?");
 		}
 
 		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
@@ -364,20 +364,20 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		{
 			if (_obj.modelCount()==0)
 			{
-				throw std::invalid_argument("No models detected, have you mode\
-				led your sequences?");
+				throw std::invalid_argument("No models detected, have you mode"\
+						"led your sequences?");
 			}
-			SerialRefiner *refiner = new SerialRefiner(this, &_obj);
-			refiner->setJobType(rope::ThoroughRefine);
-			refiner->show();
-			return;
 		}
-		catch(std::invalid_argument &err)
+		catch(std::exception &err)
 		{
 			BadChoice *brr = new BadChoice(this, err.what());
 			setModal(brr);
 			return;
-		}
+		} 
+		SerialRefiner *refiner = new SerialRefiner(this, &_obj);
+		refiner->setJobType(rope::ThoroughRefine);
+		refiner->show();
+		return;
 	}
 	else if (tag == "fix_issues")
 	{
