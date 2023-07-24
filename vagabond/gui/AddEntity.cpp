@@ -283,32 +283,31 @@ void AddEntity::searchPdb()
 
 void AddEntity::loadConfSpaceView(std::string suffix)
 {
-        try
-        {
-                if (_obj.modelCount()==0)
-                {
-                        throw std::invalid_argument("No models detected, have you modeled your entities?");
-                }
+	try
+	{
+		if (_obj.modelCount()==0)
+		{
+			throw std::invalid_argument("No models detected, have you modeled your entities?");
+		}
 
-                ConfSpaceView *view = new ConfSpaceView(this, &_obj);
-                if (suffix == "refined_torsions")
-                {
-                        view->setMode(rope::ConfTorsions);
-                }
-                else if (suffix == "atom_positions")
-                {
-                        view->setMode(rope::ConfPositional);
+		ConfSpaceView *view = new ConfSpaceView(this, &_obj);
+		if (suffix == "refined_torsions")
+		{
+			view->setMode(rope::ConfTorsions);
+		}
+		else if (suffix == "atom_positions")
+		{
+			view->setMode(rope::ConfPositional);
 		}
 		view->show();
                 
-        }
-        catch(std::exception &err)
-        {
-                
+	}
+	catch(std::exception &err)
+	{
 		BadChoice *brr = new BadChoice(this, err.what());
-                setModal(brr);
-                return;
-        }
+		setModal(brr);
+		return;
+	}
 }
 
 void AddEntity::buttonPressed(std::string tag, Button *button)
@@ -360,24 +359,23 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "refine")
 	{
-                try
-                {
-                        if (_obj.modelCount()==0)
-                        {
-                                throw std::invalid_argument("No models detected, have you modeled your sequences?");
-                        }
-                        SerialRefiner *refiner = new SerialRefiner(this, &_obj);
-                        refiner->setJobType(rope::ThoroughRefine);
-                        refiner->show();
-                        return;
-
-                }
-                catch(std::invalid_argument &err)
-                {
-                        BadChoice *brr = new BadChoice(this, err.what());
-                        setModal(brr);
-                        return;
-                }
+		try
+		{
+			if (_obj.modelCount()==0)
+			{
+				throw std::invalid_argument("No models detected, have you modeled your sequences?");
+			}
+			SerialRefiner *refiner = new SerialRefiner(this, &_obj);
+			refiner->setJobType(rope::ThoroughRefine);
+			refiner->show();
+			return;
+		}
+		catch(std::invalid_argument &err)
+		{
+			BadChoice *brr = new BadChoice(this, err.what());
+			setModal(brr);
+			return;
+		}
 	}
 	else if (tag == "fix_issues")
 	{
