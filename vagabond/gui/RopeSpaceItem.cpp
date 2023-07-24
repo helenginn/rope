@@ -306,11 +306,11 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
                                       std::string title)
 {
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
+	subset->setMode(_type);
 	subset->setFixedTitle(title);
 	subset->setWhiteList(whiteList);
 	addItem(subset);
 	subset->makeView(_confView);
-	subset->setMode(_type);
 
 	subset->inheritAxis(this);
 
@@ -330,19 +330,24 @@ void RopeSpaceItem::inheritAxis(RopeSpaceItem *parent)
 
 	if (mg->indexOfObject(hm) >= 0)
 	{
-		TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
-		_axes = new Axes(tc, old->instance());
-		_axes->takeOldAxes(old);
+		if (_type == ConfTorsions)
+		{
+			TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
+			_axes = new Axes(tc, old->instance());
+			_axes->takeOldAxes(old);
+		}
+		else if (_type == ConfPositional)
+		{
+			PositionalCluster *pc = static_cast<PositionalCluster *>(_cluster);
+			_axes = new Axes(pc, old->instance());
+			_axes->takeOldAxes(old);
+
+		}
 	}
 }
 
 Axes *RopeSpaceItem::createReference(Instance *inst)
 {
-	if (_type != ConfTorsions)
-	{
-		return nullptr;
-	}
-
 	Axes *old = _axes;
 	if (_axes != nullptr)
 	{
@@ -350,9 +355,17 @@ Axes *RopeSpaceItem::createReference(Instance *inst)
 		_confView->removeResponder(_axes);
 	}
 	
-	TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
-	
-	_axes = new Axes(tc, inst);
+	if (_type == ConfTorsions)
+	{
+		TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
+		_axes = new Axes(tc, inst);
+	}
+	else if (_type == ConfPositional)
+	{
+		PositionalCluster *pc = static_cast<PositionalCluster *>(_cluster);
+		_axes = new Axes(pc, inst);
+	}
+
 	_axes->setScene(_confView);
 	_axes->setIndexResponseView(_confView);
 	
