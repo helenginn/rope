@@ -120,7 +120,8 @@ inline void from_json(const json &j, RTMotion &id)
 	}
 	else
 	{
-		id._rtValues = j.at("motions");
+		std::vector<RTMotion::RTValue> values = j.at("motions");
+		id._rtValues = values;
 	}
 }
 

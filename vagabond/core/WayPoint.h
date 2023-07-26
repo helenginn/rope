@@ -185,7 +185,8 @@ inline void to_json(json &j, const WayPoints &value)
 /* waypoint */
 inline void from_json(const json &j, WayPoints &value)
 {
-    value._wps = j.at("wps");
+    std::vector<WayPoint> wps = j.at("wps");
+    value._wps = wps;
 }
 
 #endif

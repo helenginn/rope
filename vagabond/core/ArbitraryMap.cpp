@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 #include "ArbitraryMap.h"
 #include "Diffraction.h"
 
@@ -96,12 +96,12 @@ void ArbitraryMap::setupFromDiffraction()
 	{
 		VoxelDiffraction &vd = _diff->element(i);
 
-		if (vd.value[0] != vd.value[0] || !isfinite(vd.value[0]))
+		if (vd.value[0] != vd.value[0] || !std::isfinite(vd.value[0]))
 		{
 			continue;
 		}
 
-		if (vd.value[1] != vd.value[1] || !isfinite(vd.value[1]))
+		if (vd.value[1] != vd.value[1] || !std::isfinite(vd.value[1]))
 		{
 			continue;
 		}

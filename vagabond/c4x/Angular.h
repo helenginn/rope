@@ -20,7 +20,7 @@
 #define __vagabond__Angular__
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 #include <ostream>
 #include <vagabond/utils/degrad.h>
 
@@ -116,7 +116,7 @@ struct Angular
 
 inline bool valid(const Angular &a)
 {
-	return isfinite(a.angle) && a.angle == a.angle;
+	return std::isfinite(a.angle) && a.angle == a.angle;
 }
 
 #endif
