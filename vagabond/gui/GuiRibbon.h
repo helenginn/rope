@@ -60,9 +60,17 @@ private:
 	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;
 	std::map<int, glm::vec3> _idxPos;
-
+	std::map<int, bool> _idxRadius;
+	
+	/*struct AtomStatus
+	{
+		Atom *a;
+		glm::vec3 position;
+		int radius;
+	};*/
 	std::vector<Atom *> _cAlphas;
 	AtomGroup * _group;
+	int _compte =0;
 };
 
 #endif

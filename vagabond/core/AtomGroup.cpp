@@ -290,10 +290,10 @@ int AtomGroup::isAtomAA(const ResidueId &id)
 		{
 			return rope::IsNucleicAcid;
 		}
-		else
+/*		else if (atom->residueId()==id)
 		{
 			return rope::IsOther;
-		}
+		}*/
 	}
 }
 AtomVector AtomGroup::atomsWithName(std::string name) const
