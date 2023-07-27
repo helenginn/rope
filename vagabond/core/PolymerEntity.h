@@ -69,9 +69,9 @@ public:
 	friend void to_json(json &j, const PolymerEntity &value);
 	friend void from_json(const json &j, PolymerEntity &value);
 
-protected:
 	virtual MetadataGroup prepareTorsionGroup();
 	virtual PositionalGroup preparePositionGroup();
+protected:
 
 private:
 	Sequence _sequence;

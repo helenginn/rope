@@ -117,9 +117,10 @@ public:
 
 	friend void to_json(json &j, const PolymerEntity &value);
 	friend void from_json(const json &j, PolymerEntity &value);
-protected:
+
 	virtual MetadataGroup prepareTorsionGroup() { return MetadataGroup(0); }
 	virtual PositionalGroup preparePositionGroup() { return PositionalGroup(0); }
+protected:
 
 	VisualPreferences _visPrefs;
 	
