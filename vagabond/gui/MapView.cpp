@@ -29,29 +29,21 @@
 #include <vagabond/core/Cartographer.h>
 #include <vagabond/core/PolymerEntity.h>
 #include <vagabond/core/CompareDistances.h>
+#include <vagabond/core/Warp.h>
+#include <vagabond/core/AtomWarp.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
 #include "MapView.h"
 
-MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances) 
+MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances,
+                 Instance *reference) 
 : Display(prev)
 {
-	_cartographer = new Cartographer(entity, instances);
-	_cartographer->setResponder(this);
+	_reference = reference;
+	_instances = instances;
 	setOwnsAtoms(false);
-}
-
-MapView::MapView(Scene *prev, SpecificNetwork *spec) : Display(prev)
-{
-	_cartographer = new Cartographer(spec->network()->entity(), 
-	                                 spec->network()->instances());
-	_cartographer->setResponder(this);
-	setOwnsAtoms(false);
-
-	_specified = spec;
-	_cartographer->supplyExisting(spec);
 }
 
 MapView::~MapView()
@@ -66,20 +58,27 @@ MapView::~MapView()
 
 void MapView::setup()
 {
-	_cartographer->setup();
-	_specified = _cartographer->specified();
+	showWarpSpace();
+	addTitle("Warp space");
 
-	makeTriangles();
-	addTitle("Triangle mayhem");
+	_reference->load();
+	_reference->currentAtoms()->recalculate();
+	loadAtoms(_reference->currentAtoms());
+	
+	_warp = new Warp(_reference, 2);
+	_warp->setup();
+	
+	AtomWarp aw(_instances, _reference);
+	std::function<Vec3s(const Coord::Get &)> motions;
+	motions = aw.mappedMotions(2, _warp->atomList());
+	_warp->setAtomMotions(motions);
 
-	Instance *inst = _specified->instance();
-	inst->currentAtoms()->recalculate();
-	loadAtoms(inst->currentAtoms());
-
-	VisualPreferences *vp = &inst->entity()->visualPreferences();
+	VisualPreferences *vp = &_reference->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
+	
+	addButtons();
 
-	_worker = new std::thread(Cartographer::assess, _cartographer);
+//	_worker = new std::thread(Cartographer::assess, _cartographer);
 
 	TextButton *command = new TextButton("Save space", this);
 	command->setCentre(0.9, 0.1);
@@ -87,34 +86,23 @@ void MapView::setup()
 	addObject(command);
 }
 
-void MapView::showMap()
-{
-	ShowMap *show = new ShowMap(this, _specified);
-	show->setCartographer(_cartographer);
-	show->setMapView(this);
-	show->show();
-}
-
 void MapView::addButtons()
 {
-	if (_command)
+	if (_toggle)
 	{
-		removeObject(_command);
-		delete _command;
-		removeObject(_second);
-		delete _second;
-		removeObject(_showMap);
-		delete _showMap;
+		removeObject(_toggle);
+		delete _toggle;
 	}
 
 	{
-		TextButton *command = new TextButton("Flip torsions", this);
+		TextButton *command = new TextButton("Displaying targets", this);
 		command->setCentre(0.35, 0.9);
-		command->setReturnTag("flip");
+		command->setReturnTag("toggle");
 		addObject(command);
-		_command = command;
+		_toggle = command;
 	}
 
+	/*
 	{
 		TextButton *command = new TextButton("Nudge", this);
 		command->setCentre(0.65, 0.9);
@@ -122,38 +110,31 @@ void MapView::addButtons()
 		addObject(command);
 		_second = command;
 	}
+	*/
 
-	{
-		TextButton *command = new TextButton("Examine", this);
-		command->setCentre(0.15, 0.75);
-		command->setReturnTag("show_map");
-		addObject(command);
-		_showMap = command;
-	}
-		
-		Text *info = new Text("C-alpha trajectory off-linear course plot");
-		info->resize(0.4);
-		info->setCentre(0.85, 0.22);
-		addObject(info);
+	/*
+	Text *info = new Text("C-alpha trajectory off-linear course plot");
+	info->resize(0.4);
+	info->setCentre(0.85, 0.22);
+	addObject(info);
+	*/
 }
 
 void MapView::stopWorker()
 {
 	_worker->detach();
-	_command->setReturnTag("none");
-	_command->setInert(true);
-	_cartographer->stopASAP();
+	_toggle->setReturnTag("none");
+	_toggle->setInert(true);
 }
 
 void MapView::skipJob()
 {
-	_cartographer->skipCurrentJob();
+	
 }
 
 void MapView::cleanupPause()
 {
 	_refined = true;
-	_specified->setResponder(this);
 
 	if (_worker)
 	{
@@ -161,62 +142,26 @@ void MapView::cleanupPause()
 		_worker = nullptr;
 	}
 
-	_command->setInert(false);
-	_command->setText("Flip torsions");
-	_command->setReturnTag("flip");
-
 	_second->setInert(false);
 	_second->setText("Nudge");
 	_second->setReturnTag("nudge");
-
-	_showMap->setText("Examine");
-	_showMap->setReturnTag("show_map");
 }
 
 void MapView::makePausable()
 {
-	_specified->setDisplayInterval(100);
-	_specified->removeResponder(this);
 	_refined = false;
 
-	_command->setText("Stop");
-	_command->setReturnTag("pause");
+	_toggle->setText("Stop");
+	_toggle->setReturnTag("pause");
 
 	_second->setText("Skip");
 	_second->setReturnTag("skip");
-
-	_showMap->setText(" ");
-	_showMap->setReturnTag("none");
 }
 
-void MapView::askForNudgePoint()
+void MapView::showWarpSpace()
 {
-	setInformation("Click on point to nudge");
-	_waitingForNudge = true;
-}
-
-void MapView::startNudges(std::vector<float> point)
-{
-	_cartographer->map2Matrix()->fraction_to_cart(point);
-	makePausable();
-	_worker = new std::thread(Cartographer::nudge, _cartographer, point);
-}
-
-void MapView::startFlip(int i, int j)
-{
-	makePausable();
-	_worker = new std::thread(Cartographer::flipIdx, _cartographer, i, j);
-}
-
-void MapView::startFlips()
-{
-	makePausable();
-	_worker = new std::thread(Cartographer::flip, _cartographer);
-}
-
-void MapView::makeTriangles()
-{
-	MatrixPlot *mp = new MatrixPlot(_cartographer->matrix(), _mutex);
+	setupMatrix(&_warpMat, _divisions, _divisions);
+	MatrixPlot *mp = new MatrixPlot(_warpMat, _mutex);
 	mp->setCentre(0.15, 0.5);
 	mp->resize(0.8);
 	mp->update();
@@ -226,19 +171,12 @@ void MapView::makeTriangles()
 
 bool MapView::plotPosition(float x, float y)
 {
-	std::vector<float> vals = {x, y};
-	_cartographer->map2Matrix()->fraction_to_cart(vals);
-	int num = _specified->submitJob(true, vals);
-	_specified->retrieve();
-	float score = _specified->deviation(num);
+	_last = {x, y};
+	std::vector<float> vals = {2*x - 1, 2*y - 1};
+	int num = _warp->submitJob(true, vals);
+	_warp->retrieve();
+	float score = _warp->deviation(num);
 	std::string str = std::to_string(score);
-	bool valid = _specified->valid_position(vals);
-
-	if (!valid)
-	{
-		str += " - invalid";
-	}
-
 	setInformation(str);
 	return true;
 }
@@ -267,18 +205,7 @@ bool MapView::sampleFromPlot(double x, double y)
 		return false;
 	}
 
-	
-	if (!_waitingForNudge)
-	{
-		return plotPosition(v.x, v.y);
-	}
-	else
-	{
-		_waitingForNudge = false;
-		startNudges({v.x, v.y});
-	}
-
-	return false;
+	return plotPosition(v.x, v.y);
 }
 
 void MapView::mouseMoveEvent(double x, double y)
@@ -309,7 +236,7 @@ void MapView::saveSpace(std::string filename)
 		return;
 	}
 
-	json j = *_specified;
+	json j{}; // = thing;
 
 	std::ofstream file;
 	file.open(filename);
@@ -325,23 +252,28 @@ void MapView::askForFilename()
 	setModal(aft);
 }
 
+void MapView::toggleAtomDisplayType()
+{
+	bool set = _warp->isDisplayingTargets();
+	_warp->setDisplayingTargets(!set);
+
+	std::string str = !set ? "Displaying targets" : "Displaying predicted";
+	_toggle->setText(str);
+	plotPosition(_last[0], _last[1]);
+}
+
 void MapView::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "flip")
+	if (tag == "toggle")
 	{
-		startFlips();
+		toggleAtomDisplayType();
+
 	}
-	
 	if (tag == "json_filename")
 	{
 		TextEntry *te = static_cast<TextEntry *>(button);
 		std::string text = te->scratch();
 		saveSpace(text);
-	}
-
-	if (tag == "show_map")
-	{
-		showMap();
 	}
 
 	if (tag == "save_space")
@@ -352,11 +284,6 @@ void MapView::buttonPressed(std::string tag, Button *button)
 	if (tag == "save_model")
 	{
 		_atoms->writeToFile("tmp.pdb");
-	}
-
-	if (tag == "nudge")
-	{
-		askForNudgePoint();
 	}
 
 	if (tag == "pause")
@@ -426,8 +353,6 @@ void MapView::sendObject(std::string tag, void *object)
 	else if (tag == "done")
 	{
 		_refined = true;
-		_specified->setDisplayInterval(1);
-		_specified->setResponder(this);
 		_updateButtons = true;
 	}
 

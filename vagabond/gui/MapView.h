@@ -31,16 +31,17 @@ class MatrixPlot;
 class TextButton;
 class ShowMap;
 class Network;
+class Warp;
 
 class MapView : public Display, public Responder<Cartographer>,
 public Responder<SpecificNetwork>
 {
 public:
-	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances);
-	MapView(Scene *prev, SpecificNetwork *spec);
+	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances,
+	        Instance *reference);
 	virtual ~MapView();
 
-	void makeTriangles();
+	void showWarpSpace();
 	virtual void setup();
 	virtual void doThings();
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
@@ -50,20 +51,16 @@ public:
 	void supplyExisting(SpecificNetwork *spec);
 
 	void buttonPressed(std::string tag, Button *button);
-	void startFlip(int i, int j);
 private:
 	void makeMapping();
-	void startFlips();
-	void startNudges(std::vector<float> point);
 	void loadSpace(std::string filename);
 	void stopWorker();
 	void skipJob();
-	void showMap();
-	void askForNudgePoint();
 	void adjustToLeft(Renderable *r);
 	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
 	bool plotPosition(float x, float y);
+	void toggleAtomDisplayType();
 	void makePausable();
 	bool _editing = false;
 
@@ -74,23 +71,29 @@ private:
 
 	MatrixPlot *_plot = nullptr;
 	std::atomic<bool> _updatePlot{false};
-	std::atomic<bool> _refined{false};
+	std::atomic<bool> _refined{true};
 
 	Cartographer *_cartographer = nullptr;
 	SpecificNetwork *_specified = nullptr;
+	Instance *_reference = nullptr;
+	std::vector<Instance *> _instances;
 	std::mutex _mutex;
 
 	MatrixPlot *_distances = nullptr;
 	PCA::Matrix _distMat{};
+
+	PCA::Matrix _warpMat{};
+	float _divisions = 100;
 	
-	TextButton *_command = nullptr;
+	TextButton *_toggle = nullptr;
 	TextButton *_second = nullptr;
-	TextButton *_showMap = nullptr;
+
+	Warp *_warp = nullptr;
 
 	std::thread *_worker = nullptr;
-	bool _waitingForNudge = false;
 	bool _updateButtons = false;
 	std::atomic<bool> _cleanupPause{false};
+	std::vector<float> _last;
 };
 
 #endif

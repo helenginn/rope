@@ -16,27 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Torsion2Atomic__
-#define __vagabond__Torsion2Atomic__
+#ifndef __vagabond__AtomWarp__
+#define __vagabond__AtomWarp__
 
-#include "RopeCluster.h"
-#include "RAMovement.h"
-#include "Entity.h"
+#include <vagabond/utils/AcquireCoord.h>
 
-class RTAngles;
+class PositionalCluster;
+class TorsionCluster;
+class RAMovement;
+class Instance;
+class Atom;
 
-class Torsion2Atomic
+class AtomWarp
 {
 public:
-	Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
-	               PositionalCluster *pc = nullptr);
+	AtomWarp(std::vector<Instance *> instances, Instance *reference);
 
-	RAMovement convertAngles(const RTAngles &angles);
+	std::function<Vec3s(const Coord::Get &get)> 
+	mappedMotions(int n, const std::vector<Atom *> &order);
 private:
-	Entity *_entity = nullptr;
-	TorsionCluster *_tCluster = nullptr;
-	PositionalCluster *_pCluster = nullptr;
+	std::vector<RAMovement> allMotions(int n);
 
+	TorsionCluster *_tCluster = nullptr;
+	Instance *_reference = nullptr;
 };
 
 #endif

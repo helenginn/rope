@@ -192,16 +192,9 @@ std::vector<Instance *> PathFinding::activeInstances()
 
 void PathFinding::start()
 {
-	if (_prior)
-	{
-		MapView *mv = new MapView(this, _prior);
-		mv->show();
-		return;
-	}
-
 	std::vector<Instance *> instances = activeInstances();
 
-	MapView *mv = new MapView(this, _entity, instances);
+	MapView *mv = new MapView(this, _entity, instances, _reference);
 	mv->show();
 
 }

@@ -20,14 +20,22 @@
 #include "Torsion2Atomic.h"
 #include "Entity.h"
 
-Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster)
+Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
+                               PositionalCluster *pc)
 {
 	_entity = entity;
 	_tCluster = cluster;
 	std::vector<Instance *> instances = _tCluster->dataGroup()->asInstances();
-	PositionalGroup group = entity->makePositionalDataGroup(instances);
-	group.findDifferences();
-	_pCluster = new PositionalCluster(group);
+	if (pc == nullptr)
+	{
+		PositionalGroup group = entity->makePositionalDataGroup(instances);
+		group.findDifferences();
+		_pCluster = new PositionalCluster(group);
+	}
+	else
+	{
+		_pCluster = pc;
+	}
 }
 
 struct weights

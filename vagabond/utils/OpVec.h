@@ -19,12 +19,22 @@
 #ifndef __vagabond__OpVec__
 #define __vagabond__OpVec__
 
+#include <iostream>
 #include <vector>
 
 template <class Type>
 class OpVec : public std::vector<Type>
 {
 public:
+	OpVec<Type>() : std::vector<Type>()
+	{
+
+	}
+	OpVec<Type>(const OpVec<Type> &other) : std::vector<Type>(other)
+	{
+
+	}
+
 	OpVec<Type> operator/(const float &other) const
 	{
 		OpVec<Type> ret;

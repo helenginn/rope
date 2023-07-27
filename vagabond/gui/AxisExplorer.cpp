@@ -134,6 +134,7 @@ void AxisExplorer::adjustTorsions()
 	Entity *entity = _instance->entity();
 	Torsion2Atomic t2a(entity, _cluster);
 	_movement = t2a.convertAngles(_torsionLists[0]);
+	
 }
 
 void AxisExplorer::askForAtomMotions()

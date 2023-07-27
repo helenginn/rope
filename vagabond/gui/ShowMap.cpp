@@ -158,7 +158,6 @@ void ShowMap::buttonPressed(std::string tag, Button *button)
 	
 	if (_first >= 0 && _second >= 0 && _first != _second)
 	{
-		_view->startFlip(_second, _first);
 		back();
 	}
 
