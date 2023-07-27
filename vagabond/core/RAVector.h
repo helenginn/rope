@@ -50,6 +50,36 @@ public:
 		}
 	}
 	
+	void filter_according_to(const std::vector<Atom *> &as)
+	{
+		std::vector<RTValue> copy = _pairs;
+
+		_pairs.clear();
+		_pairs.reserve(as.size());
+		
+		for (int i = 0; i < as.size(); i++)
+		{
+			int idx = -1;
+			for (int j = 0; j < copy.size() && as[i]; j++)
+			{
+				if (copy[j].header.fitsAtom(as[i]))
+				{
+					idx = j;
+					break;
+				}
+			}
+			
+			if (idx >= 0)
+			{
+				_pairs.push_back(copy[idx]);
+			}
+			else
+			{
+				_pairs.push_back(RTValue{});
+			}
+		}
+	}
+	
 	void vector_from(const std::vector<Atom3DPosition> &ras,
 	                 const std::vector<Storage> &storage)
 	{
