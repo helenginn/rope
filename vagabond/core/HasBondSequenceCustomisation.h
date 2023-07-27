@@ -89,19 +89,6 @@ public:
 		other->_loopCount = _loopCount;
 		other->_threads = _threads;
 		other->_mode = _mode;
-		other->_posSampler = _posSampler;
-	}
-	
-	PositionSampler *posSampler()
-	{
-		return _posSampler;
-	}
-
-	/* mapping to pass Sampler coordinates to for target atom position, overriding
-	 * target and "moving" */
-	void setPositionSampler(PositionSampler *ps)
-	{
-		_posSampler = ps;
 	}
 	
 protected:
@@ -123,7 +110,6 @@ protected:
 	};
 
 	SampleMode _mode = MultiSample;
-	PositionSampler *_posSampler = nullptr;
 };
 
 #endif

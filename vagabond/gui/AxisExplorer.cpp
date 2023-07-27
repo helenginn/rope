@@ -84,6 +84,7 @@ void AxisExplorer::submitJob(float prop)
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
+		job.pos_sampler = this;
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = prop;
 		job.requests = static_cast<JobType>(JobPositionVector); 
@@ -177,8 +178,6 @@ void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
 	props.group = _instance->currentAtoms();
 	props.t = FFProperties::CAlphaSeparation;
 	calc->setForceFieldProperties(props);
-
-	calc->setPositionSampler(this);
 }
 
 void AxisExplorer::setupColoursForList(RTAngles &angles)

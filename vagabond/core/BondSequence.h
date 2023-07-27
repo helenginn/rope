@@ -214,9 +214,14 @@ private:
 	float fetchTorsionForBlock(int idx);
 	void fetchAtomTarget(int idx);
 	
+	PositionSampler *posSampler()
+	{
+		return job()->pos_sampler;
+	}
+	
 	bool positionsAvailable()
 	{
-		return (_posSampler && _atomPositions.size() && _acceptablePositions);
+		return (posSampler() && _atomPositions.size() && _acceptablePositions);
 	}
 
 	Grapher _grapher;
