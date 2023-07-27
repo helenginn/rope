@@ -89,6 +89,15 @@ public:
 		_point2Score.clear();
 	}
 	
+	void setDisplayingTargets(const bool &set)
+	{
+		_displayTargets = set;
+	}
+	
+	bool isDisplayingTargets()
+	{
+		return _displayTargets;
+	}
 protected:
 	
 	virtual bool handleAtomMap(AtomPosMap &aps)
