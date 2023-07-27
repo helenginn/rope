@@ -22,6 +22,9 @@
 #include <vagabond/utils/maths.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/RopeTypes.h>
+#include <vagabond/core/ResidueId.h>
+#include <vagabond/core/RopeTypes.h>
 
 #define INDICES_PER_BEZIER_DIVISION (12)
 #define DIVISIONS_IN_CIRCLE (16)
@@ -65,7 +68,7 @@ void GuiRibbon::addCircle(std::vector<Snow::Vertex> &vertices,
 
 void GuiRibbon::addCylinderIndices(size_t num)
 {
-	GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
+GuiRepresentation::addCylinderIndices(_vertices, _indices, num);
 }
 
 void GuiRibbon::convertToCylinder(std::vector<Snow::Vertex> *vertices)
@@ -101,11 +104,10 @@ void GuiRibbon::convertToCylinder(std::vector<Snow::Vertex> *vertices)
 		/* get the axis of motion */
 		glm::vec3 axis = glm::normalize(v2 - v1);
 		glm::vec3 average_with_prev = glm::normalize(axis + prev_axis);
-
+		
 		/* generate the appropriate circle params */
 		std::vector<glm::vec3> circle;
 		float angle = (2 * M_PI) / (double)divisions;
-
 		glm::mat4x4 rot = glm::rotate(glm::mat4(1.f), angle, average_with_prev);
 		glm::vec3 cross = glm::normalize(glm::cross(axis, xAxis));
 		cross *= 0.3;
@@ -184,8 +186,8 @@ void GuiRibbon::convertToBezier()
 
 bool GuiRibbon::previousPositionValid()
 {
-	bool lastOK = (_vertices.size() > 0 && 
-	               _vertices.back().pos[0] == _vertices.back().pos[0]);
+	bool lastOK = (_vertices.size() > 0 &&
+			_vertices.back().pos[0] == _vertices.back().pos[0]);
 
 	return lastOK;
 }
@@ -229,39 +231,77 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-	if (_vertices.size() == 0)
+	if (a!=nullptr)
 	{
-		insertAtom(nullptr);
-	}
-	
-	if (!acceptableAtom(a))
-	{
-		return;
-	}
-	
-	Atom *prev = _cAlphas.back();
-	int separation = -1;
+		if (_group->isAtomAA(a->residueId())==rope::IsAminoAcid)
+		{
+			if (_vertices.size() == 0)
+			{
+				insertAtom(nullptr);
+			}
 
-	if (prev)
-	{
-		separation = a->bondsBetween(prev, 6);
+			if (!a->isReporterAtom())
+			{
+				return;
+			}
+
+			Atom *prev = _cAlphas.back();
+			int separation = -1;
+
+			if (prev)
+			{
+				separation = a->bondsBetween(prev, 6);
+			}
+
+			if (!prev)
+			{
+				insertAtom(a);
+			}
+			else if (separation <= 4 && separation >= 0)
+			{
+				insertAtom(a);
+			}
+			else
+			{
+				insertAtom(nullptr);
+			}
+		}
+
+		if (_group->isAtomAA(a->residueId())==rope::IsNucleicAcid)
+		{
+			if (_vertices.size() == 0)
+			{
+				insertAtom(nullptr);
+			}
+
+			if (!a->isReporterAtom())
+			{
+				return;
+			}
+
+			Atom *prev = _cAlphas.back();
+			int separation = -1;
+
+			if (prev)
+			{
+				separation = a->bondsBetween(prev, 6);
+			}
+
+			if (!prev)
+			{
+				insertAtom(a);
+			}
+			else if (separation <= 6 && separation >= 0)
+			{
+				insertAtom(a);
+			}
+			else
+			{
+				insertAtom(nullptr);
+			}
+		}
 	}
-	
-	if (!prev)
-	{
-		insertAtom(a);
-	}
-	else if (separation <= 4 && separation >= 0)
-	{
-		insertAtom(a);
-	}
-	else 
-	{
-		insertAtom(nullptr);
-	}
-	
 }
-
 void GuiRibbon::convert()
 {
 	insertAtom(nullptr);
@@ -292,10 +332,11 @@ size_t GuiRibbon::verticesPerAtom()
 void GuiRibbon::prepareAtomSpace(AtomGroup *ag)
 {
 	int count = 0;
+	_group=ag;
 	for (size_t i = 0; i < ag->size(); i++)
 	{
 		// HARDCODE
-		if (acceptableAtom((*ag)[i]))
+		if (((*ag)[i])->isReporterAtom())
 		{
 			count++;
 		}
@@ -315,7 +356,7 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 	int fix = _atomIndex[a];
 	_idxPos[fix] = p;
 	_atomPos[a] = p;
-	
+
 	for (int i = fix - 2; i < fix + 1; i++)
 	{
 		if (i < 0 || i >= (int)_cAlphas.size() - 1)

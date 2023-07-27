@@ -427,9 +427,9 @@ bool Atom::isCoreMainChain(std::string atomName)
 
 }
 
-bool Atom::isReporterAtom(std::string atomName)
+bool Atom::isReporterAtom(std::string atom)
 {
-	return atomName == "CA";
+	return atom == "CA" ||atom == "P";
 }
 
 bool Atom::isCoreMainChain() const
