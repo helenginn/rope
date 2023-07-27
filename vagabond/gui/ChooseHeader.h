@@ -23,6 +23,10 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <set>
 
+/** \class ChooseHeader will call sendObject(tag, nullptr) on a responder
+ * if choose is true; tag will be the chosen string as supplied in
+ * setHeaders */
+
 class Entity;
 
 class ChooseHeader : public ListView,
