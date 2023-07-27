@@ -353,7 +353,7 @@ bool SpecificNetwork::prewarnAtoms(BondSequence *seq,
 
 void SpecificNetwork::customModifications(BondCalculator *calc, bool has_mol)
 {
-	calc->setPositionSampler(this);
+//	calc->setPositionSampler(this);
 }
 
 bool SpecificNetwork::valid_position(const std::vector<float> &vals)
