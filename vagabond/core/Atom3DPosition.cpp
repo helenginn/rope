@@ -22,6 +22,11 @@
 
 bool Atom3DPosition::fitsAtom(Atom *other, Instance *from) const
 {
+	if (from == nullptr)
+	{
+		from = _instance;
+	}
+
 	if (entity() != from->entity())
 	{
 		return false;
