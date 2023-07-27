@@ -139,6 +139,8 @@ protected:
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
 
+	std::map<Instance *, BondCalculator *> _instanceToCalculator;
+
 	TicketPoint _ticket2Point;
 	TicketScores _point2Score;
 	

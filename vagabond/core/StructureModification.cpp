@@ -146,7 +146,16 @@ void StructureModification::startCalculator()
 
 		if (!anchor->hetatm())
 		{
-			makeCalculator(anchor, true);
+			if (_instanceToCalculator.count(_instance) > 0)
+			{
+				BondCalculator *calc = _instanceToCalculator[_instance];
+				calc->addAnchorExtension(anchor);
+			}
+			else
+			{
+				makeCalculator(anchor, true);
+				_instanceToCalculator[_instance] = _calculators.back();
+			}
 		}
 		else
 		{
