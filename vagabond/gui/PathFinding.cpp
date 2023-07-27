@@ -18,10 +18,10 @@
 
 #include "PathFinding.h"
 #include <vagabond/core/Entity.h>
+#include <vagabond/gui/ChooseHeader.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskForText.h>
-#include "SpecificNetwork.h"
 #include "AddRule.h"
 #include "MapView.h"
 
@@ -54,15 +54,34 @@ void PathFinding::setup()
 		t->setCentre(0.8, top);
 		addObject(t);
 	}
-	
+
 	top += 0.2;
 
+	{
+		Text *t = new Text("Choose reference structure");
+		t->setLeft(0.2, top);
+		t->addAltTag("Structure which will be placed at the origin of the map");
+		addObject(t);
+	}
+	{
+		TextButton *t = new TextButton("choose...", this);
+		t->setRight(0.8, top);
+		t->setReturnTag("get_structure");
+		_refText = t;
+		addObject(t);
+	}
+	
+	top += 0.1;
+
+	if (false)
 	{
 		Text *t = new Text("or start from existing saved space:");
 		t->setLeft(0.2, top);
 		t->addAltTag("Find a previously saved json file");
 		addObject(t);
 	}
+
+	if (false)
 	{
 		ImageButton *t = ImageButton::arrow(-90., this);
 		t->setReturnTag("find_json");
@@ -87,14 +106,7 @@ void PathFinding::findJson()
 
 void PathFinding::loadSpace(std::string filename)
 {
-	json data;
-	std::ifstream f;
-	f.open(filename);
-	f >> data;
-	f.close();
 
-	SpecificNetwork *spec = new SpecificNetwork(data);
-	_prior = spec;
 }
 
 void PathFinding::makeRule()
@@ -117,15 +129,48 @@ void PathFinding::deleteRule()
 	refresh();
 }
 
-void PathFinding::start()
+void PathFinding::setStructureIfValid(const std::string &str)
 {
-	if (_prior)
-	{
-		MapView *mv = new MapView(this, _prior);
-		mv->show();
-		return;
-	}
+	std::vector<Instance *> instances = activeInstances();
 
+	for (Instance *inst : instances)
+	{
+		if (inst->id() == str)
+		{
+			_reference = inst;
+			_refText->setText(inst->id());
+			return;
+		}
+	}
+	
+	_reference = nullptr;
+	_refText->setText("choose...");
+}
+
+void PathFinding::getStructure()
+{
+	std::vector<Instance *> instances = activeInstances();
+	std::set<std::string> ids;
+
+	for (Instance *inst : instances)
+	{
+		ids.insert(inst->id());
+	}
+	
+	ChooseHeader *ch = new ChooseHeader(this, true);
+	ch->setResponder(this);
+	ch->setHeaders(ids);
+	ch->setTitle("Set reference structure");
+	ch->show();
+}
+
+void PathFinding::sendObject(std::string tag, void *object)
+{
+	setStructureIfValid(tag);
+}
+
+std::vector<Instance *> PathFinding::activeInstances()
+{
 	std::vector<Instance *> instances;
 
 	if (_rule)
@@ -141,6 +186,20 @@ void PathFinding::start()
 	{
 		instances = _entity->instances();
 	}
+
+	return instances;
+}
+
+void PathFinding::start()
+{
+	if (_prior)
+	{
+		MapView *mv = new MapView(this, _prior);
+		mv->show();
+		return;
+	}
+
+	std::vector<Instance *> instances = activeInstances();
 
 	MapView *mv = new MapView(this, _entity, instances);
 	mv->show();
@@ -161,6 +220,10 @@ void PathFinding::buttonPressed(std::string tag, Button *button)
 	{
 		start();
 	}
+	else if (tag == "get_structure")
+	{
+		getStructure();
+	}
 	else if (tag == "find_json")
 	{
 		findJson();
@@ -175,10 +238,14 @@ void PathFinding::buttonPressed(std::string tag, Button *button)
 	Scene::buttonPressed(tag, button);
 }
 
-
 void PathFinding::refresh()
 {
 	deleteTemps();
+	
+	if (_reference != nullptr)
+	{
+		setStructureIfValid(_reference->id());
+	}
 
 	if (_rule != nullptr)
 	{
@@ -204,3 +271,4 @@ void PathFinding::refresh()
 		addTempObject(ib);
 	}
 }
+

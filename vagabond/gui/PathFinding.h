@@ -21,13 +21,17 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/Responder.h>
 
 class SpecificNetwork;
+class ChooseHeader;
 class ObjectGroup;
+class Instance;
 class Entity;
 class Rule;
+class Text;
 
-class PathFinding : public Scene
+class PathFinding : public Scene, public Responder<ChooseHeader>
 {
 public:
 	PathFinding(Scene *prev, Entity *ent);
@@ -36,14 +40,22 @@ public:
 	virtual void refresh();
 	virtual void setup();
 	virtual void buttonPressed(std::string tag, Button *button);
+protected:
+	void sendObject(std::string tag, void *object);
 private:
+	std::vector<Instance *> activeInstances();
+	void loadSpace(std::string filename);
+	void setStructureIfValid(const std::string &str);
+
+	void getStructure();
 	void deleteRule();
 	void makeRule();
 	void findJson();
-	void loadSpace(std::string filename);
 	void start();
 
 	Entity *_entity = nullptr;
+	Text *_refText = nullptr;
+	Instance *_reference = nullptr;
 	MetadataGroup _all;
 	Rule *_rule = nullptr;
 	SpecificNetwork *_prior = nullptr;
