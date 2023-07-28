@@ -319,7 +319,7 @@ void Scene::askToQuit()
 	else
 	{
 		_isQuit = false;
-		removeModal();
+		_modal->hide();
 	}
 }
 
