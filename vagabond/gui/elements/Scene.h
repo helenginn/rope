@@ -114,7 +114,7 @@ protected:
 	bool _expired = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
-	
+	bool _isQuit = false;	
 	static std::string _defaultBg;
 };
 
