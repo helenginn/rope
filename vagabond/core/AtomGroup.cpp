@@ -277,7 +277,7 @@ Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name,
 	return nullptr;
 }
 
-int AtomGroup::isAtomAA(const ResidueId &id)
+rope::MonomerType AtomGroup::monomerType(const ResidueId &id)
 {
 	for (Atom *atom : _atoms)
 	{

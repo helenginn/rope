@@ -86,7 +86,7 @@ public:
 	Atom *atomByDesc(std::string desc) const;
 	AtomVector atomsWithName(std::string name) const;
 	Atom *firstAtomWithName(std::string name) const;
-	int isAtomAA(const ResidueId &id);
+	rope::MonomerType monomerType(const ResidueId &id);
 	
 	void recalculate();
 	
