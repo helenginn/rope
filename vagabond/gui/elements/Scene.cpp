@@ -308,10 +308,19 @@ void Scene::addTitle(std::string title)
 
 void Scene::askToQuit()
 {
-	AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to quit?",
-	                             "quit", this);
-	setModal(ayn);
-	viewChanged();
+	if (_isQuit == false)
+	{
+		AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to quit?",
+				"quit", this);
+		setModal(ayn);
+		viewChanged();
+		_isQuit = true;
+	}
+	else
+	{
+		_isQuit = false;
+		removeModal();
+	}
 }
 
 void Scene::buttonPressed(std::string tag, Button *button)
