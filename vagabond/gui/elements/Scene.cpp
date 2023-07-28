@@ -318,8 +318,9 @@ void Scene::askToQuit()
 	}
 	else
 	{
-		_isQuit = false;
 		_modal->hide();
+		viewChanged();
+		_isQuit = false;
 	}
 }
 
