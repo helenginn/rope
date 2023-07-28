@@ -63,7 +63,6 @@ weights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
 		Instance *instance = static_cast<Instance *>(grp->object(i));
 		std::vector<float> entry = grp->comparableVector(i);
 		float cc = MetadataGroup::correlation_between(compare, entry);
-		std::cout << "instance " << instance->id() << " cc = " << cc << std::endl;
 		weight.scores[instance] = cc;
 	}
 
