@@ -273,6 +273,7 @@ public:
 	{
 		_colour = col;
 		_count = 0;
+		changedPosition();
 	}
 	
 	void addToColour(float add)

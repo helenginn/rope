@@ -83,8 +83,7 @@ void GuiRibbon::segmentToWatch(std::vector<glm::vec3> &segment,
 	{
 		for (size_t j = 0; j < segment.size(); j++)
 		{
-			Watch::Entry entry{};
-			entry.atom = source.atom;
+			Watch::Entry entry(source);
 			entry.pos = segment[j];
 			watch.addWatchedAtom(entry);
 		}
@@ -177,6 +176,8 @@ std::vector<Vertex> GuiRibbon::verticesForCylinder(int i)
 
 		vertices = addCircle(centre, circle());
 	}
+	
+	colourCylinderVertices(vertices, _bezier[i].atom);
 
 	return vertices;
 }
@@ -414,38 +415,15 @@ void GuiRibbon::prepareAtomSpace(AtomGroup *ag)
 	_indices.reserve(count * indicesPerAtom());
 }
 
-void GuiRibbon::colourAtomVertices(int atom_idx, Atom *a)
+void GuiRibbon::colourCylinderVertices(std::vector<Vertex> &vertices, Atom *a)
 {
 	float prop = a->addedColour();
 	glm::vec4 c = _scheme->colour(prop);
 
-	int bez_idx = _atoms[atom_idx].next_idx;
-	if (bez_idx < 0)
+	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		return;
-	}
-
-	int cyl_idx = _bezier[bez_idx].next_idx;
-	if (cyl_idx < 0)
-	{
-		return;
-	}
-
-	while (_bezier.size() >= bez_idx + 1)
-	{
-		for (size_t i = 0; i < DIVISIONS_IN_CIRCLE; i++)
-		{
-			int idx = cyl_idx + i;
-			_vertices[idx].color = c;
-			_vertices[idx].extra[3] = prop * 3;
-		}
-
-		bez_idx++;
-		
-		if (_bezier[bez_idx].atom != a)
-		{
-			break;
-		}
+		vertices[i].color = c;
+		vertices[i].extra[3] = prop * 3;
 	}
 }
 
@@ -475,21 +453,13 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 			continue;
 		}
 
-		int j = i + 1;
-		
-		while (_bezier[j].next_idx < 0)
-		{
-			j++;
-		}
-		
-		int end = _bezier[j].next_idx;
+		int end = _bezier.stopIndex(i);
 
 		for (size_t j = start; j < end; j++)
 		{
 			prepareCylinder(j);
 		}
 
-		colourAtomVertices(i, a);
 		forceRender(true, true);
 	}
 }

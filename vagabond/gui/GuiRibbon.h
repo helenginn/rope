@@ -58,6 +58,18 @@ public:
 			return _atoms.back().atom;
 		}
 		
+		int stopIndex(int idx)
+		{
+			int j = idx + 1;
+
+			while (_atoms[j].next_idx < 0 && j < _atoms.size() - 1)
+			{
+				j++;
+			}
+
+			return _atoms[j].next_idx;
+		}
+		
 		void setNextIndex(int idx, int next)
 		{
 			 if (_atoms[idx].atom != nullptr && _atoms[idx].next_idx < 0)
@@ -147,7 +159,7 @@ private:
 	Watch _bezier;
 
 	bool correct_indices(int *is, GuiRibbon::Watch &atoms);
-	void colourAtomVertices(int start_bez, Atom *atom);
+	void colourCylinderVertices(std::vector<Vertex> &vertices, Atom *a);
 	std::vector<glm::vec3> bezierSegment(glm::vec3 p1, glm::vec3 p2,
 	                                     glm::vec3 p3, glm::vec3 p4);
 	void segmentToWatch(std::vector<glm::vec3> &segment,
