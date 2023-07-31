@@ -37,6 +37,86 @@ public:
 	virtual void prepareAtomSpace(AtomGroup *ag);
 	void convert();
 
+	struct Watch
+	{
+		struct Entry
+		{
+			Atom *atom = nullptr;
+			glm::vec3 pos = glm::vec3(NAN, NAN, NAN);
+			// next_idx refers to the first index in the next stage's array
+			// belonging to this atom.
+			int next_idx = -1;
+		};
+		
+		Atom *lastAtom()
+		{
+			if (_atoms.size() == 0)
+			{
+				return nullptr;
+			}
+
+			return _atoms.back().atom;
+		}
+		
+		void setNextIndex(int idx, int next)
+		{
+			 if (_atoms[idx].atom != nullptr && _atoms[idx].next_idx < 0)
+			{
+				_atoms[idx].next_idx = next;
+			}
+		}
+		
+		const size_t size() const
+		{
+			return _atoms.size();
+		}
+
+		void addWatchedAtom(const Entry &entry)
+		{
+			if (entry.atom)
+			{
+				_atom2Idx[entry.atom] = _atoms.size();
+			}
+
+			_atoms.push_back(entry);
+		}
+		
+		const Entry &operator[](int idx) const
+		{
+			return _atoms.at(idx);
+		}
+
+		bool has(Atom *atom) const
+		{
+			return _atom2Idx.count(atom);
+		}
+		
+		const int index(Atom *atom) const
+		{
+			return _atom2Idx.at(atom);
+		}
+		
+		const Entry &operator[](Atom *atom) const
+		{
+			int idx = _atom2Idx.at(atom);
+			return _atoms.at(idx);
+		}
+		
+		Entry &operator[](int idx)
+		{
+			return _atoms.at(idx);
+		}
+		
+		Entry &operator[](Atom *atom) 
+		{
+			int idx = _atom2Idx.at(atom);
+			return _atoms.at(idx);
+		}
+		
+		std::vector<Entry> _atoms;
+		std::map<Atom *, size_t> _atom2Idx;
+	};
+	
 protected:
 	virtual void extraUniforms();
 
@@ -44,18 +124,35 @@ private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
 	bool acceptableAtom(Atom *a);
-	void convertToCylinder(std::vector<Snow::Vertex> *vertices = nullptr);
-	void convertToBezier();
+	void prepareCylinder();
+	void prepareCylinder(int i);
+	std::vector<Vertex> verticesForCylinder(int i);
+	void prepareBezier();
+	void prepareBezier(int i);
 	void insertAtom(Atom *a);
 
 	std::vector<Snow::Vertex> makeBezier(int index);
 	void transplantCylinder(std::vector<Snow::Vertex> &cylinder, int start);
 
-	void addCircle(std::vector<Snow::Vertex> &vertices, 
-	               glm::vec3 centre, std::vector<glm::vec3> &circle);
+	std::vector<Snow::Vertex> addCircle(glm::vec3 centre, 
+	                                    const std::vector<glm::vec3> &circle);
 	void addCylinderIndices(size_t num);
 
 	bool previousPositionValid();
+	
+	/* _atoms will contain one entry per atom (and nullptrs to end chains). */
+	Watch _atoms;
+	
+	/* _bezier will contain INDICES_PER_BEZIER_DIVISION indices per atom. */
+	Watch _bezier;
+
+	bool correct_indices(int *is, GuiRibbon::Watch &atoms);
+	void colourAtomVertices(int start_bez, Atom *atom);
+	std::vector<glm::vec3> bezierSegment(glm::vec3 p1, glm::vec3 p2,
+	                                     glm::vec3 p3, glm::vec3 p4);
+	void segmentToWatch(std::vector<glm::vec3> &segment,
+	                    GuiRibbon::Watch::Entry &source,
+	                    GuiRibbon::Watch &watch);
 
 	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;

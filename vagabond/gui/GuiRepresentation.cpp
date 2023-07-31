@@ -27,7 +27,8 @@ void GuiRepresentation::watchAtomGroup(AtomGroup *ag)
 	}
 }
 
-float control_points(glm::vec3 *a, glm::vec3 b, glm::vec3 c, glm::vec3 *d)
+float GuiRepresentation::control_points(glm::vec3 *a, glm::vec3 b, 
+                                        glm::vec3 c, glm::vec3 *d)
 {
 	glm::vec3 ca = c - *a;
 	glm::vec3 bd = b - *d;
@@ -58,7 +59,8 @@ float control_points(glm::vec3 *a, glm::vec3 b, glm::vec3 c, glm::vec3 *d)
 	return ok;
 }
 
-glm::vec3 bezier(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec3 p4, double t)
+glm::vec3 GuiRepresentation::bezier(glm::vec3 p1, glm::vec3 p2, 
+                                    glm::vec3 p3, glm::vec3 p4, double t)
 {
 	double c1 = (1 - t) * (1 - t) * (1 - t);
 	double c2 = 3 * t * (1 - t) * (1 - t);

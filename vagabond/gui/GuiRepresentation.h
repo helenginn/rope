@@ -62,8 +62,12 @@ public:
 
 	virtual void addVisuals(Atom *a) {};
 protected:
+	float control_points(glm::vec3 *a, glm::vec3 b, 
+	                     glm::vec3 c, glm::vec3 *d);
 	std::vector<Snow::Vertex> bezierFrom(std::vector<Snow::Vertex> vs,
 	                                     int idx);
+	glm::vec3 bezier(glm::vec3 p1, glm::vec3 p2, 
+	                 glm::vec3 p3, glm::vec3 p4, double t);
 
 	std::vector<Snow::Vertex> wireFrameToBezier(std::vector<Snow::Vertex> &vs,
 	                                            int buffer = 0);
