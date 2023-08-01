@@ -20,6 +20,7 @@
 #define __vagabond__GuiRibbon__
 
 #include "GuiRepresentation.h"
+#include <vagabond/core/RopeTypes.h>  
 
 class GuiRibbon : public GuiRepresentation
 {
@@ -46,6 +47,8 @@ public:
 			// next_idx refers to the first index in the next stage's array
 			// belonging to this atom.
 			int next_idx = -1;
+			int radius = 1;
+
 		};
 		
 		Atom *lastAtom()

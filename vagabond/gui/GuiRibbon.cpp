@@ -172,7 +172,7 @@ std::vector<Vertex> GuiRibbon::verticesForCylinder(int i)
 		glm::vec3 axis = glm::normalize(v2 - v1);
 
 		/* generate the appropriate circle params */
-		Circle circle = Circle(0.3, divisions, axis);
+		Circle circle = Circle((0.3*(_bezier[i].radius)), divisions, axis);
 
 		vertices = addCircle(centre, circle());
 	}
@@ -317,6 +317,8 @@ void GuiRibbon::insertAtom(Atom *a)
 	{
 		entry.pos = a->initialPosition();
 		entry.atom = a;
+		rope::MonomerType type = _group->monomerType(a->residueId());
+		entry.radius = (type == rope::IsAminoAcid ? 1 : 3);
 	}
 	
 	_atoms.addWatchedAtom(entry);
