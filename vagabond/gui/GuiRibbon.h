@@ -20,7 +20,6 @@
 #define __vagabond__GuiRibbon__
 
 #include "GuiRepresentation.h"
-#include <vagabond/core/RopeTypes.h>  
 
 class GuiRibbon : public GuiRepresentation
 {
