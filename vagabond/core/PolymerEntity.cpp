@@ -24,44 +24,113 @@ PolymerEntity::PolymerEntity() : Entity()
 
 }
 
-Metadata *PolymerEntity::funcBetweenAtoms(const std::vector<Atom3DPosition> &ps,
+typedef std::vector<std::pair<Atom *, Instance *>> AtomInstanceList;
+
+class AtomCombinator : public std::vector<std::vector<Atom *>>
+{
+public:
+	AtomCombinator(Atom *first, const std::vector<AtomInstanceList> &lists)
+	{
+		std::vector<int> track(lists.size());
+		
+		if (lists.size() == 0)
+		{
+			return;
+		}
+		
+		for (const AtomInstanceList &list : lists)
+		{
+			if (list.size() == 0)
+			{
+				return;
+			}
+		}
+
+		while (true)
+		{
+			std::vector<Atom *> prep(track.size() + 1);
+			prep[0] = first;
+
+			for (int i = 0; i < track.size(); i++)
+			{
+				int idx = track[i];
+				prep[i + 1] = lists[i][idx].first;
+			}
+			
+			push_back(prep);
+			
+			bool valid = false;
+
+			for (int i = lists.size() - 1; i >= 0; i--)
+			{
+				if (track[i] < lists[i].size() - 1)
+				{
+					track[i]++;
+					valid = true;
+					break;
+				}
+				else if (i == 0)
+				{
+					break;
+				}
+				else
+				{
+					track[i] = 0;
+				}
+			}
+			
+			if (!valid)
+			{
+				break;
+			}
+		}
+	}
+};
+
+Metadata *PolymerEntity::funcBetweenAtoms(const std::vector<FindAtom> &ps,
                                           const std::string &header,
-                                          const Calculate &calculate)
+                                          const Calculate &calculate,
+                                          const Compare &compare)
 {
 	Metadata *md = new Metadata();
 	
 	for (Model *model : _models)
 	{
 		model->load(Model::NoGeometry);
-		std::vector<Instance *> instances = model->instances();
-		for (Instance *inst : instances)
+
+		AtomInstanceList matching = ps[0](model, nullptr);
+
+		for (auto match : matching)
 		{
-			if (inst->entity() != this)
+			std::vector<AtomInstanceList> more_matches;
+
+			for (int i = 1; i < ps.size(); i++)
+			{
+				AtomInstanceList next = ps[i](model, match.second);
+				more_matches.push_back(next);
+			}
+
+			AtomCombinator combinator(match.first, more_matches);
+			
+			if (combinator.size() == 0)
 			{
 				continue;
 			}
 			
-			std::vector<Atom *> atoms(ps.size());
-			
-			bool valid = true;
-			for (size_t i = 0; i < ps.size(); i++)
+			std::vector<float> results;
+			for (std::vector<Atom *> atoms : combinator)
 			{
-				atoms[i] = inst->atomForIdentifier(ps[i]);
-				if (atoms[i] == nullptr)
-				{
-					valid = false;
-					break;
-				}
+				float candidate = calculate(atoms);
+				results.push_back(candidate);
 			}
 			
-			if (valid)
-			{
-				Metadata::KeyValues kv;
+			float best = compare(results);
 
-				kv["instance"] = Value(inst->id());
-				kv[header] = Value(f_to_str(calculate(atoms), 2));
-				md->addKeyValues(kv, true);
-			}
+			Metadata::KeyValues kv;
+
+			kv["instance"] = Value(match.second->id());
+			kv[header] = Value(f_to_str(best, 2));
+			md->addKeyValues(kv, true);
 		}
 
 		md->clickTicker();

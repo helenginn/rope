@@ -95,11 +95,16 @@ public:
 	
 	virtual void housekeeping();
 	
+	typedef std::function<std::vector<std::pair<Atom *, Instance *>>
+	(Model *model, Instance *reference)> 
+	FindAtom;
 	typedef std::function<float(const std::vector<Atom *> &)> Calculate;
+	typedef std::function<float(const std::vector<float> &)> Compare;
 
-	virtual Metadata *funcBetweenAtoms(const std::vector<Atom3DPosition> &ps,
+	virtual Metadata *funcBetweenAtoms(const std::vector<FindAtom> &ps,
 	                                   const std::string &header, 
-	                                   const Calculate &calculate)
+	                                   const Calculate &calculate,
+	                                   const Compare &compare)
 	{
 		return nullptr;
 	}

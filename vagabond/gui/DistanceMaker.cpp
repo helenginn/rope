@@ -202,13 +202,17 @@ void DistanceMaker::prepareAngles()
 	Atom3DPosition two(_bRes, _second);
 	Atom3DPosition three(_cRes, _third);
 
+	PolymerEntity::FindAtom get_first = search_models_any_instance(_entity, one);
+	PolymerEntity::FindAtom get_second = search_models_same_instance(_entity, two);
+	PolymerEntity::FindAtom get_third = search_models_same_instance(_entity, three);
+
 	std::string header;
 	header += _aRes->id().as_string() + _first;
 	header += " through " + _bRes->id().as_string() + _second;
 	header += " to " + _cRes->id().as_string() + _third;
 
-	Metadata *md = _entity->funcBetweenAtoms({one, two, three}, header,
-	                                         &angle_between);
+	Metadata *md = _entity->funcBetweenAtoms({get_first, get_second, get_third},
+	                                         header, &angle_between, closest_to(0));
 	_result = md;
 }
 
@@ -216,13 +220,16 @@ void DistanceMaker::prepareDistances()
 {
 	Atom3DPosition one(_aRes, _first);
 	Atom3DPosition two(_bRes, _second);
+	
+	PolymerEntity::FindAtom get_first = search_models_any_instance(_entity, one);
+	PolymerEntity::FindAtom get_second = search_models_same_instance(_entity, two);
 
 	std::string header;
 	header += _aRes->id().as_string() + _first;
 	header += " to " + _bRes->id().as_string() + _second;
 
-	Metadata *md = _entity->funcBetweenAtoms({one, two}, header,
-	                                         &distance_between);
+	Metadata *md = _entity->funcBetweenAtoms({get_first, get_second}, header,
+	                                         &distance_between, closest_to(0));
 	_result = md;
 }
 
