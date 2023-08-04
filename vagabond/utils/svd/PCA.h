@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include <cmath>
+#include "../AcquireCoord.h"
 
 namespace PCA
 {
@@ -67,6 +68,9 @@ namespace PCA
 	void zeroMatrix(Matrix *mat);
 	void printMatrix(Matrix *mat);
 
+	void multMatrices(const Matrix &first, const Matrix &second, 
+	                  Matrix &result);
+
 	template <class Float1, class Float2>
 	void multMatrix(const Matrix &mat, Float1 *vector, Float2 *result)
 	{
@@ -76,6 +80,19 @@ namespace PCA
 			for (size_t i = 0; i < mat.cols; i++)
 			{
 				result[j] += mat[j][i] * vector[i];
+			}
+		}
+	}
+	
+	template <class Float>
+	void multMatrix(const Matrix &mat, const Coord::Get &get, Float *result)
+	{
+		for (size_t j = 0; j < mat.rows; j++)
+		{
+			result[j] = 0;
+			for (size_t i = 0; i < mat.cols; i++)
+			{
+				result[j] += mat[j][i] * get(i);
 			}
 		}
 	}

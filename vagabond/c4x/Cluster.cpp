@@ -191,7 +191,7 @@ template <class DG>
 std::vector<float> Cluster<DG>::mappedVector(int axis) const
 {
 	std::vector<float> fs;
-	fs.reserve(_result.rows);
+	fs.resize(_result.rows);
 	
 	for (int i = 0; i < rows(); i++)
 	{

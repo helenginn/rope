@@ -16,32 +16,34 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomWarp__
-#define __vagabond__AtomWarp__
+#include "Target.h"
+#include <vagabond/utils/Hypersphere.h>
 
-#include <vagabond/utils/AcquireCoord.h>
-
-class PositionalCluster;
-class TorsionCluster;
-class RAMovement;
-class Instance;
-class Atom;
-
-class AtomWarp
+Target::Target(int num_axes)
 {
-public:
-	AtomWarp(std::vector<Instance *> instances, Instance *reference);
+	_nAxes = num_axes;
+	_weights = std::vector<float>(_nAxes, 0.3);
+}
 
-	std::function<Vec3s(const Coord::Get &get)> 
-	mappedMotions(int n, const std::vector<Atom *> &order);
+const std::vector<Floats> &Target::pointsForScore()
+{
+	_points.clear();
+	
+	Hypersphere sphere(_nAxes, 50);
+	sphere.prepareFibonacci();
 
-	std::vector<Parameter *> orderedParameters(const std::vector<Parameter *> &set,
-	                                           int n);
-private:
-	std::vector<RAMovement> allMotions(int n);
-
-	TorsionCluster *_tCluster = nullptr;
-	Instance *_reference = nullptr;
-};
-
-#endif
+	for (float j = 0; j < sphere.count(); j++)
+	{
+		std::vector<float> p = sphere.point(j);
+		
+		for (size_t k = 0; k < p.size() && k < _weights.size(); k++)
+		{
+			p[k] *= _weights[k];
+		}
+		
+		Floats fs(p);
+		_points.push_back(fs);
+	}
+	
+	return _points;
+}

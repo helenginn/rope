@@ -193,6 +193,7 @@ std::vector<Instance *> PathFinding::activeInstances()
 void PathFinding::start()
 {
 	std::vector<Instance *> instances = activeInstances();
+	_entity->setReference(_reference);
 
 	MapView *mv = new MapView(this, _entity, instances, _reference);
 	mv->show();

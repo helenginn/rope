@@ -63,6 +63,19 @@ public:
 		}
 	}
 	
+	void order_by_magnitude()
+	{
+		std::sort(_pairs.begin(), _pairs.end(), 
+		          [](const RTAngles::HeaderValue &a, 
+		             const RTAngles::HeaderValue &b) -> bool
+		{
+			return (a.storage * a.storage > b.storage * b.storage);
+
+		});
+
+
+	}
+	
 	const Angular &angle(int i) const
 	{
 		return this->storage(i);

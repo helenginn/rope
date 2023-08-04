@@ -27,14 +27,15 @@
 class MappingToMatrix;
 class SpecificNetwork;
 class Cartographer;
+class TorsionWarp;
+class WarpControl;
 class MatrixPlot;
 class TextButton;
 class ShowMap;
 class Network;
 class Warp;
 
-class MapView : public Display, public Responder<Cartographer>,
-public Responder<SpecificNetwork>
+class MapView : public Display, public Responder<Warp>
 {
 public:
 	MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances,
@@ -55,11 +56,15 @@ private:
 	void makeMapping();
 	void loadSpace(std::string filename);
 	void stopWorker();
+	void startWorker();
+	void startPlot();
+
 	void skipJob();
 	void adjustToLeft(Renderable *r);
 	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
-	bool plotPosition(float x, float y);
+	float plotPosition(float x, float y);
+	void plotIndices();
 	void toggleAtomDisplayType();
 	void makePausable();
 	bool _editing = false;
@@ -83,12 +88,14 @@ private:
 	PCA::Matrix _distMat{};
 
 	PCA::Matrix _warpMat{};
-	float _divisions = 100;
+	float _divisions = 50;
 	
 	TextButton *_toggle = nullptr;
-	TextButton *_second = nullptr;
+	TextButton *_refine = nullptr;
 
 	Warp *_warp = nullptr;
+	TorsionWarp *_torsionWarp = nullptr;
+	WarpControl *_wc = nullptr;
 
 	std::thread *_worker = nullptr;
 	bool _updateButtons = false;

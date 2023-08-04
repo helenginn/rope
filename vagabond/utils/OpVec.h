@@ -30,7 +30,7 @@ public:
 	{
 
 	}
-	OpVec<Type>(const OpVec<Type> &other) : std::vector<Type>(other)
+	OpVec<Type>(const std::vector<Type> &other) : std::vector<Type>(other)
 	{
 
 	}

@@ -246,7 +246,7 @@ void SimplexEngine::run()
 	sendStartingJobs();
 	cycle();
 	
-	sendJob(bestPoint());
+	sendJob(bestResult());
 	getResults();
 }
 

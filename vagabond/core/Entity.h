@@ -89,6 +89,11 @@ public:
 		return _models;
 	}
 	
+	void setReference(Instance *const &reference)
+	{
+		_reference = reference;
+	}
+	
 	virtual void housekeeping();
 	
 	virtual Metadata *distanceBetweenAtoms(AtomRecall a, AtomRecall b)
@@ -121,6 +126,7 @@ public:
 	virtual MetadataGroup prepareTorsionGroup() { return MetadataGroup(0); }
 	virtual PositionalGroup preparePositionGroup() { return PositionalGroup(0); }
 protected:
+	Instance *_reference = nullptr;
 
 	VisualPreferences _visPrefs;
 	

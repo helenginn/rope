@@ -31,6 +31,8 @@
 #include <vagabond/core/CompareDistances.h>
 #include <vagabond/core/Warp.h>
 #include <vagabond/core/AtomWarp.h>
+#include <vagabond/core/TorsionWarp.h>
+#include <vagabond/core/WarpControl.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -65,20 +67,38 @@ void MapView::setup()
 	_reference->currentAtoms()->recalculate();
 	loadAtoms(_reference->currentAtoms());
 	
-	_warp = new Warp(_reference, 2);
+	const int dims = 2;
+	
+	_warp = new Warp(_reference, dims);
+	_warp->setResponder(this);
 	_warp->setup();
+	
+	_torsionWarp = new TorsionWarp(_warp->parameterList(), dims, 2);
+	
+	std::function<Floats(const Coord::Get &)> func;
+	func = [this](const Coord::Get &get)
+	{
+		return _torsionWarp->torsions(get);
+	};
+	
+	_warp->setBondMotions(func);
 	
 	AtomWarp aw(_instances, _reference);
 	std::function<Vec3s(const Coord::Get &)> motions;
 	motions = aw.mappedMotions(2, _warp->atomList());
 	_warp->setAtomMotions(motions);
 
+	std::vector<Parameter *> ordered;
+	ordered = aw.orderedParameters(_warp->parameterList(), 0);
+
+	_wc = new WarpControl(_warp, _torsionWarp);
+	_wc->setParameters(ordered);
+
 	VisualPreferences *vp = &_reference->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
 	
 	addButtons();
 
-//	_worker = new std::thread(Cartographer::assess, _cartographer);
 
 	TextButton *command = new TextButton("Save space", this);
 	command->setCentre(0.9, 0.1);
@@ -102,29 +122,38 @@ void MapView::addButtons()
 		_toggle = command;
 	}
 
-	/*
 	{
-		TextButton *command = new TextButton("Nudge", this);
-		command->setCentre(0.65, 0.9);
-		command->setReturnTag("nudge");
+		TextButton *command = new TextButton("Plot", this);
+		command->setCentre(0.25, 0.75);
+		command->setReturnTag("plot");
 		addObject(command);
-		_second = command;
 	}
-	*/
 
-	/*
-	Text *info = new Text("C-alpha trajectory off-linear course plot");
-	info->resize(0.4);
-	info->setCentre(0.85, 0.22);
-	addObject(info);
-	*/
+	{
+		TextButton *command = new TextButton("Refine", this);
+		command->setCentre(0.65, 0.9);
+		command->setReturnTag("refine");
+		addObject(command);
+		_refine = command;
+	}
+}
+
+void MapView::startPlot()
+{
+	_worker = new std::thread([this]() { plotIndices(); });
+
+}
+
+void MapView::startWorker()
+{
+	_worker = new std::thread(WarpControl::start_run, _wc);
+
 }
 
 void MapView::stopWorker()
 {
+	_wc->finish();
 	_worker->detach();
-	_toggle->setReturnTag("none");
-	_toggle->setInert(true);
 }
 
 void MapView::skipJob()
@@ -142,20 +171,17 @@ void MapView::cleanupPause()
 		_worker = nullptr;
 	}
 
-	_second->setInert(false);
-	_second->setText("Nudge");
-	_second->setReturnTag("nudge");
+	_refine->setInert(false);
+	_refine->setText("Refine");
+	_refine->setReturnTag("refine");
 }
 
 void MapView::makePausable()
 {
 	_refined = false;
 
-	_toggle->setText("Stop");
-	_toggle->setReturnTag("pause");
-
-	_second->setText("Skip");
-	_second->setReturnTag("skip");
+	_refine->setText("Stop");
+	_refine->setReturnTag("stop");
 }
 
 void MapView::showWarpSpace()
@@ -169,16 +195,44 @@ void MapView::showWarpSpace()
 	_plot = mp;
 }
 
-bool MapView::plotPosition(float x, float y)
+void MapView::plotIndices()
+{
+	for (int j = 0; j < _divisions; j++)
+	{
+		for (int i = 0; i < _divisions; i++)
+		{
+			float x = i / (float)_divisions;
+			float y = j / (float)_divisions;
+
+			float score = plotPosition(x, y);
+			_warpMat[i][j] = score;
+		}
+	}
+
+	_plot->update();
+}
+
+float MapView::plotPosition(float x, float y)
 {
 	_last = {x, y};
 	std::vector<float> vals = {2*x - 1, 2*y - 1};
+	_warp->clearFilters();
+	_warp->clearComparison();
 	int num = _warp->submitJob(true, vals);
 	_warp->retrieve();
 	float score = _warp->deviation(num);
 	std::string str = std::to_string(score);
 	setInformation(str);
-	return true;
+	
+	std::vector<int> voxs;
+	voxs.push_back(x * _divisions);
+	voxs.push_back(y * _divisions);
+
+	_warpMat[voxs[0]][voxs[1]] = score;
+	_warp->exposeDistanceMatrix();
+	_plot->update();
+
+	return score;
 }
 
 bool MapView::sampleFromPlot(double x, double y)
@@ -205,7 +259,8 @@ bool MapView::sampleFromPlot(double x, double y)
 		return false;
 	}
 
-	return plotPosition(v.x, v.y);
+	plotPosition(v.x, v.y);
+	return true;
 }
 
 void MapView::mouseMoveEvent(double x, double y)
@@ -259,7 +314,11 @@ void MapView::toggleAtomDisplayType()
 
 	std::string str = !set ? "Displaying targets" : "Displaying predicted";
 	_toggle->setText(str);
-	plotPosition(_last[0], _last[1]);
+	
+	if (_refined)
+	{
+		plotPosition(_last[0], _last[1]);
+	}
 }
 
 void MapView::buttonPressed(std::string tag, Button *button)
@@ -285,15 +344,22 @@ void MapView::buttonPressed(std::string tag, Button *button)
 	{
 		_atoms->writeToFile("tmp.pdb");
 	}
-
-	if (tag == "pause")
+	
+	if (tag == "plot")
 	{
-		stopWorker();
+		startPlot();
 	}
 
-	if (tag == "skip")
+	if (tag == "stop")
 	{
-		skipJob();
+		stopWorker();
+		cleanupPause();
+	}
+
+	if (tag == "refine")
+	{
+		startWorker();
+		makePausable();
 	}
 
 	Display::buttonPressed(tag, button);
@@ -339,15 +405,6 @@ void MapView::sendObject(std::string tag, void *object)
 	{
 		PCA::Matrix *dist = static_cast<PCA::Matrix *>(object);
 		displayDistances(*dist);
-	}
-
-	if (tag == "atom_list")
-	{
-		AtomPosList *apl = static_cast<AtomPosList *>(object);
-		CompareDistances cd;
-		cd.process(*apl);
-		PCA::Matrix dist = cd.matrix();
-		displayDistances(dist);
 	}
 
 	else if (tag == "done")

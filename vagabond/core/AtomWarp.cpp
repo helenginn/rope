@@ -30,17 +30,38 @@ AtomWarp::AtomWarp(std::vector<Instance *> instances, Instance *reference)
 	_reference = reference;
 	Entity *entity = reference->entity();
 
+	MetadataGroup group = entity->prepareTorsionGroup();
+
+	for (Instance *inst : instances)
 	{
-		MetadataGroup group = entity->prepareTorsionGroup();
-
-		for (Instance *inst : instances)
-		{
-			inst->addTorsionsToGroup(group, rope::RefinedTorsions);
-		}
-
-		_tCluster = new TorsionCluster(group);
-		_tCluster->cluster();
+		inst->addTorsionsToGroup(group, rope::RefinedTorsions);
 	}
+
+	_tCluster = new TorsionCluster(group);
+	_tCluster->cluster();
+}
+
+std::vector<Parameter *> 
+AtomWarp::orderedParameters(const std::vector<Parameter *> &set,
+                                                     int n)
+{
+	MetadataGroup &group = *_tCluster->dataGroup();
+	RTAngles empty = group.emptyAngles();
+
+	std::vector<Angular> angles = _tCluster->rawVector(n);
+	RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
+	combined.attachInstance(_reference);
+
+	combined.filter_according_to(set);
+	combined.order_by_magnitude();
+
+	std::vector<Parameter *> all;
+	for (size_t i = 0; i < combined.size(); i++)
+	{
+		combined.rt(i).attachToInstance(_reference);
+		all.push_back(combined.rt(i).parameter());
+	}
+	return all;
 }
 
 std::vector<RAMovement> AtomWarp::allMotions(int n)
@@ -48,15 +69,19 @@ std::vector<RAMovement> AtomWarp::allMotions(int n)
 	std::vector<RAMovement> all;
 	Torsion2Atomic t2a(_reference->entity(), _tCluster);
 	
+	std::cout << "LINEAR REGRESSION" << std::endl;
+	std::vector<RAMovement> motions_to_axis;
+	motions_to_axis = t2a.linearRegressionToAxis(_reference, n);
+	
 	MetadataGroup &group = *_tCluster->dataGroup();
 	RTAngles empty = group.emptyAngles();
 
 	for (size_t i = 0; i < n && n < _tCluster->rows(); i++)
 	{
-		std::vector<Angular> angles = _tCluster->rawVector(i);
-		RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
-		RAMovement motions = t2a.convertAngles(combined);
-		all.push_back(motions);
+//		std::vector<Angular> angles = _tCluster->rawVector(i);
+//		RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
+//		RAMovement motions = t2a.convertAnglesSimple(combined);
+		all.push_back(motions_to_axis[i]);
 	}
 
 	return all;

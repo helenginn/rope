@@ -31,8 +31,11 @@ public:
 	Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
 	               PositionalCluster *pc = nullptr);
 
-	RAMovement convertAngles(const RTAngles &angles);
+	RAMovement convertAnglesSimple(const RTAngles &angles);
+	std::vector<RAMovement> linearRegressionToAxis(Instance *ref,
+	                                               size_t max);
 private:
+
 	Entity *_entity = nullptr;
 	TorsionCluster *_tCluster = nullptr;
 	PositionalCluster *_pCluster = nullptr;

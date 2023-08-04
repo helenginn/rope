@@ -288,3 +288,41 @@ PCA::Matrix PCA::transpose(Matrix *other)
 	
 	return tmp;
 }
+
+void PCA::multMatrices(const Matrix &first, const Matrix &second, 
+                       Matrix &result)
+{
+	if (first.cols != second.rows)
+	{
+		std::string str = "(" + std::to_string(first.rows) + " x " + 
+		                   std::to_string(first.cols) + ")";
+		str += " and (" + (std::to_string(second.rows) + " x " + 
+		                   std::to_string(second.cols)) + ")";
+		throw std::runtime_error("Trying to multiply incompatible matrices:" 
+		                         + str);
+	}
+	if (result.cols > 0 && result.cols != first.rows) 
+	{
+		throw std::runtime_error("Pre-allocated matrix has improper dimensions");
+	}
+	else if (result.cols == 0)
+	{
+		setupMatrix(&result, first.rows, second.cols);
+	}
+	else
+	{
+		zeroMatrix(&result); // prepare for battle
+	}
+
+	for (size_t j = 0; j < first.rows; j++)
+	{
+		for (size_t i = 0; i < second.cols; i++)
+		{
+			for (size_t k = 0; k < first.cols; k++)
+			{
+				result[j][i] += first[j][k] * second[k][i];
+			}
+		}
+	}
+}
+

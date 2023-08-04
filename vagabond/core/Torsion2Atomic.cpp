@@ -18,6 +18,7 @@
 
 #include <functional>
 #include "Torsion2Atomic.h"
+#include <vagabond/utils/Vec3s.h>
 #include "Entity.h"
 
 Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
@@ -38,7 +39,7 @@ Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
 	}
 }
 
-struct weights
+struct SimpleWeights
 {
 	std::map<Instance *, float> scores;
 	float operator()(Instance *inst)
@@ -47,7 +48,26 @@ struct weights
 	}
 };
 
-weights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
+struct MultiWeights
+{
+	std::map<Instance *, Floats> scores;
+	Floats sum{};
+	float count = 0;
+	
+	void addInstance(Instance *const &instance, const Floats &score)
+	{
+		scores[instance] = score;
+		sum += score;
+		count++;
+	}
+
+	Floats operator()(Instance *inst)
+	{
+		return scores[inst] - sum / count;
+	}
+};
+
+SimpleWeights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
 {
 	RTAngles master = grp->emptyAngles();
 
@@ -56,7 +76,7 @@ weights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
 	std::vector<float> compare;
 	grp->convertToComparable(sorted, compare);
 	
-	weights weight;
+	SimpleWeights weight;
 	
 	for (size_t i = 0; i < grp->vectorCount(); i++)
 	{
@@ -69,13 +89,107 @@ weights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
 	return weight;
 }
 
-RAMovement Torsion2Atomic::convertAngles(const RTAngles &angles)
+MultiWeights obtain_weights(TorsionCluster *cluster, size_t max)
+{
+	MetadataGroup *grp = cluster->dataGroup();
+	MultiWeights weight;
+	
+	for (size_t i = 0; i < grp->vectorCount(); i++)
+	{
+		Instance *instance = static_cast<Instance *>(grp->object(i));
+		std::vector<float> entry = cluster->mappedVector(i);
+		Floats truncated(entry);
+		truncated.resize(max);
+		weight.addInstance(instance, truncated);
+	}
+
+	return weight;
+}
+
+std::vector<RAMovement> Torsion2Atomic::linearRegressionToAxis(Instance *ref,
+                                                               size_t max)
+{
+	MultiWeights weights = obtain_weights(_tCluster, max);
+
+	PositionalGroup *group = _pCluster->dataGroup();
+	int ref_idx = group->indexOfObject(ref);
+	std::cout << "Ref index: " << ref_idx << std::endl;
+	int n = group->vectorCount();
+
+	PCA::SVD comp_per_molecule;
+	setupSVD(&comp_per_molecule, n, max + 1);
+
+	PCA::Matrix pos_per_molecule;
+	setupMatrix(&pos_per_molecule, n, 3); // 3 = xyz coordinates of Atom
+
+	PCA::Matrix convert;
+	setupMatrix(&convert, max + 1, 3);
+
+	std::vector<Atom3DPosition> atomIds = group->headers();
+	RAMovement empty; empty.vector_from(atomIds);
+
+	std::vector<RAMovement> returns(max, empty);
+
+	for (size_t j = 0; j < atomIds.size(); j++)
+	{
+		glm::vec3 reference = group->differenceVector(ref_idx)[j];
+		Floats ref_coords = weights(ref);
+
+		zeroMatrix(&comp_per_molecule.u);
+		zeroMatrix(&pos_per_molecule);
+
+		for (size_t i = 0; i < group->vectorCount(); i++)
+		{
+			Instance *instance = static_cast<Instance *>(group->object(i));
+
+			glm::vec3 dir = group->differenceVector(i)[j];
+			Floats coords = weights(instance);
+			coords = coords - ref_coords;
+			coords.push_back(1);
+
+			for (size_t k = 0; k < 3; k++)
+			{
+				pos_per_molecule[i][k] = dir[k];
+			}
+			
+			for (size_t k = 0; k < coords.size(); k++)
+			{
+				comp_per_molecule.u[i][k] = coords[k];
+			}
+		}
+
+		runSVD(&comp_per_molecule);
+		PCA::Matrix tr = PCA::transpose(&comp_per_molecule.u);
+
+		PCA::multMatrices(tr, pos_per_molecule, convert);
+		
+		for (size_t k = 0; k < max; k++)
+		{
+			RAMovement &add_to = returns[k];
+			Posular &storage = add_to.storage(j);
+
+			glm::vec3 pos = {convert[k][0], convert[k][1], convert[k][2]};
+			glm::vec3 constant = {convert[max][0], convert[max][1], 
+			                      convert[max][2]};
+			storage = pos + constant - reference;
+		}
+		
+
+		freeMatrix(&tr);
+	}
+	
+	freeMatrix(&pos_per_molecule);
+	freeSVD(&comp_per_molecule);
+	
+	return returns;
+}
+
+RAMovement Torsion2Atomic::convertAnglesSimple(const RTAngles &angles)
 {
 	MetadataGroup *grp = _tCluster->dataGroup();
-	weights weight = obtain_weights(grp, angles);
+	SimpleWeights weight = obtain_weights(grp, angles);
 	
 	PositionalGroup *group = _pCluster->dataGroup();
-
 	std::vector<Atom3DPosition> atomIds = group->headers();
 	RAMovement motions;
 	motions.vector_from(atomIds);

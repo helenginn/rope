@@ -23,18 +23,29 @@
 #include "PositionSampler.h"
 #include <vagabond/core/Responder.h>
 #include <vagabond/utils/AcquireCoord.h>
+#include "AtomPosMap.h"
 
 class Instance;
 class TorsionBasis;
 class BondSequence;
+class CompareDistances;
 
-class Warp : public StructureModification, public PositionSampler
+class Warp : public StructureModification, public PositionSampler,
+public HasResponder<Responder<Warp>>
 {
 public:
 	Warp(Instance *ref, size_t num_axes);
 
+	const int &numAxes() const
+	{
+		return _dims;
+	}
+
 	void setup();
-	int submitJob(bool show, const std::vector<float> vals);
+	
+	std::function<float()> score(const std::vector<Floats> &points);
+
+	int submitJob(bool show, const std::vector<float> &vals);
 
 	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
 	                          Vec3s &positions);
@@ -47,10 +58,34 @@ public:
 		_atom_positions_for_coord = func;
 	}
 	
+	void setBondMotions(std::function<Floats(const Coord::Get &)> &func)
+	{
+		_torsion_angles_for_coord = func;
+	}
+	
+	const std::vector<Parameter *> &parameterList() const
+	{
+		return _base.parameters;
+	}
+	
 	const std::vector<Atom *> &atomList() const
 	{
 		return _base.atoms;
 	}
+	
+	void clearComparison();
+	void clearFilters();
+	
+	typedef std::function<bool(Atom *const &atom)> AtomFilter;
+
+	void setCompareFilters(AtomFilter &left, AtomFilter &right);
+
+	CompareDistances *compare();
+
+	void exposeDistanceMatrix();
+protected:
+	
+	virtual bool handleAtomList(AtomPosList &list);
 private:
 	void prepareAtoms();
 	void prepareBonds();
@@ -61,7 +96,6 @@ private:
 	std::function<Vec3s(const Coord::Get &)> _atom_positions_for_coord{};
 	std::function<Floats(const Coord::Get &)> _torsion_angles_for_coord{};
 
-	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 	AtomFilter _filter;
 
 	struct BasePositions
@@ -74,6 +108,9 @@ private:
 	};
 	
 	BasePositions _base;
+	CompareDistances *_compare = nullptr;
+	
+	PCA::Matrix _distances;
 };
 
 #endif

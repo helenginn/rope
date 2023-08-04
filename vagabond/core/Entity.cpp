@@ -183,6 +183,10 @@ void Entity::clickTicker()
 
 Instance *Entity::chooseRepresentativeInstance()
 {
+	if (_reference)
+	{
+		return _reference;
+	}
 	Instance *best = nullptr;
 	Instance *highest = nullptr;
 	size_t best_count = 0;
@@ -205,6 +209,7 @@ Instance *Entity::chooseRepresentativeInstance()
 	}
 	
 	std::cout << "Choosing reference: " << best->id() << std::endl;
+	_reference = best;
 	
 	return best;
 }

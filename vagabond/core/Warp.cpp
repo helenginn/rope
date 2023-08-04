@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "CompareDistances.h"
 #include "BondSequence.h"
 #include "Instance.h"
 #include "Warp.h"
@@ -26,7 +27,7 @@ Warp::Warp(Instance *ref, size_t num_axes)
 	_dims = num_axes;
 }
 
-int Warp::submitJob(bool show, const std::vector<float> vals)
+int Warp::submitJob(bool show, const std::vector<float> &vals)
 {
 	for (BondCalculator *calc : _calculators)
 	{
@@ -53,6 +54,28 @@ int Warp::submitJob(bool show, const std::vector<float> vals)
 	_point2Score[_jobNum] = Score{};
 	_jobNum++;
 	return _jobNum - 1;
+}
+
+std::function<float()> Warp::score(const std::vector<Floats> &points)
+{
+	std::function<float()> func;
+
+	func = [points, this]() -> float
+	{
+		clearComparison();
+		
+		for (const Floats &fs : points)
+		{
+			submitJob(true, fs);
+		}
+		
+		retrieve();
+
+		exposeDistanceMatrix();
+		return compare()->quickScore();
+	};
+	
+	return func;
 }
 
 void Warp::setup()
@@ -83,6 +106,7 @@ void Warp::prewarnBonds(BondSequence *seq, const Coord::Get &get, Floats &ts)
 {
 	// set ts to the torsion angles for this get
 	ts = _torsion_angles_for_coord(get);
+	ts += _base.torsions;
 }
 
 void Warp::prepareAtoms()
@@ -136,4 +160,50 @@ void Warp::prepareBonds()
 	{
 		return positions;
 	};
+}
+
+void Warp::exposeDistanceMatrix()
+{
+	freeMatrix(&_distances);
+	_distances = compare()->matrix();
+	sendResponse("atom_matrix", &_distances);
+}
+
+bool Warp::handleAtomList(AtomPosList &list)
+{
+	// handle list;
+	compare()->process(list);
+
+	return true;
+}
+
+CompareDistances *Warp::compare()
+{
+	if (!_compare)
+	{
+		_compare = new CompareDistances();
+		compare()->setLeftFilter(_filter);
+		compare()->setRightFilter(_filter);
+	}
+
+	return _compare;
+}
+
+void Warp::setCompareFilters(AtomFilter &left, AtomFilter &right)
+{
+	delete _compare;
+	_compare = nullptr;
+
+	compare()->setLeftFilter(left);
+	compare()->setRightFilter(right);
+}
+
+void Warp::clearComparison()
+{
+	compare()->clearMatrix();
+}
+
+void Warp::clearFilters()
+{
+	setCompareFilters(_filter, _filter);
 }

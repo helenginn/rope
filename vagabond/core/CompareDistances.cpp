@@ -54,7 +54,7 @@ void CompareDistances::filter(const AtomPosList &apl)
 
 		if (!_defaultFilter(awp.atom))
 		{
-			continue;
+//			continue;
 		}
 		
 		if (!_left || _left(awp.atom))
@@ -100,10 +100,10 @@ float CompareDistances::quickScore()
 
 	for (int i = 0; i < size; i++)
 	{
-		sum += _matrix.vals[i];
+		sum += _matrix.vals[i] * _matrix.vals[i];
 	}
 
-	return sum / (float)(size * _counter);
+	return sqrt(sum / (float)(size * _counter));
 }
 
 void CompareDistances::addToMatrix(const AtomPosList &apl)
@@ -125,11 +125,11 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
-			if (diff == diff)
+			if (diff == diff && abs(i - j) > 2)
 			{
 				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
-				j++;
 			}
+			j++;
 		}
 		i++;
 		j = 0;
@@ -152,6 +152,7 @@ PCA::Matrix CompareDistances::matrix()
 	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
 	{
 		copy.vals[i] /= (float)_counter;
+		copy.vals[i] *= 10.f;
 	}
 
 	return copy;
@@ -159,6 +160,9 @@ PCA::Matrix CompareDistances::matrix()
 
 void CompareDistances::clearMatrix()
 {
-	zeroMatrix(&_matrix);
+	if (_matrix.vals)
+	{
+		zeroMatrix(&_matrix);
+	}
 	_counter = 0;
 }

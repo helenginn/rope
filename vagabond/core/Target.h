@@ -16,32 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomWarp__
-#define __vagabond__AtomWarp__
+#ifndef __vagabond__Target__
+#define __vagabond__Target__
 
-#include <vagabond/utils/AcquireCoord.h>
+#include <vagabond/utils/Vec3s.h>
 
-class PositionalCluster;
-class TorsionCluster;
-class RAMovement;
-class Instance;
-class Atom;
-
-class AtomWarp
+class Target
 {
 public:
-	AtomWarp(std::vector<Instance *> instances, Instance *reference);
+	Target(int num_axes);
 
-	std::function<Vec3s(const Coord::Get &get)> 
-	mappedMotions(int n, const std::vector<Atom *> &order);
-
-	std::vector<Parameter *> orderedParameters(const std::vector<Parameter *> &set,
-	                                           int n);
+	const std::vector<Floats> &pointsForScore();
 private:
-	std::vector<RAMovement> allMotions(int n);
+	int _nAxes;
+	std::vector<float> _weights;
+	
+	std::vector<Floats> _points;
 
-	TorsionCluster *_tCluster = nullptr;
-	Instance *_reference = nullptr;
 };
 
 #endif
