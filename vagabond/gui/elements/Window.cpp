@@ -18,6 +18,7 @@ SDL_GLContext Window::_context = NULL;
 
 Scene *Window::_current = nullptr;
 Scene *Window::_next = nullptr;
+Scene *Window::_first = nullptr;
 Window *Window::_myWindow = nullptr;
 
 int Window::_width = 0;
@@ -267,6 +268,13 @@ bool Window::tick()
 	if (_next != nullptr)
 	{
 		setCurrentScene(_next);
+		
+		if (_next == _first)
+		{
+			_current->deleteObjects();
+			_current->preSetup();
+		}
+
 		_next = nullptr;
 	}
 
@@ -330,7 +338,7 @@ void Window::render()
 	SDL_GL_SwapWindow(_window);
 }
 
-void Window::setCurrentScene(Scene *scene)
+void Window::setCurrentScene(Scene *scene, bool show)
 {
 	std::unique_lock<std::mutex> lock(_switchMutex);
 	if (_current != nullptr)
@@ -340,13 +348,19 @@ void Window::setCurrentScene(Scene *scene)
 	_current = scene;
 	_current->setDims(_rect.w, _rect.h);
 	_switchMutex.unlock();
-	_current->preSetup();
+	
+	if (show)
+	{
+		_current->preSetup();
+	}
 }
 
 void Window::reloadScene(Scene *scene)
 {
 	std::unique_lock<std::mutex> lock(_switchMutex);
 	_current = scene;
+	_current->setDims(_rect.w, _rect.h);
+	_current->updateProjection();
 	_current->refresh();
 }
 

@@ -21,14 +21,14 @@
 
 #include <thread>
 
-#include "SequenceView.h"
+#include "PickAtomFromSequence.h"
 #include <thread>
 
 class Entity;
 class Metadata;
 class ImageButton;
 
-class DistanceMaker : public SequenceView
+class DistanceMaker : public PickAtomFromSequence
 {
 public:
 	DistanceMaker(Scene *prev, IndexedSequence *sequence);
@@ -37,8 +37,6 @@ public:
 	virtual void setup();
 
 	virtual void doThings();
-	virtual void addExtras(TextButton *t, Residue *r);
-	virtual void handleResidue(Button *button, Residue *r);
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void handleAtomName(std::string name);
@@ -61,7 +59,6 @@ private:
 	};
 
 	Stage _stage = Nothing;
-	Residue *_curr;
 	std::string _candidate;
 	
 	Entity *_entity = nullptr;

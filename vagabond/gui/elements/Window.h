@@ -48,7 +48,7 @@ public:
 	
 	virtual void extraWindowFlags(unsigned int &flags) = 0;
 	
-	static void setCurrentScene(Scene *scene);
+	static void setCurrentScene(Scene *scene, bool show = true);
 	static void setNextScene(Scene *scene)
 	{
 		_next = scene;
@@ -142,6 +142,7 @@ public:
 protected:
 	static Scene *_current;
 	static Scene *_next;
+	static Scene *_first;
 
 	static Window *_myWindow;
 private:
@@ -164,6 +165,7 @@ private:
 	
 	static KeyResponder *_keyResponder;
 	static int _milliseconds;
+	
 };
 
 #endif

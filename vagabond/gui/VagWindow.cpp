@@ -49,6 +49,7 @@ void VagWindow::prepareProgressView()
 	ProgressView *pv = new ProgressView(_menu);
 	pv->attachToEnvironment();
 	pv->show();
+	setNextScene(pv);
 }
 
 void VagWindow::removeProgressBar()
@@ -92,8 +93,9 @@ void VagWindow::setup(int argc, char **argv)
 	windowSetup();
 
 	MainMenu *menu = new MainMenu();
-	setCurrentScene(menu);
-	_current = menu;
+	setCurrentScene(menu, true);
+	setNextScene(menu);
+	_first = menu;
 	_menu = menu;
 	
 	bool is_native = isNativeApp();
@@ -105,7 +107,7 @@ void VagWindow::setup(int argc, char **argv)
 	else
 	{
 		ProjectMenu *pm = new ProjectMenu(menu);
-		pm->show();
+		setNextScene(pm);
 	}
 
 	_dictator = new Dictator();

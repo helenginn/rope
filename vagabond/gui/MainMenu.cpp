@@ -1,5 +1,6 @@
 // Copyright (C) 2021 Helen Ginn
 
+#include "CompareEntities.h"
 #include "GlobalOptions.h"
 #include "ProgressView.h"
 #include "MetadataView.h"
@@ -65,7 +66,7 @@ void MainMenu::setup()
 	{
 		ImageButton *button = new ImageButton("assets/images/cartoon.png", this);
 		button->resize(0.25);
-		button->setReturnTag("proteins");
+		button->setReturnTag("entities");
 		button->setCentre(0.5, 0.3);
 		addObject(button);
 
@@ -184,10 +185,23 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 		GlobalOptions *go = new GlobalOptions(this);
 		go->show();
 	}
-	else if (tag == "proteins")
+	else if (tag == "entities" && !button->left())
+	{
+		Menu *m = new Menu(this, this, "entities");
+		m->addOption("entity menu", "menu");
+		m->addOption("calculate metrics", "metrics");
+		m->setup(button);
+		setModal(m);
+	}
+	else if (tag == "entities" || tag == "entities_menu")
 	{
 		EntityMenu *menu = new EntityMenu(this);
 		menu->show();
+	}
+	else if (tag == "entities_metrics")
+	{
+		CompareEntities *ce = new CompareEntities(this);
+		ce->show();
 	}
 	else if (tag == "models")
 	{

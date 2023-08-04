@@ -20,14 +20,78 @@
 #define __vagabond__CompareEntities__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Responder.h>
+#include <set>
 
-class CompareEntities : public Scene
+class PickAtomFromSequence;
+class ChooseHeader;
+class Instance;
+class Residue;
+class Model;
+class Atom;
+
+class CompareEntities : public Scene, public Responder<ChooseHeader>,
+public Responder<PickAtomFromSequence>
 {
 public:
-	CompareEntities();
+	CompareEntities(Scene *scene);
 
+	virtual void setup();
+	virtual void refresh();
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	bool showEntityOptions();
+	void showScoreOptions();
+	bool allEntriesIdentical();
+	std::string makeHeader();
 
+	void chooseHeaders(int idx);
+	void chooseAtom(int idx);
+	void calculate();
+
+	virtual void sendObject(std::string tag, void *object);
+
+	bool proofAndShowEntity(TextButton *button, std::string &id, int idx);
+
+	std::set<std::string> acceptableEntityList();
+
+	enum Mode
+	{
+		Distance,
+		Angle,
+	};
+
+	Mode _measureMode;
+	size_t requiredCount();
+
+	enum ChooseMode
+	{
+		ChooseEntity,
+		ChooseAtom,
+	};
+
+	ChooseMode _chooseMode;
+
+	struct Entry
+	{
+		typedef std::function<std::vector<std::pair<Atom *, Instance *>>
+		(Model *model, Instance *reference)> FindAtom;
+
+		std::string atomName;
+		Residue *master;
+		std::string id;
+		std::string raw_id;
+		
+		std::string atom_desc();
+		
+		FindAtom as_find_function();
+	};
+
+	Entry _entries[3] = {Entry{}, Entry{}, Entry{}};
+	int _active = -1;
+	float _target = -1;
+
+	bool proofAndShowAtom(TextButton *button, Entry &entry);
 };
 
 #endif

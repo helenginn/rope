@@ -27,12 +27,11 @@
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
-#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <iostream>
 
 DistanceMaker::DistanceMaker(Scene *prev, IndexedSequence *sequence)
-: SequenceView(prev, sequence)
+: PickAtomFromSequence(prev, sequence)
 {
 
 }
@@ -88,36 +87,6 @@ void DistanceMaker::setup()
 	SequenceView::setup();
 
 	distanceButton();
-}
-
-void DistanceMaker::addExtras(TextButton *t, Residue *r) 
-{
-	std::string tag = r->desc();
-	t->addAltTag(tag);
-	t->setInert(false);
-}
-
-void DistanceMaker::handleResidue(Button *button, Residue *r)
-{
-	_curr = r;
-	Menu *m = new Menu(this, this, "atomname");
-	
-	if (r->atomNames().size() == 0)
-	{
-		r->housekeeping();
-	}
-	for (const std::string &name : r->atomNames())
-	{
-		if (name.length() == 0 || name[0] == 'H')
-		{
-			continue;
-		}
-
-		m->addOption(name);
-	}
-
-	m->setup(button, 0.6);
-	setModal(m);
 }
 
 void DistanceMaker::handleAtomName(std::string name)
