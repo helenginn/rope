@@ -28,7 +28,6 @@
 #include "PositionalGroup.h"
 #include "Responder.h"
 #include "VisualPreferences.h"
-#include "AtomRecall.h"
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -96,12 +95,11 @@ public:
 	
 	virtual void housekeeping();
 	
-	virtual Metadata *distanceBetweenAtoms(AtomRecall a, AtomRecall b)
-	{
-		return nullptr;
-	}
+	typedef std::function<float(const std::vector<Atom *> &)> Calculate;
 
-	virtual Metadata *angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c)
+	virtual Metadata *funcBetweenAtoms(const std::vector<Atom3DPosition> &ps,
+	                                   const std::string &header, 
+	                                   const Calculate &calculate)
 	{
 		return nullptr;
 	}

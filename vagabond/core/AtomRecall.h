@@ -19,19 +19,27 @@
 #ifndef __vagabond__AtomRecall__
 #define __vagabond__AtomRecall__
 
-class Residue;
+#include "Atom.h"
 
-struct AtomRecall
+inline float distance_between(const std::vector<Atom *> &atoms)
 {
-	Residue *master = nullptr;
-	std::string atom_name;
+	glm::vec3 first = atoms[0]->initialPosition();
+	glm::vec3 last = atoms[1]->initialPosition();
 
-	AtomRecall(Residue *m, std::string an)
-	{
-		master = m;
-		atom_name = an;
-	}
-};
+	float dist = glm::length(first - last);
+	return dist;
+}
 
+inline float angle_between(const std::vector<Atom *> &atoms)
+{
+	glm::vec3 middle = atoms[1]->initialPosition();
+	glm::vec3 first = atoms[0]->initialPosition() - middle;
+	glm::vec3 last = atoms[2]->initialPosition() - middle;
+	first = glm::normalize(first);
+	last = glm::normalize(last);
+
+	float angle = rad2deg(glm::angle(first, last));
+	return angle;
+}
 
 #endif

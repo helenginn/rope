@@ -24,54 +24,48 @@ PolymerEntity::PolymerEntity() : Entity()
 
 }
 
-Metadata *PolymerEntity::angleBetweenAtoms(AtomRecall a, AtomRecall b,
-                                           AtomRecall c)
+Metadata *PolymerEntity::funcBetweenAtoms(const std::vector<Atom3DPosition> &ps,
+                                          const std::string &header,
+                                          const Calculate &calculate)
 {
 	Metadata *md = new Metadata();
 	
-	std::string header;
-	header += a.master->id().as_string() + a.atom_name;
-	header += " through ";
-	header += b.master->id().as_string() + b.atom_name;
-	header += " to ";
-	header += c.master->id().as_string() + c.atom_name;
-	
-	AtomRecall new_a = AtomRecall(_sequence.residueLike(a.master->id()),
-	                              a.atom_name);
-	AtomRecall new_b = AtomRecall(_sequence.residueLike(b.master->id()),
-	                              b.atom_name);
-	AtomRecall new_c = AtomRecall(_sequence.residueLike(c.master->id()),
-	                              c.atom_name);
-
 	for (Model *model : _models)
 	{
-		model->angleBetweenAtoms(this, new_a, new_b, new_c, header, md);
+		model->load(Model::NoGeometry);
+		std::vector<Instance *> instances = model->instances();
+		for (Instance *inst : instances)
+		{
+			if (inst->entity() != this)
+			{
+				continue;
+			}
+			
+			std::vector<Atom *> atoms(ps.size());
+			
+			bool valid = true;
+			for (size_t i = 0; i < ps.size(); i++)
+			{
+				atoms[i] = inst->atomForIdentifier(ps[i]);
+				if (atoms[i] == nullptr)
+				{
+					valid = false;
+					break;
+				}
+			}
+			
+			if (valid)
+			{
+				Metadata::KeyValues kv;
+
+				kv["instance"] = Value(inst->id());
+				kv[header] = Value(f_to_str(calculate(atoms), 2));
+				md->addKeyValues(kv, true);
+			}
+		}
+
 		md->clickTicker();
-	}
-
-	md->finishTicker();
-
-	return md;
-}
-
-Metadata *PolymerEntity::distanceBetweenAtoms(AtomRecall a, AtomRecall b)
-{
-	Metadata *md = new Metadata();
-	
-	std::string header;
-	header += a.master->id().as_string() + a.atom_name;
-	header += " to ";
-	header += b.master->id().as_string() + b.atom_name;
-	
-	AtomRecall new_a = AtomRecall(_sequence.residueLike(a.master->id()),
-	                              a.atom_name);
-	AtomRecall new_b = AtomRecall(_sequence.residueLike(b.master->id()),
-	                              b.atom_name);
-
-	for (Model *model : _models)
-	{
-		model->distanceBetweenAtoms(this, new_a, new_b, header, md);
-		md->clickTicker();
+		model->unload();
 	}
 
 	md->finishTicker();

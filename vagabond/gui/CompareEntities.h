@@ -16,37 +16,18 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Atom3DPosition.h"
-#include "Instance.h"
-#include "Atom.h"
+#ifndef __vagabond__CompareEntities__
+#define __vagabond__CompareEntities__
 
-bool Atom3DPosition::fitsAtom(Atom *other, Instance *from) const
+#include <vagabond/gui/elements/Scene.h>
+
+class CompareEntities : public Scene
 {
-	if (from == nullptr)
-	{
-		from = _instance;
-	}
+public:
+	CompareEntities();
 
-	if (entity() != from->entity())
-	{
-		return false;
-	}
+private:
 
-	ResidueId target = other->residueId();
-	Residue *expected = from->equivalentMaster(target);
+};
 
-	if (expected == nullptr || expected != master())
-	{
-		return false;
-	}
-
-	const std::string &atom_name = atomName();
-
-	return (other->atomName() == atom_name);
-}
-
-Atom3DPosition::Atom3DPosition(Residue *master, std::string atomName)
-{
-	_master = master;
-	_atomName = atomName;
-}
+#endif

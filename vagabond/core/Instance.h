@@ -91,6 +91,8 @@ public:
 		return nullptr;
 	}
 
+	virtual Atom *atomForIdentifier(const Atom3DPosition &pos);
+
 	virtual Atom *equivalentForAtom(Ligand *other, Atom *atom)
 	{
 		return nullptr;

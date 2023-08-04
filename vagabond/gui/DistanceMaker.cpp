@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "AtomRecall.h"
 #include "DistanceMaker.h"
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Metadata.h>
@@ -197,18 +198,31 @@ void DistanceMaker::confirmAtom()
 
 void DistanceMaker::prepareAngles()
 {
-	AtomRecall one(_aRes, _first);
-	AtomRecall two(_bRes, _second);
-	AtomRecall three(_cRes, _third);
-	Metadata *md = _entity->angleBetweenAtoms(one, two, three);
+	Atom3DPosition one(_aRes, _first);
+	Atom3DPosition two(_bRes, _second);
+	Atom3DPosition three(_cRes, _third);
+
+	std::string header;
+	header += _aRes->id().as_string() + _first;
+	header += " through " + _bRes->id().as_string() + _second;
+	header += " to " + _cRes->id().as_string() + _third;
+
+	Metadata *md = _entity->funcBetweenAtoms({one, two, three}, header,
+	                                         &angle_between);
 	_result = md;
 }
 
 void DistanceMaker::prepareDistances()
 {
-	AtomRecall one(_aRes, _first);
-	AtomRecall two(_bRes, _second);
-	Metadata *md = _entity->distanceBetweenAtoms(one, two);
+	Atom3DPosition one(_aRes, _first);
+	Atom3DPosition two(_bRes, _second);
+
+	std::string header;
+	header += _aRes->id().as_string() + _first;
+	header += " to " + _bRes->id().as_string() + _second;
+
+	Metadata *md = _entity->funcBetweenAtoms({one, two}, header,
+	                                         &distance_between);
 	_result = md;
 }
 

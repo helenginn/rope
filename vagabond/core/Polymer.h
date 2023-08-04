@@ -23,7 +23,6 @@
 #include <vagabond/c4x/Posular.h>
 
 #include <string>
-#include "AtomRecall.h"
 #include "Instance.h"
 
 class MetadataGroup;
@@ -98,6 +97,7 @@ public:
 	virtual void extractTorsionAngles(AtomContent *atoms, bool tmp_dest = false);
 	virtual void insertTorsionAngles(AtomContent *atoms);
 	virtual Atom *equivalentForAtom(Polymer *other, Atom *atom);
+	virtual Atom *atomForIdentifier(const Atom3DPosition &pos);
 
 	virtual const size_t completenessScore() const;
 	
@@ -108,12 +108,6 @@ public:
 	void addPositionsToGroup(MetadataGroup &group,
 	                         std::map<Residue *, int> resIdxs);
 
-
-	Metadata::KeyValues distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
-	                                         std::string header);
-
-	Metadata::KeyValues angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
-	                                      AtomRecall &c, std::string header);
 
 	void housekeeping();
 	

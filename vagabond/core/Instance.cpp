@@ -373,3 +373,8 @@ int Instance::loadCount()
 {
 	return model()->loadCount();
 }
+
+Atom *Instance::atomForIdentifier(const Atom3DPosition &pos)
+{
+	return nullptr;
+}

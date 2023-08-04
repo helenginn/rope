@@ -63,8 +63,11 @@ public:
 	
 	virtual void housekeeping();
 	
-	virtual Metadata *distanceBetweenAtoms(AtomRecall a, AtomRecall b);
-	virtual Metadata *angleBetweenAtoms(AtomRecall a, AtomRecall b, AtomRecall c);
+	typedef std::function<float(const std::vector<Atom *> &)> Calculate;
+
+	virtual Metadata *funcBetweenAtoms(const std::vector<Atom3DPosition> &ps,
+	                                   const std::string &header, 
+	                                   const Calculate &calculate);
 
 	friend void to_json(json &j, const PolymerEntity &value);
 	friend void from_json(const json &j, PolymerEntity &value);

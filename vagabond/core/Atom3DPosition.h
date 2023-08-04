@@ -25,6 +25,9 @@
 class Atom3DPosition : public BitIdentifier
 {
 public:
+	Atom3DPosition() {};
+	Atom3DPosition(Residue *master, std::string atomName);
+
 	const std::string &atomName() const
 	{
 		return _atomName;

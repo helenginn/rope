@@ -31,7 +31,6 @@
 #include "Ligand.h"
 #include "Responder.h"
 #include "AtomGroup.h"
-#include "AtomRecall.h"
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -149,11 +148,6 @@ public:
 	{
 		return _currentAtoms;
 	}
-
-	void distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
-	                          std::string header, Metadata *md);
-	void angleBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
-	                       AtomRecall &c, std::string header, Metadata *md);
 
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);

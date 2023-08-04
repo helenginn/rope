@@ -200,88 +200,6 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 #endif
 }
 
-Metadata::KeyValues Polymer::distanceBetweenAtoms(AtomRecall &a, AtomRecall &b,
-                                                   std::string header) 
-{
-	_sequence.remapFromMaster(entity());
-
-	Metadata::KeyValues kv;
-	
-	Residue *local_a = _sequence.local_residue(a.master);
-	Residue *local_b = _sequence.local_residue(b.master);
-
-	if (local_a == nullptr || local_b == nullptr)
-	{
-		std::cout << "local_a or local_b missing" << std::endl;
-		return kv;
-	}
-	
-	Atom *p = atomByIdName(local_a->id(), a.atom_name);
-	Atom *q = atomByIdName(local_b->id(), b.atom_name);
-
-	if (!p || !q)
-	{
-		return kv;
-	}
-
-	std::cout << p->desc() << " vs " << q->desc() << " = ";
-
-	glm::vec3 init_p = p->initialPosition();
-	glm::vec3 init_q = q->initialPosition();
-	
-	double dist = glm::length(init_p - init_q);
-	std::cout << dist << std::endl;
-	
-	kv["molecule"] = Value(id());
-	kv[header] = Value(f_to_str(dist, 2));
-
-	return kv;
-}
-
-Metadata::KeyValues Polymer::angleBetweenAtoms(AtomRecall &a, AtomRecall &b,
-                                                AtomRecall &c, std::string header) 
-{
-	_sequence.remapFromMaster(entity());
-
-	Metadata::KeyValues kv;
-	
-	Residue *local_a = _sequence.local_residue(a.master);
-	Residue *local_b = _sequence.local_residue(b.master);
-	Residue *local_c = _sequence.local_residue(c.master);
-
-	if (local_a == nullptr || local_b == nullptr || local_c == nullptr)
-	{
-		std::cout << "local_a or local_b or local_c missing" << std::endl;
-		return kv;
-	}
-	
-	Atom *p = atomByIdName(local_a->id(), a.atom_name);
-	Atom *q = atomByIdName(local_b->id(), b.atom_name);
-	Atom *r = atomByIdName(local_c->id(), c.atom_name);
-	
-	if (!p || !q || !r)
-	{
-		return kv;
-	}
-	
-	std::cout << p->desc() << " through " << q->desc() << 
-	" to " << r->desc() << " = ";
-
-	glm::vec3 init_q = q->initialPosition();
-	glm::vec3 p_vec = p->initialPosition() - init_q;
-	glm::vec3 r_vec = r->initialPosition() - init_q;
-	p_vec = glm::normalize(p_vec);
-	r_vec = glm::normalize(r_vec);
-	
-	double angle = rad2deg(glm::angle(p_vec, r_vec));
-	std::cout << angle << std::endl;
-	
-	kv["instance"] = Value(id());
-	kv[header] = Value(f_to_str(angle, 2));
-
-	return kv;
-}
-
 void Polymer::mergeWith(Polymer *b)
 {
 	if (_entity_id != b->_entity_id)
@@ -501,4 +419,14 @@ const size_t Polymer::completenessScore() const
 	return const_sequence()->modelledResidueCount();
 }
 
-
+Atom *Polymer::atomForIdentifier(const Atom3DPosition &pos)
+{
+	sequence()->remapFromMaster(_entity);
+	Residue *myLocal = sequence()->local_residue(pos.master());
+	if (!myLocal)
+	{
+		return nullptr;
+	}
+	Atom *chosen = currentAtoms()->atomByIdName(myLocal->id(), pos.atomName());
+	return chosen;
+}

@@ -721,60 +721,6 @@ void Model::clickTicker()
 	Environment::modelManager()->clickTicker();
 }
 
-void Model::angleBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
-                              AtomRecall &c, std::string header, Metadata *md)
-{
-	Metadata::KeyValues kv;
-	
-	if (!hasEntity(ent->name()))
-	{
-		return;
-	}
-	
-	load();
-	
-	for (Polymer &p : _polymers)
-	{
-		if (p.entity_id() != ent->name())
-		{
-			continue;
-		}
-
-		Metadata::KeyValues kv;
-		kv = p.angleBetweenAtoms(a, b, c, header);
-
-		md->addKeyValues(kv, true);
-	}
-
-	unload();
-}
-
-void Model::distanceBetweenAtoms(Entity *ent, AtomRecall &a, AtomRecall &b,
-                                 std::string header, Metadata *md)
-{
-	if (!hasEntity(ent->name()))
-	{
-		return;
-	}
-	
-	load(NoGeometry);
-	
-	for (Polymer &p : _polymers)
-	{
-		if (p.entity_id() != ent->name())
-		{
-			continue;
-		}
-
-		Metadata::KeyValues kv;
-		kv = p.distanceBetweenAtoms(a, b, header);
-
-		md->addKeyValues(kv, true);
-	}
-
-	unload();
-}
-
 CCP4SPG *Model::spaceGroup()
 {
 	CCP4SPG *spg = nullptr;
