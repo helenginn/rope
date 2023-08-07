@@ -20,12 +20,6 @@ public:
 	Scene(Scene *prev = nullptr);
 	virtual ~Scene();
 	
-	void setModal(Modal *modal)
-	{
-		_modal = modal;
-		_left = false;
-		_right = false;
-	}
 	
 	void setBackScene(Scene *prev)
 	{
@@ -37,6 +31,7 @@ public:
 		return _previous;
 	}
 	
+	void setModal(Modal *modal);
 	void removeModal();
 
 	void preSetup();
@@ -114,7 +109,7 @@ protected:
 	bool _expired = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
-	bool _isQuit = false;	
+	bool _isModal = false;	
 	static std::string _defaultBg;
 };
 
