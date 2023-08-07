@@ -87,6 +87,7 @@ void Scene::removeModal()
 	_mouseDown = false;
 	_moving = false;
 	_left = false;
+	_isModal = false;
 }
 
 void Scene::doThings()
