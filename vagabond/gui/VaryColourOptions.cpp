@@ -73,16 +73,12 @@ void VaryColourOptions::setup()
 
 void VaryColourOptions::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "min")
+	if (tag == "back")
 	{
 		float new_min = _min->as_num();
 		_rule.setMin(new_min);
-	}
-	else if (tag == "max")
-	{
 		float new_max = _max->as_num();
 		_rule.setMax(new_max);
 	}
-
 	Scene::buttonPressed(tag, button);
 }
