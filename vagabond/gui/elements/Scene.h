@@ -109,7 +109,6 @@ protected:
 	bool _expired = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
-	bool _isModal = false;	
 	static std::string _defaultBg;
 };
 
