@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define private public
+#define protected public
 #define BOOST_TEST_MODULE test_core
 #include <vagabond/utils/include_boost.h>
 namespace tt = boost::test_tools;
