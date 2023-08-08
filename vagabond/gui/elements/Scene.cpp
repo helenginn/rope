@@ -70,12 +70,11 @@ void Scene::setBackground()
 
 void Scene::setModal(Modal *modal)
 {
-	if (!_isModal)
+	if (!_modal)
 	{
 		_modal = modal;
 		_left = false;
 		_right = false;
-		_isModal = true;
 	}
 }
 
@@ -87,7 +86,6 @@ void Scene::removeModal()
 	_mouseDown = false;
 	_moving = false;
 	_left = false;
-	_isModal = false;
 }
 
 void Scene::doThings()
@@ -320,18 +318,18 @@ void Scene::addTitle(std::string title)
 
 void Scene::askToQuit()
 {
-	if (_isModal == false)
+	if (!_modal)
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to quit?",
 				"quit", this);
+		ayn->setDismissible(true);
 		setModal(ayn);
 		viewChanged();
 	}
 	else
 	{
-		_modal->hide();
+		_modal->dismiss();
 		viewChanged();
-		_isModal = false;
 	}
 }
 

@@ -297,6 +297,7 @@ void runFunctionIfModelsExist(Entity *entity, AddEntity *add, const Func &func)
 	catch(std::exception &err)
 	{
 		BadChoice *brr = new BadChoice(add, err.what());
+		brr->setDismissible(true);
 		add->setModal(brr);
 	}
 }
