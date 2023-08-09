@@ -45,7 +45,6 @@ void VaryColourOptions::setup()
 
 		TextEntry *t = new TextEntry(str, this);
 		t->setValidationType(TextEntry::Numeric);
-		t->setReturnTag("min");
 		t->setRight(0.2, 0.7);
 		_min = t;
 		addObject(t);
@@ -56,7 +55,6 @@ void VaryColourOptions::setup()
 
 		TextEntry *t = new TextEntry(str, this);
 		t->setValidationType(TextEntry::Numeric);
-		t->setReturnTag("max");
 		t->setRight(0.8, 0.7);
 		_max = t;
 		addObject(t);
