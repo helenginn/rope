@@ -68,12 +68,13 @@ void MapView::setup()
 	loadAtoms(_reference->currentAtoms());
 	
 	const int dims = 2;
+	const int coeffs = 2;
 	
 	_warp = new Warp(_reference, dims);
 	_warp->setResponder(this);
 	_warp->setup();
 	
-	_torsionWarp = new TorsionWarp(_warp->parameterList(), dims, 2);
+	_torsionWarp = new TorsionWarp(_warp->parameterList(), dims, coeffs);
 	
 	std::function<Floats(const Coord::Get &)> func;
 	func = [this](const Coord::Get &get)
