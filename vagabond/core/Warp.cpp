@@ -25,6 +25,7 @@ Warp::Warp(Instance *ref, size_t num_axes)
 : StructureModification(ref,  1, num_axes)
 {
 	_dims = num_axes;
+	_threads = 2;
 }
 
 int Warp::submitJob(bool show, const std::vector<float> &vals)
