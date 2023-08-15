@@ -125,7 +125,7 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
-			if (diff == diff && abs(i - j) > 2)
+			if (diff == diff && abs(i - j) > 3)
 			{
 				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
 			}
