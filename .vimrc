@@ -19,6 +19,9 @@ command! Dintegration :wa|!cd build/debug; meson test --suite=integration
 :imap `N :AsyncRun ninja -C build/current vagabond.gui
 :nmap `N :AsyncRun ninja -C build/current vagabond.gui
 
+:imap `D :AsyncRun ninja -C build/debug vagabond.gui
+:nmap `D :AsyncRun ninja -C build/debug vagabond.gui
+
 command! Doxy !doxygen Doxyfile
 
 function! MakeTest()
