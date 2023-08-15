@@ -42,9 +42,11 @@ Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
 struct SimpleWeights
 {
 	std::map<Instance *, float> scores;
-	float operator()(Instance *inst)
+	Floats operator()(Instance *inst) const
 	{
-		return scores[inst];
+		Floats fs;
+		fs.push_back(scores.at(inst));
+		return fs;
 	}
 };
 
@@ -61,9 +63,9 @@ struct MultiWeights
 		count++;
 	}
 
-	Floats operator()(Instance *inst)
+	Floats operator()(Instance *inst) const
 	{
-		return scores[inst] - sum / count;
+		return scores.at(inst) - sum / count;
 	}
 };
 
@@ -106,12 +108,10 @@ MultiWeights obtain_weights(TorsionCluster *cluster, size_t max)
 	return weight;
 }
 
-std::vector<RAMovement> Torsion2Atomic::linearRegressionToAxis(Instance *ref,
-                                                               size_t max)
+template <typename Access>
+std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
+                                         PositionalGroup *group, size_t max)
 {
-	MultiWeights weights = obtain_weights(_tCluster, max);
-
-	PositionalGroup *group = _pCluster->dataGroup();
 	int ref_idx = group->indexOfObject(ref);
 	std::cout << "Ref index: " << ref_idx << std::endl;
 	int n = group->vectorCount();
@@ -129,7 +129,7 @@ std::vector<RAMovement> Torsion2Atomic::linearRegressionToAxis(Instance *ref,
 	RAMovement empty; empty.vector_from(atomIds);
 
 	std::vector<RAMovement> returns(max, empty);
-
+	
 	for (size_t j = 0; j < atomIds.size(); j++)
 	{
 		glm::vec3 reference = group->differenceVector(ref_idx)[j];
@@ -184,48 +184,33 @@ std::vector<RAMovement> Torsion2Atomic::linearRegressionToAxis(Instance *ref,
 	return returns;
 }
 
-RAMovement Torsion2Atomic::convertAnglesSimple(const RTAngles &angles)
+std::vector<RAMovement> Torsion2Atomic::linearRegression(Instance *ref,
+                                                         size_t max)
+{
+	PositionalGroup *group = _pCluster->dataGroup();
+	MultiWeights weights = obtain_weights(_tCluster, max);
+
+	return ::linearRegression(ref, [weights](Instance *instance)
+	                          {
+		                         return weights(instance);
+	                          },
+	                          group, max);
+}
+
+RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref, 
+                                               const RTAngles &angles)
 {
 	MetadataGroup *grp = _tCluster->dataGroup();
 	SimpleWeights weight = obtain_weights(grp, angles);
 	
 	PositionalGroup *group = _pCluster->dataGroup();
-	std::vector<Atom3DPosition> atomIds = group->headers();
-	RAMovement motions;
-	motions.vector_from(atomIds);
+
+	std::vector<RAMovement> results;
+	results = ::linearRegression(ref, [weight](Instance *instance)
+	                          {
+		                         return weight(instance);
+	                          },
+	                          group, 1);
 	
-	for (size_t j = 0; j < atomIds.size(); j++)
-	{
-		Atom3DPosition &a3p = atomIds[j];
-		CorrelData cd[3]{};
-		glm::vec3 xy{};
-		glm::vec3 xx{};
-
-		for (size_t i = 0; i < group->vectorCount(); i++)
-		{
-			Instance *instance = static_cast<Instance *>(group->object(i));
-			glm::vec3 dir = group->differenceVector(i)[j];
-			float cc = weight(instance);
-			
-			for (size_t k = 0; k < 3; k++)
-			{
-				add_to_CD(&cd[k], dir[k], cc);
-				xx[k] += cc * cc;
-				xy[k] += dir[k] * cc;
-			}
-		}
-
-		glm::vec3 slopes{};
-		glm::vec3 results{};
-		for (size_t k = 0; k < 3; k++)
-		{
-			results[k] = fabs(evaluate_CD(cd[k]));
-			slopes[k] = xy[k] / xx[k];
-			results[k] *= slopes[k];
-		}
-		
-		motions.storage(j) = results;
-	}
-
-	return motions;
+	return results[0];
 }

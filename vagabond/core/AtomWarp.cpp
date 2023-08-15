@@ -71,7 +71,7 @@ std::vector<RAMovement> AtomWarp::allMotions(int n)
 	
 	std::cout << "LINEAR REGRESSION" << std::endl;
 	std::vector<RAMovement> motions_to_axis;
-	motions_to_axis = t2a.linearRegressionToAxis(_reference, n);
+	motions_to_axis = t2a.linearRegression(_reference, n);
 	
 	MetadataGroup &group = *_tCluster->dataGroup();
 	RTAngles empty = group.emptyAngles();

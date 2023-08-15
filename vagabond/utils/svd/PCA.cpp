@@ -292,18 +292,22 @@ PCA::Matrix PCA::transpose(Matrix *other)
 void PCA::multMatrices(const Matrix &first, const Matrix &second, 
                        Matrix &result)
 {
+	std::string str = "(" + std::to_string(first.rows) + " x " + 
+	std::to_string(first.cols) + ")";
+	str += " and (" + (std::to_string(second.rows) + " x " + 
+	                   std::to_string(second.cols)) + ")";
+	str += " to fit (" + (std::to_string(result.rows) + " x " + 
+	                      std::to_string(result.cols)) + ")";
 	if (first.cols != second.rows)
 	{
-		std::string str = "(" + std::to_string(first.rows) + " x " + 
-		                   std::to_string(first.cols) + ")";
-		str += " and (" + (std::to_string(second.rows) + " x " + 
-		                   std::to_string(second.cols)) + ")";
 		throw std::runtime_error("Trying to multiply incompatible matrices:" 
 		                         + str);
 	}
-	if (result.cols > 0 && result.cols != first.rows) 
+	if (result.cols > 0 && (result.rows != first.rows || 
+	                        result.cols != second.cols))
 	{
-		throw std::runtime_error("Pre-allocated matrix has improper dimensions");
+		throw std::runtime_error("Pre-allocated matrix has improper dimensions: "
+		                         + str);
 	}
 	else if (result.cols == 0)
 	{
