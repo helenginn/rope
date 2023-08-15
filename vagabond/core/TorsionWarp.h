@@ -19,6 +19,7 @@
 #ifndef __vagabond__TorsionWarp__
 #define __vagabond__TorsionWarp__
 
+#include <set>
 #include <vector>
 #include <vagabond/utils/Vec3s.h>
 #include <vagabond/utils/svd/PCA.h>
@@ -43,7 +44,7 @@ public:
 	void filtersForParameter(Parameter *param, AtomFilter &left,
 	                         AtomFilter &right);
 
-	void getSetCoefficients(std::vector<Parameter *> &params,
+	void getSetCoefficients(const std::set<Parameter *> &params,
 	                        Getter &getter, Setter &setter,
 	                        int max_dim = INT_MAX);
 private:

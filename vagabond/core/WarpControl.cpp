@@ -19,6 +19,7 @@
 #include "SimplexEngine.h"
 #include "WarpControl.h"
 #include "TorsionWarp.h"
+#include "ParamSet.h"
 #include "Target.h"
 #include "Warp.h"
 #include <algorithm>
@@ -30,7 +31,6 @@ WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp)
 	_target = new Target(warp->numAxes());
 
 	_params = _warp->parameterList();
-	std::random_shuffle(_params.begin(), _params.end());
 }
 
 void WarpControl::start_run(WarpControl *wc)
@@ -38,7 +38,7 @@ void WarpControl::start_run(WarpControl *wc)
 	wc->run();
 }
 
-void WarpControl::refineParameters(std::vector<Parameter *> &params,
+bool WarpControl::refineParameters(const std::set<Parameter *> &params,
                                    float step)
 {
 	_tWarp->getSetCoefficients(params, _getter, _setter, INT_MAX);
@@ -46,7 +46,7 @@ void WarpControl::refineParameters(std::vector<Parameter *> &params,
 	int paramCount = parameterCount();
 	if (paramCount == 0)
 	{
-		return;
+		return false;
 	}
 
 	std::cout << "parameters: " << parameterCount() << std::endl;
@@ -66,37 +66,79 @@ void WarpControl::refineParameters(std::vector<Parameter *> &params,
 	}
 
 	_simplex = new SimplexEngine(this);
-	_simplex->setMaxRuns(paramCount * 6);
+	_simplex->setMaxRuns(paramCount * 2);
 	_simplex->chooseStepSizes(steps);
 	_simplex->start();
 	std::cout << " to " << _score() << std::endl;
+	
+	return _simplex->improved();
 }
 
-void WarpControl::refineParametersAround(Parameter *param)
+auto main_filter = [](Parameter *const &param) -> bool
+{
+	return (param->coversMainChain() && 
+	        !param->isPeptideBond());
+};
+
+bool WarpControl::refineParametersAround(Parameter *param)
 {
 	if (!param || !param->coversMainChain())
 	{
-		return;
+		return false;
 	}
-
-	std::set<Parameter *> related;
-	related = param->relatedParameters();
 	
-	std::vector<Parameter *> params;
-	for (Parameter *param : related)
-	{
-		if (param->coversMainChain() && !param->isPeptideBond())
-		{
-			params.push_back(param);
-		}
-	}
+	ParamSet params(param);
+	params.expandNeighbours();
+	params.filter(main_filter);
 
 	TorsionWarp::AtomFilter left, right;
 	_tWarp->filtersForParameter(param, left, right);
 	_warp->setCompareFilters(left, right);
 
-	refineParameters(params, 20.);
+	return refineParameters(params, 20.);
 
+}
+
+template <typename Func>
+auto repeat(const Func &func, int num)
+{
+	for (size_t i = 0; i < num; i++)
+	{
+		if (!func())
+		{
+			return false;
+		}
+	}
+	
+	return true;
+}
+
+void WarpControl::compensatoryMotions(ParamSet &set)
+{
+	_warp->clearFilters();
+	ParamSet centre = set;
+
+	set.expandNeighbours();
+	set.expandNeighbours();
+	set -= centre;
+	set.filter(main_filter);
+
+	std::cout << "Compensatory parameters: " << set.size() << std::endl;
+
+	bool success = false;
+	success = repeat([this, set]() { return refineParameters(set, 10); }, 3);
+
+	if (!success)
+	{
+		return;
+	}
+
+	for (Parameter *r : set)
+	{
+		ParamSet single(r);
+		refineParameters(single, 4);
+
+	}
 }
 
 void WarpControl::run()
@@ -104,6 +146,8 @@ void WarpControl::run()
 	_finish = false;
 	std::vector<Floats> points = _target->pointsForScore();
 	_score = _warp->score(points);
+	float lastScore = _score();
+	std::cout << "Starting score: " << lastScore << std::endl;
 	
 	for (Parameter *param : _params)
 	{
@@ -113,30 +157,47 @@ void WarpControl::run()
 		}
 		std::cout << param->residueId() << " " << param->desc() << std::endl;
 		
-		for (size_t j = 0; j < 3; j++)
-		{
-			refineParametersAround(param);
-		}
+		repeat([this, param]() { return refineParametersAround(param); }, 3);
 		
 		if (_finish)
 		{
 			return;
 		}
-
-		_warp->clearFilters();
-
-		std::set<Parameter *> related;
-		related = param->relatedParameters();
 		
-		for (Parameter *r : related)
+		float post_damage = _score();
+		float newest = FLT_MAX;
+		int count = 0;
+		ParamSet initial(param);
+		ParamSet related = initial;
+		
+		while (newest > lastScore * 1.01)
 		{
-			std::vector<Parameter *> ps{1, r};
-			refineParameters(ps, 4);
+			std::cout << "Compensatory motions, round " << count + 1 << std::endl;
+			compensatoryMotions(related);
 
 			if (_finish)
 			{
 				return;
 			}
+
+			count++;
+			newest = _score();
+			
+			if (count % 3 == 0)
+			{
+				if (newest > 0.99 * post_damage)
+				{
+					break;
+				}
+
+				related = initial;
+				post_damage = newest;
+			}
+		}
+
+		if (lastScore > newest)
+		{
+			lastScore = newest;
 		}
 	}
 }

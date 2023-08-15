@@ -41,7 +41,7 @@ TorsionWarp::~TorsionWarp()
 	}
 }
 
-std::vector<int> indicesForParameters(std::vector<Parameter *> &subset,
+std::vector<int> indicesForParameters(const std::set<Parameter *> &subset,
                                       std::vector<Parameter *> &all)
 {
 	std::vector<int> idxs;
@@ -60,7 +60,7 @@ std::vector<int> indicesForParameters(std::vector<Parameter *> &subset,
 	return idxs;
 }
 
-void TorsionWarp::getSetCoefficients(std::vector<Parameter *> &params,
+void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
                                      Getter &getter, Setter &setter,
                                      int max_dim)
 {

@@ -24,6 +24,7 @@
 
 class Warp;
 class Target;
+class ParamSet;
 class TorsionWarp;
 class SimplexEngine;
 
@@ -48,8 +49,9 @@ public:
 	virtual int sendJob(const std::vector<float> &all);
 private:
 	void refineParameter(Parameter *param);
-	void refineParameters(std::vector<Parameter *> &params, float step);
-	void refineParametersAround(Parameter *param);
+	bool refineParameters(const std::set<Parameter *> &params, float step);
+	bool refineParametersAround(Parameter *param);
+	void compensatoryMotions(ParamSet &set);
 
 	Warp *_warp = nullptr;
 	TorsionWarp *_tWarp = nullptr;
