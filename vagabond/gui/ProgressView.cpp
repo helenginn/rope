@@ -32,6 +32,7 @@ void ProgressView::setup()
 	addTitle("Loading...");
 	hideBackButton();
 
+	_loaded = true;
 }
 
 ProgressView::~ProgressView()
@@ -67,6 +68,8 @@ void ProgressView::doThings()
 	
 	if (_finish)
 	{
+		Environment::env().setProgressResponder(nullptr);
+		back();
 		_mutex.unlock();
 		return;
 	}
@@ -111,8 +114,6 @@ void ProgressView::finish()
 	std::lock_guard<std::mutex> lock(_mutex);
 
 	_finish = true;
-	Environment::env().setProgressResponder(nullptr);
-	back();
 
 	/*
 	if (_responder)

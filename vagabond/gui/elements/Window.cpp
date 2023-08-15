@@ -263,8 +263,6 @@ bool Window::tick()
 		return false;
 	}
 	
-	render();
-	
 	if (_next != nullptr)
 	{
 		setCurrentScene(_next);
@@ -277,6 +275,8 @@ bool Window::tick()
 
 		_next = nullptr;
 	}
+	
+	render();
 
 	_myWindow->deleteQueued();
 	

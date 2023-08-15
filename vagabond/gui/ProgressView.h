@@ -71,6 +71,7 @@ private:
 	std::mutex _mutex;
 	std::vector<ProgressInfo> _queue;
 	bool _finish = false;
+	bool _loaded = false;
 };
 
 #endif
