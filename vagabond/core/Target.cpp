@@ -22,7 +22,7 @@
 Target::Target(int num_axes)
 {
 	_nAxes = num_axes;
-	_weights = std::vector<float>(_nAxes, 0.3);
+	_weights = std::vector<float>(_nAxes, 1.0);
 }
 
 const std::vector<Floats> &Target::pointsForScore()
