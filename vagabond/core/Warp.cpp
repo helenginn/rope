@@ -62,6 +62,7 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 
 	func = [points, this]() -> float
 	{
+		_alwaysShow = false;
 		clearComparison();
 		
 		for (const Floats &fs : points)
@@ -72,6 +73,7 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 		retrieve();
 
 		exposeDistanceMatrix();
+		_alwaysShow = true;
 		return compare()->quickScore();
 	};
 	
@@ -174,7 +176,8 @@ bool Warp::handleAtomList(AtomPosList &list)
 	// handle list;
 	compare()->process(list);
 
-	return true;
+	bool show = (_count++ % 100 == 0) || _alwaysShow;
+	return show;
 }
 
 CompareDistances *Warp::compare()

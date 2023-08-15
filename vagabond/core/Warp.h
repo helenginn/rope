@@ -111,6 +111,8 @@ private:
 	CompareDistances *_compare = nullptr;
 	
 	PCA::Matrix _distances;
+	int _count = 0;
+	bool _alwaysShow = true;
 };
 
 #endif
