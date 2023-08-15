@@ -459,6 +459,7 @@ double BondSequence::calculateDeviations()
 const AtomPosList &BondSequence::extractVector()
 {
 	_posList.clear();
+	_posList.reserve(_blocks.size());
 
 	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
