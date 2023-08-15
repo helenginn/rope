@@ -159,14 +159,14 @@ void TorsionWarp::filtersForParameter(Parameter *param, AtomFilter &left,
 	left = [id](Atom *const &atom)
 	{
 		return (atom->atomName() == "CA" &&
-		        (atom->residueId() > id - 3) &&
-		        atom->residueId() < id + 3);
+		        (atom->residueId() > id - 4) &&
+		        atom->residueId() < id + 4);
 	};
 
 	right = [id](Atom *const &atom)
 	{
 		return (atom->atomName() == "CA" &&
-		        (atom->residueId() < id + 3) &&
-		        (atom->residueId() > id - 3));
+		        (atom->residueId() < id + 4) &&
+		        (atom->residueId() > id - 4));
 	};
 }
