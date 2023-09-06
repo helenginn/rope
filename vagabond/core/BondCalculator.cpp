@@ -293,6 +293,11 @@ void BondCalculator::prepareThreads()
 
 void BondCalculator::start()
 {
+	if (_started)
+	{
+		std::cout << "Warning: started an already-started bond calculator"
+		<< std::endl;
+	}
 	_started = true;
 	sanityCheckDepthLimits();
 
