@@ -191,7 +191,9 @@ public:
 	}
 
 	Job *acquireJob();
+	Result *emptyResult();
 	Result *acquireResult();
+	void recycleResult(Result *r);
 	void reset();
 private:
 	void sanityCheckPipeline();
@@ -206,6 +208,7 @@ private:
 	void setupForceFieldHandler();
 	void setupSurfaceAreaHandler();
 	void prepareThreads();
+	void cleanupRecycling();
 
 	PipelineType _type;
 	size_t _maxMemory = 0;
@@ -216,7 +219,7 @@ private:
 	
 	Pool<Job *> _jobPool;
 	ExpectantPool<Result *> _resultPool;
-	Pool<Result *> _recyclePool;
+	ExpectantPool<Result *> _recyclePool;
 
 	BondSequenceHandler *_sequenceHandler = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;

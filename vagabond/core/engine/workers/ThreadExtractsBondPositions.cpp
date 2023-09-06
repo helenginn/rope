@@ -119,7 +119,8 @@ void ThreadExtractsBondPositions::start()
 		{
 			if (r == nullptr)
 			{
-				r = new Result();
+				BondCalculator *calc = _seqHandler->calculator();
+				r = calc->emptyResult();
 				r->setFromJob(job);
 			}
 		}

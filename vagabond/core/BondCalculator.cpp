@@ -40,8 +40,26 @@ BondCalculator::~BondCalculator()
 	reset();
 }
 
+void BondCalculator::cleanupRecycling()
+{
+	Result *recycled = nullptr;
+	
+	do
+	{
+		_recyclePool.acquireObjectOrNull(recycled);
+		
+		if (recycled)
+		{
+			recycled->destroy();
+		}
+	} 
+	while (recycled);
+
+}
+
 void BondCalculator::reset()
 {
+	cleanupRecycling();
 	finish();
 	delete _sequenceHandler; _sequenceHandler = nullptr;
 	delete _surfaceHandler; _surfaceHandler = nullptr;
@@ -317,6 +335,26 @@ Result *BondCalculator::acquireResult()
 	return result;
 }
 
+void BondCalculator::recycleResult(Result *r)
+{
+	_recyclePool.pushObject(r);
+}
+
+Result *BondCalculator::emptyResult()
+{
+	Result *recycled = nullptr;
+	_recyclePool.acquireObjectOrNull(recycled);
+	
+	if (!recycled)
+	{
+		return new Result();
+	}
+	else
+	{
+		return recycled;
+	}
+}
+
 void BondCalculator::submitResult(Result *r)
 {
 	_resultPool.pushObject(r);
@@ -425,6 +463,7 @@ void BondCalculator::finish()
 		_sequenceHandler->finish();
 	}
 	
+	_recyclePool.finish();
 	_resultPool.finish();
 	_jobPool.finish();
 }	
