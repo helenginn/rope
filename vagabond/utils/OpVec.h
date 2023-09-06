@@ -30,9 +30,24 @@ public:
 	{
 
 	}
+
+	OpVec<Type>(size_t num, Type value = {}) : std::vector<Type>(num, value)
+	{
+
+	}
+
 	OpVec<Type>(const std::vector<Type> &other) : std::vector<Type>(other)
 	{
 
+	}
+	
+	template <typename Func>
+	void do_on_each(Func &func)
+	{
+		for (Type &v : *this)
+		{
+			func(v);
+		}
 	}
 
 	OpVec<Type> operator/(const float &other) const
