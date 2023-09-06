@@ -22,6 +22,8 @@
 #include <cstring>
 #include <cmath>
 #include "../AcquireCoord.h"
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 
 namespace PCA
 {
@@ -118,6 +120,34 @@ namespace PCA
 	bool runSVD(SVD *cc);
 	bool order_by_w(const OrderW &a, const OrderW &b);
 
+	inline void from_json(const json &j, PCA::Matrix &mat)
+	{
+		mat.rows = j.at("rows");
+		mat.cols = j.at("cols");
+
+		setupMatrix(&mat, mat.rows, mat.cols);
+
+		std::vector<double> vals = j.at("vals");
+		for (int i = 0; i < mat.rows * mat.cols; i++)
+		{
+			mat.vals[i] = vals[i];
+		}
+	}
+
+	inline void to_json(json &j, const PCA::Matrix &mat)
+	{
+		j["rows"] = mat.rows;
+		j["cols"] = mat.cols;
+
+		std::vector<double> vals(mat.rows * mat.cols);
+		for (int i = 0; i < mat.rows * mat.cols; i++)
+		{
+			vals[i] = mat.vals[i];
+		}
+
+		j["vals"] = vals;
+	}
 }
+
 
 #endif
