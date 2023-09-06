@@ -225,6 +225,8 @@ void PCA::freeMatrix(Matrix *m)
 	free(m->ptrs);
 	m->vals = nullptr;
 	m->ptrs = nullptr;
+	m->rows = 0;
+	m->cols = 0;
 }
 
 void PCA::freeSVD(SVD *cc)
