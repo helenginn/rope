@@ -67,11 +67,9 @@ void EntityManager::housekeeping()
 	_name2Entity.clear();
 
 	std::cout << std::endl;
-	std::cout << "All entities: " << std::endl;
 	std::vector<Entity *> ents = entities();
 	for (Entity *other : ents)
 	{
-		std::cout << other->name() << " " << other << std::endl;
 		_name2Entity[other->name()] = other;
 	}
 }

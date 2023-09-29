@@ -24,6 +24,7 @@
 #include "Engine.h"
 #include <vagabond/utils/svd/PCA.h>
 
+class Warp;
 class ArbitraryMap;
 
 class MolRefiner : public StructureModification, public RunsEngine
@@ -48,6 +49,7 @@ private:
 	void triangle_to_svd(std::vector<float> &triangle);
 	ArbitraryMap *_map = nullptr;
 	Refine::Info *_info = nullptr;
+	Warp *_warp = nullptr;
 
 	std::map<int, int> _ticket2Group;
 	std::map<int, float> _group2Scores;

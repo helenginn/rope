@@ -24,19 +24,21 @@
 #include "OnPathBasis.h"
 #include "Trajectory.h"
 #include "Sampler.h"
+#include "Warp.h"
 #include "ChemotaxisEngine.h"
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
                        Refine::Info *info, int num, int dims) :
 StructureModification(info->instance, num, dims)
 {
-	_pType = BondCalculator::PipelineCalculatedMaps;
+	_pType = BondCalculator::PipelineCorrelation;
 	_torsionType = TorsionBasis::TypeConcerted;
-
+	_threads = 2;
+	
 	if (info->instance->hasSequence())
 	{
-		_torsionType = TorsionBasis::TypeOnPath;
-		_pType = BondCalculator::PipelineCorrelation;
+		_warp = Warp::warpFromFile(info->instance, "test.json");
+		_warp->setDoesAtoms(false);
 	}
 
 	_map = comparison;
@@ -128,6 +130,7 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
+		job.pos_sampler = _warp;
 		job.custom.allocate_vectors(1, _dims, _num, true);
 
 		for (size_t i = 0; i < _dims && i < mean.size(); i++)
@@ -155,6 +158,7 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 		int ticket = calc->submitJob(job);
 		group.push_back(ticket);
 		_ticket2Group[ticket] = grpTicket;
+		std::cout << " - ticket = " << grpTicket << std::endl;
 	}
 }
 
@@ -183,8 +187,8 @@ void MolRefiner::addToMap(ArbitraryMap *map)
 		{
 			AtomMap &atoms = *r->map;
 			ArbitraryMap *bit = atoms();
-			std::cout << atoms.minBound() << " to " << atoms.maxBound() << std::endl;
-			std::cout << bit->minBound() << " to " << bit->maxBound() << std::endl;
+//			std::cout << atoms.minBound() << " to " << atoms.maxBound() << std::endl;
+//			std::cout << bit->minBound() << " to " << bit->maxBound() << std::endl;
 			*map += *bit;
 			delete bit;
 		}
@@ -226,6 +230,8 @@ void MolRefiner::retrieveJobs()
 			{
 				float cc = r->correlation;
 				setScoreForTicket(g, -cc);
+				std::cout << "ticket " << g << " = " << cc << std::endl;
+				std::cout << std::endl;
 			}
 			
 			r->destroy();
@@ -237,6 +243,7 @@ void MolRefiner::retrieveJobs()
 
 void MolRefiner::torsionBasisMods(TorsionBasis *tb)
 {
+	/*
 	OnPathBasis *opb = static_cast<OnPathBasis *>(tb);
 
 	PathManager *pm = Environment::pathManager();
@@ -250,6 +257,7 @@ void MolRefiner::torsionBasisMods(TorsionBasis *tb)
 
 	std::cout << "Path: " << p->motionCount() << std::endl;
 	opb->setTrajectory(traj);
+	*/
 }
 
 size_t MolRefiner::parameterCount()

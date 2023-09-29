@@ -381,25 +381,42 @@ void Item::deselectAllCascade()
 	triggerResponse();
 }
 
-std::vector<Item *> Item::selectedItems()
+std::vector<Item *> Item::selectedItems(bool parents_only)
 {
 	std::vector<Item *> results;
 	Item *top = topLevel();
-	top->addSelectedToList(results);
+	top->addSelectedToList(results, parents_only);
 	return results;
 }
 
-void Item::addSelectedToList(std::vector<Item *> &list)
+void Item::addAllToList(std::vector<Item *> &list)
+{
+	list.push_back(this);
+
+	for (Item *next : _items)
+	{
+		next->addAllToList(list);
+	}
+}
+
+void Item::addSelectedToList(std::vector<Item *> &list, bool parents_only)
 {
 	if (_selected)
 	{
-		list.push_back(this);
+		if (parents_only)
+		{
+			list.push_back(this);
+		}
+		else
+		{
+			addAllToList(list);
+		}
 	}
 	else
 	{
 		for (Item *next : _items)
 		{
-			next->addSelectedToList(list);
+			next->addSelectedToList(list, parents_only);
 		}
 	}
 }

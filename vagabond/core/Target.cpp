@@ -18,11 +18,70 @@
 
 #include "Target.h"
 #include <vagabond/utils/Hypersphere.h>
+#include "RopeCluster.h"
+#include "Torsion2Atomic.h"
 
-Target::Target(int num_axes)
+void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins, 
+                              std::vector<float> &maxes)
 {
+	mins = std::vector<float>(num_axes, FLT_MAX);
+	maxes = std::vector<float>(num_axes, -FLT_MAX);
+	MetadataGroup *grp = _tCluster->dataGroup();
+
+	for (size_t i = 0; i < grp->vectorCount(); i++)
+	{
+		std::vector<float> entry = _tCluster->mappedVector(i);
+		Floats truncated(entry);
+		truncated.resize(num_axes);
+		
+		for (size_t j = 0; j < truncated.size(); j++)
+		{
+			mins[j] = std::min(mins[j], truncated[j]);
+			maxes[j] = std::max(maxes[j], truncated[j]);
+		}
+	}
+
+	int idx = grp->indexOfObject(_reference);
+	std::vector<float> origin = _tCluster->mappedVector(idx);
+
+	for (size_t j = 0; j < mins.size(); j++)
+	{
+		mins[j] -= origin[j];
+		maxes[j] -= origin[j];
+		std::cout << mins[j] << " to " << maxes[j] << std::endl;
+	}
+}
+
+Target::Target(int num_axes, TorsionCluster *cluster, Instance *ref)
+{
+	_reference = ref;
 	_nAxes = num_axes;
 	_weights = std::vector<float>(_nAxes, 1.0);
+	_tCluster = cluster;
+	
+	transformMatrix();
+}
+
+Target::~Target()
+{
+	freeMatrix(&_shift);
+}
+
+void Target::transformMatrix()
+{
+	std::vector<float> mins, maxes;
+	minMaxComponents(_nAxes, mins, maxes);
+
+	setupMatrix(&_shift, _nAxes + 1, _nAxes + 1);
+	
+	_shift[_nAxes][_nAxes] = 1;
+	for (size_t i = 0; i < _nAxes; i++)
+	{
+		// translation down final column to centre
+		_shift[i][i] = (maxes[i] - mins[i]) / 8;
+	}
+	
+	printMatrix(&_shift);
 }
 
 const std::vector<Floats> &Target::pointsForScore()
@@ -41,9 +100,20 @@ const std::vector<Floats> &Target::pointsForScore()
 			p[k] *= _weights[k];
 		}
 		
+		transformCoordinates(p);
 		Floats fs(p);
 		_points.push_back(fs);
 	}
 	
 	return _points;
+}
+
+void Target::transformCoordinates(std::vector<float> &coord)
+{
+	coord.resize(_nAxes);
+	coord.push_back(1);
+	std::vector<float> result(coord.size());
+	multMatrix(_shift, &coord[0], &result[0]);
+	coord = result;
+	coord.pop_back();
 }

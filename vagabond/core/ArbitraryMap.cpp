@@ -106,23 +106,26 @@ void ArbitraryMap::setupFromDiffraction()
 	setDimensions(_diff->nx(), _diff->ny(), _diff->nz(), false);
 	makePlans();
 
-	for (size_t i = 0; i < nn(); i++)
+	auto copy = [this](int i, int j, int k)
 	{
-		VoxelDiffraction &vd = _diff->element(i);
+		VoxelDiffraction &vd = _diff->element(i, j, k);
 
 		if (vd.value[0] != vd.value[0] || !std::isfinite(vd.value[0]))
 		{
-			continue;
+			return;
 		}
 
 		if (vd.value[1] != vd.value[1] || !std::isfinite(vd.value[1]))
 		{
-			continue;
+			return;
 		}
 
-		element(i)[0] = vd.value[0];
-		element(i)[1] = vd.value[1];
-	}
+		long idx = index(i, j, k);
+		element(idx)[0] = vd.value[0];
+		element(idx)[1] = vd.value[1];
+	};
+	
+	_diff->do_op_on_centred_index(copy);
 
 	setStatus(FFT<fftwf_complex>::Reciprocal);
 	fft();

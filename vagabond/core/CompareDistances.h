@@ -56,6 +56,10 @@ public:
 		return _rightAtoms;
 	}
 
+	bool hasMatrix()
+	{
+		return _matrix.vals != nullptr;
+	}
 	PCA::Matrix matrix();
 	
 	float quickScore();
@@ -63,6 +67,12 @@ public:
 	int receivedCount()
 	{
 		return _counter;
+	}
+	
+	void setMinMaxSeparation(int min, int max)
+	{
+		_minimum = min;
+		_maximum = max;
 	}
 
 	void clearMatrix();
@@ -85,6 +95,8 @@ private:
 	
 	PCA::Matrix _matrix;
 	int _counter = 0;
+	int _minimum = 0;
+	int _maximum = INT_MAX;
 	bool _magnitude = true;
 };
 

@@ -27,31 +27,54 @@ class Target;
 class ParamSet;
 class TorsionWarp;
 class SimplexEngine;
+class TorsionCluster;
+class BondCalculator;
 
 class WarpControl : public RunsEngine
 {
 public:
-	WarpControl(Warp *warp, TorsionWarp *tWarp);
+	WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster);
+
 	
 	void setParameters(std::vector<Parameter *> &params)
 	{
 		_params = params;
 	}
+	
+	void setParamWeights(std::function<float(Parameter *)> &weights)
+	{
+		_weights = weights;
+	}
 
-	static void start_run(WarpControl *wc);
-	void run();
+	static void start_run(WarpControl *wc, bool n_to_c);
+	static void start_from_residue_id(WarpControl *wc, int start, int end);
+	void run(bool n_to_c);
+	void runFromResidueId(int start, int end);
 	void finish()
 	{
 		_finish = true;
 	}
+	
+	void transformCoordinates(std::vector<float> &coord);
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
 private:
+	void otherRun(int start = 0, int end = 26);
+	bool refineBetween(int start, int end);
 	void refineParameter(Parameter *param);
 	bool refineParameters(const std::set<Parameter *> &params, float step);
-	bool refineParametersAround(Parameter *param);
-	void compensatoryMotions(ParamSet &set);
+	void hierarchicalParameters(std::vector<Parameter *> params);
+	void compensatoryMotions(ParamSet &set, bool expand, 
+	                         Parameter *centre, bool reverse);
+	void filterToParameter(Parameter *param, bool reverse);
+	void processParameter(Parameter *param, bool reverse);
+	void processRange(std::vector<Parameter *> params, float min, float max);
+	void processIndices(std::vector<Parameter *> filtered_params, 
+	                  int min_idx, int max_idx, bool reverse);
+	void processFromParameter(std::vector<Parameter *> params, 
+	                          Parameter *start, float max);
+	void prepareScore();
 
 	Warp *_warp = nullptr;
 	TorsionWarp *_tWarp = nullptr;
@@ -59,10 +82,13 @@ private:
 	TorsionWarp::Getter _getter{};
 	TorsionWarp::Setter _setter{};
 
+	std::function<float(Parameter *)> _weights{};
+
 	SimplexEngine *_simplex = nullptr;
 	std::vector<Parameter *> _params;
 	std::function<float()> _score;
 	std::atomic<bool> _finish{false};
+	BondCalculator *_calculator = nullptr;
 };
 
 #endif

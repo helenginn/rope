@@ -118,6 +118,11 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 
 		for (const int &n : _rightIdxs)
 		{
+			if (abs(i - j) <= _minimum || abs(i - j) >= _maximum)
+			{
+				j++;
+				continue;
+			}
 			const glm::vec3 &y = apl[n].wp.ave;
 			const glm::vec3 &q = apl[n].wp.target;
 
@@ -125,7 +130,7 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
-			if (diff == diff && abs(i - j) > 3)
+			if (diff == diff)
 			{
 				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
 			}
@@ -146,13 +151,14 @@ void CompareDistances::reset()
 PCA::Matrix CompareDistances::matrix()
 {
 	PCA::Matrix copy;
-	PCA::setupMatrix(&copy, _leftAtoms.size(), _rightAtoms.size());
+	
+	PCA::setupMatrix(&copy, _matrix.rows, _matrix.cols);
 	copyMatrix(copy, _matrix);
 	
 	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
 	{
 		copy.vals[i] /= (float)_counter;
-		copy.vals[i] *= 10.f;
+		copy.vals[i] *= 1.f;
 	}
 
 	return copy;
@@ -164,5 +170,6 @@ void CompareDistances::clearMatrix()
 	{
 		zeroMatrix(&_matrix);
 	}
+	
 	_counter = 0;
 }

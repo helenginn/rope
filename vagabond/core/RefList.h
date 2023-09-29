@@ -71,6 +71,16 @@ public:
 	{
 		return _frac2Real;
 	}
+	
+	void setSpaceGroupName(std::string &name)
+	{
+		_spgName = name;
+	}
+	
+	std::string spaceGroupName()
+	{
+		return _spgName;
+	}
 private:
 	std::vector<Reflection> _refls;
 	std::array<double, 6> _cell;
@@ -83,6 +93,8 @@ private:
 	size_t _nsymops = 0;
 	glm::mat3x3 *_rots = nullptr;
 	glm::vec3 *_trans = nullptr;
+	
+	std::string _spgName;
 };
 
 #endif

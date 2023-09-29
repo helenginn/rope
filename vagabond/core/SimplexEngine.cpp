@@ -210,9 +210,7 @@ void SimplexEngine::shrink()
 		_points[i].tickets[ticket] = trial;
 	}
 	
-	getResults();
-	collateResults();
-	clearResults();
+	pickUpResults();
 }
 
 void SimplexEngine::run()
@@ -331,7 +329,7 @@ void SimplexEngine::sendStartingJobs()
 
 		for (size_t j = 0; j < n(); j++)
 		{
-			float val = (i == j) ? _steps[i] : 0;
+			float val = (i == n() - 1 - j) ? _steps[i] : 0;
 			trial[j] = val;
 		}
 		
@@ -370,6 +368,7 @@ void SimplexEngine::sendReflectionJob(int i)
 		                           _points[j].vertex, -1);
 		int ticket = sendJob(trial);
 		_points[i].tickets[ticket] = trial;
+		pickUpResults();
 		num++;
 
 		if (num >= _maxJobs)
@@ -384,6 +383,7 @@ void SimplexEngine::sendReflectionJob(int i)
 
 		SPoint trial = scaleThrough(last.vertex, _centroid.vertex, -1.5);
 		int ticket = sendJob(trial);
+		pickUpResults();
 		last.tickets[ticket] = trial;
 	}
 }
@@ -398,6 +398,8 @@ void SimplexEngine::sendShrinkJobs()
 
 		_points[i].decision = ShouldReflect;
 	}
+
+	pickUpResults();
 }
 
 void SimplexEngine::sendContractionJob(int i)

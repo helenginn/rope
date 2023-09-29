@@ -29,12 +29,15 @@ class Instance;
 class TorsionBasis;
 class BondSequence;
 class CompareDistances;
+class TorsionWarp;
 
 class Warp : public StructureModification, public PositionSampler,
 public HasResponder<Responder<Warp>>
 {
 public:
 	Warp(Instance *ref, size_t num_axes);
+	
+	static Warp *warpFromFile(Instance *reference, std::string file);
 
 	const int &numAxes() const
 	{
@@ -47,18 +50,22 @@ public:
 
 	int submitJob(bool show, const std::vector<float> &vals);
 
+	virtual glm::vec3 prewarnAtom(BondSequence *bc, const Coord::Get &get,
+	                              int index);
 	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
 	                          Vec3s &positions);
 
+	virtual float prewarnBond(BondSequence *bc, const Coord::Get &get,
+	                              int index);
 	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
 	                          Floats &torsions);
 	
-	void setAtomMotions(std::function<Vec3s(const Coord::Get &)> &func)
+	void setAtomMotions(std::function<glm::vec3(const Coord::Get &, int num)> &func)
 	{
 		_atom_positions_for_coord = func;
 	}
 	
-	void setBondMotions(std::function<Floats(const Coord::Get &)> &func)
+	void setBondMotions(std::function<float(const Coord::Get &, int num)> &func)
 	{
 		_torsion_angles_for_coord = func;
 	}
@@ -74,16 +81,28 @@ public:
 	}
 	
 	void clearComparison();
+	void resetComparison();
 	void clearFilters();
 	
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 
 	void setCompareFilters(AtomFilter &left, AtomFilter &right);
+	
+	void setTorsionWarp(TorsionWarp *tw)
+	{
+		_tWarp = tw;
+	}
+	
+	TorsionWarp *torsionWarp()
+	{
+		return _tWarp;
+	}
 
 	CompareDistances *compare();
 
 	void exposeDistanceMatrix();
 protected:
+	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 	
 	virtual bool handleAtomList(AtomPosList &list);
 private:
@@ -93,8 +112,8 @@ private:
 	int _dims = 0;
 	int _jobNum = 0;
 
-	std::function<Vec3s(const Coord::Get &)> _atom_positions_for_coord{};
-	std::function<Floats(const Coord::Get &)> _torsion_angles_for_coord{};
+	std::function<glm::vec3(const Coord::Get &, int num)> _atom_positions_for_coord{};
+	std::function<float(const Coord::Get &, int num)> _torsion_angles_for_coord{};
 
 	AtomFilter _filter;
 
@@ -109,6 +128,7 @@ private:
 	
 	BasePositions _base;
 	CompareDistances *_compare = nullptr;
+	TorsionWarp *_tWarp = nullptr;
 	
 	PCA::Matrix _distances;
 	int _count = 0;

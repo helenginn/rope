@@ -33,8 +33,10 @@ public:
 	TorsionWarp(const std::vector<Parameter *> &parameterList,
 	            int num_axes, int num_coeff);
 	~TorsionWarp();
+	
+	void coefficientsFromJson(const json &j);
 
-	Floats torsions(const Coord::Get &get);
+	float torsion(const Coord::Get &get, int num);
 	
 	typedef std::function<void(std::vector<float> &values)> Getter;
 	typedef std::function<void(const std::vector<float> &values)> Setter;
@@ -43,6 +45,8 @@ public:
 
 	void filtersForParameter(Parameter *param, AtomFilter &left,
 	                         AtomFilter &right);
+	void upToParameter(Parameter *param, AtomFilter &left,
+	                   AtomFilter &right, bool reverse);
 
 	void getSetCoefficients(const std::set<Parameter *> &params,
 	                        Getter &getter, Setter &setter,
@@ -51,6 +55,11 @@ private:
 	
 	struct TDCoefficient
 	{
+		TDCoefficient()
+		{
+
+		}
+
 		TDCoefficient(int nTorsions, int nDims, int order)
 		{
 			for (size_t i = 0; i < nDims; i++)
@@ -74,20 +83,53 @@ private:
 		
 		void makeRandom();
 		
-		Floats torsionContributions(int n, const Coord::Get &get);
+		Floats torsionContributions(int n, const Coord::Get &get, int num);
+		float torsionContribution(int n, const Coord::Get &get, int num);
 
 		std::vector<PCA::Matrix> _dim2Coeffs;
 
 		int _order = 0;
 		int _nTorsions = 0;
 		int _nDims = 0;
+
 	};
+
+	friend void from_json(const json &j, TDCoefficient &coeff);
 	
+	friend void to_json(json &j, const TDCoefficient &coeff);
+	friend void to_json(json &j, const TorsionWarp &tw);
+
 	std::vector<TDCoefficient> _coefficients;
 	std::vector<Parameter *> _parameters;
 
 	int _nCoeff = 1;
 	int _nAxes = 0;
 };
+
+inline void from_json(const json &j, TorsionWarp::TDCoefficient &coeff)
+{
+	std::vector<PCA::Matrix> coeffs = j.at("matrices");
+	coeff._dim2Coeffs = coeffs;
+
+	coeff._order = j.at("order");
+	coeff._nTorsions = j.at("num_torsions");
+	coeff._nDims = j.at("num_dims");
+
+}
+
+inline void to_json(json &j, const TorsionWarp::TDCoefficient &coeff)
+{
+	j["matrices"] = coeff._dim2Coeffs;
+	j["order"] = coeff._order;
+	j["num_torsions"] = coeff._nTorsions;
+	j["num_dims"] = coeff._nDims;
+
+}
+
+inline void to_json(json &j, const TorsionWarp &tw)
+{
+	j["coefficients"] = tw._coefficients;
+}
+
 
 #endif

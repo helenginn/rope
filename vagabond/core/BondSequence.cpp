@@ -24,6 +24,7 @@
 #include "Atom.h"
 #include <iostream>
 #include <vagabond/utils/FileReader.h>
+#include <vagabond/utils/Remember.h>
 #include <queue>
 
 class ForceField;
@@ -76,8 +77,6 @@ void BondSequence::addToGraph(AnchorExtension &ext)
 	_grapher.fillTorsionAngles(_torsionBasis);
 	_grapher.sortGraphChildren();
 	generateBlocks();
-
-	_blocksDone = _blocks.size();
 }
 
 void BondSequence::generateBlocks()
@@ -159,7 +158,7 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
-float BondSequence::fetchTorsion(int torsion_idx)
+float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get)
 {
 	if (torsion_idx < 0)
 	{
@@ -170,57 +169,76 @@ float BondSequence::fetchTorsion(int torsion_idx)
 	{
 		return _bondTorsions[torsion_idx];
 	}
+	else if (_bondTorsions.size() == 0 && posSampler())
+	{
+		return posSampler()->prewarnBond(this, get, torsion_idx);
+	}
 	
 	auto func = torsionBasis()->valueForParameter(this, torsion_idx);
 
 	if (func)
 	{
-		return func(_acquireCoord);
+		return func(get);
 	}
 
 	return 0;
 }
 
-float BondSequence::fetchTorsionForBlock(int block_idx)
+float BondSequence::fetchTorsionForBlock(int block_idx, const Coord::Get &get)
 {
 	AtomBlock &b = _blocks[block_idx];
 	int torsion_idx = b.torsion_idx;
 	
-	return fetchTorsion(torsion_idx);
+	return fetchTorsion(torsion_idx, get);
 }
 
 // ensures that the position sampler can pre-calculate all the necessary atom
 // positions 
-void BondSequence::prewarnPositionSampler()
+void BondSequence::prewarnPositionSampler(const Coord::Get &get)
 {
 	PositionSampler *ps = posSampler();
 
 	if (ps == nullptr) { return; }
 	
-	_acceptablePositions = ps->prewarnAtoms(this, _acquireCoord, _atomPositions);
-	ps->prewarnBonds(this, _acquireCoord, _bondTorsions);
+	if (!_skipSections)
+	{
+		ps->prewarnAtoms(this, get, _atomPositions);
+		ps->prewarnBonds(this, get, _bondTorsions);
+	}
+	else
+	{
+		_atomPositions = {};
+		_bondTorsions = {};
+	}
 }
 
-void BondSequence::fetchAtomTarget(int idx)
+void BondSequence::fetchAtomTarget(int idx, const Coord::Get &get)
 {
 	PositionSampler *ps = posSampler();
 
 	if (ps == nullptr) { return; }
-
-	if (positionsAvailable())
+	
+	if (!ps->doesAtoms() && _blocks[idx].atom)
 	{
-		_blocks[idx].target = _atomPositions[idx];
+		_blocks[idx].target = _blocks[idx].atom->initialPosition();
+		return;
 	}
 
+	int true_idx = (idx % _singleSequence);
+	if (positionsAvailable())
+	{
+		_blocks[idx].target = _atomPositions[true_idx];
+	}
 	else
 	{
-		_blocks[idx].target = glm::vec3(NAN, NAN, NAN);
+		_blocks[idx].target = ps->prewarnAtom(this, get, true_idx);
 	}
 }
 
-int BondSequence::calculateBlock(int idx)
+int BondSequence::calculateBlock(int idx, const Coord::Get &get)
 {
 	AtomBlock &b = _blocks[idx];
+	fetchAtomTarget(idx, get);
 
 	if (b.silenced && _usingPrograms)
 	{
@@ -228,8 +246,7 @@ int BondSequence::calculateBlock(int idx)
 		return 0;
 	}
 
-	float t = fetchTorsionForBlock(idx);
-	fetchAtomTarget(idx);
+	float t = fetchTorsionForBlock(idx, get);
 	
 	glm::mat4x4 rot = b.prepareRotation(t);
 
@@ -242,7 +259,7 @@ int BondSequence::calculateBlock(int idx)
 	if (progidx >= 0 && _usingPrograms)
 	{
 		_programs[progidx].setSequence(this);
-		_programs[progidx].run(_blocks, idx, _acquireCoord, _nCoord);
+		_programs[progidx].run(_blocks, idx, get);
 	}
 
 	return (b.atom == nullptr);
@@ -270,21 +287,41 @@ void BondSequence::checkCustomVectorSizeFits()
 	}
 }
 
-void BondSequence::acquireCustomVector(int sampleNum)
+Coord::Get prepareAcquire(float *tensor, float *vec, Sampler *sampler, int size,
+                               const int &sampleNum, const Index::Convert &convert)
 {
-	if (!job())
+	Coord::Get get_coord = [tensor, vec, sampler, size,
+	                         sampleNum, &convert](const int idx) -> float
 	{
-		return;
-	}
-
-	Job &j = *job();
-	if (j.custom.vector_count() == 0)
-	{
-		_acquireCoord = [](const int idx) -> float
+		int true_idx = convert(idx);
+		if (true_idx < 0 || true_idx >= size)
 		{
 			return 0;
-		};
-		return;
+		}
+
+		float val = vec[true_idx];
+		if (sampler)
+		{
+			sampler->add_to_vec_index(val, true_idx, tensor, sampleNum);
+		}
+		return val;
+	};
+	
+	return Remember<int, float>(get_coord);
+}
+
+Coord::Get BondSequence::acquireCustomVector(int sampleNum)
+{
+	Coord::Get get = [](const int idx) -> float
+	{
+		return 0;
+	};
+
+	Job &j = *job();
+
+	if (!job() || j.custom.vector_count() == 0)
+	{
+		return get;
 	}
 
 	int &next_num = j.custom.vecs[_customIdx].sample_num;
@@ -298,25 +335,13 @@ void BondSequence::acquireCustomVector(int sampleNum)
 	Sampler *sampler = _sampler;
 	float *tensor = custom->tensor;
 	float *vec = custom->mean;
-	_nCoord = custom->size;
+	size_t nCoords = custom->size;
 	
 	const Index::Convert &convert = _convertIndex;
-	_acquireCoord = [tensor, vec, sampler, 
-	                 sampleNum, &convert](const int idx) -> float
-	{
-		int true_idx = convert(idx);
-		if (true_idx < 0)
-		{
-			return 0;
-		}
+	get = prepareAcquire(tensor, vec, sampler, nCoords, sampleNum, convert);
+	prewarnPositionSampler(get);
 
-		float val = vec[true_idx];
-		if (sampler)
-		{
-			sampler->add_to_vec_index(val, true_idx, tensor, sampleNum);
-		}
-		return val;
-	};
+	return get;
 }
 
 void BondSequence::superpose()
@@ -335,10 +360,11 @@ void BondSequence::superpose()
 		{
 			int n = i * _singleSequence + j;
 			
-			if (_blocks[j].atom == nullptr || _blocks[n].atom == nullptr)
+			if (_blocks[n].atom == nullptr || !_blocks[n].flag)
 			{
 				continue;
 			}
+			
 
 			glm::vec3 p = _blocks[j].target;
 			glm::vec3 q = _blocks[n].my_position();
@@ -360,7 +386,7 @@ void BondSequence::superpose()
 		for (size_t j = 0; j < _singleSequence; j++)
 		{
 			int n = i * _singleSequence + j;
-			if (_blocks[n].atom == nullptr)
+			if (_blocks[n].atom == nullptr || !_blocks[n].flag)
 			{
 				continue;
 			}
@@ -373,13 +399,10 @@ void BondSequence::superpose()
 
 void BondSequence::calculate()
 {
-	bool extract = (job()->requests & JobExtractPositions);
-
 	_customIdx = 0;
 	
 	int sampleNum = 0;
-	acquireCustomVector(sampleNum);
-	prewarnPositionSampler();
+	Coord::Get get = acquireCustomVector(sampleNum);
 	
 	int start = 0; int end = _blocks.size();
 	if (_skipSections && !_fullRecalc)
@@ -390,12 +413,11 @@ void BondSequence::calculate()
 	
 	for (size_t i = start; i < end && i < _blocks.size(); i++)
 	{
-		calculateBlock(i);
+		calculateBlock(i, get);
 		
 		if (i % _singleSequence == 0)
 		{
-			acquireCustomVector(sampleNum);
-			prewarnPositionSampler();
+			get = acquireCustomVector(sampleNum);
 			sampleNum++;
 		}
 	}
@@ -406,7 +428,7 @@ void BondSequence::calculate()
 
 	if (job()->absorb)
 	{
-		_torsionBasis->absorbVector(_acquireCoord);
+		_torsionBasis->absorbVector(get);
 	}
 
 	signal(SequencePositionsReady);
@@ -449,34 +471,42 @@ double BondSequence::calculateDeviations()
 			continue;
 		}
 		
-		sum += glm::length(diff) / weight;
+		float c = glm::length(diff) / weight;
+		sum += c;
 		count += weight;
 	}
 
 	return sum / count;
 }
 
-const AtomPosList &BondSequence::extractVector()
+void BondSequence::extractVector(AtomPosList &results)
 {
-	_posList.clear();
-	_posList.reserve(_blocks.size());
-
+	int c = 0;
+	WithPos ap{};
 	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
-		if (_blocks[i].atom == nullptr)
+		AtomBlock &b = _blocks[i];
+		if (b.atom == nullptr || !b.flag)
 		{
 			continue;
 		}
 		
-		WithPos ap{};
-		glm::vec3 mypos = _blocks[i].my_position();
-		ap.ave = mypos;
-		ap.target = _blocks[i].target;
-		ap.samples.push_back(mypos);
-		_posList.push_back({_blocks[i].atom, ap});
+		ap.ave = b.my_position();
+		ap.target = b.target;
+		
+		if (c >= results.size())
+		{
+			results.resize(results.size() + 1);
+		}
+
+		results[c] = {b.atom, ap};
+		c++;
 	}
 	
-	return _posList;
+	if (c != results.size())
+	{
+		results.resize(c);
+	}
 }
 
 const AtomPosMap &BondSequence::extractPositions()
@@ -526,6 +556,11 @@ std::vector<BondSequence::ElePos> BondSequence::extractForMap()
 
 void BondSequence::cleanUpToIdle()
 {
+	for (AtomBlock &b : _blocks)
+	{
+//		b.clearMutable();
+	}
+
 	setJob(nullptr);
 	signal(SequenceIdle);
 }
@@ -536,9 +571,32 @@ void BondSequence::beginJob(Job *job)
 	signal(SequenceCalculateReady);
 }
 
+ParamSet BondSequence::flaggedParameters()
+{
+	ParamSet params;
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		AtomBlock &block = _blocks[i];
+		if (block.flag)
+		{
+			int idx = _blocks[i].torsion_idx;
+			
+			if (idx >= 0)
+			{
+				Parameter *const p = _torsionBasis->parameter(idx);
+				params.insert(p);
+			}
+		}
+	}
+	
+	return params;
+}
+
 void BondSequence::reflagDepth(int min, int max)
 {
 	bool clear = false;
+	_convertIndex = Index::identity();
 	if (min == 0 && max == INT_MAX)
 	{
 		clear = true;
@@ -555,9 +613,8 @@ void BondSequence::reflagDepth(int min, int max)
 		block.flag = clear;
 	}
 
-	if (clear || min >= _blocks.size())
+	if (clear || max >= _blocks.size())
 	{
-		_convertIndex = Index::identity();
 		return;
 	}
 	
@@ -649,8 +706,11 @@ void BondSequence::reflagDepth(int min, int max)
 		_startCalc--;
 	}
 	
-	_convertIndex = Index::from_list(torsion_idxs);
-	_activeTorsions = torsion_idxs.size();
+	if (_torsionBasis->isSimple())
+	{
+		_convertIndex = Index::from_list(torsion_idxs);
+		_activeTorsions = torsion_idxs.size();
+	}
 
 	_fullRecalc = true;
 }

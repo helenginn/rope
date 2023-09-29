@@ -112,3 +112,13 @@ void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx,
 	}
 }
 
+void AtomBlock::clearMutable()
+{
+	if (atom)
+	{
+//		wip = glm::mat4x4{};
+		basis[3] = glm::vec4{};
+//		target = glm::vec3{};
+		inherit = glm::vec3{};
+	}
+}

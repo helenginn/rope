@@ -24,6 +24,7 @@
 #include "AtomWarp.h"
 #include "Instance.h"
 #include "Entity.h"
+#include <vagabond/utils/Remember.h>
 
 AtomWarp::AtomWarp(std::vector<Instance *> instances, Instance *reference)
 {
@@ -41,25 +42,47 @@ AtomWarp::AtomWarp(std::vector<Instance *> instances, Instance *reference)
 	_tCluster->cluster();
 }
 
-std::vector<Parameter *> 
-AtomWarp::orderedParameters(const std::vector<Parameter *> &set,
-                                                     int n)
+std::function<float(Parameter *)>
+AtomWarp::parameterMagnitudes(const std::vector<Parameter *> &set, int nAxes)
 {
 	MetadataGroup &group = *_tCluster->dataGroup();
 	RTAngles empty = group.emptyAngles();
+	std::map<Parameter *, float> mags;
 
-	std::vector<Angular> angles = _tCluster->rawVector(n);
-	RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
-	combined.attachInstance(_reference);
+	for (int n = 0; n < nAxes; n++)
+	{
+		std::vector<Angular> angles = _tCluster->rawVector(n);
+		RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
+		combined.attachInstance(_reference);
+		combined.filter_according_to(set);
 
-	combined.filter_according_to(set);
-	combined.order_by_magnitude();
+		for (size_t i = 0; i < combined.size(); i++)
+		{
+			combined.rt(i).attachToInstance(_reference);
+			Parameter *p = combined.rt(i).parameter();
+			float m = combined.storage(i);
+			mags[p] += m;
+		}
+	}
+
+	return Remember<Parameter *, float>(mags);
+}
+
+std::vector<Parameter *> 
+AtomWarp::orderedParameters(const std::vector<Parameter *> &set,
+                                                     int nAxes)
+{
+	MetadataGroup &group = *_tCluster->dataGroup();
+	RTAngles empty = group.emptyAngles();
+	std::cout << _reference << std::endl;
+	empty.attachInstance(_reference);
+	empty.filter_according_to(set);
 
 	std::vector<Parameter *> all;
-	for (size_t i = 0; i < combined.size(); i++)
+	for (size_t i = 0; i < empty.size(); i++)
 	{
-		combined.rt(i).attachToInstance(_reference);
-		all.push_back(combined.rt(i).parameter());
+		empty.rt(i).attachToInstance(_reference);
+		all.push_back(empty.rt(i).parameter());
 	}
 	return all;
 }
@@ -78,18 +101,16 @@ std::vector<RAMovement> AtomWarp::allMotions(int n)
 
 	for (size_t i = 0; i < n && n < _tCluster->rows(); i++)
 	{
-//		std::vector<Angular> angles = _tCluster->rawVector(i);
-//		RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
-//		RAMovement motions = t2a.convertAnglesSimple(combined);
 		all.push_back(motions_to_axis[i]);
 	}
 
 	return all;
 }
 
-std::function<Vec3s(const Coord::Get &get)> 
+std::function<glm::vec3(const Coord::Get &get, int num)> 
 AtomWarp::mappedMotions(int n, const std::vector<Atom *> &order)
 {
+	_lastN = n;
 	std::vector<RAMovement> vecs = allMotions(n);
 	std::vector<Vec3s> motions;
 	
@@ -105,7 +126,6 @@ AtomWarp::mappedMotions(int n, const std::vector<Atom *> &order)
 		std::vector<Posular> singles = vecs[i].storage_only();
 
 		Vec3s vec;
-		int j= 0;
 		for (Posular &pos : singles)
 		{
 			vec.push_back(pos);
@@ -114,13 +134,20 @@ AtomWarp::mappedMotions(int n, const std::vector<Atom *> &order)
 		motions.push_back(vec);
 	}
 	
-	auto func = [motions, n](const Coord::Get &get)
+	auto func = [motions, n](const Coord::Get &get, int num)
 	{
-		Vec3s result{};
+		if (n <= 0 || num >= motions[0].size())
+		{
+			return glm::vec3(NAN, NAN, NAN);
+		}
+
+		glm::vec3 result{};
+
 		for (size_t i = 0; i < n; i++)
 		{
-			result += motions[i] * get(i);
+			result += motions[i][num] * get(i);
 		}
+
 		return result;
 	};
 	

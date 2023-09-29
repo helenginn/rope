@@ -65,6 +65,7 @@ public:
 	Diffraction(ArbitraryMap *map);
 
 	void populateReflections();
+	void populateSymmetry();
 	
 	size_t reflectionCount();
 

@@ -29,7 +29,7 @@ TorsionWarp::TorsionWarp(const std::vector<Parameter *> &parameterList,
 	
 	for (size_t i = 0; i < _nCoeff; i++)
 	{
-		_coefficients.push_back(TDCoefficient(_parameters.size(), _nAxes, i));
+		_coefficients.push_back(TDCoefficient(_parameters.size(), _nAxes, i+1));
 	}
 }
 
@@ -65,7 +65,8 @@ void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
                                      int max_dim)
 {
 	std::vector<int> indices = indicesForParameters(params, _parameters);
-
+	std::sort(indices.begin(), indices.end());
+	
 	getter = [indices, max_dim, this](std::vector<float> &values)
 	{
 		for (const int &idx : indices)
@@ -106,34 +107,73 @@ void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
 	};
 }
 
-Floats TorsionWarp::torsions(const Coord::Get &get)
+float TorsionWarp::torsion(const Coord::Get &get, int num)
 {
-	Floats torsions;
-	torsions.resize(_parameters.size());
-
+	float torsion = 0;
+	
 	for (TDCoefficient &coeff : _coefficients)
 	{
 		for (size_t j = 0; j < _nAxes; j++)
 		{
-			Floats contributions = coeff.torsionContributions(j, get);
-			torsions += contributions;
+			torsion += coeff.torsionContribution(j, get, num);
 		}
 	}
 	
-	return torsions;
+	return torsion;
+}
+
+float 
+TorsionWarp::TDCoefficient::torsionContribution(int n, const Coord::Get &get, 
+                                                 int num)
+{
+	float result = 0;
+	
+	PCA::Matrix &coeffs = _dim2Coeffs[n];
+	for (size_t i = 0; i < coeffs.cols; i++)
+	{
+		result += coeffs[num][i] * get(i);
+	}
+	
+	float mult = 1;
+	float get_axis = get(n);
+	for (size_t i = 0; i <= _order; i++)
+	{
+		mult *= get_axis;
+	}
+
+	result *= mult;
+	
+	return result;
 }
 
 Floats 
-TorsionWarp::TDCoefficient::torsionContributions(int n, const Coord::Get &get)
+TorsionWarp::TDCoefficient::torsionContributions(int n, const Coord::Get &get, 
+                                                 int num)
 {
 	Floats result;
-	result.resize(_nTorsions);
-	multMatrix(_dim2Coeffs[n], get, &result[0]);
+	result.resize(num < 0 ? _nTorsions : 1);
 	
+	PCA::Matrix &coeffs = _dim2Coeffs[n];
+	if (num < 0)
+	{
+		multMatrix(coeffs, get, &result[0]);
+	}
+	else
+	{
+		result[0] = 0;
+		for (size_t i = 0; i < coeffs.cols; i++)
+		{
+			result[0] += coeffs[num][i] * get(i);
+		}
+	}
+	
+	float mult = 1;
 	for (size_t i = 0; i <= _order; i++)
 	{
-		result *= get(n);
+		mult *= get(n);
 	}
+
+	result *= mult;
 	
 	return result;
 }
@@ -152,21 +192,59 @@ void TorsionWarp::TDCoefficient::makeRandom()
 	}
 }
 
+void TorsionWarp::upToParameter(Parameter *param, AtomFilter &left,
+                                AtomFilter &right, bool reverse)
+{
+	int id = param->residueId().as_num();
+	if (!reverse)
+	{
+		left = [id](Atom *const &atom)
+		{
+			return (atom->atomName() == "CA" &&
+			        atom->residueId() < id + 4);
+		};
+
+		right = [id](Atom *const &atom)
+		{
+			return (atom->atomName() == "CA" &&
+			        (atom->residueId() < id + 4));
+		};
+	}
+	else
+	{
+		left = [id](Atom *const &atom)
+		{
+			return (atom->atomName() == "CA" &&
+			        atom->residueId() > id - 4);
+		};
+
+		right = [id](Atom *const &atom)
+		{
+			return (atom->atomName() == "CA" &&
+			        (atom->residueId() > id - 4));
+		};
+	}
+}
+
 void TorsionWarp::filtersForParameter(Parameter *param, AtomFilter &left,
                                       AtomFilter &right)
 {
 	int id = param->residueId().as_num();
 	left = [id](Atom *const &atom)
 	{
-		return (atom->atomName() == "CA" &&
-		        (atom->residueId() > id - 4) &&
+		return ((atom->residueId() > id - 4) &&
 		        atom->residueId() < id + 4);
 	};
 
 	right = [id](Atom *const &atom)
 	{
-		return (atom->atomName() == "CA" &&
-		        (atom->residueId() < id + 4) &&
+		return ((atom->residueId() < id + 4) &&
 		        (atom->residueId() > id - 4));
 	};
+}
+
+void TorsionWarp::coefficientsFromJson(const json &j)
+{
+	std::vector<TDCoefficient> coefficients = j.at("coefficients");
+	_coefficients = coefficients;
 }

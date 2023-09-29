@@ -181,26 +181,31 @@ void RefList::setUnitCell(std::array<double, 6> &cell)
 
 void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 {
-	for (size_t i = 0; i < symOpCount(); i++)
+	Reflection::HKL &orig = _refls[refl].hkl;
+	const int &h = orig.h;
+	const int &k = orig.k;
+	const int &l = orig.l;
+
+	float phase = _refls[refl].phi;
+	const float &f = _refls[refl].f;
+
+	VoxelDiffraction &v = diff->element(h, k, l);
+	v.setAmplitudePhase(f, phase);
+
+	/*
+	for (int s = -1; s <= 1; s += 2)
 	{
-        Reflection::HKL next = symHKL(refl, i);
-		const int &h = next.h;
-		const int &k = next.k;
-		const int &l = next.l;
+		float shift = (float)h * _trans[i][0];
+		shift += (float)k * _trans[i][1];
+		shift += (float)l * _trans[i][2];
 
-		for (int s = -1; s <= 1; s += 2)
-		{
-			float shift = (float)h * _trans[i][0];
-			shift += (float)k * _trans[i][1];
-			shift += (float)l * _trans[i][2];
+		shift = shift - floor(shift);
+		float phase = s * (_refls[refl].phi + shift * 360.);
+		const float &f = _refls[refl].f;
 
-			shift = shift - floor(shift);
-			float phase = s * (_refls[refl].phi + shift * 360.);
-			const float &f = _refls[refl].f;
-
-			VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
-			v.setAmplitudePhase(f, phase);
-		}
+		VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
+		v.setAmplitudePhase(f, phase);
 	}
+		*/
 }
 

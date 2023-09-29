@@ -38,9 +38,7 @@ ThreadExtractsBondPositions::ThreadExtractsBondPositions(BondSequenceHandler *h)
 void ThreadExtractsBondPositions::extractVector(Job *job, BondSequence *seq)
 {
 	Result *r = job->result;
-
-	const AtomPosList &apl = seq->extractVector();
-	r->apl = apl;
+	seq->extractVector(r->apl);
 }
 
 void ThreadExtractsBondPositions::extractPositions(Job *job, BondSequence *seq)

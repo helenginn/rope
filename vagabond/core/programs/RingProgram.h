@@ -90,7 +90,7 @@ public:
 	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
 
 	void run(std::vector<AtomBlock> &blocks, int rel, 
-	         const Coord::Get &coord, int n);
+	         const Coord::Get &coord);
 	
 	void addTransformation(const glm::mat4x4 &trans);
 	void setSequence(BondSequence *seq)
@@ -98,7 +98,7 @@ public:
 		_seq = seq;
 	}
 private:
-	void fetchParameters(const Coord::Get &coord, int n);
+	void fetchParameters(const Coord::Get &coord);
 
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);

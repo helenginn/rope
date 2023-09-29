@@ -172,7 +172,7 @@ public:
 	}
 	
 	size_t selectedInTree() const;
-	std::vector<Item *> selectedItems();
+	std::vector<Item *> selectedItems(bool parents_only = true);
 	void removeSelf(bool null_parent);
 	void deselectAll();
 
@@ -255,7 +255,8 @@ private:
 	
 	const Item *constTopLevel() const;
 	void addToSelectedCount(size_t &count) const;
-	void addSelectedToList(std::vector<Item *> &list);
+	void addSelectedToList(std::vector<Item *> &list, bool parents_only);
+	void addAllToList(std::vector<Item *> &list);
 	void deselectAllCascade();
 	
 	std::string _tag;

@@ -57,6 +57,8 @@ struct AtomBlock
 	glm::mat4x4 basis;
 	glm::mat4x4 wip;
 	int write_locs[4];
+	
+	void clearMutable();
 
 	const glm::vec3 parent_position() const
 	{

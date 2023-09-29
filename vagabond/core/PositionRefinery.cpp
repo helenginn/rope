@@ -164,7 +164,7 @@ bool PositionRefinery::refineBetween(int start, int end)
 		sendJob(trial, true);
 		Result *result = _calculator->acquireResult();
 		result->transplantPositions();
-		result->destroy();
+		_calculator->recycleResult(result);
 	}
 
 	_calculator->finish();

@@ -109,18 +109,49 @@ MultiWeights obtain_weights(TorsionCluster *cluster, size_t max)
 }
 
 template <typename Access>
+PCA::Matrix weights_to_component_matrix(const Access &weights, Instance *ref,
+                                        PositionalGroup *group, int axes_num)
+{
+	int mol_num = group->vectorCount();
+
+	PCA::SVD comp_per_molecule;
+	setupSVD(&comp_per_molecule, mol_num, axes_num + 1);
+
+	Floats ref_coords = weights(ref);
+
+	for (size_t i = 0; i < group->vectorCount(); i++)
+	{
+		Instance *instance = static_cast<Instance *>(group->object(i));
+		Floats coords = weights(instance);
+		coords = coords - ref_coords;
+		coords.resize(axes_num);
+		coords.push_back(1);
+
+		for (size_t k = 0; k < coords.size(); k++)
+		{
+			comp_per_molecule.u[i][k] = coords[k];
+		}
+	}
+
+	runSVD(&comp_per_molecule);
+	PCA::Matrix tr = PCA::transpose(&comp_per_molecule.u);
+	freeSVD(&comp_per_molecule);
+	
+	return tr;
+}
+
+template <typename Access>
 std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
                                          PositionalGroup *group, size_t max)
 {
 	int ref_idx = group->indexOfObject(ref);
 	std::cout << "Ref index: " << ref_idx << std::endl;
-	int n = group->vectorCount();
 
-	PCA::SVD comp_per_molecule;
-	setupSVD(&comp_per_molecule, n, max + 1);
+	PCA::Matrix components = weights_to_component_matrix(weights, ref, group, max);
+	int mol_num = group->vectorCount();
 
 	PCA::Matrix pos_per_molecule;
-	setupMatrix(&pos_per_molecule, n, 3); // 3 = xyz coordinates of Atom
+	setupMatrix(&pos_per_molecule, mol_num, 3); // 3 = xyz coordinates of Atom
 
 	PCA::Matrix convert;
 	setupMatrix(&convert, max + 1, 3);
@@ -132,36 +163,21 @@ std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
 	
 	for (size_t j = 0; j < atomIds.size(); j++)
 	{
-		glm::vec3 reference = group->differenceVector(ref_idx)[j];
-		Floats ref_coords = weights(ref);
-
-		zeroMatrix(&comp_per_molecule.u);
 		zeroMatrix(&pos_per_molecule);
 
 		for (size_t i = 0; i < group->vectorCount(); i++)
 		{
 			Instance *instance = static_cast<Instance *>(group->object(i));
-
 			glm::vec3 dir = group->differenceVector(i)[j];
-			Floats coords = weights(instance);
-			coords = coords - ref_coords;
-			coords.push_back(1);
 
 			for (size_t k = 0; k < 3; k++)
 			{
 				pos_per_molecule[i][k] = dir[k];
 			}
-			
-			for (size_t k = 0; k < coords.size(); k++)
-			{
-				comp_per_molecule.u[i][k] = coords[k];
-			}
 		}
 
-		runSVD(&comp_per_molecule);
-		PCA::Matrix tr = PCA::transpose(&comp_per_molecule.u);
-
-		PCA::multMatrices(tr, pos_per_molecule, convert);
+		glm::vec3 reference = group->differenceVector(ref_idx)[j];
+		PCA::multMatrices(components, pos_per_molecule, convert);
 		
 		for (size_t k = 0; k < max; k++)
 		{
@@ -173,13 +189,10 @@ std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
 			                      convert[max][2]};
 			storage = pos + constant - reference;
 		}
-		
-
-		freeMatrix(&tr);
 	}
 	
 	freeMatrix(&pos_per_molecule);
-	freeSVD(&comp_per_molecule);
+	freeMatrix(&components);
 	
 	return returns;
 }

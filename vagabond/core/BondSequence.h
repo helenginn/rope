@@ -27,6 +27,7 @@
 #include <vagabond/utils/version.h>
 #include <vagabond/utils/ConvertIndex.h>
 #include "AtomPosMap.h"
+#include "ParamSet.h"
 #include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
@@ -105,6 +106,8 @@ public:
 		return _grapher;
 	}
 	
+	ParamSet flaggedParameters();
+
 	void cleanUpToIdle();
 	void beginJob(Job *job);
 	void removeTorsionBasis();
@@ -149,7 +152,7 @@ public:
 	void calculate();
 	void superpose();
 	const AtomPosMap &extractPositions();
-	const AtomPosList &extractVector();
+	void extractVector(AtomPosList &results);
 	
 	struct ElePos
 	{
@@ -177,18 +180,13 @@ public:
 	{
 		return _blocks;
 	}
-
-	float fetchTorsion(int idx);
 	
 	const int &nCoords() const
 	{
 		return _nCoord;
 	}
 
-	const Coord::Get &acquireCoord() const
-	{
-		return _acquireCoord;
-	}
+	float fetchTorsion(int idx, const Coord::Get &get);
 private:
 
 	struct AtomBlockTodo
@@ -201,18 +199,15 @@ private:
 	
 	bool atomGraphChildrenOnlyHydrogens(AtomGraph &g);
 	void markHydrogenGraphs();
-	
-	std::vector<AtomBlock> _blocks;
 
 	void generateBlocks();
-	void acquireCustomVector(int sampleNum);
+	Coord::Get acquireCustomVector(int sampleNum);
 	void makeTorsionBasis();
-	void prewarnPositionSampler();
-	void prewarnTorsions();
+	void prewarnPositionSampler(const Coord::Get &get);
 
-	int calculateBlock(int idx);
-	float fetchTorsionForBlock(int idx);
-	void fetchAtomTarget(int idx);
+	int calculateBlock(int idx, const Coord::Get &get);
+	float fetchTorsionForBlock(int idx, const Coord::Get &get);
+	void fetchAtomTarget(int idx, const Coord::Get &get);
 	
 	PositionSampler *posSampler()
 	{
@@ -221,16 +216,15 @@ private:
 	
 	bool positionsAvailable()
 	{
-		return (posSampler() && _atomPositions.size() && _acceptablePositions);
+		return (posSampler() && _atomPositions.size());
 	}
 
 	Grapher _grapher;
-	std::map<Atom *, AtomGraph *> _atom2Graph;
-
-	std::map<Atom *, int> _atom2Block;
+	std::vector<AtomBlock> _blocks;
 
 	size_t _sampleCount = 1;
-	size_t _addedAtomsCount = 0;
+	int _singleSequence = 0;
+
 	SequenceState _state = SequenceInPreparation;
 	
 	void setJob(Job *job);
@@ -242,19 +236,19 @@ private:
 	int _endCalc = INT_MAX;
 	int _maxDepth = 0;
 	int _customIdx = 0;
-	int _blocksDone = 0;
-	int _singleSequence = 0;
+
 	CustomVector *_custom = nullptr;
 	void checkCustomVectorSizeFits();
 	
-	Coord::Get _acquireCoord;
 	int _nCoord = 0;
+
+	TorsionBasis *_torsionBasis = nullptr;
+	TorsionBasis::Type _basisType;
 
 	Job *_job = nullptr;
 	BondSequenceHandler *_handler = nullptr;
-	TorsionBasis *_torsionBasis = nullptr;
-	TorsionBasis::Type _basisType;
 	Sampler *_sampler = nullptr;
+
 	std::vector<RingProgram> _programs;
 
 #ifdef VERSION_PROLINE
@@ -265,7 +259,6 @@ private:
 
 	bool _programsInitialised = false;
 	
-	bool _acceptablePositions = false;
 	Vec3s _atomPositions;
 	Floats _bondTorsions;
 	
@@ -273,7 +266,6 @@ private:
 	int _activeTorsions = 0;
 
 	AtomPosMap _posAtoms;
-	AtomPosList _posList;
 };
 
 #endif

@@ -30,6 +30,11 @@ public:
 	                                                    int tidx);
 
 	virtual void prepare(int dims = 0);
+
+	virtual bool isSimple() const
+	{
+		return true;
+	}
 private:
 
 };

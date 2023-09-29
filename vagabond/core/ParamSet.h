@@ -20,6 +20,7 @@
 #define __vagabond__ParamSet__
 
 #include <vagabond/utils/OpSet.h>
+#include <sstream>
 
 class Parameter;
 
@@ -29,8 +30,13 @@ public:
 	ParamSet(const std::set<Parameter *> &other) : OpSet(other) {}
 	ParamSet(Parameter *const &member) : OpSet(member) {}
 	ParamSet() : OpSet() {}
+	
+	friend std::ostream &operator<<(std::ostream &ss, const ParamSet &set);
 
 	void expandNeighbours();
+	void excludeBeyond(int residue_num, int direction);
+	
+	std::vector<Parameter *> toVector();
 
 	template <class Filter>
 	void filter(const Filter &filter)

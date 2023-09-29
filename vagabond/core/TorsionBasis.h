@@ -65,6 +65,11 @@ public:
 	virtual void prepareRecalculation() {};
 	std::vector<int> grabIndices(const std::set<Parameter *> &params);
 	void trimParametersToUsed(std::set<Parameter *> &params);
+	
+	virtual bool isSimple() const
+	{
+		return false;
+	}
 
 	virtual void supplyCalculatedTorsions(const std::vector<float> &floats)
 	{

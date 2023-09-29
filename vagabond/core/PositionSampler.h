@@ -25,12 +25,41 @@ class PositionSampler
 {
 public:
 	virtual ~PositionSampler() {};
+	
+	void setDoesAtoms(bool atoms)
+	{
+		_doesAtoms = true;
+	}
+	
+	const bool &doesAtoms() const
+	{
+		return _doesAtoms;
+	}
 
 	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
 	                          Vec3s &positions) = 0;
 
+	virtual glm::vec3 prewarnAtom(BondSequence *bc, const Coord::Get &get,
+	                              int index)
+	{
+		Vec3s tmp;
+		prewarnAtoms(bc, get, tmp);
+		return tmp[index];
+	}
+
+	virtual float prewarnBond(BondSequence *bc, const Coord::Get &get,
+	                              int index)
+	{
+		Floats tmp;
+		prewarnBonds(bc, get, tmp);
+		return tmp[index];
+	}
+
 	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
 	                          Floats &torsions) = 0;
+	
+private:
+	bool _doesAtoms = true;
 };
 
 #endif

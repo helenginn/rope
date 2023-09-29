@@ -20,19 +20,34 @@
 #define __vagabond__Target__
 
 #include <vagabond/utils/Vec3s.h>
+#include <vagabond/utils/svd/PCA.h>
+
+class TorsionCluster;
+class Instance;
 
 class Target
 {
 public:
-	Target(int num_axes);
+	Target(int num_axes, TorsionCluster *cluster, Instance *ref);
+	~Target();
 
 	const std::vector<Floats> &pointsForScore();
+
+	void minMaxComponents(size_t num_axes, std::vector<float> &mins, 
+	                      std::vector<float> &maxes);
+
+	void transformCoordinates(std::vector<float> &coord);
 private:
+	void transformMatrix();
+
 	int _nAxes;
 	std::vector<float> _weights;
 	
 	std::vector<Floats> _points;
 
+	Instance *_reference = nullptr;
+	TorsionCluster *_tCluster = nullptr;
+	PCA::Matrix _shift{};
 };
 
 #endif

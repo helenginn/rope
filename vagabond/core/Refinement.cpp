@@ -95,7 +95,7 @@ void Refinement::prepareInstance(Instance *mol)
 
 		std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();
 
-		int max = 1;
+		int max = 2;
 
 		/* get max top axes from cluster */
 		for (size_t i = 0; i < max && i < cluster->rows(); i++)

@@ -78,6 +78,11 @@ public:
 	
 	void clearCalculators();
 	
+	std::vector<BondCalculator *> &calculators()
+	{
+		return _calculators;
+	}
+	
 	float deviation(int idx)
 	{
 		return _point2Score[idx].deviations;

@@ -29,3 +29,31 @@ void ParamSet::expandNeighbours()
 		*this += more;
 	}
 }
+
+void ParamSet::excludeBeyond(int residue_num, int direction)
+{
+	ParamSet copy;
+	for (Parameter *p : *this)
+	{
+		float actual = p->residueId().as_num();
+		float diff = actual - residue_num;
+
+		if (diff * direction < 0) // acceptable
+		{
+			copy.insert(p);
+		}
+	}
+	
+	*this = copy;
+}
+
+std::ostream &operator<<(std::ostream &ss, const ParamSet &set) 
+{
+	ss << "Parameters: ";
+	for (Parameter *p : set)
+	{
+		ss << p->residueId() << ":" << p->desc() << ",";
+	}
+	ss << std::endl;
+	return ss;
+}

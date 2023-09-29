@@ -304,7 +304,7 @@ void StructureModification::retrieve()
 				}
 			}
 			
-			r->destroy();
+			calc->recycleResult(r);
 		}
 	}
 	

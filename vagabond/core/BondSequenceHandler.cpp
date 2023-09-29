@@ -60,6 +60,10 @@ void BondSequenceHandler::calculateThreads(int max)
 
 	_threads = max;
 	_totalSequences = max + 2;
+	if (_threads == 1)
+	{
+		_totalSequences = 1;
+	}
 }
 
 void BondSequenceHandler::sanityCheckThreads()

@@ -18,6 +18,8 @@
 
 #include "Diffraction.h"
 #include "ArbitraryMap.h"
+#include "ArbitraryMap.h"
+#include <gemmi/symmetry.hpp>
 
 Diffraction::Diffraction(int nx, int ny, int nz) 
 : Grid<VoxelDiffraction>(nx, ny, nz),
@@ -27,9 +29,10 @@ TransformedGrid<VoxelDiffraction>(nx, ny, nz)
 }
 
 Diffraction::Diffraction(ArbitraryMap *map)
-: Grid<VoxelDiffraction>(map->nx(), map->ny(), map->nz()),
-TransformedGrid<VoxelDiffraction>(map->nx(), map->ny(), map->nz())
+: Grid<VoxelDiffraction>(),
+TransformedGrid<VoxelDiffraction>(0, 0, 0)
 {
+	setDimensions(map->nx(), map->ny(), map->nz(), false);
 	bool flip = (map->status() == ArbitraryMap::Real);
 	
 	if (flip)
@@ -82,6 +85,50 @@ void Diffraction::populateReflections()
 		_list->addReflectionToGrid(this, i);
 	}
 
+	populateSymmetry();
+}
+
+void Diffraction::populateSymmetry()
+{
+	const gemmi::SpaceGroup *spg;
+	spg = gemmi::find_spacegroup_by_name(_list->spaceGroupName());
+	gemmi::GroupOps grp = spg->operations();
+
+	gemmi::ReciprocalAsu asu(spg);
+
+	auto lmb = [this, grp, asu](int h, int k, int l)
+	{
+		long idx = index(h, k, l);
+		gemmi::Op::Miller miller{h, k, l};
+
+		std::pair<gemmi::Op::Miller, int> result = asu.to_asu(miller, grp);
+		int symop = (result.second - 1) / 2;
+
+		gemmi::Op op = grp.get_op(symop);
+		glm::vec3 tr{};
+
+		for (size_t i = 0; i < 3; i++)
+		{
+			tr[i] = (float)op.tran[i] / 24.;
+		}
+
+		long asu_idx = index(result.first[0], result.first[1], result.first[2]);
+
+		float amp = element(asu_idx).amplitude();
+		float myPhase = element(asu_idx).phase();
+		myPhase *= (result.second % 2 == 0 ? -1 : 1);
+
+		/* rotation */
+		float shift = (float)h * tr[0];
+		shift += (float)k * tr[1];
+		shift += (float)l * tr[2];
+		shift = fmod(shift, 1.);
+
+		float newPhase = myPhase + shift * 360.;
+		element(idx).setAmplitudePhase(amp, newPhase);
+	};
+
+	do_op_on_centred_index(lmb);
 }
 
 size_t Diffraction::reflectionCount()
