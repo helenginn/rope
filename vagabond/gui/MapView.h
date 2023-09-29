@@ -25,14 +25,10 @@
 #include <thread>
 
 class MappingToMatrix;
-class SpecificNetwork;
-class Cartographer;
 class TorsionWarp;
 class WarpControl;
 class MatrixPlot;
 class TextButton;
-class ShowMap;
-class Network;
 class Warp;
 
 class MapView : public Display, public Responder<Warp>
@@ -75,8 +71,6 @@ private:
 	std::atomic<bool> _updatePlot{false};
 	std::atomic<bool> _refined{true};
 
-	Cartographer *_cartographer = nullptr;
-	SpecificNetwork *_specified = nullptr;
 	Instance *_reference = nullptr;
 	std::vector<Instance *> _instances;
 	std::mutex _mutex;

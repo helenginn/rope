@@ -19,7 +19,6 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
-#include <vagabond/gui/ShowMap.h>
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/svd/PCA.h>

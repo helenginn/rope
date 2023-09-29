@@ -78,8 +78,6 @@ guifiles = [
 'SetupRefinement.cpp',
 'SequenceView.cpp',
 'SequenceLine.cpp',
-'ShowMap.cpp',
-'ShowMap.h',
 'Toolkit.cpp',
 'VagWindow.cpp',
 'VaryColourOptions.cpp',

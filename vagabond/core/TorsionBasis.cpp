@@ -22,7 +22,6 @@
 #include "SimpleBasis.h"
 #include "ConcertedBasis.h"
 #include "OnPathBasis.h"
-#include "NetworkBasis.h"
 
 TorsionBasis::TorsionBasis()
 {
@@ -47,12 +46,6 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	{
 		OnPathBasis *cb = new OnPathBasis();
 		basis = cb;
-	}
-	else if (type == TorsionBasis::TypeNetwork)
-	{
-		NetworkBasis *nb = new NetworkBasis();
-		nb->setCustom(true);
-		basis = nb;
 	}
 	else if (type == TorsionBasis::TypeConcerted)
 	{
