@@ -45,6 +45,8 @@ private:
 	Model &_model;
 	Axes *_axes = nullptr;
 
+	TextButton *_space = nullptr;
+	std::string _spaceName;
 };
 
 #endif

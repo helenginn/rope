@@ -71,17 +71,21 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 
 	glm::vec3 min = map->minBound();
 	glm::vec3 max = map->maxBound();
-	float step = FLT_MAX;
+	float step = _step;
 	
-	for (size_t i = 0; i < 3; i++)
+	if (step < 0)
 	{
-		glm::vec3 test = glm::vec3({i % 3 == 0, i % 3 == 1, i % 3 == 2});
-		map->voxel2Real(test);
-		test -= min;
-		float l = glm::length(test) / 2;
-		if (step > l)
+		step = FLT_MAX;
+		for (size_t i = 0; i < 3; i++)
 		{
-			step = l;
+			glm::vec3 test = glm::vec3({i % 3 == 0, i % 3 == 1, i % 3 == 2});
+			map->voxel2Real(test);
+			test -= min;
+			float l = glm::length(test) / 2;
+			if (step > l)
+			{
+				step = l;
+			}
 		}
 	}
 
@@ -113,7 +117,7 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 	const float *ptr = &vals[0];
 	float mean = ref->mean();
 	float sigma = ref->sigma();
-	float thresh = mean + sigma;
+	float thresh = mean + sigma * _threshold;
 	std::cout << "Mean/sigma: " << mean << " " << sigma << std::endl;
 	
 	_ref = ref;

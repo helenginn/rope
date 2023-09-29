@@ -16,32 +16,47 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__WatchRefinement__
-#define __vagabond__WatchRefinement__
+#ifndef __vagabond__Remember__
+#define __vagabond__Remember__
 
-#include "Display.h"
-#include <thread>
+#include <unordered_map>
 
-class Refinement;
-
-class WatchRefinement : public Display
+template <typename In, typename Out>
+struct Remember
 {
-public:
-	WatchRefinement(Scene *prev, Refinement *refine);
-	~WatchRefinement();
+	Remember(std::function<Out(In)> &func) : _func(func) {} 
+	Remember(std::unordered_map<In, Out> &map) : _results(map) {} 
 
-	virtual void setup();
-	void start();
-
-	void setSpaceFilename(std::string name)
+	Remember(std::map<In, Out> &map)
 	{
-		_space = name;
+		for (auto it = map.begin(); it != map.end(); it++)
+		{
+			_results[it->first] = it->second;
+		}
 	}
-private:
-	Refinement *_refine = nullptr;
-	std::string _space;
 
-	std::thread *_worker = nullptr;
+	Out operator()(In in)
+	{
+		if (_results.count(in))
+		{
+			return _results.at(in);
+		}
+
+		if (_func)
+		{
+			Out out = _func(in);
+			_results[in] = out;
+			return out;
+		}
+		else
+		{
+			return Out{};
+		}
+	}
+
+	std::function<Out(In)> _func{};
+	std::unordered_map<In, Out> _results{};
 };
+
 
 #endif

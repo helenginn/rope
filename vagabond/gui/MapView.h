@@ -48,19 +48,14 @@ public:
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void sendObject(std::string, void *object);
-	
-	void supplyExisting(SpecificNetwork *spec);
 
 	void buttonPressed(std::string tag, Button *button);
 private:
-	void makeMapping();
-	void loadSpace(std::string filename);
 	void stopWorker();
 	void startWorker();
+	void startWorkerFromId(int start, int end);
 	void startPlot();
 
-	void skipJob();
-	void adjustToLeft(Renderable *r);
 	void displayDistances(PCA::Matrix &dist);
 	bool sampleFromPlot(double x, double y);
 	float plotPosition(float x, float y);
@@ -72,7 +67,9 @@ private:
 	void addButtons();
 	void cleanupPause();
 	void saveSpace(std::string filename);
+	void loadJson(const std::string &filename);
 	void askForFilename();
+	void doWindow(std::string str);
 
 	MatrixPlot *_plot = nullptr;
 	std::atomic<bool> _updatePlot{false};
@@ -94,11 +91,11 @@ private:
 	TextButton *_refine = nullptr;
 
 	Warp *_warp = nullptr;
-	TorsionWarp *_torsionWarp = nullptr;
 	WarpControl *_wc = nullptr;
 
 	std::thread *_worker = nullptr;
 	bool _updateButtons = false;
+	bool _allResidues = false;
 	std::atomic<bool> _cleanupPause{false};
 	std::vector<float> _last;
 };

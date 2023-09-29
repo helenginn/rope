@@ -39,9 +39,13 @@ void main()
 	remaining *= 0.8;
 	vec3 unit = normalize(vNormal);
 
-	if (unit.z < 0.)
+	if (track_frag == 0 && unit.z < 0.)
 	{
 		unit.z *= -1.f;
+	}
+	else if (unit.z < 0.)
+	{
+		discard;
 	}
 	remaining *= max(0., dot(unit, vec3(0., 0., 1.)));
 	result.xyz += remaining;

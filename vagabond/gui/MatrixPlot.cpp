@@ -62,7 +62,7 @@ void MatrixPlot::updateColours()
 		}
 	}
 
-	forceRender();
+	forceRender(true, false);
 }
 
 void MatrixPlot::prepareSmallVertices()

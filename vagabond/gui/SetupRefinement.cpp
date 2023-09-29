@@ -20,6 +20,8 @@
 #include <vagabond/core/Refinement.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/TextEntry.h>
 #include "SetupRefinement.h"
 #include "WatchRefinement.h"
 #include "Axes.h"
@@ -53,6 +55,21 @@ void SetupRefinement::setup()
 		d->setRight(0.8, 0.3);
 		addObject(d);
 	}
+
+	/*
+	{
+		Text *t = new Text("Protein conformational space:");
+		t->setLeft(0.2, 0.4);
+		addObject(t);
+		
+
+		TextButton *d = new TextButton("choose", this);
+		d->setReturnTag("choose_space");
+		d->setRight(0.8, 0.4);
+		_space = d;
+		addObject(d);
+	}
+	*/
 	
 	AddObject<Refinement>::setup();
 }
@@ -73,6 +90,21 @@ void SetupRefinement::buttonPressed(std::string tag, Button *button)
 		}
 	}
 	
+	if (tag == "choose_space")
+	{
+		AskForText *aft = new AskForText(this, "Enter json filename", 
+		                                 "json_filename", this);
+		setModal(aft);
+	}
+	
+	if (tag == "json_filename")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string text = te->scratch();
+		_space->setText(text);
+		_spaceName = text;
+	}
+	
 	AddObject<Refinement>::buttonPressed(tag, button);
 }
 
@@ -89,6 +121,7 @@ void SetupRefinement::prepareRefinement()
 	_obj.setup();
 	
 	WatchRefinement *wr = new WatchRefinement(this, &_obj);
+	wr->setSpaceFilename(_spaceName);
 	wr->show();
 	
 	wr->start();

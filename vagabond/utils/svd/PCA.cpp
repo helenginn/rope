@@ -300,6 +300,7 @@ void PCA::multMatrices(const Matrix &first, const Matrix &second,
 	                   std::to_string(second.cols)) + ")";
 	str += " to fit (" + (std::to_string(result.rows) + " x " + 
 	                      std::to_string(result.cols)) + ")";
+	
 	if (first.cols != second.rows)
 	{
 		throw std::runtime_error("Trying to multiply incompatible matrices:" 

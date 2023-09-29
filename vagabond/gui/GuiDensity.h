@@ -59,6 +59,16 @@ public:
 	{
 		_tracking = track ? 1 : 0;
 	}
+	
+	void setStep(float step)
+	{
+		_step = step;
+	}
+	
+	void setThreshold(float threshold)
+	{
+		_threshold = threshold;
+	}
 
 	void fromMap(AtomMap *map);
 	virtual void extraUniforms();
@@ -68,7 +78,8 @@ private:
 	OriginGrid<fftwf_complex> *_ref = nullptr;
 	OriginGrid<fftwf_complex> *_map = nullptr;
 
-	float _step = 0.5;
+	float _threshold = 1;
+	float _step = -1;
 	int _slice = 0;
 	int _tracking = 1;
 };

@@ -23,10 +23,6 @@
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/gui/MatrixPlot.h>
 #include <vagabond/utils/svd/PCA.h>
-#include <vagabond/utils/FileReader.h>
-#include <vagabond/core/MappingToMatrix.h>
-#include <vagabond/core/SpecificNetwork.h>
-#include <vagabond/core/Cartographer.h>
 #include <vagabond/core/PolymerEntity.h>
 #include <vagabond/core/CompareDistances.h>
 #include <vagabond/core/Warp.h>
@@ -36,6 +32,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/Menu.h>
 
 #include "MapView.h"
 
@@ -67,44 +64,49 @@ void MapView::setup()
 	_reference->currentAtoms()->recalculate();
 	loadAtoms(_reference->currentAtoms());
 	
-	const int dims = 2;
-	const int coeffs = 2;
-	
-	_warp = new Warp(_reference, dims);
+	_warp = Warp::warpFromFile(_reference, "test.json");
 	_warp->setResponder(this);
-	_warp->setup();
-	
-	_torsionWarp = new TorsionWarp(_warp->parameterList(), dims, coeffs);
-	
-	std::function<Floats(const Coord::Get &)> func;
-	func = [this](const Coord::Get &get)
-	{
-		return _torsionWarp->torsions(get);
-	};
-	
-	_warp->setBondMotions(func);
-	
+
 	AtomWarp aw(_instances, _reference);
-	std::function<Vec3s(const Coord::Get &)> motions;
-	motions = aw.mappedMotions(2, _warp->atomList());
+	std::function<glm::vec3(const Coord::Get &, int num)> motions;
+	motions = aw.mappedMotions(_warp->numAxes(), _warp->atomList());
 	_warp->setAtomMotions(motions);
 
 	std::vector<Parameter *> ordered;
 	ordered = aw.orderedParameters(_warp->parameterList(), 0);
+	
+	std::function<float(Parameter *)> magnitudes;
+	magnitudes = aw.parameterMagnitudes(_warp->parameterList(), _warp->numAxes());
 
-	_wc = new WarpControl(_warp, _torsionWarp);
+	TorsionCluster *cluster = aw.cluster();
+	_wc = new WarpControl(_warp, _warp->torsionWarp(), cluster);
 	_wc->setParameters(ordered);
+	_wc->setParamWeights(magnitudes);
 
 	VisualPreferences *vp = &_reference->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp);
 	
 	addButtons();
 
-
 	TextButton *command = new TextButton("Save space", this);
 	command->setCentre(0.9, 0.1);
 	command->setReturnTag("save_space");
 	addObject(command);
+}
+
+void MapView::loadJson(const std::string &filename)
+{
+	if (!file_exists(filename))
+	{
+		return;
+	}
+	json data;
+	std::ifstream f;
+	f.open(filename);
+	f >> data;
+	f.close();
+	
+	_warp->torsionWarp()->coefficientsFromJson(data);
 }
 
 void MapView::addButtons()
@@ -145,21 +147,23 @@ void MapView::startPlot()
 
 }
 
+void MapView::startWorkerFromId(int start, int end)
+{
+	_refined = false;
+	_worker = new std::thread(WarpControl::start_from_residue_id,
+	                          _wc, start, end);
+}
+
 void MapView::startWorker()
 {
-	_worker = new std::thread(WarpControl::start_run, _wc);
-
+	_refined = false;
+	_worker = new std::thread(WarpControl::start_run, _wc, _allResidues);
 }
 
 void MapView::stopWorker()
 {
 	_wc->finish();
 	_worker->detach();
-}
-
-void MapView::skipJob()
-{
-	
 }
 
 void MapView::cleanupPause()
@@ -198,6 +202,9 @@ void MapView::showWarpSpace()
 
 void MapView::plotIndices()
 {
+	_warp->clearFilters();
+	_warp->clearComparison();
+
 	for (int j = 0; j < _divisions; j++)
 	{
 		for (int i = 0; i < _divisions; i++)
@@ -215,15 +222,21 @@ void MapView::plotIndices()
 
 float MapView::plotPosition(float x, float y)
 {
+	if (!_refined)
+	{
+		return 0;
+	}
+
 	_last = {x, y};
 	std::vector<float> vals = {2*x - 1, 2*y - 1};
-	_warp->clearFilters();
-	_warp->clearComparison();
+	_wc->transformCoordinates(vals);
+
 	int num = _warp->submitJob(true, vals);
 	_warp->retrieve();
 	float score = _warp->deviation(num);
 	std::string str = std::to_string(score);
 	setInformation(str);
+	_warp->clearTickets();
 	
 	std::vector<int> voxs;
 	voxs.push_back(x * _divisions);
@@ -260,6 +273,8 @@ bool MapView::sampleFromPlot(double x, double y)
 		return false;
 	}
 
+	_warp->clearFilters();
+	_warp->clearComparison();
 	plotPosition(v.x, v.y);
 	return true;
 }
@@ -292,7 +307,7 @@ void MapView::saveSpace(std::string filename)
 		return;
 	}
 
-	json j{}; // = thing;
+	json j = *_warp->torsionWarp();
 
 	std::ofstream file;
 	file.open(filename);
@@ -356,14 +371,56 @@ void MapView::buttonPressed(std::string tag, Button *button)
 		stopWorker();
 		cleanupPause();
 	}
-
+	
 	if (tag == "refine")
 	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, this, "option");
+		m->addOption("sliding window", "sliding_window");
+		m->addOption("all", "all");
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+
+	if (tag == "option_all")
+	{
+		_allResidues = true;
 		startWorker();
 		makePausable();
 	}
+	if (tag == "option_sliding_window")
+	{
+		_allResidues = false;
+		AskForText *aft = new AskForText(this, "Bond window (x-y)?", 
+		                                 "window", this);
+		setModal(aft);
+	}
+		
+	if (tag == "window")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		doWindow(te->scratch());
+	}
 
 	Display::buttonPressed(tag, button);
+}
+
+void MapView::doWindow(std::string str)
+{
+	int begin = 0; int end = 26;
+
+	if (str.length() > 0)
+	{
+		begin = atoi(str.c_str());
+		int idx = str.find("-") + 1;
+		char *ptr = &str[idx];
+		end = atoi(ptr);
+	}
+
+	std::cout << begin << " to " << end << std::endl;
+	startWorkerFromId(begin, end);
+	makePausable();
+
 }
 
 void MapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)

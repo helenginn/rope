@@ -169,7 +169,8 @@ void insertBs(Entity *entity, Instance *instance, double *start,
 	
 	for (size_t i = 0; i < entity->sequence()->size(); i++)
 	{
-		start[i] /= total_b;
+//		start[i] /= total_b;
+		start[i] /= 60;
 		start[i] /= 2;
 	}
 
