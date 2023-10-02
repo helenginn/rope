@@ -39,10 +39,13 @@
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst, 1, 1)
 {
+	_torsionType = TorsionBasis::TypeConcerted;
 	_dims = 1;
 	_torsionLists.push_back(angles);
 	setPingPong(true);
 	setOwnsAtoms(false);
+	setDoesBonds(false);
+	setDoesAtoms(false);
 }
 
 AxisExplorer::~AxisExplorer()
@@ -87,6 +90,7 @@ void AxisExplorer::submitJob(float prop)
 		job.pos_sampler = this;
 		job.custom.allocate_vectors(1, _dims, _num);
 		job.custom.vecs[0].mean[0] = prop;
+		job.parameters = {prop};
 		job.requests = static_cast<JobType>(JobPositionVector); 
 		calc->submitJob(job);
 	}
@@ -105,7 +109,8 @@ void AxisExplorer::submitJob(float prop)
 
 		if (r->requests & JobPositionVector)
 		{
-			r->transplantPositions(_displayTargets);
+			std::cout << r->apl[0].wp.ave << std::endl;
+			r->transplantPositions(doesAtoms());
 			sum += r->score;
 		}
 	}
@@ -134,7 +139,7 @@ void AxisExplorer::adjustTorsions()
 	Entity *entity = _instance->entity();
 	Torsion2Atomic t2a(entity, _cluster);
 	_movement = t2a.convertAnglesSimple(_instance, _torsionLists[0]);
-	
+	setDoesAtoms(true);
 }
 
 void AxisExplorer::askForAtomMotions()
@@ -150,7 +155,6 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "yes_adjust")
 	{
-		_displayTargets = true;
 		adjustTorsions();
 	}
 	else
@@ -272,11 +276,6 @@ int findAtom(RAMovement &movement, Atom *search, Instance *instance)
 bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
                                 Vec3s &positions)
 {
-	if (_movement.size() == 0)
-	{
-		return false;
-	}
-
 	const std::vector<AtomBlock> &blocks = seq->blocks();
 	positions.resize(blocks.size());
 

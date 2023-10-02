@@ -26,9 +26,19 @@ class PositionSampler
 public:
 	virtual ~PositionSampler() {};
 	
+	void setDoesBonds(bool bonds)
+	{
+		_doesBonds = bonds;
+	}
+	
+	const bool &doesBonds() const
+	{
+		return _doesBonds;
+	}
+	
 	void setDoesAtoms(bool atoms)
 	{
-		_doesAtoms = true;
+		_doesAtoms = atoms;
 	}
 	
 	const bool &doesAtoms() const
@@ -60,6 +70,7 @@ public:
 	
 private:
 	bool _doesAtoms = true;
+	bool _doesBonds = true;
 };
 
 #endif

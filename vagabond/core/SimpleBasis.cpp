@@ -42,7 +42,8 @@ SimpleBasis::valueForParameter(BondSequence *seq, int tidx)
 	{
 		return [angle, tidx](const Coord::Get &coord)
 		{
-			return angle + coord(tidx);
+			float answer = angle + coord(tidx);
+			return answer;
 		};
 	}
 }

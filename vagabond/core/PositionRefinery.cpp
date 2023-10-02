@@ -329,6 +329,7 @@ int PositionRefinery::sendJob(const std::vector<float> &trial, bool absorb)
 	job.absorb = absorb;
 	job.requests = JobCalculateDeviations;
 	job.custom.allocate_vectors(1, trial.size(), 0);
+	job.parameters = trial;
 
 	if (_ncalls % 200 == 0 || absorb)
 	{

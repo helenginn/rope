@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "engine/JobManager.h"
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
@@ -169,7 +170,8 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get)
 	{
 		return _bondTorsions[torsion_idx];
 	}
-	else if (_bondTorsions.size() == 0 && posSampler())
+	else if (_bondTorsions.size() == 0 && 
+	         posSampler() && posSampler()->doesBonds())
 	{
 		return posSampler()->prewarnBond(this, get, torsion_idx);
 	}
@@ -178,7 +180,9 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get)
 
 	if (func)
 	{
-		return func(get);
+		Coord::Get shrunk = Coord::convertedGet(get, _convertIndex);
+		float torsion = func(shrunk);
+		return torsion;
 	}
 
 	return 0;
@@ -189,7 +193,8 @@ float BondSequence::fetchTorsionForBlock(int block_idx, const Coord::Get &get)
 	AtomBlock &b = _blocks[block_idx];
 	int torsion_idx = b.torsion_idx;
 	
-	return fetchTorsion(torsion_idx, get);
+	float torsion = fetchTorsion(torsion_idx, get);
+	return torsion;
 }
 
 // ensures that the position sampler can pre-calculate all the necessary atom
@@ -229,7 +234,7 @@ void BondSequence::fetchAtomTarget(int idx, const Coord::Get &get)
 	{
 		_blocks[idx].target = _atomPositions[true_idx];
 	}
-	else
+	else if (posSampler() && posSampler()->doesAtoms())
 	{
 		_blocks[idx].target = ps->prewarnAtom(this, get, true_idx);
 	}
@@ -397,12 +402,23 @@ void BondSequence::superpose()
 	}
 }
 
-void BondSequence::calculate()
+void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
 {
 	_customIdx = 0;
 	
 	int sampleNum = 0;
-	Coord::Get get = acquireCustomVector(sampleNum);
+
+	_nCoord = job()->parameters.size();
+	Coord::Get get = {};
+
+	if (coordForIdx)
+	{
+		get = coordForIdx(sampleNum);
+	}
+	else
+	{
+		get = acquireCustomVector(sampleNum);
+	}
 	
 	int start = 0; int end = _blocks.size();
 	if (_skipSections && !_fullRecalc)
@@ -417,7 +433,14 @@ void BondSequence::calculate()
 		
 		if (i % _singleSequence == 0)
 		{
-			get = acquireCustomVector(sampleNum);
+			if (coordForIdx)
+			{
+				get = coordForIdx(sampleNum);
+			}
+			else
+			{
+				get = acquireCustomVector(sampleNum);
+			}
 			sampleNum++;
 		}
 	}
@@ -428,7 +451,8 @@ void BondSequence::calculate()
 
 	if (job()->absorb)
 	{
-		_torsionBasis->absorbVector(get);
+		Coord::Get shrunk = Coord::convertedGet(get, _convertIndex);
+		_torsionBasis->absorbVector(shrunk);
 	}
 
 	signal(SequencePositionsReady);
@@ -556,11 +580,6 @@ std::vector<BondSequence::ElePos> BondSequence::extractForMap()
 
 void BondSequence::cleanUpToIdle()
 {
-	for (AtomBlock &b : _blocks)
-	{
-//		b.clearMutable();
-	}
-
 	setJob(nullptr);
 	signal(SequenceIdle);
 }

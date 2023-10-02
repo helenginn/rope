@@ -64,6 +64,13 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	calc.setInSequence(true);
 	calc.setPipelineType(_pType);
 	calc.setMaxSimultaneousThreads(_threads);
+	
+	rope::GetListFromParameters transform = [this](const std::vector<float> &all)
+	{
+		return _sampler.coordsFromParams(all);
+	};
+
+	calc.manager().setDefaultCoordTransform(transform);
 	calc.setSampler(&_sampler);
 
 	calc.setTorsionBasisType(_torsionType);

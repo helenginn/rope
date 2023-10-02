@@ -20,6 +20,7 @@
 #include <math.h>
 #include "Sampler.h"
 #include <vagabond/utils/Hypersphere.h>
+#include <vagabond/utils/Remember.h>
 #include <cmath>
 #include <iostream>
 
@@ -253,4 +254,57 @@ void Sampler::addToVec(float *&vec, float *tensor, int sample_num)
 	{
 		vec[i] += result[i];
 	}
+}
+
+// this is a function type rope::GetListFromParameters
+rope::IntToCoordGet Sampler::coordsFromParams(const std::vector<float> &all)
+{
+	PCA::Matrix tensor;
+	setupMatrix(&tensor, _dims, _dims);
+	std::vector<float> mean(_dims, 0);
+
+	int n = 0; // tracking index of "all"
+
+	for (size_t i = 0; i < _dims; i++)
+	{
+		mean[i] = all[n];
+		n++;
+	}
+
+	for (size_t i = 0; i < _dims; i++)
+	{
+		for (size_t j = i; j < _dims; j++)
+		{
+			tensor[i][j] = all[n];
+			tensor[j][i] = all[n];
+			n++;
+		}
+	}
+	
+	// this index represents the point in the sample
+	rope::IntToCoordGet make_coords = 
+	[mean, tensor, this](const int &idx) -> Coord::Get
+	{
+		const double *start_point = &_points[idx][0];
+		const int dims = _dims;
+
+		// this index represents the coefficient of the desired coordinate
+		Coord::Get get = [mean, tensor, start_point](const int &idx)
+		{
+			float f = 0;
+			
+			for (size_t i = 0; i < mean.size(); i++)
+			{
+				f += start_point[i] * tensor[idx][i];
+			}
+			
+			f += mean[idx];
+			
+			return f;
+		};
+
+		return Remember<int, float>(get);
+	};
+	
+	return make_coords;
 }

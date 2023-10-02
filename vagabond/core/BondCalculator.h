@@ -25,6 +25,7 @@
 #include <vector>
 #include <queue>
 #include "engine/Handler.h"
+#include "engine/JobManager.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"
@@ -189,6 +190,11 @@ public:
 	{
 		_props = props;
 	}
+	
+	JobManager &manager()
+	{
+		return _manager;
+	}
 
 	Job *acquireJob();
 	Result *emptyResult();
@@ -235,6 +241,7 @@ private:
 	FFProperties _props{};
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
+	JobManager _manager;
 
 	void setupCorrelationHandler();
 	

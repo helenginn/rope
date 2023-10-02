@@ -130,11 +130,10 @@ struct CustomInfo
 	}
 };
 
-class MiniJob;
-
 struct Job
 {
 	CustomInfo custom{};
+	std::vector<float> parameters{};
 
 	float fraction = 0;
 	int ticket = -1;

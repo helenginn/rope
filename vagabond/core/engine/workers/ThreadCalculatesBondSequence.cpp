@@ -17,8 +17,10 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "engine/workers/ThreadCalculatesBondSequence.h"
+#include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
+#include "engine/JobManager.h"
 #include <iostream>
 
 ThreadCalculatesBondSequence::ThreadCalculatesBondSequence(BondSequenceHandler *h)
@@ -40,8 +42,15 @@ void ThreadCalculatesBondSequence::start()
 		}
 		
 		timeStart();
+		
+		BondCalculator *calculator = seq->calculator();
+		JobManager &manager = calculator->manager();
 
-		seq->calculate();
+		Job *job = seq->job();
+
+		rope::GetListFromParameters transform = manager.defaultCoordTransform();
+		rope::IntToCoordGet paramToCoords = transform(job->parameters);
+		seq->calculate(paramToCoords);
 		timeEnd();
 	}
 	while (!_finish);

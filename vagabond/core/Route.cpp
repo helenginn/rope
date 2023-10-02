@@ -92,6 +92,7 @@ void Route::submitJob(int idx, bool show, bool forces)
 		int dims = _calc2Destination[calc].size();
 		job.custom.allocate_vectors(1, dims, _num);
 		job.fraction = idx / (float)(pointCount() - 1);
+		job.parameters.resize(dims);
 
 		for (size_t i = 0; i < dims; i++)
 		{
@@ -103,7 +104,7 @@ void Route::submitJob(int idx, bool show, bool forces)
 			{
 				value = _points[idx][calc_idx];
 			}
-			job.custom.vecs[0].mean[i] = value;
+			job.parameters[i] = value;
 		}
 
 		job.requests = static_cast<JobType>(JobPositionVector |
@@ -157,6 +158,7 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 	}
 
 	calc->setSampler(nullptr);
+	calc->manager().setDefaultCoordTransform(JobManager::identityTransform());
 }
 
 const Grapher &Route::grapher() const

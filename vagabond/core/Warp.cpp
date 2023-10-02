@@ -122,7 +122,7 @@ glm::vec3 Warp::prewarnAtom(BondSequence *bc, const Coord::Get &get, int index)
 bool Warp::prewarnAtoms(BondSequence *bc, const Coord::Get &get, Vec3s &ps)
 {
 	ps.clear();
-	return false;
+	return true;
 }
 
 

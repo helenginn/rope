@@ -31,6 +31,7 @@
 #include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
+#include "engine/JobManager.h"
 #include <vagabond/utils/Vec3s.h>
 #include "BondTorsion.h"
 #include "AtomBlock.h"
@@ -101,6 +102,11 @@ public:
 		_sampler = sampler;
 	}
 	
+	Sampler *const &sampler() 
+	{
+		return _sampler;
+	}
+	
 	const Grapher &grapher() const
 	{
 		return _grapher;
@@ -149,7 +155,7 @@ public:
 		_state = SequenceInPreparation;
 	}
 
-	void calculate();
+	void calculate(rope::IntToCoordGet coordForIdx = {});
 	void superpose();
 	const AtomPosMap &extractPositions();
 	void extractVector(AtomPosList &results);
@@ -216,7 +222,7 @@ private:
 	
 	bool positionsAvailable()
 	{
-		return (posSampler() && _atomPositions.size());
+		return (posSampler() && _atomPositions.size() && _acceptablePositions);
 	}
 
 	Grapher _grapher;
@@ -261,6 +267,7 @@ private:
 	
 	Vec3s _atomPositions;
 	Floats _bondTorsions;
+	bool _acceptablePositions = false;
 	
 	Index::Convert _convertIndex = Index::identity();
 	int _activeTorsions = 0;

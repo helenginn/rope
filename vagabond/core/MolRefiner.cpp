@@ -110,7 +110,8 @@ int MolRefiner::sendJob(const std::vector<float> &all)
 	triangle_to_svd(triangle);
 	std::vector<float> tensor = findTensorAxes(triangle);
 
-	submitJob(axis, tensor, true);
+//	submitJob(axis, tensor, true);
+	submitJob(all, tensor, true);
 	return getLastTicket();
 }
 
@@ -121,7 +122,7 @@ float MolRefiner::getResult(int *job_id)
 	return res;
 }
 
-void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
+void MolRefiner::submitJob(std::vector<float> all, std::vector<float> tensor,
                            bool show)
 {
 	std::vector<int> group;
@@ -131,6 +132,8 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 	{
 		Job job{};
 		job.pos_sampler = _warp;
+		job.parameters = all;
+		/*
 		job.custom.allocate_vectors(1, _dims, _num, true);
 
 		for (size_t i = 0; i < _dims && i < mean.size(); i++)
@@ -142,6 +145,7 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 		{
 			job.custom.vecs[0].tensor[i] = tensor[i];
 		}
+		*/
 
 		job.requests = static_cast<JobType>(JobExtractPositions |
 		                                    JobMapCorrelation);
@@ -158,7 +162,6 @@ void MolRefiner::submitJob(std::vector<float> mean, std::vector<float> tensor,
 		int ticket = calc->submitJob(job);
 		group.push_back(ticket);
 		_ticket2Group[ticket] = grpTicket;
-		std::cout << " - ticket = " << grpTicket << std::endl;
 	}
 }
 
@@ -187,8 +190,6 @@ void MolRefiner::addToMap(ArbitraryMap *map)
 		{
 			AtomMap &atoms = *r->map;
 			ArbitraryMap *bit = atoms();
-//			std::cout << atoms.minBound() << " to " << atoms.maxBound() << std::endl;
-//			std::cout << bit->minBound() << " to " << bit->maxBound() << std::endl;
 			*map += *bit;
 			delete bit;
 		}
@@ -230,8 +231,6 @@ void MolRefiner::retrieveJobs()
 			{
 				float cc = r->correlation;
 				setScoreForTicket(g, -cc);
-				std::cout << "ticket " << g << " = " << cc << std::endl;
-				std::cout << std::endl;
 			}
 			
 			r->destroy();

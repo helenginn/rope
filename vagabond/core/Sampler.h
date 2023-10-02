@@ -21,6 +21,7 @@
 
 #include <vector>
 #include "../utils/svd/PCA.h"
+#include "engine/JobManager.h"
 
 class Sampler
 {
@@ -42,6 +43,8 @@ public:
 	{
 		return _dims;
 	}
+
+	rope::IntToCoordGet coordsFromParams(const std::vector<float> &all);
 
 	const size_t pointCount() const
 	{

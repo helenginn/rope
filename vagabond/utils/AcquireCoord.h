@@ -31,21 +31,20 @@ namespace Coord
 
 	using NeedsUpdate = std::function<bool(const Coord::Get &)>;
 	
-	template <typename Type>
-	Get fromConversionAndVector(const std::vector<Type> &all,
-	                            std::function<int(const int &idx)> &convert)
+	inline Get convertedGet(const Get &get, 
+	                        std::function<int(const int &idx)> &convert)
 	{
-		Get get = [all, convert](int idx)
+		Get converted_get = [get, convert](int idx) -> float
 		{
 			if (idx < 0)
 			{
-				return 0;
+				return 0.f;
 			}
 
-			return all[convert(idx)];
+			return get(convert(idx));
 		};
 
-		return get;
+		return converted_get;
 
 	}
 
