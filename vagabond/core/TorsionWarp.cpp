@@ -27,10 +27,7 @@ TorsionWarp::TorsionWarp(const std::vector<Parameter *> &parameterList,
 	_nAxes = num_axes;
 	_nCoeff = num_coeff;
 	
-	for (size_t i = 0; i < _nCoeff; i++)
-	{
-		_coefficients.push_back(TDCoefficient(_parameters.size(), _nAxes, i+1));
-	}
+	_coefficients.push_back(TDCoefficient(_parameters.size(), _nAxes, _nCoeff));
 }
 
 TorsionWarp::~TorsionWarp()
@@ -71,14 +68,19 @@ void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
 	{
 		for (const int &idx : indices)
 		{
-			for (TDCoefficient &coefficient : _coefficients)
+			TDCoefficient &coefficient = _coefficients[0];
 			{
-				for (PCA::Matrix &matrix : coefficient._dim2Coeffs)
+				PCA::Matrix &matrix = coefficient._nets[idx].first;
+				for (int c = 0; c < matrix.cols * matrix.rows; c++)
 				{
-					for (int c = 0; c < matrix.cols && c < max_dim; c++)
-					{
-						values.push_back(matrix[idx][c]);
-					}
+					values.push_back(matrix.vals[c]);
+				}
+			}
+			{
+				PCA::Matrix &matrix = coefficient._nets[idx].second;
+				for (int c = 0; c < matrix.cols * matrix.rows; c++)
+				{
+					values.push_back(matrix.vals[c]);
 				}
 			}
 		}
@@ -92,15 +94,22 @@ void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
 		int n = 0;
 		for (const int &idx : indices)
 		{
-			for (TDCoefficient &coefficient : _coefficients)
+			TDCoefficient &coefficient = _coefficients[0];
 			{
-				for (PCA::Matrix &matrix : coefficient._dim2Coeffs)
+				PCA::Matrix &matrix = coefficient._nets[idx].first;
+				for (int c = 0; c < matrix.cols * matrix.rows; c++)
 				{
-					for (int c = 0; c < matrix.cols && c < max_dim; c++)
-					{
-						matrix[idx][c] = values[n] + start[n];
-						n++;
-					}
+					matrix.vals[c] = values[n] + start[n];
+					n++;
+				}
+			}
+
+			{
+				PCA::Matrix &matrix = coefficient._nets[idx].second;
+				for (int c = 0; c < matrix.cols * matrix.rows; c++)
+				{
+					matrix.vals[c] = values[n] + start[n];
+					n++;
 				}
 			}
 		}
@@ -109,73 +118,31 @@ void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
 
 float TorsionWarp::torsion(const Coord::Get &get, int num)
 {
-	float torsion = 0;
-	
-	for (TDCoefficient &coeff : _coefficients)
+	TDCoefficient &coefficient = _coefficients[0];
+	PCA::Matrix &first = coefficient._nets[num].first;
+
+	auto convert = [](float val) -> float
 	{
-		for (size_t j = 0; j < _nAxes; j++)
+		return 1 / (1 + exp(-val)) - 0.5;
+	};
+
+	float torsion = 0;
+	PCA::Matrix &second = coefficient._nets[num].second;
+
+	for (size_t k = 0; k < coefficient._order; k++)
+	{
+		float result = 0;
+		for (size_t j = 0; j < coefficient._nDims; j++)
 		{
-			torsion += coeff.torsionContribution(j, get, num);
+			float get_axis = j == coefficient._nDims ? 1 : get(j);
+			result += get_axis * first[k][j];
 		}
+
+		result = convert(result);
+		torsion += second[0][k] * result;
 	}
 	
 	return torsion;
-}
-
-float 
-TorsionWarp::TDCoefficient::torsionContribution(int n, const Coord::Get &get, 
-                                                 int num)
-{
-	float result = 0;
-	
-	PCA::Matrix &coeffs = _dim2Coeffs[n];
-	for (size_t i = 0; i < coeffs.cols; i++)
-	{
-		result += coeffs[num][i] * get(i);
-	}
-	
-	float mult = 1;
-	float get_axis = get(n);
-	for (size_t i = 0; i <= _order; i++)
-	{
-		mult *= get_axis;
-	}
-
-	result *= mult;
-	
-	return result;
-}
-
-Floats 
-TorsionWarp::TDCoefficient::torsionContributions(int n, const Coord::Get &get, 
-                                                 int num)
-{
-	Floats result;
-	result.resize(num < 0 ? _nTorsions : 1);
-	
-	PCA::Matrix &coeffs = _dim2Coeffs[n];
-	if (num < 0)
-	{
-		multMatrix(coeffs, get, &result[0]);
-	}
-	else
-	{
-		result[0] = 0;
-		for (size_t i = 0; i < coeffs.cols; i++)
-		{
-			result[0] += coeffs[num][i] * get(i);
-		}
-	}
-	
-	float mult = 1;
-	for (size_t i = 0; i <= _order; i++)
-	{
-		mult *= get(n);
-	}
-
-	result *= mult;
-	
-	return result;
 }
 
 void TorsionWarp::TDCoefficient::makeRandom()
@@ -186,9 +153,16 @@ void TorsionWarp::TDCoefficient::makeRandom()
 		return r;
 	};
 
-	for (size_t i = 0; i < _nDims; i++)
+	for (size_t i = 0; i < _nTorsions; i++)
 	{
-		do_op(_dim2Coeffs[i], randomise);
+		do_op(_nets[i].first, randomise);
+
+		for (size_t o = 0; o < _order; o++)
+		{
+			_nets[i].first[o][_nDims] = 0;
+		}
+
+		do_op(_nets[i].second, randomise);
 	}
 }
 

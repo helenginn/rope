@@ -56,7 +56,7 @@ Target::Target(int num_axes, TorsionCluster *cluster, Instance *ref)
 {
 	_reference = ref;
 	_nAxes = num_axes;
-	_weights = std::vector<float>(_nAxes, 1.0);
+	_weights = std::vector<float>(_nAxes, 0.5);
 	_tCluster = cluster;
 	
 	transformMatrix();
@@ -78,7 +78,7 @@ void Target::transformMatrix()
 	for (size_t i = 0; i < _nAxes; i++)
 	{
 		// translation down final column to centre
-		_shift[i][i] = (maxes[i] - mins[i]) / 8;
+		_shift[i][i] = (maxes[i] - mins[i]) / 16;
 	}
 	
 	printMatrix(&_shift);
@@ -88,7 +88,7 @@ const std::vector<Floats> &Target::pointsForScore()
 {
 	_points.clear();
 	
-	Hypersphere sphere(_nAxes, 50);
+	Hypersphere sphere(_nAxes, 200);
 	sphere.prepareFibonacci();
 
 	for (float j = 0; j < sphere.count(); j++)
@@ -102,6 +102,7 @@ const std::vector<Floats> &Target::pointsForScore()
 		
 		transformCoordinates(p);
 		Floats fs(p);
+		fs *= 1.0;
 		_points.push_back(fs);
 	}
 	

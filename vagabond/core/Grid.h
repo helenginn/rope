@@ -221,6 +221,8 @@ public:
 	{
 		return _eleSize;
 	}
+
+	virtual void multiply(float scale) {};
 protected:
 	void adjustNs();
 	virtual void prepareData();
@@ -255,7 +257,6 @@ protected:
 	}
 
 	T *_data = nullptr;
-	virtual void multiply(float scale) {};
 private:
 
 	int _nx = 0;

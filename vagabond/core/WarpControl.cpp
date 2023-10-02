@@ -129,10 +129,10 @@ bool WarpControl::refineBetween(int start, int end)
 
 	_warp->resetComparison();
 
-	int max = (end - start) / 5;
+	int max = (end - start) / 4;
 	if (max < 8) max = 8;
 	int min = max / 3; if (min < 3) min = 3;
-	_warp->compare()->setMinMaxSeparation(max / 3, max);
+	_warp->compare()->setMinMaxSeparation(3, max);
 
 	float begin = _score();
 	if (begin <= 1e-6)
@@ -147,10 +147,12 @@ bool WarpControl::refineBetween(int start, int end)
 		_simplex = nullptr;
 	}
 
-	float ave_weight = average_weight(params, _weights) * 3;
-
+	float ave_weight = average_weight(params, _weights) * 2;
+	ave_weight *= 30 / (float)params.size();
+	if (ave_weight < 0.2) ave_weight = 0.2;
+	
 	_simplex = new SimplexEngine(this);
-	_simplex->setMaxRuns((end - start) * 6);
+	_simplex->setMaxRuns((end - start) * 10);
 	_simplex->setStepSize(ave_weight);
 	_simplex->start();
 
@@ -169,27 +171,35 @@ void WarpControl::otherRun(int start, int end)
 
 	int nb = _calculator->sequence()->blockCount();
 	int depth = end - start;
-	int step = depth / 10;
+	int step = depth / 5;
+	if (start > 0) step = 4;
 	if (step <= 0) step = 1;
 
 	_calculator->finish();
+	int begin = start;
+	int finish = start + depth;
+	bool unfinished = true;
 
-	for (size_t i = start; i < nb - depth; i += step)
+	while (unfinished)
 	{
-		int begin = (i > 0 ? i : 0);
-		if (begin > nb) { return; }
-		int finish = begin + depth < nb ? begin + depth : nb - 1;
-		if (finish < 0) { return; }
-
 		std::cout << "Refining from " << begin << " to " << finish << std::endl;
+		int runs = (begin == 0 || finish == nb - 1 ? 15 : 5);
+		if (depth <= 50)
+		{
+			runs *= 2;
+		}
 
-		for (int j = 0; j < 16; j++)
+		for (int j = 0; j < runs; j++)
 		{
 			bool success = refineBetween(begin, finish);
 			
-			if (!success)
+			if (!success && finish < nb - 1)
 			{
-				i++; begin++; finish++; j--;
+				begin += (start == 0 ? 1 : -1);
+			}
+			else if (!success && finish >= nb - 1)
+			{
+				break;
 			}
 			resetTickets();
 
@@ -203,6 +213,15 @@ void WarpControl::otherRun(int start, int end)
 		{
 			break;
 		}
+
+		begin += (start == 0 ? depth : -step);
+		finish += (start == 0 ? depth : +step);
+		begin -= 2;
+		if (begin < 0) begin = 0;
+		if (begin > nb) { return; }
+		if (finish < 0) { return; }
+		if (finish > nb) finish = nb;
+
 	}
 	
 	_calculator->setMinMaxDepth(0, INT_MAX);
@@ -308,7 +327,7 @@ void WarpControl::compensatoryMotions(ParamSet &set, bool expand,
 	bool success = false;
 	float begin = _score();
 
-	float ave_weight = average_weight(set, _weights) * 3;
+	float ave_weight = average_weight(set, _weights) / 10;
 	success = repeat([this, set, ave_weight]()
 	                 {
 	                	 return refineParameters(set, ave_weight);
@@ -322,7 +341,7 @@ void WarpControl::compensatoryMotions(ParamSet &set, bool expand,
 	for (Parameter *r : set)
 	{
 		ParamSet single(r);
-		refineParameters(single, fabs(_weights(r)));
+		refineParameters(single, fabs(_weights(r)) / 10);
 
 	}
 
@@ -524,7 +543,7 @@ void WarpControl::runFromResidueId(int start, int end)
 	while (diff < 1000)
 	{
 		otherRun(start, end);
-		diff *= 2;
+		diff += 20;
 		start = 0;
 		end = diff;
 

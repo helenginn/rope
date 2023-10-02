@@ -271,7 +271,7 @@ void loadJson(const std::string &filename, TorsionWarp *tw)
 Warp *Warp::warpFromFile(Instance *reference, std::string file)
 {
 	const int target_dims = 2;
-	const int coeffs = 3;
+	const int coeffs = 1;
 
 	Warp *warp = new Warp(reference, target_dims);
 	warp->setup();

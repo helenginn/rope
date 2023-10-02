@@ -59,34 +59,42 @@ private:
 		{
 
 		}
+		
+		struct Net
+		{
+			PCA::Matrix first{};
+			PCA::Matrix second{};
+		};
 
 		TDCoefficient(int nTorsions, int nDims, int order)
 		{
-			for (size_t i = 0; i < nDims; i++)
+			for (size_t i = 0; i < nTorsions; i++)
 			{
-				PCA::Matrix next;
-				setupMatrix(&next, nTorsions, nDims);
-				_dim2Coeffs.push_back(next);
+				Net nn{};
+				setupMatrix(&nn.first, order, nDims + 1);
+				setupMatrix(&nn.second, 1, order);
+				_nets.push_back(nn);
 			}
+
 			_nDims = nDims;
 			_nTorsions = nTorsions;
 			_order = order;
+			
+			makeRandom();
 		}
 		
 		void delete_matrix()
 		{
-			for (size_t i = 0; i < _nDims; i++)
+			for (size_t i = 0; i < _nTorsions; i++)
 			{
-				freeMatrix(&_dim2Coeffs[i]);
+				freeMatrix(&_nets[i].first);
+				freeMatrix(&_nets[i].second);
 			}
 		}
 		
 		void makeRandom();
-		
-		Floats torsionContributions(int n, const Coord::Get &get, int num);
-		float torsionContribution(int n, const Coord::Get &get, int num);
 
-		std::vector<PCA::Matrix> _dim2Coeffs;
+		std::vector<Net> _nets;
 
 		int _order = 0;
 		int _nTorsions = 0;
@@ -95,8 +103,10 @@ private:
 	};
 
 	friend void from_json(const json &j, TDCoefficient &coeff);
+	friend void from_json(const json &j, TDCoefficient::Net &net);
 	
 	friend void to_json(json &j, const TDCoefficient &coeff);
+	friend void to_json(json &j, const TDCoefficient::Net &net);
 	friend void to_json(json &j, const TorsionWarp &tw);
 
 	std::vector<TDCoefficient> _coefficients;
@@ -105,11 +115,23 @@ private:
 	int _nCoeff = 1;
 	int _nAxes = 0;
 };
+inline void from_json(const json &j, TorsionWarp::TDCoefficient::Net &net)
+{
+	net.first = j.at(0);
+	net.second = j.at(1);
+}
+
+inline void to_json(json &j, const TorsionWarp::TDCoefficient::Net &net)
+{
+	j[0] = net.first;
+	j[1] = net.second;
+
+}
 
 inline void from_json(const json &j, TorsionWarp::TDCoefficient &coeff)
 {
-	std::vector<PCA::Matrix> coeffs = j.at("matrices");
-	coeff._dim2Coeffs = coeffs;
+	std::vector<TorsionWarp::TDCoefficient::Net> nets = j.at("nets");
+	coeff._nets = nets;
 
 	coeff._order = j.at("order");
 	coeff._nTorsions = j.at("num_torsions");
@@ -119,7 +141,7 @@ inline void from_json(const json &j, TorsionWarp::TDCoefficient &coeff)
 
 inline void to_json(json &j, const TorsionWarp::TDCoefficient &coeff)
 {
-	j["matrices"] = coeff._dim2Coeffs;
+	j["nets"] = coeff._nets;
 	j["order"] = coeff._order;
 	j["num_torsions"] = coeff._nTorsions;
 	j["num_dims"] = coeff._nDims;
