@@ -44,7 +44,6 @@ class PositionSampler;
 class Diffraction;
 class ForceField;
 class Grapher;
-class Sampler;
 class Atom;
 
 /** \class BondCalculator
@@ -174,8 +173,6 @@ public:
 		return _sumHandler;
 	}
 	
-	void setSampler(Sampler *sampler);
-	
 	SurfaceAreaHandler *surfaceHandler()
 	{
 		return _surfaceHandler;
@@ -237,7 +234,6 @@ private:
 	MapSumHandler *_sumHandler = nullptr;
 
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
-	Sampler *_sampler = nullptr;
 	FFProperties _props{};
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;

@@ -105,10 +105,10 @@ void BondSequenceHandler::setup()
 	calculateThreads(_maxThreads);
 	sanityCheckThreads();
 	prepareSequenceBlocks();
-	int dimensions = 0;
+	int dimensions = 1;
 	if (_sampler)
 	{
-		dimensions = _sampler->dims();
+//		dimensions = _sampler->dims();
 	}
 
 	torsionBasis()->prepare(dimensions);
@@ -135,7 +135,6 @@ void BondSequenceHandler::finish()
 void BondSequenceHandler::prepareSequenceBlocks()
 {
 	BondSequence *sequence = new BondSequence(this);
-	sequence->setSampler(_sampler);
 	sequence->setSampleCount(_totalSamples);
 	sequence->setTorsionBasisType(_basisType);
 	transferProperties(sequence);

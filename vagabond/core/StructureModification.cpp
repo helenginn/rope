@@ -25,6 +25,7 @@
 StructureModification::StructureModification(Instance *mol, int num, int dims)
 : _sampler(num, dims)
 {
+	_sampler.setup();
 	_instance = mol;
 	_num = num;
 	_dims = dims;
@@ -34,6 +35,8 @@ StructureModification::StructureModification(std::string modid, std::string inst
                                              int num, int dims)
 : _sampler(num, dims)
 {
+	_sampler.setup();
+
 	Model *model = ModelManager::manager()->model(modid);
 	Instance *instance = model->instanceWithId(inst);
 	_instance = instance;
@@ -71,7 +74,7 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	};
 
 	calc.manager().setDefaultCoordTransform(transform);
-	calc.setSampler(&_sampler);
+	calc.setTotalSamples(_sampler.pointCount());
 
 	calc.setTorsionBasisType(_torsionType);
 	calc.addAnchorExtension(anchor);
@@ -97,7 +100,7 @@ void StructureModification::addToHetatmCalculator(Atom *anchor)
 
 		_hetatmCalc->setPipelineType(_pType);
 		_hetatmCalc->setMaxSimultaneousThreads(1);
-		_hetatmCalc->setSampler(&_sampler);
+		_hetatmCalc->setTotalSamples(_sampler.pointCount());
 
 		_hetatmCalc->setIgnoreHydrogens(false);
 	}

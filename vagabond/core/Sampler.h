@@ -35,10 +35,6 @@ public:
 
 	float hypersphereVolume(float radius);
 	
-	void addToVec(float *&vec, float *tensor, int num);
-	void add_to_vec_index(float &value, const int &idx, 
-	                      const float *tensor, const int sample_num) const;
-	
 	int dims()
 	{
 		return _dims;
@@ -69,7 +65,6 @@ private:
 	
 	std::vector<std::vector<float> > _tmpPoints;
 	PCA::Matrix _points{};
-	PCA::Matrix _tensor{};
 	
 	bool _fibonacci = true;
 };

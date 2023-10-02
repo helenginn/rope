@@ -183,6 +183,7 @@ void GuiDensity::recalculate()
 {
 	int dims = 2;
 	Sampler sampler(50, dims);
+	sampler.setup();
 
 	BondCalculator calculator;
 	if (_ref == nullptr)
@@ -196,7 +197,7 @@ void GuiDensity::recalculate()
 
 	calculator.setMaxSimultaneousThreads(1);
 	calculator.setTorsionBasisType(TorsionBasis::TypeSimple);
-	calculator.setSampler(&sampler);
+	calculator.setTotalSamples(sampler.pointCount());
 	int num = sampler.pointCount();
 
 	std::vector<AtomGroup *> subgroups = _atoms->connectedGroups();
@@ -222,7 +223,6 @@ void GuiDensity::recalculate()
 	calculator.start();
 
 	Job job{};
-	job.custom.allocate_vectors(1, dims, num);
 	job.requests = static_cast<JobType>(JobExtractPositions | 
 	                                    JobCalculateMapSegment);
 	if (_ref != nullptr)

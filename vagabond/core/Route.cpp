@@ -90,7 +90,6 @@ void Route::submitJob(int idx, bool show, bool forces)
 	{
 		Job job{};
 		int dims = _calc2Destination[calc].size();
-		job.custom.allocate_vectors(1, dims, _num);
 		job.fraction = idx / (float)(pointCount() - 1);
 		job.parameters.resize(dims);
 
@@ -157,7 +156,6 @@ void Route::customModifications(BondCalculator *calc, bool has_mol)
 		calc->setForceFieldProperties(props);
 	}
 
-	calc->setSampler(nullptr);
 	calc->manager().setDefaultCoordTransform(JobManager::identityTransform());
 }
 

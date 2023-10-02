@@ -28,12 +28,10 @@ Sampler::Sampler(int n, int dims)
 {
 	_n = n;
 	_dims = dims;
-	setupMatrix(&_tensor, _dims, _dims);
 }
 
 Sampler::~Sampler()
 {
-	freeMatrix(&_tensor);
 	freeMatrix(&_points);
 }
 
@@ -201,59 +199,6 @@ float Sampler::gamma()
 	
 	float result = sqrt2pi * middle * right;
 	return result;
-}
-
-void Sampler::add_to_vec_index(float &value, const int &idx, 
-                               const float *tensor, const int sample_num) const
-{
-	float mean = _points[sample_num][idx];
-	float result = 0;
-	
-	if (tensor != nullptr)
-	{
-		for (size_t j = 0; j < _dims; j++)
-		{
-			result += tensor[idx * _dims + j] * mean;
-		}
-	}
-	else
-	{
-		result = mean;
-	}
-	
-	value += result;
-}
-
-void Sampler::addToVec(float *&vec, float *tensor, int sample_num)
-{
-	double result[_dims];
-	memset(result, '\0', sizeof(double) * _dims);
-	
-	if (tensor != nullptr)
-	{
-		for (size_t i = 0; i < _dims; i++)
-		{
-			for (size_t j = 0; j < _dims; j++)
-			{
-				_tensor[i][j] = tensor[i * _dims + j];
-			}
-		}
-
-		multMatrix(_tensor, &_points[sample_num][0], &result[0]);
-	}
-	else
-	{
-		for (size_t i = 0; i < _dims; i++)
-		{
-			result[i] = _points[sample_num][i];
-		}
-
-	}
-	
-	for (size_t i = 0; i < _dims; i++)
-	{
-		vec[i] += result[i];
-	}
 }
 
 // this is a function type rope::GetListFromParameters

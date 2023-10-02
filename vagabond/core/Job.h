@@ -56,83 +56,8 @@ enum JobType
 	JobPositionVector =          1 << 8,
 };
 
-struct CustomVector
-{
-	float *mean = nullptr;
-	float *tensor = nullptr;
-	int sample_num = 0;
-	int size = 0;
-	
-	void allocate_vector(int s)
-	{
-		mean = new float[s];
-		memset(mean, '\0', s * sizeof(float));
-		size = s;
-	}
-	
-	void allocate_tensor()
-	{
-		tensor = new float[size * size];
-		memset(tensor, '\0', size * size * sizeof(float));
-	}
-	
-	void destroy_vector()
-	{
-		delete [] mean;
-		mean = nullptr;
-		delete [] tensor;
-		tensor = nullptr;
-	}
-};
-
-struct CustomInfo
-{
-	std::vector<CustomVector> vecs;
-	
-	/** allocates vectors for figuring out perturbations ofspace.
-	 * @param n how many different types of perturbation (one 
-	 * 	per discrete conformer)
-	 * @param size how many dimensions does each vector have
-	 * @param sample_num number of samples per discrete perturbation 
-	 * @param include tensor allocation */
-	void allocate_vectors(int n, int size, int sample_num, bool tensor = false)
-	{
-		vecs.resize(n);
-		
-		int cumulative = 0;
-		for (size_t i = 0; i < n; i++)
-		{
-			vecs[i].allocate_vector(size);
-
-			if (tensor)
-			{
-				vecs[i].allocate_tensor();
-			}
-
-			cumulative += sample_num;
-			vecs[i].sample_num = cumulative;
-		}
-	}
-	
-	size_t vector_count()
-	{
-		return vecs.size();
-	}
-	
-	void destroy_vectors()
-	{
-		for (size_t i = 0; i < vecs.size(); i++)
-		{
-			vecs[i].destroy_vector();
-		}
-		
-		vecs.clear();
-	}
-};
-
 struct Job
 {
-	CustomInfo custom{};
 	std::vector<float> parameters{};
 
 	float fraction = 0;
@@ -145,7 +70,6 @@ struct Job
 	
 	void destroy()
 	{
-		custom.destroy_vectors();
 		delete this;
 	}
 };

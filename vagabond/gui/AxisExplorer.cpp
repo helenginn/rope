@@ -88,8 +88,6 @@ void AxisExplorer::submitJob(float prop)
 	{
 		Job job{};
 		job.pos_sampler = this;
-		job.custom.allocate_vectors(1, _dims, _num);
-		job.custom.vecs[0].mean[0] = prop;
 		job.parameters = {prop};
 		job.requests = static_cast<JobType>(JobPositionVector); 
 		calc->submitJob(job);
@@ -276,6 +274,10 @@ int findAtom(RAMovement &movement, Atom *search, Instance *instance)
 bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
                                 Vec3s &positions)
 {
+	if (!doesAtoms())
+	{
+		return false;
+	}
 	const std::vector<AtomBlock> &blocks = seq->blocks();
 	positions.resize(blocks.size());
 

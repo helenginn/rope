@@ -328,7 +328,6 @@ int PositionRefinery::sendJob(const std::vector<float> &trial, bool absorb)
 	Job job{};
 	job.absorb = absorb;
 	job.requests = JobCalculateDeviations;
-	job.custom.allocate_vectors(1, trial.size(), 0);
 	job.parameters = trial;
 
 	if (_ncalls % 200 == 0 || absorb)
@@ -338,14 +337,6 @@ int PositionRefinery::sendJob(const std::vector<float> &trial, bool absorb)
 	}
 	_ncalls++;
 
-	if (_stage == Positions)
-	{
-		for (size_t i = 0; i < trial.size(); i++)
-		{
-			job.custom.vecs[0].mean[i] = trial[i];
-		}
-	}
-	
 	int ticket = _calculator->submitJob(job);
 	return ticket;
 }

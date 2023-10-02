@@ -36,13 +36,8 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
-		job.custom.allocate_vectors(1, _dims, _num);
+		job.parameters = vals;
 		job.pos_sampler = this;
-
-		for (size_t i = 0; i < vals.size(); i++)
-		{
-			job.custom.vecs[0].mean[i] = vals[i];
-		}
 
 		job.requests = static_cast<JobType>(JobPositionVector |
 		                                    JobCalculateDeviations);

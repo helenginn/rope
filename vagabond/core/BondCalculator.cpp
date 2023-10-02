@@ -26,7 +26,6 @@
 #include "engine/PointStoreHandler.h"
 #include "engine/SolventHandler.h"
 #include "engine/MapSumHandler.h"
-#include "Sampler.h"
 
 BondCalculator::BondCalculator()
 {
@@ -177,7 +176,6 @@ void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
 	_sequenceHandler->setTorsionBasisType(_basisType);
-	_sequenceHandler->setSampler(_sampler);
 	transferProperties(_sequenceHandler);
 	
 	if (_mapHandler != nullptr)
@@ -478,18 +476,6 @@ const size_t BondCalculator::maxCustomVectorSize() const
 	return _sequenceHandler->parameterCount();
 }
 
-
-void BondCalculator::setSampler(Sampler *sampler)
-{
-	_sampler = sampler;
-	if (_sampler == nullptr)
-	{
-		setTotalSamples(1);
-		return;
-	}
-	sampler->setup();
-	setTotalSamples(_sampler->pointCount());
-}
 
 BondSequence *BondCalculator::sequence(int i) 
 {

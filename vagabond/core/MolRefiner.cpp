@@ -23,7 +23,6 @@
 #include "PathManager.h"
 #include "OnPathBasis.h"
 #include "Trajectory.h"
-#include "Sampler.h"
 #include "Warp.h"
 #include "ChemotaxisEngine.h"
 
@@ -133,19 +132,6 @@ void MolRefiner::submitJob(std::vector<float> all, std::vector<float> tensor,
 		Job job{};
 		job.pos_sampler = _warp;
 		job.parameters = all;
-		/*
-		job.custom.allocate_vectors(1, _dims, _num, true);
-
-		for (size_t i = 0; i < _dims && i < mean.size(); i++)
-		{
-			job.custom.vecs[0].mean[i] = mean[i];
-		}
-
-		for (size_t i = 0; i < _dims * _dims && i < tensor.size(); i++)
-		{
-			job.custom.vecs[0].tensor[i] = tensor[i];
-		}
-		*/
 
 		job.requests = static_cast<JobType>(JobExtractPositions |
 		                                    JobMapCorrelation);

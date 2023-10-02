@@ -38,10 +38,8 @@
 #include "Grapher.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
-#include "Sampler.h"
 
 class Atom;
-class Sampler;
 class BondSequenceHandler;
 
 class MiniJobSeq;
@@ -97,16 +95,6 @@ public:
 		return _blocks[i].child_position(j);
 	}
 	
-	void setSampler(Sampler *sampler)
-	{
-		_sampler = sampler;
-	}
-	
-	Sampler *const &sampler() 
-	{
-		return _sampler;
-	}
-	
 	const Grapher &grapher() const
 	{
 		return _grapher;
@@ -155,7 +143,7 @@ public:
 		_state = SequenceInPreparation;
 	}
 
-	void calculate(rope::IntToCoordGet coordForIdx = {});
+	void calculate(rope::IntToCoordGet coordForIdx);
 	void superpose();
 	const AtomPosMap &extractPositions();
 	void extractVector(AtomPosList &results);
@@ -207,7 +195,6 @@ private:
 	void markHydrogenGraphs();
 
 	void generateBlocks();
-	Coord::Get acquireCustomVector(int sampleNum);
 	void makeTorsionBasis();
 	void prewarnPositionSampler(const Coord::Get &get);
 
@@ -241,10 +228,6 @@ private:
 	int _startCalc = 0;
 	int _endCalc = INT_MAX;
 	int _maxDepth = 0;
-	int _customIdx = 0;
-
-	CustomVector *_custom = nullptr;
-	void checkCustomVectorSizeFits();
 	
 	int _nCoord = 0;
 
@@ -253,7 +236,6 @@ private:
 
 	Job *_job = nullptr;
 	BondSequenceHandler *_handler = nullptr;
-	Sampler *_sampler = nullptr;
 
 	std::vector<RingProgram> _programs;
 

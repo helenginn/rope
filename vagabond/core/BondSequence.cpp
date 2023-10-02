@@ -270,85 +270,6 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get)
 	return (b.atom == nullptr);
 }
 
-void BondSequence::checkCustomVectorSizeFits()
-{
-	if (!job())
-	{
-		return;
-	}
-
-	Job &j = *job();
-	if (j.custom.vector_count() == 0)
-	{
-		return;
-	}
-	
-	int expected = j.custom.vecs.back().sample_num;
-
-	if (expected > sampleCount())
-	{
-		throw std::runtime_error("Job custom vector needs more samples"
-		                         " than BondCalculator set up originally.");
-	}
-}
-
-Coord::Get prepareAcquire(float *tensor, float *vec, Sampler *sampler, int size,
-                               const int &sampleNum, const Index::Convert &convert)
-{
-	Coord::Get get_coord = [tensor, vec, sampler, size,
-	                         sampleNum, &convert](const int idx) -> float
-	{
-		int true_idx = convert(idx);
-		if (true_idx < 0 || true_idx >= size)
-		{
-			return 0;
-		}
-
-		float val = vec[true_idx];
-		if (sampler)
-		{
-			sampler->add_to_vec_index(val, true_idx, tensor, sampleNum);
-		}
-		return val;
-	};
-	
-	return Remember<int, float>(get_coord);
-}
-
-Coord::Get BondSequence::acquireCustomVector(int sampleNum)
-{
-	Coord::Get get = [](const int idx) -> float
-	{
-		return 0;
-	};
-
-	Job &j = *job();
-
-	if (!job() || j.custom.vector_count() == 0)
-	{
-		return get;
-	}
-
-	int &next_num = j.custom.vecs[_customIdx].sample_num;
-	_sampleNum = sampleNum;
-	if (next_num > 0 && sampleNum > next_num)
-	{
-		_customIdx++;
-	}
-	
-	CustomVector *custom = &j.custom.vecs[_customIdx];
-	Sampler *sampler = _sampler;
-	float *tensor = custom->tensor;
-	float *vec = custom->mean;
-	size_t nCoords = custom->size;
-	
-	const Index::Convert &convert = _convertIndex;
-	get = prepareAcquire(tensor, vec, sampler, nCoords, sampleNum, convert);
-	prewarnPositionSampler(get);
-
-	return get;
-}
-
 void BondSequence::superpose()
 {
 	if (!_superpose)
@@ -404,21 +325,14 @@ void BondSequence::superpose()
 
 void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
 {
-	_customIdx = 0;
-	
 	int sampleNum = 0;
 
 	_nCoord = job()->parameters.size();
 	Coord::Get get = {};
 
-	if (coordForIdx)
-	{
-		get = coordForIdx(sampleNum);
-	}
-	else
-	{
-		get = acquireCustomVector(sampleNum);
-	}
+	get = coordForIdx(sampleNum);
+
+	prewarnPositionSampler(get);
 	
 	int start = 0; int end = _blocks.size();
 	if (_skipSections && !_fullRecalc)
@@ -433,14 +347,7 @@ void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
 		
 		if (i % _singleSequence == 0)
 		{
-			if (coordForIdx)
-			{
-				get = coordForIdx(sampleNum);
-			}
-			else
-			{
-				get = acquireCustomVector(sampleNum);
-			}
+			get = coordForIdx(sampleNum);
 			sampleNum++;
 		}
 	}
