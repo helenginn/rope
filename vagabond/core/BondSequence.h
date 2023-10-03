@@ -196,7 +196,6 @@ private:
 
 	void generateBlocks();
 	void makeTorsionBasis();
-	void prewarnPositionSampler(const Coord::Get &get);
 
 	int calculateBlock(int idx, const Coord::Get &get);
 	float fetchTorsionForBlock(int idx, const Coord::Get &get);

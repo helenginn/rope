@@ -45,7 +45,6 @@ AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 	setPingPong(true);
 	setOwnsAtoms(false);
 	setDoesBonds(false);
-	setDoesAtoms(false);
 }
 
 AxisExplorer::~AxisExplorer()
@@ -153,8 +152,6 @@ void AxisExplorer::adjustTorsions()
 			atom->setOtherPosition("moving", _movement.storage(i));
 		}
 	}
-
-	setDoesAtoms(true);
 }
 
 void AxisExplorer::askForAtomMotions()
@@ -273,65 +270,5 @@ void AxisExplorer::setupColourLegend()
 	legend->setLimits(0.f, _maxTorsion);
 	legend->setCentre(0.9, 0.5);
 	addObject(legend);
-}
-
-int findAtom(RAMovement &movement, Atom *search, Instance *instance)
-{
-	for (size_t i = 0; i < movement.size(); i++)
-	{
-		if (movement.header(i).fitsAtom(search, instance))
-		{
-			return i;
-		}
-	}
-	
-	return -1;
-}
-
-bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
-                                Vec3s &positions)
-{
-	if (!doesAtoms())
-	{
-		return false;
-	}
-	/*
-	const std::vector<AtomBlock> &blocks = seq->blocks();
-	positions.resize(blocks.size());
-
-	for (int i = 0; i < blocks.size(); i++)
-	{
-		Atom *search = blocks[i].atom;
-		if (!search)
-		{
-			continue;
-		}
-		
-		glm::vec3 pos = search->initialPosition();
-		int movement_idx = _mapping(seq, i);
-		
-		if (movement_idx < 0)
-		{
-			int idx = findAtom(_movement, search, _instance);
-			_mapping.setSeqBlockIdx(seq, i, idx);
-			
-			if (idx < 0)
-			{
-				idx = _movement.size();
-			}
-
-			movement_idx = idx;
-		}
-		else if (movement_idx >= _movement.size())
-		{
-			continue;
-		}
-
-		glm::vec3 extra = _movement.storage(movement_idx) * get(0);
-		positions[i] = pos + extra;
-	}
-	*/
-
-	return true;
 }
 

@@ -50,9 +50,6 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void finishedDragging(std::string tag, double x, double y);
 
-	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
-	                          Vec3s &positions);
-
 	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
 	                          Floats &torsions) {};
 protected:

@@ -36,27 +36,6 @@ public:
 		return _doesBonds;
 	}
 	
-	void setDoesAtoms(bool atoms)
-	{
-		_doesAtoms = atoms;
-	}
-	
-	const bool &doesAtoms() const
-	{
-		return _doesAtoms;
-	}
-
-	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
-	                          Vec3s &positions) = 0;
-
-	virtual glm::vec3 prewarnAtom(BondSequence *bc, const Coord::Get &get,
-	                              int index)
-	{
-		Vec3s tmp;
-		prewarnAtoms(bc, get, tmp);
-		return tmp[index];
-	}
-
 	virtual float prewarnBond(BondSequence *bc, const Coord::Get &get,
 	                              int index)
 	{
@@ -69,7 +48,6 @@ public:
 	                          Floats &torsions) = 0;
 	
 private:
-	bool _doesAtoms = true;
 	bool _doesBonds = true;
 };
 

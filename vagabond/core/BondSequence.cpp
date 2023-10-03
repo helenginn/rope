@@ -197,52 +197,10 @@ float BondSequence::fetchTorsionForBlock(int block_idx, const Coord::Get &get)
 	return torsion;
 }
 
-// ensures that the position sampler can pre-calculate all the necessary atom
-// positions 
-void BondSequence::prewarnPositionSampler(const Coord::Get &get)
-{
-	PositionSampler *ps = posSampler();
-
-	if (ps == nullptr) { return; }
-	
-	if (!_skipSections)
-	{
-		ps->prewarnAtoms(this, get, _atomPositions);
-		ps->prewarnBonds(this, get, _bondTorsions);
-	}
-	else
-	{
-		_atomPositions = {};
-		_bondTorsions = {};
-	}
-}
-
 void BondSequence::fetchAtomTarget(int idx, const Coord::Get &get)
 {
 	rope::GetVec3FromCoordIdx atomPos = job()->atomTargets;
 	_blocks[idx].target = atomPos(get, idx);
-
-	/*
-	PositionSampler *ps = posSampler();
-
-	if (ps == nullptr) { return; }
-	
-	if (!ps->doesAtoms() && _blocks[idx].atom)
-	{
-		_blocks[idx].target = _blocks[idx].atom->initialPosition();
-		return;
-	}
-
-	int true_idx = (idx % _singleSequence);
-	if (positionsAvailable())
-	{
-		_blocks[idx].target = _atomPositions[true_idx];
-	}
-	else if (posSampler() && posSampler()->doesAtoms())
-	{
-		_blocks[idx].target = ps->prewarnAtom(this, get, true_idx);
-	}
-	*/
 }
 
 int BondSequence::calculateBlock(int idx, const Coord::Get &get)
@@ -336,8 +294,6 @@ void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
 	Coord::Get get = {};
 
 	get = coordForIdx(sampleNum);
-
-	prewarnPositionSampler(get);
 	
 	int start = 0; int end = _blocks.size();
 	if (_skipSections && !_fullRecalc)
@@ -390,17 +346,6 @@ double BondSequence::calculateDeviations()
 		glm::vec3 trial_pos = _blocks[i].my_position();
 
 		glm::vec3 target = _blocks[i].target;
-		
-		/*
-		float frac = job()->fraction;
-		float weight = 1;
-		if (frac > 1e-6)
-		{
-			glm::vec3 moving = _blocks[i].moving;
-			moving *= frac;
-			target += moving;
-		}
-		*/
 
 		glm::vec3 diff = trial_pos - target;
 		

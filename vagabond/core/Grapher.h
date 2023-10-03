@@ -79,9 +79,6 @@ public:
 		return _graphs.size();
 	}
 
-	void refreshTarget(AtomBlock &block) const;
-	void refreshTargets(BondCalculator *seq) const;
-	
 	/** returns reference to node index */
 	AtomGraph *graph(Atom *atom) const
 	{

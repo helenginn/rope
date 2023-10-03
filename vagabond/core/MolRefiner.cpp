@@ -37,7 +37,6 @@ StructureModification(info->instance, num, dims)
 	if (info->instance->hasSequence())
 	{
 		_warp = Warp::warpFromFile(info->instance, "test.json");
-		_warp->setDoesAtoms(false);
 	}
 
 	_map = comparison;

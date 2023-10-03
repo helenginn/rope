@@ -446,51 +446,6 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 	block.write_locs[0] = 1;
 }
 
-void Grapher::refreshTarget(AtomBlock &block) const
-{
-	Atom *atom = block.atom;
-	if (atom == nullptr)
-	{
-		return;
-	}
-
-	block.moving = glm::vec3(0.f);
-	if (atom->hasOtherPosition("moving"))
-	{
-		block.moving = atom->otherPosition("moving");
-	}
-
-	if (atom->hasOtherPosition("target"))
-	{
-		block.target = atom->otherPosition("target");
-	}
-	else
-	{
-		block.target = atom->initialPosition();
-	}
-}
-
-void Grapher::refreshTargets(BondCalculator *calc) const
-{
-	BondSequence *seq = nullptr;
-	int i = 0;
-	while (true)
-	{
-		seq = calc->sequence(i);
-		if (seq == nullptr)
-		{
-			break;
-		}
-
-		for (AtomBlock &block : seq->blocks())
-		{
-			refreshTarget(block);
-		}
-		i++;
-	}
-
-}
-
 void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
 {
 	if (_atom2Transform.count(gr->atom))
@@ -505,8 +460,6 @@ void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
 		size_t max = 4;
 		block.nBonds = std::min(blc, max);
 		block.wip = glm::mat4(0.);
-
-		refreshTarget(block);
 	}
 	
 	for (size_t i = 0; i < 4; i++)
