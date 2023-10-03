@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "BondCalculator.h"
 #include "BondSequence.h"
 #include "AtomBlock.h"
 #include "matrix_functions.h"
@@ -116,9 +117,44 @@ void AtomBlock::clearMutable()
 {
 	if (atom)
 	{
-//		wip = glm::mat4x4{};
+		wip = glm::mat4x4{};
 		basis[3] = glm::vec4{};
-//		target = glm::vec3{};
+		target = glm::vec3{};
 		inherit = glm::vec3{};
 	}
+}
+
+rope::GetVec3FromCoordIdx 
+AtomBlock::prepareTargetsAsInitial(std::vector<AtomBlock> &blocks)
+{
+	rope::GetVec3FromCoordIdx func = [&blocks](const Coord::Get &,
+	                                           const int &idx) -> glm::vec3
+	{
+		if (blocks[idx].atom == nullptr)
+		{
+			return glm::vec3(NAN);
+		}
+		return blocks[idx].atom->initialPosition();
+	};
+
+	return func;
+}
+
+rope::GetVec3FromCoordIdx 
+AtomBlock::prepareMovingTargets(BondCalculator *calc, const float &fraction)
+{
+	std::vector<AtomBlock> &blocks = calc->sequence()->blocks();
+
+	return [&blocks, fraction](const Coord::Get &, const int &idx)
+	{
+		if (blocks[idx].atom && blocks[idx].atom->hasOtherPosition("moving"))
+		{
+			glm::vec3 moving = blocks[idx].atom->otherPosition("moving");
+			glm::vec3 orig = blocks[idx].atom->otherPosition("target");
+
+			return orig + fraction * moving;
+		}
+		
+		return glm::vec3(NAN);
+	};
 }

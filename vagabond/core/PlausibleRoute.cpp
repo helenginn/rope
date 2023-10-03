@@ -62,11 +62,6 @@ void PlausibleRoute::setTargets()
 		atom->setOtherPosition("moving", diff);
 		atom->setOtherPosition("target", s);
 	}
-
-	for (BondCalculator *calc : _calculators)
-	{
-		grapher().refreshTargets(calc);
-	}
 }
 
 float PlausibleRoute::routeScore(int steps, bool forceField)

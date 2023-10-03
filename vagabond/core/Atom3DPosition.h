@@ -51,6 +51,7 @@ public:
 	}
 	
 	bool fitsAtom(Atom *other, Instance *from = nullptr) const;
+	Atom *atom(AtomGroup *source);
 
 	inline friend std::ostream &operator<<(std::ostream &ss, 
 	                                       const Atom3DPosition &p)

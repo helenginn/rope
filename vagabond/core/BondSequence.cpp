@@ -219,6 +219,10 @@ void BondSequence::prewarnPositionSampler(const Coord::Get &get)
 
 void BondSequence::fetchAtomTarget(int idx, const Coord::Get &get)
 {
+	rope::GetVec3FromCoordIdx atomPos = job()->atomTargets;
+	_blocks[idx].target = atomPos(get, idx);
+
+	/*
 	PositionSampler *ps = posSampler();
 
 	if (ps == nullptr) { return; }
@@ -238,6 +242,7 @@ void BondSequence::fetchAtomTarget(int idx, const Coord::Get &get)
 	{
 		_blocks[idx].target = ps->prewarnAtom(this, get, true_idx);
 	}
+	*/
 }
 
 int BondSequence::calculateBlock(int idx, const Coord::Get &get)
@@ -386,6 +391,7 @@ double BondSequence::calculateDeviations()
 
 		glm::vec3 target = _blocks[i].target;
 		
+		/*
 		float frac = job()->fraction;
 		float weight = 1;
 		if (frac > 1e-6)
@@ -394,6 +400,7 @@ double BondSequence::calculateDeviations()
 			moving *= frac;
 			target += moving;
 		}
+		*/
 
 		glm::vec3 diff = trial_pos - target;
 		
@@ -402,9 +409,9 @@ double BondSequence::calculateDeviations()
 			continue;
 		}
 		
-		float c = glm::length(diff) / weight;
+		float c = glm::length(diff);
 		sum += c;
-		count += weight;
+		count ++;
 	}
 
 	return sum / count;

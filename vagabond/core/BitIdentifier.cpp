@@ -53,6 +53,20 @@ void BitIdentifier::housekeeping()
 		_localId = _local->id();
 	}
 	
+	if (!_localSet && !_local && _instance)
+	{
+		if (_instance->hasSequence())
+		{
+			Polymer *pol = static_cast<Polymer *>(_instance);
+			_local = pol->equivalentLocal(_master);
+			if (_local)
+			{
+				_localId = _local->id();
+				_localSet = true;
+			}
+		}
+	}
+	
 	if (_localSet && !_local && _instance)
 	{
 		Residue *res = _instance->localForLocalId(_localId);

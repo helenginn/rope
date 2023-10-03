@@ -18,6 +18,8 @@
 
 #include "Atom3DPosition.h"
 #include "HeadedVector.h"
+#include "Sequence.h"
+#include "Polymer.h"
 
 template <typename Storage>
 class RAVector : public HeadedVector<Atom3DPosition, Storage>
@@ -44,6 +46,12 @@ public:
 	
 	void attachInstance(Instance *inst)
 	{
+		if (inst->hasSequence())
+		{
+			Polymer *pol = static_cast<Polymer *>(inst);
+			pol->sequence()->remapFromMaster(inst->entity());
+		}
+
 		for (RTValue &val : _pairs)
 		{
 			val.header.attachToInstance(inst);

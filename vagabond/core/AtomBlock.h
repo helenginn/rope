@@ -20,14 +20,20 @@
 #define __vagabond__AtomBlock__
 
 #include <vagabond/utils/glm_import.h>
-#include <vagabond/utils/AcquireCoord.h>
+#include "engine/JobManager.h"
 #include "Atom.h"
 
 class Atom;
-class PositionSampler;
+class BondCalculator;
 
 struct AtomBlock
 {
+	static rope::GetVec3FromCoordIdx 
+	prepareTargetsAsInitial(std::vector<AtomBlock> &blocks);
+
+	static rope::GetVec3FromCoordIdx 
+	prepareMovingTargets(BondCalculator *calc, const float &fraction);
+
 	bool flag = true;
 	bool silenced = false;
 	

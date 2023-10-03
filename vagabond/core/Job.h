@@ -25,6 +25,7 @@
 #include <thread>
 #include "Atom.h"
 #include "AtomMap.h"
+#include "engine/JobManager.h"
 
 class ThreadWorker;
 class PositionSampler;
@@ -59,8 +60,8 @@ enum JobType
 struct Job
 {
 	std::vector<float> parameters{};
+	rope::GetVec3FromCoordIdx atomTargets;
 
-	float fraction = 0;
 	int ticket = -1;
 	bool absorb = false;
 	JobType requests;

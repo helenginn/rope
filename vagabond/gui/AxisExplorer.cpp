@@ -29,7 +29,7 @@
 
 #include <vagabond/core/MetadataGroup.h>
 #include <vagabond/c4x/Cluster.h>
-#include <vagabond/core/BondSequence.h>
+#include <vagabond/core/AtomBlock.h>
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Residue.h>
@@ -89,6 +89,10 @@ void AxisExplorer::submitJob(float prop)
 		Job job{};
 		job.pos_sampler = this;
 		job.parameters = {prop};
+		if (_atomMaps)
+		{
+			job.atomTargets = AtomBlock::prepareMovingTargets(calc, prop);
+		}
 		job.requests = static_cast<JobType>(JobPositionVector); 
 		calc->submitJob(job);
 	}
@@ -108,7 +112,7 @@ void AxisExplorer::submitJob(float prop)
 		if (r->requests & JobPositionVector)
 		{
 			std::cout << r->apl[0].wp.ave << std::endl;
-			r->transplantPositions(doesAtoms());
+			r->transplantPositions(_atomMaps);
 			sum += r->score;
 		}
 	}
@@ -137,6 +141,20 @@ void AxisExplorer::adjustTorsions()
 	Entity *entity = _instance->entity();
 	Torsion2Atomic t2a(entity, _cluster);
 	_movement = t2a.convertAnglesSimple(_instance, _torsionLists[0]);
+	_movement.attachInstance(_instance);
+	_atomMaps = true;
+
+	for (size_t i = 0; i < _movement.size(); i++)
+	{
+		Atom *atom = _movement.header(i).atom(_instance->currentAtoms());
+
+		if (atom)
+		{
+			atom->setOtherPosition("target", atom->initialPosition());
+			atom->setOtherPosition("moving", _movement.storage(i));
+		}
+	}
+
 	setDoesAtoms(true);
 }
 
@@ -278,6 +296,7 @@ bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
 	{
 		return false;
 	}
+	/*
 	const std::vector<AtomBlock> &blocks = seq->blocks();
 	positions.resize(blocks.size());
 
@@ -312,6 +331,7 @@ bool AxisExplorer::prewarnAtoms(BondSequence *seq, const Coord::Get &get,
 		glm::vec3 extra = _movement.storage(movement_idx) * get(0);
 		positions[i] = pos + extra;
 	}
+	*/
 
 	return true;
 }

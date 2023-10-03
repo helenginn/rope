@@ -93,6 +93,7 @@ private:
 	float _maxTorsion = 0;
 
 	RAMovement _movement;
+	bool _atomMaps = false;
 	
 	int _dims = 1;
 };

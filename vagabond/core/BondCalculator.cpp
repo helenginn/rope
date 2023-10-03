@@ -256,6 +256,10 @@ void BondCalculator::setup()
 
 	_sequenceHandler->setup();
 
+	rope::GetVec3FromCoordIdx func;
+	func = AtomBlock::prepareTargetsAsInitial(sequence()->blocks());
+	manager().setAtomFetcher(func);
+
 	if (_mapHandler != nullptr)
 	{
 		_mapHandler->setup();
@@ -407,6 +411,10 @@ void BondCalculator::sanityCheckJob(Job &job)
 		}
 	}
 
+	if (!job.atomTargets)
+	{
+		job.atomTargets = manager().defaultAtomFetcher();
+	}
 }
 
 int BondCalculator::submitJob(Job &original_job)

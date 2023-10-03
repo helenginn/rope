@@ -19,21 +19,13 @@
 #ifndef __vagabond__Remember__
 #define __vagabond__Remember__
 
-#include <unordered_map>
+#include <map>
 
 template <typename In, typename Out>
 struct Remember
 {
 	Remember(std::function<Out(In)> &func) : _func(func) {} 
-	Remember(std::unordered_map<In, Out> &map) : _results(map) {} 
-
-	Remember(std::map<In, Out> &map)
-	{
-		for (auto it = map.begin(); it != map.end(); it++)
-		{
-			_results[it->first] = it->second;
-		}
-	}
+	Remember(std::map<In, Out> &map) : _results(map) {} 
 
 	Out operator()(In in)
 	{
@@ -55,7 +47,7 @@ struct Remember
 	}
 
 	std::function<Out(In)> _func{};
-	std::unordered_map<In, Out> _results{};
+	std::map<In, Out> _results{};
 };
 
 

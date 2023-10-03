@@ -20,6 +20,7 @@
 #define __vagabond__JobManager__
 
 #include <vagabond/utils/AcquireCoord.h>
+#include <vagabond/utils/glm_import.h>
 #include <iostream>
 
 namespace rope
@@ -27,6 +28,9 @@ namespace rope
 	typedef std::function<Coord::Get (const int &)> IntToCoordGet;
 	typedef std::function<IntToCoordGet(const std::vector<float> &)> 
 	GetListFromParameters;
+
+	typedef std::function<glm::vec3(const Coord::Get &, const int &)> 
+	GetVec3FromCoordIdx;
 }
 
 class JobManager
@@ -35,6 +39,16 @@ public:
 	void setDefaultCoordTransform(const rope::GetListFromParameters &cgfp)
 	{
 		_coordGetFromParams = cgfp;
+	}
+	
+	void setAtomFetcher(const rope::GetVec3FromCoordIdx &gvfci)
+	{
+		_atomFromCoordIdx = gvfci;
+	}
+	
+	const rope::GetVec3FromCoordIdx &defaultAtomFetcher()
+	{
+		return _atomFromCoordIdx;
 	}
 	
 	const rope::GetListFromParameters &defaultCoordTransform() const
@@ -46,9 +60,9 @@ public:
 	{
 		return [](const std::vector<float> &all)
 		{
-			auto get = [all](const int &) -> Coord::Get
+			auto get = [&all](const int &) -> Coord::Get
 			{
-				return [all](const int &i) -> float
+				return [&all](const int &i) -> float
 				{
 					if (all.size() > i && i >= 0)
 					{
@@ -60,11 +74,21 @@ public:
 			return get;
 		};
 	}
+
+	static rope::GetVec3FromCoordIdx nanPosition()
+	{
+		return [](const Coord::Get &, const int &) -> glm::vec3
+		{
+			return glm::vec3(NAN);
+		};
+	}
 private:
 	
 	// default value: return 1 no matter what
 	rope::GetListFromParameters _coordGetFromParams = identityTransform();
 
+	// return non-existent position
+	rope::GetVec3FromCoordIdx _atomFromCoordIdx = nanPosition();
 };
 
 #endif

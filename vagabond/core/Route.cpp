@@ -85,13 +85,15 @@ void Route::submitJob(int idx, bool show, bool forces)
 	{
 		show = true;
 	}
+
+	float fraction = idx / (float)(pointCount() - 1);
 	
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
 		int dims = _calc2Destination[calc].size();
-		job.fraction = idx / (float)(pointCount() - 1);
 		job.parameters.resize(dims);
+		job.atomTargets = AtomBlock::prepareMovingTargets(calc, fraction);
 
 		for (size_t i = 0; i < dims; i++)
 		{

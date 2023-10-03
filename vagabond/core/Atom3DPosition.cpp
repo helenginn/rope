@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Atom3DPosition.h"
+#include "AtomGroup.h"
 #include "Instance.h"
 #include "Atom.h"
 
@@ -43,6 +44,20 @@ bool Atom3DPosition::fitsAtom(Atom *other, Instance *from) const
 	const std::string &atom_name = atomName();
 
 	return (other->atomName() == atom_name);
+}
+
+Atom *Atom3DPosition::atom(AtomGroup *source) 
+{
+	Atom *atom = source->atomByIdName(local_id(), atomName());
+	if (atom)
+	{
+		std::cout << atom->desc() << std::endl;
+	}
+	else
+	{
+		std::cout << "not atom for " << local_id() << " " << atomName() << std::endl;
+	}
+	return atom;
 }
 
 Atom3DPosition::Atom3DPosition(Residue *master, std::string atomName)
