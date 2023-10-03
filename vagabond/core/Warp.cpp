@@ -38,6 +38,12 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 		Job job{};
 		job.parameters = vals;
 		job.pos_sampler = this;
+		job.atomTargets = [this](const Coord::Get &get, const int &idx)
+		{
+			glm::vec3 p = _atom_positions_for_coord(get, idx);
+			p += _base.positions[idx];
+			return p;
+		};
 
 		job.requests = static_cast<JobType>(JobPositionVector |
 		                                    JobCalculateDeviations);

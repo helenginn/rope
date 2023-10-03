@@ -111,7 +111,6 @@ void AxisExplorer::submitJob(float prop)
 
 		if (r->requests & JobPositionVector)
 		{
-			std::cout << r->apl[0].wp.ave << std::endl;
 			r->transplantPositions(_atomMaps);
 			sum += r->score;
 		}
