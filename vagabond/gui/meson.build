@@ -59,7 +59,6 @@ guifiles = [
 'ModelMetadataView.cpp',
 'PathsDetail.cpp',
 'PathFinding.cpp',
-'PathView.cpp',
 'PathsMenu.cpp',
 'PickAtomFromSequence.h',
 'PickAtomFromSequence.cpp',

@@ -22,7 +22,6 @@
 #include "RopeSpaceItem.h"
 #include "LineSeries.h"
 #include "RouteExplorer.h"
-#include "PathView.h"
 #include "ConfSpaceView.h"
 #include "SetupRefinement.h"
 #include "Axes.h"

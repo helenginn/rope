@@ -25,7 +25,6 @@
 #include "Polymer.h"
 
 class MetadataGroup;
-class Trajectory;
 
 class Path : public HasMetadata, Responder<HasMetadata>
 {
@@ -68,9 +67,6 @@ public:
 		return _contributeSVD;
 	}
 	
-	void addDeviationsToGroup(MetadataGroup &group);
-	void addTorsionsToGroup(MetadataGroup &group);
-	
 	std::string desc() const;
 
 	virtual const std::string id() const
@@ -88,15 +84,12 @@ public:
 		return _visible;
 	}
 	
-	Trajectory *calculateTrajectory(int steps);
-	
 	void setStepCount(int steps)
 	{
 		_steps = steps;
 	}
 	
 	bool operator==(const Path &other) const;
-	Trajectory *calculateDeviations(int steps);
 	
 	void filterAngles(MetadataGroup *group);
 	

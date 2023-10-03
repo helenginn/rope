@@ -19,7 +19,6 @@
 #include "ClusterView.h"
 #include "ColourScheme.h"
 #include "ConfSpaceView.h"
-#include <vagabond/gui/PathView.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
@@ -40,8 +39,6 @@ ClusterView::ClusterView() : PointyView()
 #ifdef __EMSCRIPTEN__
 	setSelectable(true);
 #endif
-
-	Environment::pathManager()->setResponder(this);
 }
 
 ClusterView::~ClusterView()
@@ -66,7 +63,6 @@ void ClusterView::updatePoints()
 void ClusterView::additionalJobs()
 {
 	_invert = new std::thread(ClusterView::invertSVD, this);
-	addPaths();
 }
 
 void ClusterView::prioritiseMetadata(std::string key)
@@ -230,142 +226,9 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	}
 }
 
-void ClusterView::sendObject(std::string tag, void *object)
-{
-	if (tag == "purged_path")
-	{
-		Path *p = static_cast<Path *>(object);
-		clearPath(p);
-	}
-
-}
-
-void ClusterView::clearPath(Path *path)
-{
-	if (_path2View.count(path) == 0)
-	{
-		return;
-	}
-
-	PathView *pv = _path2View[path];
-	removeObject(pv);
-	_path2View.erase(path);
-	
-	auto it = std::find(_pathViews.begin(), _pathViews.end(), pv);
-	
-	if (it != _pathViews.end())
-	{
-		_pathViews.erase(it);
-	}
-
-	delete pv;
-}
-
-void ClusterView::addPathView(PathView *pv)
-{
-	if (!hasObject(pv))
-	{
-		_pathViews.push_back(pv);
-		_path2View[pv->path()] = pv;
-		addObject(pv);
-	}
-}
-
 void ClusterView::respond()
 {
 	wait();
-}
-
-void ClusterView::clearOldPathView(PathView *pv)
-{
-	auto jt = std::find(_pathViews.begin(), _pathViews.end(), pv);
-	auto it = _path2View.find(pv->path());
-
-	if (jt != _pathViews.end())
-	{
-		_pathViews.erase(jt);
-	}
-
-	removeObject(pv);
-	Window::setDelete(pv);
-	_path2View.erase(it);
-}
-
-void ClusterView::addPath(Path *path, std::vector<PathView *> *refreshers)
-{
-	if (!path->visible() || !_cx->objectGroup()->coversPath(path))
-	{
-		return;
-	}
-
-
-	TorsionCluster *svd = nullptr;
-	svd = static_cast<TorsionCluster *>(_cx);
-	
-	PathView *pv = nullptr;
-
-	for (auto it = _path2View.begin(); it != _path2View.end(); it++)
-	{
-		if (it->first == path)
-		{
-			pv = it->second; // no need to entirely destroy this thing
-			break;
-		}
-		else if (it->first->sameRouteAsPath(path))
-		{
-			clearOldPathView(it->second);
-			break;
-		}
-	}
-
-	if (pv == nullptr)
-	{
-		pv = new PathView(*path, svd);
-	}
-
-	if (refreshers == nullptr && pv->needsUpdate())
-	{
-		pv->populate();
-		addPathView(pv);
-	}
-	else if (refreshers && pv->needsUpdate())
-	{
-		refreshers->push_back(pv);
-	}
-	
-}
-
-void ClusterView::addPaths()
-{
-#ifndef VERSION_SHORT_ROUTES
-	return;
-#endif
-
-	wait();
-	
-	if (_confSpaceView && _confSpaceView->confType() != rope::ConfTorsions)
-	{
-		return;
-	}
-
-	PathManager *pm = Environment::env().pathManager();
-	
-	std::vector<PathView *> pvs;
-
-	waitForInvert();
-
-	for (Path &path : pm->objects())
-	{
-		addPath(&path, &pvs);
-	}
-	
-	std::cout << "Total paths to populate: " << pvs.size() << std::endl;
-	
-	if (pvs.size() > 0)
-	{
-		_running = true;
-		_worker = new std::thread(ClusterView::populatePaths, this, pvs);
-	}
 }
 
 void ClusterView::waitForInvert()
@@ -421,60 +284,6 @@ void ClusterView::invertSVD(ClusterView *me)
 		}
 	}
 
-}
-
-void ClusterView::privatePopulatePaths(std::vector<PathView *> pvs)
-{
-	if (pvs.size() == 0)
-	{
-		return;
-	}
-
-	for (PathView *pv : pvs)
-	{
-		pv->populate();
-		addPathView(pv);
-
-		if (_finish)
-		{
-			break;
-		}
-		
-		clickTicker();
-	}
-
-	PathManager *pm = Environment::env().pathManager();
-
-	for (Path &path : pm->objects())
-	{
-		path.cleanupRoute();
-	}
-
-	finishTicker();
-	_finish = false;
-}
-
-void ClusterView::populatePaths(ClusterView *me, std::vector<PathView *> pvs)
-{
-	VagWindow *window = VagWindow::window();
-	
-	if (me->_inherit && me->_inherit != me)
-	{
-		me->_inherit->passiveWait();
-	}
-
-	window->requestProgressBar(pvs.size(), "Loading paths");
-	
-	me->privatePopulatePaths(pvs);
-
-	window->removeProgressBar();
-
-	{
-		std::unique_lock<std::mutex> lock(me->_lockPopulating);
-		me->_running = false;
-	}
-
-	me->_cv.notify_all();
 }
 
 void ClusterView::selected(int rawidx, bool inverse)

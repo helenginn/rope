@@ -21,7 +21,6 @@
 #include "Parameter.h"
 #include "SimpleBasis.h"
 #include "ConcertedBasis.h"
-#include "OnPathBasis.h"
 
 TorsionBasis::TorsionBasis()
 {
@@ -40,11 +39,6 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	{
 		ConcertedBasis *cb = new ConcertedBasis();
 		cb->setCustom(true);
-		basis = cb;
-	}
-	else if (type == TorsionBasis::TypeOnPath)
-	{
-		OnPathBasis *cb = new OnPathBasis();
 		basis = cb;
 	}
 	else if (type == TorsionBasis::TypeConcerted)

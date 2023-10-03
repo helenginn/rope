@@ -19,7 +19,6 @@
 #include "Path.h"
 #include "ModelManager.h"
 #include "PathManager.h"
-#include "Trajectory.h"
 #include "RTMultiple.h"
 
 Path::Path(PlausibleRoute *pr)
@@ -107,74 +106,6 @@ PlausibleRoute *Path::toRoute()
 std::string Path::desc() const
 {
 	return _startInstance + " to " + _endInstance;
-}
-
-Trajectory *Path::calculateDeviations(int steps)
-{
-	Trajectory *straight = calculateTrajectory(2);
-	Trajectory *curvy = calculateTrajectory(steps);
-	
-	curvy->subtract(straight);
-	return curvy;
-}
-
-Trajectory *Path::calculateTrajectory(int steps)
-{
-	housekeeping();
-
-	_instance->load();
-	AtomContent *grp = _instance->model()->currentAtoms();
-	PlausibleRoute *pr = toRoute();
-	pr->setup();
-	
-	pr->calculatePolynomialProgression(steps);
-	
-	std::vector<ResidueTorsion> polymer_rts = _instance->residueTorsionList();
-	RTMultiple list; list.vector_from(polymer_rts);
-	RTAngles angles; angles.vector_from(polymer_rts);
-	RTAngles first;
-	
-	for (size_t i = 0; i < steps; i++)
-	{
-		pr->submitJobAndRetrieve(i);
-		_instance->extractTorsionAngles(grp, true);
-		_instance->grabTorsions(angles, rope::TemporaryTorsions);
-		
-		if (i == 0)
-		{
-			first = angles;
-		}
-
-		angles.match_degrees_to(first);
-		first = angles;
-
-		list.add_angles_from(angles);
-	}
-	
-	_instance->unload();
-	cleanupRoute();
-	
-	Trajectory *traj = new Trajectory(list, this);
-	return traj;
-}
-
-void Path::addDeviationsToGroup(MetadataGroup &group)
-{
-	Trajectory *traj = calculateDeviations(_steps);
-	traj->addToMetadataGroup(group);
-	delete traj;
-}
-
-void Path::addTorsionsToGroup(MetadataGroup &group)
-{
-	if (!_contributeSVD)
-	{
-		return;
-	}
-
-	Trajectory *traj = calculateTrajectory(_steps);
-	traj->addToMetadataGroup(group);
-	delete traj;
 }
 
 void Path::cleanupRoute()

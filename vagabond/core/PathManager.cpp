@@ -104,20 +104,3 @@ void PathManager::purgePath(Path *path)
 	
 	sendResponse("purged_path", path);
 }
-
-void PathManager::addPathsToMetadataGroup(MetadataGroup *grp)
-{
-	std::vector<HasMetadata *> objs = grp->objects();
-
-	for (Path &path : _objects)
-	{
-		path.housekeeping();
-
-		if (!grp->coversPath(&path))
-		{
-			continue;
-		}
-
-		path.addTorsionsToGroup(*grp);
-	}
-}

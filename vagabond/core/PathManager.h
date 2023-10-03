@@ -36,8 +36,6 @@ public:
 	{
 		return "paths";
 	}
-	
-	void addPathsToMetadataGroup(MetadataGroup *grp);
 
 	std::vector<Path *> pathsForInstance(Instance *mol);
 	std::vector<Path *> pathsBetweenInstances(Instance *first, 

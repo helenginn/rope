@@ -29,7 +29,6 @@
 
 class Path;
 class Rule;
-class PathView;
 class HasMetadata;
 class FloatingText;
 class MetadataGroup;
@@ -76,14 +75,11 @@ public:
 	{
 		_inherit = cv;
 	}
-	
-	void addPath(Path *path, std::vector<PathView *> *refreshers = nullptr);
 
 	virtual void click(bool left = true);
 
 	void applyRule(const Rule &r);
 	void applySelected();
-	static void populatePaths(ClusterView *me, std::vector<PathView *> pvs);
 
 	void prioritiseMetadata(std::string key);
 	
@@ -99,17 +95,7 @@ public:
 	
 	void reselect();
 	void deselect();
-protected:
-	virtual void sendObject(std::string tag, void *object);
-
 private:
-	void clearPath(Path *path);
-	void addPaths();
-	void privatePopulatePaths(std::vector<PathView *> pvs);
-
-	void addPathView(PathView *pv);
-	void clearOldPathView(PathView *pv);
-
 	static void invertSVD(ClusterView *me);
 	void wait();
 	void passiveWait();
@@ -129,8 +115,6 @@ private:
 	std::map<const Rule *, std::vector<HasMetadata *>> _members;
 	std::map<int, int> _point2Index;
 	
-	std::map<Path *, PathView *> _path2View;
-	std::vector<PathView *> _pathViews;
 	std::thread *_worker = nullptr;
 	std::thread *_invert = nullptr;
 
