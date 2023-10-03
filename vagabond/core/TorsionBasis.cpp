@@ -152,8 +152,3 @@ Coord::Interpolate<float> TorsionBasis::valueForParameter(BondSequence *seq,
 	return ret;
 }
 
-Coord::NeedsUpdate TorsionBasis::needsUpdate(BondSequence *seq,
-                                             const Coord::Get &coord, int idx)
-{
-	return Coord::NeedsUpdate();
-}

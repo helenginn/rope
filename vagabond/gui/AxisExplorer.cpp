@@ -44,7 +44,6 @@ AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 	_torsionLists.push_back(angles);
 	setPingPong(true);
 	setOwnsAtoms(false);
-	setDoesBonds(false);
 }
 
 AxisExplorer::~AxisExplorer()
@@ -86,7 +85,6 @@ void AxisExplorer::submitJob(float prop)
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
-		job.pos_sampler = this;
 		job.parameters = {prop};
 		if (_atomMaps)
 		{

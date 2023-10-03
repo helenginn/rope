@@ -37,7 +37,6 @@ public:
 		TypeCustom,
 		TypeOnPath,
 		TypeConcerted,
-		TypeMechanical,
 	};
 
 	TorsionBasis();
@@ -52,9 +51,6 @@ public:
 	static TorsionBasis *newBasis(Type type);
 	
 	int addParameter(Parameter *param, Atom *atom = nullptr);
-
-	virtual Coord::NeedsUpdate needsUpdate(BondSequence *seq, 
-	                                       const Coord::Get &coord, int idx);
 
 	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
 	                                                    int tidx) = 0;
@@ -93,11 +89,6 @@ public:
 	void setReferenceAngle(int i, float a)
 	{
 		_angles[i].angle = a;
-	}
-	
-	Atom *atom(int i)
-	{
-		return _atoms[i];
 	}
 	
 	Parameter *const parameter(int i) const

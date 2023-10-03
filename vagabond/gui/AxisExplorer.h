@@ -22,8 +22,8 @@
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/gui/Display.h>
 #include <vagabond/core/StructureModification.h>
-#include <vagabond/core/PositionSampler.h>
 #include <vagabond/core/RAMovement.h>
+#include <vagabond/utils/Vec3s.h>
 #include <vagabond/gui/elements/DragResponder.h>
 
 class Slider;
@@ -33,7 +33,7 @@ class AtomContent;
 class ConcertedBasis;
 
 class AxisExplorer : public Display, public DragResponder, 
-public StructureModification, public PositionSampler
+public StructureModification
 {
 public:
 	AxisExplorer(Scene *prev, Instance *mol, const RTAngles &angles);

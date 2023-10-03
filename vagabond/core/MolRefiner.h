@@ -43,7 +43,6 @@ public:
 	void addToMap(ArbitraryMap *map);
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
-	virtual void torsionBasisMods(TorsionBasis *tb);
 private:
 	std::vector<float> findTensorAxes(std::vector<float> &triangle);
 	void triangle_to_svd(std::vector<float> &triangle);

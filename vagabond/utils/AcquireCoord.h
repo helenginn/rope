@@ -29,8 +29,6 @@ namespace Coord
 	template <typename Type> 
 	using Interpolate = std::function<Type(const Coord::Get &)>;
 
-	using NeedsUpdate = std::function<bool(const Coord::Get &)>;
-	
 	inline Get convertedGet(const Get &get, 
 	                        std::function<int(const int &idx)> &convert)
 	{

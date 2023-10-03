@@ -21,8 +21,6 @@
 #include "ArbitraryMap.h"
 #include "AtomMap.h"
 #include "PathManager.h"
-#include "OnPathBasis.h"
-#include "Trajectory.h"
 #include "Warp.h"
 #include "ChemotaxisEngine.h"
 
@@ -223,25 +221,6 @@ void MolRefiner::retrieveJobs()
 	}
 	
 	_ticket2Group.clear();
-}
-
-void MolRefiner::torsionBasisMods(TorsionBasis *tb)
-{
-	/*
-	OnPathBasis *opb = static_cast<OnPathBasis *>(tb);
-
-	PathManager *pm = Environment::pathManager();
-	Path *p = &pm->object(0);
-	p->startInstance()->load();
-
-	Trajectory *traj = p->calculateTrajectory(32);
-	traj->attachInstance(_instance);
-	traj->filterAngles(opb->parameters());
-	traj->relativeToFirst();
-
-	std::cout << "Path: " << p->motionCount() << std::endl;
-	opb->setTrajectory(traj);
-	*/
 }
 
 size_t MolRefiner::parameterCount()
