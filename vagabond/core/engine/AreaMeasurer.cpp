@@ -76,7 +76,7 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 {
 	_lattice.changeLatticeRadius(atom, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
-	std::vector<glm::vec3> points_in_overlap;
+	int points_in_overlap = 0;
 	const glm::vec3 pos = atom->derivedPosition();
 
 	//for each lattice point in fibonacci lattice
@@ -92,7 +92,7 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 				// if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
 				if (glm::length(point + pos - other_atom.first->derivedPosition()) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
 				{
-					points_in_overlap.push_back(point);
+					points_in_overlap++;
 					break;
 				}
 			}
@@ -102,14 +102,14 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 	// std::cout <<  "points in overlap: " << points_in_overlap.size() << std::endl;
 	// std::cout << "percentage of points not in overlap: " << 1 - ((float) points_in_overlap.size() / points.size()) << std::endl;
 	// return percentage of points not in overlap
-	return 1 - ((float) points_in_overlap.size() / points.size());
+	return 1 - ((float) points_in_overlap / points.size());
 }
 
 float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 {
 	_lattice.changeLatticeRadius(atom, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
-	std::vector<glm::vec3> points_in_overlap;
+	int points_in_overlap = 0;
 	const glm::vec3 pos = atom->derivedPosition();
 
 	std::set<Atom *> nearAtoms = _contacts->atomsNear(atom, radius);
@@ -131,14 +131,14 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 				const float radius = getVdWRadius(other_atom);
 				if (glm::length(point + pos - other_atom->derivedPosition()) <= radius + _probeRadius) // + probe radius to account for solvent molecule size
 				{
-					points_in_overlap.push_back(point);
+					points_in_overlap++;
 					break;
 				}
 			}
 		}
 	}
 	// return percentage of points not in overlap
-	return 1 - ((float) points_in_overlap.size() / points.size());
+	return 1 - ((float) points_in_overlap / points.size());
 }
 
 float areaFromExposure(float exposure, Atom *atom, double probeRadius)
