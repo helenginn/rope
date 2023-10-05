@@ -29,7 +29,7 @@ void ButtonResponder::setKeyResponder(KeyResponder *kr)
 
 void ButtonResponder::unsetKeyResponder(KeyResponder *kr)
 {
-	auto it = std::find(_keyResponders.begin(), _keyResponders.end(), kr);
+	auto it = find(_keyResponders.begin(), _keyResponders.end(), kr);
 	if (it != _keyResponders.end())
 	{
 		_keyResponders.erase(it);
