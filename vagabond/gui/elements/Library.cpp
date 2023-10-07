@@ -110,6 +110,7 @@ SDL_Surface *Library::loadImage(std::string filename)
 	
 	if (surface == nullptr)
 	{
+		std::cout << "Failed to load " << path << std::endl;
 		return NULL;
 	}
 
