@@ -30,12 +30,14 @@ StructureModification(info->instance, num, dims)
 {
 	_pType = BondCalculator::PipelineCorrelation;
 	_torsionType = TorsionBasis::TypeConcerted;
-	_threads = 2;
+	_threads = 1;
 	
 	if (info->instance->hasSequence())
 	{
 		_warp = Warp::warpFromFile(info->instance, "test.json");
 	}
+	
+	std::cout << "MolRefiner for " << info->instance->id() << std::endl;
 
 	_map = comparison;
 	_info = info;
