@@ -52,9 +52,15 @@ Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)
 	_entity_id = seq._entity_id;
 	
 	housekeeping();
-	SequenceComparison *sc = newComparison();
-	mapFromMaster(sc);
-	delete sc;
+	
+	/*
+	if (_master.size() == 0)
+	{
+		SequenceComparison *sc = newComparison();
+		mapFromMaster(sc);
+		delete sc;
+	}
+	*/
 }
 
 Sequence::Sequence(std::string str)
@@ -235,9 +241,14 @@ void Sequence::addBufferResidue()
 
 Residue *const Sequence::local_residue(Residue *const master) 
 {
-	if (!master || _map2Local.count(master) == 0)
+	if (_map2Local.size() == 0)
 	{
 		remapFromMaster();
+	}
+
+	if (!master || _map2Local.count(master) == 0)
+	{
+		return nullptr;
 	}
 
 	return _map2Local.at(master);
@@ -245,9 +256,14 @@ Residue *const Sequence::local_residue(Residue *const master)
 
 Residue *Sequence::master_residue(Residue *const local) 
 {
-	if (_map2Master.count(local) == 0)
+	if (_map2Master.size() == 0)
 	{
 		remapFromMaster();
+	}
+
+	if (!local || _map2Master.count(local) == 0)
+	{
+		return nullptr;
 	}
 
 	return _map2Master.at(local);

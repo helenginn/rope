@@ -44,6 +44,7 @@ Polymer::Polymer(std::string model_id, std::string chain_id,
 	_chain_ids.insert(chain_id);
 	_sequence = *derivative;
 	_entity = (Environment::entityManager()->entity(_entity_id));
+	_sequence.setEntityId(_entity_id);
 	
 	if (_entity != nullptr) // when newly made, which is when we fill this in
 	{
