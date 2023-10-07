@@ -44,6 +44,7 @@ void PlausibleRoute::setup()
 	prepareDestination();
 	connectParametersToDestination();
 	setTargets();
+	setTargets(); // improvement of superposition second time?
 }
 
 void PlausibleRoute::setTargets()
