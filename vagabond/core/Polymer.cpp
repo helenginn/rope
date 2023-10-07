@@ -187,7 +187,7 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 
 			double angle = p->empiricalMeasurement();
 
-			bool success = local->supplyRefinedAngle(desc, angle, tmp_dest);
+			local->supplyRefinedAngle(desc, angle, tmp_dest);
 		}
 	}
 
@@ -382,7 +382,6 @@ std::vector<Posular> Polymer::atomPositionList(Instance *reference,
 
 Atom *Polymer::equivalentForAtom(Polymer *other, Atom *atom)
 {
-	AtomGroup *otherAtoms = other->currentAtoms();
 	AtomGroup *myAtoms = currentAtoms();
 	
 	// get local residue out of the sequence of that molecule
