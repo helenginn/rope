@@ -147,6 +147,7 @@ float RouteValidator::linearityRatio()
 
 bool RouteValidator::validate()
 {
+	_route.instance()->load();
 	_route.endInstance()->load();
 	_route.instance()->currentAtoms()->recalculate();
 	_route.endInstance()->currentAtoms()->recalculate();
@@ -159,7 +160,9 @@ bool RouteValidator::validate()
 	AtomGroup *grp = _route.endInstance()->currentAtoms();
 
 	float diff = grp->residualAgainst("original");
-	bool unloaded = _route.endInstance()->unload();
+	_route.instance()->unload();
+	_route.endInstance()->unload();
+	_rmsd = diff;
 	return (diff < 0.5);
 }
 

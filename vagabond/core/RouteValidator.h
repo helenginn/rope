@@ -33,6 +33,11 @@ public:
 	 * end molecule when we use the end molecule's torsion angles? */
 	bool validate();
 	
+	const float &rmsd()
+	{
+		return _rmsd;
+	}
+	
 	/** returns average curvature per atom for a linear torsion angle trajectory */
 	float linearityRatio();
 
@@ -48,6 +53,7 @@ private:
 	std::map<Atom *, float> _distances;
 
 	float _tolerance = 0.02;
+	float _rmsd = -1;
 	int _steps = 32;
 };
 
