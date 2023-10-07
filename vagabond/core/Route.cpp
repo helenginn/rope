@@ -27,7 +27,6 @@ Route::Route(Instance *inst, TorsionCluster *cluster, int dims)
 : StructureModification(inst, 1, dims)
 {
 	_cluster = cluster;
-	useForceField(true);
 	_torsionType = TorsionBasis::TypeSimple;
 	instance()->load();
 }
@@ -115,12 +114,6 @@ void Route::submitJob(int idx, bool show, bool forces)
 			job.requests = JobCalculateDeviations;
 		}
 		
-		if (forces && _pType & BondCalculator::PipelineForceField)
-		{
-			job.requests = (JobType)(JobScoreStructure |
-			                         job.requests);
-		}
-
 		int t = calc->submitJob(job);
 		_ticket2Point[t] = idx;
 	}
@@ -128,36 +121,8 @@ void Route::submitJob(int idx, bool show, bool forces)
 	_point2Score[idx] = Score{};
 }
 
-void Route::useForceField(bool use)
-{
-	if (!use)
-	{
-		_pType = BondCalculator::PipelineAtomPositions;
-
-	}
-	else
-	{
-		_pType = BondCalculator::PipelineForceField;
-	}
-}
-
 void Route::customModifications(BondCalculator *calc, bool has_mol)
 {
-	if (!has_mol)
-	{
-		return;
-	}
-
-	calc->setPipelineType(_pType);
-	
-	if (_pType & BondCalculator::PipelineForceField)
-	{
-		FFProperties props;
-		props.group = _instance->currentAtoms();
-		props.t = FFProperties::VdWContacts;
-		calc->setForceFieldProperties(props);
-	}
-
 	calc->manager().setDefaultCoordTransform(JobManager::identityTransform());
 }
 

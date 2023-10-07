@@ -93,7 +93,6 @@ PlausibleRoute *Path::toRoute()
 	_motions.attachInstance(_instance);
 
 	PlausibleRoute *pr = new PlausibleRoute(_instance, nullptr, _motions.size());
-	pr->useForceField(false);
 	pr->setDestinationInstance(_end);
 	pr->setType(_type);
 	pr->setMotions(_motions);

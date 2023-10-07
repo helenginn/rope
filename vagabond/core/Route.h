@@ -178,8 +178,6 @@ public:
 	void bringTorsionsToRange();
 	
 	void printWayPoints();
-
-	void useForceField(bool use);
 	
 	const RTMotion &motions() const
 	{
