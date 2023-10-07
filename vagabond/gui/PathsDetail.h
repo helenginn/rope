@@ -30,9 +30,11 @@ public:
 	~PathsDetail() {}
 
 	virtual void setup();
+	virtual void refresh();
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void redraw();
 	void calculateMetrics();
 
 	float _rmsd = 0.;
