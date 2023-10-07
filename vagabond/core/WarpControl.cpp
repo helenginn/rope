@@ -149,7 +149,7 @@ bool WarpControl::refineBetween(int start, int end)
 
 	float ave_weight = average_weight(params, _weights) * 2;
 	ave_weight *= 30 / (float)params.size();
-	if (ave_weight < 0.2) ave_weight = 0.2;
+	if (ave_weight < 0.5) ave_weight = 0.5;
 	
 	_simplex = new SimplexEngine(this);
 	_simplex->setMaxRuns((end - start) * 10);
@@ -327,7 +327,8 @@ void WarpControl::compensatoryMotions(ParamSet &set, bool expand,
 	bool success = false;
 	float begin = _score();
 
-	float ave_weight = average_weight(set, _weights) / 10;
+	float ave_weight = average_weight(set, _weights) / 5;
+	if (ave_weight < 0.5) ave_weight = 0.5;
 	success = repeat([this, set, ave_weight]()
 	                 {
 	                	 return refineParameters(set, ave_weight);
