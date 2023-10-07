@@ -44,6 +44,7 @@
 #include <vagabond/gui/SearchPDB.h>
 #include <vagabond/gui/SerialRefiner.h>
 #include <vagabond/gui/PathFinding.h>
+#include <vagabond/gui/PathsMenu.h>
 #include <vagabond/gui/BFactors.h>
 
 #include <vagabond/gui/elements/ImageButton.h>
@@ -206,20 +207,20 @@ void AddEntity::showFirstPage()
 			text->resize(0.8);
 			addTempObject(text);
 		}
-		
-		{
-			ImageButton *button = new ImageButton("assets/images/bee.png", 
-			                                      this);
-			button->resize(0.19);
-			button->setReturnTag("b_factors");
-			button->setCentre(0.79, 0.58);
-			addTempObject(button);
 
-			Text *text = new Text("B factors");
-			text->setCentre(0.8, 0.7);
-			text->resize(0.8);
-			addTempObject(text);
-		}
+	if (_obj.hasSequence())
+	{
+		ImageButton *b = new ImageButton("assets/images/map.png", this);
+		b->resize(0.15);
+		b->setReturnTag("path_finding");
+		b->setCentre(0.79, 0.58);
+		addTempObject(b);
+
+		Text *text = new Text("Pathfinding");
+		text->setCentre(0.79, 0.7);
+		text->resize(0.8);
+		addTempObject(text);
+	}
 
 #ifdef VERSION_EXTEND_ENTITY_MENU
 		ImageButton *button = ImageButton::arrow(-90, this,
@@ -235,16 +236,31 @@ void AddEntity::showFirstPage()
 void AddEntity::showSecondPage()
 {
 	deleteTemps();
+
+	{
+		ImageButton *button = new ImageButton("assets/images/bee.png", 
+		                                      this);
+		button->resize(0.19);
+		button->setReturnTag("b_factors");
+		button->setCentre(0.2, 0.3);
+		addTempObject(button);
+
+		Text *text = new Text("B factors");
+		text->setCentre(0.2, 0.4);
+		text->resize(0.8);
+		addTempObject(text);
+	}
+
 	if (_obj.hasSequence())
 	{
-		ImageButton *b = new ImageButton("assets/images/map.png", this);
+		ImageButton *b = new ImageButton("assets/images/tube_1.5ml.png", this);
 		b->resize(0.15);
-		b->setReturnTag("path_finding");
-		b->setCentre(0.2, 0.3);
+		b->setReturnTag("refinement");
+		b->setCentre(0.4, 0.3);
 		addTempObject(b);
 
-		Text *text = new Text("Pathfinding");
-		text->setCentre(0.2, 0.4);
+		Text *text = new Text("Refinement prep");
+		text->setCentre(0.4, 0.4);
 		text->resize(0.8);
 		addTempObject(text);
 	}
@@ -459,7 +475,14 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "path_finding")
 	{
-		PathFinding *pf = new PathFinding(this, &_obj);
+		PathsMenu *pm = new PathsMenu(this);
+		pm->setEntityId(_obj.name());
+		pm->show();
+		return;
+	}
+	else if (tag == "refinement")
+	{
+		PathFinding *pf = new PathFinding(this, &_obj); // for warp
 		pf->show();
 		return;
 	}
