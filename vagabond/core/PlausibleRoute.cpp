@@ -125,7 +125,9 @@ void PlausibleRoute::postScore(float score)
 
 bool PlausibleRoute::validateMainTorsion(int i, bool over_mag)
 {
-	if (_mainsOnly && !parameter(i)->coversMainChain())
+	Parameter *p = parameter(i);
+	
+	if (!p || (_mainsOnly && !p->coversMainChain()))
 	{
 		return false;
 	}
