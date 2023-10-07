@@ -91,6 +91,4 @@ void Modal::squeezeToWidth(Renderable *r)
 	{
 		r->resize(0.9 * _width / width);
 	}
-
-
 }

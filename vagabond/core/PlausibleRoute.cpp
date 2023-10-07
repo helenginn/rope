@@ -481,7 +481,6 @@ void PlausibleRoute::nudgeWayPointCycles()
 			_stepSize = 0.01;
 		}
 		
-//		std::cout << count << " / " << _maximumCycles << std::endl;
 		if (frac < 0.25 || total == 0 || count >= _maximumCycles)
 		{
 			_magnitudeThreshold /= 2;
