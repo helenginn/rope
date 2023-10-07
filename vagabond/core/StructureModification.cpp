@@ -80,14 +80,6 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	calc.addAnchorExtension(anchor);
 	calc.setIgnoreHydrogens(false);
 
-	customModifications(&calc, has_mol);
-
-	calc.setup();
-	torsionBasisMods(calc.torsionBasis());
-
-	calc.start();
-	
-
 	_num = _sampler.pointCount();
 }
 
@@ -115,9 +107,7 @@ void StructureModification::finishHetatmCalculator()
 		return;
 	}
 
-	customModifications(_hetatmCalc, false);
 	_hetatmCalc->setup();
-	_hetatmCalc->start();
 }
 
 bool StructureModification::checkForInstance(AtomGroup *grp)
@@ -171,6 +161,13 @@ void StructureModification::startCalculator()
 		{
 			addToHetatmCalculator(anchor);
 		}
+	}
+
+	for (BondCalculator *calc : _calculators)
+	{
+		customModifications(calc, false);
+		calc->setup();
+		calc->start();
 	}
 	
 	finishHetatmCalculator();

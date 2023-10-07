@@ -116,7 +116,6 @@ protected:
 	}
 
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
-	virtual void torsionBasisMods(TorsionBasis *tb) {};
 
 	bool fillBasis(ConcertedBasis *cb, const RTAngles &angles, int axis = 0);
 	void supplyTorsionLists();

@@ -228,6 +228,7 @@ void Warp::customModifications(BondCalculator *calc, bool has_mol)
 {
 	calc->setSuperpose(true);
 	calc->prepareToSkipSections(true);
+	calc->manager().setDefaultCoordTransform(JobManager::identityTransform());
 }
 
 void Warp::setCompareFilters(AtomFilter &left, AtomFilter &right)

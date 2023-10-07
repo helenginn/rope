@@ -94,7 +94,7 @@ public:
 protected:
 	bool _ignoreHydrogens = false;
 	bool _skipSections = false;
-	bool _inSequence = false;
+	bool _inSequence = true;
 	bool _superpose = true;
 	size_t _loopCount = 1;
 	int _jointLimit = -1;

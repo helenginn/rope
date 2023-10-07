@@ -80,12 +80,6 @@ void BondCalculator::sanityCheckPipeline()
 	{
 		throw std::runtime_error("Bond calculator pipeline not specified");
 	}
-
-	if (_type == PipelineCorrelation && _refDensity == nullptr)
-	{
-		throw std::runtime_error("Correlation requested, but no diffraction "
-		                         "to compare to");
-	}
 }
 
 void BondCalculator::sanityCheckDepthLimits()
@@ -129,12 +123,9 @@ void BondCalculator::setupCorrelationHandler()
 		return;
 	}
 
-	std::cout << "Setting up correlation handler" << std::endl;
 	_correlHandler = new CorrelationHandler(this);
 	_correlHandler->setThreads(_threads);
 	_correlHandler->setReferenceDensity(_refDensity);
-	
-	std::cout << " = " << _correlHandler << std::endl;
 }
 
 void BondCalculator::setupMapTransferHandler()

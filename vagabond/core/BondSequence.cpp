@@ -57,7 +57,10 @@ void BondSequence::removeTorsionBasis()
 
 void BondSequence::makeTorsionBasis()
 {
-	_torsionBasis = TorsionBasis::newBasis(_basisType);
+	if (!_torsionBasis)
+	{
+		_torsionBasis = TorsionBasis::newBasis(_basisType);
+	}
 }
 
 void BondSequence::addToGraph(AnchorExtension &ext)
@@ -69,10 +72,7 @@ void BondSequence::addToGraph(AnchorExtension &ext)
 	_grapher.calculateMissingMaxDepths();
 	_grapher.fillInParents();
 
-	if (!_torsionBasis)
-	{
-		makeTorsionBasis();
-	}
+	makeTorsionBasis();
 
 	_grapher.markHydrogenGraphs();
 	_grapher.fillTorsionAngles(_torsionBasis);
@@ -239,26 +239,30 @@ void BondSequence::superpose()
 	{
 		return;
 	}
-
-	for (size_t i = 0; i < _sampleCount; i++)
+	
+	size_t i = 0;
+	while (true)
 	{
 		Superpose pose;
 		pose.forceSameHand(true);
-
-		for (size_t j = 0; j < _singleSequence; j++)
+		int start = i;
+		i++;
+		for (; i < blockCount(); i++)
 		{
-			int n = i * _singleSequence + j;
-			
-			if (_blocks[n].atom == nullptr || !_blocks[n].flag)
+			if (!_blocks[i].flag)
 			{
 				continue;
 			}
-			
 
-			glm::vec3 p = _blocks[j].target;
-			glm::vec3 q = _blocks[n].my_position();
-			
+			glm::vec3 p = _blocks[i].target;
+			glm::vec3 q = _blocks[i].my_position();
+
 			pose.addPositionPair(p, q);
+
+			if (!_blocks[i].atom)
+			{
+				break;
+			}
 		}
 
 		pose.superpose();
@@ -272,17 +276,25 @@ void BondSequence::superpose()
 			}
 		}
 
-		for (size_t j = 0; j < _singleSequence; j++)
+		for (size_t j = start; j < i; j++)
 		{
-			int n = i * _singleSequence + j;
-			if (_blocks[n].atom == nullptr || !_blocks[n].flag)
+			if (_blocks[j].atom == nullptr || !_blocks[j].flag)
 			{
 				continue;
 			}
 
-			glm::vec4 pos = _blocks[n].basis[3];
-			_blocks[n].basis[3] = trans * pos;
+			glm::vec4 pos = _blocks[j].basis[3];
+			_blocks[j].basis[3] = trans * pos;
 		}
+
+		if (i == blockCount())
+		{
+			break;
+		}
+	}
+
+	for (size_t i = 0; i < _sampleCount; i++)
+	{
 	}
 }
 

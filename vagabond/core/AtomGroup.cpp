@@ -339,7 +339,7 @@ void AtomGroup::recalculate()
 {
 	try
 	{
-		connectedGroups();
+		connectedGroups(false);
 
 		for (size_t i = 0; i < _connectedGroups.size(); i++)
 		{
