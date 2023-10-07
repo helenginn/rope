@@ -227,7 +227,6 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 
 void Grapher::generateGraphs(AnchorExtension &ext)
 {
-	std::cout << "Adding extension: " << ext.atom->desc() << std::endl;
 	_anchors.push_back(ext.atom);
 
 	AtomGraph *graph = new AtomGraph();
@@ -515,7 +514,6 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 	int curr = 0;
 
 	std::vector<AtomBlock> blocks;
-	std::cout << "Total: " << total << std::endl;
 	blocks.resize(total);
 
 	for (size_t i = _anchorsDone; i < _anchors.size(); i++)
