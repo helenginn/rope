@@ -19,11 +19,13 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include "PathsMenu.h"
+#include "EntityManager.h"
 #include "Environment.h"
 #include "RouteExplorer.h"
 #include "PlausibleRoute.h"
 #include "PathManager.h"
 #include "PathsDetail.h"
+#include "MakeNewPaths.h"
 
 PathsMenu::PathsMenu(Scene *prev) : ListView(prev)
 {
@@ -43,11 +45,20 @@ void PathsMenu::setup()
 
 size_t PathsMenu::lineCount()
 {
-	return Environment::env().pathManager()->objectCount();
+	return Environment::env().pathManager()->objectCount() + 1;
 }
 
 Renderable *PathsMenu::getLine(int i)
 {
+	if (i == 0)
+	{
+		TextButton *t = new TextButton("Make new path", this);
+		t->setReturnTag("make_new");
+		t->setLeft(0., 0.);
+		return t;
+	}
+
+	i--;
 	Box *b = new Box();
 	Path &path = Environment::env().pathManager()->object(i);
 	
@@ -74,6 +85,21 @@ Renderable *PathsMenu::getLine(int i)
 
 void PathsMenu::buttonPressed(std::string tag, Button *button)
 {
+	if (tag == "make_new")
+	{
+		Entity *entity = EntityManager::manager()->entity(_entity_id);
+		if (entity)
+		{
+			MakeNewPaths *mnp = new MakeNewPaths(this, entity);
+			mnp->show();
+		}
+		else
+		{
+			throw std::runtime_error("Couldn't find entity with this name?");
+		}
+
+		return;
+	}
 	std::string end = Button::tagEnd(tag, "view_");
 
 	if (end.length())
