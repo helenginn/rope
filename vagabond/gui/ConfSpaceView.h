@@ -83,6 +83,11 @@ public:
 	void sendObject(std::string tag, void *object);
 
 	void assignRopeSpace(RopeSpaceItem *item);
+	
+	void setMadePaths()
+	{
+		_madePaths = true;
+	}
 protected:
 	virtual void sendSelection(float t, float l, float b, float r,
 	                           bool inverse);
@@ -159,7 +164,8 @@ private:
 	
 	Status _status = Nothing;
 
-	bool _shownPaths = false;
+	static bool _madePaths;
+	bool _shownPathsButton = false;
 };
 
 #endif

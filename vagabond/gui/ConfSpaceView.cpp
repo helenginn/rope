@@ -19,9 +19,9 @@
 #include "RulesMenu.h"
 #include "PathsMenu.h"
 #include "AxesMenu.h"
+#include "RouteExplorer.h"
 #include "RopeSpaceItem.h"
 #include "LineSeries.h"
-#include "RouteExplorer.h"
 #include "ConfSpaceView.h"
 #include "SetupRefinement.h"
 #include "Axes.h"
@@ -50,6 +50,8 @@
 using namespace rope;
 std::map<Entity *, std::map<rope::ConfType, RopeSpaceItem *>> 
 	ConfSpaceView::_savedSpaces;
+	
+bool ConfSpaceView::_madePaths = false;
 
 ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
 : Scene(prev),
@@ -245,13 +247,13 @@ void ConfSpaceView::showAxesButton()
 
 void ConfSpaceView::showPathsButton()
 {
-	if (_shownPaths)
+	if (_shownPathsButton)
 	{
 		return;
 	}
 	
 	int count = Environment::env().pathManager()->objectCount();
-	if (count == 0)
+	if (count == 0 || !_madePaths)
 	{
 		return;
 	}
@@ -260,18 +262,18 @@ void ConfSpaceView::showPathsButton()
 	return;
 #endif
 
-	ImageButton *b = new ImageButton("assets/images/palette.png", this);
-	b->resize(0.1);
+	ImageButton *b = new ImageButton("assets/images/map.png", this);
+	b->resize(0.09);
 	b->setRight(0.97, 0.35);
 	b->setReturnTag("paths");
 
-	Text *t = new Text("paths");
+	Text *t = new Text("pathfinding");
 	t->resize(0.6);
-	t->setRight(0.96, 0.41);
+	t->setCentre(0.94, 0.41);
 	addObject(b);
 	addObject(t);
 	
-	_shownPaths = true;
+	_shownPathsButton = true;
 }
 
 void ConfSpaceView::showRulesButton()

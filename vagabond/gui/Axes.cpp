@@ -277,6 +277,7 @@ void Axes::route(int idx)
 	std::vector<Angular> values = directTorsionVector(idx);
 	sr->setRawDestination(values);
 	sr->setDestinationInstance(_targets[idx]);
+	_scene->setMadePaths();
 
 	RouteExplorer *re = new RouteExplorer(_scene, sr);
 	re->show();
