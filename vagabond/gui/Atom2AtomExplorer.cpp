@@ -156,7 +156,6 @@ Atom2AtomExplorer::Atom2AtomExplorer(Scene *scene, Instance *instance,
 	if (_instance->hasSequence())
 	{
 		Polymer *pol = static_cast<Polymer *>(_instance);
-		pol->sequence()->remapFromMaster(instance->entity());
 		_atom2Vec = new prepare_atom_list(_atoms, _movement, _filter, _instance);
 	}
 

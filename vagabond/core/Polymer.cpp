@@ -47,7 +47,7 @@ Polymer::Polymer(std::string model_id, std::string chain_id,
 	
 	if (_entity != nullptr) // when newly made, which is when we fill this in
 	{
-		SequenceComparison *sc = _sequence.newComparison(_entity);
+		SequenceComparison *sc = _sequence.newComparison();
 		_sequence.mapFromMaster(sc);
 		harvestMutations(sc);
 		delete sc;
@@ -91,8 +91,6 @@ void Polymer::harvestMutations(SequenceComparison *sc)
 
 void Polymer::putTorsionRefsInSequence(Chain *ch)
 {
-	_sequence.remapFromMaster(_entity);
-
 	for (size_t i = 0; i < ch->parameterCount(); i++)
 	{
 		Parameter *p = ch->parameter(i);
@@ -121,7 +119,6 @@ void Polymer::putTorsionRefsInSequence(Chain *ch)
 void Polymer::housekeeping()
 {
 	Instance::housekeeping();
-	_sequence.remapFromMaster(_entity);
 }
 
 void Polymer::insertTorsionAngles(AtomContent *atoms)
@@ -168,7 +165,6 @@ void Polymer::insertTorsionAngles(AtomContent *atoms)
 
 void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 {
-	_sequence.remapFromMaster(entity());
 	for (const std::string &chain : _chain_ids)
 	{
 		Chain *ch = atoms->chain(chain);
@@ -248,7 +244,7 @@ Residue *const Polymer::equivalentMaster(const ResidueId &target)
 	return master;
 }
 
-Residue *const Polymer::equivalentLocal(const ResidueId &m_id) const 
+Residue *const Polymer::equivalentLocal(const ResidueId &m_id)
 {
 	Residue *master = polymerEntity()->sequence()->residueLike(m_id);
 	return equivalentLocal(master);
@@ -260,9 +256,9 @@ Residue *Polymer::localForLocalId(const ResidueId &l_id)
 	return local;
 }
 
-Residue *const Polymer::equivalentLocal(Residue *const master) const 
+Residue *const Polymer::equivalentLocal(Residue *const master) 
 {
-	const Sequence *seq = const_sequence();
+	Sequence *seq = sequence();
 	Residue *const local = seq->local_residue(master);
 	return local;
 }
@@ -274,7 +270,6 @@ bool Polymer::atomBelongsToInstance(Atom *a)
 
 void Polymer::grabTorsions(RTAngles &angles, rope::TorsionType type)
 {
-	sequence()->remapFromMaster(entity());
 	sequence()->torsionsFromMapped(angles, type);
 }
 
@@ -294,7 +289,6 @@ std::map<Atom *, Atom *> Polymer::mapAtoms(Polymer *other)
 {
 	std::map<Atom *, Atom *> map;
 	std::map<ResidueId, ResidueId> resMap;
-	sequence()->remapFromMaster(_entity);
 
 	for (Residue &r : sequence()->residues())
 	{
@@ -335,7 +329,6 @@ std::vector<Posular> Polymer::atomPositionList(Instance *reference,
 	}
 
 	model()->load(Model::NoGeometry);
-	sequence()->remapFromMaster(_entity);
 
 	std::map<Atom *, Atom *> atomMap = reference->mapAtoms(this);
 
@@ -414,12 +407,11 @@ PolymerEntity *const Polymer::polymerEntity() const
 
 const size_t Polymer::completenessScore() const
 {
-	return const_sequence()->modelledResidueCount();
+	return sequence()->modelledResidueCount();
 }
 
 Atom *Polymer::atomForIdentifier(const Atom3DPosition &pos)
 {
-	sequence()->remapFromMaster(_entity);
 	Residue *myLocal = sequence()->local_residue(pos.master());
 	if (!myLocal)
 	{

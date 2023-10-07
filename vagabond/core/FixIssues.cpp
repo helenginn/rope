@@ -26,7 +26,6 @@
 FixIssues::FixIssues(Polymer *m)
 {
 	_reference = m;
-	_reference->sequence()->remapFromMaster(m->entity());
 
 }
 
@@ -363,8 +362,6 @@ void FixIssues::residuesForAtom(Polymer *mol, const Atom *a,
 {
 	Sequence *seqref = _reference->sequence();
 	Sequence *seq = mol->sequence();
-	seq->remapFromMaster(mol->entity());
-	seqref->remapFromMaster(mol->entity());
 
 	int ttc = a->terminalTorsionCount();
 	if (ttc < 1)

@@ -75,13 +75,13 @@ public:
 	{
 		return model_chain_id();
 	}
-	
-	const Sequence *const_sequence() const
+
+	Sequence *sequence()
 	{
 		return &_sequence;
 	}
-
-	Sequence *const sequence()
+	
+	const Sequence *sequence() const
 	{
 		return &_sequence;
 	}
@@ -125,8 +125,8 @@ public:
 	friend void from_json(const json &j, Polymer &value);
 	
 	virtual Residue *const equivalentMaster(const ResidueId &local);
-	virtual Residue *const equivalentLocal(Residue *const master) const;
-	virtual Residue *const equivalentLocal(const ResidueId &m_id) const;
+	virtual Residue *const equivalentLocal(Residue *const master);
+	virtual Residue *const equivalentLocal(const ResidueId &m_id);
 	virtual Residue *localForLocalId(const ResidueId &l_id);
 protected:
 	virtual bool atomBelongsToInstance(Atom *a);
@@ -172,6 +172,7 @@ inline void from_json(const json &j, Polymer &value)
 	value._entity_id = j.at("entity_id");
 	value._model_id = j.at("model_id");
 	value._sequence = j.at("sequence");
+	value._sequence.setEntityId(value._entity_id);
 	
 	if (j.count("prolined"))
 	{

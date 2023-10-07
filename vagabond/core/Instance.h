@@ -103,9 +103,9 @@ public:
 	const Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
 	virtual Residue *const equivalentMaster(const ResidueId &local)
 	{ return nullptr; }
-	virtual Residue *const equivalentLocal(Residue *const master) const
+	virtual Residue *const equivalentLocal(Residue *const master)
 	{ return nullptr; }
-	virtual Residue *const equivalentLocal(const ResidueId &m_id) const
+	virtual Residue *const equivalentLocal(const ResidueId &m_id)
 	{ return nullptr; }
 	virtual Residue *localForLocalId(const ResidueId &l_id)
 	{ return nullptr; }

@@ -49,7 +49,6 @@ public:
 		if (inst->hasSequence())
 		{
 			Polymer *pol = static_cast<Polymer *>(inst);
-			pol->sequence()->remapFromMaster(inst->entity());
 		}
 
 		for (RTValue &val : _pairs)

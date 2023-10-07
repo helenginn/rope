@@ -128,11 +128,6 @@ void insertBs(Entity *entity, Instance *instance, double *start,
               std::pair<Instance *, std::string> *mapping)
 {
 	instance->model()->load(Model::NoGeometry);
-	
-	if (instance->hasSequence())
-	{
-		static_cast<Polymer *>(instance)->sequence()->remapFromMaster(entity);
-	}
 
 	int i = -1;
 	float total_b = 0;

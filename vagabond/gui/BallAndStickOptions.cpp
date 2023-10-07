@@ -32,7 +32,6 @@ BallAndStickOptions::BallAndStickOptions(Scene *prev, Entity *ent) : ListView(pr
 	_entity = ent;
 	_preferences = &(_entity->visualPreferences());
 	Sequence *seq = _entity->sequence();
-	seq->remapFromMaster(ent);
 }
 
 void BallAndStickOptions::setup()

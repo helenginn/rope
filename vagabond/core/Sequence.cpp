@@ -19,6 +19,7 @@
 #include "SequenceComparison.h"
 #include "Atom3DPosition.h"
 #include "AtomsFromSequence.h"
+#include "EntityManager.h"
 #include "Sequence.h"
 #include "Residue.h"
 #include "Grapher.h"
@@ -48,9 +49,10 @@ Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)
 	_master = seq._master;
 	_anchor = seq._anchor;
 	_entity = seq._entity;
+	_entity_id = seq._entity_id;
 	
 	housekeeping();
-	SequenceComparison *sc = newComparison(_entity);
+	SequenceComparison *sc = newComparison();
 	mapFromMaster(sc);
 	delete sc;
 }
@@ -161,22 +163,9 @@ std::string Sequence::str()
 	return olc;
 }
 
-SequenceComparison *Sequence::newComparison(Entity *entity)
+SequenceComparison *Sequence::newComparison()
 {
-	if (entity == nullptr && _entity != nullptr)
-	{
-		entity = _entity;
-	}
-	else if (_entity == nullptr && entity != nullptr)
-	{
-		_entity = entity;
-	}
-	else if (_entity == nullptr && entity == nullptr)
-	{
-		return nullptr;
-	}
-
-	Sequence *master = entity->sequence();
+	Sequence *master = entity()->sequence();
 	SequenceComparison *sc = new SequenceComparison(master, this);
 
 	return sc;
@@ -244,29 +233,51 @@ void Sequence::addBufferResidue()
 	_master.push_back(res);
 }
 
-Residue *const Sequence::local_residue(Residue *const master) const
+Residue *const Sequence::local_residue(Residue *const master) 
 {
 	if (!master || _map2Local.count(master) == 0)
 	{
-		return nullptr;
+		remapFromMaster();
 	}
 
 	return _map2Local.at(master);
 }
 
-Residue *Sequence::master_residue(Residue *const local) const
+Residue *Sequence::master_residue(Residue *const local) 
 {
 	if (_map2Master.count(local) == 0)
 	{
-		return nullptr;
+		remapFromMaster();
 	}
 
 	return _map2Master.at(local);
 }
 
-void Sequence::remapFromMaster(Entity *entity)
+void Sequence::setEntity(Entity *entity)
 {
-	if (entity == nullptr || _residues.size() == 0)
+	_entity_id = entity->name();
+	_entity = entity;
+}
+
+Entity *Sequence::entity()
+{
+	if (_entity)
+	{
+		return _entity;
+	}
+
+	if (_entity_id.length())
+	{
+		Entity *ent = EntityManager::manager()->entity(_entity_id);
+		_entity = ent;
+	}
+	
+	return _entity;
+}
+
+void Sequence::remapFromMaster()
+{
+	if (!entity() || _residues.size() == 0)
 	{
 		return;
 	}
@@ -279,7 +290,6 @@ void Sequence::remapFromMaster(Entity *entity)
 
 	std::list<Residue>::iterator local;
 	local = _residues.begin();
-	_entity = entity;
 	_map2Master.clear();
 	_map2Local.clear();
 
@@ -292,7 +302,7 @@ void Sequence::remapFromMaster(Entity *entity)
 		}
 
 		const ResidueId &temp = mres.id();
-		Residue *other = entity->sequence()->residueLike(temp);
+		Residue *other = entity()->sequence()->residueLike(temp);
 		
 		if (other)
 		{
@@ -343,7 +353,7 @@ void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers)
 			Atom3DPosition ap{};
 			ap.setMaster(&residue);
 			ap.setAtomName(name);
-			ap.setEntity(_entity);
+			ap.setEntity(entity());
 			headers.push_back(ap);
 		}
 	}
@@ -358,7 +368,7 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)
 			ResidueTorsion rt{};
 			rt.setTorsion(torsion);
 			rt.setMaster(&residue);
-			rt.setEntity(_entity);
+			rt.setEntity(entity());
 			rt.housekeeping();
 			headers.push_back(rt);
 		}

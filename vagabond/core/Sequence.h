@@ -109,12 +109,12 @@ public:
 	/** converts entity master residue to local residue
 	 * 	@param master pointer to the Entity master residue
 	 * 	@return pointer to the corresponding local residue */
-	Residue *const local_residue(Residue *const master) const;
+	Residue *const local_residue(Residue *const master);
 
 	/** converts local residue to entity master residue
 	 * 	@param local pointer to the corresponding local residue 
 	 * 	@return pointer to the Entity master residue */
-	Residue *master_residue(Residue *const local) const;
+	Residue *master_residue(Residue *const local);
 	
 	
 	/* returns fragment xxSxx where S is central residue ID and the
@@ -161,7 +161,7 @@ public:
 	}
 
 	/** generate a sequence comparison object with Entity */
-	SequenceComparison *newComparison(Entity *entity);
+	SequenceComparison *newComparison();
 
 	/** call once to generate a master-to-local mapping from a given
 	 * SequenceComparison when establishing relationship to Entity 
@@ -170,13 +170,15 @@ public:
 	
 	/** if a master-to-local mapping has already been generated, re-generate
 	 * the mapping from master-to-local */
-	void remapFromMaster(Entity *entity);
+	void remapFromMaster();
 	
-	/** set entity for sequence without remapping */
-	void setEntity(Entity *entity)
+	void setEntityId(std::string id)
 	{
-		_entity = entity;
+		_entity_id = id;
 	}
+
+	void setEntity(Entity *entity);
+	Entity *entity();
 
 	/** name in style t<id>:<desc> to torsion angle (if available) */
 	bool torsionByName(const std::string name, Residue **res);
@@ -227,6 +229,7 @@ public:
 	
 	AtomGroup *convertToAtoms();
 	void addAtomPositionHeaders(std::vector<Atom3DPosition> &headers);
+	
 private:
 	void findSequence();
 
@@ -246,6 +249,7 @@ private:
 	ResidueMap _map2Local;
 	Atom *_anchor = nullptr;
 	Entity *_entity = nullptr;
+	std::string _entity_id;
 };
 
 /* sequence */
