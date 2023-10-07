@@ -23,6 +23,13 @@
 #include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
 
+PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &list)
+: Route(from, to, list)
+{
+	_threads = 4;
+	_maximumCycles = 5;
+}
+
 PlausibleRoute::PlausibleRoute(Instance *inst, TorsionCluster *cluster,
                                int dims)
 : Route(inst, cluster, dims)

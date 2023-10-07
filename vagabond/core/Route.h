@@ -33,6 +33,7 @@ class Route : public StructureModification, public HasResponder<Responder<Route>
 {
 public:
 	Route(Instance *inst, TorsionCluster *cluster, int dims);
+	Route(Instance *from, Instance *to, const RTAngles &list);
 	virtual ~Route();
 
 	virtual void setup();
@@ -265,6 +266,7 @@ private:
 
 	Instance *_endInstance = nullptr;
 
+	std::vector<ResidueTorsion> _headers;
 	std::vector<Angular> _rawDest;
 	
 	std::map<BondCalculator *, std::vector<int> > _calc2Destination;

@@ -32,6 +32,7 @@ class PlausibleRoute : public Route, public Progressor, public RunsEngine
 	friend Path;
 public:
 	PlausibleRoute(Instance *inst, TorsionCluster *cluster, int dims);
+	PlausibleRoute(Instance *from, Instance *to, const RTAngles &list);
 	
 	void calculateProgression(int steps);
 	void calculateLinearProgression(int steps);

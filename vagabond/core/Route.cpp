@@ -23,10 +23,22 @@
 #include "MetadataGroup.h"
 #include "RopeCluster.h"
 
+Route::Route(Instance *from, Instance *to, const RTAngles &list)
+: StructureModification(from, 1, list.size())
+{
+	_endInstance = to;
+	_headers = list.headers_only();
+	_torsionType = TorsionBasis::TypeSimple;
+	instance()->load();
+}
+
 Route::Route(Instance *inst, TorsionCluster *cluster, int dims) 
 : StructureModification(inst, 1, dims)
 {
-	_cluster = cluster;
+	if (cluster)
+	{
+		_headers = cluster->dataGroup()->headers();
+	}
 	_torsionType = TorsionBasis::TypeSimple;
 	instance()->load();
 }
@@ -213,8 +225,7 @@ void Route::getParametersFromBasis()
 
 	_missing.clear();
 
-	std::vector<ResidueTorsion> headers = _cluster->dataGroup()->headers();
-	RTAngles list = RTAngles::angles_from(headers, {});
+	RTAngles list = RTAngles::angles_from(_headers, {});
 
 	std::vector<Motion> motions;
 	std::vector<ResidueTorsion> torsions;
@@ -276,7 +287,7 @@ void Route::connectParametersToDestination()
 
 void Route::prepareDestination()
 {
-	if (_cluster == nullptr)
+	if (_headers.size() == 0)
 	{
 		return;
 	}
