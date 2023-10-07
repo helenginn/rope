@@ -33,6 +33,11 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void calculateMetrics();
+
+	float _rmsd = 0.;
+	float _linearity = 0.;
+	bool _valid = false;
 
 };
 
