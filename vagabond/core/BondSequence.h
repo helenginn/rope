@@ -238,11 +238,7 @@ private:
 
 	std::vector<RingProgram> _programs;
 
-#ifdef VERSION_PROLINE
 	bool _usingPrograms = true;
-#else
-	bool _usingPrograms = false;
-#endif
 
 	bool _programsInitialised = false;
 	

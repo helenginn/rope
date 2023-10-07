@@ -91,10 +91,8 @@ void FixIssuesView::setup()
 	addOption("Fix glutamine", "glutamine", top, false);
 	top += inc;
 	addOption("Fix histidine", "histidine", top, false);
-#ifdef VERSION_FIX_PEPTIDE
 	top += inc;
 	addOption("Fix peptide flips", "peptide_flips", top, false);
-#endif
 	
 	{
 		TextButton *t = new TextButton("Find issues", this);

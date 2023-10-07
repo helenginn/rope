@@ -639,9 +639,7 @@ std::string RingProgrammer::status()
 std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 {
 	std::lock_guard<std::mutex> lg(_mutex);
-#ifndef VERSION_PROLINE
 	return &_rammers;
-#endif
 
 	if (_rammers.size() > 0)
 	{

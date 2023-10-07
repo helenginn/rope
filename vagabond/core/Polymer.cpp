@@ -195,9 +195,7 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 	}
 
 	setRefined(true);
-#ifdef VERSION_PROLINE
 	setProlined(true);
-#endif
 }
 
 void Polymer::mergeWith(Polymer *b)

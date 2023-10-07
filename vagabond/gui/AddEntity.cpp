@@ -221,7 +221,7 @@ void AddEntity::showFirstPage()
 			addTempObject(text);
 		}
 
-#ifdef VERSION_TRIANGLES
+#ifdef VERSION_EXTEND_ENTITY_MENU
 		ImageButton *button = ImageButton::arrow(-90, this,
 		                                         "assets/images/big_button.png");
 		button->setCentre(0.92, 0.5);
