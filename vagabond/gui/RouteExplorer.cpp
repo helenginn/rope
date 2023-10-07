@@ -51,18 +51,17 @@ RouteExplorer::~RouteExplorer()
 void RouteExplorer::setup()
 {
 	_instance->load();
-
+	
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
-
+	
 	_atoms = grp;
 	_route->setAtoms(grp);
-
+	
 	Display::setup();
 	loadAtoms(grp);
 	
 	_route->setup();
-	_route->submitJobAndRetrieve(0);
 	
 	setupSave();
 	setupFinish();
