@@ -175,7 +175,6 @@ private:
 
 	std::vector<AtomGraph *> _graphs;
 	std::vector<Atom *> _atoms;
-	std::map<Atom *, AtomBlock> _atom2Transform;
 	std::vector<Atom *> _anchors;
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<int, AtomGraph *> _block2Graph;

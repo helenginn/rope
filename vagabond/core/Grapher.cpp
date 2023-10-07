@@ -227,6 +227,7 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 
 void Grapher::generateGraphs(AnchorExtension &ext)
 {
+	std::cout << "Adding extension: " << ext.atom->desc() << std::endl;
 	_anchors.push_back(ext.atom);
 
 	AtomGraph *graph = new AtomGraph();
@@ -236,11 +237,6 @@ void Grapher::generateGraphs(AnchorExtension &ext)
 	graph->depth = 0;
 	graph->maxDepth = -1;
 	addGraph(graph);
-	
-	if (ext.isContinuation())
-	{
-		_atom2Transform[ext.atom] = ext.block;
-	}
 	
 	std::vector<AtomGraph *> todo;
 	todo.push_back(graph);
@@ -448,19 +444,11 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 
 void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
 {
-	if (_atom2Transform.count(gr->atom))
-	{
-		AtomBlock &b = _atom2Transform[gr->atom];
-		block = b;
-	}
-	else
-	{
-		block.atom = gr->atom;
-		size_t blc = gr->atom->bondLengthCount();
-		size_t max = 4;
-		block.nBonds = std::min(blc, max);
-		block.wip = glm::mat4(0.);
-	}
+	block.atom = gr->atom;
+	size_t blc = gr->atom->bondLengthCount();
+	size_t max = 4;
+	block.nBonds = std::min(blc, max);
+	block.wip = glm::mat4(0.);
 	
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -525,31 +513,23 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 	int total = _atoms.size() + _anchors.size();
 	total -= _atomsDone + _anchorsDone;
 	int curr = 0;
-	/* if anchor associated with block fished from previous calculation,
-	 * there will be no ghost block */
-	total -= _atom2Transform.size();
 
 	std::vector<AtomBlock> blocks;
+	std::cout << "Total: " << total << std::endl;
 	blocks.resize(total);
 
 	for (size_t i = _anchorsDone; i < _anchors.size(); i++)
 	{
 		Atom *anchor = _anchors[i];
-		bool prev = _atom2Transform.count(anchor);
 
 		std::queue<AtomGraph *> todo;
 		AtomGraph *anchorGraph = _atom2Graph[anchor];
 		todo.push(anchorGraph);
 
-		/* make very first ghost block if applicable */
-		
-		if (!prev)
-		{
-			assignAtomToBlock(blocks[curr], anchorGraph);
-			fixBlockAsGhost(blocks[curr], anchor);
-			blocks[curr].nBonds = anchorGraph->children.size();
-			curr++;
-		}
+		assignAtomToBlock(blocks[curr], anchorGraph);
+		fixBlockAsGhost(blocks[curr], anchor);
+		blocks[curr].nBonds = anchorGraph->children.size();
+		curr++;
 		
 		while (!todo.empty())
 		{
@@ -571,8 +551,9 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 		}
 	}
 	
-	_anchorsDone = _anchors.size();
-	_atomsDone = _atoms.size();
+	_anchors.clear();
+	_atoms.clear();
+	_visits.clear();
 	
 	return blocks;
 }
