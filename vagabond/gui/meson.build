@@ -52,6 +52,8 @@ guifiles = [
 'LineSeriesOptions.cpp',
 'MapView.cpp',
 'MapView.h',
+'MakeNewPaths.cpp',
+'MakeNewPaths.h',
 'MainMenu.cpp',
 'MatrixPlot.cpp',
 'MetadataView.cpp',
