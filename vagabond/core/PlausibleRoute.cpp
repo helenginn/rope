@@ -493,6 +493,11 @@ void PlausibleRoute::nudgeWayPointCycles()
 		
 		if (frac < 0.25 || total == 0 || count >= _maximumCycles)
 		{
+			if (total == 0 && count == 1)
+			{
+				_minimumMagnitude /= 2;
+				if (_minimumMagnitude < 0.05) break;
+			}
 			_magnitudeThreshold /= 2;
 			count = 0;
 		}
@@ -529,6 +534,7 @@ void PlausibleRoute::doCycle()
 void PlausibleRoute::cycle()
 {
 	setTargets();
+	_minimumMagnitude = 5.f;
 	
 	while (_cycles != 0)
 	{
