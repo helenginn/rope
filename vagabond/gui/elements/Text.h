@@ -24,6 +24,8 @@ public:
 	{
 		return _text;
 	}
+	
+	void squishToWidth(float target);
 protected:
 	std::string _text;
 

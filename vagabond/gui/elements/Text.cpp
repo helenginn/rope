@@ -100,3 +100,13 @@ void Text::makeQuad()
 
 	rotateRound(mat);
 }
+
+void Text::squishToWidth(float target)
+{
+	float w = maximalWidth();
+	if (w > target * 2)
+	{
+		resize(target * 2 / w);
+	}
+}
+

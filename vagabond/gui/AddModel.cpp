@@ -65,11 +65,7 @@ void AddModel::setup()
 	if (kv.count("title"))
 	{
 		Text *t = new Text(kv.at("title").text());
-		float w = t->maximalWidth();
-		if (w > 1.6)
-		{
-			t->resize(1.6 / w);
-		}
+		t->squishToWidth(0.8);
 		t->setCentre(0.5, 0.15);
 		addObject(t);
 	}
