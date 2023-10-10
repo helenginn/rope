@@ -43,12 +43,6 @@ BOOST_AUTO_TEST_CASE(ramachandran_plot)
 	calculator.setSuperpose(false);
 	calculator.addAnchorExtension(anchor);
 
-	FFProperties props;
-	props.group = grp;
-	props.t = FFProperties::RamachandranContacts;
-	calculator.setForceFieldProperties(props);
-	calculator.setSampler(nullptr);
-
 	calculator.setup();
 
 	calculator.start();
@@ -88,9 +82,9 @@ BOOST_AUTO_TEST_CASE(ramachandran_plot)
 		for (float j = 0; j < 360; j++)
 		{
 			Job job{};
-			job.custom.allocate_vectors(1, dims, 1);
-			job.custom.vecs[0].mean[idxs[0]] = i;
-			job.custom.vecs[0].mean[idxs[1]] = j;
+			job.parameters.resize(dims);
+			job.parameters[idxs[0]] = i;
+			job.parameters[idxs[1]] = j;
 			job.requests = JobScoreStructure;
 			calculator.submitJob(job);
 
