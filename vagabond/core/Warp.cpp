@@ -193,7 +193,7 @@ void Warp::prepareBonds()
 
 void Warp::exposeDistanceMatrix()
 {
-	if (compare()->hasMatrix())
+	if (compare()->hasMatrix() && _showMatrix)
 	{
 		freeMatrix(&_distances);
 		_distances = compare()->matrix();

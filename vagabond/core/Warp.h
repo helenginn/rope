@@ -101,6 +101,11 @@ public:
 	CompareDistances *compare();
 
 	void exposeDistanceMatrix();
+	
+	void setShowMatrix(bool show)
+	{
+		_showMatrix = show;
+	}
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 	
@@ -133,6 +138,7 @@ private:
 	PCA::Matrix _distances;
 	int _count = 0;
 	bool _alwaysShow = true;
+	bool _showMatrix = true;
 };
 
 #endif
