@@ -483,7 +483,13 @@ ParamSet BondSequence::flaggedParameters()
 	return params;
 }
 
-void BondSequence::reflagDepth(int min, int max)
+void sanitiseMinMax(int &min, int &max, const size_t &n)
+{
+	if (min < 0) min = 0;
+	if (max > n && max != INT_MAX) max = n;
+}
+
+void BondSequence::reflagDepth(int min, int max, bool limit_max)
 {
 	bool clear = false;
 	_convertIndex = Index::identity();
@@ -491,6 +497,8 @@ void BondSequence::reflagDepth(int min, int max)
 	{
 		clear = true;
 	}
+	
+	sanitiseMinMax(min, max, _blocks.size());
 
 	_posAtoms.clear();
 
@@ -521,9 +529,8 @@ void BondSequence::reflagDepth(int min, int max)
 	todo.push(minBlock);
 	_startCalc = min;
 	int last = min;
-	int count = 0;
 	
-	std::vector<int> torsion_idxs{};
+	int target = max - min;
 
 	while (todo.size() > 0)
 	{
@@ -546,22 +553,7 @@ void BondSequence::reflagDepth(int min, int max)
 		
 		block.flag = true;
 		
-		if (block.torsion_idx >= 0)
-		{
-			torsion_idxs.push_back(block.torsion_idx);
-		}
-
-		if (block.program >= 0)
-		{
-			RingProgram *p = &_programs[block.program];
-			for (size_t i = 0; i < p->parameterCount(); i++)
-			{
-				int idx = p->parameterIndex(i);
-				torsion_idxs.push_back(idx);
-			}
-		}
-		
-		if (num >= max)
+		if (block.depth - _blocks[min].depth > target)
 		{
 			continue;
 		}
@@ -575,6 +567,10 @@ void BondSequence::reflagDepth(int min, int max)
 			}
 			
 			int nidx = curr + idx;
+			if (nidx > max && limit_max)
+			{
+				target = _blocks[curr].depth - _blocks[min].depth;
+			}
 			AtomBlockTodo next = {&_blocks[nidx], nidx, num + 1};
 			
 			if (nidx > last)
@@ -585,8 +581,40 @@ void BondSequence::reflagDepth(int min, int max)
 			todo.push(next);
 		}
 		
-		count++;
 		num++;
+	}
+	
+	std::vector<int> torsion_idxs{};
+
+	for (AtomBlock &block : _blocks)
+	{
+		if (limit_max && block.flag && 
+		    (block.depth - _blocks[min].depth > target))
+		{
+			block.flag = false;
+		}
+
+		if (!block.flag)
+		{
+			continue;
+		}
+
+		if (block.torsion_idx >= 0)
+		{
+			torsion_idxs.push_back(block.torsion_idx);
+			Parameter *const p = _torsionBasis->parameter(block.torsion_idx);
+		}
+
+		if (block.program >= 0)
+		{
+			RingProgram *p = &_programs[block.program];
+			for (size_t i = 0; i < p->parameterCount(); i++)
+			{
+				int idx = p->parameterIndex(i);
+				torsion_idxs.push_back(idx);
+			}
+		}
+		
 	}
 
 	_endCalc = last + 1;

@@ -103,7 +103,7 @@ public:
 	 * deviation 
 	 * 	@param min minimum depth from anchor position
 	 * 	@param max maximum depth from anchor position  */
-	void imposeDepthLimits(int min, int max);
+	void imposeDepthLimits(int min, int max, bool limit_max);
 
 	int activeTorsions();
 private:

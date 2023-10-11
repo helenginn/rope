@@ -208,11 +208,11 @@ TorsionBasis *BondSequenceHandler::torsionBasis() const
 	return _sequences[0]->torsionBasis();
 }
 
-void BondSequenceHandler::imposeDepthLimits(int min, int max)
+void BondSequenceHandler::imposeDepthLimits(int min, int max, bool limit_max)
 {
 	for (BondSequence *sequence : _sequences)
 	{
-		sequence->reflagDepth(min, max);
+		sequence->reflagDepth(min, max, limit_max);
 	}
 }
 

@@ -42,7 +42,8 @@ struct AtomBlock
 	int program = -1;
 	Atom *atom = nullptr;
 	char element[3] = "\0";
-	int nBonds;
+	int nBonds = 0;
+	int depth = 0;
 	
 	/* position to aim for (e.g. initial position) in deviation calculations */
 	glm::vec3 target;

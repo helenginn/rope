@@ -134,7 +134,7 @@ public:
 	void addToGraph(AnchorExtension &atom);
 	
 	void multiplyUpBySampleCount();
-	void reflagDepth(int min, int max);
+	void reflagDepth(int min, int max, bool limit_max);
 	
 	void prepareForIdle();
 

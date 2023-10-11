@@ -92,7 +92,7 @@ public:
 	 *  nevertheless be calculated.
 	 *  @param min minimum value for depth to be considered
 	 *  @param max maximum value for depth to be considered */
-	void setMinMaxDepth(int min, int max)
+	void setMinMaxDepth(int min, int max, bool limit_max = false)
 	{
 		if (_minDepth != min || _maxDepth != max)
 		{
@@ -101,6 +101,7 @@ public:
 
 		_minDepth = min;
 		_maxDepth = max;
+		_limitMax = limit_max;
 	}
 	
 	/** Returns vector of booleans corresponding to each scalar in the
@@ -218,6 +219,7 @@ private:
 	
 	int _minDepth = 0;
 	int _maxDepth = INT_MAX;
+	bool _limitMax = false;
 	bool _changedDepth = false;
 	
 	Pool<Job *> _jobPool;
