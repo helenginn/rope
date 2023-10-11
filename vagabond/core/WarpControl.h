@@ -30,12 +30,26 @@ class SimplexEngine;
 class TorsionCluster;
 class BondCalculator;
 
+struct FlexScore
+{
+	float score;
+	int size;
+	bool covered;
+	bool skip;
+};
+
+typedef std::map<int, FlexScore> FlexScoreMap;
+
 class WarpControl : public RunsEngine
 {
 public:
 	WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster);
-
 	
+	BondCalculator *const &calculator()
+	{
+		return _calculator;
+	}
+
 	void setParameters(std::vector<Parameter *> &params)
 	{
 		_params = params;
@@ -59,21 +73,26 @@ public:
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
-private:
-	void otherRun(int start = 0, int end = 26);
+	ParamSet acquireParametersBetween(int start, int end, bool reset);
+
+	bool refineBetween(int start, int end, const ParamSet &params);
 	bool refineBetween(int start, int end);
+private:
+	std::vector<std::function<void()>> prepareJobList();
+	friend FlexScoreMap scanDiagonal(WarpControl *wc, int size);
+
+	void otherRun(int start = 0, int end = 26);
 	void refineParameter(Parameter *param);
 	bool refineParameters(const std::set<Parameter *> &params, float step);
 	void hierarchicalParameters(std::vector<Parameter *> params);
 	void compensatoryMotions(ParamSet &set, bool expand, 
 	                         Parameter *centre, bool reverse);
 	void filterToParameter(Parameter *param, bool reverse);
-	void processParameter(Parameter *param, bool reverse);
-	void processRange(std::vector<Parameter *> params, float min, float max);
-	void processIndices(std::vector<Parameter *> filtered_params, 
-	                  int min_idx, int max_idx, bool reverse);
-	void processFromParameter(std::vector<Parameter *> params, 
-	                          Parameter *start, float max);
+
+	float scoreBetween(int start, int end);
+	void scanDiagonal(int size);
+
+	void replaceSimplex(SimplexEngine *&ptr, int max_runs, float step_size);
 	void prepareScore();
 
 	Warp *_warp = nullptr;
@@ -83,6 +102,9 @@ private:
 	TorsionWarp::Setter _setter{};
 
 	std::function<float(Parameter *)> _weights{};
+
+	std::vector<std::function<void()>> _jobs{};
+	int _counter = 0;
 
 	SimplexEngine *_simplex = nullptr;
 	std::vector<Parameter *> _params;
