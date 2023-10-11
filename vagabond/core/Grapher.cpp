@@ -54,10 +54,6 @@ Grapher::Grapher(Grapher &other)
 	_atom2Graph = other._atom2Graph;
 	_parameter2Graph = other._parameter2Graph;
 
-	_graphsDone = other._graphsDone;
-	_anchorsDone = other._anchorsDone;
-	_atomsDone = other._atomsDone;
-
 	_original = false;
 }
 
@@ -352,7 +348,7 @@ void Grapher::fillInParents()
 
 void Grapher::fillTorsionAngles(TorsionBasis *basis)
 {
-	for (size_t i = _graphsDone; i < _graphs.size(); i++)
+	for (size_t i = 0; i < _graphs.size(); i++)
 	{
 		_graphs[i]->torsion_idx = -1;
 
@@ -387,7 +383,7 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 
 void Grapher::markHydrogenGraphs()
 {
-	for (size_t i = _graphsDone; i < _graphs.size(); i++)
+	for (size_t i = 0; i < _graphs.size(); i++)
 	{
 		if (_graphs[i]->childrenOnlyHydrogens())
 		{
@@ -398,7 +394,7 @@ void Grapher::markHydrogenGraphs()
 
 void Grapher::sortGraphChildren()
 {
-	for (size_t i = _graphsDone; i < _graphs.size(); i++)
+	for (size_t i = 0; i < _graphs.size(); i++)
 	{
 		std::sort(_graphs[i]->children.begin(), _graphs[i]->children.end(),
 		AtomGraph::atomgraph_less_than);
@@ -511,13 +507,12 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 {
 	setupProgrammers();
 	int total = _atoms.size() + _anchors.size();
-	total -= _atomsDone + _anchorsDone;
 	int curr = 0;
 
 	std::vector<AtomBlock> blocks;
 	blocks.resize(total);
 
-	for (size_t i = _anchorsDone; i < _anchors.size(); i++)
+	for (size_t i = 0; i < _anchors.size(); i++)
 	{
 		Atom *anchor = _anchors[i];
 
@@ -550,11 +545,20 @@ std::vector<AtomBlock> Grapher::turnToBlocks(TorsionBasis *basis)
 		}
 	}
 	
-	_anchors.clear();
-	_atoms.clear();
-	_visits.clear();
 	
 	return blocks;
+}
+
+void Grapher::clearState()
+{
+	_graphs.clear();
+	_atoms.clear();
+	_anchors.clear();
+	_atom2Graph.clear();
+	_block2Graph.clear();
+	_parameter2Graph.clear();
+	_visits.clear();
+	_joints = 0;
 }
 
 void Grapher::fillMissingWriteLocations(std::vector<AtomBlock> &blocks)

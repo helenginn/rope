@@ -159,6 +159,7 @@ public:
 
 	void passTorsionsToSisters(BondSequence *sequence) const;
 private:
+	void clearState();
 	void addGraph(AtomGraph *graph);
 	int jumpsToAtom(AtomGraph *last, Atom *search, int max);
 	void passTorsionsToSisters(const std::vector<AtomBlock> &blocks,
@@ -179,8 +180,8 @@ private:
 	std::map<Atom *, AtomGraph *> _atom2Graph;
 	std::map<int, AtomGraph *> _block2Graph;
 	std::map<Parameter *, AtomGraph *> _parameter2Graph;
-	
 	std::map<Atom *, int> _visits;
+
 	int _visitLimit = 1;
 	int _observedVisitLimit = 0;
 	int _ringSizeLimit = 6;
@@ -193,10 +194,6 @@ private:
 	std::map<int, RingProgrammers> _workingProggers; // actual programmers at work
 
 	std::vector<RingProgram *> _programs;
-
-	int _graphsDone = 0;
-	int _anchorsDone = 0;
-	int _atomsDone = 0;
 	
 	bool _original = true;
 	bool _inSequence = false; 
