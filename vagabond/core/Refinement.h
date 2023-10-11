@@ -74,7 +74,6 @@ private:
 
 	Model *_model = nullptr;
 	ArbitraryMap *_map = nullptr;
-	CCP4SPG *_spg = nullptr;
 
 	std::list<Refine::Info> _molDetails;
 	std::map<Entity *, ECluster *> _entity2Cluster;

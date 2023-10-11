@@ -73,6 +73,8 @@ public:
 	{
 		return _data[i].amplitude();
 	}
+	
+	std::string spaceGroupName();
 private:
 	RefList *_list;
 

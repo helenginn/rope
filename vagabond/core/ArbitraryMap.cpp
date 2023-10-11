@@ -133,12 +133,8 @@ void ArbitraryMap::setupFromDiffraction()
 	glm::mat3x3 recip = _diff->recipMatrix();
 	glm::mat3x3 real = _diff->frac2Real();
 	setRealMatrix(real);
-	/*
-	std::cout << nx() << " " << ny() << " " << nz() << std::endl;
-	std::cout << "Real: " << glm::to_string(real) << std::endl;
-	std::cout << "Recip: " << glm::to_string(recip) << std::endl;
-	std::cout << "real2Voxel: " << glm::to_string(real2Voxel()) << std::endl;
-	*/
+	
+	_spgName = _diff->spaceGroupName();
 }
 
 void ArbitraryMap::populatePlan(FFT<fftwf_complex>::PlanDims &dims)

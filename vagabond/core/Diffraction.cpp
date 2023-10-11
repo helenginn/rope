@@ -18,7 +18,6 @@
 
 #include "Diffraction.h"
 #include "ArbitraryMap.h"
-#include "ArbitraryMap.h"
 #include <gemmi/symmetry.hpp>
 
 Diffraction::Diffraction(int nx, int ny, int nz) 
@@ -136,3 +135,7 @@ size_t Diffraction::reflectionCount()
 	return _list->reflectionCount() * _list->symOpCount() * 2;
 }
 
+std::string Diffraction::spaceGroupName()
+{
+	return _list->spaceGroupName();
+}

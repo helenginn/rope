@@ -39,7 +39,6 @@ Refinement::Refinement()
 void Refinement::setup()
 {
 	_model->load();
-	_spg = _model->spaceGroup();
 
 	prepareInstanceDetails();
 	loadMap();
@@ -167,6 +166,10 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 		MolRefiner *mr = _molRefiners[info.instance];
 		mr->addToMap(arb);
 	}
+
+	const gemmi::SpaceGroup *spg = nullptr;
+	spg = gemmi::find_spacegroup_by_name(_map->spaceGroupName());
+	gemmi::GroupOps grp = spg->operations();
 	
 	// delete me later
 	Diffraction *diff = new Diffraction(arb);
@@ -174,7 +177,8 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 	MtzFile file("");
 	file.setMap(diff);
 	file.write_to_file("spg1.mtz", 1.5);
-	SymmetryExpansion::apply(diff, _spg, 1.5);
+
+	SymmetryExpansion::apply(diff, spg, 1.5);
 	file.write_to_file("symm.mtz", 1.5);
 	
 	return arb;

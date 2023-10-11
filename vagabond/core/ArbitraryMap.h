@@ -42,6 +42,11 @@ public:
 	ArbitraryMap &operator*=(const ArbitraryMap &other);
 
 	void setupFromDiffraction();
+	
+	const std::string &spaceGroupName() const
+	{
+		return _spgName;
+	}
 
 	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
 	
@@ -90,9 +95,14 @@ public:
 		return true;
 	}
 
+	std::string spaceGroupName()
+	{
+		return _spgName;
+	}
 private:
 	Diffraction *_diff = nullptr;
 
+	std::string _spgName;
 };
 
 #endif

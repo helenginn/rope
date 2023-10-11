@@ -2,7 +2,6 @@
 #include "../utils/glm_import.h"
 #include <gemmi/numb.hpp>
 #include <gemmi/cif.hpp>
-#include <ccp4/csymlib.h>
 
 #include "CifFile.h"
 #include "Diffraction.h"

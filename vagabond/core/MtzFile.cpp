@@ -176,8 +176,6 @@ gemmi::Mtz MtzFile::prep_gemmi_mtz(float max_res)
 	std::vector<float> line(5);
 	data.reserve(_map->nn() * 5);
 
-	//	CCP4SPG *spg = ccp4spg_load_by_ccp4_num(1);
-
 	for (int k = 0; k < _map->nz() / 2; k++)
 	{
 		for (int j = -_map->ny() / 2; j < _map->ny() / 2; j++)

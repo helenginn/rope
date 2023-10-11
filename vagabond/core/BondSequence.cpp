@@ -465,12 +465,11 @@ ParamSet BondSequence::flaggedParameters()
 {
 	ParamSet params;
 
-	for (size_t i = 0; i < _blocks.size(); i++)
+	for (AtomBlock &block : _blocks)
 	{
-		AtomBlock &block = _blocks[i];
 		if (block.flag)
 		{
-			int idx = _blocks[i].torsion_idx;
+			int idx = block.torsion_idx;
 			
 			if (idx >= 0)
 			{
