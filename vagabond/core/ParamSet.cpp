@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Atom.h"
 #include "ParamSet.h"
 #include "Parameter.h"
 
@@ -56,4 +57,38 @@ std::ostream &operator<<(std::ostream &ss, const ParamSet &set)
 	}
 	ss << std::endl;
 	return ss;
+}
+
+ParamSet ParamSet::terminalSubset() const
+{
+	ParamSet subset;
+	for (Parameter *const &p : *this)
+	{
+		Atom *terminals[2] = {p->atom(0), p->atom(3)};
+		
+		bool ok[2] = {true, true};
+		for (Parameter *const &q : *this)
+		{
+			if (p == q || !q->isTorsion()) { continue; }
+			
+			Atom *check[2] = {q->atom(1), q->atom(2)};
+			
+			if (check[0] == terminals[0] || check[1] == terminals[0])
+			{
+				ok[0] = false;
+			}
+			else if (check[0] == terminals[1] || check[1] == terminals[1])
+			{
+				ok[1] = false;
+				break;
+			}
+		}
+		
+		if (ok[0] || ok[1])
+		{
+			subset.insert(p);
+		}
+	}
+	
+	return subset;
 }

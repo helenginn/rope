@@ -35,6 +35,7 @@ public:
 
 	void expandNeighbours();
 	void excludeBeyond(int residue_num, int direction);
+	ParamSet terminalSubset() const;
 	
 	std::vector<Parameter *> toVector();
 
