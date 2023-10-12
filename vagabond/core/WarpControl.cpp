@@ -29,9 +29,9 @@
 
 #define LOWER_BOUND 30
 #define UPPER_BOUND 150
-#define LONG_RUN 8
-#define SHORT_RUN 5
-#define ALIGNMENT_RUN 2
+#define LONG_RUN 5
+#define SHORT_RUN 3
+#define ALIGNMENT_RUN 1
 
 WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster)
 {
