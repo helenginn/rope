@@ -56,5 +56,5 @@ subdir : 'vagabond/utils')
 vagutils = static_library('vagutils', utilfiles, 
 	cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
 	link_args: [links],
-	dependencies : deps, install: false)
+	dependencies : [deps], install: false)
 
