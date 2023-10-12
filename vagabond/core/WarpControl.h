@@ -35,7 +35,6 @@ struct FlexScore
 	float score;
 	int size;
 	bool covered;
-	bool skip;
 };
 
 typedef std::map<int, FlexScore> FlexScoreMap;
@@ -61,8 +60,7 @@ public:
 	}
 
 	static void start_run(WarpControl *wc, bool n_to_c);
-	static void start_from_residue_id(WarpControl *wc, int start, int end);
-	void run(bool n_to_c);
+	void run();
 	void runFromResidueId(int start, int end);
 	void finish()
 	{
@@ -79,18 +77,12 @@ public:
 	bool refineBetween(int start, int end);
 private:
 	std::vector<std::function<void()>> prepareJobList();
-	friend FlexScoreMap scanDiagonal(WarpControl *wc, int size);
+	FlexScoreMap scanDiagonal(WarpControl *wc, int size);
 
-	void otherRun(int start = 0, int end = 26);
-	void refineParameter(Parameter *param);
-	bool refineParameters(const std::set<Parameter *> &params, float step);
-	void hierarchicalParameters(std::vector<Parameter *> params);
-	void compensatoryMotions(ParamSet &set, bool expand, 
-	                         Parameter *centre, bool reverse);
 	void filterToParameter(Parameter *param, bool reverse);
 
 	float scoreBetween(int start, int end);
-	void scanDiagonal(int size);
+	friend FlexScoreMap scanDiagonal(WarpControl *wc, int size);
 
 	void replaceSimplex(SimplexEngine *&ptr, int max_runs, float step_size);
 	void prepareScore();
