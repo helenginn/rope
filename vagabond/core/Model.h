@@ -160,7 +160,6 @@ public:
 	void write(std::string filename);
 	
 	ArbitraryMap *map();
-	CCP4SPG *spaceGroup();
 	float comparisonWithData(ArbitraryMap *calc);
 
 	void extractExisting();

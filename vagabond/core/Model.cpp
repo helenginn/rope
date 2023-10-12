@@ -28,7 +28,6 @@
 #include "EntityManager.h"
 #include "SequenceComparison.h"
 #include "../utils/FileReader.h"
-#include <ccp4/csymlib.h>
 
 Model::Model()
 {
@@ -719,32 +718,6 @@ void Model::throwOutEntity(Entity *ent)
 void Model::clickTicker()
 {
 	Environment::modelManager()->clickTicker();
-}
-
-CCP4SPG *Model::spaceGroup()
-{
-	CCP4SPG *spg = nullptr;
-	if (dataFile().length())
-	{
-		File *file = File::loadUnknown(dataFile());
-		
-		if (!file)
-		{
-			return nullptr;
-		}
-
-		File::Type type = file->cursoryLook();
-		
-		if (type & File::Reflections)
-		{
-			int num = file->spaceGroupNum();
-			spg = ccp4spg_load_by_ccp4_num(num);
-		}
-		
-		delete file;
-	}
-
-	return spg;
 }
 
 
