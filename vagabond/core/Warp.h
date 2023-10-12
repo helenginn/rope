@@ -85,8 +85,6 @@ public:
 	void clearFilters();
 	
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
-
-	void setCompareFilters(AtomFilter &left, AtomFilter &right);
 	
 	void setTorsionWarp(TorsionWarp *tw)
 	{

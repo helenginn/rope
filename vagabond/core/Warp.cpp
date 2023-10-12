@@ -235,15 +235,6 @@ void Warp::customModifications(BondCalculator *calc, bool has_mol)
 	calc->manager().setDefaultCoordTransform(JobManager::identityTransform());
 }
 
-void Warp::setCompareFilters(AtomFilter &left, AtomFilter &right)
-{
-	delete _compare;
-	_compare = nullptr;
-
-	compare()->setLeftFilter(left);
-	compare()->setRightFilter(right);
-}
-
 void Warp::resetComparison()
 {
 	compare()->reset();
@@ -256,7 +247,7 @@ void Warp::clearComparison()
 
 void Warp::clearFilters()
 {
-	setCompareFilters(_filter, _filter);
+	compare()->setFiltersEqual(_filter);
 }
 
 void loadJson(const std::string &filename, TorsionWarp *tw)

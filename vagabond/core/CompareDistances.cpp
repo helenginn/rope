@@ -99,7 +99,9 @@ void CompareDistances::setupMatrix()
 {
 	if (_matrix.rows == 0 || _matrix.cols == 0)
 	{
-		PCA::setupMatrix(&_matrix, _leftAtoms.size(), _rightAtoms.size());
+		int left = _leftAtoms.size();
+		int right = _equal ? _leftAtoms.size() : _rightAtoms.size();
+		PCA::setupMatrix(&_matrix, left, right);
 	}
 }
 
@@ -132,7 +134,7 @@ void CompareDistances::addEqualToMatrix(const AtomPosList &apl)
 {
 	_counter++;
 	
-	for (int i = 0; i < _leftIdxs.size() - 1; i++)
+	for (int i = 0; i < (int)_leftIdxs.size() - 1; i++)
 	{
 		const int &m = _leftIdxs[i];
 		const glm::vec3 &x = apl[m].wp.ave;
