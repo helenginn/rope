@@ -104,8 +104,8 @@ ParamSet WarpControl::acquireParametersBetween(int start, int end, bool reset)
 	
 	if (reset)
 	{
-		_calculator->finish();
 		_calculator->setMinMaxDepth(0, INT_MAX);
+		_calculator->finish();
 	}
 
 	return params;
@@ -536,13 +536,21 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 	};
 }
 
+void chop_to_fit(Between &chop, const Between &ref)
+{
+	if (chop.start < ref.start) chop.start = ref.start;
+	if (chop.end > ref.end) chop.end = ref.end;
+}
+
 void add_alignment_job(std::vector<std::function<void()>> &jobs,
                        WarpControl *wc, const FlexScoreMap &peaks, 
-                       const int &location)
+                       Between &b, const int &dir)
 {
-	Between b = {location, location};
-	find_ends_of_run(peaks, b);
+	int &loc = dir > 0 ? b.end : b.start;
+	int location = loc;
+	find_one_end_of_run(peaks, loc, dir);
 	Between use = {location - 30, location + 30};
+	chop_to_fit(use, b);
 
 	std::string desc = "Connecting segments from " +
 	std::to_string(b.start) + " to " + std::to_string(b.end)
@@ -597,12 +605,12 @@ void convert_expansion_to_job(std::vector<std::function<void()>> &jobs,
 	
 	if (last.start > 0 && backs_onto_previous(last, peaks))
 	{
-		add_alignment_job(jobs, wc, peaks, last.start);
+		add_alignment_job(jobs, wc, peaks, last, -1);
 	}
 	
 	if (last.end > 0 && backs_onto_next(last, peaks))
 	{
-		add_alignment_job(jobs, wc, peaks, last.end);
+		add_alignment_job(jobs, wc, peaks, last, +1);
 	}
 }
 
