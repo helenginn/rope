@@ -122,9 +122,6 @@ install_data(
 'assets/images/us28.png',
 install_dir : images)
 
-subdir('ccp4')
-deps += dep_ccp4
-
 subdir('config')
 #add_data = find_program('get_config.sh')
 
