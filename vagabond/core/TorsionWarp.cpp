@@ -57,18 +57,32 @@ std::vector<int> indicesForParameters(const std::set<Parameter *> &subset,
 	return idxs;
 }
 
+void TorsionWarp::getStepSizes(const std::set<Parameter *> &params,
+                               std::vector<float> &steps, float torsion_step)
+{
+	std::vector<int> indices = indicesForParameters(params, _parameters);
+	std::sort(indices.begin(), indices.end());
+	TDCoefficient &coefficient = _coefficients[0];
+	
+	steps.reserve(indices.size() * coefficient.paramsPerNet());
+
+	for (const int &idx : indices)
+	{
+		coefficient.step_sizes(torsion_step, steps);
+	}
+}
+
 void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
-                                     Getter &getter, Setter &setter,
-                                     int max_dim)
+                                     Getter &getter, Setter &setter)
 {
 	std::vector<int> indices = indicesForParameters(params, _parameters);
 	std::sort(indices.begin(), indices.end());
 	
-	getter = [indices, max_dim, this](std::vector<float> &values)
+	getter = [indices, this](std::vector<float> &values)
 	{
+		TDCoefficient &coefficient = _coefficients[0];
 		for (const int &idx : indices)
 		{
-			TDCoefficient &coefficient = _coefficients[0];
 			{
 				PCA::Matrix &matrix = coefficient._nets[idx].first;
 				for (int c = 0; c < matrix.cols * matrix.rows; c++)
@@ -89,7 +103,7 @@ void TorsionWarp::getSetCoefficients(const std::set<Parameter *> &params,
 	std::vector<float> start;
 	getter(start);
 
-	setter = [indices, max_dim, start, this](const std::vector<float> &values)
+	setter = [indices, start, this](const std::vector<float> &values)
 	{
 		int n = 0;
 		for (const int &idx : indices)
@@ -126,43 +140,65 @@ float TorsionWarp::torsion(const Coord::Get &get, int num)
 		return 1 / (1 + exp(-val)) - 0.5;
 	};
 
+	auto sinvert = [](float val) -> float
+	{
+		while (val > 1 && val < -1)
+		{
+			if (val > 1) val = 1 - val;
+			if (val < -1) val = -1 - val;
+		}
+
+		return asin(val);
+	};
+
 	float torsion = 0;
 	PCA::Matrix &second = coefficient._nets[num].second;
 
 	for (size_t k = 0; k < coefficient._order; k++)
 	{
-		float result = 0;
+		float dot = 0;
 		for (size_t j = 0; j < coefficient._nDims; j++)
 		{
-			float get_axis = j == coefficient._nDims ? 1 : get(j);
-			result += get_axis * first[k][j];
+			float get_model = first[k][j];
+			dot += get(j) * get_model;
 		}
 
-		result = convert(result);
-		torsion += second[0][k] * result;
+		float result = sinvert(dot);
+		torsion += second[0][k] * dot;
 	}
 	
 	return torsion;
 }
 
-void TorsionWarp::TDCoefficient::makeRandom()
+void TorsionWarp::TDCoefficient::step_sizes(float custom, 
+                                            std::vector<float> &steps)
 {
-	auto randomise = [](float) -> float
+	for (size_t i = 0; i < _order * _nDims; i++)
+	{
+		steps.push_back(1.0);
+	}
+
+	for (size_t i = 0; i < _order; i++)
+	{
+		steps.push_back(1.0);
+	}
+}
+
+auto randomise_mult(const float &mult)
+{
+	return [mult](float) -> float
 	{
 		float r = rand() / (double)RAND_MAX - 0.5;
-		return r;
+		return r * mult;
 	};
+}
 
+void TorsionWarp::TDCoefficient::makeRandom()
+{
 	for (size_t i = 0; i < _nTorsions; i++)
 	{
-		do_op(_nets[i].first, randomise);
-
-		for (size_t o = 0; o < _order; o++)
-		{
-			_nets[i].first[o][_nDims] = 0;
-		}
-
-		do_op(_nets[i].second, randomise);
+		do_op(_nets[i].first, randomise_mult(1));
+//		do_op(_nets[i].second, randomise_mult(1));
 	}
 }
 

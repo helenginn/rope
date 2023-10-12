@@ -49,8 +49,10 @@ public:
 	                   AtomFilter &right, bool reverse);
 
 	void getSetCoefficients(const std::set<Parameter *> &params,
-	                        Getter &getter, Setter &setter,
-	                        int max_dim = INT_MAX);
+	                        Getter &getter, Setter &setter);
+
+	void getStepSizes(const std::set<Parameter *> &params,
+	                  std::vector<float> &steps, float torsion_step);
 private:
 	
 	struct TDCoefficient
@@ -71,7 +73,7 @@ private:
 			for (size_t i = 0; i < nTorsions; i++)
 			{
 				Net nn{};
-				setupMatrix(&nn.first, order, nDims + 1);
+				setupMatrix(&nn.first, order, nDims);
 				setupMatrix(&nn.second, 1, order);
 				_nets.push_back(nn);
 			}
@@ -82,6 +84,13 @@ private:
 			
 			makeRandom();
 		}
+		
+		size_t paramsPerNet()
+		{
+			return _order * _nDims + _order;
+		}
+		
+		void step_sizes(float custom, std::vector<float> &append);
 		
 		void delete_matrix()
 		{
