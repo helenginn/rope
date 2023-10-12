@@ -60,6 +60,12 @@ public:
 	{
 		return _refined;
 	}
+	
+	friend std::ostream &operator<<(std::ostream &ss, Parameter *const &p)
+	{
+		ss << p->residueId() << " " << p->desc();
+		return ss;
+	}
 
 	virtual size_t atomCount() const = 0;
 	
