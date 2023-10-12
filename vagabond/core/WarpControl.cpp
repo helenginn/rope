@@ -104,8 +104,8 @@ ParamSet WarpControl::acquireParametersBetween(int start, int end, bool reset)
 	
 	if (reset)
 	{
-		_calculator->setMinMaxDepth(0, INT_MAX);
 		_calculator->finish();
+		_calculator->setMinMaxDepth(0, INT_MAX);
 	}
 
 	return params;
