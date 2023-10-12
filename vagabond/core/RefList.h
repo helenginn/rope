@@ -38,15 +38,12 @@ public:
 	RefList(const std::vector<Reflection> &refls);
 	~RefList();
 	
-	void setSpaceGroup(int num);
 	void extractSymops();
 	
 	size_t symOpCount()
 	{
 		return _nsymops;
 	}
-	
-	glm::vec3 applyRotSym(const glm::vec3 v, const int i);
 	
 	void setUnitCell(std::array<double, 6> &cell);
 	
@@ -61,10 +58,7 @@ public:
 	}
 	
 	void addReflectionToGrid(Diffraction *diff, int i);
-	Reflection::HKL symHKL(int refl, int symop);
-    Reflection::HKL symHKL(Reflection::HKL orig, int symop);
 
-    Reflection::HKL maxHKL();
     Reflection::HKL maxSymHKL();
 	
 	const glm::mat3x3 &frac2Real() const
@@ -91,8 +85,6 @@ private:
 	glm::mat3x3 _recip2Frac = glm::mat3(1.f);
 	
 	size_t _nsymops = 0;
-	glm::mat3x3 *_rots = nullptr;
-	glm::vec3 *_trans = nullptr;
 	
 	std::string _spgName;
 };

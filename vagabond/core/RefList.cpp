@@ -19,130 +19,45 @@
 #include "RefList.h"
 #include "Diffraction.h"
 #include "matrix_functions.h"
+#include <gemmi/symmetry.hpp>
 #include <iostream>
 
 RefList::RefList(const std::vector<Reflection> &refls)
 {
 	_refls = refls;
-	setSpaceGroup(1);
+	_spgName = "P 1";
 }
 
 RefList::~RefList()
 {
-	delete _rots;
-	delete _trans;
-	_rots = nullptr;
-	_trans = nullptr;
-}
 
-void RefList::setSpaceGroup(int num)
-{
-	if (num >= 1)
-	{
-		_spg = ccp4spg_load_by_ccp4_num(num);
-		extractSymops();
-	}
-}
-
-void RefList::extractSymops()
-{
-	delete [] _rots;
-	delete [] _trans;
-	_rots = nullptr;
-	_trans = nullptr;
-	
-	if (_spg == nullptr)
-	{
-		_nsymops = 0;
-		return;
-	}
-
-	_nsymops = _spg->nsymop;
-	_rots = new glm::mat3[_nsymops];
-	_trans = new glm::vec3[_nsymops];
-	
-	for (size_t i = 0; i < _nsymops; i++)
-	{
-		ccp4_symop &s = _spg->symop[i];
-		_rots[i] = glm::mat3x3(s.rot[0][0], s.rot[0][1], s.rot[0][2],
-		                       s.rot[1][0], s.rot[1][1], s.rot[1][2],
-		                       s.rot[2][0], s.rot[2][1], s.rot[2][2]);
-
-		_trans[i] = glm::vec3(s.trn[0], s.trn[1], s.trn[2]);
-	}
-	
-	ccp4spg_print_recip_ops(_spg);
-}
-
-Reflection::HKL RefList::symHKL(Reflection::HKL orig, int symop)
-{
-    Reflection::HKL hkl{};
-
-	for (size_t i = 0; i < 3; i++)
-	{
-		for (size_t j = 0; j < 3; j++)
-		{
-			float &mv = _rots[symop][i][j];
-			hkl[j] += orig[i] * (long)lrint(mv);
-		}
-	}
-
-	return hkl;
-}
-
-Reflection::HKL RefList::symHKL(int refl, int symop)
-{
-    Reflection::HKL &orig = _refls[refl].hkl;
-    Reflection::HKL hkl = symHKL(orig, symop);
-
-	return hkl;
-}
-
-Reflection::HKL RefList::maxHKL()
-{
-    Reflection::HKL hkl{};
-	
-	for (size_t i = 0; i < _refls.size(); i++)
-	{
-		for (size_t j = 0; j < 3; j++)
-		{
-			if (abs(_refls[i].hkl[j]) > hkl[j])
-			{
-				hkl[j] = abs(_refls[i].hkl[j]);
-			}
-		}
-
-	}
-
-	return hkl;
 }
 
 Reflection::HKL RefList::maxSymHKL()
 {
+	const gemmi::SpaceGroup *spg;
+	spg = gemmi::find_spacegroup_by_name(spaceGroupName());
+	gemmi::GroupOps grp = spg->operations();
+
     Reflection::HKL true_max = Reflection::HKL{};
 	
 	for (size_t j = 0; j < reflectionCount(); j++)
 	{
-		for (size_t i = 0; i < symOpCount(); i++)
+		Reflection::HKL &hkl = _refls[j].hkl;
+		gemmi::Op::Miller m = {hkl[0], hkl[1], hkl[2]};
+		for (int l = 0; l < grp.sym_ops.size(); l++)
 		{
-            Reflection::HKL next = symHKL(j, i);
+			gemmi::Op op = grp.get_op(l);
+			gemmi::Op::Miller n = op.apply_to_hkl(m);
 
 			for (size_t k = 0; k < 3; k++)
 			{
-				true_max[k] = std::max(true_max[k], abs(next[k]));
+				true_max[k] = std::max(true_max[k], abs(n[k]));
 			}
 		}
 	}
 
 	return true_max;
-}
-
-glm::vec3 RefList::applyRotSym(const glm::vec3 v, const int i)
-{
-	glm::vec3 w = glm::transpose(_frac2Real) * v;
-	w = _rots[i] * w;
-	w = glm::transpose(_recip2Frac) * w;
-	return w;
 }
 
 const double RefList::resolutionOf(glm::vec3 v) const
@@ -191,21 +106,5 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 
 	VoxelDiffraction &v = diff->element(h, k, l);
 	v.setAmplitudePhase(f, phase);
-
-	/*
-	for (int s = -1; s <= 1; s += 2)
-	{
-		float shift = (float)h * _trans[i][0];
-		shift += (float)k * _trans[i][1];
-		shift += (float)l * _trans[i][2];
-
-		shift = shift - floor(shift);
-		float phase = s * (_refls[refl].phi + shift * 360.);
-		const float &f = _refls[refl].f;
-
-		VoxelDiffraction &v = diff->element(s * h, s * k, s * l);
-		v.setAmplitudePhase(f, phase);
-	}
-		*/
 }
 

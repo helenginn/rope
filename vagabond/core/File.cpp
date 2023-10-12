@@ -180,8 +180,6 @@ int File::spaceGroupNum() const
 RefList *File::reflectionList() const
 {
 	RefList *list = new RefList(_reflections);
-	list->setSpaceGroup(spaceGroupNum());
-
 	std::string str = _values.at("_symmetry.space_group_name_H-M");
 	cleanup(str);
 	list->setSpaceGroupName(str);
