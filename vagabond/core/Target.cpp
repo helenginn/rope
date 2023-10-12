@@ -88,7 +88,7 @@ const std::vector<Floats> &Target::pointsForScore()
 {
 	_points.clear();
 	
-	Hypersphere sphere(_nAxes, 200);
+	Hypersphere sphere(_nAxes, 100);
 	sphere.prepareFibonacci();
 
 	for (float j = 0; j < sphere.count(); j++)
