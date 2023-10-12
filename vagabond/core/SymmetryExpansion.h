@@ -80,7 +80,7 @@ namespace SymmetryExpansion
 				gemmi::Op op = grp.get_op(l);
 				gemmi::Op::Miller m = {i, j, k};
 				gemmi::Op::Miller n = op.apply_to_hkl(m);
-				float ph_shift = op.phase_shift(m);
+				float ph_shift = rad2deg(op.phase_shift(m));
 				float phase = original_phase + ph_shift;
 
 				add_real_imag_for_index(n[0], n[1], n[2], amp, phase);
