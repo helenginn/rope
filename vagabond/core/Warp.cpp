@@ -201,6 +201,11 @@ void Warp::exposeDistanceMatrix()
 	}
 }
 
+void Warp::cleanup()
+{
+	sendResponse("cleanup", nullptr);
+}
+
 bool Warp::handleAtomList(AtomPosList &list)
 {
 

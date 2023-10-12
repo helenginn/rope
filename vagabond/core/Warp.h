@@ -106,10 +106,13 @@ public:
 	{
 		_showMatrix = show;
 	}
+
+	void cleanup();
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 	
 	virtual bool handleAtomList(AtomPosList &list);
+
 private:
 	void prepareAtoms();
 	void prepareBonds();
