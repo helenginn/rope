@@ -313,7 +313,7 @@ void print_current(const FlexScoreMap &peaks)
 
 int find_highest_uncovered_peak(const FlexScoreMap &peaks)
 {
-	float best = 0;
+	float best = -2;
 	int idx = -1;
 	for (auto it = peaks.begin(); it != peaks.end(); it++)
 	{
