@@ -66,7 +66,6 @@ private:
 	void saveSpace(std::string filename);
 	void loadJson(const std::string &filename);
 	void askForFilename();
-	void doWindow(std::string str);
 
 	MatrixPlot *_plot = nullptr;
 	std::atomic<bool> _updatePlot{false};

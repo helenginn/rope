@@ -146,13 +146,6 @@ void MapView::startPlot()
 
 }
 
-void MapView::startWorkerFromId(int start, int end)
-{
-	_refined = false;
-	_worker = new std::thread(WarpControl::start_from_residue_id,
-	                          _wc, start, end);
-}
-
 void MapView::startWorker()
 {
 	_refined = false;
@@ -380,19 +373,13 @@ void MapView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "refine")
 	{
-		glm::vec2 c = button->xy();
-		Menu *m = new Menu(this, this, "option");
-		m->addOption("sliding window", "sliding_window");
-		m->addOption("all", "all");
-		m->setup(c.x, c.y);
-		setModal(m);
+		_allResidues = true;
+		startWorker();
+		makePausable();
 	}
 
 	if (tag == "option_all")
 	{
-		_allResidues = true;
-		startWorker();
-		makePausable();
 	}
 	if (tag == "option_sliding_window")
 	{
@@ -401,32 +388,8 @@ void MapView::buttonPressed(std::string tag, Button *button)
 		                                 "window", this);
 		setModal(aft);
 	}
-		
-	if (tag == "window")
-	{
-		TextEntry *te = static_cast<TextEntry *>(button);
-		doWindow(te->scratch());
-	}
 
 	Display::buttonPressed(tag, button);
-}
-
-void MapView::doWindow(std::string str)
-{
-	int begin = 0; int end = 26;
-
-	if (str.length() > 0)
-	{
-		begin = atoi(str.c_str());
-		int idx = str.find("-") + 1;
-		char *ptr = &str[idx];
-		end = atoi(ptr);
-	}
-
-	std::cout << begin << " to " << end << std::endl;
-	startWorkerFromId(begin, end);
-	makePausable();
-
 }
 
 void MapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
