@@ -62,6 +62,7 @@ private:
 
 	void addButtons();
 	void cleanupPause();
+	void startPause();
 	void saveSpace(std::string filename);
 	void loadJson(const std::string &filename);
 	void askForFilename();

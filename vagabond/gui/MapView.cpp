@@ -165,15 +165,23 @@ void MapView::stopWorker()
 	_worker->detach();
 }
 
-void MapView::cleanupPause()
+void MapView::startPause()
 {
-	_refined = true;
-
 	if (_worker)
 	{
+		stopWorker();
 		delete _worker;
 		_worker = nullptr;
 	}
+
+	_refine->setInert(true);
+	_refine->setText("Pausing...");
+	_refine->setReturnTag("useless");
+}
+
+void MapView::cleanupPause()
+{
+	_refined = true;
 
 	_refine->setInert(false);
 	_refine->setText("Refine");
@@ -367,8 +375,7 @@ void MapView::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "stop")
 	{
-		stopWorker();
-		cleanupPause();
+		startPause();
 	}
 	
 	if (tag == "refine")
@@ -470,7 +477,7 @@ void MapView::sendObject(std::string tag, void *object)
 		_updateButtons = true;
 	}
 
-	else if (tag == "paused")
+	else if (tag == "cleanup")
 	{
 		_cleanupPause = true;
 	}
