@@ -481,7 +481,7 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 {
 	ParamSet ps;
 	int start = small.start;
-	while (ps.size() == 0)
+	while (ps.size() == 0 && start >= 0)
 	{
 		ps = wc->acquireParametersBetween(start, small.end, true); 
 		start--;
@@ -492,40 +492,44 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 	
 	while (ps.size() > 0)
 	{
-		std::cout << "Subset of size: " << subset.size() << std::endl;
 		sets.push_back(subset);
 		ps -= subset;
-		subset += ps.terminalSubset();
+		subset = ps.terminalSubset();
 	}
 	
-	if (sets.size() == 1)
+	std::reverse(sets.begin(), sets.end());
+	
+	for (size_t i = 1; i < sets.size(); i++)
 	{
-		std::cout << "Weird set: " << sets[0] << std::endl;
-
+		sets[i] += sets[0];
 	}
-
+	
 	return [wc, sets, large]()
 	{
 		int start = large.start;
 		wc->calculator()->setMinMaxDepth(start, large.end, true);
-		float last = wc->score();
+		float last = -1;
 
 		while (true)
 		{
 			for (const ParamSet &set : sets)
 			{
 				wc->calculator()->setMinMaxDepth(start, large.end, true);
+				float before = wc->score();
 				wc->calculator()->start();
 				bool success = wc->refineBetween(set, 3);
 				if (!success)
 				{
 					start--;
 				}
+				else if (last < 0)
+				{
+					last = before;
+				}
 				wc->resetTickets();
 			}
 
 			float newest = wc->score();
-			std::cout << newest << " vs " << last << std::endl;
 			if (newest > 0.9 * last)
 			{
 				break; // not enough of an improvement to do another round
