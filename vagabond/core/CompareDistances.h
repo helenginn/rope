@@ -39,11 +39,21 @@ public:
 	void setLeftFilter(AtomFilter &filter)
 	{
 		_left = filter;
+		_equal = false;
 	}
 
 	void setRightFilter(AtomFilter &filter)
 	{
 		_right = filter;
+		_equal = false;
+	}
+	
+	void setFiltersEqual(AtomFilter &filter)
+	{
+		_equal = true;
+		_left = filter;
+		_right = filter;
+
 	}
 	
 	const std::vector<Atom *> &leftAtoms() const
@@ -78,9 +88,17 @@ public:
 	void clearMatrix();
 	void reset();
 private:
+	bool isSquare()
+	{
+		return _equal;
+	}
 	void filter(const AtomPosList &apl);
+	void unequalFilter(const AtomPosList &apl);
+	void equalFilter(const AtomPosList &apl);
 	void setupMatrix();
 	void addToMatrix(const AtomPosList &apl);
+	void addUnequalToMatrix(const AtomPosList &apl);
+	void addEqualToMatrix(const AtomPosList &apl);
 
 	std::vector<Atom *> _leftAtoms;
 	std::vector<Atom *> _rightAtoms;
@@ -90,6 +108,7 @@ private:
 
 	AtomFilter _left = nullptr;
 	AtomFilter _right = nullptr;
+	bool _equal = false;
 	
 	AtomFilter _defaultFilter = nullptr;
 	

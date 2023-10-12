@@ -222,8 +222,7 @@ CompareDistances *Warp::compare()
 	if (!_compare)
 	{
 		_compare = new CompareDistances();
-		compare()->setLeftFilter(_filter);
-		compare()->setRightFilter(_filter);
+		compare()->setFiltersEqual(_filter);
 	}
 
 	return _compare;

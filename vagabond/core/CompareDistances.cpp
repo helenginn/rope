@@ -40,7 +40,7 @@ bool resi_num_comp(const Atom *a, const Atom *b)
 	return (a->residueId().as_num() < b->residueId().as_num());
 }
 
-void CompareDistances::filter(const AtomPosList &apl)
+void CompareDistances::equalFilter(const AtomPosList &apl)
 {
 	if (_leftAtoms.size() > 0 && _rightAtoms.size() > 0) { return; }
 	
@@ -52,10 +52,27 @@ void CompareDistances::filter(const AtomPosList &apl)
 	{
 		i++;
 
-		if (!_defaultFilter(awp.atom))
+		if (!_left || _left(awp.atom))
 		{
-//			continue;
+			_leftAtoms.push_back(awp.atom);
+			_leftIdxs.push_back(i);
 		}
+	}
+
+	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
+}
+
+void CompareDistances::unequalFilter(const AtomPosList &apl)
+{
+	if (_leftAtoms.size() > 0 && _rightAtoms.size() > 0) { return; }
+	
+	_leftAtoms.clear(); _rightAtoms.clear();
+	_leftIdxs.clear(); _rightIdxs.clear();
+
+	int i = -1;
+	for (const AtomWithPos &awp : apl)
+	{
+		i++;
 		
 		if (!_left || _left(awp.atom))
 		{
@@ -71,6 +88,11 @@ void CompareDistances::filter(const AtomPosList &apl)
 
 	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
 	std::sort(_rightAtoms.begin(), _rightAtoms.end(), resi_num_comp);
+}
+
+void CompareDistances::filter(const AtomPosList &apl)
+{
+	isSquare() ? equalFilter(apl) : unequalFilter(apl);
 }
 
 void CompareDistances::setupMatrix()
@@ -106,7 +128,40 @@ float CompareDistances::quickScore()
 	return sqrt(sum / (float)(size * _counter));
 }
 
-void CompareDistances::addToMatrix(const AtomPosList &apl)
+void CompareDistances::addEqualToMatrix(const AtomPosList &apl)
+{
+	_counter++;
+	
+	for (int i = 0; i < _leftIdxs.size() - 1; i++)
+	{
+		const int &m = _leftIdxs[i];
+		const glm::vec3 &x = apl[m].wp.ave;
+		const glm::vec3 &p = apl[m].wp.target;
+
+		for (int j = i + 1; j < _leftIdxs.size(); j++)
+		{
+			const int &n = _leftIdxs[j];
+			if (abs(i - j) <= _minimum || abs(i - j) >= _maximum)
+			{
+				continue;
+			}
+			const glm::vec3 &y = apl[n].wp.ave;
+			const glm::vec3 &q = apl[n].wp.target;
+
+			float expected = glm::length(p - q);
+			float acquired = glm::length(x - y);
+			
+			float diff = expected - acquired;
+			if (diff == diff)
+			{
+				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
+				_matrix[j][i] += _magnitude ? fabs(diff) : diff;
+			}
+		}
+	}
+}
+
+void CompareDistances::addUnequalToMatrix(const AtomPosList &apl)
 {
 	int i = 0; int j = 0;
 	_counter++;
@@ -139,6 +194,11 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 		i++;
 		j = 0;
 	}
+}
+
+void CompareDistances::addToMatrix(const AtomPosList &apl)
+{
+	isSquare() ? addEqualToMatrix(apl) : addUnequalToMatrix(apl);
 }
 
 void CompareDistances::reset()
