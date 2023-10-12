@@ -486,6 +486,10 @@ void sanitiseMinMax(int &min, int &max, const size_t &n)
 {
 	if (min < 0) min = 0;
 	if (max > n && max != INT_MAX) max = n;
+	if (min > max)
+	{
+		min = max;
+	}
 }
 
 void BondSequence::reflagDepth(int min, int max, bool limit_max)
