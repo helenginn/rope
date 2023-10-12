@@ -77,7 +77,7 @@ namespace SymmetryExpansion
 
 			for (int l = 0; l < grp.sym_ops.size(); l++)
 			{
-				gemmi::Op op = grp.get_op(l).inverse();
+				gemmi::Op op = grp.get_op(l);
 				gemmi::Op::Miller m = {i, j, k};
 				gemmi::Op::Miller n = op.apply_to_hkl(m);
 				float ph_shift = op.phase_shift(m);
