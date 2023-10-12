@@ -67,13 +67,15 @@ public:
 		_finish = true;
 	}
 	
+	float score();
+
 	void transformCoordinates(std::vector<float> &coord);
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
 	ParamSet acquireParametersBetween(int start, int end, bool reset);
 
-	bool refineBetween(int start, int end, const ParamSet &params);
+	bool refineBetween(const ParamSet &params, int mult = 1);
 	bool refineBetween(int start, int end);
 private:
 	std::vector<std::function<void()>> prepareJobList();

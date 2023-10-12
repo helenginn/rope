@@ -30,7 +30,7 @@
 #define LOWER_BOUND 30
 #define UPPER_BOUND 150
 #define LONG_RUN 8
-#define SHORT_RUN 3
+#define SHORT_RUN 5
 #define ALIGNMENT_RUN 2
 
 WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster)
@@ -111,7 +111,7 @@ ParamSet WarpControl::acquireParametersBetween(int start, int end, bool reset)
 	return params;
 }
 
-bool WarpControl::refineBetween(int start, int end, const ParamSet &params)
+bool WarpControl::refineBetween(const ParamSet &params, int mult)
 {
 	if (params.size() == 0)
 	{		
@@ -119,10 +119,6 @@ bool WarpControl::refineBetween(int start, int end, const ParamSet &params)
 		return false;
 	}
 	
-	int nb = _calculator->sequence()->blockCount();
-	if (start < 0) start = 0;
-	if (end > nb) end = nb;
-
 	_tWarp->getSetCoefficients(params, _getter, _setter);
 	_warp->resetComparison();
 
@@ -133,7 +129,7 @@ bool WarpControl::refineBetween(int start, int end, const ParamSet &params)
 		return false;
 	}
 
-	replaceSimplex(_simplex, (end - start) * 10, 1.0);
+	replaceSimplex(_simplex, params.size() * 4 * mult, 1.0);
 
 	float final_sc = _score();
 	std::cout << "\t" << begin << " to " << final_sc << std::endl;
@@ -144,13 +140,24 @@ bool WarpControl::refineBetween(int start, int end, const ParamSet &params)
 	return true;
 }
 
+float WarpControl::score()
+{
+	_warp->resetComparison();
+	calculator()->start();
+	float res = _score();
+	calculator()->finish();
+	_warp->resetComparison();
+	return res;
+}
+
+
 bool WarpControl::refineBetween(int start, int end)
 {
 	int count = 0;
 	while (count < 10)
 	{
 		ParamSet params = acquireParametersBetween(start, end, false);
-		bool success = refineBetween(start, end, params);
+		bool success = refineBetween(params);
 		count++;
 
 		if (success)
@@ -201,6 +208,7 @@ void WarpControl::run()
 		_jobs.clear();
 	}
 	
+	_warp->resetComparison();
 	_calculator->setMinMaxDepth(0, INT_MAX);
 	_calculator->start();
 	
@@ -484,25 +492,46 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 	
 	while (ps.size() > 0)
 	{
+		std::cout << "Subset of size: " << subset.size() << std::endl;
 		sets.push_back(subset);
 		ps -= subset;
 		subset += ps.terminalSubset();
 	}
+	
+	if (sets.size() == 1)
+	{
+		std::cout << "Weird set: " << sets[0] << std::endl;
 
-	return [wc, sets, small, large]()
+	}
+
+	return [wc, sets, large]()
 	{
 		int start = large.start;
-		for (const ParamSet &set : sets)
-		{
-			wc->calculator()->setMinMaxDepth(start, large.end, true);
-			wc->calculator()->start();
+		wc->calculator()->setMinMaxDepth(start, large.end, true);
+		float last = wc->score();
 
-			bool success = wc->refineBetween(start, large.end, set);
-			if (!success)
+		while (true)
+		{
+			for (const ParamSet &set : sets)
 			{
-				start--;
+				wc->calculator()->setMinMaxDepth(start, large.end, true);
+				wc->calculator()->start();
+				bool success = wc->refineBetween(set, 3);
+				if (!success)
+				{
+					start--;
+				}
+				wc->resetTickets();
 			}
-			wc->resetTickets();
+
+			float newest = wc->score();
+			std::cout << newest << " vs " << last << std::endl;
+			if (newest > 0.9 * last)
+			{
+				break; // not enough of an improvement to do another round
+			}
+			last = newest;
+			std::cout << "Doing well, let's try again: " << std::endl;
 		}
 	};
 }
