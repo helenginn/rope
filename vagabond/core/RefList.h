@@ -23,7 +23,6 @@
 #include "../utils/glm_import.h"
 #include <vector>
 #include <array>
-#include <ccp4/csymlib.h>
 
 class Diffraction;
 
@@ -78,8 +77,6 @@ public:
 private:
 	std::vector<Reflection> _refls;
 	std::array<double, 6> _cell;
-	
-	CCP4SPG *_spg = nullptr;
 
 	glm::mat3x3 _frac2Real = glm::mat3(1.f);
 	glm::mat3x3 _recip2Frac = glm::mat3(1.f);

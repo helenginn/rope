@@ -19,7 +19,6 @@
 #ifndef __vagabond__SymmetryExpansion__
 #define __vagabond__SymmetryExpansion__
 
-#include <ccp4/csymlib.h>
 #include <gemmi/symmetry.hpp>
 #include "Diffraction.h"
 

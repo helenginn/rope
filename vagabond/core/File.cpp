@@ -169,9 +169,6 @@ int File::spaceGroupNum() const
 	{
 		std::string str = _values.at("_symmetry.space_group_name_H-M");
 		cleanup(str);
-		CCP4SPG *group = ccp4spg_load_by_ccp4_spgname(str.c_str());
-		spg = group->spg_ccp4_num;
-		ccp4spg_free(&group);
 	}
 
 	return spg;
