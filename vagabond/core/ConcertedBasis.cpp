@@ -81,100 +81,16 @@ void ConcertedBasis::setupAngleList()
 
 }
 
-void ConcertedBasis::prepareSVD()
-{
-	freeSVD(&_svd);
-	setupSVD(&_svd, parameterCount());
-
-	for (size_t i = 0; i < parameterCount(); i++)
-	{
-		for (size_t j = 0; j <= i; j++)
-		{
-			float diff = (i == j);
-
-			_svd.u.ptrs[i][j] = diff;
-			_svd.u.ptrs[j][i] = diff;
-		}
-	}
-	
-	try
-	{
-		runSVD(&_svd);
-	}
-	catch (std::runtime_error &err)
-	{
-		return;
-	}
-
-	reorderSVD(&_svd);
-}
-
-bool ConcertedBasis::reverseLookup(Instance *inst, int axis,
-                                   const RTAngles &angles)
-{
-	bool changed = false;
-
-	for (size_t j = 0; j < angles.size(); j++)
-	{
-		for (size_t i = 0; i < _params.size(); i++)
-		{
-			Parameter *t = _params[i];
-
-			const ResidueTorsion &rt = angles.c_rt(j);
-			const Residue *local = inst->localResidueForResidueTorsion(rt);
-			if (local->id() != t->residueId())
-			{
-				continue;
-			}
-			
-			const std::string &desc = rt.torsion().desc();
-
-			if (!t->hasDesc(desc))
-			{
-				continue;
-			}
-
-			float value = angles.storage(j);
-
-			if (value != value)
-			{
-				value = 0;
-			}
-
-			_svd.u[i][axis] = value;
-			changed = true;
-		}
-	}
-
-	return changed;
-}
-
 bool ConcertedBasis::fillFromInstanceList(Instance *instance, int axis,
-                                          const RTAngles &angles)
+                                          RTAngles angles)
 {
 	prepare();
+	angles.attachInstance(instance);
+	angles.filter_according_to(parameters());
 	
-	if (angles.size() == 1)
+	for (int i = 0; i < parameterCount(); i++)
 	{
-		bool result = reverseLookup(instance, axis, angles);
-		return result;
-	}
-
-	std::cout << "Adding " << instance->id() << " axis " << axis << ", "
-	<< angles.size() << " angles" << std::endl;
-	
-	for (size_t i = 0; i < _params.size(); i++)
-	{
-		Parameter *t = _params[i];
-		
-		float value = instance->valueForTorsionFromList(t, angles);
-		
-		if (value != value)
-		{
-			value = 0;
-		}
-		
-		_svd.u[i][axis] = value;
+		_svd.u[i][axis] = angles.storage(i);
 	}
 	
 	return true;
@@ -184,11 +100,6 @@ void ConcertedBasis::prepare(int dims)
 {
 	_dims = dims;
 	setupAngleList();
-	
-	if (!_custom)
-	{
-		prepareSVD();
-	}
 }
 
 Coord::Interpolate<float> 

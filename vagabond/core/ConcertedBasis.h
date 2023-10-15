@@ -44,17 +44,13 @@ public:
 	}
 	
 	bool fillFromInstanceList(Instance *instance, int axis,
-	                          const RTAngles &angles);
-
-	bool reverseLookup(Instance *inst, int axis,
-	                   const RTAngles &angles);
+	                          RTAngles angles);
 protected:
 	Coord::Interpolate<float> fullContribution(BondSequence *seq, int tidx);
 
 	virtual float contributionForAxis(BondSequence *seq, int tidx, int axis, 
 	                                  const Coord::Get &coord) const;
 private:
-	void prepareSVD();
 	void setupAngleList();
 
 	bool _custom = false;
