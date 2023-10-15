@@ -475,8 +475,7 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "path_finding")
 	{
-		PathsMenu *pm = new PathsMenu(this);
-		pm->setEntityId(_obj.name());
+		PathsMenu *pm = new PathsMenu(this, &_obj);
 		pm->show();
 		return;
 	}

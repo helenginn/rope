@@ -21,24 +21,21 @@
 
 #include <vagabond/gui/elements/ListView.h>
 
+class Entity;
+
 class PathsMenu : public ListView
 {
 public:
-	PathsMenu(Scene *prev);
+	PathsMenu(Scene *prev, Entity *entity);
 	~PathsMenu();
 	
-	void setEntityId(std::string entity_id)
-	{
-		_entity_id = entity_id;
-	}
-
 	virtual void setup();
 
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	std::string _entity_id;
+	Entity *_entity = nullptr;
 
 };
 

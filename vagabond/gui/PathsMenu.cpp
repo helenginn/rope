@@ -20,16 +20,15 @@
 #include <vagabond/gui/elements/ImageButton.h>
 #include "PathsMenu.h"
 #include "EntityManager.h"
-#include "Environment.h"
 #include "RouteExplorer.h"
 #include "PlausibleRoute.h"
 #include "PathManager.h"
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
 
-PathsMenu::PathsMenu(Scene *prev) : ListView(prev)
+PathsMenu::PathsMenu(Scene *prev, Entity *entity) : ListView(prev)
 {
-
+	_entity = entity;
 }
 
 PathsMenu::~PathsMenu()
@@ -45,7 +44,8 @@ void PathsMenu::setup()
 
 size_t PathsMenu::lineCount()
 {
-	return Environment::env().pathManager()->objectCount() + 1;
+	std::vector<Path *> paths = PathManager::manager()->pathsForEntity(_entity);
+	return paths.size() + 1;
 }
 
 Renderable *PathsMenu::getLine(int i)
@@ -60,10 +60,11 @@ Renderable *PathsMenu::getLine(int i)
 
 	i--;
 	Box *b = new Box();
-	Path &path = Environment::env().pathManager()->object(i);
+	std::vector<Path *> paths = PathManager::manager()->pathsForEntity(_entity);
+	Path *path = paths[i];
 	
 	{
-		TextButton *t = new TextButton(path.desc(), this);
+		TextButton *t = new TextButton(path->desc(), this);
 		t->setReturnTag("path_" + std::to_string(i));
 		t->setLeft(0., 0.);
 		b->addObject(t);
@@ -87,16 +88,8 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "make_new")
 	{
-		Entity *entity = EntityManager::manager()->entity(_entity_id);
-		if (entity)
-		{
-			MakeNewPaths *mnp = new MakeNewPaths(this, entity);
-			mnp->show();
-		}
-		else
-		{
-			throw std::runtime_error("Couldn't find entity with this name?");
-		}
+		MakeNewPaths *mnp = new MakeNewPaths(this, _entity);
+		mnp->show();
 
 		return;
 	}
@@ -104,9 +97,11 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (end.length())
 	{
+		std::vector<Path *> paths;
+		paths = PathManager::manager()->pathsForEntity(_entity);
 		int idx = atoi(end.c_str());
-		Path &path = Environment::env().pathManager()->object(idx);
-		PlausibleRoute *pr = path.toRoute();
+		Path *path = paths[idx];
+		PlausibleRoute *pr = path->toRoute();
 		RouteExplorer *re = new RouteExplorer(this, pr);
 		re->show();
 		return;
@@ -117,7 +112,7 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	if (end.length())
 	{
 		int idx = atoi(end.c_str());
-		Path &path = Environment::env().pathManager()->object(idx);
+		Path &path = PathManager::manager()->object(idx);
 		PathsDetail *pd = new PathsDetail(this, &path);
 		pd->show();
 		return;

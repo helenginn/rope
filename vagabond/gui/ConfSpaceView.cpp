@@ -487,8 +487,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "paths")
 	{
-		PathsMenu *menu = new PathsMenu(this);
-		menu->setEntityId(_entity->name());
+		PathsMenu *menu = new PathsMenu(this, _entity);
 		menu->show();
 	}
 	
