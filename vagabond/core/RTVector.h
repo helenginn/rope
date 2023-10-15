@@ -112,11 +112,7 @@ public:
 	}
 	
 	
-	friend void to_json(json &j, const RTVector &value);
-	friend void from_json(const json &j, RTVector &value);
 protected:
-	friend void to_json(json &j, const RTValue &value);
-	friend void from_json(const json &j, RTValue &value);
 };
 
 

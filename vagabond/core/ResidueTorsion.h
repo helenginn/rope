@@ -81,7 +81,6 @@ inline void to_json(json &j, const ResidueTorsion &id)
 inline void from_json(const json &j, ResidueTorsion &id)
 {
 	j.at("entity").get_to(id._entityName);
-	j.at("master").get_to(id._masterId);
 	j.at("torsion").get_to(id._torsion);
 	
 	if (j.count("master"))
