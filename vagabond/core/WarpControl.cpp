@@ -644,7 +644,7 @@ FlexScoreMap scanDiagonal(WarpControl *wc, int size)
 std::vector<std::function<void()>> WarpControl::prepareJobList()
 {
 	_warp->setShowMatrix(false);
-	FlexScoreMap flex = ::scanDiagonal(this, 50);
+	FlexScoreMap flex = ::scanDiagonal(this, 80);
 	std::vector<std::function<void()>> jobs;
 
 	print_current(flex);
