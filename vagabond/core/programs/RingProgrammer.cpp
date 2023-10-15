@@ -639,7 +639,6 @@ std::string RingProgrammer::status()
 std::vector<RingProgrammer *> *RingProgrammer::allProgrammers()
 {
 	std::lock_guard<std::mutex> lg(_mutex);
-	return &_rammers;
 
 	if (_rammers.size() > 0)
 	{

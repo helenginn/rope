@@ -67,12 +67,6 @@ void GeometryTable::addGeometryLength(std::string code, std::string pName,
                                       std::string qName, double mean, 
                                       double stdev, bool link)
 {
-	if (code == "PRO" && ((pName == "CD" && qName == "N") ||
-	                      (qName == "CD" && pName == "N")))
-	{
-		return;
-	}
-
 	GeometryMap &map = _codes[code];
 	
 	Value value = {mean, stdev};
@@ -143,11 +137,6 @@ void GeometryTable::addGeometryChiral(std::string code, std::string centre,
                                       std::string pName, std::string qName, 
                                       std::string rName, int sign)
 {
-	if (code == "PRO" && centre == "N")
-	{
-		return;
-	}
-
 	GeometryMap &map = _codes[code];
 	
 	/* in the same direction as described */
