@@ -85,6 +85,11 @@ bool ResidueTorsion::fitsParameter(Parameter *other, Instance *from) const
 
 Parameter *ResidueTorsion::parameter()
 {
+	if (torsion().desc().length() == 0)
+	{
+		return nullptr;
+	}
+
 	if (!_instance)
 	{
 		throw std::runtime_error("Cannot find parameter for ResidueTorsion"\
