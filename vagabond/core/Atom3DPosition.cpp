@@ -49,14 +49,6 @@ bool Atom3DPosition::fitsAtom(Atom *other, Instance *from) const
 Atom *Atom3DPosition::atom(AtomGroup *source) 
 {
 	Atom *atom = source->atomByIdName(local_id(), atomName());
-	if (atom)
-	{
-		std::cout << atom->desc() << std::endl;
-	}
-	else
-	{
-		std::cout << "not atom for " << local_id() << " " << atomName() << std::endl;
-	}
 	return atom;
 }
 
