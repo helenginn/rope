@@ -32,9 +32,10 @@ class RouteValidator;
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
 public:
-	Route(Instance *inst, TorsionCluster *cluster, int dims);
 	Route(Instance *from, Instance *to, const RTAngles &list);
 	virtual ~Route();
+	
+	BondCalculator *calculator();
 
 	virtual void setup();
 	
@@ -110,11 +111,6 @@ public:
 	{
 		_finish = true;
 	}
-
-	void setRawDestination(const std::vector<Angular> dest)
-	{
-		_rawDest = dest;
-	}
 	
 	void setLinear()
 	{
@@ -126,24 +122,10 @@ public:
 		_type = Polynomial;
 	}
 	
-	/*
-	const std::map<int, WayPoints> &wayPoints() const
-	{
-		return _wayPoints;
-	}
-	*/
-	
 	const size_t wayPointCount() const
 	{
 		return _motions.size();
 	}
-	
-	/*
-	void setWayPoints(const std::map<int, WayPoints> &wps) 
-	{
-		_wayPoints = wps;
-	}
-	*/
 	
 	WayPoints &wayPoints(int idx)
 	{
@@ -177,8 +159,6 @@ public:
 	int indexOfParameter(Parameter *t);
 
 	void bringTorsionsToRange();
-	
-	void printWayPoints();
 	
 	const RTMotion &motions() const
 	{
@@ -238,7 +218,6 @@ protected:
 
 	void prepareDestination();
 	void getParametersFromBasis();
-	void connectParametersToDestination();
 
 	bool incrementToAtomGraph(AtomGraph *ag);
 	AtomGraph *grapherForTorsionIndex(int idx);
@@ -257,7 +236,6 @@ private:
 	float _score;
 	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
-	void reportFound();
 	void calculateAtomDeviations(Score &score);
 
 	std::vector<Parameter *> _missing;
@@ -266,10 +244,7 @@ private:
 
 	Instance *_endInstance = nullptr;
 
-	std::vector<ResidueTorsion> _headers;
-	std::vector<Angular> _rawDest;
-	
-	std::map<BondCalculator *, std::vector<int> > _calc2Destination;
+	RTAngles _source;
 	
 	InterpolationType _type = Polynomial;
 	

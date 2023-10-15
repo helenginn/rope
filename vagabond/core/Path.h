@@ -122,13 +122,6 @@ inline void to_json(json &j, const Path &value)
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
 	j["motions"] = value._motions;
-
-	/*
-	j["parameters"] = value._rts;
-	j["destination"] = value._destination;
-	j["flips"] = value._flips;
-	j["waypoints"] = value._wayPoints;
-	*/
 }
 
 /* path */
@@ -137,23 +130,7 @@ inline void from_json(const json &j, Path &value)
 	value._startInstance = j.at("start");
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
-
-	if (j.count("destination"))
-	{
-		std::vector<float> dest = j.at("destination");
-		std::vector<ResidueTorsion> rts = j.at("parameters");
-		std::vector<bool> flips = j.at("flips");
-		std::map<int, WayPoints> wps = j.at("waypoints");
-
-		value._motions.vector_from(rts);
-		value._motions.motion_angles_from(dest);
-		value._motions.waypoints_from(wps);
-		value._motions.flips_from(flips);
-	}
-	else if (j.count("motions"))
-	{
-		value._motions = j.at("motions");
-	}
+	value._motions = j.at("motions");
 }
 
 #endif

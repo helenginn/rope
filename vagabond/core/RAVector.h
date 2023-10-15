@@ -34,6 +34,24 @@ public:
 		_pairs.push_back(RTValue{rt, st});
 	}
 	
+	void vector_from(const std::vector<Atom3DPosition> &ras,
+	                 const std::vector<Storage> &storage)
+	{
+		_pairs.clear();
+		_pairs.reserve(ras.size());
+		for (int i = 0; i < ras.size(); i++)
+		{
+			if (storage.size() > i)
+			{
+				addAtom3DPosition(ras.at(i), storage.at(i));
+			}
+			else
+			{
+				addAtom3DPosition(ras.at(i), Storage{});
+			}
+		}
+	}
+	
 	void vector_from(const std::vector<Atom3DPosition> &ras)
 	{
 		_pairs.clear();
@@ -46,11 +64,6 @@ public:
 	
 	void attachInstance(Instance *inst)
 	{
-		if (inst->hasSequence())
-		{
-			Polymer *pol = static_cast<Polymer *>(inst);
-		}
-
 		for (RTValue &val : _pairs)
 		{
 			val.header.attachToInstance(inst);
@@ -83,24 +96,6 @@ public:
 			else
 			{
 				_pairs.push_back(RTValue{});
-			}
-		}
-	}
-	
-	void vector_from(const std::vector<Atom3DPosition> &ras,
-	                 const std::vector<Storage> &storage)
-	{
-		_pairs.clear();
-		_pairs.reserve(ras.size());
-		for (int i = 0; i < ras.size(); i++)
-		{
-			if (storage.size() > i)
-			{
-				addAtom3DPosition(ras.at(i), storage.at(i));
-			}
-			else
-			{
-				addAtom3DPosition(ras.at(i), Storage{});
 			}
 		}
 	}

@@ -162,7 +162,6 @@ void MakeNewPaths::prepare()
 	}
 
 	PlausibleRoute *sr = new PlausibleRoute(from, to, list);
-	sr->setRawDestination(list.storage_only());
 
 	RouteExplorer *re = new RouteExplorer(this, sr);
 	re->show();

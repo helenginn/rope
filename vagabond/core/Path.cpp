@@ -89,11 +89,9 @@ PlausibleRoute *Path::toRoute()
 	}
 	
 	_model->currentAtoms();
-
 	_motions.attachInstance(_instance);
 
-	PlausibleRoute *pr = new PlausibleRoute(_instance, nullptr, _motions.size());
-	pr->setDestinationInstance(_end);
+	PlausibleRoute *pr = new PlausibleRoute(_instance, _end);
 	pr->setType(_type);
 	pr->setMotions(_motions);
 

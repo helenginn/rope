@@ -17,11 +17,18 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PathManager.h"
+#include "Environment.h"
 
 PathManager::PathManager()
 {
 	_addMutex = new std::mutex();
 }
+
+PathManager *PathManager::manager()
+{
+	return Environment::pathManager();
+}
+
 
 PathManager::~PathManager()
 {
@@ -55,6 +62,23 @@ void PathManager::housekeeping()
 	{
 		p.housekeeping();
 	}
+}
+
+std::vector<Path *> PathManager::pathsForEntity(Entity *ent)
+{
+	std::vector<Path *> paths;
+
+	for (Path &p : _objects)
+	{
+		p.housekeeping();
+		if (p.startInstance()->entity() == ent)
+		{
+			paths.push_back(&p);
+		}
+	}
+
+	return paths;
+
 }
 
 std::vector<Path *> PathManager::pathsForInstance(Instance *inst)

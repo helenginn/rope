@@ -27,7 +27,7 @@ class RTAngles : public RTVector<Angular>
 {
 public:
 	static RTAngles angles_from(const std::vector<ResidueTorsion> &rts,
-	                            const std::vector<Angular> &angles)
+	                            const std::vector<Angular> &angles = {})
 	{
 		RTAngles res;
 		res.vector_from(rts, angles);

@@ -27,18 +27,7 @@ Route::Route(Instance *from, Instance *to, const RTAngles &list)
 : StructureModification(from, 1, list.size())
 {
 	_endInstance = to;
-	_headers = list.headers_only();
-	_torsionType = TorsionBasis::TypeSimple;
-	instance()->load();
-}
-
-Route::Route(Instance *inst, TorsionCluster *cluster, int dims) 
-: StructureModification(inst, 1, dims)
-{
-	if (cluster)
-	{
-		_headers = cluster->dataGroup()->headers();
-	}
+	_source = list;
 	_torsionType = TorsionBasis::TypeSimple;
 	instance()->load();
 }
@@ -50,7 +39,7 @@ Route::~Route()
 
 void Route::setup()
 {
-	if (_rawDest.size() == 0 && motionCount() == 0)
+	if (_source.size() == 0 && motionCount() == 0)
 	{
 		throw std::runtime_error("No destination or prior set for route");
 	}
@@ -99,36 +88,21 @@ void Route::submitJob(int idx, bool show, bool forces)
 
 	float fraction = idx / (float)(pointCount() - 1);
 	
-	for (BondCalculator *calc : _calculators)
+	BondCalculator *calc = calculator();
+
+	Job job{};
+	job.parameters = _points[idx];
+	job.atomTargets = AtomBlock::prepareMovingTargets(calc, fraction);
+
+	job.requests = static_cast<JobType>(JobPositionVector |
+	                                    JobCalculateDeviations);
+	if (!show)
 	{
-		Job job{};
-		int dims = _calc2Destination[calc].size();
-		job.parameters.resize(dims);
-		job.atomTargets = AtomBlock::prepareMovingTargets(calc, fraction);
-
-		for (size_t i = 0; i < dims; i++)
-		{
-			float value = 0;
-			int calc_idx = _calc2Destination[calc][i];
-			
-			if (calc_idx < 0) continue;
-			if (_points.size() > idx && _points[idx].size() > calc_idx)
-			{
-				value = _points[idx][calc_idx];
-			}
-			job.parameters[i] = value;
-		}
-
-		job.requests = static_cast<JobType>(JobPositionVector |
-		                                    JobCalculateDeviations);
-		if (!show)
-		{
-			job.requests = JobCalculateDeviations;
-		}
-		
-		int t = calc->submitJob(job);
-		_ticket2Point[t] = idx;
+		job.requests = JobCalculateDeviations;
 	}
+
+	int t = calc->submitJob(job);
+	_ticket2Point[t] = idx;
 
 	_point2Score[idx] = Score{};
 }
@@ -204,102 +178,67 @@ void Route::bringTorsionsToRange()
 	}
 }
 
-void Route::reportFound()
+BondCalculator *Route::calculator()
 {
-	return;
-	for (size_t i = 0; i < _missing.size(); i++)
-	{
-		std::cout << "Missing torsion " << _missing[i]->desc() << " for "
-		<< "residue " << _missing[i]->residueId().str() << std::endl;
-	}
-
+	return _instanceToCalculator[_instance];
 }
 
 void Route::getParametersFromBasis()
 {
 	if (_motions.size() > 0)
 	{
-		std::cout << "skipping" << std::endl;
+		std::cout << "skipping pick up of parameters, done already" << std::endl;
 		return;
 	}
 
 	_missing.clear();
 
-	RTAngles list = RTAngles::angles_from(_headers, {});
-
-	std::vector<Motion> motions;
+	std::vector<Motion> tmp_motions;
 	std::vector<ResidueTorsion> torsions;
 
-	for (BondCalculator *calc : _calculators)
+	BondCalculator *calc = calculator();
+	TorsionBasis *basis = calc->torsionBasis();
+
+	for (size_t i = 0; i < basis->parameterCount(); i++)
 	{
-		TorsionBasis *basis = calc->torsionBasis();
+		Parameter *p = basis->parameter(i);
+		int idx = _instance->indexForParameterFromList(p, _source);
+
+		if (idx < 0)
+		{
+			torsions.push_back(ResidueTorsion{});
+			tmp_motions.push_back(Motion{WayPoints(), false, 0});
+			_missing.push_back(p);
+			continue;
+		}
+
+		ResidueTorsion rt = _source.c_rt(idx);
+		rt.attachToInstance(_instance);
+		float final_angle = _source.storage(idx);
 		
-		for (size_t i = 0; i < basis->parameterCount(); i++)
+		if (final_angle != final_angle) 
 		{
-			Parameter *p = basis->parameter(i);
-			int idx = _instance->indexForParameterFromList(p, list);
-			
-			if (idx < 0)
-			{
-				_missing.push_back(p);
-				continue;
-			}
-
-			ResidueTorsion rt = list.c_rt(idx);
-			rt.attachToInstance(_instance);
-			float final_angle = _rawDest[idx];
-
-			torsions.push_back(rt);
-			motions.push_back(Motion{WayPoints(), false, final_angle});
+			final_angle = 0;
+			std::cout << "WARNING!" << final_angle << std::endl;
 		}
+
+		torsions.push_back(rt);
+		tmp_motions.push_back(Motion{WayPoints(), false, final_angle});
 	}
 
-	_motions = RTMotion::motions_from(torsions, motions);
-	connectParametersToDestination();
-}
-
-void Route::connectParametersToDestination()
-{
-	_calc2Destination.clear();
-
-	for (BondCalculator *calc : _calculators)
-	{
-		TorsionBasis *basis = calc->torsionBasis();
-
-		for (size_t i = 0; i < basis->parameterCount(); i++)
-		{
-			Parameter *p = basis->parameter(i);
-			
-			int chosen = -1;
-			for (int j = 0; j < motionCount(); j++)
-			{
-				if (parameter(j) == p)
-				{
-					chosen = j;
-					break;
-				}
-			}
-			
-			_calc2Destination[calc].push_back(chosen);
-		}
-	}
+	_motions = RTMotion::motions_from(torsions, tmp_motions);
+	bringTorsionsToRange();
 }
 
 void Route::prepareDestination()
 {
-	if (_headers.size() == 0)
+	if (_source.size() == 0 && _motions.size() == 0)
 	{
-		return;
-	}
-	
-	if (_rawDest.size() == 0)
-	{
-		throw std::runtime_error("Raw destination not set, trying to prepare"\
+		throw std::runtime_error("Raw destination not set, nor motions for "\
 		                         "destination");
 	}
 	
 	getParametersFromBasis();
-	reportFound();
 }
 
 int Route::indexOfParameter(Parameter *t)
@@ -313,24 +252,6 @@ int Route::indexOfParameter(Parameter *t)
 	}
 	
 	return -1;
-}
-
-void Route::printWayPoints()
-{
-	std::cout << "Waypoints:" << std::endl;
-	for (size_t i = 0; i < wayPointCount(); i++)
-	{
-		std::cout << parameter(i)->desc() << " ";
-		std::cout << " flip: " << (flip(i) ? "yes" : "no") << "; ";
-		for (size_t j = 0; j < wayPointCount(); j++)
-		{
-			std::cout << "(" << wayPoints(i)[j].progress() << ", ";
-			std::cout << wayPoints(i)[j].fraction() << ") ";
-		}
-		std::cout << std::endl;
-	}
-
-	std::cout << std::endl;
 }
 
 float Route::getTorsionAngle(int i)

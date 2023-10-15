@@ -24,6 +24,7 @@
 #include <vagabond/core/Engine.h>
 #include <vagabond/c4x/Posular.h>
 #include <thread>
+#include "RTAngles.h"
 
 class Scene;
 class Instance;
@@ -52,7 +53,7 @@ public:
 	virtual void click(bool left = true);
 	virtual bool mouseOver();
 	virtual void unmouseOver();
-	std::vector<Angular> directTorsionVector(int idx);
+	RTAngles directTorsionVector(int idx);
 
 	virtual size_t requestedIndices();
 	
@@ -80,7 +81,7 @@ private:
 	void initialise();
 
 	std::string titleForAxis(int idx);
-	std::vector<Angular> getTorsionVector(int axis);
+	RTAngles getTorsionVector(int axis);
 	std::vector<Posular> getPositionalVector(int idx);
 	void prepareAxes();
 	void refreshAxes();

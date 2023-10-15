@@ -103,23 +103,14 @@ inline void from_json(const json &j, RTVector<Motion>::RTValue &id)
 
 inline void to_json(json &j, const RTMotion &id)
 {
-	j["motions"] = id._pairs;
+	j = id._pairs;
 
 }
 
 inline void from_json(const json &j, RTMotion &id)
 {
-	if (j.count("motions") == 0)
-	{
-		std::vector<ResidueTorsion> rts = j.at("rts");
-		std::vector<Motion> motions = j.at("vals");
-		id.vector_from(rts, motions);
-	}
-	else
-	{
-		std::vector<RTMotion::RTValue> values = j.at("motions");
-		id._pairs = values;
-	}
+	std::vector<RTMotion::RTValue> values = j;
+	id._pairs = values;
 }
 
 

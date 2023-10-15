@@ -30,19 +30,10 @@ PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &lis
 	_maximumCycles = 5;
 }
 
-PlausibleRoute::PlausibleRoute(Instance *inst, TorsionCluster *cluster,
-                               int dims)
-: Route(inst, cluster, dims)
-{
-	_threads = 4;
-	_maximumCycles = 5;
-}
-
 void PlausibleRoute::setup()
 {
 	Route::setup();
 	prepareDestination();
-	connectParametersToDestination();
 	setTargets();
 	setTargets(); // improvement of superposition second time?
 }
@@ -593,7 +584,11 @@ float PlausibleRoute::getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
 	float angle = getTorsionAngle(i);
 	float prop = WayPoints::getPolynomialInterpolatedFraction(fit, frac);
 	
-	return angle * prop;
+	angle *= prop;
+	
+	if (angle != angle) { angle = 0; }
+	
+	return angle;
 }
 
 std::vector<PlausibleRoute::PolyFit> PlausibleRoute::polynomialFits()
@@ -764,6 +759,7 @@ void PlausibleRoute::splitWaypoint(int idx)
 
 void PlausibleRoute::splitWaypoints()
 {
+	std::cout << "Splitting..." << std::endl;
 	_splitCount++;
 	
 	for (size_t i = 0; i < wayPointCount(); i++)

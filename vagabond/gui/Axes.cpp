@@ -143,11 +143,11 @@ std::vector<float> Axes::getMappedVector(int idx)
 	return vals;
 }
 
-std::vector<Angular> Axes::directTorsionVector(int idx)
+RTAngles Axes::directTorsionVector(int idx)
 {
 	if (_torsionCluster == nullptr)
 	{
-		return std::vector<Angular>();
+		return RTAngles{};
 	}
 
 	if (_targets[idx] != nullptr)
@@ -156,7 +156,9 @@ std::vector<Angular> Axes::directTorsionVector(int idx)
 		int yours = _torsionCluster->dataGroup()->indexOfObject(_targets[idx]);
 
 		std::vector<Angular> vals = _torsionCluster->rawVector(mine, yours);
-		return vals;
+		const RTAngles &empty = _torsionCluster->dataGroup()->emptyAngles();
+		RTAngles angles = RTAngles::angles_from(empty.headers_only(), vals);
+		return angles;
 	}
 
 	return getTorsionVector(idx);
@@ -192,12 +194,14 @@ std::vector<Type> vectorFrom(glm::vec3 dir, ClusterType *cluster)
 	return sums;
 }
 
-std::vector<Angular> Axes::getTorsionVector(int idx)
+RTAngles Axes::getTorsionVector(int idx)
 {
 	glm::vec3 dir = _dirs[idx];
 	
-	std::vector<Angular> vec = vectorFrom<Angular>(dir, _torsionCluster);
-	return vec;
+	std::vector<Angular> vals = vectorFrom<Angular>(dir, _torsionCluster);
+	const RTAngles &empty = _torsionCluster->dataGroup()->emptyAngles();
+	RTAngles angles = RTAngles::angles_from(empty.headers_only(), vals);
+	return angles;
 }
 
 std::vector<Posular> Axes::getPositionalVector(int idx)
@@ -249,9 +253,7 @@ void Axes::loadAtom2AtomExplorer(int idx)
 
 void Axes::loadAxisExplorer(int idx)
 {
-	std::vector<ResidueTorsion> list = _torsionCluster->dataGroup()->headers();
-	std::vector<Angular> vals = getTorsionVector(idx);
-	RTAngles angles = RTAngles::angles_from(list, vals);
+	RTAngles angles = getTorsionVector(idx);
 	
 	std::string str = titleForAxis(idx);
 
@@ -271,12 +273,9 @@ void Axes::loadAxisExplorer(int idx)
 
 void Axes::route(int idx)
 {
-	int l = _torsionCluster->dataGroup()->length();
-	PlausibleRoute *sr = new PlausibleRoute(_instance, _torsionCluster, l);
-	
-	std::vector<Angular> values = directTorsionVector(idx);
-	sr->setRawDestination(values);
-	sr->setDestinationInstance(_targets[idx]);
+	Instance *end = _targets[idx];
+	RTAngles values = directTorsionVector(idx);
+	PlausibleRoute *sr = new PlausibleRoute(_instance, end, values);
 	_scene->setMadePaths();
 
 	RouteExplorer *re = new RouteExplorer(_scene, sr);

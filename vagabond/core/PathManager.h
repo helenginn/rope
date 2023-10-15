@@ -27,6 +27,7 @@ class PathManager : public Manager<Path>
 public:
 	PathManager();
 	virtual ~PathManager();
+	static PathManager *manager();
 
 	virtual Path *insertOrReplace(Path &p);
 	
@@ -37,6 +38,7 @@ public:
 		return "paths";
 	}
 
+	std::vector<Path *> pathsForEntity(Entity *ent);
 	std::vector<Path *> pathsForInstance(Instance *mol);
 	std::vector<Path *> pathsBetweenInstances(Instance *first, 
 	                                          Instance *second);
