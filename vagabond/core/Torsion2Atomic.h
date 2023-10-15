@@ -28,7 +28,8 @@ class RTAngles;
 class Torsion2Atomic
 {
 public:
-	Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
+	Torsion2Atomic(Entity *entity, TorsionCluster *cluster, 
+	               Instance *ref = nullptr, 
 	               PositionalCluster *pc = nullptr);
 
 	RAMovement convertAnglesSimple(Instance *ref, const RTAngles &angles);

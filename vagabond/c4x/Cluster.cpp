@@ -222,7 +222,6 @@ typename DG::Array Cluster<DG>::rawVector(int from, int to)
 		your_vals[i] -= my_vals[i];
 	}
 
-//	dataGroup()->removeNormals(your_vals);
 	return your_vals;
 }
 

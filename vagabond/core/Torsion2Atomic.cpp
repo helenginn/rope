@@ -16,15 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <cmath>
 #include <functional>
 #include "Torsion2Atomic.h"
 #include <vagabond/utils/Vec3s.h>
+#include <vagabond/utils/maths.h>
 #include "Entity.h"
 
 Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
-                               PositionalCluster *pc)
+                               Instance *ref, PositionalCluster *pc)
 {
 	_entity = entity;
+	if (ref)
+	{
+		_entity->setReference(ref);
+	}
 	_tCluster = cluster;
 	std::vector<Instance *> instances = _tCluster->dataGroup()->asInstances();
 	if (pc == nullptr)
@@ -69,22 +75,32 @@ struct MultiWeights
 	}
 };
 
-SimpleWeights obtain_weights(MetadataGroup *grp, const RTAngles &angles)
+SimpleWeights obtain_weights(TorsionCluster *tc, const RTAngles &angles,
+                             Instance *reference)
 {
+	MetadataGroup *grp = tc->dataGroup();
 	RTAngles master = grp->emptyAngles();
 
 	std::vector<Angular> sorted = angles.storage_according_to(master);
-
+	
 	std::vector<float> compare;
 	grp->convertToComparable(sorted, compare);
 	
 	SimpleWeights weight;
 	
+	int ref_idx = grp->indexOfObject(reference);
+
 	for (size_t i = 0; i < grp->vectorCount(); i++)
 	{
+		std::vector<Angular> entry = tc->rawVector(ref_idx, i);
 		Instance *instance = static_cast<Instance *>(grp->object(i));
-		std::vector<float> entry = grp->comparableVector(i);
-		float cc = MetadataGroup::correlation_between(compare, entry);
+
+		std::vector<float> chosen;
+		grp->convertToComparable(entry, chosen);
+
+		float cc = MetadataGroup::correlation_between(compare, chosen);
+
+
 		weight.scores[instance] = cc;
 	}
 
@@ -140,12 +156,61 @@ PCA::Matrix weights_to_component_matrix(const Access &weights, Instance *ref,
 	return tr;
 }
 
+auto basis_position(const PCA::Matrix &convert)
+{
+	return [convert](int idx)
+	{
+		int max = convert.rows - 1;
+		glm::vec3 pos = {convert[idx][0], convert[idx][1], convert[idx][2]};
+		glm::vec3 constant = {convert[max][0], convert[max][1], 
+		convert[max][2]};
+		return pos + constant;
+	};
+}
+
+auto actual_atom_position(PositionalGroup *grp, int atom_idx)
+{
+	return [grp, atom_idx](int mol_idx)
+	{
+		glm::vec3 dir = grp->differenceVector(mol_idx)[atom_idx];
+		return dir;
+	};
+}
+
+template <typename Basis>
+auto predict_position(Basis &basis)
+{
+	return [&basis](Floats &weights)
+	{
+		glm::vec3 tot{};
+		
+		int idx = 0;
+		for (float &f : weights)
+		{
+			glm::vec3 add = basis(idx) * f;
+			tot += add;
+			idx++;
+		}
+
+		return tot;
+	};
+}
+
+template <typename Func>
+void for_every_instance(PositionalGroup *group, Func &op)
+{
+	for (size_t i = 0; i < group->vectorCount(); i++)
+	{
+		op(i);
+	}
+};
+
 template <typename Access>
 std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
-                                         PositionalGroup *group, size_t max)
+                                         PositionalGroup *group, size_t max,
+                                         bool relative_to_zero = false)
 {
 	int ref_idx = group->indexOfObject(ref);
-	std::cout << "Ref index: " << ref_idx << std::endl;
 
 	PCA::Matrix components = weights_to_component_matrix(weights, ref, group, max);
 	int mol_num = group->vectorCount();
@@ -160,34 +225,38 @@ std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
 	RAMovement empty; empty.vector_from(atomIds);
 
 	std::vector<RAMovement> returns(max, empty);
-	
+
 	for (size_t j = 0; j < atomIds.size(); j++)
 	{
 		zeroMatrix(&pos_per_molecule);
-
-		for (size_t i = 0; i < group->vectorCount(); i++)
-		{
-			Instance *instance = static_cast<Instance *>(group->object(i));
-			glm::vec3 dir = group->differenceVector(i)[j];
+		auto actual_pos = actual_atom_position(group, j);
+		
+		auto populate_known_atoms = [actual_pos, pos_per_molecule](int i)
+	    {
+			glm::vec3 dir = actual_pos(i);
 
 			for (size_t k = 0; k < 3; k++)
 			{
 				pos_per_molecule[i][k] = dir[k];
 			}
-		}
-
-		glm::vec3 reference = group->differenceVector(ref_idx)[j];
-		PCA::multMatrices(components, pos_per_molecule, convert);
+		};
 		
+		for_every_instance(group, populate_known_atoms);
+
+		PCA::multMatrices(components, pos_per_molecule, convert);
+		auto basis_axis = basis_position(convert);
+		
+		glm::vec3 reference = actual_pos(ref_idx);
 		for (size_t k = 0; k < max; k++)
 		{
 			RAMovement &add_to = returns[k];
 			Posular &storage = add_to.storage(j);
-
-			glm::vec3 pos = {convert[k][0], convert[k][1], convert[k][2]};
-			glm::vec3 constant = {convert[max][0], convert[max][1], 
-			                      convert[max][2]};
-			storage = pos + constant - reference;
+			storage = basis_axis(k);
+			
+			if (!relative_to_zero)
+			{
+				storage -= reference;
+			}
 		}
 	}
 	
@@ -214,7 +283,7 @@ RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref,
                                                const RTAngles &angles)
 {
 	MetadataGroup *grp = _tCluster->dataGroup();
-	SimpleWeights weight = obtain_weights(grp, angles);
+	SimpleWeights weight = obtain_weights(_tCluster, angles, ref);
 	
 	PositionalGroup *group = _pCluster->dataGroup();
 
@@ -223,7 +292,7 @@ RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref,
 	                          {
 		                         return weight(instance);
 	                          },
-	                          group, 1);
+	                          group, 1, true);
 	
 	return results[0];
 }

@@ -135,7 +135,7 @@ void AxisExplorer::adjustTorsions()
 {
 	std::cout << "Torsion to atomic: " << std::endl;
 	Entity *entity = _instance->entity();
-	Torsion2Atomic t2a(entity, _cluster);
+	Torsion2Atomic t2a(entity, _cluster, _instance);
 	_movement = t2a.convertAnglesSimple(_instance, _torsionLists[0]);
 	_movement.attachInstance(_instance);
 	_atomMaps = true;
