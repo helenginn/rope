@@ -90,7 +90,7 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 				// check if point in overlap
 				const float radius = getVdWRadius(other_atom.first);
 				// if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
-				if (glm::length(point + pos - other_atom.first->derivedPosition()) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
+				if (sqlength(point + pos - other_atom.first->derivedPosition()) <= std::pow(radius + _probeRadius + 1e-6f,2)) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap++;
 					break;
@@ -129,7 +129,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 			{
 				// check if point in overlap
 				const float radius = getVdWRadius(other_atom);
-				if (glm::length(point + pos - other_atom->derivedPosition()) <= radius + _probeRadius) // + probe radius to account for solvent molecule size
+				if (sqlength(point + pos - other_atom->derivedPosition()) <= std::pow(radius + _probeRadius + 1e-6f,2)) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap++;
 					break;
