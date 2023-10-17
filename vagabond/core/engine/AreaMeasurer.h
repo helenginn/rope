@@ -81,4 +81,14 @@ float areaFromExposure(float exposure, Atom *atom, double probeRadius = 0.0);
 /** get VdWRadius from an atom*/
 float getVdWRadius(Atom *atom);
 
+inline float sqlength(glm::vec3 a)
+{
+	float sqlength = 0;
+	for (int i = 0; i < 3; i++)
+	{
+		sqlength += a[i] * a[i];
+	}
+	return sqlength;
+}
+
 #endif
