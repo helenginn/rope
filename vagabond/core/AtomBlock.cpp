@@ -141,18 +141,26 @@ AtomBlock::prepareTargetsAsInitial(std::vector<AtomBlock> &blocks)
 }
 
 rope::GetVec3FromCoordIdx 
-AtomBlock::prepareMovingTargets(BondCalculator *calc, const float &fraction)
+AtomBlock::prepareMovingTargets(BondCalculator *calc)
 {
 	std::vector<AtomBlock> &blocks = calc->sequence()->blocks();
 
-	return [&blocks, fraction](const Coord::Get &, const int &idx)
+	return [&blocks](const Coord::Get &get, const int &idx)
 	{
-		if (blocks[idx].atom && blocks[idx].atom->hasOtherPosition("moving"))
-		{
-			glm::vec3 moving = blocks[idx].atom->otherPosition("moving");
-			glm::vec3 orig = blocks[idx].atom->otherPosition("target");
+		Atom *const &atom = blocks[idx].atom;
 
-			return orig + fraction * moving;
+		if (atom && atom->hasOtherPosition("moving"))
+		{
+			glm::vec3 moving = atom->otherPosition("moving");
+			glm::vec3 orig = atom->otherPosition("target");
+//			std::cout << orig << " + " << get(0) << " * " << moving << std::endl;
+
+			glm::vec3 ret = orig + get(0) * moving;
+			return ret;
+		}
+		else if (atom)
+		{
+			return atom->initialPosition();
 		}
 		
 		return glm::vec3(NAN);

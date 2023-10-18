@@ -19,6 +19,7 @@
 #include "Route.h"
 #include "Polymer.h"
 #include "Grapher.h"
+#include "ParamSet.h"
 #include "TorsionBasis.h"
 #include "MetadataGroup.h"
 #include "RopeCluster.h"
@@ -44,55 +45,29 @@ void Route::setup()
 		throw std::runtime_error("No destination or prior set for route");
 	}
 
-	_fullAtoms = _instance->currentAtoms();
 	startCalculator();
 }
 
-void Route::addPoint(Point &values)
+float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
 {
-	_points.push_back(values);
-}
+	clearTickets();
 
-void Route::addEmptyPoint()
-{
-	_points.push_back(Point(_dims, 0));
-}
-
-void Route::clearPoints()
-{
-	_points.clear();
-}
-
-float Route::submitJobAndRetrieve(int idx, bool show, bool forces)
-{
-	_point2Score.clear();
-	_ticket2Point.clear();
-
-	submitJob(idx, show, forces);
+	submitJob(frac, show, job_num);
 	retrieve();
 	
-	return _point2Score[idx].scores;
+	float ret = _point2Score.begin()->second.deviations;
+
+	return ret;
 }
 
-void Route::submitJob(int idx, bool show, bool forces)
+void Route::submitJob(float frac, bool show, int job_num)
 {
-	if ((idx > 0 && idx >= _points.size()) || idx < 0)
-	{
-		return;
-	}
-	
-	if (forces)
-	{
-		show = true;
-	}
-
-	float fraction = idx / (float)(pointCount() - 1);
-	
 	BondCalculator *calc = calculator();
 
 	Job job{};
-	job.parameters = _points[idx];
-	job.atomTargets = AtomBlock::prepareMovingTargets(calc, fraction);
+	job.parameters = {frac};
+	job.atomTargets = AtomBlock::prepareMovingTargets(calc);
+	job.fetchTorsion = _fetchTorsion;
 
 	job.requests = static_cast<JobType>(JobPositionVector |
 	                                    JobCalculateDeviations);
@@ -102,9 +77,8 @@ void Route::submitJob(int idx, bool show, bool forces)
 	}
 
 	int t = calc->submitJob(job);
-	_ticket2Point[t] = idx;
-
-	_point2Score[idx] = Score{};
+	_ticket2Point[t] = job_num;
+	_point2Score[job_num] = Score{};
 }
 
 void Route::customModifications(BondCalculator *calc, bool has_mol)
@@ -191,7 +165,7 @@ void Route::getParametersFromBasis()
 		return;
 	}
 
-	_missing.clear();
+	ParamSet missing;
 
 	std::vector<Motion> tmp_motions;
 	std::vector<ResidueTorsion> torsions;
@@ -208,7 +182,7 @@ void Route::getParametersFromBasis()
 		{
 			torsions.push_back(ResidueTorsion{});
 			tmp_motions.push_back(Motion{WayPoints(), false, 0});
-			_missing.push_back(p);
+			missing.insert(p);
 			continue;
 		}
 
@@ -219,7 +193,6 @@ void Route::getParametersFromBasis()
 		if (final_angle != final_angle) 
 		{
 			final_angle = 0;
-			std::cout << "WARNING!" << final_angle << std::endl;
 		}
 
 		torsions.push_back(rt);
@@ -228,6 +201,8 @@ void Route::getParametersFromBasis()
 
 	_motions = RTMotion::motions_from(torsions, tmp_motions);
 	bringTorsionsToRange();
+	
+	std::cout << "Missing: " << missing << std::endl;
 }
 
 void Route::prepareDestination()
@@ -256,19 +231,7 @@ int Route::indexOfParameter(Parameter *t)
 
 float Route::getTorsionAngle(int i)
 {
-	if (!flip(i))
-	{
-		return destination(i);
-	}
-	
-	if (destination(i) > 0)
-	{
-		return destination(i) - 360;
-	}
-	else 
-	{
-		return destination(i) + 360;
-	}
+	return  motion(i).workingAngle();
 }
 
 std::vector<ResidueTorsion> Route::residueTorsions()

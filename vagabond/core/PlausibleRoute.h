@@ -23,6 +23,7 @@
 #include "Progressor.h"
 #include "SimplexEngine.h"
 #include <vagabond/c4x/Angular.h>
+#include <functional>
 
 class Path;
 
@@ -32,17 +33,8 @@ class PlausibleRoute : public Route, public Progressor, public RunsEngine
 	friend Path;
 public:
 	PlausibleRoute(Instance *from, Instance *to, const RTAngles &list = {});
-	
-	void calculateProgression(int steps);
-	void calculateLinearProgression(int steps);
-	void calculatePolynomialProgression(int steps);
 
 	virtual void setup();
-	
-	void setMinimumMagnitude(float mag)
-	{
-		_minimumMagnitude = mag;
-	}
 	
 	const float &bestScore() const
 	{
@@ -53,88 +45,84 @@ public:
 	
 	virtual void prepareForAnalysis();
 	float routeScore(int steps, bool forceField = false);
+
+	typedef std::function<bool(int idx)> ValidateParam;
+	typedef std::function<void()> Task;
+
+	bool validateTorsion(int idx, float min_mag, float max_mag,
+	                     bool mains_only, bool sides_only);
+
+	int nudgeTorsions(const ValidateParam &validate,
+	                  const std::string &message);
+
+	void upgradeJobs();
+	
+	const int &jobLevel() const
+	{
+		return _jobLevel;
+	}
+	
+	void finish()
+	{
+		_finish = true;
+	}
 protected:
-	std::vector<int> getIndices(const std::set<Parameter *> &related);
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();
 	void postScore(float score);
 
 	virtual void doCalculations();
-	bool flipTorsions(bool main = false);
-	bool flipTorsion(int idx);
-	int nudgeWaypoints();
-	void nudgeWayPointCycles();
-	void flipTorsionCycles();
+
+	bool flipTorsions(const ValidateParam &validate);
+
+	bool flipTorsion(const ValidateParam &validate, int idx);
+	void flipTorsionCycles(const ValidateParam &validate);
+
 	bool simplexCycle(std::vector<int> torsionIdxs);
 	void startTicker(std::string tag, int d = -1);
 
-	std::vector<int> getTorsionSequence(int start, int max, float maxMag);
+	std::vector<int> getTorsionSequence(int idx, const ValidateParam &validate);
 	
 	bool _mainsOnly = true;
-	bool _flipTorsions = true;
 	int _nudgeCount = 12;
 	
 	int flipNudgeCount()
 	{
 		return _nudgeCount * 1;
 	}
-	float _magnitudeThreshold = 90.f;
-	float _minimumMagnitude = 5.f;
-	float _maximumCycles = 100;
+
+	float _magnitudeThreshold = 1.f;
+	float _maximumCycles = 5;
 
 	float _bestScore = FLT_MAX;
-	void splitWaypoints();
-	void printWaypoints();
-	
-	const int &splitCount() const
-	{
-		return _splitCount;
-	}
 private:
-	void splitWaypoint(int i);
 
-	int _splitCount = 0;
+	void prepareJobs();
 	void addLinearInterpolatedPoint(float frac);
 
-	void twoPointProgression();
 	float getLinearInterpolatedTorsion(int i, float frac);
 
-	void activateWaypoints(bool all = false);
-	typedef std::vector<float> PolyFit;
+	void addPolynomialInterpolatedPoint(float frac);
 
-	float getPolynomialInterpolatedTorsion(PolyFit &fit, int i,
-	                                       float frac);
-
-	void addPolynomialInterpolatedPoint(std::vector<PolyFit> &fits,
-	                                    float frac);
-
-	std::vector<PolyFit> polynomialFits();
-
-	bool validateMainTorsion(int i, bool over_mag = true);
 	void prepareAnglesForRefinement(std::vector<int> &idxs);
+	void prepareTorsionFetcher();
 
-	int countTorsions();
-	virtual void doCycle();
 	virtual void cycle();
 
 	void assignParameterValues(const std::vector<float> &trial);
 
-	bool validateWayPoint(const WayPoints &wps);
-	bool validateWayPoints();
-	
-	float _stepSize = 0.02;
+	void flipTorsionCycle(const ValidateParam &validate);
 
-	void flipTorsionCycle(bool main);
-	
-	std::vector<int> _activeTorsions;
 	std::vector<float *> _paramPtrs;
 	std::vector<float> _paramStarts;
+
+	int _jobLevel = 0;
+
 	int _jobNum = 0;
-	std::map<int, float> _results;
 	
 	SimplexEngine *_simplex = nullptr;
-	
-	std::vector<float> _xPolys, _yPolys;
+
+	std::vector<Task> _tasks;
 };
 
 #endif

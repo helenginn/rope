@@ -398,6 +398,10 @@ void BondCalculator::sanityCheckJob(Job &job)
 	{
 		job.atomTargets = manager().defaultAtomFetcher();
 	}
+	if (!job.fetchTorsion && manager().defaultTorsionFetcher())
+	{
+		job.fetchTorsion = manager().defaultTorsionFetcher();
+	}
 }
 
 int BondCalculator::submitJob(Job &original_job)

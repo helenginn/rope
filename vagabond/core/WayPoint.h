@@ -23,170 +23,30 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 using nlohmann::json;
-
-class WayPoint
-{
-public:
-	WayPoint()
-	{
-
-	}
-	
-	void setFraction(float f)
-	{
-		_fraction = f;
-		_changed = true;
-	}
-
-	void setProgress(float p)
-	{
-		_progress = p;
-		_changed = true;
-	}
-	
-	float &fraction_var() 
-	{
-		_changed = true;
-		return _fraction;
-	}
-
-	float &progress_var()
-	{
-		_changed = true;
-		return _progress;
-	}
-
-	const float &fraction() const
-	{
-		return _fraction;
-	}
-
-	const float &progress() const
-	{
-		return _progress;
-	}
-
-	WayPoint(float f, float p)
-	{
-		_fraction = f; _progress = p; _changed = true;
-	}
-
-	static WayPoint startPoint()
-	{
-		WayPoint wp;
-		wp._fraction = 0;
-		wp._progress = 0;
-		return wp;
-	}
-
-	static WayPoint midPoint()
-	{
-		WayPoint wp;
-		wp._fraction = 0.5;
-		wp._progress = 0.5;
-		return wp;
-	}
-
-	static WayPoint endPoint()
-	{
-		WayPoint wp;
-		wp._fraction = 1;
-		wp._progress = 1;
-		return wp;
-	}
-	
-	friend std::ostream &operator<<(std::ostream &ss, const WayPoint &wp)
-	{
-		ss << "(" << wp._fraction << ", " << wp._progress << "), ";
-		ss << (wp._changed ? "*" : "");
-		return ss;
-	}
-	
-	const bool &changed() const
-	{
-		return _changed;
-	}
-	
-	void setChanged(bool changed)
-	{
-		_changed = changed;
-	}
-
-	std::vector<float> polyFit();
-
-	friend void to_json(json &j, const WayPoint &value);
-	friend void from_json(const json &j, WayPoint &value);
-private:
-	float _fraction = 0.5; /* fraction of route progression between 0 and 1 */
-	float _progress = 0.5; /* proportion of progress to goal at WayPoint */
-
-	bool _changed = true;
-};
 	
 struct WayPoints
 {
 	WayPoints();
 
-	std::vector<float> polyFit();
-
-	static void printFit(std::vector<float> &fit);
+	float interpolatedProgression(float frac);
 	
-	void split();
-	
-	float progress(float frac);
-
-	static float getPolynomialInterpolatedFraction(std::vector<float> &fit, 
-	                                               float frac);
-	
-	const WayPoint &at(int i) const
-	{
-		return _wps.at(i);
-	}
-	
-	WayPoint &operator[](int i)
-	{
-		return _wps[i];
-	}
-	
-	void push_back(WayPoint wp)
-	{
-		_wps.push_back(wp);
-	}
-	
-	const size_t size() const
-	{
-		return _wps.size();
-	}
-	
-	std::vector<WayPoint> _wps;
-	std::vector<float> _polyFit;
+	std::vector<float> _grads = {0, 0};
 };
-
-/* waypoint */
-inline void to_json(json &j, const WayPoint &value)
-{
-	j["p"] = value._progress;
-	j["f"] = value._fraction;
-}
-
-/* waypoint */
-inline void from_json(const json &j, WayPoint &value)
-{
-    value._progress = j.at("p");
-    value._fraction = j.at("f");
-}
 
 /* waypoints */
 inline void to_json(json &j, const WayPoints &value)
 {
-	j["wps"] = value._wps;
+	j["params"] = value._grads;
 }
 
 /* waypoint */
 inline void from_json(const json &j, WayPoints &value)
 {
-    std::vector<WayPoint> wps = j.at("wps");
-    value._wps = wps;
+	if (j.count("params"))
+	{
+		std::vector<float> params = j.at("params");
+		value._grads = params;
+	}
 }
 
 #endif

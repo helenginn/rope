@@ -166,6 +166,17 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get)
 		return 0;
 	}
 
+	if (job()->fetchTorsion)
+	{
+		Coord::Get shrunk = get;
+		if (_skipSections)
+		{
+			shrunk = Coord::convertedGet(get, _convertIndex);
+		}
+		float diff = job()->fetchTorsion(shrunk, torsion_idx);
+		diff += torsionBasis()->referenceAngle(torsion_idx);
+		return diff;
+	}
 	if (_bondTorsions.size() > torsion_idx)
 	{
 		return _bondTorsions[torsion_idx];
@@ -292,10 +303,6 @@ void BondSequence::superpose()
 			break;
 		}
 	}
-
-	for (size_t i = 0; i < _sampleCount; i++)
-	{
-	}
 }
 
 void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
@@ -356,7 +363,6 @@ double BondSequence::calculateDeviations()
 		}
 
 		glm::vec3 trial_pos = _blocks[i].my_position();
-
 		glm::vec3 target = _blocks[i].target;
 
 		glm::vec3 diff = trial_pos - target;

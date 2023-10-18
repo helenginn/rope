@@ -41,6 +41,11 @@ public:
 	{
 		return _val;
 	}
+	
+	const double &max() const
+	{
+		return _max;
+	}
 
 	virtual void setCentre(double x, double y);
 	virtual void setStep(double val);

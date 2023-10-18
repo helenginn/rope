@@ -88,7 +88,7 @@ void AxisExplorer::submitJob(float prop)
 		job.parameters = {prop};
 		if (_atomMaps)
 		{
-			job.atomTargets = AtomBlock::prepareMovingTargets(calc, prop);
+			job.atomTargets = AtomBlock::prepareMovingTargets(calc);
 		}
 		job.requests = static_cast<JobType>(JobPositionVector); 
 		calc->submitJob(job);

@@ -20,6 +20,7 @@
 #define __vagabond__Route__
 
 #include "StructureModification.h"
+#include "engine/JobManager.h"
 #include "Responder.h"
 #include "RTMotion.h"
 
@@ -38,31 +39,13 @@ public:
 	BondCalculator *calculator();
 
 	virtual void setup();
-	
-	/* typically referring to parameter angle values in order of cluster's
-	 * torsion angle headers */
-	typedef std::vector<float> Point;
-
-	/** add a point to the route.
-	 * @param values torsion angle values in the order of the cluster's 
-	 * 	torsion angle headers */
-	void addPoint(Point &values);
-
-	/** add an empty point to the route (starting position). */
-	void addEmptyPoint();
 
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
-	void submitJob(int idx, bool show = true, bool forces = false);
+	void submitJob(float frac, bool show = true, int job_num = 0);
 
-	float submitJobAndRetrieve(int idx, bool show = true, bool forces = false);
+	float submitJobAndRetrieve(float frac, bool show = true, int job_num = 0);
 	
-	/** total number of points in the system */
-	size_t pointCount()
-	{
-		return _points.size();
-	}
-
 	void shouldUpdateAtoms(bool update)
 	{
 		_updateAtoms = update;
@@ -72,10 +55,6 @@ public:
 	{
 		_cycles = cycles;
 	}
-	
-	
-	/* get rid of all points defined so far */
-	void clearPoints();
 	
 	void setDestinationInstance(Instance *inst)
 	{
@@ -135,6 +114,11 @@ public:
 	void setWayPoints(int idx, const WayPoints &wps) 
 	{
 		_motions.storage(idx).wp = wps;
+	}
+	
+	Motion &motion(int i)
+	{
+		return _motions.storage(i);
 	}
 	
 	size_t motionCount() const
@@ -214,7 +198,6 @@ protected:
 	}
 
 	std::atomic<bool> _finish{false};
-	std::vector<Point> _points;
 
 	void prepareDestination();
 	void getParametersFromBasis();
@@ -231,14 +214,16 @@ protected:
 
 	bool _updateAtoms = true;
 	int _cycles = -1;
+protected:
+	RTMotion _motions;
+	
+	rope::GetFloatFromCoordIdx _fetchTorsion{};
 private:
 	bool _calculating;
 	float _score;
 	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
-
-	std::vector<Parameter *> _missing;
 	
 	size_t _grapherIdx = 0;
 
@@ -247,8 +232,6 @@ private:
 	RTAngles _source;
 	
 	InterpolationType _type = Polynomial;
-	
-	RTMotion _motions;
 };
 
 #endif

@@ -49,6 +49,49 @@ public:
 			this->insert(t);
 		}
 	}
+	
+	std::vector<Type> toVector()
+	{
+		std::vector<Type> result;
+
+		for (const Type &t : *this)
+		{
+			result.push_back(t);
+		}
+		
+		return result;
+	}
+
+	template <typename Other, class Convert>
+	OpSet<Other> convert_to(const Convert &convert)
+	{
+		OpSet<Other> converted;
+
+		for (Type type : *this)
+		{
+			Other other = convert(type);
+			converted.insert(other);
+		}
+
+		return converted;
+	}
+
+	template <class Filter>
+	void filter(const Filter &filter)
+	{
+		OpSet<Type> filtered;
+
+		for (Type t : *this)
+		{
+			if (filter(t))
+			{
+				filtered.insert(t);
+			}
+		}
+
+		*this = filtered;
+	}
+
 
 	template <typename Container>
 	OpSet<Type> operator+(const Container &other) const

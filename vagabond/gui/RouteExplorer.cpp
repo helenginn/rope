@@ -135,7 +135,7 @@ void RouteExplorer::setupSlider()
 	Slider *s = new Slider();
 	s->setDragResponder(this);
 	s->resize(0.5);
-	s->setup("Route point number", 0, _route->pointCount() - 1, 1);
+	s->setup("Route point number", 0, 199, 1);
 	s->setStart(0.0, 0.);
 	s->setCentre(0.5, 0.85);
 	_rangeSlider = s;
@@ -144,10 +144,10 @@ void RouteExplorer::setupSlider()
 
 void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	int num = (int)x;
+	float num = x / 200.;
 	if (!_route->calculating())
 	{
-		_route->submitJobAndRetrieve(num, true, true);
+		_route->submitJobAndRetrieve(num, true, 0);
 	}
 }
 

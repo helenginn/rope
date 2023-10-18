@@ -18,142 +18,56 @@
 
 #include "WayPoint.h"
 #include <vagabond/utils/polyfit.h>
+#include <vagabond/utils/degrad.h>
 #include <iostream>
+
+// MAY BE HANDY AT SOME POINT
+// returns a unique value for this angle (in degrees) from -inf to +inf.
+float obedient_sin(const float &angle)
+{
+	float wrapped = angle;
+	int steps = 0;
+	while (wrapped > 90) { wrapped -= 180; steps++; }
+	while (wrapped <= -90) { wrapped += 180; steps--; }
+
+	float base = sin(deg2rad(wrapped));
+	int shift = steps * 2;
+	base += (float)shift;
+
+	return base;
+}
+
+float obedient_arcsin(const float &arcsin)
+{
+	float wrapped = arcsin;
+	int steps = 0;
+	while (wrapped > 1) { wrapped -= 2; steps++; }
+	while (wrapped <= -1) { wrapped += 2; steps--; }
+
+	float base = rad2deg(asin(wrapped));
+	int shift = steps * 180.;
+	base += (float)shift;
+
+	return base;
+
+}
 
 WayPoints::WayPoints()
 {
-	_wps.push_back(WayPoint::startPoint());
-	_wps.push_back(WayPoint::midPoint());
-	_wps.push_back(WayPoint::endPoint());
+
 }
 
-std::vector<float> WayPoints::polyFit()
+float WayPoints::interpolatedProgression(float frac)
 {
-	bool changed = false;
+	float s = 0;
+	float t = 0;
+	float x0 = _grads[0];
+	float x1 = _grads[1] - _grads[0];
+	const float &x = frac;
 	
-	for (const WayPoint &wp : _wps)
-	{
-		if (wp.changed())
-		{
-			changed = true;
-			break;
-		}
-	}
+	float y = ((t - s) * x + s + (x0 + s - t) * (x - 1) * (x - 1) * x
+	           + (x1 + s - t) * (x - 1) * x*x);
+	return x + y;
 
-	if (!changed)
-	{
-		return _polyFit;
-	}
-
-	int n = size();
-	std::vector<float> xs, ys;
-	
-	xs.resize(n);
-	ys.resize(n);
-
-	for (int j = 0; j < n; j++)
-	{
-		xs[j] = _wps[j].fraction();
-		ys[j] = _wps[j].progress();
-	}
-
-	_polyFit = polyfit(xs, ys, n);
-
-	for (WayPoint &wp : _wps)
-	{
-		wp.setChanged(false);
-	}
-
-	return _polyFit;
-}
-
-float WayPoints::getPolynomialInterpolatedFraction(std::vector<float> &fit, 
-                                                   float frac)
-{
-	float sum = 0;
-	int mult = 1;
-	float powered = 1;
-	
-	for (size_t i = 0; i < fit.size(); i++)
-	{
-		sum += fit[i] * powered;
-
-		/* to make the next x^2, x^3 etc. */
-		powered *= frac;
-	}
-
-	return sum;
-}
-
-
-void WayPoints::split()
-{
-	std::vector<float> fit = polyFit();
-
-	float prog = 1 / (float)size();
-	float sum = 0;
-
-	std::vector<WayPoint> newPoints;
-	for (size_t i = 0; i < size() + 1; i++)
-	{
-		float progress = getPolynomialInterpolatedFraction(fit, sum);
-		WayPoint wp(sum, progress);
-		wp.setChanged(true);
-
-		newPoints.push_back(wp);
-		sum += prog;
-	}
-	
-	_wps = newPoints;
-}
-
-float WayPoints::progress(float frac)
-{
-	const WayPoint *start = nullptr;
-	const WayPoint *end = nullptr;
-
-	for (size_t j = 1; j < size(); j++)
-	{
-		start = &at(j - 1);
-		end = &at(j);
-
-		if (at(j).fraction() > frac)
-		{
-			break;
-		}
-	}
-
-	float progress = start->progress();
-	float proportion = ((frac - start->fraction()) / 
-	                    (end->fraction() - start->fraction()));
-
-	float diff = (end->progress() - start->progress()) * proportion + progress;
-
-	return diff;
-}
-
-void WayPoints::printFit(std::vector<float> &fit)
-{
-	float powered = 0;
-	
-	for (size_t i = 0; i < fit.size(); i++)
-	{
-		if (i == 0)
-		{
-			std::cout << fit[i] << " + ";
-		}
-		else if (i != fit.size() - 1)
-		{
-			std::cout << fit[i] << "x^" << powered << " + ";
-		}
-		else 
-		{
-			std::cout << fit[i] << "x^" << powered;
-		}
-		
-		powered++;
-	}
-
-	std::cout << std::endl;
 }
 

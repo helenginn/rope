@@ -34,27 +34,10 @@ public:
 	friend std::ostream &operator<<(std::ostream &ss, const ParamSet &set);
 
 	void expandNeighbours();
+	
 	void excludeBeyond(int residue_num, int direction);
 	ParamSet terminalSubset() const;
 	
-	std::vector<Parameter *> toVector();
-
-	template <class Filter>
-	void filter(const Filter &filter)
-	{
-		ParamSet filtered;
-
-		for (Parameter *p : *this)
-		{
-			if (filter(p))
-			{
-				filtered.insert(p);
-			}
-		}
-
-		*this = filtered;
-	}
-
 private:
 
 };

@@ -27,6 +27,20 @@ struct Motion
 	WayPoints wp;
 	bool flip;
 	float angle;
+	
+	float workingAngle()
+	{
+		if (!flip) return angle;
+		
+		if (angle > 0) { return angle - 360; }
+		else { return angle + 360; }
+	}
+	
+	float interpolatedAngle(float frac)
+	{
+		float p = wp.interpolatedProgression(frac);
+		return p * workingAngle();
+	}
 };
 
 inline void to_json(json &j, const Motion &id)

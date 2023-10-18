@@ -31,6 +31,9 @@ namespace rope
 
 	typedef std::function<glm::vec3(const Coord::Get &, const int &)> 
 	GetVec3FromCoordIdx;
+
+	typedef std::function<float(const Coord::Get &, const int &)> 
+	GetFloatFromCoordIdx;
 }
 
 class JobManager
@@ -44,6 +47,16 @@ public:
 	void setAtomFetcher(const rope::GetVec3FromCoordIdx &gvfci)
 	{
 		_atomFromCoordIdx = gvfci;
+	}
+	
+	void setTorsionFetcher(const rope::GetFloatFromCoordIdx &gffci)
+	{
+		_torsionFromCoordIdx = gffci;
+	}
+	
+	const rope::GetFloatFromCoordIdx &defaultTorsionFetcher()
+	{
+		return _torsionFromCoordIdx;
 	}
 	
 	const rope::GetVec3FromCoordIdx &defaultAtomFetcher()
@@ -89,6 +102,9 @@ private:
 
 	// return non-existent position
 	rope::GetVec3FromCoordIdx _atomFromCoordIdx = nanPosition();
+
+	// return non-existent position
+	rope::GetFloatFromCoordIdx _torsionFromCoordIdx{};
 };
 
 #endif

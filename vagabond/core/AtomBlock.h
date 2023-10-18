@@ -32,7 +32,7 @@ struct AtomBlock
 	prepareTargetsAsInitial(std::vector<AtomBlock> &blocks);
 
 	static rope::GetVec3FromCoordIdx 
-	prepareMovingTargets(BondCalculator *calc, const float &fraction);
+	prepareMovingTargets(BondCalculator *calc);
 
 	bool flag = true;
 	bool silenced = false;

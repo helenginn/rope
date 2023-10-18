@@ -117,15 +117,14 @@ float RouteValidator::linearityRatio()
 	populateDistances();
 	_route.shouldUpdateAtoms(true);
 
-	_route.calculatePolynomialProgression(32);
-	_steps = _route.pointCount();
+	_steps = 32;
 
 	float ave = 0;
 	float count = 0;
 
-	for (size_t i = 0; i < _route.pointCount(); i++)
+	for (size_t i = 0; i < _steps; i++)
 	{
-		_route.submitJobAndRetrieve(i);
+		_route.submitJobAndRetrieve(i / (float)_steps);
 		
 		if (i > 1)
 		{
@@ -153,7 +152,6 @@ bool RouteValidator::validate()
 	_route.endInstance()->currentAtoms()->recalculate();
 
 	_route.shouldUpdateAtoms(true);
-	_route.twoPointProgression();
 	_route.submitJobAndRetrieve(1, true);
 
 	_route.endInstance()->superposeOn(_route.instance());
