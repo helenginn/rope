@@ -39,7 +39,7 @@ void AskMultipleChoice::addChoice(std::string text, std::string tag)
 	TextButton *tb = new TextButton(text, this);
 	tb->resize(0.8);
 	tb->setReturnTag(tag);
-	tb->setLeft(0.45, _top);
+	tb->setLeft(0.35, _top);
 	addObject(tb);
 	
 	_top += 0.07;
