@@ -133,7 +133,7 @@ std::string getPath(std::string whole)
 	size_t pos = whole.rfind("/");
 	if(pos == std::string::npos)  //No path.
 	{
-		return "./";
+		return "";
 	}
 	else
 	{
