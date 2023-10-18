@@ -61,6 +61,7 @@ struct Job
 {
 	std::vector<float> parameters{};
 	rope::GetVec3FromCoordIdx atomTargets;
+	rope::GetFloatFromCoordIdx fetchTorsion;
 
 	int ticket = -1;
 	bool absorb = false;
@@ -98,40 +99,9 @@ struct Result
 		job->result = this;
 	}
 	
-	void transplantColours()
-	{
-		AtomPosMap::iterator it;
-		for (it = aps.begin(); it != aps.end(); it++)
-		{
-			it->first->setAddedColour(it->second.colour);
-		}
-	}
+	void transplantColours();
 	
-	void transplantPositions(bool displayTargets = false)
-	{
-		if (apl.size() > 0)
-		{
-			for (const AtomWithPos &awp : apl)
-			{
-				glm::vec3 disp = displayTargets ? awp.wp.target : awp.wp.ave;
-				if (disp.x != disp.x)
-				{
-					continue;
-				}
-
-				awp.atom->setDerivedPosition(disp);
-			}
-		}
-		else if (aps.size() > 0)
-		{
-			AtomPosMap::iterator it;
-			for (it = aps.begin(); it != aps.end(); it++)
-			{
-				it->second.ave /= (float)it->second.samples.size();
-				it->first->setDerivedPositions(it->second);
-			}
-		}
-	}
+	void transplantPositions(bool displayTargets = false);
 	
 	void destroy()
 	{
