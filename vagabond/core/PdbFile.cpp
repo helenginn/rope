@@ -161,12 +161,12 @@ void PdbFile::parseFileContents()
 	_values["cell.angle_gamma"] = st.cell.gamma;
 }
 
-void PdbFile::writeAtoms(AtomGroup *grp, std::string name)
+void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
+                                    const std::string &model_name)
 {
-	gemmi::Structure st;
-	st.models.push_back(gemmi::Model(name));
+	st.models.push_back(gemmi::Model(model_name));
 	
-	gemmi::Model &m = st.models.front();
+	gemmi::Model &m = st.models.back();
 	gemmi::Chain *c = nullptr;
 	
 	ResidueId prev("");
@@ -204,15 +204,24 @@ void PdbFile::writeAtoms(AtomGroup *grp, std::string name)
 			a.pos.y = pos.y;
 			a.pos.z = pos.z;
 		}
-		
 	}
+}
 
+void PdbFile::writeStructure(gemmi::Structure &st, std::string name)
+{
 	std::ofstream file;
 	file.open(name);
 	
 	gemmi::write_pdb(st, file);
 	
 	file.close();
+}
+
+void PdbFile::writeAtoms(AtomGroup *grp, std::string name)
+{
+	gemmi::Structure st;
+	writeAtomsToStructure(grp, st, name);
+	writeStructure(st, name);
 }
 
 void PdbFile::parse()

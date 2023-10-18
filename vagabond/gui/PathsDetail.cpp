@@ -16,22 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <gemmi/to_pdb.hpp>
+
 #include "PathsDetail.h"
 #include <vagabond/core/RouteValidator.h>
 #include "RouteExplorer.h"
+#include "PdbFile.h"
 #include <vagabond/core/Path.h>
+#include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Image.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/AskMultipleChoice.h>
 
 PathsDetail::PathsDetail(Scene *prev, Path *p) : 
 Scene(prev),
 AddObject<Path>(prev, p)
 {
-//	PlausibleRoute *pr = _obj.toRoute();
-//	pr->setup();
-
 	calculateMetrics();
-
 }
 
 void PathsDetail::calculateMetrics()
@@ -143,6 +146,13 @@ void PathsDetail::setup()
 		t->setReturnTag("view");
 		addObject(t);
 	}
+
+	{
+		TextButton *t = new TextButton("Export as PDB", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnTag("export");
+		addObject(t);
+	}
 	
 	redraw();
 }
@@ -161,6 +171,188 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 		RouteExplorer *re = new RouteExplorer(this, pr);
 		re->show();
 	}
+	
+	if (tag == "export")
+	{
+		AskMultipleChoice *amc = nullptr;
+		amc = new AskMultipleChoice(this, "What kind of ensemble format would you"
+		                            " like to export?", "format", this);
+		amc->addChoice("One PDB file per structure", "per_structure");
+		amc->addChoice("Ensemble PDB file with all structures", "ensemble");
+		setModal(amc);
+	}
+	
+	std::string end = Button::tagEnd(tag, "format_");
+	if (end.length())
+	{
+		_ensemble = (end == "ensemble");
+		AskForText *aft = new AskForText(this, "How many samples along the path?", 
+		                                 "samples", this, TextEntry::Numeric);
+		setModal(aft);
+	}
+	
+	if (tag == "samples")
+	{
+		std::string str = static_cast<TextEntry *>(button)->scratch();
+		int num = atoi(str.c_str());
+		_samples = num;
+
+		AskForText *aft = new AskForText(this, "PDB filename?", 
+		                                 "filename", this);
+		setModal(aft);
+	}
+	
+	if (tag == "filename")
+	{
+		std::string filename = static_cast<TextEntry *>(button)->scratch();
+		exportPDB(filename, _samples, _ensemble);
+	}
 
 	AddObject::buttonPressed(tag, button);
+}
+
+int count_chars(const std::string &s, const char &ch)
+{
+	int count = 0;
+
+	for (int i = 0; i < s.size(); i++)
+	{
+		if (s[i] == ch)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+void check_path_and_make(std::string &path)
+{
+	if (path.back() == '/')
+	{
+		path.pop_back();
+	}
+	
+	if (count_chars(path, '/') > 1)
+	{
+		std::string err = ("Please no more than one subdirectory down."\
+		                   "\nI cannot cope with such complexities.");
+		throw std::runtime_error(err);
+	}
+
+	if (path.find('.') != std::string::npos)
+	{
+		std::string err = ("If you are going to add a path, please don't "\
+		                   "\nuse full stops (periods), it is dangerous "\
+		                   "for your filesystem.");
+		throw std::runtime_error(err);
+	}
+	else if (path.find('/') == 0)
+	{
+		std::string err = ("If you are going to add a path, please don't "\
+		                   "\nstart with a backslash. I don't want to be "\
+		                   "\nresponsible for ruining your filesystem.");
+		throw std::runtime_error(err);
+	}
+	else if (file_exists(path) && !is_directory(path))
+	{
+		std::string err = ("This path already exists as a file and I refuse"\
+		                   "\nto overwrite it. Please choose another name.");
+		throw std::runtime_error(err);
+	}
+
+	FileReader::makeDirectoryIfNeeded(path);
+
+}
+
+void PathsDetail::attemptEnsemble(const std::string &filename, const int &num)
+{
+	std::string path = getPath(filename);
+	std::string file = getFilename(filename);
+
+	if (path.length())
+	{
+		check_path_and_make(path);
+	}
+
+	PlausibleRoute *pr = _obj.toRoute();
+	AtomGroup *grp = pr->instance()->currentAtoms();
+	pr->setup();
+
+	gemmi::Structure st;
+	float step = 1 / (float)num;
+	for (size_t i = 0; i < num; i++)
+	{
+		float frac = i * step;
+		pr->submitJobAndRetrieve(frac, true);
+
+		std::string model_name = std::to_string(i);
+		PdbFile::writeAtomsToStructure(grp, st, model_name);
+	}
+	
+	PdbFile::writeStructure(st, filename);
+
+	_obj.cleanupRoute();
+}
+
+void PathsDetail::attemptPerStruct(const std::string &filename, const int &num)
+{
+	std::string path = getPath(filename);
+	std::string base = getBaseFilename(filename);
+	std::string ext = getExtension(filename);
+	
+	if (path.length())
+	{
+		check_path_and_make(path);
+	}
+	
+	PlausibleRoute *pr = _obj.toRoute();
+	AtomGroup *grp = pr->instance()->currentAtoms();
+	pr->setup();
+
+	float step = 1 / (float)num;
+	for (size_t i = 0; i < num; i++)
+	{
+		float frac = i * step;
+		pr->submitJobAndRetrieve(frac, true);
+
+		std::string fullpath = path + "/" + base + "_" + std::to_string(i)
+		+ "." + ext;
+		
+		PdbFile::writeAtoms(grp, fullpath);
+	}
+
+	_obj.cleanupRoute();
+}
+
+void PathsDetail::exportPDB(const std::string &filename, const int &num,
+                            const bool &ensemble)
+{
+	std::cout << "exporting " << filename << " with " << num << " samples "
+	<< "as " << (ensemble ? "an ensemble file" : "a file per structure")
+	<< std::endl;
+
+	try
+	{
+		if (ensemble)
+		{
+			attemptEnsemble(filename, num);
+		}
+		else
+		{
+			attemptPerStruct(filename, num);
+		}
+	}
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *b = nullptr;
+		b = new BadChoice(this, err.what());
+		setModal(b);
+		return;
+	}
+
+	BadChoice *b = nullptr;
+	b = new BadChoice(this, "Exported the path in " + std::to_string(num) +
+	                  " subdivisions.");
+	setModal(b);
 }

@@ -23,6 +23,7 @@
 
 namespace gemmi
 {
+	struct Structure;
 	struct Model;
 	struct Residue;
 	struct Chain;
@@ -38,6 +39,9 @@ public:
 	virtual void parse();
 	virtual void write(std::string filename);
 	static void writeAtoms(AtomGroup *grp, std::string name);
+	static void writeStructure(gemmi::Structure &st, std::string name);
+	static void writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
+	                                  const std::string &model_name);
 
 	void getAllGeometry();
 private:

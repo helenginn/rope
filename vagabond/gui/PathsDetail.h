@@ -37,10 +37,17 @@ private:
 	void redraw();
 	void calculateMetrics();
 
+	void attemptPerStruct(const std::string &filename, const int &num);
+	void attemptEnsemble(const std::string &filename, const int &num);
+
+	void exportPDB(const std::string &filename, const int &num,
+	               const bool &ensemble);
 	float _rmsd = 0.;
 	float _linearity = 0.;
 	bool _valid = false;
 
+	bool _ensemble = false;
+	int _samples = 0;
 };
 
 #endif
