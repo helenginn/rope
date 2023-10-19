@@ -23,6 +23,7 @@
 #include <vagabond/core/Responder.h>
 #include <functional>
 #include <set>
+#include <functional>
 
 class PickAtomFromSequence;
 class ChooseHeader;
