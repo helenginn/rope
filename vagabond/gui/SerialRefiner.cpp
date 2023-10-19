@@ -60,7 +60,7 @@ void SerialRefiner::setup()
 	std::string str = "Choose number of threads";
 	ChooseRange *cr = new ChooseRange(this, str, "choose_threads", this);
 	cr->setDefault(4);
-	cr->setRange(0, 32, 32);
+	cr->setRange(1, 32, 31);
 	setModal(cr);
 #else
 	start();

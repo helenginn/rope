@@ -103,6 +103,11 @@ public:
 	{
 		return _displayTargets;
 	}
+	
+	void setThreads(const int &thr)
+	{
+		_threads = thr;
+	}
 protected:
 	
 	virtual bool handleAtomMap(AtomPosMap &aps)

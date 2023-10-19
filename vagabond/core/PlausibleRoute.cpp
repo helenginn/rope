@@ -27,7 +27,7 @@
 PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &list)
 : Route(from, to, list)
 {
-	_threads = 4;
+	_threads = 1;
 }
 
 void PlausibleRoute::setup()

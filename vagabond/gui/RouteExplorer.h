@@ -50,6 +50,9 @@ private:
 	void setupSave();
 	void setupFinish();
 	void setupSettings();
+
+	void startWithThreads(const int &thr);
+
 	Route *_route = nullptr;
 	PlausibleRoute *_plausibleRoute = nullptr;
 	Instance *_instance = nullptr;

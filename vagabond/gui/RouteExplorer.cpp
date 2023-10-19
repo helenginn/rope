@@ -19,6 +19,7 @@
 #include "RouteExplorer.h"
 #include "GuiAtom.h"
 
+#include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Slider.h>
@@ -61,42 +62,15 @@ void RouteExplorer::setup()
 	Display::setup();
 	loadAtoms(grp);
 	
-	_route->setup();
-	
-	setupSave();
-	setupFinish();
-	
-	VisualPreferences *vp = &_instance->entity()->visualPreferences();
-	_guiAtoms->applyVisuals(vp);
-	
-	_route->finishRoute();
-	_route->prepareCalculate();
-	
-	RouteValidator rv(*_plausibleRoute);
-	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;
-	bool isValid = rv.validate();
-	
-	std::cout << "Route validator says: " << (isValid ? "route valid" :
-	                                          "route not valid") << std::endl;
-	
-	if (!isValid)
-	{
-		float value = rv.rmsd();
-		std::string message;
-		message = ("The \"from\" and \"to\" structures chosen are not "\
-		           "compatible with each other and\ndo not produce a "\
-		           "valid route. The RMSD between predicted final "\
-		           "structure based\non beginning position and what it "
-		           "ought to be is " + std::to_string(value) + " Angstroms.\n\n"\
-		           "Would you like to continue anyway?");
-
-		AskYesNo *ayn = new AskYesNo(this, message, "continue_anyway", this);
-		setModal(ayn);
-	}
-
-	_worker = new std::thread(Route::calculate, _route);
-	_watch = true;
-
+#ifdef __EMSCRIPTEN__
+	startWithThreads(1);
+#else
+	std::string str = "Choose number of threads";
+	ChooseRange *cr = new ChooseRange(this, str, "choose_threads", this);
+	cr->setDefault(4);
+	cr->setRange(1, 32, 31);
+	setModal(cr);
+#endif
 }
 
 void RouteExplorer::setupSave()
@@ -200,11 +174,59 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 	}
 }
 
+void RouteExplorer::startWithThreads(const int &thr)
+{
+	_route->setThreads(thr);
+	_route->setup();
+	
+	setupSave();
+	setupFinish();
+	
+	VisualPreferences *vp = &_instance->entity()->visualPreferences();
+	_guiAtoms->applyVisuals(vp);
+	
+	_route->finishRoute();
+	_route->prepareCalculate();
+	
+	RouteValidator rv(*_plausibleRoute);
+	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;
+	bool isValid = rv.validate();
+	
+	std::cout << "Route validator says: " << (isValid ? "route valid" :
+	                                          "route not valid") << std::endl;
+	
+	if (!isValid)
+	{
+		float value = rv.rmsd();
+		std::string message;
+		message = ("The \"from\" and \"to\" structures chosen are not "\
+		           "compatible with each other and\ndo not produce a "\
+		           "valid route. The RMSD between predicted final "\
+		           "structure based\non beginning position and what it "
+		           "ought to be is " + std::to_string(value) + " Angstroms.\n\n"\
+		           "Would you like to continue anyway?");
+
+		AskYesNo *ayn = new AskYesNo(this, message, "continue_anyway", this);
+		setModal(ayn);
+	}
+
+	_worker = new std::thread(Route::calculate, _route);
+	_watch = true;
+}
+
 void RouteExplorer::buttonPressed(std::string tag, Button *button)
 {
+	if (tag == "choose_threads")
+	{
+		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
+		float num = cr->max();
+		int threads = lrint(num);
+		startWithThreads(threads);
+	}
 	if (tag == "pause")
 	{
 		_startPause->setInert(true, true);
+		_plausibleRoute->finishTicker();
 		_route->finishRoute();
 	}
 	else if (tag == "add")
