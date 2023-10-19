@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Responder.h>
+#include <functional>
 #include <set>
 
 class PickAtomFromSequence;
