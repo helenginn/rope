@@ -71,6 +71,11 @@ public:
 	{
 		_finish = true;
 	}
+	
+	void setMaxMagnitude(const float &f)
+	{
+		_magnitudeThreshold = fabs(f);
+	}
 protected:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();

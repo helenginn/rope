@@ -68,6 +68,7 @@ auto get_nudge_jobs(PlausibleRoute *me, bool mains)
 		if (min < 0.5) min = 0.;
 		std::string str = "Nudging angles from " + f_to_str(min, 1) + " to "
 		+ f_to_str(max, 1) + " degrees";
+		me->setMaxMagnitude(max);
 		auto task = nudge_chain(me, supply_range(me, min, max, mains), str);
 		nudge_cycle.push_back(task);
 		                                                 
