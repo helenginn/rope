@@ -88,7 +88,11 @@ auto cycle_and_check(PlausibleRoute *me)
 
 		for (PlausibleRoute::Task &task : tasks)
 		{
-			task();
+			if (!me->shouldFinish())
+			{
+				task();
+				me->finishTicker();
+			}
 		}
 
 		float newsc = me->routeScore(standard);
@@ -510,6 +514,8 @@ void PlausibleRoute::cycle()
 		for (PlausibleRoute::Task &task : _tasks)
 		{
 			task();
+			finishTicker();
+
 			if (Route::_finish)
 			{
 				return;

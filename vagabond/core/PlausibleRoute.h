@@ -62,6 +62,11 @@ public:
 		return _jobLevel;
 	}
 	
+	bool shouldFinish()
+	{
+		return _finish;
+	}
+	
 	void finish()
 	{
 		_finish = true;
