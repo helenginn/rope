@@ -18,6 +18,7 @@
 
 #include "Engine.h"
 #include <iostream>
+#include <cstring>
 
 Engine::Engine(RunsEngine *ref)
 {
