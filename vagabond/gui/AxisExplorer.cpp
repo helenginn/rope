@@ -146,7 +146,7 @@ void AxisExplorer::adjustTorsions()
 
 		if (atom)
 		{
-			atom->setOtherPosition("target", atom->initialPosition());
+			atom->setOtherPosition("target", atom->derivedPosition());
 			atom->setOtherPosition("moving", _movement.storage(i));
 		}
 	}
