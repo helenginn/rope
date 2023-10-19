@@ -81,7 +81,7 @@ void Display::loadDiffraction(Diffraction *diff)
 	_diff = diff;
 	_reciprocal = true;
 
-	fftButton();
+//	fftButton();
 }
 
 void Display::fftButton()
