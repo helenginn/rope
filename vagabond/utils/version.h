@@ -22,8 +22,8 @@
 #define VERSION_LIGANDS
 #define VERSION_EXTEND_ENTITY_MENU
 
-#ifndef __EMSCRIPTEN__
 #define VERSION_SHORT_ROUTES
+#ifndef __EMSCRIPTEN__
 #define VERSION_REFINEMENT
 #endif
 

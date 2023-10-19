@@ -18,6 +18,10 @@
 
 #include <gemmi/to_pdb.hpp>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "PathsDetail.h"
 #include <vagabond/core/RouteValidator.h>
 #include "RouteExplorer.h"
@@ -174,12 +178,17 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "export")
 	{
+#ifndef __EMSCRIPTEN__
 		AskMultipleChoice *amc = nullptr;
 		amc = new AskMultipleChoice(this, "What kind of ensemble format would you"
 		                            " like to export?", "format", this);
 		amc->addChoice("One PDB file per structure", "per_structure");
 		amc->addChoice("Ensemble PDB file with all structures", "ensemble");
 		setModal(amc);
+#else
+	buttonPressed("format_ensemble", nullptr);
+	return;
+#endif
 	}
 	
 	std::string end = Button::tagEnd(tag, "format_");
@@ -250,7 +259,7 @@ void check_path_and_make(std::string &path)
 	else if (path.find('/') == 0)
 	{
 		std::string err = ("If you are going to add a path, please don't "\
-		                   "\nstart with a backslash. I don't want to be "\
+		                   "\nstart with a forwardslash. I don't want to be "\
 		                   "\nresponsible for ruining your filesystem.");
 		throw std::runtime_error(err);
 	}
@@ -286,7 +295,7 @@ void PathsDetail::attemptEnsemble(const std::string &filename, const int &num)
 		float frac = i * step;
 		pr->submitJobAndRetrieve(frac, true);
 
-		std::string model_name = std::to_string(i);
+		std::string model_name = std::to_string(i + 1);
 		PdbFile::writeAtomsToStructure(grp, st, model_name);
 	}
 	
@@ -351,8 +360,25 @@ void PathsDetail::exportPDB(const std::string &filename, const int &num,
 		return;
 	}
 
+#ifndef __EMSCRIPTEN__
 	BadChoice *b = nullptr;
 	b = new BadChoice(this, "Exported the path in " + std::to_string(num) +
 	                  " subdivisions.");
 	setModal(b);
+#else
+	try
+	{
+		std::string contents = get_file_contents(filename);
+		EM_ASM_({ window.download = download; window.download($0, $1, $2) }, 
+		        filename.c_str(), contents.c_str(), contents.length());
+	}
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *b = nullptr;
+		b = new BadChoice(this, err.what());
+		setModal(b);
+		return;
+	}
+
+#endif
 }
