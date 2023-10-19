@@ -18,6 +18,7 @@
 
 #include "LBFGSEngine.h"
 #include <stdio.h>
+#include <stdexcept>
 
 LBFGSEngine::LBFGSEngine(RunsEngine *ref) : Engine(ref)
 {
