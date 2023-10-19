@@ -37,7 +37,12 @@ public:
 
 	virtual ~Fetcher()
 	{
-
+#ifndef __EMSCRIPTEN__
+		if (_allocated)
+		{
+			pthread_join(_thread, NULL);
+		}
+#endif
 	}
 
 	static void handleResult(void *ptr, void *data, int nbytes)
@@ -76,6 +81,7 @@ public:
 #ifndef __EMSCRIPTEN__
 		ThreadStuff *ts = new ThreadStuff{url, &prepareResult, f};
 		pthread_create(&_thread, NULL, pull_one_url, ts);
+		_allocated = true;
 #else
 		emscripten_async_wget_data(url.c_str(), f, handleResult, handleError);
 #endif
@@ -92,7 +98,8 @@ protected:
 	std::string _result;
 	std::atomic<bool> _process{false};
 
-	pthread_t _thread;
+	pthread_t _thread{};
+	bool _allocated = false;
 private:
 };
 
