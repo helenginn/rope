@@ -116,7 +116,7 @@ bool GuiAtom::checkAtom(Atom *a)
 {
 	if (!_multi)
 	{
-		glm::vec3 p;
+		glm::vec3 p{};
 		if (a->positionChanged() && a->fishPosition(&p))
 		{
 			for (GuiRepresentation *&r : _representations)
@@ -149,7 +149,7 @@ bool GuiAtom::checkAtom(Atom *a)
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
