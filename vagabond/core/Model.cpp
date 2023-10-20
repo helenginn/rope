@@ -269,10 +269,7 @@ bool Model::mergePolymersInSet(std::set<Polymer *> polymers)
 			Sequence *seq_a = a->sequence();
 			Sequence *seq_b = b->sequence();
 			
-			if (!seq_a || !seq_b)
-			{
-				continue;
-			}
+			if (!seq_a || !seq_b) { continue; }
 			
 			if (!(seq_b->firstNum() > seq_a->lastNum() &&
 			      seq_b->lastNum() > seq_a->lastNum()) ||
