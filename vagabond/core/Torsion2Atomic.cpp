@@ -100,7 +100,6 @@ SimpleWeights obtain_weights(TorsionCluster *tc, const RTAngles &angles,
 
 		float cc = MetadataGroup::correlation_between(compare, chosen);
 
-
 		weight.scores[instance] = cc;
 	}
 
@@ -180,7 +179,7 @@ auto actual_atom_position(PositionalGroup *grp, int atom_idx)
 template <typename Basis>
 auto predict_position(Basis &basis)
 {
-	return [&basis](Floats &weights)
+	return [&basis](Floats &weights) -> glm::vec3
 	{
 		glm::vec3 tot{};
 		
@@ -225,6 +224,14 @@ std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
 	RAMovement empty; empty.vector_from(atomIds);
 
 	std::vector<RAMovement> returns(max, empty);
+	
+	struct Vote
+	{
+		int pos = 0;
+		int neg = 0;
+	};
+	
+	std::vector<Vote> votes(max);
 
 	for (size_t j = 0; j < atomIds.size(); j++)
 	{
@@ -258,6 +265,51 @@ std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
 				storage -= reference;
 			}
 		}
+		
+		auto predict = predict_position(basis_axis);
+		auto actual = actual_atom_position(group, j);
+		
+		std::vector<CorrelData> cds(max);
+
+		auto get_dot_between = [&cds, predict, actual, 
+		                        group, weights](int axis, int i)
+		{
+			Instance *instance = static_cast<Instance *>(group->object(i));
+			Floats w = weights(instance);
+			glm::vec3 truth = actual(i);
+			glm::vec3 pred = predict(w);
+			for (size_t i = 0; i < 3; i++)
+			{
+				add_to_CD(&cds[axis], truth[i], pred[i]);
+			}
+		};
+		
+		for (size_t a = 0; a < max; a++)
+		{
+			auto get_dot_for_axis = [get_dot_between, a](int i)
+			{
+				get_dot_between(a, i);
+			};
+
+			for_every_instance(group, get_dot_for_axis);
+		}
+
+		for (size_t a = 0; a < max; a++)
+		{
+			float cc = evaluate_CD(cds[a]);
+			cc < 0 ? votes[a].neg++ : votes[a].pos++;
+		}
+	}
+	
+	for (size_t a = 0; a < max; a++)
+	{
+		if (votes[a].neg > votes[a].pos)
+		{
+			for (size_t j = 0; j < returns[a].size(); j++)
+			{
+				returns[a].storage(j) *= -1;
+			}
+		}
 	}
 	
 	freeMatrix(&pos_per_molecule);
@@ -284,6 +336,12 @@ RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref,
 {
 	MetadataGroup *grp = _tCluster->dataGroup();
 	SimpleWeights weight = obtain_weights(_tCluster, angles, ref);
+	
+	for (size_t i = 0; i < grp->vectorCount(); i++)
+	{
+		Instance *instance = static_cast<Instance *>(grp->object(i));
+		std::cout << instance->id() << " " << weight(instance) << std::endl;
+	}
 	
 	PositionalGroup *group = _pCluster->dataGroup();
 
