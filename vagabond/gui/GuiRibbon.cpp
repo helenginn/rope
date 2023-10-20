@@ -79,33 +79,37 @@ void GuiRibbon::segmentToWatch(std::vector<glm::vec3> &segment,
                                GuiRibbon::Watch::Entry &source,
                                GuiRibbon::Watch &watch)
 {
-	if (source.next_idx < 0) // append to array
+	if (source.next_idx < 0) // next chunk doesn't exist yet, append to array
 	{
+		int bez_idx = _bezier.size(); // first index of bezier for this atom
 		for (size_t j = 0; j < segment.size(); j++)
 		{
 			Watch::Entry entry(source);
 			entry.pos = segment[j];
 			watch.addWatchedAtom(entry);
 		}
+		source.next_idx = bez_idx; // prepare for recall
 	}
-	else // add to existing array
+	else // modify existing array, positions only
 	{
 		for (size_t j = 0; j < segment.size(); j++)
 		{
-			watch[j + source.next_idx].pos = segment[j];
+			int write_idx = j + source.next_idx;
+			Watch::Entry &entry = watch[write_idx];
+			entry.pos = segment[j];
 		}
 	}
 }
 
 struct Circle
 {
-	Circle(const float &radius, const int &divisions, const glm::vec3 &axis)
+	Circle(glm::vec3 &offAxis, const float &radius, 
+	       const int &divisions, const glm::vec3 &axis)
 	{
-		glm::vec3 xAxis = glm::vec3(1, 0, 0);
-
 		float angle = (2 * M_PI) / (double)divisions;
 		glm::mat4x4 rot = glm::rotate(glm::mat4(1.f), angle, axis);
-		glm::vec3 cross = glm::normalize(glm::cross(axis, xAxis));
+		glm::vec3 cross = glm::normalize(glm::cross(axis, offAxis));
+		offAxis = glm::normalize(glm::cross(cross, axis));
 		cross *= radius;
 
 		for (size_t i = 0; i < divisions; i++)
@@ -146,8 +150,10 @@ struct HasAtom
 
 std::vector<Vertex> GuiRibbon::verticesForCylinder(int i)
 {
+	glm::vec3 xAxis = {1, 0, 0};
+
 	const int divisions = DIVISIONS_IN_CIRCLE;
-	Circle pucker = Circle(0, divisions, glm::vec3{});
+	Circle pucker = Circle(xAxis, 0, divisions, glm::vec3{});
 
 	auto has_atom = HasAtom(_bezier);
 	if (!has_atom(i))
@@ -166,14 +172,17 @@ std::vector<Vertex> GuiRibbon::verticesForCylinder(int i)
 	else
 	{
 		glm::vec3 v1 = _bezier[i - 1].pos;
+		glm::vec3 prev = _bezier[i - 1].prev_axis;
 		glm::vec3 v2 = _bezier[i + 1].pos;
 
 		/* get the axis of motion */
 		glm::vec3 axis = glm::normalize(v2 - v1);
 
 		/* generate the appropriate circle params */
-		Circle circle = Circle((0.3*(_bezier[i].radius)), divisions, axis);
-
+		Circle circle = Circle(prev, 0.3 * _bezier[i].radius, 
+		                       divisions, axis);
+		
+		_bezier[i].prev_axis = prev;
 		vertices = addCircle(centre, circle());
 	}
 	
@@ -182,8 +191,14 @@ std::vector<Vertex> GuiRibbon::verticesForCylinder(int i)
 	return vertices;
 }
 
+// index i refers to the _bezier indexing
 void GuiRibbon::prepareCylinder(int i)
 {
+	if (i < 0 || i > _bezier.size())
+	{
+		return;
+	}
+
 	std::vector<Vertex> vertices = verticesForCylinder(i);
 	
 	if (vertices.size() == 0)
@@ -264,28 +279,28 @@ void GuiRibbon::prepareBezier(int i)
 	// get all four atoms
 	int is[] = {i - 1, i + 0, i + 1, i + 2};
 
+	std::vector<glm::vec3> segment;
+
 	if (!correct_indices(is, _atoms))
 	{
 		/* add a null watch so we know when to pucker the ribbon */
-		Watch::Entry entry{};
-		_bezier.addWatchedAtom(entry);
-		return;
+		segment = {glm::vec3{NAN}};
 	}
-
-	glm::vec3 ps[4];
-	for (size_t i = 0; i < 4; i++)
+	else
 	{
-		ps[i] = _atoms[is[i]].pos;
+		glm::vec3 ps[4];
+		for (size_t i = 0; i < 4; i++)
+		{
+			ps[i] = _atoms[is[i]].pos;
+		}
+
+		control_points(&ps[0], ps[1], ps[2], &ps[3]);
+		segment = bezierSegment(ps[0], ps[1], ps[2], ps[3]);
 	}
 
-	control_points(&ps[0], ps[1], ps[2], &ps[3]);
-	std::vector<glm::vec3> segment = bezierSegment(ps[0], ps[1], 
-	                                               ps[2], ps[3]);
 
-	int bez_idx = _bezier.size(); // first index of bezier for this atom
 	segmentToWatch(segment, _atoms[i], _bezier);
-
-	_atoms.setNextIndex(i, bez_idx);
+	
 }
 
 void GuiRibbon::prepareBezier()
@@ -293,7 +308,7 @@ void GuiRibbon::prepareBezier()
 	_bezier.addWatchedAtom(Watch::Entry{});
 
 	// skip the first and the last atoms
-	for (int i = 1; i < (int)_atoms.size() - 3; i++)
+	for (int i = 1; i < (int)_atoms.size() - 2; i++)
 	{
 		prepareBezier(i);
 	}
@@ -312,6 +327,8 @@ bool GuiRibbon::previousPositionValid()
 void GuiRibbon::insertAtom(Atom *a)
 {
 	Watch::Entry entry{};
+	
+	bool has = _atoms.has(a);
 	
 	if (a)
 	{
@@ -341,12 +358,7 @@ bool GuiRibbon::acceptableAtom(Atom *a)
 
 void GuiRibbon::watchAtom(Atom *a)
 {
-	if (!a)
-	{
-		return;
-	}
-
-	if (!a->isReporterAtom())
+	if (!a || !a->isReporterAtom())
 	{
 		return;
 	}
@@ -369,15 +381,18 @@ void GuiRibbon::watchAtom(Atom *a)
 	else
 	{
 		insertAtom(nullptr);
+		insertAtom(a);
 	}
 
 }
 void GuiRibbon::convert()
 {
 	insertAtom(nullptr);
+	insertAtom(nullptr);
 	prepareBezier();
 	prepareCylinder();
 	forceRender(true, true);
+	finishUpdate();
 }
 
 void GuiRibbon::transplantCylinder(std::vector<Snow::Vertex> &cylinder, int start)
@@ -438,6 +453,7 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 
 	int fix = _atoms.index(a);
 	_atoms[a].pos = p;
+	_atoms[a].changed = true;
 
 	for (int i = fix - 2; i < fix + 1; i++)
 	{
@@ -448,25 +464,32 @@ void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)
 
 		prepareBezier(i);
 
-		int start = _bezier[i].next_idx;
+		int start = _atoms[i].next_idx;
 
-		if (start < 0)
-		{
-			continue;
-		}
+		if (start < 0) { continue; }
 
-		int end = _bezier.stopIndex(i);
+		int end = _atoms.stopIndex(i);
 
-		for (size_t j = start; j < end; j++)
+		for (int j = start; j < end; j++)
 		{
 			prepareCylinder(j);
 		}
-
-		forceRender(true, true);
 	}
+}
+
+void GuiRibbon::finishUpdate()
+{
+	forceRender(true, true);
 }
 
 void GuiRibbon::updateMultiPositions(Atom *a, WithPos &wp)
 {
 	updateSinglePosition(a, wp.ave);
+}
+
+std::ostream &operator<<(std::ostream &ss, const GuiRibbon::Watch::Entry &entry)
+{
+	ss << "{" << (!entry.atom ? "null_atom" : entry.atom->desc()) << ", ";
+	ss << entry.pos << ", points to idx " << entry.next_idx << "}";
+	return ss;
 }

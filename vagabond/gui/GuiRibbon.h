@@ -33,6 +33,7 @@ public:
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p);
 	virtual void updateMultiPositions(Atom *a, WithPos &wp);
+	virtual void finishUpdate();
 	
 	virtual void prepareAtomSpace(AtomGroup *ag);
 	void convert();
@@ -43,11 +44,16 @@ public:
 		{
 			Atom *atom = nullptr;
 			glm::vec3 pos = glm::vec3(NAN, NAN, NAN);
+			glm::vec3 prev_axis = glm::vec3(1, 0, 0);
+			bool changed = false;
 			// next_idx refers to the first index in the next stage's array
 			// belonging to this atom.
+			// stage meaning: from "single atom" to "bezier", then from
+			// "bezier" to "cylinder".
 			int next_idx = -1;
 			int radius = 1;
-
+			
+			friend std::ostream &operator<<(std::ostream &ss, const Entry &entry);
 		};
 		
 		Atom *lastAtom()
