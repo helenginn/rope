@@ -49,9 +49,6 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void finishedDragging(std::string tag, double x, double y);
-
-	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
-	                          Floats &torsions) {};
 protected:
 	void setupColoursForList(RTAngles &angles);
 private:
@@ -60,6 +57,7 @@ private:
 	void askForAtomMotions();
 	void setupColours();
 	void setupColourLegend();
+	void supplyTorsions();
 	
 	struct mapping
 	{
@@ -88,6 +86,7 @@ private:
 	double _step = 0.001;
 	float _maxTorsion = 0;
 
+	RTAngles _rawAngles;
 	RAMovement _movement;
 	bool _atomMaps = false;
 	

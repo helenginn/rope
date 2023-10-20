@@ -27,21 +27,19 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
 
-#include <vagabond/core/MetadataGroup.h>
-#include <vagabond/c4x/Cluster.h>
 #include <vagabond/core/AtomBlock.h>
-#include <vagabond/core/Polymer.h>
+#include <vagabond/core/Instance.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Residue.h>
-#include <vagabond/core/AlignmentTool.h>
 #include <vagabond/core/Torsion2Atomic.h>
+#include <vagabond/core/TorsionBasis.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst)
 {
-	_torsionType = TorsionBasis::TypeConcerted;
+	_torsionType = TorsionBasis::TypeSimple;
 	_dims = 1;
-	_torsionLists.push_back(angles);
+	_rawAngles = angles;
 	setPingPong(true);
 	setOwnsAtoms(false);
 }
@@ -55,8 +53,6 @@ void AxisExplorer::setup()
 {
 	_instance->load();
 	AtomGroup *grp = _instance->currentAtoms();
-	AlignmentTool tool(grp);
-	tool.run();
 	grp->recalculate();
 
 	loadAtoms(grp);
@@ -67,7 +63,7 @@ void AxisExplorer::setup()
 	Display::setup();
 	
 	startCalculator();
-	supplyTorsionLists();
+	supplyTorsions();
 	setupSlider();
 	
 	submitJob(0.0);
@@ -136,7 +132,7 @@ void AxisExplorer::adjustTorsions()
 	std::cout << "Torsion to atomic: " << std::endl;
 	Entity *entity = _instance->entity();
 	Torsion2Atomic t2a(entity, _cluster, _instance);
-	_movement = t2a.convertAnglesSimple(_instance, _torsionLists[0]);
+	_movement = t2a.convertAnglesSimple(_instance, _rawAngles);
 	_movement.attachInstance(_instance);
 	_atomMaps = true;
 
@@ -148,8 +144,29 @@ void AxisExplorer::adjustTorsions()
 		{
 			atom->setOtherPosition("target", atom->derivedPosition());
 			atom->setOtherPosition("moving", _movement.storage(i));
+
+			if (atom->residueId() == 5 && atom->isReporterAtom())
+			{
+				std::cout << atom->desc() << " " << _movement.storage(i) << std::endl;
+			}
 		}
 	}
+}
+
+void AxisExplorer::supplyTorsions()
+{
+	BondCalculator *calc = _instanceToCalculator[_instance];
+	std::vector<Parameter *> params = calc->torsionBasis()->parameters();
+	RTAngles filtered = _rawAngles;
+	filtered.attachInstance(_instance);
+	filtered.filter_according_to(params);
+
+	auto grab_torsion = [filtered](const Coord::Get &get, const int &idx) -> float
+	{
+		return filtered.storage(idx) * get(0);
+	};
+	
+	calc->manager().setTorsionFetcher(grab_torsion);
 }
 
 void AxisExplorer::askForAtomMotions()
@@ -240,10 +257,7 @@ void AxisExplorer::setupColours()
 		a->setAddedColour(0.f);
 	}
 	
-	if (_torsionLists.size())
-	{
-		setupColoursForList(_torsionLists[0]);
-	}
+	setupColoursForList(_rawAngles);
 }
 
 void AxisExplorer::setupColourLegend()

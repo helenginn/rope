@@ -43,7 +43,6 @@ class StructureModification
 {
 public:
 	StructureModification(Instance *mol);
-	StructureModification(std::string model, std::string inst);
 	
 	void setAtoms(AtomGroup *grp)
 	{
@@ -55,7 +54,7 @@ public:
 		return _dims;
 	}
 	
-	bool supplyTorsions(const RTAngles &angles);
+//	bool supplyTorsions(const RTAngles &angles);
 
 	virtual ~StructureModification();
 	
@@ -122,7 +121,6 @@ protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 
 	bool fillBasis(ConcertedBasis *cb, const RTAngles &angles, int axis = 0);
-	void supplyTorsionLists();
 
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
@@ -134,7 +132,6 @@ protected:
 	std::vector<BondCalculator *> _calculators;
 	AtomGroup *_fullAtoms = nullptr;
 	
-	std::vector<RTAngles> _torsionLists;
 	TorsionCluster *_cluster = nullptr;
 
 	int _dims = 1;

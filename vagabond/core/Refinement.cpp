@@ -137,8 +137,6 @@ void Refinement::setupRefiner(Refine::Info &info)
 		axis.do_op([](Angular &ang) {
 			          ang.angle /= 2;
 			         });
-
-		mr->supplyTorsions(axis);
 	}
 
 	_molRefiners[mol] = mr;

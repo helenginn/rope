@@ -27,15 +27,6 @@ StructureModification::StructureModification(Instance *mol)
 	_instance = mol;
 }
 
-//del?
-StructureModification::StructureModification(std::string modid, std::string inst) 
-{
-	Model *model = ModelManager::manager()->model(modid);
-	Instance *instance = model->instanceWithId(inst);
-	_instance = instance;
-	_dims = 1;
-}
-
 StructureModification::~StructureModification()
 {
 	cleanup();
@@ -157,35 +148,6 @@ void StructureModification::startCalculator()
 	finishHetatmCalculator();
 }
 
-bool StructureModification::supplyTorsions(const RTAngles &angles)
-{
-	if (_torsionType == TorsionBasis::TypeSimple)
-	{
-		throw std::runtime_error("Supplying torsions but not concerted basis");
-	}
-	if (_axis >= _dims)
-	{
-		std::cout << "Too many axes; aborting torsion angle supply" << std::endl;
-		return false;
-	}
-
-	bool success = false;
-	for (BondCalculator *calc : _calculators)
-	{
-		TorsionBasis *basis = calc->torsionBasis();
-		ConcertedBasis *cb = dynamic_cast<ConcertedBasis *>(basis);
-
-		if (cb)
-		{
-			success |= fillBasis(cb, angles, _axis);
-			_torsionLists.push_back(angles);
-		}
-	}
-	
-	_axis++;
-	return success;
-}
-
 bool StructureModification::fillBasis(ConcertedBasis *cb, 
                                       const RTAngles &angles, int axis)
 {
@@ -210,19 +172,6 @@ void StructureModification::changeInstance(Instance *m)
 	if (hasCalc)
 	{
 		startCalculator();
-	}
-
-	supplyTorsionLists();
-}
-
-void StructureModification::supplyTorsionLists()
-{
-	std::vector<RTAngles> lists = _torsionLists;
-	_torsionLists.clear();
-
-	for (const RTAngles &rta : lists)
-	{
-		supplyTorsions(rta);
 	}
 }
 
