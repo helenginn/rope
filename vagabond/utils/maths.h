@@ -102,18 +102,17 @@ inline double random_norm_dist(double x, double sigma)
 
 typedef struct
 {
-	double sum_x;
-	double sum_y;
-	double sum_xx;
-	double sum_yy;
-	double sum_xy;
-	double sum_w;
+	double sum_x = 0;
+	double sum_y = 0;
+	double sum_xx = 0;
+	double sum_yy = 0;
+	double sum_xy = 0;
+	double sum_w = 0;
 } CorrelData;
 
 inline CorrelData empty_CD()
 {
-	CorrelData cd;
-	memset(&cd, '\0', sizeof(cd));
+	CorrelData cd{};
 	return cd;
 }
 
