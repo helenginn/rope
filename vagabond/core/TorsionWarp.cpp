@@ -210,13 +210,13 @@ void TorsionWarp::upToParameter(Parameter *param, AtomFilter &left,
 	{
 		left = [id](Atom *const &atom)
 		{
-			return (atom->atomName() == "CA" &&
+			return (atom->isReporterAtom() &&
 			        atom->residueId() < id + 4);
 		};
 
 		right = [id](Atom *const &atom)
 		{
-			return (atom->atomName() == "CA" &&
+			return (atom->isReporterAtom() &&
 			        (atom->residueId() < id + 4));
 		};
 	}
@@ -224,13 +224,13 @@ void TorsionWarp::upToParameter(Parameter *param, AtomFilter &left,
 	{
 		left = [id](Atom *const &atom)
 		{
-			return (atom->atomName() == "CA" &&
+			return (atom->isReporterAtom() &&
 			        atom->residueId() > id - 4);
 		};
 
 		right = [id](Atom *const &atom)
 		{
-			return (atom->atomName() == "CA" &&
+			return (atom->isReporterAtom() &&
 			        (atom->residueId() > id - 4));
 		};
 	}

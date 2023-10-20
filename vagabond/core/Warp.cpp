@@ -107,7 +107,7 @@ void Warp::setup()
 	
 	_filter = [](Atom *const &atom)
 	{
-		return (atom->atomName() == "CA");
+		return (atom->isReporterAtom());
 	};
 	
 	_displayTargets = true;

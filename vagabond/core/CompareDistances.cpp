@@ -21,7 +21,7 @@
 
 bool acceptable(Atom *const &atom)
 {
-	return atom->atomName() == "CA";
+	return atom->isReporterAtom();
 }
 
 CompareDistances::~CompareDistances()
