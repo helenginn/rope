@@ -210,15 +210,18 @@ rope::IntToCoordGet Sampler::coordsFromParams(const std::vector<float> &all)
 
 	int n = 0; // tracking index of "all"
 
-	for (size_t i = 0; i < _dims; i++)
+	for (size_t i = 0; i < _dims && n < all.size(); i++)
 	{
 		mean[i] = all[n];
 		n++;
 	}
+	
+	mean.resize(_dims);
+	do_op(tensor, [](float) { return 0; });
 
-	for (size_t i = 0; i < _dims; i++)
+	for (size_t i = 0; i < _dims && n < all.size(); i++)
 	{
-		for (size_t j = i; j < _dims; j++)
+		for (size_t j = i; j < _dims && n < all.size(); j++)
 		{
 			tensor[i][j] = all[n];
 			tensor[j][i] = all[n];

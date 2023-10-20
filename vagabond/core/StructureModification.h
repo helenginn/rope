@@ -25,7 +25,6 @@
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/Residue.h>
-#include <vagabond/core/Sampler.h>
 #include "RTAngles.h"
 
 class MetadataGroup;
@@ -43,8 +42,8 @@ class Atom;
 class StructureModification
 {
 public:
-	StructureModification(Instance *mol, int num, int dims);
-	StructureModification(std::string model, std::string inst, int num, int dims);
+	StructureModification(Instance *mol);
+	StructureModification(std::string model, std::string inst);
 	
 	void setAtoms(AtomGroup *grp)
 	{
@@ -134,12 +133,10 @@ protected:
 	BondCalculator *_hetatmCalc = nullptr;
 	std::vector<BondCalculator *> _calculators;
 	AtomGroup *_fullAtoms = nullptr;
-	Sampler _sampler;
 	
 	std::vector<RTAngles> _torsionLists;
 	TorsionCluster *_cluster = nullptr;
 
-	int _num = 1;
 	int _dims = 1;
 	int _threads = 1;
 	int _axis = 0;

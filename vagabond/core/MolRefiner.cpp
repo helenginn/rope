@@ -26,7 +26,7 @@
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
                        Refine::Info *info, int num, int dims) :
-StructureModification(info->instance, num, dims)
+StructureModification(info->instance), _sampler(num, dims)
 {
 	_pType = BondCalculator::PipelineCorrelation;
 	_torsionType = TorsionBasis::TypeConcerted;
@@ -41,6 +41,9 @@ StructureModification(info->instance, num, dims)
 
 	_map = comparison;
 	_info = info;
+
+	_dims = dims;
+	_sampler.setup();
 }
 
 int triangular_number(int other)
@@ -261,4 +264,12 @@ void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
 {
 	calc->setReferenceDensity(_map);
 	calc->setPipelineType(_pType);
+	calc->setTotalSamples(_sampler.pointCount());
+
+	rope::GetListFromParameters transform = [this](const std::vector<float> &all)
+	{
+		return _sampler.coordsFromParams(all);
+	};
+
+	calc->manager().setDefaultCoordTransform(transform);
 }

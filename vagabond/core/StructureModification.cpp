@@ -22,26 +22,18 @@
 #include "EntityManager.h"
 #include "ModelManager.h"
 
-StructureModification::StructureModification(Instance *mol, int num, int dims)
-: _sampler(num, dims)
+StructureModification::StructureModification(Instance *mol)
 {
-	_sampler.setup();
 	_instance = mol;
-	_num = num;
-	_dims = dims;
 }
 
-StructureModification::StructureModification(std::string modid, std::string inst, 
-                                             int num, int dims)
-: _sampler(num, dims)
+//del?
+StructureModification::StructureModification(std::string modid, std::string inst) 
 {
-	_sampler.setup();
-
 	Model *model = ModelManager::manager()->model(modid);
 	Instance *instance = model->instanceWithId(inst);
 	_instance = instance;
-	_num = num;
-	_dims = dims;
+	_dims = 1;
 }
 
 StructureModification::~StructureModification()
@@ -67,20 +59,12 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 	calc.setInSequence(true);
 	calc.setPipelineType(_pType);
 	calc.setMaxSimultaneousThreads(_threads);
-	
-	rope::GetListFromParameters transform = [this](const std::vector<float> &all)
-	{
-		return _sampler.coordsFromParams(all);
-	};
 
-	calc.manager().setDefaultCoordTransform(transform);
-	calc.setTotalSamples(_sampler.pointCount());
+	calc.setTotalSamples(1);
 
 	calc.setTorsionBasisType(_torsionType);
 	calc.addAnchorExtension(anchor);
 	calc.setIgnoreHydrogens(false);
-
-	_num = _sampler.pointCount();
 }
 
 void StructureModification::addToHetatmCalculator(Atom *anchor)
@@ -92,7 +76,7 @@ void StructureModification::addToHetatmCalculator(Atom *anchor)
 
 		_hetatmCalc->setPipelineType(_pType);
 		_hetatmCalc->setMaxSimultaneousThreads(1);
-		_hetatmCalc->setTotalSamples(_sampler.pointCount());
+		_hetatmCalc->setTotalSamples(1);
 
 		_hetatmCalc->setIgnoreHydrogens(false);
 	}

@@ -53,7 +53,6 @@ public:
 	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
 	                          Floats &torsions) {};
 protected:
-	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 	void setupColoursForList(RTAngles &angles);
 private:
 	Slider *_rangeSlider = nullptr;

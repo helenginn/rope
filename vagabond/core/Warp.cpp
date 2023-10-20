@@ -25,7 +25,7 @@
 #include "Warp.h"
 
 Warp::Warp(Instance *ref, size_t num_axes) 
-: StructureModification(ref,  1, num_axes)
+: StructureModification(ref)
 {
 	_dims = num_axes;
 	_threads = 6;

@@ -106,11 +106,6 @@ void BondSequenceHandler::setup()
 	sanityCheckThreads();
 	prepareSequenceBlocks();
 	int dimensions = 1;
-	if (_sampler)
-	{
-//		dimensions = _sampler->dims();
-	}
-
 	torsionBasis()->prepare(dimensions);
 }
 

@@ -37,7 +37,7 @@
 #include <vagabond/core/Torsion2Atomic.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
-: Scene(prev), Display(prev), StructureModification(inst, 1, 1)
+: Scene(prev), Display(prev), StructureModification(inst)
 {
 	_torsionType = TorsionBasis::TypeConcerted;
 	_dims = 1;
@@ -179,20 +179,6 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 	}
 
 	Display::buttonPressed(tag, button);
-}
-
-void AxisExplorer::customModifications(BondCalculator *calc, bool has_mol)
-{
-	if (!has_mol)
-	{
-		return;
-	}
-
-	calc->setPipelineType(_pType);
-	FFProperties props;
-	props.group = _instance->currentAtoms();
-	props.t = FFProperties::CAlphaSeparation;
-	calc->setForceFieldProperties(props);
 }
 
 void AxisExplorer::setupColoursForList(RTAngles &angles)

@@ -23,6 +23,7 @@
 #include "RefinementInfo.h"
 #include "Engine.h"
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/core/Sampler.h>
 
 class Warp;
 class ArbitraryMap;
@@ -58,6 +59,7 @@ private:
 
 	bool _getSegment = false;
 	PCA::SVD _svd;
+	Sampler _sampler;
 };
 
 #endif

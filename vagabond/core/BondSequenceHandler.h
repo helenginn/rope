@@ -55,11 +55,6 @@ public:
 		return _calculator;
 	}
 
-	void setSampler(Sampler *sampler)
-	{
-		_sampler = sampler;
-	}
-
 	void setTorsionBasisType(TorsionBasis::Type type)
 	{
 		_basisType = type;
@@ -129,7 +124,6 @@ private:
 	std::map<std::string, int> _elements;
 	MapTransferHandler *_mapHandler = nullptr;
 	PointStoreHandler *_pointHandler = nullptr;
-	Sampler *_sampler = nullptr;
 };
 
 #endif

@@ -23,7 +23,6 @@ int main()
 	BondCalculator calculator;
 	calculator.setPipelineType(BondCalculator::PipelineCalculatedMaps);
 	calculator.setMaxSimultaneousThreads(2);
-	calculator.setSampler(&sampler);
 	calculator.addAnchorExtension(anchor);
 	calculator.setup();
 	

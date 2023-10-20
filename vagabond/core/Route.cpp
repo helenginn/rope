@@ -25,7 +25,7 @@
 #include "RopeCluster.h"
 
 Route::Route(Instance *from, Instance *to, const RTAngles &list)
-: StructureModification(from, 1, list.size())
+: StructureModification(from)
 {
 	_endInstance = to;
 	_source = list;
