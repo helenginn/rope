@@ -46,7 +46,7 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 	_bonds->setDisabled(true);
 	setName("Gui balls");
 
-	_size *= Window::ratio();
+	_size *= Window::ratio() / 2;
 }
 
 GuiBalls::~GuiBalls()

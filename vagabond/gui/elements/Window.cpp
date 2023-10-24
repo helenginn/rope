@@ -68,13 +68,13 @@ void Window::instateWindow()
 	                    SDL_GL_CONTEXT_PROFILE_CORE);
 	
 	extraWindowFlags(windowFlags);
-//	WindowFlags += SDL_WINDOW_FULLSCREEN;
 #endif
 	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
 
 	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w * _ratio,
 	                           _rect.h * _ratio, windowFlags);
 	_context = SDL_GL_CreateContext(_window);
+	
 }
 
 void Window::instateGlew()
@@ -151,6 +151,9 @@ void Window::updateDimensions(int width, int height)
 	glViewport(0, 0, w, h);
 	_width = w;
 	_height = h;
+	int logical_w, logical_h;
+	SDL_GetWindowSize(_window, &logical_w, &logical_h);
+	_ratio = (long int)lrint(_width / logical_w);
 #else
 	glViewport(0, 0, width * _ratio, height * _ratio);
 	_rect.w = width;
@@ -210,7 +213,9 @@ bool Window::tick()
 	while (SDL_PollEvent(&event))
 	{
 		glm::vec2 motion = {event.motion.x, event.motion.y};
+#ifdef __EMSCRIPTEN__
 		motion /= _ratio;
+#endif
 
 		switch (event.type)
 		{

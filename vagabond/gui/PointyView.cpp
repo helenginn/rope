@@ -27,7 +27,7 @@ PointyView::PointyView()
 	setVertexShaderFile("assets/shaders/point.vsh");
 	setImage("assets/images/points.png");
 	
-	_size *= Window::ratio();
+	_size *= Window::ratio() / 2;
 }
 
 void PointyView::refresh()

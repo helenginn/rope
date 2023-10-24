@@ -128,6 +128,7 @@ public:
 	static double ratio()
 	{
 		return _ratio; // will be 1 on non-emscripten systems
+		// except I may have fixed that...
 	}
 	
 	static SDL_Window *sdl_window()
