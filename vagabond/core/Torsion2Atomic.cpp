@@ -337,12 +337,6 @@ RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref,
 	MetadataGroup *grp = _tCluster->dataGroup();
 	SimpleWeights weight = obtain_weights(_tCluster, angles, ref);
 	
-	for (size_t i = 0; i < grp->vectorCount(); i++)
-	{
-		Instance *instance = static_cast<Instance *>(grp->object(i));
-		std::cout << instance->id() << " " << weight(instance) << std::endl;
-	}
-	
 	PositionalGroup *group = _pCluster->dataGroup();
 
 	std::vector<RAMovement> results;
