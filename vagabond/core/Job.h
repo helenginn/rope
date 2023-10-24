@@ -50,11 +50,9 @@ enum JobType
 	JobCalculateDeviations =     1 << 1,
 	JobCalculateMapSegment =     1 << 2,
 	JobMapCorrelation =          1 << 3,
-	JobScoreStructure =          1 << 4,
-	JobUpdateMechanics =         1 << 5,
-	JobSolventSurfaceArea =      1 << 6,
-	JobSolventMask =      		 1 << 7,
-	JobPositionVector =          1 << 8,
+	JobSolventSurfaceArea =      1 << 4,
+	JobSolventMask =      		 1 << 5,
+	JobPositionVector =          1 << 6,
 };
 
 struct Job
@@ -106,7 +104,6 @@ struct Result
 	void destroy()
 	{
 		delete map;
-		delete this;
 	}
 };
 

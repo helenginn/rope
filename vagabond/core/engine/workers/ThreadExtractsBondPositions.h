@@ -58,8 +58,6 @@ private:
 	void extractPositions(Job *job, BondSequence *seq);
 	void calculateDeviation(Job *job, BondSequence *seq);
 	void transferToMaps(Job *job, BondSequence *seq);
-	void updateMechanics(Job *job, BondSequence *seq);
-	void transferToForceFields(Job *job, BondSequence *seq);
 	void transferToSurfaceHandler(Job *job, BondSequence *seq);
 	void transferToSolventMask(Job *job, BondSequence *seq);
 	

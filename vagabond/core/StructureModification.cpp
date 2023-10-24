@@ -18,7 +18,6 @@
 
 #include "StructureModification.h"
 #include <vagabond/core/Polymer.h>
-#include <vagabond/core/ConcertedBasis.h>
 #include "EntityManager.h"
 #include "ModelManager.h"
 
@@ -215,17 +214,6 @@ void StructureModification::retrieve()
 			if (r->requests & JobSolventSurfaceArea)
 			{
 				std::cout << r->surface_area << std::endl;
-			}
-			
-			if (r->requests & JobScoreStructure)
-			{
-				r->transplantColours();
-				
-				if (r->score == r->score)
-				{
-					score.scores += r->score;
-					score.sc_num++;
-				}
 			}
 
 			if (r->requests & JobCalculateDeviations)

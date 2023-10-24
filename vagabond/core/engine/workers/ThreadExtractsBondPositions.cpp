@@ -20,7 +20,6 @@
 #include "BondSequenceHandler.h"
 #include "engine/SurfaceAreaHandler.h"
 #include "engine/MapTransferHandler.h"
-#include "engine/ForceFieldHandler.h"
 #include "engine/SolventHandler.h"
 #include "BondCalculator.h"
 #include "engine/PointStoreHandler.h"
@@ -56,17 +55,6 @@ void ThreadExtractsBondPositions::transferToSurfaceHandler(Job *job,
 	SurfaceAreaHandler *handler = _seqHandler->calculator()->surfaceHandler();
 	
 	handler->sendJobForCalculation(job, aps);
-	timeEnd();
-	cleanupSequence(job, seq);
-}
-
-void ThreadExtractsBondPositions::transferToForceFields(Job *job,
-                                                        BondSequence *seq)
-{
-	const AtomPosMap &aps = seq->extractPositions();
-	ForceFieldHandler *ffHandler = _seqHandler->calculator()->forceFieldHandler();
-	
-	ffHandler->atomMapToForceField(job, aps);
 	timeEnd();
 	cleanupSequence(job, seq);
 }
@@ -142,11 +130,6 @@ void ThreadExtractsBondPositions::start()
 		if (job->requests & JobSolventSurfaceArea)
 		{
 			transferToSurfaceHandler(job, seq);
-			continue; // loses control of bond sequence
-		}
-		else if (job->requests & JobScoreStructure)
-		{
-			transferToForceFields(job, seq);
 			continue; // loses control of bond sequence
 		}
 		if (job->requests & JobCalculateMapSegment ||

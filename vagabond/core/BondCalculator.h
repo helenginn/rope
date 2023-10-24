@@ -29,11 +29,9 @@
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"
-#include "FFProperties.h"
 
 class BondSequenceHandler;
 class SurfaceAreaHandler;
-class ForceFieldHandler;
 class MapTransferHandler;
 class CorrelationHandler;
 class PointStoreHandler;
@@ -42,7 +40,6 @@ class MapSumHandler;
 
 class PositionSampler;
 class Diffraction;
-class ForceField;
 class Grapher;
 class Atom;
 
@@ -69,9 +66,6 @@ public:
 
 		/** return maps after calculating 3D map */
 		PipelineCalculatedMaps = 1 << 1, 
-		
-		/** returns forcefield-related calculations from atom positions */
-		PipelineForceField = 1 << 2,
 
 		/** return after calculating correlation of calculated 3D map with 
 		 * reference 3D map */
@@ -179,16 +173,6 @@ public:
 		return _surfaceHandler;
 	}
 	
-	ForceFieldHandler *const forceFieldHandler() const
-	{
-		return _ffHandler;
-	}
-	
-	void setForceFieldProperties(FFProperties &props)
-	{
-		_props = props;
-	}
-	
 	JobManager &manager()
 	{
 		return _manager;
@@ -209,7 +193,6 @@ private:
 	void setupSolventHandler();
 	void setupMapTransferHandler();
 	void setupMapSumHandler();
-	void setupForceFieldHandler();
 	void setupSurfaceAreaHandler();
 	void prepareThreads();
 	void cleanupRecycling();
@@ -231,12 +214,10 @@ private:
 	CorrelationHandler *_correlHandler = nullptr;
 	SurfaceAreaHandler *_surfaceHandler = nullptr;
 	PointStoreHandler *_pointHandler = nullptr;
-	ForceFieldHandler *_ffHandler = nullptr;
 	SolventHandler *_solventHandler = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
 
 	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
-	FFProperties _props{};
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
 	JobManager _manager;

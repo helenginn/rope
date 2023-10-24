@@ -21,7 +21,6 @@
 #include "BondSequenceHandler.h"
 #include "engine/SurfaceAreaHandler.h"
 #include "engine/CorrelationHandler.h"
-#include "engine/ForceFieldHandler.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/PointStoreHandler.h"
 #include "engine/SolventHandler.h"
@@ -67,7 +66,6 @@ void BondCalculator::reset()
 	delete _pointHandler; _pointHandler = nullptr;
 	delete _mapHandler; _mapHandler = nullptr;
 	delete _sumHandler; _sumHandler = nullptr;
-	delete _ffHandler; _ffHandler = nullptr;
 
 	_minDepth = 0;
 	_maxDepth = INT_MAX;
@@ -184,25 +182,6 @@ void BondCalculator::setupPointHandler()
 	_pointHandler->setThreads(_maxThreads);
 }
 
-void BondCalculator::setupForceFieldHandler()
-{
-	if (!(_type & PipelineForceField))
-	{
-		return;
-	}
-
-	_ffHandler = new ForceFieldHandler(this);
-	
-	if (_props.t == FFProperties::NoTemplate)
-	{
-		throw std::runtime_error("Need to set template for "\
-		                         "force field calculation");
-	}
-	_ffHandler->setFFProperties(_props);
-	_ffHandler->setThreads(_maxThreads);
-	_ffHandler->setForceFieldCount(_maxThreads);
-}
-
 void BondCalculator::setupSurfaceAreaHandler()
 {
 	if (!(_type & PipelineSolventSurfaceArea))
@@ -226,7 +205,6 @@ void BondCalculator::setup()
 	setupSequenceHandler();
 	setupPointHandler();
 	setupSurfaceAreaHandler();
-	setupForceFieldHandler();
 	
 	if (_mapHandler != nullptr)
 	{
@@ -247,11 +225,6 @@ void BondCalculator::setup()
 	{
 		_mapHandler->setup();
 		_sumHandler->setup();
-	}
-	
-	if (_ffHandler != nullptr)
-	{
-		_ffHandler->setup();
 	}
 	
 	if (_surfaceHandler != nullptr)
@@ -299,10 +272,6 @@ void BondCalculator::start()
 	if (_surfaceHandler != nullptr)
 	{
 		_surfaceHandler->start();
-	}
-	if (_ffHandler != nullptr)
-	{
-		_ffHandler->start();
 	}
 	if (_sumHandler != nullptr)
 	{
@@ -386,16 +355,6 @@ void BondCalculator::sanityCheckJob(Job &job)
 		}
 	}
 
-	if ((job.requests & JobUpdateMechanics) ||
-	    (job.requests & JobScoreStructure))
-	{
-		if (_ffHandler == nullptr)
-		{
-			throw std::runtime_error("Job asked for request requiring non-existent"
-			                         " ForceField");
-		}
-	}
-
 	if (!job.atomTargets)
 	{
 		job.atomTargets = manager().defaultAtomFetcher();
@@ -441,11 +400,6 @@ void BondCalculator::finish()
 		_surfaceHandler->finish();
 	}
 
-	if (_ffHandler != nullptr)
-	{
-		_ffHandler->finish();
-	}
-	
 	if (_correlHandler != nullptr)
 	{
 		_correlHandler->finish();

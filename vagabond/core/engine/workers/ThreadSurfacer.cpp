@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ThreadSurfacer.h"
-#include "engine/ForceFieldHandler.h"
 #include "engine/SurfaceAreaHandler.h"
 #include "engine/AreaMeasurer.h"
 #include "BondCalculator.h"
@@ -32,16 +31,8 @@ void ThreadSurfacer::sendToNext(Job *job, AreaMeasurer *measurer)
 	BondCalculator *calc = _handler->calculator();
 
 	Result *r = job->result;
-	if (r->requests & JobScoreStructure)
-	{
-		ForceFieldHandler *ffHandler = calc->forceFieldHandler();
-		ffHandler->atomMapToForceField(job, measurer->atomPosMap());
-	}
-	else
-	{
-		job->destroy();
-		calc->submitResult(r);
-	}
+	job->destroy();
+	calc->submitResult(r);
 }
 
 void ThreadSurfacer::start()
