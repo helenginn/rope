@@ -238,7 +238,7 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 		}
 		ResidueId id = local->id();
 		
-		Atom *atom = _fullAtoms->atomByIdName(id, "CA");
+		Atom *atom = _fullAtoms->atomByIdName(id, "");
 		if (atom == nullptr)
 		{
 			continue;
