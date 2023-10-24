@@ -191,11 +191,11 @@ template <class DG>
 std::vector<float> Cluster<DG>::mappedVector(int axis) const
 {
 	std::vector<float> fs;
-	fs.resize(_result.rows);
+	fs.resize(_result.cols);
 	
-	for (int i = 0; i < rows(); i++)
+	for (int i = 0; i < columns(); i++)
 	{
-		fs[i] = _result[i][axis];
+		fs[i] = _result[axis][i];
 	}
 	
 	return fs;
