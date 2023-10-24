@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
-#include <fstream>
 #include <thread>
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/gui/MatrixPlot.h>
@@ -304,20 +303,15 @@ void MapView::mouseMoveEvent(double x, double y)
 
 void MapView::saveSpace(std::string filename)
 {
-	if (filename == "rope.json")
+	try
 	{
-		BadChoice *bc = new BadChoice(this, "rope.json is a reserved filename");
-		setModal(bc);
-		return;
+		_warp->saveSpace(filename);
 	}
-
-	json j = *_warp->torsionWarp();
-
-	std::ofstream file;
-	file.open(filename);
-	file << j.dump(1);
-	file << std::endl;
-	file.close();
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(this, err.what());
+		setModal(bc);
+	}
 }
 
 void MapView::askForFilename()

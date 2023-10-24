@@ -22,6 +22,7 @@
 #include "TorsionWarp.h"
 #include "AtomGroup.h"
 #include "Instance.h"
+#include <fstream>
 #include "Warp.h"
 
 Warp::Warp(Instance *ref, size_t num_axes) 
@@ -248,6 +249,23 @@ void Warp::clearComparison()
 void Warp::clearFilters()
 {
 	compare()->setFiltersEqual(_filter);
+}
+
+void Warp::saveSpace(const std::string &filename)
+{
+	if (filename == "rope.json")
+	{
+		throw std::runtime_error("rope.json is a reserved filename");
+	}
+
+	json j = *torsionWarp();
+
+	std::ofstream file;
+	file.open(filename);
+	file << j.dump(1);
+	file << std::endl;
+	file.close();
+
 }
 
 void loadJson(const std::string &filename, TorsionWarp *tw)

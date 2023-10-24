@@ -195,10 +195,13 @@ void WarpControl::run()
 			std::cout << "====== JOB " << _counter << " / " <<
 			_jobs.size() << " ======" << std::endl;
 			std::cout << std::endl;
+			
+			_warp->saveSpace("backup.json");
 		}
 
 		if (_finish)
 		{
+			_warp->saveSpace("done.json");
 			break;
 		}
 	}

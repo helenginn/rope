@@ -106,6 +106,7 @@ public:
 	}
 
 	void cleanup();
+	void saveSpace(const std::string &filename);
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
 	
