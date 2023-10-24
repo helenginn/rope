@@ -118,6 +118,10 @@ void Refinement::prepareInstance(Instance *mol)
 void Refinement::setupRefiner(Refine::Info &info)
 {
 	Instance *mol = info.instance;
+	if (!mol->hasSequence())
+	{
+		return;
+	}
 	
 	int dims = info.axes.size();
 	
@@ -144,7 +148,7 @@ void Refinement::setupRefiner(Refine::Info &info)
 
 void Refinement::play()
 {
-	calculatedMapAtoms();
+//	calculatedMapAtoms();
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.instance];
