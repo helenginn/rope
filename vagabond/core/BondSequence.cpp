@@ -595,10 +595,11 @@ void BondSequence::reflagDepth(int min, int max, bool limit_max)
 	
 	std::vector<int> torsion_idxs{};
 
+	int n = -1;
 	for (AtomBlock &block : _blocks)
 	{
-		if (limit_max && block.flag && 
-		    (block.depth - _blocks[min].depth > target))
+		n++;
+		if (limit_max && block.flag && n > max)
 		{
 			block.flag = false;
 		}
