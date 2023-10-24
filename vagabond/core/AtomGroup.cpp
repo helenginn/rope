@@ -263,7 +263,8 @@ Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name,
 			continue;
 		}
 
-		if (_atoms[i]->residueId() == id && name == "")
+		if (_atoms[i]->residueId() == id && name == "" 
+		    && _atoms[i]->isReporterAtom())
 		{
 			return _atoms[i];
 		}
@@ -281,7 +282,9 @@ rope::MonomerType AtomGroup::monomerType(const ResidueId &id)
 {
 	for (Atom *atom : _atoms)
 	{
-		if ((atom->atomName()=="CA" || atom->atomName()=="N" ||atom->atomName()=="C") && (atom->residueId()==id))
+		if ((atom->atomName()=="CA" || 
+		     atom->atomName()=="N" ||
+		     atom->atomName()=="C") && (atom->residueId() == id))
 		{
 			return rope::IsAminoAcid;
 		}
@@ -289,11 +292,9 @@ rope::MonomerType AtomGroup::monomerType(const ResidueId &id)
 		{
 			return rope::IsNucleicAcid;
 		}
-/*		else if (atom->residueId()==id)
-		{
-			return rope::IsOther;
-		}*/
 	}
+
+	return rope::IsOther;
 }
 AtomVector AtomGroup::atomsWithName(std::string name) const
 {

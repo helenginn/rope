@@ -419,17 +419,22 @@ bool Atom::isMainChain(std::string atomName)
 	return (isCoreMainChain(atomName) || atomName == "CB");
 }
 
-bool Atom::isCoreMainChain(std::string atomName)
+bool Atom::isCoreMainChain(std::string n)
 {
-	return (atomName == "CA" || atomName == "N" || atomName == "O"
-	        || atomName == "O" || atomName == "H" || atomName == "HA" 
-	        || atomName == "C");
+	bool pep =  (n == "CA" || n == "N" || n == "O"
+	             || n == "O" || n == "H" || n == "HA" 
+	             || n == "C");
 
+	bool nuc = (n == "P" || n == "O5'" || n == "C5'" || n == "C4'" ||
+	            n == "C3'" || n == "O3'");
+	
+	
+	return pep || nuc;
 }
 
 bool Atom::isReporterAtom(std::string atom)
 {
-	return atom == "CA" ||atom == "P";
+	return atom == "CA" || atom == "P";
 }
 
 bool Atom::isCoreMainChain() const
