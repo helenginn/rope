@@ -608,7 +608,7 @@ void BondSequence::reflagDepth(int min, int max, bool limit_max)
 		{
 			continue;
 		}
-
+		
 		if (block.torsion_idx >= 0)
 		{
 			torsion_idxs.push_back(block.torsion_idx);

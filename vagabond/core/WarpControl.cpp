@@ -279,7 +279,7 @@ float WarpControl::scoreBetween(int start, int end)
 	if (start < 0) start = 0;
 	if (end > nb) end = nb;
 
-	_calculator->setMinMaxDepth(start, end);
+	_calculator->setMinMaxDepth(start, end, true);
 	_calculator->start();
 
 	_warp->resetComparison();
@@ -372,8 +372,8 @@ bool wind(const FlexScoreMap &peaks, int &idx, int dir)
 
 bool expand_further(const FlexScoreMap &peaks, Between &between)
 {
-	bool changed = wind(peaks, between.start, -3);
-	changed |= wind(peaks, between.end, +7);
+	bool changed = wind(peaks, between.start, -5);
+	changed |= wind(peaks, between.end, +5);
 
 	return changed;
 }
