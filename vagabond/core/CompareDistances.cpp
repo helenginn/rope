@@ -99,6 +99,7 @@ void CompareDistances::setupMatrix()
 {
 	if (_matrix.rows == 0 || _matrix.cols == 0)
 	{
+		PCA::freeMatrix(&_matrix);
 		int left = _leftAtoms.size();
 		int right = _equal ? _leftAtoms.size() : _rightAtoms.size();
 		PCA::setupMatrix(&_matrix, left, right);
