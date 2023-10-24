@@ -327,7 +327,9 @@ Result *BondCalculator::acquireResult()
 
 void BondCalculator::recycleResult(Result *r)
 {
-	_recyclePool.pushObject(r);
+	r->destroy();
+	delete r;
+//	_recyclePool.pushObject(r);
 }
 
 Result *BondCalculator::emptyResult()
