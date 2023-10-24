@@ -416,14 +416,13 @@ const std::string Atom::desc() const
 
 bool Atom::isMainChain(std::string atomName)
 {
-	return (isCoreMainChain(atomName) || atomName == "CB");
+	return (isCoreMainChain(atomName) || atomName == "CB" ||
+	        atomName == "O" || atomName == "HA" || n == "H");
 }
 
 bool Atom::isCoreMainChain(std::string n)
 {
-	bool pep =  (n == "CA" || n == "N" || n == "O"
-	             || n == "O" || n == "H" || n == "HA" 
-	             || n == "C");
+	bool pep =  (n == "CA" || n == "N" || n == "C");
 
 	bool nuc = (n == "P" || n == "O5'" || n == "C5'" || n == "C4'" ||
 	            n == "C3'" || n == "O3'");

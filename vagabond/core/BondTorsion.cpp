@@ -74,8 +74,7 @@ bool BondTorsion::operator==(const BondTorsion &other) const
 
 bool BondTorsion::coversMainChain() const
 {
-	return (_a->isMainChain() && _b->isMainChain() && 
-	         _c->isMainChain() && _d->isMainChain());
+	return (_b->isCoreMainChain() && _c->isCoreMainChain());
 }
 
 bool BondTorsion::isConstrained() const
