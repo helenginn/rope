@@ -149,6 +149,10 @@ void MapView::startPlot()
 void MapView::startWorker()
 {
 	_refined = false;
+	if (_worker)
+	{
+		stopWorker();
+	}
 	_worker = new std::thread(WarpControl::start_run, _wc, _allResidues);
 }
 
@@ -156,6 +160,8 @@ void MapView::stopWorker()
 {
 	_wc->finish();
 	_worker->detach();
+	delete _worker;
+	_worker = nullptr;
 }
 
 void MapView::startPause()
@@ -163,8 +169,6 @@ void MapView::startPause()
 	if (_worker)
 	{
 		stopWorker();
-		delete _worker;
-		_worker = nullptr;
 	}
 
 	_refine->setInert(true);
