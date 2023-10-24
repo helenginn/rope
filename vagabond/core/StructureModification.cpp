@@ -148,13 +148,6 @@ void StructureModification::startCalculator()
 	finishHetatmCalculator();
 }
 
-bool StructureModification::fillBasis(ConcertedBasis *cb, 
-                                      const RTAngles &angles, int axis)
-{
-	bool result = cb->fillFromInstanceList(_instance, axis, angles);
-	return result;
-}
-
 void StructureModification::changeInstance(Instance *m)
 {
 	_instance = m;

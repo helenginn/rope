@@ -20,7 +20,6 @@
 #include "TorsionBasis.h"
 #include "Parameter.h"
 #include "SimpleBasis.h"
-#include "ConcertedBasis.h"
 
 TorsionBasis::TorsionBasis()
 {
@@ -34,16 +33,6 @@ TorsionBasis *TorsionBasis::newBasis(Type type)
 	if (type == TorsionBasis::TypeSimple)
 	{
 		basis = new SimpleBasis();
-	}
-	else if (type == TorsionBasis::TypeCustom)
-	{
-		ConcertedBasis *cb = new ConcertedBasis();
-		cb->setCustom(true);
-		basis = cb;
-	}
-	else if (type == TorsionBasis::TypeConcerted)
-	{
-		basis = new ConcertedBasis();
 	}
 
 	return basis;

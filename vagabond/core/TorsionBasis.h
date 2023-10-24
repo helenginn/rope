@@ -34,9 +34,6 @@ public:
 	enum Type
 	{
 		TypeSimple,
-		TypeCustom,
-		TypeOnPath,
-		TypeConcerted,
 	};
 
 	TorsionBasis();

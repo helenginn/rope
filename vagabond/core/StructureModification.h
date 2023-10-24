@@ -35,7 +35,6 @@ class Cluster;
 class TorsionCluster;
 class Instance;
 class BondCalculator;
-class ConcertedBasis;
 class AtomContent;
 class Atom;
 
@@ -120,8 +119,6 @@ protected:
 
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 
-	bool fillBasis(ConcertedBasis *cb, const RTAngles &angles, int axis = 0);
-
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
 	bool checkForInstance(AtomGroup *grp);
@@ -157,7 +154,7 @@ protected:
 	TicketScores _point2Score;
 	
 	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
-	TorsionBasis::Type _torsionType = TorsionBasis::TypeCustom;
+	TorsionBasis::Type _torsionType = TorsionBasis::TypeSimple;
 };
 
 #endif
