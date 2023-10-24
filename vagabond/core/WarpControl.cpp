@@ -184,7 +184,7 @@ void WarpControl::run()
 		_counter = 0;
 	}
 	
-	while (_jobs.size() > 0 && _counter < _jobs.size() - 1)
+	while (_jobs.size() > 0 && _counter < _jobs.size())
 	{
 		_jobs[_counter]();
 		_counter++;
@@ -360,7 +360,7 @@ bool wind(const FlexScoreMap &peaks, int &idx, int dir)
 	}
 
 	const FlexScore &next = peaks.at(idx + dir * step);
-	if ((curr.score >= next.score * 0.999 || curr.score < 0) && 
+	if ((curr.score >= next.score * 0.9 || curr.score < 0) && 
 	    !curr.covered)
 	{
 		idx += dir * step;
@@ -372,8 +372,8 @@ bool wind(const FlexScoreMap &peaks, int &idx, int dir)
 
 bool expand_further(const FlexScoreMap &peaks, Between &between)
 {
-	bool changed = wind(peaks, between.start, -5);
-	changed |= wind(peaks, between.end, +5);
+	bool changed = wind(peaks, between.start, -3);
+	changed |= wind(peaks, between.end, +7);
 
 	return changed;
 }
@@ -490,6 +490,9 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 		start--;
 	}
 	
+	ps.expandNeighbours();
+	prefilterParameters(ps);
+	std::cout << "Procured parameters: " << ps.size() << std::endl;
 	std::vector<ParamSet> sets;
 	ParamSet subset = ps.terminalSubset();
 	
@@ -500,11 +503,20 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 		subset = ps.terminalSubset();
 	}
 	
+	sets.push_back(subset);
 	std::reverse(sets.begin(), sets.end());
 	
 	for (size_t i = 1; i < sets.size(); i++)
 	{
-		sets[i] += sets[0];
+		sets[i] += sets[i - 1];
+	}
+	
+	while (sets.size() < 8)
+	{
+		ParamSet next = sets.back();
+		next.expandNeighbours();
+		prefilterParameters(next);
+		sets.push_back(next);
 	}
 	
 	return [wc, sets, large]()
@@ -512,16 +524,19 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 		int start = large.start;
 		wc->calculator()->setMinMaxDepth(start, large.end, true);
 		float last = -1;
+		bool first = true;
 
 		while (true)
 		{
+			std::cout << "Going through " << sets.size() << 
+			" sets of parameters." << std::endl;
 			for (const ParamSet &set : sets)
 			{
 				wc->calculator()->setMinMaxDepth(start, large.end, true);
 				float before = wc->score();
 				wc->calculator()->start();
-				bool success = wc->refineBetween(set, 3);
-				if (!success)
+				bool success = wc->refineBetween(set, 1);
+				if (!success && first)
 				{
 					start--;
 				}
@@ -532,9 +547,11 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 				wc->resetTickets();
 			}
 
+			first = false;
 			float newest = wc->score();
 			if (newest > 0.9 * last)
 			{
+				std::cout << "That was OK" << std::endl;
 				break; // not enough of an improvement to do another round
 			}
 			last = newest;
@@ -621,6 +638,36 @@ void convert_expansion_to_job(std::vector<std::function<void()>> &jobs,
 	}
 }
 
+void averageNeighbours(FlexScoreMap &map)
+{
+	FlexScoreMap copy = map;
+
+	auto prev = copy.begin();
+	auto next = copy.begin();
+	for (auto it = copy.begin(); it != copy.end(); it = next)
+	{
+		do
+		{
+			next++;
+		} 
+		while (next != copy.end() && next->second.score < 0);
+
+		if (next == copy.end())
+		{
+			break;
+		}
+
+		int idx = it->first;
+		it->second.score = (prev->second.score + 
+		                    it->second.score + 
+		                    next->second.score) / 3.;
+
+		prev = it;
+	}
+
+	map = copy;
+}
+
 FlexScoreMap scanDiagonal(WarpControl *wc, int size)
 {
 	std::map<int, FlexScore> scores;
@@ -633,14 +680,20 @@ FlexScoreMap scanDiagonal(WarpControl *wc, int size)
 		{
 			score = -1;
 		}
-		else
-		{
-			std::cout << mid << " = " << score << std::endl;
-		}
 
 		scores[mid] = {score, size, false};
 	}
 
+	averageNeighbours(scores);
+	averageNeighbours(scores);
+
+	for (auto it = scores.begin(); it != scores.end(); it++)
+	{
+		if (it->second.score >= 0)
+		{
+			std::cout << it->first << " = " << it->second.score << std::endl;
+		}
+	}
 	return scores;
 }
 
