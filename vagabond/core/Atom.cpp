@@ -417,7 +417,7 @@ const std::string Atom::desc() const
 bool Atom::isMainChain(std::string atomName)
 {
 	return (isCoreMainChain(atomName) || atomName == "CB" ||
-	        atomName == "O" || atomName == "HA" || n == "H");
+	        atomName == "O" || atomName == "HA" || atomName == "H");
 }
 
 bool Atom::isCoreMainChain(std::string n)
