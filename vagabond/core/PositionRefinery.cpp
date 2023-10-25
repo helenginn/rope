@@ -25,6 +25,7 @@
 #include "TorsionBasis.h"
 #include "SimplexEngine.h"
 #include "ChemotaxisEngine.h"
+#include "Result.h"
 
 PositionRefinery::PositionRefinery(AtomGroup *group)
 {

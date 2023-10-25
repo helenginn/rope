@@ -22,7 +22,7 @@
 #include "engine/CorrelationHandler.h"
 #include "engine/workers/ThreadMapSummer.h"
 #include "AtomSegment.h"
-#include "Job.h"
+#include "Result.h"
 
 MapSumHandler::MapSumHandler(BondCalculator *calculator)
 {

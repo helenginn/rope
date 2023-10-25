@@ -19,6 +19,7 @@
 #include "SurfaceAreaHandler.h"
 #include "workers/ThreadSurfacer.h"
 #include "AreaMeasurer.h"
+#include <thread>
 
 SurfaceAreaHandler::SurfaceAreaHandler(BondCalculator *calculator)
 {

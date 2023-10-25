@@ -21,6 +21,7 @@
 #include "ArbitraryMap.h"
 #include "AtomMap.h"
 #include "PathManager.h"
+#include "Result.h"
 #include "Warp.h"
 #include "ChemotaxisEngine.h"
 

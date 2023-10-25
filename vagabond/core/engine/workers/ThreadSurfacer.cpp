@@ -20,6 +20,7 @@
 #include "engine/SurfaceAreaHandler.h"
 #include "engine/AreaMeasurer.h"
 #include "BondCalculator.h"
+#include "Result.h"
 
 ThreadSurfacer::ThreadSurfacer(SurfaceAreaHandler *h) : ThreadWorker()
 {

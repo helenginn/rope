@@ -20,9 +20,11 @@
 #define __vagabond__SurfaceAreaHandler__
 
 #include "Handler.h"
+#include "AtomPosMap.h"
 
 class AreaMeasurer;
 class BondCalculator;
+
 
 class SurfaceAreaHandler : public Handler
 {

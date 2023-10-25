@@ -22,6 +22,7 @@
 #include "Superpose.h"
 #include "AtomGroup.h"
 #include "Atom.h"
+#include "Result.h"
 #include "BondCalculator.h"
 
 AlignmentTool::AlignmentTool(AtomGroup *group)

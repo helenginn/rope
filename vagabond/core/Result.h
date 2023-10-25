@@ -16,42 +16,41 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Atom.h"
-#include "Result.h"
+#ifndef __vagabond__Result__
+#define __vagabond__Result__
 
-void Result::transplantPositions(bool displayTargets)
+#include "Job.h"
+#include "AtomMap.h"
+
+struct Result
 {
-	if (apl.size() > 0)
+	int ticket;
+	JobType requests;
+	AtomPosMap aps{};
+	AtomPosList apl{};
+	double deviation;
+	double score;
+	double correlation;
+	float surface_area;
+	AtomMap *map = nullptr;
+
+	std::mutex handout;
+	
+	void setFromJob(Job *job)
 	{
-		for (const AtomWithPos &awp : apl)
-		{
-			glm::vec3 disp = displayTargets ? awp.wp.target : awp.wp.ave;
-
-			if (disp.x != disp.x)
-			{
-				continue;
-			}
-
-			awp.atom->setDerivedPosition(disp);
-		}
+		requests = job->requests;
+		ticket = job->ticket;
+		job->result = this;
 	}
-	else if (aps.size() > 0)
+	
+	void transplantColours();
+	
+	void transplantPositions(bool displayTargets = false);
+	
+	void destroy()
 	{
-		AtomPosMap::iterator it;
-		for (it = aps.begin(); it != aps.end(); it++)
-		{
-			it->second.ave /= (float)it->second.samples.size();
-			it->first->setDerivedPositions(it->second);
-		}
+		delete map;
 	}
-}
+};
 
-void Result::transplantColours()
-{
-	AtomPosMap::iterator it;
-	for (it = aps.begin(); it != aps.end(); it++)
-	{
-		it->first->setAddedColour(it->second.colour);
-	}
-
-}
+#endif

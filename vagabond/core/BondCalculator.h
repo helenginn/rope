@@ -26,6 +26,8 @@
 #include <queue>
 #include "engine/Handler.h"
 #include "engine/JobManager.h"
+#include "AtomMap.h"
+#include "AtomPosMap.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"

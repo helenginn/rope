@@ -24,6 +24,7 @@
 #include "../core/BondCalculator.h"
 #include <vagabond/core/AtomMap.h>
 #include "../core/ArbitraryMap.h"
+#include "Result.h"
 #define MC_IMPLEM_ENABLE
 #include "MC.h"
 

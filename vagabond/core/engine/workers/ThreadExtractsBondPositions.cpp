@@ -24,6 +24,7 @@
 #include "BondCalculator.h"
 #include "engine/PointStoreHandler.h"
 #include "BondSequence.h"
+#include "Result.h"
 #include <iostream>
 #include <algorithm>
 

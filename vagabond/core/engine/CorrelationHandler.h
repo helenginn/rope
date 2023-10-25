@@ -21,6 +21,7 @@
 
 #include <thread>
 #include "engine/Handler.h"
+#include <fftw3.h>
 
 class BondCalculator;
 class MapSumHandler;

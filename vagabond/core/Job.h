@@ -21,15 +21,11 @@
 
 #include <vector>
 #include <map>
-#include <queue>
-#include <thread>
-#include "Atom.h"
-#include "AtomMap.h"
 #include "engine/JobManager.h"
 
-class ThreadWorker;
 class BondSequence;
 class MapTransfer;
+
 struct Result;
 
 enum SequenceState
@@ -69,39 +65,6 @@ struct Job
 	void destroy()
 	{
 		delete this;
-	}
-};
-
-class ElementSegment;
-
-struct Result
-{
-	int ticket;
-	JobType requests;
-	AtomPosMap aps{};
-	AtomPosList apl{};
-	double deviation;
-	double score;
-	double correlation;
-	float surface_area;
-	AtomMap *map = nullptr;
-
-	std::mutex handout;
-	
-	void setFromJob(Job *job)
-	{
-		requests = job->requests;
-		ticket = job->ticket;
-		job->result = this;
-	}
-	
-	void transplantColours();
-	
-	void transplantPositions(bool displayTargets = false);
-	
-	void destroy()
-	{
-		delete map;
 	}
 };
 

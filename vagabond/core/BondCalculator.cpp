@@ -25,6 +25,7 @@
 #include "engine/PointStoreHandler.h"
 #include "engine/SolventHandler.h"
 #include "engine/MapSumHandler.h"
+#include "Result.h"
 
 BondCalculator::BondCalculator()
 {

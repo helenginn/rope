@@ -19,6 +19,8 @@
 #ifndef __vagabond__SerialJob__cpp__
 #define __vagabond__SerialJob__cpp__
 
+#include <thread>
+
 template <class Obj, class Thr>
 SerialJob<Obj, Thr>::SerialJob(SerialJobResponder<Obj> *responder)
 {

@@ -20,6 +20,7 @@
 #include <vagabond/core/Polymer.h>
 #include "EntityManager.h"
 #include "ModelManager.h"
+#include "Result.h"
 
 StructureModification::StructureModification(Instance *mol)
 {

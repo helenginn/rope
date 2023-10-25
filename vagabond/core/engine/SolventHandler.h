@@ -19,6 +19,7 @@
 #ifndef __vagabond__SolventHandler__
 #define __vagabond__SolventHandler__
 
+#include "AtomPosMap.h"
 #include "engine/Handler.h"
 
 class BondCalculator;

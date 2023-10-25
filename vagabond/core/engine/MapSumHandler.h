@@ -24,6 +24,7 @@
 
 class MiniJobMap;
 class CorrelationHandler;
+class ElementSegment;
 class AtomSegment;
 class AtomMap;
 

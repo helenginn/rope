@@ -20,6 +20,7 @@
 #include "engine/CorrelationHandler.h"
 #include "engine/MapSumHandler.h"
 #include "engine/Correlator.h"
+#include "Result.h"
 
 ThreadCorrelation::ThreadCorrelation(CorrelationHandler *h) : ThreadWorker()
 {

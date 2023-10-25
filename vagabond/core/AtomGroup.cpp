@@ -20,13 +20,14 @@
 #include "AlignmentTool.h"
 #include "BondLength.h"
 #include "Grapher.h"
-#include "../utils/FileReader.h"
+#include <vagabond/utils/FileReader.h>
 #include "BondTorsion.h"
 #include "TorsionBasis.h"
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
 #include "Sequence.h"
 #include "PdbFile.h"
+#include "Result.h"
 
 #include <algorithm>
 #include <iostream>

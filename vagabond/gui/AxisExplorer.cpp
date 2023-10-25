@@ -30,9 +30,9 @@
 #include <vagabond/core/AtomBlock.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Entity.h>
-#include <vagabond/core/Residue.h>
 #include <vagabond/core/Torsion2Atomic.h>
 #include <vagabond/core/TorsionBasis.h>
+#include <vagabond/core/Result.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst)
