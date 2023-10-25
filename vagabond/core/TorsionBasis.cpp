@@ -19,23 +19,10 @@
 #include <iostream>
 #include "TorsionBasis.h"
 #include "Parameter.h"
-#include "SimpleBasis.h"
 
 TorsionBasis::TorsionBasis()
 {
 
-}
-
-TorsionBasis *TorsionBasis::newBasis(Type type)
-{
-	TorsionBasis *basis = nullptr;
-
-	if (type == TorsionBasis::TypeSimple)
-	{
-		basis = new SimpleBasis();
-	}
-
-	return basis;
 }
 
 void TorsionBasis::absorbVector(const Coord::Get &coord)
@@ -74,6 +61,15 @@ int TorsionBasis::addParameter(Parameter *param, Atom *atom)
 
 void TorsionBasis::prepare(int dims)
 {
+	_angles.clear();
+
+	for (size_t i = 0; i < _params.size(); i++)
+	{
+		float start = _params[i]->value();
+		bool mask = !_params[i]->isConstrained();
+		TorsionAngle ta = {start, mask};
+		_angles.push_back(ta);
+	}
 
 }
 
@@ -126,12 +122,5 @@ std::vector<int> TorsionBasis::grabIndices(const std::set<Parameter *> &params)
 	}
 	
 	return indices;
-}
-
-Coord::Interpolate<float> TorsionBasis::valueForParameter(BondSequence *seq, 
-                                                          int tidx)
-{
-	Coord::Interpolate<float> ret{};
-	return ret;
 }
 

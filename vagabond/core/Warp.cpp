@@ -32,6 +32,15 @@ Warp::Warp(Instance *ref, size_t num_axes)
 	_threads = 6;
 }
 
+void Warp::addTorsionsToJob(Job *job)
+{
+	job->fetchTorsion = [this](const Coord::Get &get, const int &idx)
+	{
+		float t = _torsion_angles_for_coord(get, idx);
+		return t;
+	};
+}
+
 int Warp::submitJob(bool show, const std::vector<float> &vals)
 {
 	for (BondCalculator *calc : _calculators)
@@ -45,12 +54,8 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 			return p;
 		};
 		
-		job.fetchTorsion = [this](const Coord::Get &get, const int &idx)
-		{
-			float t = _torsion_angles_for_coord(get, idx);
-			return t;
-		};
-
+		addTorsionsToJob(&job);
+		
 		job.requests = static_cast<JobType>(JobPositionVector |
 		                                    JobCalculateDeviations);
 		if (!show)
@@ -117,34 +122,6 @@ void Warp::setup()
 	};
 	
 	_displayTargets = true;
-}
-
-glm::vec3 Warp::prewarnAtom(BondSequence *bc, const Coord::Get &get, int index)
-{
-	glm::vec3 p = _atom_positions_for_coord(get, index);
-	p += _base.positions[index];
-	return p;
-}
-
-bool Warp::prewarnAtoms(BondSequence *bc, const Coord::Get &get, Vec3s &ps)
-{
-	ps.clear();
-	return true;
-}
-
-
-float Warp::prewarnBond(BondSequence *bc, const Coord::Get &get, int index)
-{
-	float t = _torsion_angles_for_coord(get, index);
-	t += _base.torsions[index];
-	return t;
-}
-
-void Warp::prewarnBonds(BondSequence *seq, const Coord::Get &get, Floats &ts)
-{
-	// set ts to the torsion angles for this get
-	ts.clear();
-	return;
 }
 
 void Warp::prepareAtoms()

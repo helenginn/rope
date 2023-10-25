@@ -28,7 +28,6 @@
 #include "engine/JobManager.h"
 
 class ThreadWorker;
-class PositionSampler;
 class BondSequence;
 class MapTransfer;
 struct Result;
@@ -64,7 +63,6 @@ struct Job
 	int ticket = -1;
 	bool absorb = false;
 	JobType requests;
-	PositionSampler *pos_sampler = nullptr;
 
 	Result *result = nullptr;
 	

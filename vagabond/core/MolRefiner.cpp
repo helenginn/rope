@@ -132,7 +132,7 @@ void MolRefiner::submitJob(std::vector<float> all, std::vector<float> tensor,
 	for (BondCalculator *calc : _calculators)
 	{
 		Job job{};
-		job.pos_sampler = _warp;
+		_warp->addTorsionsToJob(&job);
 		job.parameters = all;
 
 		job.requests = static_cast<JobType>(JobExtractPositions |

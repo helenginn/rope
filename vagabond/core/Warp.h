@@ -19,8 +19,8 @@
 #ifndef __vagabond__Warp__
 #define __vagabond__Warp__
 
+#include <vagabond/utils/Vec3s.h>
 #include "StructureModification.h"
-#include "PositionSampler.h"
 #include <vagabond/core/Responder.h>
 #include <vagabond/utils/AcquireCoord.h>
 #include "AtomPosMap.h"
@@ -31,7 +31,7 @@ class BondSequence;
 class CompareDistances;
 class TorsionWarp;
 
-class Warp : public StructureModification, public PositionSampler,
+class Warp : public StructureModification,
 public HasResponder<Responder<Warp>>
 {
 public:
@@ -49,16 +49,8 @@ public:
 	std::function<float()> score(const std::vector<Floats> &points);
 
 	int submitJob(bool show, const std::vector<float> &vals);
-
-	virtual glm::vec3 prewarnAtom(BondSequence *bc, const Coord::Get &get,
-	                              int index);
-	virtual bool prewarnAtoms(BondSequence *bc, const Coord::Get &get,
-	                          Vec3s &positions);
-
-	virtual float prewarnBond(BondSequence *bc, const Coord::Get &get,
-	                              int index);
-	virtual void prewarnBonds(BondSequence *seq, const Coord::Get &get,
-	                          Floats &torsions);
+	
+	void addTorsionsToJob(Job *job);
 	
 	void setAtomMotions(std::function<glm::vec3(const Coord::Get &, int num)> &func)
 	{

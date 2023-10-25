@@ -45,27 +45,12 @@ public:
 	 * 		        corresponding to each torsion angle */
 	virtual void supplyMask(std::vector<bool> mask) {}
 	
-	static TorsionBasis *newBasis(Type type);
-	
 	int addParameter(Parameter *param, Atom *atom = nullptr);
-
-	virtual Coord::Interpolate<float> valueForParameter(BondSequence *seq, 
-	                                                    int tidx) = 0;
 
 	virtual void absorbVector(const Coord::Get &coord);
 
 	std::vector<int> grabIndices(const std::set<Parameter *> &params);
 	void trimParametersToUsed(std::set<Parameter *> &params);
-	
-	virtual bool isSimple() const
-	{
-		return false;
-	}
-
-	virtual void supplyCalculatedTorsions(const std::vector<float> &floats)
-	{
-
-	}
 
 	const size_t parameterCount() const
 	{

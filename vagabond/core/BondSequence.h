@@ -200,16 +200,6 @@ private:
 	int calculateBlock(int idx, const Coord::Get &get);
 	float fetchTorsionForBlock(int idx, const Coord::Get &get);
 	void fetchAtomTarget(int idx, const Coord::Get &get);
-	
-	PositionSampler *posSampler()
-	{
-		return job()->pos_sampler;
-	}
-	
-	bool positionsAvailable()
-	{
-		return (posSampler() && _atomPositions.size() && _acceptablePositions);
-	}
 
 	Grapher _grapher;
 	std::vector<AtomBlock> _blocks;
@@ -241,10 +231,6 @@ private:
 	bool _usingPrograms = true;
 
 	bool _programsInitialised = false;
-	
-	Vec3s _atomPositions;
-	Floats _bondTorsions;
-	bool _acceptablePositions = false;
 	
 	Index::Convert _convertIndex = Index::identity();
 	int _activeTorsions = 0;

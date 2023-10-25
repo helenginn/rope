@@ -20,7 +20,6 @@
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
-#include "PositionSampler.h"
 #include "Superpose.h"
 #include "Atom.h"
 #include <iostream>
@@ -59,7 +58,7 @@ void BondSequence::makeTorsionBasis()
 {
 	if (!_torsionBasis)
 	{
-		_torsionBasis = TorsionBasis::newBasis(_basisType);
+		_torsionBasis = new TorsionBasis();
 	}
 }
 
@@ -176,24 +175,6 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get)
 		float diff = job()->fetchTorsion(shrunk, torsion_idx);
 		diff += torsionBasis()->referenceAngle(torsion_idx);
 		return diff;
-	}
-	if (_bondTorsions.size() > torsion_idx)
-	{
-		return _bondTorsions[torsion_idx];
-	}
-	else if (_bondTorsions.size() == 0 && 
-	         posSampler() && posSampler()->doesBonds())
-	{
-		return posSampler()->prewarnBond(this, get, torsion_idx);
-	}
-	
-	auto func = torsionBasis()->valueForParameter(this, torsion_idx);
-
-	if (func)
-	{
-		Coord::Get shrunk = Coord::convertedGet(get, _convertIndex);
-		float torsion = func(shrunk);
-		return torsion;
 	}
 
 	return 0;
@@ -634,7 +615,7 @@ void BondSequence::reflagDepth(int min, int max, bool limit_max)
 		_startCalc--;
 	}
 	
-	if (_torsionBasis->isSimple())
+	if (_skipSections)
 	{
 		_convertIndex = Index::from_list(torsion_idxs);
 		_activeTorsions = torsion_idxs.size();
