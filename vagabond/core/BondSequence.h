@@ -180,6 +180,7 @@ public:
 	}
 
 	float fetchTorsion(int idx, const Coord::Get &get);
+	void makeTorsionBasis();
 private:
 
 	struct AtomBlockTodo
@@ -194,7 +195,6 @@ private:
 	void markHydrogenGraphs();
 
 	void generateBlocks();
-	void makeTorsionBasis();
 
 	int calculateBlock(int idx, const Coord::Get &get);
 	float fetchTorsionForBlock(int idx, const Coord::Get &get);
