@@ -21,6 +21,8 @@
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/BondCalculator.h>
 
+#include <vagabond/core/Result.h>
+
 namespace tt = boost::test_tools;
 
 BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
