@@ -19,15 +19,13 @@
 #ifndef __vagabond__Handler__
 #define __vagabond__Handler__
 
-#include <deque>
+#include <list>
 #include "engine/SimplePhore.h"
 #include "engine/ExpectantPhore.h"
 #include "engine/workers/ThreadWorker.h"
 #include "Job.h"
 
-class PathResources;
-class PathTask;
-class PathFinder;
+class BaseTask;
 
 class Handler
 {
@@ -209,20 +207,14 @@ protected:
 
 	};
 	
-	class PathPool : public Pool<PathTask *>
+	class TaskPool : public Pool<BaseTask *>
 	{
-	private:
-		PathResources *_resource = nullptr;
-		std::atomic<int> _lost{0};
-	
 	public:
-		PathPool();
-		
-		void setup(PathFinder *pf);
+		TaskPool();
 
-		virtual void pluckFromQueue(PathTask *&task);
-		virtual void notifyFinishedObject(PathTask *&task);
-
+		size_t number_ready();
+		virtual void pluckFromQueue(BaseTask *&task);
+		virtual void insertIntoQueue(BaseTask *&task);
 	};
 
 	template <class Object>
