@@ -69,6 +69,19 @@ public:
 		return _coordGetFromParams;
 	}
 	
+	static rope::GetFloatFromCoordIdx identityTransformFloat()
+	{
+		auto get = [](const Coord::Get &all, const int &i) -> float
+		{
+			if (i >= 0)
+			{
+				return all(i);
+			}
+			return 0.f;
+		};
+		return get;
+	}
+	
 	static rope::GetListFromParameters identityTransform()
 	{
 		return [](const std::vector<float> &all)
@@ -103,8 +116,8 @@ private:
 	// return non-existent position
 	rope::GetVec3FromCoordIdx _atomFromCoordIdx = nanPosition();
 
-	// return non-existent position
-	rope::GetFloatFromCoordIdx _torsionFromCoordIdx{};
+	// return non-existent torsion
+	rope::GetFloatFromCoordIdx _torsionFromCoordIdx = identityTransformFloat();
 };
 
 #endif
