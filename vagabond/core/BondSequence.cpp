@@ -266,6 +266,61 @@ void BondSequence::superpose()
 	}
 }
 
+void BondSequence::getCalculationBoundaries(int &start, int &end)
+{
+	start = 0; end = blocks().size();
+	if (_skipSections && !_fullRecalc)
+	{
+		start = _startCalc;
+		end = _endCalc;
+	}
+}
+
+template <class Func>
+void loopThrough(BondSequence *seq, const rope::IntToCoordGet &coordForIdx, 
+                 Func &op)
+{
+	int start, end;
+	seq->getCalculationBoundaries(start, end);
+	
+	for (size_t j = 0; j < seq->sampleCount(); j++)
+	{
+		Coord::Get get = coordForIdx(j);
+		for (size_t i = start; i < end && i < seq->singleSequence(); i++)
+		{
+			int n = j * seq->singleSequence() + i;
+			op(n, get);
+		}
+	}
+}
+
+void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
+                                  rope::GetVec3FromCoordIdx &posForCoord)
+{
+	auto calculatePositions = [posForCoord, this](int idx, 
+	                                                 const Coord::Get &get)
+	{
+		AtomBlock &b = _blocks[idx];
+		_blocks[idx].target = posForCoord(get, idx);
+	};
+	
+	loopThrough(this, coordForIdx, calculatePositions);
+}
+
+void BondSequence::calculateTorsions(rope::IntToCoordGet coordForIdx,
+                                     rope::GetFloatFromCoordIdx &torsionForCoord)
+{
+	auto calculateTorsions = [torsionForCoord, this](int idx, 
+	                                                 const Coord::Get &get)
+	{
+		calculateBlock(idx, get, torsionForCoord);
+	};
+	
+	loopThrough(this, coordForIdx, calculateTorsions);
+
+	_fullRecalc = false;
+}
+
 void BondSequence::calculate(rope::IntToCoordGet coordForIdx,
                              rope::GetFloatFromCoordIdx &torsionForCoord)
 {
