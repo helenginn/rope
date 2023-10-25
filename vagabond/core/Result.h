@@ -20,6 +20,7 @@
 #define __vagabond__Result__
 
 #include "Job.h"
+#include "AtomPosMap.h"
 
 class AtomMap;
 
