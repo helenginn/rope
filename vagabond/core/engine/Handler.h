@@ -137,6 +137,16 @@ protected:
 			return result;
 		}
 		
+		void signal()
+		{
+			sem.signal();
+		}
+		
+		void reset()
+		{
+			sem.reset();
+		}
+		
 		virtual void notifyFinishedObject(Object &obj) {};
 		
 		virtual void pluckFromQueue(Object &obj)
@@ -146,6 +156,11 @@ protected:
 				obj = members.front();
 				members.pop_front();
 			}
+		}
+		
+		virtual void insertIntoQueue(Object &obj)
+		{
+			members.push_back(obj);
 		}
 
 		void acquireObject(Object &obj)
@@ -164,6 +179,12 @@ protected:
 				sem.signal();
 			}
 		}
+
+		void pushUnavailableObject(Object &obj)
+		{
+			std::unique_lock<std::mutex> lock(sem.mutex());
+			insertIntoQueue(obj);
+		}
 		
 		int pushObject(Object &obj, int *ticket = nullptr)
 		{
@@ -175,7 +196,7 @@ protected:
 			}
 
 			int mine = _id;
-			members.push_back(obj);
+			insertIntoQueue(obj);
 			sem.signal_one();
 			
 			return mine;
