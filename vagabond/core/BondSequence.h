@@ -142,7 +142,12 @@ public:
 		_state = SequenceInPreparation;
 	}
 
-	void calculate(rope::IntToCoordGet coordForIdx);
+	void calculate(rope::IntToCoordGet coordForIdx,
+	               rope::GetFloatFromCoordIdx &torsionForCoord);
+	void calculateTorsions(rope::IntToCoordGet coordForIdx,
+	                       rope::GetFloatFromCoordIdx &torsionForCoord);
+	void calculateAtoms(rope::IntToCoordGet coordForIdx,
+	                   rope::GetVec3FromCoordIdx &posForCoord);
 	void superpose();
 	const AtomPosMap &extractPositions();
 	void extractVector(AtomPosList &results);
@@ -174,13 +179,16 @@ public:
 		return _blocks;
 	}
 	
-	const int &nCoords() const
+	const int &singleSequence() const
 	{
-		return _nCoord;
+		return _singleSequence;
 	}
-
-	float fetchTorsion(int idx, const Coord::Get &get);
+	
+	float fetchTorsion(int idx, const Coord::Get &get,
+	                   const rope::GetFloatFromCoordIdx &fetch_torsion);
 	void makeTorsionBasis();
+	
+	void getCalculationBoundaries(int &start, int &end);
 private:
 
 	struct AtomBlockTodo
@@ -196,8 +204,8 @@ private:
 
 	void generateBlocks();
 
-	int calculateBlock(int idx, const Coord::Get &get);
-	float fetchTorsionForBlock(int idx, const Coord::Get &get);
+	int calculateBlock(int idx, const Coord::Get &get,
+	                   const rope::GetFloatFromCoordIdx &fetch_torsion);
 	void fetchAtomTarget(int idx, const Coord::Get &get);
 
 	Grapher _grapher;

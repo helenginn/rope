@@ -195,10 +195,11 @@ void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
 }
 
 void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
-                      const Coord::Get &coord)
+                      const Coord::Get &coord,
+                      const rope::GetFloatFromCoordIdx &fetch_torsion)
 {
 	_idx = rel;
-	fetchParameters(coord);
+	fetchParameters(blocks, coord, fetch_torsion);
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
 	alignRingExit(blocks);
@@ -330,12 +331,15 @@ void RingProgram::setParameterFromBasis(int param_idx, HyperValue *hv)
 	_values.push_back(hv);
 }
 
-void RingProgram::fetchParameters(const Coord::Get &coord)
+void RingProgram::fetchParameters(std::vector<AtomBlock> &blocks,
+                                  const Coord::Get &coord,
+                                  const rope::GetFloatFromCoordIdx &fetch_torsion)
 {
 	for (HyperValue *hv : _values)
 	{
 		int idx = _valueMapping[hv];
-		float t = _seq->fetchTorsion(idx, coord);
+		float t = _seq->fetchTorsion(blocks[idx].torsion_idx, 
+		                             coord, fetch_torsion);
 		_name2Value[hv->name()] = t;
 	}
 	

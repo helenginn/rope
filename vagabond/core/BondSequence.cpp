@@ -149,44 +149,33 @@ void BondSequence::multiplyUpBySampleCount()
 	}
 }
 
-float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get)
+float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get,
+                                 const rope::GetFloatFromCoordIdx &fetch_torsion)
 {
-	if (torsion_idx < 0)
-	{
-		return 0;
-	}
-
-	if (job()->fetchTorsion)
-	{
-		Coord::Get shrunk = get;
-		if (_skipSections)
-		{
-			shrunk = Coord::convertedGet(get, _convertIndex);
-		}
-		float diff = job()->fetchTorsion(shrunk, torsion_idx);
-		diff += torsionBasis()->referenceAngle(torsion_idx);
-		return diff;
-	}
-
-	return 0;
-}
-
-float BondSequence::fetchTorsionForBlock(int block_idx, const Coord::Get &get)
-{
-	AtomBlock &b = _blocks[block_idx];
-	int torsion_idx = b.torsion_idx;
+	if (torsion_idx < 0) return 0;
 	
-	float torsion = fetchTorsion(torsion_idx, get);
-	return torsion;
+	float torsion = 0;
+	Coord::Get shrunk = get;
+	if (_skipSections)
+	{
+		shrunk = Coord::convertedGet(get, _convertIndex);
+	}
+	float diff = fetch_torsion(shrunk, torsion_idx);
+	diff += torsionBasis()->referenceAngle(torsion_idx);
+	return diff;
 }
 
 void BondSequence::fetchAtomTarget(int idx, const Coord::Get &get)
 {
-	rope::GetVec3FromCoordIdx atomPos = job()->atomTargets;
-	_blocks[idx].target = atomPos(get, idx);
+	if (job())
+	{
+		rope::GetVec3FromCoordIdx atomPos = job()->atomTargets;
+		_blocks[idx].target = atomPos(get, idx);
+	}
 }
 
-int BondSequence::calculateBlock(int idx, const Coord::Get &get)
+int BondSequence::calculateBlock(int idx, const Coord::Get &get,
+                                 const rope::GetFloatFromCoordIdx &fetch_torsion)
 {
 	AtomBlock &b = _blocks[idx];
 	fetchAtomTarget(idx, get);
@@ -197,7 +186,7 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get)
 		return 0;
 	}
 
-	float t = fetchTorsionForBlock(idx, get);
+	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
 	
 	glm::mat4x4 rot = b.prepareRotation(t);
 
@@ -210,7 +199,7 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get)
 	if (progidx >= 0 && _usingPrograms)
 	{
 		_programs[progidx].setSequence(this);
-		_programs[progidx].run(_blocks, idx, get);
+		_programs[progidx].run(_blocks, idx, get, fetch_torsion);
 	}
 
 	return (b.atom == nullptr);
@@ -278,34 +267,35 @@ void BondSequence::superpose()
 }
 
 void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
+void BondSequence::calculate(rope::IntToCoordGet coordForIdx,
+                             rope::GetFloatFromCoordIdx &torsionForCoord)
 {
 	int sampleNum = 0;
 
-	_nCoord = job()->parameters.size();
 	Coord::Get get = {};
 
 	get = coordForIdx(sampleNum);
-	
+
 	int start = 0; int end = _blocks.size();
 	if (_skipSections && !_fullRecalc)
 	{
 		start = _startCalc;
 		end = _endCalc;
 	}
-	
+
 	for (size_t i = start; i < end && i < _blocks.size(); i++)
 	{
-		calculateBlock(i, get);
-		
+		calculateBlock(i, get, torsionForCoord);
+
 		if (i % _singleSequence == 0)
 		{
 			get = coordForIdx(sampleNum);
 			sampleNum++;
 		}
 	}
-	
+
 	_fullRecalc = false;
-	
+
 	superpose();
 
 	if (job()->absorb)
