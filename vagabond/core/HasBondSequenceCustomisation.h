@@ -43,6 +43,11 @@ public:
 		_mode = (total == 1 ? SingleSample : MultiSample);
 	}
 	
+	bool skipSections()
+	{
+		return _skipSections;
+	}
+	
 	void prepareToSkipSections(bool skipSections)
 	{
 		_skipSections = skipSections;
