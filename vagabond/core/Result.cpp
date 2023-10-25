@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Atom.h"
+#include "AtomMap.h"
 #include "Result.h"
 
 void Result::transplantPositions(bool displayTargets)
@@ -54,4 +55,8 @@ void Result::transplantColours()
 		it->first->setAddedColour(it->second.colour);
 	}
 
+}
+void Result::destroy()
+{
+	delete map;
 }

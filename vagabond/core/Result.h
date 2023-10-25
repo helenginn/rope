@@ -20,7 +20,8 @@
 #define __vagabond__Result__
 
 #include "Job.h"
-#include "AtomMap.h"
+
+class AtomMap;
 
 struct Result
 {
@@ -47,10 +48,7 @@ struct Result
 	
 	void transplantPositions(bool displayTargets = false);
 	
-	void destroy()
-	{
-		delete map;
-	}
+	void destroy();
 };
 
 #endif
