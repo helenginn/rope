@@ -104,7 +104,6 @@ public:
 
 	void cleanUpToIdle();
 	void beginJob(Job *job);
-	void removeTorsionBasis();
 	
 	const size_t maxDepth() const
 	{

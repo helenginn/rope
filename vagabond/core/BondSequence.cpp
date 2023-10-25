@@ -45,15 +45,6 @@ BondSequence::~BondSequence()
 }
 
 
-void BondSequence::removeTorsionBasis()
-{
-	if (_torsionBasis != nullptr)
-	{
-		delete _torsionBasis;
-		_torsionBasis = nullptr;
-	}
-}
-
 void BondSequence::makeTorsionBasis()
 {
 	if (!_torsionBasis)

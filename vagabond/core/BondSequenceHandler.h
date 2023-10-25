@@ -101,6 +101,7 @@ public:
 	void imposeDepthLimits(int min, int max, bool limit_max);
 
 	int activeTorsions();
+	void prepareSequences();
 private:
 	void prewarnPositionSampler();
 	void sanityCheckThreads();

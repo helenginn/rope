@@ -42,7 +42,7 @@ BondSequenceHandler::~BondSequenceHandler()
 	{
 		if (i == 0)
 		{
-			_sequences[i]->removeTorsionBasis();
+			delete _sequences[i]->torsionBasis();
 		}
 
 		delete _sequences[i];
@@ -105,18 +105,21 @@ void BondSequenceHandler::setup()
 	calculateThreads(_maxThreads);
 	sanityCheckThreads();
 	prepareSequenceBlocks();
-	int dimensions = 1;
-	torsionBasis()->prepare(dimensions);
+	torsionBasis()->prepare(1);
 }
 
-void BondSequenceHandler::start()
+void BondSequenceHandler::prepareSequences()
 {
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
 		_sequences[i]->reset();
 		_sequences[i]->prepareForIdle();
 	}
+}
 
+void BondSequenceHandler::start()
+{
+	prepareSequences();
 	prepareThreads();
 }
 
@@ -137,6 +140,11 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	for (size_t j = 0; j < _atoms.size(); j++)
 	{
 		sequence->addToGraph(_atoms[j]);
+	}
+
+	if (_atoms.size() == 0)
+	{
+		sequence->makeTorsionBasis();
 	}
 
 	sequence->multiplyUpBySampleCount();
