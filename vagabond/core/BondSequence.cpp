@@ -266,7 +266,6 @@ void BondSequence::superpose()
 	}
 }
 
-void BondSequence::calculate(rope::IntToCoordGet coordForIdx)
 void BondSequence::calculate(rope::IntToCoordGet coordForIdx,
                              rope::GetFloatFromCoordIdx &torsionForCoord)
 {
