@@ -39,7 +39,7 @@ protected:
 		std::atomic<int> _id{0};
 		std::atomic<bool> _finish{false};
 	protected:
-		std::deque<Object> members;
+		std::list<Object> members;
 		std::vector<std::thread *> threads;
 		std::vector<ThreadWorker *> workers;
 		Sem sem;
@@ -75,7 +75,7 @@ protected:
 			
 			threads.clear();
 			workers.clear();
-			std::deque<Object> tmp;
+			std::list<Object> tmp;
 			members.swap(tmp); // shouldn't be necessary...
 
 			_finish = false;
