@@ -39,6 +39,7 @@ class CorrelationHandler;
 class PointStoreHandler;
 class SolventHandler;
 class MapSumHandler;
+template <typename I, typename O> class Task;
 
 class PositionSampler;
 class Diffraction;
@@ -82,6 +83,12 @@ public:
 	
 	int submitJob(Job &job);
 	void submitResult(Result *result);
+	void submitResult(const Result &r);
+	
+	void holdHorses();
+	void releaseHorses();
+	
+	Task<Result, void *> *submitResult(int ticket);
 	
 	/** Set limits for which atoms should be used for output results such
 	 *  as deviation calculations for positions. All atom positions will

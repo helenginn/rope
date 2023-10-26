@@ -26,6 +26,7 @@
 #include "engine/SolventHandler.h"
 #include "engine/MapSumHandler.h"
 #include "Result.h"
+#include "engine/Task.h"
 
 BondCalculator::BondCalculator()
 {
@@ -40,6 +41,31 @@ BondCalculator::~BondCalculator()
 {
 	reset();
 	delete _manager;
+}
+
+Task<Result, void *> *BondCalculator::submitResult(int ticket)
+{
+	auto send = [this, ticket](Result result) -> void *
+	{
+		result.ticket = ticket;
+		submitResult(result);
+		return nullptr;
+	};
+
+	_resultPool.expect_one();
+	auto *submit = new Task<Result, void *>(send, "submit result");
+	return submit;
+
+}
+
+void BondCalculator::holdHorses()
+{
+	_resultPool.expect_one();
+}
+
+void BondCalculator::releaseHorses()
+{
+	_resultPool.release_one();
 }
 
 void BondCalculator::cleanupRecycling()
@@ -314,6 +340,16 @@ Result *BondCalculator::emptyResult()
 	{
 		return recycled;
 	}
+}
+
+void BondCalculator::submitResult(const Result &r)
+{
+	Result *remade = new Result(r);
+	_resultPool.pushObject(remade);
+
+	// an extra signal because we trapped this semaphore when submitting
+	// the corresponding job.
+	_resultPool.one_arrived();
 }
 
 void BondCalculator::submitResult(Result *r)
