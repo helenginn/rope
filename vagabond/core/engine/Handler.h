@@ -264,7 +264,7 @@ protected:
 		virtual void clearQueue()
 		{
 			CustomPool<Object, ExpectantPhore>::clearQueue();
-			this->sem.expect_none();
+			this->sem.expect_one_fewer();
 		}
 	};
 	

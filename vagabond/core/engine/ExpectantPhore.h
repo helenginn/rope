@@ -102,7 +102,7 @@ public:
 		_cv.notify_one();
 	}
 	
-	virtual void expect_none()
+	virtual void expect_one_fewer()
 	{
 		// when this is locked, this prevents threads dripping 
 		// through the filter
