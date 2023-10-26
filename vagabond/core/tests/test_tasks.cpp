@@ -17,11 +17,12 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/core/engine/Task.h>
+#include <vagabond/core/engine/Tasks.h>
 #include "Result.h"
 #include "PdbFile.h"
 #include "AtomGroup.h"
 #include "BondSequenceHandler.h"
-#include "BondSequence.h"
+#include "BondCalculator.h"
 #include <string>
 #include <iostream>
 
@@ -64,23 +65,23 @@ BOOST_AUTO_TEST_CASE(tasks_follow_well)
 	Task<float, std::string> *convert_three{}, *convert_five{};
 	Tasks tasks;
 	{
-		auto *make_three = new Task<int, float>(make_fixed_float(3), 0);
-		convert_three = new Task<float, std::string>(to_words, 0);
+		auto *make_three = new Task<int, float>(make_fixed_float(3));
+		convert_three = new Task<float, std::string>(to_words);
 		make_three->follow_with(convert_three);
 
 		tasks += {convert_three, make_three};
 	}
 
 	{
-		auto *make_five = new Task<int, float>(make_fixed_float(5), 1);
-		convert_five = new Task<float, std::string>(to_words, 1);
+		auto *make_five = new Task<int, float>(make_fixed_float(5));
+		convert_five = new Task<float, std::string>(to_words);
 
 		make_five->follow_with(convert_five);
 
 		tasks += {make_five, convert_five};
 	}
 
-	auto *speak_out_loud = new Task<strings, void *>(speak, 2);
+	auto *speak_out_loud = new Task<strings, void *>(speak);
 	convert_three->follow_with(speak_out_loud);
 	convert_five->follow_with(speak_out_loud);
 	tasks += {speak_out_loud};
@@ -98,35 +99,62 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	geom.parse();
 	AtomGroup *hexane = geom.atoms();
 
-	BondSequenceHandler handler;
-	handler.setMaxSimultaneousThreads(1);
-	handler.setTotalSamples(1);
-	handler.setSuperpose(true);
-	handler.setIgnoreHydrogens(true);
-	handler.addAnchorExtension(hexane->chosenAnchor());
+	BondCalculator *calculator = new BondCalculator();
 
-	handler.setup();
-	handler.prepareSequences();
-	
-	std::vector<float> params(handler.sequence(0)->torsionBasis()->parameterCount());
+	BondSequenceHandler *handler = new BondSequenceHandler();
+	handler->addAnchorExtension(hexane->chosenAnchor());
 
-	struct Job
-	{
-		int ticket;
-		BondSequence *sequence;
-	};
+	handler->setup();
+	handler->prepareSequences();
 	
+	std::vector<float> params(handler->sequence(0)->torsionBasis()->parameterCount());
+
 	int ticket = 1;
-	Task<Ticket, Ticket> *final_hook;
-	Task<Ticket, void *> *let_sequence_go;
+	Tasks *tasks = new Tasks();
 
-	CalcFlags flags = CalcFlags(DoTorsions | DoPositions | DoSuperpose);
-	Tasks *tasks = handler.calculate(ticket, flags, params, 
-	                                 &final_hook, &let_sequence_go);
+	for (size_t i = 0; i < 100; i++)
+	{
+		tasks->run(6);
+		calculator->holdHorses();
+		for (size_t t = 0; t < 200; t++)
+		{
 
-	final_hook->follow_with(let_sequence_go);
+			BaseTask *first_hook = nullptr;
+			Task<Ticket, Ticket> *final_hook = nullptr;
+			
+			Task<Result, void *> *submit_result = calculator->submitResult(t);
 
-	tasks->run(2);
+			Flag::Calc calc = Flag::Calc(Flag::DoTorsions 
+			                             | Flag::DoPositions 
+			                             | Flag::DoSuperpose);
+
+			Flag::Extract gets = Flag::Extract(Flag::Deviation 
+			                                   | Flag::AtomVector);
+
+			handler->calculate(t, calc, params, &first_hook, &final_hook);
+			handler->extract(gets, submit_result, final_hook);
+
+			tasks->addTask(first_hook);
+		}
+		calculator->releaseHorses();
+
+		std::cout << "Waiting..."<<std::endl;
+		
+		while (true)
+		{
+			Result *r = calculator->acquireResult();
+
+			if (r == nullptr)
+			{
+				break;
+			}
+
+			std::cout << r->deviation << " for " << r->ticket << " over ";
+			std::cout << r->apl.size() << std::endl;
+		}
+		
+		tasks->wait();
+	}
 
 	BOOST_TEST(true);
 }
