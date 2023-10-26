@@ -161,6 +161,23 @@ protected:
 			members.push_back(obj);
 		}
 
+		void acquireObjectIfAvailable(Object &obj)
+		{
+			obj = nullptr;
+			std::unique_lock<std::mutex> lock(sem.mutex(), std::defer_lock);
+			
+			if (lock.try_lock())
+			{
+				pluckFromQueue(obj);
+			}
+
+			// semaphore was signalled with empty object array
+			if (_finish)
+			{
+				sem.signal();
+			}
+		}
+
 		void acquireObject(Object &obj)
 		{
 			obj = nullptr;
