@@ -180,14 +180,12 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 	AtomBlock &b = _blocks[idx];
 	fetchAtomTarget(idx, get);
 
-	if (b.silenced && _usingPrograms)
+	float t = 0;
+	if (!b.silenced)
 	{
-		// this is part of a ring program.
-		return 0;
+		t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
 	}
 
-	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
-	
 	glm::mat4x4 rot = b.prepareRotation(t);
 
 	b.wip = b.basis * rot * b.coordination;
@@ -202,6 +200,7 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 		_programs[progidx].run(_blocks, idx, get, fetch_torsion);
 	}
 
+	
 	return (b.atom == nullptr);
 }
 
