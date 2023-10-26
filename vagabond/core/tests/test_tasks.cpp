@@ -99,16 +99,17 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	geom.parse();
 	AtomGroup *hexane = geom.atoms();
 
-	BondCalculator calculator;
-	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
-	calculator.setMaxSimultaneousThreads(1);
-	calculator.setTotalSamples(1);
-	calculator.setSuperpose(true);
-	calculator.addAnchorExtension(hexane->chosenAnchor());
-	calculator.setup();
-	calculator.sequenceHandler()->prepareSequences();
+	BondSequenceHandler handler;
+	handler.setMaxSimultaneousThreads(1);
+	handler.setTotalSamples(1);
+	handler.setSuperpose(true);
+	handler.setIgnoreHydrogens(true);
+	handler.addAnchorExtension(hexane->chosenAnchor());
+
+	handler.setup();
+	handler.prepareSequences();
 	
-	std::vector<float> params(calculator.sequence()->torsionBasis()->parameterCount());
+	std::vector<float> params(handler.sequence(0)->torsionBasis()->parameterCount());
 
 	struct Job
 	{
@@ -121,10 +122,10 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	
 	for (int i = 0; i < 30; i++)
 	{
-	auto grabSequence = [&calculator, ticket](void *) -> Job
+	auto grabSequence = [&handler, ticket](void *) -> Job
 	{
 		SequenceState state = SequenceIdle;
-		BondSequence *seq = calculator.sequenceHandler()->acquireSequence(state);
+		BondSequence *seq = handler.acquireSequence(state);
 		std::cout << "Grabbing sequence" << std::endl;
 		return Job{ticket, seq};
 	};
@@ -137,7 +138,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		return dev;
 	};
 
-	JobManager &manager = calculator.manager();
+	JobManager manager;
 	rope::GetListFromParameters transform = manager.defaultCoordTransform();
 	rope::IntToCoordGet paramToCoords = transform(params);
 	rope::GetFloatFromCoordIdx coordsToTorsions = manager.defaultTorsionFetcher();
