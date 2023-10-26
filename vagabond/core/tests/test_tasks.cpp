@@ -18,7 +18,7 @@
 
 #include <vagabond/core/engine/Task.h>
 #include "Result.h"
-#include "CifFile.h"
+#include "PdbFile.h"
 #include "AtomGroup.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
@@ -94,8 +94,8 @@ BOOST_AUTO_TEST_CASE(tasks_follow_well)
 
 BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 {
-	std::string path = "/Applications/ccp4-7.1/lib/data/monomers/c/CHX.cif";
-	CifFile geom = CifFile(path);
+	std::string path = "/Users/vgx18549/pdbs/stromelysin/1hfs-no-lig.pdb";
+	PdbFile geom = PdbFile(path);
 	geom.parse();
 	AtomGroup *hexane = geom.atoms();
 
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	int ticket = 1;
 	Tasks tasks;
 	
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 100; i++)
 	{
 	auto grabSequence = [&handler, ticket](void *) -> Job
 	{
@@ -138,26 +138,17 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		return dev;
 	};
 
-	JobManager manager;
-	rope::GetListFromParameters transform = manager.defaultCoordTransform();
+	CoordManager *manager = handler.manager();
+	rope::GetListFromParameters transform = manager->defaultCoordTransform();
 	rope::IntToCoordGet paramToCoords = transform(params);
-	rope::GetFloatFromCoordIdx coordsToTorsions = manager.defaultTorsionFetcher();
-	rope::GetVec3FromCoordIdx coordsToPos = manager.defaultAtomFetcher();
+	rope::GetFloatFromCoordIdx coordsToTorsions = manager->defaultTorsionFetcher();
+
+	rope::GetVec3FromCoordIdx coordsToPos = manager->defaultAtomFetcher();
 	
 	auto calculateAtoms = [paramToCoords, &coordsToTorsions](Job job) -> Job
 	{
 		std::cout << "calculating atoms from torsions" << std::endl;
 		job.sequence->calculateTorsions(paramToCoords, coordsToTorsions);
-		
-		for (AtomBlock &block : job.sequence->blocks())
-		{
-			if (block.atom)
-			{
-				std::cout << block.atom->desc() << " ";
-				std::cout << block.my_position() << std::endl;
-
-			}
-		}
 
 		return job;
 	};
@@ -166,6 +157,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	{
 		std::cout << "calculating positions of atoms" << std::endl;
 		job.sequence->calculateAtoms(paramToCoords, coordsToPos);
+
 		return job;
 	};
 
