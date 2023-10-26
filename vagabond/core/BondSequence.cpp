@@ -192,7 +192,7 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 
 	b.wip = b.basis * rot * b.coordination;
 
-	b.writeToChildren(_blocks, idx, _usingPrograms);
+	b.writeToChildren(_blocks, idx);
 
 	int &progidx = b.program;
 

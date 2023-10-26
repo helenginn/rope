@@ -89,8 +89,7 @@ struct AtomBlock
 
 	glm::mat4x4 prepareRotation(float t) const;
 	
-	void writeToChildren(std::vector<AtomBlock> &context, int idx,
-	                     bool usingPrograms);
+	void writeToChildren(std::vector<AtomBlock> &context, int idx);
 };
 
 #endif

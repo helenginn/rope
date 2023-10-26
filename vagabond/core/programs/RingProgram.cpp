@@ -230,7 +230,7 @@ void RingProgram::alignRingExit(std::vector<AtomBlock> &blocks)
 		torsion_basis(mine.basis, parent, gp, self);
 		child.inherit = parent;
 		
-		mine.writeToChildren(blocks, tg.self, true);
+		mine.writeToChildren(blocks, tg.self);
 	}
 
 }
@@ -246,6 +246,7 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 		_oldPositions[b_idx] = blocks[b_idx].my_position();
 
 		blocks[b_idx].basis[3] = glm::vec4(_cyclic.atomPos(c_idx), 1.f);
+		blocks[b_idx].writeToChildren(blocks, b_idx);
 	}
 }
 

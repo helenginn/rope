@@ -68,8 +68,7 @@ glm::mat4x4 AtomBlock::prepareRotation(float torsion) const
 	return rot;
 }
 
-void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx,
-                                bool usingPrograms)
+void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx)
 {
 	if (atom == nullptr) // is anchor
 	{
@@ -97,9 +96,8 @@ void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx,
 		}
 
 		int n = idx + write_locs[i];
-
-		// check that this block isn't silenced 
-		if (context[n].silenced && usingPrograms)
+		
+		if (context[n].silenced)
 		{
 			continue;
 		}
