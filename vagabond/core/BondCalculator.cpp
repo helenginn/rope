@@ -183,6 +183,7 @@ void BondCalculator::setupPointHandler()
 
 	_pointHandler = new PointStoreHandler(this);
 	_pointHandler->setThreads(_maxThreads);
+	// setup by BondSequenceHandler
 }
 
 void BondCalculator::setupSurfaceAreaHandler()
