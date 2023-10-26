@@ -39,8 +39,6 @@ public:
 	void setTotalSamples(int total)
 	{
 		_totalSamples = total;
-		
-		_mode = (total == 1 ? SingleSample : MultiSample);
 	}
 	
 	bool skipSections()
@@ -93,7 +91,6 @@ public:
 		other->_superpose = _superpose;
 		other->_loopCount = _loopCount;
 		other->_threads = _threads;
-		other->_mode = _mode;
 	}
 	
 protected:
@@ -107,14 +104,6 @@ protected:
 	size_t _totalSamples = 0;
 	size_t _maxThreads = 1;
 	size_t _threads = 1;
-
-	enum SampleMode
-	{
-		SingleSample,
-		MultiSample,
-	};
-
-	SampleMode _mode = MultiSample;
 };
 
 #endif
