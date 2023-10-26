@@ -26,6 +26,7 @@
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"
 
+class Tasks;
 class Sampler;
 class BondSequence;
 class BondCalculator;
@@ -33,7 +34,18 @@ class MapTransferHandler;
 class PointStoreHandler;
 class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
+template <typename I, typename O> class Task;
 	
+enum CalcFlags
+{
+	DoNothing = 1 << 0,
+	DoTorsions = 1 << 1,
+	DoPositions = 1 << 2,
+	DoSuperpose = 1 << 3,
+};
+
+typedef std::pair<int, BondSequence *> Ticket;
+
 class BondSequenceHandler : public Handler, public HasBondSequenceCustomisation
 {
 public:
@@ -87,6 +99,12 @@ public:
 	{
 		return _manager;
 	}
+
+	// final_hook is the job
+	Tasks *calculate(int ticket, CalcFlags flags,
+	                 const std::vector<float> &parameters,
+	                 Task<Ticket, Ticket> **final_hook,
+	                 Task<Ticket, void *> **let_sequence_go);
 
 	void signalToHandler(BondSequence *seq, SequenceState state);
 

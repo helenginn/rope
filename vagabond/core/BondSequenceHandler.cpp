@@ -23,6 +23,7 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/PointStoreHandler.h"
 #include "BondSequence.h"
+#include "engine/Task.h"
 #include <thread>
 
 BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
@@ -209,4 +210,94 @@ void BondSequenceHandler::imposeDepthLimits(int min, int max, bool limit_max)
 int BondSequenceHandler::activeTorsions()
 {
 	return sequence(0)->activeTorsions();
+}
+
+Tasks *BondSequenceHandler::calculate(int ticket, CalcFlags flags,
+                                     const std::vector<float> &parameters,
+                                     Task<Ticket, Ticket> **final_hook,
+                                     Task<Ticket, void *> **let_sequence_go)
+{
+	rope::GetListFromParameters transform = manager()->defaultCoordTransform();
+	rope::IntToCoordGet paramToCoords = transform(parameters);
+	rope::GetFloatFromCoordIdx toTorsions = manager()->defaultTorsionFetcher();
+	rope::GetVec3FromCoordIdx coordsToPos = manager()->defaultAtomFetcher();
+
+	auto grabSequence = [this, ticket](void *) -> Ticket
+	{
+		SequenceState state = SequenceIdle;
+		BondSequence *seq = acquireSequence(state);
+		std::cout << "Grabbing sequence" << std::endl;
+		return std::make_pair(ticket, seq);
+	};
+
+	auto calculateAtoms = [paramToCoords, &toTorsions](Ticket job) -> Ticket
+	{
+		std::cout << "calculating atoms from torsions" << std::endl;
+		job.second->calculateTorsions(paramToCoords, toTorsions);
+
+		return job;
+	};
+
+	auto targetAtoms = [paramToCoords, &coordsToPos](Ticket job) -> Ticket
+	{
+		std::cout << "calculating positions of atoms" << std::endl;
+		job.second->calculateAtoms(paramToCoords, coordsToPos);
+
+		return job;
+	};
+
+	auto identity = [](Ticket job) -> Ticket
+	{
+		return job;
+	};
+
+	auto superposition = [](Ticket job) -> Ticket
+	{
+		std::cout << "superposition" << std::endl;
+		job.second->superpose();
+		return job;
+	};
+	
+	auto letSequenceGo = [](Ticket job) -> void *
+	{
+		float dev = job.second->calculateDeviations();
+		job.second->cleanUpToIdle();
+		return nullptr;
+	};
+
+	auto *grab = new Task<void *, Ticket>(grabSequence);
+
+	// do atom targets
+	auto *get_targets = (flags & DoPositions ? new Task<Ticket, Ticket>(targetAtoms)
+	                     : nullptr);
+
+	// do torsion targets
+	auto *get_predicts = (flags & DoTorsions ? 
+	                      new Task<Ticket, Ticket>(calculateAtoms) : nullptr);
+
+	auto *superpose = (flags & DoSuperpose ? new Task<Ticket, Ticket>(superposition)
+	                   : new Task<Ticket, Ticket>(identity));
+
+	auto *letgo = new Task<Ticket, void *>(letSequenceGo);
+	
+	if (get_targets)
+	{
+		grab->follow_with(get_targets);
+		get_targets->follow_with(superpose);
+	}
+	if (get_predicts)
+	{
+		grab->follow_with(get_predicts);
+		get_predicts->follow_with(superpose);
+	}
+	if (!get_targets && !get_predicts)
+	{
+		grab->follow_with(superpose);
+	}
+	
+	*final_hook = superpose;
+	*let_sequence_go = letgo;
+
+	Tasks *tasks = new Tasks({grab, get_targets, get_predicts, superpose, letgo});
+	return tasks;
 }
