@@ -111,6 +111,17 @@ std::string AtomGraph::desc() const
 
 bool AtomGraph::operator<(const AtomGraph &other) const
 {
+	// deprioritise hydrogen atoms
+	if (atom->elementSymbol() != "H" && other.atom->elementSymbol() == "H")
+	{
+		return true;
+	}
+
+	if (atom->elementSymbol() == "H" && other.atom->elementSymbol() != "H")
+	{
+		return false;
+	}
+
 	/* otherwise go for tinier branch points first */
 	if (atom->isCoreMainChain() && !other.atom->isCoreMainChain())
 	{
@@ -122,16 +133,6 @@ bool AtomGraph::operator<(const AtomGraph &other) const
 		return false;
 	}
 	
-	if (atom->elementSymbol() != "H" && other.atom->elementSymbol() == "H")
-	{
-		return true;
-	}
-
-	if (atom->elementSymbol() == "H" && other.atom->elementSymbol() != "H")
-	{
-		return false;
-	}
-
 	return atom->atomNum() > other.atom->atomNum();
 }
 
