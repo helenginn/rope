@@ -268,9 +268,13 @@ void RingProgram::recalculateBases(std::vector<AtomBlock> &blocks)
 		for (size_t i = 0; i < b.nBonds; i++)
 		{
 			int n = b_idx + b.write_locs[i];
-			glm::vec3 next = blocks[n].my_position();
-			b.wip[i] = glm::vec4(next, 0.);
-			b.writeToChildren(blocks, b_idx);
+			
+			if (_ringMapping.count(n))
+			{
+				glm::vec3 next = blocks[n].my_position();
+				b.wip[i] = glm::vec4(next, 0.);
+				b.writeToChildren(blocks, b_idx);
+			}
 		}
 	}
 
