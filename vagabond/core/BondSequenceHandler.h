@@ -56,8 +56,6 @@ public:
 	}
 	
 	TorsionBasis *torsionBasis() const;
-	
-	const size_t parameterCount() const;
 
 	void addAnchorExtension(AnchorExtension ext);
 	
@@ -103,7 +101,6 @@ public:
 	int activeTorsions();
 	void prepareSequences();
 private:
-	void prewarnPositionSampler();
 	void sanityCheckThreads();
 	void prepareSequenceBlocks();
 	void prepareThreads();

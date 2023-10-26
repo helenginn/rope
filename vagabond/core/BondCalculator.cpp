@@ -422,12 +422,6 @@ void BondCalculator::finish()
 	_jobPool.finish();
 }	
 
-const size_t BondCalculator::maxCustomVectorSize() const
-{
-	return _sequenceHandler->parameterCount();
-}
-
-
 BondSequence *BondCalculator::sequence(int i) 
 {
 	if (_sequenceHandler)

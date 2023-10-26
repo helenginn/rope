@@ -69,7 +69,8 @@ void PositionRefinery::refineThroughEach(AtomGroup *subset)
 {
 	setupCalculator(subset, false);
 
-	_nBonds = _calculator->maxCustomVectorSize();
+	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
+	_nBonds = basis->parameterCount();
 	
 	double res = fullResidual();
 

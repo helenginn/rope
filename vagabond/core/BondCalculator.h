@@ -139,8 +139,6 @@ public:
 	void start();
 	void finish();
 	
-	const size_t maxCustomVectorSize() const;
-	
 	BondSequenceHandler *sequenceHandler()
 	{
 		return _sequenceHandler;
