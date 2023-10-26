@@ -44,12 +44,12 @@ void ThreadCalculatesBondSequence::start()
 		timeStart();
 		
 		BondCalculator *calculator = seq->calculator();
-		CoordManager &manager = calculator->manager();
+		CoordManager *manager = calculator->manager();
 
 		Job *job = seq->job();
 
 		rope::GetFloatFromCoordIdx fetchTorsion = job->fetchTorsion;
-		rope::GetListFromParameters transform = manager.defaultCoordTransform();
+		rope::GetListFromParameters transform = manager->defaultCoordTransform();
 		rope::IntToCoordGet paramToCoords = transform(job->parameters);
 		seq->calculate(paramToCoords, fetchTorsion);
 		timeEnd();

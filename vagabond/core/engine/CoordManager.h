@@ -36,9 +36,13 @@ namespace rope
 	GetFloatFromCoordIdx;
 }
 
+struct AtomBlock;
+
 class CoordManager
 {
 public:
+	CoordManager();
+
 	void setDefaultCoordTransform(const rope::GetListFromParameters &cgfp)
 	{
 		_coordGetFromParams = cgfp;
@@ -68,6 +72,8 @@ public:
 	{
 		return _coordGetFromParams;
 	}
+	
+	void setAtomFetcherFromBlocks(const std::vector<AtomBlock> &blocks);
 	
 	static rope::GetFloatFromCoordIdx identityTransformFloat()
 	{
@@ -109,7 +115,6 @@ public:
 		};
 	}
 private:
-	
 	// default value: return 1 no matter what
 	rope::GetListFromParameters _coordGetFromParams = identityTransform();
 

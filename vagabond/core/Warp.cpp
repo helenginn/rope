@@ -215,7 +215,7 @@ void Warp::customModifications(BondCalculator *calc, bool has_mol)
 {
 	calc->setSuperpose(true);
 	calc->prepareToSkipSections(true);
-	calc->manager().setDefaultCoordTransform(CoordManager::identityTransform());
+	calc->manager()->setDefaultCoordTransform(CoordManager::identityTransform());
 }
 
 void Warp::resetComparison()

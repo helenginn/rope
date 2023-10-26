@@ -18,6 +18,7 @@
 
 #include "engine/workers/ThreadCalculatesBondSequence.h"
 #include "engine/workers/ThreadExtractsBondPositions.h"
+#include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/PointStoreHandler.h"
@@ -31,6 +32,8 @@ BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 	_pools[SequencePositionsReady].setName("handle positions");
 	_pools[SequenceCalculateReady].setName("calculate bonds");
 	_calculator = calc;
+	
+	_manager = calc ? calc->manager() : new CoordManager();
 }
 
 BondSequenceHandler::~BondSequenceHandler()
@@ -96,7 +99,6 @@ void BondSequenceHandler::prepareThreads()
 
 		pool.addWorker(worker, thr);
 	}
-
 }
 
 void BondSequenceHandler::setup()
@@ -147,6 +149,8 @@ void BondSequenceHandler::prepareSequenceBlocks()
 
 	sequence->multiplyUpBySampleCount();
 	_elements = sequence->elementList();
+
+	manager()->setAtomFetcherFromBlocks(sequence->blocks());
 	
 	if (_mapHandler)
 	{

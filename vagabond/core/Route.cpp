@@ -82,7 +82,7 @@ void Route::submitJob(float frac, bool show, int job_num)
 
 void Route::customModifications(BondCalculator *calc, bool has_mol)
 {
-	calc->manager().setDefaultCoordTransform(CoordManager::identityTransform());
+	calc->manager()->setDefaultCoordTransform(CoordManager::identityTransform());
 	calc->setIgnoreHydrogens(true);
 }
 

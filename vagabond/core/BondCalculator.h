@@ -170,7 +170,7 @@ public:
 		return _surfaceHandler;
 	}
 	
-	CoordManager &manager()
+	CoordManager *manager() const
 	{
 		return _manager;
 	}
@@ -195,6 +195,7 @@ private:
 	void cleanupRecycling();
 
 	PipelineType _type;
+	CoordManager *_manager = nullptr;
 	size_t _maxMemory = 0;
 	
 	int _minDepth = 0;
@@ -215,7 +216,6 @@ private:
 	MapSumHandler *_sumHandler = nullptr;
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
-	CoordManager _manager;
 
 	void setupCorrelationHandler();
 	

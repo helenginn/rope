@@ -118,7 +118,7 @@ void AtomBlock::clearMutable()
 }
 
 rope::GetVec3FromCoordIdx 
-AtomBlock::prepareTargetsAsInitial(std::vector<AtomBlock> &blocks)
+AtomBlock::prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks)
 {
 	rope::GetVec3FromCoordIdx func = [&blocks](const Coord::Get &,
 	                                           const int &idx) -> glm::vec3

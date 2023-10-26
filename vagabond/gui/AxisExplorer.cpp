@@ -165,7 +165,7 @@ void AxisExplorer::supplyTorsions()
 		return filtered.storage(idx) * get(0);
 	};
 	
-	calc->manager().setTorsionFetcher(grab_torsion);
+	calc->manager()->setTorsionFetcher(grab_torsion);
 }
 
 void AxisExplorer::askForAtomMotions()

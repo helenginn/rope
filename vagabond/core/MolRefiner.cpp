@@ -271,5 +271,5 @@ void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
 		return _sampler.coordsFromParams(all);
 	};
 
-	calc->manager().setDefaultCoordTransform(transform);
+	calc->manager()->setDefaultCoordTransform(transform);
 }

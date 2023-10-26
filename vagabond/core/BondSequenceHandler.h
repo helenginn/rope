@@ -84,6 +84,11 @@ public:
 	{
 		return _threads;
 	}
+	
+	CoordManager *manager()
+	{
+		return _manager;
+	}
 
 	void signalToHandler(BondSequence *seq, SequenceState state);
 
@@ -116,6 +121,7 @@ private:
 	std::map<std::string, int> _elements;
 	MapTransferHandler *_mapHandler = nullptr;
 	PointStoreHandler *_pointHandler = nullptr;
+	CoordManager *_manager = nullptr;
 };
 
 #endif

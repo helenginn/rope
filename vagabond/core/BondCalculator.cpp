@@ -32,11 +32,14 @@ BondCalculator::BondCalculator()
 	_maxMemory = 0;
 	_sequenceHandler = nullptr;
 	_totalSamples = 1;
+
+	_manager = new CoordManager();
 }
 
 BondCalculator::~BondCalculator()
 {
 	reset();
+	delete _manager;
 }
 
 void BondCalculator::cleanupRecycling()
@@ -217,10 +220,6 @@ void BondCalculator::setup()
 
 	_sequenceHandler->setup();
 
-	rope::GetVec3FromCoordIdx func;
-	func = AtomBlock::prepareTargetsAsInitial(sequence()->blocks());
-	manager().setAtomFetcher(func);
-
 	if (_mapHandler != nullptr)
 	{
 		_mapHandler->setup();
@@ -357,11 +356,11 @@ void BondCalculator::sanityCheckJob(Job &job)
 
 	if (!job.atomTargets)
 	{
-		job.atomTargets = manager().defaultAtomFetcher();
+		job.atomTargets = manager()->defaultAtomFetcher();
 	}
-	if (!job.fetchTorsion && manager().defaultTorsionFetcher())
+	if (!job.fetchTorsion && manager()->defaultTorsionFetcher())
 	{
-		job.fetchTorsion = manager().defaultTorsionFetcher();
+		job.fetchTorsion = manager()->defaultTorsionFetcher();
 	}
 }
 

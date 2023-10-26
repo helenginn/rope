@@ -17,5 +17,15 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CoordManager.h"
+#include "AtomBlock.h"
 
+CoordManager::CoordManager()
+{
+}
 
+void CoordManager::setAtomFetcherFromBlocks(const std::vector<AtomBlock> &blocks)
+{
+	rope::GetVec3FromCoordIdx func;
+	func = AtomBlock::prepareTargetsAsInitial(blocks);
+	setAtomFetcher(func);
+}
