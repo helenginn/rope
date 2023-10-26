@@ -140,9 +140,9 @@ public:
 	void calculate(rope::IntToCoordGet coordForIdx,
 	               rope::GetFloatFromCoordIdx &torsionForCoord);
 	void calculateTorsions(rope::IntToCoordGet coordForIdx,
-	                       rope::GetFloatFromCoordIdx &torsionForCoord);
+	                       rope::GetFloatFromCoordIdx torsionForCoord);
 	void calculateAtoms(rope::IntToCoordGet coordForIdx,
-	                   rope::GetVec3FromCoordIdx &posForCoord);
+	                   rope::GetVec3FromCoordIdx posForCoord);
 	void superpose();
 	const AtomPosMap &extractPositions();
 	void extractVector(AtomPosList &results);
@@ -167,6 +167,11 @@ public:
 	}
 	
 	SequenceState state();
+
+	void setState(const SequenceState &state)
+	{
+		_state = state;
+	}
 	void signal(SequenceState newState);
 	
 	std::vector<AtomBlock> &blocks()

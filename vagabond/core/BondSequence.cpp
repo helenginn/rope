@@ -294,7 +294,7 @@ void loopThrough(BondSequence *seq, const rope::IntToCoordGet &coordForIdx,
 }
 
 void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
-                                  rope::GetVec3FromCoordIdx &posForCoord)
+                                  rope::GetVec3FromCoordIdx posForCoord)
 {
 	auto calculatePositions = [posForCoord, this](int idx, 
 	                                                 const Coord::Get &get)
@@ -307,7 +307,7 @@ void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
 }
 
 void BondSequence::calculateTorsions(rope::IntToCoordGet coordForIdx,
-                                     rope::GetFloatFromCoordIdx &torsionForCoord)
+                                     rope::GetFloatFromCoordIdx torsionForCoord)
 {
 	auto calculateTorsions = [torsionForCoord, this](int idx, 
 	                                                 const Coord::Get &get)
