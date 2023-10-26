@@ -59,7 +59,7 @@ int TorsionBasis::addParameter(Parameter *param, Atom *atom)
 	return _params.size() - 1;
 }
 
-void TorsionBasis::prepare(int dims)
+void TorsionBasis::prepare()
 {
 	_angles.clear();
 

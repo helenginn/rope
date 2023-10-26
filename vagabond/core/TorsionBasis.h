@@ -33,7 +33,7 @@ class TorsionBasis
 public:
 	TorsionBasis();
 	virtual ~TorsionBasis() { };
-	virtual void prepare(int dims);
+	virtual void prepare();
 	
 	/** supply mask to switch refined torsion angles on/off 
 	 * 	@param mask vector of ordered booleans, true=refined, false=masked,

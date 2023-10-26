@@ -104,7 +104,7 @@ void BondSequenceHandler::setup()
 	calculateThreads(_maxThreads);
 	sanityCheckThreads();
 	prepareSequenceBlocks();
-	torsionBasis()->prepare(1);
+	torsionBasis()->prepare();
 }
 
 void BondSequenceHandler::prepareSequences()
