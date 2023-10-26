@@ -16,25 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Tasks.h"
-#include "TaskWorker.h"
+#ifndef __vagabond__BaseTask__
+#define __vagabond__BaseTask__
 
-TaskWorker::TaskWorker(Tasks *tasks)
-{
-	_tasks = tasks;
-}
+#include <atomic>
+#include <vector>
+#include <string>
 
-void TaskWorker::start()
+class BaseTask
 {
-	while (!_finish)
+public:
+	virtual std::vector<BaseTask *> operator()() { return {}; };
+	virtual ~BaseTask()
 	{
-		BaseTask *task = _tasks->acquireTask();
 
-		if (!task)
-		{
-			break;
-		}
-		
-		_tasks->executeTask(task);
 	}
-}
+	
+	bool ready()
+	{
+		return (signals >= expected);
+	}
+
+	std::atomic<int> signals{0};
+	int expected = 0;
+	int priority = 1;
+	std::string name;
+};
+
+#endif

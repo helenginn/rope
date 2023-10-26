@@ -21,162 +21,57 @@
 
 #include <functional>
 #include <iostream>
-#include <thread>
 #include <vector>
 #include <list>
 
-#include "Handler.h"
-#include "TaskWorker.h"
-
-class BaseTask
-{
-public:
-	virtual int operator()() { return 0; };
-	virtual ~BaseTask()
-	{
-
-	}
-	
-	bool ready()
-	{
-		return (signals >= expected);
-	}
-
-	std::atomic<int> signals{0};
-	int expected = 0;
-	int priority = 1;
-};
-
-class Tasks : public Handler
-{
-public:
-	Tasks(const std::vector<BaseTask *> &init = {})
-	{
-		_tasks.reset();
-		for (BaseTask *bt : init)
-		{
-			addTask(bt);
-		}
-	}
-	
-	Tasks &operator+=(const std::vector<BaseTask *> &init)
-	{
-		_tasks.reset();
-		for (BaseTask *bt : init)
-		{
-			addTask(bt);
-		}
-		return *this;
-	}
-	
-	virtual ~Tasks()
-	{
-		_tasks.waitForThreads();
-		_tasks.cleanup();
-	}
-	
-	void prepare_threads(size_t threads)
-	{
-		for (int i = 0; i < threads; i++)
-		{
-			TaskWorker *worker = new TaskWorker(this);
-			std::thread *thr = new std::thread(&TaskWorker::start, worker);
-			_tasks.addWorker(worker, thr);
-		}
-	}
-	
-	void addTask(BaseTask *bt)
-	{
-		if (!bt) return;
-
-		_tasks.pushUnavailableObject(bt);
-		if (bt->ready())
-		{
-			_tasks.signal();
-		}
-	}
-	
-	BaseTask *acquireTask()
-	{
-		BaseTask *task = nullptr;
-		_tasks.acquireObject(task);
-
-		if (taskCount() == 0)
-		{
-			_tasks.signal();
-		}
-
-		return task;
-	}
-	
-	size_t taskCount()
-	{
-		return _tasks.objectCount();
-	}
-	
-	void executeTask(BaseTask *task)
-	{
-		int unlocked = (*task)();
-		for (int i = 0; i < unlocked; i++)
-		{
-			_tasks.signal();
-		}
-		delete task;
-	}
-
-	void run(size_t threads)
-	{
-		size_t signals = _tasks.number_ready();
-		if (signals == 0)
-		{
-			std::cout << "No independent tasks to start" << std::endl;
-			return;
-		}
-		prepare_threads(threads);
-
-		for (size_t i = 0; i < signals - 1; i++)
-		{
-			_tasks.signal();
-		}
-	}
-
-	Handler::TaskPool _tasks;
-};
+#include "BaseTask.h"
 
 template <typename Input, typename Output>
 class Task : public BaseTask
 {
 public:
-	Task(const std::function<Output(Input)> &td, int pr = 1) : todo(td)
+	Task(const std::function<Output(Input)> &td, 
+	     const std::string &n = {}) : todo(td)
 	{
-		priority = pr;
-
+		name = n;
 	}
 	
-	int operator()()
+	std::vector<BaseTask *> run_release_program()
+	{
+		std::vector<BaseTask *> release;
+		for (auto connect : connections)
+		{
+			BaseTask *next = connect();
+			
+			if (next)
+			{
+				release.push_back(next);
+			}
+		}
+		
+		return release;
+	}
+	
+	std::vector<BaseTask *> operator()()
 	{
 		if (signals < expected)
 		{
-			return false;
+			std::cout << "Warning: running before ready" << std::endl;
+			return {};
 		}
 
 		output = todo(input);
 		
-		int unlocked = 0;
-		for (auto connect : connections)
-		{
-			unlocked += connect() ? 1 : 0;
-		}
-		
-		return unlocked;
+		return run_release_program();
 	}
 	
 	template <typename OutputCompatible, typename Unimportant>
-	void follow_with(Task<OutputCompatible, Unimportant> *const &next)
+	void must_complete_before(Task<OutputCompatible, Unimportant> *const &next)
 	{
-		auto connect = [next, this]() -> bool
+		auto connect = [next]() -> BaseTask *
 		{
-			return next->setInput(output);
+			bool unlocked = next->supplySignal();
+			return unlocked ? next : nullptr;
 		};
 		
 		next->expected++;
@@ -184,12 +79,31 @@ public:
 		connections.push_back(connect);
 	}
 	
+	template <typename OtherTask>
+	void follow_with(OtherTask *const &next)
+	{
+		auto connect = [next, this]() -> BaseTask *
+		{
+			bool unlocked = next->setInput(output);
+			return unlocked ? next : nullptr;
+		};
+		
+		next->expected++;
+		next->priority += priority;
+		connections.push_back(connect);
+	}
+	
+	bool supplySignal()
+	{
+		signals++;
+		return (signals == expected);
+	}
+
 	template <typename InputCompatible>
 	bool setInput(const InputCompatible &in)
 	{
 		input = in;
-		signals++;
-		return (signals >= expected);
+		return supplySignal();
 	}
 
 	const std::function<Output(Input)> todo;
@@ -197,7 +111,42 @@ public:
 	Input input{};
 	Output output{};
 	
-	std::vector<std::function<bool()>> connections;
+	std::vector<std::function<BaseTask *()>> connections;
+};
+
+template <typename Input, typename Output>
+class FailableTask : public Task<Input, Output>
+{
+public:
+	FailableTask(const std::function<Output(Input, bool *)> &td,
+	             const std::string &name = {})
+	: Task<Input, Output>({}, name), failable_todo(td)
+	{
+
+	}
+	
+	std::vector<BaseTask *> operator()()
+	{
+		if (this->signals < this->expected)
+		{
+			std::cout << "Warning: running before ready" << std::endl;
+			return {};
+		}
+
+		bool success = true;
+		this->output = failable_todo(this->input, &success);
+		
+		if (!success)
+		{
+			return {nullptr};
+		}
+		
+		std::vector<BaseTask *> results = this->run_release_program();
+		delete this;
+		return results;
+	}
+	
+	const std::function<Output(Input, bool *)> failable_todo;
 };
 
 #endif

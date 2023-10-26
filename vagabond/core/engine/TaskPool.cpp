@@ -32,18 +32,8 @@ void Handler::TaskPool::pluckFromQueue(BaseTask *&task)
 	size_t size = this->members.size();
 	if (size > 0)
 	{
-		for (auto it = this->members.begin(); it != this->members.end(); it++)
-		{
-			BaseTask *&trial = *it;
-			if (trial->ready())
-			{
-				task = trial;
-				this->members.erase(it);
-				return;
-			}
-		}
-		
-		std::cout << "Warning, could not find ready task in list!" << std::endl;
+		task = *this->members.begin();
+		this->members.pop_front();
 	}
 }
 
@@ -65,7 +55,9 @@ void Handler::TaskPool::insertIntoQueue(BaseTask *&task)
 	for (it = this->members.begin(); it != this->members.end(); it++)
 	{
 		BaseTask *&trial = *it;
+//		std::cout << trial->priority << " ";
 	}
+//	std::cout << std::endl;
 
 }
 
