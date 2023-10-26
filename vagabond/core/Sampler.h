@@ -21,7 +21,7 @@
 
 #include <vector>
 #include "../utils/svd/PCA.h"
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 
 class Sampler
 {

@@ -20,7 +20,7 @@
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 #include <iostream>
 
 ThreadCalculatesBondSequence::ThreadCalculatesBondSequence(BondSequenceHandler *h)
@@ -44,7 +44,7 @@ void ThreadCalculatesBondSequence::start()
 		timeStart();
 		
 		BondCalculator *calculator = seq->calculator();
-		JobManager &manager = calculator->manager();
+		CoordManager &manager = calculator->manager();
 
 		Job *job = seq->job();
 

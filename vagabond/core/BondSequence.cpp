@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 #include "matrix_functions.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"

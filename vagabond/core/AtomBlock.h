@@ -20,7 +20,7 @@
 #define __vagabond__AtomBlock__
 
 #include <vagabond/utils/glm_import.h>
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 #include "Atom.h"
 
 class Atom;

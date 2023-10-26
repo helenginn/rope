@@ -20,7 +20,7 @@
 #define __vagabond__Route__
 
 #include "StructureModification.h"
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 #include "Responder.h"
 #include "RTMotion.h"
 

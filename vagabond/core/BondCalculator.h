@@ -25,7 +25,7 @@
 #include <vector>
 #include <queue>
 #include "engine/Handler.h"
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 #include "AtomMap.h"
 #include "AtomPosMap.h"
 #include "TorsionBasis.h"
@@ -170,7 +170,7 @@ public:
 		return _surfaceHandler;
 	}
 	
-	JobManager &manager()
+	CoordManager &manager()
 	{
 		return _manager;
 	}
@@ -215,7 +215,7 @@ private:
 	MapSumHandler *_sumHandler = nullptr;
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
-	JobManager _manager;
+	CoordManager _manager;
 
 	void setupCorrelationHandler();
 	

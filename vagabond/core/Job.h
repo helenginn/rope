@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <map>
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 
 class BondSequence;
 class MapTransfer;

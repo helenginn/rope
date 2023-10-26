@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__JobManager__
-#define __vagabond__JobManager__
+#ifndef __vagabond__CoordManager__
+#define __vagabond__CoordManager__
 
 #include <vagabond/utils/AcquireCoord.h>
 #include <vagabond/utils/glm_import.h>
@@ -36,7 +36,7 @@ namespace rope
 	GetFloatFromCoordIdx;
 }
 
-class JobManager
+class CoordManager
 {
 public:
 	void setDefaultCoordTransform(const rope::GetListFromParameters &cgfp)

@@ -31,7 +31,7 @@
 #include "programs/RingProgram.h"
 #include "HasBondSequenceCustomisation.h"
 #include "BondSequenceHandler.h"
-#include "engine/JobManager.h"
+#include "engine/CoordManager.h"
 #include <vagabond/utils/Vec3s.h>
 #include "BondTorsion.h"
 #include "AtomBlock.h"
