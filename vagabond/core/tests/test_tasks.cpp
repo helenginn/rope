@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	int ticket = 1;
 	Tasks tasks;
 	
-	for (int i = 0; i < 30; i++)
+	for (int i = 0; i < 1; i++)
 	{
 	auto grabSequence = [&handler, ticket](void *) -> Job
 	{
@@ -148,6 +148,17 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	{
 		std::cout << "calculating atoms from torsions" << std::endl;
 		job.sequence->calculateTorsions(paramToCoords, coordsToTorsions);
+		
+		for (AtomBlock &block : job.sequence->blocks())
+		{
+			if (block.atom)
+			{
+				std::cout << block.atom->desc() << " ";
+				std::cout << block.my_position() << std::endl;
+
+			}
+		}
+
 		return job;
 	};
 
