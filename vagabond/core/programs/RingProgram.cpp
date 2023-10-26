@@ -203,6 +203,7 @@ void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
 	alignRingExit(blocks);
+	recalculateBases(blocks);
 }
 
 glm::vec3 RingProgram::originalPosition(std::vector<AtomBlock> &blocks, int idx)
@@ -247,6 +248,32 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 
 		blocks[b_idx].basis[3] = glm::vec4(_cyclic.atomPos(c_idx), 1.f);
 	}
+}
+
+void RingProgram::recalculateBases(std::vector<AtomBlock> &blocks)
+{
+	for (auto it = _ringMapping.begin();
+	     it != _ringMapping.end(); it++)
+	{
+		int b_idx = it->first + _idx;
+		AtomBlock &b = blocks[b_idx];
+		if (b.nBonds == 0)
+		{
+			continue;
+		}
+
+		glm::vec3 self = b.my_position();
+		glm::vec3 parent = b.inherit;
+
+		for (size_t i = 0; i < b.nBonds; i++)
+		{
+			int n = b_idx + b.write_locs[i];
+			glm::vec3 next = blocks[n].my_position();
+			b.wip[i] = glm::vec4(next, 0.);
+			b.writeToChildren(blocks, b_idx);
+		}
+	}
+
 }
 
 void RingProgram::setRingEntranceName(std::string atomName)
