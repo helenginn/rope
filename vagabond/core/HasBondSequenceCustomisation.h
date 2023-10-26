@@ -101,7 +101,7 @@ protected:
 	size_t _loopCount = 1;
 	int _jointLimit = -1;
 
-	size_t _totalSamples = 0;
+	size_t _totalSamples = 1;
 	size_t _maxThreads = 1;
 	size_t _threads = 1;
 };
