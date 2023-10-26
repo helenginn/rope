@@ -104,8 +104,6 @@ private:
 	void prepareThreads();
 	void calculateThreads(int max);
 
-	std::atomic<int> _run;
-
 	size_t _totalSequences = 0;
 
 	std::map<SequenceState, Pool<BondSequence *> > _pools;

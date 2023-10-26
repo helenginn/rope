@@ -26,7 +26,6 @@
 
 BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 {
-	_run = 0;
 	_totalSamples = 1;
 	_pools[SequenceIdle].setName("idle sequences");
 	_pools[SequencePositionsReady].setName("handle positions");
@@ -172,11 +171,6 @@ void BondSequenceHandler::addAnchorExtension(AnchorExtension ext)
 
 void BondSequenceHandler::signalToHandler(BondSequence *seq, SequenceState state)
 {
-	if (state == SequenceCalculateReady)
-	{
-		_run++;
-	}
-
 	Pool<BondSequence *> &pool = _pools[state];
 	pool.pushObject(seq);
 }
