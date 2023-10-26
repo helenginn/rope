@@ -25,8 +25,8 @@
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"
+#include "Result.h"
 
-class Tasks;
 class Sampler;
 class BondSequence;
 class BondCalculator;
@@ -36,13 +36,24 @@ class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
 template <typename I, typename O> class Task;
 	
-enum CalcFlags
+namespace Flag
 {
-	DoNothing = 1 << 0,
-	DoTorsions = 1 << 1,
-	DoPositions = 1 << 2,
-	DoSuperpose = 1 << 3,
-};
+	enum Calc
+	{
+		NoCalc = 1 << 0,
+		DoTorsions = 1 << 1,
+		DoPositions = 1 << 2,
+		DoSuperpose = 1 << 3,
+	};
+
+	enum Extract
+	{
+		NoExtract = 1 << 0,
+		AtomVector = 1 << 1,
+		AtomMap = 1 << 2,
+		Deviation = 1 << 3,
+	};
+}
 
 typedef std::pair<int, BondSequence *> Ticket;
 
@@ -100,15 +111,28 @@ public:
 		return _manager;
 	}
 
-	// final_hook is the job
-	Tasks *calculate(int ticket, CalcFlags flags,
-	                 const std::vector<float> &parameters,
-	                 Task<Ticket, Ticket> **final_hook,
-	                 Task<Ticket, void *> **let_sequence_go);
+	// extracting meaningful information from sequence, will return
+	// a pointer to the let_go if further tasks are required
+	BaseTask *extract(Flag::Extract flags,
+	                  Task<Result, void *> *submit_result,
+	                  Task<Ticket, Ticket> *hook,
+	                  Task<Ticket, Deviation> **dev = nullptr,
+	                  Task<Ticket, AtomPosList *> **list = nullptr,
+	                  Task<Ticket, AtomPosMap *> **map = nullptr);
+
+	// final_hook is the final job before extracting
+	void calculate(int ticket, Flag::Calc flags,
+	               const std::vector<float> &parameters,
+	               BaseTask **first_task,
+	               Task<Ticket, Ticket> **final_hook);
+
+	// let go of sequence before continuing
+	Task<Ticket, void *> *letGo();
 
 	void signalToHandler(BondSequence *seq, SequenceState state);
 
 	BondSequence *acquireSequence(SequenceState state);
+	BondSequence *acquireSequenceOrNull();
 
 	/** Changes which atoms are included for calculation of position
 	 * deviation 
