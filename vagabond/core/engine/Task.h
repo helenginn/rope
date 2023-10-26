@@ -44,7 +44,7 @@ public:
 
 	std::atomic<int> signals{0};
 	int expected = 0;
-	int priority = 0;
+	int priority = 1;
 };
 
 class Tasks : public Handler
@@ -87,6 +87,8 @@ public:
 	
 	void addTask(BaseTask *bt)
 	{
+		if (!bt) return;
+
 		_tasks.pushUnavailableObject(bt);
 		if (bt->ready())
 		{
@@ -145,7 +147,7 @@ template <typename Input, typename Output>
 class Task : public BaseTask
 {
 public:
-	Task(const std::function<Output(Input)> &td, int pr = 0) : todo(td)
+	Task(const std::function<Output(Input)> &td, int pr = 1) : todo(td)
 	{
 		priority = pr;
 
@@ -178,6 +180,7 @@ public:
 		};
 		
 		next->expected++;
+		next->priority += priority;
 		connections.push_back(connect);
 	}
 	
