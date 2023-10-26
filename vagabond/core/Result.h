@@ -24,19 +24,39 @@
 
 class AtomMap;
 
+struct Deviation
+{
+	float value;
+};
+
 struct Result
 {
-	int ticket;
+	void operator=(const Deviation &d)
+	{
+		deviation += d.value;
+	}
+
+	void operator=(const AtomPosMap *tmp)
+	{
+		aps = *tmp;
+		delete tmp;
+	}
+
+	void operator=(const AtomPosList *tmp)
+	{
+		apl = *tmp;
+		delete tmp;
+	}
+
+	int ticket = 0;
 	JobType requests;
 	AtomPosMap aps{};
 	AtomPosList apl{};
-	double deviation;
-	double score;
-	double correlation;
-	float surface_area;
+	double deviation = 0;
+	double score = 0;
+	double correlation = 0;
+	float surface_area = 0;
 	AtomMap *map = nullptr;
-
-	std::mutex handout;
 	
 	void setFromJob(Job *job)
 	{
