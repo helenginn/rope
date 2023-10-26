@@ -243,6 +243,11 @@ protected:
 			this->sem.expect_one();
 		}
 
+		void release_one()
+		{
+			this->sem.expect_one_fewer();
+		}
+
 		void one_arrived()
 		{
 			this->sem.one_arrived();
