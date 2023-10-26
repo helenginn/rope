@@ -20,7 +20,6 @@
 #include "Result.h"
 #include "PdbFile.h"
 #include "AtomGroup.h"
-#include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
 #include <string>
@@ -118,71 +117,16 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	};
 	
 	int ticket = 1;
-	Tasks tasks;
-	
-	for (int i = 0; i < 100; i++)
-	{
-	auto grabSequence = [&handler, ticket](void *) -> Job
-	{
-		SequenceState state = SequenceIdle;
-		BondSequence *seq = handler.acquireSequence(state);
-		std::cout << "Grabbing sequence" << std::endl;
-		return Job{ticket, seq};
-	};
-	
-	auto letSequenceGo = [](Job job) -> float
-	{
-		float dev = job.sequence->calculateDeviations();
-		job.sequence->cleanUpToIdle();
-		std::cout << "Letting go, dev = " << dev << std::endl;
-		return dev;
-	};
+	Task<Ticket, Ticket> *final_hook;
+	Task<Ticket, void *> *let_sequence_go;
 
-	CoordManager *manager = handler.manager();
-	rope::GetListFromParameters transform = manager->defaultCoordTransform();
-	rope::IntToCoordGet paramToCoords = transform(params);
-	rope::GetFloatFromCoordIdx coordsToTorsions = manager->defaultTorsionFetcher();
+	CalcFlags flags = CalcFlags(DoTorsions | DoPositions | DoSuperpose);
+	Tasks *tasks = handler.calculate(ticket, flags, params, 
+	                                 &final_hook, &let_sequence_go);
 
-	rope::GetVec3FromCoordIdx coordsToPos = manager->defaultAtomFetcher();
-	
-	auto calculateAtoms = [paramToCoords, &coordsToTorsions](Job job) -> Job
-	{
-		std::cout << "calculating atoms from torsions" << std::endl;
-		job.sequence->calculateTorsions(paramToCoords, coordsToTorsions);
+	final_hook->follow_with(let_sequence_go);
 
-		return job;
-	};
-
-	auto targetAtoms = [paramToCoords, &coordsToPos](Job job) -> Job
-	{
-		std::cout << "calculating positions of atoms" << std::endl;
-		job.sequence->calculateAtoms(paramToCoords, coordsToPos);
-
-		return job;
-	};
-
-	auto superposition = [](Job job) -> Job
-	{
-		std::cout << "superposition" << std::endl;
-		job.sequence->superpose();
-		return job;
-	};
-
-	auto *grab = new Task<void *, Job>(grabSequence, 0);
-	auto *get_targets = new Task<Job, Job>(targetAtoms, 1);
-	auto *get_predicts = new Task<Job, Job>(calculateAtoms, 1);
-	auto *superpose = new Task<Job, Job>(superposition, 2);
-	auto *letgo = new Task<Job, float>(letSequenceGo, 3);
-	
-	grab->follow_with(get_targets);
-	grab->follow_with(get_predicts);
-	get_targets->follow_with(superpose);
-	get_predicts->follow_with(superpose);
-	superpose->follow_with(letgo);
-
-	tasks += {grab, get_targets, get_predicts, superpose, letgo};
-	}
-	tasks.run(2);
+	tasks->run(2);
 
 	BOOST_TEST(true);
 }
