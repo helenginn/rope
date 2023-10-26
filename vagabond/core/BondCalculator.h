@@ -122,11 +122,6 @@ public:
 		_maxMemory = max;
 	}
 	
-	void setTorsionBasisType(TorsionBasis::Type type)
-	{
-		_basisType = type;
-	}
-	
 	void addAnchorExtension(Atom *atom, size_t bondCount = UINT_MAX);
 	void addAnchorExtension(AnchorExtension ext);
 	
@@ -218,8 +213,6 @@ private:
 	PointStoreHandler *_pointHandler = nullptr;
 	SolventHandler *_solventHandler = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
-
-	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
 	
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
 	JobManager _manager;

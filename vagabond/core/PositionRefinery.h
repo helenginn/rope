@@ -38,11 +38,6 @@ public:
 	PositionRefinery(AtomGroup *group = nullptr);
 	virtual ~PositionRefinery();
 	
-	void setTorsionBasis(TorsionBasis::Type type)
-	{
-		_type = type;
-	}
-
 	void refine();
 	
 	void setThorough(bool th)
@@ -103,7 +98,6 @@ private:
 	bool _finish = false;
 	std::atomic<bool> _done{false};
 	
-	TorsionBasis::Type _type = TorsionBasis::TypeSimple;
 	Engine *_engine = nullptr;
 	
 	enum RefinementStage

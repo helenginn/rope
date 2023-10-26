@@ -53,7 +53,6 @@ void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
 
 	calc.setTotalSamples(1);
 
-	calc.setTorsionBasisType(_torsionType);
 	calc.addAnchorExtension(anchor);
 	calc.setIgnoreHydrogens(false);
 }

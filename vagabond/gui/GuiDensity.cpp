@@ -197,7 +197,6 @@ void GuiDensity::recalculate()
 	}
 
 	calculator.setMaxSimultaneousThreads(1);
-	calculator.setTorsionBasisType(TorsionBasis::TypeSimple);
 	calculator.setTotalSamples(sampler.pointCount());
 	int num = sampler.pointCount();
 

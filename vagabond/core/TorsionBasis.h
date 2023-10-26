@@ -31,11 +31,6 @@ class Atom;
 class TorsionBasis
 {
 public:
-	enum Type
-	{
-		TypeSimple,
-	};
-
 	TorsionBasis();
 	virtual ~TorsionBasis() { };
 	virtual void prepare(int dims);

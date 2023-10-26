@@ -30,7 +30,6 @@ MolRefiner::MolRefiner(ArbitraryMap *comparison,
 StructureModification(info->instance), _sampler(num, dims)
 {
 	_pType = BondCalculator::PipelineCorrelation;
-	_torsionType = TorsionBasis::TypeSimple;
 	_threads = 1;
 	
 	if (info->instance->hasSequence())

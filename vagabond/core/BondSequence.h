@@ -112,11 +112,6 @@ public:
 	
 	int activeTorsions() const;
 	
-	void setTorsionBasisType(TorsionBasis::Type type)
-	{
-		_basisType = type;
-	}
-	
 	TorsionBasis *torsionBasis() const
 	{
 		return _torsionBasis;
@@ -228,7 +223,6 @@ private:
 	int _nCoord = 0;
 
 	TorsionBasis *_torsionBasis = nullptr;
-	TorsionBasis::Type _basisType;
 
 	Job *_job = nullptr;
 	BondSequenceHandler *_handler = nullptr;

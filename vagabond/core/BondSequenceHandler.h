@@ -54,11 +54,6 @@ public:
 	{
 		return _calculator;
 	}
-
-	void setTorsionBasisType(TorsionBasis::Type type)
-	{
-		_basisType = type;
-	}
 	
 	TorsionBasis *torsionBasis() const;
 	
@@ -113,8 +108,6 @@ private:
 
 	size_t _totalSequences = 0;
 
-	TorsionBasis::Type _basisType = TorsionBasis::TypeSimple;
-	
 	std::map<SequenceState, Pool<BondSequence *> > _pools;
 
 	std::vector<AnchorExtension> _atoms;

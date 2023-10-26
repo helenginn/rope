@@ -29,7 +29,6 @@ Route::Route(Instance *from, Instance *to, const RTAngles &list)
 {
 	_endInstance = to;
 	_source = list;
-	_torsionType = TorsionBasis::TypeSimple;
 	instance()->load();
 }
 

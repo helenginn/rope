@@ -277,7 +277,6 @@ void PositionRefinery::setupCalculator(AtomGroup *group, bool loopy,
 		_calculator->setInSequence(true);
 	}
 
-	_calculator->setTorsionBasisType(_type);
 	_calculator->setSuperpose(false);
 
 	group->clearChosenAnchor();

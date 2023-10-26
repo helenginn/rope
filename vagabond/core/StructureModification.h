@@ -154,7 +154,6 @@ protected:
 	TicketScores _point2Score;
 	
 	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
-	TorsionBasis::Type _torsionType = TorsionBasis::TypeSimple;
 };
 
 #endif

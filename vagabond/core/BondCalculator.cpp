@@ -157,7 +157,6 @@ void BondCalculator::setupSolventHandler()
 void BondCalculator::setupSequenceHandler()
 {
 	_sequenceHandler = new BondSequenceHandler(this);
-	_sequenceHandler->setTorsionBasisType(_basisType);
 	transferProperties(_sequenceHandler);
 	
 	if (_mapHandler != nullptr)

@@ -134,7 +134,6 @@ void BondSequenceHandler::prepareSequenceBlocks()
 {
 	BondSequence *sequence = new BondSequence(this);
 	sequence->setSampleCount(_totalSamples);
-	sequence->setTorsionBasisType(_basisType);
 	transferProperties(sequence);
 
 	for (size_t j = 0; j < _atoms.size(); j++)

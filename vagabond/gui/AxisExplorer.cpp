@@ -37,7 +37,6 @@
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst)
 {
-	_torsionType = TorsionBasis::TypeSimple;
 	_dims = 1;
 	_rawAngles = angles;
 	setPingPong(true);
