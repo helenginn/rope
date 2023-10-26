@@ -104,7 +104,7 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 		return false;
 	}
 
-	bool belongs = (a->code() == _code);
+	bool belongs = (a->code() == _code && a->elementSymbol() != "H");
 	ExitGroup::Flaggable *c = grp.central();
 	ExitGroup::Flaggable *e = grp.entry();
 	
