@@ -37,7 +37,9 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	BondCalculator *calculator = new BondCalculator();
 
-	BondSequenceHandler *handler = new BondSequenceHandler(4);
+	const int resources = 4;
+	BondSequenceHandler *handler = new BondSequenceHandler(resources);
+//	handler->setTotalSamples(120);
 	handler->addAnchorExtension(hexane->chosenAnchor());
 
 	handler->setup();
@@ -46,11 +48,12 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	BondSequence *seq = handler->sequence();
 	std::vector<float> params(handler->torsionBasis()->parameterCount());
 	
-	MapTransferHandler *eleMaps = new MapTransferHandler(seq->elementList(), 4);
+	MapTransferHandler *eleMaps = new MapTransferHandler(seq->elementList(), 
+	                                                     resources);
 	eleMaps->supplyAtomGroup(hexane->atomVector());
 	eleMaps->setup();
 
-	MapSumHandler *sums = new MapSumHandler(4, eleMaps->segment(0));
+	MapSumHandler *sums = new MapSumHandler(resources, eleMaps->segment(0));
 	sums->setup();
 
 	Tasks *tasks = new Tasks();
@@ -61,7 +64,8 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		n = std::chrono::system_clock::now();
 		tasks->run(6);
 		calculator->holdHorses();
-		for (size_t t = 0; t < 50; t++)
+		int total = 50;
+		for (size_t t = 0; t < total; t++)
 		{
 			BaseTask *first_hook = nullptr;
 			Task<Ticket, Ticket> *final_hook = nullptr;
@@ -106,8 +110,10 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		}
 
 		l = std::chrono::system_clock::now();
-		int span = std::chrono::microseconds(l - n).count();
-		std::cout << span / 1000000. << " seconds" << std::endl;
+		float span = std::chrono::microseconds(l - n).count() / 1000000.;
+
+		float pace = (float)span * 1000. / (float)total;
+		std::cout << pace << " milliseconds per map calculation" << std::endl;
 		
 		tasks->wait();
 	}
