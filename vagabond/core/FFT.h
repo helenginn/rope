@@ -19,6 +19,7 @@
 #ifndef __vagabond__FFT__
 #define __vagabond__FFT__
 
+#include <list>
 #include <fftw3.h>
 #include "TransformedGrid.h"
 
@@ -72,7 +73,7 @@ private:
 
 	void createNewPlan();
 	
-	static std::vector<PlanDims> _plans;
+	static std::list<PlanDims> _plans;
 	
 };
 

@@ -23,6 +23,7 @@
 #include <mutex>
 #include <vector>
 #include <climits>
+#include <set>
 #include "../utils/glm_import.h"
 #include <vagabond/utils/version.h>
 #include <vagabond/utils/ConvertIndex.h>

@@ -22,7 +22,7 @@
 #include "FFT.h"
 
 template <class T>
-std::vector<typename FFT<T>::PlanDims> FFT<T>::_plans;
+std::list<typename FFT<T>::PlanDims> FFT<T>::_plans;
 
 template <class T>
 FFT<T>::FFT(int nx, int ny, int nz) : Grid<T>(nx, ny, nz)
@@ -90,11 +90,13 @@ void FFT<T>::createNewPlan()
 template <class T>
 typename FFT<T>::PlanDims *FFT<T>::findPlan(int nx, int ny, int nz) const
 {
-	for (size_t i = 0; i < _plans.size(); i++)
+	for (auto it = _plans.begin(); it != _plans.end(); it++)
 	{
-		if (_plans[i].nx == nx && _plans[i].ny == ny && _plans[i].nz == nz)
+		// not in use atm
+		std::cout << it->nx << " " << it->ny << " " << it->nz << std::endl;
+		if (it->nx == nx && it->ny == ny && it->nz == nz)
 		{
-			return &_plans[i];
+			return &*it;
 		}
 	}
 

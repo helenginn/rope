@@ -56,9 +56,6 @@ void AtomMap::copyData(AtomSegment &other)
 	}
 }
 
-
-}
-
 AtomMap::AtomMap(AtomMap &other)
 : Grid<fftwf_complex>(0, 0, 0)
 , OriginGrid<fftwf_complex>(0, 0, 0)
@@ -133,16 +130,6 @@ void AtomMap::printMap()
 
 	ave /= (float)(nz() * ny());
 	std::cout << "Ave: " << ave << std::endl;
-}
-
-float *AtomMap::arrayPtr()
-{
-	for (size_t i = 0; i < nn(); i++)
-	{
-		_realOnly[i] = elementValue(i);
-	}
-
-	return _realOnly;
 }
 
 void AtomMap::populatePlan(FFT<fftwf_complex>::PlanDims &dims)

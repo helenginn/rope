@@ -19,6 +19,7 @@
 #ifndef __vagabond__BaseTask__
 #define __vagabond__BaseTask__
 
+#include <iostream>
 #include <atomic>
 #include <vector>
 #include <string>

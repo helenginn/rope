@@ -38,8 +38,6 @@ public:
 	
 	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
 
-	float *arrayPtr();
-
 	virtual float elementValue(long i) const
 	{
 		return _data[i][0];

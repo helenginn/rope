@@ -20,6 +20,7 @@
 #define __vagabond__Grid__cpp__
 
 #include "Grid.h"
+#include <iostream>
 #include <stdexcept>
 #include <cstring>
 
