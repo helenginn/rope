@@ -219,10 +219,9 @@ void ElementSegment::findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
 	nz = (long)lrint(diff[2]) + 1;
 }
 
-float ElementSegment::density(int i, int j)
+const float &ElementSegment::density(int i, int j) const
 {
-	float density = element(i).value[j];
-	return density;
+	return element(i).value[j];
 }
 
 
@@ -233,4 +232,10 @@ void ElementSegment::clear()
 		ve.value[0] = 0;
 		ve.value[1] = 0;
 	});
+}
+
+void ElementSegment::transferPlans(ElementSegment *other)
+{
+	_plan = other->_plan;
+	_planStart = &_data[0].value;
 }

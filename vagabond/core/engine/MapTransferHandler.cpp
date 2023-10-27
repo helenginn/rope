@@ -104,7 +104,15 @@ void MapTransferHandler::allocateSegments()
 			seg->setOrigin(_min);
 			seg->setElement(ele);
 			seg->setStatus(FFT<VoxelElement>::Real);
-			seg->makePlans();
+			
+			if (j == 0)
+			{
+				seg->makePlans();
+			}
+			else
+			{
+				seg->transferPlans(_segments[0]);
+			}
 
 			_segments.push_back(seg);
 			pool.pushObject(seg);

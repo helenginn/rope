@@ -40,8 +40,8 @@ void AtomSegment::addElementSegment(ElementSegment *seg)
 
 	for (size_t i = 0; i < nn(); i++)
 	{
-		float r = seg->density(i, 0);
-		float im = seg->density(i, 1);
+		const float &r = seg->density(i, 0);
+		const float &im = seg->density(i, 1);
 		long add_r = r * FIXED_MULTIPLY;
 		long add_im = im * FIXED_MULTIPLY;
 		_data[i].value[0].fetch_add(add_r);

@@ -56,8 +56,9 @@ public:
 
 	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
 	void addDensity(glm::vec3 real, float density);
-	float density(int i, int j);
+	const float &density(int i, int j) const;
 	void printMap();
+	void transferPlans(ElementSegment *other);
 	
 	void calculateMap();
 
