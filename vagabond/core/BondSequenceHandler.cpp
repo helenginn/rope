@@ -27,6 +27,14 @@
 #include "Result.h"
 #include <thread>
 
+BondSequenceHandler::BondSequenceHandler(int totalSeq) : Handler()
+{
+	_totalSequences = totalSeq;
+	_pools[SequenceIdle].setName("idle sequences");
+	
+	_manager = new CoordManager();
+}
+
 BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
 {
 	_totalSamples = 1;
