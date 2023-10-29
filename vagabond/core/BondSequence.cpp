@@ -449,6 +449,24 @@ const AtomPosMap &BondSequence::extractPositions()
 	return _posAtoms;
 }
 
+std::vector<glm::vec3> BondSequence::extractForMap(const std::string &ele,
+                                                   int num)
+{
+	std::vector<glm::vec3> epos;
+	epos.reserve(num);
+
+	for (size_t i = 0; i < _blocks.size(); i++)
+	{
+		if (_blocks[i].atom == nullptr || _blocks[i].element != ele)
+		{
+			continue;
+		}
+		
+		epos.push_back(_blocks[i].my_position());
+	}
+
+	return epos;
+}
 std::vector<BondSequence::ElePos> BondSequence::extractForMap()
 {
 	std::vector<ElePos> epos;

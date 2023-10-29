@@ -147,6 +147,7 @@ public:
 	const AtomPosMap &extractPositions();
 	void extractVector(AtomPosList &results);
 	
+	/* I hope you can delete one day */
 	struct ElePos
 	{
 		glm::vec3 pos;
@@ -154,6 +155,8 @@ public:
 	};
 
 	std::vector<ElePos> extractForMap();
+
+	std::vector<glm::vec3> extractForMap(const std::string &ele, int num);
 	double calculateDeviations();
 
 	void setSampleCount(int count)
