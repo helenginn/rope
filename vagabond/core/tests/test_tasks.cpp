@@ -21,12 +21,12 @@
 #include <vagabond/core/engine/MapTransferHandler.h>
 #include <vagabond/core/engine/CorrelationHandler.h>
 #include <vagabond/core/engine/MapSumHandler.h>
+#include "BondSequenceHandler.h"
+#include "BondCalculator.h"
 #include "Result.h"
 #include "PdbFile.h"
 #include "AtomGroup.h"
 #include "ArbitraryMap.h"
-#include "BondSequenceHandler.h"
-#include "BondCalculator.h"
 #include <string>
 #include <iostream>
 
@@ -60,11 +60,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	MapSumHandler *sums = new MapSumHandler(threads, eleMaps->segment(0));
 	sums->setup();
 
-	File *file = File::loadUnknown(density);
-	Diffraction *diff = file->diffractionData();
-	ArbitraryMap *map = new ArbitraryMap(*diff);
-	map->setupFromDiffraction();
-	delete file;
+	ArbitraryMap *map = new ArbitraryMap(density);
 	
 	CorrelationHandler *cc = new CorrelationHandler(map, sums->templateMap(),
 	                                                resources);
