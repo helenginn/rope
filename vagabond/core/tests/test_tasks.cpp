@@ -18,6 +18,8 @@
 
 #include <vagabond/core/engine/Task.h>
 #include <vagabond/core/engine/Tasks.h>
+#include <vagabond/core/engine/MapTransferHandler.h>
+#include <vagabond/core/engine/MapSumHandler.h>
 #include "Result.h"
 #include "PdbFile.h"
 #include "AtomGroup.h"
@@ -25,72 +27,6 @@
 #include "BondCalculator.h"
 #include <string>
 #include <iostream>
-
-auto make_fixed_float(const float num)
-{
-	return [num](int) -> float
-	{ 
-		std::cout << "Making a " << num << std::endl;
-		return num;
-	};
-}
-
-namespace tt = boost::test_tools;
-BOOST_AUTO_TEST_CASE(tasks_follow_well)
-{
-	return;
-	auto to_words = [](float f) -> std::string
-	{
-		std::cout << "turning " << f << " into words" << std::endl;
-		return std::to_string(f);
-	};
-	
-	struct strings
-	{
-		strings &operator=(std::string str)
-		{
-			found.push_back(str);
-			return *this;
-		}
-		std::vector<std::string> found;
-	};
-
-	auto speak = [](strings str) -> void *
-	{
-		std::cout << "say it: ";
-		std::cout << str.found[0] << " " << str.found[1] << std::endl;
-		return nullptr;
-	};
-	
-	Task<float, std::string> *convert_three{}, *convert_five{};
-	Tasks tasks;
-	{
-		auto *make_three = new Task<int, float>(make_fixed_float(3));
-		convert_three = new Task<float, std::string>(to_words);
-		make_three->follow_with(convert_three);
-
-		tasks += {convert_three, make_three};
-	}
-
-	{
-		auto *make_five = new Task<int, float>(make_fixed_float(5));
-		convert_five = new Task<float, std::string>(to_words);
-
-		make_five->follow_with(convert_five);
-
-		tasks += {make_five, convert_five};
-	}
-
-	auto *speak_out_loud = new Task<strings, void *>(speak);
-	convert_three->follow_with(speak_out_loud);
-	convert_five->follow_with(speak_out_loud);
-	tasks += {speak_out_loud};
-
-	tasks.run(2);
-
-	
-	BOOST_TEST(true);
-}
 
 BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 {
@@ -101,24 +37,32 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	BondCalculator *calculator = new BondCalculator();
 
-	BondSequenceHandler *handler = new BondSequenceHandler();
+	BondSequenceHandler *handler = new BondSequenceHandler(4);
 	handler->addAnchorExtension(hexane->chosenAnchor());
 
 	handler->setup();
 	handler->prepareSequences();
 	
-	std::vector<float> params(handler->sequence(0)->torsionBasis()->parameterCount());
+	BondSequence *seq = handler->sequence();
+	std::vector<float> params(handler->torsionBasis()->parameterCount());
+	
+	MapTransferHandler *eleMaps = new MapTransferHandler(seq->elementList(), 4);
+	eleMaps->supplyAtomGroup(hexane->atomVector());
+	eleMaps->setup();
 
-	int ticket = 1;
+	MapSumHandler *sums = new MapSumHandler(4, eleMaps->segment(0));
+	sums->setup();
+
 	Tasks *tasks = new Tasks();
 
-	for (size_t i = 0; i < 100; i++)
+	while (true)
 	{
+		std::chrono::system_clock::time_point n, l;
+		n = std::chrono::system_clock::now();
 		tasks->run(6);
 		calculator->holdHorses();
-		for (size_t t = 0; t < 200; t++)
+		for (size_t t = 0; t < 50; t++)
 		{
-
 			BaseTask *first_hook = nullptr;
 			Task<Ticket, Ticket> *final_hook = nullptr;
 			
@@ -132,13 +76,18 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 			                                   | Flag::AtomVector);
 
 			handler->calculate(t, calc, params, &first_hook, &final_hook);
-			handler->extract(gets, submit_result, final_hook);
+			Task<Ticket, void *> *letgo = nullptr;
+			letgo = handler->extract(gets, submit_result, final_hook);
+
+			std::map<std::string, GetEle> eleTasks;
+
+			handler->positionsForMap(final_hook, letgo, eleTasks);
+			eleMaps->extract(t, eleTasks);
+			sums->grab_map(eleTasks, submit_result);
 
 			tasks->addTask(first_hook);
 		}
 		calculator->releaseHorses();
-
-		std::cout << "Waiting..."<<std::endl;
 		
 		while (true)
 		{
@@ -149,9 +98,16 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 				break;
 			}
 
-			std::cout << r->deviation << " for " << r->ticket << " over ";
-			std::cout << r->apl.size() << std::endl;
+			if (r->map)
+			{
+				std::cout << "." << std::flush;
+			}
+			r->destroy(); delete r;
 		}
+
+		l = std::chrono::system_clock::now();
+		int span = std::chrono::microseconds(l - n).count();
+		std::cout << span / 1000000. << " seconds" << std::endl;
 		
 		tasks->wait();
 	}
