@@ -61,6 +61,12 @@ public:
 	{
 		_torsion_angles_for_coord = func;
 	}
+
+	const std::function<float(const Coord::Get &, 
+	                          int num)> &torsionAnglesForCoord()
+	{
+		return _torsion_angles_for_coord;
+	}
 	
 	const std::vector<Parameter *> &parameterList() const
 	{
