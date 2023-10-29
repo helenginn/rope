@@ -92,7 +92,7 @@ public:
 	{
 		return [](const std::vector<float> &all)
 		{
-			auto get = [&all](const int &) -> Coord::Get
+			auto get = [all](const int &) -> Coord::Get
 			{
 				return [&all](const int &i) -> float
 				{
