@@ -136,6 +136,7 @@ void MolRefiner::submitJob(std::vector<float> all, std::vector<float> tensor,
 		job.parameters = all;
 
 		job.requests = static_cast<JobType>(JobExtractPositions |
+		                                    JobCalculateMapSegment |
 		                                    JobMapCorrelation);
 		if (!show)
 		{
@@ -204,6 +205,9 @@ void MolRefiner::retrieveJobs()
 			{
 				continue;
 			}
+
+			if (r->map)
+			r->map->printMap();
 
 			int t = r->ticket;
 			int g = _ticket2Group[t];
