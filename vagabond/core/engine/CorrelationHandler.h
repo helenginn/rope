@@ -21,6 +21,7 @@
 
 #include <thread>
 #include "engine/Handler.h"
+#include "engine/ElementTypes.h"
 #include <fftw3.h>
 
 class BondCalculator;
@@ -32,16 +33,22 @@ class OriginGrid;
 class Correlator;
 class AtomMap;
 
+typedef std::pair<Correlator *, AtomMap *> CorrelMapPair;
+
 class CorrelationHandler : public Handler
 {
 public:
 	CorrelationHandler(BondCalculator *calculator);
 	CorrelationHandler(OriginGrid<fftwf_complex> *reference,
-	                   AtomMap *calc_template, int resources);
+	                   const AtomMap *calc_template, int resources);
 	~CorrelationHandler();
+
+	void get_correlation(Task<SegmentAddition, AtomMap *> *made_map,
+	                     Task<CorrelMapPair, Correlation> **get_cc = nullptr);
 
 	AtomMap *acquireMap(Job **job);
 	Correlator *acquireCorrelator();
+	Correlator *acquireCorrelatorIfAvailable();
 	void pushMap(AtomMap *seg, Job *job);
 	void returnCorrelator(Correlator *cc);
 

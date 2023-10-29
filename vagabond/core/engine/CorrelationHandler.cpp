@@ -20,6 +20,8 @@
 #include "engine/workers/ThreadCorrelation.h"
 #include "engine/Correlator.h"
 #include "engine/MapSumHandler.h"
+#include "engine/Task.h"
+#include "Result.h"
 
 CorrelationHandler::CorrelationHandler(BondCalculator *calc)
 {
@@ -27,12 +29,12 @@ CorrelationHandler::CorrelationHandler(BondCalculator *calc)
 }
 
 CorrelationHandler::CorrelationHandler(OriginGrid<fftwf_complex> *reference,
-                                       AtomMap *calc_template,
+                                       const AtomMap *calc_template,
                                        int resources)
 {
 	_refDensity = reference;
 	_threads = resources;
-	_template = nullptr;
+	_template = calc_template;
 }
 
 CorrelationHandler::~CorrelationHandler()
@@ -110,6 +112,14 @@ AtomMap *CorrelationHandler::acquireMap(Job **job)
 	return ret;
 }
 
+Correlator *CorrelationHandler::acquireCorrelatorIfAvailable()
+{
+	Correlator *cc;
+	_correlPool.acquireObjectIfAvailable(cc);
+
+	return cc;
+}
+
 Correlator *CorrelationHandler::acquireCorrelator()
 {
 	Correlator *cc;
@@ -127,4 +137,44 @@ void CorrelationHandler::finish()
 {
 	_correlPool.finish();
 	_mapPool.finish();
+}
+
+void CorrelationHandler::get_correlation(Task<SegmentAddition, AtomMap *> *made_map,
+                                         Task<CorrelMapPair, Correlation> **get_cc)
+{
+	auto grab_cc = [this](AtomMap *map, bool *success) -> CorrelMapPair
+	{
+		Correlator *correlator = acquireCorrelatorIfAvailable();
+		*success = (correlator != nullptr);
+		return CorrelMapPair(correlator, map);
+	};
+
+	auto *grab = new FailableTask<AtomMap *, CorrelMapPair>(grab_cc, 
+	                                                        "grab correlator");
+
+	auto correl = [](CorrelMapPair pair) -> Correlation
+	{
+		float cc = pair.first->correlation(pair.second);
+		return Correlation{cc};
+	};
+
+	auto *correlate = new Task<CorrelMapPair, Correlation>(correl, "correlate");
+	
+	if (get_cc)
+	{
+		*get_cc = correlate;
+	}
+
+	auto letgo = [this](CorrelMapPair pair) -> void *
+	{
+		returnCorrelator(pair.first);
+		return nullptr;
+	};
+
+	auto *let_go = new Task<CorrelMapPair, void *>(letgo, "let correlator go");
+
+	made_map->follow_with(grab);
+	grab->follow_with(correlate);
+	grab->follow_with(let_go);
+	correlate->must_complete_before(let_go);
 }
