@@ -168,9 +168,6 @@ void MolRefiner::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 	
-	_resources.tasks = new Tasks();
-	_resources.tasks->run(_threads);
-	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
 	engine->setStepSize(0.2);
@@ -198,6 +195,9 @@ void MolRefiner::changeDefaults(CoordManager *manager)
 
 void MolRefiner::prepareResources()
 {
+	_resources.tasks = new Tasks();
+	_resources.tasks->run(_threads);
+	
 	/* set up result bin */
 	_resources.calculator = new BondCalculator();
 
