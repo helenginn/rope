@@ -77,6 +77,7 @@ AtomMap::AtomMap(AtomMap &other)
 	this->Grid::setDimensions(other.nx(), other.ny(), other.nz(), false);
 	setOrigin(other.origin());
 	setRealDim(other.realDim());
+	_realOnly = new float[nn()];
 	
 	setStatus(FFT::Reciprocal);
 	_plan = other._plan;
