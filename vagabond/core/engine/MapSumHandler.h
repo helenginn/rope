@@ -76,6 +76,7 @@ public:
 	void transferElementSegment(ElementSegment *seg);
 	void returnMiniJob(MapJob *mj);
 	void returnSegment(AtomSegment *segment);
+	AtomSegment *acquireAtomSegmentIfAvailable();
 	void setup();
 
 	void start();

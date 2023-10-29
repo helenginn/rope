@@ -92,6 +92,14 @@ void MapSumHandler::start()
 	prepareThreads();
 }
 
+AtomSegment *MapSumHandler::acquireAtomSegmentIfAvailable()
+{
+	AtomSegment *seg = nullptr;
+	_mapPool.acquireObjectIfAvailable(seg);
+
+	return seg;
+}
+
 MapSumHandler::MapJob *MapSumHandler::acquireMapJob(Job *job)
 {
 	int ticket = job->ticket;
