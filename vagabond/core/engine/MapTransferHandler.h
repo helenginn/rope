@@ -101,6 +101,7 @@ private:
 	void allocateSegments();
 	void prepareThreads();
 	void getRealDimensions(const std::vector<Atom *> &sub);
+	ElementSegment *acquireSegmentIfAvailable(std::string ele);
 
 	std::vector<ElementSegment *> _segments;
 	std::vector<std::string> _elements;

@@ -139,6 +139,13 @@ void MapTransferHandler::start()
 	prepareThreads();
 }
 
+ElementSegment *MapTransferHandler::acquireSegmentIfAvailable(std::string ele)
+{
+	Pool<ElementSegment *> &pool = _pools[ele];
+	ElementSegment *seg = nullptr;
+	pool.acquireObjectIfAvailable(seg);
+	return seg;
+}
 void MapTransferHandler::returnSegment(ElementSegment *segment)
 {
 	segment->clear();
