@@ -19,6 +19,8 @@
 #include "BondCalculator.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/workers/ThreadMapTransfer.h"
+#include "engine/Task.h"
+#include "engine/ElementTypes.h"
 #include "AtomGroup.h"
 #include "Atom.h"
 #include "ElementSegment.h"
@@ -167,5 +169,82 @@ void MapTransferHandler::finish()
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
 		_pools[_elements[i]].finish();
+	}
+}
+
+void MapTransferHandler::extract(int ticket,
+                                 std::map<std::string, GetEle> &eleTasks)
+{
+	for (auto it = eleTasks.begin(); it != eleTasks.end(); it++)
+	{
+		const std::string &ele = it->first;
+		GetEle &jobs = it->second;
+
+		auto grab_segment = [this, ele](void *, bool *success) -> ElementSegment *
+		{
+			ElementSegment *segment = acquireSegmentIfAvailable(ele);
+			*success = (segment != nullptr);
+			return segment;
+		};
+
+		auto *grab = new FailableTask<void *, 
+		ElementSegment *>(grab_segment, "grab element segment");
+
+		jobs.grab_segment = grab;
+
+		auto put_atoms_in = [](SegmentPosList spl) -> ElementSegment *
+		{
+			ElementSegment *segment = spl.segment;
+			std::vector<glm::vec3> *positions = spl.positions;
+			
+			for (const glm::vec3 &p : *positions)
+			{
+				segment->addDensity(p, 1);
+			}
+			
+			delete positions;
+
+			segment->calculateMap();
+			return segment;
+		};
+
+		auto *put = 
+		new Task<SegmentPosList, ElementSegment *>(put_atoms_in, 
+		                                       "put " + ele + " atoms in");
+		jobs.put_atoms_in = put;
+
+		std::string desc = "sum " + ele + " to full map " + std::to_string(ticket);
+
+		auto sum = [desc](SegmentAddition add) -> SegmentAddition
+		{
+			ElementSegment *element = add.elements;
+			AtomSegment *atoms = add.atoms;
+			atoms->addElementSegment(element);
+
+			return add;
+		};
+
+		jobs.summation =
+		new Task<SegmentAddition, SegmentAddition>(sum, desc);
+		
+		auto let_seg_go = [this](SegmentAddition add) -> void *
+		{
+			returnSegment(add.elements);
+			return nullptr;
+		};
+		
+		jobs.let_go = new Task<SegmentAddition, void *>(let_seg_go);
+		
+		/* dependencies: */
+		/* - don't grab a segment before the atom list is ready to add */
+		/* - after grabbing a segment & atom list, put the atoms in the segment */
+		/* - don't sum with full map before atoms are in segment */
+		/* - only let the resources go once the summation is complete */
+		jobs.get_pos->must_complete_before(jobs.grab_segment);
+		jobs.grab_segment->follow_with(put);
+		jobs.grab_segment->follow_with(jobs.summation);
+		jobs.get_pos->follow_with(put);
+		jobs.put_atoms_in->must_complete_before(jobs.summation);
+		jobs.summation->follow_with(jobs.let_go);
 	}
 }

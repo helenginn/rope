@@ -80,6 +80,8 @@ public:
 	{
 		_sumHandler = handler;
 	}
+
+	void extract(int ticket, std::map<std::string, GetEle> &eleTasks);
 	
 	const size_t elementCount() const
 	{
