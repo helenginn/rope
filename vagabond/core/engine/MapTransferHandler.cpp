@@ -24,6 +24,13 @@
 #include "ElementSegment.h"
 #include "FFTCubicGrid.h"
 
+MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &elements,
+                                       int mapNum)
+: _mapNum(mapNum)
+{
+	supplyElementList(elements);
+}
+
 MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
 {
 	_calculator = calculator;
