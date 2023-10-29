@@ -20,10 +20,22 @@
 #include <cmath>
 #include "ArbitraryMap.h"
 #include "Diffraction.h"
+#include "File.h"
 
 ArbitraryMap::ArbitraryMap() : TransformedGrid<fftwf_complex>(0, 0, 0)
 {
 
+}
+
+ArbitraryMap::ArbitraryMap(const std::string &filename)
+: TransformedGrid<fftwf_complex>(0, 0, 0)
+{
+	File *file = File::loadUnknown(filename);
+	_diff = file->diffractionData();
+
+	setupFromDiffraction();
+
+	delete file;
 }
 
 ArbitraryMap::ArbitraryMap(Diffraction &diff) : 
