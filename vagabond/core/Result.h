@@ -21,19 +21,20 @@
 
 #include "Job.h"
 #include "AtomPosMap.h"
+#include "engine/ElementTypes.h"
 
 class AtomMap;
-
-struct Deviation
-{
-	float value;
-};
 
 struct Result
 {
 	void operator=(const Deviation &d)
 	{
 		deviation += d.value;
+	}
+
+	void operator=(const Correlation &c)
+	{
+		correlation += c.value;
 	}
 
 	void operator=(const AtomPosMap *tmp)

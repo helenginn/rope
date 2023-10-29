@@ -21,6 +21,16 @@
 
 #include <vector>
 
+struct Correlation
+{
+	float value;
+};
+
+struct Deviation
+{
+	float value;
+};
+
 class AtomSegment;
 class BondSequence;
 class ElementSegment;
