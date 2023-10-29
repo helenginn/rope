@@ -62,7 +62,13 @@ public:
 
 		output = todo(input);
 		
-		return run_release_program();
+		std::vector<BaseTask *> results = this->run_release_program();
+		
+		if (expected == total)
+		{
+			delete this;
+		}
+		return results;
 	}
 	
 	template <typename OutputCompatible, typename Unimportant>
@@ -74,7 +80,7 @@ public:
 			return unlocked ? next : nullptr;
 		};
 		
-		next->expected++;
+		next->expect_one_more(true);
 		next->priority += priority;
 		connections.push_back(connect);
 	}
@@ -88,19 +94,47 @@ public:
 			return unlocked ? next : nullptr;
 		};
 		
-		next->expected++;
+		next->expect_one_more(true);
 		next->priority += priority;
 		connections.push_back(connect);
 	}
 	
+	template <typename OtherTask>
+	void or_follow_with(OtherTask *const &next)
+	{
+		auto connect = [next, this]() -> BaseTask *
+		{
+			bool unlocked = next->setInput(output);
+			return unlocked ? next : nullptr;
+		};
+		
+		next->expect_one_more(false);
+		next->priority += priority;
+		connections.push_back(connect);
+	}
+	
+	void expect_one_more(bool required)
+	{
+		if (required) { expected++; };
+		total++;
+	}
+	
 	bool supplySignal()
 	{
-		signals++;
-		return (signals == expected);
+		int result = ++signals;
+		int triggered = (result == expected);
+		
+		if (total > expected && result == total)
+		{
+			delete this;
+			return false; // don't handle the pointer ever again
+		}
+
+		return triggered;
 	}
 
 	template <typename InputCompatible>
-	bool setInput(const InputCompatible &in)
+	bool setInput(const InputCompatible in)
 	{
 		input = in;
 		return supplySignal();
@@ -110,8 +144,6 @@ public:
 
 	Input input{};
 	Output output{};
-	
-	std::vector<std::function<BaseTask *()>> connections;
 };
 
 template <typename Input, typename Output>
@@ -142,7 +174,10 @@ public:
 		}
 		
 		std::vector<BaseTask *> results = this->run_release_program();
-		delete this;
+		if (this->expected == this->total)
+		{
+			delete this;
+		}
 		return results;
 	}
 	

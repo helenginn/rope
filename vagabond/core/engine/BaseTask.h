@@ -39,8 +39,11 @@ public:
 
 	std::atomic<int> signals{0};
 	int expected = 0;
+	int total    = 0;
 	int priority = 1;
 	std::string name;
+	
+	std::vector<std::function<BaseTask *()>> connections;
 };
 
 #endif
