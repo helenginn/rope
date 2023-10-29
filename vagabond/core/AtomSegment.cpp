@@ -42,10 +42,8 @@ void AtomSegment::addElementSegment(ElementSegment *seg)
 	{
 		const float &r = seg->density(i, 0);
 		const float &im = seg->density(i, 1);
-		long add_r = r * FIXED_MULTIPLY;
-		long add_im = -im * FIXED_MULTIPLY; /* negative because FFT's reversed */
-		_data[i].value[0].fetch_add(add_r);
-		_data[i].value[1].fetch_add(add_im);
+		_data[i].value[0] += r * FIXED_MULTIPLY;
+		_data[i].value[1] += -im * FIXED_MULTIPLY;
 	}
 }
 

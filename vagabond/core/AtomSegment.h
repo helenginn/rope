@@ -22,7 +22,7 @@
 #include "FFTCubicGrid.h"
 #include <atomic>
 
-#define FIXED_MULTIPLY (1000000)
+#define FIXED_MULTIPLY (1000000.f)
 
 class ElementSegment;
 
