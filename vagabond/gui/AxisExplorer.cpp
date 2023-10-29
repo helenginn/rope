@@ -27,12 +27,14 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
 
+#include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/AtomBlock.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Torsion2Atomic.h>
 #include <vagabond/core/TorsionBasis.h>
 #include <vagabond/core/Result.h>
+#include <vagabond/core/engine/Tasks.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev), StructureModification(inst)
@@ -41,6 +43,7 @@ AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 	_rawAngles = angles;
 	setPingPong(true);
 	setOwnsAtoms(false);
+	_instance->load();
 }
 
 AxisExplorer::~AxisExplorer()
@@ -50,19 +53,14 @@ AxisExplorer::~AxisExplorer()
 
 void AxisExplorer::setup()
 {
-	_instance->load();
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
-
 	loadAtoms(grp);
-	recalculateAtoms();
-
 	_fullAtoms = grp;
 	
 	Display::setup();
 	
-	startCalculator();
-	supplyTorsions();
+	prepareResources();
 	setupSlider();
 	
 	submitJob(0.0);
@@ -77,36 +75,34 @@ void AxisExplorer::setup()
 
 void AxisExplorer::submitJob(float prop)
 {
-	for (BondCalculator *calc : _calculators)
-	{
-		Job job{};
-		job.parameters = {prop};
-		if (_atomMaps)
-		{
-			job.atomTargets = AtomBlock::prepareMovingTargets(calc);
-		}
-		job.requests = static_cast<JobType>(JobPositionVector); 
-		calc->submitJob(job);
-	}
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
+	
+	/* get easy references to resources */
+	BondCalculator *const &calculator = _resources.calculator;
+	BondSequenceHandler *const &sequences = _resources.sequences;
+	
+	calculator->holdHorses();
 
-	double sum = 0;
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(0);
 
-	for (BondCalculator *calc : _calculators)
-	{
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
+	                             Flag::DoSuperpose);
+	Flag::Extract gets = Flag::Extract(Flag::AtomVector);
 
-		Result *r = calc->acquireResult();
+	/* calculation of torsion angle-derived and target-derived
+	 * atom positions */
+	sequences->calculate(calc, {prop}, &first_hook, &final_hook);
+	sequences->extract(gets, submit_result, final_hook);
+	
+	_resources.tasks->addTask(first_hook);
+	calculator->releaseHorses();
 
-		if (r == nullptr)
-		{
-			return;
-		}
+	Result *r = calculator->acquireResult();
+	r->transplantPositions(_displayTargets);
 
-		if (r->requests & JobPositionVector)
-		{
-			r->transplantPositions(_atomMaps);
-			sum += r->score;
-		}
-	}
+	r->destroy(); delete r;
 }
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
@@ -128,12 +124,11 @@ void AxisExplorer::setupSlider()
 
 void AxisExplorer::adjustTorsions()
 {
-	std::cout << "Torsion to atomic: " << std::endl;
 	Entity *entity = _instance->entity();
 	Torsion2Atomic t2a(entity, _cluster, _instance);
 	_movement = t2a.convertAnglesSimple(_instance, _rawAngles);
 	_movement.attachInstance(_instance);
-	_atomMaps = true;
+	_displayTargets = true;
 
 	for (size_t i = 0; i < _movement.size(); i++)
 	{
@@ -143,19 +138,19 @@ void AxisExplorer::adjustTorsions()
 		{
 			atom->setOtherPosition("target", atom->derivedPosition());
 			atom->setOtherPosition("moving", _movement.storage(i));
-
-			if (atom->residueId() == 5 && atom->isReporterAtom())
-			{
-				std::cout << atom->desc() << " " << _movement.storage(i) << std::endl;
-			}
 		}
 	}
+
+	CoordManager *manager = _resources.sequences->manager();
+	const std::vector<AtomBlock> &blocks = 
+	_resources.sequences->sequence()->blocks();
+	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
 }
 
-void AxisExplorer::supplyTorsions()
+void AxisExplorer::supplyTorsions(CoordManager *manager)
 {
-	BondCalculator *calc = _instanceToCalculator[_instance];
-	std::vector<Parameter *> params = calc->torsionBasis()->parameters();
+	BondSequenceHandler *sequences = _resources.sequences;
+	std::vector<Parameter *> params = sequences->torsionBasis()->parameters();
 	RTAngles filtered = _rawAngles;
 	filtered.attachInstance(_instance);
 	filtered.filter_according_to(params);
@@ -165,7 +160,7 @@ void AxisExplorer::supplyTorsions()
 		return filtered.storage(idx) * get(0);
 	};
 	
-	calc->manager()->setTorsionFetcher(grab_torsion);
+	manager->setTorsionFetcher(grab_torsion);
 }
 
 void AxisExplorer::askForAtomMotions()
@@ -267,5 +262,25 @@ void AxisExplorer::setupColourLegend()
 	legend->setLimits(0.f, _maxTorsion);
 	legend->setCentre(0.9, 0.5);
 	addObject(legend);
+}
+
+void AxisExplorer::prepareResources()
+{
+	_resources.tasks = new Tasks();
+	_resources.tasks->run(_threads);
+
+	const int threads = 2;
+	/* set up result bin */
+	_resources.calculator = new BondCalculator();
+
+	/* set up per-bond/atom calculation */
+	Atom *anchor = _fullAtoms->chosenAnchor();
+	BondSequenceHandler *sequences = new BondSequenceHandler(threads);
+	sequences->addAnchorExtension(anchor);
+	sequences->setup();
+	sequences->prepareSequences();
+	_resources.sequences = sequences;
+	
+	supplyTorsions(sequences->manager());
 }
 

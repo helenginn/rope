@@ -51,13 +51,14 @@ public:
 	virtual void finishedDragging(std::string tag, double x, double y);
 protected:
 	void setupColoursForList(RTAngles &angles);
+	virtual void prepareResources();
 private:
 	Slider *_rangeSlider = nullptr;
 
 	void askForAtomMotions();
 	void setupColours();
 	void setupColourLegend();
-	void supplyTorsions();
+	void supplyTorsions(CoordManager *manager);
 	
 	struct mapping
 	{
