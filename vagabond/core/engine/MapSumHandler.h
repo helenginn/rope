@@ -95,6 +95,8 @@ private:
 
 	BondCalculator *_calculator = nullptr;
 	MapTransferHandler *_mapHandler = nullptr;
+	
+	const ElementSegment *_segment = nullptr;
 	CorrelationHandler *_correlHandler = nullptr;
 	
 	AtomMap *_template = nullptr;

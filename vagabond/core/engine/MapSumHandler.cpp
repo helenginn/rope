@@ -44,21 +44,24 @@ MapSumHandler::~MapSumHandler()
 
 void MapSumHandler::createSegments()
 {
+	if (!_segment && _mapHandler)
+	{
+		_segment = _mapHandler->segment(0);
+	}
 	for (size_t i = 0; i < _mapCount + 1; i++)
 	{
 		AtomSegment *seg = new AtomSegment();
 
-		if (_mapHandler->elementCount() > 0)
-		{
-			seg->getDimensionsFrom(*_mapHandler->segment(0));
-			seg->setStatus(FFT<Density>::Real);
-		}
+		seg->getDimensionsFrom(*_segment);
+		seg->setStatus(FFT<Density>::Real);
 		
+		seg->makePlans();
 		/* in order to calculate the plan once, rather than via competing
 		 *	threads later */
 		if (i == 0)
 		{
 			_template = new AtomMap(*seg);
+			_template->makePlans();
 		}
 
 		_mapPool.pushObject(seg);
