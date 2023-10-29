@@ -52,7 +52,7 @@ void AtomMap::copyData(AtomSegment &other)
 		float r = other.density(i, 0);
 		float im = other.density(i, 1);
 		_data[i][0] = r;
-		_data[i][1] = im;
+		_data[i][1] = -im; /* negative otherwise inversion occurs */
 	}
 }
 
