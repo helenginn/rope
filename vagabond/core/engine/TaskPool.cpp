@@ -27,16 +27,6 @@ Handler::TaskPool::TaskPool()
 
 }
 
-void Handler::TaskPool::pluckFromQueue(BaseTask *&task)
-{
-	size_t size = this->members.size();
-	if (size > 0)
-	{
-		task = *this->members.begin();
-		this->members.pop_front();
-	}
-}
-
 void Handler::TaskPool::insertIntoQueue(BaseTask *&task)
 {
 	std::list<BaseTask *>::iterator it = this->members.begin();
@@ -51,13 +41,6 @@ void Handler::TaskPool::insertIntoQueue(BaseTask *&task)
 	}
 
 	this->members.insert(it, task);
-
-	for (it = this->members.begin(); it != this->members.end(); it++)
-	{
-		BaseTask *&trial = *it;
-//		std::cout << trial->priority << " ";
-	}
-//	std::cout << std::endl;
 
 }
 

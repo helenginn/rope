@@ -230,7 +230,6 @@ protected:
 		TaskPool();
 
 		size_t number_ready();
-		virtual void pluckFromQueue(BaseTask *&task);
 		virtual void insertIntoQueue(BaseTask *&task);
 	};
 
