@@ -45,7 +45,7 @@ public:
 		return _data[i][0];
 	}
 private:
-	float *_realOnly;
+	float *_realOnly = nullptr;
 
 };
 

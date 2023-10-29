@@ -32,6 +32,7 @@ AtomMap::AtomMap(AtomSegment &other)
 	setRealDim(other.realDim());
 	
 	_realOnly = new float[nn()];
+	
 //	setStatus(AtomMap::Reciprocal);
 	makePlans();
 	
@@ -40,7 +41,7 @@ AtomMap::AtomMap(AtomSegment &other)
 
 AtomMap::~AtomMap()
 {
-	delete _realOnly;
+	delete [] _realOnly;
 	_realOnly = nullptr;
 }
 
@@ -51,24 +52,27 @@ void AtomMap::copyData(AtomSegment &other)
 		float r = other.density(i, 0);
 		float im = other.density(i, 1);
 		_data[i][0] = r;
-		_data[i][1] = -im;
+		_data[i][1] = im;
 	}
+}
+
 
 }
 
 AtomMap::AtomMap(AtomMap &other)
-: Grid<fftwf_complex>(other.nx(), other.ny(), other.nz())
-, OriginGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
-, CubicGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
-, FFT<fftwf_complex>(other.nx(), other.ny(), other.nz())
-, FFTCubicGrid<fftwf_complex>(other)
+: Grid<fftwf_complex>(0, 0, 0)
+, OriginGrid<fftwf_complex>(0, 0, 0)
+, CubicGrid<fftwf_complex>(0, 0, 0)
+, FFT<fftwf_complex>(0, 0, 0)
+, FFTCubicGrid<fftwf_complex>(0, 0, 0)
 {
 	this->Grid::setDimensions(other.nx(), other.ny(), other.nz(), false);
 	setOrigin(other.origin());
 	setRealDim(other.realDim());
 	
-	_realOnly = new float[nn()];
+	setStatus(FFT::Reciprocal);
 	_plan = other._plan;
+	_planStart = &_data[0];
 }
 
 ArbitraryMap *AtomMap::operator()()
