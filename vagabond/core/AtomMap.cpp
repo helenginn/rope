@@ -56,6 +56,17 @@ void AtomMap::copyData(AtomSegment &other)
 	}
 }
 
+
+float *AtomMap::arrayPtr()
+{
+       for (size_t i = 0; i < nn(); i++)
+       {
+               _realOnly[i] = elementValue(i);
+       }
+
+       return _realOnly;
+}
+
 AtomMap::AtomMap(AtomMap &other)
 : Grid<fftwf_complex>(0, 0, 0)
 , OriginGrid<fftwf_complex>(0, 0, 0)

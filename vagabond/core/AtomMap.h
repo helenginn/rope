@@ -42,6 +42,8 @@ public:
 	{
 		return _data[i][0];
 	}
+	
+	float *arrayPtr();
 private:
 	float *_realOnly = nullptr;
 
