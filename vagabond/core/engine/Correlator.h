@@ -26,20 +26,18 @@
 template <class T>
 class OriginGrid;
 
-class MapSumHandler;
 class AtomSegment;
 class AtomMap;
 
 class Correlator
 {
 public:
-	Correlator(OriginGrid<fftwf_complex> *data, MapSumHandler *sumHandler);
+	Correlator(OriginGrid<fftwf_complex> *data, const AtomMap *templateMap);
 
 	void prepareList();
 	double correlation(AtomSegment *seg);
 private:
 	OriginGrid<fftwf_complex> *_density = nullptr;
-	MapSumHandler *_sumHandler = nullptr;
 	
 	struct Comparison
 	{

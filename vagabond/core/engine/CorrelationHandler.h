@@ -31,11 +31,14 @@ class OriginGrid;
 
 class AtomSegment;
 class Correlator;
+class AtomMap;
 
 class CorrelationHandler : public Handler
 {
 public:
 	CorrelationHandler(BondCalculator *calculator);
+	CorrelationHandler(OriginGrid<fftwf_complex> *reference,
+	                   AtomMap *calc_template, int resources);
 	~CorrelationHandler();
 
 	AtomSegment *acquireMap(Job **job);
@@ -75,6 +78,7 @@ private:
 	BondCalculator *_calculator = nullptr;
 	MapSumHandler *_sumHandler = nullptr;
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
+	const AtomMap *_template = nullptr;
 	
 	struct CorrelJob
 	{

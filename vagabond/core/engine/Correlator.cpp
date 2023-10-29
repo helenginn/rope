@@ -22,16 +22,14 @@
 #include <vagabond/utils/maths.h>
 
 Correlator::Correlator(OriginGrid<fftwf_complex> *data,
-                       MapSumHandler *sumHandler)
+                       const AtomMap *templateMap)
 {
 	_density = data;
-	_sumHandler = sumHandler;
+	_template = templateMap;
 }
 
 void Correlator::prepareList()
 {
-	_template = _sumHandler->templateMap();
-	
 	/* find minimum and maximum real-space limits of the template */
 	glm::vec3 min = _template->minBound();
 	glm::vec3 max = _template->maxBound();

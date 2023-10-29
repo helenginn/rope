@@ -19,10 +19,20 @@
 #include "engine/CorrelationHandler.h"
 #include "engine/workers/ThreadCorrelation.h"
 #include "engine/Correlator.h"
+#include "engine/MapSumHandler.h"
 
 CorrelationHandler::CorrelationHandler(BondCalculator *calc)
 {
 	_calculator = calc;
+}
+
+CorrelationHandler::CorrelationHandler(OriginGrid<fftwf_complex> *reference,
+                                       AtomMap *calc_template,
+                                       int resources)
+{
+	_refDensity = reference;
+	_threads = resources;
+	_template = nullptr;
 }
 
 CorrelationHandler::~CorrelationHandler()
@@ -32,6 +42,11 @@ CorrelationHandler::~CorrelationHandler()
 
 void CorrelationHandler::setup()
 {
+	if (!_template && _sumHandler)
+	{
+		_template = _sumHandler->templateMap();
+	}
+
 	createCorrelators();
 }
 
@@ -43,7 +58,7 @@ void CorrelationHandler::createCorrelators()
 		                         "to correlate against");
 	}
 
-	Correlator *cc = new Correlator(_refDensity, _sumHandler);
+	Correlator *cc = new Correlator(_refDensity, _template);
 	cc->prepareList();
 	_correlPool.pushObject(cc);
 
