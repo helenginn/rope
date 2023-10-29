@@ -181,8 +181,7 @@ void MapTransferHandler::finish()
 	}
 }
 
-void MapTransferHandler::extract(int ticket,
-                                 std::map<std::string, GetEle> &eleTasks)
+void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
 {
 	for (auto it = eleTasks.begin(); it != eleTasks.end(); it++)
 	{
@@ -222,7 +221,7 @@ void MapTransferHandler::extract(int ticket,
 		                                       "put " + ele + " atoms in");
 		jobs.put_atoms_in = put;
 
-		std::string desc = "sum " + ele + " to full map " + std::to_string(ticket);
+		std::string desc = "sum " + ele + " to full map ";
 
 		auto sum = [desc](SegmentAddition add) -> SegmentAddition
 		{

@@ -387,7 +387,10 @@ BondSequenceHandler::extract(Flag::Extract flags,
 		if (dev) {*dev = deviation;}
 		hook->follow_with(deviation);
 		deviation->must_complete_before(letgo);
-		deviation->follow_with(submit_result);
+		if (submit_result)
+		{
+			deviation->follow_with(submit_result);
+		}
 	}
 	if (flags & Flag::AtomVector)
 	{
@@ -396,7 +399,10 @@ BondSequenceHandler::extract(Flag::Extract flags,
 		if (list) {*list = make_atom_list;}
 		hook->follow_with(make_atom_list);
 		make_atom_list->must_complete_before(letgo);
-		make_atom_list->follow_with(submit_result);
+		if (submit_result)
+		{
+			make_atom_list->follow_with(submit_result);
+		}
 	}
 	if (flags & Flag::AtomMap)
 	{
@@ -405,8 +411,12 @@ BondSequenceHandler::extract(Flag::Extract flags,
 		if (map) {*map = make_atom_map;}
 		hook->follow_with(make_atom_map);
 		make_atom_map->must_complete_before(letgo);
-		make_atom_map->follow_with(submit_result);
+		if (submit_result)
+		{
+			make_atom_map->follow_with(submit_result);
+		}
 	}
 	
 	return letgo;
 }
+

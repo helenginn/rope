@@ -126,7 +126,6 @@ public:
 	// final_hook is the final job before extracting
 	void calculate(Flag::Calc flags, const std::vector<float> &parameters,
 	               BaseTask **first_task, CalcTask **final_hook);
-	
 
 	// pretty optional, preparing lists of element positions for maps
 	void positionsForMap(Task<BondSequence *, BondSequence *> *hook,
