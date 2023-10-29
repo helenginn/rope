@@ -25,6 +25,7 @@
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"
+#include "engine/ElementTypes.h"
 #include "Result.h"
 
 class Sampler;
@@ -55,11 +56,12 @@ namespace Flag
 	};
 }
 
-typedef std::pair<int, BondSequence *> Ticket;
 
 class BondSequenceHandler : public Handler, public HasBondSequenceCustomisation
 {
 public:
+	BondSequenceHandler(int totalSeq);
+
 	BondSequenceHandler(BondCalculator *calculator = nullptr);
 	~BondSequenceHandler();
 	
