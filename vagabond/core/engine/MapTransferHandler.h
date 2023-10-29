@@ -52,7 +52,7 @@ public:
 	 * of the 'constant' segment. 
 	 * @param all every atom to be considered in the analysis
 	 * @param sub sub-group of atoms which will change during analysis */
-	void supplyAtomGroup(std::vector<Atom *> all);
+	void supplyAtomGroup(const std::vector<Atom *> &all);
 
 	/**prepares MapTransfers and appropriate thread pools etc. 
 	 * @param elements map connecting element symbol e.g. Ca to number of
@@ -100,10 +100,7 @@ public:
 private:
 	void allocateSegments();
 	void prepareThreads();
-	void getRealDimensions(std::vector<Atom *> &sub);
-
-	std::vector<Atom *> _all;
-	std::vector<Atom *> _sub;
+	void getRealDimensions(const std::vector<Atom *> &sub);
 
 	std::vector<ElementSegment *> _segments;
 	std::vector<std::string> _elements;

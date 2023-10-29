@@ -22,6 +22,7 @@
 #include "AtomGroup.h"
 #include "Atom.h"
 #include "ElementSegment.h"
+#include "AtomSegment.h"
 #include "FFTCubicGrid.h"
 
 MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &elements,
@@ -42,21 +43,19 @@ MapTransferHandler::~MapTransferHandler()
 	finish();
 }
 
-void MapTransferHandler::supplyAtomGroup(std::vector<Atom *> all)
+void MapTransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
 {
-	_all = all;
-	
-	getRealDimensions(_all);
+	getRealDimensions(all);
 }
 
-void MapTransferHandler::getRealDimensions(std::vector<Atom *> &sub)
+void MapTransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
 {
 	_min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 	_max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	for (size_t i = 0; i < sub.size(); i++)
 	{
-		glm::vec3 pos = sub[i]->derivedPosition();
+		glm::vec3 pos = sub.at(i)->derivedPosition();
 		
 		for (size_t j = 0; j < 3; j++)
 		{
