@@ -30,6 +30,12 @@ MapSumHandler::MapSumHandler(BondCalculator *calculator)
 	_mapHandler = _calculator->mapHandler();
 }
 
+MapSumHandler::MapSumHandler(int mapCount, const ElementSegment *templ)
+{
+	_mapCount = mapCount;
+	_segment = templ;
+}
+
 MapSumHandler::~MapSumHandler()
 {
 	delete _template;

@@ -32,6 +32,7 @@ class MapSumHandler : public Handler
 {
 public:
 	MapSumHandler(BondCalculator *calculator = nullptr);
+	MapSumHandler(int mapCount, const ElementSegment *templ);
 	~MapSumHandler();
 	
 	void setMapHandler(MapTransferHandler *handler)
