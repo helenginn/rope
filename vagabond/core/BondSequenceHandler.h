@@ -145,6 +145,11 @@ public:
 	 * 	@param min minimum depth from anchor position
 	 * 	@param max maximum depth from anchor position  */
 	void imposeDepthLimits(int min, int max, bool limit_max);
+	
+	const std::map<std::string, int> &elementList() const
+	{
+		return _elements;
+	}
 
 	int activeTorsions();
 	void prepareSequences();
