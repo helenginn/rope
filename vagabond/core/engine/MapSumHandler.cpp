@@ -21,6 +21,7 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/CorrelationHandler.h"
 #include "engine/workers/ThreadMapSummer.h"
+#include "engine/Task.h"
 #include "AtomSegment.h"
 #include "Result.h"
 
@@ -216,4 +217,72 @@ void MapSumHandler::finish()
 {
 	_mapPool.finish();
 	_segmentPool.finish();
+}
+
+void MapSumHandler::grab_map(std::map<std::string, GetEle> &gets,
+                             Task<Result, void *> *submit,
+                             Task<SegmentAddition, AtomMap *> **atom_map)
+{
+	auto grab_map = [this](void *, bool *success) -> AtomSegment *
+	{
+		AtomSegment *segment = acquireAtomSegmentIfAvailable();
+		*success = (segment != nullptr);
+		return segment;
+	};
+
+	auto *grab = new FailableTask<void *, 
+	AtomSegment *>(grab_map, "grab full atom segment");
+
+	auto convert = [this](SegmentAddition add) -> AtomMap *
+	{
+		AtomMap *map = new AtomMap(*_template);
+		map->copyData(*add.atoms);
+		map->fft();
+		return map;
+	};
+
+	auto *convert_to_map = new Task<SegmentAddition, AtomMap *>
+	(convert, "convert full atoms to map");
+
+	// connect the grabbing to preparation of element segments
+	bool first = true;
+	for (auto it = gets.begin(); it != gets.end(); it++)
+	{
+		GetEle &jobs = it->second;
+		
+		if (first)
+		{
+			jobs.put_atoms_in->follow_with(grab);
+			first = false;
+		}
+		else
+		{
+			// alternative source of signal but only one is needed to start
+			jobs.put_atoms_in->or_follow_with(grab);
+		}
+
+		grab->follow_with(jobs.summation);
+		jobs.summation->follow_with(convert_to_map);
+	}
+	
+	auto let_map_go = [this](AtomSegment *add) -> void *
+	{
+		returnSegment(add);
+		return nullptr;
+	};
+
+	auto *let_go = new Task<AtomSegment *, void *>
+	(let_map_go, "let atom segment go");
+	
+	grab->follow_with(let_go);
+	convert_to_map->must_complete_before(let_go);
+	if (atom_map)
+	{
+		*atom_map = convert_to_map;
+	}
+
+	if (submit)
+	{
+		convert_to_map->follow_with(submit);
+	}
 }

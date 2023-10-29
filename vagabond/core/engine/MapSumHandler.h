@@ -21,6 +21,7 @@
 
 #include "engine/Handler.h"
 #include "BondCalculator.h"
+#include "engine/ElementTypes.h"
 
 class MiniJobMap;
 class CorrelationHandler;
@@ -77,6 +78,10 @@ public:
 	void returnMiniJob(MapJob *mj);
 	void returnSegment(AtomSegment *segment);
 	AtomSegment *acquireAtomSegmentIfAvailable();
+	void grab_map(std::map<std::string, GetEle> &gets,
+	              Task<Result, void *> *submit = nullptr,
+	              Task<SegmentAddition, AtomMap *> **atom_map = nullptr);
+
 	void setup();
 
 	void start();
