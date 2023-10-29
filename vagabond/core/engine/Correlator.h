@@ -36,6 +36,7 @@ public:
 
 	void prepareList();
 	double correlation(AtomMap *seg);
+	
 private:
 	OriginGrid<fftwf_complex> *_density = nullptr;
 	
