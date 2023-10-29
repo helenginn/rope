@@ -27,31 +27,9 @@
 class Tasks : public Handler
 {
 public:
-	Tasks(const std::vector<BaseTask *> &init = {})
+	Tasks()
 	{
 		_pool.reset();
-		add_tasks(init);
-	}
-	
-	Tasks &operator+=(const std::vector<BaseTask *> &init)
-	{
-		add_tasks(init);
-		return *this;
-	}
-	
-	void add_tasks(const std::vector<BaseTask *> &init)
-	{
-		std::vector<BaseTask *> sorted = init;
-		std::sort(sorted.begin(), sorted.end(),
-		          [](BaseTask *a, BaseTask *b) 
-				  {
-					  return a->priority > b->priority;
-				  });
-
-		for (BaseTask *bt : sorted)
-		{
-			addTask(bt);
-		}
 	}
 	
 	virtual ~Tasks()
@@ -62,7 +40,6 @@ public:
 	
 	void wait()
 	{
-		_waiting = true;
 		_pool.finish();
 	}
 	
@@ -112,28 +89,17 @@ public:
 		{
 			for (BaseTask *next : unlocked)
 			{
-				_pool.pushObject(next);
+				addTask(next);
 			}
 		}
 	}
 	
-	void empty_bin()
-	{
-		for (BaseTask *task : _bin)
-		{
-			delete task;
-		}
-		_bin.clear();
-	}
-	
 	void run(size_t threads)
 	{
-		size_t signals = _pool.number_ready();
 		prepare_threads(threads);
 	}
 
 	Handler::TaskPool _pool;
-	std::atomic<bool> _waiting{false};
 	std::vector<BaseTask *> _bin;
 };
 
