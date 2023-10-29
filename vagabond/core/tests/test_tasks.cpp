@@ -19,10 +19,12 @@
 #include <vagabond/core/engine/Task.h>
 #include <vagabond/core/engine/Tasks.h>
 #include <vagabond/core/engine/MapTransferHandler.h>
+#include <vagabond/core/engine/CorrelationHandler.h>
 #include <vagabond/core/engine/MapSumHandler.h>
 #include "Result.h"
 #include "PdbFile.h"
 #include "AtomGroup.h"
+#include "ArbitraryMap.h"
 #include "BondSequenceHandler.h"
 #include "BondCalculator.h"
 #include <string>
@@ -31,6 +33,7 @@
 BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 {
 	std::string path = "/Users/vgx18549/pdbs/stromelysin/1hfs-no-lig.pdb";
+	std::string density = "/Users/vgx18549/pdbs/stromelysin/1hfs.mtz";
 	PdbFile geom = PdbFile(path);
 	geom.parse();
 	AtomGroup *hexane = geom.atoms();
@@ -55,6 +58,17 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	MapSumHandler *sums = new MapSumHandler(resources, eleMaps->segment(0));
 	sums->setup();
+
+	File *file = File::loadUnknown(density);
+	Diffraction *diff = file->diffractionData();
+	ArbitraryMap *map = new ArbitraryMap(*diff);
+	map->setupFromDiffraction();
+	delete file;
+	map->printMap();
+	
+	CorrelationHandler *cc = new CorrelationHandler(map, sums->templateMap(),
+	                                                resources);
+	cc->setup();
 
 	Tasks *tasks = new Tasks();
 
@@ -87,7 +101,14 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 			handler->positionsForMap(final_hook, letgo, eleTasks);
 			eleMaps->extract(t, eleTasks);
-			sums->grab_map(eleTasks, submit_result);
+			Task<SegmentAddition, AtomMap *> *make_map = nullptr;
+
+			sums->grab_map(eleTasks, submit_result, &make_map);
+
+			Task<CorrelMapPair, Correlation> *correlate = nullptr;
+			cc->get_correlation(make_map, &correlate);
+			
+			correlate->follow_with(submit_result);
 
 			tasks->addTask(first_hook);
 		}
@@ -104,7 +125,9 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 			if (r->map)
 			{
-				std::cout << "." << std::flush;
+				r->map->printMap();
+//				std::cout << r->correlation << std::endl;
+//				std::cout << "." << std::flush;
 			}
 			r->destroy(); delete r;
 		}
