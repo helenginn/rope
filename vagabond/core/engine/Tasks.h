@@ -94,11 +94,6 @@ public:
 		return task;
 	}
 	
-	void detach()
-	{
-		_pool.detach_and_clean();
-	}
-	
 	size_t taskCount()
 	{
 		return _pool.objectCount();
