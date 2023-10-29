@@ -162,11 +162,12 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 {
 	ArbitraryMap *arb = new ArbitraryMap(*_map);
 	arb->clear();
+	return arb;
 	
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.instance];
-		mr->addToMap(arb);
+//		mr->addToMap(arb);
 	}
 
 	const gemmi::SpaceGroup *spg = nullptr;

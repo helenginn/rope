@@ -37,10 +37,9 @@ MolRefiner::MolRefiner(ArbitraryMap *comparison,
                        Refine::Info *info, int num, int dims) :
 StructureModification(info->instance), _sampler(num, dims)
 {
-	_pType = BondCalculator::PipelineCorrelation;
 	_threads = 5;
 	
-	if (info->instance->hasSequence())
+	if (_instance->hasSequence())
 	{
 		_warp = Warp::warpFromFile(info->instance, "test.json");
 	}
@@ -66,36 +65,6 @@ float MolRefiner::getResult(int *job_id)
 	retrieveJobs();
 	float res = RunsEngine::getResult(job_id);
 	return res;
-}
-
-void MolRefiner::submitJob(std::vector<float> all, bool show)
-{
-	std::vector<int> group;
-	int grpTicket = getNextTicket();
-
-	for (BondCalculator *calc : _calculators)
-	{
-		Job job{};
-		_warp->addTorsionsToJob(&job);
-		job.parameters = all;
-
-		job.requests = static_cast<JobType>(JobExtractPositions |
-		                                    JobCalculateMapSegment |
-		                                    JobMapCorrelation);
-		if (!show)
-		{
-			job.requests = JobMapCorrelation;
-		}
-		if (_getSegment)
-		{
-			job.requests = static_cast<JobType>(JobExtractPositions |
-			                                    JobCalculateMapSegment);
-		}
-
-		int ticket = calc->submitJob(job);
-		group.push_back(ticket);
-		_ticket2Group[ticket] = grpTicket;
-	}
 }
 
 void MolRefiner::prepareJob(const std::vector<float> &all)
@@ -155,41 +124,6 @@ int MolRefiner::sendJob(const std::vector<float> &all)
 	return _ticket;
 }
 
-void MolRefiner::addToMap(ArbitraryMap *map)
-{
-	std::cout << "Adding " << _instance->id() << " to map" << std::endl;
-	if (_best.size() == 0)
-	{
-		_best.resize(parameterCount());
-	}
-
-	_getSegment = true;
-	sendJob(_best);
-	_getSegment = false;
-
-	for (BondCalculator *calc : _calculators)
-	{
-		Result *r = calc->acquireResult();
-
-		if (r == nullptr)
-		{
-			continue;
-		}
-
-		if (r->requests)
-		{
-			AtomMap &atoms = *r->map;
-			ArbitraryMap *bit = atoms();
-			*map += *bit;
-			delete bit;
-		}
-
-		r->destroy();
-	}
-
-	_ticket2Group.clear();
-}
-
 void MolRefiner::retrieveJobs()
 {
 	BondCalculator *calc = _resources.calculator;
@@ -217,7 +151,6 @@ void MolRefiner::retrieveJobs()
 size_t MolRefiner::parameterCount()
 {
 	int n = _info->axes.size();
-
 	return n + n * (n + 1) / 2;
 }
 
@@ -261,20 +194,6 @@ void MolRefiner::changeDefaults(CoordManager *manager)
 
 	manager->setTorsionFetcher(fetchTorsion);
 	manager->setDefaultCoordTransform(transform);
-}
-
-void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
-{
-	calc->setReferenceDensity(_map);
-	calc->setPipelineType(_pType);
-	calc->setTotalSamples(_sampler.pointCount());
-
-	rope::GetListFromParameters transform = [this](const std::vector<float> &all)
-	{
-		return _sampler.coordsFromParams(all);
-	};
-
-	calc->manager()->setDefaultCoordTransform(transform);
 }
 
 void MolRefiner::prepareResources()
