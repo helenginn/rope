@@ -159,6 +159,7 @@ ElementSegment *MapTransferHandler::acquireSegmentIfAvailable(std::string ele)
 void MapTransferHandler::returnSegment(ElementSegment *segment)
 {
 	segment->clear();
+	segment->setStatus(ElementSegment::Real);
 	std::string ele = segment->elementSymbol();
 	Pool<ElementSegment *> &pool = _pools[ele];
 	pool.pushObject(segment);

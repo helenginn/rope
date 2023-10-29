@@ -147,6 +147,7 @@ ElementSegment *MapSumHandler::acquireElementSegment(MapJob *&mj)
 void MapSumHandler::returnSegment(AtomSegment *segment)
 {
 	segment->clear();
+	segment->setStatus(FFT<Density>::Real);
 	_mapPool.pushObject(segment);
 }
 

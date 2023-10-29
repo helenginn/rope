@@ -142,8 +142,6 @@ void ElementSegment::calculateMap()
 		_data[i].value[0] *= _data[i].scatter;
 		_data[i].value[1] *= _data[i].scatter;
 	}
-
-	fft();
 }
 
 void ElementSegment::printMap()
@@ -223,7 +221,6 @@ const float &ElementSegment::density(int i, int j) const
 {
 	return element(i).value[j];
 }
-
 
 void ElementSegment::clear()
 {
