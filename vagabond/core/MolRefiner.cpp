@@ -46,76 +46,6 @@ StructureModification(info->instance), _sampler(num, dims)
 	_sampler.setup();
 }
 
-int triangular_number(int other)
-{
-	int sum = 0;
-	for (size_t i = 1; i <= other; i++)
-	{
-		sum += i;
-	}
-	return sum;
-}
-
-void MolRefiner::triangle_to_svd(std::vector<float> &triangle)
-{
-	int n = _info->axes.size();
-	if (n == 0)
-	{
-		return;
-	}
-	zeroMatrix(&(_svd.u));
-
-	int track = 0;
-	for (size_t i = 0; i < n; i++)
-	{
-		for (size_t j = 0; j <= i; j++)
-		{
-			_svd.u[i][j] = triangle[track];
-			_svd.u[j][i] = triangle[track];
-			track++;
-		}
-	}
-}
-
-std::vector<float> MolRefiner::findTensorAxes(std::vector<float> &triangle)
-{
-	int n = _info->axes.size();
-	if (n == 0)
-	{
-		return std::vector<float>();
-	}
-	std::vector<float> tensor(n * n, 0);
-	
-	runSVD(&_svd);
-	
-	for (size_t i = 0; i < n; i++)
-	{
-		for (size_t j = 0; j < n; j++)
-		{
-			tensor[i * n + j] = _svd.u[i][j] * _svd.w[i];
-		}
-	}
-	
-	return tensor;
-}
-
-int MolRefiner::sendJob(const std::vector<float> &all)
-{
-	std::vector<float> axis = all;
-	axis.resize(_info->axes.size());
-	
-	std::vector<float> triangle;
-	triangle.reserve(triangular_number(axis.size()));
-	triangle.insert(triangle.begin(), all.begin() + axis.size(), all.end());
-	
-	triangle_to_svd(triangle);
-	std::vector<float> tensor = findTensorAxes(triangle);
-
-//	submitJob(axis, tensor, true);
-	submitJob(all, tensor, true);
-	return getLastTicket();
-}
-
 float MolRefiner::getResult(int *job_id)
 {
 	retrieveJobs();
@@ -123,8 +53,7 @@ float MolRefiner::getResult(int *job_id)
 	return res;
 }
 
-void MolRefiner::submitJob(std::vector<float> all, std::vector<float> tensor,
-                           bool show)
+void MolRefiner::submitJob(std::vector<float> all, bool show)
 {
 	std::vector<int> group;
 	int grpTicket = getNextTicket();
@@ -152,6 +81,12 @@ void MolRefiner::submitJob(std::vector<float> all, std::vector<float> tensor,
 		group.push_back(ticket);
 		_ticket2Group[ticket] = grpTicket;
 	}
+}
+
+int MolRefiner::sendJob(const std::vector<float> &all)
+{
+	submitJob(all, true);
+	return getLastTicket();
 }
 
 void MolRefiner::addToMap(ArbitraryMap *map)
@@ -233,12 +168,7 @@ size_t MolRefiner::parameterCount()
 {
 	int n = _info->axes.size();
 
-	freeSVD(&_svd);
-	setupSVD(&_svd, n);
-	
-	int total = n + triangular_number(n);
-
-	return total;
+	return n + n * (n + 1) / 2;
 }
 
 void MolRefiner::runEngine()
