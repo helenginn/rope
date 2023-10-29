@@ -230,64 +230,64 @@ int BondSequenceHandler::activeTorsions()
 	return sequence(0)->activeTorsions();
 }
 
-void BondSequenceHandler::calculate(int ticket, Flag::Calc flags,
+void BondSequenceHandler::calculate(Flag::Calc flags,
                                     const std::vector<float> &parameters,
                                     BaseTask **first_task,
-                                    Task<Ticket, Ticket> **final_hook)
+                                    CalcTask **final_hook)
 {
 	rope::GetListFromParameters transform = manager()->defaultCoordTransform();
 	rope::IntToCoordGet paramToCoords = transform(parameters);
 	rope::GetFloatFromCoordIdx toTorsions = manager()->defaultTorsionFetcher();
 	rope::GetVec3FromCoordIdx coordsToPos = manager()->defaultAtomFetcher();
 
-	auto grabSequence = [this, ticket](void *, bool *success) -> Ticket
+	auto grabSequence = [this](void *, bool *success) -> BondSequence *
 	{
 		BondSequence *seq = acquireSequenceOrNull();
 		*success = (seq != nullptr);
-		return std::make_pair(ticket, seq);
+		return seq;
 	};
 
-	auto calculateAtoms = [paramToCoords, toTorsions](Ticket job) -> Ticket
+	auto calculateAtoms = [paramToCoords, toTorsions]
+	(BondSequence *seq) -> BondSequence *
 	{
-		job.second->calculateTorsions(paramToCoords, toTorsions);
-
-		return job;
+		seq->calculateTorsions(paramToCoords, toTorsions);
+		return seq;
 	};
 
-	auto targetAtoms = [paramToCoords, coordsToPos](Ticket job) -> Ticket
+	auto targetAtoms = [paramToCoords, coordsToPos]
+	(BondSequence *seq) -> BondSequence *
 	{
-		job.second->calculateAtoms(paramToCoords, coordsToPos);
-
-		return job;
+		seq->calculateAtoms(paramToCoords, coordsToPos);
+		return seq;
 	};
 
-	auto identity = [](Ticket job) -> Ticket
+	auto identity = [](BondSequence *seq) -> BondSequence *
 	{
-		return job;
+		return seq;
 	};
 
-	auto superposition = [](Ticket job) -> Ticket
+	auto superposition = [](BondSequence *seq) -> BondSequence *
 	{
-		job.second->superpose();
-		return job;
+		seq->superpose();
+		return seq;
 	};
 	
-	auto *grab = new FailableTask<void *, Ticket>(grabSequence, "grab sequence");
+	auto *grab = new FailableTask<void *, BondSequence *>(grabSequence, 
+	                                                      "grab sequence");
 
 	// do atom targets
 	auto *get_targets = (flags & Flag::DoPositions ? 
-	                     new Task<Ticket, Ticket>(targetAtoms, "target atoms")
-	                     : nullptr);
+	                     new CalcTask(targetAtoms, "target atoms") :
+	                     nullptr);
 
 	// do torsion targets
 	auto *get_predicts = (flags & Flag::DoTorsions ? 
-	                      new Task<Ticket, Ticket>(calculateAtoms, 
-	                      "calculate atoms") : nullptr);
+	                      new CalcTask(calculateAtoms, "calculate atoms") 
+	                      : nullptr);
 
 	auto *superpose = (flags & Flag::DoSuperpose ? 
-	                   new Task<Ticket, Ticket>(superposition, "superpose")
-	                   : new Task<Ticket, Ticket>(identity, "identity"));
-
+	                   new CalcTask(superposition, "superpose")
+	                   : new CalcTask(identity, "identity"));
 	
 	if (get_targets)
 	{
@@ -308,21 +308,22 @@ void BondSequenceHandler::calculate(int ticket, Flag::Calc flags,
 	*first_task = grab;
 }
 
-Task<Ticket, void *> *BondSequenceHandler::letGo()
+Task<BondSequence *, void *> *BondSequenceHandler::letGo()
 {
-	auto letSequenceGo = [this](Ticket job) -> void *
+	auto letSequenceGo = [this](BondSequence *seq) -> void *
 	{
-		job.second->setState(SequenceIdle);
-		_pools[SequenceIdle].pushUnavailableObject(job.second);
+		seq->setState(SequenceIdle);
+		_pools[SequenceIdle].pushUnavailableObject(seq);
 		return nullptr;
 	};
 
-	auto *letgo = new Task<Ticket, void *>(letSequenceGo, "let sequence go");
+	auto *letgo = new Task<BondSequence *, void *>(letSequenceGo,
+	                                               "let sequence go");
 	return letgo;
 }
 
-void BondSequenceHandler::positionsForMap(Task<Ticket, Ticket> *hook,
-                                          Task<Ticket, void *> *letgo,
+void BondSequenceHandler::positionsForMap(CalcTask *hook,
+                                          Task<BondSequence *, void *> *letgo,
                                           std::map<std::string, GetEle> &eleTasks)
 {
 	for (auto it = _elements.begin(); it != _elements.end(); it++)
@@ -330,15 +331,16 @@ void BondSequenceHandler::positionsForMap(Task<Ticket, Ticket> *hook,
 		const std::string &ele = it->first;
 		int num = it->second;
 
-		auto grab_elements = [ele, num](Ticket job) -> std::vector<glm::vec3> *
+		auto grab_elements = 
+		[ele, num](BondSequence *seq) -> std::vector<glm::vec3> *
 		{
 			std::vector<glm::vec3> *results = new std::vector<glm::vec3>();
-			*results = job.second->extractForMap(ele, num);
+			*results = seq->extractForMap(ele, num);
 			return results;
 		};
 
-		 auto *get = new Task<Ticket, std::vector<glm::vec3>*>(grab_elements,
-		"grab positions for " + ele);
+		auto *get = new Task<BondSequence *, std::vector<glm::vec3>*>
+		(grab_elements, "grab positions for " + ele);
 		
 		hook->follow_with(get);
 		get->must_complete_before(letgo);
@@ -347,34 +349,33 @@ void BondSequenceHandler::positionsForMap(Task<Ticket, Ticket> *hook,
 
 }
 
-Task<Ticket, void *> *
+Task<BondSequence *, void *> *
 BondSequenceHandler::extract(Flag::Extract flags, 
                              Task<Result, void *> *submit_result,
-                             Task<Ticket, Ticket> *hook,
-                             Task<Ticket, Deviation> **dev,
-                             Task<Ticket, AtomPosList *> **list,
-                             Task<Ticket, AtomPosMap *> **map)
+                             CalcTask *hook,
+                             Task<BondSequence *, Deviation> **dev,
+                             Task<BondSequence *, AtomPosList *> **list,
+                             Task<BondSequence *, AtomPosMap *> **map)
 {
-	Task<Ticket, void *> *letgo = letGo();
+	Task<BondSequence *, void *> *letgo = letGo();
 
-	auto calcdev = [](Ticket job) -> Deviation
+	auto calcdev = [](BondSequence *seq) -> Deviation
 	{
-		float dev = job.second->calculateDeviations();
+		float dev = seq->calculateDeviations();
 		return {dev};
 	};
 	
-	auto atom_list = [](Ticket job) -> AtomPosList *
+	auto atom_list = [](BondSequence *seq) -> AtomPosList *
 	{
 		AtomPosList *apl = new AtomPosList();
-		job.second->extractVector(*apl);
+		seq->extractVector(*apl);
 		return apl;
 	};
 	
-	auto atom_map = [](Ticket job) -> AtomPosMap *
+	auto atom_map = [](BondSequence *seq) -> AtomPosMap *
 	{
-		AtomPosMap tmp = job.second->extractPositions();
+		AtomPosMap tmp = seq->extractPositions();
 		AtomPosMap *apm = new AtomPosMap(tmp);
-		std::cout << "map: " << apm->size() << std::endl;
 		return apm;
 	};
 	
@@ -382,7 +383,7 @@ BondSequenceHandler::extract(Flag::Extract flags,
 
 	if (flags & Flag::Deviation)
 	{
-		auto *deviation = new Task<Ticket, Deviation>(calcdev, "deviation");
+		auto *deviation = new Task<BondSequence *, Deviation>(calcdev, "deviation");
 		if (dev) {*dev = deviation;}
 		hook->follow_with(deviation);
 		deviation->must_complete_before(letgo);
@@ -390,7 +391,7 @@ BondSequenceHandler::extract(Flag::Extract flags,
 	}
 	if (flags & Flag::AtomVector)
 	{
-		auto *make_atom_list = new Task<Ticket, AtomPosList *>(atom_list, 
+		auto *make_atom_list = new Task<BondSequence *, AtomPosList *>(atom_list, 
 		                                                       "atom list");
 		if (list) {*list = make_atom_list;}
 		hook->follow_with(make_atom_list);
@@ -399,7 +400,7 @@ BondSequenceHandler::extract(Flag::Extract flags,
 	}
 	if (flags & Flag::AtomMap)
 	{
-		auto *make_atom_map = new Task<Ticket, AtomPosMap *>(atom_map, 
+		auto *make_atom_map = new Task<BondSequence *, AtomPosMap *>(atom_map, 
 		                                                     "atom map");
 		if (map) {*map = make_atom_map;}
 		hook->follow_with(make_atom_map);

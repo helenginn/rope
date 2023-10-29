@@ -34,9 +34,9 @@ struct Deviation
 class AtomSegment;
 class BondSequence;
 class ElementSegment;
-template <typename I, typename O> class Task;
 
-typedef std::pair<int, BondSequence *> Ticket;
+template <typename I, typename O> class Task;
+typedef Task<BondSequence *, BondSequence *> CalcTask;
 
 struct SegmentPosList
 {
@@ -72,7 +72,7 @@ struct SegmentAddition
 
 struct GetEle
 {
-	Task<Ticket, std::vector<glm::vec3> *> *get_pos = nullptr;
+	Task<BondSequence *, std::vector<glm::vec3> *> *get_pos = nullptr;
 	Task<void *, ElementSegment *> *grab_segment = nullptr;
 	Task<SegmentPosList, ElementSegment *> *put_atoms_in = nullptr;
 	Task<SegmentAddition, SegmentAddition> *summation = nullptr;

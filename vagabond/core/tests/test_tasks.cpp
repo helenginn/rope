@@ -42,15 +42,15 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	const int resources = 2;
 	const int threads = 6;
-	BondSequenceHandler *handler = new BondSequenceHandler(resources);
-	handler->setTotalSamples(120);
-	handler->addAnchorExtension(hexane->chosenAnchor());
+	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
+	sequences->setTotalSamples(120);
+	sequences->addAnchorExtension(hexane->chosenAnchor());
 
-	handler->setup();
-	handler->prepareSequences();
+	sequences->setup();
+	sequences->prepareSequences();
 	
-	BondSequence *seq = handler->sequence();
-	std::vector<float> params(handler->torsionBasis()->parameterCount());
+	BondSequence *seq = sequences->sequence();
+	std::vector<float> params(sequences->torsionBasis()->parameterCount());
 	
 	MapTransferHandler *eleMaps = new MapTransferHandler(seq->elementList(), 
 	                                                     resources);
@@ -82,24 +82,22 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		for (size_t t = 0; t < total; t++)
 		{
 			BaseTask *first_hook = nullptr;
-			Task<Ticket, Ticket> *final_hook = nullptr;
+			CalcTask *final_hook = nullptr;
 			
 			Task<Result, void *> *submit_result = calculator->submitResult(t);
 
-			Flag::Calc calc = Flag::Calc(Flag::DoTorsions 
-			                             | Flag::DoPositions 
+			Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions
 			                             | Flag::DoSuperpose);
 
-			Flag::Extract gets = Flag::Extract(Flag::Deviation 
-			                                   | Flag::AtomVector);
+			Flag::Extract gets = Flag::Extract(Flag::Deviation | Flag::AtomVector);
 
-			handler->calculate(t, calc, params, &first_hook, &final_hook);
-			Task<Ticket, void *> *letgo = nullptr;
-			letgo = handler->extract(gets, submit_result, final_hook);
+			sequences->calculate(calc, params, &first_hook, &final_hook);
+			Task<BondSequence *, void *> *letgo = nullptr;
+			letgo = sequences->extract({}, submit_result, final_hook);
 
 			std::map<std::string, GetEle> eleTasks;
 
-			handler->positionsForMap(final_hook, letgo, eleTasks);
+			sequences->positionsForMap(final_hook, letgo, eleTasks);
 			eleMaps->extract(t, eleTasks);
 			Task<SegmentAddition, AtomMap *> *make_map = nullptr;
 
