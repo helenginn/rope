@@ -20,6 +20,8 @@
 #include <vagabond/utils/include_boost.h>
 namespace tt = boost::test_tools;
 
+#include "test_tasks.cpp"
+/*
 #include "test_atomgroup.cpp"
 #include "test_atomsfromsequence.cpp"
 #include "test_handler.cpp"
@@ -31,3 +33,4 @@ namespace tt = boost::test_tools;
 #include "test_surface.cpp"
 #include "test_lbfgs.cpp"
 #include "test_grid.cpp"
+*/

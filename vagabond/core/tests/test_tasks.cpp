@@ -62,9 +62,9 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	{
 		std::chrono::system_clock::time_point n, l;
 		n = std::chrono::system_clock::now();
-		tasks->run(6);
+		tasks->run(2);
 		calculator->holdHorses();
-		int total = 50;
+		int total = 100;
 		for (size_t t = 0; t < total; t++)
 		{
 			BaseTask *first_hook = nullptr;
