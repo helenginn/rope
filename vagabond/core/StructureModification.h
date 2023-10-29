@@ -33,9 +33,10 @@ template <class T>
 class Cluster;
 
 class TorsionCluster;
-class Instance;
 class BondCalculator;
 class AtomContent;
+class Instance;
+class Tasks;
 class Atom;
 
 class StructureModification
@@ -106,6 +107,15 @@ public:
 		_threads = thr;
 	}
 protected:
+	struct Resources
+	{
+		BondCalculator *calculator = nullptr;
+		BondSequenceHandler *sequences = nullptr;
+		MapTransferHandler *perElements = nullptr;
+		MapSumHandler *summations = nullptr;
+		CorrelationHandler *correlations = nullptr;
+		Tasks *tasks = nullptr;
+	};
 	
 	virtual bool handleAtomMap(AtomPosMap &aps)
 	{
@@ -118,6 +128,8 @@ protected:
 	}
 
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
+	
+	virtual void prepareResources() {};
 
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
@@ -143,6 +155,8 @@ protected:
 		int sc_num = 0;
 	};
 	
+	Resources _resources;
+
 	bool _displayTargets = false;
 
 	typedef std::map<int, int> TicketPoint;
