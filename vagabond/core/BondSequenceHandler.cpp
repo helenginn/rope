@@ -278,7 +278,7 @@ void BondSequenceHandler::calculate(int ticket, Flag::Calc flags,
 
 	auto *superpose = (flags & Flag::DoSuperpose ? 
 	                   new Task<Ticket, Ticket>(superposition, "superpose")
-	                   : new Task<Ticket, Ticket>(identity));
+	                   : new Task<Ticket, Ticket>(identity, "identity"));
 
 	
 	if (get_targets)
@@ -313,12 +313,39 @@ Task<Ticket, void *> *BondSequenceHandler::letGo()
 	return letgo;
 }
 
-BaseTask * BondSequenceHandler::extract(Flag::Extract flags, 
-                                        Task<Result, void *> *submit_result,
-                                        Task<Ticket, Ticket> *hook,
-                                        Task<Ticket, Deviation> **dev,
-                                        Task<Ticket, AtomPosList *> **list,
-                                        Task<Ticket, AtomPosMap *> **map)
+void BondSequenceHandler::positionsForMap(Task<Ticket, Ticket> *hook,
+                                          Task<Ticket, void *> *letgo,
+                                          std::map<std::string, GetEle> &eleTasks)
+{
+	for (auto it = _elements.begin(); it != _elements.end(); it++)
+	{
+		const std::string &ele = it->first;
+		int num = it->second;
+
+		auto grab_elements = [ele, num](Ticket job) -> std::vector<glm::vec3> *
+		{
+			std::vector<glm::vec3> *results = new std::vector<glm::vec3>();
+			*results = job.second->extractForMap(ele, num);
+			return results;
+		};
+
+		 auto *get = new Task<Ticket, std::vector<glm::vec3>*>(grab_elements,
+		"grab positions for " + ele);
+		
+		hook->follow_with(get);
+		get->must_complete_before(letgo);
+		eleTasks[ele].get_pos = get;
+	}
+
+}
+
+Task<Ticket, void *> *
+BondSequenceHandler::extract(Flag::Extract flags, 
+                             Task<Result, void *> *submit_result,
+                             Task<Ticket, Ticket> *hook,
+                             Task<Ticket, Deviation> **dev,
+                             Task<Ticket, AtomPosList *> **list,
+                             Task<Ticket, AtomPosMap *> **map)
 {
 	Task<Ticket, void *> *letgo = letGo();
 

@@ -115,18 +115,23 @@ public:
 
 	// extracting meaningful information from sequence, will return
 	// a pointer to the let_go if further tasks are required
-	BaseTask *extract(Flag::Extract flags,
-	                  Task<Result, void *> *submit_result,
-	                  Task<Ticket, Ticket> *hook,
-	                  Task<Ticket, Deviation> **dev = nullptr,
-	                  Task<Ticket, AtomPosList *> **list = nullptr,
-	                  Task<Ticket, AtomPosMap *> **map = nullptr);
+	Task<Ticket, void *> *extract(Flag::Extract flags,
+	                              Task<Result, void *> *submit_result,
+	                              Task<Ticket, Ticket> *hook,
+	                              Task<Ticket, Deviation> **dev = nullptr,
+	                              Task<Ticket, AtomPosList *> **list = nullptr,
+	                              Task<Ticket, AtomPosMap *> **map = nullptr);
 
 	// final_hook is the final job before extracting
 	void calculate(int ticket, Flag::Calc flags,
 	               const std::vector<float> &parameters,
 	               BaseTask **first_task,
 	               Task<Ticket, Ticket> **final_hook);
+
+	// pretty optional, preparing lists of element positions for maps
+	void positionsForMap(Task<Ticket, Ticket> *hook,
+	                     Task<Ticket, void *> *letgo,
+	                     std::map<std::string, GetEle> &eleTasks);
 
 	// let go of sequence before continuing
 	Task<Ticket, void *> *letGo();
