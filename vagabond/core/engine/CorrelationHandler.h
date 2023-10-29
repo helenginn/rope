@@ -29,7 +29,6 @@ class MapSumHandler;
 template<class T>
 class OriginGrid;
 
-class AtomSegment;
 class Correlator;
 class AtomMap;
 
@@ -41,9 +40,9 @@ public:
 	                   AtomMap *calc_template, int resources);
 	~CorrelationHandler();
 
-	AtomSegment *acquireMap(Job **job);
+	AtomMap *acquireMap(Job **job);
 	Correlator *acquireCorrelator();
-	void pushMap(AtomSegment *seg, Job *job);
+	void pushMap(AtomMap *seg, Job *job);
 	void returnCorrelator(Correlator *cc);
 
 	void setMapSumHandler(MapSumHandler *sumHandler)
@@ -83,7 +82,7 @@ private:
 	struct CorrelJob
 	{
 		Job *job;
-		AtomSegment *map;
+		AtomMap *map;
 	};
 	
 	Pool<Correlator *> _correlPool;

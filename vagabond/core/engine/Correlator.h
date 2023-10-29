@@ -35,7 +35,7 @@ public:
 	Correlator(OriginGrid<fftwf_complex> *data, const AtomMap *templateMap);
 
 	void prepareList();
-	double correlation(AtomSegment *seg);
+	double correlation(AtomMap *seg);
 private:
 	OriginGrid<fftwf_complex> *_density = nullptr;
 	

@@ -181,6 +181,12 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 	_ticketHandout.lock();
 	_ticketMap.erase(ticket);
 	_ticketHandout.unlock();
+	
+	AtomMap *map = new AtomMap(*_template);
+	map->copyData(*mj->segment);
+	map->fft();
+
+	returnSegment(mj->segment);
 
 	Result *r = job->result;
 	if (r == nullptr)
@@ -191,22 +197,16 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 
 	if (job->requests & JobCalculateMapSegment) 
 	{
-		r->map = new AtomMap(*_template);
-		r->map->copyData(*mj->segment);
-		
-		if (!(job->requests & JobMapCorrelation))
-		{
-			returnSegment(mj->segment);
-		}
+		r->map = map;
 	}
 	
 	if (job->requests & JobMapCorrelation)
 	{
-		_correlHandler->pushMap(mj->segment, job);
+		_correlHandler->pushMap(map, job);
 	}
 	else
 	{
-		returnSegment(mj->segment);
+		delete map;
 		job->destroy();
 		_calculator->submitResult(r);
 	}

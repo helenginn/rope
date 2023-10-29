@@ -80,7 +80,7 @@ void Correlator::prepareList()
 	_density->do_op_on_basic_index(find_comparison);
 }
 
-double Correlator::correlation(AtomSegment *seg)
+double Correlator::correlation(AtomMap *map)
 {
 	CorrelData cd = empty_CD();
 	int count = 0;
@@ -88,7 +88,7 @@ double Correlator::correlation(AtomSegment *seg)
 	for (Comparison &comp : _comparisons)
 	{
 		glm::vec3 &real = comp.template_real_voxel;
-		float test = seg->interpolate(real);
+		float test = map->interpolate(real);
 		float &val = comp.comparison_value;
 		count++;
 

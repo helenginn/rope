@@ -32,9 +32,9 @@ void ThreadCorrelation::start()
 	do
 	{
 		Job *job = nullptr;
-		AtomSegment *seg = _correlHandler->acquireMap(&job);
+		AtomMap *map = _correlHandler->acquireMap(&job);
 
-		if (seg == nullptr)
+		if (map == nullptr)
 		{
 			break;
 		}
@@ -47,12 +47,15 @@ void ThreadCorrelation::start()
 		
 		timeStart();
 		// do stuff
-		double cor = cc->correlation(seg);
+		double cor = cc->correlation(map);
 		Result *result = job->result;
 		result->correlation = cor;
 
 		// tidy up
-		_sumHandler->returnSegment(seg);
+		if (job->requests & JobCalculateMapSegment)
+		{
+			delete map;
+		}
 		job->destroy();
 		_correlHandler->calculator()->submitResult(result);
 		_correlHandler->returnCorrelator(cc);

@@ -86,13 +86,13 @@ void CorrelationHandler::prepareThreads()
 	}
 }
 
-void CorrelationHandler::pushMap(AtomSegment *seg, Job *job)
+void CorrelationHandler::pushMap(AtomMap *map, Job *job)
 {
-	CorrelJob *cj = new CorrelJob{job, seg};
+	CorrelJob *cj = new CorrelJob{job, map};
 	_mapPool.pushObject(cj);
 }
 
-AtomSegment *CorrelationHandler::acquireMap(Job **job)
+AtomMap *CorrelationHandler::acquireMap(Job **job)
 {
 	CorrelJob *cj = nullptr;
 	_mapPool.acquireObject(cj);
@@ -104,7 +104,7 @@ AtomSegment *CorrelationHandler::acquireMap(Job **job)
 	}
 
 	*job = cj->job;
-	AtomSegment *ret = cj->map;
+	AtomMap *ret = cj->map;
 
 	delete cj;
 	return ret;
