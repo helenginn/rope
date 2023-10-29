@@ -52,10 +52,6 @@ void ThreadCorrelation::start()
 		result->correlation = cor;
 
 		// tidy up
-		if (job->requests & JobCalculateMapSegment)
-		{
-			delete map;
-		}
 		job->destroy();
 		_correlHandler->calculator()->submitResult(result);
 		_correlHandler->returnCorrelator(cc);
