@@ -32,6 +32,7 @@ class MolRefiner : public StructureModification, public RunsEngine
 {
 public:
 	MolRefiner(ArbitraryMap *comparison, Refine::Info *info, int num, int dims);
+	~MolRefiner();
 
 	void submitJob(std::vector<float> mean, bool show = true);
 	void retrieveJobs();
@@ -43,7 +44,10 @@ public:
 	void addToMap(ArbitraryMap *map);
 protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol);
+	virtual void prepareResources();
+	void changeDefaults(CoordManager *manager);
 private:
+	void prepareJob(const std::vector<float> &all);
 	ArbitraryMap *_map = nullptr;
 	Refine::Info *_info = nullptr;
 	Warp *_warp = nullptr;
@@ -51,6 +55,7 @@ private:
 	std::map<int, int> _ticket2Group;
 	std::map<int, float> _group2Scores;
 	int _groupTicketCount = 0;
+	int _ticket = 0;
 	
 	std::vector<float> _best;
 

@@ -17,20 +17,28 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MolRefiner.h"
+#include "SimplexEngine.h"
+#include "AtomGroup.h"
 #include "Instance.h"
 #include "ArbitraryMap.h"
 #include "AtomMap.h"
-#include "PathManager.h"
 #include "Result.h"
 #include "Warp.h"
-#include "ChemotaxisEngine.h"
+
+#include "engine/MapTransferHandler.h"
+#include "engine/CorrelationHandler.h"
+#include "engine/MapSumHandler.h"
+#include "BondSequenceHandler.h"
+#include "BondCalculator.h"
+#include "engine/Tasks.h"
+#include "engine/Task.h"
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
                        Refine::Info *info, int num, int dims) :
 StructureModification(info->instance), _sampler(num, dims)
 {
 	_pType = BondCalculator::PipelineCorrelation;
-	_threads = 1;
+	_threads = 5;
 	
 	if (info->instance->hasSequence())
 	{
@@ -44,6 +52,13 @@ StructureModification(info->instance), _sampler(num, dims)
 
 	_dims = dims;
 	_sampler.setup();
+	_instance->load();
+}
+
+MolRefiner::~MolRefiner()
+{
+	_resources.tasks->wait();
+	_instance->unload();
 }
 
 float MolRefiner::getResult(int *job_id)
@@ -83,10 +98,61 @@ void MolRefiner::submitJob(std::vector<float> all, bool show)
 	}
 }
 
+void MolRefiner::prepareJob(const std::vector<float> &all)
+{
+	_ticket++;
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
+	
+	/* get easy references to resources */
+	BondCalculator *const &calculator = _resources.calculator;
+	BondSequenceHandler *const &sequences = _resources.sequences;
+	MapTransferHandler *const &eleMaps = _resources.perElements;
+	MapSumHandler *const &sums = _resources.summations;
+	CorrelationHandler *const &correlation = _resources.correlations;
+
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
+
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
+	                             Flag::DoSuperpose);
+	Flag::Extract gets = Flag::Extract(Flag::AtomMap);
+
+	Task<BondSequence *, void *> *letgo = nullptr;
+
+	/* calculation of torsion angle-derived and target-derived
+	 * atom positions */
+	sequences->calculate(calc, all, &first_hook, &final_hook);
+	letgo = sequences->extract(gets, submit_result, final_hook);
+
+	/* Prepare the scratch space for per-element map calculation */
+	std::map<std::string, GetEle> eleTasks;
+
+	/* positions coming out of sequence to prepare for per-element maps */
+	sequences->positionsForMap(final_hook, letgo, eleTasks);
+
+	/* updates the scratch space */
+	eleMaps->extract(eleTasks);
+
+	/* summation of per-element maps into final real-space map */
+	Task<SegmentAddition, AtomMap *> *make_map = nullptr;
+	sums->grab_map(eleTasks, submit_result, &make_map);
+
+	/* correlation of real-space map against reference */
+	Task<CorrelMapPair, Correlation> *correlate = nullptr;
+	correlation->get_correlation(make_map, &correlate);
+
+	/* pop correlation into result */
+	correlate->follow_with(submit_result);
+
+	/* first task to be initiated by tasks list */
+	_resources.tasks->addTask(first_hook);
+}
+
 int MolRefiner::sendJob(const std::vector<float> &all)
 {
-	submitJob(all, true);
-	return getLastTicket();
+	prepareJob(all);
+	return _ticket;
 }
 
 void MolRefiner::addToMap(ArbitraryMap *map)
@@ -126,42 +192,26 @@ void MolRefiner::addToMap(ArbitraryMap *map)
 
 void MolRefiner::retrieveJobs()
 {
-	bool found = true;
-
-	while (found)
+	BondCalculator *calc = _resources.calculator;
+	while (true)
 	{
-		found = false;
+		Result *r = calc->acquireResult();
 
-		for (BondCalculator *calc : _calculators)
+		if (r == nullptr)
 		{
-			Result *r = calc->acquireResult();
-
-			if (r == nullptr)
-			{
-				continue;
-			}
-
-			int t = r->ticket;
-			int g = _ticket2Group[t];
-
-			found = true;
-
-			if (r->requests & JobExtractPositions)
-			{
-				r->transplantPositions();
-			}
-			
-			if (r->requests & JobMapCorrelation)
-			{
-				float cc = r->correlation;
-				setScoreForTicket(g, -cc);
-			}
-			
-			r->destroy();
+			break;
 		}
+
+		int t = r->ticket;
+
+		r->transplantPositions();
+
+		float cc = r->correlation;
+		setScoreForTicket(t, -cc);
+
+		r->destroy();
+		delete r;
 	}
-	
-	_ticket2Group.clear();
 }
 
 size_t MolRefiner::parameterCount()
@@ -173,6 +223,8 @@ size_t MolRefiner::parameterCount()
 
 void MolRefiner::runEngine()
 {
+	prepareResources();
+
 	if (!_info->instance->hasSequence())
 	{
 		return;
@@ -183,12 +235,32 @@ void MolRefiner::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 	
+	_resources.tasks = new Tasks();
+	_resources.tasks->run(_threads);
+	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
 	engine->setStepSize(0.2);
 	engine->start();
 	
 	_best = engine->bestResult();
+}
+
+void MolRefiner::changeDefaults(CoordManager *manager)
+{
+	rope::GetListFromParameters transform = [this](const std::vector<float> &all)
+	{
+		return _sampler.coordsFromParams(all);
+	};
+
+	rope::GetFloatFromCoordIdx fetchTorsion = [this](const Coord::Get &get, 
+	                                                 const int &idx)
+	{
+		return _warp->torsionAnglesForCoord()(get, idx);
+	};
+
+	manager->setTorsionFetcher(fetchTorsion);
+	manager->setDefaultCoordTransform(transform);
 }
 
 void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
@@ -203,4 +275,41 @@ void MolRefiner::customModifications(BondCalculator *calc, bool has_mol)
 	};
 
 	calc->manager()->setDefaultCoordTransform(transform);
+}
+
+void MolRefiner::prepareResources()
+{
+	/* set up result bin */
+	_resources.calculator = new BondCalculator();
+
+	/* set up per-bond/atom calculation */
+	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
+	BondSequenceHandler *sequences = new BondSequenceHandler(_threads);
+	sequences->setTotalSamples(_sampler.pointCount());
+	sequences->addAnchorExtension(anchor);
+	sequences->setup();
+	sequences->prepareSequences();
+	_resources.sequences = sequences;
+	
+	changeDefaults(sequences->manager());
+
+	AtomGroup *group = _instance->currentAtoms();
+
+	/* calculate transfer to per-element maps */
+	MapTransferHandler *perEles = new MapTransferHandler(sequences->elementList(), 
+	                                                     _threads);
+	perEles->supplyAtomGroup(group->atomVector());
+	perEles->setup();
+	_resources.perElements = perEles;
+	
+	/* summation of all element maps into one */
+	MapSumHandler *sums = new MapSumHandler(_threads, perEles->segment(0));
+	sums->setup();
+	_resources.summations = sums;
+
+	/* correlation of summed density map against reference */
+	CorrelationHandler *cc = new CorrelationHandler(_map, sums->templateMap(),
+	                                                _threads);
+	cc->setup();
+	_resources.correlations = cc;
 }
