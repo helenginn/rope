@@ -158,7 +158,7 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get,
 	Coord::Get shrunk = get;
 	if (_skipSections)
 	{
-		shrunk = Coord::convertedGet(get, _convertIndex);
+//		shrunk = Coord::convertedGet(get, _convertIndex);
 	}
 	float diff = fetch_torsion(shrunk, torsion_idx);
 	diff += torsionBasis()->referenceAngle(torsion_idx);
