@@ -189,8 +189,8 @@ public:
 
 	void printMap()
 	{
-		float ave = 0;
-		float scale = 100.;
+		float ave = mean() * nz();
+		float scale = 10.;
 		for (size_t k = 0; k < nx(); k++)
 		{
 			for (size_t j = 0; j < ny(); j++)
@@ -202,8 +202,8 @@ public:
 					long idx = index(k, j, i);
 					value += elementValue(idx);
 				}
-
-				ave += value;
+				
+				value /= ave;
 
 				std::string symbol = " ";
 
@@ -221,7 +221,6 @@ public:
 			std::cout << std::endl;
 		}
 
-		ave /= (float)(nz() * ny());
 		std::cout << "Ave: " << ave << std::endl;
 	}
 
