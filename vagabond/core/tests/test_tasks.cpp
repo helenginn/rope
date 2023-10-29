@@ -40,9 +40,10 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	BondCalculator *calculator = new BondCalculator();
 
-	const int resources = 4;
+	const int resources = 2;
+	const int threads = 6;
 	BondSequenceHandler *handler = new BondSequenceHandler(resources);
-//	handler->setTotalSamples(120);
+	handler->setTotalSamples(120);
 	handler->addAnchorExtension(hexane->chosenAnchor());
 
 	handler->setup();
@@ -56,7 +57,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	eleMaps->supplyAtomGroup(hexane->atomVector());
 	eleMaps->setup();
 
-	MapSumHandler *sums = new MapSumHandler(resources, eleMaps->segment(0));
+	MapSumHandler *sums = new MapSumHandler(threads, eleMaps->segment(0));
 	sums->setup();
 
 	File *file = File::loadUnknown(density);
@@ -64,7 +65,6 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	ArbitraryMap *map = new ArbitraryMap(*diff);
 	map->setupFromDiffraction();
 	delete file;
-	map->printMap();
 	
 	CorrelationHandler *cc = new CorrelationHandler(map, sums->templateMap(),
 	                                                resources);
@@ -76,9 +76,9 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 	{
 		std::chrono::system_clock::time_point n, l;
 		n = std::chrono::system_clock::now();
-		tasks->run(2);
+		tasks->run(threads);
 		calculator->holdHorses();
-		int total = 100;
+		int total = 50;
 		for (size_t t = 0; t < total; t++)
 		{
 			BaseTask *first_hook = nullptr;
@@ -125,9 +125,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 			if (r->map)
 			{
-				r->map->printMap();
-//				std::cout << r->correlation << std::endl;
-//				std::cout << "." << std::flush;
+				std::cout << "." << std::flush;
 			}
 			r->destroy(); delete r;
 		}

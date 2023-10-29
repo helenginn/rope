@@ -33,6 +33,8 @@ class MapSumHandler : public Handler
 {
 public:
 	MapSumHandler(BondCalculator *calculator = nullptr);
+	
+	/* map count should not be less than number of concurrent threads */
 	MapSumHandler(int mapCount, const ElementSegment *templ);
 	~MapSumHandler();
 	
