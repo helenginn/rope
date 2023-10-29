@@ -34,7 +34,6 @@ public:
 
 	virtual void multiply(float scale);
 	void copyData(AtomSegment &other);
-	void printMap();
 	
 	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
 

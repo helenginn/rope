@@ -106,43 +106,6 @@ void AtomMap::multiply(float scale)
 
 }
 
-void AtomMap::printMap()
-{
-	float ave = 0;
-	float scale = 100.;
-	for (size_t k = 0; k < nx(); k++)
-	{
-		for (size_t j = 0; j < ny(); j++)
-		{
-			float value = 0;
-			
-			for (size_t i = 0; i < nz(); i++)
-			{
-				value += element(k, j, i)[0];
-			}
-			
-			ave += value;
-
-			std::string symbol = " ";
-
-			if (value > 0.01 * scale) symbol = ".";
-			if (value > 0.02 * scale) symbol = ":";
-			if (value > 0.04 * scale) symbol = "\"";
-			if (value > 0.08 * scale) symbol = "*";
-			if (value > 0.16 * scale) symbol = "x";
-			if (value > 0.32 * scale) symbol = "H";
-			if (value > 0.64 * scale) symbol = "#";
-			if (value > 1.00 * scale) symbol = "@";
-
-			std::cout << symbol;
-		}
-		std::cout << std::endl;
-	}
-
-	ave /= (float)(nz() * ny());
-	std::cout << "Ave: " << ave << std::endl;
-}
-
 void AtomMap::populatePlan(FFT<fftwf_complex>::PlanDims &dims)
 {
 	unsigned flags = FFTW_MEASURE;
