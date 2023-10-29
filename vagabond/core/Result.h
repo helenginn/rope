@@ -48,6 +48,11 @@ struct Result
 		delete tmp;
 	}
 
+	void operator=(AtomMap *tmp)
+	{
+		map = tmp;
+	}
+
 	int ticket = 0;
 	JobType requests;
 	AtomPosMap aps{};
