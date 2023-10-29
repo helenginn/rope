@@ -43,7 +43,7 @@ void AtomSegment::addElementSegment(ElementSegment *seg)
 		const float &r = seg->density(i, 0);
 		const float &im = seg->density(i, 1);
 		_data[i].value[0] += r * FIXED_MULTIPLY;
-		_data[i].value[1] += -im * FIXED_MULTIPLY;
+		_data[i].value[1] += im * FIXED_MULTIPLY;
 	}
 }
 
