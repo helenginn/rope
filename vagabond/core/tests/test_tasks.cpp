@@ -77,6 +77,8 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		std::chrono::system_clock::time_point n, l;
 		n = std::chrono::system_clock::now();
 		tasks->run(threads);
+		
+		/* make sure calculator doesn't finish before newest jobs are queued */
 		calculator->holdHorses();
 		int total = 50;
 		for (size_t t = 0; t < total; t++)
@@ -84,6 +86,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 			BaseTask *first_hook = nullptr;
 			CalcTask *final_hook = nullptr;
 			
+			/* this final task returns the result to the pool to collect later */
 			Task<Result, void *> *submit_result = calculator->submitResult(t);
 
 			Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions
@@ -91,31 +94,46 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 			Flag::Extract gets = Flag::Extract(Flag::Deviation | Flag::AtomVector);
 
-			sequences->calculate(calc, params, &first_hook, &final_hook);
 			Task<BondSequence *, void *> *letgo = nullptr;
+
+			/* calculation of torsion angle-derived and target-derived
+			 * atom positions */
+			sequences->calculate(calc, params, &first_hook, &final_hook);
 			letgo = sequences->extract({}, submit_result, final_hook);
 
+			/* Prepare the scratch space for per-element map calculation */
 			std::map<std::string, GetEle> eleTasks;
 
+			/* positions coming out of sequence to prepare for per-element maps */
 			sequences->positionsForMap(final_hook, letgo, eleTasks);
-			eleMaps->extract(t, eleTasks);
-			Task<SegmentAddition, AtomMap *> *make_map = nullptr;
+			
+			/* updates the scratch space */
+			eleMaps->extract(eleTasks);
 
+			/* summation of per-element maps into final real-space map */
+			Task<SegmentAddition, AtomMap *> *make_map = nullptr;
 			sums->grab_map(eleTasks, submit_result, &make_map);
 
+			/* correlation of real-space map against reference */
 			Task<CorrelMapPair, Correlation> *correlate = nullptr;
 			cc->get_correlation(make_map, &correlate);
 			
+			/* pop correlation into result */
 			correlate->follow_with(submit_result);
 
+			/* first task to be initiated by tasks list */
 			tasks->addTask(first_hook);
 		}
+		
+		/* once all jobs pre-loaded, allow the calculator to run out of jobs */
 		calculator->releaseHorses();
 		
 		while (true)
 		{
+			/* grab each individual result */
 			Result *r = calculator->acquireResult();
 
+			/* we ran out! */
 			if (r == nullptr)
 			{
 				break;
