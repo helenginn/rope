@@ -93,7 +93,7 @@ public:
 	/** stop all work, join up threads and delete threads/workers */
 	void finish();
 
-	BondSequence *sequence(int i) 
+	BondSequence *sequence(int i = 0) 
 	{
 		return _sequences[i];
 	}
