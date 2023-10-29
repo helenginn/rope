@@ -54,7 +54,7 @@ void MapSumHandler::createSegments()
 		AtomSegment *seg = new AtomSegment();
 
 		seg->getDimensionsFrom(*_segment);
-		seg->setStatus(FFT<Density>::Real);
+		seg->setStatus(FFT<Density>::Reciprocal);
 		
 		seg->makePlans();
 		/* in order to calculate the plan once, rather than via competing
@@ -147,7 +147,7 @@ ElementSegment *MapSumHandler::acquireElementSegment(MapJob *&mj)
 void MapSumHandler::returnSegment(AtomSegment *segment)
 {
 	segment->clear();
-	segment->setStatus(FFT<Density>::Real);
+	segment->setStatus(FFT<Density>::Reciprocal);
 	_mapPool.pushObject(segment);
 }
 
@@ -195,18 +195,14 @@ void MapSumHandler::returnMiniJob(MapJob *mj)
 		r->setFromJob(job);
 	}
 
-	if (job->requests & JobCalculateMapSegment) 
-	{
-		r->map = map;
-	}
-	
+	r->map = map;
+
 	if (job->requests & JobMapCorrelation)
 	{
 		_correlHandler->pushMap(map, job);
 	}
 	else
 	{
-		delete map;
 		job->destroy();
 		_calculator->submitResult(r);
 	}

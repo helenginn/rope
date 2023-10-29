@@ -206,9 +206,6 @@ void MolRefiner::retrieveJobs()
 				continue;
 			}
 
-			if (r->map)
-			r->map->printMap();
-
 			int t = r->ticket;
 			int g = _ticket2Group[t];
 
