@@ -420,3 +420,9 @@ BondSequenceHandler::extract(Flag::Extract flags,
 	return letgo;
 }
 
+const Grapher &BondSequenceHandler::grapher() const
+{
+	const Grapher &g = _sequences.at(0)->grapher();
+	return g;
+}
+

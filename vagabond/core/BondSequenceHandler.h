@@ -29,6 +29,7 @@
 #include "Result.h"
 
 class Sampler;
+class Grapher;
 class BondSequence;
 class BondCalculator;
 class MapTransferHandler;
@@ -60,6 +61,8 @@ public:
 	{
 		return _calculator;
 	}
+
+	const Grapher &grapher() const;
 	
 	TorsionBasis *torsionBasis() const;
 
