@@ -75,31 +75,9 @@ void AxisExplorer::setup()
 
 void AxisExplorer::submitJob(float prop)
 {
-	BaseTask *first_hook = nullptr;
-	CalcTask *final_hook = nullptr;
-	
-	/* get easy references to resources */
-	BondCalculator *const &calculator = _resources.calculator;
-	BondSequenceHandler *const &sequences = _resources.sequences;
-	
-	calculator->holdHorses();
+	submitSingleAxisJob(prop, 0, Flag::AtomVector);
 
-	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(0);
-
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
-	                             Flag::DoSuperpose);
-	Flag::Extract gets = Flag::Extract(Flag::AtomVector);
-
-	/* calculation of torsion angle-derived and target-derived
-	 * atom positions */
-	sequences->calculate(calc, {prop}, &first_hook, &final_hook);
-	sequences->extract(gets, submit_result, final_hook);
-	
-	_resources.tasks->addTask(first_hook);
-	calculator->releaseHorses();
-
-	Result *r = calculator->acquireResult();
+	Result *r = _resources.calculator->acquireResult();
 	r->transplantPositions(_displayTargets);
 
 	r->destroy(); delete r;
@@ -266,10 +244,10 @@ void AxisExplorer::setupColourLegend()
 
 void AxisExplorer::prepareResources()
 {
-	_resources.tasks = new Tasks();
-	_resources.tasks->run(_threads);
-
 	const int threads = 2;
+	_resources.tasks = new Tasks();
+	_resources.tasks->run(threads);
+
 	/* set up result bin */
 	_resources.calculator = new BondCalculator();
 

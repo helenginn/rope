@@ -17,9 +17,12 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "StructureModification.h"
-#include <vagabond/core/Polymer.h>
+#include "BondSequenceHandler.h"
+#include "engine/ElementTypes.h"
 #include "EntityManager.h"
+#include "engine/Tasks.h"
 #include "ModelManager.h"
+#include "Polymer.h"
 #include "Result.h"
 
 StructureModification::StructureModification(Instance *mol)
@@ -95,6 +98,31 @@ bool StructureModification::checkForInstance(AtomGroup *grp)
 	}
 
 	return false;
+}
+
+void StructureModification::submitSingleAxisJob(float prop, float ticket,
+                                                Flag::Extract extraction)
+{
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
+	
+	/* get easy references to resources */
+	BondCalculator *const &calculator = _resources.calculator;
+	BondSequenceHandler *const &sequences = _resources.sequences;
+
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(ticket);
+
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
+	                             Flag::DoSuperpose);
+
+	/* calculation of torsion angle-derived and target-derived
+	 * atom positions */
+	sequences->calculate(calc, {prop}, &first_hook, &final_hook);
+	sequences->extract(extraction, submit_result, final_hook);
+	
+	_resources.tasks->addTask(first_hook);
+
 }
 
 void StructureModification::startCalculator()
@@ -180,53 +208,32 @@ void StructureModification::clearCalculators()
 
 void StructureModification::retrieve()
 {
-	bool found = true;
-
-	while (found)
+	while (true)
 	{
-		found = false;
+		BondCalculator *calc = _resources.calculator;
+		Result *r = calc->acquireResult();
 
-		for (BondCalculator *calc : _calculators)
+		if (r == nullptr)
 		{
-			Result *r = calc->acquireResult();
-
-			if (r == nullptr)
-			{
-				continue;
-			}
-
-			int t = r->ticket;
-			int idx = _ticket2Point[t];
-			Score &score = _point2Score[idx];
-
-			found = true;
-			if (r->requests & JobExtractPositions)
-			{
-				handleAtomMap(r->aps);
-			}
-			if (r->requests & JobPositionVector)
-			{
-				if (handleAtomList(r->apl))
-				{
-					r->transplantPositions(_displayTargets);
-				}
-			}
-			if (r->requests & JobSolventSurfaceArea)
-			{
-				std::cout << r->surface_area << std::endl;
-			}
-
-			if (r->requests & JobCalculateDeviations)
-			{
-				if (r->deviation == r->deviation)
-				{
-					score.deviations += r->deviation;
-					score.divs++;
-				}
-			}
-			
-			calc->recycleResult(r);
+			break;
 		}
+
+		int t = r->ticket;
+		int idx = _ticket2Point[t];
+		Score &score = _point2Score[idx];
+
+		if (handleAtomList(r->apl) || handleAtomMap(r->aps))
+		{
+			r->transplantPositions(_displayTargets);
+		}
+
+		if (r->deviation == r->deviation)
+		{
+			score.deviations += r->deviation;
+			score.divs++;
+		}
+
+		calc->recycleResult(r);
 	}
 	
 	for (TicketScores::iterator it = _point2Score.begin();

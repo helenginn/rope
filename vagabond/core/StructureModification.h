@@ -23,8 +23,9 @@
  * Instance in a structure */
 
 #include <vagabond/c4x/Angular.h>
-#include <vagabond/core/BondCalculator.h>
-#include <vagabond/core/Residue.h>
+#include "BondCalculator.h"
+#include "Residue.h"
+#include "engine/ElementTypes.h"
 #include "RTAngles.h"
 
 class MetadataGroup;
@@ -130,6 +131,7 @@ protected:
 	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
 	
 	virtual void prepareResources() {};
+	void submitSingleAxisJob(float prop, float ticket, Flag::Extract extraction);
 
 	void addToHetatmCalculator(Atom *anchor);
 	void finishHetatmCalculator();
