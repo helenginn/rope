@@ -150,7 +150,7 @@ void MakeNewPaths::prepare()
 		}
 	}
 
-	RTAngles list = prep.emptyAngles();
+	RTAngles list = prep.emptyAngles(true);
 	
 	std::vector<Angular> from_angles, to_angles;
 	from_angles = prep.vector(0);

@@ -315,7 +315,7 @@ void Instance::addTorsionsToGroup(MetadataGroup &group,
 		return;
 	}
 
-	RTAngles angles = group.emptyAngles();
+	RTAngles angles = group.emptyAngles(true);
 	grabTorsions(angles, type);
 	group.addMetadataArray(this, angles);
 }

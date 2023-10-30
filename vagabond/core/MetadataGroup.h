@@ -46,7 +46,7 @@ public:
 		return DegreeDataGroup<ResidueTorsion>::groupCount();
 	}
 	
-	const RTAngles &emptyAngles();
+	const RTAngles &emptyAngles(bool make_nan = false);
 
 	virtual const size_t headerCount() const
 	{

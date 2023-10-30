@@ -116,12 +116,19 @@ void MetadataGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 	_averages.clear();
 }
 
-const RTAngles &MetadataGroup::emptyAngles() 
+const RTAngles &MetadataGroup::emptyAngles(bool make_nan) 
 {
 	if (_empty.size() == 0)
 	{
 		std::vector<ResidueTorsion> hs = headers();
 		_empty.vector_from(hs);
+	}
+
+	float zero = make_nan ? NAN : 0;
+	
+	for (size_t i = 0; i < _empty.size(); i++)
+	{
+		_empty.storage(i) = zero;
 	}
 	
 	return _empty;
