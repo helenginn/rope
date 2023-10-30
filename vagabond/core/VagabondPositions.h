@@ -34,6 +34,7 @@ public:
 	bool refineBetween(int min, int max);
 
 	size_t totalPositions();
+	void updateAllTorsions();
 protected:
 	typedef std::function<void(std::vector<float> &values)> Getter;
 	typedef std::function<void(const std::vector<float> &values)> Setter;

@@ -38,10 +38,6 @@ _group(group)
 
 void VagabondPositions::setup()
 {
-	Atom *anchor = _group->chosenAnchor();
-	AlignmentTool tool(_group);
-	tool.run(anchor, true);
-
 	prepareResources();
 }
 
@@ -91,6 +87,11 @@ int VagabondPositions::submitJob()
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
 	
 	Flag::Extract extract = Flag::Extract(Flag::AtomVector | Flag::Deviation);
+	if (_ticket % 51 == 0)
+	{
+		extract = Flag::Extract(Flag::Deviation);
+	}
+
 
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
@@ -184,9 +185,41 @@ bool VagabondPositions::refineBetween(int min, int max)
 
 	getSetCoefficients(set, _getter, _setter);
 
-	SimplexEngine engine(this);
-	engine.setStepSize(0.2);
-	engine.start();
+	int count = 0;
+	
+	while (count < 1)
+	{
+		SimplexEngine engine(this);
+		engine.setStepSize(0.2);
+		engine.setMaxJobsPerVertex(1);
+		engine.start();
+		count++;
 
-	bool improved = engine.improved();
+		bool improved = engine.improved();
+		if (!improved)
+		{
+			break;
+		}
+		
+		const std::vector<float> &trial = engine.bestResult();
+		sendJob(trial);
+	}
+	
+	return true;
+}
+
+void VagabondPositions::updateAllTorsions()
+{
+	size_t refined = 0;
+	size_t unrefined = 0;
+
+	for (size_t i = 0; i < _group->parameterCount(); i++)
+	{
+		Parameter *p = _group->parameter(i);
+		if (p->isTorsion())
+		{
+			float f = p->empiricalMeasurement();
+			p->setValue(f);
+		}
+	}
 }
