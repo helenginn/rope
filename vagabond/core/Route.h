@@ -156,7 +156,6 @@ public:
 protected:
 	virtual void prepareResources();
 	const Grapher &grapher() const;
-	bool incrementGrapher();
 
 	virtual void doCalculations() {};
 	
@@ -201,7 +200,6 @@ protected:
 	void prepareDestination();
 	void getParametersFromBasis();
 
-	bool incrementToAtomGraph(AtomGraph *ag);
 	AtomGraph *grapherForTorsionIndex(int idx);
 
 	float getTorsionAngle(int i);
@@ -223,7 +221,6 @@ private:
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
 	
-	size_t _grapherIdx = 0;
 	int _ticket = 0;
 
 	Instance *_endInstance = nullptr;

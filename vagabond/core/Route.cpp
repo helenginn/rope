@@ -82,40 +82,11 @@ const Grapher &Route::grapher() const
 	return g;
 }
 
-bool Route::incrementToAtomGraph(AtomGraph *ag)
-{
-	AtomGraph *comp = nullptr;
-	do
-	{
-		comp = grapher().graph(ag->atom);
-	}
-	while (!comp && incrementGrapher());
-	
-	return (comp != nullptr);
-}
-
 AtomGraph *Route::grapherForTorsionIndex(int idx)
 {
-	AtomGraph *ag = nullptr;
-	do
-	{
-		ag = grapher().graph(parameter(idx));
-	}
-	while (!ag && incrementGrapher());
+	AtomGraph *ag = grapher().graph(parameter(idx));
 
 	return ag;
-}
-
-bool Route::incrementGrapher()
-{
-	_grapherIdx++;
-	if (_grapherIdx >= _calculators.size())
-	{
-		_grapherIdx = 0;
-		return false;
-	}
-	
-	return true;
 }
 
 void Route::setFlips(std::vector<int> &idxs, std::vector<int> &fs)
@@ -173,20 +144,22 @@ void Route::getParametersFromBasis()
 			torsions.push_back(ResidueTorsion{});
 			tmp_motions.push_back(Motion{WayPoints(), false, 0});
 			missing.insert(p);
-			continue;
 		}
-
-		ResidueTorsion rt = _source.c_rt(idx);
-		rt.attachToInstance(_instance);
-		float final_angle = _source.storage(idx);
-		
-		if (final_angle != final_angle) 
+		else
 		{
-			final_angle = 0;
+			ResidueTorsion rt = _source.c_rt(idx);
+			rt.attachToInstance(_instance);
+			float final_angle = _source.storage(idx);
+
+			if (final_angle != final_angle) 
+			{
+				final_angle = 0;
+			}
+
+			torsions.push_back(rt);
+			tmp_motions.push_back(Motion{WayPoints(), false, final_angle});
 		}
 
-		torsions.push_back(rt);
-		tmp_motions.push_back(Motion{WayPoints(), false, final_angle});
 	}
 
 	_motions = RTMotion::motions_from(torsions, tmp_motions);
