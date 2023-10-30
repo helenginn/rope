@@ -24,6 +24,9 @@
 #include "MetadataGroup.h"
 #include "RopeCluster.h"
 
+#include "engine/Tasks.h"
+#include "BondSequenceHandler.h"
+
 Route::Route(Instance *from, Instance *to, const RTAngles &list)
 : StructureModification(from)
 {
@@ -44,7 +47,7 @@ void Route::setup()
 		throw std::runtime_error("No destination or prior set for route");
 	}
 
-	startCalculator();
+	prepareResources();
 }
 
 float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
@@ -61,34 +64,21 @@ float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
 
 void Route::submitJob(float frac, bool show, int job_num)
 {
-	BondCalculator *calc = calculator();
-
-	Job job{};
-	job.parameters = {frac};
-	job.atomTargets = AtomBlock::prepareMovingTargets(calc);
-	job.fetchTorsion = _fetchTorsion;
-
-	job.requests = static_cast<JobType>(JobPositionVector |
-	                                    JobCalculateDeviations);
-	if (!show)
+	_ticket++;
+	Flag::Extract gets = Flag::Deviation;
+	if (show)
 	{
-		job.requests = JobCalculateDeviations;
+		gets = (Flag::Extract)(Flag::AtomVector | gets);
 	}
 
-	int t = calc->submitJob(job);
-	_ticket2Point[t] = job_num;
+	submitSingleAxisJob(frac, _ticket, gets);
+	_ticket2Point[_ticket] = job_num;
 	_point2Score[job_num] = Score{};
-}
-
-void Route::customModifications(BondCalculator *calc, bool has_mol)
-{
-	calc->manager()->setDefaultCoordTransform(CoordManager::identityTransform());
-	calc->setIgnoreHydrogens(true);
 }
 
 const Grapher &Route::grapher() const
 {
-	const Grapher &g = _calculators[_grapherIdx]->grapher();
+	const Grapher &g = _resources.sequences->grapher();
 	return g;
 }
 
@@ -170,8 +160,8 @@ void Route::getParametersFromBasis()
 	std::vector<Motion> tmp_motions;
 	std::vector<ResidueTorsion> torsions;
 
-	BondCalculator *calc = calculator();
-	TorsionBasis *basis = calc->torsionBasis();
+	BondCalculator *calc = _resources.calculator;
+	TorsionBasis *basis = _resources.sequences->torsionBasis();
 
 	for (size_t i = 0; i < basis->parameterCount(); i++)
 	{
@@ -243,4 +233,26 @@ std::vector<ResidueTorsion> Route::residueTorsions()
 	}
 
 	return rts;
+}
+
+void Route::prepareResources()
+{
+	_resources.tasks = new Tasks();
+	_resources.tasks->run(_threads);
+
+	/* set up result bin */
+	_resources.calculator = new BondCalculator();
+
+	/* set up per-bond/atom calculation */
+	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
+	BondSequenceHandler *sequences = new BondSequenceHandler(_threads);
+	sequences->setIgnoreHydrogens(true);
+	sequences->addAnchorExtension(anchor);
+	sequences->setup();
+	sequences->prepareSequences();
+	_resources.sequences = sequences;
+	
+	const std::vector<AtomBlock> &blocks = 
+	_resources.sequences->sequence()->blocks();
+	sequences->manager()->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
 }

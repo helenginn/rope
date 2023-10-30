@@ -20,6 +20,7 @@
 #include "PlausibleRoute.h"
 #include "Polymer.h"
 #include "MetadataGroup.h"
+#include "BondSequenceHandler.h"
 #include <vagabond/utils/maths.h>
 #include "Grapher.h"
 #include <vagabond/c4x/Cluster.h>
@@ -183,6 +184,7 @@ void PlausibleRoute::setTargets()
 float PlausibleRoute::routeScore(int steps, bool forceField)
 {
 	clearTickets();
+	_resources.calculator->holdHorses();
 
 	for (size_t i = 0; i < steps; i++)
 	{
@@ -194,6 +196,7 @@ float PlausibleRoute::routeScore(int steps, bool forceField)
 		submitJob(frac, show, 0);
 	}
 	
+	_resources.calculator->releaseHorses();
 	retrieve();
 
 	float sc = _point2Score[0].deviations;
@@ -548,7 +551,7 @@ void PlausibleRoute::prepareTorsionFetcher()
 		return t;
 	};
 
-	_fetchTorsion = fetch;
+	_resources.sequences->manager()->setTorsionFetcher(fetch);
 }
 
 void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)

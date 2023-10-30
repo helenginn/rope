@@ -154,10 +154,9 @@ public:
 		_motions = motions;
 	}
 protected:
+	virtual void prepareResources();
 	const Grapher &grapher() const;
 	bool incrementGrapher();
-
-	virtual void customModifications(BondCalculator *calc, bool has_mol);
 
 	virtual void doCalculations() {};
 	
@@ -217,7 +216,6 @@ protected:
 protected:
 	RTMotion _motions;
 	
-	rope::GetFloatFromCoordIdx _fetchTorsion{};
 private:
 	bool _calculating;
 	float _score;
@@ -226,6 +224,7 @@ private:
 	void calculateAtomDeviations(Score &score);
 	
 	size_t _grapherIdx = 0;
+	int _ticket = 0;
 
 	Instance *_endInstance = nullptr;
 
