@@ -23,6 +23,7 @@
 #include "TorsionBasis.h"
 #include "MetadataGroup.h"
 #include "RopeCluster.h"
+#include "BondSequence.h"
 
 #include "engine/Tasks.h"
 #include "BondSequenceHandler.h"
@@ -210,22 +211,16 @@ std::vector<ResidueTorsion> Route::residueTorsions()
 
 void Route::prepareResources()
 {
-	_resources.tasks = new Tasks();
-	_resources.tasks->run(_threads);
+	_resources.allocateMinimum(_threads);
 
-	/* set up result bin */
-	_resources.calculator = new BondCalculator();
-
-	/* set up per-bond/atom calculation */
 	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
-	BondSequenceHandler *sequences = new BondSequenceHandler(_threads);
-	sequences->setIgnoreHydrogens(true);
-	sequences->addAnchorExtension(anchor);
-	sequences->setup();
-	sequences->prepareSequences();
-	_resources.sequences = sequences;
-	
+	_resources.sequences->setIgnoreHydrogens(true);
+	_resources.sequences->addAnchorExtension(anchor);
+	_resources.sequences->setup();
+	_resources.sequences->prepareSequences();
+
 	const std::vector<AtomBlock> &blocks = 
 	_resources.sequences->sequence()->blocks();
-	sequences->manager()->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
+	CoordManager *manager = _resources.sequences->manager();
+	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
 }

@@ -26,6 +26,7 @@
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
+#include "BondSequence.h"
 
 #include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/AtomBlock.h>
@@ -245,20 +246,14 @@ void AxisExplorer::setupColourLegend()
 void AxisExplorer::prepareResources()
 {
 	const int threads = 2;
-	_resources.tasks = new Tasks();
-	_resources.tasks->run(threads);
-
-	/* set up result bin */
-	_resources.calculator = new BondCalculator();
+	_resources.allocateMinimum(threads);
 
 	/* set up per-bond/atom calculation */
-	Atom *anchor = _fullAtoms->chosenAnchor();
-	BondSequenceHandler *sequences = new BondSequenceHandler(threads);
-	sequences->addAnchorExtension(anchor);
-	sequences->setup();
-	sequences->prepareSequences();
-	_resources.sequences = sequences;
+	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
+	_resources.sequences->addAnchorExtension(anchor);
+	_resources.sequences->setup();
+	_resources.sequences->prepareSequences();
 	
-	supplyTorsions(sequences->manager());
+	supplyTorsions(_resources.sequences->manager());
 }
 

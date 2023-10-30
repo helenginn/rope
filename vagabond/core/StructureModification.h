@@ -43,7 +43,7 @@ class Atom;
 class StructureModification
 {
 public:
-	StructureModification(Instance *mol);
+	StructureModification(Instance *mol = nullptr);
 	
 	void setAtoms(AtomGroup *grp)
 	{
@@ -116,6 +116,8 @@ protected:
 		MapSumHandler *summations = nullptr;
 		CorrelationHandler *correlations = nullptr;
 		Tasks *tasks = nullptr;
+		
+		void allocateMinimum(int threads);
 	};
 	
 	virtual bool handleAtomMap(AtomPosMap &aps)

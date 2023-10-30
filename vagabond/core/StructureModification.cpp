@@ -16,11 +16,15 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "engine/MapTransferHandler.h"
+#include "engine/MapSumHandler.h"
+#include "engine/CorrelationHandler.h"
+#include "engine/ElementTypes.h"
+#include "engine/Tasks.h"
+
 #include "StructureModification.h"
 #include "BondSequenceHandler.h"
-#include "engine/ElementTypes.h"
 #include "EntityManager.h"
-#include "engine/Tasks.h"
 #include "ModelManager.h"
 #include "Polymer.h"
 #include "Result.h"
@@ -37,12 +41,14 @@ StructureModification::~StructureModification()
 
 void StructureModification::cleanup()
 {
-	for (size_t i = 0; i < _calculators.size(); i++)
-	{
-		delete _calculators[i];
-	}
-
-	_calculators.clear();
+	_resources.tasks->wait();
+	delete _resources.calculator;
+	delete _resources.sequences;
+	delete _resources.perElements;
+	delete _resources.summations;
+	delete _resources.correlations;
+	delete _resources.tasks;
+	_resources = {};
 }
 
 void StructureModification::makeCalculator(Atom *anchor, bool has_mol)
@@ -246,3 +252,16 @@ void StructureModification::retrieve()
 	}
 }
 
+
+void StructureModification::Resources::allocateMinimum(int threads)
+{
+	tasks = new Tasks();
+	tasks->run(threads);
+
+	/* set up result bin */
+	calculator = new BondCalculator();
+
+	/* set up per-bond/atom calculation */
+	sequences = new BondSequenceHandler(threads);
+
+}

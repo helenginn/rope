@@ -195,20 +195,14 @@ void MolRefiner::changeDefaults(CoordManager *manager)
 
 void MolRefiner::prepareResources()
 {
-	_resources.tasks = new Tasks();
-	_resources.tasks->run(_threads);
-	
-	/* set up result bin */
-	_resources.calculator = new BondCalculator();
-
+	_resources.allocateMinimum(_threads);
 	/* set up per-bond/atom calculation */
 	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
-	BondSequenceHandler *sequences = new BondSequenceHandler(_threads);
+	BondSequenceHandler *sequences = _resources.sequences;
 	sequences->setTotalSamples(_sampler.pointCount());
 	sequences->addAnchorExtension(anchor);
 	sequences->setup();
 	sequences->prepareSequences();
-	_resources.sequences = sequences;
 	
 	changeDefaults(sequences->manager());
 
