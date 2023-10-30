@@ -249,8 +249,16 @@ void AxisExplorer::prepareResources()
 	_resources.allocateMinimum(threads);
 
 	/* set up per-bond/atom calculation */
-	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
-	_resources.sequences->addAnchorExtension(anchor);
+	AtomGroup *group = _instance->currentAtoms();
+
+	std::vector<AtomGroup *> subsets = group->connectedGroups();
+	for (AtomGroup *subset : subsets)
+	{
+		Atom *anchor = subset->chosenAnchor();
+		_resources.sequences->addAnchorExtension(anchor);
+	}
+
+	_resources.sequences->setIgnoreHydrogens(true);
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
 	

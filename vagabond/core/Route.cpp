@@ -213,14 +213,22 @@ void Route::prepareResources()
 {
 	_resources.allocateMinimum(_threads);
 
-	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
+	AtomGroup *group = _instance->currentAtoms();
+
+	std::vector<AtomGroup *> subsets = group->connectedGroups();
+	for (AtomGroup *subset : subsets)
+	{
+		Atom *anchor = subset->chosenAnchor();
+		_resources.sequences->addAnchorExtension(anchor);
+	}
+
 	_resources.sequences->setIgnoreHydrogens(true);
-	_resources.sequences->addAnchorExtension(anchor);
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
 
 	const std::vector<AtomBlock> &blocks = 
 	_resources.sequences->sequence()->blocks();
+
 	CoordManager *manager = _resources.sequences->manager();
 	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
 }
