@@ -43,6 +43,16 @@ public:
 	{
 		return _dims;
 	}
+	
+	BondSequenceHandler *sequences()
+	{
+		return _resources.sequences;
+	}
+	
+	BondCalculator *calculator()
+	{
+		return _resources.calculator;
+	}
 
 	void setup();
 	
@@ -52,15 +62,10 @@ public:
 	
 	void addTorsionsToJob(Job *job);
 	
-	void setAtomMotions(std::function<glm::vec3(const Coord::Get &, int num)> &func)
-	{
-		_atom_positions_for_coord = func;
-	}
+	void setAtomMotions(std::function<glm::vec3(const Coord::Get &,
+	                                            int num)> &func);
 	
-	void setBondMotions(std::function<float(const Coord::Get &, int num)> &func)
-	{
-		_torsion_angles_for_coord = func;
-	}
+	void setBondMotions(std::function<float(const Coord::Get &, int num)> &func);
 
 	const std::function<float(const Coord::Get &, 
 	                          int num)> &torsionAnglesForCoord()
@@ -68,10 +73,7 @@ public:
 		return _torsion_angles_for_coord;
 	}
 	
-	const std::vector<Parameter *> &parameterList() const
-	{
-		return _base.parameters;
-	}
+	const std::vector<Parameter *> &parameterList() const;
 	
 	const std::vector<Atom *> &atomList() const
 	{
@@ -106,8 +108,7 @@ public:
 	void cleanup();
 	void saveSpace(const std::string &filename);
 protected:
-	virtual void customModifications(BondCalculator *calc, bool has_mol = true);
-	
+	virtual void prepareResources();
 	virtual bool handleAtomList(AtomPosList &list);
 
 private:
@@ -137,6 +138,7 @@ private:
 	
 	PCA::Matrix _distances;
 	int _count = 0;
+	int _ticket = 0;
 	bool _alwaysShow = true;
 	bool _showMatrix = true;
 };

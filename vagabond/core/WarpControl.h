@@ -44,9 +44,9 @@ class WarpControl : public RunsEngine
 public:
 	WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster);
 	
-	BondCalculator *const &calculator()
+	BondSequenceHandler *const &sequences()
 	{
-		return _calculator;
+		return _sequences;
 	}
 
 	void setParameters(std::vector<Parameter *> &params)
@@ -104,7 +104,7 @@ private:
 	std::vector<Parameter *> _params;
 	std::function<float()> _score;
 	std::atomic<bool> _finish{false};
-	BondCalculator *_calculator = nullptr;
+	BondSequenceHandler *_sequences = nullptr;
 };
 
 #endif

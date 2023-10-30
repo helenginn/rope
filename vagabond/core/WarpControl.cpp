@@ -38,7 +38,7 @@ WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster
 	_warp = warp;
 	_tWarp = tWarp;
 	_target = new Target(warp->numAxes(), cluster, warp->instance());
-	_calculator = _warp->calculators()[0];
+	_sequences = _warp->sequences();
 
 	_weights = [](Parameter *) { return 1; };
 	_params = _warp->parameterList();
@@ -92,20 +92,18 @@ void WarpControl::replaceSimplex(SimplexEngine *&ptr,
 
 ParamSet WarpControl::acquireParametersBetween(int start, int end, bool reset)
 {
-	int nb = _calculator->sequence()->blockCount();
+	int nb = _sequences->sequence()->blockCount();
 	if (start < 0) start = 0;
 	if (end > nb) end = nb;
 
-	_calculator->setMinMaxDepth(start, end, true);
-	_calculator->start();
+	_sequences->imposeDepthLimits(start, end, true);
 
-	ParamSet params = _calculator->sequence()->flaggedParameters();
+	ParamSet params = _sequences->sequence()->flaggedParameters();
 	prefilterParameters(params);
 	
 	if (reset)
 	{
-		_calculator->finish();
-		_calculator->setMinMaxDepth(0, INT_MAX);
+		_sequences->clearDepthLimits();
 	}
 
 	return params;
@@ -115,7 +113,6 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 {
 	if (params.size() == 0)
 	{		
-		_calculator->finish();
 		return false;
 	}
 	
@@ -125,7 +122,6 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 	float begin = _score();
 	if (begin <= 1e-6)
 	{
-		_calculator->finish();
 		return false;
 	}
 
@@ -134,7 +130,6 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 	float final_sc = _score();
 	std::cout << "\t" << begin << " to " << final_sc << std::endl;
 	
-	_calculator->finish();
 	_warp->compare()->setMinMaxSeparation(0, INT_MAX);
 
 	return true;
@@ -143,9 +138,7 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 float WarpControl::score()
 {
 	_warp->resetComparison();
-	calculator()->start();
 	float res = _score();
-	calculator()->finish();
 	_warp->resetComparison();
 	return res;
 }
@@ -175,8 +168,6 @@ bool WarpControl::refineBetween(int start, int end)
 void WarpControl::run()
 {
 	prepareScore();
-
-	_calculator->finish();
 
 	if (_jobs.size() == 0)
 	{
@@ -212,8 +203,7 @@ void WarpControl::run()
 	}
 	
 	_warp->resetComparison();
-	_calculator->setMinMaxDepth(0, INT_MAX);
-	_calculator->start();
+	_sequences->clearDepthLimits();
 	
 	_warp->cleanup();
 }
@@ -275,17 +265,14 @@ void WarpControl::transformCoordinates(std::vector<float> &coord)
 
 float WarpControl::scoreBetween(int start, int end)
 {
-	int nb = _calculator->sequence()->blockCount();
+	int nb = _sequences->sequence()->blockCount();
 	if (start < 0) start = 0;
 	if (end > nb) end = nb;
 
-	_calculator->setMinMaxDepth(start, end, true);
-	_calculator->start();
-
+	_sequences->imposeDepthLimits(start, end, true);
 	_warp->resetComparison();
 
 	float score = _score();
-	_calculator->finish();
 	return score;
 }
 
@@ -522,7 +509,7 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 	return [wc, sets, large]()
 	{
 		int start = large.start;
-		wc->calculator()->setMinMaxDepth(start, large.end, true);
+		wc->sequences()->imposeDepthLimits(start, large.end, true);
 		float last = -1;
 		bool first = true;
 
@@ -532,9 +519,8 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 			" sets of parameters." << std::endl;
 			for (const ParamSet &set : sets)
 			{
-				wc->calculator()->setMinMaxDepth(start, large.end, true);
+				wc->sequences()->imposeDepthLimits(start, large.end, true);
 				float before = wc->score();
-				wc->calculator()->start();
 				bool success = wc->refineBetween(set, 1);
 				if (!success && first)
 				{
@@ -671,7 +657,7 @@ void averageNeighbours(FlexScoreMap &map)
 FlexScoreMap scanDiagonal(WarpControl *wc, int size)
 {
 	std::map<int, FlexScore> scores;
-	int nb = wc->_calculator->sequence()->blockCount();
+	int nb = wc->sequences()->sequence()->blockCount();
 	for (int i = 1; i < nb - 1; i++)
 	{
 		int mid = i;

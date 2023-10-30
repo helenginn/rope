@@ -19,6 +19,7 @@
 #include <vagabond/utils/FileReader.h>
 #include "CompareDistances.h"
 #include "BondSequence.h"
+#include "engine/Tasks.h"
 #include "TorsionWarp.h"
 #include "AtomGroup.h"
 #include "Instance.h"
@@ -43,30 +44,35 @@ void Warp::addTorsionsToJob(Job *job)
 
 int Warp::submitJob(bool show, const std::vector<float> &vals)
 {
-	for (BondCalculator *calc : _calculators)
-	{
-		Job job{};
-		job.parameters = vals;
-		job.atomTargets = [this](const Coord::Get &get, const int &idx)
-		{
-			glm::vec3 p = _atom_positions_for_coord(get, idx);
-			p += _base.positions[idx];
-			return p;
-		};
-		
-		addTorsionsToJob(&job);
-		
-		job.requests = static_cast<JobType>(JobPositionVector |
-		                                    JobCalculateDeviations);
-		if (!show)
-		{
-			job.requests = JobCalculateDeviations;
-		}
+	_ticket++;
 
-		int t = calc->submitJob(job);
-		_ticket2Point[t] = _jobNum;
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
+	
+	/* get easy references to resources */
+	BondCalculator *const &calculator = _resources.calculator;
+	BondSequenceHandler *const &sequences = _resources.sequences;
+
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
+
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions
+	                             | Flag::DoSuperpose);
+	
+	Flag::Extract extract = Flag::Extract(Flag::AtomVector | Flag::Deviation);
+	if (!show)
+	{
+		extract = Flag::Extract(Flag::Deviation);
 	}
 
+	/* calculation of torsion angle-derived and target-derived
+	 * atom positions */
+	sequences->calculate(calc, vals, &first_hook, &final_hook);
+	sequences->extract(extract, submit_result, final_hook);
+	
+	_resources.tasks->addTask(first_hook);
+
+	_ticket2Point[_ticket] = _jobNum;
 	_point2Score[_jobNum] = Score{};
 	_jobNum++;
 	return _jobNum - 1;
@@ -80,12 +86,13 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 	{
 		_alwaysShow = false;
 		clearComparison();
-		bool show = (_jobNum % 11 == 0);
 		
+		_resources.calculator->holdHorses();
 		for (const Floats &fs : points)
 		{
 			submitJob(true, fs);
 		}
+		_resources.calculator->releaseHorses();
 		
 		retrieve();
 
@@ -112,22 +119,23 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 void Warp::setup()
 {
 	_base = {};
-	startCalculator();
-	prepareAtoms();
-	prepareBonds();
-	
 	_filter = [](Atom *const &atom)
 	{
 		return (atom->isReporterAtom());
 	};
 	
 	_displayTargets = true;
+
+	prepareResources();
+//	startCalculator();
+	prepareAtoms();
+	prepareBonds();
+	
 }
 
 void Warp::prepareAtoms()
 {
-	BondCalculator *calc = _instanceToCalculator[_instance];
-	BondSequence *seq = calc->sequence();
+	BondSequence *seq = _resources.sequences->sequence();
 
 	const std::vector<AtomBlock> &blocks = seq->blocks();
 
@@ -154,8 +162,7 @@ void Warp::prepareAtoms()
 
 void Warp::prepareBonds()
 {
-	BondCalculator *calc = _instanceToCalculator[_instance];
-	BondSequence *seq = calc->sequence();
+	BondSequence *seq = _resources.sequences->sequence();
 
 	TorsionBasis *basis = seq->torsionBasis();
 	_base.torsions.resize(basis->parameterCount());
@@ -209,13 +216,6 @@ CompareDistances *Warp::compare()
 	}
 
 	return _compare;
-}
-
-void Warp::customModifications(BondCalculator *calc, bool has_mol)
-{
-	calc->setSuperpose(true);
-	calc->prepareToSkipSections(true);
-	calc->manager()->setDefaultCoordTransform(CoordManager::identityTransform());
 }
 
 void Warp::resetComparison()
@@ -286,4 +286,62 @@ Warp *Warp::warpFromFile(Instance *reference, std::string file)
 
 	loadJson(file, tw);
 	return warp;
+}
+
+const std::vector<Parameter *> &Warp::parameterList() const
+{
+	return _resources.sequences->torsionBasis()->parameters();
+}
+
+void Warp::prepareResources()
+{
+	_resources.allocateMinimum(_threads);
+
+	AtomGroup *group = _instance->currentAtoms();
+
+	std::vector<AtomGroup *> subsets = group->connectedGroups();
+	for (AtomGroup *subset : subsets)
+	{
+		Atom *anchor = subset->chosenAnchor();
+		_resources.sequences->addAnchorExtension(anchor);
+	}
+
+	_resources.sequences->setIgnoreHydrogens(true);
+	_resources.sequences->prepareToSkipSections(true);
+	_resources.sequences->setup();
+	_resources.sequences->prepareSequences();
+
+	const std::vector<AtomBlock> &blocks = 
+	_resources.sequences->sequence()->blocks();
+
+}
+
+void Warp::setAtomMotions(std::function<glm::vec3(const Coord::Get &,
+                                                  int num)> &func)
+{
+	_atom_positions_for_coord = func;
+
+	auto fetch = [this](const Coord::Get &get, const int &idx)
+	{
+		glm::vec3 p = _atom_positions_for_coord(get, idx);
+		p += _base.positions[idx];
+		return p;
+	};
+	
+	CoordManager *manager = _resources.sequences->manager();
+	manager->setAtomFetcher(fetch);
+}
+
+void Warp::setBondMotions(std::function<float(const Coord::Get &, int num)> &func)
+{
+	_torsion_angles_for_coord = func;
+
+	auto fetch = [this](const Coord::Get &get, const int &idx)
+	{
+		float t = _torsion_angles_for_coord(get, idx);
+		return t;
+	};
+
+	CoordManager *manager = _resources.sequences->manager();
+	manager->setTorsionFetcher(fetch);
 }
