@@ -19,21 +19,13 @@
 #ifndef __vagabond__PositionRefinery__
 #define __vagabond__PositionRefinery__
 
-#include "TorsionBasis.h"
-#include "AnchorExtension.h"
-#include "Engine.h"
 #include <iostream>
-#include <queue>
 #include <atomic>
-#include <set>
-#include <climits>
 
 class AtomGroup;
-class Parameter;
-class BondCalculator;
 class VagabondPositions;
 
-class PositionRefinery : public RunsEngine
+class PositionRefinery 
 {
 public:
 	PositionRefinery(AtomGroup *group = nullptr);
@@ -49,75 +41,22 @@ public:
 	
 	static void backgroundRefine(PositionRefinery *ref);
 	
-	size_t nCalls()
-	{
-		return _ncalls;
-	}
-	
 	bool isDone()
 	{
 		return _done;
 	}
-protected:
-	virtual size_t parameterCount();
-	virtual int sendJob(const std::vector<float> &all);
-	int sendJob(const std::vector<float> &trial, bool absorb);
-	virtual float getResult(int *job_id);
 private:
-	void refine(AtomGroup *group);
 	void refineThroughEach(AtomGroup *subset);
-	void grabNewAnchor(AtomGroup *subset);
-
-	void wiggleBond(const Parameter *t);
-
-	void setupCalculator(AtomGroup *group, bool loopy, int jointLimit = -1);
-	bool refineBetween(int start, int end);
-	double fullResidual();
-	void calculateActiveTorsions();
-	void stepwiseRefinement(AtomGroup *group);
-
-	void addActiveIndices(std::set<Parameter *> &params);
-	void clearActiveIndices();
-	void setMaskFromIndices();
-	void updateAllTorsions(AtomGroup *subset);
 
 	AtomGroup *_group = nullptr;
 	BondCalculator *_calculator = nullptr;
 
 	float _step = 0.2;
-	int _ncalls = 0;
-	int _nBonds = 0;
 
-	int _nActive = 0;
-	int _start = 0;
-	int _end = 0;
-	size_t _progs = 0;
-	
-	int _depthRange = 5;
 	bool _thorough = false;
-	bool _reverse = false;
 	bool _finish = false;
-	std::atomic<bool> _done{false};
-	
-	Engine *_engine = nullptr;
-	
-	enum RefinementStage
-	{
-		None,
-		Positions,
-		Loopy,
-		CarefulLoopy,
-	};
 
-	void reallocateEngine(RefinementStage stage);
-	void loopyRefinement(AtomGroup *group, RefinementStage stage);
-	void wiggleBonds(RefinementStage stage);
-	RefinementStage _stage = None;
-	int _count = 0;
-	
-	std::set<int> _activeIndices;
-	std::set<Parameter *> _parameters;
-	std::vector<bool> _mask;
+	std::atomic<bool> _done{false};
 };
 
 #endif
