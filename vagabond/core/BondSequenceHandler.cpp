@@ -426,3 +426,8 @@ const Grapher &BondSequenceHandler::grapher() const
 	return g;
 }
 
+
+ParamSet BondSequenceHandler::flaggedParameters()
+{
+	return _sequences.at(0)->flaggedParameters();
+}

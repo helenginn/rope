@@ -21,12 +21,12 @@
 
 #include <thread>
 #include "engine/Handler.h"
-#include "BondSequence.h"
 #include "TorsionBasis.h"
 #include "AnchorExtension.h"
 #include "HasBondSequenceCustomisation.h"
 #include "engine/ElementTypes.h"
 #include "Result.h"
+#include "ParamSet.h"
 
 class Sampler;
 class Grapher;
@@ -127,8 +127,17 @@ public:
 	/** Changes which atoms are included for calculation of position
 	 * deviation 
 	 * 	@param min minimum depth from anchor position
-	 * 	@param max maximum depth from anchor position  */
+	 * 	@param max maximum depth from anchor position
+	 *  @param limit_max treat max like a hard stop when true, otherwise
+	 *  maximum number of connections to min  */
 	void imposeDepthLimits(int min, int max, bool limit_max);
+
+	void clearDepthLimits()
+	{
+		imposeDepthLimits(0, INT_MAX, false);
+	}
+	
+	ParamSet flaggedParameters();
 	
 	const std::map<std::string, int> &elementList() const
 	{

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "VagabondPositions.h"
 #include "PositionRefinery.h"
 #include "AtomGroup.h"
 #include "AlignmentTool.h"
@@ -67,6 +68,29 @@ void PositionRefinery::updateAllTorsions(AtomGroup *subset)
 
 void PositionRefinery::refineThroughEach(AtomGroup *subset)
 {
+	VagabondPositions vagabond(subset);
+	vagabond.setup();
+
+	float before = vagabond.fullResidual();
+	int depth = _thorough ? 10 : 5;
+	size_t nb = vagabond.totalPositions();
+	for (size_t i = 0; i < nb; i++)
+	{
+		bool improved = vagabond.refineBetween(i, i + depth);
+
+		if (_finish)
+		{
+			break;
+		}
+	}
+
+	float after = vagabond.fullResidual();
+
+	std::cout << "Overall average distance after refinement: "
+	<< before << " before to " << after << " Angstroms over " 
+	<< subset->size() << " atoms." << std::endl;
+	return;
+
 	setupCalculator(subset, false);
 
 	TorsionBasis *basis = _calculator->sequenceHandler()->torsionBasis();
@@ -84,9 +108,6 @@ void PositionRefinery::refineThroughEach(AtomGroup *subset)
 		refine(subset);
 	}
 
-	res = fullResidual();
-	std::cout << "Overall average distance after refinement: "
-	<< res << " Angstroms over " << subset->size() << " atoms." << std::endl;
 	
 	delete _calculator;
 	_calculator = nullptr;

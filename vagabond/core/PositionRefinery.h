@@ -31,6 +31,7 @@
 class AtomGroup;
 class Parameter;
 class BondCalculator;
+class VagabondPositions;
 
 class PositionRefinery : public RunsEngine
 {
