@@ -37,25 +37,6 @@ class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
 template <typename I, typename O> class Task;
 	
-namespace Flag
-{
-	enum Calc
-	{
-		NoCalc = 1 << 0,
-		DoTorsions = 1 << 1,
-		DoPositions = 1 << 2,
-		DoSuperpose = 1 << 3,
-	};
-
-	enum Extract
-	{
-		NoExtract = 1 << 0,
-		AtomVector = 1 << 1,
-		AtomMap = 1 << 2,
-		Deviation = 1 << 3,
-	};
-}
-
 
 class BondSequenceHandler : public Handler, public HasBondSequenceCustomisation
 {
