@@ -588,9 +588,16 @@ void Model::refine(bool sameThread, bool thorough)
 	{
 		load();
 	}
+	
+	std::vector<Instance *> insts = instances();
+	for (Instance *inst : insts)
+	{
+		AtomGroup *grp = inst->currentAtoms();
+		grp->recalculate();
+		grp->refinePositions(sameThread, thorough);
+	}
 
-	_currentAtoms->recalculate();
-	_currentAtoms->refinePositions(sameThread, thorough);
+	extractExisting();
 }
 
 void Model::extractExisting()
