@@ -214,8 +214,8 @@ template <class DG>
 typename DG::Array Cluster<DG>::rawVector(int from, int to)
 {
 	typename DG::Array my_vals, your_vals;
-	my_vals = dataGroup()->differenceVector(from);
-	your_vals = dataGroup()->differenceVector(to);
+	my_vals = dataGroup()->vector(from);
+	your_vals = dataGroup()->vector(to);
 
 	for (size_t i = 0; i < your_vals.size(); i++)
 	{
