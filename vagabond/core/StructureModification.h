@@ -23,7 +23,8 @@
  * Instance in a structure */
 
 #include <vagabond/c4x/Angular.h>
-#include "BondCalculator.h"
+#include "AtomPosMap.h"
+#include "Result.h"
 #include "Residue.h"
 #include "engine/ElementTypes.h"
 #include "RTAngles.h"
@@ -35,6 +36,10 @@ class Cluster;
 
 class TorsionCluster;
 class BondCalculator;
+class BondSequenceHandler;
+class MapTransferHandler;
+class MapSumHandler;
+class CorrelationHandler;
 class AtomContent;
 class Instance;
 class Tasks;
@@ -49,25 +54,9 @@ public:
 	{
 		_fullAtoms = grp;
 	}
-	
-	const int &dims() const
-	{
-		return _dims;
-	}
-	
-//	bool supplyTorsions(const RTAngles &angles);
 
 	virtual ~StructureModification();
 	
-	void setCluster(TorsionCluster *cluster)
-	{
-		_cluster = cluster;
-	}
-
-	void makeCalculator(Atom *anchor, bool has_mol);
-	void startCalculator();
-	
-	void changeInstance(Instance *m);
 	virtual void retrieve();
 	
 	void setInstance(Instance *inst)
@@ -78,13 +67,6 @@ public:
 	Instance *instance()
 	{
 		return _instance;
-	}
-	
-	void clearCalculators();
-	
-	std::vector<BondCalculator *> &calculators()
-	{
-		return _calculators;
 	}
 	
 	float deviation(int idx)
@@ -135,26 +117,16 @@ protected:
 		return true;
 	}
 
-	virtual void customModifications(BondCalculator *calc, bool has_mol = true) {};
-	
 	virtual void prepareResources() {};
 	void submitSingleAxisJob(float prop, float ticket, Flag::Extract extraction);
 
-	void addToHetatmCalculator(Atom *anchor);
-	void finishHetatmCalculator();
-	bool checkForInstance(AtomGroup *grp);
 	void cleanup();
+
 	Instance *_instance = nullptr;
 
-	BondCalculator *_hetatmCalc = nullptr;
-	std::vector<BondCalculator *> _calculators;
 	AtomGroup *_fullAtoms = nullptr;
-	
-	TorsionCluster *_cluster = nullptr;
 
-	int _dims = 1;
 	int _threads = 1;
-	int _axis = 0;
 
 	struct Score
 	{
@@ -171,12 +143,9 @@ protected:
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
 
-	std::map<Instance *, BondCalculator *> _instanceToCalculator;
-
 	TicketPoint _ticket2Point;
 	TicketScores _point2Score;
 	
-	BondCalculator::PipelineType _pType = BondCalculator::PipelineAtomPositions;
 };
 
 #endif

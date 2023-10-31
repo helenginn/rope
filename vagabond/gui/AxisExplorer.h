@@ -42,6 +42,11 @@ public:
 	virtual void setup();
 	virtual void tieButton() {};
 
+	void setCluster(TorsionCluster *const &cluster)
+	{
+		_cluster = cluster;
+	}
+
 	void setupSlider();
 	void submitJob(float prop);
 
@@ -87,9 +92,9 @@ private:
 	double _step = 0.001;
 	float _maxTorsion = 0;
 
+	TorsionCluster *_cluster = nullptr;
 	RTAngles _rawAngles;
 	RAMovement _movement;
-	bool _atomMaps = false;
 	
 	int _dims = 1;
 };

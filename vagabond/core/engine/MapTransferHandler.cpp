@@ -34,12 +34,6 @@ MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &element
 	supplyElementList(elements);
 }
 
-MapTransferHandler::MapTransferHandler(BondCalculator *calculator)
-{
-	_calculator = calculator;
-	_sumHandler = calculator->sumHandler();
-}
-
 MapTransferHandler::~MapTransferHandler()
 {
 	finish();

@@ -16,8 +16,6 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "engine/workers/ThreadCalculatesBondSequence.h"
-#include "engine/workers/ThreadExtractsBondPositions.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "engine/MapTransferHandler.h"
@@ -35,21 +33,8 @@ BondSequenceHandler::BondSequenceHandler(int totalSeq) : Handler()
 	_manager = new CoordManager();
 }
 
-BondSequenceHandler::BondSequenceHandler(BondCalculator *calc) : Handler()
-{
-	_totalSamples = 1;
-	_pools[SequenceIdle].setName("idle sequences");
-	_pools[SequencePositionsReady].setName("handle positions");
-	_pools[SequenceCalculateReady].setName("calculate bonds");
-	_calculator = calc;
-	
-	_manager = calc ? calc->manager() : new CoordManager();
-}
-
 BondSequenceHandler::~BondSequenceHandler()
 {
-	finish();
-
 	for (size_t i = 0; i < _sequences.size(); i++)
 	{
 		if (i == 0)
@@ -63,58 +48,8 @@ BondSequenceHandler::~BondSequenceHandler()
 	std::map<SequenceState, Pool<BondSequence *> >::iterator it;
 }
 
-void BondSequenceHandler::calculateThreads(int max)
-{
-	if (_totalSamples == 0)
-	{
-		throw(std::runtime_error("Total samples specified as zero"));
-	}
-
-	_threads = max;
-	_totalSequences = max + 2;
-	if (_threads == 1)
-	{
-		_totalSequences = 1;
-	}
-}
-
-void BondSequenceHandler::sanityCheckThreads()
-{
-	if (_threads == 0)
-	{
-		throw std::runtime_error("Nonsensical number (0) of threads requested");
-	}
-}
-
-typedef ThreadCalculatesBondSequence CalcWorker;
-typedef ThreadExtractsBondPositions ExtrWorker;
-void BondSequenceHandler::prepareThreads()
-{
-	for (size_t i = 0; i < _threads; i++)
-	{
-		ExtrWorker *worker = new ExtrWorker(this);
-		worker->setPointStoreHandler(_pointHandler);
-		std::thread *thr = new std::thread(&ExtrWorker::start, worker);
-		Pool<BondSequence *> &pool = _pools[SequencePositionsReady];
-
-		pool.addWorker(worker, thr);
-	}
-
-	for (size_t i = 0; i < _totalSequences; i++)
-	{
-		/* several calculators */
-		CalcWorker *worker = new CalcWorker(this);
-		std::thread *thr = new std::thread(&CalcWorker::start, worker);
-		Pool<BondSequence *> &pool = _pools[SequenceCalculateReady];
-
-		pool.addWorker(worker, thr);
-	}
-}
-
 void BondSequenceHandler::setup()
 {
-	calculateThreads(_maxThreads);
-	sanityCheckThreads();
 	prepareSequenceBlocks();
 	torsionBasis()->prepare();
 }
@@ -126,19 +61,6 @@ void BondSequenceHandler::prepareSequences()
 		_sequences[i]->reset();
 		_sequences[i]->prepareForIdle();
 	}
-}
-
-void BondSequenceHandler::start()
-{
-	prepareSequences();
-	prepareThreads();
-}
-
-void BondSequenceHandler::finish()
-{
-	_pools[SequenceIdle].finish();
-	_pools[SequencePositionsReady].finish();
-	_pools[SequenceCalculateReady].finish();
 }
 
 void BondSequenceHandler::prepareSequenceBlocks()
@@ -161,14 +83,6 @@ void BondSequenceHandler::prepareSequenceBlocks()
 	_elements = sequence->elementList();
 
 	manager()->setAtomFetcherFromBlocks(sequence->blocks());
-	
-	if (_mapHandler)
-	{
-		_mapHandler->supplyElementList(_elements);
-		_mapHandler->supplyAtomGroup(sequence->grapher().atoms());
-		_pointHandler->setup();
-	}
-
 	_sequences.push_back(sequence);
 
 	for (size_t i = 0; i < _totalSequences; i++)
@@ -195,15 +109,6 @@ BondSequence *BondSequenceHandler::acquireSequenceOrNull()
 	BondSequence *seq = nullptr;
 	
 	pool.acquireObjectIfAvailable(seq);
-	return seq;
-}
-
-BondSequence *BondSequenceHandler::acquireSequence(SequenceState state)
-{
-	Pool<BondSequence *> &pool = _pools[state];
-	BondSequence *seq = nullptr;
-	
-	pool.acquireObject(seq);
 	return seq;
 }
 

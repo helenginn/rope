@@ -49,8 +49,8 @@ StructureModification(), _sampler(num, dims)
 
 	_map = comparison;
 	_info = info;
-
 	_dims = dims;
+
 	_sampler.setup();
 	_instance->load();
 }
@@ -145,7 +145,6 @@ void MolRefiner::retrieveJobs()
 		setScoreForTicket(t, -cc);
 
 		r->destroy();
-		delete r;
 	}
 }
 

@@ -44,24 +44,8 @@ class BondSequenceHandler : public Handler, public HasBondSequenceCustomisation
 public:
 	BondSequenceHandler(int totalSeq);
 
-	BondSequenceHandler(BondCalculator *calculator = nullptr);
 	~BondSequenceHandler();
 	
-	void setPointStoreHandler(PointStoreHandler *handler)
-	{
-		_pointHandler = handler;
-	}
-	
-	void setMapTransferHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
-
-	BondCalculator *calculator()
-	{
-		return _calculator;
-	}
-
 	const Grapher &grapher() const;
 	
 	TorsionBasis *torsionBasis() const;
@@ -70,12 +54,6 @@ public:
 	
 	/** set up resources which are needed for calculations */
 	void setup();
-	
-	/** set up workers and corresponding threads, begin calculations */
-	void start();
-	
-	/** stop all work, join up threads and delete threads/workers */
-	void finish();
 
 	BondSequence *sequence(int i = 0) 
 	{
@@ -121,7 +99,6 @@ public:
 
 	void signalToHandler(BondSequence *seq, SequenceState state);
 
-	BondSequence *acquireSequence(SequenceState state);
 	BondSequence *acquireSequenceOrNull();
 
 	/** Changes which atoms are included for calculation of position
@@ -147,10 +124,7 @@ public:
 	int activeTorsions();
 	void prepareSequences();
 private:
-	void sanityCheckThreads();
 	void prepareSequenceBlocks();
-	void prepareThreads();
-	void calculateThreads(int max);
 
 	size_t _totalSequences = 0;
 
@@ -160,9 +134,6 @@ private:
 
 	/* Sequences to manage calculations */
 	std::vector<BondSequence *> _sequences;
-	BondCalculator *_calculator = nullptr;
-	MapTransferHandler *_mapHandler = nullptr;
-	PointStoreHandler *_pointHandler = nullptr;
 	CoordManager *_manager = nullptr;
 	std::map<std::string, int> _elements;
 };

@@ -183,12 +183,7 @@ void AlignmentTool::run(Atom *anchor, bool force)
 	{
 		Result *result = resultForAnchor(anchor);
 		
-		for (AtomWithPos &pos : result->apl)
-		{
-			std::cout << pos.wp.ave << " " << pos.wp.target << std::endl;
-		}
 		glm::mat4x4 transform = superposition(result, anchor->isTransformed());
-		std::cout << transform << std::endl;
 		updatePositions(result, transform);
 		result->destroy();
 		_group->addTransformedAnchor(anchor, transform);

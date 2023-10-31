@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
+#include "BondCalculator.h"
 #include "CompareDistances.h"
 #include "BondSequence.h"
 #include "engine/Tasks.h"

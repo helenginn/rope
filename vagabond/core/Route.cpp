@@ -114,11 +114,6 @@ void Route::bringTorsionsToRange()
 	}
 }
 
-BondCalculator *Route::calculator()
-{
-	return _instanceToCalculator[_instance];
-}
-
 void Route::getParametersFromBasis()
 {
 	if (_motions.size() > 0)

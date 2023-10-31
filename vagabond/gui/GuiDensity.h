@@ -43,8 +43,6 @@ public:
 	                        OriginGrid<fftwf_complex> *map);
 	void populateFromMap(OriginGrid<fftwf_complex> *map);
 
-	void recalculate();
-
 	void setReferenceDensity(OriginGrid<fftwf_complex> *ref)
 	{
 		_ref = ref;

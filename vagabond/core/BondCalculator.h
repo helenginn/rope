@@ -19,69 +19,23 @@
 #ifndef __vagabond__BondCalculator__
 #define __vagabond__BondCalculator__
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-#include <climits>
-#include <vector>
-#include <queue>
 #include "engine/Handler.h"
-#include "engine/CoordManager.h"
-#include "AtomMap.h"
-#include "AtomPosMap.h"
-#include "TorsionBasis.h"
-#include "AnchorExtension.h"
-#include "HasBondSequenceCustomisation.h"
 
-class BondSequenceHandler;
-class SurfaceAreaHandler;
-class MapTransferHandler;
-class CorrelationHandler;
-class PointStoreHandler;
-class SolventHandler;
-class MapSumHandler;
 template <typename I, typename O> class Task;
 
-class PositionSampler;
-class Diffraction;
-class Grapher;
-class Atom;
-
 /** \class BondCalculator
- *  Master class for the internal Vagabond engine.
+ *  Used to be master class for the internal Vagabond engine.
+ *  Now just a repository for finished results. Accompanying image is out of date.
  *
  * \image html vagabond/doc/bondcalculator_class_connections.png width=1200px
  */
 
-class BondCalculator : public Handler, public HasBondSequenceCustomisation
+class BondCalculator : public Handler
 {
 public:
 	BondCalculator();
 	~BondCalculator();
 	
-	/** Extent of BondCalculator pipeline before exiting and producing a 
-	 *  Result. */
-	enum PipelineType
-	{
-		PipelineNotSpecified = 0, /**< unknown pipeline */
-
-		/** return array of positions after calculating atom positions */
-		PipelineAtomPositions = 1 << 0, 
-
-		/** return maps after calculating 3D map */
-		PipelineCalculatedMaps = 1 << 1, 
-
-		/** return after calculating correlation of calculated 3D map with 
-		 * reference 3D map */
-		PipelineCorrelation = 1 << 3,
-
-		/** returns solvent-accessible surface area calculation in Angstroms^2 */
-		PipelineSolventSurfaceArea = 1 << 4,
-
-		/** calculates a solvent mask for maps */
-		PipelineSolventMask = 1 << 5,
-	};
-	
-	int submitJob(Job &job);
 	void submitResult(Result *result);
 	void submitResult(const Result &r);
 	
@@ -90,142 +44,10 @@ public:
 	
 	Task<Result, void *> *submitResult(int ticket);
 	
-	/** Set limits for which atoms should be used for output results such
-	 *  as deviation calculations for positions. All atom positions will
-	 *  nevertheless be calculated.
-	 *  @param min minimum value for depth to be considered
-	 *  @param max maximum value for depth to be considered */
-	void setMinMaxDepth(int min, int max, bool limit_max = false)
-	{
-		if (_minDepth != min || _maxDepth != max)
-		{
-			_changedDepth = true;
-		}
-
-		_minDepth = min;
-		_maxDepth = max;
-		_limitMax = limit_max;
-	}
-	
-	/** Returns vector of booleans corresponding to each scalar in the
-	 *  custom vector which is provided to the calculator. True if this
-	 *  vector directly affects an atom in provided depth range. */
-	std::vector<bool> depthLimitMask();
-	
-	void setPipelineType(PipelineType type)
-	{
-		_type = type;
-	}
-	
-	const PipelineType &pipelineType() const
-	{
-		return _type;
-	}
-	
-	/** @param size UINT_MAX if unlimited, otherwise maximum bytes as limit 
-	 * for map calculations */
-	void setMaxMemoryGuideline(unsigned long max)
-	{
-		_maxMemory = max;
-	}
-	
-	void addAnchorExtension(Atom *atom, size_t bondCount = UINT_MAX);
-	void addAnchorExtension(AnchorExtension ext);
-	
-	Atom *anchorAtom(int i)
-	{
-		return _atoms[i].atom;
-	}
-	
-	const size_t anchorAtomCount() const
-	{
-		return _atoms.size();
-	}
-
-	void setup();
-	void start();
-	void finish();
-	
-	BondSequenceHandler *sequenceHandler()
-	{
-		return _sequenceHandler;
-	}
-	
-	BondSequence *sequence(int i = 0);
-	TorsionBasis *torsionBasis();
-	const Grapher &grapher() const;
-	
-	void setReferenceDensity(OriginGrid<fftwf_complex> *dens)
-	{
-		_refDensity = dens;
-	}
-	
-	MapTransferHandler *mapHandler()
-	{
-		return _mapHandler;
-	}
-	
-	MapSumHandler *sumHandler()
-	{
-		return _sumHandler;
-	}
-	
-	SurfaceAreaHandler *surfaceHandler()
-	{
-		return _surfaceHandler;
-	}
-	
-	CoordManager *manager() const
-	{
-		return _manager;
-	}
-
-	Job *acquireJob();
 	Result *emptyResult();
 	Result *acquireResult();
-	void recycleResult(Result *r);
-	void reset();
 private:
-	void sanityCheckPipeline();
-	void sanityCheckThreads();
-	void sanityCheckJob(Job &job);
-	void sanityCheckDepthLimits();
-	void setupSequenceHandler();
-	void setupPointHandler();
-	void setupSolventHandler();
-	void setupMapTransferHandler();
-	void setupMapSumHandler();
-	void setupSurfaceAreaHandler();
-	void prepareThreads();
-	void cleanupRecycling();
-
-	PipelineType _type;
-	CoordManager *_manager = nullptr;
-	size_t _maxMemory = 0;
-	
-	int _minDepth = 0;
-	int _maxDepth = INT_MAX;
-	bool _limitMax = false;
-	bool _changedDepth = false;
-	
-	Pool<Job *> _jobPool;
 	ExpectantPool<Result *> _resultPool;
-	ExpectantPool<Result *> _recyclePool;
-
-	BondSequenceHandler *_sequenceHandler = nullptr;
-	MapTransferHandler *_mapHandler = nullptr;
-	CorrelationHandler *_correlHandler = nullptr;
-	SurfaceAreaHandler *_surfaceHandler = nullptr;
-	PointStoreHandler *_pointHandler = nullptr;
-	SolventHandler *_solventHandler = nullptr;
-	MapSumHandler *_sumHandler = nullptr;
-	
-	OriginGrid<fftwf_complex> *_refDensity = nullptr;
-
-	void setupCorrelationHandler();
-	
-	bool _started = false;
-	std::vector<AnchorExtension> _atoms;
 };
 
 #endif

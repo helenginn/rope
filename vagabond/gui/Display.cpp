@@ -282,7 +282,7 @@ void Display::buttonPressed(std::string tag, Button *button)
 	if (tag == "recalculate")
 	{
 		recalculateAtoms();
-		densityButton();
+//		densityButton();
 		mechanicsButton();
 		removeObject(button);
 
@@ -326,10 +326,6 @@ void Display::buttonPressed(std::string tag, Button *button)
 		_halfWedge->setDisabled(true);
 		_wedge->setDisabled(false);
 		_guiRefls->setSlice(true);
-	}
-	else if (tag == "density" && _guiDensity != nullptr)
-	{
-		_guiDensity->recalculate();
 	}
 	else if (tag == "mechanics")
 	{

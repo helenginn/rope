@@ -51,6 +51,7 @@ private:
 	Warp *_warp = nullptr;
 
 	int _ticket = 0;
+	int _dims = 0;
 	
 	std::vector<float> _best;
 	Sampler _sampler;

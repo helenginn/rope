@@ -676,11 +676,6 @@ void BondSequence::reflagDepth(int min, int max, bool limit_max)
 	_fullRecalc = true;
 }
 
-BondCalculator *BondSequence::calculator()
-{
-	return _handler->calculator();
-}
-
 int BondSequence::activeTorsions() const
 {
 	return _activeTorsions;

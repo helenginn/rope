@@ -47,7 +47,7 @@ int main()
 		}
 		std::cout << "Received ticket " << result->ticket << std::endl;
 
-		delete result;
+		result->destroy();
 	}
 	
 	std::cout << "Last ticket" << std::endl;

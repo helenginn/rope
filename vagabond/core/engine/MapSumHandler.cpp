@@ -23,13 +23,8 @@
 #include "engine/workers/ThreadMapSummer.h"
 #include "engine/Task.h"
 #include "AtomSegment.h"
+#include "AtomMap.h"
 #include "Result.h"
-
-MapSumHandler::MapSumHandler(BondCalculator *calculator)
-{
-	_calculator = calculator;
-	_mapHandler = _calculator->mapHandler();
-}
 
 MapSumHandler::MapSumHandler(int mapCount, const ElementSegment *templ)
 {

@@ -32,9 +32,6 @@ struct AtomBlock
 	prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks);
 
 	static rope::GetVec3FromCoordIdx 
-	prepareMovingTargets(BondCalculator *calc);
-
-	static rope::GetVec3FromCoordIdx 
 	prepareMovingTargets(const std::vector<AtomBlock> &blocks);
 
 	bool flag = true;

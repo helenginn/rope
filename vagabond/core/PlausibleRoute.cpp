@@ -18,6 +18,7 @@
 
 #include "ParamSet.h"
 #include "PlausibleRoute.h"
+#include "BondCalculator.h"
 #include "Polymer.h"
 #include "MetadataGroup.h"
 #include "BondSequenceHandler.h"

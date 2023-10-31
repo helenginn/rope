@@ -36,7 +36,6 @@ class PointStoreHandler;
 class MapTransferHandler : public Handler
 {
 public:
-	MapTransferHandler(BondCalculator *calculator = nullptr);
 	MapTransferHandler(const std::map<std::string, int> &elements,
 	                   int number_of_maps);
 	

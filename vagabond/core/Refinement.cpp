@@ -133,7 +133,6 @@ void Refinement::setupRefiner(Refine::Info &info)
 	int samples = info.samples;
 
 	MolRefiner *mr = new MolRefiner(_map, &info, samples, dims);
-	mr->startCalculator();
 
 	for (size_t i = 0; i < info.axes.size(); i++)
 	{

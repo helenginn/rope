@@ -28,7 +28,7 @@ int main()
 	Result *result = nullptr;
 	result = calculator.acquireResult();
 	result->transplantPositions();
-	delete result;
+	result->destroy();
 
 	calculator.finish();
 

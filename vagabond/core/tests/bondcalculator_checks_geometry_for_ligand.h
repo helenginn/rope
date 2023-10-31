@@ -22,7 +22,7 @@ int checkGeometry(std::string path, double angle_tol = 1e-3)
 	Result *result = nullptr;
 	result = calculator.acquireResult();
 	result->transplantPositions();
-	delete result;
+	result->destroy();
 
 	calculator.finish();
 	

@@ -35,8 +35,6 @@ class Route : public StructureModification, public HasResponder<Responder<Route>
 public:
 	Route(Instance *from, Instance *to, const RTAngles &list);
 	virtual ~Route();
-	
-	BondCalculator *calculator();
 
 	virtual void setup();
 

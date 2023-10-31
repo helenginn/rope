@@ -20,6 +20,7 @@
 #include "engine/ElementTypes.h"
 #include "engine/Tasks.h"
 
+#include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "AlignmentTool.h"
 #include "SimplexEngine.h"
@@ -121,7 +122,7 @@ float VagabondPositions::fullResidual()
 
 	Result *r = submitJobAndRetrieve(true);
 	float res = r->deviation;
-	r->destroy(); delete r;
+	r->destroy();
 
 	return res;
 }
@@ -170,7 +171,7 @@ int VagabondPositions::sendJob(const std::vector<float> &all)
 	_setter(all);
 	Result *r = submitJobAndRetrieve(false);
 	float res = r->deviation;
-	r->destroy(); delete r;
+	r->destroy();
 	setScoreForTicket(_ticket, res);
 
 	return _ticket;

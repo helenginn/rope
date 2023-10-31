@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 			{
 				std::cout << "." << std::flush;
 			}
-			r->destroy(); delete r;
+			r->destroy();
 		}
 
 		l = std::chrono::system_clock::now();

@@ -28,6 +28,7 @@
 #include <vagabond/utils/maths.h>
 #include "BondSequence.h"
 
+#include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/AtomBlock.h>
 #include <vagabond/core/Instance.h>
@@ -82,7 +83,7 @@ void AxisExplorer::submitJob(float prop)
 	Result *r = _resources.calculator->acquireResult();
 	r->transplantPositions(_displayTargets);
 
-	r->destroy(); delete r;
+	r->destroy(); 
 }
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)

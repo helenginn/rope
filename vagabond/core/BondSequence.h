@@ -52,8 +52,6 @@ public:
 	BondSequence(BondSequenceHandler *handler = nullptr);
 	~BondSequence();
 	
-	BondCalculator *calculator();
-	
 	const size_t addedAtomsCount() const
 	{
 		return _grapher.atoms().size();

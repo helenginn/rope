@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(ramachandran_plot)
 				float score = result->score;
 //				if (score > 0) score = 0;
 				file << f << " " << g << " " << score << std::endl;
-				delete result;
+				result->destroy();
 			}
 		}
 	}
