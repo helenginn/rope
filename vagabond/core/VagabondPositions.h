@@ -45,8 +45,8 @@ protected:
 	void getSetCoefficients(const std::set<Parameter *> &params,
 	                        Getter &getter, Setter &setter);
 
-	int submitJob();
-	Result *submitJobAndRetrieve();
+	int submitJob(bool superpose);
+	Result *submitJobAndRetrieve(bool superpose);
 	virtual void prepareResources();
 private:
 	AtomGroup *const &_group;

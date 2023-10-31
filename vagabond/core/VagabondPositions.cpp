@@ -69,7 +69,7 @@ size_t VagabondPositions::totalPositions()
 	return blocks.size();
 }
 
-int VagabondPositions::submitJob()
+int VagabondPositions::submitJob(bool superpose)
 {
 	_ticket++;
 
@@ -84,6 +84,11 @@ int VagabondPositions::submitJob()
 	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+
+	if (superpose)
+	{
+		calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions | Flag::DoSuperpose);
+	}
 	
 	Flag::Extract extract = Flag::Extract(Flag::AtomVector | Flag::Deviation);
 	if (_ticket % 51 == 0)
@@ -101,9 +106,9 @@ int VagabondPositions::submitJob()
 	return _ticket;
 }
 
-Result *VagabondPositions::submitJobAndRetrieve()
+Result *VagabondPositions::submitJobAndRetrieve(bool superpose)
 {
-	int ticket = submitJob();
+	int ticket = submitJob(superpose);
 
 	Result *r = _resources.calculator->acquireResult();
 	r->transplantPositions(_displayTargets);
@@ -114,7 +119,7 @@ float VagabondPositions::fullResidual()
 {
 	_resources.sequences->clearDepthLimits();
 
-	Result *r = submitJobAndRetrieve();
+	Result *r = submitJobAndRetrieve(true);
 	float res = r->deviation;
 	r->destroy(); delete r;
 
@@ -163,7 +168,7 @@ size_t VagabondPositions::parameterCount()
 int VagabondPositions::sendJob(const std::vector<float> &all)
 {
 	_setter(all);
-	Result *r = submitJobAndRetrieve();
+	Result *r = submitJobAndRetrieve(false);
 	float res = r->deviation;
 	r->destroy(); delete r;
 	setScoreForTicket(_ticket, res);
