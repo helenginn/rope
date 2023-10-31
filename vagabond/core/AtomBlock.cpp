@@ -144,7 +144,6 @@ AtomBlock::prepareMovingTargets(const std::vector<AtomBlock> &blocks)
 		{
 			glm::vec3 moving = atom->otherPosition("moving");
 			glm::vec3 orig = atom->otherPosition("target");
-//			std::cout << orig << " + " << get(0) << " * " << moving << std::endl;
 
 			glm::vec3 ret = orig + get(0) * moving;
 			return ret;
