@@ -150,7 +150,7 @@ void MolRefiner::retrieveJobs()
 
 size_t MolRefiner::parameterCount()
 {
-	int n = _info->axes.size();
+	int n = _dims;
 	return n + n * (n + 1) / 2;
 }
 
