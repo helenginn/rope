@@ -26,10 +26,8 @@
 class Sampler
 {
 public:
-	Sampler(int n, int dims);
+	Sampler(int nSamples, int dims);
 	~Sampler();
-
-	void setup();
 	
 	void useFibonacci(bool fib);
 
@@ -41,6 +39,12 @@ public:
 	}
 
 	rope::IntToCoordGet coordsFromParams(const std::vector<float> &all);
+	rope::IntToCoordGet rawCoordinates();
+	
+	const PCA::Matrix &points() const
+	{
+		return _points;
+	}
 
 	const size_t pointCount() const
 	{
@@ -53,6 +57,8 @@ private:
 	void convertSamples();
 	void setupGriddy();
 	void setupFibonacci();
+
+	void setup();
 
 	void addPointWithinRadius(std::vector<float> &point);
 	bool incrementPoint(std::vector<float> &point);

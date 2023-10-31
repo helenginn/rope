@@ -28,6 +28,7 @@ Sampler::Sampler(int n, int dims)
 {
 	_n = n;
 	_dims = dims;
+	setup();
 }
 
 Sampler::~Sampler()
@@ -199,6 +200,26 @@ float Sampler::gamma()
 	
 	float result = sqrt2pi * middle * right;
 	return result;
+}
+
+// this is a function type rope::GetListFromParameters
+rope::IntToCoordGet Sampler::rawCoordinates()
+{
+	rope::IntToCoordGet raw_coords = 
+	[this](const int &idx) -> Coord::Get
+	{
+		const double *start_point = &_points[idx][0];
+		const int dims = _dims;
+
+		// this index represents the coefficient of the desired coordinate
+		Coord::Get get = [start_point](const int &idx)
+		{
+			return start_point[idx];
+		};
+
+		return Remember<int, float>(get);
+	};
+
 }
 
 // this is a function type rope::GetListFromParameters
