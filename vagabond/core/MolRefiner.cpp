@@ -35,9 +35,10 @@
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
                        Refine::Info *info, int num, int dims) :
-StructureModification(info->instance), _sampler(num, dims)
+StructureModification(), _sampler(num, dims)
 {
 	_threads = 5;
+	setInstance(info->instance);
 	
 	if (_instance->hasSequence())
 	{

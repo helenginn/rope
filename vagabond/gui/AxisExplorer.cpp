@@ -38,8 +38,9 @@
 #include <vagabond/core/engine/Tasks.h>
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
-: Scene(prev), Display(prev), StructureModification(inst)
+: Scene(prev), Display(prev)
 {
+	setInstance(inst);
 	_dims = 1;
 	_rawAngles = angles;
 	setPingPong(true);

@@ -26,9 +26,9 @@
 #include <fstream>
 #include "Warp.h"
 
-Warp::Warp(Instance *ref, size_t num_axes) 
-: StructureModification(ref)
+Warp::Warp(Instance *inst, size_t num_axes) 
 {
+	setInstance(inst);
 	_dims = num_axes;
 	_threads = 6;
 }

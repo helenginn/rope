@@ -29,9 +29,8 @@
 #include "Polymer.h"
 #include "Result.h"
 
-StructureModification::StructureModification(Instance *mol)
+StructureModification::StructureModification()
 {
-	_instance = mol;
 }
 
 StructureModification::~StructureModification()

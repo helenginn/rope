@@ -43,7 +43,7 @@ class Atom;
 class StructureModification
 {
 public:
-	StructureModification(Instance *mol = nullptr);
+	StructureModification();
 	
 	void setAtoms(AtomGroup *grp)
 	{
@@ -69,6 +69,11 @@ public:
 	
 	void changeInstance(Instance *m);
 	virtual void retrieve();
+	
+	void setInstance(Instance *inst)
+	{
+		_instance = inst;
+	}
 	
 	Instance *instance()
 	{

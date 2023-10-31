@@ -29,8 +29,8 @@
 #include "BondSequenceHandler.h"
 
 Route::Route(Instance *from, Instance *to, const RTAngles &list)
-: StructureModification(from)
 {
+	setInstance(from);
 	_endInstance = to;
 	_source = list;
 	instance()->load();

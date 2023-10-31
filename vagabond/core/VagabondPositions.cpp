@@ -29,8 +29,7 @@
 #include "Result.h"
 
 VagabondPositions::VagabondPositions(AtomGroup *const &group) 
-: StructureModification(),
-_group(group)
+: _group(group)
 {
 	_threads = 1;
 
