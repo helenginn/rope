@@ -35,7 +35,7 @@
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
                        Refine::Info *info, int num, int dims) :
-StructureModification(), _sampler(num, dims)
+StructureModification(), _sampler(num, dims), _translate(dims)
 {
 	_threads = 5;
 	setInstance(info->instance);
@@ -51,7 +51,6 @@ StructureModification(), _sampler(num, dims)
 	_info = info;
 	_dims = dims;
 
-	_sampler.setup();
 	_instance->load();
 }
 

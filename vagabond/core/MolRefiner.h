@@ -21,6 +21,7 @@
 
 #include "StructureModification.h"
 #include "RefinementInfo.h"
+#include "Translation.h"
 #include "Engine.h"
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/core/Sampler.h>
@@ -55,6 +56,7 @@ private:
 	
 	std::vector<float> _best;
 	Sampler _sampler;
+	Translation _translate;
 };
 
 #endif
