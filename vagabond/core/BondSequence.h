@@ -103,25 +103,7 @@ public:
 
 	void cleanUpToIdle();
 	void beginJob(Job *job);
-
-
-	template <class Func>
-	void loopThrough(const rope::IntToCoordGet &coordForIdx, Func &op)
-	{
-		int start, end;
-		getCalculationBoundaries(start, end);
-
-		for (size_t j = 0; j < sampleCount(); j++)
-		{
-			Coord::Get get = coordForIdx(j);
-			for (size_t i = start; i < end && i < singleSequence(); i++)
-			{
-				int n = j * singleSequence() + i;
-				op(n, get);
-			}
-		}
-	}
-
+	
 	const size_t maxDepth() const
 	{
 		return _maxDepth;
@@ -154,6 +136,8 @@ public:
 		_state = SequenceInPreparation;
 	}
 
+	void calculate(rope::IntToCoordGet coordForIdx,
+	               rope::GetFloatFromCoordIdx &torsionForCoord);
 	void calculateTorsions(rope::IntToCoordGet coordForIdx,
 	                       rope::GetFloatFromCoordIdx torsionForCoord);
 	void calculateAtoms(rope::IntToCoordGet coordForIdx,
