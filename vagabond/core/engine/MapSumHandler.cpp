@@ -20,7 +20,6 @@
 #include "ElementSegment.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/CorrelationHandler.h"
-#include "engine/workers/ThreadMapSummer.h"
 #include "engine/Task.h"
 #include "AtomSegment.h"
 #include "AtomMap.h"
@@ -40,10 +39,6 @@ MapSumHandler::~MapSumHandler()
 
 void MapSumHandler::createSegments()
 {
-	if (!_segment && _mapHandler)
-	{
-		_segment = _mapHandler->segment(0);
-	}
 	for (size_t i = 0; i < _mapCount + 1; i++)
 	{
 		AtomSegment *seg = new AtomSegment();
@@ -69,72 +64,10 @@ void MapSumHandler::setup()
 	createSegments();
 }
 
-void MapSumHandler::prepareThreads()
-{
-	for (size_t i = 0; i < _threads + 1; i++)
-	{
-		/* several calculators */
-		ThreadMapSummer *worker = new ThreadMapSummer(this);
-		worker->setMapHandler(_mapHandler);
-		std::thread *thr = new std::thread(&ThreadMapSummer::start, worker);
-
-		_mapPool.addWorker(worker, thr);
-	}
-
-}
-
-void MapSumHandler::start()
-{
-	prepareThreads();
-}
-
 AtomSegment *MapSumHandler::acquireAtomSegmentIfAvailable()
 {
 	AtomSegment *seg = nullptr;
 	_mapPool.acquireObjectIfAvailable(seg);
-
-	return seg;
-}
-
-MapSumHandler::MapJob *MapSumHandler::acquireMapJob(Job *job)
-{
-	int ticket = job->ticket;
-	std::lock_guard<std::mutex> lock(_ticketHandout);
-
-	if (_ticketMap.count(ticket))
-	{
-		return _ticketMap[ticket];
-	}
-
-	AtomSegment *seg;
-	_mapPool.acquireObject(seg);
-
-	MapJob *mj = new MapJob();
-	mj->segment = seg;
-	mj->job = job;
-
-	_ticketMap[ticket] = mj;
-	
-	return mj;
-}
-
-void MapSumHandler::transferElementSegment(ElementSegment *segment)
-{
-	_segmentPool.pushObject(segment);
-}
-
-ElementSegment *MapSumHandler::acquireElementSegment(MapJob *&mj)
-{
-	ElementSegment *seg = nullptr;
-	_segmentPool.acquireObject(seg);
-
-	if (seg == nullptr)
-	{
-		return nullptr;
-	}
-
-	Job *j = seg->job();
-	mj = acquireMapJob(j);
 
 	return seg;
 }
@@ -146,69 +79,9 @@ void MapSumHandler::returnSegment(AtomSegment *segment)
 	_mapPool.pushObject(segment);
 }
 
-void MapSumHandler::returnMiniJob(MapJob *mj)
-{
-	_handout.lock();
-	mj->summed++;
-	int val = mj->summed;
-	
-	if (_ticketMap.size() > 1 && false)
-	{
-		std::cout << "Open tickets: " << _ticketMap.size() << std::endl;
-
-		std::map<int, MapJob *>::iterator it;
-		for (it = _ticketMap.begin(); it != _ticketMap.end(); it++)
-		{
-			std::cout << "Ticket: " << it->first << " ";
-			std::cout << "total: " << it->second->summed << std::endl;
-		}
-	}
-	_handout.unlock();
-
-	if (val < _mapHandler->elementCount())
-	{
-		return;
-	}
-	
-	Job *job = mj->job;
-	int ticket = job->ticket;
-
-	_ticketHandout.lock();
-	_ticketMap.erase(ticket);
-	_ticketHandout.unlock();
-	
-	AtomMap *map = new AtomMap(*_template);
-	map->copyData(*mj->segment);
-	map->fft();
-
-	returnSegment(mj->segment);
-
-	Result *r = job->result;
-	if (r == nullptr)
-	{
-		r = new Result();
-		r->setFromJob(job);
-	}
-
-	r->map = map;
-
-	if (job->requests & JobMapCorrelation)
-	{
-		_correlHandler->pushMap(map, job);
-	}
-	else
-	{
-		job->destroy();
-		_calculator->submitResult(r);
-	}
-
-	delete mj;
-}
-
 void MapSumHandler::finish()
 {
 	_mapPool.finish();
-	_segmentPool.finish();
 }
 
 void MapSumHandler::grab_map(std::map<std::string, GetEle> &gets,

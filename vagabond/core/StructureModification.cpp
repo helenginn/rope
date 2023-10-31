@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "BondCalculator.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/MapSumHandler.h"
 #include "engine/CorrelationHandler.h"

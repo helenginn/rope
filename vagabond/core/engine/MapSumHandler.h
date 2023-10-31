@@ -20,12 +20,9 @@
 #define __vagabond__MapSumHandler__
 
 #include "engine/Handler.h"
-#include "BondCalculator.h"
 #include "engine/ElementTypes.h"
 
 class MiniJobMap;
-class MapTransferHandler;
-class CorrelationHandler;
 class ElementSegment;
 class AtomSegment;
 class AtomMap;
@@ -37,24 +34,9 @@ public:
 	MapSumHandler(int mapCount, const ElementSegment *templ);
 	~MapSumHandler();
 	
-	void setMapHandler(MapTransferHandler *handler)
-	{
-		_mapHandler = handler;
-	}
-	
-	void setCorrelationHandler(CorrelationHandler *handler)
-	{
-		_correlHandler = handler;
-	}
-	
 	void setMapCount(int maps)
 	{
 		_mapCount = maps;
-	}
-	
-	void setThreads(int threads)
-	{
-		_threads = threads;
 	}
 	
 	size_t segmentCount()
@@ -62,52 +44,28 @@ public:
 		return _mapPool.objectCount();
 	}
 	
-	struct MapJob
-	{
-		AtomSegment *segment;
-		Job *job;
-		std::atomic<int> summed{0};
-	};
-	
 	const AtomMap *templateMap()
 	{
 		return _template;
 	}
 
-	ElementSegment *acquireElementSegment(MapJob *&mj);
-	void transferElementSegment(ElementSegment *seg);
-	void returnMiniJob(MapJob *mj);
-	void returnSegment(AtomSegment *segment);
 	AtomSegment *acquireAtomSegmentIfAvailable();
+	void returnSegment(AtomSegment *segment);
 	void grab_map(std::map<std::string, GetEle> &gets,
 	              Task<Result, void *> *submit = nullptr,
 	              Task<SegmentAddition, AtomMap *> **atom_map = nullptr);
 
 	void setup();
 
-	void start();
 	void finish();
 private:
 	void createSegments();
-	void prepareThreads();
 
-	MapJob *acquireMapJob(Job *job);
-	
-	std::map<int, MapJob *> _ticketMap;
-	std::mutex _handout;
-	std::mutex _ticketHandout;
-	
 	Pool<AtomSegment *> _mapPool;
-	Pool<ElementSegment *> _segmentPool;
 
-	BondCalculator *_calculator = nullptr;
-	MapTransferHandler *_mapHandler = nullptr;
-	
 	const ElementSegment *_segment = nullptr;
-	CorrelationHandler *_correlHandler = nullptr;
 	
 	AtomMap *_template = nullptr;
-	int _threads = 1;
 	int _mapCount = 1;
 };
 

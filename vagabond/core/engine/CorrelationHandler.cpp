@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "engine/CorrelationHandler.h"
-#include "engine/workers/ThreadCorrelation.h"
 #include "engine/Correlator.h"
 #include "engine/MapSumHandler.h"
 #include "engine/Task.h"
@@ -71,59 +70,10 @@ void CorrelationHandler::createCorrelators()
 	}
 }
 
-void CorrelationHandler::start()
-{
-	prepareThreads();
-}
-
-void CorrelationHandler::prepareThreads()
-{
-	for (size_t i = 0; i < _threads + 1; i++)
-	{
-		ThreadCorrelation *worker = new ThreadCorrelation(this);
-		worker->setMapSumHandler(_sumHandler);
-		std::thread *thr = new std::thread(&ThreadCorrelation::start, worker);
-
-		_correlPool.addWorker(worker, thr);
-	}
-}
-
-void CorrelationHandler::pushMap(AtomMap *map, Job *job)
-{
-	CorrelJob *cj = new CorrelJob{job, map};
-	_mapPool.pushObject(cj);
-}
-
-AtomMap *CorrelationHandler::acquireMap(Job **job)
-{
-	CorrelJob *cj = nullptr;
-	_mapPool.acquireObject(cj);
-	
-	if (cj == nullptr)
-	{
-		*job = nullptr;
-		return nullptr;
-	}
-
-	*job = cj->job;
-	AtomMap *ret = cj->map;
-
-	delete cj;
-	return ret;
-}
-
 Correlator *CorrelationHandler::acquireCorrelatorIfAvailable()
 {
 	Correlator *cc;
 	_correlPool.acquireObjectIfAvailable(cc);
-
-	return cc;
-}
-
-Correlator *CorrelationHandler::acquireCorrelator()
-{
-	Correlator *cc;
-	_correlPool.acquireObject(cc);
 
 	return cc;
 }

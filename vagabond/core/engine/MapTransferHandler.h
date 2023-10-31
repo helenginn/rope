@@ -41,11 +41,6 @@ public:
 	
 	~MapTransferHandler();
 
-	void setPointStoreHandler(PointStoreHandler *handler)
-	{
-		_pointHandler = handler;
-	}
-
 	/**let the MTH know which atoms will be involved in the calculation.
 	 * Atoms in @param all but not in @param sub will be included as part
 	 * of the 'constant' segment. 
@@ -71,15 +66,7 @@ public:
 
 	ElementSegment *acquireSegment(std::string ele);
 	void returnSegment(ElementSegment *segment);
-
-	void start();
-	void finish();
 	
-	void setSumHandler(MapSumHandler *handler)
-	{
-		_sumHandler = handler;
-	}
-
 	void extract(std::map<std::string, GetEle> &eleTasks);
 	
 	const size_t elementCount() const
@@ -100,19 +87,12 @@ public:
 	void joinThreads();
 private:
 	void allocateSegments();
-	void prepareThreads();
 	void getRealDimensions(const std::vector<Atom *> &sub);
 	ElementSegment *acquireSegmentIfAvailable(std::string ele);
 
 	std::vector<ElementSegment *> _segments;
 	std::vector<std::string> _elements;
 	std::map<std::string, Pool<ElementSegment *> > _pools;
-
-	std::mutex _handout;
-
-	BondCalculator *_calculator = nullptr;
-	MapSumHandler *_sumHandler = nullptr;
-	PointStoreHandler *_pointHandler = nullptr;
 	
 	float _cubeDim = 0.6;
 	int _threads = 2;

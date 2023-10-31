@@ -46,10 +46,7 @@ public:
 	void get_correlation(Task<SegmentAddition, AtomMap *> *made_map,
 	                     Task<CorrelMapPair, Correlation> **get_cc = nullptr);
 
-	AtomMap *acquireMap(Job **job);
-	Correlator *acquireCorrelator();
 	Correlator *acquireCorrelatorIfAvailable();
-	void pushMap(AtomMap *seg, Job *job);
 	void returnCorrelator(Correlator *cc);
 
 	void setMapSumHandler(MapSumHandler *sumHandler)
@@ -57,11 +54,6 @@ public:
 		_sumHandler = sumHandler;
 	}
 
-	void setThreads(int threads)
-	{
-		_threads = threads;
-	}
-	
 	void setReferenceDensity(OriginGrid<fftwf_complex> *dens)
 	{
 		_refDensity = dens;
@@ -74,11 +66,8 @@ public:
 
 	void setup();
 
-	void start();
 	void finish();
-	void joinThreads();
 private:
-	void prepareThreads();
 	void createCorrelators();
 
 	BondCalculator *_calculator = nullptr;

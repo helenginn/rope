@@ -18,7 +18,6 @@
 
 #include "BondCalculator.h"
 #include "engine/MapTransferHandler.h"
-#include "engine/workers/ThreadMapTransfer.h"
 #include "engine/Task.h"
 #include "engine/ElementTypes.h"
 #include "AtomGroup.h"
@@ -36,7 +35,7 @@ MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &element
 
 MapTransferHandler::~MapTransferHandler()
 {
-	finish();
+
 }
 
 void MapTransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
@@ -119,30 +118,6 @@ void MapTransferHandler::setup()
 	allocateSegments();
 }
 
-void MapTransferHandler::prepareThreads()
-{
-	for (size_t j = 0; j < _elements.size(); j++)
-	{
-		Pool<ElementSegment *> &pool = _pools[_elements[j]];
-
-		for (size_t i = 0; i < _threads; i++)
-		{
-			/* several calculators */
-			ThreadMapTransfer *worker = new ThreadMapTransfer(this, _elements[j]);
-			worker->setMapSumHandler(_sumHandler);
-			worker->setPointStoreHandler(_pointHandler);
-			std::thread *thr = new std::thread(&ThreadMapTransfer::start, worker);
-
-			pool.addWorker(worker, thr);
-		}
-	}
-}
-
-void MapTransferHandler::start()
-{
-	prepareThreads();
-}
-
 ElementSegment *MapTransferHandler::acquireSegmentIfAvailable(std::string ele)
 {
 	Pool<ElementSegment *> &pool = _pools[ele];
@@ -165,14 +140,6 @@ ElementSegment *MapTransferHandler::acquireSegment(std::string ele)
 	ElementSegment *seg = nullptr;
 	pool.acquireObject(seg);
 	return seg;
-}
-
-void MapTransferHandler::finish()
-{
-	for (size_t i = 0; i < _elements.size(); i++)
-	{
-		_pools[_elements[i]].finish();
-	}
 }
 
 void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
