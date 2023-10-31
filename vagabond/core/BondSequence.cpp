@@ -275,24 +275,6 @@ void BondSequence::getCalculationBoundaries(int &start, int &end)
 	}
 }
 
-template <class Func>
-void loopThrough(BondSequence *seq, const rope::IntToCoordGet &coordForIdx, 
-                 Func &op)
-{
-	int start, end;
-	seq->getCalculationBoundaries(start, end);
-	
-	for (size_t j = 0; j < seq->sampleCount(); j++)
-	{
-		Coord::Get get = coordForIdx(j);
-		for (size_t i = start; i < end && i < seq->singleSequence(); i++)
-		{
-			int n = j * seq->singleSequence() + i;
-			op(n, get);
-		}
-	}
-}
-
 void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
                                   rope::GetVec3FromCoordIdx posForCoord)
 {
@@ -303,7 +285,7 @@ void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
 		_blocks[idx].target = posForCoord(get, idx);
 	};
 	
-	loopThrough(this, coordForIdx, calculatePositions);
+	loopThrough(coordForIdx, calculatePositions);
 }
 
 void BondSequence::calculateTorsions(rope::IntToCoordGet coordForIdx,
@@ -315,49 +297,9 @@ void BondSequence::calculateTorsions(rope::IntToCoordGet coordForIdx,
 		calculateBlock(idx, get, torsionForCoord);
 	};
 	
-	loopThrough(this, coordForIdx, calculateTorsions);
+	loopThrough(coordForIdx, calculateTorsions);
 
 	_fullRecalc = false;
-}
-
-void BondSequence::calculate(rope::IntToCoordGet coordForIdx,
-                             rope::GetFloatFromCoordIdx &torsionForCoord)
-{
-	int sampleNum = 0;
-
-	Coord::Get get = {};
-
-	get = coordForIdx(sampleNum);
-
-	int start = 0; int end = _blocks.size();
-	if (_skipSections && !_fullRecalc)
-	{
-		start = _startCalc;
-		end = _endCalc;
-	}
-
-	for (size_t i = start; i < end && i < _blocks.size(); i++)
-	{
-		calculateBlock(i, get, torsionForCoord);
-
-		if (i % _singleSequence == 0)
-		{
-			get = coordForIdx(sampleNum);
-			sampleNum++;
-		}
-	}
-
-	_fullRecalc = false;
-
-	superpose();
-
-	if (job()->absorb)
-	{
-		Coord::Get shrunk = Coord::convertedGet(get, _convertIndex);
-		_torsionBasis->absorbVector(shrunk);
-	}
-
-	signal(SequencePositionsReady);
 }
 
 double BondSequence::calculateDeviations()
