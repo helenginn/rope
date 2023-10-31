@@ -18,6 +18,9 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "BondSequenceHandler.h"
+#include "BondSequence.h"
+#include "engine/Tasks.h"
 #include "AlignmentTool.h"
 #include "Superpose.h"
 #include "AtomGroup.h"
@@ -25,16 +28,17 @@
 #include "Result.h"
 #include "BondCalculator.h"
 
-AlignmentTool::AlignmentTool(AtomGroup *group)
+AlignmentTool::AlignmentTool(AtomGroup *group) 
 {
 	_group = group;
+	prepareResources();
 }
 
-int AlignmentTool::calculateExtension(Atom *anchor)
+size_t AlignmentTool::calculateExtension(Atom *anchor)
 {
 	std::set<Atom *> atoms;
 	atoms.insert(anchor);
-	int count = 0;
+	size_t count = 0;
 
 	while (atoms.size() < 4)
 	{
@@ -62,53 +66,81 @@ int AlignmentTool::calculateExtension(Atom *anchor)
 	return count;
 }
 
-Result *AlignmentTool::resultForAnchor(Atom *anchor, int jumps)
+void AlignmentTool::prepareResources()
 {
-	BondCalculator calculator;
-	calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
-	calculator.setMaxSimultaneousThreads(1);
-	calculator.setTotalSamples(1);
-	calculator.setSuperpose(false);
+	_resources.allocateMinimum(_threads);
+
+}
+
+void AlignmentTool::recalculateAll()
+{
+	Result *result = resultForAnchor(_group->chosenAnchor(), UINT_MAX);
+	result->transplantPositions();
+}
+
+Result *AlignmentTool::resultForAnchor(Atom *anchor, size_t jumps)
+{
+	delete _resources.sequences;
+	_resources.sequences = new BondSequenceHandler(1);
+
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+
 	if (jumps == 0)
 	{
 		jumps = calculateExtension(anchor);
 	}
-	calculator.addAnchorExtension(anchor, jumps);
-	calculator.setup();
+	else if (jumps == UINT_MAX) // all, so apply superposition
+	{
+		calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
+		                  Flag::DoSuperpose);
+	}
 
-	calculator.start();
+	_resources.sequences->addAnchorExtension({anchor, jumps});
+	_resources.sequences->setup();
+	_resources.sequences->prepareSequences();
 
-	Job job{};
-	job.requests = JobExtractPositions;
-	calculator.submitJob(job);
+	const std::vector<AtomBlock> &blocks = 
+	_resources.sequences->sequence()->blocks();
+
+	CoordManager *manager = _resources.sequences->manager();
+	manager->setAtomFetcher(AtomBlock::prepareTargetsAsInitial(blocks));
+
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
 	
-	Result *result = calculator.acquireResult();
-	calculator.finish();
+	/* get easy references to resources */
+	BondCalculator *const &calculator = _resources.calculator;
+	BondSequenceHandler *const &sequences = _resources.sequences;
+
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(0);
+	
+	Flag::Extract extract = Flag::Extract(Flag::AtomVector);
+
+	/* calculation of torsion angle-derived and target-derived
+	 * atom positions */
+	sequences->calculate(calc, {}, &first_hook, &final_hook);
+	sequences->extract(extract, submit_result, final_hook);
+	
+	_resources.tasks->addTask(first_hook);
+	
+	Result *result = calculator->acquireResult();
 
 	return result;
 }
 
 glm::mat4x4 AlignmentTool::superposition(Result *result, bool derived)
 {
-	AtomPosMap &aps = result->aps;
+	AtomPosList &apl = result->apl;
 
 	Superpose pose;
 	pose.forceSameHand(false);
 
-	AtomPosMap::iterator it;
-	for (it = aps.begin(); it != aps.end(); it++)
+	AtomPosList::iterator it;
+	for (it = apl.begin(); it != apl.end(); it++)
 	{
-		glm::vec3 init;
-		if (derived)
-		{
-			init = it->first->derivedPosition();
-		}
-		else
-		{
-			init = it->first->initialPosition();
-		}
-
-		glm::vec3 pos = it->second.ave;
+		glm::vec3 init = it->wp.target;
+		glm::vec3 pos = it->wp.ave;
 		
 		if (init.x != init.x || pos.x != pos.x)
 		{
@@ -150,7 +182,13 @@ void AlignmentTool::run(Atom *anchor, bool force)
 	else if (!anchor->isTransformed() || force)
 	{
 		Result *result = resultForAnchor(anchor);
+		
+		for (AtomWithPos &pos : result->apl)
+		{
+			std::cout << pos.wp.ave << " " << pos.wp.target << std::endl;
+		}
 		glm::mat4x4 transform = superposition(result, anchor->isTransformed());
+		std::cout << transform << std::endl;
 		updatePositions(result, transform);
 		result->destroy();
 		_group->addTransformedAnchor(anchor, transform);

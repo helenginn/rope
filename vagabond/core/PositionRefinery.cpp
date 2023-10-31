@@ -19,7 +19,6 @@
 #include "VagabondPositions.h"
 #include "PositionRefinery.h"
 #include "AtomGroup.h"
-#include "AlignmentTool.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"

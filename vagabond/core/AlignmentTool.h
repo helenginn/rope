@@ -20,23 +20,27 @@
 #define __vagabond__AlignmentTool__
 
 #include "../utils/glm_import.h"
+#include "StructureModification.h"
 
 class AtomGroup;
 
 struct Result;
 class Atom;
 
-class AlignmentTool
+class AlignmentTool : public StructureModification
 {
 public:
 	AlignmentTool(AtomGroup *group);
 
 	void run();
 	void run(Atom *anchor, bool force = false);
+	void recalculateAll();
+protected:
+	virtual void prepareResources();
 private:
-	int calculateExtension(Atom *anchor);
+	size_t calculateExtension(Atom *anchor);
 	void updatePositions(Result *result, glm::mat4 transform);
-	Result *resultForAnchor(Atom *anchor, int jumps = 0);
+	Result *resultForAnchor(Atom *anchor, size_t jumps = 0);
 	glm::mat4x4 superposition(Result *result, bool derived);
 
 	AtomGroup *_group;

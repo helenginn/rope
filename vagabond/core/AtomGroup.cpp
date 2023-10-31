@@ -365,29 +365,14 @@ void AtomGroup::recalculate()
 		{
 			Atom *anchor = _connectedGroups[i]->chosenAnchor();
 			
+			AlignmentTool tool(_connectedGroups[i]);
+
 			if (!anchor->isTransformed())
 			{
-				AlignmentTool tool(_connectedGroups[i]);
 				tool.run(anchor);
 			}
-
-			BondCalculator calculator;
-			calculator.setPipelineType(BondCalculator::PipelineAtomPositions);
-			calculator.setMaxSimultaneousThreads(1);
-			calculator.addAnchorExtension(anchor);
-			calculator.setup();
-
-			calculator.start();
-
-			Job job{};
-			job.requests = JobExtractPositions;
-			calculator.submitJob(job);
-
-			Result *result = calculator.acquireResult();
-			calculator.finish();
-			result->transplantPositions();
-
-			delete result;
+			
+			tool.recalculateAll();
 		}
 	}
 	catch (const std::runtime_error &err)
