@@ -36,10 +36,7 @@ namespace Refine
 	{
 		std::string mol_id;
 		Instance *instance = nullptr;
-		std::vector<RTAngles> axes;
 		int samples = 120;
-		
-		std::vector<float> mean;
 	};
 };
 

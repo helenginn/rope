@@ -88,30 +88,6 @@ void Refinement::prepareInstance(Instance *mol)
 	info.instance = mol;
 	info.mol_id = mol->id();
 
-	if (mol->hasSequence())
-	{
-		ECluster *cluster = grabCluster(mol->entity());
-
-		std::vector<ResidueTorsion> list = cluster->dataGroup()->headers();
-
-		int max = 2;
-
-		/* get max top axes from cluster */
-		for (size_t i = 0; i < max && i < cluster->rows(); i++)
-		{
-			std::vector<Angular> vals = cluster->rawVector(i);
-
-			RTAngles axis = RTAngles::angles_from(list, vals);
-			info.axes.push_back(axis);
-		}
-
-		/* set mean = 0 */
-		for (size_t i = 0; i < info.axes.size(); i++)
-		{
-			info.mean.push_back(0);
-		}
-	}
-
 	_molDetails.push_back(info);
 }
 
@@ -123,25 +99,11 @@ void Refinement::setupRefiner(Refine::Info &info)
 		return;
 	}
 	
-	int dims = info.axes.size();
+	const int dims = 2;
 	
-	if (dims == 0)
-	{
-		dims = 1;
-	}
-
 	int samples = info.samples;
 
 	MolRefiner *mr = new MolRefiner(_map, &info, samples, dims);
-
-	for (size_t i = 0; i < info.axes.size(); i++)
-	{
-		RTAngles axis = info.axes[i];
-		axis.do_op([](Angular &ang) {
-			          ang.angle /= 2;
-			         });
-	}
-
 	_molRefiners[mol] = mr;
 }
 
