@@ -16,8 +16,10 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Warp.h"
 #include "Model.h"
 #include "Entity.h"
+#include "AtomMap.h"
 #include "Instance.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
@@ -99,24 +101,28 @@ void Refinement::setupRefiner(Refine::Info &info)
 		return;
 	}
 	
-	const int dims = 2;
+	const int dims = 3;
 	
-	int samples = info.samples;
-
-	MolRefiner *mr = new MolRefiner(_map, &info, samples, dims);
+	info.samples = 120;
+	info.master_dims = 3;
+	info.warp = Warp::warpFromFile(info.instance, "test.json");
+	MolRefiner *mr = new MolRefiner(_map, &info);
 	_molRefiners[mol] = mr;
 }
 
 void Refinement::play()
 {
-//	calculatedMapAtoms();
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.instance];
-		mr->runEngine();
+
+		if (mr)
+		{
+			mr->runEngine();
+		}
 	}
 	
-	_model->write("after_refinement.pdb");
+	calculatedMapAtoms();
 }
 
 ArbitraryMap *Refinement::calculatedMapAtoms()
@@ -128,7 +134,17 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.instance];
-//		mr->addToMap(arb);
+		if (!mr)
+		{
+			continue;
+		}
+
+		Result *result = mr->submitJobAndRetrieve({});
+		AtomMap &map = *result->map;
+		ArbitraryMap *partial = map();
+		*arb += *partial;
+		delete partial;
+		result->destroy();
 	}
 
 	const gemmi::SpaceGroup *spg = nullptr;

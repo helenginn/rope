@@ -20,6 +20,7 @@
 #define __vagabond__Warp__
 
 #include <vagabond/utils/Vec3s.h>
+#include <vagabond/utils/svd/PCA.h>
 #include "StructureModification.h"
 #include <vagabond/core/Responder.h>
 #include <vagabond/utils/AcquireCoord.h>

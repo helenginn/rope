@@ -28,7 +28,8 @@ public:
 	Translation(int hyperDims);
 	~Translation();
 
-	rope::GetVec3FromIdx translateCoordinates(const rope::IntToCoordGet &get_coord);
+	void copyInParameters(const std::vector<float> &trans);
+	rope::GetVec3FromIdx translate(const rope::IntToCoordGet &get_coord);
 private:
 	PCA::Matrix _coordinates;
 

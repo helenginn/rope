@@ -220,6 +220,7 @@ rope::IntToCoordGet Sampler::rawCoordinates()
 		return Remember<int, float>(get);
 	};
 
+	return raw_coords;
 }
 
 // this is a function type rope::GetListFromParameters

@@ -23,6 +23,32 @@ Translation::Translation(int hyperDims)
 {
 	_hyperDims = hyperDims;
 	setupMatrix(&_coordinates, _hyperDims + 1, 3);
+	
+	for (size_t j = 0; j < 3; j++)
+	{
+		for (size_t i = 0; i < _hyperDims; i++)
+		{
+			if (i == j)
+			{
+				_coordinates[i][j] = 2.0;
+			}
+		}
+	}
+	
+	printMatrix(&_coordinates);
+}
+
+void Translation::copyInParameters(const std::vector<float> &trans)
+{
+	auto it = trans.begin();
+	for (size_t j = 0; j < _coordinates.cols; j++)
+	{
+		for (size_t i = 0; i < _coordinates.rows; i++)
+		{
+			_coordinates[i][j] = *it + (i == j ? 1.5f : 0.f);
+			it++;
+		}
+	}
 }
 
 Translation::~Translation()
@@ -30,8 +56,7 @@ Translation::~Translation()
 	freeMatrix(&_coordinates);
 }
 
-GetVec3FromIdx Translation::translateCoordinates(const IntToCoordGet 
-                                                      &get_coord)
+GetVec3FromIdx Translation::translate(const IntToCoordGet &get_coord)
 {
 	GetVec3FromIdx tr = [this, get_coord](const int &idx) -> glm::vec3
 	{
@@ -43,7 +68,8 @@ GetVec3FromIdx Translation::translateCoordinates(const IntToCoordGet
 		{
 			for (size_t i = 0; i < _hyperDims + 1; i++)
 			{
-				result[j] += get(i) * _coordinates[i][j];
+				float val = i == _hyperDims ? 1 : get(i);
+				result[j] += val * _coordinates[i][j];
 			}
 		}
 		

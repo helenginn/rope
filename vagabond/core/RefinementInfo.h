@@ -25,7 +25,7 @@
 #include "TorsionRef.h"
 #include "RTAngles.h"
 
-class Polymer;
+class Warp;
 
 /** \class RefinementInfo
  *  \brief contains information about how to replicate refinement setup */
@@ -37,6 +37,8 @@ namespace Refine
 		std::string mol_id;
 		Instance *instance = nullptr;
 		int samples = 120;
+		int master_dims = 3;
+		Warp *warp = nullptr;
 	};
 };
 

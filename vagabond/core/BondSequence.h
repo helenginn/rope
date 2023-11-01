@@ -143,6 +143,8 @@ public:
 	void calculateAtoms(rope::IntToCoordGet coordForIdx,
 	                   rope::GetVec3FromCoordIdx posForCoord);
 	void superpose();
+	void addTranslation(rope::GetVec3FromIdx getOffset);
+
 	const AtomPosMap &extractPositions();
 	void extractVector(AtomPosList &results);
 	

@@ -32,12 +32,13 @@ class ArbitraryMap;
 class MolRefiner : public StructureModification, public RunsEngine
 {
 public:
-	MolRefiner(ArbitraryMap *comparison, Refine::Info *info, int num, int dims);
+	MolRefiner(ArbitraryMap *comparison, Refine::Info *info);
 	~MolRefiner();
 
 	void retrieveJobs();
 	void runEngine();
 
+	Result *submitJobAndRetrieve(const std::vector<float> &all);
 	virtual int sendJob(const std::vector<float> &all);
 	virtual float getResult(int *job_id);
 	virtual size_t parameterCount();
@@ -45,14 +46,13 @@ protected:
 	virtual void prepareResources();
 	void changeDefaults(CoordManager *manager);
 private:
-	void prepareJob(const std::vector<float> &all);
+	void submitJob(std::vector<float> all);
+	void calculate(const std::vector<float> &params);
 
 	ArbitraryMap *_map = nullptr;
 	Refine::Info *_info = nullptr;
-	Warp *_warp = nullptr;
 
 	int _ticket = 0;
-	int _dims = 0;
 	
 	std::vector<float> _best;
 	Sampler _sampler;

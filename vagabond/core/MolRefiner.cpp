@@ -34,25 +34,32 @@
 #include "engine/Task.h"
 
 MolRefiner::MolRefiner(ArbitraryMap *comparison, 
-                       Refine::Info *info, int num, int dims) :
-StructureModification(), _sampler(num, dims), _translate(dims)
+                       Refine::Info *info) :
+StructureModification(), 
+_sampler(info->samples, info->master_dims), 
+_translate(info->master_dims)
 {
-	_threads = 5;
 	setInstance(info->instance);
-	
-	if (_instance->hasSequence())
-	{
-		_warp = Warp::warpFromFile(info->instance, "test.json");
-	}
+	_threads = 5;
 	
 	std::cout << "MolRefiner for " << info->instance->id() << std::endl;
 
 	_map = comparison;
 	_info = info;
-	_dims = dims;
 
 	_instance->load();
 }
+
+float confParams(int n)
+{
+	return n + n * (n + 1) / 2;
+}
+
+float transParams(int n)
+{
+	return (n + 1) * 3;
+}
+
 
 MolRefiner::~MolRefiner()
 {
@@ -67,14 +74,43 @@ float MolRefiner::getResult(int *job_id)
 	return res;
 }
 
-void MolRefiner::prepareJob(const std::vector<float> &all)
+Result *MolRefiner::submitJobAndRetrieve(const std::vector<float> &all)
+{
+	submitJob(all);
+	Result *r = _resources.calculator->acquireResult();
+	return r;
+}
+
+void MolRefiner::submitJob(std::vector<float> all)
+{
+	if (all.size() == 0)
+	{
+		all = _best;
+	}
+
+	std::vector<float> simple;
+	const int &n = _info->master_dims;
+	simple.reserve(confParams(n));
+	simple.insert(simple.begin(), all.begin(), all.begin() + confParams(n));
+
+	std::vector<float> trans;
+	trans.reserve(transParams(n));
+	trans.insert(trans.begin(), all.begin() + confParams(n),
+	             all.end() + confParams(n) + transParams(n));
+	
+	_translate.copyInParameters(trans);
+
+	calculate(simple);
+}
+
+void MolRefiner::calculate(const std::vector<float> &params)
 {
 	_ticket++;
 	BaseTask *first_hook = nullptr;
-	CalcTask *final_hook = nullptr;
 	
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
+	calculator->holdHorses();
 	BondSequenceHandler *const &sequences = _resources.sequences;
 	MapTransferHandler *const &eleMaps = _resources.perElements;
 	MapSumHandler *const &sums = _resources.summations;
@@ -89,16 +125,33 @@ void MolRefiner::prepareJob(const std::vector<float> &all)
 
 	Task<BondSequence *, void *> *letgo = nullptr;
 
+	CalcTask *final_hook = nullptr;
+
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
-	sequences->calculate(calc, all, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, submit_result, final_hook);
+	sequences->calculate(calc, params, &first_hook, &final_hook);
+	
+	/* on top of this, apply translations */
+	rope::IntToCoordGet raw = _sampler.rawCoordinates();
+	rope::GetVec3FromIdx get = _translate.translate(raw);
+	
+	auto add_tr = [get](BondSequence *seq) -> BondSequence *
+	{
+		seq->addTranslation(get);
+		return seq;
+	};
+
+	CalcTask *translate = new CalcTask(add_tr, "translate");
+	
+	final_hook->follow_with(translate);
+
+	letgo = sequences->extract(gets, submit_result, translate);
 
 	/* Prepare the scratch space for per-element map calculation */
 	std::map<std::string, GetEle> eleTasks;
 
 	/* positions coming out of sequence to prepare for per-element maps */
-	sequences->positionsForMap(final_hook, letgo, eleTasks);
+	sequences->positionsForMap(translate, letgo, eleTasks);
 
 	/* updates the scratch space */
 	eleMaps->extract(eleTasks);
@@ -116,11 +169,13 @@ void MolRefiner::prepareJob(const std::vector<float> &all)
 
 	/* first task to be initiated by tasks list */
 	_resources.tasks->addTask(first_hook);
+
+	calculator->releaseHorses();
 }
 
 int MolRefiner::sendJob(const std::vector<float> &all)
 {
-	prepareJob(all);
+	submitJob(all);
 	return _ticket;
 }
 
@@ -149,8 +204,8 @@ void MolRefiner::retrieveJobs()
 
 size_t MolRefiner::parameterCount()
 {
-	int n = _dims;
-	return n + n * (n + 1) / 2;
+	int n = _info->master_dims;
+	return confParams(n) + transParams(n);
 }
 
 void MolRefiner::runEngine()
@@ -185,7 +240,7 @@ void MolRefiner::changeDefaults(CoordManager *manager)
 	rope::GetFloatFromCoordIdx fetchTorsion = [this](const Coord::Get &get, 
 	                                                 const int &idx)
 	{
-		return _warp->torsionAnglesForCoord()(get, idx);
+		return _info->warp->torsionAnglesForCoord()(get, idx);
 	};
 
 	manager->setTorsionFetcher(fetchTorsion);

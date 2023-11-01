@@ -293,6 +293,23 @@ void loopThrough(BondSequence *seq, const rope::IntToCoordGet &coordForIdx,
 	}
 }
 
+void BondSequence::addTranslation(rope::GetVec3FromIdx getOffset)
+{
+	int start, end;
+	getCalculationBoundaries(start, end);
+	
+	for (size_t j = 0; j < sampleCount(); j++)
+	{
+		glm::vec4 offset = glm::vec4(getOffset(j), 0.f);
+		for (size_t i = start; i < end && i < singleSequence(); i++)
+		{
+			int n = j * singleSequence() + i;
+			_blocks[n].basis[3] += offset;
+		}
+	}
+
+}
+
 void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
                                   rope::GetVec3FromCoordIdx posForCoord)
 {
