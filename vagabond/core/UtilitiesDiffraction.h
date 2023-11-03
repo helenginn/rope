@@ -16,33 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Translation__
-#define __vagabond__Translation__
+#ifndef __vagabond__UtilitiesDiffraction__
+#define __vagabond__UtilitiesDiffraction__
 
-#include "engine/CoordManager.h"
-#include "svd/PCA.h"
+#include "Diffraction.h"
 
-class Translation
+namespace Utilities
 {
-public:
-	Translation(int hyperDims);
-	~Translation();
-
-	float parameter(int i)
+	inline auto mask_from_reference(Diffraction *reference)
 	{
-		return _coordinates.vals[i];
-	}
-
-	void setParameter(int i, const float &val)
-	{
-		_coordinates.vals[i] = val;
-	}
-
-	rope::GetVec3FromIdx translate(const rope::IntToCoordGet &get_coord);
-private:
-	PCA::Matrix _coordinates;
-
-	int _hyperDims = 0;
+		return [reference](long idx) -> bool
+		{
+			float ref = reference->element(idx).amplitude();
+			return (ref != ref);
+		};
+	};
 };
+
 
 #endif

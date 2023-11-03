@@ -29,7 +29,7 @@ class ArbitraryMap;
 struct VoxelDiffraction
 {
 	fftwf_complex value;
-	short int category = 0;
+	short int category = -1;
 	
 	void setAmplitudePhase(float amp, float ph)
 	{
@@ -39,9 +39,23 @@ struct VoxelDiffraction
 	
 	void addAmplitudePhase(float amp, float ph)
 	{
-		amp += amplitude();
-		ph += phase();
-		setAmplitudePhase(amp, ph);
+		float add[2];
+		add[0] = amp * cos(deg2rad(ph));
+		add[1] = amp * sin(deg2rad(ph));
+		value[0] += add[0];
+		value[1] += add[1];
+	}
+	
+	const void setAmplitude(float f) 
+	{
+		float p = phase();
+		setAmplitudePhase(f, p);
+	}
+	
+	const void setPhase(float p) 
+	{
+		float amp = amplitude();
+		setAmplitudePhase(amp, p);
 	}
 	
 	const float phase() const
@@ -63,9 +77,18 @@ public:
 	Diffraction(int nx, int ny, int nz);
 	Diffraction(RefList &list);
 	Diffraction(ArbitraryMap *map);
+	Diffraction(Diffraction *other);
 
 	void populateReflections();
 	void populateSymmetry();
+
+	const bool &sliced() const
+	{
+		return _sliced;
+	}
+
+	void sliceIntoBins(const std::vector<float> &bins);
+	void copyBinningFrom(Diffraction *other);
 	
 	size_t reflectionCount();
 
@@ -74,10 +97,18 @@ public:
 		return _data[i].amplitude();
 	}
 	
+	/** only set when derived from a RefList or inherited from 
+	 * other Diffraction object */
+	const float &maxResolution() const
+	{
+		return _maxRes;
+	}
+	
 	std::string spaceGroupName();
 private:
 	RefList *_list;
-
+	float _maxRes = FLT_MAX;
+	bool _sliced = false;
 };
 
 #endif

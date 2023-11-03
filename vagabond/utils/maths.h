@@ -68,9 +68,9 @@ double standard_deviation(std::vector<double> &values);
 void regression_line(std::vector<double> xs, std::vector<double> ys,
                      double *intercept, double *gradient, int max = 0);
 
-/* Dstar */
-void generateResolutionBins(double minD, double maxD,
-                            int binCount, std::vector<double> *bins);
+/* provide min/maxD in real space resolution */
+void generateResolutionBins(float minD, float maxD,
+                            int binCount, std::vector<float> &bins);
 
 inline double normal_distribution(double x, double sigma)
 {

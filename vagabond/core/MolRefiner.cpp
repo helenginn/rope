@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/Vec3s.h>
+
 #include "MolRefiner.h"
 #include "SimplexEngine.h"
 #include "AtomGroup.h"
@@ -48,6 +50,8 @@ _translate(info->master_dims)
 	_info = info;
 
 	_instance->load();
+	_best.resize(parameterCount());
+	prepareResources();
 }
 
 float confParams(int n)
@@ -59,7 +63,6 @@ float transParams(int n)
 {
 	return (n + 1) * 3;
 }
-
 
 MolRefiner::~MolRefiner()
 {
@@ -83,24 +86,7 @@ Result *MolRefiner::submitJobAndRetrieve(const std::vector<float> &all)
 
 void MolRefiner::submitJob(std::vector<float> all)
 {
-	if (all.size() == 0)
-	{
-		all = _best;
-	}
-
-	std::vector<float> simple;
-	const int &n = _info->master_dims;
-	simple.reserve(confParams(n));
-	simple.insert(simple.begin(), all.begin(), all.begin() + confParams(n));
-
-	std::vector<float> trans;
-	trans.reserve(transParams(n));
-	trans.insert(trans.begin(), all.begin() + confParams(n),
-	             all.end() + confParams(n) + transParams(n));
-	
-	_translate.copyInParameters(trans);
-
-	calculate(simple);
+	calculate(all);
 }
 
 void MolRefiner::calculate(const std::vector<float> &params)
@@ -175,7 +161,8 @@ void MolRefiner::calculate(const std::vector<float> &params)
 
 int MolRefiner::sendJob(const std::vector<float> &all)
 {
-	submitJob(all);
+	_setter(all);
+	submitJob(_parameters);
 	return _ticket;
 }
 
@@ -210,8 +197,6 @@ size_t MolRefiner::parameterCount()
 
 void MolRefiner::runEngine()
 {
-	prepareResources();
-
 	if (!_info->instance->hasSequence())
 	{
 		return;
@@ -222,12 +207,15 @@ void MolRefiner::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 	
+	_parameters.resize(confParams(_info->master_dims));
+	setGetterSetters();
+	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
-	engine->setStepSize(0.2);
+	engine->setStepSize(0.5);
 	engine->start();
 	
-	_best = engine->bestResult();
+	_best = Floats(engine->bestResult());
 }
 
 void MolRefiner::changeDefaults(CoordManager *manager)
@@ -279,4 +267,45 @@ void MolRefiner::prepareResources()
 	                                                _threads);
 	cc->setup();
 	_resources.correlations = cc;
+}
+
+void MolRefiner::setGetterSetters()
+{
+	int nn = _info->master_dims;
+	_getter = [nn, this](std::vector<float> &values)
+	{
+		int i = 0;
+		values.resize(parameterCount());
+
+		for (size_t n = 0; n < confParams(nn); n++)
+		{
+			values[i] = _parameters[n];
+			i++;
+		}
+
+		for (size_t n = 0; n < transParams(nn); n++)
+		{
+			values[i] = _translate.parameter(n);
+			i++;
+		}
+	};
+
+	std::vector<float> start;
+	_getter(start);
+
+	_setter = [nn, start, this](const std::vector<float> &values)
+	{
+		int i = 0;
+		for (size_t n = 0; n < confParams(nn); n++)
+		{
+			_parameters[n] = values[i] + start[i];
+			i++;
+		}
+
+		for (size_t n = 0; n < transParams(nn); n++)
+		{
+			_translate.setParameter(n, values[i] + start[i]);
+			i++;
+		}
+	};
 }

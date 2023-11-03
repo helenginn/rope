@@ -42,21 +42,30 @@ public:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual float getResult(int *job_id);
 	virtual size_t parameterCount();
+
+	typedef std::function<void(std::vector<float> &values)> Getter;
+	typedef std::function<void(const std::vector<float> &values)> Setter;
 protected:
 	virtual void prepareResources();
 	void changeDefaults(CoordManager *manager);
 private:
 	void submitJob(std::vector<float> all);
 	void calculate(const std::vector<float> &params);
+	void setGetterSetters();
 
 	ArbitraryMap *_map = nullptr;
 	Refine::Info *_info = nullptr;
 
 	int _ticket = 0;
 	
-	std::vector<float> _best;
+	Floats _best;
 	Sampler _sampler;
 	Translation _translate;
+
+	Getter _getter{};
+	Setter _setter{};
+	
+	Floats _parameters;
 };
 
 #endif

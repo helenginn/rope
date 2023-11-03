@@ -44,6 +44,16 @@ TransformedGrid<fftwf_complex>(0, 0, 0)
 	_diff = &diff;
 }
 
+ArbitraryMap::ArbitraryMap(const ArbitraryMap &other) : 
+TransformedGrid<fftwf_complex>(0, 0, 0)
+{
+	setDimensions(other.nx(), other.ny(), other.nz(), false);
+	makePlans();
+	setOrigin(other.origin());
+	setStatus(ArbitraryMap::Real);
+	setRealMatrix(other.frac2Real());
+}
+
 ArbitraryMap::ArbitraryMap(OriginGrid &other) : 
 TransformedGrid<fftwf_complex>(0, 0, 0)
 {

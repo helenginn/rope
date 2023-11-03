@@ -35,6 +35,7 @@ public:
 	ArbitraryMap();
 	ArbitraryMap(Diffraction &diff);
 	ArbitraryMap(OriginGrid &other);
+	ArbitraryMap(const ArbitraryMap &other);
 	ArbitraryMap(const std::string &filename);
 	
 	ArbitraryMap &operator+=(const ArbitraryMap &other);

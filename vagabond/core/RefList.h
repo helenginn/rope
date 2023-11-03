@@ -56,6 +56,11 @@ public:
 		return _refls.size();
 	}
 	
+	const Reflection &operator[](int i) const
+	{
+		return _refls.at(i);
+	}
+	
 	void addReflectionToGrid(Diffraction *diff, int i);
 
     Reflection::HKL maxSymHKL();

@@ -16,33 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Translation__
-#define __vagabond__Translation__
+#ifndef __vagabond__Babinet__
+#define __vagabond__Babinet__
 
-#include "engine/CoordManager.h"
-#include "svd/PCA.h"
+class Diffraction;
 
-class Translation
+class Babinet
 {
 public:
-	Translation(int hyperDims);
-	~Translation();
+	Babinet(Diffraction *model);
+	~Babinet();
 
-	float parameter(int i)
-	{
-		return _coordinates.vals[i];
-	}
-
-	void setParameter(int i, const float &val)
-	{
-		_coordinates.vals[i] = val;
-	}
-
-	rope::GetVec3FromIdx translate(const rope::IntToCoordGet &get_coord);
+	Diffraction *operator()();
 private:
-	PCA::Matrix _coordinates;
+	void applyKB(float k, float b);
+	void prepareSolvent();
+	void addProtein();
 
-	int _hyperDims = 0;
+	float _k = 0.5;
+	float _b = 120;
+	Diffraction *_model = nullptr;
+	Diffraction *_solvent = nullptr;
 };
 
 #endif

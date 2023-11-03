@@ -16,33 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Translation__
-#define __vagabond__Translation__
+#ifndef __vagabond__Scaler__
+#define __vagabond__Scaler__
 
-#include "engine/CoordManager.h"
-#include "svd/PCA.h"
+class Diffraction;
 
-class Translation
+class Scaler
 {
 public:
-	Translation(int hyperDims);
-	~Translation();
-
-	float parameter(int i)
+	/* will modify model to fit scale of data */
+	Scaler(Diffraction *const &data, Diffraction *const &model);
+	
+	void setBins(const int &bins)
 	{
-		return _coordinates.vals[i];
+		_bins = bins;
 	}
 
-	void setParameter(int i, const float &val)
-	{
-		_coordinates.vals[i] = val;
-	}
-
-	rope::GetVec3FromIdx translate(const rope::IntToCoordGet &get_coord);
+	void operator()();
 private:
-	PCA::Matrix _coordinates;
+	Diffraction *const &_data;
+	Diffraction *const &_model;
 
-	int _hyperDims = 0;
+	int _bins = 20;
 };
 
 #endif

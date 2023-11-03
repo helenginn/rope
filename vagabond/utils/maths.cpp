@@ -145,9 +145,10 @@ double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
 }
 
 /* Produces in real space */
-void generateResolutionBins(double minD, double maxD,
-                            int binCount, std::vector<double> *bins)
+void generateResolutionBins(float minD, float maxD,
+                            int binCount, std::vector<float> &bins)
 {
+	bins.reserve(binCount);
 	double minRadius = (minD == 0) ? 0 : 1 / minD;
 	double maxRadius = 1 / maxD;
 
@@ -166,14 +167,14 @@ void generateResolutionBins(double minD, double maxD,
 	double r1 = minRadius;
 	double r2 = 0;
 
-	bins->push_back(1 / r1);
+	bins.push_back(1 / r1);
 
 	for (int i = 0; i < binCount; i++)
 	{
 		double r2_cubed = pow(r1, 3) + eachVolume;
 		r2 = cbrt(r2_cubed);
 
-		bins->push_back(1 / r2);
+		bins.push_back(1 / r2);
 
 		r1 = r2;
 	}

@@ -19,8 +19,11 @@
 #include "File.h"
 #include "Warp.h"
 #include "Model.h"
+#include "Scaler.h"
 #include "Entity.h"
 #include "AtomMap.h"
+#include "RFactor.h"
+#include "Babinet.h"
 #include "Instance.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
@@ -125,7 +128,7 @@ void Refinement::play()
 		}
 	}
 	
-	calculatedMapAtoms();
+	updateMap();
 }
 
 ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
@@ -154,19 +157,43 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 	spg = gemmi::find_spacegroup_by_name(_map->spaceGroupName());
 	gemmi::GroupOps grp = spg->operations();
 	
-	// delete me later
-	Diffraction *diff = new Diffraction(arb);
-
-	MtzFile file("");
-	file.setMap(diff);
-	SymmetryExpansion::apply(diff, spg, max_res);
-	file.write_to_file("symm.mtz", max_res);
-	
 	if (reciprocal)
 	{
+		// delete me later
+		Diffraction *diff = new Diffraction(arb);
+		SymmetryExpansion::apply(diff, spg, max_res);
+
+		MtzFile file("");
+		file.setMap(diff);
+		file.write_to_file("symm.mtz", max_res);
+
 		*reciprocal = diff;
 	}
-	
+
 	return arb;
 }
 
+void Refinement::updateMap()
+{
+	float maxRes = _diff->maxResolution();
+	Diffraction *recip_model = nullptr;
+	ArbitraryMap *real = calculatedMapAtoms(&recip_model, maxRes);
+
+	Babinet babinet(recip_model);
+	Diffraction *solvated = babinet();
+
+	Scaler scale(_diff, solvated);
+	scale();
+	
+	RFactor rfac(_diff, solvated, 20);
+	float all = rfac();
+	std::cout << "Overall R factor: " << all * 100 << "%" << std::endl;
+	
+	MtzFile file("");
+	file.setMap(solvated);
+	file.write_to_file("solv.mtz", maxRes);
+
+	delete real;
+	delete recip_model;
+	delete solvated;
+}

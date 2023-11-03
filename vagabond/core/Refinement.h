@@ -48,6 +48,7 @@ public:
 	static void run(Refinement *r)
 	{
 		r->play();
+		r->play();
 	}
 	
 	ArbitraryMap *map()
@@ -56,11 +57,12 @@ public:
 	}
 	
 	ArbitraryMap *calculatedMapAtoms(Diffraction **reciprocal = nullptr,
-	float max_res = 1.5);
+	                                 float max_res = 1.5);
 	
 	void loadDiffraction(const std::string &filename);
 	void setup();
 	void play();
+	void updateMap();
 private:
 	void prepareInstanceDetails();
 	void prepareInstance(Instance *mol);

@@ -100,6 +100,10 @@ void RefList::addReflectionToGrid(Diffraction *diff, int refl)
 	const int &h = orig.h;
 	const int &k = orig.k;
 	const int &l = orig.l;
+	if (_refls[refl].free)
+	{
+		return;
+	}
 
 	float phase = _refls[refl].phi;
 	const float &f = _refls[refl].f;

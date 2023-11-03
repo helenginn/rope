@@ -115,6 +115,18 @@ public:
 
 		return *this;
 	}
+
+	OpVec<Type> &operator/=(const OpVec<Type> &other)
+	{
+		this->resize(other.size());
+
+		for (size_t i = 0; i < this->size(); i++)
+		{
+			(*this)[i] /= other[i];
+		}
+
+		return *this;
+	}
 	
 	friend std::ostream &operator<<(std::ostream &ss, const OpVec<Type> &vs)
 	{

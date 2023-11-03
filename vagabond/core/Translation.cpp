@@ -30,25 +30,12 @@ Translation::Translation(int hyperDims)
 		{
 			if (i == j)
 			{
-				_coordinates[i][j] = 2.0;
+				_coordinates[i][j] = 2.5;
 			}
 		}
 	}
 	
 	printMatrix(&_coordinates);
-}
-
-void Translation::copyInParameters(const std::vector<float> &trans)
-{
-	auto it = trans.begin();
-	for (size_t j = 0; j < _coordinates.cols; j++)
-	{
-		for (size_t i = 0; i < _coordinates.rows; i++)
-		{
-			_coordinates[i][j] = *it + (i == j ? 1.5f : 0.f);
-			it++;
-		}
-	}
 }
 
 Translation::~Translation()

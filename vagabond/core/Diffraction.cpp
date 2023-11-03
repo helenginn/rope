@@ -27,6 +27,17 @@ TransformedGrid<VoxelDiffraction>(nx, ny, nz)
 
 }
 
+Diffraction::Diffraction(Diffraction *other) : Grid<VoxelDiffraction>(),
+TransformedGrid<VoxelDiffraction>(0, 0, 0)
+{
+	setDimensions(other->nx(), other->ny(), other->nz(), false);
+
+	copy_data_from(other);
+	setRealMatrix(other->frac2Real());
+	_maxRes = other->_maxRes;
+	_list = other->_list;
+}
+
 Diffraction::Diffraction(ArbitraryMap *map)
 : Grid<VoxelDiffraction>(),
 TransformedGrid<VoxelDiffraction>(0, 0, 0)
@@ -82,6 +93,13 @@ void Diffraction::populateReflections()
 	for (size_t i = 0; i < _list->reflectionCount(); i++)
 	{
 		_list->addReflectionToGrid(this, i);
+		const Reflection &refl = (*_list)[i];
+		float res = resolution(refl.hkl.h, refl.hkl.k, refl.hkl.l);
+		/* resolution is inverted space */
+		if (_maxRes > res)
+		{
+			_maxRes = res;
+		}
 	}
 
 	populateSymmetry();
@@ -138,4 +156,46 @@ size_t Diffraction::reflectionCount()
 std::string Diffraction::spaceGroupName()
 {
 	return _list->spaceGroupName();
+}
+
+void Diffraction::sliceIntoBins(const std::vector<float> &bins)
+{
+	auto slice = [this, bins](int h, int k, int l)
+	{
+		float res = resolution(h, k, l);
+
+		for (int i = 0; i < bins.size() - 1; i++)
+		{
+			const float &min = bins[i];
+			const float &max = bins[i + 1];
+
+			// note: resolution is inverted
+			if (res < min && res > max) 
+			{
+				element(h, k, l).category = i;
+				break;
+			}
+		}
+	};
+
+	do_op_on_centred_index(slice);
+	_sliced = true;
+
+}
+
+void Diffraction::copyBinningFrom(Diffraction *other)
+{
+	if (nn() != other->nn())
+	{
+		throw std::runtime_error("Mismatched nn() for data/model!");
+	}
+
+	auto copy_slice = [this, other](long idx)
+	{
+		element(idx).category = other->element(idx).category;
+	};
+
+	do_op_on_each_1d_index(copy_slice);
+	_sliced = true;
+
 }
