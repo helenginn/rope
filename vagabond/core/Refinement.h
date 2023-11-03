@@ -24,15 +24,11 @@
 #include <list>
 
 class Model;
-class ArbitraryMap;
-class MetadataGroup;
 class MolRefiner;
+class Diffraction;
+class ArbitraryMap;
 struct ccp4_spacegroup_;
 typedef ccp4_spacegroup_ CCP4SPG;
-
-template <class T>
-class ClusterSVD;
-typedef ClusterSVD<MetadataGroup> ECluster;
 
 class Refinement
 {
@@ -59,24 +55,23 @@ public:
 		return _map;
 	}
 	
-	ArbitraryMap *calculatedMapAtoms();
-	float comparisonWithData();
+	ArbitraryMap *calculatedMapAtoms(Diffraction **reciprocal = nullptr,
+	float max_res = 1.5);
 	
+	void loadDiffraction(const std::string &filename);
 	void setup();
 	void play();
 private:
 	void prepareInstanceDetails();
 	void prepareInstance(Instance *mol);
-	ECluster *grabCluster(Entity *entity);
 	void setupRefiners();
 	void setupRefiner(Refine::Info &info);
-	void loadMap();
 
 	Model *_model = nullptr;
+	Diffraction *_diff = nullptr;
 	ArbitraryMap *_map = nullptr;
 
 	std::list<Refine::Info> _molDetails;
-	std::map<Entity *, ECluster *> _entity2Cluster;
 	
 	std::map<Instance *, MolRefiner *> _molRefiners;
 };

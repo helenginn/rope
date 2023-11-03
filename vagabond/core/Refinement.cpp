@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "File.h"
 #include "Warp.h"
 #include "Model.h"
 #include "Entity.h"
@@ -23,6 +24,7 @@
 #include "Instance.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
+#include "Diffraction.h"
 #include "ArbitraryMap.h"
 #include "MetadataGroup.h"
 #include "SymmetryExpansion.h"
@@ -30,7 +32,6 @@
 #include "Diffraction.h"
 #include "MtzFile.h"
 
-#include <vagabond/c4x/ClusterSVD.h>
 #include <fstream>
 
 Refinement::Refinement()
@@ -43,13 +44,30 @@ void Refinement::setup()
 	_model->load();
 
 	prepareInstanceDetails();
-	loadMap();
 	setupRefiners();
 }
 
-void Refinement::loadMap()
+void Refinement::loadDiffraction(const std::string &filename)
 {
-	_map = _model->map();
+	File *file = File::loadUnknown(filename);
+
+	if (!file)
+	{
+		return;
+	}
+
+	File::Type type = file->cursoryLook();
+
+	if (type & File::Reflections)
+	{
+		Diffraction *diff = file->diffractionData();
+		_diff = diff;
+
+		_map = new ArbitraryMap(*diff);
+		_map->setupFromDiffraction();
+	}
+
+	delete file;
 }
 
 void Refinement::prepareInstanceDetails()
@@ -67,21 +85,6 @@ void Refinement::setupRefiners()
 	{
 		setupRefiner(info);
 	}
-}
-
-ECluster *Refinement::grabCluster(Entity *entity)
-{
-	if (_entity2Cluster.count(entity))
-	{
-		return _entity2Cluster[entity];
-	}
-
-	MetadataGroup angles = entity->makeTorsionDataGroup();
-	ECluster *cx = new ECluster(angles);
-	cx->cluster();
-	_entity2Cluster[entity] = cx;
-
-	return cx;
 }
 
 void Refinement::prepareInstance(Instance *mol)
@@ -125,11 +128,11 @@ void Refinement::play()
 	calculatedMapAtoms();
 }
 
-ArbitraryMap *Refinement::calculatedMapAtoms()
+ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
+                                             float max_res)
 {
 	ArbitraryMap *arb = new ArbitraryMap(*_map);
 	arb->clear();
-	return arb;
 	
 	for (Refine::Info &info  : _molDetails)
 	{
@@ -156,19 +159,14 @@ ArbitraryMap *Refinement::calculatedMapAtoms()
 
 	MtzFile file("");
 	file.setMap(diff);
-	file.write_to_file("spg1.mtz", 1.5);
-
-	SymmetryExpansion::apply(diff, spg, 1.5);
-	file.write_to_file("symm.mtz", 1.5);
+	SymmetryExpansion::apply(diff, spg, max_res);
+	file.write_to_file("symm.mtz", max_res);
+	
+	if (reciprocal)
+	{
+		*reciprocal = diff;
+	}
 	
 	return arb;
-
 }
 
-float Refinement::comparisonWithData()
-{
-	ArbitraryMap *calc = calculatedMapAtoms();
-	float result = _model->comparisonWithData(calc);
-	std::cout << "Comparison result: " << result << std::endl;
-	return result;
-}

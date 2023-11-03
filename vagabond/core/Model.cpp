@@ -724,42 +724,6 @@ void Model::clickTicker()
 	Environment::modelManager()->clickTicker();
 }
 
-
-ArbitraryMap *Model::map()
-{
-	if (dataFile().length())
-	{
-		File *file = File::loadUnknown(dataFile());
-		
-		if (!file)
-		{
-			return nullptr;
-		}
-
-		File::Type type = file->cursoryLook();
-		
-		if (type & File::Reflections)
-		{
-			Diffraction *diff = file->diffractionData();
-			if (!diff)
-			{
-				return nullptr;
-			}
-
-			ArbitraryMap *map = new ArbitraryMap(*diff);
-			map->setupFromDiffraction();
-			
-			delete file;
-			return map;
-		}
-		
-		delete file;
-		return nullptr;
-	}
-
-	return nullptr;
-}
-
 float Model::comparisonWithData(ArbitraryMap *calc)
 {
 	return 0;

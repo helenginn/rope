@@ -159,7 +159,6 @@ public:
 	void finishedRefinement();
 	void write(std::string filename);
 	
-	ArbitraryMap *map();
 	float comparisonWithData(ArbitraryMap *calc);
 
 	void extractExisting();

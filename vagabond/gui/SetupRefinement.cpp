@@ -118,6 +118,7 @@ void SetupRefinement::checkValues()
 
 void SetupRefinement::prepareRefinement()
 {
+	_obj.loadDiffraction(_model.dataFile());
 	_obj.setup();
 	
 	WatchRefinement *wr = new WatchRefinement(this, &_obj);

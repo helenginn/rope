@@ -20,6 +20,7 @@
 #include "AddModel.h"
 #include "Display.h"
 #include "GuiAtom.h"
+#include "ArbitraryMap.h"
 #include <vagabond/gui/Toolkit.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -130,7 +131,8 @@ void ModelMenu::refineModel(std::string name)
 		d->setOwnsAtoms(false);
 		d->setMultiBondMode(true);
 		d->guiAtoms()->setDisableRibbon(false);
-		d->densityFromMap(model->map());
+		ArbitraryMap *map = new ArbitraryMap(model->dataFile());
+		d->densityFromMap(map);
 		d->show();
 	}
 	catch (std::runtime_error &err)
