@@ -125,6 +125,9 @@ public:
 		_data[idx] = value;
 	}
 
+	/** carries out an operation on each index starting at 
+	 * 	(-nx() / 2, -ny() / 2, -nz() / 2) and ending at
+	 * 	(+nx() / 2, +ny() / 2, +nz() / 2). Suitable for reciprocal maps */
 	template <typename F>
 	void do_op_on_centred_index(F func)
 	{
@@ -138,6 +141,9 @@ public:
 		
 		do_op_on_basic_index(wrap);
 	}
+
+	/** carries out an operation on each index starting at (0, 0, 0) and
+	 *  ending at (nx() - 1, ny() - 1, nz() - 1). Suitable for real space maps */
 	
 	template <typename F>
 	void do_op_on_basic_index(F func)
@@ -154,6 +160,8 @@ public:
 		}
 	}
 
+	/** carries out an operation on each templated element of individual voxels.
+	 * 	Does not provide information on the index/spatial arrangements of element */
 	template <typename F>
 	void do_op_on_each_element(F func)
 	{
@@ -163,6 +171,8 @@ public:
 		                       });
 	}
 
+	/** carries out an operation on each index covering each voxel. Does
+	 *  not provide information on the spatial arrangement of elements */
 	template <typename F>
 	void do_op_on_each_1d_index(F func)
 	{
@@ -172,6 +182,8 @@ public:
 		}
 	}
 
+	/** carries out an operation on each calculated value of individual voxels.
+	 * 	Does not provide information on the index/spatial arrangements of element */
 	template <typename F>
 	void do_op_on_each_value(F func)
 	{
