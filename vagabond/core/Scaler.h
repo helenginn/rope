@@ -25,19 +25,15 @@ class Scaler
 {
 public:
 	/* will modify model to fit scale of data */
-	Scaler(Diffraction *const &data, Diffraction *const &model);
+	Scaler(Diffraction *const &data, Diffraction *const &model,
+	       const std::vector<float> &binning);
 	
-	void setBins(const int &bins)
-	{
-		_bins = bins;
-	}
-
 	void operator()();
 private:
 	Diffraction *const &_data;
 	Diffraction *const &_model;
 
-	int _bins = 20;
+	std::vector<float> _binning;
 };
 
 #endif

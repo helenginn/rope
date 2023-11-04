@@ -178,11 +178,15 @@ void Refinement::updateMap()
 	float maxRes = _diff->maxResolution();
 	Diffraction *recip_model = nullptr;
 	ArbitraryMap *real = calculatedMapAtoms(&recip_model, maxRes);
+	delete real;
 
 	Babinet babinet(recip_model);
 	Diffraction *solvated = babinet();
 
-	Scaler scale(_diff, solvated);
+	std::vector<float> bins;
+	generateResolutionBins(0, maxRes, 20, bins);
+
+	Scaler scale(_diff, solvated, bins);
 	scale();
 	
 	RFactor rfac(_diff, solvated, 20);
@@ -193,7 +197,6 @@ void Refinement::updateMap()
 	file.setMap(solvated);
 	file.write_to_file("solv.mtz", maxRes);
 
-	delete real;
 	delete recip_model;
 	delete solvated;
 }

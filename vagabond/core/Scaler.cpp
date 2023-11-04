@@ -21,7 +21,8 @@
 #include "UtilitiesDiffraction.h"
 #include "Scaler.h"
 
-Scaler::Scaler(Diffraction *const &data, Diffraction *const &model)
+Scaler::Scaler(Diffraction *const &data, Diffraction *const &model,
+               const std::vector<float> &binning)
 : _data(data), _model(model)
 {
 	if (_data->nn() != _model->nn())
@@ -29,6 +30,7 @@ Scaler::Scaler(Diffraction *const &data, Diffraction *const &model)
 		std::cout << "Warning: mismatched n for data/model!" << std::endl;
 	}
 
+	_binning = binning;
 }
 
 template <typename Mask>
@@ -81,12 +83,10 @@ void scale(Diffraction *reciprocal, const Floats &corrections)
 void Scaler::operator()()
 {
 	float maxRes = _data->maxResolution();
-	std::vector<float> bins;
-	generateResolutionBins(0, maxRes, _bins, bins);
 	
 	if (!_data->sliced())
 	{
-		_data->sliceIntoBins(bins);
+		_data->sliceIntoBins(_binning);
 	}
 
 	if (!_model->sliced())
@@ -95,8 +95,8 @@ void Scaler::operator()()
 	}
 
 	auto mask = Utilities::mask_from_reference(_data);
-	Floats corrections = averages_for_bins(mask, _data, _bins);
-	Floats model_aves = averages_for_bins(mask, _model, _bins);
+	Floats corrections = averages_for_bins(mask, _data, _binning.size());
+	Floats model_aves = averages_for_bins(mask, _model, _binning.size());
 	
 	corrections /= model_aves;
 	
