@@ -20,6 +20,7 @@
 #define __vagabond__BaseTask__
 
 #include <iostream>
+#include <functional>
 #include <atomic>
 #include <vector>
 #include <string>

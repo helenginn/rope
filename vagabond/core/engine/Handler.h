@@ -20,6 +20,7 @@
 #define __vagabond__Handler__
 
 #include <list>
+#include <thread>
 #include "engine/SimplePhore.h"
 #include "engine/ExpectantPhore.h"
 #include "engine/workers/ThreadWorker.h"

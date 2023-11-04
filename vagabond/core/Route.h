@@ -19,6 +19,7 @@
 #ifndef __vagabond__Route__
 #define __vagabond__Route__
 
+#include <atomic>
 #include "StructureModification.h"
 #include "engine/CoordManager.h"
 #include "Responder.h"
