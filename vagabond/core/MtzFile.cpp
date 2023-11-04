@@ -71,6 +71,7 @@ gemmi::Mtz::Column *find_column(gemmi::Mtz &mtz,
 		ret = mtz.column_with_label(trial);
 		if (ret)
 		{
+			std::cout << "Found column with label " << trial << std::endl;
 			return ret;
 		}
 	}
@@ -86,7 +87,7 @@ gemmi::Mtz::Column *find_phi_column(gemmi::Mtz &mtz)
 
 gemmi::Mtz::Column *find_f_column(gemmi::Mtz &mtz)
 {
-	const std::vector<std::string> list = {"FWT", "F", "FP", "Fobs"};
+	const std::vector<std::string> list = {"FP", "F", "Fobs", "FWT"};
 	return find_column(mtz, list);
 }
 
