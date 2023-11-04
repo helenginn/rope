@@ -70,7 +70,7 @@ private:
 	void setupRefiner(Refine::Info &info);
 
 	Model *_model = nullptr;
-	Diffraction *_diff = nullptr;
+	Diffraction *_data = nullptr;
 	ArbitraryMap *_map = nullptr;
 
 	std::list<Refine::Info> _molDetails;

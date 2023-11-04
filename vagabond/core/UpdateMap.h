@@ -16,29 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Recombine__
-#define __vagabond__Recombine__
+#ifndef __vagabond__UpdateMap__
+#define __vagabond__UpdateMap__
 
-class Diffraction;
+#include "Diffraction.h"
 
-class Recombine
+class UpdateMap
 {
 public:
-	enum Type
-	{
-		Weighted,
-		Difference
-	};
-
-	Recombine(Diffraction *data, Diffraction *model, const Type &type = Weighted);
+	/* model should already be solvated */
+	UpdateMap(Diffraction *const &data, Diffraction *const &model);
 
 	Diffraction *operator()();
 private:
-	Diffraction *_data = nullptr;
-	Diffraction *_model = nullptr;
-	Diffraction *_combined = nullptr;
+	void writeAutoOpeningMtz(Diffraction *const &toWrite,
+	                         Diffraction *const &diff = nullptr);
+	Diffraction *const &_data;
+	Diffraction *const &_model;
 
-	Type _type = Weighted;
 };
 
 #endif

@@ -17,11 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Recombine.h"
+#include "Diffraction.h"
 
-Recombine::Recombine(Diffraction *data, Diffraction *model)
+Recombine::Recombine(Diffraction *data, Diffraction *model, const Type &type)
 {
 	_data = data;
 	_model = model;
+	_type = type;
 
 	if (_data->nn() != _model->nn())
 	{
@@ -39,7 +41,22 @@ Diffraction *Recombine::operator()()
 		float fc = _model->element(idx).amplitude();
 		float ph = _model->element(idx).phase();
 
-		float amp = 2 * fo - fc;
+		float amp = 0;
+		
+		switch (_type)
+		{
+			case Weighted:
+			amp = 2 * fo - fc;
+			break;
+			
+			case Difference:
+			amp = fo - fc;
+			break;
+			
+			default:
+			break;
+		}
+
 		_combined->element(idx).addAmplitudePhase(amp, ph);
 	};
 	

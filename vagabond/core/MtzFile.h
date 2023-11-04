@@ -19,6 +19,7 @@
 #ifndef __vagabond__MtzFile__
 #define __vagabond__MtzFile__
 
+#include <functional>
 #include "File.h"
 
 class Diffraction;
@@ -29,10 +30,27 @@ namespace gemmi
 	struct Mtz;
 }
 
+struct WriteColumn
+{
+	template <class Func>
+	WriteColumn(const std::string &_name, const std::string &_type,
+	            Func value)
+	{
+		name = _name;
+		type = _type;
+		get_value = value;
+	}
+
+	std::string name;
+	std::string type;
+	std::function<float(int, int, int)> get_value;
+};
+
 class MtzFile : public File
 {
 public:
 	MtzFile(std::string filename = "");
+	MtzFile(Diffraction *diffraction);
 	
 	void setMap(Diffraction *diffraction)
 	{

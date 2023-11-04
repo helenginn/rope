@@ -16,7 +16,6 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/utils/maths.h>
 #include <vagabond/utils/Vec3s.h>
 #include "UtilitiesDiffraction.h"
 #include "Scaler.h"

@@ -19,21 +19,18 @@
 #include "File.h"
 #include "Warp.h"
 #include "Model.h"
-#include "Scaler.h"
 #include "Entity.h"
 #include "AtomMap.h"
-#include "RFactor.h"
 #include "Babinet.h"
+#include "MtzFile.h"
 #include "Instance.h"
+#include "UpdateMap.h"
 #include "MolRefiner.h"
 #include "Refinement.h"
 #include "Diffraction.h"
 #include "ArbitraryMap.h"
 #include "MetadataGroup.h"
 #include "SymmetryExpansion.h"
-
-#include "Diffraction.h"
-#include "MtzFile.h"
 
 #include <fstream>
 
@@ -64,7 +61,7 @@ void Refinement::loadDiffraction(const std::string &filename)
 	if (type & File::Reflections)
 	{
 		Diffraction *diff = file->diffractionData();
-		_diff = diff;
+		_data = diff;
 
 		_map = new ArbitraryMap(*diff);
 		_map->setupFromDiffraction();
@@ -175,28 +172,27 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 
 void Refinement::updateMap()
 {
-	float maxRes = _diff->maxResolution();
+	/* currently matched to service crystallography */
+
+	/* calculate the initial model map to required resolution */
+	float maxRes = _data->maxResolution();
 	Diffraction *recip_model = nullptr;
 	ArbitraryMap *real = calculatedMapAtoms(&recip_model, maxRes);
 	delete real;
 
+	/* populate with solvent stuff */
 	Babinet babinet(recip_model);
-	Diffraction *solvated = babinet();
-
-	std::vector<float> bins;
-	generateResolutionBins(0, maxRes, 20, bins);
-
-	Scaler scale(_diff, solvated, bins);
-	scale();
-	
-	RFactor rfac(_diff, solvated, 20);
-	float all = rfac();
-	std::cout << "Overall R factor: " << all * 100 << "%" << std::endl;
-	
-	MtzFile file("");
-	file.setMap(solvated);
-	file.write_to_file("solv.mtz", maxRes);
-
+	Diffraction *solvated_model = babinet();
 	delete recip_model;
-	delete solvated;
+	
+	/* recombine with data */
+	UpdateMap update(_data, solvated_model);
+	Diffraction *combined = update();
+	
+	/* prepare new map for target function */
+	delete _map;
+	_map = new ArbitraryMap(*combined);
+	_map->setupFromDiffraction();
+
+	delete solvated_model;
 }

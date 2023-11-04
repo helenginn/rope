@@ -29,6 +29,11 @@ MtzFile::MtzFile(std::string filename) : File(filename)
 
 }
 
+MtzFile::MtzFile(Diffraction *diffraction) : File("")
+{
+	_map = diffraction;
+}
+
 File::Type MtzFile::cursoryLook()
 {
 	std::string tmp = toFilename(_filename);
@@ -174,34 +179,29 @@ gemmi::Mtz MtzFile::prep_gemmi_mtz(float max_res)
 	mtz.add_column("PHWT", 'P', 0, 4, false);
 
 	std::vector<float> data;
-	std::vector<float> line(5);
 	data.reserve(_map->nn() * 5);
 
-	for (int k = 0; k < _map->nz() / 2; k++)
+	auto write_line = [this, &data, max_res](int i, int j, int k)
 	{
-		for (int j = -_map->ny() / 2; j < _map->ny() / 2; j++)
+		if (k < 0 || _map->resolution(i, j, k) < max_res)
 		{
-			for (int i = -_map->nx() / 2; i < _map->nx() / 2; i++)
-			{
-				bool f000 = (i == 0 && j == 0 && k == 0);
-
-				if (_map->resolution(i, j, k) < max_res)
-				{
-					continue;
-				}
-
-				float f = _map->element(i, j, k).amplitude();
-				float p = _map->element(i, j, k).phase();
-
-				line = {(float)i, (float)j, (float)k, f, p};
-
-				data.reserve(data.size() + line.size());
-				data.insert(data.end(), line.begin(), line.end());
-			}
+			return;
 		}
-	}
+
+		std::vector<float> line(5);
+		float f = _map->element(i, j, k).amplitude();
+		float p = _map->element(i, j, k).phase();
+
+		line = {(float)i, (float)j, (float)k, f, p};
+
+		data.reserve(data.size() + line.size());
+		data.insert(data.end(), line.begin(), line.end());
+	};
+
+	_map->do_op_on_centred_index(write_line);
 	
 	mtz.set_data(&data[0], data.size());
+
 	return mtz;
 }
 
