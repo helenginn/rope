@@ -148,7 +148,7 @@ private:
 
 	int _entrance = -1;
 	// duplicated is set to TRUE when RingProgrammer spawns a second copy
-	bool _duplicated = false;
+	bool _foundID = false;
 	ResidueId _activeId{};
 	bool _complete = false;
 	

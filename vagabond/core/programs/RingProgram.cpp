@@ -67,10 +67,9 @@ void RingProgram::addRingIndex(int idx, std::string atomName)
 	_ringMapping[idx] = cycle_idx;
 }
 
-void RingProgram::addBranchIndex(int child, int self, int parent, int gp,
-                                 std::string param_name)
+void RingProgram::addBranchIndex(int child, int self, int parent, int gp)
 {
-	TorsionGroup tg{child, self, parent, gp, param_name};
+	TorsionGroup tg{child, self, parent, gp};
 	_torsionGroups.push_back(tg);
 }
 
@@ -203,7 +202,6 @@ void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
 	alignRingExit(blocks);
-//	recalculateBases(blocks);
 }
 
 glm::vec3 RingProgram::originalPosition(std::vector<AtomBlock> &blocks, int idx)
@@ -225,7 +223,11 @@ void RingProgram::alignRingExit(std::vector<AtomBlock> &blocks)
 		glm::vec4 parent = glm::vec4(originalPosition(blocks, tg.parent), 0);
 		glm::vec3 gp = originalPosition(blocks, tg.gp);
 		
+		self = glm::vec4(blocks[tg.self].my_position(), 0);
+		parent = glm::vec4(blocks[tg.parent].my_position(), 0);
+		
 		AtomBlock &mine = blocks[tg.self];
+
 		AtomBlock &child = blocks[tg.child];
 
 		torsion_basis(mine.basis, parent, gp, self);
@@ -243,69 +245,11 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 	{
 		int b_idx = it->first + _idx;
 		int c_idx = it->second;
-
+		
 		_oldPositions[b_idx] = blocks[b_idx].my_position();
 
 		blocks[b_idx].basis[3] = glm::vec4(_cyclic.atomPos(c_idx), 1.f);
 	}
-}
-
-void RingProgram::recalculateBases(std::vector<AtomBlock> &blocks)
-{
-	std::cout << "=============================" << std::endl;
-	for (auto it = _ringMapping.begin();
-	     it != _ringMapping.end(); it++)
-	{
-		int b_idx = it->first + _idx;
-
-		/* grab my internal ring member */
-		AtomBlock &b = blocks[b_idx];
-		if (b.nBonds == 0)
-		{
-			continue;
-		}
-		std::cout << "WORKING ON: " << std::endl;
-		b.printBlock();
-
-		for (size_t i = 0; i < b.nBonds; i++)
-		{
-			/* find the index of my bond's child */
-			int n = b_idx + b.write_locs[i];
-			AtomBlock &next_block = blocks[n];
-			std::cout << "BEFORE UPDATE NEXT BLOCK: " << std::endl;
-			next_block.printBlock();
-			
-			int ringLookup = n - _idx;
-			
-			if (_ringMapping.count(ringLookup) && blocks[n].silenced)
-			{
-				glm::vec3 next = next_block.my_position();
-				b.wip[i] = glm::vec4(next, 1.);
-				std::cout << "GRABBING POSITION: " << next << 
-				" FOR " << i << std::endl;
-			}
-		}
-
-		std::cout << "BEFORE UPDATE: " << std::endl;
-		b.printBlock();
-
-		b.writeToChildren(blocks, b_idx);
-
-		std::cout << "AFTER UPDATE: " << std::endl;
-		b.printBlock();
-
-		for (size_t i = 0; i < b.nBonds; i++)
-		{
-			/* find the index of my bond's child */
-			int n = b_idx + b.write_locs[i];
-			AtomBlock &next_block = blocks[n];
-			std::cout << "AFTER UPDATE NEXT BLOCK: " << std::endl;
-			next_block.printBlock();
-		}
-	}
-
-	std::cout << "=============================" << std::endl;
-	std::cout << std::endl;
 }
 
 void RingProgram::setRingEntranceName(std::string atomName)
@@ -397,8 +341,7 @@ void RingProgram::fetchParameters(std::vector<AtomBlock> &blocks,
 	for (HyperValue *hv : _values)
 	{
 		int idx = _valueMapping[hv];
-		float t = _seq->fetchTorsion(blocks[idx].torsion_idx, 
-		                             coord, fetch_torsion);
+		float t = _seq->fetchTorsion(idx, coord, fetch_torsion);
 		_name2Value[hv->name()] = t;
 	}
 	

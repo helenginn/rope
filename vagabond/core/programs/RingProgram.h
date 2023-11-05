@@ -85,8 +85,7 @@ public:
 	void setRingEntranceName(std::string atomName);
 	void addAlignmentIndex(int idx, std::string atomName);
 	void addRingIndex(int idx, std::string atomName);
-	void addBranchIndex(int child, int self, int parent, int gp,
-	                    std::string param_name);
+	void addBranchIndex(int child, int self, int parent, int gp);
 	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
 
 	void run(std::vector<AtomBlock> &blocks, int rel, 
@@ -106,7 +105,6 @@ private:
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
 	void alignRingExit(std::vector<AtomBlock> &blocks);
-	void recalculateBases(std::vector<AtomBlock> &blocks);
 	glm::vec3 originalPosition(std::vector<AtomBlock> &blocks, int idx);
 
 	int lowestAlignment();
@@ -141,7 +139,6 @@ private:
 		int self;
 		int parent;
 		int gp;
-		std::string param_name;
 	};
 	
 	ResidueId _activeId{};

@@ -18,6 +18,8 @@
 
 class Atom;
 #include <nlohmann/json.hpp>
+#include "Atom.h"
+#include <sstream>
 using nlohmann::json;
 
 namespace rope
@@ -30,9 +32,38 @@ public:
 		std::string name;
 		int idx;
 		bool central;
+		bool belongs;
 		bool entry;
 		Atom *ptr;
 	};
+	
+	/* exit group is not required to complete if an atom entry exists but
+	 * the found central atom doesn't have the name in its neighbours */
+	bool required()
+	{
+		// must find the central atom before judging requirements
+		if (!central()->ptr) 
+		{
+			return true;
+		}
+
+		std::string entry_name = entry()->name;
+		Atom *centre = central()->ptr;
+		
+		for (size_t i = 0; i < centre->bondLengthCount(); i++)
+		{
+			Atom *neighbour = centre->connectedAtom(i);
+			std::string n = neighbour->atomName();
+			
+			// if the atom exists, we must wait for it.
+			if (n == entry_name)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 
 	Flaggable *entry()
 	{
@@ -76,12 +107,12 @@ public:
 
 	void addCentral(std::string name)
 	{
-		atoms.push_back(Flaggable{name, -1, true, false, nullptr});
+		atoms.push_back(Flaggable{name, -1, true, false, false, nullptr});
 	}
 
 	void add(std::string name, bool entry = false)
 	{
-		atoms.push_back(Flaggable{name, -1, false, entry, nullptr});
+		atoms.push_back(Flaggable{name, -1, false, false, entry, nullptr});
 	}
 
 	bool allFlagged()
@@ -98,7 +129,26 @@ public:
 	}
 
 	std::vector<Flaggable> atoms;
-	std::string exitParameter;
+	bool chosen_entry = false;
+	bool skip = false;
+	
+	friend std::ostream &operator<<(std::ostream &ss, const ExitGroup &grp) 
+	{
+		ss << "{";
+		for (const Flaggable &f : grp.atoms)
+		{
+			ss << "(" << f.name << " = ";
+			ss << (f.ptr ? f.ptr->desc() : "(null)");
+			ss << ", ";
+			ss << f.idx;
+			
+			if (f.central) ss << ", central";
+			if (f.entry) ss << ", entry";
+			ss << "),";
+		}
+		ss << "}";
+		return ss;
+	}
 };
 
 inline void to_json(json &j, const ExitGroup::Flaggable &value)
@@ -106,6 +156,7 @@ inline void to_json(json &j, const ExitGroup::Flaggable &value)
 	j["name"] = value.name;
 	j["central"] = value.central;
 	j["entry"] = value.entry;
+	j["belongs"] = value.belongs;
 }
 
 inline void from_json(const json &j, ExitGroup::Flaggable &value)
@@ -113,6 +164,12 @@ inline void from_json(const json &j, ExitGroup::Flaggable &value)
 	value.name = j.at("name");
 	value.central = j.at("central");
 	value.entry = j.at("entry");
+	
+	if (j.count("belongs"))
+	{
+		value.belongs = j.at("belongs");
+	}
+
 	value.idx = -1;
 	value.ptr = nullptr;
 }
@@ -120,14 +177,18 @@ inline void from_json(const json &j, ExitGroup::Flaggable &value)
 inline void to_json(json &j, const ExitGroup &value)
 {
 	j["atoms"] = value.atoms;
-	j["exit_parameter"] = value.exitParameter;
+	j["skip"] = value.skip;
 }
 
 inline void from_json(const json &j, ExitGroup &value)
 {
 	std::vector<ExitGroup::Flaggable> atoms = j.at("atoms");
 	value.atoms = atoms;
-	value.exitParameter = j.at("exit_parameter");
+
+	if (j.count("skip"))
+	{
+		value.skip = j.at("skip");
+	}
 }
 
 };

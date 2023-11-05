@@ -62,10 +62,10 @@
             "entry": true,
             "name": "C"
           }
-        ],
-        "exit_parameter": "out_psi"
+        ]
       },
       {
+		"skip": true,
         "atoms": [
           {
             "central": true,
@@ -87,8 +87,157 @@
             "entry": true,
             "name": "C"
           }
-        ],
-        "exit_parameter": "out_psi"
+        ]
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CB"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CA"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CG"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "belongs": true,
+            "name": "HB2"
+          }
+        ]
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CB"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CA"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CG"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "belongs": true,
+            "name": "HB3"
+          }
+        ]
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CD"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CG"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "N"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "belongs": true,
+            "name": "HD2"
+          }
+        ]
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CD"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CG"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "N"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "belongs": true,
+            "name": "HD3"
+          }
+        ]
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CG"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CB"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CD"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "belongs": true,
+            "name": "HG2"
+          }
+        ]
+      },
+      {
+        "atoms": [
+          {
+            "central": true,
+            "entry": false,
+            "name": "CG"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CB"
+          },
+          {
+            "central": false,
+            "entry": false,
+            "name": "CD"
+          },
+          {
+            "central": false,
+            "entry": true,
+            "belongs": true,
+            "name": "HG3"
+          }
+        ]
       }
     ],
     "param_specs": [

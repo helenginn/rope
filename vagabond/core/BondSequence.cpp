@@ -156,10 +156,6 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get,
 	
 	float torsion = 0;
 	Coord::Get shrunk = get;
-	if (_skipSections)
-	{
-//		shrunk = Coord::convertedGet(get, _convertIndex);
-	}
 	float diff = fetch_torsion(shrunk, torsion_idx);
 	diff += torsionBasis()->referenceAngle(torsion_idx);
 	return diff;
@@ -180,16 +176,16 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 	AtomBlock &b = _blocks[idx];
 	fetchAtomTarget(idx, get);
 
-	if (b.silenced)
-	{
-		return 0;
-	}
-
 	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
 
-	glm::mat4x4 rot = b.prepareRotation(t);
+	if (b.silenced)
+	{
+		t = 0;
+	}
 
+	glm::mat4x4 rot = b.prepareRotation(t);
 	b.wip = b.basis * rot * b.coordination;
+
 	b.writeToChildren(_blocks, idx);
 
 	int &progidx = b.program;
@@ -364,12 +360,6 @@ void BondSequence::calculate(rope::IntToCoordGet coordForIdx,
 
 	superpose();
 
-	if (job()->absorb)
-	{
-		Coord::Get shrunk = Coord::convertedGet(get, _convertIndex);
-		_torsionBasis->absorbVector(shrunk);
-	}
-
 	signal(SequencePositionsReady);
 }
 
@@ -528,9 +518,20 @@ ParamSet BondSequence::flaggedParameters()
 				Parameter *const p = _torsionBasis->parameter(idx);
 				params.insert(p);
 			}
+
+			if (block.program >= 0)
+			{
+				RingProgram *prog = &_programs[block.program];
+				for (size_t i = 0; i < prog->parameterCount(); i++)
+				{
+					int idx = prog->parameterIndex(i);
+					Parameter *const p = _torsionBasis->parameter(idx);
+					params.insert(p);
+				}
+			}
 		}
 	}
-	
+
 	return params;
 }
 
@@ -547,7 +548,6 @@ void sanitiseMinMax(int &min, int &max, const size_t &n)
 void BondSequence::reflagDepth(int min, int max, bool limit_max)
 {
 	bool clear = false;
-	_convertIndex = Index::identity();
 	if (min == 0 && max == INT_MAX)
 	{
 		clear = true;
@@ -639,51 +639,11 @@ void BondSequence::reflagDepth(int min, int max, bool limit_max)
 		num++;
 	}
 	
-	std::vector<int> torsion_idxs{};
-
-	int n = -1;
-	for (AtomBlock &block : _blocks)
-	{
-		n++;
-		if (limit_max && block.flag && n > max)
-		{
-			block.flag = false;
-		}
-
-		if (!block.flag)
-		{
-			continue;
-		}
-		
-		if (block.torsion_idx >= 0)
-		{
-			torsion_idxs.push_back(block.torsion_idx);
-			Parameter *const p = _torsionBasis->parameter(block.torsion_idx);
-		}
-
-		if (block.program >= 0)
-		{
-			RingProgram *p = &_programs[block.program];
-			for (size_t i = 0; i < p->parameterCount(); i++)
-			{
-				int idx = p->parameterIndex(i);
-				torsion_idxs.push_back(idx);
-			}
-		}
-		
-	}
-
 	_endCalc = last + 1;
 	
 	if (_startCalc > 0 && _blocks[_startCalc - 1].atom == nullptr)
 	{
 		_startCalc--;
-	}
-	
-	if (_skipSections)
-	{
-		_convertIndex = Index::from_list(torsion_idxs);
-		_activeTorsions = torsion_idxs.size();
 	}
 
 	_fullRecalc = true;

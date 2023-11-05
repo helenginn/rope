@@ -104,7 +104,7 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 		return false;
 	}
 
-	bool belongs = (a->code() == _code && a->elementSymbol() != "H");
+	bool belongs = (a->code() == _code);
 	ExitGroup::Flaggable *c = grp.central();
 	ExitGroup::Flaggable *e = grp.entry();
 	
@@ -131,6 +131,11 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 	// now we are allowed to search for the ring atoms
 	for (ExitGroup::Flaggable &atom : grp.atoms)
 	{
+		if (atom.belongs && !belongs)
+		{
+			continue;
+		}
+
 		// obviously not one of these, we've already found them
 		if (atom.name == a->atomName() && 
 		    ((!atom.entry && belongs) || atom.entry))
@@ -154,7 +159,7 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 				}
 			}
 			// any member of the ring must match the original residue ID
-			else if (!atom.entry && _duplicated && a->residueId() != _activeId)
+			else if (!atom.entry && _foundID && a->residueId() != _activeId)
 			{
 				continue;
 			}
@@ -163,17 +168,17 @@ bool RingProgrammer::registerWithGroup(ExitGroup &grp, Atom *a, int idx)
 			atom.ptr = a;
 			
 			if (atom.central && e->ptr && !e->ptr->isConnectedToAtom(a) &&
-			    _duplicated)
+			    _foundID)
 			{
 				e->idx = -1;
 				e->ptr = nullptr;
 			}
-			
+
 			// we can now set the original residue ID
-			if (atom.central && e->ptr && !_duplicated)
+			if (atom.central && e->ptr && !_foundID)
 			{
 				_activeId = a->residueId();
-				_duplicated = true;
+				_foundID = true;
 				return true;
 			}
 		}
@@ -224,7 +229,7 @@ bool RingProgrammer::groupsComplete()
 	bool done = true;
 	for (size_t i = 0; i < _groups.size(); i++)
 	{
-		bool flagged = _groups[i].allFlagged();
+		bool flagged = _groups[i].allFlagged() || !_groups[i].required();
 		if (!flagged)
 		{
 			done = false;
@@ -251,6 +256,9 @@ void RingProgrammer::grabAtomLocation(Atom *atom, int idx)
 	{
 		return;
 	}
+	
+	/* got to get this into either the core ring members or one of the
+	 * branch atoms */
 
 	const std::vector<std::string> members = ringMembers();
 	std::string n = atom->atomName();
@@ -388,6 +396,7 @@ bool RingProgrammer::isProgramTriggered()
 	if (best_group >= 0)
 	{
 		_entrance = best_group;
+		_groups[best_group].chosen_entry = true;
 		wipeFlagsExcept(best_group);
 		// make sure all registered atoms get entered for program
 		findGroupLocations(best_group);
@@ -489,6 +498,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 	/*
 	for (auto it = _branchLocs.begin(); it != _branchLocs.end(); it++)
 	{
+		// correct the index of this branch location 
 		int corrected = it->second - _triggerIndex;
 
 		if (corrected <= 0)
@@ -513,7 +523,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		}
 
 		Atom *curr = blocks[it->second].atom;
-//		prog->addBranchIndex(corrected, curr, gp, ancestor_idx);
+		prog->addBranchIndex(corrected, curr, gp);
 		
 		if (!prog->isValid())
 		{
@@ -542,23 +552,14 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		prog->setParameterFromBasis(idx, hv);
 	}
 
-	/*
-	std::string param_name = _groups[_entrance].exitParameter;
-	Parameter *p = pinned->findParameter(param_name, pinned->residueId());
-
-	if (!p)
-	{
-		std::cout << "WARNING! Cannot find " << param_name << " in "
-		<< pinned->desc() << std::endl;
-	}
-	*/
-
 	for (size_t i = 0; i < _groups.size(); i++)
 	{
-		if (i == _entrance)
+		/* only cover finished groups, i.e. ignore hydrogens if missing */
+		if (i == _entrance || !_groups[i].allFlagged() || _groups[i].skip)
 		{
 			continue;
 		}
+
 		ExitGroup &group = _groups[i];
 		ExitGroup::Flaggable &f = *group.entry();
 
@@ -571,22 +572,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		prior = prior->prior;
 		int grandparent = _graph2Idx[prior];
 
-		std::string out = group.exitParameter;
-		Parameter *hv = pinned->findParameter(out, pinned->residueId());
-		int old = blocks[self].torsion_idx;
-
-//		blocks[self].torsion_idx = basis->indexForParameter(hv);
-/*
-		std::cout << old << " = ";
-		if (old > 0)
-		{
-			std::cout << basis->parameter(old)->desc() << ", ";
-			std::cout << basis->parameter(old)->value() << " vs ";
-			std::cout << hv->value() << " (" << hv->desc() << ")" << std::endl;
-		}
-		*/
-		
-		prog->addBranchIndex(child, self, parent, grandparent, out);
+		prog->addBranchIndex(child, self, parent, grandparent);
 	}
 
 	prog->setTorsionBasis(basis);
