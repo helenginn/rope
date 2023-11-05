@@ -96,6 +96,11 @@ void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx)
 		}
 
 		int n = idx + write_locs[i];
+		
+		if (context[n].silenced)
+		{
+			continue;
+		}
 
 		// update CHILD's basis with CURRENT position, PARENT position and 
 		// CHILD's position

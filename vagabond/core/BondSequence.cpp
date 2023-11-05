@@ -180,26 +180,25 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 	AtomBlock &b = _blocks[idx];
 	fetchAtomTarget(idx, get);
 
-	float t = 0;
-	if (!b.silenced)
+	if (b.silenced)
 	{
-		t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
+		return 0;
 	}
+
+	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
 
 	glm::mat4x4 rot = b.prepareRotation(t);
 
 	b.wip = b.basis * rot * b.coordination;
-
 	b.writeToChildren(_blocks, idx);
 
 	int &progidx = b.program;
 
-	if (progidx >= 0 && _usingPrograms)
+	if (progidx >= 0)
 	{
 		_programs[progidx].setSequence(this);
 		_programs[progidx].run(_blocks, idx, get, fetch_torsion);
 	}
-
 	
 	return (b.atom == nullptr);
 }
@@ -239,12 +238,9 @@ void BondSequence::superpose()
 		pose.superpose();
 		const glm::mat4x4 &trans = pose.transformation();
 
-		if (_usingPrograms)
+		for (RingProgram &program : _programs)
 		{
-			for (RingProgram &program : _programs)
-			{
-				program.addTransformation(trans);
-			}
+			program.addTransformation(trans);
 		}
 
 		for (size_t j = start; j < i; j++)

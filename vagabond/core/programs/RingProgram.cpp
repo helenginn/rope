@@ -203,7 +203,7 @@ void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
 	alignRingExit(blocks);
-	recalculateBases(blocks);
+//	recalculateBases(blocks);
 }
 
 glm::vec3 RingProgram::originalPosition(std::vector<AtomBlock> &blocks, int idx)
@@ -252,32 +252,60 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 
 void RingProgram::recalculateBases(std::vector<AtomBlock> &blocks)
 {
+	std::cout << "=============================" << std::endl;
 	for (auto it = _ringMapping.begin();
 	     it != _ringMapping.end(); it++)
 	{
 		int b_idx = it->first + _idx;
+
+		/* grab my internal ring member */
 		AtomBlock &b = blocks[b_idx];
 		if (b.nBonds == 0)
 		{
 			continue;
 		}
-
-		glm::vec3 self = b.my_position();
-		glm::vec3 parent = b.inherit;
+		std::cout << "WORKING ON: " << std::endl;
+		b.printBlock();
 
 		for (size_t i = 0; i < b.nBonds; i++)
 		{
+			/* find the index of my bond's child */
 			int n = b_idx + b.write_locs[i];
+			AtomBlock &next_block = blocks[n];
+			std::cout << "BEFORE UPDATE NEXT BLOCK: " << std::endl;
+			next_block.printBlock();
 			
-			if (_ringMapping.count(n))
+			int ringLookup = n - _idx;
+			
+			if (_ringMapping.count(ringLookup) && blocks[n].silenced)
 			{
-				glm::vec3 next = blocks[n].my_position();
-				b.wip[i] = glm::vec4(next, 0.);
-				b.writeToChildren(blocks, b_idx);
+				glm::vec3 next = next_block.my_position();
+				b.wip[i] = glm::vec4(next, 1.);
+				std::cout << "GRABBING POSITION: " << next << 
+				" FOR " << i << std::endl;
 			}
+		}
+
+		std::cout << "BEFORE UPDATE: " << std::endl;
+		b.printBlock();
+
+		b.writeToChildren(blocks, b_idx);
+
+		std::cout << "AFTER UPDATE: " << std::endl;
+		b.printBlock();
+
+		for (size_t i = 0; i < b.nBonds; i++)
+		{
+			/* find the index of my bond's child */
+			int n = b_idx + b.write_locs[i];
+			AtomBlock &next_block = blocks[n];
+			std::cout << "AFTER UPDATE NEXT BLOCK: " << std::endl;
+			next_block.printBlock();
 		}
 	}
 
+	std::cout << "=============================" << std::endl;
+	std::cout << std::endl;
 }
 
 void RingProgram::setRingEntranceName(std::string atomName)
@@ -374,13 +402,15 @@ void RingProgram::fetchParameters(std::vector<AtomBlock> &blocks,
 		_name2Value[hv->name()] = t;
 	}
 	
-	// if we've got this far, we have our parasitic torsion angles instead.
+	// if we've got this far, we have inherited the torsion angles from the
+	// original estimation from nearest equivalents, and can now further refine them
 	float psi = _name2Value["pseudo_psi"];
 	float x2 = _name2Value["pseudo_x2"];
 	
 	float offset = 0;
 	float amplitude = 0;
 	
+	// convert to offset/amplitude parameters for pseudo-rotating cyclic atoms */
 	_table.toAmpOffset(psi, x2, &amplitude, &offset);
 	
 	_cyclic.setOffset(offset);

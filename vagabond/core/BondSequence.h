@@ -238,8 +238,6 @@ private:
 
 	std::vector<RingProgram> _programs;
 
-	bool _usingPrograms = true;
-
 	bool _programsInitialised = false;
 	
 	Index::Convert _convertIndex = Index::identity();
