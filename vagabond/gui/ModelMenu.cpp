@@ -131,8 +131,12 @@ void ModelMenu::refineModel(std::string name)
 		d->setOwnsAtoms(false);
 		d->setMultiBondMode(true);
 		d->guiAtoms()->setDisableRibbon(false);
+
 		ArbitraryMap *map = new ArbitraryMap(model->dataFile());
-		d->densityFromMap(map);
+		if (map->nn() > 0)
+		{
+			d->densityFromMap(map);
+		}
 		d->show();
 	}
 	catch (std::runtime_error &err)

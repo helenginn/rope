@@ -51,7 +51,6 @@ _translate(info->master_dims)
 
 	_instance->load();
 	_best.resize(parameterCount());
-	prepareResources();
 }
 
 float confParams(int n)
@@ -197,6 +196,8 @@ size_t MolRefiner::parameterCount()
 
 void MolRefiner::runEngine()
 {
+	prepareResources();
+
 	if (!_info->instance->hasSequence())
 	{
 		return;
@@ -237,6 +238,8 @@ void MolRefiner::changeDefaults(CoordManager *manager)
 
 void MolRefiner::prepareResources()
 {
+	cleanup();
+
 	_resources.allocateMinimum(_threads);
 	/* set up per-bond/atom calculation */
 	Atom *anchor = _instance->currentAtoms()->chosenAnchor();

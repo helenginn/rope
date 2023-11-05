@@ -32,8 +32,8 @@ UpdateMap::UpdateMap(Diffraction *const &data, Diffraction *const &model)
 	}
 }
 
-void UpdateMap::writeAutoOpeningMtz(Diffraction *const &toWrite,
-                                    Diffraction *const &diff)
+std::vector<WriteColumn> UpdateMap::writeAutoOpeningMtz(Diffraction *const &toWrite,
+                                                        Diffraction *const &diff)
 {
 	/* writing an MTZ which should be auto-openable in Coot */
 
@@ -65,11 +65,13 @@ void UpdateMap::writeAutoOpeningMtz(Diffraction *const &toWrite,
 
 	if (diff)
 	{
-		columns.push_back(WriteColumn("DELFWT", "F", 
-		                              [diff](int i, int j, int k)
-		                              {
-			                             return diff->element(i, j, k).amplitude();
-		                              }));
+		columns.push_back
+		(WriteColumn("DELFWT", "F", 
+		             [this, diff](int i, int j, int k)
+		             {
+			            return (diff->element(i, j, k).amplitude() -
+			            		_model->element(i, j, k).amplitude());
+		             }));
 
 		columns.push_back(WriteColumn("PHDELWT", "P", 
 		                              [this](int i, int j, int k)
@@ -78,7 +80,7 @@ void UpdateMap::writeAutoOpeningMtz(Diffraction *const &toWrite,
 		                              }));
 	}
 	
-
+	return columns;
 }
 
 Diffraction *UpdateMap::operator()()
@@ -101,8 +103,10 @@ Diffraction *UpdateMap::operator()()
 	Recombine difference_map(_data, _model, Recombine::Difference);
 	Diffraction *differences = difference_map();
 	
+	std::vector<WriteColumn> writes = writeAutoOpeningMtz(weighted, differences);
+	
 	MtzFile file(weighted);
-	file.write_to_file("recombined.mtz", maxRes);
+	file.write_to_file("recombined.mtz", maxRes, writes);
 
 	return weighted;
 }

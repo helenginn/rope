@@ -70,10 +70,10 @@ protected:
 
 	GuiAtom *_guiAtoms = nullptr;
 	GuiRefls *_guiRefls = nullptr;
+	GuiDensity *_guiDensity = nullptr;
 private:
 	void resetDensityMap();
 
-	GuiDensity *_guiDensity = nullptr;
 	AtomGroup *_toLoad = nullptr;
 
 	ImageButton *_halfWedge = nullptr;

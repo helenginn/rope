@@ -162,6 +162,7 @@ void MtzFile::setMap(ArbitraryMap *map)
 	_map = new Diffraction(map);
 }
 
+/*
 gemmi::Mtz MtzFile::prep_gemmi_mtz(float max_res)
 {
 	gemmi::Mtz mtz = gemmi::Mtz(true);
@@ -204,17 +205,101 @@ gemmi::Mtz MtzFile::prep_gemmi_mtz(float max_res)
 
 	return mtz;
 }
+*/
 
-std::string MtzFile::write_to_string(float max_res)
+std::vector<WriteColumn> writes_for(Diffraction *diff)
 {
-	gemmi::Mtz mtz = prep_gemmi_mtz(max_res);
+	std::vector<WriteColumn> columns;
+
+	columns.push_back(WriteColumn("FWT", "F", 
+	                              [diff](int i, int j, int k)
+	                              {
+		                             return diff->element(i, j, k).amplitude();
+	                              }));
+
+	columns.push_back(WriteColumn("PHWT", "P", 
+	                              [diff](int i, int j, int k)
+	                              {
+		                             return diff->element(i, j, k).phase();
+	                              }));
+	
+	return columns;
+}
+
+std::string MtzFile::write_to_string(float max_res,
+                                     std::vector<WriteColumn> columns)
+{
+	if (columns.size() == 0)
+	{
+		columns = writes_for(_map);
+	}
+	gemmi::Mtz mtz = prepare_mtz(max_res, columns);
 	std::string contents;
 	mtz.write_to_string(contents);
 	return contents;
 }
 
-void MtzFile::write_to_file(std::string filename, float max_res)
+void MtzFile::write_to_file(std::string filename, float max_res,
+                            std::vector<WriteColumn> columns)
 {
-	gemmi::Mtz mtz = prep_gemmi_mtz(max_res);
+	if (columns.size() == 0)
+	{
+		columns = writes_for(_map);
+	}
+
+	gemmi::Mtz mtz = prepare_mtz(max_res, columns);
 	mtz.write_to_file(filename);
+}
+
+gemmi::Mtz MtzFile::prepare_mtz(float max_res, 
+                                const std::vector<WriteColumn> &columns)
+{
+	gemmi::Mtz mtz = gemmi::Mtz(true);
+	mtz.spacegroup = gemmi::find_spacegroup_by_name("P 1");
+
+	glm::mat3x3 frac2Real = _map->frac2Real();
+	std::array<double, 6> uc_dims;
+	unit_cell_from_mat3x3(frac2Real, &uc_dims[0]);
+
+	gemmi::UnitCell uc(uc_dims);
+	mtz.set_cell_for_all(uc);
+	mtz.add_dataset("dataset");
+
+	int pos = 3;
+	for (const WriteColumn &column : columns)
+	{
+		mtz.add_column(column.name, column.type[0], 0, pos, false);
+		pos++;
+
+	}
+
+	std::vector<float> data;
+	data.reserve(_map->nn() * 5);
+
+	auto write_line = [this, &data, &columns, max_res](int i, int j, int k)
+	{
+		if (k < 0 || _map->resolution(i, j, k) < max_res)
+		{
+			return;
+		}
+
+		std::vector<float> line = {(float)i, (float)j, (float)k};
+		line.reserve(3 + columns.size());
+
+		for (const WriteColumn &value : columns)
+		{
+			float next = value(i, j, k);
+			line.push_back(next);
+		}
+
+		data.reserve(data.size() + line.size());
+		data.insert(data.end(), line.begin(), line.end());
+	};
+
+	_map->do_op_on_centred_index(write_line);
+	
+	mtz.set_data(&data[0], data.size());
+
+	return mtz;
+
 }

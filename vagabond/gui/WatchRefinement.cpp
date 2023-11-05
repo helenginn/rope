@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "WatchRefinement.h"
+#include "GuiDensity.h"
 #include "Refinement.h"
 #include "Model.h"
 
@@ -34,14 +35,12 @@ WatchRefinement::~WatchRefinement()
 
 void WatchRefinement::setup()
 {
+	_refine->setResponder(this);
 	_refine->model()->load();
 	AtomGroup *grp = _refine->model()->currentAtoms();
 	loadAtoms(grp);
 
 	Display::setup();
-
-	ArbitraryMap *map = _refine->map();
-	densityFromMap(map);
 
 	setMultiBondMode(true);
 }
@@ -49,4 +48,36 @@ void WatchRefinement::setup()
 void WatchRefinement::start()
 {
 	_worker = new std::thread(&Refinement::run, _refine);
+}
+
+void WatchRefinement::swapMap(ArbitraryMap *map)
+{
+	std::cout << "Swapping map" << std::endl;
+	removeObject(_guiDensity);
+	OriginGrid<fftwf_complex> *old = _guiDensity->map();
+
+	delete _guiDensity;
+	_guiDensity = new GuiDensity();
+	densityFromMap(map);
+	addObject(_guiDensity);
+	delete old;
+}
+
+void WatchRefinement::sendObject(std::string tag, void *object)
+{
+	if (tag == "swap_map")
+	{
+		ArbitraryMap *map = static_cast<ArbitraryMap *>(object);
+		_mainThreadJobs.push_back([this, map]() { swapMap(map); });
+	}
+}
+
+void WatchRefinement::doThings()
+{
+	for (std::function<void()> &job : _mainThreadJobs)
+	{
+		job();
+	}
+	
+	_mainThreadJobs.clear();
 }

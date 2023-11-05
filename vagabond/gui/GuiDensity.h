@@ -67,6 +67,11 @@ public:
 	{
 		_threshold = threshold;
 	}
+	
+	OriginGrid<fftwf_complex> *const &map() const
+	{
+		return _map;
+	}
 
 	void fromMap(AtomMap *map);
 	virtual void extraUniforms();

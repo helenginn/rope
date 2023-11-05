@@ -41,7 +41,10 @@ StructureModification::~StructureModification()
 
 void StructureModification::cleanup()
 {
-	_resources.tasks->wait();
+	if (_resources.tasks != nullptr)
+	{
+		_resources.tasks->wait();
+	}
 	delete _resources.calculator;
 	delete _resources.sequences;
 	delete _resources.perElements;

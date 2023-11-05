@@ -34,6 +34,11 @@ class MolRefiner : public StructureModification, public RunsEngine
 public:
 	MolRefiner(ArbitraryMap *comparison, Refine::Info *info);
 	~MolRefiner();
+	
+	void changeMap(ArbitraryMap *map)
+	{
+		_map = map;
+	}
 
 	void retrieveJobs();
 	void runEngine();
@@ -45,8 +50,8 @@ public:
 
 	typedef std::function<void(std::vector<float> &values)> Getter;
 	typedef std::function<void(const std::vector<float> &values)> Setter;
-protected:
 	virtual void prepareResources();
+protected:
 	void changeDefaults(CoordManager *manager);
 private:
 	void submitJob(std::vector<float> all);

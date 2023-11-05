@@ -19,29 +19,35 @@
 #ifndef __vagabond__WatchRefinement__
 #define __vagabond__WatchRefinement__
 
+#include <vagabond/core/Responder.h>
 #include "Display.h"
 #include <thread>
 
 class Refinement;
 
-class WatchRefinement : public Display
+class WatchRefinement : public Display, public Responder<Refinement>
 {
 public:
 	WatchRefinement(Scene *prev, Refinement *refine);
 	~WatchRefinement();
 
 	virtual void setup();
+	virtual void doThings();
 	void start();
 
 	void setSpaceFilename(std::string name)
 	{
 		_space = name;
 	}
+
+	void swapMap(ArbitraryMap *map);
+	virtual void sendObject(std::string tag, void *object);
 private:
 	Refinement *_refine = nullptr;
 	std::string _space;
 
 	std::thread *_worker = nullptr;
+	std::vector<std::function<void()> > _mainThreadJobs;
 };
 
 #endif

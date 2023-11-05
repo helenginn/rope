@@ -31,9 +31,11 @@ ArbitraryMap::ArbitraryMap(const std::string &filename)
 : TransformedGrid<fftwf_complex>(0, 0, 0)
 {
 	File *file = File::loadUnknown(filename);
-	_diff = file->diffractionData();
-
-	setupFromDiffraction();
+	if (file && file->reflectionCount())
+	{
+		_diff = file->diffractionData();
+		setupFromDiffraction();
+	}
 
 	delete file;
 }

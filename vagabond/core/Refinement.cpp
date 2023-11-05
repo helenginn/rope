@@ -115,6 +115,9 @@ void Refinement::setupRefiner(Refine::Info &info)
 
 void Refinement::play()
 {
+	updateMap();
+	updateMap();
+
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.instance];
@@ -142,6 +145,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 			continue;
 		}
 
+		mr->prepareResources();
 		Result *result = mr->submitJobAndRetrieve({});
 		AtomMap &map = *result->map;
 		ArbitraryMap *partial = map();
@@ -170,6 +174,23 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 	return arb;
 }
 
+void Refinement::swapMap(ArbitraryMap *map)
+{
+	for (Refine::Info &info  : _molDetails)
+	{
+		MolRefiner *mr = _molRefiners[info.instance];
+		if (!mr)
+		{
+			continue;
+		}
+
+		mr->changeMap(map);
+	}
+
+	sendResponse("swap_map", map);
+	_map = map;
+}
+
 void Refinement::updateMap()
 {
 	/* currently matched to service crystallography */
@@ -190,9 +211,12 @@ void Refinement::updateMap()
 	Diffraction *combined = update();
 	
 	/* prepare new map for target function */
-	delete _map;
-	_map = new ArbitraryMap(*combined);
-	_map->setupFromDiffraction();
+	ArbitraryMap *old = _map;
+
+	ArbitraryMap *map = new ArbitraryMap(*combined);
+	map->setupFromDiffraction();
+	swapMap(map);
 
 	delete solvated_model;
 }
+

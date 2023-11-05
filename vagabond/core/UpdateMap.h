@@ -21,6 +21,8 @@
 
 #include "Diffraction.h"
 
+struct WriteColumn;
+
 class UpdateMap
 {
 public:
@@ -29,8 +31,8 @@ public:
 
 	Diffraction *operator()();
 private:
-	void writeAutoOpeningMtz(Diffraction *const &toWrite,
-	                         Diffraction *const &diff = nullptr);
+	std::vector<WriteColumn> writeAutoOpeningMtz(Diffraction *const &toWrite,
+	                                             Diffraction *const &diff = nullptr);
 	Diffraction *const &_data;
 	Diffraction *const &_model;
 

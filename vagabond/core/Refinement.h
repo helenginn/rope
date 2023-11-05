@@ -20,6 +20,7 @@
 #define __vagabond__Refinement__
 
 #include "RefinementInfo.h"
+#include <vagabond/core/Responder.h>
 
 #include <list>
 
@@ -27,10 +28,8 @@ class Model;
 class MolRefiner;
 class Diffraction;
 class ArbitraryMap;
-struct ccp4_spacegroup_;
-typedef ccp4_spacegroup_ CCP4SPG;
 
-class Refinement
+class Refinement : public HasResponder<Responder<Refinement>>
 {
 public:
 	Refinement();
@@ -63,6 +62,7 @@ public:
 	void setup();
 	void play();
 	void updateMap();
+	void swapMap(ArbitraryMap *map);
 private:
 	void prepareInstanceDetails();
 	void prepareInstance(Instance *mol);

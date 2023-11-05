@@ -40,6 +40,11 @@ struct WriteColumn
 		type = _type;
 		get_value = value;
 	}
+	
+	float operator()(int i, int j, int k) const
+	{
+		return get_value(i, j, k);
+	}
 
 	std::string name;
 	std::string type;
@@ -59,12 +64,15 @@ public:
 
 	void setMap(ArbitraryMap *map);
 
-	std::string write_to_string(float max_res = -1);
-	void write_to_file(std::string filename, float max_res = -1);
+	std::string write_to_string(float max_res = -1,
+	                            std::vector<WriteColumn> columns = {});
+	void write_to_file(std::string filename, float max_res = -1,
+	                   std::vector<WriteColumn> columns = {});
 	virtual File::Type cursoryLook();
 	virtual void parse();
 private:
 	gemmi::Mtz prep_gemmi_mtz(float max);
+	gemmi::Mtz prepare_mtz(float max_res, const std::vector<WriteColumn> &columns);
 
 	Diffraction *_map = nullptr;
 };
