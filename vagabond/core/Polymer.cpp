@@ -185,7 +185,15 @@ void Polymer::extractTorsionAngles(AtomContent *atoms, bool tmp_dest)
 				continue;
 			}
 
-			double angle = p->empiricalMeasurement();
+			float angle = 0;
+			if (p->isTorsion() && !p->isRefined())
+			{
+				angle = p->empiricalMeasurement();
+			}
+			else
+			{
+				angle = p->value();
+			}
 
 			local->supplyRefinedAngle(desc, angle, tmp_dest);
 		}

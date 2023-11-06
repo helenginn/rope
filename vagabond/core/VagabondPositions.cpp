@@ -215,16 +215,7 @@ bool VagabondPositions::refineBetween(int min, int max)
 
 void VagabondPositions::updateAllTorsions()
 {
-	size_t refined = 0;
-	size_t unrefined = 0;
-
-	for (size_t i = 0; i < _group->parameterCount(); i++)
-	{
-		Parameter *p = _group->parameter(i);
-		if (p->isTorsion())
-		{
-			float f = p->empiricalMeasurement();
-			p->setValue(f);
-		}
-	}
+	TorsionBasis *basis = _resources.sequences->torsionBasis();
+	basis->absorbVector(Coord::fromVector(_parameters));
+	_parameters = std::vector<float>(_parameters.size(), 0);
 }
