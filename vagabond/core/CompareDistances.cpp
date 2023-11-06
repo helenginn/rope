@@ -18,6 +18,7 @@
 
 #include "CompareDistances.h"
 #include "Atom.h"
+#define FIXED_MULTIPLY (1000000.f)
 
 bool acceptable(Atom *const &atom)
 {
@@ -26,7 +27,7 @@ bool acceptable(Atom *const &atom)
 
 CompareDistances::~CompareDistances()
 {
-	freeMatrix(&_matrix);
+	_counts.free();
 }
 
 CompareDistances::CompareDistances(bool magnitude)
@@ -42,10 +43,10 @@ bool resi_num_comp(const Atom *a, const Atom *b)
 
 void CompareDistances::equalFilter(const AtomPosList &apl)
 {
-	if (_leftAtoms.size() > 0 && _rightAtoms.size() > 0) { return; }
+	if (_leftAtoms.size() > 0) { return; }
 	
-	_leftAtoms.clear(); _rightAtoms.clear();
-	_leftIdxs.clear(); _rightIdxs.clear();
+	_leftAtoms.clear(); 
+	_leftIdxs.clear();
 
 	int i = -1;
 	for (const AtomWithPos &awp : apl)
@@ -60,50 +61,37 @@ void CompareDistances::equalFilter(const AtomPosList &apl)
 	}
 
 	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
-}
-
-void CompareDistances::unequalFilter(const AtomPosList &apl)
-{
-	if (_leftAtoms.size() > 0 && _rightAtoms.size() > 0) { return; }
-	
-	_leftAtoms.clear(); _rightAtoms.clear();
-	_leftIdxs.clear(); _rightIdxs.clear();
-
-	int i = -1;
-	for (const AtomWithPos &awp : apl)
-	{
-		i++;
-		
-		if (!_left || _left(awp.atom))
-		{
-			_leftAtoms.push_back(awp.atom);
-			_leftIdxs.push_back(i);
-		}
-		if (!_right || _right(awp.atom))
-		{
-			_rightAtoms.push_back(awp.atom);
-			_rightIdxs.push_back(i);
-		}
-	}
-
-	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
-	std::sort(_rightAtoms.begin(), _rightAtoms.end(), resi_num_comp);
 }
 
 void CompareDistances::filter(const AtomPosList &apl)
 {
-	isSquare() ? equalFilter(apl) : unequalFilter(apl);
+	equalFilter(apl);
 }
 
 void CompareDistances::setupMatrix()
 {
-	if (_matrix.rows == 0 || _matrix.cols == 0)
+	if (_set)
 	{
-		PCA::freeMatrix(&_matrix);
-		int left = _leftAtoms.size();
-		int right = _equal ? _leftAtoms.size() : _rightAtoms.size();
-		PCA::setupMatrix(&_matrix, left, right);
+		return;
 	}
+
+	std::unique_lock<std::mutex> lock(_setupLock);
+
+	while (_setSignal <= 0)
+	{
+		_cv.wait(lock);
+	}
+	
+	_setSignal--;
+
+	if (!_counts.set())
+	{
+		_counts.setup(_leftAtoms.size());
+	}
+	
+	_set = true;
+	
+	_cv.notify_all();
 }
 
 void CompareDistances::process(const AtomPosList &apl)
@@ -116,7 +104,7 @@ void CompareDistances::process(const AtomPosList &apl)
 float CompareDistances::quickScore()
 {
 	float sum = 0;
-	int size = _matrix.cols * _matrix.rows;
+	int size = _counts.n() * _counts.n();
 	
 	if (size == 0)
 	{
@@ -125,7 +113,8 @@ float CompareDistances::quickScore()
 
 	for (int i = 0; i < size; i++)
 	{
-		sum += _matrix.vals[i] * _matrix.vals[i];
+		float add = _counts.vals[i] / FIXED_MULTIPLY;
+		sum += add * add;
 	}
 
 	return sqrt(sum / (float)(size * _counter));
@@ -155,59 +144,28 @@ void CompareDistances::addEqualToMatrix(const AtomPosList &apl)
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
-			if (diff == diff)
+			float add = _magnitude ? fabs(diff) : diff;
+			if (add == add)
 			{
-				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
-				_matrix[j][i] += _magnitude ? fabs(diff) : diff;
+				_counts[i][j] += add * FIXED_MULTIPLY;
+				_counts[j][i] += add * FIXED_MULTIPLY;
 			}
 		}
-	}
-}
-
-void CompareDistances::addUnequalToMatrix(const AtomPosList &apl)
-{
-	int i = 0; int j = 0;
-	_counter++;
-	
-	for (const int &m : _leftIdxs)
-	{
-		const glm::vec3 &x = apl[m].wp.ave;
-		const glm::vec3 &p = apl[m].wp.target;
-
-		for (const int &n : _rightIdxs)
-		{
-			if (abs(i - j) <= _minimum || abs(i - j) >= _maximum)
-			{
-				j++;
-				continue;
-			}
-			const glm::vec3 &y = apl[n].wp.ave;
-			const glm::vec3 &q = apl[n].wp.target;
-
-			float expected = glm::length(p - q);
-			float acquired = glm::length(x - y);
-			
-			float diff = expected - acquired;
-			if (diff == diff)
-			{
-				_matrix[i][j] += _magnitude ? fabs(diff) : diff;
-			}
-			j++;
-		}
-		i++;
-		j = 0;
 	}
 }
 
 void CompareDistances::addToMatrix(const AtomPosList &apl)
 {
-	isSquare() ? addEqualToMatrix(apl) : addUnequalToMatrix(apl);
+	addEqualToMatrix(apl);
 }
 
 void CompareDistances::reset()
 {
-	_leftAtoms.clear(); _rightAtoms.clear();
-	freeMatrix(&_matrix);
+	std::unique_lock<std::mutex> lock(_setupLock);
+	_set = false;
+	_setSignal = 1;
+	_leftAtoms.clear();
+	_counts.free();
 	_counter = 0;
 }
 
@@ -215,13 +173,12 @@ PCA::Matrix CompareDistances::matrix()
 {
 	PCA::Matrix copy;
 	
-	PCA::setupMatrix(&copy, _matrix.rows, _matrix.cols);
-	copyMatrix(copy, _matrix);
+	PCA::setupMatrix(&copy, _counts.n(), _counts.n());
 	
-	for (size_t i = 0; i < _matrix.rows * _matrix.cols; i++)
+	for (size_t i = 0; i < _counts.n() * _counts.n(); i++)
 	{
+		copy.vals[i] = _counts.vals[i] / FIXED_MULTIPLY;
 		copy.vals[i] /= (float)_counter;
-		copy.vals[i] *= 1.f;
 	}
 
 	return copy;
@@ -229,10 +186,6 @@ PCA::Matrix CompareDistances::matrix()
 
 void CompareDistances::clearMatrix()
 {
-	if (_matrix.vals)
-	{
-		zeroMatrix(&_matrix);
-	}
-	
+	_counts.zero();
 	_counter = 0;
 }

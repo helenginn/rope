@@ -21,8 +21,9 @@
 
 #include <vagabond/utils/svd/PCA.h>
 #include <functional>
+#include <mutex>
 #include "AtomPosMap.h"
-#include <functional>
+#include <atomic>
 
 class Atom;
 
@@ -35,24 +36,11 @@ public:
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 	
 	void process(const AtomPosList &apl);
-
-	void setLeftFilter(AtomFilter &filter)
-	{
-		_left = filter;
-		_equal = false;
-	}
-
-	void setRightFilter(AtomFilter &filter)
-	{
-		_right = filter;
-		_equal = false;
-	}
 	
 	void setFiltersEqual(AtomFilter &filter)
 	{
 		_equal = true;
 		_left = filter;
-		_right = filter;
 
 	}
 	
@@ -60,16 +48,12 @@ public:
 	{
 		return _leftAtoms;
 	}
-	
-	const std::vector<Atom *> &rightAtoms() const
-	{
-		return _rightAtoms;
-	}
 
 	bool hasMatrix()
 	{
-		return _matrix.vals != nullptr;
+		return _counts.set();
 	}
+
 	PCA::Matrix matrix();
 	
 	float quickScore();
@@ -93,26 +77,75 @@ private:
 		return _equal;
 	}
 	void filter(const AtomPosList &apl);
-	void unequalFilter(const AtomPosList &apl);
 	void equalFilter(const AtomPosList &apl);
 	void setupMatrix();
 	void addToMatrix(const AtomPosList &apl);
-	void addUnequalToMatrix(const AtomPosList &apl);
 	void addEqualToMatrix(const AtomPosList &apl);
 
 	std::vector<Atom *> _leftAtoms;
-	std::vector<Atom *> _rightAtoms;
 
 	std::vector<int> _leftIdxs;
-	std::vector<int> _rightIdxs;
 
 	AtomFilter _left = nullptr;
-	AtomFilter _right = nullptr;
-	bool _equal = false;
+	bool _equal = true;
 	
 	AtomFilter _defaultFilter = nullptr;
 	
-	PCA::Matrix _matrix;
+	struct Matrix
+	{
+		void setup(int n)
+		{
+			free();
+			_n = n;
+			vals = new std::atomic<long>[n * n];
+			zero();
+		}
+		
+		const int &n() const
+		{
+			return _n;
+		}
+		
+		bool set() const
+		{
+			return (vals != nullptr);
+		}
+		
+		void zero()
+		{
+			for (int i = 0; i < _n * _n; i++)
+			{
+				vals[i] = 0;
+			}
+		}
+		
+		void free()
+		{
+			if (vals)
+			{
+				delete [] vals;
+				vals = nullptr;
+			}
+			
+			_n = 0;
+		}
+		
+		std::atomic<long> *const operator[](int i)
+		{
+			return &vals[i * n()];
+		}
+
+		std::atomic<long> *vals = nullptr;
+		int _n = 0;
+	};
+
+	Matrix _counts;
+	std::mutex _setupLock;
+	std::atomic<int> _setSignal{1};
+	std::atomic<bool> _set{false};
+
+	std::condition_variable _cv;
+
 	int _counter = 0;
 	int _minimum = 0;
 	int _maximum = INT_MAX;
