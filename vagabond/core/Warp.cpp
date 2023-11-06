@@ -21,6 +21,7 @@
 #include "CompareDistances.h"
 #include "BondSequence.h"
 #include "engine/Tasks.h"
+#include "engine/Task.h"
 #include "TorsionWarp.h"
 #include "AtomGroup.h"
 #include "Instance.h"
@@ -65,11 +66,13 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	{
 		extract = Flag::Extract(Flag::Deviation);
 	}
+	
+	Task<BondSequence *, AtomPosList *> *list = nullptr;
 
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
 	sequences->calculate(calc, vals, &first_hook, &final_hook);
-	sequences->extract(extract, submit_result, final_hook);
+	sequences->extract_compare_distances(submit_result, _compare, final_hook);
 	
 	_resources.tasks->addTask(first_hook);
 
@@ -86,9 +89,9 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 	func = [points, this]() -> float
 	{
 		_alwaysShow = false;
-		clearComparison();
-		
+		_compare->reset();
 		_resources.calculator->holdHorses();
+
 		for (const Floats &fs : points)
 		{
 			submitJob(true, fs);
@@ -97,20 +100,10 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 		
 		retrieve();
 
-		float sum = 0; float count = 0;
-		for (TicketScores::iterator it = _point2Score.begin();
-		     it != _point2Score.end(); it++)
-		{
-			sum += it->second.deviations;
-			count++;
-		}
-		sum /= count;
-
 		exposeDistanceMatrix();
 		_alwaysShow = true;
 		clearTickets();
 
-//		return sum;
 		return compare()->quickScore();
 	};
 	
@@ -203,7 +196,7 @@ bool Warp::handleAtomList(AtomPosList &list)
 	bool show = (_count++ % 107 == 0) || _alwaysShow;
 
 	// handle list;
-	compare()->process(list);
+//	compare()->process(list);
 
 	return show;
 }

@@ -43,8 +43,6 @@ bool resi_num_comp(const Atom *a, const Atom *b)
 
 void CompareDistances::equalFilter(const AtomPosList &apl)
 {
-	if (_leftAtoms.size() > 0) { return; }
-	
 	_leftAtoms.clear(); 
 	_leftIdxs.clear();
 
@@ -63,12 +61,7 @@ void CompareDistances::equalFilter(const AtomPosList &apl)
 	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
 }
 
-void CompareDistances::filter(const AtomPosList &apl)
-{
-	equalFilter(apl);
-}
-
-void CompareDistances::setupMatrix()
+void CompareDistances::setupMatrix(const AtomPosList &apl)
 {
 	if (_set)
 	{
@@ -82,22 +75,26 @@ void CompareDistances::setupMatrix()
 		_cv.wait(lock);
 	}
 	
-	_setSignal--;
-
-	if (!_counts.set())
+	if (!_set)
 	{
-		_counts.setup(_leftAtoms.size());
+		_setSignal--;
+
+		if (!_counts.set())
+		{
+			equalFilter(apl);
+			_counts.setup(_leftAtoms.size());
+		}
+
+		_set = true;
+		_setSignal = 1;
+
+		_cv.notify_all();
 	}
-	
-	_set = true;
-	
-	_cv.notify_all();
 }
 
 void CompareDistances::process(const AtomPosList &apl)
 {
-	filter(apl);
-	setupMatrix();
+	setupMatrix(apl);
 	addToMatrix(apl);
 }
 

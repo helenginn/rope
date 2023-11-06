@@ -20,6 +20,7 @@
 #include "BondSequenceHandler.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/PointStoreHandler.h"
+#include "CompareDistances.h"
 #include "BondSequence.h"
 #include "engine/Task.h"
 #include "Result.h"
@@ -254,6 +255,44 @@ void BondSequenceHandler::positionsForMap(CalcTask *hook,
 
 }
 
+auto atom_list()
+{
+	return [](BondSequence *seq) -> AtomPosList *
+	{
+		AtomPosList *apl = new AtomPosList();
+		seq->extractVector(*apl);
+		return apl;
+	};
+};
+
+Task<BondSequence *, void *> *
+BondSequenceHandler::extract_compare_distances(Task<Result, void *> *submit_result,
+                                               CompareDistances *compare,
+                                               CalcTask *hook)
+{
+	Task<BondSequence *, void *> *letgo = letGo();
+	hook->follow_with(letgo);
+	auto *make_atom_list = new Task<BondSequence *, AtomPosList *>(atom_list(), 
+	                                                               "atom list");
+
+	hook->follow_with(make_atom_list);
+	make_atom_list->must_complete_before(letgo);
+
+	auto process_list = [compare](AtomPosList *list) -> AtomPosList *
+	{
+		compare->process(*list);
+		return list;
+	};
+	
+	auto *list_to_compare = 
+	new Task<AtomPosList *, AtomPosList *>(process_list, "compare distances");
+	
+	make_atom_list->follow_with(list_to_compare);
+	list_to_compare->follow_with(submit_result);
+
+	return letgo;
+}
+
 Task<BondSequence *, void *> *
 BondSequenceHandler::extract(Flag::Extract flags, 
                              Task<Result, void *> *submit_result,
@@ -268,13 +307,6 @@ BondSequenceHandler::extract(Flag::Extract flags,
 	{
 		float dev = seq->calculateDeviations();
 		return {dev};
-	};
-	
-	auto atom_list = [](BondSequence *seq) -> AtomPosList *
-	{
-		AtomPosList *apl = new AtomPosList();
-		seq->extractVector(*apl);
-		return apl;
 	};
 	
 	auto atom_map = [](BondSequence *seq) -> AtomPosMap *
@@ -299,8 +331,8 @@ BondSequenceHandler::extract(Flag::Extract flags,
 	}
 	if (flags & Flag::AtomVector)
 	{
-		auto *make_atom_list = new Task<BondSequence *, AtomPosList *>(atom_list, 
-		                                                       "atom list");
+		auto *make_atom_list = new Task<BondSequence *, AtomPosList *>(atom_list(), 
+		                                                               "atom list");
 		if (list) {*list = make_atom_list;}
 		hook->follow_with(make_atom_list);
 		make_atom_list->must_complete_before(letgo);

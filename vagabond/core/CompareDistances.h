@@ -76,9 +76,8 @@ private:
 	{
 		return _equal;
 	}
-	void filter(const AtomPosList &apl);
 	void equalFilter(const AtomPosList &apl);
-	void setupMatrix();
+	void setupMatrix(const AtomPosList &apl);
 	void addToMatrix(const AtomPosList &apl);
 	void addEqualToMatrix(const AtomPosList &apl);
 

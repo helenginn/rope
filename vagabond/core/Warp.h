@@ -112,6 +112,12 @@ protected:
 	virtual void prepareResources();
 	virtual bool handleAtomList(AtomPosList &list);
 
+	virtual bool handleAtomMap(AtomPosMap &aps)
+	{
+		return false;
+	}
+
+
 private:
 	void prepareAtoms();
 	void prepareBonds();

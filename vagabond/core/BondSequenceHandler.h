@@ -32,8 +32,8 @@ class Sampler;
 class Grapher;
 class BondSequence;
 class BondCalculator;
+class CompareDistances;
 class MapTransferHandler;
-class PointStoreHandler;
 class ThreadCalculatesBondSequence;
 class ThreadExtractsBondPositions;
 template <typename I, typename O> class Task;
@@ -93,6 +93,11 @@ public:
 	void positionsForMap(Task<BondSequence *, BondSequence *> *hook,
 	                     Task<BondSequence *, void *> *letgo,
 	                     std::map<std::string, GetEle> &eleTasks);
+
+	Task<BondSequence *, void *> *
+	extract_compare_distances(Task<Result, void *> *submit_result,
+	                          CompareDistances *compare,
+	                          CalcTask *hook);
 
 	// let go of sequence before continuing
 	Task<BondSequence *, void *> *letGo();
