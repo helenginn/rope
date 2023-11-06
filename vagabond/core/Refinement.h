@@ -46,6 +46,7 @@ public:
 	
 	static void run(Refinement *r)
 	{
+		r->updateMap();
 		r->play();
 		r->play();
 	}

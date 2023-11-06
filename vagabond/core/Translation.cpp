@@ -30,7 +30,7 @@ Translation::Translation(int hyperDims)
 		{
 			if (i == j)
 			{
-				_coordinates[i][j] = 2.5;
+				_coordinates[i][j] = 2.0;
 			}
 		}
 	}

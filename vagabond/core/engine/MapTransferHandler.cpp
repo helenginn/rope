@@ -50,7 +50,7 @@ void MapTransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
 
 	for (size_t i = 0; i < sub.size(); i++)
 	{
-		glm::vec3 pos = sub.at(i)->derivedPosition();
+		glm::vec3 pos = sub.at(i)->initialPosition();
 		
 		for (size_t j = 0; j < 3; j++)
 		{
@@ -64,9 +64,12 @@ void MapTransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
 		_min = glm::vec3(0.);
 		_max = glm::vec3(0.);
 	}
+	else
+	{
+		_min -= _pad * 2.f;
+		_max += _pad * 2.f;
+	}
 	
-	_min -= _pad;
-	_max += _pad;
 }
 
 void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
@@ -83,6 +86,7 @@ void MapTransferHandler::allocateSegments()
 {
 	int nx, ny, nz;
 	ElementSegment::findDimensions(nx, ny, nz, _min, _max, _cubeDim);
+	std::cout << nx << " " << ny << " " << nz << std::endl;
 	
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
@@ -92,7 +96,7 @@ void MapTransferHandler::allocateSegments()
 		for (size_t j = 0; j < _mapNum; j++)
 		{
 			ElementSegment *seg = new ElementSegment();
-			seg->setDimensions(nx, ny, nz);
+			seg->setDimensions(nx, ny, nz, false);
 			seg->setRealDim(_cubeDim);
 			seg->setOrigin(_min);
 			seg->setElement(ele);

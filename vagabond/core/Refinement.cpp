@@ -115,9 +115,6 @@ void Refinement::setupRefiner(Refine::Info &info)
 
 void Refinement::play()
 {
-	updateMap();
-	updateMap();
-
 	for (Refine::Info &info  : _molDetails)
 	{
 		MolRefiner *mr = _molRefiners[info.instance];

@@ -212,9 +212,9 @@ void ElementSegment::findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
 	glm::vec3 diff = max - min;
 	diff /= cubeDim;
 
-	nx = (long)lrint(diff[0]) + 1;
-	ny = (long)lrint(diff[1]) + 1;
-	nz = (long)lrint(diff[2]) + 1;
+	nx = (long)lrint(diff[0]) + 1; adjustN(nx);
+	ny = (long)lrint(diff[1]) + 1; adjustN(ny);
+	nz = (long)lrint(diff[2]) + 1; adjustN(nz);
 }
 
 const float &ElementSegment::density(int i, int j) const
