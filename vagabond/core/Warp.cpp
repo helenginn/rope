@@ -61,11 +61,7 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions
 	                             | Flag::DoSuperpose);
 	
-	Flag::Extract extract = Flag::Extract(Flag::AtomVector | Flag::Deviation);
-	if (!show)
-	{
-		extract = Flag::Extract(Flag::Deviation);
-	}
+	Flag::Extract extract = Flag::Extract(Flag::AtomVector);
 	
 	Task<BondSequence *, AtomPosList *> *list = nullptr;
 
@@ -121,10 +117,8 @@ void Warp::setup()
 	_displayTargets = true;
 
 	prepareResources();
-//	startCalculator();
 	prepareAtoms();
 	prepareBonds();
-	
 }
 
 void Warp::prepareAtoms()
@@ -192,11 +186,7 @@ void Warp::cleanup()
 
 bool Warp::handleAtomList(AtomPosList &list)
 {
-
 	bool show = (_count++ % 107 == 0) || _alwaysShow;
-
-	// handle list;
-//	compare()->process(list);
 
 	return show;
 }
