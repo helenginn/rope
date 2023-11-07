@@ -86,7 +86,6 @@ void MapTransferHandler::allocateSegments()
 {
 	int nx, ny, nz;
 	ElementSegment::findDimensions(nx, ny, nz, _min, _max, _cubeDim);
-	std::cout << nx << " " << ny << " " << nz << std::endl;
 	
 	for (size_t i = 0; i < _elements.size(); i++)
 	{
