@@ -58,6 +58,8 @@ private:
 	void calculate(const std::vector<float> &params);
 	void setGetterSetters();
 
+	float confParams(int n);
+
 	ArbitraryMap *_map = nullptr;
 	Refine::Info *_info = nullptr;
 
