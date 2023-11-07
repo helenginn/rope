@@ -86,23 +86,20 @@ void Engine::getResults()
 		
 		if (_verbose)
 		{
-			std::cout << score;
+			if (score >= _bestScore)
+			{
+				std::cout << "." << std::flush;
+			}
+			else
+			{
+				std::cout << "+" << std::flush;
+			}
 		}
-		
+
 		if (score < _bestScore)
 		{
-			if (_verbose)
-			{
-				std::cout << " - best";
-			}
-
 			_bestScore = score;
 			_bestResult = _scores[job_id].vals;
-		}
-		
-		if (_verbose)
-		{
-			std::cout << std::endl;
 		}
 	}
 	while (true);
@@ -158,11 +155,19 @@ void Engine::start()
 
 	currentScore();
 	_startScore = _currentScore;
-	
+	if (_verbose)
+	{
+		std::cout << _currentScore << " -> " << std::flush;
+	}
+
 	run();
 	
 	currentScore();
 	_endScore = _currentScore;
+	if (_verbose)
+	{
+		std::cout << " -> " << _endScore << std::endl;
+	}
 	
 	_improved = (_endScore < _startScore - 1e-6);
 }
