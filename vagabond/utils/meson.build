@@ -46,6 +46,7 @@ install_headers([
 'FileReader.h',
 'glm_import.h',
 'glm_json.h',
+'degrad.h',
 'seqalign.h',
 'maths.h',
 'version.h',
