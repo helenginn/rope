@@ -20,7 +20,7 @@
 #define __vagabond__Translation__
 
 #include "engine/CoordManager.h"
-#include "svd/PCA.h"
+#include <vagabond/utils/svd/PCA.h>
 
 class Translation
 {
