@@ -53,9 +53,16 @@ _translate(info->master_dims)
 	_best.resize(parameterCount());
 }
 
-float confParams(int n)
+float MolRefiner::confParams(int n)
 {
-	return n + n * (n + 1) / 2;
+	if (_info->warp)
+	{
+		return n + n * (n + 1) / 2;
+	}
+	else
+	{
+		return _resources.sequences->torsionBasis()->parameterCount();
+	}
 }
 
 float transParams(int n)
@@ -203,6 +210,8 @@ void MolRefiner::runEngine()
 		return;
 	}
 
+	std::cout << _info->instance->id() << std::endl;
+
 	if (_map == nullptr)
 	{
 		throw std::runtime_error("Map provided to refinement is null");
@@ -226,11 +235,22 @@ void MolRefiner::changeDefaults(CoordManager *manager)
 		return _sampler.coordsFromParams(all);
 	};
 
-	rope::GetFloatFromCoordIdx fetchTorsion = [this](const Coord::Get &get, 
-	                                                 const int &idx)
+	rope::GetFloatFromCoordIdx fetchTorsion;
+	                                                  
+	if (_info->warp)
 	{
-		return _info->warp->torsionAnglesForCoord()(get, idx);
-	};
+		fetchTorsion = [this](const Coord::Get &get, const int &idx)
+		{
+			return _info->warp->torsionAnglesForCoord()(get, idx);
+		};
+	}
+	else
+	{
+		fetchTorsion = [](const Coord::Get &get, const int &idx)
+		{
+			return 0;
+		};
+	}
 
 	manager->setTorsionFetcher(fetchTorsion);
 	manager->setDefaultCoordTransform(transform);
