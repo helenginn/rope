@@ -91,4 +91,40 @@ inline float sqlength(glm::vec3 a)
 	return sqlength;
 }
 
+class TimerSurfaceArea
+{
+public:
+	static TimerSurfaceArea &getInstance()
+	{
+		static TimerSurfaceArea instance;
+		return instance;
+	}
+	
+	void reset()
+	{
+		times.clear();
+	}
+	
+	void start()
+	{
+		_start = std::chrono::high_resolution_clock::now();
+	}
+
+	void end()
+	{
+		_end = std::chrono::high_resolution_clock::now();
+		times.push_back(_end - _start);
+	}
+	
+	std::vector<std::chrono::duration<float>> times;
+	bool timing = false;
+private:
+	TimerSurfaceArea() {}
+	TimerSurfaceArea(TimerSurfaceArea const&) = delete;
+	void operator=(TimerSurfaceArea const&) = delete;
+	
+  std::chrono::high_resolution_clock::time_point _start;
+	std::chrono::high_resolution_clock::time_point _end;
+};
+
 #endif
