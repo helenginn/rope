@@ -22,7 +22,7 @@
 #include "ArbitraryMap.h"
 #include "Polymer.h"
 #include "Chain.h"
-#include "File.h"
+#include "files/File.h"
 #include "AtomContent.h"
 #include "Environment.h"
 #include "EntityManager.h"

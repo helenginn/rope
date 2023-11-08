@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "MtzFile.h"
+#include "files/MtzFile.h"
 #define GEMMI_WRITE_IMPLEMENTATION
 #include <gemmi/mtz.hpp>
 #include <vagabond/core/matrix_functions.h>

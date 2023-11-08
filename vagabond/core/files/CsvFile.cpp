@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "CsvFile.h"
+#include "files/CsvFile.h"
 #include "Metadata.h"
 #include <fstream>
 #include <vagabond/utils/FileReader.h>

@@ -22,7 +22,7 @@
 #include <iostream>
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/core/FileManager.h>
-#include <vagabond/core/File.h>
+#include <vagabond/core/files/File.h>
 #include <vagabond/core/Responder.h>
 
 class FileManager;

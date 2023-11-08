@@ -22,7 +22,7 @@
 #include <vagabond/gui/SequenceView.h>
 #include <vagabond/gui/ChooseEntity.h>
 
-#include <vagabond/core/File.h>
+#include <vagabond/core/files/File.h>
 #include <vagabond/core/Chain.h>
 #include <vagabond/core/AtomContent.h>
 #include <vagabond/core/Sequence.h>

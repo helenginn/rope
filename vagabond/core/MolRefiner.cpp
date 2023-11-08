@@ -65,12 +65,6 @@ float MolRefiner::getResult(int *job_id)
 
 Result *MolRefiner::submitJobAndRetrieve(const std::vector<float> &all)
 {
-	for (float &f : _parameters)
-	{
-		std::cout << f << " ";
-	}
-	std::cout << std::endl;
-
 	std::vector<float> params = all;
 	params.resize(parameterCount());
 	_setter(params);

@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "FastaFile.h"
+#include "files/FastaFile.h"
 #include <fstream>
 
 FastaFile::FastaFile(std::string filename) : File(filename)

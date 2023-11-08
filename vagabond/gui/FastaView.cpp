@@ -18,7 +18,7 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
-#include <vagabond/core/FastaFile.h>
+#include <vagabond/core/files/FastaFile.h>
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/Entity.h>
 #include "SequenceView.h"

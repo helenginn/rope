@@ -25,7 +25,7 @@
 #include "PathsDetail.h"
 #include <vagabond/core/RouteValidator.h>
 #include "RouteExplorer.h"
-#include "PdbFile.h"
+#include "files/PdbFile.h"
 #include <vagabond/core/Path.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/TextButton.h>

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "../AtomGroup.h"
-#include "../CifFile.h"
+#include "../files/CifFile.h"
 #include "../BondTorsion.h"
 
 int main()

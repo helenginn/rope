@@ -1,5 +1,5 @@
 #include "../AtomGroup.h"
-#include "../CifFile.h"
+#include "../files/CifFile.h"
 #include "../BondCalculator.h"
 #include "../AlignmentTool.h"
 #include <iomanip>

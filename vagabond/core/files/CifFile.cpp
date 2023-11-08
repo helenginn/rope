@@ -3,7 +3,7 @@
 #include <gemmi/numb.hpp>
 #include <gemmi/cif.hpp>
 
-#include "CifFile.h"
+#include "files/CifFile.h"
 #include "Diffraction.h"
 #include "RefList.h"
 #include "Knotter.h"

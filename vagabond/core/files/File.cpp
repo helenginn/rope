@@ -20,11 +20,11 @@
 #include <math.h>
 #include <gemmi/numb.hpp>
 #include "../utils/FileReader.h"
-#include "CifFile.h"
-#include "CsvFile.h"
-#include "MtzFile.h"
-#include "PdbFile.h"
-#include "FastaFile.h"
+#include "files/CifFile.h"
+#include "files/CsvFile.h"
+#include "files/MtzFile.h"
+#include "files/PdbFile.h"
+#include "files/FastaFile.h"
 #include "Atom.h"
 #include "Diffraction.h"
 #include "AtomContent.h"

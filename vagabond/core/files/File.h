@@ -19,10 +19,10 @@
 #ifndef __File__File__
 #define __File__File__
 
-#include "AtomGroup.h"
-#include "GeometryTable.h"
-#include "Reflection.h"
-#include "../utils/FileReader.h"
+#include "../AtomGroup.h"
+#include "../GeometryTable.h"
+#include "../Reflection.h"
+#include <vagabond/utils/FileReader.h>
 
 class Atom;
 class AtomContent;

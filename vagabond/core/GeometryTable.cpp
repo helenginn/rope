@@ -18,7 +18,7 @@
 
 #include "GeometryTable.h"
 #include "AtomGroup.h"
-#include "CifFile.h"
+#include "files/CifFile.h"
 #include "Knotter.h"
 #include "Environment.h"
 #include "FileManager.h"

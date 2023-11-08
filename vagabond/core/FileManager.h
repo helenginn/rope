@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 #include <pthread.h>
-#include "File.h"
+#include "files/File.h"
 #include "Progressor.h"
 #include "Responder.h"
 

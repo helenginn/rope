@@ -21,7 +21,7 @@
 #include "Sequence.h"
 #include "BondLength.h"
 #include "Knotter.h"
-#include "PdbFile.h"
+#include "files/PdbFile.h"
 #include "GeometryTable.h"
 
 AtomsFromSequence::AtomsFromSequence(Sequence &seq) : _seq(seq)

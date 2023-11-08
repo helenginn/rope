@@ -20,7 +20,7 @@
 #include <cmath>
 #include "ArbitraryMap.h"
 #include "Diffraction.h"
-#include "File.h"
+#include "files/File.h"
 
 ArbitraryMap::ArbitraryMap() : TransformedGrid<fftwf_complex>(0, 0, 0)
 {

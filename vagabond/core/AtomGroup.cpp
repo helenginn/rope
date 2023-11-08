@@ -26,7 +26,7 @@
 #include "BondCalculator.h"
 #include "PositionRefinery.h"
 #include "Sequence.h"
-#include "PdbFile.h"
+#include "files/PdbFile.h"
 #include "Result.h"
 
 #include <algorithm>

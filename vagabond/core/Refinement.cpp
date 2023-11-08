@@ -23,7 +23,7 @@
 #include "Entity.h"
 #include "AtomMap.h"
 #include "Babinet.h"
-#include "MtzFile.h"
+#include "files/MtzFile.h"
 #include "Instance.h"
 #include "UpdateMap.h"
 #include "MolRefiner.h"

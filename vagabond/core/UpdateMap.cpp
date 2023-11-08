@@ -21,7 +21,7 @@
 #include "Scaler.h"
 #include "RFactor.h"
 #include "Recombine.h"
-#include "MtzFile.h"
+#include "files/MtzFile.h"
 
 UpdateMap::UpdateMap(Diffraction *const &data, Diffraction *const &model)
 : _data(data), _model(model)

@@ -18,7 +18,7 @@
 
 #include "Babinet.h"
 #include "Diffraction.h"
-#include "MtzFile.h"
+#include "files/MtzFile.h"
 
 Babinet::Babinet(Diffraction *model)
 {

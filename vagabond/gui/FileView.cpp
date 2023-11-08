@@ -31,7 +31,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 
-#include <vagabond/core/File.h>
+#include <vagabond/core/files/File.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/AtomContent.h>
 #include <vagabond/core/Environment.h>

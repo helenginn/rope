@@ -21,8 +21,8 @@
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>
 #include <fstream>
-#include "PdbFile.h"
-#include "CifFile.h"
+#include "files/PdbFile.h"
+#include "files/CifFile.h"
 #include "AtomGroup.h"
 #include "Atom.h"
 #include "Knotter.h"

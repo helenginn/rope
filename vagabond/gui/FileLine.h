@@ -19,7 +19,7 @@
 #ifndef __vagabond__FileLine__
 #define __vagabond__FileLine__
 
-#include <vagabond/core/CifFile.h>
+#include <vagabond/core/files/CifFile.h>
 #include <vagabond/gui/elements/Box.h>
 
 class FileView;
