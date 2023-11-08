@@ -35,14 +35,12 @@
 #include "engine/Tasks.h"
 #include "engine/Task.h"
 
-MolRefiner::MolRefiner(ArbitraryMap *comparison, 
-                       Refine::Info *info) :
-StructureModification(), 
-_sampler(info->samples, info->master_dims), 
-_translate(info->master_dims)
+MolRefiner::MolRefiner(ArbitraryMap *comparison, Refine::Info *info) :
+StructureModification(),
+_sampler(info->samples, info->master_dims)
 {
 	setInstance(info->instance);
-	_threads = 5;
+	_threads = 6;
 	
 	std::cout << "MolRefiner for " << info->instance->id() << std::endl;
 
@@ -50,24 +48,6 @@ _translate(info->master_dims)
 	_info = info;
 
 	_instance->load();
-	_best.resize(parameterCount());
-}
-
-float MolRefiner::confParams(int n)
-{
-	if (_info->warp)
-	{
-		return n + n * (n + 1) / 2;
-	}
-	else
-	{
-		return _resources.sequences->torsionBasis()->parameterCount();
-	}
-}
-
-float transParams(int n)
-{
-	return (n + 1) * 3;
 }
 
 MolRefiner::~MolRefiner()
@@ -85,90 +65,50 @@ float MolRefiner::getResult(int *job_id)
 
 Result *MolRefiner::submitJobAndRetrieve(const std::vector<float> &all)
 {
-	submitJob(all);
+	for (float &f : _parameters)
+	{
+		std::cout << f << " ";
+	}
+	std::cout << std::endl;
+
+	std::vector<float> params = all;
+	params.resize(parameterCount());
+	_setter(params);
+	_info->bind_parameters(_parameters);
+	submitJob();
 	Result *r = _resources.calculator->acquireResult();
 	return r;
 }
 
-void MolRefiner::submitJob(std::vector<float> all)
-{
-	calculate(all);
-}
-
-void MolRefiner::calculate(const std::vector<float> &params)
+void MolRefiner::submitJob()
 {
 	_ticket++;
-	BaseTask *first_hook = nullptr;
 	
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
 	calculator->holdHorses();
-	BondSequenceHandler *const &sequences = _resources.sequences;
-	MapTransferHandler *const &eleMaps = _resources.perElements;
-	MapSumHandler *const &sums = _resources.summations;
-	CorrelationHandler *const &correlation = _resources.correlations;
 
 	/* this final task returns the result to the pool to collect later */
 	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
-
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
-	                             Flag::DoSuperpose);
-	Flag::Extract gets = Flag::Extract(Flag::AtomMap);
-
-	Task<BondSequence *, void *> *letgo = nullptr;
-
-	CalcTask *final_hook = nullptr;
-
-	/* calculation of torsion angle-derived and target-derived
-	 * atom positions */
-	sequences->calculate(calc, params, &first_hook, &final_hook);
 	
-	/* on top of this, apply translations */
-	rope::IntToCoordGet raw = _sampler.rawCoordinates();
-	rope::GetVec3FromIdx get = _translate.translate(raw);
-	
-	auto add_tr = [get](BondSequence *seq) -> BondSequence *
+	for (Refine::Calc &calc : _info->subunits)
 	{
-		seq->addTranslation(get);
-		return seq;
-	};
+		BaseTask *first_hook = calc.submit(_resources, submit_result);
 
-	CalcTask *translate = new CalcTask(add_tr, "translate");
-	
-	final_hook->follow_with(translate);
-
-	letgo = sequences->extract(gets, submit_result, translate);
-
-	/* Prepare the scratch space for per-element map calculation */
-	std::map<std::string, GetEle> eleTasks;
-
-	/* positions coming out of sequence to prepare for per-element maps */
-	sequences->positionsForMap(translate, letgo, eleTasks);
-
-	/* updates the scratch space */
-	eleMaps->extract(eleTasks);
-
-	/* summation of per-element maps into final real-space map */
-	Task<SegmentAddition, AtomMap *> *make_map = nullptr;
-	sums->grab_map(eleTasks, submit_result, &make_map);
-
-	/* correlation of real-space map against reference */
-	Task<CorrelMapPair, Correlation> *correlate = nullptr;
-	correlation->get_correlation(make_map, &correlate);
-
-	/* pop correlation into result */
-	correlate->follow_with(submit_result);
-
-	/* first task to be initiated by tasks list */
-	_resources.tasks->addTask(first_hook);
+		/* first task to be initiated by tasks list */
+		_resources.tasks->addTask(first_hook);
+	}
 
 	calculator->releaseHorses();
 }
 
 int MolRefiner::sendJob(const std::vector<float> &all)
 {
-	_setter(all);
-	submitJob(_parameters);
+	std::vector<float> chosen = all;
+	chosen.resize(parameterCount());
+	_setter(chosen);
+	_info->bind_parameters(_parameters);
+	submitJob();
 	return _ticket;
 }
 
@@ -197,8 +137,7 @@ void MolRefiner::retrieveJobs()
 
 size_t MolRefiner::parameterCount()
 {
-	int n = _info->master_dims;
-	return confParams(n) + transParams(n);
+	return _info->total_params();
 }
 
 void MolRefiner::runEngine()
@@ -217,43 +156,13 @@ void MolRefiner::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 	
-	_parameters.resize(confParams(_info->master_dims));
-	setGetterSetters();
-	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
 	engine->setStepSize(0.2);
 	engine->start();
 	
-	_best = Floats(engine->bestResult());
-}
-
-void MolRefiner::changeDefaults(CoordManager *manager)
-{
-	rope::GetListFromParameters transform = [this](const std::vector<float> &all)
-	{
-		return _sampler.coordsFromParams(all);
-	};
-
-	rope::GetFloatFromCoordIdx fetchTorsion;
-	                                                  
-	if (_info->warp)
-	{
-		fetchTorsion = [this](const Coord::Get &get, const int &idx)
-		{
-			return _info->warp->torsionAnglesForCoord()(get, idx);
-		};
-	}
-	else
-	{
-		fetchTorsion = [](const Coord::Get &get, const int &idx)
-		{
-			return 0;
-		};
-	}
-
-	manager->setTorsionFetcher(fetchTorsion);
-	manager->setDefaultCoordTransform(transform);
+	_parameters = Floats(engine->bestResult());
+	setGetterSetters();
 }
 
 void MolRefiner::prepareResources()
@@ -265,18 +174,19 @@ void MolRefiner::prepareResources()
 	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
 	BondSequenceHandler *sequences = _resources.sequences;
 	sequences->setTotalSamples(_sampler.pointCount());
-	sequences->addAnchorExtension(anchor);
+	
+	for (Atom *anchor : _info->anchors)
+	{
+		sequences->addAnchorExtension(anchor);
+	}
+
 	sequences->setup();
 	sequences->prepareSequences();
-	
-	changeDefaults(sequences->manager());
-
-	AtomGroup *group = _instance->currentAtoms();
 
 	/* calculate transfer to per-element maps */
 	MapTransferHandler *perEles = new MapTransferHandler(sequences->elementList(), 
 	                                                     _threads);
-	perEles->supplyAtomGroup(group->atomVector());
+	perEles->supplyAtomGroup(_info->all_atoms.toVector());
 	perEles->setup();
 	_resources.perElements = perEles;
 	
@@ -290,25 +200,22 @@ void MolRefiner::prepareResources()
 	                                                _threads);
 	cc->setup();
 	_resources.correlations = cc;
+
+	setGetterSetters();
 }
 
 void MolRefiner::setGetterSetters()
 {
-	int nn = _info->master_dims;
-	_getter = [nn, this](std::vector<float> &values)
+	_parameters.resize(parameterCount());
+
+	_getter = [this](std::vector<float> &values)
 	{
 		int i = 0;
-		values.resize(parameterCount());
+		values.resize(_parameters.size());
 
-		for (size_t n = 0; n < confParams(nn); n++)
+		for (size_t n = 0; n < _parameters.size(); n++)
 		{
 			values[i] = _parameters[n];
-			i++;
-		}
-
-		for (size_t n = 0; n < transParams(nn); n++)
-		{
-			values[i] = _translate.parameter(n);
 			i++;
 		}
 	};
@@ -316,18 +223,14 @@ void MolRefiner::setGetterSetters()
 	std::vector<float> start;
 	_getter(start);
 
-	_setter = [nn, start, this](const std::vector<float> &values)
+	_setter = [start, this](const std::vector<float> &values)
 	{
 		int i = 0;
-		for (size_t n = 0; n < confParams(nn); n++)
+		_parameters.resize(values.size());
+
+		for (size_t n = 0; n < values.size(); n++)
 		{
 			_parameters[n] = values[i] + start[i];
-			i++;
-		}
-
-		for (size_t n = 0; n < transParams(nn); n++)
-		{
-			_translate.setParameter(n, values[i] + start[i]);
 			i++;
 		}
 	};

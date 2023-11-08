@@ -66,8 +66,7 @@ public:
 	void swapMap(ArbitraryMap *map);
 private:
 	void prepareInstanceDetails();
-	void prepareInstance(Instance *mol);
-	void setupRefiners();
+	Refine::Info &prepareInstance(Instance *mol);
 	void setupRefiner(Refine::Info &info);
 
 	Model *_model = nullptr;

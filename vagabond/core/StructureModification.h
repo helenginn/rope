@@ -94,7 +94,7 @@ public:
 	{
 		_threads = thr;
 	}
-protected:
+
 	struct Resources
 	{
 		BondCalculator *calculator = nullptr;
@@ -107,6 +107,7 @@ protected:
 		void allocateMinimum(int threads);
 	};
 	
+protected:
 	virtual bool handleAtomMap(AtomPosMap &aps)
 	{
 		return true;

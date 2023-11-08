@@ -19,12 +19,16 @@
 #ifndef __vagabond__RefinementInfo__
 #define __vagabond__RefinementInfo__
 
+#include "StructureModification.h"
+#include <vagabond/utils/OpSet.h>
 #include <vagabond/c4x/Angular.h>
 #include "ResidueTorsion.h"
 #include "Residue.h"
-#include "TorsionRef.h"
-#include "RTAngles.h"
 
+template <typename I, typename O> class Task;
+
+class MolRefiner;
+class BaseTask;
 class Warp;
 
 /** \class RefinementInfo
@@ -32,14 +36,59 @@ class Warp;
 
 namespace Refine
 {
+	typedef std::function<BaseTask *(StructureModification::Resources &,
+	                                 Task<Result, void *> *,
+	                                 const std::vector<float> &)> Calculate;
+
+	typedef std::function<BaseTask *(StructureModification::Resources &,
+	                                 Task<Result, void *> *)> Submit;
+	
+	struct Calc
+	{
+		Calculate op;
+		Submit submit;
+		int n_params;
+	};
+
 	struct Info
 	{
-		std::string mol_id;
 		Instance *instance = nullptr;
+		MolRefiner *refiner = nullptr;
+		OpSet<Atom *> anchors;
+		OpSet<Atom *> all_atoms;
+		std::vector<Calc> subunits;
 		int samples = 120;
 		int master_dims = 3;
 		Warp *warp = nullptr;
+
+		void bind_parameters(const std::vector<float> &vals)
+		{
+			auto it = vals.begin();
+
+			for (Calc &calc : subunits)
+			{
+				const int &length = calc.n_params;
+				std::vector<float> params;
+				params.reserve(length);
+				params.insert(params.begin(), it, it + length);
+				it = it + length;
+				calc.submit = std::bind(calc.op, std::placeholders::_1,
+				                        std::placeholders::_2, params);
+			}
+		}
+		
+		int total_params()
+		{
+			int params = 0;
+			for (Calc &calc : subunits)
+			{
+				const int &length = calc.n_params;
+				params += length;
+			}
+			return params;
+		}
 	};
+	
 };
 
 #endif

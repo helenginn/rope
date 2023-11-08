@@ -16,7 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "File.h"
+#include <list>
+
 #include "Warp.h"
 #include "Model.h"
 #include "Entity.h"
@@ -29,7 +30,7 @@
 #include "Refinement.h"
 #include "Diffraction.h"
 #include "ArbitraryMap.h"
-#include "MetadataGroup.h"
+#include "WarpedRefine.h"
 #include "SymmetryExpansion.h"
 
 #include <fstream>
@@ -44,7 +45,6 @@ void Refinement::setup()
 	_model->load();
 
 	prepareInstanceDetails();
-	setupRefiners();
 }
 
 void Refinement::loadDiffraction(const std::string &filename)
@@ -70,39 +70,69 @@ void Refinement::loadDiffraction(const std::string &filename)
 	delete file;
 }
 
+template <typename Filter>
+std::list<Instance *> list_from_instances(std::vector<Instance *> &instances,
+                                          const Filter &filter)
+{
+	std::list<Instance *> list;
+	
+	for (Instance *instance : instances)
+	{
+		if (filter(instance))
+		{
+			list.push_back(instance);
+		}
+	}
+
+	return list;
+}
+
 void Refinement::prepareInstanceDetails()
 {
 	std::vector<Instance *> instances = _model->instances();
-	for (Instance *inst : instances)
-	{
-		prepareInstance(inst);
-	}
-}
+	
+	std::list<Instance *> single_atoms, multi_atoms;
 
-void Refinement::setupRefiners()
-{
-	for (Refine::Info &info : _molDetails)
+	single_atoms = list_from_instances(instances, [](Instance *const &inst)
+									   {
+										   return inst->currentAtoms()->size() == 1;
+									   });
+
+	multi_atoms = list_from_instances(instances, [](Instance *const &inst)
+									   {
+										   return inst->currentAtoms()->size() > 1;
+									   });
+
+	std::cout << instances.size() << " instances of which " << single_atoms.size()
+	<< " only have one atom." << std::endl;
+
+	for (Instance *inst : multi_atoms)
 	{
+		if (!inst->hasSequence())
+		{
+			continue;
+		}
+
+		Refine::Info &info = prepareInstance(inst);
 		setupRefiner(info);
+
+		WarpedRefine *prep_refine;
+		WarpedRefine &wr = *new WarpedRefine(inst, info, info.refiner->sampler());
+		wr();
 	}
 }
 
-void Refinement::prepareInstance(Instance *mol)
+Refine::Info &Refinement::prepareInstance(Instance *mol)
 {
 	Refine::Info info;
 	info.instance = mol;
-	info.mol_id = mol->id();
-
 	_molDetails.push_back(info);
+	return _molDetails.back();
 }
 
 void Refinement::setupRefiner(Refine::Info &info)
 {
 	Instance *mol = info.instance;
-	if (!mol->hasSequence())
-	{
-		return;
-	}
 	
 	const int dims = 3;
 	
@@ -110,6 +140,7 @@ void Refinement::setupRefiner(Refine::Info &info)
 	info.master_dims = 3;
 	info.warp = Warp::warpFromFile(info.instance, "test.json");
 	MolRefiner *mr = new MolRefiner(_map, &info);
+	info.refiner = mr;
 	_molRefiners[mol] = mr;
 }
 

@@ -105,6 +105,12 @@ public:
 		return ret;
 	}
 
+	OpSet<Type> &operator+=(const Type &other)
+	{
+		this->insert(other);
+		return *this;
+	}
+
 	template <typename Container>
 	OpSet<Type> &operator+=(const Container &other)
 	{

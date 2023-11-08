@@ -60,12 +60,12 @@ public:
 		_torsionFromCoordIdx = gffci;
 	}
 	
-	const rope::GetFloatFromCoordIdx &defaultTorsionFetcher()
+	const rope::GetFloatFromCoordIdx &defaultTorsionFetcher() const
 	{
 		return _torsionFromCoordIdx;
 	}
 	
-	const rope::GetVec3FromCoordIdx &defaultAtomFetcher()
+	const rope::GetVec3FromCoordIdx &defaultAtomFetcher() const
 	{
 		return _atomFromCoordIdx;
 	}

@@ -100,7 +100,7 @@ inline double random_norm_dist(double x, double sigma)
 	return total;
 }
 
-typedef struct
+struct CorrelData
 {
 	double sum_x = 0;
 	double sum_y = 0;
@@ -108,7 +108,7 @@ typedef struct
 	double sum_yy = 0;
 	double sum_xy = 0;
 	double sum_w = 0;
-} CorrelData;
+};
 
 inline CorrelData empty_CD()
 {

@@ -247,6 +247,7 @@ void BondSequence::superpose()
 			}
 
 			glm::vec4 pos = _blocks[j].basis[3];
+
 			_blocks[j].basis[3] = trans * pos;
 		}
 

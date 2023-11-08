@@ -21,10 +21,9 @@
 
 #include "StructureModification.h"
 #include "RefinementInfo.h"
-#include "Translation.h"
+#include "Sampler.h"
 #include "Engine.h"
 #include <vagabond/utils/svd/PCA.h>
-#include <vagabond/core/Sampler.h>
 
 class Warp;
 class ArbitraryMap;
@@ -34,6 +33,11 @@ class MolRefiner : public StructureModification, public RunsEngine
 public:
 	MolRefiner(ArbitraryMap *comparison, Refine::Info *info);
 	~MolRefiner();
+	
+	Sampler *sampler()
+	{
+		return &_sampler;
+	}
 	
 	void changeMap(ArbitraryMap *map)
 	{
@@ -48,14 +52,11 @@ public:
 	virtual float getResult(int *job_id);
 	virtual size_t parameterCount();
 
-	typedef std::function<void(std::vector<float> &values)> Getter;
-	typedef std::function<void(const std::vector<float> &values)> Setter;
 	virtual void prepareResources();
 protected:
 	void changeDefaults(CoordManager *manager);
 private:
-	void submitJob(std::vector<float> all);
-	void calculate(const std::vector<float> &params);
+	void submitJob();
 	void setGetterSetters();
 
 	float confParams(int n);
@@ -65,14 +66,14 @@ private:
 
 	int _ticket = 0;
 	
-	Floats _best;
 	Sampler _sampler;
-	Translation _translate;
-
-	Getter _getter{};
-	Setter _setter{};
 	
 	Floats _parameters;
+
+	typedef std::function<void(std::vector<float> &values)> Getter;
+	typedef std::function<void(const std::vector<float> &values)> Setter;
+	Getter _getter{};
+	Setter _setter{};
 };
 
 #endif

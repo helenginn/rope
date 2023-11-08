@@ -16,25 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Translation__
-#define __vagabond__Translation__
+#ifndef __vagabond__WarpedRefine__
+#define __vagabond__WarpedRefine__
 
-#include "engine/CoordManager.h"
-#include <vagabond/utils/svd/PCA.h>
+class Instance;
+class Sampler;
 
-class Translation
+namespace Refine {
+	struct Info;
+};
+
+class WarpedRefine
 {
 public:
-	Translation(int hyperDims);
-	~Translation();
+	WarpedRefine(Instance *const &instance, Refine::Info &info,
+	             Sampler *sampler);
 
-	rope::GetVec3FromIdx translate(const rope::IntToCoordGet &get_coord,
-	                               const std::vector<float> &params) const;
+	void operator()();
 private:
-	PCA::Matrix _defaults;
-	PCA::Matrix _coordinates;
+	Refine::Calculate prepareSubmission();
+	void setGetterSetters();
+	int confParams();
+	int transParams();
+	
+	int n_params()
+	{
+		return confParams() + transParams();
+	}
 
-	int _hyperDims = 0;
+	Refine::Info &_info;
+	Instance *const &_instance;
+	Sampler *_sampler;
+
 };
 
 #endif

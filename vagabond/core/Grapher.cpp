@@ -445,6 +445,7 @@ void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
 	block.nBonds = std::min(max, blc);
 	block.depth = gr->depth;
 	block.wip = glm::mat4(0.);
+	block.target = gr->atom->initialPosition();
 	
 	for (size_t i = 0; i < 4; i++)
 	{

@@ -33,6 +33,7 @@ Sampler::Sampler(int n, int dims)
 
 Sampler::~Sampler()
 {
+	std::cout << "deleting sampler" << std::endl;
 	freeMatrix(&_points);
 }
 
