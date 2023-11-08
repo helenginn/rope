@@ -39,6 +39,12 @@ AreaMeasurer::~AreaMeasurer()
 
 float AreaMeasurer::surfaceArea()
 {
+	TimerSurfaceArea& timer = TimerSurfaceArea::getInstance();
+	bool timing = timer.timing;
+
+	if (timing)
+	{	timer.start();}
+
 	_contacts->updateSheet(_posMap);
 	_lattice.resetLatticeRadius();
 	// std::cout << _posMap.size() << std::endl;
@@ -68,6 +74,9 @@ float AreaMeasurer::surfaceArea()
 		const float &area_atom = areaFromExposure(exposure, atom.first, _probeRadius);
 		area += area_atom;
 	}
+
+	if (timing)
+	{	timer.end();}
 
 	return area;
 }
