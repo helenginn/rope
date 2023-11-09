@@ -116,8 +116,7 @@ void Refinement::prepareInstanceDetails()
 		Refine::Info &info = prepareInstance(inst);
 		setupRefiner(info);
 
-		WarpedRefine *prep_refine;
-		WarpedRefine &wr = *new WarpedRefine(inst, info, info.refiner->sampler());
+		WarpedRefine wr = WarpedRefine(inst, info, info.refiner->sampler());
 		wr();
 	}
 }
@@ -133,8 +132,6 @@ Refine::Info &Refinement::prepareInstance(Instance *mol)
 void Refinement::setupRefiner(Refine::Info &info)
 {
 	Instance *mol = info.instance;
-	
-	const int dims = 3;
 	
 	info.samples = 120;
 	info.master_dims = 3;
@@ -239,8 +236,6 @@ void Refinement::updateMap()
 	Diffraction *combined = update();
 	
 	/* prepare new map for target function */
-	ArbitraryMap *old = _map;
-
 	ArbitraryMap *map = new ArbitraryMap(*combined);
 	map->setupFromDiffraction();
 	swapMap(map);

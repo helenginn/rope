@@ -165,7 +165,6 @@ void MolRefiner::prepareResources()
 
 	_resources.allocateMinimum(_threads);
 	/* set up per-bond/atom calculation */
-	Atom *anchor = _instance->currentAtoms()->chosenAnchor();
 	BondSequenceHandler *sequences = _resources.sequences;
 	sequences->setTotalSamples(_sampler.pointCount());
 	

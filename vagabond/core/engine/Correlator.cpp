@@ -61,7 +61,7 @@ void Correlator::prepareList()
 
 		/* * store the reference density value of the voxel */
 		float value = _density->realValue(real_pos);
-		float check = _density->realValue(relative_pos);
+//		float check = _density->realValue(relative_pos);
 
 		/* establish if each point falls within the box 
 		 * and throw out if not */

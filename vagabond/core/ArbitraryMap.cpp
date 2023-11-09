@@ -154,7 +154,6 @@ void ArbitraryMap::setupFromDiffraction()
 	setStatus(FFT<fftwf_complex>::Reciprocal);
 	fft();
 	
-	glm::mat3x3 recip = _diff->recipMatrix();
 	glm::mat3x3 real = _diff->frac2Real();
 	setRealMatrix(real);
 	

@@ -46,7 +46,7 @@ void BulkMask::addSphere(luint bit, glm::vec3 pos, const float &radius)
 	int voxRadius = ceil(radius / realDim());
 	std::cout << radius << " vs " << voxRadius << std::endl;
 	real2Voxel(pos);
-	glm::vec3 remainder = pos;
+//	glm::vec3 remainder = pos;
 	
 	int idx = 0;
 	while (bit > 64)
