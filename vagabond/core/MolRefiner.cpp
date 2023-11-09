@@ -22,8 +22,8 @@
 #include "SimplexEngine.h"
 #include "AtomGroup.h"
 #include "Instance.h"
-#include "ArbitraryMap.h"
-#include "AtomMap.h"
+#include "grids/ArbitraryMap.h"
+#include "grids/AtomMap.h"
 #include "Result.h"
 #include "Warp.h"
 

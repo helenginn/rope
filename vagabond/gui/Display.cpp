@@ -9,7 +9,7 @@
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AlignmentTool.h>
-#include <vagabond/core/ArbitraryMap.h>
+#include <vagabond/core/grids/ArbitraryMap.h>
 #include <vagabond/core/VisualPreferences.h>
 
 #include <SDL2/SDL.h>

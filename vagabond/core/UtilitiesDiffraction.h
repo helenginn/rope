@@ -19,7 +19,7 @@
 #ifndef __vagabond__UtilitiesDiffraction__
 #define __vagabond__UtilitiesDiffraction__
 
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 
 namespace Utilities
 {

@@ -20,7 +20,7 @@
 #define __vagabond__SymmetryExpansion__
 
 #include <gemmi/symmetry.hpp>
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 
 namespace SymmetryExpansion
 {

@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "engine/Correlator.h"
-#include "AtomMap.h"
+#include "grids/AtomMap.h"
 #include "engine/MapSumHandler.h"
 #include <vagabond/utils/maths.h>
 

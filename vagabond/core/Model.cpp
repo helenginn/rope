@@ -19,7 +19,6 @@
 #include <vagabond/utils/version.h>
 #include "Model.h"
 #include "ModelManager.h"
-#include "ArbitraryMap.h"
 #include "Polymer.h"
 #include "Chain.h"
 #include "files/File.h"
@@ -723,12 +722,6 @@ void Model::clickTicker()
 {
 	Environment::modelManager()->clickTicker();
 }
-
-float Model::comparisonWithData(ArbitraryMap *calc)
-{
-	return 0;
-}
-
 
 void Model::respond()
 {

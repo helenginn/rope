@@ -17,12 +17,12 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "engine/MapSumHandler.h"
-#include "ElementSegment.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/CorrelationHandler.h"
 #include "engine/Task.h"
-#include "AtomSegment.h"
-#include "AtomMap.h"
+#include "grids/ElementSegment.h"
+#include "grids/AtomSegment.h"
+#include "grids/AtomMap.h"
 #include "Result.h"
 
 MapSumHandler::MapSumHandler(int mapCount, const ElementSegment *templ)

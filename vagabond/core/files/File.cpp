@@ -26,7 +26,7 @@
 #include "files/PdbFile.h"
 #include "files/FastaFile.h"
 #include "Atom.h"
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 #include "AtomContent.h"
 #include "Metadata.h"
 #include "RefList.h"

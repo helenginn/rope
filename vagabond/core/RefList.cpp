@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "RefList.h"
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 #include "matrix_functions.h"
 #include <gemmi/symmetry.hpp>
 #include <iostream>

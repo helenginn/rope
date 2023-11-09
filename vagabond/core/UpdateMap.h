@@ -19,8 +19,8 @@
 #ifndef __vagabond__UpdateMap__
 #define __vagabond__UpdateMap__
 
-#include "Diffraction.h"
 
+class Diffraction;
 struct WriteColumn;
 
 class UpdateMap

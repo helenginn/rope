@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Recombine.h"
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 
 Recombine::Recombine(Diffraction *data, Diffraction *model, const Type &type)
 {

@@ -20,10 +20,10 @@
 #include "GuiDensity.h"
 #include "../core/Sampler.h"
 #include <vagabond/gui/elements/SnowGL.h>
-#include "../core/AtomGroup.h"
-#include "../core/BondCalculator.h"
-#include <vagabond/core/AtomMap.h>
-#include "../core/ArbitraryMap.h"
+#include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/BondCalculator.h>
+#include <vagabond/core/grids/AtomMap.h>
+#include <vagabond/core/grids/ArbitraryMap.h>
 #include "Result.h"
 #define MC_IMPLEM_ENABLE
 #include "MC.h"

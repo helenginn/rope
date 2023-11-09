@@ -158,8 +158,6 @@ public:
 	void findInteractions();
 	void finishedRefinement();
 	void write(std::string filename);
-	
-	float comparisonWithData(ArbitraryMap *calc);
 
 	void extractExisting();
 

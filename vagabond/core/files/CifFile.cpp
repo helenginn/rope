@@ -4,7 +4,7 @@
 #include <gemmi/cif.hpp>
 
 #include "files/CifFile.h"
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 #include "RefList.h"
 #include "Knotter.h"
 #include "GeometryTable.h"

@@ -22,9 +22,9 @@
 #include "engine/ElementTypes.h"
 #include "AtomGroup.h"
 #include "Atom.h"
-#include "ElementSegment.h"
-#include "AtomSegment.h"
-#include "FFTCubicGrid.h"
+#include "grids/ElementSegment.h"
+#include "grids/AtomSegment.h"
+#include "grids/FFTCubicGrid.h"
 
 MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &elements,
                                        int mapNum)

@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
-#include <vagabond/core/Diffraction.h>
+#include <vagabond/core/grids/Diffraction.h>
 #include "GuiRefls.h"
 #include "VagWindow.h"
 #include <vagabond/utils/maths.h>

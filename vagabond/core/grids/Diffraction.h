@@ -22,7 +22,7 @@
 #include <fftw3.h>
 #include "TransformedGrid.h"
 #include "Diffraction.h"
-#include "RefList.h"
+#include "../RefList.h"
 
 class ArbitraryMap;
 

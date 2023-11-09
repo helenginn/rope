@@ -20,7 +20,7 @@
 #include "AddModel.h"
 #include "Display.h"
 #include "GuiAtom.h"
-#include "ArbitraryMap.h"
+#include <vagabond/core/grids/ArbitraryMap.h>
 #include <vagabond/gui/Toolkit.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>

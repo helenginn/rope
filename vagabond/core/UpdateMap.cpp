@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/maths.h>
+#include "grids/Diffraction.h"
 #include "UpdateMap.h"
 #include "Scaler.h"
 #include "RFactor.h"

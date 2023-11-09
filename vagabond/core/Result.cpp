@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Atom.h"
-#include "AtomMap.h"
+#include "grids/AtomMap.h"
 #include "Result.h"
 
 void Result::transplantPositions(bool displayTargets)

@@ -20,7 +20,7 @@
 #define __vagabond__GuiDensity__
 
 #include <vagabond/gui/elements/CullablePrimitives.h>
-#include <vagabond/core/OriginGrid.h>
+#include <vagabond/core/grids/OriginGrid.h>
 #include <fftw3.h>
 
 class AtomMap;

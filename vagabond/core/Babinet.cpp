@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Babinet.h"
-#include "Diffraction.h"
+#include "grids/Diffraction.h"
 #include "files/MtzFile.h"
 
 Babinet::Babinet(Diffraction *model)

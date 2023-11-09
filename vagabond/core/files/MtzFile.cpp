@@ -20,7 +20,7 @@
 #define GEMMI_WRITE_IMPLEMENTATION
 #include <gemmi/mtz.hpp>
 #include <vagabond/core/matrix_functions.h>
-#include <vagabond/core/Diffraction.h>
+#include <vagabond/core/grids/Diffraction.h>
 
 //using namespace gemmi::Mtz;
 
