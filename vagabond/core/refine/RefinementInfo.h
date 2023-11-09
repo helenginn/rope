@@ -27,7 +27,7 @@
 
 template <typename I, typename O> class Task;
 
-class MolRefiner;
+class Unit;
 class BaseTask;
 class Warp;
 
@@ -53,7 +53,7 @@ namespace Refine
 	struct Info
 	{
 		Instance *instance = nullptr;
-		MolRefiner *refiner = nullptr;
+		Unit *refiner = nullptr;
 		OpSet<Atom *> anchors;
 		OpSet<Atom *> all_atoms;
 		std::vector<Calc> subunits;

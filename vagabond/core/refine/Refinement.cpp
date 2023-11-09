@@ -28,7 +28,7 @@
 #include "files/MtzFile.h"
 #include "Instance.h"
 #include "UpdateMap.h"
-#include "MolRefiner.h"
+#include "Unit.h"
 #include "Refinement.h"
 #include "WarpedRefine.h"
 #include "SymmetryExpansion.h"
@@ -136,20 +136,20 @@ void Refinement::setupRefiner(Refine::Info &info)
 	info.samples = 120;
 	info.master_dims = 3;
 	info.warp = Warp::warpFromFile(info.instance, "test.json");
-	MolRefiner *mr = new MolRefiner(_map, &info);
-	info.refiner = mr;
-	_molRefiners[mol] = mr;
+	Unit *unit = new Unit(_map, &info);
+	info.refiner = unit;
+	_units[mol] = unit;
 }
 
 void Refinement::play()
 {
 	for (Refine::Info &info  : _molDetails)
 	{
-		MolRefiner *mr = _molRefiners[info.instance];
+		Unit *unit = _units[info.instance];
 
-		if (mr)
+		if (unit)
 		{
-			mr->runEngine();
+			unit->runEngine();
 		}
 	}
 	
@@ -164,14 +164,14 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 	
 	for (Refine::Info &info  : _molDetails)
 	{
-		MolRefiner *mr = _molRefiners[info.instance];
-		if (!mr)
+		Unit *unit = _units[info.instance];
+		if (!unit)
 		{
 			continue;
 		}
 
-		mr->prepareResources();
-		Result *result = mr->submitJobAndRetrieve({});
+		unit->prepareResources();
+		Result *result = unit->submitJobAndRetrieve({});
 		AtomMap &map = *result->map;
 		ArbitraryMap *partial = map();
 		*arb += *partial;
@@ -203,13 +203,13 @@ void Refinement::swapMap(ArbitraryMap *map)
 {
 	for (Refine::Info &info  : _molDetails)
 	{
-		MolRefiner *mr = _molRefiners[info.instance];
-		if (!mr)
+		Unit *unit = _units[info.instance];
+		if (!unit)
 		{
 			continue;
 		}
 
-		mr->changeMap(map);
+		unit->changeMap(map);
 	}
 
 	sendResponse("swap_map", map);

@@ -25,7 +25,7 @@
 #include <list>
 
 class Model;
-class MolRefiner;
+class Unit;
 class Diffraction;
 class ArbitraryMap;
 
@@ -75,7 +75,7 @@ private:
 
 	std::list<Refine::Info> _molDetails;
 	
-	std::map<Instance *, MolRefiner *> _molRefiners;
+	std::map<Instance *, Unit *> _units;
 };
 
 #endif

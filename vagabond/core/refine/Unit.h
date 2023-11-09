@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MolRefiner__
-#define __vagabond__MolRefiner__
+#ifndef __vagabond__Unit__
+#define __vagabond__Unit__
 
 #include "StructureModification.h"
 #include "RefinementInfo.h"
@@ -28,11 +28,11 @@
 class Warp;
 class ArbitraryMap;
 
-class MolRefiner : public StructureModification, public RunsEngine
+class Unit : public StructureModification, public RunsEngine
 {
 public:
-	MolRefiner(ArbitraryMap *comparison, Refine::Info *info);
-	~MolRefiner();
+	Unit(ArbitraryMap *comparison, Refine::Info *info);
+	~Unit();
 	
 	Sampler *sampler()
 	{

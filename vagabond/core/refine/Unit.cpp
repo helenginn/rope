@@ -18,7 +18,7 @@
 
 #include <vagabond/utils/Vec3s.h>
 
-#include "MolRefiner.h"
+#include "Unit.h"
 #include "SimplexEngine.h"
 #include "AtomGroup.h"
 #include "Instance.h"
@@ -35,14 +35,14 @@
 #include "engine/Tasks.h"
 #include "engine/Task.h"
 
-MolRefiner::MolRefiner(ArbitraryMap *comparison, Refine::Info *info) :
+Unit::Unit(ArbitraryMap *comparison, Refine::Info *info) :
 StructureModification(),
 _sampler(info->samples, info->master_dims)
 {
 	setInstance(info->instance);
 	_threads = 6;
 	
-	std::cout << "MolRefiner for " << info->instance->id() << std::endl;
+	std::cout << "Unit for " << info->instance->id() << std::endl;
 
 	_map = comparison;
 	_info = info;
@@ -50,20 +50,20 @@ _sampler(info->samples, info->master_dims)
 	_instance->load();
 }
 
-MolRefiner::~MolRefiner()
+Unit::~Unit()
 {
 	_resources.tasks->wait();
 	_instance->unload();
 }
 
-float MolRefiner::getResult(int *job_id)
+float Unit::getResult(int *job_id)
 {
 	retrieveJobs();
 	float res = RunsEngine::getResult(job_id);
 	return res;
 }
 
-Result *MolRefiner::submitJobAndRetrieve(const std::vector<float> &all)
+Result *Unit::submitJobAndRetrieve(const std::vector<float> &all)
 {
 	std::vector<float> params = all;
 	params.resize(parameterCount());
@@ -74,7 +74,7 @@ Result *MolRefiner::submitJobAndRetrieve(const std::vector<float> &all)
 	return r;
 }
 
-void MolRefiner::submitJob()
+void Unit::submitJob()
 {
 	_ticket++;
 	
@@ -96,7 +96,7 @@ void MolRefiner::submitJob()
 	calculator->releaseHorses();
 }
 
-int MolRefiner::sendJob(const std::vector<float> &all)
+int Unit::sendJob(const std::vector<float> &all)
 {
 	std::vector<float> chosen = all;
 	chosen.resize(parameterCount());
@@ -106,7 +106,7 @@ int MolRefiner::sendJob(const std::vector<float> &all)
 	return _ticket;
 }
 
-void MolRefiner::retrieveJobs()
+void Unit::retrieveJobs()
 {
 	BondCalculator *calc = _resources.calculator;
 	while (true)
@@ -129,12 +129,12 @@ void MolRefiner::retrieveJobs()
 	}
 }
 
-size_t MolRefiner::parameterCount()
+size_t Unit::parameterCount()
 {
 	return _info->total_params();
 }
 
-void MolRefiner::runEngine()
+void Unit::runEngine()
 {
 	prepareResources();
 
@@ -159,7 +159,7 @@ void MolRefiner::runEngine()
 	setGetterSetters();
 }
 
-void MolRefiner::prepareResources()
+void Unit::prepareResources()
 {
 	cleanup();
 
@@ -197,7 +197,7 @@ void MolRefiner::prepareResources()
 	setGetterSetters();
 }
 
-void MolRefiner::setGetterSetters()
+void Unit::setGetterSetters()
 {
 	_parameters.resize(parameterCount());
 
