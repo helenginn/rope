@@ -18,7 +18,7 @@
 
 #include "WatchRefinement.h"
 #include "GuiDensity.h"
-#include "Refinement.h"
+#include "refine/Refinement.h"
 #include "Model.h"
 
 WatchRefinement::WatchRefinement(Scene *prev, Refinement *refine)

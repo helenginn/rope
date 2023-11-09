@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/core/Model.h>
-#include <vagabond/core/Refinement.h>
+#include <vagabond/core/refine/Refinement.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>

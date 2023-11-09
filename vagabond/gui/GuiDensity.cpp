@@ -18,7 +18,7 @@
 
 #include <fstream>
 #include "GuiDensity.h"
-#include "../core/Sampler.h"
+#include <vagabond/core/refine/Sampler.h>
 #include <vagabond/gui/elements/SnowGL.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/BondCalculator.h>
