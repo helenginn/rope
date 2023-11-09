@@ -19,7 +19,6 @@
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "engine/MapTransferHandler.h"
-#include "engine/PointStoreHandler.h"
 #include "CompareDistances.h"
 #include "BondSequence.h"
 #include "engine/Task.h"
