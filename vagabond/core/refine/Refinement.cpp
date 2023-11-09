@@ -30,7 +30,7 @@
 #include "UpdateMap.h"
 #include "Unit.h"
 #include "Refinement.h"
-#include "WarpedRefine.h"
+#include "FromWarp.h"
 #include "SymmetryExpansion.h"
 
 #include <fstream>
@@ -116,7 +116,7 @@ void Refinement::prepareInstanceDetails()
 		Refine::Info &info = prepareInstance(inst);
 		setupRefiner(info);
 
-		WarpedRefine wr = WarpedRefine(inst, info, info.refiner->sampler());
+		FromWarp wr = FromWarp(inst, info, info.refiner->sampler());
 		wr();
 	}
 }

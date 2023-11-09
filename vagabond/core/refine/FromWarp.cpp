@@ -36,7 +36,7 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-WarpedRefine::WarpedRefine(Instance *const &instance, Refine::Info &info,
+FromWarp::FromWarp(Instance *const &instance, Refine::Info &info,
                            Sampler *sampler)
 : _info(info), 
 _instance(instance),
@@ -45,13 +45,13 @@ _sampler(sampler)
 
 }
 
-int WarpedRefine::confParams()
+int FromWarp::confParams()
 {
 	int n = _info.master_dims;
 	return n + n * (n + 1) / 2;
 }
 
-int WarpedRefine::transParams()
+int FromWarp::transParams()
 {
 	int n = _info.master_dims;
 	return (n + 1) * 3;
@@ -75,7 +75,7 @@ std::vector<std::vector<float>> split(const std::vector<float> &vals,
 	return paramses;
 }
 
-Refine::Calculate WarpedRefine::prepareSubmission()
+Refine::Calculate FromWarp::prepareSubmission()
 {
 	CoordManager manager;
 	Sampler *sampler = _sampler;
@@ -168,7 +168,7 @@ Refine::Calculate WarpedRefine::prepareSubmission()
 	};
 }
 
-void WarpedRefine::operator()()
+void FromWarp::operator()()
 {
 	AtomGroup *group = _instance->currentAtoms();
 	_info.anchors += group->chosenAnchor();

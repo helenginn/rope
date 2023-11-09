@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__WarpedRefine__
-#define __vagabond__WarpedRefine__
+#ifndef __vagabond__FromWarp__
+#define __vagabond__FromWarp__
 
 class Instance;
 class Sampler;
@@ -26,11 +26,10 @@ namespace Refine {
 	struct Info;
 };
 
-class WarpedRefine
+class FromWarp
 {
 public:
-	WarpedRefine(Instance *const &instance, Refine::Info &info,
-	             Sampler *sampler);
+	FromWarp(Instance *const &instance, Refine::Info &info, Sampler *sampler);
 
 	void operator()();
 private:
