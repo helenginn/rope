@@ -41,9 +41,11 @@ float AreaMeasurer::surfaceArea()
 {
 	TimerSurfaceArea& timer = TimerSurfaceArea::getInstance();
 	bool timing = timer.timing;
+	int loops = 0;
 
+	repeat:
 	if (timing)
-	{	timer.start();}
+	{	 timer.start();}
 
 	_contacts->updateSheet(_posMap);
 	_lattice.resetLatticeRadius();
@@ -76,7 +78,9 @@ float AreaMeasurer::surfaceArea()
 	}
 
 	if (timing)
-	{	timer.end();}
+	{	timer.end(); loops++;}
+  if (timing && loops < TimerSurfaceArea::getInstance().loops)
+	{	goto repeat;}
 
 	return area;
 }
