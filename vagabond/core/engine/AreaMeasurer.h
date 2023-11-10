@@ -103,6 +103,7 @@ public:
 	void reset()
 	{
 		times.clear();
+		loops = 0;
 	}
 	
 	void start()
@@ -118,6 +119,7 @@ public:
 	
 	std::vector<std::chrono::duration<float>> times;
 	bool timing = false;
+	int loops = 0;
 private:
 	TimerSurfaceArea() {}
 	TimerSurfaceArea(TimerSurfaceArea const&) = delete;
