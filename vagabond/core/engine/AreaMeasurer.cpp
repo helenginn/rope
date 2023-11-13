@@ -26,14 +26,9 @@
 
 AreaMeasurer::AreaMeasurer(SurfaceAreaHandler *handler, int n_points)
 {
-	std::cout << "AreaMeasurer()" << std::endl;
-	std::cout << "_handler " << std::endl;
 	_handler = handler;
-	std::cout << "_contacts " << std::endl;
 	_contacts = new ContactSheet();
-	std::cout << "_lattice " << std::endl;
 	_lattice = Fibonacci();
-	std::cout << "_lattice.generateLattice " << std::endl;
   _lattice.generateLattice(n_points, 1.0);
 }
 
@@ -44,9 +39,15 @@ AreaMeasurer::~AreaMeasurer()
 
 float AreaMeasurer::surfaceArea()
 {
-	std::cout << "surfaceArea()" << std::endl;
+	TimerSurfaceArea& timer = TimerSurfaceArea::getInstance();
+	bool timing = timer.timing;
+	int loops = 0;
+
+	repeat:
+	if (timing)
+	{	 timer.start();}
+
 	_contacts->updateSheet(_posMap);
-	std::cout << "updateSheet()" << std::endl;
 	_lattice.resetLatticeRadius();
 	// std::cout << _posMap.size() << std::endl;
 
@@ -68,17 +69,18 @@ float AreaMeasurer::surfaceArea()
 		}
 	}
 	//end fibonacci points test
-	std::cout << "Fibonacci points test passed" << std::endl;
-  int atoms = 0;
+
   for (std::pair<Atom *const, WithPos> atom : _posMap)
 	{
-		atoms++;
-		if (atoms % 100 == 0)
-		  std::cout << "Atom " << atoms << std::endl;
     const float &exposure = AreaMeasurer::fibExposureSingleAtom(atom.first);
 		const float &area_atom = areaFromExposure(exposure, atom.first, _probeRadius);
 		area += area_atom;
 	}
+
+	if (timing)
+	{	timer.end(); loops++;}
+  if (timing && loops < TimerSurfaceArea::getInstance().loops)
+	{	goto repeat;}
 
 	return area;
 }
