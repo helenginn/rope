@@ -243,14 +243,10 @@ protected:
 
 		void acquireObjectOrNull(Object &obj)
 		{
-			std::cout << "acquireObjectOrNull()" << std::endl;
-			std::cout << "obj nullptr " << std::endl;
 			obj = nullptr;
-			std::cout << "sem.wait()" << std::endl;
 			this->sem.wait();
-			std::cout << "sem.mutex()" << std::endl;
 			std::unique_lock<std::mutex> lock(this->sem.mutex());
-			std::cout << "pluckFromQueue()" << std::endl;
+
 			if (this->members.size())
 			{
 				obj = this->members.front();

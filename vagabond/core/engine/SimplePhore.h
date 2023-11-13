@@ -55,14 +55,12 @@ public:
 	
 	virtual void wait()
 	{
-		std::cout << "SimplePhore::wait()" << std::endl;
-		std::cout << "lock mutex" << std::endl;
 		// all of these locking events will be temporary as they'll
 		// filter through to the bottleneck.
 		std::unique_lock<std::mutex> lock(_mutex);
 		
 		// ... filter ...
-		std::cout << "while loop" << std::endl;
+
 		while (_n == 0)
 		{
 			// bottleneck: threads only pass through one at a time here
