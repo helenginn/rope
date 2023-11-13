@@ -57,11 +57,8 @@ void BondCalculator::releaseHorses()
 
 Result *BondCalculator::acquireResult()
 {
-	std::cout << "acquireResult()" << std::endl;
 	Result *result = nullptr;
-	std::cout << "acquireObjectOrNull" << std::endl;
 	_resultPool.acquireObjectOrNull(result);
-	std::cout << "acquireObjectOrNull() done" << std::endl;
 	return result;
 }
 
