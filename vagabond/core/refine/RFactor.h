@@ -19,6 +19,7 @@
 #ifndef __vagabond__RFactor__
 #define __vagabond__RFactor__
 
+#include <cmath>
 #include <vector>
 class Diffraction;
 

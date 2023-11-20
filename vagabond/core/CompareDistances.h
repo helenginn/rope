@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/svd/PCA.h>
 #include <functional>
+#include <condition_variable>
 #include <mutex>
 #include "AtomPosMap.h"
 #include <atomic>
