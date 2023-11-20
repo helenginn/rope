@@ -81,6 +81,11 @@ void ElementSegment::populatePlan(FFT<VoxelElement>::PlanDims &dims)
 void ElementSegment::addDensity(glm::vec3 real, float density)
 {
 	real2Voxel(real);
+	
+	if (!withinRealBounds(real.x, real.y, real.z))
+	{
+		return;
+	}
 
 	collapse(real);
 

@@ -119,7 +119,6 @@ ArbitraryMap &ArbitraryMap::operator+=(const ArbitraryMap &other)
 	return *this;
 }
 
-
 void ArbitraryMap::setupFromDiffraction()
 {
 	if (_diff == nullptr)

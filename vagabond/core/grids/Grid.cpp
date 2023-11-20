@@ -129,9 +129,30 @@ void Grid<T>::prepareData()
 
 }
 
+template <class T>
+bool Grid<T>::withinRealBounds(int i, int j, int k) const
+{
+	if (i < 0 || i > +_nx)
+	{
+		return false;
+	}
+
+	if (j < 0 || j > +_ny)
+	{
+		return false;
+	}
+
+	if (k < 0 || k > +_nz)
+	{
+		return false;
+	}
+	
+	return true;
+}
+
 /* is a given ijk within -n/2 < ijk <= n/2 */
 template <class T>
-bool Grid<T>::withinBounds(int i, int j, int k)
+bool Grid<T>::withinReciprocalBounds(int i, int j, int k) const
 {
 	if (i >= _nx / 2 || i < -_nx / 2)
 	{

@@ -32,6 +32,8 @@ public:
 	void operation_on_other(const TransformedGrid<T> &other,
 	                        Func op_function);
 
+	void addFromOther(const TransformedGrid<T> &other);
+
 	void setRecipMatrix(glm::mat3x3 mat);
 
 	virtual const glm::mat3x3 &frac2Real() const

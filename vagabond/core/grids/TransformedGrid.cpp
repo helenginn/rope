@@ -37,11 +37,11 @@ void TransformedGrid<T>::operation_on_other(const TransformedGrid<T> &other,
 	/* loop through modify's density points which are within the bounds of 
 	 * "other" */
 
-	glm::vec3 min = other.minBound();
-	glm::vec3 max = other.maxBound();
-
-	auto lmb = [this, &min, &max, &other, &op_function](int i, int j, int k)
+	auto lmb = [this, &other, &op_function](int i, int j, int k)
 	{
+		glm::vec3 min = other.minBound();
+		glm::vec3 max = other.maxBound();
+
 		/* my real position */
 		glm::vec3 relative_pos = real(i, j, k);
 		/* find point relative to the minimum "other" */
@@ -56,14 +56,19 @@ void TransformedGrid<T>::operation_on_other(const TransformedGrid<T> &other,
 		/* new position in the space closest to the template box */
 		this->fractional_to_index(relative_pos);
 		voxel2Real(relative_pos);
-
 		relative_pos += min;
 
-		if (relative_pos.x > max.x || relative_pos.y > max.y
-		    || relative_pos.z > max.z)
+		glm::vec3 check_bounds = relative_pos;
+		
+		/* convert my position to fractional */
+		other.real2Voxel(check_bounds);
+
+		if (!other.withinRealBounds(check_bounds.x, check_bounds.y,
+		                            check_bounds.z))
 		{
 			return;
 		}
+
 
 		/* other's interpolated value */
 		float val = other.interpolate(relative_pos);
@@ -74,10 +79,63 @@ void TransformedGrid<T>::operation_on_other(const TransformedGrid<T> &other,
 		/* do the operation */
 		op_function(ele_mine, val);
 	};
-	
+
 	this->do_op_on_basic_index(lmb);
 }
 
+template <class T>
+void TransformedGrid<T>::addFromOther(const TransformedGrid<T> &other)
+{
+	auto lmb = [this, &other](int i, int j, int k)
+	{
+		glm::vec3 min = other.minBound();
+
+		/* my real position */
+		glm::vec3 relative_pos = real(i, j, k);
+		/* find point relative to the minimum "other" */
+
+		glm::vec3 check_bounds = relative_pos;
+		
+		/* convert my position to fractional */
+		other.real2Voxel(check_bounds);
+
+		if (!other.withinRealBounds(check_bounds.x, check_bounds.y,
+		                            check_bounds.z))
+		{
+			return;
+		}
+
+
+		/* other's interpolated value */
+		float val = other.interpolate(relative_pos);
+
+		/* my element */
+		T &ele_mine = this->element(i, j, k);
+
+		ele_mine[0] += val;
+	};
+	
+	glm::vec3 min = other.minBound() - this->origin();
+	glm::vec3 max = other.maxBound() - this->origin();
+
+	this->real2Voxel(min);
+	this->real2Voxel(max);
+	
+	int xmin = lrint(min.x - 1); int xmax = lrint(max.x + 1);
+	int ymin = lrint(min.y - 1); int ymax = lrint(max.y + 1);
+	int zmin = lrint(min.z - 1); int zmax = lrint(max.z + 1);
+
+	for (int z = zmin; z <= zmax; z++)
+	{
+		for (int y = ymin; y <= ymax; y++)
+		{
+			for (int x = xmin; x <= xmax; x++)
+			{
+				lmb(x, y, z);
+			}
+		}
+	}
+}
 
 template <class T>
 void TransformedGrid<T>::setRealMatrix(glm::mat3x3 mat)

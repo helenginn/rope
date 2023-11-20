@@ -174,7 +174,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 		Result *result = unit->submitJobAndRetrieve({});
 		AtomMap &map = *result->map;
 		ArbitraryMap *partial = map();
-		*arb += *partial;
+		arb->addFromOther(*partial);
 		delete partial;
 		result->destroy();
 	}
