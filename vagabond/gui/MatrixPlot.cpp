@@ -40,10 +40,15 @@ glm::vec4 MatrixPlot::colourForValue(float val)
 
 void MatrixPlot::update()
 {
-	checkDimensions();
+	std::unique_lock<std::mutex> lock(_buffLock);
+	
+	if (!checkDimensions())
+	{
+		lock.unlock();
+	}
 
-	std::unique_lock<std::mutex> lock(_mutex, std::defer_lock);
-	if (lock.try_lock())
+	std::unique_lock<std::mutex> datalock(_mutex, std::defer_lock);
+	if (datalock.try_lock())
 	{
 		updateColours();
 	}
@@ -67,7 +72,6 @@ void MatrixPlot::updateColours()
 
 void MatrixPlot::prepareSmallVertices()
 {
-	std::unique_lock<std::mutex> lock(_mutex);
 	_index2Vertex.clear();
 	int matNum = 0;
 	int vertNum = 0;
@@ -79,7 +83,7 @@ void MatrixPlot::prepareSmallVertices()
 			glm::vec3 pos{};
 			pos.x = i * _xProp;
 			pos.y = j * _yProp;
-			
+
 			for (int m = 0; m < 2; m++)
 			{
 				for (int n = 0; n < 2; n++)
@@ -90,19 +94,19 @@ void MatrixPlot::prepareSmallVertices()
 					glm::vec3 tmp = base;
 					tmp.x -= 0.5; tmp.y -= 0.5;
 					Snow::Vertex &v = addVertex(tmp);
-					
+
 					v.tex.x = 1 - base.x;
 					v.tex.y = 1 - base.y;
-					
+
 					float val = _mat[i][j];
 					v.color = colourForValue(val);
 					vertNum++;
 				}
 			}
-			
+
 			addIndices(-4, -3, -2);
 			addIndices(-3, -2, -1);
-			
+
 			_index2Vertex[matNum] = vertNum - 4;
 			matNum++;
 		}
@@ -133,11 +137,11 @@ void MatrixPlot::setup()
 	rescale(Window::aspect(), 1.);
 }
 
-void MatrixPlot::checkDimensions()
+bool MatrixPlot::checkDimensions()
 {
 	if (_cols == _mat.cols && _rows == _mat.rows)
 	{
-		return;
+		return false;
 	}
 
 	clearVertices();
@@ -147,4 +151,6 @@ void MatrixPlot::checkDimensions()
 	float scale = resizeScale();
 	resize(scale);
 	setResizeScale(scale);
+	
+	return true;
 }

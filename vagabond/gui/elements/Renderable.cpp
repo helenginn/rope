@@ -263,7 +263,7 @@ void Renderable::runProgram()
 		glUniform1i(uTex, 0);
 	}
 
-	if (_shaderGets->buffered())
+	if (_shaderGets->buffered() && indexCount() > 0)
 	{
 		std::unique_lock<std::mutex> buffers(_buffLock);
 

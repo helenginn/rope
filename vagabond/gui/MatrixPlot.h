@@ -46,7 +46,7 @@ protected:
 private:
 	glm::vec4 colourForValue(float val);
 	void prepareSmallVertices();
-	void checkDimensions();
+	bool checkDimensions();
 	void updateColours();
 	void setup();
 
