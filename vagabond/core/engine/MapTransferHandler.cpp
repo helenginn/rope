@@ -64,12 +64,9 @@ void MapTransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
 		_min = glm::vec3(0.);
 		_max = glm::vec3(0.);
 	}
-	else
-	{
-		_min -= _pad * 2.f;
-		_max += _pad * 2.f;
-	}
-	
+
+	_min -= _pad * 2.f;
+	_max += _pad * 2.f;
 }
 
 void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
