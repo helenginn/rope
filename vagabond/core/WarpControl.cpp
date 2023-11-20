@@ -27,8 +27,8 @@
 #include "Warp.h"
 #include <algorithm>
 
-#define LOWER_BOUND 30
-#define UPPER_BOUND 150
+#define LOWER_BOUND 10
+#define UPPER_BOUND 100
 #define LONG_RUN 5
 #define SHORT_RUN 3
 #define ALIGNMENT_RUN 1
@@ -109,7 +109,27 @@ ParamSet WarpControl::acquireParametersBetween(int start, int end, bool reset)
 	return params;
 }
 
-bool WarpControl::refineBetween(const ParamSet &params, int mult)
+void WarpControl::prepareComparison(bool more_atoms)
+{
+	_warp->resetComparison();
+
+	if (more_atoms)
+	{
+		auto permissive = [](Atom *const &atom) -> bool
+		{
+			return (atom->isMainChain() && atom->atomName() != "C"
+			        && atom->atomName() != "CA");
+		};
+
+		_warp->compare()->setFiltersEqual(permissive);
+	}
+	else
+	{
+		_warp->clearFilters();
+	}
+}
+
+bool WarpControl::refineBetween(const ParamSet &params, bool more_atoms)
 {
 	if (params.size() == 0)
 	{		
@@ -117,7 +137,8 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 	}
 	
 	_tWarp->getSetCoefficients(params, _getter, _setter);
-	_warp->resetComparison();
+
+	prepareComparison(more_atoms);
 
 	float begin = _score();
 	if (begin <= 1e-6)
@@ -125,7 +146,7 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 		return false;
 	}
 
-	replaceSimplex(_simplex, params.size() * 4 * mult, 1.0);
+	replaceSimplex(_simplex, params.size() * 4, 1.0);
 
 	float final_sc = _score();
 	std::cout << "\t" << begin << " to " << final_sc << std::endl;
@@ -135,11 +156,14 @@ bool WarpControl::refineBetween(const ParamSet &params, int mult)
 	return true;
 }
 
-float WarpControl::score()
+float WarpControl::score(bool more_atoms)
 {
-	_warp->resetComparison();
-	float res = _score();
-	_warp->resetComparison();
+	prepareComparison(more_atoms);
+
+	std::vector<Floats> points = _target->pointsForScore();
+	float res = _warp->score(points, false)();
+
+	prepareComparison(more_atoms);
 	return res;
 }
 
@@ -150,7 +174,7 @@ bool WarpControl::refineBetween(int start, int end)
 	while (count < 10)
 	{
 		ParamSet params = acquireParametersBetween(start, end, false);
-		bool success = refineBetween(params);
+		bool success = refineBetween(params, true);
 		count++;
 
 		if (success)
@@ -202,7 +226,7 @@ void WarpControl::run()
 		_jobs.clear();
 	}
 	
-	_warp->resetComparison();
+	prepareComparison(false);
 	_sequences->clearDepthLimits();
 	
 	_warp->cleanup();
@@ -229,7 +253,7 @@ auto repeat(const Func &func, int num)
 void WarpControl::prepareScore()
 {
 	std::vector<Floats> points = _target->pointsForScore();
-	_score = _warp->score(points);
+	_score = _warp->score(points, false);
 	float lastScore = _score();
 	std::cout << "Starting score: " << lastScore << std::endl;
 
@@ -270,7 +294,7 @@ float WarpControl::scoreBetween(int start, int end)
 	if (end > nb) end = nb;
 
 	_sequences->imposeDepthLimits(start, end, true);
-	_warp->resetComparison();
+	prepareComparison(true);
 
 	float score = _score();
 	return score;
@@ -359,8 +383,8 @@ bool wind(const FlexScoreMap &peaks, int &idx, int dir)
 
 bool expand_further(const FlexScoreMap &peaks, Between &between)
 {
-	bool changed = wind(peaks, between.start, -5);
-	changed |= wind(peaks, between.end, +5);
+	bool changed = wind(peaks, between.start, -3);
+	changed |= wind(peaks, between.end, +3);
 
 	return changed;
 }
@@ -520,8 +544,8 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 			for (const ParamSet &set : sets)
 			{
 				wc->sequences()->imposeDepthLimits(start, large.end, true);
-				float before = wc->score();
-				bool success = wc->refineBetween(set, 1);
+				float before = wc->score(true);
+				bool success = wc->refineBetween(set, true);
 				if (!success && first)
 				{
 					start--;
@@ -534,7 +558,7 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 			}
 
 			first = false;
-			float newest = wc->score();
+			float newest = wc->score(true);
 			if (newest > 0.9 * last)
 			{
 				std::cout << "That was OK" << std::endl;

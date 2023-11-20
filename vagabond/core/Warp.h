@@ -57,7 +57,8 @@ public:
 
 	void setup();
 	
-	std::function<float()> score(const std::vector<Floats> &points);
+	std::function<float()> score(const std::vector<Floats> &points,
+	                             bool expose_matrix = true);
 
 	int submitJob(bool show, const std::vector<float> &vals);
 	

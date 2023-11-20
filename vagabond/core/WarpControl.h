@@ -67,7 +67,7 @@ public:
 		_finish = true;
 	}
 	
-	float score();
+	float score(bool more_atoms);
 
 	void transformCoordinates(std::vector<float> &coord);
 
@@ -75,13 +75,14 @@ public:
 	virtual int sendJob(const std::vector<float> &all);
 	ParamSet acquireParametersBetween(int start, int end, bool reset);
 
-	bool refineBetween(const ParamSet &params, int mult = 1);
+	bool refineBetween(const ParamSet &params, bool more_atoms);
 	bool refineBetween(int start, int end);
 private:
 	std::vector<std::function<void()>> prepareJobList();
 	FlexScoreMap scanDiagonal(WarpControl *wc, int size);
 
 	void filterToParameter(Parameter *param, bool reverse);
+	void prepareComparison(bool more_atoms);
 
 	float scoreBetween(int start, int end);
 	friend FlexScoreMap scanDiagonal(WarpControl *wc, int size);

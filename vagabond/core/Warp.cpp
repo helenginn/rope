@@ -32,7 +32,7 @@ Warp::Warp(Instance *inst, size_t num_axes)
 {
 	setInstance(inst);
 	_dims = num_axes;
-	_threads = 6;
+	_threads = 8;
 }
 
 void Warp::addTorsionsToJob(Job *job)
@@ -58,8 +58,12 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	/* this final task returns the result to the pool to collect later */
 	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
 
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions
-	                             | Flag::DoSuperpose);
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+	
+	if (show)
+	{
+		calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions | Flag::DoSuperpose);
+	}
 	
 	Flag::Extract extract = Flag::Extract(Flag::AtomVector);
 	
@@ -72,17 +76,16 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	
 	_resources.tasks->addTask(first_hook);
 
-	_ticket2Point[_ticket] = _jobNum;
-	_point2Score[_jobNum] = Score{};
 	_jobNum++;
 	return _jobNum - 1;
 }
 
-std::function<float()> Warp::score(const std::vector<Floats> &points)
+std::function<float()> Warp::score(const std::vector<Floats> &points,
+                                   bool expose_matrix)
 {
 	std::function<float()> func;
 
-	func = [points, this]() -> float
+	func = [expose_matrix, points, this]() -> float
 	{
 		_alwaysShow = false;
 		_compare->reset();
@@ -90,13 +93,17 @@ std::function<float()> Warp::score(const std::vector<Floats> &points)
 
 		for (const Floats &fs : points)
 		{
-			submitJob(true, fs);
+			submitJob(false, fs);
 		}
 		_resources.calculator->releaseHorses();
 		
 		retrieve();
 
-		exposeDistanceMatrix();
+		if (expose_matrix)
+		{
+			exposeDistanceMatrix();
+		}
+
 		_alwaysShow = true;
 		clearTickets();
 
