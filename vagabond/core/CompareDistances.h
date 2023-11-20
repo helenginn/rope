@@ -37,7 +37,7 @@ public:
 	
 	void process(const AtomPosList &apl);
 	
-	void setFiltersEqual(AtomFilter &filter)
+	void setFiltersEqual(const AtomFilter &filter)
 	{
 		_equal = true;
 		_left = filter;
@@ -79,7 +79,6 @@ private:
 	void equalFilter(const AtomPosList &apl);
 	void setupMatrix(const AtomPosList &apl);
 	void addToMatrix(const AtomPosList &apl);
-	void addEqualToMatrix(const AtomPosList &apl);
 
 	std::vector<Atom *> _leftAtoms;
 

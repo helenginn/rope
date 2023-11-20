@@ -79,11 +79,8 @@ void CompareDistances::setupMatrix(const AtomPosList &apl)
 	{
 		_setSignal--;
 
-		if (!_counts.set())
-		{
-			equalFilter(apl);
-			_counts.setup(_leftAtoms.size());
-		}
+		equalFilter(apl);
+		_counts.setup(_leftAtoms.size());
 
 		_set = true;
 		_setSignal = 1;
@@ -117,23 +114,21 @@ float CompareDistances::quickScore()
 	return sqrt(sum / (float)(size * _counter));
 }
 
-void CompareDistances::addEqualToMatrix(const AtomPosList &apl)
+void CompareDistances::addToMatrix(const AtomPosList &apl)
 {
 	_counter++;
 	
 	for (int i = 0; i < (int)_leftIdxs.size() - 1; i++)
 	{
 		const int &m = _leftIdxs[i];
+		
 		const glm::vec3 &x = apl[m].wp.ave;
 		const glm::vec3 &p = apl[m].wp.target;
 
 		for (int j = i + 1; j < _leftIdxs.size(); j++)
 		{
 			const int &n = _leftIdxs[j];
-			if (abs(i - j) <= _minimum || abs(i - j) >= _maximum)
-			{
-				continue;
-			}
+
 			const glm::vec3 &y = apl[n].wp.ave;
 			const glm::vec3 &q = apl[n].wp.target;
 
@@ -149,11 +144,6 @@ void CompareDistances::addEqualToMatrix(const AtomPosList &apl)
 			}
 		}
 	}
-}
-
-void CompareDistances::addToMatrix(const AtomPosList &apl)
-{
-	addEqualToMatrix(apl);
 }
 
 void CompareDistances::reset()
