@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "WayPoint.h"
-#include <vagabond/utils/polyfit.h>
 #include <vagabond/utils/degrad.h>
 #include <iostream>
 
