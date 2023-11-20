@@ -79,6 +79,7 @@ void BondSequenceHandler::prepareSequenceBlocks()
 		sequence->makeTorsionBasis();
 	}
 
+	sequence->generateBlocks();
 	sequence->multiplyUpBySampleCount();
 	_elements = sequence->elementList();
 

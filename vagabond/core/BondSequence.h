@@ -190,6 +190,8 @@ public:
 	                   const rope::GetFloatFromCoordIdx &fetch_torsion);
 	void makeTorsionBasis();
 	
+	void generateBlocks();
+
 	void getCalculationBoundaries(int &start, int &end);
 private:
 
@@ -203,8 +205,6 @@ private:
 	
 	bool atomGraphChildrenOnlyHydrogens(AtomGraph &g);
 	void markHydrogenGraphs();
-
-	void generateBlocks();
 
 	int calculateBlock(int idx, const Coord::Get &get,
 	                   const rope::GetFloatFromCoordIdx &fetch_torsion);

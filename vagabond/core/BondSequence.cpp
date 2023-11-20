@@ -67,7 +67,6 @@ void BondSequence::addToGraph(AnchorExtension &ext)
 	_grapher.markHydrogenGraphs();
 	_grapher.fillTorsionAngles(_torsionBasis);
 	_grapher.sortGraphChildren();
-	generateBlocks();
 }
 
 void BondSequence::generateBlocks()
