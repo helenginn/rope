@@ -47,8 +47,11 @@ public:
 	static void run(Refinement *r)
 	{
 		r->updateMap();
-		r->play();
-		r->play();
+		
+		for (size_t i = 0; i < 10; i++)
+		{
+			r->play();
+		}
 	}
 	
 	ArbitraryMap *map()
@@ -75,7 +78,6 @@ private:
 
 	std::list<Refine::Info> _molDetails;
 	
-	std::map<Instance *, Unit *> _units;
 };
 
 #endif

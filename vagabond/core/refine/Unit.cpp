@@ -39,21 +39,15 @@ Unit::Unit(ArbitraryMap *comparison, Refine::Info *info) :
 StructureModification(),
 _sampler(info->samples, info->master_dims)
 {
-	setInstance(info->instance);
-	_threads = 6;
-	
-	std::cout << "Unit for " << info->instance->id() << std::endl;
+	_threads = 5;
 
 	_map = comparison;
 	_info = info;
-
-	_instance->load();
 }
 
 Unit::~Unit()
 {
 	_resources.tasks->wait();
-	_instance->unload();
 }
 
 float Unit::getResult(int *job_id)
@@ -138,13 +132,6 @@ void Unit::runEngine()
 {
 	prepareResources();
 
-	if (!_info->instance->hasSequence())
-	{
-		return;
-	}
-
-	std::cout << _info->instance->id() << std::endl;
-
 	if (_map == nullptr)
 	{
 		throw std::runtime_error("Map provided to refinement is null");
@@ -153,6 +140,7 @@ void Unit::runEngine()
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
 	engine->setStepSize(0.2);
+//	engine->setMaxRuns(100);
 	engine->start();
 	
 	_parameters = Floats(engine->bestResult());

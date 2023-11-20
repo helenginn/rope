@@ -29,7 +29,8 @@ namespace rope
 	typedef std::function<IntToCoordGet(const std::vector<float> &)> 
 	GetListFromParameters;
 
-	typedef std::function<glm::vec3(const int &)> GetVec3FromIdx;
+	typedef std::function<glm::vec3(const int &, const glm::vec3 &v)> 
+	GetVec3FromIdx;
 
 	typedef std::function<glm::vec3(const Coord::Get &, const int &)> 
 	GetVec3FromCoordIdx;

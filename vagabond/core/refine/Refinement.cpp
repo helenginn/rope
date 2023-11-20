@@ -30,7 +30,7 @@
 #include "UpdateMap.h"
 #include "Unit.h"
 #include "Refinement.h"
-#include "FromWarp.h"
+#include "Wiggler.h"
 #include "SymmetryExpansion.h"
 
 #include <fstream>
@@ -43,6 +43,7 @@ Refinement::Refinement()
 void Refinement::setup()
 {
 	_model->load();
+	_model->currentAtoms()->recalculate();
 
 	prepareInstanceDetails();
 }
@@ -108,44 +109,78 @@ void Refinement::prepareInstanceDetails()
 
 	for (Instance *inst : multi_atoms)
 	{
+		Wiggler::Module mods = Wiggler::Module(Wiggler::Warp | 
+		                                       Wiggler::Translate |
+		                                       Wiggler::Rotate);
+
 		if (!inst->hasSequence())
 		{
-			continue;
+			mods = Wiggler::Translate;
 		}
+
+		inst->load();
 
 		Refine::Info &info = prepareInstance(inst);
 		setupRefiner(info);
 
-		FromWarp wr = FromWarp(inst, info, info.refiner->sampler());
-		wr();
+		Wiggler wiggler = Wiggler(info, info.refiner->sampler());
+		wiggler.setModules(mods);
+		wiggler();
+	}
+	
+	if (single_atoms.size())
+	{
+		{
+			Refine::Info info;
+			for (Instance *inst : single_atoms)
+			{
+				inst->load();
+				info.instances.push_back(inst);
+			}
+
+			_molDetails.push_back(info);
+		}
+		
+		Refine::Info &network = _molDetails.back();
+		network.samples = 120;
+		network.master_dims = 3;
+
+		Unit *unit = new Unit(_map, &network);
+		network.refiner = unit;
+
+		Wiggler wiggler = Wiggler(network, network.refiner->sampler());
+		wiggler.setModules(Wiggler::Translate);
+		wiggler();
+
 	}
 }
 
 Refine::Info &Refinement::prepareInstance(Instance *mol)
 {
 	Refine::Info info;
-	info.instance = mol;
+	info.instances.push_back(mol);
 	_molDetails.push_back(info);
 	return _molDetails.back();
 }
 
 void Refinement::setupRefiner(Refine::Info &info)
 {
-	Instance *mol = info.instance;
+	if (info.instances.size() == 0) return;
+	Instance *mol = info.instances[0];
+	std::string file = (mol->hasSequence() ? mol->id() + ".json" : "");
 	
 	info.samples = 120;
 	info.master_dims = 3;
-	info.warp = Warp::warpFromFile(info.instance, "test.json");
+	info.warp = Warp::warpFromFile(mol, file);
 	Unit *unit = new Unit(_map, &info);
 	info.refiner = unit;
-	_units[mol] = unit;
 }
 
 void Refinement::play()
 {
 	for (Refine::Info &info  : _molDetails)
 	{
-		Unit *unit = _units[info.instance];
+		Unit *unit = info.refiner;
 
 		if (unit)
 		{
@@ -164,7 +199,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 	
 	for (Refine::Info &info  : _molDetails)
 	{
-		Unit *unit = _units[info.instance];
+		Unit *unit = info.refiner;
 		if (!unit)
 		{
 			continue;
@@ -203,7 +238,7 @@ void Refinement::swapMap(ArbitraryMap *map)
 {
 	for (Refine::Info &info  : _molDetails)
 	{
-		Unit *unit = _units[info.instance];
+		Unit *unit = info.refiner;
 		if (!unit)
 		{
 			continue;

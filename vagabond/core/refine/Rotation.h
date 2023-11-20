@@ -16,37 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FromWarp__
-#define __vagabond__FromWarp__
+#ifndef __vagabond__Rotation__
+#define __vagabond__Rotation__
 
-class Instance;
-class Sampler;
+#include "engine/CoordManager.h"
+#include <vagabond/utils/svd/PCA.h>
 
-namespace Refine {
-	struct Info;
-};
-
-class FromWarp
+class Rotation
 {
 public:
-	FromWarp(Instance *const &instance, Refine::Info &info, Sampler *sampler);
+	Rotation(int hyperDims, glm::vec3 centre);
+	~Rotation();
 
-	void operator()();
+	rope::GetVec3FromIdx rotate(const rope::IntToCoordGet &get_coord,
+	                            const std::vector<float> &params) const;
 private:
-	Refine::Calculate prepareSubmission();
-	void setGetterSetters();
-	int confParams();
-	int transParams();
+	PCA::Matrix _coordinates;
+
+	int _hyperDims = 0;
 	
-	int n_params()
-	{
-		return confParams() + transParams();
-	}
-
-	Refine::Info &_info;
-	Instance *const &_instance;
-	Sampler *_sampler;
-
+	glm::vec3 _centre = {};
 };
 
 #endif

@@ -31,6 +31,24 @@ class Unit;
 class BaseTask;
 class Warp;
 
+inline std::vector<std::vector<float>> split(const std::vector<float> &vals,
+                                             const std::vector<int> &list)
+{
+	std::vector<std::vector<float>> paramses;
+	auto it = vals.begin();
+
+	for (const int &length : list)
+	{
+		std::vector<float> params;
+		params.reserve(length);
+		params.insert(params.begin(), it, it + length);
+		paramses.push_back(params);
+		it = it + length;
+	}
+	
+	return paramses;
+}
+
 /** \class RefinementInfo
  *  \brief contains information about how to replicate refinement setup */
 
@@ -52,7 +70,7 @@ namespace Refine
 
 	struct Info
 	{
-		Instance *instance = nullptr;
+		std::vector<Instance *> instances;
 		Unit *refiner = nullptr;
 		OpSet<Atom *> anchors;
 		OpSet<Atom *> all_atoms;

@@ -33,7 +33,6 @@ Sampler::Sampler(int n, int dims)
 
 Sampler::~Sampler()
 {
-	std::cout << "deleting sampler" << std::endl;
 	freeMatrix(&_points);
 }
 
@@ -218,7 +217,7 @@ rope::IntToCoordGet Sampler::rawCoordinates()
 			return start_point[idx];
 		};
 
-		return Remember<int, float>(get);
+		return get;
 	};
 
 	return raw_coords;
@@ -257,7 +256,6 @@ rope::IntToCoordGet Sampler::coordsFromParams(const std::vector<float> &all)
 	[mean, tensor, this](const int &idx) -> Coord::Get
 	{
 		const double *start_point = &_points[idx][0];
-		const int dims = _dims;
 
 		// this index represents the coefficient of the desired coordinate
 		Coord::Get get = [mean, tensor, start_point](const int &idx)
@@ -274,6 +272,7 @@ rope::IntToCoordGet Sampler::coordsFromParams(const std::vector<float> &all)
 			return f;
 		};
 
+		return get;
 		return Remember<int, float>(get);
 	};
 	

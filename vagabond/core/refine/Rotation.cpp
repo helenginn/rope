@@ -16,62 +16,65 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Translation.h"
+#include "Rotation.h"
 using namespace rope;
 
-Translation::Translation(int hyperDims)
+Rotation::Rotation(int hyperDims, glm::vec3 centre)
 {
 	_hyperDims = hyperDims;
-	setupMatrix(&_defaults, _hyperDims + 1, 3);
+	_centre = centre;
 	setupMatrix(&_coordinates, _hyperDims + 1, 3);
-	
-	
-	for (size_t j = 0; j < 3; j++)
-	{
-		for (size_t i = 0; i < _hyperDims; i++)
-		{
-			if (i == j)
-			{
-				_defaults[i][j] = 2.0;
-			}
-		}
-	}
+
 }
 
-Translation::~Translation()
+Rotation::~Rotation()
 {
-	freeMatrix(&_defaults);
 	freeMatrix(&_coordinates);
 }
 
-GetVec3FromIdx Translation::translate(const IntToCoordGet &get_coord,
+rope::GetVec3FromIdx Rotation::rotate(const rope::IntToCoordGet &get_coord,
                                       const std::vector<float> &params) const
 {
 	int i = 0;
 	for (const float &p : params)
 	{
-		_coordinates.vals[i] = p + _defaults.vals[i];
+		_coordinates.vals[i] = p;
 		i++;
 	}
 
-	GetVec3FromIdx tr = [this, get_coord](const int &idx, 
-	                                      const glm::vec3 &) -> glm::vec3
+	GetVec3FromIdx rot = [this, get_coord](const int &idx, 
+	                                      const glm::vec3 &v) -> glm::vec3
 	{
 		Coord::Get get = get_coord(idx); // raw sampled coordinate
 
-		glm::vec3 result{};
+		glm::vec3 from_centre = v - _centre;
+
+		glm::vec3 dir{};
 		
 		for (size_t j = 0; j < _coordinates.cols; j++)
 		{
 			for (size_t i = 0; i < _coordinates.rows; i++)
 			{
 				float val = (i == _coordinates.rows - 1) ? 1 : get(i);
-				result[j] += val * _coordinates[i][j];
+				dir[j] += val * _coordinates[i][j];
 			}
 		}
 		
-		return result;
+		glm::vec3 axis = glm::normalize(dir);
+		float angle = glm::length(dir) / 5.f;
+		
+		if (angle != angle) angle = 0;
+		if (axis.x != axis.x) axis = {1, 0, 0};
+		
+		glm::mat3x3 rot = glm::mat3x3(glm::rotate(glm::mat4(1.f), angle, axis));
+		
+		glm::vec3 rotated = rot * from_centre;
+		rotated += _centre;
+		rotated -= v;
+
+		return rotated;
 	};
 	
-	return tr;
+	return rot;
+
 }

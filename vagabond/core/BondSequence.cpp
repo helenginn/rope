@@ -24,7 +24,6 @@
 #include "Atom.h"
 #include <iostream>
 #include <vagabond/utils/FileReader.h>
-#include <vagabond/utils/Remember.h>
 #include <queue>
 
 class ForceField;
@@ -173,7 +172,7 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
                                  const rope::GetFloatFromCoordIdx &fetch_torsion)
 {
 	AtomBlock &b = _blocks[idx];
-	fetchAtomTarget(idx, get);
+//	fetchAtomTarget(idx, get);
 
 	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
 
@@ -285,17 +284,18 @@ void loopThrough(BondSequence *seq, const rope::IntToCoordGet &coordForIdx,
 	}
 }
 
-void BondSequence::addTranslation(rope::GetVec3FromIdx getOffset)
+void BondSequence::addOffset(rope::GetVec3FromIdx getOffset)
 {
 	int start, end;
 	getCalculationBoundaries(start, end);
 	
 	for (size_t j = 0; j < sampleCount(); j++)
 	{
-		glm::vec4 offset = glm::vec4(getOffset(j), 0.f);
 		for (size_t i = start; i < end && i < singleSequence(); i++)
 		{
 			int n = j * singleSequence() + i;
+			glm::vec3 original = _blocks[n].basis[3];
+			glm::vec4 offset = glm::vec4(getOffset(j, original), 0);
 			_blocks[n].basis[3] += offset;
 		}
 	}
