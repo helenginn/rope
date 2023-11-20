@@ -155,8 +155,6 @@ public:
 		char element[3];
 	};
 
-	std::vector<ElePos> extractForMap();
-
 	std::vector<glm::vec3> extractForMap(const std::string &ele, int num);
 	double calculateDeviations();
 
