@@ -46,8 +46,6 @@ void ThreadSurfacer::start()
 			break;
 		}
 		
-		timeStart();
-		
 		float area = am->surfaceArea();
 		Job *job = am->job();
 
@@ -57,8 +55,6 @@ void ThreadSurfacer::start()
 		sendToNext(job, am);
 		
 		_handler->returnToIdle(am);
-
-		timeEnd();
 	}
 	while (true);
 }

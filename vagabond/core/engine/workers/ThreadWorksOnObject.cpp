@@ -43,15 +43,12 @@ void ThreadWorksOnObject<Thr, Obj>::start()
 			continue;
 		}
 		
-		timeStart();
 		bool result = doJob(t);
 		
 		if (!result)
 		{
 			break;
 		}
-
-		timeEnd();
 
 		_handler->finishedObject(t);
 	}

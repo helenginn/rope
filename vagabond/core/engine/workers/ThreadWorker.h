@@ -21,7 +21,6 @@
 
 #include <atomic>
 #include <iostream>
-#include <chrono>
 #include <vagabond/utils/os.h>
 
 class ThreadWorker
@@ -59,69 +58,12 @@ public:
 		_finish = true;
 	}
 	
-	void expressTiming()
-	{
-		if (_timeWait == 0 && _timeWork == 0)
-		{
-			return;
-		}
-
-		std::cout << type() << ": ";
-		double ratio = (float)_timeWork / (float)(_timeWait + _timeWork);
-		std::cout << "" << ratio * 100 << "% work" << std::endl;
-	}
-	
 	virtual std::string type() = 0;
 protected:
-	void time(int &timePool)
-	{
-#ifdef OS_WINDOWS
-        return;
-#else
-#ifdef OS_LINUX
-        return;
-#else
-		std::chrono::system_clock::time_point n;
-		n = std::chrono::system_clock::now();
-		
-		if (_measured)
-		{
-			int span = std::chrono::microseconds(n - _t).count();
-			_t = n;
-			timePool += span;
-		}
-		else if (!_measured)
-		{
-			_t = n;
-			_tStart = n;
-			_measured = true;
-		}
-#endif
-#endif
-	}
-	
-	void timeStart()
-	{
-		if (_test)
-		{
-			time(_timeWait);
-		}
-	}
-
-	void timeEnd()
-	{
-		if (_test)
-		{
-			time(_timeWork);
-		}
-	}
-
 	std::atomic<bool> _finish{false};
 
 	int _timeWait = 0;
 	int _timeWork = 0;
-	std::chrono::system_clock::time_point _tStart;
-	std::chrono::system_clock::time_point _t;
 	bool _measured = false;
 	bool _test = false;
 };
