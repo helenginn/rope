@@ -22,11 +22,11 @@
 #include <vagabond/core/engine/CorrelationHandler.h>
 #include <vagabond/core/engine/MapSumHandler.h>
 #include <vagabond/core/files/PdbFile.h>
+#include <vagabond/core/grids/ArbitraryMap.h>
 #include "BondSequenceHandler.h"
 #include "BondCalculator.h"
 #include "Result.h"
 #include "AtomGroup.h"
-#include "ArbitraryMap.h"
 #include <string>
 #include <iostream>
 
