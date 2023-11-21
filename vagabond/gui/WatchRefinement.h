@@ -20,6 +20,7 @@
 #define __vagabond__WatchRefinement__
 
 #include <vagabond/core/Responder.h>
+#include <functional>
 #include "Display.h"
 #include <thread>
 

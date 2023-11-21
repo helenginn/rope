@@ -21,10 +21,10 @@
 #include <vagabond/core/engine/MapTransferHandler.h>
 #include <vagabond/core/engine/CorrelationHandler.h>
 #include <vagabond/core/engine/MapSumHandler.h>
+#include <vagabond/core/files/PdbFile.h>
 #include "BondSequenceHandler.h"
 #include "BondCalculator.h"
 #include "Result.h"
-#include "PdbFile.h"
 #include "AtomGroup.h"
 #include "ArbitraryMap.h"
 #include <string>
