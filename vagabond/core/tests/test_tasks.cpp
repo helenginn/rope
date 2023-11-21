@@ -70,8 +70,6 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	while (true)
 	{
-		std::chrono::system_clock::time_point n, l;
-		n = std::chrono::system_clock::now();
 		tasks->run(threads);
 		
 		/* make sure calculator doesn't finish before newest jobs are queued */
@@ -141,12 +139,6 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 			}
 			r->destroy();
 		}
-
-		l = std::chrono::system_clock::now();
-		float span = std::chrono::microseconds(l - n).count() / 1000000.;
-
-		float pace = (float)span * 1000. / (float)total;
-		std::cout << pace << " milliseconds per map calculation" << std::endl;
 		
 		tasks->wait();
 	}
