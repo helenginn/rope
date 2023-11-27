@@ -38,6 +38,7 @@ GuiRibbon::GuiRibbon(GuiAtom *parent) : GuiRepresentation(parent)
 
 	std::string filename = "assets/images/pencil_shading.png";
 	setImage(filename, true);
+	setName("Polymer ribbon");
 
 	insertAtom(nullptr);
 }
@@ -211,10 +212,15 @@ void GuiRibbon::prepareCylinder(int i)
 	if (cyl_idx < 0 && _bezier[i].atom)
 	{
 		cyl_idx = vertexCount();
+		bool first = (_vertices.size() == 0);
+		_vertices.reserve(_vertices.size() + vertices.size());
 		_vertices.insert(_vertices.end(), vertices.begin(), vertices.end());
 		_bezier.setNextIndex(i, cyl_idx);
 
-		addCylinderIndices(DIVISIONS_IN_CIRCLE);
+		if (!first)
+		{
+			addCylinderIndices(DIVISIONS_IN_CIRCLE);
+		}
 	}
 	else
 	{
@@ -387,11 +393,12 @@ void GuiRibbon::watchAtom(Atom *a)
 }
 void GuiRibbon::convert()
 {
+	std::unique_lock<std::mutex> verts(_vertLock);
+
 	insertAtom(nullptr);
 	insertAtom(nullptr);
 	prepareBezier();
 	prepareCylinder();
-	forceRender(true, true);
 	finishUpdate();
 }
 
