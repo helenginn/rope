@@ -95,7 +95,6 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 		r->prepareAtomSpace(a);
 	}
 
-	std::unique_lock<std::mutex> lock(_vertLock);
 	for (GuiRepresentation *&r : _representations)
 	{
 		r->watchAtomGroup(a);
