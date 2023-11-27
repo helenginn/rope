@@ -41,9 +41,9 @@ float AreaMeasurer::surfaceArea()
 {
 	TimerSurfaceArea& timer = TimerSurfaceArea::getInstance();
 	bool timing = timer.timing;
-	int loops = 0;
+	// int loops = 0;
 
-	repeat:
+	// repeat:
 	if (timing)
 	{	 timer.start();}
 
@@ -77,10 +77,12 @@ float AreaMeasurer::surfaceArea()
 		area += area_atom;
 	}
 
-	if (timing)
-	{	timer.end(); loops++;}
-  if (timing && loops < TimerSurfaceArea::getInstance().loops)
-	{	goto repeat;}
+  if (timing)
+	{	timer.end();}
+	// if (timing)
+	// {	timer.end(); loops++;}
+  // if (timing && loops < TimerSurfaceArea::getInstance().loops)
+	// {	goto repeat;}
 
 	return area;
 }
