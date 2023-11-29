@@ -60,6 +60,12 @@ struct ActivationEnergy
 
 class AtomMap;
 class AnisoMap;
+
+struct SurfaceAreaValue
+{
+	float value;
+};
+
 class AtomSegment;
 class BondSequence;
 class QuickSegment;

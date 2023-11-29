@@ -29,7 +29,7 @@ class BondCalculator;
 class SurfaceAreaHandler : public Handler
 {
 public:
-	SurfaceAreaHandler(BondCalculator *calculator);
+	SurfaceAreaHandler(BondCalculator *calculator = nullptr);
 	~SurfaceAreaHandler();
 
 	void setThreads(const int threads)
