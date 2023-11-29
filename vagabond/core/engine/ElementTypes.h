@@ -50,6 +50,11 @@ struct Deviation
 	float value;
 };
 
+struct SurfaceAreaValue
+{
+	float value;
+};
+
 class AtomSegment;
 class BondSequence;
 class ElementSegment;
