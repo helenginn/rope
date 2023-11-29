@@ -164,12 +164,7 @@ BOOST_AUTO_TEST_CASE(atom_no_neighbours)
 	AtomPosMap posMap;
 	posMap = {{&atom, withPos}};
 
-	BondCalculator calc;
-	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(&atom);
-	calc.setup();
-	calc.start();
-  SurfaceAreaHandler SAH(&calc);
+  SurfaceAreaHandler SAH;
   AreaMeasurer AM(&SAH);
 	AM.copyAtomMap(posMap);
 
