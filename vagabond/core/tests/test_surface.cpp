@@ -18,8 +18,12 @@
 
 #include <vagabond/utils/include_boost.h>
 
+#include <vagabond/core/engine/Task.h>
+#include <vagabond/core/engine/Tasks.h>
+#include <vagabond/core/Result.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/BondCalculator.h>
+#include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/engine/ContactSheet.h>
 #include <vagabond/core/engine/SurfaceAreaHandler.h>
 #include <vagabond/core/engine/AreaMeasurer.h>
@@ -27,8 +31,8 @@
 #include <iomanip>
 #include "vagabond/utils/glm_import.h"
 #include "Atom.h"
-#include "CifFile.h"
-#include "PdbFile.h"
+#include <vagabond/core/files/CifFile.h>
+#include <vagabond/core/files/PdbFile.h>
 
 
 namespace tt = boost::test_tools;
