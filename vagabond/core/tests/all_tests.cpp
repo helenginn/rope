@@ -20,19 +20,18 @@
 #include <vagabond/utils/include_boost.h>
 namespace tt = boost::test_tools;
 
+<<<<<<< HEAD
 #include "test_bfac_occ.cpp"
 #include "test_tasks.cpp"
-/*
-#include "test_hnet.cpp"
-#include "test_atomgroup.cpp"
-#include "test_atomsfromsequence.cpp"
-#include "test_handler.cpp"
-#include "test_list.cpp"
-#include "test_molecule.cpp"
-#include "test_molrefiner.cpp"
-#include "test_ramachandran.cpp"
-#include "test_sequence.cpp"
+// #include "test_tasks.cpp"
+// #include "test_atomgroup.cpp"
+// #include "test_atomsfromsequence.cpp"
+// #include "test_handler.cpp"
+// #include "test_list.cpp"
+// #include "test_molecule.cpp"
+// #include "test_molrefiner.cpp"
+// #include "test_ramachandran.cpp"
+// #include "test_sequence.cpp"
 #include "test_surface.cpp"
-#include "test_lbfgs.cpp"
-#include "test_grid.cpp"
-*/
+// #include "test_lbfgs.cpp"
+// #include "test_grid.cpp"
