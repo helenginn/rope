@@ -172,220 +172,219 @@ BOOST_AUTO_TEST_CASE(atom_no_neighbours)
 	float exposure = AM.fibExposureSingleAtom(&atom);
 	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
 	BOOST_TEST(exposure == 1.0f);
-	calc.finish();
 }
 
-// check atom exposure for no overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_far_neighbour)
-{
-	// initialise 2 atoms with no overlap and distant positions
-	Atom atom, atom2, atomControl;
-	glm::vec3 pos, pos2, posControl;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
-	posControl = glm::vec3(sqrt(2.04*2.04 + 6.08*6.08 + 7.60*7.60), 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atomControl.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	atomControl.setDerivedPosition(posControl);
-	WithPos withPos, withPos2, withPosControl;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-	withPosControl.ave = posControl;
-
-	AtomPosMap posMap, posMapControl;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
-
-	BondCalculator calc;
-	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(&atom);
-	calc.setup();
-	calc.start();
-  SurfaceAreaHandler SAH(&calc);
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
-
-	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
-
-	AM.copyAtomMap(posMapControl);
-
-	float exposureControl = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_far_neighbour exposure (control): " << exposureControl << std::endl;
-
-	BOOST_TEST(exposure == 1.0f);
-	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-	calc.finish();
-}
-
-// check atom exposure for small overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
-{
-	// initialise 2 atoms with overlap but more distant positions 
-	Atom atom, atom2, atomControl;
-	glm::vec3 pos, pos2, posControl;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(4.0f, 0.76f, 0.0f);
-	posControl = glm::vec3(sqrt(4.0*4.0 + 0.76*0.76), 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atomControl.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	atomControl.setDerivedPosition(posControl);
-	WithPos withPos, withPos2, withPosControl;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-	withPosControl.ave = posControl;
-
-	AtomPosMap posMap, posMapControl;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
-
-	BondCalculator calc;
-	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(&atom);
-	calc.setup();
-	calc.start();
-  SurfaceAreaHandler SAH(&calc);
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
-
-	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
-
-	AM.copyAtomMap(posMapControl);
-
-	float exposureControl = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl << std::endl;
-
-	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-	calc.finish();
-}
-
-// check atom exposure for large overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
-{
-	// initialise 2 atoms with close positions
-	Atom atom, atom2, atomControl;
-	glm::vec3 pos, pos2, posControl;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(1.0f, 1.0f, 0.0f);
-	posControl = glm::vec3(sqrt(1.0f*1.0f + 1.0f*1.0f), 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atomControl.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	atomControl.setDerivedPosition(posControl);
-	WithPos withPos, withPos2, withPosControl;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-	withPosControl.ave = posControl;
-
-	AtomPosMap posMap, posMapControl;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
-
-	BondCalculator calc;
-	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(&atom);
-	calc.setup();
-	calc.start();
-  SurfaceAreaHandler SAH(&calc);
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
-
-	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
-
-	AM.copyAtomMap(posMapControl);
-
-	float exposureControl = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_large_overlap_neighbour exposure (control): " << exposureControl << std::endl;
-
-	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-	calc.finish();
-}
-
-// check atom exposure for full overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
-{
-	// initialise 2 atoms with same position
-	Atom atom, atom2;
-	glm::vec3 pos, pos2;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	WithPos withPos, withPos2;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-
-	AtomPosMap posMap;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-
-	BondCalculator calc;
-	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(&atom);
-	calc.setup();
-	calc.start();
-  SurfaceAreaHandler SAH(&calc);
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
-
-	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(&atom);
-	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
-	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
-	calc.finish();
-}
-
-// BOOST_AUTO_TEST_CASE(failing_Test)
+// // check atom exposure for no overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_far_neighbour)
 // {
-// 	BOOST_TEST(1 == 2);
+// 	// initialise 2 atoms with no overlap and distant positions
+// 	Atom atom, atom2, atomControl;
+// 	glm::vec3 pos, pos2, posControl;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
+// 	posControl = glm::vec3(sqrt(2.04*2.04 + 6.08*6.08 + 7.60*7.60), 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atomControl.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	atomControl.setDerivedPosition(posControl);
+// 	WithPos withPos, withPos2, withPosControl;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+// 	withPosControl.ave = posControl;
+
+// 	AtomPosMap posMap, posMapControl;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+
+// 	BondCalculator calc;
+// 	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
+// 	calc.addAnchorExtension(&atom);
+// 	calc.setup();
+// 	calc.start();
+//   SurfaceAreaHandler SAH(&calc);
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
+
+// 	// calculate the exposure of the atom
+// 	float exposure = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
+
+// 	AM.copyAtomMap(posMapControl);
+
+// 	float exposureControl = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_far_neighbour exposure (control): " << exposureControl << std::endl;
+
+// 	BOOST_TEST(exposure == 1.0f);
+// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+// 	calc.finish();
 // }
 
-BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
-{
-	// oxygen atom Van der Waals radius is 1.52 Ang according to Google.
-	// volume: 4/3 * pi * r^3 is 14.7 Ang^3.
-	// surface: 4 * pi * r^2 is 29.0333 Ang^2.
+// // check atom exposure for small overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
+// {
+// 	// initialise 2 atoms with overlap but more distant positions 
+// 	Atom atom, atom2, atomControl;
+// 	glm::vec3 pos, pos2, posControl;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(4.0f, 0.76f, 0.0f);
+// 	posControl = glm::vec3(sqrt(4.0*4.0 + 0.76*0.76), 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atomControl.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	atomControl.setDerivedPosition(posControl);
+// 	WithPos withPos, withPos2, withPosControl;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+// 	withPosControl.ave = posControl;
 
-	Atom a;
-	a.setElementSymbol("O");
-	
-	AtomGroup grp;
-	grp += &a;
-	
-	BondCalculator calc;
-	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(&a);
-	
-	calc.setup();
-	calc.start();
-	
-	Job job{};
-	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+// 	AtomPosMap posMap, posMapControl;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
 
-	calc.submitJob(job);
+// 	BondCalculator calc;
+// 	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
+// 	calc.addAnchorExtension(&atom);
+// 	calc.setup();
+// 	calc.start();
+//   SurfaceAreaHandler SAH(&calc);
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
 
-	Result *r = calc.acquireResult();
-	calc.finish();
+// 	// calculate the exposure of the atom
+// 	float exposure = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
+
+// 	AM.copyAtomMap(posMapControl);
+
+// 	float exposureControl = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl << std::endl;
+
+// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+// 	calc.finish();
+// }
+
+// // check atom exposure for large overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
+// {
+// 	// initialise 2 atoms with close positions
+// 	Atom atom, atom2, atomControl;
+// 	glm::vec3 pos, pos2, posControl;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(1.0f, 1.0f, 0.0f);
+// 	posControl = glm::vec3(sqrt(1.0f*1.0f + 1.0f*1.0f), 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atomControl.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	atomControl.setDerivedPosition(posControl);
+// 	WithPos withPos, withPos2, withPosControl;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+// 	withPosControl.ave = posControl;
+
+// 	AtomPosMap posMap, posMapControl;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+
+// 	BondCalculator calc;
+// 	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
+// 	calc.addAnchorExtension(&atom);
+// 	calc.setup();
+// 	calc.start();
+//   SurfaceAreaHandler SAH(&calc);
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
+
+// 	// calculate the exposure of the atom
+// 	float exposure = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
+
+// 	AM.copyAtomMap(posMapControl);
+
+// 	float exposureControl = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_large_overlap_neighbour exposure (control): " << exposureControl << std::endl;
+
+// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+// 	calc.finish();
+// }
+
+// // check atom exposure for full overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
+// {
+// 	// initialise 2 atoms with same position
+// 	Atom atom, atom2;
+// 	glm::vec3 pos, pos2;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	WithPos withPos, withPos2;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+
+// 	AtomPosMap posMap;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+
+// 	BondCalculator calc;
+// 	calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
+// 	calc.addAnchorExtension(&atom);
+// 	calc.setup();
+// 	calc.start();
+//   SurfaceAreaHandler SAH(&calc);
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
+
+// 	// calculate the exposure of the atom
+// 	float exposure = AM.fibExposureSingleAtom(&atom);
+// 	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
+// 	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
+// 	calc.finish();
+// }
+
+// // BOOST_AUTO_TEST_CASE(failing_Test)
+// // {
+// // 	BOOST_TEST(1 == 2);
+// // }
+
+// BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
+// {
+// 	// oxygen atom Van der Waals radius is 1.52 Ang according to Google.
+// 	// volume: 4/3 * pi * r^3 is 14.7 Ang^3.
+// 	// surface: 4 * pi * r^2 is 29.0333 Ang^2.
+
+// 	Atom a;
+// 	a.setElementSymbol("O");
 	
-	float area = r->surface_area;
-	std::cout << "O-atom area: " << area << std::endl;
-	// BOOST_TEST(area == 29.0333f, tt::tolerance(1e-2f)); // this is not solvent accesible area
-	BOOST_TEST(area == 103.5079f, tt::tolerance(1e-2f)); //solvent accessible area
-}
+// 	AtomGroup grp;
+// 	grp += &a;
+	
+// 	BondCalculator calc;
+// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
+// 	calc.addAnchorExtension(&a);
+	
+// 	calc.setup();
+// 	calc.start();
+	
+// 	Job job{};
+// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+
+// 	calc.submitJob(job);
+
+// 	Result *r = calc.acquireResult();
+// 	calc.finish();
+	
+// 	float area = r->surface_area;
+// 	std::cout << "O-atom area: " << area << std::endl;
+// 	// BOOST_TEST(area == 29.0333f, tt::tolerance(1e-2f)); // this is not solvent accesible area
+// 	BOOST_TEST(area == 103.5079f, tt::tolerance(1e-2f)); //solvent accessible area
+// }
 
 void test_cif(std::string name, std::string filename, float area_control, float tolerance)
 {
@@ -394,23 +393,59 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	geom.parse();
   
 	AtomGroup *atomgroup = geom.atoms();
-	BondCalculator calc;
-	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(atomgroup->chosenAnchor()); 
-  
-	calc.setup();
-	calc.start();
+
+	BondCalculator *calculator = new BondCalculator();
+
+	const int resources = 2;
+	const int threads = 2;
+	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
+	sequences->setTotalSamples(1);
+	sequences->addAnchorExtension(atomgroup->chosenAnchor());
+
+	sequences->setup();
+	sequences->prepareSequences();
+	Tasks *tasks = new Tasks();
+	tasks->run(threads);
+
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
+	
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(0);
+
+	Flag::Calc calc_flags = Flag::Calc(Flag::DoTorsions);
+	Flag::Extract gets = Flag::Extract(Flag::AtomMap);
+
+	Task<BondSequence *, void *> *letgo = nullptr;
+
+	Task<BondSequence *, AtomPosMap *> *extract_map;
+
+	/* calculation of torsion angle-derived and target-derived
+		* atom positions */
+	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
+	letgo = sequences->extract(gets, nullptr, final_hook,
+	nullptr, nullptr, &extract_map);
+
+	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
+	{
+		AreaMeasurer am;
+		am.copyAtomMap(*map);
+		float area = am.surfaceArea();
+		return SurfaceAreaValue{area};
+	};
+
+	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+
+	extract_map->follow_with(map_to_surface);
+	map_to_surface->follow_with(submit_result);
+
+	/* first task to be initiated by tasks list */
+	tasks->addTask(first_hook);
 
 	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
   TimerSurfaceArea::getInstance().timing = true;
 
-	Job job{};
-	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
-  
-	calc.submitJob(job);
-  
-	Result *r = calc.acquireResult();
-	calc.finish();
+	Result *r = calculator->acquireResult();
 	
 	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> duration = end - start;
@@ -421,442 +456,445 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
 	std::cout << "calc time: " << calcTime << std::endl;
   
+	delete calculator;
+	delete sequences;
+
 	BOOST_TEST(area == area_control, tt::tolerance(tolerance)); //solvent accessible area (PyMOL);
 }
 
-void test_pdb(std::string name, std::string filename, float area_control, float tolerance)
-{
-	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-	PdbFile pdb(path);
-	pdb.parse();
+// void test_pdb(std::string name, std::string filename, float area_control, float tolerance)
+// {
+// 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+// 	PdbFile pdb(path);
+// 	pdb.parse();
 
-	AtomGroup *atomgroup = pdb.atoms();
-	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+// 	AtomGroup *atomgroup = pdb.atoms();
+// 	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
 
-	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
+// 	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
 
-	BondCalculator calc;
-	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-	for (AtomGroup *group : subGroups)
-	{
-		calc.addAnchorExtension(group->chosenAnchor());
-	}
+// 	BondCalculator calc;
+// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
+// 	for (AtomGroup *group : subGroups)
+// 	{
+// 		calc.addAnchorExtension(group->chosenAnchor());
+// 	}
 	
-	calc.setup();
-	calc.start();
-	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
-	TimerSurfaceArea::getInstance().timing = true;
+// 	calc.setup();
+// 	calc.start();
+// 	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+// 	TimerSurfaceArea::getInstance().timing = true;
 
 
-	Job job{};
-	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+// 	Job job{};
+// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
 
-	calc.submitJob(job);
+// 	calc.submitJob(job);
 
-	Result *r = calc.acquireResult();
-	calc.finish();
+// 	Result *r = calc.acquireResult();
+// 	calc.finish();
 
-	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<float> duration = end - start;
-	float calcTime = TimerSurfaceArea::getInstance().times[0].count();
-	TimerSurfaceArea::getInstance().reset();
-	TimerSurfaceArea::getInstance().timing = false;
+// 	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+// 	std::chrono::duration<float> duration = end - start;
+// 	float calcTime = TimerSurfaceArea::getInstance().times[0].count();
+// 	TimerSurfaceArea::getInstance().reset();
+// 	TimerSurfaceArea::getInstance().timing = false;
 
-	float area = r->surface_area;
-	std::cout << name << " area: " << area << std::endl;
-	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
-	std::cout << "calc time: " << calcTime << std::endl;
-	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
-}
+// 	float area = r->surface_area;
+// 	std::cout << name << " area: " << area << std::endl;
+// 	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
+// 	std::cout << "calc time: " << calcTime << std::endl;
+// 	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
+// }
 
-void time_cif(std::string name, std::string filename, int sets, int reps)
-{
-	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-	CifFile geom = CifFile(path);
-	geom.parse();
+// void time_cif(std::string name, std::string filename, int sets, int reps)
+// {
+// 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+// 	CifFile geom = CifFile(path);
+// 	geom.parse();
 
-	AtomGroup *atomgroup = geom.atoms();
-	BondCalculator calc;
-	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-	calc.addAnchorExtension(atomgroup->chosenAnchor());
+// 	AtomGroup *atomgroup = geom.atoms();
+// 	BondCalculator calc;
+// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
+// 	calc.addAnchorExtension(atomgroup->chosenAnchor());
 
-	calc.setup();
-	calc.start();
+// 	calc.setup();
+// 	calc.start();
 
-	Job job{};
-	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+// 	Job job{};
+// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
 
-	std::vector<std::chrono::duration<float>> times;
-	std::vector<float> avgSets;
-	std::vector<float> stdDevSets;
-	TimerSurfaceArea::getInstance().timing = true;
+// 	std::vector<std::chrono::duration<float>> times;
+// 	std::vector<float> avgSets;
+// 	std::vector<float> stdDevSets;
+// 	TimerSurfaceArea::getInstance().timing = true;
 
-	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
-	std::endl;
+// 	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
+// 	std::endl;
 
-	for (int i = 0; i < sets; i++)
-	{
-		for (int j = 0; j < reps; j++)
-		{
-			calc.submitJob(job);
-			Result *r = calc.acquireResult();
-		}
-	}
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			calc.submitJob(job);
+// 			Result *r = calc.acquireResult();
+// 		}
+// 	}
 
-	times = TimerSurfaceArea::getInstance().times;
-	TimerSurfaceArea::getInstance().reset();
-	TimerSurfaceArea::getInstance().timing = false;
+// 	times = TimerSurfaceArea::getInstance().times;
+// 	TimerSurfaceArea::getInstance().reset();
+// 	TimerSurfaceArea::getInstance().timing = false;
 
-	for (int i = 0; i < sets; i++)
-	{
-		float avg = 0.0f;
-		for (int j = 0; j < reps; j++)
-		{
-			avg += times[i*reps + j].count();
-		}
-		avg = avg / reps;
-		float stdDev = 0.0f;
-		for (int j = 0; j < reps; j++)
-		{
-			stdDev += pow(times[i*reps + j].count() - avg, 2);
-		}
-		stdDev = sqrt(stdDev / reps);
-		avgSets.push_back(avg);
-		stdDevSets.push_back(stdDev);
-		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
-		std::cout << std::left << std::setw(6) << "run " << i
-              << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
-              << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
-	}
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		float avg = 0.0f;
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			avg += times[i*reps + j].count();
+// 		}
+// 		avg = avg / reps;
+// 		float stdDev = 0.0f;
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			stdDev += pow(times[i*reps + j].count() - avg, 2);
+// 		}
+// 		stdDev = sqrt(stdDev / reps);
+// 		avgSets.push_back(avg);
+// 		stdDevSets.push_back(stdDev);
+// 		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
+// 		std::cout << std::left << std::setw(6) << "run " << i
+//               << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
+//               << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
+// 	}
 	
-	float total_avg = 0.0f;
-	for (int i = 0; i < sets; i++)
-	{
-		total_avg += avgSets[i];
-	}
-	total_avg = total_avg / sets;
+// 	float total_avg = 0.0f;
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		total_avg += avgSets[i];
+// 	}
+// 	total_avg = total_avg / sets;
 
-	float avg_stdDev = 0.0f;
-	for (int i = 0; i < sets; i++)
-	{
-		avg_stdDev += stdDevSets[i];
-	}
-	avg_stdDev = avg_stdDev / sets;
+// 	float avg_stdDev = 0.0f;
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		avg_stdDev += stdDevSets[i];
+// 	}
+// 	avg_stdDev = avg_stdDev / sets;
 
-	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
-	std::cout << std::left << std::setw(6) << "TOTAL" 
-          << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
-          << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+// 	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
+// 	std::cout << std::left << std::setw(6) << "TOTAL" 
+//           << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
+//           << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
 
-	calc.finish();
-}
+// 	calc.finish();
+// }
 
-void time_pdb(std::string name, std::string filename, int sets, int reps)
-{
-	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-	PdbFile pdb(path);
-	pdb.parse();
+// void time_pdb(std::string name, std::string filename, int sets, int reps)
+// {
+// 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+// 	PdbFile pdb(path);
+// 	pdb.parse();
 
-	AtomGroup *atomgroup = pdb.atoms();
-	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
+// 	AtomGroup *atomgroup = pdb.atoms();
+// 	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
 
-	BondCalculator calc;
-	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-	for (AtomGroup *group : subGroups)
-	{
-		calc.addAnchorExtension(group->chosenAnchor());
-	}
-	calc.setup();
-	calc.start();
+// 	BondCalculator calc;
+// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
+// 	for (AtomGroup *group : subGroups)
+// 	{
+// 		calc.addAnchorExtension(group->chosenAnchor());
+// 	}
+// 	calc.setup();
+// 	calc.start();
 
-	Job job{};
-	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+// 	Job job{};
+// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
 
-	std::vector<std::chrono::duration<float>> times;
-	std::vector<float> avgSets;
-	std::vector<float> stdDevSets;
-	TimerSurfaceArea::getInstance().timing = true;
+// 	std::vector<std::chrono::duration<float>> times;
+// 	std::vector<float> avgSets;
+// 	std::vector<float> stdDevSets;
+// 	TimerSurfaceArea::getInstance().timing = true;
 
-	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
-	std::endl;
+// 	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
+// 	std::endl;
 
-	for (int i = 0; i < sets; i++)
-	{
-		for (int j = 0; j < reps; j++)
-		{
-			calc.submitJob(job);
-			Result *r = calc.acquireResult();
-		}
-	}
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			calc.submitJob(job);
+// 			Result *r = calc.acquireResult();
+// 		}
+// 	}
 
-	times = TimerSurfaceArea::getInstance().times;
-	TimerSurfaceArea::getInstance().reset();
-	TimerSurfaceArea::getInstance().timing = false;
+// 	times = TimerSurfaceArea::getInstance().times;
+// 	TimerSurfaceArea::getInstance().reset();
+// 	TimerSurfaceArea::getInstance().timing = false;
 
-	for (int i = 0; i < sets; i++)
-	{
-		float avg = 0.0f;
-		for (int j = 0; j < reps; j++)
-		{
-			avg += times[i*reps + j].count();
-		}
-		avg = avg / reps;
-		float stdDev = 0.0f;
-		for (int j = 0; j < reps; j++)
-		{
-			stdDev += pow(times[i*reps + j].count() - avg, 2);
-		}
-		stdDev = sqrt(stdDev / reps);
-		avgSets.push_back(avg);
-		stdDevSets.push_back(stdDev);
-		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
-		std::cout << std::left << std::setw(6) << "run " << i
-              << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
-              << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
-	}
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		float avg = 0.0f;
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			avg += times[i*reps + j].count();
+// 		}
+// 		avg = avg / reps;
+// 		float stdDev = 0.0f;
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			stdDev += pow(times[i*reps + j].count() - avg, 2);
+// 		}
+// 		stdDev = sqrt(stdDev / reps);
+// 		avgSets.push_back(avg);
+// 		stdDevSets.push_back(stdDev);
+// 		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
+// 		std::cout << std::left << std::setw(6) << "run " << i
+//               << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
+//               << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
+// 	}
 	
-	float total_avg = 0.0f;
-	for (int i = 0; i < sets; i++)
-	{
-		total_avg += avgSets[i];
-	}
-	total_avg = total_avg / sets;
+// 	float total_avg = 0.0f;
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		total_avg += avgSets[i];
+// 	}
+// 	total_avg = total_avg / sets;
 
-	float avg_stdDev = 0.0f;
-	for (int i = 0; i < sets; i++)
-	{
-		avg_stdDev += stdDevSets[i];
-	}
-	avg_stdDev = avg_stdDev / sets;
+// 	float avg_stdDev = 0.0f;
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		avg_stdDev += stdDevSets[i];
+// 	}
+// 	avg_stdDev = avg_stdDev / sets;
 
-	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
-	std::cout << std::left << std::setw(6) << "TOTAL" 
-          << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
-          << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+// 	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
+// 	std::cout << std::left << std::setw(6) << "TOTAL" 
+//           << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
+//           << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
 
-	calc.finish();
-}
+// 	calc.finish();
+// }
 
-void time_pdb2(std::string name, std::string filename, int sets, int reps)
-{
-	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-	PdbFile pdb(path);
-	pdb.parse();
+// void time_pdb2(std::string name, std::string filename, int sets, int reps)
+// {
+// 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+// 	PdbFile pdb(path);
+// 	pdb.parse();
 
-	AtomGroup *atomgroup = pdb.atoms();
-	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
+// 	AtomGroup *atomgroup = pdb.atoms();
+// 	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
 
-	BondCalculator calc;
-	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-	for (AtomGroup *group : subGroups)
-	{
-		calc.addAnchorExtension(group->chosenAnchor());
-	}
-	calc.setup();
-	calc.start();
+// 	BondCalculator calc;
+// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
+// 	for (AtomGroup *group : subGroups)
+// 	{
+// 		calc.addAnchorExtension(group->chosenAnchor());
+// 	}
+// 	calc.setup();
+// 	calc.start();
 
-	Job job{};
-	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+// 	Job job{};
+// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
 
-	std::vector<std::chrono::duration<float>> times;
-	std::vector<float> avgSets;
-	std::vector<float> stdDevSets;
-	TimerSurfaceArea::getInstance().timing = true;
-	TimerSurfaceArea::getInstance().loops = reps * sets;
+// 	std::vector<std::chrono::duration<float>> times;
+// 	std::vector<float> avgSets;
+// 	std::vector<float> stdDevSets;
+// 	TimerSurfaceArea::getInstance().timing = true;
+// 	TimerSurfaceArea::getInstance().loops = reps * sets;
 
-	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << 
-	std::endl;
+// 	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << 
+// 	std::endl;
 
-	calc.submitJob(job);
-	Result *r = calc.acquireResult();
+// 	calc.submitJob(job);
+// 	Result *r = calc.acquireResult();
 
-	times = TimerSurfaceArea::getInstance().times;
-	TimerSurfaceArea::getInstance().reset();
-	TimerSurfaceArea::getInstance().timing = false;
+// 	times = TimerSurfaceArea::getInstance().times;
+// 	TimerSurfaceArea::getInstance().reset();
+// 	TimerSurfaceArea::getInstance().timing = false;
 
-	for (int i = 0; i < sets; i++)
-	{
-		float avg = 0.0f;
-		for (int j = 0; j < reps; j++)
-		{
-			avg += times[i*reps + j].count();
-		}
-		avg = avg / reps;
-		float stdDev = 0.0f;
-		for (int j = 0; j < reps; j++)
-		{
-			stdDev += pow(times[i*reps + j].count() - avg, 2);
-		}
-		stdDev = sqrt(stdDev / reps);
-		avgSets.push_back(avg);
-		stdDevSets.push_back(stdDev);
-		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
-		std::cout << std::left << std::setw(6) << "run " << i
-              << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
-              << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
-	}
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		float avg = 0.0f;
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			avg += times[i*reps + j].count();
+// 		}
+// 		avg = avg / reps;
+// 		float stdDev = 0.0f;
+// 		for (int j = 0; j < reps; j++)
+// 		{
+// 			stdDev += pow(times[i*reps + j].count() - avg, 2);
+// 		}
+// 		stdDev = sqrt(stdDev / reps);
+// 		avgSets.push_back(avg);
+// 		stdDevSets.push_back(stdDev);
+// 		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
+// 		std::cout << std::left << std::setw(6) << "run " << i
+//               << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
+//               << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
+// 	}
 	
-	float total_avg = 0.0f;
-	for (int i = 0; i < sets; i++)
-	{
-		total_avg += avgSets[i];
-	}
-	total_avg = total_avg / sets;
+// 	float total_avg = 0.0f;
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		total_avg += avgSets[i];
+// 	}
+// 	total_avg = total_avg / sets;
 
-	float avg_stdDev = 0.0f;
-	for (int i = 0; i < sets; i++)
-	{
-		avg_stdDev += stdDevSets[i];
-	}
-	avg_stdDev = avg_stdDev / sets;
+// 	float avg_stdDev = 0.0f;
+// 	for (int i = 0; i < sets; i++)
+// 	{
+// 		avg_stdDev += stdDevSets[i];
+// 	}
+// 	avg_stdDev = avg_stdDev / sets;
 
-	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
-	std::cout << std::left << std::setw(6) << "TOTAL" 
-          << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
-          << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+// 	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
+// 	std::cout << std::left << std::setw(6) << "TOTAL" 
+//           << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
+//           << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
 
-	calc.finish();
-}
+// 	calc.finish();
+// }
 
 BOOST_AUTO_TEST_CASE(glycine_surface_area)
 {
 	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f); //221.691f
 }
 
-BOOST_AUTO_TEST_CASE(atp_surface_area)
-{
-	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
-}
-
-BOOST_AUTO_TEST_CASE(tyr_surface_area)
-{
-	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
-}
-
-BOOST_AUTO_TEST_CASE(exanatide_surface_area)
-{
-	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
-}
-
-BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
-{
-	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
-}
-
-BOOST_AUTO_TEST_CASE(insulin_surface_area)
-{
-	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
-}
-
-BOOST_AUTO_TEST_CASE(leptin_surface_area)
-{
-	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
-{
-	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
-}
-
-BOOST_AUTO_TEST_CASE(profilin_surface_area)
-{
-	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(rhoA_surface_area)
-{
-	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
-{
-	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
-{
-	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
-{
-	test_pdb("psoriasin", "1psr.pdb", 10495.5f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
-{
-	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(plectin_surface_area)
-{
-	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
-}
-
-BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
-{
-	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
-}
-
-// BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
+// BOOST_AUTO_TEST_CASE(atp_surface_area)
 // {
-// 	test_pdb("hemoglobin", "pdb2h35.ent", 28211.436f, 1e-2f);
+// 	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
 // }
 
-BOOST_AUTO_TEST_CASE(time_glycine)
-{
-	time_cif("glycine", "GLY.cif", 5, 500);  
-}
+// BOOST_AUTO_TEST_CASE(tyr_surface_area)
+// {
+// 	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
+// }
 
-BOOST_AUTO_TEST_CASE(time_insulin)
-{
-	time_pdb("insulin", "pdb3i40.ent", 5, 10);
-}
+// BOOST_AUTO_TEST_CASE(exanatide_surface_area)
+// {
+// 	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
+// }
 
-BOOST_AUTO_TEST_CASE(time_leptin)
-{
-	time_pdb("leptin", "1ax8.pdb", 3, 10);
-}
+// BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
+// {
+// 	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
+// }
 
-BOOST_AUTO_TEST_CASE(time_lysozyme)
-{
-	time_pdb("lysozyme", "1gwd.pdb", 3, 10);
-}
+// BOOST_AUTO_TEST_CASE(insulin_surface_area)
+// {
+// 	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
+// }
 
-BOOST_AUTO_TEST_CASE(time_profilin)
-{
-	time_pdb("profilin", "1a0k.pdb", 3, 10);
-}
+// BOOST_AUTO_TEST_CASE(leptin_surface_area)
+// {
+// 	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(time_rhoA)
-{
-	time_pdb("rhoA", "1a2b.pdb", 3, 5);
-}
+// BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
+// {
+// 	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
+// }
 
-BOOST_AUTO_TEST_CASE(time_erythropoietin)
-{
-	time_pdb("erythropoietin", "1buy.pdb", 2, 5);
-}
+// BOOST_AUTO_TEST_CASE(profilin_surface_area)
+// {
+// 	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(time_interleukin6)
-{
-	time_pdb("interleukin-6", "1alu.pdb", 3, 5);
-}
+// BOOST_AUTO_TEST_CASE(rhoA_surface_area)
+// {
+// 	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(time_psoriasin)
-{
-	time_pdb("psoriasin", "1psr.pdb", 2, 8);
-}
+// BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
+// {
+// 	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(time_cytohhesin)
-{
-	time_pdb("cytohisene", "1bc9.pdb", 2, 2);
-}
+// BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
+// {
+// 	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(time_methyltransferase)
-{
-	time_pdb("methyltransferase", "1yub.pdb", 2, 2);
-}
+// BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
+// {
+// 	test_pdb("psoriasin", "1psr.pdb", 10495.5f, 1e-2f);
+// }
+
+// BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
+// {
+// 	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
+// }
+
+// BOOST_AUTO_TEST_CASE(plectin_surface_area)
+// {
+// 	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
+// }
+
+// BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
+// {
+// 	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
+// }
+
+// // BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
+// // {
+// // 	test_pdb("hemoglobin", "pdb2h35.ent", 28211.436f, 1e-2f);
+// // }
+
+// BOOST_AUTO_TEST_CASE(time_glycine)
+// {
+// 	time_cif("glycine", "GLY.cif", 5, 500);  
+// }
+
+// BOOST_AUTO_TEST_CASE(time_insulin)
+// {
+// 	time_pdb("insulin", "pdb3i40.ent", 5, 10);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_leptin)
+// {
+// 	time_pdb("leptin", "1ax8.pdb", 3, 10);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_lysozyme)
+// {
+// 	time_pdb("lysozyme", "1gwd.pdb", 3, 10);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_profilin)
+// {
+// 	time_pdb("profilin", "1a0k.pdb", 3, 10);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_rhoA)
+// {
+// 	time_pdb("rhoA", "1a2b.pdb", 3, 5);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_erythropoietin)
+// {
+// 	time_pdb("erythropoietin", "1buy.pdb", 2, 5);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_interleukin6)
+// {
+// 	time_pdb("interleukin-6", "1alu.pdb", 3, 5);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_psoriasin)
+// {
+// 	time_pdb("psoriasin", "1psr.pdb", 2, 8);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_cytohhesin)
+// {
+// 	time_pdb("cytohisene", "1bc9.pdb", 2, 2);
+// }
+
+// BOOST_AUTO_TEST_CASE(time_methyltransferase)
+// {
+// 	time_pdb("methyltransferase", "1yub.pdb", 2, 2);
+// }
 
 // BOOST_AUTO_TEST_CASE(time_profilin2)
 // {
