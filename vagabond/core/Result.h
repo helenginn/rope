@@ -75,6 +75,11 @@ struct Result
 	{
 		map = tmp;
 	}
+	
+	void operator=(const SurfaceAreaValue &s)
+	{
+		surface_area += s.value;
+	}
 
 	int ticket = 0;
 	JobType requests;
