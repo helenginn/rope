@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(pos_map_3_atoms)
 	ContactSheet sheet;
 	sheet.updateSheet(posMap);
 	// find all near atoms within a radius of 2.0 Ang
-	std::set<Atom *> nearAtoms = sheet.atomsNear(atom_1, 2.0);
+	std::set<Atom *> nearAtoms = sheet.atomsNear(posMap, atom_1, 2.0);
 
 	//	check that the correct atoms are returned
 	BOOST_TEST(nearAtoms.size() == 1);
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(atom_no_neighbours)
 	AM.copyAtomMap(posMap);
 
 	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(&atom);
+	float exposure = AM.fibExposureSingleAtom(posMap, &atom);
 	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
 	BOOST_TEST(exposure == 1.0f);
 }
@@ -394,16 +394,19 @@ void test_cif(std::string name, std::string filename, float area_control, float 
   
 	AtomGroup *atomgroup = geom.atoms();
 
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+
 	BondCalculator *calculator = new BondCalculator();
 
-	const int resources = 2;
-	const int threads = 2;
+	const int resources = 1;
+	const int threads = 1;
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
 	sequences->setTotalSamples(1);
 	sequences->addAnchorExtension(atomgroup->chosenAnchor());
 
 	sequences->setup();
 	sequences->prepareSequences();
+
 	Tasks *tasks = new Tasks();
 	tasks->run(threads);
 
@@ -423,14 +426,13 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	/* calculation of torsion angle-derived and target-derived
 		* atom positions */
 	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, nullptr, final_hook,
-	nullptr, nullptr, &extract_map);
+	letgo = sequences->extract(gets, nullptr, final_hook,	nullptr, nullptr, &extract_map);
 
 	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
 	{
 		AreaMeasurer am;
 		am.copyAtomMap(*map);
-		float area = am.surfaceArea();
+		float area = am.surfaceArea(*map);
 		return SurfaceAreaValue{area};
 	};
 
@@ -450,6 +452,8 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> duration = end - start;
   float calcTime = TimerSurfaceArea::getInstance().times[0].count();
+	TimerSurfaceArea::getInstance().reset();
+	TimerSurfaceArea::getInstance().timing = false;
 
 	float area = r->surface_area;
 	std::cout << name << " area: " << area << std::endl;
@@ -462,50 +466,88 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	BOOST_TEST(area == area_control, tt::tolerance(tolerance)); //solvent accessible area (PyMOL);
 }
 
-// void test_pdb(std::string name, std::string filename, float area_control, float tolerance)
-// {
-// 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-// 	PdbFile pdb(path);
-// 	pdb.parse();
+void test_pdb(std::string name, std::string filename, float area_control, float tolerance)
+{
+	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+	PdbFile pdb(path);
+	pdb.parse();
 
-// 	AtomGroup *atomgroup = pdb.atoms();
-// 	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+	AtomGroup *atomgroup = pdb.atoms();
 
-// 	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
 
-// 	BondCalculator calc;
-// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-// 	for (AtomGroup *group : subGroups)
-// 	{
-// 		calc.addAnchorExtension(group->chosenAnchor());
-// 	}
+	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
+
+	BondCalculator *calculator = new BondCalculator();
+
+	const int resources = 1;
+	const int threads = 1;
+	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
+	sequences->setTotalSamples(1);
+	// calculator->setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
+	for (AtomGroup *group : subGroups)
+	{
+		sequences->addAnchorExtension(group->chosenAnchor());
+	}
 	
-// 	calc.setup();
-// 	calc.start();
-// 	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
-// 	TimerSurfaceArea::getInstance().timing = true;
+	sequences->setup();
+	sequences->prepareSequences();
+	
 
+	Tasks *tasks = new Tasks();
+	tasks->run(threads);
 
-// 	Job job{};
-// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
 
-// 	calc.submitJob(job);
+	Task<Result, void *> *submit_result = calculator->submitResult(0);
 
-// 	Result *r = calc.acquireResult();
-// 	calc.finish();
+	Flag::Calc calc_flags = Flag::Calc(Flag::DoTorsions);
+	Flag::Extract gets = Flag::Extract(Flag::AtomMap);
 
-// 	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
-// 	std::chrono::duration<float> duration = end - start;
-// 	float calcTime = TimerSurfaceArea::getInstance().times[0].count();
-// 	TimerSurfaceArea::getInstance().reset();
-// 	TimerSurfaceArea::getInstance().timing = false;
+	Task<BondSequence *, void *> *letgo = nullptr;
 
-// 	float area = r->surface_area;
-// 	std::cout << name << " area: " << area << std::endl;
-// 	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
-// 	std::cout << "calc time: " << calcTime << std::endl;
-// 	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
-// }
+	Task<BondSequence *, AtomPosMap *> *extract_map;
+
+	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
+	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr, &extract_map);
+
+	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
+	{
+		AreaMeasurer am;
+		am.copyAtomMap(*map);
+		float area = am.surfaceArea(*map);
+		return SurfaceAreaValue{area};
+	};
+
+	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+
+	extract_map->follow_with(map_to_surface);
+	map_to_surface->follow_with(submit_result);
+
+	tasks->addTask(first_hook);
+
+	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+	TimerSurfaceArea::getInstance().timing = true;
+
+	Result *r = calculator->acquireResult();
+
+	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<float> duration = end - start;
+	float calcTime = TimerSurfaceArea::getInstance().times[0].count();
+	TimerSurfaceArea::getInstance().reset();
+	TimerSurfaceArea::getInstance().timing = false;
+
+	float area = r->surface_area;
+	std::cout << name << " area: " << area << std::endl;
+	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
+	std::cout << "calc time: " << calcTime << std::endl;
+
+	delete calculator;
+	delete sequences;
+
+	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
+}
 
 // void time_cif(std::string name, std::string filename, int sets, int reps)
 // {
@@ -761,85 +803,85 @@ BOOST_AUTO_TEST_CASE(glycine_surface_area)
 	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f); //221.691f
 }
 
-// BOOST_AUTO_TEST_CASE(atp_surface_area)
-// {
-// 	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
-// }
+BOOST_AUTO_TEST_CASE(atp_surface_area)
+{
+	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
+}
 
-// BOOST_AUTO_TEST_CASE(tyr_surface_area)
-// {
-// 	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
-// }
+BOOST_AUTO_TEST_CASE(tyr_surface_area)
+{
+	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
+}
 
-// BOOST_AUTO_TEST_CASE(exanatide_surface_area)
-// {
-// 	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
-// }
+BOOST_AUTO_TEST_CASE(exanatide_surface_area)
+{
+	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
+}
 
-// BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
-// {
-// 	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
-// }
+BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
+{
+	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
+}
 
-// BOOST_AUTO_TEST_CASE(insulin_surface_area)
-// {
-// 	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
-// }
+BOOST_AUTO_TEST_CASE(insulin_surface_area)
+{
+	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
+}
 
-// BOOST_AUTO_TEST_CASE(leptin_surface_area)
-// {
-// 	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(leptin_surface_area)
+{
+	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
-// {
-// 	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
-// }
+BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
+{
+	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
+}
 
-// BOOST_AUTO_TEST_CASE(profilin_surface_area)
-// {
-// 	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(profilin_surface_area)
+{
+	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(rhoA_surface_area)
-// {
-// 	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(rhoA_surface_area)
+{
+	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
-// {
-// 	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
+{
+	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
-// {
-// 	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
+{
+	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
-// {
-// 	test_pdb("psoriasin", "1psr.pdb", 10495.5f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
+{
+	test_pdb("psoriasin", "1psr.pdb", 10495.5f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
-// {
-// 	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
+{
+	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(plectin_surface_area)
-// {
-// 	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(plectin_surface_area)
+{
+	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
+}
 
-// BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
-// {
-// 	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
-// }
+BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
+{
+	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
+}
 
-// // BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
-// // {
-// // 	test_pdb("hemoglobin", "pdb2h35.ent", 28211.436f, 1e-2f);
-// // }
+BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
+{
+	test_pdb("hemoglobin", "pdb2h35.ent", 28211.436f, 1e-2f);
+}
 
 // BOOST_AUTO_TEST_CASE(time_glycine)
 // {
