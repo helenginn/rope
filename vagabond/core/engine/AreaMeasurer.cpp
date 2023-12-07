@@ -37,7 +37,7 @@ AreaMeasurer::~AreaMeasurer()
 	delete _contacts;
 }
 
-float AreaMeasurer::surfaceArea()
+float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 {
 	TimerSurfaceArea& timer = TimerSurfaceArea::getInstance();
 	bool timing = timer.timing;
@@ -47,7 +47,7 @@ float AreaMeasurer::surfaceArea()
 	if (timing)
 	{	 timer.start();}
 
-	_contacts->updateSheet(_posMap);
+	// _contacts->updateSheet(_posMap); // not necessary
 	_lattice.resetLatticeRadius();
 	// std::cout << _posMap.size() << std::endl;
 
@@ -70,9 +70,9 @@ float AreaMeasurer::surfaceArea()
 	}
 	//end fibonacci points test
 
-  for (std::pair<Atom *const, WithPos> atom : _posMap)
+  for (std::pair<Atom *const, WithPos> atom : posMap)
 	{
-    const float &exposure = AreaMeasurer::fibExposureSingleAtom(atom.first);
+    const float &exposure = AreaMeasurer::fibExposureSingleAtom(posMap, atom.first); // pass in posmap to this function
 		const float &area_atom = areaFromExposure(exposure, atom.first, _probeRadius);
 		area += area_atom;
 	}
@@ -87,7 +87,7 @@ float AreaMeasurer::surfaceArea()
 	return area;
 }
 
-float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
+float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom) // also needs local copy of posmap
 {
 	_lattice.changeLatticeRadius(atom, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
@@ -120,14 +120,14 @@ float AreaMeasurer::fibExposureSingleAtom(Atom *atom)
 	return 1 - ((float) points_in_overlap / points.size());
 }
 
-float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
+float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, float radius)
 {
 	_lattice.changeLatticeRadius(atom, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
 	int points_in_overlap = 0;
 	const glm::vec3 pos = atom->derivedPosition();
 
-	std::set<Atom *> nearAtoms = _contacts->atomsNear(atom, radius);
+	std::set<Atom *> nearAtoms = _contacts->atomsNear(posMap, atom, radius);
 	_contacts->calculateZSliceMap(atom, nearAtoms);
 	std::map<Atom *, std::map<Atom *, std::pair<float, float> > > zSliceMap = _contacts->getZSliceMap();
 	
@@ -135,7 +135,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 	for (const auto &other_atom : nearAtoms)
 	{
 		// get lower and upper z slice bounds
-		const float Z_l = zSliceMap[atom][other_atom].first;
+		const float Z_l = zSliceMap[atom][other_atom].first; //make 1 reference for both calls
 		const float Z_u = zSliceMap[atom][other_atom].second;
 		//for each lattice point in fibonacci lattice
 		for (const glm::vec3 &point : points)
@@ -144,7 +144,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(Atom *atom, float radius)
 			{
 				// check if point in overlap
 				const float radius = getVdWRadius(other_atom);
-				if (sqlength(point + pos - other_atom->derivedPosition()) <= std::pow(radius + _probeRadius + 1e-6f,2)) // + probe radius to account for solvent molecule size
+				if (sqlength(point + pos - other_atom->derivedPosition()) <= std::pow(radius + _probeRadius + 1e-6f,2)) // + probe radius to account for solvent molecule size ;replace with posmap value (derivedpos)
 				{
 					points_in_overlap++;
 					break;

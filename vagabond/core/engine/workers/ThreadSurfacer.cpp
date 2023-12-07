@@ -46,7 +46,7 @@ void ThreadSurfacer::start()
 			break;
 		}
 		
-		float area = am->surfaceArea();
+		float area = am->surfaceArea(am->atomPosMap());
 		Job *job = am->job();
 
 		Result *r = job->result;

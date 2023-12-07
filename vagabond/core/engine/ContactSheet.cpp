@@ -58,11 +58,11 @@ void ContactSheet::calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms)
 	}
 }
 
-std::set<Atom *> ContactSheet::atomsNear(Atom *centre, float radius)
+std::set<Atom *> ContactSheet::atomsNear(const AtomPosMap &posMap, Atom *centre, float radius)
 {
 	// replace empty set with nearby atoms
 	std::set<Atom *> nearAtomsSet;
-  for (auto &atom : _posMap)
+  for (auto &atom : posMap)
 	{
 		if (glm::length(atom.second.ave - centre->derivedPosition()) <= radius && atom.first != centre)
 		{
