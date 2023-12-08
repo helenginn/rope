@@ -11,6 +11,7 @@ PyMethodDef methods[] =
     {"greet", greet, METH_VARARGS, "terrible documentation"},
     {"get_atom_positions", getAtomPositions, METH_NOARGS, "Get atom position"},
     {"get_one_atom_position", getOneAtomPosition, METH_NOARGS, "Get one atom position"},
+    {"fish_positions", fishPositions, METH_NOARGS, "Fish positions"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -68,6 +69,56 @@ PyObject* getOneAtomPosition(PyObject* self, PyObject* args)
     }
 }
 
+PyObject* createWithPosObject(const WithPos& withPos)
+{
+    // Create a Python dictionary to represent WithPos
+    PyObject* withPosObj = PyDict_New();
+
+    // Check if the creation was successful
+    if (withPosObj == NULL)
+    {
+        return NULL;
+    }
+
+    // Create a Python list to represent samples
+    PyObject* samplesList = PyList_New(withPos.samples.size());
+    for (size_t i = 0; i < withPos.samples.size(); ++i)
+    {
+        PyList_SET_ITEM(samplesList, i, Py_BuildValue("(fff)", withPos.samples[i].x, withPos.samples[i].y, withPos.samples[i].z));
+    }
+
+    PyDict_SetItemString(withPosObj, "samples", samplesList);
+    PyDict_SetItemString(withPosObj, "ave", Py_BuildValue("(fff)", withPos.ave.x, withPos.ave.y, withPos.ave.z));
+    PyDict_SetItemString(withPosObj, "target", Py_BuildValue("(fff)", withPos.target.x, withPos.target.y, withPos.target.z));
+    PyDict_SetItemString(withPosObj, "colour", Py_BuildValue("f", withPos.colour));
+
+    return withPosObj;
+}
+
+PyObject* fishPositions(PyObject* self, PyObject* args)
+{
+    Atom* atom = new Atom(); // not sure about this line
+
+    if (!atom) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid Atom object");
+        return NULL;
+    }
+
+    WithPos wp;
+    if (atom->fishPositions(&wp))
+    {
+        PyObject* withPosObj = createWithPosObject(wp);
+        return withPosObj;
+    }
+    else
+    {
+        // Return an error or default value
+        PyErr_SetString(PyExc_RuntimeError, "Failed to get atom positions");
+        return NULL;
+    }
+}
+
+// -------------------------------- To delete:
 
 PyObject* getAtomPositions(PyObject* self, PyObject* args)
 {

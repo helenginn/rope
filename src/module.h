@@ -4,6 +4,7 @@
 #include <Python.h>
 #include <vector>
 #include <vagabond/core/Atom.h>
+#include <vagabond/core/AtomPosMap.h>
 
 struct AtomWrapper {
     Atom& atom;
@@ -17,6 +18,8 @@ extern "C" {
     PyObject* greet(PyObject* self, PyObject * args);
     PyObject* getOneAtomPosition(PyObject* self, PyObject* args);
     PyObject* getAtomPositions(PyObject* self, PyObject* args);
+    PyObject* createWithPosObject(const WithPos& withPos);
+    PyObject* fishPositions(PyObject* self, PyObject* args);
 }
 
 #endif  // MODULE_H
