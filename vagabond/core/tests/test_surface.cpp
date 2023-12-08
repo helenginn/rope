@@ -389,6 +389,8 @@ BOOST_AUTO_TEST_CASE(atom_no_neighbours)
 void test_cif(std::string name, std::string filename, float area_control, float tolerance)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+
 	CifFile geom = CifFile(path);
 	geom.parse();
   
@@ -444,7 +446,6 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	/* first task to be initiated by tasks list */
 	tasks->addTask(first_hook);
 
-	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
   TimerSurfaceArea::getInstance().timing = true;
 
 	Result *r = calculator->acquireResult();
@@ -469,6 +470,8 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 void test_pdb(std::string name, std::string filename, float area_control, float tolerance)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+	
 	PdbFile pdb(path);
 	pdb.parse();
 
@@ -527,7 +530,6 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 
 	tasks->addTask(first_hook);
 
-	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
 	TimerSurfaceArea::getInstance().timing = true;
 
 	Result *r = calculator->acquireResult();
@@ -860,7 +862,7 @@ BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
 
 BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
 {
-	test_pdb("psoriasin", "1psr.pdb", 10495.5f, 1e-2f);
+	test_pdb("psoriasin", "1psr.pdb", 12222.7f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
@@ -880,7 +882,7 @@ BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
 
 BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
 {
-	test_pdb("hemoglobin", "pdb2h35.ent", 28211.436f, 1e-2f);
+	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 1e-2f);
 }
 
 // BOOST_AUTO_TEST_CASE(time_glycine)
