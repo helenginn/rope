@@ -953,57 +953,8 @@ BOOST_AUTO_TEST_CASE(time_hemoglobin)
 	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2);
 }
 
-// BOOST_AUTO_TEST_CASE(time_profilin2)
-// {
-// 	time_pdb2("profilin", "1a0k.pdb", 2, 2);
-// }
-
-// BOOST_AUTO_TEST_CASE(time_lysozyme2)
-// {
-// 	time_pdb2("lysozyme", "1gwd.pdb", 2, 2);  
-// }
 
 // BOOST_AUTO_TEST_CASE(albumin_surface_area)
 // {
 // 	test_pdb("albumin", "pdb1e78.ent", 56982.762f, 1e-2f);
-// }
-
-// BOOST_AUTO_TEST_CASE(two_oxygen_atoms_have_surface_area)
-// {
-// 	// oxygen atom Van der Waals radius is 1.52 Ang according to Google.
-// 	// volume: 4/3 * pi * r^3 is 14.7 Ang^3.
-// 	// surface: 4 * pi * r^2 is 29.0333 Ang^2.
-
-// 	Atom a, b;
-// 	a.setElementSymbol("O");
-// 	b.setElementSymbol("O");
-// 	glm::vec3 pos_a = glm::vec3(-1.52f, 0.0f, 0.0f);
-// 	glm::vec3 pos_b = glm::vec3(1.52f, 0.0f, 0.0f);
-
-// 	a.setDerivedPosition(pos_a);
-// 	b.setDerivedPosition(pos_b);
-	
-// 	AtomGroup grp;
-// 	grp += &a;
-// 	grp += &b;
-	
-// 	BondCalculator calc;
-// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-// 	calc.addAnchorExtension(&a);
-// 	calc.addAnchorExtension(&b);
-	
-// 	calc.setup();
-// 	calc.start();
-	
-// 	Job job{};
-// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
-
-// 	calc.submitJob(job);
-
-// 	Result *r = calc.acquireResult();
-// 	calc.finish();
-	
-// 	float area = r->surface_area;
-// 	std::cout << "area: " << area << std::endl;
-// 	// BOOST_TEST(area < 2*29.0333f, tt::tolerance(1e-2f));
 // }
