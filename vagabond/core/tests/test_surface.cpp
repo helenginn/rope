@@ -471,7 +471,7 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
 	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
-	
+
 	PdbFile pdb(path);
 	pdb.parse();
 
@@ -551,87 +551,126 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
 }
 
-// void time_cif(std::string name, std::string filename, int sets, int reps)
-// {
-// 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-// 	CifFile geom = CifFile(path);
-// 	geom.parse();
+void time_cif(std::string name, std::string filename, int sets, int reps)
+{
+	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
+	CifFile geom = CifFile(path);
+	geom.parse();
 
-// 	AtomGroup *atomgroup = geom.atoms();
-// 	BondCalculator calc;
-// 	calc.setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
-// 	calc.addAnchorExtension(atomgroup->chosenAnchor());
+	AtomGroup *atomgroup = geom.atoms();
 
-// 	calc.setup();
-// 	calc.start();
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
 
-// 	Job job{};
-// 	job.requests = static_cast<JobType>(JobSolventSurfaceArea);
+	BondCalculator *calculator = new BondCalculator();
 
-// 	std::vector<std::chrono::duration<float>> times;
-// 	std::vector<float> avgSets;
-// 	std::vector<float> stdDevSets;
-// 	TimerSurfaceArea::getInstance().timing = true;
+	const int resources = 1;
+	const int threads = 1;
+	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
+	sequences->setTotalSamples(1);
+	sequences->addAnchorExtension(atomgroup->chosenAnchor());
 
-// 	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
-// 	std::endl;
+	sequences->setup();
+	sequences->prepareSequences();
 
-// 	for (int i = 0; i < sets; i++)
-// 	{
-// 		for (int j = 0; j < reps; j++)
-// 		{
-// 			calc.submitJob(job);
-// 			Result *r = calc.acquireResult();
-// 		}
-// 	}
+	Tasks *tasks = new Tasks();
+	tasks->run(threads);
 
-// 	times = TimerSurfaceArea::getInstance().times;
-// 	TimerSurfaceArea::getInstance().reset();
-// 	TimerSurfaceArea::getInstance().timing = false;
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
 
-// 	for (int i = 0; i < sets; i++)
-// 	{
-// 		float avg = 0.0f;
-// 		for (int j = 0; j < reps; j++)
-// 		{
-// 			avg += times[i*reps + j].count();
-// 		}
-// 		avg = avg / reps;
-// 		float stdDev = 0.0f;
-// 		for (int j = 0; j < reps; j++)
-// 		{
-// 			stdDev += pow(times[i*reps + j].count() - avg, 2);
-// 		}
-// 		stdDev = sqrt(stdDev / reps);
-// 		avgSets.push_back(avg);
-// 		stdDevSets.push_back(stdDev);
-// 		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
-// 		std::cout << std::left << std::setw(6) << "run " << i
-//               << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
-//               << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
-// 	}
+	Task<Result, void *> *submit_result = calculator->submitResult(0);
+
+	Flag::Calc calc_flags = Flag::Calc(Flag::DoTorsions);
+	Flag::Extract gets = Flag::Extract(Flag::AtomMap);
+
+	Task<BondSequence *, void *> *letgo = nullptr;
+
+	Task<BondSequence *, AtomPosMap *> *extract_map;
+
+	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
+	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr, &extract_map);
+
+	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
+	{
+		AreaMeasurer am;
+		am.copyAtomMap(*map);
+		float area = am.surfaceArea(*map);
+		return SurfaceAreaValue{area};
+	};
+
+	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+
+	extract_map->follow_with(map_to_surface);
+	map_to_surface->follow_with(submit_result);
+
+	tasks->addTask(first_hook);
+
+	std::vector<std::chrono::duration<float>> times;
+	std::vector<float> avgSets;
+	std::vector<float> stdDevSets;
+	TimerSurfaceArea::getInstance().timing = true;
+
+	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
+	std::endl;
+
+	for (int i = 0; i < sets; i++)
+	{
+		for (int j = 0; j < reps; j++)
+		{
+			Result *r = calc.acquireResult();
+		}
+	}
+
+	times = TimerSurfaceArea::getInstance().times;
+	TimerSurfaceArea::getInstance().reset();
+	TimerSurfaceArea::getInstance().timing = false;
+
+	for (int i = 0; i < sets; i++)
+	{
+		float avg = 0.0f;
+		for (int j = 0; j < reps; j++)
+		{
+			avg += times[i*reps + j].count();
+		}
+		avg = avg / reps;
+		float stdDev = 0.0f;
+		for (int j = 0; j < reps; j++)
+		{
+			stdDev += pow(times[i*reps + j].count() - avg, 2);
+		}
+		stdDev = sqrt(stdDev / reps);
+		avgSets.push_back(avg);
+		stdDevSets.push_back(stdDev);
+		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
+		std::cout << std::left << std::setw(6) << "run " << i
+              << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
+              << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
+	}
 	
-// 	float total_avg = 0.0f;
-// 	for (int i = 0; i < sets; i++)
-// 	{
-// 		total_avg += avgSets[i];
-// 	}
-// 	total_avg = total_avg / sets;
+	float total_avg = 0.0f;
+	for (int i = 0; i < sets; i++)
+	{
+		total_avg += avgSets[i];
+	}
+	total_avg = total_avg / sets;
 
-// 	float avg_stdDev = 0.0f;
-// 	for (int i = 0; i < sets; i++)
-// 	{
-// 		avg_stdDev += stdDevSets[i];
-// 	}
-// 	avg_stdDev = avg_stdDev / sets;
+	float avg_stdDev = 0.0f;
+	for (int i = 0; i < sets; i++)
+	{
+		avg_stdDev += stdDevSets[i];
+	}
+	avg_stdDev = avg_stdDev / sets;
 
-// 	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
-// 	std::cout << std::left << std::setw(6) << "TOTAL" 
-//           << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
-//           << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
+	std::cout << std::left << std::setw(6) << "TOTAL" 
+          << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
+          << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+	float area = r->surface_area;
+	std::cout << name << " area: " << area << std::endl;
 
-// 	calc.finish();
-// }
+	delete calculator;
+	delete sequences;
+}
 
 // void time_pdb(std::string name, std::string filename, int sets, int reps)
 // {
