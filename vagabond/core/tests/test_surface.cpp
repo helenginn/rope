@@ -1042,60 +1042,72 @@ BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
 	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 1e-2f);
 }
 
-// BOOST_AUTO_TEST_CASE(time_glycine)
-// {
-// 	time_cif("glycine", "GLY.cif", 5, 500);  
-// }
+// TIMING TESTS
 
-// BOOST_AUTO_TEST_CASE(time_insulin)
-// {
-// 	time_pdb("insulin", "pdb3i40.ent", 5, 10);
-// }
+BOOST_AUTO_TEST_CASE(time_glycine)
+{
+	time_cif("glycine", "GLY.cif", 5, 500);
+}
 
-// BOOST_AUTO_TEST_CASE(time_leptin)
-// {
-// 	time_pdb("leptin", "1ax8.pdb", 3, 10);
-// }
+BOOST_AUTO_TEST_CASE(time_insulin)
+{
+	time_pdb("insulin", "pdb3i40.ent", 5, 10);
+}
 
-// BOOST_AUTO_TEST_CASE(time_lysozyme)
-// {
-// 	time_pdb("lysozyme", "1gwd.pdb", 3, 10);
-// }
+BOOST_AUTO_TEST_CASE(time_leptin)
+{
+	time_pdb("leptin", "1ax8.pdb", 3, 10);
+}
 
-// BOOST_AUTO_TEST_CASE(time_profilin)
-// {
-// 	time_pdb("profilin", "1a0k.pdb", 3, 10);
-// }
+BOOST_AUTO_TEST_CASE(time_lysozyme)
+{
+	time_pdb("lysozyme", "1gwd.pdb", 3, 10);
+}
 
-// BOOST_AUTO_TEST_CASE(time_rhoA)
-// {
-// 	time_pdb("rhoA", "1a2b.pdb", 3, 5);
-// }
+BOOST_AUTO_TEST_CASE(time_profilin)
+{
+	time_pdb("profilin", "1a0k.pdb", 3, 10);
+}
 
-// BOOST_AUTO_TEST_CASE(time_erythropoietin)
-// {
-// 	time_pdb("erythropoietin", "1buy.pdb", 2, 5);
-// }
+BOOST_AUTO_TEST_CASE(time_rhoA)
+{
+	time_pdb("rhoA", "1a2b.pdb", 3, 5);
+}
 
-// BOOST_AUTO_TEST_CASE(time_interleukin6)
-// {
-// 	time_pdb("interleukin-6", "1alu.pdb", 3, 5);
-// }
+BOOST_AUTO_TEST_CASE(time_erythropoietin)
+{
+	time_pdb("erythropoietin", "1buy.pdb", 2, 5);
+}
 
-// BOOST_AUTO_TEST_CASE(time_psoriasin)
-// {
-// 	time_pdb("psoriasin", "1psr.pdb", 2, 8);
-// }
+BOOST_AUTO_TEST_CASE(time_interleukin6)
+{
+	time_pdb("interleukin-6", "1alu.pdb", 3, 5);
+}
 
-// BOOST_AUTO_TEST_CASE(time_cytohhesin)
-// {
-// 	time_pdb("cytohisene", "1bc9.pdb", 2, 2);
-// }
+BOOST_AUTO_TEST_CASE(time_psoriasin)
+{
+	time_pdb("psoriasin", "1psr.pdb", 2, 8);
+}
 
-// BOOST_AUTO_TEST_CASE(time_methyltransferase)
-// {
-// 	time_pdb("methyltransferase", "1yub.pdb", 2, 2);
-// }
+BOOST_AUTO_TEST_CASE(time_cytohhesin)
+{
+	time_pdb("cytohisene", "1bc9.pdb", 2, 2);
+}
+
+BOOST_AUTO_TEST_CASE(time_plectin)
+{
+	time_pdb("plectin", "2n03.pdb", 2, 2);
+}
+
+BOOST_AUTO_TEST_CASE(time_methyltransferase)
+{
+	time_pdb("methyltransferase", "1yub.pdb", 2, 2);
+}
+
+BOOST_AUTO_TEST_CASE(time_hemoglobin)
+{
+	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2);
+}
 
 // BOOST_AUTO_TEST_CASE(time_profilin2)
 // {
