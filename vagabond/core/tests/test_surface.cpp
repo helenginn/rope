@@ -579,7 +579,23 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
 }
 
-void time_cif(std::string name, std::string filename, int sets, int reps)
+std::condition_variable cv;
+std::mutex cv_m;
+
+void cooldown(float seconds)
+{
+    std::unique_lock<std::mutex> lock(cv_m);
+    for (int i = seconds; i > 0; --i)
+    {
+        std::cout << "\rCooldown... " << i << " seconds left." << std::flush;
+        cv.wait_for(lock, std::chrono::seconds(1));
+    }
+    std::cout << "\rCooldown completed.               " << std::flush;
+    cv.wait_for(lock, std::chrono::seconds(1));
+    std::cout << "\r                                   \r" << std::flush;
+}
+
+void time_cif(std::string name, std::string filename, int sets, int reps, float cooldownSeconds = 0)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
 	CifFile geom = CifFile(path);
@@ -590,6 +606,11 @@ void time_cif(std::string name, std::string filename, int sets, int reps)
 	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
 
 	BondCalculator *calculator = new BondCalculator();
+
+	if (cooldownSeconds > 0)
+	{
+		cooldown(cooldownSeconds);
+	}
 
 	const int resources = 1;
 	const int threads = 1;
@@ -700,7 +721,7 @@ void time_cif(std::string name, std::string filename, int sets, int reps)
 	delete sequences;
 }
 
-void time_pdb(std::string name, std::string filename, int sets, int reps)
+void time_pdb(std::string name, std::string filename, int sets, int reps, float cooldownSeconds = 0)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
 	PdbFile pdb(path);
@@ -713,6 +734,11 @@ void time_pdb(std::string name, std::string filename, int sets, int reps)
 
 	BondCalculator *calculator = new BondCalculator();
 
+	if (cooldownSeconds > 0)
+	{
+		cooldown(cooldownSeconds);
+	}
+	
 	const int resources = 1;
 	const int threads = 1;
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
