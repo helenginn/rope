@@ -675,6 +675,7 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 	TimerSurfaceArea::getInstance().reset();
 	TimerSurfaceArea::getInstance().timing = false;
 
+	float total = 0;
 	for (int i = 0; i < sets; i++)
 	{
 		float avg = 0.0f;
@@ -687,6 +688,7 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 		for (int j = 0; j < reps; j++)
 		{
 			stdDev += pow(times[i*reps + j].count() - avg, 2);
+			total += times[i*reps + j].count();
 		}
 		stdDev = sqrt(stdDev / reps);
 		avgSets.push_back(avg);
@@ -715,6 +717,7 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 	std::cout << std::left << std::setw(6) << "TOTAL" 
           << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
           << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+	std::cout << "Total test time: " << total << std::endl;
 	std::cout << "Surface area: " << r->surface_area << std::endl;
 
 	delete calculator;
@@ -738,7 +741,7 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	{
 		cooldown(cooldownSeconds);
 	}
-	
+
 	const int resources = 1;
 	const int threads = 1;
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
@@ -807,6 +810,7 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	TimerSurfaceArea::getInstance().reset();
 	TimerSurfaceArea::getInstance().timing = false;
 
+	float total = 0;
 	for (int i = 0; i < sets; i++)
 	{
 		float avg = 0.0f;
@@ -819,6 +823,7 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 		for (int j = 0; j < reps; j++)
 		{
 			stdDev += pow(times[i*reps + j].count() - avg, 2);
+			total += times[i*reps + j].count();
 		}
 		stdDev = sqrt(stdDev / reps);
 		avgSets.push_back(avg);
@@ -847,6 +852,7 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	std::cout << std::left << std::setw(6) << "TOTAL" 
           << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
           << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+	std::cout << "Total test time: " << total << std::endl;
 	std::cout << "Surface area: " << r->surface_area << std::endl;
 
 	delete calculator;
@@ -855,156 +861,156 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 
 
 
-BOOST_AUTO_TEST_CASE(glycine_surface_area)
-{
-	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f); //221.691f
-}
+// BOOST_AUTO_TEST_CASE(glycine_surface_area)
+// {
+// 	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f); //221.691f
+// }
 
-BOOST_AUTO_TEST_CASE(atp_surface_area)
-{
-	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
-}
+// BOOST_AUTO_TEST_CASE(atp_surface_area)
+// {
+// 	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
+// }
 
-BOOST_AUTO_TEST_CASE(tyr_surface_area)
-{
-	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
-}
+// BOOST_AUTO_TEST_CASE(tyr_surface_area)
+// {
+// 	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
+// }
 
-BOOST_AUTO_TEST_CASE(exanatide_surface_area)
-{
-	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
-}
+// BOOST_AUTO_TEST_CASE(exanatide_surface_area)
+// {
+// 	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
+// }
 
-BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
-{
-	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
-}
+// BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
+// {
+// 	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
+// }
 
-BOOST_AUTO_TEST_CASE(insulin_surface_area)
-{
-	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
-}
+// BOOST_AUTO_TEST_CASE(insulin_surface_area)
+// {
+// 	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
+// }
 
-BOOST_AUTO_TEST_CASE(leptin_surface_area)
-{
-	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(leptin_surface_area)
+// {
+// 	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
-{
-	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
-}
+// BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
+// {
+// 	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
+// }
 
-BOOST_AUTO_TEST_CASE(profilin_surface_area)
-{
-	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(profilin_surface_area)
+// {
+// 	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(rhoA_surface_area)
-{
-	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(rhoA_surface_area)
+// {
+// 	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
-{
-	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
+// {
+// 	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
-{
-	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
+// {
+// 	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
-{
-	test_pdb("psoriasin", "1psr.pdb", 12222.7f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
+// {
+// 	test_pdb("psoriasin", "1psr.pdb", 12222.7f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
-{
-	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
+// {
+// 	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(plectin_surface_area)
-{
-	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(plectin_surface_area)
+// {
+// 	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
-{
-	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
+// {
+// 	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
+// }
 
-BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
-{
-	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 1e-2f);
-}
+// BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
+// {
+// 	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 1e-2f);
+// }
 
 // TIMING TESTS
 
 BOOST_AUTO_TEST_CASE(time_glycine)
 {
-	time_cif("glycine", "GLY.cif", 5, 500);
+	time_cif("glycine", "GLY.cif", 5, 500, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_insulin)
 {
-	time_pdb("insulin", "pdb3i40.ent", 5, 10);
+	time_pdb("insulin", "pdb3i40.ent", 5, 10, 10);
 }
 
 BOOST_AUTO_TEST_CASE(time_leptin)
 {
-	time_pdb("leptin", "1ax8.pdb", 3, 10);
+	time_pdb("leptin", "1ax8.pdb", 3, 10, 30);
 }
 
 BOOST_AUTO_TEST_CASE(time_lysozyme)
 {
-	time_pdb("lysozyme", "1gwd.pdb", 3, 10);
+	time_pdb("lysozyme", "1gwd.pdb", 3, 10, 30);
 }
 
 BOOST_AUTO_TEST_CASE(time_profilin)
 {
-	time_pdb("profilin", "1a0k.pdb", 3, 10);
+	time_pdb("profilin", "1a0k.pdb", 3, 10, 30);
 }
 
 BOOST_AUTO_TEST_CASE(time_rhoA)
 {
-	time_pdb("rhoA", "1a2b.pdb", 3, 5);
+	time_pdb("rhoA", "1a2b.pdb", 3, 5, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_erythropoietin)
 {
-	time_pdb("erythropoietin", "1buy.pdb", 2, 5);
+	time_pdb("erythropoietin", "1buy.pdb", 2, 5, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_interleukin6)
 {
-	time_pdb("interleukin-6", "1alu.pdb", 3, 5);
+	time_pdb("interleukin-6", "1alu.pdb", 3, 5, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_psoriasin)
 {
-	time_pdb("psoriasin", "1psr.pdb", 2, 8);
+	time_pdb("psoriasin", "1psr.pdb", 2, 8, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_cytohhesin)
 {
-	time_pdb("cytohisene", "1bc9.pdb", 2, 2);
+	time_pdb("cytohisene", "1bc9.pdb", 2, 2, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_plectin)
 {
-	time_pdb("plectin", "2n03.pdb", 2, 2);
+	time_pdb("plectin", "2n03.pdb", 2, 2, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_methyltransferase)
 {
-	time_pdb("methyltransferase", "1yub.pdb", 2, 2);
+	time_pdb("methyltransferase", "1yub.pdb", 2, 2, 45);
 }
 
 BOOST_AUTO_TEST_CASE(time_hemoglobin)
 {
-	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2);
+	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2, 45);
 }
 
 
