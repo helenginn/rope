@@ -64,16 +64,16 @@ void Fibonacci::generateLattice(int num, double radius)
 	}
 }
 
-void Fibonacci::changeLatticeRadius(Atom *atom, double probeRadius)
+void Fibonacci::changeLatticeRadius(float radius, const float probeRadius)
 {
-	const float radius = getVdWRadius(atom) + probeRadius;
 	if (radius != _radius || probeRadius != _probeRadius)
 	{
+		_radius = radius;
+		_probeRadius = probeRadius;
+		radius += probeRadius;
 		for (int i = 0; i < _unitPoints.size(); i++)
 		{
 			_points[i] = _unitPoints[i] * radius;
 		}
-		_radius = radius;
-		_probeRadius = probeRadius;
 	}
 }
