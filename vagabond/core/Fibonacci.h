@@ -32,7 +32,7 @@ public:
 	void generateLattice(int num, double radius);
 
   /** changes the radius of the Fibonacci lattice points to the atom's VdW Radius*/
-	void changeLatticeRadius(Atom *atom, double probeRadius = 0.0);
+	void changeLatticeRadius(float radius, const float probeRadius = 0.0);
 
 	void resetLatticeRadius()
 	{

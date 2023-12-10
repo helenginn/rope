@@ -108,6 +108,10 @@ BOOST_AUTO_TEST_CASE(area_from_exposure)
 	a2.setElementSymbol("C");
 	a3.setElementSymbol("N");
 	a4.setElementSymbol("S");
+	float radius1 = getVdWRadius(&a1);
+	float radius2 = getVdWRadius(&a2);
+	float radius3 = getVdWRadius(&a3);
+	float radius4 = getVdWRadius(&a4);
 	exp1 = 0.0;
 	exp2 = 1.0;
 	exp3 = 0.3;
@@ -116,10 +120,10 @@ BOOST_AUTO_TEST_CASE(area_from_exposure)
 	area2 = (4 * M_PI * 1.70 * 1.70) * exp2;
 	area3 = (4 * M_PI * 1.55 * 1.55) * exp3;
 	area4 = (4 * M_PI * 1.80 * 1.80) * exp4;
-	calcArea1 = areaFromExposure(exp1, &a1);
-	calcArea2 = areaFromExposure(exp2, &a2);
-	calcArea3 = areaFromExposure(exp3, &a3);
-	calcArea4 = areaFromExposure(exp4, &a4);
+	calcArea1 = areaFromExposure(exp1, radius1);
+	calcArea2 = areaFromExposure(exp2, radius2);
+	calcArea3 = areaFromExposure(exp3, radius3);
+	calcArea4 = areaFromExposure(exp4, radius4);
 	BOOST_TEST(calcArea1 == area1, tt::tolerance(1e-2f));
 	BOOST_TEST(calcArea2 == area2, tt::tolerance(1e-2f));
 	BOOST_TEST(calcArea3 == area3, tt::tolerance(1e-2f));
@@ -169,7 +173,8 @@ BOOST_AUTO_TEST_CASE(atom_no_neighbours)
 	AM.copyAtomMap(posMap);
 
 	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom);
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
 	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
 	BOOST_TEST(exposure == 1.0f);
 }
@@ -208,12 +213,13 @@ BOOST_AUTO_TEST_CASE(atom_far_neighbour)
 	AM.copyAtomMap(posMap);
 
 	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom);
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
 	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
 
 	AM.copyAtomMap(posMapControl);
 
-	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom);
+	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
 	std::cout << "atom_far_neighbour exposure (control): " << exposureControl << std::endl;
 
 	BOOST_TEST(exposure == 1.0f);
@@ -249,12 +255,12 @@ BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
 	AM.copyAtomMap(posMap);
 
 	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom);
-	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
 
 	AM.copyAtomMap(posMapControl);
 
-	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom);
+	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
 	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl << std::endl;
 
 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
@@ -289,12 +295,12 @@ BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
 	AM.copyAtomMap(posMap);
 
 	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom);
-	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
 
 	AM.copyAtomMap(posMapControl);
 
-	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom);
+	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
 	std::cout << "atom_large_overlap_neighbour exposure (control): " << exposureControl << std::endl;
 
 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
@@ -324,8 +330,8 @@ BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
 	AM.copyAtomMap(posMap);
 
 	// calculate the exposure of the atom
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom);
-	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
 	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
 }
 

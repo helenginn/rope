@@ -41,9 +41,7 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 {
 	TimerSurfaceArea& timer = TimerSurfaceArea::getInstance();
 	bool timing = timer.timing;
-	// int loops = 0;
-
-	// repeat:
+	
 	if (timing)
 	{	 timer.start();}
 
@@ -59,37 +57,34 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	std::vector<glm::vec3> points = _lattice.getPoints();
 
 
-  //loop through points and check that each point has magnitude 1:
-	for (int i = 0; i < points.size(); i++)
-	{
-		float magnitude = sqrt(pow(points[i].x,2) + pow(points[i].y,2) + pow(points[i].z,2));
-		if (fabs(magnitude - 1) > 0.0001)
-		{
-			std::cout << "Error: magnitude of point " << i << " is not 1, is " << magnitude << std::endl;
-		}
-	}
-	//end fibonacci points test
+  // //loop through points and check that each point has magnitude 1:
+	// for (int i = 0; i < points.size(); i++)
+	// {
+	// 	float magnitude = sqrt(pow(points[i].x,2) + pow(points[i].y,2) + pow(points[i].z,2));
+	// 	if (fabs(magnitude - 1) > 0.0001)
+	// 	{
+	// 		std::cout << "Error: magnitude of point " << i << " is not 1, is " << magnitude << std::endl;
+	// 	}
+	// }
+	// //end fibonacci points test
 
   for (std::pair<Atom *const, WithPos> atom : posMap)
 	{
-    const float &exposure = AreaMeasurer::fibExposureSingleAtom(posMap, atom.first); // pass in posmap to this function
-		const float &area_atom = areaFromExposure(exposure, atom.first, _probeRadius);
+		const float radius = getVdWRadius(atom.first);
+    const float &exposure = AreaMeasurer::fibExposureSingleAtom(posMap, atom.first, radius); // pass in posmap to this function
+		const float &area_atom = areaFromExposure(exposure, radius, _probeRadius);
 		area += area_atom;
 	}
 
   if (timing)
 	{	timer.end();}
-	// if (timing)
-	// {	timer.end(); loops++;}
-  // if (timing && loops < TimerSurfaceArea::getInstance().loops)
-	// {	goto repeat;}
 
 	return area;
 }
 
-float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom) // also needs local copy of posmap
+float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, const float radius) // also needs local copy of posmap
 {
-	_lattice.changeLatticeRadius(atom, _probeRadius);
+	_lattice.changeLatticeRadius(radius, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
 	int points_in_overlap = 0;
 	const glm::vec3 pos = atom->derivedPosition();
@@ -103,9 +98,8 @@ float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom) 
 			if (other_atom.first != atom)
 			{
 				// check if point in overlap
-				const float radius = getVdWRadius(other_atom.first);
 				// if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
-				if (sqlength(point + pos - other_atom.first->derivedPosition()) <= std::pow(radius + _probeRadius + 1e-6f,2)) // + probe radius to account for solvent molecule size
+				if (sqlength(point + pos - other_atom.first->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap++;
 					break;
@@ -120,14 +114,14 @@ float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom) 
 	return 1 - ((float) points_in_overlap / points.size());
 }
 
-float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, float radius)
+float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, const float radius)
 {
-	_lattice.changeLatticeRadius(atom, _probeRadius);
+	_lattice.changeLatticeRadius(radius, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
 	int points_in_overlap = 0;
 	const glm::vec3 pos = atom->derivedPosition();
 
-	std::set<Atom *> nearAtoms = _contacts->atomsNear(posMap, atom, radius);
+	std::set<Atom *> nearAtoms = _contacts->atomsNear(posMap, atom, radius); //todo
 	_contacts->calculateZSliceMap(atom, nearAtoms);
 	std::map<Atom *, std::map<Atom *, std::pair<float, float> > > zSliceMap = _contacts->getZSliceMap();
 	
@@ -143,8 +137,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *
 			if (other_atom != atom && point.z >= Z_l && point.z <= Z_u)
 			{
 				// check if point in overlap
-				const float radius = getVdWRadius(other_atom);
-				if (sqlength(point + pos - other_atom->derivedPosition()) <= std::pow(radius + _probeRadius + 1e-6f,2)) // + probe radius to account for solvent molecule size ;replace with posmap value (derivedpos)
+				if (sqlength(point + pos - other_atom->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size ;replace with posmap value (derivedpos)
 				{
 					points_in_overlap++;
 					break;
@@ -156,10 +149,9 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *
 	return 1 - ((float) points_in_overlap / points.size());
 }
 
-float areaFromExposure(float exposure, Atom *atom, double probeRadius)
+float areaFromExposure(float exposure, float radius, double probeRadius)
 {
-	const float radius = getVdWRadius(atom) + probeRadius;
-	const float area = exposure * 4 * M_PI * pow(radius,2);
+	const float area = exposure * 4 * M_PI * (radius + probeRadius) * (radius + probeRadius);
 	return area;
 }
 
