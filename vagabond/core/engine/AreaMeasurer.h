@@ -61,22 +61,22 @@ public:
 	/** calculates surface area of previously copied atom map in Angstroms. */
 	float surfaceArea(const AtomPosMap &posMap);
 	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
-	float fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom);
+	float fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, const float radius);
 	/** more efficiently calculates exposure of atom, i.e. the percentage of points not in the overlap with other atoms within a specified radius */
-	float fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, float radius);
+	float fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, const float radius);
 
 private:
 	Job *_job = nullptr;
 	AtomPosMap _posMap;
 	Fibonacci _lattice;
-	double _probeRadius = 1.4;
+	float _probeRadius = 1.4;
 
 	SurfaceAreaHandler *_handler = nullptr;
 	ContactSheet *_contacts = nullptr;
 };
 
 /** calculates the exposed area from atom's lattice exposure and  vdw radius*/
-float areaFromExposure(float exposure, Atom *atom, double probeRadius = 0.0);
+float areaFromExposure(float exposure, float radius, double probeRadius = 0.0);
 
 /** get VdWRadius from an atom*/
 float getVdWRadius(Atom *atom);
