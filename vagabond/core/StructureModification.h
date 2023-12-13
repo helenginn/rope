@@ -39,6 +39,7 @@ class BondCalculator;
 class BondSequenceHandler;
 class MapTransferHandler;
 class MapSumHandler;
+class ImplicitBHandler;
 class CorrelationHandler;
 class AtomContent;
 class Instance;
@@ -101,6 +102,7 @@ public:
 		BondSequenceHandler *sequences = nullptr;
 		MapTransferHandler *perElements = nullptr;
 		MapSumHandler *summations = nullptr;
+		ImplicitBHandler *implicits = nullptr;
 		CorrelationHandler *correlations = nullptr;
 		Tasks *tasks = nullptr;
 		

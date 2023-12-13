@@ -16,62 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Wiggler__
-#define __vagabond__Wiggler__
+#ifndef __vagabond__ImplicitBHandler__
+#define __vagabond__ImplicitBHandler__
 
-#include "RefinementInfo.h"
+#include <thread>
+#include "engine/Handler.h"
+//#include "engine/ElementTypes.h"
 
-class Instance;
-class Sampler;
+class AtomMap;
+class AnisoMap;
 
-namespace Refine {
-	struct Info;
-};
-
-class Wiggler
+class ImplicitBHandler : public Handler
 {
 public:
-	Wiggler(Refine::Info &info, Sampler *sampler);
-	virtual ~Wiggler() {};
-	
-	enum Module
-	{
-		None = 0,
-		Warp = 1 << 0,
-		Translate = 1 << 1,
-		Rotate = 1 << 2,
-		ImplicitB = 1 << 3,
-	};
-	
-	void setModules(const Module &mod)
-	{
-		_modules = mod;
-	}
+	ImplicitBHandler(int resources, const AtomMap *calc_template);
 
-	void operator()();
-	
-	int n_params();
-	std::vector<int> chopped_params();
+	void setup();
 
-	int confParams();
-	int transParams();
-	int rotParams();
+	AnisoMap *acquireAnisoMapIfAvailable();
+	void returnAnisoMap(AnisoMap *aniso);
+private:
+	const AtomMap *_template = nullptr;
 	
-	void setSuperpose(bool superpose)
-	{
-		_superpose = superpose;
-	}
+	Pool<AnisoMap *> _anisoPool;
 
-	AtomGroup *group();
+	int _threads = 1;
 
-	Refine::Calculate prepareSubmission();
-
-	Refine::Info &_info;
-	Sampler *_sampler = nullptr;
-	
-	bool _superpose = true;
-	
-	Module _modules = None;
 };
 
 #endif

@@ -50,6 +50,8 @@ struct Deviation
 	float value;
 };
 
+class AtomMap;
+class AnisoMap;
 class AtomSegment;
 class BondSequence;
 class ElementSegment;
@@ -87,6 +89,22 @@ struct SegmentAddition
 
 	ElementSegment *elements = nullptr;
 	AtomSegment *atoms = nullptr;
+};
+
+struct ApplyAniso
+{
+	void operator=(AnisoMap *const &_aniso)
+	{
+		aniso = _aniso;
+	}
+
+	void operator=(AtomMap *const &_map)
+	{
+		map = _map;
+	}
+
+	AnisoMap *aniso = nullptr;
+	AtomMap *map = nullptr;
 };
 
 struct GetEle

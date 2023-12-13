@@ -24,8 +24,10 @@
 #include "Sampler.h"
 #include "Warp.h"
 
+#include "grids/AnisoMap.h"
 #include "engine/MapTransferHandler.h"
 #include "engine/CorrelationHandler.h"
+#include "engine/ImplicitBHandler.h"
 #include "engine/MapSumHandler.h"
 #include "BondSequenceHandler.h"
 #include "BondCalculator.h"
@@ -87,6 +89,14 @@ CoordManager coordinateManagement(Wiggler *wiggle)
 	return manager;
 }
 
+void scale(std::vector<float> &vals, float sc)
+{
+	for (float &f : vals)
+	{
+		f *= sc;
+	}
+}
+
 Refine::Calculate Wiggler::prepareSubmission()
 {
 	AtomGroup *grp = group();
@@ -112,6 +122,7 @@ Refine::Calculate Wiggler::prepareSubmission()
 		BondSequenceHandler *const &sequences = resources.sequences;
 		MapTransferHandler *const &eleMaps = resources.perElements;
 		MapSumHandler *const &sums = resources.summations;
+		ImplicitBHandler *const &implicits = resources.implicits;
 		CorrelationHandler *const &correlation = resources.correlations;
 
 		Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoSuperpose);
@@ -189,11 +200,56 @@ Refine::Calculate Wiggler::prepareSubmission()
 
 		/* correlation of real-space map against reference */
 		Task<CorrelMapPair, Correlation> *correlate = nullptr;
-		correlation->get_correlation(make_map, &correlate);
+		Task<AtomMap *, CorrelMapPair> *grab_correl = nullptr;
+		correlation->get_correlation(nullptr, &correlate, &grab_correl);
+
+		if (modules & ImplicitB)
+		{
+			/* apply additional anisotropic B to whole unit */
+
+			auto get_implicit = [implicits](void *, bool *success) -> AnisoMap *
+			{
+				AnisoMap *am = implicits->acquireAnisoMapIfAvailable();
+				*success = (am != nullptr);
+				return am;
+			};
+
+			auto *acquire = new FailableTask<void *, AnisoMap *>(get_implicit);
+
+			make_map->must_complete_before(acquire);
+			std::vector<float> anisos = paramses[3];
+
+			auto add_implicit = [anisos](ApplyAniso aa) -> AtomMap *
+			{
+				aa.aniso->setBs(anisos);
+				aa.aniso->applyToMap(aa.map);
+				return aa.map;
+			};
+
+			auto *apply_aniso = new Task<ApplyAniso, AtomMap *>(add_implicit);
+
+			acquire->follow_with(apply_aniso);
+			make_map->follow_with(apply_aniso);
+
+			auto free_implicit = [implicits](AnisoMap *aniso) -> void *
+			{
+				implicits->returnAnisoMap(aniso);
+				return nullptr;
+			};
+
+			auto *free_aniso = new Task<AnisoMap *, void *>(free_implicit);
+			apply_aniso->must_complete_before(free_aniso);
+			acquire->follow_with(free_aniso);
+			apply_aniso->follow_with(grab_correl);
+		}
+		else
+		{
+			make_map->follow_with(grab_correl);
+		}
 
 		/* pop correlation into result */
 		correlate->follow_with(submit_result);
-		
+
 		return first_hook;
 	};
 }
@@ -213,7 +269,12 @@ int Wiggler::transParams()
 int Wiggler::rotParams()
 {
 	int n = _info.master_dims;
-	return (n + 1) * 3;
+	return (n) * 4;
+}
+
+int implicitParams()
+{
+	return 6;
 }
 
 std::vector<int> Wiggler::chopped_params()
@@ -223,6 +284,7 @@ std::vector<int> Wiggler::chopped_params()
 	list.push_back(_modules & Warp ? confParams() : 0);
 	list.push_back(_modules & Translate ? transParams() : 0);
 	list.push_back(_modules & Rotate ? rotParams() : 0);
+	list.push_back(_modules & ImplicitB ? implicitParams() : 0);
 	
 	return list;
 }
@@ -248,7 +310,13 @@ void Wiggler::operator()()
 	for (Instance *inst : _info.instances)
 	{
 		AtomGroup *group = inst->currentAtoms();
-		_info.anchors += group->chosenAnchor();
+		
+		std::vector<AtomGroup *> connected = group->connectedGroups();
+		
+		for (AtomGroup *subgroup : connected)
+		{
+			_info.anchors += subgroup->chosenAnchor();
+		}
 	}
 
 	_info.all_atoms += group()->atomVector();

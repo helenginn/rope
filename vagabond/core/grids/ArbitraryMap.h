@@ -101,6 +101,8 @@ public:
 	{
 		return _spgName;
 	}
+	
+	virtual void multiply(float scale);
 private:
 	Diffraction *_diff = nullptr;
 

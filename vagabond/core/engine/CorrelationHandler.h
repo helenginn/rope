@@ -22,11 +22,11 @@
 #include <thread>
 #include "engine/Handler.h"
 #include "engine/ElementTypes.h"
-#include <fftw3.h>
 
 class BondCalculator;
 class MapSumHandler;
 
+typedef float fftwf_complex[2];
 template<class T>
 class OriginGrid;
 
@@ -38,13 +38,13 @@ typedef std::pair<Correlator *, AtomMap *> CorrelMapPair;
 class CorrelationHandler : public Handler
 {
 public:
-	CorrelationHandler(BondCalculator *calculator);
 	CorrelationHandler(OriginGrid<fftwf_complex> *reference,
 	                   const AtomMap *calc_template, int resources);
 	~CorrelationHandler();
 
 	void get_correlation(Task<SegmentAddition, AtomMap *> *made_map,
-	                     Task<CorrelMapPair, Correlation> **get_cc = nullptr);
+	                     Task<CorrelMapPair, Correlation> **get_cc,
+	                     Task<AtomMap *, CorrelMapPair> **grab = nullptr);
 
 	Correlator *acquireCorrelatorIfAvailable();
 	void returnCorrelator(Correlator *cc);
@@ -66,7 +66,6 @@ public:
 
 	void setup();
 
-	void finish();
 private:
 	void createCorrelators();
 
@@ -75,14 +74,7 @@ private:
 	OriginGrid<fftwf_complex> *_refDensity = nullptr;
 	const AtomMap *_template = nullptr;
 	
-	struct CorrelJob
-	{
-		Job *job;
-		AtomMap *map;
-	};
-	
 	Pool<Correlator *> _correlPool;
-	Pool<CorrelJob *> _mapPool;
 
 	int _threads = 1;
 };

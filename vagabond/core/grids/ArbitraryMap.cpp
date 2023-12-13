@@ -173,3 +173,12 @@ void ArbitraryMap::populatePlan(FFT<fftwf_complex>::PlanDims &dims)
 	_planStart = &_data[0];
 }
 
+void ArbitraryMap::multiply(float scale)
+{
+	for (size_t i = 0; i < nn(); i++)
+	{
+		_data[i][0] *= scale;
+		_data[i][1] *= scale;
+	}
+}
+

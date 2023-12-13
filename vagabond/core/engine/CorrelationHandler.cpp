@@ -22,11 +22,6 @@
 #include "engine/Task.h"
 #include "Result.h"
 
-CorrelationHandler::CorrelationHandler(BondCalculator *calc)
-{
-	_calculator = calc;
-}
-
 CorrelationHandler::CorrelationHandler(OriginGrid<fftwf_complex> *reference,
                                        const AtomMap *calc_template,
                                        int resources)
@@ -83,14 +78,9 @@ void CorrelationHandler::returnCorrelator(Correlator *cc)
 	_correlPool.pushObject(cc);
 }
 
-void CorrelationHandler::finish()
-{
-	_correlPool.finish();
-	_mapPool.finish();
-}
-
 void CorrelationHandler::get_correlation(Task<SegmentAddition, AtomMap *> *made_map,
-                                         Task<CorrelMapPair, Correlation> **get_cc)
+                                         Task<CorrelMapPair, Correlation> **get_cc,
+                                         Task<AtomMap *, CorrelMapPair> **get_grab)
 {
 	auto grab_cc = [this](AtomMap *map, bool *success) -> CorrelMapPair
 	{
@@ -109,7 +99,7 @@ void CorrelationHandler::get_correlation(Task<SegmentAddition, AtomMap *> *made_
 	};
 
 	auto *correlate = new Task<CorrelMapPair, Correlation>(correl, "correlate");
-	
+
 	if (get_cc)
 	{
 		*get_cc = correlate;
@@ -123,7 +113,16 @@ void CorrelationHandler::get_correlation(Task<SegmentAddition, AtomMap *> *made_
 
 	auto *let_go = new Task<CorrelMapPair, void *>(letgo, "let correlator go");
 
-	made_map->follow_with(grab);
+	if (made_map)
+	{
+		made_map->follow_with(grab);
+	}
+
+	if (get_grab)
+	{
+		*get_grab = grab;
+	}
+
 	grab->follow_with(correlate);
 	grab->follow_with(let_go);
 	correlate->must_complete_before(let_go);

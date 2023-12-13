@@ -29,6 +29,7 @@
 
 #include "engine/MapTransferHandler.h"
 #include "engine/CorrelationHandler.h"
+#include "engine/ImplicitBHandler.h"
 #include "engine/MapSumHandler.h"
 #include "BondSequenceHandler.h"
 #include "BondCalculator.h"
@@ -175,6 +176,11 @@ void Unit::prepareResources()
 	MapSumHandler *sums = new MapSumHandler(_threads, perEles->segment(0));
 	sums->setup();
 	_resources.summations = sums;
+	
+	/* application of additional anisotropic B factor */
+	ImplicitBHandler *ibh = new ImplicitBHandler(_threads, sums->templateMap());
+	ibh->setup();
+	_resources.implicits = ibh;
 
 	/* correlation of summed density map against reference */
 	CorrelationHandler *cc = new CorrelationHandler(_map, sums->templateMap(),
