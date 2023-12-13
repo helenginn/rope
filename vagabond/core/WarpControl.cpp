@@ -522,7 +522,7 @@ auto task_for_smaller_param_range(WarpControl *wc, const Between &small,
 		sets[i] += sets[i - 1];
 	}
 	
-	while (sets.size() < 8)
+	while (sets.size() < 16)
 	{
 		ParamSet next = sets.back();
 		next.expandNeighbours();

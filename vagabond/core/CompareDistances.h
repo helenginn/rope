@@ -36,7 +36,7 @@ public:
 
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 	
-	void process(const AtomPosList &apl);
+	void process(const AtomPosList &apl, bool show);
 	
 	void setFiltersEqual(const AtomFilter &filter)
 	{
@@ -58,6 +58,7 @@ public:
 	PCA::Matrix matrix();
 	
 	float quickScore();
+	float runningScore();
 	
 	int receivedCount()
 	{
@@ -78,8 +79,8 @@ private:
 		return _equal;
 	}
 	void equalFilter(const AtomPosList &apl);
-	void setupMatrix(const AtomPosList &apl);
-	void addToMatrix(const AtomPosList &apl);
+	void setupMatrix(const AtomPosList &apl, bool show);
+	void addToMatrix(const AtomPosList &apl, bool show);
 
 	std::vector<Atom *> _leftAtoms;
 
@@ -145,7 +146,8 @@ private:
 
 	std::condition_variable _cv;
 
-	int _counter = 0;
+	std::atomic<long> _counter{0};
+	std::atomic<long> _total{0};
 	int _minimum = 0;
 	int _maximum = INT_MAX;
 	bool _magnitude = true;

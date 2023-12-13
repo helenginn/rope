@@ -270,7 +270,7 @@ auto atom_list()
 Task<BondSequence *, void *> *
 BondSequenceHandler::extract_compare_distances(Task<Result, void *> *submit_result,
                                                CompareDistances *compare,
-                                               CalcTask *hook)
+                                               CalcTask *hook, bool show)
 {
 	Task<BondSequence *, void *> *letgo = letGo();
 	hook->follow_with(letgo);
@@ -280,9 +280,9 @@ BondSequenceHandler::extract_compare_distances(Task<Result, void *> *submit_resu
 	hook->follow_with(make_atom_list);
 	make_atom_list->must_complete_before(letgo);
 
-	auto process_list = [compare](AtomPosList *list) -> AtomPosList *
+	auto process_list = [compare, show](AtomPosList *list) -> AtomPosList *
 	{
-		compare->process(*list);
+		compare->process(*list, show);
 		return list;
 	};
 	

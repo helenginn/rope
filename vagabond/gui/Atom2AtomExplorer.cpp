@@ -170,7 +170,7 @@ void Atom2AtomExplorer::update()
 	std::vector<Posular> vals = _movement.storage_only();
 	AtomPosList posList = positions(vals, multiply_by<glm::vec3>(_motionScale));
 
-	_cd.process(posList);
+	_cd.process(posList, true);
 
 	const float &scale = _colourScale;
 	_matrix = _cd.matrix();

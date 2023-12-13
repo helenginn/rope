@@ -60,7 +60,7 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
 	
-	if (show)
+	if (show || !_displayTargets)
 	{
 		calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions | Flag::DoSuperpose);
 	}
@@ -72,7 +72,8 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
 	sequences->calculate(calc, vals, &first_hook, &final_hook);
-	sequences->extract_compare_distances(submit_result, _compare, final_hook);
+	sequences->extract_compare_distances(submit_result, _compare, 
+	                                     final_hook, show);
 	
 	_resources.tasks->addTask(first_hook);
 
@@ -93,7 +94,7 @@ std::function<float()> Warp::score(const std::vector<Floats> &points,
 
 		for (const Floats &fs : points)
 		{
-			submitJob(false, fs);
+			submitJob(expose_matrix, fs);
 		}
 		_resources.calculator->releaseHorses();
 		
@@ -107,7 +108,14 @@ std::function<float()> Warp::score(const std::vector<Floats> &points,
 		_alwaysShow = true;
 		clearTickets();
 
-		return compare()->quickScore();
+		if (expose_matrix)
+		{
+			return compare()->quickScore();
+		}
+		else
+		{
+			return compare()->runningScore();
+		}
 	};
 	
 	return func;
@@ -253,6 +261,7 @@ void loadJson(const std::string &filename, TorsionWarp *tw)
 	f >> data;
 	f.close();
 	
+	std::cout << "Found json: " << filename << std::endl;
 	tw->coefficientsFromJson(data);
 }
 

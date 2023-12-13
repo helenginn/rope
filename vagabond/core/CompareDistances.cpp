@@ -61,7 +61,7 @@ void CompareDistances::equalFilter(const AtomPosList &apl)
 	std::sort(_leftAtoms.begin(), _leftAtoms.end(), resi_num_comp);
 }
 
-void CompareDistances::setupMatrix(const AtomPosList &apl)
+void CompareDistances::setupMatrix(const AtomPosList &apl, bool show)
 {
 	if (_set)
 	{
@@ -80,19 +80,24 @@ void CompareDistances::setupMatrix(const AtomPosList &apl)
 		_setSignal--;
 
 		equalFilter(apl);
-		_counts.setup(_leftAtoms.size());
+		
+		if (show)
+		{
+			_counts.setup(_leftAtoms.size());
+		}
 
 		_set = true;
 		_setSignal = 1;
+		_total = 0;
 
 		_cv.notify_all();
 	}
 }
 
-void CompareDistances::process(const AtomPosList &apl)
+void CompareDistances::process(const AtomPosList &apl, bool show)
 {
-	setupMatrix(apl);
-	addToMatrix(apl);
+	setupMatrix(apl, show);
+	addToMatrix(apl, show);
 }
 
 float CompareDistances::quickScore()
@@ -114,9 +119,18 @@ float CompareDistances::quickScore()
 	return sqrt(sum / (float)(size * _counter));
 }
 
-void CompareDistances::addToMatrix(const AtomPosList &apl)
+float CompareDistances::runningScore()
+{
+	float sum = _total / FIXED_MULTIPLY;
+
+	return sqrt(sum / (float)(_counter));
+}
+
+void CompareDistances::addToMatrix(const AtomPosList &apl, bool show)
 {
 	_counter++;
+	long running = 0;
+	long count = 0;
 	
 	for (int i = 0; i < (int)_leftIdxs.size() - 1; i++)
 	{
@@ -132,17 +146,38 @@ void CompareDistances::addToMatrix(const AtomPosList &apl)
 			const glm::vec3 &y = apl[n].wp.ave;
 			const glm::vec3 &q = apl[n].wp.target;
 
+			// avoiding lack of inline in glm::length
+			/*
+			float expected = sqrt((p.x - q.x) * (p.x - q.x) +
+			                      (p.y - q.y) * (p.y - q.y) +
+			                      (p.z - q.z) * (p.z - q.z));
+
+			float acquired = sqrt((x.x - y.x) * (x.x - y.x) +
+			                      (x.y - y.y) * (x.y - y.y) +
+			                      (x.z - y.z) * (x.z - y.z));
+			*/
+			
 			float expected = glm::length(p - q);
 			float acquired = glm::length(x - y);
 			
 			float diff = expected - acquired;
 			float add = _magnitude ? fabs(diff) : diff;
-			if (add == add)
+			if (add == add && show)
 			{
 				_counts[i][j] += add * FIXED_MULTIPLY;
 				_counts[j][i] += add * FIXED_MULTIPLY;
 			}
+			else if (add == add)
+			{
+				running += add * FIXED_MULTIPLY;
+				count += 2;
+			}
 		}
+	}
+	
+	if (!show && count > 0)
+	{
+		_total += running / count;
 	}
 }
 

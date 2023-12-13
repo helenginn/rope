@@ -98,7 +98,7 @@ public:
 	Task<BondSequence *, void *> *
 	extract_compare_distances(Task<Result, void *> *submit_result,
 	                          CompareDistances *compare,
-	                          CalcTask *hook);
+	                          CalcTask *hook, bool show = true);
 
 	// let go of sequence before continuing
 	Task<BondSequence *, void *> *letGo();
