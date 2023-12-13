@@ -32,9 +32,11 @@ ElementLibrary::ElementLibrary()
 	addElement("p", ScatterFactors::pScatter);
 	addElement("f", ScatterFactors::fScatter);
 	addElement("na", ScatterFactors::naScatter);
+	addElement("mg", ScatterFactors::mgScatter);
 	addElement("cl", ScatterFactors::clScatter);
 	addElement("ca", ScatterFactors::caScatter);
 	addElement("zn", ScatterFactors::znScatter);
+	addElement("mn", ScatterFactors::mnScatter);
 }
 
 void ElementLibrary::addElement(std::string element, const float *scatter)
