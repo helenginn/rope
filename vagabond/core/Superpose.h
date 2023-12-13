@@ -28,6 +28,7 @@ class Superpose
 {
 public:
 	Superpose();
+	~Superpose();
 	
 	void forceSameHand(bool hand)
 	{
@@ -94,6 +95,7 @@ private:
 	glm::mat4x4 _transformation;
 	glm::mat3x3 _rotation;
 	glm::vec3 _translation;
+	PCA::SVD _svd{};
 };
 
 #endif

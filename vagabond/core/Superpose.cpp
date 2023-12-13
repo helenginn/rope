@@ -25,6 +25,12 @@ using namespace PCA;
 Superpose::Superpose()
 {
 	_transformation = glm::mat4(1.f);
+	setupSVD(&_svd, 3, 3);
+}
+
+Superpose::~Superpose()
+{
+	freeSVD(&_svd);
 }
 
 void Superpose::getAveragePositions(glm::vec3 &pm, glm::vec3 &qm)
@@ -63,6 +69,9 @@ void Superpose::subtractPositions(const glm::vec3 &pm, const glm::vec3 &qm)
 
 void Superpose::populateSVD(SVD &svd)
 {
+	PCA::zeroMatrix(&_svd.u);
+	PCA::zeroMatrix(&_svd.v);
+
 	for (size_t i = 0; i < _pairs.size(); i++)
 	{
 		for (size_t k = 0; k < 3; k++)
@@ -151,18 +160,18 @@ void Superpose::superpose()
 	getAveragePositions(pm, qm);
 	subtractPositions(pm, qm);
 	
-	SVD svd;
-	setupSVD(&svd, 3, 3);
-	populateSVD(svd);
-	runSVD(&svd);
+	populateSVD(_svd);
+	runSVD(&_svd);
 
-	glm::mat3x3 rot = getRotation(svd);
+	glm::mat3x3 rot = getRotation(_svd);
 
 	glm::vec3 &subtract = qm;
 	glm::vec3 &add = pm;
 	
 	createTransformation(subtract, rot, add);
-	freeSVD(&svd);
+	_pairs.clear();
+	_originals.clear();
+	_pfm = {}; _qfm = {};
 }
 
 float Superpose::rmsd()
