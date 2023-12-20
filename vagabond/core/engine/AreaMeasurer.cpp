@@ -45,9 +45,7 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	if (timing)
 	{	 timer.start();}
 
-	// _contacts->updateSheet(_posMap); // not necessary
 	_lattice.resetLatticeRadius();
-	// std::cout << _posMap.size() << std::endl;
 
 	AreaMeasurer::setProbeRadius(1.35);
 	
@@ -55,18 +53,6 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	float area = 0;
 	//fibonacci points test
 	std::vector<glm::vec3> points = _lattice.getPoints();
-
-
-  // //loop through points and check that each point has magnitude 1:
-	// for (int i = 0; i < points.size(); i++)
-	// {
-	// 	float magnitude = sqrt(pow(points[i].x,2) + pow(points[i].y,2) + pow(points[i].z,2));
-	// 	if (fabs(magnitude - 1) > 0.0001)
-	// 	{
-	// 		std::cout << "Error: magnitude of point " << i << " is not 1, is " << magnitude << std::endl;
-	// 	}
-	// }
-	// //end fibonacci points test
 
   for (std::pair<Atom *const, WithPos> atom : posMap)
 	{
@@ -103,19 +89,14 @@ float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, 
 				}
 				const float radius = getVdWRadius(other_atom.first);
 				// check if point in overlap
-				// if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
 				if (sqlength(point + pos - other_atom.first->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size
 				{
 					points_in_overlap++;
 					break;
 				}
 			}
-			// std::cout << "Other atom " << other_atom.first->elementSymbol() << "points in overlap: " << points_in_overlap.size() << std::endl;
 		}
 	}
-	// std::cout <<  "points in overlap: " << points_in_overlap.size() << std::endl;
-	// std::cout << "percentage of points not in overlap: " << 1 - ((float) points_in_overlap.size() / points.size()) << std::endl;
-	// return percentage of points not in overlap
 	return 1 - ((float) points_in_overlap / points.size());
 }
 
