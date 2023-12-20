@@ -97,6 +97,7 @@ float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, 
 		{
 			if (other_atom.first != atom)
 			{
+				const float radius = getVdWRadius(other_atom.first);
 				// check if point in overlap
 				// if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
 				if (sqlength(point + pos - other_atom.first->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size
