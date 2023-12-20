@@ -869,87 +869,87 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 
 BOOST_AUTO_TEST_CASE(glycine_surface_area)
 {
-	test_cif("glycine", "GLY.cif", 216.612f, 3e-2f); //221.691f
+	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f); //221.691f
 }
 
 BOOST_AUTO_TEST_CASE(atp_surface_area)
 {
-	test_cif("atp", "ATP.cif", 641.4f, 3e-2f); //649.230f
+	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
 }
 
 BOOST_AUTO_TEST_CASE(tyr_surface_area)
 {
-	test_cif("tyr", "TYR.cif", 366.551f, 3e-2f); //372.816f
+	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
 }
 
 BOOST_AUTO_TEST_CASE(exanatide_surface_area)
 {
-	test_pdb("exanatide", "7mll.pdb", 3184.6f, 3e-2f); //3180.258f
+	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
 }
 
 BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
 {
-	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 3e-2f); //3177.264f
+	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
 }
 
 BOOST_AUTO_TEST_CASE(insulin_surface_area)
 {
-	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 3e-2f); //3383.559f
+	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
 }
 
 BOOST_AUTO_TEST_CASE(leptin_surface_area)
 {
-	test_pdb("leptin", "1ax8.pdb", 7687.9f, 3e-2f);
+	test_pdb("leptin", "1ax8.pdb", 7687.9f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
 {
-	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 3e-2f); //6516.170f
+	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
 }
 
 BOOST_AUTO_TEST_CASE(profilin_surface_area)
 {
-	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 3e-2f);
+	test_pdb("profilin", "1a0k.pdb", 6812.57422f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(rhoA_surface_area)
 {
-	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 3e-2f);
+	test_pdb("rhoA", "1a2b.pdb", 10084.7f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(erythropoietin_surface_area)
 {
-	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 3e-2f);
+	test_pdb("erythropoietin", "1buy.pdb", 10495.5f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(interleukin6_surface_area)
 {
-	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 3e-2f);
+	test_pdb("interleukin-6", "1alu.pdb", 9078.37f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(psoriasin_surface_area)
 {
-	test_pdb("psoriasin", "1psr.pdb", 12222.7f, 3e-2f);
+	test_pdb("psoriasin", "1psr.pdb", 12222.7f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(cytohhesin_surface_area)
 {
-	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 3e-2f);
+	test_pdb("cytohisene", "1bc9.pdb", 13874.4f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(plectin_surface_area)
 {
-	test_pdb("plectin", "2n03.pdb", 11333.4f, 3e-2f);
+	test_pdb("plectin", "2n03.pdb", 11333.4f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
 {
-	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 3e-2f);
+	test_pdb("methyltransferase", "1yub.pdb", 15660.9f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
 {
-	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 3e-2f);
+	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 1e-2f);
 }
 
 // TIMING TESTS
