@@ -93,10 +93,14 @@ float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, 
 	for (const glm::vec3 &point : points)
 	{
 		// for every other atom in posmap
-		for (auto &other_atom : _posMap)
+		for (auto &other_atom : posMap)
 		{
 			if (other_atom.first != atom)
 			{
+				if (glm::dot((pos-other_atom.first->derivedPosition()),(pos-other_atom.first->derivedPosition())) > (radius+_probeRadius+_maxVdWRadius) * (radius+_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
+				{
+					continue;
+				}
 				const float radius = getVdWRadius(other_atom.first);
 				// check if point in overlap
 				// if (glm::length(point + pos - other_atom.second.ave) <= radius + _probeRadius + 1e-6f) // + probe radius to account for solvent molecule size
@@ -137,6 +141,7 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *
 		{
 			if (other_atom != atom && point.z >= Z_l && point.z <= Z_u)
 			{
+				const float radius = getVdWRadius(other_atom);
 				// check if point in overlap
 				if (sqlength(point + pos - other_atom->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size ;replace with posmap value (derivedpos)
 				{
@@ -159,6 +164,14 @@ float areaFromExposure(float exposure, float radius, double probeRadius)
 float getVdWRadius(Atom *atom)
 {
 	std::string elementSymbol = atom->elementSymbol();
+	// if (elementSymbol == "C")
+  //   return 1.7;
+	// else if (elementSymbol == "O")
+  //   return 1.52;
+	// else if (elementSymbol == "N")
+  //   return 1.55;
+	// else if (elementSymbol == "S")
+	// 	return 1.8;
 	gemmi::Element elem(elementSymbol);
 	const float radius = elem.vdw_r();
 	return radius;
