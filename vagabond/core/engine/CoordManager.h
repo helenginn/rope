@@ -26,6 +26,7 @@
 namespace rope
 {
 	typedef std::function<Coord::Get (const int &)> IntToCoordGet;
+	typedef std::function<Coord::Get (const Coord::Get &)> ModifyCoordGet;
 	typedef std::function<IntToCoordGet(const std::vector<float> &)> 
 	GetListFromParameters;
 

@@ -108,7 +108,7 @@ namespace PCA
 		}
 	}
 
-	void copyMatrix(Matrix &dest, Matrix &source);
+	void copyMatrix(Matrix &dest, const Matrix &source);
 	void reorderSVD(SVD *cc);
 	bool invertSVD(SVD *cc);
 	void freeMatrix(Matrix *m);

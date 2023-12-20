@@ -68,16 +68,15 @@ std::vector<WriteColumn> UpdateMap::writeAutoOpeningMtz(Diffraction *const &toWr
 	{
 		columns.push_back
 		(WriteColumn("DELFWT", "F", 
-		             [this, diff](int i, int j, int k)
+		             [diff](int i, int j, int k)
 		             {
-			            return (diff->element(i, j, k).amplitude() -
-			            		_model->element(i, j, k).amplitude());
+			            return (diff->element(i, j, k).amplitude());
 		             }));
 
 		columns.push_back(WriteColumn("PHDELWT", "P", 
-		                              [this](int i, int j, int k)
+		                              [diff](int i, int j, int k)
 		                              {
-			                             return _model->element(i, j, k).phase();
+			                             return diff->element(i, j, k).phase();
 		                              }));
 	}
 	

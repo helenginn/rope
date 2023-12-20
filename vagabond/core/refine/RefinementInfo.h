@@ -29,6 +29,7 @@ template <typename I, typename O> class Task;
 
 class Unit;
 class BaseTask;
+class Barycentric;
 class Warp;
 
 inline std::vector<std::vector<float>> split(const std::vector<float> &vals,
@@ -61,11 +62,21 @@ namespace Refine
 	typedef std::function<BaseTask *(StructureModification::Resources &,
 	                                 Task<Result, void *> *)> Submit;
 	
+	enum Module
+	{
+		None = 0,
+		Warp = 1 << 0,
+		Translate = 1 << 1,
+		Rotate = 1 << 2,
+		ImplicitB = 1 << 3,
+		Barycentric = 1 << 4,
+	};
+	
 	struct Calc
 	{
-		Calculate op;
-		Submit submit;
-		int n_params;
+		Calculate op; // organises the tasks
+		Submit submit; // empty?
+		int n_params; // total number of params to handle
 	};
 
 	struct Info
@@ -77,7 +88,10 @@ namespace Refine
 		std::vector<Calc> subunits;
 		int samples = 120;
 		int master_dims = 3;
-		Warp *warp = nullptr;
+		float max_res = -1;
+		class Warp *warp = nullptr;
+		class Barycentric *barycentric = nullptr;
+		Module modules = Refine::None;
 
 		void bind_parameters(const std::vector<float> &vals)
 		{

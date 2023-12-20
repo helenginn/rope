@@ -109,13 +109,15 @@ void Refinement::prepareInstanceDetails()
 
 	for (Instance *inst : multi_atoms)
 	{
-		Wiggler::Module mods = Wiggler::Module(Wiggler::Warp | 
-		                                       Wiggler::Translate |
-		                                       Wiggler::Rotate);
+		Refine::Module mods = Refine::Module(Refine::Warp | 
+		                                       Refine::ImplicitB |
+		                                     Refine::Barycentric |
+		                                       Refine::Translate |
+		                                       Refine::Rotate);
 
 		if (!inst->hasSequence())
 		{
-			mods = Wiggler::Translate;
+			mods = Refine::Module(Refine::None);
 		}
 
 		inst->load();
@@ -132,6 +134,7 @@ void Refinement::prepareInstanceDetails()
 	{
 		{
 			Refine::Info info;
+			info.max_res = _data->maxResolution();
 			for (Instance *inst : single_atoms)
 			{
 				inst->load();
@@ -142,6 +145,7 @@ void Refinement::prepareInstanceDetails()
 		}
 		
 		Refine::Info &network = _molDetails.back();
+		network.max_res = _data->maxResolution();
 		network.samples = 120;
 		network.master_dims = 3;
 
@@ -149,7 +153,7 @@ void Refinement::prepareInstanceDetails()
 		network.refiner = unit;
 
 		Wiggler wiggler = Wiggler(network, network.refiner->sampler());
-		wiggler.setModules(Wiggler::Translate);
+		wiggler.setModules(Refine::Translate);
 		wiggler();
 
 	}
@@ -171,6 +175,8 @@ void Refinement::setupRefiner(Refine::Info &info)
 	
 	info.samples = 120;
 	info.master_dims = 3;
+	info.max_res = _data->maxResolution();
+	std::cout << info.max_res << " Ang" << std::endl;
 	info.warp = Warp::warpFromFile(mol, file);
 	Unit *unit = new Unit(_map, &info);
 	info.refiner = unit;
@@ -220,14 +226,8 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 	
 	if (reciprocal)
 	{
-		// delete me later
 		Diffraction *diff = new Diffraction(arb);
 		SymmetryExpansion::apply(diff, spg, max_res);
-
-		MtzFile file("");
-		file.setMap(diff);
-		file.write_to_file("symm.mtz", max_res);
-
 		*reciprocal = diff;
 	}
 

@@ -62,8 +62,12 @@ void PCA::zeroMatrix(Matrix *mat)
 	memset(mat->vals, '\0', sizeof(mat->vals[0]) * mat->rows * mat->cols);
 }
 
-void PCA::copyMatrix(Matrix &dest, Matrix &source)
+void PCA::copyMatrix(Matrix &dest, const Matrix &source)
 {
+	if (dest.rows == 0 && dest.cols == 0)
+	{
+		setupMatrix(&dest, source.rows, source.cols);
+	}
 	if (dest.rows < source.rows || dest.cols < source.cols)
 	{
 		throw std::runtime_error("Destination rows/cols not compatible with "

@@ -32,7 +32,7 @@ Translation::Translation(int hyperDims)
 		{
 			if (i == j)
 			{
-				_defaults[i][j] = 2.0;
+				_defaults[i][j] = 1.0;
 			}
 		}
 	}
@@ -65,7 +65,7 @@ GetVec3FromIdx Translation::translate(const IntToCoordGet &get_coord,
 		{
 			for (size_t i = 0; i < _coordinates.rows; i++)
 			{
-				float val = (i == _coordinates.rows - 1) ? 1 : get(i);
+				float val = (i == _coordinates.rows - 1) ? 0 : get(i);
 				result[j] += val * _coordinates[i][j];
 			}
 		}

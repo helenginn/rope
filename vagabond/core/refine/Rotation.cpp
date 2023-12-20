@@ -23,7 +23,7 @@ Rotation::Rotation(int hyperDims, glm::vec3 centre)
 {
 	_hyperDims = hyperDims;
 	_centre = centre;
-	setupMatrix(&_coordinates, _hyperDims + 1, 3);
+	setupMatrix(&_coordinates, _hyperDims, 4);
 
 }
 
@@ -49,19 +49,25 @@ rope::GetVec3FromIdx Rotation::rotate(const rope::IntToCoordGet &get_coord,
 
 		glm::vec3 from_centre = v - _centre;
 
-		glm::vec3 dir{};
+		float raw[] = {0.f, 0.f, 0.f, 0.f};
 		
 		for (size_t j = 0; j < _coordinates.cols; j++)
 		{
 			for (size_t i = 0; i < _coordinates.rows; i++)
 			{
-				float val = (i == _coordinates.rows - 1) ? 1 : get(i);
-				dir[j] += val * _coordinates[i][j];
+				float val = get(i);
+				raw[j] += val * _coordinates[i][j];
 			}
 		}
 		
-		glm::vec3 axis = glm::normalize(dir);
-		float angle = glm::length(dir) / 5.f;
+		for (size_t i = 0; i < 3 && false; i++)
+		{
+			raw[i] = 1 / (1 + exp(-raw[i])) - 0.5;
+		}
+		
+		glm::vec3 axis = glm::vec3(raw[0], raw[1], raw[2]);
+		float angle = glm::length(axis) / 2.f;
+		axis = glm::normalize(axis);
 		
 		if (angle != angle) angle = 0;
 		if (axis.x != axis.x) axis = {1, 0, 0};

@@ -22,6 +22,7 @@
 #include "AtomGroup.h"
 #include "Instance.h"
 #include "Sampler.h"
+#include "Barycentric.h"
 #include "Warp.h"
 
 #include "grids/AnisoMap.h"
@@ -36,6 +37,8 @@
 
 #include "Translation.h"
 #include "Rotation.h"
+
+#define FIDUCIAL_COUNT (5)
 
 Wiggler::Wiggler(Refine::Info &info, Sampler *sampler)
 : _info(info), _sampler(sampler)
@@ -67,10 +70,10 @@ CoordManager coordinateManagement(Wiggler *wiggle)
 	manager.setDefaultCoordTransform(transform);
 
 	rope::GetFloatFromCoordIdx fetchTorsion;
+	Warp *warp = wiggle->_info.warp;
 	
-	if (wiggle->_modules & Wiggler::Warp)
+	if (wiggle->_modules & Refine::Warp)
 	{
-		Warp *warp = wiggle->_info.warp;
 		fetchTorsion = [warp](const Coord::Get &get, const int &idx)
 		{
 			return warp->torsionAnglesForCoord()(get, idx);
@@ -104,17 +107,26 @@ Refine::Calculate Wiggler::prepareSubmission()
 	Sampler *sampler = _sampler;
 	std::vector<int> list = chopped_params();
 	int dims = _info.master_dims;
-	Module modules = _modules;
+	int warp_dims = _info.warp ? _info.warp->numAxes() : 0;
+	Refine::Module modules = _modules;
 	glm::vec3 centre = grp->initialCentre();
 	bool &superpose = _superpose;
+	
+	Barycentric *bary = nullptr;
+	if (modules & Refine::Barycentric)
+	{
+		_info.barycentric = new Barycentric(warp_dims, FIDUCIAL_COUNT);
+		bary = _info.barycentric;
+	}
 
-	return [sampler, dims, manager, list, modules, centre, superpose]
+	return [sampler, dims, manager, list, modules, centre, superpose, bary]
 	(StructureModification::Resources &resources, 
 	 Task<Result, void *> *submit_result,
 	 const std::vector<float> &params) 
 	-> BaseTask *
 	{
 		std::vector<std::vector<float>> paramses = split(params, list);
+		paramses.resize(5);
 
 		BaseTask *first_hook = nullptr;
 
@@ -137,11 +149,28 @@ Refine::Calculate Wiggler::prepareSubmission()
 
 		CalcTask *final_hook = nullptr;
 
+		rope::GetFloatFromCoordIdx toTorsions = manager.defaultTorsionFetcher();
+		
+		if (modules & Refine::Barycentric)
+		{
+			std::vector<float> baryparams = paramses[4];
+			rope::ModifyCoordGet modify = bary->convert(baryparams);
+
+			auto tmp = [modify, toTorsions](const Coord::Get &get, const int &idx)
+			{
+				const Coord::Get modified = modify(get);
+				return toTorsions(modified, idx);
+			};
+			
+			toTorsions = tmp;
+		}
+
 		/* calculation of torsion angle-derived and target-derived
 		 * atom positions */
-		sequences->calculate(calc, paramses[0], &first_hook, &final_hook, &manager);
+		sequences->calculate(calc, paramses[0], &first_hook, &final_hook, 
+		                     &manager, toTorsions);
 
-		if (modules & Rotate)
+		if (modules & Refine::Rotate)
 		{
 			/* on top of this, apply translations */
 			rope::IntToCoordGet raw = sampler->rawCoordinates();
@@ -162,7 +191,7 @@ Refine::Calculate Wiggler::prepareSubmission()
 			final_hook = rotate;
 		}
 
-		if (modules & Translate)
+		if (modules & Refine::Translate)
 		{
 			/* on top of this, apply translations */
 			rope::IntToCoordGet raw = sampler->rawCoordinates();
@@ -203,7 +232,7 @@ Refine::Calculate Wiggler::prepareSubmission()
 		Task<AtomMap *, CorrelMapPair> *grab_correl = nullptr;
 		correlation->get_correlation(nullptr, &correlate, &grab_correl);
 
-		if (modules & ImplicitB)
+		if (modules & Refine::ImplicitB)
 		{
 			/* apply additional anisotropic B to whole unit */
 
@@ -266,6 +295,12 @@ int Wiggler::transParams()
 	return (n + 1) * 3;
 }
 
+int Wiggler::baryParams()
+{
+	int n = FIDUCIAL_COUNT;
+	return (n) * _info.warp->numAxes();
+}
+
 int Wiggler::rotParams()
 {
 	int n = _info.master_dims;
@@ -281,10 +316,11 @@ std::vector<int> Wiggler::chopped_params()
 {
 	std::vector<int> list;
 	
-	list.push_back(_modules & Warp ? confParams() : 0);
-	list.push_back(_modules & Translate ? transParams() : 0);
-	list.push_back(_modules & Rotate ? rotParams() : 0);
-	list.push_back(_modules & ImplicitB ? implicitParams() : 0);
+	list.push_back(_modules & Refine::Warp ? confParams() : 0);
+	list.push_back(_modules & Refine::Translate ? transParams() : 0);
+	list.push_back(_modules & Refine::Rotate ? rotParams() : 0);
+	list.push_back(_modules & Refine::ImplicitB ? implicitParams() : 0);
+	list.push_back(_modules & Refine::Barycentric ? baryParams() : 0);
 	
 	return list;
 }

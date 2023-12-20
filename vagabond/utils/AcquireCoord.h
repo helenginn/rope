@@ -47,7 +47,7 @@ namespace Coord
 	}
 
 	template <typename Type>
-	Get fromVector(const std::vector<Type> &all)
+	Get fromVector(const std::vector<Type> all)
 	{
 		Get get = [all](int idx)
 		{

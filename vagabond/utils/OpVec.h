@@ -130,11 +130,20 @@ public:
 	
 	friend std::ostream &operator<<(std::ostream &ss, const OpVec<Type> &vs)
 	{
-		std::cout << "opvec(" << vs.size() << ")";
-		if (vs.size() > 0)
+		ss << "opvec(" << vs.size() << "): ";
+
+		int i = 0;
+		for (const float &f : vs)
 		{
-			std::cout << ", [0] = " << vs[0];
+			ss << f << ", ";
+			i++;
+			if (i == 10)
+			{
+				ss << " ...";
+				break;
+			}
 		}
+
 		return ss;
 	}
 

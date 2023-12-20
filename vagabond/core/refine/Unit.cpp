@@ -140,12 +140,19 @@ void Unit::runEngine()
 	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);
-	engine->setStepSize(0.2);
-//	engine->setMaxRuns(100);
+	engine->setStepSize(0.5);
+	engine->setMaxRuns(200);
 	engine->start();
 	
 	_parameters = Floats(engine->bestResult());
 	setGetterSetters();
+	
+	std::cout << "Parameters: " << std::endl;
+	for (float &f : _parameters)
+	{
+		std::cout << f << ", ";
+	}
+	std::cout << std::endl;
 }
 
 void Unit::prepareResources()
@@ -168,6 +175,10 @@ void Unit::prepareResources()
 	/* calculate transfer to per-element maps */
 	MapTransferHandler *perEles = new MapTransferHandler(sequences->elementList(), 
 	                                                     _threads);
+	if (_info->max_res > 0)
+	{
+		perEles->setCubeDim(_info->max_res / 3);
+	}
 	perEles->supplyAtomGroup(_info->all_atoms.toVector());
 	perEles->setup();
 	_resources.perElements = perEles;

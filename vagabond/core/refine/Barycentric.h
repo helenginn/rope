@@ -16,55 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Wiggler__
-#define __vagabond__Wiggler__
+#ifndef __vagabond__Barycentric__
+#define __vagabond__Barycentric__
 
-#include "RefinementInfo.h"
+#include <vagabond/utils/svd/PCA.h>
+#include "../engine/CoordManager.h"
 
-class Instance;
-class Sampler;
-
-namespace Refine {
-	struct Info;
-};
-
-class Wiggler
+class Barycentric
 {
 public:
-	Wiggler(Refine::Info &info, Sampler *sampler);
-	virtual ~Wiggler() {};
-	
-	void setModules(const Refine::Module &mod)
-	{
-		_modules = mod;
-		_info.modules = mod;
-	}
-	
-	void operator()();
-	
-	int n_params();
-	std::vector<int> chopped_params();
+	Barycentric(int warp_dims, int fiducial_count);
+	Barycentric(const Barycentric &other);
+	~Barycentric();
 
-	int confParams();
-	int transParams();
-	int rotParams();
-	int baryParams();
-	
-	void setSuperpose(bool superpose)
-	{
-		_superpose = superpose;
-	}
+	rope::ModifyCoordGet convert(const std::vector<float> &parameters) const;
+private:
+	int _dims = 0;
+	int _count = 0;
 
-	AtomGroup *group();
-
-	Refine::Calculate prepareSubmission();
-
-	Refine::Info &_info;
-	Sampler *_sampler = nullptr;
-	
-	bool _superpose = true;
-	
-	Refine::Module _modules = Refine::None;
+	PCA::Matrix _fiducials{};
+	PCA::Matrix _toBarycentric{};
 };
 
 #endif

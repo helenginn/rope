@@ -25,6 +25,7 @@
 #define VERSION_SHORT_ROUTES
 #ifndef __EMSCRIPTEN__
 #define VERSION_REFINEMENT
+#define VERSION_COMPLETE_LOOPS
 #endif
 
 #endif

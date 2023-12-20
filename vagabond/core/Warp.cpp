@@ -310,10 +310,6 @@ void Warp::prepareResources()
 	_resources.sequences->prepareToSkipSections(true);
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
-
-	const std::vector<AtomBlock> &blocks = 
-	_resources.sequences->sequence()->blocks();
-
 }
 
 void Warp::setAtomMotions(std::function<glm::vec3(const Coord::Get &,

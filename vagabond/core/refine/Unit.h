@@ -39,6 +39,11 @@ public:
 		return &_sampler;
 	}
 	
+	void setMaxResolution(float max)
+	{
+		_maxRes = max;
+	}
+
 	void changeMap(ArbitraryMap *map)
 	{
 		_map = map;
@@ -69,6 +74,7 @@ private:
 	Sampler _sampler;
 	
 	Floats _parameters;
+	float _maxRes = -1;
 
 	typedef std::function<void(std::vector<float> &values)> Getter;
 	typedef std::function<void(const std::vector<float> &values)> Setter;
