@@ -70,6 +70,7 @@ private:
 	AtomPosMap _posMap;
 	Fibonacci _lattice;
 	float _probeRadius = 1.4;
+	const float _maxVdWRadius = 3.48; //Fr (Francium) in gemmi library
 
 	SurfaceAreaHandler *_handler = nullptr;
 	ContactSheet *_contacts = nullptr;
