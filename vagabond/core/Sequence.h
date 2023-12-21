@@ -46,7 +46,7 @@ public:
 	Sequence();
 	~Sequence();
 	Sequence(const Sequence &seq);
-	Sequence(std::string str);
+	Sequence(std::string str, int offset = 0);
 	
 	Sequence &operator+=(Sequence *other);
 	Sequence &operator+=(Residue &res);

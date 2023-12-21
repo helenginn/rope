@@ -63,14 +63,14 @@ Sequence::Sequence(const Sequence &seq) : IndexedSequence(seq)
 	*/
 }
 
-Sequence::Sequence(std::string str)
+Sequence::Sequence(std::string str, int offset)
 {
 	for (size_t i = 0; i < str.length(); i++)
 	{
 		char ch = str[i];
 
 		std::string tlc = gemmi::expand_protein_one_letter(ch);
-		Residue r{ResidueId(i + 1), tlc, " "};
+		Residue r{ResidueId(i + offset + 1), tlc, " "};
 		
 		*this += r;
 	}
