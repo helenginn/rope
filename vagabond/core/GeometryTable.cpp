@@ -22,6 +22,7 @@
 #include "Knotter.h"
 #include "Environment.h"
 #include "FileManager.h"
+#include "BondLength.h"
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/version.h>
 #include <iostream>
@@ -207,7 +208,7 @@ double GeometryTable::length(std::string code, std::string pName,
 		}
 	}
 
-	if (_codes.count(".") == 0)
+	if (_codes.count(".") == 0 || !links)
 	{
 		return -1;
 	}
@@ -457,6 +458,12 @@ double GeometryTable::checkLengthLinks(std::string code, std::string pName,
 std::set<std::string> GeometryTable::allAtomNames(std::string &code)
 {
 	std::set<std::string> atoms;
+	
+	if (_codes.count(code) == 0)
+	{
+		throw std::runtime_error("Could not find code " + code + 
+		                         " in geometry tables.");
+	}
 	
 	const GeometryMap &map = _codes[code];
 	
