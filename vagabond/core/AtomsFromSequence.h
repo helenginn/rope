@@ -28,7 +28,7 @@ class GeometryTable;
 class AtomsFromSequence
 {
 public:
-	AtomsFromSequence(Sequence &seq);
+	AtomsFromSequence(Sequence &seq, bool oxt = true);
 	~AtomsFromSequence();
 
 	AtomGroup *atoms();
@@ -36,6 +36,7 @@ private:
 	GeometryTable *geometry();
 
 	Sequence &_seq;
+	bool _oxt = false;
 
 };
 

@@ -24,8 +24,9 @@
 #include "files/PdbFile.h"
 #include "GeometryTable.h"
 
-AtomsFromSequence::AtomsFromSequence(Sequence &seq) : _seq(seq)
+AtomsFromSequence::AtomsFromSequence(Sequence &seq, bool oxt) : _seq(seq)
 {
+	_oxt = oxt;
 
 }
 
@@ -36,11 +37,8 @@ AtomsFromSequence::~AtomsFromSequence()
 
 GeometryTable *AtomsFromSequence::geometry()
 {
-	PdbFile file("");
-	file.getAllGeometry();
-
-	GeometryTable *gt = file.geometryTable();
-	return gt;
+	GeometryTable &gt = GeometryTable::getAllGeometry();
+	return &gt;
 }
 
 AtomGroup *AtomsFromSequence::atoms()
@@ -65,6 +63,7 @@ AtomGroup *AtomsFromSequence::atoms()
 		const ResidueId &id = r->id();
 
 		int term = (i == _seq.size() - 1) ? 1 : (i == 0 ? -1 : 0);
+		if (!_oxt) term = 0;
 		AtomGroup *ag = gt->constructResidue(code, id, &num, term);
 		
 		if (ag->size() == 0)
