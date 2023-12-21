@@ -65,6 +65,16 @@ public:
 		return _derived.pos.ave;
 	}
 	
+	const void addOtherPosition(std::string tag, glm::vec3 val)
+	{
+		_others[tag].pos.samples.push_back(val);
+	}
+
+	const WithPos &otherPositions(std::string tag)
+	{
+		return _others[tag].pos;
+	}
+	
 	const void setOtherPosition(std::string tag, glm::vec3 val)
 	{
 		_others[tag].pos.ave = val;
