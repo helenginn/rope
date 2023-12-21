@@ -123,15 +123,21 @@ void AtomBlock::clearMutable()
 }
 
 rope::GetVec3FromCoordIdx 
-AtomBlock::prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks)
+AtomBlock::prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks,
+                                   const std::function<bool(Atom *)> &filter)
 {
-	rope::GetVec3FromCoordIdx func = [&blocks](const Coord::Get &,
-	                                           const int &idx) -> glm::vec3
+	rope::GetVec3FromCoordIdx func = [filter, blocks](const Coord::Get &,
+	                                                   const int &idx) -> glm::vec3
 	{
 		if (blocks[idx].atom == nullptr)
 		{
 			return glm::vec3(NAN);
 		}
+		if (filter && filter(blocks[idx].atom))
+		{
+			return glm::vec3(NAN);
+		}
+
 		return blocks[idx].atom->initialPosition();
 	};
 
