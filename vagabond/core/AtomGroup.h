@@ -140,7 +140,7 @@ public:
 
 //	void alignAnchor();
 	void refinePositions(bool sameThread = false, bool thorough = false);
-	void organiseSamples(int n);
+	void orderByResidueId();
 	
 	void getLimitingResidues(int *min, int *max);
 	
@@ -187,7 +187,7 @@ protected:
 private:
 	void findPossibleAnchors();
 
-AtomVector _atoms;
+	AtomVector _atoms;
 	AtomVector _anchors;
 	AtomVector _transformedAnchors;
 	

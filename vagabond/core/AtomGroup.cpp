@@ -405,9 +405,37 @@ void AtomGroup::refinePositions(bool sameThread, bool thorough)
 	}
 }
 
-void AtomGroup::organiseSamples(int n)
+void AtomGroup::orderByResidueId()
 {
-
+	std::cout << _atoms.size() << std::endl;
+	auto compare_ids = [](Atom *const &a, Atom *const &b) -> bool
+	{
+		if (a->residueId() > b->residueId())
+		{
+			return false;
+		}
+		else if (a->residueId() < b->residueId()) 
+		{
+			return true;
+		}
+		else if (a->atomNum() >= b->atomNum())
+		{
+			return false;
+		}
+		else
+		{
+			return true;
+		}
+	};
+	
+	std::sort(_atoms.begin(), _atoms.end(), compare_ids);
+	
+	int idx = 0;
+	for (Atom *const &a : _atoms)
+	{
+		a->setAtomNum(idx);
+		idx++;
+	}
 }
 
 void AtomGroup::remove(AtomGroup *g)
