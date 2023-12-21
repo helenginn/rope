@@ -29,6 +29,7 @@
 #include "IconLegend.h"
 #include "SerialRefiner.h"
 #include "ClusterView.h"
+#include "LoopyDisplay.h"
 #include "AddModel.h"
 
 #include <vagabond/utils/version.h>
@@ -479,6 +480,17 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		sr->show();
 	}
 	
+	if (tag == "loopy")
+	{
+		Instance *i = static_cast<Instance *>(button->returnObject());
+		if (i->hasSequence())
+		{
+			Polymer *pi = static_cast<Polymer *>(i);
+			LoopyDisplay *ld = new LoopyDisplay(this, pi);
+			ld->show();
+		}
+	}
+	
 	if (tag == "set_as_reference")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
@@ -623,6 +635,9 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	m->addOption("set as reference", "set_as_reference");
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
+#endif
+#ifdef VERSION_COMPLETE_LOOPS
+	m->addOption("loopy completion", "loopy");
 #endif
 	float x; float y;
 	getFractionalPos(x, y);

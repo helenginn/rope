@@ -50,6 +50,8 @@ guifiles = [
 'IconLegend.cpp',
 'LineSeries.cpp',
 'LineSeriesOptions.cpp',
+'LoopyDisplay.cpp',
+'LoopyDisplay.h',
 'MapView.cpp',
 'MapView.h',
 'MakeNewPaths.cpp',
