@@ -1,4 +1,4 @@
-project('vagabond', 'cpp', 'c')
+project('vagabond', 'cpp', 'c', version : '1.5')
 
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
