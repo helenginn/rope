@@ -52,7 +52,12 @@ public:
 		return _muts;
 	}
 	
-	Sequence *right()
+	Sequence *const &left() const
+	{
+		return _left;
+	}
+	
+	Sequence *const &right() const
 	{
 		return _right;
 	}
@@ -65,6 +70,11 @@ public:
 	const Alignment &rightAlign() const
 	{
 		return _rightAlign;
+	}
+	
+	const std::string &matchLine() const
+	{
+		return _aOutput;
 	}
 	
 	float match();
