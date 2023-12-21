@@ -220,8 +220,11 @@ void BondSequence::superpose()
 
 			glm::vec3 p = _blocks[i].target;
 			glm::vec3 q = _blocks[i].my_position();
-
-			pose.addPositionPair(p, q);
+			
+			if (p.x == p.x)
+			{
+				pose.addPositionPair(p, q);
+			}
 
 			if (!_blocks[i].atom)
 			{
