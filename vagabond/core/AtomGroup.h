@@ -54,6 +54,15 @@ public:
 	virtual void add(Atom *a);
 	void add(AtomGroup *g);
 	void add(const AtomVector &v);
+	
+	template <typename Func>
+	void do_op(const Func &func)
+	{
+		for (Atom *atom : _atoms)
+		{
+			func(atom);
+		}
+	}
 
 	void addTransformedAnchor(Atom *a, glm::mat4x4 transform);
 	void remove(AtomGroup *g);

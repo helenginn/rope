@@ -100,6 +100,23 @@ bool AtomGroup::hasAtom(Atom *a)
 	return (it != _atoms.end());
 }
 
+
+void AtomGroup::remove(AtomGroup *g)
+{
+	for (size_t i = 0; i < g->size(); i++)
+	{
+		remove((*g)[i]);
+	}
+}
+
+void AtomGroup::add(AtomGroup *g)
+{
+	for (size_t i = 0; i < g->size(); i++)
+	{
+		add((*g)[i]);
+	}
+}
+
 void AtomGroup::add(const AtomVector &av)
 {
 	for (Atom *a : av)
@@ -281,6 +298,8 @@ Atom *AtomGroup::atomByIdName(const ResidueId &id, std::string name,
 
 rope::MonomerType AtomGroup::monomerType(const ResidueId &id)
 {
+	std::vector<std::string> nucleics = {"O5\'", "C5\'", "C4\'", "C3\'", "O3\'"};
+
 	for (Atom *atom : _atoms)
 	{
 		if ((atom->atomName()=="CA" || 
@@ -289,14 +308,19 @@ rope::MonomerType AtomGroup::monomerType(const ResidueId &id)
 		{
 			return rope::IsAminoAcid;
 		}
-		else if ((atom->atomName()=="O5\'" ||atom->atomName()=="C5\'" ||atom->atomName()=="C4\'" ||atom->atomName()=="C3\'" ||atom->atomName()=="O3\'") && (atom ->residueId()==id))
+		
+		for (const std::string &name : nucleics)
 		{
-			return rope::IsNucleicAcid;
+			if (atom->atomName() == name)
+			{
+				return rope::IsNucleicAcid;
+			}
 		}
 	}
 
 	return rope::IsOther;
 }
+
 AtomVector AtomGroup::atomsWithName(std::string name) const
 {
 	to_upper(name);
@@ -435,22 +459,6 @@ void AtomGroup::orderByResidueId()
 	{
 		a->setAtomNum(idx);
 		idx++;
-	}
-}
-
-void AtomGroup::remove(AtomGroup *g)
-{
-	for (size_t i = 0; i < g->size(); i++)
-	{
-		remove((*g)[i]);
-	}
-}
-
-void AtomGroup::add(AtomGroup *g)
-{
-	for (size_t i = 0; i < g->size(); i++)
-	{
-		add((*g)[i]);
 	}
 }
 
