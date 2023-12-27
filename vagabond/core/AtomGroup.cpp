@@ -431,7 +431,6 @@ void AtomGroup::refinePositions(bool sameThread, bool thorough)
 
 void AtomGroup::orderByResidueId()
 {
-	std::cout << _atoms.size() << std::endl;
 	auto compare_ids = [](Atom *const &a, Atom *const &b) -> bool
 	{
 		if (a->residueId() > b->residueId())
