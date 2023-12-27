@@ -105,6 +105,7 @@ class Conformer : public HasMetadata
 {
 public:
 	Conformer(Loop *loop = nullptr);
+	virtual const Metadata::KeyValues metadata(Metadata *source = nullptr) const;
 	
 	void setCount(int count)
 	{

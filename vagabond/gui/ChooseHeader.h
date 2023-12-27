@@ -27,7 +27,8 @@
  * if choose is true; tag will be the chosen string as supplied in
  * setHeaders */
 
-class Entity;
+class Metadata;
+class ObjectGroup;
 
 class ChooseHeader : public ListView,
 public HasResponder<Responder<ChooseHeader>>
@@ -55,7 +56,8 @@ public:
 		_title = title;
 	}
 
-	void setEntity(std::string name);
+	void setData(Metadata *source, ObjectGroup *group);
+
 	virtual void setup();
 
 	virtual size_t lineCount();
@@ -63,13 +65,14 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	Entity *_entity;
 	std::vector<std::string> _headers;
 	std::vector<std::string> _assigned;
 	std::string _title;
 	bool _choose = false;
 	bool _canDelete = false;
 
+	Metadata *_md = nullptr;
+	ObjectGroup *_group = nullptr;
 
 };
 

@@ -54,10 +54,10 @@ std::map<Entity *, std::map<rope::ConfType, RopeSpaceItem *>>
 	
 bool ConfSpaceView::_madePaths = false;
 
-ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent) 
+ConfSpaceView::ConfSpaceView(Scene *prev, Entity *ent, SavedSpace &space) 
 : Scene(prev),
 Mouse3D(prev),
-IndexResponseView(prev)
+IndexResponseView(prev), _savedSpace(space)
 {
 	_entity = ent;
 	shiftToCentre(glm::vec3(0.f), 10);
@@ -70,7 +70,8 @@ void ConfSpaceView::makeFirstCluster()
 		return;
 	}
 	
-	RopeSpaceItem *saved = savedSpace();
+	RopeSpaceItem *saved = _savedSpace.load(_entity, _type);
+
 	if (saved)
 	{
 		_ropeSpace = saved;
@@ -81,7 +82,7 @@ void ConfSpaceView::makeFirstCluster()
 		_ropeSpace = new RopeSpaceItem(_entity);
 		_ropeSpace->setMode(_type);
 		_ropeSpace->makeView(this);
-		setSavedSpace(_ropeSpace);
+		_savedSpace.save(_ropeSpace, _entity, _type);
 	}
 
 	_selected = _ropeSpace;
@@ -175,13 +176,19 @@ void ConfSpaceView::proofRopeSpace()
 
 void ConfSpaceView::assignRopeSpace(RopeSpaceItem *item)
 {
-	removeObject(_view);
-	removeResponder(_view);
-	_view = nullptr;
+	if (_view)
+	{
+		removeObject(_view);
+		removeResponder(_view);
+		_view = nullptr;
+	}
 	
-	removeObject(_axes);
-	removeResponder(_axes);
-	_axes = nullptr;
+	if (_axes)
+	{
+		removeObject(_axes);
+		removeResponder(_axes);
+		_axes = nullptr;
+	}
 	
 	clearResponders();
 
@@ -505,8 +512,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "rules")
 	{
-		RulesMenu *menu = new RulesMenu(this);
-		menu->setEntityId(_entity->name());
+		RulesMenu *menu = new RulesMenu(this, _savedSpace.associatedMetadata());
 		menu->setData(_selected->cluster()->objectGroup());
 		menu->show();
 	}
@@ -612,7 +618,7 @@ void ConfSpaceView::applyRules()
 
 	IconLegend *il = new IconLegend(this);
 
-	const Ruler &ruler = Environment::metadata()->ruler();
+	const Ruler &ruler = _savedSpace.associatedMetadata()->ruler();
 
 	for (const Rule &r : ruler.rules())
 	{

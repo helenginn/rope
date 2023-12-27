@@ -16,42 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LoopyDisplay__
-#define __vagabond__LoopyDisplay__
+#ifndef __vagabond__TrainingSetSupplier__
+#define __vagabond__TrainingSetSupplier__
 
-#include <vagabond/core/Responder.h>
-#include <vagabond/core/loopy/Loopy.h>
-#include <mutex>
-#include "Display.h"
-#include "LoopyDisplay.h"
-#include "SavedSpace.h"
-#include "Metadata.h"
+#include "StructureModification.h"
 
-class Loopy;
-class Polymer;
+class Warp;
 
-class LoopyDisplay : public Display, public Responder<Loopy>
+class TrainingSetSupplier : public StructureModification
 {
 public:
-	LoopyDisplay(Scene *prev, Polymer *const &pol);
-	~LoopyDisplay();
+	TrainingSetSupplier(Instance *ref);
+	~TrainingSetSupplier();
 
-	virtual void buttonPressed(std::string tag, Button *button);
-	virtual void setup();
-
-	virtual void sendObject(std::string tag, void *object);
 private:
-	void prepareConformerCluster(ListConformers confs);
+	Instance *_instance = nullptr;
+	Warp *_warp = nullptr;
 
-	Loopy _loopy;
-	Polymer *_polymer = nullptr;
-	
-	std::thread *_worker = nullptr;
-	std::thread *_clusterer = nullptr;
-	
-	SavedSpace _space;
-	Metadata _metadata;
-	std::mutex _spaceMut;
 };
 
 #endif

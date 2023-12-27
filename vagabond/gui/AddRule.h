@@ -23,6 +23,7 @@
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Responder.h>
 
+class Metadata;
 class RulesMenu;
 class ObjectGroup;
 class ChooseHeader;
@@ -30,14 +31,9 @@ class ChooseHeader;
 class AddRule : public AddObject<Rule>, public Responder<ChooseHeader>
 {
 public:
-	AddRule(Scene *prev, Rule *chosen);
-	AddRule(Scene *prev);
+	AddRule(Scene *prev, Rule *chosen, Metadata *md);
+	AddRule(Scene *prev, Metadata *md);
 	~AddRule();
-	
-	void setEntityId(std::string entity_id)
-	{
-		_entity_id = entity_id;
-	}
 	
 	void setCaller(RulesMenu *rm)
 	{
@@ -61,9 +57,9 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	TextButton *_headerButton = nullptr;
-	std::string _entity_id;
 	RulesMenu *_caller = nullptr;
 	ObjectGroup *_group = nullptr;
+	Metadata *_md = nullptr;
 };
 
 #endif

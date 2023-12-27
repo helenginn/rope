@@ -28,7 +28,7 @@ class HasMetadata : public HasResponder<Responder<HasMetadata>>
 public:
 	virtual ~HasMetadata() {};
 
-	virtual const Metadata::KeyValues metadata() const
+	virtual const Metadata::KeyValues metadata(Metadata *source = nullptr) const
 	{
 		return Metadata::KeyValues();
 	}

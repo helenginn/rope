@@ -222,10 +222,10 @@ void Instance::extractTransformedAnchors(AtomContent *atoms)
 
 }
 
-const Metadata::KeyValues Instance::metadata() const
+const Metadata::KeyValues Instance::metadata(Metadata *from) const
 {
-	Metadata::KeyValues mod = _model->metadata();
-	Metadata *md = Environment::metadata();
+	Metadata *md = from ? from : Environment::metadata();
+	Metadata::KeyValues mod = _model->metadata(md);
 
 	const Metadata::KeyValues *ptr = md->valuesForInstance(id());
 	Metadata::KeyValues mol;

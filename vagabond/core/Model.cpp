@@ -471,9 +471,9 @@ void Model::autoAssignEntities(Entity *chosen)
 	housekeeping();
 }
 
-const Metadata::KeyValues Model::metadata() const
+const Metadata::KeyValues Model::metadata(Metadata *source) const
 {
-	Metadata *md = Environment::metadata();
+	Metadata *md = source ? source : Environment::metadata();
 	const Metadata::KeyValues *ptr = md->values(_name, _filename);
 	
 	if (ptr != nullptr)

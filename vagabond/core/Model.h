@@ -150,7 +150,7 @@ public:
 	friend void to_json(json &j, const Model &value);
 	friend void from_json(const json &j, Model &value);
 	
-	virtual const Metadata::KeyValues metadata() const;
+	virtual const Metadata::KeyValues metadata(Metadata *source = nullptr) const;
 	
 	void clickTicker();
 	void findInteractions();

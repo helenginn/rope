@@ -47,6 +47,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
 
 class HasMetadata;
 class ObjectGroup;
+class Metadata;
 
 class Rule
 {
@@ -108,6 +109,11 @@ public:
 	const Scheme &scheme() const
 	{
 		return _scheme;
+	}
+
+	void setMetadata(Metadata *md)
+	{
+		_md = md;
 	}
 
 	void setHeader(std::string header)
@@ -215,6 +221,8 @@ private:
 
 	std::string _header;
 	std::string _headerValue;
+	
+	Metadata *_md = nullptr;
 
 	int _pointType = 1;
 };

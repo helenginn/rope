@@ -23,9 +23,14 @@
 #include <vagabond/core/Metadata.h>
 #include <vagabond/gui/elements/TextButton.h>
 
-RulesMenu::RulesMenu(Scene *prev) : ListView(prev)
+RulesMenu::RulesMenu(Scene *prev, Metadata *source) : ListView(prev)
 {
-	_md = Environment::metadata();
+	if (source == nullptr)
+	{
+		source = Environment::metadata();
+	}
+
+	_md = source;
 	_md->ruler().setResponder(this);
 }
 
@@ -73,7 +78,6 @@ Renderable *RulesMenu::getLine(int i)
 void RulesMenu::presentAddRule(AddRule *view)
 {
 	view->setCaller(this);
-	view->setEntityId(_entity_id);
 	view->setData(_group);
 	view->show();
 }
@@ -82,7 +86,8 @@ void RulesMenu::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "add")
 	{
-		AddRule *view = new AddRule(this);
+		AddRule *view = new AddRule(this, _md);
+		view->setData(_group);
 		presentAddRule(view);
 	}
 
@@ -97,7 +102,8 @@ void RulesMenu::buttonPressed(std::string tag, Button *button)
 		Rule &r = _md->ruler().rule(idx);
 		_lastRule = &r;
 		
-		AddRule *view = new AddRule(this, &r);
+		AddRule *view = new AddRule(this, &r, _md);
+		view->setData(_group);
 		presentAddRule(view);
 	}
 

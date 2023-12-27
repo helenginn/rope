@@ -81,12 +81,18 @@ void RopeSpaceItem::clusterIfNeeded()
 
 void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 {
-	ClusterView *oldView = _confView->view();
+	ClusterView *oldView = nullptr;
+	
+	if (_confView)
+	{
+		oldView = _confView->view();
+	}
 
 	setConfView(attach);
+	std::cout << "Attach: " << _confView << std::endl;
+
 	clusterIfNeeded();
 	_confView->assignRopeSpace(this);
-
 
 	attach->addIndexResponder(_view);
 	_view->setIndexResponseView(attach);
@@ -105,6 +111,11 @@ void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 
 void RopeSpaceItem::allocateView()
 {
+	if (_view)
+	{
+		return;
+	}
+
 	ClusterView *view = new ClusterView();
 	_view = view;
 }
@@ -158,19 +169,37 @@ void RopeSpaceItem::setResponders()
 	}
 }
 
-void RopeSpaceItem::calculateCluster()
+void RopeSpaceItem::torsionCluster(MetadataGroup *group)
 {
-	setResponders();
+	allocateView();
 
-	RopeCluster *cx = nullptr;
-	if (_type == ConfTorsions)
+	MetadataGroup angles(0);
+	if (group == nullptr)
 	{
-		MetadataGroup angles = _entity->makeTorsionDataGroup();
+		angles = _entity->makeTorsionDataGroup();
 		angles.setWhiteList(_whiteList);
 		angles.write(_entity->name() + "_torsions.csv");
 		angles.normalise();
 
-		cx = new TorsionCluster(angles);
+		group = &angles;
+	}
+
+	_cluster = new TorsionCluster(*group);
+	_view->setCluster(_cluster);
+}
+
+void RopeSpaceItem::calculateCluster()
+{
+	if (_cluster != nullptr)
+	{
+		return;
+	}
+
+	setResponders();
+
+	if (_type == ConfTorsions)
+	{
+		torsionCluster();
 	}
 	else if (_type == ConfPositional)
 	{
@@ -178,11 +207,10 @@ void RopeSpaceItem::calculateCluster()
 		group.setWhiteList(_whiteList);
 		group.write(_entity->name() + "_atoms.csv");
 
-		cx = new PositionalCluster(group);
+		_cluster = new PositionalCluster(group);
 	}
 
-	_cluster = cx;
-	_view->setCluster(cx);
+	_view->setCluster(_cluster);
 
 }
 

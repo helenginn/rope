@@ -32,6 +32,7 @@ class ObjectGroup
 {
 public:
 	ObjectGroup() {};
+
 	virtual ~ObjectGroup() {};
 
 	std::vector<float> numbersForKey(std::string key);

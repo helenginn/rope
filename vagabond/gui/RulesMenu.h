@@ -29,14 +29,9 @@ class ObjectGroup;
 class RulesMenu : public ListView, public RulerResponder
 {
 public:
-	RulesMenu(Scene *prev);
+	RulesMenu(Scene *prev, Metadata *source = nullptr);
 	~RulesMenu();
 	
-	void setEntityId(std::string entity_id)
-	{
-		_entity_id = entity_id;
-	}
-
 	void setData(ObjectGroup *group)
 	{
 		_group = group;
@@ -55,10 +50,8 @@ private:
 	void presentAddRule(AddRule *view);
 
 	Metadata *_md = nullptr;
-	std::string _entity_id;
 	Rule *_lastRule = nullptr;
 	ObjectGroup *_group;
-
 };
 
 #endif

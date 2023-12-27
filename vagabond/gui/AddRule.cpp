@@ -33,17 +33,20 @@
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/core/MetadataGroup.h>
 
-AddRule::AddRule(Scene *prev, Rule *chosen) :
+AddRule::AddRule(Scene *prev, Rule *chosen, Metadata *md) :
 Scene(prev),
 AddObject(prev, chosen)
 {
-
+	_md = md;
+	_obj.setMetadata(md);
 }
 
-AddRule::AddRule(Scene *prev) :
+AddRule::AddRule(Scene *prev, Metadata *md) :
 Scene(prev),
 AddObject(prev)
 {
+	_md = md;
+	_obj.setMetadata(md);
 
 }
 
@@ -124,7 +127,7 @@ void AddRule::recalculateLimits()
 	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
 		HasMetadata *hm = _group->object(i);
-		const Metadata::KeyValues data = hm->metadata();
+		const Metadata::KeyValues data = hm->metadata(_md);
 
 		if (data.count(header) == 0 || !data.at(header).hasNumber())
 		{
@@ -190,12 +193,13 @@ void AddRule::openOptions()
 	else if (_obj.type() == Rule::VaryColour)
 	{
 		VaryColourOptions *options = new VaryColourOptions(this, _obj);
+		options->setData(_md, _group);
 		options->show();
 	}
 	else if (_obj.type() == Rule::ChangeIcon)
 	{
 		ChangeIconOptions *options = new ChangeIconOptions(this, _obj);
-		options->setEntity(_entity_id);
+		options->setData(_md, _group);
 		options->show();
 	}
 
@@ -217,14 +221,14 @@ void AddRule::buttonPressed(std::string tag, Button *button)
 	{
 		ChooseHeader *ch = new ChooseHeader(this);
 		ch->setResponder(this);
-		ch->setEntity(_entity_id);
+		ch->setData(_md, _group);
 		ch->show();
 	}
 	else if (tag == "create")
 	{
 		try
 		{
-			Environment::metadata()->ruler().addRule(_obj);
+			_md->ruler().addRule(_obj);
 			back();
 		}
 		catch (const std::runtime_error &err)

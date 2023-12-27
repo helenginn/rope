@@ -108,8 +108,6 @@ public:
 	{
 		return nullptr;
 	}
-
-	std::map<std::string, int> allMetadataHeaders();
 	
 	void clickTicker();
 	

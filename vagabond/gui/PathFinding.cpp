@@ -116,9 +116,8 @@ void PathFinding::makeRule()
 		_rule = new Rule();
 	}
 
-	AddRule *ar = new AddRule(this, _rule);
+	AddRule *ar = new AddRule(this, _rule, Environment::metadata());
 	ar->setData(&_all);
-	ar->setEntityId(_entity->name());
 	ar->show();
 }
 

@@ -86,20 +86,32 @@ Renderable *ChooseHeader::getLine(int i)
 	return b;
 }
 
-void ChooseHeader::setEntity(std::string name)
+void ChooseHeader::setData(Metadata *source, ObjectGroup *group)
 {
-	_entity = Environment::entityManager()->entity(name);
-	
-	if (_entity != nullptr)
+	Metadata *from = source ? source : Environment::metadata();
+	std::map<std::string, int> results;
+
+	for (HasMetadata *const &hm  : group->objects())
 	{
-		std::map<std::string, int> results = _entity->allMetadataHeaders();
-		std::map<std::string, int>::iterator it;
+		const Metadata::KeyValues kv = hm->metadata(from);
 		
-		for (it = results.begin(); it != results.end(); it++)
+		if (kv.size() == 0)
 		{
-			_headers.push_back(it->first);
-			_assigned.push_back(i_to_str(it->second));
+			continue;
 		}
+
+		Metadata::KeyValues::const_iterator it;
+		
+		for (it = kv.cbegin(); it != kv.cend(); it++)
+		{
+			results[it->first]++;
+		}
+	}
+
+	for (auto it = results.begin(); it != results.end(); it++)
+	{
+		_headers.push_back(it->first);
+		_assigned.push_back(i_to_str(it->second));
 	}
 }
 

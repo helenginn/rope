@@ -17,16 +17,20 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/core/loopy/ListConformers.h>
 #include "LoopyDisplay.h"
+#include "ConformerClusters.h"
 #include "Polymer.h"
+#include "RopeSpaceItem.h"
+#include "ConfSpaceView.h"
+#include <vagabond/core/RopeCluster.h>
 
-LoopyDisplay::LoopyDisplay(Scene *prev, Polymer *const &pol) : Display(prev),
-_loopy(pol)
+LoopyDisplay::LoopyDisplay(Scene *prev, Polymer *const &pol) 
+: Scene(prev), Display(prev), _loopy(pol)
 {
 	_polymer = pol;
 	_polymer->load();
 	setOwnsAtoms(false);
-	std::cout << "Polymer: " << pol << std::endl;
 	_loopy.setResponder(this);
 }
 
@@ -50,6 +54,13 @@ void LoopyDisplay::setup()
 	button->setCentre(0.5, 0.85);
 	addObject(button);
 
+
+	TextButton *clusters = new TextButton("See clusters", 
+	                                    this);
+	clusters->setReturnTag("clusters");
+	clusters->resize(0.8);
+	clusters->setCentre(0.9, 0.05);
+	addObject(clusters);
 }
 
 void LoopyDisplay::buttonPressed(std::string tag, Button *button)
@@ -63,6 +74,70 @@ void LoopyDisplay::buttonPressed(std::string tag, Button *button)
 			_polymer->unload();
 		}
 	}
+	else if (tag == "clusters")
+	{
+		std::unique_lock<std::mutex> lock(_spaceMut);
+		ConfSpaceView *csv = new ConfSpaceView(this, _polymer->entity(), _space);
+		csv->show();
+	}
 
 	Display::buttonPressed(tag, button);
+}
+
+void LoopyDisplay::sendObject(std::string tag, void *object)
+{
+	if (tag == "conformer_list")
+	{
+		ListConformers *confs = static_cast<ListConformers *>(object);
+		if (confs->size() == 0)
+		{
+			return;
+		}
+
+		if (_clusterer)
+		{
+			_clusterer->detach();
+			delete _clusterer;
+			_clusterer = nullptr;
+		}
+		
+		_clusterer = new std::thread(&LoopyDisplay::prepareConformerCluster,
+		                             this, *confs);
+	}
+}
+
+void LoopyDisplay::prepareConformerCluster(ListConformers confs)
+{
+	if (confs.size() == 0)
+	{
+		return;
+	}
+	
+	Conformer *const &model = confs.front();
+	size_t n_angles = model->headers().size();
+
+	MetadataGroup *group = new MetadataGroup(n_angles);
+	group->addHeaders(model->headers());
+	
+	for (Conformer *const &conf : confs)
+	{
+		std::string id = conf->id();
+		float rmsd = conf->rmsd();
+		Metadata::KeyValues kv = {{"rmsd", Value(rmsd)}, {"instance", id}};
+
+		std::vector<Angular> angles = conf->angles();
+		group->addMetadataArray(conf, angles);
+		_metadata.addKeyValues(kv, true);
+	}
+
+	group->write(_polymer->id() + "_loop_torsions.csv");
+	group->normalise();
+
+	RopeSpaceItem *item = new RopeSpaceItem(_polymer->entity());
+	item->setMode(rope::ConfTorsions);
+	item->torsionCluster(group);
+	
+	std::unique_lock<std::mutex> lock(_spaceMut);
+	_space.setAssociatedMetadata(&_metadata);
+	_space.save(item, _polymer->entity(), rope::ConfTorsions);
 }

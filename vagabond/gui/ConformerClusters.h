@@ -16,42 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__LoopyDisplay__
-#define __vagabond__LoopyDisplay__
+#ifndef __vagabond__ConformerClusters__
+#define __vagabond__ConformerClusters__
 
-#include <vagabond/core/Responder.h>
-#include <vagabond/core/loopy/Loopy.h>
-#include <mutex>
-#include "Display.h"
-#include "LoopyDisplay.h"
-#include "SavedSpace.h"
-#include "Metadata.h"
+#include <vagabond/gui/elements/Mouse3D.h>
 
-class Loopy;
-class Polymer;
+class MetadataGroup;
+template <class T> class Cluster;
 
-class LoopyDisplay : public Display, public Responder<Loopy>
+class ConformerClusters : public Mouse3D
 {
 public:
-	LoopyDisplay(Scene *prev, Polymer *const &pol);
-	~LoopyDisplay();
+	ConformerClusters(Scene *prev);
 
-	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void setup();
-
-	virtual void sendObject(std::string tag, void *object);
+	
+	void supplyList(Cluster<MetadataGroup> &cluster);
 private:
-	void prepareConformerCluster(ListConformers confs);
 
-	Loopy _loopy;
-	Polymer *_polymer = nullptr;
-	
-	std::thread *_worker = nullptr;
-	std::thread *_clusterer = nullptr;
-	
-	SavedSpace _space;
-	Metadata _metadata;
-	std::mutex _spaceMut;
 };
 
 #endif

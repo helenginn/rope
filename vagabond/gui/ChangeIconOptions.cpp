@@ -157,7 +157,7 @@ void ChangeIconOptions::buttonPressed(std::string tag, Button *button)
 	if (tag == "header_value")
 	{
 		ChooseHeaderValue *chv = new ChooseHeaderValue(this, _rule);
-		chv->setEntity(_entity_id);
+		chv->setData(_md, _group);
 		chv->show();
 		_equiv->click();
 		_rule.setAssigned(false);

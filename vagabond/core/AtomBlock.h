@@ -29,8 +29,11 @@ class BondCalculator;
 struct AtomBlock
 {
 	static rope::GetVec3FromCoordIdx 
+	prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks);
+
+	static rope::GetVec3FromCoordIdx 
 	prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks,
-	                        const std::function<bool(Atom *)> &filter = {});
+	                        const std::function<bool(Atom *)> &filter);
 
 	static rope::GetVec3FromCoordIdx 
 	prepareMovingTargets(const std::vector<AtomBlock> &blocks);

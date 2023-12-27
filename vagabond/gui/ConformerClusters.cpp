@@ -16,36 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ChooseHeaderValue__
-#define __vagabond__ChooseHeaderValue__
+#include "ConformerClusters.h"
+#include <vagabond/core/MetadataGroup.h>
 
-#include <vagabond/gui/elements/ListView.h>
-
-#include <set>
-
-class Rule;
-class Metadata;
-class ObjectGroup;
-
-class ChooseHeaderValue : public ListView
+ConformerClusters::ConformerClusters(Scene *prev) 
+: Scene(prev), Mouse3D(prev)
 {
-public:
-	ChooseHeaderValue(Scene *prev, Rule &rule);
 
-	void setData(Metadata *source, ObjectGroup *group);
+}
 
-	void setEntity(std::string name);
-	virtual void setup();
+void ConformerClusters::setup()
+{
 
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
+}
 
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-private:
-	std::vector<std::string> _values;
-	std::vector<std::string> _assigned;
 
-	Rule &_rule;
-};
+void ConformerClusters::supplyList(Cluster<MetadataGroup> &cluster)
+{
 
-#endif
+}

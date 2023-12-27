@@ -113,7 +113,7 @@ public:
 	int indexForParameterFromList(Parameter *param, const RTAngles &list);
 	float valueForTorsionFromList(Parameter *bt, const RTAngles &list);
 
-	virtual const Metadata::KeyValues metadata() const;
+	virtual const Metadata::KeyValues metadata(Metadata *from = nullptr) const;
 	void updateRmsdMetadata();
 	
 	virtual std::map<Atom *, Atom *> mapAtoms(Polymer *other)

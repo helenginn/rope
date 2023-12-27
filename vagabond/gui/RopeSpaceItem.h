@@ -25,6 +25,7 @@
 
 
 class ButtonResponder;
+class MetadataGroup;
 class HasMetadata;
 class ClusterView;
 class RopeCluster;
@@ -93,6 +94,7 @@ public:
 	void setConfView(ConfSpaceView *attach);
 	
 	size_t selectedCount();
+	void torsionCluster(MetadataGroup *group = nullptr);
 	virtual void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();

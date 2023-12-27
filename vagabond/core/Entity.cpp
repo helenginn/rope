@@ -30,30 +30,6 @@ Entity::Entity()
 
 }
 
-std::map<std::string, int> Entity::allMetadataHeaders()
-{
-	std::map<std::string, int> headers;
-	
-	for (const Instance *instance : instances())
-	{
-		const Metadata::KeyValues kv = instance->metadata();
-		
-		if (kv.size() == 0)
-		{
-			continue;
-		}
-
-		Metadata::KeyValues::const_iterator it;
-		
-		for (it = kv.cbegin(); it != kv.cend(); it++)
-		{
-			headers[it->first]++;
-		}
-	}
-
-	return headers;
-}
-
 void Entity::checkModel(Model &m)
 {
 	if (m.hasEntity(name()))

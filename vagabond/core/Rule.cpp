@@ -85,7 +85,7 @@ void Rule::setVals(std::vector<float> &vals)
 
 bool Rule::appliesToObject(HasMetadata *hm) const
 {
-	const Metadata::KeyValues data = hm->metadata();
+	const Metadata::KeyValues data = hm->metadata(_md);
 
 	if (data.count(_header) == 0)
 	{
@@ -107,7 +107,7 @@ std::vector<float> Rule::valuesForObjects(ObjectGroup *group) const
 
 	for (size_t i = 0; i < group->objectCount(); i++)
 	{
-		const Metadata::KeyValues data = group->object(i)->metadata();
+		const Metadata::KeyValues data = group->object(i)->metadata(_md);
 		
 		if (data.count(header()) == 0 || !data.at(header()).hasNumber())
 		{

@@ -286,3 +286,16 @@ void Conformer::report()
 {
 
 }
+
+const Metadata::KeyValues Conformer::metadata(Metadata *source) const
+{
+	Metadata *md = source ? source : Environment::metadata();
+	const Metadata::KeyValues *ptr = md->valuesForInstance(id());
+
+	if (ptr != nullptr)
+	{
+		return *ptr;
+	}
+
+	return Metadata::KeyValues{};
+}

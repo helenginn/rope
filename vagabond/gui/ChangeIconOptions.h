@@ -24,15 +24,18 @@
 class Rule;
 class TextButton;
 class ChoiceText;
+class Metadata;
+class ObjectGroup;
 
 class ChangeIconOptions : public Scene
 {
 public:
 	ChangeIconOptions(Scene *prev, Rule &rule);
 	
-	void setEntity(std::string name)
+	void setData(Metadata *source, ObjectGroup *group)
 	{
-		_entity_id = name;
+		_group = group;
+		_md = source;
 	}
 
 	virtual void setup();
@@ -40,7 +43,9 @@ public:
 	void updateText();
 	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
-	std::string _entity_id;
+	Metadata *_md = nullptr;
+	ObjectGroup *_group = nullptr;
+
 	TextButton *_headerButton = nullptr;
 	ChoiceText *_equiv = nullptr;
 	ChoiceText *_assigned = nullptr;

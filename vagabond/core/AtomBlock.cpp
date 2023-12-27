@@ -126,14 +126,30 @@ rope::GetVec3FromCoordIdx
 AtomBlock::prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks,
                                    const std::function<bool(Atom *)> &filter)
 {
-	rope::GetVec3FromCoordIdx func = [filter, blocks](const Coord::Get &,
-	                                                   const int &idx) -> glm::vec3
+	rope::GetVec3FromCoordIdx func{};
+	func = [filter, &blocks] (const Coord::Get &, const int &idx) -> glm::vec3
 	{
 		if (blocks[idx].atom == nullptr)
 		{
 			return glm::vec3(NAN);
 		}
-		if (filter && filter(blocks[idx].atom))
+		if (filter(blocks[idx].atom))
+		{
+			return glm::vec3(NAN);
+		}
+
+		return blocks[idx].atom->initialPosition();
+	};
+	return func;
+}
+
+rope::GetVec3FromCoordIdx 
+AtomBlock::prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks)
+{
+	rope::GetVec3FromCoordIdx func{};
+	func = [&blocks] (const Coord::Get &, const int &idx) -> glm::vec3
+	{
+		if (blocks[idx].atom == nullptr)
 		{
 			return glm::vec3(NAN);
 		}

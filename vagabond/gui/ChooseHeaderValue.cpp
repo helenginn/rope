@@ -31,41 +31,22 @@ _rule(rule)
 
 }
 
-void ChooseHeaderValue::setEntity(std::string name)
+void ChooseHeaderValue::setData(Metadata *source, ObjectGroup *group)
 {
-	_entity = Environment::entityManager()->entity(name);
 	_values.clear();
 	std::string header = _rule.header();
+	Metadata *from = source ? source : Environment::metadata();
 
 	std::map<std::string, int> values;
 	
-	if (_entity != nullptr)
+	for (HasMetadata *const &hm  : group->objects())
 	{
-		for (const Model *model : _entity->models())
-		{
-			const Metadata::KeyValues kv = model->metadata();
+		const Metadata::KeyValues kv = hm->metadata(from);
 
-			if (kv.count(header))
-			{
-				std::string val = kv.at(header).text();
-				std::cout << val << std::endl;
-				values[val]++;
-			}
-		}
-		
-		if (values.size() == 0)
+		if (kv.count(header))
 		{
-			for (const Instance *instance : _entity->instances())
-			{
-				const Metadata::KeyValues kv = instance->metadata();
-
-				if (kv.count(header))
-				{
-					std::string val = kv.at(header).text();
-					std::cout << val << std::endl;
-					values[val]++;
-				}
-			}
+			std::string val = kv.at(header).text();
+			values[val]++;
 		}
 	}
 	

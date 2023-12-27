@@ -26,6 +26,7 @@
 BFactors::BFactors(Scene *prev, Entity *entity) : Scene(prev)
 {
 	_entity = entity;
+	_group = _entity->makeTorsionDataGroup();
 }
 
 void BFactors::setup()
@@ -75,8 +76,9 @@ void BFactors::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "choose_header")
 	{
+
 		ChooseHeader *header = new ChooseHeader(this, true);
-		header->setEntity(_entity->name());
+		header->setData(Environment::metadata(), &_group);
 		header->setResponder(this);
 		header->show();
 	}
