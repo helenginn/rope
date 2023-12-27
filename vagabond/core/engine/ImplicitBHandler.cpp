@@ -20,11 +20,12 @@
 #include "grids/AnisoMap.h"
 #include "grids/AtomMap.h"
 
-ImplicitBHandler::ImplicitBHandler(int resources, const AtomMap *calc_template)
+ImplicitBHandler::ImplicitBHandler(int resources, const AtomMap *calc_template,
+                                   const std::vector<float> &six_params)
 {
 	_threads = resources;
 	_template = calc_template;
-
+	_sixParams = six_params;
 }
 
 void ImplicitBHandler::setup()
@@ -32,6 +33,7 @@ void ImplicitBHandler::setup()
 	for (int i = 0; i < _threads; i++)
 	{
 		AnisoMap *anisou = new AnisoMap(*_template);
+		anisou->setBs(_sixParams);
 		_anisoPool.pushObject(anisou);
 	}
 }

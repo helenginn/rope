@@ -29,7 +29,8 @@ class AnisoMap;
 class ImplicitBHandler : public Handler
 {
 public:
-	ImplicitBHandler(int resources, const AtomMap *calc_template);
+	ImplicitBHandler(int resources, const AtomMap *calc_template,
+	                 const std::vector<float> &six_params = {});
 
 	void setup();
 
@@ -39,6 +40,7 @@ private:
 	const AtomMap *_template = nullptr;
 	
 	Pool<AnisoMap *> _anisoPool;
+	std::vector<float> _sixParams;
 
 	int _threads = 1;
 
