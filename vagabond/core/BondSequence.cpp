@@ -366,10 +366,11 @@ void BondSequence::calculate(rope::IntToCoordGet coordForIdx,
 	signal(SequencePositionsReady);
 }
 
-double BondSequence::calculateDeviations()
+float BondSequence::calculateDeviations(const std::function<float(Atom *)> 
+                                        &weights)
 {
-	double sum = 0;
-	double count = 0;
+	float sum = 0;
+	float count = 0;
 
 	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
@@ -386,6 +387,13 @@ double BondSequence::calculateDeviations()
 		glm::vec3 trial_pos = _blocks[i].my_position();
 		glm::vec3 target = _blocks[i].target;
 
+		float weight = 1;
+		
+		if (weights)
+		{
+			weight = weights(_blocks[i].atom);
+		}
+
 		glm::vec3 diff = trial_pos - target;
 		
 		if (diff.x != diff.x)
@@ -394,8 +402,9 @@ double BondSequence::calculateDeviations()
 		}
 		
 		float c = glm::length(diff);
-		sum += c;
-		count ++;
+		
+		sum += c * weight;
+		count += weight;
 	}
 
 	return sum / count;

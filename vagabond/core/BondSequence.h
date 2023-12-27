@@ -156,7 +156,7 @@ public:
 	};
 
 	std::vector<glm::vec3> extractForMap(const std::string &ele, int num);
-	double calculateDeviations();
+	float calculateDeviations(const std::function<float(Atom *)> &weights = {});
 
 	void setSampleCount(int count)
 	{
