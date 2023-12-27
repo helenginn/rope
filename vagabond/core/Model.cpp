@@ -767,3 +767,31 @@ std::vector<Instance *> Model::instances()
 	return instances;
 }
 
+Diffraction *Model::getDiffraction(std::string filename)
+{
+	if (filename == "")
+	{
+		filename = _dataFile;
+	}
+
+	File *file = File::loadUnknown(filename);
+
+	if (!file)
+	{
+		return nullptr;
+	}
+
+	File::Type type = file->cursoryLook();
+
+	if (type & File::Reflections)
+	{
+		Diffraction *diff = file->diffractionData();
+		delete file;
+		return diff;
+	}
+
+	delete file;
+	return nullptr;
+}
+
+

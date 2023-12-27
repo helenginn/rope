@@ -160,6 +160,7 @@ public:
 	void write(std::string filename);
 
 	void extractExisting();
+	Diffraction *getDiffraction(std::string filename = "");
 
 	Polymer *polymerForChain(std::string ch) const
 	{
