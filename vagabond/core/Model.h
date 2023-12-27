@@ -41,9 +41,6 @@ class Polymer;
 class AtomContent;
 class ArbitraryMap;
 
-struct ccp4_spacegroup_;
-typedef ccp4_spacegroup_ CCP4SPG;
-
 class Model : public HasResponder<Responder<Model>>, Responder<AtomGroup>,
 public HasMetadata
 {
