@@ -166,7 +166,7 @@ public:
 	template <typename F>
 	void do_op_on_each_element(F func)
 	{
-		do_op_on_each_1d_index([this, func](int i) 
+		do_op_on_each_1d_index([this, func](long i) 
 		                       {
 			                      func(element(i));
 		                       });
@@ -177,7 +177,7 @@ public:
 	template <typename F>
 	void do_op_on_each_1d_index(F func)
 	{
-		for (int i = 0; i < nn(); i++)
+		for (long i = 0; i < nn(); i++)
 		{
 			func(i);
 		}
