@@ -133,7 +133,7 @@ public:
 		ss << "opvec(" << vs.size() << "): ";
 
 		int i = 0;
-		for (const float &f : vs)
+		for (const Type &f : vs)
 		{
 			ss << f << ", ";
 			i++;
