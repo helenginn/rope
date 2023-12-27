@@ -20,6 +20,7 @@
 #define __vagabond__Value__
 
 #include <iostream>
+#include <string>
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -34,6 +35,17 @@ public:
 	Value(std::string text)
 	{
 		setText(text);
+	}
+	
+	Value(const char *text)
+	{
+		setText(text);
+	}
+	
+	template <typename T>
+	Value(T textable)
+	{
+		setText(std::to_string(textable));
 	}
 	
 	void setText(std::string text)
