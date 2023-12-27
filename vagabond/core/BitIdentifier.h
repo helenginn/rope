@@ -67,6 +67,12 @@ public:
 	const ResidueId &id();
 	const ResidueId &local_id();
 
+	void setLocalId(const ResidueId &id)
+	{
+		_localId = id;
+		_localSet = true;
+	}
+
 	friend void to_json(json &j, const ResidueTorsion &value);
 	friend void from_json(const json &j, ResidueTorsion &value);
 protected:
