@@ -80,6 +80,11 @@ void AnisoMap::calculateMap()
 
 void AnisoMap::setBs(const std::vector<float> &six_params)
 {
+	if (six_params.size() < 6)
+	{
+		return;
+	}
+
 	glm::mat3x3 mat = matrix_from_params(six_params, _initial);
 	glm::mat3x3 tmat = glm::transpose(mat);
 
