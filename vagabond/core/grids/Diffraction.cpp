@@ -18,6 +18,7 @@
 
 #include "Diffraction.h"
 #include "ArbitraryMap.h"
+#include "SymmetryExpansion.h"
 #include <gemmi/symmetry.hpp>
 
 Diffraction::Diffraction(int nx, int ny, int nz) 
@@ -197,5 +198,15 @@ void Diffraction::copyBinningFrom(Diffraction *other)
 
 	do_op_on_each_1d_index(copy_slice);
 	_sliced = true;
+
+}
+
+void Diffraction::applySymmetry(const std::string &spg_name)
+{
+	const gemmi::SpaceGroup *spg = nullptr;
+	spg = gemmi::find_spacegroup_by_name(spg_name);
+	gemmi::GroupOps grp = spg->operations();
+	
+	SymmetryExpansion::apply(this, spg, _maxRes);
 
 }

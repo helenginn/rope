@@ -91,6 +91,7 @@ public:
 	void copyBinningFrom(Diffraction *other);
 	
 	size_t reflectionCount();
+	void applySymmetry(const std::string &spg);
 
 	virtual float elementValue(long i) const
 	{

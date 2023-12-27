@@ -31,7 +31,6 @@
 #include "Unit.h"
 #include "Refinement.h"
 #include "Wiggler.h"
-#include "SymmetryExpansion.h"
 
 #include <fstream>
 
@@ -50,25 +49,11 @@ void Refinement::setup()
 
 void Refinement::loadDiffraction(const std::string &filename)
 {
-	File *file = File::loadUnknown(filename);
+	Diffraction *diff = _model->getDiffraction();
+	_data = diff;
 
-	if (!file)
-	{
-		return;
-	}
-
-	File::Type type = file->cursoryLook();
-
-	if (type & File::Reflections)
-	{
-		Diffraction *diff = file->diffractionData();
-		_data = diff;
-
-		_map = new ArbitraryMap(*diff);
-		_map->setupFromDiffraction();
-	}
-
-	delete file;
+	_map = new ArbitraryMap(*diff);
+	_map->setupFromDiffraction();
 }
 
 template <typename Filter>
@@ -220,14 +205,10 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 		result->destroy();
 	}
 
-	const gemmi::SpaceGroup *spg = nullptr;
-	spg = gemmi::find_spacegroup_by_name(_map->spaceGroupName());
-	gemmi::GroupOps grp = spg->operations();
-	
 	if (reciprocal)
 	{
 		Diffraction *diff = new Diffraction(arb);
-		SymmetryExpansion::apply(diff, spg, max_res);
+		diff->applySymmetry(_map->spaceGroupName());
 		*reciprocal = diff;
 	}
 

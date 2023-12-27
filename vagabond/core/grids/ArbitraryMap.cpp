@@ -22,6 +22,9 @@
 #include "Diffraction.h"
 #include "files/File.h"
 
+#include "SymmetryExpansion.h"
+#include <gemmi/symmetry.hpp>
+
 ArbitraryMap::ArbitraryMap() : TransformedGrid<fftwf_complex>(0, 0, 0)
 {
 
@@ -182,3 +185,33 @@ void ArbitraryMap::multiply(float scale)
 	}
 }
 
+void ArbitraryMap::applySymmetry(const std::string &spg_name)
+{
+	if (status() == ArbitraryMap::Real)
+	{
+		fft();
+	}
+	
+	Diffraction *diff = new Diffraction(this);
+
+	const gemmi::SpaceGroup *spg = nullptr;
+	spg = gemmi::find_spacegroup_by_name(spg_name);
+	gemmi::GroupOps grp = spg->operations();
+	
+	SymmetryExpansion::apply(diff, spg, -1);
+
+	this->do_op_on_each_1d_index([this, diff](long &ele)
+	{
+		float d = fabs(element(ele)[0] - diff->element(ele).value[0]);
+
+		element(ele)[0] = diff->element(ele).value[0];
+		element(ele)[1] = diff->element(ele).value[1];
+	});
+	
+	delete diff;
+
+	if (status() == ArbitraryMap::Reciprocal)
+	{
+		fft();
+	}
+}

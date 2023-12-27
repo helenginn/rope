@@ -24,7 +24,8 @@
 
 namespace SymmetryExpansion
 {
-	static void apply(Diffraction *grid, const gemmi::SpaceGroup *spg, float dMax)
+	template <typename GridType> 
+	static void apply(GridType *grid, const gemmi::SpaceGroup *spg, float dMax)
 	{
 		gemmi::GroupOps grp = spg->operations();
 		fftwf_complex *dest = (fftwf_complex *)calloc(grid->nn(),
@@ -102,6 +103,10 @@ namespace SymmetryExpansion
 			grid->element(i).value[0] = dest[i][0];
 			grid->element(i).value[1] = dest[i][1];
 		});
+		
+		/* make sure total number of electrons are preserved, if provided */
+		grid->element(0).value[0] *= grp.sym_ops.size();
+		grid->element(0).value[1] *= grp.sym_ops.size();
 
 		free(dest);
 	}
