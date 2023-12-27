@@ -329,7 +329,7 @@ void SimplexEngine::sendStartingJobs()
 
 		for (size_t j = 0; j < n(); j++)
 		{
-			float val = (i == n() - 1 - j) ? _steps[i] : 0;
+			float val = (i == n() - 1 - j) ? _steps[j] : 0;
 			trial[j] = val;
 		}
 		
