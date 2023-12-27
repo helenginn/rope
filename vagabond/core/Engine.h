@@ -25,64 +25,7 @@
 #include <cfloat>
 #include <functional>
 
-class RunsEngine
-{
-public:
-	virtual ~RunsEngine() {};
-	virtual size_t parameterCount() = 0;
-	virtual int sendJob(const std::vector<float> &all) = 0;
-
-	virtual float getResult(int *job_id)
-	{
-		if (_scores.size() == 0)
-		{
-			*job_id = -1;
-			return 0;
-		}
-
-		*job_id = _scores.begin()->first;
-		float result = _scores.begin()->second;
-		_scores.erase(_scores.begin());
-
-		return result;
-	}
-
-	void resetTickets()
-	{
-		_ticket = 0;
-		_scores.clear();
-	}
-	
-	bool returnsGradients()
-	{
-		return (!!_gradient);
-	}
-protected:
-	int getNextTicket()
-	{
-		return ++_ticket;
-	}
-	
-	const int &getLastTicket() const
-	{
-		return _ticket;
-	}
-	
-	void setGradientFunction(const std::function<std::vector<float>(int)>
-	                         &gradient)
-	{
-		_gradient = gradient;
-	}
-	
-	void setScoreForTicket(int ticket, double score)
-	{
-		_scores[ticket] = score;
-	}
-private:
-	int _ticket = 0;
-	std::map<int, double> _scores;
-	std::function<std::vector<float>(int)> _gradient{};
-};
+#include "RunsEngine.h"
 
 class Engine
 {
