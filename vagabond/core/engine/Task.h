@@ -132,6 +132,11 @@ public:
 
 		return triggered;
 	}
+	
+	void changeTodo(const std::function<Output(Input)> &new_todo)
+	{
+		todo = new_todo;
+	}
 
 	template <typename InputCompatible>
 	bool setInput(const InputCompatible in)
@@ -140,7 +145,7 @@ public:
 		return supplySignal();
 	}
 
-	const std::function<Output(Input)> todo;
+	std::function<Output(Input)> todo;
 
 	Input input{};
 	Output output{};
