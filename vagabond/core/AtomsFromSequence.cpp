@@ -104,6 +104,23 @@ AtomGroup *AtomsFromSequence::atoms()
 			t->setRefinedAngle(180.f);
 		}
 
+		if (!t->coversMainChain())
+		{
+			bool ok = true;
+			for (int i = 0; i < 4; i++)
+			{
+				if (t->atom(i) && t->atom(i)->code() == "PRO")
+				{
+					ok = false;
+					break;
+				}
+			}
+			
+			if (ok)
+			{
+				t->setRefinedAngle(180.f);
+			}
+		}
 	}
 	
 	total->recalculate();
