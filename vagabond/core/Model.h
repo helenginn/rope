@@ -38,6 +38,7 @@ using nlohmann::json;
 class File;
 class Chain;
 class Polymer;
+class Diffraction;
 class AtomContent;
 class ArbitraryMap;
 

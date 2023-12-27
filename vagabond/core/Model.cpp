@@ -24,6 +24,7 @@
 #include "files/File.h"
 #include "AtomContent.h"
 #include "Environment.h"
+#include "grids/Diffraction.h"
 #include "EntityManager.h"
 #include "SequenceComparison.h"
 #include "../utils/FileReader.h"
