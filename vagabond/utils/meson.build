@@ -19,6 +19,8 @@ utilfiles = [
 'ProbDist.h',
 'AcquireCoord.h',
 'ConvertIndex.h',
+'OpVec.h',
+'OpList.h',
 'histogram.h',
 'histogram.cpp',
 'brain/Layer.cpp',
