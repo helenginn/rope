@@ -57,8 +57,14 @@ void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, 
 		int w = 0;
 		for (size_t i = 0; i < text.length(); i++)
 		{
-			int charHeight = dimPtr[(int)text[i]][0];
-			int charWidth = dimPtr[(int)text[i]][1];
+			int idx = (char)text[i];
+			if (idx < 0)
+			{
+				continue;
+			}
+
+			int charHeight = dimPtr[idx][0];
+			int charWidth = dimPtr[idx][1];
 			w += charWidth - squish;
 			if (charHeight > maxHeight)
 			{
@@ -99,7 +105,11 @@ void TextManager::text_malloc(png_byte **pointer, std::string text, int *width, 
 
 		for (int i = 0; i < text.length(); i++)
 		{
-			char whichAscii = text[i];
+			int whichAscii = (char)text[i];
+			if (whichAscii < 0)
+			{
+				continue;
+			}
 			png_byte *chosenAscii = asciiPtr[(int)whichAscii];
 			int chosenHeight = dimPtr[(int)whichAscii][0];
 			int chosenWidth = dimPtr[(int)whichAscii][1];
