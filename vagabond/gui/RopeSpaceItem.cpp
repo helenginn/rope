@@ -23,6 +23,8 @@
 #include "Axes.h"
 #include "RopeCluster.h"
 #include "MetadataView.h"
+#include "MetadataGroup.h"
+#include "PositionalGroup.h"
 #include "PathManager.h"
 #include <vagabond/core/Metadata.h>
 #include <vagabond/utils/FileReader.h>
@@ -130,12 +132,15 @@ void RopeSpaceItem::purgeHasMetadata(HasMetadata *hm)
 		setMustCluster();
 	}
 	
-	auto it = std::find(_whiteList.begin(), _whiteList.end(), hm);
+	std::vector<HasMetadata *> objects = grp->objects();
+	auto it = std::find(objects.begin(), objects.end(), hm);
 	
-	if (it != _whiteList.end())
+	if (it != objects.end())
 	{
-		_whiteList.erase(it);
+		objects.erase(it);
 	}
+
+	_group->setWhiteList(objects);
 	
 	for (int i = 0; i < itemCount(); i++)
 	{
@@ -169,19 +174,17 @@ void RopeSpaceItem::setResponders()
 	}
 }
 
-void RopeSpaceItem::torsionCluster(MetadataGroup *group)
+void RopeSpaceItem::torsionCluster()
 {
 	allocateView();
 
-	MetadataGroup angles(0);
+	MetadataGroup *group = static_cast<MetadataGroup *>(_group);
 	if (group == nullptr)
 	{
-		angles = _entity->makeTorsionDataGroup();
-		angles.setWhiteList(_whiteList);
-		angles.write(_entity->name() + "_torsions.csv");
-		angles.normalise();
-
-		group = &angles;
+		group = new MetadataGroup(_entity->makeTorsionDataGroup());
+		group->write(_entity->name() + "_torsions.csv");
+		group->normalise();
+		_group = group;
 	}
 
 	_cluster = new TorsionCluster(*group);
@@ -203,15 +206,17 @@ void RopeSpaceItem::calculateCluster()
 	}
 	else if (_type == ConfPositional)
 	{
-		PositionalGroup group = _entity->makePositionalDataGroup();
-		group.setWhiteList(_whiteList);
-		group.write(_entity->name() + "_atoms.csv");
+		PositionalGroup *group = static_cast<PositionalGroup *>(_group);
+		if (_group == nullptr)
+		{
+			group = new PositionalGroup(_entity->makePositionalDataGroup());
+			group->write(_entity->name() + "_atoms.csv");
+			_group = group;
+		}
 
-		_cluster = new PositionalCluster(group);
+		_cluster = new PositionalCluster(*group);
+		_view->setCluster(_cluster);
 	}
-
-	_view->setCluster(_cluster);
-
 }
 
 RopeSpaceItem *RopeSpaceItem::branchFromRuleRange(const Rule *rule, float min,
@@ -223,7 +228,7 @@ RopeSpaceItem *RopeSpaceItem::branchFromRuleRange(const Rule *rule, float min,
 	for (size_t i = 0; i < mg->objectCount(); i++)
 	{
 		HasMetadata *hm = mg->object(i);
-		Metadata::KeyValues kv = hm->metadata();
+		Metadata::KeyValues kv = hm->metadata(_md);
 		
 		if (kv.count(rule->header()) > 0)
 		{
@@ -252,7 +257,7 @@ RopeSpaceItem *RopeSpaceItem::branchFromRule(Rule *rule, bool inverse)
 	for (size_t i = 0; i < mg->objectCount(); i++)
 	{
 		HasMetadata *hm = mg->object(i);
-		Metadata::KeyValues kv = hm->metadata();
+		Metadata::KeyValues kv = hm->metadata(_md);
 		std::string expected = rule->headerValue();
 		std::string value;
 		
@@ -300,7 +305,7 @@ std::string RopeSpaceItem::displayName() const
 	
 	if (!isTopLevelItem())
 	{
-		title += " (" + std::to_string(_whiteList.size()) + ")";
+		title += " (" + std::to_string(_group->objectCount()) + ")";
 	}
 
 	return title;
@@ -331,10 +336,31 @@ RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
 RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
                                       std::string title)
 {
+	ObjectGroup *group_ptr = nullptr;
+	
+	if (_type == ConfTorsions)
+	{
+		MetadataGroup *group = static_cast<MetadataGroup *>(_group);
+		MetadataGroup *new_group;
+		int length = group->headers().size();
+		new_group = new MetadataGroup(*group);
+		new_group->setWhiteList(whiteList);
+		group_ptr = new_group;
+	}
+	else
+	{
+		PositionalGroup *group = static_cast<PositionalGroup *>(_group);
+		PositionalGroup *new_group;
+		int length = group->headers().size();
+		new_group = new PositionalGroup(*group);
+		new_group->setWhiteList(whiteList);
+		group_ptr = new_group;
+	}
+
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
 	subset->setMode(_type);
 	subset->setFixedTitle(title);
-	subset->setWhiteList(whiteList);
+	subset->setObjectGroup(group_ptr);
 	addItem(subset);
 	subset->makeView(_confView);
 

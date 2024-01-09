@@ -26,12 +26,14 @@
 #include "StructureModification.h"
 #include "ParamSet.h"
 #include "Conformer.h"
+#include "Atom.h"
 #include "ListConformers.h"
 #include "ResidueId.h"
 
 class Instance;
 class Diffraction;
 class ArbitraryMap;
+class LoopCorrelation;
 class FilterConformer;
 class FilterSelfClash;
 class FilterCrystalContact;
@@ -81,6 +83,24 @@ struct Loop
 		        id.as_num() <= instance_end() + 1);
 	}
 
+	auto mainChainInLoop()
+	{
+		return [this](Atom *atom)
+		{
+			// not part of loop
+			if (!atom || !idInLoop(atom->residueId()))
+			{
+				return false;
+			}
+
+			if (!atom->isMainChain())
+			{
+				return false;
+			}
+
+			return true;
+		};
+	}
 };
 
 class RoughLoop;
@@ -91,6 +111,7 @@ class ArbitraryMap;
 class Loopy : public HasResponder<Responder<Loopy>>, public StructureModification
 {
 	friend RoughLoop;
+	friend LoopCorrelation;
 	friend FilterConformer;
 	friend FilterSelfClash;
 	friend FilterCrystalContact;
@@ -121,7 +142,7 @@ private:
 	/* preparing space to refine */
 	void processLoop(Loop &loop);
 	void prepareLoop(const Loop &loop);
-	void prepareMaps();
+	void prepareMaps(bool all_atoms = true);
 	void prepareResources();
 	void grabNewParameters();
 

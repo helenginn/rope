@@ -214,7 +214,8 @@ void AddRule::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "delete")
 	{
-		Environment::purgeRule(_obj);
+		Metadata *md = _md ? _md : Environment::metadata();
+		md->ruler().removeLike(_obj);
 		back();
 	}
 	else if (tag == "header")

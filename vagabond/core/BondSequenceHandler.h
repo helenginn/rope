@@ -99,7 +99,8 @@ public:
 	// pretty optional, preparing lists of element positions for maps
 	void positionsForMap(Task<BondSequence *, BondSequence *> *hook,
 	                     Task<BondSequence *, void *> *letgo,
-	                     std::map<std::string, GetEle> &eleTasks);
+	                     std::map<std::string, GetEle> &eleTasks,
+	                     const std::function<bool(Atom *const &)> &filter = {});
 
 	Task<BondSequence *, void *> *
 	extract_compare_distances(Task<Result, void *> *submit_result,

@@ -104,22 +104,13 @@ AtomGroup *AtomsFromSequence::atoms()
 			t->setRefinedAngle(180.f);
 		}
 
-		if (!t->coversMainChain())
+		if (!t->coversMainChain() && t->desc() == "N-CA-C-N")
 		{
-			bool ok = true;
-			for (int i = 0; i < 4; i++)
-			{
-				if (t->atom(i) && t->atom(i)->code() == "PRO")
-				{
-					ok = false;
-					break;
-				}
-			}
-			
-			if (ok)
-			{
-				t->setRefinedAngle(180.f);
-			}
+			t->setRefinedAngle(150.f);
+		}
+		if (!t->coversMainChain() && t->desc() == "C-N-CA-C")
+		{
+			t->setRefinedAngle(-60.f);
 		}
 	}
 	

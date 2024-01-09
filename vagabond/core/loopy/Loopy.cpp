@@ -37,6 +37,7 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/ImplicitBHandler.h"
 #include "engine/MapSumHandler.h"
+#include "engine/CorrelationHandler.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
@@ -50,6 +51,7 @@
 #include "files/MtzFile.h"
 
 #include "RoughLoop.h"
+#include "LoopCorrelation.h"
 #include "FilterSelfClash.h"
 #include "FilterCrystalContact.h"
 
@@ -144,8 +146,6 @@ void Loopy::copyPositions(const std::string &tag)
 	{
 		atom->addOtherPosition(tag, atom->derivedPosition());
 	}
-
-	writeOutPositions(tag);
 }
 
 ListConformers Loopy::generateRoughs(int n)
@@ -160,6 +160,7 @@ ListConformers Loopy::generateRoughs(int n)
 
 		float best = rougher.roughLoop();
 		std::cout << best;
+
 		if (best < _rmsdLimit)
 		{
 			roughs.push_back(new Conformer(_active));
@@ -172,6 +173,10 @@ ListConformers Loopy::generateRoughs(int n)
 
 		std::cout << std::endl;
 	}
+
+	writeOutPositions("rough");
+	writeOutPositions("no_self_clash");
+	writeOutPositions("no_contacts");
 	
 	std::cout << "Reached " << roughs.size() << " rough solutions." << std::endl;
 	return roughs;
@@ -197,6 +202,17 @@ ListConformers filterConformers(const ListConformers &list,
 	return filtered;
 }
 
+void sumDensity(ListConformers &list, Loopy *loop, ArbitraryMap *map)
+{
+	LoopCorrelation correl(map, loop);
+
+	list.do_on_each([&correl](Conformer *conf)
+   	{
+		float score = correl.scoreFor(conf);
+		conf->setCorrelationWithDensity(score);
+	});
+
+}
 
 void Loopy::processLoop(Loop &loop)
 {
@@ -207,6 +223,8 @@ void Loopy::processLoop(Loop &loop)
 	while (_noncontact.size() < 1000)
 	{
 		ListConformers list = generateRoughs(10);
+
+		sumDensity(list, this, _map);
 		_generated += list;
 		
 		ListConformers next;
@@ -217,7 +235,8 @@ void Loopy::processLoop(Loop &loop)
 		nexter = filterConformers(next, FilterCrystalContact(this), 0.2);
 		_noncontact += nexter;
 		
-		sendResponse("conformer_list", &_noncontact);
+		sendResponse("non_clash", &_nonclash);
+		sendResponse("non_contact", &_noncontact);
 
 		progressReport();
 	}
@@ -277,8 +296,13 @@ void Loopy::prepareLoop(const Loop &loop)
 	std::cout << "Torsions in sequence fragment: " << grp->bondTorsionCount() << std::endl;
 	
 	AtomGroup *contents = _instance->currentAtoms();
+
 	std::cout << "Atoms in original model: " << contents->size() << std::endl;
 	std::cout << "Torsions in original model: " << contents->bondTorsionCount() << std::endl;
+
+	Atom *last_c = contents->atomByIdName(ResidueId(loop.instance_start()), "C");
+	std::string chain = last_c->chain();
+	grp->do_op([chain](Atom *atom) { atom->setChain(chain); });
 	
 	contents->add(grp->atomVector());
 	GeometryTable *gt = &GeometryTable::getAllGeometry();
@@ -460,7 +484,7 @@ void Loopy::fCalcMap()
 	_instance->model()->unload();
 }
 
-void Loopy::prepareMaps()
+void Loopy::prepareMaps(bool all_atoms)
 {
 	BondSequenceHandler *&sequences = _resources.sequences;
 
@@ -468,11 +492,38 @@ void Loopy::prepareMaps()
 	MapTransferHandler *perEles = new MapTransferHandler(sequences->elementList(), 
 	                                                     _threads);
 	perEles->setCubeDim(0.8);
+	
+	if (_resources.perElements)
+	{
+		delete _resources.perElements;
+	}
 
 	AtomGroup *contents = _instance->model()->currentAtoms();
+	
+	if (!all_atoms)
+	{
+		Loop &curr = *_active.loop();
+		auto filter = [&curr](Atom *const &atom) -> bool
+		{
+			return curr.idInLoop(atom->residueId());
+		};
+
+		contents = contents->new_subset(filter);
+	}
+
 	perEles->supplyAtomGroup(contents->atomVector());
 	perEles->setup();
 	_resources.perElements = perEles;
+	
+	if (!all_atoms)
+	{
+		delete contents; contents = nullptr;
+	}
+	
+	if (_resources.summations)
+	{
+		delete _resources.summations;
+	}
 	
 	/* summation of all element maps into one */
 	MapSumHandler *sums = new MapSumHandler(_threads, perEles->segment(0));
@@ -486,6 +537,16 @@ void Loopy::prepareMaps()
 	ibh->setup();
 	_resources.implicits = ibh;
 
+	if (!all_atoms)
+	{
+		/* correlation of summed density map against reference */
+		CorrelationHandler *cc = new CorrelationHandler(_map, sums->templateMap(),
+		                                                _threads);
+
+		cc->setup();
+		_resources.correlations = cc;
+
+	}
 }
 
 void Loopy::prepareResources()
@@ -510,10 +571,12 @@ void Loopy::prepareResources()
 	grabNewParameters();
 	std::cout << _active.validCount() << " new parameters to refine." << std::endl;
 
-	prepareMaps();
+	prepareMaps(true);
 	
 	loadDensityMap();
 	fCalcMap();
+
+	prepareMaps(false);
 
 	Loop &curr = *_active.loop();
 	auto filter = [&curr](Atom *const &atom) -> bool
@@ -538,4 +601,5 @@ void Loopy::operator()(int i)
 
 	processLoop(_loops[i]);
 }
+
 

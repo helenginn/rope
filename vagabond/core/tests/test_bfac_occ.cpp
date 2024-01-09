@@ -43,8 +43,8 @@ float peak_height_for_b_factor(float b)
 
 BOOST_AUTO_TEST_CASE(bfactor_occupancy_equivalent)
 {
-	float first_b = 45.95;
-	float second_b = 61.3;
+	float second_b = 49.94;
+	float first_b = 37.75;
 
 	float first_peak = peak_height_for_b_factor(first_b);
 	float second_peak = peak_height_for_b_factor(second_b);

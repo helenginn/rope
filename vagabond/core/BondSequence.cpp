@@ -410,14 +410,15 @@ float BondSequence::calculateDeviations(const std::function<float(Atom *)>
 	return sum / count;
 }
 
-void BondSequence::extractVector(AtomPosList &results)
+void BondSequence::extractVector(AtomPosList &results, const
+                                 const std::function<bool(Atom *const &)> &filter)
 {
 	int c = 0;
 	WithPos ap{};
 	for (size_t i = _startCalc; i < _blocks.size() && i < _endCalc; i++)
 	{
 		AtomBlock &b = _blocks[i];
-		if (b.atom == nullptr || !b.flag)
+		if (b.atom == nullptr || !b.flag || (filter && !filter(b.atom)))
 		{
 			continue;
 		}
@@ -464,15 +465,17 @@ const AtomPosMap &BondSequence::extractPositions()
 	return _posAtoms;
 }
 
-std::vector<glm::vec3> BondSequence::extractForMap(const std::string &ele,
-                                                   int num)
+std::vector<glm::vec3> BondSequence::extractForMap(const std::string &ele, int num,
+                                                  const std::function<bool(Atom *const &)>
+                                                  &filter)
 {
 	std::vector<glm::vec3> epos;
 	epos.reserve(num);
 
 	for (size_t i = 0; i < _blocks.size(); i++)
 	{
-		if (_blocks[i].atom == nullptr || _blocks[i].element != ele)
+		if (_blocks[i].atom == nullptr || _blocks[i].element != ele ||
+		    (filter && !filter(_blocks[i].atom)))
 		{
 			continue;
 		}

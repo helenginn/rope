@@ -243,7 +243,9 @@ Task<BondSequence *, void *> *BondSequenceHandler::letGo()
 
 void BondSequenceHandler::positionsForMap(CalcTask *hook,
                                           Task<BondSequence *, void *> *letgo,
-                                          std::map<std::string, GetEle> &eleTasks)
+                                          std::map<std::string, GetEle> &eleTasks,
+                                          const std::function<bool(Atom *const &)> 
+                                          &filter)
 {
 	for (auto it = _elements.begin(); it != _elements.end(); it++)
 	{
@@ -251,10 +253,10 @@ void BondSequenceHandler::positionsForMap(CalcTask *hook,
 		int num = it->second;
 
 		auto grab_elements = 
-		[ele, num](BondSequence *seq) -> std::vector<glm::vec3> *
+		[ele, num, filter](BondSequence *seq) -> std::vector<glm::vec3> *
 		{
 			std::vector<glm::vec3> *results = new std::vector<glm::vec3>();
-			*results = seq->extractForMap(ele, num);
+			*results = seq->extractForMap(ele, num, filter);
 			return results;
 		};
 

@@ -36,13 +36,6 @@ FilterConformer::FilterConformer(Loopy *loopy)
 
 int FilterConformer::submitJob(const std::vector<float> &vals) const
 {
-	if (!_clash)
-	{
-		std::cout << "FilterConformer subclass has not initialised _clash"\
-		" function." << std::endl;
-		return -1;
-	}
-
 	int ticket = 1;
 
 	BaseTask *first_hook = nullptr;
@@ -65,16 +58,19 @@ int FilterConformer::submitJob(const std::vector<float> &vals) const
 	sequences->calculate(calc, vals, &first_hook, &final_hook);
 	sequences->extract(extract, submit_result, final_hook, &dev);
 	
-	const ClashFunction &clash = _clash;
-
-	auto calc_clash = [clash](BondSequence *seq) -> Deviation
+	if (_clash)
 	{
-		const std::vector<AtomBlock> &blocks = seq->blocks();
-		float score = clash(blocks);
-		return {score};
-	};
-	
-	dev->changeTodo(calc_clash);
+		const ClashFunction &clash = _clash;
+
+		auto calc_clash = [clash](BondSequence *seq) -> Deviation
+		{
+			const std::vector<AtomBlock> &blocks = seq->blocks();
+			float score = clash(blocks);
+			return {score};
+		};
+
+		dev->changeTodo(calc_clash);
+	}
 	
 	_resources.tasks->addTask(first_hook);
 

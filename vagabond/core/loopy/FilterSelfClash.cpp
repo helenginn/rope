@@ -34,22 +34,7 @@ auto clash_score(Conformer *conf, const std::vector<AtomBlock> &blocks, bool mai
 		size_t jth;
 	};
 	
-	auto filter_atom = [conf, main](Atom *atom)
-	{
-		// not part of loop
-		if (!atom || !conf->loop()->idNeedsClashCheck(atom->residueId()))
-		{
-			return false;
-		}
-
-		// (perhaps) side chains are not being tested at this stage
-		if (main && !atom->isMainChain())
-		{
-			return false;
-		}
-
-		return true;
-	};
+	auto filter_atom = conf->loop()->mainChainInLoop();
 
 	std::vector<AtomPosPair> pairs;
 

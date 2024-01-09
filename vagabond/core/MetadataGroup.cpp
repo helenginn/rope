@@ -75,7 +75,7 @@ void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
 			vectors.push_back(_vectors[i]);
 		}
 	}
-
+	
 	_objects = short_list;
 	_vectorNames = names;
 	_vectors = vectors;

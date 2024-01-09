@@ -34,7 +34,10 @@ public:
 
 	typedef std::function<float(const std::vector<AtomBlock> &)> ClashFunction;
 
-	virtual bool acceptable(const float &value, const float &threshold) const = 0;
+	virtual bool acceptable(const float &value, const float &threshold) const
+	{
+		return false;
+	}
 	
 	bool operator()(Conformer *conf, float threshold) const;
 	int submitJob(const std::vector<float> &vals) const;

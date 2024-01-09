@@ -16,20 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ListConformers__
-#define __vagabond__ListConformers__
+#ifndef __vagabond__LoopCorrelation__
+#define __vagabond__LoopCorrelation__
 
-#include <vagabond/utils/OpList.h>
+#include "FilterConformer.h"
+
+class Loopy;
 class Conformer;
-class Metadata;
+class ArbitraryMap;
 
-class ListConformers : public OpList<Conformer *>
+class LoopCorrelation : public FilterConformer
 {
 public:
-	void setMetadata(Metadata *store, 
-	                 const std::string &key, const std::string &value);
+	LoopCorrelation(ArbitraryMap *map, Loopy *loopy);
+	
+	float scoreFor(Conformer *conf);
 
+	virtual int submitCorrelJob(const std::vector<float> &vals) const;
 private:
+	ArbitraryMap *_map = nullptr;
+	Loopy *_loopy = nullptr;
 
 };
 

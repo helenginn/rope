@@ -24,6 +24,7 @@
 #include <functional>
 #include "RunsEngine.h"
 #include "HasMetadata.h"
+#include "ResidueTorsion.h"
 #include <vagabond/c4x/Angular.h>
 
 struct Loop;
@@ -143,9 +144,20 @@ public:
 	}
 
 	void setGetterSetters(const LoopStage &stage, std::vector<float> &steps);
+	ParameterType parameterType(Parameter *param);
 
 	void randomise(const LoopStage &stage);
 	void report();
+	
+	void setCorrelationWithDensity(float &sum)
+	{
+		_observedCC = sum;
+	}
+	
+	const float &correlationWithDensity() const
+	{
+		return _observedCC;
+	}
 	
 	void setRmsd(float &rmsd)
 	{
@@ -189,6 +201,7 @@ private:
 	Setter _setter{};
 	
 	float _rmsd = FLT_MAX;
+	float _observedCC = 0;
 	int _count = 0;
 };
 

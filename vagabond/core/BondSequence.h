@@ -146,7 +146,8 @@ public:
 	void addOffset(rope::GetVec3FromIdx getOffset);
 
 	const AtomPosMap &extractPositions();
-	void extractVector(AtomPosList &results);
+	void extractVector(AtomPosList &results, 
+	                   const std::function<bool(Atom *const &)> &filter = {});
 	
 	/* I hope you can delete one day */
 	struct ElePos
@@ -155,7 +156,9 @@ public:
 		char element[3];
 	};
 
-	std::vector<glm::vec3> extractForMap(const std::string &ele, int num);
+	std::vector<glm::vec3> extractForMap(const std::string &ele, int num,
+	                                     const std::function<bool(Atom *const &)> 
+	                                     &filter = {});
 	float calculateDeviations(const std::function<float(Atom *)> &weights = {});
 
 	void setSampleCount(int count)

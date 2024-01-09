@@ -90,6 +90,11 @@ ParameterType parameter_type(Parameter *param, Loop *loop)
 	}
 }
 
+ParameterType Conformer::parameterType(Parameter *param)
+{
+	return parameter_type(param, _loop);
+}
+
 bool type_used_for_stage(const ParameterType &type, const LoopStage &stage)
 {
 	if (type == Invalid)
@@ -97,7 +102,7 @@ bool type_used_for_stage(const ParameterType &type, const LoopStage &stage)
 		return false;
 	}
 
-	if (type == Adjustment && (stage == Rough))
+	if (type == Adjustment && (stage == Rough || stage == Adjusting))
 	{
 		return true;
 	}
@@ -145,6 +150,7 @@ Conformer::ParamDetails::ParamDetails(Parameter *p, int idx, Loop *loop)
 	{
 		step = 2.f;
 	}
+
 	value = 0;
 }
 
@@ -186,7 +192,14 @@ void Conformer::randomise(const LoopStage &stage)
 	{
 		if (details.type == Ramachandran)
 		{
-			details.value = (rand() / (double)RAND_MAX) * 360.f - 180.f;
+			if (details.param->anAtom()->code() == "PRO")
+			{
+				details.value = (rand() / (double)RAND_MAX) * 30.f - 15.f;
+			}
+			else
+			{
+				details.value = (rand() / (double)RAND_MAX) * 360.f - 180.f;
+			}
 		}
 		else
 		{
@@ -204,7 +217,7 @@ std::vector<Angular> Conformer::angles()
 	
 	for (ParamDetails &details : _details)
 	{
-		if (details.type == Adjustment)
+		if (details.type == Ramachandran || details.type == Adjustment)
 		{
 			angs.push_back(Angular(_values[details.index]));
 		}
@@ -219,7 +232,7 @@ std::vector<ResidueTorsion> Conformer::headers()
 
 	for (ParamDetails &details : _details)
 	{
-		if (details.type == Adjustment)
+		if (details.type == Ramachandran || details.type == Adjustment)
 		{
 			ResidueTorsion rt{};
 			rt.setTorsion(TorsionRef(details.param));

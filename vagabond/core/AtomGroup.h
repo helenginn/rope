@@ -63,6 +63,22 @@ public:
 			func(atom);
 		}
 	}
+	
+	template <typename Func>
+	AtomGroup *new_subset(Func &filter)
+	{
+		AtomGroup *group = new AtomGroup();
+
+		for (Atom *atom : _atoms)
+		{
+			if (filter(atom))
+			{
+				group->add(atom);
+			}
+		}
+		
+		return group;
+	}
 
 	void addTransformedAnchor(Atom *a, glm::mat4x4 transform);
 	void remove(AtomGroup *g);

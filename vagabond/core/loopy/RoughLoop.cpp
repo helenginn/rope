@@ -171,6 +171,8 @@ float RoughLoop::refine(const LoopStage &stage)
 
 	best = engine.bestScore();
 
+	submitJob(true, _active.values());
+
 	return best;
 }
 

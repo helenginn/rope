@@ -27,25 +27,11 @@
 auto clash_score(Conformer *conf, const std::vector<AtomBlock> &blocks,
                  ArbitraryMap *fcMap, std::string &message)
 {
-	auto filter_atom = [conf](Atom *atom)
-	{
-		// not part of loop
-		if (!atom || !conf->loop()->idInLoop(atom->residueId()))
-		{
-			return false;
-		}
-		
-		if (!atom->isMainChain())
-		{
-			return false;
-		}
-
-		return true;
-	};
+	auto filter_atom = conf->loop()->mainChainInLoop();
 	
 	std::vector<size_t> indices;
 
-	for (size_t i = 0; i < blocks.size() - 1; i++)
+	for (size_t i = 0; i < blocks.size(); i++)
 	{
 		Atom *const &first = blocks[i].atom;
 		if (!filter_atom(first)) { continue; }

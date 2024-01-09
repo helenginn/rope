@@ -16,21 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ListConformers__
-#define __vagabond__ListConformers__
+#include "ListConformers.h"
+#include "Metadata.h"
+#include "Conformer.h"
 
-#include <vagabond/utils/OpList.h>
-class Conformer;
-class Metadata;
-
-class ListConformers : public OpList<Conformer *>
+void ListConformers::setMetadata(Metadata *store,
+                                 const std::string &key, const std::string &value)
 {
-public:
-	void setMetadata(Metadata *store, 
-	                 const std::string &key, const std::string &value);
-
-private:
-
-};
-
-#endif
+	do_on_each([store, key, value](Conformer *conf)
+   {
+		Metadata::KeyValues kv = {{key, value}, {"instance", conf->id()}};
+		store->addKeyValues(kv, true);
+   });
+}

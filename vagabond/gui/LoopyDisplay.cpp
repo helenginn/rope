@@ -86,7 +86,7 @@ void LoopyDisplay::buttonPressed(std::string tag, Button *button)
 
 void LoopyDisplay::sendObject(std::string tag, void *object)
 {
-	if (tag == "conformer_list")
+	if (tag == "non_clash")
 	{
 		ListConformers *confs = static_cast<ListConformers *>(object);
 		if (confs->size() == 0)
@@ -103,6 +103,11 @@ void LoopyDisplay::sendObject(std::string tag, void *object)
 		
 		_clusterer = new std::thread(&LoopyDisplay::prepareConformerCluster,
 		                             this, *confs);
+	}
+	else if (tag == "non_contact")
+	{
+		ListConformers *confs = static_cast<ListConformers *>(object);
+		confs->setMetadata(&_metadata, "clash", "false");
 	}
 }
 
@@ -122,8 +127,10 @@ void LoopyDisplay::prepareConformerCluster(ListConformers confs)
 	for (Conformer *const &conf : confs)
 	{
 		std::string id = conf->id();
-		float rmsd = conf->rmsd();
-		Metadata::KeyValues kv = {{"rmsd", Value(rmsd)}, {"instance", id}};
+		Metadata::KeyValues kv = 
+		{{"rmsd", Value(conf->rmsd())}, 
+		{"correlation", Value(conf->correlationWithDensity())}, 
+		{"instance", id}};
 
 		std::vector<Angular> angles = conf->angles();
 		group->addMetadataArray(conf, angles);
@@ -134,8 +141,10 @@ void LoopyDisplay::prepareConformerCluster(ListConformers confs)
 	group->normalise();
 
 	RopeSpaceItem *item = new RopeSpaceItem(_polymer->entity());
+	item->setMetadata(&_metadata);
 	item->setMode(rope::ConfTorsions);
-	item->torsionCluster(group);
+	item->setObjectGroup(group);
+	item->torsionCluster();
 	
 	std::unique_lock<std::mutex> lock(_spaceMut);
 	_space.setAssociatedMetadata(&_metadata);
