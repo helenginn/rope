@@ -1,4 +1,4 @@
-project('vagabond', 'cpp', 'c', version : '1.5')
+project('rope', 'cpp', 'c', version : '1.5')
 
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
@@ -22,7 +22,7 @@ name = 'index.html'
 
 if (links == [])
   deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw]
-  name = 'vagabond.gui'
+  name = 'rope.gui'
 endif
 
 data_dir = get_option('datadir') / 'vagabond'

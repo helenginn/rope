@@ -2,8 +2,8 @@ set path=vagabond/core/**,vagabond/gui/**,vagabond/gui/elements/**,vagabond/util
 
 command! Tags !ctags -R vagabond/core/* vagabond/gui/* vagabond/utils/*
 
-command! Ninja :wa|!ninja -C build/current vagabond.gui
-command! Dinja :wa|!ninja -C build/debug vagabond.gui
+command! Ninja :wa|!ninja -C build/current rope.gui
+command! Dinja :wa|!ninja -C build/debug rope.gui
 command! Winja :wa|!ninja -C build/website
 
 command! Unit :wa|!ninja -C build/current vagabond/core/tests/boost_test_core &&  build/current/vagabond/core/tests/boost_test_core; ninja -C build/current vagabond/utils/tests/boost_test_utils &&  build/current/vagabond/utils/tests/boost_test_utils; 
@@ -16,11 +16,11 @@ command! Dintegration :wa|!cd build/debug; meson test --suite=integration
 :imap `u :Tinja
 :nmap `u :Tinja
 
-:imap `N :AsyncRun ninja -C build/current vagabond.gui
-:nmap `N :AsyncRun ninja -C build/current vagabond.gui
+:imap `N :AsyncRun ninja -C build/current rope.gui
+:nmap `N :AsyncRun ninja -C build/current rope.gui
 
-:imap `D :AsyncRun ninja -C build/debug vagabond.gui
-:nmap `D :AsyncRun ninja -C build/debug vagabond.gui
+:imap `D :AsyncRun ninja -C build/debug rope.gui
+:nmap `D :AsyncRun ninja -C build/debug rope.gui
 
 command! Doxy !doxygen Doxyfile
 
