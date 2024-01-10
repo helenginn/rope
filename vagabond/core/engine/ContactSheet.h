@@ -37,7 +37,7 @@ public:
 	 * sheet for these positions before sending any queries. This can take
 	 * advantage of any partially-sorted existing sheet calculations as updated
 	 * atom positions will be closely related. */
-	void updateSheet(AtomPosMap &newPositions);
+	void updateSheet(const AtomPosMap &newPositions);
 
 	/** calculate zSliceMap for relevant atom neighbours*/
 	void calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms);

@@ -18,12 +18,13 @@
 
 #include "ContactSheet.h"
 #include "AreaMeasurer.h"
+#include <cmath>
 
 ContactSheet::ContactSheet()
 {
 }
 
-void ContactSheet::updateSheet(AtomPosMap &newPositions)
+void ContactSheet::updateSheet(const AtomPosMap &newPositions)
 {
 	// update any existing scratch calculations...
 	//loop through newPositions and update _posMap:
@@ -64,7 +65,13 @@ std::set<Atom *> ContactSheet::atomsNear(const AtomPosMap &posMap, Atom *centre,
 	std::set<Atom *> nearAtomsSet;
   for (auto &atom : posMap)
 	{
-		if (glm::length(atom.second.ave - centre->derivedPosition()) <= radius && atom.first != centre)
+		// if (fabs(atom.first->derivedPosition().x - centre->derivedPosition().x) > radius ||
+		//     fabs(atom.first->derivedPosition().y - centre->derivedPosition().y) > radius ||
+		// 		fabs(atom.first->derivedPosition().z - centre->derivedPosition().z) > radius)
+		// {
+		// 	continue;
+		// } // ↑ not faster with that if-condition
+		if (glm::dot(atom.first->derivedPosition() - centre->derivedPosition(),atom.first->derivedPosition() - centre->derivedPosition()) <= radius*radius && atom.first != centre)
 		{
 			nearAtomsSet.insert(atom.first);
 		}
