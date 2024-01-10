@@ -49,5 +49,6 @@ BOOST_AUTO_TEST_CASE(bfactor_occupancy_equivalent)
 	float first_peak = peak_height_for_b_factor(first_b);
 	float second_peak = peak_height_for_b_factor(second_b);
 
-	std::cout << second_peak / first_peak << std::endl;
+	float ratio = second_peak / first_peak;
+	BOOST_TEST(ratio < 1);
 }

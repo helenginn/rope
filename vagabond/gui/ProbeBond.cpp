@@ -16,23 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define BOOST_TEST_MODULE test_core
-#include <vagabond/utils/include_boost.h>
-namespace tt = boost::test_tools;
+#include "ProbeBond.h"
 
-#include "test_bfac_occ.cpp"
-#include "test_hnet.cpp"
-/*
-#include "test_tasks.cpp"
-#include "test_atomgroup.cpp"
-#include "test_atomsfromsequence.cpp"
-#include "test_handler.cpp"
-#include "test_list.cpp"
-#include "test_molecule.cpp"
-#include "test_molrefiner.cpp"
-#include "test_ramachandran.cpp"
-#include "test_sequence.cpp"
-#include "test_surface.cpp"
-#include "test_lbfgs.cpp"
-#include "test_grid.cpp"
-*/
+ProbeBond::ProbeBond(const std::string &tag, const glm::vec3 &start,
+                     const glm::vec3 &end)
+: Image("assets/images/" + tag + ".png")
+{
+	setVertexShaderFile("assets/shaders/floating_box.vsh");
+	setUsesProjection(true);
+
+	glm::vec3 dir = end - start;
+	glm::vec3 norm = {dir.y, -dir.x, 0};
+	dir /= 5.f;
+	norm /= 5.f;
+
+	_vertices[0].pos = start - norm + dir;
+	_vertices[1].pos = start + dir;
+	_vertices[2].pos = end - norm - dir;
+	_vertices[3].pos = end - dir;
+
+}

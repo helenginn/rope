@@ -5,7 +5,6 @@
 #include "ProgressView.h"
 #include "MetadataView.h"
 #include "DatasetMenu.h"
-#include "SandboxView.h"
 #include "EntityMenu.h"
 #include "ModelMenu.h"
 #include "MainMenu.h"
@@ -17,6 +16,9 @@
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/utils/version.h>
+
+#include "ProtonNetworkView.h"
+#include <vagabond/core/files/PdbFile.h>
 
 #include <iostream>
 
@@ -99,7 +101,6 @@ void MainMenu::setup()
 		addObject(text);
 	}
 
-#ifdef VERSION_SANDBOX
 	{
 		ImageButton *button = new ImageButton("assets/images/tube_1.5ml.png", this);
 		button->resize(0.15);
@@ -111,7 +112,6 @@ void MainMenu::setup()
 		text->setCentre(0.8, 0.80);
 		addObject(text);
 	}
-#endif
 }
 
 void MainMenu::doThings()
@@ -221,7 +221,10 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "sandbox")
 	{
-		SandboxView *sb = new SandboxView(this);
+		PdbFile file("trypsin_apo_CS187A_20220708_conf_B.pdb");
+		file.parse();
+		AtomGroup *grp = file.atoms();
+		ProtonNetworkView *sb = new ProtonNetworkView(this, *(new Network()));
 		sb->show();
 	}
 

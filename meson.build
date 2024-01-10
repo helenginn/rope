@@ -115,12 +115,16 @@ install_data(
 'assets/images/sequence.png',
 'assets/images/some_atoms.png',
 'assets/images/tick.png',
+'assets/images/transparency.png',
 'assets/images/triangle.png',
 'assets/images/tools.png',
 'assets/images/torsion.png',
 'assets/images/tube_1.5ml.png',
 'assets/images/unit_cell.png',
 'assets/images/us28.png',
+'assets/images/strong_bond.png',
+'assets/images/weak_bond.png',
+'assets/images/unassigned_bond.png',
 install_dir : images)
 
 subdir('config')

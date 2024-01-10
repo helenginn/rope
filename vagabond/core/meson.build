@@ -77,6 +77,10 @@ cfile,
 'loopy/RoughLoop.cpp',
 'loopy/RoughLoop.h',
 
+'protonic/Network.h',
+'protonic/Network.cpp',
+'protonic/Probe.h',
+
 'refine/Babinet.cpp',
 'refine/Babinet.h',
 'refine/Barycentric.cpp',

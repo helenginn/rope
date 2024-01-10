@@ -58,6 +58,7 @@ protected:
 	bool _controls = true;
 	bool _makesSelections = false;
 	
+	bool _2D = false;
 	bool _makingSelection = false;
 	bool _reducingSelection = false;
 	float _topPos = 0;

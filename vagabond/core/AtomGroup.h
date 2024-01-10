@@ -65,7 +65,7 @@ public:
 	}
 	
 	template <typename Func>
-	AtomGroup *new_subset(Func &filter)
+	AtomGroup *new_subset(const Func &filter)
 	{
 		AtomGroup *group = new AtomGroup();
 

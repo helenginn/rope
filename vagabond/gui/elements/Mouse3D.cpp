@@ -21,6 +21,7 @@
 
 Mouse3D::Mouse3D(Scene *prev) : Mouse2D(prev)
 {
+	_2D = false;
 
 }
 
