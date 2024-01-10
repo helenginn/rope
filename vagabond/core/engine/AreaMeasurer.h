@@ -21,6 +21,7 @@
 
 #include "AtomPosMap.h"
 #include "vagabond/core/Fibonacci.h"
+#include <set>
 
 class SurfaceAreaHandler;
 class ContactSheet;
@@ -61,7 +62,7 @@ public:
 	/** calculates surface area of previously copied atom map in Angstroms. */
 	float surfaceArea(const AtomPosMap &posMap);
 	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
-	float fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, const float radius);
+	float fibExposureSingleAtom(const std::set<Atom *> &atomsNearPosmap, Atom *atom, const float radius);
 	/** more efficiently calculates exposure of atom, i.e. the percentage of points not in the overlap with other atoms within a specified radius */
 	float fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, const float radius);
 
