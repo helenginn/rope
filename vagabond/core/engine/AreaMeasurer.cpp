@@ -54,10 +54,13 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	//fibonacci points test
 	std::vector<glm::vec3> points = _lattice.getPoints();
 
+	_contacts->updateSheet(posMap);
+
   for (std::pair<Atom *const, WithPos> atom : posMap)
 	{
 		const float radius = getVdWRadius(atom.first);
-    const float &exposure = AreaMeasurer::fibExposureSingleAtom(posMap, atom.first, radius); // pass in posmap to this function
+		const std::set<Atom *> atomsNearPosmap = _contacts->atomsNear(posMap, atom.first, radius +_maxVdWRadius + _probeRadius);
+    const float &exposure = AreaMeasurer::fibExposureSingleAtom(atomsNearPosmap, atom.first, radius); // pass in posmap to this function
 		const float &area_atom = areaFromExposure(exposure, radius, _probeRadius);
 		area += area_atom;
 	}
@@ -68,7 +71,7 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	return area;
 }
 
-float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, const float radius) // also needs local copy of posmap
+float AreaMeasurer::fibExposureSingleAtom(const std::set<Atom *> &atomsNearPosmap, Atom *atom, const float radius) // also needs local copy of posmap
 {
 	_lattice.changeLatticeRadius(radius, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
@@ -79,21 +82,18 @@ float AreaMeasurer::fibExposureSingleAtom(const AtomPosMap &posMap, Atom *atom, 
 	for (const glm::vec3 &point : points)
 	{
 		// for every other atom in posmap
-		for (auto &other_atom : posMap)
+		for (const auto &other_atom : atomsNearPosmap)
 		{
-			if (other_atom.first != atom)
+			if (glm::dot((pos-other_atom->derivedPosition()),(pos-other_atom->derivedPosition())) > (radius+_probeRadius+_maxVdWRadius) * (radius+_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
 			{
-				if (glm::dot((pos-other_atom.first->derivedPosition()),(pos-other_atom.first->derivedPosition())) > (radius+_probeRadius+_maxVdWRadius) * (radius+_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
-				{
-					continue;
-				}
-				const float radius = getVdWRadius(other_atom.first);
-				// check if point in overlap
-				if (sqlength(point + pos - other_atom.first->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size
-				{
-					points_in_overlap++;
-					break;
-				}
+				continue;
+			}
+			const float radius = getVdWRadius(other_atom);
+			// check if point in overlap
+			if (sqlength(point + pos - other_atom->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size
+			{
+				points_in_overlap++;
+				break;
 			}
 		}
 	}

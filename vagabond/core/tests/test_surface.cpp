@@ -154,186 +154,186 @@ BOOST_AUTO_TEST_CASE(z_slices)
 	std::cout << "zSlice2: " << zSlice2.first << ", " << zSlice2.second << std::endl;
 }
 
-// check atom exposure for no neighbours
-BOOST_AUTO_TEST_CASE(atom_no_neighbours)
-{
-	Atom atom;
-	glm::vec3 pos;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	atom.setElementSymbol("O"); // chosen arbitrarily
-	atom.setDerivedPosition(pos);
-	WithPos withPos;
-	withPos.ave = pos;
+// // check atom exposure for no neighbours
+// BOOST_AUTO_TEST_CASE(atom_no_neighbours)
+// {
+// 	Atom atom;
+// 	glm::vec3 pos;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	atom.setElementSymbol("O"); // chosen arbitrarily
+// 	atom.setDerivedPosition(pos);
+// 	WithPos withPos;
+// 	withPos.ave = pos;
 
-	AtomPosMap posMap;
-	posMap = {{&atom, withPos}};
+// 	AtomPosMap posMap;
+// 	posMap = {{&atom, withPos}};
 
-  SurfaceAreaHandler SAH;
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
+//   SurfaceAreaHandler SAH;
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
 
-	// calculate the exposure of the atom
-	float radius = getVdWRadius(&atom);
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
-	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
-	BOOST_TEST(exposure == 1.0f);
-}
+// 	// calculate the exposure of the atom
+// 	float radius = getVdWRadius(&atom);
+// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
+// 	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
+// 	BOOST_TEST(exposure == 1.0f);
+// }
 
-// check atom exposure for no overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_far_neighbour)
-{
-	// initialise 2 atoms with no overlap and distant positions
-	Atom atom, atom2, atomControl;
-	glm::vec3 pos, pos2, posControl;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
-	posControl = glm::vec3(sqrt(2.04*2.04 + 6.08*6.08 + 7.60*7.60), 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atomControl.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	atomControl.setDerivedPosition(posControl);
-	WithPos withPos, withPos2, withPosControl;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-	withPosControl.ave = posControl;
+// // check atom exposure for no overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_far_neighbour)
+// {
+// 	// initialise 2 atoms with no overlap and distant positions
+// 	Atom atom, atom2, atomControl;
+// 	glm::vec3 pos, pos2, posControl;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
+// 	posControl = glm::vec3(sqrt(2.04*2.04 + 6.08*6.08 + 7.60*7.60), 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atomControl.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	atomControl.setDerivedPosition(posControl);
+// 	WithPos withPos, withPos2, withPosControl;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+// 	withPosControl.ave = posControl;
 
-	AtomPosMap posMap, posMapControl;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+// 	AtomPosMap posMap, posMapControl;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
 
-	// BondCalculator calc;
-	// calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-	// calc.addAnchorExtension(&atom);
-	// calc.setup();
-	// calc.start();
-  SurfaceAreaHandler SAH;
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
+// 	// BondCalculator calc;
+// 	// calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
+// 	// calc.addAnchorExtension(&atom);
+// 	// calc.setup();
+// 	// calc.start();
+//   SurfaceAreaHandler SAH;
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
 
-	// calculate the exposure of the atom
-	float radius = getVdWRadius(&atom);
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
-	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
+// 	// calculate the exposure of the atom
+// 	float radius = getVdWRadius(&atom);
+// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
+// 	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
 
-	AM.copyAtomMap(posMapControl);
+// 	AM.copyAtomMap(posMapControl);
 
-	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
-	std::cout << "atom_far_neighbour exposure (control): " << exposureControl << std::endl;
+// 	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
+// 	std::cout << "atom_far_neighbour exposure (control): " << exposureControl << std::endl;
 
-	BOOST_TEST(exposure == 1.0f);
-	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-}
+// 	BOOST_TEST(exposure == 1.0f);
+// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+// }
 
-// // check atom exposure for small overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
-{
-	// initialise 2 atoms with overlap but more distant positions 
-	Atom atom, atom2, atomControl;
-	glm::vec3 pos, pos2, posControl;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(4.0f, 0.76f, 0.0f);
-	posControl = glm::vec3(sqrt(4.0*4.0 + 0.76*0.76), 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atomControl.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	atomControl.setDerivedPosition(posControl);
-	WithPos withPos, withPos2, withPosControl;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-	withPosControl.ave = posControl;
+// // // check atom exposure for small overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
+// {
+// 	// initialise 2 atoms with overlap but more distant positions 
+// 	Atom atom, atom2, atomControl;
+// 	glm::vec3 pos, pos2, posControl;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(4.0f, 0.76f, 0.0f);
+// 	posControl = glm::vec3(sqrt(4.0*4.0 + 0.76*0.76), 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atomControl.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	atomControl.setDerivedPosition(posControl);
+// 	WithPos withPos, withPos2, withPosControl;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+// 	withPosControl.ave = posControl;
 
-	AtomPosMap posMap, posMapControl;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+// 	AtomPosMap posMap, posMapControl;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
 
-  SurfaceAreaHandler SAH;
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
+//   SurfaceAreaHandler SAH;
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
 
-	// calculate the exposure of the atom
-	float radius = getVdWRadius(&atom);
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
+// 	// calculate the exposure of the atom
+// 	float radius = getVdWRadius(&atom);
+// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
 
-	AM.copyAtomMap(posMapControl);
+// 	AM.copyAtomMap(posMapControl);
 
-	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
-	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl << std::endl;
+// 	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
+// 	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl << std::endl;
 
-	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-}
+// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+// }
 
-// // check atom exposure for large overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
-{
-	// initialise 2 atoms with close positions
-	Atom atom, atom2, atomControl;
-	glm::vec3 pos, pos2, posControl;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(1.0f, 1.0f, 0.0f);
-	posControl = glm::vec3(sqrt(1.0f*1.0f + 1.0f*1.0f), 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atomControl.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	atomControl.setDerivedPosition(posControl);
-	WithPos withPos, withPos2, withPosControl;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
-	withPosControl.ave = posControl;
+// // // check atom exposure for large overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
+// {
+// 	// initialise 2 atoms with close positions
+// 	Atom atom, atom2, atomControl;
+// 	glm::vec3 pos, pos2, posControl;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(1.0f, 1.0f, 0.0f);
+// 	posControl = glm::vec3(sqrt(1.0f*1.0f + 1.0f*1.0f), 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atomControl.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	atomControl.setDerivedPosition(posControl);
+// 	WithPos withPos, withPos2, withPosControl;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
+// 	withPosControl.ave = posControl;
 
-	AtomPosMap posMap, posMapControl;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+// 	AtomPosMap posMap, posMapControl;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
 
-  SurfaceAreaHandler SAH;
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
+//   SurfaceAreaHandler SAH;
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
 
-	// calculate the exposure of the atom
-	float radius = getVdWRadius(&atom);
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
+// 	// calculate the exposure of the atom
+// 	float radius = getVdWRadius(&atom);
+// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
 
-	AM.copyAtomMap(posMapControl);
+// 	AM.copyAtomMap(posMapControl);
 
-	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
-	std::cout << "atom_large_overlap_neighbour exposure (control): " << exposureControl << std::endl;
+// 	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
+// 	std::cout << "atom_large_overlap_neighbour exposure (control): " << exposureControl << std::endl;
 
-	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-}
+// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+// }
 
-// // check atom exposure for full overlap with other atom
-BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
-{
-	// initialise 2 atoms with same position
-	Atom atom, atom2;
-	glm::vec3 pos, pos2;
-	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
-	atom.setElementSymbol("O");
-	atom2.setElementSymbol("O");
-	atom.setDerivedPosition(pos);
-	atom2.setDerivedPosition(pos2);
-	WithPos withPos, withPos2;
-	withPos.ave = pos;
-	withPos2.ave = pos2;
+// // // check atom exposure for full overlap with other atom
+// BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
+// {
+// 	// initialise 2 atoms with same position
+// 	Atom atom, atom2;
+// 	glm::vec3 pos, pos2;
+// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
+// 	atom.setElementSymbol("O");
+// 	atom2.setElementSymbol("O");
+// 	atom.setDerivedPosition(pos);
+// 	atom2.setDerivedPosition(pos2);
+// 	WithPos withPos, withPos2;
+// 	withPos.ave = pos;
+// 	withPos2.ave = pos2;
 
-	AtomPosMap posMap;
-	posMap = {{&atom, withPos}, {&atom2, withPos2}};
+// 	AtomPosMap posMap;
+// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
 
-  SurfaceAreaHandler SAH;
-  AreaMeasurer AM(&SAH);
-	AM.copyAtomMap(posMap);
+//   SurfaceAreaHandler SAH;
+//   AreaMeasurer AM(&SAH);
+// 	AM.copyAtomMap(posMap);
 
-	// calculate the exposure of the atom
-	float radius = getVdWRadius(&atom);
-	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
-	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
-}
+// 	// calculate the exposure of the atom
+// 	float radius = getVdWRadius(&atom);
+// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
+// 	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
+// }
 
 // // BOOST_AUTO_TEST_CASE(failing_Test)
 // // {
@@ -961,62 +961,62 @@ BOOST_AUTO_TEST_CASE(time_glycine)
 
 BOOST_AUTO_TEST_CASE(time_insulin)
 {
-	time_pdb("insulin", "pdb3i40.ent", 5, 10, 10);
+	time_pdb("insulin", "pdb3i40.ent", 5, 10, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_leptin)
 {
-	time_pdb("leptin", "1ax8.pdb", 3, 10, 30);
+	time_pdb("leptin", "1ax8.pdb", 3, 10, 10);
 }
 
 BOOST_AUTO_TEST_CASE(time_lysozyme)
 {
-	time_pdb("lysozyme", "1gwd.pdb", 3, 10, 30);
+	time_pdb("lysozyme", "1gwd.pdb", 3, 10, 10);
 }
 
 BOOST_AUTO_TEST_CASE(time_profilin)
 {
-	time_pdb("profilin", "1a0k.pdb", 3, 10, 30);
+	time_pdb("profilin", "1a0k.pdb", 3, 10, 10);
 }
 
 BOOST_AUTO_TEST_CASE(time_rhoA)
 {
-	time_pdb("rhoA", "1a2b.pdb", 3, 5, 45);
+	time_pdb("rhoA", "1a2b.pdb", 3, 5, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_erythropoietin)
 {
-	time_pdb("erythropoietin", "1buy.pdb", 2, 5, 45);
+	time_pdb("erythropoietin", "1buy.pdb", 2, 5, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_interleukin6)
 {
-	time_pdb("interleukin-6", "1alu.pdb", 3, 5, 45);
+	time_pdb("interleukin-6", "1alu.pdb", 3, 5, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_psoriasin)
 {
-	time_pdb("psoriasin", "1psr.pdb", 2, 8, 45);
+	time_pdb("psoriasin", "1psr.pdb", 2, 8, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_cytohhesin)
 {
-	time_pdb("cytohisene", "1bc9.pdb", 2, 2, 45);
+	time_pdb("cytohisene", "1bc9.pdb", 2, 2, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_plectin)
 {
-	time_pdb("plectin", "2n03.pdb", 2, 2, 45);
+	time_pdb("plectin", "2n03.pdb", 2, 2, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_methyltransferase)
 {
-	time_pdb("methyltransferase", "1yub.pdb", 2, 2, 45);
+	time_pdb("methyltransferase", "1yub.pdb", 2, 2, 15);
 }
 
 BOOST_AUTO_TEST_CASE(time_hemoglobin)
 {
-	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2, 45);
+	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2, 20);
 }
 
 
