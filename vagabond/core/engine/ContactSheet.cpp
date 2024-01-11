@@ -38,11 +38,11 @@ void ContactSheet::updateSheet(const AtomPosMap &newPositions)
 
 void ContactSheet::calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms)
 {
-	const float &R_A = getVdWRadius(centre); // move up out of loop
 	for (Atom *const &atom : nearAtoms)
 	{
 		const glm::vec3 &a = centre->derivedPosition();
 		const glm::vec3 &b = atom->derivedPosition();
+		const float &R_A = getVdWRadius(centre);
 		const float &R_B = getVdWRadius(atom);
 		const float &d_AB = glm::length(centre->derivedPosition() - atom->derivedPosition());
 		const float &Z_b = b.z - a.z;
@@ -55,7 +55,7 @@ void ContactSheet::calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms)
 		_zSliceMap[centre][atom] = {Z_l, Z_u};
 		_zSliceMap[atom][centre] = {std::max(-R_B, a.z + Z_l - b.z), std::min(R_B, a.z + Z_u - b.z)};
 
-		// std::cout << "d_AB: " << d_AB << " R_A: " << R_A << " R_B: " << R_B << " Z_b: " << Z_b << std::endl;
+		std::cout << "d_AB: " << d_AB << " R_A: " << R_A << " R_B: " << R_B << " Z_b: " << Z_b << std::endl;
 	}
 }
 
