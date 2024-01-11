@@ -18,21 +18,54 @@
 
 #include "ProbeBond.h"
 
+void ProbeBond::fixVertices(const glm::vec3 &start, const glm::vec3 &dir)
+{
+	clearVertices();
+
+	{
+		Snow::Vertex &v = addVertex(start);
+		v.normal = dir;
+		v.tex[0] = -0.5;
+		v.tex[1] = 0;
+	}
+
+	{
+		Snow::Vertex &v = addVertex(start + dir);
+		v.normal = dir;
+		v.tex[0] = -0.5;
+		v.tex[1] = 1;
+	}
+
+	{
+		Snow::Vertex &v = addVertex(start);
+		v.normal = dir;
+		v.tex[0] = +0.5;
+		v.tex[1] = 0;
+	}
+
+	{
+		Snow::Vertex &v = addVertex(start + dir);
+		v.normal = dir;
+		v.tex[0] = +0.5;
+		v.tex[1] = 1;
+	}
+
+	addIndices(-4, -3, -2);
+	addIndices(-3, -2, -1);
+
+}
+
 ProbeBond::ProbeBond(const std::string &tag, const glm::vec3 &start,
                      const glm::vec3 &end)
 : Image("assets/images/" + tag + ".png")
 {
-	setVertexShaderFile("assets/shaders/floating_box.vsh");
+//	setVertexShaderFile("assets/shaders/floating_box.vsh");
+	setVertexShaderFile("assets/shaders/axes.vsh");
+	setFragmentShaderFile("assets/shaders/axes.fsh");
 	setUsesProjection(true);
 
 	glm::vec3 dir = end - start;
-	glm::vec3 norm = {dir.y, -dir.x, 0};
-	dir /= 5.f;
-	norm /= 5.f;
+	dir /= 4.f;
 
-	_vertices[0].pos = start - norm + dir;
-	_vertices[1].pos = start + dir;
-	_vertices[2].pos = end - norm - dir;
-	_vertices[3].pos = end - dir;
-
+	fixVertices(start + dir, end - start - 2.f * dir);
 }

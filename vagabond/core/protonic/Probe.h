@@ -19,7 +19,7 @@
 #ifndef __vagabond__Probe__
 #define __vagabond__Probe__
 
-#define Z_DEF (-50)
+#define Z_DEF (-0)
 #include <vagabond/core/Atom.h>
 
 class Probe
@@ -53,10 +53,16 @@ public:
 		{
 			_atom = inherit;
 			_init = _atom->initialPosition();
+			_colour = (_atom->code() == "HOH" ? 
+			           glm::vec3(0, 0, 0.0) : glm::vec3(-0.3f));
 		}
 
 		_pos = _init;
-		_pos.z = Z_DEF;
+	}
+	
+	const glm::vec3 colour() const
+	{
+		return _colour;
 	}
 	
 	std::string display()
@@ -74,6 +80,10 @@ public:
 			str = "N";
 			break;
 
+			case hnet::Atom::Sulphur:
+			str = "S";
+			break;
+
 			case hnet::Atom::Contradiction:
 			str = "!";
 			break;
@@ -86,6 +96,7 @@ public:
 		return str;
 	}
 
+	glm::vec3 _colour = {};
 	hnet::AtomConnector &_obj;
 	Atom *_atom = nullptr;
 };
@@ -119,6 +130,10 @@ public:
 
 			case hnet::Hydrogen::Contradiction:
 			str = "!";
+			break;
+
+			case hnet::Hydrogen::Unassigned:
+			str = "?";
 			break;
 
 			default:
@@ -182,8 +197,6 @@ public:
 			str = "unassigned_bond";
 			break;
 		}
-		
-		std::cout << "bond display: " << str << std::endl;
 		
 		return str;
 	}

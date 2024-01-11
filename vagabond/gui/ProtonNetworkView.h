@@ -20,9 +20,9 @@
 #define __vagabond__ProtonNetworkView__
 
 #include <vagabond/core/protonic/Network.h>
-#include <vagabond/gui/elements/Mouse2D.h>
+#include <vagabond/gui/elements/Mouse3D.h>
 
-class ProtonNetworkView : public Mouse2D
+class ProtonNetworkView : public Mouse3D
 {
 public:
 	ProtonNetworkView(Scene *scene, Network &network);

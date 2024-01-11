@@ -16,20 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ProbeBond__
-#define __vagabond__ProbeBond__
+#ifndef __vagabond__CountConverter__
+#define __vagabond__CountConverter__
 
-#include <vagabond/gui/elements/Image.h>
-
-class ProbeBond : public Image
+template <class ConnectType, 
+struct CountConverter
 {
-public:
-	ProbeBond(const std::string &tag, const glm::vec3 &start,
-	          const glm::vec3 &end);
 
-	void fixVertices(const glm::vec3 &start, const glm::vec3 &dir);
-private:
 
+	BondConnector &_left;
+	BondConnector &_right;
 };
 
 #endif

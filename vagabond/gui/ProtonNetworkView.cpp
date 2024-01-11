@@ -22,23 +22,25 @@
 #include <vagabond/gui/elements/FloatingText.h>
 
 ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
-: Scene(scene), Mouse2D(scene), _network(network)
+: Scene(scene), Mouse3D(scene), _network(network)
 {
-
+	_translation.z -= 50;
 }
 
 void ProtonNetworkView::findAtomProbes()
 {
 	for (AtomProbe *const &probe : _network.atomProbes())
 	{
-		FloatingText *text = new FloatingText(probe->display(), 25);
+		FloatingText *text = new FloatingText(probe->display(), 25, -0.0);
 		text->setPosition(probe->position());
+		glm::vec3 c = probe->colour();
+		text->setColour(c.x, c.y, c.z);
 		addObject(text);
 	}
 
 	for (HydrogenProbe *const &probe : _network.hydrogenProbes())
 	{
-		FloatingText *text = new FloatingText(probe->display(), 25);
+		FloatingText *text = new FloatingText(probe->display(), 25, -0.0);
 		text->setPosition(probe->position());
 		addObject(text);
 	}

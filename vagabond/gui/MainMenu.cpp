@@ -224,7 +224,7 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 		PdbFile file("trypsin_apo_CS187A_20220708_conf_B.pdb");
 		file.parse();
 		AtomGroup *grp = file.atoms();
-		ProtonNetworkView *sb = new ProtonNetworkView(this, *(new Network()));
+		ProtonNetworkView *sb = new ProtonNetworkView(this, *(new Network(grp)));
 		sb->show();
 	}
 

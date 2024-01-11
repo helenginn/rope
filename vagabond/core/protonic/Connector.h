@@ -20,7 +20,7 @@
 #define __vagabond__Connector__
 
 #include "hnet.h"
-
+#include "Conditions.h"
 #include <functional>
 #include <list>
 
@@ -53,10 +53,21 @@ struct Connector
 		_checks.push_back(checker);
 	}
 	
+	void pop_last_check()
+	{
+		_checks.pop_back();
+	}
+	
 	bool impose_value(const Value &value) // by user
 	{
 		_user = true;
 		assign_value(value);
+	}
+	
+	void change_default(const Value &value)
+	{
+		_value = value;
+		_default = value;
 	}
 	
 	void forget()
@@ -65,17 +76,32 @@ struct Connector
 		assign_value(_default);
 	}
 
-	bool assign_value_without_checking(const Value &value)
+	/* returns true if changed */
+	bool assign_value_without_checking(const Value &value, void *informant)
 	{
-		if (_value == value) { return false; }
+		bool ignore = false;
+
+		if (_conditions.has_condition(informant) &&
+		    _conditions.condition(informant) == value)
+		{
+			return ignore; // tbd
+		}
 		
-		_value = (Value)(_value & value);
-		return true;
+		Value before = _conditions.belief();
+		_conditions.apply_condition(informant, value);
+		Value after = _conditions.belief();
+		/*
+		std::cout << this << " " << before << 
+		" before applying condition " << value << 
+		" resulting in " << after << std::endl;
+		*/
+		
+		return (before != after);
 	}
 		
 	bool check_all()
 	{
-		if (is_contradictory(_value))
+		if (is_contradictory(value()))
 		{
 			return false;
 		}
@@ -92,9 +118,9 @@ struct Connector
 		return true;
 	}
 	
-	bool assign_value(const Value &value)
+	bool assign_value(const Value &value, void *informant)
 	{
-		if (assign_value_without_checking(value))
+		if (assign_value_without_checking(value, informant))
 		{
 			return check_all();
 		}
@@ -102,9 +128,9 @@ struct Connector
 		return true;
 	}
 
-	Value &value()
+	Value value()
 	{
-		return _value;
+		return _conditions.belief();
 	}
 
 	/* list of attached constraint-checking functions */
@@ -114,20 +140,22 @@ struct Connector
 	Value _value = {};
 	Value _default = {};
 	
+	Conditions<Value> _conditions;
+	
 	bool _user = false;
 };
 
-typedef Connector<int> IntegerConnector;
 typedef Connector<Atom::Values> AtomConnector;
 typedef Connector<Bond::Values> BondConnector;
 typedef Connector<Hydrogen::Values> HydrogenConnector;
+typedef Connector<Count::Values> CountConnector;
 
 /* union to store created connectors in a list */
 struct AnyConnector
 {
 	enum Type
 	{
-		Atom, Bond, Hydrogen, Integer
+		Atom, Bond, Hydrogen, Count
 	};
 	
 	AnyConnector(BondConnector *const &connector)
@@ -136,9 +164,9 @@ struct AnyConnector
 		_ptr = connector;
 	}
 	
-	AnyConnector(IntegerConnector *const &connector)
+	AnyConnector(CountConnector *const &connector)
 	{
-		_type = Integer;
+		_type = Count;
 		_ptr = connector;
 	}
 	
@@ -166,8 +194,8 @@ struct AnyConnector
 			delete static_cast<BondConnector *>(_ptr);
 			break;
 
-			case Integer:
-			delete static_cast<IntegerConnector *>(_ptr);
+			case Count:
+			delete static_cast<CountConnector *>(_ptr);
 			break;
 
 			case Hydrogen:

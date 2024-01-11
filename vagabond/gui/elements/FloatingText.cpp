@@ -19,14 +19,14 @@
 #include <iostream>
 #include "FloatingText.h"
 
-FloatingText::FloatingText(std::string text, float mult) : Text(text)
+FloatingText::FloatingText(std::string text, float mult, float yOff) : Text(text)
 {
 	setVertexShaderFile("assets/shaders/floating_box.vsh");
-	correctBox(mult);
+	correctBox(mult, yOff);
 	setUsesProjection(true);
 }
 
-void FloatingText::correctBox(float mult)
+void FloatingText::correctBox(float mult, float y_offset)
 {
 	glm::vec3 centre = centroid();
 
@@ -38,7 +38,7 @@ void FloatingText::correctBox(float mult)
 #ifdef __EMSCRIPTEN__
 //		v.extra *= 10;
 #endif
-		v.extra.y += 0.5;
+		v.extra.y += y_offset;
 		v.pos = centre;
 	}
 }

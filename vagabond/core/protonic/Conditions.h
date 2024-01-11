@@ -16,20 +16,52 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ProbeBond__
-#define __vagabond__ProbeBond__
+#ifndef __vagabond__Conditions__
+#define __vagabond__Conditions__
 
-#include <vagabond/gui/elements/Image.h>
+#include "hnet.h"
+#include <map>
 
-class ProbeBond : public Image
+template <class Value>
+struct Conditions
 {
-public:
-	ProbeBond(const std::string &tag, const glm::vec3 &start,
-	          const glm::vec3 &end);
+	std::map<void *, Value> _conditions;
+	
+	Value belief() const
+	{
+		Value val{};
+		hnet::init_unassigned(val);
 
-	void fixVertices(const glm::vec3 &start, const glm::vec3 &dir);
-private:
+		for (auto it = _conditions.begin(); it != _conditions.end(); it++)
+		{
+			val = (Value)(val & it->second);
+		}
+		
+		return val;
+	}
 
+	bool has_condition(void *ptr) const
+	{
+		return _conditions.count(ptr) > 0;
+	}
+
+	const Value &condition(void *ptr) const
+	{
+		return _conditions.at(ptr);
+	}
+
+	Value &remove_condition(void *ptr)
+	{
+		if (has_condition(ptr))
+		{
+			_conditions.erase(ptr);
+		}
+	}
+
+	void apply_condition(void *ptr, const Value &value)
+	{
+		_conditions[ptr] = value;
+	}
 };
 
 #endif

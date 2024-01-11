@@ -19,11 +19,12 @@
 #ifndef __vagabond__Network__
 #define __vagabond__Network__
 
-#include <list>
-
 #include "Connector.h"
 #include "Constraint.h"
 #include "Probe.h"
+
+#include <list>
+#include <map>
 
 class Probe;
 
@@ -66,15 +67,52 @@ public:
 	BondProbe &add_probe(BondProbe *const &probe);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
 private:
+	void probeAtom(Atom *atom);
+	void setupAmineNitrogen(::Atom *atom);
+	void setupCarbonylOxygen(::Atom *atom);
+	void setupWater(::Atom *atom);
 
 	AtomGroup *findNeighbours(::Atom *centre);
+	void attachToNeighbours(::Atom *atom);
+	void finaliseContacts(::Atom *atom);
+	void mutualExclusions(::Atom *atom);
+	void setupAtom(::Atom *atom);
 
 	std::list<hnet::AnyConnector> _connectors;
 	std::list<hnet::AnyConstraint> _constraints;
 	std::list<AtomProbe *> _atomProbes;
 	std::list<HydrogenProbe *> _hydrogenProbes;
 	std::list<BondProbe *> _bondProbes;
+	
+	struct AtomDetails
+	{
+		hnet::AtomConnector *connector{};
 
+		hnet::CountConnector *strong{};
+		hnet::CountConnector *weak{};
+		hnet::CountConnector *present{};
+
+		// all bonds regardless of who made them
+		std::vector<hnet::BondConnector *> bonds;
+
+		// atoms associated with all bonds
+		std::vector<Atom *> bonded_atoms;
+
+		AtomProbe *probe{};
+	};
+
+	void prepareSimple(Network::AtomDetails &details, 
+	                   const hnet::Count::Values &n_strong,
+	                   const hnet::Count::Values &n_weak);
+
+	void prepareCoordinated(Network::AtomDetails &details,
+	                        const hnet::Count::Values &n_charge,
+	                        const hnet::Count::Values &n_coord_num,
+	                        const hnet::Count::Values &n_donations);
+	
+	std::map<Atom *, AtomDetails> _atomMap;
+
+	AtomGroup *_original = nullptr;
 	AtomGroup *_group = nullptr;
 };
 
