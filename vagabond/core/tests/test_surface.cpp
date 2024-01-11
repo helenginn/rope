@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(z_slices)
 {
 	Atom a1, a2;
 	glm::vec3 pos1, pos2;
-	a1.setElementSymbol("O");
+	a1.setElementSymbol("O"); // 1.52 radius
 	a2.setElementSymbol("O");
 	pos1 = glm::vec3(0.0f, 0.0f, 0.0f);
 	pos2 = glm::vec3(1.0f, 0.0f, 2.0f);
@@ -966,57 +966,57 @@ BOOST_AUTO_TEST_CASE(time_insulin)
 
 BOOST_AUTO_TEST_CASE(time_leptin)
 {
-	time_pdb("leptin", "1ax8.pdb", 3, 10, 10);
+	time_pdb("leptin", "1ax8.pdb", 3, 10, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_lysozyme)
 {
-	time_pdb("lysozyme", "1gwd.pdb", 3, 10, 10);
+	time_pdb("lysozyme", "1gwd.pdb", 3, 10, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_profilin)
 {
-	time_pdb("profilin", "1a0k.pdb", 3, 10, 10);
+	time_pdb("profilin", "1a0k.pdb", 3, 10, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_rhoA)
 {
-	time_pdb("rhoA", "1a2b.pdb", 3, 5, 15);
+	time_pdb("rhoA", "1a2b.pdb", 3, 5, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_erythropoietin)
 {
-	time_pdb("erythropoietin", "1buy.pdb", 2, 5, 15);
+	time_pdb("erythropoietin", "1buy.pdb", 2, 5, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_interleukin6)
 {
-	time_pdb("interleukin-6", "1alu.pdb", 3, 5, 15);
+	time_pdb("interleukin-6", "1alu.pdb", 3, 5, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_psoriasin)
 {
-	time_pdb("psoriasin", "1psr.pdb", 2, 8, 15);
+	time_pdb("psoriasin", "1psr.pdb", 2, 8, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_cytohhesin)
 {
-	time_pdb("cytohisene", "1bc9.pdb", 2, 2, 15);
+	time_pdb("cytohisene", "1bc9.pdb", 2, 2, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_plectin)
 {
-	time_pdb("plectin", "2n03.pdb", 2, 2, 15);
+	time_pdb("plectin", "2n03.pdb", 2, 2, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_methyltransferase)
 {
-	time_pdb("methyltransferase", "1yub.pdb", 2, 2, 15);
+	time_pdb("methyltransferase", "1yub.pdb", 2, 2, 5);
 }
 
 BOOST_AUTO_TEST_CASE(time_hemoglobin)
 {
-	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2, 20);
+	time_pdb("hemoglobin", "pdb2h35.ent", 2, 2, 15);
 }
 
 

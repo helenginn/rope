@@ -60,7 +60,18 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	{
 		const float radius = getVdWRadius(atom.first);
 		const std::set<Atom *> atomsNearPosmap = _contacts->atomsNear(posMap, atom.first, radius +_maxVdWRadius + _probeRadius);
-    const float &exposure = AreaMeasurer::fibExposureSingleAtom(atomsNearPosmap, atom.first, radius); // pass in posmap to this function
+		_contacts->calculateZSliceMap(atom.first, atomsNearPosmap);
+		std::map<Atom *, std::map<Atom *, std::pair<float, float> > > zSliceMap = _contacts->getZSliceMap();
+			for (const auto &other_atom : atomsNearPosmap)
+		{
+			// Get the pair of lower and upper z slice bounds (like in z-slice exposure function)
+			const auto& zSliceBounds = zSliceMap[atom.first][other_atom];
+			const float Z_l = zSliceBounds.first;
+			const float Z_u = zSliceBounds.second;
+		}
+    
+		// const float &exposure = AreaMeasurer::fibExposureSingleAtom(atomsNearPosmap, atom.first, radius); // pass in posmap to this function
+		const float &exposure = 0.6; // arbitrary value for estimation
 		const float &area_atom = areaFromExposure(exposure, radius, _probeRadius);
 		area += area_atom;
 	}
