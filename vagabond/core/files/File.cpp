@@ -174,12 +174,17 @@ int File::spaceGroupNum() const
 	return spg;
 }
 
+std::string File::spaceGroupName() const
+{
+	std::string name = _values.at("_symmetry.space_group_name_H-M");
+	cleanup(name);
+	return name;
+}
+
 RefList *File::reflectionList() const
 {
 	RefList *list = new RefList(_reflections);
-	std::string str = _values.at("_symmetry.space_group_name_H-M");
-	cleanup(str);
-	list->setSpaceGroupName(str);
+	list->setSpaceGroupName(spaceGroupName());
 	
 	if (hasUnitCell())
 	{

@@ -53,42 +53,46 @@ struct Connector
 		_checks.push_back(checker);
 	}
 	
-	void pop_last_check()
+	/* add a forget routine called from a constraint */
+	void add_forget(const Forget &forget)
 	{
+		_forgets.push_back(forget);
+	}
+	
+	void pop_last_check(void *ptr)
+	{
+		forget(ptr);
+
 		_checks.pop_back();
+		_forgets.pop_back();
 	}
 	
-	bool impose_value(const Value &value) // by user
+	void forget_all(void *blame)
 	{
-		_user = true;
-		assign_value(value);
+		forget(blame);
+		check_all(blame);
 	}
 	
-	void change_default(const Value &value)
+	void report()
 	{
-		_value = value;
-		_default = value;
-	}
-	
-	void forget()
-	{
-		_user = false;
-		assign_value(_default);
+		std::cout << "===============" << std::endl;
+		std::cout << "Report for " << this << std::endl;
+		_conditions.report_conditions();
 	}
 
 	/* returns true if changed */
-	bool assign_value_without_checking(const Value &value, void *informant)
+	bool assign_value_without_checking(const Value &value, void *informant,
+	                                   void *blame)
 	{
 		bool ignore = false;
 
-		if (_conditions.has_condition(informant) &&
-		    _conditions.condition(informant) == value)
+		if (_conditions.from_informant_and_blame(informant, blame) == value)
 		{
 			return ignore; // tbd
 		}
 		
 		Value before = _conditions.belief();
-		_conditions.apply_condition(informant, value);
+		_conditions.apply_condition(informant, blame, value);
 		Value after = _conditions.belief();
 		/*
 		std::cout << this << " " << before << 
@@ -98,8 +102,25 @@ struct Connector
 		
 		return (before != after);
 	}
+	
+	bool forget(void *blame)
+	{
+		int total = _conditions.remove_condition_with_blame(blame);
+		if (total == 0)
+		{
+			return false;
+		}
+
+		/* if we reassign a new value, we recalculate checks */
+		for (Forget &forget_condition : _forgets)
+		{
+			forget_condition(blame);
+		}
 		
-	bool check_all()
+		return true;
+	}
+		
+	bool check_all(void *blame)
 	{
 		if (is_contradictory(value()))
 		{
@@ -109,7 +130,7 @@ struct Connector
 		/* if we reassign a new value, we recalculate checks */
 		for (Checker &checker : _checks)
 		{
-			if (!checker())
+			if (!checker(blame))
 			{
 				return false;
 			}
@@ -118,11 +139,11 @@ struct Connector
 		return true;
 	}
 	
-	bool assign_value(const Value &value, void *informant)
+	bool assign_value(const Value &value, void *informant, void *blame)
 	{
-		if (assign_value_without_checking(value, informant))
+		if (assign_value_without_checking(value, informant, blame))
 		{
-			return check_all();
+			return check_all(blame);
 		}
 
 		return true;
@@ -135,6 +156,7 @@ struct Connector
 
 	/* list of attached constraint-checking functions */
 	std::list<Checker> _checks;
+	std::list<Forget> _forgets;
 
 	/* working value associated with this connector */
 	Value _value = {};

@@ -23,6 +23,13 @@
 #include <variant>
 #include <vector>
 
+
+/** serious missing features:
+ * - crystal contacts
+ * - check orientation is compatible with H-bonding
+ * - alternate conformers
+ */
+
 namespace hnet
 {
 /*  definitions for bonds which may or may not involve a hydrogen */
@@ -30,14 +37,17 @@ namespace Bond
 {
 	enum Values
 	{
-		Contradiction = 0,
-		Absent        = 1 << 0,
-		Weak          = (1 << 1),
-		NotWeak       = (1 << 0 | 1 << 2),
-		Strong        = (1 << 2),
-		NotStrong     = (1 << 0 | 1 << 1),
-		Present       = (1 << 1 | 1 << 2),
-		Unassigned    = (1 << 0 | 1 << 1 | 1 << 2),
+		Contradiction =  (0),
+		Absent        =  (1 << 0),
+		Weak          =  (1 << 1),
+		NotWeak       = ~(1 << 1),
+		Strong        =  (1 << 2),
+		NotStrong     = ~(1 << 2),
+		Present       =  (1 << 1 | 1 << 2),
+//		Broken        =  (1 << 3),
+//		NotBroken     = ~(1 << 3),
+//		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
+		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2),
 	};
 };
 
@@ -80,27 +90,49 @@ namespace Count
 		Five          = 1 << 5,
 		Six           = 1 << 6,
 		Seven         = 1 << 7,
-		mOne          = 1 << 8,
-		mTwo          = 1 << 9,
-		mThree        = 1 << 10,
-		mFour         = 1 << 11,
-		mFive         = 1 << 12,
-		mSix          = 1 << 13,
-		mSeven        = 1 << 14,
-		OneOrZero     = (1 << 0 | 1 << 1),
-		TwoToZero     = (1 << 0 | 1 << 1 | 1 << 2),
-		ZeroOrMore    = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 
-		                 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7),
-		ZeroOrLess    = (1 << 0  | 1 << 8  | 1 << 9  | 1 << 10 | 
-		                 1 << 11 | 1 << 12 | 1 << 13 | 1 << 14),
-		Unassigned    = ~(1 << 15)
+		Eight         = 1 << 8,
+		Nine          = 1 << 9,
+		Ten           = 1 << 10,
+		Eleven        = 1 << 11,
+		Twelve        = 1 << 12,
+		Thirteen      = 1 << 13,
+		Fourteen      = 1 << 14,
+		Fifteen       = 1 << 15,
+		mOne           = 1 << 16,
+		mTwo           = 1 << 17,
+		mThree         = 1 << 18,
+		mFour          = 1 << 19,
+		mFive          = 1 << 20,
+		mSix           = 1 << 21,
+		mSeven         = 1 << 22,
+		mEight         = 1 << 23,
+		mNine          = 1 << 24,
+		mTen           = 1 << 25,
+		mEleven        = 1 << 27,
+		mTwelve        = 1 << 28,
+		mThirteen      = 1 << 29,
+		mFourteen      = 1 << 30,
+		mFifteen       = 1 << 31,
+		OneOrZero      = (1 << 0 | 1 << 1),
+		mOneOrZero     = (1 << 0 | 1 << 16),
+		TwoToZero      = (1 << 0 | 1 << 1 | 1 << 2),
+		ThreeToZero    = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
+		ZeroOrMore     = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 
+		                  1 << 4 | 1 << 5 | 1 << 6 | 1 << 7 | 1 << 8 | 1 << 9
+		                  | 1 << 10 | 1 << 11 | 1 << 12 | 1 << 13 | 1 << 14 
+		                  | 1 << 15),
+		MoreThanZero   = (         1 << 1 | 1 << 2 | 1 << 3 | 
+		                  1 << 4 | 1 << 5 | 1 << 6 | 1 << 7 | 1 << 8 | 1 << 9
+		                  | 1 << 10 | 1 << 11 | 1 << 12 | 1 << 13 | 1 << 14 
+		                  | 1 << 15),
+		Unassigned    = ~(0)
 	};
 };
 
 inline std::string to_string(int val)
 {
 	std::string str = "0b";
-	for (int j = 32; j >= 0; j--)
+	for (int j = 31; j >= 0; j--)
 	{
 		unsigned char byte = (val >> j) & 1;
 		str += (byte ? "1" : "0");
@@ -180,7 +212,8 @@ inline bool is_contradictory(const Count::Values &val)
 
 /* function signatures */
 
-typedef std::function<bool()> Checker;
+typedef std::function<bool(void *previous)> Checker;
+typedef std::function<void(void *previous)> Forget;
 
 /* write descriptions of states to stream */
 
@@ -274,61 +307,24 @@ inline Count::Values values_as_count(const std::vector<int> &values)
 {
 	auto int_to_count = [](const int &val)
 	{
-		switch (val)
+		if (val >= 0)
 		{
-			case 0:
-			return Count::Zero;
-
-			case 1:
-			return Count::One;
-
-			case 2:
-			return Count::Two;
-
-			case 3:
-			return Count::Three;
-
-			case 4:
-			return Count::Four;
-
-			case 5:
-			return Count::Five;
-
-			case 6:
-			return Count::Six;
-
-			case 7:
-			return Count::Seven;
-
-			case -1:
-			return Count::mOne;
-
-			case -2:
-			return Count::mTwo;
-
-			case -3:
-			return Count::mThree;
-
-			case -4:
-			return Count::mFour;
-
-			case -5:
-			return Count::mFive;
-
-			case -6:
-			return Count::mSix;
-
-			case -7:
-			return Count::mSeven;
-
-			default:
-			return Count::Contradiction;
+			return (Count::Values)(1 << val);
+		}
+		else
+		{
+			return (Count::Values)(1 << (-val + 15));
 		}
 	};
 	
 	Count::Values addition = Count::Contradiction;
 	for (const int &value : values)
 	{
+		if (value > 15 || value < -15)
+		{
+			continue;
+		}
+
 		Count::Values isolated = int_to_count(value);
 		addition = (Count::Values)(addition | isolated);
 	}

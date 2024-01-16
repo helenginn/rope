@@ -28,17 +28,35 @@ struct CountAdder
 	           CountConnector &sum)
 	: _left(left), _right(right), _sum(sum)
 	{
-		auto self_check = [this]() { return check(); };
+		auto self_check = [this](void *prev) { return check(prev); };
 		
 		_sum.add_constraint_check(self_check);
 		_left.add_constraint_check(self_check);
 		_right.add_constraint_check(self_check);
 
-		if (!check())
+		auto forget_me = [this](void *blame) { return forget(blame); };
+
+		_left.add_forget(forget_me);
+		_sum.add_forget(forget_me);
+		_right.add_forget(forget_me);
+
+		if (!check(this))
 		{
+			_left.pop_last_check(this);
+			_sum.pop_last_check(this);
+			_right.pop_last_check(this);
+
 			throw std::runtime_error("New addition of Adder immediately "\
 			                         "failed validation check");
 		}
+
+	}
+	
+	void forget(void *blame)
+	{
+		_left.forget(blame);
+		_sum.forget(blame);
+		_right.forget(blame);
 	}
 	
 	template <class Op>
@@ -59,18 +77,8 @@ struct CountAdder
 		return options;
 	}
 	
-	bool check()
+	bool check(void *previous)
 	{
-		/* if something is totally unassigned, 
-		 * doesn't matter what the other values are, there are no
-		 * constraints on them */
-		if (is_unassigned(_sum.value()) || 
-		    is_unassigned(_left.value()) ||
-		    is_unassigned(_right.value()))
-		{
-			return true;
-		}
-		
 		/* however, partial assignments of all values will lead to some
 		 * values being permitted and others not, so we can generate a list
 		 * of permitted values for each pair, and constrain the latter. */
@@ -86,7 +94,7 @@ struct CountAdder
 			                                        { return a + b; });
 
 			Count::Values sum_count = values_as_count(options);
-			_sum.assign_value(sum_count, this); // imposes this list on sum
+			_sum.assign_value(sum_count, this, previous);
 		}
 
 		/* impose options on left */
@@ -99,7 +107,7 @@ struct CountAdder
 			                                        { return a - b; });
 
 			Count::Values left_count = values_as_count(options);
-			_left.assign_value(left_count, this); // imposes this list on sum
+			_left.assign_value(left_count, this, previous);
 		}
 
 		/* impose options on right */
@@ -112,7 +120,7 @@ struct CountAdder
 			                                        { return a - b; });
 
 			Count::Values right_count = values_as_count(options);
-			_right.assign_value(right_count, this); // imposes this list on sum
+			_right.assign_value(right_count, this, previous); 
 		}
 
 		return (!is_contradictory(_sum.value()) || 

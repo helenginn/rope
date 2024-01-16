@@ -19,13 +19,62 @@
 #ifndef __vagabond__CountConverter__
 #define __vagabond__CountConverter__
 
-template <class ConnectType, 
-struct CountConverter
+namespace hnet
 {
+template <class Connector, class Value>
+struct Converter
+{
+	Converter(Connector &affected, Connector &imposer, 
+	               const Value &result,
+	               const Value &condition)
+	: _affected(affected), _imposer(imposer), _condition(condition),
+	_result(result)
+	{
+		/* add this object's constraint check function to the connector */
+		_affected.add_constraint_check([this](){ return check(); });
+		_imposer.add_constraint_check([this](){ return check(); });
 
+		if (!check())
+		{
+			throw std::runtime_error("New constraint immediately "\
+			                         "failed validation check");
+		}
+	}
 
-	BondConnector &_left;
-	BondConnector &_right;
+	bool check()
+	{
+		Value v; init_unassigned(v);
+		Value not_condition = (Value)(v & ~_condition);
+
+		bool satisfies = (_imposer.value() & _condition);
+		std::cout << _affected.value() << " " << _imposer.value() << " " << _condition << " " << not_condition << std::endl;
+
+		std::cout << "Imposer has condition? : " << satisfies << std::endl;
+		// also mustn't be able to not be this condition
+		satisfies &= !(_imposer.value() & (~_condition & v));
+		std::cout << "Imposer also is not not-condition? : " << satisfies << std::endl;
+		if (satisfies)
+		{
+			_affected.assign_value(_result, this);
+		}
+		else
+		{
+			_affected.assign_value(v, this);
+		}
+
+		bool con = (!is_contradictory(_affected.value()));
+
+		return con;
+	}
+
+	Connector &_affected;
+	Connector &_imposer;
+	Value _condition;
+	Value _result;
+};
+
+typedef Converter<CountConnector, Count::Values> CountConverter;
+
 };
 
 #endif

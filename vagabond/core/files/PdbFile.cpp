@@ -133,6 +133,20 @@ void PdbFile::parseFileContents()
 		return;
 	}
 
+	const gemmi::SpaceGroup *spg = st.find_spacegroup();
+	
+	if (spg)
+	{
+		_values["_symmetry.space_group_name_H-M"] = spg->xhm();
+	}
+	
+	_values["_cell.length_a"] = std::to_string(st.cell.a);
+	_values["_cell.length_b"] = std::to_string(st.cell.b);
+	_values["_cell.length_c"] = std::to_string(st.cell.c);
+	_values["_cell.angle_alpha"] = std::to_string(st.cell.alpha);
+	_values["_cell.angle_beta"] = std::to_string(st.cell.beta);
+	_values["_cell.angle_gamma"] = std::to_string(st.cell.gamma);
+
 	setup_entities(st);
 	
 	for (size_t i = 0; i < st.entities.size(); i++)

@@ -29,35 +29,52 @@ struct EitherOrBond
 	EitherOrBond(BondConnector &left, BondConnector &right)
 	: _left(left), _right(right)
 	{
-		auto self_check = [this]() { return check(); };
+		auto self_check = [this](void *prev) { return check(prev); };
 
 		_left.add_constraint_check(self_check);
 		_right.add_constraint_check(self_check);
+		
+		auto forget_me = [this](void *blame) { return forget(blame); };
 
-		if (!check())
+		_left.add_forget(forget_me);
+		_right.add_forget(forget_me);
+
+		if (!check(this))
 		{
-			_left.pop_last_check();
-			_right.pop_last_check();
+			_left.pop_last_check(this);
+			_right.pop_last_check(this);
 
 			throw std::runtime_error("New either/or dichotomy immediately "\
 			                         "failed validation check");
 		}
 	}
-
-	bool check()
+	
+	void forget(void *blame)
 	{
-		Bond::Values forLeft = _left.value();
-		Bond::Values forRight = _right.value();
-		
+		_left.forget(blame);
+		_right.forget(blame);
+	}
+
+	bool check(void *previous)
+	{
+		if (_left.value() == Bond::Unassigned)
+		{
+			_right.assign_value(Bond::Unassigned, this, previous);
+		}
+		if (_right.value() == Bond::Unassigned)
+		{
+			_left.assign_value(Bond::Unassigned, this, previous);
+		}
+
 		if ((_left.value() & Bond::Present) && 
 		    !(_left.value() & Bond::Absent))
 		{
-			_right.assign_value(Bond::Absent, this);
+			_right.assign_value(Bond::Absent, this, previous);
 		}
 		else if ((_right.value() & Bond::Present) &&
 		         !(_right.value() & Bond::Absent))
 		{
-			_left.assign_value(Bond::Absent, this);
+			_left.assign_value(Bond::Absent, this, previous);
 		}
 
 		bool con = (!is_contradictory(_left.value()) &&

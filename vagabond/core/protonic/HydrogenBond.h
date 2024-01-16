@@ -30,47 +30,34 @@ struct HydrogenBond
 	             BondConnector &right) 
 	: _left(left), _centre(centre), _right(right)
 	{
-		auto self_check = [this]() { return check(); };
+		auto self_check = [this](void *prev) { return check(prev); };
 
 		_left.add_constraint_check(self_check);
 		_right.add_constraint_check(self_check);
 		_centre.add_constraint_check(self_check);
+
+		auto forget_me = [this](void *blame) { return forget(blame); };
+
+		_left.add_forget(forget_me);
+		_centre.add_forget(forget_me);
+		_right.add_forget(forget_me);
 		
-		if (!check())
+		if (!check(this))
 		{
-			_left.pop_last_check();
-			_centre.pop_last_check();
-			_right.pop_last_check();
+			_left.pop_last_check(this);
+			_centre.pop_last_check(this);
+			_right.pop_last_check(this);
 
 			throw std::runtime_error("New hydrogen bond immediately "\
 			                         "failed validation check");
 		}
 	}
 	
-	bool check_conditions()
+	void forget(void *blame)
 	{
-		if ((_left.value() & Bond::Strong) && 
-		    (_centre.value() & Hydrogen::Present) && 
-		    (_right.value() & Bond::Weak))
-		{
-			return true;
-		}
-
-		if ((_left.value() & Bond::Weak) && 
-		    (_centre.value() & Hydrogen::Present) && 
-		    (_right.value() & Bond::Strong))
-		{
-			return true;
-		}
-
-		if ((_left.value() & Bond::Absent) && 
-		    (_centre.value() & Hydrogen::Absent) && 
-		    (_right.value() & Bond::Absent))
-		{
-			return true;
-		}
-		
-		return false;
+		_left.forget(blame);
+		_centre.forget(blame);
+		_right.forget(blame);
 	}
 	
 	bool bond_definitely_present(const Bond::Values &val)
@@ -78,29 +65,43 @@ struct HydrogenBond
 		return (val & Bond::Present) && !(val & Bond::Absent);
 	}
 	
-	bool impose()
+	void print_bond()
+	{
+		std::cout << _left.value() << " " << _centre.value() << 
+		" " << _right.value() << std::endl;
+		
+		if (_left.value() == Bond::Contradiction)
+		{
+			_left.report();
+		}
+		else if (_right.value() == Bond::Contradiction)
+		{
+			_right.report();
+		}
+	}
+	
+	bool impose(void *prev)
 	{
 		Bond::Values forLeft = _left.value();
 		Hydrogen::Values forCentre = _centre.value();
 		Bond::Values forRight = _right.value();
 
-		if (_centre.value() == Hydrogen::Absent)
+		if ((_centre.value() == Hydrogen::Absent) ||
+		    (_left.value() == Bond::Absent || _right.value() == Bond::Absent))
 		{
-			/* if hydrogen is absent, bonds to it must also be absent */
+			/* if anything is absent, hydrogen & all bonds must also be absent */
 			forLeft = Bond::Values(forLeft & Bond::Absent);
+			forCentre = Hydrogen::Values(forCentre & Hydrogen::Absent);
 			forRight = Bond::Values(forRight & Bond::Absent);
 		}
-		else if (_centre.value() == Hydrogen::Present)
-		{
-			/* if hydrogen is absent, no bond to it may be absent */
-			forLeft = Bond::Values(forLeft & Bond::Present);
-			forRight = Bond::Values(forRight & Bond::Present);
-		}
-		
-		/* if there bond is present, hydrogen must exist */
-		if (bond_definitely_present(_left.value()) ||
+
+		if ((_centre.value() == Hydrogen::Present) ||
+		    bond_definitely_present(_left.value()) ||
 		    bond_definitely_present(_right.value()))
 		{
+			/* if anything is present, hydrogen & all bonds must also be present */
+			forLeft = Bond::Values(forLeft & Bond::Present);
+			forRight = Bond::Values(forRight & Bond::Present);
 			forCentre = Hydrogen::Values(forCentre & Hydrogen::Present);
 		}
 
@@ -115,7 +116,8 @@ struct HydrogenBond
 		{
 			forRight = Bond::Values(forRight & Bond::Strong);
 		}
-		else if (_right.value() == Bond::Strong)
+
+		if (_right.value() == Bond::Strong)
 		{
 			forLeft = Bond::Values(forLeft & Bond::Weak);
 		}
@@ -124,26 +126,23 @@ struct HydrogenBond
 			forLeft = Bond::Values(forLeft & Bond::Strong);
 		}
 		
-		bool check_left = _left.assign_value_without_checking(forLeft, this);
-		bool check_centre = _centre.assign_value_without_checking(forCentre, this);
-		bool check_right = _right.assign_value_without_checking(forRight, this);
+		_left.assign_value(forLeft, this, prev);
+		if (is_contradictory(_left.value())) return false;
 
-		if (check_left && !_left.check_all()) return false;
-		if (check_centre && !_centre.check_all()) return false;
-		if (check_right && !_right.check_all()) return false;
+		_centre.assign_value(forCentre, this, prev);
+		if (is_contradictory(_centre.value())) return false;
+
+		_right.assign_value(forRight, this, prev);
+		if (is_contradictory(_right.value())) return false;
 
 		return true;
 	}
 	
-	bool check()
+	bool check(void *previous)
 	{
-		bool result = check_conditions();
-		if (result)
-		{
-			return impose();
-		}
+		bool result = impose(previous);
 
-		return false;
+		return result;
 	}
 	
 	BondConnector &_left;

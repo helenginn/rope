@@ -25,42 +25,102 @@
 template <class Value>
 struct Conditions
 {
-	std::map<void *, Value> _conditions;
+	typedef std::map<std::pair<void *, void *>, Value> ConditionMap;
+	ConditionMap _conditions;
 	
-	Value belief() const
+	template <typename FilterIn>
+	Value belief_when(const FilterIn &filtered) const
 	{
 		Value val{};
 		hnet::init_unassigned(val);
 
-		for (auto it = _conditions.begin(); it != _conditions.end(); it++)
+		for (typename ConditionMap::const_iterator it = _conditions.begin(); 
+		     it != _conditions.end(); it++)
 		{
-			val = (Value)(val & it->second);
+			if (filtered(it))
+			{
+				val = (Value)(val & it->second);
+			}
 		}
 		
 		return val;
 	}
-
-	bool has_condition(void *ptr) const
+	
+	Value belief() const
 	{
-		return _conditions.count(ptr) > 0;
+		return belief_when([](const typename ConditionMap::const_iterator &) 
+		                   { return true; });
 	}
 
-	const Value &condition(void *ptr) const
+	Value from_informant(void *informant) const
 	{
-		return _conditions.at(ptr);
-	}
-
-	Value &remove_condition(void *ptr)
-	{
-		if (has_condition(ptr))
+		auto condition_from_informant = 
+		[informant](const typename ConditionMap::const_iterator &cond)
 		{
-			_conditions.erase(ptr);
-		}
+			return (cond->first.first == informant);
+		};
+		
+		return belief_when(condition_from_informant);
 	}
 
-	void apply_condition(void *ptr, const Value &value)
+	Value from_informant_and_blame(void *informant, void *blame) const
 	{
-		_conditions[ptr] = value;
+		auto from_combo = [informant, blame]
+		(const typename ConditionMap::const_iterator &cond)
+		{
+			return (cond->first.first == informant && 
+			        cond->first.second == blame);
+		};
+		
+		return belief_when(from_combo);
+	}
+
+	const Value &condition(void *informant, void *blame) const
+	{
+		return _conditions.at(std::make_pair(informant, blame));
+	}
+
+	int remove_condition_with_blame(void *blame)
+	{
+		bool success = false;
+		int count = 0;
+		while (!success)
+		{
+			success = true;
+			for (auto it = _conditions.begin(); it != _conditions.end(); it++)
+			{
+				if (it->first.second == blame)
+				{
+					_conditions.erase(it->first);
+					success = false;
+					count++;
+					break;
+				}
+			}
+		}
+		
+		return count;
+	}
+	
+	void report_conditions()
+	{
+		using namespace hnet;
+		std::cout << "===============" << std::endl;
+		std::cout << "conditions: " << _conditions.size() << std::endl;
+		for (auto it = _conditions.begin(); it != _conditions.end(); it++)
+		{
+			std::cout << "informant " << it->first.first << " who blames ";
+			std::cout << it->first.second << " says: " << it->second << std::endl;
+		}
+		std::cout << "Belief: " << belief() << std::endl;
+		std::cout << "===============" << std::endl;
+		std::cout << std::endl;
+
+	}
+
+	void apply_condition(void *informant, void *blame, const Value &value)
+	{
+		_conditions[std::make_pair(informant, blame)] = value;
 	}
 };
 

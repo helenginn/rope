@@ -27,6 +27,7 @@
 #include "EitherOrBond.h"
 #include "BondAdder.h"
 #include "CountAdder.h"
+#include "Limit.h"
 
 namespace hnet
 {
@@ -38,16 +39,27 @@ struct Constant
 	_connector(connector), _constant(constant)
 	{
 		/* add this object's constraint check function to the connector */
-		_connector.add_constraint_check([this](){ return check(); });
+		auto self_check = [this](void *prev) { return check(prev); };
+		_connector.add_constraint_check(self_check);
 
-		if (!check())
+		auto forget_me = [this](void *blame) { return forget(blame); };
+		_connector.add_forget(forget_me);
+
+		if (!check(this))
 		{
+			_connector.pop_last_check(this);
+
 			throw std::runtime_error("New constraint immediately "\
 			                         "failed validation check");
 		}
 	}
 	
-	bool check()
+	void forget(void *blame)
+	{
+		_connector.forget(blame);
+	}
+	
+	bool check(void *previous)
 	{
 		Value candidate = Value(_connector.value() & _constant);
 		if (is_contradictory(candidate))
@@ -56,7 +68,7 @@ struct Constant
 		}
 		else
 		{
-			return _connector.assign_value(_constant, this);
+			return _connector.assign_value(_constant, this, previous);
 		}
 	}
 	
@@ -66,6 +78,7 @@ struct Constant
 
 /* simple typedefs */
 typedef Constant<AtomConnector, Atom::Values> AtomConstant;
+typedef Constant<BondConnector, Bond::Values> BondConstant;
 typedef Constant<CountConnector, Count::Values> CountConstant;
 
 /* union to store created constraints in a list */
@@ -73,8 +86,21 @@ struct AnyConstraint
 {
 	enum Type
 	{
-		Count, Atom, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, EiOrBond
+		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, 
+		AbsentAdd, EiOrBond, Min, Max
 	};
+	
+	AnyConstraint(MaxLimit *const &constraint)
+	{
+		_type = Max;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(MinLimit *const &constraint)
+	{
+		_type = Min;
+		_ptr = constraint;
+	}
 	
 	AnyConstraint(CountConstant *const &constraint)
 	{
@@ -85,6 +111,12 @@ struct AnyConstraint
 	AnyConstraint(AtomConstant *const &constraint)
 	{
 		_type = Atom;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(BondConstant *const &constraint)
+	{
+		_type = Bond;
 		_ptr = constraint;
 	}
 	
@@ -103,6 +135,12 @@ struct AnyConstraint
 	AnyConstraint(WeakAdder *const &constraint)
 	{
 		_type = WeakAdd;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(AbsentAdder *const &constraint)
+	{
+		_type = AbsentAdd;
 		_ptr = constraint;
 	}
 	
@@ -134,6 +172,15 @@ struct AnyConstraint
 			case Atom:
 			delete static_cast<AtomConstant *>(_ptr); break;
 
+			case Bond:
+			delete static_cast<BondConstant *>(_ptr); break;
+
+			case Min:
+			delete static_cast<MinLimit *>(_ptr); break;
+
+			case Max:
+			delete static_cast<MaxLimit *>(_ptr); break;
+
 			case WeakAdd:
 			delete static_cast<WeakAdder *>(_ptr); break;
 
@@ -142,6 +189,9 @@ struct AnyConstraint
 
 			case PresentAdd:
 			delete static_cast<PresentAdder *>(_ptr); break;
+
+			case AbsentAdd:
+			delete static_cast<AbsentAdder *>(_ptr); break;
 
 			case CountAdd:
 			delete static_cast<CountAdder *>(_ptr); break;

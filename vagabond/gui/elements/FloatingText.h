@@ -28,6 +28,7 @@ public:
 	FloatingText(std::string text, float mult = 5, float yOff = 0.5);
 
 	void correctBox(float mult, float y_offset = 0.5);
+
 private:
 
 };

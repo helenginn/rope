@@ -94,10 +94,6 @@ bool AtomGroup::hasAtom(Atom *a)
 	}
 
 	return (_desc2Atom.count(a->desc()) > 0);
-
-	AtomVector::iterator it = std::find(_atoms.begin(), _atoms.end(), a);
-
-	return (it != _atoms.end());
 }
 
 
@@ -431,8 +427,26 @@ void AtomGroup::refinePositions(bool sameThread, bool thorough)
 
 void AtomGroup::orderByResidueId()
 {
-	auto compare_ids = [](Atom *const &a, Atom *const &b) -> bool
+	std::function<bool(Atom *const &, Atom *const &)> compare_ids;
+	compare_ids = [&compare_ids](Atom *const &a, Atom *const &b) -> bool
 	{
+		if (a->symmetryCopyOf() && !b->symmetryCopyOf())
+		{
+			return false;
+		}
+		else if (!a->symmetryCopyOf() && b->symmetryCopyOf())
+		{
+			return true;
+		}
+		else if (a->symmetryCopyOf() && b->symmetryCopyOf())
+		{
+			if (a->symmetryCopyOf() == b->symmetryCopyOf())
+			{
+				return (a->desc() < b->desc());
+			}
+
+			return compare_ids(a->symmetryCopyOf(), b->symmetryCopyOf());
+		}
 		if (a->residueId() > b->residueId())
 		{
 			return false;

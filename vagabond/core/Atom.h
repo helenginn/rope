@@ -23,6 +23,7 @@ class Atom : public HasBondstraints
 {
 public:
 	Atom();
+	Atom(const Atom &other);
 	Atom(std::string code, std::string name);
 
 	/** summary (average) of atom placement */
@@ -301,6 +302,17 @@ public:
 	{
 		return _cyclic;
 	}
+	
+	void setSymmetryCopyOf(Atom *const &other, const std::string &note)
+	{
+		_symAtom = other;
+		_symNote = note;
+	}
+	
+	Atom *const &symmetryCopyOf() const
+	{
+		return _symAtom;
+	}
 private:
 	void changedPosition();
 
@@ -329,6 +341,9 @@ private:
 	int _count = 0;
 	glm::mat4x4 _transform = glm::mat4(1.f);
 	Cyclic *_cyclic = nullptr;
+
+	Atom *_symAtom = nullptr;
+	std::string _symNote;
 };
 
 

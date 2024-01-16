@@ -31,7 +31,7 @@ struct BondAdder
 	BondAdder(const std::vector<BondConnector *> &bonds, CountConnector &sum)
 	: _bonds(bonds), _sum(sum)
 	{
-		auto self_check = [this]() { return check(); };
+		auto self_check = [this](void *prev) { return check(prev); };
 
 		for (BondConnector *const &bc : bonds)
 		{
@@ -40,20 +40,37 @@ struct BondAdder
 
 		_sum.add_constraint_check(self_check);
 
-		if (!check())
+		auto forget_me = [this](void *blame) { return forget(blame); };
+
+		for (BondConnector *const &bc : bonds)
+		{
+			bc->add_forget(forget_me);
+		}
+
+		if (!check(this))
 		{
 			for (BondConnector *const &bc : bonds)
 			{
-				bc->pop_last_check();
+				bc->pop_last_check(this);
 			}
 
-			_sum.pop_last_check();
+			_sum.pop_last_check(this);
 
 			std::ostringstream ss;
 			ss << Request;
 			throw std::runtime_error("New addition of BondAdder (" + 
 			                         ss.str() + ") immediately "\
 			                         "failed validation check");
+		}
+	}
+	
+	void forget(void *blame)
+	{
+		_sum.forget(blame);
+
+		for (BondConnector *const &bc : _bonds)
+		{
+			bc->forget(blame);
 		}
 	}
 	
@@ -65,6 +82,12 @@ struct BondAdder
 		return request && other;
 	}
 	
+	bool value_is_requested_and_nothing_else(const Bond::Values &val)
+	{
+		Bond::Values not_request = (Bond::Values)(Bond::Unassigned & ~Request);
+		return ((val & Request) && (val & not_request) == Bond::Contradiction);
+	}
+	
 	void get_certains_maybes(int &total, int &certain, int &maybe)
 	{
 		total = 0;
@@ -74,7 +97,7 @@ struct BondAdder
 		for (BondConnector *const &bond : _bonds)
 		{
 			Bond::Values val = bond->value();
-			if (val == Request)
+			if (value_is_requested_and_nothing_else(val))
 			{
 				certain++;
 			}
@@ -87,7 +110,7 @@ struct BondAdder
 		}
 	}
 	
-	void tell_maybe_bonds(const Bond::Values &tell)
+	void tell_maybe_bonds(const Bond::Values &tell, void *previous)
 	{
 		std::vector<BondConnector *> chosen;
 
@@ -97,7 +120,7 @@ struct BondAdder
 			/* go on, tell them they're not requested! */
 			if (value_is_not_just_requested(val))
 			{
-				bool changed = bond->assign_value(tell, this);
+				bool changed = bond->assign_value(tell, this, previous);
 				if (changed)
 				{
 					chosen.push_back(bond);
@@ -106,17 +129,19 @@ struct BondAdder
 		}
 	}
 	
-	bool check()
+	bool check(void *previous)
 	{
 		int total = 0;
 		int certain = 0;
 		int maybe = 0;
 
 		get_certains_maybes(total, certain, maybe);
+//		std::cout << total << " bonds of which " << certain << " are "\
+//		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
 		
 		/* firstly we impose the range of certain and maybe bonds to sum */
 		std::vector<int> possibilities;
-		possibilities.reserve(maybe);
+		possibilities.reserve(maybe + 1);
 
 		for (int i = certain; i <= certain + maybe; i++)
 		{
@@ -124,7 +149,7 @@ struct BondAdder
 		}
 
 		Count::Values count = values_as_count(possibilities);
-		_sum.assign_value(count, this);
+		_sum.assign_value(count, this, previous);
 		
 		/* now we find all the possible values of sum, in integer form. */
 		std::vector<int> sum_options = possible_values(_sum.value());
@@ -148,11 +173,11 @@ struct BondAdder
 			{
 				Bond::Values not_request;
 				not_request = (Bond::Values)(Bond::Unassigned & ~Request);
-				tell_maybe_bonds(not_request);
+				tell_maybe_bonds(not_request, previous);
 			}
 			else if (acceptables[0] == certain + maybe)
 			{
-				tell_maybe_bonds((Bond::Values)Request);
+				tell_maybe_bonds((Bond::Values)Request, previous);
 			}
 		}
 		/* but if there's no acceptable solution then it's a contradiction */
@@ -171,6 +196,7 @@ struct BondAdder
 typedef BondAdder<Bond::Strong> StrongAdder;
 typedef BondAdder<Bond::Weak> WeakAdder;
 typedef BondAdder<Bond::Present> PresentAdder;
+typedef BondAdder<Bond::Absent> AbsentAdder;
 };
 
 #endif

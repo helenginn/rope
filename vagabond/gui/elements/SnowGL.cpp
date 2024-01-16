@@ -33,9 +33,6 @@ SnowGL::SnowGL()
 	_controlPressed = false;
 	_right = false;
 
-	_zNear = 1;
-	_zFar = 400;
-
 	setupCamera();
 
 	_r = 1.; _g = 1.; _b = 0.5; _a = 1.;

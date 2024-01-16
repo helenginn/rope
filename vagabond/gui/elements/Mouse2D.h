@@ -32,12 +32,14 @@ public:
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
+	virtual void keyPressEvent(SDL_Keycode pressed);
 
 	void setControls(const bool controls)
 	{
 		_controls = false;
 	}
 protected:
+	void reslab();
 	virtual void sendSelection(float t, float l, float b, float r,
 	                           bool inverse);
 
@@ -65,6 +67,8 @@ protected:
 	float _leftPos = 0;
 	float _rightPos = 0;
 	float _bottomPos = 0;
+	
+	float _manualFar = 0;
 	
 	SelectionBox *_box = nullptr;
 	bool _slabbing = false;

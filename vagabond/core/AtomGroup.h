@@ -29,10 +29,8 @@ typedef Atom *AtomPtr;
 typedef std::vector<AtomPtr> AtomVector;
 
 class PositionRefinery;
-class Mechanics;
 class Sequence;
 class File;
-class ForceField;
 
 class AtomGroup : public HasResponder<Responder<AtomGroup> >, public HasBondstraints
 {
@@ -62,6 +60,19 @@ public:
 		{
 			func(atom);
 		}
+	}
+	
+	template <typename Func>
+	Atom *find_by(const Func &func)
+	{
+		for (Atom *atom : _atoms)
+		{
+			if (func(atom))
+			{
+				return atom;
+			}
+		}
+		return nullptr;
 	}
 	
 	template <typename Func>
@@ -179,28 +190,6 @@ public:
 	
 	float rmsd() const;
 	
-	void assignForceField(ForceField *ff)
-	{
-		if (ff != nullptr)
-		{
-			_forceField = ff;
-			_ffCounter++;
-		}
-		else
-		{
-			_ffCounter--;
-			if (_ffCounter == 0)
-			{
-				_forceField = nullptr;
-			}
-		}
-	}
-	
-	ForceField *forceField()
-	{
-		return _forceField;
-	}
-
 protected:
 	Atom *atom(int i) const
 	{
@@ -221,10 +210,6 @@ private:
 
 	std::thread *_refine = nullptr;
 	PositionRefinery *_refinery = nullptr;
-	std::thread *_mechThread = nullptr;
-	Mechanics *_mech = nullptr;
-	ForceField *_forceField = nullptr;
-	int _ffCounter = 0;
 	
 	double _lastResidual = FLT_MAX;
 	std::vector<AtomGroup *> _connectedGroups;

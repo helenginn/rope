@@ -59,7 +59,6 @@ ProbeBond::ProbeBond(const std::string &tag, const glm::vec3 &start,
                      const glm::vec3 &end)
 : Image("assets/images/" + tag + ".png")
 {
-//	setVertexShaderFile("assets/shaders/floating_box.vsh");
 	setVertexShaderFile("assets/shaders/axes.vsh");
 	setFragmentShaderFile("assets/shaders/axes.fsh");
 	setUsesProjection(true);

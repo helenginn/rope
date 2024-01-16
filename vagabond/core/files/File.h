@@ -109,6 +109,10 @@ public:
 	/** returns assigned space group 
 	 * 	@return CCP4 space group number or -1 if not assigned */
 	int spaceGroupNum() const;
+	
+	/** returns assigned space group name as string
+	 * 	@return CCP4 space group number or "" if not assigned */
+	std::string spaceGroupName() const;
 
 	/** returns any atom count assigned.
 	 * @return number of macromolecular atoms if available; if not, number of 

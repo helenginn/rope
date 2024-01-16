@@ -47,7 +47,8 @@ public:
 class AtomProbe : public Probe
 {
 public:
-	AtomProbe(hnet::AtomConnector &obj, Atom *inherit = nullptr) : _obj(obj)
+	AtomProbe(hnet::AtomConnector &obj, Atom *inherit = nullptr,
+	          const std::string &custom_text = {}) : _obj(obj)
 	{
 		if (inherit)
 		{
@@ -58,6 +59,7 @@ public:
 		}
 
 		_pos = _init;
+		_text = custom_text;
 	}
 	
 	const glm::vec3 colour() const
@@ -65,8 +67,28 @@ public:
 		return _colour;
 	}
 	
+	void setColour(const glm::vec3 &colour)
+	{
+		_colour = colour;
+	}
+	
+	void setMult(const float &m)
+	{
+		_mult = m;
+	}
+	
+	float mult()
+	{
+		return _mult;
+	}
+	
 	std::string display()
 	{
+		if (_text.length())
+		{
+			return _text;
+		}
+
 		std::string str;
 		hnet::Atom::Values val = _obj.value();
 
@@ -96,6 +118,8 @@ public:
 		return str;
 	}
 
+	std::string _text;
+	float _mult = 25;
 	glm::vec3 _colour = {};
 	hnet::AtomConnector &_obj;
 	Atom *_atom = nullptr;

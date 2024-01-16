@@ -70,7 +70,7 @@ public:
 		return _frac2Real;
 	}
 	
-	void setSpaceGroupName(std::string &name)
+	void setSpaceGroupName(const std::string &name)
 	{
 		_spgName = name;
 	}

@@ -25,13 +25,15 @@ ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network)
 : Scene(scene), Mouse3D(scene), _network(network)
 {
 	_translation.z -= 50;
+	_farSlab = 40;
 }
 
 void ProtonNetworkView::findAtomProbes()
 {
 	for (AtomProbe *const &probe : _network.atomProbes())
 	{
-		FloatingText *text = new FloatingText(probe->display(), 25, -0.0);
+		FloatingText *text = new FloatingText(probe->display(), 
+		                                      probe->mult(), -0.0);
 		text->setPosition(probe->position());
 		glm::vec3 c = probe->colour();
 		text->setColour(c.x, c.y, c.z);
@@ -52,6 +54,7 @@ void ProtonNetworkView::findAtomProbes()
 		addObject(bond);
 	}
 
+	shiftToCentre(_network.centre(), 50);
 }
 
 void ProtonNetworkView::setup()

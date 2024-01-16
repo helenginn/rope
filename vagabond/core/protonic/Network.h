@@ -19,20 +19,21 @@
 #ifndef __vagabond__Network__
 #define __vagabond__Network__
 
+#include <list>
+#include <map>
+
 #include "Connector.h"
 #include "Constraint.h"
 #include "Probe.h"
-
-#include <list>
-#include <map>
 
 class Probe;
 
 class Network
 {
 public:
-	Network(AtomGroup *group);
 	Network();
+	Network(AtomGroup *group, const std::string &spg_name,
+	        const std::array<double, 6> &unit_cell = {});
 
 	template <class Connector>
 	auto &add(Connector *const &connector)
@@ -47,6 +48,8 @@ public:
 		_constraints.push_back(hnet::AnyConstraint(constraint));
 		return *constraint;
 	}
+	
+	hnet::CountConnector &add_zero_or_positive_connector();
 	
 	const std::list<HydrogenProbe *> &hydrogenProbes() const
 	{
@@ -63,6 +66,8 @@ public:
 		return _atomProbes;
 	}
 	
+	glm::vec3 centre() const;
+	
 	AtomProbe &add_probe(AtomProbe *const &probe);
 	BondProbe &add_probe(BondProbe *const &probe);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
@@ -70,13 +75,20 @@ private:
 	void probeAtom(Atom *atom);
 	void setupAmineNitrogen(::Atom *atom);
 	void setupCarbonylOxygen(::Atom *atom);
+	void setupSingleAlcohol(::Atom *atom);
+	void setupLysineAmine(::Atom *atom);
 	void setupWater(::Atom *atom);
+
+	void findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
+	                       const std::string &name);
 
 	AtomGroup *findNeighbours(::Atom *centre);
 	void attachToNeighbours(::Atom *atom);
-	void finaliseContacts(::Atom *atom);
+	void attachAdderConstraints(::Atom *atom);
 	void mutualExclusions(::Atom *atom);
+	void findBondRanges(::Atom *atom);
 	void setupAtom(::Atom *atom);
+//	::Atom *uninvolvedCoordinator(::Atom *atom);
 
 	std::list<hnet::AnyConnector> _connectors;
 	std::list<hnet::AnyConstraint> _constraints;
@@ -91,6 +103,9 @@ private:
 		hnet::CountConnector *strong{};
 		hnet::CountConnector *weak{};
 		hnet::CountConnector *present{};
+		hnet::CountConnector *absent{};
+		hnet::CountConnector *expl_bonds{};
+		hnet::CountConnector *forced_absent{};
 
 		// all bonds regardless of who made them
 		std::vector<hnet::BondConnector *> bonds;
@@ -99,11 +114,9 @@ private:
 		std::vector<Atom *> bonded_atoms;
 
 		AtomProbe *probe{};
+		Atom *atom{};
 	};
 
-	void prepareSimple(Network::AtomDetails &details, 
-	                   const hnet::Count::Values &n_strong,
-	                   const hnet::Count::Values &n_weak);
 
 	void prepareCoordinated(Network::AtomDetails &details,
 	                        const hnet::Count::Values &n_charge,
@@ -113,7 +126,9 @@ private:
 	std::map<Atom *, AtomDetails> _atomMap;
 
 	AtomGroup *_original = nullptr;
+	AtomGroup *_symMates = nullptr;
 	AtomGroup *_group = nullptr;
+	AtomGroup *_groupAndMates = nullptr;
 };
 
 #endif

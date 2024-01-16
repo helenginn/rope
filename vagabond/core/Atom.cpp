@@ -12,6 +12,20 @@ Atom::Atom()
 
 }
 
+Atom::Atom(const Atom &other)
+{
+	_initial = other._initial;
+	_derived = other._derived;
+	_setupInitial = other._setupInitial;
+	_code = other._code;
+	_residueId = other._residueId;
+	_atomName = other._atomName;
+	_hetatm = other._hetatm;
+	_occupancy = other._occupancy;
+	_ele = other._ele;
+	_chain = other._chain;
+}
+
 Atom::Atom(std::string code, std::string name)
 {
 	_code = code;
@@ -411,6 +425,11 @@ const std::string Atom::desc() const
 		str += _chain + "-";
 	}
 	str += code() + i_to_str(residueNumber()) + ":" + atomName();
+	if (_symNote.length())
+	{
+		str += " " + _symNote;
+	}
+
 	return str;
 }
 
