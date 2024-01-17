@@ -3,15 +3,15 @@
 
 class SurfaceAreaValidator
 {
-
 public:
   SurfaceAreaValidator();
   ~SurfaceAreaValidator();
 
   void loadEnv(std::string environmentFilePath);
   
+  void validatePaths();
+  
 private:
   Environment _env;
-
 };
 
