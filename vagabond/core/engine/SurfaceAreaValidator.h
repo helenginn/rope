@@ -10,8 +10,8 @@ public:
   void loadEnv(std::string environmentFilePath);
   
   void validatePaths();
-  
+
 private:
-  Environment _env;
+  Environment &_env;
 };
 
