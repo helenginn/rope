@@ -6,6 +6,8 @@ namespace tt = boost::test_tools;
 BOOST_AUTO_TEST_CASE(test_SAV_load)
 {
   SurfaceAreaValidator SAV;
-  SAV.loadEnv("/home/iko/UNI/BA-BSC/ROPE/quick_bundle/rope.json");
+  // SAV.loadEnv("/home/iko/UNI/BA-BSC/ROPE/quick_bundle/rope.json");
+  SAV.loadEnv("rope.json");
+
   SAV.validatePaths();
 }
