@@ -16,7 +16,7 @@ public:
 
   void loadEnv(std::string environmentFilePath);
   
-  void validatePaths();
+  void validatePaths(int steps=20, int resources=1, int threads=1);
 
 private:
   Environment &_env;
