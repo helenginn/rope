@@ -19,6 +19,7 @@
 #include "TextEntry.h"
 #include "ButtonResponder.h"
 #include "SnowGL.h"
+#include <SDL2/SDL_clipboard.h>
 #include <iostream>
 
 void TextEntry::click(bool left)
@@ -141,7 +142,16 @@ void TextEntry::keyPressed(char key)
 {
 	if (_active)
 	{
-		shiftKey(key);
+		if (!_gl->controlPressed())
+		{
+			shiftKey(key);
+		}
+		else if (key == 'v')
+		{
+			const char *ch = SDL_GetClipboardText();
+			std::string str(ch);
+			_scratch += str;
+		}
 
 		if (validateKey(key))
 		{
