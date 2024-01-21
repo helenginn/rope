@@ -26,6 +26,7 @@ ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network)
 {
 	_translation.z -= 50;
 	_farSlab = 40;
+	_slabbing = true;
 }
 
 void ProtonNetworkView::findAtomProbes()
