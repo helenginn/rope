@@ -27,6 +27,10 @@
 #include "Probe.h"
 
 class Probe;
+namespace hnet
+{
+	class Coordinated;
+}
 
 class Network
 {
@@ -49,8 +53,6 @@ public:
 		return *constraint;
 	}
 	
-	hnet::CountConnector &add_zero_or_positive_connector();
-	
 	const std::list<HydrogenProbe *> &hydrogenProbes() const
 	{
 		return _hydrogenProbes;
@@ -71,8 +73,14 @@ public:
 	AtomProbe &add_probe(AtomProbe *const &probe);
 	BondProbe &add_probe(BondProbe *const &probe);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
+
+	std::map<::Atom *, hnet::Coordinated *> &atomMap()
+	{
+		return _atomMap;
+	}
 private:
-	void probeAtom(Atom *atom);
+	void establishAtom(::Atom *atom);
+
 	void setupAmineNitrogen(::Atom *atom);
 	void setupCarbonylOxygen(::Atom *atom);
 	void setupSingleAlcohol(::Atom *atom);
@@ -82,48 +90,15 @@ private:
 	void findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
 	                       const std::string &name);
 
-	AtomGroup *findNeighbours(::Atom *centre);
-	void attachToNeighbours(::Atom *atom);
-	void attachAdderConstraints(::Atom *atom);
-	void mutualExclusions(::Atom *atom);
-	void findBondRanges(::Atom *atom);
 	void setupAtom(::Atom *atom);
-//	::Atom *uninvolvedCoordinator(::Atom *atom);
 
 	std::list<hnet::AnyConnector> _connectors;
 	std::list<hnet::AnyConstraint> _constraints;
 	std::list<AtomProbe *> _atomProbes;
 	std::list<HydrogenProbe *> _hydrogenProbes;
 	std::list<BondProbe *> _bondProbes;
-	
-	struct AtomDetails
-	{
-		hnet::AtomConnector *connector{};
 
-		hnet::CountConnector *strong{};
-		hnet::CountConnector *weak{};
-		hnet::CountConnector *present{};
-		hnet::CountConnector *absent{};
-		hnet::CountConnector *expl_bonds{};
-		hnet::CountConnector *forced_absent{};
-
-		// all bonds regardless of who made them
-		std::vector<hnet::BondConnector *> bonds;
-
-		// atoms associated with all bonds
-		std::vector<Atom *> bonded_atoms;
-
-		AtomProbe *probe{};
-		Atom *atom{};
-	};
-
-
-	void prepareCoordinated(Network::AtomDetails &details,
-	                        const hnet::Count::Values &n_charge,
-	                        const hnet::Count::Values &n_coord_num,
-	                        const hnet::Count::Values &n_donations);
-	
-	std::map<Atom *, AtomDetails> _atomMap;
+	std::map<Atom *, hnet::Coordinated *> _atomMap;
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_symMates = nullptr;

@@ -77,6 +77,8 @@ cfile,
 'loopy/RoughLoop.cpp',
 'loopy/RoughLoop.h',
 
+'protonic/Coordinated.h',
+'protonic/Coordinated.cpp',
 'protonic/Network.h',
 'protonic/Network.cpp',
 'protonic/Probe.h',

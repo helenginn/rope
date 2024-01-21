@@ -44,10 +44,10 @@ namespace Bond
 		Strong        =  (1 << 2),
 		NotStrong     = ~(1 << 2),
 		Present       =  (1 << 1 | 1 << 2),
-//		Broken        =  (1 << 3),
-//		NotBroken     = ~(1 << 3),
-//		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
-		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2),
+		Broken        =  (1 << 3),
+		NotBroken     = ~(1 << 3),
+		NotPresent    =  (1 << 0 | 1 << 3), // absent or broken
+		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
 };
 

@@ -62,7 +62,12 @@ struct HydrogenBond
 	
 	bool bond_definitely_present(const Bond::Values &val)
 	{
-		return (val & Bond::Present) && !(val & Bond::Absent);
+		return (val & Bond::Present) && !(val & Bond::NotPresent);
+	}
+	
+	bool bond_definitely_not_used(const Bond::Values &val)
+	{
+		return (val & Bond::NotPresent) && !(val & Bond::Present);
 	}
 	
 	void print_bond()
@@ -87,12 +92,13 @@ struct HydrogenBond
 		Bond::Values forRight = _right.value();
 
 		if ((_centre.value() == Hydrogen::Absent) ||
-		    (_left.value() == Bond::Absent || _right.value() == Bond::Absent))
+		    bond_definitely_not_used(_left.value()) ||
+		    bond_definitely_not_used(_right.value()))
 		{
 			/* if anything is absent, hydrogen & all bonds must also be absent */
-			forLeft = Bond::Values(forLeft & Bond::Absent);
+			forLeft = Bond::Values(forLeft & Bond::NotPresent);
 			forCentre = Hydrogen::Values(forCentre & Hydrogen::Absent);
-			forRight = Bond::Values(forRight & Bond::Absent);
+			forRight = Bond::Values(forRight & Bond::NotPresent);
 		}
 
 		if ((_centre.value() == Hydrogen::Present) ||
