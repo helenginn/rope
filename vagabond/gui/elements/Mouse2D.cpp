@@ -19,10 +19,12 @@
 #include "Window.h"
 #include "Mouse2D.h"
 #include "SelectionBox.h"
+#include <SDL2/SDL.h>
 
 Mouse2D::Mouse2D(Scene *prev) : Scene(prev)
 {
 	_alwaysOn = true;
+	_2D = true;
 }
 
 Mouse2D::~Mouse2D()
@@ -122,7 +124,7 @@ void Mouse2D::mouseMoveEvent(double x, double y)
 		return;
 	}
 
-	if (_left && !_shiftPressed && !_controlPressed && !_altPressed)
+	if (_left && !_shiftPressed && !_controlPressed && !_altPressed && !_2D)
 	{
 		double dx = x - _lastX;
 		double dy = y - _lastY;
@@ -177,6 +179,7 @@ void Mouse2D::mouseMoveEvent(double x, double y)
 	
 	_lastX = x;
 	_lastY = y;
+	reslab();
 }
 
 void Mouse2D::regulariseBox()
@@ -223,6 +226,23 @@ void Mouse2D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 	interpretMouseButton(button, false);
 }
 
+void Mouse2D::keyPressEvent(SDL_Keycode pressed)
+{
+	Scene::keyPressEvent(pressed);
+	
+	if (pressed == SDLK_d)
+	{
+		_manualFar -= 0.2;
+	}
+	else if (pressed == SDLK_f)
+	{
+		_manualFar += 0.2;
+	}
+	
+	reslab();
+	viewChanged();
+}
+
 void Mouse2D::updateSelectionBox()
 {
 	if (_box == nullptr)
@@ -245,4 +265,17 @@ void Mouse2D::sendSelection(float top, float left, float bottom, float right,
                             bool inverse)
 {
 
+}
+
+void Mouse2D::reslab()
+{
+	if (!_slabbing)
+	{
+		return;
+	}
+
+	float dist = fabs(_centre.z);
+
+	_nearSlab = 2 * dist / 3 - _manualFar;
+	_farSlab = 3 * dist / 2 + _manualFar;
 }

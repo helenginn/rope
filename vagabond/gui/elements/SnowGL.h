@@ -173,6 +173,12 @@ public:
 		x = _lastX / (float)_w;
 		y = _lastY / (float)_h;
 	}
+	
+	void getSlabs(float &near, float &far)
+	{
+		near = _nearSlab;
+		far = _farSlab;
+	}
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();
@@ -204,8 +210,12 @@ protected:
 	GLuint _pingPongFbo[2] = {0, 0};
 	
 	float _camAlpha, _camBeta, _camGamma;
-	float _zNear;
-	float _zFar;
+	float _zNear = 1;
+	float _zFar = 400;
+
+	float _nearSlab = -2;
+	float _farSlab = -2;
+
 	float _time;
 	bool _invertZ;
 

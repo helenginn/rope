@@ -7,6 +7,8 @@ in vec2 vTex;
 in vec4 vExtra;
 
 uniform sampler2D pic_tex;
+uniform float near_slab;
+uniform float far_slab;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out uint ValIndex;
@@ -23,6 +25,13 @@ void main()
 	{
 		discard;
 	}
+
+	if ((near_slab >= -1 && far_slab >= -1) &&
+		(vPos.z > far_slab || vPos.z < near_slab))
+	{
+		discard;
+	}
+
 	result += vColor;
 	ValIndex = uint(vExtra.x);
 	FragColor = result;

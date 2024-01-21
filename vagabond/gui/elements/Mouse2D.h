@@ -66,6 +66,7 @@ protected:
 	float _bottomPos = 0;
 	
 	SelectionBox *_box = nullptr;
+	bool _slabbing = false;
 
 };
 

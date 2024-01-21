@@ -215,6 +215,30 @@ glm::mat4x4 Renderable::getModel()
 	return _myModel * _gl->getModel();
 }
 
+void Renderable::slabbing()
+{
+	float near_slab = -2;
+	float far_slab = -2;
+	
+	if (_gl && _usesProj)
+	{
+		_gl->getSlabs(near_slab, far_slab);
+	}
+
+	GLuint uNear = glGetUniformLocation(_program, "near_slab");
+
+	if (uNear != 0)
+	{
+		glUniform1f(uNear, near_slab);
+	}
+
+	GLuint uFar = glGetUniformLocation(_program, "far_slab");
+	if (uFar != 0)
+	{
+		glUniform1f(uFar, far_slab);
+	}
+}
+
 void Renderable::runProgram()
 {
 	if (_program == 0)
@@ -250,6 +274,7 @@ void Renderable::runProgram()
 		_delegate->extraUniforms();
 	}
 
+	slabbing();
 	extraUniforms();
 
 	checkErrors("rebinding extras");
