@@ -98,7 +98,7 @@ void sort_by(std::vector<TabulatedData::Strings> &entries,
 
 	auto compare = [ascending](const Pair &a, const Pair &b)
 	{
-		return (ascending ? a.second > b.second : a.second < b.second);
+		return (ascending ? a.second < b.second : a.second > b.second);
 	};
 
 	std::sort(pairs.begin(), pairs.end(), compare);
