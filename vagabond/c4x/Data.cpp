@@ -85,6 +85,79 @@ float Data::correlation_between(int i, int j)
 	return correlation_between(v, w);
 }
 
+float Data::distance_between(int i, int j)
+{
+	if (i == j)
+	{
+		return 0;
+	}
+	
+	Comparable &v = _comparables[i];
+	Comparable &w = _comparables[j];
+	
+	float sq = 0;
+	
+	for (size_t n = 0; n < _length; n++)
+	{
+		if (v[n] != v[n] || w[n] != w[n])
+		{
+			continue;
+		}
+
+		float add = (v[n] - w[n]) * (v[n] - w[n]);
+		if (!valid(add))
+		{
+			continue;
+		}
+		sq += add;
+	}
+	
+	return sqrt(sq);
+}
+
+PCA::Matrix Data::arbitraryMatrix(const std::function<float(int, int)> 
+                                  &comparison)
+{
+	findDifferences();
+	
+	PCA::Matrix m;
+	
+	int n = vectorCount();
+	
+	PCA::setupMatrix(&m, n, n);
+	
+	for (size_t j = 0; j < n; j++)
+	{
+		for (size_t i = 0; i < n; i++)
+		{
+			double &val = m[j][i];
+			
+			float corr = comparison(i, j);
+
+            if (!valid(corr))
+			{
+				corr = 0;
+			}
+
+			val = corr;
+		}
+	}
+	
+	return m;
+}
+
+PCA::Matrix Data::distanceMatrix()
+{
+	return arbitraryMatrix([this](int i, int j) 
+	                       { return distance_between(i, j); });
+}
+
+PCA::Matrix Data::correlationMatrix()
+{
+	return arbitraryMatrix([this](int i, int j) 
+	                       { return correlation_between(i, j); });
+}
+
 Data::Comparable Data::weightedComparable(const std::vector<float> &weights)
 {
 	if (weights.size() != vectorCount())

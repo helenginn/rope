@@ -20,6 +20,7 @@
 #define __vagabond__Data__
 
 #include <vector>
+#include <vagabond/utils/svd/PCA.h>
 
 class Data
 {
@@ -67,8 +68,16 @@ public:
 		return _groupCount;
 	}
 	
+	/** Return distance matrix of size m*m where m = member size */
+	PCA::Matrix distanceMatrix();
+
+	/** Return correlation matrix of size m*m where m = member size */
+	PCA::Matrix correlationMatrix();
+	PCA::Matrix arbitraryMatrix(const std::function<float(int, int)> 
+	                            &comparison);
 protected:
 	float correlation_between(int i, int j);
+	float distance_between(int i, int j);
 
 	int groupForIndex(int i);
 

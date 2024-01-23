@@ -30,11 +30,6 @@
  * Vector components are referred to as units.
  */
 
-namespace PCA
-{
-	struct Matrix;
-}
-
 template <class Unit, class Header>
 class DataGroup : public Data
 {
@@ -73,12 +68,6 @@ public:
 	void convertToUnits(const Comparable &comp, Array &diffs);
 
 	void applyNormals(Comparable &arr);
-	
-	/** Return correlation matrix of size m*m where m = member size */
-	virtual PCA::Matrix correlationMatrix();
-	
-	/** Return distance matrix of size m*m where m = member size */
-	virtual PCA::Matrix distanceMatrix();
 
 	/** write as CSV to filename */
 	virtual void write(std::string filename);
@@ -131,8 +120,6 @@ protected:
 	/** Normalise differences for each unit (i.e. vector component) */
 	virtual void normalise();
 
-	float distance_between(int i, int j);
-
 	std::vector<Array> _vectors;
 	std::vector<Array> _diffs;
 	std::vector<std::string> _vectorNames;
@@ -144,8 +131,6 @@ protected:
 	Array &averageForIndex(int i);
 	
 	std::map<const Array *, int> _arrayToGroup;
-
-	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit, Header>::*comparison)(int, int));
 
 	bool _subtractAverage = true;
 	std::vector<Array> _averages;
