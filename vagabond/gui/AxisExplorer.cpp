@@ -31,6 +31,7 @@
 #include <vagabond/utils/maths.h>
 #include "BondSequence.h"
 
+#include <vagabond/core/TabulatedData.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/BondSequenceHandler.h>
 #include <vagabond/core/AtomBlock.h>
@@ -203,29 +204,11 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 
 void AxisExplorer::setupColoursForList(RTAngles &angles)
 {
-	float sum = 0;
-	for (size_t i = 0; i < angles.size(); i++)
-	{
-		const ResidueTorsion &rt = angles.c_rt(i);
-		
-		if (!rt.torsion().coversMainChain())
-		{
-			continue;
-		}
-
-		const Angular &val = angles.storage(i);
-		float sqval = val * val;
-		sum += sqval;
-	}
-	
-	sum /= (float)(angles.size());
-	
-	float stdev = sqrt(sum);
-	_maxTorsion = stdev * 4;
+	std::map<ResidueId, float> list;
 
 	for (size_t i = 0; i < angles.size(); i++)
 	{
-		const ResidueTorsion &rt = angles.c_rt(i);
+		ResidueTorsion &rt = angles.rt(i);
 		const TorsionRef &tr = rt.torsion();
 		
 		if (!tr.coversMainChain())
@@ -247,9 +230,40 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 			continue;
 		}
 
-		float val = fabs(angles.storage(i));
-		val /= _maxTorsion;
-		atom->addToColour(val);
+		float val = angles.storage(i);
+		float sqval = val * val;
+		list[id] += sqval;
+	}
+	
+	float sqdev = 0;
+	for (auto it = list.begin(); it != list.end(); it++)
+	{
+		it->second = sqrt(it->second);
+		sqdev += it->second * it->second;
+	}
+
+	sqdev /= (float)(list.size());
+	float stdev = sqrt(sqdev);
+	_maxTorsion = stdev * 3;
+	
+	if (_data)
+	{
+		delete _data;
+	}
+	
+	_data = new TabulatedData({{"Residue number", TabulatedData::Number},
+		                     {"Angle deviation (deg)", TabulatedData::Number}});
+
+	for (auto it = list.begin(); it != list.end(); it++)
+	{
+		const ResidueId &id = it->first;
+		Atom *atom = _fullAtoms->atomByIdName(id, "");
+		float variation = it->second / (_maxTorsion);
+
+		atom->setAddedColour(variation);
+		_data->addEntry({{"Residue number", it->first.str()},
+			             {"Angle deviation (deg)", 
+		                   std::to_string(variation)}});
 	}
 }
 

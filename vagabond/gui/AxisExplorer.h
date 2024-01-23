@@ -30,6 +30,7 @@ class Slider;
 class Residue;
 class Instance;
 class AtomContent;
+class TabulatedData;
 class ConcertedBasis;
 
 class AxisExplorer : public Display, public DragResponder, 
@@ -93,6 +94,7 @@ private:
 	double _step = 0.001;
 	float _maxTorsion = 0;
 
+	TabulatedData *_data = nullptr;
 	TorsionCluster *_cluster = nullptr;
 	RTAngles _rawAngles;
 	RAMovement _movement;
