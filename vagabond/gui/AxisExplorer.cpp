@@ -23,7 +23,10 @@
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/GuiAtom.h>
+#include <vagabond/gui/TableView.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
 #include "BondSequence.h"
@@ -54,6 +57,15 @@ AxisExplorer::~AxisExplorer()
 	_instance->unload();
 }
 
+void AxisExplorer::makeMenu()
+{
+	TextButton *text = new TextButton("Menu", this);
+	text->setReturnTag("menu");
+	text->setRight(0.95, 0.1);
+	addObject(text);
+
+}
+
 void AxisExplorer::setup()
 {
 	AtomGroup *grp = _instance->currentAtoms();
@@ -69,6 +81,7 @@ void AxisExplorer::setup()
 	submitJob(0.0);
 	setupColours();
 	setupColourLegend();
+	makeMenu();
 	
 	VisualPreferences *vp = &_instance->entity()->visualPreferences();
 	_guiAtoms->applyVisuals(vp, instance());
@@ -155,7 +168,22 @@ void AxisExplorer::askForAtomMotions()
 
 void AxisExplorer::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "yes_adjust")
+	if (tag == "menu")
+	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, this, "options");
+		m->addOption("Table for main chain", "main_chain");
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+	else if (tag == "options_main_chain")
+	{
+		TableView *tv = new TableView(this, _data, 
+		                              "Main chain torsion variation");
+		tv->show();
+
+	}
+	else if (tag == "yes_adjust")
 	{
 		adjustTorsions();
 	}

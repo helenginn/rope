@@ -21,9 +21,9 @@
 
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/gui/Display.h>
-#include <vagabond/core/StructureModification.h>
-#include <vagabond/core/RAMovement.h>
 #include <vagabond/utils/Vec3s.h>
+#include <vagabond/core/RAMovement.h>
+#include <vagabond/core/StructureModification.h>
 #include <vagabond/gui/elements/DragResponder.h>
 
 class Slider;
@@ -61,6 +61,7 @@ private:
 	Slider *_rangeSlider = nullptr;
 
 	void askForAtomMotions();
+	void makeMenu();
 	void setupColours();
 	void setupColourLegend();
 	void supplyTorsions(CoordManager *manager);
