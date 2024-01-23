@@ -85,6 +85,8 @@ guifiles = [
 'SetupRefinement.cpp',
 'SequenceView.cpp',
 'SequenceLine.cpp',
+'TableView.cpp',
+'TableView.h',
 'Toolkit.cpp',
 'VagWindow.cpp',
 'VaryColourOptions.cpp',
