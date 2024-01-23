@@ -282,7 +282,7 @@ public:
 	void setAddedColour(float col)
 	{
 		_colour = col;
-		_count = 0;
+		_count = 1;
 		changedPosition();
 	}
 	
