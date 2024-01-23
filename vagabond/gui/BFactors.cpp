@@ -147,7 +147,7 @@ void insertBs(Entity *entity, Instance *instance, double *start,
 		}
 		
 		AtomGroup *group = instance->currentAtoms();
-		Atom *ca = group->atomByIdName(local->id(), "CA");
+		Atom *ca = group->atomByIdName(local->id(), "");
 		
 		if (!ca)
 		{

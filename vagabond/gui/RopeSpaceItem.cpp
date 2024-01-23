@@ -183,7 +183,6 @@ void RopeSpaceItem::torsionCluster()
 	{
 		group = new MetadataGroup(_entity->makeTorsionDataGroup());
 		group->write(_entity->name() + "_torsions.csv");
-		group->normalise();
 		_group = group;
 	}
 

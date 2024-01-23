@@ -1,4 +1,6 @@
 c4xfiles = [
+'Data.h',
+'Data.cpp',
 'DegreeDataGroup.cpp',
 'ClusterTSNE.cpp',
 'Cluster.h',

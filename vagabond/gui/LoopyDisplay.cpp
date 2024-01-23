@@ -138,7 +138,6 @@ void LoopyDisplay::prepareConformerCluster(ListConformers confs)
 	}
 
 	group->write(_polymer->id() + "_loop_torsions.csv");
-	group->normalise();
 
 	RopeSpaceItem *item = new RopeSpaceItem(_polymer->entity());
 	item->setMetadata(&_metadata);

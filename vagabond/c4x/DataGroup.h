@@ -23,6 +23,8 @@
 #include <vector>
 #include <string>
 
+#include "Data.h"
+
 /** \class DataGroup
  * In charge of collecting vectors and clustering on results.
  * Vector components are referred to as units.
@@ -34,30 +36,26 @@ namespace PCA
 }
 
 template <class Unit, class Header>
-class DataGroup
+class DataGroup : public Data
 {
 public:
+	using Data::_length;
+	using Data::_groupMembership; using Data::_groupCount;
+	using Data::_stdevs;
+	using Data::Comparable; using Data::_comparables;
+
 	/** allocates shell for DataGroup.
 	 *  @param length fixed length of individual vector,
 	 *  made up of units */
 	DataGroup(int length);
 	
-	virtual int length()
+	virtual int comparable_size()
 	{
-		return _length;
+		return Unit::comparable_size();
 	}
-	
-	virtual int comparable_length()
-	{
-		return Unit::comparable_size() * length();
-	}
-
-	virtual ~DataGroup();
 
 	/** Array is vector of type Unit */
 	typedef std::vector<Unit> Array;
-
-	typedef std::vector<float> Comparable;
 
 	/** Calculate average vector from individual vectors */
 	virtual void calculateAverage();
@@ -75,10 +73,6 @@ public:
 	void convertToUnits(const Comparable &comp, Array &diffs);
 
 	void applyNormals(Comparable &arr);
-	void removeNormals(Comparable &arr);
-	
-	/** Normalise differences for each unit (i.e. vector component) */
-	virtual void normalise();
 	
 	/** Return correlation matrix of size m*m where m = member size */
 	virtual PCA::Matrix correlationMatrix();
@@ -101,11 +95,6 @@ public:
 		return _vectors.size();
 	}
 	
-	const Comparable &comparableVector(const int i) const
-	{
-		return _comparables[i];
-	}
-	
 	const Array &vector(const int i) const
 	{
 		return _vectors[i];
@@ -115,8 +104,7 @@ public:
 	{
 		return _diffs[i];
 	}
-	
-	const Comparable weightedComparable(std::vector<float> weights);
+
 	const Array weightedDifferences(std::vector<float> weights);
 
 	const Array differences(int m, int n);
@@ -136,23 +124,17 @@ public:
 		return _headers;
 	}
 	
-	const int &groupCount() const
-	{
-		return _groupCount;
-	}
-	
 	void clearAverages();
 	
 	void purge(int i);
-
-	static float correlation_between(const Comparable &v, const Comparable &w);
 protected:
-	float correlation_between(int i, int j);
+	/** Normalise differences for each unit (i.e. vector component) */
+	virtual void normalise();
+
 	float distance_between(int i, int j);
 
 	std::vector<Array> _vectors;
 	std::vector<Array> _diffs;
-	std::vector<Comparable> _comparables;
 	std::vector<std::string> _vectorNames;
 
 	std::vector<std::string> _unitNames;
@@ -160,19 +142,13 @@ protected:
 
 	void prepareAverages();
 	Array &averageForIndex(int i);
-	int groupForIndex(int i);
 	
-	/** for separate average calculation */
-	int _groupCount = 0;
-	std::vector<int> _groupMembership;
 	std::map<const Array *, int> _arrayToGroup;
 
 	PCA::Matrix arbitraryMatrix(float(DataGroup<Unit, Header>::*comparison)(int, int));
 
-	int _length;
 	bool _subtractAverage = true;
 	std::vector<Array> _averages;
-	std::vector<float> _stdevs;
 };
 
 #include "DataGroup.cpp"
