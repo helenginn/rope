@@ -191,6 +191,8 @@ cfile,
 'Superpose.cpp',
 'Target.cpp',
 'Target.h',
+'TabulatedData.cpp',
+'TabulatedData.h',
 
 'TorsionBasis.cpp',
 'Torsion2Atomic.cpp',
