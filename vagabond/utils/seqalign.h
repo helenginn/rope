@@ -172,7 +172,6 @@ inline size_t best_match(Alignment ala, Alignment alb, size_t pos, int threshold
 		}
 		
 		int ae = pos;
-		int be = i;
 		for (size_t j = i; j < alb.seq.size(); j++)
 		{
 			if (alb.seq[j] != ala.seq[ae] || 
@@ -183,7 +182,6 @@ inline size_t best_match(Alignment ala, Alignment alb, size_t pos, int threshold
 			}
 			
 			count++;
-			be++;
 			ae++;
 			
 			if (ae > (int)ala.seq.size())
@@ -612,7 +610,6 @@ inline void print_map(Alignment &al)
 
 inline void loop_alignment(Alignment &ala, Alignment &alb)
 {
-	int count = 0;
 	int threshold = 6;
 
 	while (true)
@@ -626,8 +623,6 @@ inline void loop_alignment(Alignment &ala, Alignment &alb)
 
 		int match = best_match(ala, alb, aseed, threshold);
 		
-		count++;
-
 		if (match == 0)
 		{
 			int more = false;
@@ -703,7 +698,6 @@ inline void compare_sequences_and_alignments(std::string a, std::string b,
                                              Alignment &bestb, int tries = 10)
 {
 	int best_mut = a.length() + 1; // to ensure no double deletion
-	int improved = 0;
 
 	for (size_t i = 0; i < tries; i++)
 	{
@@ -718,7 +712,6 @@ inline void compare_sequences_and_alignments(std::string a, std::string b,
 		
 		if (mut < best_mut)
 		{
-			improved++;
 			best_mut = mut;
 			delete_alignment(&besta);
 			delete_alignment(&bestb);
@@ -805,7 +798,6 @@ inline void tidy_alignments(Alignment &ala, Alignment &alb)
 		}
 
 		bool failed = false;
-		bool was_a = false;
 		
 		/* now we march forwards, counting who runs out of UNMATCHED first */
 		/* MATCHED check comes first */
@@ -814,7 +806,6 @@ inline void tidy_alignments(Alignment &ala, Alignment &alb)
 			if (i >= ala.seq.size())
 			{
 				// blargh, ends, ignore for now
-				was_a = true;
 				failed = true;
 				break;
 			}
@@ -836,7 +827,6 @@ inline void tidy_alignments(Alignment &ala, Alignment &alb)
 			else if (isMatched(amask) && !isMatched(bmask))
 			{
 				/* woops, a made sense again first */
-				was_a = true;
 				failed = true;
 				continue;
 			}
