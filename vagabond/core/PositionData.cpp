@@ -16,17 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "PositionalGroup.h"
+#include "PositionData.h"
 #include "HasMetadata.h"
 
-void PositionalGroup::addMetadataArray(HasMetadata *hmd, Array next)
+void PositionData::addMetadataArray(HasMetadata *hmd, Array next)
 {
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
 	this->addArray(name, next);
 }
 
-PositionalGroup::~PositionalGroup()
+PositionData::~PositionData()
 {
 	
 }

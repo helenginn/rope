@@ -22,7 +22,7 @@
 #include "RAMovement.h"
 #include "Entity.h"
 
-class PositionalGroup;
+class PositionData;
 class ClusterSVD;
 class RTAngles;
 
@@ -32,7 +32,7 @@ public:
 	Torsion2Atomic(Entity *entity, ClusterSVD *cluster, 
 	               TorsionData *mg,
 	               Instance *ref = nullptr, 
-	               PositionalGroup *pg = nullptr);
+	               PositionData *pg = nullptr);
 
 	RAMovement convertAnglesSimple(Instance *ref, const RTAngles &angles);
 
@@ -42,7 +42,7 @@ private:
 
 	Entity *_entity = nullptr;
 
-	PositionalGroup *_pData = nullptr;
+	PositionData *_pData = nullptr;
 	TorsionData *_tData = nullptr;
 
 	ClusterSVD *_tCluster = nullptr;

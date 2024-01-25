@@ -24,17 +24,17 @@
 class Axes;
 class Menu;
 class TorsionData;
-class PositionalGroup;
+class PositionData;
 
 typedef std::function<void(Axes *, Menu *)> DoEditMenu;
 typedef std::function<void(Axes *, const std::string &)> DoRequest;
 
 DoEditMenu editMenu(TorsionData *group);
 
-DoEditMenu editMenu(PositionalGroup *group);
+DoEditMenu editMenu(PositionData *group);
 
 DoRequest doRequest(TorsionData *group);
 
-DoRequest doRequest(PositionalGroup *group);
+DoRequest doRequest(PositionData *group);
 
 #endif

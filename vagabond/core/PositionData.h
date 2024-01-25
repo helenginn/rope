@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PositionalGroup__
-#define __vagabond__PositionalGroup__
+#ifndef __vagabond__PositionData__
+#define __vagabond__PositionData__
 
 #include <vagabond/c4x/Posular.h>
 #include <vagabond/c4x/TypedData.h>
@@ -25,19 +25,19 @@
 #include "ObjectGroup.h"
 #include "Residue.h"
 
-class PositionalGroup : 
+class PositionData : 
 public ObjectGroup,
 public TypedData<Posular, Atom3DPosition>
 {
 public:
-	PositionalGroup(size_t length) : 
+	PositionData(size_t length) : 
 	ObjectGroup(this),
 	TypedData<Posular, Atom3DPosition>(length)
 	{
 		
 	}
 
-	PositionalGroup(const PositionalGroup &other) 
+	PositionData(const PositionData &other) 
 	: ObjectGroup(this), TypedData<Posular, Atom3DPosition>(other)
 	{
 		_objects = other._objects;
@@ -48,7 +48,7 @@ public:
 		return "atom_id,delta_position_x,delta_position_y,delta_position_z";
 	}
 	
-	virtual ~PositionalGroup();
+	virtual ~PositionData();
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 private:
 

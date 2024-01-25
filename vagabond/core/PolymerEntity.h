@@ -21,7 +21,7 @@
 
 #include "Entity.h"
 #include "TorsionData.h"
-#include "PositionalGroup.h"
+#include "PositionData.h"
 
 class PolymerEntity : public Entity, public HasResponder<Responder<PolymerEntity> >
 {
@@ -75,7 +75,7 @@ public:
 	friend void from_json(const json &j, PolymerEntity &value);
 
 	virtual TorsionData prepareTorsionGroup();
-	virtual PositionalGroup preparePositionGroup();
+	virtual PositionData preparePositionGroup();
 protected:
 
 private:

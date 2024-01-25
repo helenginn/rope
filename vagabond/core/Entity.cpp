@@ -23,7 +23,7 @@
 #include "Model.h"
 #include "Metadata.h"
 #include "AtomContent.h"
-#include "PositionalGroup.h"
+#include "PositionData.h"
 
 Entity::Entity()
 {
@@ -213,7 +213,7 @@ TorsionData Entity::makeTorsionDataGroup(bool empty)
 	return group;
 }
 
-PositionalGroup Entity::makePositionalDataGroup()
+PositionData Entity::makePositionalDataGroup()
 {
 	std::vector<Instance *> polymers;
 	for (Model *m : _models)
@@ -227,10 +227,10 @@ PositionalGroup Entity::makePositionalDataGroup()
 	return makePositionalDataGroup(polymers);
 }
 
-PositionalGroup Entity::makePositionalDataGroup(std::vector<Instance *> 
+PositionData Entity::makePositionalDataGroup(std::vector<Instance *> 
                                                 &polymers)
 {
-	PositionalGroup group = preparePositionGroup();
+	PositionData group = preparePositionGroup();
 	const std::vector<Atom3DPosition> &headers = group.headers();
 
 	/* make a quick lookup table for the first residue in each */

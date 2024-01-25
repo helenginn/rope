@@ -166,12 +166,12 @@ TorsionData PolymerEntity::prepareTorsionGroup()
 	return group;
 }
 
-PositionalGroup PolymerEntity::preparePositionGroup()
+PositionData PolymerEntity::preparePositionGroup()
 {
 	std::vector<Atom3DPosition> headers;
 	_sequence.addAtomPositionHeaders(headers);
 	
-	PositionalGroup group(headers.size());
+	PositionData group(headers.size());
 	group.addHeaders(headers);
 
 	return group;

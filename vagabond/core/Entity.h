@@ -25,7 +25,7 @@
 #include "Substance.h"
 #include "Model.h"
 #include "TorsionData.h"
-#include "PositionalGroup.h"
+#include "PositionData.h"
 #include "Responder.h"
 #include "VisualPreferences.h"
 
@@ -68,8 +68,8 @@ public:
 	virtual void appendIfMissing(Instance *mol) {};
 	
 	TorsionData makeTorsionDataGroup(bool empty = false);
-	PositionalGroup makePositionalDataGroup();
-	PositionalGroup makePositionalDataGroup(std::vector<Instance *> 
+	PositionData makePositionalDataGroup();
+	PositionData makePositionalDataGroup(std::vector<Instance *> 
 	                                        &polymers);
 
 	Instance *chooseRepresentativeInstance();
@@ -125,7 +125,7 @@ public:
 	friend void from_json(const json &j, PolymerEntity &value);
 
 	virtual TorsionData prepareTorsionGroup() { return TorsionData(0); }
-	virtual PositionalGroup preparePositionGroup() { return PositionalGroup(0); }
+	virtual PositionData preparePositionGroup() { return PositionData(0); }
 protected:
 	Instance *_reference = nullptr;
 

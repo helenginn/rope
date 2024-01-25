@@ -19,7 +19,7 @@
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/TorsionData.h>
-#include <vagabond/core/PositionalGroup.h>
+#include <vagabond/core/PositionData.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskForText.h>
@@ -32,7 +32,7 @@
 #include "AxisRequests.h"
 #include "MetadataView.h"
 #include "TorsionData.h"
-#include "PositionalGroup.h"
+#include "PositionData.h"
 #include "PathManager.h"
 
 #include "RopeSpaceItem.h"
@@ -366,7 +366,7 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 	}
 	else
 	{
-		PositionalGroup *group = static_cast<PositionalGroup *>(_group);
+		PositionData *group = static_cast<PositionData *>(_group);
 		group_ptr = prepareCopy(*group);
 	}
 

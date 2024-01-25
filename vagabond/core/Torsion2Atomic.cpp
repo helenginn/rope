@@ -26,7 +26,7 @@
 
 Torsion2Atomic::Torsion2Atomic(Entity *entity, ClusterSVD *cluster,
                                TorsionData *mg, Instance *ref,
-                               PositionalGroup *pg)
+                               PositionData *pg)
 {
 	_entity = entity;
 	if (ref)
@@ -41,7 +41,7 @@ Torsion2Atomic::Torsion2Atomic(Entity *entity, ClusterSVD *cluster,
 
 	if (pg == nullptr)
 	{
-		_pData = new PositionalGroup(entity->makePositionalDataGroup(insts));
+		_pData = new PositionData(entity->makePositionalDataGroup(insts));
 		_pData->findDifferences();
 	}
 	else
@@ -130,7 +130,7 @@ MultiWeights obtain_weights(TorsionData *data, ClusterSVD *cluster,
 
 template <typename Access>
 PCA::Matrix weights_to_component_matrix(const Access &weights, Instance *ref,
-                                        PositionalGroup *group, int axes_num)
+                                        PositionData *group, int axes_num)
 {
 	int mol_num = group->vectorCount();
 
@@ -172,7 +172,7 @@ auto basis_position(const PCA::Matrix &convert)
 	};
 }
 
-auto actual_atom_position(PositionalGroup *grp, int atom_idx)
+auto actual_atom_position(PositionData *grp, int atom_idx)
 {
 	return [grp, atom_idx](int mol_idx)
 	{
@@ -201,7 +201,7 @@ auto predict_position(Basis &basis)
 }
 
 template <typename Func>
-void for_every_instance(PositionalGroup *group, Func &op)
+void for_every_instance(PositionData *group, Func &op)
 {
 	for (size_t i = 0; i < group->vectorCount(); i++)
 	{
@@ -211,7 +211,7 @@ void for_every_instance(PositionalGroup *group, Func &op)
 
 template <typename Access>
 std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
-                                         PositionalGroup *group, size_t max,
+                                         PositionData *group, size_t max,
                                          bool relative_to_zero = false)
 {
 	int ref_idx = group->indexOfObject(ref);

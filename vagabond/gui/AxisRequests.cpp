@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/RouteExplorer.h>
-#include <vagabond/core/PositionalGroup.h>
+#include <vagabond/core/PositionData.h>
 #include <vagabond/core/TorsionData.h>
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/c4x/ClusterSVD.h>
@@ -33,7 +33,7 @@
 
 #include "AxisRequests.h"
 
-DoEditMenu editMenu(PositionalGroup *group)
+DoEditMenu editMenu(PositionData *group)
 {
 	return [](Axes *axes, Menu *menu)
 	{
@@ -85,7 +85,7 @@ std::vector<Type> vectorFrom(glm::vec3 dir, ClusterType *cluster,
 }
 
 
-DoRequest doRequest(PositionalGroup *group)
+DoRequest doRequest(PositionData *group)
 {
 	return [group](Axes *axes, const std::string &request)
 	{
