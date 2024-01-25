@@ -19,7 +19,7 @@
 #include "AxesMenu.h"
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/HasMetadata.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 #include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>

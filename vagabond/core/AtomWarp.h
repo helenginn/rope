@@ -23,7 +23,7 @@
 
 class PositionalCluster;
 class TorsionCluster;
-class MetadataGroup;
+class TorsionData;
 class RAMovement;
 class ClusterSVD;
 class Instance;
@@ -43,7 +43,7 @@ public:
 	std::function<float(Parameter *)>
 	parameterMagnitudes(const std::vector<Parameter *> &set, int nAxes);
 
-	MetadataGroup *const &torsionData() const
+	TorsionData *const &torsionData() const
 	{
 		return _torsionData;
 	}
@@ -55,7 +55,7 @@ public:
 private:
 	std::vector<RAMovement> allMotions(int n);
 
-	MetadataGroup *_torsionData = nullptr;
+	TorsionData *_torsionData = nullptr;
 	ClusterSVD *_tCluster = nullptr;
 	Instance *_reference = nullptr;
 	

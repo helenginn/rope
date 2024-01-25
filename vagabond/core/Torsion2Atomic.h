@@ -30,7 +30,7 @@ class Torsion2Atomic
 {
 public:
 	Torsion2Atomic(Entity *entity, ClusterSVD *cluster, 
-	               MetadataGroup *mg,
+	               TorsionData *mg,
 	               Instance *ref = nullptr, 
 	               PositionalGroup *pg = nullptr);
 
@@ -43,7 +43,7 @@ private:
 	Entity *_entity = nullptr;
 
 	PositionalGroup *_pData = nullptr;
-	MetadataGroup *_tData = nullptr;
+	TorsionData *_tData = nullptr;
 
 	ClusterSVD *_tCluster = nullptr;
 	ClusterSVD *_pCluster = nullptr;

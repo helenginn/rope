@@ -21,7 +21,7 @@
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Polymer.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
 #include "LineSeries.h"

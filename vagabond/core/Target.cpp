@@ -51,7 +51,7 @@ void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins,
 	}
 }
 
-Target::Target(int num_axes, MetadataGroup *group, 
+Target::Target(int num_axes, TorsionData *group, 
                ClusterSVD *cluster, Instance *ref)
 {
 	_reference = ref;

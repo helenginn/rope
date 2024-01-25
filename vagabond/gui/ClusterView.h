@@ -31,7 +31,7 @@ class Path;
 class Rule;
 class HasMetadata;
 class FloatingText;
-class MetadataGroup;
+class TorsionData;
 class ClusterSVD;
 class ObjectGroup;
 class ConfSpaceView;

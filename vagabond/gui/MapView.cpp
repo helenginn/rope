@@ -77,7 +77,7 @@ void MapView::setup()
 	magnitudes = aw.parameterMagnitudes(_warp->parameterList(), _warp->numAxes());
 
 	ClusterSVD *cluster = aw.cluster();
-	MetadataGroup *data = aw.torsionData();
+	TorsionData *data = aw.torsionData();
 	_wc = new WarpControl(_warp, _warp->torsionWarp(), data, cluster);
 	_wc->setParameters(ordered);
 	_wc->setParamWeights(magnitudes);

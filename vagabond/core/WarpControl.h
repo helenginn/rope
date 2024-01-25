@@ -27,7 +27,7 @@ class Target;
 class ParamSet;
 class ClusterSVD;
 class TorsionWarp;
-class MetadataGroup;
+class TorsionData;
 class SimplexEngine;
 class BondCalculator;
 
@@ -43,7 +43,7 @@ typedef std::map<int, FlexScore> FlexScoreMap;
 class WarpControl : public RunsEngine
 {
 public:
-	WarpControl(Warp *warp, TorsionWarp *tWarp, MetadataGroup *group, ClusterSVD *cluster);
+	WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionData *group, ClusterSVD *cluster);
 	
 	BondSequenceHandler *const &sequences()
 	{

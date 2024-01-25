@@ -26,7 +26,7 @@
 
 #include <string>
 
-class MetadataGroup;
+class TorsionData;
 class AtomContent;
 class PolymerEntity;
 class Model;
@@ -106,7 +106,7 @@ public:
 	virtual void grabTorsions(RTAngles &angles,
 	                              rope::TorsionType type = rope::RefinedTorsions);
 
-	void addPositionsToGroup(MetadataGroup &group,
+	void addPositionsToGroup(TorsionData &group,
 	                         std::map<Residue *, int> resIdxs);
 
 

@@ -21,7 +21,6 @@
 
 #include <vagabond/gui/elements/Mouse3D.h>
 
-class MetadataGroup;
 class ClusterSVD;
 
 class ConformerClusters : public Mouse3D

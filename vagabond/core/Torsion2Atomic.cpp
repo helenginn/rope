@@ -25,7 +25,7 @@
 #include "Entity.h"
 
 Torsion2Atomic::Torsion2Atomic(Entity *entity, ClusterSVD *cluster,
-                               MetadataGroup *mg, Instance *ref,
+                               TorsionData *mg, Instance *ref,
                                PositionalGroup *pg)
 {
 	_entity = entity;
@@ -81,7 +81,7 @@ struct MultiWeights
 	}
 };
 
-SimpleWeights obtain_weights(MetadataGroup *data, ClusterSVD *tc, 
+SimpleWeights obtain_weights(TorsionData *data, ClusterSVD *tc, 
                              const RTAngles &angles, Instance *reference)
 {
 	RTAngles master = data->emptyAngles();
@@ -103,7 +103,7 @@ SimpleWeights obtain_weights(MetadataGroup *data, ClusterSVD *tc,
 		std::vector<float> chosen;
 		data->convertToComparable(entry, chosen);
 
-		float cc = MetadataGroup::correlation_between(compare, chosen);
+		float cc = TorsionData::correlation_between(compare, chosen);
 
 		weight.scores[instance] = cc;
 	}
@@ -111,7 +111,7 @@ SimpleWeights obtain_weights(MetadataGroup *data, ClusterSVD *tc,
 	return weight;
 }
 
-MultiWeights obtain_weights(MetadataGroup *data, ClusterSVD *cluster,
+MultiWeights obtain_weights(TorsionData *data, ClusterSVD *cluster,
                             size_t max)
 {
 	MultiWeights weight;

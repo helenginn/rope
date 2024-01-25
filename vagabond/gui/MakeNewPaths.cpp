@@ -125,7 +125,7 @@ void MakeNewPaths::checkAndPrepare()
 void MakeNewPaths::prepare()
 {
 	std::vector<Instance *> instances = _entity->instances();
-	MetadataGroup prep = _entity->makeTorsionDataGroup(true);
+	TorsionData prep = _entity->makeTorsionDataGroup(true);
 
 	Instance *from = nullptr;
 	Instance *to = nullptr;

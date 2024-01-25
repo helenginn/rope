@@ -307,7 +307,7 @@ float Instance::valueForTorsionFromList(Parameter *param, const RTAngles &list)
 	return list.storage(idx);
 }
 
-void Instance::addTorsionsToGroup(MetadataGroup &group, 
+void Instance::addTorsionsToGroup(TorsionData &group, 
                                   rope::TorsionType type)
 {
 	if (!isRefined())

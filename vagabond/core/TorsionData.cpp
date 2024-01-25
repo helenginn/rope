@@ -16,24 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "Instance.h"
 
-MetadataGroup::MetadataGroup(size_t length) 
+TorsionData::TorsionData(size_t length) 
 : ObjectGroup(this),
 DegreeTypedData(length)
 {
 
 }
 
-void MetadataGroup::addMetadataArray(HasMetadata *hmd, Array next)
+void TorsionData::addMetadataArray(HasMetadata *hmd, Array next)
 {
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
 	DegreeTypedData::addArray(name, next);
 }
 
-void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
+void TorsionData::addMetadataArray(HasMetadata *hmd, RTAngles next)
 {
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
@@ -41,7 +41,7 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
 	DegreeTypedData::addArray(name, filtered);
 }
 
-const RTAngles &MetadataGroup::emptyAngles(bool make_nan) 
+const RTAngles &TorsionData::emptyAngles(bool make_nan) 
 {
 	if (_empty.size() == 0)
 	{

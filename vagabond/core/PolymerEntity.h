@@ -20,7 +20,7 @@
 #define __vagabond__PolymerEntity__
 
 #include "Entity.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "PositionalGroup.h"
 
 class PolymerEntity : public Entity, public HasResponder<Responder<PolymerEntity> >
@@ -74,7 +74,7 @@ public:
 	friend void to_json(json &j, const PolymerEntity &value);
 	friend void from_json(const json &j, PolymerEntity &value);
 
-	virtual MetadataGroup prepareTorsionGroup();
+	virtual TorsionData prepareTorsionGroup();
 	virtual PositionalGroup preparePositionGroup();
 protected:
 

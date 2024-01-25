@@ -23,7 +23,7 @@
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/RouteExplorer.h>
 #include <vagabond/core/PositionalGroup.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
@@ -41,7 +41,7 @@ DoEditMenu editMenu(PositionalGroup *group)
 	};
 };
 
-DoEditMenu editMenu(MetadataGroup *group)
+DoEditMenu editMenu(TorsionData *group)
 {
 	return [](Axes *axes, Menu *menu)
 	{
@@ -116,7 +116,7 @@ DoRequest doRequest(PositionalGroup *group)
 	};
 };
 
-DoRequest doRequest(MetadataGroup *group)
+DoRequest doRequest(TorsionData *group)
 {
 	return [group](Axes *axes, const std::string &request)
 	{

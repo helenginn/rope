@@ -24,7 +24,7 @@
 #include "Sequence.h"
 #include "Substance.h"
 #include "Model.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "PositionalGroup.h"
 #include "Responder.h"
 #include "VisualPreferences.h"
@@ -67,7 +67,7 @@ public:
 	virtual void throwOutInstance(Ligand *mol) {};
 	virtual void appendIfMissing(Instance *mol) {};
 	
-	MetadataGroup makeTorsionDataGroup(bool empty = false);
+	TorsionData makeTorsionDataGroup(bool empty = false);
 	PositionalGroup makePositionalDataGroup();
 	PositionalGroup makePositionalDataGroup(std::vector<Instance *> 
 	                                        &polymers);
@@ -124,7 +124,7 @@ public:
 	friend void to_json(json &j, const PolymerEntity &value);
 	friend void from_json(const json &j, PolymerEntity &value);
 
-	virtual MetadataGroup prepareTorsionGroup() { return MetadataGroup(0); }
+	virtual TorsionData prepareTorsionGroup() { return TorsionData(0); }
 	virtual PositionalGroup preparePositionGroup() { return PositionalGroup(0); }
 protected:
 	Instance *_reference = nullptr;

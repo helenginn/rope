@@ -34,7 +34,7 @@
 #define ALIGNMENT_RUN 1
 
 WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp, 
-                         MetadataGroup *group, ClusterSVD *cluster)
+                         TorsionData *group, ClusterSVD *cluster)
 {
 	_warp = warp;
 	_tWarp = tWarp;

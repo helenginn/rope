@@ -20,12 +20,12 @@
 #define __vagabond__Path__
 
 #include "HasMetadata.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "PlausibleRoute.h"
 #include "Polymer.h"
 
 class Model;
-class MetadataGroup;
+class TorsionData;
 
 class Path : public HasMetadata, Responder<HasMetadata>
 {
@@ -92,7 +92,7 @@ public:
 	
 	bool operator==(const Path &other) const;
 	
-	void filterAngles(MetadataGroup *group);
+	void filterAngles(TorsionData *group);
 	
 	float angleForFraction(float frac, int idx);
 	

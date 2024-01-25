@@ -120,7 +120,7 @@ void LoopyDisplay::prepareConformerCluster(ListConformers confs)
 	Conformer *const &model = confs.front();
 	size_t n_angles = model->headers().size();
 
-	MetadataGroup *group = new MetadataGroup(n_angles);
+	TorsionData *group = new TorsionData(n_angles);
 	group->addHeaders(model->headers());
 	
 	for (Conformer *const &conf : confs)

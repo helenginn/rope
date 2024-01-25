@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ConformerClusters.h"
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 
 ConformerClusters::ConformerClusters(Scene *prev) 
 : Scene(prev), Mouse3D(prev)

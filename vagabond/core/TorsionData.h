@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MetadataGroup__
-#define __vagabond__MetadataGroup__
+#ifndef __vagabond__TorsionData__
+#define __vagabond__TorsionData__
 
 #include <vagabond/c4x/DegreeTypedData.h>
 #include "TorsionRef.h"
@@ -30,12 +30,12 @@ class Residue;
 
 class HasMetadata;
 
-class MetadataGroup : public ObjectGroup, public DegreeTypedData<ResidueTorsion>
+class TorsionData : public ObjectGroup, public DegreeTypedData<ResidueTorsion>
 {
 public:
-	MetadataGroup(size_t length);
+	TorsionData(size_t length);
 	
-	MetadataGroup(const MetadataGroup &other) 
+	TorsionData(const TorsionData &other) 
 	: ObjectGroup(this), DegreeTypedData<ResidueTorsion>(other)
 	{
 		_empty = other._empty;

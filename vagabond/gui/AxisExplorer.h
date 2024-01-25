@@ -44,7 +44,7 @@ public:
 	virtual void setup();
 	virtual void tieButton() {};
 
-	void setCluster(ClusterSVD *const &cluster, MetadataGroup *const &data)
+	void setCluster(ClusterSVD *const &cluster, TorsionData *const &data)
 	{
 		_cluster = cluster;
 		_tData = data;
@@ -98,7 +98,7 @@ private:
 
 	TabulatedData *_data = nullptr;
 	ClusterSVD *_cluster = nullptr;
-	MetadataGroup *_tData = nullptr;
+	TorsionData *_tData = nullptr;
 	RTAngles _rawAngles;
 	RAMovement _movement;
 	

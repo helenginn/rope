@@ -27,7 +27,7 @@
 #include <vagabond/c4x/Posular.h>
 
 #include "HasMetadata.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "ResidueId.h"
 #include "RopeTypes.h"
 
@@ -193,7 +193,7 @@ public:
 		return std::vector<Posular>();
 	};
 
-	void addTorsionsToGroup(MetadataGroup &group, rope::TorsionType type);
+	void addTorsionsToGroup(TorsionData &group, rope::TorsionType type);
 protected:
 
 	std::string _model_id;

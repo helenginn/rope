@@ -190,9 +190,9 @@ Instance *Entity::chooseRepresentativeInstance()
 	return best;
 }
 
-MetadataGroup Entity::makeTorsionDataGroup(bool empty)
+TorsionData Entity::makeTorsionDataGroup(bool empty)
 {
-	MetadataGroup group = prepareTorsionGroup();
+	TorsionData group = prepareTorsionGroup();
 	
 	if (empty)
 	{

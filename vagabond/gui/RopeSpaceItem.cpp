@@ -18,7 +18,7 @@
 
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/Metadata.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 #include <vagabond/core/PositionalGroup.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -31,7 +31,7 @@
 #include "Axes.h"
 #include "AxisRequests.h"
 #include "MetadataView.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "PositionalGroup.h"
 #include "PathManager.h"
 
@@ -361,7 +361,7 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 	
 	if (_type == ConfTorsions)
 	{
-		MetadataGroup *group = static_cast<MetadataGroup *>(_group);
+		TorsionData *group = static_cast<TorsionData *>(_group);
 		group_ptr = prepareCopy(*group);
 	}
 	else
@@ -374,7 +374,6 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
 	subset->setMode(_type);
 	subset->setFixedTitle(title);
-	std::cout << "New object count: " << group_ptr->objectCount() << std::endl;
 	subset->setObjectGroup(group_ptr);
 	addItem(subset);
 	subset->makeView(_confView);

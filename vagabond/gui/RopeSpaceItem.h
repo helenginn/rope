@@ -25,7 +25,7 @@
 
 
 class ButtonResponder;
-class MetadataGroup;
+class TorsionData;
 class HasMetadata;
 class ObjectGroup;
 class ClusterView;

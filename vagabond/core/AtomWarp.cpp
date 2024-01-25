@@ -31,7 +31,7 @@ AtomWarp::AtomWarp(std::vector<Instance *> instances, Instance *reference)
 	_reference = reference;
 	Entity *entity = reference->entity();
 
-	_torsionData = new MetadataGroup(entity->prepareTorsionGroup());
+	_torsionData = new TorsionData(entity->prepareTorsionGroup());
 
 	for (Instance *inst : instances)
 	{

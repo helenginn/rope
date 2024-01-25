@@ -80,7 +80,6 @@ void ClusterView::makePoints()
 	}
 
 	clearVertices();
-	std::cout << "Objects: " << _data->objectCount() << std::endl;
 	
 	size_t count = _data->objectCount();
 	_vertices.reserve(count);
@@ -99,8 +98,6 @@ void ClusterView::makePoints()
 
 		addPoint(v, 0);
 	}
-	
-	std::cout << "Vertices: " << vertexCount() << std::endl;
 	
 	reindex();
 }

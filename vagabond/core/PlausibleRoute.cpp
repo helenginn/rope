@@ -20,7 +20,7 @@
 #include "PlausibleRoute.h"
 #include "BondCalculator.h"
 #include "Polymer.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "BondSequenceHandler.h"
 #include <vagabond/utils/maths.h>
 #include "Grapher.h"

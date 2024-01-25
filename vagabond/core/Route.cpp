@@ -21,7 +21,7 @@
 #include "Grapher.h"
 #include "ParamSet.h"
 #include "TorsionBasis.h"
-#include "MetadataGroup.h"
+#include "TorsionData.h"
 #include "BondSequence.h"
 
 #include "engine/Tasks.h"

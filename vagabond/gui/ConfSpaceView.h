@@ -32,7 +32,7 @@ class Polymer;
 class Rule;
 class Axes;
 class HasMetadata;
-class MetadataGroup;
+class TorsionData;
 class RouteExplorer;
 class RopeSpaceItem;
 class PathView;

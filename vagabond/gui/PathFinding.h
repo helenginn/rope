@@ -20,7 +20,7 @@
 #define __vagabond__PathFinding__
 
 #include <vagabond/gui/elements/Scene.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 #include <vagabond/core/Responder.h>
 
 class SpecificNetwork;
@@ -56,7 +56,7 @@ private:
 	Entity *_entity = nullptr;
 	Text *_refText = nullptr;
 	Instance *_reference = nullptr;
-	MetadataGroup _all;
+	TorsionData _all;
 	Rule *_rule = nullptr;
 	SpecificNetwork *_prior = nullptr;
 };

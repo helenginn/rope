@@ -21,7 +21,7 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Responder.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 #include <mutex>
 
 class Entity;
@@ -53,7 +53,7 @@ private:
 	
 	std::mutex _mutex;
 	PCA::Matrix _results{};
-	MetadataGroup _group = MetadataGroup(0);
+	TorsionData _group = TorsionData(0);
 };
 
 #endif

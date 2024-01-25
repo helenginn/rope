@@ -31,7 +31,7 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/HasMetadata.h>
-#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/TorsionData.h>
 
 AddRule::AddRule(Scene *prev, Rule *chosen, Metadata *md) :
 Scene(prev),
