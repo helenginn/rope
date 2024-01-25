@@ -20,6 +20,7 @@
 #define __vagabond__ClusterTSNE__
 
 #include "Cluster.h"
+#include "Angular.h"
 
 class ClusterTSNE 
 {

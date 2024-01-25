@@ -21,7 +21,6 @@
 
 #include "Data.h"
 #include <vagabond/utils/glm_import.h>
-#include "ViewableCluster.h"
 #include <atomic>
 
 class MetadataGroup;
