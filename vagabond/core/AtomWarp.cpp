@@ -19,8 +19,8 @@
 #include <vagabond/utils/AcquireCoord.h>
 #include <vagabond/utils/Vec3s.h>
 #include <vagabond/core/RTAngles.h>
+#include <vagabond/c4x/ClusterSVD.h>
 #include "Torsion2Atomic.h"
-#include "RopeCluster.h"
 #include "AtomWarp.h"
 #include "Instance.h"
 #include "Entity.h"
@@ -31,27 +31,26 @@ AtomWarp::AtomWarp(std::vector<Instance *> instances, Instance *reference)
 	_reference = reference;
 	Entity *entity = reference->entity();
 
-	MetadataGroup group = entity->prepareTorsionGroup();
+	_torsionData = new MetadataGroup(entity->prepareTorsionGroup());
 
 	for (Instance *inst : instances)
 	{
-		inst->addTorsionsToGroup(group, rope::RefinedTorsions);
+		inst->addTorsionsToGroup(*_torsionData, rope::RefinedTorsions);
 	}
 
-	_tCluster = new TorsionCluster(group);
+	_tCluster = new ClusterSVD(_torsionData);
 	_tCluster->cluster();
 }
 
 std::function<float(Parameter *)>
 AtomWarp::parameterMagnitudes(const std::vector<Parameter *> &set, int nAxes)
 {
-	MetadataGroup &group = *_tCluster->dataGroup();
-	RTAngles empty = group.emptyAngles();
+	RTAngles empty = _torsionData->emptyAngles();
 	std::map<Parameter *, float> mags;
 
 	for (int n = 0; n < nAxes; n++)
 	{
-		std::vector<Angular> angles = _tCluster->rawVector(n);
+		std::vector<Angular> angles = _torsionData->rawVector(_tCluster, n);
 		RTAngles combined = RTAngles::angles_from(empty.headers_only(), angles);
 		combined.attachInstance(_reference);
 		combined.filter_according_to(set);
@@ -72,8 +71,7 @@ std::vector<Parameter *>
 AtomWarp::orderedParameters(const std::vector<Parameter *> &set,
                                                      int nAxes)
 {
-	MetadataGroup &group = *_tCluster->dataGroup();
-	RTAngles empty = group.emptyAngles();
+	RTAngles empty = _torsionData->emptyAngles();
 	std::cout << _reference << std::endl;
 	empty.attachInstance(_reference);
 	empty.filter_according_to(set);
@@ -90,14 +88,13 @@ AtomWarp::orderedParameters(const std::vector<Parameter *> &set,
 std::vector<RAMovement> AtomWarp::allMotions(int n)
 {
 	std::vector<RAMovement> all;
-	Torsion2Atomic t2a(_reference->entity(), _tCluster);
+	Torsion2Atomic t2a(_reference->entity(), _tCluster, _torsionData);
 	
 	std::cout << "LINEAR REGRESSION" << std::endl;
 	std::vector<RAMovement> motions_to_axis;
 	motions_to_axis = t2a.linearRegression(_reference, n);
 	
-	MetadataGroup &group = *_tCluster->dataGroup();
-	RTAngles empty = group.emptyAngles();
+	RTAngles empty = _torsionData->emptyAngles();
 
 	for (size_t i = 0; i < n && n < _tCluster->rows(); i++)
 	{

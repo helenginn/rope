@@ -19,31 +19,40 @@
 #ifndef __vagabond__MetadataGroup__
 #define __vagabond__MetadataGroup__
 
-#include <vagabond/c4x/DegreeDataGroup.h>
-#include <vagabond/core/TorsionRef.h>
-#include <vagabond/core/Residue.h>
-#include <vagabond/core/ResidueTorsion.h>
-#include <vagabond/core/ObjectGroup.h>
+#include <vagabond/c4x/DegreeTypedData.h>
+#include "TorsionRef.h"
+#include "Residue.h"
+#include "ResidueTorsion.h"
+#include "ObjectGroup.h"
 #include "RTAngles.h"
 
 class Residue;
 
 class HasMetadata;
 
-class MetadataGroup : public ObjectGroup, public DegreeDataGroup<ResidueTorsion>
+class MetadataGroup : public ObjectGroup, public DegreeTypedData<ResidueTorsion>
 {
 public:
 	MetadataGroup(size_t length);
+	
+	MetadataGroup(const MetadataGroup &other) 
+	: ObjectGroup(this), DegreeTypedData<ResidueTorsion>(other)
+	{
+		_empty = other._empty;
+		_objects = other._objects;
+	}
+
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 	virtual void addMetadataArray(HasMetadata *hmd, RTAngles next);
-	
-	virtual void setWhiteList(std::vector<HasMetadata *> list);
-	virtual void setWhiteList(std::vector<Instance *> list);
-	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
+
+	virtual std::string csvFirstLine()
+	{
+		return "torsion_id,torsion(degrees)";
+	}
 
 	virtual const int groupCount() const
 	{
-		return DegreeDataGroup<ResidueTorsion>::groupCount();
+		return DegreeTypedData<ResidueTorsion>::groupCount();
 	}
 	
 	const RTAngles &emptyAngles(bool make_nan = false);
@@ -52,21 +61,15 @@ public:
 	{
 		return headers().size();
 	}
-
-	virtual void setSubtractAverage(bool subtract)
-	{
-		_subtractAverage = subtract;
-	}
-	
 	
 	virtual void clearAverages()
 	{
-		return DegreeDataGroup<ResidueTorsion>::clearAverages();
+		return DegreeTypedData<ResidueTorsion>::clearAverages();
 	}
 	
 	virtual void purge(int i)
 	{
-		DegreeDataGroup<ResidueTorsion>::purge(i);
+		DegreeTypedData<ResidueTorsion>::purge(i);
 	}
 private:
 	RTAngles _empty;

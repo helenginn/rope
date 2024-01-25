@@ -22,13 +22,15 @@
 #include <vagabond/utils/Vec3s.h>
 #include <vagabond/utils/svd/PCA.h>
 
-class TorsionCluster;
+class MetadataGroup;
+class ClusterSVD;
 class Instance;
 
 class Target
 {
 public:
-	Target(int num_axes, TorsionCluster *cluster, Instance *ref);
+	Target(int num_axes, MetadataGroup *group,
+	       ClusterSVD *cluster, Instance *ref);
 	~Target();
 
 	const std::vector<Floats> &pointsForScore();
@@ -46,7 +48,8 @@ private:
 	std::vector<Floats> _points;
 
 	Instance *_reference = nullptr;
-	TorsionCluster *_tCluster = nullptr;
+	MetadataGroup *_data = nullptr;
+	ClusterSVD *_tCluster = nullptr;
 	PCA::Matrix _shift{};
 };
 

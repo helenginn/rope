@@ -20,11 +20,16 @@
 #define __vagabond__Data__
 
 #include <vector>
+#include <iostream>
 #include <vagabond/utils/svd/PCA.h>
+
+class Cluster;
+class ObjectGroup;
 
 class Data
 {
 public:
+	friend ObjectGroup;
 	Data(int length) : _length(length)
 	{
 
@@ -32,36 +37,58 @@ public:
 	
 	virtual ~Data() {}
 
-	virtual int length()
+	int length()
 	{
 		return _length;
 	}
 
 	virtual int comparable_size() = 0;
 
-	virtual int comparable_length()
+	int comparable_length()
 	{
 		return comparable_size() * length();
 	}
 
+	/** number of headers (e.g. residue/torsion pairs implemented in
+	 *  TypedData */
+	virtual const size_t headerCount() const = 0;
+
 	typedef std::vector<float> Comparable;
 	
-	virtual Comparable 
+	Comparable 
 	weightedComparable(const std::vector<float> &weights);
 
 	const Comparable &comparableVector(const int i) const
 	{
 		return _comparables[i];
 	}
+
+	void applyNormals(Comparable &arr);
+	void removeNormals(Comparable &arr);
 	
 	virtual const size_t vectorCount() const = 0;
+
+	virtual void cutVectorsToIndexList(const std::vector<int> &indices) = 0;
 
 	/** Find differences between individual vectors and average.
 	 * @param average vector to use as average, or internal average if
 	 * nullptr */
 	virtual void findDifferences() = 0;
+	virtual void clearAverages() = 0;
+
+	virtual void write(std::string filename) = 0;
+
+	virtual void rawVectorToCSV(Cluster *cluster, int axis_idx, 
+	                            std::ostream &ss) = 0;
+
+	virtual void purge(int i) = 0;
 
 	static float correlation_between(const Comparable &v, const Comparable &w);
+	
+	void registerChanged()
+	{
+		_changed = true;
+	}
 
 	const int &groupCount() const
 	{
@@ -88,7 +115,8 @@ protected:
 	std::vector<Comparable> _comparables;
 	std::vector<float> _stdevs;
 
-	int _length;
+	int _length = 0;
+	bool _changed = true;
 };
 
 #endif

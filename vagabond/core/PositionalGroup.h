@@ -20,49 +20,36 @@
 #define __vagabond__PositionalGroup__
 
 #include <vagabond/c4x/Posular.h>
-#include <vagabond/c4x/DataGroup.h>
+#include <vagabond/c4x/TypedData.h>
 #include "Atom3DPosition.h"
 #include "ObjectGroup.h"
 #include "Residue.h"
 
-class PositionalGroup : public ObjectGroup, 
-public DataGroup<Posular, Atom3DPosition>
+class PositionalGroup : 
+public ObjectGroup,
+public TypedData<Posular, Atom3DPosition>
 {
 public:
-	PositionalGroup(size_t length) : DataGroup<Posular, Atom3DPosition>(length)
+	PositionalGroup(size_t length) : 
+	ObjectGroup(this),
+	TypedData<Posular, Atom3DPosition>(length)
 	{
 		
 	}
+
+	PositionalGroup(const PositionalGroup &other) 
+	: ObjectGroup(this), TypedData<Posular, Atom3DPosition>(other)
+	{
+		_objects = other._objects;
+	}
+
+	virtual std::string csvFirstLine()
+	{
+		return "atom_id,delta_position_x,delta_position_y,delta_position_z";
+	}
 	
 	virtual ~PositionalGroup();
-
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
-	virtual void setWhiteList(std::vector<HasMetadata *> list);
-
-	virtual const int groupCount() const
-	{
-		return DataGroup<Posular, Atom3DPosition>::groupCount();
-	}
-
-	virtual const size_t headerCount() const
-	{
-		return headers().size();
-	}
-
-	virtual void setSubtractAverage(bool subtract)
-	{
-		_subtractAverage = subtract;
-	}
-
-	virtual void clearAverages()
-	{
-		return DataGroup<Posular, Atom3DPosition>::clearAverages();
-	}
-
-	virtual void purge(int i)
-	{
-		DataGroup<Posular, Atom3DPosition>::purge(i);
-	}
 private:
 
 };

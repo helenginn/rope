@@ -16,31 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Cluster__cpp__
-#define __vagabond__Cluster__cpp__
-
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <algorithm>
-#include "Cluster.h"
 #include <vagabond/utils/maths.h>
 #include <vagabond/utils/Canonical.h>
 
-template <class DG>
-Cluster<DG>::Cluster(DG &dg) : _dg(dg)
-{
-	_dg = dg;
+#include "Cluster.h"
 
+Cluster::Cluster(Data *const &data)
+{
+	_data = data;
 }
 
-template <class DG>
-Cluster<DG>::~Cluster()
+Cluster::~Cluster()
 {
 	
 }
 
-template <class DG>
-const size_t Cluster<DG>::pointCount() const
+const size_t Cluster::pointCount() const
 {
 	return _result.rows;
 }
@@ -56,8 +50,7 @@ struct AxisCC
 	}
 };
 
-template <class DG>
-int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
+int Cluster::bestAxisFit(std::vector<float> &vals)
 {
 	std::vector<AxisCC> _pairs;
 	for (size_t j = 0; j < _result.rows; j++)
@@ -113,8 +106,7 @@ int Cluster<DG>::bestAxisFit(std::vector<float> &vals)
 	return 0;
 }
 
-template <class DG>
-glm::vec3 Cluster<DG>::point(std::vector<float> &mapped) const
+glm::vec3 Cluster::point(std::vector<float> &mapped) const
 {
 	glm::vec3 v = glm::vec3(0.f);
 
@@ -130,8 +122,7 @@ glm::vec3 Cluster<DG>::point(std::vector<float> &mapped) const
 	return v;
 }
 
-template <class DG>
-glm::vec3 Cluster<DG>::point(int idx) const
+glm::vec3 Cluster::point(int idx) const
 {
 	glm::vec3 v = glm::vec3(0.f);
 
@@ -144,8 +135,7 @@ glm::vec3 Cluster<DG>::point(int idx) const
 	return v;
 }
 
-template <class DG>
-void Cluster<DG>::normaliseResults(float scale)
+void Cluster::normaliseResults(float scale)
 {
 	float sum = 0;
 	for (size_t i = 0; i < _result.rows * _result.cols; i++)
@@ -162,8 +152,7 @@ void Cluster<DG>::normaliseResults(float scale)
 	}
 }
 
-template <class DG>
-std::vector<float> Cluster<DG>::weights(int axis)
+std::vector<float> Cluster::weights(int axis)
 {
 	std::vector<float> ws;
 	float sc = this->_scaleFactor;
@@ -178,17 +167,7 @@ std::vector<float> Cluster<DG>::weights(int axis)
 	return ws;
 }
 
-template <class DG>
-typename DG::Array Cluster<DG>::rawVector(int axis)
-{
-	std::vector<float> ws = weights(axis);
-	typename DG::Array result = _dg.weightedDifferences(ws);
-	
-	return result;
-}
-
-template <class DG>
-std::vector<float> Cluster<DG>::mappedVector(int axis) const
+std::vector<float> Cluster::mappedVector(int axis) const
 {
 	std::vector<float> fs;
 	fs.resize(_result.cols);
@@ -201,32 +180,15 @@ std::vector<float> Cluster<DG>::mappedVector(int axis) const
 	return fs;
 }
 
-template <class DG>
-typename DG::Comparable Cluster<DG>::rawComparable(int axis)
+typename Data::Comparable Cluster::rawComparable(int axis)
 {
 	std::vector<float> ws = weights(axis);
-	typename DG::Comparable result = _dg.weightedComparable(ws);
+	typename Data::Comparable result = _data->weightedComparable(ws);
 	
 	return result;
 }
 
-template <class DG>
-typename DG::Array Cluster<DG>::rawVector(int from, int to)
-{
-	typename DG::Array my_vals, your_vals;
-	my_vals = dataGroup()->vector(from);
-	your_vals = dataGroup()->vector(to);
-
-	for (size_t i = 0; i < your_vals.size(); i++)
-	{
-		your_vals[i] -= my_vals[i];
-	}
-
-	return your_vals;
-}
-
-template <class DG>
-float Cluster<DG>::weight(int axis) const
+float Cluster::weight(int axis) const
 {
 	float sum = 0;
 	
@@ -239,8 +201,7 @@ float Cluster<DG>::weight(int axis) const
 	return sum;
 }
 
-template <class DG>
-void Cluster<DG>::changeLastAxis(int axis)
+void Cluster::changeLastAxis(int axis)
 {
 	for (size_t i = 0; i < 3; i++)
 	{
@@ -256,5 +217,4 @@ void Cluster<DG>::changeLastAxis(int axis)
 	_clusterVersion++;
 }
 
-#endif
 

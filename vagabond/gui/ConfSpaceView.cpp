@@ -40,7 +40,6 @@
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
-#include <vagabond/core/RopeCluster.h>
 #include <vagabond/c4x/ClusterTSNE.h>
 
 #include <vagabond/core/Entity.h>
@@ -325,7 +324,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "show_origin")
 	{
 		delete _origin; _origin = nullptr;
-		Axes *axes = new Axes(_cluster);
+		Axes *axes = new Axes(_selected->data(), _cluster);
 		addObject(axes);
 		_origin = axes;
 	}
@@ -382,7 +381,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "average_clear")
 	{
-		ObjectGroup *mdg = _cluster->objectGroup();
+		ObjectGroup *mdg = _selected->data();
 		mdg->clearAverages();
 		_selected->setMustCluster();
 		refresh();
@@ -391,7 +390,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "selection_separate_average")
 	{
 		std::vector<HasMetadata *> members = _view->selectedMembers();
-		ObjectGroup *mdg = _cluster->objectGroup();
+		ObjectGroup *mdg = _selected->data();
 		mdg->setSeparateAverage(members);
 		_selected->setMustCluster();
 		refresh();
@@ -401,8 +400,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	{
 		Rule *rule = static_cast<Rule *>(button->returnObject());
 		std::vector<HasMetadata *> members = _view->membersForRule(rule);
-		ObjectGroup *mdg = _cluster->objectGroup();
-		mdg->setSeparateAverage(members);
+		_selected->data()->setSeparateAverage(members);
 		_selected->setMustCluster();
 		refresh();
 	}
@@ -513,7 +511,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "rules")
 	{
 		RulesMenu *menu = new RulesMenu(this, _savedSpace.associatedMetadata());
-		menu->setData(_selected->cluster()->objectGroup());
+		menu->setData(_selected->data());
 		menu->show();
 	}
 	
@@ -523,7 +521,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		{
 			AxesMenu *menu = new AxesMenu(this);
 			menu->setEntityId(_entity->name());
-			menu->setCluster(_cluster);
+			menu->setCluster(_cluster, _selected->data());
 			menu->show();
 		}
 	}

@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/Mouse3D.h>
 
 class MetadataGroup;
-template <class T> class Cluster;
+class ClusterSVD;
 
 class ConformerClusters : public Mouse3D
 {
@@ -31,7 +31,7 @@ public:
 
 	virtual void setup();
 	
-	void supplyList(Cluster<MetadataGroup> &cluster);
+	void supplyList(ClusterSVD *cluster);
 private:
 
 };

@@ -20,6 +20,8 @@
 #define __vagabond__PolymerEntity__
 
 #include "Entity.h"
+#include "MetadataGroup.h"
+#include "PositionalGroup.h"
 
 class PolymerEntity : public Entity, public HasResponder<Responder<PolymerEntity> >
 {

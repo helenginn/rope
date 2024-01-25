@@ -76,8 +76,9 @@ void MapView::setup()
 	std::function<float(Parameter *)> magnitudes;
 	magnitudes = aw.parameterMagnitudes(_warp->parameterList(), _warp->numAxes());
 
-	TorsionCluster *cluster = aw.cluster();
-	_wc = new WarpControl(_warp, _warp->torsionWarp(), cluster);
+	ClusterSVD *cluster = aw.cluster();
+	MetadataGroup *data = aw.torsionData();
+	_wc = new WarpControl(_warp, _warp->torsionWarp(), data, cluster);
 	_wc->setParameters(ordered);
 	_wc->setParamWeights(magnitudes);
 

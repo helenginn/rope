@@ -22,7 +22,6 @@
 #include "ParamSet.h"
 #include "TorsionBasis.h"
 #include "MetadataGroup.h"
-#include "RopeCluster.h"
 #include "BondSequence.h"
 
 #include "engine/Tasks.h"

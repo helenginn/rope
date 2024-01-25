@@ -21,40 +21,82 @@
 
 #include <vector>
 #include <string>
+#include <vagabond/c4x/Data.h>
 #include <vagabond/c4x/Cluster.h>
 
 class HasMetadata;
 class Instance;
 class Rule;
 class Path;
+class Menu;
+class Axes;
 
 class ObjectGroup
 {
 public:
-	ObjectGroup() {};
+	ObjectGroup(Data *data)
+	{
+		_data = data;
+	}
 
 	virtual ~ObjectGroup() {};
 
 	std::vector<float> numbersForKey(std::string key);
+
 	virtual void setSeparateAverage(std::vector<HasMetadata *> list);
+
 	std::vector<HasMetadata *> subsetFromRule(const Rule &r);
-	
+
 	bool coversPath(Path *path);
 
-	virtual const size_t headerCount() const = 0;
-	virtual void setSubtractAverage(bool subtract) = 0;
-	virtual const int groupCount() const = 0;
-	virtual void clearAverages() = 0;
+	virtual void setWhiteList(std::vector<HasMetadata *> list);
 
-	virtual void setWhiteList(std::vector<HasMetadata *> list) = 0;
+	virtual void setWhiteList(std::vector<Instance *> list);
 
 	const size_t objectCount() const
 	{
 		return _objects.size();
 	}
 	
-	const int indexOfObject(HasMetadata *obj) const;
+	size_t numGroups() const;
+
+	virtual void write_data(std::string filename);
 	
+	virtual std::string csvFirstLine() = 0;
+
+	void rawVectorToCSV(Cluster *cluster, int axis_idx, std::ostream &ss);
+	
+	const int indexOfObject(HasMetadata *obj) const
+	{
+		for (size_t i = 0; i < _objects.size(); i++)
+		{
+			if (obj == _objects[i])
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+	
+	virtual void clearAverages();
+	
+	void editMenu(Axes *axes, Menu *menu);
+	void doRequest(Axes *axes, const std::string &request);
+	
+	typedef std::function<void(Axes *, Menu *)> DoEditMenu;
+	typedef std::function<void(Axes *, const std::string &)> DoRequest;
+	
+	void setDoEditMenu(const DoEditMenu &do_it)
+	{
+		_doEditMenu = do_it;
+	}
+	
+	void setDoRequest(const DoRequest &do_it)
+	{
+		_doRequest = do_it;
+	}
+
 	HasMetadata *const object(int i) 
 	{
 		return _objects[i];
@@ -65,14 +107,21 @@ public:
 		return _objects;
 	}
 	
+	Data *const &data()
+	{
+		return _data;
+	}
+	
 	std::vector<Instance *> asInstances() const;
-	
-	bool purge(HasMetadata *hm);
-	
-	virtual void purge(int idx) = 0;
+
+	bool purgeObject(HasMetadata *hm);
 protected:
+	Data *_data = nullptr;
+
 	std::vector<HasMetadata *> _objects;
 
+	DoEditMenu _doEditMenu;
+	DoRequest _doRequest;
 };
 
 #endif

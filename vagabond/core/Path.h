@@ -24,6 +24,7 @@
 #include "PlausibleRoute.h"
 #include "Polymer.h"
 
+class Model;
 class MetadataGroup;
 
 class Path : public HasMetadata, Responder<HasMetadata>

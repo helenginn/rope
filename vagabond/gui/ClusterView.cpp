@@ -28,7 +28,6 @@
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/ObjectGroup.h>
 #include <vagabond/core/PathManager.h>
-#include <vagabond/core/RopeCluster.h>
 
 #include <iostream>
 
@@ -48,9 +47,9 @@ ClusterView::~ClusterView()
 
 void ClusterView::updatePoints()
 {
-	if (vertexCount() > _cx->objectGroup()->objectCount())
+	if (vertexCount() > _data->objectCount())
 	{
-		_vertices.resize(_cx->objectGroup()->objectCount());
+		_vertices.resize(_data->objectCount());
 	}
 
 	for (size_t i = 0; i < _vertices.size(); i++)
@@ -67,7 +66,7 @@ void ClusterView::additionalJobs()
 
 void ClusterView::prioritiseMetadata(std::string key)
 {
-	std::vector<float> vals = _cx->objectGroup()->numbersForKey(key);
+	std::vector<float> vals = _data->numbersForKey(key);
 	_cx->chooseBestAxes(vals);
 
 	refresh();
@@ -80,16 +79,16 @@ void ClusterView::makePoints()
 		return;
 	}
 
-	_cx->cluster();
 	clearVertices();
+	std::cout << "Objects: " << _data->objectCount() << std::endl;
 	
-	size_t count = _cx->pointCount();
+	size_t count = _data->objectCount();
 	_vertices.reserve(count);
 	_indices.reserve(count);
 
 	for (size_t i = 0; i < count; i++)
 	{
-		if (!_cx->objectGroup()->object(i)->displayable())
+		if (!_data->object(i)->displayable())
 		{
 			continue;
 		}
@@ -106,8 +105,9 @@ void ClusterView::makePoints()
 	reindex();
 }
 
-void ClusterView::setCluster(RopeCluster *cx)
+void ClusterView::setCluster(ClusterSVD *cx, ObjectGroup *data)
 {
+	_data = data;
 	_cx = cx;
 
 	makePoints();
@@ -115,10 +115,9 @@ void ClusterView::setCluster(RopeCluster *cx)
 
 void ClusterView::applySelected()
 {
-	ObjectGroup &group = *_cx->objectGroup();
-	for (size_t i = 0; i < group.objectCount(); i++)
+	for (size_t i = 0; i < _data->objectCount(); i++)
 	{
-		HasMetadata *hm = group.object(i);
+		HasMetadata *hm = _data->object(i);
 		if (hm->isSelected())
 		{
 			_vertices[i].color = glm::vec4(1.0, 1.0, 0.1, 1.0);
@@ -139,8 +138,7 @@ void ClusterView::applyVaryColour(const Rule &r)
 		return;
 	}
 
-	ObjectGroup *group = _cx->objectGroup();
-	std::vector<float> values = r.valuesForObjects(group);
+	std::vector<float> values = r.valuesForObjects(_data);
 
 	for (size_t i = 0; i < values.size(); i++)
 	{
@@ -157,13 +155,12 @@ void ClusterView::applyChangeIcon(const Rule &r)
 {
 	int pt = r.pointType();
 
-	ObjectGroup &group = *_cx->objectGroup();
-	for (size_t i = 0; i < group.objectCount(); i++)
+	for (size_t i = 0; i < _data->objectCount(); i++)
 	{
-		if (r.appliesToObject(group.object(i)))
+		if (r.appliesToObject(_data->object(i)))
 		{
 			setPointType(i, pt);
-			_members[&r].push_back(group.object(i));
+			_members[&r].push_back(_data->object(i));
 		}
 	}
 	
@@ -202,17 +199,15 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	}
 	
 	int idx = _point2Index[rawidx];
-	
-	ObjectGroup &group = *_cx->objectGroup();
 
 	if (_confSpaceView->returnToView() && left && !hover)
 	{
-		Polymer *pol = static_cast<Polymer *>(group.object(idx));
+		Polymer *pol = static_cast<Polymer *>(_data->object(idx));
 		_confSpaceView->reorientToPolymer(pol);
 		return;
 	}
 
-	std::string str = group.object(idx)->id();
+	std::string str = _data->object(idx)->id();
 
 	FloatingText *ft = new FloatingText(str);
 	ft->setPosition(_vertices[rawidx].pos);
@@ -222,7 +217,7 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	
 	if (hover == false && !left) // click!
 	{
-		_confSpaceView->prepareModelMenu(group.object(idx));
+		_confSpaceView->prepareModelMenu(_data->object(idx));
 	}
 }
 
@@ -295,8 +290,7 @@ void ClusterView::selected(int rawidx, bool inverse)
 	
 	int idx = _point2Index[rawidx];
 	
-	ObjectGroup &group = *_cx->objectGroup();
-	HasMetadata *hm = static_cast<HasMetadata *>(group.object(idx));
+	HasMetadata *hm = static_cast<HasMetadata *>(_data->object(idx));
 
 	if (hm)
 	{
@@ -306,11 +300,9 @@ void ClusterView::selected(int rawidx, bool inverse)
 
 void ClusterView::deselect()
 {
-	ObjectGroup &group = *_cx->objectGroup();
-
-	for (size_t i = 0; i < group.objectCount(); i++)
+	for (size_t i = 0; i < _data->objectCount(); i++)
 	{
-		HasMetadata *hm = static_cast<HasMetadata *>(group.object(i));
+		HasMetadata *hm = static_cast<HasMetadata *>(_data->object(i));
 		hm->setSelected(false);
 	}
 }
@@ -319,11 +311,9 @@ std::vector<HasMetadata *> ClusterView::selectedMembers()
 {
 	std::vector<HasMetadata *> hms;
 
-	ObjectGroup &group = *_cx->objectGroup();
-
-	for (size_t i = 0; i < group.objectCount(); i++)
+	for (size_t i = 0; i < _data->objectCount(); i++)
 	{
-		HasMetadata *hm = static_cast<HasMetadata *>(group.object(i));
+		HasMetadata *hm = static_cast<HasMetadata *>(_data->object(i));
 		if (hm->isSelected())
 		{
 			hms.push_back(hm);

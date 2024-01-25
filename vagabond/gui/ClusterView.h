@@ -32,7 +32,8 @@ class Rule;
 class HasMetadata;
 class FloatingText;
 class MetadataGroup;
-class RopeCluster;
+class ClusterSVD;
+class ObjectGroup;
 class ConfSpaceView;
 
 class ClusterView : public PointyView,
@@ -43,7 +44,7 @@ public:
 	ClusterView();
 	~ClusterView();
 
-	void setCluster(RopeCluster *cx);
+	void setCluster(ClusterSVD *cx, ObjectGroup *data);
 	
 	void clearRules()
 	{
@@ -62,9 +63,14 @@ public:
 	
 	std::vector<HasMetadata *> selectedMembers();
 	
-	RopeCluster *cluster()
+	ClusterSVD *cluster()
 	{
 		return _cx;
+	}
+	
+	ObjectGroup *data()
+	{
+		return _data;
 	}
 
 	virtual void makePoints();
@@ -108,7 +114,7 @@ private:
 	
 	void setFinish(bool finish);
 
-	RopeCluster *_cx = nullptr;
+	ClusterSVD *_cx = nullptr;
 	FloatingText *_text = nullptr;
 	ConfSpaceView *_confSpaceView = nullptr;
 
@@ -121,6 +127,7 @@ private:
 	std::atomic<bool> _finish{false}, _running{false};
 	std::condition_variable _cv;
 	
+	ObjectGroup *_data = nullptr;
 	ClusterView *_inherit = nullptr;
 	std::mutex _lockPopulating;
 	

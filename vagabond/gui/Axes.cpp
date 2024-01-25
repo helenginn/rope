@@ -20,56 +20,26 @@
 #include <math.h>
 #include <vagabond/utils/version.h>
 #include <vagabond/utils/FileReader.h>
-#include <vagabond/core/RopeCluster.h>
+#include <vagabond/utils/maths.h>
 #include <vagabond/core/ChemotaxisEngine.h>
-#include <vagabond/core/RAMovement.h>
-#include <vagabond/core/Instance.h>
+#include <vagabond/core/ObjectGroup.h>
+#include <vagabond/core/HasMetadata.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include "VagWindow.h"
-#include "AxisExplorer.h"
 #include "ConfSpaceView.h"
 #include "PlausibleRoute.h"
 #include "RouteExplorer.h"
-#include "Atom2AtomExplorer.h"
 #include "Axes.h"
 
-Axes::Axes(TorsionCluster *group, Instance *m) : IndexResponder()
+Axes::Axes(ObjectGroup *data, ClusterSVD *cluster, HasMetadata *m) 
+: IndexResponder()
 {
 	initialise();
 
-	_cluster = group;
-	_torsionCluster = group;
-	_instance = m;
-	
-	prepareAxes();
-
-#ifdef __EMSCRIPTEN__
-	if (m) { setSelectable(true); }
-#endif
-}
-
-Axes::Axes(PositionalCluster *group, Instance *m) : IndexResponder()
-{
-	initialise();
-
-	_cluster = group;
-	_positionalCluster = group;
-	_instance = m;
-	
-	prepareAxes();
-
-#ifdef __EMSCRIPTEN__
-	if (m) { setSelectable(true); }
-#endif
-}
-
-Axes::Axes(RopeCluster *group, Instance *m) : IndexResponder()
-{
-	initialise();
-
-	_cluster = group;
-	_instance = m;
+	_data = data;
+	_cluster = cluster;
+	_focus = m;
 	
 	prepareAxes();
 
@@ -95,7 +65,6 @@ void Axes::initialise()
 	for (size_t i = 0; i < 3; i++)
 	{
 		_targets[i] = nullptr;
-		_planes[i] = false;
 	}
 }
 
@@ -143,78 +112,29 @@ std::vector<float> Axes::getMappedVector(int idx)
 	return vals;
 }
 
-RTAngles Axes::directTorsionVector(int idx)
+void Axes::indicesOfObjectsPointedAt(int &start, int &end, int idx)
 {
-	if (_torsionCluster == nullptr)
+	if (idx < 0) idx = _lastIdx;
+	
+	if (_targets[idx] == nullptr)
 	{
-		return RTAngles{};
-	}
-
-	if (_targets[idx] != nullptr)
-	{
-		int mine = _torsionCluster->dataGroup()->indexOfObject(_instance);
-		int yours = _torsionCluster->dataGroup()->indexOfObject(_targets[idx]);
-
-		std::vector<Angular> vals = _torsionCluster->rawVector(mine, yours);
-		const RTAngles &empty = _torsionCluster->dataGroup()->emptyAngles();
-		RTAngles angles = RTAngles::angles_from(empty.headers_only(), vals);
-		return angles;
-	}
-
-	return getTorsionVector(idx);
-}
-
-template <typename Type, class ClusterType>
-std::vector<Type> vectorFrom(glm::vec3 dir, ClusterType *cluster)
-{
-	std::vector<Type> sums;
-	for (size_t i = 0; i < 3; i++)
-	{
-		if (i >= cluster->rows())
-		{
-			continue;
-		}
-
-		int axis = cluster->axis(i);
-		std::vector<Type> vals = cluster->rawVector(axis);
-
-		float &weight = dir[i];
-		
-		if (sums.size() == 0)
-		{
-			sums.resize(vals.size());
-		}
-		
-		for (size_t j = 0; j < vals.size(); j++)
-		{
-			sums[j] += vals[j] * weight;
-		}
+		return;
 	}
 	
-	return sums;
-}
-
-RTAngles Axes::getTorsionVector(int idx)
-{
-	glm::vec3 dir = _dirs[idx];
-	
-	std::vector<Angular> vals = vectorFrom<Angular>(dir, _torsionCluster);
-	const RTAngles &empty = _torsionCluster->dataGroup()->emptyAngles();
-	RTAngles angles = RTAngles::angles_from(empty.headers_only(), vals);
-	return angles;
-}
-
-std::vector<Posular> Axes::getPositionalVector(int idx)
-{
-	glm::vec3 dir = _dirs[idx];
-	
-	std::vector<Posular> vec = vectorFrom<Posular>(dir, _positionalCluster);
-	return vec;
+	start = _data->indexOfObject(_focus);
+	end = _data->indexOfObject(_targets[idx]);
 }
 
 std::string Axes::titleForAxis(int idx)
 {
-	std::string str = "Reference " + _instance->id();
+	if (idx < 0) idx = _lastIdx;
+	
+	if (_lastIdx < 0)
+	{
+		return "";
+	}
+
+	std::string str = "Reference " + _focus->id();
 	std::string info;
 	
 	if (_targets[idx] != nullptr)
@@ -230,73 +150,9 @@ std::string Axes::titleForAxis(int idx)
 	return str;
 }
 
-void Axes::loadAtom2AtomExplorer(int idx)
-{
-	std::vector<Atom3DPosition> list;
-	list = _positionalCluster->dataGroup()->headers();
-
-	std::vector<Posular> vals = getPositionalVector(idx);
-	if (vals.size() == 0)
-	{
-		return;
-	}
-	
-	RAMovement movement = RAMovement::movements_from(list, vals);
-
-	std::string str = titleForAxis(idx);
-
-	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(_scene, _instance, movement);
-	a2a->setCluster(_positionalCluster);
-	a2a->setFutureTitle(str);
-	a2a->show();
-}
-
-void Axes::loadAxisExplorer(int idx)
-{
-	RTAngles angles = getTorsionVector(idx);
-	
-	std::string str = titleForAxis(idx);
-
-	try
-	{
-		AxisExplorer *ae = new AxisExplorer(_scene, _instance, angles);
-		ae->setCluster(_torsionCluster);
-		ae->setFutureTitle(str);
-		ae->show();
-	}
-	catch (const std::runtime_error &err)
-	{
-		BadChoice *bc = new BadChoice(Window::currentScene(), err.what());
-		Window::currentScene()->setModal(bc);
-	}
-}
-
-void Axes::route(int idx)
-{
-	Instance *end = _targets[idx];
-	RTAngles values = directTorsionVector(idx);
-	PlausibleRoute *sr = new PlausibleRoute(_instance, end, values);
-	_scene->setMadePaths();
-
-	RouteExplorer *re = new RouteExplorer(_scene, sr);
-	re->show();
-
-}
-
 void Axes::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "explore_axis")
-	{
-		if (_torsionCluster)
-		{
-			loadAxisExplorer(_lastIdx);
-		}
-		else if (_positionalCluster)
-		{
-			loadAtom2AtomExplorer(_lastIdx);
-		}
-	}
-	else if (tag == "reorient")
+	if (tag == "reorient")
 	{
 		_scene->buttonPressed("choose_reorient_molecule", nullptr);
 	}
@@ -312,9 +168,9 @@ void Axes::buttonPressed(std::string tag, Button *button)
 	{
 		reorient(_lastIdx, nullptr);
 	}
-	else if (tag == "route")
+	else
 	{
-		route(_lastIdx);
+		_data->doRequest(this, tag);
 	}
 }
 
@@ -329,38 +185,41 @@ void Axes::takeOldAxes(Axes *old)
 	refreshAxes();
 }
 
+void Axes::assembleMenu()
+{
+	Menu *m = new Menu(_scene, this);
+
+	_data->editMenu(this, m);
+
+	m->addOption("reorient", "reorient");
+	m->addOption("reflect", "reflect");
+
+	if (_scene->colourRule() != nullptr)
+	{
+		m->addOption("match colour", "match_colour");
+	}
+	
+	if (_edited[_lastIdx])
+	{
+		m->addOption("reset", "reset");
+	}
+
+	double w = _scene->width();
+	double h = _scene->height();
+	int lx = -1; int ly = -1;
+	_scene->getLastPos(lx, ly);
+	double x = lx / w; double y = ly / h;
+	m->setup(x, y);
+
+	_scene->setModal(m);
+}
+
 void Axes::interacted(int idx, bool hover, bool left)
 {
-	if (!hover && _instance && _cluster)
+	if (!hover && _focus && _cluster)
 	{
 		_lastIdx = idx;
-
-		Menu *m = new Menu(_scene, this);
-		m->addOption("explore axis", "explore_axis");
-		m->addOption("reorient", "reorient");
-		m->addOption("reflect", "reflect");
-		
-		if (_scene->colourRule() != nullptr)
-		{
-			m->addOption("match colour", "match_colour");
-		}
-		
-		if (_targets[idx] != nullptr)
-		{
-			m->addOption("reset", "reset");
-#ifdef VERSION_SHORT_ROUTES
-			m->addOption("find route", "route");
-#endif
-		}
-		
-		double w = _scene->width();
-		double h = _scene->height();
-		int lx = -1; int ly = -1;
-		_scene->getLastPos(lx, ly);
-		double x = lx / w; double y = ly / h;
-		m->setup(x, y);
-
-		_scene->setModal(m);
+		assembleMenu();
 	}
 }
 
@@ -384,8 +243,7 @@ size_t Axes::requestedIndices()
 
 void Axes::refreshAxes()
 {
-	ObjectGroup *group = _cluster->objectGroup();
-	int idx = group->indexOfObject(_instance);
+	int idx = _data->indexOfObject(_focus);
 	glm::vec3 start = glm::vec3(0.f);
 	
 	if (idx >= 0)
@@ -399,7 +257,6 @@ void Axes::refreshAxes()
 		_cluster->reweight(dir);
 		
 		glm::vec4 colour = glm::vec4(0., 0., 0., 0.);
-		colour[2] = (_planes[i] ? 1. : 0.);
 
 		for (size_t j = 0; j < 4; j++)
 		{
@@ -418,10 +275,9 @@ void Axes::prepareAxes()
 {
 	glm::vec3 centre = glm::vec3(0.f);
 	
-	if (_cluster && _instance)
+	if (_cluster && _focus)
 	{
-		ObjectGroup *group = _cluster->objectGroup();
-		int idx = group->indexOfObject(_instance);
+		int idx = _data->indexOfObject(_focus);
 		centre = _cluster->pointForDisplay(idx);
 	}
 
@@ -440,7 +296,7 @@ void Axes::reflect(int i)
 	refreshAxes();
 }
 
-void Axes::reorient(int i, Instance *mol)
+void Axes::reorient(int i, HasMetadata *mol)
 {
 	if (i >= 0 && i <= 2)
 	{
@@ -459,24 +315,25 @@ void Axes::reorient(int i, Instance *mol)
 		}
 	}
 
-	ObjectGroup *group = _cluster->objectGroup();
-	int idx = group->indexOfObject(_instance);
+	int idx = _data->indexOfObject(_focus);
 	glm::vec3 centre = _cluster->point(idx);
 
 	for (size_t i = 0; i < 3; i++)
 	{
 		if (_targets[i] != nullptr)
 		{
-			int tidx = group->indexOfObject(_targets[i]);
+			int tidx = _data->indexOfObject(_targets[i]);
 			glm::vec3 diff = _cluster->point(tidx) - centre;
 			glm::vec3 norm = glm::normalize(diff);
 
 			_dirs[i] = norm;
+			_edited[i] = true;
 		}
 		else
 		{
 			_dirs[i] = glm::vec3(0.f);
 			_dirs[i][i] = 1.f;
+			_edited[i] = false;
 		}
 	}
 	
@@ -496,11 +353,11 @@ size_t Axes::parameterCount()
 
 int Axes::sendJob(const std::vector<float> &all)
 {
-	std::vector<float> vals = _cluster->objectGroup()->numbersForKey(_key);
+	std::vector<float> vals = _data->numbersForKey(_key);
 	CorrelData cd = empty_CD();
 	glm::vec3 dir = glm::normalize(glm::vec3(all[0], all[1], all[2]));
 
-	for (int idx = 0; idx < _cluster->objectGroup()->objectCount(); idx++)
+	for (int idx = 0; idx < _data->objectCount(); idx++)
 	{
 		glm::vec3 centre = _cluster->point(idx);
 		float pos = glm::dot(dir, centre);
@@ -535,6 +392,11 @@ void Axes::prioritiseDirection(std::string key)
 	}
 	_engine = new ChemotaxisEngine(this);
 	_engine->start();
+	
+	if (_lastIdx >= 0)
+	{
+		_edited[_lastIdx] = true;
+	}
 	
 	_key = "";
 	std::string score = std::to_string(_engine->bestScore());

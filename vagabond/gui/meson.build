@@ -6,6 +6,8 @@ guifiles = [
 'Atom2AtomExplorer.h',
 'Axes.cpp',
 'AxesMenu.cpp',
+'AxisRequests.cpp',
+'AxisRequests.h',
 'AxisExplorer.cpp',
 'BallAndStickOptions.cpp',
 'BFactors.cpp',

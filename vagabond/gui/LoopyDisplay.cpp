@@ -23,7 +23,6 @@
 #include "Polymer.h"
 #include "RopeSpaceItem.h"
 #include "ConfSpaceView.h"
-#include <vagabond/core/RopeCluster.h>
 
 LoopyDisplay::LoopyDisplay(Scene *prev, Polymer *const &pol) 
 : Scene(prev), Display(prev), _loopy(pol)
@@ -143,7 +142,7 @@ void LoopyDisplay::prepareConformerCluster(ListConformers confs)
 	item->setMetadata(&_metadata);
 	item->setMode(rope::ConfTorsions);
 	item->setObjectGroup(group);
-	item->torsionCluster();
+	item->prepareCluster();
 	
 	std::unique_lock<std::mutex> lock(_spaceMut);
 	_space.setAssociatedMetadata(&_metadata);

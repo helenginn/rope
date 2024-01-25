@@ -16,21 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "RopeSpaceItem.h"
-#include "ConfSpaceView.h"
-#include "Entity.h"
-#include "Instance.h"
-#include "Axes.h"
-#include "RopeCluster.h"
-#include "MetadataView.h"
-#include "MetadataGroup.h"
-#include "PositionalGroup.h"
-#include "PathManager.h"
+#include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/core/MetadataGroup.h>
+#include <vagabond/core/PositionalGroup.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
+
+#include "ConfSpaceView.h"
+#include "Entity.h"
+#include "Instance.h"
+#include "Axes.h"
+#include "AxisRequests.h"
+#include "MetadataView.h"
+#include "MetadataGroup.h"
+#include "PositionalGroup.h"
+#include "PathManager.h"
+
+#include "RopeSpaceItem.h"
 
 using namespace rope;
 
@@ -48,6 +53,7 @@ RopeSpaceItem::~RopeSpaceItem()
 	delete _view;
 	delete _cluster;
 	delete _axes;
+	delete _group;
 }
 
 void RopeSpaceItem::makeView(ConfSpaceView *attach)
@@ -77,6 +83,7 @@ void RopeSpaceItem::clusterIfNeeded()
 
 	_confView->assignRopeSpace(nullptr);
 	_cluster->cluster();
+	_view->setCluster(_cluster, _group);
 
 	_mustCluster = false;
 }
@@ -124,15 +131,14 @@ void RopeSpaceItem::allocateView()
 
 void RopeSpaceItem::purgeHasMetadata(HasMetadata *hm)
 {
-	ObjectGroup *grp = _cluster->objectGroup();
-	bool found = grp->purge(hm);
+	bool found = _group->purgeObject(hm);
 	
 	if (found)
 	{
 		setMustCluster();
 	}
 	
-	std::vector<HasMetadata *> objects = grp->objects();
+	std::vector<HasMetadata *> objects = _group->objects();
 	auto it = std::find(objects.begin(), objects.end(), hm);
 	
 	if (it != objects.end())
@@ -174,20 +180,56 @@ void RopeSpaceItem::setResponders()
 	}
 }
 
-void RopeSpaceItem::torsionCluster()
+std::string RopeSpaceItem::tag_for_type()
+{
+	switch (_type)
+	{
+		case ConfTorsions:
+		return "torsions";
+		case ConfPositional:
+		return "positions";
+		default:
+		return "unknown";
+	}
+}
+
+template <class ExactGroup>
+ObjectGroup *prepareCopy(const ExactGroup &other)
+{
+	ExactGroup *grp = new ExactGroup(other);
+	grp->setDoEditMenu(editMenu(grp));
+	grp->setDoRequest(doRequest(grp));
+
+	return grp;
+}
+
+ObjectGroup *RopeSpaceItem::appropriateStartingGroup()
+{
+	ObjectGroup *grp = nullptr;
+	if (_type == ConfTorsions)
+	{
+		grp = prepareCopy(_entity->makeTorsionDataGroup());
+	}
+	else
+	{
+		grp = prepareCopy(_entity->makePositionalDataGroup());
+	}
+	
+	return grp;
+}
+
+void RopeSpaceItem::prepareCluster()
 {
 	allocateView();
 
-	MetadataGroup *group = static_cast<MetadataGroup *>(_group);
-	if (group == nullptr)
+	if (_group == nullptr)
 	{
-		group = new MetadataGroup(_entity->makeTorsionDataGroup());
-		group->write(_entity->name() + "_torsions.csv");
-		_group = group;
+		_group = appropriateStartingGroup();
+		_group->write_data(_entity->name() + "_" + tag_for_type() + ".csv");
 	}
 
-	_cluster = new TorsionCluster(*group);
-	_view->setCluster(_cluster);
+	_cluster = new ClusterSVD(_group->data());
+	_view->setCluster(_cluster, _group);
 }
 
 void RopeSpaceItem::calculateCluster()
@@ -198,35 +240,17 @@ void RopeSpaceItem::calculateCluster()
 	}
 
 	setResponders();
-
-	if (_type == ConfTorsions)
-	{
-		torsionCluster();
-	}
-	else if (_type == ConfPositional)
-	{
-		PositionalGroup *group = static_cast<PositionalGroup *>(_group);
-		if (_group == nullptr)
-		{
-			group = new PositionalGroup(_entity->makePositionalDataGroup());
-			group->write(_entity->name() + "_atoms.csv");
-			_group = group;
-		}
-
-		_cluster = new PositionalCluster(*group);
-		_view->setCluster(_cluster);
-	}
+	prepareCluster();
 }
 
 RopeSpaceItem *RopeSpaceItem::branchFromRuleRange(const Rule *rule, float min,
                                                   float max)
 {
-	ObjectGroup *mg = _cluster->objectGroup();
 	std::vector<HasMetadata *> whiteList;
 
-	for (size_t i = 0; i < mg->objectCount(); i++)
+	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
-		HasMetadata *hm = mg->object(i);
+		HasMetadata *hm = _group->object(i);
 		Metadata::KeyValues kv = hm->metadata(_md);
 		
 		if (kv.count(rule->header()) > 0)
@@ -250,12 +274,11 @@ RopeSpaceItem *RopeSpaceItem::branchFromRuleRange(const Rule *rule, float min,
 
 RopeSpaceItem *RopeSpaceItem::branchFromRule(Rule *rule, bool inverse)
 {
-	ObjectGroup *mg = _cluster->objectGroup();
 	std::vector<HasMetadata *> whiteList;
 
-	for (size_t i = 0; i < mg->objectCount(); i++)
+	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
-		HasMetadata *hm = mg->object(i);
+		HasMetadata *hm = _group->object(i);
 		Metadata::KeyValues kv = hm->metadata(_md);
 		std::string expected = rule->headerValue();
 		std::string value;
@@ -312,12 +335,11 @@ std::string RopeSpaceItem::displayName() const
 
 RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
 {
-	ObjectGroup *mg = _cluster->objectGroup();
 	std::vector<HasMetadata *> whiteList;
 
-	for (size_t i = 0; i < mg->objectCount(); i++)
+	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
-		HasMetadata *hm = mg->object(i);
+		HasMetadata *hm = _group->object(i);
 
 		if (hm->isSelected() == !inverse)
 		{
@@ -340,25 +362,19 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 	if (_type == ConfTorsions)
 	{
 		MetadataGroup *group = static_cast<MetadataGroup *>(_group);
-		MetadataGroup *new_group;
-		int length = group->headers().size();
-		new_group = new MetadataGroup(*group);
-		new_group->setWhiteList(whiteList);
-		group_ptr = new_group;
+		group_ptr = prepareCopy(*group);
 	}
 	else
 	{
 		PositionalGroup *group = static_cast<PositionalGroup *>(_group);
-		PositionalGroup *new_group;
-		int length = group->headers().size();
-		new_group = new PositionalGroup(*group);
-		new_group->setWhiteList(whiteList);
-		group_ptr = new_group;
+		group_ptr = prepareCopy(*group);
 	}
 
+	group_ptr->setWhiteList(whiteList);
 	RopeSpaceItem *subset = new RopeSpaceItem(_entity);
 	subset->setMode(_type);
 	subset->setFixedTitle(title);
+	std::cout << "New object count: " << group_ptr->objectCount() << std::endl;
 	subset->setObjectGroup(group_ptr);
 	addItem(subset);
 	subset->makeView(_confView);
@@ -375,25 +391,13 @@ void RopeSpaceItem::inheritAxis(RopeSpaceItem *parent)
 		return;
 	}
 
-	ObjectGroup *mg = _cluster->objectGroup();
 	Axes *old = parent->axes();
-	HasMetadata *hm = old->instance();
+	HasMetadata *hm = old->focus();
 
-	if (mg->indexOfObject(hm) >= 0)
+	if (_group->indexOfObject(hm) >= 0)
 	{
-		if (_type == ConfTorsions)
-		{
-			TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
-			_axes = new Axes(tc, old->instance());
-			_axes->takeOldAxes(old);
-		}
-		else if (_type == ConfPositional)
-		{
-			PositionalCluster *pc = static_cast<PositionalCluster *>(_cluster);
-			_axes = new Axes(pc, old->instance());
-			_axes->takeOldAxes(old);
-
-		}
+		_axes = new Axes(_group, _cluster, old->focus());
+		_axes->takeOldAxes(old);
 	}
 }
 
@@ -406,16 +410,7 @@ Axes *RopeSpaceItem::createReference(Instance *inst)
 		_confView->removeResponder(_axes);
 	}
 	
-	if (_type == ConfTorsions)
-	{
-		TorsionCluster *tc = static_cast<TorsionCluster *>(_cluster);
-		_axes = new Axes(tc, inst);
-	}
-	else if (_type == ConfPositional)
-	{
-		PositionalCluster *pc = static_cast<PositionalCluster *>(_cluster);
-		_axes = new Axes(pc, inst);
-	}
+	_axes = new Axes(_group, _cluster, inst);
 
 	_axes->setScene(_confView);
 	_axes->setIndexResponseView(_confView);
@@ -479,12 +474,11 @@ void RopeSpaceItem::buttonPressed(std::string tag, Button *button)
 
 size_t RopeSpaceItem::selectedCount()
 {
-	ObjectGroup *mg = _cluster->objectGroup();
 	size_t count = 0;
 	
-	for (size_t i = 0; i < mg->objectCount(); i++)
+	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
-		HasMetadata *hm = mg->object(i);
+		HasMetadata *hm = _group->object(i);
 		
 		if (hm->isSelected())
 		{
@@ -497,8 +491,7 @@ size_t RopeSpaceItem::selectedCount()
 
 int RopeSpaceItem::separateAverageCount()
 {
-	ObjectGroup *mg = _cluster->objectGroup();
-	return mg->groupCount();
+	return _group->numGroups();
 }
 
 void RopeSpaceItem::handleMetadataTag(std::string tag, Button *button)
@@ -540,11 +533,10 @@ void RopeSpaceItem::handleMetadataTag(std::string tag, Button *button)
 void RopeSpaceItem::setMetadata(std::string key, std::string value)
 {
 	Metadata *md = new Metadata();
-	ObjectGroup *mg = _cluster->objectGroup();
 	
-	for (size_t i = 0; i < mg->objectCount(); i++)
+	for (size_t i = 0; i < _group->objectCount(); i++)
 	{
-		HasMetadata *hm = mg->object(i);
+		HasMetadata *hm = _group->object(i);
 		Metadata::KeyValues kv;
 
 		kv["molecule"] = Value(hm->id());

@@ -19,6 +19,8 @@
 #include "ClusterTSNE.h"
 #include "ClusterSVD.h"
 
+#include <iostream>
+
 ClusterTSNE::ClusterTSNE(const PCA::Matrix &distances, const PCA::Matrix *start,
                          int dims)
 {

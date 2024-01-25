@@ -29,7 +29,7 @@ class MetadataGroup;
 class HasMetadata;
 class ObjectGroup;
 class ClusterView;
-class RopeCluster;
+class ClusterSVD;
 class Metadata;
 class Instance;
 class Entity;
@@ -55,9 +55,14 @@ public:
 		return _view;
 	}
 	
-	RopeCluster *cluster()
+	ClusterSVD *cluster()
 	{
 		return _cluster;
+	}
+	
+	ObjectGroup *data()
+	{
+		return _group;
 	}
 	
 	rope::ConfType confType()
@@ -101,7 +106,7 @@ public:
 	void setConfView(ConfSpaceView *attach);
 	
 	size_t selectedCount();
-	void torsionCluster();
+	void prepareCluster();
 	virtual void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();
@@ -115,6 +120,8 @@ private:
 
 	RopeSpaceItem *newFrom(std::vector<HasMetadata *> &whiteList,
 	                       std::string title);
+	std::string tag_for_type();
+	ObjectGroup *appropriateStartingGroup();
 
 	void allocateView();
 	void inheritAxis(RopeSpaceItem *parent);
@@ -129,7 +136,7 @@ private:
 
 	ObjectGroup *_group = nullptr;
 	ClusterView *_view = nullptr;
-	RopeCluster *_cluster = nullptr;
+	ClusterSVD *_cluster = nullptr;
 	Axes *_axes = nullptr;
 	Entity *_entity = nullptr;
 	ConfSpaceView *_confView = nullptr;

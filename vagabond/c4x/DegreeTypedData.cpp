@@ -17,16 +17,16 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 
-#ifndef __vagabond__DegreeDataGroup__cpp__
-#define __vagabond__DegreeDataGroup__cpp__
+#ifndef __vagabond__DegreeTypedData__cpp__
+#define __vagabond__DegreeTypedData__cpp__
 
-#include "DegreeDataGroup.h"
+#include "DegreeTypedData.h"
 #include <iostream>
 
 using std::isfinite;
 
 template <class Header>
-void DegreeDataGroup<Header>::matchDegrees(Array &next)
+void DegreeTypedData<Header>::matchDegrees(Array &next)
 {
 	for (size_t i = 0; i < _length; i++)
 	{
@@ -37,15 +37,15 @@ void DegreeDataGroup<Header>::matchDegrees(Array &next)
 		}
 		
 		size_t j = 0;
-		Array *master = nullptr;
+		typename TypedData<Angular, Header>::Array *master = nullptr;
 		
-		if (_vectors.size())
+		if (this->vectorCount())
 		{
-			master = &_vectors[j];
+			master = &_entries[j].vector;
 
-			for (j = 0; j < DataGroup<Angular, Header>::vectorCount(); j++)
+			for (j = 0; j < TypedData<Angular, Header>::vectorCount(); j++)
 			{
-				master = &_vectors[j];
+				master = &_entries[j].vector;
 
 				if ((*master)[i] == (*master)[i] && valid((*master)[i]))
 				{
@@ -74,16 +74,16 @@ void DegreeDataGroup<Header>::matchDegrees(Array &next)
 }
 
 template <class Header>
-void DegreeDataGroup<Header>::addArray(std::string name, Array next)
+void DegreeTypedData<Header>::addArray(std::string name, Array next)
 {
-	if (_vectors.size() > 0)
+	if (this->vectorCount() > 0)
 	{
 		matchDegrees(next);
 	}
 	
-	DataGroup<Angular, Header>::addArray(name, next);
+	TypedData<Angular, Header>::addArray(name, next);
 
-	if (_vectors.size() <= 1)
+	if (_entries.size() <= 1)
 	{
 		return;
 	}

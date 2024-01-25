@@ -33,11 +33,12 @@
 #define SHORT_RUN 3
 #define ALIGNMENT_RUN 1
 
-WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp, TorsionCluster *cluster)
+WarpControl::WarpControl(Warp *warp, TorsionWarp *tWarp, 
+                         MetadataGroup *group, ClusterSVD *cluster)
 {
 	_warp = warp;
 	_tWarp = tWarp;
-	_target = new Target(warp->numAxes(), cluster, warp->instance());
+	_target = new Target(warp->numAxes(), group, cluster, warp->instance());
 	_sequences = _warp->sequences();
 
 	_weights = [](Parameter *) { return 1; };

@@ -16,41 +16,51 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__DataGroup__
-#define __vagabond__DataGroup__
+#ifndef __vagabond__TypedData__
+#define __vagabond__TypedData__
 
 #include <map>
 #include <vector>
 #include <string>
 
 #include "Data.h"
+#include "Cluster.h"
 
-/** \class DataGroup
+/** \class TypedData
  * In charge of collecting vectors and clustering on results.
  * Vector components are referred to as units.
  */
 
 template <class Unit, class Header>
-class DataGroup : public Data
+class TypedData : public Data
 {
 public:
 	using Data::_length;
+	using Data::_changed;
 	using Data::_groupMembership; using Data::_groupCount;
 	using Data::_stdevs;
 	using Data::Comparable; using Data::_comparables;
 
-	/** allocates shell for DataGroup.
+	/** Array is vector of type Unit */
+	typedef std::vector<Unit> Array;
+	
+	struct Entry
+	{
+		std::string name;
+		Array vector;
+		Array diff;
+	};
+
+	/** allocates shell for TypedData.
 	 *  @param length fixed length of individual vector,
 	 *  made up of units */
-	DataGroup(int length);
+	TypedData(int length);
+	~TypedData() {}
 	
 	virtual int comparable_size()
 	{
 		return Unit::comparable_size();
 	}
-
-	/** Array is vector of type Unit */
-	typedef std::vector<Unit> Array;
 
 	/** Calculate average vector from individual vectors */
 	virtual void calculateAverage();
@@ -62,18 +72,23 @@ public:
 	 * @param average vector to use as average, or internal average if
 	 * nullptr */
 	virtual void findDifferences();
+
+	Array rawVector(int from, int to);
+	Array rawVector(Cluster *cluster, int axis_idx);
+	void arrayToCSV(const Array &array, std::ostream &ss);
+
+	virtual void rawVectorToCSV(Cluster *cluster, int axis_idx, 
+	                            std::ostream &ss);
 	
 	void convertToDifferences(Array &arr, const Array *ave);
 	void convertToComparable(const Array &diff, Comparable &end);
 	void convertToUnits(const Comparable &comp, Array &diffs);
 
-	void applyNormals(Comparable &arr);
-
 	/** write as CSV to filename */
 	virtual void write(std::string filename);
 
 	/** add an individual vector. Vector must have
-	 * same length as specified when constructing the DataGroup.
+	 * same length as specified when constructing the TypedData.
 	 * @param name vector name
 	 * @param next vector's array to add to members of the group */
 	virtual void addArray(std::string name, Array next);
@@ -81,18 +96,20 @@ public:
 	/** returns number of members of this group. */
 	virtual const size_t vectorCount() const
 	{
-		return _vectors.size();
+		return _entries.size();
 	}
 	
 	const Array &vector(const int i) const
 	{
-		return _vectors[i];
+		return _entries[i].vector;
 	}
 	
 	const Array &differenceVector(const int i) const
 	{
-		return _diffs[i];
+		return _entries[i].diff;
 	}
+	
+	virtual void cutVectorsToIndexList(const std::vector<int> &indices);
 
 	const Array weightedDifferences(std::vector<float> weights);
 
@@ -103,9 +120,9 @@ public:
 	/** Add names of units. Total must not exceed length. */
 	virtual void addHeaders(std::vector<Header> header);
 	
-	const std::vector<std::string> &unitNames() const
+	virtual const size_t headerCount() const
 	{
-		return _unitNames;
+		return headers().size();
 	}
 	
 	const std::vector<Header> &headers() const
@@ -113,29 +130,44 @@ public:
 		return _headers;
 	}
 	
-	void clearAverages();
+	virtual void clearAverages();
 	
-	void purge(int i);
+	virtual void purge(int i);
 protected:
 	/** Normalise differences for each unit (i.e. vector component) */
 	virtual void normalise();
+	
+	template <class Func>
+	void do_on_all_headers(const Func &func)
+	{
+		int i = 0;
+		for (Header &header : _headers)
+		{
+			func(header, i); i++;
+		}
+	}
+	
+	template <class Func>
+	void do_on_all_entries(const Func &func)
+	{
+		int i = 0;
+		for (Entry &entry : _entries)
+		{
+			func(entry, i); i++;
+		}
+	}
 
-	std::vector<Array> _vectors;
-	std::vector<Array> _diffs;
-	std::vector<std::string> _vectorNames;
-
-	std::vector<std::string> _unitNames;
+	std::vector<Entry> _entries;
 	std::vector<Header> _headers;
+
+	std::vector<Array> _averages;
 
 	void prepareAverages();
 	Array &averageForIndex(int i);
-	
-	std::map<const Array *, int> _arrayToGroup;
 
 	bool _subtractAverage = true;
-	std::vector<Array> _averages;
 };
 
-#include "DataGroup.cpp"
+#include "TypedData.cpp"
 
 #endif

@@ -22,13 +22,15 @@
 /** \class Instance group of atoms corresponding to a concrete/observed
  *  molecule from a structure */
 
-#include "ResidueId.h"
-#include "RopeTypes.h"
-#include "HasMetadata.h"
-#include "MetadataGroup.h"
 #include <vagabond/utils/glm_json.h>
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Posular.h>
+
+#include "HasMetadata.h"
+#include "MetadataGroup.h"
+#include "ResidueId.h"
+#include "RopeTypes.h"
+
 using nlohmann::json;
 
 class Atom3DPosition;

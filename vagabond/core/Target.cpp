@@ -18,7 +18,7 @@
 
 #include "Target.h"
 #include <vagabond/utils/Hypersphere.h>
-#include "RopeCluster.h"
+#include <vagabond/c4x/ClusterSVD.h>
 #include "Torsion2Atomic.h"
 
 void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins, 
@@ -26,9 +26,8 @@ void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins,
 {
 	mins = std::vector<float>(num_axes, FLT_MAX);
 	maxes = std::vector<float>(num_axes, -FLT_MAX);
-	MetadataGroup *grp = _tCluster->dataGroup();
 
-	for (size_t i = 0; i < grp->vectorCount(); i++)
+	for (size_t i = 0; i < _data->vectorCount(); i++)
 	{
 		std::vector<float> entry = _tCluster->mappedVector(i);
 		Floats truncated(entry);
@@ -41,7 +40,7 @@ void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins,
 		}
 	}
 
-	int idx = grp->indexOfObject(_reference);
+	int idx = _data->indexOfObject(_reference);
 	std::vector<float> origin = _tCluster->mappedVector(idx);
 
 	for (size_t j = 0; j < mins.size(); j++)
@@ -52,11 +51,13 @@ void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins,
 	}
 }
 
-Target::Target(int num_axes, TorsionCluster *cluster, Instance *ref)
+Target::Target(int num_axes, MetadataGroup *group, 
+               ClusterSVD *cluster, Instance *ref)
 {
 	_reference = ref;
 	_nAxes = num_axes;
 	_weights = std::vector<float>(_nAxes, 0.5);
+	_data = group;
 	_tCluster = cluster;
 	
 	transformMatrix();

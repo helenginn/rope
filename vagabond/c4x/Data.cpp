@@ -146,6 +146,27 @@ PCA::Matrix Data::arbitraryMatrix(const std::function<float(int, int)>
 	return m;
 }
 
+void Data::applyNormals(Comparable &arr)
+{
+	for (size_t j = 0; j < comparable_length(); j++)
+	{
+		arr[j] /= _stdevs[j];
+	}
+}
+
+void Data::removeNormals(Comparable &arr)
+{
+	for (size_t j = 0; j < comparable_length(); j++)
+	{
+		arr[j] *= _stdevs[j];
+
+		if (arr[j] != arr[j] || !isfinite(arr[j]))
+		{
+			arr[j] = 0;
+		}
+	}
+}
+
 PCA::Matrix Data::distanceMatrix()
 {
 	return arbitraryMatrix([this](int i, int j) 

@@ -16,15 +16,15 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "LineSeries.h"
-
 #include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/Rule.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Polymer.h>
-#include <vagabond/core/RopeCluster.h>
 #include <vagabond/core/MetadataGroup.h>
+#include <vagabond/c4x/ClusterSVD.h>
+
+#include "LineSeries.h"
 
 #include <algorithm>
 
@@ -34,7 +34,7 @@ _rule(r)
 	setName("Line series");
 	appendObject(cv);
 	_indices.clear();
-	_group = cv->cluster()->objectGroup();
+	_group = cv->data();
 
 	_renderType = GL_LINES;
 	setUsesProjection(true);

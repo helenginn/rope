@@ -17,21 +17,17 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ObjectGroup.h"
-#include "HasMetadata.h"
-#include "Instance.h"
 #include "Path.h"
+#include "Instance.h"
+#include "HasMetadata.h"
+#include "Metadata.h"
 
-const int ObjectGroup::indexOfObject(HasMetadata *obj) const
+bool ObjectGroup::coversPath(Path *path)
 {
-	for (size_t i = 0; i < _objects.size(); i++)
-	{
-		if (obj == _objects[i])
-		{
-			return i;
-		}
-	}
-	
-	return -1;
+	int start = indexOfObject(path->startInstance());
+	int end   = indexOfObject(path->endInstance());
+
+	return (start >= 0 && end >= 0);
 }
 
 std::vector<float> ObjectGroup::numbersForKey(std::string key)
@@ -46,7 +42,7 @@ std::vector<float> ObjectGroup::numbersForKey(std::string key)
 		{
 			val = kv.at(key).number();
 		}
-		
+
 		vals.push_back(val);
 	}
 
@@ -68,6 +64,59 @@ std::vector<HasMetadata *> ObjectGroup::subsetFromRule(const Rule &r)
 	return list;
 }
 
+void ObjectGroup::setWhiteList(std::vector<HasMetadata *> list)
+{
+	if (list.size() == 0)
+	{
+		return;
+	}
+
+	std::vector<HasMetadata *> short_list;
+	std::vector<int> indices;
+
+	for (int i = 0; i < _objects.size(); i++)
+	{
+		HasMetadata *object = _objects[i];
+
+		if (std::find(list.begin(), list.end(), object) != list.end())
+		{
+			indices.push_back(i);
+			short_list.push_back(object);
+		}
+	}
+
+	_objects = short_list;
+	_data->cutVectorsToIndexList(indices);
+}
+
+void ObjectGroup::setWhiteList(std::vector<Instance *> list)
+{
+	std::vector<HasMetadata *> hms;
+	hms.reserve(list.size());
+
+	for (Instance *inst : list)
+	{
+		hms.push_back(inst);
+	}
+
+	setWhiteList(hms);
+}
+
+bool ObjectGroup::purgeObject(HasMetadata *hm)
+{
+	for (size_t i = 0; i < _objects.size(); i++)
+	{
+		if (_objects[i] == hm)
+		{
+			_data->purge(i);
+			_objects.erase(_objects.begin() + i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 std::vector<Instance *> ObjectGroup::asInstances() const
 {
 	std::vector<Instance *> list;
@@ -81,30 +130,77 @@ std::vector<Instance *> ObjectGroup::asInstances() const
 
 }
 
+
 void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 {
-
-}
-
-bool ObjectGroup::purge(HasMetadata *hm)
-{
-	for (size_t i = 0; i < _objects.size(); i++)
+	if (_data->_groupMembership.size() != _data->vectorCount())
 	{
-		if (_objects[i] == hm)
-		{
-			purge(i);
-			_objects.erase(_objects.begin() + i);
-			return true;
-		}
+		_data->_groupMembership.resize(_data->vectorCount());
 	}
 
-	return false;
+	if (list.size() == 0)
+	{
+		return;
+	}
+
+	_data->_groupCount++;
+
+	int i = 0;
+	for (HasMetadata *object : _objects)
+	{
+		std::vector<HasMetadata *>::iterator it;
+		it = std::find(list.begin(), list.end(), object);
+
+		if (it != list.end())
+		{
+			_data->_groupMembership[i] = _data->_groupCount;
+		}
+
+		i++;
+	}
+
+	_data->registerChanged();
+
 }
 
-bool ObjectGroup::coversPath(Path *path)
+size_t ObjectGroup::numGroups() const
 {
-	int start = indexOfObject(path->startInstance());
-	int end   = indexOfObject(path->endInstance());
+	return _data->groupCount();
+}
 
-	return (start >= 0 && end >= 0);
+void ObjectGroup::clearAverages()
+{
+	_data->clearAverages();
+}
+
+void ObjectGroup::rawVectorToCSV(Cluster *cluster, int axis_idx, 
+                                 std::ostream &ss)
+{
+	_data->rawVectorToCSV(cluster, axis_idx, ss);
+}
+
+void ObjectGroup::write_data(std::string filename)
+{
+	_data->write(filename);
+}
+
+void ObjectGroup::editMenu(Axes *axes, Menu *menu)
+{
+	if (!_doEditMenu)
+	{
+		return;
+	}
+
+	_doEditMenu(axes, menu);
+}
+
+void ObjectGroup::doRequest(Axes *axes, const std::string &request)
+{
+	if (!_doRequest)
+	{
+		return;
+	}
+
+	_doRequest(axes, request);
+
 }

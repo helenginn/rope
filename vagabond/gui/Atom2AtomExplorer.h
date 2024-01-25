@@ -39,11 +39,6 @@ class Atom2AtomExplorer : public Scene, public DragResponder
 public:
 	Atom2AtomExplorer(Scene *scene, Instance *instance,
 	                  const RAMovement &movements);
-	
-	void setCluster(PositionalCluster *const &cluster)
-	{
-		_cluster = cluster;
-	}
 
 	virtual void setup();
 
@@ -56,8 +51,6 @@ private:
 
 	Instance *_instance = nullptr;
 	AtomGroup *_atoms = nullptr;
-
-	PositionalCluster *_cluster = nullptr;
 
 	void slider();
 	void addPlot();

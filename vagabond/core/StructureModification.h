@@ -31,7 +31,6 @@
 
 class MetadataGroup;
 
-template <class T>
 class Cluster;
 
 class TorsionCluster;

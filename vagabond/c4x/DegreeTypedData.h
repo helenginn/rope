@@ -16,38 +16,37 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__DegreeDataGroup__
-#define __vagabond__DegreeDataGroup__
+#ifndef __vagabond__DegreeTypedData__
+#define __vagabond__DegreeTypedData__
 
 #include "Angular.h"
-#include "DataGroup.h"
+#include "TypedData.h"
 
-/** \class DegreeDataGroup
- * specialised class of DataGroup that takes degree values and ensures all
+/** \class DegreeTypedData
+ * specialised class of TypedData that takes degree values and ensures all
  * values match previous entries as closely as possible by adding or subtracting
  * multiple of 360 degrees */
 
 
 template <class Header>
-class DegreeDataGroup : public DataGroup<Angular, Header>
+class DegreeTypedData : public TypedData<Angular, Header>
 {
 public:
-	using Array = typename DataGroup<Angular, Header>::Array;
+	using Array = typename TypedData<Angular, Header>::Array;
 	
-	DegreeDataGroup(int num) : DataGroup<Angular, Header>(num) {}
+	DegreeTypedData(int num) : TypedData<Angular, Header>(num) {}
 
 	void matchDegrees(Array &next);
 	virtual void addArray(std::string name, Array next);
 protected:
-	using DataGroup<Angular, Header>::_length;
-	using DataGroup<Angular, Header>::_vectors;
-	using DataGroup<Angular, Header>::_diffs;
-	using DataGroup<Angular, Header>::_stdevs;
+	using TypedData<Angular, Header>::_length;
+	using TypedData<Angular, Header>::_entries;
+	using TypedData<Angular, Header>::_stdevs;
 
 private:
 
 };
 
-#include "DegreeDataGroup.cpp"
+#include "DegreeTypedData.cpp"
 
 #endif

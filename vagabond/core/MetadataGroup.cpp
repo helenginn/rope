@@ -19,7 +19,9 @@
 #include "MetadataGroup.h"
 #include "Instance.h"
 
-MetadataGroup::MetadataGroup(size_t length) : DegreeDataGroup(length)
+MetadataGroup::MetadataGroup(size_t length) 
+: ObjectGroup(this),
+DegreeTypedData(length)
 {
 
 }
@@ -28,7 +30,7 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, Array next)
 {
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
-	DegreeDataGroup::addArray(name, next);
+	DegreeTypedData::addArray(name, next);
 }
 
 void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
@@ -36,84 +38,7 @@ void MetadataGroup::addMetadataArray(HasMetadata *hmd, RTAngles next)
 	_objects.push_back(hmd);
 	std::string name = hmd->id();
 	std::vector<Angular> filtered = next.storage_according_to(emptyAngles());
-	DegreeDataGroup::addArray(name, filtered);
-}
-
-
-void MetadataGroup::setWhiteList(std::vector<Instance *> list)
-{
-	std::vector<HasMetadata *> hms;
-	hms.reserve(list.size());
-
-	for (Instance *inst : list)
-	{
-		hms.push_back(inst);
-	}
-	
-	setWhiteList(hms);
-}
-
-void MetadataGroup::setWhiteList(std::vector<HasMetadata *> list)
-{
-	if (list.size() == 0)
-	{
-		return;
-	}
-
-	std::vector<HasMetadata *> short_list;
-	std::vector<Array> vectors;
-	std::vector<std::string> names;
-
-	for (int i = 0; i < _objects.size(); i++)
-	{
-		HasMetadata *object = _objects[i];
-
-		if (std::find(list.begin(), list.end(), object) != list.end())
-		{
-			short_list.push_back(object);
-			names.push_back(_vectorNames[i]);
-			vectors.push_back(_vectors[i]);
-		}
-	}
-	
-	_objects = short_list;
-	_vectorNames = names;
-	_vectors = vectors;
-
-	_diffs.clear();
-	_averages.clear();
-}
-
-void MetadataGroup::setSeparateAverage(std::vector<HasMetadata *> list)
-{
-	if (_groupMembership.size() != _vectors.size())
-	{
-		_groupMembership.resize(_vectors.size());
-	}
-	
-	if (list.size() == 0)
-	{
-		return;
-	}
-
-	_groupCount++;
-	int i = 0;
-	for (HasMetadata *object : _objects)
-	{
-		std::vector<HasMetadata *>::iterator it;
-		it = std::find(list.begin(), list.end(), object);
-		
-		if (it != list.end())
-		{
-			_groupMembership[i] = _groupCount;
-			_arrayToGroup[&_vectors[i]] = _groupCount;
-		}
-
-		i++;
-	}
-	
-	_diffs.clear();
-	_averages.clear();
+	DegreeTypedData::addArray(name, filtered);
 }
 
 const RTAngles &MetadataGroup::emptyAngles(bool make_nan) 

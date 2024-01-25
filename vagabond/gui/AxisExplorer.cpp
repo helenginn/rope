@@ -16,9 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "AxisExplorer.h"
-#include "Chain.h"
-#include "ColourLegend.h"
+#include <vagabond/c4x/ClusterSVD.h>
 
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -29,7 +27,6 @@
 #include <vagabond/gui/TableView.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
-#include "BondSequence.h"
 
 #include <vagabond/core/TabulatedData.h>
 #include <vagabond/core/BondCalculator.h>
@@ -41,6 +38,11 @@
 #include <vagabond/core/TorsionBasis.h>
 #include <vagabond/core/Result.h>
 #include <vagabond/core/engine/Tasks.h>
+
+#include "AxisExplorer.h"
+#include "Chain.h"
+#include "ColourLegend.h"
+#include "BondSequence.h"
 
 AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 : Scene(prev), Display(prev)
@@ -120,7 +122,7 @@ void AxisExplorer::setupSlider()
 void AxisExplorer::adjustTorsions()
 {
 	Entity *entity = _instance->entity();
-	Torsion2Atomic t2a(entity, _cluster, _instance);
+	Torsion2Atomic t2a(entity, _cluster, _tData, _instance);
 	_movement = t2a.convertAnglesSimple(_instance, _rawAngles);
 	_movement.attachInstance(_instance);
 	_displayTargets = true;
@@ -252,7 +254,7 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 	}
 	
 	_data = new TabulatedData({{"Residue number", TabulatedData::Number},
-		                     {"Angle deviation (deg)", TabulatedData::Number}});
+		                     {"Angle variation (deg)", TabulatedData::Number}});
 
 	for (auto it = list.begin(); it != list.end(); it++)
 	{
@@ -262,7 +264,7 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 
 		atom->setAddedColour(variation);
 		_data->addEntry({{"Residue number", it->first.str()},
-			             {"Angle deviation (deg)", 
+			             {"Angle variation (deg)", 
 		                   std::to_string(variation)}});
 	}
 }

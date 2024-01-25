@@ -16,40 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ClusterSVD__cpp__
-#define __vagabond__ClusterSVD__cpp__
-
-#include "Cluster.h"
+#include "ClusterSVD.h"
+#include "Data.h"
 #include <iostream>
 
-template <class DG>
-ClusterSVD<DG>::ClusterSVD(DG &dg) : Cluster<DG>(dg)
+ClusterSVD::ClusterSVD(Data *const &data) : Cluster(data)
 {
 
 }
 
-template <class DG>
-ClusterSVD<DG>::~ClusterSVD()
+ClusterSVD::~ClusterSVD()
 {
 	freeSVD(&_svd);
 }
 
-template <class DG>
-PCA::Matrix ClusterSVD<DG>::matrix()
+PCA::Matrix ClusterSVD::matrix(Data *const &data)
 {
 	if (_type == PCA::Distance)
 	{
-		return this->_dg.distanceMatrix();
+		return data->distanceMatrix();
 	}
 	else 
 	{
-		return this->_dg.correlationMatrix();
+		return data->correlationMatrix();
 	}
 	
 }
 
-template <class DG>
-std::vector<float> ClusterSVD<DG>::mapVector(typename DG::Array &vec)
+/*
+std::vector<float> ClusterSVD::mapVector(typename DG::Array &vec)
 {
 	typename DG::Comparable comp;
 	this->_dg.convertToComparable(vec, comp);
@@ -57,9 +52,9 @@ std::vector<float> ClusterSVD<DG>::mapVector(typename DG::Array &vec)
 
 	return result;
 }
+*/
 
-template <class DG>
-std::vector<float> ClusterSVD<DG>::mapComparable(typename DG::Comparable &vec)
+std::vector<float> ClusterSVD::mapComparable(typename Data::Comparable &vec)
 {
 	_mutex.lock();
 	std::vector<float> result;
@@ -70,15 +65,16 @@ std::vector<float> ClusterSVD<DG>::mapComparable(typename DG::Comparable &vec)
 	return result;
 }
 
-template <class DG>
-void ClusterSVD<DG>::cluster()
+void ClusterSVD::cluster()
 {
-	if (this->dataGroup()->vectorCount() == 0)
+	if (_data->vectorCount() == 0)
 	{
 		return;
 	}
+	
+	_data->findDifferences();
 
-	PCA::Matrix mat = matrix();
+	PCA::Matrix mat = matrix(_data);
 
 	setupSVD(&_svd, mat.rows, mat.cols);
 	setupMatrix(&this->_result, mat.rows, mat.cols);
@@ -114,17 +110,16 @@ void ClusterSVD<DG>::cluster()
 	this->_clusterVersion++;
 }
 
-template <class DG>
-void ClusterSVD<DG>::calculateInverse()
+void ClusterSVD::calculateInverse()
 {
 	_mutex.lock();
-	int l = this->_dg.comparable_length();
+	int l = this->data()->comparable_length();
 	PCA::SVD tmp;
 	setupSVD(&tmp, l, _svd.u.rows);
 	
 	for (size_t i = 0; i < _svd.u.rows; i++)
 	{
-		typename DG::Comparable raw = this->rawComparable(i);
+		typename Data::Comparable raw = this->rawComparable(i);
 
 		for (size_t j = 0; j < l; j++)
 		{
@@ -137,13 +132,12 @@ void ClusterSVD<DG>::calculateInverse()
 	_mutex.unlock();
 }
 
-template <class DG>
-void ClusterSVD<DG>::recalculateResult()
+void ClusterSVD::recalculateResult()
 {
-	for (size_t i = 0; i < this->dataGroup()->vectorCount(); i++)
+	for (size_t i = 0; i < this->data()->vectorCount(); i++)
 	{
-		typename DG::Comparable comp = this->dataGroup()->comparableVector(i);
-		this->_dg.removeNormals(comp);
+		typename Data::Comparable comp = this->data()->comparableVector(i);
+		this->data()->removeNormals(comp);
 
 		std::vector<float> mapped = mapComparable(comp);
 		
@@ -155,12 +149,10 @@ void ClusterSVD<DG>::recalculateResult()
 
 }
 
-template <class DG>
-PCA::Matrix ClusterSVD<DG>::distanceMatrix()
+PCA::Matrix ClusterSVD::distanceMatrix()
 {
 	PCA::Matrix distances = distancesFrom(this->_result);
 
 	return distances;
 }
 
-#endif

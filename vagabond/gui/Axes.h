@@ -20,16 +20,15 @@
 #define __vagabond__Axes__
 
 #include <vagabond/gui/elements/IndexResponder.h>
-#include <vagabond/c4x/Cluster.h>
+#include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/Engine.h>
 #include <vagabond/c4x/Posular.h>
 #include <thread>
 #include "RTAngles.h"
 
 class Scene;
-class Instance;
-class TorsionCluster;
-class PositionalCluster;
+class HasMetadata;
+class ClusterSVD;
 class ChemotaxisEngine;
 class ConfSpaceView;
 class RopeCluster;
@@ -37,23 +36,28 @@ class RopeCluster;
 class Axes : public IndexResponder, public ButtonResponder, public RunsEngine
 {
 public:
-	Axes(TorsionCluster *group, Instance *m = nullptr);
-	Axes(PositionalCluster *group, Instance *m = nullptr);
-	Axes(RopeCluster *group, Instance *m = nullptr);
+	Axes(ObjectGroup *group, ClusterSVD *cluster, HasMetadata *m = nullptr);
 	~Axes();
 	
 	void setScene(ConfSpaceView *scene)
 	{
 		_scene = scene;
 	}
+	
+	enum Status
+	{
+		Unedited,
+		PrincipalCombination,
+		PointingToOther,
+		None
+	};
 
 	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual void reindex();
-	virtual void reorient(int i, Instance *mol);
+	void reorient(int i, HasMetadata *mol);
 	virtual void click(bool left = true);
 	virtual bool mouseOver();
 	virtual void unmouseOver();
-	RTAngles directTorsionVector(int idx);
 
 	virtual size_t requestedIndices();
 	
@@ -62,10 +66,54 @@ public:
 	void buttonPressed(std::string tag, Button *button);
 	void backgroundPrioritise(std::string key);
 	
-	Instance *instance()
+	Status status(int idx = -1)
 	{
-		return _instance;
+		if (idx == -1)
+		{
+			idx = _lastIdx;
+		}
+		if (idx == -1)
+		{
+			return None;
+		}
+
+		if (_targets[idx])
+		{
+			return PointingToOther;
+		}
+		
+		return (_edited[idx] ? PrincipalCombination : Unedited);
 	}
+	
+	glm::vec3 axisInQuestion()
+	{
+		if (_lastIdx < 0) return {};
+		return _dirs[_lastIdx];
+	}
+	
+	ClusterSVD *const &cluster() const
+	{
+		return _cluster;
+	}
+	
+	ObjectGroup *const &data() const
+	{
+		return _data;
+	}
+	
+	HasMetadata *focus()
+	{
+		return _focus;
+	}
+	
+	ConfSpaceView *scene()
+	{
+		return _scene;
+	}
+
+	std::string titleForAxis(int idx = -1);
+	
+	void indicesOfObjectsPointedAt(int &start, int &end, int idx = -1);
 
 	virtual size_t parameterCount();
 	virtual int sendJob(const std::vector<float> &all);
@@ -80,31 +128,28 @@ private:
 	void route(int idx);
 	void initialise();
 
-	std::string titleForAxis(int idx);
-	RTAngles getTorsionVector(int axis);
-	std::vector<Posular> getPositionalVector(int idx);
 	void prepareAxes();
 	void refreshAxes();
 	void reflect(int i);
+	void assembleMenu();
 
-	void loadAxisExplorer(int idx);
-	void loadAtom2AtomExplorer(int idx);
-
-	RopeCluster *_cluster = nullptr;
-	TorsionCluster *_torsionCluster = nullptr;
-	PositionalCluster *_positionalCluster = nullptr;
-	Instance *_instance = nullptr;
+	ObjectGroup *_data = nullptr;
+	ClusterSVD *_cluster = nullptr;
+	HasMetadata *_focus = nullptr;
 	ConfSpaceView *_scene = nullptr;
+
+	// last accessed arrow, 0 to 2 or -1 if not accessed
 	int _lastIdx = -1;
 	
-	Instance *_targets[3];
+	// directions in which the axes are pointing
+	HasMetadata *_targets[3];
 	
 	void stop();
 	std::thread *_worker = nullptr;
 	std::string _key;
 	ChemotaxisEngine *_engine = nullptr;
 
-	bool _planes[3];
+	bool _edited[3] = {false, false, false};
 	std::vector<glm::vec3> _dirs;
 	
 };

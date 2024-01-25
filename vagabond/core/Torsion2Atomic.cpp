@@ -19,29 +19,35 @@
 #include <cmath>
 #include <functional>
 #include "Torsion2Atomic.h"
+#include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/utils/Vec3s.h>
 #include <vagabond/utils/maths.h>
 #include "Entity.h"
 
-Torsion2Atomic::Torsion2Atomic(Entity *entity, TorsionCluster *cluster,
-                               Instance *ref, PositionalCluster *pc)
+Torsion2Atomic::Torsion2Atomic(Entity *entity, ClusterSVD *cluster,
+                               MetadataGroup *mg, Instance *ref,
+                               PositionalGroup *pg)
 {
 	_entity = entity;
 	if (ref)
 	{
 		_entity->setReference(ref);
 	}
+
 	_tCluster = cluster;
-	std::vector<Instance *> instances = _tCluster->dataGroup()->asInstances();
-	if (pc == nullptr)
+	_tData = mg;
+
+	std::vector<Instance *> insts = mg->asInstances();
+
+	if (pg == nullptr)
 	{
-		PositionalGroup group = entity->makePositionalDataGroup(instances);
-		group.findDifferences();
-		_pCluster = new PositionalCluster(group);
+		_pData = new PositionalGroup(entity->makePositionalDataGroup(insts));
+		_pData->findDifferences();
 	}
 	else
 	{
-		_pCluster = pc;
+		_pData = pg;
+		_pData->findDifferences();
 	}
 }
 
@@ -75,28 +81,27 @@ struct MultiWeights
 	}
 };
 
-SimpleWeights obtain_weights(TorsionCluster *tc, const RTAngles &angles,
-                             Instance *reference)
+SimpleWeights obtain_weights(MetadataGroup *data, ClusterSVD *tc, 
+                             const RTAngles &angles, Instance *reference)
 {
-	MetadataGroup *grp = tc->dataGroup();
-	RTAngles master = grp->emptyAngles();
+	RTAngles master = data->emptyAngles();
 
 	std::vector<Angular> sorted = angles.storage_according_to(master);
 	
 	std::vector<float> compare;
-	grp->convertToComparable(sorted, compare);
+	data->convertToComparable(sorted, compare);
 	
 	SimpleWeights weight;
 	
-	int ref_idx = grp->indexOfObject(reference);
+	int ref_idx = data->indexOfObject(reference);
 
-	for (size_t i = 0; i < grp->vectorCount(); i++)
+	for (size_t i = 0; i < data->vectorCount(); i++)
 	{
-		std::vector<Angular> entry = tc->rawVector(ref_idx, i);
-		Instance *instance = static_cast<Instance *>(grp->object(i));
+		std::vector<Angular> entry = data->rawVector(ref_idx, i);
+		Instance *instance = static_cast<Instance *>(data->object(i));
 
 		std::vector<float> chosen;
-		grp->convertToComparable(entry, chosen);
+		data->convertToComparable(entry, chosen);
 
 		float cc = MetadataGroup::correlation_between(compare, chosen);
 
@@ -106,14 +111,14 @@ SimpleWeights obtain_weights(TorsionCluster *tc, const RTAngles &angles,
 	return weight;
 }
 
-MultiWeights obtain_weights(TorsionCluster *cluster, size_t max)
+MultiWeights obtain_weights(MetadataGroup *data, ClusterSVD *cluster,
+                            size_t max)
 {
-	MetadataGroup *grp = cluster->dataGroup();
 	MultiWeights weight;
 	
-	for (size_t i = 0; i < grp->vectorCount(); i++)
+	for (size_t i = 0; i < data->vectorCount(); i++)
 	{
-		Instance *instance = static_cast<Instance *>(grp->object(i));
+		Instance *instance = static_cast<Instance *>(data->object(i));
 		std::vector<float> entry = cluster->mappedVector(i);
 		Floats truncated(entry);
 		truncated.resize(max);
@@ -321,30 +326,26 @@ std::vector<RAMovement> linearRegression(Instance *ref, const Access &weights,
 std::vector<RAMovement> Torsion2Atomic::linearRegression(Instance *ref,
                                                          size_t max)
 {
-	PositionalGroup *group = _pCluster->dataGroup();
-	MultiWeights weights = obtain_weights(_tCluster, max);
+	MultiWeights weights = obtain_weights(_tData, _tCluster, max);
 
 	return ::linearRegression(ref, [weights](Instance *instance)
 	                          {
 		                         return weights(instance);
 	                          },
-	                          group, max);
+	                          _pData, max);
 }
 
 RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref, 
                                                const RTAngles &angles)
 {
-	MetadataGroup *grp = _tCluster->dataGroup();
-	SimpleWeights weight = obtain_weights(_tCluster, angles, ref);
-	
-	PositionalGroup *group = _pCluster->dataGroup();
+	SimpleWeights weight = obtain_weights(_tData, _tCluster, angles, ref);
 
 	std::vector<RAMovement> results;
 	results = ::linearRegression(ref, [weight](Instance *instance)
 	                          {
 		                         return weight(instance);
 	                          },
-	                          group, 1, true);
+	                          _pData, 1, true);
 	
 	return results[0];
 }

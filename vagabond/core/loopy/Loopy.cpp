@@ -20,9 +20,8 @@
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>
 
-#include "Loopy.h"
-#include "Polymer.h"
 #include "Entity.h"
+#include "Polymer.h"
 #include "Residue.h"
 #include "Sequence.h"
 #include "BondLength.h"
@@ -54,6 +53,8 @@
 #include "LoopCorrelation.h"
 #include "FilterSelfClash.h"
 #include "FilterCrystalContact.h"
+
+#include "Loopy.h"
 
 Loopy::Loopy(Polymer *instance) : _instance(instance)
 {

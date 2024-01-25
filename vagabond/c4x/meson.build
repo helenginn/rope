@@ -1,11 +1,15 @@
 c4xfiles = [
 'Data.h',
 'Data.cpp',
-'DegreeDataGroup.cpp',
-'ClusterTSNE.cpp',
+'DegreeTypedData.h',
 'Cluster.h',
+'Cluster.cpp',
+'ClusterSVD.h',
+'ClusterSVD.cpp',
+'ClusterTSNE.h',
+'ClusterTSNE.cpp',
 'Posular.h',
-'DataGroup.h',
+'TypedData.h',
 ]
 
 cluster4x = static_library('cluster4x', c4xfiles, 

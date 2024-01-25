@@ -17,9 +17,9 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AxesMenu.h"
+#include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/core/MetadataGroup.h>
-#include <vagabond/core/RopeCluster.h>
 #include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -121,34 +121,30 @@ Renderable *AxesMenu::getLine(int i)
 void AxesMenu::supplySingleAxis(int i)
 {
 	_csv = "";
-	_csv += _cluster->csvFirstLine() + "\n";
+	_csv += _data->csvFirstLine() + "\n";
 	
-	for (size_t j = 0; j < _cluster->objectGroup()->headerCount(); j++)
-	{
-		_csv += _cluster->csvLine(i, j) + "\n";
-	}
-
+	std::ostringstream ss;
+	_data->rawVectorToCSV(_cluster, i, ss);
+	_csv += ss.str();
 }
 
 void AxesMenu::supplyMainPlot()
 {
 	_csv = "";
-	ObjectGroup *mg = _cluster->objectGroup();
 	
-	for (size_t i = 0; i < mg->objectCount(); i++)
+	for (size_t i = 0; i < _data->objectCount(); i++)
 	{
-		HasMetadata *hm = mg->object(i);
+		HasMetadata *hm = _data->object(i);
 		_csv += hm->id() + ",";
 		
 		for (size_t j = 0; j < _cluster->columns(); j++)
 		{
-			_csv += _cluster->value_desc(i, j) + ",";
+			_csv += std::to_string(_cluster->value(i, j)) + ",";
 		}
 		
 		_csv.pop_back();
 		_csv += "\n";
 	}
-
 }
 
 void AxesMenu::supplyCSV(std::string indicator)

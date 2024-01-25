@@ -36,8 +36,6 @@ class MetadataGroup;
 class RouteExplorer;
 class RopeSpaceItem;
 class PathView;
-
-template <class DG>
 class Cluster;
 
 class ConfSpaceView : public Mouse3D, public IndexResponseView,
@@ -140,7 +138,7 @@ private:
 	Entity *_entity = nullptr;
 	int _extra = 0;
 	ClusterView *_view = nullptr;
-	RopeCluster *_cluster = nullptr;
+	ClusterSVD *_cluster = nullptr;
 	Axes *_axes = nullptr;
 	Axes *_origin = nullptr;
 	const Rule *_colourRule = nullptr;

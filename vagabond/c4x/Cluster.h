@@ -19,18 +19,18 @@
 #ifndef __vagabond__Cluster__
 #define __vagabond__Cluster__
 
-#include "DataGroup.h"
+#include "Data.h"
 #include <vagabond/utils/glm_import.h>
 #include "ViewableCluster.h"
 #include <atomic>
 
 class MetadataGroup;
+class Data;
 
-template <class DG>
 class Cluster 
 {
 public:
-	Cluster(DG &dg);
+	Cluster(Data *const &data);
 	
 	virtual ~Cluster();
 
@@ -53,22 +53,21 @@ public:
 	std::vector<float> weights(int axis);
 	
 	/** raw vector which would correspond to given cluster axis */
-	typename DG::Array rawVector(int axis);
+//	typename DG::Array rawVector(int axis);
 	
 	/** raw comparable which would correspond to given cluster axis */
-	typename DG::Comparable rawComparable(int axis);
-
-	/* difference raw vector between dataset 'from' and 'to' */
-	typename DG::Array rawVector(int from, int to);
+	Data::Comparable rawComparable(int axis);
 
 	/* post-SVD vector for a single dataset */
 	std::vector<float> mappedVector(int idx) const;
 
 	/** implement by superclass to map raw vector into clustered space */
+	/*
 	virtual std::vector<float> mapVector(typename DG::Array &raw)
 	{
 		return std::vector<float>();
 	}
+	*/
 	
 	size_t columns() const
 	{
@@ -81,22 +80,12 @@ public:
 	}
 
 	virtual float weight(int axis) const;
+
 	virtual float weight(int i, int j) const
 	{
 		return _result[i][j];
 	}
 	
-	DG *dataGroup()
-	{
-		return &_dg;
-	}
-
-	virtual ObjectGroup *objectGroup()
-	{
-		ObjectGroup *grp = dynamic_cast<ObjectGroup *>(this->dataGroup());
-		return grp;
-	}
-
 	virtual const size_t &axis(int i) const
 	{
 		return _axes[i];
@@ -123,10 +112,14 @@ public:
 	}
 	
 	virtual void changeLastAxis(int axis);
+	
+	Data *const &data()
+	{
+		return _data;
+	}
 protected:
+	Data *_data = nullptr;
 	void normaliseResults(float scale = 1);
-
-	DG _dg;
 
 	float _scaleFactor = 1;
 	PCA::Matrix _result{};
@@ -135,7 +128,5 @@ protected:
 	
 	std::atomic<int> _clusterVersion{0};
 };
-
-#include "Cluster.cpp"
 
 #endif

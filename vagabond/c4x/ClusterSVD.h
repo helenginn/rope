@@ -23,11 +23,11 @@
 #include "Cluster.h"
 #include <mutex>
 
-template <class DG>
-class ClusterSVD : public Cluster<DG>
+class Data;
+class ClusterSVD : public Cluster
 {
 public:
-	ClusterSVD(DG &dg);
+	ClusterSVD(Data *const &data);
 	~ClusterSVD();
 	
 	void setType(PCA::MatrixType type)
@@ -83,8 +83,8 @@ public:
 		return tmp;
 	}
 
-	virtual std::vector<float> mapComparable(typename DG::Comparable &vec);
-	virtual std::vector<float> mapVector(typename DG::Array &vec);
+	virtual std::vector<float> mapComparable(typename Data::Comparable &vec);
+//	virtual std::vector<float> mapVector(typename DG::Array &vec);
 
 	virtual float weight(int axis) const
 	{
@@ -106,14 +106,12 @@ public:
 	void recalculateResult();
 	void calculateInverse();
 private:
-	PCA::Matrix matrix();
+	PCA::Matrix matrix(Data *const &data);
 
 	PCA::SVD _svd{};
 	PCA::Matrix _rawToCluster{};
 	PCA::MatrixType _type = PCA::Correlation;
 	std::mutex _mutex;
 };
-
-#include "ClusterSVD.cpp"
 
 #endif

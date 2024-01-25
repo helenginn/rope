@@ -22,8 +22,9 @@
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Posular.h>
 
-#include <string>
 #include "Instance.h"
+
+#include <string>
 
 class MetadataGroup;
 class AtomContent;

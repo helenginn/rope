@@ -29,6 +29,7 @@
 class Slider;
 class Residue;
 class Instance;
+class ClusterSVD;
 class AtomContent;
 class TabulatedData;
 class ConcertedBasis;
@@ -43,9 +44,10 @@ public:
 	virtual void setup();
 	virtual void tieButton() {};
 
-	void setCluster(TorsionCluster *const &cluster)
+	void setCluster(ClusterSVD *const &cluster, MetadataGroup *const &data)
 	{
 		_cluster = cluster;
+		_tData = data;
 	}
 
 	void setupSlider();
@@ -95,7 +97,8 @@ private:
 	float _maxTorsion = 0;
 
 	TabulatedData *_data = nullptr;
-	TorsionCluster *_cluster = nullptr;
+	ClusterSVD *_cluster = nullptr;
+	MetadataGroup *_tData = nullptr;
 	RTAngles _rawAngles;
 	RAMovement _movement;
 	

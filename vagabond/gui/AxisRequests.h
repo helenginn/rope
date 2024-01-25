@@ -16,22 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ConformerClusters.h"
-#include <vagabond/core/MetadataGroup.h>
+#ifndef __vagabond__AxisRequests__
+#define __vagabond__AxisRequests__
 
-ConformerClusters::ConformerClusters(Scene *prev) 
-: Scene(prev), Mouse3D(prev)
-{
+#include <string>
 
-}
+class Axes;
+class Menu;
+class MetadataGroup;
+class PositionalGroup;
 
-void ConformerClusters::setup()
-{
+typedef std::function<void(Axes *, Menu *)> DoEditMenu;
+typedef std::function<void(Axes *, const std::string &)> DoRequest;
 
-}
+DoEditMenu editMenu(MetadataGroup *group);
 
+DoEditMenu editMenu(PositionalGroup *group);
 
-void ConformerClusters::supplyList(ClusterSVD *cluster)
-{
+DoRequest doRequest(MetadataGroup *group);
 
-}
+DoRequest doRequest(PositionalGroup *group);
+
+#endif
