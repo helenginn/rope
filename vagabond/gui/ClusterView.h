@@ -33,7 +33,7 @@ class HasMetadata;
 class FloatingText;
 class TorsionData;
 class ClusterSVD;
-class ObjectGroup;
+class ObjectData;
 class ConfSpaceView;
 
 class ClusterView : public PointyView,
@@ -44,7 +44,7 @@ public:
 	ClusterView();
 	~ClusterView();
 
-	void setCluster(ClusterSVD *cx, ObjectGroup *data);
+	void setCluster(ClusterSVD *cx, ObjectData *data);
 	
 	void clearRules()
 	{
@@ -68,7 +68,7 @@ public:
 		return _cx;
 	}
 	
-	ObjectGroup *data()
+	ObjectData *data()
 	{
 		return _data;
 	}
@@ -127,7 +127,7 @@ private:
 	std::atomic<bool> _finish{false}, _running{false};
 	std::condition_variable _cv;
 	
-	ObjectGroup *_data = nullptr;
+	ObjectData *_data = nullptr;
 	ClusterView *_inherit = nullptr;
 	std::mutex _lockPopulating;
 	

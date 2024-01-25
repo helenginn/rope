@@ -25,7 +25,7 @@
 
 class SpecificNetwork;
 class ChooseHeader;
-class ObjectGroup;
+class ObjectData;
 class Instance;
 class Entity;
 class Rule;

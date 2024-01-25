@@ -22,7 +22,7 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
 #include <vagabond/core/ChemotaxisEngine.h>
-#include <vagabond/core/ObjectGroup.h>
+#include <vagabond/core/ObjectData.h>
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -32,7 +32,7 @@
 #include "RouteExplorer.h"
 #include "Axes.h"
 
-Axes::Axes(ObjectGroup *data, ClusterSVD *cluster, HasMetadata *m) 
+Axes::Axes(ObjectData *data, ClusterSVD *cluster, HasMetadata *m) 
 : IndexResponder()
 {
 	initialise();

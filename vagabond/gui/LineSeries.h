@@ -23,7 +23,7 @@
 #include "ClusterView.h"
 
 class Rule;
-class ObjectGroup;
+class ObjectData;
 
 class LineSeries : public SimplePolygon
 {
@@ -47,7 +47,7 @@ private:
 		}
 	};
 
-	ObjectGroup *_group;
+	ObjectData *_group;
 	const Rule &_rule;
 
 };

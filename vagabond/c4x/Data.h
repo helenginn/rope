@@ -24,12 +24,12 @@
 #include <vagabond/utils/svd/PCA.h>
 
 class Cluster;
-class ObjectGroup;
+class ObjectData;
 
 class Data
 {
 public:
-	friend ObjectGroup;
+	friend ObjectData;
 	Data(int length) : _length(length)
 	{
 

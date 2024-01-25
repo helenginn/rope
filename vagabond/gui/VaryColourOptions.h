@@ -24,14 +24,14 @@
 class Rule;
 class TextEntry;
 class Metadata;
-class ObjectGroup;
+class ObjectData;
 
 class VaryColourOptions : public Scene
 {
 public:
 	VaryColourOptions(Scene *prev, Rule &rule);
 
-	void setData(Metadata *source, ObjectGroup *group)
+	void setData(Metadata *source, ObjectData *group)
 	{
 		_group = group;
 		_md = source;
@@ -41,7 +41,7 @@ public:
 	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	Metadata *_md = nullptr;
-	ObjectGroup *_group = nullptr;
+	ObjectData *_group = nullptr;
 
 	TextEntry *_min = nullptr;
 	TextEntry *_max = nullptr;

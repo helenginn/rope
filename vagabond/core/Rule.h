@@ -46,7 +46,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM( Scheme,
                              })
 
 class HasMetadata;
-class ObjectGroup;
+class ObjectData;
 class Metadata;
 
 class Rule
@@ -162,7 +162,7 @@ public:
 	
 	void setVals(std::vector<float> &vals);
 	
-	std::vector<float> valuesForObjects(ObjectGroup *group) const;
+	std::vector<float> valuesForObjects(ObjectData *group) const;
 	
 	void convert_value(float &val) const
 	{

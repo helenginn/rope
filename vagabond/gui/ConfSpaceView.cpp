@@ -381,7 +381,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "average_clear")
 	{
-		ObjectGroup *mdg = _selected->data();
+		ObjectData *mdg = _selected->data();
 		mdg->clearAverages();
 		_selected->setMustCluster();
 		refresh();
@@ -390,7 +390,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "selection_separate_average")
 	{
 		std::vector<HasMetadata *> members = _view->selectedMembers();
-		ObjectGroup *mdg = _selected->data();
+		ObjectData *mdg = _selected->data();
 		mdg->setSeparateAverage(members);
 		_selected->setMustCluster();
 		refresh();

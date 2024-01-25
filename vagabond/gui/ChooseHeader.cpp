@@ -86,7 +86,7 @@ Renderable *ChooseHeader::getLine(int i)
 	return b;
 }
 
-void ChooseHeader::setData(Metadata *source, ObjectGroup *group)
+void ChooseHeader::setData(Metadata *source, ObjectData *group)
 {
 	Metadata *from = source ? source : Environment::metadata();
 	std::map<std::string, int> results;

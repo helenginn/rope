@@ -16,13 +16,13 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ObjectGroup.h"
+#include "ObjectData.h"
 #include "Path.h"
 #include "Instance.h"
 #include "HasMetadata.h"
 #include "Metadata.h"
 
-bool ObjectGroup::coversPath(Path *path)
+bool ObjectData::coversPath(Path *path)
 {
 	int start = indexOfObject(path->startInstance());
 	int end   = indexOfObject(path->endInstance());
@@ -30,7 +30,7 @@ bool ObjectGroup::coversPath(Path *path)
 	return (start >= 0 && end >= 0);
 }
 
-std::vector<float> ObjectGroup::numbersForKey(std::string key)
+std::vector<float> ObjectData::numbersForKey(std::string key)
 {
 	std::vector<float> vals;
 	for (HasMetadata *object : _objects)
@@ -49,7 +49,7 @@ std::vector<float> ObjectGroup::numbersForKey(std::string key)
 	return vals;
 }
 
-std::vector<HasMetadata *> ObjectGroup::subsetFromRule(const Rule &r)
+std::vector<HasMetadata *> ObjectData::subsetFromRule(const Rule &r)
 {
 	std::vector<HasMetadata *> list;
 
@@ -64,7 +64,7 @@ std::vector<HasMetadata *> ObjectGroup::subsetFromRule(const Rule &r)
 	return list;
 }
 
-void ObjectGroup::setWhiteList(std::vector<HasMetadata *> list)
+void ObjectData::setWhiteList(std::vector<HasMetadata *> list)
 {
 	if (list.size() == 0)
 	{
@@ -89,7 +89,7 @@ void ObjectGroup::setWhiteList(std::vector<HasMetadata *> list)
 	_data->cutVectorsToIndexList(indices);
 }
 
-void ObjectGroup::setWhiteList(std::vector<Instance *> list)
+void ObjectData::setWhiteList(std::vector<Instance *> list)
 {
 	std::vector<HasMetadata *> hms;
 	hms.reserve(list.size());
@@ -102,7 +102,7 @@ void ObjectGroup::setWhiteList(std::vector<Instance *> list)
 	setWhiteList(hms);
 }
 
-bool ObjectGroup::purgeObject(HasMetadata *hm)
+bool ObjectData::purgeObject(HasMetadata *hm)
 {
 	for (size_t i = 0; i < _objects.size(); i++)
 	{
@@ -117,7 +117,7 @@ bool ObjectGroup::purgeObject(HasMetadata *hm)
 	return false;
 }
 
-std::vector<Instance *> ObjectGroup::asInstances() const
+std::vector<Instance *> ObjectData::asInstances() const
 {
 	std::vector<Instance *> list;
 
@@ -131,7 +131,7 @@ std::vector<Instance *> ObjectGroup::asInstances() const
 }
 
 
-void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)
+void ObjectData::setSeparateAverage(std::vector<HasMetadata *> list)
 {
 	if (_data->_groupMembership.size() != _data->vectorCount())
 	{
@@ -163,28 +163,28 @@ void ObjectGroup::setSeparateAverage(std::vector<HasMetadata *> list)
 
 }
 
-size_t ObjectGroup::numGroups() const
+size_t ObjectData::numGroups() const
 {
 	return _data->groupCount();
 }
 
-void ObjectGroup::clearAverages()
+void ObjectData::clearAverages()
 {
 	_data->clearAverages();
 }
 
-void ObjectGroup::rawVectorToCSV(Cluster *cluster, int axis_idx, 
+void ObjectData::rawVectorToCSV(Cluster *cluster, int axis_idx, 
                                  std::ostream &ss)
 {
 	_data->rawVectorToCSV(cluster, axis_idx, ss);
 }
 
-void ObjectGroup::write_data(std::string filename)
+void ObjectData::write_data(std::string filename)
 {
 	_data->write(filename);
 }
 
-void ObjectGroup::editMenu(Axes *axes, Menu *menu)
+void ObjectData::editMenu(Axes *axes, Menu *menu)
 {
 	if (!_doEditMenu)
 	{
@@ -194,7 +194,7 @@ void ObjectGroup::editMenu(Axes *axes, Menu *menu)
 	_doEditMenu(axes, menu);
 }
 
-void ObjectGroup::doRequest(Axes *axes, const std::string &request)
+void ObjectData::doRequest(Axes *axes, const std::string &request)
 {
 	if (!_doRequest)
 	{

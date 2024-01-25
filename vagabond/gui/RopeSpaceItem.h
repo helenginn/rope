@@ -27,7 +27,7 @@
 class ButtonResponder;
 class TorsionData;
 class HasMetadata;
-class ObjectGroup;
+class ObjectData;
 class ClusterView;
 class ClusterSVD;
 class Metadata;
@@ -45,7 +45,7 @@ public:
 	RopeSpaceItem(Entity *entity);
 	virtual ~RopeSpaceItem();
 
-	void setObjectGroup(ObjectGroup *group)
+	void setObjectGroup(ObjectData *group)
 	{
 		_group = group;
 	}
@@ -60,7 +60,7 @@ public:
 		return _cluster;
 	}
 	
-	ObjectGroup *data()
+	ObjectData *data()
 	{
 		return _group;
 	}
@@ -121,7 +121,7 @@ private:
 	RopeSpaceItem *newFrom(std::vector<HasMetadata *> &whiteList,
 	                       std::string title);
 	std::string tag_for_type();
-	ObjectGroup *appropriateStartingGroup();
+	ObjectData *appropriateStartingGroup();
 
 	void allocateView();
 	void inheritAxis(RopeSpaceItem *parent);
@@ -134,7 +134,7 @@ private:
 	
 	RopeSpaceItem *ropeSpaceItem(int idx);
 
-	ObjectGroup *_group = nullptr;
+	ObjectData *_group = nullptr;
 	ClusterView *_view = nullptr;
 	ClusterSVD *_cluster = nullptr;
 	Axes *_axes = nullptr;

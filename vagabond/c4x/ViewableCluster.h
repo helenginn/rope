@@ -22,7 +22,7 @@
 #include <vagabond/c4x/Angular.h>
 
 class MetadataGroup;
-class ObjectGroup;
+class ObjectData;
 
 class ViewableCluster
 {
@@ -50,7 +50,7 @@ public:
 	virtual bool givesTorsionAngles() = 0;
 	virtual bool canMapVectors() = 0;
 	
-	virtual ObjectGroup *objectGroup() = 0;
+	virtual ObjectData *objectGroup() = 0;
 	
 	virtual void chooseBestAxes(std::vector<float> &vals) = 0;
 private:

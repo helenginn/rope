@@ -28,7 +28,7 @@
  * setHeaders */
 
 class Metadata;
-class ObjectGroup;
+class ObjectData;
 
 class ChooseHeader : public ListView,
 public HasResponder<Responder<ChooseHeader>>
@@ -56,7 +56,7 @@ public:
 		_title = title;
 	}
 
-	void setData(Metadata *source, ObjectGroup *group);
+	void setData(Metadata *source, ObjectData *group);
 
 	virtual void setup();
 
@@ -72,7 +72,7 @@ private:
 	bool _canDelete = false;
 
 	Metadata *_md = nullptr;
-	ObjectGroup *_group = nullptr;
+	ObjectData *_group = nullptr;
 
 };
 

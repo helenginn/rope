@@ -20,7 +20,7 @@
 #include "Instance.h"
 
 TorsionData::TorsionData(size_t length) 
-: ObjectGroup(this),
+: ObjectData(this),
 DegreeTypedData(length)
 {
 

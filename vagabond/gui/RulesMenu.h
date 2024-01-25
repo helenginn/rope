@@ -24,7 +24,7 @@
 
 class AddRule;
 class Metadata;
-class ObjectGroup;
+class ObjectData;
 
 class RulesMenu : public ListView, public RulerResponder
 {
@@ -32,7 +32,7 @@ public:
 	RulesMenu(Scene *prev, Metadata *source = nullptr);
 	~RulesMenu();
 	
-	void setData(ObjectGroup *group)
+	void setData(ObjectData *group)
 	{
 		_group = group;
 	}
@@ -51,7 +51,7 @@ private:
 
 	Metadata *_md = nullptr;
 	Rule *_lastRule = nullptr;
-	ObjectGroup *_group;
+	ObjectData *_group;
 };
 
 #endif

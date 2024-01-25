@@ -22,23 +22,23 @@
 #include <vagabond/c4x/Posular.h>
 #include <vagabond/c4x/TypedData.h>
 #include "Atom3DPosition.h"
-#include "ObjectGroup.h"
+#include "ObjectData.h"
 #include "Residue.h"
 
 class PositionData : 
-public ObjectGroup,
+public ObjectData,
 public TypedData<Posular, Atom3DPosition>
 {
 public:
 	PositionData(size_t length) : 
-	ObjectGroup(this),
+	ObjectData(this),
 	TypedData<Posular, Atom3DPosition>(length)
 	{
 		
 	}
 
 	PositionData(const PositionData &other) 
-	: ObjectGroup(this), TypedData<Posular, Atom3DPosition>(other)
+	: ObjectData(this), TypedData<Posular, Atom3DPosition>(other)
 	{
 		_objects = other._objects;
 	}

@@ -26,7 +26,7 @@
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Polymer.h>
 #include <vagabond/c4x/ClusterSVD.h>
-#include <vagabond/core/ObjectGroup.h>
+#include <vagabond/core/ObjectData.h>
 #include <vagabond/core/PathManager.h>
 
 #include <iostream>
@@ -102,7 +102,7 @@ void ClusterView::makePoints()
 	reindex();
 }
 
-void ClusterView::setCluster(ClusterSVD *cx, ObjectGroup *data)
+void ClusterView::setCluster(ClusterSVD *cx, ObjectData *data)
 {
 	_data = data;
 	_cx = cx;

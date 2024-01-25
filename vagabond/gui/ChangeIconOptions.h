@@ -25,14 +25,14 @@ class Rule;
 class TextButton;
 class ChoiceText;
 class Metadata;
-class ObjectGroup;
+class ObjectData;
 
 class ChangeIconOptions : public Scene
 {
 public:
 	ChangeIconOptions(Scene *prev, Rule &rule);
 	
-	void setData(Metadata *source, ObjectGroup *group)
+	void setData(Metadata *source, ObjectData *group)
 	{
 		_group = group;
 		_md = source;
@@ -44,7 +44,7 @@ public:
 	void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	Metadata *_md = nullptr;
-	ObjectGroup *_group = nullptr;
+	ObjectData *_group = nullptr;
 
 	TextButton *_headerButton = nullptr;
 	ChoiceText *_equiv = nullptr;

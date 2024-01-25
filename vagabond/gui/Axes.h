@@ -36,7 +36,7 @@ class RopeCluster;
 class Axes : public IndexResponder, public ButtonResponder, public RunsEngine
 {
 public:
-	Axes(ObjectGroup *group, ClusterSVD *cluster, HasMetadata *m = nullptr);
+	Axes(ObjectData *group, ClusterSVD *cluster, HasMetadata *m = nullptr);
 	~Axes();
 	
 	void setScene(ConfSpaceView *scene)
@@ -96,7 +96,7 @@ public:
 		return _cluster;
 	}
 	
-	ObjectGroup *const &data() const
+	ObjectData *const &data() const
 	{
 		return _data;
 	}
@@ -133,7 +133,7 @@ private:
 	void reflect(int i);
 	void assembleMenu();
 
-	ObjectGroup *_data = nullptr;
+	ObjectData *_data = nullptr;
 	ClusterSVD *_cluster = nullptr;
 	HasMetadata *_focus = nullptr;
 	ConfSpaceView *_scene = nullptr;

@@ -25,7 +25,7 @@
 
 class Metadata;
 class RulesMenu;
-class ObjectGroup;
+class ObjectData;
 class ChooseHeader;
 
 class AddRule : public AddObject<Rule>, public Responder<ChooseHeader>
@@ -40,7 +40,7 @@ public:
 		_caller = rm;
 	}
 
-	void setData(ObjectGroup *group)
+	void setData(ObjectData *group)
 	{
 		_group = group;
 	}
@@ -58,7 +58,7 @@ public:
 private:
 	TextButton *_headerButton = nullptr;
 	RulesMenu *_caller = nullptr;
-	ObjectGroup *_group = nullptr;
+	ObjectData *_group = nullptr;
 	Metadata *_md = nullptr;
 };
 

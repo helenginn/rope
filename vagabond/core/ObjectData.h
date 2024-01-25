@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ObjectGroup__
-#define __vagabond__ObjectGroup__
+#ifndef __vagabond__ObjectData__
+#define __vagabond__ObjectData__
 
 #include <vector>
 #include <string>
@@ -31,15 +31,15 @@ class Path;
 class Menu;
 class Axes;
 
-class ObjectGroup
+class ObjectData
 {
 public:
-	ObjectGroup(Data *data)
+	ObjectData(Data *data)
 	{
 		_data = data;
 	}
 
-	virtual ~ObjectGroup() {};
+	virtual ~ObjectData() {};
 
 	std::vector<float> numbersForKey(std::string key);
 

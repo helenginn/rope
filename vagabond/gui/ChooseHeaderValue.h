@@ -25,14 +25,14 @@
 
 class Rule;
 class Metadata;
-class ObjectGroup;
+class ObjectData;
 
 class ChooseHeaderValue : public ListView
 {
 public:
 	ChooseHeaderValue(Scene *prev, Rule &rule);
 
-	void setData(Metadata *source, ObjectGroup *group);
+	void setData(Metadata *source, ObjectData *group);
 
 	void setEntity(std::string name);
 	virtual void setup();

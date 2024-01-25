@@ -194,7 +194,7 @@ std::string RopeSpaceItem::tag_for_type()
 }
 
 template <class ExactGroup>
-ObjectGroup *prepareCopy(const ExactGroup &other)
+ObjectData *prepareCopy(const ExactGroup &other)
 {
 	ExactGroup *grp = new ExactGroup(other);
 	grp->setDoEditMenu(editMenu(grp));
@@ -203,9 +203,9 @@ ObjectGroup *prepareCopy(const ExactGroup &other)
 	return grp;
 }
 
-ObjectGroup *RopeSpaceItem::appropriateStartingGroup()
+ObjectData *RopeSpaceItem::appropriateStartingGroup()
 {
-	ObjectGroup *grp = nullptr;
+	ObjectData *grp = nullptr;
 	if (_type == ConfTorsions)
 	{
 		grp = prepareCopy(_entity->makeTorsionDataGroup());
@@ -357,7 +357,7 @@ RopeSpaceItem *RopeSpaceItem::makeGroupFromSelected(bool inverse)
 RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
                                       std::string title)
 {
-	ObjectGroup *group_ptr = nullptr;
+	ObjectData *group_ptr = nullptr;
 	
 	if (_type == ConfTorsions)
 	{

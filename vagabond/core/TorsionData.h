@@ -23,20 +23,20 @@
 #include "TorsionRef.h"
 #include "Residue.h"
 #include "ResidueTorsion.h"
-#include "ObjectGroup.h"
+#include "ObjectData.h"
 #include "RTAngles.h"
 
 class Residue;
 
 class HasMetadata;
 
-class TorsionData : public ObjectGroup, public DegreeTypedData<ResidueTorsion>
+class TorsionData : public ObjectData, public DegreeTypedData<ResidueTorsion>
 {
 public:
 	TorsionData(size_t length);
 	
 	TorsionData(const TorsionData &other) 
-	: ObjectGroup(this), DegreeTypedData<ResidueTorsion>(other)
+	: ObjectData(this), DegreeTypedData<ResidueTorsion>(other)
 	{
 		_empty = other._empty;
 		_objects = other._objects;

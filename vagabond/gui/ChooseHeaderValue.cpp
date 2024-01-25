@@ -31,7 +31,7 @@ _rule(rule)
 
 }
 
-void ChooseHeaderValue::setData(Metadata *source, ObjectGroup *group)
+void ChooseHeaderValue::setData(Metadata *source, ObjectData *group)
 {
 	_values.clear();
 	std::string header = _rule.header();

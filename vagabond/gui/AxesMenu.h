@@ -22,7 +22,7 @@
 #include <vagabond/gui/elements/ListView.h>
 #include "ExportsCSV.h"
 
-class ObjectGroup;
+class ObjectData;
 class ClusterSVD;
 
 class AxesMenu : public ListView, public ExportsCSV
@@ -35,7 +35,7 @@ public:
 		_entity_id = entity_id;
 	}
 
-	void setCluster(ClusterSVD *cluster, ObjectGroup *data)
+	void setCluster(ClusterSVD *cluster, ObjectData *data)
 	{
 		_cluster = cluster;
 		_data = data;
@@ -49,7 +49,7 @@ public:
 	virtual void setup();
 private:
 	ClusterSVD *_cluster = nullptr;
-	ObjectGroup *_data = nullptr;
+	ObjectData *_data = nullptr;
 	std::string _entity_id;
 
 	virtual void supplyCSV(std::string indicator = "");
