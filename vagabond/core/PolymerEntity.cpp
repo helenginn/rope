@@ -177,6 +177,17 @@ PositionData PolymerEntity::preparePositionGroup()
 	return group;
 }
 
+BFactorData PolymerEntity::prepareBFactorGroup()
+{
+	std::vector<Atom3DPosition> headers;
+	_sequence.addAtomPositionHeaders(headers);
+	
+	BFactorData group(headers.size());
+	group.addHeaders(headers);
+
+	return group;
+}
+
 void PolymerEntity::throwOutInstance(Polymer *mol)
 {
 	mol->eraseIfPresent(_molecules);

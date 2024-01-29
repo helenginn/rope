@@ -378,3 +378,53 @@ Atom *Instance::atomForIdentifier(const Atom3DPosition &pos)
 {
 	return nullptr;
 }
+
+void Instance::grabBFactors(RAFloats &bVals)
+{
+	AtomGroup *grp = currentAtoms();
+
+	RAFloats localValues;
+	float total_b = 0;
+	float count = 0;
+
+	for (Atom *atom : grp->atomVector())
+	{
+		Residue *master = equivalentMaster(atom->residueId());
+		
+		if (!master)
+		{
+			continue;
+		}
+		
+		Atom3DPosition a3p(master, atom->atomName());
+		float b = atom->initialBFactor();
+		total_b += b;
+		count++;
+		
+		localValues.addAtom3DPosition(a3p, b);
+	}
+	
+	total_b /= count;
+	
+	std::vector<DataFloat> tmp = localValues.storage_according_to(bVals);
+	
+	for (DataFloat &f : tmp)
+	{
+		f /= total_b;
+	}
+
+	std::vector<Atom3DPosition> headers = bVals.headers_only();
+	bVals.vector_from(headers, tmp);
+}
+
+void Instance::addBFactorsToGroup(BFactorData &group)
+{
+	model()->load(Model::NoGeometry);
+	AtomGroup *grp = currentAtoms();
+	
+	RAFloats bVals = group.emptyBFactors(true);
+	grabBFactors(bVals);
+	group.addMetadataArray(this, bVals.storage_only());
+
+	model()->unload();
+}

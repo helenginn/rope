@@ -20,6 +20,7 @@
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/TorsionData.h>
 #include <vagabond/core/PositionData.h>
+#include <vagabond/core/BFactorData.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskForText.h>
@@ -188,6 +189,8 @@ std::string RopeSpaceItem::tag_for_type()
 		return "torsions";
 		case ConfPositional:
 		return "positions";
+		case ConfBFactor:
+		return "bfactors";
 		default:
 		return "unknown";
 	}
@@ -210,9 +213,13 @@ ObjectData *RopeSpaceItem::appropriateStartingGroup()
 	{
 		grp = prepareCopy(_entity->makeTorsionDataGroup());
 	}
-	else
+	else if (_type == ConfPositional)
 	{
 		grp = prepareCopy(_entity->makePositionalDataGroup());
+	}
+	else
+	{
+		grp = prepareCopy(_entity->makeBFactorGroup());
 	}
 	
 	return grp;
@@ -364,9 +371,14 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 		TorsionData *group = static_cast<TorsionData *>(_group);
 		group_ptr = prepareCopy(*group);
 	}
-	else
+	else if (_type == ConfPositional)
 	{
 		PositionData *group = static_cast<PositionData *>(_group);
+		group_ptr = prepareCopy(*group);
+	}
+	else
+	{
+		BFactorData *group = static_cast<BFactorData *>(_group);
 		group_ptr = prepareCopy(*group);
 	}
 

@@ -23,6 +23,7 @@
 #include "Polymer.h"
 #include "RopeSpaceItem.h"
 #include "ConfSpaceView.h"
+#include "TorsionData.h"
 
 LoopyDisplay::LoopyDisplay(Scene *prev, Polymer *const &pol) 
 : Scene(prev), Display(prev), _loopy(pol)

@@ -24,6 +24,7 @@ namespace rope
 	{
 		ConfPositional,
 		ConfTorsions,
+		ConfBFactor,
 	};
 }
 

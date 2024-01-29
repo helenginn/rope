@@ -24,6 +24,7 @@
 #include <vagabond/gui/RouteExplorer.h>
 #include <vagabond/core/PositionData.h>
 #include <vagabond/core/TorsionData.h>
+#include <vagabond/core/BFactorData.h>
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
@@ -170,4 +171,13 @@ DoRequest doRequest(TorsionData *group)
 	};
 };
 
+DoEditMenu editMenu(BFactorData *group)
+{
+	return {};
+};
+
+DoRequest doRequest(BFactorData *group)
+{
+	return {};
+};
 

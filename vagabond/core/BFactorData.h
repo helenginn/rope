@@ -16,42 +16,45 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PositionData__
-#define __vagabond__PositionData__
+#ifndef __vagabond__BFactorData__
+#define __vagabond__BFactorData__
 
-#include <vagabond/c4x/Posular.h>
+#include <vagabond/c4x/DataFloat.h>
 #include <vagabond/c4x/TypedData.h>
+
+#include "RAFloats.h"
 #include "Atom3DPosition.h"
 #include "ObjectData.h"
 
-class PositionData : 
-public ObjectData,
-public TypedData<Posular, Atom3DPosition>
+class BFactorData : public ObjectData,
+public TypedData<DataFloat, Atom3DPosition>
 {
 public:
-	PositionData(size_t length) : 
+	BFactorData(size_t length) :
 	ObjectData(this),
-	TypedData<Posular, Atom3DPosition>(length)
+	TypedData<DataFloat, Atom3DPosition>(length)
 	{
-		
+		_normalise = false;
 	}
 
-	PositionData(const PositionData &other) 
-	: ObjectData(this), TypedData<Posular, Atom3DPosition>(other)
+	BFactorData(const BFactorData &other) 
+	: ObjectData(this), TypedData<DataFloat, Atom3DPosition>(other)
 	{
 		_objects = other._objects;
 	}
 
 	virtual std::string csvFirstLine()
 	{
-		return "atom_id,delta_position_x,delta_position_y,delta_position_z";
+		return "atom_id,b_factor_norm";
 	}
 	
-	virtual ~PositionData();
+	virtual ~BFactorData();
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
+
+	const RAFloats &emptyBFactors(bool make_nan);
 private:
+	RAFloats _empty;
 
 };
-
 
 #endif

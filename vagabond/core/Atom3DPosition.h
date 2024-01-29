@@ -38,6 +38,13 @@ public:
 		_atomName = name;
 	}
 	
+	bool operator==(const Atom3DPosition &other) const
+	{
+		return (_master == other._master &&
+		        _entityName == other._entityName &&
+		        _atomName == other._atomName);
+	}
+	
 	std::string desc() const
 	{
 		if (_master == nullptr)

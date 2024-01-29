@@ -18,6 +18,7 @@
 
 #include "VisualPreferences.h"
 #include "Instance.h"
+#include "Residue.h"
 #include "Atom.h"
 
 VisualPreferences::VisualPreferences()

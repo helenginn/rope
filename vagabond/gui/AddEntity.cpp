@@ -372,6 +372,10 @@ void AddEntity::loadConfSpaceView(std::string suffix)
 	{
 		view->setMode(rope::ConfPositional);
 	}
+	else if (suffix == "b_factor_space")
+	{
+		view->setMode(rope::ConfBFactor);
+	}
 
 	view->show();
 }
@@ -435,6 +439,7 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 		Menu *m = new Menu(this, this, "conf_space");
 		m->addOption("refined torsions", "refined_torsions");
 		m->addOption("atom positions", "atom_positions");
+		m->addOption("B factors", "b_factor_space");
 		m->setup(button);
 		setModal(m);
 	}

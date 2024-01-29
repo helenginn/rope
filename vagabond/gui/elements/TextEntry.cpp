@@ -146,14 +146,14 @@ void TextEntry::keyPressed(char key)
 		{
 			shiftKey(key);
 		}
-		else if (key == 'v')
+		else if (_gl->controlPressed() && key == 'v')
 		{
 			const char *ch = SDL_GetClipboardText();
 			std::string str(ch);
 			_scratch += str;
 		}
 
-		if (validateKey(key))
+		if (!_gl->controlPressed() && validateKey(key))
 		{
 			_scratch += key;
 		}

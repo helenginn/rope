@@ -159,7 +159,6 @@ void TypedData<Unit, Header>::convertToDifferences(Array &arr, const Array *ave)
 			arr[j] = {};
 		}
 	}
-
 }
 
 template <class Unit, class Header>
@@ -255,6 +254,10 @@ void TypedData<Unit, Header>::normalise()
 		do_on_all_entries(add_to_standard_deviation);
 		
 		double stdev = sqrt(xx - x * x / n);
+		if (!_normalise)
+		{
+			stdev = 1.f;
+		}
 		
 		for (size_t j = 0; j < Unit::comparable_size(); j++)
 		{
@@ -394,10 +397,8 @@ void TypedData<Unit, Header>::cutVectorsToIndexList(const std::vector<int>
 
 	for (const int &idx : indices)
 	{
-		std::cout << idx << " ";
 		entries.push_back(_entries[idx]);
 	}
-	std::cout << std::endl;
 
 	_entries = entries;
 	clearAverages();

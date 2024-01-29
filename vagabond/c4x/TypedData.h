@@ -166,6 +166,7 @@ protected:
 	Array &averageForIndex(int i);
 
 	bool _subtractAverage = true;
+	bool _normalise = true;
 };
 
 #include "TypedData.cpp"

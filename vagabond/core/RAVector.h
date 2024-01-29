@@ -16,6 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#ifndef __vagabond__RAVector__
+#define __vagabond__RAVector__
+
 #include "Atom3DPosition.h"
 #include "HeadedVector.h"
 #include "Sequence.h"
@@ -102,3 +105,5 @@ public:
 	
 protected:
 };
+
+#endif

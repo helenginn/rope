@@ -25,6 +25,7 @@
 #include "Substance.h"
 #include "Model.h"
 #include "TorsionData.h"
+#include "BFactorData.h"
 #include "PositionData.h"
 #include "Responder.h"
 #include "VisualPreferences.h"
@@ -71,6 +72,7 @@ public:
 	PositionData makePositionalDataGroup();
 	PositionData makePositionalDataGroup(std::vector<Instance *> 
 	                                        &polymers);
+	BFactorData makeBFactorGroup(bool empty = false);
 
 	Instance *chooseRepresentativeInstance();
 	
@@ -126,6 +128,7 @@ public:
 
 	virtual TorsionData prepareTorsionGroup() { return TorsionData(0); }
 	virtual PositionData preparePositionGroup() { return PositionData(0); }
+	virtual BFactorData prepareBFactorGroup() { return BFactorData(0); }
 protected:
 	Instance *_reference = nullptr;
 

@@ -26,8 +26,8 @@
 #include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Posular.h>
 
+#include "ResidueTorsion.h"
 #include "HasMetadata.h"
-#include "TorsionData.h"
 #include "ResidueId.h"
 #include "RopeTypes.h"
 
@@ -37,9 +37,12 @@ class Atom3DPosition;
 
 class ResidueTorsion;
 class AtomContent;
+class BFactorData;
+class TorsionData;
 class Parameter;
 class Interface;
 class AtomGroup;
+class RAFloats;
 class RTAngles;
 class Polymer;
 class Residue;
@@ -194,7 +197,9 @@ public:
 	};
 
 	void addTorsionsToGroup(TorsionData &group, rope::TorsionType type);
+	void addBFactorsToGroup(BFactorData &group);
 protected:
+	void grabBFactors(RAFloats &bVals);
 
 	std::string _model_id;
 	std::string _entity_id;

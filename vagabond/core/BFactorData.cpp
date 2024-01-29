@@ -16,42 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__PositionData__
-#define __vagabond__PositionData__
+#include "BFactorData.h"
+#include "HasMetadata.h"
 
-#include <vagabond/c4x/Posular.h>
-#include <vagabond/c4x/TypedData.h>
-#include "Atom3DPosition.h"
-#include "ObjectData.h"
-
-class PositionData : 
-public ObjectData,
-public TypedData<Posular, Atom3DPosition>
+void BFactorData::addMetadataArray(HasMetadata *hmd, Array next)
 {
-public:
-	PositionData(size_t length) : 
-	ObjectData(this),
-	TypedData<Posular, Atom3DPosition>(length)
+	_objects.push_back(hmd);
+	std::string name = hmd->id();
+	this->addArray(name, next);
+}
+
+BFactorData::~BFactorData()
+{
+	
+}
+
+const RAFloats &BFactorData::emptyBFactors(bool make_nan) 
+{
+	if (_empty.size() == 0)
 	{
-		
+		std::vector<Atom3DPosition> hs = headers();
+		_empty.vector_from(hs);
 	}
 
-	PositionData(const PositionData &other) 
-	: ObjectData(this), TypedData<Posular, Atom3DPosition>(other)
+	float zero = make_nan ? NAN : 0;
+	
+	for (size_t i = 0; i < _empty.size(); i++)
 	{
-		_objects = other._objects;
-	}
-
-	virtual std::string csvFirstLine()
-	{
-		return "atom_id,delta_position_x,delta_position_y,delta_position_z";
+		_empty.storage(i) = zero;
 	}
 	
-	virtual ~PositionData();
-	virtual void addMetadataArray(HasMetadata *hmd, Array next);
-private:
-
-};
-
-
-#endif
+	return _empty;
+}

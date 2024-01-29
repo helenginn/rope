@@ -104,6 +104,7 @@ install_data(
 'assets/images/pencil_shading.png',
 'assets/images/phenylalanine.png',
 'assets/images/points.png',
+'assets/images/present_bond.png',
 'assets/images/protein.png',
 'assets/images/protractor.png',
 'assets/images/reflections.png',

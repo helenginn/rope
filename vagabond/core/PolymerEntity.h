@@ -76,6 +76,7 @@ public:
 
 	virtual TorsionData prepareTorsionGroup();
 	virtual PositionData preparePositionGroup();
+	virtual BFactorData prepareBFactorGroup();
 protected:
 
 private:

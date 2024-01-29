@@ -190,6 +190,23 @@ Instance *Entity::chooseRepresentativeInstance()
 	return best;
 }
 
+BFactorData Entity::makeBFactorGroup(bool empty)
+{
+	BFactorData group = prepareBFactorGroup();
+	
+	if (empty)
+	{
+		return group;
+	}
+	
+	for (Instance *inst : instances())
+	{
+		inst->addBFactorsToGroup(group);
+	}
+		
+	return group;
+}
+
 TorsionData Entity::makeTorsionDataGroup(bool empty)
 {
 	TorsionData group = prepareTorsionGroup();

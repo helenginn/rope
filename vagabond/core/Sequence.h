@@ -228,7 +228,8 @@ public:
 	                        rope::TorsionType type = rope::RefinedTorsions);
 	
 	AtomGroup *convertToAtoms();
-	void addAtomPositionHeaders(std::vector<Atom3DPosition> &headers);
+	void addAtomPositionHeaders(std::vector<Atom3DPosition> &headers,
+	                            bool main_chain_only = false);
 	
 private:
 	void findSequence();

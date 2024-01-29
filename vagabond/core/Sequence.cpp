@@ -355,7 +355,8 @@ const size_t Sequence::torsionCount() const
 	return sum;
 }
 
-void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers)
+void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers,
+                                      bool main_chain_only)
 {
 	for (Residue &residue : _residues)
 	{
@@ -366,6 +367,11 @@ void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers)
 
 		for (const std::string &name : residue.atomNames())
 		{
+			if (main_chain_only && !Atom::isMainChain(name))
+			{
+				continue;
+			}
+
 			Atom3DPosition ap{};
 			ap.setMaster(&residue);
 			ap.setAtomName(name);
