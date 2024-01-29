@@ -30,105 +30,109 @@ struct Job;
 class AreaMeasurer
 {
 public:
-	AreaMeasurer(SurfaceAreaHandler *handler = nullptr, int n_points = 400);
-	~AreaMeasurer();
-	
-	void setJob(Job *j)
-	{
-		_job = j;
-	}
-	
-	Job *job() const
-	{
-		return _job;
-	}
+  AreaMeasurer(SurfaceAreaHandler *handler = nullptr, int n_points = 400);
+  ~AreaMeasurer();
+  
+  void setJob(Job *j)
+  {
+    _job = j;
+  }
+  
+  Job *job() const
+  {
+    return _job;
+  }
 
-	void copyAtomMap(AtomPosMap &posMap)
-	{
-		_posMap = posMap;
-	}
-	
-	const AtomPosMap &atomPosMap() const
-	{
-		return _posMap;
-	}
+  void copyAtomMap(AtomPosMap &posMap)
+  {
+    _posMap = posMap;
+  }
+  
+  const AtomPosMap &atomPosMap() const
+  {
+    return _posMap;
+  }
 
   /** set probe radius used for calculating solvent accesible surface*/
-	void setProbeRadius(float radius)
-	{
-		_probeRadius = radius;
-	}
-	
-	/** calculates surface area of previously copied atom map in Angstroms. */
-	float surfaceArea(const AtomPosMap &posMap);
-	/** calculates exposure of atom, i.e. the percentage of points not in the overlap with the other atoms in posmap */
-	float fibExposureSingleAtom(const std::set<Atom *> &atomsNearPosmap, Atom *atom, const float radius);
-	/** more efficiently calculates exposure of atom, i.e. the percentage of points not in the overlap with other atoms within a specified radius */
-	float fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom, const float radius);
+  void setProbeRadius(float radius)
+  {
+    _probeRadius = radius;
+  }
+  
+  /** calculates surface area of previously copied atom map in Angstroms. */
+  float surfaceArea(const AtomPosMap &posMap);
+
+  /** calculates exposure of atom, i.e. the percentage of points not in 
+   * the overlap with the other atoms in the 'atomsNear' set */
+  float fibExposureSingleAtom(const std::set<Atom *> &atomsNearPosmap,
+                              Atom *atom, const float radius);
+  
+  /** more efficiently calculates exposure of atom,
+   *  i.e. the percentage of points not in the overlap with other atoms
+   *  within a specified radius */
+  float fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *atom,
+                                    const float radius);
 
 private:
-	Job *_job = nullptr;
-	AtomPosMap _posMap;
-	Fibonacci _lattice;
-	float _probeRadius = 1.4;
-	const float _maxVdWRadius = 3.48; //Fr (Francium) in gemmi library
+  Job *_job = nullptr;
+  AtomPosMap _posMap;
+  Fibonacci _lattice;
+  float _probeRadius = 1.4; // water molecule radius estimation
+  const float _maxVdWRadius = 3.48; //Fr (Francium) radius in gemmi library
 
-	SurfaceAreaHandler *_handler = nullptr;
-	ContactSheet *_contacts = nullptr;
+  SurfaceAreaHandler *_handler = nullptr;
+  ContactSheet *_contacts = nullptr;
 };
 
-/** calculates the exposed area from atom's lattice exposure and  vdw radius*/
-float areaFromExposure(float exposure, float radius, double probeRadius = 0.0);
+/** calculates exposed area from atom's lattice exposure, vdw & probe radius */
+float areaFromExposure(float exposure, float radius, double probeRadius = 1.4);
 
-/** get VdWRadius from an atom*/
+/** gets van der Waals radius from an atom */
 float getVdWRadius(Atom *atom);
 
+/** handy function to get squared length of a vector efficiently */
 inline float sqlength(glm::vec3 a)
 {
-	float sqlength = 0;
-	for (int i = 0; i < 3; i++)
-	{
-		sqlength += a[i] * a[i];
-	}
-	return sqlength;
+  return glm::dot(a, a);
 }
 
+/** singleton class to time surface area calculations */
 class TimerSurfaceArea
 {
 public:
-	static TimerSurfaceArea &getInstance()
-	{
-		static TimerSurfaceArea instance;
-		return instance;
-	}
-	
-	void reset()
-	{
-		times.clear();
-		loops = 0;
-	}
-	
-	void start()
-	{
-		_start = std::chrono::high_resolution_clock::now();
-	}
+  static TimerSurfaceArea &getInstance()
+  {
+    static TimerSurfaceArea instance;
+    return instance;
+  }
+  
+  void reset() // reset timer
+  {
+    times.clear();
+    loops = 0;
+  }
+  
+  void start()  // start timer
+  {
+    _start = std::chrono::high_resolution_clock::now();
+  }
 
-	void end()
-	{
-		_end = std::chrono::high_resolution_clock::now();
-		times.push_back(_end - _start);
-	}
-	
-	std::vector<std::chrono::duration<float>> times;
-	bool timing = false;
-	int loops = 0;
+  void end() // end timer
+  {
+    _end = std::chrono::high_resolution_clock::now();
+    times.push_back(_end - _start);
+  }
+  
+  std::vector<std::chrono::duration<float>> times;
+  bool timing = false;
+  int loops = 0;
 private:
-	TimerSurfaceArea() {}
-	TimerSurfaceArea(TimerSurfaceArea const&) = delete;
-	void operator=(TimerSurfaceArea const&) = delete;
-	
+  TimerSurfaceArea() {}
+  TimerSurfaceArea(TimerSurfaceArea const&) = delete;
+  void operator=(TimerSurfaceArea const&) = delete;
+  
   std::chrono::high_resolution_clock::time_point _start;
-	std::chrono::high_resolution_clock::time_point _end;
+  std::chrono::high_resolution_clock::time_point _end;
 };
 
 #endif

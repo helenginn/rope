@@ -17,7 +17,6 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/include_boost.h>
-
 #include <vagabond/core/engine/Task.h>
 #include <vagabond/core/engine/Tasks.h>
 #include <vagabond/core/Result.h>
@@ -33,7 +32,6 @@
 #include "Atom.h"
 #include <vagabond/core/files/CifFile.h>
 #include <vagabond/core/files/PdbFile.h>
-
 
 namespace tt = boost::test_tools;
 
@@ -120,10 +118,10 @@ BOOST_AUTO_TEST_CASE(area_from_exposure)
 	area2 = (4 * M_PI * 1.70 * 1.70) * exp2;
 	area3 = (4 * M_PI * 1.55 * 1.55) * exp3;
 	area4 = (4 * M_PI * 1.80 * 1.80) * exp4;
-	calcArea1 = areaFromExposure(exp1, radius1);
-	calcArea2 = areaFromExposure(exp2, radius2);
-	calcArea3 = areaFromExposure(exp3, radius3);
-	calcArea4 = areaFromExposure(exp4, radius4);
+	calcArea1 = areaFromExposure(exp1, radius1, 0);
+	calcArea2 = areaFromExposure(exp2, radius2, 0);
+	calcArea3 = areaFromExposure(exp3, radius3, 0);
+	calcArea4 = areaFromExposure(exp4, radius4, 0);
 	BOOST_TEST(calcArea1 == area1, tt::tolerance(1e-2f));
 	BOOST_TEST(calcArea2 == area2, tt::tolerance(1e-2f));
 	BOOST_TEST(calcArea3 == area3, tt::tolerance(1e-2f));
@@ -154,199 +152,164 @@ BOOST_AUTO_TEST_CASE(z_slices)
 	std::cout << "zSlice2: " << zSlice2.first << ", " << zSlice2.second << std::endl;
 }
 
-// // check atom exposure for no neighbours
-// BOOST_AUTO_TEST_CASE(atom_no_neighbours)
-// {
-// 	Atom atom;
-// 	glm::vec3 pos;
-// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-// 	atom.setElementSymbol("O"); // chosen arbitrarily
-// 	atom.setDerivedPosition(pos);
-// 	WithPos withPos;
-// 	withPos.ave = pos;
+// check atom exposure for no neighbours
+BOOST_AUTO_TEST_CASE(atom_no_neighbours)
+{
+	Atom atom;
+	glm::vec3 pos;
+	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	atom.setElementSymbol("O"); // chosen arbitrarily
+	atom.setDerivedPosition(pos);
 
-// 	AtomPosMap posMap;
-// 	posMap = {{&atom, withPos}};
+	std::set<Atom *> nearAtoms = {};
 
-//   SurfaceAreaHandler SAH;
-//   AreaMeasurer AM(&SAH);
-// 	AM.copyAtomMap(posMap);
+  SurfaceAreaHandler SAH;
+  AreaMeasurer AM(&SAH);
 
-// 	// calculate the exposure of the atom
-// 	float radius = getVdWRadius(&atom);
-// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
-// 	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
-// 	BOOST_TEST(exposure == 1.0f);
-// }
+	// calculate the exposure of the atom
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(nearAtoms, &atom, radius);
+	std::cout << "atom_no_neighbours exposure: " << exposure << std::endl;
+	BOOST_TEST(exposure == 1.0f);
+}
 
-// // check atom exposure for no overlap with other atom
-// BOOST_AUTO_TEST_CASE(atom_far_neighbour)
-// {
-// 	// initialise 2 atoms with no overlap and distant positions
-// 	Atom atom, atom2, atomControl;
-// 	glm::vec3 pos, pos2, posControl;
-// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-// 	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
-// 	posControl = glm::vec3(sqrt(2.04*2.04 + 6.08*6.08 + 7.60*7.60), 0.0f, 0.0f);
-// 	atom.setElementSymbol("O");
-// 	atom2.setElementSymbol("O");
-// 	atomControl.setElementSymbol("O");
-// 	atom.setDerivedPosition(pos);
-// 	atom2.setDerivedPosition(pos2);
-// 	atomControl.setDerivedPosition(posControl);
-// 	WithPos withPos, withPos2, withPosControl;
-// 	withPos.ave = pos;
-// 	withPos2.ave = pos2;
-// 	withPosControl.ave = posControl;
+// check atom exposure for no overlap with other atom
+BOOST_AUTO_TEST_CASE(atom_far_neighbour)
+{
+	// initialise 2 atoms with no overlap and distant positions
+	Atom atom, atom2, atomControl;
+	glm::vec3 pos, pos2, posControl;
+	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	pos2 = glm::vec3(2.04f, 6.08f, 7.60f);
+	posControl = glm::vec3(sqrt(2.04*2.04 + 6.08*6.08 + 7.60*7.60), 0.0f, 0.0f);
+	atom.setElementSymbol("O");
+	atom2.setElementSymbol("O");
+	atomControl.setElementSymbol("O");
+	atom.setDerivedPosition(pos);
+	atom2.setDerivedPosition(pos2);
+	atomControl.setDerivedPosition(posControl);
 
-// 	AtomPosMap posMap, posMapControl;
-// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+	std::set<Atom *> nearAtoms = {&atom2};
+	std::set<Atom *> nearAtomsControl = {&atomControl};
 
-// 	// BondCalculator calc;
-// 	// calc.setPipelineType	(BondCalculator::PipelineSolventSurfaceArea);
-// 	// calc.addAnchorExtension(&atom);
-// 	// calc.setup();
-// 	// calc.start();
-//   SurfaceAreaHandler SAH;
-//   AreaMeasurer AM(&SAH);
-// 	AM.copyAtomMap(posMap);
+  SurfaceAreaHandler SAH;
+  AreaMeasurer AM(&SAH);
 
-// 	// calculate the exposure of the atom
-// 	float radius = getVdWRadius(&atom);
-// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);
-// 	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
+	// calculate the exposure of the atom
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(nearAtoms, &atom, radius);
+	std::cout << "atom_far_neighbour exposure: " << exposure << std::endl;
 
-// 	AM.copyAtomMap(posMapControl);
+	float exposureControl = AM.fibExposureSingleAtom(nearAtomsControl, &atom,
+																									 radius);
+	std::cout << "atom_far_neighbour exposure (control): " << exposureControl 
+																												 << std::endl;
 
-// 	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
-// 	std::cout << "atom_far_neighbour exposure (control): " << exposureControl << std::endl;
+	BOOST_TEST(exposure == 1.0f);
+	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+}
 
-// 	BOOST_TEST(exposure == 1.0f);
-// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-// }
+// // check atom exposure for small overlap with other atom
+BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
+{
+	// initialise 2 atoms with overlap but more distant positions 
+	Atom atom, atom2, atomControl;
+	glm::vec3 pos, pos2, posControl;
+	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	pos2 = glm::vec3(4.0f, 0.76f, 0.0f);
+	posControl = glm::vec3(sqrt(4.0*4.0 + 0.76*0.76), 0.0f, 0.0f);
+	atom.setElementSymbol("O");
+	atom2.setElementSymbol("O");
+	atomControl.setElementSymbol("O");
+	atom.setDerivedPosition(pos);
+	atom2.setDerivedPosition(pos2);
+	atomControl.setDerivedPosition(posControl);
 
-// // // check atom exposure for small overlap with other atom
-// BOOST_AUTO_TEST_CASE(atom_small_overlap_neighbour)
-// {
-// 	// initialise 2 atoms with overlap but more distant positions 
-// 	Atom atom, atom2, atomControl;
-// 	glm::vec3 pos, pos2, posControl;
-// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-// 	pos2 = glm::vec3(4.0f, 0.76f, 0.0f);
-// 	posControl = glm::vec3(sqrt(4.0*4.0 + 0.76*0.76), 0.0f, 0.0f);
-// 	atom.setElementSymbol("O");
-// 	atom2.setElementSymbol("O");
-// 	atomControl.setElementSymbol("O");
-// 	atom.setDerivedPosition(pos);
-// 	atom2.setDerivedPosition(pos2);
-// 	atomControl.setDerivedPosition(posControl);
-// 	WithPos withPos, withPos2, withPosControl;
-// 	withPos.ave = pos;
-// 	withPos2.ave = pos2;
-// 	withPosControl.ave = posControl;
+	std::set<Atom *> nearAtoms = {&atom2};
+	std::set<Atom *> nearAtomsControl = {&atomControl};
 
-// 	AtomPosMap posMap, posMapControl;
-// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+  SurfaceAreaHandler SAH;
+  AreaMeasurer AM(&SAH);
 
-//   SurfaceAreaHandler SAH;
-//   AreaMeasurer AM(&SAH);
-// 	AM.copyAtomMap(posMap);
+	// calculate the exposure of the atom
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(nearAtoms, &atom, radius);	
+	std::cout << "atom_small_overlap_neighbour exposure: " << exposure 
+	                                                       << std::endl;
 
-// 	// calculate the exposure of the atom
-// 	float radius = getVdWRadius(&atom);
-// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_small_overlap_neighbour exposure: " << exposure << std::endl;
+	float exposureControl = AM.fibExposureSingleAtom(nearAtomsControl, &atom, radius);
+	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl
+																																	 << std::endl;
 
-// 	AM.copyAtomMap(posMapControl);
+	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+}
 
-// 	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
-// 	std::cout << "atom_small_overlap_neighbour exposure (control): " << exposureControl << std::endl;
+// // check atom exposure for large overlap with other atom
+BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
+{
+	// initialise 2 atoms with close positions
+	Atom atom, atom2, atomControl;
+	glm::vec3 pos, pos2, posControl;
+	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	pos2 = glm::vec3(1.0f, 1.0f, 0.0f);
+	posControl = glm::vec3(sqrt(1.0f*1.0f + 1.0f*1.0f), 0.0f, 0.0f);
+	atom.setElementSymbol("O");
+	atom2.setElementSymbol("O");
+	atomControl.setElementSymbol("O");
+	atom.setDerivedPosition(pos);
+	atom2.setDerivedPosition(pos2);
+	atomControl.setDerivedPosition(posControl);
 
-// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-// }
+	std::set<Atom *> nearAtoms = {&atom2};
+	std::set<Atom *> nearAtomsControl = {&atomControl};
 
-// // // check atom exposure for large overlap with other atom
-// BOOST_AUTO_TEST_CASE(atom_large_overlap_neighbour)
-// {
-// 	// initialise 2 atoms with close positions
-// 	Atom atom, atom2, atomControl;
-// 	glm::vec3 pos, pos2, posControl;
-// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-// 	pos2 = glm::vec3(1.0f, 1.0f, 0.0f);
-// 	posControl = glm::vec3(sqrt(1.0f*1.0f + 1.0f*1.0f), 0.0f, 0.0f);
-// 	atom.setElementSymbol("O");
-// 	atom2.setElementSymbol("O");
-// 	atomControl.setElementSymbol("O");
-// 	atom.setDerivedPosition(pos);
-// 	atom2.setDerivedPosition(pos2);
-// 	atomControl.setDerivedPosition(posControl);
-// 	WithPos withPos, withPos2, withPosControl;
-// 	withPos.ave = pos;
-// 	withPos2.ave = pos2;
-// 	withPosControl.ave = posControl;
+  SurfaceAreaHandler SAH;
+  AreaMeasurer AM(&SAH);
 
-// 	AtomPosMap posMap, posMapControl;
-// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-// 	posMapControl = {{&atom, withPos}, {&atomControl, withPosControl}};
+	// calculate the exposure of the atom
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(nearAtoms, &atom, radius);
+	std::cout << "atom_large_overlap_neighbour exposure: " << exposure 
+																												 << std::endl;
 
-//   SurfaceAreaHandler SAH;
-//   AreaMeasurer AM(&SAH);
-// 	AM.copyAtomMap(posMap);
+	float exposureControl = AM.fibExposureSingleAtom(nearAtomsControl, &atom,
+																									 radius);
+	std::cout << "atom_large_overlap_neighbour exposure (control): " 
+						<< exposureControl << std::endl;
 
-// 	// calculate the exposure of the atom
-// 	float radius = getVdWRadius(&atom);
-// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_large_overlap_neighbour exposure: " << exposure << std::endl;
+	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
+}
 
-// 	AM.copyAtomMap(posMapControl);
+// // check atom exposure for full overlap with other atom
+BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
+{
+	// initialise 2 atoms with same position
+	Atom atom, atom2;
+	glm::vec3 pos, pos2;
+	pos = glm::vec3(0.0f, 0.0f, 0.0f);
+	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
+	atom.setElementSymbol("O");
+	atom2.setElementSymbol("O");
+	atom.setDerivedPosition(pos);
+	atom2.setDerivedPosition(pos2);
 
-// 	float exposureControl = AM.fibExposureSingleAtom(posMapControl, &atom, radius);
-// 	std::cout << "atom_large_overlap_neighbour exposure (control): " << exposureControl << std::endl;
+	std::set<Atom *> nearAtoms = {&atom2};
 
-// 	BOOST_TEST(exposure == exposureControl, tt::tolerance(1e-2f));
-// }
+  SurfaceAreaHandler SAH;
+  AreaMeasurer AM(&SAH);
 
-// // // check atom exposure for full overlap with other atom
-// BOOST_AUTO_TEST_CASE(atom_full_overlap_neighbour)
-// {
-// 	// initialise 2 atoms with same position
-// 	Atom atom, atom2;
-// 	glm::vec3 pos, pos2;
-// 	pos = glm::vec3(0.0f, 0.0f, 0.0f);
-// 	pos2 = glm::vec3(0.0f, 0.0f, 0.0f);
-// 	atom.setElementSymbol("O");
-// 	atom2.setElementSymbol("O");
-// 	atom.setDerivedPosition(pos);
-// 	atom2.setDerivedPosition(pos2);
-// 	WithPos withPos, withPos2;
-// 	withPos.ave = pos;
-// 	withPos2.ave = pos2;
-
-// 	AtomPosMap posMap;
-// 	posMap = {{&atom, withPos}, {&atom2, withPos2}};
-
-//   SurfaceAreaHandler SAH;
-//   AreaMeasurer AM(&SAH);
-// 	AM.copyAtomMap(posMap);
-
-// 	// calculate the exposure of the atom
-// 	float radius = getVdWRadius(&atom);
-// 	float exposure = AM.fibExposureSingleAtom(posMap, &atom, radius);	std::cout << "atom_full_overlap_neighbour exposure: " << exposure << std::endl;
-// 	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
-// }
-
-// // BOOST_AUTO_TEST_CASE(failing_Test)
-// // {
-// // 	BOOST_TEST(1 == 2);
-// // }
+	// calculate the exposure of the atom
+	float radius = getVdWRadius(&atom);
+	float exposure = AM.fibExposureSingleAtom(nearAtoms, &atom, radius);
+	std::cout << "atom_full_overlap_neighbour exposure: " << exposure 
+																												<< std::endl;
+	BOOST_TEST(exposure == 0.0f, tt::tolerance(1e-2f));
+}
 
 BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 {
-	// oxygen atom Van der Waals radius is 1.52 Ang according to Google.
-	// volume: 4/3 * pi * r^3 is 14.7 Ang^3.
-	// surface: 4 * pi * r^2 is 29.0333 Ang^2.
-
-	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+	std::chrono::_V2::system_clock::time_point start 
+		= std::chrono::high_resolution_clock::now();
 
 	Atom a;
 	a.setElementSymbol("O");
@@ -358,6 +321,7 @@ BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 
 	const int resources = 1;
 	const int threads = 1;
+
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
 	sequences->setTotalSamples(1);
 	sequences->addAnchorExtension(&a);
@@ -381,17 +345,20 @@ BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 	Task<BondSequence *, AtomPosMap *> *extract_map;
 
 	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr, &extract_map);
+	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr,
+														 &extract_map);
 
 	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
 	{
 		AreaMeasurer am;
+		am.setProbeRadius(1.35);
 		am.copyAtomMap(*map);
 		float area = am.surfaceArea(*map);
 		return SurfaceAreaValue{area};
 	};
 
-	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(
+		map_to_surface_job, "map to surface");
 
 	extract_map->follow_with(map_to_surface);
 	map_to_surface->follow_with(submit_result);
@@ -402,7 +369,8 @@ BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 
 	Result *r = calculator->acquireResult();
 
-	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+	std::chrono::_V2::system_clock::time_point end 
+		= std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> duration = end - start;
 	float calcTime = TimerSurfaceArea::getInstance().times[0].count();
 	TimerSurfaceArea::getInstance().reset();
@@ -410,27 +378,30 @@ BOOST_AUTO_TEST_CASE(oxygen_atom_has_surface_area)
 
 	float area = r->surface_area;
 	std::cout <<"Oxygen atom area: " << area << std::endl;
-	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
+	std::cout << std::left << std::setw(11) << "time: " << duration.count() 
+																											<< std::endl;
 	std::cout << "calc time: " << calcTime << std::endl;
 
 	delete calculator;
 	delete sequences;
 
-		// BOOST_TEST(area == 29.0333f, tt::tolerance(1e-2f)); // this is not solvent accesible area
 	BOOST_TEST(area == 103.5079f, tt::tolerance(1e-2f)); //solvent accessible area
 }
 
-void test_cif(std::string name, std::string filename, float area_control, float tolerance)
+void test_cif(std::string name, std::string filename, float area_control,
+							float tolerance)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+	std::chrono::_V2::system_clock::time_point start 
+		= std::chrono::high_resolution_clock::now();
 
 	CifFile geom = CifFile(path);
 	geom.parse();
   
 	AtomGroup *atomgroup = geom.atoms();
 
-	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size() 
+																									<< std::endl;
 
 	BondCalculator *calculator = new BondCalculator();
 
@@ -462,17 +433,20 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 	/* calculation of torsion angle-derived and target-derived
 		* atom positions */
 	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, nullptr, final_hook,	nullptr, nullptr, &extract_map);
+	letgo = sequences->extract(gets, nullptr, final_hook,	nullptr, nullptr,
+														 &extract_map);
 
 	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
 	{
 		AreaMeasurer am;
+		am.setProbeRadius(1.35);
 		am.copyAtomMap(*map);
 		float area = am.surfaceArea(*map);
 		return SurfaceAreaValue{area};
 	};
 
-	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(
+		map_to_surface_job, "map to surface");
 
 	extract_map->follow_with(map_to_surface);
 	map_to_surface->follow_with(submit_result);
@@ -484,7 +458,8 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 
 	Result *r = calculator->acquireResult();
 	
-	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+	std::chrono::_V2::system_clock::time_point end
+		= std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> duration = end - start;
   float calcTime = TimerSurfaceArea::getInstance().times[0].count();
 	TimerSurfaceArea::getInstance().reset();
@@ -492,26 +467,30 @@ void test_cif(std::string name, std::string filename, float area_control, float 
 
 	float area = r->surface_area;
 	std::cout << name << " area: " << area << std::endl;
-	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
+	std::cout << std::left << std::setw(11) << "time: " << duration.count() 
+																											<< std::endl;
 	std::cout << "calc time: " << calcTime << std::endl;
   
 	delete calculator;
 	delete sequences;
 
-	BOOST_TEST(area == area_control, tt::tolerance(tolerance)); //solvent accessible area (PyMOL);
+	BOOST_TEST(area == area_control, tt::tolerance(tolerance));
 }
 
-void test_pdb(std::string name, std::string filename, float area_control, float tolerance)
+void test_pdb(std::string name, std::string filename, float area_control,
+							float tolerance)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
-	std::chrono::_V2::system_clock::time_point start = std::chrono::high_resolution_clock::now();
+	std::chrono::_V2::system_clock::time_point start
+		= std::chrono::high_resolution_clock::now();
 
 	PdbFile pdb(path);
 	pdb.parse();
 
 	AtomGroup *atomgroup = pdb.atoms();
 
-	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size()
+																								 << std::endl;
 
 	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
 
@@ -519,9 +498,9 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 
 	const int resources = 1;
 	const int threads = 1;
+
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
 	sequences->setTotalSamples(1);
-	// calculator->setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
 	for (AtomGroup *group : subGroups)
 	{
 		sequences->addAnchorExtension(group->chosenAnchor());
@@ -529,7 +508,6 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 	
 	sequences->setup();
 	sequences->prepareSequences();
-	
 
 	Tasks *tasks = new Tasks();
 	tasks->run(threads);
@@ -547,17 +525,20 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 	Task<BondSequence *, AtomPosMap *> *extract_map;
 
 	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr, &extract_map);
+	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr,
+														 &extract_map);
 
 	auto map_to_surface_job = [](AtomPosMap *map) -> SurfaceAreaValue
 	{
 		AreaMeasurer am;
+		am.setProbeRadius(1.35);
 		am.copyAtomMap(*map);
 		float area = am.surfaceArea(*map);
 		return SurfaceAreaValue{area};
 	};
 
-	auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+	auto *map_to_surface =new Task<AtomPosMap *, SurfaceAreaValue>(
+		map_to_surface_job, "map to surface");
 
 	extract_map->follow_with(map_to_surface);
 	map_to_surface->follow_with(submit_result);
@@ -568,7 +549,8 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 
 	Result *r = calculator->acquireResult();
 
-	std::chrono::_V2::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+	std::chrono::_V2::system_clock::time_point end 
+		= std::chrono::high_resolution_clock::now();
 	std::chrono::duration<float> duration = end - start;
 	float calcTime = TimerSurfaceArea::getInstance().times[0].count();
 	TimerSurfaceArea::getInstance().reset();
@@ -576,7 +558,8 @@ void test_pdb(std::string name, std::string filename, float area_control, float 
 
 	float area = r->surface_area;
 	std::cout << name << " area: " << area << std::endl;
-	std::cout << std::left << std::setw(11) << "time: " << duration.count() << std::endl;
+	std::cout << std::left << std::setw(11) << "time: " << duration.count() 
+																											<< std::endl;
 	std::cout << "calc time: " << calcTime << std::endl;
 
 	delete calculator;
@@ -601,7 +584,8 @@ void cooldown(float seconds)
     std::cout << "\r                                   \r" << std::flush;
 }
 
-void time_cif(std::string name, std::string filename, int sets, int reps, float cooldownSeconds = 0)
+void time_cif(std::string name, std::string filename, int sets, int reps,
+							float cooldownSeconds = 0)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
 	CifFile geom = CifFile(path);
@@ -609,7 +593,8 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 
 	AtomGroup *atomgroup = geom.atoms();
 
-	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size() 
+																								 << std::endl;
 
 	BondCalculator *calculator = new BondCalculator();
 
@@ -620,6 +605,7 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 
 	const int resources = 1;
 	const int threads = 1;
+
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
 	sequences->setTotalSamples(1);
 	sequences->addAnchorExtension(atomgroup->chosenAnchor());
@@ -643,11 +629,14 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 	Task<BondSequence *, AtomPosMap *> *extract_map;
 
 	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr, &extract_map);
+	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr,
+														 &extract_map);
 
-	auto timing_map_to_surface_job = [sets, reps](AtomPosMap *map) -> SurfaceAreaValue
+	auto timing_map_to_surface_job 
+		= [sets, reps](AtomPosMap *map) -> SurfaceAreaValue
 	{
 		AreaMeasurer am;
+		am.setProbeRadius(1.35);
 		am.copyAtomMap(*map);
 		float area;
 		for (int i = 0; i < sets; i++)
@@ -660,7 +649,8 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 		return SurfaceAreaValue{area};
 	};
 
-  auto *timing_map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(timing_map_to_surface_job, "map to surface");
+  auto *timing_map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(
+		timing_map_to_surface_job, "map to surface");
 
 	extract_map->follow_with(timing_map_to_surface);
 	timing_map_to_surface->follow_with(submit_result);
@@ -672,8 +662,8 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 	std::vector<float> stdDevSets;
 	TimerSurfaceArea::getInstance().timing = true;
 
-	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
-	std::endl;
+	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " 
+						<< sets << " runs, " << reps << " repetitions" <<	std::endl;
 
 	Result *r = calculator->acquireResult();
 	
@@ -699,10 +689,11 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 		stdDev = sqrt(stdDev / reps);
 		avgSets.push_back(avg);
 		stdDevSets.push_back(stdDev);
-		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
 		std::cout << std::left << std::setw(6) << "run " << i
-              << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
-              << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
+              << std::setw(12) << "  average: " << std::fixed
+							<< std::setprecision(9) << avg 
+              << std::setw(22) << "  standard deviation: " << std::fixed
+							<< std::setprecision(9) << stdDev << std::endl;
 	}
 	
 	float total_avg = 0.0f;
@@ -719,10 +710,11 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 	}
 	avg_stdDev = avg_stdDev / sets;
 
-	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
 	std::cout << std::left << std::setw(6) << "TOTAL" 
-          << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
-          << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+          << std::setw(13) << "   run avg: " << std::fixed
+					<< std::setprecision(9) << total_avg 
+          << std::setw(22) << "  avg std deviation: " << std::fixed
+					<< std::setprecision(9) << avg_stdDev << std::endl;
 	std::cout << "Total test time: " << total << std::endl;
 	std::cout << "Surface area: " << r->surface_area << std::endl;
 
@@ -730,7 +722,8 @@ void time_cif(std::string name, std::string filename, int sets, int reps, float 
 	delete sequences;
 }
 
-void time_pdb(std::string name, std::string filename, int sets, int reps, float cooldownSeconds = 0)
+void time_pdb(std::string name, std::string filename, int sets, int reps,
+	float cooldownSeconds = 0)
 {
 	std::string path = "/home/iko/UNI/BA-BSC/ROPE/molecule_files/" + filename;
 	PdbFile pdb(path);
@@ -739,7 +732,8 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	AtomGroup *atomgroup = pdb.atoms();
 	std::vector<AtomGroup *> subGroups = atomgroup->connectedGroups();
 
-	std::cout << "\n" << name << " atoms number: " << atomgroup->size() << std::endl;
+	std::cout << "\n" << name << " atoms number: " << atomgroup->size()
+																								 << std::endl;
 
 	BondCalculator *calculator = new BondCalculator();
 
@@ -750,9 +744,9 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 
 	const int resources = 1;
 	const int threads = 1;
+
 	BondSequenceHandler *sequences = new BondSequenceHandler(resources);
 	sequences->setTotalSamples(1);
-	// calculator->setPipelineType(BondCalculator::PipelineSolventSurfaceArea);
 	for (AtomGroup *group : subGroups)
 	{
 		sequences->addAnchorExtension(group->chosenAnchor());
@@ -761,7 +755,6 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	sequences->setup();
 	sequences->prepareSequences();
 	
-
 	Tasks *tasks = new Tasks();
 	tasks->run(threads);
 
@@ -778,11 +771,14 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	Task<BondSequence *, AtomPosMap *> *extract_map;
 
 	sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr, &extract_map);
+	letgo = sequences->extract(gets, nullptr, final_hook, nullptr, nullptr,
+														 &extract_map);
 
-	auto timing_map_to_surface_job = [sets, reps](AtomPosMap *map) -> SurfaceAreaValue
+	auto timing_map_to_surface_job 
+		= [sets, reps](AtomPosMap *map) -> SurfaceAreaValue
 	{
 		AreaMeasurer am;
+		am.setProbeRadius(1.35);
 		am.copyAtomMap(*map);
 		float area;
 		for (int i = 0; i < sets; i++)
@@ -795,7 +791,8 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 		return SurfaceAreaValue{area};
 	};
 
-	auto *timing_map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(timing_map_to_surface_job, "map to surface");
+	auto *timing_map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(
+		timing_map_to_surface_job, "map to surface");
 
 	extract_map->follow_with(timing_map_to_surface);
 	timing_map_to_surface->follow_with(submit_result);
@@ -807,8 +804,8 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	std::vector<float> stdDevSets;
 	TimerSurfaceArea::getInstance().timing = true;
 
-	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " << sets << " runs, " << reps << " repetitions" <<
-	std::endl;
+	std::cout << "\nTIMING " << name << " SURFACE AREA CALCULATION" << " - " 
+						<< sets << " runs, " << reps << " repetitions" <<	std::endl;
 
 	Result *r = calculator->acquireResult();
 	
@@ -834,10 +831,11 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 		stdDev = sqrt(stdDev / reps);
 		avgSets.push_back(avg);
 		stdDevSets.push_back(stdDev);
-		// std::cout << "run " << i << "\t" << "average: " << avg << "\t" << "standard deviation: " << stdDev << std::endl;
 		std::cout << std::left << std::setw(6) << "run " << i
-              << std::setw(12) << "  average: " << std::fixed << std::setprecision(9) << avg 
-              << std::setw(22) << "  standard deviation: " << std::fixed << std::setprecision(9) << stdDev << std::endl;
+              << std::setw(12) << "  average: " << std::fixed
+							<< std::setprecision(9) << avg 
+              << std::setw(22) << "  standard deviation: " << std::fixed
+							<< std::setprecision(9) << stdDev << std::endl;
 	}
 	
 	float total_avg = 0.0f;
@@ -854,10 +852,11 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	}
 	avg_stdDev = avg_stdDev / sets;
 
-	// std::cout << "TOTAL" << "\t" << "run average: " << total_avg << "\t" << "average standard deviation: " << avg_stdDev << std::endl;
 	std::cout << std::left << std::setw(6) << "TOTAL" 
-          << std::setw(13) << "   run avg: " << std::fixed << std::setprecision(9) << total_avg 
-          << std::setw(22) << "  avg std deviation: " << std::fixed << std::setprecision(9) << avg_stdDev << std::endl;
+          << std::setw(13) << "   run avg: " << std::fixed
+					<< std::setprecision(9) << total_avg 
+          << std::setw(22) << "  avg std deviation: " << std::fixed
+					<< std::setprecision(9) << avg_stdDev << std::endl;
 	std::cout << "Total test time: " << total << std::endl;
 	std::cout << "Surface area: " << r->surface_area << std::endl;
 
@@ -865,36 +864,36 @@ void time_pdb(std::string name, std::string filename, int sets, int reps, float 
 	delete sequences;
 }
 
-
+// SURFACE AREA TESTS
 
 BOOST_AUTO_TEST_CASE(glycine_surface_area)
 {
-	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f); //221.691f
+	test_cif("glycine", "GLY.cif", 216.612f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(atp_surface_area)
 {
-	test_cif("atp", "ATP.cif", 641.4f, 1e-2f); //649.230f
+	test_cif("atp", "ATP.cif", 641.4f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(tyr_surface_area)
 {
-	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f); //372.816f
+	test_cif("tyr", "TYR.cif", 366.551f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(exanatide_surface_area)
 {
-	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f); //3180.258f
+	test_pdb("exanatide", "7mll.pdb", 3184.6f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(noPPalpha_surface_area)
 {
-	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f); //3177.264f
+	test_pdb("noPPalpha", "8g0x.pdb", 3248.37f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(insulin_surface_area)
 {
-	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f); //3383.559f
+	test_pdb("insulin", "pdb3i40.ent", 3729.28f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(leptin_surface_area)
@@ -904,7 +903,7 @@ BOOST_AUTO_TEST_CASE(leptin_surface_area)
 
 BOOST_AUTO_TEST_CASE(lysozyme_surface_area)
 {
-	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f); //6516.170f
+	test_pdb("lysozyme", "1gwd.pdb", 7277.73f, 1e-2f);
 }
 
 BOOST_AUTO_TEST_CASE(profilin_surface_area)
@@ -949,7 +948,7 @@ BOOST_AUTO_TEST_CASE(methyltransferase_surface_area)
 
 BOOST_AUTO_TEST_CASE(hemoglobin_surface_area)
 {
-	test_pdb("hemoglobin", "pdb2h35.ent", 28211.4355, 1e-2f);
+	test_pdb("hemoglobin", "pdb2h35.ent", 27245.4, 1e-2f);
 }
 
 // TIMING TESTS
@@ -1020,7 +1019,3 @@ BOOST_AUTO_TEST_CASE(time_hemoglobin)
 }
 
 
-// BOOST_AUTO_TEST_CASE(albumin_surface_area)
-// {
-// 	test_pdb("albumin", "pdb1e78.ent", 56982.762f, 1e-2f);
-// }

@@ -59,19 +59,14 @@ void ContactSheet::calculateZSliceMap(Atom * centre, std::set<Atom *> nearAtoms)
 	}
 }
 
-std::set<Atom *> ContactSheet::atomsNear(const AtomPosMap &posMap, Atom *centre, float radius)
+std::set<Atom *> ContactSheet::atomsNear(const AtomPosMap &posMap, Atom *centre,
+																				 float radius)
 {
-	// replace empty set with nearby atoms
 	std::set<Atom *> nearAtomsSet;
   for (auto &atom : posMap)
 	{
-		// if (fabs(atom.first->derivedPosition().x - centre->derivedPosition().x) > radius ||
-		//     fabs(atom.first->derivedPosition().y - centre->derivedPosition().y) > radius ||
-		// 		fabs(atom.first->derivedPosition().z - centre->derivedPosition().z) > radius)
-		// {
-		// 	continue;
-		// } // ↑ not faster with that if-condition
-		if (glm::dot(atom.first->derivedPosition() - centre->derivedPosition(),atom.first->derivedPosition() - centre->derivedPosition()) <= radius*radius && atom.first != centre)
+		if (sqlength(atom.first->derivedPosition() - centre->derivedPosition()) 
+				<= radius*radius && atom.first != centre)
 		{
 			nearAtomsSet.insert(atom.first);
 		}
