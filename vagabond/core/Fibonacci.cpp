@@ -26,9 +26,7 @@ Fibonacci::Fibonacci()
 
 Fibonacci::~Fibonacci()
 {
-
 }
-
 
 void Fibonacci::generateLattice(int num, double radius)
 {

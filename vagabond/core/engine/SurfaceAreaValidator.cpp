@@ -20,7 +20,8 @@ void SurfaceAreaValidator::loadEnv(std::string environmentFilePath)
 void SurfaceAreaValidator::validatePaths(int steps, int resources, int threads)
 {
   std::cout << "\nEntity count: " << _env.entityCount() << std::endl;
-  std::cout << "Model count: " << _env.modelManager()->objects().size() << std::endl;
+  std::cout << "Model count: " << _env.modelManager()->objects().size() 
+                               << std::endl;
   std::cout << "Path count: " << _env.pathManager()->objectCount() << std::endl;
 
   std::vector<Entity *> entities = _env.entityManager()->entities();
@@ -79,9 +80,11 @@ void SurfaceAreaValidator::validatePaths(int steps, int resources, int threads)
         Task<BondSequence *, AtomPosMap *> *extract_map;
 
         sequences->calculate(calc_flags, {}, &first_hook, &final_hook);
-        letgo = sequences->extract(gets, nullptr, final_hook,	nullptr, nullptr, &extract_map);
+        letgo = sequences->extract(gets, nullptr, final_hook,	nullptr, nullptr,
+                                   &extract_map);
 
-        auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(map_to_surface_job, "map to surface");
+        auto *map_to_surface = new Task<AtomPosMap *, SurfaceAreaValue>(
+          map_to_surface_job, "map to surface");
 
         extract_map->follow_with(map_to_surface);
         map_to_surface->follow_with(submit_result);
@@ -95,12 +98,14 @@ void SurfaceAreaValidator::validatePaths(int steps, int resources, int threads)
         if (frac == 0.0)
           std::cout << std::endl;
 
-        std::cout << "fraction: " << std::setw(7) << std::fixed << std::setprecision(4) << frac << "\t" << "area: " << std::setw(8) << std::setprecision(2) << area << std::endl;
+        std::cout << "fraction: " << std::setw(7) << std::fixed
+                  << std::setprecision(4) << frac << "\t" << "area: "
+                  << std::setw(8) << std::setprecision(2) << area << std::endl;
 
         delete sequences;
       }
 
     }
   }
-        delete calculator;
+  delete calculator;
 }
