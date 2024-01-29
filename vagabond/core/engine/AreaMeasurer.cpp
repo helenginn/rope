@@ -23,7 +23,6 @@
 #include <iostream>
 #include <gemmi/elem.hpp>
 
-
 AreaMeasurer::AreaMeasurer(SurfaceAreaHandler *handler, int n_points)
 {
 	_handler = handler;
@@ -45,22 +44,21 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	if (timing)
 	{	 timer.start();}
 
-	_lattice.resetLatticeRadius();
-
-	AreaMeasurer::setProbeRadius(1.35);
-	
-	// calculate
 	float area = 0;
-	//fibonacci points test
-	std::vector<glm::vec3> points = _lattice.getPoints();
 
 	_contacts->updateSheet(posMap);
 
   for (std::pair<Atom *const, WithPos> atom : posMap)
 	{
 		const float radius = getVdWRadius(atom.first);
-		const std::set<Atom *> atomsNearPosmap = _contacts->atomsNear(posMap, atom.first, radius +_maxVdWRadius + _probeRadius);
-    const float &exposure = AreaMeasurer::fibExposureSingleAtom(atomsNearPosmap, atom.first, radius); // pass in posmap to this function
+		const std::set<Atom *> atomsNear = _contacts->atomsNear(
+				posMap,
+				atom.first,
+				radius +_maxVdWRadius + _probeRadius
+		);
+    const float &exposure = AreaMeasurer::fibExposureSingleAtom(atomsNear,
+																																atom.first,
+																																radius);
 		const float &area_atom = areaFromExposure(exposure, radius, _probeRadius);
 		area += area_atom;
 	}
@@ -71,7 +69,8 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 	return area;
 }
 
-float AreaMeasurer::fibExposureSingleAtom(const std::set<Atom *> &atomsNearPosmap, Atom *atom, const float radius) // also needs local copy of posmap
+float AreaMeasurer::fibExposureSingleAtom(const std::set<Atom *> &atomsNear,
+																					Atom *atom, const float radius)
 {
 	_lattice.changeLatticeRadius(radius, _probeRadius);
 	std::vector<glm::vec3> points = _lattice.getPoints();
@@ -81,16 +80,21 @@ float AreaMeasurer::fibExposureSingleAtom(const std::set<Atom *> &atomsNearPosma
 	//for each lattice point in fibonacci lattice
 	for (const glm::vec3 &point : points)
 	{
-		// for every other atom in posmap
-		for (const auto &other_atom : atomsNearPosmap)
+		// for each other atom in posmap
+		for (const auto &other_atom : atomsNear)
 		{
-			if (glm::dot((pos-other_atom->derivedPosition()),(pos-other_atom->derivedPosition())) > (radius+_probeRadius+_maxVdWRadius) * (radius+_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
+			if (sqlength((pos-other_atom->derivedPosition())) >
+					(radius+_probeRadius+_maxVdWRadius) *
+					(radius+_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
 			{
 				continue;
 			}
 			const float radius = getVdWRadius(other_atom);
 			// check if point in overlap
-			if (sqlength(point + pos - other_atom->derivedPosition()) <= (radius + _probeRadius + 1e-6f) * (radius + _probeRadius + 1e-6f)) // + probe radius to account for solvent molecule size
+			if (sqlength(point + pos - other_atom->derivedPosition())
+					<= (radius + _probeRadius) 
+					* (radius + _probeRadius)
+					+ 1e-6f) // small epsilon so that points on the edge are counted
 			{
 				points_in_overlap++;
 				break;
@@ -138,21 +142,14 @@ float AreaMeasurer::fibExposureSingleAtomZSlice(const AtomPosMap &posMap, Atom *
 
 float areaFromExposure(float exposure, float radius, double probeRadius)
 {
-	const float area = exposure * 4 * M_PI * (radius + probeRadius) * (radius + probeRadius);
+	const float area =
+		exposure * 4 * M_PI * (radius + probeRadius) * (radius + probeRadius);
 	return area;
 }
 
 float getVdWRadius(Atom *atom)
 {
 	std::string elementSymbol = atom->elementSymbol();
-	// if (elementSymbol == "C")
-  //   return 1.7;
-	// else if (elementSymbol == "O")
-  //   return 1.52;
-	// else if (elementSymbol == "N")
-  //   return 1.55;
-	// else if (elementSymbol == "S")
-	// 	return 1.8;
 	gemmi::Element elem(elementSymbol);
 	const float radius = elem.vdw_r();
 	return radius;

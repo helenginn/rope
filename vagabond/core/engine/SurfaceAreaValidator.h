@@ -8,6 +8,7 @@
 #include "vagabond/core/Environment.h"
 #include "gemmi/model.hpp"
 #include "vagabond/core/files/PdbFile.h"
+
 class SurfaceAreaValidator
 {
 public:

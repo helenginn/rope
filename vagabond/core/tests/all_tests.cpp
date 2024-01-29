@@ -33,6 +33,6 @@ namespace tt = boost::test_tools;
 // #include "test_ramachandran.cpp"
 // #include "test_sequence.cpp"
 #include "test_surfaceareavalidator.cpp"
-// #include "test_surface.cpp"
+#include "test_surface.cpp"
 // #include "test_lbfgs.cpp"
 // #include "test_grid.cpp"

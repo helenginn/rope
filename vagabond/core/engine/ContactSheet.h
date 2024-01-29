@@ -48,7 +48,8 @@ public:
 	}
 
 	/** return set of near atoms within the specified radius*/
-	std::set<Atom *> atomsNear(const AtomPosMap &posMap, Atom *centre, float radius);
+	std::set<Atom *> atomsNear(const AtomPosMap &posMap, Atom *centre,
+														 float radius);
 private:
 	AtomPosMap _posMap;
 	std::map<Atom *, std::map<Atom *, std::pair<float, float> > > _zSliceMap;
