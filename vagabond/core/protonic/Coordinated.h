@@ -30,6 +30,8 @@ class AtomGroup;
 namespace hnet
 {
 typedef std::pair<::Atom *, hnet::BondConnector *> ABPair;
+typedef OpSet<ABPair> PairSet;
+typedef std::pair<ABPair, ABPair> CoordSeed;
 
 class Coordinated
 {
@@ -60,12 +62,10 @@ public:
 	                        const Count::Values &remaining_valency);
 
 	AtomGroup *findNeighbours(AtomGroup *group, const glm::vec3 &v, 
-	                          float distance);
+	                          float distance, bool one_sided);
 	void attachToNeighbours(AtomGroup *searchGroup);
-	void mutualExclusions();
-	void findBondRanges();
+	void mutualExclusions(AtomGroup *clashCheck);
 	void attachAdderConstraints();
-	void augmentBonding(AtomGroup *search);
 
 	void probeAtom();
 
@@ -103,28 +103,48 @@ public:
 	{
 		return _expl_bonds;
 	}
-	
-	hnet::CountConnector *const &forced_absent() const
+
+	size_t bondCount() const
 	{
-		return _forced_absent;
+		return _bonds.size();
+	}
+	
+	void addBond(const ABPair &bond);
+	
+	// to ensure that bonds between asymmetric atoms to symmetry operated atoms
+	// are forced to have equal connectivity
+	void equilibrateBonds();
+
+	std::vector<hnet::BondConnector *> bonds_only() const;
+	
+	ABPair bondedSymmetricAtom(::Atom *asymmetric);
+	
+	const bool &failedCheck() const
+	{
+		return _failedCheck;
 	}
 
-	std::vector<hnet::BondConnector *> &bonds()
+	const PairSet &bonds() const
 	{
 		return _bonds;
 	}
 
-	std::vector<::Atom *> &bonded_atoms()
-	{
-		return _bondedAtoms;
-	}
+	void eitherOr(const ABPair &first, const ABPair &second);
 private:
+	OpSet<PairSet> findSeeds();
+	ABPair makePossibleHydrogen(const glm::vec3 &pos);
+	void comparePairs(OpSet<PairSet> &results,
+	                  const ABPair &first, const ABPair &second,
+	                  glm::vec3 &centre);
+	PairSet developSeed(const PairSet &seed, const PairSet &all,
+	                    const PairSet &uninvolved, const glm::vec3 &centre,
+	                    AtomGroup *clashCheck, int &fake_atom_count);
+	OpSet<PairSet> expandAllSeeds(AtomGroup *clashCheck);
+
 	std::map<::Atom *, Coordinated *> &atomMap() const
 	{
 		return _network.atomMap();
 	}
-
-	OpSet<ABPair> pairSets();
 
 	hnet::AtomConnector *_connector{};
 
@@ -133,15 +153,15 @@ private:
 	hnet::CountConnector *_present{};
 	hnet::CountConnector *_absent{};
 	hnet::CountConnector *_expl_bonds{};
-	hnet::CountConnector *_forced_absent{};
 
 	// all bonds regardless of who made them
-	std::vector<hnet::BondConnector *> _bonds;
-
-	// atoms associated with all bonds
-	std::vector<::Atom *> _bondedAtoms;
+	PairSet _bonds;
+	
+	// the atom not involved in hydrogen bonding, but important for coordination
+	OpSet<ABPair> _uninvolved{};
 	
 	int _coordNum = 0;
+	bool _failedCheck = false;
 
 	AtomProbe *_probe{};
 

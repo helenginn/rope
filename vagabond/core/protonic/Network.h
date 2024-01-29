@@ -86,6 +86,7 @@ private:
 	void setupSingleAlcohol(::Atom *atom);
 	void setupLysineAmine(::Atom *atom);
 	void setupWater(::Atom *atom);
+	void setupAsnGlnNitrogen(::Atom *atom);
 
 	void findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
 	                       const std::string &name);

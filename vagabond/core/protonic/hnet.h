@@ -25,8 +25,9 @@
 
 
 /** serious missing features:
- * - crystal contacts
- * - check orientation is compatible with H-bonding
+ * - missing hydrogens off non-donors
+ * - donatable hydrogens which are incompatible with each other
+ *    - in trypsin, Ser170 and Ser167 for example
  * - alternate conformers
  */
 
@@ -39,14 +40,15 @@ namespace Bond
 	{
 		Contradiction =  (0),
 		Absent        =  (1 << 0),
+		NotAbsent     =  (1 << 1 | 1 << 2 | 1 << 3),
 		Weak          =  (1 << 1),
-		NotWeak       = ~(1 << 1),
+		NotWeak       =  (1 << 0 | 1 << 2 | 1 << 3),
 		Strong        =  (1 << 2),
-		NotStrong     = ~(1 << 2),
+		NotStrong     =  (1 << 0 | 1 << 1 | 1 << 3),
 		Present       =  (1 << 1 | 1 << 2),
+		NotPresent    =  (1 << 0 | 1 << 3),
 		Broken        =  (1 << 3),
-		NotBroken     = ~(1 << 3),
-		NotPresent    =  (1 << 0 | 1 << 3), // absent or broken
+		NotBroken     =  (1 << 0 | 1 << 1 | 1 << 2),
 		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
 };
@@ -269,6 +271,10 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		ss << std::string("Absent");
 		break;
 
+		case Bond::NotAbsent:
+		ss << std::string("NotAbsent");
+		break;
+
 		case Bond::Weak:
 		ss << std::string("Weak");
 		break;
@@ -287,6 +293,18 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 
 		case Bond::Present:
 		ss << std::string("Present");
+		break;
+
+		case Bond::NotPresent:
+		ss << std::string("NotPresent");
+		break;
+
+		case Bond::NotBroken:
+		ss << std::string("NotBroken");
+		break;
+
+		case Bond::Broken:
+		ss << std::string("Broken");
 		break;
 
 		case Bond::Unassigned:

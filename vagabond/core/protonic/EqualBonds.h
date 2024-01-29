@@ -16,24 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EitherOrBond__
-#define __vagabond__EitherOrBond__
+#ifndef __vagabond__EqualBonds__
+#define __vagabond__EqualBonds__
 
 #include "hnet.h"
 
 namespace hnet
 {
-/* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct EitherOrBond
+struct EqualBonds
 {
-	EitherOrBond(BondConnector &left, BondConnector &right)
+	EqualBonds(BondConnector &left, BondConnector &right)
 	: _left(left), _right(right)
 	{
 		auto self_check = [this](void *prev) { return check(prev); };
 
 		_left.add_constraint_check(self_check);
 		_right.add_constraint_check(self_check);
-		
+
 		auto forget_me = [this](void *blame) { return forget(blame); };
 
 		_left.add_forget(forget_me);
@@ -44,43 +43,31 @@ struct EitherOrBond
 			_left.pop_last_check(this);
 			_right.pop_last_check(this);
 
-			throw std::runtime_error("New either/or dichotomy immediately "\
+			throw std::runtime_error("New equivalent bonds immediately "\
 			                         "failed validation check");
 		}
 	}
-	
+
 	void forget(void *blame)
 	{
 		_left.forget(blame);
 		_right.forget(blame);
 	}
 
-	bool check(void *previous)
+	bool check(void *prev)
 	{
-		if (_left.value() == Bond::Unassigned)
-		{
-			_right.assign_value(Bond::Unassigned, this, previous);
-		}
-		if (_right.value() == Bond::Unassigned)
-		{
-			_left.assign_value(Bond::Unassigned, this, previous);
-		}
+		Bond::Values forLeft = _left.value();
+		Bond::Values forRight = _right.value();
 
-		if ((_left.value() & Bond::NotBroken) && 
-		    !(_left.value() & Bond::Broken))
-		{
-			_right.assign_value(Bond::Broken, this, previous);
-		}
-		else if ((_right.value() & Bond::NotBroken) &&
-		         !(_right.value() & Bond::Broken))
-		{
-			_left.assign_value(Bond::Broken, this, previous);
-		}
+		Bond::Values both = Bond::Values(forLeft & forRight);
 
-		bool con = (!is_contradictory(_left.value()) &&
-		            !is_contradictory(_right.value()));
-		
-		return con;
+		_left.assign_value(both, this, prev);
+		if (is_contradictory(_left.value())) return false;
+
+		_right.assign_value(both, this, prev);
+		if (is_contradictory(_right.value())) return false;
+
+		return true;
 	}
 
 	BondConnector &_left;

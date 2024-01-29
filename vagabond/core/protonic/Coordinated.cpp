@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define HYDROGEN_BONDING_TOLERANCE (35.0f)
+
 #include <iostream>
 #include <vagabond/utils/glm_import.h>
 
@@ -25,17 +27,46 @@
 
 using namespace hnet;
 
+inline std::ostream &operator<<(std::ostream &ss, const ABPair &pair)
+{
+	if (pair.first == nullptr)
+	{
+		ss << "(nullptr)";
+	}
+	else
+	{
+		ss << pair.first->desc();
+	}
+	
+	if (pair.second == nullptr)
+	{
+		ss << "(nullptr)";
+	}
+	return ss;
+}
+
+
+inline std::ostream &operator<<(std::ostream &ss, const PairSet &all)
+{
+	for (const ABPair &ps : all)
+	{
+		ss << ps << " ";
+	}
+	ss << "(" << all.size() << ")";
+	return ss;
+}
+
 Coordinated::Coordinated(::Atom *atom, Network &network)
 : _network(network), _atom(atom)
 {
 	probeAtom();
 }
 
-auto find_close(::Atom *const &ref, float threshold)
+auto find_close(::Atom *const &ref, float threshold, bool one_sided)
 {
-	return [ref, threshold](::Atom *const &atom)
+	return [ref, threshold, one_sided](::Atom *const &atom)
 	{
-		if (atom->atomNum() < ref->atomNum())
+		if (one_sided && (ref->atomNum() < atom->atomNum()))
 		{
 			return false;
 		}
@@ -51,26 +82,22 @@ auto find_close(::Atom *const &ref, float threshold)
 			}
 		}
 		
-		if (atom->isConnectedToAtom(ref))
+		if (atom->isConnectedToAtom(ref) || atom == ref || 
+		    atom->bondsBetween(ref, 5) >= 0)
 		{
 			return false;
 		}
 		
-		if (atom->bondsBetween(ref, 5) >= 0)
-		{
-			return false;
-		}
+		float l = glm::length(init - pos);
 		
-		float length = glm::length(init - pos);
-		
-		return (length < threshold && length > 2.0);
+		return (l < threshold && l > 2.0);
 	};
 }
 
 AtomGroup *Coordinated::findNeighbours(AtomGroup *group, const glm::vec3 &v, 
-                                       float distance)
+                                       float distance, bool one_sided)
 {
-	auto filter_in = find_close(_atom, distance);
+	auto filter_in = find_close(_atom, distance, one_sided);
 
 	return group->new_subset(filter_in);
 }
@@ -112,22 +139,32 @@ void Coordinated::probeAtom()
 /* finding the "uninvolved" atom for throwing out non-bondable possibilities
  * due to violating bond angle: Ser-CB---O:::H---X where CB-O-X must be reasonable
  * values */
-::Atom *uninvolvedCoordinator(::Atom *atom, float *angle)
+OpSet<ABPair> uninvolvedCoordinators(::Atom *atom)
 {
 	struct FindUninvolved
 	{
 		std::string code;
 		std::string active;
 		std::string uninvolved;
-		float mean_angle;
 	};
 
-	std::vector<FindUninvolved> list = {{"SER", "OG", "CB", 109.5},
-		                                {"LYS", "NZ", "CE", 109.5}};
+	std::vector<FindUninvolved> list = {{"SER", "OG", "CB"},
+		                                {"THR", "OG1", "CB"},
+		                                {"TYR", "OH", "CZ"},
+		                                {"", "N", "CA"},
+		                                {"", "N", "C"},
+		                                {"", "O", "C"},
+		                                {"GLN", "OE1", "CD"},
+		                                {"GLN", "NE2", "CD"},
+		                                {"ASN", "OD1", "CG"},
+		                                {"ASN", "ND2", "CG"},
+		                                {"LYS", "NZ", "CE"}};
 
+	OpSet<ABPair> found;
 	for (FindUninvolved &find : list)
 	{
-		if (atom->code() != find.code || atom->atomName() != find.active)
+		if ((atom->code() != find.code && find.code.length() > 0)
+		    || atom->atomName() != find.active)
 		{
 			continue;
 		}
@@ -136,107 +173,567 @@ void Coordinated::probeAtom()
 		{
 			if (atom->connectedAtom(i)->atomName() == find.uninvolved)
 			{
-				*angle = find.mean_angle;
-				return atom->connectedAtom(i);
+				found.insert({atom->connectedAtom(i), nullptr});
 			}
 		}
 	}
 	
-	return nullptr;
+	return found;
 }
 
-bool acceptableBondingAngle(::Atom *centre, ::Atom *uninvolved,
-                            ::Atom *candidate, float target_angle)
+float expected_angle_for_coordination(int coord)
 {
-	if (!centre || !uninvolved || !candidate)
+	switch (coord)
 	{
-		return true;
+		case 2: return 180;
+		case 3: return 120;
+		case 4: return 109.5;
+		default: return 0;
+	}
+}
+
+std::vector<glm::vec3> template_for_coordination(int coord)
+{
+	if (coord == 4)
+	{
+		// tetrahedral coordination around centre (origin)
+		return {{1, -1, 1}, {-1, -1, -1}, {-1, 1, 1}, {1, 1, -1}};
+	}
+	else if (coord == 3)
+	{
+		// trigonal coordination around centre (origin)
+		return {{1, 0, 0}, {-0.5, 0.866, 0}, {-0.5, -0.866, 0}};
+	}
+	else if (coord == 2)
+	{
+		// trigonal coordination around centre (origin)
+		return {{1, 0, 0}, {-1.0, 0, 0}};
+	}
+	
+	return {};
+}
+
+
+std::vector<glm::vec3> align(int coordNum, const glm::vec3 &centre,
+                             const std::vector<glm::vec3> &some)
+{
+	std::vector<glm::vec3> blueprint = template_for_coordination(coordNum);
+	
+	if (blueprint.size() == 0) return {};
+
+	Superpose pose;
+	pose.setForcedMeans({}, {});
+	
+	glm::vec3 blueprint_centre = {};
+	pose.addPositionPair(blueprint_centre, blueprint_centre); // centre
+
+	for (size_t i = 0; i < some.size(); i++)
+	{
+		glm::vec3 dir = glm::normalize(some[i] - centre);
+		glm::vec3 expected = glm::normalize(blueprint[i]);
+		pose.addPositionPair(dir, expected);
 	}
 
-	glm::vec3 r = uninvolved->initialPosition();
-	glm::vec3 l = candidate->initialPosition();
-	glm::vec3 c = centre->initialPosition();
+	pose.superpose();
+	glm::mat3x3 super = pose.rotation();
+	
+	std::vector<glm::vec3> to_return;
 
-	glm::vec3 c2l = glm::normalize(l - c);
-	glm::vec3 c2r = glm::normalize(r - c);
-
-	float angle = rad2deg(glm::angle(c2l, c2r));
-
-	return (angle > target_angle - 25 && angle < target_angle + 25);
+	for (size_t i = 0; i < coordNum; i++)
+	{
+		glm::vec3 pos = super * glm::normalize(blueprint[i]);
+		pos += centre;
+		to_return.push_back(pos);
+	}
+	
+	return to_return;
 }
 
-void Coordinated::mutualExclusions()
+void Coordinated::eitherOr(const ABPair &first, const ABPair &second)
 {
-	std::vector<::Atom *> &atoms = bonded_atoms();
-	glm::vec3 c = _atom->initialPosition();
+	if (!first.second || !second.second || first == second)
+	{
+		return;
+	}
+	
+	std::cout << "Wanting to add either/or constraint between " 
+	<< first << " and " << second << std::endl;
+	add_constraint(new EitherOrBond(*first.second, *second.second));
+}
 
-	if (_bondedAtoms.size() == 0)
+void Coordinated::comparePairs(OpSet<PairSet> &results,
+                                  const ABPair &first, const ABPair &second,
+                                  glm::vec3 &centre)
+{
+	::Atom *left = first.first;
+	::Atom *right = second.first;
+
+	if (left == right)
 	{
 		return;
 	}
 
-	for (int i = 0; i < _bondedAtoms.size() - 1; i++)
-	{
-		::Atom *left = atoms[i];
-		glm::vec3 l = left->initialPosition();
-		for (int j = i + 1; j < _bondedAtoms.size(); j++)
-		{
-			::Atom *right = _bondedAtoms[j];
-			glm::vec3 r = right->initialPosition();
+	float target_angle = expected_angle_for_coordination(_coordNum);
+	glm::vec3 l = left->initialPosition();
+	glm::vec3 r = right->initialPosition();
 
-			glm::vec3 c2l = glm::normalize(l - c);
-			glm::vec3 c2r = glm::normalize(r - c);
-			
-			float angle = rad2deg(glm::angle(c2l, c2r));
-			
-			bool accept = (angle > 95 && angle < 140);
-			
-			if (!accept)
+	glm::vec3 c2l = glm::normalize(l - centre);
+	glm::vec3 c2r = glm::normalize(r - centre);
+
+	float angle = rad2deg(glm::angle(c2l, c2r));
+
+	bool accept = (angle > target_angle - 1.5 * HYDROGEN_BONDING_TOLERANCE && 
+	               angle < target_angle + 1.5 * HYDROGEN_BONDING_TOLERANCE);
+
+	// we definitely can't accept this pair if it's far outside
+	// this range!
+	if (!accept)
+	{
+		eitherOr(first, second);
+		return;
+	}
+
+	PairSet both;
+	both.insert(first);
+	both.insert(second);
+	
+	results.insert(both);
+}
+
+OpSet<PairSet> Coordinated::findSeeds()
+{
+	float target_angle = expected_angle_for_coordination(_coordNum);
+	std::cout << "Target: " << target_angle << " for " << _coordNum << std::endl;
+	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
+
+	OpSet<PairSet> results;
+	OpSet<ABPair> sets = bonds();
+	
+	std::vector<ABPair> bonded_atoms = sets.toVector();
+	glm::vec3 c = _atom->initialPosition();
+	
+	std::cout << uninvolved.size() << " uninvolved and " << sets.size() << 
+	" possible bonders" << std::endl;
+
+	if (uninvolved.size() == 0)
+	{
+		for (int i = 0; i < bonded_atoms.size() - 1; i++)
+		{
+			for (int j = i + 1; j < bonded_atoms.size(); j++)
 			{
-				add_constraint(new EitherOrBond(*_bonds[i], *_bonds[j]));
+				comparePairs(results, bonded_atoms[i], bonded_atoms[j], c);
 			}
+		}
+	}
+	else if (uninvolved.size() == 1)
+	{
+		for (const ABPair &not_bonding : uninvolved)
+		{
+			for (const ABPair &bonding : sets)
+			{
+				comparePairs(results, not_bonding, bonding, c);
+			}
+		}
+
+	}
+	else if (uninvolved.size() == 2)
+	{
+		results += uninvolved;
+	}
+
+	return results;
+}
+
+glm::vec3 ab_pair_to_vec(const ABPair &pair)
+{
+	glm::vec3 other = pair.first->initialPosition();
+	return other;
+}
+
+std::vector<glm::vec3> seed_to_vecs(const PairSet &seed)
+{
+	std::vector<glm::vec3> results;
+	
+	for (const ABPair &pair : seed)
+	{
+		results.push_back(ab_pair_to_vec(pair));
+	}
+
+	return results;
+}
+
+auto mutually_exclude(Coordinated *me, const PairSet &unwanted)
+{
+	for (const ABPair &left : unwanted)
+	{
+		for (const ABPair &right : unwanted)
+		{
+			if (left == right)
+			{
+				continue;
+			}
+			me->eitherOr(left, right);
+			me->eitherOr(right, left);
 		}
 	}
 }
 
+auto prep_find_candidates(const PairSet &candidates, const glm::vec3 &centre)
+{
+	return [candidates, centre](const glm::vec3 &other) -> PairSet
+	{
+		PairSet survivors;
+		for (const ABPair &candidate : candidates)
+		{
+			glm::vec3 position = ab_pair_to_vec(candidate);
+			position = glm::normalize(position - centre);
+			glm::vec3 dir = glm::normalize(other - centre);
+
+			float rad = glm::angle(dir, position);
+			float deg = rad2deg(rad);
+			std::cout << candidate << " deg: " << deg << std::endl;
+
+			if (deg < HYDROGEN_BONDING_TOLERANCE)
+			{
+				survivors.insert(candidate);
+			}
+		}
+		
+		return survivors;
+	};
+}
+
+ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
+{
+	::Atom *hAtom = new ::Atom();
+	hAtom->setResidueId(_atom->residueId());
+	hAtom->setInitialPosition(pos);
+	hAtom->setAtomName("H!");
+
+	BondConnector &new_bond = add(new BondConnector());
+	return {hAtom, &new_bond};
+}
+
+auto prepare_clash_check(Coordinated *me, AtomGroup *search)
+{
+	return [search, me](const glm::vec3 &other) -> bool
+	{
+		::Atom *central = *me;
+		AtomGroup *neighbours = me->findNeighbours(search, other, 2.5, false);
+		
+		for (::Atom *suspect : neighbours->atomVector())
+		{
+			if (!central->isConnectedToAtom(suspect) && central != suspect)
+			{
+				return true;
+			}
+		}
+		
+		delete neighbours;
+		return false;
+	};
+};
+
+void break_all_bonds(Coordinated *me, const PairSet &set)
+{
+	for (const ABPair &pair : set)
+	{
+		if (pair.second)
+		{
+			me->add_constraint(new BondConstant(*pair.second, Bond::Broken));
+		}
+	}
+}
+
+PairSet Coordinated::developSeed(const PairSet &seed, const PairSet &all,
+                                 const PairSet &uninvolved,
+                                 const glm::vec3 &centre,
+                                 AtomGroup *clashCheck,
+                                 int &fake_atom_count)
+{
+	auto clash_check_at_position = prepare_clash_check(this, clashCheck);
+	std::cout << "Seeding from " << seed << std::endl;
+
+	// strategy here: now we want to predict all the locations of our
+	// remaining coordinated spots.
+
+	std::vector<glm::vec3> some = seed_to_vecs(seed);
+
+	// We will now end up with predicted locations for the missing bonds.
+	// Some of these will line up with other registered bonds (which are
+	// in the acceptable set). Others will clash with other atoms in the
+	// protein structure and must be declared absent. Others won't clash
+	// with the other atoms (in which case they must be declared and left
+	// open to any bonding state).
+
+	// others: contains the predicted positions of all coordination geometry
+	std::vector<glm::vec3> others = align(_coordNum, centre, some);
+
+	std::cout << "Others: " << std::endl;
+	for (const glm::vec3 &v : others)
+	{
+		std::cout << "\t" << glm::to_string(v) << std::endl;
+	}
+
+	// prepare the function to test whether another registered bond is
+	// part of this coordination.
+	auto find_candidates = prep_find_candidates(all, centre);
+
+	// we want to track a list of all the registered bonds that survives
+	// this range check.
+	PairSet survivors;
+
+	int clash_count = 0;
+
+	for (const glm::vec3 &other : others)
+	{
+		// although it is theoretically possible that multiple bonds could
+		// survive this range check, they will already have been mutually
+		// excluded due to poor bonding angles during seed-finding.
+		PairSet additions = find_candidates(other);
+		std::cout << "Found existing candidates: " << additions << std::endl;
+
+		// if we did not find any coordinated bonds from the registered
+		// set of atoms, then we must create a possible hydrogen position
+		// at the missing location.
+
+		if (additions.size() == 0)
+		{
+			ABPair fresh_hydrogen = makePossibleHydrogen(other);
+
+			// the issue here is that the possible hydrogen we have
+			// made may not even be present due to clashes elsewhere
+			// in the structure.
+			bool clash = clash_check_at_position(other);
+
+			if (clash)
+			{
+				// make sure it is absent
+				BondConnector &freshHBond = *fresh_hydrogen.second;
+				add_constraint(new BondConstant(freshHBond, 
+				                                Bond::NotPresent)); 
+				clash_count++;
+			}
+
+			additions += fresh_hydrogen;
+			fake_atom_count++;
+		}
+
+		// add this onto the growing list of atom/bond pairs which have
+		// survived the coordination check.
+		survivors += additions;
+	}
+
+	std::cout << "Surviving coordination: " << survivors << std::endl;
+
+	std::cout << fake_atom_count << " fake atoms"
+	<< " from " << _coordNum << ", of which " << clash_count << 
+	" clash." << std::endl;
+
+	return survivors;
+}
+
+OpSet<PairSet> Coordinated::expandAllSeeds(AtomGroup *clashCheck)
+{
+	// get all the pairs of atoms from the registered neighbours of this atom.
+	// at this point we've already filtered out options very far away from
+	// the optimal bonding angle and supplied constraints so they won't
+	// happen again.
+	std::cout << "========================================" << std::endl;
+	std::cout << "Atom: " << _atom->desc() << std::endl;
+	OpSet<PairSet> seeds = findSeeds();
+	PairSet all = bonds();
+
+	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
+	all += uninvolved;
+
+	glm::vec3 centre = _atom->initialPosition();
+	
+	std::cout << "Total seeds: " << seeds.size() << std::endl;
+
+	// if we don't have enough to even start some seeds, then we give up
+	// as any remaining coordination positions will be under-determined
+	if (seeds.size() == 0)
+	{
+		std::cout << "Abandoning ship for " << _atom->desc() << std::endl;
+		return {};
+	}
+	
+	OpSet<PairSet> survivor_groups;
+	
+	for (const PairSet &seed : seeds)
+	{
+		int fake_atom_count = 0;
+
+		PairSet survivors = developSeed(seed, all, uninvolved, centre, 
+		                                clashCheck, fake_atom_count);
+
+		if (fake_atom_count == _coordNum)
+		{
+			// if none of the original seed bonds line up, then the bond must
+			// be broken as the coordination is poor.
+			break_all_bonds(this, seed);
+			continue;
+		}
+		
+		// if we have already encountered this same set of survivors then
+		// we don't want to duplicate constraints for no reason.
+		
+		// we need to make a custom equality function as we need to ignore
+		// the Atom; the fake hydrogens would otherwise always register as
+		// different.
+		auto are_equivalent = [](const PairSet &a, const PairSet &b)
+		{
+			auto a_it = a.begin(); auto b_it = b.begin();
+
+			while (a_it != a.end() && b_it != b.end())
+			{
+				if (a_it->first->atomName() == "H!" && 
+				    b_it->first->atomName() == "H!")
+				{
+					a_it++; b_it++;
+					continue;
+				}
+
+				if (a_it->second != b_it->second)
+				{
+					return false;
+				}
+
+				a_it++; b_it++;
+			}
+			
+			return true;
+		};
+
+		bool found = false;
+		for (const PairSet &old_solution : survivor_groups)
+		{
+			if (are_equivalent(old_solution, survivors))
+			{
+				found = true;
+			}
+		}
+		
+		if (found)
+		{
+			continue;
+		}
+		
+		survivor_groups += survivors;
+	}
+
+	return survivor_groups;
+}
+
+OpSet<PairSet> convert_pair_set_to_all_relationships(const PairSet &start)
+{
+	OpSet<PairSet> relationships;
+	
+	for (const ABPair &left : start)
+	{
+		for (const ABPair &right : start)
+		{
+			if (left == right) continue;
+			
+			PairSet pair_up;
+			pair_up += left; pair_up += right;
+			relationships.insert(pair_up);
+		}
+	}
+	
+	return relationships;
+}
+
+void Coordinated::mutualExclusions(AtomGroup *clashCheck)
+{
+	if (!_expl_bonds)
+	{
+		return;
+	}
+
+	OpSet<PairSet> survivor_groups = expandAllSeeds(clashCheck);
+		
+	std::cout << "Total combos: " << survivor_groups.size() << std::endl;
+
+	if (survivor_groups.size() == 0)
+	{
+		return;
+	}
+	
+	for (const OpSet<ABPair> &survivors : survivor_groups)
+	{
+		for (const ABPair &survivor : survivors)
+		{
+			if (survivor.first->atomName() == "H!")
+			{
+				addBond(survivor);
+			}
+		}
+	}
+	
+	// now we want to ban any pair-wise bond combos which are not observed.
+	OpSet<PairSet> all_relationships;
+	OpSet<PairSet> accepted_relationships;
+	
+	PairSet all = bonds();
+
+	std::cout << "All: " << all << std::endl;
+
+	// first we calculate all possible relationships between bonds
+	all_relationships = convert_pair_set_to_all_relationships(all);
+	
+	// now we add all the acceptable (observed) relationships from survivors
+	for (const PairSet &group : survivor_groups)
+	{
+		std::cout << "group: " << group << std::endl;
+		accepted_relationships += convert_pair_set_to_all_relationships(group);
+	}
+	
+	OpSet<PairSet> unwanted = all_relationships - accepted_relationships;
+	
+	std::cout << "All relationships: " << all_relationships.size() << std::endl;
+	std::cout << "Number to ban: " << unwanted.size() << std::endl;
+	
+	for (const PairSet &bad_pair : unwanted)
+	{
+		mutually_exclude(this, bad_pair);
+	}
+	
+	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
+	int not_broken = _coordNum - uninvolved.size();
+
+	hnet::Count::Values nb = values_as_count({not_broken});
+	std::cout << "Number of attached bonds: " << bondCount() << std::endl;
+	std::cout << "Count constraint: " << nb << std::endl;
+	std::cout << std::endl;
+	add_constraint(new CountConstant(*_expl_bonds, nb));
+}
 
 void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 {
 	AtomGroup *search = findNeighbours(searchGroup, _atom->initialPosition(),
-	                                   3.1);
+	                                   3.1, true);
 	AtomProbe *ref = atomMap()[_atom]->probe();
 	
-	float target_angle = 110.f;
-	::Atom *const &uninvolved = uninvolvedCoordinator(_atom, &target_angle);
+	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
+	_uninvolved = uninvolved;
 
 	for (::Atom *const &candidate : search->atomVector()) 
 	{
 		AtomProbe *other = atomMap()[candidate]->probe();
 		
-		if (!acceptableBondingAngle(_atom, uninvolved, candidate, target_angle))
-		{
-			continue;
-		}
-
 		HydrogenConnector &h = add(new HydrogenConnector());
 		HydrogenProbe &hProbe = _network.add_probe(new HydrogenProbe(h, *ref, 
 		                                                             *other));
 		
 		BondConnector &left = add(new BondConnector());
 		BondConnector &right = add(new BondConnector());
-		_bonds.push_back(&left);
-		_bondedAtoms.push_back(candidate);
-		
-		/* get the atom which the candidate is a symmetry copy of */
-		::Atom *actual = candidate->symmetryCopyOf();
-		if (!actual)
-		{
-			/* unless we're looking at the real asymmetric unit atom */
-			actual = candidate;
-		}
+		ABPair left_pair = {candidate, &left};
+		addBond(left_pair);
 
-		atomMap()[actual]->bonds().push_back(&right);
-		atomMap()[actual]->bonded_atoms().push_back(_atom);
+		ABPair right_pair = {_atom, &right};
+		atomMap()[candidate]->addBond(right_pair);
 
 		_network.add_probe(new BondProbe(left, *ref, hProbe));
 		_network.add_probe(new BondProbe(right, hProbe, *other));
@@ -247,282 +744,59 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 	delete search;
 }
 
-void check_next_bond(Coordinated *me, OpSet<ABPair> remaining,
-                     std::set<OpSet<ABPair>> &final_counts,
-                     OpSet<ABPair> done = {})
+void Coordinated::addBond(const ABPair &bond)
 {
-	bool all_contradictory = true;
-	for (ABPair victim : remaining)
-	{
-		if (victim.second->value() & Bond::Present)
-		{
-			/* inform all previous victims as they've forgotten */
-			for (auto previous : done)
-			{
-				previous.second->assign_value(Bond::Present, me, me);
-			}
-
-			// certainly not absent
-			victim.second->assign_value(Bond::Present, me, me); 
-
-			if (!is_contradictory(victim.second->value()))
-			{
-				all_contradictory = false;
-				OpSet<ABPair> new_remains = remaining;
-				OpSet<ABPair> new_done = done;
-				new_done += victim;
-				new_remains -= victim;
-
-				check_next_bond(me, new_remains, final_counts, new_done);
-			}
-
-			/* makes all victims forget */
-			victim.second->forget_all(me);
-		}
-	}
-	
-	if (all_contradictory)
-	{
-		final_counts.insert(done);
-	}
-};
-
-OpSet<ABPair> Coordinated::pairSets()
-{
-	OpSet<ABPair> bonds;
-	
-	for (size_t i = 0; i < _bondedAtoms.size(); i++)
-	{
-		bonds.insert({_bondedAtoms[i], _bonds[i]});
-	}
-
-	return bonds;
+	_bonds += bond;
 }
 
-std::vector<glm::vec3> template_for_coordination(int coord)
+std::vector<hnet::BondConnector *> Coordinated::bonds_only() const
 {
-	if (coord == 4)
+	std::vector<hnet::BondConnector *> connectors;
+	
+	for (const ABPair &bond : _bonds)
 	{
-		return {{0, 0, 1}, {0, 1, 0}, {1, 0, 0}, {1, 1, 1}};
-	}
-	else if (coord == 3)
-	{
-		return {{0, 0, 0}, {0, 1, 0}, {0.707, 0.707, 0}};
+		connectors.push_back(bond.second);
 	}
 	
-	return {};
+	return connectors;
 }
 
-std::vector<glm::vec3> align(int coordNum, const glm::vec3 &centre,
-                             const std::vector<glm::vec3> &some)
+template <class Adder>
+void trappedAdder(Coordinated *me, hnet::CountConnector *adder,
+                  const std::string &fail_msg)
 {
-	if (coordNum - some.size() <= 0)
-	{
-		return {};
-	}
-
-	std::vector<glm::vec3> blueprint = template_for_coordination(coordNum);
-	
-	if (blueprint.size() == 0) return {};
-
-	Superpose pose;
-	
-	for (size_t i = 0; i < some.size(); i++)
-	{
-		glm::vec3 dir = glm::normalize(some[i] - centre);
-		pose.addPositionPair(blueprint[i], dir);
-	}
-
-	pose.superpose();
-	glm::mat4x4 super = pose.transformation();
-	
-	std::vector<glm::vec3> to_return;
-
-	for (size_t i = some.size(); i < coordNum; i++)
-	{
-		glm::vec4 pos4 = glm::vec4(blueprint[i], 1.f);
-		glm::vec3 pos = glm::vec3(super * pos4);
-		to_return.push_back(pos);
-	}
-	
-	return to_return;
-}
-
-// to find positions for each remaining hydrogen bond direction and,
-// if they must be absent, assign them as such */
-void Coordinated::augmentBonding(AtomGroup *search)
-{
-	if (!_present || _bonds.size() == 0 || _coordNum == 0)
+	if (adder == nullptr)
 	{
 		return;
 	}
 
-	std::set<OpSet<ABPair>> counts;
-	OpSet<ABPair> bonds = pairSets();
-	check_next_bond(this, bonds, counts);
-	
-	auto make_check = [this](const OpSet<ABPair> &bonds, AtomGroup *search)
-	{
-		return [bonds, search, this](const glm::vec3 &h) -> ::Atom *
-		{
-			AtomGroup *neighbours = findNeighbours(search, h, 2.5);
-
-			for (::Atom *a : neighbours->atomVector())
-			{
-				bool in_bonding = false;
-				for (const ABPair &pair : bonds)
-				{
-					if (pair.first == a)
-					{
-						in_bonding = true;
-					}
-				}
-				
-				if (!in_bonding)
-				{
-					delete neighbours;
-					return a;
-				}
-			}
-			
-			delete neighbours;
-			return nullptr;
-		};
-	};
-	
-	glm::vec3 centre = _atom->initialPosition();
-
-	for (const OpSet<ABPair> &used : counts)
-	{
-		if (used.size() < 2)
-		{
-			// not enough information to pin down the other coordinations
-			continue;
-		}
-		
-		std::vector<glm::vec3> some;
-
-		for (const ABPair &pair : used)
-		{
-			::Atom *next = pair.first;
-			some.push_back(next->initialPosition());
-		}
-
-		std::vector<glm::vec3> others = align(_coordNum, centre, some);
-		auto check = make_check(used, search);
-
-		for (const glm::vec3 &v : others)
-		{
-			glm::vec3 h = glm::normalize(v) + centre;
-			::Atom *smash = check(h);
-			
-			if (smash) // one of these will be _atom
-			{
-				::Atom *hAtom = new ::Atom();
-				hAtom->setResidueId(_atom->residueId());
-				hAtom->setInitialPosition(h);
-				hAtom->setAtomName("H!");
-				
-				BondConnector &new_bond = add(new BondConnector());
-				add_constraint(new BondConstant(new_bond, Bond::Absent));
-				atomMap()[_atom]->_bondedAtoms.push_back(hAtom);
-				atomMap()[_atom]->_bonds.push_back(&new_bond);
-			}
-		}
-	}
-}
-
-void Coordinated::findBondRanges()
-{
-	if (!_present || _bonds.size() == 0)
-	{
-		return;
-	}
-
-	std::set<OpSet<ABPair>> counts;
-	OpSet<ABPair> bonds = pairSets();
-	check_next_bond(this, bonds, counts);
-	
-	OpSet<int> allowed, forced_absent;
-	for (const std::set<ABPair> &set : counts) 
-	{
-		if (_atom->desc() == "W-HOH56:O")
-		{
-			std::cout << set.size() << " ";
-		}
-		allowed.insert(set.size());
-		forced_absent.insert(_bonds.size() - set.size());
-	}
-	if (_atom->desc() == "W-HOH56:O")
-	{
-		std::cout << std::endl;
-	}
-	
-#warning serine is missing the uninvolved valency partner
-	
-	for (ABPair victim : bonds)
-	{
-		victim.second->forget_all(this);
-		if (counts.size() == 1)
-		{
-			try
-			{
-				add_constraint(new BondConstant(*victim.second, Bond::NotBroken));
-			}
-			catch (const std::runtime_error &err)
-			{
-				std::cout << "Could not initialise not broken constraints on " 
-				<< _atom->desc() 
-				<< " as they are immediately violated" << std::endl;
-			}
-		}
-	}
-	
-	Count::Values allowable = values_as_count(allowed.toVector());
-	Count::Values forceable = values_as_count(forced_absent.toVector());
-	
 	try
 	{
-		add_constraint(new CountConstant(*_expl_bonds, allowable));
-		add_constraint(new CountConstant(*_forced_absent, forceable));
+		me->add_constraint(new Adder(me->bonds_only(), *adder));
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << "Could not initialise range constraints on " << _atom->desc() 
-		<< " as they are immediately violated" << std::endl;
-
-		std::cout << "Allowable: " << allowable << std::endl;
-		std::cout << "Explicit: " << _expl_bonds->value() << std::endl;
-		std::cout << "\t -> " << err.what() << std::endl;
-		_probe->setColour(glm::vec3(0.0, 0.6, 0.0));
+		std::cout << "Adding " + fail_msg + " problem: " 
+		<< adder->value() << " for " << me->bondCount() << " bonds." 
+		<< std::endl;
+		std::cout << "\tThey are: " << me->bonds() << std::endl;
+		throw err;
 	}
 }
 
 void Coordinated::attachAdderConstraints()
 {
-	if (!_strong || !_weak)
-	{
-		return;
-	}
-
 	try
 	{
-		add_constraint(new StrongAdder(_bonds, *_strong));
-		add_constraint(new WeakAdder(_bonds, *_weak));
-		
-		if (_present)
-		{
-			add_constraint(new PresentAdder(_bonds, *_present));
-		}
-		
-		if (_absent)
-		{
-			add_constraint(new AbsentAdder(_bonds, *_absent));
-		}
+		trappedAdder<StrongAdder>(this, _strong, "strong adder");
+		trappedAdder<WeakAdder>(this, _weak, "weak adder");
+		trappedAdder<AbsentAdder>(this, _absent, "absent adder");
+		trappedAdder<PresentAdder>(this, _present, "present adder");
+		trappedAdder<NotBrokenAdder>(this, _expl_bonds, "not broken adder");
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << "Absent problem: " << _absent->value() << std::endl;
+		_failedCheck = true;
 		std::cout << "Could not initialise adder constraints on " << _atom->desc() 
 		<< " as they are immediately violated" << std::endl;
 		std::cout << "\t -> " << err.what() << std::endl;
@@ -540,96 +814,35 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 		_coordNum = poss[0];
 	}
 
-	CountConnector &tot_strong = add_zero_or_positive_connector();
 	CountConnector &expl_strong = add_zero_or_positive_connector();
-	CountConnector &hidden_strong = add_zero_or_positive_connector();
-
-	CountConnector &tot_weak = add_zero_or_positive_connector();
 	CountConnector &expl_weak = add_zero_or_positive_connector();
-	CountConnector &hidden_weak = add_zero_or_positive_connector();
-
-	CountConnector &tot_absent = add_zero_or_positive_connector();
 	CountConnector &expl_absent = add_zero_or_positive_connector();
-	CountConnector &hidden_absent = add_zero_or_positive_connector();
-
-	CountConnector &hidden_lone_pairs = add_zero_or_positive_connector();
-	CountConnector &tot_lone_pairs = add_zero_or_positive_connector();
-	CountConnector &expl_lone_pairs = add_zero_or_positive_connector();
-
-	CountConnector &hidden_present = add_zero_or_positive_connector();
-	CountConnector &tot_present = add_zero_or_positive_connector();
+	CountConnector &expl_vacancies = add_zero_or_positive_connector();
 	CountConnector &expl_present = add_zero_or_positive_connector();
-
-	CountConnector &hidden_bonds = add_zero_or_positive_connector();
 	CountConnector &expl_bonds = add_zero_or_positive_connector();
 
 	CountConnector &charge = add(new CountConnector());
 	CountConnector &coord_num = add(new CountConnector());
 	CountConnector &valency = add(new CountConnector());
 	
-	/* forced absences are caused by mutually inaccessible bonds whereas
-	 * other absences are derived in some other way */
-	CountConnector &forced_absent = add(new CountConnector());
-	CountConnector &other_absent = add(new CountConnector());
+	/* CountAdder format: arg0 + arg1 = arg2 */
 
 	/* ensure all hidden bonds are unable to fall below zero */
-	add_constraint(new CountConstant(hidden_weak, Count::ZeroOrMore));
-	add_constraint(new CountConstant(hidden_strong, Count::ZeroOrMore));
-	add_constraint(new CountConstant(hidden_bonds, Count::ZeroOrMore));
-	add_constraint(new CountConstant(hidden_absent, Count::ZeroOrMore));
-	add_constraint(new CountConstant(hidden_present, Count::ZeroOrMore));
-
-	add_constraint(new CountConstant(tot_weak, Count::ZeroOrMore));
-	add_constraint(new CountConstant(tot_strong, Count::ZeroOrMore));
-	add_constraint(new CountConstant(tot_absent, Count::ZeroOrMore));
-	add_constraint(new CountConstant(tot_present, Count::ZeroOrMore));
-
-	add_constraint(new CountConstant(expl_weak, Count::ZeroOrMore));
-	add_constraint(new CountConstant(expl_strong, Count::ZeroOrMore));
-	add_constraint(new CountConstant(expl_bonds, Count::ZeroOrMore));
-	add_constraint(new CountConstant(expl_absent, Count::ZeroOrMore));
-	add_constraint(new CountConstant(expl_present, Count::ZeroOrMore));
-
 	add_constraint(new CountConstant(charge, n_charge));
 	add_constraint(new CountConstant(coord_num, n_coord_num));
 	add_constraint(new CountConstant(valency, remaining_valency));
 	
-	/* CountAdder format: arg0 + arg1 = arg2 */
-
-	/* totals are the sum of explicit + hidden bonds */
-	add_constraint(new CountAdder(hidden_strong, expl_strong, tot_strong));
-	add_constraint(new CountAdder(hidden_weak, expl_weak, tot_weak));
-	add_constraint(new CountAdder(hidden_absent, other_absent, tot_absent));
-	add_constraint(new CountAdder(hidden_lone_pairs, expl_lone_pairs, 
-	                              tot_lone_pairs));
-	add_constraint(new CountAdder(hidden_present, expl_present, tot_present));
-	
 	/* present bonds are the sum of weak and strong */
-	add_constraint(new CountAdder(tot_strong, tot_weak, tot_present));
-	add_constraint(new CountAdder(hidden_strong, hidden_weak, hidden_present));
 	add_constraint(new CountAdder(expl_strong, expl_weak, expl_present));
 
-	/* lone pairs are the sum of weak bonds and absent bonds */
-	add_constraint(new CountAdder(tot_absent, tot_weak, tot_lone_pairs));
-	add_constraint(new CountAdder(hidden_absent, hidden_weak, hidden_lone_pairs));
-	add_constraint(new CountAdder(other_absent, expl_weak, expl_lone_pairs));
-
-	/* coordination number is the sum of present and hidden bonds */
-	add_constraint(new CountAdder(expl_present, hidden_bonds, coord_num));
-
-	/* explicit absences are the sum of those forced by mutual exclusion and
-	 * otherwise derived elsewhere in the network */
-	add_constraint(new CountAdder(forced_absent, other_absent, expl_absent));
-
-	/* all bonds are accounted for by strong and lone pairs */
-	add_constraint(new CountAdder(hidden_strong, hidden_lone_pairs, hidden_bonds));
-	add_constraint(new CountAdder(expl_strong, expl_lone_pairs, expl_bonds));
+	/* vacancies are the sum of weak bonds and absent bonds */
+	add_constraint(new CountAdder(expl_absent, expl_weak, expl_vacancies));
 
 	/* coordination number is accounted for by all strong and all lone pairs */
-	add_constraint(new CountAdder(tot_strong, tot_lone_pairs, coord_num));
+	add_constraint(new CountAdder(expl_strong, expl_vacancies, expl_bonds));
 
 	/* total strong bonds is determined by remaining valency and charge */
-	add_constraint(new CountAdder(valency, charge, tot_strong));
+	add_constraint(new CountAdder(valency, charge, expl_strong));
 
 	/* counts which need to be hooked up to bond adders later */
 	_strong = &expl_strong;
@@ -637,31 +850,47 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_present = &expl_present;
 	_absent = &expl_absent;
 	_expl_bonds = &expl_bonds;
-	_forced_absent = &forced_absent;
+}
 
-	/*
-	std::cout << "===========" << _atom->desc() << "===========" << std::endl;
-	std::cout << "HIDDEN: " << std::endl;
-	std::cout << "hidden bonds " << " " << hidden_bonds.value() << std::endl;
-	std::cout << "hidden strong " << " " << hidden_strong.value() << std::endl;
-	std::cout << "hidden weak " << " " << hidden_weak.value() << std::endl;
-	std::cout << "hidden absent " << " " << hidden_absent.value() << std::endl;
-	std::cout << "hidden lone pairs " << " " << hidden_lone_pairs.value() << std::endl;
-	std::cout << "hidden present " << " " << hidden_present.value() << std::endl;
+ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)
+{
+	for (const ABPair &bond : _bonds)
+	{
+		std::cout << bond << " ";
+		if (bond.first->symmetryCopyOf() == asymmetric)
+		{
+			std::cout << std::endl;
+			return bond;
+		}
+	}
+	
+	std::cout << std::endl;
+	return ABPair{};
+}
 
-	std::cout << "TOTAL: " << std::endl;
-	std::cout << "coordination number " << " " << coord_num.value() << std::endl;
-	std::cout << "tot strong " << " " << tot_strong.value() << std::endl;
-	std::cout << "tot weak " << " " << tot_weak.value() << std::endl;
-	std::cout << "tot absent " << " " << tot_absent.value() << std::endl;
-	std::cout << "tot lone pairs " << " " << tot_lone_pairs.value() << std::endl;
+void Coordinated::equilibrateBonds()
+{
+	for (const ABPair &bond : _bonds)
+	{
+		if (!bond.first->symmetryCopyOf())
+		{
+			// within asymmetric unit - we can safely ignore
+			continue;
+		}
 
-	std::cout << "EXPLICIT: " << std::endl;
-	std::cout << "expl bonds " << " " << expl_present.value() << std::endl;
-	std::cout << "expl strong " << " " << expl_strong.value() << std::endl;
-	std::cout << "expl weak " << " " << expl_weak.value() << std::endl;
-	std::cout << "expl absent " << " " << expl_absent.value() << std::endl;
-	std::cout << "expl lone pairs " << " " << expl_lone_pairs.value() << std::endl;
-	*/
+		// get the asymmetric version of our symmetry mate
+		::Atom *asym_other = bond.first->symmetryCopyOf();
+		
+		Coordinated *other = atomMap()[asym_other];
+		
+		// ask the asymmetric version for the symmetry mate of my own atom
+		const ABPair &corresponding = other->bondedSymmetricAtom(_atom);
+		
+		hnet::BondConnector &left = *bond.second;
+		hnet::BondConnector &right = *corresponding.second;
+		
+		add_constraint(new EqualBonds(left, right));
+	}
 
 }
+

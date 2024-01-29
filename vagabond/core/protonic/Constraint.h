@@ -25,6 +25,7 @@
 #include "Connector.h"
 #include "HydrogenBond.h"
 #include "EitherOrBond.h"
+#include "EqualBonds.h"
 #include "BondAdder.h"
 #include "CountAdder.h"
 #include "Limit.h"
@@ -76,6 +77,7 @@ struct Constant
 	Value _constant;
 };
 
+
 /* simple typedefs */
 typedef Constant<AtomConnector, Atom::Values> AtomConstant;
 typedef Constant<BondConnector, Bond::Values> BondConstant;
@@ -87,7 +89,7 @@ struct AnyConstraint
 	enum Type
 	{
 		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, 
-		AbsentAdd, EiOrBond, Min, Max
+		AbsentAdd, NotBrokenAdd, EiOrBond, Min, Max, Equal
 	};
 	
 	AnyConstraint(MaxLimit *const &constraint)
@@ -120,6 +122,12 @@ struct AnyConstraint
 		_ptr = constraint;
 	}
 	
+	AnyConstraint(EqualBonds *const &constraint)
+	{
+		_type = Equal;
+		_ptr = constraint;
+	}
+	
 	AnyConstraint(HydrogenBond *const &constraint)
 	{
 		_type = HBond;
@@ -129,6 +137,12 @@ struct AnyConstraint
 	AnyConstraint(EitherOrBond *const &constraint)
 	{
 		_type = EiOrBond;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(NotBrokenAdder *const &constraint)
+	{
+		_type = NotBrokenAdd;
 		_ptr = constraint;
 	}
 	
@@ -193,11 +207,17 @@ struct AnyConstraint
 			case AbsentAdd:
 			delete static_cast<AbsentAdder *>(_ptr); break;
 
+			case NotBrokenAdd:
+			delete static_cast<NotBrokenAdder *>(_ptr); break;
+
 			case CountAdd:
 			delete static_cast<CountAdder *>(_ptr); break;
 
 			case HBond:
 			delete static_cast<HydrogenConnector *>(_ptr); break;
+			
+			case Equal:
+			delete static_cast<EqualBonds *>(_ptr); break;
 			
 			case EiOrBond:
 			delete static_cast<EitherOrBond *>(_ptr); break;

@@ -67,7 +67,8 @@ struct HydrogenBond
 	
 	bool bond_definitely_not_used(const Bond::Values &val)
 	{
-		return (val & Bond::NotPresent) && !(val & Bond::Present);
+		return (val == Bond::Absent || val == Bond::Broken || 
+		        val == Bond::NotPresent);
 	}
 	
 	void print_bond()

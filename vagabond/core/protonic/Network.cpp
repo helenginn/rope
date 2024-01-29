@@ -55,20 +55,34 @@ void Network::findAtomAndNameIt(::Atom *atom, const std::string &atomName,
 void Network::setupSingleAlcohol(::Atom *atom)
 {
 	if (!((atom->atomName() == "OG" && atom->code() == "SER") ||
-	    (atom->atomName() == "OG1" && atom->code() == "THR")))
+	    (atom->atomName() == "OG1" && atom->code() == "THR") ||
+	    (atom->atomName() == "OH" && atom->code() == "TYR")))
 	{ return; }
 	
-	std::string str = atom->code() == "SER" ? "Ser" : "Thr";
-	findAtomAndNameIt(atom, "CB", str);
+	std::string str = atom->code() == "SER" ? "Ser" : "";
+	
+	if (str == "")
+	{
+		str = atom->code() == "TYR" ? "Tyr" : "Thr";
+	}
 
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
+	if (str == "Tyr")
+	{
+		findAtomAndNameIt(atom, "CZ", str);
+	}
+	else
+	{
+		findAtomAndNameIt(atom, "CB", str);
+	}
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::One);
 }
 
 void Network::setupLysineAmine(::Atom *atom)
 {
 	if (!(atom->atomName() == "NZ" && atom->code() == "LYS")) { return; }
 
-	_atomMap[atom]->prepareCoordinated(Count::One, Count::Three, Count::Two);
+	_atomMap[atom]->prepareCoordinated(Count::One, Count::Four, Count::Two);
 	findAtomAndNameIt(atom, "CE", "Lys");
 }
 
@@ -84,19 +98,55 @@ void Network::setupAmineNitrogen(::Atom *atom)
 	if (terminal)
 	{
 		Count::Values n_charge = terminal ? Count::OneOrZero : Count::Zero;
-		_atomMap[atom]->prepareCoordinated(n_charge, Count::Three, Count::Two);
+		_atomMap[atom]->prepareCoordinated(n_charge, Count::Four, Count::Two);
 	}
 	else
 	{
-		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::One, Count::One);
+		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
 	}
+}
+
+void Network::setupAsnGlnNitrogen(::Atom *atom)
+{
+	bool bad = true;
+	if ((atom->atomName() == "ND2" && atom->code() == "ASN") ||
+	    (atom->atomName() == "NE2" && atom->code() == "GLN"))
+	{
+		bad = false;
+	}
+	if (bad) return;
+
+	findAtomAndNameIt(atom, "CG", "Asn");
+	findAtomAndNameIt(atom, "CD", "Gln");
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Two);
 }
 
 void Network::setupCarbonylOxygen(::Atom *atom)
 {
-	if (atom->atomName() != "O" || atom->code() == "HOH") { return; }
+	bool bad = false;
+	Count::Values coordination = Count::Two;
 
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Two, Count::Zero);
+	if (atom->atomName() != "O" || atom->code() == "HOH")
+	{
+		bad = true;
+	}
+	if ((atom->atomName() == "OD1" && atom->code() == "ASN") ||
+	    (atom->atomName() == "OE1" && atom->code() == "GLN"))
+	{
+		bad = false;
+		coordination = Count::Three;
+
+		findAtomAndNameIt(atom, "CG", "Asn");
+		findAtomAndNameIt(atom, "CD", "Gln");
+	}
+	
+	if (bad)
+	{
+		return;
+	}
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, coordination, Count::Zero);
 }
 
 void Network::setupWater(::Atom *atom)
@@ -108,10 +158,11 @@ void Network::setupWater(::Atom *atom)
 	
 void Network::setupAtom(::Atom *atom)
 {
-	if (_atomMap[atom]->bonds().size())
+	if (_atomMap[atom]->bondCount())
 	{
 		setupAmineNitrogen(atom);
 		setupLysineAmine(atom);
+		setupAsnGlnNitrogen(atom);
 		setupCarbonylOxygen(atom);
 		setupSingleAlcohol(atom);
 		setupWater(atom);
@@ -188,19 +239,18 @@ AtomGroup *getSymmetryMates(AtomGroup *const &other, const std::string &spg_name
 					{
 						glm::vec3 trial_frac = sym_pos + glm::vec3(i, j, k);
 						glm::vec3 trial = uc_mat * trial_frac;
-						float length = glm::length(pos - trial);
 						
 						::Atom *near = other->find_by([close_to, trial]
 						                              (::Atom *const &a)
 						                              {return close_to(a, trial);});
 						if (near)
 						{
-							::Atom *copy = new ::Atom(*near);
+							::Atom *copy = new ::Atom(*atom);
 							std::string note = ("rot " + std::to_string(l) + 
 							                    " trans " + std::to_string(i) +
 							                    " " + std::to_string(j) +
 							                    " " + std::to_string(k));
-							copy->setSymmetryCopyOf(near, note);
+							copy->setSymmetryCopyOf(atom, note);
 							copy->setInitialPosition(trial);
 							copy->setDerivedPosition(trial);
 							total->add(copy);
@@ -237,19 +287,41 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << _symMates->size() << " symmetry atoms." << std::endl;
 	std::cout << _groupAndMates->size() << " original+symmetry atoms." << std::endl;
 
+	// set up the connectors and probes for each atom
 	_group->do_op([this](::Atom *atom) { establishAtom(atom); });
+	// set up the connectors and probes for each symmetry-related atom
 	_symMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 
+	// record the hydrogen-bonding neighbours for each atom
+	// generate connectors for each acquired bond
 	_group->do_op([this](::Atom *a)
 	{
 		_atomMap[a]->attachToNeighbours(_groupAndMates);
 	});
 
-	_group->do_op([this](::Atom *a) { _atomMap[a]->mutualExclusions(); });
+	// here is when the coordination is prepared
 	_group->do_op([this](::Atom *a) { setupAtom(a); });
-	_group->do_op([this](::Atom *a) { _atomMap[a]->attachAdderConstraints(); });
-//	_group->do_op([this](::Atom *a) { _atomMap[a]->augmentBonding(_original); });
-	_group->do_op([this](::Atom *a) { _atomMap[a]->findBondRanges(); });
+
+	// find sets of bonds which can/cannot participate in bonding together
+	_group->do_op([this](::Atom *a)
+	              { _atomMap[a]->mutualExclusions(_groupAndMates); });
+
+	// find sets of bonds which can/cannot participate in bonding together
+	_group->do_op([this](::Atom *a)
+	              { _atomMap[a]->equilibrateBonds(); });
+	
+	auto job = [this](::Atom *a) { _atomMap[a]->attachAdderConstraints(); };
+
+	_group->do_op(job);
+	
+	int failCount = 0;
+	_group->do_op([this, &failCount](::Atom *a)
+	{
+		failCount += (atomMap()[a]->failedCheck()) ? 1 : 0;
+	});
+	
+	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
+	std::cout << failCount << " failed some logical check." << std::endl;
 }
 
 glm::vec3 Network::centre() const

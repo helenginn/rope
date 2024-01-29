@@ -213,8 +213,16 @@ public:
 			str = "transparency";
 			break;
 
+			case hnet::Bond::Broken:
+			str = "transparency";
+			break;
+
+			case hnet::Bond::NotPresent:
+			str = "transparency";
+			break;
+
 			case hnet::Bond::Present:
-			str = "unassigned_bond";
+			str = "present_bond";
 			break;
 
 			default:

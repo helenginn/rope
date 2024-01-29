@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <sstream>
+#include "Constraint.h"
 
 namespace hnet
 {
@@ -28,6 +29,28 @@ namespace hnet
 template <Bond::Values Request>
 struct BondAdder
 {
+	void get_certains_maybes(int &total, int &certain, int &maybe)
+	{
+		total = 0;
+		certain = 0;
+		maybe = 0;
+
+		for (BondConnector *const &bond : _bonds)
+		{
+			Bond::Values val = bond->value();
+			if (value_is_requested_and_nothing_else(val))
+			{
+				certain++;
+			}
+			else if (value_is_not_just_requested(val))
+			{
+				maybe++;
+			}
+
+			total++;
+		}
+	}
+	
 	BondAdder(const std::vector<BondConnector *> &bonds, CountConnector &sum)
 	: _bonds(bonds), _sum(sum)
 	{
@@ -49,6 +72,13 @@ struct BondAdder
 
 		if (!check(this))
 		{
+			int total = 0; int certain = 0; int maybe = 0;
+			get_certains_maybes(total, certain, maybe);
+
+			std::cout << _bonds.size() << " bonds for adder." << std::endl;
+			std::cout << total << " bonds of which " << certain << " are "\
+			"certainly " << Request << " and " << maybe << " maybe" << std::endl;
+			
 			for (BondConnector *const &bc : bonds)
 			{
 				bc->pop_last_check(this);
@@ -58,6 +88,12 @@ struct BondAdder
 
 			std::ostringstream ss;
 			ss << Request;
+
+//			std::cout << "Report for bonds of adder " << this << std::endl;
+			for (BondConnector *const &bc : bonds)
+			{
+				bc->report();
+			}
 			throw std::runtime_error("New addition of BondAdder (" + 
 			                         ss.str() + ") immediately "\
 			                         "failed validation check");
@@ -86,28 +122,6 @@ struct BondAdder
 	{
 		Bond::Values not_request = (Bond::Values)(Bond::Unassigned & ~Request);
 		return ((val & Request) && (val & not_request) == Bond::Contradiction);
-	}
-	
-	void get_certains_maybes(int &total, int &certain, int &maybe)
-	{
-		total = 0;
-		certain = 0;
-		maybe = 0;
-
-		for (BondConnector *const &bond : _bonds)
-		{
-			Bond::Values val = bond->value();
-			if (value_is_requested_and_nothing_else(val))
-			{
-				certain++;
-			}
-			else if (value_is_not_just_requested(val))
-			{
-				maybe++;
-			}
-
-			total++;
-		}
 	}
 	
 	void tell_maybe_bonds(const Bond::Values &tell, void *previous)
@@ -197,6 +211,7 @@ typedef BondAdder<Bond::Strong> StrongAdder;
 typedef BondAdder<Bond::Weak> WeakAdder;
 typedef BondAdder<Bond::Present> PresentAdder;
 typedef BondAdder<Bond::Absent> AbsentAdder;
+typedef BondAdder<Bond::NotBroken> NotBrokenAdder;
 };
 
 #endif

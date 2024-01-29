@@ -26,6 +26,7 @@
 
 namespace hnet
 {
+
 template <typename Value>
 struct Connector
 {
