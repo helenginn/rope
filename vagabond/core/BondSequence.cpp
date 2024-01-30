@@ -410,7 +410,7 @@ float BondSequence::calculateDeviations(const std::function<float(Atom *)>
 	return sum / count;
 }
 
-void BondSequence::extractVector(AtomPosList &results, const
+void BondSequence::extractVector(AtomPosList &results, 
                                  const std::function<bool(Atom *const &)> &filter)
 {
 	int c = 0;
