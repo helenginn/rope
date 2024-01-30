@@ -22,7 +22,7 @@
 #include <iostream>
 #include <variant>
 #include <vector>
-
+#include <functional>
 
 /** serious missing features:
  * - missing hydrogens off non-donors
