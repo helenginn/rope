@@ -58,6 +58,8 @@ public:
 	
 	std::vector<std::string> headers() const;
 	
+	std::string asCSV();
+	
 	friend std::ostream &operator<<(std::ostream &ss, const TabulatedData &data);
 private:
 	int indexForHeader(const std::string &header) const;

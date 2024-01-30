@@ -198,6 +198,31 @@ size_t TabulatedData::totalWidth(std::vector<size_t> &sizes) const
 	return length;
 }
 
+std::string TabulatedData::asCSV()
+{
+	std::string result;
+	for (const std::string &h : headers())
+	{
+		result += h + ", ";
+	}
+	result.pop_back();
+	result.pop_back();
+	result += "\n";
+
+	for (const Strings &entry : _entries)
+	{
+		for (const std::string &val : entry)
+		{
+			result += val + ", ";
+		}
+		result.pop_back();
+		result.pop_back();
+		result += "\n";
+	}
+	
+	return result;
+}
+
 std::ostream &operator<<(std::ostream &ss, const TabulatedData &data)
 {
 	auto print_words = [&ss](const std::vector<size_t> &sizes,

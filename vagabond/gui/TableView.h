@@ -20,10 +20,11 @@
 #define __vagabond__TableView__
 
 #include <vagabond/gui/elements/ListView.h>
+#include <vagabond/gui/ExportsCSV.h>
 
 class TabulatedData;
 
-class TableView : public ListView
+class TableView : public ListView, public ExportsCSV
 {
 public:
 	TableView(Scene *prev, TabulatedData *data, const std::string &title);
@@ -35,7 +36,9 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	virtual void supplyCSV(std::string indicator = "");
 	void displayHeaders();
+	void addMenu();
 
 	TabulatedData *_data;
 

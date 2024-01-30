@@ -36,6 +36,7 @@ protected:
 		_me = me;
 	}
 
+	void exportCSVToClipboard();
 	virtual void supplyCSV(std::string indicator = "") = 0;
 	void askForFilename();
 	void exportCSVToFile(std::string filename);

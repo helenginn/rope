@@ -21,6 +21,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/Scene.h>
 #include <iostream>
+#include <SDL2/SDL_clipboard.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -38,6 +39,11 @@ void ExportsCSV::askForFilename()
 		                                 "export_csv", _me);
 		_me->setModal(aft);
 #endif
+}
+
+void ExportsCSV::exportCSVToClipboard()
+{
+	SDL_SetClipboardText(_csv.c_str());
 }
 
 void ExportsCSV::exportCSVToFile(std::string filename)
@@ -71,6 +77,11 @@ void ExportsCSV::buttonPressed(std::string tag, Button *button)
 	{
 		supplyCSV();
 		askForFilename();
+	}
+	else if (tag == "copy_csv")
+	{
+		supplyCSV();
+		exportCSVToClipboard();
 	}
 	else if (tag == "export_csv")
 	{

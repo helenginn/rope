@@ -53,9 +53,18 @@ void TableView::displayHeaders()
 
 }
 
+void TableView::addMenu()
+{
+	TextButton *text = new TextButton("Menu", this);
+	text->setReturnTag("main_menu");
+	text->setRight(0.95, 0.1);
+	addObject(text);
+}
+
 void TableView::setup()
 {
 	addTitle(_title);
+	addMenu();
 	displayHeaders();
 	ListView::setup();
 }
@@ -88,10 +97,33 @@ Renderable *TableView::getLine(int i)
 	return b;
 }
 
+void TableView::supplyCSV(std::string indicator)
+{
+	_csv = _data->asCSV();
+
+}
+
 void TableView::buttonPressed(std::string tag, Button *button)
 {
-	std::string header = Button::tagEnd(tag, "header_");
+	if (tag == "main_menu")
+	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, this, "overall");
+		m->addOption("Copy CSV", "copy_csv");
+		m->addOption("Export CSV", "export");
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+
+	std::string overall = Button::tagEnd(tag, "overall_");
 	
+	if (overall == "copy_csv" || overall == "export")
+	{
+		ExportsCSV::buttonPressed(overall, button);
+		return;
+	}
+	
+	std::string header = Button::tagEnd(tag, "header_");
 	std::string menu = Button::tagEnd(tag, "menu_");
 	
 	if (menu == "asort")
