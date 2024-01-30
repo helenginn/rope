@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "Data.h"
 
 inline bool valid(const float &a)
