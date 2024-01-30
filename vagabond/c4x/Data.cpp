@@ -162,7 +162,7 @@ void Data::removeNormals(Comparable &arr)
 	{
 		arr[j] *= _stdevs[j];
 
-		if (!valid(arr[j])
+		if (!valid(arr[j]))
 		{
 			arr[j] = 0;
 		}
