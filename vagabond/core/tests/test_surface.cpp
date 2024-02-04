@@ -35,6 +35,19 @@
 
 namespace tt = boost::test_tools;
 
+BOOST_AUTO_TEST_CASE(print_fib_lattice)
+{
+	Fibonacci fib;
+	fib.generateLattice(400, 1.0);
+	std::vector<glm::vec3> points = fib.getPoints();
+	std::cout << "\nFibonacci lattice points: " << std::endl;
+	for (glm::vec3 point : points)
+	{
+		std::cout << point.x << " " << point.y << " " << point.z << std::endl;
+	}
+	std::cout << std::endl;
+}
+
 // test whether ContactSheet::atomsNear returns the correct atoms
 BOOST_AUTO_TEST_CASE(pos_map_3_atoms)
 {
