@@ -54,7 +54,7 @@ float AreaMeasurer::surfaceArea(const AtomPosMap &posMap)
 		const std::set<Atom *> atomsNear = _contacts->atomsNear(
 				posMap,
 				atom.first,
-				radius +_maxVdWRadius + _probeRadius
+				radius +_maxVdWRadius + 2*_probeRadius
 		);
     const float &exposure = AreaMeasurer::fibExposureSingleAtom(atomsNear,
 																																atom.first,
@@ -84,8 +84,8 @@ float AreaMeasurer::fibExposureSingleAtom(const std::set<Atom *> &atomsNear,
 		for (const auto &other_atom : atomsNear)
 		{
 			if (sqlength((pos-other_atom->derivedPosition())) >
-					(radius+_probeRadius+_maxVdWRadius) *
-					(radius+_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
+					(radius+2*_probeRadius+_maxVdWRadius) *
+					(radius+2*_probeRadius+_maxVdWRadius)) // if atom is too far away, skip
 			{
 				continue;
 			}
