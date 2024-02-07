@@ -1,32 +1,35 @@
 #version 330 core
 
-in vec4 vProper;
 in vec4 vPos;
 in vec4 vColor;
-in vec2 vTex;
 in vec4 vExtra;
+in vec2 vTex;
 
 uniform sampler2D pic_tex;
 uniform float near_slab;
 uniform float far_slab;
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out uint ValIndex;
 
 void main()
 {
 	if ((near_slab >= -1 && far_slab >= -1) &&
-		(vProper.z > far_slab || vProper.z < near_slab))
+		(vPos.z > far_slab || vPos.z < near_slab))
 	{
 		discard;
 	}
 
-	if (vColor.a <= 0.01)
+	if (vColor.a < -0.99)
 	{
 		discard;
 	}
 
-	vec4 result = vColor;
+	vec4 result = texture(pic_tex, vTex);
+	result += vColor;
+	ValIndex = uint(vExtra[3]);
 	FragColor = result;
+
 }
 
 

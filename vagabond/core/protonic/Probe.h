@@ -21,8 +21,10 @@
 
 #define Z_DEF (-0)
 #include <vagabond/core/Atom.h>
+#include "Connector.h"
+#include <vagabond/core/Responder.h>
 
-class Probe
+class Probe : public HasResponder<Responder<Probe>>
 {
 public:
 	virtual const glm::vec3 &position() const
@@ -39,9 +41,47 @@ public:
 	{
 		_pos = glm::vec3(position, Z_DEF);
 	}
+	
+	void register_probe(Probe *other)
+	{
+		_others.push_back(other);
+	}
+	
+	std::vector<Probe *> &others()
+	{
+		return _others;
+	}
+	
+	virtual bool is_text() = 0;
+
+	virtual bool is_atom()
+	{
+		return false;
+	}
+	
+	virtual bool is_certain() = 0;
+	
+	void setAlpha(float alpha)
+	{
+		_alpha = alpha;
+		
+		for (Probe *other : _others)
+		{
+			other->setAlpha(_alpha);
+		}
+		sendResponse("alpha", this);
+	}
+	
+	float alpha() const
+	{
+		return _alpha;
+	}
 
 	glm::vec3 _pos = {};
 	glm::vec3 _init = {};
+	
+	std::vector<Probe *> _others;
+	float _alpha = 0.f;
 };
 
 class AtomProbe : public Probe
@@ -61,6 +101,11 @@ public:
 		_pos = _init;
 		_text = custom_text;
 	}
+
+	virtual bool is_text()
+	{
+		return true;
+	}
 	
 	const glm::vec3 colour() const
 	{
@@ -71,6 +116,11 @@ public:
 	{
 		_colour = colour;
 	}
+
+	virtual bool is_atom()
+	{
+		return true;
+	}
 	
 	void setMult(const float &m)
 	{
@@ -80,6 +130,11 @@ public:
 	float mult()
 	{
 		return _mult;
+	}
+	
+	::Atom *const &atom() const
+	{
+		return _atom;
 	}
 	
 	std::string display()
@@ -118,6 +173,19 @@ public:
 		return str;
 	}
 
+	virtual bool is_certain()
+	{
+		bool good = true;
+		for (Probe *const &other : others())
+		{
+			if (!other->is_certain())
+			{
+				good = false;
+			}
+		}
+		return _obj.is_certain() && good;
+	}
+
 	std::string _text;
 	float _mult = 25;
 	glm::vec3 _colour = {};
@@ -135,6 +203,9 @@ public:
 		_init = left.position() + right.position();
 		_init /= 2;
 		_pos = _init;
+
+		left.register_probe(this);
+		right.register_probe(this);
 	}
 	
 	std::string display()
@@ -168,8 +239,27 @@ public:
 		return str;
 	}
 
+	virtual bool is_text()
+	{
+		return true;
+	}
+
+	const AtomProbe &left() const
+	{
+		return _left;
+	}
+
+	const AtomProbe &right() const
+	{
+		return _right;
+	}
+
+	virtual bool is_certain()
+	{
+		return _obj.is_certain();
+	}
+
 	hnet::HydrogenConnector &_obj;
-	Atom *_atom = nullptr;
 	AtomProbe &_left;
 	AtomProbe &_right;
 };
@@ -182,6 +272,9 @@ public:
 	{
 		_init = left.position();
 		_pos = _init;
+		
+		left.register_probe(this);
+		right.register_probe(this);
 	}
 
 	virtual const glm::vec3 &position() const
@@ -192,6 +285,11 @@ public:
 	const glm::vec3 &end() const
 	{
 		return _right.position();
+	}
+
+	virtual bool is_text()
+	{
+		return false;
 	}
 	
 	std::string display()
@@ -233,8 +331,12 @@ public:
 		return str;
 	}
 
+	virtual bool is_certain()
+	{
+		return _obj.is_certain();
+	}
+
 	hnet::BondConnector &_obj;
-	Atom *_atom = nullptr;
 	Probe &_left;
 	Probe &_right;
 };

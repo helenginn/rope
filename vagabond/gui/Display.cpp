@@ -1,3 +1,21 @@
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
+
 #include "Display.h"
 #include "GuiAtom.h"
 #include "GuiRefls.h"
@@ -5,6 +23,7 @@
 
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Atom.h>
@@ -17,75 +36,28 @@
 
 Display::Display(Scene *prev) : 
 Scene(prev),
-Mouse3D(prev)
+Mouse3D(prev),
+IndexResponseView(prev)
 {
 	_alwaysOn = true;
-
+	_farSlab = 80;
+	_slabbing = true;
+	shiftToCentre({}, 80);
 }
 
 Display::~Display()
 {
-	cleanup();
-}
-
-void Display::deleteAtoms()
-{
-	if (_owns && _atoms != nullptr)
+	for (DisplayUnit *unit : _units)
 	{
-		delete _atoms;
-		_atoms = nullptr;
+		delete unit;
 	}
-}
-
-void Display::cleanup()
-{
-	stop();
-	deleteAtoms();
-}
-
-void Display::stop()
-{
-	if (_guiAtoms != nullptr)
-	{
-		_guiAtoms->stop();
-		removeObject(_guiAtoms);
-		_guiAtoms = nullptr;
-	}
-}
-
-void Display::recalculateAtoms()
-{
-	_atoms->recalculate();
-}
-
-void Display::loadDiffraction(Diffraction *diff)
-{
-	if (_guiRefls != nullptr)
-	{
-		removeObject(_guiRefls);
-		delete _guiRefls;
-	}
-
-	_guiRefls = new GuiRefls();
-	_guiRefls->populateFromDiffraction(diff);
-
-	_centre = glm::vec3(0., 0., 0.);
-	_translation = -_centre;
-	_translation.z -= 10;
 	
-	updateCamera();
-
-	addObject(_guiRefls);
-	wedgeButtons();
-	
-	_diff = diff;
-	_reciprocal = true;
-
-//	fftButton();
+	_units.clear();
 }
 
 void Display::fftButton()
 {
+	return;
 	TextButton *text = new TextButton("Fourier", this);
 	text->setRight(0.95, 0.25);
 	text->setReturnTag("fft");
@@ -95,6 +67,7 @@ void Display::fftButton()
 
 void Display::wedgeButtons()
 {
+	return;
 	ImageButton *lemon = new ImageButton("assets/images/orange.png", this);
 	lemon->resize(0.16);
 	lemon->setCentre(0.9, 0.1);
@@ -113,6 +86,7 @@ void Display::wedgeButtons()
 
 void Display::mechanicsButton()
 {
+	return;
 	ImageButton *mechanics = new ImageButton("assets/images/torsion.png", this);
 	mechanics->resize(0.10);
 	mechanics->setCentre(0.94, 0.24);
@@ -123,6 +97,7 @@ void Display::mechanicsButton()
 
 void Display::densityButton()
 {
+	return;
 	ImageButton *density = new ImageButton("assets/images/density.png", this);
 	density->resize(0.15);
 	density->setCentre(0.94, 0.12);
@@ -131,76 +106,9 @@ void Display::densityButton()
 	addObject(density);
 }
 
-void Display::densityFromMap(ArbitraryMap *map)
+void Display::registerPosition(const glm::vec3 &pos)
 {
-	_guiDensity->populateFromMap(map);
-}
-
-void Display::densityFromDiffraction(Diffraction *diff)
-{
-	_map = new ArbitraryMap(*diff);
-	_map->setupFromDiffraction();
-
-	_guiDensity->setReferenceDensity(_map);
-}
-
-void Display::loadAtoms(AtomGroup *atoms)
-{
-	if (_guiAtoms != nullptr)
-	{
-		removeObject(_guiAtoms);
-		delete _guiAtoms;
-	}
-	
-	if (_owns && _atoms != nullptr)
-	{
-		delete _atoms;
-	}
-	
-	_atoms = atoms;
-	_guiAtoms = new GuiAtom();
-	_guiAtoms->watchAtoms(_atoms);
-	_guiAtoms->checkAtoms();
-	_guiAtoms->setDisableBalls(false);
-	_guiAtoms->setDisableRibbon(false);
-	_guiAtoms->startBackgroundWatch();
-
-	VisualPreferences vp = VisualPreferences::ballStickOnly();
-	_guiAtoms->applyVisuals(&vp);
-
-	_guiDensity = new GuiDensity();
-	_guiDensity->setAtoms(_atoms);
-
-	addObject(_guiDensity);
-	
-	/*
-	_centre = _atoms->initialCentre();
-	_translation = -_centre;
-	_translation.z -= 240;
-	*/
-
-	// FIXME: replace with SnowGL::shiftToCentre
-	glm::vec3 update = _atoms->initialCentre();
-	glm::vec3 diff = update - _centre;
-	_model = glm::mat4(1.f);
-	_centre += diff;
-	_translation = -diff;
-	
-	if (_first)
-	{
-		_translation.z -= 240;
-	}
-	
-	_first = false;
-
-	updateCamera();
-
-	addObject(_guiAtoms);
-	
-	if (_owns)
-	{
-		tieButton();
-	}
+	shiftToCentre(pos, 0);
 }
 
 void Display::tieButton()
@@ -215,70 +123,28 @@ void Display::tieButton()
 	}
 }
 
-void Display::resetDensityMap()
-{
-	if (_map != nullptr)
-	{
-		delete _map;
-		_map = nullptr;
-	}
-	
-	if (_guiDensity != nullptr)
-	{
-		removeObject(_guiDensity);
-		delete _guiDensity;
-		_guiDensity = nullptr;
-	}
-}
-
-void Display::makeMapFromDiffraction()
-{
-	resetDensityMap();
-
-	if (_diff)
-	{
-		_map = new ArbitraryMap(*_diff);
-		_map->setupFromDiffraction();
-		_guiDensity = new GuiDensity();
-		_guiDensity->populateFromMap(_map);
-		addObject(_guiDensity);
-		_guiRefls->setDisabled(true);
-	}
-	
-	_reciprocal = false;
-}
-
 void Display::setup()
 {
-	if (_toLoad != nullptr && _atoms == nullptr)
-	{
-		loadAtoms(_toLoad);
-		_toLoad = nullptr;
-	}
-	
 #ifndef __EMSCRIPTEN__
 	if (_pingPong)
 	{
 		preparePingPongBuffers();
 	}
 #endif
+
+	IndexResponseView::setup();
 }
 
 void Display::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")
 	{
-		if (_atoms != nullptr)
-		{
-			stop();
-			_atoms->cancelRefinement();
-		}
-		
 		triggerResponse();
 	}
 
 	Scene::buttonPressed(tag, button);
 
+	/*
 	if (tag == "recalculate")
 	{
 		recalculateAtoms();
@@ -332,16 +198,28 @@ void Display::buttonPressed(std::string tag, Button *button)
 		_atoms->writeToFile("tmp.pdb");
 //		_atoms->mechanics();
 	}
+	*/
 }
 
-/*
-void Display::setVideoMode()
+void Display::interactedWithNothing(bool left, bool hover)
 {
-
+	if (hover)
+	{
+		supplyFloatingText(nullptr);
+	}
 }
-*/
 
-void Display::setMultiBondMode(bool mode)
+void Display::supplyFloatingText(FloatingText *text)
 {
-	_guiAtoms->setMultiBond(mode);
+	if (_text == text) return;
+	if (_text)
+	{
+		removeObject(_text);
+		delete _text;
+		_text = nullptr;
+	}
+
+	_text = text;
+	addObject(_text);
 }
+

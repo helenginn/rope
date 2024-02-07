@@ -9,6 +9,7 @@ in vec2 tex;
 uniform mat4 projection;
 uniform mat4 model;
 
+out vec4 vProper;
 out vec4 vPos;
 out vec4 vColor;
 out vec3 vNormal;
@@ -23,7 +24,8 @@ void main()
 	vNormal = rot * normal;
 	vTex = tex;
 	vColor = color;
-	vPos = vec4(mat3(model) * vec3(extra), 1.);
+	vProper = gl_Position;
+	vPos = vec4(rot * vec3(extra), 1.);
 	vExtra = extra;
 }
 

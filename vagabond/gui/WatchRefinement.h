@@ -49,6 +49,8 @@ private:
 
 	std::thread *_worker = nullptr;
 	std::vector<std::function<void()> > _mainThreadJobs;
+	
+	DisplayUnit *_current = nullptr;
 };
 
 #endif

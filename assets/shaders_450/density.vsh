@@ -13,14 +13,12 @@ uniform mat3x3 unit_cell;
 uniform int track;
 
 out vec3 dPos;
+out vec4 vPos;
 out vec4 vColor;
 out vec3 vNormal;
 out float jump;
 
-mat3x3 inv_rot = inverse(mat3(model));
-mat3x3 inv_cell = inverse(mat3(unit_cell));
-
-ivec3 round_movement(vec3 v)
+ivec3 round_movement(vec3 v, mat3 inv_rot, mat3 inv_cell)
 {
     vec4 pos = vec4(v, 1.);
 	vec3 diff = vec3(model * pos) - centre;
@@ -48,9 +46,9 @@ ivec3 round_movement(vec3 v)
 	return ret;
 }
 
-vec4 move_vertex(vec3 v)
+vec4 move_vertex(vec3 v, mat3 inv_rot, mat3 inv_cell)
 {
-	vec3 round = vec3(round_movement(v));
+	vec3 round = vec3(round_movement(v, inv_rot, inv_cell));
     vec4 pos = vec4(v, 1.);
 
 	for (int i = 0; i < 3; i++)
@@ -63,9 +61,9 @@ vec4 move_vertex(vec3 v)
 	return pos;
 }
 
-bool bad_length(vec3 v)
+bool bad_length(vec3 v, mat3 inv_rot, mat3 inv_cell)
 {
-	vec4 pos = move_vertex(v);
+	vec4 pos = move_vertex(v, inv_rot, inv_cell);
 	float dist = length(vec3(model * pos) - centre);
 	if (dist > 19.)
 	{
@@ -78,19 +76,23 @@ bool bad_length(vec3 v)
 
 void main()
 {
+	mat3x3 inv_rot = inverse(mat3(model));
+	mat3x3 inv_cell = inverse(mat3(unit_cell));
 
-	vec4 ref1 = move_vertex(position);
+	vec4 ref1 = move_vertex(position, inv_rot, inv_cell);
 
 	if (track == 1)
 	{
 		jump = -1.;
-		if (bad_length(position) || bad_length(second) || bad_length(third))
+		if (bad_length(position, inv_rot, inv_cell) || 
+			bad_length(second, inv_rot, inv_cell) || 
+			bad_length(third, inv_rot, inv_cell))
 		{
 			return;
 		}
 
-		vec4 ref2 = move_vertex(second);
-		vec4 ref3 = move_vertex(third);
+		vec4 ref2 = move_vertex(second, inv_rot, inv_cell);
+		vec4 ref3 = move_vertex(third, inv_rot, inv_cell);
 
 		if (length(ref3 - ref2) > 19. || length(ref2 - ref1) > 19. ||
 				length(ref1 - ref3) > 19.)
@@ -107,6 +109,7 @@ void main()
 	vec4 pos = ref1;
 	dPos = vec3(model * pos) - centre;
 
+	vPos = projection * model * pos;
 	gl_Position = projection * model * pos;
 	mat3 rot = mat3(model);
 	vNormal = rot * normal;

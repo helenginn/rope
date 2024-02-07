@@ -33,7 +33,6 @@ GuiRibbon::GuiRibbon(GuiAtom *parent) : GuiRepresentation(parent)
 {
 	setUsesProjection(true);
 	setVertexShaderFile("assets/shaders/with_matrix.vsh");
-//	setFragmentShaderFile("assets/shaders/lighting.fsh");
 	setFragmentShaderFile("assets/shaders/pencil_shading.fsh");
 
 	std::string filename = "assets/images/pencil_shading.png";

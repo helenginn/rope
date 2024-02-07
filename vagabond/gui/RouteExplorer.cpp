@@ -41,7 +41,6 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 	_plausibleRoute = route;
 	_route = route;
 	_route->setResponder(this);
-	setOwnsAtoms(false);
 }
 
 RouteExplorer::~RouteExplorer()
@@ -55,12 +54,15 @@ void RouteExplorer::setup()
 	
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
+
+	DisplayUnit *unit = new DisplayUnit(this);
+	unit->loadAtoms(grp, _instance->entity());
+	unit->displayAtoms();
+	addDisplayUnit(unit);
 	
-	_atoms = grp;
 	_route->setAtoms(grp);
 	
 	Display::setup();
-	loadAtoms(grp);
 	
 #ifdef __EMSCRIPTEN__
 	startWithThreads(1);
@@ -181,9 +183,6 @@ void RouteExplorer::startWithThreads(const int &thr)
 	
 	setupSave();
 	setupFinish();
-	
-	VisualPreferences *vp = &_instance->entity()->visualPreferences();
-	_guiAtoms->applyVisuals(vp);
 	
 	_route->finishRoute();
 	_route->prepareCalculate();

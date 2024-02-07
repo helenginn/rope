@@ -19,11 +19,9 @@
 #define HYDROGEN_BONDING_TOLERANCE (35.0f)
 
 #include <iostream>
-#include <vagabond/utils/glm_import.h>
 
 #include "Coordinated.h"
 #include "AtomGroup.h"
-#include "Superpose.h"
 
 using namespace hnet;
 
@@ -66,7 +64,7 @@ auto find_close(::Atom *const &ref, float threshold, bool one_sided)
 {
 	return [ref, threshold, one_sided](::Atom *const &atom)
 	{
-		if (one_sided && (ref->atomNum() < atom->atomNum()))
+		if (one_sided && (ref->atomNum() > atom->atomNum()))
 		{
 			return false;
 		}
@@ -90,7 +88,8 @@ auto find_close(::Atom *const &ref, float threshold, bool one_sided)
 		
 		float l = glm::length(init - pos);
 		
-		return (l < threshold && l > 2.0);
+		return ((l < threshold && l > 2.0 && one_sided) ||
+		        l < threshold);
 	};
 }
 
@@ -134,119 +133,6 @@ void Coordinated::probeAtom()
 	{
 		_probe->setColour(glm::vec3(0.6f, 0.0f, 0.0f));
 	}
-}
-
-/* finding the "uninvolved" atom for throwing out non-bondable possibilities
- * due to violating bond angle: Ser-CB---O:::H---X where CB-O-X must be reasonable
- * values */
-OpSet<ABPair> uninvolvedCoordinators(::Atom *atom)
-{
-	struct FindUninvolved
-	{
-		std::string code;
-		std::string active;
-		std::string uninvolved;
-	};
-
-	std::vector<FindUninvolved> list = {{"SER", "OG", "CB"},
-		                                {"THR", "OG1", "CB"},
-		                                {"TYR", "OH", "CZ"},
-		                                {"", "N", "CA"},
-		                                {"", "N", "C"},
-		                                {"", "O", "C"},
-		                                {"GLN", "OE1", "CD"},
-		                                {"GLN", "NE2", "CD"},
-		                                {"ASN", "OD1", "CG"},
-		                                {"ASN", "ND2", "CG"},
-		                                {"LYS", "NZ", "CE"}};
-
-	OpSet<ABPair> found;
-	for (FindUninvolved &find : list)
-	{
-		if ((atom->code() != find.code && find.code.length() > 0)
-		    || atom->atomName() != find.active)
-		{
-			continue;
-		}
-		
-		for (size_t i = 0; i < atom->bondLengthCount(); i++)
-		{
-			if (atom->connectedAtom(i)->atomName() == find.uninvolved)
-			{
-				found.insert({atom->connectedAtom(i), nullptr});
-			}
-		}
-	}
-	
-	return found;
-}
-
-float expected_angle_for_coordination(int coord)
-{
-	switch (coord)
-	{
-		case 2: return 180;
-		case 3: return 120;
-		case 4: return 109.5;
-		default: return 0;
-	}
-}
-
-std::vector<glm::vec3> template_for_coordination(int coord)
-{
-	if (coord == 4)
-	{
-		// tetrahedral coordination around centre (origin)
-		return {{1, -1, 1}, {-1, -1, -1}, {-1, 1, 1}, {1, 1, -1}};
-	}
-	else if (coord == 3)
-	{
-		// trigonal coordination around centre (origin)
-		return {{1, 0, 0}, {-0.5, 0.866, 0}, {-0.5, -0.866, 0}};
-	}
-	else if (coord == 2)
-	{
-		// trigonal coordination around centre (origin)
-		return {{1, 0, 0}, {-1.0, 0, 0}};
-	}
-	
-	return {};
-}
-
-
-std::vector<glm::vec3> align(int coordNum, const glm::vec3 &centre,
-                             const std::vector<glm::vec3> &some)
-{
-	std::vector<glm::vec3> blueprint = template_for_coordination(coordNum);
-	
-	if (blueprint.size() == 0) return {};
-
-	Superpose pose;
-	pose.setForcedMeans({}, {});
-	
-	glm::vec3 blueprint_centre = {};
-	pose.addPositionPair(blueprint_centre, blueprint_centre); // centre
-
-	for (size_t i = 0; i < some.size(); i++)
-	{
-		glm::vec3 dir = glm::normalize(some[i] - centre);
-		glm::vec3 expected = glm::normalize(blueprint[i]);
-		pose.addPositionPair(dir, expected);
-	}
-
-	pose.superpose();
-	glm::mat3x3 super = pose.rotation();
-	
-	std::vector<glm::vec3> to_return;
-
-	for (size_t i = 0; i < coordNum; i++)
-	{
-		glm::vec3 pos = super * glm::normalize(blueprint[i]);
-		pos += centre;
-		to_return.push_back(pos);
-	}
-	
-	return to_return;
 }
 
 void Coordinated::eitherOr(const ABPair &first, const ABPair &second)
@@ -314,6 +200,11 @@ OpSet<PairSet> Coordinated::findSeeds()
 	
 	std::cout << uninvolved.size() << " uninvolved and " << sets.size() << 
 	" possible bonders" << std::endl;
+	
+	if (uninvolved.size() == 0 && sets.size() == 0)
+	{
+		return results;
+	}
 
 	if (uninvolved.size() == 0)
 	{
@@ -409,6 +300,8 @@ ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
 	hAtom->setResidueId(_atom->residueId());
 	hAtom->setInitialPosition(pos);
 	hAtom->setAtomName("H!");
+	hAtom->setCode(_atom->code());
+	hAtom->setElementSymbol("H");
 
 	BondConnector &new_bond = add(new BondConnector());
 	return {hAtom, &new_bond};
@@ -419,7 +312,7 @@ auto prepare_clash_check(Coordinated *me, AtomGroup *search)
 	return [search, me](const glm::vec3 &other) -> bool
 	{
 		::Atom *central = *me;
-		AtomGroup *neighbours = me->findNeighbours(search, other, 2.5, false);
+		AtomGroup *neighbours = me->findNeighbours(search, other, 2.1, false);
 		
 		for (::Atom *suspect : neighbours->atomVector())
 		{
@@ -713,7 +606,7 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 {
 	AtomGroup *search = findNeighbours(searchGroup, _atom->initialPosition(),
-	                                   3.1, true);
+	                                   3.2, true);
 	AtomProbe *ref = atomMap()[_atom]->probe();
 	
 	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
@@ -844,6 +737,9 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	/* total strong bonds is determined by remaining valency and charge */
 	add_constraint(new CountAdder(valency, charge, expl_strong));
 
+	_charge = &charge;
+	_donors = &valency;
+
 	/* counts which need to be hooked up to bond adders later */
 	_strong = &expl_strong;
 	_weak = &expl_weak;
@@ -886,10 +782,17 @@ void Coordinated::equilibrateBonds()
 		// ask the asymmetric version for the symmetry mate of my own atom
 		const ABPair &corresponding = other->bondedSymmetricAtom(_atom);
 		
-		hnet::BondConnector &left = *bond.second;
-		hnet::BondConnector &right = *corresponding.second;
-		
-		add_constraint(new EqualBonds(left, right));
+		if (corresponding.second)
+		{
+			hnet::BondConnector &left = *bond.second;
+			hnet::BondConnector &right = *corresponding.second;
+
+			add_constraint(new EqualBonds(left, right));
+		}
+		else
+		{
+			_failedCheck = true;
+		}
 	}
 
 }

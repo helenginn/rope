@@ -50,7 +50,9 @@ protected:
 	virtual void checkIndexBuffer(double x, double y, bool hover, 
 	                              bool arrow, bool left);
 	
-	virtual void interactedWithNothing(bool left) {};
+	// called if there is no meaningful index.
+	// otherwise IndexResponder gets ::interacted.
+	virtual void interactedWithNothing(bool left, bool hover = false) {};
 
 private:
 	IndexResponder *getResponderForIndex(int &val);

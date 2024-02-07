@@ -1,38 +1,70 @@
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
 
 #ifndef __vagabond__Display__
 #define __vagabond__Display__
 
+#include "DisplayUnit.h"
 #include "vagabond/gui/elements/Mouse3D.h"
+#include "vagabond/gui/elements/IndexResponseView.h"
 #include <vagabond/core/Responder.h>
 #include <atomic>
 
 class ImageButton;
-class GuiAtom;
-class GuiRefls;
-class GuiDensity;
-class AtomGroup;
-class Diffraction;
-class ArbitraryMap;
-class Entity;
+class FloatingText;
 
 class Display : 
 public Mouse3D, 
 public HasResponder<Responder<Display>>,
-public Responder<Entity>
+public IndexResponseView
 {
 public:
 	Display(Scene *prev = nullptr);
 	virtual ~Display();
 
 	virtual void setup();
+	
+	void addDisplayUnit(DisplayUnit *unit)
+	{
+		_units.push_back(unit);
+	}
+	
+	void removeDisplayUnit(DisplayUnit *unit)
+	{
+		auto it = std::find(_units.begin(), _units.end(), unit);
+		
+		if (it != _units.end())
+		{
+			delete *it;
+			_units.erase(it);
+		}
+	}
+	
+	void clearDisplayUnits()
+	{
+		for (DisplayUnit *unit : _units)
+		{
+			delete unit;
+		}
 
-	void loadAtoms(AtomGroup *atoms);
-	void stop();
-	void cleanup();
-	void deleteAtoms();
+		_units.clear();
+	}
 
-	void loadDiffraction(Diffraction *diff);
-	void makeMapFromDiffraction();
 	void recalculateAtoms();
 	virtual void tieButton();
 	void wedgeButtons();
@@ -43,52 +75,26 @@ public:
 		_pingPong = pp;
 	}
 	
-	void setMultiBondMode(bool mode);
-	
-	void setOwnsAtoms(bool owns)
-	{
-		_owns = owns;
-	}
-	
-	void setAtoms(AtomGroup *grp)
-	{
-		_toLoad = grp;
-	}
-	
-	GuiAtom *guiAtoms()
-	{
-		return _guiAtoms;
-	}
-	
-	void densityFromDiffraction(Diffraction *diff);
-	void densityFromMap(ArbitraryMap *map);
-	
+	void registerPosition(const glm::vec3 &pos);
 	virtual void buttonPressed(std::string tag, Button *button);
 	void fftButton();
-protected:
-	AtomGroup *_atoms = nullptr;
+	
+	void supplyFloatingText(FloatingText *text);
 
-	GuiAtom *_guiAtoms = nullptr;
-	GuiRefls *_guiRefls = nullptr;
-	GuiDensity *_guiDensity = nullptr;
+	virtual void interactedWithNothing(bool left, bool hover = false);
 private:
 	void resetDensityMap();
-
-	AtomGroup *_toLoad = nullptr;
 
 	ImageButton *_halfWedge = nullptr;
 	ImageButton *_wedge = nullptr;
 	ImageButton *_density = nullptr;
 	ImageButton *_mechanics = nullptr;
 	
-	Diffraction *_diff = nullptr;
-	ArbitraryMap *_map = nullptr;
-	
-	bool _owns = true;
-	bool _reciprocal = false;
-	bool _first = true;
+	FloatingText *_text = nullptr;
+
 	bool _pingPong = false;
 	std::atomic<bool> _finish{false};
+	std::vector<DisplayUnit *> _units;
 };
 
 #endif

@@ -16,23 +16,37 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define BOOST_TEST_MODULE test_core
-#include <vagabond/utils/include_boost.h>
-namespace tt = boost::test_tools;
+#ifndef __vagabond__ProbeAtom__
+#define __vagabond__ProbeAtom__
 
-#include "test_bfac_occ.cpp"
-#include "test_tasks.cpp"
-/*
-#include "test_hnet.cpp"
-#include "test_atomgroup.cpp"
-#include "test_atomsfromsequence.cpp"
-#include "test_handler.cpp"
-#include "test_list.cpp"
-#include "test_molecule.cpp"
-#include "test_molrefiner.cpp"
-#include "test_ramachandran.cpp"
-#include "test_sequence.cpp"
-#include "test_surface.cpp"
-#include "test_lbfgs.cpp"
-#include "test_grid.cpp"
-*/
+#include <vagabond/gui/elements/FloatingText.h>
+#include <vagabond/gui/elements/IndexResponder.h>
+
+class Probe;
+class AtomProbe;
+class HydrogenProbe;
+class ProtonNetworkView;
+
+class ProbeAtom : public FloatingText, virtual public IndexResponder
+{
+public:
+	ProbeAtom(ProtonNetworkView *view, AtomProbe *probe);
+	ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe);
+
+	virtual size_t requestedIndices()
+	{
+		return 1;
+	}
+
+	virtual void interacted(int idx, bool hover, bool left);
+	virtual void reindex();
+private:
+	void hoverOverAtom();
+	void offerAtomMenu();
+
+	Probe *_probe = nullptr;
+
+	ProtonNetworkView *_view = nullptr;
+};
+
+#endif

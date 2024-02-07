@@ -90,9 +90,9 @@ struct BondAdder
 			ss << Request;
 
 //			std::cout << "Report for bonds of adder " << this << std::endl;
-			for (BondConnector *const &bc : bonds)
+//			for (BondConnector *const &bc : bonds)
 			{
-				bc->report();
+//				bc->report();
 			}
 			throw std::runtime_error("New addition of BondAdder (" + 
 			                         ss.str() + ") immediately "\

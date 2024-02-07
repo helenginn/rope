@@ -19,6 +19,7 @@
 #include "ModelMenu.h"
 #include "AddModel.h"
 #include "Display.h"
+#include "DisplayUnit.h"
 #include "GuiAtom.h"
 #include <vagabond/core/grids/ArbitraryMap.h>
 #include <vagabond/gui/Toolkit.h>
@@ -122,21 +123,18 @@ void ModelMenu::refineModel(std::string name)
 	try
 	{
 		Model *model = _manager->model(name);
-		model->load();
-		_currModel = model;
-		AtomContent *atoms = model->currentAtoms();
-
+		
 		Display *d = new Display(this);
-		d->loadAtoms(atoms);
-		d->setOwnsAtoms(false);
-		d->setMultiBondMode(true);
-		d->guiAtoms()->setDisableRibbon(false);
+		DisplayUnit *unit = new DisplayUnit(d);
+		unit->loadModel(model);
 
 		ArbitraryMap *map = new ArbitraryMap(model->dataFile());
 		if (map->nn() > 0)
 		{
-			d->densityFromMap(map);
+			unit->densityFromMap(map);
 		}
+		
+		d->addDisplayUnit(unit);
 		d->show();
 	}
 	catch (std::runtime_error &err)

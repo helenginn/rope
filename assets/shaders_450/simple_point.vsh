@@ -10,6 +10,7 @@ uniform float size;
 uniform mat4 projection;
 uniform mat4 model;
 
+out vec4 vProper;
 out vec4 vPos;
 out vec4 vColor;
 out vec4 vExtra;
@@ -26,6 +27,7 @@ void main()
 	vTex = tex;
 	vColor = color;
 	vPos = vec4(mat3(model) * vec3(extra), 1.);
+	vProper = gl_Position;
 }
 
 

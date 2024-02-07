@@ -19,19 +19,36 @@
 #ifndef __vagabond__GuiBalls__
 #define __vagabond__GuiBalls__
 
+#include <vagabond/gui/elements/IndexResponder.h>
+
 #include "GuiRepresentation.h"
 
+class Display;
 class GuiAtom;
 class GuiBond;
+class FloatingText;
 
 class GuiBalls : public GuiRepresentation
 {
 public:
 	GuiBalls(GuiAtom *parent);
 	virtual ~GuiBalls();
+	
+	void setDisplay(Display *scene)
+	{
+		_scene = scene;
+	}
 
 	virtual void watchAtom(Atom *a);
 	void watchBonds(AtomGroup *ag);
+
+	virtual size_t requestedIndices()
+	{
+		return _atomIndex.size();
+	}
+
+	virtual void reindex();
+	virtual void interacted(int idx, bool hover, bool left);
 
 	void setMulti(bool m);
 
@@ -54,13 +71,18 @@ private:
 
 	Renderable *_template = nullptr;
 	GuiBond *_bonds = nullptr;
+	
+	Display *_scene = nullptr;
 
 	std::map<Atom *, int> _atomIndex;
+	std::map<int, Atom *> _indexAtom;
 	std::map<Atom *, glm::vec3> _atomPos;
 	
 	bool _multi = false;
+	FloatingText *_text = nullptr;
 	
 	float _size = 30;
+	int _lastIdx = -1;
 };
 
 #endif

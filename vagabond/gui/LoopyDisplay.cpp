@@ -30,7 +30,6 @@ LoopyDisplay::LoopyDisplay(Scene *prev, Polymer *const &pol)
 {
 	_polymer = pol;
 	_polymer->load();
-	setOwnsAtoms(false);
 	_loopy.setResponder(this);
 }
 
@@ -43,8 +42,11 @@ LoopyDisplay::~LoopyDisplay()
 void LoopyDisplay::setup()
 {
 	AtomGroup *grp = _polymer->currentAtoms();
-	loadAtoms(grp);
-	mechanicsButton();
+	DisplayUnit *unit = new DisplayUnit(this);
+	unit->loadAtoms(grp, _polymer->entity());
+	unit->displayAtoms();
+	addDisplayUnit(unit);
+
 	Display::setup();
 
 	TextButton *button = new TextButton("Begin build loop", 

@@ -43,6 +43,11 @@ public:
 		return _atoms;
 	}
 	
+	GuiBalls *const &balls() const
+	{
+		return _balls;
+	}
+	
 	void setDisableBalls(bool dis);
 	void setDisableRibbon(bool dis);
 

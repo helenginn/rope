@@ -225,15 +225,15 @@ void Renderable::slabbing()
 		_gl->getSlabs(near_slab, far_slab);
 	}
 
-	GLuint uNear = glGetUniformLocation(_program, "near_slab");
+	GLint uNear = glGetUniformLocation(_program, "near_slab");
 
-	if (uNear != 0)
+	if (uNear >= 0)
 	{
 		glUniform1f(uNear, near_slab);
 	}
 
-	GLuint uFar = glGetUniformLocation(_program, "far_slab");
-	if (uFar != 0)
+	GLint uFar = glGetUniformLocation(_program, "far_slab");
+	if (uFar >= 0)
 	{
 		glUniform1f(uFar, far_slab);
 	}

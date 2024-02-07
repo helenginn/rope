@@ -22,6 +22,10 @@
 #include <vagabond/gui/elements/SimplePolygon.h>
 #include "IndexResponseView.h"
 
+// you need to reimplement requestedIndices() and reindex()
+// and prepare to get signals on interacted(...)
+// also IndexResponseView::setup needs calling
+
 class IndexResponder : public SimplePolygon
 {
 public:

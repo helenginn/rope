@@ -51,7 +51,6 @@ AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 	_dims = 1;
 	_rawAngles = angles;
 	setPingPong(true);
-	setOwnsAtoms(false);
 	_instance->load();
 }
 
@@ -73,8 +72,12 @@ void AxisExplorer::setup()
 {
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
-	loadAtoms(grp);
 	_fullAtoms = grp;
+	
+	DisplayUnit *unit = new DisplayUnit(this);
+	unit->loadAtoms(grp, _instance->entity());
+	unit->displayAtoms();
+	addDisplayUnit(unit);
 	
 	Display::setup();
 	
@@ -85,9 +88,6 @@ void AxisExplorer::setup()
 	setupColours();
 	setupColourLegend();
 	makeMenu();
-	
-	VisualPreferences *vp = &_instance->entity()->visualPreferences();
-	_guiAtoms->applyVisuals(vp, instance());
 	
 	askForAtomMotions();
 }

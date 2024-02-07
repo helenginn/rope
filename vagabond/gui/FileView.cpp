@@ -113,15 +113,23 @@ void FileView::handleFileWithoutChoice(std::string filename)
 		if (file->atomCount() > 0)
 		{
 			Display *display = new Display(this);
-			display->loadAtoms(file->atoms());
-			display->setMultiBondMode(true);
+
+			DisplayUnit *unit = new DisplayUnit(display);
+			unit->loadAtoms(file->atoms());
+			unit->displayAtoms();
+			display->addDisplayUnit(unit);
+
 			display->show();
 		}
 	}
 	else if (type & File::Reflections)
 	{
 		Display *display = new Display(this);
-		display->loadDiffraction(file->diffractionData());
+
+		DisplayUnit *unit = new DisplayUnit(display);
+		unit->loadReflections(file->diffractionData());
+		display->addDisplayUnit(unit);
+
 		display->show();
 	}
 	else if (type & File::Meta)

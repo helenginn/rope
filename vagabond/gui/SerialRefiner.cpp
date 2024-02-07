@@ -31,7 +31,6 @@ Display(prev)
 {
 	_handler = new SerialRefineJob(entity, this);
 	_handler->setThreads(1);
-	setOwnsAtoms(false);
 	setControls(false);
 }
 
@@ -156,16 +155,13 @@ void SerialRefiner::loadModelIntoDisplay(Model *model)
 		total << ")" << std::endl;
 
 		addTitle(ss.str());
-		loadAtoms(atoms);
-		guiAtoms()->setDisableRibbon(false);
-		guiAtoms()->setDisableBalls(true);
-	}
-}
+		DisplayUnit *unit = new DisplayUnit(this);
+		unit->loadAtoms(atoms);
+		unit->displayAtoms();
 
-void SerialRefiner::dismantleDisplay()
-{
-	stop();
-	_atoms = nullptr;
+		clearDisplayUnits();
+		addDisplayUnit(unit);
+	}
 }
 
 void SerialRefiner::showSummary()
@@ -200,7 +196,7 @@ void SerialRefiner::processUpdate(Update &update)
 	}
 	else if (update.task == Detach)
 	{
-		dismantleDisplay();
+		clearDisplayUnits();
 	}
 	else if (update.task == Finish)
 	{

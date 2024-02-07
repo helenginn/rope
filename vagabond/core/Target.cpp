@@ -79,7 +79,7 @@ void Target::transformMatrix()
 	for (size_t i = 0; i < _nAxes; i++)
 	{
 		// translation down final column to centre
-		_shift[i][i] = (maxes[i] - mins[i]) / 4;
+		_shift[i][i] = (maxes[i] - mins[i]) / 8;
 	}
 	
 	printMatrix(&_shift);

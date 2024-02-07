@@ -91,7 +91,7 @@ public:
 protected:
 	virtual void sendSelection(float t, float l, float b, float r,
 	                           bool inverse);
-	virtual void interactedWithNothing(bool left);
+	virtual void interactedWithNothing(bool left, bool hover);
 	void prepareEmptySpaceMenu();
 
 private:

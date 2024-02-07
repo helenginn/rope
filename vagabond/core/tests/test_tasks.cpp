@@ -29,14 +29,16 @@
 #include "AtomGroup.h"
 #include <string>
 #include <iostream>
+#include <time.h>
 
 BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 {
-	std::string path = "/Users/vgx18549/pdbs/stromelysin/1hfs-no-lig.pdb";
-	std::string density = "/Users/vgx18549/pdbs/stromelysin/1hfs.mtz";
+	std::string path = "/Users/ginnh/pdbs/stromelysin/1hfs-no-lig.pdb";
+	std::string density = "/Users/ginnh/pdbs/stromelysin/1hfs.mtz";
 	PdbFile geom = PdbFile(path);
 	geom.parse();
 	AtomGroup *hexane = geom.atoms();
+	std::cout << "Total atoms: " << hexane->size() << std::endl;
 
 	BondCalculator *calculator = new BondCalculator();
 
@@ -68,6 +70,8 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 	Tasks *tasks = new Tasks();
 
+	time_t start = ::time(nullptr);
+	float count = 0;
 	while (true)
 	{
 		tasks->run(threads);
@@ -75,6 +79,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		/* make sure calculator doesn't finish before newest jobs are queued */
 		calculator->holdHorses();
 		int total = 50;
+		count += total;
 		for (size_t t = 0; t < total; t++)
 		{
 			BaseTask *first_hook = nullptr;
@@ -139,6 +144,12 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 			}
 			r->destroy();
 		}
+		time_t end = ::time(nullptr);
+		double diff = ::difftime(end, start);
+		float per_calc = diff / count;
+		std::cout << "ave = " << per_calc * 1000 << " ms" << std::endl;
+
+		std::cout << std::endl;
 		
 		tasks->wait();
 	}

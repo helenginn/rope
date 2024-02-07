@@ -140,6 +140,13 @@ struct Connector
 		return true;
 	}
 	
+	bool is_certain()
+	{
+		Value belief = _conditions.belief();
+
+		return certain(belief);
+	}
+	
 	bool assign_value(const Value &value, void *informant, void *blame)
 	{
 		if (assign_value_without_checking(value, informant, blame))

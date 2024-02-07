@@ -1,20 +1,28 @@
 #version 330 core
 
+in vec3 dPos;
+in vec4 vPos;
 in vec4 vColor;
 in vec3 vNormal;
-in vec3 dPos;
 in float jump;
 
 uniform sampler2D pic_tex;
 uniform float slice;
 uniform int track_frag;
 
-uniform vec3 centre;
+uniform float near_slab;
+uniform float far_slab;
 
 out vec4 FragColor;
 
 void main()
 {
+	if ((near_slab >= -1 && far_slab >= -1) &&
+		(vPos.z > far_slab || vPos.z < near_slab))
+	{
+		discard;
+	}
+
 	float dist = length(dPos);
 	if (track_frag == 1)
 	{

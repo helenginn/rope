@@ -40,7 +40,6 @@ MapView::MapView(Scene *prev, Entity *entity, std::vector<Instance *> instances,
 {
 	_reference = reference;
 	_instances = instances;
-	setOwnsAtoms(false);
 }
 
 MapView::~MapView()
@@ -60,7 +59,11 @@ void MapView::setup()
 
 	_reference->load();
 	_reference->currentAtoms()->recalculate();
-	loadAtoms(_reference->currentAtoms());
+
+	DisplayUnit *unit = new DisplayUnit(this);
+	unit->loadAtoms(_reference->currentAtoms(), _reference->entity());
+	unit->displayAtoms();
+	addDisplayUnit(unit);
 	
 	_warp = Warp::warpFromFile(_reference, "test.json");
 	_warp->setResponder(this);
@@ -82,9 +85,6 @@ void MapView::setup()
 	_wc->setParameters(ordered);
 	_wc->setParamWeights(magnitudes);
 
-	VisualPreferences *vp = &_reference->entity()->visualPreferences();
-	_guiAtoms->applyVisuals(vp);
-	
 	addButtons();
 
 	TextButton *command = new TextButton("Save space", this);
@@ -357,7 +357,7 @@ void MapView::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "save_model")
 	{
-		_atoms->writeToFile("tmp.pdb");
+		_reference->currentAtoms()->writeToFile("tmp.pdb");
 	}
 	
 	if (tag == "plot")

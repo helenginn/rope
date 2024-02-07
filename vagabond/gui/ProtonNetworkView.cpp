@@ -16,13 +16,14 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "ProbeAtom.h"
 #include "ProbeBond.h"
 #include "ProtonNetworkView.h"
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
 ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
-: Scene(scene), Mouse3D(scene), _network(network)
+: Scene(scene), Mouse3D(scene), IndexResponseView(scene), _network(network)
 {
 	_translation.z -= 50;
 	_farSlab = 40;
@@ -33,29 +34,58 @@ void ProtonNetworkView::findAtomProbes()
 {
 	for (AtomProbe *const &probe : _network.atomProbes())
 	{
-		FloatingText *text = new FloatingText(probe->display(), 
-		                                      probe->mult(), -0.0);
-		text->setPosition(probe->position());
-		glm::vec3 c = probe->colour();
-		text->setColour(c.x, c.y, c.z);
-		addObject(text);
+		ProbeAtom *text = new ProbeAtom(this, probe);
+		addObject((FloatingText *)text);
+		_textProbes[probe] = text;
+		probe->setResponder(this);
+		addIndexResponder(text);
 	}
 
 	for (HydrogenProbe *const &probe : _network.hydrogenProbes())
 	{
-		FloatingText *text = new FloatingText(probe->display(), 25, -0.0);
-		text->setPosition(probe->position());
-		addObject(text);
+		ProbeAtom *text = new ProbeAtom(this, probe);
+		addObject((FloatingText *)text);
+		_textProbes[probe] = text;
+		probe->setResponder(this);
+		addIndexResponder(text);
 	}
 
 	for (BondProbe *const &probe : _network.bondProbes())
 	{
 		ProbeBond *bond = new ProbeBond(probe->display(), probe->position(),
 		                                probe->end());
+		bond->setAlpha(probe->alpha());
 		addObject(bond);
+		_bondProbes[probe] = bond;
+		probe->setResponder(this);
 	}
 
 	shiftToCentre(_network.centre(), 50);
+	IndexResponseView::setup();
+}
+
+void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
+{
+	if (_active)
+	{
+		_active->setHighlighted(false);
+		_active = nullptr;
+	}
+}
+
+void ProtonNetworkView::sendObject(std::string tag, void *object)
+{
+	std::cout << tag << std::endl;
+	Probe *p = static_cast<Probe *>(object);
+	if (_textProbes.count(p))
+	{
+		_textProbes[p]->FloatingText::setAlpha(p->alpha());
+	}
+
+	if (_bondProbes.count(p))
+	{
+		_bondProbes[p]->setAlpha(p->alpha());
+	}
 }
 
 void ProtonNetworkView::setup()

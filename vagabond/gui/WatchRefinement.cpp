@@ -38,11 +38,15 @@ void WatchRefinement::setup()
 	_refine->setResponder(this);
 	_refine->model()->load();
 	AtomGroup *grp = _refine->model()->currentAtoms();
-	loadAtoms(grp);
+
+	DisplayUnit *unit = new DisplayUnit(this);
+	unit->loadAtoms(grp);
+	unit->displayAtoms();
+	unit->setMultiBondMode(true);
+	_current = unit;
+	addDisplayUnit(unit);
 
 	Display::setup();
-
-	setMultiBondMode(true);
 }
 
 void WatchRefinement::start()
@@ -53,14 +57,7 @@ void WatchRefinement::start()
 void WatchRefinement::swapMap(ArbitraryMap *map)
 {
 	std::cout << "Swapping map" << std::endl;
-	removeObject(_guiDensity);
-	OriginGrid<fftwf_complex> *old = _guiDensity->map();
-
-	delete _guiDensity;
-	_guiDensity = new GuiDensity();
-	densityFromMap(map);
-	addObject(_guiDensity);
-	delete old;
+	_current->densityFromMap(map);
 }
 
 void WatchRefinement::sendObject(std::string tag, void *object)

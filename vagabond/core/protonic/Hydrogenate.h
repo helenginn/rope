@@ -16,23 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define BOOST_TEST_MODULE test_core
-#include <vagabond/utils/include_boost.h>
-namespace tt = boost::test_tools;
+#ifndef __vagabond__Hydrogenate__
+#define __vagabond__Hydrogenate__
 
-#include "test_bfac_occ.cpp"
-#include "test_tasks.cpp"
-/*
-#include "test_hnet.cpp"
-#include "test_atomgroup.cpp"
-#include "test_atomsfromsequence.cpp"
-#include "test_handler.cpp"
-#include "test_list.cpp"
-#include "test_molecule.cpp"
-#include "test_molrefiner.cpp"
-#include "test_ramachandran.cpp"
-#include "test_sequence.cpp"
-#include "test_surface.cpp"
-#include "test_lbfgs.cpp"
-#include "test_grid.cpp"
-*/
+/** \class Hydrogenate
+ * does that margarine thing for the protein backbone/unmoving hydrogens. */
+
+class Atom;
+class AtomGroup;
+
+namespace hnet
+{
+class Hydrogenate
+{
+public:
+	Hydrogenate(::Atom *atom, AtomGroup *destination);
+
+	void operator()();
+private:
+	AtomGroup *_destination = nullptr;
+	::Atom *_atom = nullptr;
+
+};
+};
+
+#endif

@@ -86,12 +86,13 @@ struct CountAdder
 		/* first we return to the comfortable world of integers... */
 		std::vector<int> left_options = possible_values(_left.value());
 		std::vector<int> right_options = possible_values(_right.value());
-		
+
 		/* impose options on sum */
 		{
 			std::vector<int> options = permutations(left_options, right_options,
 			                                        [](const int &a, const int &b)
 			                                        { return a + b; });
+			
 
 			Count::Values sum_count = values_as_count(options);
 			_sum.assign_value(sum_count, this, previous);

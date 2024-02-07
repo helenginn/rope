@@ -29,7 +29,7 @@
 #include "IconLegend.h"
 #include "SerialRefiner.h"
 #include "ClusterView.h"
-#include "LoopyDisplay.h"
+#include "ProtonNetworkView.h"
 #include "AddModel.h"
 
 #include <vagabond/utils/version.h>
@@ -41,6 +41,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/c4x/ClusterTSNE.h>
+#include <vagabond/core/files/PdbFile.h>
 
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Environment.h>
@@ -265,10 +266,6 @@ void ConfSpaceView::showPathsButton()
 		return;
 	}
 	
-#ifndef VERSION_SHORT_ROUTES
-	return;
-#endif
-
 	ImageButton *b = new ImageButton("assets/images/map.png", this);
 	b->resize(0.09);
 	b->setRight(0.97, 0.35);
@@ -485,15 +482,19 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		sr->show();
 	}
 	
-	if (tag == "loopy")
+	if (tag == "proton")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
-		if (i->hasSequence())
-		{
-			Polymer *pi = static_cast<Polymer *>(i);
-			LoopyDisplay *ld = new LoopyDisplay(this, pi);
-			ld->show();
-		}
+		std::string pdb = i->model()->filename();
+		PdbFile file(pdb);
+		file.parse();
+		AtomGroup *grp = file.atoms();
+		std::string spg_name = file.spaceGroupName();
+		std::array<double, 6> uc = file.unitCell();
+
+		ProtonNetworkView *sb;
+		sb = new ProtonNetworkView(this, *(new Network(grp, spg_name, uc)));
+		sb->show();
 	}
 	
 	if (tag == "set_as_reference")
@@ -640,8 +641,8 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
 #endif
-#ifdef VERSION_COMPLETE_LOOPS
-	m->addOption("loopy completion", "loopy");
+#ifdef VERSION_PROTON_NETWORK
+	m->addOption("proton network", "proton");
 #endif
 	float x; float y;
 	getFractionalPos(x, y);
@@ -701,8 +702,13 @@ void ConfSpaceView::prepareEmptySpaceMenu()
 
 }
 
-void ConfSpaceView::interactedWithNothing(bool left)
+void ConfSpaceView::interactedWithNothing(bool left, bool hover)
 {
+	if (hover)
+	{
+		return;
+	}
+
 	if (!left && !_moving)
 	{
 		prepareEmptySpaceMenu();

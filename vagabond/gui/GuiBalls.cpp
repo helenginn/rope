@@ -18,8 +18,9 @@
 
 #include "GuiBalls.h"
 #include "GuiBond.h"
+#include "Display.h"
 
-#include <vagabond/gui/elements/Icosahedron.h>
+#include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/matrix_functions.h>
 #include <vagabond/core/Atom.h>
@@ -56,6 +57,35 @@ GuiBalls::~GuiBalls()
 	delete _template;
 	_template = nullptr;
 	
+}
+
+void GuiBalls::reindex()
+{
+	size_t offset = indexOffset();
+	for (size_t i = 0; i < vertexCount(); i++)
+	{
+		_vertices[i].extra[0] = offset + 1.5 + i;
+	}
+}
+
+void GuiBalls::interacted(int idx, bool hover, bool left)
+{
+	if (_lastIdx == idx)
+	{
+		return;
+	}
+
+	if (hover && _scene && _indexAtom.count(idx))
+	{
+		Atom *atom = _indexAtom[idx];
+
+		std::string str = atom->desc();
+
+		FloatingText *ft = new FloatingText(str, 25);
+		ft->setPosition(_vertices[idx].pos);
+
+		_scene->supplyFloatingText(ft);
+	}
 }
 
 void GuiBalls::extraUniforms()
@@ -157,6 +187,7 @@ void GuiBalls::watchAtom(Atom *a)
 
 	_atomPos[a] = a->initialPosition();
 	_atomIndex[a] = index;
+	_indexAtom[index] = a;
 }
 
 void GuiBalls::watchBonds(AtomGroup *ag)

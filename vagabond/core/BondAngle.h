@@ -41,7 +41,7 @@ public:
 
 	double measurement() const;
 	
-	const Atom *atom(int i) const
+	Atom *const &atom(int i) const
 	{
 		if (i == 0) return _a;
 		if (i == 1) return _b;

@@ -278,4 +278,8 @@ void Mouse2D::reslab()
 
 	_nearSlab = 2 * dist / 3 - _manualFar;
 	_farSlab = 3 * dist / 2 + _manualFar;
+	if (_farSlab < _nearSlab + 1)
+	{
+		_farSlab = _nearSlab + 1;
+	}
 }

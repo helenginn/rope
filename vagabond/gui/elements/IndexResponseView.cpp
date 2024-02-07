@@ -80,9 +80,9 @@ void IndexResponseView::checkIndexBuffer(double x, double y, bool hover,
 	{
 		ir->interacted(val, hover, left);
 	}
-	else if (!hover)
+	else
 	{
-		interactedWithNothing(left);
+		interactedWithNothing(left, hover);
 	}
 	
 }

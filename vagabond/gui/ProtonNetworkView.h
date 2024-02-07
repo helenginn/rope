@@ -19,20 +19,45 @@
 #ifndef __vagabond__ProtonNetworkView__
 #define __vagabond__ProtonNetworkView__
 
+#include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/core/protonic/Network.h>
+#include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/Mouse3D.h>
 
-class ProtonNetworkView : public Mouse3D
+class BondProbe;
+class AtomProbe;
+class ProbeAtom;
+class HydrogenProbe;
+class ProbeBond;
+class Probe;
+
+class ProtonNetworkView : public Mouse3D, public Responder<Probe>,
+public IndexResponseView
 {
 public:
 	ProtonNetworkView(Scene *scene, Network &network);
 
 	virtual void setup();
+	
+	void setActive(Renderable *r)
+	{
+		if (_active && _active != r)
+		{
+			_active->setHighlighted(false);
+		}
+		_active = r;
+	}
 private:
+	virtual void sendObject(std::string tag, void *object);
+	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
+	
+	std::map<Probe *, ProbeAtom *> _textProbes;
+	std::map<Probe *, ProbeBond *> _bondProbes;
 	
 	Network &_network;
 
+	Renderable *_active = nullptr;
 };
 
 #endif

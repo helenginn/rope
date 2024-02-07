@@ -16,23 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define BOOST_TEST_MODULE test_core
-#include <vagabond/utils/include_boost.h>
-namespace tt = boost::test_tools;
+#ifndef __vagabond__HideComplete__
+#define __vagabond__HideComplete__
 
-#include "test_bfac_occ.cpp"
-#include "test_tasks.cpp"
-/*
-#include "test_hnet.cpp"
-#include "test_atomgroup.cpp"
-#include "test_atomsfromsequence.cpp"
-#include "test_handler.cpp"
-#include "test_list.cpp"
-#include "test_molecule.cpp"
-#include "test_molrefiner.cpp"
-#include "test_ramachandran.cpp"
-#include "test_sequence.cpp"
-#include "test_surface.cpp"
-#include "test_lbfgs.cpp"
-#include "test_grid.cpp"
-*/
+#include <map>
+#include <list>
+
+class Network;
+class AtomProbe;
+class Atom;
+class Probe;
+
+class HideComplete
+{
+public:
+	HideComplete(Network &network);
+
+	void operator()(bool closed = true);
+private:
+	bool add_connected_hydrogens(std::map<AtomProbe *, 
+	                             bool> &checked, ::Atom *atom, 
+	                             std::list<AtomProbe *> &to_check,
+	                             std::list<Probe *> &to_show);
+
+	void add_if_unchecked(::Atom *atom, 
+	                      std::map<AtomProbe *, bool> &checked,
+	                      std::list<AtomProbe *> &to_check);
+	void hide_closed();
+
+	Network &_network;
+
+};
+
+#endif

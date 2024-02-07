@@ -21,18 +21,14 @@
 
 #include <vagabond/utils/OpSet.h>
 
-#include "hnet.h"
 #include "Network.h"
+#include "alignment.h"
 
 class Atom;
 class AtomGroup;
 
 namespace hnet
 {
-typedef std::pair<::Atom *, hnet::BondConnector *> ABPair;
-typedef OpSet<ABPair> PairSet;
-typedef std::pair<ABPair, ABPair> CoordSeed;
-
 class Coordinated
 {
 public:
@@ -128,6 +124,16 @@ public:
 	{
 		return _bonds;
 	}
+	
+	hnet::CountConnector *const &donors() const
+	{
+		return _donors;
+	}
+	
+	hnet::CountConnector *const &charge() const
+	{
+		return _charge;
+	}
 
 	void eitherOr(const ABPair &first, const ABPair &second);
 private:
@@ -147,6 +153,9 @@ private:
 	}
 
 	hnet::AtomConnector *_connector{};
+
+	hnet::CountConnector *_charge{};
+	hnet::CountConnector *_donors{};
 
 	hnet::CountConnector *_strong{};
 	hnet::CountConnector *_weak{};

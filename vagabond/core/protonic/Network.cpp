@@ -20,12 +20,15 @@
 
 #include "matrix_functions.h"
 
+#include "HideComplete.h"
+#include "Hydrogenate.h"
 #include "Coordinated.h"
 #include "Network.h"
 #include "AtomGroup.h"
 #include "HydrogenBond.h"
 #include "BondAdder.h"
 #include "CountAdder.h"
+#include "BondAngle.h"
 
 using namespace hnet;
 
@@ -122,6 +125,135 @@ void Network::setupAsnGlnNitrogen(::Atom *atom)
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Two);
 }
 
+void Network::showCarboxylAtom(::Atom *atom)
+{
+	findAtomAndNameIt(atom, "CG", "Asp");
+	findAtomAndNameIt(atom, "CD", "Glu");
+}
+
+void Network::shareDonors(::Atom *left, ::Atom *right,
+                           const Count::Values &allowable)
+{
+	CountConnector &sum = add(new CountConnector());
+	add_constraint(new CountConstant(sum, allowable));
+	
+	CountConnector *lConnect = _atomMap[left]->donors();
+	CountConnector *rConnect = _atomMap[right]->donors();
+
+	if (lConnect && rConnect)
+	{
+		add_constraint(new CountAdder(*lConnect, *rConnect, sum));
+	}
+}
+
+void Network::shareCharges(::Atom *left, ::Atom *right,
+                           const Count::Values &allowable)
+{
+	CountConnector &sum = add(new CountConnector());
+	add_constraint(new CountConstant(sum, allowable));
+	
+	CountConnector *lConnect = _atomMap[left]->charge();
+	CountConnector *rConnect = _atomMap[right]->charge();
+
+	if (lConnect && rConnect)
+	{
+		add_constraint(new CountAdder(*lConnect, *rConnect, sum));
+	}
+}
+
+::Atom *find_partner(::Atom *atom, const std::string &search)
+{
+	::Atom *partner = nullptr;
+	for (size_t i = 0; i < atom->bondAngleCount(); i++)
+	{
+		BondAngle *angle = atom->bondAngle(i);
+		if (angle->atom(0)->atomName() == search) partner = angle->atom(0);
+		if (angle->atom(2)->atomName() == search) partner = angle->atom(2);
+
+		if (partner) break;
+	}
+
+	return partner;
+}
+
+void Network::setupHistidine(::Atom *atom)
+{
+	bool bad = true;
+	if (atom->atomName() == "ND1" && atom->code() == "HIS")
+	{
+		bad = false;
+	}
+	
+	if (bad)
+	{
+		return;
+	}
+	
+	::Atom *partner = find_partner(atom, "NE2");
+	
+	if (!partner)
+	{
+		return;
+	}
+
+	const Count::Values charge = Count::OneOrZero;
+	const Count::Values donors = Count::OneOrZero;
+
+	const Count::Values charge_sum = Count::OneOrZero;
+	const Count::Values charge_donors = Count::OneOrZero;
+
+	_atomMap[atom]->prepareCoordinated(charge, Count::Three, donors);
+	_atomMap[partner]->prepareCoordinated(charge, Count::Three, donors);
+	
+	shareCharges(atom, partner, charge_sum);
+	shareDonors(atom, partner, charge_donors);
+	
+	findAtomAndNameIt(atom, "CE1", "His");
+	findAtomAndNameIt(partner, "CE1", "His");
+}
+
+void Network::setupCarboxylOxygen(::Atom *atom)
+{
+	bool bad = true;
+	std::string search;
+	if (atom->atomName() == "OD1" && atom->code() == "ASP")
+	{
+		bad = false;
+		search = "OD2";
+
+	}
+	if (atom->atomName() == "OE1" && atom->code() == "GLU")
+	{
+		bad = false;
+		search = "OE2";
+	}
+	
+	if (bad)
+	{
+		return;
+	}
+	
+	::Atom *partner = find_partner(atom, search);
+	
+	if (!partner)
+	{
+		return;
+	}
+
+	Count::Values charge = Count::mOneOrZero;
+	Count::Values donors = Count::One;
+
+	Count::Values charge_sum = Count::mOneOrZero;
+
+	_atomMap[atom]->prepareCoordinated(charge, Count::Three, donors);
+	_atomMap[partner]->prepareCoordinated(charge, Count::Three, donors);
+	
+	shareCharges(atom, partner, charge_sum);
+	
+	showCarboxylAtom(atom);
+	showCarboxylAtom(partner);
+}
+
 void Network::setupCarbonylOxygen(::Atom *atom)
 {
 	bool bad = false;
@@ -164,9 +296,19 @@ void Network::setupAtom(::Atom *atom)
 		setupLysineAmine(atom);
 		setupAsnGlnNitrogen(atom);
 		setupCarbonylOxygen(atom);
+		setupCarboxylOxygen(atom);
 		setupSingleAlcohol(atom);
+		setupHistidine(atom);
 		setupWater(atom);
 	}
+}
+
+AtomGroup *nonHydrogensFrom(AtomGroup *const &other)
+{
+	return other->new_subset([](::Atom *const &atom)
+	{
+		return (atom->elementSymbol() != "H");
+	});
 }
 
 AtomGroup *hydrogenDonorsFrom(AtomGroup *const &other)
@@ -176,6 +318,17 @@ AtomGroup *hydrogenDonorsFrom(AtomGroup *const &other)
 		return (atom->elementSymbol() == "N" || atom->elementSymbol() == "O"
 		        || atom->elementSymbol() == "S");
 	});
+}
+
+AtomGroup *rehydrogenate(AtomGroup *const &full_set)
+{
+	full_set->do_op([full_set](::Atom *const &atom)
+	{
+		Hydrogenate hydrogenate(atom, full_set);
+		hydrogenate();
+	});
+	
+	return full_set;
 }
 
 AtomGroup *getSymmetryMates(AtomGroup *const &other, const std::string &spg_name,
@@ -275,7 +428,15 @@ void Network::establishAtom(::Atom *atom)
 Network::Network(AtomGroup *group, const std::string &spg_name,
                  const std::array<double, 6> &unit_cell)
 {
-	_original = group;
+	_original = rehydrogenate(nonHydrogensFrom(group));
+	AtomGroup *mates = getSymmetryMates(_original, spg_name, unit_cell, 2.5);
+	_originalAndMates = new AtomGroup();
+	_originalAndMates->add(mates);
+	_originalAndMates->add(_original);
+	_originalAndMates->orderByResidueId();
+
+	_originalAndMates->writeToFile("tmp.pdb");
+
 	_group = hydrogenDonorsFrom(_original);
 	_symMates = getSymmetryMates(_group, spg_name, unit_cell, 3.2);
 	_groupAndMates = new AtomGroup();
@@ -304,7 +465,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 	// find sets of bonds which can/cannot participate in bonding together
 	_group->do_op([this](::Atom *a)
-	              { _atomMap[a]->mutualExclusions(_groupAndMates); });
+	              { _atomMap[a]->mutualExclusions(_originalAndMates); });
 
 	// find sets of bonds which can/cannot participate in bonding together
 	_group->do_op([this](::Atom *a)
@@ -322,6 +483,9 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	
 	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
 	std::cout << failCount << " failed some logical check." << std::endl;
+	std::cout << std::endl;
+	HideComplete hide(*this);
+	hide(true);
 }
 
 glm::vec3 Network::centre() const
@@ -337,12 +501,15 @@ Network::Network()
 HydrogenProbe &Network::add_probe(HydrogenProbe *const &probe)
 {
 	_hydrogenProbes.push_back(probe);
+	_h2Probe[probe->left().atom()].push_back(probe);
+	_h2Probe[probe->right().atom()].push_back(probe);
 	return *probe;
 }
 
 AtomProbe &Network::add_probe(AtomProbe *const &probe)
 {
 	_atomProbes.push_back(probe);
+	_atom2Probe[probe->atom()] = probe;
 	return *probe;
 }
 

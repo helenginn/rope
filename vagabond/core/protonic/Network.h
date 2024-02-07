@@ -26,6 +26,7 @@
 #include "Constraint.h"
 #include "Probe.h"
 
+class HideComplete;
 class Probe;
 namespace hnet
 {
@@ -35,6 +36,7 @@ namespace hnet
 class Network
 {
 public:
+	friend HideComplete;
 	Network();
 	Network(AtomGroup *group, const std::string &spg_name,
 	        const std::array<double, 6> &unit_cell = {});
@@ -87,6 +89,14 @@ private:
 	void setupLysineAmine(::Atom *atom);
 	void setupWater(::Atom *atom);
 	void setupAsnGlnNitrogen(::Atom *atom);
+	void setupCarboxylOxygen(::Atom *atom);
+	void setupHistidine(::Atom *atom);
+
+	void showCarboxylAtom(::Atom *atom);
+	void shareCharges(::Atom *left, ::Atom *right,
+	                 const hnet::Count::Values &allowable);
+	void shareDonors(::Atom *left, ::Atom *right,
+	                 const hnet::Count::Values &allowable);
 
 	void findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
 	                       const std::string &name);
@@ -100,11 +110,14 @@ private:
 	std::list<BondProbe *> _bondProbes;
 
 	std::map<Atom *, hnet::Coordinated *> _atomMap;
+	std::map<Atom *, AtomProbe *> _atom2Probe;
+	std::map<Atom *, std::vector<HydrogenProbe *> > _h2Probe;
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_symMates = nullptr;
 	AtomGroup *_group = nullptr;
 	AtomGroup *_groupAndMates = nullptr;
+	AtomGroup *_originalAndMates = nullptr;
 };
 
 #endif

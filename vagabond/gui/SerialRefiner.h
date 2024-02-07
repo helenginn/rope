@@ -56,7 +56,6 @@ public:
 	virtual void entityDone();
 private:
 	void loadModelIntoDisplay(Model *model);
-	void dismantleDisplay();
 	void showThreads();
 	void start();
 	void showSummary();

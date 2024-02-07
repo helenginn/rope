@@ -142,6 +142,24 @@ inline std::string to_string(int val)
 	return str;
 }
 
+template <typename Type>
+bool certain(const Type &val)
+{
+	int total = 0;
+	for (int j = 31; j >= 0; j--)
+	{
+		unsigned char byte = (val >> j) & 1;
+		total += byte ? 1 : 0;
+		
+		if (total > 1)
+		{
+			return false;
+		}
+	}
+
+	return true;
+
+}
 
 /* universal functions to determine unassigned values 
  * for use in templated constraints */
@@ -381,6 +399,30 @@ inline std::vector<int> possible_values(const Count::Values &count)
 			case Count::Seven:
 			return 7;
 
+			case Count::Eight:
+			return 8;
+
+			case Count::Nine:
+			return 9;
+
+			case Count::Ten:
+			return 10;
+
+			case Count::Eleven:
+			return 11;
+
+			case Count::Twelve:
+			return 12;
+
+			case Count::Thirteen:
+			return 13;
+
+			case Count::Fourteen:
+			return 14;
+
+			case Count::Fifteen:
+			return 15;
+
 			case Count::mOne:
 			return -1;
 
@@ -402,6 +444,30 @@ inline std::vector<int> possible_values(const Count::Values &count)
 			case Count::mSeven:
 			return -7;
 
+			case Count::mEight:
+			return -8;
+
+			case Count::mNine:
+			return -9;
+
+			case Count::mTen:
+			return -10;
+
+			case Count::mEleven:
+			return -11;
+
+			case Count::mTwelve:
+			return -12;
+
+			case Count::mThirteen:
+			return -13;
+
+			case Count::mFourteen:
+			return -14;
+
+			case Count::mFifteen:
+			return -15;
+
 			default:
 			throw std::runtime_error("straightforward conversion to integer"\
 			                         " impossible, val = " + std::to_string(val));
@@ -409,7 +475,7 @@ inline std::vector<int> possible_values(const Count::Values &count)
 	};
 	
 	std::vector<int> results;
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < 32; i++)
 	{
 		Count::Values check = (Count::Values)(1 << i);
 		Count::Values isolated = (Count::Values)(count & check);
