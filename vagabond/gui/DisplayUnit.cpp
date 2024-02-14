@@ -180,3 +180,25 @@ void DisplayUnit::densityFromMap(ArbitraryMap *map)
 	_guiDensity->populateFromMap(map);
 	_parent->addObject(_guiDensity);
 }
+
+void DisplayUnit::refreshDensity(AtomMap *map)
+{
+	if (!_guiDensity)
+	{
+		_guiDensity = new GuiDensity();
+		_parent->addObject(_guiDensity);
+	}
+
+	_guiDensity->fromDifferences(map);
+}
+
+void DisplayUnit::tear(AtomMap *map)
+{
+	if (!_guiDensity)
+	{
+		_guiDensity = new GuiDensity();
+		_parent->addObject(_guiDensity);
+	}
+
+	_guiDensity->tear(map);
+}

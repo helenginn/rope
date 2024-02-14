@@ -28,6 +28,7 @@ class Diffraction;
 class ArbitraryMap;
 class Entity;
 class Model;
+class AtomMap;
 
 struct DisplayUnit
 {
@@ -43,6 +44,9 @@ public:
 	{
 		_atoms_are_mine = true;
 	}
+
+	void tear(AtomMap *map);
+	void refreshDensity(AtomMap *map);
 
 	void loadModel(Model *model);
 	void loadAtoms(AtomGroup *group, Entity *entity = nullptr);
