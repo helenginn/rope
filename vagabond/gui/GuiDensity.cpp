@@ -37,7 +37,7 @@ GuiDensity::GuiDensity() : CullablePrimitives()
 	setName("Gui density");
 }
 
-void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
+void GuiDensity::objectFromMesh(MC::mcMesh &mesh, bool diff)
 {
 	_indices.clear();
 	_vertices.clear();
@@ -51,6 +51,11 @@ void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
 		v.normal = glm::vec3(mn.x, mn.y, mn.z);
 		v.color = glm::vec4(0.5, 0.5, 0.8, 1.0);
 		
+		if (diff && mesh.values[i] < 0)
+		{
+			v.color = glm::vec4(1.0, 0.8, 0.2, 1.0);
+		}
+		
 		_vertices.push_back(v);
 	}
 
@@ -62,9 +67,9 @@ void GuiDensity::objectFromMesh(MC::mcMesh &mesh)
 }
 
 void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
-                                    OriginGrid<fftwf_complex> *map)
+                                    OriginGrid<fftwf_complex> *map,
+                                    bool diff)
 {
-	std::cout << "Sample" << std::endl;
 	if (ref == nullptr || map == nullptr)
 	{
 		return;
@@ -106,6 +111,12 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 			{
 				glm::vec3 real = glm::vec3(x, y, z) + min;
 				float val = ref->realValue(real);
+				bool report = fabs(x) > 20 && fabs(x) < 22;
+				if (_tear)
+				{
+					val -= _tear->realValue(real);
+				}
+
 				vals.push_back(val);
 			}
 		}
@@ -116,19 +127,24 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 	unsigned int nz = (int)lrint(limits.z / step);
 
 	const float *ptr = &vals[0];
-	float mean = ref->mean();
-	float sigma = ref->sigma();
-	float thresh = mean + sigma * _threshold;
+	float mean = _tear ? _tear->mean() : ref->mean();
+	if (diff)
+	{
+		mean = 0;
+	}
+
+	float sigma = _tear ? _tear->sigma() : ref->sigma();
+	float thresh = mean + sigma * _threshold * 3;
 	std::cout << "Mean/sigma: " << mean << " " << sigma << std::endl;
 	
 	_ref = ref;
 	_map = map;
 
 	MC::mcMesh mesh;
-	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
+	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh, diff);
 	
 	std::unique_lock<std::mutex> lock(_vertLock);
-	objectFromMesh(mesh);
+	objectFromMesh(mesh, diff);
 	rotateByMatrix(glm::mat3(step));
 	addToVertices(min);
 	setDisabled(false);
@@ -137,31 +153,16 @@ void GuiDensity::sampleFromOtherMap(OriginGrid<fftwf_complex> *ref,
 	rebufferIndexData();
 }
 
-void GuiDensity::fromMap(AtomMap *map)
+void GuiDensity::tear(AtomMap *map)
 {
-	const float *ptr = map->arrayPtr();
+	_tear = map;
+}
 
-	float mean = map->mean();
-	float sigma = map->sigma();
-	float thresh = mean + sigma;
-	unsigned int nx = map->nx();
-	unsigned int ny = map->ny();
-	unsigned int nz = map->nz();
-
-	float real = map->realDim();
-	glm::vec3 origin = map->origin();
-
-	MC::mcMesh mesh;
-	MC::marching_cube(ptr, nx, ny, nz, thresh, mesh);
-
-	std::unique_lock<std::mutex> lock(_vertLock);
-	objectFromMesh(mesh);
-	rotateByMatrix(glm::mat3(real));
-	addToVertices(origin);
-	setDisabled(false);
-	lock.unlock();
-	rebufferVertexData();
-	rebufferIndexData();
+void GuiDensity::fromDifferences(AtomMap *map)
+{
+	_hasUC = false;
+	sampleFromOtherMap(map, map, true);
+	std::cout << vertexCount() << " now " << std::endl;
 }
 
 void GuiDensity::populateFromMap(OriginGrid<fftwf_complex> *map)
@@ -200,9 +201,9 @@ void GuiDensity::extraUniforms()
 	GLuint uSlice = glGetUniformLocation(_program, "slice");
 	glUniform1f(uSlice, _slice);
 	
-	glm::mat3x3 uc = glm::mat3(1.f);
+	glm::mat3x3 uc = glm::mat3(1000.f);
 	
-	if (_map)
+	if (_hasUC && _map)
 	{
 		uc = _map->frac2Real();
 	}

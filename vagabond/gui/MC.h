@@ -94,6 +94,7 @@ namespace MC
 	public:
 		std::vector<mcVec3f> vertices;
 		std::vector<mcVec3f> normals;
+		std::vector<float> values;
 		std::vector<muint> indices;
 	} mcMesh;
 
@@ -199,7 +200,7 @@ namespace MC
 	\param x, y, z current slab index
 	\param size slab indices array size
 	*/
-	static void mc_internalComputeEdge(mcVec3i* slab_inds, mcMesh& mesh, float va, float vb, int axis, muint x, muint y, muint z, const mcVec3i& size)
+	static void mc_internalComputeEdge(mcVec3i* slab_inds, mcMesh& mesh, float va, float vb, int axis, muint x, muint y, muint z, const mcVec3i& size, float sign)
 	{
 		if ((va < 0.0) == (vb < 0.0))
 			return;
@@ -207,6 +208,7 @@ namespace MC
 		v[axis] += va / (va - vb);
 		slab_inds[mc_internalToIndex1DSlab(x, y, z, size)][axis] = muint(mesh.vertices.size());
 		mesh.vertices.push_back(v);
+		mesh.values.push_back(sign);
 		mesh.normals.push_back(mcVec3f({ 0, 0, 0 }));
 	}
 
@@ -252,15 +254,17 @@ namespace MC
 	\param outputMesh indexed mesh returned.
 	*/
 	void marching_cube(const MC_FLOAT* field, muint nx, muint ny, muint nz,
-	                   MC_FLOAT thresh, mcMesh& outputMesh)
+	                   MC_FLOAT thresh, mcMesh& outputMesh, bool absolute)
 	{
 		outputMesh.vertices.reserve(defaultVerticeArraySize);
 		outputMesh.normals.reserve(defaultNormalArraySize);
 		outputMesh.indices.reserve(defaultTriangleArraySize);
+		outputMesh.values.reserve(defaultVerticeArraySize);
 
 		const mcVec3i size = { nx, ny, nz };
 		mcVec3i* slab_inds = new mcVec3i[nx * ny * 2];
 		MC_FLOAT vs[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+		MC_FLOAT ws[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 		muint edge_indices[12];
 		for (muint z = 0; z < nz - 1; z++)
 		{
@@ -279,6 +283,12 @@ namespace MC
 					
 					for (size_t i = 0; i < 8; i++)
 					{
+						ws[i] = vs[i];
+						if (absolute)
+						{
+							vs[i] = fabs(vs[i]);
+						}
+
 						vs[i] -= thresh;
 					}
 
@@ -295,28 +305,28 @@ namespace MC
 						continue;
 
 					if (y == 0 && z == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[0], vs[1], 0, x, y, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[0], vs[1], 0, x, y, z, size, ws[0] + ws[1]);
 					if (z == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[2], vs[3], 0, x, y + 1, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[2], vs[3], 0, x, y + 1, z, size, ws[2] + ws[3]);
 					if (y == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[4], vs[5], 0, x, y, z + 1, size);
-					mc_internalComputeEdge(slab_inds, outputMesh, vs[6], vs[7], 0, x, y + 1, z + 1, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[4], vs[5], 0, x, y, z + 1, size, ws[4] + ws[5]);
+					mc_internalComputeEdge(slab_inds, outputMesh, vs[6], vs[7], 0, x, y + 1, z + 1, size, ws[6] + ws[7]);
 
 					if (x == 0 && z == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[0], vs[2], 1, x, y, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[0], vs[2], 1, x, y, z, size, ws[0] + ws[2]);
 					if (z == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[1], vs[3], 1,x + 1, y, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[1], vs[3], 1,x + 1, y, z, size, ws[1] + ws[3]);
 					if (x == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[4], vs[6], 1, x, y, z + 1, size);
-					mc_internalComputeEdge(slab_inds, outputMesh, vs[5], vs[7], 1, x + 1, y, z + 1, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[4], vs[6], 1, x, y, z + 1, size, ws[4] + ws[6]);
+					mc_internalComputeEdge(slab_inds, outputMesh, vs[5], vs[7], 1, x + 1, y, z + 1, size, ws[5] + ws[7]);
 
 					if (x == 0 && y == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[0], vs[4], 2, x, y, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[0], vs[4], 2, x, y, z, size, ws[0] + ws[4]);
 					if (y == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[1], vs[5], 2, x + 1, y, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[1], vs[5], 2, x + 1, y, z, size, ws[1] + ws[5]);
 					if (x == 0)
-						mc_internalComputeEdge(slab_inds, outputMesh, vs[2], vs[6], 2, x, y + 1, z, size);
-					mc_internalComputeEdge(slab_inds, outputMesh, vs[3], vs[7], 2, x + 1, y + 1, z, size);
+						mc_internalComputeEdge(slab_inds, outputMesh, vs[2], vs[6], 2, x, y + 1, z, size, ws[2] + ws[6]);
+					mc_internalComputeEdge(slab_inds, outputMesh, vs[3], vs[7], 2, x + 1, y + 1, z, size, ws[3] + ws[7]);
 
 					edge_indices[0] = slab_inds[mc_internalToIndex1DSlab(x, y, z, size)].x;
 					edge_indices[1] = slab_inds[mc_internalToIndex1DSlab(x, y + 1, z, size)].x;

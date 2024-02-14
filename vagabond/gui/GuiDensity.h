@@ -40,7 +40,8 @@ public:
 	virtual void render(SnowGL *gl);
 
 	void sampleFromOtherMap(OriginGrid<fftwf_complex> *ref, 
-	                        OriginGrid<fftwf_complex> *map);
+	                        OriginGrid<fftwf_complex> *map,
+	                        bool diff = false);
 	void populateFromMap(OriginGrid<fftwf_complex> *map);
 
 	void setReferenceDensity(OriginGrid<fftwf_complex> *ref)
@@ -73,18 +74,21 @@ public:
 		return _map;
 	}
 
-	void fromMap(AtomMap *map);
+	void tear(AtomMap *map);
+	void fromDifferences(AtomMap *map);
 	virtual void extraUniforms();
 private:
-	void objectFromMesh(MC::mcMesh &mesh);
+	void objectFromMesh(MC::mcMesh &mesh, bool diff);
 	AtomGroup *_atoms = nullptr;
 	OriginGrid<fftwf_complex> *_ref = nullptr;
 	OriginGrid<fftwf_complex> *_map = nullptr;
+	OriginGrid<fftwf_complex> *_tear = nullptr;
 
 	float _threshold = 1;
 	float _step = -1;
 	int _slice = 0;
 	int _tracking = 1;
+	bool _hasUC = true;
 };
 
 #endif
