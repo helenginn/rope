@@ -51,7 +51,8 @@ public:
 	}
 
 	void setupSlider();
-	void submitJob(float prop);
+	void submitJob(float prop, bool tear = false);
+	void submitJobAndRetrieve(float prop, bool tear = false);
 
 	void adjustTorsions();
 
@@ -95,7 +96,11 @@ private:
 	double _max = 1; 
 	double _step = 0.001;
 	float _maxTorsion = 0;
+	bool _electric = false;
+	bool _first = true;
 
+	AtomMap *_latest = nullptr;
+	DisplayUnit *_unit = nullptr;
 	TabulatedData *_data = nullptr;
 	ClusterSVD *_cluster = nullptr;
 	TorsionData *_tData = nullptr;

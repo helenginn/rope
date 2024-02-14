@@ -28,6 +28,10 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
 
+#include <vagabond/core/engine/ElectricFielder.h>
+#include <vagabond/core/engine/Task.h>
+#include <vagabond/core/grids/AtomMap.h>
+#include <vagabond/core/grids/ArbitraryMap.h>
 #include <vagabond/core/TabulatedData.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/BondSequenceHandler.h>
@@ -37,6 +41,7 @@
 #include <vagabond/core/Torsion2Atomic.h>
 #include <vagabond/core/TorsionBasis.h>
 #include <vagabond/core/Result.h>
+#include <vagabond/core/files/MtzFile.h>
 #include <vagabond/core/engine/Tasks.h>
 
 #include "AxisExplorer.h"
@@ -78,13 +83,14 @@ void AxisExplorer::setup()
 	unit->loadAtoms(grp, _instance->entity());
 	unit->displayAtoms();
 	addDisplayUnit(unit);
+	_unit = unit;
 	
 	Display::setup();
 	
 	prepareResources();
 	setupSlider();
 	
-	submitJob(0.0);
+	submitJobAndRetrieve(0.0);
 	setupColours();
 	setupColourLegend();
 	makeMenu();
@@ -92,19 +98,46 @@ void AxisExplorer::setup()
 	askForAtomMotions();
 }
 
-void AxisExplorer::submitJob(float prop)
+void AxisExplorer::submitJobAndRetrieve(float prop, bool tear)
 {
-	submitSingleAxisJob(prop, 0, Flag::AtomVector);
+	submitJob(prop, tear);
 
 	Result *r = _resources.calculator->acquireResult();
 	r->transplantPositions(_displayTargets);
+	
+	if (_latest)
+	{
+		delete _latest;
+	}
+	
+	_unit->refreshDensity(r->map);
+	_latest = r->map;
+	r->map = nullptr;
 
 	r->destroy(); 
+
+}
+
+void AxisExplorer::submitJob(float prop, bool tear)
+{
+	Task<Result, void *> *submit = nullptr;
+	CalcTask *calc = nullptr;
+	Task<BondSequence *, void *> *let_sequence_go = nullptr;
+	
+	submit = submitSingleAxisJob(prop, 0, Flag::AtomVector, &calc, 
+	                             &let_sequence_go);
+	
+	if (_electric && _unit)
+	{
+		_resources.electricField->positionsToElectricField(calc, submit,
+		                                                   let_sequence_go);
+	}
 }
 
 void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	submitJob(x);
+	submitJobAndRetrieve(x, _first);
+	_first = false;
 }
 
 void AxisExplorer::setupSlider()
@@ -176,6 +209,10 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		glm::vec2 c = button->xy();
 		Menu *m = new Menu(this, this, "options");
 		m->addOption("Table for main chain", "main_chain");
+		if (_electric)
+		{
+			m->addOption("Save electric field", "electric_field");
+		}
 		m->setup(c.x, c.y);
 		setModal(m);
 	}
@@ -184,6 +221,29 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		TableView *tv = new TableView(this, _data, 
 		                              "Main chain torsion variation");
 		tv->show();
+
+	}
+	else if (tag == "options_electric_field")
+	{
+		if (_latest)
+		{
+			Diffraction *diff = _instance->model()->getDiffraction();
+			if (!diff)
+			{
+				return;
+			}
+
+			ArbitraryMap *clear = new ArbitraryMap(*diff);
+			clear->setupFromDiffraction();
+			clear->clear();
+			ArbitraryMap *map = (*_latest)();
+			*clear += *map;
+			MtzFile file;
+			file.setMap(clear);
+			file.write_to_file("efield.mtz", 2);
+			delete map;
+			delete clear;
+		}
 
 	}
 	else if (tag == "yes_adjust")
@@ -307,6 +367,10 @@ void AxisExplorer::prepareResources()
 	_resources.sequences->setIgnoreHydrogens(true);
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
+	
+	_resources.electricField = new ElectricFielder(1);
+	_resources.electricField->supplyAtomGroup(group->atomVector());
+	_resources.electricField->setup();
 	
 	supplyTorsions(_resources.sequences->manager());
 }
