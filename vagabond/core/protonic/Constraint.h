@@ -29,6 +29,7 @@
 #include "BondAdder.h"
 #include "CountAdder.h"
 #include "Limit.h"
+#include "Stricter.h"
 
 namespace hnet
 {
@@ -89,8 +90,14 @@ struct AnyConstraint
 	enum Type
 	{
 		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, 
-		AbsentAdd, NotBrokenAdd, EiOrBond, Min, Max, Equal
+		AbsentAdd, NotBrokenAdd, EiOrBond, Min, Max, Equal, Stricter
 	};
+	
+	AnyConstraint(StricterBond *const &constraint)
+	{
+		_type = Stricter;
+		_ptr = constraint;
+	}
 	
 	AnyConstraint(MaxLimit *const &constraint)
 	{
@@ -221,6 +228,10 @@ struct AnyConstraint
 			
 			case EiOrBond:
 			delete static_cast<EitherOrBond *>(_ptr); break;
+
+			case Stricter:
+			delete static_cast<StricterBond *>(_ptr); break;
+
 
 			default: break;
 		}

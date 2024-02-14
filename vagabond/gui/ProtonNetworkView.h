@@ -30,12 +30,18 @@ class ProbeAtom;
 class HydrogenProbe;
 class ProbeBond;
 class Probe;
+class Menu;
 
 class ProtonNetworkView : public Mouse3D, public Responder<Probe>,
 public IndexResponseView
 {
 public:
 	ProtonNetworkView(Scene *scene, Network &network);
+	
+	Network &network()
+	{
+		return _network;
+	}
 
 	virtual void setup();
 	
@@ -47,6 +53,8 @@ public:
 		}
 		_active = r;
 	}
+	
+	void setMenu(Menu *menu);
 private:
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);

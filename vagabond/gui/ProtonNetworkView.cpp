@@ -21,6 +21,7 @@
 #include "ProtonNetworkView.h"
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/gui/elements/FloatingText.h>
+#include <vagabond/gui/elements/Menu.h>
 
 ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
 : Scene(scene), Mouse3D(scene), IndexResponseView(scene), _network(network)
@@ -52,12 +53,11 @@ void ProtonNetworkView::findAtomProbes()
 
 	for (BondProbe *const &probe : _network.bondProbes())
 	{
-		ProbeBond *bond = new ProbeBond(probe->display(), probe->position(),
-		                                probe->end());
-		bond->setAlpha(probe->alpha());
-		addObject(bond);
+		ProbeBond *bond = new ProbeBond(this, probe);
+		addObject((Image *)bond);
 		_bondProbes[probe] = bond;
 		probe->setResponder(this);
+		addIndexResponder(bond);
 	}
 
 	shiftToCentre(_network.centre(), 50);
@@ -71,6 +71,7 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 		_active->setHighlighted(false);
 		_active = nullptr;
 	}
+	setInformation("");
 }
 
 void ProtonNetworkView::sendObject(std::string tag, void *object)
@@ -84,7 +85,7 @@ void ProtonNetworkView::sendObject(std::string tag, void *object)
 
 	if (_bondProbes.count(p))
 	{
-		_bondProbes[p]->setAlpha(p->alpha());
+		_bondProbes[p]->updateProbe();
 	}
 }
 
@@ -93,4 +94,13 @@ void ProtonNetworkView::setup()
 	addTitle("Proton network");
 
 	findAtomProbes();
+}
+
+void ProtonNetworkView::setMenu(Menu *menu)
+{
+	float x; float y;
+	getFractionalPos(x, y);
+	menu->setup(x, y);
+
+	setModal(menu);
 }

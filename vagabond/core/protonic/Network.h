@@ -28,6 +28,7 @@
 
 class HideComplete;
 class Probe;
+class Decree;
 namespace hnet
 {
 	class Coordinated;
@@ -74,12 +75,15 @@ public:
 	
 	AtomProbe &add_probe(AtomProbe *const &probe);
 	BondProbe &add_probe(BondProbe *const &probe);
+	CountProbe &add_probe(CountProbe *const &probe);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
 
 	std::map<::Atom *, hnet::Coordinated *> &atomMap()
 	{
 		return _atomMap;
 	}
+	
+	Decree *newDecree(const std::string &str);
 private:
 	void establishAtom(::Atom *atom);
 
@@ -95,7 +99,7 @@ private:
 	void showCarboxylAtom(::Atom *atom);
 	void shareCharges(::Atom *left, ::Atom *right,
 	                 const hnet::Count::Values &allowable);
-	void shareDonors(::Atom *left, ::Atom *right,
+	void shareStrong(::Atom *left, ::Atom *right,
 	                 const hnet::Count::Values &allowable);
 
 	void findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
@@ -108,6 +112,7 @@ private:
 	std::list<AtomProbe *> _atomProbes;
 	std::list<HydrogenProbe *> _hydrogenProbes;
 	std::list<BondProbe *> _bondProbes;
+	std::list<CountProbe *> _countProbes;
 
 	std::map<Atom *, hnet::Coordinated *> _atomMap;
 	std::map<Atom *, AtomProbe *> _atom2Probe;
@@ -118,6 +123,8 @@ private:
 	AtomGroup *_group = nullptr;
 	AtomGroup *_groupAndMates = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
+	
+	std::vector<Decree *> _decrees;
 };
 
 #endif

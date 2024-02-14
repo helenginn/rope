@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include "FloatingText.h"
+#include "Library.h"
 
 FloatingText::FloatingText(std::string text, float mult, float yOff) : Text(text)
 {
@@ -35,10 +36,40 @@ void FloatingText::correctBox(float mult, float y_offset)
 		v.extra = glm::vec4(v.pos - centre, 0);
 		v.extra *= mult;
 		
-#ifdef __EMSCRIPTEN__
-//		v.extra *= 10;
-#endif
 		v.extra.y += y_offset;
 		v.pos = centre;
 	}
+}
+
+void FloatingText::changeText(const std::string &text)
+{
+	float old_w = _w;
+	float old_h = _h;
+
+	if (_texid > 0)
+	{
+		Library::getLibrary()->dropTexture(_texid);
+		_texid = 0;
+	}
+
+	GLuint tex = Library::getLibrary()->loadText(text, &_w, &_h, _type);
+	_texid = tex;
+	
+	glm::mat3x3 mat = glm::mat3(1.);
+	mat[0][0] = (float)_w / old_w;
+	mat[1][1] = (float)_h / old_h;
+
+	for (Vertex &v : _vertices)
+	{
+		float last = v.extra[3];
+		v.extra = glm::vec4(mat * glm::vec3(v.extra), last);
+	}
+
+	for (Vertex &v : _unselectedVertices)
+	{
+		float last = v.extra[3];
+		v.extra = glm::vec4(mat * glm::vec3(v.extra), last);
+	}
+
+	FloatingText::forceRender(true, true);
 }

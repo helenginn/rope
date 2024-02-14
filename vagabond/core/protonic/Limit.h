@@ -20,6 +20,7 @@
 #define __vagabond__Limit__
 
 #include "hnet.h"
+#include <climits>
 
 namespace hnet
 {

@@ -151,20 +151,37 @@ struct Connector
 	{
 		if (assign_value_without_checking(value, informant, blame))
 		{
+			if (_update)
+			{
+				_update();
+			}
 			return check_all(blame);
 		}
 
 		return true;
+	}
+	
+	void set_update(const UpdateProbe &update)
+	{
+		_update = update;
 	}
 
 	Value value()
 	{
 		return _conditions.belief();
 	}
+	
+	std::vector<Value> values()
+	{
+		Value as_one = _conditions.belief();
+		return split_into_options(as_one);
+	}
 
 	/* list of attached constraint-checking functions */
 	std::list<Checker> _checks;
 	std::list<Forget> _forgets;
+	
+	UpdateProbe _update;
 
 	/* working value associated with this connector */
 	Value _value = {};

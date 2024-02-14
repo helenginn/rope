@@ -16,67 +16,63 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EitherOrBond__
-#define __vagabond__EitherOrBond__
+#ifndef __vagabond__Stricter__
+#define __vagabond__Stricter__
 
 #include "hnet.h"
 
 namespace hnet
 {
-/* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct EitherOrBond
+/* simple constant class to impose a stricter belief when satisfying a
+ * Condition */
+struct StricterBond
 {
-	EitherOrBond(BondConnector &left, BondConnector &right)
-	: _left(left), _right(right)
+	typedef std::function<bool(const Bond::Values &)> Condition;
+
+	StricterBond(BondConnector &bond, const Condition &cond, 
+             Bond::Values impose) :
+	_condition(cond), _bond(bond), _impose(impose)
 	{
 		auto self_check = [this](void *prev) { return check(prev); };
 
-		_left.add_constraint_check(self_check);
-		_right.add_constraint_check(self_check);
-		
+		/* add this object's constraint check function to the connector */
+		_bond.add_constraint_check(self_check);
+
 		auto forget_me = [this](void *blame) { return forget(blame); };
 
-		_left.add_forget(forget_me);
-		_right.add_forget(forget_me);
+		_bond.add_forget(forget_me);
 
 		if (!check(this))
 		{
-			_left.pop_last_check(this);
-			_right.pop_last_check(this);
+			_bond.pop_last_check(this);
 
-			throw std::runtime_error("New either/or dichotomy immediately "\
+			throw std::runtime_error("New stricter condition immediately "\
 			                         "failed validation check");
+
 		}
 	}
 	
 	void forget(void *blame)
 	{
-		_left.forget(blame);
-		_right.forget(blame);
+		_bond.forget(blame);
 	}
-
+	
 	bool check(void *previous)
 	{
-		if ((_left.value() & Bond::NotBroken) && 
-		    !(_left.value() & Bond::Broken))
+		if (_condition(_bond.value()))
 		{
-			_right.assign_value(Bond::Broken, this, previous);
+			_bond.assign_value(_impose, this, previous);
 		}
-		if ((_right.value() & Bond::NotBroken) &&
-		    !(_right.value() & Bond::Broken))
-		{
-			_left.assign_value(Bond::Broken, this, previous);
-		}
-
-		bool con = (!is_contradictory(_left.value()) &&
-		            !is_contradictory(_right.value()));
 		
-		return con;
+		return !is_contradictory(_bond.value());
 	}
-
-	BondConnector &_left;
-	BondConnector &_right;
+	
+	Condition _condition;
+	BondConnector &_bond;
+	Bond::Values _impose;
 };
+
 };
 
 #endif
+

@@ -16,21 +16,19 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FloatingText__
-#define __vagabond__FloatingText__
+#ifndef __vagabond__Decree__
+#define __vagabond__Decree__
 
-#include "Text.h"
-#include <string>
-
-class FloatingText : public Text
+class Decree
 {
 public:
-	FloatingText(std::string text, float mult = 5, float yOff = 0.5);
+	Decree(const std::string &name)
+	{
+		_name = name;
+	}
 
-	void correctBox(float mult, float y_offset = 0.5);
-
-	void changeText(const std::string &text);
 private:
+	std::string _name;
 
 };
 

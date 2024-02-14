@@ -20,15 +20,32 @@
 #define __vagabond__ProbeBond__
 
 #include <vagabond/gui/elements/Image.h>
+#include <vagabond/gui/elements/IndexResponder.h>
 
-class ProbeBond : public Image
+class BondProbe;
+class ProtonNetworkView;
+
+class ProbeBond : public Image, public ButtonResponder,
+virtual public IndexResponder
 {
 public:
-	ProbeBond(const std::string &tag, const glm::vec3 &start,
-	          const glm::vec3 &end);
+	ProbeBond(ProtonNetworkView *view, BondProbe *probe);
 
+	void updateProbe();
 	void fixVertices(const glm::vec3 &start, const glm::vec3 &dir);
+	
+	virtual size_t requestedIndices();
+	
+	void reindex();
+	void interacted(int idx, bool hover, bool left);
+	void offerBondMenu();
+
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+	void declareBond(hnet::Bond::Values value);
+
+	BondProbe *_probe = nullptr;
+	ProtonNetworkView *_view = nullptr;
 
 };
 

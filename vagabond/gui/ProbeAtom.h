@@ -21,17 +21,22 @@
 
 #include <vagabond/gui/elements/FloatingText.h>
 #include <vagabond/gui/elements/IndexResponder.h>
+#include <vagabond/core/protonic/hnet.h>
 
 class Probe;
 class AtomProbe;
 class HydrogenProbe;
 class ProtonNetworkView;
 
-class ProbeAtom : public FloatingText, virtual public IndexResponder
+class ProbeAtom : public FloatingText, public ButtonResponder,
+virtual public IndexResponder
 {
 public:
 	ProbeAtom(ProtonNetworkView *view, AtomProbe *probe);
 	ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe);
+
+	void updateProbe();
+	void fullUpdate();
 
 	virtual size_t requestedIndices()
 	{
@@ -40,9 +45,12 @@ public:
 
 	virtual void interacted(int idx, bool hover, bool left);
 	virtual void reindex();
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void hoverOverAtom();
 	void offerAtomMenu();
+	void offerHydrogenMenu();
+	void declareHydrogen(hnet::Hydrogen::Values value);
 
 	Probe *_probe = nullptr;
 

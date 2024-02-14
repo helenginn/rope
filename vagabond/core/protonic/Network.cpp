@@ -20,6 +20,7 @@
 
 #include "matrix_functions.h"
 
+#include "Decree.h"
 #include "HideComplete.h"
 #include "Hydrogenate.h"
 #include "Coordinated.h"
@@ -131,34 +132,42 @@ void Network::showCarboxylAtom(::Atom *atom)
 	findAtomAndNameIt(atom, "CD", "Glu");
 }
 
-void Network::shareDonors(::Atom *left, ::Atom *right,
-                           const Count::Values &allowable)
+template <typename Obtain>
+void shareProperty(Network *me, ::Atom *left, ::Atom *right, 
+                   const Obtain &obtain, const Count::Values &allowable)
 {
-	CountConnector &sum = add(new CountConnector());
-	add_constraint(new CountConstant(sum, allowable));
+	CountConnector &sum = me->add(new CountConnector());
+	me->add_constraint(new CountConstant(sum, allowable));
 	
-	CountConnector *lConnect = _atomMap[left]->donors();
-	CountConnector *rConnect = _atomMap[right]->donors();
+	CountConnector *lConnect = obtain(left);
+	CountConnector *rConnect = obtain(right);
 
 	if (lConnect && rConnect)
 	{
-		add_constraint(new CountAdder(*lConnect, *rConnect, sum));
+		me->add_constraint(new CountAdder(*lConnect, *rConnect, sum));
 	}
+}
+
+void Network::shareStrong(::Atom *left, ::Atom *right,
+                           const Count::Values &allowable)
+{
+	auto get_strong = [this](::Atom *atom)
+	{
+		return _atomMap[atom]->strong();
+	};
+
+	shareProperty(this, left, right, get_strong, allowable);
 }
 
 void Network::shareCharges(::Atom *left, ::Atom *right,
                            const Count::Values &allowable)
 {
-	CountConnector &sum = add(new CountConnector());
-	add_constraint(new CountConstant(sum, allowable));
-	
-	CountConnector *lConnect = _atomMap[left]->charge();
-	CountConnector *rConnect = _atomMap[right]->charge();
-
-	if (lConnect && rConnect)
+	auto get_charges = [this](::Atom *atom)
 	{
-		add_constraint(new CountAdder(*lConnect, *rConnect, sum));
-	}
+		return _atomMap[atom]->charge();
+	};
+
+	shareProperty(this, left, right, get_charges, allowable);
 }
 
 ::Atom *find_partner(::Atom *atom, const std::string &search)
@@ -200,13 +209,13 @@ void Network::setupHistidine(::Atom *atom)
 	const Count::Values donors = Count::OneOrZero;
 
 	const Count::Values charge_sum = Count::OneOrZero;
-	const Count::Values charge_donors = Count::OneOrZero;
+	const Count::Values strong_sum = Count::Values(Count::One | Count::Two);
 
 	_atomMap[atom]->prepareCoordinated(charge, Count::Three, donors);
 	_atomMap[partner]->prepareCoordinated(charge, Count::Three, donors);
 	
 	shareCharges(atom, partner, charge_sum);
-	shareDonors(atom, partner, charge_donors);
+	shareStrong(atom, partner, strong_sum);
 	
 	findAtomAndNameIt(atom, "CE1", "His");
 	findAtomAndNameIt(partner, "CE1", "His");
@@ -242,6 +251,7 @@ void Network::setupCarboxylOxygen(::Atom *atom)
 
 	Count::Values charge = Count::mOneOrZero;
 	Count::Values donors = Count::One;
+	Count::Values strong_sum = Count::OneOrZero;
 
 	Count::Values charge_sum = Count::mOneOrZero;
 
@@ -249,6 +259,7 @@ void Network::setupCarboxylOxygen(::Atom *atom)
 	_atomMap[partner]->prepareCoordinated(charge, Count::Three, donors);
 	
 	shareCharges(atom, partner, charge_sum);
+	shareStrong(atom, partner, strong_sum);
 	
 	showCarboxylAtom(atom);
 	showCarboxylAtom(partner);
@@ -498,6 +509,12 @@ Network::Network()
 
 }
 
+CountProbe &Network::add_probe(CountProbe *const &probe)
+{
+	_countProbes.push_back(probe);
+	return *probe;
+}
+
 HydrogenProbe &Network::add_probe(HydrogenProbe *const &probe)
 {
 	_hydrogenProbes.push_back(probe);
@@ -517,4 +534,11 @@ BondProbe &Network::add_probe(BondProbe *const &probe)
 {
 	_bondProbes.push_back(probe);
 	return *probe;
+}
+
+Decree *Network::newDecree(const std::string &str)
+{
+	Decree *decree = new Decree(str);
+	_decrees.push_back(decree);
+	return decree;
 }

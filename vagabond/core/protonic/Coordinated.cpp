@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define HYDROGEN_BONDING_TOLERANCE (35.0f)
+#define HYDROGEN_BONDING_TOLERANCE (30.0f)
 
 #include <iostream>
 
@@ -570,8 +570,9 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 	OpSet<PairSet> accepted_relationships;
 	
 	PairSet all = bonds();
+	PairSet unpaired = all;
 
-	std::cout << "All: " << all << std::endl;
+	std::cout << "All: " << unpaired << std::endl;
 
 	// first we calculate all possible relationships between bonds
 	all_relationships = convert_pair_set_to_all_relationships(all);
@@ -580,6 +581,7 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 	for (const PairSet &group : survivor_groups)
 	{
 		std::cout << "group: " << group << std::endl;
+		unpaired -= group;
 		accepted_relationships += convert_pair_set_to_all_relationships(group);
 	}
 	
@@ -591,6 +593,16 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 	for (const PairSet &bad_pair : unwanted)
 	{
 		mutually_exclude(this, bad_pair);
+	}
+	
+	for (const ABPair &nopair : unpaired)
+	{
+		if (nopair.second)
+		{
+			add_constraint(new BondConstant(*nopair.second, Bond::Broken));
+
+		}
+
 	}
 	
 	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
@@ -679,6 +691,7 @@ void trappedAdder(Coordinated *me, hnet::CountConnector *adder,
 
 void Coordinated::attachAdderConstraints()
 {
+	std::cout << "Adding adder constraints to " << _atom->desc() << std::endl;
 	try
 	{
 		trappedAdder<StrongAdder>(this, _strong, "strong adder");
@@ -726,7 +739,7 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	add_constraint(new CountConstant(valency, remaining_valency));
 	
 	/* present bonds are the sum of weak and strong */
-	add_constraint(new CountAdder(expl_strong, expl_weak, expl_present));
+//	add_constraint(new CountAdder(expl_strong, expl_weak, expl_present));
 
 	/* vacancies are the sum of weak bonds and absent bonds */
 	add_constraint(new CountAdder(expl_absent, expl_weak, expl_vacancies));
@@ -746,6 +759,36 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_present = &expl_present;
 	_absent = &expl_absent;
 	_expl_bonds = &expl_bonds;
+
+	auto can_be_present_and_cannot_be_broken = [](const Bond::Values &value) 
+	{
+		bool can_be_present = false;
+		bool can_be_broken = true;
+		if ((value & Bond::NotBroken) && !(value & Bond::Broken))
+		{
+			can_be_broken = false;
+		}
+
+		if ((value & Bond::Present))
+		{
+			can_be_present = true;
+		}
+		
+		return (can_be_present && !can_be_broken);
+	};
+
+	for (const ABPair &bond : _bonds)
+	{
+		add_constraint(new StricterBond(*bond.second, 
+		                                can_be_present_and_cannot_be_broken,
+		                                Bond::Present));
+	}
+	
+	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, _atom));
+	_charge->set_update([&probe, this]()
+	{
+		std::cout << _atom->desc() << " charge: " << probe.display() << std::endl;
+	});
 }
 
 ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)

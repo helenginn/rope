@@ -41,6 +41,7 @@ namespace Bond
 		Contradiction =  (0),
 		Absent        =  (1 << 0),
 		NotAbsent     =  (1 << 1 | 1 << 2 | 1 << 3),
+		AbsentOrWeak  =  (1 << 0 | 1 << 1),
 		Weak          =  (1 << 1),
 		NotWeak       =  (1 << 0 | 1 << 2 | 1 << 3),
 		Strong        =  (1 << 2),
@@ -232,6 +233,7 @@ inline bool is_contradictory(const Count::Values &val)
 
 /* function signatures */
 
+typedef std::function<void()> UpdateProbe;
 typedef std::function<bool(void *previous)> Checker;
 typedef std::function<void(void *previous)> Forget;
 
@@ -287,6 +289,10 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 
 		case Bond::Absent:
 		ss << std::string("Absent");
+		break;
+
+		case Bond::AbsentOrWeak:
+		ss << std::string("AbsentOrWeak");
 		break;
 
 		case Bond::NotAbsent:
@@ -488,6 +494,24 @@ inline std::vector<int> possible_values(const Count::Values &count)
 	
 	return results;
 };
+
+template <typename Type>
+std::vector<Type> split_into_options(const Type &belief)
+{
+	std::vector<Type> results;
+	for (int i = 0; i < 32; i++)
+	{
+		Type check = (Type)(1 << i);
+		Type isolated = (Type)(belief & check);
+
+		if (!is_contradictory(isolated))
+		{
+			results.push_back(isolated);
+		}
+	}
+	
+	return results;
+}
 
 };
 

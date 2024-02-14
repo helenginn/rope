@@ -37,6 +37,16 @@ public:
 
 	}
 	
+	const glm::vec3 colour() const
+	{
+		return _colour;
+	}
+	
+	void setColour(const glm::vec3 &colour)
+	{
+		_colour = colour;
+	}
+
 	void setPosition(const glm::vec2 &position)
 	{
 		_pos = glm::vec3(position, Z_DEF);
@@ -53,6 +63,7 @@ public:
 	}
 	
 	virtual bool is_text() = 0;
+	virtual std::string display() = 0;
 
 	virtual bool is_atom()
 	{
@@ -71,16 +82,34 @@ public:
 		}
 		sendResponse("alpha", this);
 	}
-	
+
 	float alpha() const
 	{
 		return _alpha;
 	}
 
+	void setMult(const float &m)
+	{
+		_mult = m;
+	}
+	
+	float mult()
+	{
+		return _mult;
+	}
+	
+	::Atom *const &atom() const
+	{
+		return _atom;
+	}
+	
+	Atom *_atom = nullptr;
 	glm::vec3 _pos = {};
 	glm::vec3 _init = {};
 	
 	std::vector<Probe *> _others;
+	glm::vec3 _colour = {};
+	float _mult = 25;
 	float _alpha = 0.f;
 };
 
@@ -107,37 +136,12 @@ public:
 		return true;
 	}
 	
-	const glm::vec3 colour() const
-	{
-		return _colour;
-	}
-	
-	void setColour(const glm::vec3 &colour)
-	{
-		_colour = colour;
-	}
-
 	virtual bool is_atom()
 	{
 		return true;
 	}
 	
-	void setMult(const float &m)
-	{
-		_mult = m;
-	}
-	
-	float mult()
-	{
-		return _mult;
-	}
-	
-	::Atom *const &atom() const
-	{
-		return _atom;
-	}
-	
-	std::string display()
+	virtual std::string display()
 	{
 		if (_text.length())
 		{
@@ -187,10 +191,7 @@ public:
 	}
 
 	std::string _text;
-	float _mult = 25;
-	glm::vec3 _colour = {};
 	hnet::AtomConnector &_obj;
-	Atom *_atom = nullptr;
 };
 
 class HydrogenProbe : public Probe
@@ -208,7 +209,7 @@ public:
 		right.register_probe(this);
 	}
 	
-	std::string display()
+	virtual std::string display()
 	{
 		std::string str;
 		hnet::Hydrogen::Values val = _obj.value();
@@ -292,7 +293,7 @@ public:
 		return false;
 	}
 	
-	std::string display()
+	virtual std::string display()
 	{
 		std::string str;
 		hnet::Bond::Values val = _obj.value();
@@ -339,6 +340,46 @@ public:
 	hnet::BondConnector &_obj;
 	Probe &_left;
 	Probe &_right;
+};
+
+class CountProbe : public Probe
+{
+public:
+	CountProbe(hnet::CountConnector &obj, Atom *atom) :
+	_obj(obj)
+	{
+		_pos = atom->initialPosition();
+		_pos = _init;
+		_atom = atom;
+	}
+
+	virtual bool is_text()
+	{
+		return false;
+	}
+	
+	virtual std::string display()
+	{
+		std::string str;
+		hnet::Count::Values val = _obj.value();
+		std::vector<int> options = hnet::possible_values(val);
+
+		std::string list;
+		for (const int &opt : options)
+		{
+			list += std::to_string(opt) + "/";
+		}
+		list.pop_back();
+		
+		return list;
+	}
+
+	virtual bool is_certain()
+	{
+		return _obj.is_certain();
+	}
+
+	hnet::CountConnector &_obj;
 };
 
 #endif
