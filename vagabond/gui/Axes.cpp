@@ -231,7 +231,7 @@ void Axes::reindex()
 	{
 		for (size_t j = 0; j < 4; j++)
 		{
-			_vertices[i * 4 + j].extra[0] = i + 1 + offset;
+			_vertices[i * 4 + j].extra[3] = i + 1 + offset;
 		}
 	}
 }
