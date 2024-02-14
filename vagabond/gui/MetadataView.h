@@ -21,13 +21,11 @@
 
 #include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/Scene.h>
-#include "ExportsCSV.h"
 
 class Metadata;
 class ChooseHeader;
 
-class MetadataView : public Scene, public Responder<ChooseHeader>,
-ExportsCSV
+class MetadataView : public Scene, public Responder<ChooseHeader>
 {
 public:
 	MetadataView(Scene *prev, Metadata *md);
@@ -38,7 +36,6 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 
 protected:
-	virtual void supplyCSV(std::string indicator = "");
 
 private:
 	Metadata *_md = nullptr;

@@ -47,7 +47,6 @@ void MetadataView::setup()
 	addTitle("Metadata summary - " + _md->source());
 
 	{
-		setExportHandler(this);
 		TextButton *t = new TextButton("View data", this);
 		t->setRight(0.9, 0.1);
 		t->setReturnTag("view");
@@ -85,11 +84,6 @@ void MetadataView::setup()
 		t->setReturnTag("add");
 		addObject(t);
 	}
-}
-
-void MetadataView::supplyCSV(std::string indicator)
-{
-	_csv = _md->asCSV();
 }
 
 void MetadataView::buttonPressed(std::string tag, Button *button)
@@ -141,8 +135,7 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 		TableView *view = new TableView(this, _md->asModelData(), title);
 		view->show();
 	}
-	
-	ExportsCSV::buttonPressed(tag, button);
+
 	Scene::buttonPressed(tag, button);
 }
 
