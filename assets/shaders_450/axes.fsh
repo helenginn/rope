@@ -33,7 +33,7 @@ void main()
 	}
 
 	result += vColor;
-	ValIndex = uint(vExtra.x);
+	ValIndex = uint(vExtra.w);
 	FragColor = result;
 }
 

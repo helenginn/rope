@@ -132,7 +132,7 @@ void Display::setup()
 	}
 #endif
 
-	IndexResponseView::setup();
+//	IndexResponseView::setup();
 }
 
 void Display::buttonPressed(std::string tag, Button *button)

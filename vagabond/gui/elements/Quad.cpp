@@ -74,35 +74,9 @@ void Quad::render(SnowGL *sender)
 void Quad::extraUniforms()
 {
 	{
-		const char *uniform_name = "horizontal";
-		GLuint pos = glGetUniformLocation(_program, uniform_name);
-		glUniform1i(pos, _mode);
-	}
-
-	{
 		const char *uniform_name = "mode";
 		GLuint pos = glGetUniformLocation(_program, uniform_name);
 		glUniform1i(pos, _mode);
-	}
-
-	{
-		const char *uniform_name = "threshold";
-		GLuint pos = glGetUniformLocation(_program, uniform_name);
-		glUniform1f(pos, _threshold);
-	}
-
-	{
-		const char *uniform_name = "other";
-		GLuint pos = glGetUniformLocation(_program, uniform_name);
-		glUniform1f(pos, _other);
-	}
-
-	{
-		/*
-		const char *uniform_name = "weight";
-		GLuint pos = glGetUniformLocation(_program, uniform_name);
-		glUniform1fv(pos, _count, _dist);
-		*/
 	}
 
 	GLint uTex = glGetUniformLocation(_program, "pic_tex");

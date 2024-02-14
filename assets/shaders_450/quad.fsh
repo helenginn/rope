@@ -7,13 +7,15 @@ uniform sampler2D pic_tex;
 uniform sampler2D bright_tex;
 
 uniform int mode;
-uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216,
-								   0.054054, 0.016216);
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out uint ValIndex;
 
 void main()
 {
+	float weight[5] = float[] (0.227027, 0.1945946, 0.1216216,
+	                           0.054054, 0.016216);
+
 	if (mode == 2)
 	{
 		vec3 result = texture(pic_tex, vTex).rgb;
