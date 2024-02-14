@@ -29,7 +29,6 @@ public:
 protected:
 	std::string _text;
 
-private:
 	void setInitialText(std::string text);
 	virtual void makeQuad();
 	int _w = 0;
