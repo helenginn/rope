@@ -20,6 +20,8 @@
 #define __vagabond__ElementTypes__
 
 #include <vector>
+#include "grids/QuickSegment.h"
+#include "AtomPosMap.h"
 
 namespace Flag
 {
@@ -54,6 +56,7 @@ class AtomMap;
 class AnisoMap;
 class AtomSegment;
 class BondSequence;
+class QuickSegment;
 class ElementSegment;
 
 template <typename I, typename O> class Task;
@@ -61,7 +64,7 @@ typedef Task<BondSequence *, BondSequence *> CalcTask;
 
 struct SegmentPosList
 {
-	void operator=(ElementSegment *const &seg)
+	void operator=(QuickSegment *const &seg)
 	{
 		segment = seg;
 	}
@@ -71,13 +74,19 @@ struct SegmentPosList
 		positions = pos;
 	}
 
-	ElementSegment *segment = nullptr;
+	void operator=(AtomPosList *const &pos) // for electric field
+	{
+		posList = pos;
+	}
+
+	QuickSegment *segment = nullptr;
 	std::vector<glm::vec3> *positions = nullptr;
+	AtomPosList *posList = nullptr;
 };
 
 struct SegmentAddition
 {
-	void operator=(ElementSegment *const &seg)
+	void operator=(QuickSegment *const &seg)
 	{
 		elements = seg;
 	}
@@ -87,7 +96,7 @@ struct SegmentAddition
 		atoms = seg;
 	}
 
-	ElementSegment *elements = nullptr;
+	QuickSegment *elements = nullptr;
 	AtomSegment *atoms = nullptr;
 };
 
@@ -111,7 +120,7 @@ struct GetEle
 {
 	Task<BondSequence *, std::vector<glm::vec3> *> *get_pos = nullptr;
 	Task<void *, ElementSegment *> *grab_segment = nullptr;
-	Task<SegmentPosList, ElementSegment *> *put_atoms_in = nullptr;
+	Task<SegmentPosList, QuickSegment *> *put_atoms_in = nullptr;
 	Task<SegmentAddition, SegmentAddition> *summation = nullptr;
 	Task<SegmentAddition, void *> *let_go = nullptr;
 };

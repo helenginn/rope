@@ -16,36 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomMap__
-#define __vagabond__AtomMap__
+#ifndef __vagabond__TransferHandler__
+#define __vagabond__TransferHandler__
 
-#include "FFTCubicGrid.h"
+#include "engine/Handler.h"
 
-class ArbitraryMap;
-class AtomSegment;
+class Atom;
 
-class AtomMap : public FFTCubicGrid<fftwf_complex>
+class TransferHandler : public Handler
 {
 public:
-	AtomMap();
-	AtomMap(AtomSegment &other);
-	AtomMap(AtomMap &other);
-	ArbitraryMap *operator()();
-	~AtomMap();
+	TransferHandler(int mapNum);
 
-	virtual void multiply(float scale);
-	void copyData(AtomSegment &other);
+	void supplyAtomGroup(const std::vector<Atom *> &all);
 	
-	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
-
-	virtual float elementValue(long i) const
+	/** set length dimension of cubic voxel
+	 * 	@param dim length in Angstroms */
+	void setCubeDim(float dim)
 	{
-		return _data[i][0];
+		_cubeDim = dim;
 	}
+protected:
+	void getRealDimensions(const std::vector<Atom *> &sub);
+
+	float _cubeDim = 0.6;
+	int _mapNum = 2;
 	
-	float *arrayPtr();
-private:
-	float *_realOnly = nullptr;
+	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+	glm::vec3 _max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	glm::vec3 _pad = glm::vec3(2, 2, 2);
 
 };
 

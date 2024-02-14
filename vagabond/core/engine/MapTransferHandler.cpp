@@ -20,15 +20,13 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/Task.h"
 #include "engine/ElementTypes.h"
-#include "AtomGroup.h"
-#include "Atom.h"
 #include "grids/ElementSegment.h"
 #include "grids/AtomSegment.h"
 #include "grids/FFTCubicGrid.h"
 
 MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &elements,
                                        int mapNum)
-: _mapNum(mapNum)
+: TransferHandler(mapNum)
 {
 	supplyElementList(elements);
 }
@@ -36,37 +34,6 @@ MapTransferHandler::MapTransferHandler(const std::map<std::string, int> &element
 MapTransferHandler::~MapTransferHandler()
 {
 
-}
-
-void MapTransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
-{
-	getRealDimensions(all);
-}
-
-void MapTransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
-{
-	_min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
-	_max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-	for (size_t i = 0; i < sub.size(); i++)
-	{
-		glm::vec3 pos = sub.at(i)->initialPosition();
-		
-		for (size_t j = 0; j < 3; j++)
-		{
-			_min[j] = std::min(_min[j], pos[j]);
-			_max[j] = std::max(_max[j], pos[j]);
-		}
-	}
-	
-	if (sub.size() == 0)
-	{
-		_min = glm::vec3(0.);
-		_max = glm::vec3(0.);
-	}
-
-	_min -= _pad * 2.f;
-	_max += _pad * 2.f;
 }
 
 void MapTransferHandler::supplyElementList(std::map<std::string, int> elements)
@@ -161,9 +128,9 @@ void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
 
 		jobs.grab_segment = grab;
 
-		auto put_atoms_in = [](SegmentPosList spl) -> ElementSegment *
+		auto put_atoms_in = [](SegmentPosList spl) -> QuickSegment *
 		{
-			ElementSegment *segment = spl.segment;
+			QuickSegment *segment = spl.segment;
 			std::vector<glm::vec3> *positions = spl.positions;
 			
 			for (const glm::vec3 &p : *positions)
@@ -178,7 +145,7 @@ void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
 		};
 
 		auto *put = 
-		new Task<SegmentPosList, ElementSegment *>(put_atoms_in, 
+		new Task<SegmentPosList, QuickSegment *>(put_atoms_in, 
 		                                       "put " + ele + " atoms in");
 		jobs.put_atoms_in = put;
 
@@ -186,9 +153,9 @@ void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
 
 		auto sum = [desc](SegmentAddition add) -> SegmentAddition
 		{
-			ElementSegment *element = add.elements;
+			QuickSegment *element = add.elements;
 			AtomSegment *atoms = add.atoms;
-			atoms->addElementSegment(element);
+			atoms->addQuickSegment(element);
 
 			return add;
 		};
@@ -198,7 +165,7 @@ void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
 		
 		auto let_seg_go = [this](SegmentAddition add) -> void *
 		{
-			returnSegment(add.elements);
+			returnSegment(static_cast<ElementSegment *>(add.elements));
 			return nullptr;
 		};
 		

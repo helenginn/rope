@@ -19,22 +19,18 @@
 #ifndef __vagabond__ElementSegment__
 #define __vagabond__ElementSegment__
 
-#include "FFTCubicGrid.h"
+#include "QuickSegment.h"
 
-class AtomGroup;
-struct Job;
-
-struct VoxelElement
-{
-	fftwf_complex value;
-	float scatter = 0;
-};
-
-class ElementSegment : public FFTCubicGrid<VoxelElement>
+class ElementSegment : public QuickSegment
 {
 public:
-	ElementSegment();
-	
+	ElementSegment() : 
+	CubicGrid<VoxelElement>(0, 0, 0),
+	QuickSegment()
+	{
+
+	}
+
 	/** set the periodic table element symbol
 	 * @param element upper case element symbol e.g. CA for calcium. */
 	void setElement(std::string element);
@@ -44,39 +40,9 @@ public:
 		return _elementSymbol;
 	}
 	
-	void setJob(Job *job)
-	{
-		_job = job;
-	}
-	
-	Job *const job() const
-	{
-		return _job;
-	}
-
-	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
-	void addDensity(glm::vec3 real, float density);
-	const float &density(int i, int j) const;
-	void printMap();
-	void transferPlans(ElementSegment *other);
-	
-	void calculateMap();
-
-	virtual float sum();
-	void clear();
-	virtual void multiply(float scale);
-
-	static void findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
-	                           glm::vec3 max, float cubeDim);
-
-	virtual float elementValue(long i) const
-	{
-		return _data[i].value[0];
-	}
 protected:
 
 private:
-	Job *_job;
 	std::string _elementSymbol;
 
 };

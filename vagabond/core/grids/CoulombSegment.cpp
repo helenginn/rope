@@ -16,37 +16,40 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomMap__
-#define __vagabond__AtomMap__
+#include "CoulombSegment.h"
 
-#include "FFTCubicGrid.h"
-
-class ArbitraryMap;
-class AtomSegment;
-
-class AtomMap : public FFTCubicGrid<fftwf_complex>
+void CoulombSegment::prepare()
 {
-public:
-	AtomMap();
-	AtomMap(AtomSegment &other);
-	AtomMap(AtomMap &other);
-	ArbitraryMap *operator()();
-	~AtomMap();
-
-	virtual void multiply(float scale);
-	void copyData(AtomSegment &other);
-	
-	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
-
-	virtual float elementValue(long i) const
+	do_op_on_centred_index([this](int i, int j, int k)
 	{
-		return _data[i][0];
+		float res = 1 / resolution(i, j, k);
+		float sqrt_exp = res / 0.55;
+		float val = exp(-sqrt_exp * sqrt_exp);
+
+		VoxelElement &ve = this->element(i, j, k);
+		ve.scatter = val;
+	});
+}
+
+AtomMap *CoulombSegment::convertToMap() const
+{
+	AtomMap *map = new AtomMap();
+	map->Grid::setDimensions(nx(), ny(), nz(), false);
+
+	map->setOrigin(origin());
+	map->setRealDim(realDim());
+	
+	for (size_t i = 0; i < nn(); i++)
+	{
+		float r = density(i, 0);
+		map->element(i)[0] = r;
 	}
 	
-	float *arrayPtr();
-private:
-	float *_realOnly = nullptr;
+	return map;
+}
 
-};
-
-#endif
+void CoulombSegment::calculateMap()
+{
+	QuickSegment::calculateMap();
+	fft();
+}

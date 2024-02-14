@@ -19,7 +19,7 @@
 #ifndef __vagabond__MapTransferHandler__
 #define __vagabond__MapTransferHandler__
 
-#include "engine/Handler.h"
+#include "TransferHandler.h"
 #include "BondSequence.h"
 
 class AtomGroup;
@@ -33,20 +33,13 @@ class PointStoreHandler;
  * electron distribution maps (density/electrostatic potential) for each
  * individual element. */
 
-class MapTransferHandler : public Handler
+class MapTransferHandler : public TransferHandler
 {
 public:
 	MapTransferHandler(const std::map<std::string, int> &elements,
 	                   int number_of_maps);
 	
 	~MapTransferHandler();
-
-	/**let the MTH know which atoms will be involved in the calculation.
-	 * Atoms in @param all but not in @param sub will be included as part
-	 * of the 'constant' segment. 
-	 * @param all every atom to be considered in the analysis
-	 * @param sub sub-group of atoms which will change during analysis */
-	void supplyAtomGroup(const std::vector<Atom *> &all);
 
 	/**prepares MapTransfers and appropriate thread pools etc. 
 	 * @param elements map connecting element symbol e.g. Ca to number of
@@ -56,13 +49,6 @@ public:
 	/** after supplying atom groups and element list, run setup() to
 	 *  allocate internal resources */
 	void setup();
-	
-	/** set length dimension of cubic voxel
-	 * 	@param dim length in Angstroms */
-	void setCubeDim(float dim)
-	{
-		_cubeDim = dim;
-	}
 
 	ElementSegment *acquireSegment(std::string ele);
 	void returnSegment(ElementSegment *segment);
@@ -83,24 +69,13 @@ public:
 	{
 		return _segments[i];
 	}
-
-	void joinThreads();
 private:
 	void allocateSegments();
-	void getRealDimensions(const std::vector<Atom *> &sub);
 	ElementSegment *acquireSegmentIfAvailable(std::string ele);
 
 	std::vector<ElementSegment *> _segments;
 	std::vector<std::string> _elements;
 	std::map<std::string, Pool<ElementSegment *> > _pools;
-	
-	float _cubeDim = 0.6;
-	int _threads = 2;
-	int _mapNum = 2;
-	
-	glm::vec3 _min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
-	glm::vec3 _max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-	glm::vec3 _pad = glm::vec3(2, 2, 2);
 };
 
 #endif

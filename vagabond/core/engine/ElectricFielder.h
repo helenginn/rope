@@ -16,36 +16,40 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomMap__
-#define __vagabond__AtomMap__
+#ifndef __vagabond__ElectricFielder__
+#define __vagabond__ElectricFielder__
 
-#include "FFTCubicGrid.h"
+#include "ElementTypes.h"
+#include "TransferHandler.h"
+#include "AtomPosMap.h"
 
-class ArbitraryMap;
-class AtomSegment;
+class CoulombSegment;
+class BondSequence;
 
-class AtomMap : public FFTCubicGrid<fftwf_complex>
+template <class X, class Y> class Task;
+
+class ElectricFielder : public TransferHandler
 {
 public:
-	AtomMap();
-	AtomMap(AtomSegment &other);
-	AtomMap(AtomMap &other);
-	ArbitraryMap *operator()();
-	~AtomMap();
+	ElectricFielder(int mapNum) : TransferHandler(mapNum) { }
 
-	virtual void multiply(float scale);
-	void copyData(AtomSegment &other);
-	
-	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
+	void setup();
+	void allocateSegments();
 
-	virtual float elementValue(long i) const
+	CoulombSegment *acquireSegment();
+	void returnSegment(CoulombSegment *segment);
+
+	const CoulombSegment *segment(int i) const
 	{
-		return _data[i][0];
+		return _segments[i];
 	}
-	
-	float *arrayPtr();
+
+	void positionsToElectricField(CalcTask *hook,
+	                              Task<Result, void *> *submit,
+	                              Task<BondSequence *, void *> *let_sequence_go);
 private:
-	float *_realOnly = nullptr;
+	Pool<CoulombSegment *> _pool;
+	std::vector<CoulombSegment *> _segments;
 
 };
 

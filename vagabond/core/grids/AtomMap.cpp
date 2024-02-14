@@ -20,6 +20,16 @@
 #include "AtomSegment.h"
 #include "ArbitraryMap.h"
 
+AtomMap::AtomMap()
+: Grid<fftwf_complex>(0, 0, 0)
+, OriginGrid<fftwf_complex>(0, 0, 0)
+, CubicGrid<fftwf_complex>(0, 0, 0)
+, FFT<fftwf_complex>(0, 0, 0)
+, FFTCubicGrid<fftwf_complex>(0, 0, 0)
+{
+
+}
+
 AtomMap::AtomMap(AtomSegment &other)
 : Grid<fftwf_complex>(other.nx(), other.ny(), other.nz())
 , OriginGrid<fftwf_complex>(other.nx(), other.ny(), other.nz())
@@ -59,12 +69,16 @@ void AtomMap::copyData(AtomSegment &other)
 
 float *AtomMap::arrayPtr()
 {
-       for (size_t i = 0; i < nn(); i++)
-       {
-               _realOnly[i] = elementValue(i);
-       }
+	if (!_realOnly)
+	{
+		_realOnly = new float[nn()];
+	}
+	for (size_t i = 0; i < nn(); i++)
+	{
+		_realOnly[i] = elementValue(i);
+	}
 
-       return _realOnly;
+	return _realOnly;
 }
 
 AtomMap::AtomMap(AtomMap &other)
@@ -120,3 +134,4 @@ void AtomMap::populatePlan(FFT<fftwf_complex>::PlanDims &dims)
 
 	_planStart = &_data[0];
 }
+

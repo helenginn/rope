@@ -16,50 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomSegment__
-#define __vagabond__AtomSegment__
+#ifndef __vagabond__QuickSegment__
+#define __vagabond__QuickSegment__
 
 #include "FFTCubicGrid.h"
-#include <atomic>
 
-#define FIXED_MULTIPLY (1000000.f)
+class AtomGroup;
 
-class QuickSegment;
-
-/** \class AtomSegment
- *  class for atomically adding map values. Because float isn't intrinsically 
- *  supported in std:atomic, will have to go for fixed-point number. */
-
-struct Density
+struct VoxelElement
 {
-	std::atomic<long> value[2];
+	fftwf_complex value;
+	float scatter = 0;
 };
 
-class AtomSegment : public FFTCubicGrid<Density>
+class QuickSegment : public FFTCubicGrid<VoxelElement>
 {
 public:
-	AtomSegment();
+	QuickSegment();
 
-	template <class T>
-	void getDimensionsFrom(const FFTCubicGrid<T> &other)
-	{
-		const int &nx = other.nx();
-		const int &ny = other.ny();
-		const int &nz = other.nz();
-		
-		setDimensions(nx, ny, nz, false);
-		setOrigin(other.origin());
-		setRealDim(other.realDim());
-	}
+	virtual void populatePlan(FFT<VoxelElement>::PlanDims &dims);
+	void addDensity(glm::vec3 real, float density);
+	const float &density(int i, int j) const;
+	void printMap();
+	void transferPlans(QuickSegment *other);
 	
-	void addQuickSegment(QuickSegment *seg);
-	float density(int i, int j);
-	
+	virtual void calculateMap();
+
+	virtual float sum();
 	void clear();
+	virtual void multiply(float scale);
+
+	static void findDimensions(int &nx, int &ny, int &nz, glm::vec3 min,
+	                           glm::vec3 max, float cubeDim);
 
 	virtual float elementValue(long i) const
 	{
-		return _data[i].value[0] / (float)FIXED_MULTIPLY;
+		return _data[i].value[0];
 	}
 private:
 

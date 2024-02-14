@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "ElementSegment.h"
+#include "QuickSegment.h"
 #include "AtomSegment.h"
 
 AtomSegment::AtomSegment()
@@ -30,7 +30,7 @@ AtomSegment::AtomSegment()
 	this->Grid::setDimensions(nx, ny, nz);
 }
 
-void AtomSegment::addElementSegment(ElementSegment *seg)
+void AtomSegment::addQuickSegment(QuickSegment *seg)
 {
 	if (seg->nn() != nn())
 	{

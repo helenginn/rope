@@ -16,37 +16,44 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AtomMap__
-#define __vagabond__AtomMap__
+#include "TransferHandler.h"
+#include "AtomGroup.h"
+#include "Atom.h"
 
-#include "FFTCubicGrid.h"
-
-class ArbitraryMap;
-class AtomSegment;
-
-class AtomMap : public FFTCubicGrid<fftwf_complex>
+TransferHandler::TransferHandler(int mapNum)
+: _mapNum(mapNum)
 {
-public:
-	AtomMap();
-	AtomMap(AtomSegment &other);
-	AtomMap(AtomMap &other);
-	ArbitraryMap *operator()();
-	~AtomMap();
 
-	virtual void multiply(float scale);
-	void copyData(AtomSegment &other);
-	
-	virtual void populatePlan(FFT<fftwf_complex>::PlanDims &dims);
+}
 
-	virtual float elementValue(long i) const
+void TransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
+{
+	getRealDimensions(all);
+}
+
+void TransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
+{
+	_min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
+	_max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (size_t i = 0; i < sub.size(); i++)
 	{
-		return _data[i][0];
+		glm::vec3 pos = sub.at(i)->initialPosition();
+		
+		for (size_t j = 0; j < 3; j++)
+		{
+			_min[j] = std::min(_min[j], pos[j]);
+			_max[j] = std::max(_max[j], pos[j]);
+		}
 	}
 	
-	float *arrayPtr();
-private:
-	float *_realOnly = nullptr;
+	if (sub.size() == 0)
+	{
+		_min = glm::vec3(0.);
+		_max = glm::vec3(0.);
+	}
 
-};
+	_min -= _pad * 2.f;
+	_max += _pad * 2.f;
+}
 
-#endif
