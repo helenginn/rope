@@ -67,5 +67,5 @@ bool Ligand::atomBelongsToInstance(Atom *a)
 
 const std::string Ligand::id() const
 {
-	return _anchorDesc;
+	return _model_id + ":" + _anchorDesc;
 }
