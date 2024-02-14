@@ -42,7 +42,7 @@ ClusterView::ClusterView() : PointyView()
 
 ClusterView::~ClusterView()
 {
-	wait();
+	waitForInvert();
 }
 
 void ClusterView::updatePoints()
@@ -61,7 +61,10 @@ void ClusterView::updatePoints()
 
 void ClusterView::additionalJobs()
 {
-	_invert = new std::thread(ClusterView::invertSVD, this);
+	if (_inverted)
+	{
+		_invert = new std::thread(ClusterView::invertSVD, this);
+	}
 }
 
 void ClusterView::prioritiseMetadata(std::string key)
@@ -218,11 +221,6 @@ void ClusterView::interacted(int rawidx, bool hover, bool left)
 	}
 }
 
-void ClusterView::respond()
-{
-	wait();
-}
-
 void ClusterView::waitForInvert()
 {
 	if (_invert)
@@ -232,37 +230,7 @@ void ClusterView::waitForInvert()
 		_invert = nullptr;
 	}
 }
-
-void ClusterView::wait()
-{
-	if (_worker)
-	{
-		passiveWait();
-		_worker->join();
-		delete _worker;
-		_worker = nullptr;
-		_cv.notify_all();
-	}
-}
-
-void ClusterView::setFinish(bool finish)
-{
-	std::unique_lock<std::mutex> lock(_lockPopulating);
-	_finish = finish;
-}
 	
-void ClusterView::passiveWait()
-{
-	std::unique_lock<std::mutex> lock(_lockPopulating);
-	if (!_running)
-	{
-		return;
-	}
-
-	_finish = true;
-	_cv.wait(lock);
-}
-
 void ClusterView::invertSVD(ClusterView *me)
 {
 	if (me->_cx)
@@ -274,6 +242,7 @@ void ClusterView::invertSVD(ClusterView *me)
 		{
 			me->_cx->calculateInverse();
 		}
+		me->_inverted = true;
 	}
 
 }

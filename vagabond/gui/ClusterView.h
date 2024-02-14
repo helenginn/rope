@@ -37,8 +37,7 @@ class ObjectData;
 class ConfSpaceView;
 
 class ClusterView : public PointyView,
-public Progressor,
-public Responder<Manager<Path>>
+public Progressor
 {
 public:
 	ClusterView();
@@ -91,8 +90,6 @@ public:
 	
 	virtual void interacted(int idx, bool hover, bool left = true);
 	virtual void selected(int idx, bool inverse);
-
-	virtual void respond();
 	
 	virtual bool selectable() const
 	{
@@ -103,16 +100,12 @@ public:
 	void deselect();
 private:
 	static void invertSVD(ClusterView *me);
-	void wait();
-	void passiveWait();
 	void waitForInvert();
 
 	void applyVaryColour(const Rule &r);
 	void applyChangeIcon(const Rule &r);
 	
 	bool _updatingProgressBar = false;
-	
-	void setFinish(bool finish);
 
 	ClusterSVD *_cx = nullptr;
 	FloatingText *_text = nullptr;
@@ -121,15 +114,14 @@ private:
 	std::map<const Rule *, std::vector<HasMetadata *>> _members;
 	std::map<int, int> _point2Index;
 	
-	std::thread *_worker = nullptr;
 	std::thread *_invert = nullptr;
+	std::atomic<bool> _inverted{false};
 
 	std::atomic<bool> _finish{false}, _running{false};
 	std::condition_variable _cv;
 	
 	ObjectData *_data = nullptr;
 	ClusterView *_inherit = nullptr;
-	std::mutex _lockPopulating;
 	
 	int _clusterVersion = 0;
 };
