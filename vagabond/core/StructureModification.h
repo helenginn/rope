@@ -40,6 +40,7 @@ class MapTransferHandler;
 class MapSumHandler;
 class ImplicitBHandler;
 class CorrelationHandler;
+class ElectricFielder;
 class AtomContent;
 class Instance;
 class Tasks;
@@ -103,6 +104,7 @@ public:
 		MapSumHandler *summations = nullptr;
 		ImplicitBHandler *implicits = nullptr;
 		CorrelationHandler *correlations = nullptr;
+		ElectricFielder *electricField = nullptr;
 		Tasks *tasks = nullptr;
 		
 		void allocateMinimum(int threads);
@@ -120,7 +122,12 @@ protected:
 	}
 
 	virtual void prepareResources() {};
-	void submitSingleAxisJob(float prop, float ticket, Flag::Extract extraction);
+
+	Task<Result, void *> *submitSingleAxisJob(float prop, float ticket,
+	                                          Flag::Extract extraction,
+	                                          CalcTask **task = nullptr,
+	                                          Task<BondSequence *, void *> 
+	                                          **letgo = nullptr);
 
 	void cleanup();
 

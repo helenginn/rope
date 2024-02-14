@@ -20,6 +20,7 @@
 #include "engine/MapTransferHandler.h"
 #include "engine/MapSumHandler.h"
 #include "engine/CorrelationHandler.h"
+#include "engine/ElectricFielder.h"
 #include "engine/ElementTypes.h"
 #include "engine/Tasks.h"
 
@@ -50,12 +51,16 @@ void StructureModification::cleanup()
 	delete _resources.perElements;
 	delete _resources.summations;
 	delete _resources.correlations;
+	delete _resources.electricField;
 	delete _resources.tasks;
 	_resources = {};
 }
 
-void StructureModification::submitSingleAxisJob(float prop, float ticket,
-                                                Flag::Extract extraction)
+Task<Result, void *> *
+StructureModification::submitSingleAxisJob(float prop, float ticket,
+                                           Flag::Extract extraction,
+                                           CalcTask **calc_hook,
+                                           Task<BondSequence *, void *> **letgo)
 {
 	BaseTask *first_hook = nullptr;
 	CalcTask *final_hook = nullptr;
@@ -73,9 +78,17 @@ void StructureModification::submitSingleAxisJob(float prop, float ticket,
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
 	sequences->calculate(calc, {prop}, &first_hook, &final_hook);
+
+	Task<BondSequence *, void *> *let = 
 	sequences->extract(extraction, submit_result, final_hook);
 	
+	if (letgo) { *letgo = let; }
+	
 	_resources.tasks->addTask(first_hook);
+	
+	if (calc_hook) { *calc_hook = final_hook; }
+	
+	return submit_result;
 
 }
 
@@ -130,5 +143,5 @@ void StructureModification::Resources::allocateMinimum(int threads)
 
 	/* set up per-bond/atom calculation */
 	sequences = new BondSequenceHandler(threads);
-
 }
+
