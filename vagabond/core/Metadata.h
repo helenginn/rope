@@ -25,6 +25,7 @@
 #include "Value.h"
 #include "Ruler.h"
 #include "Progressor.h"
+#include "TabulatedData.h"
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -104,12 +105,26 @@ public:
 		return _inst2Data.size() + _model2Data.size() + _file2Data.size();
 	}
 
+	const size_t instanceEntryCount() const
+	{
+		return _inst2Data.size();
+	}
+
+	const size_t modelEntryCount() const
+	{
+		return _model2Data.size();
+	}
+
 	Ruler &ruler()
 	{
 		return _ruler;
 	}
 	
 	std::string asCSV() const;
+	
+	TabulatedData *asInstanceData();
+	TabulatedData *asModelData();
+	TabulatedData *asData(const std::vector<std::string> &ids);
 
 	friend void to_json(json &j, const Metadata &value);
 	friend void from_json(const json &j, Metadata &value);

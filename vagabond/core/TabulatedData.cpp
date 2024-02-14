@@ -24,6 +24,7 @@
 TabulatedData::TabulatedData(const std::vector<HeaderTypePair> &headerTypes)
 : _headerTypes(headerTypes)
 {
+	_visible = std::vector<bool>(headerTypes.size(), true);
 
 }
 
@@ -141,16 +142,67 @@ int TabulatedData::indexForHeader(const std::string &header) const
 	                         "in table");
 }
 
-std::vector<std::string> TabulatedData::headers() const
+bool TabulatedData::hasHidden() const
+{
+	for (const bool &vis : _visible)
+	{
+		if (!vis) return true;
+	}
+	
+	return false;
+}
+
+std::vector<std::string> TabulatedData::entry(int i) const
+{
+	std::vector<std::string> strings;
+
+	auto start = _visible.begin();
+	for (const std::string &str : _entries[i])
+	{
+		if (*start)
+		{
+			strings.push_back(str);
+		}
+		start++;
+	}
+
+	return strings;
+
+}
+
+std::vector<std::string> TabulatedData::all_headers() const
+{
+	return headers(true);
+}
+
+std::vector<std::string> TabulatedData::headers(bool all) const
 {
 	std::vector<std::string> headers;
 
+	auto start = _visible.begin();
 	for (const HeaderTypePair &headerType : _headerTypes)
 	{
-		headers.push_back(headerType.first);
+		if (*start || all)
+		{
+			headers.push_back(headerType.first);
+		}
+		start++;
 	}
 
 	return headers;
+}
+
+void TabulatedData::hideAfterEntry(int idx)
+{
+	for (int i = 0; i < idx && i < _headerTypes.size(); i++)
+	{
+		_visible[i] = true;
+	}
+
+	for (int i = idx; i < _headerTypes.size(); i++)
+	{
+		_visible[i] = false;
+	}
 }
 
 TabulatedData::Strings TabulatedData::column(const std::string &header) const
@@ -175,24 +227,34 @@ size_t TabulatedData::longestEntryLength(const std::string &header) const
 
 	for (const Strings &entry : _entries)
 	{
-		size_t candidate = entry[idx].length();
-		length = std::max(candidate, length);
+			size_t candidate = entry[idx].length();
+			length = std::max(candidate, length);
 	}
 	
 	return length;
 }
 
-size_t TabulatedData::totalWidth(std::vector<size_t> &sizes) const
+size_t TabulatedData::totalWidth(std::vector<size_t> &sizes, 
+                                 size_t max_out) const
 {
 	size_t length = 0;
 	sizes.clear();
 
+	auto start = _visible.begin();
 	for (int i = 0; i < _headerTypes.size(); i++)
 	{
-		size_t l = longestEntryLength(_headerTypes[i].first);
-		length += l;
-		length += 3; // barrier between entries
-		sizes.push_back(l);
+		if (*start)
+		{
+			size_t l = longestEntryLength(_headerTypes[i].first);
+			if (l > max_out && max_out > 0)
+			{
+				l = max_out;
+			}
+			length += l;
+			length += 3; // barrier between entries
+			sizes.push_back(l);
+		}
+		start++;
 	}
 
 	return length;
@@ -211,9 +273,14 @@ std::string TabulatedData::asCSV()
 
 	for (const Strings &entry : _entries)
 	{
+		auto start = _visible.begin();
 		for (const std::string &val : entry)
 		{
-			result += val + ", ";
+			if (*start)
+			{
+				result += val + ", ";
+			}
+			start++;
 		}
 		result.pop_back();
 		result.pop_back();
@@ -267,4 +334,17 @@ std::ostream &operator<<(std::ostream &ss, const TabulatedData &data)
 	print_character('=', width + pad);
 
 	return ss;
+}
+
+void TabulatedData::hide(const std::string &str)
+{
+	auto start = _visible.begin();
+	for (const HeaderTypePair &headerType : _headerTypes)
+	{
+		if (headerType.first == str) 
+		{
+			*start = false;
+		}
+		start++;
+	}
 }

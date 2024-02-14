@@ -46,6 +46,20 @@ Instance *ModelManager::instance(std::string name)
 	return nullptr;
 }
 
+std::vector<std::string> ModelManager::polymers()
+{
+	std::vector<std::string> ids;
+	for (Model &obj : _objects)
+	{
+		for (Polymer &pol : obj.polymers())
+		{
+			ids.push_back(pol.id());
+		}
+	}
+
+	return ids;
+}
+
 Model *ModelManager::insertIfUnique(Model &m)
 {
     std::string model_name = m.name();

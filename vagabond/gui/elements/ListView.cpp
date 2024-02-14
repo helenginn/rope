@@ -44,7 +44,7 @@ size_t ListView::unitsPerPage()
 
 void ListView::refresh()
 {
-	loadFilesFrom(_start, LINES_PER_PAGE);
+	loadFilesFrom(_start, unitsPerPage());
 }
 
 void ListView::loadFilesFrom(int start, int num)
@@ -52,20 +52,21 @@ void ListView::loadFilesFrom(int start, int num)
 	deleteTemps();
 
 	int count = lineCount();
-	int npages = ceil((float)count / (float)LINES_PER_PAGE);
+	int npages = ceil((float)count / (float)unitsPerPage());
 	double pos = 0.3;
 
 	for (size_t i = start; i < start + num && i < count; i++)
 	{
 		Renderable *line = getLine(i);
-		line->setLeft(0.2, pos);
-		pos += 0.06;
+		line->setLeft(leftMargin(), pos);
+		float ratio = 0.06 * LINES_PER_PAGE / (float)unitsPerPage();
+		pos += ratio;
 		addTempObject(line);
 	}
 	
 	if (npages > 1)
 	{
-		int mypage = _start / LINES_PER_PAGE;
+		int mypage = _start / unitsPerPage();
 		std::ostringstream ss;
 		ss << "(" << mypage + 1 << " / " << npages << ")";
 		Text *pageNo = new Text(ss.str());

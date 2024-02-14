@@ -18,6 +18,8 @@
 
 #include "Environment.h"
 #include "Metadata.h"
+#include "ModelManager.h"
+#include <vagabond/utils/OpSet.h>
 #include <sstream>
 
 Metadata::Metadata()
@@ -251,6 +253,129 @@ std::string Metadata::asCSV() const
 	}
 
 	return csv.str();
+}
+
+OpSet<std::string> values_for(const std::list<Metadata::KeyValues> &data,
+                                 const std::string &header)
+{
+	std::set<std::string> results;
+	for (const Metadata::KeyValues &kv : data)
+	{
+		if (kv.count(header))
+		{
+			results.insert(kv.at(header).text());
+		}
+	}
+
+	return results;
+}
+
+std::vector<TabulatedData::HeaderTypePair> 
+toHeaderTypes(const std::set<std::string> &list)
+{
+	std::vector<TabulatedData::HeaderTypePair> results;
+
+	for (const std::string &str : list)
+	{
+		results.push_back({str, TabulatedData::Text});
+	}
+	
+	return results;
+}
+
+template <typename GetId, typename DoWithId>
+auto get_info(const GetId &get_id, const DoWithId &do_with_id)
+{
+	return [get_id, do_with_id](const std::string &id)
+	{
+		const Metadata::KeyValues *kv = get_id(id);
+
+		if (kv == nullptr)
+		{
+			return;
+		}
+
+		do_with_id(kv);
+	};
+}
+
+TabulatedData *Metadata::asInstanceData()
+{
+	OpSet<std::string> instances = values_for(_data, "molecule");
+	instances += values_for(_data, "instance");
+	return asData(instances.toVector());
+}
+
+TabulatedData *Metadata::asModelData()
+{
+	OpSet<std::string> models = values_for(_data, "model");
+	return asData(models.toVector());
+}
+
+TabulatedData *Metadata::asData(const std::vector<std::string> &ids) 
+{
+	OpSet<TabulatedData::HeaderTypePair> headers;
+	
+	auto insert_into_headers = [&headers](const KeyValues *kv)
+	{
+		for (auto it = kv->begin(); it != kv->end(); it++)
+		{
+			TabulatedData::DataType type = TabulatedData::Text; 
+			if (it->second.hasNumber())
+			{
+				type = TabulatedData::Number; 
+			}
+
+			headers.insert({it->first, type});
+		}
+	};
+
+	auto process_instance = get_info([this](const std::string &id)
+	                                 { return valuesForInstance(id); },
+	                                 insert_into_headers);
+
+	auto process_model = get_info([this](const std::string &id)
+	                                 { return valuesForModel(id); },
+	                                 insert_into_headers);
+
+	for (const std::string &id : ids)
+	{
+		process_instance(id);
+		process_model(id);
+	}
+
+	TabulatedData *data = new TabulatedData(headers.toVector());
+	
+	auto insert_into_data = [&data](const KeyValues *kv)
+	{
+		std::vector<TabulatedData::StringPair> pairs;
+		for (auto it = kv->begin(); it != kv->end(); it++)
+		{
+			pairs.push_back({it->first, it->second.text()});
+			std::cout << it->first << "=" << it->second << ", ";
+		}
+		std::cout << std::endl;
+		if (pairs.size())
+		{
+			data->addEntry(pairs);
+		}
+	};
+
+	auto add_instance = get_info([this](const std::string &id)
+	                             { return valuesForInstance(id); },
+	                             insert_into_data);
+
+	auto add_model = get_info([this](const std::string &id)
+	                          { return valuesForModel(id); },
+	                          insert_into_data);
+
+	for (const std::string &id : ids)
+	{
+		add_instance(id);
+		add_model(id);
+	}
+
+	return data;
 }
 
 void Metadata::setModelIdForInstanceId(std::string inst_id, std::string mod_id)

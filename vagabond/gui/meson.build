@@ -21,6 +21,8 @@ guifiles = [
 'ChooseEntity.cpp',
 'ClusterPointDemo.cpp',
 'ClusterView.cpp',
+'ColumnView.cpp',
+'ColumnView.h',
 'CompareEntities.cpp',
 'CompareEntities.h',
 'ConfSpaceView.cpp',

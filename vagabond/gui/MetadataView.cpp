@@ -18,12 +18,14 @@
 
 #include "MetadataView.h"
 #include "ChooseHeader.h"
+#include "TableView.h"
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/Menu.h>
 
 MetadataView::MetadataView(Scene *prev, Metadata *md) : Scene(prev)
 {
@@ -46,9 +48,9 @@ void MetadataView::setup()
 
 	{
 		setExportHandler(this);
-		TextButton *t = new TextButton("Export", this);
+		TextButton *t = new TextButton("View data", this);
 		t->setRight(0.9, 0.1);
-		t->setReturnTag("export");
+		t->setReturnTag("view");
 		addObject(t);
 	}
 	{
@@ -111,6 +113,33 @@ void MetadataView::buttonPressed(std::string tag, Button *button)
 
 		ch->setHeaders(headers);
 		ch->show();
+	}
+	else if (tag == "view")
+	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, this, "view");
+		if (_md->instanceEntryCount() > 1)
+		{
+			m->addOption("Individual molecules", "instances");
+		}
+		if (_md->modelEntryCount() > 1)
+		{
+			m->addOption("Whole models", "models");
+		}
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+	else if (tag == "view_instances")
+	{
+		std::string title = "Metadata table - " + _md->source();
+		TableView *view = new TableView(this, _md->asInstanceData(), title);
+		view->show();
+	}
+	else if (tag == "view_models")
+	{
+		std::string title = "Metadata table - " + _md->source();
+		TableView *view = new TableView(this, _md->asModelData(), title);
+		view->show();
 	}
 	
 	ExportsCSV::buttonPressed(tag, button);

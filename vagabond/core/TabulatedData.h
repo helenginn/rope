@@ -42,21 +42,35 @@ public:
 	Strings column(const std::string &header) const;
 
 	size_t longestEntryLength(const std::string &header) const;
-	size_t totalWidth(std::vector<size_t> &sizes) const;
+	size_t totalWidth(std::vector<size_t> &sizes, size_t max_out = 0) const;
+	
+	void hideAfterEntry(int idx);
 	
 	size_t entryCount()
 	{
 		return _entries.size();
 	}
 	
-	std::vector<std::string> entry(int i) const
+	std::vector<std::string> entry(int i) const;
+	
+	bool is_visible(int idx)
 	{
-		return _entries[i];
+		return _visible[idx];
 	}
+	
+	void toggle_visible(int idx)
+	{
+		_visible[idx] = !_visible[idx];
+	}
+	
+	void hide(const std::string &str);
+	
+	bool hasHidden() const;
 	
 	void order_by(const std::string &header, bool ascending);
 	
-	std::vector<std::string> headers() const;
+	std::vector<std::string> headers(bool all = false) const;
+	std::vector<std::string> all_headers() const;
 	
 	std::string asCSV();
 	
@@ -64,6 +78,7 @@ public:
 private:
 	int indexForHeader(const std::string &header) const;
 	std::vector<HeaderTypePair> _headerTypes;
+	std::vector<bool> _visible;
 
 	std::vector<Strings> _entries;
 };

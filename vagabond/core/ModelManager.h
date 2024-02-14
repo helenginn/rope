@@ -39,6 +39,8 @@ public:
 	
 	Instance *instance(std::string name);
 	
+	std::vector<std::string> polymers();
+	
 	Model *const model(std::string name) const
 	{
         to_lower(name);

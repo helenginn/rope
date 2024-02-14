@@ -16,50 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__TableView__
-#define __vagabond__TableView__
+#ifndef __vagabond__ColumnView__
+#define __vagabond__ColumnView__
 
 #include <vagabond/gui/elements/ListView.h>
-#include <vagabond/gui/ExportsCSV.h>
 
 class TabulatedData;
 
-class TableView : public ListView, public ExportsCSV
+class ColumnView : public ListView
 {
 public:
-	TableView(Scene *prev, TabulatedData *data, const std::string &title);
+	ColumnView(Scene *prev, TabulatedData *data);
 
 	virtual void setup();
-	virtual void refresh();
 
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
 
-	virtual float leftMargin()
-	{
-		return 0.1;
-	}
-
-	virtual size_t unitsPerPage();
-
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	
-	TabulatedData *const &data() const
-	{
-		return _data;
-	}
-
-	float resizing();
-	void addPlusSign();
 private:
-	virtual void supplyCSV(std::string indicator = "");
-	void displayHeaders();
-	void addMenu();
-
-	TabulatedData *_data;
-
-	std::string _title;
-	std::string _current;
+	TabulatedData *_data = nullptr;
+	std::vector<std::string> _headers;
 };
 
 #endif

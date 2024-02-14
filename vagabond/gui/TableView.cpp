@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
 
+#include "ColumnView.h"
 #include "TableView.h"
 
 TableView::TableView(Scene *prev, TabulatedData *data, const std::string &title)
@@ -29,28 +30,92 @@ TableView::TableView(Scene *prev, TabulatedData *data, const std::string &title)
 {
 	_title = title;
 	_data = data;
+	_data->hideAfterEntry(20);
+}
+
+std::string sanitised_length(std::string header, size_t max_out)
+{
+	if (header.size() > max_out)
+	{
+		header.resize(max_out);
+		header += "...";
+	}
+	return header;
+}
+
+float resizing(TabulatedData *data)
+{
+	size_t max_out = 20;
+	std::vector<size_t> sizes;
+	float total = data->totalWidth(sizes, max_out);
+	const float width = 0.8f;
+	float resizing = 100 * width / total;
+	if (resizing > 1.f)
+	{
+		resizing = 1.f;
+	}
+
+	return resizing;
+}
+
+size_t TableView::unitsPerPage()
+{
+	float size = ::resizing(_data);
+	return ceil(ListView::unitsPerPage() / size);
+}
+
+Box *makeTextBoxes(TableView *view, std::vector<std::string> strings,
+                   TabulatedData *data)
+{
+	Box *box = new Box();
+
+	size_t max_out = 20;
+	std::vector<size_t> sizes;
+	float total = data->totalWidth(sizes, max_out);
+	const float width = 0.8f;
+	float used_width = 0;
+	float size = ::resizing(data);
+
+	if (view)
+	{
+		size *= 0.6;
+	}
+
+	for (int j = 0; j < strings.size(); j++)
+	{
+		std::string display = (view ? strings[j] : 
+		                       sanitised_length(strings[j], max_out));
+
+		Text *text = nullptr;
+		
+		if (view)
+		{
+			TextButton *b = new TextButton(display, view, false, Font::Thick);
+			b->setReturnTag("header_" + strings[j]);
+			text = b;
+		}
+		else
+		{
+			text = new Text(display);
+		}
+
+		float prop = width * ((sizes[j] + 3) / total);
+		text->resize(size);
+		text->squishToWidth(prop);
+		text->setLeft(0.0 + used_width, 0.0);
+		used_width += prop;
+		box->addObject(text);
+	}
+
+	return box;
 }
 
 void TableView::displayHeaders()
 {
 	std::vector<std::string> headers = _data->headers();
-
-	std::vector<size_t> sizes;
-	float total = _data->totalWidth(sizes);
-	const float width = (0.8f - 0.2f);
-	float used_width = 0;
-
-	for (int j = 0; j < headers.size(); j++)
-	{
-		TextButton *text = new TextButton(headers[j], this, false, Font::Thick);
-		text->setReturnTag("header_" + headers[j]);
-		float prop = width * (sizes[j] / total);
-		text->resize(0.6);
-		text->setLeft(0.2 + used_width, 0.2);
-		used_width += prop;
-		addObject(text);
-	}
-
+	Box *line = makeTextBoxes(this, headers, _data);
+	line->setLeft(0.1, 0.2);
+	addTempObject(line);
 }
 
 void TableView::addMenu()
@@ -61,38 +126,46 @@ void TableView::addMenu()
 	addObject(text);
 }
 
+void TableView::refresh()
+{
+	ListView::refresh();
+	displayHeaders();
+	addPlusSign();
+}
+
+void TableView::addPlusSign()
+{
+	if (!_data->hasHidden())
+	{
+		return;
+	}
+
+	TextButton *plus = new TextButton("+", this, false, Font::Thick);
+	plus->setRight(0.95, 0.2);
+	plus->setReturnTag("plus");
+	addTempObject(plus);
+}
+
 void TableView::setup()
 {
 	addTitle(_title);
 	addMenu();
 	displayHeaders();
+	addPlusSign();
 	ListView::setup();
 }
 
 size_t TableView::lineCount()
 {
-	return _data->entryCount() + 1;
+	return _data->entryCount();
 }
 
 Renderable *TableView::getLine(int i)
 {
 	std::vector<std::string> strings = _data->entry(i);
-	
-	std::vector<size_t> sizes;
-	float total = _data->totalWidth(sizes);
-	const float width = (0.8f - 0.2f);
-	float used_width = 0;
 
-	Box *b = new Box();
-	
-	for (int j = 0; j < strings.size(); j++)
-	{
-		Text *text = new Text(strings[j]);
-		float prop = width * (sizes[j] / total);
-		text->setLeft(used_width, 0.0);
-		used_width += prop;
-		b->addObject(text);
-	}
+	Box *b = makeTextBoxes(nullptr, strings, _data);
+	b->setLeft(-0.1, 0.0);
 
 	return b;
 }
@@ -114,6 +187,11 @@ void TableView::buttonPressed(std::string tag, Button *button)
 		m->setup(c.x, c.y);
 		setModal(m);
 	}
+	else if (tag == "plus")
+	{
+		ColumnView *view = new ColumnView(this, _data);
+		view->show();
+	}
 
 	std::string overall = Button::tagEnd(tag, "overall_");
 	
@@ -129,6 +207,11 @@ void TableView::buttonPressed(std::string tag, Button *button)
 	if (menu == "asort")
 	{
 		_data->order_by(_current, true);
+		refresh();
+	}
+	if (menu == "hide")
+	{
+		_data->hide(_current);
 		refresh();
 	}
 	else if (menu == "dsort")
@@ -157,6 +240,7 @@ void TableView::buttonPressed(std::string tag, Button *button)
 		m->addOption("Sort ascending", "asort");
 		m->addOption("Sort descending", "dsort");
 		m->addOption("Copy list", "copy");
+		m->addOption("Hide", "hide");
 		m->setup(c.x, c.y);
 		setModal(m);
 
