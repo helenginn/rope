@@ -309,6 +309,8 @@ public:
 		_symNote = note;
 	}
 	
+	float charge();
+	
 	Atom *const &symmetryCopyOf() const
 	{
 		return _symAtom;

@@ -521,3 +521,21 @@ int Atom::bondsBetween(Atom *end, int maxBonds, bool long_way)
 	
 	return -1;
 }
+
+float Atom::charge()
+{
+	if (elementSymbol() == "O")
+	{
+		return -0.668;
+	}
+	if (elementSymbol() == "C")
+	{
+		return +0.1955;
+	}
+	if (elementSymbol() == "N")
+	{
+		return -0.53;
+	}
+	
+	return 0;
+}
