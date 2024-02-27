@@ -20,6 +20,7 @@
 #define __vagabond__TangledBond__
 
 #include <string>
+#include <vector>
 
 class BondLength;
 class Atom;
