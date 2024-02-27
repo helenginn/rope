@@ -24,6 +24,7 @@ class Atom;
 
 #include "Bondstraint.h"
 #include <stdexcept>
+#include <cmath>
 
 class BondLength : public Bondstraint
 {
