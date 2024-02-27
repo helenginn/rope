@@ -144,6 +144,23 @@ void Display::buttonPressed(std::string tag, Button *button)
 
 	Scene::buttonPressed(tag, button);
 
+	if (tag == "recalculate")
+	{
+		for (DisplayUnit *unit : _units)
+		{
+			AtomGroup *grp = unit->atoms();
+			grp->recalculate();
+		}
+		static_cast<TextButton *>(button)->setReturnTag("refine_positions");
+	}
+	else if (tag == "refine_positions")
+	{
+		for (DisplayUnit *unit : _units)
+		{
+			unit->atoms()->refinePositions(false, true);
+		}
+	}
+
 	/*
 	if (tag == "recalculate")
 	{

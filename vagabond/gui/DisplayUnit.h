@@ -44,6 +44,11 @@ public:
 	{
 		_atoms_are_mine = true;
 	}
+	
+	AtomGroup *atoms()
+	{
+		return _atoms;
+	}
 
 	void tear(AtomMap *map);
 	void refreshDensity(AtomMap *map);

@@ -126,7 +126,9 @@ void ModelMenu::refineModel(std::string name)
 		
 		Display *d = new Display(this);
 		DisplayUnit *unit = new DisplayUnit(d);
+		unit->setOwnsAtoms();
 		unit->loadModel(model);
+		d->tieButton();
 
 		ArbitraryMap *map = new ArbitraryMap(model->dataFile());
 		if (map->nn() > 0)

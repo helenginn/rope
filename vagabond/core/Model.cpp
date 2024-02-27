@@ -602,7 +602,6 @@ void Model::refine(bool sameThread, bool thorough)
 
 void Model::extractExisting()
 {
-	insertTorsions();
 	extractTorsions();
 	HasResponder<Responder<Model>>::triggerResponse();
 }
