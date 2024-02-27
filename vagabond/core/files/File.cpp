@@ -46,7 +46,11 @@ File::~File()
 {
 	delete _compAtoms;
 	delete _macroAtoms;
-	delete _metadata;
+	
+	if (!_accessedMetadata)
+	{
+		delete _metadata;
+	}
 	
 	if (!_accessedTable)
 	{
@@ -111,6 +115,7 @@ AtomContent *File::atoms()
 
 Metadata *File::metadata()
 {
+	_accessedMetadata = true;
 	return new Metadata(*_metadata);
 }
 

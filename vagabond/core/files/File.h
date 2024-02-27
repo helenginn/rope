@@ -203,6 +203,7 @@ protected:
 	std::vector<Reflection> _reflections;
 	
 	bool _accessedTable = false;
+	bool _accessedMetadata = false;
 	KnotLevel _knot = KnotTorsions;
 
 };

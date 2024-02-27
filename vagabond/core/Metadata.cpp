@@ -318,6 +318,10 @@ TabulatedData *Metadata::asData(const std::vector<std::string> &ids)
 	
 	auto insert_into_headers = [&headers](const KeyValues *kv)
 	{
+		if (kv == nullptr || kv->size() == 0)
+		{
+			return;
+		}
 		for (auto it = kv->begin(); it != kv->end(); it++)
 		{
 			TabulatedData::DataType type = TabulatedData::Text; 
