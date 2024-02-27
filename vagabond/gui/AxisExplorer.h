@@ -96,7 +96,7 @@ private:
 	double _max = 1; 
 	double _step = 0.001;
 	float _maxTorsion = 0;
-	bool _electric = true;
+	bool _electric = false;
 	bool _first = true;
 
 	AtomMap *_latest = nullptr;

@@ -68,6 +68,12 @@ DisplayUnit::~DisplayUnit()
 		_parent->removeObject(_guiAtoms);
 		_guiAtoms = nullptr;
 	}
+	
+	if (_atoms_are_mine)
+	{
+//		delete _atoms;
+//		_atoms = nullptr;
+	}
 }
 
 void DisplayUnit::loadReflections(Diffraction *diff)
