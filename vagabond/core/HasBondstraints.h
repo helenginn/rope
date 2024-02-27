@@ -19,6 +19,7 @@
 #ifndef __vagabond__HasBondstraints__
 #define __vagabond__HasBondstraints__
 
+#include <set>
 #include <vector>
 #include <map>
 #include "Bondstraint.h"
@@ -94,6 +95,8 @@ public:
 	{
 		return _bondAngles.size();
 	}
+
+	std::vector<BondAngle *> findBondAngles(std::set<Atom *> existing);
 	
 	BondAngle *findBondAngle(Atom *left, Atom *centre, Atom *right,
 	                         bool throw_on_failure = false);
@@ -116,7 +119,7 @@ public:
 	  * @returns specific bond angle where given atom is central */
 	BondAngle *centralBondAngle(int i) const 
 	{
-		return _terminalBondAngles[i];
+		return _centralBondAngles[i];
 	}
 
 	/** @returns number of bond angles where given atom is terminal,

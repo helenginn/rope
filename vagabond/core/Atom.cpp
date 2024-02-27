@@ -32,7 +32,8 @@ Atom::Atom(std::string code, std::string name)
 	_atomName = name;
 }
 
-void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor)
+void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor,
+                              float occupancy)
 {
 	_initial.pos.ave = pos;
 	if (b > 0)
@@ -538,4 +539,15 @@ float Atom::charge()
 	}
 	
 	return 0;
+}
+
+OpSet<std::string> Atom::conformerList()
+{
+	OpSet<std::string> set;
+	for (auto it = _conformers.begin(); it != _conformers.end(); it++)
+	{
+		set.insert(it->first);
+	}
+
+	return set;
 }

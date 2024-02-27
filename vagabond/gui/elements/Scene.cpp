@@ -173,7 +173,8 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 
 	_left = button.button == SDL_BUTTON_LEFT;
 
-	if (hasIndexedObjects() > 0 && _modal == nullptr && _chosen == nullptr)
+	if (hasIndexedObjects() > 0 && _modal == nullptr && _chosen == nullptr
+	    && !_moving)
 	{
 		checkIndexBuffer(x, y, false, true, _left);
 	}

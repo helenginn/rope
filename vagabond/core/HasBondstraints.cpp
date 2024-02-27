@@ -226,6 +226,32 @@ HyperValue *HasBondstraints::findHyperValue(Atom *atom)
 	return nullptr;
 }
 
+std::vector<BondAngle *> 
+HasBondstraints::findBondAngles(std::set<Atom *> existing)
+{
+	std::vector<BondAngle *> results;
+	for (size_t i = 0; i < _bondAngles.size(); i++)
+	{
+		BondAngle *ba = _bondAngles[i];
+		bool found = true;
+
+		for (Atom *atom : existing)
+		{
+			if (!ba->hasAtom(atom))
+			{
+				found = false;
+			}
+		}
+		
+		if (found)
+		{
+			results.push_back(ba);
+		}
+	}
+	
+	return results;
+}
+
 BondAngle *HasBondstraints::findBondAngle(Atom *left, Atom *centre, Atom *right,
                                           bool throw_on_failure)
 {

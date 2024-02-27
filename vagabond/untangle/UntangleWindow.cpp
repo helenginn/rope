@@ -16,27 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "TransferHandler.h"
-#include "AtomGroup.h"
-#include "GroupBounds.h"
-#include "Atom.h"
+#include "UntangleWindow.h"
+#include "UntangleView.h"
 
-TransferHandler::TransferHandler(int mapNum)
-: _mapNum(mapNum)
+UntangleWindow::UntangleWindow() : Window()
 {
 
 }
 
-void TransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
+void UntangleWindow::setup(int argc, char **argv)
 {
-	getRealDimensions(all);
-}
+	windowSetup();
 
-void TransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
-{
-	GroupBounds bounds(sub);
-	bounds.calculate();
-	_min = bounds.min - _pad * 2.f;
-	_max = bounds.max + _pad * 2.f;
-}
+	UntangleView *view = new UntangleView();
+	
+	if (argc > 1)
+	{
+		view->load(argv[1]);
+	}
 
+	setCurrentScene(view, true);
+	_first = view;
+}

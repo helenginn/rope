@@ -16,40 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "CoulombSegment.h"
+#ifndef __vagabond__TangledBond__
+#define __vagabond__TangledBond__
 
-void CoulombSegment::prepare()
+#include <string>
+
+class BondLength;
+class Atom;
+
+class TangledBond
 {
-	do_op_on_centred_index([this](int i, int j, int k)
+public:
+	TangledBond(BondLength &src);
+
+	operator BondLength &()
 	{
-		float dstar = 1 / resolution(i, j, k);
-		float sqrt_exp = dstar / 0.55;
-		float val = exp(-sqrt_exp * sqrt_exp);
-
-		VoxelElement &ve = this->element(i, j, k);
-		ve.scatter = val;
-	});
-}
-
-AtomMap *CoulombSegment::convertToMap() const
-{
-	AtomMap *map = new AtomMap();
-	map->Grid::setDimensions(nx(), ny(), nz(), false);
-
-	map->setOrigin(origin());
-	map->setRealDim(realDim());
-	
-	for (size_t i = 0; i < nn(); i++)
-	{
-		float r = density(i, 0);
-		map->element(i)[0] = r;
+		return _src;
 	}
 	
-	return map;
-}
+	Atom *atom(int i);
+	std::vector<std::pair<std::string, std::string>> options();
+	
+	float total_score(float bias);
+	float simple_score(const std::string &q, const std::string &r);
+	float length_score(const std::string &p, const std::string &q, 
+	                   const std::string &r, const std::string &s);
+	float angle_score(const std::string &p, const std::string &q, 
+	                  const std::string &r, const std::string &s);
+	
+	float volatility();
+	
+	bool hasHydrogens() const;
+	
+	std::string desc() const;
+private:
 
-void CoulombSegment::calculateMap()
-{
-	QuickSegment::calculateMap();
-	fft();
-}
+	BondLength &_src;
+
+};
+
+#endif

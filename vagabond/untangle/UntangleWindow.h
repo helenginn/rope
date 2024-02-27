@@ -16,27 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "TransferHandler.h"
-#include "AtomGroup.h"
-#include "GroupBounds.h"
-#include "Atom.h"
+#ifndef __vagabond__UntangleWindow__
+#define __vagabond__UntangleWindow__
 
-TransferHandler::TransferHandler(int mapNum)
-: _mapNum(mapNum)
+#include <vagabond/gui/elements/Window.h>
+
+class UntangleWindow : public Window
 {
+public:
+	UntangleWindow();
 
-}
+	virtual void setup(int argc, char **argv);
 
-void TransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
-{
-	getRealDimensions(all);
-}
+	virtual void extraWindowFlags(unsigned int &flags)
+	{
+		flags += SDL_WINDOW_RESIZABLE;
+	}
+private:
 
-void TransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
-{
-	GroupBounds bounds(sub);
-	bounds.calculate();
-	_min = bounds.min - _pad * 2.f;
-	_max = bounds.max + _pad * 2.f;
-}
+};
 
+#endif

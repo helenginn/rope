@@ -17,9 +17,6 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/utils/version.h>
 
-#include "ProtonNetworkView.h"
-#include <vagabond/core/files/PdbFile.h>
-
 #include <iostream>
 
 #ifdef __EMSCRIPTEN__
@@ -101,6 +98,7 @@ void MainMenu::setup()
 		addObject(text);
 	}
 
+	/*
 	{
 		ImageButton *button = new ImageButton("assets/images/tube_1.5ml.png", this);
 		button->resize(0.15);
@@ -112,6 +110,7 @@ void MainMenu::setup()
 		text->setCentre(0.8, 0.80);
 		addObject(text);
 	}
+	*/
 }
 
 void MainMenu::doThings()
@@ -221,16 +220,6 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "sandbox")
 	{
-//		PdbFile file("trypsin_apo_CS187A_20220708_conf_B.pdb");
-		PdbFile file("5rge.pdb");
-//		PdbFile file("final-50C_cell4_partialator_mmm_1p7A_Fs.pdb");
-		file.parse();
-		AtomGroup *grp = file.atoms();
-		std::string spg_name = file.spaceGroupName();
-		std::array<double, 6> uc = file.unitCell();
-		ProtonNetworkView *sb;
-		sb = new ProtonNetworkView(this, *(new Network(grp, spg_name, uc)));
-		sb->show();
 	}
 
 	Scene::buttonPressed(tag, button);

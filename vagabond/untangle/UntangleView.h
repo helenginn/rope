@@ -16,27 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "TransferHandler.h"
-#include "AtomGroup.h"
-#include "GroupBounds.h"
-#include "Atom.h"
+#ifndef __vagabond__UntangleView__
+#define __vagabond__UntangleView__
 
-TransferHandler::TransferHandler(int mapNum)
-: _mapNum(mapNum)
+#include <vagabond/gui/Display.h>
+
+class Untangle;
+class Visual;
+
+class UntangleView : public Display
 {
+public:
+	UntangleView(Scene *prev = nullptr);
 
-}
+	virtual void setup();
 
-void TransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
-{
-	getRealDimensions(all);
-}
+	virtual void recalculate();
+	
+	void load(const std::string &filename);
+	virtual void buttonPressed(std::string tag, Button *button);
+	virtual void keyReleaseEvent(SDL_Keycode pressed);
+private:
+	Untangle *_untangle = nullptr;
+	Visual *_visual = nullptr;
 
-void TransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
-{
-	GroupBounds bounds(sub);
-	bounds.calculate();
-	_min = bounds.min - _pad * 2.f;
-	_max = bounds.max + _pad * 2.f;
-}
+	std::string _filename;
+	int _resi = -1;
+};
 
+#endif

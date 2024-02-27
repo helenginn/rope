@@ -67,9 +67,9 @@ public:
 	bool angleExists(std::string code, std::string pName, std::string qName,
 	                 std::string rName);
 	double angle(std::string code, std::string pName, std::string qName,
-	                 std::string rName, bool links = false);
+	                 std::string rName, bool links = false) const;
 	double angle_stdev(std::string code, std::string pName, std::string qName,
-	                 std::string rName);
+	                 std::string rName, bool links = false) const;
 
 	bool torsionExists(std::string code, std::string pName, std::string qName,
 	                   std::string rName, std::string sName);
@@ -90,14 +90,15 @@ public:
 	
 	AtomGroup *constructResidue(std::string code, const ResidueId &id, 
 	                            int *atomNum, int terminal = 0);
+
 private:
 	void loadExtraGeometries(std::set<std::string> &files);
+
 	struct Value
 	{
 		double mean;
 		double stdev;
 	};
-
 	struct AtomPair
 	{
 		std::string p;
@@ -184,6 +185,15 @@ private:
 		std::map<AtomQuartet, int> chirals;
 	};
 
+	Value angle_value(std::string code, std::string pName, std::string qName,
+	                 std::string rName, bool links = false) const;
+	Value angle_value(const GeometryMap &map, std::string pName,
+	                  std::string qName, std::string rName) const;
+	Value angle_value(const GeometryMap &map, std::string pName,
+	                  std::string qName, std::string rName, bool links) const;
+	double angle_stdev(const GeometryMap &map, std::string pName,
+	                   std::string qName, std::string rName) const;
+
 	std::set<std::string> allAtomNames(std::string &code);
 
 	double length(const GeometryMap &map, std::string pName, 
@@ -192,8 +202,8 @@ private:
 	double checkLengthLinks(std::string code, std::string pName,
 	                        std::string qName) const;
 
-	double checkAngleLinks(std::string code, std::string pName,
-	                       std::string qName, std::string rName) const;
+	Value checkAngleLinks(std::string code, std::string pName,
+	                      std::string qName, std::string rName) const;
 
 	bool linkCodeMatches(std::string code, std::string query) const;
 	double angle(const GeometryMap &map, std::string pName,

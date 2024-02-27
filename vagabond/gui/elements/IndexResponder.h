@@ -24,6 +24,7 @@
 
 // you need to reimplement requestedIndices() and reindex()
 // and prepare to get signals on interacted(...)
+// addIndexResponder for each of the responders
 // also IndexResponseView::setup needs calling
 
 class IndexResponder : public SimplePolygon

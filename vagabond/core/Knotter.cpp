@@ -142,15 +142,18 @@ void Knotter::createBondAngles(Atom *atom)
 			std::string aCode = atom->code();
 
 			double standard = -1;
+			double stdev = -1;
 			
 			if (start->residueId() == end->residueId() 
 			    && start->chain() == end->chain())
 			{
 				standard = _table->angle(aCode, sName, aName, eName);
+				stdev = _table->angle_stdev(aCode, sName, aName, eName);
 			}
 			else
 			{
 				standard = _table->angle(aCode, sName, aName, eName, true);
+				stdev = _table->angle_stdev(aCode, sName, aName, eName, true);
 			}
 
 			if (standard < 0)
@@ -163,7 +166,7 @@ void Knotter::createBondAngles(Atom *atom)
 				continue;
 			}
 
-			new BondAngle(_group, start, atom, end, standard);
+			new BondAngle(_group, start, atom, end, standard, stdev);
 		}
 	}
 }

@@ -35,6 +35,7 @@ class File;
 class AtomGroup : public HasResponder<Responder<AtomGroup> >, public HasBondstraints
 {
 public:
+	AtomGroup(size_t preload);
 	AtomGroup();
 	~AtomGroup();
 	void cancelRefinement();
@@ -178,6 +179,7 @@ public:
 	void refinePositions(bool sameThread = false, bool thorough = false);
 	void orderByResidueId();
 	
+	// will set defaults for min/max
 	void getLimitingResidues(int *min, int *max);
 	
 	/** returns a sequence object according to the connectivity of the

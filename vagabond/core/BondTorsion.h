@@ -103,7 +103,8 @@ public:
 		if (i == 1) return _b;
 		if (i == 2) return _c;
 		if (i == 3) return _d;
-		throw std::runtime_error("asked for silly atom number from bond angle");
+		throw std::runtime_error("asked for silly atom number "\
+		                         "from bond torsion");
 	}
 	
 	virtual bool coversMainChain() const;

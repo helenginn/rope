@@ -20,13 +20,15 @@
 #include "AtomGroup.h"
 #include "Atom.h"
 
-BondAngle::BondAngle(AtomGroup *owner, Atom *a, Atom *b, Atom *c, double angle)
+BondAngle::BondAngle(AtomGroup *owner, Atom *a, Atom *b, Atom *c, double angle,
+                     double stdev)
 {
 	_owner = owner;
 	_a = a;
 	_b = b;
 	_c = c;
 	_angle = angle;
+	_stdev = stdev;
 	
 	if (_a == nullptr || _b == nullptr || _c == nullptr)
 	{
@@ -133,3 +135,4 @@ double BondAngle::measurement() const
 
 	return rad2deg(angle);
 }
+

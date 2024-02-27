@@ -3,7 +3,9 @@
 #ifndef __practical__HasRenderables__
 #define __practical__HasRenderables__
 
+#include <mutex>
 #include <vector>
+#include <functional>
 #include <SDL2/SDL.h>
 
 class Renderable;
@@ -61,6 +63,8 @@ public:
 
 	virtual void doThingsCircuit();
 	virtual void doThings() {};
+	
+	void addMainThreadJob(const std::function<void()> &);
 
 	virtual Renderable *findObject(double x, double y);
 	void doAccessibilityThings(SDL_Keycode pressed, bool shift);
@@ -78,6 +82,9 @@ protected:
 
 	Renderable *_chosen = nullptr;
 	Renderable *_dragged = nullptr;
+	
+	std::vector<std::function<void()>> _jobs;
+	std::mutex _joblock;
 };
 
 #endif

@@ -31,6 +31,8 @@
 #include "CountAdder.h"
 #include "BondAngle.h"
 
+#include "GroupBounds.h"
+
 using namespace hnet;
 
 void Network::findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
@@ -359,28 +361,51 @@ AtomGroup *getSymmetryMates(AtomGroup *const &other, const std::string &spg_name
 	glm::mat3x3 to_frac = glm::inverse(uc_mat);
 	float distsq = distance * distance;
 	
+	GroupBounds bounds(other);
+	glm::vec3 min = bounds.min - glm::vec3(5.f);
+	glm::vec3 max = bounds.max + glm::vec3(5.f);
+	
+	auto outside_bounds = [min, max](const glm::vec3 &target) -> bool
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			if (min[i] > target[i]) { return true; }
+			if (max[i] < target[i]) { return true; }
+		}
+		return false;
+	};
+
+	auto close_to = [distsq](::Atom *atom, const glm::vec3 &target) -> bool
+	{
+		glm::vec3 second = atom->initialPosition();
+		for (int i = 0; i < 3; i++)
+		{
+			if (fabs(second[i] - target[i]) > distsq)
+			{
+				return false;
+			}
+		}
+		glm::vec3 diff = second - target;
+		float lsq = glm::dot(diff, diff);
+		return (lsq < distsq && lsq >= 1e-3);
+	};
+
+
 	auto add_symop_atom_if_nearby = 
-	[grp, other, to_frac, uc_mat, distsq, total](::Atom *const &atom)
+	[grp, close_to, other, to_frac, uc_mat, distsq, total, outside_bounds]
+	(::Atom *const &atom)
 	{
 		glm::vec3 pos = atom->initialPosition();
 		glm::vec3 frac = to_frac * pos;
 		glm::vec3 nearest_origin = {};
-		
+
 		for (int i = 0; i < 3; i++)
 		{
 			nearest_origin[i] = (int)floor(frac[i]);
 		}
-		
+
 		frac -= nearest_origin;
 		std::array<double, 3> f = {frac.x, frac.y, frac.z};
-
-		auto close_to = [distsq](::Atom *atom, const glm::vec3 &target) -> bool
-		{
-			glm::vec3 second = atom->initialPosition();
-			glm::vec3 diff = second - target;
-			float lsq = glm::dot(diff, diff);
-			return (lsq < distsq && lsq >= 1e-3);
-		};
 
 		for (int l = 0; l < grp.sym_ops.size(); l++)
 		{
@@ -403,6 +428,10 @@ AtomGroup *getSymmetryMates(AtomGroup *const &other, const std::string &spg_name
 					{
 						glm::vec3 trial_frac = sym_pos + glm::vec3(i, j, k);
 						glm::vec3 trial = uc_mat * trial_frac;
+						if (outside_bounds(trial))
+						{
+							continue;
+						}
 						
 						::Atom *near = other->find_by([close_to, trial]
 						                              (::Atom *const &a)

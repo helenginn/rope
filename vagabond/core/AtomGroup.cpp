@@ -38,6 +38,12 @@ AtomGroup::AtomGroup() : HasBondstraints()
 
 }
 
+AtomGroup::AtomGroup(size_t preload) : HasBondstraints()
+{
+	_atoms.reserve(preload);
+
+}
+
 void AtomGroup::writeToFile(std::string name)
 {
 	PdbFile::writeAtoms(this, name);

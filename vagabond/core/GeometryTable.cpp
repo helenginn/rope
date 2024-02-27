@@ -240,35 +240,55 @@ bool GeometryTable::angleExists(std::string code, std::string pName,
 	return angle(code, pName, qName, rName) >= 0;
 }
 
-double GeometryTable::angle(const GeometryMap &map, std::string pName,
-                            std::string qName, std::string rName) const
+GeometryTable::Value GeometryTable::angle_value(const GeometryMap &map, std::string pName,
+                                           std::string qName, std::string rName) const
 {
 	AtomTriplet trio = {pName, qName, rName};
 	if (map.angles.count(trio) == 0)
 	{
-		return -1;
+		return {-1, -1};
 	}
 
 	const Value &v = map.angles.at(trio);
 
-	return v.mean;
+	return v;
 }
 
-double GeometryTable::angle(std::string code, std::string pName,
-                            std::string qName, std::string rName,
-                            bool links)
+double GeometryTable::angle(const GeometryMap &map, std::string pName,
+                            std::string qName, std::string rName) const
+{
+	return angle_value(map, pName, qName, rName).mean;
+}
+
+double GeometryTable::angle_stdev(const GeometryMap &map, std::string pName,
+                                  std::string qName, std::string rName) const
+{
+	return angle_value(map, pName, qName, rName).stdev;
+}
+
+GeometryTable::Value GeometryTable::angle_value(std::string code, std::string pName,
+                  std::string qName, std::string rName, bool links) const
 {
 	AtomTriplet trio = {pName, qName, rName};
+	
 
 	if (!links)
 	{
-		double a = angle(_codes[code], pName, qName, rName);
-
-		if (a < 0)
+		Value a{-1, -1};;
+		if (_codes.count(code))
 		{
-			a = angle(_codes["."], pName, qName, rName);
+			a = angle_value(_codes.at(code), pName, qName, rName);
+
+			if (a.mean < 0)
+			{
+				a = angle_value(_codes.at("."), pName, qName, rName);
+			}
 		}
-		
+		else
+		{
+			a = angle_value(_codes.at("."), pName, qName, rName);
+		}
+
 		return a;
 	}
 	else
@@ -277,22 +297,17 @@ double GeometryTable::angle(std::string code, std::string pName,
 	}
 }
 
-double GeometryTable::angle_stdev(std::string code, std::string pName,
-                                  std::string qName, std::string rName)
+double GeometryTable::angle(std::string code, std::string pName,
+                            std::string qName, std::string rName, bool links) const
 {
-	GeometryMap &map = _codes[code];
-
-	AtomTriplet trio = {pName, qName, rName};
-	if (map.angles.count(trio) == 0)
-	{
-		return -1;
-	}
-
-	Value &v = map.angles[trio];
-
-	return v.stdev;
+	return angle_value(code, pName, qName, rName, links).mean;
 }
 
+double GeometryTable::angle_stdev(std::string code, std::string pName,
+                                  std::string qName, std::string rName, bool links) const
+{
+	return angle_value(code, pName, qName, rName, links).stdev;
+}
 
 bool GeometryTable::torsionExists(std::string code, std::string pName,
                                   std::string qName, std::string rName,
@@ -401,8 +416,10 @@ bool GeometryTable::linkCodeMatches(std::string code, std::string query) const
 	return false;
 }
 
-double GeometryTable::checkAngleLinks(std::string code, std::string pName,
-                                      std::string qName, std::string rName) const
+GeometryTable::Value GeometryTable::checkAngleLinks(std::string code,
+                                               std::string pName,
+                                               std::string qName,
+                                               std::string rName) const
 {
 	std::map<std::string, GeometryMap>::const_iterator it;
 	
@@ -417,15 +434,15 @@ double GeometryTable::checkAngleLinks(std::string code, std::string pName,
 		}
 		
 		const GeometryMap &map = it->second;
-		double a = angle(map, pName, qName, rName);
+		Value v = angle_value(map, pName, qName, rName);
 
-		if (a >= 0)
+		if (v.mean >= 0)
 		{
-			return a;
+			return v;
 		}
 	}
 
-	return -1;
+	return {-1, -1};
 }
 
 double GeometryTable::checkLengthLinks(std::string code, std::string pName,

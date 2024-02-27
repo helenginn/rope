@@ -491,10 +491,19 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		AtomGroup *grp = file.atoms();
 		std::string spg_name = file.spaceGroupName();
 		std::array<double, 6> uc = file.unitCell();
+		
+		std::chrono::time_point<std::chrono::system_clock> start, end;
+
+		start = std::chrono::system_clock::now();
 
 		ProtonNetworkView *sb;
 		sb = new ProtonNetworkView(this, *(new Network(grp, spg_name, uc)));
 		sb->show();
+
+		end = std::chrono::system_clock::now();
+		std::chrono::duration<float> fsec = end - start;
+		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(fsec);
+		std::cout << ms.count() << " ms to set up" << std::endl;
 	}
 	
 	if (tag == "set_as_reference")

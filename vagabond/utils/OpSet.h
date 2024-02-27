@@ -50,6 +50,22 @@ public:
 		}
 	}
 	
+	template <class Container>
+	OpSet<std::pair<Type, Type>> pairs_with(const Container &other)
+	{
+		OpSet<std::pair<Type, Type>> pairs;
+
+		for (const Type &left : *this)
+		{
+			for (const Type &right : other)
+			{
+				pairs.insert({left, right});
+			}
+		}
+		
+		return pairs;
+	}
+	
 	std::vector<Type> toVector()
 	{
 		std::vector<Type> result;

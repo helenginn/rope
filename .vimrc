@@ -1,4 +1,4 @@
-set path=vagabond/core/**,vagabond/gui/**,vagabond/gui/elements/**,vagabond/utils/**,vagabond/cmd/**,vagabond/c4x/**,
+set path=vagabond/core/**,vagabond/gui/**,vagabond/gui/elements/**,vagabond/utils/**,vagabond/cmd/**,vagabond/c4x/**,vagabond/untangle/**
 
 command! Tags !ctags -R vagabond/core/* vagabond/gui/* vagabond/utils/* vagabond/c4x/*
 

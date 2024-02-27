@@ -20,6 +20,7 @@
 #define __vagabond__PdbFile__
 
 #include "File.h"
+#include <vagabond/utils/OpSet.h>
 
 namespace gemmi
 {
@@ -38,10 +39,12 @@ public:
 	virtual File::Type cursoryLook();
 	virtual void parse();
 	virtual void write(std::string filename);
-	static void writeAtoms(AtomGroup *grp, std::string name);
+	static void writeAtoms(AtomGroup *grp, std::string name, 
+	                       bool altConfs = false);
 	static void writeStructure(gemmi::Structure &st, std::string name);
 	static void writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
-	                                  const std::string &model_name);
+	                                  const std::string &model_name,
+	                                  bool altConfs = false);
 
 	void getAllGeometry();
 private:
@@ -58,6 +61,7 @@ private:
 	void processModel(gemmi::Model &m);
 	void processResidue(gemmi::Residue &r, AtomInfo &ai);
 	void processAtom(gemmi::Atom &a, AtomInfo &ai, char conf);
+	void processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai);
 
 	void parseFileContents();
 

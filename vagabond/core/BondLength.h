@@ -34,9 +34,29 @@ public:
 
 	const double measurement() const;
 
+	size_t count()
+	{
+		return 2;
+	}
+
+	const double &stdev() const
+	{
+		return _stdev;
+	}
+
 	const double &length() const
 	{
 		return _length;
+	}
+
+	const double &expectation() const
+	{
+		return _length;
+	}
+	
+	const float as_z_score(const float &other) const
+	{
+		return fabs(other - expectation()) / stdev();
 	}
 	
 	virtual const std::string desc() const;
@@ -70,6 +90,7 @@ private:
 	Atom *_a;
 	Atom *_b;
 	double _length;
+	double _stdev = 0.01;
 };
 
 #endif

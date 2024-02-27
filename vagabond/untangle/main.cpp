@@ -16,27 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "TransferHandler.h"
-#include "AtomGroup.h"
-#include "GroupBounds.h"
-#include "Atom.h"
+#include "UntangleWindow.h"
+#include <vagabond/utils/gl_import.h>
 
-TransferHandler::TransferHandler(int mapNum)
-: _mapNum(mapNum)
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#else
+#include <curl/curl.h>
+#endif
+
+float test = 0;
+
+int main (int argc, char **argv)
 {
+	UntangleWindow window;
+	window.setup(argc, argv);
 
+	while (window.tick())
+	{
+
+	}
+
+	return 0;
 }
-
-void TransferHandler::supplyAtomGroup(const std::vector<Atom *> &all)
-{
-	getRealDimensions(all);
-}
-
-void TransferHandler::getRealDimensions(const std::vector<Atom *> &sub)
-{
-	GroupBounds bounds(sub);
-	bounds.calculate();
-	_min = bounds.min - _pad * 2.f;
-	_max = bounds.max + _pad * 2.f;
-}
-

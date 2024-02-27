@@ -31,7 +31,8 @@ class BondAngle : public Bondstraint
 {
 public:
 	/** ownership is taken over by the AtomGroup after creation */
-	BondAngle(AtomGroup *owner, Atom *a, Atom *b, Atom *c, double angle);
+	BondAngle(AtomGroup *owner, Atom *a, Atom *b, Atom *c, double angle,
+	double stdev = 0);
 	virtual ~BondAngle() {};
 
 	const double &angle() const
@@ -39,7 +40,27 @@ public:
 		return _angle;
 	}
 
+	const double &expectation() const
+	{
+		return _angle;
+	}
+
+	const double &stdev() const
+	{
+		return _stdev;
+	}
+
 	double measurement() const;
+	
+	size_t count()
+	{
+		return 3;
+	}
+	
+	const float as_z_score(const float &other) const
+	{
+		return fabs(other - expectation()) / stdev();
+	}
 	
 	Atom *const &atom(int i) const
 	{
@@ -47,6 +68,11 @@ public:
 		if (i == 1) return _b;
 		if (i == 2) return _c;
 		throw std::runtime_error("asked for silly atom number from bond angle");
+	}
+	
+	bool hasAtom(Atom *a)
+	{
+		return (_c == a || _a == a || _b == a);
 	}
 	
 	bool atomIsTerminal(Atom *a)
@@ -79,12 +105,18 @@ public:
 		return !(*this == other);
 	}
 
+	float stdev()
+	{
+		return _stdev;
+	}
+	
 	virtual const std::string desc() const;
 private:
 	Atom *_a;
 	Atom *_b;
 	Atom *_c;
 	double _angle;
+	double _stdev = 0;
 };
 
 #endif

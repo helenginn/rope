@@ -1,0 +1,25 @@
+untanglefiles = [
+'MemoryTangle.h',
+'MemoryTangle.cpp',
+'Points.h',
+'Points.cpp',
+'TangledBond.h',
+'TangledBond.cpp',
+'UntangleWindow.h',
+'UntangleWindow.cpp',
+'UntangleView.h',
+'UntangleView.cpp',
+'Untangle.h',
+'Untangle.cpp',
+'Visual.h',
+'Visual.cpp',
+'main.cpp',
+]
+
+executable('untangle', untanglefiles,
+    link_with : [gui, core],
+    cpp_args: ['-std=c++14'],
+    link_args: [links],
+	include_directories: ['../..'],
+    dependencies : deps, 
+    install: false)

@@ -59,11 +59,45 @@ void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)
 	*_macroAtoms += vagatom;
 }
 
-std::set<char> get_alt_confs(std::vector<gemmi::Atom> &atoms)
+void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
+{
+	Atom *vagatom = new Atom();
+	vagatom->setAtomNum(_num);
+	vagatom->setResidueId(ai.resid);
+	vagatom->setChain(ai.chain);
+	vagatom->setHetatm(ai.isHetatm);
+	vagatom->setCode(ai.res);
+
+	bool first = true;
+	
+	for (gemmi::Atom *const &a : atoms)
+	{
+		glm::vec3 pos = glm::vec3(a->pos.x, a->pos.y, a->pos.z);
+
+		if (first)
+		{
+			vagatom->setAtomName(a->name);
+			vagatom->setElementSymbol(a->element.name());
+			vagatom->setInitialPosition(pos, a->b_iso, {}, a->occ);
+			first = false;
+		}
+
+		std::string str;
+		str += a->altloc;
+		vagatom->conformerPositions()[str].pos.ave = pos;
+		vagatom->conformerPositions()[str].b = a->b_iso;
+		vagatom->conformerPositions()[str].occ = a->occ;
+	}
+	
+	_num++;
+	*_macroAtoms += vagatom;
+}
+
+std::set<char> get_alt_confs(const std::vector<gemmi::Atom> &atoms)
 {
 	std::set<char> chs;
 
-	for (gemmi::Atom &atom : atoms)
+	for (const gemmi::Atom &atom : atoms)
 	{
 		if (atom.altloc != '\0')
 		{
@@ -74,6 +108,35 @@ std::set<char> get_alt_confs(std::vector<gemmi::Atom> &atoms)
 	return chs;
 }
 
+std::vector<std::string> get_atom_names(const std::vector<gemmi::Atom> &atoms)
+{
+	std::vector<std::string> names;
+
+	for (const gemmi::Atom &atom : atoms)
+	{
+		if (std::find(names.begin(), names.end(), atom.name) == names.end())
+		{
+			names.push_back(atom.name);
+		}
+	}
+	
+	return names;
+}
+
+std::map<std::string, std::vector<gemmi::Atom *>> 
+group_alt_confs(std::vector<gemmi::Atom> &atoms)
+{
+	std::map<std::string, std::vector<gemmi::Atom *>> map;
+
+	for (gemmi::Atom &atom : atoms)
+	{
+		std::string name = atom.name;
+		map[name].push_back(&atom);
+	}
+	
+	return map;
+}
+
 void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
 {
 	ai.res = r.name;
@@ -81,18 +144,13 @@ void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
 	ai.seqstr = r.seqid.str();
 	ai.isHetatm = (r.het_flag == 'H');
 	
-	std::set<char> confs = get_alt_confs(r.atoms);
+	typedef std::map<std::string, std::vector<gemmi::Atom *>> GroupMap;
+	GroupMap grps = group_alt_confs(r.atoms);
 	
-	char chosen = '\0';
-	if (confs.size())
+	std::vector<std::string> names = get_atom_names(r.atoms);
+	for (const std::string &name : names)
 	{
-		chosen = *confs.begin();
-	}
-	
-	for (size_t i = 0; i < r.atoms.size(); i++)
-	{
-		gemmi::Atom &a = r.atoms[i];
-		processAtom(a, ai, chosen);
+		processAtomSet(grps[name], ai);
 	}
 }
 
@@ -176,7 +234,7 @@ void PdbFile::parseFileContents()
 }
 
 void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
-                                    const std::string &model_name)
+                                    const std::string &model_name, bool altConfs)
 {
 	st.models.push_back(gemmi::Model(model_name));
 	
@@ -185,6 +243,8 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 	
 	ResidueId prev("");
 	gemmi::Residue *last = nullptr;
+	gemmi::Residue *first = nullptr;
+
 	for (size_t i = 0; i < grp->size(); i++)
 	{
 		Atom *atom = (*grp)[i];
@@ -207,7 +267,7 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 			prev = id;
 		}
 		
-		if (last != nullptr)
+		if (last != nullptr && !altConfs)
 		{
 			last->atoms.push_back(gemmi::Atom());
 			gemmi::Atom &a = last->atoms.back();
@@ -217,6 +277,35 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 			a.pos.x = pos.x;
 			a.pos.y = pos.y;
 			a.pos.z = pos.z;
+			first = nullptr;
+		}
+		else if (last != nullptr && altConfs)
+		{
+			Atom::ConformerInfo &info = atom->conformerPositions();
+			std::map<std::string, std::vector<gemmi::Atom>> map;
+			
+			for (auto it = info.begin(); it != info.end(); it++)
+			{
+				map[it->first].push_back(gemmi::Atom());
+				gemmi::Atom &a = map[it->first].back();
+				glm::vec3 pos = it->second.pos.ave;
+				a.name = atom->atomName();
+				a.b_iso = it->second.b;
+				a.occ = it->second.occ;
+				a.altloc = it->first[0];
+				a.element = gemmi::Element(atom->elementSymbol());
+				a.pos.x = pos.x;
+				a.pos.y = pos.y;
+				a.pos.z = pos.z;
+			}
+			
+			for (auto it = map.begin(); it != map.end(); it++)
+			{
+				for (gemmi::Atom &atom : it->second)
+				{
+					last->atoms.push_back(atom);
+				}
+			}
 		}
 	}
 }
@@ -231,10 +320,10 @@ void PdbFile::writeStructure(gemmi::Structure &st, std::string name)
 	file.close();
 }
 
-void PdbFile::writeAtoms(AtomGroup *grp, std::string name)
+void PdbFile::writeAtoms(AtomGroup *grp, std::string name, bool altConfs)
 {
 	gemmi::Structure st;
-	writeAtomsToStructure(grp, st, name);
+	writeAtomsToStructure(grp, st, name, altConfs);
 	writeStructure(st, name);
 }
 

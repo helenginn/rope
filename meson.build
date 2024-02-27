@@ -180,6 +180,8 @@ else # emscripten
   dependencies : deps, install: true)
 endif
 
+subdir('vagabond/untangle')
+
 if (links == [])
   subdir('vagabond/c4x/tests')
   subdir('vagabond/utils/tests')

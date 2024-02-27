@@ -8,6 +8,7 @@
 #include "AtomPosMap.h"
 #include "ResidueId.h"
 #include <mutex>
+#include <vagabond/utils/OpSet.h>
 #include <vector>
 
 struct BondNum
@@ -31,20 +32,32 @@ public:
 	{
 		glm::mat3x3 tensor;
 		float b;
+		float occ;
 		WithPos pos;
 	}; 
+	
+	typedef std::map<std::string, AtomPlacement> ConformerInfo;
 	
 	/** @param pos 3D coordinate in real space
 	 * @param b B factor in Angstroms squared
 	 * @param tensor anisotropic tensor; values in PDB divided by 10000 */
 	void setInitialPosition(glm::vec3 pos, float b = -1, 
-	                        glm::mat3x3 tensor = glm::mat3(1.f));
+	                        glm::mat3x3 tensor = glm::mat3(1.f),
+	                        float occupancy = 1.f);
 	
 	/** @returns initial B factor, usually as found in the PDB/mmCIF file */
 	const float &initialBFactor() const
 	{
 		return _initial.b;
 	}
+	
+	/** @returns initial position, usually as found in the PDB/mmCIF file */
+	ConformerInfo &conformerPositions()
+	{
+		return _conformers;
+	}
+	
+	OpSet<std::string> conformerList();
 	
 	/** @returns initial position, usually as found in the PDB/mmCIF file */
 	const glm::vec3 &initialPosition() const
@@ -320,6 +333,7 @@ private:
 
 	AtomPlacement _initial{};
 	AtomPlacement _derived{};
+	ConformerInfo _conformers{};
 	
 	std::map<std::string, AtomPlacement> _others{};
 
