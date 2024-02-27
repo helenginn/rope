@@ -18,10 +18,12 @@
 
 #include <vagabond/c4x/ClusterSVD.h>
 
+#include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/GuiAtom.h>
 #include <vagabond/gui/TableView.h>
@@ -209,12 +211,19 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		glm::vec2 c = button->xy();
 		Menu *m = new Menu(this, this, "options");
 		m->addOption("Table for main chain", "main_chain");
+		m->addOption("Save state as PDB", "save_state");
 		if (_electric)
 		{
 			m->addOption("Save electric field", "electric_field");
 		}
 		m->setup(c.x, c.y);
 		setModal(m);
+	}
+	else if (tag == "options_save_state")
+	{
+		AskForText *aft = new AskForText(this, "PDB file name to save to:",
+		                                 "export_pdb", this);
+		setModal(aft);
 	}
 	else if (tag == "options_main_chain")
 	{
@@ -249,6 +258,17 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 	else if (tag == "yes_adjust")
 	{
 		adjustTorsions();
+	}
+	else if (tag == "export_pdb")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string filename = te->scratch();
+
+		std::string path = getPath(filename);
+		std::string file = getFilename(filename);
+		check_path_and_make(path);
+
+		_instance->currentAtoms()->writeToFile(filename);
 	}
 	else
 	{

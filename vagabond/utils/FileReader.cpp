@@ -325,4 +325,58 @@ void escape_filename(std::string &file)
 	}
 }
 
+int count_chars(const std::string &s, const char &ch)
+{
+	int count = 0;
+
+	for (int i = 0; i < s.size(); i++)
+	{
+		if (s[i] == ch)
+		{
+			count++;
+		}
+	}
+
+	return count;
+}
+
+
+void check_path_and_make(std::string &path)
+{
+	if (path.back() == '/')
+	{
+		path.pop_back();
+	}
+	
+	if (count_chars(path, '/') > 1)
+	{
+		std::string err = ("Please no more than one subdirectory down."\
+		                   "\nI cannot cope with such complexities.");
+		throw std::runtime_error(err);
+	}
+
+	if (path.find('.') != std::string::npos)
+	{
+		std::string err = ("If you are going to add a path, please don't "\
+		                   "\nuse full stops (periods), it is dangerous "\
+		                   "for your filesystem.");
+		throw std::runtime_error(err);
+	}
+	else if (path.find('/') == 0)
+	{
+		std::string err = ("If you are going to add a path, please don't "\
+		                   "\nstart with a forwardslash. I don't want to be "\
+		                   "\nresponsible for ruining your filesystem.");
+		throw std::runtime_error(err);
+	}
+	else if (file_exists(path) && !is_directory(path))
+	{
+		std::string err = ("This path already exists as a file and I refuse"\
+		                   "\nto overwrite it. Please choose another name.");
+		throw std::runtime_error(err);
+	}
+
+	FileReader::makeDirectoryIfNeeded(path);
+
+}
 
