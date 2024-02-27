@@ -20,11 +20,12 @@
 #define __vagabond__Untangle__
 
 #include <set>
-#include <string>
 #include <map>
 #include <list>
-#include <functional>
+#include <mutex>
+#include <string>
 #include <thread>
+#include <functional>
 #include "TangledBond.h"
 #include <vagabond/utils/OpSet.h>
 #include <vagabond/utils/glm_import.h>
