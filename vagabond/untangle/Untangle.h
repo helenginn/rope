@@ -23,6 +23,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <functional>
 #include <thread>
 #include "TangledBond.h"
 #include <vagabond/utils/OpSet.h>
