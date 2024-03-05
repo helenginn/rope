@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Residue.h"
-#include <gemmi/polyheur.hpp>
+#include <gemmi/resinfo.hpp>
 
 Residue::Residue(ResidueId id, std::string code, std::string chain)
 {
@@ -28,7 +28,10 @@ Residue::Residue(ResidueId id, std::string code, std::string chain)
 
 const std::string Residue::one_letter_code() const
 {
-	return gemmi::one_letter_code(std::vector<std::string>(1, _code));
+	std::string letter;
+	gemmi::ResidueInfo info = gemmi::find_tabulated_residue(_code);
+	letter += info.one_letter_code;
+	return letter;
 }
 
 bool Residue::hasTorsionRef(TorsionRef &ref) const

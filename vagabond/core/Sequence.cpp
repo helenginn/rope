@@ -26,7 +26,7 @@
 #include "Entity.h"
 #include "Atom.h"
 #include <sstream>
-#include <gemmi/polyheur.hpp>
+#include <gemmi/resinfo.hpp>
 
 Sequence::Sequence()
 {
@@ -69,8 +69,8 @@ Sequence::Sequence(std::string str, int offset)
 	{
 		char ch = str[i];
 
-		std::string tlc = gemmi::expand_protein_one_letter(ch);
-		Residue r{ResidueId(i + offset + 1), tlc, " "};
+		std::string tlc = gemmi::expand_one_letter(ch, gemmi::ResidueKind::AA);
+		Residue r{ResidueId(i + 1), tlc, " "};
 		
 		*this += r;
 	}
@@ -157,13 +157,15 @@ std::string Sequence::str()
 {
 	std::ostringstream ss;
 	std::vector<std::string> resvec;
+	std::string olc;
 	
 	for (Residue &r : _residues)
 	{
 		resvec.push_back(r.code());
+		gemmi::ResidueInfo info = gemmi::find_tabulated_residue(r.code());
+		olc += info.one_letter_code;
 	}
 
-	std::string olc = gemmi::one_letter_code(resvec);
 //	std::replace(olc.begin(), olc.end(), 'X', ' ');
 	
 	return olc;
