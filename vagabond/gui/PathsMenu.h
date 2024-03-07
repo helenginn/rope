@@ -20,23 +20,36 @@
 #define __vagabond__PathsMenu__
 
 #include <vagabond/gui/elements/ListView.h>
+#include <Responder.h>
 
+class Path;
+
+template <class T>
+class Manager;
 class Entity;
 
-class PathsMenu : public ListView
+class PathsMenu : public ListView, public Responder<Manager<Path>>
 {
 public:
-	PathsMenu(Scene *prev, Entity *entity);
+	typedef std::vector<Path *> Paths;
+	PathsMenu(Scene *prev, Entity *entity,
+	          const std::vector<Paths> &paths = {});
 	~PathsMenu();
 	
 	virtual void setup();
+	virtual void respond();
 
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	virtual void sendObject(std::string tag, void *object);
 private:
+	void preparePaths();
+
 	Entity *_entity = nullptr;
 
+	std::vector<Paths> _paths;
+	bool _parent = false;
 };
 
 #endif

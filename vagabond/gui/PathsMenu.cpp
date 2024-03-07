@@ -26,9 +26,67 @@
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
 
-PathsMenu::PathsMenu(Scene *prev, Entity *entity) : ListView(prev)
+PathsMenu::PathsMenu(Scene *prev, Entity *entity,
+                     const std::vector<Paths> &paths)
+: ListView(prev)
 {
 	_entity = entity;
+	_paths = paths;
+	
+	if (_paths.size() == 0)
+	{
+		_parent = true;
+		preparePaths();
+	}
+	
+	PathManager::manager()->setResponder(this);
+}
+
+void PathsMenu::preparePaths()
+{
+	_paths.clear();
+
+	PathManager::GroupedMap map;
+	map = PathManager::manager()->groupedPathsForEntity(_entity);
+
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		_paths.push_back(it->second);
+	}
+}
+
+void PathsMenu::sendObject(std::string tag, void *object)
+{
+	if (tag == "purged_path")
+	{
+		Path *path = static_cast<Path *>(object);
+		for (auto jt = _paths.begin(); jt != _paths.end(); jt++)
+		{
+			Paths &paths = *jt;
+			for (auto it = paths.begin(); it != paths.end(); it++)
+			{
+				if (*it == path)
+				{
+					paths.erase(it);
+					if (paths.size() == 0)
+					{
+						_paths.erase(jt);
+					}
+
+					return;
+				}
+			}
+		}
+	}
+}
+
+void PathsMenu::respond()
+{
+	if (_parent)
+	{
+		preparePaths();
+		refresh();
+	}
 }
 
 PathsMenu::~PathsMenu()
@@ -44,32 +102,47 @@ void PathsMenu::setup()
 
 size_t PathsMenu::lineCount()
 {
-	std::vector<Path *> paths = PathManager::manager()->pathsForEntity(_entity);
-	return paths.size() + 1;
+	return _paths.size() + (_parent ? 1 : 0);
 }
 
 Renderable *PathsMenu::getLine(int i)
 {
-	if (i == 0)
+	if (i == 0 && _parent)
 	{
 		TextButton *t = new TextButton("Make new path", this);
 		t->setReturnTag("make_new");
 		t->setLeft(0., 0.);
 		return t;
 	}
+	else if (_parent)
+	{
+		i--;
+	}
 
-	i--;
 	Box *b = new Box();
-	std::vector<Path *> paths = PathManager::manager()->pathsForEntity(_entity);
-	Path *path = paths[i];
+
+	const Paths &paths = _paths[i];
+	
+	if (paths.size() == 0)
+	{
+		return b;
+	}
+
+	Path *path = paths[0];
+	std::string desc = path->desc();
+	if (paths.size() > 1)
+	{
+		desc += " (" + std::to_string(paths.size()) + " paths)";
+	}
 	
 	{
-		TextButton *t = new TextButton(path->desc(), this);
+		TextButton *t = new TextButton(desc, this);
 		t->setReturnTag("path_" + std::to_string(i));
 		t->setLeft(0., 0.);
 		b->addObject(t);
 	}
 	
+	if (paths.size() == 1)
 	{
 		ImageButton *button = new ImageButton("assets/images/eye.png", 
 		                                      this);
@@ -97,12 +170,13 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (end.length())
 	{
-		std::vector<Path *> paths;
-		paths = PathManager::manager()->pathsForEntity(_entity);
 		int idx = atoi(end.c_str());
-		Path *path = paths[idx];
+		const Paths &paths = _paths[idx];
+		Path *path = paths[0];
+
 		PlausibleRoute *pr = path->toRoute();
 		RouteExplorer *re = new RouteExplorer(this, pr);
+		re->saveOver(path);
 		re->show();
 		return;
 	}
@@ -112,9 +186,25 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	if (end.length())
 	{
 		int idx = atoi(end.c_str());
-		Path &path = PathManager::manager()->object(idx);
-		PathsDetail *pd = new PathsDetail(this, &path);
-		pd->show();
+
+		if (_paths[idx].size() == 1)
+		{
+			Path *path = _paths[idx][0];
+			PathsDetail *pd = new PathsDetail(this, path);
+			pd->show();
+		}
+		else
+		{
+			std::vector<Paths> new_paths;
+			for (Path *path : _paths[idx])
+			{
+				new_paths.push_back({path});
+			}
+
+			PathsMenu *menu = new PathsMenu(this, _entity, new_paths);
+			menu->show();
+
+		}
 		return;
 	}
 	
