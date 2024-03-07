@@ -457,7 +457,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "path_from")
 	{
-		Polymer *m = static_cast<Polymer	*>(button->returnObject());
+		Polymer *m = static_cast<Polymer *>(button->returnObject());
 		_from = m;
 	}
 	
