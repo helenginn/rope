@@ -58,6 +58,7 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void finishedDragging(std::string tag, double x, double y);
+	void perResidueLocalMotions();
 protected:
 	void setupColoursForList(RTAngles &angles);
 	virtual void prepareResources();
@@ -66,31 +67,10 @@ private:
 
 	void askForAtomMotions();
 	void makeMenu();
+	void localMotion();
 	void setupColours();
 	void setupColourLegend();
 	void supplyTorsions(CoordManager *manager);
-	
-	struct mapping
-	{
-		int operator()(BondSequence *seq, int block)
-		{
-			if (map.count(seq) && map.at(seq).count(block))
-			{
-				return map[seq][block];
-			}
-
-			return -1;
-		}
-		
-		void setSeqBlockIdx(BondSequence *seq, int block, int move_idx)
-		{
-			map[seq][block] = move_idx;
-		}
-
-		std::map<BondSequence *, std::map<int, int>> map;
-	};
-	
-	mapping _mapping;
 	
 	double _min = -1; 
 	double _max = 1; 
@@ -98,10 +78,12 @@ private:
 	float _maxTorsion = 0;
 	bool _electric = false;
 	bool _first = true;
+	bool _showingAtomic = false;
 
 	AtomMap *_latest = nullptr;
 	DisplayUnit *_unit = nullptr;
 	TabulatedData *_data = nullptr;
+	TabulatedData *_localMotions = nullptr;
 	ClusterSVD *_cluster = nullptr;
 	TorsionData *_tData = nullptr;
 	RTAngles _rawAngles;

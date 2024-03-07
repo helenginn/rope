@@ -26,6 +26,7 @@
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/GuiAtom.h>
+#include <vagabond/gui/GuiDensity.h>
 #include <vagabond/gui/TableView.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/maths.h>
@@ -37,6 +38,8 @@
 #include <vagabond/core/TabulatedData.h>
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/core/BondSequenceHandler.h>
+#include <vagabond/core/LocalMotion.h>
+#include <vagabond/core/GroupBounds.h>
 #include <vagabond/core/AtomBlock.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Entity.h>
@@ -161,6 +164,7 @@ void AxisExplorer::adjustTorsions()
 	_movement = t2a.convertAnglesSimple(_instance, _rawAngles);
 	_movement.attachInstance(_instance);
 	_displayTargets = true;
+	_showingAtomic = true;
 
 	for (size_t i = 0; i < _movement.size(); i++)
 	{
@@ -195,6 +199,83 @@ void AxisExplorer::supplyTorsions(CoordManager *manager)
 	manager->setTorsionFetcher(grab_torsion);
 }
 
+void AxisExplorer::localMotion()
+{
+	AtomGroup *group = _instance->currentAtoms();
+	GroupBounds bounds(group);
+	bounds.calculate();
+
+	glm::vec3 min = bounds.min - 5.f;
+	glm::vec3 max = bounds.max + 5.f;
+	
+	std::cout << min << " " << max << std::endl;
+	float cube = 1.f;
+
+	AtomMap *map = new AtomMap();
+	int nx, ny, nz;
+	map->findDimensions(nx, ny, nz, min, max, cube);
+	map->setOrigin(min);
+	map->setDimensions(nx, ny, nz, false);
+	map->setRealDim(cube);
+	
+	LocalMotion motion(group);
+
+	auto get_weight = [map, &motion](int i, int j, int k)
+	{
+		glm::vec3 real = {i, j, k};
+		map->voxel2Real(real);
+		float value = motion.scoreFor(real);
+		map->element(i, j, k)[0] = value;
+	};
+	
+	map->do_op_on_basic_index(get_weight);
+	
+	_unit->density()->setThreshold(1);
+	_unit->refreshDensity(map, false);
+	_latest = map;
+}
+
+void AxisExplorer::perResidueLocalMotions()
+{
+	int minRes, maxRes;
+	AtomGroup *group = _instance->currentAtoms();
+	group->getLimitingResidues(&minRes, &maxRes);
+
+	_localMotions = 
+	new TabulatedData({{"Residue number", TabulatedData::Number},
+	                  {"Local motion (AU)", TabulatedData::Number}});
+
+	for (int res = minRes; res <= maxRes; res++)
+	{
+		float total = 0;
+		float weights = 0;
+		AtomGroup *residue = group->new_subset([res](Atom *const &a)
+		{
+			return (a->residueId() == res && !a->isCoreMainChain());
+		});
+
+		for (Atom *atom : residue->atomVector())
+		{
+			glm::vec3 pos = atom->derivedPosition();
+			float value = _latest->interpolate(pos);
+			total += value;
+			weights++;
+		}
+		
+		total /= weights;
+
+		_localMotions->addEntry({{"Residue number", std::to_string(res)},
+			                       {"Local motion (AU)", 
+		                        std::to_string(total)}});
+		
+		delete residue;
+	}
+	
+	TableView *tv = new TableView(this, _localMotions, 
+	                              "Side chain exposure to local motion");
+	tv->show();
+}
+
 void AxisExplorer::askForAtomMotions()
 {
 	std::string str = "Would you like to see the atom motions associated\n"
@@ -212,12 +293,25 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		Menu *m = new Menu(this, this, "options");
 		m->addOption("Table for main chain", "main_chain");
 		m->addOption("Save state as PDB", "save_state");
-		if (_electric)
+		if (_showingAtomic)
 		{
-			m->addOption("Save electric field", "electric_field");
+			m->addOption("Local variance of motion", "local_motion");
+		}
+		if (_latest)
+		{
+			m->addOption("Local motion per residue", "motion_per_residue");
+			m->addOption("Save map", "save_map");
 		}
 		m->setup(c.x, c.y);
 		setModal(m);
+	}
+	else if (tag == "options_motion_per_residue")
+	{
+		perResidueLocalMotions();
+	}
+	else if (tag == "options_local_motion")
+	{
+		localMotion();
 	}
 	else if (tag == "options_save_state")
 	{
@@ -232,7 +326,7 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		tv->show();
 
 	}
-	else if (tag == "options_electric_field")
+	else if (tag == "options_save_map")
 	{
 		if (_latest)
 		{
@@ -247,9 +341,10 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 			clear->clear();
 			ArbitraryMap *map = (*_latest)();
 			*clear += *map;
+			clear->applySymmetry();
 			MtzFile file;
 			file.setMap(clear);
-			file.write_to_file("efield.mtz", 2);
+			file.write_to_file("save_map.mtz", 2);
 			delete map;
 			delete clear;
 		}
