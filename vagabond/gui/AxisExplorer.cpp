@@ -112,7 +112,7 @@ void AxisExplorer::submitJobAndRetrieve(float prop, bool tear)
 		delete _latest;
 	}
 	
-	_unit->refreshDensity(r->map);
+	_unit->refreshDensity(r->map, true);
 	_latest = r->map;
 	r->map = nullptr;
 

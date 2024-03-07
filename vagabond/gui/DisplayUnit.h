@@ -49,9 +49,14 @@ public:
 	{
 		return _atoms;
 	}
+	
+	GuiDensity *density()
+	{
+		return _guiDensity;
+	}
 
 	void tear(AtomMap *map);
-	void refreshDensity(AtomMap *map);
+	void refreshDensity(AtomMap *map, bool differences);
 
 	void loadModel(Model *model);
 	void loadAtoms(AtomGroup *group, Entity *entity = nullptr);

@@ -158,11 +158,10 @@ void GuiDensity::tear(AtomMap *map)
 	_tear = map;
 }
 
-void GuiDensity::fromDifferences(AtomMap *map)
+void GuiDensity::fromAtomMap(AtomMap *map, bool differences)
 {
 	_hasUC = false;
-	sampleFromOtherMap(map, map, true);
-	std::cout << vertexCount() << " now " << std::endl;
+	sampleFromOtherMap(map, map, differences);
 }
 
 void GuiDensity::populateFromMap(OriginGrid<fftwf_complex> *map)

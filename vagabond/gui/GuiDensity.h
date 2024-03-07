@@ -75,7 +75,7 @@ public:
 	}
 
 	void tear(AtomMap *map);
-	void fromDifferences(AtomMap *map);
+	void fromAtomMap(AtomMap *map, bool differences);
 	virtual void extraUniforms();
 private:
 	void objectFromMesh(MC::mcMesh &mesh, bool diff);

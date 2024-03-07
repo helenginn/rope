@@ -187,7 +187,7 @@ void DisplayUnit::densityFromMap(ArbitraryMap *map)
 	_parent->addObject(_guiDensity);
 }
 
-void DisplayUnit::refreshDensity(AtomMap *map)
+void DisplayUnit::refreshDensity(AtomMap *map, bool differences)
 {
 	if (!_guiDensity)
 	{
@@ -195,7 +195,7 @@ void DisplayUnit::refreshDensity(AtomMap *map)
 		_parent->addObject(_guiDensity);
 	}
 
-	_guiDensity->fromDifferences(map);
+	_guiDensity->fromAtomMap(map, differences);
 }
 
 void DisplayUnit::tear(AtomMap *map)
