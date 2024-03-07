@@ -30,6 +30,7 @@ class TextButton;
 class Instance;
 class Slider;
 class Route;
+class Path;
 
 class RouteExplorer : public Display, public DragResponder,
 public Responder<Route>
@@ -37,6 +38,11 @@ public Responder<Route>
 public:
 	RouteExplorer(Scene *prev, PlausibleRoute *route);
 	virtual ~RouteExplorer();
+	
+	void saveOver(Path *path)
+	{
+		_oldPath = path;
+	}
 
 	virtual void setup();
 	virtual void doThings();
@@ -55,6 +61,8 @@ private:
 
 	Route *_route = nullptr;
 	PlausibleRoute *_plausibleRoute = nullptr;
+	Path *_oldPath = nullptr;
+
 	Instance *_instance = nullptr;
 
 	Slider *_rangeSlider = nullptr;

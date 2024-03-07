@@ -29,7 +29,7 @@ public:
 	virtual ~PathManager();
 	static PathManager *manager();
 
-	virtual Path *insertOrReplace(Path &p);
+	virtual Path *insertOrReplace(Path &new_path, Path *old_pointer);
 	
 	void purgePath(Path *path);
 

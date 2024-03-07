@@ -231,7 +231,7 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 	else if (tag == "add")
 	{
 		Path path(_plausibleRoute);
-		Environment::env().pathManager()->insertOrReplace(path);
+		Environment::env().pathManager()->insertOrReplace(path, _oldPath);
 		back();
 	}
 	else if (tag == "start" && _worker == nullptr)

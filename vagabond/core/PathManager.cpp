@@ -35,25 +35,28 @@ PathManager::~PathManager()
 	
 }
 
-Path *PathManager::insertOrReplace(Path &p)
+Path *PathManager::insertOrReplace(Path &new_path, Path *old_pointer)
 {
-	std::unique_lock<std::mutex> lock(*_addMutex);
-	auto it = std::find(_objects.begin(), _objects.end(), p);
+	auto it = std::find_if(_objects.begin(), _objects.end(),
+	[&old_pointer](const Path &a)
+	{
+		return (&a == old_pointer);
+	});
 
 	if (it == _objects.end())
 	{
-		_objects.push_back(p);
+		_objects.push_back(new_path);
 	}
 	else
 	{
-		*it = p;
+		*it = new_path;
 	}
 
 	housekeeping();
 
 	Manager::triggerResponse();
 
-	return &*it;
+	return &_objects.back();
 }
 
 void PathManager::housekeeping()
