@@ -343,6 +343,11 @@ int count_chars(const std::string &s, const char &ch)
 
 void check_path_and_make(std::string &path)
 {
+	if (path.length() == 0)
+	{
+		return;
+	}
+
 	if (path.back() == '/')
 	{
 		path.pop_back();
