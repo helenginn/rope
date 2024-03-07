@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <algorithm>
+
 #include "Route.h"
 #include "Polymer.h"
 #include "Grapher.h"
@@ -23,8 +25,12 @@
 #include "TorsionBasis.h"
 #include "TorsionData.h"
 #include "BondSequence.h"
+#include "BondCalculator.h"
+#include "PairwiseDeviations.h"
 
+#include "matrix_functions.h"
 #include "engine/Tasks.h"
+#include "engine/Task.h"
 #include "BondSequenceHandler.h"
 
 Route::Route(Instance *from, Instance *to, const RTAngles &list)
@@ -54,7 +60,11 @@ float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
 {
 	clearTickets();
 
+	_resources.calculator->holdHorses();
+
 	submitJob(frac, show, job_num);
+
+	_resources.calculator->releaseHorses();
 	retrieve();
 	
 	float ret = _point2Score.begin()->second.deviations;
@@ -62,18 +72,50 @@ float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
 	return ret;
 }
 
-void Route::submitJob(float frac, bool show, int job_num)
+void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 {
 	_ticket++;
-	Flag::Extract gets = Flag::Deviation;
+	Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
 	if (show)
 	{
 		gets = (Flag::Extract)(Flag::AtomVector | gets);
 	}
 
-	submitSingleAxisJob(frac, _ticket, gets);
-	_ticket2Point[_ticket] = job_num;
+	BaseTask *first_hook = nullptr;
+	CalcTask *final_hook = nullptr;
+	
+	/* get easy references to resources */
+	BondCalculator *const &calculator = _resources.calculator;
+	BondSequenceHandler *const &sequences = _resources.sequences;
+
+	/* this final task returns the result to the pool to collect later */
+	Task<Result, void *> *submit_result = calculator->submitResult(job_num);
+
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
+	                             Flag::DoSuperpose);
+
+	/* calculation of torsion angle-derived and target-derived
+	 * atom positions */
+	sequences->calculate(calc, {frac}, &first_hook, &final_hook);
+
+	Task<BondSequence *, void *> *let = 
+	sequences->extract(gets, submit_result, final_hook);
+
+	PairwiseDeviations pd([](Atom *const &atom)
+	                      {
+		                     return (atom->atomName() == "CA" ||
+		                     		 !atom->isMainChain());
+		                  });
+	Task<BondSequence *, Deviation> *task = pd.task();
+	
+	final_hook->follow_with(task);
+	task->must_complete_before(let);
+	task->follow_with(submit_result);
+	
+	_ticket2Point[job_num] = job_num;
 	_point2Score[job_num] = Score{};
+	
+	_resources.tasks->addTask(first_hook);
 }
 
 const Grapher &Route::grapher() const
@@ -97,6 +139,60 @@ void Route::setFlips(std::vector<int> &idxs, std::vector<int> &fs)
 	}
 }
 
+void Route::bestGuessTorsion(int idx)
+{
+	if (!parameter(idx)->isTorsion())
+	{
+		return;
+	}
+
+	glm::vec3 before[4]{};
+	glm::vec3 after[4]{};
+
+	for (size_t i = 0; i < parameter(idx)->atomCount(); i++)
+	{
+		before[i] = parameter(idx)->atom(i)->otherPosition("target");
+		after[i] = parameter(idx)->atom(i)->otherPosition("moving");
+	}
+
+	float first = 0;
+	float last = 0;
+	for (float f = 0; f <= 1.01; f += 0.1)
+	{
+		glm::vec3 frac[4]{};
+		for (int i = 0; i < 4; i++)
+		{
+			frac[i] = before[i] + after[i] * f;
+		}
+		
+		float torsion = measure_bond_torsion(frac);
+		if (f <= 0)
+		{
+			first = torsion;
+			last = torsion;
+		}
+		else
+		{
+			while (torsion < last - 180.f) torsion += 360.f;
+			while (torsion >= last + 180.f) torsion -= 360.f;
+		}
+
+		last = torsion;
+	}
+	
+	destination(idx) = last - first;
+}
+
+void Route::bestGuessTorsions()
+{
+	for (size_t i = 0; i < motionCount(); i++)
+	{
+		if (fabs(destination(i)) > 30)
+		{
+			bestGuessTorsion(i);
+		}
+	}
+}
 
 void Route::bringTorsionsToRange()
 {
@@ -126,7 +222,6 @@ void Route::getParametersFromBasis()
 	std::vector<Motion> tmp_motions;
 	std::vector<ResidueTorsion> torsions;
 
-	BondCalculator *calc = _resources.calculator;
 	TorsionBasis *basis = _resources.sequences->torsionBasis();
 
 	for (size_t i = 0; i < basis->parameterCount(); i++)
@@ -220,6 +315,11 @@ void Route::prepareResources()
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
 
+	updateAtomFetch();
+}
+
+void Route::updateAtomFetch()
+{
 	const std::vector<AtomBlock> &blocks = 
 	_resources.sequences->sequence()->blocks();
 

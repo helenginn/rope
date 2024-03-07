@@ -195,9 +195,11 @@ void PlausibleRoute::setTargets()
 		atom->setOtherPosition("moving", diff);
 		atom->setOtherPosition("target", s);
 	}
+	
+	updateAtomFetch();
 }
 
-float PlausibleRoute::routeScore(int steps, bool forceField)
+float PlausibleRoute::routeScore(int steps, bool pairwise)
 {
 	clearTickets();
 	_resources.calculator->holdHorses();
@@ -209,7 +211,7 @@ float PlausibleRoute::routeScore(int steps, bool forceField)
 		
 		if (!_updateAtoms) show = false; // don't show
 
-		submitJob(frac, show, 0);
+		submitJob(frac, show, 0, pairwise);
 	}
 	
 	_resources.calculator->releaseHorses();
@@ -340,7 +342,8 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 }
 
 int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
-                                  const std::string &message)
+                                  const std::string &message,
+                                  const std::vector<size_t> &indices)
 {
 	int changed = 0;
 	startTicker(message);
@@ -356,7 +359,7 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 
 	float start = routeScore(flipNudgeCount());
 
-	for (size_t i = 0; i < motionCount(); i++)
+	for (size_t j = 0; j < indices.size(); j++)
 	{
 		if (Route::_finish)
 		{
@@ -365,6 +368,7 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 
 		clickTicker();
 
+		size_t i = indices[j];
 		Parameter *centre = parameter(i);
 
 		if (!validate(i))
@@ -461,7 +465,7 @@ bool PlausibleRoute::flipTorsion(const ValidateParam &validate, int idx)
 	{
 		setFlips(idxs, putatives[i]);
 
-		float candidate = routeScore(flipNudgeCount());
+		float candidate = routeScore(flipNudgeCount(), false);
 
 		if (candidate < _bestScore - 1e-3)
 		{
@@ -482,7 +486,7 @@ bool PlausibleRoute::flipTorsions(const ValidateParam &validate)
 	startTicker("Flipping torsions");
 	bool changed = false;
 
-	_bestScore = routeScore(flipNudgeCount());
+	_bestScore = routeScore(flipNudgeCount(), false);
 	
 	for (size_t i = 0; i < motionCount(); i++)
 	{
@@ -519,6 +523,8 @@ void PlausibleRoute::flipTorsionCycle(const ValidateParam &validate)
 		
 		count++;
 	}
+
+	_bestScore = routeScore(flipNudgeCount(), true);
 }
 
 

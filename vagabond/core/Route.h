@@ -41,7 +41,8 @@ public:
 
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
-	void submitJob(float frac, bool show = true, int job_num = 0);
+	void submitJob(float frac, bool show = true, 
+	               int job_num = 0, bool pairwise = true);
 
 	float submitJobAndRetrieve(float frac, bool show = true, int job_num = 0);
 	
@@ -142,6 +143,7 @@ public:
 	int indexOfParameter(Parameter *t);
 
 	void bringTorsionsToRange();
+	void bestGuessTorsions();
 	
 	const RTMotion &motions() const
 	{
@@ -177,6 +179,8 @@ protected:
 	{
 		return _motions.storage(i).flip;
 	}
+
+	void bestGuessTorsion(int i);
 	
 	enum InterpolationType
 	{
@@ -211,6 +215,8 @@ protected:
 	bool _updateAtoms = true;
 	int _cycles = -1;
 protected:
+	void updateAtomFetch();
+
 	RTMotion _motions;
 	
 private:

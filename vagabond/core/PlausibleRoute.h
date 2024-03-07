@@ -44,7 +44,7 @@ public:
 	void setTargets();
 	
 	virtual void prepareForAnalysis();
-	float routeScore(int steps, bool forceField = false);
+	float routeScore(int steps, bool pairwise = true);
 
 	typedef std::function<bool(int idx)> ValidateParam;
 	typedef std::function<void()> Task;
@@ -53,7 +53,8 @@ public:
 	                     bool mains_only, bool sides_only);
 
 	int nudgeTorsions(const ValidateParam &validate,
-	                  const std::string &message);
+	                  const std::string &message,
+	                  const std::vector<size_t> &indices);
 
 	void upgradeJobs();
 	
