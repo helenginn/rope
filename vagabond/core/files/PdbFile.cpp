@@ -186,7 +186,7 @@ void PdbFile::parseFileContents()
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << "Reading " << path << " failed: " << std::endl;
+		std::cout << "Reading original filename: " << _filename << " failed: " << std::endl;
 		std::cout << err.what() << std::endl;
 		return;
 	}
@@ -365,7 +365,7 @@ void PdbFile::write(std::string filename)
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << "Reading " << path << " failed: " << std::endl;
+		std::cout << "Reading original file " << _filename << " failed: " << std::endl;
 		std::cout << err.what() << std::endl;
 		return;
 	}
@@ -410,7 +410,7 @@ File::Type PdbFile::cursoryLook()
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << "Reading " << path << " failed: " << std::endl;
+		std::cout << "Reading original file " << _filename << " failed: " << std::endl;
 		std::cout << err.what() << std::endl;
 		return Nothing;
 	}
