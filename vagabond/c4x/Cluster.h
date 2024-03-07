@@ -70,34 +70,34 @@ public:
 	
 	size_t columns() const
 	{
-		return _result.cols;
+		return _uMatrix.cols();
 	}
 	
 	virtual size_t rows() const
 	{
-		return _result.rows;
+		return _uMatrix.rows();
 	}
 
 	virtual float weight(int axis) const;
 
 	virtual float weight(int i, int j) const
 	{
-		return _result[i][j];
+		return _uMatrix(i, j);
+	}
+
+	const float value(int i, int j) const
+	{
+		return _uMatrix(i, j);
 	}
 	
 	virtual const size_t &axis(int i) const
 	{
 		return _axes[i];
 	}
-	
-	const float value(int i, int j) const
-	{
-		return _result[i][j];
-	}
 
-	const PCA::Matrix &results() const
+	const PCA::Matrix results() const
 	{
-		return _result;
+		return _uMatrix;
 	}
 	
 	const float &scaleFactor() const
@@ -124,6 +124,11 @@ protected:
 	PCA::Matrix _result{};
 	size_t _axes[3] = {0, 1, 2};
 	double _total = 0;
+	
+	Eigen::MatrixXf _uMatrix;
+	Eigen::VectorXf _weights;
+
+	Eigen::MatrixXf _inverse;
 	
 	std::atomic<int> _clusterVersion{0};
 };

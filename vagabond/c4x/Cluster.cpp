@@ -129,7 +129,7 @@ glm::vec3 Cluster::point(int idx) const
 	for (size_t i = 0; i < 3 && i < _result.cols; i++)
 	{
 		int axis = _axes[i];
-		v[i] = _result[idx][axis];
+		v[i] = value(idx, axis);
 	}
 	
 	return v;
