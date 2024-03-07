@@ -26,6 +26,7 @@
 #include <vagabond/core/TorsionData.h>
 #include <vagabond/core/BFactorData.h>
 #include <vagabond/core/PlausibleRoute.h>
+#include <vagabond/core/NewPath.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
 #include "AxisExplorer.h"
@@ -154,17 +155,14 @@ DoRequest doRequest(TorsionData *group)
 
 			Instance *start = static_cast<Instance *>(group->object(start_idx));
 			Instance *end = static_cast<Instance *>(group->object(end_idx));
+			
+			NewPath new_path(start, end);
+			PlausibleRoute *pr = new_path();
 
-			std::vector<Angular> vals = group->rawVector(start_idx, end_idx);
-			const RTAngles &empty = group->emptyAngles();
-			RTAngles angles = RTAngles::angles_from(empty.headers_only(), vals);
-
-			PlausibleRoute *sr = new PlausibleRoute(start, end, angles);
 			ConfSpaceView *scene = axes->scene();
-
 			scene->setMadePaths();
 
-			RouteExplorer *re = new RouteExplorer(scene, sr);
+			RouteExplorer *re = new RouteExplorer(scene, pr);
 			re->show();
 
 		}

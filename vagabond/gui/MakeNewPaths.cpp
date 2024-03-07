@@ -21,6 +21,7 @@
 #include "RouteExplorer.h"
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/core/Entity.h>
+#include <vagabond/core/NewPath.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
@@ -124,17 +125,15 @@ void MakeNewPaths::checkAndPrepare()
 
 void MakeNewPaths::prepare()
 {
-	std::vector<Instance *> instances = _entity->instances();
-	TorsionData prep = _entity->makeTorsionDataGroup(true);
-
 	Instance *from = nullptr;
 	Instance *to = nullptr;
+
+	std::vector<Instance *> instances = _entity->instances();
 
 	for (Instance *inst : instances)
 	{
 		if (inst->id() == _fromId)
 		{
-			inst->addTorsionsToGroup(prep, rope::RefinedTorsions);
 			from = inst;
 			std::cout << "found from: " << from << std::endl;
 		}
@@ -144,26 +143,15 @@ void MakeNewPaths::prepare()
 	{
 		if (inst->id() == _toId)
 		{
-			inst->addTorsionsToGroup(prep, rope::RefinedTorsions);
 			std::cout << "found to: " << from << std::endl;
 			to = inst;
 		}
 	}
 
-	RTAngles list = prep.emptyAngles(true);
-	
-	std::vector<Angular> from_angles, to_angles;
-	from_angles = prep.vector(0);
-	to_angles = prep.vector(1);
+	NewPath new_path(from, to);
+	PlausibleRoute *route = new_path();
 
-	for (size_t i = 0; i < to_angles.size(); i++)
-	{
-		list.storage(i) = to_angles[i] - from_angles[i];
-	}
-
-	PlausibleRoute *sr = new PlausibleRoute(from, to, list);
-
-	RouteExplorer *re = new RouteExplorer(this, sr);
+	RouteExplorer *re = new RouteExplorer(this, route);
 	re->show();
 }
 
