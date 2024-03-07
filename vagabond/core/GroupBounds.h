@@ -19,6 +19,8 @@
 #ifndef __vagabond__GroupBounds__
 #define __vagabond__GroupBounds__
 
+#include "AtomGroup.h"
+
 struct GroupBounds
 {
 	GroupBounds(AtomGroup *const &grp) : _atoms(grp->atomVector())
