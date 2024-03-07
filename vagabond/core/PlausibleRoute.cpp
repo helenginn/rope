@@ -278,6 +278,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 
 	_paramPtrs.clear();
 	_paramStarts.clear();
+	_hasSides = false;
 	std::vector<float> steps;
 	
 	for (size_t i = 0; i < idxs.size(); i++)
@@ -285,6 +286,12 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 		if (idxs[i] < 0)
 		{
 			continue;
+		}
+		
+		if (parameter(idxs[i])->isTorsion() &&
+		    !parameter(idxs[i])->coversMainChain())
+		{
+			_hasSides = true;
 		}
 
 		WayPoints &wps = wayPoints(idxs[i]);
@@ -378,9 +385,13 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 		
 		ParamSet related = centre->relatedParameters();
 		OpSet<int> single;
-//		single.push_back(indexOfParameter(centre));
-		single = convert_to_indices(related);
+		single.insert(indexOfParameter(centre));
+//		single = convert_to_indices(related);
 		single.filter(validate);
+		if (single.size() == 0)
+		{
+			continue;
+		}
 		
 		bool result = simplexCycle(single.toVector());
 		

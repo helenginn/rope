@@ -33,10 +33,16 @@ public:
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 
 	PairwiseDeviations(const AtomFilter &filter = {});
+	
+	void setLimit(const float &limit)
+	{
+		_limit = limit;
+	}
 
 	Task<BondSequence *, Deviation> *task();
 private:
 	AtomFilter _filter;
+	float _limit = 8.f;
 
 };
 

@@ -26,9 +26,10 @@ PairwiseDeviations::PairwiseDeviations(const AtomFilter &filter)
 	_filter = filter;
 }
 
-auto simplePairwiseDeviation(const PairwiseDeviations::AtomFilter &filter) 
+auto simplePairwiseDeviation(const PairwiseDeviations::AtomFilter &filter,
+                             const float &limit = 8.f) 
 {
-	return [filter](BondSequence *seq) -> Deviation
+	return [limit, filter](BondSequence *seq) -> Deviation
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
 		glm::vec3 *scratch = new glm::vec3[blocks.size() * 2];
@@ -45,8 +46,6 @@ auto simplePairwiseDeviation(const PairwiseDeviations::AtomFilter &filter)
 			scratch[n+1] = it->target;
 			n += 2;
 		}
-		
-		const int limit = 10.f;
 		
 		for (int i = 0; i < n - 2; i += 2)
 		{
@@ -71,55 +70,19 @@ auto simplePairwiseDeviation(const PairwiseDeviations::AtomFilter &filter)
 				if (!ok) continue;
 
 				glm::vec3 targdiff = atarg - btarg;
-				glm::vec3 posdiff = apos - bpos;
 				
 				float targdist = glm::length(targdiff);
-				float weight = 1 / (targdist * targdist);
-				
-				float dist = fabs(targdist - glm::length(posdiff));
-				total += dist * dist * weight;
-				count += weight;
-			}
-		}
-		
-		total /= count;
-		total = sqrt(total);
-		delete [] scratch;
-
-		return {total};
-
-		for (auto it = blocks.begin(); it != blocks.end() - 1; it++)
-		{
-			if (it->atom == nullptr || !it->flag)
-			{
-				continue;
-			}
-			
-			if (filter && !filter(it->atom)) continue;
-
-			glm::mat4x4 &abasis = it->basis;
-			const glm::vec3 &atarg = it->target;
-
-			for (auto jt = it + 1; jt != blocks.end(); jt++)
-			{
-				if (jt->atom == nullptr || !jt->flag)
+				if (targdist > limit)
 				{
 					continue;
 				}
 
-				if (filter && !filter(jt->atom)) continue;
+				float weight = 1 / (targdist * targdist);
 				
-				glm::mat4x4 &bbasis = jt->basis;
-				const glm::vec3 &btarg = jt->target;
-				
-				glm::vec3 targdiff = atarg - btarg;
-				glm::vec3 posdiff = {abasis[3][0] - bbasis[3][0],
-					                 abasis[3][1] - bbasis[3][1],
-					                 abasis[3][2] - bbasis[3][2]};
-				
-				float dist = fabs(glm::length(targdiff) - glm::length(posdiff));
-				total += dist;
-				count++;
+				glm::vec3 posdiff = apos - bpos;
+				float dist = fabs(targdist - glm::length(posdiff));
+				total += dist * dist * weight;
+				count += weight;
 			}
 		}
 		
@@ -133,7 +96,7 @@ auto simplePairwiseDeviation(const PairwiseDeviations::AtomFilter &filter)
 
 Task<BondSequence *, Deviation> *PairwiseDeviations::task()
 {
-	auto return_deviation = simplePairwiseDeviation(_filter);
+	auto return_deviation = simplePairwiseDeviation(_filter, _limit);
 	auto *task = new Task<BondSequence *, Deviation>(return_deviation);
 	return task;
 }

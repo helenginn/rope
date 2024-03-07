@@ -100,12 +100,20 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 
 	Task<BondSequence *, void *> *let = 
 	sequences->extract(gets, submit_result, final_hook);
+	
+	auto main_chain_filter = [](Atom *const &atom)
+	{
+		return atom->isReporterAtom() && atom->elementSymbol() != "H";
+	};
 
-	PairwiseDeviations pd([](Atom *const &atom)
-	                      {
-		                     return (atom->atomName() == "CA" ||
-		                     		 !atom->isMainChain());
-		                  });
+	auto side_chain_filter = [](Atom *const &atom)
+	{
+		return ((atom->isReporterAtom() || !atom->isMainChain())
+		        && atom->elementSymbol() != "H");
+	};
+
+	PairwiseDeviations pd(_hasSides ? side_chain_filter : main_chain_filter);
+	pd.setLimit(10.f);
 	Task<BondSequence *, Deviation> *task = pd.task();
 	
 	final_hook->follow_with(task);

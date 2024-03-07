@@ -218,6 +218,7 @@ protected:
 	void updateAtomFetch();
 
 	RTMotion _motions;
+	bool _hasSides = false;
 	
 private:
 	bool _calculating;
