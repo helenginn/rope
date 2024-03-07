@@ -44,6 +44,17 @@ public:
 	virtual void voxel2Real(glm::vec3 &voxel) const;
 	virtual glm::vec3 reciprocal(int h, int k, int l) const;
 	virtual glm::vec3 real(int h, int k, int l) const;
+
+	static void findDimensions(int &nx, int &ny, int &nz, 
+	                           glm::vec3 min, glm::vec3 max, float &cubeDim)
+	{
+		glm::vec3 size = max - min;
+		glm::vec3 diff = size / cubeDim;
+
+		nx = (long)lrint(diff[0]) + 1; adjustN(nx);
+		ny = (long)lrint(diff[1]) + 1; adjustN(ny);
+		nz = (long)lrint(diff[2]) + 1; adjustN(nz);
+	}
 private:
 	float _realDim = 1;
 	float _recipDim = 1;
