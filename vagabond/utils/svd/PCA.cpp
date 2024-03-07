@@ -26,6 +26,15 @@
 
 using namespace PCA;
 
+Matrix::Matrix(const Eigen::MatrixXf &matrix)
+{
+	setupMatrix(this, matrix.rows(), matrix.cols());
+	for (int i = 0; i < rows * cols; i++)
+	{
+		vals[i] = matrix.data()[i];
+	}
+}
+
 void PCA::setupMatrix(Matrix *mat, int rows, int cols)
 {
 	mat->vals = (double *)calloc(rows * cols, sizeof(double));

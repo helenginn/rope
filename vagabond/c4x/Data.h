@@ -22,6 +22,7 @@
 #include <vector>
 #include <iostream>
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/utils/Eigen/Dense>
 
 class Cluster;
 class ObjectData;
@@ -96,11 +97,11 @@ public:
 	}
 	
 	/** Return distance matrix of size m*m where m = member size */
-	PCA::Matrix distanceMatrix();
+	Eigen::MatrixXf distanceMatrix();
 
 	/** Return correlation matrix of size m*m where m = member size */
-	PCA::Matrix correlationMatrix();
-	PCA::Matrix arbitraryMatrix(const std::function<float(int, int)> 
+	Eigen::MatrixXf correlationMatrix();
+	Eigen::MatrixXf arbitraryMatrix(const std::function<float(int, int)> 
 	                            &comparison);
 protected:
 	float correlation_between(int i, int j);

@@ -19,6 +19,7 @@
 #ifndef __vagabond__PCA__
 #define __vagabond__PCA__
 
+#include "../Eigen/Dense"
 #include <cstring>
 #include <cmath>
 #include "../AcquireCoord.h"
@@ -35,6 +36,9 @@ namespace PCA
 
 	struct Matrix
 	{
+		Matrix() = default;
+		Matrix(const Eigen::MatrixXf &matrix);
+
 		double *vals = nullptr;
 		double **ptrs = nullptr;
 		int rows = 0; // slow

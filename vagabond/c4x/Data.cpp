@@ -20,6 +20,8 @@
 #include <cmath>
 #include "Data.h"
 
+using Eigen::MatrixXf;
+
 inline bool valid(const float &a)
 {
 	return std::isfinite(a) && a == a;
@@ -117,23 +119,19 @@ float Data::distance_between(int i, int j)
 	return sqrt(sq);
 }
 
-PCA::Matrix Data::arbitraryMatrix(const std::function<float(int, int)> 
+MatrixXf Data::arbitraryMatrix(const std::function<float(int, int)> 
                                   &comparison)
 {
 	findDifferences();
 	
-	PCA::Matrix m;
-	
 	int n = vectorCount();
 	
-	PCA::setupMatrix(&m, n, n);
+	MatrixXf m(n, n);
 	
 	for (size_t j = 0; j < n; j++)
 	{
 		for (size_t i = 0; i < n; i++)
 		{
-			double &val = m[j][i];
-			
 			float corr = comparison(i, j);
 
             if (!valid(corr))
@@ -141,7 +139,7 @@ PCA::Matrix Data::arbitraryMatrix(const std::function<float(int, int)>
 				corr = 0;
 			}
 
-			val = corr;
+			m(j, i) = corr;
 		}
 	}
 	
@@ -169,13 +167,13 @@ void Data::removeNormals(Comparable &arr)
 	}
 }
 
-PCA::Matrix Data::distanceMatrix()
+MatrixXf Data::distanceMatrix()
 {
 	return arbitraryMatrix([this](int i, int j) 
 	                       { return distance_between(i, j); });
 }
 
-PCA::Matrix Data::correlationMatrix()
+MatrixXf Data::correlationMatrix()
 {
 	return arbitraryMatrix([this](int i, int j) 
 	                       { return correlation_between(i, j); });

@@ -20,6 +20,10 @@
 #include "Data.h"
 #include <iostream>
 
+using Eigen::MatrixXf;
+using Eigen::VectorXf;
+using Eigen::BDCSVD;
+
 ClusterSVD::ClusterSVD(Data *const &data) : Cluster(data)
 {
 
@@ -30,7 +34,7 @@ ClusterSVD::~ClusterSVD()
 	freeSVD(&_svd);
 }
 
-PCA::Matrix ClusterSVD::matrix(Data *const &data)
+MatrixXf ClusterSVD::matrix(Data *const &data)
 {
 	if (_type == PCA::Distance)
 	{
@@ -43,24 +47,26 @@ PCA::Matrix ClusterSVD::matrix(Data *const &data)
 	
 }
 
-/*
-std::vector<float> ClusterSVD::mapVector(typename DG::Array &vec)
-{
-	typename DG::Comparable comp;
-	this->_dg.convertToComparable(vec, comp);
-	std::vector<float> result = mapComparable(comp);
-
-	return result;
-}
-*/
-
+// not actually tested - might be buggy?
 std::vector<float> ClusterSVD::mapComparable(typename Data::Comparable &vec)
 {
 	_mutex.lock();
 	std::vector<float> result;
-	result.resize(_rawToCluster.rows);
+	result.resize(_inverse.rows());
+	
+	Eigen::VectorXf original(vec.size());
+	for (int i = 0; i < vec.size(); i++)
+	{
+		original(i) = vec[i];
+	}
 
-	multMatrix(this->_rawToCluster, &vec[0], &result[0]);
+	Eigen::VectorXf mapped = _inverse * original;
+
+	for (int i = 0; i < mapped.size(); i++)
+	{
+		result[i] = mapped(i);
+	}
+
 	_mutex.unlock();
 	return result;
 }
@@ -74,11 +80,16 @@ void ClusterSVD::cluster()
 	
 	_data->findDifferences();
 
-	PCA::Matrix mat = matrix(_data);
+	MatrixXf dataMtx = matrix(_data);
+	BDCSVD<MatrixXf> svd = dataMtx.bdcSvd();
+	svd.compute(dataMtx, Eigen::ComputeFullU);
 
-	setupSVD(&_svd, mat.rows, mat.cols);
-	setupMatrix(&this->_result, mat.rows, mat.cols);
+//	PCA::Matrix mat = matrix(_data);
 
+	setupSVD(&_svd, dataMtx.rows(), dataMtx.cols());
+	setupMatrix(&_result, dataMtx.rows(), dataMtx.cols());
+
+	/*
 	copyMatrix(_svd.u, mat);
 	
 	try
@@ -93,9 +104,24 @@ void ClusterSVD::cluster()
 	}
 
 	reorderSVD(&_svd);
+	*/
+	_uMatrix = svd.matrixU();
+	_uMatrix.transposeInPlace();
+
+	_svd.u = _uMatrix;
+	_svd.v = svd.matrixV();
+	_result = svd.matrixU();
+	_weights = svd.singularValues();
+	
+	for (int i = 0; i < svd.singularValues().rows(); i++)
+	{
+		_svd.w[i] = svd.singularValues()(i);
+
+	}
 
 	copyMatrix(this->_result, _svd.u);
 	this->_scaleFactor = 1 / _svd.w[0];
+	this->_scaleFactor = 1 / svd.singularValues()(0);
 
 	for (size_t i = 0; i < this->_result.cols; i++)
 	{
@@ -104,31 +130,33 @@ void ClusterSVD::cluster()
 			this->_result[j][i] /= this->_scaleFactor;
 		}
 		this->_total += _svd.w[i];
+		this->_total += svd.singularValues()(i);
 	}
 
-	freeMatrix(&mat);
+//	freeMatrix(&mat);
 	this->_clusterVersion++;
 }
 
 void ClusterSVD::calculateInverse()
 {
 	_mutex.lock();
+
 	int l = this->data()->comparable_length();
-	PCA::SVD tmp;
-	setupSVD(&tmp, l, _svd.u.rows);
+	int n = _weights.rows();
+
+	Eigen::MatrixXf prep(l, n);
 	
-	for (size_t i = 0; i < _svd.u.rows; i++)
+	for (size_t i = 0; i < n; i++)
 	{
 		typename Data::Comparable raw = this->rawComparable(i);
 
 		for (size_t j = 0; j < l; j++)
 		{
-			tmp.u[j][i] = raw[j];
+			prep(j, i) = raw[j];
 		}
 	}
 	
-	invertSVD(&tmp);
-	_rawToCluster = PCA::transpose(&tmp.u);
+	_inverse = prep.inverse();
 	_mutex.unlock();
 }
 

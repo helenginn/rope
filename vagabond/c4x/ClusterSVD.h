@@ -84,16 +84,15 @@ public:
 	}
 
 	virtual std::vector<float> mapComparable(typename Data::Comparable &vec);
-//	virtual std::vector<float> mapVector(typename DG::Array &vec);
 
 	virtual float weight(int axis) const
 	{
-		return _svd.w[axis];
+		return _weights(axis);
 	}
 
 	virtual float weight(int i, int j) const
 	{
-		return _svd.u[i][j];
+		return _uMatrix(i, j);
 	}
 
 	PCA::Matrix distanceMatrix();
@@ -106,10 +105,14 @@ public:
 	void recalculateResult();
 	void calculateInverse();
 private:
-	PCA::Matrix matrix(Data *const &data);
+	Eigen::MatrixXf matrix(Data *const &data);
+	
+	Eigen::MatrixXf _uMatrix;
+	Eigen::VectorXf _weights;
+
+	Eigen::MatrixXf _inverse;
 
 	PCA::SVD _svd{};
-	PCA::Matrix _rawToCluster{};
 	PCA::MatrixType _type = PCA::Correlation;
 	std::mutex _mutex;
 };
