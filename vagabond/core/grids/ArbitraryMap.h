@@ -103,7 +103,7 @@ public:
 	}
 	
 	virtual void multiply(float scale);
-	void applySymmetry(const std::string &spg_name);
+	void applySymmetry(const std::string &spg_name = "");
 private:
 	Diffraction *_diff = nullptr;
 

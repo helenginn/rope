@@ -192,10 +192,17 @@ void ArbitraryMap::applySymmetry(const std::string &spg_name)
 		fft();
 	}
 	
+	std::string use = (spg_name == "" ? _spgName : spg_name);
+	
+	if (use == "")
+	{
+		throw std::runtime_error("I don't have a space group to work with");
+	}
+	
 	Diffraction *diff = new Diffraction(this);
 
 	const gemmi::SpaceGroup *spg = nullptr;
-	spg = gemmi::find_spacegroup_by_name(spg_name);
+	spg = gemmi::find_spacegroup_by_name(use);
 	gemmi::GroupOps grp = spg->operations();
 	
 	SymmetryExpansion::apply(diff, spg, -1);
