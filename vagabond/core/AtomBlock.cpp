@@ -160,27 +160,50 @@ AtomBlock::prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks)
 	return func;
 }
 
-rope::GetVec3FromCoordIdx 
-AtomBlock::prepareMovingTargets(const std::vector<AtomBlock> &blocks)
+std::vector<std::pair<glm::vec3, glm::vec3>>
+AtomBlock::prepareMotions(const std::vector<AtomBlock> &blocks)
 {
-	return [&blocks](const Coord::Get &get, const int &idx)
+	std::vector<std::pair<glm::vec3, glm::vec3>> motions;
+	motions.reserve(blocks.size());
+	
+	for (const AtomBlock &block : blocks)
 	{
-		Atom *const &atom = blocks[idx].atom;
+		if (!block.atom)
+		{
+			motions.push_back({{NAN,NAN,NAN}, {NAN,NAN,NAN}});
+			continue;
+		}
 
+		Atom *const &atom = block.atom;
 		if (atom && atom->hasOtherPosition("moving"))
 		{
 			glm::vec3 moving = atom->otherPosition("moving");
 			glm::vec3 orig = atom->otherPosition("target");
-
-			glm::vec3 ret = orig + get(0) * moving;
-			return ret;
+			motions.push_back({orig, moving});
 		}
 		else if (atom)
 		{
-			return atom->initialPosition();
+			glm::vec3 init = atom->initialPosition();
+			motions.push_back({init, {}});
 		}
-		
-		return glm::vec3(NAN);
+	}
+
+	return motions;
+}
+
+rope::GetVec3FromCoordIdx 
+AtomBlock::prepareMovingTargets(const std::vector<AtomBlock> &blocks)
+{
+	std::vector<std::pair<glm::vec3, glm::vec3>> motions;
+	motions = prepareMotions(blocks);
+
+	return [motions](const Coord::Get &get, const int &idx)
+	{
+		glm::vec3 orig = motions[idx].first;
+		glm::vec3 moving = motions[idx].second;
+
+		glm::vec3 ret = orig + get(0) * moving;
+		return ret;
 	};
 
 }
