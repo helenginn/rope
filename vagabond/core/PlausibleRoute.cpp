@@ -38,6 +38,12 @@ void PlausibleRoute::setup()
 	prepareDestination();
 	prepareTorsionFetcher();
 	setTargets();
+
+	if (_isNew)	
+	{
+		bestGuessTorsions();
+	}
+
 	prepareJobs();
 }
 
@@ -53,9 +59,18 @@ template <class Validate>
 auto nudge_chain(PlausibleRoute *me, const Validate &validate,
                  const std::string &message)
 {
-	return [me, validate, message]()
+	std::vector<size_t> indices; indices.reserve(me->motionCount());
+	
+	for (size_t i = 0; i < me->motionCount(); i++)
 	{
-		me->nudgeTorsions(validate, message);
+		indices.push_back(i);
+	}
+	
+	std::random_shuffle(indices.begin(), indices.end());
+
+	return [me, validate, message, indices]()
+	{
+		me->nudgeTorsions(validate, message, indices);
 	};
 };
 

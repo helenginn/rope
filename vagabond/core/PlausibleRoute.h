@@ -57,6 +57,11 @@ public:
 
 	void upgradeJobs();
 	
+	void setNew(bool isNew)
+	{
+		_isNew = isNew;
+	}
+	
 	const int &jobLevel() const
 	{
 		return _jobLevel;
@@ -95,6 +100,7 @@ protected:
 	
 	bool _mainsOnly = true;
 	int _nudgeCount = 12;
+	int _isNew = true;
 	
 	int flipNudgeCount()
 	{
