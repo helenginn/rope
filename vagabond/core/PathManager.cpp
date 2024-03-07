@@ -67,6 +67,28 @@ void PathManager::housekeeping()
 	}
 }
 
+PathManager::GroupedMap PathManager::groupedPathsForEntity(Entity *ent)
+{
+	GroupedMap map;
+
+	for (Path &p : _objects)
+	{
+		p.housekeeping();
+		if (p.startInstance()->entity() != ent)
+		{
+			continue;
+		}
+
+		std::pair<Instance *, Instance *> pair;
+		pair = {p.startInstance(), p.endInstance()};
+
+		map[pair].push_back(&p);
+	}
+
+	return map;
+
+}
+
 std::vector<Path *> PathManager::pathsForEntity(Entity *ent)
 {
 	std::vector<Path *> paths;

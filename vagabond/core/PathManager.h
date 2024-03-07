@@ -44,6 +44,11 @@ public:
 	                                          Instance *second);
 
 	void housekeeping();
+
+	typedef std::map<std::pair<Instance *, Instance *>, std::vector<Path *>>
+	GroupedMap;
+
+	GroupedMap groupedPathsForEntity(Entity *ent);
 	
 	friend void to_json(json &j, const PathManager &value);
 	friend void from_json(const json &j, PathManager &value);
