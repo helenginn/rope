@@ -99,7 +99,6 @@ void RopeSpaceItem::attachExisting(ConfSpaceView *attach)
 	}
 
 	setConfView(attach);
-	std::cout << "Attach: " << _confView << std::endl;
 
 	clusterIfNeeded();
 	_confView->assignRopeSpace(this);
