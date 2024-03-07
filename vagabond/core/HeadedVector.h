@@ -19,6 +19,9 @@
 #ifndef __vagabond__HeadedVector__
 #define __vagabond__HeadedVector__
 
+#include <random>
+#include <algorithm>
+
 template <typename Header, typename Storage>
 class HeadedVector
 {
@@ -35,6 +38,13 @@ public:
 	const size_t size() const
 	{
 		return _pairs.size();
+	}
+
+	void shuffle()
+	{
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(_pairs.begin(), _pairs.end(), g);
 	}
 
 	std::vector<Header> headers_only() const
