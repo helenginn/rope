@@ -83,7 +83,6 @@ void CsvFile::processLine(std::string line)
 	for (size_t i = 0; i < components.size() && i < _headers.size(); i++)
 	{
 		std::string h = _headers[i];
-		std::cout << i << " " << h << " - " << components[i] << std::endl;
 		
 		if (components[i].length())
 		{
@@ -112,7 +111,6 @@ void CsvFile::processHeaders(std::string line)
 	{
 		defenestrate(h);
 		remove_quotes(h);
-		std::cout << "header: " << h << ", ";
 	}
 	std::cout << std::endl;
 	
