@@ -36,6 +36,8 @@ public IndexResponseView
 public:
 	Display(Scene *prev = nullptr);
 	virtual ~Display();
+	
+	void stopGui();
 
 	virtual void setup();
 	

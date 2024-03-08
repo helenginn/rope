@@ -66,6 +66,7 @@ AxisExplorer::AxisExplorer(Scene *prev, Instance *inst, const RTAngles &angles)
 
 AxisExplorer::~AxisExplorer()
 {
+	stopGui();
 	_instance->unload();
 }
 

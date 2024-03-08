@@ -40,6 +40,8 @@ public:
 	
 	~DisplayUnit();
 	
+	void stopGui();
+	
 	void setOwnsAtoms()
 	{
 		_atoms_are_mine = true;

@@ -55,6 +55,15 @@ Display::~Display()
 	_units.clear();
 }
 
+void Display::stopGui()
+{
+	for (DisplayUnit *unit : _units)
+	{
+		unit->stopGui();
+	}
+
+}
+
 void Display::fftButton()
 {
 	return;

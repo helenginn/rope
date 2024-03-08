@@ -51,29 +51,35 @@ void DisplayUnit::setMultiBondMode(bool mode)
 	}
 }
 
-DisplayUnit::~DisplayUnit()
+void DisplayUnit::stopGui()
 {
-	if (_model)
-	{
-		_model->unload();
-	}
-	
-	resetDensityMap();
-
-	delete _guiRefls;
-
 	if (_guiAtoms != nullptr)
 	{
 		_guiAtoms->stop();
 		_parent->removeObject(_guiAtoms);
 		_guiAtoms = nullptr;
 	}
+}
+
+DisplayUnit::~DisplayUnit()
+{
+	resetDensityMap();
+
+	delete _guiRefls;
 	
+	stopGui();
+
 	if (_atoms_are_mine)
 	{
 //		delete _atoms;
 //		_atoms = nullptr;
 	}
+
+	if (_model)
+	{
+		_model->unload();
+	}
+	
 }
 
 void DisplayUnit::loadReflections(Diffraction *diff)
