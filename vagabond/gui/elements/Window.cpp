@@ -71,7 +71,7 @@ void Window::instateWindow()
 #endif
 	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
 
-	_window = SDL_CreateWindow("Vagabond", 0, 0, _rect.w * _ratio,
+	_window = SDL_CreateWindow("RoPE", 0, 0, _rect.w * _ratio,
 	                           _rect.h * _ratio, windowFlags);
 	_context = SDL_GL_CreateContext(_window);
 	
