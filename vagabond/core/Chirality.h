@@ -84,7 +84,7 @@ public:
 	
 	const bool operator==(const Chirality &other) const;
 
-	virtual const std::string desc() const;
+	virtual const std::string desc();
 private:
 	Atom *_a;
 	Atom *_b;

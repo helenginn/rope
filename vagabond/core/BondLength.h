@@ -60,7 +60,7 @@ public:
 		return fabs(other - expectation()) / stdev();
 	}
 	
-	virtual const std::string desc() const;
+	virtual const std::string desc();
 	
 	Atom *atom(int i)
 	{

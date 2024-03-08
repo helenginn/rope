@@ -30,7 +30,7 @@ public:
 	virtual const double value() = 0;
 	virtual void setValue(const double value) = 0;
 	
-	virtual bool hasDesc(std::string desc) const = 0;
+	virtual bool hasDesc(std::string desc) = 0;
 	
 	virtual Atom *anAtom() = 0;
 	

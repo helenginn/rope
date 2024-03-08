@@ -118,7 +118,7 @@ void BondAngle::getSequentialAtoms(BondAngle *o, Atom **a, Atom **b,
 	}
 }
 
-const std::string BondAngle::desc() const
+const std::string BondAngle::desc()
 {
 	return "(" + _b->code() + ") " + _a->atomName() + "-" + 
 	_b->atomName() + "-" + _c->atomName();

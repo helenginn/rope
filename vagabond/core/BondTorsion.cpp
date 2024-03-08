@@ -88,16 +88,24 @@ bool BondTorsion::isPeptideBond() const
 	        (_b->atomName() == "N" && _c->atomName() == "C"));
 }
 
-const std::string BondTorsion::reverse_desc() const
+const std::string BondTorsion::reverse_desc() 
 {
-	return _d->atomName() + "-" + _c->atomName() + "-" + 
-	_b->atomName() + "-" + _a->atomName();
+	if (_rDesc.length()) return _rDesc;
+
+	_rDesc = (_d->atomName() + "-" + _c->atomName() + "-" + 
+	          _b->atomName() + "-" + _a->atomName());
+
+	return _rDesc;
 }
 
-const std::string BondTorsion::desc() const
+const std::string BondTorsion::desc() 
 {
-	return _a->atomName() + "-" + _b->atomName() + "-" + 
-	_c->atomName() + "-" + _d->atomName();
+	if (_desc.length()) return _desc;
+
+	_desc = (_a->atomName() + "-" + _b->atomName() + "-" + 
+	         _c->atomName() + "-" + _d->atomName());
+	
+	return _desc;
 }
 
 double BondTorsion::startingAngle()

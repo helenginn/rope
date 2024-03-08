@@ -36,7 +36,7 @@ public:
 	virtual ResidueId residueId();
 	virtual const ResidueId &residueId() const;
 
-	virtual bool hasDesc(std::string d) const
+	virtual bool hasDesc(std::string d)
 	{
 		return d == desc();
 	}
@@ -66,7 +66,7 @@ public:
 		return _name;
 	}
 
-	virtual const std::string desc() const
+	virtual const std::string desc()
 	{
 		return name();
 	}

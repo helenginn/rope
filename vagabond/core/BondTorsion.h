@@ -151,10 +151,10 @@ public:
 	glm::vec3 bondDirection() const;
 	double similarityScore(BondTorsion *const other) const;
 	
-	virtual const std::string desc() const;
-	virtual const std::string reverse_desc() const;
+	virtual const std::string desc();
+	virtual const std::string reverse_desc();
 
-	virtual bool hasDesc(std::string d) const
+	virtual bool hasDesc(std::string d)
 	{
 		return (d == desc() || d == reverse_desc());
 	}
@@ -168,6 +168,9 @@ private:
 	Atom *_b;
 	Atom *_c;
 	Atom *_d;
+	
+	std::string _desc;
+	std::string _rDesc;
 
 	double _angle = 0;
 	double _refinedAngle = 0;

@@ -76,7 +76,7 @@ const double BondLength::measurement() const
 	return length;
 }
 
-const std::string BondLength::desc() const
+const std::string BondLength::desc()
 {
 	std::string desc = _a->atomName() + "-" + _b->atomName();
 	return desc;

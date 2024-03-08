@@ -33,7 +33,7 @@ public:
 		_owner = nullptr;
 	}
 	
-	virtual const std::string desc() const
+	virtual const std::string desc()
 	{
 		return "";
 	}

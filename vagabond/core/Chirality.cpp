@@ -96,7 +96,7 @@ const bool Chirality::operator==(const Chirality &other) const
 
 }
 
-const std::string Chirality::desc() const
+const std::string Chirality::desc()
 {
 	return _cen->atomName() + ":" + _a->atomName() + "-" + _b->atomName()
 	+ "-" + _c->atomName();
