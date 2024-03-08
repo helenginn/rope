@@ -58,6 +58,7 @@ float LocalMotion::scoreFor(const glm::vec3 &location)
 	{
 		glm::vec3 a_targ = a->otherPosition("target");
 		glm::vec3 a_move = a->otherPosition("moving");
+
 		for (Atom *b : subset->atomVector())
 		{
 			if (a == b) continue;
@@ -66,15 +67,19 @@ float LocalMotion::scoreFor(const glm::vec3 &location)
 			glm::vec3 b_move = b->otherPosition("moving");
 			
 			glm::vec3 at_rest = b_targ - a_targ;
-			glm::vec3 in_motion = (b_targ + b_move) - (a_targ + a_move);
+			glm::vec3 motion = b_move - a_move;
 			
-			float distance = (glm::length(a_targ - location) 
-			                  * glm::length(b_targ - location));
-			float weight = 1 / (distance * distance);
-			
-			float diff = glm::length(in_motion) - glm::length(at_rest);
+			float nom = 0;
+			for (int i = 0; i < 3; i++)
+			{
+				nom += motion[i] * at_rest[i];
+			}
 
-			total += fabs(diff) * weight;
+			float weight = 1 / glm::length(a_targ);
+			
+			float exact = nom / glm::length(at_rest);
+
+			total += fabs(exact) * weight;
 			weights += weight;
 		}
 	}
