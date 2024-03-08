@@ -63,7 +63,7 @@ void FileView::filterForTypes(File::Type type)
 
 void FileView::setup()
 {
-	addTitle("Vagabond file system");
+	addTitle("RoPE file system");
 
 #ifdef __EMSCRIPTEN__
 	{
