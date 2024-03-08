@@ -188,16 +188,15 @@ void TypedData<Unit, Header>::convertToComparable(const Array &diff,
 	{
 		float *pos = &end[i];
 		Unit::comparable(diff[j], pos);
-		
-		for (size_t k = 0; k < Unit::comparable_size(); k++)
-		{
-			if (pos[k] != pos[k] || !isfinite(pos[k]))
-			{
-				pos[k] = 0;
-			}
-		}
-
 		i += Unit::comparable_size();
+	}
+		
+	for (size_t k = 0; k < end.size(); k++)
+	{
+		if (end[k] != end[k] || !isfinite(end[k]))
+		{
+			end[k] = 0;
+		}
 	}
 }
 

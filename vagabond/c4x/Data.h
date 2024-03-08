@@ -95,6 +95,8 @@ public:
 	{
 		return _groupCount;
 	}
+
+	Eigen::MatrixXf dataMatrix();
 	
 	/** Return distance matrix of size m*m where m = member size */
 	Eigen::MatrixXf distanceMatrix();

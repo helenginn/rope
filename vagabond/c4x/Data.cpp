@@ -151,6 +151,10 @@ void Data::applyNormals(Comparable &arr)
 	for (size_t j = 0; j < comparable_length(); j++)
 	{
 		arr[j] /= _stdevs[j];
+		if (!valid(arr[j]))
+		{
+			arr[j] = 0;
+		}
 	}
 }
 
@@ -209,3 +213,27 @@ Data::Comparable Data::weightedComparable(const std::vector<float> &weights)
 	return vals;
 }
 
+Eigen::MatrixXf Data::dataMatrix()
+{
+	findDifferences();
+//	Eigen::MatrixXf values(length(), vectorCount());
+	Eigen::MatrixXf values(vectorCount(), length());
+	
+	for (int i = 0; i < vectorCount(); i++)
+	{
+		Comparable &comparable = _comparables[i];
+
+		int J = 0;
+		for (int j = 0; j < comparable_length(); j += comparable_size())
+		{
+			for (size_t k = 0; k < comparable_size(); k++)
+			{
+				float value = comparable[j + k];
+				values(i, J) = value;
+			}
+			J++;
+		}
+	}
+	
+	return values;
+}

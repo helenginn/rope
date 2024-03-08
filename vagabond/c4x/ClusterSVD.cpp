@@ -84,46 +84,12 @@ void ClusterSVD::cluster()
 	BDCSVD<MatrixXf> svd = dataMtx.bdcSvd();
 	svd.compute(dataMtx, Eigen::ComputeFullU);
 
-
-//	PCA::Matrix mat = matrix(_data);
-
 	setupMatrix(&_result, dataMtx.rows(), dataMtx.cols());
 
-	/*
-	copyMatrix(_svd.u, mat);
-	
-	try
-	{
-		runSVD(&_svd);
-	}
-	catch (std::runtime_error &err)
-	{
-		std::cout << "Error running svd: " << err.what() << std::endl;
-		freeMatrix(&mat);
-		return;
-	}
-
-	reorderSVD(&_svd);
-	*/
 	_uMatrix = svd.matrixU();
-//	_uMatrix.transposeInPlace();
-
-//	_svd.u = _uMatrix;
-//	_svd.v = svd.matrixV();
-//	_result = svd.matrixU();
 	_weights = svd.singularValues();
 	_uMatrix *= _weights(0);
 	
-	std::cout << _uMatrix << std::endl;
-	
-	for (int i = 0; i < svd.singularValues().rows(); i++)
-	{
-//		_svd.w[i] = svd.singularValues()(i);
-
-	}
-
-//	copyMatrix(this->_result, _svd.u);
-//	this->_scaleFactor = 1 / _svd.w[0];
 	this->_scaleFactor = 1 / _weights(0);
 
 	for (size_t i = 0; i < this->_result.cols; i++)
@@ -135,7 +101,6 @@ void ClusterSVD::cluster()
 		this->_total += svd.singularValues()(i);
 	}
 
-//	freeMatrix(&mat);
 	this->_clusterVersion++;
 }
 
