@@ -186,11 +186,39 @@ void Route::bestGuessTorsion(int idx)
 			while (torsion < last - 180.f) torsion += 360.f;
 			while (torsion >= last + 180.f) torsion -= 360.f;
 		}
+		
 
 		last = torsion;
 	}
 	
 	destination(idx) = last - first;
+
+//	std::cout << time(NULL) << std::endl;
+	if (fabs(last - first) > 90.f)
+	{
+		int rnd = int(rand() % 5);
+		if (//parameter(idx)->residueId() != 59 &&
+		                parameter(idx)->residueId() != 61)
+		{ 
+			if (parameter(idx)->coversMainChain())
+			{
+				std::cout << "Skipping " << parameter(idx) << std::endl;
+			}
+			return;
+		}
+
+		int dir = (last - first > 0) ? -1 : 1;
+		if (parameter(idx)->coversMainChain())
+		{
+			std::cout << "Flipping " << parameter(idx)->desc() << " ";
+			std::cout << destination(idx) << " to ";
+		}
+		destination(idx) += dir * 360;
+		if (parameter(idx)->coversMainChain())
+		{
+			std::cout << destination(idx) << std::endl;
+		}
+	}
 }
 
 void Route::bestGuessTorsions()
