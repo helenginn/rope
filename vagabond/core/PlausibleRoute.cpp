@@ -333,6 +333,11 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 	}
 
 	_bestScore = routeScore(_nudgeCount);
+	
+	if (_bestScore <= 0)
+	{
+		return false;
+	}
 
 	_simplex->start();
 
@@ -639,14 +644,9 @@ void PlausibleRoute::prepareForAnalysis()
 
 void PlausibleRoute::upgradeJobs()
 {
-	if (_jobLevel > 3) { return; }
+	if (_jobLevel > 4) { return; }
 
-	std::cout << "Splitting..." << std::endl;
 	_jobLevel++;
-	
-	if (_jobLevel == 2)
-	{
-		_mainsOnly = false;
-	}
+	std::cout << "Job level now " << _jobLevel << "..." << std::endl;
 }
 
