@@ -94,7 +94,21 @@ struct AtomBlock
 	void silence();
 	void printBlock() const;
 
-	glm::mat4x4 prepareRotation(float t) const;
+	glm::mat4x4 prepareRotation(float torsion) const
+	{
+		float t = deg2rad(torsion);
+
+		float sint = sin(t);
+		float cost = cos(t);
+
+		glm::mat4x4 rot = glm::mat4(1.f);
+		rot[0][0] = cost;
+		rot[1][0] = -sint;
+		rot[0][1] = sint;
+		rot[1][1] = cost;
+
+		return rot;
+	}
 	
 	void writeToChildren(std::vector<AtomBlock> &context, int idx);
 };
