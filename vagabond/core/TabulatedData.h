@@ -32,6 +32,9 @@ public:
 		Number,
 	};
 	
+	TabulatedData operator+(const std::pair<TabulatedData *, 
+	                        std::string> &join) const;
+	
 	typedef std::pair<std::string, std::string> StringPair;
 	typedef std::pair<std::string, DataType> HeaderTypePair;
 	typedef std::vector<std::string> Strings;
@@ -46,7 +49,7 @@ public:
 	
 	void hideAfterEntry(int idx);
 	
-	size_t entryCount()
+	size_t entryCount() const
 	{
 		return _entries.size();
 	}

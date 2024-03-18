@@ -20,6 +20,7 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <vagabond/utils/OpSet.h>
 
 TabulatedData::TabulatedData(const std::vector<HeaderTypePair> &headerTypes)
 : _headerTypes(headerTypes)
@@ -138,8 +139,7 @@ int TabulatedData::indexForHeader(const std::string &header) const
 		i++;
 	}
 
-	throw std::runtime_error("Header " + header + "requested not present "\
-	                         "in table");
+	return -1;
 }
 
 bool TabulatedData::hasHidden() const
@@ -347,4 +347,74 @@ void TabulatedData::hide(const std::string &str)
 		}
 		start++;
 	}
+}
+
+TabulatedData TabulatedData::operator+(const std::pair<TabulatedData *, 
+                                       std::string> &join) const
+{
+	TabulatedData *other = join.first;
+	std::string header = join.second;
+	
+	if (other == nullptr)
+	{
+		throw std::runtime_error("Other tabulated data table is null");
+	}
+	
+	std::cout << "Entry count: " << entryCount() << std::endl;
+	OpSet<HeaderTypePair> myHeaders = _headerTypes;
+	OpSet<HeaderTypePair> otherHeaders = other->_headerTypes;
+	
+	OpSet<HeaderTypePair> new_all = myHeaders + otherHeaders;
+
+	TabulatedData new_data(new_all.toVector());
+	
+	int myIndex = indexForHeader(header);
+	int otherIndex = other->indexForHeader(header);
+	std::cout << "Indices: " << myIndex << " " << otherIndex << std::endl;
+
+	for (const Strings &strings : _entries)
+	{
+		const Strings *merge_with = nullptr;
+		if (myIndex >= 0)
+		{
+			const std::string &value = strings[myIndex];
+
+			for (const Strings &foreigns : other->_entries)
+			{
+				if (foreigns[otherIndex] == value)
+				{
+					merge_with = &foreigns;
+					break;
+				}
+			}
+		}
+		
+		std::vector<StringPair> prep;
+		for (const HeaderTypePair &newHeader : new_all)
+		{
+			int mine = indexForHeader(newHeader.first);
+			int yours = other->indexForHeader(newHeader.first);
+
+			if (mine >= 0)
+			{
+				std::pair<std::string, std::string> pair = 
+				{newHeader.first, strings[mine]};
+				prep.push_back(pair);
+			}
+			else if (yours >= 0 && merge_with)
+			{
+				std::pair<std::string, std::string> pair = 
+				{newHeader.first, (*merge_with)[yours]};
+				prep.push_back(pair);
+			}
+			else
+			{
+				prep.push_back({newHeader.first, ""});
+			}
+		}
+
+		new_data.addEntry(prep);
+	}
+	
+	return new_data;
 }
