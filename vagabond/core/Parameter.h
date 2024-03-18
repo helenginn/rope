@@ -83,7 +83,7 @@ public:
 		return false;
 	}
 
-	std::set<Parameter *> relatedParameters() const;
+	std::set<Parameter *> relatedParameters(bool close = false) const;
 
 public:
 	bool _refined = false;

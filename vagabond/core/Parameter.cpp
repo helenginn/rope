@@ -19,11 +19,13 @@
 #include "Parameter.h"
 #include "Atom.h"
 
-std::set<Parameter *> Parameter::relatedParameters() const
+std::set<Parameter *> Parameter::relatedParameters(bool close) const
 {
 	std::set<Parameter *> params;
 
-	for (size_t i = 0; i < atomCount(); i++)
+	int start = close ? 1 : 0;
+	int end = close ? 2 : atomCount();
+	for (size_t i = start; i < atomCount() && i < end; i++)
 	{
 		Atom *a = atom(i);
 		
