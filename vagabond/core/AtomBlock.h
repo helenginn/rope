@@ -31,7 +31,7 @@ struct AtomBlock
 	static rope::GetVec3FromCoordIdx 
 	prepareTargetsAsInitial(const std::vector<AtomBlock> &blocks);
 
-	static std::vector<std::pair<glm::vec3, glm::vec3>>
+	static std::vector<glm::vec3>
 	prepareMotions(const std::vector<AtomBlock> &blocks);
 
 	static rope::GetVec3FromCoordIdx 
