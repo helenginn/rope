@@ -152,7 +152,19 @@ void RouteExplorer::doThings()
 	
 	if (_newScore == _newScore)
 	{
-		setInformation("Score: " + f_to_str(_newScore, 3));
+		if (_route->doingSides())
+		{
+			setInformation("Clash score: " + f_to_str(_newScore, 3));
+		}
+		else if (_route->doingCubic())
+		{
+			setInformation("Cubic score: " + f_to_str(_newScore, 3));
+		}
+		else if (_route->doingQuadratic())
+		{
+			setInformation("Quadratic score: " + f_to_str(_newScore, 3));
+		}
+
 		_newScore = NAN;
 	}
 
