@@ -21,6 +21,7 @@
 
 #include "ResidueId.h"
 
+#include "TabulatedData.h"
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 
@@ -76,6 +77,8 @@ public:
 	{
 		_displayBallSticks.erase(_displayBallSticks.begin() + i);
 	}
+	
+	TabulatedData asData();
 	
 	std::vector<Atom *> selectBallStickAtoms(std::vector<Atom *> &av, 
 	                                         Instance *inst = nullptr);

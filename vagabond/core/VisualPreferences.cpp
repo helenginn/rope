@@ -82,3 +82,17 @@ std::vector<Atom *> VisualPreferences::selectBallStickAtoms(std::vector<Atom *>
 
 	return subset;
 }
+
+TabulatedData VisualPreferences::asData()
+{
+	TabulatedData new_data({{"Residue number", TabulatedData::Number},
+	                        {"Ball-and-stick", TabulatedData::Text}});
+
+	for (const ResidueId &id : _displayBallSticks)
+	{
+		new_data.addEntry({{"Residue number", id.str()},
+		                   {"Ball-and-stick", "Yes"}});
+	}
+	
+	return new_data;
+}
