@@ -63,11 +63,6 @@ public:
 		_isNew = isNew;
 	}
 	
-	const int &jobLevel() const
-	{
-		return _jobLevel;
-	}
-	
 	bool shouldFinish()
 	{
 		return _finish;
@@ -82,10 +77,16 @@ public:
 	{
 		_magnitudeThreshold = fabs(f);
 	}
+	
+	void clearIds()
+	{
+		_ids.clear();
+	}
+
+	void postScore(float score);
 protected:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();
-	void postScore(float score);
 
 	virtual void doCalculations();
 

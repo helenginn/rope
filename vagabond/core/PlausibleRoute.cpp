@@ -51,13 +51,13 @@ auto supply_range = [](PlausibleRoute *me, float min, float max, bool mains_only
 {
 	return [me, min, max, mains_only](int idx)
 	{
-		return me->validateTorsion(idx, min, max, mains_only, false);
+		return me->validateTorsion(idx, min, max, mains_only, !mains_only);
 	};
 };
 
 template <class Validate>
 auto nudge_chain(PlausibleRoute *me, const Validate &validate,
-                 const std::string &message)
+                 const std::string &message, bool randomise)
 {
 	std::vector<size_t> indices; indices.reserve(me->motionCount());
 	
@@ -66,7 +66,10 @@ auto nudge_chain(PlausibleRoute *me, const Validate &validate,
 		indices.push_back(i);
 	}
 	
-	std::random_shuffle(indices.begin(), indices.end());
+	if (randomise)
+	{
+		std::random_shuffle(indices.begin(), indices.end());
+	}
 
 	return [me, validate, message, indices]()
 	{
@@ -77,16 +80,17 @@ auto nudge_chain(PlausibleRoute *me, const Validate &validate,
 auto get_nudge_jobs(PlausibleRoute *me, bool mains)
 {
 	std::vector<PlausibleRoute::Task> nudge_cycle;
-	std::vector<float> maxes = {1, 2, 5, 10, 20, 45, 90, 180, 360};
+	std::vector<float> maxes = {1, 2, 4, 8, 15, 30, 60, 120, 240, 360};
 
 	for (float &max : maxes)
 	{
-		float min = max / 4;
-		if (min < 0.5) min = 0.;
+		float min = max / 2;
+		if (min < 0.6) min = 0.;
 		std::string str = "Nudging angles from " + f_to_str(min, 1) + " to "
 		+ f_to_str(max, 1) + " degrees";
 		me->setMaxMagnitude(max);
-		auto task = nudge_chain(me, supply_range(me, min, max, mains), str);
+		auto task = nudge_chain(me, supply_range(me, min, max, mains), 
+		                        str, mains);
 		nudge_cycle.push_back(task);
 		                                                 
 	}
@@ -100,7 +104,7 @@ auto cycle_and_check(PlausibleRoute *me)
 	{
 		int standard = 12;
 		float oldsc = me->routeScore(standard);
-		bool mains = (me->jobLevel() <= 1);
+		bool mains = !me->doingSides();
 
 		std::vector<PlausibleRoute::Task> tasks = get_nudge_jobs(me, mains);
 
@@ -113,13 +117,20 @@ auto cycle_and_check(PlausibleRoute *me)
 			}
 		}
 
+		me->clearIds();
 		float newsc = me->routeScore(standard);
+		me->postScore(newsc);
 
-		if (fabs(newsc - oldsc) < 0.002 && me->jobLevel() > 1)
+		if (me->doingSides())
+		{
+			std::cout << newsc << " from " << oldsc << std::endl;
+		}
+
+		if (newsc > 0.99 * oldsc && me->jobLevel() > 3)
 		{
 			me->finish();
 		}
-		else if (newsc > 0.9 * oldsc)
+		else if (!me->shouldFinish() && newsc > 0.9 * oldsc)
 		{
 			me->upgradeJobs();
 		}
@@ -278,7 +289,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 
 	_paramPtrs.clear();
 	_paramStarts.clear();
-	_hasSides = false;
+	_ids.clear();
 	std::vector<float> steps;
 	
 	for (size_t i = 0; i < idxs.size(); i++)
@@ -288,12 +299,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 			continue;
 		}
 		
-		if (parameter(idxs[i])->isTorsion() &&
-		    !parameter(idxs[i])->coversMainChain())
-		{
-			_hasSides = true;
-		}
-
+		_ids.insert(parameter(idxs[i])->residueId());
 		WayPoints &wps = wayPoints(idxs[i]);
 
 		_paramStarts.push_back(wps._grads[0]);
@@ -364,6 +370,7 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 		return indices;
 	};
 
+	_ids.clear();
 	float start = routeScore(flipNudgeCount());
 
 	for (size_t j = 0; j < indices.size(); j++)
@@ -398,6 +405,7 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 		changed += (result ? 1 : 0);
 	}
 
+	_ids.clear();
 	postScore(_bestScore);
 	finishTicker();
 	
@@ -536,6 +544,7 @@ void PlausibleRoute::flipTorsionCycle(const ValidateParam &validate)
 	}
 
 	_bestScore = routeScore(flipNudgeCount(), true);
+	postScore(_bestScore);
 }
 
 
@@ -546,7 +555,7 @@ void PlausibleRoute::flipTorsionCycles(const ValidateParam &validate)
 
 void PlausibleRoute::cycle()
 {
-	while (_jobLevel < 3)
+	while (_jobLevel < 4)
 	{
 		for (PlausibleRoute::Task &task : _tasks)
 		{

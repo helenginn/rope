@@ -154,6 +154,30 @@ public:
 	{
 		_motions = motions;
 	}
+	bool doingQuadratic()
+	{
+		return _jobLevel == 0;
+	}
+
+	bool doingCubic()
+	{
+		return _jobLevel >= 1;
+	}
+	
+	bool doingSides()
+	{
+		return _jobLevel >= 2;
+	}
+
+	const int &jobLevel() const
+	{
+		return _jobLevel;
+	}
+	
+	void setJobLevel(int level)
+	{
+		_jobLevel = level;
+	}
 protected:
 	virtual void prepareResources();
 	const Grapher &grapher() const;
@@ -214,11 +238,13 @@ protected:
 
 	bool _updateAtoms = true;
 	int _cycles = -1;
-protected:
+
 	void updateAtomFetch();
 
 	RTMotion _motions;
-	bool _hasSides = false;
+	int _jobLevel = 0;
+	
+	std::set<ResidueId> _ids;
 	
 private:
 	bool _calculating;
