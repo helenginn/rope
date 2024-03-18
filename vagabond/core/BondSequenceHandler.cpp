@@ -157,7 +157,7 @@ void BondSequenceHandler::calculate(Flag::Calc flags,
 	const CoordManager *man = (specific_manager ? specific_manager : manager());
 	rope::GetListFromParameters transform = man->defaultCoordTransform();
 	rope::IntToCoordGet paramToCoords = transform(parameters);
-	rope::GetVec3FromCoordIdx coordsToPos = man->defaultAtomFetcher();
+	const rope::GetVec3FromCoordIdx &coordsToPos = man->defaultAtomFetcher();
 
 	auto grabSequence = [this](void *, bool *success) -> BondSequence *
 	{
@@ -173,7 +173,7 @@ void BondSequenceHandler::calculate(Flag::Calc flags,
 		return seq;
 	};
 
-	auto targetAtoms = [paramToCoords, coordsToPos]
+	auto targetAtoms = [paramToCoords, &coordsToPos]
 	(BondSequence *seq) -> BondSequence *
 	{
 		seq->calculateAtoms(paramToCoords, coordsToPos);
