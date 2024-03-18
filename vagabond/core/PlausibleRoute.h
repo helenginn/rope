@@ -100,7 +100,6 @@ protected:
 
 	std::vector<int> getTorsionSequence(int idx, const ValidateParam &validate);
 	
-	bool _mainsOnly = true;
 	int _nudgeCount = 12;
 	int _isNew = true;
 	
@@ -133,8 +132,6 @@ private:
 
 	std::vector<float *> _paramPtrs;
 	std::vector<float> _paramStarts;
-
-	int _jobLevel = 0;
 
 	int _jobNum = 0;
 	
