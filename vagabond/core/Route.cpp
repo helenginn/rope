@@ -35,6 +35,7 @@
 
 Route::Route(Instance *from, Instance *to, const RTAngles &list)
 {
+	srand(time(NULL));
 	setInstance(from);
 	_endInstance = to;
 	_source = list;
@@ -44,6 +45,8 @@ Route::Route(Instance *from, Instance *to, const RTAngles &list)
 Route::~Route()
 {
 	instance()->unload();
+	delete _pwMain;
+	delete _pwSide;
 }
 
 void Route::setup()
@@ -76,6 +79,7 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 {
 	_ticket++;
 	Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
+//	gets = Flag::NoExtract;
 	if (show)
 	{
 		gets = (Flag::Extract)(Flag::AtomVector | gets);
@@ -101,25 +105,23 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 	Task<BondSequence *, void *> *let = 
 	sequences->extract(gets, submit_result, final_hook);
 	
-	auto main_chain_filter = [](Atom *const &atom)
+	if (pairwise)
 	{
-		return atom->isReporterAtom() && atom->elementSymbol() != "H";
-	};
+		Task<BondSequence *, Deviation> *task = nullptr;
+		if (!doingSides() || !pairwise)
+		{
+			task = _pwMain->normal_task(doingPreClash());
+		}
+		else
+		{
+			task = _pwSide->clash_task(_ids);
+		}
 
-	auto side_chain_filter = [](Atom *const &atom)
-	{
-		return ((atom->isReporterAtom() || !atom->isMainChain())
-		        && atom->elementSymbol() != "H");
-	};
+		final_hook->follow_with(task);
+		task->must_complete_before(let);
+		task->follow_with(submit_result);
+	}
 
-	PairwiseDeviations pd(_hasSides ? side_chain_filter : main_chain_filter);
-	pd.setLimit(10.f);
-	Task<BondSequence *, Deviation> *task = pd.task();
-	
-	final_hook->follow_with(task);
-	task->must_complete_before(let);
-	task->follow_with(submit_result);
-	
 	_ticket2Point[job_num] = job_num;
 	_point2Score[job_num] = Score{};
 	
@@ -333,4 +335,26 @@ void Route::updateAtomFetch()
 
 	CoordManager *manager = _resources.sequences->manager();
 	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
+	
+	delete _pwMain;
+	delete _pwSide;
+
+	auto main_chain_filter = [](Atom *const &atom)
+	{
+		return atom->atomName() == "CA" || atom->atomName() == "O";
+		return (atom->atomName() == "N" || atom->atomName() == "C" ||
+		        atom->atomName() == "O" || atom->atomName() == "CA");
+	};
+
+	auto side_chain_filter = [](Atom *const &atom)
+	{
+		return (atom->elementSymbol() != "H");
+	};
+
+	const float limit = 8.f;
+	_pwMain = new PairwiseDeviations(_resources.sequences->sequence(),
+	                                 main_chain_filter, limit);
+
+	_pwSide = new PairwiseDeviations(_resources.sequences->sequence(),
+	                                 side_chain_filter, 15.f);
 }

@@ -30,6 +30,7 @@ struct AtomGraph;
 class ResidueTorsion;
 class TorsionCluster;
 class RouteValidator;
+class PairwiseDeviations;
 
 class Route : public StructureModification, public HasResponder<Responder<Route> >
 {
@@ -154,6 +155,7 @@ public:
 	{
 		_motions = motions;
 	}
+	
 	bool doingQuadratic()
 	{
 		return _jobLevel == 0;
@@ -178,6 +180,7 @@ public:
 	{
 		_jobLevel = level;
 	}
+	
 protected:
 	virtual void prepareResources();
 	const Grapher &grapher() const;
@@ -256,8 +259,9 @@ private:
 	int _ticket = 0;
 
 	Instance *_endInstance = nullptr;
-
 	RTAngles _source;
+	PairwiseDeviations *_pwMain = nullptr;
+	PairwiseDeviations *_pwSide = nullptr;
 	
 	InterpolationType _type = Polynomial;
 };

@@ -20,8 +20,13 @@
 #define __vagabond__PairwiseDeviations__
 
 #include <functional>
+#include <map>
+#include <vector>
+#include <set>
 
 class Atom;
+class BondSequence;
+struct ResidueId;
 struct Deviation; 
 
 template <typename In, typename Out> class Task;
@@ -32,18 +37,30 @@ class PairwiseDeviations
 public:
 	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 
-	PairwiseDeviations(const AtomFilter &filter = {});
+	PairwiseDeviations(BondSequence *sequence,
+	                   const AtomFilter &filter = {},
+	                   const float &limit = 8.f);
+
+	~PairwiseDeviations();
 	
 	void setLimit(const float &limit)
 	{
 		_limit = limit;
 	}
 
-	Task<BondSequence *, Deviation> *task();
+	Task<BondSequence *, Deviation> *normal_task(bool slam);
+	Task<BondSequence *, Deviation> *
+	clash_task(const std::set<ResidueId> &forResidues);
 private:
+	void prepare(BondSequence *seq);
+
 	AtomFilter _filter;
 	float _limit = 8.f;
 
+	int *_knownPairs = nullptr;
+	size_t _memSize = 0;
+	size_t _pairSize = 0;
+	std::map<ResidueId, std::vector<int>> _perResidue;
 };
 
 #endif
