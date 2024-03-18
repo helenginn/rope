@@ -5,6 +5,7 @@ compile_args = meson.get_cross_property('compile_args', [])
 glm = dependency('glm', required: false)
 gl = dependency('glew')
 curl = dependency('libcurl')
+zlib = dependency('zlib')
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 thread_dep = dependency('threads')
@@ -21,7 +22,7 @@ deps = [glm, json]
 name = 'index.html'
 
 if (links == [])
-  deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw]
+  deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
   name = 'rope.gui'
 endif
 
