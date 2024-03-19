@@ -110,7 +110,7 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 		Task<BondSequence *, Deviation> *task = nullptr;
 		if (!doingSides() || !pairwise)
 		{
-			task = _pwMain->normal_task(doingPreClash());
+			task = _pwMain->normal_task(false);
 		}
 		else
 		{
