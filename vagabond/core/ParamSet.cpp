@@ -36,9 +36,8 @@ std::ostream &operator<<(std::ostream &ss, const ParamSet &set)
 	ss << "Parameters: ";
 	for (Parameter *p : set)
 	{
-		ss << p << ",";
+		ss << p << ", ";
 	}
-	ss << std::endl;
 	return ss;
 }
 
