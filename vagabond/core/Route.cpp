@@ -108,7 +108,7 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 	if (pairwise)
 	{
 		Task<BondSequence *, Deviation> *task = nullptr;
-		if (!doingSides() || !pairwise)
+		if (!doingSides())
 		{
 			task = _pwMain->normal_task(false);
 		}
@@ -193,12 +193,10 @@ void Route::bestGuessTorsion(int idx)
 	
 	destination(idx) = last - first;
 
-//	std::cout << time(NULL) << std::endl;
 	if (fabs(last - first) > 90.f)
 	{
-		int rnd = int(rand() % 5);
-		if (//parameter(idx)->residueId() != 59 &&
-		                parameter(idx)->residueId() != 61)
+		int rnd = int(rand() % 10);
+		if (rnd >= 1)
 		{ 
 			if (parameter(idx)->coversMainChain())
 			{
@@ -275,7 +273,7 @@ void Route::getParametersFromBasis()
 		}
 		else
 		{
-			ResidueTorsion rt = _source.c_rt(idx);
+			ResidueTorsion rt = _source.rt(idx);
 			rt.attachToInstance(_instance);
 			float final_angle = _source.storage(idx);
 
@@ -287,13 +285,27 @@ void Route::getParametersFromBasis()
 			torsions.push_back(rt);
 			tmp_motions.push_back(Motion{WayPoints(), false, final_angle});
 		}
-
 	}
 
 	_motions = RTMotion::motions_from(torsions, tmp_motions);
 	bringTorsionsToRange();
+	prepareTwists();
+
+	std::cout << "Missing: " << missing << " from " << _motions.size() << 
+	" motions and " << _twists.size() << " twists." << std::endl;
+}
+
+void Route::setTwists(const RTPeptideTwist &twists)
+{
+	_twists = twists;
+	_motions.incorporate(_twists);
+}
 	
-	std::cout << "Missing: " << missing << std::endl;
+void Route::prepareTwists()
+{
+	_twists = RTPeptideTwist::empty_twists(_motions.headers_only());
+	_motions.incorporate(_twists);
+	
 }
 
 void Route::prepareDestination()
@@ -369,9 +381,8 @@ void Route::updateAtomFetch()
 
 	auto main_chain_filter = [](Atom *const &atom)
 	{
-		return atom->atomName() == "CA" || atom->atomName() == "O";
-		return (atom->atomName() == "N" || atom->atomName() == "C" ||
-		        atom->atomName() == "O" || atom->atomName() == "CA");
+		return atom->atomName() == "CA" || atom->atomName() == "O"
+			   || atom->atomName() == "C" || atom->atomName() == "N";
 	};
 
 	auto side_chain_filter = [](Atom *const &atom)
@@ -385,4 +396,23 @@ void Route::updateAtomFetch()
 
 	_pwSide = new PairwiseDeviations(_resources.sequences->sequence(),
 	                                 side_chain_filter, 15.f);
+}
+
+void Route::clearCustomisation()
+{
+	_finish = false;
+
+	for (size_t i = 0; i < motionCount(); i++)
+	{
+		motion(i).wp = {};
+		motion(i).flip = false;
+	}
+
+	for (size_t i = 0; i < twistCount(); i++)
+	{
+		twist(i).twist = {};
+	}
+	
+	_jobLevel = 0;
+	bestGuessTorsions();
 }

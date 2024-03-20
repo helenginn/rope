@@ -179,3 +179,13 @@ DoRequest doRequest(BFactorData *group)
 	return {};
 };
 
+DoEditMenu editMenu(PathData *group)
+{
+	return {};
+};
+
+DoRequest doRequest(PathData *group)
+{
+	return {};
+};
+

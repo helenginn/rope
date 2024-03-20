@@ -623,6 +623,11 @@ void ConfSpaceView::applyRules()
 {
 	_view->reset();
 	removeRules();
+	
+	if (_type == rope::ConfPath)
+	{
+		return;
+	}
 
 	IconLegend *il = new IconLegend(this);
 

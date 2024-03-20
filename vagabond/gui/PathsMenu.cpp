@@ -18,16 +18,23 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/ConfSpaceView.h>
+#include "SavedSpace.h"
+#include "RopeSpaceItem.h"
+#include "Entity.h"
 #include "PathsMenu.h"
+#include "PathData.h"
 #include "EntityManager.h"
 #include "RouteExplorer.h"
+#include "Instance.h"
 #include "PlausibleRoute.h"
 #include "PathManager.h"
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
-                     const std::vector<Paths> &paths)
+                     const std::vector<PathGroup> &paths)
 : ListView(prev)
 {
 	_entity = entity;
@@ -97,6 +104,14 @@ PathsMenu::~PathsMenu()
 void PathsMenu::setup()
 {
 	addTitle("Paths menu");
+
+	{
+		TextButton *t = new TextButton("Menu", this);
+		t->setRight(0.9, 0.1);
+		t->setReturnTag("menu");
+		addObject(t);
+	}
+
 	ListView::setup();
 }
 
@@ -195,10 +210,10 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		}
 		else
 		{
-			std::vector<Paths> new_paths;
+			std::vector<PathGroup> new_paths;
 			for (Path *path : _paths[idx])
 			{
-				new_paths.push_back({path});
+				new_paths.push_back(PathGroup(1, path));
 			}
 
 			PathsMenu *menu = new PathsMenu(this, _entity, new_paths);
@@ -207,6 +222,63 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		}
 		return;
 	}
+
+	if (tag == "menu")
+	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, this, "menu");
+		if (!_parent)
+		{
+			m->addOption("Cluster paths", "cluster_paths");
+		}
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+	
+	if (tag == "menu_cluster_paths")
+	{
+		prepareSpace();
+	}
+
 	
 	ListView::buttonPressed(tag, button);
 }
+
+void PathsMenu::prepareSpace()
+{
+	if (_space != nullptr)
+	{
+		delete _space;
+		_space = nullptr;
+	}
+	
+	PathGroup group;
+	Entity *entity = nullptr;
+	for (PathGroup &grp : _paths)
+	{
+		if (!entity)
+		{
+			entity = grp[0]->startInstance()->entity();
+		}
+
+		group.push_back(grp[0]);
+	}
+	
+	std::cout << "paths: " << group.size() << std::endl;
+	
+	PathData *data = group.preparePathData();
+	data->write(entity->name() + "_path_params.csv");
+
+	RopeSpaceItem *item = new RopeSpaceItem(_entity);
+	item->setMode(rope::ConfPath);
+	item->setObjectGroup(data);
+	item->prepareCluster();
+
+	_space = new SavedSpace();
+	_space->save(item, entity, rope::ConfPath);
+
+	ConfSpaceView *csv = new ConfSpaceView(this, entity, *_space);
+	csv->setMode(rope::ConfPath);
+	csv->show();
+}
+

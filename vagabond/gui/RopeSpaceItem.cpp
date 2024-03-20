@@ -18,6 +18,7 @@
 
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/core/PathData.h>
 #include <vagabond/core/TorsionData.h>
 #include <vagabond/core/PositionData.h>
 #include <vagabond/core/BFactorData.h>
@@ -362,9 +363,14 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 		PositionData *group = static_cast<PositionData *>(_group);
 		group_ptr = prepareCopy(*group);
 	}
-	else
+	else if (_type == ConfBFactor)
 	{
 		BFactorData *group = static_cast<BFactorData *>(_group);
+		group_ptr = prepareCopy(*group);
+	}
+	else if (_type == ConfPath)
+	{
+		PathData *group = static_cast<PathData *>(_group);
 		group_ptr = prepareCopy(*group);
 	}
 

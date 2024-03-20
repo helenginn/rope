@@ -172,7 +172,9 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	if (tag == "view")
 	{
 		PlausibleRoute *pr = _obj.toRoute();
+		pr->setJobLevel(2);
 		RouteExplorer *re = new RouteExplorer(this, pr);
+		re->saveOver(&_obj);
 		re->show();
 	}
 	

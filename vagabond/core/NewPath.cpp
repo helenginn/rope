@@ -49,3 +49,4 @@ PlausibleRoute *NewPath::operator()()
 	PlausibleRoute *pr = new PlausibleRoute(_from, _to, list);
 	return pr;
 }
+

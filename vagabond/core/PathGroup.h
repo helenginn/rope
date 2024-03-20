@@ -16,29 +16,38 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AxisRequests__
-#define __vagabond__AxisRequests__
+#ifndef __vagabond__PathGroup__
+#define __vagabond__PathGroup__
 
-#include <string>
+#include <vagabond/utils/OpVec.h>
 
-class Axes;
-class Menu;
+class Path;
 class PathData;
-class TorsionData;
-class BFactorData;
-class PositionData;
 
-typedef std::function<void(Axes *, Menu *)> DoEditMenu;
-typedef std::function<void(Axes *, const std::string &)> DoRequest;
+class PathGroup : public OpVec<Path *>
+{
+public:
+	virtual ~PathGroup() {};
 
-DoEditMenu editMenu(TorsionData *group);
-DoEditMenu editMenu(PositionData *group);
-DoEditMenu editMenu(BFactorData *group);
-DoEditMenu editMenu(PathData *group);
+	PathGroup() : OpVec()
+	{
 
-DoRequest doRequest(TorsionData *group);
-DoRequest doRequest(PositionData *group);
-DoRequest doRequest(BFactorData *group);
-DoRequest doRequest(PathData *group);
+	}
+
+	template <class Container>
+	PathGroup(const Container &other) : OpVec(other)
+	{
+
+	}
+
+	PathGroup(size_t num, Path *const &path = nullptr) : OpVec(num, path)
+	{
+
+	}
+
+	virtual PathData *preparePathData();
+private:
+
+};
 
 #endif

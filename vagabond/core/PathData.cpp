@@ -16,29 +16,18 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AxisRequests__
-#define __vagabond__AxisRequests__
+#include "PathData.h"
+#include "HasMetadata.h"
 
-#include <string>
+void PathData::addMetadataArray(HasMetadata *hmd, Array next)
+{
+	_objects.push_back(hmd);
+	std::string name = hmd->id();
+	this->addArray(name, next);
+}
 
-class Axes;
-class Menu;
-class PathData;
-class TorsionData;
-class BFactorData;
-class PositionData;
+PathData::~PathData()
+{
+	
+}
 
-typedef std::function<void(Axes *, Menu *)> DoEditMenu;
-typedef std::function<void(Axes *, const std::string &)> DoRequest;
-
-DoEditMenu editMenu(TorsionData *group);
-DoEditMenu editMenu(PositionData *group);
-DoEditMenu editMenu(BFactorData *group);
-DoEditMenu editMenu(PathData *group);
-
-DoRequest doRequest(TorsionData *group);
-DoRequest doRequest(PositionData *group);
-DoRequest doRequest(BFactorData *group);
-DoRequest doRequest(PathData *group);
-
-#endif

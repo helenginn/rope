@@ -56,8 +56,12 @@ private:
 	void setupSave();
 	void setupFinish();
 	void setupSettings();
+	void saveAndRestart();
 
 	void startWithThreads(const int &thr);
+	void handleDone();
+	void pause();
+	void demolishSlider();
 
 	Route *_route = nullptr;
 	PlausibleRoute *_plausibleRoute = nullptr;
@@ -71,7 +75,10 @@ private:
 
 	std::atomic<bool> _watch{false};
 	
+	static int _threads;
 	int _numTicks = -1;
+	bool _pausing = false;
+	bool _restart = true;
 	float _newScore = NAN;
 	std::string _progressName;
 };

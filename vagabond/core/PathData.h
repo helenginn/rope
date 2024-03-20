@@ -16,29 +16,41 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AxisRequests__
-#define __vagabond__AxisRequests__
+#ifndef __vagabond__PathData__
+#define __vagabond__PathData__
 
-#include <string>
+#include <vagabond/c4x/DataFloat.h>
+#include <vagabond/c4x/TypedData.h>
 
-class Axes;
-class Menu;
-class PathData;
-class TorsionData;
-class BFactorData;
-class PositionData;
+#include "ObjectData.h"
+#include "ResidueTorsion.h"
 
-typedef std::function<void(Axes *, Menu *)> DoEditMenu;
-typedef std::function<void(Axes *, const std::string &)> DoRequest;
+class PathData : public ObjectData, public TypedData<DataFloat, ResidueTorsion>
+{
+public:
+	PathData(size_t length) : ObjectData(this),
+	TypedData<DataFloat, ResidueTorsion>(length)
+	{
+		_normalise = false;
+	}
 
-DoEditMenu editMenu(TorsionData *group);
-DoEditMenu editMenu(PositionData *group);
-DoEditMenu editMenu(BFactorData *group);
-DoEditMenu editMenu(PathData *group);
+	PathData(const PathData &other) 
+	: ObjectData(this), TypedData<DataFloat, ResidueTorsion>(other)
+	{
+		_objects = other._objects;
+		_normalise = other._normalise;
+	}
 
-DoRequest doRequest(TorsionData *group);
-DoRequest doRequest(PositionData *group);
-DoRequest doRequest(BFactorData *group);
-DoRequest doRequest(PathData *group);
+	virtual std::string csvFirstLine()
+	{
+		return "residue_id,quadratic,cubic";
+	}
+
+	virtual ~PathData();
+	virtual void addMetadataArray(HasMetadata *hmd, Array next);
+
+private:
+
+};
 
 #endif

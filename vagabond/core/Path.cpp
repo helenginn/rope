@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Path.h"
+#include "PathData.h"
 #include "ModelManager.h"
 #include "PathManager.h"
 #include "RTMultiple.h"
@@ -32,6 +33,7 @@ Path::Path(PlausibleRoute *pr)
 	_type = pr->type();
 
 	_motions = pr->motions();
+	_twists = pr->twists();
 	
 	_route = nullptr;
 }
@@ -90,11 +92,21 @@ PlausibleRoute *Path::toRoute()
 	
 	_model->currentAtoms();
 	_motions.attachInstance(_instance);
+	_twists.attachInstance(_instance);
 
 	PlausibleRoute *pr = new PlausibleRoute(_instance, _end);
 	pr->setNew(false);
 	pr->setType(_type);
 	pr->setMotions(_motions);
+	
+	if (_twists.size() == 0)
+	{
+		pr->prepareTwists();
+	}
+	else
+	{
+		pr->setTwists(_twists);
+	}
 
 	_route = pr;
 	
@@ -138,6 +150,18 @@ void Path::sendObject(std::string tag, void *object)
 	{
 		Environment::pathManager()->purgePath(this);
 	}
-
 }
 
+void Path::addToData(PathData *pd)
+{
+	std::vector<DataFloat> entry(pd->length());
+	DataFloat *pos = &entry[0];
+
+	for (size_t i = 0; i < _motions.size(); i++)
+	{
+		Motion &motion = _motions.storage(i);
+		motion.writeToData(pos);
+	}
+
+	pd->addMetadataArray(this, entry);
+}

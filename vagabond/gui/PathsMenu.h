@@ -20,9 +20,11 @@
 #define __vagabond__PathsMenu__
 
 #include <vagabond/gui/elements/ListView.h>
+#include "PathGroup.h"
 #include <Responder.h>
 
 class Path;
+class SavedSpace;
 
 template <class T>
 class Manager;
@@ -33,7 +35,7 @@ class PathsMenu : public ListView, public Responder<Manager<Path>>
 public:
 	typedef std::vector<Path *> Paths;
 	PathsMenu(Scene *prev, Entity *entity,
-	          const std::vector<Paths> &paths = {});
+	          const std::vector<PathGroup> &paths = {});
 	~PathsMenu();
 	
 	virtual void setup();
@@ -44,12 +46,14 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 	virtual void sendObject(std::string tag, void *object);
 private:
+	void prepareSpace();
 	void preparePaths();
 
 	Entity *_entity = nullptr;
 
-	std::vector<Paths> _paths;
+	std::vector<PathGroup> _paths;
 	bool _parent = false;
+	SavedSpace *_space = nullptr;
 };
 
 #endif

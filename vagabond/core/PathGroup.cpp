@@ -16,29 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AxisRequests__
-#define __vagabond__AxisRequests__
+#include "PathGroup.h"
+#include "PathData.h"
+#include "Path.h"
 
-#include <string>
+PathData *PathGroup::preparePathData()
+{
+	if (size() == 0) return nullptr;
+	
+	Path *const &ref = at(0);
 
-class Axes;
-class Menu;
-class PathData;
-class TorsionData;
-class BFactorData;
-class PositionData;
+	size_t size = ref->motionCount() * 2;
 
-typedef std::function<void(Axes *, Menu *)> DoEditMenu;
-typedef std::function<void(Axes *, const std::string &)> DoRequest;
+	PathData *pd = new PathData(size);
+	
+	std::vector<ResidueTorsion> headers;
+	for (int i = 0; i < ref->motionCount(); i++)
+	{
+		headers.push_back(ref->motions().rt(i));
+	}
 
-DoEditMenu editMenu(TorsionData *group);
-DoEditMenu editMenu(PositionData *group);
-DoEditMenu editMenu(BFactorData *group);
-DoEditMenu editMenu(PathData *group);
+	pd->addHeaders(headers);
+	
+	for (Path *const &path : *this)
+	{
+		path->addToData(pd);
+	}
 
-DoRequest doRequest(TorsionData *group);
-DoRequest doRequest(PositionData *group);
-DoRequest doRequest(BFactorData *group);
-DoRequest doRequest(PathData *group);
-
-#endif
+	return pd;
+}

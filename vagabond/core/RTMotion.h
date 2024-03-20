@@ -19,14 +19,30 @@
 #ifndef __vagabond__RTMotion__
 #define __vagabond__RTMotion__
 
+#include <vagabond/c4x/DataFloat.h>
 #include "RTVector.h"
+#include "RTPeptideTwist.h"
 #include "WayPoint.h"
+#include "Atom.h"
 
 struct Motion
 {
 	WayPoints wp;
 	bool flip;
 	float angle;
+	
+	struct Twist
+	{
+		PeptideTwist *twist = nullptr;
+		bool positive = true;
+		
+		float contribution(float frac) const
+		{
+			return (positive ? 1 : -1) * twist->interpolatedTwist(frac);
+		}
+	};
+	
+	Twist twist;
 	
 	float workingAngle()
 	{
@@ -36,10 +52,20 @@ struct Motion
 		else { return angle + 360; }
 	}
 	
+	void writeToData(DataFloat *&ptr)
+	{
+		float extra = twist.twist ? twist.twist->twist : 0.f;
+;
+		ptr[0] = workingAngle() * wp._grads[0] + extra * 4;
+		ptr[1] = workingAngle() * wp._grads[1];
+		ptr += 2;
+	}
+	
 	float interpolatedAngle(float frac)
 	{
 		float p = wp.interpolatedProgression(frac);
-		return p * workingAngle();
+		float q = twist.twist ? twist.contribution(frac) : 0;
+		return p * workingAngle() + q;
 	}
 };
 
@@ -66,6 +92,31 @@ public:
 		RTMotion res;
 		res.vector_from(rts, motions);
 		return res;
+	}
+	
+	void incorporate(RTPeptideTwist &twist)
+	{
+		for (size_t j = 0; j < twist.size(); j++)
+		{
+			ResidueTorsion &rt = twist.rt(j);
+			Parameter *p = rt.parameter();
+			Atom *a = p->atom(1); // should be N or C of peptide
+			Atom *b = p->atom(2); // should be N or C of peptide
+
+			for (size_t i = 0; i < size(); i++)
+			{
+				ResidueTorsion &rt = this->rt(i);
+				Parameter *q = rt.parameter();
+				
+				if (q && q->hasAtom(a) && q->hasAtom(b) && 
+				    !q->isPeptideBond() && q->coversMainChain())
+				{
+					bool direction = q->atom(0)->elementSymbol() == "N";
+					PeptideTwist &value = twist.storage(j);
+					this->storage(i).twist = {&value, direction};
+				}
+			}
+		}
 	}
 
 	void flips_from(const std::vector<bool> &flips)

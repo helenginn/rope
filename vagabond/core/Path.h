@@ -25,6 +25,7 @@
 #include "Polymer.h"
 
 class Model;
+class PathData;
 class TorsionData;
 
 class Path : public HasMetadata, Responder<HasMetadata>
@@ -53,6 +54,11 @@ public:
 	PlausibleRoute *toRoute();
 	void housekeeping();
 	
+	const RTMotion &motions() const
+	{
+		return _motions;
+	}
+	
 	void setContributeToSVD(bool contrib)
 	{
 		_contributeSVD = contrib;
@@ -77,7 +83,7 @@ public:
 
 	virtual bool displayable() const /* so these aren't points in the map */
 	{
-		return false;
+		return true;
 	}
 	
 	const bool &visible() const
@@ -97,6 +103,8 @@ public:
 	float angleForFraction(float frac, int idx);
 	
 	virtual void sendObject(std::string tag, void *object);
+
+	virtual void addToData(PathData *pd);
 private:
 	std::string _startInstance;
 	std::string _model_id;
@@ -105,6 +113,7 @@ private:
 	Model *_model = nullptr;
 	Instance *_end = nullptr;
 	RTMotion _motions;
+	RTPeptideTwist _twists;
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
@@ -123,6 +132,7 @@ inline void to_json(json &j, const Path &value)
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
 	j["motions"] = value._motions;
+	j["twists"] = value._twists;
 }
 
 /* path */
@@ -132,6 +142,11 @@ inline void from_json(const json &j, Path &value)
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
 	value._motions = j.at("motions");
+	
+	if (j.count("twists"))
+	{
+		value._twists = j.at("twists");
+	}
 }
 
 #endif

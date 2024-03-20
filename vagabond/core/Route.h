@@ -24,6 +24,7 @@
 #include "engine/CoordManager.h"
 #include "Responder.h"
 #include "RTMotion.h"
+#include "RTPeptideTwist.h"
 
 class Grapher;
 struct AtomGraph;
@@ -117,6 +118,16 @@ public:
 		_motions.storage(idx).wp = wps;
 	}
 	
+	PeptideTwist &twist(int i)
+	{
+		return _twists.storage(i);
+	}
+	
+	size_t twistCount() const
+	{
+		return _twists.size();
+	}
+	
 	Motion &motion(int i)
 	{
 		return _motions.storage(i);
@@ -126,6 +137,8 @@ public:
 	{
 		return _motions.size();
 	}
+	
+	void clearCustomisation();
 	
 	Parameter *parameter(int i)
 	{
@@ -155,6 +168,15 @@ public:
 	{
 		_motions = motions;
 	}
+
+	void prepareTwists();
+	
+	const RTPeptideTwist &twists() const
+	{
+		return _twists;
+	}
+	
+	void setTwists(const RTPeptideTwist &twists);
 	
 	bool doingQuadratic()
 	{
@@ -243,8 +265,8 @@ protected:
 	int _cycles = -1;
 
 	void updateAtomFetch();
-
 	RTMotion _motions;
+	RTPeptideTwist _twists;
 	int _jobLevel = 0;
 	
 	std::set<ResidueId> _ids;

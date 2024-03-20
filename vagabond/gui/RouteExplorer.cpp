@@ -35,6 +35,8 @@
 #include <vagabond/core/Route.h>
 #include <vagabond/core/Path.h>
 
+int RouteExplorer::_threads = -1;
+
 RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 {
 	_instance = route->instance();
@@ -67,11 +69,18 @@ void RouteExplorer::setup()
 #ifdef __EMSCRIPTEN__
 	startWithThreads(1);
 #else
-	std::string str = "Choose number of threads";
-	ChooseRange *cr = new ChooseRange(this, str, "choose_threads", this);
-	cr->setDefault(4);
-	cr->setRange(1, 32, 31);
-	setModal(cr);
+	if (_threads < 0)
+	{
+		std::string str = "Choose number of threads";
+		ChooseRange *cr = new ChooseRange(this, str, "choose_threads", this);
+		cr->setDefault(4);
+		cr->setRange(1, 32, 31);
+		setModal(cr);
+	}
+	else
+	{
+		startWithThreads(_threads);
+	}
 #endif
 }
 
@@ -118,6 +127,18 @@ void RouteExplorer::setupSlider()
 	addObject(s);
 }
 
+void RouteExplorer::demolishSlider()
+{
+	if (_rangeSlider)
+	{
+		removeObject(_rangeSlider);
+		Window::setDelete(_rangeSlider);
+	}
+
+	_rangeSlider = nullptr;
+}
+
+
 void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 {
 	float num = x / 200.;
@@ -127,22 +148,25 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 	}
 }
 
-void RouteExplorer::doThings()
+void RouteExplorer::pause()
 {
-	if (_watch && _worker != nullptr && !_route->calculating())
+	if (_worker)
 	{
 		_worker->join();
 		delete _worker;
 		_worker = nullptr;
-		
-		setupSlider();
-		_watch = false;
-
-		_startPause->setReturnTag("start");
-		_startPause->setText("Start");
-		_startPause->setInert(false);
 	}
-	
+
+	setupSlider();
+	_watch = false;
+
+	_startPause->setReturnTag("start");
+	_startPause->setText("Start");
+	_startPause->setInert(false);
+}
+
+void RouteExplorer::doThings()
+{
 	if (_numTicks > 0)
 	{
 		VagWindow::window()->requestProgressBar(_numTicks, _progressName);
@@ -186,6 +210,11 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 		float *ptr = static_cast<float *>(object);
 		_newScore = *ptr;
 	}
+	
+	if (tag == "done")
+	{
+		addMainThreadJob([this]() { handleDone(); });
+	}
 }
 
 void RouteExplorer::startWithThreads(const int &thr)
@@ -219,6 +248,7 @@ void RouteExplorer::startWithThreads(const int &thr)
 
 		AskYesNo *ayn = new AskYesNo(this, message, "continue_anyway", this);
 		setModal(ayn);
+		return;
 	}
 
 	_worker = new std::thread(Route::calculate, _route);
@@ -231,11 +261,12 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 	{
 		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
 		float num = cr->max();
-		int threads = lrint(num);
-		startWithThreads(threads);
+		_threads = lrint(num);
+		startWithThreads(_threads);
 	}
 	if (tag == "pause")
 	{
+		_pausing = true;
 		_startPause->setInert(true, true);
 		_plausibleRoute->finishTicker();
 		_route->finishRoute();
@@ -248,11 +279,8 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "start" && _worker == nullptr)
 	{
-		if (_rangeSlider)
-		{
-			removeObject(_rangeSlider);
-			Window::setDelete(_rangeSlider);
-		}
+		_pausing = false;
+		demolishSlider();
 
 		_route->prepareCalculate();
 		_worker = new std::thread(Route::calculate, _route);
@@ -273,4 +301,38 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 	}
 
 	Display::buttonPressed(tag, button);
+}
+
+void RouteExplorer::handleDone()
+{
+	pause();
+
+	if (_pausing)
+	{
+		_pausing = false;
+		return;
+	}
+	
+	if (_restart)
+	{
+		saveAndRestart();
+	}
+}
+
+void RouteExplorer::saveAndRestart()
+{
+	if (_worker)
+	{
+		_worker->join();
+		delete _worker;
+		_worker = nullptr;
+	}
+
+	demolishSlider();
+
+	Path path(_plausibleRoute);
+	Environment::env().pathManager()->insertOrReplace(path, nullptr);
+	_plausibleRoute->clearCustomisation();
+
+	startWithThreads(_threads);
 }

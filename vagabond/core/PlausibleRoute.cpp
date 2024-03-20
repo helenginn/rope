@@ -301,20 +301,32 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 		
 		_ids.insert(parameter(idxs[i])->residueId());
 		WayPoints &wps = wayPoints(idxs[i]);
+		Motion &motion = _motions.storage(idxs[i]);
+		
+		float movement = fabs(destination(idxs[i]));
+		float adjusted = 10 / (movement + 0.01);
+		float step = adjusted;
 
 		_paramStarts.push_back(wps._grads[0]);
 		_paramPtrs.push_back(&wps._grads[0]);
-		steps.push_back(0.1);
+		steps.push_back(step);
 
-		if (_jobLevel > 0)
+		if (doingCubic() && motion.twist.twist)
+		{
+			_paramStarts.push_back(motion.twist.twist->twist);
+			_paramPtrs.push_back(&motion.twist.twist->twist);
+			steps.push_back(45.f);
+		}
+
+		if (doingCubic())
 		{
 			_paramStarts.push_back(wps._grads[1]);
 			_paramPtrs.push_back(&wps._grads[1]);
-			steps.push_back(0.1);
+			steps.push_back(step);
 		}
 	}
 	
-	_simplex->setMaxRuns(20);
+	_simplex->setMaxRuns(doingCubic() ? 20 : 10);
 	_simplex->chooseStepSizes(steps);
 }
 
@@ -395,10 +407,13 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 			continue;
 		}
 		
-		ParamSet related = centre->relatedParameters();
 		OpSet<int> single;
 		single.insert(indexOfParameter(centre));
-//		single = convert_to_indices(related);
+		if (doingCubic())
+		{
+			ParamSet related = centre->relatedParameters();
+			single = convert_to_indices(related);
+		}
 		single.filter(validate);
 		if (single.size() == 0)
 		{
@@ -566,7 +581,7 @@ void PlausibleRoute::cycle()
 		{
 			task();
 			finishTicker();
-
+			
 			if (Route::_finish)
 			{
 				return;
@@ -579,6 +594,8 @@ void PlausibleRoute::cycle()
 
 void PlausibleRoute::doCalculations()
 {
+	_finish = false;
+
 	if (!Route::_finish)
 	{
 		cycle();
@@ -587,6 +604,8 @@ void PlausibleRoute::doCalculations()
 	finishTicker();
 	prepareForAnalysis();
 	Route::_finish = false;
+	std::cout << "Sending response now" << std::endl;
+	Route::sendResponse("done", (void *)this);
 }
 
 void PlausibleRoute::prepareTorsionFetcher()

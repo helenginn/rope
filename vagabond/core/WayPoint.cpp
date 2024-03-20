@@ -36,21 +36,6 @@ float obedient_sin(const float &angle)
 	return base;
 }
 
-float obedient_arcsin(const float &arcsin)
-{
-	float wrapped = arcsin;
-	int steps = 0;
-	while (wrapped > 1) { wrapped -= 2; steps++; }
-	while (wrapped <= -1) { wrapped += 2; steps--; }
-
-	float base = rad2deg(asin(wrapped));
-	int shift = steps * 180.;
-	base += (float)shift;
-
-	return base;
-
-}
-
 WayPoints::WayPoints()
 {
 
