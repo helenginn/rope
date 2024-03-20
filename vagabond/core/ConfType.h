@@ -15,8 +15,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
+
 #ifndef __vagabond__ConfType__
 #define __vagabond__ConfType__
+
+#include <string>
 
 namespace rope
 {
@@ -25,7 +28,25 @@ namespace rope
 		ConfPositional,
 		ConfTorsions,
 		ConfBFactor,
+		ConfPath,
 	};
+
+	inline std::string tag_for_conf_type(const ConfType &type)
+	{
+		switch (type)
+		{
+			case ConfTorsions:
+			return "torsions";
+			case ConfPositional:
+			return "positions";
+			case ConfBFactor:
+			return "bfactors";
+			case ConfPath:
+			return "paths";
+			default:
+			return "unknown";
+		}
+	}
 }
 
 #endif

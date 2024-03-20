@@ -180,21 +180,6 @@ void RopeSpaceItem::setResponders()
 	}
 }
 
-std::string RopeSpaceItem::tag_for_type()
-{
-	switch (_type)
-	{
-		case ConfTorsions:
-		return "torsions";
-		case ConfPositional:
-		return "positions";
-		case ConfBFactor:
-		return "bfactors";
-		default:
-		return "unknown";
-	}
-}
-
 template <class ExactGroup>
 ObjectData *prepareCopy(const ExactGroup &other)
 {
@@ -231,7 +216,9 @@ void RopeSpaceItem::prepareCluster()
 	if (_group == nullptr)
 	{
 		_group = appropriateStartingGroup();
-		_group->write_data(_entity->name() + "_" + tag_for_type() + ".csv");
+		std::string str = _entity->name() + "_" + tag_for_conf_type(_type);
+		str += ".csv";
+		_group->write_data(str);
 	}
 
 	_cluster = new ClusterSVD(_group->data());
