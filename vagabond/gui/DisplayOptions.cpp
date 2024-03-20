@@ -20,9 +20,9 @@
 #include "BallAndStickOptions.h"
 
 #include <vagabond/core/Entity.h>
-#include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 
 DisplayOptions::DisplayOptions(Scene *prev, Entity *ent) : Scene(prev)
 {
@@ -38,24 +38,19 @@ DisplayOptions::~DisplayOptions()
 void DisplayOptions::setup()
 {
 	addTitle("Display options");
-
-	{
-		ChoiceText *opt = new ChoiceText("C-alpha trace", this, this);
-		opt->setLeft(0.2, 0.3);
-		opt->setReturnTag("calpha_trace");
-		addObject(opt);
-		_preferences->cAlphaTrace() ? opt->tick() : opt->untick();
-	}
-
-	{
-		ChoiceText *opt = new ChoiceText("Display all ball-and-stick", 
-		                                 this, this);
-		opt->setLeft(0.2, 0.4);
-		opt->setReturnTag("all_ball_and_stick");
-		addObject(opt);
-		_preferences->ballAndStick() ? opt->tick() : opt->untick();
-	}
 	
+	_tickboxes = new TickBoxes(this, this);
+	_tickboxes->addOption("C-alpha trace", "calpha_trace");
+	_tickboxes->addOption("Display all ball-and-stick", "all_ball_and_stick");
+	
+	_tickboxes->tick("calpha_trace", _preferences->cAlphaTrace());
+	_tickboxes->tick("all_ball_and_stick", _preferences->ballAndStick());
+	
+	_tickboxes->setVertical(true);
+	_tickboxes->setOneOnly(false);
+	_tickboxes->arrange(0.2, 0.3, 1.0, 0.5);
+	addObject(_tickboxes);
+
 	{
 		TextButton *opt = new TextButton("or ball-and-stick options", this);
 		opt->setLeft(0.24, 0.5);
@@ -76,7 +71,6 @@ void DisplayOptions::setup()
 void DisplayOptions::refresh()
 {
 	bool bas = _preferences->ballAndStick();
-	std::cout << "bas: " << bas << std::endl;
 	for (Button *b : _basOptions)
 	{
 		bas ? b->setInert(true, true) : b->setInert(false, true);
@@ -89,18 +83,17 @@ void DisplayOptions::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "calpha_trace")
 	{
-		bool ticked = static_cast<ChoiceText *>(button)->ticked();
-		_preferences->setCAlphaTrace(!ticked);
+		bool ticked = static_cast<TickBoxes *>(button)->isTicked(tag);
+		_preferences->setCAlphaTrace(ticked);
 	}
 	else if (tag == "all_ball_and_stick")
 	{
-		bool ticked = static_cast<ChoiceText *>(button)->ticked();
-		_preferences->setBallAndStick(!ticked);
+		bool ticked = static_cast<TickBoxes *>(button)->isTicked(tag);
+		_preferences->setBallAndStick(ticked);
 		refresh();
 	}
 	else if (tag == "ball_and_stick_options")
 	{
-		std::cout << "ball and stick" << std::endl;
 		BallAndStickOptions *baso = new BallAndStickOptions(this, _entity);
 		baso->show();
 	}

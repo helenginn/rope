@@ -26,6 +26,7 @@ class Entity;
 class FixIssues;
 class Polymer;
 class ChoiceText;
+class TickBoxes;
 
 class FixIssuesView : public Scene
 {
@@ -36,8 +37,6 @@ public:
 	virtual void setup();
 	virtual void buttonPressed(std::string tag, Button *button);
 private:
-	void addOption(std::string name, std::string tag, float top,
-	               bool ticked);
 	FixIssues::Options options();
 	void stop();
 
@@ -45,6 +44,7 @@ private:
 	Polymer *_molecule = nullptr;
 
 	FixIssues *_fixer = nullptr;
+	TickBoxes *_tickboxes = nullptr;
 	std::thread *_worker = nullptr;
 	
 	std::vector<ChoiceText *> _options;

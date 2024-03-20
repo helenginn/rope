@@ -19,7 +19,7 @@
 #include "LineSeriesOptions.h"
 #include <vagabond/core/Rule.h>
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/ChoiceGroup.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 
 LineSeriesOptions::LineSeriesOptions(Scene *prev, Rule &rule) :
 Scene(prev),
@@ -37,13 +37,13 @@ void LineSeriesOptions::setup()
 		t->setLeft(0.2, 0.3);
 		addObject(t);
 
-		ChoiceGroup *cg = new ChoiceGroup(this, this);
-		cg->addText("start");
-		cg->addText("end");
-		cg->addText("both");
-		cg->addText("none");
-		cg->arrange(1.0, 0.65, 0.3, 0.5, 0);
-		addObject(cg);
+		TickBoxes *tb = new TickBoxes(this, this);
+		tb->addOption("start");
+		tb->addOption("end");
+		tb->addOption("both");
+		tb->addOption("none");
+		tb->arrange(0.4, 0.3, 0.9, 0.9);
+		addObject(tb);
 	}
 
 	{

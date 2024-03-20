@@ -20,9 +20,9 @@
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/core/TorsionData.h>
-#include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 
 AxesMenu::AxesMenu(Scene *prev) : ListView(prev)
 {
@@ -50,7 +50,7 @@ void AxesMenu::setup()
 	
 	{
 		Text *t = new Text("Number");
-		t->setLeft(0.23, 0.2);
+		t->setLeft(0.21, 0.2);
 		addObject(t);
 		
 	}
@@ -86,18 +86,11 @@ Renderable *AxesMenu::getLine(int i)
 	
 	{
 		std::string text = "axis " + i_to_str(i);
-		ChoiceText *t = new ChoiceText(text, this, this);
-
-		t->setLeft(0, 0);
-		b->addObject(t);
-		
-		t->click();
-		if (!found)
-		{
-			t->unclick();
-		}
-
-		t->setReturnTag("axis_" + i_to_str(i));
+		std::string tag = "axis_" + i_to_str(i);
+		TickBoxes *tickboxes = new TickBoxes(this, this);
+		tickboxes->addOption(text, tag, found);
+		tickboxes->arrange(0, 0, 1.0, 0.1);
+		b->addObject(tickboxes);
 	}
 	
 	{
@@ -162,10 +155,11 @@ void AxesMenu::supplyCSV(std::string indicator)
 
 void AxesMenu::buttonPressed(std::string tag, Button *button)
 {
-	std::string end = Choice::tagEnd(tag, "axis_");
+	std::string end = Button::tagEnd(tag, "axis_");
 	
 	if (end.length())
 	{
+		TickBoxes *tb = static_cast<TickBoxes *>(button);
 		int axis = atoi(end.c_str());
 		_cluster->changeLastAxis(axis);
 		refresh();

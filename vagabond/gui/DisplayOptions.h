@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/Scene.h>
 
 class Entity;
+class TickBoxes;
 class VisualPreferences;
 
 class DisplayOptions : public Scene
@@ -36,6 +37,7 @@ public:
 private:
 	Entity *_entity = nullptr;
 	VisualPreferences *_preferences = nullptr;
+	TickBoxes *_tickboxes = nullptr;
 	
 	std::vector<Button *> _basOptions;
 };

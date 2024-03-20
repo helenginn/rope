@@ -20,8 +20,8 @@
 #include <vagabond/core/Entity.h>
 #include <vagabond/utils/version.h>
 #include <vagabond/gui/ResolveIssues.h>
-#include <vagabond/gui/elements/Choice.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 
 FixIssuesView::FixIssuesView(Scene *prev, Entity *ent) : Scene(prev)
 {
@@ -45,18 +45,6 @@ FixIssuesView::~FixIssuesView()
 
 }
 
-void FixIssuesView::addOption(std::string name, std::string tag, float top,
-                              bool ticked)
-{
-	ChoiceText *opt = new ChoiceText(name, this, this);
-	opt->setLeft(0.2, top);
-	opt->setReturnTag(tag);
-	addObject(opt);
-	ticked ? opt->tick() : opt->untick();
-	_options.push_back(opt);
-
-}
-
 void FixIssuesView::setup()
 {
 	addTitle("Fix issues in " + _entity->name());
@@ -76,23 +64,20 @@ void FixIssuesView::setup()
 	
 	float inc = 0.06;
 	float top = 0.2;
-	addOption("Fix phenylalanines", "phenylalanine", top, true);
-	top += inc;
-	addOption("Fix tyrosines", "tyrosine", top, true);
-	top += inc;
-	addOption("Fix aspartate", "aspartate", top, true);
-	top += inc;
-	addOption("Fix glutamate", "glutamate", top, true);
-	top += inc;
-	addOption("Fix arginine", "arginine", top, true);
-	top += inc;
-	addOption("Fix asparagine", "asparagine", top, false);
-	top += inc;
-	addOption("Fix glutamine", "glutamine", top, false);
-	top += inc;
-	addOption("Fix histidine", "histidine", top, false);
-	top += inc;
-	addOption("Fix peptide flips", "peptide_flips", top, false);
+	_tickboxes = new TickBoxes(this, this);
+	_tickboxes->addOption("Fix phenylalanines", "phenylalanine", true);
+	_tickboxes->addOption("Fix tyrosines", "tyrosine", true);
+	_tickboxes->addOption("Fix aspartate", "aspartate", true);
+	_tickboxes->addOption("Fix glutamate", "glutamate", true);
+	_tickboxes->addOption("Fix arginine", "arginine", true);
+	_tickboxes->addOption("Fix asparagine", "asparagine", false);
+	_tickboxes->addOption("Fix glutamine", "glutamine", false);
+	_tickboxes->addOption("Fix histidine", "histidine", false);
+	_tickboxes->addOption("Fix peptide flips", "peptide_flips", false);
+	_tickboxes->setVertical(true);
+	_tickboxes->setOneOnly(false);
+	_tickboxes->arrange(0.2, 0.2, 1.0, 0.8);
+	addObject(_tickboxes);
 	
 	{
 		TextButton *t = new TextButton("Find issues", this);
@@ -107,48 +92,37 @@ FixIssues::Options FixIssuesView::options()
 {
 	FixIssues::Options ret = FixIssues::FixNone;
 
-	for (ChoiceText *ch : _options)
+	if (_tickboxes->isTicked("phenylalanine"))
 	{
-		bool ticked = ch->ticked();
-		if (!ticked)
-		{
-			continue;
-		}
-
-		std::string tag = ch->tag();
-
-		if (tag == "phenylalanine")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixPhenylalanine);
-		}
-		else if (tag == "tyrosine")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixTyrosine);
-		}
-		else if (tag == "aspartate")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixAspartate);
-		}
-		else if (tag == "glutamate")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixGlutamate);
-		}
-		else if (tag == "asparagine")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixAsparagine);
-		}
-		else if (tag == "arginine")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixArginine);
-		}
-		else if (tag == "histidine")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixHistidine);
-		}
-		else if (tag == "peptide_flips")
-		{
-			ret = (FixIssues::Options)(ret | FixIssues::FixPeptideFlips);
-		}
+		ret = (FixIssues::Options)(ret | FixIssues::FixPhenylalanine);
+	}
+	else if (_tickboxes->isTicked("tyrosine"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixTyrosine);
+	}
+	else if (_tickboxes->isTicked("aspartate"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixAspartate);
+	}
+	else if (_tickboxes->isTicked("glutamate"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixGlutamate);
+	}
+	else if (_tickboxes->isTicked("asparagine"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixAsparagine);
+	}
+	else if (_tickboxes->isTicked("arginine"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixArginine);
+	}
+	else if (_tickboxes->isTicked("histidine"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixHistidine);
+	}
+	else if (_tickboxes->isTicked("peptide_flips"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixPeptideFlips);
 	}
 
 	return ret;

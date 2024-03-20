@@ -25,8 +25,7 @@
 
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
-#include <vagabond/gui/elements/ChoiceGroup.h>
-#include <vagabond/gui/elements/Choice.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Metadata.h>
@@ -61,28 +60,27 @@ void AddRule::addTypeButtons()
 	t->setLeft(0.1, 0.2);
 	addObject(t);
 
-	ChoiceGroup *cg = new ChoiceGroup(this, this);
-	ChoiceText *ls = cg->addText("Line series", "line_series");
-	ChoiceText *ci = cg->addText("Change icon", "change_icon");
-	ChoiceText *vc = cg->addText("Vary colour", "vary_colour");
-	cg->arrange(1.0, 0.5, 0.3, 0.8, 0);
+	TickBoxes *tb = new TickBoxes(this, this);
+	tb->addOption("Line series", "line_series");
+	tb->addOption("Change icon", "change_icon");
+	tb->addOption("Vary colour", "vary_colour");
+	tb->arrange(0.2, 0.3, 0.9, 0.8);
+	addObject(tb);
 	
 	switch (_obj.type())
 	{
 		case Rule::LineSeries:
-		ls->click();
+		tb->tick("line_series");
 		break;
 		case Rule::ChangeIcon:
-		ci->click();
+		tb->tick("change_icon");
 		break;
 		case Rule::VaryColour:
-		vc->click();
+		tb->tick("vary_colour");
 		break;
 		default:
 		break;
 	}
-	
-	addObject(cg);
 }
 
 void AddRule::addHeaderButtons()

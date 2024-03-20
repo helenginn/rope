@@ -118,6 +118,8 @@ install_data(
 'assets/images/sequence.png',
 'assets/images/some_atoms.png',
 'assets/images/tick.png',
+'assets/images/tickbox_empty.png',
+'assets/images/tickbox_filled.png',
 'assets/images/transparency.png',
 'assets/images/triangle.png',
 'assets/images/tools.png',

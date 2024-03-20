@@ -17,8 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "GlobalOptions.h"
-#include <vagabond/gui/elements/ChoiceGroup.h>
-#include <vagabond/gui/elements/Choice.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/core/Environment.h>
 
 GlobalOptions::GlobalOptions(Scene *prev) : Scene(prev)
@@ -34,10 +33,20 @@ void GlobalOptions::setup()
 	t->setLeft(0.1, 0.2);
 	addObject(t);
 
-	ChoiceGroup *cg = new ChoiceGroup(this, this);
-	cg->addText("Paper", "bg_paper");
-	cg->addText("White", "bg_white");
-	cg->arrange(1.0, 0.5, 0.3, 0.8, 0);
+	TickBoxes *cg = new TickBoxes(this, this);
+	cg->addOption("Paper", "bg_paper");
+	cg->addOption("White", "bg_white");
+	
+	if (Scene::_defaultBg == "assets/images/paper.jpg")
+	{
+		cg->tick("bg_paper");
+	}
+	else if (Scene::_defaultBg == "assets/images/blank.png")
+	{
+		cg->tick("bg_white");
+	}
+
+	cg->arrange(0.3, 0.3, 0.9, 1.0);
 	addObject(cg);
 	
 }

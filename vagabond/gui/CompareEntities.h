@@ -60,9 +60,10 @@ private:
 	{
 		Distance,
 		Angle,
+		None,
 	};
 
-	Mode _measureMode;
+	Mode _measureMode = None;
 	size_t requiredCount();
 
 	enum ChooseMode

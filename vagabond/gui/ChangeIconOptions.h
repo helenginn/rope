@@ -24,6 +24,7 @@
 class Rule;
 class TextButton;
 class ChoiceText;
+class TickBoxes;
 class Metadata;
 class ObjectData;
 
@@ -47,8 +48,7 @@ private:
 	ObjectData *_group = nullptr;
 
 	TextButton *_headerButton = nullptr;
-	ChoiceText *_equiv = nullptr;
-	ChoiceText *_assigned = nullptr;
+	TickBoxes *_assignment = nullptr;
 	Rule &_rule;
 };
 

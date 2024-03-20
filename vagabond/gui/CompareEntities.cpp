@@ -24,8 +24,7 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TextEntry.h>
-#include <vagabond/gui/elements/ChoiceGroup.h>
-#include <vagabond/gui/elements/Choice.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/AtomRecall.h>
 
@@ -45,11 +44,11 @@ void CompareEntities::setup()
 	}
 	
 	{
-		ChoiceGroup *cg = new ChoiceGroup(this, this);
-		cg->addText("distance");
-		cg->addText("angle");
-		cg->arrange(1.0, 0.65, 0.22, 0.5, 0);
-		addObject(cg);
+		TickBoxes *tb = new TickBoxes(this, this);
+		tb->addOption("distance");
+		tb->addOption("angle");
+		tb->arrange(0.4, 0.22, 0.9, 0.5);
+		addObject(tb);
 	}
 }
 
@@ -98,6 +97,11 @@ bool CompareEntities::proofAndShowEntity(TextButton *button,
 	}
 
 	std::set<std::string> acceptable = acceptableEntityList();
+	for (const std::string &acc : acceptable)
+	{
+		std::cout << acc << ", ";
+	}
+	std::cout << std::endl;
 	
 	if (Button::tagEnd(id, "different ").length() > 0 && idx == 0)
 	{
@@ -118,6 +122,7 @@ bool CompareEntities::proofAndShowEntity(TextButton *button,
 bool CompareEntities::showEntityOptions()
 {
 	int max = requiredCount();
+	std::cout << "Max: " << max << std::endl;
 	bool full_house = true;
 
 	float top = 0.35;
@@ -156,8 +161,13 @@ bool CompareEntities::showEntityOptions()
 
 size_t CompareEntities::requiredCount()
 {
-	size_t max = (_measureMode == Distance ? 2 : 3);
-	return max;
+	switch (_measureMode)
+	{
+		case None: return 0;
+		case Distance: return 2;
+		case Angle: return 3;
+		default: return 0;
+	}
 }
 
 bool CompareEntities::allEntriesIdentical()
@@ -181,6 +191,12 @@ void CompareEntities::showScoreOptions()
 		Text *t = new Text("These settings should produce no duplicate metrics.");
 		t->setLeft(0.15, .6);
 		addTempObject(t);
+
+		TextButton *ok = new TextButton("Calculate", this);
+		ok->setRight(0.9, 0.9);
+		ok->setReturnTag("calculate");
+		addTempObject(ok);
+
 		return;
 	}
 
@@ -188,14 +204,16 @@ void CompareEntities::showScoreOptions()
 	t->setLeft(0.15, .6);
 	addTempObject(t);
 
-	ChoiceGroup *cg = new ChoiceGroup(this, this);
-	ChoiceText *smallest = cg->addText("smallest value", "smallest");
-	ChoiceText *closest = cg->addText("closest to:", "closest");
-	cg->arrange(1.0, 0.4, 0.72, 0.0, 0.16);
-	addTempObject(cg);
+	std::cout << "Adding score options here" << std::endl;
+	TickBoxes *tb = new TickBoxes(this, this);
+	tb->addOption("smallest value", "smallest");
+	tb->addOption("closest to:", "closest");
+	tb->setVertical(true);
+	tb->arrange(0.4, 0.67, 0.9, 0.85);
+	addTempObject(tb);
 	
-	ChoiceText *select = (_target < 0 ? smallest : closest);
-	select->tick();
+	std::string chosen = (_target < 0 ? "smallest" : "closest");
+	tb->tick(chosen);
 	
 	std::string str = (_target < 0 ? "enter..." : f_to_str(_target, 2));
 	TextEntry *te = new TextEntry(str, this, this);
@@ -258,7 +276,7 @@ void CompareEntities::chooseHeaders(int idx)
 void CompareEntities::sendObject(std::string tag, void *object)
 {
 	if (_chooseMode == ChooseEntity &&
-	    (_entries[_active].id != tag && _entries[_active].raw_id != tag))
+	    (_entries[_active].id != tag && _entries[_active].id != tag))
 	{
 		_entries[_active] = Entry{};
 		_entries[_active].id = tag;
@@ -284,13 +302,24 @@ void CompareEntities::sendObject(std::string tag, void *object)
 
 void CompareEntities::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "distance")
+	std::cout << "tag: " << tag << std::endl;
+
+	if (tag == "distance" || tag == "angle")
 	{
-		_measureMode = Distance;
-	}
-	else if (tag == "angle")
-	{
-		_measureMode = Angle;
+		TickBoxes *tb = static_cast<TickBoxes *>(button);
+		
+		if (!tb->isTicked(tag))
+		{
+			_measureMode = None;
+		}
+		else if (tag == "distance")
+		{
+			_measureMode = Distance;
+		}
+		else if (tag == "angle")
+		{
+			_measureMode = Angle;
+		}
 	}
 	
 	{

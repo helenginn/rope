@@ -20,7 +20,7 @@
 #include <vagabond/core/FixIssues.h>
 
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/Choice.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
 ResolveIssues::ResolveIssues(Scene *prev, FixIssues *fixer) : ListView(prev)
@@ -64,19 +64,12 @@ Renderable *ResolveIssues::getLine(int i)
 
 	Box *b = new Box();
 	{
-		ChoiceText *text = new ChoiceText(_fixer->issueMessage(i), this, this);
-		text->setLeft(-0.1, 0.);
-		b->addObject(text);
-		text->click();
-
-		text->resize(0.8);
-		
-		if (!_fix.at(i))
-		{
-			text->untick();
-		}
-
-		text->setReturnTag("issue_" + std::to_string(i));
+		TickBoxes *tb = new TickBoxes(this, this);
+		std::string text = _fixer->issueMessage(i);
+		std::string tag = "issue_" + std::to_string(i);
+		tb->addOption(text, tag, _fix.at(i));
+		tb->arrange(0, 0, 1.0, 0.1);
+		b->addObject(tb);
 	}
 
 	return b;
@@ -129,18 +122,9 @@ void ResolveIssues::buttonPressed(std::string tag, Button *button)
 	if (end.length())
 	{
 		int idx = atoi(end.c_str());
-		bool current = _fix.at(idx);
-		ChoiceText *ch = static_cast<ChoiceText *>(button);
-		_fix[idx] = !current;
-		
-		if (!current)
-		{
-			ch->untick();
-		}
-		else
-		{
-			ch->tick();
-		}
+		TickBoxes *ch = static_cast<TickBoxes *>(button);
+		_fix[idx] = !_fix[idx];
+		ch->tick(tag, _fix[idx]);
 	}
 	else if (tag == "resolve" && _fixer->done())
 	{

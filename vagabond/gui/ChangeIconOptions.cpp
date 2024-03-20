@@ -21,8 +21,7 @@
 #include "ClusterPointDemo.h"
 #include <vagabond/core/Rule.h>
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/ChoiceGroup.h>
-#include <vagabond/gui/elements/Choice.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/utils/FileReader.h>
 #include <iostream>
 
@@ -46,21 +45,15 @@ void ChangeIconOptions::setup()
 	addTitle(str);
 
 	{
-		ChoiceGroup *cg = new ChoiceGroup(this, this);
-		_equiv = cg->addText("when value is:", "equivalent");
-		_assigned = cg->addText("or when any value is assigned", "assigned");
-		cg->setAlignment(Renderable::Left);
-		cg->arrange(1.0, 0.2, 0.3, 0.0, 0.2);
+		TickBoxes *cg = new TickBoxes(this, this);
+		cg->setVertical(true);
+		cg->addOption("when value is:", "equivalent");
+		cg->addOption("or when any value is assigned", "assigned");
+		cg->arrange(0.2, 0.25, 0.9, 0.40);
 
-		if (_rule.ifAssigned())
-		{
-			_assigned->click();
-		}
-		else
-		{
-			_equiv->click();
-		}
+		cg->tick(_rule.ifAssigned() ? "assigned" : "equivalent");
 		addObject(cg);
+		_assignment = cg;
 	}
 	
 	{
@@ -77,20 +70,19 @@ void ChangeIconOptions::setup()
 		cpd->setCentre(0.5, 0.55);
 		addObject(cpd);
 
-		ChoiceGroup *cg = new ChoiceGroup(this, this);
-		ChoiceText *holders[8];
-		holders[0] = cg->addText("filled\ncircle", "pt_0");
-		holders[1] = cg->addText("filled\nstar", "pt_1");
-		holders[2] = cg->addText("filled\ntriangle", "pt_2");
-		holders[3] = cg->addText("cross", "pt_3");
-		holders[4] = cg->addText("point\ncircle", "pt_4");
-		holders[5] = cg->addText("star", "pt_5");
-		holders[6] = cg->addText("triangle", "pt_6");
-		holders[7] = cg->addText("asterisk", "pt_7");
-		cg->arrange(0.8, 0.5, 0.7, 0.8, 0);
+		TickBoxes *cg = new TickBoxes(this, this);
+		cg->addOption("filled\ncircle", "pt_0");
+		cg->addOption("filled\nstar", "pt_1");
+		cg->addOption("filled\ntriangle", "pt_2");
+		cg->addOption("cross", "pt_3");
+		cg->addOption("point\ncircle", "pt_4");
+		cg->addOption("star", "pt_5");
+		cg->addOption("triangle", "pt_6");
+		cg->addOption("asterisk", "pt_7");
+		cg->arrange(0.15, 0.62, 0.95, 1.0);
 		
-		int pt = _rule.pointType();
-		holders[pt]->click();
+		std::string tag = "pt_" + std::to_string(_rule.pointType());
+		cg->tick(tag);
 
 		addObject(cg);
 	}
@@ -138,14 +130,14 @@ void ChangeIconOptions::refresh()
 {
 	if (_rule.headerValue().length() == 0)
 	{
-		_assigned->click();
+		_assignment->tick("assigned");
 		_rule.setAssigned(true);
 	}
 
 	if (_rule.header().length() == 0)
 	{
 		_headerButton->setInert(true);
-		_assigned->click();
+		_assignment->tick("assigned");
 		_rule.setAssigned(true);
 	}
 
@@ -159,7 +151,7 @@ void ChangeIconOptions::buttonPressed(std::string tag, Button *button)
 		ChooseHeaderValue *chv = new ChooseHeaderValue(this, _rule);
 		chv->setData(_md, _group);
 		chv->show();
-		_equiv->click();
+		_assignment->tick("equivalent");
 		_rule.setAssigned(false);
 	}
 	else if (tag == "equivalent")
