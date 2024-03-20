@@ -30,14 +30,19 @@ auto atom_is_near(const glm::vec3 &location, float threshold)
 {
 	return [location, threshold](Atom *const &atom) -> bool
 	{
-		glm::vec3 init = atom->initialPosition();
-
+		glm::vec3 init = atom->derivedPosition();
+		
 		for (int i = 0; i < 3; i++)
 		{
 			if (fabs(init[i] - location[i]) > threshold)
 			{
 				return false;
 			}
+		}
+
+//		if (!atom->isMainChain())
+		{
+//			return false;
 		}
 
 		float l = glm::length(init - location);
@@ -47,7 +52,7 @@ auto atom_is_near(const glm::vec3 &location, float threshold)
 
 float LocalMotion::scoreFor(const glm::vec3 &location)
 {
-	auto atom_is_within_range = atom_is_near(location, 5);
+	auto atom_is_within_range = atom_is_near(location, 8);
 
 	AtomGroup *subset = _group->new_subset(atom_is_within_range);
 
@@ -74,10 +79,14 @@ float LocalMotion::scoreFor(const glm::vec3 &location)
 			{
 				nom += motion[i] * at_rest[i];
 			}
-
-			float weight = 1 / glm::length(a_targ);
-			
 			float exact = nom / glm::length(at_rest);
+
+			glm::vec3 from_me = (a_targ + b_targ) / 2.f - location;
+
+			float aWeight = 1 / glm::dot(from_me, from_me);
+			float bWeight = 1 / glm::dot(at_rest, at_rest);
+			
+			float weight = aWeight * bWeight;
 
 			total += fabs(exact) * weight;
 			weights += weight;

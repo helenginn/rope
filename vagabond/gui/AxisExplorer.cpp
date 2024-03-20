@@ -231,9 +231,27 @@ void AxisExplorer::localMotion()
 	
 	map->do_op_on_basic_index(get_weight);
 	
-	_unit->density()->setThreshold(1);
+	_unit->density()->setThreshold(2);
 	_unit->refreshDensity(map, false);
 	_latest = map;
+}
+
+TabulatedData *data_with_visuals(const TabulatedData &data, Instance *instance)
+{
+	VisualPreferences &vp = instance->entity()->visualPreferences();
+	TabulatedData extra = vp.asData();
+	TabulatedData *ret = nullptr;
+
+	if (extra.entryCount())
+	{
+		ret = new TabulatedData(data + std::make_pair(&extra, "Residue number"));
+	}
+	else
+	{
+		ret = new TabulatedData(data);
+	}
+	
+	return ret;
 }
 
 void AxisExplorer::perResidueLocalMotions()
@@ -242,9 +260,8 @@ void AxisExplorer::perResidueLocalMotions()
 	AtomGroup *group = _instance->currentAtoms();
 	group->getLimitingResidues(&minRes, &maxRes);
 
-	_localMotions = 
-	new TabulatedData({{"Residue number", TabulatedData::Number},
-	                  {"Local motion (AU)", TabulatedData::Number}});
+	TabulatedData data({{"Residue number", TabulatedData::Number},
+	                   {"Local motion (AU)", TabulatedData::Number}});
 
 	for (int res = minRes; res <= maxRes; res++)
 	{
@@ -265,12 +282,14 @@ void AxisExplorer::perResidueLocalMotions()
 		
 		total /= weights;
 
-		_localMotions->addEntry({{"Residue number", std::to_string(res)},
-			                       {"Local motion (AU)", 
-		                        std::to_string(total)}});
+		data.addEntry({{"Residue number", std::to_string(res)},
+		              {"Local motion (AU)", std::to_string(total)}});
 		
 		delete residue;
 	}
+
+
+	_localMotions = data_with_visuals(data, _instance);
 	
 	TableView *tv = new TableView(this, _localMotions, 
 	                              "Side chain exposure to local motion");
@@ -429,8 +448,11 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 		delete _data;
 	}
 	
-	_data = new TabulatedData({{"Residue number", TabulatedData::Number},
-		                     {"Angle variation (deg)", TabulatedData::Number}});
+	TabulatedData data({{"Residue number", TabulatedData::Number},
+	                   {"Angle variation (deg)", TabulatedData::Number}});
+
+	VisualPreferences &vp = _instance->entity()->visualPreferences();
+	TabulatedData extra = vp.asData();
 
 	for (auto it = list.begin(); it != list.end(); it++)
 	{
@@ -439,9 +461,19 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 		float variation = it->second / (_maxTorsion);
 
 		atom->setAddedColour(variation);
-		_data->addEntry({{"Residue number", it->first.str()},
+		data.addEntry({{"Residue number", it->first.str()},
 			             {"Angle variation (deg)", 
 		                   std::to_string(variation)}});
+	}
+	
+	if (extra.entryCount())
+	{
+		_data = new TabulatedData(data + 
+		                          std::make_pair(&extra, "Residue number"));
+	}
+	else
+	{
+		_data = new TabulatedData(data);
 	}
 }
 
