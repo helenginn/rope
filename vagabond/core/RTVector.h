@@ -71,7 +71,7 @@ public:
 		}
 	}
 	
-	const ResidueTorsion &c_rt(int i) const
+	const ResidueTorsion &rt(int i) const
 	{
 		return _pairs[i].header;
 	}

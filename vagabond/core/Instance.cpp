@@ -283,7 +283,7 @@ int Instance::indexForParameterFromList(Parameter *param, const RTAngles &list)
 	
 	for (size_t i = 0; i < list.size(); i++)
 	{
-		const ResidueTorsion &rt = list.c_rt(i);
+		const ResidueTorsion &rt = list.rt(i);
 		if (!rt.fitsParameter(param, this))
 		{
 			continue;
