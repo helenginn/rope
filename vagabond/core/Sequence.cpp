@@ -70,6 +70,7 @@ Sequence::Sequence(std::string str, int offset)
 		char ch = str[i];
 
 		std::string tlc = gemmi::expand_one_letter(ch, gemmi::ResidueKind::AA);
+
 		Residue r{ResidueId(i + 1), tlc, " "};
 		
 		*this += r;
@@ -163,7 +164,12 @@ std::string Sequence::str()
 	{
 		resvec.push_back(r.code());
 		gemmi::ResidueInfo info = gemmi::find_tabulated_residue(r.code());
-		olc += info.one_letter_code;
+		char ch = info.one_letter_code;
+		if (info.one_letter_code == ' ')
+		{
+			ch = 'X';
+		}
+		olc += ch;
 	}
 
 //	std::replace(olc.begin(), olc.end(), 'X', ' ');
