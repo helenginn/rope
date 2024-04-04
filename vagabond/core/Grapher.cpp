@@ -241,19 +241,6 @@ void Grapher::addGraph(AtomGraph *graph)
 	_visits[graph->atom]++;
 }
 
-bool AtomGraph::childrenOnlyHydrogens()
-{
-	bool hydrogens = true;
-	
-	for (size_t i = 0; i < children.size(); i++)
-	{
-		if (children[i]->atom->elementSymbol() != "H")
-		{
-			hydrogens = false;
-		}
-	}
-}
-
 void Grapher::calculateMissingMaxDepths()
 {
 	for (int i = _graphs.size() - 1; i >= 0; i--)
