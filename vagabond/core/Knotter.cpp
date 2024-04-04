@@ -184,14 +184,13 @@ void Knotter::createBondTorsion(BondAngle *first, BondAngle *second)
 
 	double standard = _table->torsion(code, aName, bName, cName, dName);
 	double dev = _table->torsion_stdev(code, aName, bName, cName, dName);
-	
-	BondTorsion *torsion = new BondTorsion(_group, a, b, c, d, standard);
 
 	/* if dev is less than 0.5 degrees, treat as constraint */
-	if (standard >= 0 && dev < 0.5) 
-	{
-		torsion->setConstrained(true);
-	}
+	bool constrained = (standard >= 0 && dev < 0.5);
+	
+	BondTorsion *torsion = new BondTorsion(_group, a, b, c, d, 
+	                                       standard, constrained);
+
 }
 
 void Knotter::createHyperValues(Atom *atom, RingProgrammer *programmer)

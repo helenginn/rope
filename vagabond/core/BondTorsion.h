@@ -33,7 +33,7 @@ class BondTorsion : public Parameter
 public:
 	/** ownership is taken over by the AtomGroup after creation */
 	BondTorsion(AtomGroup *owner, Atom *a, Atom *b, Atom *c, 
-	            Atom *d, double angle);
+	            Atom *d, double angle, bool constrained = false);
 
 	virtual ~BondTorsion() {};
 	
@@ -65,6 +65,8 @@ public:
 	{
 		return (_a == a || _b == a || _c == a || _d == a);
 	}
+	
+	bool matchesAtoms(Atom *a, Atom *b, Atom *c, Atom *d);
 
 	virtual Atom *anAtom()
 	{

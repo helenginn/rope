@@ -25,10 +25,10 @@
 double BondTorsion::_maxSeparation = 20;
 
 BondTorsion::BondTorsion(AtomGroup *owner, Atom *a, Atom *b, Atom *c, 
-                         Atom *d, double angle)
+                         Atom *d, double angle, bool constrained)
 {
 	_owner = owner;
-	_constrained = false;
+	_constrained = constrained;
 	_a = a;
 	_b = b;
 	_c = c;
@@ -263,3 +263,20 @@ bool BondTorsion::spansMultipleChains() const
 	return false;
 }
 
+bool BondTorsion::matchesAtoms(Atom *a, Atom *b, Atom *c, Atom *d)
+{
+	auto matches_list = [this](const std::array<Atom *, 4> &abcd)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			if (abcd[i] && abcd[i] != atom(i))
+			{
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	return matches_list({a, b, c, d}) || matches_list({d, c, b, a});
+}

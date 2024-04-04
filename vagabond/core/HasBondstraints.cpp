@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/OpSet.h>
 #include <iostream>
 #include "HasBondstraints.h"
 #include "BondTorsion.h"
@@ -175,6 +176,10 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 		_terminalTorsions.push_back(torsion);
 	}
 
+	if (_owns)
+	{
+		propagateRigidity(torsion);
+	}
 }
 
 void HasBondstraints::addBondstraint(Chirality *chir)
@@ -327,11 +332,9 @@ BondTorsion *HasBondstraints::findBondTorsion(std::string desc)
 BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, 
                                               Atom *c, Atom *d) const
 {
-	BondTorsion bt(nullptr, a, b, c, d, 0);
-
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
-		if (*_torsions[i] == bt)
+		if (_torsions[i]->matchesAtoms(a, b, c, d))
 		{
 			return _torsions[i];
 		}
@@ -395,4 +398,76 @@ void HasBondstraints::addBondstraintsFrom(HasBondstraints *other)
 		}
 	}
 
+}
+
+void HasBondstraints::propagateRigidity(BondTorsion *torsion)
+{
+	if (!torsion->isConstrained())
+	{
+		return;
+	}
+
+	std::vector<BondTorsion *> todo{1, torsion};
+	OpSet<Atom *> found;
+	OpSet<BondTorsion *> done;
+	
+	auto add_to_todo = [&done, &found, &todo](Atom *const &atom)
+	{
+		found.insert(atom);
+
+		for (size_t i = 0; i < atom->bondTorsionCount(); i++)
+		{
+			BondTorsion *t = atom->bondTorsion(i);
+			if (done.count(t) == 0)
+			{
+				todo.push_back(t);
+			}
+		}
+	};
+	
+	while (todo.size())
+	{
+		BondTorsion *current = todo.back();
+		todo.pop_back();
+		done.insert(current);
+
+		if (current->isConstrained())
+		{
+			Atom *central[] = {current->atom(1), current->atom(2)};
+			
+			for (Atom *atom : central)
+			{
+				add_to_todo(atom);
+			}
+		}
+	}
+	
+	for (Atom *atom : found)
+	{
+		for (int i = 0; i < atom->bondLengthCount(); i++)
+		{
+			Atom *other = atom->connectedAtom(i);
+			if (!found.count(other))
+			{
+				continue;
+			}
+			
+			for (int j = 0; j < atom->bondTorsionCount(); j++)
+			{
+				BondTorsion *check = atom->bondTorsion(j);
+				if (check->isConstrained())
+				{
+					return;
+				}
+				
+				if (check->matchesAtoms(nullptr, atom, other, nullptr))
+				{
+					std::cout << "Constraining " << check->desc() << " of " 
+					<< atom->desc() << " to true" <<std::endl;
+					check->setConstrained(true);
+				}
+			}
+		}
+
+	}
 }
