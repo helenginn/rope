@@ -125,21 +125,6 @@ public:
 		return _programs;
 	}
 	
-	void setVisitLimit(int limit)
-	{
-		_visitLimit = limit;
-	}
-	
-	void setJointLimit(int limit)
-	{
-		_jointLimit = limit;
-	}
-	
-	const int &observedVisitLimit() const
-	{
-		return _observedVisitLimit;
-	}
-	
 	std::string desc() const;
 	
 	/** get the first graph of the next residue following along the nodes.
@@ -148,7 +133,6 @@ public:
 	 * @return node of beginning of next residue */
 	AtomGraph *firstGraphNextResidue(AtomGraph *last);
 	
-	std::vector<const AtomGraph *> joints() const;
 	const std::vector<AtomGraph *> &graphs() const
 	{
 		return _graphs;
@@ -176,11 +160,7 @@ private:
 	std::map<Parameter *, AtomGraph *> _parameter2Graph;
 	std::map<Atom *, int> _visits;
 
-	int _visitLimit = 1;
-	int _observedVisitLimit = 0;
 	int _ringSizeLimit = 6;
-	int _jointLimit = -1;
-	int _joints = 0;
 	
 	typedef std::deque<RingProgrammer> RingProgrammers;
 

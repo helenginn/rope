@@ -70,16 +70,6 @@ public:
 		_threads = threads;
 	}
 	
-	void setMaximumLoopCount(size_t loops)
-	{
-		_loopCount = loops;
-	}
-	
-	void setMaximumJointCount(int max)
-	{
-		_jointLimit = max;
-	}
-	
 	void transferProperties(HasBondSequenceCustomisation *other)
 	{
 		other->_ignoreHydrogens = _ignoreHydrogens;
@@ -87,9 +77,7 @@ public:
 		other->_totalSamples = _totalSamples;
 		other->_inSequence = _inSequence;
 		other->_maxThreads = _maxThreads;
-		other->_jointLimit = _jointLimit;
 		other->_superpose = _superpose;
-		other->_loopCount = _loopCount;
 		other->_threads = _threads;
 	}
 	
@@ -98,8 +86,6 @@ protected:
 	bool _skipSections = false;
 	bool _inSequence = true;
 	bool _superpose = true;
-	size_t _loopCount = 1;
-	int _jointLimit = -1;
 
 	size_t _totalSamples = 1;
 	size_t _maxThreads = 1;

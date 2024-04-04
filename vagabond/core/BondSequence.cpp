@@ -54,9 +54,7 @@ void BondSequence::makeTorsionBasis()
 
 void BondSequence::addToGraph(AnchorExtension &ext)
 {
-	_grapher.setVisitLimit(_loopCount);
 	_grapher.setInSequence(_inSequence);
-	_grapher.setJointLimit(_jointLimit);
 	_grapher.generateGraphs(ext);
 	_grapher.calculateMissingMaxDepths();
 	_grapher.fillInParents();

@@ -95,7 +95,7 @@ bool Grapher::preferredConnection(Atom *atom, Atom *next)
 
 bool Grapher::beyondVisitLimit(Atom *atom)
 {
-	return (_visits[atom] >= _visitLimit);
+	return (_visits[atom] >= 1);
 }
 
 int Grapher::jumpsToAtom(AtomGraph *last, Atom *search, int max)
@@ -177,6 +177,7 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 			continue;
 		}
 		
+		/* ignore five-membered rings as they're covered by proline program */
 		int between = jumpsToAtom(current, next, _ringSizeLimit + 1);
 		if (between >= 0 && between < _ringSizeLimit)
 		{
@@ -186,20 +187,6 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 		/* important not to go round in circles */
 		if (beyondVisitLimit(next))
 		{
-			// but if it's beyond the limit, it's a joint
-			
-			// we only care if the visit limit is not 1, though
-			if (_visitLimit > 1)
-			{
-				if (_jointLimit < 0 && _joints > _jointLimit)
-				{
-					continue;
-				}
-
-				current->joint = true;
-				_joints++;
-			}
-
 			continue;
 		}
 
@@ -254,24 +241,7 @@ void Grapher::addGraph(AtomGraph *graph)
 	{
 		_atom2Graph[graph->atom] = graph;
 	}
-	// we only care about graph joints if the visit limit is greater than 1
-	// and if we actually have a parent atom
-	else if (graph->parent && _visitLimit > 1)
-	// normally, the upcoming visits would be one less than the current.
-	// however, if they're the same, that means it's become a loop join.
-	{
-		if (_visits[graph->atom] == _visits[graph->parent])
-		{
-			graph->joint = true;
-		}
-	}
-
 	_visits[graph->atom]++;
-	
-	if (_visits[graph->atom] > _observedVisitLimit)
-	{
-		_observedVisitLimit = _visits[graph->atom];
-	}
 }
 
 bool AtomGraph::childrenOnlyHydrogens()
@@ -559,7 +529,6 @@ void Grapher::clearState()
 	_block2Graph.clear();
 	_parameter2Graph.clear();
 	_visits.clear();
-	_joints = 0;
 }
 
 void Grapher::fillMissingWriteLocations(std::vector<AtomBlock> &blocks)
