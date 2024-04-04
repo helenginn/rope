@@ -52,6 +52,11 @@ struct Deviation
 	float value;
 };
 
+struct ActivationEnergy
+{
+	float value;
+};
+
 class AtomMap;
 class AnisoMap;
 class AtomSegment;
