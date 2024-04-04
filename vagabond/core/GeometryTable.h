@@ -24,6 +24,9 @@
 #include <mutex>
 #include <set>
 #include <map>
+#include <iostream>
+
+#include "BackboneType.h"
 
 struct ResidueId;
 class AtomGroup;
@@ -39,6 +42,21 @@ public:
 	}
 	
 	static GeometryTable &getAllGeometry();
+	
+	void setBackboneType(const std::string &code, const BackboneType &type)
+	{
+		_backboneTypes[code] = type;
+	}
+	
+	BackboneType backboneType(const std::string &code)
+	{
+		if (_backboneTypes.count(code))
+		{
+			return _backboneTypes.at(code);
+		}
+		
+		return NoOverride;
+	}
 
 	void addGeometryLength(std::string code, std::string pName,
 	                       std::string qName, double mean, double stdev, 
@@ -211,6 +229,7 @@ private:
 	
 	std::map<std::string, GeometryMap> _codes;
 	std::map<std::string, GeometryMap> _links;
+	std::map<std::string, BackboneType> _backboneTypes;
 	
 	static GeometryTable _loadedGeometry;
 	std::set<std::string> _loadedFiles;
