@@ -25,6 +25,12 @@
 Path::Path(PlausibleRoute *pr)
 {
 	_route = pr;
+	_hash = pr->hash();
+	pr->refreshScores();
+	_momentum = pr->momentumScore();
+	_activationEnergy = pr->activationEnergy();
+	_clash = pr->clashScore();
+
 	_startInstance = pr->instance()->id();
 	_endInstance = pr->endInstance()->id();
 	_model_id = pr->instance()->model()->id();
@@ -41,6 +47,17 @@ Path::Path(PlausibleRoute *pr)
 Path::~Path()
 {
 	
+}
+
+const Metadata::KeyValues Path::metadata(Metadata *source) const
+{
+	Metadata::KeyValues chosen;
+	if (source == nullptr) return chosen;
+
+	const Metadata::KeyValues *ptr = source->valuesForInstance(id());
+	if (!ptr) return chosen;
+
+	return *ptr;
 }
 
 void Path::housekeeping()
@@ -98,6 +115,8 @@ PlausibleRoute *Path::toRoute()
 	pr->setNew(false);
 	pr->setType(_type);
 	pr->setMotions(_motions);
+	pr->setScores(_momentum, _clash);
+	pr->setHash(_hash);
 	
 	if (_twists.size() == 0)
 	{
@@ -122,6 +141,12 @@ void Path::cleanupRoute()
 {
 	if (_route)
 	{
+		_route->setHash();
+		_momentum = _route->momentumScore();
+		_activationEnergy = _route->activationEnergy();
+		_clash = _route->clashScore();
+		_hash = _route->hash();
+
 		delete _route;
 		_route = nullptr;
 	}

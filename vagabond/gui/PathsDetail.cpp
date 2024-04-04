@@ -45,6 +45,7 @@ void PathsDetail::calculateMetrics()
 {
 	PlausibleRoute *pr = _obj.toRoute();
 	pr->setup();
+	pr->refreshScores();
 
 	RouteValidator rv(*pr);
 
@@ -113,7 +114,7 @@ void PathsDetail::setup()
 	addTitle("Path details");
 	AddObject::setup();
 
-	Text *t = new Text(_obj.desc());
+	Text *t = new Text(_obj.id());
 	t->setCentre(0.5, 0.15);
 	t->squishToWidth(0.8);
 	addObject(t);
@@ -238,7 +239,7 @@ void PathsDetail::attemptEnsemble(const std::string &filename, const int &num)
 
 	gemmi::Structure st;
 	float step = 1 / (float)num;
-	for (size_t i = 0; i < num; i++)
+	for (size_t i = 0; i <= num; i++)
 	{
 		float frac = i * step;
 		pr->submitJobAndRetrieve(frac, true);
@@ -268,7 +269,7 @@ void PathsDetail::attemptPerStruct(const std::string &filename, const int &num)
 	pr->setup();
 
 	float step = 1 / (float)num;
-	for (size_t i = 0; i < num; i++)
+	for (size_t i = 0; i <= num; i++)
 	{
 		float frac = i * step;
 		pr->submitJobAndRetrieve(frac, true);

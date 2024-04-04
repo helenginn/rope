@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Metadata.h"
 #include "PathGroup.h"
 #include "PathData.h"
 #include "Path.h"
@@ -44,4 +45,33 @@ PathData *PathGroup::preparePathData()
 	}
 
 	return pd;
+}
+
+Metadata *PathGroup::prepareMetadata()
+{
+	Metadata *metadata = new Metadata();
+	for (Path *const &path : *this)
+	{
+		if (!path->hasScores())
+		{
+			PlausibleRoute *pr = path->toRoute();
+			pr->setup();
+			pr->refreshScores();
+			path->cleanupRoute();
+		}
+		
+		float clash = path->clashScore();
+		float activation_energy = path->activationEnergy();
+
+		std::string id = path->id();
+		Metadata::KeyValues kv = 
+		{{"clash", Value(clash)}, 
+		{"activation energy", Value(activation_energy)}, 
+		{"momentum", Value(path->momentumScore())}, 
+		{"instance", id}};
+
+		metadata->addKeyValues(kv, true);
+	}
+
+	return metadata;
 }

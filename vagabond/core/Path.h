@@ -36,6 +36,8 @@ public:
 	Path(PlausibleRoute *pr);
 	void cleanupRoute();
 
+	const Metadata::KeyValues metadata(Metadata *source) const;
+
 	Instance *startInstance() const
 	{
 		return _instance;
@@ -78,7 +80,12 @@ public:
 
 	virtual const std::string id() const
 	{
-		return desc();
+		std::string str = desc();
+		if (_hash.length())
+		{
+			str += " " + _hash;
+		}
+		return str;
 	}
 
 	virtual bool displayable() const /* so these aren't points in the map */
@@ -96,6 +103,21 @@ public:
 		_steps = steps;
 	}
 	
+	float clashScore() 
+	{
+		return _clash;
+	}
+	
+	float momentumScore() 
+	{
+		return _momentum;
+	}
+	
+	float activationEnergy() 
+	{
+		return _activationEnergy;
+	}
+	
 	bool operator==(const Path &other) const;
 	
 	void filterAngles(TorsionData *group);
@@ -105,6 +127,11 @@ public:
 	virtual void sendObject(std::string tag, void *object);
 
 	virtual void addToData(PathData *pd);
+	
+	bool hasScores()
+	{
+		return _momentum != FLT_MAX && _clash != FLT_MAX;
+	}
 private:
 	std::string _startInstance;
 	std::string _model_id;
@@ -117,6 +144,12 @@ private:
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
+	
+	float _activationEnergy = FLT_MAX;
+	float _momentum = FLT_MAX;
+	float _clash = FLT_MAX;
+	
+	std::string _hash;
 
 	int _steps = 12;
 	
@@ -133,6 +166,11 @@ inline void to_json(json &j, const Path &value)
 	j["end"] = value._endInstance;
 	j["motions"] = value._motions;
 	j["twists"] = value._twists;
+
+	j["hash"] = value._hash;
+	j["clash_score"] = value._clash;
+	j["momentum_score"] = value._momentum;
+	j["activation_energy"] = value._activationEnergy;
 }
 
 /* path */
@@ -146,6 +184,18 @@ inline void from_json(const json &j, Path &value)
 	if (j.count("twists"))
 	{
 		value._twists = j.at("twists");
+	}
+	
+	if (j.count("hash"))
+	{
+		value._clash = j.at("clash_score");
+		value._momentum = j.at("momentum_score");
+		value._hash = j.at("hash");
+	}
+	
+	if (j.count("activation_energy"))
+	{
+		value._activationEnergy = j.at("activation_energy");
 	}
 }
 

@@ -23,6 +23,7 @@
 
 class Path;
 class PathData;
+class Metadata;
 
 class PathGroup : public OpVec<Path *>
 {
@@ -46,6 +47,7 @@ public:
 	}
 
 	virtual PathData *preparePathData();
+	virtual Metadata *prepareMetadata();
 private:
 
 };

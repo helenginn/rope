@@ -41,6 +41,7 @@ public:
 		return _bestScore;
 	}
 
+	void refreshScores();
 	void setTargets();
 	
 	virtual void prepareForAnalysis();
@@ -84,6 +85,16 @@ public:
 	}
 
 	void postScore(float score);
+	
+	int nudgeCount()
+	{
+		if (doingSides())
+		{
+			return 50;
+		}
+
+		return 12;
+	}
 protected:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();

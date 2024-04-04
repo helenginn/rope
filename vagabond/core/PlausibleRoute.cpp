@@ -102,7 +102,7 @@ auto cycle_and_check(PlausibleRoute *me)
 {
 	return [me]()
 	{
-		int standard = 12;
+		int standard = me->nudgeCount();
 		float oldsc = me->routeScore(standard);
 		bool mains = !me->doingSides();
 
@@ -126,11 +126,12 @@ auto cycle_and_check(PlausibleRoute *me)
 			std::cout << newsc << " from " << oldsc << std::endl;
 		}
 
-		if (newsc > 0.99 * oldsc && me->jobLevel() > 3)
+		if ((newsc < 0 || newsc > 0.99 * oldsc) && me->jobLevel() > 3
+		    && (oldsc - newsc > 0.005))
 		{
 			me->finish();
 		}
-		else if (!me->shouldFinish() && newsc > 0.9 * oldsc)
+		else if (!me->shouldFinish() && (newsc < 0 || newsc > 0.9 * oldsc))
 		{
 			me->upgradeJobs();
 		}
@@ -229,6 +230,13 @@ float PlausibleRoute::routeScore(int steps, bool pairwise)
 	retrieve();
 
 	float sc = _point2Score[0].deviations;
+	
+	if (doingSides())
+	{
+		_activationEnergy = _point2Score[0].highest_energy;
+		_activationEnergy -= _point2Score[0].lowest_energy;
+	}
+
 	clearTickets();
 	
 	return sc;
@@ -260,6 +268,11 @@ bool PlausibleRoute::validateTorsion(int idx, float min_mag,
 	}
 
 	Parameter *const &p = parameter(idx);
+	
+	if (p && p->isConstrained())
+	{
+		return false;
+	}
 
 	if (!p || (mains_only && !p->coversMainChain())
 	    || (sides_only && p->coversMainChain()))
@@ -305,7 +318,7 @@ void PlausibleRoute::prepareAnglesForRefinement(std::vector<int> &idxs)
 		
 		float movement = fabs(destination(idxs[i]));
 		float adjusted = 10 / (movement + 0.01);
-		float step = adjusted;
+		float step = doingSides() ? adjusted * 3 : adjusted;
 
 		_paramStarts.push_back(wps._grads[0]);
 		_paramPtrs.push_back(&wps._grads[0]);
@@ -344,7 +357,7 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 		return false;
 	}
 
-	_bestScore = routeScore(_nudgeCount);
+	_bestScore = routeScore(nudgeCount());
 	
 	if (_bestScore <= 0)
 	{
@@ -354,7 +367,7 @@ bool PlausibleRoute::simplexCycle(std::vector<int> torsionIdxs)
 	_simplex->start();
 
 	bool changed = false;
-	float bs = routeScore(_nudgeCount);
+	float bs = routeScore(nudgeCount());
 
 	if (bs < _bestScore - 1e-3)
 	{
@@ -388,7 +401,6 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 	};
 
 	_ids.clear();
-	float start = routeScore(flipNudgeCount());
 
 	for (size_t j = 0; j < indices.size(); j++)
 	{
@@ -457,7 +469,7 @@ std::vector<int> PlausibleRoute::getTorsionSequence(int idx,
 
 	int count = 0;
 	idxs.push_back(idx);
-	const int max = 5;
+	const int max = 0;
 	
 	while (g && count < max)
 	{
@@ -487,7 +499,7 @@ bool PlausibleRoute::flipTorsion(const ValidateParam &validate, int idx)
 {
 	std::vector<int> idxs = getTorsionSequence(idx, validate);
 	
-	if (idxs.size() == 0)
+	if (idxs.size() == 0 || doingSides())
 	{
 		return false;
 	}
@@ -594,8 +606,6 @@ void PlausibleRoute::cycle()
 
 void PlausibleRoute::doCalculations()
 {
-	_finish = false;
-
 	if (!Route::_finish)
 	{
 		cycle();
@@ -647,7 +657,7 @@ int PlausibleRoute::sendJob(const std::vector<float> &all)
 
 void PlausibleRoute::prepareForAnalysis()
 {
-	float result = routeScore(_nudgeCount);
+	float result = routeScore(nudgeCount());
 	postScore(result);
 	int steps = 200;
 	
@@ -669,3 +679,18 @@ void PlausibleRoute::upgradeJobs()
 	std::cout << "Job level now " << _jobLevel << "..." << std::endl;
 }
 
+
+void PlausibleRoute::refreshScores()
+{
+	_nudgeCount = 12;
+	_jobLevel = 0;
+	_momentum = routeScore(nudgeCount(), true);
+
+	_jobLevel = 3;
+	_clash = routeScore(nudgeCount(), true);
+	std::cout << "Minimise momentum score " << _momentum << std::endl;
+	std::cout << "Minimise clash score " << _clash << std::endl;
+	std::cout << "Activation energy " << _activationEnergy << std::endl;
+	
+	_gotScores = true;
+}

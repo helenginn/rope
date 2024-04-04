@@ -148,6 +148,6 @@ void LoopyDisplay::prepareConformerCluster(ListConformers confs)
 	item->prepareCluster();
 	
 	std::unique_lock<std::mutex> lock(_spaceMut);
-	_space.setAssociatedMetadata(&_metadata);
+	_space.addAssociatedMetadata(&_metadata);
 	_space.save(item, _polymer->entity(), rope::ConfTorsions);
 }

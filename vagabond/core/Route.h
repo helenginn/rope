@@ -67,6 +67,21 @@ public:
 	{
 		return _endInstance;
 	}
+	
+	float clashScore() 
+	{
+		return _clash;
+	}
+	
+	float momentumScore() 
+	{
+		return _momentum;
+	}
+	
+	float activationEnergy() 
+	{
+		return _activationEnergy;
+	}
 
 	/* to be called on separate thread */
 	static void calculate(Route *me)
@@ -209,11 +224,6 @@ protected:
 
 	virtual void doCalculations() {};
 	
-	float score(int idx)
-	{
-		return _point2Score[idx].scores;
-	}
-	
 	float &destination(int i)
 	{
 		return _motions.storage(i).angle;
@@ -271,9 +281,26 @@ protected:
 	
 	std::set<ResidueId> _ids;
 	
+	void setScores(float &momentum, float &clash)
+	{
+		_momentum = momentum;
+		_clash = clash;
+		_gotScores = true;
+	}
+
+	void setHash(const std::string &hash = "");
+	const std::string &hash() const
+	{
+		return _hash;
+	}
+
+protected:
+	float _activationEnergy = FLT_MAX;
+	float _momentum = FLT_MAX;
+	float _clash = FLT_MAX;
+	bool _gotScores = false;
 private:
-	bool _calculating;
-	float _score;
+	bool _calculating = false;
 	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
@@ -286,6 +313,7 @@ private:
 	PairwiseDeviations *_pwSide = nullptr;
 	
 	InterpolationType _type = Polynomial;
+	std::string _hash;
 };
 
 #endif

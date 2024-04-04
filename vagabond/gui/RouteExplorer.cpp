@@ -63,6 +63,7 @@ void RouteExplorer::setup()
 	addDisplayUnit(unit);
 	
 	_route->setAtoms(grp);
+	_route->finishRoute();
 	
 	Display::setup();
 	
@@ -86,7 +87,7 @@ void RouteExplorer::setup()
 
 void RouteExplorer::setupSave()
 {
-	if (_plausibleRoute == nullptr)
+	if (_plausibleRoute == nullptr || _saveAndExit)
 	{
 		return;
 	}
@@ -94,6 +95,7 @@ void RouteExplorer::setupSave()
 	TextButton *tb = new TextButton("Add & exit", this);
 	tb->setReturnTag("add");
 	tb->setRight(0.9, 0.1);
+	_saveAndExit = tb;
 	addObject(tb);
 }
 
@@ -150,6 +152,7 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 
 void RouteExplorer::pause()
 {
+	std::cout << "Pausing" << std::endl;
 	if (_worker)
 	{
 		_worker->join();
@@ -211,10 +214,20 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 		_newScore = *ptr;
 	}
 	
-	if (tag == "done")
+	if (tag == "done" && _restart)
 	{
 		addMainThreadJob([this]() { handleDone(); });
 	}
+	else if (tag == "done" && !_restart)
+	{
+		addMainThreadJob([this]() { pause(); });
+	}
+}
+
+void RouteExplorer::calculate()
+{
+	_watch = true;
+	_worker = new std::thread(Route::calculate, _route);
 }
 
 void RouteExplorer::startWithThreads(const int &thr)
@@ -225,7 +238,6 @@ void RouteExplorer::startWithThreads(const int &thr)
 	setupSave();
 	setupFinish();
 	
-	_route->finishRoute();
 	_route->prepareCalculate();
 	
 	RouteValidator rv(*_plausibleRoute);
@@ -251,8 +263,7 @@ void RouteExplorer::startWithThreads(const int &thr)
 		return;
 	}
 
-	_worker = new std::thread(Route::calculate, _route);
-	_watch = true;
+	calculate();
 }
 
 void RouteExplorer::buttonPressed(std::string tag, Button *button)
@@ -283,8 +294,8 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		demolishSlider();
 
 		_route->prepareCalculate();
-		_worker = new std::thread(Route::calculate, _route);
 		_watch = true;
+		_worker = new std::thread(Route::calculate, _route);
 
 		TextButton *tb = static_cast<TextButton *>(button);
 		tb->setReturnTag("pause");
@@ -297,6 +308,11 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 	else if (tag == "no_continue_anyway")
 	{
 		Display::buttonPressed("back", button);
+		return;
+	}
+	else if (tag == "yes_continue_anyway")
+	{
+		calculate();
 		return;
 	}
 
@@ -313,9 +329,14 @@ void RouteExplorer::handleDone()
 		return;
 	}
 	
-	if (_restart)
+	if (_restart && !_first)
 	{
 		saveAndRestart();
+	}
+	else if (_first)
+	{
+		_plausibleRoute->clearCustomisation();
+		_first = false;
 	}
 }
 

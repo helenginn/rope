@@ -43,6 +43,11 @@ public:
 	{
 		_oldPath = path;
 	}
+	
+	void setRestart(bool restart)
+	{
+		_restart = restart;
+	}
 
 	virtual void setup();
 	virtual void doThings();
@@ -58,6 +63,7 @@ private:
 	void setupSettings();
 	void saveAndRestart();
 
+	void calculate();
 	void startWithThreads(const int &thr);
 	void handleDone();
 	void pause();
@@ -71,14 +77,16 @@ private:
 
 	Slider *_rangeSlider = nullptr;
 	TextButton *_startPause = nullptr;
+	TextButton *_saveAndExit = nullptr;
 	std::thread *_worker = nullptr;
 
 	std::atomic<bool> _watch{false};
 	
+	bool _first = true;
 	static int _threads;
 	int _numTicks = -1;
 	bool _pausing = false;
-	bool _restart = true;
+	bool _restart = false;
 	float _newScore = NAN;
 	std::string _progressName;
 };

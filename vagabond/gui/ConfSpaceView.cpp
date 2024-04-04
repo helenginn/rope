@@ -30,6 +30,7 @@
 #include "SerialRefiner.h"
 #include "ClusterView.h"
 #include "ProtonNetworkView.h"
+#include "PathsDetail.h"
 #include "AddModel.h"
 
 #include <vagabond/utils/version.h>
@@ -82,6 +83,7 @@ void ConfSpaceView::makeFirstCluster()
 		_ropeSpace = new RopeSpaceItem(_entity);
 		_ropeSpace->setMode(_type);
 		_ropeSpace->makeView(this);
+		_ropeSpace->setMetadata(_savedSpace.associatedMetadata());
 		_savedSpace.save(_ropeSpace, _entity, _type);
 	}
 
@@ -461,15 +463,26 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		_from = m;
 	}
 	
-	if (tag == "view_model")
+	if (tag == "view_object")
 	{
-		Polymer *m = static_cast<Polymer	*>(button->returnObject());
+		HasMetadata *ret = static_cast<HasMetadata *>(button->returnObject());
+		Polymer *m = dynamic_cast<Polymer *>(ret);
 		
 		if (m)
 		{
 			AddModel *am = new AddModel(this, m->model());
 			am->setDeleteAllowed(false);
 			am->show();
+			return;
+		}
+
+		Path *p = dynamic_cast<Path *>(ret);
+		
+		if (p)
+		{
+			PathsDetail *pd = new PathsDetail(this, p);
+			pd->show();
+			return;
 		}
 	}
 	
@@ -624,11 +637,6 @@ void ConfSpaceView::applyRules()
 	_view->reset();
 	removeRules();
 	
-	if (_type == rope::ConfPath)
-	{
-		return;
-	}
-
 	IconLegend *il = new IconLegend(this);
 
 	const Ruler &ruler = _savedSpace.associatedMetadata()->ruler();
@@ -650,7 +658,7 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 {
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
-	m->addOption("view details", "view_model");
+	m->addOption("view details", "view_object");
 	m->addOption("set as reference", "set_as_reference");
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");

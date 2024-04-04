@@ -35,6 +35,8 @@ public:
 		return _defaultSpace;
 	}
 	
+	SavedSpace();
+	
 	Metadata *associatedMetadata()
 	{
 		if (!_metadata)
@@ -44,13 +46,10 @@ public:
 		
 		else return _metadata;
 	}
-	
-	void setAssociatedMetadata(Metadata *metadata)
-	{
-		_metadata = metadata;
-	}
 
-	RopeSpaceItem *const load(Entity *entity, rope::ConfType &type) const
+	void addAssociatedMetadata(Metadata *metadata);
+
+	RopeSpaceItem *const load(Entity *entity, const rope::ConfType &type) const
 	{
 		if (_savedSpaces.count(entity) == 0 ||
 		    _savedSpaces.at(entity).count(type) == 0)

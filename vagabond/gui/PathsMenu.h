@@ -52,6 +52,7 @@ private:
 	Entity *_entity = nullptr;
 
 	std::vector<PathGroup> _paths;
+	PathGroup _allPaths;
 	bool _parent = false;
 	SavedSpace *_space = nullptr;
 };

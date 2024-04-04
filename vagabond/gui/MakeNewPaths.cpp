@@ -152,6 +152,7 @@ void MakeNewPaths::prepare()
 	PlausibleRoute *route = new_path();
 
 	RouteExplorer *re = new RouteExplorer(this, route);
+	re->setRestart(true);
 	re->show();
 }
 

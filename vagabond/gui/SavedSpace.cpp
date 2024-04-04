@@ -17,5 +17,21 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SavedSpace.h"
+#include "Metadata.h"
 
 SavedSpace SavedSpace::_defaultSpace{};
+
+SavedSpace::SavedSpace()
+{
+
+}
+
+void SavedSpace::addAssociatedMetadata(Metadata *metadata)
+{
+	if (!_metadata)
+	{
+		_metadata = new Metadata();
+	}
+
+	*_metadata += *metadata;
+}

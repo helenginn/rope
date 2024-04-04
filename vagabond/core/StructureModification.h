@@ -139,10 +139,10 @@ protected:
 
 	struct Score
 	{
-		float scores = 0;
 		float deviations = 0;
+		float highest_energy = -FLT_MAX;
+		float lowest_energy = FLT_MAX;
 		int divs = 0;
-		int sc_num = 0;
 	};
 	
 	Resources _resources;

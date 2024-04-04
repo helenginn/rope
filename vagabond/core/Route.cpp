@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <algorithm>
+#include <stdlib.h>
 
 #include "Route.h"
 #include "Polymer.h"
@@ -197,6 +198,7 @@ void Route::bestGuessTorsion(int idx)
 	
 	destination(idx) = last - first;
 
+	return;
 	if (fabs(last - first) > 90.f)
 	{
 		int rnd = int(rand() % 10);
@@ -409,7 +411,6 @@ void Route::clearCustomisation()
 	for (size_t i = 0; i < motionCount(); i++)
 	{
 		motion(i).wp = {};
-		motion(i).flip = false;
 	}
 
 	for (size_t i = 0; i < twistCount(); i++)
@@ -418,5 +419,23 @@ void Route::clearCustomisation()
 	}
 	
 	_jobLevel = 0;
-	bestGuessTorsions();
+	_hash = ""; setHash();
+}
+
+void Route::setHash(const std::string &hash)
+{
+	if (_hash.length() == 0 && hash.length() > 0)
+	{
+		_hash = hash;
+	}
+	else if (_hash.length() == 0)
+	{
+		unsigned int rand_num = rand();
+		char str[65];
+		sprintf(str, "%x", rand_num);
+
+		std::string hash; hash += str;
+		_hash = hash;
+		std::cout << "New hash: " << _hash << std::endl;
+	}
 }

@@ -168,7 +168,7 @@ void RopeSpaceItem::sendObject(std::string tag, void *object)
 
 void RopeSpaceItem::setResponders()
 {
-	if (!isTopLevelItem())
+	if (!isTopLevelItem() || !_entity)
 	{
 		return;
 	}
@@ -194,6 +194,12 @@ ObjectData *prepareCopy(const ExactGroup &other)
 ObjectData *RopeSpaceItem::appropriateStartingGroup()
 {
 	ObjectData *grp = nullptr;
+	if (_entity == nullptr)
+	{
+		throw std::runtime_error("Can't produce starting group - no group,"\
+		                         " no entity");
+	}
+
 	if (_type == ConfTorsions)
 	{
 		grp = prepareCopy(_entity->makeTorsionDataGroup());
@@ -217,7 +223,12 @@ void RopeSpaceItem::prepareCluster()
 	if (_group == nullptr)
 	{
 		_group = appropriateStartingGroup();
-		std::string str = _entity->name() + "_" + tag_for_conf_type(_type);
+		std::string str;
+		if (_entity)
+		{
+			str += _entity->name() + "_";
+		}
+		str += tag_for_conf_type(_type);
 		str += ".csv";
 		_group->write_data(str);
 	}
@@ -379,6 +390,7 @@ RopeSpaceItem *RopeSpaceItem::newFrom(std::vector<HasMetadata *> &whiteList,
 	subset->setMode(_type);
 	subset->setFixedTitle(title);
 	subset->setObjectGroup(group_ptr);
+	subset->setMetadata(_md);
 	addItem(subset);
 	subset->makeView(_confView);
 
@@ -542,7 +554,7 @@ void RopeSpaceItem::setMetadata(std::string key, std::string value)
 		HasMetadata *hm = _group->object(i);
 		Metadata::KeyValues kv;
 
-		kv["molecule"] = Value(hm->id());
+		kv["instance"] = Value(hm->id());
 		kv[_tmpKey] = Value(_tmpValue);
 
 		md->addKeyValues(kv, true);

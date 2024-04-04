@@ -45,6 +45,14 @@ PathsMenu::PathsMenu(Scene *prev, Entity *entity,
 		_parent = true;
 		preparePaths();
 	}
+	else
+	{
+		for (const PathGroup &group : paths)
+		for (Path *const &path : group)
+		{
+			_allPaths.push_back(path);
+		}
+	}
 	
 	PathManager::manager()->setResponder(this);
 }
@@ -144,9 +152,10 @@ Renderable *PathsMenu::getLine(int i)
 	}
 
 	Path *path = paths[0];
-	std::string desc = path->desc();
+	std::string desc = path->id();
 	if (paths.size() > 1)
 	{
+		desc = path->desc();
 		desc += " (" + std::to_string(paths.size()) + " paths)";
 	}
 	
@@ -239,43 +248,45 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	{
 		prepareSpace();
 	}
-
 	
 	ListView::buttonPressed(tag, button);
 }
 
 void PathsMenu::prepareSpace()
 {
-	if (_space != nullptr)
-	{
-		delete _space;
-		_space = nullptr;
-	}
-	
-	PathGroup group;
 	Entity *entity = nullptr;
-	for (PathGroup &grp : _paths)
+
+	if (!_space)
 	{
-		if (!entity)
-		{
-			entity = grp[0]->startInstance()->entity();
-		}
-
-		group.push_back(grp[0]);
+		_space = new SavedSpace();
 	}
-	
-	std::cout << "paths: " << group.size() << std::endl;
-	
-	PathData *data = group.preparePathData();
-	data->write(entity->name() + "_path_params.csv");
 
-	RopeSpaceItem *item = new RopeSpaceItem(_entity);
-	item->setMode(rope::ConfPath);
-	item->setObjectGroup(data);
-	item->prepareCluster();
+	for (Path *const &path : _allPaths)
+	{
+		if (entity == nullptr)
+		{
+			entity = path->startInstance()->entity();
+		}
+	}
 
-	_space = new SavedSpace();
-	_space->save(item, entity, rope::ConfPath);
+	Metadata *metadata = _allPaths.prepareMetadata();
+
+	RopeSpaceItem *current = _space->load(_entity, rope::ConfPath);
+	if (!current || current->data()->objectCount() != _allPaths.size())
+	{
+		PathData *data = _allPaths.preparePathData();
+		data->write("path_params.csv");
+
+		RopeSpaceItem *item = new RopeSpaceItem(entity);
+		item->setMode(rope::ConfPath);
+		item->setObjectGroup(data);
+		item->prepareCluster();
+		item->setMetadata(metadata);
+
+		_space->save(item, entity, rope::ConfPath);
+	}
+
+	_space->addAssociatedMetadata(metadata);
 
 	ConfSpaceView *csv = new ConfSpaceView(this, entity, *_space);
 	csv->setMode(rope::ConfPath);

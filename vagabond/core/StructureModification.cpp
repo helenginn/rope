@@ -116,6 +116,16 @@ void StructureModification::retrieve()
 		if (r->deviation == r->deviation)
 		{
 			score.deviations += r->deviation;
+			
+			if (score.lowest_energy > r->deviation)
+			{
+				score.lowest_energy = r->deviation;
+			}
+			if (score.highest_energy < r->deviation)
+			{
+				score.highest_energy = r->deviation;
+			}
+
 			score.divs++;
 		}
 
@@ -125,10 +135,8 @@ void StructureModification::retrieve()
 	for (TicketScores::iterator it = _point2Score.begin();
 	     it != _point2Score.end(); it++)
 	{
-		it->second.scores /= it->second.sc_num;
 		it->second.deviations /= it->second.divs;
 		it->second.divs = 1;
-		it->second.sc_num = 1;
 	}
 }
 
