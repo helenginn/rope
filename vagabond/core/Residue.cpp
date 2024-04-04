@@ -30,7 +30,14 @@ const std::string Residue::one_letter_code() const
 {
 	std::string letter;
 	gemmi::ResidueInfo info = gemmi::find_tabulated_residue(_code);
-	letter += info.one_letter_code;
+	if (info.one_letter_code == ' ')
+	{
+		letter += 'X';
+	}
+	else
+	{
+		letter += info.one_letter_code;
+	}
 	return letter;
 }
 
