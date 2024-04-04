@@ -61,9 +61,6 @@ public:
 	void sortGraphChildren();
 	
 	bool beyondVisitLimit(Atom *atom);
-	
-	PCA::Matrix distanceMatrix();
-	void fillDistances(PCA::Matrix &m);
 
 	std::vector<AtomBlock> turnToBlocks(TorsionBasis *basis);
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);
@@ -157,13 +154,10 @@ public:
 		return _graphs;
 	}
 
-	void passTorsionsToSisters(BondSequence *sequence) const;
 private:
 	void clearState();
 	void addGraph(AtomGraph *graph);
 	int jumpsToAtom(AtomGraph *last, Atom *search, int max);
-	void passTorsionsToSisters(const std::vector<AtomBlock> &blocks,
-	                           int idx) const;
 	void extendGraphNormally(AtomGraph *current,
 	                         std::vector<AtomGraph *> &todo,
 	                         AnchorExtension &ext);

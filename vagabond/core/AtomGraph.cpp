@@ -137,26 +137,6 @@ bool AtomGraph::operator<(const AtomGraph &other) const
 }
 
 
-BondTorsion *AtomGraph::pertinentTorsion() const
-{
-	if (!prior || !(prior->prior))
-	{
-		return nullptr;
-	}
-	
-	AtomGraph *further = prior->prior;
-	
-	for (AtomGraph *child : further->children)
-	{
-		if (child->torsion)
-		{
-			return child->torsion;
-		}
-	}
-	
-	return nullptr;
-}
-
 BondTorsion *AtomGraph::controllingTorsion() const
 {
 	Atom *next = atom;
@@ -191,3 +171,5 @@ AtomGraph *AtomGraph::deepestChild() const
 	
 	return chosen;
 }
+
+
