@@ -107,19 +107,23 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 	
 	if (pairwise)
 	{
-		Task<BondSequence *, Deviation> *task = nullptr;
 		if (!doingSides())
 		{
+			Task<BondSequence *, Deviation> *task = nullptr;
 			task = _pwMain->normal_task(false);
+			final_hook->follow_with(task);
+			task->must_complete_before(let);
+			task->follow_with(submit_result);
 		}
 		else
 		{
+			Task<BondSequence *, ActivationEnergy> *task = nullptr;
 			task = _pwSide->clash_task(_ids);
+			final_hook->follow_with(task);
+			task->must_complete_before(let);
+			task->follow_with(submit_result);
 		}
 
-		final_hook->follow_with(task);
-		task->must_complete_before(let);
-		task->follow_with(submit_result);
 	}
 
 	_ticket2Point[job_num] = job_num;
