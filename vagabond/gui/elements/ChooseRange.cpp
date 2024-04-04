@@ -97,9 +97,8 @@ void ChooseRange::buttonPressed(std::string tag, Button *button)
 	}
 
 	setReturnObject(this);
-	_sender->buttonPressed(Button::tag(), this);
-
 	hide();
+	_sender->buttonPressed(Button::tag(), this);
 }
 
 ChooseRange::~ChooseRange()
