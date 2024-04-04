@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vagabond/utils/OpSet.h>
 #include <vector>
+#include "BackboneType.h"
 
 struct BondNum
 {
@@ -260,6 +261,16 @@ public:
 	static bool isMainChain(std::string name);
 	static bool isCoreMainChain(std::string atomName);
 	
+	void setOverrideType(const BackboneType &type)
+	{
+		_backboneType = type;
+	}
+
+	const BackboneType &backboneType() const
+	{
+		return _backboneType;
+	}
+	
 	bool isReporterAtom() const;
 	static bool isReporterAtom(std::string name);
 	
@@ -357,6 +368,8 @@ private:
 	int _count = 0;
 	glm::mat4x4 _transform = glm::mat4(1.f);
 	Cyclic *_cyclic = nullptr;
+
+	BackboneType _backboneType = NoOverride;
 
 	Atom *_symAtom = nullptr;
 	std::string _symNote;

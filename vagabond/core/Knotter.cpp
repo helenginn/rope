@@ -268,6 +268,11 @@ void Knotter::findBondLengths()
 	for (size_t i = 0; i < group.size(); i++)
 	{
 		Atom *atom = group[i];
+		
+		std::string code = atom->code() + ":" + atom->atomName();
+		BackboneType type = _table->backboneType(code);
+		atom->setOverrideType(type);
+
 		checkAtoms(atom, i + 1);
 	}
 }

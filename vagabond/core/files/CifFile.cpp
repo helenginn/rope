@@ -35,21 +35,12 @@ std::string CifFile::ignoreChirals[] =
 	"_ignore_chirals.atom_id", ""
 };
 
-std::string CifFile::sideLinks[] = 
-{
-	"_side_links.comp_id", "_side_links.atom_id", ""
-};
-
-std::string CifFile::centralAtoms[] = 
-{
-	"_central_atoms.comp_id", "_central_atoms.atom_id", ""
-};
-
 std::string CifFile::compHeaders[] = 
 {
 	"_chem_comp_atom.comp_id", "_chem_comp_atom.x",
 	"_chem_comp_atom.y", "_chem_comp_atom.z",
-	"_chem_comp_atom.atom_id", "_chem_comp_atom.type_symbol", ""
+	"_chem_comp_atom.atom_id", "_chem_comp_atom.type_symbol", 
+	"_chem_comp_atom.backbone_type", ""
 };
 
 std::string CifFile::angleHeaders[] = 
@@ -328,8 +319,13 @@ bool CifFile::identifyHeader(Document &doc, std::string headers[])
 }
 
 bool CifFile::getHeaders(Loop &loop, std::string *headers, int *indices,
-                              int n)
+                              int req, int n)
 {
+	if (n == -1)
+	{
+		n = req;
+	}
+
 	for (size_t i = 0; i < n; i++)
 	{
 		indices[i] = -1;
@@ -350,7 +346,7 @@ bool CifFile::getHeaders(Loop &loop, std::string *headers, int *indices,
 	}
 
 	bool found = true;
-	for (size_t i = 0; i < n; i++)
+	for (size_t i = 0; i < req; i++)
 	{
 		if (indices[i] == -1)
 		{
@@ -416,15 +412,16 @@ bool CifFile::processLoopAsChirals(Loop &loop)
 
 bool CifFile::processLoopAsCompAtoms(Loop &loop)
 {
-	int idxs[6];
+	int idxs[8];
 	int &code_idx = idxs[0];
 	int &x_idx = idxs[1];
 	int &y_idx = idxs[2];
 	int &z_idx = idxs[3];
 	int &atom_name_idx = idxs[4];
 	int &ele_idx = idxs[5];
+	int &backbone_idx = idxs[6];
 	
-	if (!getHeaders(loop, compHeaders, idxs, 6))
+	if (!getHeaders(loop, compHeaders, idxs, 6, 7))
 	{
 		return false;
 	}
@@ -452,6 +449,31 @@ bool CifFile::processLoopAsCompAtoms(Loop &loop)
 		a->setInitialPosition(pos, 30);
 		a->setCode(code);
 		
+		if (backbone_idx >= 0)
+		{
+			const std::string &str = loop.values[i + backbone_idx];
+			BackboneType type = NoOverride;
+			
+			if (str == "main")
+			{
+				type = MainChainType;
+			}
+			else if (str == "side")
+			{
+				type = SideChainType;
+			}
+			else if (str == "both")
+			{
+				type = BothType;
+			}
+			else if (str == "reporter")
+			{
+				type = ReporterType;
+			}
+			
+			geometryTable()->setBackboneType(code + ":" + name, type);
+		}
+
 		_atomNum++;
 		_compAtoms->add(a);
 	}

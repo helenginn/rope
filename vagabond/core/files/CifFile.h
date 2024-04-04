@@ -32,7 +32,7 @@ private:
 	bool processLoopAsReflections(gemmi::cif::Loop &loop);
 
 	bool getHeaders(gemmi::cif::Loop &loop, std::string *headers, 
-	                int *indices, int n);
+	                int *indices, int req, int n = -1);
 	bool identifyHeader(std::string *headers);
 	bool identifyPairs(gemmi::cif::Document &doc, std::string keys[]);
 
@@ -49,8 +49,8 @@ private:
 	static std::string groupSymbolKeys[];
 
 	static std::string ignoreChirals[];
-	static std::string sideLinks[];
-	static std::string centralAtoms[];
+	static std::string sideChain[];
+	static std::string mainChain[];
 
 	bool identifyHeader(gemmi::cif::Document &doc, std::string headers[]);
 	bool identifyHeader(gemmi::cif::Loop &loop, std::string headers[]);

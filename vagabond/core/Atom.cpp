@@ -24,6 +24,7 @@ Atom::Atom(const Atom &other)
 	_occupancy = other._occupancy;
 	_ele = other._ele;
 	_chain = other._chain;
+	_backboneType = other._backboneType;
 }
 
 Atom::Atom(std::string code, std::string name)
@@ -458,16 +459,32 @@ bool Atom::isReporterAtom(std::string atom)
 
 bool Atom::isCoreMainChain() const
 {
+	if (_backboneType != NoOverride)
+	{
+		return (_backboneType == MainChainType || _backboneType == ReporterType);
+	}
+
 	return isCoreMainChain(atomName());
 }
 
 bool Atom::isMainChain() const
 {
+	if (_backboneType != NoOverride)
+	{
+		return (_backboneType == MainChainType || _backboneType == BothType
+		        || _backboneType == ReporterType);
+	}
+
 	return isMainChain(atomName());
 }
 
 bool Atom::isReporterAtom() const
 {
+	if (_backboneType != NoOverride)
+	{
+		return (_backboneType == ReporterType);
+	}
+
 	return isReporterAtom(atomName());
 }
 
