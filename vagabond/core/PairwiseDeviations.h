@@ -28,6 +28,7 @@ class Atom;
 class BondSequence;
 struct ResidueId;
 struct Deviation; 
+struct ActivationEnergy; 
 
 template <typename In, typename Out> class Task;
 class BondSequence;
@@ -49,7 +50,7 @@ public:
 	}
 
 	Task<BondSequence *, Deviation> *normal_task(bool slam);
-	Task<BondSequence *, Deviation> *
+	Task<BondSequence *, ActivationEnergy> *
 	clash_task(const std::set<ResidueId> &forResidues);
 private:
 	void prepare(BondSequence *seq);

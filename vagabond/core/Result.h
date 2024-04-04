@@ -32,6 +32,16 @@ struct Result
 		deviation += d.value;
 	}
 
+	void operator=(const ActivationEnergy &d)
+	{
+		if (activation < d.value && d.value == d.value)
+		{
+			activation = d.value;
+		}
+
+		deviation += d.value;
+	}
+
 	void operator=(const Correlation &c)
 	{
 		correlation += c.value;
@@ -61,6 +71,7 @@ struct Result
 	double deviation = 0;
 	double score = 0;
 	double correlation = 0;
+	float activation = 0;
 	float surface_area = 0;
 	AtomMap *map = nullptr;
 	

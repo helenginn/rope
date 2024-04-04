@@ -158,8 +158,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		}
 	}
 	
-	std::cout << good << " / " << (bad + good) << std::endl;
-	
 	_pairSize = pairs.size();
 	_knownPairs = new int[_pairSize];
 	memcpy(_knownPairs, &pairs[0], sizeof(int) * _pairSize);
@@ -279,11 +277,11 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
            std::set<ResidueId> forResidues)
 {
 	return [memSize, filter, &perResidues, forResidues]
-	(BondSequence *seq) -> Deviation
+	(BondSequence *seq) -> ActivationEnergy
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
 		glm::vec4 *scratch = new glm::vec4[memSize / 2];
-		float total = 0;
+		long double total = 0;
 		float count = 0;
 
 		int n = 0;
@@ -313,10 +311,10 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
 				float difflength = glm::length(posdiff);
 				
 				float ratio = vdw_dist / difflength;
-				float to6 = ratio * ratio * ratio * ratio * ratio * ratio;
-				float to12 = to6 * to6;
+				long double to6 = ratio * ratio * ratio * ratio * ratio * ratio;
+				long double to12 = to6 * to6;
 
-				float potential = (to12 - to6);
+				long double potential = (to12 - to6);
 				total += potential;
 				count ++;
 			};
@@ -326,18 +324,19 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
 		
 		delete [] scratch;
 		
+		total *= 4 * 0.12; // kJ/mol
 		total /= count;
 		
-		return {total};
+		return {(float)total};
 	};
 };
 
-Task<BondSequence *, Deviation> *
+Task<BondSequence *, ActivationEnergy> *
 PairwiseDeviations::clash_task(const std::set<ResidueId> &forResidues)
 {
-	auto return_deviation = clash(_perResidue, _memSize, _filter, 
+	auto ljPotential = clash(_perResidue, _memSize, _filter, 
 	                              forResidues);
-	auto *task = new Task<BondSequence *, Deviation>(return_deviation);
+	auto *task = new Task<BondSequence *, ActivationEnergy>(ljPotential);
 	return task;
 }
 
