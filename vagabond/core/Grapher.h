@@ -57,7 +57,6 @@ public:
 	void fillInParents();
 
 	void fillTorsionAngles(TorsionBasis *basis);
-	void markHydrogenGraphs();
 	void sortGraphChildren();
 	
 	bool beyondVisitLimit(Atom *atom);

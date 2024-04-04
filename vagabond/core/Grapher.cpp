@@ -196,12 +196,9 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 		nextGraph->parent = current->atom;
 		nextGraph->atom = next;
 		nextGraph->prior = current;
-
 		nextGraph->depth = current->depth + 1;
-		nextGraph->maxDepth = -1;
 
 		current->children.push_back(nextGraph);
-
 		todo.push_back(nextGraph);
 
 		addGraph(nextGraph);
@@ -217,7 +214,6 @@ void Grapher::generateGraphs(AnchorExtension &ext)
 	graph->parent = ext.parent;
 	graph->grandparent = ext.grandparent;
 	graph->depth = 0;
-	graph->maxDepth = -1;
 	addGraph(graph);
 	
 	std::vector<AtomGraph *> todo;
@@ -241,6 +237,7 @@ void Grapher::addGraph(AtomGraph *graph)
 	{
 		_atom2Graph[graph->atom] = graph;
 	}
+
 	_visits[graph->atom]++;
 }
 
@@ -255,10 +252,7 @@ bool AtomGraph::childrenOnlyHydrogens()
 			hydrogens = false;
 		}
 	}
-
-	return hydrogens;
 }
-
 
 void Grapher::calculateMissingMaxDepths()
 {
@@ -351,17 +345,6 @@ void Grapher::fillTorsionAngles(TorsionBasis *basis)
 	}
 }
 
-void Grapher::markHydrogenGraphs()
-{
-	for (size_t i = 0; i < _graphs.size(); i++)
-	{
-		if (_graphs[i]->childrenOnlyHydrogens())
-		{
-			_graphs[i]->onlyHydrogens = true;
-		}
-	}
-}
-
 void Grapher::sortGraphChildren()
 {
 	for (size_t i = 0; i < _graphs.size(); i++)
@@ -386,16 +369,6 @@ void Grapher::sortGraphChildren()
 				_graphs[i]->children[0] = _graphs[i]->children[j];
 				_graphs[i]->children[j] = tmp;
 			}
-		}
-
-		/* use these to assign priority levels: 0 is main chain,
-		 * > 0 are side chains in decreasing atom count */
-		int count = _graphs[i]->children.size();
-		for (size_t j = 0; j < count; j++)
-		{
-			int priority = j;
-			AtomGraph *child = _graphs[i]->children[j];
-			child->priority = priority;
 		}
 	}
 }

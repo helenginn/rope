@@ -34,14 +34,12 @@ struct AtomGraph
 	int priority = 0;
 	int depth = 0;
 	int maxDepth = -1;
-	bool onlyHydrogens = false;
 	BondTorsion *torsion = nullptr;
 	int torsion_idx = -1;
 	std::vector<AtomGraph *> children;
 	AtomGraph *prior = nullptr;
 	bool joint = false; // set to true when this went round a loop
 
-	bool childrenOnlyHydrogens();
 	bool checkAtomGraph() const;
 	
 	/** will return the bond torsion of the exact relationship of this
