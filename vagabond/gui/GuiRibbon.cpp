@@ -348,17 +348,7 @@ void GuiRibbon::insertAtom(Atom *a)
 
 bool GuiRibbon::acceptableAtom(Atom *a)
 {
-	if (a->atomName() == "CA")
-	{
-		return true;
-	}
-
-	if (a->atomName() == "P")
-	{
-		return true;
-	}
-
-	return false;
+	return a->isReporterAtom();
 }
 
 void GuiRibbon::watchAtom(Atom *a)
