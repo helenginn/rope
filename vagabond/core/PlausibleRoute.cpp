@@ -208,7 +208,9 @@ void PlausibleRoute::setTargets()
 		atom->setOtherPosition("target", s);
 	}
 	
-	updateAtomFetch();
+	updateAtomFetch(_resources.sequences);
+	updateAtomFetch(_mainChainSequences);
+	preparePairwiseDeviations();
 }
 
 float PlausibleRoute::routeScore(int steps, bool pairwise)

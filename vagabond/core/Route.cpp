@@ -380,20 +380,17 @@ void Route::prepareResources()
 	_mainChainSequences->setAtomFilter(rope::atom_is_core_main_chain());
 	_mainChainSequences->setup();
 	_mainChainSequences->prepareSequences();
+
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
 
-	updateAtomFetch();
+	updateAtomFetch(_resources.sequences);
+//	updateAtomFetch(_mainChainSequences);
+	preparePairwiseDeviations();
 }
 
-void Route::updateAtomFetch()
+void Route::preparePairwiseDeviations()
 {
-	const std::vector<AtomBlock> &blocks = 
-	_resources.sequences->sequence()->blocks();
-
-	CoordManager *manager = _resources.sequences->manager();
-	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
-	
 	delete _pwMain;
 	delete _pwSide;
 
@@ -414,6 +411,15 @@ void Route::updateAtomFetch()
 
 	_pwSide = new PairwiseDeviations(_resources.sequences->sequence(),
 	                                 side_chain_filter, 15.f);
+}
+
+void Route::updateAtomFetch(BondSequenceHandler *const &handler)
+{
+	const std::vector<AtomBlock> &blocks = 
+	handler->sequence()->blocks();
+
+	CoordManager *manager = handler->manager();
+	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
 }
 
 void Route::clearCustomisation()

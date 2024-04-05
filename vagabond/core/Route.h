@@ -282,7 +282,8 @@ protected:
 	bool _updateAtoms = true;
 	int _cycles = -1;
 
-	void updateAtomFetch();
+	void updateAtomFetch(BondSequenceHandler *const &handler);
+	void preparePairwiseDeviations();
 	RTMotion _motions;
 	RTPeptideTwist _twists;
 	int _jobLevel = 0;
@@ -307,6 +308,7 @@ protected:
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
 	bool _gotScores = false;
+	BondSequenceHandler *_mainChainSequences = nullptr;
 private:
 	bool _calculating = false;
 	
@@ -314,7 +316,7 @@ private:
 	void calculateAtomDeviations(Score &score);
 	
 	int _ticket = 0;
-
+	
 	Instance *_endInstance = nullptr;
 	RTAngles _source;
 	PairwiseDeviations *_pwMain = nullptr;
@@ -322,6 +324,7 @@ private:
 	
 	InterpolationType _type = Polynomial;
 	std::string _hash;
+
 };
 
 #endif
