@@ -74,11 +74,7 @@ protected:
 
 	size_t _totalSamples = 1;
 	
-	AtomFilter _filter = 
-	[](Atom *const &atom)
-	{
-		return atom->elementSymbol() != "H";
-	};
+	AtomFilter _filter = {};
 };
 
 #endif
