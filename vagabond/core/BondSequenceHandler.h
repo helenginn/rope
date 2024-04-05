@@ -65,11 +65,6 @@ public:
 		return _sequences.size();
 	}
 	
-	int threadCount()
-	{
-		return _threads;
-	}
-	
 	CoordManager *manager()
 	{
 		return _manager;

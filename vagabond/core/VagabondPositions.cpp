@@ -22,7 +22,6 @@
 
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
-#include "AlignmentTool.h"
 #include "SimplexEngine.h"
 #include "BondSequence.h"
 #include "TorsionBasis.h"
