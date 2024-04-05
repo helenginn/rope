@@ -96,7 +96,7 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options)
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
 	BondSequenceHandler *const &sequences = 
-	coreChain ? resources.sequences : _resources.sequences;
+	coreChain ? _resources.sequences : _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
 	Task<Result, void *> *submit_result = calculator->submitResult(0);
