@@ -156,9 +156,9 @@ void PolymerEntity::housekeeping()
 
 TorsionData PolymerEntity::prepareTorsionGroup()
 {
-	size_t num = sequence()->torsionCount();
 	std::vector<ResidueTorsion> headers;
 	_sequence.addResidueTorsions(headers);
+	size_t num = headers.size();
 
 	TorsionData group(num);
 	group.addHeaders(headers);

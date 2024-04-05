@@ -395,6 +395,11 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)
 	{
 		for (const TorsionRef &torsion : residue.torsions())
 		{
+			if (torsion.hasHydrogen())
+			{
+				continue;
+			}
+
 			ResidueTorsion rt{};
 			rt.setTorsion(torsion);
 			rt.setMaster(&residue);

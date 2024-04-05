@@ -99,7 +99,9 @@ public:
 	std::string atomName(int i) const;
 	
 	size_t atomCount() const;
+	bool hasHydrogen() const;
 private:
+
 	std::string _desc;
 	std::string _reverse_desc;
 	float _refinedAngle = 0;

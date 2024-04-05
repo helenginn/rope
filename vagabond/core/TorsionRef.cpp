@@ -103,3 +103,16 @@ bool TorsionRef::coversMainChain() const
 
 	return true;
 }
+
+bool TorsionRef::hasHydrogen() const
+{
+	for (size_t i = 0; i < atomCount(); i++)
+	{
+		if (atomName(i)[0] == 'H')
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
