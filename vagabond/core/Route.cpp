@@ -363,6 +363,9 @@ void Route::prepareResources()
 {
 	_resources.allocateMinimum(_threads);
 
+	/* prepare separate sequences for main-chain only */
+	_mainChainSequences = new BondSequenceHandler(_threads);
+
 	AtomGroup *group = _instance->currentAtoms();
 
 	std::vector<AtomGroup *> subsets = group->connectedGroups();
@@ -370,9 +373,13 @@ void Route::prepareResources()
 	{
 		Atom *anchor = subset->chosenAnchor();
 		_resources.sequences->addAnchorExtension(anchor);
+		_mainChainSequences->addAnchorExtension(anchor);
 	}
 
-	_resources.sequences->setIgnoreHydrogens(true);
+	_mainChainSequences->setIgnoreHydrogens(true);
+	_mainChainSequences->setAtomFilter(rope::atom_is_core_main_chain());
+	_mainChainSequences->setup();
+	_mainChainSequences->prepareSequences();
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
 
