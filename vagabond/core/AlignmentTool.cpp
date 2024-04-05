@@ -18,6 +18,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <vagabond/utils/OpSet.h>
 #include "BondSequenceHandler.h"
 #include "BondSequence.h"
 #include "engine/Tasks.h"
@@ -36,30 +37,43 @@ AlignmentTool::AlignmentTool(AtomGroup *group)
 
 size_t AlignmentTool::calculateExtension(Atom *anchor)
 {
-	std::set<Atom *> atoms;
-	atoms.insert(anchor);
+	OpSet<Atom *> atoms;
+	OpSet<Atom *> check;
+	check.insert(anchor);
 	size_t count = 0;
-
-	while (atoms.size() < 4)
+	
+	auto insert_if_not_hydrogen = [&atoms](OpSet<Atom *> &tmp, 
+	                                       Atom *const &atom)
 	{
-		std::set<Atom *> next;
-		for (Atom *atom : atoms)
+		if (atom->elementSymbol() != "H")
 		{
-			next.insert(atom);
+			atoms.insert(atom);
+			tmp.insert(atom);
+		}
+	};
+
+	while (atoms.size() <= 4)
+	{
+		OpSet<Atom *> next;
+		int before_size = atoms.size();
+
+		for (Atom *atom : check)
+		{
+			insert_if_not_hydrogen(next, atom);
 			
 			for (size_t j = 0; j < atom->bondLengthCount(); j++)
 			{
-				next.insert(atom->connectedAtom(j));
+				insert_if_not_hydrogen(next, atom->connectedAtom(j));
 			}
 		}
 		
-		if (atoms.size() == next.size())
-		/* we're not getting any bigger */
+		if (atoms.size() == before_size)
 		{
+			// not getting any bigger, so break
 			break;
 		}
 
-		atoms = next;
+		check = next;
 		count++;
 	}
 	
@@ -94,6 +108,12 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor, size_t jumps)
 		calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
 		                  Flag::DoSuperpose);
 	}
+	
+	_resources.sequences->setAtomFilter
+	([](Atom *const &atom)
+	{
+		return atom->elementSymbol() != "H";
+	});
 
 	_resources.sequences->addAnchorExtension({anchor, jumps});
 	_resources.sequences->setup();
