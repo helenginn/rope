@@ -32,7 +32,7 @@ namespace rope
 	{
 		return [](Atom *const &atom)
 		{
-			return !atom || atom->elementSymbol() != "H";
+			return atom && atom->elementSymbol() != "H";
 		};
 	}
 
