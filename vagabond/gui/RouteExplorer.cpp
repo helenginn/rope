@@ -146,7 +146,7 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 	float num = x / 200.;
 	if (!_route->calculating())
 	{
-		_route->submitJobAndRetrieve(num, true, 0);
+		_route->submitJobAndRetrieve(num, true);
 	}
 }
 

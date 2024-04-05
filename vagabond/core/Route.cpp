@@ -28,6 +28,7 @@
 #include "BondSequence.h"
 #include "BondCalculator.h"
 #include "PairwiseDeviations.h"
+#include "function_typedefs.h"
 
 #include "matrix_functions.h"
 #include "engine/Tasks.h"
@@ -60,13 +61,13 @@ void Route::setup()
 	prepareResources();
 }
 
-float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
+float Route::submitJobAndRetrieve(float frac, bool show)
 {
 	clearTickets();
 
 	_resources.calculator->holdHorses();
 
-	submitJob(frac, show, job_num);
+	submitJob(frac, show);
 
 	_resources.calculator->releaseHorses();
 	retrieve();
@@ -76,11 +77,14 @@ float Route::submitJobAndRetrieve(float frac, bool show, int job_num)
 	return ret;
 }
 
-void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
+void Route::submitJob(float frac, bool show, const CalcOptions &options)
 {
 	_ticket++;
-	Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
-//	gets = Flag::NoExtract;
+	bool needs_deviation = !(options & Pairwise);
+	bool pairwise = (options & Pairwise);
+	bool coreChain = (options & CoreChain);
+
+	Flag::Extract gets = needs_deviation ? Flag::Deviation : Flag::NoExtract;
 	if (show)
 	{
 		gets = (Flag::Extract)(Flag::AtomVector | gets);
@@ -91,10 +95,11 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 	
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
-	BondSequenceHandler *const &sequences = _resources.sequences;
+	BondSequenceHandler *const &sequences = 
+	coreChain ? resources.sequences : _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(job_num);
+	Task<Result, void *> *submit_result = calculator->submitResult(0);
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
 	                             Flag::DoSuperpose);
@@ -127,8 +132,8 @@ void Route::submitJob(float frac, bool show, int job_num, bool pairwise)
 
 	}
 
-	_ticket2Point[job_num] = job_num;
-	_point2Score[job_num] = Score{};
+	_ticket2Point[0] = 0;
+	_point2Score[0] = Score{};
 	
 	_resources.tasks->addTask(first_hook);
 }

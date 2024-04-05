@@ -215,6 +215,11 @@ float PlausibleRoute::routeScore(int steps, bool pairwise)
 {
 	clearTickets();
 	_resources.calculator->holdHorses();
+	CalcOptions options = pairwise ? Pairwise : None;
+	if (!doingSides())
+	{
+		options = (CalcOptions)(options | CoreChain);
+	}
 
 	for (size_t i = 0; i < steps; i++)
 	{
@@ -223,7 +228,7 @@ float PlausibleRoute::routeScore(int steps, bool pairwise)
 		
 		if (!_updateAtoms) show = false; // don't show
 
-		submitJob(frac, show, 0, pairwise);
+		submitJob(frac, show, Pairwise);
 	}
 	
 	_resources.calculator->releaseHorses();
@@ -664,7 +669,7 @@ void PlausibleRoute::prepareForAnalysis()
 	for (size_t i = 0; i < steps; i++)
 	{
 		float frac = i / (float)steps;
-		submitJob(frac, true, true);
+		submitJob(frac, true);
 	}
 	
 	retrieve();

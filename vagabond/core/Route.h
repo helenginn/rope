@@ -41,12 +41,20 @@ public:
 
 	virtual void setup();
 
+	enum CalcOptions
+	{
+		None = 0,
+		Pairwise = 1 << 0,
+		CoreChain = 1 << 1,
+	};
+
+
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
 	void submitJob(float frac, bool show = true, 
-	               int job_num = 0, bool pairwise = true);
+	               const CalcOptions &options = None);
 
-	float submitJobAndRetrieve(float frac, bool show = true, int job_num = 0);
+	float submitJobAndRetrieve(float frac, bool show = true);
 	
 	void shouldUpdateAtoms(bool update)
 	{
