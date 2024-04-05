@@ -101,7 +101,7 @@ struct prepare_atom_list
 {
 	prepare_atom_list(AtomGroup *const &group, 
 	                  const RAMovement &movement,
-	                  CompareDistances::AtomFilter &filter,
+	                  AtomFilter &filter,
 	                  Instance *const &instance)
 	: _group(group), _movement(movement), _filter(filter), _instance(instance)
 	{
@@ -136,7 +136,7 @@ struct prepare_atom_list
 
 	AtomGroup *const &_group;
 	const RAMovement &_movement;
-	CompareDistances::AtomFilter _filter;
+	AtomFilter _filter;
 	Instance *const _instance;
 };
 

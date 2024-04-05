@@ -150,6 +150,18 @@ int Grapher::jumpsToAtom(AtomGraph *last, Atom *search, int max)
 	return -1;
 }
 
+bool Grapher::atom_acceptable(Atom *next)
+{
+	if (!_filter)
+	{
+		return true;
+	}
+	
+	bool accept = _filter(next);
+
+	return accept;
+}
+
 void Grapher::extendGraphNormally(AtomGraph *current, 
                                   std::vector<AtomGraph *> &todo,
                                   AnchorExtension &ext)
@@ -166,6 +178,11 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 	{
 		Atom *next = atom->connectedAtom(i);
 		if (next == current->parent)
+		{
+			continue;
+		}
+		
+		if (!atom_acceptable(next))
 		{
 			continue;
 		}
@@ -207,6 +224,11 @@ void Grapher::extendGraphNormally(AtomGraph *current,
 
 void Grapher::generateGraphs(AnchorExtension &ext)
 {
+	if (!atom_acceptable(ext.atom))
+	{
+		return;
+	}
+
 	_anchors.push_back(ext.atom);
 
 	AtomGraph *graph = new AtomGraph();
@@ -232,6 +254,12 @@ void Grapher::addGraph(AtomGraph *graph)
 {
 	_graphs.push_back(graph);
 	_atoms.push_back(graph->atom);
+
+	if (!atom_acceptable(graph->atom))
+	{
+		std::cout << "ACTUALLY REJECTING " << graph->atom->desc() << std::endl;
+		return;
+	}
 
 	if (_visits[graph->atom] == 0)
 	{

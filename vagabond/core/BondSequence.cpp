@@ -54,6 +54,7 @@ void BondSequence::makeTorsionBasis()
 
 void BondSequence::addToGraph(AnchorExtension &ext)
 {
+	_grapher.setAtomFilter(_filter);
 	_grapher.setInSequence(_inSequence);
 	_grapher.generateGraphs(ext);
 	_grapher.calculateMissingMaxDepths();
@@ -196,12 +197,12 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 
 void BondSequence::superpose()
 {
-	if (!_superpose)
+	size_t i = 0;
+	if (_blocks.size() == 0)
 	{
 		return;
 	}
-	
-	size_t i = 0;
+
 	while (true)
 	{
 		Superpose pose;

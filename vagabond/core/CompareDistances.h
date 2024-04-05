@@ -20,7 +20,7 @@
 #define __vagabond__CompareDistances__
 
 #include <vagabond/utils/svd/PCA.h>
-#include <functional>
+#include "function_typedefs.h"
 #include <condition_variable>
 #include <mutex>
 #include "AtomPosMap.h"
@@ -33,8 +33,6 @@ class CompareDistances
 public:
 	CompareDistances(bool magnitude = true);
 	~CompareDistances();
-
-	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 	
 	void process(const AtomPosList &apl, bool show);
 	

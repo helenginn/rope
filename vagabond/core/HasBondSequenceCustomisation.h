@@ -19,16 +19,11 @@
 #ifndef __vagabond__HasBondSequenceCustomisation__
 #define __vagabond__HasBondSequenceCustomisation__
 
+#include "function_typedefs.h"
+
 class HasBondSequenceCustomisation
 {
 public:
-	/** resulting atom distribution should be superimposed on the
-	 * initial atom positions from the PDB */
-	void setSuperpose(bool superpose)
-	{
-		_superpose = superpose;
-	}
-	
 	/** grapher should follow the main chain and avoid exploring 
 	 * 	branches like disulphides */
 	void setInSequence(bool sequence)
@@ -39,6 +34,11 @@ public:
 	void setTotalSamples(int total)
 	{
 		_totalSamples = total;
+	}
+	
+	void setAtomFilter(const AtomFilter &filter)
+	{
+		_filter = filter;
 	}
 	
 	bool skipSections()
@@ -57,18 +57,6 @@ public:
 	{
 		_ignoreHydrogens = ignore;
 	}
-
-	/** ignored after setup() is called.
-	 * 	@param max must be explicitly specified as non-zero positive */
-	void setMaxSimultaneousThreads(size_t max)
-	{
-		_maxThreads = max;
-	}
-	
-	void setThreads(size_t threads)
-	{
-		_threads = threads;
-	}
 	
 	void transferProperties(HasBondSequenceCustomisation *other)
 	{
@@ -76,20 +64,21 @@ public:
 		other->_skipSections = _skipSections;
 		other->_totalSamples = _totalSamples;
 		other->_inSequence = _inSequence;
-		other->_maxThreads = _maxThreads;
-		other->_superpose = _superpose;
-		other->_threads = _threads;
+		other->_filter = _filter;
 	}
 	
 protected:
 	bool _ignoreHydrogens = false;
 	bool _skipSections = false;
 	bool _inSequence = true;
-	bool _superpose = true;
 
 	size_t _totalSamples = 1;
-	size_t _maxThreads = 1;
-	size_t _threads = 1;
+	
+	AtomFilter _filter = 
+	[](Atom *const &atom)
+	{
+		return atom->elementSymbol() != "H";
+	};
 };
 
 #endif

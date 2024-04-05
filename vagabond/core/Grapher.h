@@ -19,6 +19,7 @@
 #ifndef __vagabond__Grapher__
 #define __vagabond__Grapher__
 
+#include "function_typedefs.h"
 #include "AtomGraph.h"
 #include "AnchorExtension.h"
 #include "AtomBlock.h"
@@ -63,6 +64,11 @@ public:
 
 	std::vector<AtomBlock> turnToBlocks(TorsionBasis *basis);
 	void fillMissingWriteLocations(std::vector<AtomBlock> &blocks);
+
+	void setAtomFilter(const AtomFilter &filter)
+	{
+		_filter = filter;
+	}
 	
 	void setInSequence(bool inSequence)
 	{
@@ -139,6 +145,8 @@ public:
 
 private:
 	void clearState();
+	bool atom_acceptable(Atom *next);
+
 	void addGraph(AtomGraph *graph);
 	int jumpsToAtom(AtomGraph *last, Atom *search, int max);
 	void extendGraphNormally(AtomGraph *current,
@@ -167,6 +175,7 @@ private:
 	std::map<int, RingProgrammers> _workingProggers; // actual programmers at work
 
 	std::vector<RingProgram *> _programs;
+	AtomFilter _filter = {};
 	
 	bool _original = true;
 	bool _inSequence = false; 

@@ -63,7 +63,7 @@ private:
 	prepare_atom_list *_atom2Vec;
 	
 	CompareDistances _cd;
-	CompareDistances::AtomFilter _filter{};
+	AtomFilter _filter{};
 	
 	PCA::Matrix _matrix;
 	MatrixPlot *_plot = nullptr;
