@@ -16,8 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#ifndef __vagabond__function__typedefs
+#define __vagabond__function__typedefs
+
+#include "Atom.h"
 #include <functional>
 
 class Atom;
 
 typedef std::function<bool(Atom *const &atom)> AtomFilter;
+
+namespace rope
+{
+	inline AtomFilter atom_is_not_hydrogen()
+	{
+		return [](Atom *const &atom)
+		{
+			return !atom || atom->elementSymbol() != "H";
+		};
+	}
+
+	inline AtomFilter atom_is_core_main_chain()
+	{
+		return [](Atom *const &atom)
+		{
+			return (!atom || 
+			        (atom->elementSymbol() != "H" && 
+			        atom->isCoreMainChain()));
+		};
+	}
+};
+
+#endif

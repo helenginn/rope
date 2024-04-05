@@ -109,11 +109,7 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor, size_t jumps)
 		                  Flag::DoSuperpose);
 	}
 	
-	_resources.sequences->setAtomFilter
-	([](Atom *const &atom)
-	{
-		return atom->elementSymbol() != "H";
-	});
+	_resources.sequences->setAtomFilter(rope::atom_is_not_hydrogen());
 
 	_resources.sequences->addAnchorExtension({anchor, jumps});
 	_resources.sequences->setup();
