@@ -30,7 +30,7 @@ void DegreeTypedData<Header>::matchDegrees(Array &next)
 {
 	for (size_t i = 0; i < _length; i++)
 	{
-		if (next[i] != next[i] || !valid(next[i]))
+		if (!valid(next[i]))
 		{
 			next[i] = NAN;
 			continue;
