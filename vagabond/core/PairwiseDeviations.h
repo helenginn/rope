@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <cstddef>
 
 class Atom;
 class BondSequence;
