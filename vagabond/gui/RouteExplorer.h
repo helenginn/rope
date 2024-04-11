@@ -82,6 +82,7 @@ private:
 
 	std::atomic<bool> _watch{false};
 	
+	time_t _start = {};
 	bool _first = true;
 	static int _threads;
 	int _numTicks = -1;
@@ -89,6 +90,7 @@ private:
 	bool _restart = false;
 	float _newScore = NAN;
 	std::string _progressName;
+	int _numberMade = 0;
 };
 
 #endif

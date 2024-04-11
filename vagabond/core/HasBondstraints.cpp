@@ -178,7 +178,12 @@ void HasBondstraints::addBondstraint(BondTorsion *torsion)
 
 	if (_owns)
 	{
-		propagateRigidity(torsion);
+		bool changed = true;
+		
+		while (changed)
+		{
+			changed = propagateRigidity(torsion);
+		}
 	}
 }
 
@@ -400,11 +405,11 @@ void HasBondstraints::addBondstraintsFrom(HasBondstraints *other)
 
 }
 
-void HasBondstraints::propagateRigidity(BondTorsion *torsion)
+bool HasBondstraints::propagateRigidity(BondTorsion *torsion)
 {
 	if (!torsion->isConstrained())
 	{
-		return;
+		return false;
 	}
 
 	std::vector<BondTorsion *> todo{1, torsion};
@@ -442,6 +447,8 @@ void HasBondstraints::propagateRigidity(BondTorsion *torsion)
 		}
 	}
 	
+	bool changed = false;
+	
 	for (Atom *atom : found)
 	{
 		for (int i = 0; i < atom->bondLengthCount(); i++)
@@ -457,17 +464,30 @@ void HasBondstraints::propagateRigidity(BondTorsion *torsion)
 				BondTorsion *check = atom->bondTorsion(j);
 				if (check->isConstrained())
 				{
-					return;
+					continue;
 				}
 				
 				if (check->matchesAtoms(nullptr, atom, other, nullptr))
 				{
-					std::cout << "Constraining " << check->desc() << " of " 
-					<< atom->desc() << " to true" <<std::endl;
+					float t = check->measurement(BondTorsion::SourceInitial);
+					if (fabs(t) > 350.f || fabs(t) < 10.f)
+					{
+						t = 0.f;
+					}
+					if (fabs(t) > 170.f && fabs(t) < 190.f)
+					{
+						t = 180.f;
+					}
+
+					if (fabs(t) < 10.f) t = 0;
+					check->setAngle(t);
+
 					check->setConstrained(true);
+					changed = true;
 				}
 			}
 		}
-
 	}
+
+	return changed;
 }

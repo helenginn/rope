@@ -77,7 +77,7 @@ void ProgressBar::sendObject(std::string tag, void *object)
 	}
 	else if (tag == "done")
 	{
-		finish();
+		addMainThreadJob([this]() { finish(); });
 	}
 }
 

@@ -138,10 +138,10 @@ public:
 
 	void calculate(rope::IntToCoordGet coordForIdx,
 	               rope::GetFloatFromCoordIdx &torsionForCoord);
-	void calculateTorsions(rope::IntToCoordGet coordForIdx,
-	                       rope::GetFloatFromCoordIdx torsionForCoord);
-	void calculateAtoms(rope::IntToCoordGet coordForIdx,
-	                   rope::GetVec3FromCoordIdx posForCoord);
+	void calculateTorsions(const rope::IntToCoordGet &coordForIdx,
+	                       const rope::GetFloatFromCoordIdx &torsionForCoord);
+	void calculateAtoms(const rope::IntToCoordGet &coordForIdx,
+	                   const rope::GetVec3FromCoordIdx &posForCoord);
 	void superpose();
 	void addOffset(rope::GetVec3FromIdx getOffset);
 
@@ -149,13 +149,6 @@ public:
 	void extractVector(AtomPosList &results, 
 	                   const std::function<bool(Atom *const &)> &filter = {});
 	
-	/* I hope you can delete one day */
-	struct ElePos
-	{
-		glm::vec3 pos;
-		char element[3];
-	};
-
 	std::vector<glm::vec3> extractForMap(const std::string &ele, int num,
 	                                     const std::function<bool(Atom *const &)> 
 	                                     &filter = {});

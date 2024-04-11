@@ -20,8 +20,9 @@
 #include "GuiAtom.h"
 
 #include <vagabond/gui/elements/ChooseRange.h>
-#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/VagWindow.h>
 
@@ -53,7 +54,6 @@ RouteExplorer::~RouteExplorer()
 void RouteExplorer::setup()
 {
 	_instance->load();
-	
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
 
@@ -170,26 +170,29 @@ void RouteExplorer::pause()
 
 void RouteExplorer::doThings()
 {
-	if (_numTicks > 0)
-	{
-		VagWindow::window()->requestProgressBar(_numTicks, _progressName);
-		_numTicks = -1;
-		_progressName = "";
-	}
-	
 	if (_newScore == _newScore)
 	{
-		if (_route->doingSides())
+		if (_route->doingHydrogens())
 		{
-			setInformation("Clash score: " + f_to_str(_newScore, 3));
+			setInformation("Full-atom clash score: " + f_to_str(_newScore, 3));
+		}
+		else if (_route->doingClashes() && !_route->doingHydrogens())
+		{
+			setInformation("Hydrogen-free clash score: "
+			               + f_to_str(_newScore, 3));
+		}
+		else if (_route->doingSides() && !_route->doingClashes())
+		{
+			setInformation("Cubic score with side chains: " 
+			               + f_to_str(_newScore, 3));
 		}
 		else if (_route->doingCubic())
 		{
-			setInformation("Cubic score: " + f_to_str(_newScore, 3));
+			setInformation("2nd order score: " + f_to_str(_newScore, 3));
 		}
 		else if (_route->doingQuadratic())
 		{
-			setInformation("Quadratic score: " + f_to_str(_newScore, 3));
+			setInformation("1st order score: " + f_to_str(_newScore, 3));
 		}
 
 		_newScore = NAN;
@@ -204,8 +207,18 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 	if (object != nullptr && end.length())
 	{
 		int *ptr = static_cast<int *>(object);
-		_numTicks = *ptr;
-		_progressName = end;
+		int numTicks = *ptr;
+		std::string progressName = end;
+
+		if (_numTicks > 0)
+		{
+			addMainThreadJob([this, numTicks, progressName]()
+   	        {
+				VagWindow::window()->requestProgressBar(numTicks, 
+				                                        progressName);
+			});
+		}
+	
 	}
 	
 	if (tag == "score")
@@ -222,6 +235,19 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 	{
 		addMainThreadJob([this]() { pause(); });
 	}
+
+	if (tag == "error")
+	{
+		std::string *ptr = static_cast<std::string *>(object);
+
+		BadChoice *error = new BadChoice(this, *ptr);
+		error->setDismissible(true);
+		this->setModal(error);
+		
+		delete ptr;
+		return;
+	};
+	
 }
 
 void RouteExplorer::calculate()
@@ -233,7 +259,18 @@ void RouteExplorer::calculate()
 void RouteExplorer::startWithThreads(const int &thr)
 {
 	_route->setThreads(thr);
-	_route->setup();
+
+	try
+	{
+		_route->setup();
+	}
+	catch (const std::runtime_error &error)
+	{
+		BadChoice *bc = new BadChoice(this, error.what());
+		bc->setDismissible(true);
+		this->setModal(bc);
+		return;
+	}
 	
 	setupSave();
 	setupFinish();
@@ -294,6 +331,7 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		demolishSlider();
 
 		_route->prepareCalculate();
+		_start = ::time(NULL);
 		_watch = true;
 		_worker = new std::thread(Route::calculate, _route);
 
@@ -353,7 +391,22 @@ void RouteExplorer::saveAndRestart()
 
 	Path path(_plausibleRoute);
 	Environment::env().pathManager()->insertOrReplace(path, nullptr);
+	time_t end = ::time(NULL);
+	
+	_numberMade++;
+//	if (_numberMade % 5 == 0)
+	{
+		Environment::env().save();
+	}
+	
+	time_t duration = end - _start;
+	int seconds = duration % 60;
+	int minutes = (duration - seconds + 1) / 60;
+	std::cout << "Route took " << minutes << " mins and " << seconds 
+	<< " seconds to refine." << std::endl;
+
 	_plausibleRoute->clearCustomisation();
 
+	_start = end;
 	startWithThreads(_threads);
 }

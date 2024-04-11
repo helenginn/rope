@@ -86,10 +86,12 @@ public:
 	               const CoordManager *specific_manager = nullptr);
 
 	// allows for custom toTorsions function
+	/*
 	void calculate(Flag::Calc flags, const std::vector<float> &parameters,
 	               BaseTask **first_task, CalcTask **final_hook,
-	               const CoordManager *specific_manager,
-	               const rope::GetFloatFromCoordIdx &transform);
+	               const CoordManager *specific_manager);
+//	               const rope::GetFloatFromCoordIdx &transform);
+*/
 
 	// pretty optional, preparing lists of element positions for maps
 	void positionsForMap(Task<BondSequence *, BondSequence *> *hook,

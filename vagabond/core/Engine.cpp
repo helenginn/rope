@@ -166,7 +166,13 @@ void Engine::start()
 	_endScore = _currentScore;
 	if (_verbose)
 	{
-		std::cout << " -> " << _endScore << std::endl;
+		std::cout << " -> " << _endScore << " (";
+		
+		for (const float &f : bestResult())
+		{
+			std::cout << f << ", ";
+		}
+		std::cout << ")" << std::endl;
 	}
 	
 	_improved = (_endScore < _startScore - 1e-6);

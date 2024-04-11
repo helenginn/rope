@@ -170,7 +170,6 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
                                  const rope::GetFloatFromCoordIdx &fetch_torsion)
 {
 	AtomBlock &b = _blocks[idx];
-//	fetchAtomTarget(idx, get);
 
 	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
 
@@ -182,7 +181,10 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 	glm::mat4x4 rot = b.prepareRotation(t);
 	b.wip = b.basis * rot * b.coordination;
 
-	b.writeToChildren(_blocks, idx);
+	if (b.nBonds > 0)
+	{
+		b.writeToChildren(_blocks, idx);
+	}
 
 	int &progidx = b.program;
 
@@ -205,7 +207,7 @@ void BondSequence::superpose()
 
 	while (true)
 	{
-		Superpose pose;
+		Superpose pose(blockCount());
 		pose.forceSameHand(true);
 		int start = i;
 		i++;
@@ -303,8 +305,8 @@ void BondSequence::addOffset(rope::GetVec3FromIdx getOffset)
 
 }
 
-void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
-                                  rope::GetVec3FromCoordIdx posForCoord)
+void BondSequence::calculateAtoms(const rope::IntToCoordGet &coordForIdx,
+                                  const rope::GetVec3FromCoordIdx &posForCoord)
 {
 	auto calculatePositions = [posForCoord, this](int idx, 
 	                                                 const Coord::Get &get)
@@ -316,11 +318,11 @@ void BondSequence::calculateAtoms(rope::IntToCoordGet coordForIdx,
 	loopThrough(this, coordForIdx, calculatePositions);
 }
 
-void BondSequence::calculateTorsions(rope::IntToCoordGet coordForIdx,
-                                     rope::GetFloatFromCoordIdx torsionForCoord)
+void BondSequence::calculateTorsions(const rope::IntToCoordGet &coordForIdx,
+                                     const rope::GetFloatFromCoordIdx &torsionForCoord)
 {
-	auto calculateTorsions = [torsionForCoord, this](int idx, 
-	                                                 const Coord::Get &get)
+	auto calculateTorsions = [torsionForCoord, this]
+	(int idx, const Coord::Get &get)
 	{
 		calculateBlock(idx, get, torsionForCoord);
 	};

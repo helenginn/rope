@@ -88,13 +88,15 @@ public:
 	
 	int nudgeCount()
 	{
-		if (doingSides())
+		if (doingClashes())
 		{
-			return 50;
+			return 24;
 		}
 
 		return 12;
 	}
+
+	bool meaningfulUpdate(float new_score, float old_score, float threshold);
 protected:
 	virtual int sendJob(const std::vector<float> &all);
 	virtual size_t parameterCount();
@@ -106,7 +108,7 @@ protected:
 	bool flipTorsion(const ValidateParam &validate, int idx);
 	void flipTorsionCycles(const ValidateParam &validate);
 
-	bool simplexCycle(std::vector<int> torsionIdxs);
+	bool simplexCycle(const std::vector<int> &torsionIdxs);
 	void startTicker(std::string tag, int d = -1);
 
 	std::vector<int> getTorsionSequence(int idx, const ValidateParam &validate);
@@ -124,7 +126,6 @@ protected:
 
 	float _bestScore = FLT_MAX;
 private:
-
 	void prepareJobs();
 	void addLinearInterpolatedPoint(float frac);
 
@@ -132,8 +133,8 @@ private:
 
 	void addPolynomialInterpolatedPoint(float frac);
 
-	void prepareAnglesForRefinement(std::vector<int> &idxs);
-	void prepareTorsionFetcher();
+	void prepareAnglesForRefinement(const std::vector<int> &idxs);
+	void prepareTorsionFetcher(BondSequenceHandler *handler);
 
 	virtual void cycle();
 

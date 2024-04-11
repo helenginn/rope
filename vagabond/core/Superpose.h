@@ -28,6 +28,7 @@ class Superpose
 {
 public:
 	Superpose();
+	Superpose(int expectation);
 	~Superpose();
 	
 	void forceSameHand(bool hand)

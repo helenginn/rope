@@ -43,7 +43,7 @@ private:
 	void exportPDB(const std::string &filename, const int &num,
 	               const bool &ensemble);
 	float _rmsd = 0.;
-	float _linearity = 0.;
+	float _VdWEnergy = 0.;
 	bool _valid = false;
 
 	bool _ensemble = false;

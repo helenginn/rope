@@ -34,8 +34,14 @@ PathData *PathGroup::preparePathData()
 	std::vector<ResidueTorsion> headers;
 	for (int i = 0; i < ref->motionCount(); i++)
 	{
-		headers.push_back(ref->motions().rt(i));
+		const ResidueTorsion &rt = ref->motions().rt(i);
+		if (!rt.torsion().coversMainChain())
+		{
+//			continue;
+		}
+		headers.push_back(rt);
 	}
+	std::cout << "Header size: " << headers.size() << std::endl;
 
 	pd->addHeaders(headers);
 	
@@ -58,6 +64,7 @@ Metadata *PathGroup::prepareMetadata()
 			pr->setup();
 			pr->refreshScores();
 			path->cleanupRoute();
+			std::cout << std::endl;
 		}
 		
 		float clash = path->clashScore();

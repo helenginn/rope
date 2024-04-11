@@ -28,9 +28,10 @@
 #include "files/PdbFile.h"
 #include <vagabond/core/Path.h>
 #include <vagabond/utils/FileReader.h>
-#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/AskMultipleChoice.h>
 
@@ -49,7 +50,8 @@ void PathsDetail::calculateMetrics()
 
 	RouteValidator rv(*pr);
 
-	_linearity = rv.linearityRatio();
+	_VdWEnergy = _obj.activationEnergy();
+//	_linearity = rv.linearityRatio();
 	_valid = rv.validate();
 	_rmsd = rv.rmsd();
 	_obj.cleanupRoute();
@@ -93,15 +95,22 @@ void PathsDetail::redraw()
 	top = 0.5;
 	
 	{
-		std::string str = std::to_string(_linearity);
+		std::string str = std::to_string(_VdWEnergy);
 		Text *t = new Text(str);
-		t->addAltTag("Well-refined paths usually have linearity above 0.9");
+		t->addAltTag("in kJ/mol");
 		t->setRight(0.8, top);
 		addTempObject(t);
 		
-		if (_linearity > 0.9 && _valid)
+		if (_VdWEnergy < 10.f && _valid)
 		{
 			Image *image = new Image("assets/images/happy_face.png");
+			image->resize(0.04);
+			image->setCentre(0.83, top);
+			addTempObject(image);
+		}
+		else if (_VdWEnergy > 1000.f && _valid)
+		{
+			Image *image = new Image("assets/images/sad_face.png");
 			image->resize(0.04);
 			image->setCentre(0.83, top);
 			addTempObject(image);
@@ -130,16 +139,18 @@ void PathsDetail::setup()
 	top = 0.5;
 	
 	{
-		Text *t = new Text("Measure of linearity:");
+		Text *t = new Text("VdW activation energy barrier:");
 		t->setLeft(0.2, top);
 		addObject(t);
 	}
 	
-	top = 0.6;
+	top = 0.61;
 
 	{
-		Text *t = new Text("Note: path validation does not currently include any "\
-		                   "estimation of\natomic clashes or remedy against them.");
+		Text *t = new Text
+		("Note: path validation does not currently include any estimation of\n"\
+		 "electrostatic potential, favoured rotamers, solvent accessibility or\n"\
+		 "internal vaccuums.");
 		t->squishToWidth(0.6);
 		t->setLeft(0.2, top);
 		addObject(t);
@@ -172,8 +183,40 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "view")
 	{
+		glm::vec2 c = button->xy();
+		Menu *m = new Menu(this, this, "viewfrom");
+		m->addOption("From start (1st order momentum)", "quadratic");
+		m->addOption("2nd order momentum", "cubic");
+		m->addOption("2nd order momentum (+ sides)", "sides");
+		m->addOption("Hydrogen-free clash", "h_free_clash");
+		m->addOption("All-atom clash", "h_clash");
+		m->setup(c.x, c.y);
+		setModal(m);
+	}
+
+	std::string end = Button::tagEnd(tag, "viewfrom_");
+	if (end.length())
+	{
+		int job = 0;
+		if (end == "cubic")
+		{
+			job = 1;
+		}
+		if (end == "sides")
+		{
+			job = 2;
+		}
+		else if (end == "h_free_clash")
+		{
+			job = 3;
+		}
+		else if (end == "h_clash")
+		{
+			job = 4;
+		}
+
 		PlausibleRoute *pr = _obj.toRoute();
-		pr->setJobLevel(2);
+		pr->setJobLevel(job);
 		RouteExplorer *re = new RouteExplorer(this, pr);
 		re->saveOver(&_obj);
 		re->show();
@@ -194,7 +237,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 #endif
 	}
 	
-	std::string end = Button::tagEnd(tag, "format_");
+	end = Button::tagEnd(tag, "format_");
 	if (end.length())
 	{
 		_ensemble = (end == "ensemble");

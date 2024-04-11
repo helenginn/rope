@@ -46,6 +46,7 @@ public:
 		None = 0,
 		Pairwise = 1 << 0,
 		CoreChain = 1 << 1,
+		NoHydrogens = 1 << 2,
 	};
 
 
@@ -86,18 +87,18 @@ public:
 		return _momentum;
 	}
 	
+	void setActivationEnergy(float energy) 
+	{
+		_activationEnergy = energy;
+	}
+	
 	float activationEnergy() 
 	{
 		return _activationEnergy;
 	}
 
 	/* to be called on separate thread */
-	static void calculate(Route *me)
-	{
-		me->_calculating = true;
-		me->doCalculations();
-		me->_calculating = false;
-	}
+	static void calculate(Route *me);
 	
 	bool calculating()
 	{
@@ -215,6 +216,21 @@ public:
 	{
 		return _jobLevel >= 2;
 	}
+	
+	bool doingClashes()
+	{
+		return _jobLevel >= 3;
+	}
+	
+	bool doingHydrogens()
+	{
+		return _jobLevel >= 4;
+	}
+	
+	bool lastJob()
+	{
+		return _jobLevel >= 5;
+	}
 
 	const int &jobLevel() const
 	{
@@ -224,6 +240,37 @@ public:
 	void setJobLevel(int level)
 	{
 		_jobLevel = level;
+	}
+	
+	void setMaximumFlipTrial(const float &trials)
+	{
+		_maxFlipTrial = trials;
+	}
+
+	const float &maximumClashDistance() const
+	{
+		return _maxClashDistance;
+	}
+	
+	void setMaximumClashDistance(const float &distance)
+	{
+		_maxClashDistance = distance;
+	}
+
+	const float &maximumMomentumDistance() const
+	{
+		return _maxMomentumDistance;
+	}
+	
+	void setMaximumMomentumDistance(const float &distance)
+	{
+		_maxMomentumDistance = distance;
+	}
+
+	void setHash(const std::string &hash = "");
+	const std::string &hash() const
+	{
+		return _hash;
 	}
 	
 protected:
@@ -297,18 +344,16 @@ protected:
 		_gotScores = true;
 	}
 
-	void setHash(const std::string &hash = "");
-	const std::string &hash() const
-	{
-		return _hash;
-	}
-
-protected:
 	float _activationEnergy = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
 	bool _gotScores = false;
+
 	BondSequenceHandler *_mainChainSequences = nullptr;
+	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
+
+	void unlockAll();
+	int _maxFlipTrial = 0;
 private:
 	bool _calculating = false;
 	
@@ -316,11 +361,14 @@ private:
 	void calculateAtomDeviations(Score &score);
 	
 	int _ticket = 0;
+	float _maxMomentumDistance = 8.f;
+	float _maxClashDistance = 15.f;
 	
 	Instance *_endInstance = nullptr;
 	RTAngles _source;
 	PairwiseDeviations *_pwMain = nullptr;
-	PairwiseDeviations *_pwSide = nullptr;
+	PairwiseDeviations *_pwHeavy = nullptr;
+	PairwiseDeviations *_pwEvery = nullptr;
 	
 	InterpolationType _type = Polynomial;
 	std::string _hash;

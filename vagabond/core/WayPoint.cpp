@@ -51,7 +51,18 @@ float WayPoints::interpolatedProgression(float frac)
 	
 	float y = ((t - s) * x + s + (x0 + s - t) * (x - 1) * (x - 1) * x
 	           + (x1 + s - t) * (x - 1) * x*x);
-	return x + y;
+	
+	float tot = 0;
+	for (int i = 0; i < 2; i++)
+	{
+		float limit = M_PI * (i + 1);
+		float f = frac * limit;
+
+		tot += sin(f) * _grads[i];
+	}
+
+	return tot;
+	return y;
 
 }
 

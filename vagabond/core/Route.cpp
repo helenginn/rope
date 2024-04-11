@@ -48,7 +48,8 @@ Route::~Route()
 {
 	instance()->unload();
 	delete _pwMain;
-	delete _pwSide;
+	delete _pwHeavy;
+	delete _pwEvery;
 }
 
 void Route::setup()
@@ -80,11 +81,11 @@ float Route::submitJobAndRetrieve(float frac, bool show)
 void Route::submitJob(float frac, bool show, const CalcOptions &options)
 {
 	_ticket++;
-	bool needs_deviation = !(options & Pairwise);
 	bool pairwise = (options & Pairwise);
 	bool coreChain = (options & CoreChain);
+	bool hydrogens = !(options & NoHydrogens);
 
-	Flag::Extract gets = needs_deviation ? Flag::Deviation : Flag::NoExtract;
+	Flag::Extract gets = !pairwise ? Flag::Deviation : Flag::NoExtract;
 	if (show)
 	{
 		gets = (Flag::Extract)(Flag::AtomVector | gets);
@@ -95,14 +96,18 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options)
 	
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
-	BondSequenceHandler *const &sequences = 
-	coreChain ? _resources.sequences : _resources.sequences;
+	BondSequenceHandler *sequences = 
+	coreChain ? _mainChainSequences : 
+	(hydrogens ? _resources.sequences : _hydrogenFreeSequences);
 
 	/* this final task returns the result to the pool to collect later */
 	Task<Result, void *> *submit_result = calculator->submitResult(0);
 
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
-	                             Flag::DoSuperpose);
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+	if (show || !pairwise)
+	{
+		calc = Flag::Calc(Flag::DoSuperpose | calc);
+	}
 
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
@@ -113,18 +118,22 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options)
 	
 	if (pairwise)
 	{
-		if (!doingSides())
+		std::set<ResidueId> empty;
+		if (!doingClashes())
 		{
+			PairwiseDeviations *chosen = doingSides() ? _pwHeavy : _pwMain;
 			Task<BondSequence *, Deviation> *task = nullptr;
-			task = _pwMain->normal_task(false);
+
+			task = chosen->momentum_task(doingSides() ? _ids : empty);
 			final_hook->follow_with(task);
 			task->must_complete_before(let);
 			task->follow_with(submit_result);
 		}
 		else
 		{
+			PairwiseDeviations *chosen = hydrogens ? _pwEvery : _pwHeavy;
 			Task<BondSequence *, ActivationEnergy> *task = nullptr;
-			task = _pwSide->clash_task(_ids);
+			task = chosen->clash_task(doingSides() ? _ids : empty);
 			final_hook->follow_with(task);
 			task->must_complete_before(let);
 			task->follow_with(submit_result);
@@ -260,7 +269,6 @@ void Route::getParametersFromBasis()
 {
 	if (_motions.size() > 0)
 	{
-		std::cout << "skipping pick up of parameters, done already" << std::endl;
 		return;
 	}
 
@@ -302,8 +310,8 @@ void Route::getParametersFromBasis()
 	bringTorsionsToRange();
 	prepareTwists();
 
-	std::cout << "Missing: " << missing << " from " << _motions.size() << 
-	" motions and " << _twists.size() << " twists." << std::endl;
+//	std::cout << "Missing: " << missing << " from " << _motions.size() << 
+//	" motions and " << _twists.size() << " twists." << std::endl;
 }
 
 void Route::setTwists(const RTPeptideTwist &twists)
@@ -365,6 +373,7 @@ void Route::prepareResources()
 
 	/* prepare separate sequences for main-chain only */
 	_mainChainSequences = new BondSequenceHandler(_threads);
+	_hydrogenFreeSequences = new BondSequenceHandler(_threads);
 
 	AtomGroup *group = _instance->currentAtoms();
 
@@ -374,6 +383,7 @@ void Route::prepareResources()
 		Atom *anchor = subset->chosenAnchor();
 		_resources.sequences->addAnchorExtension(anchor);
 		_mainChainSequences->addAnchorExtension(anchor);
+		_hydrogenFreeSequences->addAnchorExtension(anchor);
 	}
 
 	_mainChainSequences->setIgnoreHydrogens(true);
@@ -381,18 +391,25 @@ void Route::prepareResources()
 	_mainChainSequences->setup();
 	_mainChainSequences->prepareSequences();
 
+	_hydrogenFreeSequences->setIgnoreHydrogens(true);
+	_hydrogenFreeSequences->setAtomFilter(rope::atom_is_not_hydrogen());
+	_hydrogenFreeSequences->setup();
+	_hydrogenFreeSequences->prepareSequences();
+
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
 
 	updateAtomFetch(_resources.sequences);
-//	updateAtomFetch(_mainChainSequences);
+	updateAtomFetch(_mainChainSequences);
+	updateAtomFetch(_hydrogenFreeSequences);
 	preparePairwiseDeviations();
 }
 
 void Route::preparePairwiseDeviations()
 {
 	delete _pwMain;
-	delete _pwSide;
+	delete _pwHeavy;
+	delete _pwEvery;
 
 	auto main_chain_filter = [](Atom *const &atom)
 	{
@@ -406,11 +423,14 @@ void Route::preparePairwiseDeviations()
 	};
 
 	const float limit = 8.f;
-	_pwMain = new PairwiseDeviations(_resources.sequences->sequence(),
-	                                 main_chain_filter, limit);
+	_pwMain = new PairwiseDeviations(_mainChainSequences->sequence(),
+									 {}, _maxMomentumDistance);
 
-	_pwSide = new PairwiseDeviations(_resources.sequences->sequence(),
-	                                 side_chain_filter, 15.f);
+	_pwHeavy = new PairwiseDeviations(_hydrogenFreeSequences->sequence(),
+									 {}, _maxClashDistance);
+
+	_pwEvery = new PairwiseDeviations(_resources.sequences->sequence(),
+									  {}, _maxClashDistance);
 }
 
 void Route::updateAtomFetch(BondSequenceHandler *const &handler)
@@ -437,6 +457,7 @@ void Route::clearCustomisation()
 	}
 	
 	_jobLevel = 0;
+	unlockAll();
 	_hash = ""; setHash();
 }
 
@@ -457,3 +478,28 @@ void Route::setHash(const std::string &hash)
 		std::cout << "New hash: " << _hash << std::endl;
 	}
 }
+
+void Route::calculate(Route *me)
+{
+	try
+	{
+		me->_calculating = true;
+		me->doCalculations();
+		me->_calculating = false;
+	}
+	catch (const std::runtime_error &error)
+	{
+		std::string *str = new std::string(error.what());
+		me->sendResponse("error", str);
+	}
+}
+
+void Route::unlockAll()
+{
+	for (size_t i = 0; i < motionCount(); i++)
+	{
+		motion(i).locked = false;
+	}
+
+}
+

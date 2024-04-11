@@ -25,11 +25,8 @@
 Path::Path(PlausibleRoute *pr)
 {
 	_route = pr;
-	_hash = pr->hash();
 	pr->refreshScores();
-	_momentum = pr->momentumScore();
-	_activationEnergy = pr->activationEnergy();
-	_clash = pr->clashScore();
+	acquireSingleProperties(_route);
 
 	_startInstance = pr->instance()->id();
 	_endInstance = pr->endInstance()->id();
@@ -98,6 +95,17 @@ void Path::housekeeping()
 	_end->setResponder(this);
 }
 
+void Path::acquireSingleProperties(Route *route)
+{
+	route->setHash();
+	_momentum = route->momentumScore();
+	_activationEnergy = route->activationEnergy();
+	_clash = route->clashScore();
+	_maxMomentumDistance = route->maximumMomentumDistance();
+	_maxClashDistance = route->maximumClashDistance();
+	_hash = route->hash();
+}
+
 PlausibleRoute *Path::toRoute()
 {
 	housekeeping();
@@ -116,6 +124,9 @@ PlausibleRoute *Path::toRoute()
 	pr->setType(_type);
 	pr->setMotions(_motions);
 	pr->setScores(_momentum, _clash);
+	pr->setMaximumMomentumDistance(_maxMomentumDistance);
+	pr->setMaximumClashDistance(_maxClashDistance);
+	pr->setActivationEnergy(_activationEnergy);
 	pr->setHash(_hash);
 	
 	if (_twists.size() == 0)
@@ -141,11 +152,7 @@ void Path::cleanupRoute()
 {
 	if (_route)
 	{
-		_route->setHash();
-		_momentum = _route->momentumScore();
-		_activationEnergy = _route->activationEnergy();
-		_clash = _route->clashScore();
-		_hash = _route->hash();
+		acquireSingleProperties(_route);
 
 		delete _route;
 		_route = nullptr;
@@ -185,6 +192,11 @@ void Path::addToData(PathData *pd)
 	for (size_t i = 0; i < _motions.size(); i++)
 	{
 		Motion &motion = _motions.storage(i);
+		if (!_motions.rt(i).torsion().coversMainChain())
+		{
+//			continue;
+		}
+
 		motion.writeToData(pos);
 	}
 

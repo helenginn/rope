@@ -49,7 +49,9 @@ public:
 		_limit = limit;
 	}
 
-	Task<BondSequence *, Deviation> *normal_task(bool slam);
+	Task<BondSequence *, Deviation> *
+	momentum_task(const std::set<ResidueId> &forResidues);
+
 	Task<BondSequence *, ActivationEnergy> *
 	clash_task(const std::set<ResidueId> &forResidues);
 private:
@@ -58,9 +60,7 @@ private:
 	AtomFilter _filter;
 	float _limit = 8.f;
 
-	int *_knownPairs = nullptr;
 	size_t _memSize = 0;
-	size_t _pairSize = 0;
 	std::map<ResidueId, std::vector<int>> _perResidue;
 };
 

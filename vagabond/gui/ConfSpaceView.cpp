@@ -29,6 +29,7 @@
 #include "IconLegend.h"
 #include "SerialRefiner.h"
 #include "ClusterView.h"
+#include "LoopyDisplay.h"
 #include "ProtonNetworkView.h"
 #include "PathsDetail.h"
 #include "AddModel.h"
@@ -451,6 +452,13 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		refiner->setJobType(rope::SkipRefine);
 		refiner->show();
 	}
+	
+	if (tag == "mutate")
+	{
+		Polymer *m = static_cast<Polymer *>(button->returnObject());
+		LoopyDisplay *ld = new LoopyDisplay(this, m);
+		ld->show();
+	}
 	if (tag == "no_use_unrefined")
 	{
 		// show conf space
@@ -662,6 +670,9 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	m->addOption("set as reference", "set_as_reference");
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
+#endif
+#ifdef VERSION_MUTATE
+//	m->addOption("mutate", "mutate");
 #endif
 #ifdef VERSION_PROTON_NETWORK
 	m->addOption("proton network", "proton");

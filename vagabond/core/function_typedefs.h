@@ -40,9 +40,8 @@ namespace rope
 	{
 		return [](Atom *const &atom)
 		{
-			return (!atom || 
-			        (atom->elementSymbol() != "H" && 
-			        atom->isCoreMainChain()));
+			return (atom && atom->elementSymbol() != "H" && 
+			        (atom->atomName() == "O" || atom->isCoreMainChain()));
 		};
 	}
 };

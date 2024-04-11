@@ -149,8 +149,9 @@ Refine::Calculate Wiggler::prepareSubmission()
 
 		CalcTask *final_hook = nullptr;
 
-		rope::GetFloatFromCoordIdx toTorsions = manager.defaultTorsionFetcher();
+		const rope::GetFloatFromCoordIdx &toTorsions = manager.defaultTorsionFetcher();
 		
+		/*
 		if (modules & Refine::Barycentric)
 		{
 			std::vector<float> baryparams = paramses[4];
@@ -164,11 +165,12 @@ Refine::Calculate Wiggler::prepareSubmission()
 			
 			toTorsions = tmp;
 		}
+		*/
 
 		/* calculation of torsion angle-derived and target-derived
 		 * atom positions */
 		sequences->calculate(calc, paramses[0], &first_hook, &final_hook, 
-		                     &manager, toTorsions);
+		                     &manager/*, toTorsions*/);
 
 		if (modules & Refine::Rotate)
 		{

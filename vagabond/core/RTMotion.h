@@ -30,6 +30,7 @@ struct Motion
 	WayPoints wp;
 	bool flip;
 	float angle;
+	int locked = 0;
 	
 	struct Twist
 	{
@@ -56,8 +57,8 @@ struct Motion
 	{
 		float extra = twist.twist ? twist.twist->twist : 0.f;
 ;
-		ptr[0] = workingAngle() * wp._grads[0] + extra * 4;
-		ptr[1] = workingAngle() * wp._grads[1];
+		ptr[0] = (wp._grads[0] + extra * 4) * (flip ? 1 : -1);
+		ptr[1] = (wp._grads[1]) * (flip ? 1 : -1);
 		ptr += 2;
 	}
 	
@@ -65,7 +66,7 @@ struct Motion
 	{
 		float p = wp.interpolatedProgression(frac);
 		float q = twist.twist ? twist.contribution(frac) : 0;
-		return p * workingAngle() + q;
+		return frac * workingAngle() + p + q;
 	}
 };
 

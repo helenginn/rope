@@ -495,10 +495,13 @@ int Atom::bondsBetween(Atom *end, int maxBonds, bool long_way)
 		return -1;
 	}
 
-	std::set<Atom *> rejected;
+	std::vector<Atom *> rejected;
+	rejected.reserve(maxBonds * 3);
+	rejected.push_back(this);
+
 	std::vector<BondNum> bnums;
+	bnums.reserve(maxBonds * 3);
 	bnums.push_back({this, maxBonds});
-	rejected.insert(this);
 
 	while (bnums.size())
 	{
@@ -526,12 +529,13 @@ int Atom::bondsBetween(Atom *end, int maxBonds, bool long_way)
 				continue;
 			}
 
-			if (rejected.count(other))
+			if (std::find(rejected.begin(), rejected.end(), other) !=
+			    rejected.end())
 			{
 				continue;
 			}
 			
-			rejected.insert(other);
+			rejected.push_back(other);
 			BondNum newBn{other, bn.num - 1};
 			bnums.push_back(newBn);
 		}

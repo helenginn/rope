@@ -77,6 +77,11 @@ public:
 	{
 		return _angle;
 	}
+	
+	void setAngle(const double &angle)
+	{
+		_angle = angle;
+	}
 
 	void setRefinedAngle(const double angle)
 	{

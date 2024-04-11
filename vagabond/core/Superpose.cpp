@@ -28,6 +28,13 @@ Superpose::Superpose()
 	setupSVD(&_svd, 3, 3);
 }
 
+Superpose::Superpose(int expectation)
+{
+	_pairs.reserve(expectation);
+	_transformation = glm::mat4(1.f);
+	setupSVD(&_svd, 3, 3);
+}
+
 Superpose::~Superpose()
 {
 	freeSVD(&_svd);

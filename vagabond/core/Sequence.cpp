@@ -71,7 +71,7 @@ Sequence::Sequence(std::string str, int offset)
 
 		std::string tlc = gemmi::expand_one_letter(ch, gemmi::ResidueKind::AA);
 
-		Residue r{ResidueId(i + 1), tlc, " "};
+		Residue r{ResidueId(i + 1 + offset), tlc, " "};
 		
 		*this += r;
 	}

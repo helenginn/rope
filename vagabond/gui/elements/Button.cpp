@@ -21,7 +21,15 @@ void Button::click(bool left)
 
 	_left = left;
 	setHighlighted(false);
-	_sender->buttonPressed(_tag, this);
+	
+	if (!_returnJob)
+	{
+		_sender->buttonPressed(_tag, this);
+	}
+	else
+	{
+		_returnJob();
+	}
 }
 
 bool Button::mouseOver()

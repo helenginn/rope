@@ -29,6 +29,11 @@ public:
 		_object = ptr;
 	}
 	
+	void setReturnJob(const std::function<void()> &job)
+	{
+		_returnJob = job;
+	}
+	
 	void *returnObject()
 	{
 		return _object;
@@ -74,6 +79,7 @@ protected:
 	ButtonResponder *_sender;
 private:
 	void *_object = nullptr;
+	std::function<void()> _returnJob{};
 	std::string _tag;
 	bool _left = true;
 

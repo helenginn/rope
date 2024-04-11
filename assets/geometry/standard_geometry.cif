@@ -1711,7 +1711,7 @@ PHE    CA    HA     SING N N  6    0.980    0.020    0 .
 PHE    CB    HB2    SING N N 10    0.970    0.020    0 .
 PHE    CB    HB3    SING N N 11    0.970    0.020    0 .
 PHE    CD1   HD1    SING N N 15    0.930    0.020    0 .
-PHE    CD2   HD2    SING N N 17    1.382    0.030    0 .
+PHE    CD2   HD2    SING N N 17    0.930    0.030    0 .
 PHE    CE1   HE1    SING N N 19    0.930    0.020    0 .
 PHE    CE2   HE2    SING N N 21    0.930    0.020    0 .
 PHE    CZ    HZ     SING N N 22    0.930    0.020    0 .

@@ -133,6 +133,8 @@ public:
 		return _momentum != FLT_MAX && _clash != FLT_MAX;
 	}
 private:
+	void acquireSingleProperties(Route *route);
+
 	std::string _startInstance;
 	std::string _model_id;
 	std::string _endInstance;
@@ -148,6 +150,9 @@ private:
 	float _activationEnergy = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
+	
+	float _maxMomentumDistance = 8.f;
+	float _maxClashDistance = 15.f;
 	
 	std::string _hash;
 
@@ -171,6 +176,8 @@ inline void to_json(json &j, const Path &value)
 	j["clash_score"] = value._clash;
 	j["momentum_score"] = value._momentum;
 	j["activation_energy"] = value._activationEnergy;
+	j["maximum_momentum_distance"] = value._maxMomentumDistance;
+	j["maximum_clash_distance"] = value._maxClashDistance;
 }
 
 /* path */
@@ -191,6 +198,16 @@ inline void from_json(const json &j, Path &value)
 		value._clash = j.at("clash_score");
 		value._momentum = j.at("momentum_score");
 		value._hash = j.at("hash");
+	}
+	
+	if (j.count("maximum_momentum_distance"))
+	{
+		value._maxMomentumDistance = j.at("maximum_momentum_distance");
+	}
+	
+	if (j.count("maximum_clash_distance"))
+	{
+		value._maxClashDistance = j.at("maximum_clash_distance");
 	}
 	
 	if (j.count("activation_energy"))

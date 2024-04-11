@@ -136,6 +136,7 @@ int BondSequenceHandler::activeTorsions()
 	return sequence(0)->activeTorsions();
 }
 
+/*
 void BondSequenceHandler::calculate(Flag::Calc flags,
                                     const std::vector<float> &parameters,
                                     BaseTask **first_task,
@@ -143,19 +144,21 @@ void BondSequenceHandler::calculate(Flag::Calc flags,
                                     const CoordManager *specific_manager)
 {
 	const CoordManager *man = (specific_manager ? specific_manager : manager());
-	rope::GetFloatFromCoordIdx toTorsions = man->defaultTorsionFetcher();
-	calculate(flags, parameters, first_task, final_hook, man, toTorsions);
+	const rope::GetFloatFromCoordIdx &toTorsions = man->defaultTorsionFetcher();
+//	calculate(flags, parameters, first_task, final_hook, man, toTorsions);
 }
+*/
 
 void BondSequenceHandler::calculate(Flag::Calc flags,
                                     const std::vector<float> &parameters,
                                     BaseTask **first_task,
                                     CalcTask **final_hook,
-                                    const CoordManager *specific_manager,
-                                    const rope::GetFloatFromCoordIdx &toTorsions)
+                                    const CoordManager *specific_manager)
+//                                    const rope::GetFloatFromCoordIdx &toTorsions)
 {
 	const CoordManager *man = (specific_manager ? specific_manager : manager());
 	rope::GetListFromParameters transform = man->defaultCoordTransform();
+	const rope::GetFloatFromCoordIdx &toTorsions = man->defaultTorsionFetcher();
 	rope::IntToCoordGet paramToCoords = transform(parameters);
 	const rope::GetVec3FromCoordIdx &coordsToPos = man->defaultAtomFetcher();
 

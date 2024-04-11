@@ -19,7 +19,6 @@
 #include "BondCalculator.h"
 #include "BondSequence.h"
 #include "AtomBlock.h"
-#include "matrix_functions.h"
 
 void AtomBlock::silence()
 {
@@ -50,49 +49,6 @@ void AtomBlock::printBlock() const
 	std::cout << "inherit: " << glm::to_string(inherit) << std::endl;
 	std::cout << std::endl;
 
-}
-
-void AtomBlock::writeToChildren(std::vector<AtomBlock> &context, int idx)
-{
-	if (atom == nullptr) // is anchor
-	{
-		int nidx = idx + write_locs[0];
-
-		/* context[idx].basis assigned originally by Grapher */
-		context[nidx].basis = basis;
-		glm::mat4x4 wip = context[nidx].basis * context[nidx].coordination;
-
-		context[nidx].inherit = (wip[0]);
-		if (nBonds == 1)
-		{
-			context[nidx].inherit = (wip[1]);
-		}
-			
-		return;
-	}
-
-	// write locations!
-	for (size_t i = 0; i < nBonds; i++)
-	{
-		if (write_locs[i] < 0)
-		{
-			continue;
-		}
-
-		int n = idx + write_locs[i];
-		
-		if (context[n].silenced)
-		{
-			continue;
-		}
-
-		// update CHILD's basis with CURRENT position, PARENT position and 
-		// CHILD's position
-		torsion_basis(context[n].basis, basis[3], inherit, wip[i]);
-		
-		// update CHILD's inherited position with CURRENT position
-		context[n].inherit = glm::vec3(basis[3]);
-	}
 }
 
 void AtomBlock::clearMutable()

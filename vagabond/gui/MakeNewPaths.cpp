@@ -23,7 +23,9 @@
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/NewPath.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/TickBoxes.h>
 
 MakeNewPaths::MakeNewPaths(Scene *prev, Entity *entity) 
 : Scene(prev), _entity(entity)
@@ -51,7 +53,7 @@ void MakeNewPaths::setup()
 		addObject(t);
 	}
 
-	top += 0.1;
+	top += 0.08;
 
 	{
 		Text *t = new Text("Choose \"to\" structure");
@@ -67,6 +69,81 @@ void MakeNewPaths::setup()
 		_toButton = t;
 		addObject(t);
 	}
+	
+	top += 0.10;
+	
+	TickBoxes *tb = new TickBoxes(this, this);
+	tb->addOption("After refinement, save and auto-restart", 
+	              "auto_restart", true);
+	tb->arrange(0.2, top, 0.5, top + 0.5);
+	tb->setReturnJob([this]() { _restart = !_restart; });
+	addObject(tb);
+
+	top += 0.06;
+	addFloatEntry(top, "Maximum distance of interest (momentum)",
+	              &_maxMomentumDistance);
+
+	top += 0.06;
+	addFloatEntry(top, "Maximum distance of interest (clash)",
+	              &_maxClashDistance);
+
+	top += 0.06;
+	addIntEntry(top, "Maximum torsion flip trial",
+	              &_maxFlipTrial);
+}
+
+void MakeNewPaths::addIntEntry(float top, const std::string &desc, 
+                               int *target)
+{
+	if (target == nullptr)
+	{
+		throw std::runtime_error("Target for float entry is nullptr");
+	}
+
+	Text *t = new Text(desc);
+	t->setLeft(0.2, top);
+	addObject(t);
+	
+	std::string def = i_to_str(*target);
+	TextEntry *entry = new TextEntry(def, this);
+	entry->setValidationType(TextEntry::Numeric);
+	entry->setReturnJob
+	([target, entry]()
+	{
+		*target = atof(entry->scratch().c_str());
+		entry->setScratch(i_to_str(*target));
+		entry->setText(i_to_str(*target));
+	});
+
+	entry->setRight(0.8, top);
+	addObject(entry);
+}
+
+void MakeNewPaths::addFloatEntry(float top, const std::string &desc, 
+                                 float *target)
+{
+	if (target == nullptr)
+	{
+		throw std::runtime_error("Target for float entry is nullptr");
+	}
+
+	Text *t = new Text(desc);
+	t->setLeft(0.2, top);
+	addObject(t);
+	
+	std::string def = f_to_str(*target, 1);
+	TextEntry *entry = new TextEntry(def, this);
+	entry->setValidationType(TextEntry::Numeric);
+	entry->setReturnJob
+	([target, entry]()
+	{
+		*target = atof(entry->scratch().c_str());
+		entry->setScratch(f_to_str(*target, 1));
+		entry->setText(f_to_str(*target, 1));
+	});
+
+	entry->setRight(0.8, top);
+	addObject(entry);
 }
 
 void MakeNewPaths::getStructure(bool from)
@@ -120,6 +197,15 @@ void MakeNewPaths::checkAndPrepare()
 		return;
 	}
 
+	if (_maxMomentumDistance < 0 || _maxClashDistance < 0)
+	{
+		BadChoice *bc = new BadChoice(this, "Please choose a sensible "\
+		                              "(positive non-zero)\nset of "
+		                              " maximum distances.");
+		setModal(bc);
+		return;
+	}
+
 	prepare();
 }
 
@@ -150,9 +236,12 @@ void MakeNewPaths::prepare()
 
 	NewPath new_path(from, to);
 	PlausibleRoute *route = new_path();
+	route->setMaximumMomentumDistance(_maxMomentumDistance);
+	route->setMaximumClashDistance(_maxClashDistance);
+	route->setMaximumFlipTrial(_maxFlipTrial);
 
 	RouteExplorer *re = new RouteExplorer(this, route);
-	re->setRestart(true);
+	re->setRestart(_restart);
 	re->show();
 }
 

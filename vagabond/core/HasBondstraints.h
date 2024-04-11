@@ -222,7 +222,7 @@ protected:
 	bool hasHyperValue(HyperValue *hv);
 private:
 	/* make sure that all rigid torsion angles are marked */
-	void propagateRigidity(BondTorsion *torsion);
+	bool propagateRigidity(BondTorsion *torsion);
 
 	bool _owns = false;
 	bool _grabby = false;
