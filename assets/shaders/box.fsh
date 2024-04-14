@@ -14,7 +14,7 @@ out vec4 FragColor;
 
 void main()
 {
-	if ((near_slab >= -1 && far_slab >= -1) &&
+	if ((near_slab >= -1. && far_slab >= -1.) &&
 		(vPos.z > far_slab || vPos.z < near_slab))
 	{
 		discard;

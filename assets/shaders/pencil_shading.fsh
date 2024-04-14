@@ -2,6 +2,7 @@
 
 precision lowp float;
 
+in vec4 vProper;
 in vec4 vPos;
 in vec4 vColor;
 in vec3 vNormal;
@@ -15,7 +16,7 @@ out vec4 FragColor;
 
 void main()
 {
-	if ((near_slab >= -1 && far_slab >= -1) &&
+	if ((near_slab >= -1. && far_slab >= -1.) &&
 		(vProper.z > far_slab || vProper.z < near_slab))
 	{
 		discard;
