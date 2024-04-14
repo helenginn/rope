@@ -90,16 +90,8 @@ void ClusterSVD::cluster()
 	_weights = svd.singularValues();
 	_uMatrix *= _weights(0);
 	
+	std::cout << "weight: " << _weights(0) << std::endl;
 	this->_scaleFactor = 1 / _weights(0);
-
-	for (size_t i = 0; i < this->_result.cols; i++)
-	{
-		for (size_t j = 0; j < this->_result.rows; j++)
-		{
-			this->_result[j][i] /= this->_scaleFactor;
-		}
-		this->_total += svd.singularValues()(i);
-	}
 
 	this->_clusterVersion++;
 }

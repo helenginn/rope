@@ -123,7 +123,6 @@ protected:
 	float _scaleFactor = 1;
 	PCA::Matrix _result{};
 	size_t _axes[3] = {0, 1, 2};
-	double _total = 0;
 	
 	Eigen::MatrixXf _uMatrix;
 	Eigen::VectorXf _weights;

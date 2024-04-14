@@ -148,6 +148,8 @@ void AxisExplorer::finishedDragging(std::string tag, double x, double y)
 
 void AxisExplorer::setupSlider()
 {
+	removeObject(_rangeSlider);
+	delete _rangeSlider;
 	Slider *s = new Slider();
 	s->setDragResponder(this);
 	s->resize(0.5);
@@ -313,6 +315,8 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 		Menu *m = new Menu(this, this, "options");
 		m->addOption("Table for main chain", "main_chain");
 		m->addOption("Save state as PDB", "save_state");
+		m->addOption("Alter min / max axis", "alter_min");
+		/*
 		if (_showingAtomic)
 		{
 			m->addOption("Local variance of motion", "local_motion");
@@ -322,12 +326,49 @@ void AxisExplorer::buttonPressed(std::string tag, Button *button)
 			m->addOption("Local motion per residue", "motion_per_residue");
 			m->addOption("Save map", "save_map");
 		}
+		*/
 		m->setup(c.x, c.y);
 		setModal(m);
 	}
 	else if (tag == "options_motion_per_residue")
 	{
 		perResidueLocalMotions();
+	}
+	else if (tag == "options_alter_min")
+	{
+		AskForText *aft = new AskForText(this, "Enter new minimum range "\
+		                                 "(default -1):", "altered_min", this,
+		                                 TextEntry::Numeric);
+		setModal(aft);
+
+	}
+	else if (tag == "altered_min")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		float min = atof(te->scratch().c_str());
+		if (min != min || !isfinite(min))
+		{
+			min = -1;
+		}
+		_min = min;
+
+		AskForText *aft = new AskForText(this, "Enter new maximum range "\
+		                                 "(default 1):", "altered_max", this,
+		                                 TextEntry::Numeric);
+		setModal(aft);
+	}
+	else if (tag == "altered_max")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		float max = atof(te->scratch().c_str());
+		if (max != max || !isfinite(max))
+		{
+			max = +1;
+		}
+		_max = max;
+
+		setupSlider();
+		submitJobAndRetrieve(0.0);
 	}
 	else if (tag == "options_local_motion")
 	{
@@ -428,6 +469,9 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 		}
 
 		float val = angles.storage(i);
+		
+//		std::cout << id.str() << " " << tr.desc() << " " << val << std::endl;
+
 		float sqval = val * val;
 		list[id] += sqval;
 	}

@@ -347,7 +347,7 @@ TypedData<Unit, Header>::differences(int m, int n)
 
 template <class Unit, class Header>
 const typename TypedData<Unit, Header>::Array
-TypedData<Unit, Header>::weightedDifferences(std::vector<float> weights)
+TypedData<Unit, Header>::weightedDifferences(const std::vector<float> &weights)
 {
 	if (weights.size() != vectorCount())
 	{
@@ -361,7 +361,7 @@ TypedData<Unit, Header>::weightedDifferences(std::vector<float> weights)
 
 	for (size_t j = 0; j < weights.size(); j++)
 	{
-		auto supply_weighted_contribution = [this, j, &array, weights]
+		auto supply_weighted_contribution = [this, j, &array, &weights]
 		(Header &h, int i)
 		{
 			Unit add = _entries[j].diff[i];

@@ -111,7 +111,7 @@ public:
 	
 	virtual void cutVectorsToIndexList(const std::vector<int> &indices);
 
-	const Array weightedDifferences(std::vector<float> weights);
+	const Array weightedDifferences(const std::vector<float> &weights);
 
 	const Array differences(int m, int n);
 	
