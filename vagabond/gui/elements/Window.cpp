@@ -264,8 +264,12 @@ void Window::recordEvent(const SDL_Event &event)
 			return;
 		}
 		
-		str += std::to_string(event.motion.x) + " ";
-		str += std::to_string(event.motion.y);
+		float fx = event.motion.x;
+		float fy = event.motion.y;
+		std::cout << fx << " " << fy << " before conv." << std::endl;
+		currentScene()->convertToGLCoords(&fx, &fy);
+		
+		str += std::to_string(fx) + " " + std::to_string(fy);
 	}
 	else if (key)
 	{

@@ -27,22 +27,17 @@ int main(int argc, char **argv)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 	
-	bool runmode = (argc > 1 ? (strcmp(argv[1], "run") == 0) : false);
-	bool recordmode = (argc > 1 ? (strcmp(argv[1], "record") == 0) : false);
-
 	std::string file = "";
-	if (runmode || recordmode)
-	{
-		if (runmode) std::cout << "Run mode" << std::endl;
-		if (recordmode) std::cout << "Record mode" << std::endl;
-		file = (argc > 2 ? argv[2] : "");
-	}
+	file = (argc > 1 ? argv[1] : "");
 
-	CheckList check(runmode ? file : "");
+	if (!file_exists(file))
+	{
+		std::ofstream f(file); f.close();
+	}
+	CheckList check(file);
 
 	VagWindow window;
 	window.setup(1, argv);
-	window.setRecordFile(recordmode ? file : "");
 
 	while (window.tick())
 	{

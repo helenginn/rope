@@ -80,6 +80,9 @@ public:
 		lastX = _lastX; lastY = _lastY;
 		convertToGLCoords(&lastX, &lastY);
 	}
+
+	void convertToPixels(float *x, float *y);
+	void convertToGLCoords(float *x, float *y);
 	
 	const bool &mouseDown() const
 	{
@@ -89,7 +92,6 @@ protected:
 	void reloadBackground();
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
-	void convertToGLCoords(float *x, float *y);
 	virtual void checkIndexBuffer(double x, double y, 
 	                              bool hover, bool arrow, bool left) {};
 	void setCentrePixels(Renderable *r, int x, int y);

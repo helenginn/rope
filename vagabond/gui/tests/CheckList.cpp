@@ -17,6 +17,8 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CheckList.h"
+#include "../elements/Window.h"
+#include "../elements/Scene.h"
 #include <string>
 #include <vagabond/utils/FileReader.h>
 #include <SDL2/SDL.h>
@@ -71,8 +73,10 @@ void CheckList::pushClick(const std::vector<std::string> &bits)
 	bool left = (bits[2] == "left");
 	bool right = (bits[2] == "right");
 
-	int x = atoi(bits[3].c_str());
-	int y = atoi(bits[4].c_str());
+	float x = atof(bits[3].c_str());
+	float y = atof(bits[4].c_str());
+	Window::currentScene()->convertToPixels(&x, &y);
+	std::cout << "Pushing event with: " << x << " " << y << std::endl;
 	
 	SDL_Event event;
 	if (down) event.type = SDL_MOUSEBUTTONDOWN;

@@ -122,6 +122,12 @@ void Scene::setCentrePixels(Renderable *r, int x, int y)
 	r->setPosition(glm::vec3(xf, -yf, 0));
 }
 
+void Scene::convertToPixels(float *x, float *y)
+{
+	*x = (*x + 1) / 2 * width();
+	*y = (1 - *y) / 2 * height();
+}
+
 void Scene::convertToGLCoords(float *x, float *y)
 {
 	*x = 2 * (float)*x / width() - 1;
