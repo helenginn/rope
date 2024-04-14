@@ -48,8 +48,14 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
 	FloatingText::setPosition(probe->position());
 	_probe = probe;
 	_view = view;
+	
+#ifndef __EMSCRIPTEN__
+	std::string shader = "assets/shaders/indexed_box.fsh";
+#else
+	std::string shader = "assets/shaders/box.fsh";
+#endif
 
-	FloatingText::setFragmentShaderFile("assets/shaders/indexed_box.fsh");
+	FloatingText::setFragmentShaderFile(shader);
 	probe->_obj.set_update([this]() { updateProbe(); });
 	fullUpdate();
 }
@@ -64,7 +70,12 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe)
 	FloatingText::setAlpha(probe->alpha());
 	FloatingText::setColour(0, 0, 0);
 
-	FloatingText::setFragmentShaderFile("assets/shaders/indexed_box.fsh");
+#ifndef __EMSCRIPTEN__
+	std::string shader = "assets/shaders/indexed_box.fsh";
+#else
+	std::string shader = "assets/shaders/box.fsh";
+#endif
+	FloatingText::setFragmentShaderFile(shader);
 	probe->_obj.set_update([this]() { updateProbe(); });
 
 	fullUpdate();

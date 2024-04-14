@@ -21,8 +21,13 @@ void main()
 	{
 		discard;
 	}
+	if (vColor.a < -0.99)
+	{
+		discard;
+	}
 
-	if (vPos.z > far_slab || vPos.z < near_slab)
+	if ((near_slab >= -1 && far_slab >= -1) &&
+		(vPos.z > far_slab || vPos.z < near_slab))
 	{
 		discard;
 	}

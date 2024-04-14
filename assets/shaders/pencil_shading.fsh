@@ -8,11 +8,19 @@ in vec3 vNormal;
 in vec2 vTex;
 
 uniform sampler2D pic_tex;
+uniform float near_slab;
+uniform float far_slab;
 
 out vec4 FragColor;
 
 void main()
 {
+	if ((near_slab >= -1 && far_slab >= -1) &&
+		(vProper.z > far_slab || vProper.z < near_slab))
+	{
+		discard;
+	}
+
 	vec4 result = vColor;
 	vec3 remaining = vec3(1., 1., 1.) - result.xyz;
 	vec3 unit = normalize(vNormal);
