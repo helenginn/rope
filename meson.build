@@ -15,13 +15,15 @@ if (links == [])
   fftw_req = true
 endif
 
+native = (links == [])
+req = native ? true : false
+
 fftw = dependency('fftw3f', required: fftw_req)
 json = dependency('nlohmann_json')
-gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'])
+gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: req)
 deps = [glm, json]
 name = 'index.html'
 
-if (links == [])
   deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
   name = 'rope.gui'
 endif
@@ -193,9 +195,8 @@ else # emscripten
   dependencies : deps, install: true)
 endif
 
-subdir('vagabond/untangle')
-
 if (links == [])
+  subdir('vagabond/untangle')
   subdir('vagabond/c4x/tests')
   subdir('vagabond/utils/tests')
   subdir('vagabond/core/tests')
