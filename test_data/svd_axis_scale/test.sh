@@ -13,3 +13,5 @@ echo "Acquired alignment: " $alignment
 result=`echo $alignment | awk ' { print ($1 > 0.99 ? "true" : "false"); } '`
 echo "Success: $result"
 echo $result > results.txt
+
+rm myo_torsions.csv results.txt test.pdb
