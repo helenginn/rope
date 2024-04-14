@@ -1,0 +1,206 @@
+click down left 0.049769 0.300207
+click up left 0.049769 0.300207
+wait 30
+click down left -0.555556 0.260870
+click up left -0.555556 0.260870
+wait 30
+click down left -0.211806 0.306418
+click up left -0.211806 0.306418
+wait 30
+click down right -0.745370 0.014493
+click up right -0.745370 0.014493
+wait 30
+click down left -0.597222 -0.169772
+click up left -0.597222 -0.167702
+wait 30
+click down left -0.292824 0.016563
+click up left -0.292824 0.016563
+wait 30
+click down left -0.177083 -0.041408
+click up left -0.177083 -0.041408
+wait 30
+click down left -0.415509 -0.296066
+click up left -0.415509 -0.296066
+wait 30
+click down left 0.013889 -0.293996
+click up left 0.013889 -0.293996
+wait 30
+click down left 0.265046 -0.057971
+click move left 0.244213 -0.057971
+click move left 0.202546 -0.057971
+click move left 0.158565 -0.057971
+click move left 0.143519 -0.057971
+click move left 0.092593 -0.057971
+click move left 0.034722 -0.057971
+click move left 0.005787 -0.057971
+click move left -0.004630 -0.055901
+click move left -0.038194 -0.051760
+click move left -0.077546 -0.047619
+click move left -0.103009 -0.045549
+click move left -0.122685 -0.043478
+click move left -0.141204 -0.041408
+click move left -0.146991 -0.041408
+click move left -0.165509 -0.039338
+click move left -0.182870 -0.037267
+click move left -0.206019 -0.035197
+click move left -0.221065 -0.035197
+click move left -0.231481 -0.035197
+click move left -0.244213 -0.035197
+click move left -0.251157 -0.035197
+click move left -0.254630 -0.037267
+click up left -0.254630 -0.037267
+wait 30
+click down right -0.255787 -0.039338
+click move ? -0.255787 -0.037267
+click move ? -0.255787 -0.008282
+click move ? -0.255787 0.028986
+click move ? -0.255787 0.039337
+click move ? -0.255787 0.070393
+click move ? -0.254630 0.103520
+click move ? -0.253472 0.124224
+click move ? -0.253472 0.126294
+click move ? -0.253472 0.142857
+click move ? -0.252315 0.161491
+click move ? -0.252315 0.175983
+click move ? -0.252315 0.186335
+click move ? -0.252315 0.190476
+click move ? -0.252315 0.194617
+click move ? -0.252315 0.198758
+click up right -0.252315 0.198758
+wait 30
+click down left 0.812500 0.792961
+click up left 0.812500 0.792961
+wait 30
+click down left 0.707176 0.577640
+click up left 0.707176 0.577640
+wait 30
+key down 48
+key up 48
+wait 10
+key down 13
+key up 13
+wait 10
+key down 49
+key up 49
+wait 10
+key down 46
+key up 46
+wait 10
+key down 52
+key down 49
+key up 52
+wait 10
+key up 49
+wait 10
+key down 52
+key up 52
+wait 10
+key down 13
+key up 13
+wait 10
+click down left 0.003472 -0.701863
+click move left 0.002315 -0.701863
+click move left 0.001157 -0.701863
+click move left 0.000000 -0.701863
+click move left -0.001157 -0.701863
+click move left -0.002315 -0.701863
+click move left -0.005787 -0.699793
+click move left -0.010417 -0.699793
+click move left -0.017361 -0.699793
+click move left -0.025463 -0.699793
+click move left -0.038194 -0.697723
+click move left -0.052083 -0.695652
+click move left -0.067130 -0.695652
+click move left -0.084491 -0.691511
+click move left -0.105324 -0.689441
+click move left -0.119213 -0.685300
+click move left -0.134259 -0.681159
+click move left -0.148148 -0.681159
+click move left -0.166667 -0.677019
+click move left -0.180556 -0.674948
+click move left -0.193287 -0.672878
+click move left -0.206019 -0.670807
+click move left -0.222222 -0.668737
+click move left -0.231481 -0.666667
+click move left -0.241898 -0.664596
+click move left -0.250000 -0.662526
+click move left -0.252315 -0.660455
+click move left -0.260417 -0.658385
+click move left -0.267361 -0.656315
+click move left -0.275463 -0.656315
+click move left -0.284722 -0.654244
+click move left -0.289352 -0.654244
+click move left -0.291667 -0.652174
+click move left -0.289352 -0.652174
+click move left -0.285880 -0.650104
+click move left -0.281250 -0.650104
+click move left -0.275463 -0.648033
+click move left -0.273148 -0.648033
+click move left -0.261574 -0.648033
+click move left -0.243056 -0.648033
+click move left -0.218750 -0.648033
+click move left -0.187500 -0.648033
+click move left -0.181713 -0.648033
+click move left -0.143519 -0.648033
+click move left -0.107639 -0.650104
+click move left -0.075231 -0.650104
+click move left -0.021991 -0.656315
+click move left 0.012731 -0.656315
+click move left 0.047454 -0.658385
+click move left 0.072917 -0.660455
+click move left 0.081019 -0.660455
+click move left 0.108796 -0.660455
+click move left 0.135417 -0.662526
+click move left 0.163194 -0.664596
+click move left 0.196759 -0.666667
+click move left 0.219907 -0.668737
+click move left 0.238426 -0.668737
+click move left 0.259259 -0.668737
+click move left 0.270833 -0.668737
+click move left 0.281250 -0.668737
+click move left 0.289352 -0.668737
+click move left 0.298611 -0.668737
+click move left 0.305556 -0.670807
+click move left 0.310185 -0.670807
+click move left 0.315972 -0.670807
+click move left 0.318287 -0.672878
+click move left 0.320602 -0.672878
+click up left 0.320602 -0.672878
+wait 30
+click down left 0.855324 0.832298
+click up left 0.855324 0.832298
+wait 30
+click down left 0.688657 0.639752
+click up left 0.688657 0.639752
+wait 30
+key down 116
+key down 101
+key up 116
+wait 10
+key down 115
+key down 116
+key up 101
+wait 10
+key up 115
+wait 10
+key down 46
+key up 116
+wait 10
+key up 46
+wait 10
+key down 112
+key up 112
+wait 10
+key down 100
+key down 98
+key up 100
+wait 10
+key up 98
+wait 10
+key down 13
+key up 13
+wait 10
+key down 27
+key up 27
+wait 10
+click down left 0.403935 -0.298137
