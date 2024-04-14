@@ -20,6 +20,7 @@
 #define __vagabond__CheckList__
 
 #include <vector>
+#include <string>
 
 #define WAITCOUNT (30)
 
