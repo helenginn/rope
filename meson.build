@@ -1,4 +1,4 @@
-project('rope', 'cpp', 'c', version : '1.5')
+project('rope', 'cpp', 'c', version : '0.1.6')
 
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
@@ -24,6 +24,7 @@ gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: req)
 deps = [glm, json]
 name = 'index.html'
 
+if (native)
   deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
   name = 'rope.gui'
 endif
@@ -158,11 +159,11 @@ subdir('vagabond/gui')
 
 extrafiles = []
 
-if (links != [])
+if (not native)
 extrafiles += 'vagabond/gui/print_file.cpp'
 endif
 
-if (links == []) # not emscripten
+if (native) # not emscripten
   executable(name, 'vagabond/gui/main.cpp',
   link_with : [gui, core],
   cpp_args: ['-std=c++11'],
