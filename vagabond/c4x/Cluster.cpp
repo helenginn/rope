@@ -156,6 +156,7 @@ std::vector<float> Cluster::weights(int axis)
 {
 	std::vector<float> ws;
 	float sc = this->_scaleFactor;
+	sc *= sc;
 	
 	for (size_t i = 0; i < _result.rows; i++)
 	{

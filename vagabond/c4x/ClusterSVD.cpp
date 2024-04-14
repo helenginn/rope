@@ -90,6 +90,8 @@ void ClusterSVD::cluster()
 	_weights = svd.singularValues();
 	_uMatrix *= _weights(0);
 	
+	_result = PCA::Matrix(_uMatrix);
+
 	std::cout << "weight: " << _weights(0) << std::endl;
 	this->_scaleFactor = 1 / _weights(0);
 
