@@ -174,6 +174,16 @@ if (links == []) # not emscripten
     link_args: [links],
     dependencies : [fftw, json, gemmi, thread_dep, curl],
     install: true)
+
+  executable('rope.gui.test',
+  ['vagabond/gui/tests/main.cpp',
+   'vagabond/gui/tests/CheckList.cpp',
+   'vagabond/gui/tests/CheckList.h'],
+  link_with : [gui, core],
+  cpp_args: ['-std=c++11'],
+  link_args: [links],
+  dependencies : deps, 
+  install: true)
 else # emscripten
   start_cpp = 'vagabond/gui/main.cpp'
   executable(name, extrafiles, start_cpp,

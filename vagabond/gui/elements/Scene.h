@@ -80,6 +80,11 @@ public:
 		lastX = _lastX; lastY = _lastY;
 		convertToGLCoords(&lastX, &lastY);
 	}
+	
+	const bool &mouseDown() const
+	{
+		return _mouseDown;
+	}
 protected:
 	void reloadBackground();
 	virtual std::vector<Renderable *> &pertinentObjects();

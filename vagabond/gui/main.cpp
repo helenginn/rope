@@ -9,8 +9,6 @@
 #include <curl/curl.h>
 #endif
 
-float test = 0;
-
 int main (int argc, char **argv)
 {
 #ifdef __EMSCRIPTEN__

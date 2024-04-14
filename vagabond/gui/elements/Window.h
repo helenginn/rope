@@ -135,6 +135,11 @@ public:
 	{
 		return _window;
 	}
+	
+	void setRecordFile(const std::string &filename)
+	{
+		_recordFile = filename;
+	}
 
 	void instateWindow();
 	void giveUpOpenGL();
@@ -147,8 +152,10 @@ protected:
 
 	static Window *_myWindow;
 private:
+	void recordEvent(const SDL_Event &event);
 	void handleWindowEvent(SDL_Event &event);
 	void deleteQueued();
+	bool _test = false;
 
 	static SDL_Renderer *_renderer;
 	static SDL_Window *_window;
@@ -158,6 +165,9 @@ private:
 	static int _width;
 	static int _height;
 	static double _ratio;
+	
+	std::string _recordFile;
+	bool _lastKey = false;
 
 	static std::set<Scene *> _toDelete;
 	static std::mutex _deleteMutex;

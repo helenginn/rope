@@ -3,6 +3,7 @@
 #include "Renderable.h"
 #include "Library.h"
 
+#include <fstream>
 #include <iostream>
 #include <SDL2/SDL_image.h>
 
@@ -202,6 +203,99 @@ void Window::handleWindowEvent(SDL_Event &event)
 
 }
 
+void Window::recordEvent(const SDL_Event &event)
+{
+	std::string str;
+	bool mouse = false;
+	bool key = false;
+	int add_wait = 0;
+	switch (event.type)
+	{
+		case SDL_WINDOWEVENT:
+		break;
+
+		case SDL_KEYDOWN:
+		key = true;
+		str += "key down ";
+		break;
+
+		case SDL_KEYUP:
+		str += "key up ";
+		key = true;
+		break;
+
+		case SDL_MOUSEMOTION:
+		str += "click move ";
+		mouse = true;
+		break;
+
+		case SDL_MOUSEBUTTONDOWN:
+		str += "click down ";
+		mouse = true;
+		break;
+
+		case SDL_MOUSEBUTTONUP:
+		str += "click up ";
+		add_wait = 30;
+		mouse = true;
+		break;
+	}
+
+	if (mouse)
+	{
+		switch (event.button.button)
+		{
+			case SDL_BUTTON_LEFT:
+			str += "left ";
+			break;
+
+			case SDL_BUTTON_RIGHT:
+			str += "right ";
+			break;
+			
+			default:
+			str += "? ";
+			break;
+		}
+		
+		if (!currentScene()->mouseDown() && 
+		    event.type == SDL_MOUSEMOTION)
+		{
+			return;
+		}
+		
+		str += std::to_string(event.motion.x) + " ";
+		str += std::to_string(event.motion.y);
+	}
+	else if (key)
+	{
+		int sym = (int)event.key.keysym.sym;
+		str += std::to_string(sym);
+		if (event.type == SDL_KEYUP && _lastKey)
+		{
+			add_wait = 10;
+		}
+		_lastKey = true;
+	}
+
+	if (str.length() == 0 || str == " ")
+	{
+		return;
+	}
+
+	std::cout << _recordFile << " << " << str << std::endl;
+	std::ofstream outfile;
+	outfile.open(_recordFile, std::ios_base::app);
+	outfile << str << std::endl;
+	
+	if (add_wait > 0)
+	{
+		outfile << "wait " << add_wait << std::endl;
+	}
+
+	outfile.close();
+}
+
 bool Window::tick()
 {
 	SDL_GLContext context = SDL_GL_GetCurrentContext();
@@ -216,6 +310,11 @@ bool Window::tick()
 #ifdef __EMSCRIPTEN__
 		motion /= _ratio;
 #endif
+
+		if (_myWindow->_recordFile.length())
+		{
+			_myWindow->recordEvent(event);
+		}
 
 		switch (event.type)
 		{
