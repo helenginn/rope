@@ -282,8 +282,14 @@ void PathsMenu::prepareSpace()
 		item->setObjectGroup(data);
 		item->prepareCluster();
 		item->setMetadata(metadata);
+		current = item;
 
 		_space->save(item, entity, rope::ConfPath);
+	}
+
+	for (Path *const &path : _allPaths)
+	{
+		path->setResponder(current);
 	}
 
 	_space->addAssociatedMetadata(metadata);

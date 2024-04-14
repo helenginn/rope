@@ -57,6 +57,11 @@ const Metadata::KeyValues Path::metadata(Metadata *source) const
 	return *ptr;
 }
 
+void Path::signalDeletion()
+{
+	sendResponse("purge", this);
+}
+
 void Path::housekeeping()
 {
 	if (_model && _instance && _end)

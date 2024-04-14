@@ -35,6 +35,8 @@ public:
 	~Path();
 	Path(PlausibleRoute *pr);
 	void cleanupRoute();
+	
+	void signalDeletion();
 
 	const Metadata::KeyValues metadata(Metadata *source) const;
 

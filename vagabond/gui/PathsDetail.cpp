@@ -177,6 +177,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "delete" && _deleteAllowed)
 	{
+		_obj.signalDeletion();
 		Environment::purgePath(_obj);
 		back();
 	}
