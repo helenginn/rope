@@ -32,7 +32,6 @@ public:
 	VagWindow();
 	virtual void setup(int argc, char **argv);
 	void setup_special();
-	virtual void resume();
 	virtual void mainThreadActivities();
 	
 	static VagWindow *window()
@@ -60,12 +59,13 @@ public:
 	}
 
 	void requestProgressBar(int ticks, std::string text);
-	void prepareProgressBar();
-	void removeProgressBar();
+	void requestProgressBarRemoval();
 private:
+	void prepareProgressBar(int ticks, std::string text);
+	void removeProgressBar();
+
 	static Dictator *_dictator;
 	MainMenu *_menu = nullptr;
-	bool _resume = false;
 	struct BarDetails
 	{
 		int ticks = 0;

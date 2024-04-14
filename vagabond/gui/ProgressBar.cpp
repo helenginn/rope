@@ -57,7 +57,7 @@ void ProgressBar::setMaxTicks(int count)
 void ProgressBar::finish()
 {
 	setDisabled(true);
-	VagWindow::window()->removeProgressBar();
+	VagWindow::window()->requestProgressBarRemoval();
 }
 
 void ProgressBar::sendObject(std::string tag, void *object)
@@ -77,7 +77,7 @@ void ProgressBar::sendObject(std::string tag, void *object)
 	}
 	else if (tag == "done")
 	{
-		addMainThreadJob([this]() { finish(); });
+		finish();
 	}
 }
 

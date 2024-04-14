@@ -210,13 +210,9 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 		int numTicks = *ptr;
 		std::string progressName = end;
 
-		if (_numTicks > 0)
+		if (numTicks > 0)
 		{
-			addMainThreadJob([this, numTicks, progressName]()
-   	        {
-				VagWindow::window()->requestProgressBar(numTicks, 
-				                                        progressName);
-			});
+			VagWindow::window()->requestProgressBar(numTicks, progressName);
 		}
 	
 	}

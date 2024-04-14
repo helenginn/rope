@@ -63,29 +63,34 @@ void VagWindow::removeProgressBar()
 	}
 }
 
-void VagWindow::requestProgressBar(int ticks, std::string text)
+void VagWindow::requestProgressBarRemoval()
 {
-	_bar.ticks = ticks;
-	_bar.text = text;
+	addMainThreadJob([this]()
+	                 {
+		                removeProgressBar();
+	});
+
 }
 
-void VagWindow::prepareProgressBar()
+void VagWindow::requestProgressBar(int ticks, std::string text)
 {
-	if (_bar.ticks == 0)
-	{
-		return;
-	}
+	addMainThreadJob([this, ticks, text]()
+	                 {
+		                prepareProgressBar(ticks, text);
+	});
+}
 
+void VagWindow::prepareProgressBar(int ticks, std::string text)
+{
 	removeProgressBar();
 
-	ProgressBar *pb = new ProgressBar(_bar.text);
+	ProgressBar *pb = new ProgressBar(text);
 	Environment::env().setProgressResponder(pb);
-	pb->setMaxTicks(_bar.ticks);
+	pb->setMaxTicks(ticks);
 	_bar.ptr = pb;
+	_bar.ticks = ticks;
+	_bar.text = text;
 	addObject(pb);
-	
-	_bar.ticks = 0;
-	_bar.text = "";
 }
 
 void VagWindow::setup(int argc, char **argv)
@@ -131,16 +136,6 @@ void VagWindow::setup(int argc, char **argv)
 
 void VagWindow::mainThreadActivities()
 {
-	if (_resume)
-	{
-		_resume = false;
-	}
-	
-	prepareProgressBar();
-}
-
-void VagWindow::resume()
-{
-	_resume = true;
+	doJobs();
 }
 

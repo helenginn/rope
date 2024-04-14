@@ -208,6 +208,18 @@ void HasRenderables::addMainThreadJob(const std::function<void()> &job)
 	_jobs.push_back(job);
 }
 
+void HasRenderables::doJobs()
+{
+	std::unique_lock<std::mutex> lock(_joblock);
+	for (const auto &job : _jobs)
+	{
+		job();
+	}
+	
+	_jobs.clear();
+
+}
+
 void HasRenderables::doThingsCircuit()
 {
 	for (size_t i = 0; i < objectCount(); i++)
@@ -216,14 +228,7 @@ void HasRenderables::doThingsCircuit()
 	}
 
 	doThings();
-	
-	std::unique_lock<std::mutex> lock(_joblock);
-	for (const auto &job : _jobs)
-	{
-		job();
-	}
-	
-	_jobs.clear();
+	doJobs();
 }
 
 Renderable *HasRenderables::tab(bool shift)

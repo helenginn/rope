@@ -65,6 +65,7 @@ public:
 	virtual void doThings() {};
 	
 	void addMainThreadJob(const std::function<void()> &);
+	void doJobs();
 
 	virtual Renderable *findObject(double x, double y);
 	void doAccessibilityThings(SDL_Keycode pressed, bool shift);

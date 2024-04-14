@@ -85,7 +85,6 @@ private:
 	time_t _start = {};
 	bool _first = true;
 	static int _threads;
-	int _numTicks = -1;
 	bool _pausing = false;
 	bool _restart = false;
 	float _newScore = NAN;
