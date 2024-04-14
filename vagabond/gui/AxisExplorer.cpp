@@ -507,7 +507,7 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 		atom->setAddedColour(variation);
 		data.addEntry({{"Residue number", it->first.str()},
 			             {"Angle variation (deg)", 
-		                   std::to_string(variation)}});
+		                   std::to_string(it->second)}});
 	}
 	
 	if (extra.entryCount())
