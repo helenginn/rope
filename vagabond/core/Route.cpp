@@ -168,20 +168,20 @@ void Route::setFlips(std::vector<int> &idxs, std::vector<int> &fs)
 	}
 }
 
-void Route::bestGuessTorsion(int idx)
+float best_guess_torsion(Parameter *param)
 {
-	if (!parameter(idx)->isTorsion())
+	if (!param->isTorsion())
 	{
-		return;
+		return 0;
 	}
 
 	glm::vec3 before[4]{};
 	glm::vec3 after[4]{};
 
-	for (size_t i = 0; i < parameter(idx)->atomCount(); i++)
+	for (size_t i = 0; i < param->atomCount(); i++)
 	{
-		before[i] = parameter(idx)->atom(i)->otherPosition("target");
-		after[i] = parameter(idx)->atom(i)->otherPosition("moving");
+		before[i] = param->atom(i)->otherPosition("target");
+		after[i] = param->atom(i)->otherPosition("moving");
 	}
 
 	float first = 0;
@@ -209,34 +209,18 @@ void Route::bestGuessTorsion(int idx)
 
 		last = torsion;
 	}
-	
-	destination(idx) = last - first;
 
-	return;
-	if (fabs(last - first) > 90.f)
+	return last - first;
+}
+
+void Route::bestGuessTorsion(int idx)
+{
+	if (!parameter(idx)->isTorsion())
 	{
-		int rnd = int(rand() % 10);
-		if (rnd >= 1)
-		{ 
-			if (parameter(idx)->coversMainChain())
-			{
-				std::cout << "Skipping " << parameter(idx) << std::endl;
-			}
-			return;
-		}
-
-		int dir = (last - first > 0) ? -1 : 1;
-		if (parameter(idx)->coversMainChain())
-		{
-			std::cout << "Flipping " << parameter(idx)->desc() << " ";
-			std::cout << destination(idx) << " to ";
-		}
-		destination(idx) += dir * 360;
-		if (parameter(idx)->coversMainChain())
-		{
-			std::cout << destination(idx) << std::endl;
-		}
+		return;
 	}
+
+	destination(idx) = best_guess_torsion(parameter(idx));
 }
 
 void Route::bestGuessTorsions()
@@ -265,13 +249,8 @@ void Route::bringTorsionsToRange()
 	}
 }
 
-void Route::getParametersFromBasis()
+void Route::getParametersFromBasis(const MakeMotion &make_mot)
 {
-	if (_motions.size() > 0)
-	{
-		return;
-	}
-
 	ParamSet missing;
 
 	std::vector<Motion> tmp_motions;
@@ -282,36 +261,61 @@ void Route::getParametersFromBasis()
 	for (size_t i = 0; i < basis->parameterCount(); i++)
 	{
 		Parameter *p = basis->parameter(i);
-		int idx = _instance->indexForParameterFromList(p, _source);
-
-		if (idx < 0)
-		{
-			torsions.push_back(ResidueTorsion{});
-			tmp_motions.push_back(Motion{WayPoints(), false, 0});
-			missing.insert(p);
-		}
-		else
-		{
-			ResidueTorsion rt = _source.rt(idx);
-			rt.attachToInstance(_instance);
-			float final_angle = _source.storage(idx);
-
-			if (final_angle != final_angle) 
-			{
-				final_angle = 0;
-			}
-
-			torsions.push_back(rt);
-			tmp_motions.push_back(Motion{WayPoints(), false, final_angle});
-		}
+		ResidueTorsion rt{};
+		tmp_motions.push_back(make_mot(p, rt));
+		torsions.push_back(rt);
 	}
 
 	_motions = RTMotion::motions_from(torsions, tmp_motions);
-	bringTorsionsToRange();
-	prepareTwists();
+}
 
-//	std::cout << "Missing: " << missing << " from " << _motions.size() << 
-//	" motions and " << _twists.size() << " twists." << std::endl;
+void Route::prepareParameters()
+{
+	auto make_motion = [this](Parameter *const &param, ResidueTorsion &rt)
+	{
+		rt = ResidueTorsion(param);
+		rt.attachToInstance(_instance);
+
+		// index may be in existing motions, or in the source torsions
+		int mot_idx = _motions.indexOfHeader(rt);
+		int src_idx = _source.indexOfHeader(rt);
+		int twst_idx = _twists.indexOfHeader(rt);
+
+		Motion mt = {WayPoints(), false, 0};
+
+		if (mot_idx >= 0)
+		{
+			Motion &target = _motions.storage(mot_idx);
+			mt = target;
+			if (mt.twist.twist && twst_idx >= 0)
+			{
+				_twists.storage(twst_idx).twist = mt.twist.twist->twist;
+				_twists.storage(twst_idx).twist = mt.twist.twist->twist;
+
+			}
+		}
+
+		// if we have a more up-to-date torsion angle then we should use that,
+		// but take into account 360 degree flips
+		if (src_idx >= 0 && mot_idx < 0)
+		{
+			mt.angle = _source.storage(src_idx);
+		}
+		else if (src_idx >= 0 && mot_idx >= 0)
+		{
+			float torsion = _source.storage(src_idx);
+			float last = mt.angle;
+			while (torsion < last - 180.f) torsion += 360.f;
+			while (torsion >= last + 180.f) torsion -= 360.f;
+
+			mt.angle = torsion;
+		}
+
+		return mt;
+	};
+
+	getParametersFromBasis(make_motion);
+	
 }
 
 void Route::setTwists(const RTPeptideTwist &twists)
@@ -335,7 +339,7 @@ void Route::prepareDestination()
 		                         "destination");
 	}
 	
-	getParametersFromBasis();
+	prepareParameters();
 }
 
 int Route::indexOfParameter(Parameter *t)

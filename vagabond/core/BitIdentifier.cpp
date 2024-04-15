@@ -22,6 +22,11 @@
 
 void BitIdentifier::housekeeping()
 {
+	if (_instance && !_entity)
+	{
+		_entity = _instance->entity();
+	}
+
 	if (_entity && _entityName.length() == 0)
 	{
 		_entityName = _entity->name();
@@ -72,6 +77,12 @@ void BitIdentifier::housekeeping()
 		Residue *res = _instance->localForLocalId(_localId);
 		_local = res;
 	}
+	
+	if (!_masterSet && _localSet && _instance)
+	{
+		_master = _instance->equivalentMaster(_localId);
+		housekeeping();
+	}
 }
 
 const ResidueId &BitIdentifier::local_id()
@@ -92,4 +103,16 @@ const ResidueId &BitIdentifier::id()
 	}
 
 	return _masterId;
+}
+
+void BitIdentifier::attachToInstance(Instance *inst, Residue *local)
+{
+	if (_instance && _instance != inst)
+	{
+		_localSet = false;
+	}
+
+	_instance = inst;
+	_local = local;
+	housekeeping();
 }

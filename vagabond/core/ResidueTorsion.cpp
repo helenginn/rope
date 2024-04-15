@@ -22,6 +22,12 @@
 #include "AtomGroup.h"
 #include <sstream>
 
+ResidueTorsion::ResidueTorsion(Parameter *const &param)
+{
+	setTorsion(param->desc());
+	setLocalId(param->residueId());
+}
+
 void ResidueTorsion::housekeeping()
 {
 	BitIdentifier::housekeeping();

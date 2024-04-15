@@ -57,12 +57,7 @@ public:
 		_master = residue;
 	}
 	
-	void attachToInstance(Instance *inst, Residue *local = nullptr)
-	{
-		_instance = inst;
-		_local = local;
-		housekeeping();
-	}
+	void attachToInstance(Instance *inst, Residue *local = nullptr);
 	
 	const ResidueId &id();
 	const ResidueId &local_id();

@@ -389,20 +389,28 @@ void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers,
 	}
 }
 
-void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers)
+void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers,
+                                  bool as_master)
 {
 	for (Residue &residue : _residues)
 	{
 		for (const TorsionRef &torsion : residue.torsions())
 		{
-			if (torsion.hasHydrogen())
+			if (as_master && torsion.hasHydrogen())
 			{
 				continue;
 			}
 
 			ResidueTorsion rt{};
 			rt.setTorsion(torsion);
-			rt.setMaster(&residue);
+			if (as_master)
+			{
+				rt.setMaster(&residue);
+			}
+			else
+			{
+				rt.setLocalId(residue.id());
+			}
 			rt.setEntity(entity());
 			rt.housekeeping();
 			headers.push_back(rt);

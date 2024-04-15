@@ -21,14 +21,16 @@
 
 class Instance;
 class PlausibleRoute;
+class Path;
 
 class NewPath
 {
 public:
-	NewPath(Instance *from, Instance *to);
+	NewPath(Instance *from, Instance *to, Path *blueprint = nullptr);
 
 	PlausibleRoute *operator()();
 private:
+	Path *_blueprint = nullptr;
 	Instance *_from = nullptr;
 	Instance *_to = nullptr;
 

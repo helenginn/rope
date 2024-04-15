@@ -234,13 +234,12 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "menu")
 	{
-		glm::vec2 c = button->xy();
 		Menu *m = new Menu(this, this, "menu");
 		if (!_parent)
 		{
 			m->addOption("Cluster paths", "cluster_paths");
 		}
-		m->setup(c.x, c.y);
+		m->setup(button);
 		setModal(m);
 	}
 	
