@@ -29,6 +29,8 @@
 class ResidueTorsion : public BitIdentifier
 {
 public:
+	ResidueTorsion() = default;
+	ResidueTorsion(Parameter *const &param);
 	virtual ~ResidueTorsion() {};
 	virtual void housekeeping();
 	

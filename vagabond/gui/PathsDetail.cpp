@@ -22,6 +22,7 @@
 #include <emscripten.h>
 #endif
 
+#include "MakeNewPaths.h"
 #include "PathsDetail.h"
 #include <vagabond/core/RouteValidator.h>
 #include "RouteExplorer.h"
@@ -40,6 +41,7 @@ Scene(prev),
 AddObject<Path>(prev, p)
 {
 	calculateMetrics();
+	_deleteAllowed = false;
 }
 
 void PathsDetail::calculateMetrics()
@@ -157,6 +159,13 @@ void PathsDetail::setup()
 	}
 
 	{
+		TextButton *t = new TextButton("Menu", this);
+		t->setLeft(0.9, 0.1);
+		t->setReturnTag("menu");
+		addObject(t);
+	}
+
+	{
 		TextButton *t = new TextButton("View", this);
 		t->setLeft(0.2, 0.8);
 		t->setReturnTag("view");
@@ -175,11 +184,29 @@ void PathsDetail::setup()
 
 void PathsDetail::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "delete" && _deleteAllowed)
+	if (tag == "menu")
+	{
+		Menu *m = new Menu(this, this);
+		m->addOption("derive new", "derive_new");
+		m->addOption("delete", "delete");
+		m->setup(button);
+		setModal(m);
+	}
+
+	if (tag == "delete")
 	{
 		_obj.signalDeletion();
 		Environment::purgePath(_obj);
 		back();
+	}
+	
+	if (tag == "derive_new")
+	{
+		MakeNewPaths *mnp = nullptr;
+		mnp = new MakeNewPaths(this, _obj.startInstance()->entity());
+		mnp->setPriorStartEnd(_obj.startInstance(), _obj.endInstance());
+		mnp->setBlueprint(&_obj);
+		mnp->show();
 	}
 	
 	if (tag == "view")

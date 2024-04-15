@@ -90,6 +90,8 @@ void MakeNewPaths::setup()
 	top += 0.06;
 	addIntEntry(top, "Maximum torsion flip trial",
 	              &_maxFlipTrial);
+	
+	refresh();
 }
 
 void MakeNewPaths::addIntEntry(float top, const std::string &desc, 
@@ -234,7 +236,7 @@ void MakeNewPaths::prepare()
 		}
 	}
 
-	NewPath new_path(from, to);
+	NewPath new_path(from, to, _blueprint);
 	PlausibleRoute *route = new_path();
 	route->setMaximumMomentumDistance(_maxMomentumDistance);
 	route->setMaximumClashDistance(_maxClashDistance);
@@ -243,6 +245,12 @@ void MakeNewPaths::prepare()
 	RouteExplorer *re = new RouteExplorer(this, route);
 	re->setRestart(_restart);
 	re->show();
+}
+
+void MakeNewPaths::setPriorStartEnd(Instance *start, Instance *end)
+{
+	_fromId = start->id();
+	_toId = end->id();
 }
 
 void MakeNewPaths::sendObject(std::string tag, void *object)

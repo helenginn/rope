@@ -315,7 +315,10 @@ protected:
 	std::atomic<bool> _finish{false};
 
 	void prepareDestination();
-	void getParametersFromBasis();
+	typedef std::function<Motion(Parameter *const &param, 
+	                             ResidueTorsion &rt)> MakeMotion;
+	void getParametersFromBasis(const MakeMotion &make_mot);
+	void prepareParameters();
 
 	AtomGraph *grapherForTorsionIndex(int idx);
 

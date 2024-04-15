@@ -58,6 +58,11 @@ public:
 	PlausibleRoute *toRoute();
 	void housekeeping();
 	
+	const RTPeptideTwist &twists() const
+	{
+		return _twists;
+	}
+	
 	const RTMotion &motions() const
 	{
 		return _motions;

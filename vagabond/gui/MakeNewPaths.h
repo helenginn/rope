@@ -22,7 +22,9 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Responder.h>
 
+class Path;
 class Entity;
+class Instance;
 class TextButton;
 class ChooseHeader;
 
@@ -30,6 +32,13 @@ class MakeNewPaths : public Scene, public Responder<ChooseHeader>
 {
 public:
 	MakeNewPaths(Scene *prev, Entity *entity);
+	
+	void setBlueprint(Path *blueprint)
+	{
+		_blueprint = blueprint;
+	}
+	
+	void setPriorStartEnd(Instance *start, Instance *end);
 
 	virtual void setup();
 	virtual void refresh();
@@ -51,6 +60,7 @@ private:
 	Entity *const _entity;
 	TextButton *_fromButton = nullptr;
 	TextButton *_toButton = nullptr;
+	Path *_blueprint = nullptr;
 
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;

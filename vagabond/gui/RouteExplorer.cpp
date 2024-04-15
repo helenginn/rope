@@ -369,7 +369,6 @@ void RouteExplorer::handleDone()
 	}
 	else if (_first)
 	{
-		_plausibleRoute->clearCustomisation();
 		_first = false;
 	}
 }

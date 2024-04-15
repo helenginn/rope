@@ -18,12 +18,14 @@
 
 #include "NewPath.h"
 #include "PlausibleRoute.h"
+#include "Path.h"
 #include "Entity.h"
 
-NewPath::NewPath(Instance *from, Instance *to)
+NewPath::NewPath(Instance *from, Instance *to, Path *blueprint)
 {
 	_from = from;
 	_to = to;
+	_blueprint = blueprint;
 }
 
 PlausibleRoute *NewPath::operator()()
@@ -31,7 +33,18 @@ PlausibleRoute *NewPath::operator()()
 	Entity *entity = _from->entity();
 	std::vector<Instance *> instances = entity->instances();
 
-	TorsionData prep = entity->makeTorsionDataGroup(true);
+	Polymer *pFrom = static_cast<Polymer *>(_from);
+	std::vector<ResidueTorsion> headers;
+	pFrom->sequence()->addResidueTorsions(headers, false);
+	for (ResidueTorsion &rt : headers)
+	{
+		rt.attachToInstance(_from);
+	}
+
+	size_t num = headers.size();
+	TorsionData prep(num);
+	prep.addHeaders(headers);
+
 	_from->addTorsionsToGroup(prep, rope::RefinedTorsions);
 	_to->addTorsionsToGroup(prep, rope::RefinedTorsions);
 
@@ -47,6 +60,18 @@ PlausibleRoute *NewPath::operator()()
 	}
 
 	PlausibleRoute *pr = new PlausibleRoute(_from, _to, list);
+	
+	if (_blueprint)
+	{
+		RTMotion motions = _blueprint->motions();
+		RTPeptideTwist twists = _blueprint->twists();
+		motions.attachInstance(_from);
+		twists.attachInstance(_from);
+		pr->setMotions(motions);
+		pr->setTwists(twists);
+		pr->setNew(false);
+	}
+
 	return pr;
 }
 
