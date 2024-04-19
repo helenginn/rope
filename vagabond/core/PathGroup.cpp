@@ -53,18 +53,17 @@ PathData *PathGroup::preparePathData()
 	return pd;
 }
 
-Metadata *PathGroup::prepareMetadata()
+Metadata *PathGroup::prepareMetadata(bool force)
 {
 	Metadata *metadata = new Metadata();
 	for (Path *const &path : *this)
 	{
-		if (!path->hasScores())
+		if (!path->hasScores() || force)
 		{
 			PlausibleRoute *pr = path->toRoute();
 			pr->setup();
 			pr->refreshScores();
 			path->cleanupRoute();
-			std::cout << std::endl;
 		}
 		
 		float clash = path->clashScore();
