@@ -81,7 +81,10 @@ void BitIdentifier::housekeeping()
 	if (!_masterSet && _localSet && _instance)
 	{
 		_master = _instance->equivalentMaster(_localId);
-		housekeeping();
+		if (_master)
+		{
+			housekeeping();
+		}
 	}
 }
 
