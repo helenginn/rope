@@ -23,7 +23,8 @@
 
 void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
 {
-	std::map<ResidueId, std::vector<int>> perResidue = dev->perResiduePairs();
+	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
+										{});
 
 	TorsionBasis *basis = seq->torsionBasis();
 	std::vector<AtomBlock> &blocks = seq->blocks();
@@ -95,7 +96,7 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
 		}
 	};
 
-	for_each_residue(perResidue, {}, check_momentum);
+	loop(check_momentum);
 
 	for (float &f : grads)
 	{

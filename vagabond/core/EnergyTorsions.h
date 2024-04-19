@@ -42,12 +42,28 @@ public:
 	~EnergyTorsions();
 	
 	typedef std::function<float(const float &)> Torsion2Energy;
+	
+	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
+	{
+		return _perResidues;
+	}
+
+	const std::vector<Torsion2Energy> &energies()
+	{
+		return _energies;
+	}
+
+	const std::vector<int> &pairs() const
+	{
+		return _pairs;
+	}
 
 	Task<BondSequence *, ActivationEnergy> *
 	energy_task(const std::set<ResidueId> &forResidues);
 private:
 	void prepare(BondSequence *sequence, const RTMotion &motions);
 
+	std::vector<int> _pairs;
 	std::map<ResidueId, std::vector<int>> _perResidues;
 	std::vector<float> _dampeners;
 	std::vector<Torsion2Energy> _energies;
