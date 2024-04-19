@@ -156,9 +156,16 @@ protected:
 			}
 		}
 		
-		virtual void insertIntoQueue(Object &obj)
+		virtual void insertIntoQueue(Object &obj, bool back)
 		{
-			members.push_back(obj);
+			if (back)
+			{
+				members.push_back(obj);
+			}
+			else
+			{
+				members.push_front(obj);
+			}
 		}
 
 		void acquireObjectIfAvailable(Object &obj)
@@ -198,23 +205,14 @@ protected:
 		void pushUnavailableObject(Object &obj)
 		{
 			std::unique_lock<std::mutex> lock(sem.mutex());
-			insertIntoQueue(obj);
+			insertIntoQueue(obj, true);
 		}
 		
-		int pushObject(Object &obj, int *ticket = nullptr)
+		void pushObject(Object &obj, bool back = false)
 		{
 			std::unique_lock<std::mutex> lock(sem.mutex());
-
-			if (ticket != nullptr)
-			{
-				*ticket = ++_id;
-			}
-
-			int mine = _id;
-			insertIntoQueue(obj);
+			insertIntoQueue(obj, back);
 			sem.signal_one();
-			
-			return mine;
 		}
 	};
 
@@ -230,7 +228,7 @@ protected:
 		TaskPool();
 
 		size_t number_ready();
-		virtual void insertIntoQueue(BaseTask *&task);
+		virtual void insertIntoQueue(BaseTask *&task, bool back);
 	};
 
 	template <class Object>

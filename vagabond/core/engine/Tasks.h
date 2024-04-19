@@ -53,11 +53,15 @@ public:
 		}
 	}
 	
-	void addTask(BaseTask *bt)
+	void addTask(BaseTask *bt, bool back = true)
 	{
 		if (!bt) return;
 
-		if (bt->ready())
+		if (bt->ready() && back)
+		{
+			_pool.pushObject(bt);
+		}
+		else if (bt->ready() && !back)
 		{
 			_pool.pushObject(bt);
 		}
