@@ -19,3 +19,4 @@
 #include "Task.h"
 #include <string>
 
+bool BaseTask::verbose = false;

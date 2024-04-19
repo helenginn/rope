@@ -21,6 +21,7 @@
 
 #include <functional>
 #include <iostream>
+#include <mutex>
 #include <vector>
 #include <list>
 
@@ -58,6 +59,11 @@ public:
 		{
 			std::cout << "Warning: running before ready" << std::endl;
 			return {};
+		}
+
+		if (BaseTask::verbose)
+		{
+			std::cout << "Running " << name << std::endl;
 		}
 
 		output = todo(input);
@@ -122,7 +128,7 @@ public:
 	bool supplySignal()
 	{
 		int result = ++signals;
-		int triggered = (result == expected);
+		int triggered = (result >= at_least && result == expected);
 		
 		if (total > expected && result == total)
 		{
@@ -149,7 +155,9 @@ public:
 
 	Input input{};
 	Output output{};
+	std::mutex _mutex;
 };
+
 
 template <typename Input, typename Output>
 class FailableTask : public Task<Input, Output>
