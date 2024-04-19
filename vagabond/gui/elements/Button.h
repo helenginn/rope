@@ -34,6 +34,11 @@ public:
 		_returnJob = job;
 	}
 	
+	const std::function<void()> &returnJob() const
+	{
+		return _returnJob;
+	}
+	
 	void *returnObject()
 	{
 		return _object;
@@ -66,6 +71,8 @@ public:
 
 	virtual void unMouseOver();
 	virtual bool mouseOver();
+	
+	void reaction(std::string tag = "");
 
 	virtual void click(bool left = true);
 

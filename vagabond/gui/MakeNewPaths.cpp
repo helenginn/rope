@@ -73,10 +73,10 @@ void MakeNewPaths::setup()
 	top += 0.10;
 	
 	TickBoxes *tb = new TickBoxes(this, this);
+	tb->setReturnJob([this]() { _restart = !_restart; });
 	tb->addOption("After refinement, save and auto-restart", 
 	              "auto_restart", true);
 	tb->arrange(0.2, top, 0.5, top + 0.5);
-	tb->setReturnJob([this]() { _restart = !_restart; });
 	addObject(tb);
 
 	top += 0.06;

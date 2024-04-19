@@ -21,7 +21,7 @@
 #include "ImageButton.h"
 
 TickBoxes::TickBoxes(Scene *scene, ButtonResponder *responder,
-                     const std::string &main_tag) : Box()
+                     const std::string &main_tag) : Box(), Button(responder)
 {
 	_scene = scene;
 	_responder = responder;
@@ -186,7 +186,8 @@ void TickBoxes::buttonPressed(std::string tag, Button *button)
 	toggle(tag);
 	
 	std::string response_tag = (_tag.length() > 0 ? _tag + "_" + tag : tag);
-	_responder->buttonPressed(response_tag, this);
+	
+	reaction(response_tag);
 }
 
 TickBoxes::Option::Option(TickBoxes *boxes, const std::string &str, 
