@@ -17,8 +17,10 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ParamSet.h"
+#include "ResidueId.h"
 #include "PlausibleRoute.h"
 #include "BondCalculator.h"
+#include "GradientTerm.h"
 #include "BondSequence.h"
 #include "Polymer.h"
 #include "TorsionData.h"
@@ -111,6 +113,10 @@ auto cycle_and_check(PlausibleRoute *me)
 {
 	return [me]()
 	{
+		if (!me->doingSides()) 
+		{
+			return;
+		}
 		int standard = me->nudgeCount();
 		float oldsc = me->routeScore(standard);
 		bool mains = !me->doingSides();
@@ -184,15 +190,25 @@ void PlausibleRoute::prepareJobs()
 	{
 		flipTorsionCycles(large_sides);
 	};
+	
+	auto check_gradients = [this]()
+	{
+		bool good = true;
+		while (good && !doingSides())
+		{
+			good = applyGradients();
+		}
+	};
 
 	only_once flip_once(flip_main_chain);
-	
 	_tasks.push_back(flip_once);
+	
+	_tasks.push_back(check_gradients);
 	_tasks.push_back(cycle_and_check(this));
 	
 //	if (_maxFlipTrial > 0)
 	{
-		_tasks.push_back(flip_side_chain);
+//		_tasks.push_back(flip_side_chain);
 	}
 }
 
@@ -223,16 +239,17 @@ void PlausibleRoute::setTargets()
 	updateAtomFetch(_resources.sequences);
 	updateAtomFetch(_mainChainSequences);
 	updateAtomFetch(_hydrogenFreeSequences);
-	preparePairwiseDeviations();
+	prepareEnergyTerms();
 	prepareTorsionFetcher(_mainChainSequences);
 	prepareTorsionFetcher(_hydrogenFreeSequences);
 }
 
-float PlausibleRoute::routeScore(int steps, bool pairwise)
+PlausibleRoute::CalcOptions 
+PlausibleRoute::calcOptions(const CalcOptions &add_options,
+                                        const CalcOptions &subtract_options)
 {
-	clearTickets();
-	_resources.calculator->holdHorses();
-	CalcOptions options = pairwise ? Pairwise : None;
+	CalcOptions options = Pairwise;
+
 	if (!doingClashes() && !doingSides())
 	{
 		options = (CalcOptions)(options | CoreChain);
@@ -241,7 +258,86 @@ float PlausibleRoute::routeScore(int steps, bool pairwise)
 	{
 		options = (CalcOptions)(options | NoHydrogens);
 	}
+	if (doingClashes())
+	{
+		options = (CalcOptions)(options | Pairwise | VdWClashes);
+	}
+	
+	options = Route::CalcOptions(options & (~subtract_options));
+	
+	return options;
+}
 
+bool PlausibleRoute::applyGradients()
+{
+	GradientPath *path = gradients();
+
+	float prev_score = FLT_MAX;
+	float first_score = routeScore(nudgeCount());
+	int count = 0;
+	while (true)
+	{
+		float frac = 0.01;
+
+		int n = 0;
+		float score = routeScore(nudgeCount());
+		count++;
+		if (score > prev_score - 1e-6)
+		{
+			break;
+		}
+		prev_score = score;
+		for (Floats &sines : path->grads)
+		{
+			int p = path->motion_idxs[n];
+			n++;
+			if (p >= 0 && p < motionCount())
+			{
+				Parameter *param = parameter(p);
+
+				for (int i = 0; i < sines.size(); i++)
+				{
+					motion(p).wp._grads[i] += sines[i] * frac;
+				}
+			}
+		}
+		
+		if (Route::_finish)
+		{
+			return false;
+		}
+	}
+	
+	std::cout << "Count: " << count << std::endl;
+	
+	postScore(prev_score);
+	path->destroy();
+	delete path;
+	return prev_score < first_score;
+}
+
+GradientPath *PlausibleRoute::gradients(const CalcOptions &add_options,
+                                const CalcOptions &subtract_options)
+{
+	CalcOptions options = calcOptions(add_options, subtract_options);
+	
+	int order = 2;
+	if (doingCubic()) order = 2;
+
+	return submitGradients(options, order);
+}
+
+
+
+float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
+                                 const CalcOptions &subtract_options)
+{
+	clearTickets();
+	_resources.calculator->holdHorses();
+	
+	CalcOptions options = calcOptions(add_options, subtract_options);
+
+	int n = 0;
 	for (size_t i = 0; i < steps; i++)
 	{
 		float show = (rand() / (double)RAND_MAX < 0.01);
@@ -249,7 +345,8 @@ float PlausibleRoute::routeScore(int steps, bool pairwise)
 		
 		if (!_updateAtoms) show = false; // don't show
 
-		submitJob(frac, show, options);
+		submitJob(frac, show, options, n);
+		n++;
 	}
 	
 	_resources.calculator->releaseHorses();
@@ -366,7 +463,7 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 	
 	_bestScore = routeScore(nudgeCount());
 	
-	int runs = doingCubic() ? 20 : 10;
+	int runs = doingCubic() ? 10 : 10;
 	
 	_simplex->setMaxRuns(runs);
 	_simplex->chooseStepSizes(steps);
@@ -425,15 +522,6 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 	int changed = 0;
 	startTicker(message);
 
-	auto convert_to_indices = [this](ParamSet &set) -> OpSet<int>
-	{
-		OpSet<int> indices = set.convert_to<int>([this](Parameter *p)
-		                                         {
-			                                        return indexOfParameter(p);
-		                                         });
-		return indices;
-	};
-
 	_ids.clear();
 
 	for (size_t j = 0; j < indices.size(); j++)
@@ -457,20 +545,8 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 		
 		OpSet<int> single;
 		single.insert(indexOfParameter(centre));
-		if (doingClashes() && false)
-		{
-//			ParamSet related = centre->relatedParameters();
-//			single = convert_to_indices(related);
-		}
 
 		single.filter(validate);
-		/*
-		for (const int &idx : single)
-		{
-			std::cout << idx << "->" << parameter(idx) << ", ";
-		}
-		std::cout << std::endl;
-		*/
 		
 		if (single.size() == 0)
 		{
@@ -484,16 +560,6 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 			int &lock = motion(*single.begin()).locked;
 			lock++;
 		}
-		/*
-		else if (result && single.size() == 1)
-		{
-			int &lock = motion(*single.begin()).locked;
-			if (lock > 0)
-			{
-				std::cout << "Editing locked param " << lock << std::endl;
-			}
-		}
-		*/
 		
 		changed += (result ? 1 : 0);
 	}
@@ -579,7 +645,7 @@ bool PlausibleRoute::flipTorsion(const ValidateParam &validate, int idx)
 	{
 		setFlips(idxs, putatives[i]);
 
-		float candidate = routeScore(flipNudgeCount(), pairwise);
+		float candidate = routeScore(flipNudgeCount(), None, Pairwise);
 
 		if (candidate < _bestScore - 1e-3)
 		{
@@ -600,10 +666,10 @@ bool PlausibleRoute::flipTorsions(const ValidateParam &validate)
 	startTicker("Flipping torsions");
 	bool changed = false;
 
-	bool pairwise = doingClashes();
-	if (pairwise) return false;
+	if (doingClashes()) return false;
+	if (_maxFlipTrial == 0) return false;
 
-	_bestScore = routeScore(flipNudgeCount(), pairwise);
+	_bestScore = routeScore(flipNudgeCount());
 	float min = doingClashes() ? 10 : 90;
 	
 	for (size_t i = 0; i < motionCount(); i++)
@@ -643,7 +709,7 @@ void PlausibleRoute::flipTorsionCycle(const ValidateParam &validate)
 		count++;
 	}
 
-	_bestScore = routeScore(flipNudgeCount(), true);
+	_bestScore = routeScore(flipNudgeCount(), None, Pairwise);
 	postScore(_bestScore);
 }
 
@@ -777,9 +843,15 @@ void PlausibleRoute::refreshScores()
 
 	_jobLevel = 4;
 	_clash = routeScore(nudgeCount());
+	_vdwEnergy = _activationEnergy;
+	routeScore(nudgeCount());
+	_torsionEnergy = _activationEnergy;
+
 	std::cout << "Minimise momentum score " << _momentum << std::endl;
 	std::cout << "Minimise clash score " << _clash << std::endl;
-	std::cout << "Activation energy " << _activationEnergy << std::endl;
+	std::cout << "VdW energy " << _vdwEnergy << std::endl;
+
+	_activationEnergy = _vdwEnergy;
 	
 	_gotScores = true;
 }
