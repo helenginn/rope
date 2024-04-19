@@ -63,6 +63,7 @@ struct AtomBlock
 	glm::vec3 inherit;
 
 	int torsion_idx;
+	float torsion = 0;
 	
 	/* rotation and translation to move the atom into the right place;
 	 * previous bond is in Z direction */
