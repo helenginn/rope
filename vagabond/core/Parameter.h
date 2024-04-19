@@ -84,6 +84,7 @@ public:
 	}
 
 	std::set<Parameter *> relatedParameters(bool close = false) const;
+	std::set<Parameter *> sisters() const;
 
 public:
 	bool _refined = false;

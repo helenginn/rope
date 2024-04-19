@@ -33,7 +33,8 @@ public:
 	
 	friend std::ostream &operator<<(std::ostream &ss, const ParamSet &set);
 
-	void expandNeighbours();
+	void expandNeighbours(bool close = false);
+	void expandToSisters();
 	
 	void excludeBeyond(int residue_num, int direction);
 	ParamSet terminalSubset() const;
