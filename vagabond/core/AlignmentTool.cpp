@@ -129,7 +129,7 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor, size_t jumps)
 	BondSequenceHandler *const &sequences = _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(0);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
 	
 	Flag::Extract extract = Flag::Extract(Flag::AtomVector);
 
@@ -140,7 +140,7 @@ Result *AlignmentTool::resultForAnchor(Atom *anchor, size_t jumps)
 	
 	_resources.tasks->addTask(first_hook);
 	
-	Result *result = calculator->acquireResult();
+	Result *result = calculator->acquireObject();
 
 	return result;
 }

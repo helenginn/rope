@@ -54,7 +54,7 @@ int LoopCorrelation::submitCorrelJob(const std::vector<float> &vals) const
 	CorrelationHandler *const &correlation = _resources.correlations;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
 
 	Flag::Calc calc;
 	calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions | Flag::DoSuperpose);
@@ -102,7 +102,7 @@ float LoopCorrelation::scoreFor(Conformer *conf)
 {
 	submitCorrelJob(conf->values());
 
-	Result *r = _loopy->_resources.calculator->acquireResult();
+	Result *r = _loopy->_resources.calculator->acquireObject();
 	r->transplantPositions();
 
 	return r->correlation;

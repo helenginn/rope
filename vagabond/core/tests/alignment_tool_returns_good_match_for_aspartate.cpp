@@ -34,7 +34,7 @@ int main()
 	Result *result = nullptr;
 	double devs[2];
 
-	while ((result = calculator.acquireResult()))
+	while ((result = calculator.acquireObject()))
 	{
 		for (size_t i = 0; i < 2; i++)
 		{

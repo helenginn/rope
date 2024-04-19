@@ -81,7 +81,7 @@ int VagabondPositions::submitJob(bool superpose)
 	BondSequenceHandler *const &sequences = _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(_ticket);
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
 
@@ -110,7 +110,7 @@ Result *VagabondPositions::submitJobAndRetrieve(bool superpose)
 {
 	int ticket = submitJob(superpose);
 
-	Result *r = _resources.calculator->acquireResult();
+	Result *r = _resources.calculator->acquireObject();
 	r->transplantPositions(_displayTargets);
 	return r;
 }

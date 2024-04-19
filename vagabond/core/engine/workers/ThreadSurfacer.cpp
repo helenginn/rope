@@ -33,7 +33,7 @@ void ThreadSurfacer::sendToNext(Job *job, AreaMeasurer *measurer)
 
 	Result *r = job->result;
 	job->destroy();
-	calc->submitResult(r);
+	calc->submit(r);
 }
 
 void ThreadSurfacer::start()

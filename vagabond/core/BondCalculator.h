@@ -19,7 +19,8 @@
 #ifndef __vagabond__BondCalculator__
 #define __vagabond__BondCalculator__
 
-#include "engine/Handler.h"
+#include "Bin.h"
+#include "Result.h"
 
 template <typename I, typename O> class Task;
 
@@ -30,24 +31,9 @@ template <typename I, typename O> class Task;
  * \image html vagabond/doc/bondcalculator_class_connections.png width=1200px
  */
 
-class BondCalculator : public Handler
+class BondCalculator : public Bin<Result>
 {
-public:
-	BondCalculator();
-	~BondCalculator();
-	
-	void submitResult(Result *result);
-	void submitResult(const Result &r);
-	
-	void holdHorses();
-	void releaseHorses();
-	
-	Task<Result, void *> *submitResult(int ticket);
-	
-	Result *emptyResult();
-	Result *acquireResult();
-private:
-	ExpectantPool<Result *> _resultPool;
+
 };
 
 #endif

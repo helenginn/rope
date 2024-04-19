@@ -407,7 +407,7 @@ void Loopy::fCalcMap()
 	});
 
 	/* prepare end result */
-	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(_ticket);
 
 	/* get list of elements from our allocated resources */
 	std::map<std::string, int> list = _resources.sequences->elementList();
@@ -466,7 +466,7 @@ void Loopy::fCalcMap()
 
 	_resources.tasks->addTask(first_hook);
 
-	Result *r = calculator->acquireResult();
+	Result *r = calculator->acquireObject();
 	AtomMap *map = r->map;
 
 	ArbitraryMap *partial = (*map)();

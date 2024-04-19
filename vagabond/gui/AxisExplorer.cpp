@@ -108,7 +108,7 @@ void AxisExplorer::submitJobAndRetrieve(float prop, bool tear)
 {
 	submitJob(prop, tear);
 
-	Result *r = _resources.calculator->acquireResult();
+	Result *r = _resources.calculator->acquireObject();
 	r->transplantPositions(_displayTargets);
 	
 	if (_latest)

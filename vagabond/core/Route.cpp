@@ -101,7 +101,7 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options)
 	(hydrogens ? _resources.sequences : _hydrogenFreeSequences);
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(0);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
 	if (show || !pairwise)
