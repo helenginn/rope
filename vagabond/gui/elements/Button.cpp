@@ -21,12 +21,21 @@ void Button::click(bool left)
 
 	_left = left;
 	setHighlighted(false);
-	
-	if (!_returnJob)
+	reaction();
+}
+
+void Button::reaction(std::string tag)
+{	
+	if (tag == "")
 	{
-		_sender->buttonPressed(_tag, this);
+		tag = _tag;
 	}
-	else
+
+	if (!_returnJob && _sender)
+	{
+		_sender->buttonPressed(tag, this);
+	}
+	else if (_returnJob)
 	{
 		_returnJob();
 	}
