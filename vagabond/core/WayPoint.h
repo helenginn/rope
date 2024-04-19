@@ -27,6 +27,7 @@ using nlohmann::json;
 struct WayPoints
 {
 	WayPoints();
+	WayPoints(int order);
 
 	float interpolatedProgression(float frac);
 	
