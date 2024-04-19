@@ -27,7 +27,7 @@ Handler::TaskPool::TaskPool()
 
 }
 
-void Handler::TaskPool::insertIntoQueue(BaseTask *&task)
+void Handler::TaskPool::insertIntoQueue(BaseTask *&task, bool back)
 {
 	std::list<BaseTask *>::iterator it = this->members.begin();
 
