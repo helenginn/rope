@@ -38,22 +38,23 @@ float obedient_sin(const float &angle)
 
 WayPoints::WayPoints()
 {
+	
+}
+
+WayPoints::WayPoints(int order)
+{
+	_grads.resize(order);
+	for (float &f : _grads)
+	{
+		f = 0;//rand() / (double)RAND_MAX;
+	}
 
 }
 
 float WayPoints::interpolatedProgression(float frac)
 {
-	float s = 0;
-	float t = 0;
-	float x0 = _grads[0];
-	float x1 = _grads[1] - _grads[0];
-	const float &x = frac;
-	
-	float y = ((t - s) * x + s + (x0 + s - t) * (x - 1) * (x - 1) * x
-	           + (x1 + s - t) * (x - 1) * x*x);
-	
 	float tot = 0;
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < _grads.size(); i++)
 	{
 		float limit = M_PI * (i + 1);
 		float f = frac * limit;
@@ -62,7 +63,6 @@ float WayPoints::interpolatedProgression(float frac)
 	}
 
 	return tot;
-	return y;
 
 }
 
