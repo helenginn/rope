@@ -86,7 +86,7 @@ int RoughLoop::submitJob(bool show, const std::vector<float> &vals)
 	BondSequenceHandler *const &sequences = _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
 	Task<BondSequence *, Deviation> *dev = nullptr;
 
 	Flag::Calc calc;
@@ -129,7 +129,7 @@ int RoughLoop::sendJob(const std::vector<float> &vals)
 
 float RoughLoop::getResult(int *job_id)
 {
-	Result *r = _resources.calculator->acquireResult();
+	Result *r = _resources.calculator->acquireObject();
 
 	if (!r)
 	{

@@ -56,7 +56,7 @@ int Warp::submitJob(bool show, const std::vector<float> &vals)
 	BondSequenceHandler *const &sequences = _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(_ticket);
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
 	

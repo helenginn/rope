@@ -70,7 +70,7 @@ StructureModification::submitSingleAxisJob(float prop, float ticket,
 	BondSequenceHandler *const &sequences = _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
 
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions |
 	                             Flag::DoSuperpose);
@@ -97,7 +97,7 @@ void StructureModification::retrieve()
 	while (true)
 	{
 		BondCalculator *calc = _resources.calculator;
-		Result *r = calc->acquireResult();
+		Result *r = calc->acquireObject();
 
 		if (r == nullptr)
 		{

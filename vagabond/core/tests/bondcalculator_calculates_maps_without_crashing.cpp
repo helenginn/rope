@@ -41,7 +41,7 @@ int main()
 	
 	for (size_t i = 0; i < num; i++)
 	{
-		result = calculator.acquireResult();
+		result = calculator.acquireObject();
 		if (result == nullptr)
 		{
 			std::cout << "Prematurely returned null result" << std::endl;

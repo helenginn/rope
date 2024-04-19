@@ -46,7 +46,7 @@ int FilterConformer::submitJob(const std::vector<float> &vals) const
 	BondSequenceHandler *const &sequences = _resources.sequences;
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
 	Task<BondSequence *, Deviation> *dev = nullptr;
 
 	Flag::Calc calc;
@@ -81,7 +81,7 @@ bool FilterConformer::operator()(Conformer *active, float proximity_limit) const
 {
 	submitJob(active->values());
 
-	Result *r = _resources.calculator->acquireResult();
+	Result *r = _resources.calculator->acquireObject();
 	r->transplantPositions();
 
 	float clash = r->deviation;

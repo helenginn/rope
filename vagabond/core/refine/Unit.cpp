@@ -65,7 +65,7 @@ Result *Unit::submitJobAndRetrieve(const std::vector<float> &all)
 	_setter(params);
 	_info->bind_parameters(_parameters);
 	submitJob();
-	Result *r = _resources.calculator->acquireResult();
+	Result *r = _resources.calculator->acquireObject();
 	return r;
 }
 
@@ -78,7 +78,7 @@ void Unit::submitJob()
 	calculator->holdHorses();
 
 	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->submitResult(_ticket);
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(_ticket);
 	
 	for (Refine::Calc &calc : _info->subunits)
 	{
@@ -106,7 +106,7 @@ void Unit::retrieveJobs()
 	BondCalculator *calc = _resources.calculator;
 	while (true)
 	{
-		Result *r = calc->acquireResult();
+		Result *r = calc->acquireObject();
 
 		if (r == nullptr)
 		{
