@@ -238,6 +238,7 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		if (!_parent)
 		{
 			m->addOption("Cluster paths", "cluster_paths");
+			m->addOption("Redo metrics", "redo_metrics");
 		}
 		m->setup(button);
 		setModal(m);
@@ -246,6 +247,12 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	if (tag == "menu_cluster_paths")
 	{
 		prepareSpace();
+	}
+	
+	if (tag == "menu_redo_metrics")
+	{
+		Metadata *metadata = _allPaths.prepareMetadata(true);
+		delete metadata;
 	}
 	
 	ListView::buttonPressed(tag, button);

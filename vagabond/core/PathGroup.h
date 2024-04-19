@@ -47,7 +47,7 @@ public:
 	}
 
 	virtual PathData *preparePathData();
-	virtual Metadata *prepareMetadata();
+	virtual Metadata *prepareMetadata(bool force = false);
 private:
 
 };
