@@ -27,9 +27,9 @@
 
 struct Motion
 {
-	WayPoints wp;
-	bool flip;
-	float angle;
+	WayPoints wp{};
+	bool flip = false;
+	float angle = 0;
 	int locked = 0;
 	
 	struct Twist
@@ -45,7 +45,7 @@ struct Motion
 	
 	Twist twist;
 	
-	float workingAngle()
+	float workingAngle() const
 	{
 		if (!flip) return angle;
 		
