@@ -171,7 +171,8 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 {
 	AtomBlock &b = _blocks[idx];
 
-	float t = fetchTorsion(_blocks[idx].torsion_idx, get, fetch_torsion);
+	float t = fetchTorsion(b.torsion_idx, get, fetch_torsion);
+	b.torsion = t;
 
 	if (b.silenced)
 	{
