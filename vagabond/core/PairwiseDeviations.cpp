@@ -20,6 +20,7 @@
 #include "engine/ElementTypes.h"
 #include "engine/Task.h"
 #include "BondSequence.h"
+#include "LoopRoundResidues.h"
 #include <gemmi/elem.hpp>
 
 PairwiseDeviations::PairwiseDeviations(BondSequence *sequence,
@@ -34,23 +35,8 @@ PairwiseDeviations::PairwiseDeviations(BondSequence *sequence,
 
 PairwiseDeviations::~PairwiseDeviations()
 {
+	delete [] _reference;
 
-}
-
-template <typename Job>
-auto do_on_each_block(const std::vector<AtomBlock> &blocks,
-                      const PairwiseDeviations::AtomFilter &filterIn,
-                      const Job &job)
-{
-	for (const AtomBlock &block : blocks)
-	{
-		Atom *const &atom = block.atom;
-
-		if (atom == nullptr || !block.flag) { continue; }
-		if (filterIn && !filterIn(atom)) { continue; }
-
-		job(block);
-	}
 }
 
 void PairwiseDeviations::prepare(BondSequence *seq)
@@ -165,86 +151,57 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		}
 	}
 	
-	delete [] scratch;
+	_reference = scratch;
 }
 
-template <typename Job>
-void for_each_residue(const std::map<ResidueId, std::vector<int>> &perResidues, 
-                      const std::set<ResidueId> &forResidues, const Job &job)
-{
-	if (forResidues.size() == 0)
-	{
-		for (auto it = perResidues.begin(); it != perResidues.end(); it++)
-		{
-			const std::vector<int> &pairs = it->second;
-			job(pairs);
-		}
-	}
-	else
-	{
-		for (const ResidueId &id : forResidues)
-		{
-			const std::vector<int> &pairs = perResidues.at(id);
-			job(pairs);
-		}
-	}
-};
-
-
-auto simple(const std::map<ResidueId, std::vector<int>> &perResidues, 
-            size_t memSize, const PairwiseDeviations::AtomFilter &filter, 
+auto simple(float frac, const std::map<ResidueId, std::vector<int>> &perResidue, 
+            size_t memSize, const glm::vec3 *reference, 
             std::set<ResidueId> forResidues)
 {
-	return [memSize, filter, &perResidues, forResidues]
+	return [memSize, frac, &perResidue, reference, forResidues]
 	(BondSequence *seq) -> Deviation
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
 		glm::vec3 *scratch = new glm::vec3[memSize];
-
+		
 		int n = 0;
 		auto collect_targets = [scratch, /*&atoms,*/ &n](const AtomBlock &block)
 		{
 			scratch[n] = block.my_position();
-			scratch[n+1] = block.target;
-			n += 2;
+//			glm::vec3 orig = block.atom->otherPosition("target");
+//			glm::vec3 moving = block.atom->otherPosition("moving");
+//			scratch[n + 1] = orig;
+//			scratch[n + 2] = orig + moving;
+			n += 1;
 		};
 
-		do_on_each_block(blocks, filter, collect_targets);
+		do_on_each_block(blocks, {}, collect_targets);
 
 		float total = 0;
 		float count = 0;
+		
+		target_actual_distances lookup(reference, scratch);
 
-		auto check_momentum = [&scratch, &total, &count]
+		auto check_momentum = [&frac, &lookup, &total, &count]
 		(const std::vector<int> &pairs)
 		{
 			const int *ptr = &pairs[0];
 			for (int i = 0; i < pairs.size(); i += 2)
 			{
-				int p = ptr[i] * 2;
-				int q = ptr[i + 1] * 2;
+				int p = ptr[i];
+				int q = ptr[i + 1];
+				
+				float targdist = lookup.target(p, q, frac);
+				float actualdist = lookup.actual(p, q);
 
-				const glm::vec3 &apos = scratch[p];
-				const glm::vec3 &atarg = scratch[p + 1];
+				float dist = (targdist - actualdist);
 
-				const glm::vec3 &bpos = scratch[q];
-				const glm::vec3 &btarg = scratch[q + 1];
-
-				glm::vec3 posdiff = apos - bpos;
-				float difflength = glm::length(posdiff);
-
-				glm::vec3 targdiff = atarg - btarg;
-
-				float targdist = glm::length(targdiff);
-				float weight = 1 / (targdist);
-
-				float dist = fabs(targdist - difflength);
-
-				total += dist * dist * weight;
-				count += weight;
+				total += dist * dist;
+				count += 1;
 			}
 		};
 
-		for_each_residue(perResidues, forResidues, check_momentum);
+		for_each_residue(perResidue, forResidues, check_momentum);
 		
 		total /= count;
 		total = sqrt(total);
@@ -256,7 +213,7 @@ auto simple(const std::map<ResidueId, std::vector<int>> &perResidues,
 };
 
 auto clash(const std::map<ResidueId, std::vector<int>> &perResidues, 
-           size_t memSize, const PairwiseDeviations::AtomFilter &filter,
+           size_t memSize, const AtomFilter &filter,
            std::set<ResidueId> forResidues)
 {
 	return [memSize, filter, &perResidues, forResidues]
@@ -274,6 +231,7 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
 		ClashInfo *scratch = new ClashInfo[memSize / 2];
 		long double total = 0;
 		float count = 0;
+		float atom_num = 0;
 
 		int n = 0;
 		auto collect_targets = [scratch, &n](const AtomBlock &block)
@@ -288,7 +246,7 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
 
 		do_on_each_block(blocks, filter, collect_targets);
 
-		auto check_clashes = [&scratch, &total, &count]
+		auto check_clashes = [&scratch, &atom_num, &total, &count]
 		(const std::vector<int> &pairs)
 		{
 			for (int i = 0; i < pairs.size(); i += 2)
@@ -322,6 +280,8 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
 				total += potential * weight;
 				count ++;
 			};
+
+			atom_num ++;
 		};
 		
 		for_each_residue(perResidues, forResidues, check_clashes);
@@ -329,15 +289,18 @@ auto clash(const std::map<ResidueId, std::vector<int>> &perResidues,
 		delete [] scratch;
 		
 		total /= count;
+		total *= atom_num;
 		
 		return {(float)total};
 	};
 };
 
 Task<BondSequence *, Deviation> *
-PairwiseDeviations::momentum_task(const std::set<ResidueId> &forResidues)
+PairwiseDeviations::momentum_task(float frac, 
+                                  const std::set<ResidueId> &forResidues)
 {
-	auto return_deviation = simple(_perResidue, _memSize, _filter, forResidues);
+	auto return_deviation = simple(frac, _perResidue, _memSize, 
+	                               _reference, forResidues);
 	auto *task = new Task<BondSequence *, Deviation>(return_deviation);
 	return task;
 }

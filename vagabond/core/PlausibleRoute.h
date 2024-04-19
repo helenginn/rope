@@ -45,7 +45,8 @@ public:
 	void setTargets();
 	
 	virtual void prepareForAnalysis();
-	float routeScore(int steps, bool pairwise = true);
+	float routeScore(int steps, const CalcOptions &add_options = None,
+	                 const CalcOptions &sub_options = None);
 
 	typedef std::function<bool(int idx)> ValidateParam;
 	typedef std::function<void()> Task;
@@ -135,6 +136,13 @@ private:
 
 	void prepareAnglesForRefinement(const std::vector<int> &idxs);
 	void prepareTorsionFetcher(BondSequenceHandler *handler);
+
+	CalcOptions calcOptions(const CalcOptions &add_options,
+	                  const CalcOptions &subtract_options);
+
+	bool applyGradients();
+	GradientPath *gradients(const CalcOptions &add_options = None,
+	                        const CalcOptions &subtract_options = None);
 
 	virtual void cycle();
 

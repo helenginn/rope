@@ -28,6 +28,8 @@
 #include "BondSequence.h"
 #include "BondCalculator.h"
 #include "PairwiseDeviations.h"
+#include "EnergyTorsions.h"
+#include "GradientTerm.h"
 #include "function_typedefs.h"
 
 #include "matrix_functions.h"
@@ -50,6 +52,7 @@ Route::~Route()
 	delete _pwMain;
 	delete _pwHeavy;
 	delete _pwEvery;
+	delete _etHeavy;
 }
 
 void Route::setup()
@@ -78,12 +81,93 @@ float Route::submitJobAndRetrieve(float frac, bool show)
 	return ret;
 }
 
-void Route::submitJob(float frac, bool show, const CalcOptions &options)
+GradientPath *Route::submitGradients(const CalcOptions &options, int order)
 {
-	_ticket++;
+	int steps = (order + 1) * 2;
+
+	Bin<GradientPath> big_bin;
+	big_bin.holdHorses();
+
+	BondSequenceHandler *sequences = _mainChainSequences;
+	PairwiseDeviations *pwMain = _pwMain;
+
+	Task<GradientPath, void *> *big_submission = big_bin.actOfSubmission(0);
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+	// do not allow to complete unless all steps 
+
+	std::vector<int> indices;
+	std::vector<int> motion_idxs;
+
+	std::vector<AtomBlock> &blocks = sequences->sequence()->blocks();
+	TorsionBasis *basis = sequences->torsionBasis();
+
+	for (size_t i = 0; i < blocks.size(); i++)
+	{
+		if (blocks[i].torsion_idx < 0) { continue; }
+		int tidx = blocks[i].torsion_idx;
+
+		Parameter *p = basis->parameter(tidx);
+		if (p->isConstrained())
+		{
+			continue;
+		}
+
+		indices.push_back(i);
+		motion_idxs.push_back(indexOfParameter(p));
+	}
+
+	big_submission->input.grads.resize(indices.size());
+	big_submission->input.motion_idxs = motion_idxs;
+	big_submission->at_least = (steps - 1) * indices.size();
+
+	for (size_t i = 0; i < steps; i++)
+	{
+		if (i == 0) continue;
+
+		float frac = i / (float)steps;
+
+		BaseTask *first_hook = nullptr;
+		CalcTask *final_hook = nullptr;
+		sequences->calculate(calc, {frac}, &first_hook, &final_hook);
+		Task<BondSequence *, void *> *let_go = sequences->letGo();
+		
+		for (int j = 0; j < indices.size(); j++)
+		{
+			int b_idx = indices[j];
+			int g_idx = j;
+			auto calc_term = [order, frac, g_idx, b_idx, pwMain]
+			(BondSequence *seq) -> GradientTerm
+			{
+				GradientTerm term(order, frac, g_idx, b_idx);
+				term.calculate(seq, pwMain);
+				return term;
+			};
+			
+			auto make_term = new Task<BondSequence *, GradientTerm>
+			(calc_term, "calculate gradient term");
+
+			final_hook->follow_with(make_term);
+			final_hook->follow_with(let_go);
+			make_term->follow_with(big_submission);
+			make_term->must_complete_before(let_go);
+		}
+
+		_resources.tasks->addTask(first_hook);
+	}
+
+	big_bin.releaseHorses();
+	GradientPath *r = big_bin.acquireObject();
+	return r;
+}
+
+void Route::submitJob(float frac, bool show, const CalcOptions &options, 
+                      int ticket)
+{
 	bool pairwise = (options & Pairwise);
 	bool coreChain = (options & CoreChain);
 	bool hydrogens = !(options & NoHydrogens);
+	bool torsion_energies = (options & TorsionEnergies);
+	bool vdw_clashes = (options & VdWClashes);
 
 	Flag::Extract gets = !pairwise ? Flag::Deviation : Flag::NoExtract;
 	if (show)
@@ -119,12 +203,12 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options)
 	if (pairwise)
 	{
 		std::set<ResidueId> empty;
-		if (!doingClashes())
+		if (!vdw_clashes)
 		{
 			PairwiseDeviations *chosen = doingSides() ? _pwHeavy : _pwMain;
 			Task<BondSequence *, Deviation> *task = nullptr;
 
-			task = chosen->momentum_task(doingSides() ? _ids : empty);
+			task = chosen->momentum_task(frac, doingSides() ? _ids : empty);
 			final_hook->follow_with(task);
 			task->must_complete_before(let);
 			task->follow_with(submit_result);
@@ -139,9 +223,18 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options)
 			task->follow_with(submit_result);
 		}
 
+		// torsion energies
+		if (torsion_energies && hydrogens)
+		{
+			Task<BondSequence *, ActivationEnergy> *task = nullptr;
+			task = _etHeavy->energy_task(doingSides() ? _ids : empty);
+			final_hook->follow_with(task);
+			task->must_complete_before(let);
+			task->follow_with(submit_result);
+		}
 	}
 
-	_ticket2Point[0] = 0;
+	_ticket2Point[ticket] = 0;
 	_point2Score[0] = Score{};
 	
 	_resources.tasks->addTask(first_hook);
@@ -234,21 +327,6 @@ void Route::bestGuessTorsions()
 	}
 }
 
-void Route::bringTorsionsToRange()
-{
-	for (size_t i = 0; i < motionCount(); i++)
-	{
-		while (destination(i) >= 180)
-		{
-			destination(i) -= 360;
-		}
-		while (destination(i) < -180)
-		{
-			destination(i) += 360;
-		}
-	}
-}
-
 void Route::getParametersFromBasis(const MakeMotion &make_mot)
 {
 	ParamSet missing;
@@ -281,7 +359,7 @@ void Route::prepareParameters()
 		int src_idx = _source.indexOfHeader(rt);
 		int twst_idx = _twists.indexOfHeader(rt);
 
-		Motion mt = {WayPoints(), false, 0};
+		Motion mt = {WayPoints(_order), false, 0};
 
 		if (mot_idx >= 0)
 		{
@@ -310,12 +388,16 @@ void Route::prepareParameters()
 
 			mt.angle = torsion;
 		}
+		
+		if (mt.angle != mt.angle)
+		{
+			mt.angle = 0; // usually due to mismatched sequence
+		}
 
 		return mt;
 	};
 
 	getParametersFromBasis(make_motion);
-	
 }
 
 void Route::setTwists(const RTPeptideTwist &twists)
@@ -406,27 +488,16 @@ void Route::prepareResources()
 	updateAtomFetch(_resources.sequences);
 	updateAtomFetch(_mainChainSequences);
 	updateAtomFetch(_hydrogenFreeSequences);
-	preparePairwiseDeviations();
+	prepareEnergyTerms();
 }
 
-void Route::preparePairwiseDeviations()
+void Route::prepareEnergyTerms()
 {
 	delete _pwMain;
 	delete _pwHeavy;
 	delete _pwEvery;
+	delete _etHeavy;
 
-	auto main_chain_filter = [](Atom *const &atom)
-	{
-		return atom->atomName() == "CA" || atom->atomName() == "O"
-			   || atom->atomName() == "C" || atom->atomName() == "N";
-	};
-
-	auto side_chain_filter = [](Atom *const &atom)
-	{
-		return (atom->elementSymbol() != "H");
-	};
-
-	const float limit = 8.f;
 	_pwMain = new PairwiseDeviations(_mainChainSequences->sequence(),
 									 {}, _maxMomentumDistance);
 
@@ -435,6 +506,9 @@ void Route::preparePairwiseDeviations()
 
 	_pwEvery = new PairwiseDeviations(_resources.sequences->sequence(),
 									  {}, _maxClashDistance);
+									
+	_etHeavy = new EnergyTorsions(_resources.sequences->sequence(),
+	                              motions());
 }
 
 void Route::updateAtomFetch(BondSequenceHandler *const &handler)

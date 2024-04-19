@@ -28,9 +28,11 @@
 
 class Grapher;
 struct AtomGraph;
+struct GradientPath;
 class ResidueTorsion;
 class TorsionCluster;
 class RouteValidator;
+class EnergyTorsions;
 class PairwiseDeviations;
 
 class Route : public StructureModification, public HasResponder<Responder<Route> >
@@ -47,13 +49,17 @@ public:
 		Pairwise = 1 << 0,
 		CoreChain = 1 << 1,
 		NoHydrogens = 1 << 2,
+		TorsionEnergies = 1 << 3,
+		VdWClashes = 1 << 4,
 	};
 
+	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
 
 	/** submit results to the bond calculator
 	 * @param idx produce results for idx-th point */
 	void submitJob(float frac, bool show = true, 
-	               const CalcOptions &options = None);
+	               const CalcOptions &options = None,
+	               int ticket = 1);
 
 	float submitJobAndRetrieve(float frac, bool show = true);
 	
@@ -180,7 +186,6 @@ public:
 	
 	int indexOfParameter(Parameter *t);
 
-	void bringTorsionsToRange();
 	void bestGuessTorsions();
 	
 	const RTMotion &motions() const
@@ -276,6 +281,7 @@ public:
 protected:
 	virtual void prepareResources();
 	const Grapher &grapher() const;
+	GradientPath *submitGradients(const CalcOptions &options, int order);
 
 	virtual void doCalculations() {};
 	
@@ -333,7 +339,7 @@ protected:
 	int _cycles = -1;
 
 	void updateAtomFetch(BondSequenceHandler *const &handler);
-	void preparePairwiseDeviations();
+	void prepareEnergyTerms();
 	RTMotion _motions;
 	RTPeptideTwist _twists;
 	int _jobLevel = 0;
@@ -350,6 +356,8 @@ protected:
 	float _activationEnergy = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
+	float _vdwEnergy = FLT_MAX;
+	float _torsionEnergy = FLT_MAX;
 	bool _gotScores = false;
 
 	BondSequenceHandler *_mainChainSequences = nullptr;
@@ -357,13 +365,13 @@ protected:
 
 	void unlockAll();
 	int _maxFlipTrial = 0;
+	int _order = 3;
 private:
 	bool _calculating = false;
 	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
 	
-	int _ticket = 0;
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;
 	
@@ -372,10 +380,21 @@ private:
 	PairwiseDeviations *_pwMain = nullptr;
 	PairwiseDeviations *_pwHeavy = nullptr;
 	PairwiseDeviations *_pwEvery = nullptr;
+	EnergyTorsions *_etHeavy = nullptr;
 	
 	InterpolationType _type = Polynomial;
 	std::string _hash;
 
 };
+
+inline std::ostream &operator<<(std::ostream &ss, const Route::CalcOptions &opts)
+{
+	if (opts & Route::Pairwise) ss << "Pairwise ";
+	if (opts & Route::CoreChain) ss << "CoreChain ";
+	if (opts & Route::NoHydrogens) ss << "NoHydrogens ";
+	if (opts & Route::TorsionEnergies) ss << "TorsionEnergies ";
+	if (opts & Route::VdWClashes) ss << "VdWClashes ";
+	return ss;
+}
 
 #endif

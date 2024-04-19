@@ -24,6 +24,7 @@
 #include <vector>
 #include <set>
 #include <cstddef>
+#include "function_typedefs.h"
 
 class Atom;
 class BondSequence;
@@ -37,7 +38,7 @@ class BondSequence;
 class PairwiseDeviations
 {
 public:
-	typedef std::function<bool(Atom *const &atom)> AtomFilter;
+//	typedef std::function<bool(Atom *const &atom)> AtomFilter;
 
 	PairwiseDeviations(BondSequence *sequence,
 	                   const AtomFilter &filter = {},
@@ -49,9 +50,19 @@ public:
 	{
 		_limit = limit;
 	}
+	
+	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
+	{
+		return _perResidue;
+	}
+	
+	glm::vec3 *const &reference() const
+	{
+		return _reference;
+	}
 
 	Task<BondSequence *, Deviation> *
-	momentum_task(const std::set<ResidueId> &forResidues);
+	momentum_task(float frac, const std::set<ResidueId> &forResidues);
 
 	Task<BondSequence *, ActivationEnergy> *
 	clash_task(const std::set<ResidueId> &forResidues);
@@ -62,6 +73,7 @@ private:
 	float _limit = 8.f;
 
 	size_t _memSize = 0;
+	glm::vec3 *_reference = nullptr;
 	std::map<ResidueId, std::vector<int>> _perResidue;
 };
 
