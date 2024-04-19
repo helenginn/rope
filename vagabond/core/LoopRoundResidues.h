@@ -23,26 +23,21 @@
 #include <set>
 #include "ResidueId.h"
 
-template <typename Job>
-void for_each_residue(const std::map<ResidueId, std::vector<int>> &perResidues, 
-                      const std::set<ResidueId> &forResidues, const Job &job)
+typedef std::function<void(const std::vector<int> &pairs)> JobOnPair;
+typedef std::function<void(JobOnPair)> LoopMechanism;
+
+inline LoopMechanism for_each_residue(const std::map<ResidueId,
+                                      std::vector<int>> &perResidues, 
+                                      const std::set<ResidueId> &forResidues)
 {
-	if (forResidues.size() == 0)
+	return [&perResidues, forResidues](const JobOnPair &job)
 	{
 		for (auto it = perResidues.begin(); it != perResidues.end(); it++)
 		{
 			const std::vector<int> &pairs = it->second;
 			job(pairs);
 		}
-	}
-	else
-	{
-		for (const ResidueId &id : forResidues)
-		{
-			const std::vector<int> &pairs = perResidues.at(id);
-			job(pairs);
-		}
-	}
+	};
 };
 
 template <typename Job>
@@ -58,6 +53,24 @@ auto do_on_each_block(const std::vector<AtomBlock> &blocks,
 		if (filterIn && !filterIn(atom)) { continue; }
 
 		job(block);
+	}
+}
+
+inline LoopMechanism loop_mechanism(const std::vector<int> &pairs,
+                                    const std::map<ResidueId, 
+                                    std::vector<int>> &perResidues,
+                                    const std::set<ResidueId> &forResidues)
+{
+	if (forResidues.size())
+	{
+		return for_each_residue(perResidues, forResidues);
+	}
+	else
+	{
+		return [pairs](const JobOnPair &job)
+		{
+			job(pairs);
+		};
 	}
 }
 

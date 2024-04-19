@@ -38,30 +38,30 @@ EnergyTorsions::~EnergyTorsions()
 
 }
 
-auto energy_term(const std::map<ResidueId, std::vector<int>> &perResidues, 
-                 std::set<ResidueId> forResidues, 
-                 std::vector<Torsion2Energy> &energies,
-                 const std::vector<float> &weights)
+auto energy_term(EnergyTorsions *et, const std::set<ResidueId> &forResidues)
 {
-	return [&perResidues, forResidues, &energies, &weights]
+	LoopMechanism loop = loop_mechanism(et->pairs(), et->perResiduePairs(),
+	                                    forResidues);
+
+	return [loop, et]
 	(BondSequence *seq) -> ActivationEnergy
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
+		const std::vector<Torsion2Energy> &energies = et->energies();
 		
 		float total = 0; // already in kJ/mol
-		auto get_energies = [&total, &blocks, &energies, &weights]
+		auto get_energies = [&total, &blocks, &energies]
 		(const std::vector<int> &torsions)
 		{
 			for (const int &idx : torsions)
 			{
 				float t = blocks[idx].torsion;
 				float energy = energies[idx](t);
-				float dampen = weights[idx];
-				total += energy * dampen;
+				total += energy;
 			}
 		};
 		
-		for_each_residue(perResidues, forResidues, get_energies);
+		loop(get_energies);
 		
 		return {(float)total};
 	};
@@ -70,8 +70,7 @@ auto energy_term(const std::map<ResidueId, std::vector<int>> &perResidues,
 Task<BondSequence *, ActivationEnergy> *
 EnergyTorsions::energy_task(const std::set<ResidueId> &forResidues)
 {
-	auto energy = energy_term(_perResidues, forResidues, 
-	                          _energies, _dampeners);
+	auto energy = energy_term(this, forResidues);
 	auto *task = new Task<BondSequence *, ActivationEnergy>(energy);
 	return task;
 
@@ -235,6 +234,7 @@ void EnergyTorsions::prepare(BondSequence *sequence,
 			func = [](const float &) { return 0.f; };
 		}
 		
+		_pairs.push_back(_energies.size());
 		_energies.push_back(func);
 		_dampeners.push_back(weight);
 	}

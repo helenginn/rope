@@ -51,6 +51,16 @@ public:
 		_limit = limit;
 	}
 	
+	const std::vector<int> &pairs()
+	{
+		return _pairs;
+	}
+	
+	size_t memSize()
+	{
+		return _memSize;
+	}
+	
 	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
 	{
 		return _perResidue;
@@ -75,6 +85,7 @@ private:
 	size_t _memSize = 0;
 	glm::vec3 *_reference = nullptr;
 	std::map<ResidueId, std::vector<int>> _perResidue;
+	std::vector<int> _pairs;
 };
 
 #endif
