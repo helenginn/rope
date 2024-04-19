@@ -40,12 +40,15 @@ public:
 	}
 
 	std::atomic<int> signals{0};
-	int expected = 0;
+	std::atomic<int> expected{0};
+	int at_least = 0;
 	int total    = 0;
 	int priority = 1;
 	std::string name;
 	
 	std::vector<std::function<BaseTask *()>> connections;
+	static bool verbose;
 };
+
 
 #endif
