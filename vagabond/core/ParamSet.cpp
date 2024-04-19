@@ -20,13 +20,24 @@
 #include "ParamSet.h"
 #include "Parameter.h"
 
-void ParamSet::expandNeighbours()
+void ParamSet::expandNeighbours(bool close)
 {
 	ParamSet copy(*this);
 
 	for (Parameter *p : copy)
 	{
-		ParamSet more(p->relatedParameters());
+		ParamSet more(p->relatedParameters(close));
+		*this += more;
+	}
+}
+
+void ParamSet::expandToSisters()
+{
+	ParamSet copy(*this);
+
+	for (Parameter *p : copy)
+	{
+		ParamSet more(p->sisters());
 		*this += more;
 	}
 }

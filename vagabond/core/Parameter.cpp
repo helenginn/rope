@@ -39,3 +39,33 @@ std::set<Parameter *> Parameter::relatedParameters(bool close) const
 	
 	return params;
 }
+
+std::set<Parameter *> Parameter::sisters() const
+{
+	if (!isTorsion())
+	{
+		return {};
+	}
+
+	std::set<Parameter *> params;
+	Atom *left = atom(1);
+	Atom *right = atom(2);
+
+	for (size_t i = 1; i < atomCount() && i <= 2; i++)
+	{
+		Atom *a = atom(i);
+		
+		for (size_t j = 0; j < a->parameterCount(); j++)
+		{
+			Parameter *p = a->parameter(j);
+			
+			if (p->isTorsion() && 
+			    p->atomIsCentral(left) && p->atomIsCentral(right))
+			{
+				params.insert(p);
+			}
+		}
+	}
+	
+	return params;
+}
