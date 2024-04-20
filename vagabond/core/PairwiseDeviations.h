@@ -56,6 +56,11 @@ public:
 		return _pairs;
 	}
 	
+	Atom *const &atom(int i)
+	{
+		return _atoms[i];
+	}
+	
 	size_t memSize()
 	{
 		return _memSize;
@@ -85,6 +90,7 @@ private:
 	size_t _memSize = 0;
 	glm::vec3 *_reference = nullptr;
 	std::map<ResidueId, std::vector<int>> _perResidue;
+	std::vector<Atom *> _atoms;
 	std::vector<int> _pairs;
 };
 
