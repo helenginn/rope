@@ -22,6 +22,7 @@
 #include <vagabond/utils/Vec3s.h>
 #include <mutex>
 class BondSequence;
+class Parameter;
 class Separation;
 class PairwiseDeviations;
 
@@ -30,11 +31,12 @@ struct GradientTerm
 	GradientTerm() = default;
 
 	GradientTerm(const int &order, const float &f, const int &gidx,
-	             const int &bidx)
+	             const int &bidx, Parameter *const &p)
 	{
 		frac = f;
 		b_idx = bidx;
 		g_idx = gidx;
+		param = p;
 		grads.resize(order);
 	}
 	
@@ -44,6 +46,7 @@ struct GradientTerm
 	float frac = 0;
 	int b_idx = 0; // block index
 	int g_idx = 0;
+	Parameter *param = nullptr;
 
 	Floats grads;
 };

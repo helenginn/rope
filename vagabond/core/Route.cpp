@@ -136,12 +136,13 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order)
 		for (int j = 0; j < indices.size(); j++)
 		{
 			int b_idx = indices[j];
+			Parameter *p = basis->parameter(blocks[b_idx].torsion_idx);
 			int g_idx = j;
 			Separation *sep = _sep;
-			auto calc_term = [sep, order, frac, g_idx, b_idx, pwMain]
+			auto calc_term = [sep, order, frac, g_idx, b_idx, p, pwMain]
 			(BondSequence *seq) -> GradientTerm
 			{
-				GradientTerm term(order, frac, g_idx, b_idx);
+				GradientTerm term(order, frac, g_idx, b_idx, p);
 				term.calculate(seq, pwMain, sep);
 				return term;
 			};

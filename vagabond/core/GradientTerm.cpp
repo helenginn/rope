@@ -68,9 +68,15 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 			int p = ptr[i];
 			int q = ptr[i + 1];
 			
-			int lc = sep->separationBetween(p, b_idx);
-			int cr = sep->separationBetween(b_idx, q);
+			if (p == b_idx || q == b_idx)
+			{
+				continue;
+			}
+			
 			int lr = sep->separationBetween(p, q);
+			int lc = sep->separationBetween(p, b_idx);
+			if (lc > lr) { continue; }
+			int cr = sep->separationBetween(b_idx, q);
 
 			if (lc + cr - lr > 0) // atom is not in between the pair
 			{
