@@ -33,7 +33,6 @@ Path::Path(PlausibleRoute *pr)
 	_model_id = pr->instance()->model()->id();
 	_instance = pr->instance();
 	_end = pr->endInstance();
-	_type = pr->type();
 
 	_motions = pr->motions();
 	_twists = pr->twists();
@@ -126,7 +125,6 @@ PlausibleRoute *Path::toRoute()
 
 	PlausibleRoute *pr = new PlausibleRoute(_instance, _end);
 	pr->setNew(false);
-	pr->setType(_type);
 	pr->setMotions(_motions);
 	pr->setScores(_momentum, _clash);
 	pr->setMaximumMomentumDistance(_maxMomentumDistance);
