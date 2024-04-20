@@ -446,12 +446,14 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 		_paramPtrs.push_back(&wps._grads[0]);
 		steps.push_back(step);
 
-		if (doingCubic() && motion.twist.twist)
+		/*
+		if (doingCubic() && motion.twist.twist && !doingSides())
 		{
 			_paramStarts.push_back(motion.twist.twist->twist);
 			_paramPtrs.push_back(&motion.twist.twist->twist);
 			steps.push_back(45.f);
 		}
+		*/
 
 		if (doingCubic())
 		{
@@ -463,7 +465,7 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 	
 	_bestScore = routeScore(nudgeCount());
 	
-	int runs = doingCubic() ? 10 : 10;
+	int runs = doingCubic() ? 20 : 10;
 	
 	_simplex->setMaxRuns(runs);
 	_simplex->chooseStepSizes(steps);
