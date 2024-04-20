@@ -35,6 +35,11 @@ public:
 	{
 		prepare(atoms);
 	}
+	
+	int index_of(Atom *const &ptr)
+	{
+		return _atoms.index_of(ptr);
+	}
 
 	int separationBetween(Atom *const &a, Atom *const &b);
 	int separationBetween(int i, int j)
