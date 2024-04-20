@@ -191,12 +191,12 @@ void PlausibleRoute::prepareJobs()
 		flipTorsionCycles(large_sides);
 	};
 	
-	auto check_gradients = [this]()
+	auto check_gradients = [this, large_main]()
 	{
 		bool good = true;
 		while (good && !doingSides())
 		{
-			good = applyGradients(large_main);
+			good = applyGradients({});
 		}
 	};
 
