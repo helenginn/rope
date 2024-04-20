@@ -488,7 +488,6 @@ void Route::prepareResources()
 	updateAtomFetch(_resources.sequences);
 	updateAtomFetch(_mainChainSequences);
 	updateAtomFetch(_hydrogenFreeSequences);
-	prepareEnergyTerms();
 }
 
 void Route::prepareEnergyTerms()
