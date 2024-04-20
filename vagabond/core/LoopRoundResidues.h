@@ -32,9 +32,9 @@ inline LoopMechanism for_each_residue(const std::map<ResidueId,
 {
 	return [&perResidues, forResidues](const JobOnPair &job)
 	{
-		for (auto it = perResidues.begin(); it != perResidues.end(); it++)
+		for (const ResidueId &id : forResidues)
 		{
-			const std::vector<int> &pairs = it->second;
+			const std::vector<int> &pairs = perResidues.at(id);
 			job(pairs);
 		}
 	};
