@@ -119,7 +119,7 @@ protected:
 	
 	int flipNudgeCount()
 	{
-		return _nudgeCount * 1;
+		return _nudgeCount * 2;
 	}
 
 	float _magnitudeThreshold = 1.f;
