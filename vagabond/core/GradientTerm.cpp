@@ -18,10 +18,12 @@
 
 #include "GradientTerm.h"
 #include "BondSequence.h"
+#include "Separation.h"
 #include "PairwiseDeviations.h"
 #include "LoopRoundResidues.h"
 
-void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
+void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
+                             Separation *sep)
 {
 	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
 										{});
@@ -48,15 +50,15 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
 		sines[i] = sin(f);
 	}
 
-	AtomBlock &block = blocks[b_idx];
 	float count = 0;
 	glm::vec3 *ref = dev->reference();
 
 	target_actual_distances lookup(ref, scratch);
 	
-	auto check_momentum = [this, &block, lookup, sines, &count]
+	auto check_momentum = [this, &blocks, dev, lookup, sep, sines, &count]
 	(const std::vector<int> &pairs)
 	{
+		AtomBlock &block = blocks[b_idx];
 		glm::vec3 myPos = block.my_position();
 		glm::vec3 upPos = block.parent_position();
 
@@ -65,12 +67,12 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
 		{
 			int p = ptr[i];
 			int q = ptr[i + 1];
+			
+			int lc = sep->separationBetween(p, b_idx);
+			int cr = sep->separationBetween(b_idx, q);
+			int lr = sep->separationBetween(p, q);
 
-			if ((p >= b_idx && q >= b_idx) || (p <= b_idx && q <= b_idx))
-			{
-				continue;
-			}
-			if (p == b_idx || q == b_idx)
+			if (lc + cr - lr > 0) // atom is not in between the pair
 			{
 				continue;
 			}
