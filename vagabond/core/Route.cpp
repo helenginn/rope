@@ -23,8 +23,9 @@
 #include "Polymer.h"
 #include "Grapher.h"
 #include "ParamSet.h"
-#include "TorsionBasis.h"
+#include "Separation.h"
 #include "TorsionData.h"
+#include "TorsionBasis.h"
 #include "BondSequence.h"
 #include "BondCalculator.h"
 #include "PairwiseDeviations.h"
@@ -53,6 +54,7 @@ Route::~Route()
 	delete _pwHeavy;
 	delete _pwEvery;
 	delete _etHeavy;
+	delete _sep;
 }
 
 void Route::setup()
@@ -496,6 +498,7 @@ void Route::prepareEnergyTerms()
 	delete _pwHeavy;
 	delete _pwEvery;
 	delete _etHeavy;
+	delete _sep;
 
 	_pwMain = new PairwiseDeviations(_mainChainSequences->sequence(),
 									 {}, _maxMomentumDistance);
@@ -508,6 +511,8 @@ void Route::prepareEnergyTerms()
 									
 	_etHeavy = new EnergyTorsions(_resources.sequences->sequence(),
 	                              motions());
+
+	_sep = new Separation(_hydrogenFreeSequences->sequence()->addedAtoms());
 }
 
 void Route::updateAtomFetch(BondSequenceHandler *const &handler)

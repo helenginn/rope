@@ -27,6 +27,7 @@
 #include "RTPeptideTwist.h"
 
 class Grapher;
+class Separation;
 struct AtomGraph;
 struct GradientPath;
 class ResidueTorsion;
@@ -355,6 +356,7 @@ private:
 	PairwiseDeviations *_pwHeavy = nullptr;
 	PairwiseDeviations *_pwEvery = nullptr;
 	EnergyTorsions *_etHeavy = nullptr;
+	Separation *_sep = nullptr;
 	
 	std::string _hash;
 
