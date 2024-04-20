@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "CompareAtoms.h"
 #include "AtomGroup.h"
 #include "AlignmentTool.h"
 #include "BondLength.h"
@@ -434,42 +435,7 @@ void AtomGroup::refinePositions(bool sameThread, bool thorough)
 void AtomGroup::orderByResidueId()
 {
 	std::function<bool(Atom *const &, Atom *const &)> compare_ids;
-	compare_ids = [&compare_ids](Atom *const &a, Atom *const &b) -> bool
-	{
-		if (a->symmetryCopyOf() && !b->symmetryCopyOf())
-		{
-			return false;
-		}
-		else if (!a->symmetryCopyOf() && b->symmetryCopyOf())
-		{
-			return true;
-		}
-		else if (a->symmetryCopyOf() && b->symmetryCopyOf())
-		{
-			if (a->symmetryCopyOf() == b->symmetryCopyOf())
-			{
-				return (a->desc() < b->desc());
-			}
-
-			return compare_ids(a->symmetryCopyOf(), b->symmetryCopyOf());
-		}
-		if (a->residueId() > b->residueId())
-		{
-			return false;
-		}
-		else if (a->residueId() < b->residueId()) 
-		{
-			return true;
-		}
-		else if (a->atomNum() >= b->atomNum())
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-	};
+	compare_ids = atom_ptr_compare_function();
 	
 	std::sort(_atoms.begin(), _atoms.end(), compare_ids);
 	
