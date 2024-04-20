@@ -49,8 +49,8 @@ auto do_on_each_block(const std::vector<AtomBlock> &blocks,
 	{
 		Atom *const &atom = block.atom;
 
-		if (atom == nullptr || !block.flag) { continue; }
-		if (filterIn && !filterIn(atom)) { continue; }
+//		if (atom == nullptr || !block.flag) { continue; }
+//		if (filterIn && !filterIn(atom)) { continue; }
 
 		job(block);
 	}

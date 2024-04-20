@@ -43,18 +43,20 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 {
 	const std::vector<AtomBlock> &blocks = seq->blocks();
 	glm::vec3 *scratch = new glm::vec3[blocks.size() * 2];
-	std::vector<Atom *> atoms(blocks.size());
+	_atoms = std::vector<Atom *>(blocks.size());
 
 	int n = 0;
-	auto collect_targets = [&atoms, scratch, &n](const AtomBlock &block)
+	auto collect_targets = [this, scratch, &n](const AtomBlock &block)
 	{
 		Atom *const &atom = block.atom;
-
-		glm::vec3 orig = atom->otherPosition("target");
-		glm::vec3 moving = atom->otherPosition("moving");
-		scratch[n] = orig;
-		scratch[n + 1] = moving;
-		atoms[n / 2] = atom;
+		if (atom)
+		{
+			glm::vec3 orig = atom->otherPosition("target");
+			glm::vec3 moving = atom->otherPosition("moving");
+			scratch[n] = orig;
+			scratch[n + 1] = moving;
+		}
+		_atoms[n / 2] = atom;
 		n += 2;
 	};
 	
@@ -88,11 +90,13 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		const glm::vec3 &at_rest_i = scratch[i];
 		const glm::vec3 &moving_i = scratch[i + 1];
 		
-		Atom *left = atoms[i / 2];
+		Atom *left = _atoms[i / 2];
+		if (!left) continue;
 
 		for (int j = i + 2; j < n; j += 2)
 		{
-			Atom *right = atoms[j / 2];
+			Atom *right = _atoms[j / 2];
+			if (!right) continue;
 
 			bool too_close = false;
 			for (size_t k = 0; k < left->bondTorsionCount(); k++)
@@ -235,11 +239,14 @@ auto clash(PairwiseDeviations *dev, std::set<ResidueId> forResidues)
 		int n = 0;
 		auto collect_targets = [scratch, &n](const AtomBlock &block)
 		{
-			gemmi::Element ele = gemmi::Element(block.element);
-			float vdwRadius = ele.vdw_r();
-			scratch[n].position = block.my_position();
-			scratch[n].radius = vdwRadius;
-			scratch[n].atomic_num = ele.atomic_number();
+			if (block.atom)
+			{
+				gemmi::Element ele = gemmi::Element(block.element);
+				float vdwRadius = ele.vdw_r();
+				scratch[n].position = block.my_position();
+				scratch[n].radius = vdwRadius;
+				scratch[n].atomic_num = ele.atomic_number();
+			}
 			n++;
 		};
 
