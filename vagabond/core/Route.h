@@ -357,8 +357,10 @@ private:
 	
 	struct Helpers
 	{
+		BondSequence *seq = nullptr;
 		PairwiseDeviations *pw = nullptr;
 		EnergyTorsions *et = nullptr;
+		Separation *sep = nullptr;
 	};
 	
 	void deleteHelpers();
@@ -367,8 +369,6 @@ private:
 	
 	Instance *_endInstance = nullptr;
 	RTAngles _source;
-
-	Separation *_sep = nullptr;
 	
 	std::string _hash;
 
