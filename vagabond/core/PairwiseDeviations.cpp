@@ -61,7 +61,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	};
 	
 	do_on_each_block(blocks, _filter, collect_targets);
-	_memSize = n;
 
 	// pre-calculate pairs to interrogate
 	
@@ -169,7 +168,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 	(BondSequence *seq) -> Deviation
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
-		glm::vec3 *scratch = new glm::vec3[dev->memSize()];
+		glm::vec3 *scratch = new glm::vec3[blocks.size()];
 		
 		int n = 0;
 		auto collect_targets = [scratch, &n](const AtomBlock &block)
