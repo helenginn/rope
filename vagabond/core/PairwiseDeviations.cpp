@@ -86,15 +86,17 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	const float threshold = _limit;
 	for (int i = 0; i < n - 2; i += 2)
 	{
+		int m = i / 2;
+		Atom *left = _atoms[m];
+		if (!left) continue;
+
 		const glm::vec3 &at_rest_i = scratch[i];
 		const glm::vec3 &moving_i = scratch[i + 1];
 		
-		Atom *left = _atoms[i / 2];
-		if (!left) continue;
-
 		for (int j = i + 2; j < n; j += 2)
 		{
-			Atom *right = _atoms[j / 2];
+			int n = j / 2;
+			Atom *right = _atoms[n];
 			if (!right) continue;
 
 			bool too_close = false;
@@ -143,8 +145,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			{
 				continue;
 			}
-			
-			int m = i / 2; int n = j / 2;
 			
 			_perResidue[left->residueId()].push_back(m);
 			_perResidue[left->residueId()].push_back(n);
