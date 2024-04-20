@@ -54,8 +54,12 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 	glm::vec3 *ref = dev->reference();
 
 	target_actual_distances lookup(ref, scratch);
+
+	int a_idx = sep->index_of(param->atom(1));
+	int c_idx = sep->index_of(param->atom(2));
+	int pre = (b_idx == c_idx ? a_idx : c_idx);
 	
-	auto check_momentum = [this, &blocks, dev, lookup, sep, sines, &count]
+	auto check_momentum = [this, &pre, &blocks, lookup, sep, sines, &count]
 	(const std::vector<int> &pairs)
 	{
 		AtomBlock &block = blocks[b_idx];
@@ -75,24 +79,25 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 			
 			int lr = sep->separationBetween(p, q);
 			int lc = sep->separationBetween(p, b_idx);
-			if (lc > lr) { continue; }
 			int cr = sep->separationBetween(b_idx, q);
 
-			if (lc + cr - lr > 0) // atom is not in between the pair
-			{
-				continue;
-			}
+			// atom is not in between the pair
+			bool reject = (lc + cr - lr > 0);
+			if (reject) { continue; }
+			
+			int lp = sep->separationBetween(pre, p);
+			float dir = (lp > lc ? -1 : +1);
+//			std::cout << (dir > 0 ? "+" : "-");
 
 			float targdist = lookup.target(p, q, frac);
 			float actualdist = lookup.actual(p, q);
-
 			float diff = (targdist - actualdist);
 			
 			float change = bond_rotation_on_distance_gradient(myPos, upPos, 
 			                                                lookup.pos(p),
 			                                                lookup.pos(q));
 			
-			float grad = deg2rad(2 * diff * change);
+			float grad = deg2rad(2 * diff * change * dir);
 			
 			int n = 0;
 			if (grad == grad && std::isfinite(grad))
@@ -105,6 +110,7 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 			}
 			count++;
 		}
+//		std::cout << std::endl;
 	};
 
 	loop(check_momentum);
