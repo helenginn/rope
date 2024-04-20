@@ -51,7 +51,6 @@ Route::~Route()
 {
 	deleteHelpers();
 	instance()->unload();
-	delete _sep;
 }
 
 void Route::setup()
@@ -94,6 +93,7 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	big_bin.holdHorses();
 
 	PairwiseDeviations *pw = _helpers[handler].pw;
+	Separation *sep = _helpers[handler].sep;
 
 	Task<GradientPath, void *> *big_submission = big_bin.actOfSubmission(0);
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
@@ -145,12 +145,11 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 			int b_idx = indices[j];
 			Parameter *p = basis->parameter(blocks[b_idx].torsion_idx);
 			int g_idx = j;
-			Separation *sep = _sep;
-			auto calc_term = [sep, order, frac, g_idx, b_idx, p, pwMain]
+			auto calc_term = [sep, order, frac, g_idx, b_idx, p, pw]
 			(BondSequence *seq) -> GradientTerm
 			{
 				GradientTerm term(order, frac, g_idx, b_idx, p);
-				term.calculate(seq, pwMain, sep);
+				term.calculate(seq, pw, sep);
 				return term;
 			};
 			
@@ -506,6 +505,7 @@ void Route::deleteHelpers()
 	{
 		delete it->second.pw;
 		delete it->second.et;
+		delete it->second.sep;
 	}
 
 	_helpers.clear();
@@ -516,9 +516,13 @@ void Route::prepareEnergyTerms()
 	deleteHelpers();
 
 	{
-		auto pw = new PairwiseDeviations(_mainChainSequences->sequence(),
-		                                 {}, _maxMomentumDistance);
+		BondSequence *seq = _mainChainSequences->sequence();
+		_helpers[_mainChainSequences].seq = seq;
+		auto pw = new PairwiseDeviations(seq, {}, _maxMomentumDistance);
+		Separation *sep = new Separation(seq);
+
 		_helpers[_mainChainSequences].pw = pw;
+		_helpers[_mainChainSequences].sep = sep;
 	}
 
 	{
@@ -539,7 +543,6 @@ void Route::prepareEnergyTerms()
 		_helpers[_resources.sequences].et = et;
 	}
 
-	_sep = new Separation(_hydrogenFreeSequences->sequence()->addedAtoms());
 }
 
 void Route::updateAtomFetch(BondSequenceHandler *const &handler)
