@@ -670,7 +670,6 @@ bool PlausibleRoute::flipTorsions(const ValidateParam &validate)
 	bool changed = false;
 
 	if (doingClashes()) return false;
-	if (_maxFlipTrial == 0) return false;
 
 	_bestScore = routeScore(flipNudgeCount());
 	float min = doingClashes() ? 10 : 90;
@@ -719,6 +718,7 @@ void PlausibleRoute::flipTorsionCycle(const ValidateParam &validate)
 
 void PlausibleRoute::flipTorsionCycles(const ValidateParam &validate)
 {
+	if (_maxFlipTrial == 0) return;
 	flipTorsionCycle(validate);
 }
 
