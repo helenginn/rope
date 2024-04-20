@@ -196,7 +196,7 @@ void PlausibleRoute::prepareJobs()
 		bool good = true;
 		while (good && !doingSides())
 		{
-			good = applyGradients();
+			good = applyGradients(large_main);
 		}
 	};
 
@@ -268,9 +268,9 @@ PlausibleRoute::calcOptions(const CalcOptions &add_options,
 	return options;
 }
 
-bool PlausibleRoute::applyGradients()
+bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 {
-	GradientPath *path = gradients();
+	GradientPath *path = gradients(validate);
 
 	float prev_score = FLT_MAX;
 	float first_score = routeScore(nudgeCount());
@@ -316,15 +316,16 @@ bool PlausibleRoute::applyGradients()
 	return prev_score < first_score;
 }
 
-GradientPath *PlausibleRoute::gradients(const CalcOptions &add_options,
-                                const CalcOptions &subtract_options)
+GradientPath *PlausibleRoute::gradients(const ValidateParam &validate,
+                                        const CalcOptions &add_options,
+                                        const CalcOptions &subtract_options)
 {
 	CalcOptions options = calcOptions(add_options, subtract_options);
 	
-	int order = 2;
-	if (doingCubic()) order = 2;
+	BondSequenceHandler *handler = doingSides() ? 
+	_hydrogenFreeSequences : _mainChainSequences;
 
-	return submitGradients(options, order);
+	return submitGradients(options, _order, validate, handler);
 }
 
 

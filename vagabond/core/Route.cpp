@@ -49,11 +49,8 @@ Route::Route(Instance *from, Instance *to, const RTAngles &list)
 
 Route::~Route()
 {
+	deleteHelpers();
 	instance()->unload();
-	delete _pwMain;
-	delete _pwHeavy;
-	delete _pwEvery;
-	delete _etHeavy;
 	delete _sep;
 }
 
@@ -83,15 +80,20 @@ float Route::submitJobAndRetrieve(float frac, bool show)
 	return ret;
 }
 
-GradientPath *Route::submitGradients(const CalcOptions &options, int order)
+GradientPath *Route::submitGradients(const CalcOptions &options, int order,
+                                     const ValidateParam &validate,
+                                     BondSequenceHandler *handler)
 {
+	if (handler == nullptr) handler = _mainChainSequences;
+	
+	bool all_comparisons = doingSides() ? true : false;
+
 	int steps = (order + 1) * 2;
 
 	Bin<GradientPath> big_bin;
 	big_bin.holdHorses();
 
-	BondSequenceHandler *sequences = _mainChainSequences;
-	PairwiseDeviations *pwMain = _pwMain;
+	PairwiseDeviations *pw = _helpers[handler].pw;
 
 	Task<GradientPath, void *> *big_submission = big_bin.actOfSubmission(0);
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
@@ -100,8 +102,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order)
 	std::vector<int> indices;
 	std::vector<int> motion_idxs;
 
-	std::vector<AtomBlock> &blocks = sequences->sequence()->blocks();
-	TorsionBasis *basis = sequences->torsionBasis();
+	std::vector<AtomBlock> &blocks = handler->sequence()->blocks();
+	TorsionBasis *basis = handler->torsionBasis();
 
 	for (size_t i = 0; i < blocks.size(); i++)
 	{
@@ -109,13 +111,18 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order)
 		int tidx = blocks[i].torsion_idx;
 
 		Parameter *p = basis->parameter(tidx);
+		int pidx = indexOfParameter(p);
+		if (validate && !validate(pidx))
+		{
+			continue;
+		}
 		if (p->isConstrained())
 		{
 			continue;
 		}
 
 		indices.push_back(i);
-		motion_idxs.push_back(indexOfParameter(p));
+		motion_idxs.push_back(pidx);
 	}
 
 	big_submission->input.grads.resize(indices.size());
@@ -130,8 +137,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order)
 
 		BaseTask *first_hook = nullptr;
 		CalcTask *final_hook = nullptr;
-		sequences->calculate(calc, {frac}, &first_hook, &final_hook);
-		Task<BondSequence *, void *> *let_go = sequences->letGo();
+		handler->calculate(calc, {frac}, &first_hook, &final_hook);
+		Task<BondSequence *, void *> *let_go = handler->letGo();
 		
 		for (int j = 0; j < indices.size(); j++)
 		{
@@ -184,8 +191,7 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options,
 	
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
-	BondSequenceHandler *sequences = 
-	coreChain ? _mainChainSequences : 
+	BondSequenceHandler *sequences = coreChain ? _mainChainSequences : 
 	(hydrogens ? _resources.sequences : _hydrogenFreeSequences);
 
 	/* this final task returns the result to the pool to collect later */
@@ -206,20 +212,19 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options,
 	
 	if (pairwise)
 	{
+		PairwiseDeviations *chosen = _helpers[sequences].pw;
 		std::set<ResidueId> empty;
 		if (!vdw_clashes)
 		{
-			PairwiseDeviations *chosen = doingSides() ? _pwHeavy : _pwMain;
 			Task<BondSequence *, Deviation> *task = nullptr;
 
-			task = chosen->momentum_task(frac, doingSides() ? _ids : empty);
+			task = chosen->momentum_task(frac, empty);//doingSides() ? _ids : empty);
 			final_hook->follow_with(task);
 			task->must_complete_before(let);
 			task->follow_with(submit_result);
 		}
 		else
 		{
-			PairwiseDeviations *chosen = hydrogens ? _pwEvery : _pwHeavy;
 			Task<BondSequence *, ActivationEnergy> *task = nullptr;
 			task = chosen->clash_task(doingSides() ? _ids : empty);
 			final_hook->follow_with(task);
@@ -230,8 +235,9 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options,
 		// torsion energies
 		if (torsion_energies && hydrogens)
 		{
+			EnergyTorsions *chosen = _helpers[sequences].et;
 			Task<BondSequence *, ActivationEnergy> *task = nullptr;
-			task = _etHeavy->energy_task(doingSides() ? _ids : empty);
+			task = chosen->energy_task(doingSides() ? _ids : empty);
 			final_hook->follow_with(task);
 			task->must_complete_before(let);
 			task->follow_with(submit_result);
@@ -494,25 +500,44 @@ void Route::prepareResources()
 	updateAtomFetch(_hydrogenFreeSequences);
 }
 
+void Route::deleteHelpers()
+{
+	for (auto it = _helpers.begin(); it != _helpers.end(); it++)
+	{
+		delete it->second.pw;
+		delete it->second.et;
+	}
+
+	_helpers.clear();
+}
+
 void Route::prepareEnergyTerms()
 {
-	delete _pwMain;
-	delete _pwHeavy;
-	delete _pwEvery;
-	delete _etHeavy;
-	delete _sep;
+	deleteHelpers();
 
-	_pwMain = new PairwiseDeviations(_mainChainSequences->sequence(),
-									 {}, _maxMomentumDistance);
+	{
+		auto pw = new PairwiseDeviations(_mainChainSequences->sequence(),
+		                                 {}, _maxMomentumDistance);
+		_helpers[_mainChainSequences].pw = pw;
+	}
 
-	_pwHeavy = new PairwiseDeviations(_hydrogenFreeSequences->sequence(),
-									 {}, _maxClashDistance);
+	{
+		auto pw = new PairwiseDeviations(_hydrogenFreeSequences->sequence(),
+		                                 {}, _maxClashDistance);
+		_helpers[_hydrogenFreeSequences].pw = pw;
+	}
 
-	_pwEvery = new PairwiseDeviations(_resources.sequences->sequence(),
-									  {}, _maxClashDistance);
-									
-	_etHeavy = new EnergyTorsions(_resources.sequences->sequence(),
-	                              motions());
+	{
+		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
+		                                  {}, _maxClashDistance);
+		_helpers[_resources.sequences].pw = pw;
+	}
+
+	{
+		auto et = new EnergyTorsions(_resources.sequences->sequence(),
+		                             motions());
+		_helpers[_resources.sequences].et = et;
+	}
 
 	_sep = new Separation(_hydrogenFreeSequences->sequence()->addedAtoms());
 }
