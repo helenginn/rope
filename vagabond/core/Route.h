@@ -123,16 +123,6 @@ public:
 		_finish = true;
 	}
 	
-	void setLinear()
-	{
-		_type = Linear;
-	}
-	
-	void setPolynomial()
-	{
-		_type = Polynomial;
-	}
-	
 	const size_t wayPointCount() const
 	{
 		return _motions.size();
@@ -302,22 +292,6 @@ protected:
 
 	void bestGuessTorsion(int i);
 	
-	enum InterpolationType
-	{
-		Linear,
-		Polynomial,
-	};
-	
-	void setType(InterpolationType type)
-	{
-		_type = type;
-	}
-	
-	const InterpolationType &type() const
-	{
-		return _type;
-	}
-
 	std::atomic<bool> _finish{false};
 
 	void prepareDestination();
@@ -382,7 +356,6 @@ private:
 	PairwiseDeviations *_pwEvery = nullptr;
 	EnergyTorsions *_etHeavy = nullptr;
 	
-	InterpolationType _type = Polynomial;
 	std::string _hash;
 
 };

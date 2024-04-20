@@ -165,8 +165,6 @@ private:
 
 	int _steps = 12;
 	
-	PlausibleRoute::InterpolationType _type = PlausibleRoute::Polynomial;
-	
 	PlausibleRoute *_route = nullptr;
 };
 
