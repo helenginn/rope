@@ -48,7 +48,6 @@ public:
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
 
-	typedef std::function<bool(int idx)> ValidateParam;
 	typedef std::function<void()> Task;
 
 	bool validateTorsion(int idx, float min_mag, float max_mag,
@@ -140,8 +139,9 @@ private:
 	CalcOptions calcOptions(const CalcOptions &add_options,
 	                  const CalcOptions &subtract_options);
 
-	bool applyGradients();
-	GradientPath *gradients(const CalcOptions &add_options = None,
+	bool applyGradients(const ValidateParam &validate);
+	GradientPath *gradients(const ValidateParam &validate,
+	                        const CalcOptions &add_options = None,
 	                        const CalcOptions &subtract_options = None);
 
 	virtual void cycle();

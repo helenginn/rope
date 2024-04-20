@@ -270,9 +270,14 @@ public:
 	}
 	
 protected:
+	typedef std::function<bool(int idx)> ValidateParam;
+
+
 	virtual void prepareResources();
 	const Grapher &grapher() const;
-	GradientPath *submitGradients(const CalcOptions &options, int order);
+	GradientPath *submitGradients(const CalcOptions &options, int order,
+	                              const ValidateParam &validate = {},
+	                              BondSequenceHandler *handler = nullptr);
 
 	virtual void doCalculations() {};
 	
@@ -350,12 +355,19 @@ private:
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;
 	
+	struct Helpers
+	{
+		PairwiseDeviations *pw = nullptr;
+		EnergyTorsions *et = nullptr;
+	};
+	
+	void deleteHelpers();
+	
+	std::map<BondSequenceHandler *, Helpers> _helpers;
+	
 	Instance *_endInstance = nullptr;
 	RTAngles _source;
-	PairwiseDeviations *_pwMain = nullptr;
-	PairwiseDeviations *_pwHeavy = nullptr;
-	PairwiseDeviations *_pwEvery = nullptr;
-	EnergyTorsions *_etHeavy = nullptr;
+
 	Separation *_sep = nullptr;
 	
 	std::string _hash;
