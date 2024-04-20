@@ -87,10 +87,13 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
 			float grad = deg2rad(2 * diff * change);
 			
 			int n = 0;
-			for (const float &f : sines)
+			if (grad == grad && std::isfinite(grad))
 			{
-				grads[n] += f * grad;
-				n++;
+				for (const float &f : sines)
+				{
+					grads[n] += f * grad;
+					n++;
+				}
 			}
 			count++;
 		}
@@ -101,6 +104,10 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev)
 	for (float &f : grads)
 	{
 		f /= (float)count;
+		if (f != f || !std::isfinite(f))
+		{
+			f = 0;
+		}
 	}
 
 	delete [] scratch;
