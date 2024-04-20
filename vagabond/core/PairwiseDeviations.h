@@ -61,11 +61,6 @@ public:
 		return _atoms[i];
 	}
 	
-	size_t memSize()
-	{
-		return _memSize;
-	}
-	
 	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
 	{
 		return _perResidue;
@@ -87,7 +82,6 @@ private:
 	AtomFilter _filter;
 	float _limit = 8.f;
 
-	size_t _memSize = 0;
 	glm::vec3 *_reference = nullptr;
 	std::map<ResidueId, std::vector<int>> _perResidue;
 	std::vector<Atom *> _atoms;
