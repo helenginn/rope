@@ -339,7 +339,7 @@ protected:
 
 	void unlockAll();
 	int _maxFlipTrial = 0;
-	int _order = 3;
+	int _order = 2;
 private:
 	bool _calculating = false;
 	
