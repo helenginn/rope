@@ -44,11 +44,10 @@ WayPoints::WayPoints()
 WayPoints::WayPoints(int order)
 {
 	_grads.resize(order);
-	for (float &f : _grads)
+	if (order > 0)
 	{
-		f = 0;//rand() / (double)RAND_MAX;
+		_grads[0] = 5. * rand() / (double)RAND_MAX;
 	}
-
 }
 
 float WayPoints::interpolatedProgression(float frac)
