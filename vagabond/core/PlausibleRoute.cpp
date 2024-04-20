@@ -271,49 +271,103 @@ PlausibleRoute::calcOptions(const CalcOptions &add_options,
 bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 {
 	GradientPath *path = gradients(validate);
-
-	float prev_score = FLT_MAX;
-	float first_score = routeScore(nudgeCount());
-	int count = 0;
-	while (true)
+	if (Route::_finish)
 	{
-		float frac = 0.01;
-
-		int n = 0;
-		float score = routeScore(nudgeCount());
-		count++;
-		if (score > prev_score - 1e-6)
+		delete path;
+		return false;
+	}
+	std::vector<Floats> current; current.resize(motionCount());
+	
+	/*
+	for (int i = 0; i < path->grads.size(); i++)
+	{
+		int p = path->motion_idxs[i]; // motion_idx
+		if (p < 0)
 		{
-			break;
+			continue;
 		}
-		prev_score = score;
-		for (Floats &sines : path->grads)
+		std::cout << parameter(p) << "\t";
+		for (int j = 0; j < path->grads[i].size(); j++)
 		{
-			int p = path->motion_idxs[n];
-			n++;
+			std::cout << path->grads[i][j] << ", ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << std::endl;
+	*/
+
+	for (int i = 0; i < path->motion_idxs.size(); i++)
+	{
+		int p = path->motion_idxs[i];
+		if (p >= 0 && p < motionCount())
+		{
+			current[p] = motion(p).wp._grads;
+		}
+	}
+
+	float alpha = 0;
+	float step = 0.25;
+	
+	auto score_for_alpha = [this, path, current](const float &alpha) -> float
+	{
+		for (int j = 0; j < path->motion_idxs.size(); j++)
+		{
+			int p = path->motion_idxs[j]; // motion_idx
 			if (p >= 0 && p < motionCount())
 			{
-				Parameter *param = parameter(p);
-
+				const Floats &sines = path->grads[j];
 				for (int i = 0; i < sines.size(); i++)
 				{
-					motion(p).wp._grads[i] += sines[i] * frac;
+					motion(p).wp._grads[i] = current[p][i] + sines[i] * alpha;
 				}
 			}
+		}
+
+		float score = routeScore(nudgeCount());
+//		std::cout << alpha << " -> " << score << std::endl;
+		return score;
+	};
+
+	float best_score = score_for_alpha(0);
+	float first_score = best_score;
+	float best_alpha = 0;
+
+	int divisions = 0;
+	while (divisions < 12)
+	{
+		float candidate = alpha + step;
+		float score = score_for_alpha(candidate);
+		
+		if (score < best_score)
+		{
+			std::cout << "\t" << best_score << " now " << score << std::endl;
+			best_score = score;
+			postScore(best_score);
+			best_alpha = candidate;
+			std::cout << "\tbest alpha now " << best_alpha << std::endl;
+			alpha = best_alpha;
+			divisions = 0;
+			step *= 1.5;
+		}
+		else if (score >= best_score)
+		{
+			divisions++;
+			step /= 2;
 		}
 		
 		if (Route::_finish)
 		{
-			return false;
+			break;
 		}
 	}
 	
-	std::cout << "Count: " << count << std::endl;
+	std::cout << "Best alpha: " << best_alpha << std::endl;
+	best_score = score_for_alpha(best_alpha);
+	postScore(best_score);
 	
-	postScore(prev_score);
 	path->destroy();
 	delete path;
-	return prev_score < first_score;
+	return !_finish && (best_score < first_score);
 }
 
 GradientPath *PlausibleRoute::gradients(const ValidateParam &validate,
