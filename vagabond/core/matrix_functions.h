@@ -72,20 +72,24 @@ void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr);
  * @param the child atom's position, whose matrix needs updating
  */
 inline void torsion_basis(glm::mat4x4 &target, const glm::vec4 &self, 
-                   const glm::vec3 &prev, const glm::vec4 &next)
+                   glm::vec3 prev, const glm::vec4 &next)
 {
 	/* previous bond direction is the old Z direction. This will be in
 	 * the same plane as the new X direction. */
 
+	vec3 curr;
 	/* previous bond basis placement is equal to the current position of self */
-	vec3 prevdir = prev - vec3(self);
+	for (int i = 0; i < 3; i++)
+	{
+		prev[i] -= self[i];
+		curr[i] = next[i] - self[i];
+	}
 	
 	/* current bond direction will become the new Z direction */
-	vec3 curr = vec3(next - self);
 	curr = normalize(curr);
 
 	/* cross and normalise to get the new Y direction */
-	vec3 y_dir = cross(curr, prevdir);
+	vec3 y_dir = cross(curr, prev);
 	y_dir = normalize(y_dir);
 
 	/* "prev" won't be at a right-angle, so we need to re-make it.

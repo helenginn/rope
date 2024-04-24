@@ -20,46 +20,48 @@
 #include "BondSequence.h"
 #include "CompareAtoms.h"
 
-using MatrixXf = Eigen::MatrixXf;
+using Matrix = Eigen::MatrixXi;
 
-void fill_distances(MatrixXf &m)
+void fill_distances(Matrix &m)
 {
 	int count = m.rows();
 
 	for (size_t k = 0; k < count; k++)
 	{
-		for (size_t i = 0; i < count; i++)
+		for (size_t i = 0; i < count - 1; i++)
 		{
-			for (size_t j = 0; j < count; j++)
+			for (size_t j = i + 1; j < count; j++)
 			{
-				double ij = m(i, j);
-				double ik = m(i, k);
-				double kj = m(k, j);
+				int ij = m(i, j);
+				int ik = m(i, k);
+				int kj = m(k, j);
 
-				double sum = ik + kj;
-
-				if (ij != ij)
+				int sum = ik + kj;
+				if (ik >= 0 && kj >= 0)
 				{
-					m(i, j) = sum;
-					m(j, i) = sum;
-				}
-				else if (ij > sum)
-				{
-					m(i, j) = sum;
-					m(j, i) = sum;
+					if (ij < 0)
+					{
+						m(i, j) = sum;
+						m(j, i) = sum;
+					}
+					else if (ij > sum)
+					{
+						m(i, j) = sum;
+						m(j, i) = sum;
+					}
 				}
 			}
 		}
 	}
 }
 
-void wipe(MatrixXf &mat)
+void wipe(Matrix &mat)
 {
 	for (int i = 0; i < mat.rows(); i++)
 	{
 		for (int j = 0; j < mat.cols(); j++)
 		{
-			mat(i, j) = (i == j) ? 0 : NAN;
+			mat(i, j) = (i == j) ? 0 : -1;
 		}
 	}
 }
@@ -68,7 +70,7 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 {
 	_atoms = SortedVector(atoms);
 	int n = _atoms.size();
-	_matrix = MatrixXf(n, n);
+	_matrix = Matrix(n, n);
 
 	wipe(_matrix);
 	
@@ -81,8 +83,11 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 		{
 			Atom *b = a->connectedAtom(j);
 			int b_idx = _atoms.index_of(b);
+			if (b_idx >= 0)
+			{
+				_matrix(i, b_idx) = 1;
+			}
 
-			_matrix(i, b_idx) = 1;
 		}
 	}
 	

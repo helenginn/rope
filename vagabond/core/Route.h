@@ -163,6 +163,7 @@ public:
 	
 	Parameter *parameter(int i)
 	{
+		if (i < 0) return nullptr;
 		return _motions.rt(i).parameter();
 	}
 	
@@ -215,17 +216,17 @@ public:
 	
 	bool doingClashes()
 	{
-		return _jobLevel >= 3;
+		return _jobLevel >= 2;
 	}
 	
 	bool doingHydrogens()
 	{
-		return _jobLevel >= 4;
+		return _jobLevel >= 3;
 	}
 	
 	bool lastJob()
 	{
-		return _jobLevel >= 5;
+		return _jobLevel >= 4;
 	}
 
 	const int &jobLevel() const
@@ -362,6 +363,9 @@ private:
 		EnergyTorsions *et = nullptr;
 		Separation *sep = nullptr;
 	};
+
+	friend void setup_helpers(Route::Helpers &helpers, 
+	                          BondSequence *seq, float distance);
 	
 	void deleteHelpers();
 	
@@ -371,6 +375,7 @@ private:
 	RTAngles _source;
 	
 	std::string _hash;
+	bool _setup = false;
 
 };
 

@@ -46,7 +46,7 @@ WayPoints::WayPoints(int order)
 	_grads.resize(order);
 	if (order > 0)
 	{
-		_grads[0] = 5. * rand() / (double)RAND_MAX;
+		_grads[0] = 2. * (rand() / (double)RAND_MAX - 0.5);
 	}
 }
 

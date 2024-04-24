@@ -215,7 +215,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 		Menu *m = new Menu(this, this, "viewfrom");
 		m->addOption("From start (1st order momentum)", "quadratic");
 		m->addOption("2nd order momentum", "cubic");
-		m->addOption("2nd order momentum (+ sides)", "sides");
+//		m->addOption("2nd order momentum (+ sides)", "sides");
 		m->addOption("Hydrogen-free clash", "h_free_clash");
 		m->addOption("All-atom clash", "h_clash");
 		m->setup(c.x, c.y);
@@ -236,11 +236,11 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 		}
 		else if (end == "h_free_clash")
 		{
-			job = 3;
+			job = 2;
 		}
 		else if (end == "h_clash")
 		{
-			job = 4;
+			job = 3;
 		}
 
 		PlausibleRoute *pr = _obj.toRoute();

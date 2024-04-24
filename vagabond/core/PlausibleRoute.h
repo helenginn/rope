@@ -44,7 +44,6 @@ public:
 	void refreshScores();
 	void setTargets();
 	
-	virtual void prepareForAnalysis();
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
 

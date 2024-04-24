@@ -21,7 +21,6 @@
 #include "engine/Task.h"
 #include "BondSequence.h"
 #include "LoopRoundResidues.h"
-#include <gemmi/elem.hpp>
 
 PairwiseDeviations::PairwiseDeviations(BondSequence *sequence,
                                        const AtomFilter &filter, 
@@ -222,36 +221,15 @@ auto clash(PairwiseDeviations *dev, std::set<ResidueId> forResidues)
 	return [loop] (BondSequence *seq) -> ActivationEnergy
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
-		
-		struct ClashInfo
-		{
-			glm::vec3 position;
-			float radius;
-			float atomic_num;
-		};
+		PairwiseDeviations::ClashInfo *scratch = nullptr;
+		obtainClashInfo(blocks, scratch);
+		auto lookup = clash_to_lookup(scratch);
 
-		ClashInfo *scratch = new ClashInfo[blocks.size()];
 		long double total = 0;
 		float count = 0;
 		float atom_num = 0;
 
-		int n = 0;
-		auto collect_targets = [scratch, &n](const AtomBlock &block)
-		{
-			if (block.atom)
-			{
-				gemmi::Element ele = gemmi::Element(block.element);
-				float vdwRadius = ele.vdw_r();
-				scratch[n].position = block.my_position();
-				scratch[n].radius = vdwRadius;
-				scratch[n].atomic_num = ele.atomic_number();
-			}
-			n++;
-		};
-
-		do_on_each_block(blocks, {}, collect_targets);
-
-		auto check_clashes = [&scratch, &atom_num, &total, &count]
+		auto check_clashes = [&lookup, &atom_num, &total, &count]
 		(const std::vector<int> &pairs)
 		{
 			for (int i = 0; i < pairs.size(); i += 2)
@@ -259,30 +237,14 @@ auto clash(PairwiseDeviations *dev, std::set<ResidueId> forResidues)
 				int p = pairs[i];
 				int q = pairs[i + 1];
 				
-				const glm::vec3 &apos = scratch[p].position;
-				const glm::vec3 &bpos = scratch[q].position;
+				long double potential = lookup(p, q, false);
 				
-				float vdw_dist = scratch[p].radius + scratch[q].radius;
-
-				glm::vec3 posdiff = apos - bpos;
-				float difflength = glm::length(posdiff);
-				
-				float ratio = vdw_dist / difflength;
-				long double to6 = ratio * ratio * ratio * ratio * ratio * ratio;
-				long double to12 = to6 * to6;
-				
-				// to roughly match tables of epsilon found online
-				float weight = (scratch[p].atomic_num + 
-				                scratch[q].atomic_num) / 100;
-				weight *= 4;
-				
-				long double potential = (to12 - to6);
 				if (potential != potential)
 				{
 					continue;
 				}
 
-				total += potential * weight;
+				total += potential;
 				count ++;
 			};
 
