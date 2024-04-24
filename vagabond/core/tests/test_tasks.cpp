@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 			CalcTask *final_hook = nullptr;
 			
 			/* this final task returns the result to the pool to collect later */
-			Task<Result, void *> *submit_result = calculator->submitResult(t);
+			Task<Result, void *> *submit_result = calculator->actOfSubmission(t);
 
 			Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions
 			                             | Flag::DoSuperpose);
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 		while (true)
 		{
 			/* grab each individual result */
-			Result *r = calculator->acquireResult();
+			Result *r = calculator->acquireObject();
 
 			/* we ran out! */
 			if (r == nullptr)
