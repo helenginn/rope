@@ -16,26 +16,37 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Interaction.h"
-#include "Atom.h"
+#ifndef __vagabond__WholeModelPathSetupView__
+#define __vagabond__WholeModelPathSetupView__
 
-Interaction::Interaction(Atom *la, Atom *ra)
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/ListInstancesView.h>
+
+class TextButton;
+class ChooseHeader;
+
+class WholeModelPathSetupView : public Scene, public Responder<ChooseHeader>,
+public Responder<ListInstancesView>
 {
-	_sides.push_back(la->desc());
-	_sides.push_back(ra->desc());
-}
+public:
+	WholeModelPathSetupView(Scene *prev);
 
-std::string Interaction::desc() const
-{
-	std::ostringstream ss;
-	
-	for (const std::string &side : _sides)
-	{
-		ss << side << ":";
-	}
-	
-	ss << _value;
-	
-	return ss.str();
-}
+	virtual void setup();
+	virtual void refresh();
 
+	void getStructure(bool from);
+	virtual void sendObject(std::string tag, void *object);
+	
+	size_t chosenPairs();
+private:
+
+	TextButton *_fromButton = nullptr;
+	TextButton *_toButton = nullptr;
+
+	std::string _fromId;
+	std::string _toId;
+	bool _from = false;
+	ListInstancesView::Map _map;
+};
+
+#endif

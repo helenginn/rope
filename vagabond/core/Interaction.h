@@ -35,8 +35,17 @@ public:
 	{
 		_value = value;
 	}
+	
+	Atom *const &left() const
+	{
+		return _left;
+	}
 
-	std::string desc();
+	Atom *const &right() const
+	{
+		return _right;
+	}
+	std::string desc() const;
 	Interaction *expandedToFit(Interaction *other);
 private:
 	std::vector<std::string> _sides;

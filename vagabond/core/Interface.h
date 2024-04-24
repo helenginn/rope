@@ -34,6 +34,16 @@ public:
 	void addInteraction(Interaction &ia);
 	std::string desc();
 	
+	const size_t size() const
+	{
+		return _interactions.size();
+	}
+	
+	const std::list<Interaction> &interactions() const
+	{
+		return _interactions;
+	}
+	
 	void loadModel();
 private:
 	std::list<Interaction> _interactions;

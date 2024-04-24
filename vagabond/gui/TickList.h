@@ -16,26 +16,39 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Interaction.h"
-#include "Atom.h"
+#ifndef __vagabond__TickList__
+#define __vagabond__TickList__
 
-Interaction::Interaction(Atom *la, Atom *ra)
-{
-	_sides.push_back(la->desc());
-	_sides.push_back(ra->desc());
-}
+#include <vagabond/gui/elements/ListView.h>
+#include <vagabond/core/Responder.h>
+#include <map>
 
-std::string Interaction::desc() const
+class TickList : public ListView, public HasResponder<Responder<TickList>>
 {
-	std::ostringstream ss;
-	
-	for (const std::string &side : _sides)
+public:
+	TickList(Scene *prev);
+
+	void setOptions(const std::vector<std::string> &headers)
 	{
-		ss << side << ":";
+		_headers = headers;
 	}
-	
-	ss << _value;
-	
-	return ss.str();
-}
 
+	void setTicked(const std::vector<std::string> &ticked)
+	{
+		for (const std::string &t : ticked)
+		{
+			_ticks[t] = true;
+		}
+	}
+
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
+
+	virtual void buttonPressed(std::string tag, Button *button);
+private:
+	std::vector<std::string> _headers;
+	
+	std::map<std::string, bool> _ticks;
+};
+
+#endif

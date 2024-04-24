@@ -39,6 +39,7 @@ Ligand::Ligand(std::string model_id, AtomGroup *grp)
 
 Ligand::Ligand()
 {
+	setRefined(true); // false but needed for now
 
 }
 
