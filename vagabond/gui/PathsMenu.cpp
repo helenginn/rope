@@ -20,6 +20,7 @@
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ConfSpaceView.h>
+#include "WholeModelPathSetupView.h"
 #include "SavedSpace.h"
 #include "RopeSpaceItem.h"
 #include "Entity.h"
@@ -185,8 +186,16 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "make_new")
 	{
-		MakeNewPaths *mnp = new MakeNewPaths(this, _entity);
-		mnp->show();
+		if (_left)
+		{
+			MakeNewPaths *mnp = new MakeNewPaths(this, _entity);
+			mnp->show();
+		}
+		else
+		{
+			WholeModelPathSetupView *wmpsv = new WholeModelPathSetupView(this);
+			wmpsv->show();
+		}
 
 		return;
 	}

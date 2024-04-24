@@ -45,6 +45,11 @@ public:
 			_headers.push_back(h);
 		}
 	}
+
+	void setHeaders(std::vector<std::string> &headers)
+	{
+		_headers = headers;
+	}
 	
 	void setCanDelete(bool del)
 	{

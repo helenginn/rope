@@ -16,26 +16,49 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Interaction.h"
-#include "Atom.h"
+#include <vagabond/gui/elements/TickBoxes.h>
+#include "TickList.h"
 
-Interaction::Interaction(Atom *la, Atom *ra)
+TickList::TickList(Scene *prev) : ListView(prev)
 {
-	_sides.push_back(la->desc());
-	_sides.push_back(ra->desc());
+
 }
 
-std::string Interaction::desc() const
+size_t TickList::lineCount()
 {
-	std::ostringstream ss;
-	
-	for (const std::string &side : _sides)
+	return _headers.size();
+}
+
+Renderable *TickList::getLine(int i)
+{
+	Box *b = new Box();
 	{
-		ss << side << ":";
+		TickBoxes *tb = new TickBoxes(this, this);
+		std::string text = _headers[i];
+		bool ticked = _ticks[text];
+		tb->addOption(text, text, ticked);
+		tb->arrange(0, 0, 0.5, 0.1);
+		b->addObject(tb);
 	}
-	
-	ss << _value;
-	
-	return ss.str();
+
+	return b;
 }
 
+void TickList::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "back")
+	{
+		std::vector<std::string> accepted;
+		for (const std::string &str : _headers)
+		{
+			if (_ticks[str])
+			{
+				accepted.push_back(str);
+			}
+		}
+
+		sendResponse("list", &accepted);
+	}
+
+	ListView::buttonPressed(tag, button);
+}
