@@ -48,7 +48,7 @@ public:
 	}
 private:
 	void prepare(const std::vector<Atom *> &atoms);
-	Eigen::MatrixXf _matrix;
+	Eigen::MatrixXi _matrix;
 	
 	struct SortedVector
 	{

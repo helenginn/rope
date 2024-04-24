@@ -28,6 +28,7 @@
 
 class Atom;
 class BondSequence;
+struct AtomBlock; 
 struct ResidueId;
 struct Deviation; 
 struct ActivationEnergy; 
@@ -45,6 +46,16 @@ public:
 	                   const float &limit = 8.f);
 
 	~PairwiseDeviations();
+
+	struct ClashInfo
+	{
+		glm::vec3 position;
+		float radius;
+		float atomic_num;
+	};
+	
+	void obtainClashInfo(const std::vector<AtomBlock> &blocks,
+	                     ClashInfo *&scratch);
 	
 	void setLimit(const float &limit)
 	{

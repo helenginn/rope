@@ -22,27 +22,10 @@
 #include "PairwiseDeviations.h"
 #include "LoopRoundResidues.h"
 
-void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
-                             Separation *sep)
+Floats prepare_sines(size_t size, float frac)
 {
-	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
-										{});
-
-	TorsionBasis *basis = seq->torsionBasis();
-	std::vector<AtomBlock> &blocks = seq->blocks();
-	glm::vec3 *scratch = new glm::vec3[blocks.size() * 1];
-
-	int n = 0;
-	auto collect_targets = [scratch, /*&atoms,*/ &n](const AtomBlock &block)
-	{
-		scratch[n] = block.my_position();
-		n++;
-	};
-
-	do_on_each_block(blocks, {}, collect_targets);
-	
-	Floats sines(grads.size());
-	for (int i = 0; i < grads.size(); i++)
+	Floats sines(size);
+	for (int i = 0; i < size; i++)
 	{
 		float limit = M_PI * (i + 1);
 		float f = frac * limit;
@@ -50,16 +33,27 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 		sines[i] = sin(f);
 	}
 
+	return sines;
+}
+
+void GradientTerm::clash(BondSequence *seq, PairwiseDeviations *dev,
+                         Separation *sep)
+{
+	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
+										{});
+	std::vector<AtomBlock> &blocks = seq->blocks();
+	PairwiseDeviations::ClashInfo *scratch = nullptr;
+	obtainClashInfo(blocks, scratch);
+	auto lookup = clash_to_lookup(scratch);
+
 	float count = 0;
-	glm::vec3 *ref = dev->reference();
-
-	target_actual_distances lookup(ref, scratch);
-
+	float total = 0;
+	Floats sines = prepare_sines(grads.size(), frac);
 	int a_idx = sep->index_of(param->atom(1));
 	int c_idx = sep->index_of(param->atom(2));
 	int pre = (b_idx == c_idx ? a_idx : c_idx);
-	
-	auto check_momentum = [this, &pre, &blocks, lookup, sep, sines, &count]
+
+	auto check_clashes = [this, &pre, &blocks, lookup, sep, sines, &count]
 	(const std::vector<int> &pairs)
 	{
 		AtomBlock &block = blocks[b_idx];
@@ -86,12 +80,9 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 			if (reject) { continue; }
 			
 			int lp = sep->separationBetween(pre, p);
-			float dir = (lp > lc ? -1 : +1);
-//			std::cout << (dir > 0 ? "+" : "-");
+			float dir = (lp > lc ? +1 : -1);
 
-			float targdist = lookup.target(p, q, frac);
-			float actualdist = lookup.actual(p, q);
-			float diff = (targdist - actualdist);
+			long double diff = lookup(p, q, true);
 			
 			float change = bond_rotation_on_distance_gradient(myPos, upPos, 
 			                                                lookup.pos(p),
@@ -110,7 +101,108 @@ void GradientTerm::calculate(BondSequence *seq, PairwiseDeviations *dev,
 			}
 			count++;
 		}
-//		std::cout << std::endl;
+	};
+
+	loop(check_clashes);
+
+	for (float &f : grads)
+	{
+		f /= (float)(count);
+		if (f != f || !std::isfinite(f))
+		{
+			f = 0;
+		}
+	}
+
+	delete [] scratch;
+}
+
+void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
+                             Separation *sep)
+{
+//	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
+//										{});
+	const std::vector<int> &pairs = dev->pairs();
+	auto loop = [pairs](const JobOnPair &job)
+	{
+		job(pairs);
+	};
+
+	std::vector<AtomBlock> &blocks = seq->blocks();
+	glm::vec3 *scratch = new glm::vec3[blocks.size() * 1];
+
+	glm::vec3 *ref = dev->reference();
+	target_actual_distances lookup(ref, scratch);
+
+	int n = 0;
+	auto collect_targets = [scratch, /*&atoms,*/ &n](const AtomBlock &block)
+	{
+		scratch[n] = block.my_position();
+		n++;
+	};
+
+	do_on_each_block(blocks, {}, collect_targets);
+	
+	Floats sines = prepare_sines(grads.size(), frac);
+	
+	float count = 0;
+
+	int a_idx = sep->index_of(param->atom(1));
+	int c_idx = sep->index_of(param->atom(2));
+	int pre = (b_idx == c_idx ? a_idx : c_idx);
+	
+	auto check_momentum = [this, &pre, &blocks, lookup, 
+	                       sep, sines, &count]
+	(const std::vector<int> &pairs)
+	{
+		AtomBlock &block = blocks[b_idx];
+		glm::vec3 myPos = block.my_position();
+		glm::vec3 upPos = block.parent_position();
+
+		const int *ptr = &pairs[0];
+		for (int i = 0; i < pairs.size(); i += 2)
+		{
+			int p = ptr[i];
+			int q = ptr[i + 1];
+			
+			if (p == b_idx || q == b_idx)
+			{
+				continue;
+			}
+			
+			int lr = sep->separationBetween(p, q);
+			int lc = sep->separationBetween(p, b_idx);
+			if (lc > lr) { continue; }
+			int cr = sep->separationBetween(b_idx, q);
+
+			// atom is not in between the pair
+			bool reject = (lc + cr - lr > 0);
+			if (reject) { continue; }
+			
+			int lp = sep->separationBetween(pre, p);
+			float dir = (lp > lc ? +1 : -1);
+
+			float targdist = lookup.target(p, q, frac);
+			float actualdist = lookup.actual(p, q);
+			float diff = (actualdist - targdist);
+			
+			float change = bond_rotation_on_distance_gradient(myPos, upPos, 
+			                                                lookup.pos(p),
+			                                                lookup.pos(q));
+			
+			float grad = deg2rad(2 * diff * change * dir);
+			
+			int n = 0;
+			if (grad == grad && std::isfinite(grad))
+			{
+				for (const float &f : sines)
+				{
+					grads[n] += f * grad;
+					n++;
+				}
+			}
+			count++;
+		}
 	};
 
 	loop(check_momentum);

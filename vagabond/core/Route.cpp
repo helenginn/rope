@@ -55,12 +55,18 @@ Route::~Route()
 
 void Route::setup()
 {
+	if (_setup)
+	{
+		return;
+	}
+
 	if (_source.size() == 0 && motionCount() == 0)
 	{
 		throw std::runtime_error("No destination or prior set for route");
 	}
 
 	prepareResources();
+	_setup = true;
 }
 
 float Route::submitJobAndRetrieve(float frac, bool show)
@@ -83,10 +89,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
                                      const ValidateParam &validate,
                                      BondSequenceHandler *handler)
 {
-	if (handler == nullptr) handler = _mainChainSequences;
+	if (handler == nullptr) handler = _hydrogenFreeSequences;
 	
-	bool all_comparisons = doingSides() ? true : false;
-
 	int steps = (order + 1) * 2;
 
 	Bin<GradientPath> big_bin;
@@ -96,7 +100,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	Separation *sep = _helpers[handler].sep;
 
 	Task<GradientPath, void *> *big_submission = big_bin.actOfSubmission(0);
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+//	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions);// | Flag::DoPositions);
 	// do not allow to complete unless all steps 
 
 	std::vector<int> indices;
@@ -145,16 +150,28 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 			int b_idx = indices[j];
 			Parameter *p = basis->parameter(blocks[b_idx].torsion_idx);
 			int g_idx = j;
-			auto calc_term = [sep, order, frac, g_idx, b_idx, p, pw]
+			auto momentum_term = [sep, order, frac, g_idx, b_idx, p, pw]
 			(BondSequence *seq) -> GradientTerm
 			{
 				GradientTerm term(order, frac, g_idx, b_idx, p);
-				term.calculate(seq, pw, sep);
+				term.momentum(seq, pw, sep);
+				return term;
+			};
+
+			auto clash_term = [sep, order, frac, g_idx, b_idx, p, pw]
+			(BondSequence *seq) -> GradientTerm
+			{
+				GradientTerm term(order, frac, g_idx, b_idx, p);
+				term.clash(seq, pw, sep);
 				return term;
 			};
 			
-			auto make_term = new Task<BondSequence *, GradientTerm>
-			(calc_term, "calculate gradient term");
+			bool clash = (options & VdWClashes);
+			auto make_term = clash ? 
+			(new Task<BondSequence *, GradientTerm> (clash_term, 
+			                                         "clash gradient")) :
+			(new Task<BondSequence *, GradientTerm> (momentum_term, 
+                                         "momentum gradient"));
 
 			final_hook->follow_with(make_term);
 			final_hook->follow_with(let_go);
@@ -196,7 +213,7 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options,
 	/* this final task returns the result to the pool to collect later */
 	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
 
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoPositions);
+	Flag::Calc calc = Flag::Calc(Flag::DoTorsions);// | Flag::DoPositions);
 	if (show || !pairwise)
 	{
 		calc = Flag::Calc(Flag::DoSuperpose | calc);
@@ -511,24 +528,29 @@ void Route::deleteHelpers()
 	_helpers.clear();
 }
 
+void setup_helpers(Route::Helpers &helpers, BondSequence *seq, float distance)
+{
+	auto pw = new PairwiseDeviations(seq, {}, distance);
+	Separation *sep = new Separation(seq);
+
+	helpers.pw = pw;
+	helpers.sep = sep;
+
+}
+
 void Route::prepareEnergyTerms()
 {
 	deleteHelpers();
 
 	{
 		BondSequence *seq = _mainChainSequences->sequence();
-		_helpers[_mainChainSequences].seq = seq;
-		auto pw = new PairwiseDeviations(seq, {}, _maxMomentumDistance);
-		Separation *sep = new Separation(seq);
-
-		_helpers[_mainChainSequences].pw = pw;
-		_helpers[_mainChainSequences].sep = sep;
+		setup_helpers(_helpers[_mainChainSequences], seq, _maxMomentumDistance);
 	}
 
 	{
-		auto pw = new PairwiseDeviations(_hydrogenFreeSequences->sequence(),
-		                                 {}, _maxClashDistance);
-		_helpers[_hydrogenFreeSequences].pw = pw;
+		BondSequence *seq = _hydrogenFreeSequences->sequence();
+		setup_helpers(_helpers[_hydrogenFreeSequences], 
+		              seq, _maxMomentumDistance);
 	}
 
 	{

@@ -309,7 +309,7 @@ void BondSequence::addOffset(rope::GetVec3FromIdx getOffset)
 void BondSequence::calculateAtoms(const rope::IntToCoordGet &coordForIdx,
                                   const rope::GetVec3FromCoordIdx &posForCoord)
 {
-	auto calculatePositions = [posForCoord, this](int idx, 
+	auto calculatePositions = [&posForCoord, this](int idx, 
 	                                                 const Coord::Get &get)
 	{
 		AtomBlock &b = _blocks[idx];
@@ -322,7 +322,7 @@ void BondSequence::calculateAtoms(const rope::IntToCoordGet &coordForIdx,
 void BondSequence::calculateTorsions(const rope::IntToCoordGet &coordForIdx,
                                      const rope::GetFloatFromCoordIdx &torsionForCoord)
 {
-	auto calculateTorsions = [torsionForCoord, this]
+	auto calculateTorsions = [&torsionForCoord, this]
 	(int idx, const Coord::Get &get)
 	{
 		calculateBlock(idx, get, torsionForCoord);

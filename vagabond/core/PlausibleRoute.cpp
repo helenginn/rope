@@ -97,7 +97,7 @@ bool PlausibleRoute::meaningfulUpdate(float new_score, float old_score,
 {
 	if (new_score < 0) return false;
 	
-	if (doingClashes() && new_score < 0.01)
+	if (doingClashes() && new_score < 0.3)
 	{
 		return false;
 	}
@@ -113,7 +113,7 @@ auto cycle_and_check(PlausibleRoute *me)
 {
 	return [me]()
 	{
-		if (!me->doingSides()) 
+		if (!me->doingClashes()) 
 		{
 			return;
 		}
@@ -141,7 +141,7 @@ auto cycle_and_check(PlausibleRoute *me)
 			std::cout << oldsc << " to " << newsc << std::endl;
 		}
 
-		if (!me->shouldFinish() && !me->meaningfulUpdate(newsc, oldsc, 0.9))
+		if (!me->shouldFinish() && !me->meaningfulUpdate(newsc, oldsc, 0.99))
 		{
 			me->upgradeJobs();
 			if (me->lastJob())
@@ -194,10 +194,23 @@ void PlausibleRoute::prepareJobs()
 	auto check_gradients = [this, large_main]()
 	{
 		bool good = true;
-		while (good && !doingSides())
+		float before = _bestScore;
+		while (!doingClashes())
 		{
 			good = applyGradients({});
+			if (!good)
+			{
+				if (!_finish)
+				{
+					upgradeJobs();
+				}
+
+				float after = _bestScore;
+				std::cout << before << " to " << after << std::endl;
+				break;
+			}
 		}
+		
 	};
 
 	only_once flip_once(flip_main_chain);
@@ -205,11 +218,6 @@ void PlausibleRoute::prepareJobs()
 	
 	_tasks.push_back(check_gradients);
 	_tasks.push_back(cycle_and_check(this));
-	
-//	if (_maxFlipTrial > 0)
-	{
-//		_tasks.push_back(flip_side_chain);
-	}
 }
 
 void PlausibleRoute::setTargets()
@@ -270,31 +278,19 @@ PlausibleRoute::calcOptions(const CalcOptions &add_options,
 
 bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 {
-	GradientPath *path = gradients(validate);
+	auto side_chain = [this](int idx) -> bool
+	{
+		return parameter(idx) && !parameter(idx)->coversMainChain();
+	};
+
+	GradientPath *path = gradients(doingSides() ? side_chain : validate);
 	if (Route::_finish)
 	{
 		delete path;
 		return false;
 	}
+
 	std::vector<Floats> current; current.resize(motionCount());
-	
-	/*
-	for (int i = 0; i < path->grads.size(); i++)
-	{
-		int p = path->motion_idxs[i]; // motion_idx
-		if (p < 0)
-		{
-			continue;
-		}
-		std::cout << parameter(p) << "\t";
-		for (int j = 0; j < path->grads[i].size(); j++)
-		{
-			std::cout << path->grads[i][j] << ", ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-	*/
 
 	for (int i = 0; i < path->motion_idxs.size(); i++)
 	{
@@ -305,10 +301,13 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 		}
 	}
 
+	float scale = doingClashes() ? 1e-4 : 1;
+	scale = 1;
 	float alpha = 0;
 	float step = 0.25;
 	
-	auto score_for_alpha = [this, path, current](const float &alpha) -> float
+	auto score_for_alpha = [this, scale, path, current]
+	(const float &alpha) -> float
 	{
 		for (int j = 0; j < path->motion_idxs.size(); j++)
 		{
@@ -318,12 +317,17 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 				const Floats &sines = path->grads[j];
 				for (int i = 0; i < sines.size(); i++)
 				{
-					motion(p).wp._grads[i] = current[p][i] + sines[i] * alpha;
+					float add = sines[i] * alpha * scale;
+					if (fabs(add) > 20)
+					{
+						add = (add > 0 ? 1 : -1) * 20;
+					}
+					motion(p).wp._grads[i] = current[p][i] + add;
 				}
 			}
 		}
 
-		float score = routeScore(nudgeCount());
+		float score = routeScore(nudgeCount(), None, CoreChain);
 //		std::cout << alpha << " -> " << score << std::endl;
 		return score;
 	};
@@ -340,11 +344,9 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 		
 		if (score < best_score)
 		{
-			std::cout << "\t" << best_score << " now " << score << std::endl;
 			best_score = score;
 			postScore(best_score);
 			best_alpha = candidate;
-			std::cout << "\tbest alpha now " << best_alpha << std::endl;
 			alpha = best_alpha;
 			divisions = 0;
 			step *= 1.5;
@@ -361,13 +363,18 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 		}
 	}
 	
-	std::cout << "Best alpha: " << best_alpha << std::endl;
 	best_score = score_for_alpha(best_alpha);
+	_bestScore = best_score;
 	postScore(best_score);
 	
 	path->destroy();
 	delete path;
-	return !_finish && (best_score < first_score);
+
+	if (_finish) return false;
+	if (best_alpha < 1e-4) return false;
+	if (first_score - best_score < 1e-4) return false;
+
+	return true;
 }
 
 GradientPath *PlausibleRoute::gradients(const ValidateParam &validate,
@@ -376,10 +383,9 @@ GradientPath *PlausibleRoute::gradients(const ValidateParam &validate,
 {
 	CalcOptions options = calcOptions(add_options, subtract_options);
 	
-	BondSequenceHandler *handler = doingSides() ? 
-	_hydrogenFreeSequences : _mainChainSequences;
+	int order = doingQuadratic() ? 1 : 2;
 
-	return submitGradients(options, _order, validate, handler);
+	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
 
 
@@ -501,15 +507,6 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 		_paramPtrs.push_back(&wps._grads[0]);
 		steps.push_back(step);
 
-		/*
-		if (doingCubic() && motion.twist.twist && !doingSides())
-		{
-			_paramStarts.push_back(motion.twist.twist->twist);
-			_paramPtrs.push_back(&motion.twist.twist->twist);
-			steps.push_back(45.f);
-		}
-		*/
-
 		if (doingCubic())
 		{
 			_paramStarts.push_back(wps._grads[1]);
@@ -595,7 +592,7 @@ int PlausibleRoute::nudgeTorsions(const ValidateParam &validate,
 
 		if (!validate(i) || 
 		    (!doingClashes() && motion(i).locked > 0) ||
-		    (doingClashes() && motion(i).locked > 1))
+		    (doingClashes() && motion(i).locked > 0))
 		{
 			continue;
 		}
@@ -803,7 +800,6 @@ void PlausibleRoute::doCalculations()
 	}
 	
 	finishTicker();
-	prepareForAnalysis();
 	Route::_finish = false;
 	std::cout << "Sending response now" << std::endl;
 	Route::sendResponse("done", (void *)this);
@@ -857,29 +853,12 @@ int PlausibleRoute::sendJob(const std::vector<float> &all)
 	assignParameterValues(all);
 	float result = FLT_MAX;
 	
-	int num = std::min((int)_magnitudeThreshold * 2, 32);
-	num = std::max(num, 4);
+	int num = nudgeCount();
 	result = routeScore(num);
 	
 	int ticket = getNextTicket();
 	setScoreForTicket(ticket, result);
 	return ticket;
-}
-
-void PlausibleRoute::prepareForAnalysis()
-{
-	float result = routeScore(nudgeCount());
-	postScore(result);
-	int steps = 200;
-	
-	for (size_t i = 0; i < steps; i++)
-	{
-		float frac = i / (float)steps;
-		submitJob(frac, true);
-	}
-	
-	retrieve();
-	clearTickets();
 }
 
 void PlausibleRoute::upgradeJobs()
