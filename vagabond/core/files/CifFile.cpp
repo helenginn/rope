@@ -441,6 +441,7 @@ bool CifFile::processLoopAsCompAtoms(Loop &loop)
 
 		std::string ele = loop.values[i + ele_idx];
 		std::string name = loop.values[i + atom_name_idx];
+		remove_quotes(name);
 
 		Atom *a = new Atom();
 		a->setElementSymbol(ele);
@@ -514,6 +515,9 @@ bool CifFile::processLoopAsAngles(Loop &loop)
 		std::string p = loop.values[i + id1_idx];
 		std::string q = loop.values[i + id2_idx];
 		std::string r = loop.values[i + id3_idx];
+		remove_quotes(p);
+		remove_quotes(q);
+		remove_quotes(r);
 		float angle = as_number(loop.values[i + angle_idx]);
 		float dev = as_number(loop.values[i + dev_idx]);
 
@@ -550,6 +554,9 @@ bool CifFile::processLoopAsAngleLinks(Loop &loop)
 		std::string p = loop.values[i + id1_idx];
 		std::string q = loop.values[i + id2_idx];
 		std::string r = loop.values[i + id3_idx];
+		remove_quotes(p);
+		remove_quotes(q);
+		remove_quotes(r);
 		float angle = as_number(loop.values[i + angle_idx]);
 		float dev = as_number(loop.values[i + dev_idx]);
 		std::string link_code = loop.values[i + link_idx];
@@ -594,6 +601,8 @@ bool CifFile::processLoopAsLengthLinks(Loop &loop)
 	{
 		std::string p = loop.values[i + id1_idx];
 		std::string q = loop.values[i + id2_idx];
+		remove_quotes(p);
+		remove_quotes(q);
 		float length = as_number(loop.values[i + dist_idx]);
 		float dev = as_number(loop.values[i + dev_idx]);
 		std::string link_code = loop.values[i + link_idx];
@@ -637,6 +646,8 @@ bool CifFile::processLoopAsLengths(Loop &loop)
 		std::string code = loop.values[i + code_idx];
 		std::string p = loop.values[i + id1_idx];
 		std::string q = loop.values[i + id2_idx];
+		remove_quotes(p);
+		remove_quotes(q);
 		float length = as_number(loop.values[i + dist_idx]);
 		float dev = as_number(loop.values[i + dev_idx]);
 
@@ -675,6 +686,10 @@ bool CifFile::processLoopAsTorsions(Loop &loop)
 		std::string q = loop.values[i + id2_idx];
 		std::string r = loop.values[i + id3_idx];
 		std::string s = loop.values[i + id4_idx];
+		remove_quotes(p);
+		remove_quotes(q);
+		remove_quotes(r);
+		remove_quotes(s);
 		float angle = as_number(loop.values[i + angle_idx]);
 		float dev = as_number(loop.values[i + dev_idx]);
 		int period = as_number(loop.values[i + period_idx]);
