@@ -26,6 +26,7 @@
 
 class Substance;
 class AtomGroup;
+class Residue;
 
 class Ligand : public Instance
 {
@@ -42,7 +43,19 @@ public:
 	}
 
 	virtual bool atomBelongsToInstance(Atom *a);
+
+	virtual Atom *equivalentForAtom(Ligand *other, Atom *atom);
+
+	virtual std::vector<ResidueTorsion> residueTorsionList();
+
+	virtual void grabTorsions(RTAngles &angles,
+	                          rope::TorsionType type = rope::RefinedTorsions);
+
+	virtual const Residue *
+	localResidueForResidueTorsion(const ResidueTorsion &rt);
 protected:
+	void collectTorsions();
+
 	friend void to_json(json &j, const Ligand &value);
 	friend void from_json(const json &j, Ligand &value);
 
@@ -51,6 +64,7 @@ private:
 	std::string _code;
 	std::string _chain;
 	std::set<ResidueId> _resids;
+	std::vector<ResidueTorsion> _rts;
 };
 
 inline void to_json(json &j, const Ligand &value)

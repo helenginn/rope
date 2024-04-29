@@ -105,7 +105,9 @@ public:
 	
 	void superposeOn(Instance *other);
 	
-	const Residue *localResidueForResidueTorsion(const ResidueTorsion &rt);
+	virtual const Residue *
+	localResidueForResidueTorsion(const ResidueTorsion &rt);
+
 	virtual Residue *const equivalentMaster(const ResidueId &local)
 	{ return nullptr; }
 	virtual Residue *const equivalentLocal(Residue *const master)

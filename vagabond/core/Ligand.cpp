@@ -20,6 +20,7 @@
 #include "Environment.h"
 #include "ModelManager.h"
 #include "AtomGroup.h"
+#include "RTAngles.h"
 #include "Model.h"
 
 Ligand::Ligand(std::string model_id, AtomGroup *grp)
@@ -40,7 +41,6 @@ Ligand::Ligand(std::string model_id, AtomGroup *grp)
 Ligand::Ligand()
 {
 	setRefined(true); // false but needed for now
-
 }
 
 std::string Ligand::desc() const
@@ -69,4 +69,73 @@ bool Ligand::atomBelongsToInstance(Atom *a)
 const std::string Ligand::id() const
 {
 	return _model_id + ":" + _anchorDesc;
+}
+
+Atom *Ligand::equivalentForAtom(Ligand *other, Atom *atom)
+{
+	load();
+	AtomGroup *mine = currentAtoms();
+
+	for (Atom *candidate : mine->atomVector())
+	{
+		if (candidate->atomName() == atom->atomName())
+		{
+			return candidate;
+		}
+	}
+	
+	unload();
+	return nullptr;
+}
+
+void Ligand::collectTorsions()
+{
+	if (_rts.size() > 0)
+	{
+		return;
+	}
+
+	load();
+	_rts.clear();
+	AtomGroup *mine = currentAtoms();
+	
+	for (size_t i = 0; i < mine->bondTorsionCount(); i++)
+	{
+		BondTorsion *t = mine->bondTorsion(i);
+		ResidueTorsion rt(t);
+		_rts.push_back(ResidueTorsion(t));
+	}
+	
+	unload();
+}
+
+std::vector<ResidueTorsion> Ligand::residueTorsionList()
+{
+	collectTorsions();
+	return _rts;
+}
+
+void Ligand::grabTorsions(RTAngles &angles, rope::TorsionType type)
+{
+	collectTorsions();
+	for (int i = 0; i < angles.size(); i++)
+	{
+		ResidueTorsion &rt = angles.rt(i);
+
+		Angular f = NAN;
+		for (int j = 0; j < _rts.size(); j++)
+		{
+			if (rt == _rts[j])
+			{
+				f = _rts[j].torsion().refinedAngle();
+				break;
+			}
+		}
+
+		angles.storage(i) = f;
+	}
+}
+const Residue *Ligand::localResidueForResidueTorsion(const ResidueTorsion &rt)
+{
+	return nullptr; // ??? when we don't have a sequence then...??
 }
