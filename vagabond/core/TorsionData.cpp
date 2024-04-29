@@ -26,6 +26,37 @@ DegreeTypedData(length)
 
 }
 
+TorsionData TorsionData::operator+(const TorsionData &other) const
+{
+	if (other.vectorCount() != vectorCount())
+	{
+		throw std::runtime_error("Trying to add torsion datas of different"\
+		                         "vector lengths");
+	}
+
+	size_t length = _length + other._length;
+	TorsionData combined(length);
+	std::cout << "Combined length: " << length << std::endl;
+
+	std::vector<ResidueTorsion> left_headers = headers();
+	std::vector<ResidueTorsion> right_headers = other.headers();
+	combined.addHeaders(left_headers);
+	combined.addHeaders(right_headers);
+	std::cout << left_headers.size() << " " << right_headers.size() << std::endl;
+	
+	for (int i = 0; i < vectorCount(); i++)
+	{
+		std::vector<Angular> angles; angles.reserve(length);
+		angles.insert(angles.end(), vector(i).begin(), vector(i).end());
+		angles.insert(angles.end(), other.vector(i).begin(), 
+		              other.vector(i).end());
+		combined.addArray(i == 0 ? "from" : "to", angles);
+		std::cout << i << " added " << angles.size() << std::endl;
+	}
+
+	return combined;
+}
+
 void TorsionData::addMetadataArray(HasMetadata *hmd, Array next)
 {
 	_objects.push_back(hmd);

@@ -42,6 +42,8 @@ public:
 		_objects = other._objects;
 	}
 
+	TorsionData operator+(const TorsionData &other) const;
+
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 	virtual void addMetadataArray(HasMetadata *hmd, RTAngles next);
 
