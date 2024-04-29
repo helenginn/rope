@@ -67,6 +67,7 @@ public:
 	}
 	
 	bool matchesAtoms(Atom *a, Atom *b, Atom *c, Atom *d);
+	virtual Atom *owningAtom() const;
 
 	virtual Atom *anAtom()
 	{

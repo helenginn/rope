@@ -85,6 +85,11 @@ public:
 	{
 		return _atom;
 	}
+
+	virtual Atom *owningAtom() const
+	{
+		return _atom;
+	}
 	
 	virtual size_t atomCount() const
 	{

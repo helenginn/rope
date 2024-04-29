@@ -227,10 +227,16 @@ const ResidueId &BondTorsion::residueId() const
 		return _resId;
 	}
 
+	Atom *owning = owningAtom();
+	return owning->residueId();
+}
+
+Atom *BondTorsion::owningAtom() const
+{
 	const ResidueId &bId = _b->residueId();
 	const ResidueId &cId = _c->residueId();
 
-	return (bId < cId ? bId : cId);
+	return (bId < cId ? _b : _c);
 }
 
 ResidueId BondTorsion::residueId() 
