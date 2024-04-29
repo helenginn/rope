@@ -19,9 +19,13 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include "PathInterfaceSetupView.h"
 #include "TickList.h"
+#include "NewPath.h"
+#include "RouteExplorer.h"
+#include "PlausibleRoute.h"
 #include <vagabond/core/Model.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Interface.h>
+#include <vagabond/core/NonCovalents.h>
 #include <string>
 
 PathInterfaceSetupView::PathInterfaceSetupView(Scene *prev, Model *from,
@@ -31,11 +35,13 @@ PathInterfaceSetupView::PathInterfaceSetupView(Scene *prev, Model *from,
 	_from = from;
 	_to = to;
 
+	std::cout << "load" << std::endl;
 	_from->load();
 }
 
 PathInterfaceSetupView::~PathInterfaceSetupView()
 {
+	std::cout << "unload" << std::endl;
 	_from->unload();
 
 	for (Group &group : _interfaces)
@@ -46,6 +52,7 @@ PathInterfaceSetupView::~PathInterfaceSetupView()
 
 void PathInterfaceSetupView::precalculateInterfaces()
 {
+	_from->load();
 	for (int i = 0; i < _list.size() - 1; i++)
 	{
 		const std::string &first = _list[i];
@@ -60,15 +67,28 @@ void PathInterfaceSetupView::precalculateInterfaces()
 			}
 
 			std::string str = first + " to " + second;
-			Interface *face = left->interfaceWithOther(right);
+			Interface *face = left->interfaceWithOther(right, 3.1);
 			_interfaces.push_back({left, right, str, face});
 		}
 	}
+
+	_from->unload();
 }
 
 void PathInterfaceSetupView::setup()
 {
 	addTitle("Prepare interfaces");
+
+	{
+		TextButton *t = new TextButton("Next", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnJob
+		([this]()
+		 {
+			preparePath();
+		 });
+		addObject(t);
+	}
 
 	precalculateInterfaces();
 	ListView::setup();
@@ -145,12 +165,18 @@ std::vector<PathInterfaceSetupView::StringPair>
 PathInterfaceSetupView::sanitiseInteractions(Group &group)
 {
 	std::vector<StringPair> pairs;
-	for (const Interaction &interaction : group.face->interactions())
+	for (const std::string &chosen : group.chosen)
 	{
-		const std::string l = interaction.left()->desc();
-		const std::string r = interaction.right()->desc();
-
-		pairs.push_back({l, r});
+		for (const Interaction &interaction : group.face->interactions())
+		{
+			if (chosen == interaction.desc())
+			{
+				std::string left = interaction.side(0);
+				std::string right = interaction.side(1);
+				
+				pairs.push_back({left, right});
+			}
+		}
 	}
 
 	return pairs;
@@ -158,5 +184,34 @@ PathInterfaceSetupView::sanitiseInteractions(Group &group)
 
 void PathInterfaceSetupView::preparePath()
 {
+	NewPath new_path;
 
+	for (const std::string &key : _list)
+	{
+		if (_map.count(key) && _map[key].length() > 0)
+		{
+			Instance *left = _from->instanceWithId(key);
+			Instance *right = _to->instanceWithId(_map[key]);
+			new_path.addLinkedInstances(left, right);
+		}
+	}
+
+	PlausibleRoute *route = new_path();
+
+	NonCovalents *noncovs = new NonCovalents();
+	for (Group &group : _interfaces)
+	{
+		std::vector<StringPair> atom_descriptions = sanitiseInteractions(group);
+
+		for (const StringPair &pair : atom_descriptions)
+		{
+			noncovs->addBond(group.left, group.right, pair.first, pair.second);
+		}
+	}
+	
+	route->setNonCovalents(noncovs);
+
+	RouteExplorer *re = new RouteExplorer(this, route);
+	re->show();
 }
+
