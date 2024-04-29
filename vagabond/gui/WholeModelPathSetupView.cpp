@@ -195,6 +195,7 @@ void WholeModelPathSetupView::sendObject(std::string tag, void *object)
 				pair.id = "";
 			}
 		}
+
 		refresh();
 	}
 	else
