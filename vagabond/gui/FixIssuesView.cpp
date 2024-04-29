@@ -96,31 +96,31 @@ FixIssues::Options FixIssuesView::options()
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixPhenylalanine);
 	}
-	else if (_tickboxes->isTicked("tyrosine"))
+	if (_tickboxes->isTicked("tyrosine"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixTyrosine);
 	}
-	else if (_tickboxes->isTicked("aspartate"))
+	if (_tickboxes->isTicked("aspartate"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixAspartate);
 	}
-	else if (_tickboxes->isTicked("glutamate"))
+	if (_tickboxes->isTicked("glutamate"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixGlutamate);
 	}
-	else if (_tickboxes->isTicked("asparagine"))
+	if (_tickboxes->isTicked("asparagine"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixAsparagine);
 	}
-	else if (_tickboxes->isTicked("arginine"))
+	if (_tickboxes->isTicked("arginine"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixArginine);
 	}
-	else if (_tickboxes->isTicked("histidine"))
+	if (_tickboxes->isTicked("histidine"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixHistidine);
 	}
-	else if (_tickboxes->isTicked("peptide_flips"))
+	if (_tickboxes->isTicked("peptide_flips"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixPeptideFlips);
 	}
