@@ -172,6 +172,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 			
 			int lr = sep->separationBetween(p, q);
 			int lc = sep->separationBetween(p, b_idx);
+			if (lr < 0) { continue; }
 			if (lc > lr) { continue; }
 			int cr = sep->separationBetween(b_idx, q);
 
