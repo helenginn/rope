@@ -19,18 +19,34 @@
 #ifndef __vagabond__NewPath__
 #define __vagabond__NewPath__
 
+#include <vector>
+
 class Instance;
 class PlausibleRoute;
+class TorsionData;
 class Path;
 
 class NewPath
 {
 public:
 	NewPath(Instance *from, Instance *to, Path *blueprint = nullptr);
+	NewPath(Path *blueprint = nullptr);
+	
+	void addLinkedInstances(Instance *from, Instance *to);
 
 	PlausibleRoute *operator()();
+	TorsionData *addPair(Instance *from, Instance *to);
+	TorsionData *dataAllPairs();
 private:
 	Path *_blueprint = nullptr;
+
+	struct InstancePair
+	{
+		Instance *start = nullptr;
+		Instance *end = nullptr;
+	};
+	
+	std::vector<InstancePair> _pairs;
 	Instance *_from = nullptr;
 	Instance *_to = nullptr;
 

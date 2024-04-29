@@ -33,6 +33,7 @@ class PlausibleRoute : public Route, public Progressor, public RunsEngine
 	friend Path;
 public:
 	PlausibleRoute(Instance *from, Instance *to, const RTAngles &list = {});
+	PlausibleRoute(const RTAngles &list = {});
 
 	virtual void setup();
 	
@@ -43,6 +44,7 @@ public:
 
 	void refreshScores();
 	void setTargets();
+	void setTargets(Instance *inst);
 	
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);

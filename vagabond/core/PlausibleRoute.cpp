@@ -35,6 +35,11 @@ PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &lis
 	_threads = 1;
 }
 
+PlausibleRoute::PlausibleRoute(const RTAngles &list) : Route(list)
+{
+
+}
+
 void PlausibleRoute::setup()
 {
 	Route::setup();
@@ -220,10 +225,10 @@ void PlausibleRoute::prepareJobs()
 	_tasks.push_back(cycle_and_check(this));
 }
 
-void PlausibleRoute::setTargets()
+void PlausibleRoute::setTargets(Instance *inst)
 {
 	std::map<Atom *, glm::vec3> atomStart;
-	AtomGroup *grp = instance()->currentAtoms();
+	AtomGroup *grp = inst->currentAtoms();
 
 	submitJobAndRetrieve(0., true);
 
@@ -242,6 +247,14 @@ void PlausibleRoute::setTargets()
 		glm::vec3 diff = (d - s);
 		atom->setOtherPosition("moving", diff);
 		atom->setOtherPosition("target", s);
+	}
+}
+
+void PlausibleRoute::setTargets()
+{
+	for (size_t i = 0; i < instanceCount(); i++)
+	{
+		setTargets(startInstance(i));
 	}
 	
 	updateAtomFetch(_resources.sequences);
@@ -501,7 +514,7 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 		Motion &motion = _motions.storage(idxs[i]);
 		
 		float movement = fabs(destination(idxs[i]));
-		float step = doingClashes() ? 5 : 1;
+		float step = doingClashes() ? 2 : 1;
 
 		_paramStarts.push_back(wps._grads[0]);
 		_paramPtrs.push_back(&wps._grads[0]);
@@ -824,7 +837,7 @@ void PlausibleRoute::prepareTorsionFetcher(BondSequenceHandler *handler)
 		lookup[i] = motion_idx;
 	}
 
-	auto fetch = [this, lookup](const Coord::Get &get, int torsion_idx)
+	auto fetch = [this, basis, lookup](const Coord::Get &get, int torsion_idx)
 	{
 		int mot_idx = lookup[torsion_idx];
 		if (mot_idx < 0) return 0.f;
