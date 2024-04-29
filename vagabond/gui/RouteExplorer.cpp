@@ -48,18 +48,18 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 
 RouteExplorer::~RouteExplorer()
 {
-	_instance->unload();
+//	_instance->unload();
 }
 
 void RouteExplorer::setup()
 {
-	_instance->load();
-	AtomGroup *grp = _instance->currentAtoms();
+	AtomGroup *grp = _route->all_atoms();
+	std::cout << "Total atoms: " << grp->size() << std::endl;
 	grp->recalculate();
 
 	DisplayUnit *unit = new DisplayUnit(this);
-	unit->loadAtoms(grp, _instance->entity());
-	unit->displayAtoms();
+	unit->loadAtoms(grp, nullptr);//_instance->entity());
+	unit->displayAtoms(false, false);
 	addDisplayUnit(unit);
 	
 	_route->setAtoms(grp);
@@ -274,22 +274,21 @@ void RouteExplorer::startWithThreads(const int &thr)
 	_route->prepareCalculate();
 	
 	RouteValidator rv(*_plausibleRoute);
-	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;
-	bool isValid = rv.validate();
+//	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;
+	std::string valid_message = rv.validate();
 	
-	std::cout << "Route validator says: " << (isValid ? "route valid" :
-	                                          "route not valid") << std::endl;
+	std::cout << "Route validator says: " << (valid_message.length() ? 
+                                              "route not valid" :
+	                                          "route valid") << std::endl;
 	
-	if (!isValid)
+	if (valid_message.length())
 	{
-		float value = rv.rmsd();
 		std::string message;
 		message = ("The \"from\" and \"to\" structures chosen are not "\
-		           "compatible with each other and\ndo not produce a "\
-		           "valid route. The RMSD between predicted final "\
-		           "structure based\non beginning position and what it "
-		           "ought to be is " + std::to_string(value) + " Angstroms.\n\n"\
-		           "Would you like to continue anyway?");
+		           "compatible with each other and do not produce a"\
+		           "valid route.\nThe RMSDs between predicted final "\
+		           "structure based\non beginning position differed:\n"\
+		           + valid_message + "Would you like to continue anyway?");
 
 		AskYesNo *ayn = new AskYesNo(this, message, "continue_anyway", this);
 		setModal(ayn);
