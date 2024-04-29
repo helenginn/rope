@@ -513,7 +513,7 @@ void Model::housekeeping()
 
 void Model::findInteractions()
 {
-	if (_ligands.size() > 0 && _polymers.size() > 0)
+	if (_ligands.size() > 0 && _polymers.size() > 0 && false)
 	{
 		_ligands.front().interfaceWithOther(&_polymers.front());
 	}
