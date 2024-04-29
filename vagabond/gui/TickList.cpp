@@ -38,6 +38,13 @@ Renderable *TickList::getLine(int i)
 		bool ticked = _ticks[text];
 		tb->addOption(text, text, ticked);
 		tb->arrange(0, 0, 0.5, 0.1);
+		tb->setReturnJob
+		([this, tb, text]()
+		 {
+			bool ticked = tb->isTicked(text);
+			_ticks[text] = ticked;
+		 });
+
 		b->addObject(tb);
 	}
 
