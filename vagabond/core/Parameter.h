@@ -73,6 +73,8 @@ public:
 	{
 		return value();
 	}
+	
+	virtual Atom *owningAtom() const = 0;
 
 	virtual bool isConstrained() const = 0;
 	virtual bool coversMainChain() const = 0;
