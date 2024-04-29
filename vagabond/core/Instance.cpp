@@ -41,7 +41,7 @@ void Instance::addToInterface(Instance *other, Interface *face,
 
 	for (Atom *l : left->atomVector())
 	{
-		if (right->hasAtom(l))
+		if (right->hasAtom(l) || l->elementSymbol() == "H")
 		{
 			continue;
 		}
@@ -50,6 +50,11 @@ void Instance::addToInterface(Instance *other, Interface *face,
 
 		for (Atom *r : right->atomVector())
 		{
+			if (r->elementSymbol() == "H")
+			{
+				continue;
+			}
+
 			glm::vec3 rv = derived ? r->derivedPosition() : r->initialPosition();
 			glm::vec3 diff = rv - lv;
 
@@ -65,8 +70,6 @@ void Instance::addToInterface(Instance *other, Interface *face,
 			face->addInteraction(ia);
 		}
 	}
-	
-	unload();
 }
 
 void Instance::load()
@@ -131,11 +134,10 @@ void Instance::reload()
 }
 
 
-Interface *Instance::interfaceWithOther(Instance *other)
+Interface *Instance::interfaceWithOther(Instance *other, float threshold)
 {
 	Interface *face = new Interface(other, this);
-	addToInterface(other, face, 4, false);
-	std::cout << face->desc() << std::endl;
+	addToInterface(other, face, threshold, false);
 
 	return face;
 }
@@ -307,8 +309,7 @@ float Instance::valueForTorsionFromList(Parameter *param, const RTAngles &list)
 	return list.storage(idx);
 }
 
-void Instance::addTorsionsToGroup(TorsionData &group, 
-                                  rope::TorsionType type)
+void Instance::addTorsionsToGroup(TorsionData &group, rope::TorsionType type)
 {
 	if (!isRefined())
 	{
