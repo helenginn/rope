@@ -104,7 +104,7 @@ Parameter *ResidueTorsion::parameter()
 
 	housekeeping();
 	
-	if (!_local || !_local->hasTorsionRef(_torsion)) 
+	if (!_localSet || (_local && !_local->hasTorsionRef(_torsion)))
 	{
 		return nullptr;
 	}
