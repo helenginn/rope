@@ -25,6 +25,7 @@
 ResidueTorsion::ResidueTorsion(Parameter *const &param)
 {
 	setTorsion(param->desc());
+	_torsion.setRefinedAngle(param->value());
 	setLocalId(param->residueId());
 }
 
