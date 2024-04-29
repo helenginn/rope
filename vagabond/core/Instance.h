@@ -84,7 +84,7 @@ public:
 	
 	/** generate a simple interface between this comparable and its model
 	 *  with a tight cutoff distance */
-	Interface *interfaceWithOther(Instance *other);
+	Interface *interfaceWithOther(Instance *other, float threshold = 4);
 
 	void addToInterface(Instance *other, Interface *face, 
 	                    double max, bool derived);
