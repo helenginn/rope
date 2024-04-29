@@ -314,7 +314,7 @@ rope::MonomerType AtomGroup::monomerType(const ResidueId &id)
 		
 		for (const std::string &name : nucleics)
 		{
-			if (atom->atomName() == name)
+			if (atom->atomName() == name && atom->residueId() == id)
 			{
 				return rope::IsNucleicAcid;
 			}
