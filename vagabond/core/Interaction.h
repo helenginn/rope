@@ -47,6 +47,11 @@ public:
 	}
 	std::string desc() const;
 	Interaction *expandedToFit(Interaction *other);
+	
+	const std::string &side(const int &idx) const
+	{
+		return _sides[idx];
+	}
 private:
 	std::vector<std::string> _sides;
 	float _value;
