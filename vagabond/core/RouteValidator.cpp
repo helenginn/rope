@@ -20,6 +20,7 @@
 #include "PlausibleRoute.h"
 #include "AtomGroup.h"
 #include "Instance.h"
+#include <vagabond/utils/FileReader.h>
 
 RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 {
@@ -144,24 +145,47 @@ float RouteValidator::linearityRatio()
 	return ave;
 }
 
-bool RouteValidator::validate()
+float RouteValidator::validate(Instance *start, Instance *end)
 {
-	_route.instance()->load();
-	_route.endInstance()->load();
-	_route.instance()->currentAtoms()->recalculate();
-	_route.endInstance()->currentAtoms()->recalculate();
+	start->load();
+	end->load();
+	start->currentAtoms()->recalculate();
+	end->currentAtoms()->recalculate();
 
 	_route.shouldUpdateAtoms(true);
 	_route.submitJobAndRetrieve(1, true);
 
-	_route.endInstance()->superposeOn(_route.instance());
-	AtomGroup *grp = _route.endInstance()->currentAtoms();
+	end->superposeOn(start);
+	AtomGroup *grp = end->currentAtoms();
 
 	float diff = grp->residualAgainst("original");
-	_route.instance()->unload();
-	_route.endInstance()->unload();
-	_rmsd = diff;
-	return (diff < 0.5);
+	start->unload();
+	end->unload();
+	return diff;
+
+}
+
+std::string RouteValidator::validate()
+{
+	std::string msg;
+	_rmsd = 0;
+
+	for (size_t i = 0; i < _route.instanceCount(); i++)
+	{
+		float rmsd = validate(_route.startInstance(i), 
+		                      _route.endInstance(i));
+
+		bool valid = (rmsd < 0.5);
+		_rmsd += rmsd;
+
+		if (!valid)
+		{
+			msg += "RMSD for " + _route.startInstance(i)->id() + " is ";
+			msg += f_to_str(rmsd, 2) + " Angstroms.\n";
+		}
+	}
+	
+	return msg;
 }
 
 int RouteValidator::endInstanceGaps()

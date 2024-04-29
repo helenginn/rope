@@ -44,13 +44,49 @@ Route::Route(Instance *from, Instance *to, const RTAngles &list)
 	setInstance(from);
 	_endInstance = to;
 	_source = list;
-	instance()->load();
+	
+	addLinkedInstances(from, to);
+}
+
+Route::Route(const RTAngles &list)
+{
+	srand(time(NULL));
+	_source = list;
+}
+
+void Route::addLinkedInstances(Instance *from, Instance *to)
+{
+	_pairs.push_back({from, to});
+	if (_instance == nullptr)
+	{
+		_instance = from;
+		_endInstance = to;
+	}
+	from->load();
+}
+
+AtomGroup *Route::all_atoms()
+{
+	AtomGroup *grp = new AtomGroup();
+	
+	for (InstancePair &pair : _pairs)
+	{
+		AtomGroup *next = pair.start->currentAtoms();
+		next->recalculate();
+		grp->add(next);
+	}
+
+	return grp;
 }
 
 Route::~Route()
 {
 	deleteHelpers();
-	instance()->unload();
+	
+	for (InstancePair &pair : _pairs)
+	{
+//		pair.start->unload();
+	}
 }
 
 void Route::setup()
@@ -207,8 +243,8 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options,
 	
 	/* get easy references to resources */
 	BondCalculator *const &calculator = _resources.calculator;
-	BondSequenceHandler *sequences = coreChain ? _mainChainSequences : 
-	(hydrogens ? _resources.sequences : _hydrogenFreeSequences);
+	BondSequenceHandler *sequences = (hydrogens ? _resources.sequences : 
+	                                  _hydrogenFreeSequences);
 
 	/* this final task returns the result to the pool to collect later */
 	Task<Result, void *> *submit_result = calculator->actOfSubmission(ticket);
@@ -222,10 +258,18 @@ void Route::submitJob(float frac, bool show, const CalcOptions &options,
 	/* calculation of torsion angle-derived and target-derived
 	 * atom positions */
 	sequences->calculate(calc, {frac}, &first_hook, &final_hook);
+	
+	if (_noncovs)
+	{
+		CalcTask *alignment = _noncovs->align_task();
+		final_hook->follow_with(alignment);
+		alignment->must_complete_before(submit_result);
+		final_hook = alignment;
+	}
 
 	Task<BondSequence *, void *> *let = 
 	sequences->extract(gets, submit_result, final_hook);
-	
+
 	if (pairwise)
 	{
 		PairwiseDeviations *chosen = _helpers[sequences].pw;
@@ -339,7 +383,8 @@ void Route::bestGuessTorsion(int idx)
 		return;
 	}
 
-	destination(idx) = best_guess_torsion(parameter(idx));
+	float best_guess = best_guess_torsion(parameter(idx));
+	destination(idx) = best_guess;
 }
 
 void Route::bestGuessTorsions()
@@ -375,16 +420,33 @@ void Route::getParametersFromBasis(const MakeMotion &make_mot)
 
 void Route::prepareParameters()
 {
-	auto make_motion = [this](Parameter *const &param, ResidueTorsion &rt)
+	auto instance_for_param = [this](Parameter *const &param) -> Instance *
 	{
+		Atom *atom = param->owningAtom();
+
+		for (const InstancePair &pair : _pairs)
+		{
+			if (pair.start->atomBelongsToInstance(atom))
+			{
+				return pair.start;
+			}
+		}
+		
+		return nullptr;
+	};
+
+	auto make_motion = [this, instance_for_param]
+	(Parameter *const &param, ResidueTorsion &rt)
+	{
+		Instance *inst = instance_for_param(param);
 		rt = ResidueTorsion(param);
-		rt.attachToInstance(_instance);
+		rt.attachToInstance(inst);
 
 		// index may be in existing motions, or in the source torsions
 		int mot_idx = _motions.indexOfHeader(rt);
 		int src_idx = _source.indexOfHeader(rt);
 		int twst_idx = _twists.indexOfHeader(rt);
-
+		
 		Motion mt = {WayPoints(_order), false, 0};
 
 		if (mot_idx >= 0)
@@ -487,17 +549,18 @@ void Route::prepareResources()
 	_mainChainSequences = new BondSequenceHandler(_threads);
 	_hydrogenFreeSequences = new BondSequenceHandler(_threads);
 
-	AtomGroup *group = _instance->currentAtoms();
-
-	std::vector<AtomGroup *> subsets = group->connectedGroups();
-	for (AtomGroup *subset : subsets)
+	for (const InstancePair &pair : _pairs)
 	{
-		Atom *anchor = subset->chosenAnchor();
-		_resources.sequences->addAnchorExtension(anchor);
-		_mainChainSequences->addAnchorExtension(anchor);
-		_hydrogenFreeSequences->addAnchorExtension(anchor);
+		AtomGroup *group = pair.start->currentAtoms();
+		std::vector<AtomGroup *> subsets = group->connectedGroups();
+		for (AtomGroup *subset : subsets)
+		{
+			Atom *anchor = subset->chosenAnchor();
+			_resources.sequences->addAnchorExtension(anchor);
+			_mainChainSequences->addAnchorExtension(anchor);
+			_hydrogenFreeSequences->addAnchorExtension(anchor);
+		}
 	}
-
 	_mainChainSequences->setIgnoreHydrogens(true);
 	_mainChainSequences->setAtomFilter(rope::atom_is_core_main_chain());
 	_mainChainSequences->setup();
@@ -514,6 +577,11 @@ void Route::prepareResources()
 	updateAtomFetch(_resources.sequences);
 	updateAtomFetch(_mainChainSequences);
 	updateAtomFetch(_hydrogenFreeSequences);
+	
+	if (_noncovs)
+	{
+		_noncovs->provideSequence(_resources.sequences->sequence());
+	}
 }
 
 void Route::deleteHelpers()
@@ -544,7 +612,7 @@ void Route::prepareEnergyTerms()
 
 	{
 		BondSequence *seq = _mainChainSequences->sequence();
-		setup_helpers(_helpers[_mainChainSequences], seq, _maxMomentumDistance);
+//		setup_helpers(_helpers[_mainChainSequences], seq, _maxMomentumDistance);
 	}
 
 	{

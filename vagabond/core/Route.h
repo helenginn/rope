@@ -22,6 +22,7 @@
 #include <atomic>
 #include "StructureModification.h"
 #include "engine/CoordManager.h"
+#include "NonCovalents.h"
 #include "Responder.h"
 #include "RTMotion.h"
 #include "RTPeptideTwist.h"
@@ -40,6 +41,9 @@ class Route : public StructureModification, public HasResponder<Responder<Route>
 {
 public:
 	Route(Instance *from, Instance *to, const RTAngles &list);
+	Route(const RTAngles &list);
+	
+	void addLinkedInstances(Instance *from, Instance *to);
 	virtual ~Route();
 
 	virtual void setup();
@@ -61,6 +65,11 @@ public:
 	void submitJob(float frac, bool show = true, 
 	               const CalcOptions &options = None,
 	               int ticket = 1);
+	
+	void setNonCovalents(NonCovalents *noncovs)
+	{
+		_noncovs = noncovs;
+	}
 
 	float submitJobAndRetrieve(float frac, bool show = true);
 	
@@ -199,6 +208,21 @@ public:
 	
 	void setTwists(const RTPeptideTwist &twists);
 	
+	size_t instanceCount()
+	{
+		return _pairs.size();
+	}
+
+	Instance *startInstance(int i)
+	{
+		return _pairs[i].start;
+	}
+
+	Instance *endInstance(int i)
+	{
+		return _pairs[i].end;
+	}
+	
 	bool doingQuadratic()
 	{
 		return _jobLevel == 0;
@@ -270,6 +294,7 @@ public:
 		return _hash;
 	}
 	
+	AtomGroup *all_atoms();
 protected:
 	typedef std::function<bool(int idx)> ValidateParam;
 
@@ -350,6 +375,8 @@ protected:
 private:
 	bool _calculating = false;
 	
+	NonCovalents *_noncovs = nullptr;
+	
 	void addToAtomPosMap(AtomPosMap &map, Result *r);
 	void calculateAtomDeviations(Score &score);
 	
@@ -369,6 +396,13 @@ private:
 	
 	void deleteHelpers();
 	
+	struct InstancePair
+	{
+		Instance *start = nullptr;
+		Instance *end = nullptr;
+	};
+	
+	std::vector<InstancePair> _pairs;
 	std::map<BondSequenceHandler *, Helpers> _helpers;
 	
 	Instance *_endInstance = nullptr;

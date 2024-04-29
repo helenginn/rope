@@ -22,6 +22,7 @@
 #include <map>
 
 class PlausibleRoute;
+class Instance;
 class Atom;
 
 class RouteValidator
@@ -31,7 +32,7 @@ public:
 	
 	/** does the start molecule produce something within 0.5 Angstroms of the
 	 * end molecule when we use the end molecule's torsion angles? */
-	bool validate();
+	std::string validate();
 	
 	const float &rmsd()
 	{
@@ -45,6 +46,7 @@ public:
 	 * 	molecule? */
 	int endInstanceGaps();
 private:
+	float validate(Instance *start, Instance *end);
 	float dotLastTwoVectors();
 	void populateDistances();
 	void savePreviousPositions();

@@ -23,43 +23,74 @@
 
 NewPath::NewPath(Instance *from, Instance *to, Path *blueprint)
 {
-	_from = from;
-	_to = to;
+	addLinkedInstances(from, to);
 	_blueprint = blueprint;
+}
+
+NewPath::NewPath(Path *blueprint)
+{
+	_blueprint = blueprint;
+}
+
+TorsionData *NewPath::addPair(Instance *from, Instance *to)
+{
+	std::vector<ResidueTorsion> headers = from->residueTorsionList();
+	size_t num = headers.size();
+	TorsionData *prep = new TorsionData(num);
+	prep->addHeaders(headers);
+
+	from->addTorsionsToGroup(*prep, rope::RefinedTorsions);
+	to->addTorsionsToGroup(*prep, rope::RefinedTorsions);
+
+	return prep;
+}
+
+TorsionData *NewPath::dataAllPairs()
+{
+	TorsionData *all = nullptr;
+	
+	for (const InstancePair &pair : _pairs)
+	{
+		TorsionData *next = addPair(pair.start, pair.end);
+		std::cout << pair.start->id() << " to " << pair.end->id() << " gives "
+		<< next->headerCount() << " headers." << std::endl;
+		if (all == nullptr)
+		{
+			all = next;
+		}
+		else
+		{
+			TorsionData *combined = new TorsionData(*all + *next);
+			delete all;
+			delete next;
+			all = combined;
+		}
+	}
+
+	return all;
 }
 
 PlausibleRoute *NewPath::operator()()
 {
-	Entity *entity = _from->entity();
-	std::vector<Instance *> instances = entity->instances();
+	TorsionData *prep = dataAllPairs();
 
-	Polymer *pFrom = static_cast<Polymer *>(_from);
-	std::vector<ResidueTorsion> headers;
-	pFrom->sequence()->addResidueTorsions(headers, false);
-	for (ResidueTorsion &rt : headers)
-	{
-		rt.attachToInstance(_from);
-	}
-
-	size_t num = headers.size();
-	TorsionData prep(num);
-	prep.addHeaders(headers);
-
-	_from->addTorsionsToGroup(prep, rope::RefinedTorsions);
-	_to->addTorsionsToGroup(prep, rope::RefinedTorsions);
-
-	RTAngles list = prep.emptyAngles(true);
+	RTAngles list = prep->emptyAngles(true);
 	
 	std::vector<Angular> from_angles, to_angles;
-	from_angles = prep.vector(0);
-	to_angles = prep.vector(1);
+	from_angles = prep->vector(0);
+	to_angles = prep->vector(1);
 
 	for (size_t i = 0; i < to_angles.size(); i++)
 	{
 		list.storage(i) = to_angles[i] - from_angles[i];
 	}
 
-	PlausibleRoute *pr = new PlausibleRoute(_from, _to, list);
+	PlausibleRoute *pr = new PlausibleRoute(list);
+
+	for (const InstancePair &pair : _pairs)
+	{
+		pr->addLinkedInstances(pair.start, pair.end);
+	}
 	
 	if (_blueprint)
 	{
@@ -71,7 +102,26 @@ PlausibleRoute *NewPath::operator()()
 		pr->setTwists(twists);
 		pr->setNew(false);
 	}
+	
+	delete prep;
 
 	return pr;
 }
 
+
+void NewPath::addLinkedInstances(Instance *from, Instance *to)
+{
+	if (from->hasSequence() && false)
+	{
+		_pairs.insert(_pairs.begin(), {from, to});
+	}
+	else
+	{
+		_pairs.push_back({from, to});
+	}
+	if (!_from)
+	{
+		_from = from;
+		_to = to;
+	}
+}
