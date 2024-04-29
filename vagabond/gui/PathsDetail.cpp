@@ -54,7 +54,7 @@ void PathsDetail::calculateMetrics()
 
 	_VdWEnergy = _obj.activationEnergy();
 //	_linearity = rv.linearityRatio();
-	_valid = rv.validate();
+	_valid = rv.validate().length();
 	_rmsd = rv.rmsd();
 	_obj.cleanupRoute();
 }
