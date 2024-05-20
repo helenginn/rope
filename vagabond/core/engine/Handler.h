@@ -221,15 +221,6 @@ protected:
 	{
 
 	};
-	
-	class TaskPool : public Pool<BaseTask *>
-	{
-	public:
-		TaskPool();
-
-		size_t number_ready();
-		virtual void insertIntoQueue(BaseTask *&task, bool back);
-	};
 
 	template <class Object>
 	class ExpectantPool : public CustomPool<Object, ExpectantPhore>
@@ -268,6 +259,15 @@ protected:
 			CustomPool<Object, ExpectantPhore>::clearQueue();
 			this->sem.expect_one_fewer();
 		}
+	};
+	
+	class TaskPool : public Pool<BaseTask *>
+	{
+	public:
+		TaskPool();
+
+		size_t number_ready();
+		virtual void insertIntoQueue(BaseTask *&task, bool back);
 	};
 	
 private:

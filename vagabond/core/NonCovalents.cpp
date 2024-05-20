@@ -340,6 +340,6 @@ std::function<BondSequence *(BondSequence *)> NonCovalents::align()
 Task<BondSequence *, BondSequence *> *NonCovalents::align_task()
 {
 	auto alignment = align();
-	auto *task = new Task<BondSequence *, BondSequence *>(alignment);
+	auto *task = new Task<BondSequence *, BondSequence *>(alignment, "alignment");
 	return task;
 }

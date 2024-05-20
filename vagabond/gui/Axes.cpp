@@ -346,12 +346,12 @@ void Axes::backgroundPrioritise(std::string key)
 	_worker = new std::thread(&Axes::prioritiseDirection, this, key);
 }
 
-size_t Axes::parameterCount()
+size_t Axes::parameterCount(Engine *caller)
 {
 	return 3;
 }
 
-int Axes::sendJob(const std::vector<float> &all)
+int Axes::sendJob(const std::vector<float> &all, Engine *caller)
 {
 	std::vector<float> vals = _data->numbersForKey(_key);
 	CorrelData cd = empty_CD();

@@ -70,7 +70,7 @@ public:
 		};
 
 		_objectPool.expect_one();
-		auto *submit = new Task<Object, void *>(send, "submit object");
+		auto *submit = new Task<Object, void *>(send, "submit to bin");
 		return submit;
 
 	}

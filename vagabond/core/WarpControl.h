@@ -72,8 +72,8 @@ public:
 
 	void transformCoordinates(std::vector<float> &coord);
 
-	virtual size_t parameterCount();
-	virtual int sendJob(const std::vector<float> &all);
+	virtual size_t parameterCount(Engine *caller);
+	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 	ParamSet acquireParametersBetween(int start, int end, bool reset);
 
 	bool refineBetween(const ParamSet &params, bool more_atoms);

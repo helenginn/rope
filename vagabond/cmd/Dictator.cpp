@@ -19,10 +19,12 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/utils/os.h>
 #include "Dictator.h"
+#include "Socket.h"
 #include "CmdWorker.h"
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/core/PathManager.h>
 #include <vagabond/core/Model.h>
 #include <vagabond/core/ModelManager.h>
 #include <vagabond/core/Reporter.h>
@@ -38,6 +40,10 @@ void Dictator::makeCommands()
 	_commands["load"] = "Comma- or space-separated list of files to load";
 	_commands["exit"] = "Exit RoPE";
 	_commands["add"] = "Load metadata CSV file with 'model' or 'filename' column";
+	_commands["hungry-hippo"] = "Begin hungry-hippo mode (e.g. for beamtime)";
+	_commands["refine-path"] = "Refine between instances (first and second argument), for N cycles (third argument, default 1)";
+	_commands["save"] = "Save to environment file.";
+
 	_commands["environment"] = ("Link to json file (usually rope.json) to "\
 	                            "restore RoPE environment");
 	_commands["automodel"] = ("Auto-model atom coordinate files according "\
@@ -152,10 +158,35 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	{
 		exit(0);
 	}
+	
+	if (first == "save")
+	{
+		Environment::env().save();
+		std::cout << "Saved." << std::endl;
+	}
 
 	if (first == "environment")
 	{
 		Environment::env().load(last);
+	}
+
+	if (first == "refine-path")
+	{
+		std::cout << "here" << std::endl;
+		std::vector<std::string> args = split(last, ',');
+		if (args.size() < 2)
+		{
+			std::cout << "Not enough arguments to refine path" << std::endl;
+		}
+		std::string &start = args[0];
+		std::string &end = args[1];
+		
+		int cycles = 1;
+		if (args.size() > 2)
+		{
+			cycles = atoi(args[2].c_str());
+		}
+		PathManager::manager()->makePathBetween(start, end, cycles);
 	}
 
 	if (first == "automodel")
@@ -230,6 +261,13 @@ void Dictator::processRequest(std::string &first, std::string &last)
         Reporter reporter;
         reporter.report();
     }
+
+	if (first == "hungry-hippo")
+	{
+		delete _socket;
+		_socket = new Socket(this);
+		_socketer = new std::thread(&Socket::operator(), _socket);
+	}
 }
 
 bool Dictator::checkForFile(std::string &first, std::string &last)
@@ -309,3 +347,25 @@ void Dictator::wait()
     _thread->join();
 }
 
+void sanitise(std::string &argument)
+{
+	if (argument == "hungry-hippo")
+	{
+		argument = "";
+	}
+}
+
+void Dictator::sendObject(std::string tag, void *object)
+{
+	if (tag == "arg")
+	{
+		std::string argument = *static_cast<std::string *>(object);
+		sanitise(argument);
+		
+		if (argument.length())
+		{
+			addArg(argument);
+		}
+	}
+
+}

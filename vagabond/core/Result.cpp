@@ -20,6 +20,8 @@
 #include "grids/AtomMap.h"
 #include "Result.h"
 
+std::mutex *Result::mut = new std::mutex();
+
 void Result::transplantPositions(bool displayTargets)
 {
 	if (apl.size() > 0)

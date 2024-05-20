@@ -21,6 +21,7 @@
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/gui/TableView.h>
 #include <vagabond/gui/elements/TextButton.h>
 
 RulesMenu::RulesMenu(Scene *prev, Metadata *source) : ListView(prev)
@@ -47,6 +48,13 @@ void RulesMenu::setup()
 		TextButton *t = new TextButton("OK", this);
 		t->setRight(0.8, 0.8);
 		t->setReturnTag("back");
+		addObject(t);
+	}
+	
+	{
+		TextButton *t = new TextButton("View data", this);
+		t->setRight(0.9, 0.1);
+		t->setReturnTag("view");
 		addObject(t);
 	}
 
@@ -89,6 +97,13 @@ void RulesMenu::buttonPressed(std::string tag, Button *button)
 		AddRule *view = new AddRule(this, _md);
 		view->setData(_group);
 		presentAddRule(view);
+	}
+
+	if (tag == "view")
+	{
+		std::string title = "Metadata table - " + _md->source();
+		TableView *view = new TableView(this, _md->asInstanceData(), title);
+		view->show();
 	}
 
 	std::string rule_prefix = "rule_";

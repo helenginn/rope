@@ -104,6 +104,7 @@ void Path::acquireSingleProperties(Route *route)
 	route->setHash();
 	_momentum = route->momentumScore();
 	_activationEnergy = route->activationEnergy();
+	_torsionEnergy = route->torsionEnergy();
 	_clash = route->clashScore();
 	_maxMomentumDistance = route->maximumMomentumDistance();
 	_maxClashDistance = route->maximumClashDistance();
@@ -128,6 +129,7 @@ PlausibleRoute *Path::toRoute()
 	pr->setMotions(_motions);
 	pr->setScores(_momentum, _clash);
 	pr->setMaximumMomentumDistance(_maxMomentumDistance);
+	pr->setTorsionEnergy(_torsionEnergy);
 	pr->setMaximumClashDistance(_maxClashDistance);
 	pr->setActivationEnergy(_activationEnergy);
 	pr->setHash(_hash);

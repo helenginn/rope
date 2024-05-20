@@ -39,8 +39,8 @@ protected:
 	typedef std::function<void(std::vector<float> &values)> Getter;
 	typedef std::function<void(const std::vector<float> &values)> Setter;
 
-	virtual size_t parameterCount();
-	virtual int sendJob(const std::vector<float> &all);
+	virtual size_t parameterCount(Engine *caller);
+	virtual int sendJob(const std::vector<float> &all, Engine *caller = nullptr);
 
 	void getSetCoefficients(const std::set<Parameter *> &params,
 	                        Getter &getter, Setter &setter);

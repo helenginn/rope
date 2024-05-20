@@ -57,8 +57,8 @@ struct Motion
 	{
 		float extra = twist.twist ? twist.twist->twist : 0.f;
 ;
-		ptr[0] = (wp._grads[0] + extra * 4) * (flip ? 1 : -1);
-		ptr[1] = (wp._grads[1]) * (flip ? 1 : -1);
+		ptr[0] = (wp._amps[0] + extra * 4) * (flip ? 1 : -1);
+		ptr[1] = (wp._amps[1]) * (flip ? 1 : -1);
 		ptr += 2;
 	}
 	

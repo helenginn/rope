@@ -115,8 +115,8 @@ public:
 	
 	void indicesOfObjectsPointedAt(int &start, int &end, int idx = -1);
 
-	virtual size_t parameterCount();
-	virtual int sendJob(const std::vector<float> &all);
+	virtual size_t parameterCount(Engine *caller);
+	virtual int sendJob(const std::vector<float> &all, Engine *caller = nullptr);
 	
 	virtual bool selectable() const
 	{

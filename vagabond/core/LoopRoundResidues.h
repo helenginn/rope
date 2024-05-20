@@ -132,7 +132,7 @@ inline auto clash_to_lookup(PairwiseDeviations::ClashInfo *scratch)
 			float d = _scratch[p].radius + _scratch[q].radius;
 			float ratio = d / difflength;
 
-			return ratio;
+			return std::max(ratio, 0.f);
 		}
 		
 		float vdw_gradient(int p, int q) const
@@ -148,12 +148,14 @@ inline auto clash_to_lookup(PairwiseDeviations::ClashInfo *scratch)
 			glm::vec3 posdiff = apos - bpos;
 			float r = glm::length(posdiff);
 			
+			/*
 			if (r < d * 1.3)
 			{
 				float term = (r - d * 1.3);
 				return term * term * term;
 			}
 			return 0;
+			*/
 		
 
 //			float ratio = vdw_ratio(p, q);
@@ -167,8 +169,10 @@ inline auto clash_to_lookup(PairwiseDeviations::ClashInfo *scratch)
 			float weight = (_scratch[p].atomic_num + 
 			                _scratch[q].atomic_num) / 25;
 
+			const double mod = pow(1.4, 6);
 			long double potential = 6 * dto6 / to7 - 12 * dto12 / to13;
-			potential *= -weight;
+//			potential = -1 * dto6 / (1.4 * to6);
+			potential *= weight;
 			return potential;
 		}
 		

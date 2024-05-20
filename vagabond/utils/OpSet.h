@@ -50,6 +50,34 @@ public:
 		}
 	}
 	
+	/*
+	bool operator<(const OpSet<Type> &other) const
+	{
+		auto it = other.begin();
+		for (const Type &ours : *this)
+		{
+			const Type &theirs = *it;
+			if (ours != theirs)
+			{
+				return ours < theirs;
+			}
+			
+			it++;
+			if (it == other.end())
+			{
+				return false;
+			}
+		}
+
+		if (it != other.end())
+		{
+			return true;
+		}
+
+		return false;
+	}
+	*/
+	
 	template <class Container>
 	OpSet<std::pair<Type, Type>> pairs_with(const Container &other)
 	{

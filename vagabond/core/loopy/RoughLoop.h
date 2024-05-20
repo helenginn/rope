@@ -33,10 +33,10 @@ public:
 
 	std::function<float(Atom *)> calculateWeights();
 
-	virtual int sendJob(const std::vector<float> &vals);
-	virtual float getResult(int *job_id);
+	virtual int sendJob(const std::vector<float> &vals, Engine *caller);
+	virtual float getResult(int *job_id, Engine *caller);
 
-	virtual size_t parameterCount();
+	virtual size_t parameterCount(Engine *caller);
 	float roughLoop();
 private:
 	float refine(const LoopStage &stage);

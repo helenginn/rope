@@ -19,15 +19,19 @@
 #ifndef __vagabond__PairwiseDeviations__
 #define __vagabond__PairwiseDeviations__
 
+#include <vagabond/utils/OpVec.h>
+#include <vagabond/utils/Eigen/Dense>
 #include <functional>
 #include <map>
 #include <vector>
 #include <set>
 #include <cstddef>
 #include "function_typedefs.h"
+#include "paths/ResidueContacts.h"
 
 class Atom;
 class BondSequence;
+class BundleBonds;
 struct AtomBlock; 
 struct ResidueId;
 struct Deviation; 
@@ -54,9 +58,6 @@ public:
 		float atomic_num;
 	};
 	
-	void obtainClashInfo(const std::vector<AtomBlock> &blocks,
-	                     ClashInfo *&scratch);
-	
 	void setLimit(const float &limit)
 	{
 		_limit = limit;
@@ -65,6 +66,11 @@ public:
 	const std::vector<int> &pairs()
 	{
 		return _pairs;
+	}
+
+	const std::set<ResidueId> &residues() const
+	{
+		return _residues;
 	}
 	
 	Atom *const &atom(int i)
@@ -81,22 +87,31 @@ public:
 	{
 		return _reference;
 	}
+	
+	Contacts &contacts()
+	{
+		return _contacts;
+	}
 
 	Task<BondSequence *, Deviation> *
 	momentum_task(float frac, const std::set<ResidueId> &forResidues);
 
-	Task<BondSequence *, ActivationEnergy> *
-	clash_task(const std::set<ResidueId> &forResidues);
+	Task<BundleBonds *, ActivationEnergy> *
+	bundle_clash(const std::set<ResidueId> &forResidues);
 private:
 	void prepare(BondSequence *seq);
 
-	AtomFilter _filter;
+	AtomFilter _filter{};
 	float _limit = 8.f;
 
 	glm::vec3 *_reference = nullptr;
 	std::map<ResidueId, std::vector<int>> _perResidue;
+	std::set<ResidueId> _residues;
 	std::vector<Atom *> _atoms;
 	std::vector<int> _pairs;
+	std::vector<ResidueId> _correspondingResiduePairs;
+	
+	Contacts _contacts;
 };
 
 #endif

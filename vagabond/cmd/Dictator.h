@@ -19,6 +19,7 @@
 #ifndef __breathalyser__dictator__
 #define __breathalyser__dictator__
 
+#include <vagabond/core/Responder.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -28,8 +29,9 @@
 #include <map>
 
 class CmdWorker;
+class Socket;
 
-class Dictator
+class Dictator : public Responder<Socket>
 {
 public:
 	Dictator();
@@ -61,6 +63,8 @@ public:
 
 	void start();
 	bool nextJob();
+
+	virtual void sendObject(std::string tag, void *object);
 	
 	void workerLock()
 	{
@@ -86,6 +90,8 @@ private:
 	std::condition_variable _cv;
 	std::mutex _mutex;
 	std::thread *_thread;
+	std::thread *_socketer;
+	Socket *_socket = nullptr;
 	CmdWorker *_worker;
 	std::vector<std::string> _args;
 	int _currentJob;

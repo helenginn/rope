@@ -37,7 +37,8 @@ struct ResidueId;
 class EnergyTorsions
 {
 public:
-	EnergyTorsions(BondSequence *sequence, const RTMotion &motions);
+	EnergyTorsions(BondSequence *sequence, const RTMotion &motions,
+	               const std::function<int(Parameter *)> &lookup);
 
 	~EnergyTorsions();
 	
@@ -57,15 +58,18 @@ public:
 	{
 		return _pairs;
 	}
+	
+	float reference_torsion(int idx, float frac);
 
 	Task<BondSequence *, ActivationEnergy> *
-	energy_task(const std::set<ResidueId> &forResidues);
+	energy_task(const std::set<ResidueId> &forResidues, float frac);
 private:
-	void prepare(BondSequence *sequence, const RTMotion &motions);
+	void prepare(BondSequence *sequence, const RTMotion &motions,
+	             const std::function<int(Parameter *)> &lookup);
 
 	std::vector<int> _pairs;
 	std::map<ResidueId, std::vector<int>> _perResidues;
-	std::vector<float> _dampeners;
+	std::vector<std::pair<float, float> > _angles;
 	std::vector<Torsion2Energy> _energies;
 	std::vector<OpSet<ResidueId>> _partitions;
 };

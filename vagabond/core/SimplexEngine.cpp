@@ -17,9 +17,11 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "SimplexEngine.h"
+#include "engine/Task.h"
 #include <float.h>
 #include <algorithm>
 #include <iostream>
+#include "MultiSimplex.h"
 
 SimplexEngine::SimplexEngine(RunsEngine *ref) : Engine(ref)
 {
@@ -58,6 +60,7 @@ void SimplexEngine::allocateResources()
 void SimplexEngine::findCentroid()
 {
 	resetVertex(_centroid);
+	float c = 0;
 
 	for (size_t j = 0; j < n(); j++)
 	{
@@ -65,11 +68,12 @@ void SimplexEngine::findCentroid()
 		{
 			_centroid.vertex[i] += _points[j].vertex[i];
 		}
+		c++;
 	}
 
 	for (size_t i = 0; i < n(); i++)
 	{
-		_centroid.vertex[i] /= (float)n();
+		_centroid.vertex[i] /= (float)c;
 	}
 }
 
@@ -81,102 +85,163 @@ void SimplexEngine::printPoint(SPoint &point)
 	}
 }
 
+void SimplexEngine::printSimplex()
+{
+	std::cout << "==== SIMPLEX ====" << std::endl;
+	for (int i = 0; i < pointCount(); i++)
+	{
+		if (i == 0)
+		{
+			std::cout << "Best:   ";
+		}
+		else if (i == pointCount() - 1)
+		{
+			std::cout << "Worst:  ";
+		}
+		else
+		{
+			std::cout << "Point " << i << ": ";
+		}
+
+		printPoint(_points[i].vertex);
+		std::cout << " ==> " << _points[i].eval << std::endl;
+	}
+	std::cout << std::endl;
+}
+
+bool SimplexEngine::reachedConvergence()
+{
+	return (_count > _maxRuns || _shrinkCount >= 10 || _finish);
+}
+
+SimplexEngine::TestPoint &SimplexEngine::worst()
+{
+	return _points[_points.size() - 1];
+}
+
+SimplexEngine::TestPoint &SimplexEngine::second_worst()
+{
+	int idx = _points.size() - 2;
+	if (idx < 0) idx = 0;
+	return _points[idx];
+}
+
+void SimplexEngine::requestReflection()
+{
+	reorderVertices();
+//	printSimplex();
+	Engine::clearResults();
+
+	findCentroid();
+	SPoint trial = scaleThrough(worst().vertex, _centroid.vertex, -1);
+	_reflected = trial;
+	sendJob(trial);
+}
+
+void SimplexEngine::replaceReflection()
+{
+	worst().vertex = _reflected;
+	worst().eval = _lastEval;
+}
+
+void SimplexEngine::submitExpansion()
+{
+	SPoint expanded = scaleThrough(_reflected, _centroid.vertex, -2);
+	sendJob(expanded);
+	_expanded = expanded;
+}
+
+void SimplexEngine::handleExpansion()
+{
+	getOneResult();
+	float next = findBestScore();
+	clearResults();
+
+	worst().vertex = (next < _lastEval ? _expanded : _reflected);
+	worst().eval = (next < _lastEval ? next : _lastEval);
+}
+
+void SimplexEngine::submitContraction(float eval, float worst_score, 
+                                      float second_worst_score)
+{
+	if (eval > second_worst_score && eval < worst_score)
+	{
+		_contracted = scaleThrough(_reflected, _centroid.vertex, 0.5);
+		_compare = eval;
+	}
+	else 
+	{
+		_contracted = scaleThrough(worst().vertex, _centroid.vertex, 0.5);
+		_compare = worst_score;
+	}
+
+	sendJob(_contracted);
+}
+
+void SimplexEngine::handleContraction()
+{
+	float next = FLT_MAX;
+	getResults();
+	clearResults();
+
+	if (next < _compare)
+	{
+		worst().vertex = _contracted;
+		worst().eval = next;
+	}
+	else
+	{
+		submitShrink();
+		handleJobs();
+	}
+
+}
+
 void SimplexEngine::cycle()
 {
-	int count = 0;
-	int shrink_count = 0;
-	_changedParams = false;
+	_count = 0;
+	_shrinkCount = 0;
 
 	while (true)
 	{
-		if (count > _maxRuns || shrink_count >= 10 || _finish)
+		if (reachedConvergence())
 		{
 			break;
 		}
 
-		reorderVertices();
+		requestReflection();
 
-		TestPoint &worst = _points[_points.size() - 1];
-		float worst_score = worst.eval;
-
-		TestPoint &second_worst = _points[_points.size() - 2];
-		float second_worst_score = second_worst.eval;
+		float worst_score = worst().eval;
+		float second_worst_score = second_worst().eval;
 
 		TestPoint &best = _points[0];
 		float best_score = best.eval;
-		
-		Engine::clearResults();
 
-		findCentroid();
-		SPoint trial = scaleThrough(worst.vertex, _centroid.vertex, -1);
-		sendJob(trial);
-
-		float eval = FLT_MAX;
 		getResults();
-		Engine::findBestResult(&eval);
+		_lastEval = Engine::findBestScore();
 		clearResults();
-		count++;
+		_count++;
 		
-		if (eval > best_score && eval < second_worst_score)
+		if (_lastEval > best_score && _lastEval < second_worst_score)
 		{
-			worst.vertex = trial;
-			worst.eval = eval;
-			continue;
+			replaceReflection();
 		}
-		if (eval < best_score)
+		else if (_lastEval < best_score)
 		{
-			_changedParams = true;
-			SPoint expanded = scaleThrough(trial, _centroid.vertex, -2);
-			sendJob(expanded);
-			
-			float next = FLT_MAX;
-			getResults();
-			Engine::findBestResult(&next);
-			clearResults();
-			
-			worst.vertex = (next < eval ? expanded : trial);
-			worst.eval = (next < eval ? next : eval);
-			continue;
+			submitExpansion();
+			handleExpansion();
 		}
 		else 
 		{
-			SPoint contracted;
-			float compare;
-			if (eval > second_worst_score && eval < worst_score)
-			{
-				contracted = scaleThrough(trial, _centroid.vertex, 0.5);
-				compare = eval;
-			}
-			else 
-			{
-				contracted = scaleThrough(worst.vertex, _centroid.vertex, 0.5);
-				compare = worst_score;
-			}
-
-			sendJob(contracted);
-
-			float next = FLT_MAX;
-			getResults();
-			Engine::findBestResult(&next);
-			clearResults();
-
-			if (next < compare)
-			{
-				worst.vertex = contracted;
-				worst.eval = next;
-				continue;
-			}
-			else
-			{
-				shrink_count++;
-				shrink();
-			}
+			submitContraction(_lastEval, worst_score, second_worst_score);
+			handleContraction();
 		}
 	}
 }
 
 void SimplexEngine::collateResults()
 {
+	std::unique_lock<std::mutex> lock(_mutex);
 	for (auto it = _scores.begin(); it != _scores.end(); it++)
 	{
 		int ticket = it->first;
@@ -185,7 +250,6 @@ void SimplexEngine::collateResults()
 		{
 			if (_points[i].tickets.count(ticket) > 0)
 			{
-				SPoint &p = _points[i].tickets[ticket];
 				_points[i].eval = it->second.score;
 				_points[i].vertex = it->second.vals;
 			}
@@ -194,27 +258,28 @@ void SimplexEngine::collateResults()
 
 }
 
-void SimplexEngine::pickUpResults()
+void SimplexEngine::handleJobs()
 {
 	getResults();
 	collateResults();
 	clearResults();
 }
 
-void SimplexEngine::shrink()
+void SimplexEngine::submitShrink()
 {
+	_shrinkCount++;
 	for (size_t i = 0; i < _points.size(); i++)
 	{
 		SPoint trial = scaleThrough(_points[i].vertex, _centroid.vertex, 0.8);
 		int ticket = sendJob(trial);
 		_points[i].tickets[ticket] = trial;
 	}
-	
-	pickUpResults();
 }
 
-void SimplexEngine::run()
+void SimplexEngine::preRun()
 {
+	n() = ref()->parameterCount(this);
+
 	if (n() <= 0)
 	{
 		throw std::runtime_error("Nonsensical dimensions for SimplexEngine");
@@ -235,94 +300,26 @@ void SimplexEngine::run()
 
 	std::vector<float> empty = std::vector<float>(n(), 0);
 	sendJob(empty);
+}
+
+void SimplexEngine::run()
+{
+	preRun();
 	
 	getResults();
-	float begin = FLT_MAX;
-	findBestResult(&begin);
 
 	allocateResources();
 	sendStartingJobs();
+	handleJobs();
 	cycle();
 	
 	sendJob(bestResult());
 	getResults();
 }
 
-bool SimplexEngine::classifyResults()
-{
-	getResults();
-
-	bool changed = false;
-
-	for (auto it = _scores.begin(); it != _scores.end(); it++)
-	{
-		int ticket = it->first;
-		int eval = it->second.score;
-
-		float worst = _points[_points.size() - 1].eval;
-		float second_worst = _points[_points.size() - 2].eval;
-		float best = _points[0].eval;
-
-		for (size_t i = 0; i < _points.size(); i++)
-		{
-			if (_points[i].tickets.count(ticket) > 0)
-			{
-				Decision job = _points[i].decision;
-
-				/* no improvement on 2nd worst */
-				if (eval > worst)
-				{
-					_points[i].decision = ShouldReflect;
-				}
-				else if (eval > second_worst)
-				{
-					_points[i].decision = ShouldReflect;
-				}
-				else if (eval < second_worst)
-				{
-					changed = true;
-
-					TestPoint &w = _points[_points.size() - 1];
-					w.vertex = _points[i].tickets[ticket];
-					w.eval = eval;
-
-					if (eval < best)
-					{
-						w.decision = ShouldExpand;
-					}
-					else 
-					{
-						w.decision = ShouldReflect;
-					}
-				}
-
-				reorderVertices();
-				_points[i].tickets.erase(ticket);
-				break;
-			}
-		}
-
-		float new_worst = _points[_points.size() - 1].eval;
-
-		if (new_worst >= worst)
-		{
-			_points[_points.size() - 1].decision = ShouldContract;
-		}
-
-		if (changed)
-		{
-			findCentroid();
-		}
-	}
-	
-	clearResults();
-	
-	return changed;
-}
-
 void SimplexEngine::sendStartingJobs()
 {
-	for (size_t i = 0; i < _points.size(); i++)
+	for (size_t i = 0; i < pointCount(); i++)
 	{
 		SPoint trial;
 		trial.resize(n());
@@ -343,8 +340,6 @@ void SimplexEngine::sendStartingJobs()
 		
 		_points[i].tickets[ticket] = trial;
 	}
-	
-	pickUpResults();
 }
 
 SimplexEngine::SPoint SimplexEngine::scaleThrough(SPoint &p, SPoint &q, float k)
@@ -359,87 +354,6 @@ SimplexEngine::SPoint SimplexEngine::scaleThrough(SPoint &p, SPoint &q, float k)
 	return ret;
 }
 
-void SimplexEngine::sendReflectionJob(int i)
-{
-	int num = 0;
-	for (size_t j = 0; j < i; j++)
-	{
-		SPoint trial = scaleThrough(_points[i].vertex, 
-		                           _points[j].vertex, -1);
-		int ticket = sendJob(trial);
-		_points[i].tickets[ticket] = trial;
-		pickUpResults();
-		num++;
-
-		if (num >= _maxJobs)
-		{
-			break;
-		}
-	}
-	
-	if (i == 0)
-	{
-		TestPoint &last = _points.back();
-
-		SPoint trial = scaleThrough(last.vertex, _centroid.vertex, -1.5);
-		int ticket = sendJob(trial);
-		pickUpResults();
-		last.tickets[ticket] = trial;
-	}
-}
-
-void SimplexEngine::sendShrinkJobs()
-{
-	for (size_t i = 0; i < _points.size(); i++)
-	{
-		SPoint trial = scaleThrough(_points[i].vertex, _centroid.vertex, 0.8);
-		int ticket = sendJob(trial);
-		_points[i].tickets[ticket] = trial;
-
-		_points[i].decision = ShouldReflect;
-	}
-
-	pickUpResults();
-}
-
-void SimplexEngine::sendContractionJob(int i)
-{
-	SPoint trial = scaleThrough(_points[i].vertex, 
-	                           _centroid.vertex, 0.8);
-	int ticket = sendJob(trial);
-	_points[i].tickets[ticket] = trial;
-}
-
-void SimplexEngine::sendExpansionJob(int i)
-{
-	SPoint trial = scaleThrough(_points[i].vertex, 
-	                           _centroid.vertex, 1.5);
-	int ticket = sendJob(trial);
-	_points[i].tickets[ticket] = trial;
-}
-
-void SimplexEngine::sendDecidedJobs()
-{
-	for (size_t i = 0; i < _points.size(); i++)
-	{
-		if (_points[i].decision == ShouldExpand)
-		{
-			sendExpansionJob(i);
-		} 
-		else if (_points[i].decision == ShouldReflect)
-		{
-			sendReflectionJob(i);
-		}
-		else if (_points[i].decision == ShouldContract)
-		{
-			sendContractionJob(i);
-		}
-
-		_points[i].decision = ShouldReflect;
-	}
-
-}
-
 const SimplexEngine::SPoint &SimplexEngine::bestPoint() const
 {
 	return _points[0].vertex;
@@ -449,3 +363,229 @@ void SimplexEngine::finish()
 {
 	_finish = true;
 }
+
+void SimplexEngine::handleShrink(MultiEngine *ms, Task<void *, void *> *&first)
+{
+	Task<void *, void *> *before = nullptr;
+	for (int i = 0; i < pointCount(); i++)
+	{
+		auto job = [this](void *) -> void *
+		{
+			getOneResult();
+			return nullptr;
+		};
+
+		auto *next = new Task<void *, void *>(job, "getting job", 
+		                                      ms->hanging());
+		if (i == 0)
+		{
+			first = next;
+			before = next;
+		}
+		else
+		{
+			before->must_complete_before(next);
+			before = next;
+		}
+	}
+	
+	auto finalise = [this, ms](void *) -> void *
+	{
+		collateResults();
+		clearResults();
+		auto *restart =
+		new Task<void *, void *>(_cycle, "start new cycle");
+		ms->addImmediateTask(restart);
+		return nullptr;
+	};
+
+	auto *after = new Task<void *, void *>(finalise, "finalising", 
+	                                       ms->immediate());
+	before->must_complete_before(after);
+}
+
+Task<void *, void *> *
+SimplexEngine::taskedHandleJobs(Task<void *, void *> *before,
+                                MultiEngine *ms)
+{
+	for (int i = 0; i < pointCount(); i++)
+	{
+		int total = pointCount();
+		auto job = [this, i, total](void *) -> void *
+		{
+			getOneResult();
+			return nullptr;
+		};
+
+		auto *next = new Task<void *, void *>(job, "getting job", 
+		                                      ms->hanging());
+		before->must_complete_before(next);
+		before = next;
+	}
+	
+	auto finalise = [this](void *) -> void *
+	{
+		collateResults();
+		clearResults();
+		return nullptr;
+	};
+
+	auto *after = new Task<void *, void *>(finalise, "finalising", 
+	                                       ms->immediate());
+	before->must_complete_before(after);
+	return after;
+}
+
+void SimplexEngine::prepareCycle(MultiEngine *ms)
+{	
+	_declare_done = [this, ms](void *)
+	{
+		ms->declareDone(this, bestResult());
+		_points.clear();
+		_bestResult.clear();
+		_bestScore = FLT_MAX;
+		return nullptr;
+	};
+
+	_handle_expand  = [this, ms](void *) -> void *
+	{
+		handleExpansion();
+		auto *restart =
+		new Task<void *, void *>(_cycle, "start new cycle");
+		ms->addImmediateTask(restart);
+		return nullptr;
+	};
+
+	_handle_contract  = [this, ms](void *) -> void *
+	{
+		getOneResult();
+		float next = findBestScore();
+		clearResults();
+
+		if (next < _compare)
+		{
+			worst().vertex = _contracted;
+			worst().eval = next;
+			auto *restart =
+			new Task<void *, void *>(_cycle, "start new cycle");
+			ms->addImmediateTask(restart);
+		}
+		else
+		{
+			Task<void *, void *> *first = nullptr;
+			handleShrink(ms, first);
+			ms->addHangingTask(first);
+			submitShrink();
+			// finish up here
+		}
+
+		return nullptr;
+	};
+
+	_decide_what_to_do = [this, ms]
+	(void *) -> void *
+	{
+		getOneResult();
+		_lastEval = findBestScore();
+//		std::cout << "Eval: " << _lastEval << std::endl;
+		clearResults(); // in reflected.
+		_count++;
+
+		if (_lastEval > _trio.best && _lastEval < _trio.second_worst)
+		{
+			replaceReflection();
+			auto *restart = new Task<void *, void *>
+			(_cycle, "start new cycle");
+			ms->addImmediateTask(restart);
+		}
+		else if (_lastEval < _trio.best)
+		{
+			ms->addHangingTask(new Task<void *, void *>
+			                   (_handle_expand,
+			                   "handle expansion"));
+			submitExpansion();
+		}
+		else 
+		{
+			ms->addHangingTask(new Task<void *, void *>
+			                   (_handle_contract,
+			                   "handle contraction"));
+
+			submitContraction(_lastEval, _trio.worst, 
+			                  _trio.second_worst);
+		}
+
+		return nullptr;
+	};
+
+
+	_cycle = [this, ms]
+	(void *) -> void *
+	{
+		if (reachedConvergence())
+		{
+			ms->addImmediateTask(new Task<void *, void *>(_declare_done,
+			                                              "declare done"));
+		}
+		else
+		{
+			float w = worst().eval;
+			float sw = second_worst().eval;
+			float b = _points[0].eval;
+
+			_trio = {w, sw, b};
+
+			ms->addHangingTask(new Task<void *, void *>(_decide_what_to_do,
+			                                            "decision time"));
+
+			requestReflection();
+		}
+
+		return nullptr;
+	};
+}
+
+void SimplexEngine::taskedCycle(Task<void *, void *> *before, MultiEngine *ms)
+{
+	auto check_convergence = 
+	new Task<void *, void *>(_cycle, "start new cycle",
+	                         ms->immediate());
+
+	before->must_complete_before(check_convergence);
+}
+
+Task<void *, void *> *SimplexEngine::taskedRun(MultiEngine *ms)
+{
+	_count = 0;
+	_shrinkCount = 0;
+	n() = ref()->parameterCount(this);
+	allocateResources();
+	prepareCycle(ms);
+
+	auto *prerun = new Task<void *, void *>
+	([this](void *)
+	 {
+		preRun();
+		return nullptr;
+	},
+	 "pre-run");
+
+	auto *handle_baseline = new Task<void *, void *>
+	([this](void *)
+	 {
+		getOneResult();
+		allocateResources();
+		sendStartingJobs();
+		return nullptr;
+	},
+	"handle_baseline");
+	
+	auto *handleJobs = taskedHandleJobs(handle_baseline, ms);
+	taskedCycle(handleJobs, ms);
+	
+	ms->addHangingTask(handle_baseline);
+
+	return prerun;
+	
+}
+

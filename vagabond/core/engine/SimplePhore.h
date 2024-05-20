@@ -70,6 +70,11 @@ public:
 		_n--;
 	}
 
+	virtual void hold_back()
+	{
+		_n--;
+	}
+	
 	virtual void signal_one()
 	{
 		_n++;

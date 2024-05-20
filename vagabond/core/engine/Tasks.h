@@ -34,13 +34,17 @@ public:
 	
 	virtual ~Tasks()
 	{
-		_pool.waitForThreads();
-		_pool.cleanup();
+		cleanup();
 	}
 	
-	void wait()
+	void cleanup()
 	{
 		_pool.finish();
+	}
+
+	void clear()
+	{
+		_pool.clearQueue();
 	}
 	
 	void prepare_threads(size_t threads)
@@ -53,17 +57,27 @@ public:
 		}
 	}
 	
-	void addTask(BaseTask *bt, bool back = true)
+	void addTask(BaseTask *bt)
 	{
 		if (!bt) return;
 
-		if (bt->ready() && back)
+		if (bt->ready())
 		{
-			_pool.pushObject(bt);
-		}
-		else if (bt->ready() && !back)
-		{
-			_pool.pushObject(bt);
+			Tasks *chosen = bt->favoured;
+			if (chosen != nullptr && chosen != this)
+			{
+				chosen->addTask(bt);
+				return;
+			}
+
+			/*
+			if (name != "tasks")
+			{
+				std::cout << bt->name << " being added to " << name << " at"
+				<< (back_default ? " back" : " front") << std::endl;
+			}
+			*/
+			_pool.pushObject(bt, back_default);
 		}
 	}
 	
@@ -105,6 +119,8 @@ public:
 
 	Handler::TaskPool _pool;
 	std::vector<BaseTask *> _bin;
+	bool back_default = false;
+	std::string name = "tasks";
 };
 
 #endif

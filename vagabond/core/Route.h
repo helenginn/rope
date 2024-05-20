@@ -26,9 +26,12 @@
 #include "Responder.h"
 #include "RTMotion.h"
 #include "RTPeptideTwist.h"
+#include "paths/Scores.h"
+#include "Bin.h"
 
 class Grapher;
 class Separation;
+struct Contacts;
 struct AtomGraph;
 struct GradientPath;
 class ResidueTorsion;
@@ -56,15 +59,19 @@ public:
 		NoHydrogens = 1 << 2,
 		TorsionEnergies = 1 << 3,
 		VdWClashes = 1 << 4,
+		PerResidue = 1 << 5,
+		ClashSwell = 1 << 6,
 	};
 
 	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
 
-	/** submit results to the bond calculator
-	 * @param idx produce results for idx-th point */
+	/*
 	void submitJob(float frac, bool show = true, 
 	               const CalcOptions &options = None,
 	               int ticket = 1);
+	*/
+
+	void submitToShow(float frac);
 	
 	void setNonCovalents(NonCovalents *noncovs)
 	{
@@ -111,6 +118,16 @@ public:
 	float activationEnergy() 
 	{
 		return _activationEnergy;
+	}
+
+	void setTorsionEnergy(float energy) 
+	{
+		_torsionEnergy = energy;
+	}
+	
+	float torsionEnergy() 
+	{
+		return _torsionEnergy;
 	}
 
 	/* to be called on separate thread */
@@ -223,6 +240,11 @@ public:
 		return _pairs[i].end;
 	}
 	
+	void setChosenFrac(const float &frac)
+	{
+		_chosenFrac = frac;
+	}
+	
 	bool doingQuadratic()
 	{
 		return _jobLevel == 0;
@@ -305,6 +327,9 @@ protected:
 	                              const ValidateParam &validate = {},
 	                              BondSequenceHandler *handler = nullptr);
 
+	void submitValue(const CalcOptions &options, int steps,
+	                 BondSequenceHandler *handler);
+
 	virtual void doCalculations() {};
 	
 	float &destination(int i)
@@ -372,6 +397,10 @@ protected:
 	void unlockAll();
 	int _maxFlipTrial = 0;
 	int _order = 2;
+	Bin<ByResidueResult> _perResBin;
+	Contacts *_contacts = nullptr;
+	
+	float _chosenFrac = 0.5;
 private:
 	bool _calculating = false;
 	
@@ -404,6 +433,7 @@ private:
 	
 	std::vector<InstancePair> _pairs;
 	std::map<BondSequenceHandler *, Helpers> _helpers;
+	std::map<Parameter *, int> _parameter2Idx;
 	
 	Instance *_endInstance = nullptr;
 	RTAngles _source;
@@ -420,6 +450,7 @@ inline std::ostream &operator<<(std::ostream &ss, const Route::CalcOptions &opts
 	if (opts & Route::NoHydrogens) ss << "NoHydrogens ";
 	if (opts & Route::TorsionEnergies) ss << "TorsionEnergies ";
 	if (opts & Route::VdWClashes) ss << "VdWClashes ";
+	if (opts & Route::PerResidue) ss << "PerResidue ";
 	return ss;
 }
 

@@ -29,6 +29,7 @@ struct Result
 {
 	void operator=(const Deviation &d)
 	{
+		std::unique_lock<std::mutex> lock(*mut);
 		deviation += d.value;
 	}
 
@@ -40,6 +41,7 @@ struct Result
 		}
 
 		deviation += d.value;
+
 	}
 
 	void operator=(const Correlation &c)
@@ -74,6 +76,7 @@ struct Result
 	float activation = 0;
 	float surface_area = 0;
 	AtomMap *map = nullptr;
+	static std::mutex *mut;
 	
 	void setFromJob(Job *job)
 	{

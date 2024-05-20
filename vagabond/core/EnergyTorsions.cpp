@@ -28,9 +28,10 @@
 
 using Torsion2Energy = EnergyTorsions::Torsion2Energy;
 
-EnergyTorsions::EnergyTorsions(BondSequence *sequence, const RTMotion &motions)
+EnergyTorsions::EnergyTorsions(BondSequence *sequence, const RTMotion &motions,
+                               const std::function<int(Parameter *)> &lookup)
 {
-	prepare(sequence, motions);
+	prepare(sequence, motions, lookup);
 }
 
 EnergyTorsions::~EnergyTorsions()
@@ -38,26 +39,38 @@ EnergyTorsions::~EnergyTorsions()
 
 }
 
-auto energy_term(EnergyTorsions *et, const std::set<ResidueId> &forResidues)
+auto energy_term(EnergyTorsions *et, float frac, 
+                 const std::set<ResidueId> &forResidues)
 {
 	LoopMechanism loop = loop_mechanism(et->pairs(), et->perResiduePairs(),
 	                                    forResidues);
 
-	return [loop, et]
+	return [loop, frac, et]
 	(BondSequence *seq) -> ActivationEnergy
 	{
 		std::vector<AtomBlock> &blocks = seq->blocks();
 		const std::vector<Torsion2Energy> &energies = et->energies();
+		TorsionBasis *basis = seq->torsionBasis();
 		
 		float total = 0; // already in kJ/mol
-		auto get_energies = [&total, &blocks, &energies]
+		auto get_energies = [&total, &blocks, &basis, &energies, &et, &frac]
 		(const std::vector<int> &torsions)
 		{
 			for (const int &idx : torsions)
 			{
 				float t = blocks[idx].torsion;
+
+				float ref = et->reference_torsion(idx, frac);
+
 				float energy = energies[idx](t);
-				total += energy;
+				float ref_energy = energies[idx](ref);
+				
+				float diff = energy - ref_energy;
+
+				if (diff > 0)
+				{
+					total += energy - ref_energy;
+				}
 			}
 		};
 		
@@ -68,9 +81,9 @@ auto energy_term(EnergyTorsions *et, const std::set<ResidueId> &forResidues)
 }
 
 Task<BondSequence *, ActivationEnergy> *
-EnergyTorsions::energy_task(const std::set<ResidueId> &forResidues)
+EnergyTorsions::energy_task(const std::set<ResidueId> &forResidues, float frac)
 {
-	auto energy = energy_term(this, forResidues);
+	auto energy = energy_term(this, frac, forResidues);
 	auto *task = new Task<BondSequence *, ActivationEnergy>(energy);
 	return task;
 
@@ -183,49 +196,23 @@ EnergyTorsions::Torsion2Energy function_for_block(TorsionBasis *basis,
 	return calculate_contribution;
 }
 
-float weightForResidue(const RTMotion &motions, const ResidueId &res)
-{
-	std::vector<ResidueTorsion> rts = motions.headers_only();
-	float biggest = 0;
-	int i = -1;
-	for (ResidueTorsion rt : rts)
-	{
-		i++;
-
-		if (rt.local_id() != res)
-		{
-			continue;
-		}
-		
-		const Motion &mot = motions.storage(i);
-		float angle = fabs(mot.workingAngle());
-		if (angle > biggest)
-		{
-			biggest = angle;
-		}
-	}
-
-	// sigmoidal curve
-	float r = 30.;
-	biggest /= r;
-	biggest *= biggest; // to the power 2
-	biggest *= biggest; // to the power 4
-	biggest *= biggest; // to the power 8
-	return biggest / (biggest + 1);
-}
-
 void EnergyTorsions::prepare(BondSequence *sequence, 
-                             const RTMotion &motions)
+                             const RTMotion &motions,
+                             const std::function<int(Parameter *)> &lookup)
 {
 	TorsionBasis *basis = sequence->torsionBasis();
+
 	for (AtomBlock &block : sequence->blocks())
 	{
 		Torsion2Energy func = function_for_block(basis, block);
-		float weight = 1;
+		float start_angle = 0;
+		int idx = -1;
 		
 		if (func)
 		{
 			Parameter *p = basis->parameter(block.torsion_idx);
+			start_angle = p->value();
+			idx = lookup(p);
 			ResidueId resi = p->residueId();
 			_perResidues[resi].push_back(_energies.size());
 		}
@@ -234,8 +221,23 @@ void EnergyTorsions::prepare(BondSequence *sequence,
 			func = [](const float &) { return 0.f; };
 		}
 		
+		float end_angle = start_angle;
+
+		if (idx >= 0)
+		{
+			end_angle += motions.storage(idx).workingAngle();
+		}
+
 		_pairs.push_back(_energies.size());
 		_energies.push_back(func);
-		_dampeners.push_back(weight);
+		_angles.push_back({start_angle, end_angle});
 	}
+}
+
+float EnergyTorsions::reference_torsion(int idx, float frac)
+{
+	float start = _angles[idx].first;
+	float end = _angles[idx].second;
+
+	return start + frac * (end - start);
 }

@@ -19,6 +19,7 @@
 #ifndef __vagabond__Engine__
 #define __vagabond__Engine__
 
+#include <mutex>
 #include <vector>
 #include <map>
 #include <cstddef>
@@ -65,6 +66,8 @@ public:
 	{
 		_verbose = verb;
 	}
+
+	void preRun();
 private:
 	struct TicketScore
 	{
@@ -75,10 +78,11 @@ private:
 protected:
 
 	int sendJob(const std::vector<float> &all);
-	std::vector<float> findBestResult(float *score);
+	float findBestScore();
 	
 	void getResults();
 	void grabGradients(float *g, const float *x);
+	bool getOneResult();
 	
 	const std::vector<float> &current() const
 	{
@@ -89,6 +93,7 @@ protected:
 	
 	void clearResults()
 	{
+		std::unique_lock<std::mutex> lock(_mutex);
 		_scores.clear();
 	}
 	
@@ -101,7 +106,12 @@ protected:
 	void add_current_to(std::vector<float> &other);
 	void add_to(std::vector<float> &other, const std::vector<float> &add);
 	
-	int n()
+	RunsEngine *const &ref()
+	{
+		return _ref;
+	}
+	
+	int &n()
 	{
 		return _n;
 	}
@@ -110,16 +120,18 @@ protected:
 	float _step = 1.0;
 	int _maxRuns = 500;
 	std::map<int, TicketScore> _scores;
+	std::mutex _mutex;
+	std::vector<float> _current, _bestResult;
+	float _bestScore = FLT_MAX;
 private:
+	void postRun();
 	void trueGradients(float *g, const float *x);
 	void estimateGradients(float *g, const float *x);
 
 	RunsEngine *_ref = nullptr;
 	bool _verbose = false;
 
-	std::vector<float> _current, _bestResult;
 	int _n = 0;
-	float _bestScore = FLT_MAX;
 	float _startScore = FLT_MAX;
 	float _currentScore = FLT_MAX;
 	float _endScore = FLT_MAX;

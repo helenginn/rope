@@ -158,14 +158,14 @@ void VagabondPositions::getSetCoefficients(const std::set<Parameter *> &params,
 	};
 }
 
-size_t VagabondPositions::parameterCount()
+size_t VagabondPositions::parameterCount(Engine *caller)
 {
 	std::vector<float> tmp;
 	_getter(tmp);
 	return tmp.size();
 }
 
-int VagabondPositions::sendJob(const std::vector<float> &all)
+int VagabondPositions::sendJob(const std::vector<float> &all, Engine *sender)
 {
 	_setter(all);
 	Result *r = submitJobAndRetrieve(false);

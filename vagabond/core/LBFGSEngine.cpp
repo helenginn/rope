@@ -57,9 +57,8 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 {
 	std::vector<float> vals = vec_from_lbfgs(x, n);
 	
-	float eval = FLT_MAX;
 	sendJob(vals);
-	Engine::findBestResult(&eval);
+	float eval = findBestScore();
 
 	Engine::grabGradients(g, x);
 
@@ -81,8 +80,6 @@ void LBFGSEngine::run()
 	sendJob(empty);
 
 	getResults();
-	float begin = FLT_MAX;
-	findBestResult(&begin);
 
 	lbfgs_parameter_t param;
 	

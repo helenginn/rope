@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 
 		std::cout << std::endl;
 		
-		tasks->wait();
+		delete tasks;
 	}
 
 	BOOST_TEST(true);

@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
 
 template <class Type>
 class OpVec : public std::vector<Type>
@@ -39,6 +40,14 @@ public:
 	OpVec<Type>(const std::vector<Type> &other) : std::vector<Type>(other)
 	{
 
+	}
+	
+	OpVec<Type>(const std::set<Type> &other)
+	{
+		for (const Type &v : other)
+		{
+			this->push_back(v);
+		}
 	}
 	
 	template <typename Func>

@@ -127,6 +127,8 @@ void RouteExplorer::setupSlider()
 	s->setCentre(0.5, 0.85);
 	_rangeSlider = s;
 	addObject(s);
+
+	_route->setChosenFrac(0.5);
 }
 
 void RouteExplorer::demolishSlider()
@@ -146,6 +148,7 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 	float num = x / 200.;
 	if (!_route->calculating())
 	{
+		_route->setChosenFrac(num);
 		_route->submitJobAndRetrieve(num, true);
 	}
 }
@@ -274,7 +277,6 @@ void RouteExplorer::startWithThreads(const int &thr)
 	_route->prepareCalculate();
 	
 	RouteValidator rv(*_plausibleRoute);
-//	std::cout << "Linearity ratio: " << rv.linearityRatio() << std::endl;
 	std::string valid_message = rv.validate();
 	
 	std::cout << "Route validator says: " << (valid_message.length() ? 
@@ -388,10 +390,7 @@ void RouteExplorer::saveAndRestart()
 	time_t end = ::time(NULL);
 	
 	_numberMade++;
-//	if (_numberMade % 5 == 0)
-	{
-		Environment::env().save();
-	}
+	Environment::env().save();
 	
 	time_t duration = end - _start;
 	int seconds = duration % 60;
@@ -402,5 +401,6 @@ void RouteExplorer::saveAndRestart()
 	_plausibleRoute->clearCustomisation();
 
 	_start = end;
+
 	startWithThreads(_threads);
 }

@@ -45,6 +45,9 @@ public:
 
 	void housekeeping();
 
+	void makePathBetween(const std::string &start, const std::string &end,
+	                     int cycles = 1);
+
 	typedef std::map<std::pair<Instance *, Instance *>, std::vector<Path *>>
 	GroupedMap;
 

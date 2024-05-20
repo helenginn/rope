@@ -314,7 +314,7 @@ void Cyclic::refine()
 	_engine->start();
 }
 
-size_t Cyclic::parameterCount()
+size_t Cyclic::parameterCount(Engine *caller)
 {
 	size_t count = Parameters::parameterCount() + atomCount();
 	return count;
@@ -333,7 +333,7 @@ int Cyclic::indexOfName(std::string name) const
 	return -1;
 }
 
-int Cyclic::sendJob(const std::vector<float> &all)
+int Cyclic::sendJob(const std::vector<float> &all, Engine *caller)
 {
 	Parameters defs(_start);
 	defs.addFromVector(all);
@@ -348,7 +348,7 @@ int Cyclic::sendJob(const std::vector<float> &all)
 	return _issue;
 }
 
-float Cyclic::getResult(int *job_id)
+float Cyclic::getResult(int *job_id, Engine *caller)
 {
 	if (_scores.size() == 0)
 	{

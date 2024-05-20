@@ -16,38 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__WayPoint__
-#define __vagabond__WayPoint__
+#ifndef __vagabond__Scores__
+#define __vagabond__Scores__
 
-#include <iostream>
-#include <vector>
-#include <nlohmann/json.hpp>
-using nlohmann::json;
-	
-struct WayPoints
+#include "ResidueId.h"
+#include <mutex>
+
+struct ActivationEnergy;
+
+struct SingleResidueResult
 {
-	WayPoints();
-	WayPoints(int order);
+	ResidueId id;
+	float score;
 
-	float interpolatedProgression(float frac);
-	
-	std::vector<float> _amps = {0, 0};
+	void operator=(const ActivationEnergy &d);
 };
 
-/* waypoints */
-inline void to_json(json &j, const WayPoints &value)
+struct ByResidueResult
 {
-	j["params"] = value._amps;
-}
-
-/* waypoint */
-inline void from_json(const json &j, WayPoints &value)
-{
-	if (j.count("params"))
+	std::map<ResidueId, float> scores;
+	std::mutex *mutex = new std::mutex();
+	int ticket;
+	
+	void destroy()
 	{
-		std::vector<float> params = j.at("params");
-		value._amps = params;
+		delete mutex;
+		delete this;
 	}
-}
+
+	void operator=(const SingleResidueResult &srr);
+};
 
 #endif

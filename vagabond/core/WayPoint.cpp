@@ -20,22 +20,6 @@
 #include <vagabond/utils/degrad.h>
 #include <iostream>
 
-// MAY BE HANDY AT SOME POINT
-// returns a unique value for this angle (in degrees) from -inf to +inf.
-float obedient_sin(const float &angle)
-{
-	float wrapped = angle;
-	int steps = 0;
-	while (wrapped > 90) { wrapped -= 180; steps++; }
-	while (wrapped <= -90) { wrapped += 180; steps--; }
-
-	float base = sin(deg2rad(wrapped));
-	int shift = steps * 2;
-	base += (float)shift;
-
-	return base;
-}
-
 WayPoints::WayPoints()
 {
 	
@@ -43,25 +27,28 @@ WayPoints::WayPoints()
 
 WayPoints::WayPoints(int order)
 {
-	_grads.resize(order);
+	_amps.resize(order);
 	if (order > 0)
 	{
-		_grads[0] = 2. * (rand() / (double)RAND_MAX - 0.5);
+		_amps[0] = 2. * (rand() / (double)RAND_MAX - 0.5);
 	}
 }
 
 float WayPoints::interpolatedProgression(float frac)
 {
+	float modifier = 1;//(frac - frac*frac);
+
 	float tot = 0;
-	for (int i = 0; i < _grads.size(); i++)
+	for (int i = 0; i < _amps.size(); i++)
 	{
 		float limit = M_PI * (i + 1);
 		float f = frac * limit;
+		float sinf = sin(f);
 
-		tot += sin(f) * _grads[i];
+		tot += (sinf) * _amps[i] * modifier;
 	}
 
-	return tot;
+	return tot * modifier;
 
 }
 

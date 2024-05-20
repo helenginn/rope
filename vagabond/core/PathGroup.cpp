@@ -68,11 +68,17 @@ Metadata *PathGroup::prepareMetadata(bool force)
 		
 		float clash = path->clashScore();
 		float activation_energy = path->activationEnergy();
+		float torsion_energy = path->torsionEnergy();
+		
+		const double gas_constant = 8.31446;
+		float boltzmann_vdw = exp(-activation_energy / gas_constant);
 
 		std::string id = path->id();
 		Metadata::KeyValues kv = 
 		{{"clash", Value(clash)}, 
-		{"activation energy", Value(activation_energy)}, 
+		{"vdw activation energy", Value(activation_energy)}, 
+		{"vdw boltzmann probability", Value(boltzmann_vdw)}, 
+		{"torsion activation energy", Value(torsion_energy)}, 
 		{"momentum", Value(path->momentumScore())}, 
 		{"instance", id}};
 
