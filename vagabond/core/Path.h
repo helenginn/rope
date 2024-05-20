@@ -124,6 +124,12 @@ public:
 	{
 		return _activationEnergy;
 	}
+
+
+	float torsionEnergy() 
+	{
+		return _torsionEnergy;
+	}
 	
 	bool operator==(const Path &other) const;
 	
@@ -155,6 +161,7 @@ private:
 	bool _visible = true;
 	
 	float _activationEnergy = FLT_MAX;
+	float _torsionEnergy = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
 	
@@ -181,6 +188,7 @@ inline void to_json(json &j, const Path &value)
 	j["clash_score"] = value._clash;
 	j["momentum_score"] = value._momentum;
 	j["activation_energy"] = value._activationEnergy;
+	j["torsion_energy"] = value._torsionEnergy;
 	j["maximum_momentum_distance"] = value._maxMomentumDistance;
 	j["maximum_clash_distance"] = value._maxClashDistance;
 }
@@ -218,6 +226,11 @@ inline void from_json(const json &j, Path &value)
 	if (j.count("activation_energy"))
 	{
 		value._activationEnergy = j.at("activation_energy");
+	}
+	
+	if (j.count("torsion_energy"))
+	{
+		value._torsionEnergy = j.at("torsion_energy");
 	}
 }
 

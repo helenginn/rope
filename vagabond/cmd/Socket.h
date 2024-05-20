@@ -16,38 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__WayPoint__
-#define __vagabond__WayPoint__
+#ifndef __vagabond__Socket__
+#define __vagabond__Socket__
 
-#include <iostream>
-#include <vector>
-#include <nlohmann/json.hpp>
-using nlohmann::json;
-	
-struct WayPoints
+#include <vagabond/core/Responder.h>
+
+class Dictator;
+
+class Socket : public HasResponder<Responder<Socket>>
 {
-	WayPoints();
-	WayPoints(int order);
+public:
+	Socket(Dictator *dictator, unsigned short port = 12345);
 
-	float interpolatedProgression(float frac);
-	
-	std::vector<float> _amps = {0, 0};
+	bool operator()();
+private:
+	unsigned short _port = 12345;
+	Dictator *_dictator = nullptr;
+
 };
-
-/* waypoints */
-inline void to_json(json &j, const WayPoints &value)
-{
-	j["params"] = value._amps;
-}
-
-/* waypoint */
-inline void from_json(const json &j, WayPoints &value)
-{
-	if (j.count("params"))
-	{
-		std::vector<float> params = j.at("params");
-		value._amps = params;
-	}
-}
 
 #endif

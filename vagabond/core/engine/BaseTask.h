@@ -25,6 +25,8 @@
 #include <vector>
 #include <string>
 
+class Tasks;
+
 class BaseTask
 {
 public:
@@ -47,6 +49,7 @@ public:
 	std::string name;
 	
 	std::vector<std::function<BaseTask *()>> connections;
+	Tasks *favoured = nullptr;
 	static bool verbose;
 };
 

@@ -19,6 +19,7 @@
 #ifndef __vagabond__RunsEngine__
 #define __vagabond__RunsEngine__
 
+#include <iostream>
 #include <vector>
 #include <map>
 #include <cstddef>
@@ -28,14 +29,17 @@
 typedef std::function<void(std::vector<float> &values)> Getter;
 typedef std::function<void(const std::vector<float> &values)> Setter;
 
+class Engine;
+
 class RunsEngine
 {
 public:
 	virtual ~RunsEngine() {};
-	virtual size_t parameterCount() = 0;
-	virtual int sendJob(const std::vector<float> &all) = 0;
+	virtual size_t parameterCount(Engine *caller) = 0;
+	virtual int sendJob(const std::vector<float> &all, 
+	                    Engine *sender = nullptr) = 0;
 
-	virtual float getResult(int *job_id)
+	virtual float getResult(int *job_id, Engine *sender)
 	{
 		if (_scores.size() == 0)
 		{
@@ -75,6 +79,16 @@ protected:
 	                         &gradient)
 	{
 		_gradient = gradient;
+	}
+	
+	float scoreForTicket(int ticket)
+	{
+		if (_scores.count(ticket) == 0)
+		{
+			std::cout << "missing ticket " << ticket << std::endl;
+			return FLT_MAX;
+		}
+		return _scores[ticket];
 	}
 	
 	void setScoreForTicket(int ticket, double score)

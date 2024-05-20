@@ -21,13 +21,16 @@
 
 #include "Route.h"
 #include "Progressor.h"
+#include "MultiSimplex.h"
 #include "SimplexEngine.h"
 #include <vagabond/c4x/Angular.h>
 #include <functional>
 
 class Path;
+template <class Type> class OpSet;
 
-class PlausibleRoute : public Route, public Progressor, public RunsEngine
+class PlausibleRoute : public Route, public Progressor, public RunsEngine,
+public RunsMultiEngine<ResidueId>, public RunsMultiEngine<OpSet<ResidueId>>
 {
 	friend RouteValidator;
 	friend Path;
@@ -48,6 +51,11 @@ public:
 	
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
+
+	ByResidueResult *byResidueScore(int steps, const CalcOptions &add_options
+	                                = CalcOptions(PerResidue | VdWClashes),
+	                                const CalcOptions &subtract_options
+	                                = None);
 
 	typedef std::function<void()> Task;
 
@@ -91,7 +99,7 @@ public:
 	{
 		if (doingClashes())
 		{
-			return 24;
+			return 6;
 		}
 
 		return 12;
@@ -99,8 +107,17 @@ public:
 
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);
 protected:
-	virtual int sendJob(const std::vector<float> &all);
-	virtual size_t parameterCount();
+	virtual int sendJob(const std::vector<float> &all, Engine *caller);
+
+	virtual std::map<ResidueId, float> 
+	getMultiResult(const std::vector<float> &all, 
+	               MultiSimplex<ResidueId> *caller);
+
+	virtual std::map<OpSet<ResidueId>, float> 
+	getMultiResult(const std::vector<float> &all, 
+	               MultiSimplex<OpSet<ResidueId>> *caller);
+
+	virtual size_t parameterCount(Engine *caller = nullptr);
 
 	virtual void doCalculations();
 
@@ -114,12 +131,11 @@ protected:
 
 	std::vector<int> getTorsionSequence(int idx, const ValidateParam &validate);
 	
-	int _nudgeCount = 12;
 	int _isNew = true;
 	
 	int flipNudgeCount()
 	{
-		return _nudgeCount * 2;
+		return nudgeCount() * 2;
 	}
 
 	float _magnitudeThreshold = 1.f;
@@ -141,6 +157,9 @@ private:
 	                  const CalcOptions &subtract_options);
 
 	bool applyGradients(const ValidateParam &validate);
+	bool perResidueGradients();
+	bool lateStageGradients();
+
 	GradientPath *gradients(const ValidateParam &validate,
 	                        const CalcOptions &add_options = None,
 	                        const CalcOptions &subtract_options = None);
@@ -150,9 +169,13 @@ private:
 	void assignParameterValues(const std::vector<float> &trial);
 
 	void flipTorsionCycle(const ValidateParam &validate);
+	void addFloatParameter(float *value, float step);
+
+	void zeroParameters();
 
 	std::vector<float *> _paramPtrs;
 	std::vector<float> _paramStarts;
+	std::vector<float> _steps;
 
 	int _jobNum = 0;
 	

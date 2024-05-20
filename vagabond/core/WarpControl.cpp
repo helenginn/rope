@@ -267,14 +267,14 @@ void WarpControl::runFromResidueId(int start, int end)
 	run();
 }
 
-size_t WarpControl::parameterCount()
+size_t WarpControl::parameterCount(Engine *caller)
 {
 	std::vector<float> tmp;
 	_getter(tmp);
 	return tmp.size();
 }
 
-int WarpControl::sendJob(const std::vector<float> &all)
+int WarpControl::sendJob(const std::vector<float> &all, Engine *caller)
 {
 	_setter(all);
 	int next = getNextTicket();

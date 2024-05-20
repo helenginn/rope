@@ -98,9 +98,9 @@ public:
 		_magnitude = mag;
 	}
 
-	virtual size_t parameterCount();
-	virtual int sendJob(const std::vector<float> &all);
-	virtual float getResult(int *job_id);
+	virtual size_t parameterCount(Engine *caller);
+	virtual int sendJob(const std::vector<float> &all, Engine *caller);
+	virtual float getResult(int *job_id, Engine *caller);
 
 	friend void to_json(json &j, const Cyclic &value);
 	friend void from_json(const json &j, Cyclic &value);

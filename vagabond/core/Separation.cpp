@@ -22,46 +22,13 @@
 
 using Matrix = Eigen::MatrixXi;
 
-void fill_distances(Matrix &m)
-{
-	int count = m.rows();
-
-	for (size_t k = 0; k < count; k++)
-	{
-		for (size_t i = 0; i < count - 1; i++)
-		{
-			for (size_t j = i + 1; j < count; j++)
-			{
-				int ij = m(i, j);
-				int ik = m(i, k);
-				int kj = m(k, j);
-
-				int sum = ik + kj;
-				if (ik >= 0 && kj >= 0)
-				{
-					if (ij < 0)
-					{
-						m(i, j) = sum;
-						m(j, i) = sum;
-					}
-					else if (ij > sum)
-					{
-						m(i, j) = sum;
-						m(j, i) = sum;
-					}
-				}
-			}
-		}
-	}
-}
-
 void wipe(Matrix &mat)
 {
 	for (int i = 0; i < mat.rows(); i++)
 	{
 		for (int j = 0; j < mat.cols(); j++)
 		{
-			mat(i, j) = (i == j) ? 0 : -1;
+			mat(i, j) = 0;
 		}
 	}
 }
@@ -74,24 +41,64 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 
 	wipe(_matrix);
 	
+	OpSet<Atom *> included;
+	OpSet<Atom *> leads;
+
 	for (int i = 0; i < _atoms.size(); i++)
 	{
 		Atom *a = _atoms._atoms[i];
 		if (!a) continue;
-
-		for (int j = 0; j < a->bondLengthCount(); j++)
+		int a_idx = _atoms.index_of(a);
+		if (a_idx >= 0)
 		{
-			Atom *b = a->connectedAtom(j);
-			int b_idx = _atoms.index_of(b);
-			if (b_idx >= 0)
-			{
-				_matrix(i, b_idx) = 1;
-			}
-
+			leads.insert(a);
+			included.insert(a);
+			break;
 		}
 	}
-	
-	fill_distances(_matrix);
+
+	Separation &me = *this;
+
+	while (leads.size())
+	{
+		OpSet<Atom *> next_leads;
+		for (Atom *const a : leads)
+		{
+			for (int j = 0; j < a->bondLengthCount(); j++)
+			{
+				Atom *b = a->connectedAtom(j);
+				if (included.count(b))
+				{
+					continue;
+				}
+
+				int b_idx = _atoms.index_of(b);
+				if (b_idx < 0)
+				{
+					continue;
+				}
+
+				for (Atom *const prev : included)
+				{
+					if (_atoms.index_of(prev) < 0) { continue; }
+
+					int increment = me(prev, a) + 1;
+					int current = me(prev, b);
+					
+					if (current == 0 || current > increment)
+					{
+						me(prev, b) = increment;
+						me(b, prev) = increment;
+					}
+				}
+
+				included.insert(b);
+				next_leads.insert(b);
+			}
+		}
+
+		leads = next_leads;
+	}
 }
 
 Separation::Separation(BondSequence *const &sequence)
@@ -121,40 +128,23 @@ int Separation::separationBetween(Atom *const &a, Atom *const &b)
 }
 
 Separation::SortedVector::SortedVector(std::vector<Atom *> atoms) //:
-//_compare(atom_ptr_compare_function())
 {
-//	_compare = atom_ptr_compare_function();
 	_atoms = atoms;
-
-//	std::sort(_atoms.begin(), _atoms.end(), _compare);
+	for (int i = 0; i < atoms.size(); i++)
+	{
+		_map[atoms[i]] = i;
+	}
 }
 
 int Separation::SortedVector::index_of(Atom *const &ptr)
 {
-	auto it = std::find(_atoms.begin(), _atoms.end(), ptr);
-	if (it == _atoms.end()) return -1;
-	return (&*it - &_atoms[0]);
-
-	/*
-	size_t lower = 0;
-	size_t upper = _atoms.size();
-
-	if (_compare(ptr, _atoms[lower])) { return -1; }
-	if (_compare(_atoms[upper], ptr)) { return -1; }
-	if (_atoms[lower] == ptr) { return lower; }
-
-	while (true)
+	if (_map.count(ptr) == 0)
 	{
-		size_t range = (upper + lower);
-		size_t middle = (range % 2 == 0) ? (range / 2) : (range + 1) / 2;
-		if (_atoms[middle] == ptr)
-		{
-			return middle;
-		}
-
-		(_compare(ptr, _atoms[middle]) ? upper : lower) = middle;
+		return -1;
 	}
-	
-	return -1;
-	*/
+	else
+	{
+		return _map.at(ptr);
+	}
 }
+

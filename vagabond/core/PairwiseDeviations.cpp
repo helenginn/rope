@@ -20,6 +20,7 @@
 #include "engine/ElementTypes.h"
 #include "engine/Task.h"
 #include "BondSequence.h"
+#include "paths/BundleBonds.h"
 #include "LoopRoundResidues.h"
 
 PairwiseDeviations::PairwiseDeviations(BondSequence *sequence,
@@ -62,15 +63,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	do_on_each_block(blocks, _filter, collect_targets);
 
 	// pre-calculate pairs to interrogate
-	
-	auto closest_time_between_atoms = [](const glm::vec3 &at_rest,
-	                                     const glm::vec3 &moving)
-	{
-		float A = glm::dot(moving, moving);
-		float B = glm::dot(at_rest, moving);
-		
-		return A / B;
-	};
 	
 	auto distance_between_atoms = [](const glm::vec3 &at_rest,
 	                                 const glm::vec3 &moving, float t)
@@ -127,18 +119,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			{
 				ok = true;
 			}
-			else
-			{
-				float t = closest_time_between_atoms(at_rest, moving);
-				if (t < 0 || t > 1) continue;
-
-				float shortest = distance_between_atoms(at_rest, moving, t);
-
-				if (shortest < threshold)
-				{
-					ok = true;
-				}
-			}
 
 			if (!ok)
 			{
@@ -150,8 +130,13 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			_perResidue[right->residueId()].push_back(m);
 			_perResidue[right->residueId()].push_back(n);
 			
+			_residues.insert(left->residueId());
+			_residues.insert(right->residueId());
+			
 			_pairs.push_back(m);
 			_pairs.push_back(n);
+			_correspondingResiduePairs.push_back(left->residueId());
+			_correspondingResiduePairs.push_back(right->residueId());
 		}
 	}
 	
@@ -213,23 +198,28 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 	};
 };
 
-auto clash(PairwiseDeviations *dev, std::set<ResidueId> forResidues)
+Task<BondSequence *, Deviation> *
+PairwiseDeviations::momentum_task(float frac, 
+                                  const std::set<ResidueId> &forResidues)
 {
-	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
-	                                    forResidues);
+	auto return_deviation = simple(this, frac, forResidues);
+	auto *task = new Task<BondSequence *, Deviation>(return_deviation, "momentum");
+	return task;
+}
 
-	return [loop] (BondSequence *seq) -> ActivationEnergy
+Task<BundleBonds *, ActivationEnergy> *
+PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
+{
+	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
+	target_actual_distances targets(reference(), nullptr);
+
+	auto job = [loop, targets, this]
+	(BundleBonds *bb) -> ActivationEnergy
 	{
-		std::vector<AtomBlock> &blocks = seq->blocks();
-		PairwiseDeviations::ClashInfo *scratch = nullptr;
-		obtainClashInfo(blocks, scratch);
-		auto lookup = clash_to_lookup(scratch);
+		auto lookup = bb->lookup();
 
 		long double total = 0;
-		float count = 0;
-		float atom_num = 0;
-
-		auto check_clashes = [&lookup, &atom_num, &total, &count]
+		auto check_clashes = [&lookup, &total, &bb, &targets, this]
 		(const std::vector<int> &pairs)
 		{
 			for (int i = 0; i < pairs.size(); i += 2)
@@ -237,47 +227,28 @@ auto clash(PairwiseDeviations *dev, std::set<ResidueId> forResidues)
 				int p = pairs[i];
 				int q = pairs[i + 1];
 				
-				long double potential = lookup(p, q, false);
+				long double ref_distance = targets.target(p, q, bb->frac());
+				long double potential = lookup(p, q, -1);
+				long double reference = lookup(p, q, ref_distance);
 				
 				if (potential != potential)
 				{
 					continue;
 				}
 
-				total += potential;
-				count ++;
+				long double diff = potential - reference;
+				
+				if (diff > 0)
+				{
+					total += diff;
+				}
 			};
-
-			atom_num ++;
 		};
 		
 		loop(check_clashes);
 		
-		delete [] scratch;
-		
-		total /= count;
-		total *= atom_num;
-		
 		return {(float)total};
 	};
-};
-
-Task<BondSequence *, Deviation> *
-PairwiseDeviations::momentum_task(float frac, 
-                                  const std::set<ResidueId> &forResidues)
-{
-	auto return_deviation = simple(this, frac, forResidues);
-	auto *task = new Task<BondSequence *, Deviation>(return_deviation);
-	return task;
+	
+	return new Task<BundleBonds *, ActivationEnergy>(job, "bundled clashes");
 }
-
-
-Task<BondSequence *, ActivationEnergy> *
-PairwiseDeviations::clash_task(const std::set<ResidueId> &forResidues)
-{
-	auto ljPotential = clash(this, forResidues);
-	auto *task = new Task<BondSequence *, ActivationEnergy>(ljPotential);
-	return task;
-}
-
-

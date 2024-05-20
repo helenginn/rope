@@ -20,6 +20,7 @@
 #include "ResidueId.h"
 #include "PlausibleRoute.h"
 #include "BondCalculator.h"
+#include "MultiSimplex.h"
 #include "GradientTerm.h"
 #include "BondSequence.h"
 #include "Polymer.h"
@@ -27,6 +28,7 @@
 #include "BondSequenceHandler.h"
 #include <vagabond/utils/maths.h>
 #include "Grapher.h"
+#include "paths/ResidueContacts.h"
 #include <vagabond/c4x/Cluster.h>
 
 PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &list)
@@ -74,9 +76,11 @@ auto nudge_chain(PlausibleRoute *me, const Validate &validate,
 		indices.push_back(i);
 	}
 	
-	if (randomise)
+	if (false && randomise)
 	{
-		std::random_shuffle(indices.begin(), indices.end());
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(indices.begin(), indices.end(), g);
 	}
 
 	return [me, validate, message, indices]()
@@ -100,11 +104,13 @@ auto get_nudge_jobs(PlausibleRoute *me, bool mains)
 bool PlausibleRoute::meaningfulUpdate(float new_score, float old_score,
                                       float threshold)
 {
-	if (new_score < 0) return false;
-	
-	if (doingClashes() && new_score < 0.3)
+	if (doingClashes() && old_score < 0 && new_score < 0)
 	{
-		return false;
+		return old_score - new_score > 10;
+	}
+	else if (old_score * new_score < 0)
+	{
+		return true;
 	}
 
 	bool good_ratio = (new_score < threshold * old_score);
@@ -178,51 +184,71 @@ void PlausibleRoute::prepareJobs()
 {
 	auto large_main = [this](int idx) -> bool
 	{
-		return validateTorsion(idx, 30, 360., true, false);
+		return validateTorsion(idx, 120, 360., true, false);
 	};
 
+	/*
 	auto large_sides = [this](int idx) -> bool
 	{
 		return validateTorsion(idx, 30, 360., false, true);
 	};
+	*/
 
 	auto flip_main_chain = [this, large_main]()
 	{
 		flipTorsionCycles(large_main);
 	};
 
+	/*
 	auto flip_side_chain = [this, large_sides]()
 	{
 		flipTorsionCycles(large_sides);
 	};
-	
-	auto check_gradients = [this, large_main]()
-	{
-		bool good = true;
-		float before = _bestScore;
-		while (!doingClashes())
-		{
-			good = applyGradients({});
-			if (!good)
-			{
-				if (!_finish)
-				{
-					upgradeJobs();
-				}
+	*/
 
-				float after = _bestScore;
-				std::cout << before << " to " << after << std::endl;
-				break;
+	auto check_gradients = [this]
+	(const std::function<bool()> &gradient_type)
+	{
+		return [this, gradient_type]()
+		{
+			bool good = true;
+			float before = routeScore(nudgeCount(), None, CoreChain);
+			while (true || !doingClashes())
+			{
+				good = gradient_type();
+				if (!good)
+				{
+					if (!_finish)
+					{
+						upgradeJobs();
+						if (lastJob())
+						{
+							finish();
+						}
+					}
+
+					float after = _bestScore;
+					std::cout << before << " to " << after << std::endl;
+					break;
+				}
 			}
-		}
-		
+		};
 	};
 
 	only_once flip_once(flip_main_chain);
 	_tasks.push_back(flip_once);
-	
-	_tasks.push_back(check_gradients);
-	_tasks.push_back(cycle_and_check(this));
+	_tasks.push_back(check_gradients([this]()
+	                                 {
+		                                if (!doingClashes())
+										{
+											return applyGradients({});
+										}
+										else
+										{
+											return perResidueGradients(); 
+										}
+									}));
+//	_tasks.push_back(cycle_and_check(this));
 }
 
 void PlausibleRoute::setTargets(Instance *inst)
@@ -281,12 +307,338 @@ PlausibleRoute::calcOptions(const CalcOptions &add_options,
 	}
 	if (doingClashes())
 	{
-		options = (CalcOptions)(options | Pairwise | VdWClashes);
+		options = (CalcOptions)(options | Pairwise | VdWClashes | TorsionEnergies);
+	}
+	if (doingSides())
+	{
+		options = (CalcOptions)(options | PerResidue);
 	}
 	
 	options = Route::CalcOptions(options & (~subtract_options));
+	options = Route::CalcOptions(options | (add_options));
 	
 	return options;
+}
+
+std::vector<Floats> save_current(GradientPath *path, const RTMotion &motions)
+{
+	auto current = std::vector<Floats>(motions.size());
+
+	for (int i = 0; i < path->motion_idxs.size(); i++)
+	{
+		int p = path->motion_idxs[i];
+		if (p >= 0 && p < motions.size())
+		{
+			current[p] = motions.storage(p).wp._amps;
+		}
+	}
+
+	return current;
+}
+
+// you'll probably have to optimise this by working directly 
+// from path->motion_idxs
+std::map<int, int> indexed_motions(ByResidueResult *r, RTMotion &motions)
+{
+	std::map<int, int> indexed;
+	int n = 0;
+	for (auto it = r->scores.begin(); it != r->scores.end(); it++)
+	{
+		for (int i = 0; i < motions.size(); i++)
+		{
+			if (motions.rt(i).local_id() == it->first)
+			{
+				indexed[i] = n; // motion -> residue
+			}
+		}
+		n++;
+	}
+
+	return indexed;
+}
+
+bool PlausibleRoute::perResidueGradients()
+{
+	_contacts = nullptr;
+
+	_paramPtrs.clear();
+	_paramStarts.clear();
+	_steps.clear();
+
+	float step = 10;
+	std::map<ResidueId, std::vector<int>> map;
+	int n = 0;
+	for (int i = 0; i < motionCount(); i++)
+	{
+		ResidueTorsion &rt = residueTorsion(i);
+		if (parameter(i)->coversMainChain() || parameter(i)->isConstrained())
+		{
+			continue;
+		}
+
+		const ResidueId &local = rt.local_id();
+		WayPoints &wps = wayPoints(i);
+
+		addFloatParameter(&wps._amps[0], step);
+		addFloatParameter(&wps._amps[1], step);
+
+		for (int j = 0; j < 2; j++)
+		{
+			map[local].push_back(n + j);
+		}
+
+		n += 2;
+	}
+
+	float oldsc = routeScore(nudgeCount(), None, CoreChain);
+	postScore(oldsc);
+
+	MultiSimplex<ResidueId> ms(this, parameterCount());
+	ms.setStepSize(step);
+	ms.supplyInfo(map);
+	ms.run();
+	zeroParameters();
+
+	float newsc = routeScore(nudgeCount(), None, CoreChain);
+	_bestScore = newsc;
+	postScore(newsc);
+
+	if (_finish) return false;
+
+	struct RankedResidue
+	{
+		float score;
+		ResidueId id;
+
+		bool operator<(const RankedResidue &other) const
+		{
+			return score > other.score; // want descending
+		}
+	};
+
+	std::set<RankedResidue> residues;
+
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		const ResidueId &id = it->first;
+		_ids = {id};
+		float sc = routeScore(nudgeCount(), None, CoreChain);
+		residues.insert({sc, id});
+	}
+
+	OpSet<ResidueId> chosen;
+
+	n = 0;
+	for (const RankedResidue &rr : residues)
+	{
+		if (n >= 5) break;
+		chosen.insert(rr.id);
+		n++;
+	}
+
+	std::map<ResidueId, std::vector<int>> mini;
+	for (const ResidueId &id : chosen)
+	{
+		mini[id] = map[id];
+	}
+
+	_ids = chosen;
+	{
+		MultiSimplex<ResidueId> ms(this, parameterCount());
+		ms.setMaxRuns(20);
+		ms.setStepSize(step);
+		ms.supplyInfo(mini);
+		for (int i = 0; i < 10; i++)
+		{
+			ms.run();
+			zeroParameters();
+		}
+		if (_finish) return false;
+	}
+
+	_ids.clear();
+		
+
+	newsc = routeScore(nudgeCount(), None, CoreChain);
+	_bestScore = newsc;
+	postScore(newsc);
+	std::cout << "here: " << oldsc << " to " << newsc << std::endl;
+	return meaningfulUpdate(newsc, oldsc, 0.95);
+}
+
+bool PlausibleRoute::lateStageGradients()
+{
+	auto side_chain = [this](int idx) -> bool
+	{
+		return parameter(idx) && !parameter(idx)->coversMainChain() && !parameter(idx)->isConstrained();
+	};
+
+	GradientPath *path = gradients(side_chain);
+	if (Route::_finish)
+	{
+		delete path; return false;
+	}
+
+	std::vector<Floats> current = save_current(path, _motions);
+	ByResidueResult *best = nullptr;
+	best = byResidueScore(nudgeCount());
+	for (auto it = best->scores.begin(); it != best->scores.end(); it++)
+	{
+		it->second = FLT_MAX;
+	}
+
+	std::vector<float> alphas(best->scores.size(), 0);
+	std::vector<float> steps(best->scores.size(), 0.2);
+	std::vector<float> best_alphas(best->scores.size(), 0);
+
+	std::map<int, int> indexed = indexed_motions(best, _motions);
+
+	auto sum_score = [](ByResidueResult *score)
+	{
+		float sum = 0;
+		for (auto it = score->scores.begin(); it != score->scores.end(); it++)
+		{
+			sum += it->second;
+		}
+		sum /= score->scores.size() * 2;
+		return sum;
+	};
+
+	std::string desc;
+	float biggest = 0;
+	for (int j = 0; j < path->motion_idxs.size(); j++)
+	{
+		int p = path->motion_idxs[j];
+		if (p >= 0 && p < motionCount())
+		{
+			const Floats &sines = path->grads[j];
+			for (const float &s : sines)
+			{
+				if (fabs(s) > biggest)
+				{
+					biggest = fabs(s);
+					desc = _motions.rt(p).desc();
+				}
+			}
+		}
+	}
+	std::cout << "biggest: " << biggest << " for " << desc << std::endl;
+	biggest *= 10;
+
+	auto scores_for_alpha = [this, &biggest, &path, &current, &indexed]
+		(const std::vector<float> &alphas) -> ByResidueResult *
+		{
+
+			for (int j = 0; j < path->motion_idxs.size(); j++)
+			{
+				int p = path->motion_idxs[j];
+				if (p >= 0 && p < motionCount())
+				{
+					int a = indexed[p];
+					float alpha = alphas[a];
+
+					const Floats &sines = path->grads[j];
+					for (int i = 0; i < sines.size(); i++)
+					{
+						float add = sines[i] * alpha / biggest * 10;
+						if (add > 0.1 * biggest)
+						{
+							continue;
+						}
+						motion(p).wp._amps[i] = current[p][i] + add;
+					}
+				}
+			}
+
+			ByResidueResult *score;
+			score = byResidueScore(nudgeCount());
+
+			return score;
+		};
+
+	auto adjust_alphas = [this](std::vector<float> &alphas,
+			std::vector<float> &best_alphas,
+			std::vector<float> &steps,
+			ByResidueResult *last, ByResidueResult *best)
+		-> bool
+		{
+			auto jt = best->scores.begin();
+			int idx = 0;
+			bool another = false;
+			for (auto it = last->scores.begin(); it != last->scores.end();
+					it++)
+			{
+				float my_score = it->second;
+				float best_score = jt->second;
+
+				if (my_score < best_score)
+				{
+					/*
+					   std::cout << it->first << ": " << my_score << " vs " <<
+					   best_score << " with alpha " << " " << alphas[idx] << 
+					   " step " << steps[idx] << std::endl;
+					 */
+
+					jt->second = my_score;
+					best_alphas[idx] = alphas[idx];
+				}
+				else
+				{
+					//                             alphas[idx] = best_alphas[idx];
+					steps[idx] *= 0.5;
+				}
+
+				if (steps[idx] > 1 / 12.f)
+				{
+					another = true;
+				}
+
+				jt++; idx++;
+			}
+
+			for (int i = 0; i < alphas.size() && another; i++)
+			{
+				alphas[i] += steps[i];
+			}
+
+			return another;
+		};
+
+	std::vector<float> chosen_alphas(best->scores.size(), 0);
+	float best_score = FLT_MAX;
+
+	int count = 0;
+	while (count < 20)
+	{
+		ByResidueResult *next = scores_for_alpha(alphas);
+		float score = sum_score(next);
+		std::cout << "mixed alphas -> " << score << std::endl;
+		if (score < best_score)
+		{
+			chosen_alphas = alphas;
+			best_score = score;
+		}
+
+		bool another = adjust_alphas(alphas, best_alphas, steps, next, best);
+		next->destroy();
+		count++;
+		if (!another) break;
+	}
+
+	ByResidueResult *next = scores_for_alpha(best_alphas);
+	float alternative = sum_score(next);
+	std::cout << "Best alphas combined: " << alternative << std::endl;
+	if (best_score < alternative)
+	{
+		ByResidueResult *choice = scores_for_alpha(chosen_alphas);
+		std::cout << "Better: " << sum_score(choice) << std::endl;
+		choice->destroy();
+	}
+
+	best->destroy();
+	next->destroy();
+
+	return count > 1;
 }
 
 bool PlausibleRoute::applyGradients(const ValidateParam &validate)
@@ -303,19 +655,9 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 		return false;
 	}
 
-	std::vector<Floats> current; current.resize(motionCount());
+	std::vector<Floats> current = save_current(path, _motions);
 
-	for (int i = 0; i < path->motion_idxs.size(); i++)
-	{
-		int p = path->motion_idxs[i];
-		if (p >= 0 && p < motionCount())
-		{
-			current[p] = motion(p).wp._grads;
-		}
-	}
-
-	float scale = doingClashes() ? 1e-4 : 1;
-	scale = 1;
+	float scale = 1;
 	float alpha = 0;
 	float step = 0.25;
 	
@@ -331,11 +673,7 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 				for (int i = 0; i < sines.size(); i++)
 				{
 					float add = sines[i] * alpha * scale;
-					if (fabs(add) > 20)
-					{
-						add = (add > 0 ? 1 : -1) * 20;
-					}
-					motion(p).wp._grads[i] = current[p][i] + add;
+					motion(p).wp._amps[i] = current[p][i] + add;
 				}
 			}
 		}
@@ -401,41 +739,65 @@ GradientPath *PlausibleRoute::gradients(const ValidateParam &validate,
 	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
 
+ByResidueResult *PlausibleRoute::byResidueScore(int steps, 
+                                                const CalcOptions &add_options,
+                                                const CalcOptions 
+                                                &subtract_options)
+{
+	clearTickets();
+	CalcOptions options = calcOptions(add_options, subtract_options);
 
+	if (!(options & PerResidue && options & VdWClashes))
+	{
+		throw std::runtime_error("Using wrong options to call a per-residue "
+		                         "score in PlausibleRoute.cpp");
+	}
+
+	submitValue(options, steps, nullptr);
+	retrieve();
+	_perResBin.releaseHorses();
+	ByResidueResult *r = _perResBin.acquireObject();
+	float total = 0;
+	float c = 0;
+	for (auto it = r->scores.begin(); it != r->scores.end(); it++)
+	{
+		total += it->second;
+		c++;
+	}
+	total /= 2 * c;
+
+	return r;
+}
 
 float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
                                  const CalcOptions &subtract_options)
 {
 	clearTickets();
-	_resources.calculator->holdHorses();
-	
-	CalcOptions options = calcOptions(add_options, subtract_options);
+	CalcOptions extra_subtract = CalcOptions(subtract_options | PerResidue);
+	CalcOptions options = calcOptions(add_options, extra_subtract);
 
-	int n = 0;
-	for (size_t i = 0; i < steps; i++)
+	if (options & PerResidue && options & VdWClashes)
 	{
-		float show = (rand() / (double)RAND_MAX < 0.01);
-		float frac = i / (float)steps;
-		
-		if (!_updateAtoms) show = false; // don't show
-
-		submitJob(frac, show, options, n);
-		n++;
+		throw std::runtime_error("Using wrong function to call a per-residue "
+		                         "score in PlausibleRoute.cpp");
 	}
-	
-	_resources.calculator->releaseHorses();
+
+	float sc = 0;
+	submitValue(options, steps, nullptr);
 	retrieve();
+	sc = _point2Score[0].deviations / (float)steps;
+	float highest = _point2Score[0].highest_energy;
+	float lowest = _point2Score[1].lowest_energy;
+	_activationEnergy = highest - lowest;
 
-	float sc = _point2Score[0].deviations;
-	
-	if (doingClashes())
+	bool show = rand() % 5 == 0;
+	if (show || true)
 	{
-		_activationEnergy = _point2Score[0].highest_energy;
-		_activationEnergy -= _point2Score[0].lowest_energy;
+		submitToShow(_chosenFrac);
+		retrieve();
 	}
-
-	clearTickets();
 	
+	clearTickets();
 	return sc;
 }
 
@@ -487,6 +849,13 @@ bool PlausibleRoute::validateTorsion(int idx, float min_mag,
 	return true;
 }
 
+void PlausibleRoute::addFloatParameter(float *value, float step)
+{
+	_paramStarts.push_back(*value);
+	_paramPtrs.push_back(value);
+	_steps.push_back(step);
+}
+
 void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 {
 	if (_simplex)
@@ -499,8 +868,8 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 
 	_paramPtrs.clear();
 	_paramStarts.clear();
+	_steps.clear();
 	_ids.clear();
-	std::vector<float> steps;
 	
 	for (size_t i = 0; i < idxs.size(); i++)
 	{
@@ -511,20 +880,16 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 		
 		_ids.insert(parameter(idxs[i])->residueId());
 		WayPoints &wps = wayPoints(idxs[i]);
-		Motion &motion = _motions.storage(idxs[i]);
+//		Motion &motion = _motions.storage(idxs[i]);
 		
 		float movement = fabs(destination(idxs[i]));
 		float step = doingClashes() ? 2 : 1;
 
-		_paramStarts.push_back(wps._grads[0]);
-		_paramPtrs.push_back(&wps._grads[0]);
-		steps.push_back(step);
+		addFloatParameter(&wps._amps[0], step);
 
 		if (doingCubic())
 		{
-			_paramStarts.push_back(wps._grads[1]);
-			_paramPtrs.push_back(&wps._grads[1]);
-			steps.push_back(step);
+			addFloatParameter(&wps._amps[1], step);
 		}
 	}
 	
@@ -533,10 +898,10 @@ void PlausibleRoute::prepareAnglesForRefinement(const std::vector<int> &idxs)
 	int runs = doingCubic() ? 20 : 10;
 	
 	_simplex->setMaxRuns(runs);
-	_simplex->chooseStepSizes(steps);
+	_simplex->chooseStepSizes(_steps);
 }
 
-size_t PlausibleRoute::parameterCount()
+size_t PlausibleRoute::parameterCount(Engine *caller)
 {
 	return _paramPtrs.size();
 }
@@ -735,7 +1100,7 @@ bool PlausibleRoute::flipTorsions(const ValidateParam &validate)
 
 	if (doingClashes()) return false;
 
-	_bestScore = routeScore(flipNudgeCount());
+	_bestScore = routeScore(flipNudgeCount(), None, Pairwise);
 	float min = doingClashes() ? 10 : 90;
 	
 	for (size_t i = 0; i < motionCount(); i++)
@@ -792,7 +1157,17 @@ void PlausibleRoute::cycle()
 	{
 		for (PlausibleRoute::Task &task : _tasks)
 		{
+			time_t start = ::time(NULL);
 			task();
+			time_t end = ::time(NULL);
+			time_t duration = end - start;
+			int seconds = duration % 60;
+			int minutes = (duration - seconds + 1) / 60;
+			if (seconds > 0 || minutes > 0)
+			{
+				std::cout << "Cycle: " << minutes << "m " << seconds 
+				<< "s." << std::endl;
+			}
 			finishTicker();
 			
 			if (Route::_finish)
@@ -850,6 +1225,15 @@ void PlausibleRoute::prepareTorsionFetcher(BondSequenceHandler *handler)
 	handler->manager()->setTorsionFetcher(fetch);
 }
 
+void PlausibleRoute::zeroParameters()
+{
+	for (size_t i = 0; i < _paramPtrs.size(); i++)
+	{
+		float update_value = *(_paramPtrs[i]);
+		_paramStarts[i] = update_value;
+	}
+}
+
 void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 {
 	assert(trial.size() == _paramPtrs.size());
@@ -861,7 +1245,66 @@ void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 	}
 }
 
-int PlausibleRoute::sendJob(const std::vector<float> &all)
+std::map<OpSet<ResidueId>, float> PlausibleRoute::
+	getMultiResult(const std::vector<float> &all,
+	               MultiSimplex<OpSet<ResidueId>> *caller)
+{
+	assignParameterValues(all);
+	
+	int num = nudgeCount();
+	if (rand() % 5 == 0 || true)
+	{
+		submitToShow(_chosenFrac);
+		retrieve();
+	}
+
+	ByResidueResult *rr = byResidueScore(num);
+	std::map<ResidueId, float> scores = rr->scores;
+	std::map<OpSet<ResidueId>, float> converted = caller->blueprint();
+	
+	for (auto it = converted.begin(); it != converted.end(); it++)
+	{
+		for (const ResidueId &id : it->first)
+		{
+			it->second += scores[id];
+		}
+	}
+
+	delete rr;
+	return converted;
+}
+
+std::map<ResidueId, float> PlausibleRoute::
+	getMultiResult(const std::vector<float> &all,
+	               MultiSimplex<ResidueId> *caller)
+{
+	assignParameterValues(all);
+	
+	int num = nudgeCount();
+	if (rand() % 5 == 0 || true)
+	{
+		submitToShow(_chosenFrac);
+		retrieve();
+	}
+
+	ByResidueResult *rr = byResidueScore(num);
+	std::map<ResidueId, float> scores = rr->scores;
+	
+	/*
+	for (auto it = converted.begin(); it != converted.end(); it++)
+	{
+		for (const ResidueId &id : it->first)
+		{
+			it->second += scores[id];
+		}
+	}
+	*/
+
+	delete rr;
+	return scores;
+}
+
+int PlausibleRoute::sendJob(const std::vector<float> &all, Engine *caller)
 {
 	assignParameterValues(all);
 	float result = FLT_MAX;
@@ -879,6 +1322,11 @@ void PlausibleRoute::upgradeJobs()
 	if (lastJob()) { return; }
 
 	_jobLevel++;
+
+	if (doingClashes() && !doingHydrogens())
+	{
+		_jobLevel++;
+	}
 	
 	unlockAll();
 	std::cout << "Job level now " << _jobLevel << "..." << std::endl;
@@ -891,14 +1339,15 @@ void PlausibleRoute::refreshScores()
 	_momentum = routeScore(nudgeCount());
 
 	_jobLevel = 4;
-	_clash = routeScore(nudgeCount());
+	_clash = routeScore(nudgeCount(), None, TorsionEnergies);
 	_vdwEnergy = _activationEnergy;
-	routeScore(nudgeCount());
+	routeScore(nudgeCount(), TorsionEnergies, VdWClashes);
 	_torsionEnergy = _activationEnergy;
 
 	std::cout << "Minimise momentum score " << _momentum << std::endl;
 	std::cout << "Minimise clash score " << _clash << std::endl;
 	std::cout << "VdW energy " << _vdwEnergy << std::endl;
+	std::cout << "Torsion energy " << _torsionEnergy << std::endl;
 
 	_activationEnergy = _vdwEnergy;
 	

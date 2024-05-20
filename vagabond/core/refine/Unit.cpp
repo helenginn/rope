@@ -48,13 +48,12 @@ _sampler(info->samples, info->master_dims)
 
 Unit::~Unit()
 {
-	_resources.tasks->wait();
 }
 
-float Unit::getResult(int *job_id)
+float Unit::getResult(int *job_id, Engine *caller)
 {
 	retrieveJobs();
-	float res = RunsEngine::getResult(job_id);
+	float res = RunsEngine::getResult(job_id, caller);
 	return res;
 }
 
@@ -91,7 +90,7 @@ void Unit::submitJob()
 	calculator->releaseHorses();
 }
 
-int Unit::sendJob(const std::vector<float> &all)
+int Unit::sendJob(const std::vector<float> &all, Engine *caller)
 {
 	std::vector<float> chosen = all;
 	chosen.resize(parameterCount());
@@ -124,7 +123,7 @@ void Unit::retrieveJobs()
 	}
 }
 
-size_t Unit::parameterCount()
+size_t Unit::parameterCount(Engine *caller)
 {
 	return _info->total_params();
 }

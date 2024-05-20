@@ -22,6 +22,7 @@
 // how many bonds separate each pair of atoms
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/OpSet.h>
+#include <map>
 
 class Atom;
 class BondSequence;
@@ -46,6 +47,18 @@ public:
 	{
 		return _matrix(i, j);
 	}
+	
+	auto &operator()(Atom *const &a, Atom *const &b)
+	{
+		int i = _atoms.index_of(a);
+		int j = _atoms.index_of(b);
+		if (i < 0 || j < 0)
+		{
+			return _fail;
+		}
+
+		return _matrix(i, j);
+	}
 private:
 	void prepare(const std::vector<Atom *> &atoms);
 	Eigen::MatrixXi _matrix;
@@ -62,10 +75,12 @@ private:
 			return _atoms.size();
 		}
 		
+		std::map<Atom *, int> _map;
 		std::vector<Atom *> _atoms;
 	};
 
 	SortedVector _atoms;
+	int _fail = -1;
 };
 
 #endif

@@ -16,38 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__WayPoint__
-#define __vagabond__WayPoint__
+#include "MultiSimplex.h"
+#include "engine/Tasks.h"
 
-#include <iostream>
-#include <vector>
-#include <nlohmann/json.hpp>
-using nlohmann::json;
-	
-struct WayPoints
+MultiEngine::MultiEngine()
 {
-	WayPoints();
-	WayPoints(int order);
-
-	float interpolatedProgression(float frac);
-	
-	std::vector<float> _amps = {0, 0};
-};
-
-/* waypoints */
-inline void to_json(json &j, const WayPoints &value)
-{
-	j["params"] = value._amps;
+	_immediate = new Tasks();
+	_immediate->prepare_threads(1);
+	_immediate->name = "immediate";
+	_hanging = new Tasks();
+	_hanging->prepare_threads(1);
+	_hanging->back_default = true;
+	_hanging->name = "hanging";
 }
 
-/* waypoint */
-inline void from_json(const json &j, WayPoints &value)
+void MultiEngine::clearTasks()
 {
-	if (j.count("params"))
-	{
-		std::vector<float> params = j.at("params");
-		value._amps = params;
-	}
+	_immediate->clear();
+	_hanging->clear();
+
 }
 
-#endif
+MultiEngine::~MultiEngine()
+{
+	_immediate->cleanup();
+	_hanging->cleanup();
+	delete _immediate;
+	delete _hanging;
+	_immediate = nullptr;
+	_hanging = nullptr;
+}
+
+void MultiEngine::addImmediateTask(BaseTask *bt)
+{
+	_immediate->addTask(bt);
+}
+
+void MultiEngine::addHangingTask(BaseTask *bt)
+{
+	_hanging->addTask(bt);
+}

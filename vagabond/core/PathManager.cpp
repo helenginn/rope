@@ -17,7 +17,9 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "PathManager.h"
+#include "ModelManager.h"
 #include "Environment.h"
+#include "NewPath.h"
 
 PathManager::PathManager()
 {
@@ -152,4 +154,45 @@ void PathManager::purgePath(Path *path)
 	}
 	
 	sendResponse("purged_path", path);
+}
+
+void PathManager::makePathBetween(const std::string &start,
+                                  const std::string &end, int cycles)
+{
+	Instance *first = ModelManager::manager()->instance(start);
+	Instance *second = ModelManager::manager()->instance(end);
+	
+	bool ok = true;
+	if (!first)
+	{
+		std::cout << "Cannot find start instance (" << start << ") for making a path." << std::endl;
+		ok = false;
+	}
+	if (!second)
+	{
+		std::cout << "Cannot find end instance (" << end << ") for making a path." << std::endl;
+		ok = false;
+	}
+	
+	if (!ok) return;
+	std::cout << "Found " << start << " and " << end << ", running " << cycles << " cycles" << std::endl;
+
+	NewPath np(first, second);
+	PlausibleRoute *route = np();
+	route->setThreads(8);
+	route->setMaximumMomentumDistance(6.f);
+	route->setMaximumClashDistance(8.f);
+	route->setup();
+	
+	for (int i = 0; i < cycles; i++)
+	{
+		route->prepareCalculate();
+		std::cout << "Beginning calculation..." << std::endl;
+		route->calculate(route);
+		std::cout << "Done." << std::endl;
+		Path path(route);
+		insertOrReplace(path, nullptr);
+		Environment::env().save();
+		route->clearCustomisation();
+	}
 }

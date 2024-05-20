@@ -26,15 +26,17 @@
 #include <list>
 
 #include "BaseTask.h"
+#include "Tasks.h"
 
 template <typename Input, typename Output>
 class Task : public BaseTask
 {
 public:
 	Task(const std::function<Output(Input)> &td, 
-	     const std::string &n = {}) : todo(td)
+	     const std::string &n = {}, Tasks *f = nullptr) : todo(td)
 	{
 		name = n;
+		favoured = f;
 	}
 	
 	std::vector<BaseTask *> run_release_program()
@@ -134,6 +136,7 @@ public:
 		{
 			delete this;
 			return false; // don't handle the pointer ever again
+			// may not be used?
 		}
 
 		return triggered;

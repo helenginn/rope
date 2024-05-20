@@ -24,7 +24,7 @@ Engine::Engine(RunsEngine *ref)
 {
 	_ref = ref;
 	_ref->resetTickets();
-	_n = _ref->parameterCount();
+	_n = _ref->parameterCount(this);
 }
 
 void Engine::currentScore()
@@ -37,80 +37,78 @@ void Engine::currentScore()
 	clearResults();
 	sendJob(_bestResult);
 	getResults();
-	findBestResult(&_currentScore);
+	_currentScore = findBestScore();
 	clearResults();
 }
 
-std::vector<float> Engine::findBestResult(float *score)
+float Engine::findBestScore()
 {
-	auto it = _scores.begin();
-	TicketScore *ts = nullptr;
 	float best = FLT_MAX;
-	
-	while (it != _scores.end())
+
+	std::unique_lock<std::mutex> lock(_mutex);
+	for (auto it = _scores.begin(); it != _scores.end(); it++)
 	{
 		if (it->second.received && it->second.score < best)
 		{
 			best = it->second.score;
-			ts = &(it->second);
 		}
-
-		it++;
-	}
-
-	if (ts == nullptr)
-	{
-		*score = FLT_MAX;
-		return std::vector<float>();
 	}
 	
-	*score = best;
-	return ts->vals;
+	return best;
+}
+
+bool Engine::getOneResult()
+{
+	int job_id = -1;
+	float score = _ref->getResult(&job_id, this);
+
+	if (job_id < 0)
+	{
+		return false;
+	}
+
+	std::unique_lock<std::mutex> lock(_mutex);
+	_scores[job_id].score = score;
+	_scores[job_id].received = true;
+
+	if (_verbose)
+	{
+		if (score >= _bestScore)
+		{
+			std::cout << "." << std::flush;
+		}
+		else
+		{
+			std::cout << "+" << std::flush;
+		}
+	}
+
+	if (score < _bestScore)
+	{
+		_bestScore = score;
+		_bestResult = _scores[job_id].vals;
+	}
+	return true;
 }
 
 void Engine::getResults()
 {
-	int job_id = -1;
-
-	do
+	while (true)
 	{
-		float score = _ref->getResult(&job_id);
-		
-		if (job_id < 0)
+		if (!getOneResult())
 		{
 			return;
 		}
-		
-		_scores[job_id].score = score;
-		_scores[job_id].received = true;
-		
-		if (_verbose)
-		{
-			if (score >= _bestScore)
-			{
-				std::cout << "." << std::flush;
-			}
-			else
-			{
-				std::cout << "+" << std::flush;
-			}
-		}
-
-		if (score < _bestScore)
-		{
-			_bestScore = score;
-			_bestResult = _scores[job_id].vals;
-		}
 	}
-	while (true);
 }
 
 int Engine::sendJob(const std::vector<float> &all)
 {
-	int ticket = _ref->sendJob(all);
+	int ticket = _ref->sendJob(all, this);
 	TicketScore ts{};
 	ts.vals = all;
 
+	std::unique_lock<std::mutex> lock(_mutex);
 	_scores[ticket] = ts;
 	return ticket;
 }
@@ -140,9 +138,9 @@ void Engine::add_current_to(std::vector<float> &other)
 	add_to(other, _current);
 }
 
-void Engine::start()
+void Engine::preRun()
 {
-	_n = _ref->parameterCount();
+	_n = _ref->parameterCount(this);
 	_current.clear();
 	_bestResult.clear();
 	_bestScore = FLT_MAX;
@@ -159,23 +157,31 @@ void Engine::start()
 	{
 		std::cout << _currentScore << " -> " << std::flush;
 	}
+}
 
-	run();
-	
+void Engine::postRun()
+{
 	currentScore();
 	_endScore = _currentScore;
 	if (_verbose)
 	{
 		std::cout << " -> " << _endScore << " (";
-		
+
 		for (const float &f : bestResult())
 		{
 			std::cout << f << ", ";
 		}
 		std::cout << ")" << std::endl;
 	}
-	
+
 	_improved = (_endScore < _startScore - 1e-6);
+}
+
+void Engine::start()
+{
+	preRun();
+	run();
+	postRun();
 }
 
 void Engine::trueGradients(float *g, const float *x)

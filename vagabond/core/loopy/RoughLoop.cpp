@@ -68,7 +68,7 @@ RoughLoop::calculateWeights()
 	return _active.weights();
 }
 
-size_t RoughLoop::parameterCount()
+size_t RoughLoop::parameterCount(Engine *caller)
 {
 	size_t count = _active.parameterCount();
 	return count;
@@ -118,7 +118,7 @@ int RoughLoop::submitJob(bool show, const std::vector<float> &vals)
 	return ticket;
 }
 
-int RoughLoop::sendJob(const std::vector<float> &vals)
+int RoughLoop::sendJob(const std::vector<float> &vals, Engine *caller)
 {
 	_active.setValues(vals);
 	std::vector<float> prep = _active.values();
@@ -127,7 +127,7 @@ int RoughLoop::sendJob(const std::vector<float> &vals)
 	return ticket;
 }
 
-float RoughLoop::getResult(int *job_id)
+float RoughLoop::getResult(int *job_id, Engine *caller)
 {
 	Result *r = _resources.calculator->acquireObject();
 

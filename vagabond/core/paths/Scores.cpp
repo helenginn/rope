@@ -16,38 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__WayPoint__
-#define __vagabond__WayPoint__
+#include "Scores.h"
+#include "../engine/ElementTypes.h"
 
-#include <iostream>
-#include <vector>
-#include <nlohmann/json.hpp>
-using nlohmann::json;
-	
-struct WayPoints
+void SingleResidueResult::operator=(const ActivationEnergy &d)
 {
-	WayPoints();
-	WayPoints(int order);
-
-	float interpolatedProgression(float frac);
-	
-	std::vector<float> _amps = {0, 0};
-};
-
-/* waypoints */
-inline void to_json(json &j, const WayPoints &value)
-{
-	j["params"] = value._amps;
+	score += d.value;
 }
 
-/* waypoint */
-inline void from_json(const json &j, WayPoints &value)
+void ByResidueResult::operator=(const SingleResidueResult &srr)
 {
-	if (j.count("params"))
-	{
-		std::vector<float> params = j.at("params");
-		value._amps = params;
-	}
+	std::unique_lock<std::mutex> lock(*mutex);
+	scores[srr.id] += srr.score;
 }
-
-#endif

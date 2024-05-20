@@ -26,6 +26,10 @@
 
 #include "Engine.h"
 
+template <class X, class Y> class Task;
+class MultiEngine;
+class BaseTask;
+
 class SimplexEngine : public Engine
 {
 public:
@@ -42,20 +46,20 @@ public:
 		_maxJobs = maxJobs;
 	}
 
+	Task<void *, void *> *taskedRun(MultiEngine *ms);
+
 	virtual void finish();
 protected:
 	virtual void run();
+	void preRun();
 
 	typedef std::vector<float> SPoint;
 
 	const SPoint &bestPoint() const;
 
-	const bool &changedParams() const
-	{
-		return _changedParams;
-	}
-	
 	void printPoint(SPoint &point);
+	void printSimplex();
+
 	std::atomic<bool> _finish{false};
 
 private:
@@ -97,31 +101,70 @@ private:
 		}
 	};
 
+	bool reachedConvergence();
 	void allocateResources();
 	void resetVertex(TestPoint &point);
 	void reorderVertices();
 	SPoint scaleThrough(SPoint &p, SPoint &q, float k);
 
-	bool classifyResults();
 	void collateResults();
 
+	void requestReflection();
 	void sendStartingJobs();
-	void sendDecidedJobs();
-	void sendReflectionJob(int i);
-	void sendContractionJob(int i);
-	void sendExpansionJob(int i);
-	void sendShrinkJobs();
-	void shrink();
+	void submitShrink();
 	void cycle();
-	void pickUpResults();
+	void handleJobs();
 	void findCentroid();
+
+	void replaceReflection();
+	void submitExpansion();
+	void handleExpansion();
+	void submitContraction(float eval, float worst_score, 
+	                       float second_worst_score);
+	void handleContraction();
+
+	Task<void *, void *> *taskedHandleJobs(Task<void *, void *> *before,
+	                                       MultiEngine *ms);
+	void handleShrink(MultiEngine *ms, Task<void *, void *> *&first);
+
+	void taskedCycle(Task<void *, void *> *before, MultiEngine *ms);
+	void prepareCycle(MultiEngine *ms);
+	
+	int pointCount()
+	{
+		return _points.size();
+	}
 
 	std::vector<TestPoint> _points;
 	TestPoint _centroid{};
 
+	TestPoint &worst();
+	TestPoint &second_worst();
+	SPoint _reflected;
+	SPoint _expanded;
+	SPoint _contracted;
+	float _compare = 0;
+	float _lastEval = 0;
+
 	int _maxJobs = 1;
-	bool _changedParams = false;
+	int _count = 0;
+	int _shrinkCount = 0;
 	std::vector<float> _steps;
+	
+	struct ScoreTrio
+	{
+		float worst;
+		float second_worst;
+		float best;
+	};
+
+	ScoreTrio _trio{};
+
+	std::function<void *(void *)> _cycle{};
+	std::function<void *(void *)> _handle_expand{};
+	std::function<void *(void *)> _declare_done{};
+	std::function<void *(void *)> _handle_contract{};
+	std::function<void *(void *)> _decide_what_to_do{};
 };
 
 #endif

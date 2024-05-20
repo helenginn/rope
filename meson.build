@@ -173,7 +173,7 @@ if (native) # not emscripten
 
   executable('rope', 'vagabond/cmd/main.cpp',
     link_with : [core, cli],
-    cpp_args: ['-std=c++11'],
+    cpp_args: ['-std=c++14'],
     link_args: [links],
     dependencies : [fftw, json, gemmi, thread_dep, curl],
     install: true)

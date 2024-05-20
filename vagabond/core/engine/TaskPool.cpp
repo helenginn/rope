@@ -24,11 +24,16 @@
 
 Handler::TaskPool::TaskPool()
 {
-
 }
 
 void Handler::TaskPool::insertIntoQueue(BaseTask *&task, bool back)
 {
+	if (back)
+	{
+		members.push_back(task);
+		return;
+	}
+
 	std::list<BaseTask *>::iterator it = this->members.begin();
 
 	for (it = this->members.begin(); it != this->members.end(); it++)

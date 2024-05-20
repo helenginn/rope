@@ -11,11 +11,13 @@
 #include <sstream>
 #include <cerrno>
 #include <cmath>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
 #include <iomanip>
 #include <algorithm>
+#include <errno.h>
 
 std::string FileReader::outputDir;
 
@@ -76,10 +78,11 @@ void debom(std::string &name)
 	}
 }
 
-bool file_exists(const std::string& name)
+bool file_exists(const std::string &name)
 {
 	struct stat buffer;
-	return (stat(name.c_str(), &buffer) == 0);
+	bool found = (stat(name.c_str(), &buffer) == 0);
+	return found;
 }
 
 std::string get_file_contents(std::string filename)

@@ -44,7 +44,7 @@ void StructureModification::cleanup()
 {
 	if (_resources.tasks != nullptr)
 	{
-		_resources.tasks->wait();
+//		_resources.tasks->wait();
 	}
 	delete _resources.calculator;
 	delete _resources.sequences;
@@ -117,13 +117,13 @@ void StructureModification::retrieve()
 		{
 			score.deviations += r->deviation;
 			
-			if (score.lowest_energy > r->deviation)
+			if (score.lowest_energy > r->activation)
 			{
-				score.lowest_energy = r->deviation;
+				score.lowest_energy = r->activation;
 			}
-			if (score.highest_energy < r->deviation)
+			if (score.highest_energy < r->activation)
 			{
-				score.highest_energy = r->deviation;
+				score.highest_energy = r->activation;
 			}
 
 			score.divs++;
