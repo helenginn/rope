@@ -295,10 +295,14 @@ public:
 			_received++;
 		}
 		
-		info.expected.expect_one();
-		int ticket = getNextTicket();
-		info.jobs.push({all});
-		info.tickets.push(ticket);
+		int ticket = -1;
+		{
+			std::unique_lock<std::mutex> lock(info.expected.mutex());
+			info.expected.expect_one_already_locked();
+			ticket = getNextTicket();
+			info.jobs.push({all});
+			info.tickets.push(ticket);
+		}
 		
 		checkCompletion();
 		
