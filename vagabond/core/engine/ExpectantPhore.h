@@ -111,6 +111,11 @@ public:
 		_e--;
 	}
 	
+	virtual void expect_one_already_locked()
+	{
+		_e++;
+	}
+	
 	virtual void expect_one()
 	{
 		// when this is locked, this prevents threads dripping 

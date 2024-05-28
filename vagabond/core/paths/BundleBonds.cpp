@@ -160,10 +160,7 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 		// solve for closest point
 		
 		float &a = sum[0]; float &b = sum[1]; 
-		float &c = sum[2]; float &d = sum[3];
-		
-		float sol0 = (-b - sqrt(b*b - 3*a*c)) / (3*a);
-		float sol1 = (-b + sqrt(b*b - 3*a*c)) / (3*a);
+		float &c = sum[2];
 		
 		auto diff_from_coeffs = get_diff_from_coeffs(diff);
 
@@ -176,6 +173,15 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 
 		glm::vec3 pos0 = _positions[q].pos[1] - _positions[p].pos[1];
 		float e = energy_from_diff(pos0);
+		
+		if (b*b - 3*a*c < 0)
+		{
+			return e;
+		}
+
+		float sqrt_term = sqrt(b*b - 3*a*c);
+		float sol0 = (-b - sqrt_term) / (3*a);
+		float sol1 = (-b + sqrt_term) / (3*a);
 
 		if (sol0 == sol0 && sol0 > 0 && sol0 < 1)
 		{

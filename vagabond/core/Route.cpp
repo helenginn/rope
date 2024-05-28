@@ -123,14 +123,13 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	
 	int steps = (order + 1) * 2;
 
-	Bin<GradientPath> big_bin;
-	big_bin.holdHorses();
+	_gradientBin.holdHorses();
 
 	PairwiseDeviations *pw = _helpers[handler].pw;
 	Separation *sep = _helpers[handler].sep;
 
 	// zero = all calculations
-	Task<GradientPath, void *> *big_submission = big_bin.actOfSubmission(0);
+	Task<GradientPath, void *> *big_submission = _gradientBin.actOfSubmission(0);
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions);
 
 	std::vector<int> indices;
@@ -211,8 +210,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 		_resources.tasks->addTask(first_hook);
 	}
 
-	big_bin.releaseHorses();
-	GradientPath *r = big_bin.acquireObject();
+	_gradientBin.releaseHorses();
+	GradientPath *r = _gradientBin.acquireObject();
 	return r;
 }
 
@@ -243,12 +242,10 @@ void Route::submitValue(const CalcOptions &options, int steps,
                         BondSequenceHandler *handler)
 {
 	bool pairwise = (options & Pairwise);
-	bool coreChain = (options & CoreChain);
 	bool hydrogens = !(options & NoHydrogens);
 	bool torsion_energies = (options & TorsionEnergies);
 	bool vdw_clashes = (options & VdWClashes);
 	bool per_residue = (options & PerResidue && vdw_clashes);
-	bool clash_swell = (options & ClashSwell && vdw_clashes);
 
 	Flag::Extract gets = !pairwise ? Flag::Deviation : Flag::NoExtract;
 
@@ -405,6 +402,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 				info.bundle_hook->follow_with(task);
 				setup_submit_hooks(task, i);
 			}
+			
 
 			if (per_residue)
 			{
