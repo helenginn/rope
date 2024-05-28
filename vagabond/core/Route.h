@@ -31,7 +31,6 @@
 
 class Grapher;
 class Separation;
-struct Contacts;
 struct AtomGraph;
 struct GradientPath;
 class ResidueTorsion;
@@ -55,12 +54,10 @@ public:
 	{
 		None = 0,
 		Pairwise = 1 << 0,
-		CoreChain = 1 << 1,
-		NoHydrogens = 1 << 2,
-		TorsionEnergies = 1 << 3,
-		VdWClashes = 1 << 4,
-		PerResidue = 1 << 5,
-		ClashSwell = 1 << 6,
+		NoHydrogens = 1 << 1,
+		TorsionEnergies = 1 << 2,
+		VdWClashes = 1 << 3,
+		PerResidue = 1 << 4,
 	};
 
 	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
@@ -374,6 +371,7 @@ protected:
 	RTMotion _motions;
 	RTPeptideTwist _twists;
 	int _jobLevel = 0;
+	std::vector<int> _activeParams;
 	
 	std::set<ResidueId> _ids;
 	
@@ -397,8 +395,9 @@ protected:
 	void unlockAll();
 	int _maxFlipTrial = 0;
 	int _order = 2;
+
 	Bin<ByResidueResult> _perResBin;
-	Contacts *_contacts = nullptr;
+	Bin<GradientPath> _gradientBin;
 	
 	float _chosenFrac = 0.5;
 private:
@@ -446,7 +445,6 @@ private:
 inline std::ostream &operator<<(std::ostream &ss, const Route::CalcOptions &opts)
 {
 	if (opts & Route::Pairwise) ss << "Pairwise ";
-	if (opts & Route::CoreChain) ss << "CoreChain ";
 	if (opts & Route::NoHydrogens) ss << "NoHydrogens ";
 	if (opts & Route::TorsionEnergies) ss << "TorsionEnergies ";
 	if (opts & Route::VdWClashes) ss << "VdWClashes ";

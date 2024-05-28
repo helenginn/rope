@@ -62,10 +62,6 @@ public:
 	bool validateTorsion(int idx, float min_mag, float max_mag,
 	                     bool mains_only, bool sides_only);
 
-	int nudgeTorsions(const ValidateParam &validate,
-	                  const std::string &message,
-	                  const std::vector<size_t> &indices);
-
 	void upgradeJobs();
 	
 	void setNew(bool isNew)
@@ -126,10 +122,10 @@ protected:
 	bool flipTorsion(const ValidateParam &validate, int idx);
 	void flipTorsionCycles(const ValidateParam &validate);
 
-	bool simplexCycle(const std::vector<int> &torsionIdxs);
 	void startTicker(std::string tag, int d = -1);
 
-	std::vector<int> getTorsionSequence(int idx, const ValidateParam &validate);
+	std::vector<int> getTorsionSequence(int idx, int max, 
+	                                    const ValidateParam &validate);
 	
 	int _isNew = true;
 	
@@ -150,15 +146,13 @@ private:
 
 	void addPolynomialInterpolatedPoint(float frac);
 
-	void prepareAnglesForRefinement(const std::vector<int> &idxs);
 	void prepareTorsionFetcher(BondSequenceHandler *handler);
 
 	CalcOptions calcOptions(const CalcOptions &add_options,
 	                  const CalcOptions &subtract_options);
 
 	bool applyGradients(const ValidateParam &validate);
-	bool perResidueGradients();
-	bool lateStageGradients();
+	bool sideChainGradients();
 
 	GradientPath *gradients(const ValidateParam &validate,
 	                        const CalcOptions &add_options = None,
