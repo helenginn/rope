@@ -19,7 +19,9 @@
 #ifndef __vagabond__BundleBonds__
 #define __vagabond__BundleBonds__
 
+#include <functional>
 #include <vector>
+#include <array>
 #include <set>
 #include <vagabond/utils/glm_import.h>
 
