@@ -19,6 +19,7 @@
 #ifndef __vagabond__Result__
 #define __vagabond__Result__
 
+#include <mutex>
 #include "Job.h"
 #include "AtomPosMap.h"
 #include "engine/ElementTypes.h"
