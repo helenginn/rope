@@ -20,6 +20,7 @@
 #define __vagabond__RouteValidator__
 
 #include <map>
+#include <string>
 
 class PlausibleRoute;
 class Instance;
