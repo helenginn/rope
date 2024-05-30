@@ -32,17 +32,17 @@ public:
 
 	}
 
-	OpSet<Type>(const std::set<Type> &other) : std::set<Type>(other)
+	OpSet(const std::set<Type> &other) : std::set<Type>(other)
 	{
 
 	}
 
-	OpSet<Type>(const Type &member) : std::set<Type>()
+	OpSet(const Type &member) : std::set<Type>()
 	{
 		this->insert(member);
 	}
 
-	OpSet<Type>(const std::vector<Type> &other) : std::set<Type>()
+	OpSet(const std::vector<Type> &other) : std::set<Type>()
 	{
 		for (const Type &t : other)
 		{

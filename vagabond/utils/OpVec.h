@@ -32,17 +32,17 @@ public:
 
 	}
 
-	OpVec<Type>(size_t num, Type value = {}) : std::vector<Type>(num, value)
+	OpVec(size_t num, Type value = {}) : std::vector<Type>(num, value)
 	{
 
 	}
 
-	OpVec<Type>(const std::vector<Type> &other) : std::vector<Type>(other)
+	OpVec(const std::vector<Type> &other) : std::vector<Type>(other)
 	{
 
 	}
 	
-	OpVec<Type>(const std::set<Type> &other)
+	OpVec(const std::set<Type> &other)
 	{
 		for (const Type &v : other)
 		{
