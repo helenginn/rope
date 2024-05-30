@@ -27,7 +27,7 @@ template <class Type>
 class OpVec : public std::vector<Type>
 {
 public:
-	OpVec<Type>() : std::vector<Type>()
+	OpVec() : std::vector<Type>()
 	{
 
 	}
