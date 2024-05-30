@@ -26,17 +26,17 @@ template <class Type>
 class OpList : public std::list<Type>
 {
 public:
-	OpList<Type>() : std::list<Type>()
+	OpList() : std::list<Type>()
 	{
 
 	}
 
-	OpList<Type>(size_t num, Type value = {}) : std::list<Type>(num, value)
+	OpList(size_t num, Type value = {}) : std::list<Type>(num, value)
 	{
 
 	}
 
-	OpList<Type>(const std::list<Type> &other) : std::list<Type>(other)
+	OpList(const std::list<Type> &other) : std::list<Type>(other)
 	{
 
 	}
