@@ -45,6 +45,10 @@ public:
 	}
 	
 	void setUnitCell(std::array<double, 6> &cell);
+	const std::array<double, 6> &unitCell()
+	{
+		return _cell;
+	}
 	
 	const double resolutionOf(const int idx) const;
 	const double resolutionOf(glm::vec3 v) const;

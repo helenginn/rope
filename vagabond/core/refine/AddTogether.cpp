@@ -16,36 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__function__typedefs
-#define __vagabond__function__typedefs
+#include "AddTogether.h"
+#include "../grids/Diffraction.h"
 
-#include "Atom.h"
-#include <functional>
-
-class Atom;
-
-typedef std::function<bool(Atom *const &atom)> AtomFilter;
-typedef std::function<int(const int &p)> PairFilter;
-
-namespace rope
+Diffraction *AddTogether::operator()()
 {
-	inline AtomFilter atom_is_not_hydrogen()
+	Diffraction *result = new Diffraction(_first);
+
+	auto add_other = [this, result](long idx)
 	{
-		return [](Atom *const &atom)
-		{
-			return atom && atom->elementSymbol() != "H";
-		};
-	}
+		float amp = _second->element(idx).amplitude();
+		float ph = _second->element(idx).phase();
 
-	inline AtomFilter atom_is_core_main_chain()
-	{
-		return [](Atom *const &atom)
-		{
-			return (atom && atom->elementSymbol() != "H" && 
-			        (atom->atomName() == "O" || atom->isCoreMainChain()));
-		};
-	}
-
-};
-
-#endif
+		result->element(idx).addAmplitudePhase(amp, ph);
+	};
+	
+	result->do_op_on_each_1d_index(add_other);
+	return result;
+}

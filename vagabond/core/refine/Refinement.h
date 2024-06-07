@@ -60,7 +60,8 @@ public:
 	}
 	
 	ArbitraryMap *calculatedMapAtoms(Diffraction **reciprocal = nullptr,
-	                                 float max_res = 1.5);
+	                                 float max_res = 1.5,
+	                                 AtomPosMap *all_atoms = nullptr);
 	
 	void loadDiffraction(const std::string &filename);
 	void setup();

@@ -37,6 +37,7 @@ TransformedGrid<VoxelDiffraction>(0, 0, 0)
 	setRealMatrix(other->frac2Real());
 	_maxRes = other->_maxRes;
 	_list = other->_list;
+	_spgName = other->_spgName;
 }
 
 Diffraction::Diffraction(ArbitraryMap *map)
@@ -203,10 +204,16 @@ void Diffraction::copyBinningFrom(Diffraction *other)
 
 void Diffraction::applySymmetry(const std::string &spg_name)
 {
+	std::string chosen = (spg_name.length() ? spg_name : _spgName);
+	if (chosen.length() == 0)
+	{
+		throw std::runtime_error("Applying symmetry but space group empty");
+	}
+	
 	const gemmi::SpaceGroup *spg = nullptr;
 	spg = gemmi::find_spacegroup_by_name(spg_name);
 	gemmi::GroupOps grp = spg->operations();
 	
 	SymmetryExpansion::apply(this, spg, _maxRes);
-
+	_spgName = spg_name;
 }

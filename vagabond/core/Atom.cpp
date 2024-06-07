@@ -199,8 +199,13 @@ void Atom::checkChirality(glm::mat4x4 &ret, Atom *prev,
 			index[0] = prev;
 		}
 
+		bool print = false;
 		for (size_t i = 0; i < count; i++)
 		{
+			if (desc() == "LEU59:CA" || desc() == "SER57:CA")
+			{
+				print = true;
+			}
 			chosen[i + offset] = children[i];
 			index[i + offset] = children[i];
 		}
@@ -241,6 +246,10 @@ void Atom::checkChirality(glm::mat4x4 &ret, Atom *prev,
 		glm::vec3 cr = glm::cross(vecs[1], vecs[2]);
 		double dot = glm::dot(cr, vecs[0]);
 
+		if (print)
+		{
+			std::cout << desc() << " " << dot << " " << sign << std::endl;
+		}
 		if (dot * sign < 0) // flippity flip
 		{
 			for (size_t i = 0; i < 4; i++)

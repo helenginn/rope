@@ -22,13 +22,13 @@
 #include "BondSequence.h"
 #include "paths/BundleBonds.h"
 #include "LoopRoundResidues.h"
+#include "Separation.h"
 
 PairwiseDeviations::PairwiseDeviations(BondSequence *sequence,
-                                       const AtomFilter &filter, 
-                                       const float &limit)
+                                       const float &limit, Separation *sep)
 {
-	_filter = filter;
 	_limit = limit;
+	_sep = sep;
 	
 	prepare(sequence);
 }
@@ -60,7 +60,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		n += 2;
 	};
 	
-	do_on_each_block(blocks, _filter, collect_targets);
+	do_on_each_block(blocks, collect_targets);
 
 	// pre-calculate pairs to interrogate
 	
@@ -103,44 +103,58 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			{
 				continue;
 			}
-
+			
+			if (_sep && _sep->separationBetween(m, n) < 0)
+			{
+				continue;
+			}
+			
 			const glm::vec3 &at_rest_j = scratch[j];
 			const glm::vec3 &moving_j = scratch[j + 1];
 
 			glm::vec3 at_rest = at_rest_i - at_rest_j;
 			glm::vec3 moving = moving_i - moving_j;
+			float start = distance_between_atoms(at_rest, moving, 0);
+			float end = distance_between_atoms(at_rest, moving, 1);
 			
-			bool ok = false;
-			if (distance_between_atoms(at_rest, moving, 0) < threshold)
-			{
-				ok = true;
-			}
-			else if (distance_between_atoms(at_rest, moving, 1) < threshold)
-			{
-				ok = true;
-			}
-
+			bool ok = (start < threshold || end < threshold);
 			if (!ok)
 			{
 				continue;
 			}
 			
-			_perResidue[left->residueId()].push_back(m);
-			_perResidue[left->residueId()].push_back(n);
-			_perResidue[right->residueId()].push_back(m);
-			_perResidue[right->residueId()].push_back(n);
+			int size = _infoPairs.size();
+
+			_perResidue[left->residueId()].push_back(size);
+			_perResidue[right->residueId()].push_back(size);
 			
 			_residues.insert(left->residueId());
 			_residues.insert(right->residueId());
 			
-			_pairs.push_back(m);
-			_pairs.push_back(n);
-			_correspondingResiduePairs.push_back(left->residueId());
-			_correspondingResiduePairs.push_back(right->residueId());
+			_pairs.push_back(_infoPairs.size());
+			_infoPairs.push_back({m, n, start, end});
+			_atoms2Info[{left, right}] = size;
+			_atoms2Info[{right, left}] = size;
 		}
 	}
 	
 	_reference = scratch;
+}
+
+void PairwiseDeviations::addWaypoint(Atom *const &left, Atom *const &right,
+                                     const float &frac, const float &distance)
+{
+	std::pair<Atom *, Atom *> pair{left, right};
+	if (_atoms2Info.count(pair) == 0)
+	{
+		return;
+	}
+
+	const int &idx = _atoms2Info[pair];
+	TargetInfo &info = _infoPairs[idx];
+	float current = info.target(frac);
+	info.mFrac = frac;
+	info.dMid = current + distance;
 }
 
 auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues)
@@ -161,23 +175,27 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 			n++;
 		};
 
-		do_on_each_block(blocks, {}, collect_targets);
+		do_on_each_block(blocks, collect_targets);
 
 		float total = 0;
 		float count = 0;
 		
 		target_actual_distances lookup(dev->reference(), scratch);
 
-		auto check_momentum = [&frac, &lookup, &total, &count]
+		auto check_momentum = [&frac, &lookup, &total, &count, dev]
 		(const std::vector<int> &pairs)
 		{
-			const int *ptr = &pairs[0];
-			for (int i = 0; i < pairs.size(); i += 2)
+			for (int i = 0; i < pairs.size(); i++)
 			{
-				int p = ptr[i];
-				int q = ptr[i + 1];
-				
-				float targdist = lookup.target(p, q, frac);
+				TargetInfo &info = dev->info(i);
+				const int &p = info.p;
+				const int &q = info.q;
+				if (!dev->filter_in(p) || !dev->filter_in(q))
+				{
+					continue;
+				}
+
+				float targdist = info.target(frac);
 				float actualdist = lookup.actual(p, q);
 
 				float dist = (targdist - actualdist);
@@ -208,24 +226,30 @@ PairwiseDeviations::momentum_task(float frac,
 }
 
 Task<BundleBonds *, ActivationEnergy> *
-PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
+PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues,
+                                 bool include_negative)
 {
 	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
 	target_actual_distances targets(reference(), nullptr);
 
-	auto job = [loop, targets, this]
+	auto job = [loop, targets, include_negative, this]
 	(BundleBonds *bb) -> ActivationEnergy
 	{
 		auto lookup = bb->lookup();
 
 		long double total = 0;
-		auto check_clashes = [&lookup, &total, &bb, &targets, this]
+		auto check_clashes = [&lookup, &total, &include_negative, &bb, &targets, this]
 		(const std::vector<int> &pairs)
 		{
-			for (int i = 0; i < pairs.size(); i += 2)
+			for (int i = 0; i < pairs.size(); i++)
 			{
-				int p = pairs[i];
-				int q = pairs[i + 1];
+				TargetInfo &info = _infoPairs[pairs[i]];
+				int p = info.p;
+				int q = info.q;
+				if (!filter_in(p) || !filter_in(q))
+				{
+					continue;
+				}
 				
 				long double ref_distance = targets.target(p, q, bb->frac());
 				long double potential = lookup(p, q, -1);
@@ -238,7 +262,8 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 
 				long double diff = potential - reference;
 				
-				if (diff > 0)
+				if (diff > 0 && (include_negative ||
+				                 (!include_negative && potential > 0)))
 				{
 					total += diff;
 				}
@@ -247,8 +272,9 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 		
 		loop(check_clashes);
 		
-		return {(float)total};
+		return {(float)total, bb->frac()};
 	};
 	
 	return new Task<BundleBonds *, ActivationEnergy>(job, "bundled clashes");
 }
+

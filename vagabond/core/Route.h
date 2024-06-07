@@ -22,6 +22,7 @@
 #include <atomic>
 #include "StructureModification.h"
 #include "engine/CoordManager.h"
+#include "function_typedefs.h"
 #include "NonCovalents.h"
 #include "Responder.h"
 #include "RTMotion.h"
@@ -213,6 +214,9 @@ public:
 		_motions = motions;
 	}
 
+	void clearFilters(bool allow);
+	void addFilter(const std::set<Atom *> &list, bool allow);
+
 	void prepareTwists();
 	
 	const RTPeptideTwist &twists() const
@@ -240,6 +244,10 @@ public:
 	void setChosenFrac(const float &frac)
 	{
 		_chosenFrac = frac;
+		if (frac < 0.01 || frac > 0.99)
+		{
+			_chosenFrac = 0.5;
+		}
 	}
 	
 	bool doingQuadratic()
@@ -264,12 +272,12 @@ public:
 	
 	bool doingHydrogens()
 	{
-		return _jobLevel >= 3;
+		return _jobLevel >= 2;
 	}
 	
 	bool lastJob()
 	{
-		return _jobLevel >= 4;
+		return _jobLevel >= 3;
 	}
 
 	const int &jobLevel() const
@@ -391,6 +399,11 @@ protected:
 
 	BondSequenceHandler *_mainChainSequences = nullptr;
 	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
+	
+	PairwiseDeviations *pairwiseForSequences(BondSequenceHandler *handler)
+	{
+		return _helpers[handler].pw;
+	}
 
 	void unlockAll();
 	int _maxFlipTrial = 0;
@@ -400,6 +413,8 @@ protected:
 	Bin<GradientPath> _gradientBin;
 	
 	float _chosenFrac = 0.5;
+	int _repelCount = 0;
+	PairFilter _motionFilter{};
 private:
 	bool _calculating = false;
 	

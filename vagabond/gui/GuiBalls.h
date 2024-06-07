@@ -66,6 +66,15 @@ private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
 
+	virtual void selected(int idx, bool inverse);
+	
+	virtual bool selectable() const
+	{
+		return true;
+	}
+	
+	void deselect();
+
 	void colourByElement(std::string ele);
 	void setPosition(glm::vec3 position);
 

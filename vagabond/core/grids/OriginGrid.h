@@ -47,6 +47,11 @@ public:
 
 	virtual const glm::mat3x3 &frac2Real() const = 0;
 
+	virtual glm::mat3x3 real2Frac() const
+	{
+		return glm::inverse(frac2Real());
+	}
+
 	virtual float realValue(glm::vec3 real)
 	{
 		return this->interpolate(real);

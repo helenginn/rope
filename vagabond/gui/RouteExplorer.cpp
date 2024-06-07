@@ -24,7 +24,9 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/Slider.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/VagWindow.h>
+#include <vagabond/gui/PathParamEditor.h>
 
 #include <vagabond/core/PlausibleRoute.h>
 #include <vagabond/core/RouteValidator.h>
@@ -44,6 +46,7 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 	_plausibleRoute = route;
 	_route = route;
 	_route->setResponder(this);
+	setPingPong(true);
 }
 
 RouteExplorer::~RouteExplorer()
@@ -53,6 +56,7 @@ RouteExplorer::~RouteExplorer()
 
 void RouteExplorer::setup()
 {
+	setMakesSelections();
 	AtomGroup *grp = _route->all_atoms();
 	std::cout << "Total atoms: " << grp->size() << std::endl;
 	grp->recalculate();
@@ -62,6 +66,7 @@ void RouteExplorer::setup()
 	unit->displayAtoms(false, false);
 	addDisplayUnit(unit);
 	
+	_atoms = grp;
 	_route->setAtoms(grp);
 	_route->finishRoute();
 	
@@ -99,12 +104,11 @@ void RouteExplorer::setupSave()
 	addObject(tb);
 }
 
-void RouteExplorer::setupSettings()
+void RouteExplorer::setupEditor()
 {
-	TextButton *tb = new TextButton("Settings", this);
-	tb->setReturnTag("settings");
-	tb->setRight(0.9, 0.1);
-	_startPause = tb;
+	TextButton *tb = new TextButton("Editor", this);
+	tb->setReturnTag("editor");
+	tb->setRight(0.9, 0.22);
 	addObject(tb);
 }
 
@@ -270,31 +274,35 @@ void RouteExplorer::startWithThreads(const int &thr)
 		this->setModal(bc);
 		return;
 	}
-	
+
 	setupSave();
 	setupFinish();
-	
-	_route->prepareCalculate();
-	
-	RouteValidator rv(*_plausibleRoute);
-	std::string valid_message = rv.validate();
-	
-	std::cout << "Route validator says: " << (valid_message.length() ? 
-                                              "route not valid" :
-	                                          "route valid") << std::endl;
-	
-	if (valid_message.length())
-	{
-		std::string message;
-		message = ("The \"from\" and \"to\" structures chosen are not "\
-		           "compatible with each other and do not produce a"\
-		           "valid route.\nThe RMSDs between predicted final "\
-		           "structure based\non beginning position differed:\n"\
-		           + valid_message + "Would you like to continue anyway?");
+	setupEditor();
 
-		AskYesNo *ayn = new AskYesNo(this, message, "continue_anyway", this);
-		setModal(ayn);
-		return;
+	_route->prepareCalculate();
+
+	if (_numberMade == 0)
+	{
+		RouteValidator rv(*_plausibleRoute);
+		std::string valid_message = rv.validate();
+
+		std::cout << "Route validator says: " << (valid_message.length() ? 
+                                          "route not valid" :
+		                                          "route valid") << std::endl;
+
+		if (valid_message.length())
+		{
+			std::string message;
+			message = ("The \"from\" and \"to\" structures chosen are not "\
+			           "compatible with each other and do not produce a"\
+			           "valid route.\nThe RMSDs between predicted final "\
+			           "structure based\non beginning position differed:\n"\
+			           + valid_message + "Would you like to continue anyway?");
+
+			AskYesNo *ayn = new AskYesNo(this, message, "continue_anyway", this);
+			setModal(ayn);
+			return;
+		}
 	}
 
 	calculate();
@@ -308,6 +316,11 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		float num = cr->max();
 		_threads = lrint(num);
 		startWithThreads(_threads);
+	}
+	if (tag == "editor")
+	{
+		PathParamEditor *ppe = new PathParamEditor(this, _route);
+		ppe->show();
 	}
 	if (tag == "pause")
 	{
@@ -335,6 +348,11 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		TextButton *tb = static_cast<TextButton *>(button);
 		tb->setReturnTag("pause");
 		tb->setText("Pause");
+		
+		if (_route->lastJob())
+		{
+			_route->setJobLevel(2);
+		}
 	}
 	else if (tag == "settings")
 	{
@@ -404,3 +422,72 @@ void RouteExplorer::saveAndRestart()
 
 	startWithThreads(_threads);
 }
+
+void RouteExplorer::prepareEmptySpaceMenu()
+{
+	auto freeze_all = [](const int &p) -> bool
+	{
+		return 0;
+	};
+	
+	auto clear_filter = [this](bool allow)
+	{
+		return [allow, this]()
+		{
+			_route->clearFilters(allow);
+		};
+	};
+	
+	std::set<Atom *> selected;
+	for (Atom *const &atom : _atoms->atomVector())
+	{
+		if (atom->isSelected())
+		{
+			selected.insert(atom);
+		}
+	}
+
+	Menu *m = new Menu(this);
+	m->addOption("freeze all", clear_filter(false));
+	m->addOption("unfreeze all", clear_filter(true));
+	
+	auto change_selection = [this, &selected](bool allow)
+	{
+		return [selected, this, allow]()
+		{
+			_route->addFilter(selected, allow);
+		};
+	};
+
+	if (selected.size())
+	{
+		m->addOption("freeze selected", change_selection(false));
+		m->addOption("unfreeze selected", change_selection(true));
+	}
+
+	double x = _lastX / (double)_w; double y = _lastY / (double)_h;
+	m->setup(x, y);
+	setModal(m);
+}
+
+void RouteExplorer::interactedWithNothing(bool left, bool hover)
+{
+	if (_shiftPressed && left && !_moving)
+	{
+		deselect();
+	}
+
+	if (!left && !_moving)
+	{
+		prepareEmptySpaceMenu();
+	}
+
+	Display::interactedWithNothing(left, hover);
+}
+
+void RouteExplorer::sendSelection(float t, float l, float b, float r,
+                                      bool inverse)
+{
+	IndexResponseView::sendSelection(t, l, b, r, inverse);
+}
+

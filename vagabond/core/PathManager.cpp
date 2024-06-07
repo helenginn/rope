@@ -182,6 +182,7 @@ void PathManager::makePathBetween(const std::string &start,
 	route->setThreads(8);
 	route->setMaximumMomentumDistance(6.f);
 	route->setMaximumClashDistance(8.f);
+	route->setMaximumFlipTrial(3);
 	route->setup();
 	
 	for (int i = 0; i < cycles; i++)

@@ -33,6 +33,7 @@ public:
 	~Menu();
 
 	TextButton *addOption(std::string text, std::string tag = "");
+	TextButton *addOption(std::string text, const std::function<void()> &job);
 	void setup(double x, double y, double resize = 1);
 	void setup(Renderable *r, double resize = 1);
 	void buttonPressed(std::string tag, Button *button = nullptr);

@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "ApplyScaleBFactor.h"
+#include "AddTogether.h"
 #include "Babinet.h"
 #include "grids/Diffraction.h"
 #include "files/MtzFile.h"
@@ -37,29 +39,24 @@ void Babinet::prepareSolvent()
 
 void Babinet::applyKB(float k, float b)
 {
-	auto b_factor = [this, k, b](int i, int j, int l)
-	{
-		long idx = _solvent->index(i, j, l);
-		float res = _solvent->resolution(i, j, l);
-		float amp = _model->element(idx).amplitude();
-		
-		float b_val = exp(-b / (4 * res * res));
-		if (idx == 0) b_val = 1;
-		float mult = k * b_val;
-		amp = amp * mult * -1;
-
-		_solvent->element(idx).setAmplitude(amp);
-	};
-	
-	_solvent->do_op_on_centred_index(b_factor);
+	ApplyScaleBFactor apply(_solvent);
+	apply(k, b);
 }
 
 void Babinet::addProtein()
 {
+	/*
+	AddTogether add(_model, _solvent);
+	
+	Diffraction *result = add();
+	delete _solvent;
+	_solvent = result;
+	return;
+	*/
+
 	auto add_protein = [this](long idx)
 	{
 		float amp = _model->element(idx).amplitude();
-		float my_amp = _solvent->element(idx).amplitude();
 		float ph = _model->element(idx).phase();
 
 		_solvent->element(idx).addAmplitudePhase(amp, ph);
@@ -73,12 +70,6 @@ Diffraction *Babinet::operator()()
 {
 	prepareSolvent();
 	applyKB(_k, _b);
-
-	/*
-	MtzFile file("");
-	file.setMap(_solvent);
-	file.write_to_file("only.mtz", 1.5);
-	*/
 
 	addProtein();
 

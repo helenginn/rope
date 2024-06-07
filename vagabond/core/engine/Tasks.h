@@ -42,6 +42,11 @@ public:
 		_pool.finish();
 	}
 
+	void wait()
+	{
+		_pool.joinThreads();
+	}
+
 	void clear()
 	{
 		_pool.clearQueue();

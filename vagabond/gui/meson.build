@@ -76,6 +76,8 @@ guifiles = [
 'PathInterfaceSetupView.cpp',
 'PathInterfaceSetupView.h',
 'PathFinding.cpp',
+'PathParamEditor.cpp',
+'PathParamEditor.h',
 'PathsMenu.cpp',
 'PickAtomFromSequence.h',
 'PickAtomFromSequence.cpp',
@@ -176,7 +178,7 @@ guifiles = [
 ]
 
 gui = static_library('vaggui', guifiles,
-	cpp_args: ['-std=c++14', compile_args],
+	cpp_args: ['-std=c++20', compile_args],
 	link_args: [links],
 	dependencies : deps, 
     include_directories: ['../..', '../core'],

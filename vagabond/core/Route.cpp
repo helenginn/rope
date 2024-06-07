@@ -121,7 +121,7 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 {
 	if (handler == nullptr) handler = _hydrogenFreeSequences;
 	
-	int steps = (order + 1) * 2;
+	int steps = (order + 1) * 4;
 
 	_gradientBin.holdHorses();
 
@@ -153,9 +153,13 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 		{
 			continue;
 		}
+		if (_motionFilter && !_motionFilter(pidx))
+		{
+			continue;
+		}
 
-		indices.push_back(i);
-		motion_idxs.push_back(pidx);
+		indices.push_back(i); // pointer to block index (atom)
+		motion_idxs.push_back(pidx); // pointer to motion or parameter
 	}
 
 	big_submission->input.grads.resize(indices.size());
@@ -212,6 +216,7 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 
 	_gradientBin.releaseHorses();
 	GradientPath *r = _gradientBin.acquireObject();
+	
 	return r;
 }
 
@@ -225,18 +230,8 @@ struct TaskInfo
 
 std::function<void(CalcTask *&)> extra_tasks(NonCovalents *covs)
 {
-
 	return {};
 }
-
-void raw_bond_calculation(int steps, 
-                          const std::function<void(CalcTask *&)> &extra_tasks,
-                          std::vector<BaseTask *> *firsts = nullptr,
-                          std::map<int, TaskInfo> *frac_tasks = nullptr)
-{
-
-}
-
 
 void Route::submitValue(const CalcOptions &options, int steps,
                         BondSequenceHandler *handler)
@@ -247,7 +242,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	bool vdw_clashes = (options & VdWClashes);
 	bool per_residue = (options & PerResidue && vdw_clashes);
 
-	Flag::Extract gets = !pairwise ? Flag::Deviation : Flag::NoExtract;
+	Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
 
 	std::vector<BaseTask *> firsts;
 	std::map<int, TaskInfo> frac_tasks;
@@ -255,6 +250,10 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	/* get easy references to resources */
 	BondSequenceHandler *sequences = (hydrogens ? _resources.sequences : 
 	                                  _hydrogenFreeSequences);
+
+	BondCalculator *const &calculator = _resources.calculator;
+	calculator->reset();
+	Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
 
 	// dependent on sequences, steps, firsts, frac_tasks, extra tasks like noncovs
 	for (int i = 0; i < steps; i++)
@@ -282,10 +281,12 @@ void Route::submitValue(const CalcOptions &options, int steps,
 			final_hook->follow_with(alignment);
 			final_hook = alignment;
 		}
+
+		Task<Result, void *> *sr = pairwise ? nullptr : submit_result;
 		
 		// only put deviations together for non-pairwise calculation
 		Task<BondSequence *, void *> *let = 
-		sequences->extract(gets, nullptr, final_hook);
+		sequences->extract(gets, sr, final_hook);
 
 		frac_tasks[i].final_hook = final_hook;
 		frac_tasks[i].let_go = let;
@@ -293,23 +294,24 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		firsts.push_back(first_hook);
 	}
 
-	BondCalculator *const &calculator = _resources.calculator;
-	Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
-	calculator->holdHorses();
-
-	Task<Result, void *> *first_only = calculator->actOfSubmission(1);
+	Task<Result, void *> *first_only = nullptr;
 	Task<ByResidueResult, void *> *by_residue = nullptr;
-	
-	if (per_residue)
+
+	if (pairwise)
 	{
-		by_residue = _perResBin.actOfSubmission(0);
-		_perResBin.holdHorses();
+		first_only = calculator->actOfSubmission(1);
+
+		if (per_residue)
+		{
+			by_residue = _perResBin.actOfSubmission(0);
+			_perResBin.holdHorses();
+		}
 	}
 	
 	bool uses_bundles = vdw_clashes;
 
 	int n_bundles = 0;
-	for (int i = 0; i < steps - 1; i++)
+	for (int i = 0; i < steps - 1 && pairwise; i++)
 	{
 		TaskInfo &info = frac_tasks[i];
 
@@ -380,90 +382,87 @@ void Route::submitValue(const CalcOptions &options, int steps,
 			}
 		};
 
-		if (pairwise)
+		PairwiseDeviations *chosen = _helpers[sequences].pw;
+
+		std::set<ResidueId> active_ids = 
+		doingSides() ? _ids : std::set<ResidueId>();
+
+		if (!vdw_clashes)
 		{
-			PairwiseDeviations *chosen = _helpers[sequences].pw;
+			Task<BondSequence *, Deviation> *task = nullptr;
+			task = chosen->momentum_task(frac, active_ids);
+			info.final_hook->follow_with(task);
+			task->must_complete_before(info.let_go);
+			setup_submit_hooks(task, i);
+		}
+		else
+		{
+			Task<BundleBonds *, ActivationEnergy> *task = nullptr;
+			task = chosen->bundle_clash(active_ids);
+			info.bundle_hook->follow_with(task);
+			setup_submit_hooks(task, i);
+		}
 
-			std::set<ResidueId> active_ids = 
-			doingSides() ? _ids : std::set<ResidueId>();
 
-			if (!vdw_clashes)
+		if (per_residue)
+		{
+			std::set<ResidueId> residues = chosen->residues();
+
+			for (const ResidueId &id : residues)
 			{
-				Task<BondSequence *, Deviation> *task = nullptr;
-				task = chosen->momentum_task(frac, active_ids);
-				info.final_hook->follow_with(task);
-				task->must_complete_before(info.let_go);
-				setup_submit_hooks(task, i);
-			}
-			else
-			{
-				Task<BundleBonds *, ActivationEnergy> *task = nullptr;
-				task = chosen->bundle_clash(active_ids);
-				info.bundle_hook->follow_with(task);
-				setup_submit_hooks(task, i);
-			}
-			
-
-			if (per_residue)
-			{
-				std::set<ResidueId> residues = chosen->residues();
-
-				for (const ResidueId &id : residues)
+				if (_ids.size() > 0 && _ids.count(id) == 0)
 				{
-					if (_ids.size() > 0 && _ids.count(id) == 0)
-					{
-						continue;
-					}
-					Task<BundleBonds *, ActivationEnergy> *task = nullptr;
-					task = chosen->bundle_clash({id});
-					info.bundle_hook->follow_with(task);
-					task->must_complete_before(info.delete_bundle);
+					continue;
+				}
+				Task<BundleBonds *, ActivationEnergy> *task = nullptr;
+				task = chosen->bundle_clash({id});
+				info.bundle_hook->follow_with(task);
+				task->must_complete_before(info.delete_bundle);
 
-					Task<BondSequence *, ActivationEnergy> *engy = nullptr;
-					if (torsion_energies && hydrogens)
-					{
-						EnergyTorsions *chosen = _helpers[sequences].et;
-						engy = chosen->energy_task({id}, frac);
-						info.final_hook->follow_with(engy);
-						engy->must_complete_before(info.let_go);
-					}
+				Task<BondSequence *, ActivationEnergy> *engy = nullptr;
+				if (torsion_energies && hydrogens)
+				{
+					EnergyTorsions *chosen = _helpers[sequences].et;
+					engy = chosen->energy_task({id}, frac);
+					info.final_hook->follow_with(engy);
+					engy->must_complete_before(info.let_go);
+				}
 
-					auto convert = [id, steps](const ActivationEnergy &ae) 
-					-> SingleResidueResult
-					{
-						return {id, ae.value / steps};
-					};
-					
-					auto *vdw_conv =
-					new Task<ActivationEnergy, SingleResidueResult>(convert,
-					"convert vdw to single residue result");
+				auto convert = [id, steps](const ActivationEnergy &ae) 
+				-> SingleResidueResult
+				{
+					return {id, ae.value / steps};
+				};
 
-					task->follow_with(vdw_conv);
-					vdw_conv->follow_with(by_residue);
-					
-					if (engy)
-					{
-						auto *engy_conv =
-						new Task<ActivationEnergy, 
-						SingleResidueResult>(convert,
-						                     "convert energy to single");
+				auto *vdw_conv =
+				new Task<ActivationEnergy, SingleResidueResult>(convert,
+				                                                "convert vdw to single residue result");
 
-						engy->follow_with(engy_conv);
-						engy_conv->follow_with(by_residue);
-					}
+				task->follow_with(vdw_conv);
+				vdw_conv->follow_with(by_residue);
+
+				if (engy)
+				{
+					auto *engy_conv =
+					new Task<ActivationEnergy, 
+					SingleResidueResult>(convert,
+					                     "convert energy to single");
+
+					engy->follow_with(engy_conv);
+					engy_conv->follow_with(by_residue);
 				}
 			}
+		}
 
-			// torsion energies
-			if (torsion_energies && hydrogens && !per_residue)
-			{
-				EnergyTorsions *chosen = _helpers[sequences].et;
-				Task<BondSequence *, ActivationEnergy> *task = nullptr;
-				task = chosen->energy_task(active_ids, frac);
-				info.final_hook->follow_with(task);
-				task->must_complete_before(info.let_go);
-				setup_submit_hooks(task, i);
-			}
+		// torsion energies
+		if (torsion_energies && hydrogens && !per_residue)
+		{
+			EnergyTorsions *chosen = _helpers[sequences].et;
+			Task<BondSequence *, ActivationEnergy> *task = nullptr;
+			task = chosen->energy_task(active_ids, frac);
+			info.final_hook->follow_with(task);
+			task->must_complete_before(info.let_go);
+			setup_submit_hooks(task, i);
 		}
 	}
 
@@ -478,7 +477,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		_resources.tasks->addTask(t);
 	}
 
-	calculator->releaseHorses();
+//	calculator->releaseHorses();
 }
 
 void Route::submitToShow(float frac)
@@ -813,8 +812,8 @@ void Route::deleteHelpers()
 
 void setup_helpers(Route::Helpers &helpers, BondSequence *seq, float distance)
 {
-	auto pw = new PairwiseDeviations(seq, {}, distance);
 	Separation *sep = new Separation(seq);
+	auto pw = new PairwiseDeviations(seq, distance, sep);
 
 	helpers.pw = pw;
 	helpers.sep = sep;
@@ -837,8 +836,10 @@ void Route::prepareEnergyTerms()
 	}
 
 	{
+//		BondSequence *seq = _resources.sequences->sequence();
+//		setup_helpers(_helpers[_resources.sequences], seq, _maxClashDistance);
 		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
-		                                  {}, _maxClashDistance);
+		                                 _maxClashDistance);
 		_helpers[_resources.sequences].pw = pw;
 	}
 
@@ -876,8 +877,22 @@ void Route::clearCustomisation()
 	{
 		twist(i).twist = {};
 	}
+
+	{
+		delete _helpers[_resources.sequences].pw;
+		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
+		                                 _maxClashDistance);
+		_helpers[_resources.sequences].pw = pw;
+	}
+	{
+		delete _helpers[_hydrogenFreeSequences].pw;
+		auto pw = new PairwiseDeviations(_hydrogenFreeSequences->sequence(),
+		                                 _maxClashDistance);
+		_helpers[_hydrogenFreeSequences].pw = pw;
+	}
 	
 	_jobLevel = 0;
+	_repelCount = 0;
 	unlockAll();
 	_hash = ""; setHash();
 }
@@ -924,3 +939,111 @@ void Route::unlockAll()
 
 }
 
+auto make_filter_from_list(const std::set<int> &affected, bool allow)
+{
+	return [allow, affected](int p) -> int
+	{
+		if (affected.count(p))
+		{
+			return allow;
+		}
+
+		return -1;
+	};
+}
+
+PairFilter filterForAtoms(PairwiseDeviations *dev, 
+                          const std::set<Atom *> &list, bool allow) 
+{
+	std::set<int> affected;
+	for (Atom *const &atom : list)
+	{
+		int idx = dev->index(atom);
+		if (idx >= 0)
+		{
+			affected.insert(idx);
+		}
+	}
+	
+	return make_filter_from_list(affected, allow);
+}
+
+PairFilter filterForParameters(Route *me, const std::set<Atom *> &list, 
+                               bool allow)
+{
+	std::set<int> affected;
+
+	for (int i = 0; i < me->motionCount(); i++)
+	{
+		Parameter *param = me->parameter(i);
+
+		for (int j = 0; j < param->atomCount(); j++)
+		{
+			if (list.count(param->atom(j)) > 0)
+			{
+				affected.insert(i);
+				break;
+			}
+		}
+	}
+	std::cout << "Affected params: " << affected.size() << std::endl;
+
+	return make_filter_from_list(affected, allow);
+}
+
+PairFilter addFilters(const PairFilter &old_filter,
+                      const PairFilter &new_filter)
+{
+	PairFilter combined = [new_filter, old_filter](const int &p)
+	{
+		int result = new_filter(p);
+		if (result >= 0)
+		{
+			return result;
+		}
+		else if (old_filter)
+		{
+			return old_filter(p);
+		}
+		else
+		{
+			return 1;
+		}
+	};
+	
+	return combined;
+}
+
+
+void Route::addFilter(const std::set<Atom *> &list, bool allow)
+{
+	PairFilter addition = filterForParameters(this, list, allow);
+	_motionFilter = addFilters(_motionFilter, addition);
+
+	for (auto it = _helpers.begin(); it != _helpers.end(); it++)
+	{
+		PairwiseDeviations *chosen = it->second.pw;
+		if (chosen)
+		{
+			PairFilter oldFilter = chosen->filter();
+			PairFilter atomFilter = filterForAtoms(chosen, list, allow);
+			PairFilter added = addFilters(oldFilter, atomFilter);
+			chosen->setFilter(added);
+		}
+	}
+}
+
+void Route::clearFilters(bool allow)
+{
+	PairFilter filter = [allow](const int &) -> int { return allow; };
+	_motionFilter = filter;
+
+	for (auto it = _helpers.begin(); it != _helpers.end(); it++)
+	{
+		PairwiseDeviations *chosen = it->second.pw;
+		if (chosen)
+		{
+			chosen->setFilter(filter);
+		}
+	}
+}

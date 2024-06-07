@@ -39,6 +39,7 @@ struct Result
 		if (activation < d.value && d.value == d.value)
 		{
 			activation = d.value;
+			activation_frac = d.frac;
 		}
 
 		deviation += d.value;
@@ -75,6 +76,7 @@ struct Result
 	double score = 0;
 	double correlation = 0;
 	float activation = 0;
+	float activation_frac = -1;
 	float surface_area = 0;
 	AtomMap *map = nullptr;
 	static std::mutex *mut;

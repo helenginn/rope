@@ -46,13 +46,13 @@ void StructureModification::cleanup()
 	{
 //		_resources.tasks->wait();
 	}
+	delete _resources.tasks;
 	delete _resources.calculator;
 	delete _resources.sequences;
 	delete _resources.perElements;
 	delete _resources.summations;
 	delete _resources.correlations;
 	delete _resources.electricField;
-	delete _resources.tasks;
 	_resources = {};
 }
 

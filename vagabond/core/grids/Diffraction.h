@@ -91,7 +91,7 @@ public:
 	void copyBinningFrom(Diffraction *other);
 	
 	size_t reflectionCount();
-	void applySymmetry(const std::string &spg);
+	void applySymmetry(const std::string &spg = {});
 
 	virtual float elementValue(long i) const
 	{
@@ -105,11 +105,22 @@ public:
 		return _maxRes;
 	}
 	
+	RefList *list()
+	{
+		return _list;
+	}
+	
+	void setList(RefList *list)
+	{
+		_list = list;
+	}
+	
 	std::string spaceGroupName();
 private:
 	RefList *_list;
 	float _maxRes = FLT_MAX;
 	bool _sliced = false;
+	std::string _spgName;
 };
 
 #endif

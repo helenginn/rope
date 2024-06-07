@@ -55,6 +55,7 @@ struct Deviation
 struct ActivationEnergy
 {
 	float value;
+	float frac;
 };
 
 class AtomMap;

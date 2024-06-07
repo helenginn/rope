@@ -61,6 +61,8 @@ public:
 	}
 private:
 	void prepare(const std::vector<Atom *> &atoms);
+	void prepareSegment(const std::vector<Atom *> &atoms);
+
 	Eigen::MatrixXi _matrix;
 	
 	struct SortedVector

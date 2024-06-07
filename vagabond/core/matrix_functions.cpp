@@ -5,10 +5,10 @@ using namespace glm;
 
 mat3x3 mat3x3_rhbasis(vec3 a, vec3 b)
 {
-	normalize(a);
-	normalize(b);
+	a = normalize(a);
+	b = normalize(b);
 	vec3 c = cross(a, b);
-	normalize(c);
+	c = normalize(c);
 	c *= -1;
 
 	mat3x3 mat;

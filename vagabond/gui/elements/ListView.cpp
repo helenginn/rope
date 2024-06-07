@@ -18,6 +18,9 @@
 
 #include "ListView.h"
 #include "ImageButton.h"
+#include "TextEntry.h"
+#include "TextButton.h"
+#include "AskForText.h"
 #include <sstream>
 
 #define LINES_PER_PAGE 8
@@ -47,12 +50,19 @@ void ListView::refresh()
 	loadFilesFrom(_start, unitsPerPage());
 }
 
+int ListView::nPages()
+{
+	int count = lineCount();
+	int npages = ceil((float)count / (float)unitsPerPage());
+	return npages;
+}
+
 void ListView::loadFilesFrom(int start, int num)
 {
 	deleteTemps();
 
 	int count = lineCount();
-	int npages = ceil((float)count / (float)unitsPerPage());
+	int npages = nPages();
 	double pos = 0.3;
 
 	for (size_t i = start; i < start + num && i < count; i++)
@@ -69,8 +79,16 @@ void ListView::loadFilesFrom(int start, int num)
 		int mypage = _start / unitsPerPage();
 		std::ostringstream ss;
 		ss << "(" << mypage + 1 << " / " << npages << ")";
-		Text *pageNo = new Text(ss.str());
+		TextButton *pageNo = new TextButton(ss.str(), this);
 		pageNo->setCentre(0.5, 0.8);
+		pageNo->setReturnJob([this]()
+		{
+			AskForText *aft = new AskForText(this, "Jump to page:", 
+			                                 "change_page", this,
+			                                 TextEntry::Numeric);
+			setModal(aft);
+		});
+
 		addTempObject(pageNo);
 
 	}
@@ -84,4 +102,22 @@ void ListView::loadFilesFrom(int start, int num)
 	{
 		scrollForwardButton();
 	}
+}
+
+void ListView::buttonPressed(std::string tag, Button *button)
+{
+	if (tag == "change_page")
+	{
+		TextEntry *te = static_cast<TextEntry *>(button);
+		int page = atoi(te->scratch().c_str());
+		int npages = nPages();
+		if (page >= 1 && page <= npages)
+		{
+			page--;
+			_start = page * unitsPerPage();
+			refresh();
+		}
+	}
+
+	ForwardBackward::buttonPressed(tag, button);
 }

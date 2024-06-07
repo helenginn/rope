@@ -16,36 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__function__typedefs
-#define __vagabond__function__typedefs
+#include "ApplyScaleBFactor.h"
+#include "../grids/Diffraction.h"
 
-#include "Atom.h"
-#include <functional>
-
-class Atom;
-
-typedef std::function<bool(Atom *const &atom)> AtomFilter;
-typedef std::function<int(const int &p)> PairFilter;
-
-namespace rope
+Diffraction *ApplyScaleBFactor::operator()(const float &k, const float &b)
 {
-	inline AtomFilter atom_is_not_hydrogen()
+	auto b_factor = [this, k, b](int i, int j, int l)
 	{
-		return [](Atom *const &atom)
+		long idx = _model->index(i, j, l);
+		float res = _model->resolution(i, j, l);
+		float amp = _model->element(idx).amplitude();
+		
+		float b_val = exp(-b / (4 * res * res));
+		if (idx == 0) b_val = 1;
+		float mult = k * b_val;
+		amp = amp * mult * -1;
+		
+		if (amp < 0)
 		{
-			return atom && atom->elementSymbol() != "H";
-		};
-	}
+			float phase = _model->element(idx).phase();
+			_model->element(idx).setPhase(phase + 180.f);
+			amp = -amp;
+		}
 
-	inline AtomFilter atom_is_core_main_chain()
-	{
-		return [](Atom *const &atom)
-		{
-			return (atom && atom->elementSymbol() != "H" && 
-			        (atom->atomName() == "O" || atom->isCoreMainChain()));
-		};
-	}
-
-};
-
-#endif
+		_model->element(idx).setAmplitude(amp);
+	};
+	
+	_model->do_op_on_centred_index(b_factor);
+	return _model;
+}

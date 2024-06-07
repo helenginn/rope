@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <fstream>
 #include "Separation.h"
 #include "BondSequence.h"
 #include "CompareAtoms.h"
@@ -28,25 +29,63 @@ void wipe(Matrix &mat)
 	{
 		for (int j = 0; j < mat.cols(); j++)
 		{
-			mat(i, j) = 0;
+			mat(i, j) = -1;
 		}
 	}
 }
 
 void Separation::prepare(const std::vector<Atom *> &atoms)
 {
+	std::vector<std::vector<Atom *>> set;
+
+	std::vector<Atom *> wip;
+	for (int i = 0; i < atoms.size(); i++)
+	{
+		Atom *a = atoms[i];
+		if (!a && wip.size())
+		{
+			set.push_back(wip);
+			wip.clear();
+		}
+		else
+		{
+			wip.push_back(a);
+		}
+	}
+
+	if (wip.size())
+	{
+		set.push_back(wip);
+	}
+	
 	_atoms = SortedVector(atoms);
 	int n = _atoms.size();
 	_matrix = Matrix(n, n);
 
 	wipe(_matrix);
 	
+	std::cout << "Atoms: ";
+	for (std::vector<Atom *> &wip : set)
+	{
+		std::cout << wip.size() << ", ";
+		prepareSegment(wip);
+	}
+	std::cout << std::endl;
+	
+	std::ofstream file;
+	file.open("check_matrix.csv");
+	file << _matrix << std::endl;
+	file.close();
+}
+
+void Separation::prepareSegment(const std::vector<Atom *> &atoms)
+{
 	OpSet<Atom *> included;
 	OpSet<Atom *> leads;
 
-	for (int i = 0; i < _atoms.size(); i++)
+	for (int i = 0; i < atoms.size(); i++)
 	{
-		Atom *a = _atoms._atoms[i];
+		Atom *a = atoms[i];
 		if (!a) continue;
 		int a_idx = _atoms.index_of(a);
 		if (a_idx >= 0)
@@ -82,10 +121,11 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 				{
 					if (_atoms.index_of(prev) < 0) { continue; }
 
-					int increment = me(prev, a) + 1;
+					int prev_to_a = me(prev, a) < 0 ? 0 : me(prev, a);
+					int increment = prev_to_a + 1;
 					int current = me(prev, b);
 					
-					if (current == 0 || current > increment)
+					if (current < 0 || current > increment)
 					{
 						me(prev, b) = increment;
 						me(b, prev) = increment;

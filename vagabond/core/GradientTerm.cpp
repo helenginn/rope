@@ -53,18 +53,22 @@ void GradientTerm::clash(BondSequence *seq, PairwiseDeviations *dev,
 	int c_idx = sep->index_of(param->atom(2));
 	int pre = (b_idx == c_idx ? a_idx : c_idx);
 
-	auto check_clashes = [this, &pre, &blocks, lookup, sep, sines, &count]
+	auto check_clashes = [this, &pre, &blocks, lookup, sep, sines, &count, dev]
 	(const std::vector<int> &pairs)
 	{
 		AtomBlock &block = blocks[b_idx];
 		glm::vec3 myPos = block.my_position();
 		glm::vec3 upPos = block.parent_position();
 
-		const int *ptr = &pairs[0];
-		for (int i = 0; i < pairs.size(); i += 2)
+		for (int i = 0; i < pairs.size(); i++)
 		{
-			int p = ptr[i];
-			int q = ptr[i + 1];
+			TargetInfo &info = dev->info(i);
+			int p = info.p;
+			int q = info.q;
+			if (!dev->filter_in(p) && !dev->filter_in(q))
+			{
+				continue;
+			}
 			
 			if (p == b_idx || q == b_idx)
 			{
@@ -72,8 +76,11 @@ void GradientTerm::clash(BondSequence *seq, PairwiseDeviations *dev,
 			}
 			
 			int lr = sep->separationBetween(p, q);
+			if (lr < 0) continue;
 			int lc = sep->separationBetween(p, b_idx);
+			if (lc < 0) continue;
 			int cr = sep->separationBetween(b_idx, q);
+			if (cr < 0) continue;
 
 			// atom is not in between the pair
 			bool reject = (lc + cr - lr > 0);
@@ -120,8 +127,6 @@ void GradientTerm::clash(BondSequence *seq, PairwiseDeviations *dev,
 void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
                              Separation *sep)
 {
-//	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
-//										{});
 	const std::vector<int> &pairs = dev->pairs();
 	auto loop = [pairs](const JobOnPair &job)
 	{
@@ -141,7 +146,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 		n++;
 	};
 
-	do_on_each_block(blocks, {}, collect_targets);
+	do_on_each_block(blocks, collect_targets);
 	
 	Floats sines = prepare_sines(grads.size(), frac);
 	
@@ -152,18 +157,22 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 	int pre = (b_idx == c_idx ? a_idx : c_idx);
 	
 	auto check_momentum = [this, &pre, &blocks, lookup, 
-	                       sep, sines, &count]
+	                       sep, sines, &count, dev]
 	(const std::vector<int> &pairs)
 	{
 		AtomBlock &block = blocks[b_idx];
 		glm::vec3 myPos = block.my_position();
 		glm::vec3 upPos = block.parent_position();
 
-		const int *ptr = &pairs[0];
-		for (int i = 0; i < pairs.size(); i += 2)
+		for (int i = 0; i < pairs.size(); i++)
 		{
-			int p = ptr[i];
-			int q = ptr[i + 1];
+			TargetInfo &info = dev->info(i);
+			int p = info.p;
+			int q = info.q;
+			if (!dev->filter_in(p) || !dev->filter_in(q))
+			{
+				continue;
+			}
 			
 			if (p == b_idx || q == b_idx)
 			{
@@ -171,8 +180,8 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 			}
 			
 			int lr = sep->separationBetween(p, q);
-			int lc = sep->separationBetween(p, b_idx);
 			if (lr < 0) { continue; }
+			int lc = sep->separationBetween(p, b_idx);
 			if (lc > lr) { continue; }
 			int cr = sep->separationBetween(b_idx, q);
 
@@ -218,4 +227,18 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 	}
 
 	delete [] scratch;
+}
+
+void GradientPath::print()
+{
+	for (int i = 0; i < motion_idxs.size(); i++)
+	{
+		std::cout << motion_idxs[i] << ": ";
+		for (int j = 0; j < grads[i].size(); j++)
+		{
+			std::cout << grads[i][j] << ", ";
+		}
+		std::cout << std::endl;
+	}
+
 }

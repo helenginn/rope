@@ -16,36 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__function__typedefs
-#define __vagabond__function__typedefs
+#ifndef __vagabond__BulkSolvent__
+#define __vagabond__BulkSolvent__
 
-#include "Atom.h"
-#include <functional>
+#include "AtomPosMap.h"
+class Diffraction;
 
-class Atom;
-
-typedef std::function<bool(Atom *const &atom)> AtomFilter;
-typedef std::function<int(const int &p)> PairFilter;
-
-namespace rope
+class BulkSolvent
 {
-	inline AtomFilter atom_is_not_hydrogen()
-	{
-		return [](Atom *const &atom)
-		{
-			return atom && atom->elementSymbol() != "H";
-		};
-	}
+public:
+	BulkSolvent(Diffraction *diffraction, const AtomPosMap &all_atoms);
 
-	inline AtomFilter atom_is_core_main_chain()
-	{
-		return [](Atom *const &atom)
-		{
-			return (atom && atom->elementSymbol() != "H" && 
-			        (atom->atomName() == "O" || atom->isCoreMainChain()));
-		};
-	}
+	Diffraction *operator()();
+private:
+	const AtomPosMap &_atoms;
+	Diffraction *_model = nullptr;
 
+	float _spacing = 0.4;
 };
 
 #endif
