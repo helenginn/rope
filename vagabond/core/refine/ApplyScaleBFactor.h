@@ -16,35 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__function__typedefs
-#define __vagabond__function__typedefs
+#ifndef __vagabond__ApplyScaleBFactor__
+#define __vagabond__ApplyScaleBFactor__
 
-#include "Atom.h"
-#include <functional>
+class Diffraction;
 
-class Atom;
-
-typedef std::function<bool(Atom *const &atom)> AtomFilter;
-typedef std::function<int(const int &p)> PairFilter;
-
-namespace rope
+class ApplyScaleBFactor
 {
-	inline AtomFilter atom_is_not_hydrogen()
+public:
+	ApplyScaleBFactor(Diffraction *model)
 	{
-		return [](Atom *const &atom)
-		{
-			return atom && atom->elementSymbol() != "H";
-		};
+		_model = model;
 	}
 
-	inline AtomFilter atom_is_core_main_chain()
-	{
-		return [](Atom *const &atom)
-		{
-			return (atom && atom->elementSymbol() != "H" && 
-			        (atom->atomName() == "O" || atom->isCoreMainChain()));
-		};
-	}
+	Diffraction *operator()(const float &k, const float &b);
+private:
+	Diffraction *_model = nullptr;
 
 };
 

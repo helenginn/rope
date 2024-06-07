@@ -32,6 +32,7 @@
 class Atom;
 class BondSequence;
 class BundleBonds;
+class Separation;
 struct AtomBlock; 
 struct ResidueId;
 struct Deviation; 
@@ -40,14 +41,38 @@ struct ActivationEnergy;
 template <typename In, typename Out> class Task;
 class BondSequence;
 
+struct TargetInfo
+{
+	int p;
+	int q;
+	float dStart;
+	float dEnd;
+	float mFrac = -1;
+	float dMid = -1;
+	
+	float target(float frac)
+	{
+		if (mFrac < 0 || frac < 0.01 || frac > 0.99)
+		{
+			float targdist = dStart + frac * (dEnd - dStart);
+			return targdist;
+		}
+		else
+		{
+			float start = (frac < mFrac ? dStart : dMid);
+			float end = (frac < mFrac ? dMid : dEnd);
+			float f = (frac < mFrac ? frac / mFrac : (frac - mFrac) / (1 - mFrac));
+			return start + f * (end - start);
+		}
+
+	}
+};
+
 class PairwiseDeviations
 {
 public:
-//	typedef std::function<bool(Atom *const &atom)> AtomFilter;
-
 	PairwiseDeviations(BondSequence *sequence,
-	                   const AtomFilter &filter = {},
-	                   const float &limit = 8.f);
+	                   const float &limit = 8.f, Separation *sep = nullptr);
 
 	~PairwiseDeviations();
 
@@ -73,9 +98,36 @@ public:
 		return _residues;
 	}
 	
+	int index(Atom *const &atom)
+	{
+		int n = 0;
+		for (Atom *candidate : _atoms)
+		{
+			if (candidate == atom)
+			{
+				return n;
+			}
+			n++;
+		}
+		return -1;
+	}
+	
+	size_t atomCount()
+	{
+		return _atoms.size();
+	}
+
 	Atom *const &atom(int i)
 	{
 		return _atoms[i];
+	}
+	
+	void addWaypoint(Atom *const &left, Atom *const &right,
+	                 const float &frac, const float &distance);
+
+	bool containsPair(Atom *const &left, Atom *const &right)
+	{
+		return (_atoms2Info.count({left, right}) > 0);
 	}
 	
 	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
@@ -88,30 +140,49 @@ public:
 		return _reference;
 	}
 	
-	Contacts &contacts()
+	TargetInfo &info(int p)
 	{
-		return _contacts;
+		return _infoPairs[p];
 	}
-
+	
 	Task<BondSequence *, Deviation> *
 	momentum_task(float frac, const std::set<ResidueId> &forResidues);
 
 	Task<BundleBonds *, ActivationEnergy> *
-	bundle_clash(const std::set<ResidueId> &forResidues);
+	bundle_clash(const std::set<ResidueId> &forResidues,
+	             bool include_negative = true);
+
+	bool filter_in(int p) const
+	{
+		return !_filter || _filter(p);
+	}
+
+	void setFilter(PairFilter &filter)
+	{
+		_filter = filter;
+	}
+	
+	const PairFilter &filter() const
+	{
+		return _filter;
+	}
 private:
 	void prepare(BondSequence *seq);
 
-	AtomFilter _filter{};
+	PairFilter _filter{};
 	float _limit = 8.f;
+	
+	typedef std::pair<Atom *, Atom *> AtomAtom;
 
 	glm::vec3 *_reference = nullptr;
 	std::map<ResidueId, std::vector<int>> _perResidue;
 	std::set<ResidueId> _residues;
+	std::map<AtomAtom, int> _atoms2Info;
 	std::vector<Atom *> _atoms;
+	std::vector<TargetInfo> _infoPairs;
 	std::vector<int> _pairs;
-	std::vector<ResidueId> _correspondingResiduePairs;
 	
-	Contacts _contacts;
+	Separation *_sep = nullptr;
 };
 
 #endif

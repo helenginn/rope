@@ -93,6 +93,21 @@ void Menu::setup(double x, double y, double scale)
 	setArbitrary(x, y, Renderable::Alignment(horizontal | vertical));
 }
 
+TextButton *Menu::addOption(std::string text, const std::function<void()> &job)
+{
+	auto job_and_hide = [job, this]
+	{
+		hide();
+		job();
+	};
+
+	TextButton *option = new TextButton(text, this);
+	option->resize(0.8);
+	option->setReturnJob(job_and_hide);
+	_options.push_back(option);
+	return option;
+}
+
 TextButton *Menu::addOption(std::string text, std::string tag)
 {
 	if (tag.length() == 0)

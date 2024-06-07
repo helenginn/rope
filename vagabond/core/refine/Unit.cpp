@@ -121,6 +121,8 @@ void Unit::retrieveJobs()
 
 		r->destroy();
 	}
+	
+	calc->reset();
 }
 
 size_t Unit::parameterCount(Engine *caller)
@@ -136,6 +138,19 @@ void Unit::runEngine()
 	{
 		throw std::runtime_error("Map provided to refinement is null");
 	}
+	
+	if (parameterCount() == 0)
+	{
+		std::cout << "Skipping refinement - no parameters" << std::endl;
+		return;
+	}
+	
+	std::cout << parameterCount() << " parameters for: ";
+	for (Instance *const &inst : _info->instances)
+	{
+		std::cout << inst->id() << ", ";
+	}
+	std::cout << std::endl;
 	
 	SimplexEngine *engine = new SimplexEngine(this);
 	engine->setVerbose(true);

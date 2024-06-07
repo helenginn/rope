@@ -47,6 +47,7 @@ Floats averages_for_bins(Mask mask, Diffraction *reciprocal, int count)
 
 		float amp = reciprocal->element(idx).amplitude();
 		int cat = reciprocal->element(idx).category;
+
 		if (cat < 0 || amp != amp)
 		{
 			return;

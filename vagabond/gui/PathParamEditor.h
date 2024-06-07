@@ -16,36 +16,39 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__function__typedefs
-#define __vagabond__function__typedefs
+#ifndef __vagabond__PathParamEditor__
+#define __vagabond__PathParamEditor__
 
-#include "Atom.h"
-#include <functional>
+#include <vagabond/gui/elements/ListView.h>
 
-class Atom;
+class Route;
 
-typedef std::function<bool(Atom *const &atom)> AtomFilter;
-typedef std::function<int(const int &p)> PairFilter;
-
-namespace rope
+class PathParamEditor : public ListView
 {
-	inline AtomFilter atom_is_not_hydrogen()
+public:
+	PathParamEditor(Scene *prev, Route *route);
+
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
+
+	virtual void setup();
+	virtual void refresh();
+
+	virtual float leftMargin()
 	{
-		return [](Atom *const &atom)
-		{
-			return atom && atom->elementSymbol() != "H";
-		};
+		return 0.2;
 	}
 
-	inline AtomFilter atom_is_core_main_chain()
+	virtual size_t unitsPerPage()
 	{
-		return [](Atom *const &atom)
-		{
-			return (atom && atom->elementSymbol() != "H" && 
-			        (atom->atomName() == "O" || atom->isCoreMainChain()));
-		};
+		return 16;
 	}
+private:
+	void recalculateTotals();
 
+	Route *_route = nullptr;
+
+	std::vector<float> _totals;
 };
 
 #endif

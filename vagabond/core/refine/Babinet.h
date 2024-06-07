@@ -33,7 +33,7 @@ private:
 	void prepareSolvent();
 	void addProtein();
 
-	float _k = 0.5;
+	float _k = -0.2;
 	float _b = 120;
 	Diffraction *_model = nullptr;
 	Diffraction *_solvent = nullptr;

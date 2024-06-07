@@ -46,6 +46,8 @@ public:
 	
 	std::set<int> objectsInBox(float t, float l, float b, float r);
 	void selectIndices(std::set<int> &results, bool inverse);
+
+	void deselect();
 protected:
 	virtual void checkIndexBuffer(double x, double y, bool hover, 
 	                              bool arrow, bool left);
@@ -54,7 +56,9 @@ protected:
 	// otherwise IndexResponder gets ::interacted.
 	virtual void interactedWithNothing(bool left, bool hover = false) {};
 
+	void sendSelection(float t, float l, float b, float r, bool inverse);
 private:
+
 	IndexResponder *getResponderForIndex(int &val);
 
 	std::vector<IndexResponder *> _responders;

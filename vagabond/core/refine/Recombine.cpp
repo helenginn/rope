@@ -71,8 +71,8 @@ Diffraction *Recombine::operator()()
 		float standard_error = sqrt(fo_error * fo_error + diff_error * diff_error);
 		float centroid = 0;
 
-		int index = lrint(standard_error / 0.01);
-		if (index < 314)
+		int index = lrint(fo_error / 0.01); // 0.01 increments calculated
+		if (index < 314) // limit of calculations, otherwise zero
 		{
 			centroid = centroid_to_phase_stdev[index * 2 + 1];
 		}
@@ -102,7 +102,7 @@ Diffraction *Recombine::operator()()
 		float prop = proportion_amplitude_below_zero(fc, diff);
 		
 		// we use this to reduce the size of our amplitude if Fc is near origin
-		amp *= 1 - 2 * prop;
+//		amp *= 1 - 2 * prop;
 
 		_combined->element(idx).addAmplitudePhase(amp, ph);
 	};

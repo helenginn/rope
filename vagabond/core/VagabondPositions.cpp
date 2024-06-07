@@ -47,7 +47,7 @@ void VagabondPositions::prepareResources()
 	Atom *anchor = _group->chosenAnchor();
 	_resources.sequences->addAnchorExtension(anchor);
 
-	_resources.sequences->setIgnoreHydrogens(true);
+//	_resources.sequences->setIgnoreHydrogens(true);
 	_resources.sequences->prepareToSkipSections(true);
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();

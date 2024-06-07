@@ -76,7 +76,7 @@ auto energy_term(EnergyTorsions *et, float frac,
 		
 		loop(get_energies);
 		
-		return {(float)total};
+		return {(float)total, frac};
 	};
 }
 

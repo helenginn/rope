@@ -755,20 +755,9 @@ void ConfSpaceView::interactedWithNothing(bool left, bool hover)
 }
 
 void ConfSpaceView::sendSelection(float t, float l, float b, float r,
-                                  bool inverse)
+                                      bool inverse)
 {
-	convertToGLCoords(&l, &t);
-	convertToGLCoords(&r, &b);
-
-#ifndef __EMSCRIPTEN__
-	convertGLToHD(l, t);
-	convertGLToHD(r, b);
-#endif
-
-	std::set<int> results = objectsInBox(t, l, b, r);
-	
-	selectIndices(results, inverse);
-
+	IndexResponseView::sendSelection(t, l, b, r, inverse);
 	applyRules();
 }
 

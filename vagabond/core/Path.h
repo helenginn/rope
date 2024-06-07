@@ -189,6 +189,11 @@ inline void to_json(json &j, const Path &value)
 	j["momentum_score"] = value._momentum;
 	j["activation_energy"] = value._activationEnergy;
 	j["torsion_energy"] = value._torsionEnergy;
+	if (value._torsionEnergy != value._torsionEnergy ||
+	    !std::isfinite(value._torsionEnergy))
+	{
+		j["torsion_energy"] = 0;
+	}
 	j["maximum_momentum_distance"] = value._maxMomentumDistance;
 	j["maximum_clash_distance"] = value._maxClashDistance;
 }

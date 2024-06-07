@@ -62,6 +62,11 @@ glm::mat3x3 bond_aligned_matrix(double a, double b, double c,
 glm::mat3x3 mat3x3_from_unit_cell(double a, double b, double c, 
                                   double alpha, double beta, double gamma);
 
+inline glm::mat3x3 mat3x3_from_unit_cell(double *d)
+{
+	return mat3x3_from_unit_cell(d[0], d[1], d[2], d[3], d[4], d[5]);
+}
+
 /** unit cell dimensions from supplied matrix */
 void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr);
 

@@ -39,7 +39,7 @@ namespace SymmetryExpansion
 		auto accepted_res = [grid, dMax](int i, int j, int k) -> bool
 		{
 			if (dMax < 0) return true;
-			return (grid->resolution(i, j, k) > dMax);
+			return (grid->resolution(i, j, k) < dMax);
 		};
 
 		auto is_sysabs = [grp](int i, int j, int k) -> bool

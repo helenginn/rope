@@ -53,6 +53,13 @@ struct Motion
 		else { return angle + 360; }
 	}
 	
+	float fractionalWorkingAngle(const float &frac)
+	{
+		float x = (frac - 0.5) * M_PI;
+		float convert = sin(x) / 2 + 0.5;
+		return frac * workingAngle();
+	}
+	
 	void writeToData(DataFloat *&ptr)
 	{
 		float extra = twist.twist ? twist.twist->twist : 0.f;
@@ -65,8 +72,8 @@ struct Motion
 	float interpolatedAngle(float frac)
 	{
 		float p = wp.interpolatedProgression(frac);
-		float q = twist.twist ? twist.contribution(frac) : 0;
-		return frac * workingAngle() + p + q;
+		float q = fractionalWorkingAngle(frac);
+		return q + p;
 	}
 };
 

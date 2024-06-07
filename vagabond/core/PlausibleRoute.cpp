@@ -25,11 +25,13 @@
 #include "BondSequence.h"
 #include "Polymer.h"
 #include "TorsionData.h"
+#include "PairwiseDeviations.h"
 #include "BondSequenceHandler.h"
 #include <vagabond/utils/maths.h>
 #include "Grapher.h"
 #include "paths/ResidueContacts.h"
 #include <vagabond/c4x/Cluster.h>
+#include <gemmi/elem.hpp>
 
 PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &list)
 : Route(from, to, list)
@@ -40,6 +42,46 @@ PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &lis
 PlausibleRoute::PlausibleRoute(const RTAngles &list) : Route(list)
 {
 
+}
+
+void PlausibleRoute::rewindTorsions()
+{
+	for (int i = 0; i < motionCount(); i++)
+	{
+		if (!parameter(i)->coversMainChain())
+		{
+			continue;
+		}
+
+		std::vector<int> seq = getTorsionSequence
+		(i, -1, [this](const int &idx)
+		 {
+			return parameter(idx)->coversMainChain();
+		});
+
+		float total = 0;
+		for (int j = 0; j < seq.size(); j++)
+		{
+			float angle = motion(seq[j]).workingAngle();
+			total += angle;
+			
+			if (angle > 150 && total > 480 && !motion(seq[j]).flip)
+			{
+				total -= 360;
+				motion(seq[j]).flip = !motion(seq[j]).flip;
+			}
+			if (angle < -150 && total < -480 && !motion(seq[j]).flip)
+			{
+				total += 360;
+				motion(seq[j]).flip = !motion(seq[j]).flip;
+			}
+			
+			std::cout << angle << " " << total;
+			std::cout << std::endl;
+		}
+
+		break;
+	}
 }
 
 void PlausibleRoute::setup()
@@ -53,24 +95,16 @@ void PlausibleRoute::setup()
 	{
 		bestGuessTorsions();
 	}
-
+//	rewindTorsions();
+	
 	prepareJobs();
 }
 
 bool PlausibleRoute::meaningfulUpdate(float new_score, float old_score,
                                       float threshold)
 {
-	if (doingClashes() && old_score < 0 && new_score < 0)
-	{
-		return old_score - new_score > 10;
-	}
-	else if (old_score * new_score < 0)
-	{
-		return true;
-	}
-
 	bool good_ratio = (new_score < threshold * old_score);
-	float required_reduction = doingClashes() ? 0.5 : 0.005;
+	float required_reduction = doingClashes() ? 0.5 : 0.001;
 	bool bad_reduction = (old_score - new_score < required_reduction);
 
 	return good_ratio && !bad_reduction;
@@ -104,7 +138,17 @@ void PlausibleRoute::prepareJobs()
 	{
 		flipTorsionCycles(large_main);
 	};
+	
+	auto large_side = [this](int idx) -> bool
+	{
+		return validateTorsion(idx, 90, 360., false, true);
+	};
 
+	auto flip_side_chain = [this, large_side]()
+	{
+		flipTorsionCycles(large_side);
+	};
+	
 	auto check_gradients = [this]
 	(const std::function<bool()> &gradient_type)
 	{
@@ -112,42 +156,56 @@ void PlausibleRoute::prepareJobs()
 		{
 			bool good = true;
 			float before = routeScore(nudgeCount());
-			while (true || !doingClashes())
+			int amnesty = 0;
+			while (true)
 			{
+				amnesty++;
 				good = gradient_type();
+				if (_finish)
+				{
+					return;
+				}
 				if (!good)
 				{
+					if (amnesty < 64 && !doingClashes())
+					{
+						continue;
+					}
+
 					if (!_finish)
 					{
 						upgradeJobs();
-						if (lastJob())
-						{
-							finish();
-						}
 					}
 
 					float after = _bestScore;
 					std::cout << before << " to " << after << std::endl;
 					break;
 				}
+
 			}
 		};
 	};
+	
+	auto do_next = [this]()
+	{
+		if (doingClashes()) { return sideChainGradients(); }
+		else { return applyGradients(_paths); };
+	};
+	
+	_paths = {};
 
-	only_once flip_once(flip_main_chain);
-	_tasks.push_back(flip_once);
-	_tasks.push_back(check_gradients([this]()
-	                                 {
-		                                if (!doingClashes())
-										{
-											return applyGradients({});
-										}
-										else
-										{
-//											return mainChainClashAvoidance();
-											return sideChainGradients(); 
-										}
-									}));
+	only_once flip_mains(flip_main_chain);
+	only_once flip_sides(flip_side_chain);
+	_tasks.push_back(flip_mains);
+	_tasks.push_back(check_gradients(do_next));
+	_tasks.push_back(flip_sides);
+
+	return;
+	_tasks.push_back([this]()
+	                 {
+		                repelMainChainAtomsFromWorstResidues();
+		                return false;
+		             });
 }
 
 void PlausibleRoute::setTargets(Instance *inst)
@@ -252,6 +310,54 @@ std::map<int, int> indexed_motions(ByResidueResult *r, RTMotion &motions)
 	return indexed;
 }
 
+OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
+{
+	struct RankedResidue
+	{
+		float score;
+		ResidueId id;
+
+		bool operator<(const RankedResidue &other) const
+		{
+			return score > other.score; // want descending
+		}
+	};
+
+	std::set<RankedResidue> residues;
+
+	std::map<ResidueId, std::vector<int>> map;
+	int n = 0;
+	for (int i = 0; i < motionCount(); i++)
+	{
+		ResidueTorsion &rt = residueTorsion(i);
+		if (parameter(i) && 
+		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained()))
+		{
+			continue;
+		}
+
+		const ResidueId &local = rt.local_id();
+
+		_ids = {local};
+		float sc = routeScore(nudgeCount());
+		residues.insert({sc, local});
+	}
+
+	OpSet<ResidueId> chosen;
+
+	n = 0;
+	for (const RankedResidue &rr : residues)
+	{
+		if (n >= num) break;
+		chosen.insert(rr.id);
+		std::cout << rr.id << " has score " << rr.score << std::endl;
+		n++;
+	}
+	
+	_ids.clear();
+
+	return chosen;
+}
 
 bool PlausibleRoute::sideChainGradients()
 {
@@ -265,7 +371,8 @@ bool PlausibleRoute::sideChainGradients()
 	for (int i = 0; i < motionCount(); i++)
 	{
 		ResidueTorsion &rt = residueTorsion(i);
-		if (parameter(i)->coversMainChain() || parameter(i)->isConstrained())
+		if (parameter(i) && 
+		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained()))
 		{
 			continue;
 		}
@@ -299,36 +406,8 @@ bool PlausibleRoute::sideChainGradients()
 
 	if (_finish) return false;
 
-	struct RankedResidue
-	{
-		float score;
-		ResidueId id;
-
-		bool operator<(const RankedResidue &other) const
-		{
-			return score > other.score; // want descending
-		}
-	};
-
-	std::set<RankedResidue> residues;
-
-	for (auto it = map.begin(); it != map.end(); it++)
-	{
-		const ResidueId &id = it->first;
-		_ids = {id};
-		float sc = routeScore(nudgeCount());
-		residues.insert({sc, id});
-	}
-
-	OpSet<ResidueId> chosen;
-
-	n = 0;
-	for (const RankedResidue &rr : residues)
-	{
-		if (n >= 5) break;
-		chosen.insert(rr.id);
-		n++;
-	}
+	OpSet<ResidueId> chosen = worstSidechains(5);
+	_ids = chosen;
 
 	std::map<ResidueId, std::vector<int>> mini;
 	for (const ResidueId &id : chosen)
@@ -336,7 +415,6 @@ bool PlausibleRoute::sideChainGradients()
 		mini[id] = map[id];
 	}
 
-	_ids = chosen;
 	{
 		MultiSimplex<ResidueId> ms(this, parameterCount());
 		ms.setMaxRuns(20);
@@ -347,11 +425,11 @@ bool PlausibleRoute::sideChainGradients()
 			ms.run();
 			zeroParameters();
 		}
+
 		if (_finish) return false;
 	}
 
 	_ids.clear();
-		
 
 	newsc = routeScore(nudgeCount());
 	_bestScore = newsc;
@@ -360,14 +438,103 @@ bool PlausibleRoute::sideChainGradients()
 	return meaningfulUpdate(newsc, oldsc, 0.95);
 }
 
-bool PlausibleRoute::applyGradients(const ValidateParam &validate)
+void PlausibleRoute::repelMainChainAtomsFromWorstResidues()
+{
+	if (!lastJob() || _repelCount >= 6)
+	{
+		return;
+	}
+
+	_repelCount++;
+	AtomGroup *all = all_atoms();
+//	OpSet<ResidueId> worst = worstSidechains(5);
+
+	std::cout << "Repelling main chain atoms!" << std::endl;
+	submitToShow(0.25);
+	retrieve();
+
+	all->writeToFile("compare.pdb");
+	AtomGroup *all_contacts = new AtomGroup();
+	AtomGroup *main = all->new_subset([](Atom *const &a)
+	                                 {
+		                                return a->isMainChain();
+	                                 });
+
+	float frac = 0.25;
+	auto get_too_close = [&frac, this, main](Atom *const &a)
+	{
+		PairwiseDeviations *chosen = 
+		pairwiseForSequences(_hydrogenFreeSequences);
+
+		const glm::vec3 &p = a->derivedPosition();
+		float radius = 2.5;
+
+		for (Atom *const &other : main->atomVector())
+		{
+			if (other == a || other->bondsBetween(a, 4, false) > 0)
+			{
+				return false;
+			}
+
+			const glm::vec3 &q = other->derivedPosition();
+			glm::vec3 diff = p - q;
+			float l = glm::length(diff);
+			if (l < radius)
+			{
+				bool too_close = false;
+				for (size_t k = 0; k < a->bondTorsionCount(); k++)
+				{
+					if (a->bondTorsion(k)->hasAtom(other))
+					{
+						too_close = true;
+					}
+				}
+
+				if (too_close)
+				{
+					return false;
+				}
+
+				std::cout << a->desc() << " vs " << other->desc() << 
+				" --> " << radius - l << std::endl;
+
+				float extra = (radius - l) * 5;
+				chosen->addWaypoint(a, other, frac, extra);
+
+				diff *= radius / l;
+//				glm::vec3 new_pos = q + diff;
+//				other->setDerivedPosition(new_pos);
+
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	AtomGroup *contacts = main->new_subset(get_too_close);
+	delete contacts;
+	delete main;
+	delete all_contacts;
+	delete all;
+	
+	_jobLevel = 0;
+
+	if (lastJob())
+	{
+		finish();
+	}
+}
+
+bool PlausibleRoute::applyGradients(GradientPaths &paths)
 {
 	auto side_chain = [this](int idx) -> bool
 	{
 		return parameter(idx) && !parameter(idx)->coversMainChain();
 	};
 
-	GradientPath *path = gradients(doingSides() ? side_chain : validate);
+	GradientPath *path = gradients(doingSides() ? side_chain : ValidateParam{});
+
 	if (Route::_finish)
 	{
 		delete path;
@@ -375,6 +542,12 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 	}
 
 	std::vector<Floats> current = save_current(path, _motions);
+
+	for (int j = 0; j < path->motion_idxs.size(); j++)
+	{
+		int p = path->motion_idxs[j]; // motion_idx
+		const Floats &sines = path->grads[j];
+	}
 
 	float scale = 1;
 	float alpha = 0;
@@ -429,7 +602,7 @@ bool PlausibleRoute::applyGradients(const ValidateParam &validate)
 		
 		if (Route::_finish)
 		{
-			break;
+			return false;
 		}
 	}
 	
@@ -509,12 +682,8 @@ float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
 	float lowest = _point2Score[1].lowest_energy;
 	_activationEnergy = highest - lowest;
 
-	bool show = rand() % 5 == 0;
-	if (show || true)
-	{
-		submitToShow(_chosenFrac);
-		retrieve();
-	}
+	submitToShow(_chosenFrac);
+	retrieve();
 	
 	clearTickets();
 	return sc;
@@ -791,6 +960,7 @@ void PlausibleRoute::prepareTorsionFetcher(BondSequenceHandler *handler)
 	{
 		int mot_idx = lookup[torsion_idx];
 		if (mot_idx < 0) return 0.f;
+		if (_motionFilter && !_motionFilter(mot_idx)) return 0.f;
 
 		float t = motion(mot_idx).interpolatedAngle(get(0));
 		if (t != t) t = 0;
@@ -820,35 +990,6 @@ void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 	}
 }
 
-std::map<OpSet<ResidueId>, float> PlausibleRoute::
-	getMultiResult(const std::vector<float> &all,
-	               MultiSimplex<OpSet<ResidueId>> *caller)
-{
-	assignParameterValues(all);
-	
-	int num = nudgeCount();
-	if (rand() % 5 == 0 || true)
-	{
-		submitToShow(_chosenFrac);
-		retrieve();
-	}
-
-	ByResidueResult *rr = byResidueScore(num);
-	std::map<ResidueId, float> scores = rr->scores;
-	std::map<OpSet<ResidueId>, float> converted = caller->blueprint();
-	
-	for (auto it = converted.begin(); it != converted.end(); it++)
-	{
-		for (const ResidueId &id : it->first)
-		{
-			it->second += scores[id];
-		}
-	}
-
-	delete rr;
-	return converted;
-}
-
 std::map<ResidueId, float> PlausibleRoute::
 	getMultiResult(const std::vector<float> &all,
 	               MultiSimplex<ResidueId> *caller)
@@ -856,11 +997,8 @@ std::map<ResidueId, float> PlausibleRoute::
 	assignParameterValues(all);
 	
 	int num = nudgeCount();
-	if (rand() % 5 == 0 || true)
-	{
-		submitToShow(_chosenFrac);
-		retrieve();
-	}
+	submitToShow(_chosenFrac);
+	retrieve();
 
 	ByResidueResult *rr = byResidueScore(num);
 	std::map<ResidueId, float> scores = rr->scores;
@@ -888,11 +1026,6 @@ void PlausibleRoute::upgradeJobs()
 
 	_jobLevel++;
 
-	if (doingClashes() && !doingHydrogens())
-	{
-		_jobLevel++;
-	}
-	
 	unlockAll();
 	std::cout << "Job level now " << _jobLevel << "..." << std::endl;
 }

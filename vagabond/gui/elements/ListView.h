@@ -29,6 +29,8 @@ public:
 	virtual void setup();
 	virtual void refresh();
 	virtual size_t unitsPerPage();
+	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	int nPages();
 
 	virtual float leftMargin()
 	{

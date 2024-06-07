@@ -358,6 +358,10 @@ int GeometryTable::chirality(std::string code, std::string centre,
                              std::string rName)
 {
 	GeometryMap &map = _codes[code];
+	for (auto it = map.chirals.begin(); it != map.chirals.end(); it++)
+	{
+		const AtomQuartet &quartet = it->first;
+	}
 
 	AtomQuartet quartet = {centre, pName, qName, rName};
 	if (map.chirals.count(quartet) == 0)

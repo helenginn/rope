@@ -23,6 +23,7 @@
 #include "Progressor.h"
 #include "MultiSimplex.h"
 #include "SimplexEngine.h"
+#include "GradientTerm.h"
 #include <vagabond/c4x/Angular.h>
 #include <functional>
 
@@ -30,7 +31,7 @@ class Path;
 template <class Type> class OpSet;
 
 class PlausibleRoute : public Route, public Progressor, public RunsEngine,
-public RunsMultiEngine<ResidueId>, public RunsMultiEngine<OpSet<ResidueId>>
+public RunsMultiEngine<ResidueId>
 {
 	friend RouteValidator;
 	friend Path;
@@ -95,7 +96,7 @@ public:
 	{
 		if (doingClashes())
 		{
-			return 6;
+			return 12;
 		}
 
 		return 12;
@@ -108,10 +109,6 @@ protected:
 	virtual std::map<ResidueId, float> 
 	getMultiResult(const std::vector<float> &all, 
 	               MultiSimplex<ResidueId> *caller);
-
-	virtual std::map<OpSet<ResidueId>, float> 
-	getMultiResult(const std::vector<float> &all, 
-	               MultiSimplex<OpSet<ResidueId>> *caller);
 
 	virtual size_t parameterCount(Engine *caller = nullptr);
 
@@ -151,12 +148,17 @@ private:
 	CalcOptions calcOptions(const CalcOptions &add_options,
 	                  const CalcOptions &subtract_options);
 
-	bool applyGradients(const ValidateParam &validate);
+	bool applyGradients(GradientPaths &paths);
+	OpSet<ResidueId> worstSidechains(int num);
 	bool sideChainGradients();
+	void rewindTorsions();
+	void repelMainChainAtomsFromWorstResidues();
 
 	GradientPath *gradients(const ValidateParam &validate,
 	                        const CalcOptions &add_options = None,
 	                        const CalcOptions &subtract_options = None);
+	
+	GradientPaths _paths{};
 
 	virtual void cycle();
 

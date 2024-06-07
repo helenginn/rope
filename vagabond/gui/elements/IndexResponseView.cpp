@@ -186,3 +186,30 @@ void IndexResponseView::selectIndices(std::set<int> &results, bool inverse)
 		responder->selected(r, inverse);
 	}
 }
+
+void IndexResponseView::deselect()
+{
+	for (IndexResponder *ir : _responders)
+	{
+		for (size_t idx = 0; idx < ir->requestedIndices(); idx++)
+		{
+			ir->selected(idx, 1);
+		}
+	}
+}
+
+void IndexResponseView::sendSelection(float t, float l, float b, float r,
+                                      bool inverse)
+{
+	convertToGLCoords(&l, &t);
+	convertToGLCoords(&r, &b);
+
+#ifndef __EMSCRIPTEN__
+	convertGLToHD(l, t);
+	convertGLToHD(r, b);
+#endif
+
+	std::set<int> results = objectsInBox(t, l, b, r);
+	
+	selectIndices(results, inverse);
+}

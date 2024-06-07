@@ -301,6 +301,7 @@ public:
 	
 	float addedColour()
 	{
+		if (_count == 0) return 0;
 		return _colour / (float)_count;
 	}
 	
@@ -335,6 +336,16 @@ public:
 	
 	float charge();
 	
+	void setSelected(const bool &sel)
+	{
+		_selected = sel;
+	}
+	
+	const bool &isSelected() const
+	{
+		return _selected;
+	}
+	
 	Atom *const &symmetryCopyOf() const
 	{
 		return _symAtom;
@@ -351,6 +362,7 @@ private:
 	bool _setupInitial = false;
 	bool _changedPosition = false;
 
+	bool _selected = false;
 	bool _transformed = false;
 	bool _hetatm = false;
 	float _occupancy = 1.;

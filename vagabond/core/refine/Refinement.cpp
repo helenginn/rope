@@ -25,6 +25,9 @@
 #include "grids/ArbitraryMap.h"
 #include "grids/AtomMap.h"
 #include "Babinet.h"
+#include "ApplyScaleBFactor.h"
+#include "AddTogether.h"
+#include "BulkSolvent.h"
 #include "files/MtzFile.h"
 #include "Instance.h"
 #include "UpdateMap.h"
@@ -94,9 +97,9 @@ void Refinement::prepareInstanceDetails()
 
 	for (Instance *inst : multi_atoms)
 	{
-		Refine::Module mods = Refine::Module(Refine::Warp | 
-		                                       Refine::ImplicitB |
-		                                     Refine::Barycentric |
+		Refine::Module mods = Refine::Module(//Refine::Warp | 
+//		                                       Refine::ImplicitB |
+//		                                     Refine::Barycentric |
 		                                       Refine::Translate |
 		                                       Refine::Rotate);
 
@@ -115,7 +118,7 @@ void Refinement::prepareInstanceDetails()
 		wiggler();
 	}
 	
-	if (single_atoms.size())
+	if (single_atoms.size() && false)
 	{
 		{
 			Refine::Info info;
@@ -183,10 +186,20 @@ void Refinement::play()
 }
 
 ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
-                                             float max_res)
+                                             float max_res,
+                                             AtomPosMap *all_atoms)
 {
 	ArbitraryMap *arb = new ArbitraryMap(*_map);
 	arb->clear();
+	
+	auto add_to_map = [&all_atoms](const AtomPosMap &other)
+	{
+		if (all_atoms == nullptr) return;
+		for (auto it = other.begin(); it != other.end(); it++)
+		{
+			(*all_atoms)[it->first] = it->second;
+		}
+	};
 	
 	for (Refine::Info &info  : _molDetails)
 	{
@@ -202,6 +215,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 		ArbitraryMap *partial = map();
 		arb->addFromOther(*partial);
 		delete partial;
+		add_to_map(result->aps);
 		result->destroy();
 	}
 
@@ -209,6 +223,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 	{
 		Diffraction *diff = new Diffraction(arb);
 		diff->applySymmetry(_map->spaceGroupName());
+		diff->setList(_data->list());
 		*reciprocal = diff;
 	}
 
@@ -235,17 +250,40 @@ void Refinement::swapMap(ArbitraryMap *map)
 void Refinement::updateMap()
 {
 	/* currently matched to service crystallography */
+	
+	/* collecting atoms for bulk solvent */
+	AtomPosMap all_atoms;
 
 	/* calculate the initial model map to required resolution */
 	float maxRes = _data->maxResolution();
 	Diffraction *recip_model = nullptr;
-	ArbitraryMap *real = calculatedMapAtoms(&recip_model, maxRes);
+	ArbitraryMap *real = calculatedMapAtoms(&recip_model, maxRes, &all_atoms);
+	float total_e = real->sum();
 	delete real;
 
+	ApplyScaleBFactor blur_protein(recip_model);
+	recip_model->printMap();
+	
+	BulkSolvent bs(recip_model, all_atoms);
+	Diffraction *solvent = bs();
+	solvent->multiply(1 / solvent->sum());
+
+	MtzFile file(solvent);
+	
+	ApplyScaleBFactor blur_solvent(solvent);
+	blur_solvent(100, 120);
+	solvent->printMap();
+	file.write_to_file("solvent.mtz", _data->maxResolution());
+	
+	AddTogether add(recip_model, solvent);
+	Diffraction *solvated_model = add();
+	solvated_model->printMap();
+
 	/* populate with solvent stuff */
+	/*
 	Babinet babinet(recip_model);
 	Diffraction *solvated_model = babinet();
-	delete recip_model;
+	*/
 	
 	/* recombine with data */
 	UpdateMap update(_data, solvated_model);
@@ -256,6 +294,7 @@ void Refinement::updateMap()
 	map->setupFromDiffraction();
 	swapMap(map);
 
+	delete recip_model;
 	delete solvated_model;
 }
 

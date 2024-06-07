@@ -12,6 +12,7 @@ uniform float far_slab;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out uint ValIndex;
+layout (location = 2) out vec4 BrightColor;
 
 void main()
 {
@@ -30,7 +31,9 @@ void main()
 	}
 	tex *= vColor;
 	ValIndex = uint(vExtra.x);
+
 	FragColor = tex;
+	BrightColor = vExtra.y * vec4(0.2, 0.2, 0.6, 1.);
 }
 
 

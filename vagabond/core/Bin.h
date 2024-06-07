@@ -32,8 +32,6 @@ public:
 	{
 		_objectPool.pushObject(r);
 
-		// an extra signal because we trapped this semaphore when submitting
-		// the corresponding job. IS THIS A BUG?
 		_objectPool.one_arrived();
 	}
 
@@ -73,6 +71,11 @@ public:
 		auto *submit = new Task<Object, void *>(send, "submit to bin");
 		return submit;
 
+	}
+	
+	void reset()
+	{
+		_objectPool.reset();
 	}
 	
 	Object *acquireObject()

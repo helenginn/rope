@@ -48,6 +48,9 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 	setName("Gui balls");
 
 	_size *= Window::ratio() / 2;
+#ifdef __EMSCRIPTEN__
+	setSelectable(true);
+#endif
 }
 
 GuiBalls::~GuiBalls()
@@ -241,4 +244,32 @@ void GuiBalls::setMulti(bool m)
 void GuiBalls::finishUpdate()
 {
 	_bonds->forceRender(true, true);
+}
+
+void GuiBalls::selected(int idx, bool inverse)
+{
+	if (_lastIdx == idx)
+	{
+		return;
+	}
+
+	if (_scene && _indexAtom.count(idx))
+	{
+		Atom *atom = _indexAtom[idx];
+		atom->setSelected(!inverse);
+		_vertices[idx].extra[1] = inverse ? 0 : 1;
+	}
+	forceRender(true, false);
+}
+
+void GuiBalls::deselect()
+{
+	for (auto it = _atomIndex.begin(); it != _atomIndex.end(); it++)
+	{
+		Atom *atom = it->first;
+		atom->setSelected(false);
+		_vertices[it->second].extra[1] = 0;
+	}
+
+	forceRender(true, false);
 }

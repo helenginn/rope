@@ -57,10 +57,14 @@ public:
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 	virtual void buttonPressed(std::string tag, Button *button);
+
+	virtual void interactedWithNothing(bool left, bool hover);
+protected:
+	void sendSelection(float t, float l, float b, float r, bool inverse);
 private:
 	void setupSave();
+	void setupEditor();
 	void setupFinish();
-	void setupSettings();
 	void saveAndRestart();
 
 	void calculate();
@@ -68,6 +72,8 @@ private:
 	void handleDone();
 	void pause();
 	void demolishSlider();
+
+	void prepareEmptySpaceMenu();
 
 	Route *_route = nullptr;
 	PlausibleRoute *_plausibleRoute = nullptr;
@@ -90,6 +96,7 @@ private:
 	float _newScore = NAN;
 	std::string _progressName;
 	int _numberMade = 0;
+	AtomGroup *_atoms = nullptr;
 };
 
 #endif

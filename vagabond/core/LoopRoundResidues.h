@@ -43,7 +43,6 @@ inline auto for_each_residue(const std::map<ResidueId,
 
 template <typename Job>
 auto do_on_each_block(const std::vector<AtomBlock> &blocks,
-                      const AtomFilter &filterIn,
                       const Job &job)
 {
 	for (const AtomBlock &block : blocks)
@@ -231,7 +230,7 @@ inline void obtainClashInfo(const std::vector<AtomBlock> &blocks,
 		n++;
 	};
 
-	do_on_each_block(blocks, {}, collect_targets);
+	do_on_each_block(blocks, collect_targets);
 }
 
 

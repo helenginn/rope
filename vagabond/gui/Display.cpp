@@ -169,62 +169,6 @@ void Display::buttonPressed(std::string tag, Button *button)
 			unit->atoms()->refinePositions(false, true);
 		}
 	}
-
-	/*
-	if (tag == "recalculate")
-	{
-		recalculateAtoms();
-//		densityButton();
-		mechanicsButton();
-		removeObject(button);
-
-		{
-			TextButton *replace = new TextButton("Refine model positions", 
-			                                    this);
-			replace->setReturnTag("refine_positions");
-			replace->resize(0.8);
-			replace->setCentre(0.5, 0.85);
-			addObject(replace);
-			removeObject(button);
-			delete button;
-			return;
-		}
-	}
-	else if (tag == "refine_positions")
-	{
-		_atoms->refinePositions(false, true);
-	}
-	else if (tag == "fft")
-	{
-		if (_reciprocal)
-		{
-			makeMapFromDiffraction();
-		}
-		else
-		{
-			_reciprocal = true;
-			resetDensityMap();
-			_guiRefls->setDisabled(false);
-		}
-	}
-	else if (tag == "full_wedge")
-	{
-		_halfWedge->setDisabled(false);
-		_wedge->setDisabled(true);
-		_guiRefls->setSlice(false);
-	}
-	else if (tag == "half_wedge")
-	{
-		_halfWedge->setDisabled(true);
-		_wedge->setDisabled(false);
-		_guiRefls->setSlice(true);
-	}
-	else if (tag == "mechanics")
-	{
-		_atoms->writeToFile("tmp.pdb");
-//		_atoms->mechanics();
-	}
-	*/
 }
 
 void Display::interactedWithNothing(bool left, bool hover)

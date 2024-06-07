@@ -16,35 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__function__typedefs
-#define __vagabond__function__typedefs
+#ifndef __vagabond__AddTogether__
+#define __vagabond__AddTogether__
 
-#include "Atom.h"
-#include <functional>
+class Diffraction;
 
-class Atom;
-
-typedef std::function<bool(Atom *const &atom)> AtomFilter;
-typedef std::function<int(const int &p)> PairFilter;
-
-namespace rope
+class AddTogether
 {
-	inline AtomFilter atom_is_not_hydrogen()
+public:
+	AddTogether(Diffraction *first, Diffraction *second)
 	{
-		return [](Atom *const &atom)
-		{
-			return atom && atom->elementSymbol() != "H";
-		};
+		_first = first;
+		_second = second;
 	}
 
-	inline AtomFilter atom_is_core_main_chain()
-	{
-		return [](Atom *const &atom)
-		{
-			return (atom && atom->elementSymbol() != "H" && 
-			        (atom->atomName() == "O" || atom->isCoreMainChain()));
-		};
-	}
+	Diffraction *operator()();
+private:
+	Diffraction *_first = nullptr;
+	Diffraction *_second = nullptr;
 
 };
 
