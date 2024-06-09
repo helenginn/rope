@@ -24,7 +24,7 @@
 
 #include "MakeNewPaths.h"
 #include "PathsDetail.h"
-#include <vagabond/core/RouteValidator.h>
+#include <vagabond/core/paths/RouteValidator.h>
 #include "RouteExplorer.h"
 #include "files/PdbFile.h"
 #include <vagabond/core/Path.h>

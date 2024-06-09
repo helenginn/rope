@@ -397,7 +397,6 @@ protected:
 	float _torsionEnergy = FLT_MAX;
 	bool _gotScores = false;
 
-	BondSequenceHandler *_mainChainSequences = nullptr;
 	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
 	
 	PairwiseDeviations *pairwiseForSequences(BondSequenceHandler *handler)
@@ -415,13 +414,13 @@ protected:
 	float _chosenFrac = 0.5;
 	int _repelCount = 0;
 	PairFilter _motionFilter{};
-private:
-	bool _calculating = false;
+	
+	std::vector<std::function<BondSequence *(BondSequence *)>> _postCalcTasks;
+	void prepareAlignment();
 	
 	NonCovalents *_noncovs = nullptr;
-	
-	void addToAtomPosMap(AtomPosMap &map, Result *r);
-	void calculateAtomDeviations(Score &score);
+private:
+	bool _calculating = false;
 	
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;

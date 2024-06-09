@@ -25,8 +25,8 @@
 #include <vagabond/core/PositionData.h>
 #include <vagabond/core/TorsionData.h>
 #include <vagabond/core/BFactorData.h>
-#include <vagabond/core/PlausibleRoute.h>
-#include <vagabond/core/NewPath.h>
+#include <vagabond/core/paths/PlausibleRoute.h>
+#include <vagabond/core/paths/NewPath.h>
 #include <vagabond/c4x/ClusterSVD.h>
 
 #include "AxisExplorer.h"

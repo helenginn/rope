@@ -19,7 +19,8 @@
 #include "PathManager.h"
 #include "ModelManager.h"
 #include "Environment.h"
-#include "NewPath.h"
+#include "paths/NewPath.h"
+#include <fstream>
 
 PathManager::PathManager()
 {
@@ -179,14 +180,21 @@ void PathManager::makePathBetween(const std::string &start,
 
 	NewPath np(first, second);
 	PlausibleRoute *route = np();
-	route->setThreads(8);
+
+	AtomGroup *grp = route->all_atoms();
+	grp->recalculate();
+	route->setAtoms(grp);
+
+	route->setThreads(6);
 	route->setMaximumMomentumDistance(6.f);
 	route->setMaximumClashDistance(8.f);
-	route->setMaximumFlipTrial(3);
+	route->setMaximumFlipTrial(0);
 	route->setup();
 	
 	for (int i = 0; i < cycles; i++)
 	{
+		time_t start = ::time(NULL);
+
 		route->prepareCalculate();
 		std::cout << "Beginning calculation..." << std::endl;
 		route->calculate(route);
@@ -195,5 +203,136 @@ void PathManager::makePathBetween(const std::string &start,
 		insertOrReplace(path, nullptr);
 		Environment::env().save();
 		route->clearCustomisation();
+
+		time_t end = ::time(NULL);
+		time_t duration = end - start;
+		int seconds = duration % 60;
+		int minutes = (duration - seconds + 1) / 60;
+		if (seconds > 0 || minutes > 0)
+		{
+			std::cout << "Cycle: " << minutes << "m " << seconds 
+			<< "s." << std::endl;
+		}
 	}
+	
+	delete grp;
+	delete route;
+}
+
+std::vector<Instance *> instances_for_ids(const std::vector<std::string> &insts)
+{
+	std::vector<Instance *> instances;
+	instances.reserve(insts.size());
+	for (const std::string &inst : insts)
+	{
+		Instance *instance = ModelManager::manager()->instance(inst);
+		
+		if (!instance)
+		{
+			std::cout << "Skipping instance: " << inst << std::endl;
+			continue;
+		}
+
+		instances.push_back(instance);
+	}
+
+	return instances;
+}
+
+template <typename Job>
+void do_on_each_pair_of_paths(const Job &job,
+                              const std::vector<std::string> &insts)
+{
+	std::vector<Instance *> instances = instances_for_ids(insts);
+	std::cout << "Number of instances: " << instances.size() << std::endl;
+
+	if (instances.size() == 0) { return; };
+	
+	for (Instance *const &first : instances)
+	{
+		for (Instance *const &second : instances)
+		{
+			job(first, second);
+		}
+	}
+};
+
+void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
+                                       int cycles)
+{
+	auto make_path = [this, cycles](Instance *first, Instance *second)
+	{
+		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
+		int total = cycles - pairPaths.size();
+		if (total <= 0) { return; };
+
+		makePathBetween(first->id(), second->id(), total);
+	};
+	
+	do_on_each_pair_of_paths(make_path, insts);
+}
+
+void PathManager::pathMatrix(const std::string &filename,
+                             const std::vector<std::string> &insts)
+{
+	std::ofstream file;
+	file.open(filename);
+
+	file << "left,right,vdw,torsion" << std::endl;
+	
+	struct Result
+	{
+		float vdw = 0;
+		float torsion = 0;
+	};
+
+	std::map<std::string, std::map<std::string, Result>> results;
+
+	auto report_paths = [this, &file, &results]
+	(Instance *first, Instance *second)
+	{
+		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
+		
+		if (pairPaths.size() == 0) { return; }
+		
+		float all_vdw = 0;
+		float all_torsion = 0;
+		float count = 0;
+
+		for (Path *const &path : pairPaths)
+		{
+			float vdw_energy = path->activationEnergy();
+			float torsion = path->torsionEnergy();
+			
+			all_vdw += vdw_energy;
+			all_torsion += torsion;
+			count++;
+		}
+		
+		all_vdw /= count;
+		all_torsion /= count;
+		
+		results[first->id()][second->id()].vdw = all_vdw;
+		results[first->id()][second->id()].torsion = all_torsion;
+	};
+
+	do_on_each_pair_of_paths(report_paths, insts);
+
+	for (auto it = results.begin(); it != results.end(); it++)
+	{
+		const std::string &first = it->first;
+		float ref_vdw = results[first][first].vdw;
+		float ref_torsion = results[first][first].torsion;
+
+		for (auto jt = it->second.begin(); jt != it->second.end(); jt++)
+		{
+			const std::string &second = jt->first;
+
+			file << first << "," << second << ",";
+			file << jt->second.vdw - ref_vdw << ",";
+			file << jt->second.torsion - ref_torsion << std::endl;
+		}
+	};
+	
+	file.close();
 }

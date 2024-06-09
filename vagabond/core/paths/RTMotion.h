@@ -55,8 +55,6 @@ struct Motion
 	
 	float fractionalWorkingAngle(const float &frac)
 	{
-		float x = (frac - 0.5) * M_PI;
-		float convert = sin(x) / 2 + 0.5;
 		return frac * workingAngle();
 	}
 	

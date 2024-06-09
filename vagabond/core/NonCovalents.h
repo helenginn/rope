@@ -23,6 +23,7 @@
 #include <set>
 #include <map>
 #include <string>
+#include <iostream>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/glm_import.h>
 
@@ -56,7 +57,7 @@ public:
 		prepare(seq);
 	}
 
-	Task<BondSequence *, BondSequence *> *align_task();
+	std::function<BondSequence *(BondSequence *)> align_task();
 private:
 	void prepare(BondSequence *const &seq);
 	void prepareMatrix();

@@ -29,7 +29,7 @@
 #include "EntityManager.h"
 #include "RouteExplorer.h"
 #include "Instance.h"
-#include "PlausibleRoute.h"
+#include "paths/PlausibleRoute.h"
 #include "PathManager.h"
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"

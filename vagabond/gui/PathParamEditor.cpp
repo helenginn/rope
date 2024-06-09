@@ -19,7 +19,7 @@
 #include "vagabond/gui/elements/TextEntry.h"
 #include "vagabond/gui/elements/TextButton.h"
 #include "PathParamEditor.h"
-#include <vagabond/core/Route.h>
+#include <vagabond/core/paths/Route.h>
 #include <vagabond/utils/FileReader.h>
 
 PathParamEditor::PathParamEditor(Scene *prev, Route *route) : ListView(prev)

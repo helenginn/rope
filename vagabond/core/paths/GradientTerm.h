@@ -22,7 +22,8 @@
 #include <vagabond/utils/Vec3s.h>
 #include <mutex>
 #include <list>
-#include <vagabond/core/RTMotion.h>
+#include "RTMotion.h"
+
 class BondSequence;
 class Parameter;
 class Separation;
@@ -44,9 +45,6 @@ struct GradientTerm
 	
 	void momentum(BondSequence *sequence, PairwiseDeviations *main,
 	              Separation *sep);
-
-	void clash(BondSequence *sequence, PairwiseDeviations *main,
-	           Separation *sep);
 
 	float frac = 0;
 	int b_idx = 0; // block index
@@ -92,56 +90,6 @@ struct GradientPath
 	std::vector<Floats> grads;
 	std::vector<int> motion_idxs;
 	int ticket = 0;
-};
-
-struct GradientPaths
-{
-	std::list<GradientPath *> paths;
-
-	void operator+=(GradientPath *const &path)
-	{
-		paths.push_front(path);
-		
-		if (paths.size() > 4)
-		{
-			paths.back()->destroy();
-			delete paths.back();
-			paths.pop_back();
-		}
-	}
-
-	std::vector<Floats> momentum_gradient(const RTMotion &motions)
-	{
-		if (paths.size() == 0) return {};
-		if (paths.front()->size() == 0) return {};
-
-		std::vector<Floats> values(motions.size());
-
-		float modifier = 1;
-		for (GradientPath *path : paths)
-		{
-			for (int j = 0; j < path->motion_idxs.size(); j++)
-			{
-				int p = path->motion_idxs[j]; // motion_idx
-				
-				if (p >= 0 && p < motions.size())
-				{
-					const Floats &sines = path->grads[j];
-					Floats bits;
-					for (int i = 0; i < sines.size(); i++)
-					{
-						float add = sines[i] * modifier;
-						bits.push_back(add);
-					}
-					values[p] = bits;
-				}
-			}
-			
-			modifier /= 2;
-		}
-
-		return values;
-	}
 };
 
 #endif

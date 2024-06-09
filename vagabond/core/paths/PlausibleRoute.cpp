@@ -18,7 +18,7 @@
 
 #include "ParamSet.h"
 #include "ResidueId.h"
-#include "PlausibleRoute.h"
+#include "paths/PlausibleRoute.h"
 #include "BondCalculator.h"
 #include "MultiSimplex.h"
 #include "GradientTerm.h"
@@ -89,15 +89,16 @@ void PlausibleRoute::setup()
 	Route::setup();
 	prepareDestination();
 	prepareTorsionFetcher(_resources.sequences);
+	prepareAlignment();
 	setTargets();
 
 	if (_isNew)	
 	{
 		bestGuessTorsions();
 	}
-//	rewindTorsions();
 	
 	prepareJobs();
+	postScore(routeScore(nudgeCount()));
 }
 
 bool PlausibleRoute::meaningfulUpdate(float new_score, float old_score,
@@ -167,7 +168,7 @@ void PlausibleRoute::prepareJobs()
 				}
 				if (!good)
 				{
-					if (amnesty < 64 && !doingClashes())
+					if (amnesty < 16 && !doingClashes())
 					{
 						continue;
 					}
@@ -189,10 +190,8 @@ void PlausibleRoute::prepareJobs()
 	auto do_next = [this]()
 	{
 		if (doingClashes()) { return sideChainGradients(); }
-		else { return applyGradients(_paths); };
+		else { return applyGradients(); };
 	};
-	
-	_paths = {};
 
 	only_once flip_mains(flip_main_chain);
 	only_once flip_sides(flip_side_chain);
@@ -213,7 +212,8 @@ void PlausibleRoute::setTargets(Instance *inst)
 	std::map<Atom *, glm::vec3> atomStart;
 	AtomGroup *grp = inst->currentAtoms();
 
-	submitJobAndRetrieve(0., true);
+	submitToShow(0.);
+	retrieve();
 
 	for (Atom *atom : grp->atomVector())
 	{
@@ -221,8 +221,10 @@ void PlausibleRoute::setTargets(Instance *inst)
 		atomStart[atom] = d;
 	}
 
-	submitJobAndRetrieve(1., true);
+	submitToShow(1.);
+	retrieve();
 
+	grp->writeToFile(inst->id() + "_rewrite.pdb");
 	for (Atom *atom : grp->atomVector())
 	{
 		glm::vec3 d = atom->derivedPosition();
@@ -241,10 +243,8 @@ void PlausibleRoute::setTargets()
 	}
 	
 	updateAtomFetch(_resources.sequences);
-	updateAtomFetch(_mainChainSequences);
 	updateAtomFetch(_hydrogenFreeSequences);
 	prepareEnergyTerms();
-	prepareTorsionFetcher(_mainChainSequences);
 	prepareTorsionFetcher(_hydrogenFreeSequences);
 }
 
@@ -319,7 +319,7 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 
 		bool operator<(const RankedResidue &other) const
 		{
-			return score > other.score; // want descending
+			return score > other.score && id != other.id; // want descending
 		}
 	};
 
@@ -526,7 +526,7 @@ void PlausibleRoute::repelMainChainAtomsFromWorstResidues()
 	}
 }
 
-bool PlausibleRoute::applyGradients(GradientPaths &paths)
+bool PlausibleRoute::applyGradients()
 {
 	auto side_chain = [this](int idx) -> bool
 	{
@@ -901,17 +901,7 @@ void PlausibleRoute::cycle()
 	{
 		for (PlausibleRoute::Task &task : _tasks)
 		{
-			time_t start = ::time(NULL);
 			task();
-			time_t end = ::time(NULL);
-			time_t duration = end - start;
-			int seconds = duration % 60;
-			int minutes = (duration - seconds + 1) / 60;
-			if (seconds > 0 || minutes > 0)
-			{
-				std::cout << "Cycle: " << minutes << "m " << seconds 
-				<< "s." << std::endl;
-			}
 			finishTicker();
 			
 			if (Route::_finish)

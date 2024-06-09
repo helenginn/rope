@@ -19,13 +19,13 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include "PathInterfaceSetupView.h"
 #include "TickList.h"
-#include "NewPath.h"
 #include "RouteExplorer.h"
-#include "PlausibleRoute.h"
+#include "paths/PlausibleRoute.h"
 #include <vagabond/core/Model.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Interface.h>
 #include <vagabond/core/NonCovalents.h>
+#include <vagabond/core/paths/NewPath.h>
 #include <string>
 
 PathInterfaceSetupView::PathInterfaceSetupView(Scene *prev, Model *from,

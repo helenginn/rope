@@ -41,7 +41,10 @@ void Dictator::makeCommands()
 	_commands["exit"] = "Exit RoPE";
 	_commands["add"] = "Load metadata CSV file with 'model' or 'filename' column";
 	_commands["hungry-hippo"] = "Begin hungry-hippo mode (e.g. for beamtime)";
+
+	_commands["path-matrix"] = "Matrix of thermodynamic scores for paths between list of instances. First argument: output filename; all following arguments: instance identifiers";
 	_commands["refine-path"] = "Refine between instances (first and second argument), for N cycles (third argument, default 1)";
+	_commands["auto-paths"] = "Refine all pairs within a group of instances. First argument: integer number of cycles; all following arguments: instance identifiers";
 	_commands["save"] = "Save to environment file.";
 
 	_commands["environment"] = ("Link to json file (usually rope.json) to "\
@@ -168,6 +171,23 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	if (first == "environment")
 	{
 		Environment::env().load(last);
+	}
+
+	if (first == "path-matrix")
+	{
+		std::vector<std::string> args = split(last, ',');
+		std::string filename = args[0];
+		args.erase(args.begin());
+		PathManager::manager()->pathMatrix(filename, args);
+	}
+
+	if (first == "auto-paths")
+	{
+		std::vector<std::string> args = split(last, ',');
+		int num = atoi(args[0].c_str());
+		args.erase(args.begin());
+
+		PathManager::manager()->makePathsWithinGroup(args, num);
 	}
 
 	if (first == "refine-path")
