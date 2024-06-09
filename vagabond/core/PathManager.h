@@ -33,6 +33,9 @@ public:
 	
 	void purgePath(Path *path);
 
+	void makePathsWithinGroup(const std::vector<std::string> &insts,
+	                          int cycles);
+
 	virtual const std::string progressName() const
 	{
 		return "paths";
@@ -45,6 +48,8 @@ public:
 
 	void housekeeping();
 
+	void pathMatrix(const std::string &filename,
+	                const std::vector<std::string> &insts);
 	void makePathBetween(const std::string &start, const std::string &end,
 	                     int cycles = 1);
 

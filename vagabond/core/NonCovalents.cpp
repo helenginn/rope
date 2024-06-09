@@ -123,14 +123,13 @@ void NonCovalents::findMiddleAtoms(BondSequence *const &seq, Bond &bond)
 	}
 
 	bond.frac = glm::length(middle - left) / glm::length(right - left);
-	std::cout << " frac: " << bond.frac << std::endl;
+//	std::cout << " frac: " << bond.frac << std::endl;
 	
 }
 
 void NonCovalents::assignInstancesToAtoms(BondSequence *const &seq)
 {
 	int i = 0;
-	std::cout << "instances: " << _instances.size() << std::endl;
 	for (AtomBlock &block : seq->blocks())
 	{
 		if (block.atom)
@@ -183,6 +182,7 @@ void NonCovalents::prepare(BondSequence *const &seq)
 void NonCovalents::prepareOne()
 {
 	int data_number = _bonds.size();
+
 	_leftMatrix = MatrixXf(3, data_number);
 	_rightMatrix = MatrixXf(3, data_number);
 
@@ -247,9 +247,9 @@ std::function<BondSequence *(BondSequence *)> NonCovalents::align()
 		l.transposeInPlace();
 		r.transposeInPlace();
 		
-		std::cout << "===================" << std::endl;
-		std::cout << "difference: " << std::endl << r - l << std::endl;
-		std::cout << std::endl;
+//		std::cout << "===================" << std::endl;
+//		std::cout << "difference: " << std::endl << r - l << std::endl;
+//		std::cout << std::endl;
 		
 		auto get_ave_trans = [](const Eigen::MatrixXf &mat) -> Eigen::Vector3f
 		{
@@ -265,16 +265,16 @@ std::function<BondSequence *(BondSequence *)> NonCovalents::align()
 
 		Eigen::Vector3f overall = get_ave_trans(l);
 		Eigen::Vector3f first_diff = get_ave_trans(r - l);
-		std::cout << "First diff: " << first_diff << std::endl;
+//		std::cout << "First diff: " << first_diff << std::endl;
 		for (int i = 0; i < l.rows(); i++)
 		{
 			l(i, {0, 1, 2}) -= overall.transpose();
 			r(i, {0, 1, 2}) -= (overall - first_diff).transpose();
 		}
-		std::cout << "-> new left: " << std::endl;
-		std::cout << l << std::endl;
-		std::cout << "-> new right: " << std::endl;
-		std::cout << r << std::endl;
+//		std::cout << "-> new left: " << std::endl;
+//		std::cout << l << std::endl;
+//		std::cout << "-> new right: " << std::endl;
+//		std::cout << r << std::endl;
 		
 		Eigen::MatrixXf sol = l.colPivHouseholderQr().solve(r);
 		
@@ -313,8 +313,8 @@ std::function<BondSequence *(BondSequence *)> NonCovalents::align()
 			}
 		}
 
-		std::cout << "Transform: " << std::endl;
-		std::cout << transform << std::endl;
+//		std::cout << "Transform: " << std::endl;
+//		std::cout << transform << std::endl;
 
 		for (Instance *inst : _instances)
 		{
@@ -337,9 +337,8 @@ std::function<BondSequence *(BondSequence *)> NonCovalents::align()
 	};
 }
 
-Task<BondSequence *, BondSequence *> *NonCovalents::align_task()
+std::function<BondSequence *(BondSequence *)> NonCovalents::align_task()
 {
 	auto alignment = align();
-	auto *task = new Task<BondSequence *, BondSequence *>(alignment, "alignment");
-	return task;
+	return alignment;
 }

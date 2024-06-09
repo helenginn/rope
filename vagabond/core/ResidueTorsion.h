@@ -46,8 +46,13 @@ public:
 	
 	const bool operator==(const ResidueTorsion &other) const
 	{
-		return (_master == other._master && _torsion == other._torsion
-		        && _entityName == other._entityName);
+		bool first = (_master == other._master && _torsion == other._torsion
+		              && _entityName == other._entityName);
+		
+		bool second = (!_instance || !other._instance 
+		               || _instance == other._instance);
+		
+		return first && second;
 	}
 	
 	Parameter *parameter();

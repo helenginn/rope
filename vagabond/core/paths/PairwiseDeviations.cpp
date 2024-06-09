@@ -20,7 +20,7 @@
 #include "engine/ElementTypes.h"
 #include "engine/Task.h"
 #include "BondSequence.h"
-#include "paths/BundleBonds.h"
+#include "BundleBonds.h"
 #include "LoopRoundResidues.h"
 #include "Separation.h"
 
@@ -185,6 +185,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 		auto check_momentum = [&frac, &lookup, &total, &count, dev]
 		(const std::vector<int> &pairs)
 		{
+			float worst = 0;
 			for (int i = 0; i < pairs.size(); i++)
 			{
 				TargetInfo &info = dev->info(i);
@@ -199,8 +200,14 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 				float actualdist = lookup.actual(p, q);
 
 				float dist = (targdist - actualdist);
+				dist *= dist;
+				
+				if (worst < dist)
+				{
+					worst = dist;
+				}
 
-				total += dist * dist;
+				total += dist;
 				count += 1;
 			}
 		};
@@ -230,15 +237,14 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues,
                                  bool include_negative)
 {
 	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
-	target_actual_distances targets(reference(), nullptr);
 
-	auto job = [loop, targets, include_negative, this]
+	auto job = [loop, include_negative, this]
 	(BundleBonds *bb) -> ActivationEnergy
 	{
 		auto lookup = bb->lookup();
 
 		long double total = 0;
-		auto check_clashes = [&lookup, &total, &include_negative, &bb, &targets, this]
+		auto check_clashes = [&lookup, &total, &include_negative, &bb, this]
 		(const std::vector<int> &pairs)
 		{
 			for (int i = 0; i < pairs.size(); i++)
@@ -251,7 +257,7 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues,
 					continue;
 				}
 				
-				long double ref_distance = targets.target(p, q, bb->frac());
+				long double ref_distance = info.target(bb->frac());
 				long double potential = lookup(p, q, -1);
 				long double reference = lookup(p, q, ref_distance);
 				

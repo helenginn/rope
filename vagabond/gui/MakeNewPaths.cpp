@@ -19,9 +19,9 @@
 #include "MakeNewPaths.h"
 #include "ChooseHeader.h"
 #include "RouteExplorer.h"
-#include <vagabond/core/PlausibleRoute.h>
+#include <vagabond/core/paths/PlausibleRoute.h>
 #include <vagabond/core/Entity.h>
-#include <vagabond/core/NewPath.h>
+#include <vagabond/core/paths/NewPath.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/BadChoice.h>

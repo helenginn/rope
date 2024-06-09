@@ -28,14 +28,14 @@
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/PathParamEditor.h>
 
-#include <vagabond/core/PlausibleRoute.h>
-#include <vagabond/core/RouteValidator.h>
+#include <vagabond/core/paths/PlausibleRoute.h>
+#include <vagabond/core/paths/RouteValidator.h>
 #include <vagabond/core/AlignmentTool.h>
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Polymer.h>
 #include <vagabond/core/Entity.h>
-#include <vagabond/core/Route.h>
+#include <vagabond/core/paths/Route.h>
 #include <vagabond/core/Path.h>
 
 int RouteExplorer::_threads = -1;

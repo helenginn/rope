@@ -36,14 +36,12 @@ TorsionData TorsionData::operator+(const TorsionData &other) const
 
 	size_t length = _length + other._length;
 	TorsionData combined(length);
-	std::cout << "Combined length: " << length << std::endl;
 
 	std::vector<ResidueTorsion> left_headers = headers();
 	std::vector<ResidueTorsion> right_headers = other.headers();
 	combined.addHeaders(left_headers);
 	combined.addHeaders(right_headers);
-	std::cout << left_headers.size() << " " << right_headers.size() << std::endl;
-	
+
 	for (int i = 0; i < vectorCount(); i++)
 	{
 		std::vector<Angular> angles; angles.reserve(length);
@@ -51,7 +49,6 @@ TorsionData TorsionData::operator+(const TorsionData &other) const
 		angles.insert(angles.end(), other.vector(i).begin(), 
 		              other.vector(i).end());
 		combined.addArray(i == 0 ? "from" : "to", angles);
-		std::cout << i << " added " << angles.size() << std::endl;
 	}
 
 	return combined;

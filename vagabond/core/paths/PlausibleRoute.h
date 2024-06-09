@@ -19,7 +19,7 @@
 #ifndef __vagabond__PlausibleRoute__
 #define __vagabond__PlausibleRoute__
 
-#include "Route.h"
+#include "paths/Route.h"
 #include "Progressor.h"
 #include "MultiSimplex.h"
 #include "SimplexEngine.h"
@@ -96,7 +96,7 @@ public:
 	{
 		if (doingClashes())
 		{
-			return 12;
+			return 6;
 		}
 
 		return 12;
@@ -148,7 +148,7 @@ private:
 	CalcOptions calcOptions(const CalcOptions &add_options,
 	                  const CalcOptions &subtract_options);
 
-	bool applyGradients(GradientPaths &paths);
+	bool applyGradients();
 	OpSet<ResidueId> worstSidechains(int num);
 	bool sideChainGradients();
 	void rewindTorsions();
@@ -157,8 +157,6 @@ private:
 	GradientPath *gradients(const ValidateParam &validate,
 	                        const CalcOptions &add_options = None,
 	                        const CalcOptions &subtract_options = None);
-	
-	GradientPaths _paths{};
 
 	virtual void cycle();
 

@@ -54,6 +54,7 @@ TorsionData *NewPath::dataAllPairs()
 		TorsionData *next = addPair(pair.start, pair.end);
 		std::cout << pair.start->id() << " to " << pair.end->id() << " gives "
 		<< next->headerCount() << " headers." << std::endl;
+
 		if (all == nullptr)
 		{
 			all = next;

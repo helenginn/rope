@@ -21,7 +21,7 @@
 
 #include "HasMetadata.h"
 #include "TorsionData.h"
-#include "PlausibleRoute.h"
+#include "paths/PlausibleRoute.h"
 #include "Polymer.h"
 
 class Model;
@@ -124,7 +124,6 @@ public:
 	{
 		return _activationEnergy;
 	}
-
 
 	float torsionEnergy() 
 	{

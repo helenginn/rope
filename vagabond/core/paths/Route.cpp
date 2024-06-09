@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <stdlib.h>
 
-#include "Route.h"
+#include "paths/Route.h"
 #include "Polymer.h"
 #include "Grapher.h"
 #include "ParamSet.h"
@@ -121,7 +121,7 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 {
 	if (handler == nullptr) handler = _hydrogenFreeSequences;
 	
-	int steps = (order + 1) * 4;
+	int steps = (order + 1) * 2;
 
 	_gradientBin.holdHorses();
 
@@ -138,10 +138,20 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	std::vector<AtomBlock> &blocks = handler->sequence()->blocks();
 	TorsionBasis *basis = handler->torsionBasis();
 
+	bool clash = (options & VdWClashes);
+	if (clash)
+	{
+		throw std::runtime_error("Not supporting gradients for clash right now");
+	}
+
 	for (size_t i = 0; i < blocks.size(); i++)
 	{
 		if (blocks[i].torsion_idx < 0) { continue; }
 		int tidx = blocks[i].torsion_idx;
+		if (blocks[i].atom->elementSymbol() == "H")
+		{
+			continue;
+		}
 
 		Parameter *p = basis->parameter(tidx);
 		int pidx = indexOfParameter(p);
@@ -190,18 +200,7 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 				return term;
 			};
 
-			auto clash_term = [sep, order, frac, g_idx, b_idx, p, pw]
-			(BondSequence *seq) -> GradientTerm
-			{
-				GradientTerm term(order, frac, g_idx, b_idx, p);
-				term.clash(seq, pw, sep);
-				return term;
-			};
-			
-			bool clash = (options & VdWClashes);
-			auto make_term = clash ? 
-			(new Task<BondSequence *, GradientTerm> (clash_term, 
-			                                         "clash gradient")) :
+			auto make_term = 
 			(new Task<BondSequence *, GradientTerm> (momentum_term, 
                                          "momentum gradient"));
 
@@ -228,9 +227,13 @@ struct TaskInfo
 	Task<BundleBonds *, BundleBonds *> *bundle_hook;
 };
 
-std::function<void(CalcTask *&)> extra_tasks(NonCovalents *covs)
+void Route::prepareAlignment()
 {
-	return {};
+	if (_noncovs)
+	{
+		auto alignment = _noncovs->align_task();
+		_postCalcTasks.push_back(alignment);
+	}
 }
 
 void Route::submitValue(const CalcOptions &options, int steps,
@@ -275,11 +278,11 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		 * atom positions */
 		sequences->calculate(calc, {frac}, &first_hook, &final_hook);
 
-		if (_noncovs)
+		for (auto &task : _postCalcTasks)
 		{
-			CalcTask *alignment = _noncovs->align_task();
-			final_hook->follow_with(alignment);
-			final_hook = alignment;
+			CalcTask *job = new CalcTask(task, "post-calc task");
+			final_hook->follow_with(job);
+			final_hook = job;
 		}
 
 		Task<Result, void *> *sr = pairwise ? nullptr : submit_result;
@@ -500,12 +503,11 @@ void Route::submitToShow(float frac)
 	 * atom positions */
 	sequences->calculate(calc, {frac}, &first_hook, &final_hook);
 	
-	if (_noncovs)
+	for (auto &task : _postCalcTasks)
 	{
-		CalcTask *alignment = _noncovs->align_task();
-		final_hook->follow_with(alignment);
-		alignment->must_complete_before(submit_result);
-		final_hook = alignment;
+		CalcTask *job = new CalcTask(task, "post-calc task");
+		final_hook->follow_with(job);
+		final_hook = job;
 	}
 
 	Task<BondSequence *, void *> *let = 
@@ -662,7 +664,6 @@ void Route::prepareParameters()
 		// index may be in existing motions, or in the source torsions
 		int mot_idx = _motions.indexOfHeader(rt);
 		int src_idx = _source.indexOfHeader(rt);
-		int twst_idx = _twists.indexOfHeader(rt);
 		
 		Motion mt = {WayPoints(_order), false, 0};
 
@@ -670,12 +671,6 @@ void Route::prepareParameters()
 		{
 			Motion &target = _motions.storage(mot_idx);
 			mt = target;
-			if (mt.twist.twist && twst_idx >= 0)
-			{
-				_twists.storage(twst_idx).twist = mt.twist.twist->twist;
-				_twists.storage(twst_idx).twist = mt.twist.twist->twist;
-
-			}
 		}
 
 		// if we have a more up-to-date torsion angle then we should use that,
@@ -698,7 +693,7 @@ void Route::prepareParameters()
 		{
 			mt.angle = 0; // usually due to mismatched sequence
 		}
-
+		
 		return mt;
 	};
 
@@ -760,7 +755,6 @@ void Route::prepareResources()
 	_resources.allocateMinimum(_threads);
 
 	/* prepare separate sequences for main-chain only */
-	_mainChainSequences = new BondSequenceHandler(_threads);
 	_hydrogenFreeSequences = new BondSequenceHandler(_threads);
 
 	for (const InstancePair &pair : _pairs)
@@ -771,14 +765,9 @@ void Route::prepareResources()
 		{
 			Atom *anchor = subset->chosenAnchor();
 			_resources.sequences->addAnchorExtension(anchor);
-			_mainChainSequences->addAnchorExtension(anchor);
 			_hydrogenFreeSequences->addAnchorExtension(anchor);
 		}
 	}
-	_mainChainSequences->setIgnoreHydrogens(true);
-	_mainChainSequences->setAtomFilter(rope::atom_is_core_main_chain());
-	_mainChainSequences->setup();
-	_mainChainSequences->prepareSequences();
 
 	_hydrogenFreeSequences->setIgnoreHydrogens(true);
 	_hydrogenFreeSequences->setAtomFilter(rope::atom_is_not_hydrogen());
@@ -789,7 +778,6 @@ void Route::prepareResources()
 	_resources.sequences->prepareSequences();
 
 	updateAtomFetch(_resources.sequences);
-	updateAtomFetch(_mainChainSequences);
 	updateAtomFetch(_hydrogenFreeSequences);
 	
 	if (_noncovs)
@@ -825,22 +813,23 @@ void Route::prepareEnergyTerms()
 	deleteHelpers();
 
 	{
-		BondSequence *seq = _mainChainSequences->sequence();
-//		setup_helpers(_helpers[_mainChainSequences], seq, _maxMomentumDistance);
-	}
-
-	{
 		BondSequence *seq = _hydrogenFreeSequences->sequence();
 		setup_helpers(_helpers[_hydrogenFreeSequences], 
 		              seq, _maxMomentumDistance);
 	}
 
 	{
-//		BondSequence *seq = _resources.sequences->sequence();
-//		setup_helpers(_helpers[_resources.sequences], seq, _maxClashDistance);
-		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
-		                                 _maxClashDistance);
-		_helpers[_resources.sequences].pw = pw;
+		if (_noncovs)
+		{
+			BondSequence *seq = _resources.sequences->sequence();
+			setup_helpers(_helpers[_resources.sequences], seq, _maxClashDistance);
+		}
+		else
+		{
+			auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
+			                                 _maxClashDistance);
+			_helpers[_resources.sequences].pw = pw;
+		}
 	}
 
 	{

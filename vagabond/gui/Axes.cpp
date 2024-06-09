@@ -28,7 +28,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include "VagWindow.h"
 #include "ConfSpaceView.h"
-#include "PlausibleRoute.h"
+#include "paths/PlausibleRoute.h"
 #include "RouteExplorer.h"
 #include "Axes.h"
 
