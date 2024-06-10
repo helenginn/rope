@@ -185,7 +185,6 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 		auto check_momentum = [&frac, &lookup, &total, &count, dev]
 		(const std::vector<int> &pairs)
 		{
-			float worst = 0;
 			for (int i = 0; i < pairs.size(); i++)
 			{
 				TargetInfo &info = dev->info(i);
@@ -200,14 +199,8 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 				float actualdist = lookup.actual(p, q);
 
 				float dist = (targdist - actualdist);
-				dist *= dist;
 				
-				if (worst < dist)
-				{
-					worst = dist;
-				}
-
-				total += dist;
+				total += dist * dist;
 				count += 1;
 			}
 		};
