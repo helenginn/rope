@@ -196,6 +196,8 @@ cfile,
 'paths/RouteValidator.cpp',
 'paths/Scores.cpp',
 'paths/Scores.h',
+'paths/Selection.cpp',
+'paths/Selection.h',
 
 'MultiEngine.cpp',
 'MultiSimplex.h',

@@ -435,7 +435,7 @@ void RouteExplorer::prepareEmptySpaceMenu()
 	{
 		return [allow, this]()
 		{
-			_route->clearFilters(allow);
+			_route->selection().clearFilters(allow);
 		};
 	};
 	
@@ -456,7 +456,7 @@ void RouteExplorer::prepareEmptySpaceMenu()
 	{
 		return [selected, this, allow]()
 		{
-			_route->addFilter(selected, allow);
+			_route->selection().addFilter(selected, allow);
 		};
 	};
 
