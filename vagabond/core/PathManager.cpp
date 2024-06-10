@@ -201,7 +201,6 @@ void PathManager::makePathBetween(const std::string &start,
 		std::cout << "Done." << std::endl;
 		Path path(route);
 		insertOrReplace(path, nullptr);
-		Environment::env().save();
 		route->clearCustomisation();
 
 		time_t end = ::time(NULL);
@@ -254,6 +253,8 @@ void do_on_each_pair_of_paths(const Job &job,
 		{
 			job(first, second);
 		}
+
+		Environment::env().save();
 	}
 };
 
