@@ -23,11 +23,11 @@
 #include "StructureModification.h"
 #include "engine/CoordManager.h"
 #include "function_typedefs.h"
+#include "BestGuessTorsions.h"
 #include "NonCovalents.h"
 #include "Selection.h"
 #include "Responder.h"
 #include "RTMotion.h"
-#include "RTPeptideTwist.h"
 #include "paths/Scores.h"
 #include "Bin.h"
 
@@ -65,6 +65,7 @@ public:
 
 	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
 	friend Selection;
+	friend BestGuessTorsions;
 
 	/*
 	void submitJob(float frac, bool show = true, 
@@ -166,16 +167,6 @@ public:
 		_motions.storage(idx).wp = wps;
 	}
 	
-	PeptideTwist &twist(int i)
-	{
-		return _twists.storage(i);
-	}
-	
-	size_t twistCount() const
-	{
-		return _twists.size();
-	}
-	
 	Motion &motion(int i)
 	{
 		return _motions.storage(i);
@@ -204,8 +195,11 @@ public:
 	void setFlips(std::vector<int> &idxs, std::vector<int> &fs);
 	
 	int indexOfParameter(Parameter *t);
-
-	void bestGuessTorsions();
+	
+	BestGuessTorsions &bestGuessTorsions()
+	{
+		return _bestGuessTorsions;
+	}
 	
 	const RTMotion &motions() const
 	{
@@ -217,15 +211,6 @@ public:
 		_motions = motions;
 	}
 
-	void prepareTwists();
-	
-	const RTPeptideTwist &twists() const
-	{
-		return _twists;
-	}
-	
-	void setTwists(const RTPeptideTwist &twists);
-	
 	size_t instanceCount()
 	{
 		return _pairs.size();
@@ -361,8 +346,6 @@ protected:
 	{
 		return _motions.storage(i).flip;
 	}
-
-	void bestGuessTorsion(int i);
 	
 	std::atomic<bool> _finish{false};
 
@@ -387,7 +370,6 @@ protected:
 	void updateAtomFetch(BondSequenceHandler *const &handler);
 	void prepareEnergyTerms();
 	RTMotion _motions;
-	RTPeptideTwist _twists;
 	int _jobLevel = 0;
 	std::vector<int> _activeParams;
 	
@@ -427,6 +409,8 @@ protected:
 
 	Selection _selection{this};
 	PairFilter _motionFilter{};
+	
+	BestGuessTorsions _bestGuessTorsions{this};
 	
 	std::vector<std::function<BondSequence *(BondSequence *)>> _postCalcTasks;
 	void prepareAlignment();

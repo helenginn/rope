@@ -21,7 +21,6 @@
 
 #include <vagabond/c4x/DataFloat.h>
 #include "RTVector.h"
-#include "RTPeptideTwist.h"
 #include "WayPoint.h"
 #include "Atom.h"
 
@@ -31,19 +30,6 @@ struct Motion
 	bool flip = false;
 	float angle = 0;
 	int locked = 0;
-	
-	struct Twist
-	{
-		PeptideTwist *twist = nullptr;
-		bool positive = true;
-		
-		float contribution(float frac) const
-		{
-			return (positive ? 1 : -1) * twist->interpolatedTwist(frac);
-		}
-	};
-	
-	Twist twist;
 	
 	float workingAngle() const
 	{
@@ -60,9 +46,7 @@ struct Motion
 	
 	void writeToData(DataFloat *&ptr)
 	{
-		float extra = twist.twist ? twist.twist->twist : 0.f;
-;
-		ptr[0] = (wp._amps[0] + extra * 4) * (flip ? 1 : -1);
+		ptr[0] = (wp._amps[0]) * (flip ? 1 : -1);
 		ptr[1] = (wp._amps[1]) * (flip ? 1 : -1);
 		ptr += 2;
 	}
@@ -100,31 +84,6 @@ public:
 		return res;
 	}
 	
-	void incorporate(RTPeptideTwist &twist)
-	{
-		for (size_t j = 0; j < twist.size(); j++)
-		{
-			ResidueTorsion &rt = twist.rt(j);
-			Parameter *p = rt.parameter();
-			Atom *a = p->atom(1); // should be N or C of peptide
-			Atom *b = p->atom(2); // should be N or C of peptide
-
-			for (size_t i = 0; i < size(); i++)
-			{
-				ResidueTorsion &rt = this->rt(i);
-				Parameter *q = rt.parameter();
-				
-				if (q && q->hasAtom(a) && q->hasAtom(b) && 
-				    !q->isPeptideBond() && q->coversMainChain())
-				{
-					bool direction = q->atom(0)->elementSymbol() == "N";
-					PeptideTwist &value = twist.storage(j);
-					this->storage(i).twist = {&value, direction};
-				}
-			}
-		}
-	}
-
 	void flips_from(const std::vector<bool> &flips)
 	{
 		assert(flips.size() == _pairs.size());

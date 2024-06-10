@@ -96,11 +96,8 @@ PlausibleRoute *NewPath::operator()()
 	if (_blueprint)
 	{
 		RTMotion motions = _blueprint->motions();
-		RTPeptideTwist twists = _blueprint->twists();
 		motions.attachInstance(_from);
-		twists.attachInstance(_from);
 		pr->setMotions(motions);
-		pr->setTwists(twists);
 		pr->setNew(false);
 	}
 	

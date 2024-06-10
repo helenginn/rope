@@ -99,7 +99,7 @@ public:
 			return 6;
 		}
 
-		return 12;
+		return 6;
 	}
 
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);

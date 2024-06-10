@@ -178,6 +178,8 @@ cfile,
 'engine/workers/ThreadWorksOnModel.h',
 'engine/workers/ThreadWorker.h',
 
+'paths/BestGuessTorsions.cpp',
+'paths/BestGuessTorsions.h',
 'paths/BundleBonds.cpp',
 'paths/BundleBonds.h',
 'paths/EnergyTorsions.cpp',
