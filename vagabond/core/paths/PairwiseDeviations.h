@@ -149,8 +149,7 @@ public:
 	momentum_task(float frac, const std::set<ResidueId> &forResidues);
 
 	Task<BundleBonds *, ActivationEnergy> *
-	bundle_clash(const std::set<ResidueId> &forResidues,
-	             bool include_negative = true);
+	bundle_clash(const std::set<ResidueId> &forResidues);
 
 	bool filter_in(int p) const
 	{
