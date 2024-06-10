@@ -224,7 +224,6 @@ void PlausibleRoute::setTargets(Instance *inst)
 	submitToShow(1.);
 	retrieve();
 
-	grp->writeToFile(inst->id() + "_rewrite.pdb");
 	for (Atom *atom : grp->atomVector())
 	{
 		glm::vec3 d = atom->derivedPosition();
