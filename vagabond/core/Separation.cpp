@@ -110,6 +110,10 @@ void Separation::prepareSegment(const std::vector<Atom *> &atoms)
 				{
 					continue;
 				}
+				if (a->atomName() == "SG" && b->atomName() == "SG")
+				{
+					continue;
+				}
 
 				int b_idx = _atoms.index_of(b);
 				if (b_idx < 0)
