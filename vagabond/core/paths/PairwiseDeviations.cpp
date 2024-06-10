@@ -178,7 +178,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 		do_on_each_block(blocks, collect_targets);
 
 		float total = 0;
-		float count = 0;
+		int count = 0;
 		
 		target_actual_distances lookup(dev->reference(), scratch);
 
@@ -201,13 +201,13 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 				float dist = (targdist - actualdist);
 				
 				total += dist * dist;
-				count += 1;
+				count++;
 			}
 		};
 
 		loop(check_momentum);
 		
-		total /= count;
+		total /= (float)count;
 		total = sqrt(total);
 
 		delete [] scratch;
@@ -226,43 +226,43 @@ PairwiseDeviations::momentum_task(float frac,
 }
 
 Task<BundleBonds *, ActivationEnergy> *
-PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues,
-                                 bool include_negative)
+PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 {
 	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
 
-	auto job = [loop, include_negative, this]
+	auto job = [loop, this]
 	(BundleBonds *bb) -> ActivationEnergy
 	{
 		auto lookup = bb->lookup();
 
 		long double total = 0;
-		auto check_clashes = [&lookup, &total, &include_negative, &bb, this]
+		float frac = bb->frac();
+		auto check_clashes = [&lookup, &total, &frac, this]
 		(const std::vector<int> &pairs)
 		{
 			for (int i = 0; i < pairs.size(); i++)
 			{
 				TargetInfo &info = _infoPairs[pairs[i]];
-				int p = info.p;
-				int q = info.q;
+				const int &p = info.p;
+				const int &q = info.q;
 				if (!filter_in(p) || !filter_in(q))
 				{
 					continue;
 				}
 				
-				long double ref_distance = info.target(bb->frac());
 				long double potential = lookup(p, q, -1);
-				long double reference = lookup(p, q, ref_distance);
 				
 				if (potential != potential)
 				{
 					continue;
 				}
 
+				long double ref_distance = info.target(frac);
+				long double reference = lookup(p, q, ref_distance);
+
 				long double diff = potential - reference;
 				
-				if (diff > 0 && (include_negative ||
-				                 (!include_negative && potential > 0)))
+				if (diff > 0)
 				{
 					total += diff;
 				}
@@ -271,7 +271,7 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues,
 		
 		loop(check_clashes);
 		
-		return {(float)total, bb->frac()};
+		return {(float)total, frac};
 	};
 	
 	return new Task<BundleBonds *, ActivationEnergy>(job, "bundled clashes");

@@ -818,18 +818,16 @@ void Route::prepareEnergyTerms()
 		              seq, _maxMomentumDistance);
 	}
 
+	if (_noncovs)
 	{
-		if (_noncovs)
-		{
-			BondSequence *seq = _resources.sequences->sequence();
-			setup_helpers(_helpers[_resources.sequences], seq, _maxClashDistance);
-		}
-		else
-		{
-			auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
-			                                 _maxClashDistance);
-			_helpers[_resources.sequences].pw = pw;
-		}
+		BondSequence *seq = _resources.sequences->sequence();
+		setup_helpers(_helpers[_resources.sequences], seq, _maxClashDistance);
+	}
+	else
+	{
+		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
+		                                 _maxClashDistance);
+		_helpers[_resources.sequences].pw = pw;
 	}
 
 	{

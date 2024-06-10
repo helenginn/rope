@@ -74,22 +74,6 @@ struct target_actual_distances
 	target_actual_distances(const glm::vec3 *ref_, const glm::vec3 *local_)
 	: ref(ref_), local(local_) {};
 	
-	float target(int p, int q, float frac) const
-	{
-		const glm::vec3 &astart = ref[2 * p];
-		const glm::vec3 &aend = astart + ref[2 * p + 1];
-		const glm::vec3 &bstart = ref[2 * q];
-		const glm::vec3 &bend = bstart + ref[2 * q + 1];
-
-		glm::vec3 targstart = astart - bstart;
-		glm::vec3 targend = aend - bend;
-		float startdiff = glm::length(targstart);
-		float enddiff = glm::length(targend);
-		float targdist = startdiff + frac * (enddiff - startdiff);
-
-		return targdist;
-	};
-	
 	const glm::vec3 &pos(int p) const
 	{
 		return local[p];
@@ -99,8 +83,7 @@ struct target_actual_distances
 	{
 		const glm::vec3 &apos = local[p];
 		const glm::vec3 &bpos = local[q];
-		glm::vec3 posdiff = apos - bpos;
-		float posdist = glm::length(posdiff);
+		float posdist = glm::length(apos - bpos);
 		return posdist;
 	};
 
