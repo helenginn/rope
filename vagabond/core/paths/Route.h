@@ -24,6 +24,7 @@
 #include "engine/CoordManager.h"
 #include "function_typedefs.h"
 #include "NonCovalents.h"
+#include "Selection.h"
 #include "Responder.h"
 #include "RTMotion.h"
 #include "RTPeptideTwist.h"
@@ -31,6 +32,7 @@
 #include "Bin.h"
 
 class Grapher;
+class Selection;
 class Separation;
 struct AtomGraph;
 struct GradientPath;
@@ -62,6 +64,7 @@ public:
 	};
 
 	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
+	friend Selection;
 
 	/*
 	void submitJob(float frac, bool show = true, 
@@ -214,9 +217,6 @@ public:
 		_motions = motions;
 	}
 
-	void clearFilters(bool allow);
-	void addFilter(const std::set<Atom *> &list, bool allow);
-
 	void prepareTwists();
 	
 	const RTPeptideTwist &twists() const
@@ -314,6 +314,12 @@ public:
 	{
 		_maxMomentumDistance = distance;
 	}
+	
+	Selection &selection()
+	{
+		return _selection;
+	}
+	
 	void setGui(bool gui)
 	{
 		_gui = gui;
@@ -418,6 +424,8 @@ protected:
 	
 	float _chosenFrac = 0.5;
 	int _repelCount = 0;
+
+	Selection _selection{this};
 	PairFilter _motionFilter{};
 	
 	std::vector<std::function<BondSequence *(BondSequence *)>> _postCalcTasks;
