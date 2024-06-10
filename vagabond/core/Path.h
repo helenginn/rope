@@ -58,11 +58,6 @@ public:
 	PlausibleRoute *toRoute();
 	void housekeeping();
 	
-	const RTPeptideTwist &twists() const
-	{
-		return _twists;
-	}
-	
 	const RTMotion &motions() const
 	{
 		return _motions;
@@ -154,7 +149,6 @@ private:
 	Model *_model = nullptr;
 	Instance *_end = nullptr;
 	RTMotion _motions;
-	RTPeptideTwist _twists;
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
@@ -181,7 +175,6 @@ inline void to_json(json &j, const Path &value)
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
 	j["motions"] = value._motions;
-	j["twists"] = value._twists;
 
 	j["hash"] = value._hash;
 	j["clash_score"] = value._clash;
@@ -204,11 +197,6 @@ inline void from_json(const json &j, Path &value)
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
 	value._motions = j.at("motions");
-	
-	if (j.count("twists"))
-	{
-		value._twists = j.at("twists");
-	}
 	
 	if (j.count("hash"))
 	{

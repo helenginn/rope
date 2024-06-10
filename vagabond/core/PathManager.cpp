@@ -247,14 +247,20 @@ void do_on_each_pair_of_paths(const Job &job,
 
 	if (instances.size() == 0) { return; };
 	
+	int jobs = 0;
 	for (Instance *const &first : instances)
 	{
 		for (Instance *const &second : instances)
 		{
-			job(first, second);
-		}
+			bool success = job(first, second);
+			jobs += success ? 1 : 0;
 
-		Environment::env().save();
+			if (jobs % 5 == 4)
+			{
+				Environment::env().save();
+				jobs = 0;
+			}
+		}
 	}
 };
 
@@ -265,9 +271,10 @@ void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
 	{
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 		int total = cycles - pairPaths.size();
-		if (total <= 0) { return; };
+		if (total <= 0) { return false; };
 
 		makePathBetween(first->id(), second->id(), total);
+		return true;
 	};
 	
 	do_on_each_pair_of_paths(make_path, insts);
@@ -294,7 +301,7 @@ void PathManager::pathMatrix(const std::string &filename,
 	{
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 		
-		if (pairPaths.size() == 0) { return; }
+		if (pairPaths.size() == 0) { return false; }
 		
 		float all_vdw = 0;
 		float all_torsion = 0;
@@ -315,6 +322,7 @@ void PathManager::pathMatrix(const std::string &filename,
 		
 		results[first->id()][second->id()].vdw = all_vdw;
 		results[first->id()][second->id()].torsion = all_torsion;
+		return false;
 	};
 
 	do_on_each_pair_of_paths(report_paths, insts);

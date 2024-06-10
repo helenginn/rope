@@ -540,73 +540,6 @@ void Route::setFlips(std::vector<int> &idxs, std::vector<int> &fs)
 	}
 }
 
-float best_guess_torsion(Parameter *param)
-{
-	if (!param->isTorsion())
-	{
-		return 0;
-	}
-
-	glm::vec3 before[4]{};
-	glm::vec3 after[4]{};
-
-	for (size_t i = 0; i < param->atomCount(); i++)
-	{
-		before[i] = param->atom(i)->otherPosition("target");
-		after[i] = param->atom(i)->otherPosition("moving");
-	}
-
-	float first = 0;
-	float last = 0;
-	for (float f = 0; f <= 1.01; f += 0.1)
-	{
-		glm::vec3 frac[4]{};
-		for (int i = 0; i < 4; i++)
-		{
-			frac[i] = before[i] + after[i] * f;
-		}
-		
-		float torsion = measure_bond_torsion(frac);
-		if (f <= 0)
-		{
-			first = torsion;
-			last = torsion;
-		}
-		else
-		{
-			while (torsion < last - 180.f) torsion += 360.f;
-			while (torsion >= last + 180.f) torsion -= 360.f;
-		}
-		
-
-		last = torsion;
-	}
-
-	return last - first;
-}
-
-void Route::bestGuessTorsion(int idx)
-{
-	if (!parameter(idx)->isTorsion())
-	{
-		return;
-	}
-
-	float best_guess = best_guess_torsion(parameter(idx));
-	destination(idx) = best_guess;
-}
-
-void Route::bestGuessTorsions()
-{
-	for (size_t i = 0; i < motionCount(); i++)
-	{
-		if (fabs(destination(i)) > 30)
-		{
-			bestGuessTorsion(i);
-		}
-	}
-}
-
 void Route::getParametersFromBasis(const MakeMotion &make_mot)
 {
 	ParamSet missing;
@@ -698,19 +631,6 @@ void Route::prepareParameters()
 	};
 
 	getParametersFromBasis(make_motion);
-}
-
-void Route::setTwists(const RTPeptideTwist &twists)
-{
-	_twists = twists;
-	_motions.incorporate(_twists);
-}
-	
-void Route::prepareTwists()
-{
-	_twists = RTPeptideTwist::empty_twists(_motions.headers_only());
-	_motions.incorporate(_twists);
-	
 }
 
 void Route::prepareDestination()
@@ -858,11 +778,6 @@ void Route::clearCustomisation()
 	for (size_t i = 0; i < motionCount(); i++)
 	{
 		motion(i).wp = WayPoints(_order);
-	}
-
-	for (size_t i = 0; i < twistCount(); i++)
-	{
-		twist(i).twist = {};
 	}
 
 	{

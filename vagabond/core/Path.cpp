@@ -35,7 +35,6 @@ Path::Path(PlausibleRoute *pr)
 	_end = pr->endInstance();
 
 	_motions = pr->motions();
-	_twists = pr->twists();
 	
 	_route = nullptr;
 }
@@ -122,7 +121,6 @@ PlausibleRoute *Path::toRoute()
 	
 	_model->currentAtoms();
 	_motions.attachInstance(_instance);
-	_twists.attachInstance(_instance);
 
 	PlausibleRoute *pr = new PlausibleRoute(_instance, _end);
 	pr->setNew(false);
@@ -134,15 +132,6 @@ PlausibleRoute *Path::toRoute()
 	pr->setActivationEnergy(_activationEnergy);
 	pr->setHash(_hash);
 	
-	if (_twists.size() == 0)
-	{
-		pr->prepareTwists();
-	}
-	else
-	{
-		pr->setTwists(_twists);
-	}
-
 	_route = pr;
 	
 	return pr;

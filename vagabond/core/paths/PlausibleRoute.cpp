@@ -94,7 +94,7 @@ void PlausibleRoute::setup()
 
 	if (_isNew)	
 	{
-		bestGuessTorsions();
+		bestGuessTorsions()();
 	}
 	
 	prepareJobs();
