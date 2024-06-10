@@ -94,8 +94,9 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 			int lr = sep->separationBetween(p, q);
 			if (lr < 0) { continue; }
 			int lc = sep->separationBetween(p, b_idx);
-			if (lc > lr) { continue; }
+			if (lc < 0 || lc > lr) { continue; }
 			int cr = sep->separationBetween(b_idx, q);
+			if (cr < 0) { continue; }
 
 			// atom is not in between the pair
 			bool reject = (lc + cr - lr > 0);
@@ -104,7 +105,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 			int lp = sep->separationBetween(pre, p);
 			float dir = (lp > lc ? +1 : -1);
 
-			float targdist = lookup.target(p, q, frac);
+			float targdist = info.target(frac);
 			float actualdist = lookup.actual(p, q);
 			float diff = (actualdist - targdist);
 			
