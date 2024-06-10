@@ -314,6 +314,10 @@ public:
 	{
 		_maxMomentumDistance = distance;
 	}
+	void setGui(bool gui)
+	{
+		_gui = gui;
+	}
 
 	void setHash(const std::string &hash = "");
 	const std::string &hash() const
@@ -407,6 +411,7 @@ protected:
 	void unlockAll();
 	int _maxFlipTrial = 0;
 	int _order = 2;
+	bool _gui = false;
 
 	Bin<ByResidueResult> _perResBin;
 	Bin<GradientPath> _gradientBin;

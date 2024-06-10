@@ -681,8 +681,11 @@ float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
 	float lowest = _point2Score[1].lowest_energy;
 	_activationEnergy = highest - lowest;
 
-	submitToShow(_chosenFrac);
-	retrieve();
+	if (_gui)
+	{
+		submitToShow(_chosenFrac);
+		retrieve();
+	}
 	
 	clearTickets();
 	return sc;
@@ -986,8 +989,11 @@ std::map<ResidueId, float> PlausibleRoute::
 	assignParameterValues(all);
 	
 	int num = nudgeCount();
-	submitToShow(_chosenFrac);
-	retrieve();
+	if (_gui)
+	{
+		submitToShow(_chosenFrac);
+		retrieve();
+	}
 
 	ByResidueResult *rr = byResidueScore(num);
 	std::map<ResidueId, float> scores = rr->scores;

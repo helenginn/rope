@@ -46,6 +46,7 @@ RouteExplorer::RouteExplorer(Scene *prev, PlausibleRoute *route) : Scene(prev)
 	_plausibleRoute = route;
 	_route = route;
 	_route->setResponder(this);
+	_route->setGui(true);
 	setPingPong(true);
 }
 
