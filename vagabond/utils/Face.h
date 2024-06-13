@@ -433,7 +433,7 @@ public:
 	typedef SharedFace<N - 1, D, Type> LowerFace;
 	typedef SharedFace<N, D, Type> SameFace;
 	
-	virtual ~SharedFace<N, D, Type>() {}
+	virtual ~SharedFace() {}
 	
 	virtual int n()
 	{
@@ -919,7 +919,7 @@ public:
 
 	}
 
-	virtual ~SharedFace<0, D, Type>() {}
+	virtual ~SharedFace() {}
 
 	virtual Type exact_value() const
 	{
