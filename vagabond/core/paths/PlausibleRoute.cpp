@@ -194,10 +194,10 @@ void PlausibleRoute::prepareJobs()
 	};
 
 	only_once flip_mains(flip_main_chain);
-	only_once flip_sides(flip_side_chain);
+//	only_once flip_sides(flip_side_chain);
 	_tasks.push_back(flip_mains);
 	_tasks.push_back(check_gradients(do_next));
-	_tasks.push_back(flip_sides);
+//	_tasks.push_back(flip_sides);
 
 	return;
 	_tasks.push_back([this]()
@@ -416,7 +416,7 @@ bool PlausibleRoute::sideChainGradients()
 
 	{
 		MultiSimplex<ResidueId> ms(this, parameterCount());
-		ms.setMaxRuns(20);
+//		ms.setMaxRuns(20);
 		ms.setStepSize(step);
 		ms.supplyInfo(mini);
 		for (int i = 0; i < 10; i++)
