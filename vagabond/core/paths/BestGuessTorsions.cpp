@@ -22,7 +22,7 @@
 
 BestGuessTorsions::BestGuessTorsions(Route *const &route)
 {
-
+	_route = route;
 }
 
 float best_guess_torsion(Parameter *param)
