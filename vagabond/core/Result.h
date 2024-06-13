@@ -81,13 +81,6 @@ struct Result
 	AtomMap *map = nullptr;
 	static std::mutex *mut;
 	
-	void setFromJob(Job *job)
-	{
-		requests = job->requests;
-		ticket = job->ticket;
-		job->result = this;
-	}
-	
 	void transplantColours();
 	
 	void transplantPositions(bool displayTargets = false);
