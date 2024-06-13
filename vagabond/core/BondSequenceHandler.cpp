@@ -46,6 +46,7 @@ BondSequenceHandler::~BondSequenceHandler()
 	}
 	
 	std::map<SequenceState, Pool<BondSequence *> >::iterator it;
+	delete _manager;
 }
 
 void BondSequenceHandler::setup()
@@ -136,25 +137,11 @@ int BondSequenceHandler::activeTorsions()
 	return sequence(0)->activeTorsions();
 }
 
-/*
 void BondSequenceHandler::calculate(Flag::Calc flags,
                                     const std::vector<float> &parameters,
                                     BaseTask **first_task,
                                     CalcTask **final_hook,
                                     const CoordManager *specific_manager)
-{
-	const CoordManager *man = (specific_manager ? specific_manager : manager());
-	const rope::GetFloatFromCoordIdx &toTorsions = man->defaultTorsionFetcher();
-//	calculate(flags, parameters, first_task, final_hook, man, toTorsions);
-}
-*/
-
-void BondSequenceHandler::calculate(Flag::Calc flags,
-                                    const std::vector<float> &parameters,
-                                    BaseTask **first_task,
-                                    CalcTask **final_hook,
-                                    const CoordManager *specific_manager)
-//                                    const rope::GetFloatFromCoordIdx &toTorsions)
 {
 	const CoordManager *man = (specific_manager ? specific_manager : manager());
 	rope::GetListFromParameters transform = man->defaultCoordTransform();
