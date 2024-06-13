@@ -42,6 +42,7 @@ StructureModification::~StructureModification()
 
 void StructureModification::cleanup()
 {
+	retrieve();
 	if (_resources.tasks != nullptr)
 	{
 //		_resources.tasks->wait();
