@@ -125,8 +125,17 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			
 			int size = _infoPairs.size();
 
-			_perResidue[left->residueId()].push_back(size);
-			_perResidue[right->residueId()].push_back(size);
+			// we check if it's a side chain, because we are not interested 
+			// in a per-residue check if we can't move it.
+			if (!left->isMainChain())
+			{
+				_perResidue[left->residueId()].push_back(size);
+			}
+			
+			if (!right->isMainChain())
+			{
+				_perResidue[right->residueId()].push_back(size);
+			}
 			
 			_residues.insert(left->residueId());
 			_residues.insert(right->residueId());
