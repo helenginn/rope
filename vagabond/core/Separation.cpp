@@ -72,10 +72,12 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 	}
 	std::cout << std::endl;
 	
+	/*
 	std::ofstream file;
 	file.open("check_matrix.csv");
 	file << _matrix << std::endl;
 	file.close();
+	*/
 }
 
 void Separation::prepareSegment(const std::vector<Atom *> &atoms)
