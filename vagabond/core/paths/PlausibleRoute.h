@@ -96,10 +96,10 @@ public:
 	{
 		if (doingClashes())
 		{
-			return 6;
+			return 12;
 		}
 
-		return 6;
+		return 12;
 	}
 
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);
