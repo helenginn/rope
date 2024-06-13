@@ -129,7 +129,7 @@ BulkMask::BulkMask(Diffraction *blueprint, float spacing)
 
 	// will overhang, but we can ignore it until the end if we work in 
 	// inverted space
-	this->TransformedGrid<Masker>::setDimensions(nx, ny, nz, false); 
+	this->CubicGrid<Masker>::setDimensions(nx, ny, nz, false); 
 
 	this->setRealDim(spacing);
 }

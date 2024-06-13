@@ -702,8 +702,8 @@ public:
 	SharedFace(SharedFace<0, D, Type> *face, SharedFace<0, D, Type> &point) :
 	SharedFace<1, D, Type>(*face, point) {}
 
-	SharedFace<1, D, Type>() {}
-	virtual ~SharedFace<1, D, Type>() {}
+	SharedFace() {}
+	virtual ~SharedFace() {}
 
 	virtual int n()
 	{
