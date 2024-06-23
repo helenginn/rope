@@ -109,7 +109,7 @@ void BundleBonds::findCoefficients()
 
 long double vdw_energy(const float &difflength,
                        const float &ar, // radius
-                       const float &aan, const float &ban) // atomic num
+                       const float &aan) // atomic num
 {
 	float d = ar;
 	float ratio = d / difflength;
@@ -118,7 +118,7 @@ long double vdw_energy(const float &difflength,
 	long double to12 = to6 * to6;
 
 	// to roughly match tables of epsilon found online
-	float weight = (aan + ban) / 25;
+	float weight = aan / 25;
 
 	long double potential = (to12 - to6) * weight;
 	return potential;
@@ -143,8 +143,7 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 		if (dist >= 0)
 		{
 			return vdw_energy(dist, _positions[p].radius,
-			                  _positions[p].atomic_num,
-			                  _positions[q].atomic_num);
+			                  _positions[p].atomic_num);
 		}
 
 		std::array<glm::vec3, 4> diff = _positions[q] - _positions[p];
@@ -167,8 +166,7 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 		auto energy_from_diff = [this, p, q](const glm::vec3 &posdiff)
 		{
 			return vdw_energy(glm::length(posdiff), _positions[p].radius,
-			                  _positions[p].atomic_num,
-			                  _positions[q].atomic_num);
+			                  _positions[p].atomic_num);
 		};
 
 		glm::vec3 pos0 = _positions[q].pos[1] - _positions[p].pos[1];
