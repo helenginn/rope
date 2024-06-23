@@ -35,8 +35,11 @@ inline auto for_each_residue(const std::map<ResidueId,
 	{
 		for (const ResidueId &id : forResidues)
 		{
-			const std::vector<int> &pairs = perResidues.at(id);
-			job(pairs);
+			if (perResidues.count(id))
+			{
+				const std::vector<int> &pairs = perResidues.at(id);
+				job(pairs);
+			}
 		}
 	};
 };
