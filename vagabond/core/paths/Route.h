@@ -182,7 +182,7 @@ public:
 	Parameter *parameter(int i)
 	{
 		if (i < 0) return nullptr;
-		return _motions.rt(i).parameter();
+		return _parameters[i];
 	}
 	
 	std::vector<ResidueTorsion> residueTorsions();
@@ -318,13 +318,11 @@ public:
 	
 	AtomGroup *all_atoms();
 protected:
-	typedef std::function<bool(int idx)> ValidateParam;
-
 
 	virtual void prepareResources();
 	const Grapher &grapher() const;
 	GradientPath *submitGradients(const CalcOptions &options, int order,
-	                              const ValidateParam &validate = {},
+	                              const ValidateIndex &validate = {},
 	                              BondSequenceHandler *handler = nullptr);
 
 	void submitValue(const CalcOptions &options, int steps,
@@ -398,7 +396,7 @@ protected:
 
 	void unlockAll();
 	int _maxFlipTrial = 0;
-	int _order = 2;
+	int _order = 3;
 	bool _gui = false;
 
 	Bin<ByResidueResult> _perResBin;
@@ -444,6 +442,7 @@ private:
 	std::vector<InstancePair> _pairs;
 	std::map<BondSequenceHandler *, Helpers> _helpers;
 	std::map<Parameter *, int> _parameter2Idx;
+	std::vector<Parameter *> _parameters;
 	
 	Instance *_endInstance = nullptr;
 	RTAngles _source;

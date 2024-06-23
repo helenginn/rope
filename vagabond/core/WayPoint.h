@@ -22,6 +22,7 @@
 #include <iostream>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include <vagabond/utils/Vec3s.h>
 using nlohmann::json;
 	
 struct WayPoints
@@ -31,6 +32,22 @@ struct WayPoints
 
 	float interpolatedProgression(float frac);
 	
+	void forceOrder(int order)
+	{
+		_amps.resize(order);
+	}
+	
+	static float amplitude(const float &frac, const float &order);
+	static Floats amplitudes(const float &frac, const int &total_order);
+	
+	static std::function<Floats(const float &)> weights(const int &order)
+	{
+		return [order](const float &frac)
+		{
+			return WayPoints::amplitudes(frac, order);
+		};
+	}
+
 	std::vector<float> _amps = {0, 0};
 };
 

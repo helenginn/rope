@@ -20,6 +20,7 @@
 #define __vagabond__Selection__
 
 #include <set>
+#include "../function_typedefs.h"
 
 class Atom;
 class Route;
@@ -29,6 +30,10 @@ class Selection
 {
 public:
 	Selection(Route *const &route);
+	
+	std::vector<std::pair<int, int>>
+	activeParameters(BondSequenceHandler *const &handler,
+	                 const ValidateIndex &validate);
 
 	void addDeviations(PairwiseDeviations *dev)
 	{

@@ -20,6 +20,8 @@
 #include "Route.h"
 #include "Parameter.h"
 #include "Selection.h"
+#include "../BondSequenceHandler.h"
+#include "../BondSequence.h"
 #include "function_typedefs.h"
 #include "PairwiseDeviations.h"
 
@@ -133,4 +135,41 @@ void Selection::clearFilters(bool allow)
 			chosen->setFilter(filter);
 		}
 	}
+}
+
+typedef std::pair<int, int> IntInt;
+
+std::vector<IntInt>
+Selection::activeParameters(BondSequenceHandler *const &handler,
+                            const ValidateIndex &validate)
+{
+	const std::vector<AtomBlock> &blocks = handler->sequence()->blocks();
+	TorsionBasis *basis = handler->torsionBasis();
+
+	std::vector<IntInt> idxs;
+
+	for (size_t bidx = 0; bidx < blocks.size(); bidx++)
+	{
+		if (blocks[bidx].torsion_idx < 0) { continue; }
+		int tidx = blocks[bidx].torsion_idx;
+
+		Parameter *p = basis->parameter(tidx);
+		int pidx = _route->indexOfParameter(p);
+		if (validate && !validate(pidx))
+		{
+			continue;
+		}
+		if (p->isConstrained())
+		{
+			continue;
+		}
+		if (_route->_motionFilter && !_route->_motionFilter(pidx))
+		{
+			continue;
+		}
+
+		idxs.push_back({bidx, pidx}); // block index, param (also motion) index
+	}
+
+	return idxs;
 }

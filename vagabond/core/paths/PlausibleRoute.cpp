@@ -370,7 +370,7 @@ bool PlausibleRoute::sideChainGradients()
 	for (int i = 0; i < motionCount(); i++)
 	{
 		ResidueTorsion &rt = residueTorsion(i);
-		if (parameter(i) && 
+		if (!parameter(i) ||
 		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained()))
 		{
 			continue;
@@ -532,7 +532,7 @@ bool PlausibleRoute::applyGradients()
 		return parameter(idx) && !parameter(idx)->coversMainChain();
 	};
 
-	GradientPath *path = gradients(doingSides() ? side_chain : ValidateParam{});
+	GradientPath *path = gradients(doingSides() ? side_chain : ValidateIndex{});
 
 	if (Route::_finish)
 	{
@@ -619,13 +619,13 @@ bool PlausibleRoute::applyGradients()
 	return true;
 }
 
-GradientPath *PlausibleRoute::gradients(const ValidateParam &validate,
+GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
                                         const CalcOptions &add_options,
                                         const CalcOptions &subtract_options)
 {
 	CalcOptions options = calcOptions(add_options, subtract_options);
 	
-	int order = doingQuadratic() ? 1 : 2;
+	int order = doingQuadratic() ? 1 : _order;
 
 	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
@@ -762,7 +762,7 @@ void print(std::vector<int> &flips)
 
 std::vector<int>
 PlausibleRoute::getTorsionSequence(int idx, int max,
-                                   const ValidateParam &validate)
+                                   const ValidateIndex &validate)
 {
 	if (!validate(idx))
 	{
@@ -800,7 +800,7 @@ PlausibleRoute::getTorsionSequence(int idx, int max,
 	return idxs;
 }
 
-bool PlausibleRoute::flipTorsion(const ValidateParam &validate, int idx)
+bool PlausibleRoute::flipTorsion(const ValidateIndex &validate, int idx)
 {
 	std::vector<int> idxs = getTorsionSequence(idx, _maxFlipTrial, validate);
 	
@@ -839,7 +839,7 @@ bool PlausibleRoute::flipTorsion(const ValidateParam &validate, int idx)
 	return changed;
 }
 
-bool PlausibleRoute::flipTorsions(const ValidateParam &validate)
+bool PlausibleRoute::flipTorsions(const ValidateIndex &validate)
 {
 	startTicker("Flipping torsions");
 	bool changed = false;
@@ -872,7 +872,7 @@ bool PlausibleRoute::flipTorsions(const ValidateParam &validate)
 	return changed;
 }
 
-void PlausibleRoute::flipTorsionCycle(const ValidateParam &validate)
+void PlausibleRoute::flipTorsionCycle(const ValidateIndex &validate)
 {
 	int count = 0;
 
@@ -891,7 +891,7 @@ void PlausibleRoute::flipTorsionCycle(const ValidateParam &validate)
 }
 
 
-void PlausibleRoute::flipTorsionCycles(const ValidateParam &validate)
+void PlausibleRoute::flipTorsionCycles(const ValidateIndex &validate)
 {
 	if (_maxFlipTrial == 0) return;
 	flipTorsionCycle(validate);

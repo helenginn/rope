@@ -114,15 +114,15 @@ protected:
 
 	virtual void doCalculations();
 
-	bool flipTorsions(const ValidateParam &validate);
+	bool flipTorsions(const ValidateIndex &validate);
 
-	bool flipTorsion(const ValidateParam &validate, int idx);
-	void flipTorsionCycles(const ValidateParam &validate);
+	bool flipTorsion(const ValidateIndex &validate, int idx);
+	void flipTorsionCycles(const ValidateIndex &validate);
 
 	void startTicker(std::string tag, int d = -1);
 
 	std::vector<int> getTorsionSequence(int idx, int max, 
-	                                    const ValidateParam &validate);
+	                                    const ValidateIndex &validate);
 	
 	int _isNew = true;
 	
@@ -154,7 +154,7 @@ private:
 	void rewindTorsions();
 	void repelMainChainAtomsFromWorstResidues();
 
-	GradientPath *gradients(const ValidateParam &validate,
+	GradientPath *gradients(const ValidateIndex &validate,
 	                        const CalcOptions &add_options = None,
 	                        const CalcOptions &subtract_options = None);
 
@@ -162,7 +162,7 @@ private:
 
 	void assignParameterValues(const std::vector<float> &trial);
 
-	void flipTorsionCycle(const ValidateParam &validate);
+	void flipTorsionCycle(const ValidateIndex &validate);
 	void addFloatParameter(float *value, float step);
 
 	void zeroParameters();

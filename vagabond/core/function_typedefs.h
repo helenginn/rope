@@ -26,6 +26,7 @@ class Atom;
 
 typedef std::function<bool(Atom *const &atom)> AtomFilter;
 typedef std::function<int(const int &p)> PairFilter;
+typedef std::function<bool(int idx)> ValidateIndex;
 
 namespace rope
 {
