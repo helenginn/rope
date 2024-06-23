@@ -102,7 +102,7 @@ public:
 
 	virtual const size_t completenessScore() const;
 	
-	virtual std::vector<ResidueTorsion> residueTorsionList();
+	virtual std::vector<ResidueTorsion> residueTorsionList(bool add_hydrogens = false);
 	virtual void grabTorsions(RTAngles &angles,
 	                              rope::TorsionType type = rope::RefinedTorsions);
 

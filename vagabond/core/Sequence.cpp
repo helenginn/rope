@@ -390,13 +390,14 @@ void Sequence::addAtomPositionHeaders(std::vector<Atom3DPosition> &headers,
 }
 
 void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers,
-                                  bool as_master)
+                                  bool as_master,
+                                  bool add_hydrogens)
 {
 	for (Residue &residue : _residues)
 	{
 		for (const TorsionRef &torsion : residue.torsions())
 		{
-			if (as_master && torsion.hasHydrogen())
+			if (!add_hydrogens && torsion.hasHydrogen())
 			{
 				continue;
 			}

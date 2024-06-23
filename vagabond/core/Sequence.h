@@ -221,7 +221,8 @@ public:
 	/** torsion angle names in order of residue / reference, to be called
 	 * on the entity master sequence in the case of clustering */
 	void addResidueTorsions(std::vector<ResidueTorsion> &headers, 
-	                        bool as_master = true);
+	                        bool as_master = true,
+	                        bool add_hydrogens = false);
 
 	/** call on entity master sequence to get the corresponding torsion 
 	 * angles from a derived/mapped sequence */

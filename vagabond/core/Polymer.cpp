@@ -282,10 +282,10 @@ void Polymer::grabTorsions(RTAngles &angles, rope::TorsionType type)
 	sequence()->torsionsFromMapped(angles, type);
 }
 
-std::vector<ResidueTorsion> Polymer::residueTorsionList()
+std::vector<ResidueTorsion> Polymer::residueTorsionList(bool add_hydrogens)
 {
 	std::vector<ResidueTorsion> rts;
-	polymerEntity()->sequence()->addResidueTorsions(rts);
+	polymerEntity()->sequence()->addResidueTorsions(rts, false, add_hydrogens);
 	
 	for (ResidueTorsion &rt : rts)
 	{

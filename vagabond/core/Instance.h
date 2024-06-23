@@ -176,7 +176,8 @@ public:
 	friend void to_json(json &j, const Polymer &value);
 	friend void from_json(const json &j, Polymer &value);
 
-	virtual std::vector<ResidueTorsion> residueTorsionList()
+	virtual std::vector<ResidueTorsion> residueTorsionList(bool add_hydrogens 
+	                                                       = false)
 	{
 		return std::vector<ResidueTorsion>();
 	}
