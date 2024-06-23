@@ -88,7 +88,7 @@ Atom *Ligand::equivalentForAtom(Ligand *other, Atom *atom)
 	return nullptr;
 }
 
-void Ligand::collectTorsions()
+void Ligand::collectTorsions(bool add_hydrogens)
 {
 	if (_rts.size() > 0)
 	{
@@ -103,21 +103,24 @@ void Ligand::collectTorsions()
 	{
 		BondTorsion *t = mine->bondTorsion(i);
 		ResidueTorsion rt(t);
-		_rts.push_back(ResidueTorsion(t));
+		if (!rt.torsion().hasHydrogen())
+		{
+			_rts.push_back(ResidueTorsion(t));
+		}
 	}
 	
 	unload();
 }
 
-std::vector<ResidueTorsion> Ligand::residueTorsionList()
+std::vector<ResidueTorsion> Ligand::residueTorsionList(bool add_hydrogens)
 {
-	collectTorsions();
+	collectTorsions(add_hydrogens);
 	return _rts;
 }
 
 void Ligand::grabTorsions(RTAngles &angles, rope::TorsionType type)
 {
-	collectTorsions();
+	collectTorsions(false);
 	for (int i = 0; i < angles.size(); i++)
 	{
 		ResidueTorsion &rt = angles.rt(i);

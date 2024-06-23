@@ -34,7 +34,7 @@ NewPath::NewPath(Path *blueprint)
 
 TorsionData *NewPath::addPair(Instance *from, Instance *to)
 {
-	std::vector<ResidueTorsion> headers = from->residueTorsionList();
+	std::vector<ResidueTorsion> headers = from->residueTorsionList(true);
 	size_t num = headers.size();
 	TorsionData *prep = new TorsionData(num);
 	prep->addHeaders(headers);

@@ -46,7 +46,7 @@ public:
 
 	virtual Atom *equivalentForAtom(Ligand *other, Atom *atom);
 
-	virtual std::vector<ResidueTorsion> residueTorsionList();
+	virtual std::vector<ResidueTorsion> residueTorsionList(bool add_hydrogens = false);
 
 	virtual void grabTorsions(RTAngles &angles,
 	                          rope::TorsionType type = rope::RefinedTorsions);
@@ -54,7 +54,7 @@ public:
 	virtual const Residue *
 	localResidueForResidueTorsion(const ResidueTorsion &rt);
 protected:
-	void collectTorsions();
+	void collectTorsions(bool add_hydrogens);
 
 	friend void to_json(json &j, const Ligand &value);
 	friend void from_json(const json &j, Ligand &value);
