@@ -33,13 +33,16 @@ struct GradientTerm
 {
 	GradientTerm() = default;
 
+	typedef std::function<Floats(const float &frac)> Weights;
+
 	GradientTerm(const int &order, const float &f, const int &gidx,
-	             const int &bidx, Parameter *const &p)
+	             const int &bidx, Parameter *const &p, const Weights &weights)
 	{
 		frac = f;
 		b_idx = bidx;
 		g_idx = gidx;
 		param = p;
+		_weights = weights;
 		grads.resize(order);
 	}
 	
@@ -50,6 +53,7 @@ struct GradientTerm
 	int b_idx = 0; // block index
 	int g_idx = 0; // gradient index
 	Parameter *param = nullptr;
+	Weights _weights;
 
 	Floats grads;
 };

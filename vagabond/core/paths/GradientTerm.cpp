@@ -22,20 +22,6 @@
 #include "PairwiseDeviations.h"
 #include "LoopRoundResidues.h"
 
-Floats prepare_sines(size_t size, float frac)
-{
-	Floats sines(size);
-	for (int i = 0; i < size; i++)
-	{
-		float limit = M_PI * (i + 1);
-		float f = frac * limit;
-
-		sines[i] = sin(f);
-	}
-
-	return sines;
-}
-
 void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
                              Separation *sep)
 {
@@ -52,7 +38,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 	target_actual_distances lookup(ref, scratch);
 
 	int n = 0;
-	auto collect_targets = [scratch, /*&atoms,*/ &n](const AtomBlock &block)
+	auto collect_targets = [scratch, &n](const AtomBlock &block)
 	{
 		scratch[n] = block.my_position();
 		n++;
@@ -60,7 +46,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 
 	do_on_each_block(blocks, collect_targets);
 	
-	Floats sines = prepare_sines(grads.size(), frac);
+	Floats sines = _weights(frac);
 	
 	float count = 0;
 

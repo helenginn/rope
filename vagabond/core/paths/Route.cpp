@@ -116,7 +116,7 @@ float Route::submitJobAndRetrieve(float frac, bool show)
 }
 
 GradientPath *Route::submitGradients(const CalcOptions &options, int order,
-                                     const ValidateParam &validate,
+                                     const ValidateIndex &validate,
                                      BondSequenceHandler *handler)
 {
 	if (handler == nullptr) handler = _hydrogenFreeSequences;
@@ -132,9 +132,6 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	Task<GradientPath, void *> *big_submission = _gradientBin.actOfSubmission(0);
 	Flag::Calc calc = Flag::Calc(Flag::DoTorsions);
 
-	std::vector<int> indices;
-	std::vector<int> motion_idxs;
-
 	std::vector<AtomBlock> &blocks = handler->sequence()->blocks();
 	TorsionBasis *basis = handler->torsionBasis();
 
@@ -144,37 +141,19 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 		throw std::runtime_error("Not supporting gradients for clash right now");
 	}
 
-	for (size_t i = 0; i < blocks.size(); i++)
+	std::vector<std::pair<int, int>> idxs;
+	idxs = _selection.activeParameters(handler, validate);
+
+	std::vector<int> motion_idxs(idxs.size());
+	
+	for (int i = 0; i < idxs.size(); i++)
 	{
-		if (blocks[i].torsion_idx < 0) { continue; }
-		int tidx = blocks[i].torsion_idx;
-		if (blocks[i].atom->elementSymbol() == "H")
-		{
-			continue;
-		}
-
-		Parameter *p = basis->parameter(tidx);
-		int pidx = indexOfParameter(p);
-		if (validate && !validate(pidx))
-		{
-			continue;
-		}
-		if (p->isConstrained())
-		{
-			continue;
-		}
-		if (_motionFilter && !_motionFilter(pidx))
-		{
-			continue;
-		}
-
-		indices.push_back(i); // pointer to block index (atom)
-		motion_idxs.push_back(pidx); // pointer to motion or parameter
+		motion_idxs[i] = idxs[i].second;
 	}
 
-	big_submission->input.grads.resize(indices.size());
+	big_submission->input.grads.resize(idxs.size());
 	big_submission->input.motion_idxs = motion_idxs;
-	big_submission->at_least = (steps - 1) * indices.size();
+	big_submission->at_least = (steps - 1) * idxs.size();
 
 	for (size_t i = 0; i < steps; i++)
 	{
@@ -187,15 +166,19 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 		handler->calculate(calc, {frac}, &first_hook, &final_hook);
 		Task<BondSequence *, void *> *let_go = handler->letGo();
 		
-		for (int j = 0; j < indices.size(); j++)
+		for (int j = 0; j < idxs.size(); j++)
 		{
-			int b_idx = indices[j];
+			int b_idx = idxs[j].first;
 			Parameter *p = basis->parameter(blocks[b_idx].torsion_idx);
 			int g_idx = j;
 			auto momentum_term = [sep, order, frac, g_idx, b_idx, p, pw]
 			(BondSequence *seq) -> GradientTerm
 			{
-				GradientTerm term(order, frac, g_idx, b_idx, p);
+				std::function<Floats(const float &)> weights =
+				WayPoints::weights(order);
+
+				GradientTerm term(order, frac, g_idx, b_idx, p, 
+				                  weights);
 				term.momentum(seq, pw, sep);
 				return term;
 			};
@@ -548,6 +531,7 @@ void Route::getParametersFromBasis(const MakeMotion &make_mot)
 	std::vector<ResidueTorsion> torsions;
 
 	TorsionBasis *basis = _resources.sequences->torsionBasis();
+	_parameter2Idx.clear();
 
 	for (size_t i = 0; i < basis->parameterCount(); i++)
 	{
@@ -555,19 +539,11 @@ void Route::getParametersFromBasis(const MakeMotion &make_mot)
 		ResidueTorsion rt{};
 		tmp_motions.push_back(make_mot(p, rt));
 		torsions.push_back(rt);
+		_parameters.push_back(p);
+		_parameter2Idx[p] = i;
 	}
 
 	_motions = RTMotion::motions_from(torsions, tmp_motions);
-	_parameter2Idx.clear();
-	
-	for (int i = 0; i < motionCount(); i++)
-	{
-		Parameter *param = parameter(i);
-		if (param)
-		{
-			_parameter2Idx[param] = i;
-		}
-	}
 }
 
 void Route::prepareParameters()
@@ -604,6 +580,7 @@ void Route::prepareParameters()
 		{
 			Motion &target = _motions.storage(mot_idx);
 			mt = target;
+			mt.wp.forceOrder(_order);
 		}
 
 		// if we have a more up-to-date torsion angle then we should use that,

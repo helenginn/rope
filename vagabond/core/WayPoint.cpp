@@ -34,6 +34,25 @@ WayPoints::WayPoints(int order)
 	}
 }
 
+float WayPoints::amplitude(const float &frac, const float &order)
+{
+	float limit = M_PI * (order + 1);
+	float f = frac * limit;
+	float sinf = sin(f);
+	return sinf;
+}
+
+Floats WayPoints::amplitudes(const float &frac, const int &total_order)
+{
+	Floats sines(total_order);
+	for (int i = 0; i < total_order; i++)
+	{
+		sines[i] = amplitude(frac, i);
+	}
+
+	return sines;
+}
+
 float WayPoints::interpolatedProgression(float frac)
 {
 	float modifier = 1;//(frac - frac*frac);
@@ -41,14 +60,10 @@ float WayPoints::interpolatedProgression(float frac)
 	float tot = 0;
 	for (int i = 0; i < _amps.size(); i++)
 	{
-		float limit = M_PI * (i + 1);
-		float f = frac * limit;
-		float sinf = sin(f);
-
+		float sinf = amplitude(frac, i);
 		tot += (sinf) * _amps[i] * modifier;
 	}
 
 	return tot * modifier;
-
 }
 
