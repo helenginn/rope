@@ -211,33 +211,37 @@ float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
                                          const glm::vec3 &c, const glm::vec3 &d)
 {
 	/* b = bond axis */
-	glm::vec3 bond = b - a;
+	glm::vec3 bond = glm::normalize(b - a);
 	
 	/* for ease of reading: x,y,z = bond axis direction */
 	float &x = bond.x;
 	float &y = bond.y;
 	float &z = bond.z;
 	
-	/* p and q are distances to query atoms c and d */
+	/* p and q are vectors to query atoms c and d */
 	glm::vec3 p = c - b;
 	glm::vec3 q = d - b;
 	
 	/* when torsion angle = 0, q.x etc. simplify to q.x */
 
-	double fx = ((q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y) + 
+	float fx = ((q.x - p.x) * (q.x - p.x) + (q.y - p.y) * (q.y - p.y) + 
 	             (q.z - p.z) * (q.z - p.z));
 	
 	/* derivative of q.x with respect to alpha */
-	double dQx_by_dA = y * q.z - z * q.y;
-	double dQy_by_dA = z * q.x - x * q.z;
-	double dQz_by_dA = x * q.y - y * q.x;
+	/*
+	float dQx_by_dA = y * q.z - z * q.y;
+	float dQy_by_dA = z * q.x - x * q.z;
+	float dQz_by_dA = x * q.y - y * q.x;
+	*/
+	float dQx_by_dA = q.z * (y - x * z) - q.y * (x * y + z);
+	float dQy_by_dA = q.x * (z - y * x) - q.z * (y * z + x);
+	float dQz_by_dA = q.y * (x - z * y) - q.x * (z * x + y);
 
 	/* dfx = derivative of fx */
-	double dfx = (2*(q.x - p.x) * dQx_by_dA + 
-	              2*(q.y - p.y) * dQy_by_dA +
-	              2*(q.z - p.z) * dQz_by_dA);
+	float dfx = (2*(q.x - p.x) * dQx_by_dA + 2*(q.y - p.y) * dQy_by_dA +
+	             2*(q.z - p.z) * dQz_by_dA);
 
-	double dD_by_dA = -1/sqrt(fx) * dfx / 2;
+	float dD_by_dA = -1/sqrt(fx) * dfx / 2;
 
 	return dD_by_dA;
 }
