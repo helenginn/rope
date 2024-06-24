@@ -64,6 +64,7 @@ struct AtomBlock
 
 	int torsion_idx;
 	float torsion = 0;
+	float offset = 0;
 	
 	/* rotation and translation to move the atom into the right place;
 	 * previous bond is in Z direction */
@@ -98,7 +99,7 @@ struct AtomBlock
 
 	glm::mat4x4 prepareRotation(float torsion) const
 	{
-		float t = deg2rad(torsion);
+		float t = deg2rad(torsion + offset);
 
 		float sint = sin(t);
 		float cost = cos(t);

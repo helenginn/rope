@@ -450,6 +450,11 @@ void RingProgrammer::fixProgramIndices(std::vector<AtomBlock> &blocks,
 			{
 				blocks[f.idx].silence();
 			}
+			
+			if (f.ptr->atomName() == "CB")
+			{
+				blocks[f.idx].offset = 120;
+			}
 		}
 	}
 
