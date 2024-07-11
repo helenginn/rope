@@ -307,8 +307,6 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		{
 			BundleBonds *bbs = new BundleBonds(sequences->sequence(), frac);
 
-			if (!hydrogens) bbs->addVdWRadius(0.4);
-
 			auto bundle_hook = [](BundleBonds *bbs) -> BundleBonds *
 			{
 				return bbs;
@@ -466,9 +464,14 @@ void Route::submitValue(const CalcOptions &options, int steps,
 //	calculator->releaseHorses();
 }
 
-void Route::submitToShow(float frac)
+void Route::submitToShow(float frac, Atom *atom)
 {
-	Flag::Extract gets = Flag::AtomVector;
+	if (frac < 0)
+	{
+		frac = _chosenFrac;
+	}
+
+	Flag::Extract gets = (atom ? Flag::NoExtract : Flag::AtomVector);
 
 	BaseTask *first_hook = nullptr;
 	CalcTask *final_hook = nullptr;
@@ -495,6 +498,30 @@ void Route::submitToShow(float frac)
 
 	Task<BondSequence *, void *> *let = 
 	sequences->extract(gets, submit_result, final_hook);
+	
+	if (atom)
+	{
+		auto get_position = [atom](BondSequence *const &seq) -> AtomPosList *
+		{
+			for (int i = 0; i < seq->blockCount(); i++)
+			{
+				if (seq->blocks()[i].atom == atom)
+				{
+					AtomPosList *apl = new AtomPosList(1);
+					(*apl)[0].atom = atom;
+					(*apl)[0].wp.ave = seq->blocks()[i].my_position();
+					return apl;
+				}
+			}
+			return new AtomPosList(0);
+		};
+
+		auto *get_atom = new Task<BondSequence *, AtomPosList *>(get_position, 
+		                                                         "get atom");
+		final_hook->follow_with(get_atom);
+		get_atom->must_complete_before(let);
+		get_atom->follow_with(submit_result);
+	}
 
 	_ticket2Point[0] = 0;
 	_point2Score[0] = Score{};
@@ -695,7 +722,8 @@ void Route::deleteHelpers()
 	_helpers.clear();
 }
 
-void setup_helpers(Route::Helpers &helpers, BondSequence *seq, float distance)
+void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
+                   float distance)
 {
 	Separation *sep = new Separation(seq);
 	auto pw = new PairwiseDeviations(seq, distance, sep);
@@ -718,7 +746,8 @@ void Route::prepareEnergyTerms()
 	if (_noncovs)
 	{
 		BondSequence *seq = _resources.sequences->sequence();
-		setup_helpers(_helpers[_resources.sequences], seq, _maxClashDistance);
+		setup_helpers(_helpers[_resources.sequences], seq,
+		              _maxClashDistance);
 	}
 	else
 	{
@@ -770,7 +799,7 @@ void Route::clearCustomisation()
 		_helpers[_hydrogenFreeSequences].pw = pw;
 	}
 	
-	_jobLevel = 0;
+	setFirstJob();
 	_repelCount = 0;
 	unlockAll();
 	_hash = ""; setHash();
@@ -817,3 +846,38 @@ void Route::unlockAll()
 	}
 
 }
+
+int Route::paramIdxForAtom(Atom *const &atom)
+{
+	BondSequence *const &seq = _resources.sequences->sequence();
+	std::vector<AtomBlock> &blocks = seq->blocks();
+
+	int idx = -1;
+	for (size_t i = 0; i < blocks.size(); i++)
+	{
+		if (blocks[i].atom == atom)
+		{
+			idx = i;
+			break;
+		}
+	}
+	
+	if (idx < 0) return -1;
+	
+	for (size_t i = 0; i < blocks.size(); i++)
+	{
+		for (int j = 0; j < blocks[i].nBonds; j++)
+		{
+			int add = blocks[i].write_locs[j];
+			if (i + add == idx)
+			{
+				return blocks[i].torsion_idx;
+				int first = blocks[i].write_locs[0];
+				return blocks[i + first].torsion_idx;
+			}
+		}
+	}
+
+	return -1;
+}
+

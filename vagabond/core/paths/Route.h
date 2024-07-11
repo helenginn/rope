@@ -67,13 +67,7 @@ public:
 	friend Selection;
 	friend BestGuessTorsions;
 
-	/*
-	void submitJob(float frac, bool show = true, 
-	               const CalcOptions &options = None,
-	               int ticket = 1);
-	*/
-
-	void submitToShow(float frac);
+	void submitToShow(float frac = -1, Atom *atom = nullptr);
 	
 	void setNonCovalents(NonCovalents *noncovs)
 	{
@@ -150,6 +144,11 @@ public:
 	virtual void finishRoute()
 	{
 		_finish = true;
+	}
+	
+	void setFinish(bool finish)
+	{
+		_finish = finish;
 	}
 	
 	const size_t wayPointCount() const
@@ -235,34 +234,61 @@ public:
 		}
 	}
 	
-	bool doingQuadratic()
+	void setFirstJob()
+	{
+		_jobOrder = 0;
+		_jobLevel = 0;
+	}
+	
+	void setLastJob()
+	{
+		_jobOrder = _order;
+		_jobLevel = 4;
+	}
+	
+	bool doingMomentum()
 	{
 		return _jobLevel == 0;
 	}
 
-	bool doingCubic()
+	int currentOrder()
+	{
+		return _jobOrder + 1;
+	}
+
+	bool doingOrder(int order)
+	{
+		return _jobOrder < order - 1;
+	}
+
+	bool doingSides()
 	{
 		return _jobLevel >= 1;
 	}
 	
-	bool doingSides()
-	{
-		return _jobLevel >= 2;
-	}
-	
 	bool doingClashes()
 	{
-		return _jobLevel >= 2;
+		return _jobLevel >= 1;
 	}
 	
 	bool doingHydrogens()
 	{
-		return _jobLevel >= 2;
+		return _jobLevel >= 1;
+	}
+	
+	bool lastOrder()
+	{
+		return _jobOrder >= _order - 1;
+	}
+	
+	int order()
+	{
+		return _order;
 	}
 	
 	bool lastJob()
 	{
-		return _jobLevel >= 3;
+		return _jobLevel >= 2;
 	}
 
 	const int &jobLevel() const
@@ -273,6 +299,11 @@ public:
 	void setJobLevel(int level)
 	{
 		_jobLevel = level;
+		_jobOrder = 0;
+		if (_jobLevel > 0)
+		{
+			_jobOrder = _order;
+		}
 	}
 	
 	void setMaximumFlipTrial(const float &trials)
@@ -316,7 +347,14 @@ public:
 		return _hash;
 	}
 	
+	std::vector<std::pair<ResidueId, float>> lemons()
+	{
+		return _lemons;
+	}
+	
 	AtomGroup *all_atoms();
+	
+	int paramIdxForAtom(Atom *const &atom);
 protected:
 
 	virtual void prepareResources();
@@ -369,6 +407,7 @@ protected:
 	void prepareEnergyTerms();
 	RTMotion _motions;
 	int _jobLevel = 0;
+	int _jobOrder = 0;
 	std::vector<int> _activeParams;
 	
 	std::set<ResidueId> _ids;
@@ -414,6 +453,7 @@ protected:
 	void prepareAlignment();
 	
 	NonCovalents *_noncovs = nullptr;
+	std::vector<std::pair<ResidueId, float>> _lemons;
 private:
 	bool _calculating = false;
 	
@@ -428,8 +468,8 @@ private:
 		Separation *sep = nullptr;
 	};
 
-	friend void setup_helpers(Route::Helpers &helpers, 
-	                          BondSequence *seq, float distance);
+	friend void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
+	                          float distance);
 	
 	void deleteHelpers();
 	

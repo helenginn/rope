@@ -25,6 +25,7 @@
 #include "SimplexEngine.h"
 #include "GradientTerm.h"
 #include <vagabond/c4x/Angular.h>
+#include "../lbfgs/lbfgs.h"
 #include <functional>
 
 class Path;
@@ -103,6 +104,9 @@ public:
 	}
 
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);
+
+	void prepareGradients(lbfgsfloatval_t *g);
+	float evaluateMomentum(const lbfgsfloatval_t *x);
 protected:
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 
@@ -150,13 +154,14 @@ private:
 
 	bool applyGradients();
 	OpSet<ResidueId> worstSidechains(int num);
-	bool sideChainGradients();
+	bool sideChainGradients(int i);
 	void rewindTorsions();
 	void repelMainChainAtomsFromWorstResidues();
 
 	GradientPath *gradients(const ValidateIndex &validate,
 	                        const CalcOptions &add_options = None,
 	                        const CalcOptions &subtract_options = None);
+
 
 	virtual void cycle();
 
@@ -170,6 +175,8 @@ private:
 	std::vector<float *> _paramPtrs;
 	std::vector<float> _paramStarts;
 	std::vector<float> _steps;
+	
+	GradientPath *_path = nullptr;
 
 	int _jobNum = 0;
 	
