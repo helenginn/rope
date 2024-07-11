@@ -185,10 +185,10 @@ void PathManager::makePathBetween(const std::string &start,
 	grp->recalculate();
 	route->setAtoms(grp);
 
-	route->setThreads(6);
-	route->setMaximumMomentumDistance(6.f);
-	route->setMaximumClashDistance(8.f);
-	route->setMaximumFlipTrial(0);
+	route->setThreads(8);
+	route->setMaximumMomentumDistance(8.f);
+	route->setMaximumClashDistance(10.f);
+	route->setMaximumFlipTrial(1);
 	route->setup();
 	
 	for (int i = 0; i < cycles; i++)
@@ -272,6 +272,14 @@ void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 		int total = cycles - pairPaths.size();
 		if (total <= 0) { return false; };
+		
+		// temporary
+		/*
+		if (first->id().rfind(second->id().substr(0, 5)) != std::string::npos)
+		{
+			return false;
+		}
+		*/
 
 		makePathBetween(first->id(), second->id(), total);
 		return true;
