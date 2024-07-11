@@ -470,11 +470,11 @@ bool HasBondstraints::propagateRigidity(BondTorsion *torsion)
 				if (check->matchesAtoms(nullptr, atom, other, nullptr))
 				{
 					float t = check->measurement(BondTorsion::SourceInitial);
-					if (fabs(t) > 350.f || fabs(t) < 10.f)
+					if (fabs(t) > 330.f || fabs(t) < 30.f)
 					{
 						t = 0.f;
 					}
-					if (fabs(t) > 170.f && fabs(t) < 190.f)
+					if (fabs(t) > 150.f && fabs(t) < 210.f)
 					{
 						t = 180.f;
 					}
