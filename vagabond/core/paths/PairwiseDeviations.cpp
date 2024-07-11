@@ -187,7 +187,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 		do_on_each_block(blocks, collect_targets);
 
 		float total = 0;
-		int count = 0;
+		float count = 0;
 		
 		target_actual_distances lookup(dev->reference(), scratch);
 
@@ -206,11 +206,12 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 
 				float targdist = info.target(frac);
 				float actualdist = lookup.actual(p, q);
+				float weight = 1 / (1 + actualdist);
 
 				float dist = (targdist - actualdist);
 				
-				total += dist * dist;
-				count++;
+				total += dist * dist * weight;
+				count += weight;
 			}
 		};
 

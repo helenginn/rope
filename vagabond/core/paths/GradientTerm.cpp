@@ -93,13 +93,14 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 
 			float targdist = info.target(frac);
 			float actualdist = lookup.actual(p, q);
+			float weight = 1 / (1 + actualdist);
 			float diff = (actualdist - targdist);
 			
 			float change = bond_rotation_on_distance_gradient(myPos, upPos, 
 			                                                lookup.pos(p),
 			                                                lookup.pos(q));
 			
-			float grad = deg2rad(2 * diff * change * dir);
+			float grad = deg2rad(-2 * diff * change * dir * weight);
 			
 			int n = 0;
 			if (grad == grad && std::isfinite(grad))
@@ -110,7 +111,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 					n++;
 				}
 			}
-			count++;
+			count += weight;
 		}
 	};
 

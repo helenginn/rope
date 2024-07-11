@@ -87,6 +87,7 @@ struct GradientPath
 			grads[term.g_idx][n] += f;
 			n++;
 		}
+		grads[term.g_idx][n] /= (float)n;
 		return *this;
 	}
 
