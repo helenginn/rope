@@ -33,6 +33,7 @@
 
 #include <vagabond/core/Environment.h>
 #include <vagabond/core/FileManager.h>
+#include <stdlib.h>
 
 ProjectMenu::ProjectMenu(Scene *prev) : Scene(prev)
 {
@@ -47,7 +48,8 @@ void ProjectMenu::setup()
 	float top = 0.3;
 
 	{
-		Text *t = new Text("Choose existing project");
+		TextButton *t = new TextButton("Choose existing project", this);
+		t->setReturnTag("choose_project");
 		t->setLeft(0.2, top);
 		addObject(t);
 	}
@@ -62,7 +64,8 @@ void ProjectMenu::setup()
 	top += 0.08;
 
 	{
-		Text *t = new Text("or find project folder");
+		TextButton *t = new TextButton("or find project folder", this);
+		t->setReturnTag("choose_folder");
 		t->setLeft(0.2, top);
 		addObject(t);
 	}
@@ -252,6 +255,7 @@ void ProjectMenu::createProject()
 	}
 	
 	std::string project = _name + ":" + _path;
+	std::cout << "Adding project " << project << std::endl;
 	_projects.push_back(project);
 	writeProjects();
 
@@ -259,14 +263,21 @@ void ProjectMenu::createProject()
 	back();
 }
 
+std::string project_file_name()
+{
+	const char* homeDir = getenv("HOME");
+	std::string dir = homeDir;
+	return dir + "/.rope_projects.txt";
+}
+
 void ProjectMenu::findExistingProjects()
 {
 	_projects.clear();
 	_names.clear();
 
-	if (file_exists("projects.txt"))
+	if (file_exists(project_file_name()))
 	{
-		std::string all = get_file_contents("projects.txt");
+		std::string all = get_file_contents(project_file_name());
 		_projects = split(all, '\n');
 	}
 	
@@ -288,13 +299,27 @@ void ProjectMenu::findExistingProjects()
 
 void ProjectMenu::writeProjects()
 {
+
 	std::ofstream file;
-	file.open("projects.txt");
+	file.open(project_file_name());
 	
+	if (!file)
+	{
+		std::cout << "Couldn't open" << std::endl;
+		BadChoice *bc = new BadChoice(this,
+		                              "Warning: could not open projects file");
+		setModal(bc);
+		return;
+	}
+	
+	std::cout << "Survived the opening" << std::endl;
+	std::cout << "number: " << _projects.size() << std::endl;
+
 	for (size_t i = 0; i < _projects.size(); i++)
 	{
 		if (_projects[i].length())
 		{
+			std::cout << "Proj: " << _projects[i] << std::endl;
 			file << _projects[i] << std::endl;
 		}
 	}

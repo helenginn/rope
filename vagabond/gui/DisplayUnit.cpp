@@ -214,3 +214,12 @@ void DisplayUnit::tear(AtomMap *map)
 
 	_guiDensity->tear(map);
 }
+
+void DisplayUnit::addAtomIndexResponder(Responder<GuiBalls> *const &rsp)
+{
+	if (_guiAtoms)
+	{
+		_guiAtoms->balls()->setResponder(rsp);
+	}
+
+}

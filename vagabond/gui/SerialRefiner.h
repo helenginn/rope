@@ -86,6 +86,7 @@ private:
 	std::mutex _mutex;
 	std::condition_variable _cv;
 	time_t _start{};
+	AtomGroup *_displayAtoms = nullptr;
 };
 
 #endif

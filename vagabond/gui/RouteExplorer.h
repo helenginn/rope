@@ -28,12 +28,14 @@
 class PlausibleRoute;
 class TextButton;
 class Instance;
+class GuiBalls;
 class Slider;
 class Route;
 class Path;
+class Atom;
 
 class RouteExplorer : public Display, public DragResponder,
-public Responder<Route>
+public Responder<Route>, public Responder<GuiBalls>
 {
 public:
 	RouteExplorer(Scene *prev, PlausibleRoute *route);
@@ -52,6 +54,7 @@ public:
 	virtual void setup();
 	virtual void doThings();
 	void setupSlider();
+	void clearLemons();
 	
 	virtual void sendObject(std::string tag, void *object);
 
@@ -66,6 +69,7 @@ private:
 	void setupEditor();
 	void setupFinish();
 	void saveAndRestart();
+	void setupClearLemons();
 
 	void calculate();
 	void startWithThreads(const int &thr);
@@ -74,6 +78,9 @@ private:
 	void demolishSlider();
 
 	void prepareEmptySpaceMenu();
+	void pickAtom(Atom *const &atom);
+
+	void makeLemons();
 
 	Route *_route = nullptr;
 	PlausibleRoute *_plausibleRoute = nullptr;

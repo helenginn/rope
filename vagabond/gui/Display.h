@@ -20,6 +20,7 @@
 #define __vagabond__Display__
 
 #include "DisplayUnit.h"
+#include <SDL2/SDL.h>
 #include "vagabond/gui/elements/Mouse3D.h"
 #include "vagabond/gui/elements/IndexResponseView.h"
 #include <vagabond/core/Responder.h>
@@ -84,6 +85,8 @@ public:
 	void supplyFloatingText(FloatingText *text);
 
 	virtual void interactedWithNothing(bool left, bool hover = false);
+	virtual void keyPressEvent(SDL_Keycode pressed);
+	void focusOnResidue(int res);
 private:
 	void resetDensityMap();
 

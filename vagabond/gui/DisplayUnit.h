@@ -29,6 +29,9 @@ class ArbitraryMap;
 class Entity;
 class Model;
 class AtomMap;
+class GuiBalls;
+
+template <typename Thing> class Responder;
 
 struct DisplayUnit
 {
@@ -56,6 +59,8 @@ public:
 	{
 		return _guiDensity;
 	}
+	
+	void addAtomIndexResponder(Responder<GuiBalls> *const &rsp);
 
 	void tear(AtomMap *map);
 	void refreshDensity(AtomMap *map, bool differences);

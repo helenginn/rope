@@ -99,7 +99,7 @@ void PathsDetail::redraw()
 	{
 		std::string str = std::to_string(_VdWEnergy);
 		Text *t = new Text(str);
-		t->addAltTag("in kJ/mol");
+		t->addAltTag("in kJ/mol, treat as\napproximate");
 		t->setRight(0.8, top);
 		addTempObject(t);
 		
@@ -151,7 +151,7 @@ void PathsDetail::setup()
 	{
 		Text *t = new Text
 		("Note: path validation does not currently include any estimation of\n"\
-		 "electrostatic potential, favoured rotamers, solvent accessibility or\n"\
+		 "electrostatic potential, solvent accessibility or "\
 		 "internal vaccuums.");
 		t->squishToWidth(0.6);
 		t->setLeft(0.2, top);
@@ -213,8 +213,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	{
 		glm::vec2 c = button->xy();
 		Menu *m = new Menu(this, this, "viewfrom");
-		m->addOption("From start (1st order momentum)", "quadratic");
-		m->addOption("2nd order momentum", "cubic");
+		m->addOption("Momentum", "momenum");
 		m->addOption("All-atom clash", "h_clash");
 		m->setup(c.x, c.y);
 		setModal(m);
@@ -224,13 +223,9 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	if (end.length())
 	{
 		int job = 0;
-		if (end == "cubic")
+		if (end == "h_clash")
 		{
 			job = 1;
-		}
-		else if (end == "h_clash")
-		{
-			job = 2;
 		}
 
 		PlausibleRoute *pr = _obj.toRoute();

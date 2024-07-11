@@ -78,16 +78,22 @@ void GuiBalls::interacted(int idx, bool hover, bool left)
 		return;
 	}
 
-	if (hover && _scene && _indexAtom.count(idx))
+	if (_scene && _indexAtom.count(idx))
 	{
 		Atom *atom = _indexAtom[idx];
 
-		std::string str = atom->desc();
+		if (hover)
+		{
+			std::string str = atom->desc();
 
-		FloatingText *ft = new FloatingText(str, 25);
-		ft->setPosition(_vertices[idx].pos);
-
-		_scene->supplyFloatingText(ft);
+			FloatingText *ft = new FloatingText(str, 25);
+			ft->setPosition(_vertices[idx].pos);
+			_scene->supplyFloatingText(ft);
+		}
+		else
+		{
+			sendResponse("left_atom", atom);
+		}
 	}
 }
 

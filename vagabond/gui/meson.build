@@ -72,6 +72,8 @@ guifiles = [
 'MetadataView.cpp',
 'ModelMenu.cpp',
 'ModelMetadataView.cpp',
+'ParamTweaker.cpp',
+'ParamTweaker.h',
 'PathsDetail.cpp',
 'PathInterfaceSetupView.cpp',
 'PathInterfaceSetupView.h',

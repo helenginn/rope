@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/core/SerialRefineJob.h>
+#include <vagabond/core/function_typedefs.h>
 #include "SerialRefiner.h"
 #include "Display.h"
 #include "GuiAtom.h"
@@ -37,7 +38,7 @@ Display(prev)
 SerialRefiner::~SerialRefiner()
 {
 	delete _handler;
-
+	delete _displayAtoms;
 }
 
 void SerialRefiner::start()
@@ -147,6 +148,9 @@ void SerialRefiner::loadModelIntoDisplay(Model *model)
 
 	if (atoms)
 	{
+		delete _displayAtoms;
+		_displayAtoms = atoms->new_subset(rope::atom_is_not_hydrogen());
+
 		int count = _handler->finishedCount() + 1;
 		int total = _handler->objectCount();
 
@@ -156,7 +160,7 @@ void SerialRefiner::loadModelIntoDisplay(Model *model)
 
 		addTitle(ss.str());
 		DisplayUnit *unit = new DisplayUnit(this);
-		unit->loadAtoms(atoms);
+		unit->loadAtoms(_displayAtoms);
 		unit->displayAtoms();
 
 		clearDisplayUnits();
