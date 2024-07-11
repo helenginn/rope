@@ -34,6 +34,11 @@ WayPoints::WayPoints(int order)
 	}
 }
 
+void WayPoints::zero()
+{
+	_amps = std::vector<float>(_amps.size(), 0);
+}
+
 float WayPoints::amplitude(const float &frac, const float &order)
 {
 	float limit = M_PI * (order + 1);
