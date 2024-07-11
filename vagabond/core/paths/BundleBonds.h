@@ -59,11 +59,6 @@ public:
 	
 	bool areSidechains(int p, int q);
 	
-	void addVdWRadius(const float &add)
-	{
-		_vdwAdd = add;
-	}
-	
 	void report(int p, int q);
 	
 	const std::array<bool, 4> &received() const
@@ -79,7 +74,7 @@ private:
 		glm::vec3 pos[4] = {};
 		std::array<glm::vec3, 4> coefficients = {}; // x^3 + x^2 + x + c
 		float radius;
-		int atomic_num;
+		float epsilon;
 		
 		std::array<glm::vec3, 4> operator-(const FourPos &other) const
 		{
@@ -93,7 +88,6 @@ private:
 	};
 
 	bool _recordContacts = false;
-	float _vdwAdd = 0;
 	float _frac = 0;
 	std::vector<FourPos> _positions;
 	std::array<bool, 4> _received;
