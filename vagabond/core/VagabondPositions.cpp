@@ -47,6 +47,7 @@ void VagabondPositions::prepareResources()
 	Atom *anchor = _group->chosenAnchor();
 	_resources.sequences->addAnchorExtension(anchor);
 
+//	_resources.sequences->setAtomFilter(rope::atom_is_not_hydrogen());
 //	_resources.sequences->setIgnoreHydrogens(true);
 	_resources.sequences->prepareToSkipSections(true);
 	_resources.sequences->setup();
@@ -181,6 +182,7 @@ bool VagabondPositions::refineBetween(int min, int max)
 	_resources.sequences->imposeDepthLimits(min, max, false);
 
 	ParamSet set = _resources.sequences->flaggedParameters();
+	set.filter([](Parameter *const &param) { return !param->isConstrained(); });
 	
 	if (set.size() == 0)
 	{
