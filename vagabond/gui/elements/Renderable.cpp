@@ -257,13 +257,13 @@ void Renderable::runProgram()
 	rebindVBOBuffers();
 	checkErrors("rebinding program");
 
-	_model = getModel();
+	_model = _usesProj ? getModel() : glm::mat4(1.f);
 	_uModel = glGetUniformLocation(_program, "model");
 	_glModel = glm::transpose(model());
 	glUniformMatrix4fv(_uModel, 1, GL_FALSE, &_model[0][0]);
 	checkErrors("rebinding model");
 
-	_proj = _gl->getProjection();
+	_proj = _usesProj ? _gl->getProjection() : glm::mat4(1.f);
 	_uProj = glGetUniformLocation(_program, "projection");
 	_glProj = glm::transpose(projection());
 	glUniformMatrix4fv(_uProj, 1, GL_FALSE, &_proj[0][0]);
