@@ -30,6 +30,8 @@ struct WayPoints
 	WayPoints();
 	WayPoints(int order);
 
+	void zero();
+
 	float interpolatedProgression(float frac);
 	
 	void forceOrder(int order)
