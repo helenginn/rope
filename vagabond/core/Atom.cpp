@@ -379,7 +379,6 @@ glm::mat4x4 Atom::coordinationMatrix(Atom *children[4], int count, Atom *prev)
 		}
 		else if (count == 2)
 		{
-
 			insert_three_atoms(tmp, lengths, angles);
 		}
 		else if (count == 1)
