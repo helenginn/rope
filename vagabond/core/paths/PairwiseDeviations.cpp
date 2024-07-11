@@ -24,7 +24,7 @@
 #include "LoopRoundResidues.h"
 #include "Separation.h"
 
-PairwiseDeviations::PairwiseDeviations(BondSequence *sequence,
+PairwiseDeviations::PairwiseDeviations(BondSequence *sequence, 
                                        const float &limit, Separation *sep)
 {
 	_limit = limit;
@@ -98,7 +98,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 					too_close = true;
 				}
 			}
-
+			
 			if (too_close)
 			{
 				continue;
@@ -117,7 +117,12 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			float start = distance_between_atoms(at_rest, moving, 0);
 			float end = distance_between_atoms(at_rest, moving, 1);
 			
-			bool ok = (start < threshold || end < threshold);
+			bool is_side = !(left->isMainChain() && right->isMainChain());
+
+			float modulate = is_side ?  0.5 : 1.0;
+
+			bool ok = (start < threshold * modulate || 
+			           end < threshold * modulate);
 			if (!ok)
 			{
 				continue;
@@ -127,12 +132,12 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 
 			// we check if it's a side chain, because we are not interested 
 			// in a per-residue check if we can't move it.
-			if (!left->isMainChain())
+//			if (!left->isMainChain())
 			{
 				_perResidue[left->residueId()].push_back(size);
 			}
 			
-			if (!right->isMainChain())
+//			if (!right->isMainChain())
 			{
 				_perResidue[right->residueId()].push_back(size);
 			}
@@ -141,7 +146,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			_residues.insert(right->residueId());
 			
 			_pairs.push_back(_infoPairs.size());
-			_infoPairs.push_back({m, n, start, end});
+			_infoPairs.push_back({m, n, start, end, is_side});
 			_atoms2Info[{left, right}] = size;
 			_atoms2Info[{right, left}] = size;
 		}

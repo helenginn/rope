@@ -47,6 +47,7 @@ struct TargetInfo
 	int q;
 	float dStart;
 	float dEnd;
+	bool hasSide = false;
 	float mFrac = -1;
 	float dMid = -1;
 	
@@ -170,6 +171,7 @@ private:
 
 	PairFilter _filter{};
 	float _limit = 8.f;
+	bool _clash = false;
 	
 	typedef std::pair<Atom *, Atom *> AtomAtom;
 
