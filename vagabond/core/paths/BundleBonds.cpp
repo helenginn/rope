@@ -101,26 +101,33 @@ void BundleBonds::findCoefficients()
 		{
 			gemmi::Element ele = gemmi::Element(ps.atom->elementSymbol());
 			float vdwRadius = ele.vdw_r();
-			ps.radius = vdwRadius + _vdwAdd;
-			ps.atomic_num = ele.atomic_number();
+			ps.radius = vdwRadius;
+			ps.epsilon = 0.07;
+			switch (ele.atomic_number())
+			{
+				case 1: ps.epsilon = 0.0037; break;
+				case 6: ps.epsilon = 0.0205; break;
+				case 7: ps.epsilon = 0.0407; break;
+				case 8: ps.epsilon = 0.0502; break;
+				case 16: ps.epsilon = 0.0600; break;
+			}
 		}
 	}
 }
 
-long double vdw_energy(const float &difflength,
-                       const float &ar, // radius
-                       const float &aan) // atomic num
+long double vdw_energy(const float &difflengthsq,
+                       const float &sigma, // radius
+                       const float &epsilon) // atomic num
 {
-	float d = ar;
-	float ratio = d / difflength;
+	float d = sigma;
+	float ratio = (d * d) / difflengthsq;
 
-	long double to6 = ratio * ratio * ratio * ratio * ratio * ratio;
+	long double to6 = ratio * ratio * ratio;
 	long double to12 = to6 * to6;
 
 	// to roughly match tables of epsilon found online
-	float weight = aan / 25;
 
-	long double potential = (to12 - to6) * weight;
+	long double potential = (epsilon * to12 - 2 * epsilon * to6);
 	return potential;
 }
 
@@ -140,10 +147,12 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 
 	auto job = [this](int p, int q, float dist) -> long double
 	{
+		float diameter = (_positions[p].radius + _positions[q].radius) * 0.75;
+		float epsilon = sqrt(_positions[p].epsilon * _positions[q].epsilon);
+
 		if (dist >= 0)
 		{
-			return vdw_energy(dist, _positions[p].radius,
-			                  _positions[p].atomic_num);
+			return vdw_energy(dist * dist, diameter, epsilon);
 		}
 
 		std::array<glm::vec3, 4> diff = _positions[q] - _positions[p];
@@ -158,15 +167,15 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 
 		// solve for closest point
 
-		float &a = sum[0]; float &b = sum[1]; 
-		float &c = sum[2];
+		float &a = sum[0]; float &b = sum[1]; float &c = sum[2];
 
 		auto diff_from_coeffs = get_diff_from_coeffs(diff);
 
-		auto energy_from_diff = [this, p, q](const glm::vec3 &posdiff)
+		auto energy_from_diff = [this, &diameter, &epsilon]
+		(const glm::vec3 &posdiff)
 		{
-			return vdw_energy(glm::length(posdiff), _positions[p].radius,
-			                  _positions[p].atomic_num);
+			return vdw_energy(glm::dot(posdiff, posdiff),
+			                  diameter, epsilon);
 		};
 
 		glm::vec3 pos0 = _positions[q].pos[1] - _positions[p].pos[1];
