@@ -162,13 +162,14 @@ void PlausibleRoute::prepareJobs()
 			{
 				amnesty++;
 				good = gradient_type();
+				_ids.clear();
 				if (_finish)
 				{
 					return;
 				}
 				if (!good)
 				{
-					if (amnesty < 16 && !doingClashes())
+					if (amnesty < 1 && !doingClashes())
 					{
 						continue;
 					}
@@ -187,12 +188,43 @@ void PlausibleRoute::prepareJobs()
 		};
 	};
 	
-	auto do_next = [this]()
+	auto increase_order_on_success = [this](const std::function<bool(int)> &job,
+	                                        int max)
 	{
-		if (doingClashes()) { return sideChainGradients(); }
-		else { return applyGradients(); };
+		int i = 0;
+		bool improved = false;
+		while (i < max)
+		{
+			bool this_time = job(i);
+			if (_finish) return false;
+			improved |= this_time;
+			if (i < max - 1)
+			{
+				i++;
+			}
+			else if (!this_time)
+			{
+				break;
+			}
+		}
+		return improved;
 	};
 
+	auto do_next = [this, increase_order_on_success]()
+	{
+		if (doingClashes())
+		{
+			return
+			increase_order_on_success([this](int i)
+			                          { return sideChainGradients(i); },
+			                          2);
+		}
+		else
+		{
+			return applyGradients();
+		};
+	};
+	
 	only_once flip_mains(flip_main_chain);
 //	only_once flip_sides(flip_side_chain);
 	_tasks.push_back(flip_mains);
@@ -272,16 +304,20 @@ PlausibleRoute::calcOptions(const CalcOptions &add_options,
 	return options;
 }
 
-std::vector<Floats> save_current(GradientPath *path, const RTMotion &motions)
+std::vector<float> save_current(GradientPath *path, const RTMotion &motions,
+                                 int to_order)
 {
-	auto current = std::vector<Floats>(motions.size());
+	std::vector<float> current = std::vector<float>(motions.size() * to_order);
 
 	for (int i = 0; i < path->motion_idxs.size(); i++)
 	{
 		int p = path->motion_idxs[i];
 		if (p >= 0 && p < motions.size())
 		{
-			current[p] = motions.storage(p).wp._amps;
+			for (int j = 0; j < to_order; j++)
+			{
+				current[p * to_order + j] = motions.storage(p).wp._amps[j];
+			}
 		}
 	}
 
@@ -345,20 +381,32 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	OpSet<ResidueId> chosen;
 
 	n = 0;
+	float sum = 0;
+	_lemons.clear();
+
 	for (const RankedResidue &rr : residues)
 	{
 		if (n >= num) break;
 		chosen.insert(rr.id);
 		std::cout << rr.id << " has score " << rr.score << std::endl;
+		_lemons.push_back({rr.id, rr.score});
+		sum += rr.score;
 		n++;
 	}
+	
+	for (auto &lemon : _lemons)
+	{
+		lemon.second /= sum;
+	}
+	
+	Route::sendResponse("lemon", nullptr);
 	
 	_ids.clear();
 
 	return chosen;
 }
 
-bool PlausibleRoute::sideChainGradients()
+bool PlausibleRoute::sideChainGradients(int order)
 {
 	_paramPtrs.clear();
 	_paramStarts.clear();
@@ -370,8 +418,8 @@ bool PlausibleRoute::sideChainGradients()
 	for (int i = 0; i < motionCount(); i++)
 	{
 		ResidueTorsion &rt = residueTorsion(i);
-		if (!parameter(i) ||
-		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained()))
+		if (!parameter(i) || (parameter(i)->isTorsion() &&
+		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained())))
 		{
 			continue;
 		}
@@ -379,15 +427,12 @@ bool PlausibleRoute::sideChainGradients()
 		const ResidueId &local = rt.local_id();
 		WayPoints &wps = wayPoints(i);
 
-		addFloatParameter(&wps._amps[0], step);
-		addFloatParameter(&wps._amps[1], step);
-
-		for (int j = 0; j < 2; j++)
+		for (int j = 0; j <= order; j++)
 		{
-			map[local].push_back(n + j);
+			addFloatParameter(&wps._amps[j], step);
+			map[local].push_back(n);
+			n++;
 		}
-
-		n += 2;
 	}
 
 	float oldsc = routeScore(nudgeCount());
@@ -517,7 +562,7 @@ void PlausibleRoute::repelMainChainAtomsFromWorstResidues()
 	delete all_contacts;
 	delete all;
 	
-	_jobLevel = 0;
+	setFirstJob();
 
 	if (lastJob())
 	{
@@ -525,14 +570,86 @@ void PlausibleRoute::repelMainChainAtomsFromWorstResidues()
 	}
 }
 
-bool PlausibleRoute::applyGradients()
+template <typename JobOnTerm>
+auto do_on_each_path_component(PlausibleRoute *pr, 
+                               GradientPath *path, const JobOnTerm &job)
 {
-	auto side_chain = [this](int idx) -> bool
+	for (int j = 0; j < path->motion_idxs.size(); j++)
 	{
-		return parameter(idx) && !parameter(idx)->coversMainChain();
+		int p = path->motion_idxs[j]; // motion_idx
+		if (p >= 0 && p < pr->motionCount())
+		{
+			const Floats &sines = path->grads[j];
+			for (int i = 0; i < sines.size(); i++)
+			{
+				int n = p * pr->currentOrder() + i;
+				job(p, i, n);
+			}
+		}
+	}
+
+}
+
+float PlausibleRoute::evaluateMomentum(const lbfgsfloatval_t *x)
+{
+	do_on_each_path_component(this, _path,
+	[this, x](int p, int i, int n)
+	{
+		motion(p).wp._amps[i] = x[n];
+	});
+
+	float score = routeScore(nudgeCount());
+	
+	if (score < _bestScore)
+	{
+		_bestScore = score;
+		postScore(score);
+	}
+
+	return score;
+}
+
+void PlausibleRoute::prepareGradients(lbfgsfloatval_t *g)
+{
+	const auto side_chain = [this](int idx) -> bool
+	{
+		return ((parameter(idx) && !parameter(idx)->coversMainChain()) ||
+		        !parameter(idx)->isTorsion()) ;
 	};
 
+	delete _path;
 	GradientPath *path = gradients(doingSides() ? side_chain : ValidateIndex{});
+	_path = path;
+
+	for (int j = 0; j < _path->motion_idxs.size(); j++)
+	{
+		int p = _path->motion_idxs[j]; // motion_idx
+		if (p >= 0 && p < motionCount())
+		{
+			const Floats &sines = _path->grads[j];
+			for (int i = 0; i < sines.size(); i++)
+			{
+				int n = p * currentOrder() + i;
+				g[n] = sines[i];
+			}
+		}
+	}
+}
+
+lbfgsfloatval_t evaluateLbfgs(void *instance, 
+                                 const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
+                                 const int n, const lbfgsfloatval_t step)
+{
+
+	PlausibleRoute *pr = static_cast<PlausibleRoute *>(instance);
+	float result = pr->evaluateMomentum(x);
+	pr->prepareGradients(g);
+	return result;
+}
+
+bool PlausibleRoute::applyGradients()
+{
+	GradientPath *path = gradients(ValidateIndex{});
 
 	if (Route::_finish)
 	{
@@ -540,83 +657,27 @@ bool PlausibleRoute::applyGradients()
 		return false;
 	}
 
-	std::vector<Floats> current = save_current(path, _motions);
-
-	for (int j = 0; j < path->motion_idxs.size(); j++)
-	{
-		int p = path->motion_idxs[j]; // motion_idx
-		const Floats &sines = path->grads[j];
-	}
-
-	float scale = 1;
-	float alpha = 0;
-	float step = 0.25;
+	lbfgs_parameter_t params;
 	
-	auto score_for_alpha = [this, scale, path, current]
-	(const float &alpha) -> float
-	{
-		for (int j = 0; j < path->motion_idxs.size(); j++)
-		{
-			int p = path->motion_idxs[j]; // motion_idx
-			if (p >= 0 && p < motionCount())
-			{
-				const Floats &sines = path->grads[j];
-				for (int i = 0; i < sines.size(); i++)
-				{
-					float add = sines[i] * alpha * scale;
-					motion(p).wp._amps[i] = current[p][i] + add;
-				}
-			}
-		}
+	lbfgs_parameter_init(&params);
+	params.max_iterations = 10;
+	params.max_linesearch = 10;
 
-		float score = routeScore(nudgeCount());
-//		std::cout << alpha << " -> " << score << std::endl;
-		return score;
-	};
+	float startScore = routeScore(nudgeCount());
+	_bestScore = startScore;
 
-	float best_score = score_for_alpha(0);
-	float first_score = best_score;
-	float best_alpha = 0;
-
-	int divisions = 0;
-	while (divisions < 12)
-	{
-		float candidate = alpha + step;
-		float score = score_for_alpha(candidate);
-		
-		if (score < best_score)
-		{
-			best_score = score;
-			postScore(best_score);
-			best_alpha = candidate;
-			alpha = best_alpha;
-			divisions = 0;
-			step *= 1.5;
-		}
-		else if (score >= best_score)
-		{
-			divisions++;
-			step /= 2;
-		}
-		
-		if (Route::_finish)
-		{
-			return false;
-		}
-	}
+	_path = path;
+	std::vector<float> current = save_current(path, _motions, currentOrder());
+	float endScore = 0;
+	int res = lbfgs(current.size(), &current[0], &endScore, &evaluateLbfgs,
+	                nullptr, this, &params);
 	
-	best_score = score_for_alpha(best_alpha);
-	_bestScore = best_score;
-	postScore(best_score);
-	
-	path->destroy();
-	delete path;
-
-	if (_finish) return false;
-	if (best_alpha < 1e-4) return false;
-	if (first_score - best_score < 1e-4) return false;
-
-	return true;
+	delete _path; _path = nullptr;
+	bool meaningful = endScore < startScore - 0.001;
+	std::cout << "n = " << current.size() << ", " << 
+	startScore << " --> " << endScore << " ";
+	std::cout << (meaningful ? "(meaningful)" : "(meaningless)") << std::endl;
+	return meaningful;
 }
 
 GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
@@ -625,7 +686,7 @@ GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
 {
 	CalcOptions options = calcOptions(add_options, subtract_options);
 	
-	int order = doingQuadratic() ? 1 : _order;
+	int order = _jobOrder + 1;
 
 	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
@@ -1019,19 +1080,32 @@ void PlausibleRoute::upgradeJobs()
 {
 	if (lastJob()) { return; }
 
-	_jobLevel++;
+	if (lastOrder() && _jobLevel == 0)
+	{
+		_jobLevel++;
+		_jobOrder = _order;
+	}
+	else if (_jobLevel == 0)
+	{
+		_jobOrder++;
+	}
+	else
+	{
+		_jobLevel++;
+	}
 
 	unlockAll();
-	std::cout << "Job level now " << _jobLevel << "..." << std::endl;
+	std::cout << "Job level now " << _jobLevel << ", order " << _jobOrder 
+	<< std::endl;
 }
 
 
 void PlausibleRoute::refreshScores()
 {
-	_jobLevel = 0;
+	setFirstJob();
 	_momentum = routeScore(nudgeCount());
 
-	_jobLevel = 4;
+	setLastJob();
 	_clash = routeScore(nudgeCount(), None, TorsionEnergies);
 	_vdwEnergy = _activationEnergy;
 	routeScore(nudgeCount(), TorsionEnergies, VdWClashes);
