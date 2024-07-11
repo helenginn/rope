@@ -138,9 +138,12 @@ private:
 	std::map<std::string, int> _atomLocs;
 	std::map<Atom *, int> _atomPtrLocs;
 	std::map<std::string, int> _branchLocs;
+	std::map<std::string, int> _riderLocs;
 	std::map<int, AtomGraph *> _idx2Graph;
 	std::map<AtomGraph *, int> _graph2Idx;
 	std::map<std::string, std::string> _grandparents;
+
+	std::vector<std::string> _riders;
 
 	std::string _cyclicFile;
 
@@ -193,6 +196,11 @@ inline void from_json(const json &j, RingProgrammer &value)
 	{
 		std::vector<rope::ExitGroup> groups = j["groups"];
 		value._groups = groups;
+	}
+
+	if (j.count("riders"))
+	{
+		value._riders = j["riders"];
 	}
 
 	if (j.count("code"))
