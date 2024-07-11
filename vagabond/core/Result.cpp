@@ -22,7 +22,7 @@
 
 std::mutex *Result::mut = new std::mutex();
 
-void Result::transplantPositions(bool displayTargets)
+void Result::transplantPositions(bool displayTargets, bool other)
 {
 	if (apl.size() > 0)
 	{
@@ -35,7 +35,14 @@ void Result::transplantPositions(bool displayTargets)
 				continue;
 			}
 
-			awp.atom->setDerivedPosition(disp);
+			if (other)
+			{
+				awp.atom->setOtherPosition("other", disp);
+			}
+			else
+			{
+				awp.atom->setDerivedPosition(disp);
+			}
 		}
 	}
 	else if (aps.size() > 0)

@@ -111,7 +111,7 @@ void StructureModification::retrieve()
 
 		if (handleAtomList(r->apl) || handleAtomMap(r->aps))
 		{
-			r->transplantPositions(_displayTargets);
+			r->transplantPositions(_displayTargets, !_displayAnything);
 		}
 
 		if (r->deviation == r->deviation)

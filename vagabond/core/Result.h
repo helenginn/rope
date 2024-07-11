@@ -83,7 +83,8 @@ struct Result
 	
 	void transplantColours();
 	
-	void transplantPositions(bool displayTargets = false);
+	void transplantPositions(bool displayTargets = false,
+	                         bool other = false);
 	
 	void destroy();
 };
