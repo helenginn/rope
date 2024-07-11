@@ -35,7 +35,19 @@ void AtomBlock::printBlock() const
 		std::cout << "Atom: " << atom->atomName() << "\t" <<
 		atom->desc() << std::endl;
 		std::cout << "init pos: " << 
-		glm::to_string(atom->initialPosition()) << std::endl;
+		glm::to_string(atom->initialPosition()) << ", followed by: ";
+		
+		for (size_t i = 0; i < nBonds; i++)
+		{
+			if (write_locs[i] < 0)
+			{
+				continue;
+			}
+
+			const AtomBlock &following = *(this + write_locs[i]);
+			std::cout << following.atom->desc() << " ";
+		}
+		std::cout << std::endl;
 	}
 	else
 	{
