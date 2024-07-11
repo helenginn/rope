@@ -19,6 +19,7 @@
 #include "RouteExplorer.h"
 #include "GuiAtom.h"
 
+#include <vagabond/gui/elements/FloatingImage.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
@@ -27,6 +28,7 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/PathParamEditor.h>
+#include <vagabond/gui/ParamTweaker.h>
 
 #include <vagabond/core/paths/PlausibleRoute.h>
 #include <vagabond/core/paths/RouteValidator.h>
@@ -66,6 +68,7 @@ void RouteExplorer::setup()
 	unit->loadAtoms(grp, nullptr);//_instance->entity());
 	unit->displayAtoms(false, false);
 	addDisplayUnit(unit);
+	unit->addAtomIndexResponder(this);
 	
 	_atoms = grp;
 	_route->setAtoms(grp);
@@ -103,6 +106,17 @@ void RouteExplorer::setupSave()
 	tb->setRight(0.9, 0.1);
 	_saveAndExit = tb;
 	addObject(tb);
+}
+
+void RouteExplorer::setupClearLemons()
+{
+	TextButton *tb = new TextButton("Clear lemons", this);
+	tb->addAltTag("Lemons show the worst clashes in the path");
+	tb->setReturnJob([this, tb]() {
+		                clearLemons();
+	                 });
+	tb->setRight(0.9, 0.28);
+	addTempObject(tb);
 }
 
 void RouteExplorer::setupEditor()
@@ -171,9 +185,41 @@ void RouteExplorer::pause()
 	setupSlider();
 	_watch = false;
 
-	_startPause->setReturnTag("start");
 	_startPause->setText("Start");
 	_startPause->setInert(false);
+
+	auto start_pause = [this]()
+	{
+		if (_startPause->text() == "Start")
+		{
+			_startPause->setText("Pause");
+
+			if (_first)
+			{
+				buttonPressed("start_momentum", _startPause);
+				_first = false;
+			}
+			else
+			{
+				Menu *m = new Menu(this);
+				m->addOption("momentum", "start_momentum");
+				m->addOption("clash", "start_clash");
+				double x = _lastX / (double)_w;
+				double y = _lastY / (double)_h;
+				m->setup(x, y);
+				setModal(m);
+			}
+		}
+		else
+		{
+			_pausing = true;
+			_startPause->setInert(true, true);
+			_plausibleRoute->finishTicker();
+			_route->finishRoute();
+		}
+	};
+
+	_startPause->setReturnJob(start_pause);
 }
 
 void RouteExplorer::doThings()
@@ -194,19 +240,42 @@ void RouteExplorer::doThings()
 			setInformation("Cubic score with side chains: " 
 			               + f_to_str(_newScore, 3));
 		}
-		else if (_route->doingCubic())
+		else if (_route->doingMomentum())
 		{
-			setInformation("2nd order score: " + f_to_str(_newScore, 3));
-		}
-		else if (_route->doingQuadratic())
-		{
-			setInformation("1st order score: " + f_to_str(_newScore, 3));
+			int order = _route->currentOrder();
+			setInformation("Order " + std::to_string(order) + " score: " 
+			               + f_to_str(_newScore, 3));
 		}
 
 		_newScore = NAN;
 	}
 
 	Scene::doThings();
+}
+
+void RouteExplorer::pickAtom(Atom *const &atom)
+{
+	int idx = _route->paramIdxForAtom(atom);
+	if (idx < 0) 
+	{
+		return;
+	}
+
+	Parameter *param = _route->parameter(idx);
+	
+	if (param->coversMainChain())
+	{
+		return;
+	}
+
+	float x, y;
+	getFractionalPos(x, y);
+	
+	Motion &motion = _route->motion(idx);
+	ParamTweaker *pt = new ParamTweaker(this, motion, atom, param, _route);
+	pt->setup(x, y);
+
+	setModal(pt);
 }
 
 void RouteExplorer::sendObject(std::string tag, void *object)
@@ -252,7 +321,60 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 		return;
 	};
 	
+	if (tag == "left_atom")
+	{
+		Atom *atom = static_cast<Atom *>(object);
+		pickAtom(atom);
+	}
+	
+	if (tag == "lemon")
+	{
+		addMainThreadJob([this](){ makeLemons(); });
+	}
 }
+
+void RouteExplorer::clearLemons()
+{
+	deleteTemps();
+}
+
+void RouteExplorer::makeLemons()
+{
+	auto lemons = _route->lemons();
+	deleteTemps();
+
+	for (auto lemon : lemons)
+	{
+		ResidueId &id = lemon.first;
+		float score = lemon.second;
+
+		Atom *chosen = _atoms->atomByIdName({id}, "CA");
+		if (!chosen)
+		{
+			chosen = _atoms->atomByIdName({id}, "");
+		}
+
+		if (chosen)
+		{
+			FloatingImage *image = new FloatingImage("assets/images/lemon.png",
+			                                         50 * score, 0.2);
+			image->setColour(0.1, 0.1, 0.1);
+			image->setPosition(chosen->derivedPosition());
+			image->setVertexShaderFile("assets/shaders/lemon.vsh");
+			image->setFragmentShaderFile("assets/shaders/lemon.fsh");
+			addTempObject(image);
+		}
+	}
+
+	setupClearLemons();
+}
+
+/*
+void RouteExplorer::Responder<GuiBalls>::sendObject(std::string tag,
+                                                    void *object)
+{
+}
+*/
 
 void RouteExplorer::calculate()
 {
@@ -323,6 +445,7 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		PathParamEditor *ppe = new PathParamEditor(this, _route);
 		ppe->show();
 	}
+	/*
 	if (tag == "pause")
 	{
 		_pausing = true;
@@ -330,14 +453,18 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		_plausibleRoute->finishTicker();
 		_route->finishRoute();
 	}
+	*/
 	else if (tag == "add")
 	{
 		Path path(_plausibleRoute);
 		Environment::env().pathManager()->insertOrReplace(path, _oldPath);
 		back();
 	}
-	else if (tag == "start" && _worker == nullptr)
+	else if ((tag == "start_momentum" || tag == "start_clashes")
+	         && _worker == nullptr)
 	{
+		_route->setJobLevel(tag == "start_momentum" ? 0 : 1);
+		_route->setFinish(false);
 		_pausing = false;
 		demolishSlider();
 
@@ -345,15 +472,6 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		_start = ::time(NULL);
 		_watch = true;
 		_worker = new std::thread(Route::calculate, _route);
-
-		TextButton *tb = static_cast<TextButton *>(button);
-		tb->setReturnTag("pause");
-		tb->setText("Pause");
-		
-		if (_route->lastJob())
-		{
-			_route->setJobLevel(2);
-		}
 	}
 	else if (tag == "settings")
 	{

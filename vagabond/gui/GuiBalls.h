@@ -28,7 +28,8 @@ class GuiAtom;
 class GuiBond;
 class FloatingText;
 
-class GuiBalls : public GuiRepresentation
+class GuiBalls : public GuiRepresentation, 
+public HasResponder<Responder<GuiBalls>>
 {
 public:
 	GuiBalls(GuiAtom *parent);

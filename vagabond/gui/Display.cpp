@@ -23,6 +23,7 @@
 
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/AtomGroup.h>
@@ -193,3 +194,43 @@ void Display::supplyFloatingText(FloatingText *text)
 	addObject(_text);
 }
 
+void Display::focusOnResidue(int res)
+{
+	for (DisplayUnit *const &unit : _units)
+	{
+		AtomGroup *atoms = unit->atoms();
+		Atom *chosen = atoms->atomByIdName({res}, "CA");
+		if (!chosen)
+		{
+			chosen = atoms->atomByIdName({res}, "");
+		}
+		if (!chosen)
+		{
+			continue;
+		}
+
+		shiftToCentre(chosen->derivedPosition(), 5);
+	}
+}
+
+void Display::keyPressEvent(SDL_Keycode pressed)
+{
+	if (pressed == SDLK_g)
+	{
+		TextEntry *te = new TextEntry("enter residue", this);
+		te->setValidationType(TextEntry::Numeric);
+		te->setReturnJob([this, te]()
+		                 {
+			                std::string scr = te->scratch();
+			                int res = atoi(scr.c_str());
+			                focusOnResidue(res);
+			                removeObject(te);
+		                 });
+		te->setCentre(0.5, 0.3);
+		addObject(te);
+		
+		addMainThreadJob([te]() { te->click(); });
+	}
+
+	Mouse2D::keyPressEvent(pressed);
+}
