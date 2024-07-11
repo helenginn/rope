@@ -91,6 +91,16 @@ public:
 		return _displayTargets;
 	}
 	
+	bool isDisplaying()
+	{
+		return _displayAnything;
+	}
+	
+	void setDisplayAnything(bool any)
+	{
+		_displayAnything = any;
+	}
+	
 	void setThreads(const int &thr)
 	{
 		_threads = thr;
@@ -148,6 +158,7 @@ protected:
 	Resources _resources;
 
 	bool _displayTargets = false;
+	bool _displayAnything = true;
 
 	typedef std::map<int, int> TicketPoint;
 	typedef std::map<int, Score> TicketScores;
