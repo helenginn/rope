@@ -168,10 +168,6 @@ EnergyTorsions::Torsion2Energy function_for_block(TorsionBasis *basis,
 		}
 		
 		obs.push_back({z, rel_angle, 60});
-		if (pz > 1 && qz > 1)
-		{
-//			obs.push_back({z, rel_angle, 120});
-		}
 	}
 
 	std::vector<Torsion2Energy> curves;
