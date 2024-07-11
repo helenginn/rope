@@ -451,9 +451,9 @@ void RingProgrammer::fixProgramIndices(std::vector<AtomBlock> &blocks,
 				blocks[f.idx].silence();
 			}
 			
-			if (f.ptr->atomName() == "CB")
+			if (f.ptr && f.ptr->atomName() == "CB" && f.ptr->code() == "PRO")
 			{
-				blocks[f.idx].offset = 120;
+				blocks[f.idx].offset = 150;
 			}
 		}
 	}
@@ -500,43 +500,6 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		}
 	}
 	
-	/*
-	for (auto it = _branchLocs.begin(); it != _branchLocs.end(); it++)
-	{
-		// correct the index of this branch location 
-		int corrected = it->second - _triggerIndex;
-
-		if (corrected <= 0)
-		{
-			// not relevant as they'll already have been calculated
-			continue;
-		}
-
-		// make sure we do not execute the normal program
-		AtomGraph *gr = _idx2Graph[it->second];
-		AtomGraph *prior = gr->prior;
-		prior = prior->prior;
-		prior = prior->prior;
-		
-		int ancestor_idx = _graph2Idx[prior];
-
-		std::string gp = gr->grandparent->atomName();
-		
-		if (gp.length() == 0)
-		{
-			throw std::runtime_error("OH NO, the atom lost its grandparent.");
-		}
-
-		Atom *curr = blocks[it->second].atom;
-		prog->addBranchIndex(corrected, curr, gp);
-		
-		if (!prog->isValid())
-		{
-			return;
-		}
-	}
-	*/
-	
 	int pindx = _atomLocs[_pinnedAtom];
 	Atom *pinned = nullptr;
 	if (pindx >= 0)
@@ -577,7 +540,7 @@ void RingProgrammer::makeProgram(std::vector<AtomBlock> &blocks, int prog_num,
 		prior = prior->prior;
 		int grandparent = _graph2Idx[prior];
 
-		prog->addBranchIndex(child, self, parent, grandparent);
+		prog->addBranchIndex(child, blocks);
 	}
 
 	prog->setTorsionBasis(basis);

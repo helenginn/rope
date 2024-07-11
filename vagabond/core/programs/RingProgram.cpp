@@ -54,138 +54,88 @@ void RingProgram::addAlignmentIndex(int idx, std::string atomName)
 	int cycle_idx = _cyclic.indexOfName(atomName);
 	_alignmentMapping[idx] = cycle_idx;
 	_ringMapping[idx] = cycle_idx; // this messes with torsion angle measurements?
+	_name2Ring[atomName] = idx;
 }
 
 void RingProgram::addRingIndex(int idx, std::string atomName)
 {
 	int cycle_idx = _cyclic.indexOfName(atomName);
 	_ringMapping[idx] = cycle_idx;
+	_name2Ring[atomName] = idx;
 }
 
-void RingProgram::addBranchIndex(int child, int self, int parent, int gp)
+int inRing(const std::map<std::string, int> &name2Ring, Atom *check)
 {
-	TorsionGroup tg{child, self, parent, gp};
-	_torsionGroups.push_back(tg);
+	if (name2Ring.count(check->atomName()))
+	{
+		return name2Ring.at(check->atomName());
+	}
+	return -1;
 }
 
-void RingProgram::addBranchIndex(int idx, Atom *atom, std::string grandparent)
+bool isInRing(const std::map<std::string, int> &name2Ring, Atom *check)
 {
-	std::string atomName = atom->atomName();
+	return (name2Ring.count(check->atomName()));
+}
 
-	// the bases of these need adjusting.
-	// we can recalculate the bond direction and atom position.
-	// the basis needs:
-	// 		the parent's atom position (basis[3])
-	// 		the grandparent's atom position (inherit)
-	// 		the 'other' atom's position from the ring.
-	// there is also the 'other' ring member, as this must be calculated
-	// using the expected bond angles.
-	// these will all be members of the ring, but identity of grandparent has
-	// to be supplied by the programmer, as this is needed for the forward
-	// torsions.
-	
-	// first, we establish which of the connected atoms belongs to the ring,
-	// the primary ring member.
-	
-	Atom *primary = nullptr;
 
-	for (size_t i = 0; i < atom->bondLengthCount(); i++)
+void RingProgram::addBranchIndex(int child, std::vector<AtomBlock> &blocks)
+{
+	Atom *mine = blocks[child].atom;
+	int dir = mine->atomName().find("3") != std::string::npos;
+
+	RidingAtom ride{};
+	Atom *connected = nullptr;
+	
+	for (int i = 0; i < mine->bondLengthCount(); i++)
 	{
-		Atom *neighbour = atom->connectedAtom(i);
-		
-		if (neighbour->residueId() != _activeId)
+		Atom *conn = mine->connectedAtom(i);
+		bool found = isInRing(_name2Ring, conn);
+		if (found)
 		{
-			continue;
-		}
-
-		std::string n = neighbour->atomName();
-		int idx = _cyclic.indexOfName(n);
-
-		if (idx >= 0)
-		{
-			primary = neighbour;
-			break;
+			connected = conn;
+			ride.connected = inRing(_name2Ring, conn);
 		}
 	}
 	
-	if (!primary)
+	if (!connected)
 	{
-		std::cout << "Couldn't find primary" << std::endl;
-		_invalid = true;
-		return;
-	}
-
-	// next, we can find the other two ring members, and assign them to
-	// 'other' or 'grandparent' as fitting the input parameter.
-	
-	Atom *gp_atom = nullptr;
-	Atom *other_atom = nullptr;
-
-	for (size_t i = 0; i < primary->bondLengthCount(); i++)
-	{
-		Atom *a = primary->connectedAtom(i);
-		if (a == atom)
-		{
-			continue; // easily avoid the branched atom.
-		}
-
-		std::string n = a->atomName();
-		int idx = _cyclic.indexOfName(n);
-		
-		if (idx < 0)
-		{
-			continue; // not part of the ring, so irrelevant.
-		}
-		
-		if (n == grandparent)
-		{
-			gp_atom = a;
-		}
-		else 
-		{
-			other_atom = a;
-
-		}
-		
-		if (gp_atom && other_atom)
-		{
-			break;
-		}
-	}
-	
-	// Now we should have all atoms...
-	
-	
-	if (!gp_atom || !other_atom)
-	{
-		std::cout << gp_atom << " " << other_atom << std::endl;
-		_invalid = true;
 		return;
 	}
 	
-	if (false)
+	int count = 0;
+	for (int i = 0; i < connected->bondLengthCount(); i++)
 	{
-		std::cout << atom->desc() << " primarily bonded to " << primary->desc() <<
-		" with grandparent as " << gp_atom->desc() << " and other atom as "
-		<< other_atom->desc() << std::endl;
+		Atom *conn = connected->connectedAtom(i);
+		bool found = isInRing(_name2Ring, conn);
+		if (found)
+		{
+			if (count == 0)
+			{
+				ride.left = inRing(_name2Ring, conn);
+				count++;
+			}
+			else
+			{
+				ride.right = inRing(_name2Ring, conn);
+				count++;
+				break;
+			}
+		}
 	}
-	
-	Lookup l{};
-	l.curr_idx = idx;
-	l.middle_idx = _cyclic.indexOfName(primary->atomName());
-	l.gp_idx = _cyclic.indexOfName(gp_atom->atomName());
-	l.other_idx = _cyclic.indexOfName(other_atom->atomName());
 
-	l.length = primary->findBondLength(atom, primary)->length();
-	l.curr_to_gp = primary->findBondAngle(atom, primary, gp_atom)->angle();
-	l.curr_to_other = primary->findBondAngle(atom, primary, other_atom)->angle();
-	
-	Chirality *ch = primary->findChirality(primary, atom, gp_atom, other_atom);
-	Atom *tmp = nullptr;
-	int sign = ch->get_sign(&atom, &other_atom, &gp_atom, &tmp);
-	l.sign = sign;
+	if (count < 2)
+	{
+		return;
+	}
 
-	_branchMapping.push_back(l);
+	ride.left_right_mult = -0.33;
+	ride.cross_mult = -0.3 * (dir ? 1 : -1);
+	ride.me = child;
+	blocks[child].program = -2;
+	blocks[child].silenced = true;
+	
+	_riders.push_back(ride);
 }
 
 void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
@@ -196,7 +146,7 @@ void RingProgram::run(std::vector<AtomBlock> &blocks, int rel,
 	fetchParameters(blocks, coord, fetch_torsion);
 	alignCyclic(blocks);
 	alignOtherRingMembers(blocks);
-	alignRingExit(blocks);
+	alignRiders(blocks);
 }
 
 glm::vec3 RingProgram::originalPosition(std::vector<AtomBlock> &blocks, int idx)
@@ -210,29 +160,6 @@ glm::vec3 RingProgram::originalPosition(std::vector<AtomBlock> &blocks, int idx)
 	return v;
 }
 
-void RingProgram::alignRingExit(std::vector<AtomBlock> &blocks)
-{
-	for (TorsionGroup &tg : _torsionGroups)
-	{
-		glm::vec4 self = glm::vec4(originalPosition(blocks, tg.self), 0);
-		glm::vec4 parent = glm::vec4(originalPosition(blocks, tg.parent), 0);
-		glm::vec3 gp = originalPosition(blocks, tg.gp);
-		
-		self = glm::vec4(blocks[tg.self].my_position(), 0);
-		parent = glm::vec4(blocks[tg.parent].my_position(), 0);
-		
-		AtomBlock &mine = blocks[tg.self];
-
-		AtomBlock &child = blocks[tg.child];
-
-		torsion_basis(mine.basis, parent, gp, self);
-		child.inherit = parent;
-		
-		mine.writeToChildren(blocks, tg.self);
-	}
-
-}
-
 void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 {
 	for (auto it = _ringMapping.begin();
@@ -244,6 +171,27 @@ void RingProgram::alignOtherRingMembers(std::vector<AtomBlock> &blocks)
 		_oldPositions[b_idx] = blocks[b_idx].my_position();
 
 		blocks[b_idx].basis[3] = glm::vec4(_cyclic.atomPos(c_idx), 1.f);
+	}
+}
+
+void RingProgram::alignRiders(std::vector<AtomBlock> &blocks)
+{
+	for (RidingAtom &rider : _riders)
+	{
+		const glm::vec3 &centre = blocks[rider.connected + _idx].my_position();
+		const glm::vec3 &left = blocks[rider.left + _idx].my_position();
+		const glm::vec3 &right = blocks[rider.right + _idx].my_position();
+		glm::vec3 to_left = glm::normalize(left - centre);
+		glm::vec3 to_right = glm::normalize(right - centre);
+		
+		glm::vec3 cross = glm::normalize(glm::cross(to_left, to_right));
+		glm::vec3 add = (to_left + to_right) / 2.f;
+
+		glm::vec3 combo = rider.left_right_mult * add + rider.cross_mult * cross;
+		combo = 0.97f * glm::normalize(combo);
+
+		glm::vec3 old = blocks[rider.me].my_position();
+		blocks[rider.me].basis[3] = glm::vec4(combo + centre, 1.f);
 	}
 }
 

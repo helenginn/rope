@@ -83,8 +83,7 @@ public:
 	void setRingEntranceName(std::string atomName);
 	void addAlignmentIndex(int idx, std::string atomName);
 	void addRingIndex(int idx, std::string atomName);
-	void addBranchIndex(int child, int self, int parent, int gp);
-	void addBranchIndex(int idx, Atom *curr, std::string grandparent);
+	void addBranchIndex(int child, std::vector<AtomBlock> &blocks);
 
 	void run(std::vector<AtomBlock> &blocks, int rel, 
 	         const Coord::Get &coord,
@@ -103,6 +102,7 @@ private:
 	void alignCyclic(std::vector<AtomBlock> &blocks);
 	void alignOtherRingMembers(std::vector<AtomBlock> &blocks);
 	void alignRingExit(std::vector<AtomBlock> &blocks);
+	void alignRiders(std::vector<AtomBlock> &blocks);
 	glm::vec3 originalPosition(std::vector<AtomBlock> &blocks, int idx);
 
 	int lowestAlignment();
@@ -116,6 +116,7 @@ private:
 	std::map<int, glm::vec3> _oldPositions;
 	std::map<HyperValue *, int> _valueMapping;
 	std::map<std::string, float> _name2Value;
+	std::map<std::string, int> _name2Ring;
 	std::vector<HyperValue *> _values;
 	SpecialTable _table;
 	
@@ -131,18 +132,23 @@ private:
 		float curr_to_other = -1;
 	};
 	
-	struct TorsionGroup
+	// maps the immediate "connected" atom and the left/right atoms connected
+	// to the "connected" atom, with which we can re-establish hydrogen position
+	// including multiplier for cross product vector */
+	struct RidingAtom
 	{
-		int child;
-		int self;
-		int parent;
-		int gp;
+		int me;
+		int connected;
+		int left;
+		int right;
+		float left_right_mult;
+		float cross_mult;
 	};
 	
 	ResidueId _activeId{};
 	Atom *_atom = nullptr;
 	std::vector<Lookup> _branchMapping;
-	std::vector<TorsionGroup> _torsionGroups;
+	std::vector<RidingAtom> _riders;
 	std::string _entranceName;
 	int _entranceCycleIdx = -1;
 	
