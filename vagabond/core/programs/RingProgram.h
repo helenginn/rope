@@ -68,8 +68,6 @@ public:
 		return _valueMapping.at(_values[i]);
 	}
 	
-	void makeLinkToAtom();
-	
 	void setTorsionBasis(TorsionBasis *basis)
 	{
 		_basis = basis;

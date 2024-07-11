@@ -39,11 +39,6 @@ RingProgram::~RingProgram()
 
 }
 
-void RingProgram::makeLinkToAtom()
-{
-
-}
-
 RingProgram::RingProgram(RingProgrammer *parent)
 {
 	_cyclic = parent->cyclic();

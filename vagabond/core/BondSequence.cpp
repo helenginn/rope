@@ -78,7 +78,6 @@ void BondSequence::generateBlocks()
 	for (size_t i = 0; i < _grapher.programCount(); i++)
 	{
 		_programs.push_back(*_grapher.programs()[i]);
-		_programs.back().makeLinkToAtom();
 	}
 }
 
