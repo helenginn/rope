@@ -52,11 +52,6 @@ private:
 	void getStructure(bool from);
 	bool _from = true;
 
-	void addFloatEntry(float top, const std::string &desc, 
-	                   float *target);
-	void addIntEntry(float top, const std::string &desc, 
-	                   int *target);
-
 	Entity *const _entity;
 	TextButton *_fromButton = nullptr;
 	TextButton *_toButton = nullptr;
@@ -64,6 +59,7 @@ private:
 
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;
+	float _randomDegrees = 0.f;
 	int _maxFlipTrial = 0;
 	bool _restart = true;
 	std::string _fromId;
