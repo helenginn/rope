@@ -16,31 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ParamTweaker__
-#define __vagabond__ParamTweaker__
+#ifndef __vagabond__BackboneTweaker__
+#define __vagabond__BackboneTweaker__
 
 #include "PathTweaker.h"
 
-class ThickLine;
-class Line;
-
-class ParamTweaker : public PathTweaker
+class BackboneTweaker : public PathTweaker
 {
 public:
-	ParamTweaker(Scene *scene, Motion &motion, Atom *const &atom,
-	              Parameter *const &param, Route *const &route);
+	BackboneTweaker(Scene *scene, Motion &motion, Atom *const &atom,
+	                Parameter *const &param, Route *const &route);
 
 	void setup();
-	void setupHarmonics();
-	void refreshHarmonics(int i);
-	void refreshHarmonics();
 private:
-	void getTrajectory();
 	void redraw();
+	void prepareParameters();
 
-	ThickLine *_line = nullptr;
+	std::vector<int> _idxs;
 
-	std::vector<ThickLine *> _harmonics;
 };
 
 #endif
