@@ -31,6 +31,7 @@ TableView::TableView(Scene *prev, TabulatedData *data, const std::string &title)
 	_title = title;
 	_data = data;
 	_data->hideAfterEntry(20);
+	setExportHandler(this);
 }
 
 std::string sanitised_length(std::string header, size_t max_out)
