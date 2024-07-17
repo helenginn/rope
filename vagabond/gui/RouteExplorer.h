@@ -74,7 +74,7 @@ private:
 	void calculate();
 	void startWithThreads(const int &thr);
 	void handleDone();
-	void pause();
+	void returnToStart();
 	void demolishSlider();
 
 	void prepareEmptySpaceMenu();

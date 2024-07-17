@@ -76,6 +76,8 @@ void RouteExplorer::setup()
 	_route->finishRoute();
 	
 	Display::setup();
+	setupEditor();
+	setupSave();
 	
 #ifdef __EMSCRIPTEN__
 	startWithThreads(1);
@@ -130,10 +132,45 @@ void RouteExplorer::setupEditor()
 
 void RouteExplorer::setupFinish()
 {
+	if (_startPause)
+	{
+		return;
+	}
+
 	TextButton *tb = new TextButton("Pause", this);
-	tb->setReturnTag("pause");
 	tb->setRight(0.9, 0.16);
 	_startPause = tb;
+
+	auto start_pause = [this]()
+	{
+		if (_startPause->text() == "Start")
+		{
+			if (_first && _route->jobLevel() == 0 && !_oldPath)
+			{
+				buttonPressed("start_momentum", _startPause);
+				_first = false;
+			}
+			else
+			{
+				Menu *m = new Menu(this);
+				m->addOption("momentum", "start_momentum");
+				m->addOption("clash", "start_clash");
+				double x = _lastX / (double)_w;
+				double y = _lastY / (double)_h;
+				m->setup(x, y);
+				setModal(m);
+			}
+		}
+		else
+		{
+			_pausing = true;
+			_startPause->setInert(true, true);
+			_plausibleRoute->finishTicker();
+			_route->finishRoute();
+		}
+	};
+
+	_startPause->setReturnJob(start_pause);
 	addObject(tb);
 }
 
@@ -173,7 +210,7 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 	}
 }
 
-void RouteExplorer::pause()
+void RouteExplorer::returnToStart()
 {
 	std::cout << "Pausing" << std::endl;
 	if (_worker)
@@ -188,39 +225,6 @@ void RouteExplorer::pause()
 
 	_startPause->setText("Start");
 	_startPause->setInert(false);
-
-	auto start_pause = [this]()
-	{
-		if (_startPause->text() == "Start")
-		{
-			_startPause->setText("Pause");
-
-			if (_first)
-			{
-				buttonPressed("start_momentum", _startPause);
-				_first = false;
-			}
-			else
-			{
-				Menu *m = new Menu(this);
-				m->addOption("momentum", "start_momentum");
-				m->addOption("clash", "start_clash");
-				double x = _lastX / (double)_w;
-				double y = _lastY / (double)_h;
-				m->setup(x, y);
-				setModal(m);
-			}
-		}
-		else
-		{
-			_pausing = true;
-			_startPause->setInert(true, true);
-			_plausibleRoute->finishTicker();
-			_route->finishRoute();
-		}
-	};
-
-	_startPause->setReturnJob(start_pause);
 }
 
 void RouteExplorer::doThings()
@@ -311,7 +315,7 @@ void RouteExplorer::sendObject(std::string tag, void *object)
 	}
 	else if (tag == "done" && !_restart)
 	{
-		addMainThreadJob([this]() { pause(); });
+		addMainThreadJob([this]() { returnToStart(); });
 	}
 
 	if (tag == "error")
@@ -403,9 +407,7 @@ void RouteExplorer::startWithThreads(const int &thr)
 		return;
 	}
 
-	setupSave();
 	setupFinish();
-	setupEditor();
 
 	_route->prepareCalculate();
 
@@ -450,26 +452,18 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 		PathParamEditor *ppe = new PathParamEditor(this, _route);
 		ppe->show();
 	}
-	/*
-	if (tag == "pause")
-	{
-		_pausing = true;
-		_startPause->setInert(true, true);
-		_plausibleRoute->finishTicker();
-		_route->finishRoute();
-	}
-	*/
 	else if (tag == "add")
 	{
 		Path path(_plausibleRoute);
 		Environment::env().pathManager()->insertOrReplace(path, _oldPath);
 		back();
 	}
-	else if ((tag == "start_momentum" || tag == "start_clashes")
+	else if ((tag == "start_momentum" || tag == "start_clash")
 	         && _worker == nullptr)
 	{
-		_route->setJobLevel(tag == "start_momentum" ? 0 : 1);
+		_startPause->setText("Pause");
 		_route->setFinish(false);
+		_route->setJobLevel(tag == "start_momentum" ? 0 : 1);
 		_pausing = false;
 		demolishSlider();
 
@@ -498,19 +492,19 @@ void RouteExplorer::buttonPressed(std::string tag, Button *button)
 
 void RouteExplorer::handleDone()
 {
-	pause();
-
-	if (_pausing)
+	if (_pausing || _first)
 	{
 		_pausing = false;
+		returnToStart();
 		return;
 	}
-	
+
 	if (_restart && !_first)
 	{
 		saveAndRestart();
 	}
-	else if (_first)
+
+	if (_first)
 	{
 		_first = false;
 	}
@@ -541,6 +535,7 @@ void RouteExplorer::saveAndRestart()
 	<< " seconds to refine." << std::endl;
 
 	_plausibleRoute->clearCustomisation();
+	clearLemons();
 
 	_start = end;
 
