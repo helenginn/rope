@@ -48,6 +48,7 @@
 #include <vagabond/gui/BFactors.h>
 
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -514,8 +515,15 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "delete" && _existing)
 	{
-		Environment::purgeEntity(_obj.name());
-		back();
+		AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to delete\n"\
+		                             "the entity?");
+		ayn->addJob("yes", [this]()
+		            {
+			           Environment::purgeEntity(_obj.name());
+			           back();
+			        });
+			
+		setModal(ayn);
 	}
 	else if (tag == "back" && _existing)
 	{
