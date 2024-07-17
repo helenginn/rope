@@ -18,7 +18,8 @@
 
 #include "ThickLine.h"
 
-ThickLine::ThickLine(bool proj) : Image("assets/images/mini_rope.png")
+ThickLine::ThickLine(bool proj, const std::string &filename) 
+: Image(filename)
 {
 	setName("ThickLine");
 	_renderType = GL_TRIANGLES;
@@ -79,6 +80,12 @@ void ThickLine::addThickLine(glm::vec3 start, glm::vec3 dir, glm::vec3 colour)
 
 void ThickLine::addPoint(glm::vec3 p, glm::vec3 colour)
 {
+	if (!usesProjection())
+	{
+		p.x = p.x * 2 - 1;
+		p.y = 1 - p.y * 2;
+	}
+
 	glm::vec3 dir = (p - _last);
 
 	if (!_assigned)
@@ -118,4 +125,12 @@ void ThickLine::drag(double x, double y)
 	{
 		_doJob(x, y);
 	}
+}
+
+void ThickLine::extraUniforms()
+{
+	const char *uniform_name = "thickness";
+	GLuint u = glGetUniformLocation(_program, uniform_name);
+	glUniform1f(u, _thickness);
+
 }

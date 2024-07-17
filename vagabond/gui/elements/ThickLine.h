@@ -24,7 +24,8 @@
 class ThickLine : public Image
 {
 public:
-	ThickLine(bool proj = true);
+	ThickLine(bool proj = true,
+	          const std::string &filename = "assets/images/mini_rope.png");
 
 	void addPoint(glm::vec3 p, glm::vec3 colour = {});
 	void reset()
@@ -38,15 +39,23 @@ public:
 		_doJob = job;
 	}
 	
+	void setThickness(const float &thickness)
+	{
+		_thickness = thickness;
+	}
+	
 	virtual void drag(double x, double y);
 	virtual bool mouseOver();
 	virtual void unMouseOver();
+	
+	virtual void extraUniforms();
 private:
 	void addThickLine(glm::vec3 start, glm::vec3 dir, glm::vec3 colour);
 	void setupHarmonics();
 
 	glm::vec3 _last{};
 	bool _assigned = false;
+	float _thickness = 1.0;
 	
 	std::function<void(double, double)> _doJob;
 };
