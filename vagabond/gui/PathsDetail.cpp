@@ -75,6 +75,7 @@ void PathsDetail::redraw()
 		Text *t = new Text(str);
 		t->setRight(0.8, top);
 		addTempObject(t);
+
 		if (!_valid)
 		{
 			t->setColour(0.5, 0.0, 0.0);
@@ -83,7 +84,7 @@ void PathsDetail::redraw()
 			std::string str = ("Deviation: " + std::to_string(_rmsd) 
 			                   + " Angstroms");
 			Text *t = new Text(str);
-			t->addAltTag("Threshold of validity would be 0.02 Angstroms");
+			t->addAltTag("Threshold of validity would be 0.5 Angstroms");
 			t->setRight(0.8, top);
 			addTempObject(t);
 
@@ -137,6 +138,15 @@ void PathsDetail::setup()
 		t->setLeft(0.2, top);
 		addObject(t);
 	}
+
+	{
+		Text *t = new Text("Calculated by using the torsion angles from ending "
+		"structure and topology from starting structure.\nThe models are then superimposed and RMSD calculated.\nThis will flag if the underlying structures are incompatible, e.g. due to missing residues etc.");
+		t->resize(0.4);
+		t->setLeft(0.2, top + 0.06);
+		addObject(t);
+
+	}
 	
 	top = 0.5;
 	
@@ -145,18 +155,18 @@ void PathsDetail::setup()
 		t->setLeft(0.2, top);
 		addObject(t);
 	}
-	
-	top = 0.61;
 
 	{
 		Text *t = new Text
 		("Note: path validation does not currently include any estimation of\n"\
 		 "electrostatic potential, solvent accessibility or "\
 		 "internal vaccuums.");
-		t->squishToWidth(0.6);
-		t->setLeft(0.2, top);
+		t->resize(0.4);
+		t->setLeft(0.2, top + 0.06);
 		addObject(t);
 	}
+	
+	top = 0.61;
 
 	{
 		TextButton *t = new TextButton("Menu", this);
@@ -211,30 +221,12 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "view")
 	{
-		glm::vec2 c = button->xy();
-		Menu *m = new Menu(this, this, "viewfrom");
-		m->addOption("Momentum", "momenum");
-		m->addOption("All-atom clash", "h_clash");
-		m->setup(c.x, c.y);
-		setModal(m);
-	}
-
-	std::string end = Button::tagEnd(tag, "viewfrom_");
-	if (end.length())
-	{
-		int job = 0;
-		if (end == "h_clash")
-		{
-			job = 1;
-		}
-
 		PlausibleRoute *pr = _obj.toRoute();
-		pr->setJobLevel(job);
 		RouteExplorer *re = new RouteExplorer(this, pr);
 		re->saveOver(&_obj);
 		re->show();
 	}
-	
+
 	if (tag == "export")
 	{
 #ifndef __EMSCRIPTEN__
@@ -250,7 +242,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 #endif
 	}
 	
-	end = Button::tagEnd(tag, "format_");
+	std::string end = Button::tagEnd(tag, "format_");
 	if (end.length())
 	{
 		_ensemble = (end == "ensemble");
