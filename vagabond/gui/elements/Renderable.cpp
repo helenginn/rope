@@ -1294,23 +1294,7 @@ void Renderable::realign(double x, double y)
 
 void Renderable::realign()
 {
-	switch (_align)
-	{
-		case Left:
-		setLeft(_x, _y);
-		break;
-
-		case Right:
-		setRight(_x, _y);
-		break;
-
-		case Centre:
-		setCentre(_x, _y);
-		break;
-		
-		default:
-		break;
-	}
+	setArbitrary(_x, _y, _align);
 
 	if (_hover)
 	{
