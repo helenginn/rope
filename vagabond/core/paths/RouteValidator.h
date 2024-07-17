@@ -40,6 +40,11 @@ public:
 		return _rmsd;
 	}
 	
+	bool valid() const
+	{
+		return (_rmsd < 0.5);
+	}
+	
 	/** returns average curvature per atom for a linear torsion angle trajectory */
 	float linearityRatio();
 
@@ -48,9 +53,6 @@ public:
 	int endInstanceGaps();
 private:
 	float validate(Instance *start, Instance *end);
-	float dotLastTwoVectors();
-	void populateDistances();
-	void savePreviousPositions();
 
 	PlausibleRoute &_route;
 	std::map<Atom *, float> _distances;

@@ -53,8 +53,8 @@ void PathsDetail::calculateMetrics()
 	RouteValidator rv(*pr);
 
 	_VdWEnergy = _obj.activationEnergy();
-//	_linearity = rv.linearityRatio();
-	_valid = rv.validate().length();
+	rv.validate();
+	_valid = rv.valid();
 	_rmsd = rv.rmsd();
 	_obj.cleanupRoute();
 }
