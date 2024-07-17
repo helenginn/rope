@@ -378,13 +378,6 @@ void RouteExplorer::makeLemons()
 	setupClearLemons();
 }
 
-/*
-void RouteExplorer::Responder<GuiBalls>::sendObject(std::string tag,
-                                                    void *object)
-{
-}
-*/
-
 void RouteExplorer::calculate()
 {
 	_watch = true;
