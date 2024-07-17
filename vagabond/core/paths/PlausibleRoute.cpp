@@ -162,11 +162,13 @@ void PlausibleRoute::prepareJobs()
 			{
 				amnesty++;
 				good = gradient_type();
+
 				_ids.clear();
 				if (_finish)
 				{
 					return;
 				}
+
 				if (!good)
 				{
 					if (amnesty < 1 && !doingClashes())
