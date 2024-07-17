@@ -1326,7 +1326,7 @@ void Renderable::setExtra(glm::vec4 pos)
 	}
 }
 
-void Renderable::setHover(Renderable *hover)
+void Renderable::setHover(Renderable *hover, float hover_point)
 {
 	if (hover == nullptr && _hover != nullptr)
 	{
@@ -1354,7 +1354,7 @@ void Renderable::setHover(Renderable *hover)
 	glm::vec3 min, max;
 	_hover->boundaries(&min, &max);
 	
-	hy = _y - 0.02 - (max.y - min.y) / 2;
+	hy = _y - hover_point - (max.y - min.y) / 2;
 
 	_hover->setAlignXY(_align, hx, hy);
 	_hover->realign();

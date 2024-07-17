@@ -78,11 +78,11 @@ void Box::rescale(double x, double y)
 	rotateRound(mat);
 }
 
-void Box::addAltTag(std::string text)
+void Box::addAltTag(std::string text, float hover_point)
 {
 	Text *alt = new Text(text);
 	alt->resize(0.5);
-	setHover(alt);
+	setHover(alt, hover_point);
 }
 
 bool Box::mouseOver()
