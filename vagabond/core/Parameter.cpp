@@ -25,15 +25,17 @@ std::set<Parameter *> Parameter::relatedParameters(bool close) const
 
 	int start = close ? 1 : 0;
 	int end = close ? 2 : atomCount();
-	for (size_t i = start; i < atomCount() && i < end; i++)
+	for (size_t i = start; i < atomCount() && i <= end; i++)
 	{
 		Atom *a = atom(i);
 		
 		for (size_t j = 0; j < a->parameterCount(); j++)
 		{
 			Parameter *p = a->parameter(j);
-			
-			params.insert(p);
+			if (!close || p->atomIsCentral(a))
+			{
+				params.insert(p);
+			}
 		}
 	}
 	
