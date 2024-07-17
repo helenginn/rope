@@ -136,6 +136,10 @@ public:
 	}
 	
 	void setUsesProjection(bool usesProj);
+	bool usesProjection()
+	{
+		return _usesProj;
+	}
 	
 	void setDisabled(bool dis);
 	
