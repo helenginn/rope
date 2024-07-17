@@ -28,7 +28,7 @@ using nlohmann::json;
 struct WayPoints
 {
 	WayPoints();
-	WayPoints(int order);
+	WayPoints(int order, float random);
 
 	void zero();
 
