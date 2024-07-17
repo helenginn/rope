@@ -26,6 +26,7 @@
 #include "BestGuessTorsions.h"
 #include "NonCovalents.h"
 #include "Selection.h"
+#include "Resource.h"
 #include "Responder.h"
 #include "RTMotion.h"
 #include "paths/Scores.h"
@@ -438,7 +439,6 @@ protected:
 
 	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
 
-	void unlockAll();
 	int _maxFlipTrial = 0;
 	int _order = 3;
 	bool _gui = false;
