@@ -24,7 +24,7 @@ public:
 	virtual bool mouseOver();
 	virtual void unMouseOver();
 	
-	void addAltTag(std::string text);
+	void addAltTag(std::string text, float hover_point = 0.02);
 };
 
 #endif

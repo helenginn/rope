@@ -296,7 +296,7 @@ public:
 	
 	void forceRender(bool vert = true, bool idx = true);
 
-	void setHover(Renderable *hover);
+	void setHover(Renderable *hover, float hover_point = 0.02);
 
 	enum Alignment
 	{
