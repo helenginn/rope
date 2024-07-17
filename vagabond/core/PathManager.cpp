@@ -142,6 +142,25 @@ std::vector<Path *> PathManager::pathsBetweenInstances(Instance *first,
 	return paths;
 }
 
+void PathManager::purgeEntity(Entity *ent)
+{
+	std::vector<Path *> paths = pathsForEntity(ent);
+	for (auto it = _objects.begin(); it != _objects.end(); it++)
+	{
+		Path &p = *it;
+
+		if (p.startInstance()->entity() == ent ||
+		    p.endInstance()->entity() == ent)
+		{
+			sendResponse("purged_path", &p);
+			_objects.erase(it);
+			it = _objects.begin();
+		}
+
+	}
+	
+}
+
 void PathManager::purgePath(Path *path)
 {
 	for (auto it = _objects.begin(); it != _objects.end(); it++)

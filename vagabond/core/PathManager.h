@@ -32,6 +32,7 @@ public:
 	virtual Path *insertOrReplace(Path &new_path, Path *old_pointer);
 	
 	void purgePath(Path *path);
+	void purgeEntity(Entity *ent);
 
 	void makePathsWithinGroup(const std::vector<std::string> &insts,
 	                          int cycles);
