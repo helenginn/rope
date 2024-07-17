@@ -601,7 +601,7 @@ void Route::prepareParameters()
 		int mot_idx = _motions.indexOfHeader(rt);
 		int src_idx = _source.indexOfHeader(rt);
 		
-		Motion mt = {WayPoints(_order), false, 0};
+		Motion mt = {WayPoints(_order, _randomPerturb), false, 0};
 
 		if (mot_idx >= 0)
 		{

@@ -39,7 +39,8 @@ void PathParamEditor::setup()
 	 {
 		for (int i = 0; i < _route->motionCount(); i++)
 		{
-			_route->motion(i).wp = WayPoints(2);
+			_route->motion(i).wp = WayPoints(_route->order(), 
+			                                 _route->randomPerturb());
 		}
 		refresh();
 	});

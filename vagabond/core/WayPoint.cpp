@@ -25,12 +25,12 @@ WayPoints::WayPoints()
 	
 }
 
-WayPoints::WayPoints(int order)
+WayPoints::WayPoints(int order, float random)
 {
 	_amps.resize(order);
 	if (order > 0)
 	{
-		_amps[0] = 0. * (rand() / (double)RAND_MAX - 0.5);
+		_amps[0] = random * (rand() / (double)RAND_MAX - 0.5);
 	}
 }
 
