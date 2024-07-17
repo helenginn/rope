@@ -84,10 +84,9 @@ struct GradientPath
 		int n = 0;
 		for (const float &f : term.grads)
 		{
-			grads[term.g_idx][n] += f;
+			grads[term.g_idx][n] += f / (float)term.grads.size();
 			n++;
 		}
-		grads[term.g_idx][n] /= (float)n;
 		return *this;
 	}
 
