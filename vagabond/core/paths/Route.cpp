@@ -794,7 +794,6 @@ void Route::clearCustomisation()
 	
 	setFirstJob();
 	_repelCount = 0;
-	unlockAll();
 	_hash = ""; setHash();
 }
 
@@ -829,15 +828,6 @@ void Route::calculate(Route *me)
 		std::string *str = new std::string(error.what());
 		me->sendResponse("error", str);
 	}
-}
-
-void Route::unlockAll()
-{
-	for (size_t i = 0; i < motionCount(); i++)
-	{
-		motion(i).locked = false;
-	}
-
 }
 
 int Route::paramIdxForAtom(Atom *const &atom)
