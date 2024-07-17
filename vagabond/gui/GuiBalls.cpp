@@ -53,6 +53,23 @@ GuiBalls::GuiBalls(GuiAtom *parent) : GuiRepresentation(parent)
 #endif
 }
 
+void GuiBalls::click(bool left)
+{
+	interacted(currentVertex(), false, left);
+}
+
+bool GuiBalls::mouseOver()
+{
+	interacted(currentVertex(), true, true);
+	return (currentVertex() >= 0);
+}
+
+void GuiBalls::unMouseOver()
+{
+	interacted(-1, true, true);
+}
+
+
 GuiBalls::~GuiBalls()
 {
 	delete _bonds;
@@ -77,6 +94,12 @@ void GuiBalls::interacted(int idx, bool hover, bool left)
 	{
 		return;
 	}
+	
+	if (idx < 0)
+	{
+		removeObject(_text);
+		delete _text; _text = nullptr;
+	}
 
 	if (_scene && _indexAtom.count(idx))
 	{
@@ -88,13 +111,18 @@ void GuiBalls::interacted(int idx, bool hover, bool left)
 
 			FloatingText *ft = new FloatingText(str, 25);
 			ft->setPosition(_vertices[idx].pos);
-			_scene->supplyFloatingText(ft);
+			removeObject(_text);
+			delete _text; _text = nullptr;
+			addObject(ft);
+			_text = ft;
 		}
 		else
 		{
 			sendResponse("left_atom", atom);
 		}
 	}
+
+	_lastIdx = idx;
 }
 
 void GuiBalls::extraUniforms()
