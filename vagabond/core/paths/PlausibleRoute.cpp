@@ -177,6 +177,12 @@ void PlausibleRoute::prepareJobs()
 					if (!_finish)
 					{
 						upgradeJobs();
+						
+						if (lastJob())
+						{
+							finish();
+							break;
+						}
 					}
 
 					float after = _bestScore;
