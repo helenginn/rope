@@ -156,7 +156,6 @@ private:
 	OpSet<ResidueId> worstSidechains(int num);
 	bool sideChainGradients(int i);
 	void rewindTorsions();
-	void repelMainChainAtomsFromWorstResidues();
 
 	GradientPath *gradients(const ValidateIndex &validate,
 	                        const CalcOptions &add_options = None,
