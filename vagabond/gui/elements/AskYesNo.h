@@ -14,16 +14,23 @@
 class AskYesNo : public Modal
 {
 public:
-	AskYesNo(Scene *scene, std::string text, std::string tag, 
-	         ButtonResponder *sender);
+	AskYesNo(Scene *scene, std::string text, std::string tag = "", 
+	         ButtonResponder *sender = nullptr);
 	
 	~AskYesNo();
+	
+	void addJob(const std::string &answer,
+	            const std::function<void()> &job)
+	{
+		_jobs[answer] = job;
+	}
 
 	virtual void buttonPressed(std::string tag, Button *button);
 private:
 	ButtonResponder *_sender;
 	std::string _tag;
 
+	std::map<std::string, std::function<void()>> _jobs;
 };
 
 #endif
