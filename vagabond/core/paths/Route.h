@@ -105,6 +105,16 @@ public:
 	{
 		return _momentum;
 	}
+
+	void setRandomPerturb(float &randomPerturb)
+	{
+		_randomPerturb = randomPerturb;
+	}
+	
+	const float &randomPerturb() const
+	{
+		return _randomPerturb;
+	}
 	
 	void setActivationEnergy(float energy) 
 	{
@@ -459,6 +469,7 @@ private:
 	
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;
+	float _randomPerturb = 0.f;
 	
 	struct Helpers
 	{
