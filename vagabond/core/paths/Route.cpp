@@ -125,8 +125,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 
 	_gradientBin.holdHorses();
 
-	PairwiseDeviations *pw = _helpers[handler].pw;
-	Separation *sep = _helpers[handler].sep;
+	PairwiseDeviations *pw = _helpers[handler].pairwise.acquire();
+	Separation *sep = _helpers[handler].separation.acquire();
 
 	// zero = all calculations
 	Task<GradientPath, void *> *big_submission = _gradientBin.actOfSubmission(0);
@@ -366,7 +366,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 			}
 		};
 
-		PairwiseDeviations *chosen = _helpers[sequences].pw;
+		PairwiseDeviations *chosen = _helpers[sequences].pairwise.acquire();
 
 		std::set<ResidueId> active_ids = 
 		doingSides() ? _ids : std::set<ResidueId>();
@@ -714,46 +714,49 @@ void Route::deleteHelpers()
 {
 	for (auto it = _helpers.begin(); it != _helpers.end(); it++)
 	{
-		delete it->second.pw;
+		it->second.pairwise.clear();
+		it->second.separation.clear();
 		delete it->second.et;
-		delete it->second.sep;
 	}
 
 	_helpers.clear();
 }
 
 void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
-                   float distance)
+                   float distance, bool multi)
 {
-	Separation *sep = new Separation(seq);
-	auto pw = new PairwiseDeviations(seq, distance, sep);
+	auto make_separation = [seq]()
+	{
+		return new Separation(seq);
+	};
 
-	helpers.pw = pw;
-	helpers.sep = sep;
+	helpers.separation = Resource<Separation>(make_separation);
+	
+	auto make_pairwise = [&helpers, seq, distance, multi]()
+	{
+		Separation *sep = multi ? helpers.separation.acquire() : nullptr;
+		return new PairwiseDeviations(seq, distance, sep);
+	};
 
+	helpers.pairwise = Resource<PairwiseDeviations>(make_pairwise);
 }
 
 void Route::prepareEnergyTerms()
 {
 	deleteHelpers();
 
+	bool multiInstance = _noncovs;
+
 	{
 		BondSequence *seq = _hydrogenFreeSequences->sequence();
 		setup_helpers(_helpers[_hydrogenFreeSequences], 
-		              seq, _maxMomentumDistance);
+		              seq, _maxMomentumDistance, multiInstance);
 	}
 
-	if (_noncovs)
 	{
 		BondSequence *seq = _resources.sequences->sequence();
 		setup_helpers(_helpers[_resources.sequences], seq,
-		              _maxClashDistance);
-	}
-	else
-	{
-		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
-		                                 _maxClashDistance);
-		_helpers[_resources.sequences].pw = pw;
+		              _maxClashDistance, multiInstance);
 	}
 
 	{
@@ -783,21 +786,11 @@ void Route::clearCustomisation()
 
 	for (size_t i = 0; i < motionCount(); i++)
 	{
-		motion(i).wp = WayPoints(_order);
+		motion(i).wp = WayPoints(_order, _randomPerturb);
 	}
 
-	{
-		delete _helpers[_resources.sequences].pw;
-		auto pw = new PairwiseDeviations(_resources.sequences->sequence(),
-		                                 _maxClashDistance);
-		_helpers[_resources.sequences].pw = pw;
-	}
-	{
-		delete _helpers[_hydrogenFreeSequences].pw;
-		auto pw = new PairwiseDeviations(_hydrogenFreeSequences->sequence(),
-		                                 _maxClashDistance);
-		_helpers[_hydrogenFreeSequences].pw = pw;
-	}
+	_helpers[_resources.sequences].pairwise.reset();
+	_helpers[_hydrogenFreeSequences].pairwise.reset();
 	
 	setFirstJob();
 	_repelCount = 0;

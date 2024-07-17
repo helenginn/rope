@@ -437,11 +437,6 @@ protected:
 	bool _gotScores = false;
 
 	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
-	
-	PairwiseDeviations *pairwiseForSequences(BondSequenceHandler *handler)
-	{
-		return _helpers[handler].pw;
-	}
 
 	void unlockAll();
 	int _maxFlipTrial = 0;
@@ -474,13 +469,13 @@ private:
 	struct Helpers
 	{
 		BondSequence *seq = nullptr;
-		PairwiseDeviations *pw = nullptr;
+		Resource<PairwiseDeviations> pairwise{};
+		Resource<Separation> separation{};
 		EnergyTorsions *et = nullptr;
-		Separation *sep = nullptr;
 	};
 
 	friend void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
-	                          float distance);
+	                          float distance, bool multi);
 	
 	void deleteHelpers();
 	
