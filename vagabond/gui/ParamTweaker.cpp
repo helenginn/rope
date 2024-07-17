@@ -29,11 +29,9 @@
 
 ParamTweaker::ParamTweaker(Scene *scene, Motion &motion, Atom *const &atom,
                            Parameter *const &param, Route *const &route) : 
-Modal(scene, 0.2, 0.6),
-_motion(motion), _param(param), _route(route), _atom(atom)
+PathTweaker(scene, motion, atom, param, route, 0.2)
 {
-	setCentre(0.85, 0.5);
-	setAlpha(-0.3);
+
 }
 
 void ParamTweaker::getTrajectory()
@@ -69,7 +67,7 @@ void ParamTweaker::redraw()
 	}
 }
 
-void ParamTweaker::setup(double x, double y)
+void ParamTweaker::setup()
 {
 	getTrajectory();
 
@@ -134,13 +132,8 @@ void ParamTweaker::setup(double x, double y)
 	setupHarmonics();
 }
 
-void ParamTweaker::buttonPressed(std::string tag, Button *button)
-{
-
-}
-
-#define X_OFFSET 0.55
-#define Y_OFFSET -0.4
+#define X_OFFSET 0.775
+#define Y_OFFSET 0.7
 #define Y_SCALE 720.f
 
 glm::vec3 transform_to_pos(float frac, glm::vec3 start, float dist, 
@@ -170,7 +163,7 @@ void ParamTweaker::refreshHarmonics(int i)
 	{
 		float mag = _motion.wp._amps[i];
 		glm::vec3 pos = transform_to_pos(f, {X_OFFSET, Y_OFFSET, 0.95},
-		                                 0.3, mag, i);
+		                                 0.15, mag, i);
 		_harmonics[i]->addPoint(pos, glm::vec3(0, 0, 0));
 	}
 
@@ -194,8 +187,9 @@ void ParamTweaker::setupHarmonics()
 
 		auto alter_amp = [this, i](double x, double y)
 		{
-			y -= Y_OFFSET;
-			_motion.wp._amps[i] = y * Y_SCALE;
+			y += (Y_OFFSET * 2 - 1);
+			y = -y;
+			_motion.wp._amps[i] = y * Y_SCALE / 2;
 			refreshHarmonics(i);
 			getTrajectory();
 		};

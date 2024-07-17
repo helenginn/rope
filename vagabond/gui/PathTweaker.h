@@ -16,31 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ParamTweaker__
-#define __vagabond__ParamTweaker__
+#ifndef __vagabond__PathTweaker__
+#define __vagabond__PathTweaker__
 
-#include "PathTweaker.h"
+#include <vagabond/gui/elements/Modal.h>
+#include <vagabond/gui/elements/ButtonResponder.h>
 
-class ThickLine;
-class Line;
+class Parameter;
+struct Motion;
+class Route;
+class Atom;
 
-class ParamTweaker : public PathTweaker
+class PathTweaker : public Modal
 {
 public:
-	ParamTweaker(Scene *scene, Motion &motion, Atom *const &atom,
-	              Parameter *const &param, Route *const &route);
+	PathTweaker(Scene *scene, Motion &motion, Atom *const &atom,
+	            Parameter *const &param, Route *const &route, float width);
 
-	void setup();
-	void setupHarmonics();
-	void refreshHarmonics(int i);
-	void refreshHarmonics();
-private:
-	void getTrajectory();
-	void redraw();
+	virtual void buttonPressed(std::string tag, Button *button) {};
+	
+	virtual void setup() = 0;
+protected:
 
-	ThickLine *_line = nullptr;
+	Motion &_motion;
+	Parameter *_param = nullptr;
+	Route *_route = nullptr;
+	Atom *_atom = nullptr;
 
-	std::vector<ThickLine *> _harmonics;
 };
 
 #endif

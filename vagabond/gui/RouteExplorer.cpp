@@ -29,6 +29,7 @@
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/PathParamEditor.h>
 #include <vagabond/gui/ParamTweaker.h>
+#include <vagabond/gui/BackboneTweaker.h>
 
 #include <vagabond/core/paths/PlausibleRoute.h>
 #include <vagabond/core/paths/RouteValidator.h>
@@ -255,6 +256,10 @@ void RouteExplorer::doThings()
 
 void RouteExplorer::pickAtom(Atom *const &atom)
 {
+	if (_worker)
+	{
+		return;
+	}
 	int idx = _route->paramIdxForAtom(atom);
 	if (idx < 0) 
 	{
@@ -262,19 +267,19 @@ void RouteExplorer::pickAtom(Atom *const &atom)
 	}
 
 	Parameter *param = _route->parameter(idx);
+	Motion &motion = _route->motion(idx);
+	PathTweaker *pt = nullptr;
 	
 	if (param->coversMainChain())
 	{
-		return;
+		pt = new BackboneTweaker(this, motion, atom, param, _route);
+	}
+	else
+	{
+		pt = new ParamTweaker(this, motion, atom, param, _route);
 	}
 
-	float x, y;
-	getFractionalPos(x, y);
-	
-	Motion &motion = _route->motion(idx);
-	ParamTweaker *pt = new ParamTweaker(this, motion, atom, param, _route);
-	pt->setup(x, y);
-
+	pt->setup();
 	setModal(pt);
 }
 

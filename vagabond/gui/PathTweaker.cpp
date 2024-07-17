@@ -16,31 +16,20 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__ParamTweaker__
-#define __vagabond__ParamTweaker__
-
 #include "PathTweaker.h"
+#include <vagabond/core/Parameter.h>
+#include <vagabond/core/paths/RTMotion.h>
+#include <vagabond/core/paths/Route.h>
+#include <vagabond/core/WayPoint.h>
 
-class ThickLine;
-class Line;
-
-class ParamTweaker : public PathTweaker
+PathTweaker::PathTweaker(Scene *scene, Motion &motion, Atom *const &atom,
+                         Parameter *const &param, Route *const &route,
+                         float width)
+: Modal(scene, width, 0.6),
+_motion(motion), _param(param), _route(route), _atom(atom)
 {
-public:
-	ParamTweaker(Scene *scene, Motion &motion, Atom *const &atom,
-	              Parameter *const &param, Route *const &route);
+	setCentre(1 - (width / 2) - 0.05, 0.5);
+	setAlpha(-0.3);
 
-	void setup();
-	void setupHarmonics();
-	void refreshHarmonics(int i);
-	void refreshHarmonics();
-private:
-	void getTrajectory();
-	void redraw();
+}
 
-	ThickLine *_line = nullptr;
-
-	std::vector<ThickLine *> _harmonics;
-};
-
-#endif
