@@ -9,6 +9,7 @@ guifiles = [
 'AxisRequests.cpp',
 'AxisRequests.h',
 'AxisExplorer.cpp',
+'BallAndStickOptions.h',
 'BallAndStickOptions.cpp',
 'BFactors.cpp',
 'BFactors.h',
