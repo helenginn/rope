@@ -236,13 +236,6 @@ void PlausibleRoute::prepareJobs()
 	_tasks.push_back(flip_mains);
 	_tasks.push_back(check_gradients(do_next));
 //	_tasks.push_back(flip_sides);
-
-	return;
-	_tasks.push_back([this]()
-	                 {
-		                repelMainChainAtomsFromWorstResidues();
-		                return false;
-		             });
 }
 
 void PlausibleRoute::setTargets(Instance *inst)
@@ -486,94 +479,6 @@ bool PlausibleRoute::sideChainGradients(int order)
 	postScore(newsc);
 	std::cout << "here: " << oldsc << " to " << newsc << std::endl;
 	return meaningfulUpdate(newsc, oldsc, 0.95);
-}
-
-void PlausibleRoute::repelMainChainAtomsFromWorstResidues()
-{
-	if (!lastJob() || _repelCount >= 6)
-	{
-		return;
-	}
-
-	_repelCount++;
-	AtomGroup *all = all_atoms();
-//	OpSet<ResidueId> worst = worstSidechains(5);
-
-	std::cout << "Repelling main chain atoms!" << std::endl;
-	submitToShow(0.25);
-	retrieve();
-
-	all->writeToFile("compare.pdb");
-	AtomGroup *all_contacts = new AtomGroup();
-	AtomGroup *main = all->new_subset([](Atom *const &a)
-	                                 {
-		                                return a->isMainChain();
-	                                 });
-
-	float frac = 0.25;
-	auto get_too_close = [&frac, this, main](Atom *const &a)
-	{
-		PairwiseDeviations *chosen = 
-		pairwiseForSequences(_hydrogenFreeSequences);
-
-		const glm::vec3 &p = a->derivedPosition();
-		float radius = 2.5;
-
-		for (Atom *const &other : main->atomVector())
-		{
-			if (other == a || other->bondsBetween(a, 4, false) > 0)
-			{
-				return false;
-			}
-
-			const glm::vec3 &q = other->derivedPosition();
-			glm::vec3 diff = p - q;
-			float l = glm::length(diff);
-			if (l < radius)
-			{
-				bool too_close = false;
-				for (size_t k = 0; k < a->bondTorsionCount(); k++)
-				{
-					if (a->bondTorsion(k)->hasAtom(other))
-					{
-						too_close = true;
-					}
-				}
-
-				if (too_close)
-				{
-					return false;
-				}
-
-				std::cout << a->desc() << " vs " << other->desc() << 
-				" --> " << radius - l << std::endl;
-
-				float extra = (radius - l) * 5;
-				chosen->addWaypoint(a, other, frac, extra);
-
-				diff *= radius / l;
-//				glm::vec3 new_pos = q + diff;
-//				other->setDerivedPosition(new_pos);
-
-				return true;
-			}
-		}
-
-		return false;
-	};
-
-	AtomGroup *contacts = main->new_subset(get_too_close);
-	delete contacts;
-	delete main;
-	delete all_contacts;
-	delete all;
-	
-	setFirstJob();
-
-	if (lastJob())
-	{
-		finish();
-	}
 }
 
 template <typename JobOnTerm>
