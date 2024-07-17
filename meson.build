@@ -1,4 +1,4 @@
-project('rope', 'cpp', 'c', version : '0.1.6')
+project('rope', 'cpp', 'c', version : '0.1.7')
 
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
@@ -57,19 +57,20 @@ install_data(
 'assets/shaders_450/scrollbox.fsh',
 'assets/shaders_450/shade.fsh',
 'assets/shaders_450/floating_box.vsh',
-'assets/shaders_450/with_matrix.vsh',
 'assets/shaders_450/density.vsh',
 'assets/shaders_450/density.fsh',
 'assets/shaders_450/lemon.vsh',
+'assets/shaders_450/lighting.fsh',
 'assets/shaders_450/multiply.fsh',
 'assets/shaders_450/pencil_shading.fsh',
 'assets/shaders_450/progress.fsh',
 'assets/shaders_450/point.vsh',
 'assets/shaders_450/point.fsh',
+'assets/shaders_450/reflections.fsh',
 'assets/shaders_450/simple_point.fsh',
 'assets/shaders_450/simple_point.vsh',
-'assets/shaders_450/lighting.fsh',
-'assets/shaders_450/reflections.fsh',
+'assets/shaders_450/unproj_axes.vsh',
+'assets/shaders_450/with_matrix.vsh',
 install_dir : shaders)
 
 install_data(
