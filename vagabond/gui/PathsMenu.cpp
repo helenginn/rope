@@ -18,6 +18,7 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include "WholeModelPathSetupView.h"
@@ -248,9 +249,29 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		{
 			m->addOption("Cluster paths", "cluster_paths");
 			m->addOption("Redo metrics", "redo_metrics");
+			m->addOption("Delete paths", "delete_paths");
 		}
 		m->setup(button);
 		setModal(m);
+	}
+	
+	if (tag == "yes_del_all")
+	{
+		for (Path *const &path : _allPaths)
+		{
+			path->signalDeletion();
+			Environment::purgePath(*path);
+		}
+
+		back();
+	}
+	
+	if (tag == "menu_delete_paths")
+	{
+		AskYesNo *askyn = new AskYesNo(this, "Are you sure you want to delete"\
+		                               " all paths\nlisted here?", "del_all", 
+		                               this);
+		setModal(askyn);
 	}
 	
 	if (tag == "menu_cluster_paths")
