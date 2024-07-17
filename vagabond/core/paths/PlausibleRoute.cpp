@@ -1007,7 +1007,6 @@ void PlausibleRoute::upgradeJobs()
 		_jobLevel++;
 	}
 
-	unlockAll();
 	std::cout << "Job level now " << _jobLevel << ", order " << _jobOrder 
 	<< std::endl;
 }
