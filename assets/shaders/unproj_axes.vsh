@@ -1,4 +1,5 @@
-#version 330 core
+#version 300 es
+precision lowp float;
 
 in vec3 normal;
 in vec3 position;
@@ -32,6 +33,7 @@ void main()
 	vColor = color;
 	vExtra = extra;
 }
+
 
 
 
