@@ -169,6 +169,7 @@ void Environment::purgeEntity(std::string id)
 	Entity *ent = entityManager()->entity(id);
 	if (ent)
 	{
+		pathManager()->purgeEntity(ent);
 		modelManager()->purgeEntity(ent);
 		entityManager()->purgeEntity(ent);
 	}
