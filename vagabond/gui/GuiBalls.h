@@ -34,6 +34,8 @@ public HasResponder<Responder<GuiBalls>>
 public:
 	GuiBalls(GuiAtom *parent);
 	virtual ~GuiBalls();
+
+	void click(bool left);
 	
 	void setDisplay(Display *scene)
 	{
@@ -64,6 +66,8 @@ public:
 protected:
 	virtual void extraUniforms();
 private:
+	virtual bool mouseOver();
+	virtual void unMouseOver();
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
 

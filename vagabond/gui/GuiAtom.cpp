@@ -46,7 +46,14 @@ GuiAtom::GuiAtom() : SimplePolygon()
 	_representations.push_back(_ribbon);
 	_representations.push_back(_thickBonds);
 	_representations.push_back(_balls);
+
+	addObject(_helices);
+	addObject(_ribbon);
+	addObject(_thickBonds);
+	addObject(_balls);
+
 	_finish = false;
+	setName("Gui atom");
 }
 
 GuiAtom::~GuiAtom()
@@ -78,12 +85,7 @@ void GuiAtom::render(SnowGL *gl)
 	gl->viewChanged();
 	glEnable(GL_DEPTH_TEST);
 	
-	Renderable::render(gl); // I don't have...?
-
-	for (GuiRepresentation *&r : _representations)
-	{
-		r->render(gl);
-	}
+	Renderable::render(gl);
 
 	glDisable(GL_DEPTH_TEST);
 }
