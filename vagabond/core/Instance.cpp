@@ -348,11 +348,11 @@ void Instance::superposeOn(Instance *other)
 	sp.superpose();
 	glm::mat4 tr = sp.transformation();
 
-	for (Atom *a : myAtoms->atomVector())
+	for (Atom *mine : myAtoms->atomVector())
 	{
-		glm::vec3 d = a->derivedPosition();
+		glm::vec3 d = mine->derivedPosition();
 		glm::vec3 update = glm::vec3(tr * glm::vec4(d, 1.f));
-		a->setDerivedPosition(update);
+		mine->setDerivedPosition(update);
 	}
 }
 

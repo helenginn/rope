@@ -20,129 +20,12 @@
 #include "PlausibleRoute.h"
 #include "AtomGroup.h"
 #include "Instance.h"
+#include "../function_typedefs.h"
 #include <vagabond/utils/FileReader.h>
 
 RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 {
 
-}
-
-void RouteValidator::populateDistances()
-{
-	if (_distances.size() > 0)
-	{
-		return;
-	}
-	
-	AtomGroup *grp = _route.instance()->currentAtoms();
-	for (Atom *a : grp->atomVector())
-	{
-		if (!a->isMainChain())
-		{
-			continue;
-		}
-
-		glm::vec3 moving = a->otherPosition("moving");
-		moving /= (float)_steps;
-		_distances[a] = glm::length(moving);
-	}
-}
-
-float RouteValidator::dotLastTwoVectors()
-{
-	float dots = 0;
-	float count = 0;
-
-	AtomGroup *grp = _route.instance()->currentAtoms();
-	for (Atom *a : grp->atomVector())
-	{
-		if (!a->isMainChain() || _distances.count(a) == 0)
-		{
-			continue;
-		}
-
-		glm::vec3 curr = a->derivedPosition();
-		glm::vec3 parent = a->otherPosition("parent");
-		glm::vec3 grandparent = a->otherPosition("grandparent");
-
-		glm::vec3 vec1 = curr - parent;
-		glm::vec3 vec2 = parent - grandparent;
-		
-		glm::vec3 first = glm::normalize(vec1);
-		glm::vec3 second = glm::normalize(vec2);
-		
-		float dot = glm::dot(first, second);
-		float mag = sqrt(glm::length(vec1) * glm::length(vec2));
-		float norm = _distances[a];
-		
-		dot *= (norm + _tolerance) / (mag + _tolerance);
-		
-		if (dot < 0)
-		{
-			dot = 0;
-		}
-		
-		if (dot == dot)
-		{
-			dots += dot;
-			count++;
-		}
-		
-	}
-	
-	dots /= count;
-	return dots;
-}
-
-void RouteValidator::savePreviousPositions()
-{
-	AtomGroup *grp = _route.instance()->currentAtoms();
-	for (Atom *a : grp->atomVector())
-	{
-		if (!a->isMainChain())
-		{
-			continue;
-		}
-
-		glm::vec3 curr = a->derivedPosition();
-		glm::vec3 parent = (a->hasOtherPosition("parent") ?
-		                    a->otherPosition("parent") : curr);
-		
-		a->setOtherPosition("grandparent", parent);
-		a->setOtherPosition("parent", curr);
-	}
-}
-
-float RouteValidator::linearityRatio()
-{
-	populateDistances();
-	_route.shouldUpdateAtoms(true);
-
-	_steps = 32;
-
-	float ave = 0;
-	float count = 0;
-
-	for (size_t i = 0; i < _steps; i++)
-	{
-		_route.submitJobAndRetrieve(i / (float)_steps);
-		
-		if (i > 1)
-		{
-			float contribution = dotLastTwoVectors();
-			
-			if (contribution == contribution)
-			{
-				ave += contribution;
-				count++;
-			}
-		}
-		
-		savePreviousPositions();
-	}
-	
-	ave /= count;
-	return ave;
 }
 
 float RouteValidator::validate(Instance *start, Instance *end)
@@ -152,15 +35,23 @@ float RouteValidator::validate(Instance *start, Instance *end)
 	start->currentAtoms()->recalculate();
 	end->currentAtoms()->recalculate();
 
-	_route.shouldUpdateAtoms(true);
-	_route.submitJobAndRetrieve(1, true);
+	_route.submitToShow(1);
+	_route.retrieve();
 
 	end->superposeOn(start);
 	AtomGroup *grp = end->currentAtoms();
+	AtomGroup *nonH = grp->new_subset(rope::atom_is_not_hydrogen());
 
-	float diff = grp->residualAgainst("original");
+	float diff = nonH->residualAgainst("original");
+	
+	grp->do_op([](Atom *const &a)
+	           { a->setDerivedPosition(a->initialPosition()); });
+
 	start->unload();
 	end->unload();
+	
+	delete nonH;
+
 	return diff;
 
 }
@@ -176,10 +67,10 @@ std::string RouteValidator::validate()
 		                      _route.endInstance(i));
 
 		bool valid = (rmsd < 0.5);
-		_rmsd += rmsd;
-
+		
 		if (!valid)
 		{
+			_rmsd += rmsd;
 			msg += "RMSD for " + _route.startInstance(i)->id() + " is ";
 			msg += f_to_str(rmsd, 2) + " Angstroms.\n";
 		}
