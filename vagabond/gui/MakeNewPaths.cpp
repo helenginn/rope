@@ -27,11 +27,51 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TickBoxes.h>
 
+#include <sstream>
+
 MakeNewPaths::MakeNewPaths(Scene *prev, Entity *entity) 
 : Scene(prev), _entity(entity)
 {
 
 }
+
+template <typename T>
+std::string to_string_with_precision(const T a_value, const int n = 6)
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << a_value;
+    return std::move(out).str();
+}
+
+template <typename Num>
+void addNumEntry(MakeNewPaths *mnp, float top, const std::string &desc, 
+                               Num *target)
+{
+	if (target == nullptr)
+	{
+		throw std::runtime_error("Target for int/float entry is nullptr");
+	}
+
+	Text *t = new Text(desc);
+	t->setLeft(0.2, top);
+	mnp->addObject(t);
+	
+	std::string def = to_string_with_precision(*target, 1);
+	TextEntry *entry = new TextEntry(def, mnp);
+	entry->setValidationType(TextEntry::Numeric);
+	entry->setReturnJob
+	([target, entry]()
+	{
+		*target = atof(entry->scratch().c_str());
+		entry->setScratch(i_to_str(*target));
+		entry->setText(i_to_str(*target));
+	});
+
+	entry->setRight(0.8, top);
+	mnp->addObject(entry);
+}
+
 
 void MakeNewPaths::setup()
 {
@@ -79,73 +119,24 @@ void MakeNewPaths::setup()
 	tb->arrange(0.2, top, 0.5, top + 0.5);
 	addObject(tb);
 
-	top += 0.06;
-	addFloatEntry(top, "Maximum distance of interest (momentum)",
+	float step = 0.05;
+	top += step;
+	addNumEntry(this, top, "Maximum distance of interest (momentum)",
 	              &_maxMomentumDistance);
 
-	top += 0.06;
-	addFloatEntry(top, "Maximum distance of interest (clash)",
+	top += step;
+	addNumEntry(this, top, "Maximum distance of interest (clash)",
 	              &_maxClashDistance);
 
-	top += 0.06;
-	addIntEntry(top, "Maximum torsion flip trial",
+	top += step;
+	addNumEntry(this, top, "Maximum torsion flip trial",
 	              &_maxFlipTrial);
+
+	top += step;
+	addNumEntry(this, top, "Random starting perturbation (degrees)",
+	              &_randomDegrees);
 	
 	refresh();
-}
-
-void MakeNewPaths::addIntEntry(float top, const std::string &desc, 
-                               int *target)
-{
-	if (target == nullptr)
-	{
-		throw std::runtime_error("Target for float entry is nullptr");
-	}
-
-	Text *t = new Text(desc);
-	t->setLeft(0.2, top);
-	addObject(t);
-	
-	std::string def = i_to_str(*target);
-	TextEntry *entry = new TextEntry(def, this);
-	entry->setValidationType(TextEntry::Numeric);
-	entry->setReturnJob
-	([target, entry]()
-	{
-		*target = atof(entry->scratch().c_str());
-		entry->setScratch(i_to_str(*target));
-		entry->setText(i_to_str(*target));
-	});
-
-	entry->setRight(0.8, top);
-	addObject(entry);
-}
-
-void MakeNewPaths::addFloatEntry(float top, const std::string &desc, 
-                                 float *target)
-{
-	if (target == nullptr)
-	{
-		throw std::runtime_error("Target for float entry is nullptr");
-	}
-
-	Text *t = new Text(desc);
-	t->setLeft(0.2, top);
-	addObject(t);
-	
-	std::string def = f_to_str(*target, 1);
-	TextEntry *entry = new TextEntry(def, this);
-	entry->setValidationType(TextEntry::Numeric);
-	entry->setReturnJob
-	([target, entry]()
-	{
-		*target = atof(entry->scratch().c_str());
-		entry->setScratch(f_to_str(*target, 1));
-		entry->setText(f_to_str(*target, 1));
-	});
-
-	entry->setRight(0.8, top);
-	addObject(entry);
 }
 
 void MakeNewPaths::getStructure(bool from)
@@ -241,6 +232,7 @@ void MakeNewPaths::prepare()
 	route->setMaximumMomentumDistance(_maxMomentumDistance);
 	route->setMaximumClashDistance(_maxClashDistance);
 	route->setMaximumFlipTrial(_maxFlipTrial);
+	route->setRandomPerturb(_randomDegrees);
 
 	RouteExplorer *re = new RouteExplorer(this, route);
 	re->setRestart(_restart);
