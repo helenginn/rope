@@ -44,18 +44,18 @@ namespace Flag
 
 struct Correlation
 {
-	float value;
+	float value = 0;
 };
 
 struct Deviation
 {
-	float value;
+	float value = 0;
 };
 
 struct ActivationEnergy
 {
-	float value;
-	float frac;
+	float value = 0;
+	float frac = 0;
 };
 
 class AtomMap;

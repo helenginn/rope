@@ -277,7 +277,7 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 
 				long double diff = potential - reference;
 				
-				if (diff > 0)
+				if (diff > 0 && std::isfinite(diff))
 				{
 					total += diff;
 				}
