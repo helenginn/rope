@@ -71,10 +71,29 @@ private:
 	struct FourPos
 	{
 		Atom *atom = nullptr;
-		glm::vec3 pos[4] = {};
-		std::array<glm::vec3, 4> coefficients = {}; // x^3 + x^2 + x + c
+		std::array<glm::vec3, 4> pos = {};
+		std::array<glm::vec3, 4> controls = {};
+		std::array<glm::vec3, 4> coefficients = {};
 		float radius;
 		float epsilon;
+		
+		void get_controls(const std::array<bool, 4> &available)
+		{
+			controls = pos;
+			if (!available[0])
+			{
+				controls[0] = 2.f * controls[1] - controls[2];
+			}
+			else if (available[2] && !available[3])
+			{
+				controls[3] = 2.f * controls[2] - controls[1];
+			}
+			else if (!available[2] && !available[3])
+			{
+				controls[2] = 2.f * controls[1] - controls[0];
+				controls[3] = 3.f * controls[1] - 2.f * controls[0];
+			}
+		}
 		
 		std::array<glm::vec3, 4> operator-(const FourPos &other) const
 		{

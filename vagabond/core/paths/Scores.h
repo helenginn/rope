@@ -26,15 +26,15 @@ struct ActivationEnergy;
 
 struct SingleResidueResult
 {
-	ResidueId id;
-	float score;
-
-	void operator=(const ActivationEnergy &d);
+	ResidueId id{};
+	float score = 0;
+	float highest = 0;
 };
 
 struct ByResidueResult
 {
 	std::map<ResidueId, float> scores;
+	std::map<ResidueId, float> activations;
 	std::mutex *mutex = new std::mutex();
 	int ticket;
 	

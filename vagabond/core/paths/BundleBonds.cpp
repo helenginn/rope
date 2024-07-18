@@ -63,39 +63,61 @@ auto make_gradients(BundleBonds *bb)
 	{
 		if (count == 4)
 		{
-			return idx ?  (ps[2] - ps[0]) : (ps[3] - ps[1]);
+			return idx == 0 ? (ps[2] - ps[0]) : (ps[3] - ps[1]);
 		}
 		else if (count == 3 && available[0] == 0)
 		{
 			//right hand
-			return idx ?  (ps[2] - ps[1]) : (ps[1] - ps[2]);
+			return idx == 0 ? (ps[3] - ps[1]) : (ps[1] - ps[2]);
 		}
 		else
 		{
 			//left hand
-			return idx ?  (ps[1] - ps[0]) : (ps[0] - ps[1]);
+			return idx == 1 ? (ps[1] - ps[0]) : (ps[0] - ps[1]);
 		}
 	};
 }
 
+auto get_diff_from_coeffs(const std::array<glm::vec3, 4> &diff)
+{
+	return [&diff](const float &f)
+	{
+		glm::vec3 pdiff = {};
+		pdiff = diff[0] * f*f*f + diff[1] * f*f + diff[2] * f + diff[3];
+		return pdiff;
+	};
+};
+
 void BundleBonds::findCoefficients()
 {
-	auto get_gradients = make_gradients(this);
+//	auto get_gradients = make_gradients(this);
+
+	glm::mat3 mat = {{-1, +1, -1}, {1, 1, 1}, {8, 4, 2}};
+	glm::mat3 inv = glm::transpose(glm::inverse(mat));
 
 	for (FourPos &ps : _positions)
 	{
-		const glm::vec3 *ptr = &ps.pos[0];
+		ps.get_controls(_received);
 
-		const glm::vec3 g0 = get_gradients(ptr, 0);
-		const glm::vec3 g1 = get_gradients(ptr, 1);
+		std::array<glm::vec3, 4> &p = ps.controls;
 
-		const glm::vec3 &f0 = ps.pos[1];
-		const glm::vec3 &f1 = ps.pos[2];
+		for (int i = 0; i < 3; i++)
+		{
+			glm::vec3 ys = {};
+			ys[0] = p[0][i];
+			ys[1] = p[2][i];
+			ys[2] = p[3][i];
+			ys -= p[1][i];
 
-		ps.coefficients[0] = g0 + g1;
-		ps.coefficients[1] = -2.f * g0 - g1;
-		ps.coefficients[2] = g0 + f1 - f0;
-		ps.coefficients[3] = f0;
+			glm::vec3 abc = inv * ys;
+
+			for (int j = 0; j < 3; j++)
+			{
+				ps.coefficients[j][i] = abc[j];
+			}
+		}
+
+		ps.coefficients[3] = p[1];
 
 		if (ps.atom)
 		{
@@ -131,16 +153,6 @@ long double vdw_energy(const float &difflengthsq,
 	return potential;
 }
 
-auto get_diff_from_coeffs(const std::array<glm::vec3, 4> &diff)
-{
-	return [&diff](const float &f)
-	{
-		glm::vec3 pdiff = {};
-		pdiff = diff[0] * f*f*f + diff[1] * f*f + diff[2] * f + diff[3];
-		return pdiff;
-	};
-};
-
 std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 {
 	findCoefficients();
@@ -157,55 +169,36 @@ std::function<long double(int p, int q, float dist)> BundleBonds::lookup()
 
 		std::array<glm::vec3, 4> diff = _positions[q] - _positions[p];
 
-		int i = 0;
-		float sum[] = {0, 0, 0, 0};
-		for (const glm::vec3 &v : diff)
+		auto polynomial = get_diff_from_coeffs(diff);
+		auto sqlength = [&polynomial](float f)
 		{
-			sum[i] = v[0] + v[1] + v[2];
-			i++;
-		}
-
-		// solve for closest point
-
-		float &a = sum[0]; float &b = sum[1]; float &c = sum[2];
-
-		auto diff_from_coeffs = get_diff_from_coeffs(diff);
-
-		auto energy_from_diff = [this, &diameter, &epsilon]
-		(const glm::vec3 &posdiff)
-		{
-			return vdw_energy(glm::dot(posdiff, posdiff),
-			                  diameter, epsilon);
+			glm::vec3 res = polynomial(f);
+			return glm::dot(res, res);
 		};
 
-		glm::vec3 pos0 = _positions[q].pos[1] - _positions[p].pos[1];
-		float e = energy_from_diff(pos0);
-
-		if (b*b - 3*a*c < 0)
+		float close = FLT_MAX;
+		float bottom = 0; float bottom_score = sqlength(0);
+		float top = 1; float top_score = sqlength(1);
+		float best_score = (top_score > bottom_score ?
+		                    bottom_score : top_score);
+		float thresh = 0.05;
+		
+		while (fabs(top - bottom) > thresh)
 		{
-			return e;
-		}
-
-		float sqrt_term = sqrt(b*b - 3*a*c);
-		float sol0 = (-b - sqrt_term) / (3*a);
-		float sol1 = (-b + sqrt_term) / (3*a);
-
-		if (sol0 == sol0 && sol0 > 0 && sol0 < 1)
-		{
-			float e2 = energy_from_diff(diff_from_coeffs(sol0));
-			if (e2 == e2)
+			float trial = (top + bottom) / 2;
+			float score = sqlength(trial);
+			bool replace_top = (top_score > bottom_score);
+			
+			if (best_score > score)
 			{
-				e = std::max(e2, e);
+				best_score = score;
 			}
+
+			(replace_top ? top_score : bottom_score) = score;
+			(replace_top ? top : bottom) = trial;
 		}
-		else if (sol1 == sol1 && sol1 > 0 && sol1 < 1)
-		{
-			float e2 = energy_from_diff(diff_from_coeffs(sol1));
-			if (e2 == e2)
-			{
-				e = std::max(e2, e);
-			}
-		}
+
+		float e = vdw_energy(best_score, diameter, epsilon);
 
 		return e;
 	};

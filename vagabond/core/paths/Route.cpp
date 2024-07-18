@@ -297,7 +297,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	bool uses_bundles = vdw_clashes;
 
 	int n_bundles = 0;
-	for (int i = 0; i < steps - 1 && pairwise; i++)
+	for (int i = 0; i < steps && pairwise; i++)
 	{
 		TaskInfo &info = frac_tasks[i];
 
@@ -720,6 +720,12 @@ void Route::deleteHelpers()
 	}
 
 	_helpers.clear();
+}
+
+void Route::installAllResidues()
+{
+	PairwiseDeviations *pd = _helpers[_resources.sequences].pairwise.acquire();
+	_ids = pd->residues();
 }
 
 void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
