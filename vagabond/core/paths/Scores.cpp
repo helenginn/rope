@@ -19,13 +19,12 @@
 #include "Scores.h"
 #include "../engine/ElementTypes.h"
 
-void SingleResidueResult::operator=(const ActivationEnergy &d)
-{
-	score += d.value;
-}
-
 void ByResidueResult::operator=(const SingleResidueResult &srr)
 {
 	std::unique_lock<std::mutex> lock(*mutex);
 	scores[srr.id] += srr.score;
+	if (activations[srr.id] < srr.score)
+	{
+		activations[srr.id] = srr.score;
+	}
 }

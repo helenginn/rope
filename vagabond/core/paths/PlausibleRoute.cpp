@@ -325,27 +325,6 @@ std::vector<float> save_current(GradientPath *path, const RTMotion &motions,
 	return current;
 }
 
-// you'll probably have to optimise this by working directly 
-// from path->motion_idxs
-std::map<int, int> indexed_motions(ByResidueResult *r, RTMotion &motions)
-{
-	std::map<int, int> indexed;
-	int n = 0;
-	for (auto it = r->scores.begin(); it != r->scores.end(); it++)
-	{
-		for (int i = 0; i < motions.size(); i++)
-		{
-			if (motions.rt(i).local_id() == it->first)
-			{
-				indexed[i] = n; // motion -> residue
-			}
-		}
-		n++;
-	}
-
-	return indexed;
-}
-
 OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 {
 	struct RankedResidue
@@ -360,28 +339,22 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	};
 
 	std::set<RankedResidue> residues;
+	
+	_ids.clear();
+	ByResidueResult *rr = byResidueScore(nudgeCount());
+	std::map<ResidueId, float> highests = rr->activations;
+	delete rr;
 
-	std::map<ResidueId, std::vector<int>> map;
-	int n = 0;
-	for (int i = 0; i < motionCount(); i++)
+	for (auto it = highests.begin(); it != highests.end(); it++)
 	{
-		ResidueTorsion &rt = residueTorsion(i);
-		if (parameter(i) && 
-		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained()))
-		{
-			continue;
-		}
-
-		const ResidueId &local = rt.local_id();
-
-		_ids = {local};
-		float sc = routeScore(nudgeCount());
-		residues.insert({sc, local});
+		const ResidueId &local = it->first;
+		float score = it->second;
+		residues.insert({it->second, local});
 	}
 
 	OpSet<ResidueId> chosen;
 
-	n = 0;
+	int n = 0;
 	float sum = 0;
 	_lemons.clear();
 
@@ -389,7 +362,6 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	{
 		if (n >= num) break;
 		chosen.insert(rr.id);
-		std::cout << rr.id << " has score " << rr.score << std::endl;
 		_lemons.push_back({rr.id, rr.score});
 		sum += rr.score;
 		n++;
@@ -439,11 +411,13 @@ bool PlausibleRoute::sideChainGradients(int order)
 	float oldsc = routeScore(nudgeCount());
 	postScore(oldsc);
 
+	installAllResidues();
 	MultiSimplex<ResidueId> ms(this, parameterCount());
 	ms.setStepSize(step);
 	ms.supplyInfo(map);
 	ms.run();
 	zeroParameters();
+	_ids.clear();
 
 	float newsc = routeScore(nudgeCount());
 	_bestScore = newsc;
@@ -462,11 +436,11 @@ bool PlausibleRoute::sideChainGradients(int order)
 
 	{
 		MultiSimplex<ResidueId> ms(this, parameterCount());
-//		ms.setMaxRuns(20);
 		ms.setStepSize(step);
 		ms.supplyInfo(mini);
 		for (int i = 0; i < 10; i++)
 		{
+			_ids = chosen;
 			ms.run();
 			zeroParameters();
 		}
@@ -480,7 +454,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 	_bestScore = newsc;
 	postScore(newsc);
 	std::cout << "here: " << oldsc << " to " << newsc << std::endl;
-	return meaningfulUpdate(newsc, oldsc, 0.95);
+	return meaningfulUpdate(newsc, oldsc, 0.90);
 }
 
 template <typename JobOnTerm>
@@ -954,6 +928,11 @@ void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 		float value = _paramStarts[i] + trial[i];
 		*(_paramPtrs[i]) = value;
 	}
+}
+
+void PlausibleRoute::finishedKey(const ResidueId &key)
+{
+	_ids.erase(key);
 }
 
 std::map<ResidueId, float> PlausibleRoute::

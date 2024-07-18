@@ -457,6 +457,8 @@ protected:
 	std::vector<std::function<BondSequence *(BondSequence *)>> _postCalcTasks;
 	void prepareAlignment();
 	
+	void installAllResidues();
+
 	NonCovalents *_noncovs = nullptr;
 	std::vector<std::pair<ResidueId, float>> _lemons;
 private:

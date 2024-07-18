@@ -114,6 +114,8 @@ protected:
 	getMultiResult(const std::vector<float> &all, 
 	               MultiSimplex<ResidueId> *caller);
 
+	virtual void finishedKey(const ResidueId &key);
+
 	virtual size_t parameterCount(Engine *caller = nullptr);
 
 	virtual void doCalculations();

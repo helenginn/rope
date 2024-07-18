@@ -40,6 +40,8 @@ public:
 	virtual std::map<Key, float> 
 	getMultiResult(const std::vector<float> &all, MultiSimplex<Key> *caller) = 0;
 
+	virtual void finishedKey(const Key &key) {};
+
 };
 
 class MultiEngine
@@ -314,6 +316,7 @@ public:
 		std::unique_lock<std::mutex> lock(_access);
 		_done++;
 		Key &key = _engine2Key.at(sender);
+		_ref->finishedKey(key);
 		Info &info = _key2Info.at(key);
 		info.best = best;
 		info.done = true;

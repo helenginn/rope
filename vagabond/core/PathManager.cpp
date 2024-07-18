@@ -323,7 +323,7 @@ void PathManager::pathMatrix(const std::string &filename,
 
 	std::map<std::string, std::map<std::string, Result>> results;
 
-	auto report_paths = [this, &file, &results]
+	auto report_paths = [this, &results]
 	(Instance *first, Instance *second)
 	{
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
