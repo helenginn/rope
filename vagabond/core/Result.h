@@ -36,6 +36,7 @@ struct Result
 
 	void operator=(const ActivationEnergy &d)
 	{
+		std::unique_lock<std::mutex> lock(*mut);
 		if (activation < d.value && d.value == d.value)
 		{
 			activation = d.value;
