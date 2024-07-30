@@ -20,6 +20,7 @@
 #define __vagabond__HydrogenBond__
 
 #include "hnet.h"
+#include <fstream>
 
 namespace hnet
 {
@@ -71,23 +72,51 @@ struct HydrogenBond
 		        val == Bond::NotPresent);
 	}
 	
+	// void print_bond()
+	// {
+	// 	// std::ofstream outputFile("hbond_output.txt");
+
+	// 	std::cout << _left.value() << " " << _centre.value() << 
+	// 	" " << _right.value() << std::endl;
+		
+	// 	if (_left.value() == Bond::Contradiction)
+	// 	{
+	// 		_left.report();
+	// 	}
+	// 	else if (_right.value() == Bond::Contradiction)
+	// 	{
+	// 		_right.report();
+	// 	}
+	// }
+	
 	void print_bond()
 	{
-		std::cout << _left.value() << " " << _centre.value() << 
-		" " << _right.value() << std::endl;
-		
-		if (_left.value() == Bond::Contradiction)
-		{
-			_left.report();
-		}
-		else if (_right.value() == Bond::Contradiction)
-		{
-			_right.report();
-		}
+	    std::ofstream outputFile("hbond_output.txt", std::ios_base::app); // Open in append mode
+
+	    if (!outputFile.is_open())
+	    {
+	        std::cerr << "Failed to open output file." << std::endl;
+	        return;
+	    }
+
+	    outputFile << _left.value() << " " << _centre.value() << " " << _right.value() << std::endl;
+
+	    if (_left.value() == Bond::Contradiction)
+	    {
+	        _left.report();
+	    }
+	    else if (_right.value() == Bond::Contradiction)
+	    {
+	        _right.report();
+	    }
+
+	    outputFile.close(); // Close the file after writing
 	}
-	
+
+
 	bool impose(void *prev)
 	{
+
 		Bond::Values forLeft = _left.value();
 		Hydrogen::Values forCentre = _centre.value();
 		Bond::Values forRight = _right.value();
@@ -142,6 +171,7 @@ struct HydrogenBond
 		_right.assign_value(forRight, this, prev);
 		if (is_contradictory(_right.value())) return false;
 
+		print_bond();
 		return true;
 	}
 	
