@@ -20,8 +20,10 @@
 #include <vagabond/utils/include_boost.h>
 namespace tt = boost::test_tools;
 
-#include "test_bfac_occ.cpp"
-#include "test_tasks.cpp"
+// #include "test_bfac_occ.cpp"
+// #include "test_tasks.cpp"
+#include "test_hnet.cpp"
+
 /*
 #include "test_hnet.cpp"
 #include "test_atomgroup.cpp"
