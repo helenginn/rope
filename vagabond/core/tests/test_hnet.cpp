@@ -19,6 +19,14 @@
 #include <vagabond/core/protonic/Connector.h>
 #include <vagabond/core/protonic/Constraint.h>
 #include <vagabond/core/protonic/Network.h>
+#include <vagabond/core/files/PdbFile.h>
+#include <vagabond/core/protonic/Probe.h>
+#include "AtomGroup.h"
+#include <string>
+#include <iostream>
+#include <time.h>
+
+
 
 using namespace hnet;
 
@@ -53,15 +61,68 @@ BOOST_AUTO_TEST_CASE(can_create_network)
 	BOOST_TEST(true);
 }
 
+// BOOST_AUTO_TEST_CASE(can_create_hydrogen_bond)
+// {
+// 	std::string path = "/Users/vapostolop/Desktop/rope_kgs_crystallin/fresh01_refined_woDTT.pdb";
+// 	PdbFile geom = PdbFile(path);
+// 	geom.parse();
+// 	AtomGroup *hexane = geom.atoms();
+// 	std::cout << "Total atoms: " << hexane->size() << std::endl;
+
+
+// 	AtomConnector o(hnet::Atom::Oxygen);
+// 	BondConnector o_h(Bond::Strong);
+// 	HydrogenConnector h;
+// 	BondConnector h_n;
+// 	AtomConnector n(hnet::Atom::Nitrogen);
+
+// 	HydrogenBond hbond(o_h, h, h_n);
+// 	hbond.print_bond();
+	
+// 	BOOST_TEST(true);
+// }
+
 BOOST_AUTO_TEST_CASE(can_create_hydrogen_bond)
 {
-	AtomConnector o(hnet::Atom::Oxygen);
-	BondConnector o_h(Bond::Strong);
-	HydrogenConnector h;
-	BondConnector h_n;
-	AtomConnector n(hnet::Atom::Nitrogen);
+    std::string path = "/Users/vapostolop/Desktop/rope_kgs_crystallin/fresh01_refined_woDTT.pdb";
+    PdbFile crystallin = PdbFile(path);
+    crystallin.parse();
+    AtomGroup *atomgrp = crystallin.atoms(); // use for Dimitris 
+    std::cout << "Total atoms: " << atomgrp->size() << std::endl;
 
-	HydrogenBond hbond(o_h, h, h_n);
-	
-	BOOST_TEST(true);
+	std::string spg_name = crystallin.spaceGroupName();
+	std::array<double, 6> uc = crystallin.unitCell();
+
+	std::cout << "Space group name: " << spg_name << std::endl;
+
+	Network network(atomgrp, spg_name, uc);
+	for (HydrogenProbe *const &probe : network.hydrogenProbes())
+	{
+		hnet::Hydrogen::Values val = probe->_obj.value();
+		std::cout << val << std::endl;
+		AtomProbe &left = probe->_left;
+		::Atom *atom = left._atom;
+		std::cout << atom->desc() << std::endl;
+
+		AtomProbe &right = probe->_right;
+		atom = right._atom;
+		// std::cout << atom->desc() << std::endl;
+		std::cout << atom->bondLengthCount() << std::endl;
+
+		// std::cout << atom->bondsBetween(atom, 10, true) << std::endl;
+	}
+
+
+    BOOST_TEST(true);
 }
+
+
+
+
+
+
+
+
+
+
+
