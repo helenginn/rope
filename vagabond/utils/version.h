@@ -29,4 +29,6 @@
 
 
 
+#define VERSION_FLEXIBILITY
+
 #endif
