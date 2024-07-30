@@ -6,6 +6,7 @@ build
 data
 doc/
 tags
+gemmi/
 
 *.sw?
 
