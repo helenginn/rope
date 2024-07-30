@@ -33,8 +33,10 @@
 
 BOOST_AUTO_TEST_CASE(tasks_with_calculator)
 {
-	std::string path = "/Users/ginnh/pdbs/stromelysin/1hfs-no-lig.pdb";
-	std::string density = "/Users/ginnh/pdbs/stromelysin/1hfs.mtz";
+	// std::string path = "/Users/ginnh/pdbs/stromelysin/1hfs-no-lig.pdb";
+	// std::string density = "/Users/ginnh/pdbs/stromelysin/1hfs.mtz";
+	std::string path = "/Users/vapostolop/Desktop/rope_kgs_crystallin/fresh01_refined_woDTT.pdb";
+	std::string density = "/Users/vapostolop/Desktop/rope_kgs_crystallin/fresh01_refined.pdb";
 	PdbFile geom = PdbFile(path);
 	geom.parse();
 	AtomGroup *hexane = geom.atoms();
