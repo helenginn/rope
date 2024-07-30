@@ -191,7 +191,11 @@ public:
 	AtomGroup extractFragment(Sequence seq);
 	
 	float rmsd() const;
-	
+
+	// V:
+	void printAtoms() const;
+
+
 protected:
 	Atom *atom(int i) const
 	{

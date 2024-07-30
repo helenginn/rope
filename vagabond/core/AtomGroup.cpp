@@ -659,3 +659,17 @@ float AtomGroup::residualAgainst(std::string pos_tag)
 	return sum;
 
 }
+
+void AtomGroup::printAtoms() const {
+    for (const auto& atom : _atoms) {
+        std::cout << "Atom details:" << std::endl;
+        std::cout << "Description: " << atom->desc() << std::endl;
+        std::cout << "Element Symbol: " << atom->elementSymbol() << std::endl;
+        std::cout << "Residue ID: " << atom->residueId() << std::endl;
+        std::cout << "Atom Name: " << atom->atomName() << std::endl;
+        std::cout << "Chain: " << atom->chain() << std::endl;
+        std::cout << "Initial Position: X: " << atom->initialPosition().x << ", Y: " << atom->initialPosition().y << ", Z: " << atom->initialPosition().z << std::endl;
+        std::cout << "Derived Position: X: " << atom->derivedPosition().x << ", Y: " << atom->derivedPosition().y << ", Z: " << atom->derivedPosition().z << std::endl;
+        std::cout << "-----------------------------" << std::endl;
+    }
+}
