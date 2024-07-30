@@ -28,4 +28,6 @@
 #define VERSION_MUTATE
 #endif
 
+#define VERSION_FLEXIBILITY
+
 #endif
