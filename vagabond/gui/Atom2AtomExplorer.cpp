@@ -237,6 +237,7 @@ void Atom2AtomExplorer::mousePressEvent(double x, double y,
 void Atom2AtomExplorer::finishedDragging(std::string tag, double x, double y)
 {
 	_colourScale = (100 - x) / 10;
+	_colourScale *= 10; 
 	update();
 }
 
