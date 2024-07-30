@@ -31,6 +31,7 @@
 #include "ClusterView.h"
 #include "LoopyDisplay.h"
 #include "ProtonNetworkView.h"
+#include "FlexibilityView.h"
 #include "PathsDetail.h"
 #include "EvolveView.h"
 #include "AddModel.h"
@@ -538,6 +539,19 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		sr->show();
 	}
 	
+	if (tag == "flexibility_analysis")
+	{
+		Instance *i = static_cast<Instance *>(button->returnObject());
+		std::string pdb = i->model()->filename();
+		PdbFile file(pdb);
+		file.parse();
+		AtomGroup *grp = file.atoms();
+		std::string spg_name = file.spaceGroupName();
+		std::array<double, 6> uc = file.unitCell();
+
+		FlexibilityView *flex;
+		flex = new FlexibilityView(this, i);
+	}
 	if (tag == "proton")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
@@ -562,7 +576,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(fsec);
 		std::cout << ms.count() << " ms to set up" << std::endl;
 	}
-	
 	if (tag == "set_as_reference")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
@@ -703,7 +716,7 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
 	m->addOption("view details", "view_object");
-	m->addOption("set as reference", "set_as_reference");
+	m->addOption("set as reference", "flexibility_analysis");
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
 	m->addOption("evolve", "evolve");
@@ -713,6 +726,9 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 #endif
 #ifdef VERSION_PROTON_NETWORK
 	m->addOption("proton network", "proton");
+#endif
+#ifdef VERSION_FLEXIBILITY
+	m->addOption("flexibility", "flexibility_analysis");
 #endif
 	float x; float y;
 	getFractionalPos(x, y);
