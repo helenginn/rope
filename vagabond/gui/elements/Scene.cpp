@@ -6,6 +6,7 @@
 #include "TextButton.h"
 #include "Scene.h"
 #include "AskYesNo.h"
+#include "AskToSave.h"
 #include "Image.h"
 #include <vagabond/utils/gl_import.h>
 #include <iostream>
@@ -340,6 +341,7 @@ void Scene::askToQuit()
 	}
 }
 
+
 void Scene::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")
@@ -349,7 +351,13 @@ void Scene::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "yes_quit")
 	{
-		exit(0);
+		// ask if they want to save changes before exiting
+		AskToSave *ats = new AskToSave(this, "Do you want to save?",
+		"savequit", this);
+		ats->setDismissible(true);
+		setModal(ats);
+		viewChanged();
+
 	}
 	if (tag == "remove_info" && _info != nullptr)
 	{
