@@ -1,6 +1,7 @@
 guielementfiles = [
 cfile,
 'AskYesNo.cpp',
+'AskToSave.cpp',
 'AskForText.cpp',
 'AskMultipleChoice.cpp',
 'AskMultipleChoice.h',
@@ -90,6 +91,7 @@ cfile,
 
 install_headers([
 #'AskYesNo.h',
+#'AskToSave.h',
 #'AskForText.h',
 #'BadChoice.h',
 #'Box.h',
