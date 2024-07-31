@@ -33,7 +33,10 @@ void AskYesNo::buttonPressed(std::string tag, Button *button)
 		hide();
 		if (_sender)
 		{
+			std::cout << tag <<std::endl;
+			std::cout << _tag <<std::endl;
 			_sender->buttonPressed(tag + "_" + _tag);
+
 		}
 	}
 }
