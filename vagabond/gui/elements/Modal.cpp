@@ -84,6 +84,33 @@ void Modal::addTwoButtons(std::string left, std::string ltag,
 
 }
 
+void Modal::addThreeButtons(std::string left, std::string ltag,
+						  std::string center, std::string ctag,
+                          std::string right, std::string rtag)
+{
+	{
+		TextButton *button = new TextButton(left, this);
+		button->setReturnTag(ltag);
+		button->setCentre(0.3, 0.65);
+		addObject(button);
+	}
+
+	{
+		TextButton *button = new TextButton(center, this);
+		button->setReturnTag(ctag);
+		button->setCentre(0.5, 0.65);
+		addObject(button);
+	}
+
+	{
+		TextButton *button = new TextButton(right, this);
+		button->setReturnTag(rtag);
+		button->setCentre(0.7, 0.65);
+		addObject(button);
+	}
+
+}
+
 void Modal::squeezeToWidth(Renderable *r)
 {
 	float width = r->maximalWidth() / 2;
