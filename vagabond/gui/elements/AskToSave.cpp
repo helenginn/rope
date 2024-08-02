@@ -2,6 +2,7 @@
 
 #include "AskToSave.h"
 #include "TextButton.h"
+#include "Modal.h"
 #include <vagabond/core/Environment.h>
 
 AskToSave::AskToSave(Scene *scene, std::string text, std::string tag,
@@ -14,7 +15,7 @@ Modal(scene, 0.6, 0.4)
 
 	squeezeToWidth(t);
 
-	addTwoButtons("No", "no", "Yes", "yes");
+	addThreeButtons("Cancel", "cancel", "No", "no", "Yes", "yes");
 	
 	_sender = sender;
 	_tag = tag;
@@ -52,6 +53,10 @@ void AskToSave::buttonPressed(std::string tag, Button *button)
 			{
 				Environment::environment().save();
 				exit(0);
+			}
+			else if (tagCompine == "cancel_savequit");
+			{
+				setDismissible(true);
 			}
 
 		}
