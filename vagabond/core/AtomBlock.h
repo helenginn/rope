@@ -49,7 +49,14 @@ struct AtomBlock
 	
 	// program = idx when program should start, -1 when not in use,
 	// -2 when in the middle of program and -3 when program is done
+	// 	programs include things like proline rings and are only used in such
+	//  "special cases"
 	int program = -1;
+	
+	// atom pointer points to the atom associated with this block
+	// however if it is "nullptr" then it indicates that it is at the beginning
+	// of a new tree of connected atoms and contains the information required
+	// 	to place the first atom (the next atom block) in space.
 	Atom *atom = nullptr;
 	char element[3] = "\0";
 	int nBonds = 0;
@@ -64,7 +71,15 @@ struct AtomBlock
 	/* parent's position */
 	glm::vec3 inherit;
 
+	/* can be negative if there is no controlling torsion angle for this atom
+	 * (for example, if it is a "sister" atom of the atom being controlled),
+	 * otherwise it is the index of the torsion kept in an array inside
+	 * TorsionBasis */
 	int torsion_idx;
+	
+	/* "torsion" is just a temporary holder for the torsion angle when it is
+	 * calculated so it can be accessed later - but setting it doesn't affect
+	 * the calculations */
 	float torsion = 0;
 	float offset = 0;
 	
@@ -72,6 +87,9 @@ struct AtomBlock
 	 * previous bond is in Z direction */
 	glm::mat4x4 basis;
 	glm::mat4x4 wip;
+	
+	/* write locations specifies the relative indices of the "controlled" atoms
+	 * by this torsion angle - if torsion_idx is not negative. */
 	int write_locs[4];
 	
 	void clearMutable();
