@@ -464,6 +464,42 @@ void Route::submitValue(const CalcOptions &options, int steps,
 //	calculator->releaseHorses();
 }
 
+void Route::colourHiddenHinges(float frac)
+{
+	for (size_t i = 0; i < motionCount(); i++)
+	{
+		Parameter *const &p = parameter(i);
+		if (!p->coversMainChain())
+		{
+			continue;
+		}
+
+		float hinge = motion(i).hiddenHingeAngle(frac);
+		
+		std::vector<Atom *> reporters;
+		for (int j = 0; j < p->atomCount(); j++)
+		{
+			if (p->atom(j)->isReporterAtom())
+			{
+				reporters.push_back(p->atom(j));
+			}
+		}
+		
+		if (reporters.size() == 0)
+		{
+			continue;
+		}
+
+		hinge /= (reporters.size());
+		// so peptide bond will contribute to neighbouring CAs!
+
+		for (Atom *atom : reporters)
+		{
+			atom->addToColour(hinge);
+		}
+	}
+}
+
 void Route::submitToShow(float frac, Atom *atom)
 {
 	if (frac < 0)
