@@ -67,6 +67,13 @@ public:
 
 		_units.clear();
 	}
+	
+	std::vector<DisplayUnit *> &units()
+	{
+		return _units;
+	}
+	
+	void clearColours();
 
 	void recalculateAtoms();
 	virtual void tieButton();

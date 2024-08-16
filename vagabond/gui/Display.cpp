@@ -145,6 +145,15 @@ void Display::setup()
 //	IndexResponseView::setup();
 }
 
+void Display::clearColours()
+{
+	for (DisplayUnit *unit : _units)
+	{
+		AtomGroup *group = unit->atoms();
+		group->do_op([](Atom *const &a) { a->clearColour(); });
+	}
+}
+
 void Display::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")

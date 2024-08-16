@@ -68,9 +68,9 @@ glm::vec3 GuiRepresentation::bezier(glm::vec3 p1, glm::vec3 p2,
 	double c4 = t * t * t;
 
 	p2 *= c1;
-	p3 *= c4;
 	p1 *= c2;
 	p4 *= c3;
+	p3 *= c4;
 
 	glm::vec3 add = p1 + p2;	
 	add += p3 + p4;
@@ -97,6 +97,7 @@ GuiRepresentation::bezierFrom(std::vector<Snow::Vertex> vs, int idx)
 	for (Snow::Vertex &v : next_set)
 	{
 		v.color = vs[idx].color;
+		v.extra[3] = vs[idx].extra[3];
 	}
 
 	return next_set;

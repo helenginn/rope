@@ -48,6 +48,7 @@ public:
 	}
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p) = 0;
+	virtual void setHidden(Atom *a, const bool &hidden) {}
 	virtual void finishUpdate() {};
 	virtual void updateMultiPositions(Atom *a, WithPos &wp) = 0;
 	virtual void watchAtom(Atom *a) = 0;

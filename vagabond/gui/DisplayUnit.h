@@ -60,6 +60,8 @@ public:
 		return _guiDensity;
 	}
 	
+	GuiBalls *const &balls();
+	
 	void addAtomIndexResponder(Responder<GuiBalls> *const &rsp);
 
 	void tear(AtomMap *map);

@@ -322,11 +322,16 @@ void GuiHelices::cAlphasToWireFrame(Helix &h, std::vector<Snow::Vertex> &vs,
 			glm::vec3 pos = ca->derivedPosition();
 			float prop = ca->addedColour();
 			glm::vec4 c = _scheme->colour(prop);
+			bool hidden = _hidden[ca];
+			c[3] = hidden ? 0.1 : 1.0;
 
 			vs.push_back(new_vertex(pos));
 
 			vs.back().color = c;
-			vs.back().extra[3] = prop * 3;
+			if (!hidden)
+			{
+				vs.back().extra[3] = prop * 3;
+			}
 		}
 		else
 		{
@@ -441,6 +446,7 @@ void GuiHelices::makeHelixSlab(Snow::Vertex &origin, Snow::Vertex &previous,
 		norm += helix_normals[i][1] * dir;
 		v.normal = glm::normalize(norm);
 		v.color = origin.color;
+		v.extra = origin.extra;
 
 		verts.push_back(v);
 	}
@@ -617,6 +623,7 @@ void GuiHelices::finishUpdate()
 			Vertex &v = _vertices[insertion + j];
 			v.pos = full_verts[j].pos;
 			v.color = full_verts[j].color;
+			v.extra = full_verts[j].extra;
 			v.normal = glm::normalize(full_verts[j].normal);
 		}
 	}
@@ -625,4 +632,9 @@ void GuiHelices::finishUpdate()
 	calculateNormals();
 
 	forceRender(true, false);
+}
+
+void GuiHelices::setHidden(Atom *a, const bool &hidden)
+{
+	_hidden[a] = hidden;
 }

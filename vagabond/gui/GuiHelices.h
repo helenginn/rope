@@ -36,6 +36,7 @@ public:
 	virtual void updateMultiPositions(Atom *a, WithPos &wp);
 	
 	virtual void finishUpdate();
+	virtual void setHidden(Atom *a, const bool &hidden);
 protected:
 	virtual void extraUniforms();
 private:
@@ -96,6 +97,7 @@ private:
 	std::vector<Atom *> _ns;
 	std::vector<Atom *> _os;
 	std::map<Atom *, int> _cAlphaMap;
+	std::map<Atom *, bool> _hidden;
 	std::set<int> _helicesToUpdate;
 };
 

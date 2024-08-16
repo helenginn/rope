@@ -184,6 +184,13 @@ void GuiBalls::updateMultiPositions(Atom *a, WithPos &wp)
 	_bonds->updateAtoms(a, wp);
 }
 
+
+void GuiBalls::setHidden(Atom *a, const bool &hidden)
+{
+	int idx = _atomIndex[a];
+	_vertices[idx].color[3] = hidden ? 0.1 : 1.0;
+}
+
 void GuiBalls::updateSinglePosition(Atom *a, glm::vec3 &p)
 {
 	int idx = _atomIndex[a];

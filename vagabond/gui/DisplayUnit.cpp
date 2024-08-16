@@ -61,6 +61,11 @@ void DisplayUnit::stopGui()
 	}
 }
 
+GuiBalls *const &DisplayUnit::balls()
+{
+	return _guiAtoms->balls();
+}
+
 DisplayUnit::~DisplayUnit()
 {
 	resetDensityMap();

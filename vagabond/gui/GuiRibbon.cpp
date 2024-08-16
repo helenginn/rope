@@ -28,6 +28,7 @@
 
 #define INDICES_PER_BEZIER_DIVISION (12)
 #define DIVISIONS_IN_CIRCLE (16)
+#define TOTAL_INDICES_PER_ATOM (INDICES_PER_BEZIER_DIVISION * DIVISIONS_IN_CIRCLE )
 
 GuiRibbon::GuiRibbon(GuiAtom *parent) : GuiRepresentation(parent)
 {
@@ -333,8 +334,6 @@ void GuiRibbon::insertAtom(Atom *a)
 {
 	Watch::Entry entry{};
 	
-	bool has = _atoms.has(a);
-	
 	if (a)
 	{
 		entry.pos = a->initialPosition();
@@ -431,13 +430,30 @@ void GuiRibbon::prepareAtomSpace(AtomGroup *ag)
 void GuiRibbon::colourCylinderVertices(std::vector<Vertex> &vertices, Atom *a)
 {
 	float prop = a->addedColour();
+	bool hidden = _atoms[a].hidden;
 	glm::vec4 c = _scheme->colour(prop);
 
 	for (size_t i = 0; i < vertices.size(); i++)
 	{
-		vertices[i].color = c;
-		vertices[i].extra[3] = prop * 3;
+		vertices[i].color[0] = c[0];
+		vertices[i].color[1] = c[1];
+		vertices[i].color[2] = c[2];
+		vertices[i].color[3] = hidden ? 0.1 : 1.0;
+		if (!hidden)
+		{
+			vertices[i].extra[3] = prop * 3;
+		}
 	}
+}
+
+void GuiRibbon::setHidden(Atom *a, const bool &hidden)
+{
+	if (!a || !_bezier.has(a))
+	{
+		return;
+	}
+	
+	_atoms[a].hidden = hidden;
 }
 
 void GuiRibbon::updateSinglePosition(Atom *a, glm::vec3 &p)

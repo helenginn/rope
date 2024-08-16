@@ -49,6 +49,15 @@ public:
 	{
 		return _atomIndex.size();
 	}
+	
+	int indexForAtom(Atom *const &atom)
+	{
+		if (_atomIndex.count(atom))
+		{
+			return _atomIndex[atom];
+		}
+		return -1;
+	}
 
 	virtual void reindex();
 	virtual void interacted(int idx, bool hover, bool left);
@@ -57,12 +66,15 @@ public:
 
 	virtual void updateSinglePosition(Atom *a, glm::vec3 &p);
 	virtual void updateMultiPositions(Atom *a, WithPos &wp);
+	virtual void setHidden(Atom *a, const bool &hidden);
 	
 	virtual void prepareAtomSpace(AtomGroup *ag);
 	virtual void addVisuals(Atom *a);
 
 	virtual void removeVisuals();
 	virtual void finishUpdate();
+
+	virtual void selected(int idx, bool inverse);
 protected:
 	virtual void extraUniforms();
 private:
@@ -71,7 +83,6 @@ private:
 	size_t verticesPerAtom();
 	size_t indicesPerAtom();
 
-	virtual void selected(int idx, bool inverse);
 	
 	virtual bool selectable() const
 	{
