@@ -115,11 +115,13 @@ void GuiAtom::watchAtoms(AtomGroup *a)
 
 bool GuiAtom::checkAtom(Atom *a)
 {
+	bool hidden = false;
 	if (!_multi)
 	{
 		glm::vec3 p{};
-		if (a->positionChanged() && a->fishPosition(&p))
+		if (a->positionChanged() && a->fishPosition(&p, &hidden))
 		{
+			std::cout << hidden << std::endl;
 			for (GuiRepresentation *&r : _representations)
 			{
 				if (r->isDisabled())
@@ -128,6 +130,7 @@ bool GuiAtom::checkAtom(Atom *a)
 				}
 
 				r->updateSinglePosition(a, p);
+				r->setHidden(a, hidden);
 			}
 			return true;
 		}
@@ -135,7 +138,7 @@ bool GuiAtom::checkAtom(Atom *a)
 	else
 	{
 		WithPos wp;
-		if (a->positionChanged() && a->fishPositions(&wp))
+		if (a->positionChanged() && a->fishPositions(&wp, &hidden))
 		{
 			for (GuiRepresentation *&r : _representations)
 			{
@@ -146,6 +149,7 @@ bool GuiAtom::checkAtom(Atom *a)
 
 				r->updateSinglePosition(a, wp.ave);
 				r->updateMultiPositions(a, wp);
+				r->setHidden(a, hidden);
 			}
 			return true;
 		}

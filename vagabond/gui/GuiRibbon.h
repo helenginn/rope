@@ -46,6 +46,7 @@ public:
 			glm::vec3 pos = glm::vec3(NAN, NAN, NAN);
 			glm::vec3 prev_axis = glm::vec3(1, 0, 0);
 			bool changed = false;
+			bool hidden = false;
 			// next_idx refers to the first index in the next stage's array
 			// belonging to this atom.
 			// stage meaning: from "single atom" to "bezier", then from
@@ -137,6 +138,7 @@ public:
 		std::map<Atom *, size_t> _atom2Idx;
 	};
 	
+	virtual void setHidden(Atom *a, const bool &hidden);
 protected:
 	virtual void extraUniforms();
 
@@ -174,7 +176,6 @@ private:
 	                    GuiRibbon::Watch::Entry &source,
 	                    GuiRibbon::Watch &watch);
 
-	std::map<Atom *, int> _atomIndex;
 	std::map<Atom *, glm::vec3> _atomPos;
 	std::map<int, glm::vec3> _idxPos;
 
