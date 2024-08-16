@@ -77,8 +77,8 @@ void main()
 		result.xyz *= 1.5 + val;
 	}
 
-	result.a = 1.;
 	FragColor = get_base_colour(result);
+	FragColor.a = vColor.a;
 	BrightColor = get_glow(vExtra[3]);
 }
 
