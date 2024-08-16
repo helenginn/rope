@@ -307,7 +307,7 @@ File *File::loadUnknown(std::string filename)
 	return f;
 }
 
-File::Type File::typeUnknown(std::string filename, Flavour needed)
+File::Type File::checkUnknownType(std::string filename, Flavour needed)
 {
 	Flavour flav = flavour(filename);
 	
@@ -349,4 +349,16 @@ File::Type File::typeUnknown(std::string filename, Flavour needed)
 	}
 	
 	return type;
+}
+
+File::Type File::typeUnknown(std::string filename, Flavour needed)
+{
+	try
+	{
+		return checkUnknownType(filename, needed);
+	}
+	catch (...)
+	{
+		return Nothing;
+	}
 }
