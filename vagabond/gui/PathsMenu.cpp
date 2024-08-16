@@ -50,9 +50,11 @@ PathsMenu::PathsMenu(Scene *prev, Entity *entity,
 	else
 	{
 		for (const PathGroup &group : paths)
-		for (Path *const &path : group)
 		{
-			_allPaths.push_back(path);
+			for (Path *const &path : group)
+			{
+				_allPaths.push_back(path);
+			}
 		}
 	}
 	
