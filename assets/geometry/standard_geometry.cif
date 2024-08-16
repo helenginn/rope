@@ -1730,6 +1730,7 @@ PRO    N     CA     SING N N  1    1.468    0.017   38 .
 PRO    N     CD     SING N N  2    1.474    0.014   39 "cis"
 PRO    N     CD     SING N N  2    1.474    0.014   39 "trans"
 PRO    N     H2     SING N N  3    0.860    0.020    0 .
+PRO    N     H3     SING N N  3    0.860    0.020    0 .
 PRO    CA    HA     SING N N  6    0.980    0.020    0 .
 PRO    CB    HB2    SING N N 10    0.970    0.020    0 .
 PRO    CB    HB3    SING N N 11    0.970    0.020    0 .
@@ -2851,6 +2852,9 @@ _chem_comp_angle.description
  PRO      CA     N      CD      111.7      1.4   35  "trans"
  PRO      C      N      CD      120.6      2.2  256  "cis"
  PRO      C      N      CD      128.4      2.1  256  "trans"
+ PRO      C      N      H1      124.3      1.5    .  .
+ PRO      C      N      H2      124.3      1.5    .  .
+ PRO      C      N      H3      124.3      1.5    .  .
  PRO      CB     CA     C       112.0      2.5   31  "cis"
  PRO      CB     CA     C       111.7      2.1   37  "trans"
  PRO      CB     CG     CD      105.4      2.3  111  "cis"
