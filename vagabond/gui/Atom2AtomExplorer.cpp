@@ -116,7 +116,6 @@ struct prepare_atom_list
 		}
 
 		fillable<atompos> atoms;
-		std::cout << "here" << std::endl;
 
 		for (size_t i = 0; i < _group->size(); i++)
 		{
@@ -181,6 +180,7 @@ void Atom2AtomExplorer::update()
 
 	PCA::do_op(_matrix, func);
 	_plot->update();
+	_plot->setCentre(0.5, 0.5);
 
 	_legend->setCentre(0.0, 0.0);
 	_legend->setLimits(-1.5 / _colourScale, 1.5 / _colourScale);
@@ -190,7 +190,6 @@ void Atom2AtomExplorer::update()
 void Atom2AtomExplorer::addPlot()
 {
 	_plot = new MatrixPlot(_matrix, _mutex);
-	addObject(_plot);
 
 	ColourLegend *legend = new ColourLegend(_plot->legend()->scheme(), 
 	                                        true, this);
@@ -211,6 +210,7 @@ void Atom2AtomExplorer::setup()
 	}
 	
 	update();
+	addObject(_plot);
 }
 
 void Atom2AtomExplorer::slider()
