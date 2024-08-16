@@ -30,7 +30,7 @@ Hydrogenate::Hydrogenate(::Atom *atom, AtomGroup *destination)
 
 void Hydrogenate::operator()()
 {
-	if (_atom->elementSymbol() == "H")
+	if (!_atom || _atom->elementSymbol() == "H")
 	{
 		return;
 	}

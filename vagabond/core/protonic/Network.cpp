@@ -335,12 +335,15 @@ AtomGroup *hydrogenDonorsFrom(AtomGroup *const &other)
 
 AtomGroup *rehydrogenate(AtomGroup *const &full_set)
 {
-	full_set->do_op([full_set](::Atom *const &atom)
+	AtomGroup *new_hydrogens = new AtomGroup();
+	full_set->do_op([new_hydrogens](::Atom *const &atom)
 	{
-		Hydrogenate hydrogenate(atom, full_set);
+		Hydrogenate hydrogenate(atom, new_hydrogens);
 		hydrogenate();
 	});
 	
+	full_set->add(new_hydrogens);
+	delete new_hydrogens;
 	return full_set;
 }
 
@@ -392,7 +395,7 @@ AtomGroup *getSymmetryMates(AtomGroup *const &other, const std::string &spg_name
 
 
 	auto add_symop_atom_if_nearby = 
-	[grp, close_to, other, to_frac, uc_mat, distsq, total, outside_bounds]
+	[grp, close_to, other, to_frac, uc_mat, total, outside_bounds]
 	(::Atom *const &atom)
 	{
 		glm::vec3 pos = atom->initialPosition();
