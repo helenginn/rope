@@ -51,6 +51,8 @@ public:
 		_restart = restart;
 	}
 
+	virtual void keyPressEvent(SDL_Keycode pressed);
+
 	virtual void setup();
 	virtual void doThings();
 	void setupSlider();
