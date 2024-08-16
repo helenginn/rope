@@ -147,13 +147,18 @@ AtomBlock::prepareMotions(const std::vector<AtomBlock> &blocks)
 }
 
 rope::GetVec3FromCoordIdx 
-AtomBlock::prepareMovingTargets(const std::vector<AtomBlock> &blocks)
+AtomBlock::prepareMovingTargets(const std::vector<AtomBlock> &blocks,
+                                const PairFilter &filter)
 {
 	std::vector<glm::vec3> motions;
 	motions = prepareMotions(blocks);
 
-	return [motions](const Coord::Get &get, const int &idx)
+	return [motions, filter](const Coord::Get &get, const int &idx)
 	{
+		if (filter && filter(idx) == 0)
+		{
+			return glm::vec3(NAN);
+		}
 		const glm::vec3 &orig = motions[idx * 2 + 0];
 		const glm::vec3 &moving = motions[idx * 2 + 1];
 
