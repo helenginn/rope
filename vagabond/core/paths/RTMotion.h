@@ -57,6 +57,22 @@ struct Motion
 		float q = fractionalWorkingAngle(frac);
 		return q + p;
 	}
+	
+	float hiddenHingeAngle(const float &frac)
+	{
+		float p = interpolatedAngle(frac);
+		float w = workingAngle();
+		if (p * w < 0)
+		{
+			return fabs(p);
+		}
+
+		float diff = fabs(p) - fabs(workingAngle());
+
+		float result = std::max(0.f, diff);
+
+		return result;
+	}
 };
 
 inline void to_json(json &j, const Motion &id)

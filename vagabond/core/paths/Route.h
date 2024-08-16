@@ -77,6 +77,8 @@ public:
 
 	float submitJobAndRetrieve(float frac, bool show = true);
 	
+	void colourHiddenHinges(float frac); // need to clear the colour yourself
+	
 	void shouldUpdateAtoms(bool update)
 	{
 		_updateAtoms = update;
