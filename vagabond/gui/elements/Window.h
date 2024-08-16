@@ -179,6 +179,7 @@ private:
 	
 	static KeyResponder *_keyResponder;
 	static int _milliseconds;
+
 	
 };
 

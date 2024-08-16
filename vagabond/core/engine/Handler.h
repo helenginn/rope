@@ -246,7 +246,6 @@ protected:
 			obj = nullptr;
 			this->sem.wait();
 			std::unique_lock<std::mutex> lock(this->sem.mutex());
-
 			if (this->members.size())
 			{
 				obj = this->members.front();
