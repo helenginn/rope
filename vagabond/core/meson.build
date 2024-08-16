@@ -35,6 +35,8 @@ cfile,
 'Environment.cpp',
 'Fibonacci.cpp',
 'FileManager.cpp',
+'Flexibility.cpp',
+'Flexibility.h',
 
 'files/File.cpp',
 'files/FastaFile.cpp',

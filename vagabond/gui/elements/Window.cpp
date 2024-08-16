@@ -72,7 +72,7 @@ void Window::instateWindow()
 #endif
 	windowFlags += SDL_WINDOW_ALLOW_HIGHDPI;
 
-	_window = SDL_CreateWindow("RoPE", 0, 0, _rect.w * _ratio,
+	_window = SDL_CreateWindow("vRoPE", 0, 0, _rect.w * _ratio,
 	                           _rect.h * _ratio, windowFlags);
 	_context = SDL_GL_CreateContext(_window);
 	
@@ -334,6 +334,7 @@ bool Window::tick()
 			if (event.key.keysym.sym == SDLK_ESCAPE)
 			{
 #ifndef __EMSCRIPTEN__
+				SDL_Delay(_milliseconds);
 				_current->askToQuit();
 #endif
 			}
