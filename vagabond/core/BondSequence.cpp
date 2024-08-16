@@ -150,8 +150,7 @@ float BondSequence::fetchTorsion(int torsion_idx, const Coord::Get &get,
 	if (torsion_idx < 0) return 0;
 	
 	float torsion = 0;
-	Coord::Get shrunk = get;
-	float diff = fetch_torsion(shrunk, torsion_idx);
+	float diff = fetch_torsion(get, torsion_idx);
 	diff += torsionBasis()->referenceAngle(torsion_idx);
 	return diff;
 }
@@ -235,11 +234,6 @@ void BondSequence::superpose()
 		pose.superpose();
 		const glm::mat4x4 &trans = pose.transformation();
 
-		for (RingProgram &program : _programs)
-		{
-			program.addTransformation(trans);
-		}
-
 		for (size_t j = start; j < i; j++)
 		{
 			if (_blocks[j].atom == nullptr || !_blocks[j].flag)
@@ -250,6 +244,14 @@ void BondSequence::superpose()
 			glm::vec4 pos = _blocks[j].basis[3];
 
 			_blocks[j].basis[3] = trans * pos;
+		}
+
+		for (RingProgram &program : _programs)
+		{
+			if (program.progIndex() <= i)
+			{
+				program.addTransformation(trans);
+			}
 		}
 
 		if (i == blockCount())

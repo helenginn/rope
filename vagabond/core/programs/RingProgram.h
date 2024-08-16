@@ -78,6 +78,11 @@ public:
 		_activeId = id;
 	}
 	
+	const int &progIndex() const
+	{
+		return _idx;
+	}
+	
 	void setParameterFromBasis(int param_idx, HyperValue *hv);
 
 	void setRingEntranceName(std::string atomName);
