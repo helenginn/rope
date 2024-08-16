@@ -111,11 +111,12 @@ namespace Count
 		mEight         = 1 << 23,
 		mNine          = 1 << 24,
 		mTen           = 1 << 25,
-		mEleven        = 1 << 27,
-		mTwelve        = 1 << 28,
-		mThirteen      = 1 << 29,
-		mFourteen      = 1 << 30,
-		mFifteen       = 1 << 31,
+		mEleven        = 1 << 26,
+		mTwelve        = 1 << 27,
+		mThirteen      = 1 << 28,
+		mFourteen      = 1 << 29,
+		mFifteen       = 1 << 30,
+		mSixteen       = 1 << 31,
 		OneOrZero      = (1 << 0 | 1 << 1),
 		mOneOrZero     = (1 << 0 | 1 << 16),
 		TwoToZero      = (1 << 0 | 1 << 1 | 1 << 2),
@@ -473,6 +474,9 @@ inline std::vector<int> possible_values(const Count::Values &count)
 
 			case Count::mFifteen:
 			return -15;
+
+			case Count::mSixteen:
+			return -16;
 
 			default:
 			throw std::runtime_error("straightforward conversion to integer"\
