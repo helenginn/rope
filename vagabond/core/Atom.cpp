@@ -126,11 +126,15 @@ bool Atom::positionChanged()
 	return tmp;
 }
 
-bool Atom::fishPositions(WithPos *wp)
+bool Atom::fishPositions(WithPos *wp, bool *hidden)
 {
 	if (_mutex.try_lock())
 	{
 		*wp = _derived.pos;
+		if (hidden)
+		{
+			*hidden = isHidden();
+		}
 		_changedPosition = false;
 		unlockMutex();
 		return true;
@@ -140,11 +144,15 @@ bool Atom::fishPositions(WithPos *wp)
 
 }
 
-bool Atom::fishPosition(glm::vec3 *p)
+bool Atom::fishPosition(glm::vec3 *p, bool *hidden)
 {
 	if (_mutex.try_lock())
 	{
 		*p = _derived.pos.ave;
+		if (hidden)
+		{
+			*hidden = isHidden();
+		}
 		_changedPosition = false;
 		unlockMutex();
 		return true;
@@ -204,7 +212,7 @@ void Atom::checkChirality(glm::mat4x4 &ret, Atom *prev,
 		{
 			if (desc() == "LEU59:CA" || desc() == "SER57:CA")
 			{
-				print = true;
+//				print = true;
 			}
 			chosen[i + offset] = children[i];
 			index[i + offset] = children[i];

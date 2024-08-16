@@ -233,13 +233,13 @@ public:
 	 *  if inaccessible, pointer contents remain unchanged.
 	 * 	@param pos pointer to glm::vec3 storage for derived position.
 	 * 	@returns true if position was successfully accessed, otherwise false. */
-	bool fishPosition(glm::vec3 *pos);
+	bool fishPosition(glm::vec3 *pos, bool *hidden);
 	
 	/** get all derived positions of ensemble, conditional on immediate access 
 	 * 	 by mutex lock. If inaccessible, pointer contents remain unchanged.
 	 * 	@param pos pointer to Atom::WithPos storage for derived position.
 	 * 	@returns true if position was successfully accessed, otherwise false. */
-	bool fishPositions(WithPos *wp);
+	bool fishPositions(WithPos *wp, bool *hidden);
 	
 	void setCode(std::string code);
 	
@@ -312,6 +312,28 @@ public:
 		changedPosition();
 	}
 	
+	void clearColour()
+	{
+		_colour = 0;
+		_count = 0;
+	}
+	
+	bool isHidden()
+	{
+		return _hidden;
+	}
+	
+	void setHidden(const bool &hidden)
+	{
+		bool same = (_hidden == hidden);
+		_hidden = hidden;
+		
+		if (!same)
+		{
+			changedPosition();
+		}
+	}
+	
 	void addToColour(float add)
 	{
 		_colour += add;
@@ -378,6 +400,7 @@ private:
 
 	float _colour = 0;
 	int _count = 0;
+	bool _hidden = false;
 	glm::mat4x4 _transform = glm::mat4(1.f);
 	Cyclic *_cyclic = nullptr;
 
