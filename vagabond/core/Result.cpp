@@ -56,6 +56,7 @@ void Result::transplantPositions(bool displayTargets, bool other)
 	}
 }
 
+
 void Result::transplantColours()
 {
 	AtomPosMap::iterator it;

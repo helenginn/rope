@@ -1,30 +1,20 @@
-// vagabond
-// Copyright (C) 2022 Helen Ginn
-// 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// 
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
-// 
-// Please email: vagabond @ hginn.co.uk for more details.
-
 #include "FlexibilityView.h"
+
+#include <vagabond/gui/elements/Slider.h>
+
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/Result.h>
+#include <vagabond/core/Flexibility.h>
 
-FlexibilityView::FlexibilityView(Scene *prev, Instance *inst)
+
+
+FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 : Scene(prev), Display(prev)
 {
+	_flex = flex;
 	_instance = inst;
-	_instance->load();
+	setup();
 }
 
 FlexibilityView::~FlexibilityView()
@@ -44,7 +34,41 @@ void FlexibilityView::setup()
 	unit->displayAtoms();
 	addDisplayUnit(unit);
 
-	
 	Display::setup();
-	
+	_flex->prepareResources();
+	setupSlider();
+	float retrievedWeight;
+	retrievedWeight = _flex->submitJobAndRetrieve(0.0, true);
+	// askForAtomFlexibility();
+
+
 }
+
+void FlexibilityView::setupSlider()
+{
+	removeObject(_rangeSlider);
+	delete _rangeSlider;
+	Slider *s = new Slider();
+	s->setDragResponder(this);
+	s->resize(0.5);
+	s->setup("Flexibility amplifier", _min, _max, _step);
+	s->setStart(0.5, 0.);
+	s->setCentre(0.5, 0.85);
+	_rangeSlider = s;
+	addObject(s);
+
+}
+
+void FlexibilityView::finishedDragging(std::string tag, double x, double y)
+{
+	// _flex->setChosenWeight(x);
+	float num = x / 1.;
+	float test_retrival = _flex->submitJobAndRetrieve(num, _first );
+	_first = false;
+}
+
+
+
+
+
+

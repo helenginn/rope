@@ -515,15 +515,12 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "flexibility_analysis")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
-		std::string pdb = i->model()->filename();
-		PdbFile file(pdb);
-		file.parse();
-		AtomGroup *grp = file.atoms();
-		std::string spg_name = file.spaceGroupName();
-		std::array<double, 6> uc = file.unitCell();
 
-		FlexibilityView *flex;
-		flex = new FlexibilityView(this, i);
+		Flexibility *flex;
+		flex  = new Flexibility(i);
+		FlexibilityView *flexview;
+		flexview = new FlexibilityView(this, i, flex);
+		flexview->show();
 	}
 	if (tag == "proton")
 	{
@@ -689,7 +686,7 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	Menu *m = new Menu(this);
 	m->setReturnObject(hm);
 	m->addOption("view details", "view_object");
-	m->addOption("set as reference", "flexibility_analysis");
+	m->addOption("set as reference", "set_as_reference");
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
 	m->addOption("evolve", "evolve");

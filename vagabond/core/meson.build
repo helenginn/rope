@@ -37,6 +37,8 @@ cfile,
 'Evolve.h',
 'Fibonacci.cpp',
 'FileManager.cpp',
+'Flexibility.cpp',
+'Flexibility.h',
 
 'files/File.cpp',
 'files/FastaFile.cpp',

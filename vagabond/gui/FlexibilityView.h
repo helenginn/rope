@@ -21,25 +21,42 @@
 
 
 #include <vagabond/gui/Display.h>
+#include <vagabond/gui/elements/DragResponder.h>
+#include <vagabond/core/Flexibility.h>
+
+
 
 class Slider;
 class Residue;
 class Instance;
 class AtomContent;
 
-class FlexibilityView: public Display
+class FlexibilityView: public Display, public DragResponder
 {
 public:
-	FlexibilityView(Scene *prev, Instance *mol);
+	FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex);
 	~FlexibilityView();
 
 	virtual void setup();
+	void setupSlider();
 
-	// void submitJobAndRetrieve(float prop, bool tear = false);
 	// virtual void buttonPressed(std::string tag, Button *button);
-	// virtual void finishedDragging(std::string tag, double x, double y);
+	void submitJob(float prop, bool tear = false);
+	virtual void finishedDragging(std::string tag, double x, double y);
 private: 
+	Flexibility *_flex = nullptr;
 	Instance *_instance = nullptr;
+	Slider *_rangeSlider = nullptr;
+	bool _electric = false;
+	DisplayUnit *_unit = nullptr;
+	AtomMap *_latest = nullptr;
+	bool _first = true;
+
+	double _min = -1; 
+	double _max = 1; 
+	double _step = 0.001;
+
+
 
 };
 
