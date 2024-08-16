@@ -20,6 +20,7 @@
 #define __vagabond__AtomBlock__
 
 #include <vagabond/utils/glm_import.h>
+#include "function_typedefs.h"
 #include "engine/CoordManager.h"
 #include "matrix_functions.h"
 #include "Atom.h"
@@ -40,7 +41,8 @@ struct AtomBlock
 	                        const std::function<bool(Atom *)> &filter);
 
 	static rope::GetVec3FromCoordIdx 
-	prepareMovingTargets(const std::vector<AtomBlock> &blocks);
+	prepareMovingTargets(const std::vector<AtomBlock> &blocks,
+	                     const PairFilter &filter = {});
 
 	bool flag = true;
 	bool silenced = false;
