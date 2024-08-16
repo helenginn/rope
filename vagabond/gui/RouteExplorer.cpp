@@ -22,10 +22,12 @@
 #include <vagabond/gui/elements/FloatingImage.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/GuiBalls.h>
 #include <vagabond/gui/VagWindow.h>
 #include <vagabond/gui/PathParamEditor.h>
 #include <vagabond/gui/ParamTweaker.h>
@@ -199,14 +201,90 @@ void RouteExplorer::demolishSlider()
 	_rangeSlider = nullptr;
 }
 
+void RouteExplorer::keyPressEvent(SDL_Keycode pressed)
+{
+	if (pressed == SDLK_s)
+	{
+
+		TextEntry *te = new TextEntry("enter residue range", this);
+		te->setReturnJob([this, te]()
+		{
+			std::string scr = te->scratch();
+			std::vector<std::string> bits = split(scr, '-');
+
+			if (bits.size() < 2) { return; }
+			int start = atoi(bits[0].c_str());
+			int end = atoi(bits[1].c_str());
+			std::cout << start << " to " << end << std::endl;
+
+			auto highlight_if_in_range = [start, end](Atom *const &atom)
+			{
+				return (atom->residueId().as_num() >= start && 
+				        atom->residueId().as_num() <= end);
+			};
+			
+			auto add_to_accepted = [highlight_if_in_range]
+			(DisplayUnit *unit, Atom *const &atom, std::vector<int> &accepted)
+			{
+				if (highlight_if_in_range(atom))
+				{
+					int idx = unit->balls()->indexForAtom(atom);
+					if (idx >= 0)
+					{
+						accepted.push_back(idx);
+					}
+				}
+			};
+
+			auto process_unit = [add_to_accepted]
+			(DisplayUnit *unit)
+			{
+				std::vector<int> accepted;
+				AtomGroup *group = unit->atoms();
+
+				auto add_to_accepted_bound = [&accepted, &unit,
+				                              &add_to_accepted]
+				(Atom *const &atom)
+				{
+					add_to_accepted(unit, atom, accepted);
+				};
+				
+				group->do_op(add_to_accepted_bound);
+				
+				for (int &idx : accepted)
+				{
+					unit->balls()->selected(idx, false);
+				}
+				unit->balls()->forceRender(true, false);
+			};
+			
+			for (DisplayUnit *unit : units())
+			{
+				process_unit(unit);
+			}
+
+			removeObject(te);
+		});
+		te->setCentre(0.5, 0.3);
+		addObject(te);
+		
+		addMainThreadJob([te]() { te->click(); });
+	}
+
+	Display::keyPressEvent(pressed);
+}
+
 
 void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 {
-	float num = x / 200.;
+	float num = x / 199.;
 	if (!_route->calculating())
 	{
 		_route->setChosenFrac(num);
 		_route->submitJobAndRetrieve(num, true);
+
+		clearColours();
+		_route->colourHiddenHinges(num);
 	}
 }
 
@@ -537,16 +615,27 @@ void RouteExplorer::saveAndRestart()
 
 void RouteExplorer::prepareEmptySpaceMenu()
 {
+	auto hide_frozen = [this]()
+	{
+		for (Atom *const &atom : _atoms->atomVector())
+		{
+			if (!atom) continue;
+			bool show = (_route->selection().atomIsActive(atom));
+			atom->setHidden(!show);
+		}
+	};
+
 	auto freeze_all = [](const int &p) -> bool
 	{
 		return 0;
 	};
 	
-	auto clear_filter = [this](bool allow)
+	auto clear_filter = [this, &hide_frozen](bool allow)
 	{
-		return [allow, this]()
+		return [allow, hide_frozen, this]()
 		{
 			_route->selection().clearFilters(allow);
+			hide_frozen();
 		};
 	};
 	
@@ -563,11 +652,12 @@ void RouteExplorer::prepareEmptySpaceMenu()
 	m->addOption("freeze all", clear_filter(false));
 	m->addOption("unfreeze all", clear_filter(true));
 	
-	auto change_selection = [this, &selected](bool allow)
+	auto change_selection = [this, &hide_frozen, &selected](bool allow)
 	{
-		return [selected, this, allow]()
+		return [selected, this, hide_frozen, allow]()
 		{
 			_route->selection().addFilter(selected, allow);
+			hide_frozen();
 		};
 	};
 
