@@ -181,6 +181,7 @@ public:
 	
 	virtual void write(std::string filename) {}
 protected:
+	static Type checkUnknownType(std::string filename, Flavour needed);
 
 	static bool compare_file_ending(const std::string &filename, 
 	                                const std::string &comp, File::Flavour result);
