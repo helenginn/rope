@@ -831,8 +831,8 @@ void Route::clearCustomisation()
 		motion(i).wp = WayPoints(_order, _randomPerturb);
 	}
 
-	_helpers[_resources.sequences].pairwise.reset();
-	_helpers[_hydrogenFreeSequences].pairwise.reset();
+//	_helpers[_resources.sequences].pairwise.reset();
+//	_helpers[_hydrogenFreeSequences].pairwise.reset();
 	
 	setFirstJob();
 	_repelCount = 0;
