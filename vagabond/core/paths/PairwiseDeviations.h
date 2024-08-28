@@ -47,7 +47,7 @@ struct TargetInfo
 	int q;
 	float dStart;
 	float dEnd;
-	bool hasSide = false;
+	bool close = false;
 	float mFrac = -1;
 	float dMid = -1;
 	

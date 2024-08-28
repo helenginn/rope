@@ -30,6 +30,20 @@ Selection::Selection(Route *const &route)
 	_route = route;
 }
 
+void Selection::populateDeviations()
+{
+	if (_deviations.size())
+	{
+		return;
+	}
+
+	BondSequenceHandler *seq = _route->_resources.sequences;
+	addDeviations(_route->_helpers[seq].pairwise.acquire());
+
+	seq = _route->_hydrogenFreeSequences;
+	addDeviations(_route->_helpers[seq].pairwise.acquire());
+}
+
 auto make_filter_from_list(const std::set<int> &affected, bool allow)
 {
 	return [allow, affected](int p) -> int
@@ -108,6 +122,8 @@ PairFilter addFilters(const PairFilter &old_filter,
 
 void Selection::addFilter(const std::set<Atom *> &list, bool allow)
 {
+	populateDeviations();
+
 	PairFilter addition = filterForParameters(_route, list, allow);
 	_route->_motionFilter = addFilters(_route->_motionFilter, addition);
 
@@ -121,12 +137,17 @@ void Selection::addFilter(const std::set<Atom *> &list, bool allow)
 			chosen->setFilter(added);
 		}
 	}
+
+	_route->updateAtomFetches();
 }
 
 void Selection::clearFilters(bool allow)
 {
+	populateDeviations();
+
 	PairFilter filter = [allow](const int &) -> int { return allow; };
 	_route->_motionFilter = filter;
+	_route->updateAtomFetches();
 
 	for (PairwiseDeviations *const &chosen : _deviations)
 	{
@@ -172,4 +193,19 @@ Selection::activeParameters(BondSequenceHandler *const &handler,
 	}
 
 	return idxs;
+}
+
+bool Selection::atomIsActive(Atom *const &a)
+{
+	return true;
+	populateDeviations();
+	
+	if (_deviations.size() == 0)
+	{
+		return true;
+	}
+	
+	bool hidden = _deviations[0]->filter_in(_deviations[0]->index(a));
+	
+	return hidden;
 }

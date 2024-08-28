@@ -50,6 +50,18 @@ public:
 		}
 	}
 	
+	Type sum() const
+	{
+		Type sum = {};
+		for (const Type &v : *this)
+		{
+			sum += v;
+		}
+
+		sum /= (float)this->size();
+		return sum;
+	}
+	
 	template <typename Func>
 	void do_on_each(Func &func)
 	{
@@ -108,6 +120,18 @@ public:
 		for (size_t i = 0; i < this->size(); i++)
 		{
 			(*this)[i] *= other;
+		}
+
+		return *this;
+	}
+
+	OpVec<Type> &operator-=(const OpVec<Type> &other)
+	{
+		this->resize(other.size());
+
+		for (size_t i = 0; i < this->size(); i++)
+		{
+			(*this)[i] -= other[i];
 		}
 
 		return *this;

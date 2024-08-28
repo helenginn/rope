@@ -16,38 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Selection__
-#define __vagabond__Selection__
+#ifndef __vagabond__Targets__
+#define __vagabond__Targets__
 
-#include <set>
-#include "../function_typedefs.h"
+#include <vector>
 
-class Atom;
 class Route;
-class PairwiseDeviations;
+struct InstancePair;
 
-class Selection
+class Targets
 {
 public:
-	Selection(Route *const &route);
-	
-	std::vector<std::pair<int, int>>
-	activeParameters(BondSequenceHandler *const &handler,
-	                 const ValidateIndex &validate);
+	Targets(Route *const &route, const std::vector<InstancePair> &pairs);
 
-	void addDeviations(PairwiseDeviations *dev)
-	{
-		_deviations.push_back(dev);
-	}
-
-	bool atomIsActive(Atom *const &a);
-	void clearFilters(bool allow);
-	void addFilter(const std::set<Atom *> &list, bool allow);
-	void populateDeviations();
+	void operator()();
 private:
-
 	Route *_route = nullptr;
-	std::vector<PairwiseDeviations *> _deviations;
+	void setTargets(InstancePair &pair);
+	void setEndPoint(InstancePair &pair);
+	std::vector<InstancePair> _pairs;
 
 };
 

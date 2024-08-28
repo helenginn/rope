@@ -94,7 +94,7 @@ public:
 		return pairs;
 	}
 	
-	std::vector<Type> toVector()
+	std::vector<Type> toVector() const
 	{
 		std::vector<Type> result;
 
@@ -107,7 +107,21 @@ public:
 	}
 
 	template <typename Other, class Convert>
-	OpSet<Other> convert_to(const Convert &convert)
+	std::vector<Other> convert_to_vector(const Convert &convert) const
+	{
+		std::vector<Other> converted;
+
+		for (Type type : *this)
+		{
+			Other other = convert(type);
+			converted.push_back(other);
+		}
+
+		return converted;
+	}
+
+	template <typename Other, class Convert>
+	OpSet<Other> convert_to(const Convert &convert) const
 	{
 		OpSet<Other> converted;
 

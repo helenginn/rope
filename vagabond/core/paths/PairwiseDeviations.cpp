@@ -123,6 +123,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 
 			bool ok = (start < threshold * modulate || 
 			           end < threshold * modulate);
+			
 			if (!ok)
 			{
 				continue;
@@ -132,12 +133,12 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 
 			// we check if it's a side chain, because we are not interested 
 			// in a per-residue check if we can't move it.
-//			if (!left->isMainChain())
+			if (!left->isMainChain())
 			{
 				_perResidue[left->residueId()].push_back(size);
 			}
 			
-//			if (!right->isMainChain())
+			if (!right->isMainChain())
 			{
 				_perResidue[right->residueId()].push_back(size);
 			}
@@ -145,8 +146,10 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			_residues.insert(left->residueId());
 			_residues.insert(right->residueId());
 			
+			bool close = (start < 2 || end < 2);
+
 			_pairs.push_back(_infoPairs.size());
-			_infoPairs.push_back({m, n, start, end, is_side});
+			_infoPairs.push_back({m, n, start, end, close});
 			_atoms2Info[{left, right}] = size;
 			_atoms2Info[{right, left}] = size;
 		}
@@ -258,6 +261,11 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 			for (int i = 0; i < pairs.size(); i++)
 			{
 				TargetInfo &info = _infoPairs[pairs[i]];
+				if (info.close)
+				{
+					continue;
+				}
+
 				const int &p = info.p;
 				const int &q = info.q;
 				if (!filter_in(p) || !filter_in(q))

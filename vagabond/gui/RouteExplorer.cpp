@@ -285,6 +285,7 @@ void RouteExplorer::finishedDragging(std::string tag, double x, double y)
 
 		clearColours();
 		_route->colourHiddenHinges(num);
+		_atoms->writeToFile("tmp_routeexplorer.pdb");
 	}
 }
 
