@@ -32,6 +32,7 @@ public:
 	Resource(const std::function<Pointer *()> &creation = {})
 	{
 		_creation = creation;
+		_mutex = std::shared_ptr<std::mutex>(new std::mutex());
 	}
 	
 	void clear()
@@ -43,11 +44,18 @@ public:
 	void reset()
 	{
 		clear();
-		request();
+		acquire();
 	}
 	
 	Pointer *acquire()
 	{
+		std::unique_lock<std::mutex> lock(*_mutex);
+		
+		if (_resource)
+		{
+			return _resource;
+		}
+
 		if (!_worker && !_resource)
 		{
 			request();
@@ -72,6 +80,11 @@ public:
 
 		auto creation_into_object = [this]()
 		{
+			if (!_creation)
+			{
+				std::cout << "Warning! creation function is empty!" << std::endl;
+				std::cout << "Crashing soon" << std::endl;
+			}
 			Pointer *ptr = _creation();
 			_resource = ptr;
 		};
@@ -84,6 +97,7 @@ private:
 	
 	Pointer *_resource = nullptr;
 	std::thread *_worker = nullptr;
+	std::shared_ptr<std::mutex> _mutex = nullptr;
 };
 
 #endif

@@ -506,6 +506,7 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "proton")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
+		i->load();
 		std::string pdb = i->model()->filename();
 		PdbFile file(pdb);
 		file.parse();

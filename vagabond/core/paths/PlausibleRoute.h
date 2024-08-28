@@ -49,7 +49,6 @@ public:
 
 	void refreshScores();
 	void setTargets();
-	void setTargets(Instance *inst);
 	
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
@@ -123,9 +122,7 @@ protected:
 	bool flipTorsions(const ValidateIndex &validate);
 
 	bool flipTorsion(const ValidateIndex &validate, int idx);
-	void flipTorsionCycles(const ValidateIndex &validate);
-
-	void startTicker(std::string tag, int d = -1);
+	void flipTorsionCycle(const ValidateIndex &validate);
 
 	std::vector<int> getTorsionSequence(int idx, int max, 
 	                                    const ValidateIndex &validate);
@@ -168,7 +165,6 @@ private:
 
 	void assignParameterValues(const std::vector<float> &trial);
 
-	void flipTorsionCycle(const ValidateIndex &validate);
 	void addFloatParameter(float *value, float step);
 
 	void zeroParameters();

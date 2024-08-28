@@ -214,8 +214,30 @@ void Route::prepareAlignment()
 {
 	if (_noncovs)
 	{
-		auto alignment = _noncovs->align_task();
-		_postCalcTasks.push_back(alignment);
+		_noncovs->provideSequence(_resources.sequences->sequence());
+	}
+}
+
+std::vector<std::function<BondSequence *(BondSequence *)>> 
+Route::extraTasks(const float &frac)
+{
+	std::vector<std::function<BondSequence *(BondSequence *)>> ret;
+	if (_noncovs && _noncovs->ready())
+	{
+		auto alignment = _noncovs->align_task(frac);
+		ret.push_back(alignment);
+	}
+	return ret;
+}
+
+void Route::applyPostCalcTasks(CalcTask *&hook, const float &frac)
+{
+	auto tasks = extraTasks(frac);
+	for (auto &task : tasks)
+	{
+		CalcTask *job = new CalcTask(task, "post-calc task");
+		hook->follow_with(job);
+		hook = job;
 	}
 }
 
@@ -261,12 +283,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		 * atom positions */
 		sequences->calculate(calc, {frac}, &first_hook, &final_hook);
 
-		for (auto &task : _postCalcTasks)
-		{
-			CalcTask *job = new CalcTask(task, "post-calc task");
-			final_hook->follow_with(job);
-			final_hook = job;
-		}
+		applyPostCalcTasks(final_hook, frac);
 
 		Task<Result, void *> *sr = pairwise ? nullptr : submit_result;
 		
@@ -525,12 +542,7 @@ void Route::submitToShow(float frac, Atom *atom)
 	 * atom positions */
 	sequences->calculate(calc, {frac}, &first_hook, &final_hook);
 	
-	for (auto &task : _postCalcTasks)
-	{
-		CalcTask *job = new CalcTask(task, "post-calc task");
-		final_hook->follow_with(job);
-		final_hook = job;
-	}
+	applyPostCalcTasks(final_hook, frac);
 
 	Task<BondSequence *, void *> *let = 
 	sequences->extract(gets, submit_result, final_hook);
@@ -632,7 +644,7 @@ void Route::prepareParameters()
 		Instance *inst = instance_for_param(param);
 		rt = ResidueTorsion(param);
 		rt.attachToInstance(inst);
-
+		
 		// index may be in existing motions, or in the source torsions
 		int mot_idx = _motions.indexOfHeader(rt);
 		int src_idx = _source.indexOfHeader(rt);
@@ -736,14 +748,6 @@ void Route::prepareResources()
 
 	_resources.sequences->setup();
 	_resources.sequences->prepareSequences();
-
-	updateAtomFetch(_resources.sequences);
-	updateAtomFetch(_hydrogenFreeSequences);
-	
-	if (_noncovs)
-	{
-		_noncovs->provideSequence(_resources.sequences->sequence());
-	}
 }
 
 void Route::deleteHelpers()
@@ -813,13 +817,27 @@ void Route::prepareEnergyTerms()
 
 }
 
+void Route::updateAtomFetches()
+{
+	updateAtomFetch(_resources.sequences);
+	updateAtomFetch(_hydrogenFreeSequences);
+}
+
 void Route::updateAtomFetch(BondSequenceHandler *const &handler)
 {
 	const std::vector<AtomBlock> &blocks = 
 	handler->sequence()->blocks();
 
 	CoordManager *manager = handler->manager();
-	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks));
+	
+	auto filter = [&blocks, this](const int &idx)
+	{
+		Atom *atom = blocks[idx].atom;
+		return _selection.atomIsActive(atom);
+	};
+
+	manager->setAtomFetcher(AtomBlock::prepareMovingTargets(blocks,
+	                                                        filter));
 }
 
 void Route::clearCustomisation()

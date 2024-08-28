@@ -32,6 +32,12 @@
 #include "paths/Scores.h"
 #include "Bin.h"
 
+struct InstancePair
+{
+	Instance *start = nullptr;
+	Instance *end = nullptr;
+};
+
 class Grapher;
 class Selection;
 class Separation;
@@ -238,6 +244,11 @@ public:
 		return _pairs[i].end;
 	}
 	
+	std::vector<InstancePair> &pairs()
+	{
+		return _pairs;
+	}
+	
 	void setChosenFrac(const float &frac)
 	{
 		_chosenFrac = frac;
@@ -416,6 +427,7 @@ protected:
 	bool _updateAtoms = true;
 	int _cycles = -1;
 
+	void updateAtomFetches();
 	void updateAtomFetch(BondSequenceHandler *const &handler);
 	void prepareEnergyTerms();
 	RTMotion _motions;
@@ -442,7 +454,7 @@ protected:
 	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
 
 	int _maxFlipTrial = 0;
-	int _order = 3;
+	int _order = 2;
 	bool _gui = false;
 
 	Bin<ByResidueResult> _perResBin;
@@ -456,8 +468,9 @@ protected:
 	
 	BestGuessTorsions _bestGuessTorsions{this};
 	
-	std::vector<std::function<BondSequence *(BondSequence *)>> _postCalcTasks;
 	void prepareAlignment();
+	std::vector<std::function<BondSequence *(BondSequence *)>> 
+	extraTasks(const float &frac);
 	
 	void installAllResidues();
 
@@ -469,7 +482,7 @@ private:
 	float _maxMomentumDistance = 8.f;
 	float _maxClashDistance = 15.f;
 	float _randomPerturb = 0.f;
-	
+
 	struct Helpers
 	{
 		BondSequence *seq = nullptr;
@@ -481,13 +494,8 @@ private:
 	friend void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
 	                          float distance, bool multi);
 	
+	void applyPostCalcTasks(CalcTask *&hook, const float &frac);
 	void deleteHelpers();
-	
-	struct InstancePair
-	{
-		Instance *start = nullptr;
-		Instance *end = nullptr;
-	};
 	
 	std::vector<InstancePair> _pairs;
 	std::map<BondSequenceHandler *, Helpers> _helpers;

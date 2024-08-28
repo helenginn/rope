@@ -30,6 +30,7 @@
 #include <vagabond/utils/maths.h>
 #include "Grapher.h"
 #include "paths/ResidueContacts.h"
+#include "paths/Targets.h"
 #include <vagabond/c4x/Cluster.h>
 #include <gemmi/elem.hpp>
 
@@ -89,8 +90,8 @@ void PlausibleRoute::setup()
 	Route::setup();
 	prepareDestination();
 	prepareTorsionFetcher(_resources.sequences);
-	prepareAlignment();
 	setTargets();
+	prepareAlignment();
 
 	if (_isNew)	
 	{
@@ -137,7 +138,7 @@ void PlausibleRoute::prepareJobs()
 
 	auto flip_main_chain = [this, large_main]()
 	{
-		flipTorsionCycles(large_main);
+		flipTorsionCycle(large_main);
 	};
 	
 	auto large_side = [this](int idx) -> bool
@@ -147,7 +148,7 @@ void PlausibleRoute::prepareJobs()
 
 	auto flip_side_chain = [this, large_side]()
 	{
-		flipTorsionCycles(large_side);
+		flipTorsionCycle(large_side);
 	};
 	
 	auto check_gradients = [this]
@@ -196,10 +197,11 @@ void PlausibleRoute::prepareJobs()
 		};
 	};
 	
-	auto increase_order_on_success = [this](const std::function<bool(int)> &job,
-	                                        int max)
+	int start = (_order <= 2 ? 1 : 0);
+	auto increase_order_on_success = [this, start]
+	(const std::function<bool(int)> &job, int max)
 	{
-		int i = 0;
+		int i = start;
 		bool improved = false;
 		while (i < max)
 		{
@@ -234,45 +236,16 @@ void PlausibleRoute::prepareJobs()
 	};
 	
 	only_once flip_mains(flip_main_chain);
-//	only_once flip_sides(flip_side_chain);
+	only_once flip_sides(flip_side_chain);
 	_tasks.push_back(flip_mains);
 	_tasks.push_back(check_gradients(do_next));
-//	_tasks.push_back(flip_sides);
-}
-
-void PlausibleRoute::setTargets(Instance *inst)
-{
-	std::map<Atom *, glm::vec3> atomStart;
-	AtomGroup *grp = inst->currentAtoms();
-
-	submitToShow(0.);
-	retrieve();
-
-	for (Atom *atom : grp->atomVector())
-	{
-		glm::vec3 d = atom->derivedPosition();
-		atomStart[atom] = d;
-	}
-
-	submitToShow(1.);
-	retrieve();
-
-	for (Atom *atom : grp->atomVector())
-	{
-		glm::vec3 d = atom->derivedPosition();
-		glm::vec3 s = atomStart[atom];
-		glm::vec3 diff = (d - s);
-		atom->setOtherPosition("moving", diff);
-		atom->setOtherPosition("target", s);
-	}
+	_tasks.push_back(flip_sides);
 }
 
 void PlausibleRoute::setTargets()
 {
-	for (size_t i = 0; i < instanceCount(); i++)
-	{
-		setTargets(startInstance(i));
-	}
+	Targets targets(this, pairs());
+	targets();
 	
 	updateAtomFetch(_resources.sequences);
 	updateAtomFetch(_hydrogenFreeSequences);
@@ -348,7 +321,6 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	for (auto it = highests.begin(); it != highests.end(); it++)
 	{
 		const ResidueId &local = it->first;
-		float score = it->second;
 		residues.insert({it->second, local});
 	}
 
@@ -534,6 +506,17 @@ lbfgsfloatval_t evaluateLbfgs(void *instance,
 	return result;
 }
 
+GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
+                                        const CalcOptions &add_options,
+                                        const CalcOptions &subtract_options)
+{
+	CalcOptions options = calcOptions(add_options, subtract_options);
+	
+	int order = _jobOrder + 1;
+
+	return submitGradients(options, order, validate, _hydrogenFreeSequences);
+}
+
 bool PlausibleRoute::applyGradients()
 {
 	GradientPath *path = gradients(ValidateIndex{});
@@ -556,8 +539,8 @@ bool PlausibleRoute::applyGradients()
 	_path = path;
 	std::vector<float> current = save_current(path, _motions, currentOrder());
 	float endScore = 0;
-	int res = lbfgs(current.size(), &current[0], &endScore, &evaluateLbfgs,
-	                nullptr, this, &params);
+	lbfgs(current.size(), &current[0], &endScore, &evaluateLbfgs,
+	      nullptr, this, &params);
 	
 	delete _path; _path = nullptr;
 	bool meaningful = endScore < startScore - 0.001;
@@ -565,17 +548,6 @@ bool PlausibleRoute::applyGradients()
 	startScore << " --> " << endScore << " ";
 	std::cout << (meaningful ? "(meaningful)" : "(meaningless)") << std::endl;
 	return meaningful;
-}
-
-GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
-                                        const CalcOptions &add_options,
-                                        const CalcOptions &subtract_options)
-{
-	CalcOptions options = calcOptions(add_options, subtract_options);
-	
-	int order = _jobOrder + 1;
-
-	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
 
 ByResidueResult *PlausibleRoute::byResidueScore(int steps, 
@@ -596,15 +568,6 @@ ByResidueResult *PlausibleRoute::byResidueScore(int steps,
 	retrieve();
 	_perResBin.releaseHorses();
 	ByResidueResult *r = _perResBin.acquireObject();
-	float total = 0;
-	float c = 0;
-	for (auto it = r->scores.begin(); it != r->scores.end(); it++)
-	{
-		total += it->second;
-		c++;
-	}
-	total /= 2 * c;
-
 	return r;
 }
 
@@ -639,17 +602,6 @@ float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
 	return sc;
 }
 
-void PlausibleRoute::startTicker(std::string tag, int d)
-{
-	if (d < 0)
-	{
-		d = motionCount();
-	}
-
-	HasResponder<Responder<Route>>::sendResponse("progress_" + tag, 
-	                                             &d);
-}
-
 void PlausibleRoute::postScore(float score)
 {
 	HasResponder<Responder<Route>>::sendResponse("score", &score);
@@ -666,13 +618,9 @@ bool PlausibleRoute::validateTorsion(int idx, float min_mag,
 
 	Parameter *const &p = parameter(idx);
 	
-	if (p && p->isConstrained())
-	{
-		return false;
-	}
-
-	if (!p || (mains_only && !p->coversMainChain())
-	    || (sides_only && p->coversMainChain()))
+	if ((p && p->isConstrained()) ||
+	    (!p || (mains_only && !p->coversMainChain()) ||
+	    (sides_only && p->coversMainChain())))
 	{
 		return false;
 	}
@@ -757,8 +705,6 @@ bool PlausibleRoute::flipTorsion(const ValidateIndex &validate, int idx)
 		return false;
 	}
 	
-	bool pairwise = doingClashes();
-
 	std::vector<int> best(idxs.size(), false);
 	for (size_t i = 0; i < idxs.size(); i++)
 	{
@@ -771,7 +717,7 @@ bool PlausibleRoute::flipTorsion(const ValidateIndex &validate, int idx)
 	{
 		setFlips(idxs, putatives[i]);
 
-		float candidate = routeScore(flipNudgeCount(), None, Pairwise);
+		float candidate = routeScore(flipNudgeCount());//, None, Pairwise);
 
 		if (candidate < _bestScore - 1e-3)
 		{
@@ -789,13 +735,11 @@ bool PlausibleRoute::flipTorsion(const ValidateIndex &validate, int idx)
 
 bool PlausibleRoute::flipTorsions(const ValidateIndex &validate)
 {
-	startTicker("Flipping torsions");
 	bool changed = false;
 
 	if (doingClashes()) return false;
 
-	_bestScore = routeScore(flipNudgeCount(), None, Pairwise);
-	float min = doingClashes() ? 10 : 90;
+	_bestScore = routeScore(flipNudgeCount());//, None, Pairwise);
 	
 	for (size_t i = 0; i < motionCount(); i++)
 	{
@@ -806,7 +750,7 @@ bool PlausibleRoute::flipTorsions(const ValidateIndex &validate)
 
 		clickTicker();
 		
-		if (!validate(i) || fabs(destination(i)) < min)
+		if (!validate(i))
 		{
 			continue;
 		}
@@ -822,6 +766,7 @@ bool PlausibleRoute::flipTorsions(const ValidateIndex &validate)
 
 void PlausibleRoute::flipTorsionCycle(const ValidateIndex &validate)
 {
+	if (_maxFlipTrial == 0) return;
 	int count = 0;
 
 	while (flipTorsions(validate) && count < 100)
@@ -836,13 +781,6 @@ void PlausibleRoute::flipTorsionCycle(const ValidateIndex &validate)
 
 	_bestScore = routeScore(flipNudgeCount(), None, Pairwise);
 	postScore(_bestScore);
-}
-
-
-void PlausibleRoute::flipTorsionCycles(const ValidateIndex &validate)
-{
-	if (_maxFlipTrial == 0) return;
-	flipTorsionCycle(validate);
 }
 
 void PlausibleRoute::cycle()
@@ -896,7 +834,7 @@ void PlausibleRoute::prepareTorsionFetcher(BondSequenceHandler *handler)
 		lookup[i] = motion_idx;
 	}
 
-	auto fetch = [this, basis, lookup](const Coord::Get &get, int torsion_idx)
+	auto fetch = [this, lookup](const Coord::Get &get, int torsion_idx)
 	{
 		int mot_idx = lookup[torsion_idx];
 		if (mot_idx < 0) return 0.f;
@@ -989,7 +927,6 @@ void PlausibleRoute::upgradeJobs()
 	std::cout << "Job level now " << _jobLevel << ", order " << _jobOrder 
 	<< std::endl;
 }
-
 
 void PlausibleRoute::refreshScores()
 {

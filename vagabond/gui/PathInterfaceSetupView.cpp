@@ -203,13 +203,28 @@ void PathInterfaceSetupView::preparePath()
 	{
 		std::vector<StringPair> atom_descriptions = sanitiseInteractions(group);
 
-		for (const StringPair &pair : atom_descriptions)
+		for (const std::string &key : _list)
 		{
-			noncovs->addBond(group.left, group.right, pair.first, pair.second);
+			if (_map.count(key) && _map[key].length() > 0)
+			{
+				Instance *left = _from->instanceWithId(key);
+				noncovs->addInstance(left);
+			}
 		}
 	}
+
+	/*
+		for (const StringPair &pair : atom_descriptions)
+		{
+			noncovs->addInstance(group.left);
+			noncovs->addInstance(group.right);
+//			noncovs->addBond(group.left, group.right, pair.first, pair.second);
+		}
+	}
+	*/
 	
 	route->setNonCovalents(noncovs);
+	route->setMaximumFlipTrial(1);
 
 	RouteExplorer *re = new RouteExplorer(this, route);
 	re->show();

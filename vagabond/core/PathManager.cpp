@@ -267,15 +267,22 @@ void do_on_each_pair_of_paths(const Job &job,
 	if (instances.size() == 0) { return; };
 	
 	int jobs = 0;
-	for (Instance *const &first : instances)
+	for (int i = 0; i < instances.size(); i++)
 	{
-		for (Instance *const &second : instances)
+		Instance *const &first = instances.at(i);
+
+		int window = 5;
+		int start = std::max(i - window, 0);
+		int end = std::min(i + window, (int)instances.size());
+		for (int j = start; j < end; j++)
 		{
+			Instance *const &second = instances.at(j);
 			bool success = job(first, second);
 			jobs += success ? 1 : 0;
 
 			if (jobs % 5 == 4)
 			{
+				std::cout << "Saving..." << std::endl;
 				Environment::env().save();
 				jobs = 0;
 			}
@@ -291,14 +298,6 @@ void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 		int total = cycles - pairPaths.size();
 		if (total <= 0) { return false; };
-		
-		// temporary
-		/*
-		if (first->id().rfind(second->id().substr(0, 5)) != std::string::npos)
-		{
-			return false;
-		}
-		*/
 
 		makePathBetween(first->id(), second->id(), total);
 		return true;

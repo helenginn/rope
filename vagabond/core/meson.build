@@ -200,6 +200,8 @@ cfile,
 'paths/Scores.h',
 'paths/Selection.cpp',
 'paths/Selection.h',
+'paths/Targets.cpp',
+'paths/Targets.h',
 
 'MultiEngine.cpp',
 'MultiSimplex.h',

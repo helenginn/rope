@@ -24,9 +24,12 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <vagabond/utils/OpSet.h>
+#include <vagabond/utils/OpVec.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/glm_import.h>
 
+class Atom;
 class Instance;
 class BondSequence;
 template <class X, class Y> class Task;
@@ -36,65 +39,131 @@ class NonCovalents
 public:
 	NonCovalents();
 
-	void addBond(Instance *a, Instance *b, const std::string &left,
-	             const std::string &right)
+	void addInstance(Instance *a)
 	{
-		_bonds.push_back({a, b, left, right});
+		if (_instances.size() == 0)
+		{
+			_invariant = a;
+		}
+
 		if (std::find(_instances.begin(), _instances.end(), a) ==
 		    _instances.end())
 		{
+			if (_instances.size() > 0)
+			{
+				_instance2Idx[a] = _instances.size() - 1;
+			}
 			_instances.push_back(a);
 		}
-		if (std::find(_instances.begin(), _instances.end(), b) ==
-		    _instances.end())
-		{
-			_instances.push_back(b);
-		}
+	}
+	
+	const bool &ready() const
+	{
+		return _ready;
 	}
 	
 	void provideSequence(BondSequence *const &seq)
 	{
 		prepare(seq);
+		_ready = true;
 	}
 
-	std::function<BondSequence *(BondSequence *)> align_task();
+	std::function<BondSequence *(BondSequence *)> align_task(const float &frac);
+
+	struct WeightedSum
+	{
+		WeightedSum(Atom *atom, const std::vector<Atom *> &fiducials);
+
+		Atom *atom;
+		std::vector<Atom *> fiducials;
+		float ave_weight = 1;
+
+		typedef std::function<glm::vec3(Atom *)> GetPos;
+		
+		OpVec<float> weights_for_positions(const GetPos &getPos);
+
+		glm::vec3 position_for_weights(const GetPos &getPos,
+		                               const OpVec<float> &weights);
+
+		std::function<OpVec<float>(float)> weights_for_frac;
+
+		std::function<Eigen::VectorXf(float)> weights_to_matrix_column;
+	};
+
+	struct Interface
+	{
+		Instance *left{}, *right{};
+		
+		struct Side
+		{
+			OpSet<Atom *> atoms; // pointers to atoms
+			std::vector<int> seq_idxs; // pointers to corresponding 
+									   // AtomBlock in BondSequence
+			std::map<Atom *, int> locs; // atom to seq_idxs index
+			
+			void reindex();
+		};
+
+		Side lefts, rights;
+		std::vector<WeightedSum> sums;
+	};
+
 private:
 	void prepare(BondSequence *const &seq);
 	void prepareMatrix();
-	void prepareOne();
-	
-	struct Bond
-	{
-		Instance *left_instance{};
-		Instance *right_instance{};
-		std::string left{};
-		std::string right{};
-		int left_lookup = -1; 
-		int right_lookup = -1;
-		int middle_lookup = -1;
-		bool left_is_donor = false;
-		float frac = 0.;
-		
-		std::function<glm::vec3(BondSequence *)> left_contributor;
-		std::function<glm::vec3(BondSequence *)> right_contributor;
 
-		int left_drop[2] = {-1, -1};
-		int right_drop[2] = {-1, -1};
+	struct MatId
+	{
+		int row; // instance, should already be multiplied by 4
+		int col; // column corresponding to atom info
+		int idx; // index of BondSequence's AtomBlocks
+		float weight = 1; // per-sum weight
 	};
 
-	void findBondedAtoms(BondSequence *const &seq, Bond &bond);
-	void findMiddleAtoms(BondSequence *const &seq, Bond &bond);
-	void assignInstancesToAtoms(BondSequence *const &seq);
+	std::vector<MatId> 
+	matrix_coordinates(const OpSet<Atom *> &all,
+	                   const std::function<int(Atom *const &)> 
+	                   &atom_idx);
 
-	std::function<BondSequence *(BondSequence *)> align();
+	std::vector<MatId> target_coordinates();
+	void prepareTargets();
+
+	void prepareCoordinateColumns(const std::function<int(Atom *const &)> &atom_idx);
+
+	void assignInstancesToAtoms(BondSequence *const &seq);
+	void prepareBarycentricWeights();
+	void preparePositionMatrix();
+	void prepareBarycentricTargetMatrices();
+
+	void findInterfaces(const std::function<int(Atom *const &)> &func);
+	NonCovalents::Interface findInterface(Instance *first, Instance *second);
+
+	std::function<BondSequence *(BondSequence *)> align(const float &frac);
 
 	std::vector<Instance *> _instances;
-	std::vector<Bond> _bonds;
-	std::map<Instance *, std::map<Instance *, Bond *>> _map;
+	std::map<Instance *, int> _instance2Idx;
+	std::vector<Interface> _faces;
+	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
+	                   bool trans_only)> _blocksToMatrixPositions;
+	std::function<void(BondSequence *seq, 
+	                   Eigen::MatrixXf &dest)> _blocksToTargetMatrix;
+	std::function<void(const float &frac,
+	                   Eigen::MatrixXf &dest)> _weightsToMatrixPositions;
+
+	std::map<int, MatId> _seqToId;
+	std::vector<MatId> _matIds;
+
 	std::map<Instance *, std::vector<int>> _atomNumbers;
+
+	Eigen::MatrixXf _positions;
+	Eigen::MatrixXf _barycentrics;
+	Eigen::MatrixXf _targets;
 
 	Eigen::MatrixXf _leftMatrix;
 	Eigen::MatrixXf _rightMatrix;
+	
+	Instance *_invariant = nullptr;
+	bool _ready = false;
 };
 
 #endif
