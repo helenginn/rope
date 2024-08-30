@@ -28,11 +28,23 @@
 #include <vagabond/utils/OpVec.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/glm_import.h>
+#include "AtomGroup.h"
 
 class Atom;
 class Instance;
 class BondSequence;
 template <class X, class Y> class Task;
+
+struct Segment
+{
+	Segment(int n)
+	{
+		num = n;
+	}
+
+	int num = -1;
+	AtomGroup *grp = new AtomGroup();
+};
 
 class NonCovalents
 {
@@ -130,7 +142,7 @@ private:
 
 	void prepareCoordinateColumns(const std::function<int(Atom *const &)> &atom_idx);
 
-	void assignInstancesToAtoms(BondSequence *const &seq);
+	void assignSegmentsToAtoms(BondSequence *const &seq);
 	void prepareBarycentricWeights();
 	void preparePositionMatrix();
 	void prepareBarycentricTargetMatrices();
@@ -140,9 +152,11 @@ private:
 
 	std::function<BondSequence *(BondSequence *)> align(const float &frac);
 
+	std::vector<Segment> _segments;
 	std::vector<Instance *> _instances;
 	std::map<Instance *, int> _instance2Idx;
 	std::vector<Interface> _faces;
+
 	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
 	                   bool trans_only)> _blocksToMatrixPositions;
 	std::function<void(BondSequence *seq, 

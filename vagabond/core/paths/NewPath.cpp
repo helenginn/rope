@@ -84,7 +84,6 @@ PlausibleRoute *NewPath::operator()()
 	for (size_t i = 0; i < to_angles.size(); i++)
 	{
 		list.storage(i) = to_angles[i] - from_angles[i];
-		std::cout << list.rt(i).desc() << " -> " << list.storage(i) << std::endl;
 	}
 
 	PlausibleRoute *pr = new PlausibleRoute(list);

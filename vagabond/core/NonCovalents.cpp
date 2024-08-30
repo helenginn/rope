@@ -54,11 +54,32 @@ int atom_index_for_atom(BondSequence *const &seq, Atom *const &atom)
 		                            });
 }
 
-void NonCovalents::assignInstancesToAtoms(BondSequence *const &seq)
+bool atomBelongsToSegment(Atom *atom, Segment *seg)
 {
+	return (seg->grp->hasAtom(atom));
+}
+
+void NonCovalents::assignSegmentsToAtoms(BondSequence *const &seq)
+{
+	Segment *segment = nullptr;
+	int n = 0;
 	int i = 0;
+
 	for (AtomBlock &block : seq->blocks())
 	{
+		if (!block.atom)
+		{
+			if (segment && segment->grp->size() > 0)
+			{
+				_segments.push_back(*segment);
+				delete segment;
+				segment = nullptr;
+			}
+			
+			segment = new Segment(n);
+			n++;
+		}
+
 		if (block.atom)
 		{
 			for (Instance *instance : _instances)
@@ -68,9 +89,17 @@ void NonCovalents::assignInstancesToAtoms(BondSequence *const &seq)
 					_atomNumbers[instance].push_back(i);
 				}
 			}
+			
+			segment->grp->add(block.atom);
 		}
 
 		i++;
+	}
+	
+	if (segment && segment->grp->size() > 0)
+	{
+		_segments.push_back(*segment);
+		delete segment;
 	}
 }
 
@@ -268,6 +297,7 @@ NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos)
 
 	Eigen::MatrixXf weights = to_centric.colPivHouseholderQr().solve(vec);
 	
+	/*
 	{
 		std::cout << "SOLVE: " << std::endl;
 		std::cout << to_centric << std::endl;
@@ -277,6 +307,7 @@ NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos)
 		std::cout << weights << std::endl;
 		std::cout << std::endl;
 	}
+	*/
 
 	std::vector<float> ws = {weights(0), weights(1), weights(2), weights(3)};
 	return OpVec<float>(ws);
@@ -320,6 +351,7 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
                             NonCovalents::Interface::Side &lefts, 
                             NonCovalents::Interface::Side &rights)
 {
+	std::cout << face.left->id() << " to " << face.right->id() << std::endl;
 	for (Atom *right : rights.atoms)
 	{
 		auto l = closest_atoms(lefts.atoms, 4);
@@ -328,7 +360,7 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		NonCovalents::WeightedSum candidate = 
 		NonCovalents::WeightedSum(right, neighbours);
 
-		if (candidate.ave_weight < 10)
+		if (candidate.ave_weight < 5)
 		{
 			candidate.ave_weight = 1 / (candidate.ave_weight *
 			                            candidate.ave_weight);
@@ -337,6 +369,15 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 			{
 				continue;
 			}
+			
+			std::cout << "\t" << candidate.atom->desc() << " <-> ";
+			
+			for (Atom *f : candidate.fiducials)
+			{
+				std::cout << f->desc() << ", ";
+			}
+			std::cout << std::endl;
+
 			candidate.ave_weight = 1;
 			face.sums.push_back(candidate);
 		}
@@ -353,10 +394,6 @@ void NonCovalents::prepareBarycentricWeights()
 	for (Interface &face : _faces)
 	{
 		weighted_sums_for_side(face, face.lefts, face.rights);
-		/*
-		std::cout << "Next face! " << face.left->id() << " to " <<
-		face.right->id() << " (" << face.sums.size() << ")" <<  std::endl;
-		*/
 
 		auto seq_idx_for_atom = [face](Atom *atom)
 		{
@@ -444,7 +481,7 @@ void NonCovalents::prepare(BondSequence *const &seq)
 	
 	// each instance is provided a list of AtomBlock indices.
 	// currently does not account for chain breaks - needs retrofitting.
-	assignInstancesToAtoms(seq);
+	assignSegmentsToAtoms(seq);
 	
 	// all atoms are inspected for involvement at an instance-instance
 	// interface and a list made of participating atoms for each interface.
@@ -751,7 +788,8 @@ NonCovalents::align(const float &frac)
 			Eigen::MatrixXf fixed = u * v.transpose();
 			if (fixed.determinant() < 0)
 			{
-				fixed({0, 1, 2}, 2) *= -1.f;
+				v({0, 1, 2}, 2) *= -1.f;
+				fixed = u * v.transpose();
 			}
 
 			sol(Eigen::seqN(j, 3), {0, 1, 2}) = fixed;
@@ -826,100 +864,6 @@ NonCovalents::align(const float &frac)
 				basis[3] = transform * tmp;
 			}
 		}
-
-//		Eigen::JacobiSVD<MatrixXf> svd(sol, Eigen::ComputeFullU | Eigen::ComputeFullV);
-		
-//		l.transposeInPlace();
-//		r.transposeInPlace();
-		
-//		std::cout << "===================" << std::endl;
-//		std::cout << "difference: " << std::endl << r - l << std::endl;
-//		std::cout << std::endl;
-		
-		/*
-		auto get_ave_trans = [](const Eigen::MatrixXf &mat) -> Eigen::Vector3f
-		{
-			Eigen::Vector3f diff;
-			for (int i = 0; i < mat.rows(); i++)
-			{
-				diff += mat(i, {0, 1, 2}).transpose();
-			}
-
-			diff /= (float)(mat.rows());
-			return diff;
-		};
-
-		Eigen::Vector3f overall = get_ave_trans(l);
-		Eigen::Vector3f first_diff = get_ave_trans(r - l);
-//		std::cout << "First diff: " << first_diff << std::endl;
-		for (int i = 0; i < l.rows(); i++)
-		{
-			l(i, {0, 1, 2}) -= overall.transpose();
-			r(i, {0, 1, 2}) -= (overall - first_diff).transpose();
-		}
-//		std::cout << "-> new left: " << std::endl;
-//		std::cout << l << std::endl;
-//		std::cout << "-> new right: " << std::endl;
-//		std::cout << r << std::endl;
-		
-		Eigen::MatrixXf sol = l.colPivHouseholderQr().solve(r);
-		
-		if (sol.rows() != 3 || sol.cols() != 3)
-		{
-			return seq;
-		}
-
-		Eigen::JacobiSVD<MatrixXf> svd(sol, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-		Eigen::MatrixXf u = svd.matrixU();
-		Eigen::MatrixXf v = svd.matrixV();
-		Eigen::MatrixXf fixed = u * v.transpose();
-		sol({0, 1, 2}, {0, 1, 2}) = fixed;
-
-		Eigen::MatrixXf translate = MatrixXf::Identity(4, 4);
-		Eigen::MatrixXf back = MatrixXf::Identity(4, 4);
-		Eigen::MatrixXf rotate = MatrixXf::Identity(4, 4);
-
-		translate(3, {0, 1, 2}) += overall.transpose();
-		back(3, {0, 1, 2}) -= overall.transpose();
-		rotate({0, 1, 2}, {0, 1, 2}) = sol;
-		
-		Eigen::MatrixXf there_and_back = back * rotate * translate;
-
-		mat4x4 transform = mat4x4(1.f);
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				transform[i][j] = there_and_back(i, j);
-				if (transform[i][j] != transform[i][j])
-				{
-					return seq;
-				}
-			}
-		}
-
-//		std::cout << "Transform: " << std::endl;
-//		std::cout << transform << std::endl;
-
-		for (Instance *inst : _instances)
-		{
-			if (inst == _instances.back())
-			{
-				continue;
-			}
-
-			std::vector<int> &idxs = _atomNumbers[inst];
-
-			for (const int &idx : idxs)
-			{
-				mat4x4 &basis = seq->blocks()[idx].basis;
-				vec4 tmp = basis[3]; tmp[3] = 1.;
-				basis[3] = transform * tmp;
-			}
-		}
-		*/
-		
 		return seq;
 	};
 	
