@@ -91,6 +91,10 @@ struct AtomBlock
 	/* write locations specifies the relative indices of the "controlled" atoms
 	 * by this torsion angle - if torsion_idx is not negative. */
 	int write_locs[4];
+
+	/* relative index of the parent atomblock which assigned this atomblock's
+	 * my_position. */
+	int parent_idx = 0;
 	
 	void clearMutable();
 

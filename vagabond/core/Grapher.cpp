@@ -393,6 +393,7 @@ void Grapher::fixBlockAsGhost(AtomBlock &block, Atom *anchor)
 	block.atom = nullptr;
 	block.basis = anchor->transformation();
 	block.write_locs[0] = 1;
+	block.parent_idx = -1;
 }
 
 void Grapher::assignAtomToBlock(AtomBlock &block, AtomGraph *gr)
@@ -557,6 +558,7 @@ void Grapher::fillMissingWriteLocations(std::vector<AtomBlock> &blocks)
 			}
 
 			blocks[i].write_locs[j] = index;
+			blocks[i + index].parent_idx = -index;
 		}
 
 		if (num > 0)
