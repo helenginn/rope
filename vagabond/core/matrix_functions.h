@@ -135,5 +135,6 @@ double dist_ang(std::vector<double> &a, std::vector<double> &b, int n, std::vect
 
 /** calculates magnitude of difference between two vectors (bonds) */
 double distv(double r1, double r2);
+
 #endif
 

@@ -349,7 +349,6 @@ void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr)
 	}
 }
 
-
 double dist_ang(std::vector<double> &a, std::vector<double> &b, int n, 
 		std::vector<double> &bondSymmetry)
 {
