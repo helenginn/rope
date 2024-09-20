@@ -349,4 +349,26 @@ void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr)
 }
 
 
+double dist_ang(double *a, double *b, int n)
+{
+	double t = 0.0, d;
+	int i;
 
+	for(i = 0, t = 0; i < n; i++)
+	{
+		while(a[i] > 180.0) a[i] = a[i] - 360.0;
+		while(a[i] < -180.0) a[i] = a[i] + 360.0;
+		while(b[i] > 180.0) b[i] = b[i] - 360.0;
+		while(b[i] < -180.0) b[i] = b[i] + 360.0;
+		
+		d = fabs(a[i] - b[i]);
+
+		if(d > 180.0) d = 360.0 - d;
+
+		d = d*d;
+
+		t = t + d;
+	}
+
+	return sqrt(t);
+}
