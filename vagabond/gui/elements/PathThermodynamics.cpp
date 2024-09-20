@@ -1,444 +1,95 @@
-// Copyright (C) 2021 Helen Ginn
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
 
-#include "Window.h"
-#include "Modal.h"
-#include "IndexResponder.h"
-#include "TextButton.h"
+
 #include "PathThermodynamics.h"
-#include "AskYesNo.h"
-#include "Image.h"
-#include <vagabond/utils/gl_import.h>
-#include <iostream>
-#include <SDL2/SDL.h>
-#include <time.h>
+#include "CandidateView.h"
+#include <vagabond/core/Entity.h>
+#include <nlohmann/json.hpp>
+#include <vagabond/utils/FileReader.h>
+#include <vagabond/gui/elements/TextEntry.h>
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ChooseRange.h>
+#include <vagabond/gui/elements/BadChoice.h>
 
-#include <cstring>
-
-std::string Scene::_defaultBg = "assets/images/paper.jpg";
-
-Scene::Scene(Scene *prev) : SnowGL()
+SearchPDB::SearchPDB(Scene *prev, Entity *ent) : Scene(prev)
 {
-	_mouseDown = false;
-	_previous = prev;
-
-	setBackground();
+	_entity = ent;
 }
 
-Scene::~Scene()
+void SearchPDB::setup()
 {
-	
-}
+	addTitle("Search PDB by " + _entity->name() + " sequence");
 
-void Scene::preSetup()
-{
-	showBackButton();
-	
-	if (_title.length())
 	{
-		addTitle(_title);
-		_title = "";
-	}
-	
-	setup();
-	_viewChanged = true;
-}
-
-void Scene::reloadBackground()
-{
-	removeObject(_background);
-	Window::setDelete(_background);
-	_background = nullptr;
-
-	Image *r = new Image(_defaultBg);
-	r->Box::makeQuad();
-	addObjectToFront(r);
-	_background = r;
-
-	if (_previous != nullptr)
-	{
-		_previous->reloadBackground();
-	}
-}
-
-void Scene::setBackground()
-{
-	Image *r = new Image(_defaultBg);
-	r->Box::makeQuad();
-	addObject(r);
-	_background = r;
-}
-
-void Scene::setModal(Modal *modal)
-{
-	if (!_modal)
-	{
-		_modal = modal;
-		_left = false;
-		_right = false;
-	}
-}
-
-void Scene::removeModal()
-{
-	_removeModal = _modal;
-	_modal = nullptr;
-	resetMouseKeyboard();
-	_mouseDown = false;
-	_moving = false;
-	_left = false;
-}
-
-void Scene::doThings()
-{
-	if (_mustRefresh)
-	{
-		refresh();
-		_mustRefresh = false;
-		viewChanged();
-	}
-}
-
-void Scene::render()
-{
-	SnowGL::render();
-
-	if (_modal != nullptr)
-	{
-		_modal->render(this);
-	}
-	
-	if (_removeModal != nullptr)
-	{
-		delete _removeModal;
-		_removeModal = nullptr;
-	}
-}
-
-void Scene::setCentrePixels(Renderable *r, int x, int y)
-{
-	double xf = 2 * (double)x / width() - 1;
-	double yf = 2 * (double)y / height() - 1;
-
-	r->setPosition(glm::vec3(xf, -yf, 0));
-}
-
-void Scene::convertToPixels(float *x, float *y)
-{
-	*x = (*x + 1) / 2 * width();
-	*y = (1 - *y) / 2 * height();
-}
-
-void Scene::convertToGLCoords(float *x, float *y)
-{
-	*x = 2 * (float)*x / width() - 1;
-	*y = 1 - 2 * (float)*y / height();
-}
-
-void Scene::convertToGLCoords(double *x, double *y)
-{
-	*x = 2 * (double)*x / width() - 1;
-	*y = 1 - 2 * (double)*y / height();
-}
-
-std::vector<Renderable *> &Scene::pertinentObjects()
-{
-	if (_modal != nullptr)
-	{
-		return _modal->objects();
-	}
-
-	return objects();
-}
-
-void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
-{
-	if (_expired) return;
-	
-	if (_dragged && _moving)
-	{
-		_dragged->undrag();
-	}
-	else if (_dragged)
-	{
-		_dragged->click(button.button == SDL_BUTTON_LEFT);
-	}
-
-	_dragged = nullptr;
-	convertToGLCoords(&x, &y);
-
-	if (_modal != nullptr && _chosen == nullptr)
-	{
-		double z = -FLT_MAX;
-		bool hit = _modal->intersectsRay(x, y, &z);
-
-		if (!hit && _left)
 		{
-			_modal->dismiss();
-		}
-	}
-
-	_left = button.button == SDL_BUTTON_LEFT;
-
-	if (hasIndexedObjects() > 0 && _modal == nullptr && _chosen == nullptr
-	    && !_moving)
-	{
-		checkIndexBuffer(x, y, false, true, _left);
-	}
-
-	_mouseDown = false;
-	_moving = false;
-}
-
-void Scene::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
-{
-	if (_expired) return;
-
-	_lastX = x;
-	_lastY = y;
-	convertToGLCoords(&x, &y);
-	_moving = false;
-	_mouseDown = true;
-
-	Renderable *chosen = findObject(x, y);
-	_left = (button.button == SDL_BUTTON_LEFT);
-	_chosen = chosen;
-
-	if (chosen != nullptr)
-	{
-		if (chosen->isDraggable())
-		{
-			std::cout  << "Draggable: " << chosen->name() << std::endl;
-			_dragged = chosen;
-		}
-		else
-		{
-			// warning: clicking the chosen object may result in its destruction
-			chosen->click(_left);
-			// don't use the pointer afterwards
+			Text *t = new Text("Sequence identity cutoff");
+			t->setLeft(0.2, 0.3);
+			addObject(t);
 		}
 
-	}
-}
-
-void Scene::mouseMoveEvent(double x, double y)
-{
-	if (_expired) return;
-
-	double tx = x;
-	double ty = y;
-	convertToGLCoords(&tx, &ty);
-	_moving = true;
-
-	clearHighlights();
-	Renderable *chosen = findObject(tx, ty);
-
-	SDL_Cursor *cursor = nullptr;
-	bool arrow = true;
-	if (chosen != nullptr && chosen->mouseOver())
-	{
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-		arrow = false;
-	}
-	else
-	{
-		cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-	}
-
-	if (_mouseDown && _dragged != nullptr && _dragged->isDraggable())
-	{
-		_dragged->drag(tx, ty);
-	}
-	
-	swapCursor(cursor);
-	
-	if (hasIndexedObjects() > 0 && _modal == nullptr)
-	{
-		checkIndexBuffer(tx, ty, true, arrow, true);
-	}
-}
-
-void Scene::swapCursor(SDL_Cursor *newCursor)
-{
-	SDL_SetCursor(newCursor);
-
-	if (_cursor != nullptr)
-	{
-		SDL_FreeCursor(_cursor);
-		_cursor = nullptr;
-	}
-
-	_cursor = newCursor;
-}
-
-void Scene::showSimple()
-{
-	Window::reloadScene(this);
-}
-
-void Scene::queueToShow()
-{
-	Window::setNextScene(this);
-}
-
-void Scene::show()
-{
-	Window::setCurrentScene(this);
-}
-
-void Scene::hideBackButton()
-{
-	if (_back)
-	{
-		_back->setDisabled(true);
-	}
-}
-
-void Scene::showBackButton()
-{
-	if (_previous == nullptr)
-	{
-		return;
-	}
-
-	TextButton *button = new TextButton("Back", this);
-	button->setReturnTag("back");
-	button->resize(0.6);
-	button->setLeft(0.02, 0.06);
-	addObject(button);
-	_back = button;
-}
-
-void Scene::addTitle(std::string title)
-{
-	if (_titleText != nullptr)
-	{
-		removeObject(_titleText);
-		delete _titleText;
-		_titleText = nullptr;
-	}
-
-	Text *text = new Text(title, Font::Thick);
-	text->setCentre(0.5, 0.1);
-	addObject(text);
-	_titleText = text;
-}
-
-void Scene::askToQuit()
-{
-	if (!_modal)
-	{
-		AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to quit?",
-				"quit", this);
-		ayn->setDismissible(true);
-		setModal(ayn);
-		viewChanged();
-	}
-	else
-	{
-		_modal->dismiss();
-		viewChanged();
-	}
-}
-
-void Scene::buttonPressed(std::string tag, Button *button)
-{
-	if (tag == "back")
-	{
-		_previous->showSimple();
-		Window::setDelete(this);
-	}
-	else if (tag == "yes_quit")
-	{
-		exit(0);
-	}
-	if (tag == "remove_info" && _info != nullptr)
-	{
-		removeObject(_info);
-		delete _info;
-		_info = nullptr;
-	}
-}
-
-void Scene::back(int num)
-{
-	_previous->showSimple();
-	Window::setDelete(this);
-	
-	/* recursively remove scenes */
-	if (num > 0)
-	{
-		_previous->back(num - 1);
-
-		if (num == 1)
 		{
-			/* might be called anyway */
-			_previous->refresh();
+			TextButton *tb = new TextButton(i_to_str(_cutoff), this);
+			tb->setRight(0.8, 0.3);
+			tb->setReturnTag("get_identity_cutoff");
+			_cutoffText = tb;
+			addObject(tb);
 		}
 	}
 	
-	_expired = true;
-}
-
-void Scene::interpretControlKey(SDL_Keycode pressed, bool dir)
-{
-	if (pressed == SDLK_LCTRL)
 	{
-		_controlPressed = dir;
-	}
-
-	if (pressed == SDLK_LGUI || pressed == SDLK_LALT)
-	{
-		_altPressed = dir;
-	}
-
-	if (pressed == SDLK_LSHIFT)
-	{
-		_shiftPressed = dir;
-	}
-}
-
-void Scene::keyPressEvent(SDL_Keycode pressed)
-{
-	interpretControlKey(pressed, true);
-
-	if (!keyResponder())
-	{
-		if (_modal)
 		{
-			_modal->doAccessibilityThings(pressed, _shiftPressed);
+			Text *t = new Text("Maximum structures to return");
+			t->setLeft(0.2, 0.4);
+			addObject(t);
 		}
-		else
+
 		{
-			doAccessibilityThings(pressed, _shiftPressed);
+			TextEntry *te = new TextEntry(i_to_str(_rows), this);
+			te->setScratch(i_to_str(_rows));
+			te->setValidationType(TextEntry::Numeric);
+			te->setRight(0.8, 0.4);
+			_maxRowsText = te;
+			addObject(te);
 		}
-		return;
 	}
 
-	keyResponder()->keyPressed(pressed);
+	{
+		TextButton *tb = new TextButton("Run", this);
+		tb->setLeft(0.8, 0.8);
+		tb->setReturnTag("run");
+		addObject(tb);
+	}
 }
 
-
-void Scene::setInformation(std::string str)
+void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 {
-	if (_info != nullptr)
+	if (tag == "get_identity_cutoff")
 	{
-		removeObject(_info);
-		Window::setDelete(_info);
-		_info = nullptr;
-	}
-
-	if (str.length())
-	{
-		_info = new TextButton(str, this, true);
-		_info->setReturnTag("remove_info");
-		_info->resize(0.6);
-		_info->setCentre(0.5, 0.16);
-		addObject(_info);
-	}
-
+		std::string str = "Choose sequence identify cutoff";
+		ChooseRange *cr = new ChooseRange(this, str, "set_identity_cutoff", this);
+		cr->setDefault(_cutoff);
+		cr->setRange(0, 100, 100);
+		setModal(cr);
+	}	
 }
 
-void Scene::keyReleaseEvent(SDL_Keycode pressed)
+void PathThermodynamics::refresh()
 {
-	interpretControlKey(pressed, false);
+	_cutoffText->setText(i_to_str(_cutoff));
 }
