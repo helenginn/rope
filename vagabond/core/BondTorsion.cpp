@@ -123,9 +123,10 @@ double BondTorsion::startingAngle()
 	return measurement(SourceInitial);
 }
 
-double BondTorsion::measurement(BondTorsion::Source source)
+double BondTorsion::measurement(BondTorsion::Source source, bool force)
 {
-	if (_measured && source == SourceInitial)
+	if (_measured && source == SourceInitial
+			&& !force)
 	{
 		return _measuredAngle;
 	}
