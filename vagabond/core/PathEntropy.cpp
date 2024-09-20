@@ -153,9 +153,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 	return torsRes;
 }
 
-
 /* Calculates entropy from torsion angles, assuming independence between the residues */
-
 struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> torsRes, int numDivisions)
 {
 	int numResPerModel = torsRes.size();
