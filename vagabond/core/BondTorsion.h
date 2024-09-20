@@ -48,7 +48,7 @@ public:
 		return measurement(BondTorsion::SourceDerived);
 	}
 
-	double measurement(BondTorsion::Source source);
+	double measurement(BondTorsion::Source source, bool force = false);
 	double startingAngle();
 	
 	virtual size_t atomCount() const
