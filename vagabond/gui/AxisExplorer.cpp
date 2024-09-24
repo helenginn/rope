@@ -110,6 +110,7 @@ void AxisExplorer::submitJobAndRetrieve(float prop, bool tear)
 	submitJob(prop, tear);
 
 	Result *r = _resources.calculator->acquireObject();
+	std::cout << "Value of _displayTargets in AxisExplorer: " << std::boolalpha << _displayTargets << std::endl;
 	r->transplantPositions(_displayTargets);
 	
 	if (_latest)
