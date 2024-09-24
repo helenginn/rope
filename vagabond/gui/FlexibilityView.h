@@ -31,29 +31,41 @@ class Residue;
 class Instance;
 class AtomContent;
 
+// FlexibilityView class - Inherits from Display and DragResponder
 class FlexibilityView: public Display, public DragResponder
 {
 public:
+	// Constructor - Takes a pointer to the previous scene, instance, and flexibility object
 	FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex);
+	// Destructor
 	~FlexibilityView();
 
+	// Sets up the view (called during initialization)
 	virtual void setup();
+	// Sets up the slider element
 	void setupSlider();
 
-	// virtual void buttonPressed(std::string tag, Button *button);
+	// Submits a flexibility calculation job with a specific weight
 	void submitJob(float prop, bool tear = false);
+	// Handles finishing drag interaction on the slider (updates flexibility weight)
 	virtual void finishedDragging(std::string tag, double x, double y);
+	void callAddHBonds(std::string donor, std::string acceptor)
+	{
+		_flex->addHBond(donor, acceptor);
+	}
 private: 
 	Flexibility *_flex = nullptr;
 	Instance *_instance = nullptr;
 	Slider *_rangeSlider = nullptr;
-	bool _electric = false;
 	DisplayUnit *_unit = nullptr;
 	AtomMap *_latest = nullptr;
 	bool _first = true;
 
+	// Minimum value for the slider
 	double _min = -1; 
+	// Maximum value for the slider
 	double _max = 1; 
+	// Step size for the slider
 	double _step = 0.001;
 
 
