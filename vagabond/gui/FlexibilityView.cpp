@@ -14,7 +14,7 @@ FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 {
 	_flex = flex;
 	_instance = inst;
-	setup();
+	// setup();
 }
 
 FlexibilityView::~FlexibilityView()
@@ -30,18 +30,27 @@ void FlexibilityView::setup()
 	grp->recalculate();
 	
 	DisplayUnit *unit = new DisplayUnit(this);
+	// unit->loadAtoms(grp, _instance->entity());
 	unit->loadAtoms(grp, _instance->entity());
 	unit->displayAtoms();
 	addDisplayUnit(unit);
 
 	Display::setup();
 	_flex->prepareResources();
+	_flex->submitJobAndRetrieve(0.0);
+	_flex->submitJobAndRetrieve(0.0);
+	// findMotions call will be here
+	std::string donor_1 = "A-ILE3:N";
+	std::string acceptor_1 = "A-ASP32:O";
+	std::string donor_2 = "A-TYR22:N";
+	std::string acceptor_2 = "A-SER18:O";
+	callAddHBonds(donor_1, acceptor_1);
+	callAddHBonds(donor_2, acceptor_2);
+	_flex->printHBonds();
 	setupSlider();
-	float retrievedWeight;
-	retrievedWeight = _flex->submitJobAndRetrieve(0.0, true);
+
+
 	// askForAtomFlexibility();
-
-
 }
 
 void FlexibilityView::setupSlider()
@@ -61,11 +70,12 @@ void FlexibilityView::setupSlider()
 
 void FlexibilityView::finishedDragging(std::string tag, double x, double y)
 {
-	// _flex->setChosenWeight(x);
 	float num = x / 1.;
-	float test_retrival = _flex->submitJobAndRetrieve(num, _first );
+	float test_retrival = _flex->submitJobAndRetrieve(num);
 	_first = false;
 }
+
+
 
 
 
