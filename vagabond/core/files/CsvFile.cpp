@@ -86,9 +86,9 @@ void CsvFile::processLine(std::string line)
 		
 		if (components[i].length())
 		{
+			defenestrate(components[i]);
 			trim(components[i]);
 			remove_quotes(components[i]);
-			defenestrate(components[i]);
 		}
 
 		if (components[i].length() == 0)
@@ -99,7 +99,6 @@ void CsvFile::processLine(std::string line)
 
 		kvs[h] = Value(components[i]);
 	}
-	
 	_metadata->addKeyValues(kvs, true);
 }
 
@@ -137,6 +136,7 @@ void CsvFile::parseFileContents()
 		return;
 	}
 	
+	debom(line);
 	processHeaders(line);
 
 	while (getline(f, line))
