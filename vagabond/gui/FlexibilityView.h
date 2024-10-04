@@ -49,10 +49,9 @@ public:
 	void submitJob(float prop, bool tear = false);
 	// Handles finishing drag interaction on the slider (updates flexibility weight)
 	virtual void finishedDragging(std::string tag, double x, double y);
-	void callAddHBonds(std::string donor, std::string acceptor)
-	{
-		_flex->addHBond(donor, acceptor);
-	}
+	void callAddHBonds(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs);
+	int calculateMaximumTorsionSetSize(const std::vector<std::pair<std::string, std::string>>& donorAcceptorPairs);
+
 private: 
 	Flexibility *_flex = nullptr;
 	Instance *_instance = nullptr;
