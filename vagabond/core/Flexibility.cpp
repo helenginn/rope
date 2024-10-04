@@ -9,6 +9,8 @@
 #include "BondSequenceHandler.h"
 #include <vagabond/core/BondCalculator.h>
 
+using Eigen::MatrixXf;
+
 // Initializes the Flexibility object with an instance pointer
 Flexibility::Flexibility(Instance *i) 
 {
@@ -61,8 +63,10 @@ void Flexibility::calculateTorsionFlexibility(CoordManager* specific_manager)
 {
 	auto calculateFlexibility = [](const Coord::Get &get, const int &idx) 
 	{
-		float torsion = get(0); // Gets torsion value
-		return torsion; 
+		float weight = get(0); // Gets weight value passed into submitJob
+        int bigVecIdx = idx; 
+        float flexWeight = BigVect[bigVecIdx]*weight;
+		return flexWeight; 
 	};
 	specific_manager->setTorsionFetcher(calculateFlexibility); // Sets the torsion fetcher
 }
@@ -113,34 +117,38 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
     // Access the donor and acceptor AtomBlock objects
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
     const AtomBlock& donorBlock = blocks[donorBlock_idx];
-    donorBlock.printBlock();
     const AtomBlock& acceptorBlock = blocks[acceptorBlock_idx];
+
+    int parentDonor_idx = blocks[donorBlock_idx].parent_idx;
+    int parentAcceptor_idx = blocks[acceptorBlock_idx].parent_idx;
+
+
 
     glm::vec3 donorPos = blocks[donorBlock_idx].my_position(); 
    	glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
 
-   	glm::vec3 parentDonorPos = blocks[donorBlock_idx-1].atom->initialPosition(); // replace with DonorBlock.parent_idx 
-    glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx-1].atom->initialPosition();
+   	// glm::vec3 parentDonorPos = blocks[parentDonor_idx].atom->initialPosition(); // replace with DonorBlock.parent_idx 
+    // glm::vec3 parentAcceptorPos = blocks[parentAcceptor_idx].atom->initialPosition();
+    glm::vec3 parentDonorPos = blocks[donorBlock_idx + parentDonor_idx].my_position();
+    glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx + parentAcceptor_idx].my_position();
 
-    // Calculate alpha-vectors
-    glm::vec3 alphaVector1 = parentDonorPos - donorPos;
-    glm::vec3 alphaVector2 = acceptorPos - donorPos;
 
     float distance = calculateDistance(donorPos, acceptorPos);
-    float alphaAngle = calculateAngle(alphaVector1, alphaVector2);
+    float alphaAngleDistance = calculateAngleDistance(donorPos, acceptorPos, parentDonorPos);
+    float betaAngleDistance = calculateAngleDistance(acceptorPos, donorPos, parentAcceptorPos);
+
 
 	// Create HBondEntity and store values
     HBondEntity hbe;
     hbe.Donor = donorAtom;
+    hbe.donorIdx = donorBlock_idx;
     hbe.Acceptor = acceptorAtom;
+    hbe.acceptorIdx = acceptorBlock_idx;
     hbe.startDist = distance;
     hbe.ParentDonor = blocks[donorBlock_idx - 1].atom;
     hbe.ParentAcceptor = blocks[acceptorBlock_idx - 1].atom;
-    hbe.AlphaAngle = alphaAngle;
-
-    // Push back the HBondEntity into the _hbonds vector
-    _hbonds.push_back(hbe);
-
+    hbe.AlphaAngleDist = alphaAngleDistance;
+    hbe.BetaAngleDist = betaAngleDistance;
 
     // Print the positions and distance for debugging
     std::cout << "Donor position: " << donorPos.x << ", " << donorPos.y << ", " << donorPos.z << std::endl;
@@ -148,10 +156,43 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
     std::cout << "Distance: " << distance << std::endl;
     std::cout << "Parent donor atom position: " << parentDonorPos.x << ", " << parentDonorPos.y << ", " << parentDonorPos.z << std::endl;
     std::cout << "Parent acceptor atom position: " << parentAcceptorPos.x << ", " << parentAcceptorPos.y << ", " << parentAcceptorPos.z << std::endl;
-    std::cout << "Angle alpha (degrees): " << alphaAngle << " degrees" << std::endl;
+    std::cout << "Angle alpha distance (from acceptor to parent-donor): " << alphaAngleDistance << std::endl;
+    std::cout << "Beta alpha distance (from donor to parent-acceptor): " << betaAngleDistance << std::endl;
+
+
+    // Find last common ancestor (LCA) between donor and acceptor atom 
+    std::vector<int> lca_idx = lastCommonAncestorIdx(donorBlock_idx, acceptorBlock_idx);
+    // insert torsion vector to _hbe 
+    hbe.TorsionVec = lca_idx; 
+    _hbonds.push_back(hbe);
+    std::cout << "Size of hbe.TorsionVec: " << hbe.TorsionVec.size() << std::endl;
+    _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
+    buildJacobianMatrix();
+    // before turning vector into a set I want to put together all the the vectors into one
+
+    // std::set<int> torsionSet;
+    // // Insert elements from the vector into a set:
+    // torsionSet.insert(lca_idx.begin(), lca_idx.end());
+
 
 }
 
+float Flexibility::calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3) 
+{                           
+    // NOT NECESSARY!!                   
+    float a = calculateDistance(vector1, vector2);
+    float b = calculateDistance(vector1, vector3);
+
+    // Calculate alpha angle
+    glm::vec3 alphaVector1 = vector3 - vector1;
+    glm::vec3 alphaVector2 = vector2 - vector1;
+    float alphaAngle = calculateAngle(alphaVector1, alphaVector2);
+
+    // Calculate distance between vector3 and vector2 using the Law of Cosines
+    float c = sqrt(a * a + b * b - 2 * a * b * cos(glm::radians(alphaAngle)));
+
+    return c;
+}
 
 float Flexibility::calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2) 
 {
@@ -184,6 +225,101 @@ int Flexibility::accessAtomBlock(Atom* atom)
     return -1;
 }
 
+std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acceptorBlock_idx)
+{
+    std::vector<int> torsionVector;
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    while (true)
+    {
+        if (blocks[donorBlock_idx].depth > blocks[acceptorBlock_idx].depth)
+        {
+            donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
+            std::cout << "kk "<< donorBlock_idx << std::endl;
+            std::cout << "torsionVector: ";
+            for (int torsionIdx : torsionVector) 
+            {
+                std::cout << torsionIdx << " ";
+            }
+            std::cout << std::endl;
+        }
+        else if (blocks[donorBlock_idx].depth < blocks[acceptorBlock_idx].depth)
+        {
+            acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);  
+            std::cout << "ll "<< donorBlock_idx << std::endl;
+            for (int torsionIdx : torsionVector) 
+            {
+                std::cout << torsionIdx << " ";
+            }
+            std::cout << std::endl;
+        }
+        else // equal depth 
+        {
+            if (blocks[donorBlock_idx].depth == blocks[acceptorBlock_idx].depth) // found common ancestor 
+            {
+                std::cout << "mm "<< donorBlock_idx << std::endl;
+                for (int torsionIdx : torsionVector) 
+                {
+                    std::cout << torsionIdx << " ";
+                }
+                std::cout << std::endl;
+                return torsionVector;
+            }
+            // rewind at the same time
+            acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);
+            donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
+            std::cout << "nn "<< donorBlock_idx << std::endl;
+        }
+
+    }
+}
+
+int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector) 
+{
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    int blockParent_idx = blocks[block_idx].parent_idx;
+    block_idx += blockParent_idx;
+    // If the block has torsion larger than -1, add them to the torsion vector
+    if (blocks[block_idx].torsion_idx >= 0) 
+    {
+        // torsionVector.push_back(blocks[block_idx].torsion_idx); changed to: 
+        torsionVector.push_back(block_idx); // if the hbond is between two molecules htat are not conected with a common ancestor: this case need to be handle this case
+    }
+    // print a statement if there is no common ancestor: if you reach 0 (or maybe 1, but basically the first depth)
+    return block_idx;
+}
+
+void Flexibility::buildJacobianMatrix()
+{
+    // Get the number of torsions and values
+    int numCol = _hbonds.size();
+    std::vector<int> globalTorsionVector(_globalTorsionSet.begin(), _globalTorsionSet.end());
+    int numRow = _globalTorsionSet.size();
+    std::cout << "Jacobian matrix has " << numCol << " columns" << std::endl;
+    std::cout << "Jacobian matrix has " << numRow << " rows" << std::endl;
+
+    // set up the JacobianMatrix
+    Eigen::MatrixXf jacobianMatrix(numRow, numCol);
+    jacobianMatrix.setZero();
+    // Loop through the Jacobian matrix and print elements
+    for (int i = 0; i < numRow; ++i) 
+    {
+        for (int j = 0; j < numCol; ++j) 
+        {
+            int torsionIdx = globalTorsionVector[i];
+            HBondEntity& hbe = _hbonds[j];
+
+            const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+            glm::vec3 APos = blocks[torsionIdx].my_position(); 
+            glm::vec3 BPos = blocks[torsionIdx].inherit; 
+            glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
+            glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
+            float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+        }
+
+    }
+
+}
+
 
 void Flexibility::printHBonds() const
 {
@@ -195,15 +331,9 @@ void Flexibility::printHBonds() const
         std::cout << "  Start Distance: " << hbe.startDist << std::endl;
         std::cout << "  Parent Donor: " << hbe.ParentDonor->desc() << std::endl;
         std::cout << "  Parent Acceptor: " << hbe.ParentAcceptor->desc() << std::endl;
-        std::cout << "  Alpha angle: " << hbe.AlphaAngle << std::endl;
         std::cout << "--------------------" << std::endl;
     }
 }
-
-
-
-
-
 
 
 
