@@ -97,6 +97,9 @@ struct AtomBlock
 	int parent_idx = 0;
 	
 	void clearMutable();
+	/* relative index of the parent atomblock which assigned this atomblock's
+	 * my_position. */
+	int parent_idx = 0;
 
 	const glm::vec3 parent_position() const
 	{
