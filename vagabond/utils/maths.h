@@ -20,8 +20,8 @@
 
 double r_factor(std::vector<double> &set1, std::vector<double> &set2);
 
-double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
-                   double cutoff = -FLT_MAX, std::vector<double> *weights = 
+float correlation(std::vector<float> &vec1, std::vector<float> &vec2,
+                   float cutoff = -FLT_MAX, std::vector<float> *weights = 
                    NULL);
 
 template <class T>
@@ -169,7 +169,7 @@ inline double evaluate_CD(CorrelData &cd)
 	double bottom_left = cd.sum_w * cd.sum_xx - cd.sum_x * cd.sum_x;
 	double bottom_right = cd.sum_w * cd.sum_yy - cd.sum_y * cd.sum_y;
 	
-	double r = top / sqrt(bottom_left * bottom_right);
+	double r = top / (sqrt(bottom_left) * sqrt(bottom_right));
 	
 	if (r != r) return 0;
 	

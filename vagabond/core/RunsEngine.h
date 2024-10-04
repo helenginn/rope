@@ -70,7 +70,7 @@ protected:
 		return ++_ticket;
 	}
 	
-	const int &getLastTicket() const
+	const int getLastTicket() const
 	{
 		return _ticket;
 	}

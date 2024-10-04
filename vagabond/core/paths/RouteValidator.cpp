@@ -30,8 +30,6 @@ RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 
 float RouteValidator::validate(Instance *start, Instance *end)
 {
-	start->load();
-	end->load();
 	start->currentAtoms()->recalculate();
 	end->currentAtoms()->recalculate();
 
@@ -47,9 +45,6 @@ float RouteValidator::validate(Instance *start, Instance *end)
 	grp->do_op([](Atom *const &a)
 	           { a->setDerivedPosition(a->initialPosition()); });
 
-	start->unload();
-	end->unload();
-	
 	delete nonH;
 
 	return diff;
@@ -60,6 +55,12 @@ std::string RouteValidator::validate()
 {
 	std::string msg;
 	_rmsd = 0;
+
+	for (size_t i = 0; i < _route.instanceCount(); i++)
+	{
+		_route.startInstance(i)->load();
+		_route.endInstance(i)->load();
+	}
 
 	for (size_t i = 0; i < _route.instanceCount(); i++)
 	{
@@ -74,6 +75,12 @@ std::string RouteValidator::validate()
 			msg += "RMSD for " + _route.startInstance(i)->id() + " is ";
 			msg += f_to_str(rmsd, 2) + " Angstroms.\n";
 		}
+	}
+
+	for (size_t i = 0; i < _route.instanceCount(); i++)
+	{
+		_route.startInstance(i)->unload();
+		_route.endInstance(i)->unload();
 	}
 	
 	return msg;

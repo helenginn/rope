@@ -152,7 +152,7 @@ void MtzFile::parse()
 		refl.f = f;
 		refl.sigf = sigf;
 		refl.phi = phi;
-		
+	
 		_reflections.push_back(refl);
 	}
 }

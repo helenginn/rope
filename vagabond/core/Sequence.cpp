@@ -393,7 +393,6 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers,
                                   bool as_master,
                                   bool add_hydrogens)
 {
-	std::cout << "Getting RTs" << std::endl;
 	for (Residue &residue : _residues)
 	{
 		for (const TorsionRef &torsion : residue.torsions())
@@ -411,7 +410,6 @@ void Sequence::addResidueTorsions(std::vector<ResidueTorsion> &headers,
 			}
 			else
 			{
-				std::cout << "local ID: " << residue.id() << std::endl;
 				rt.setLocalId(residue.id());
 			}
 			rt.setEntity(entity());

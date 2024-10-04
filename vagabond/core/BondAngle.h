@@ -85,7 +85,28 @@ public:
 		return _b == a;
 	}
 	
-	bool formsTorsionWith(BondAngle *other);
+	bool formsTorsionWith(BondAngle *o)
+	{
+		if (_b == o->_a && _c == o->_b && _a != o->_c)
+		{
+			return true;
+		}
+		else if (_b == o->_c && _c == o->_b && _a != o->_a)
+		{
+			return true;
+		}
+		else if (_b == o->_a && _a == o->_b && _c != o->_c)
+		{
+			return true;
+		}
+		else if (_b == o->_c && _a == o->_b && _c != o->_a)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 	void getSequentialAtoms(BondAngle *other, Atom **a, Atom **b, 
 	                        Atom **c, Atom **d);
 

@@ -123,9 +123,9 @@ void FixIssues::processModel(Model *m)
 		}
 		if (_options & FixGlutamine)
 		{
-			AtomVector glns = findAtoms(&m, "GLU", "OE1");
+			AtomVector glns = findAtoms(&m, "GLN", "OE1");
 			processAtoms(&m, glns, 180);
-			glns = findAtoms(&m, "GLU", "NE2");
+			glns = findAtoms(&m, "GLN", "NE2");
 			processAtoms(&m, glns, 180);
 		}
 		if (_options & FixHistidine)

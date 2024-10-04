@@ -55,6 +55,9 @@ public:
 	
 	bool isTicked(const std::string &tag);
 	
+	void addOption(const std::string &text, const std::function<void()> &job,
+	               bool ticked = false);
+	
 	void addOption(const std::string &text, std::string tag = "",
 	               bool ticked = false);
 	
@@ -76,10 +79,16 @@ private:
 		TextButton *text = nullptr;
 		ImageButton *tickbox = nullptr;
 		TickBoxes *parent = nullptr;
+		std::function<void()> job{};
 		bool ticked = false;
 		
 		float totalDim(int dim);
 		
+		void set(TickBoxes *boxes, const std::string &str, 
+		         const std::string &tag, const std::function<void()> &job, 
+		         bool tkt);
+		Option(TickBoxes *parent, const std::string &text, 
+		       const std::function<void()> &job, bool ticked);
 		Option(TickBoxes *parent, const std::string &text, 
 		       const std::string &tag, bool ticked);
 		~Option();

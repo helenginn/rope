@@ -68,6 +68,7 @@ public:
 		TorsionEnergies = 1 << 2,
 		VdWClashes = 1 << 3,
 		PerResidue = 1 << 4,
+		ContactMap = 1 << 5,
 	};
 
 	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
@@ -444,6 +445,7 @@ protected:
 		_gotScores = true;
 	}
 
+	float _energy = FLT_MAX;
 	float _activationEnergy = FLT_MAX;
 	float _momentum = FLT_MAX;
 	float _clash = FLT_MAX;
@@ -454,7 +456,7 @@ protected:
 	BondSequenceHandler *_hydrogenFreeSequences = nullptr;
 
 	int _maxFlipTrial = 0;
-	int _order = 2;
+	int _order = 3;
 	bool _gui = false;
 
 	Bin<ByResidueResult> _perResBin;
@@ -492,7 +494,7 @@ private:
 	};
 
 	friend void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
-	                          float distance, bool multi);
+	                          float distance, bool multi, bool momentum);
 	
 	void applyPostCalcTasks(CalcTask *&hook, const float &frac);
 	void deleteHelpers();

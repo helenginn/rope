@@ -20,6 +20,7 @@
 #define __vagabond__Knotter__
 
 class Atom;
+class HelpKnot;
 class AtomGroup;
 class GeometryTable;
 class RingProgrammer;
@@ -69,7 +70,7 @@ private:
 	void createBondAngles(Atom *atom);
 	void createBondTorsion(BondAngle *first, BondAngle *second);
 	void checkAtomChirality(Atom *atom, bool use_dictionary);
-	void checkAtoms(Atom *atom, int start);
+	void checkAtoms(HelpKnot &knot, Atom *atom, int start);
 	void createHyperValues(Atom *atom, RingProgrammer *programmer);
 
 	AtomGroup *_group;

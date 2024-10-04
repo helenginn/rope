@@ -33,6 +33,12 @@ TickBoxes::~TickBoxes()
 
 }
 
+void TickBoxes::addOption(const std::string &text, 
+                          const std::function<void()> &job, bool ticked)
+{
+	_options.push_back(Option(this, text, job, ticked));
+}
+
 void TickBoxes::addOption(const std::string &text, std::string tag,
                           bool ticked)
 {
@@ -190,20 +196,47 @@ void TickBoxes::buttonPressed(std::string tag, Button *button)
 	reaction(response_tag);
 }
 
-TickBoxes::Option::Option(TickBoxes *boxes, const std::string &str, 
-                          const std::string &new_tag, bool tkt)
+void TickBoxes::Option::set(TickBoxes *boxes, const std::string &str, 
+                            const std::string &new_tag, 
+                            const std::function<void()> &job, bool tkt)
 {
 	tag = new_tag;
 	ticked = tkt;
+	
+	auto wrapped_job = [job, boxes, new_tag]
+	{
+		boxes->toggle(new_tag);
+		job();
+	};
 
 	text = new TextButton(str, boxes);
-	text->setReturnTag(tag);
+	if (job)
+	{
+		text->setReturnJob(wrapped_job);
+	}
+	text->setReturnTag(new_tag);
 	text->setLeft(0.01, 0.00);
 
 	tickbox = new ImageButton(image_for_state(ticked), boxes);
 	tickbox->setCentre(0.00, 0.00);
 	tickbox->resize(0.05);
 	tickbox->setReturnTag(tag);
+	if (job)
+	{
+		tickbox->setReturnJob(wrapped_job);
+	}
+}
+
+TickBoxes::Option::Option(TickBoxes *boxes, const std::string &str, 
+                          const std::string &new_tag, bool tkt)
+{
+	set(boxes, str, new_tag, {}, tkt);
+}
+
+TickBoxes::Option::Option(TickBoxes *boxes, const std::string &text, 
+                          const std::function<void()> &job, bool ticked)
+{
+	set(boxes, str, {}, job, ticked);
 }
 
 TickBoxes::Option::~Option()

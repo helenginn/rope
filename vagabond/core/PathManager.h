@@ -53,6 +53,7 @@ public:
 	                const std::vector<std::string> &insts);
 	void makePathBetween(const std::string &start, const std::string &end,
 	                     int cycles = 1);
+	void obstacles(const std::vector<std::string> &insts);
 
 	typedef std::map<std::pair<Instance *, Instance *>, std::vector<Path *>>
 	GroupedMap;

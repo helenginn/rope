@@ -108,6 +108,10 @@ FixIssues::Options FixIssuesView::options()
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixGlutamate);
 	}
+	if (_tickboxes->isTicked("glutamine"))
+	{
+		ret = (FixIssues::Options)(ret | FixIssues::FixGlutamine);
+	}
 	if (_tickboxes->isTicked("asparagine"))
 	{
 		ret = (FixIssues::Options)(ret | FixIssues::FixAsparagine);

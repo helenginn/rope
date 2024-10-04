@@ -27,6 +27,7 @@
 #include <vagabond/core/paths/RouteValidator.h>
 #include "RouteExplorer.h"
 #include "files/PdbFile.h"
+#include "ContactExplorer.h"
 #include <vagabond/core/Path.h>
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -198,6 +199,7 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 	{
 		Menu *m = new Menu(this, this);
 		m->addOption("derive new", "derive_new");
+		m->addOption("contact map", "contact_map");
 		m->addOption("delete", "delete");
 		m->setup(button);
 		setModal(m);
@@ -225,6 +227,15 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 		RouteExplorer *re = new RouteExplorer(this, pr);
 		re->saveOver(&_obj);
 		re->show();
+	}
+	
+	if (tag == "contact_map")
+	{
+		PlausibleRoute *pr = _obj.toRoute();
+		pr->setup();
+		Contacts contacts = pr->contactMap();
+		ContactExplorer *expl = new ContactExplorer(this, contacts);
+		expl->show();
 	}
 
 	if (tag == "export")

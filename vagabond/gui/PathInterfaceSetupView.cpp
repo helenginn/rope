@@ -42,7 +42,7 @@ PathInterfaceSetupView::PathInterfaceSetupView(Scene *prev, Model *from,
 PathInterfaceSetupView::~PathInterfaceSetupView()
 {
 	std::cout << "unload" << std::endl;
-	_from->unload();
+//	_from->unload();
 
 	for (Group &group : _interfaces)
 	{
@@ -90,7 +90,7 @@ void PathInterfaceSetupView::setup()
 		addObject(t);
 	}
 
-	precalculateInterfaces();
+//	precalculateInterfaces();
 	ListView::setup();
 }
 
@@ -199,30 +199,6 @@ void PathInterfaceSetupView::preparePath()
 	PlausibleRoute *route = new_path();
 
 	NonCovalents *noncovs = new NonCovalents();
-	for (Group &group : _interfaces)
-	{
-		std::vector<StringPair> atom_descriptions = sanitiseInteractions(group);
-
-		for (const std::string &key : _list)
-		{
-			if (_map.count(key) && _map[key].length() > 0)
-			{
-				Instance *left = _from->instanceWithId(key);
-				noncovs->addInstance(left);
-			}
-		}
-	}
-
-	/*
-		for (const StringPair &pair : atom_descriptions)
-		{
-			noncovs->addInstance(group.left);
-			noncovs->addInstance(group.right);
-//			noncovs->addBond(group.left, group.right, pair.first, pair.second);
-		}
-	}
-	*/
-	
 	route->setNonCovalents(noncovs);
 	route->setMaximumFlipTrial(1);
 

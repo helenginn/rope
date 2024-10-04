@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/FileReader.h>
 #include "ChooseHeader.h"
 #include "WholeModelPathSetupView.h"
 #include "PathInterfaceSetupView.h"
@@ -26,6 +27,27 @@
 WholeModelPathSetupView::WholeModelPathSetupView(Scene *prev) : Scene(prev)
 {
 
+}
+
+void WholeModelPathSetupView::cheatSheet()
+{
+	if (!file_exists("cheat_sheet.txt"))
+	{
+		return;
+	}
+	
+	std::string contents = get_file_contents("cheat_sheet.txt");
+	std::vector<std::string> lines = split(contents, '\n');
+	std::cout << lines.size() << " interactions" << std::endl;
+	
+	for (const std::string &line : lines)
+	{
+		std::vector<std::string> bits = split(line, ' ');
+		if (bits.size() < 2) continue;
+
+		std::cout << bits[0] << " = " << bits[1] << std::endl;
+		_map[bits[0]] = {true, bits[1]};
+	}
 }
 
 void WholeModelPathSetupView::setup()
@@ -104,6 +126,7 @@ void WholeModelPathSetupView::refresh()
 			t->setReturnJob
 			([this]()
 			 {
+				cheatSheet();
 				std::vector<std::string> froms = instances_for(_fromId);
 				std::vector<std::string> tos = instances_for(_toId);
 

@@ -25,10 +25,12 @@
 #include "Separation.h"
 
 PairwiseDeviations::PairwiseDeviations(BondSequence *sequence, 
-                                       const float &limit, Separation *sep)
+                                       const float &limit, Separation *sep,
+                                       bool for_momentum)
 {
 	_limit = limit;
 	_sep = sep;
+	_momentum = for_momentum;
 	
 	prepare(sequence);
 }
@@ -53,6 +55,11 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		{
 			glm::vec3 orig = atom->otherPosition("target");
 			glm::vec3 moving = atom->otherPosition("moving");
+			
+			if (glm::length(orig) < 1e-6)
+			{
+				std::cout << "!!!" << atom->desc() << " " << orig << std::endl;
+			}
 			scratch[n] = orig;
 			scratch[n + 1] = moving;
 		}
@@ -72,7 +79,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	};
 	
 	std::vector<int> pairs;
-	pairs.reserve((n * (n + 1)) / 2);
 	
 	const float threshold = _limit;
 	for (int i = 0; i < n - 2; i += 2)
@@ -99,7 +105,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 				}
 			}
 			
-			if (too_close)
+			if (!_momentum && too_close)
 			{
 				continue;
 			}
@@ -119,7 +125,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			
 			bool is_side = !(left->isMainChain() && right->isMainChain());
 
-			float modulate = is_side ?  0.5 : 1.0;
+			float modulate = is_side ? 0.5 : 1.0;
 
 			bool ok = (start < threshold * modulate || 
 			           end < threshold * modulate);
@@ -133,12 +139,12 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 
 			// we check if it's a side chain, because we are not interested 
 			// in a per-residue check if we can't move it.
-			if (!left->isMainChain())
+//			if (!left->isMainChain())
 			{
 				_perResidue[left->residueId()].push_back(size);
 			}
 			
-			if (!right->isMainChain())
+//			if (!right->isMainChain())
 			{
 				_perResidue[right->residueId()].push_back(size);
 			}
@@ -147,6 +153,11 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			_residues.insert(right->residueId());
 			
 			bool close = (start < 2 || end < 2);
+
+			if (_pairs.size() % n == 0)
+			{
+				_pairs.reserve(_pairs.size() + n);
+			}
 
 			_pairs.push_back(_infoPairs.size());
 			_infoPairs.push_back({m, n, start, end, close});
@@ -227,6 +238,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 		
 		total /= (float)count;
 		total = sqrt(total);
+		if (total != total) total = 0;
 
 		delete [] scratch;
 
@@ -299,4 +311,61 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 	
 	return new Task<BundleBonds *, ActivationEnergy>(job, "bundled clashes");
 }
+
+Task<BundleBonds *, Contacts> *
+PairwiseDeviations::contact_map(const std::set<ResidueId> &forResidues)
+{
+	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
+
+	auto job = [loop, this]
+	(BundleBonds *bb) -> Contacts
+	{
+		auto lookup = bb->lookup();
+		float frac = bb->frac();
+		Contacts contacts{};
+
+		auto check_clashes = [&lookup, &frac, &contacts, this]
+		(const std::vector<int> &pairs)
+		{
+			for (int i = 0; i < pairs.size(); i++)
+			{
+				TargetInfo &info = _infoPairs[pairs[i]];
+				if (info.close)
+				{
+					continue;
+				}
+
+				const int &p = info.p;
+				const int &q = info.q;
+				
+				long double potential = lookup(p, q, -1);
+				
+				if (potential != potential)
+				{
+					continue;
+				}
+
+				const ResidueId &l = _atoms[p]->residueId();
+				const ResidueId &r = _atoms[q]->residueId();
+
+				long double ref_distance = info.target(frac);
+				long double reference = lookup(p, q, ref_distance);
+
+				long double diff = potential - reference;
+				
+				if (diff > 0 && std::isfinite(diff))
+				{
+					contacts[l][r] += diff;
+				}
+			};
+		};
+		
+		loop(check_clashes);
+		
+		return contacts;
+	};
+	
+	return new Task<BundleBonds *, Contacts>(job, "contact map");
+}
+
 

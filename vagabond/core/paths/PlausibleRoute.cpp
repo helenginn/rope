@@ -29,7 +29,6 @@
 #include "BondSequenceHandler.h"
 #include <vagabond/utils/maths.h>
 #include "Grapher.h"
-#include "paths/ResidueContacts.h"
 #include "paths/Targets.h"
 #include <vagabond/c4x/Cluster.h>
 #include <gemmi/elem.hpp>
@@ -43,46 +42,6 @@ PlausibleRoute::PlausibleRoute(Instance *from, Instance *to, const RTAngles &lis
 PlausibleRoute::PlausibleRoute(const RTAngles &list) : Route(list)
 {
 
-}
-
-void PlausibleRoute::rewindTorsions()
-{
-	for (int i = 0; i < motionCount(); i++)
-	{
-		if (!parameter(i)->coversMainChain())
-		{
-			continue;
-		}
-
-		std::vector<int> seq = getTorsionSequence
-		(i, -1, [this](const int &idx)
-		 {
-			return parameter(idx)->coversMainChain();
-		});
-
-		float total = 0;
-		for (int j = 0; j < seq.size(); j++)
-		{
-			float angle = motion(seq[j]).workingAngle();
-			total += angle;
-			
-			if (angle > 150 && total > 480 && !motion(seq[j]).flip)
-			{
-				total -= 360;
-				motion(seq[j]).flip = !motion(seq[j]).flip;
-			}
-			if (angle < -150 && total < -480 && !motion(seq[j]).flip)
-			{
-				total += 360;
-				motion(seq[j]).flip = !motion(seq[j]).flip;
-			}
-			
-			std::cout << angle << " " << total;
-			std::cout << std::endl;
-		}
-
-		break;
-	}
 }
 
 void PlausibleRoute::setup()
@@ -106,7 +65,7 @@ bool PlausibleRoute::meaningfulUpdate(float new_score, float old_score,
                                       float threshold)
 {
 	bool good_ratio = (new_score < threshold * old_score);
-	float required_reduction = doingClashes() ? 0.5 : 0.001;
+	float required_reduction = doingClashes() ? 1.0 : 0.001;
 	bool bad_reduction = (old_score - new_score < required_reduction);
 
 	return good_ratio && !bad_reduction;
@@ -231,7 +190,8 @@ void PlausibleRoute::prepareJobs()
 		}
 		else
 		{
-			return applyGradients();
+			bool success = applyGradients();
+			return success;
 		};
 	};
 	
@@ -239,7 +199,7 @@ void PlausibleRoute::prepareJobs()
 	only_once flip_sides(flip_side_chain);
 	_tasks.push_back(flip_mains);
 	_tasks.push_back(check_gradients(do_next));
-	_tasks.push_back(flip_sides);
+//	_tasks.push_back(flip_sides);
 }
 
 void PlausibleRoute::setTargets()
@@ -334,7 +294,10 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	{
 		if (n >= num) break;
 		chosen.insert(rr.id);
-		_lemons.push_back({rr.id, rr.score});
+		if (doingClashes())
+		{
+			_lemons.push_back({rr.id, rr.score});
+		}
 		sum += rr.score;
 		n++;
 	}
@@ -344,7 +307,10 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 		lemon.second /= sum;
 	}
 	
-	Route::sendResponse("lemon", nullptr);
+	if (_lemons.size())
+	{
+		Route::sendResponse("lemon", nullptr);
+	}
 	
 	_ids.clear();
 
@@ -357,7 +323,9 @@ bool PlausibleRoute::sideChainGradients(int order)
 	_paramStarts.clear();
 	_steps.clear();
 
-	float step = 10;
+	OpSet<ResidueId> chosen = worstSidechains(5);
+
+	float step = doingClashes() ? 10 : 2.0;
 	std::map<ResidueId, std::vector<int>> map;
 	int n = 0;
 	for (int i = 0; i < motionCount(); i++)
@@ -366,6 +334,13 @@ bool PlausibleRoute::sideChainGradients(int order)
 		if (!parameter(i) || (parameter(i)->isTorsion() &&
 		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained())))
 		{
+			continue;
+		}
+		
+		if (!doingClashes() && (parameter(i)->atom(0)->elementSymbol() == "H" ||
+		    parameter(i)->atom(3)->elementSymbol() == "H"))
+		{
+			// trying to do this on momentum isn't very successful.
 			continue;
 		}
 
@@ -397,7 +372,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 
 	if (_finish) return false;
 
-	OpSet<ResidueId> chosen = worstSidechains(5);
+	chosen = worstSidechains(5);
 	_ids = chosen;
 
 	std::map<ResidueId, std::vector<int>> mini;
@@ -407,6 +382,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 	}
 
 	{
+		if (!doingClashes()) step = 1;
 		MultiSimplex<ResidueId> ms(this, parameterCount());
 		ms.setStepSize(step);
 		ms.supplyInfo(mini);
@@ -541,6 +517,9 @@ bool PlausibleRoute::applyGradients()
 	float endScore = 0;
 	lbfgs(current.size(), &current[0], &endScore, &evaluateLbfgs,
 	      nullptr, this, &params);
+
+	sideChainGradients(currentOrder());
+	endScore = routeScore(nudgeCount());
 	
 	delete _path; _path = nullptr;
 	bool meaningful = endScore < startScore - 0.001;
@@ -556,9 +535,10 @@ ByResidueResult *PlausibleRoute::byResidueScore(int steps,
                                                 &subtract_options)
 {
 	clearTickets();
-	CalcOptions options = calcOptions(add_options, subtract_options);
+	CalcOptions options = calcOptions(CalcOptions(add_options | PerResidue),
+	                                  subtract_options);
 
-	if (!(options & PerResidue && options & VdWClashes))
+	if (!(options & PerResidue))
 	{
 		throw std::runtime_error("Using wrong options to call a per-residue "
 		                         "score in PlausibleRoute.cpp");
@@ -590,7 +570,7 @@ float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
 	sc = _point2Score[0].deviations / (float)steps;
 	float highest = _point2Score[0].highest_energy;
 	float lowest = _point2Score[1].lowest_energy;
-	_activationEnergy = highest - lowest;
+	_energy = highest - lowest;
 
 	if (_gui)
 	{
@@ -885,8 +865,17 @@ std::map<ResidueId, float> PlausibleRoute::
 		submitToShow(_chosenFrac);
 		retrieve();
 	}
+	
+	ByResidueResult *rr = nullptr;
+	if (doingClashes())
+	{
+		rr = byResidueScore(num);
+	}
+	else
+	{
+		rr = byResidueScore(num, NoHydrogens, VdWClashes);
+	}
 
-	ByResidueResult *rr = byResidueScore(num);
 	std::map<ResidueId, float> scores = rr->scores;
 
 	delete rr;
@@ -928,6 +917,23 @@ void PlausibleRoute::upgradeJobs()
 	<< std::endl;
 }
 
+Contacts PlausibleRoute::contactMap()
+{
+	clearTickets();
+	CalcOptions options = calcOptions(CalcOptions(VdWClashes | ContactMap),
+	                                  None);
+	submitValue(options, nudgeCount(), nullptr);
+	
+	Contacts contacts{};
+	auto handle_results = [&contacts](Result *r)
+	{
+		contacts = r->contacts;
+	};
+
+	retrieve(handle_results);
+	return contacts;
+}
+
 void PlausibleRoute::refreshScores()
 {
 	setFirstJob();
@@ -935,9 +941,9 @@ void PlausibleRoute::refreshScores()
 
 	setLastJob();
 	_clash = routeScore(nudgeCount(), None, TorsionEnergies);
-	_vdwEnergy = _activationEnergy;
+	_vdwEnergy = _energy;
 	routeScore(nudgeCount(), TorsionEnergies, VdWClashes);
-	_torsionEnergy = _activationEnergy;
+	_torsionEnergy = _energy;
 
 	std::cout << "Minimise momentum score " << _momentum << std::endl;
 	std::cout << "Minimise clash score " << _clash << std::endl;

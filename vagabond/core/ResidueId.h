@@ -91,6 +91,11 @@ struct ResidueId
 	{
 		if (num == o.num)
 		{
+			if ((insert == "" && o.insert == " ") ||
+			    (o.insert == "" && insert == " "))
+			{
+				return false;
+			}
 			return insert > o.insert;
 		}
 		else
@@ -103,6 +108,11 @@ struct ResidueId
 	{
 		if (num == o.num)
 		{
+			if ((insert == "" && o.insert == " ") ||
+			    (o.insert == "" && insert == " "))
+			{
+				return false;
+			}
 			return insert < o.insert;
 		}
 		else

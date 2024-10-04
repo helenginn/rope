@@ -61,30 +61,6 @@ bool BondAngle::operator==(const BondAngle &other) const
 	return false;
 }
 
-
-bool BondAngle::formsTorsionWith(BondAngle *o)
-{
-	if (_b == o->_a && _c == o->_b && _a != o->_c)
-	{
-		return true;
-	}
-	else if (_b == o->_c && _c == o->_b && _a != o->_a)
-	{
-		return true;
-	}
-	else if (_b == o->_a && _a == o->_b && _c != o->_c)
-	{
-		return true;
-	}
-	else if (_b == o->_c && _a == o->_b && _c != o->_a)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-
 void BondAngle::getSequentialAtoms(BondAngle *o, Atom **a, Atom **b, 
                                    Atom **c, Atom **d)
 {

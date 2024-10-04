@@ -18,7 +18,9 @@
 
 #include "NonCovalents.h"
 #include "BondSequence.h"
+#include "GroupBounds.h"
 #include "AtomGroup.h"
+#include "HelpKnot.h"
 #include "Instance.h"
 #include "Atom.h"
 #include "engine/Task.h"
@@ -54,42 +56,57 @@ int atom_index_for_atom(BondSequence *const &seq, Atom *const &atom)
 		                            });
 }
 
-bool atomBelongsToSegment(Atom *atom, Segment *seg)
+bool atomBelongsToSegment(Atom *atom, Segment &seg)
 {
-	return (seg->grp->hasAtom(atom));
+	return (seg.grp->hasAtom(atom));
 }
 
 void NonCovalents::assignSegmentsToAtoms(BondSequence *const &seq)
 {
 	Segment *segment = nullptr;
+	std::vector<int> numbers;
 	int n = 0;
+	int m = 0;
 	int i = 0;
+	
+	auto add_segment = [this, &numbers, &n, &m](Segment *&segment)
+	{
+		if (segment && segment->grp->size() > 0)
+		{
+			std::cout << "Segment " << n << ": " << segment->grp->size() << std::endl;
+			_atomNumbers[*segment] = numbers;
+			_segments.push_back(*segment);
+			numbers.clear();
+
+			if (_invariant.num < 0)
+			{
+				_invariant = *segment;
+				std::cout << "Assigning invariant" << std::endl;
+			}
+			else
+			{
+				_segment2Idx[*segment] = m;
+				m++;
+			}
+
+			delete segment;
+			segment = nullptr;
+		}
+
+	};
 
 	for (AtomBlock &block : seq->blocks())
 	{
 		if (!block.atom)
 		{
-			if (segment && segment->grp->size() > 0)
-			{
-				_segments.push_back(*segment);
-				delete segment;
-				segment = nullptr;
-			}
-			
+			add_segment(segment);
 			segment = new Segment(n);
 			n++;
 		}
 
 		if (block.atom)
 		{
-			for (Instance *instance : _instances)
-			{
-				if (instance->atomBelongsToInstance(block.atom))
-				{
-					_atomNumbers[instance].push_back(i);
-				}
-			}
-			
+			numbers.push_back(i);
 			segment->grp->add(block.atom);
 		}
 
@@ -98,20 +115,33 @@ void NonCovalents::assignSegmentsToAtoms(BondSequence *const &seq)
 	
 	if (segment && segment->grp->size() > 0)
 	{
-		_segments.push_back(*segment);
-		delete segment;
+		add_segment(segment);
 	}
 }
 
-NonCovalents::Interface NonCovalents::findInterface(Instance *first, 
-                                                    Instance *second)
+NonCovalents::Interface NonCovalents::findInterface(Segment first, 
+                                                    Segment second)
 {
 	Interface interface;
 	interface.left = first;
 	interface.right = second;
 
-	AtomGroup *grp = first->currentAtoms();
-	AtomGroup *compare = second->currentAtoms();
+	AtomGroup *grp = first.grp;
+	AtomGroup *compare = second.grp;
+	
+	GroupBounds bounds_grp(grp);
+	GroupBounds bounds_compare(compare);
+
+	for (int i = 0; i < 3; i++)
+	{
+		glm::vec3 &min1 = bounds_grp.min;
+		glm::vec3 &max1 = bounds_compare.max;
+		if (max1[i] < min1[i] - 5) return interface;
+
+		glm::vec3 &max2 = bounds_grp.max;
+		glm::vec3 &min2 = bounds_compare.min;
+		if (max2[i] < min2[i] - 5) return interface;
+	}
 	
 	auto valid_distance = [](glm::vec3 &a, glm::vec3 &b) -> bool
 	{
@@ -212,11 +242,11 @@ auto closest_atoms(OpSet<Atom *> &atoms, int total)
 void NonCovalents::findInterfaces(const std::function<int(Atom *const &)> 
                                   &atom_idx)
 {
-	for (Instance *first : _instances)
+	for (Segment &first : _segments)
 	{
 		if (first == _invariant) { continue; }
 
-		for (Instance *second : _instances)
+		for (Segment &second : _segments)
 		{
 			if (first == second) continue;
 
@@ -272,6 +302,11 @@ OpVec<float>
 NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos)
 {
 	glm::vec3 ave{};
+	
+	if (fiducials.size() < 4)
+	{
+		return {};
+	}
 
 	Eigen::MatrixXf to_centric(fiducials.size(), 4);
 	int n = 0;
@@ -332,6 +367,12 @@ NonCovalents::WeightedSum::WeightedSum(Atom *a,
 
 	OpVec<float> start_weights = weights_for_positions(start_pos);
 	OpVec<float> end_weights = weights_for_positions(end_pos);
+	if (start_weights.size() < 4 || end_weights.size() < 4)
+	{
+		ave_weight = -1;
+		return;
+	}
+
 	OpVec<float> diffs = end_weights - start_weights;
 	
 	ave_weight = 0;
@@ -351,7 +392,6 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
                             NonCovalents::Interface::Side &lefts, 
                             NonCovalents::Interface::Side &rights)
 {
-	std::cout << face.left->id() << " to " << face.right->id() << std::endl;
 	for (Atom *right : rights.atoms)
 	{
 		auto l = closest_atoms(lefts.atoms, 4);
@@ -360,7 +400,7 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		NonCovalents::WeightedSum candidate = 
 		NonCovalents::WeightedSum(right, neighbours);
 
-		if (candidate.ave_weight < 5)
+		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0)
 		{
 			candidate.ave_weight = 1 / (candidate.ave_weight *
 			                            candidate.ave_weight);
@@ -560,9 +600,9 @@ NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
 	std::vector<int> seqs = all.convert_to_vector<int>(atom_idx);
 	std::map<Atom *, int> locate = to_indices(vec);
 
-	auto get_row = [this](Instance *inst)
+	auto get_row = [this](Segment &seg)
 	{
-		return _instance2Idx.count(inst) ? 4 * _instance2Idx.at(inst) : -1;
+		return _segment2Idx.count(seg) ? 4 * _segment2Idx.at(seg) : -1;
 	};
 
 	auto get_col = [locate](Atom *const &atom)
@@ -575,24 +615,23 @@ NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
 //	std::cout << "Invariant: " << _invariant->id() << std::endl;
 	for (Atom *const &atom : vec)
 	{
-		Instance *chosen = nullptr;
-		for (Instance *instance : _instances)
+		Segment chosen{-1};
+		for (Segment segment : _segments)
 		{
-			if (instance->atomBelongsToInstance(atom))
+			if (atomBelongsToSegment(atom, segment))
 			{
-				chosen = instance;
+				chosen = segment;
 			}
 		}
-		if (!chosen) { continue; }
+		if (chosen.num < 0) { continue; }
 
 		int row = get_row(chosen);
 		int col = get_col(atom);
 		int seq = seqs[col];
 		
-		/*
-		std::cout << chosen->id() << " -> ";
+		std::cout << chosen.grp->size() << "," << chosen.num << " -> ";
 		std::cout << row << ", " << col << ", " << seq << std::endl;
-		*/
+
 		ids.push_back({row, col, seq});
 	}
 	
@@ -600,7 +639,7 @@ NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
 }
 
 OpSet<Atom *> total_atoms(const std::vector<NonCovalents::Interface> &faces,
-                          Instance *invariant)
+                          Segment &invariant)
 {
 	int total = 0;
 	OpSet<Atom *> all;
@@ -641,7 +680,7 @@ void NonCovalents::prepareBarycentricTargetMatrices()
 
 void NonCovalents::preparePositionMatrix()
 {
-	int l = (_instances.size() - 1) * 4;
+	int l = (_segments.size() - 1) * 4;
 	int n = total_atoms(_faces, _invariant).size();
 
 	_positions = MatrixXf(l, n);
@@ -769,9 +808,9 @@ NonCovalents::align(const float &frac)
 		empty.setZero();
 
 		int n = 0;
-		for (int i = 0; i < _instances.size(); i++)
+		for (int i = 0; i < _segments.size(); i++)
 		{
-			if (_instance2Idx.count(_instances[i]) == 0)
+			if (_segment2Idx.count(_segments[i]) == 0)
 			{
 				continue; // invariant
 			}
@@ -824,12 +863,12 @@ NonCovalents::align(const float &frac)
 		std::cout << sol * positions << std::endl;
 		*/
 
-		std::map<Instance *, glm::mat4x4> rots;
+		std::map<Segment, glm::mat4x4> rots;
 
 		n = 0;
-		for (int i = 0; i < _instances.size(); i++)
+		for (int i = 0; i < _segments.size(); i++)
 		{
-			if (_instance2Idx.count(_instances[i]) == 0)
+			if (_segment2Idx.count(_segments[i]) == 0)
 			{
 				continue; // invariant
 			}
@@ -838,23 +877,23 @@ NonCovalents::align(const float &frac)
 
 			Eigen::MatrixXf cutout = sol(Eigen::seqN(j, 4), {0, 1, 2});
 
-			Instance *inst = _instances[i];
-			rots[inst] = eigenMat4x3ToGlm(cutout);
+			Segment seg = _segments[i];
+			rots[seg] = eigenMat4x3ToGlm(cutout);
 		}
 
-		for (Instance *inst : _instances)
+		for (Segment &seg : _segments)
 		{
-			if (inst == _invariant)
+			if (seg == _invariant)
 			{
 				continue;
 			}
 
-			std::vector<int> &idxs = _atomNumbers[inst];
-			if (rots.count(inst) == 0)
+			std::vector<int> &idxs = _atomNumbers[seg];
+			if (rots.count(seg) == 0)
 			{
 				continue;
 			}
-			const glm::mat4x4 &transform = rots.at(inst);
+			const glm::mat4x4 &transform = rots.at(seg);
 //			std::cout << transform << std::endl;
 
 			for (const int &idx : idxs)

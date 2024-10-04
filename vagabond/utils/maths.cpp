@@ -58,12 +58,12 @@ double r_factor(std::vector<double> &set1, std::vector<double> &set2)
 	return rfactor;
 }
 
-double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
-                   double cutoff, std::vector<double> *weights)
+float correlation(std::vector<float> &vec1, std::vector<float> &vec2,
+                   float cutoff, std::vector<float> *weights)
 {
-	double sum_x = 0;
-	double sum_y = 0;
-	double sum_weight = 0;
+	float sum_x = 0;
+	float sum_y = 0;
+	float sum_weight = 0;
 
 	if (!vec1.size() || !vec2.size())
 	{
@@ -72,7 +72,7 @@ double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
 
 	for (int i = 0; i < vec1.size(); i++)
 	{
-		double weight = 1;
+		float weight = 1;
 		
 		if (weights != NULL)
 		{
@@ -95,19 +95,19 @@ double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
 		sum_weight += weight;
 	}
 
-	double mean_x = sum_x / sum_weight;
-	double mean_y = sum_y / sum_weight;
+	float mean_x = sum_x / sum_weight;
+	float mean_y = sum_y / sum_weight;
 
 	if (mean_x != mean_x || mean_y != mean_y)
 	return 0;
 
-	double sum_x_y_minus_mean_x_y = 0;
-	double sum_x_minus_mean_x_sq = 0;
-	double sum_y_minus_mean_y_sq = 0;
+	float sum_x_y_minus_mean_x_y = 0;
+	float sum_x_minus_mean_x_sq = 0;
+	float sum_y_minus_mean_y_sq = 0;
 
 	for (int i = 0; i < vec1.size(); i++)
 	{
-		double weight = 1;
+		float weight = 1;
 		
 		if (weights != NULL)
 		{
@@ -124,7 +124,7 @@ double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
 			continue;
 		}
 
-		double addition = (vec1[i] - mean_x) * (vec2[i] - mean_y);
+		float addition = (vec1[i] - mean_x) * (vec2[i] - mean_y);
 		sum_x_y_minus_mean_x_y += addition * weight;
 
 		addition = pow(vec1[i] - mean_x, 2);
@@ -138,7 +138,7 @@ double correlation(std::vector<double> &vec1, std::vector<double> &vec2,
 	sum_x_minus_mean_x_sq /= sum_weight;
 	sum_y_minus_mean_y_sq /= sum_weight;
 
-	double r = sum_x_y_minus_mean_x_y
+	float r = sum_x_y_minus_mean_x_y
 	/ (sqrt(sum_x_minus_mean_x_sq) * sqrt(sum_y_minus_mean_y_sq));
 
 	return r;

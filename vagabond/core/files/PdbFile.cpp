@@ -155,12 +155,16 @@ void PdbFile::processResidue(gemmi::Residue &r, AtomInfo &ai)
 	}
 }
 
-void PdbFile::processModel(gemmi::Model &m)
+void PdbFile::processModel(gemmi::Model &m, int idx)
 {
 	for (size_t i = 0; i < m.chains.size(); i++)
 	{
 		gemmi::Chain &c = m.chains[i];
 		std::string ch_id = c.name;
+		if (idx >= 0)
+		{
+			ch_id += std::to_string(idx);
+		}
 
 		for (size_t j = 0; j < c.residues.size(); j++)
 		{
@@ -208,6 +212,7 @@ void PdbFile::parseFileContents()
 
 	gemmi::setup_entities(st);
 	
+	/*
 	for (size_t i = 0; i < st.entities.size(); i++)
 	{
 		std::vector<std::string> seq = st.entities[i].full_sequence;
@@ -215,10 +220,12 @@ void PdbFile::parseFileContents()
 //		std::cout << st.entities[i].name << " = ";
 //		std::cout << gemmi::one_letter_code(seq) << std::endl;
 	}
+	*/
 
 	for (size_t i = 0; i < st.models.size(); i++)
 	{
-		processModel(st.models[i]);
+		int idx = st.models.size() == 1 ? -1 : i;
+		processModel(st.models[i], idx);
 	}
 	
 //	std::cout << "This file " << _filename << " has " << atomCount() 

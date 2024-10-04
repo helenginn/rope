@@ -39,6 +39,7 @@ public:
 	
 	size_t chosenPairs();
 private:
+	void cheatSheet();
 
 	TextButton *_fromButton = nullptr;
 	TextButton *_toButton = nullptr;

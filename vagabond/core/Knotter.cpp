@@ -24,6 +24,7 @@
 #include "BondLength.h"
 #include "Chirality.h"
 #include "AtomGroup.h"
+#include "HelpKnot.h"
 #include "Atom.h"
 #include "programs/RingProgrammer.h"
 #include "GeometryTable.h"
@@ -45,15 +46,15 @@ Knotter::~Knotter()
 
 }
 
-void Knotter::checkAtoms(Atom *atom, int start)
+void Knotter::checkAtoms(HelpKnot &knot, Atom *atom, int start)
 {
-	AtomGroup &group = *_group;
 	glm::vec3 pos = atom->derivedPosition();
-	const float cutoff = 3;
 
-	for (size_t i = start; i < group.size(); i++)
+	const float cutoff = 3;
+	std::vector<Atom *> &atoms = knot.atoms(pos);
+
+	for (Atom *other : atoms)
 	{
-		Atom *other = group[i];
 		if (other == atom)
 		{
 			continue;
@@ -212,10 +213,11 @@ void Knotter::findBondTorsions()
 	for (int i = 0; i < (int)group.bondAngleCount() - 1; i++)
 	{
 		BondAngle *first = group.bondAngle(i);
+		Atom *centre = first->atom(1);
 		
-		for (int j = i + 1; j < (int)group.bondAngleCount(); j++)
+		for (int j = 0; j < (int)centre->bondAngleCount(); j++)
 		{
-			BondAngle *second = group.bondAngle(j);
+			BondAngle *second = centre->bondAngle(j);
 			
 			bool overlaps = first->formsTorsionWith(second);
 			
@@ -264,6 +266,8 @@ void Knotter::findHyperValues()
 void Knotter::findBondLengths()
 {
 	AtomGroup &group = *_group;
+	HelpKnot knot(&group, 20);
+
 	for (size_t i = 0; i < group.size(); i++)
 	{
 		Atom *atom = group[i];
@@ -272,7 +276,7 @@ void Knotter::findBondLengths()
 		BackboneType type = _table->backboneType(code);
 		atom->setOverrideType(type);
 
-		checkAtoms(atom, i + 1);
+		checkAtoms(knot, atom, i + 1);
 	}
 }
 

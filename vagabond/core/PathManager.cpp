@@ -271,10 +271,12 @@ void do_on_each_pair_of_paths(const Job &job,
 	{
 		Instance *const &first = instances.at(i);
 
-		int window = 5;
+		int window = 10;
 		int start = std::max(i - window, 0);
-		int end = std::min(i + window, (int)instances.size());
-		for (int j = start; j < end; j++)
+		int end = std::min(i, (int)instances.size());
+		start = 0;
+		end = instances.size();
+		for (int j = start + 1; j < end; j++)
 		{
 			Instance *const &second = instances.at(j);
 			bool success = job(first, second);
@@ -306,6 +308,67 @@ void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
 	do_on_each_pair_of_paths(make_path, insts);
 }
 
+void PathManager::obstacles(const std::vector<std::string> &insts)
+{
+	std::map<ResidueId, float> results;
+
+	auto report_paths = [this, &results]
+	(Instance *first, Instance *second)
+	{
+		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
+		
+		if (pairPaths.size() == 0) { return false; }
+
+		for (Path *const &path : pairPaths)
+		{
+			PlausibleRoute *pr = path->toRoute();
+			pr->setup();
+
+			float vdw_energy = path->activationEnergy();
+			float boltzmann = exp(-vdw_energy / 2.57);
+			boltzmann -= 0.5;
+			float weight = exp(-boltzmann * boltzmann);
+			weight *= 3;
+
+			OpSet<ResidueId> worst = pr->worstSidechains(10);
+			
+			for (const ResidueId &id : worst)
+			{
+				results[id] += weight;
+			}
+			
+			path->cleanupRoute();
+		}
+
+		std::cout << "=======================" << std::endl;
+		std::cout << results.size() << " res" << std::endl;
+		std::cout << "=======================" << std::endl;
+		ResidueId start = results.begin()->first;
+		auto it = results.end(); it--;
+		ResidueId end = it->first;
+
+		for (int i = start.as_num(); i <= end.as_num(); i++)
+		{
+			ResidueId id(i);
+			id.insert = " ";
+			if (results.count(id))
+			{
+				std::cout << i << ", " << results.at(id) << std::endl;
+			}
+			else
+			{
+				std::cout << i << ", " << "0" << std::endl;
+			}
+		}
+		std::cout << std::endl;
+
+		return false;
+	};
+	
+	do_on_each_pair_of_paths(report_paths, insts);
+	std::cout << std::endl;
+}
+
 void PathManager::pathMatrix(const std::string &filename,
                              const std::vector<std::string> &insts)
 {
@@ -322,25 +385,30 @@ void PathManager::pathMatrix(const std::string &filename,
 
 	std::map<std::string, std::map<std::string, Result>> results;
 
-	auto report_paths = [this, &results]
+	int tally = 0;
+	auto report_paths = [this, &results, &tally]
 	(Instance *first, Instance *second)
 	{
+		std::cout << first->id() << " vs " << second->id() << std::endl;
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 		
 		if (pairPaths.size() == 0) { return false; }
 		
+		std::cout << "\t\t!!" << std::endl;
 		float all_vdw = 0;
 		float all_torsion = 0;
 		float count = 0;
 
 		for (Path *const &path : pairPaths)
 		{
+			std::cout << path->desc() << std::endl;
 			float vdw_energy = path->activationEnergy();
 			float torsion = path->torsionEnergy();
 			
 			all_vdw += vdw_energy;
 			all_torsion += torsion;
 			count++;
+			tally++;
 		}
 		
 		all_vdw /= count;
@@ -352,6 +420,8 @@ void PathManager::pathMatrix(const std::string &filename,
 	};
 
 	do_on_each_pair_of_paths(report_paths, insts);
+	std::cout << "Total paths: " << objectCount() << std::endl;
+	std::cout << "Paths examined: " << tally << std::endl;
 
 	for (auto it = results.begin(); it != results.end(); it++)
 	{
@@ -370,4 +440,5 @@ void PathManager::pathMatrix(const std::string &filename,
 	};
 	
 	file.close();
+	
 }

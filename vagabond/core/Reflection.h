@@ -20,10 +20,10 @@
 #define __vagabond__Reflection__
 
 #include <stdexcept>
+#include <iostream>
 
 struct Reflection
 {
-
     struct HKL
     {
         int h = 0;
@@ -37,6 +37,25 @@ struct Reflection
             if (idx == 2) return l;
             throw std::runtime_error("dimension over 3 accessing HKL");
         }
+
+		bool operator<(const HKL &other) const
+		{
+			if (h != other.h) return h < other.h;
+			if (k != other.k) return k < other.k;
+			if (l != other.l) return l < other.l;
+			return false;
+		}
+		
+		bool operator==(const HKL &other) const
+		{
+			return (h == other.h && k == other.k && l == other.l);
+		}
+
+		bool near(const HKL &other, int tol = 1) const
+		{
+			return (abs(other.h - h) <= tol && abs(other.k - k) <= tol &&
+			        abs(other.l - l) <= tol);
+		}
 
         HKL()
         {
@@ -71,6 +90,12 @@ struct Reflection
 		phi = ph;
 	}
 };
+
+inline std::ostream &operator<<(std::ostream &ss, const Reflection::HKL &hkl)
+{
+	ss << "(" << hkl.h << " " << hkl.k << " " << hkl.l << ")";
+	return ss;
+}
 
 #endif
 

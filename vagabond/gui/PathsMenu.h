@@ -55,6 +55,7 @@ private:
 	PathGroup _allPaths;
 	bool _parent = false;
 	SavedSpace *_space = nullptr;
+	std::set<int> _selected;
 };
 
 #endif

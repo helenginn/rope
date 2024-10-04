@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <set>
+#include <map>
 #include "ResidueTorsion.h"
 #include <vagabond/utils/AcquireCoord.h>
 
@@ -75,6 +76,7 @@ public:
 	int indexForParameter(Parameter *param);
 protected:
 	std::vector<Parameter *> _params;
+	std::map<Parameter *, int> _param2Idx;
 	std::vector<Atom *> _atoms;
 
 	struct TorsionAngle

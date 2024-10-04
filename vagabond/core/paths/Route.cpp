@@ -248,7 +248,8 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	bool hydrogens = !(options & NoHydrogens);
 	bool torsion_energies = (options & TorsionEnergies);
 	bool vdw_clashes = (options & VdWClashes);
-	bool per_residue = (options & PerResidue && vdw_clashes);
+	bool per_residue = (options & PerResidue);
+	bool contact_map = (options & ContactMap && vdw_clashes);
 
 	Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
 
@@ -262,6 +263,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	BondCalculator *const &calculator = _resources.calculator;
 	calculator->reset();
 	Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
+	calculator->holdHorses();
 
 	// dependent on sequences, steps, firsts, frac_tasks, extra tasks like noncovs
 	for (int i = 0; i < steps; i++)
@@ -388,24 +390,64 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		std::set<ResidueId> active_ids = 
 		doingSides() ? _ids : std::set<ResidueId>();
 
-		if (!vdw_clashes)
+		if (!vdw_clashes && !contact_map)
 		{
-			Task<BondSequence *, Deviation> *task = nullptr;
-			task = chosen->momentum_task(frac, active_ids);
-			info.final_hook->follow_with(task);
-			task->must_complete_before(info.let_go);
-			setup_submit_hooks(task, i);
+			if (!per_residue)
+			{
+				Task<BondSequence *, Deviation> *task = nullptr;
+				task = chosen->momentum_task(frac, active_ids);
+				info.final_hook->follow_with(task);
+				task->must_complete_before(info.let_go);
+				setup_submit_hooks(task, i);
+			}
+			else
+			{
+				std::set<ResidueId> residues = chosen->residues();
+
+				for (const ResidueId &id : residues)
+				{
+					if (_ids.size() > 0 && _ids.count(id) == 0)
+					{
+						continue;
+					}
+					Task<BondSequence *, Deviation> *task = nullptr;
+					task = chosen->momentum_task(frac, {id});
+					info.final_hook->follow_with(task);
+					task->must_complete_before(info.let_go);
+					setup_submit_hooks(task, i);
+
+					auto convert = [id, steps](const Deviation &ae) 
+					-> SingleResidueResult
+					{
+						return {id, ae.value / steps};
+					};
+
+					auto *momentum_conv =
+					new Task<Deviation, SingleResidueResult>
+					(convert, "convert score to single residue result");
+
+					task->follow_with(momentum_conv);
+					momentum_conv->follow_with(by_residue);
+				}
+			}
 		}
-		else
+		else if (!contact_map)
 		{
 			Task<BundleBonds *, ActivationEnergy> *task = nullptr;
 			task = chosen->bundle_clash(active_ids);
 			info.bundle_hook->follow_with(task);
 			setup_submit_hooks(task, i);
 		}
+		else
+		{
+			Task<BundleBonds *, Contacts> *task = nullptr;
+			task = chosen->contact_map(active_ids);
+			info.bundle_hook->follow_with(task);
+			setup_submit_hooks(task, i);
+		}
 
 
-		if (per_residue)
+		if (per_residue && vdw_clashes)
 		{
 			std::set<ResidueId> residues = chosen->residues();
 
@@ -478,7 +520,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		_resources.tasks->addTask(t);
 	}
 
-//	calculator->releaseHorses();
+	calculator->releaseHorses();
 }
 
 void Route::colourHiddenHinges(float frac)
@@ -769,7 +811,7 @@ void Route::installAllResidues()
 }
 
 void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
-                   float distance, bool multi)
+                   float distance, bool multi, bool momentum = false)
 {
 	auto make_separation = [seq]()
 	{
@@ -778,10 +820,10 @@ void setup_helpers(Route::Helpers &helpers, BondSequence *seq,
 
 	helpers.separation = Resource<Separation>(make_separation);
 	
-	auto make_pairwise = [&helpers, seq, distance, multi]()
+	auto make_pairwise = [&helpers, seq, distance, multi, momentum]()
 	{
 		Separation *sep = multi ? helpers.separation.acquire() : nullptr;
-		return new PairwiseDeviations(seq, distance, sep);
+		return new PairwiseDeviations(seq, distance, sep, momentum);
 	};
 
 	helpers.pairwise = Resource<PairwiseDeviations>(make_pairwise);
@@ -796,7 +838,7 @@ void Route::prepareEnergyTerms()
 	{
 		BondSequence *seq = _hydrogenFreeSequences->sequence();
 		setup_helpers(_helpers[_hydrogenFreeSequences], 
-		              seq, _maxMomentumDistance, multiInstance);
+		              seq, _maxMomentumDistance, multiInstance, true);
 	}
 
 	{
@@ -847,6 +889,7 @@ void Route::clearCustomisation()
 	for (size_t i = 0; i < motionCount(); i++)
 	{
 		motion(i).wp = WayPoints(_order, _randomPerturb);
+		motion(i).flip = false;
 	}
 
 //	_helpers[_resources.sequences].pairwise.reset();

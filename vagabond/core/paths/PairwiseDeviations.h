@@ -27,7 +27,7 @@
 #include <set>
 #include <cstddef>
 #include "function_typedefs.h"
-#include "paths/ResidueContacts.h"
+#include "paths/Contacts.h"
 
 class Atom;
 class BondSequence;
@@ -73,7 +73,8 @@ class PairwiseDeviations
 {
 public:
 	PairwiseDeviations(BondSequence *sequence,
-	                   const float &limit = 8.f, Separation *sep = nullptr);
+	                   const float &limit = 8.f, Separation *sep = nullptr,
+	                   bool for_momentum = false);
 
 	~PairwiseDeviations();
 
@@ -152,6 +153,9 @@ public:
 	Task<BundleBonds *, ActivationEnergy> *
 	bundle_clash(const std::set<ResidueId> &forResidues);
 
+	Task<BundleBonds *, Contacts> *
+	contact_map(const std::set<ResidueId> &forResidues);
+
 	bool filter_in(int p) const
 	{
 		return !_filter || _filter(p);
@@ -172,6 +176,7 @@ private:
 	PairFilter _filter{};
 	float _limit = 8.f;
 	bool _clash = false;
+	bool _momentum = false;
 	
 	typedef std::pair<Atom *, Atom *> AtomAtom;
 

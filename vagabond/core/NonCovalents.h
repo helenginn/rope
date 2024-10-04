@@ -44,6 +44,21 @@ struct Segment
 
 	int num = -1;
 	AtomGroup *grp = new AtomGroup();
+	
+	bool operator==(const Segment &other) const
+	{
+		return (grp == other.grp && num == other.num);
+	}
+	
+	bool operator<(const Segment &other) const
+	{
+		if (grp != other.grp)
+		{
+			return grp < other.grp;
+		}
+		
+		return num < other.num;
+	}
 };
 
 class NonCovalents
@@ -53,20 +68,6 @@ public:
 
 	void addInstance(Instance *a)
 	{
-		if (_instances.size() == 0)
-		{
-			_invariant = a;
-		}
-
-		if (std::find(_instances.begin(), _instances.end(), a) ==
-		    _instances.end())
-		{
-			if (_instances.size() > 0)
-			{
-				_instance2Idx[a] = _instances.size() - 1;
-			}
-			_instances.push_back(a);
-		}
 	}
 	
 	const bool &ready() const
@@ -104,7 +105,7 @@ public:
 
 	struct Interface
 	{
-		Instance *left{}, *right{};
+		Segment left{-1}, right{-1};
 		
 		struct Side
 		{
@@ -148,13 +149,13 @@ private:
 	void prepareBarycentricTargetMatrices();
 
 	void findInterfaces(const std::function<int(Atom *const &)> &func);
-	NonCovalents::Interface findInterface(Instance *first, Instance *second);
+	NonCovalents::Interface findInterface(Segment first, Segment second);
 
 	std::function<BondSequence *(BondSequence *)> align(const float &frac);
 
 	std::vector<Segment> _segments;
 	std::vector<Instance *> _instances;
-	std::map<Instance *, int> _instance2Idx;
+	std::map<Segment, int> _segment2Idx;
 	std::vector<Interface> _faces;
 
 	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
@@ -167,7 +168,7 @@ private:
 	std::map<int, MatId> _seqToId;
 	std::vector<MatId> _matIds;
 
-	std::map<Instance *, std::vector<int>> _atomNumbers;
+	std::map<Segment, std::vector<int>> _atomNumbers;
 
 	Eigen::MatrixXf _positions;
 	Eigen::MatrixXf _barycentrics;
@@ -176,7 +177,7 @@ private:
 	Eigen::MatrixXf _leftMatrix;
 	Eigen::MatrixXf _rightMatrix;
 	
-	Instance *_invariant = nullptr;
+	Segment _invariant{-1};
 	bool _ready = false;
 };
 

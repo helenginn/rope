@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <iostream>
 #include "Scores.h"
 #include "../engine/ElementTypes.h"
 

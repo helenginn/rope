@@ -26,6 +26,7 @@
 #include "RopeSpaceItem.h"
 #include "Entity.h"
 #include "PathsMenu.h"
+#include "BlameView.h"
 #include "PathData.h"
 #include "EntityManager.h"
 #include "RouteExplorer.h"
@@ -34,6 +35,7 @@
 #include "PathManager.h"
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
+#include <vagabond/gui/elements/TickBoxes.h>
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
                      const std::vector<PathGroup> &paths)
@@ -123,6 +125,29 @@ void PathsMenu::setup()
 		t->setReturnTag("menu");
 		addObject(t);
 	}
+	
+	{
+		TickBoxes *tb = new TickBoxes(this, this);
+		tb->addOption("all", 
+		[this, tb]()
+		{
+			if (tb->isTicked(""))
+			{
+				for (int i = 0; i < _paths.size(); i++)
+				{
+					_selected.insert(i);
+				}
+			}
+			else
+			{
+				_selected.clear();
+			}
+			
+			refresh();
+		});
+		tb->arrange(0.19, 0.24, 0.29, 0.34);
+		addObject(tb);
+	}
 
 	ListView::setup();
 }
@@ -163,11 +188,33 @@ Renderable *PathsMenu::getLine(int i)
 		desc += " (" + std::to_string(paths.size()) + " paths)";
 	}
 	
+	// add the title
 	{
 		TextButton *t = new TextButton(desc, this);
 		t->setReturnTag("path_" + std::to_string(i));
 		t->setLeft(0., 0.);
 		b->addObject(t);
+	}
+
+	// add the option box
+	{
+		TickBoxes *tb = new TickBoxes(this, this);
+		auto func = [this, i]()
+		{
+			std::cout << "Inserting " << i << std::endl;
+			if (_selected.count(i) == 0)
+			{
+				_selected.insert(i);
+			}
+			else
+			{
+				_selected.erase(i);
+			}
+		};
+
+		tb->addOption("", func, _selected.count(i));
+		tb->arrange(-0.01, 0.0, 0.05, 0.1);
+		b->addObject(tb);
 	}
 	
 	if (paths.size() == 1)
@@ -253,6 +300,23 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 			m->addOption("Redo metrics", "redo_metrics");
 			m->addOption("Delete paths", "delete_paths");
 		}
+		
+		if (_selected.size() > 0)
+		{
+			auto func = [this]()
+			{
+				std::vector<PathGroup> groups;
+				for (const int &idx : _selected)
+				{
+					groups.push_back(_paths[idx]);
+				}
+				
+				BlameView *view = new BlameView(this, _entity, groups);
+				view->show();
+			};
+			m->addOption("Residue blame", func);
+		}
+
 		m->setup(button);
 		setModal(m);
 	}

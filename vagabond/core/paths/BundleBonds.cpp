@@ -90,8 +90,6 @@ auto get_diff_from_coeffs(const std::array<glm::vec3, 4> &diff)
 
 void BundleBonds::findCoefficients()
 {
-//	auto get_gradients = make_gradients(this);
-
 	glm::mat3 mat = {{-1, +1, -1}, {1, 1, 1}, {8, 4, 2}};
 	glm::mat3 inv = glm::transpose(glm::inverse(mat));
 

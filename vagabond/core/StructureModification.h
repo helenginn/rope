@@ -58,7 +58,7 @@ public:
 
 	virtual ~StructureModification();
 	
-	virtual void retrieve();
+	virtual void retrieve(const std::function<void(Result *)> &job = {});
 	
 	void setInstance(Instance *inst)
 	{

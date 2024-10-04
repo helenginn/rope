@@ -45,14 +45,12 @@ int TorsionBasis::addParameter(Parameter *param, Atom *atom)
 		return -1;
 	}
 	
-	for (size_t i = 0; i < _params.size(); i++)
+	if (_param2Idx.count(param))
 	{
-		if (_params[i] == param)
-		{
-			return i;
-		}
+		return _param2Idx.at(param);
 	}
 
+	_param2Idx[param] = _params.size();
 	_params.push_back(param);
 	_atoms.push_back(atom);
 

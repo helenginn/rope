@@ -49,6 +49,7 @@ public:
 
 	void refreshScores();
 	void setTargets();
+	OpSet<ResidueId> worstSidechains(int num);
 	
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
@@ -91,6 +92,7 @@ public:
 	}
 
 	void postScore(float score);
+	Contacts contactMap();
 	
 	int nudgeCount()
 	{
@@ -152,9 +154,7 @@ private:
 	                  const CalcOptions &subtract_options);
 
 	bool applyGradients();
-	OpSet<ResidueId> worstSidechains(int num);
 	bool sideChainGradients(int i);
-	void rewindTorsions();
 
 	GradientPath *gradients(const ValidateIndex &validate,
 	                        const CalcOptions &add_options = None,

@@ -42,6 +42,7 @@ void Dictator::makeCommands()
 	_commands["add"] = "Load metadata CSV file with 'model' or 'filename' column";
 	_commands["hungry-hippo"] = "Begin hungry-hippo mode (e.g. for beamtime)";
 
+	_commands["path-obstacles"] = "List residues according to their contribution to energy terms in pathways. All following arguments: instance identifiers for which paths should be examined";
 	_commands["path-matrix"] = "Matrix of thermodynamic scores for paths between list of instances. First argument: output filename; all following arguments: instance identifiers";
 	_commands["refine-path"] = "Refine between instances (first and second argument), for N cycles (third argument, default 1)";
 	_commands["auto-paths"] = "Refine all pairs within a group of instances. First argument: integer number of cycles; all following arguments: instance identifiers";
@@ -171,6 +172,14 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	if (first == "environment")
 	{
 		Environment::env().load(last);
+	}
+
+	if (first == "path-obstacles")
+	{
+		std::vector<std::string> args = split(last, ',');
+		std::string filename = args[0];
+		args.erase(args.begin());
+		PathManager::manager()->obstacles(args);
 	}
 
 	if (first == "path-matrix")

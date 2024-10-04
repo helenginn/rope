@@ -81,10 +81,16 @@ void Targets::operator()()
 	{
 		pair.start->load();
 		pair.end->load();
+	}
 
+	for (InstancePair &pair : _pairs)
+	{
 		setTargets(pair);
 		setEndPoint(pair);
+	}
 
+	for (InstancePair &pair : _pairs)
+	{
 		pair.start->unload();
 		pair.end->unload();
 	}

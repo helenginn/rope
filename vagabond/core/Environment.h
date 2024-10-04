@@ -125,7 +125,7 @@ private:
 	Responder<Progressor> *_pg = nullptr;
 
 	static Environment _environment;
-	std::string _matrixBackgroundFilename = "assets/images/pencil_shading.png";
+	std::string _matrixBackgroundFilename = "assets/images/black.png";
 	std::string _colourSchemeFilename = "assets/images/colour_scheme.png";
 };
 

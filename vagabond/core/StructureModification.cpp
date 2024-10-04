@@ -93,7 +93,7 @@ StructureModification::submitSingleAxisJob(float prop, float ticket,
 
 }
 
-void StructureModification::retrieve()
+void StructureModification::retrieve(const std::function<void(Result *)> &job)
 {
 	while (true)
 	{
@@ -128,6 +128,11 @@ void StructureModification::retrieve()
 			}
 
 			score.divs++;
+		}
+		
+		if (job)
+		{
+			job(r);
 		}
 
 		r->destroy();

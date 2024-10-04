@@ -22,6 +22,7 @@
 #include <mutex>
 #include "Job.h"
 #include "AtomPosMap.h"
+#include "paths/Contacts.h"
 #include "engine/ElementTypes.h"
 
 class AtomMap;
@@ -32,6 +33,12 @@ struct Result
 	{
 		std::unique_lock<std::mutex> lock(*mut);
 		deviation += d.value;
+	}
+
+	void operator=(const Contacts &d)
+	{
+		std::unique_lock<std::mutex> lock(*mut);
+		contacts = d;
 	}
 
 	void operator=(const ActivationEnergy &d)
@@ -80,6 +87,7 @@ struct Result
 	float activation_frac = -1;
 	float surface_area = 0;
 	AtomMap *map = nullptr;
+	Contacts contacts;
 	static std::mutex *mut;
 	
 	void transplantColours();
