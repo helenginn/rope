@@ -3,9 +3,11 @@
 
 #include <algorithm>
 #include <vagabond/gui/Display.h>
+#include <vagabond/utils/Eigen/Dense>
 #include <stdlib.h>
 #include <atomic>
 #include "StructureModification.h"
+
 
 class Flexibility : public Display, public StructureModification {
 public:
@@ -15,12 +17,15 @@ public:
     struct HBondEntity
     {
         Atom* Donor; 
+        int donorIdx;
         Atom* Acceptor;
+        int acceptorIdx;
         float startDist;
         Atom* ParentDonor;
         Atom* ParentAcceptor;
-        float AlphaAngle;
-        float BetaAngle;
+        float AlphaAngleDist;
+        float BetaAngleDist;
+        std::vector<int> TorsionVec;
     }; 
 
     void addLinkedInstances(Instance *from, Instance *to);
@@ -49,6 +54,10 @@ public:
         return glm::length(vector1 - vector2);  
     }
     float calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2);
+    float calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3);
+    std::vector<int> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
+   int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
+   void buildJacobianMatrix();
 protected:
     float _chosenWeight = 0.5;;
 private:
@@ -56,6 +65,8 @@ private:
 	bool _setup = false;
     bool _displayTargets = false;
     std::vector<HBondEntity> _hbonds;
+    std::set<int> _globalTorsionSet;
+    Eigen::MatrixXf _jacobMtx;
 
 };
 
