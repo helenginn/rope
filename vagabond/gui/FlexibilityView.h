@@ -25,7 +25,6 @@
 #include <vagabond/core/Flexibility.h>
 
 
-
 class Slider;
 class Residue;
 class Instance;
@@ -39,7 +38,8 @@ public:
 	FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex);
 	// Destructor
 	~FlexibilityView();
-
+	void makeMenu();
+	void buttonPressed(std::string tag, Button *button);
 	// Sets up the view (called during initialization)
 	virtual void setup();
 	// Sets up the slider element
