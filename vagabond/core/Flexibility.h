@@ -46,6 +46,7 @@ public:
 	void prepareResources();
     void calculateTorsionFlexibility(CoordManager* specific_manager);
 	void submitJob(float weight);
+    void addMultipleHBonds(const std::vector<std::pair<std::string, std::string>>& donorAcceptorPairs);
     void addHBond(std::string donor, std::string acceptor);
     void printHBonds() const;
     int accessAtomBlock(Atom* atom);
@@ -58,6 +59,8 @@ public:
     std::vector<int> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
    int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
    void buildJacobianMatrix();
+   void calculateSVD();
+   void calculateFlexWeights();
 protected:
     float _chosenWeight = 0.5;;
 private:
@@ -66,8 +69,12 @@ private:
     bool _displayTargets = false;
     std::vector<HBondEntity> _hbonds;
     std::set<int> _globalTorsionSet;
+    std::vector<int> _globalTorsionVector;
+    std::vector<float> _allTorsions;
     Eigen::MatrixXf _jacobMtx;
-
+    Eigen::MatrixXf _U;
+    Eigen::VectorXf _singularValues;
+    Eigen::MatrixXf _V;
 };
 
 #endif
