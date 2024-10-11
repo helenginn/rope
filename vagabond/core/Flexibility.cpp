@@ -8,14 +8,17 @@
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
 #include <vagabond/core/BondCalculator.h>
+#include <vagabond/utils/svd/PCA.h>
+#include <vagabond/utils/Eigen/Dense>
 
 using Eigen::MatrixXf;
+using Eigen::VectorXf;
+using Eigen::BDCSVD;
 
 // Initializes the Flexibility object with an instance pointer
 Flexibility::Flexibility(Instance *i) 
 {
 	setInstance(i); 
-	_instance->load(); 
 }
 
 Flexibility::~Flexibility() 
@@ -27,8 +30,6 @@ Flexibility::~Flexibility()
 // Submits a flexibility calculation job and retrieves the result
 float Flexibility::submitJobAndRetrieve(float weight) 
 {
-	std::cout << "weight: " << weight << std::endl;	
-
 	submitJob(weight); 
 	Result *r = _resources.calculator->acquireObject();
 	r->transplantPositions(_displayTargets);
@@ -45,7 +46,6 @@ void Flexibility::prepareResources()
 
 	AtomGroup *group = _instance->currentAtoms(); // Gets the current atom group
 	std::vector<AtomGroup *> subsets = group->connectedGroups(); // Gets connected groups
-
 	for (AtomGroup *subset : subsets) 
 	{
 		Atom *anchor = subset->chosenAnchor(); // Gets the anchor atom
@@ -54,18 +54,16 @@ void Flexibility::prepareResources()
 
 	_resources.sequences->setup(); // Sets up sequences
 	_resources.sequences->prepareSequences(); // Prepares sequences
-	CoordManager* that_is_manager = _resources.sequences->manager(); // Gets the coordinate manager
-	calculateTorsionFlexibility(that_is_manager); // Calculates torsion flexibility
 }
 
 // Calculates torsion flexibility using a lambda function
 void Flexibility::calculateTorsionFlexibility(CoordManager* specific_manager) 
 {
-	auto calculateFlexibility = [](const Coord::Get &get, const int &idx) 
+	auto calculateFlexibility = [this](const Coord::Get &get, const int &idx) 
 	{
 		float weight = get(0); // Gets weight value passed into submitJob
         int bigVecIdx = idx; 
-        float flexWeight = BigVect[bigVecIdx]*weight;
+        float flexWeight = _allTorsions[bigVecIdx]*weight;
 		return flexWeight; 
 	};
 	specific_manager->setTorsionFetcher(calculateFlexibility); // Sets the torsion fetcher
@@ -96,9 +94,34 @@ void Flexibility::submitJob(float weight)
   _resources.tasks->addTask(first_hook); // Adds task to the task list
 }
 
+void Flexibility::addMultipleHBonds(const std::vector<std::pair<std::string, std::string>>& donorAcceptorPairs) 
+{
+    for (const auto& pair : donorAcceptorPairs) 
+    {
+        addHBond(pair.first, pair.second);
+    }
+
+    // Calculate the Jacobian matrix
+    buildJacobianMatrix();
+
+    // Print the Jacobian matrix
+    std::cout << "Jacobian Matrix:" << std::endl;
+    std::cout << _jacobMtx << std::endl;
+
+    // calculate SVD matrices 
+    _globalTorsionVector.assign(_globalTorsionSet.begin(), _globalTorsionSet.end());
+    calculateSVD();
+    calculateFlexWeights();
+
+    // Gets the coordinate manager
+    CoordManager* that_is_manager = _resources.sequences->manager(); 
+    // Calculates torsion flexibility
+    calculateTorsionFlexibility(that_is_manager); 
+}
 
 void Flexibility::addHBond(std::string donor, std::string acceptor)
 {
+
 	AtomGroup* atomGroup = _instance->currentAtoms();
 	Atom* donorAtom = atomGroup->atomByDesc(donor);
 	Atom* acceptorAtom = atomGroup->atomByDesc(acceptor);
@@ -122,21 +145,15 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
     int parentDonor_idx = blocks[donorBlock_idx].parent_idx;
     int parentAcceptor_idx = blocks[acceptorBlock_idx].parent_idx;
 
-
-
     glm::vec3 donorPos = blocks[donorBlock_idx].my_position(); 
    	glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
 
-   	// glm::vec3 parentDonorPos = blocks[parentDonor_idx].atom->initialPosition(); // replace with DonorBlock.parent_idx 
-    // glm::vec3 parentAcceptorPos = blocks[parentAcceptor_idx].atom->initialPosition();
     glm::vec3 parentDonorPos = blocks[donorBlock_idx + parentDonor_idx].my_position();
     glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx + parentAcceptor_idx].my_position();
-
 
     float distance = calculateDistance(donorPos, acceptorPos);
     float alphaAngleDistance = calculateAngleDistance(donorPos, acceptorPos, parentDonorPos);
     float betaAngleDistance = calculateAngleDistance(acceptorPos, donorPos, parentAcceptorPos);
-
 
 	// Create HBondEntity and store values
     HBondEntity hbe;
@@ -162,20 +179,14 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
 
     // Find last common ancestor (LCA) between donor and acceptor atom 
     std::vector<int> lca_idx = lastCommonAncestorIdx(donorBlock_idx, acceptorBlock_idx);
-    // insert torsion vector to _hbe 
+    // Insert torsion vector to _hbe 
     hbe.TorsionVec = lca_idx; 
     _hbonds.push_back(hbe);
-    std::cout << "Size of hbe.TorsionVec: " << hbe.TorsionVec.size() << std::endl;
     _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
-    buildJacobianMatrix();
-    // before turning vector into a set I want to put together all the the vectors into one
-
-    // std::set<int> torsionSet;
-    // // Insert elements from the vector into a set:
-    // torsionSet.insert(lca_idx.begin(), lca_idx.end());
-
 
 }
+
+
 
 float Flexibility::calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3) 
 {                           
@@ -216,7 +227,6 @@ int Flexibility::accessAtomBlock(Atom* atom)
         if (block.atom == atom) 
         {
             // Atom found within the block
-            std::cout << "Atom " << atom->desc() << " is in block " << i << std::endl;
             return i; // Return the index of the block
         }
     }
@@ -234,40 +244,20 @@ std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acce
         if (blocks[donorBlock_idx].depth > blocks[acceptorBlock_idx].depth)
         {
             donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
-            std::cout << "kk "<< donorBlock_idx << std::endl;
-            std::cout << "torsionVector: ";
-            for (int torsionIdx : torsionVector) 
-            {
-                std::cout << torsionIdx << " ";
-            }
-            std::cout << std::endl;
         }
         else if (blocks[donorBlock_idx].depth < blocks[acceptorBlock_idx].depth)
         {
             acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);  
-            std::cout << "ll "<< donorBlock_idx << std::endl;
-            for (int torsionIdx : torsionVector) 
-            {
-                std::cout << torsionIdx << " ";
-            }
-            std::cout << std::endl;
         }
         else // equal depth 
         {
             if (blocks[donorBlock_idx].depth == blocks[acceptorBlock_idx].depth) // found common ancestor 
             {
-                std::cout << "mm "<< donorBlock_idx << std::endl;
-                for (int torsionIdx : torsionVector) 
-                {
-                    std::cout << torsionIdx << " ";
-                }
-                std::cout << std::endl;
                 return torsionVector;
             }
             // rewind at the same time
             acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);
             donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
-            std::cout << "nn "<< donorBlock_idx << std::endl;
         }
 
     }
@@ -294,8 +284,6 @@ void Flexibility::buildJacobianMatrix()
     int numCol = _hbonds.size();
     std::vector<int> globalTorsionVector(_globalTorsionSet.begin(), _globalTorsionSet.end());
     int numRow = _globalTorsionSet.size();
-    std::cout << "Jacobian matrix has " << numCol << " columns" << std::endl;
-    std::cout << "Jacobian matrix has " << numRow << " rows" << std::endl;
 
     // set up the JacobianMatrix
     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
@@ -314,12 +302,41 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+            jacobianMatrix(i,j) = derivative;
         }
-
     }
+    _jacobMtx = jacobianMatrix;
+}
+
+void Flexibility::calculateSVD() 
+{
+    MatrixXf jacobMtrT = _jacobMtx.transpose();
+    BDCSVD<MatrixXf> svdJac = jacobMtrT.bdcSvd();
+
+    svdJac.compute(jacobMtrT, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    _U = svdJac.matrixU();
+    _singularValues = svdJac.singularValues();
+    _V = svdJac.matrixV();
 
 }
 
+void Flexibility::calculateFlexWeights()
+{
+    // get the all the torsions of the protein 
+    int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
+    std::vector<float> weightColumn(_V.rows());
+    for (int i = 0; i < _V.rows(); ++i)
+    {
+        weightColumn[i] = _V(i, _V.cols() - 1);
+    }
+    _allTorsions = std::vector<float> (totalTorsionNum);
+
+    // Assign weights to torsion vectors
+    for (int i = 0; i < _globalTorsionVector.size(); ++i) 
+    {
+        _allTorsions[_globalTorsionVector[i]] = weightColumn[i];
+    }
+}
 
 void Flexibility::printHBonds() const
 {
