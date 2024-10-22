@@ -4,6 +4,7 @@
 #include "GlobalOptions.h"
 #include "ProgressView.h"
 #include "MetadataView.h"
+#include "HBondDataView.h"
 #include "DatasetMenu.h"
 #include "EntityMenu.h"
 #include "ModelMenu.h"
@@ -97,6 +98,19 @@ void MainMenu::setup()
 		text->setCentre(0.2, 0.80);
 		addObject(text);
 	}
+
+	{
+		ImageButton *button = new ImageButton("assets/images/some_atoms.png", this);
+		button->resize(0.25);
+		button->setReturnTag("hbonds");
+		button->setCentre(0.5, 0.65);
+		addObject(button);
+
+		Text *text = new Text("H-bonds");
+		text->setCentre(0.5, 0.8);
+		addObject(text);
+	}
+
 
 	/*
 	{
