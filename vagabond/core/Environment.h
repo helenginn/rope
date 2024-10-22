@@ -18,7 +18,6 @@
 
 #ifndef __vagabond__Environment__
 #define __vagabond__Environment__
-
 #include <string>
 #include <nlohmann/json.hpp>
 using nlohmann::json;
@@ -27,6 +26,7 @@ class Path;
 class Rule;
 class Entity;
 class Metadata;
+class HBondData;
 class Instance;
 class Progressor;
 class FileManager;
@@ -46,6 +46,10 @@ public:
 	static Metadata *metadata()
 	{
 		return _environment._metadata;
+	}
+	static HBondData *hBondData()
+	{
+		return _environment._hBondData;
 	}
 
 	static PathManager *pathManager()
@@ -121,6 +125,7 @@ private:
 	EntityManager *_entityManager = nullptr;
 	PathManager *_pathManager = nullptr;
 	Metadata *_metadata = nullptr;
+	HBondData *_hBondData = nullptr;
 	
 	Responder<Progressor> *_pg = nullptr;
 
