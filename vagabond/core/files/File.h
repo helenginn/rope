@@ -28,6 +28,7 @@ class Atom;
 class AtomContent;
 class AtomGroup;
 class Metadata;
+class HBondData;
 class GeometryTable;
 class Diffraction;
 class RefList;
@@ -73,7 +74,8 @@ public:
 		Cif,
 		Csv,
 		Jsn,
-		Fasta
+		Fasta,
+		Txt
 	};
 	
 	static File *loadUnknown(std::string filename);
@@ -148,6 +150,8 @@ public:
 	 * @returns Metadata containing data relating to model filename or 
 	 * model id */
 	Metadata *metadata();
+
+	HBondData *hBondData();
 	
 	/** to only pull out a single monomer from a larger collection.
 	 *	@param code three letter code */
@@ -198,6 +202,7 @@ protected:
 	AtomGroup *_macroAtoms = new AtomGroup();
 	GeometryTable *_table = nullptr;
 	Metadata *_metadata = nullptr;
+	HBondData *_hBondData = nullptr;
 	
 	std::map<std::string, std::string> _values;
 	std::map<std::string, std::string> _sequences;
@@ -205,6 +210,7 @@ protected:
 	
 	bool _accessedTable = false;
 	bool _accessedMetadata = false;
+	bool _accessedHBondData = false;
 	KnotLevel _knot = KnotTorsions;
 
 };

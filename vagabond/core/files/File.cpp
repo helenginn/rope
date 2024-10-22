@@ -22,6 +22,7 @@
 #include "../utils/FileReader.h"
 #include "files/CifFile.h"
 #include "files/CsvFile.h"
+#include "files/TextFile.h"
 #include "files/MtzFile.h"
 #include "files/PdbFile.h"
 #include "files/FastaFile.h"
@@ -29,6 +30,7 @@
 #include "grids/Diffraction.h"
 #include "AtomContent.h"
 #include "Metadata.h"
+#include "HBondData.h"
 #include "RefList.h"
 #include "FileManager.h"
 
@@ -40,6 +42,7 @@ File::File(std::string filename)
 	_compAtoms->setOwns(true);
 	_macroAtoms->setOwns(true);
 	_metadata = new Metadata();
+	_hBondData = new HBondData();
 }
 
 File::~File()
@@ -56,6 +59,11 @@ File::~File()
 	{
 		delete _table;
 	}
+	if (!_accessedHBondData)
+	{
+		delete _hBondData;
+	}
+
 }
 
 std::string File::toFilename(std::string filename)
@@ -124,6 +132,12 @@ Metadata *File::metadata()
 {
 	_accessedMetadata = true;
 	return new Metadata(*_metadata);
+}
+
+HBondData *File::hBondData()
+{
+	_accessedHBondData = true;
+	return new HBondData(*_hBondData);
 }
 
 bool File::hasUnitCell() const
@@ -238,6 +252,7 @@ File::Flavour File::flavour(std::string filename)
 	const std::string cif = "cif";
 	const std::string csv = "csv";
 	const std::string fasta = "fasta";
+	const std::string txt = "txt";
 	to_lower(filename);
 
 	if (compare_file_ending(filename, json, Jsn))
@@ -263,6 +278,10 @@ File::Flavour File::flavour(std::string filename)
 	if (compare_file_ending(filename, fasta, Fasta))
 	{
 		return Fasta;
+	}
+		if (compare_file_ending(filename, txt, Txt))
+	{
+		return Txt;
 	}
 
 	return None;
@@ -297,6 +316,10 @@ File *File::openUnknown(std::string filename)
 	else if (flav == Fasta)
 	{
 		f = new FastaFile(filename);
+	}
+		else if (flav == Txt)
+	{
+		f = new TextFile(filename);
 	}
 	
 	return f;
