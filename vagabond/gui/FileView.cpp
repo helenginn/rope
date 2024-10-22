@@ -26,6 +26,7 @@
 #endif
 
 #include "MetadataView.h"
+#include "HBondDataView.h"
 
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskYesNo.h>
@@ -194,6 +195,11 @@ void FileView::handleFileWithoutChoice(std::string filename)
 	else if (type & File::Meta)
 	{
 		MetadataView *view = new MetadataView(this, file->metadata());
+		view->show();
+	}
+	else if (type & File::Meta)
+	{
+		HBondDataView *view = new HBondDataView(this, file->hBondData());
 		view->show();
 	}
 
