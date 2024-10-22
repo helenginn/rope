@@ -19,6 +19,7 @@
 #include "Environment.h"
 #include "FileManager.h"
 #include "Metadata.h"
+#include "HBondData.h"
 #include "Ruler.h"
 #include "PathManager.h"
 #include "ModelManager.h"
@@ -40,7 +41,7 @@ Environment::Environment()
 {
 	_metadata = new Metadata();
 	_metadata->setSource("master");
-
+	_hBondData = new HBondData();
 	_fileManager = new FileManager();
 	_pathManager = new PathManager();
 	_modelManager = new ModelManager();
