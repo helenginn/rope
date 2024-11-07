@@ -104,6 +104,8 @@ guifiles = [
 'PathParamEditor.cpp',
 'PathParamEditor.h',
 'PathsMenu.cpp',
+'PathThermodynamics.cpp',
+'PathThermodynamics.h',
 'PickAtomFromSequence.h',
 'PickAtomFromSequence.cpp',
 'PointyView.cpp',
