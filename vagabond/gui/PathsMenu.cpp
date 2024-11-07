@@ -36,6 +36,7 @@
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
 #include <vagabond/gui/elements/TickBoxes.h>
+#include "PathThermodynamics.h"
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
                      const std::vector<PathGroup> &paths)
@@ -299,8 +300,9 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		if (!_parent)
 		{
 			m->addOption("Cluster paths", "cluster_paths");
-			m->addOption("Redo metrics", "redo_metrics");
+			m->addOption("Redo metrics", "redo_metrics"); 
 			m->addOption("Delete paths", "delete_paths");
+			m->addOption("Calculate thermodynamics", "path_thermodynamics");
 		}
 		
 		if (_selected.size() > 0)
@@ -351,6 +353,13 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	{
 		Metadata *metadata = _allPaths.prepareMetadata(true);
 		delete metadata;
+	}
+
+	if (tag == "menu_path_thermodynamics")
+	{
+		PathThermodynamics *pt = new PathThermodynamics(this, _entity);
+		pt->show();
+		return;
 	}
 	
 	ListView::buttonPressed(tag, button);
