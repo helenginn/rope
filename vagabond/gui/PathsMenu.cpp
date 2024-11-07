@@ -41,6 +41,8 @@
 #include "HeatMapOptions.h"
 #include "HeatMapVDW.h"
 #include <functional>
+#include <vagabond/gui/elements/TickBoxes.h>
+#include "PathThermodynamics.h"
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
                      const std::vector<PathGroup> &paths)
@@ -493,6 +495,11 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
         HeatMapView *hmv = new HeatMapView(this, entropyData);*/
 
     }
+	{
+		PathThermodynamics *pt = new PathThermodynamics(this, _entity);
+		pt->show();
+		return;
+	}
 	
     if (tag == "menu_map_path_values")
     {
