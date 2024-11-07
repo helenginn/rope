@@ -6,8 +6,6 @@
 #include <string>
 #include <Path.h>
 
-//struct for calculation using the k-NN method with Kozachenko-Leonenko estimator
-
 struct EntropyKL {
 int nSingle{};
 int nPairs{};
