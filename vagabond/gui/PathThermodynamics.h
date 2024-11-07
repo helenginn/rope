@@ -22,16 +22,23 @@
 #include <vagabond/gui/elements/Scene.h>
 
 class PathGroup;
-class TextEntry;
-class Text;
+class Entity;
 
 class PathThermodynamics : public Scene
 {
 public:
-	PathThermodynamics(Scene *prev, PathGroup *group);
+	PathThermodynamics(Scene *prev, Entity *entity);
+	virtual ~PathThermodynamics(){};
 
 	virtual void setup();
+	virtual void refresh();
+	
+	void addTypeButtons();
+
 	virtual void buttonPressed(std::string tag, Button *button);
+
+private:
+	Entity *_entity = nullptr;
 };
 
 #endif
