@@ -37,7 +37,7 @@ int PathThermodynamics::_numPaths = 0;
 PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<Path*> paths) : Scene(prev)
 {
 	_entity = entity;
-    _paths = paths;
+        _paths = paths;
 
 	_pathEntropy = new PathEntropy();
 }
@@ -56,8 +56,7 @@ void PathThermodynamics::addTypeButtons()
 
 void PathThermodynamics::setup()
 {
-	addTitle("Calculate path thermodynamics");
-    
+	addTitle("Calculate path thermodynamics");    
     Path *path = _paths.front();
     Text *t = new Text(path->desc());
     t->setCentre(0.5, 0.15);

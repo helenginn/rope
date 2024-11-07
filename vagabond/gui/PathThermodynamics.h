@@ -24,6 +24,8 @@
 class Path;
 class Entity;
 class PathEntropy;
+class PathGroup;
+class Entity;
 
 class PathThermodynamics : public Scene
 {
@@ -35,7 +37,6 @@ public:
 	virtual void refresh();
 	
 	void addTypeButtons();
-    void checkPathNum(int nn);
 
 	virtual void buttonPressed(std::string tag, Button *button);
 
