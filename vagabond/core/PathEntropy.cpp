@@ -20,8 +20,12 @@ double *torsionAngles;
 Sequence seq;
 BondTorsion *torsion;
 
-void init_flag_par(struct Flag_par *flag_par);
-void get_atoms_and_residues(const std::string &model_id);
+void PathEntropy::init_flag_par(struct Flag_par *flag_par)
+	{
+		(*flag_par).n = 10; /* number of nearest neighbours */
+		(*flag_par).minres = 1e-10;
+		(*flag_par).kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+	}
 
 void get_atoms_and_residues(const std::string &model_id)
 {
@@ -41,7 +45,8 @@ void get_atoms_and_residues(const std::string &model_id)
 	}
 
 	double torsionAngles = torsion->measurement(BondTorsion::SourceDerived, true);
-	
+		
+	std::map <ResidueId, std::vector<BondTorsion *>> Tors_res4nn;
 	
 	Sequence seq = Sequence(atom);
 } 
@@ -49,7 +54,7 @@ void get_atoms_and_residues(const std::string &model_id)
 
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
-int calculate_entropy_independent(int nf, struct Flag_par flag_par, struct Entropy *entropy){
+int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par, struct Entropy *entropy){
 	int i, j, k, K, m, ok;
 	double **phit;
 	double *d, *ent_k, *ent_k_2, *sd_k, *ent_k_tot, *ent_k_tot_2, *d_mean, *ld_mean, *x, *y, *w, *a, *sd;
@@ -59,6 +64,8 @@ int calculate_entropy_independent(int nf, struct Flag_par flag_par, struct Entro
 
 	(*entropy).n_single = n_res_per_model;
 	(*entropy).n_nn = flag_par.n;
+	alloc_entropy(entropy, n_res_per_model, 0, (*entropy).n_nn, flag_par);
+
 	K = flag_par.n + 1;
 
 	for(k = 1; k <= K-1; k++)
@@ -187,5 +194,95 @@ int calculate_entropy_independent(int nf, struct Flag_par flag_par, struct Entro
 		}
 	}
 
+}
+
+/* Calculates entropy using mutual information for torsions closer in space than a given value */
+
+int calculate_entropy_mi(int nf, struct Flag_par flag_par, struct Entropy *entropy)
+{
+	int K;
+
+	/* for each residue... */
+	K = flag_par.n + 1;
+
+	/* ... based on a cutoff distance, calculate how many pairs of groups must be considered */
+
+}
+
+int tors_res2mi(int *n_res_per_model_mi, struct Flag_par flag_par)
+{
+	int i, j, k, l;
+
+	l = 0;
+
+	for(i = 0; i < seq.size(); i++)
+	{
+		l = l + (int) floor((double) torsionAngles[i] / (double) flag_par.kmi);
+	/*	if((torsionAngles[i] % flag_par.kmi) !=0) l++; */
+	}
+
+	*n_res_per_model_mi = l;
+}
+
+int PathEntropy::comp(const void * elem1, const void * elem2){
+	double f1 = *((double *)elem1);
+	double f2 = *((double *)elem2);
+	if (f1 > f2) return 1;
+	if (f1 < f2) return -1;
+	return 0;
+}
+
+/* linear weighting function */
+int PathEntropy::fitlw(double *x, double *y, double *w, int n, double *a, double *sd, int *ok)
+{
+	int i, j, k;
+	double xm, ym, x2, y2, xy, xy2, wt, sig2;
+	wt = 0;
+	xm = 0;
+	ym = 0;
+	x2 = 0;
+	y2 = 0;
+	xy = 0;
+
+	for(i = 0; i < n; i++)
+	{
+		xm = xm + x[i]*w[i];
+		ym = ym + y[i]*w[i];
+		x2 = x2 + x[i]*x[i]*w[i];
+		y2 = y2 + y[i]*y[i]*w[i];
+		xy = xy + x[i]*y[i]*w[i];
+		xy2 = xy2 + x[i]*y[i]*x[i]*y[i]*w[i];
+		wt = wt + w[i];
+	}
+
+	xm = xm/wt;
+	ym = ym/wt;
+	x2 = x2/wt;
+	y2 = y2/wt;
+	xy = xy/wt;
+	xm = xm/wt;
+
+	a[1] = (xy - xm*ym)/(x2 - xm*xm);
+	a[0] = ym - a[1]*xm;
+
+	sig2 = 0;
+
+	for(i = 0; i < n; i++)
+	{
+		sig2 = sig2 + (y[i] - a[0] - a[1]*x[i])*(y[i] - a[0] - a[1]*x[i])*w[i];
+	}
+
+	sig2 = sig2/wt;
+
+	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + xm*xm/((double) n * (x2 - xm*xm)));
+	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (x2 - xm*xm));
+}
+
+/* allocates memory to entropy structure */
+int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct Flag_par flag_par)
+{
+	(*entropy).total = (double*) calloc(n_nn, sizeof(double));
+	(*entropy).sd_total = (double*) calloc(n_nn, sizeof(double));
+	(*entropy).dm_total = (double*) calloc(n_nn, sizeof(double));
 }
 
