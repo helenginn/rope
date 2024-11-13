@@ -24,44 +24,35 @@
 #include <chrono>
 #include <set>
 #include "Value.h"
-#include "Ruler.h"
+#include "Database.h"
 #include "Progressor.h"
-#include "TabulatedData.h"
+// #include "TabulatedData.h"
 
-#include <nlohmann/json.hpp>
-using nlohmann::json;
 
-class Metadata : public Progressor
+class Metadata : public Progressor, public Database
 {
 public:
 	Metadata();
 	~Metadata();
+
+	Metadata *metadata()
+	{
+		return _metadata;
+	}
+	
+	void newMetadata(Metadata *meta)
+	{
+		_metadata = meta;
+	}
 	
 	bool isMaster();
-	
-	void setSource(std::string source)
-	{
-		_source = source;
-	}
-	
-	const std::string &source() const
-	{
-		return _source;
-	}
-	
-	typedef std::map<std::string, Value> KeyValues;
-
+	void housekeeping();
 	/** add line of key-value pairs into the metadata lookup table.
 	 * @param kv map of header-to-value pairs
 	 * @param overwrite replace existing information for model/filename
 	 * @throws exception if overwrite is false, but duplicate entry found */
 	void addKeyValues(const KeyValues &kv, const bool overwrite);
-	
-	void purgeKey(std::string key);
-	
-	Metadata &operator+=(const Metadata &other);
-
-	/** picks up metadata information for a given model id */
+	void setModelIdForInstanceId(std::string, std::string);
 	const KeyValues *valuesForModel(const std::string name)
 	{
 		if (_model2Data.count(name))
@@ -71,10 +62,6 @@ public:
 		
 		return nullptr;
 	}
-
-	const KeyValues *valuesForInstance(const std::string name);
-	
-	void setModelIdForInstanceId(std::string, std::string);
 
 	const KeyValues *valuesForFilename(const std::string name)
 	{
@@ -86,21 +73,17 @@ public:
 		return nullptr;
 	}
 
+	const KeyValues *valuesForInstance(const std::string id)
+	{
+		if (_inst2Data.count(id))
+		{
+			return _inst2Data.at(id);
+		}
+
+		return nullptr;
+	}
 	const KeyValues *values(const std::string model_id = "", 
 	                        const std::string filename = "");
-	
-	void housekeeping();
-
-	const std::set<std::string> &headers() const
-	{
-		return _headers;
-	}
-
-	const size_t headerCount() const
-	{
-		return _headers.size();
-	}
-
 	const size_t entryCount() const
 	{
 		return _inst2Data.size() + _model2Data.size() + _file2Data.size();
@@ -115,62 +98,30 @@ public:
 	{
 		return _model2Data.size();
 	}
-
-	Ruler &ruler()
-	{
-		return _ruler;
-	}
-	
 	std::string asCSV() const;
-	
-	TabulatedData *asInstanceData();
-	TabulatedData *asModelData();
-	TabulatedData *asData(const std::vector<std::string> &ids);
 
-	friend void to_json(json &j, const Metadata &value);
-	friend void from_json(const json &j, Metadata &value);
+	const KeyValues* valuesForHeader(const std::string& header, const std::string& id) override 
+	{
+	    if (header == "molecule" || header == "instance") {
+	        return _inst2Data.at(id);
+	    } else if (header == "model") {
+	        return _model2Data.at(id);
+	    }
+	    return nullptr;
+    }
+	
+	// TabulatedData *asInstanceData();
+	// TabulatedData *asModelData();
+	// TabulatedData *asData(const std::vector<std::string> &ids);
+
 private:
-	bool addToList(KeyValues &edit, std::string &key,
-	               const std::map<std::string, KeyValues *> &search, 
-	               bool overwrite) const;
+	Metadata *_metadata = nullptr;
 	void extractData(std::ostringstream &csv, KeyValues &kv) const;
-
-	Ruler _ruler;
-	std::string _source;
-	std::list<KeyValues> _data;
-	
-	std::set<std::string> _headers;
 	std::map<std::string, std::string> _inst2Model;
-
 	std::map<std::string, KeyValues *> _inst2Data;
 	std::map<std::string, KeyValues *> _model2Data;
 	std::map<std::string, KeyValues *> _file2Data;
 };
 
-inline void to_json(json &j, const Metadata &value)
-{
-	j["source"] = value._source;
-	j["headers"] = value._headers;
-
-	j["data"] = value._data;
-	j["ruler"] = value._ruler;
-}
-
-inline void from_json(const json &j, Metadata &value)
-{
-	value._source = j.at("source");
-	try
-	{
-		std::list<Metadata::KeyValues> tmp = j.at("data");
-		value._data = tmp;
-        std::set<std::string> header = j.at("headers");
-		value._headers = header;
-		value._ruler = j.at("ruler");
-	}
-	catch (const nlohmann::detail::out_of_range &err)
-	{
-
-	}
-}
 
 #endif
