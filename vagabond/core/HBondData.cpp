@@ -46,213 +46,162 @@ void HBondData::housekeeping()
 {
 	std::list<KeyValues> tmp = _data;
 	_data.clear();
-
 	for (const KeyValues &kv : tmp)
 	{
 		addKeyValues(kv, true);
 	}
 }
 
-
-void HBondData::purgeKey(std::string key)
-{
-	for (KeyValues &kv : _data)
-	{
-		if (kv.count(key))
-		{
-			kv.erase(key);
-		}
-	}
-
-	for (auto it = _headers.begin(); it != _headers.end(); it++)
-	{
-		if (*it == key)
-		{
-			_headers.erase(it);
-			break;
-		}
-	}
-}
-
-
-bool HBondData::addToList(KeyValues &edit, std::string &key,
-                         const std::map<std::string, KeyValues *> &search, 
-                         bool overwrite) const
-{
-	if (key.length() == 0 || search.count(key) == 0)
-	{
-		return false;
-	}
-
-	if (!overwrite && search.count(key) && edit != *search.at(key))
-	{
-		throw std::runtime_error("Conflicting data for key " + key);
-	}
-
-	if (!search.count(key) || edit == *search.at(key))
-	{
-		return false;
-	}
-	
-	const KeyValues &old = *search.at(key);
-	KeyValues::const_iterator it;
-
-	for (it = old.begin(); it != old.end(); it++)
-	{
-		edit[it->first] = it->second;
-	}
-	
-	return true;
-}
-
-
 void HBondData::addKeyValues(const KeyValues &kv, const bool overwrite)
 {
-	std::string hbond_id;
-	if (kv.count("H-bond_ID"))
-	{
-		hbond_id = kv.at("H-bond_ID").text();
-	}
-	
-	KeyValues edit = kv;
-
-	addToList(edit, hbond_id, _hbond2Data, overwrite);
-	
-	KeyValues::const_iterator it;
-	
-	for (it = edit.cbegin(); it != edit.cend(); it++)
-	{
-		std::string h = it->first;
-		_headers.insert(h);
-	}
-	_data.push_back(edit);
-	_hbond2Data[hbond_id] = &_data.back();
-
-}
-
-HBondData &HBondData::operator+=(const HBondData &other)
-{
-	for (const KeyValues &kv : other._data)
-	{
-		addKeyValues(kv, true);
-	}
-	
-	return *this;
-}
-
-inline OpSet<std::string> values_for(const std::list<HBondData::KeyValues> &data,
-                                 const std::string &header)
-{
-	std::set<std::string> results;
-	for (const HBondData::KeyValues &kv : data)
-	{
-		if (kv.count(header))
-		{
-			results.insert(kv.at(header).text());
-			// Print the extracted value here
-      		std::cout << kv.at(header).text() << std::endl;
-
-		}
-	}
-
-	return results;
+		processKeyValue(kv, {"H-bond_ID"}, _hbond2Data, true);
+		headersFromValues(kv);
 }
 
 
-inline std::vector<TabulatedData::HeaderTypePair> 
-toHeaderTypes(const std::set<std::string> &list)
-{
-	std::vector<TabulatedData::HeaderTypePair> results;
+// bool HBondData::addToList(KeyValues &edit, std::string &key,
+//                          const std::map<std::string, KeyValues *> &search, 
+//                          bool overwrite) const
+// {
+// 	if (key.length() == 0 || search.count(key) == 0)
+// 	{
+// 		return false;
+// 	}
 
-	for (const std::string &str : list)
-	{
-		results.push_back({str, TabulatedData::Text});
-	}
+// 	if (!overwrite && search.count(key) && edit != *search.at(key))
+// 	{
+// 		throw std::runtime_error("Conflicting data for key " + key);
+// 	}
+
+// 	if (!search.count(key) || edit == *search.at(key))
+// 	{
+// 		return false;
+// 	}
 	
-	return results;
-}
+// 	const KeyValues &old = *search.at(key);
+// 	KeyValues::const_iterator it;
 
-template <typename GetId, typename DoWithId>
-auto get_info(const GetId &get_id, const DoWithId &do_with_id)
-{
-	return [get_id, do_with_id](const std::string &id)
-	{
-		const HBondData::KeyValues *kv = get_id(id);
-
-		if (kv == nullptr)
-		{
-			return;
-		}
-
-		do_with_id(kv);
-	};
-}
-
-TabulatedData *HBondData::asHBondData()
-{
-	OpSet<std::string> hBond = values_for(_data, "H-bond_ID");
-	return asData(hBond.toVector());
-}
-
-
-TabulatedData *HBondData::asData(const std::vector<std::string> &ids) 
-{
-	OpSet<TabulatedData::HeaderTypePair> headers;
+// 	for (it = old.begin(); it != old.end(); it++)
+// 	{
+// 		edit[it->first] = it->second;
+// 	}
 	
-	auto insert_into_headers = [&headers](const KeyValues *kv)
-	{
-		if (kv == nullptr || kv->size() == 0)
-		{
-			return;
-		}
-		for (auto it = kv->begin(); it != kv->end(); it++)
-		{
-			TabulatedData::DataType type = TabulatedData::Text; 
-			if (it->second.hasNumber())
-			{
-				type = TabulatedData::Number; 
-			}
+// 	return true;
+// }
 
-			headers.insert({it->first, type});
-		}
-	};
+// inline OpSet<std::string> values_for(const std::list<HBondData::KeyValues> &data,
+//                                  const std::string &header)
+// {
+// 	std::set<std::string> results;
+// 	for (const HBondData::KeyValues &kv : data)
+// 	{
+// 		if (kv.count(header))
+// 		{
+// 			results.insert(kv.at(header).text());
+// 			// Print the extracted value here
+//       		std::cout << kv.at(header).text() << std::endl;
 
-	auto process_hbond = get_info([this](const std::string &id)
-                                 { return valuesForHBond(id); },
-                                 insert_into_headers);
+// 		}
+// 	}
 
-	for (const std::string &id : ids)
-	{
-		process_hbond(id);
-	}
+// 	return results;
+// }
 
-	TabulatedData *data = new TabulatedData(headers.toVector());
+
+// inline std::vector<TabulatedData::HeaderTypePair> 
+// toHeaderTypes(const std::set<std::string> &list)
+// {
+// 	std::vector<TabulatedData::HeaderTypePair> results;
+
+// 	for (const std::string &str : list)
+// 	{
+// 		results.push_back({str, TabulatedData::Text});
+// 	}
 	
-	auto insert_into_data = [&data](const KeyValues *kv)
-	{
-		std::vector<TabulatedData::StringPair> pairs;
-		for (auto it = kv->begin(); it != kv->end(); it++)
-		{
-			pairs.push_back({it->first, it->second.text()});
-			std::cout << it->first << "=" << it->second << ", ";
-		}
-		std::cout << std::endl;
-		if (pairs.size())
-		{
-			data->addEntry(pairs);
-		}
-	};
-	auto add_hbond = get_info([this](const std::string &id)
-                             { return valuesForHBond(id); },
-                             insert_into_data);
+// 	return results;
+// }
 
-	for (const std::string &id : ids)
-	{
-		add_hbond(id);
-	}
+// template <typename GetId, typename DoWithId>
+// auto get_info(const GetId &get_id, const DoWithId &do_with_id)
+// {
+// 	return [get_id, do_with_id](const std::string &id)
+// 	{
+// 		const HBondData::KeyValues *kv = get_id(id);
 
-	return data;
-}
+// 		if (kv == nullptr)
+// 		{
+// 			return;
+// 		}
+
+// 		do_with_id(kv);
+// 	};
+// }
+
+// TabulatedData *HBondData::asHBondData()
+// {
+// 	OpSet<std::string> hBond = values_for(_data, "H-bond_ID");
+// 	return asData(hBond.toVector());
+// }
+
+
+// TabulatedData *HBondData::asData(const std::vector<std::string> &ids) 
+// {
+// 	OpSet<TabulatedData::HeaderTypePair> headers;
+	
+// 	auto insert_into_headers = [&headers](const KeyValues *kv)
+// 	{
+// 		if (kv == nullptr || kv->size() == 0)
+// 		{
+// 			return;
+// 		}
+// 		for (auto it = kv->begin(); it != kv->end(); it++)
+// 		{
+// 			TabulatedData::DataType type = TabulatedData::Text; 
+// 			if (it->second.hasNumber())
+// 			{
+// 				type = TabulatedData::Number; 
+// 			}
+
+// 			headers.insert({it->first, type});
+// 		}
+// 	};
+
+// 	auto process_hbond = get_info([this](const std::string &id)
+//                                  { return valuesForHBond(id); },
+//                                  insert_into_headers);
+
+// 	for (const std::string &id : ids)
+// 	{
+// 		process_hbond(id);
+// 	}
+
+// 	TabulatedData *data = new TabulatedData(headers.toVector());
+	
+// 	auto insert_into_data = [&data](const KeyValues *kv)
+// 	{
+// 		std::vector<TabulatedData::StringPair> pairs;
+// 		for (auto it = kv->begin(); it != kv->end(); it++)
+// 		{
+// 			pairs.push_back({it->first, it->second.text()});
+// 			std::cout << it->first << "=" << it->second << ", ";
+// 		}
+// 		std::cout << std::endl;
+// 		if (pairs.size())
+// 		{
+// 			data->addEntry(pairs);
+// 		}
+// 	};
+// 	auto add_hbond = get_info([this](const std::string &id)
+//                              { return valuesForHBond(id); },
+//                              insert_into_data);
+
+// 	for (const std::string &id : ids)
+// 	{
+// 		add_hbond(id);
+// 	}
+
+// 	return data;
+// }
 
 
 
