@@ -100,6 +100,8 @@ void CsvFile::processLine(std::string line)
 		kvs[h] = Value(components[i]);
 	}
 	_metadata->addKeyValues(kvs, true);
+
+
 }
 
 void CsvFile::processHeaders(std::string line)
