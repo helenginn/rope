@@ -42,6 +42,7 @@ Environment::Environment()
 	_metadata = new Metadata();
 	_metadata->setSource("master");
 	_hBondData = new HBondData();
+	_hBondData->setSource("master");
 	_fileManager = new FileManager();
 	_pathManager = new PathManager();
 	_modelManager = new ModelManager();
@@ -66,6 +67,7 @@ void Environment::save()
 	data["entity_manager"] = *_entityManager;
 	data["path_manager"] = *_pathManager;
 	data["metadata"] = *_metadata;
+	data["hBondData"] = *_hBondData;
 #ifdef __EMSCRIPTEN__
 	std::string contents = data.dump();
 #endif
@@ -120,12 +122,27 @@ void Environment::load(std::string file)
 	f.close();
 	
 	*_fileManager = data["file_manager"];
-	 *_modelManager = data["model_manager"];
+	*_modelManager = data["model_manager"];
 	loadEntitiesBackwardsCompatible(data);
 	*_metadata = data["metadata"];
+
+	  // Check if hBondData key exists
+	if (data.count("hBondData")) 
+	{
+		*_hBondData = data["hBondData"];
+	} 
+	else 
+	{
+		// hBondData key missing, initialize an empty HBondData object
+		_hBondData = new HBondData();
+		_hBondData->setSource("master"); // Set source if necessary
+		std::cerr << "Warning: hBondData key missing in JSON file. Using an empty HBondData object." << std::endl;
+	}
+
 	*_pathManager = data["path_manager"];
 
 	_metadata->housekeeping();
+	_hBondData->housekeeping();
 	_entityManager->housekeeping();
 	_modelManager->housekeeping();
 	
