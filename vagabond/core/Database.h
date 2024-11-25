@@ -62,6 +62,7 @@ public:
 	{
 		return _headers.size();
 	}
+	const virtual size_t entryCount() = 0;
 	bool addToList(KeyValues &edit, std::string &key,
 	               const std::map<std::string, KeyValues *> &search, 
 	               bool overwrite) const;
@@ -77,6 +78,7 @@ protected:
 	Database *_dataType = nullptr;
 	std::list<KeyValues> _data;
 	std::set<std::string> _headers;
+	// std::map<std::string, KeyValues *> _model2Data;
 	std::string _source;
 	Ruler _ruler;
 

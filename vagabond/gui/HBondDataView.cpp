@@ -21,10 +21,12 @@
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/HBondData.h>
+#include <vagabond/core/Database.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/Menu.h>
+
 
 HBondDataView::HBondDataView(Scene *prev, HBondData *hbd) : Scene(prev)
 {
@@ -42,7 +44,7 @@ HBondDataView::~HBondDataView()
 
 void HBondDataView::setup()
 {
-	addTitle("H-bonds summary - " + _hbd->source());
+	addTitle("H-bonds summary -  List of sets" + _hbd->source());
 
 	{
 		TextButton *t = new TextButton("View data", this);
@@ -51,7 +53,8 @@ void HBondDataView::setup()
 		addObject(t);
 	}
 	{
-		Text *t = new Text("Number of entries");
+		// this is 
+		Text *t = new Text("Number of h-bond sets");
 		t->setLeft(0.2, 0.3);
 		addObject(t);
 	}
@@ -78,11 +81,14 @@ void HBondDataView::setup()
 	}
 }
 
+
 void HBondDataView::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "add_hbond")
 	{
+		std::cout << "Adding to hbond data file: " << _hbd->source() << std::endl;		
 		HBondData &master = *Environment::hBondData();
+		master += *_hbd;
 		back();
 	}
 	else if (tag == "headers")

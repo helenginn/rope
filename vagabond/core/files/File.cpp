@@ -29,6 +29,7 @@
 #include "Atom.h"
 #include "grids/Diffraction.h"
 #include "AtomContent.h"
+#include "Database.h"
 #include "Metadata.h"
 #include "HBondData.h"
 #include "RefList.h"
@@ -49,7 +50,7 @@ File::~File()
 {
 	delete _compAtoms;
 	delete _macroAtoms;
-	
+
 	if (!_accessedMetadata)
 	{
 		delete _metadata;
@@ -370,6 +371,10 @@ File::Type File::typeUnknown(std::string filename, Flavour needed)
 		FastaFile f = FastaFile(filename);
 		type = f.cursoryLook();
 	}
-	
+	else if (flav == Txt)
+	{
+		TextFile f = TextFile(filename);
+		type = f.cursoryLook();
+	}
 	return type;
 }

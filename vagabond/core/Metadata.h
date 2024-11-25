@@ -51,7 +51,7 @@ public:
 	 * @param kv map of header-to-value pairs
 	 * @param overwrite replace existing information for model/filename
 	 * @throws exception if overwrite is false, but duplicate entry found */
-	void addKeyValues(const KeyValues &kv, const bool overwrite);
+	void addKeyValues(const KeyValues &kv, const bool overwrite) override;
 	void setModelIdForInstanceId(std::string, std::string);
 	const KeyValues *valuesForModel(const std::string name)
 	{
@@ -82,9 +82,29 @@ public:
 
 		return nullptr;
 	}
+
+	const KeyValues* valuesForHeader(const std::string& header, const std::string& id) override 
+	{
+		std::cout << header <<std::endl;
+	    if (header == "molecule" || header == "instance") {
+	    	if (_inst2Data.count(id) > 0) {
+	        	return _inst2Data.at(id);
+	    	}
+	    } else if (header == "filename") {
+	    	if (_file2Data.count(id) > 0) {
+	    		return _file2Data.at(id);
+	    	}
+	    } else if (header == "model") {
+	    	if (_model2Data.count(id) > 0) {
+	        	return _model2Data.at(id);
+	        }
+	    }
+	    return nullptr;
+    }
+	
 	const KeyValues *values(const std::string model_id = "", 
 	                        const std::string filename = "");
-	const size_t entryCount() const
+	const size_t entryCount() override
 	{
 		return _inst2Data.size() + _model2Data.size() + _file2Data.size();
 	}
@@ -99,21 +119,8 @@ public:
 		return _model2Data.size();
 	}
 	std::string asCSV() const;
-
-	const KeyValues* valuesForHeader(const std::string& header, const std::string& id) override 
-	{
-	    if (header == "molecule" || header == "instance") {
-	        return _inst2Data.at(id);
-	    } else if (header == "model") {
-	        return _model2Data.at(id);
-	    }
-	    return nullptr;
-    }
-	
 	// TabulatedData *asInstanceData();
 	// TabulatedData *asModelData();
-	// TabulatedData *asData(const std::vector<std::string> &ids);
-
 private:
 	Metadata *_metadata = nullptr;
 	void extractData(std::ostringstream &csv, KeyValues &kv) const;

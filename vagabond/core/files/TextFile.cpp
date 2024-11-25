@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "files/TextFile.h"
-#include "Metadata.h"
+#include "HBondData.h"
 #include <fstream>
 #include <vagabond/utils/FileReader.h>
 #include <iostream>
@@ -68,7 +68,7 @@ File::Type TextFile::cursoryLook()
 		if (header == "H-bond_ID")
 		{
 			f.close();
-			return Meta;
+			return HBond;
 		}
 	}
 
@@ -80,7 +80,7 @@ void TextFile::processLine(std::string line)
 {
 	std::vector<std::string> components = split(line, ' ');
 	
-	Metadata::KeyValues kvs;
+	HBondData::KeyValues kvs;
 	for (size_t i = 0; i < components.size() && i < _headers.size(); i++)
 	{
 		std::string h = _headers[i];
@@ -100,7 +100,7 @@ void TextFile::processLine(std::string line)
 
 		kvs[h] = Value(components[i]);
 	}
-	_metadata->addKeyValues(kvs, true);
+	_hBondData->addKeyValues(kvs, true);
 }
 
 void TextFile::processHeaders(std::string line)
@@ -118,7 +118,7 @@ void TextFile::processHeaders(std::string line)
 
 void TextFile::parseFileContents()
 {
-	_metadata->setSource(_filename);
+	_hBondData->setSource(_filename);
 
 	std::string path = toFilename(_filename);
 

@@ -22,6 +22,7 @@
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/Metadata.h>
+#include <vagabond/core/Database.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -76,7 +77,7 @@ void MetadataView::setup()
 		t->setCentre(0.8, 0.4);
 		addObject(t);
 	}
-	
+
 	if (_md != Environment::metadata())
 	{
 		TextButton *t = new TextButton("Add to database", this);
@@ -88,6 +89,7 @@ void MetadataView::setup()
 
 void MetadataView::buttonPressed(std::string tag, Button *button)
 {
+
 	if (tag == "add")
 	{
 		Metadata &master = *Environment::metadata();
