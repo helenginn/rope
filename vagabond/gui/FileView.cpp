@@ -197,7 +197,7 @@ void FileView::handleFileWithoutChoice(std::string filename)
 		MetadataView *view = new MetadataView(this, file->metadata());
 		view->show();
 	}
-	else if (type & File::Meta)
+	else if (type & File::HBond)
 	{
 		HBondDataView *view = new HBondDataView(this, file->hBondData());
 		view->show();

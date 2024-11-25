@@ -27,6 +27,7 @@ class Rule;
 class Entity;
 class Metadata;
 class HBondData;
+class Database;
 class Instance;
 class Progressor;
 class FileManager;

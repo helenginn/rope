@@ -4,8 +4,7 @@
 
 Database::Database()
 {
-	// new Metadata();
-	// new HBondData();
+
 }
 
 
@@ -45,7 +44,7 @@ std::string Database::processKeyValue(const KeyValues &kv, const std::vector<std
                                std::map<std::string, KeyValues *> &existingInfo, 
                                const bool overwrite) 
 {
-  // Iterate through each key in the vector
+  // Log input values at the beginning
 	std::string data_id;
 	for (const std::string& current_key : key) 
 	{
@@ -58,17 +57,12 @@ std::string Database::processKeyValue(const KeyValues &kv, const std::vector<std
 		}
 		// Create a deep copy of the key-value pair
 		KeyValues kvCopy = kv;
-
-		// Update internal data structures
 		addToList(kvCopy, data_id, existingInfo, overwrite);
 		_data.push_back(kvCopy);
 
-		if (existingInfo.count(data_id) > 0 && overwrite) 
-		{
-
-			existingInfo[data_id] = &_data.back();
-		}
+		existingInfo[data_id] = &_data.back();
 	}
+
 	return data_id;
 }
 
@@ -161,8 +155,10 @@ auto get_info(const GetId &get_id, const DoWithId &do_with_id)
 	};
 }
 
+
 TabulatedData *Database::asInstanceData()
 {
+
 	OpSet<std::string> instances = values_for(_data, "molecule");
 	instances += values_for(_data, "instance");
 	return asData(instances.toVector());
@@ -170,12 +166,14 @@ TabulatedData *Database::asInstanceData()
 
 TabulatedData *Database::asModelData()
 {
+	std::cout << "In asModel" << std::endl;
 	OpSet<std::string> models = values_for(_data, "model");
 	return asData(models.toVector());
 }
 
 TabulatedData *Database::asHBondData()
 {
+	std::cout << "In asHBondData" << std::endl;
 	OpSet<std::string> hBond = values_for(_data, "H-bond_ID");
 	return asData(hBond.toVector());
 }
@@ -184,45 +182,45 @@ TabulatedData *Database::asHBondData()
 
 TabulatedData *Database::asData(const std::vector<std::string> &ids) 
 {
-  OpSet<TabulatedData::HeaderTypePair> headers;
+	
+	OpSet<TabulatedData::HeaderTypePair> headers;
+	std::vector<std::vector<TabulatedData::StringPair>> entries;
+
   std::vector<DataProcessor> processors = {
+  	{"model", [this](const std::string& id) { return valuesForHeader("model", id); }},
     {"H-bond_ID", [this](const std::string& id) { return valuesForHeader("H-bond_ID", id); }},
     {"molecule", [this](const std::string& id) { return valuesForHeader("molecule", id); }},
-    {"instance", [this](const std::string& id) { return valuesForHeader("instance", id); }},
-    {"model", [this](const std::string& id) { return valuesForHeader("model", id); }}
+    {"instance", [this](const std::string& id) { return valuesForHeader("instance", id); }}
   };
 
-   auto insert_into_headers = [&headers](const KeyValues *kv) 
-  {
-      if (kv == nullptr || kv->size() == 0) {
-          return;
-      }
-      for (auto it = kv->begin(); it != kv->end(); it++) 
-      {
-          TabulatedData::DataType type = TabulatedData::Text;
-          if (it->second.hasNumber()) {
-              type = TabulatedData::Number;
-          }
+	// Update headers
+  auto insert_into_headers = [&headers](const KeyValues *kv) {
+	    if (kv == nullptr || kv->size() == 0) {
+	        return;
+	    }
 
-          headers.insert({it->first, type});
-      }
-  };
+	    for (auto it = kv->begin(); it != kv->end(); it++) {
+	    	TabulatedData::DataType type = it->second.hasNumber() ? TabulatedData::Number : TabulatedData::Text;
+	      headers.insert({it->first, type});
+	    }
+	};
 
-  TabulatedData* data = new TabulatedData(headers.toVector());
-  auto insert_into_data = [&data](const KeyValues *kv) 
-  	{
-      std::vector<TabulatedData::StringPair> pairs;
-      for (auto it = kv->begin(); it != kv->end(); it++) 
-      {
-          pairs.push_back({it->first, it->second.text()});
-          std::cout << it->first << "=" << it->second << ", ";
-      }
-      std::cout << std::endl;
-      if (pairs.size()) {
-          data->addEntry(pairs);
-      }
-  };
-  
+	// Accumulate entries
+	auto insert_into_data = [&entries](const KeyValues *kv)
+	{
+			std::vector<TabulatedData::StringPair> pairs;
+			for (auto it = kv->begin(); it != kv->end(); it++)
+			{
+				pairs.push_back({it->first, it->second.text()});
+				std::cout << it->first << "=" << it->second << ", ";
+			}
+			std::cout << std::endl;
+			if (pairs.size())
+			{
+				entries.push_back(pairs);
+			}
+		};
+
 	for (const std::string &id : ids)
 	{  
 	  for (const auto& processor : processors) 
@@ -232,9 +230,15 @@ TabulatedData *Database::asData(const std::vector<std::string> &ids)
 	  }
 	}
 
+  TabulatedData *data = new TabulatedData(headers.toVector());
+  for (const auto &entry : entries) {
+      data->addEntry(entry);
+  }
+
+  	// Print the tabulated data
+	std::cout << "Generated Tabulated Data:" << std::endl;
+	std::cout << *data << std::endl;
 
 return data;
 
 }
-
-
