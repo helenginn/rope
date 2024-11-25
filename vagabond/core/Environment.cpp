@@ -20,6 +20,7 @@
 #include "FileManager.h"
 #include "Metadata.h"
 #include "HBondData.h"
+#include "Database.h"
 #include "Ruler.h"
 #include "PathManager.h"
 #include "ModelManager.h"

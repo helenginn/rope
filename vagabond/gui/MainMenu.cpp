@@ -227,6 +227,12 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 		MetadataView *mv = new MetadataView(this, md);
 		mv->show();
 	}
+	else if (tag == "hbonds")
+	{
+		HBondData *hbd = Environment::hBondData();
+		HBondDataView *hbdv = new HBondDataView(this, hbd);
+		hbdv->show();
+	}
 	else if (tag == "datasets")
 	{
 		DatasetMenu *menu = new DatasetMenu(this);

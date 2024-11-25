@@ -64,6 +64,7 @@ public:
 		Meta = 1 << 6, /**< contains metadata on file or model names */
 		Json = 1 << 7, /**< json (environment?) file */
 		Sequence = 1 << 8, /**< sequence-containing file */
+		HBond = 1 << 9, /**< contains metadata on file or model names */
 	};
 
 	enum Flavour

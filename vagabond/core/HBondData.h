@@ -32,7 +32,7 @@ public:
 	 * @param kv map of header-to-value pairs
 	 * @param overwrite replace existing information for model/filename
 	 * @throws exception if overwrite is false, but duplicate entry found */
-	void addKeyValues(const KeyValues &kv, const bool overwrite);
+	void addKeyValues(const KeyValues &kv, const bool overwrite) override;
 	const KeyValues *valuesForHBond(const std::string name)
 	{
 		if (_hbond2Data.count(name))
@@ -45,26 +45,24 @@ public:
 
 
 	const KeyValues *values(const std::string hbond_id = "");
-
-	// -------------------------------------------------------------------------------------
 	const KeyValues* valuesForHeader(const std::string& header, const std::string& id) override {
         if (header == "H-bond_ID") {
             return _hbond2Data.at(id);
         }
         return nullptr;
     }
-    // ------------------------------------------------------------------------------------------
+  
+
+	const size_t entryCount() override
+	{
+		return hBondEntryCount();
+	}
 
 	const size_t hBondEntryCount() const
 	{
 		return _hbond2Data.size();
 	}
-	// TabulatedData *asHBondData();
-	// TabulatedData *asData(const std::vector<std::string> &ids);
 private: 
-	// bool addToList(KeyValues &edit, std::string &key,
-    //            const std::map<std::string, KeyValues *> &search, 
-    //            bool overwrite) const;
 	void extractData(std::ostringstream &csv, KeyValues &kv) const;
 	HBondData *_hBondData = nullptr;
 	std::map<std::string, KeyValues *> _hbond2Data;
