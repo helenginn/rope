@@ -29,9 +29,12 @@ using namespace PCA;
 Matrix::Matrix(const Eigen::MatrixXf &matrix)
 {
 	setupMatrix(this, matrix.rows(), matrix.cols());
-	for (int i = 0; i < rows * cols; i++)
+	for (int i = 0; i < rows; i++)
 	{
-		vals[i] = matrix.data()[i];
+		for (int j = 0; j < cols; j++)
+		{
+			ptrs[i][j] = matrix(i, j);
+		}
 	}
 }
 
