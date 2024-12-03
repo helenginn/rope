@@ -30,6 +30,7 @@ class BondSequence;
 class Separation
 {
 public:
+	Separation() {};
 	Separation(BondSequence *const &seq);
 
 	Separation(const std::vector<Atom *> &atoms)
