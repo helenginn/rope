@@ -139,6 +139,7 @@ void Unit::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 	
+	std::cout << "Param count: " << parameterCount() << std::endl;
 	if (parameterCount() == 0)
 	{
 		std::cout << "Skipping refinement - no parameters" << std::endl;

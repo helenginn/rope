@@ -95,6 +95,7 @@ void Refinement::prepareInstanceDetails()
 	std::cout << instances.size() << " instances of which " << single_atoms.size()
 	<< " only have one atom." << std::endl;
 
+	// handle the multi-atom components.
 	for (Instance *inst : multi_atoms)
 	{
 		Refine::Module mods = Refine::Module(//Refine::Warp | 
@@ -103,9 +104,10 @@ void Refinement::prepareInstanceDetails()
 		                                       Refine::Translate |
 		                                       Refine::Rotate);
 
+		// if it's not a protein...
 		if (!inst->hasSequence())
 		{
-			mods = Refine::Module(Refine::None);
+			mods = Refine::Module(Refine::Translate);
 		}
 
 		inst->load();
@@ -118,7 +120,8 @@ void Refinement::prepareInstanceDetails()
 		wiggler();
 	}
 	
-	if (single_atoms.size() && false)
+	// handle single-atom things
+	if (single_atoms.size())
 	{
 		{
 			Refine::Info info;
@@ -143,7 +146,6 @@ void Refinement::prepareInstanceDetails()
 		Wiggler wiggler = Wiggler(network, network.refiner->sampler());
 		wiggler.setModules(Refine::Translate);
 		wiggler();
-
 	}
 }
 
@@ -209,6 +211,7 @@ ArbitraryMap *Refinement::calculatedMapAtoms(Diffraction **reciprocal,
 			continue;
 		}
 
+		std::cout << "unit: " << info.instances[0]->id() << std::endl;
 		unit->prepareResources();
 		Result *result = unit->submitJobAndRetrieve({});
 		AtomMap &map = *result->map;
@@ -262,22 +265,32 @@ void Refinement::updateMap()
 	delete real;
 
 	ApplyScaleBFactor blur_protein(recip_model);
-	recip_model->printMap();
+//	recip_model->printMap();
+	{
+		MtzFile file(recip_model);
+		file.write_to_file("recip_model.mtz", _data->maxResolution());
+	}
 	
 	BulkSolvent bs(recip_model, all_atoms);
 	Diffraction *solvent = bs();
 	solvent->multiply(1 / solvent->sum());
 
-	MtzFile file(solvent);
 	
 	ApplyScaleBFactor blur_solvent(solvent);
 	blur_solvent(100, 120);
-	solvent->printMap();
-	file.write_to_file("solvent.mtz", _data->maxResolution());
+//	solvent->printMap();
+	{
+		MtzFile file(solvent);
+		file.write_to_file("solvent.mtz", _data->maxResolution());
+	}
 	
 	AddTogether add(recip_model, solvent);
 	Diffraction *solvated_model = add();
 	solvated_model->printMap();
+	{
+		MtzFile file(solvated_model);
+		file.write_to_file("solvated.mtz", _data->maxResolution());
+	}
 
 	/* populate with solvent stuff */
 	/*

@@ -74,8 +74,8 @@ namespace Refine
 	
 	struct Calc
 	{
-		Calculate op; // organises the tasks
-		Submit submit; // empty?
+		Calculate op; // organises the tasks, set in Wiggler
+		Submit submit; // set in bind_parameters()
 		int n_params; // total number of params to handle
 	};
 
