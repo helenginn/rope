@@ -180,10 +180,7 @@ int BondSequence::calculateBlock(int idx, const Coord::Get &get,
 	glm::mat4x4 rot = b.prepareRotation(t);
 	b.wip = b.basis * rot * b.coordination;
 
-	if (b.nBonds > 0)
-	{
-		b.writeToChildren(_blocks, idx);
-	}
+	b.writeToChildren(_blocks, idx);
 
 	int &progidx = b.program;
 
