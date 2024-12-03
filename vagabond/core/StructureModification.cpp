@@ -42,6 +42,10 @@ StructureModification::~StructureModification()
 
 void StructureModification::cleanup()
 {
+	if (!_resources.calculator)
+	{
+		return;
+	}
 	retrieve();
 	if (_resources.tasks != nullptr)
 	{
