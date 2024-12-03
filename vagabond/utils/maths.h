@@ -65,8 +65,8 @@ T mean(std::vector<T> &vec1)
 
 double standard_deviation(std::vector<double> &values);
 
-void regression_line(std::vector<double> xs, std::vector<double> ys,
-                     double *intercept, double *gradient, int max = 0);
+void regression_line(std::vector<float> xs, std::vector<float> ys,
+                     float *intercept, float *gradient, int max = 0);
 
 /* provide min/maxD in real space resolution */
 void generateResolutionBins(float minD, float maxD,

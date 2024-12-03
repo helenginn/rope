@@ -180,20 +180,20 @@ void generateResolutionBins(float minD, float maxD,
 	}
 }
 
-void regression_line(std::vector<double> xs, std::vector<double> ys,
-                     double *intercept, double *gradient, int max)
+void regression_line(std::vector<float> xs, std::vector<float> ys,
+                     float *intercept, float *gradient, int max)
 {
-	double sigma_x = 0;
-	double sigma_y = 0;
-	double sigma_x_y = 0;
-	double sigma_x_2 = 0;
-	double weight_n = 0;
+	float sigma_x = 0;
+	float sigma_y = 0;
+	float sigma_x_y = 0;
+	float sigma_x_2 = 0;
+	float weight_n = 0;
 
 	for (int i=0; i < xs.size(); i++)
 	{
-		double x = xs[i];
-		double y = ys[i];
-		double weight = 1;
+		float x = xs[i];
+		float y = ys[i];
+		float weight = 1;
 
 		sigma_x += x * weight;
 		sigma_y += y * weight;
@@ -207,11 +207,11 @@ void regression_line(std::vector<double> xs, std::vector<double> ys,
 		}
 	}
 
-	double mean_x = sigma_x / weight_n;
-	double mean_y = sigma_y / weight_n;
+	float mean_x = sigma_x / weight_n;
+	float mean_y = sigma_y / weight_n;
 
-	double sxy = sigma_x_y - sigma_x * sigma_y / weight_n;
-	double sxx = sigma_x_2 - pow(sigma_x, 2) / weight_n;
+	float sxy = sigma_x_y - sigma_x * sigma_y / weight_n;
+	float sxx = sigma_x_2 - pow(sigma_x, 2) / weight_n;
 
 	*gradient = sxy / sxx;
 	*intercept = mean_y - *gradient * mean_x;
