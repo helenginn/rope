@@ -92,7 +92,8 @@ gemmi::Mtz::Column *find_phi_column(gemmi::Mtz &mtz)
 
 gemmi::Mtz::Column *find_f_column(gemmi::Mtz &mtz)
 {
-	const std::vector<std::string> list = {"FP", "F", "Fobs", "FWT"};
+	const std::vector<std::string> list = {"FP", "F", "Fobs", "FWT", 
+	"F-obs-filtered"};
 	return find_column(mtz, list);
 }
 
