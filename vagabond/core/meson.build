@@ -33,6 +33,8 @@ cfile,
 'Entity.cpp',
 'EntityManager.cpp',
 'Environment.cpp',
+'Evolve.cpp',
+'Evolve.h',
 'Fibonacci.cpp',
 'FileManager.cpp',
 

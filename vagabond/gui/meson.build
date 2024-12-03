@@ -47,6 +47,8 @@ guifiles = [
 'DistanceMaker.cpp',
 'EntityMenu.cpp',
 'EntityFromSequence.cpp',
+'EvolveView.cpp',
+'EvolveView.h',
 'ExportsCSV.cpp',
 'FastaView.cpp',
 'FileLine.cpp',
