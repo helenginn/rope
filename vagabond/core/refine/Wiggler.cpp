@@ -245,7 +245,8 @@ Refine::Calculate Wiggler::prepareSubmission()
 				return am;
 			};
 
-			auto *acquire = new FailableTask<void *, AnisoMap *>(get_implicit);
+			auto *acquire = new FailableTask<void *, AnisoMap *>(get_implicit,
+			                                                     "get_implicit");
 
 			make_map->must_complete_before(acquire);
 			std::vector<float> anisos = paramses[3];
@@ -257,7 +258,8 @@ Refine::Calculate Wiggler::prepareSubmission()
 				return aa.map;
 			};
 
-			auto *apply_aniso = new Task<ApplyAniso, AtomMap *>(add_implicit);
+			auto *apply_aniso = new Task<ApplyAniso, AtomMap *>(add_implicit,
+			                                                    "add_implicit");
 
 			acquire->follow_with(apply_aniso);
 			make_map->follow_with(apply_aniso);
@@ -268,7 +270,8 @@ Refine::Calculate Wiggler::prepareSubmission()
 				return nullptr;
 			};
 
-			auto *free_aniso = new Task<AnisoMap *, void *>(free_implicit);
+			auto *free_aniso = new Task<AnisoMap *, void *>(free_implicit,
+			                                                "free_implicit");
 			apply_aniso->must_complete_before(free_aniso);
 			acquire->follow_with(free_aniso);
 			apply_aniso->follow_with(grab_correl);
@@ -281,6 +284,7 @@ Refine::Calculate Wiggler::prepareSubmission()
 		/* pop correlation into result */
 		correlate->follow_with(submit_result);
 
+		first_hook->setName("wiggler operation");
 		return first_hook;
 	};
 }

@@ -177,7 +177,8 @@ public:
 		do_on_each_engine(start_engine);
 
 		auto *mother_task = new Task<void *, void *>([](void *)
-		                                             { return nullptr; });
+		                                             { return nullptr; },
+		"mother task");
 		for (auto *first : firsts)
 		{
 			mother_task->must_complete_before(first);

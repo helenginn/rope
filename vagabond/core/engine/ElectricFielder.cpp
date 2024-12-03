@@ -96,7 +96,8 @@ void ElectricFielder::
 		return apl;
 	};
 	
-	auto *seq_to_list = new Task<BondSequence *, AtomPosList *>(seq2poslist);
+	auto *seq_to_list = new Task<BondSequence *, AtomPosList *>(seq2poslist,
+	"sequence to pos list");
 	hook->follow_with(seq_to_list);
 	
 	seq_to_list->must_complete_before(let_sequence_go);
@@ -125,9 +126,10 @@ void ElectricFielder::
 	};
 
 	auto *pos_to_segment = 
-	new Task<SegmentPosList, QuickSegment *>(into_segment);
+	new Task<SegmentPosList, QuickSegment *>(into_segment, "into segment");
 
-	auto convert_to_map = new Task<QuickSegment *, AtomMap *>(convert);
+	auto convert_to_map = new Task<QuickSegment *, AtomMap *>(convert,
+	"convert to map");
 	
 	seq_to_list->follow_with(pos_to_segment);
 	grab->follow_with(pos_to_segment);
@@ -141,7 +143,7 @@ void ElectricFielder::
 		return nullptr;
 	};
 
-	auto *let_go = new Task<SegmentAddition, void *>(let_seg_go);
+	auto *let_go = new Task<SegmentAddition, void *>(let_seg_go, "let seq go");
 
 	pos_to_segment->follow_with(let_go);
 	convert_to_map->must_complete_before(let_go);

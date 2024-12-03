@@ -404,7 +404,7 @@ void Loopy::fCalcMap()
 	([](void *) -> void *
 	{
 		return nullptr;
-	});
+	}, "nothing");
 
 	/* prepare end result */
 	Task<Result, void *> *submit_result = calculator->actOfSubmission(_ticket);

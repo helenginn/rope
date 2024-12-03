@@ -169,7 +169,8 @@ void MapTransferHandler::extract(std::map<std::string, GetEle> &eleTasks)
 			return nullptr;
 		};
 		
-		jobs.let_go = new Task<SegmentAddition, void *>(let_seg_go);
+		jobs.let_go = new Task<SegmentAddition, void *>(let_seg_go,
+		"let segment go");
 		
 		/* dependencies: */
 		/* - don't grab a segment before the atom list is ready to add */

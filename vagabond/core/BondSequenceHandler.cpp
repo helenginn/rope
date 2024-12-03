@@ -349,7 +349,7 @@ BondSequenceHandler::extract(Flag::Extract flags,
 	if (flags & Flag::AtomMap)
 	{
 		auto *make_atom_map = new Task<BondSequence *, AtomPosMap *>(atom_map, 
-		                                                     "atom map");
+		                                                     "make atom map");
 		if (map) {*map = make_atom_map;}
 		hook->follow_with(make_atom_map);
 		make_atom_map->must_complete_before(letgo);

@@ -84,7 +84,7 @@ Task<BondSequence *, ActivationEnergy> *
 EnergyTorsions::energy_task(const std::set<ResidueId> &forResidues, float frac)
 {
 	auto energy = energy_term(this, frac, forResidues);
-	auto *task = new Task<BondSequence *, ActivationEnergy>(energy);
+	auto *task = new Task<BondSequence *, ActivationEnergy>(energy, "torsion activation energy");
 	return task;
 
 }
