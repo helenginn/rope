@@ -574,7 +574,8 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 
 	std::cout << "All: " << unpaired << std::endl;
 
-	// first we calculate all possible relationships between bonds
+	// first we calculate all possible relationships between bonds (including
+	// mutually exclusive pairs)
 	all_relationships = convert_pair_set_to_all_relationships(all);
 	
 	// now we add all the acceptable (observed) relationships from survivors
@@ -585,6 +586,7 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 		accepted_relationships += convert_pair_set_to_all_relationships(group);
 	}
 	
+	// these need to be banned.
 	OpSet<PairSet> unwanted = all_relationships - accepted_relationships;
 	
 	std::cout << "All relationships: " << all_relationships.size() << std::endl;
@@ -600,9 +602,7 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 		if (nopair.second)
 		{
 			add_constraint(new BondConstant(*nopair.second, Bond::Broken));
-
 		}
-
 	}
 	
 	OpSet<ABPair> uninvolved = uninvolvedCoordinators(_atom);
@@ -739,7 +739,7 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	add_constraint(new CountConstant(valency, remaining_valency));
 	
 	/* present bonds are the sum of weak and strong */
-//	add_constraint(new CountAdder(expl_strong, expl_weak, expl_present));
+	add_constraint(new CountAdder(expl_strong, expl_weak, expl_present));
 
 	/* vacancies are the sum of weak bonds and absent bonds */
 	add_constraint(new CountAdder(expl_absent, expl_weak, expl_vacancies));
@@ -760,6 +760,10 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	_absent = &expl_absent;
 	_expl_bonds = &expl_bonds;
 
+	// we ensure that if a bond can be present and cannot be broken,
+	// it must be present
+	// however we have a problem: if only one coordination state is remaining
+	// then the bonds don't know that they cannot be broken.
 	auto can_be_present_and_cannot_be_broken = [](const Bond::Values &value) 
 	{
 		bool can_be_present = false;
@@ -807,8 +811,10 @@ ABPair Coordinated::bondedSymmetricAtom(::Atom *asymmetric)
 	return ABPair{};
 }
 
-void Coordinated::equilibrateBonds()
+void Coordinated::findSymmetricallyRelatedBonds()
 {
+	// make sure bonds which are related by symmetry are constrained to
+	// be equal
 	for (const ABPair &bond : _bonds)
 	{
 		if (!bond.first->symmetryCopyOf())
