@@ -59,11 +59,7 @@ float Unit::getResult(int *job_id, Engine *caller)
 
 Result *Unit::submitJobAndRetrieve(const std::vector<float> &all)
 {
-	std::vector<float> params = all;
-	params.resize(parameterCount());
-	_setter(params);
-	_info->bind_parameters(_parameters);
-	submitJob();
+	sendJob(all, nullptr);
 	Result *r = _resources.calculator->acquireObject();
 	return r;
 }
