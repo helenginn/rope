@@ -44,6 +44,12 @@ public:
 		_vertical = vert;
 	}
 
+	const bool &oneOnly() const
+	{
+		return _oneOnly;
+	}
+
+
 	const std::string &tag() const
 	{
 		return _tag;
@@ -52,6 +58,7 @@ public:
 	void setInert(const std::string &tag, bool inert = true);
 	void tick(const std::string &tag, bool yes = true);
 	void toggle(const std::string &tag);
+	void untickAllExcept(const std::string &tag);
 	
 	bool isTicked(const std::string &tag);
 	
@@ -69,7 +76,6 @@ private:
 	ButtonResponder *_responder = nullptr;
 	Scene *_scene = nullptr;
 
-	void untickAllExcept(const std::string &tag);
 	float resizeNeeded(float width, float height);
 	
 	struct Option

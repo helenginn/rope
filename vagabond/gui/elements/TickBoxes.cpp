@@ -205,7 +205,15 @@ void TickBoxes::Option::set(TickBoxes *boxes, const std::string &str,
 	
 	auto wrapped_job = [job, boxes, new_tag]
 	{
-		boxes->toggle(new_tag);
+		if (boxes->oneOnly())
+		{
+			boxes->untickAllExcept(new_tag);
+			boxes->tick(new_tag);
+		}
+		else
+		{
+			boxes->toggle(new_tag);
+		}
 		job();
 	};
 
@@ -236,7 +244,7 @@ TickBoxes::Option::Option(TickBoxes *boxes, const std::string &str,
 TickBoxes::Option::Option(TickBoxes *boxes, const std::string &text, 
                           const std::function<void()> &job, bool ticked)
 {
-	set(boxes, str, {}, job, ticked);
+	set(boxes, text, text, job, ticked);
 }
 
 TickBoxes::Option::~Option()
