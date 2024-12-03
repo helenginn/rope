@@ -88,6 +88,7 @@ void AxisExplorer::setup()
 	DisplayUnit *unit = new DisplayUnit(this);
 	unit->loadAtoms(grp, _instance->entity());
 	unit->displayAtoms();
+	unit->startWatch();
 	addDisplayUnit(unit);
 	_unit = unit;
 	
@@ -189,7 +190,8 @@ void AxisExplorer::adjustTorsions()
 void AxisExplorer::supplyTorsions(CoordManager *manager)
 {
 	BondSequenceHandler *sequences = _resources.sequences;
-	std::vector<Parameter *> params = sequences->torsionBasis()->parameters();
+	const std::vector<Parameter *> &params =
+	sequences->torsionBasis()->parameters();
 	RTAngles filtered = _rawAngles;
 	filtered.attachInstance(_instance);
 	filtered.filter_according_to(params);

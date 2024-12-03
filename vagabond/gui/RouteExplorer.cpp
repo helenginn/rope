@@ -72,6 +72,7 @@ void RouteExplorer::setup()
 	unit->displayAtoms(false, false);
 	addDisplayUnit(unit);
 	unit->addAtomIndexResponder(this);
+	unit->startWatch();
 	
 	_atoms = grp;
 	_route->setAtoms(grp);

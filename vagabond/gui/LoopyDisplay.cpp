@@ -45,6 +45,7 @@ void LoopyDisplay::setup()
 	DisplayUnit *unit = new DisplayUnit(this);
 	unit->loadAtoms(grp, _polymer->entity());
 	unit->displayAtoms();
+	unit->startWatch();
 	addDisplayUnit(unit);
 
 	Display::setup();

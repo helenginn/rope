@@ -74,6 +74,7 @@ public:
 	void displayAtoms(bool hide_balls = false, bool hide_ribbon = false);
 
 	void setMultiBondMode(bool mode);
+	void startWatch();
 	
 	void displayDensityFromAtoms();
 	void densityFromMap(ArbitraryMap *map);

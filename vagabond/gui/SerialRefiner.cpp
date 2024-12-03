@@ -162,6 +162,7 @@ void SerialRefiner::loadModelIntoDisplay(Model *model)
 		DisplayUnit *unit = new DisplayUnit(this);
 		unit->loadAtoms(_displayAtoms);
 		unit->displayAtoms();
+		unit->startWatch();
 
 		clearDisplayUnits();
 		addDisplayUnit(unit);

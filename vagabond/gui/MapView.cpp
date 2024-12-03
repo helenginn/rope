@@ -63,6 +63,7 @@ void MapView::setup()
 	DisplayUnit *unit = new DisplayUnit(this);
 	unit->loadAtoms(_reference->currentAtoms(), _reference->entity());
 	unit->displayAtoms();
+	unit->startWatch();
 	addDisplayUnit(unit);
 	
 	_warp = Warp::warpFromFile(_reference, "test.json");

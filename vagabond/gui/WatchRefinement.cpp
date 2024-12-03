@@ -43,6 +43,7 @@ void WatchRefinement::setup()
 	unit->loadAtoms(grp);
 	unit->displayAtoms();
 	unit->setMultiBondMode(true);
+	unit->startWatch();
 	_current = unit;
 	addDisplayUnit(unit);
 

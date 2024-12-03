@@ -140,7 +140,6 @@ void DisplayUnit::displayAtoms(bool hide_balls, bool hide_ribbon)
 	_guiAtoms->checkAtoms();
 	_guiAtoms->setDisableBalls(hide_balls);
 	_guiAtoms->setDisableRibbon(hide_ribbon);
-	_guiAtoms->startBackgroundWatch();
 	_guiAtoms->balls()->setDisplay(_parent);
 
 	setVisuals();
@@ -148,6 +147,11 @@ void DisplayUnit::displayAtoms(bool hide_balls, bool hide_ribbon)
 	_parent->addObject(_guiAtoms);
 	_parent->addIndexResponder(_guiAtoms->balls());
 	_parent->registerPosition(_atoms->initialCentre());
+}
+
+void DisplayUnit::startWatch()
+{
+	_guiAtoms->startBackgroundWatch();
 }
 
 void DisplayUnit::displayDensityFromAtoms()
@@ -184,6 +188,7 @@ void DisplayUnit::loadModel(Model *model)
 	model->load();
 	loadAtoms(model->currentAtoms());
 	displayAtoms(false, false);
+	startWatch();
 }
 
 void DisplayUnit::densityFromMap(ArbitraryMap *map)

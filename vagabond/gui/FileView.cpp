@@ -117,6 +117,7 @@ void FileView::handleFileWithoutChoice(std::string filename)
 			DisplayUnit *unit = new DisplayUnit(display);
 			unit->loadAtoms(file->atoms());
 			unit->displayAtoms();
+			unit->startWatch();
 			display->addDisplayUnit(unit);
 
 			display->show();
