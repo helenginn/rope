@@ -63,7 +63,7 @@ public:
 			return {};
 		}
 
-		if (BaseTask::verbose)
+		if (BaseTask::verbose || am_verbose)
 		{
 			std::cout << "Running " << name << std::endl;
 		}
@@ -154,6 +154,7 @@ public:
 		return supplySignal();
 	}
 
+	bool am_verbose = false;
 	std::function<Output(Input)> todo;
 
 	Input input{};
