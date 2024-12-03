@@ -131,12 +131,10 @@ public:
 	{
 		int result = ++signals;
 		int triggered = (result >= at_least && result == expected);
-		
-		if (total > expected && result == total)
+		if (am_verbose)
 		{
-			delete this;
-			return false; // don't handle the pointer ever again
-			// may not be used?
+			std::cout << "now " << result << ", at least " << at_least
+			<< " and expected " << expected << std::endl;
 		}
 
 		return triggered;
