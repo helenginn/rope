@@ -66,16 +66,7 @@ void WatchRefinement::sendObject(std::string tag, void *object)
 	if (tag == "swap_map")
 	{
 		ArbitraryMap *map = static_cast<ArbitraryMap *>(object);
-		_mainThreadJobs.push_back([this, map]() { swapMap(map); });
+		addMainThreadJob([this, map]() { swapMap(map); });
 	}
 }
 
-void WatchRefinement::doThings()
-{
-	for (std::function<void()> &job : _mainThreadJobs)
-	{
-		job();
-	}
-	
-	_mainThreadJobs.clear();
-}

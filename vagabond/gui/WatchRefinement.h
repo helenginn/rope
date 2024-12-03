@@ -33,7 +33,6 @@ public:
 	~WatchRefinement();
 
 	virtual void setup();
-	virtual void doThings();
 	void start();
 
 	void setSpaceFilename(std::string name)
@@ -48,7 +47,6 @@ private:
 	std::string _space;
 
 	std::thread *_worker = nullptr;
-	std::vector<std::function<void()> > _mainThreadJobs;
 	
 	DisplayUnit *_current = nullptr;
 };
