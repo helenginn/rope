@@ -40,6 +40,11 @@ public:
 	{
 		return (signals >= expected);
 	}
+	
+	void setName(const std::string &n)
+	{
+		name = n;
+	}
 
 	std::atomic<int> signals{0};
 	std::atomic<int> expected{0};
