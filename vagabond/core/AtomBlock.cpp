@@ -51,7 +51,7 @@ void AtomBlock::printBlock() const
 	}
 	else
 	{
-		std::cout << "Ghost block" << std::endl;
+		std::cout << "Ghost block, nbonds = " << nBonds << std::endl;
 	}
 	std::cout << "Program: " << program << ", flagged: " << flag << ", ";
 	std::cout << "silenced: " << silenced << std::endl;
