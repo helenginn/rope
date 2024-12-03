@@ -148,7 +148,10 @@ public:
 	template <typename InputCompatible>
 	bool setInput(const InputCompatible in)
 	{
-		input = in;
+		{
+			std::unique_lock<std::mutex> lock(_mutex);
+			input = in;
+		}
 		return supplySignal();
 	}
 
@@ -181,7 +184,11 @@ public:
 		}
 
 		bool success = true;
-		this->output = failable_todo(this->input, &success);
+
+		{
+			std::unique_lock<std::mutex> lock(this->_mutex);
+			this->output = failable_todo(this->input, &success);
+		}
 		
 		if (!success)
 		{
