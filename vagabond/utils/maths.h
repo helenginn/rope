@@ -123,6 +123,10 @@ inline void add_to_CD(CorrelData *cd, T x, T y, T w)
 	{
 		return;
 	}
+	if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(w))
+	{
+		return;
+	}
 
 	cd->sum_x += x * w;
 	cd->sum_y += y * w;
@@ -136,6 +140,11 @@ template <class T>
 inline void add_to_CD(CorrelData *cd, T x, T y)
 {
 	if (x != x || y != y)
+	{
+		return;
+	}
+
+	if (!std::isfinite(x) || !std::isfinite(y))
 	{
 		return;
 	}
