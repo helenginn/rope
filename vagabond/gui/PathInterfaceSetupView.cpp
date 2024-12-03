@@ -200,7 +200,7 @@ void PathInterfaceSetupView::preparePath()
 
 	NonCovalents *noncovs = new NonCovalents();
 	route->setNonCovalents(noncovs);
-	route->setMaximumFlipTrial(1);
+	route->setMaximumFlipTrial(0);
 
 	RouteExplorer *re = new RouteExplorer(this, route);
 	re->show();
