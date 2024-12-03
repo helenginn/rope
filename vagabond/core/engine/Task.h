@@ -33,7 +33,7 @@ class Task : public BaseTask
 {
 public:
 	Task(const std::function<Output(Input)> &td, 
-	     const std::string &n = {}, Tasks *f = nullptr) : todo(td)
+	     const std::string &n, Tasks *f = nullptr) : todo(td)
 	{
 		name = n;
 		favoured = f;
@@ -167,7 +167,7 @@ class FailableTask : public Task<Input, Output>
 {
 public:
 	FailableTask(const std::function<Output(Input, bool *)> &td,
-	             const std::string &name = {})
+	             const std::string &name)
 	: Task<Input, Output>({}, name), failable_todo(td)
 	{
 
