@@ -116,6 +116,7 @@ void Slider::finishedDragging(std::string tag, double x, double y)
 	
 	if (_responder != nullptr)
 	{
+		tag = (_dot && _dot->tag().length()) ? _dot->tag() : tag;
 		_responder->finishedDragging(tag, _val, 0);
 	}
 }
