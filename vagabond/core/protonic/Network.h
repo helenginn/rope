@@ -92,9 +92,11 @@ private:
 	void setupSingleAlcohol(::Atom *atom);
 	void setupLysineAmine(::Atom *atom);
 	void setupWater(::Atom *atom);
+	void setupArginine(::Atom *atom);
 	void setupAsnGlnNitrogen(::Atom *atom);
 	void setupCarboxylOxygen(::Atom *atom);
 	void setupHistidine(::Atom *atom);
+	void setupTryptophan(::Atom *atom);
 
 	void showCarboxylAtom(::Atom *atom);
 	void shareCharges(::Atom *left, ::Atom *right,

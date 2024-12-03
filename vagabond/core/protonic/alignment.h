@@ -250,6 +250,18 @@ inline OpSet<ABPair> uninvolvedCoordinators(::Atom *atom)
 		                                {"ASN", "ND2", "CG"},
 		                                {"ASP", "OD1", "CG"},
 		                                {"ASP", "OD2", "CG"},
+		                                {"GLU", "OE1", "CD"},
+		                                {"GLU", "OE2", "CD"},
+		                                {"HIS", "ND1", "CG"},
+		                                {"HIS", "ND1", "CE1"},
+		                                {"HIS", "NE2", "CE1"},
+		                                {"HIS", "NE2", "CD2"},
+		                                {"TRP", "NE1", "CD1"},
+		                                {"TRP", "NE1", "CE2"},
+		                                {"ARG", "NH1", "CZ"},
+		                                {"ARG", "NH2", "CZ"},
+		                                {"ARG", "NE", "CZ"},
+		                                {"ARG", "NE", "CD"},
 		                                {"LYS", "NZ", "CE"}};
 
 	OpSet<ABPair> found;

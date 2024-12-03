@@ -25,7 +25,7 @@
 #include <functional>
 
 /** serious missing features:
- * - missing hydrogens off non-donors
+ * - missing hydrogens off non-donors // sorted?
  * - donatable hydrogens which are incompatible with each other
  *    - in trypsin, Ser170 and Ser167 for example
  * - alternate conformers
@@ -38,19 +38,19 @@ namespace Bond
 {
 	enum Values
 	{
-		Contradiction =  (0),
-		Absent        =  (1 << 0),
-		NotAbsent     =  (1 << 1 | 1 << 2 | 1 << 3),
-		AbsentOrWeak  =  (1 << 0 | 1 << 1),
-		Weak          =  (1 << 1),
-		NotWeak       =  (1 << 0 | 1 << 2 | 1 << 3),
-		Strong        =  (1 << 2),
-		NotStrong     =  (1 << 0 | 1 << 1 | 1 << 3),
-		Present       =  (1 << 1 | 1 << 2),
-		NotPresent    =  (1 << 0 | 1 << 3),
-		Broken        =  (1 << 3),
-		NotBroken     =  (1 << 0 | 1 << 1 | 1 << 2),
-		Unassigned    =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
+		Contradiction   =  (0),
+		Absent          =  (1 << 0),
+		NotAbsent       =  (1 << 1 | 1 << 2 | 1 << 3),
+		AbsentOrWeak    =  (1 << 0 | 1 << 1),
+		Weak            =  (1 << 1),
+		NotWeak         =  (1 << 0 | 1 << 2 | 1 << 3),
+		Strong          =  (1 << 2),
+		NotStrong       =  (1 << 0 | 1 << 1 | 1 << 3),
+		Present         =  (1 << 1 | 1 << 2),
+		NotPresent      =  (1 << 0 | 1 << 3),
+		Broken          =  (1 << 3),
+		NotBroken       =  (1 << 0 | 1 << 1 | 1 << 2),
+		Unassigned      =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
 };
 

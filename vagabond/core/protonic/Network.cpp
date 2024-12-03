@@ -252,7 +252,7 @@ void Network::setupCarboxylOxygen(::Atom *atom)
 	}
 
 	Count::Values charge = Count::mOneOrZero;
-	Count::Values donors = Count::One;
+	Count::Values donors = Count::OneOrZero;
 	Count::Values strong_sum = Count::OneOrZero;
 
 	Count::Values charge_sum = Count::mOneOrZero;
@@ -300,6 +300,43 @@ void Network::setupWater(::Atom *atom)
 	
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::Two);
 }
+
+void Network::setupArginine(::Atom *atom)
+{
+	if (atom->code() != "ARG" || 
+	    !(atom->atomName() == "NH1" || atom->atomName() == "NH2" || 
+	    atom->atomName() == "NE"))
+	{ return; }
+
+	std::cout << "Processing arginine atom " << atom->desc() << std::endl;
+	if (atom->atomName() == "NH1" || atom->atomName() == "NH2")
+	{
+		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three,
+		                                   Count::Two);
+	}
+	else
+	{
+		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three,
+		                                   Count::One);
+	}
+
+	findAtomAndNameIt(atom, "CZ", "Arg");
+}
+
+void Network::setupTryptophan(::Atom *atom)
+{
+	if (atom->code() != "TRP")
+	{
+		return;
+	}
+
+	if (!(atom->code() == "TRP" && atom->atomName() == "NE1"))
+	{ return; }
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
+	findAtomAndNameIt(atom, "CD1", "Trp");
+	findAtomAndNameIt(atom, "CE2", "Trp");
+}
 	
 void Network::setupAtom(::Atom *atom)
 {
@@ -312,6 +349,8 @@ void Network::setupAtom(::Atom *atom)
 		setupCarboxylOxygen(atom);
 		setupSingleAlcohol(atom);
 		setupHistidine(atom);
+		setupArginine(atom);
+		setupTryptophan(atom);
 		setupWater(atom);
 	}
 }
@@ -472,7 +511,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
                  const std::array<double, 6> &unit_cell)
 {
 	_original = rehydrogenate(nonHydrogensFrom(group));
-	AtomGroup *mates = getSymmetryMates(_original, spg_name, unit_cell, 2.5);
+	AtomGroup *mates = getSymmetryMates(_original, spg_name, unit_cell, 4.0);
 	_originalAndMates = new AtomGroup();
 	_originalAndMates->add(mates);
 	_originalAndMates->add(_original);
@@ -481,7 +520,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	_originalAndMates->writeToFile("tmp.pdb");
 
 	_group = hydrogenDonorsFrom(_original);
-	_symMates = getSymmetryMates(_group, spg_name, unit_cell, 3.2);
+	_symMates = getSymmetryMates(_group, spg_name, unit_cell, 4.0);
 	_groupAndMates = new AtomGroup();
 	_groupAndMates->add(_group);
 	_groupAndMates->add(_symMates);
@@ -512,8 +551,10 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 	// find sets of bonds which can/cannot participate in bonding together
 	_group->do_op([this](::Atom *a)
-	              { _atomMap[a]->equilibrateBonds(); });
+	              { _atomMap[a]->findSymmetricallyRelatedBonds(); });
 	
+	// set the previously determined adder constraints linking actual
+	// bonding patterns to the coordinated atom.
 	auto job = [this](::Atom *a) { _atomMap[a]->attachAdderConstraints(); };
 
 	_group->do_op(job);
