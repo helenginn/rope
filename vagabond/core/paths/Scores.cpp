@@ -16,16 +16,5 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <iostream>
 #include "Scores.h"
-#include "../engine/ElementTypes.h"
 
-void ByResidueResult::operator=(const SingleResidueResult &srr)
-{
-	std::unique_lock<std::mutex> lock(*mutex);
-	scores[srr.id] += srr.score;
-	if (activations[srr.id] < srr.score)
-	{
-		activations[srr.id] = srr.score;
-	}
-}

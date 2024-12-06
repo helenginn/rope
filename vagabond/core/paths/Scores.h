@@ -20,21 +20,27 @@
 #define __vagabond__Scores__
 
 #include "ResidueId.h"
+#include "../engine/ElementTypes.h"
 #include <mutex>
+
+// helpful rant:
+// The spaghetti code is really upsetting. I built this lovely control system which splits jobs arbitrarily on different threads, and somehow the control mechanism is just a giant IF statement maze now. I can split the scores up by residue ID but not by subunit. I’ve got a class called “ByResidueResult” and obviously I will need a “ByInstanceResult”, but I should make it templated for the future (“ResultBy<Custom>” where Custom can be whatever I like). In fact, “DetermineCustom” should be an actual function figuring out what “Custom” is. Then I can return e.g. instance ID or residue ID or whatever I like elsewhere in the code.
 
 struct ActivationEnergy;
 
-struct SingleResidueResult
+template <class Custom>
+struct SingleResult
 {
-	ResidueId id{};
+	Custom id{};
 	float score = 0;
 	float highest = 0;
 };
 
-struct ByResidueResult
+template <class Custom>
+struct ResultBy
 {
-	std::map<ResidueId, float> scores;
-	std::map<ResidueId, float> activations;
+	std::map<Custom, float> scores;
+	std::map<Custom, float> activations;
 	std::mutex *mutex = new std::mutex();
 	int ticket;
 	
@@ -44,7 +50,18 @@ struct ByResidueResult
 		delete this;
 	}
 
-	void operator=(const SingleResidueResult &srr);
+	void operator=(const SingleResult<Custom> &srr)
+	{
+		std::unique_lock<std::mutex> lock(*mutex);
+		scores[srr.id] += srr.score;
+		if (activations[srr.id] < srr.score)
+		{
+			activations[srr.id] = srr.score;
+		}
+	}
 };
+
+typedef SingleResult<ResidueId> SingleResidueResult;
+typedef ResultBy<ResidueId> ByResidueResult;
 
 #endif
