@@ -92,6 +92,7 @@ Renderable *ModelMenu::getLine(int i)
 void ModelMenu::buttonPressed(std::string tag, Button *button)
 {
 	ListView::buttonPressed(tag, button);
+	std::cout << "Hi from ModelMenu::buttonPressed and tag " << tag << std::endl;
 
 	if (tag == "add")
 	{

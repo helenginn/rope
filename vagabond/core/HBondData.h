@@ -5,11 +5,13 @@
 #include <list>
 #include <chrono>
 #include <set>
+#include <mutex>
 #include "Value.h"
 #include "Ruler.h"
 #include "Database.h"
 #include "Progressor.h"
 #include "TabulatedData.h"
+#include "files/File.h"
 
 
 class HBondData : public Progressor, public Database
@@ -39,7 +41,7 @@ public:
 		{
 			return _hbond2Data.at(name);
 		}
-		
+
 		return nullptr;
 	}
 
@@ -62,10 +64,30 @@ public:
 	{
 		return _hbond2Data.size();
 	}
+
+	HBondData* getHBondData() 
+	{
+		// Check if the master HBondData object exists
+		if (Environment::hBondData()) 
+		{
+			return Environment::hBondData();
+		}
+
+		// If no master exists, return nullptr (or potentially throw an exception)
+		// You might want to consider throwing an exception here if a master 
+		// HBondData object is crucial for your application.
+		return nullptr;
+	}
+	bool unload();
+	std::vector<std::pair<std::string, std::string>> generateDonorAcceptorPairs();
+	std::string toUpperCase(const std::string& str);
 private: 
 	void extractData(std::ostringstream &csv, KeyValues &kv) const;
 	HBondData *_hBondData = nullptr;
 	std::map<std::string, KeyValues *> _hbond2Data;
+	int _loadCounter = 0;
+	std::mutex *_loadMutex = nullptr;
+	File *_currentFile = nullptr;
 
 };
 
