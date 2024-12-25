@@ -22,7 +22,9 @@
 
 #include <vagabond/gui/Display.h>
 #include <vagabond/gui/elements/DragResponder.h>
+#include <vagabond/gui/HBondMenu.h>
 #include <vagabond/core/Flexibility.h>
+
 
 
 class Slider;
@@ -44,15 +46,25 @@ public:
 	virtual void setup();
 	// Sets up the slider element
 	void setupSlider();
-
+	void selectMode(HBondMenu *hbmenu, bool flag)
+	{
+		// HBondMenu *hbmenu = new HBondMenu(this);
+		hbmenu->setMode(flag);
+	}
+	void checkHBondSelection();
 	// Submits a flexibility calculation job with a specific weight
 	void submitJob(float prop, bool tear = false);
 	// Handles finishing drag interaction on the slider (updates flexibility weight)
 	virtual void finishedDragging(std::string tag, double x, double y);
-	void callAddHBonds(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs);
-	int calculateMaximumTorsionSetSize(const std::vector<std::pair<std::string, std::string>>& donorAcceptorPairs);
+	void callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs);	
+	int calculateMaximumTorsionSetSize(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs);
+	void hbondSelected(HBondMenu* hbondMenu, const std::vector<HBondManager::HBondPair> &selectedHBonds);
+	void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
+	void reset();
 
 private: 
+	bool _selectFlag = false;
+	std::vector<HBondManager::HBondPair> _hBondPairs;
 	Flexibility *_flex = nullptr;
 	Instance *_instance = nullptr;
 	Slider *_rangeSlider = nullptr;

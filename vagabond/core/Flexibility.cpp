@@ -1,12 +1,14 @@
 #include <vagabond/core/Flexibility.h>
 #include <vagabond/utils/maths.h>
 #include <vagabond/c4x/Cluster.h>
+#include <mutex>
 #include <gemmi/elem.hpp>
 #include "Instance.h"
 #include "AtomGroup.h"
 #include "BondSequence.h"
 #include "BondCalculator.h"
 #include "BondSequenceHandler.h"
+#include "HBondManager.h"
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/Eigen/Dense>
@@ -59,6 +61,7 @@ void Flexibility::prepareResources()
 // Calculates torsion flexibility using a lambda function
 void Flexibility::calculateTorsionFlexibility(CoordManager* specific_manager) 
 {
+    std::cout << "Starting caclulating torsion Flexibility" << std::endl;
 	auto calculateFlexibility = [this](const Coord::Get &get, const int &idx) 
 	{
 		float weight = get(0); // Gets weight value passed into submitJob
@@ -67,6 +70,7 @@ void Flexibility::calculateTorsionFlexibility(CoordManager* specific_manager)
 		return flexWeight; 
 	};
 	specific_manager->setTorsionFetcher(calculateFlexibility); // Sets the torsion fetcher
+    std::cout << "Finishing caclulating torsion Flexibility" << std::endl;
 }
 
 // Submits a flexibility calculation job
@@ -94,19 +98,37 @@ void Flexibility::submitJob(float weight)
   _resources.tasks->addTask(first_hook); // Adds task to the task list
 }
 
-void Flexibility::addMultipleHBonds(const std::vector<std::pair<std::string, std::string>>& donorAcceptorPairs) 
+void Flexibility::loadHBondsFromManager(HBondManager* hbondManager) 
 {
-    for (const auto& pair : donorAcceptorPairs) 
+    if (hbondManager == nullptr) 
     {
-        addHBond(pair.first, pair.second);
+        std::cerr << "Error: HBondManager is null." << std::endl;
+        return;
     }
+    
+    auto& donorAcceptorPairs = hbondManager->getHBondPairs();
+    
+    // Add the HBonds into the Flexibility class
+    // addMultipleHBonds(donorAcceptorPairs);
+    
+    std::cout << "Successfully loaded HBond pairs into Flexibility." << std::endl;
+}
 
+
+void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
+{
+
+    if (donorAcceptorPairs.empty()) 
+    {
+        std::cerr << "Error: No HBonds to add." << std::endl;
+        return;
+    }
     // Calculate the Jacobian matrix
     buildJacobianMatrix();
 
     // Print the Jacobian matrix
     std::cout << "Jacobian Matrix:" << std::endl;
-    std::cout << _jacobMtx << std::endl;
+    // std::cout << _jacobMtx << std::endl;
 
     // calculate SVD matrices 
     _globalTorsionVector.assign(_globalTorsionSet.begin(), _globalTorsionSet.end());
@@ -119,21 +141,83 @@ void Flexibility::addMultipleHBonds(const std::vector<std::pair<std::string, std
     calculateTorsionFlexibility(that_is_manager); 
 }
 
-void Flexibility::addHBond(std::string donor, std::string acceptor)
+bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
+    // Initialize static counters
+    static int missingDonorCount = 0;
+    static int missingHydrogenCount = 0;
+    static int successfulValidations = 0;
+
+    // Retrieve the current AtomGroup
+    AtomGroup* atomGroup = _instance->currentAtoms();
+
+    if (!atomGroup) {
+        std::cerr << "Error: currentAtoms() returned a null pointer." << std::endl;
+        return false;
+    }
+
+    // Check if donor exists
+    Atom* donorAtom = atomGroup->atomByDesc(hbondPair.donor);
+    if (!donorAtom) {
+        ++missingDonorCount;
+        std::cerr << "Error: Donor atom '" << hbondPair.donor 
+                  << "' not found in the AtomGroup. Total missing donors: " 
+                  << missingDonorCount << std::endl;
+        return false;
+    }
+
+    // Check if acceptor (hydrogen) exists
+    Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.acceptor);
+    if (!hydrogenAtom) {
+        ++missingHydrogenCount;
+        std::cerr << "Error: Acceptor (hydrogen) atom '" << hbondPair.acceptor 
+                  << "' not found in the AtomGroup. Total missing hydrogens: " 
+                  << missingHydrogenCount << std::endl;
+        return false;
+    }
+
+    // If both atoms are found
+    ++successfulValidations;
+    std::cout << "Validation successful. Total successful validations: " 
+              << successfulValidations << std::endl;
+
+    return true;
+}
+
+bool Flexibility::checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom) 
 {
+    atom = atomGroup->atomByDesc(atomDesc);
+    if (!atom) {
+        std::cerr << "Error: Atom '" << atomDesc << "' not found." << std::endl;
+        return false;
+    }
+    return true;
+}
 
-	AtomGroup* atomGroup = _instance->currentAtoms();
-	Atom* donorAtom = atomGroup->atomByDesc(donor);
-	Atom* acceptorAtom = atomGroup->atomByDesc(acceptor);
 
-   // Check if either atom is null
-    if (donorAtom == nullptr || acceptorAtom == nullptr)
-    {
-        std::cerr << "Error: Could not find one or both atoms in the AtomGroup." << std::endl;
+void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair) {
+    // Validate the HBondPair atoms
+    if (!validateHBondPair(hbondPair)) {
+        std::cerr << "Validation failed: One or both atoms not found. Skipping HBond addition." << std::endl;
+        return;
+    }
+    // Proceed with the rest of the addHBond logic as before
+    AtomGroup* atomGroup = _instance->currentAtoms();
+    Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
+    Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.donor);
+
+    // Error handling for acceptor
+    if (!checkAndGetAtom(atomGroup, hbondPair.acceptor, acceptorAtom) || 
+        !checkAndGetAtom(atomGroup, hbondPair.donor, hydrogenAtom)) {
         return;
     }
 
-    // calculate HBond distance
+    Atom* donorAtom = hydrogenAtom->connectedAtom(0); // Assuming bonded atom is donor
+    if (!donorAtom) {
+        std::cerr << "Error: Hydrogen atom '" << hbondPair.donor << "' is not connected to any atom." << std::endl;
+        return;
+    }
+
+    // Access donor and acceptor positions
     int donorBlock_idx = accessAtomBlock(donorAtom);
     int acceptorBlock_idx = accessAtomBlock(acceptorAtom);
 
@@ -141,13 +225,13 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
     const AtomBlock& donorBlock = blocks[donorBlock_idx];
     const AtomBlock& acceptorBlock = blocks[acceptorBlock_idx];
-
+    
     int parentDonor_idx = blocks[donorBlock_idx].parent_idx;
     int parentAcceptor_idx = blocks[acceptorBlock_idx].parent_idx;
 
-    glm::vec3 donorPos = blocks[donorBlock_idx].my_position(); 
-   	glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
-
+    // Compute positions, distances, and angles
+    glm::vec3 donorPos = blocks[donorBlock_idx].my_position();
+    glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
     glm::vec3 parentDonorPos = blocks[donorBlock_idx + parentDonor_idx].my_position();
     glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx + parentAcceptor_idx].my_position();
 
@@ -155,7 +239,7 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
     float alphaAngleDistance = calculateAngleDistance(donorPos, acceptorPos, parentDonorPos);
     float betaAngleDistance = calculateAngleDistance(acceptorPos, donorPos, parentAcceptorPos);
 
-	// Create HBondEntity and store values
+    // Create HBondEntity and store values
     HBondEntity hbe;
     hbe.Donor = donorAtom;
     hbe.donorIdx = donorBlock_idx;
@@ -167,23 +251,11 @@ void Flexibility::addHBond(std::string donor, std::string acceptor)
     hbe.AlphaAngleDist = alphaAngleDistance;
     hbe.BetaAngleDist = betaAngleDistance;
 
-    // Print the positions and distance for debugging
-    std::cout << "Donor position: " << donorPos.x << ", " << donorPos.y << ", " << donorPos.z << std::endl;
-    std::cout << "Acceptor position: " << acceptorPos.x << ", " << acceptorPos.y << ", " << acceptorPos.z << std::endl;
-    std::cout << "Distance: " << distance << std::endl;
-    std::cout << "Parent donor atom position: " << parentDonorPos.x << ", " << parentDonorPos.y << ", " << parentDonorPos.z << std::endl;
-    std::cout << "Parent acceptor atom position: " << parentAcceptorPos.x << ", " << parentAcceptorPos.y << ", " << parentAcceptorPos.z << std::endl;
-    std::cout << "Angle alpha distance (from acceptor to parent-donor): " << alphaAngleDistance << std::endl;
-    std::cout << "Beta alpha distance (from donor to parent-acceptor): " << betaAngleDistance << std::endl;
-
-
-    // Find last common ancestor (LCA) between donor and acceptor atom 
     std::vector<int> lca_idx = lastCommonAncestorIdx(donorBlock_idx, acceptorBlock_idx);
     // Insert torsion vector to _hbe 
-    hbe.TorsionVec = lca_idx; 
+    hbe.TorsionVec = lca_idx;
     _hbonds.push_back(hbe);
     _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
-
 }
 
 
@@ -282,9 +354,10 @@ void Flexibility::buildJacobianMatrix()
 {
     // Get the number of torsions and values
     int numCol = _hbonds.size();
+    std::cout << "Number of columns of JacMat = " << numCol << std::endl;
     std::vector<int> globalTorsionVector(_globalTorsionSet.begin(), _globalTorsionSet.end());
     int numRow = _globalTorsionSet.size();
-
+    std::cout << "Number of rows of JacMat = " << numRow << std::endl;
     // set up the JacobianMatrix
     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
     jacobianMatrix.setZero();
@@ -301,6 +374,14 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 BPos = blocks[torsionIdx].inherit; 
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
+
+            std::cout << "derivatives " << numRow << std::endl;
+            std::cout << "Processing row " << i << ", column " << j << std::endl;
+            std::cout << "APos: " << APos.x << ", " << APos.y << ", " << APos.z << std::endl;
+            std::cout << "BPos: " << BPos.x << ", " << BPos.y << ", " << BPos.z << std::endl;
+            std::cout << "CPos: " << CPos.x << ", " << CPos.y << ", " << CPos.z << std::endl;
+            std::cout << "DPos: " << DPos.x << ", " << DPos.y << ", " << DPos.z << std::endl;
+
             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
             jacobianMatrix(i,j) = derivative;
         }
@@ -312,6 +393,7 @@ void Flexibility::calculateSVD()
 {
     MatrixXf jacobMtrT = _jacobMtx.transpose();
     BDCSVD<MatrixXf> svdJac = jacobMtrT.bdcSvd();
+    std::cout << "Singular values: " << svdJac.singularValues().transpose() << std::endl;
 
     svdJac.compute(jacobMtrT, Eigen::ComputeFullU | Eigen::ComputeFullV);
     _U = svdJac.matrixU();
@@ -322,6 +404,7 @@ void Flexibility::calculateSVD()
 
 void Flexibility::calculateFlexWeights()
 {
+    std::cout << "Calculate flex weights " << std::endl;
     // get the all the torsions of the protein 
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
     std::vector<float> weightColumn(_V.rows());
@@ -336,7 +419,18 @@ void Flexibility::calculateFlexWeights()
     {
         _allTorsions[_globalTorsionVector[i]] = weightColumn[i];
     }
+    std::cout << "Finishin calcualting flex weights " << std::endl;
 }
+
+void Flexibility::clearHBonds()
+{
+    std::lock_guard<std::mutex> lock(_mutex); // Ensure thread safety
+    _hbonds.clear();
+    _globalTorsionSet.clear();  // Clear the global torsion set
+    _jacobMtx = Eigen::MatrixXf(); // Reset the Jacobian matrix to an empty state
+    std::cout << "Hydrogen bonds and associated data cleared in Flexibility." << std::endl;
+}
+
 
 void Flexibility::printHBonds() const
 {
@@ -346,9 +440,9 @@ void Flexibility::printHBonds() const
         std::cout << "  Donor: " << hbe.Donor->desc() << std::endl;
         std::cout << "  Acceptor: " << hbe.Acceptor->desc() << std::endl;
         std::cout << "  Start Distance: " << hbe.startDist << std::endl;
-        std::cout << "  Parent Donor: " << hbe.ParentDonor->desc() << std::endl;
-        std::cout << "  Parent Acceptor: " << hbe.ParentAcceptor->desc() << std::endl;
-        std::cout << "--------------------" << std::endl;
+        // std::cout << "  Parent Donor: " << hbe.ParentDonor->desc() << std::endl;
+        // std::cout << "  Parent Acceptor: " << hbe.ParentAcceptor->desc() << std::endl;
+        // std::cout << "--------------------" << std::endl;
     }
 }
 

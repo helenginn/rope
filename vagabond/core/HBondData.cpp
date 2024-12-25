@@ -44,8 +44,10 @@ const HBondData::KeyValues *HBondData::values(const std::string hbond_id)
 
 void HBondData::housekeeping()
 {
+	// return;
 	std::list<KeyValues> tmp = _data;
 	_data.clear();
+	_hbond2Data.clear();
 	for (const KeyValues &kv : tmp)
 	{
 		addKeyValues(kv, true);
@@ -56,6 +58,85 @@ void HBondData::addKeyValues(const KeyValues &kv, const bool overwrite)
 {
 		processKeyValue(kv, {"H-bond_ID"}, _hbond2Data, true);
 		headersFromValues(kv);
+}
+
+
+bool HBondData::unload()
+{
+	std::unique_lock<std::mutex> lock(*_loadMutex);
+
+	if (_loadCounter == 0) { return false; } // don't unload twice!
+	_loadCounter--;
+//	std::cout << "Model " << name() << " load counter: " 
+//	<< _loadCounter << std::endl;
+	if (_loadCounter > 0) { return false; }
+	
+	if (_currentFile)
+	{
+		delete _currentFile;
+		_currentFile = nullptr;
+	}
+
+	return true;
+}
+
+
+std::string HBondData::toUpperCase(const std::string& str)
+{
+    std::string result = str;
+    std::transform(result.begin(), result.end(), result.begin(), ::toupper);
+    return result;
+} 
+
+
+std::vector<std::pair<std::string, std::string>> HBondData::generateDonorAcceptorPairs()
+{
+    TabulatedData* fullData = asHBondData();
+    if (!fullData)
+    {
+        std::cerr << "Error: H-bond data not available." << std::endl;
+        return {};
+    }
+
+    auto fetch = [&](const std::string& col) 
+    {
+   		auto column = fullData->column(col);
+    	if (column.empty()) {
+        	std::cerr << "Error: Column '" << col << "' not found or empty." << std::endl;
+    	}
+    	return column;
+    };
+
+	std::vector<std::string> accChain = fetch("Acc-chain");
+    std::vector<std::string> accResn = fetch("Acc-resn");
+    std::vector<std::string> accResi = fetch("Acc-resi");
+    std::vector<std::string> accAtom = fetch("Acc-atomn");
+    std::vector<std::string> hChain = fetch("H-chain");
+    std::vector<std::string> hResn = fetch("H-resn");
+    std::vector<std::string> hResi = fetch("H-resi");
+    std::vector<std::string> hAtom = fetch("H-atomn");
+
+    size_t rowCount = accChain.size();
+    if (rowCount != accResn.size() || rowCount != accResi.size() || hChain.size() != hAtom.size())
+    {
+        std::cerr << "Error: Column size mismatch in H-bond data." << std::endl;
+        delete fullData;
+        return {};
+    }
+
+    std::vector<std::pair<std::string, std::string>> pairs;
+    for (size_t i = 0; i < rowCount; i++)
+    {
+        pairs.emplace_back(
+            toUpperCase(accChain[i]) + "-" + toUpperCase(accResn[i]) + toUpperCase(accResi[i]) + ":" + toUpperCase(accAtom[i]),
+            toUpperCase(hChain[i]) + "-" + toUpperCase(hResn[i]) + toUpperCase(hResi[i]) + ":" + toUpperCase(hAtom[i]));
+    }
+
+    delete fullData;
+    return pairs;
+
+
+
 }
 
 

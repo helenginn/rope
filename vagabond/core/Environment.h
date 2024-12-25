@@ -35,6 +35,7 @@ class PathManager;
 class ModelManager;
 class GlobalOptions;
 class EntityManager;
+class HBondManager;
 
 template <typename Progressor> class Responder;
 
@@ -61,6 +62,11 @@ public:
 	static ModelManager *modelManager()
 	{
 		return _environment._modelManager;
+	}
+
+	static HBondManager *hBondManager()
+	{
+		return _environment._hBondManager;
 	}
 
 	static size_t entityCount();
@@ -127,7 +133,7 @@ private:
 	PathManager *_pathManager = nullptr;
 	Metadata *_metadata = nullptr;
 	HBondData *_hBondData = nullptr;
-	
+	HBondManager *_hBondManager = nullptr;
 	Responder<Progressor> *_pg = nullptr;
 
 	static Environment _environment;

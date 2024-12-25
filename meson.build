@@ -4,7 +4,6 @@ project('rope', 'cpp', 'c', version: '0.1.7',
 build_dir = meson.current_build_dir()
 links = meson.get_external_property('links', [])
 compile_args = meson.get_external_property('compile_args', [])
-
 # Check if we are building natively or for emscripten
 is_native = (links == [])
 
@@ -89,4 +88,3 @@ else  # emscripten
     dependencies: header_deps,
     install: true)
 endif
-

@@ -76,7 +76,9 @@ public:
 	std::vector<std::string> all_headers() const;
 	
 	std::string asCSV();
-	
+
+
+	TabulatedData filterColumns(const std::vector<std::string>& selectedColumns) const;
 	friend std::ostream &operator<<(std::ostream &ss, const TabulatedData &data);
 private:
 	int indexForHeader(const std::string &header) const;

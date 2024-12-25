@@ -25,6 +25,7 @@
 #include "PathManager.h"
 #include "ModelManager.h"
 #include "EntityManager.h"
+#include "HBondManager.h"
 
 #include <iostream>
 #include <fstream>
@@ -47,7 +48,9 @@ Environment::Environment()
 	_fileManager = new FileManager();
 	_pathManager = new PathManager();
 	_modelManager = new ModelManager();
+	_hBondManager = new HBondManager();
 	_entityManager = new EntityManager();
+
 }
 
 Environment::~Environment()
@@ -68,7 +71,9 @@ void Environment::save()
 	data["entity_manager"] = *_entityManager;
 	data["path_manager"] = *_pathManager;
 	data["metadata"] = *_metadata;
-	data["hBondData"] = *_hBondData;
+	// data["hBondData"] = *_hBondData;
+	// data["hbond_manager"]["hBondData"] = *_hBondManager->getHBondDatafromManager(); 
+	data["hbond_manager"] = *_hBondManager;
 #ifdef __EMSCRIPTEN__
 	std::string contents = data.dump();
 #endif
@@ -126,24 +131,22 @@ void Environment::load(std::string file)
 	*_modelManager = data["model_manager"];
 	loadEntitiesBackwardsCompatible(data);
 	*_metadata = data["metadata"];
-
-	  // Check if hBondData key exists
-	if (data.count("hBondData")) 
+	// Check if hBondData key exists
+	if (data.count("hbond_manager")) 
 	{
-		*_hBondData = data["hBondData"];
+		*_hBondManager = data["hbond_manager"];
 	} 
 	else 
 	{
 		// hBondData key missing, initialize an empty HBondData object
-		_hBondData = new HBondData();
-		_hBondData->setSource("master"); // Set source if necessary
+		_hBondManager = new HBondManager();
 		std::cerr << "Warning: hBondData key missing in JSON file. Using an empty HBondData object." << std::endl;
 	}
 
 	*_pathManager = data["path_manager"];
 
 	_metadata->housekeeping();
-	_hBondData->housekeeping();
+	_hBondManager->housekeeping();
 	_entityManager->housekeeping();
 	_modelManager->housekeeping();
 	

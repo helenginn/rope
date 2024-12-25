@@ -53,7 +53,7 @@ std::string Database::processKeyValue(const KeyValues &kv, const std::vector<std
 			data_id = kv.at(current_key).text();
 		} 
 		else {
-			return ""; 
+			continue; 
 		}
 		// Create a deep copy of the key-value pair
 		KeyValues kvCopy = kv;
