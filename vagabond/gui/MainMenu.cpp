@@ -8,6 +8,7 @@
 #include "DatasetMenu.h"
 #include "EntityMenu.h"
 #include "ModelMenu.h"
+#include "HBondMenu.h"
 #include "MainMenu.h"
 #include "FileView.h"
 
@@ -100,7 +101,8 @@ void MainMenu::setup()
 	}
 
 	{
-		ImageButton *button = new ImageButton("assets/images/some_atoms.png", this);
+		// ImageButton *button = new ImageButton("assets/images/hydrogen_bond.png", this);
+		ImageButton *button = new ImageButton("assets/images/happy_face.png", this);
 		button->resize(0.25);
 		button->setReturnTag("hbonds");
 		button->setCentre(0.5, 0.65);
@@ -227,11 +229,17 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 		MetadataView *mv = new MetadataView(this, md);
 		mv->show();
 	}
+	// else if (tag == "hbonds")
+	// {
+	// 	HBondData *hbd = Environment::hBondData();
+	// 	HBondDataView *hbdv = new HBondDataView(this, hbd);
+	// 	hbdv->show();
+	// }
 	else if (tag == "hbonds")
 	{
-		HBondData *hbd = Environment::hBondData();
-		HBondDataView *hbdv = new HBondDataView(this, hbd);
-		hbdv->show();
+		// HBondData *hbd = Environment::hBondData();
+		HBondMenu *hbdmenu = new HBondMenu(this);
+		hbdmenu->show();
 	}
 	else if (tag == "datasets")
 	{

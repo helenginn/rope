@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/FileReader.h>
 #include <vagabond/core/HBondData.h>
+#include <vagabond/core/HBondManager.h>
 #include <vagabond/core/Database.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -87,8 +88,12 @@ void HBondDataView::buttonPressed(std::string tag, Button *button)
 	if (tag == "add_hbond")
 	{
 		std::cout << "Adding to hbond data file: " << _hbd->source() << std::endl;		
-		HBondData &master = *Environment::hBondData();
-		master += *_hbd;
+		// HBondData &master = *Environment::hBondData();
+		// master += *_hbd;
+		int num_hbonds = _hbd->entryCount();
+		std::cout << "Number of hbonds in HBondDataView::buttonPressed " << num_hbonds << std::endl;
+		HBondManager &manager =  *Environment::hBondManager();
+		manager.insertIfUnique(*_hbd);
 		back();
 	}
 	else if (tag == "headers")

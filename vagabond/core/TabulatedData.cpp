@@ -26,7 +26,6 @@ TabulatedData::TabulatedData(const std::vector<HeaderTypePair> &headerTypes)
 : _headerTypes(headerTypes)
 {
 	_visible = std::vector<bool>(headerTypes.size(), true);
-
 }
 
 void TabulatedData::addEntry(const std::vector<StringPair> &entries)
@@ -53,6 +52,7 @@ void TabulatedData::addEntry(const std::vector<StringPair> &entries)
 		
 		if (!found)
 		{
+			std::cout << "Didn't found any entries" << std::endl;
 			entry.push_back("");
 		}
 	}
@@ -70,7 +70,7 @@ std::vector<float> cast_to_floats(const TabulatedData::Strings &strings)
 {
 	std::vector<float> floats;
 	floats.reserve(strings.size());
-
+// 
 	for (const std::string &str : strings)
 	{
 		floats.push_back(atof(str.c_str()));
@@ -418,3 +418,34 @@ TabulatedData TabulatedData::operator+(const std::pair<TabulatedData *,
 	
 	return new_data;
 }
+
+TabulatedData TabulatedData::filterColumns(const std::vector<std::string>& selectedColumns) const 
+{
+    // Step 1: Determine the indices of the selected columns
+    std::vector<int> indices;
+    std::vector<HeaderTypePair> filteredHeaders;
+
+    for (const auto& column : selectedColumns) {
+        int index = indexForHeader(column);
+        if (index == -1) {
+            throw std::runtime_error("Column '" + column + "' not found in headers");
+        }
+        indices.push_back(index);
+        filteredHeaders.push_back(_headerTypes[index]);
+    }
+
+    // Step 2: Create a new TabulatedData object with the selected headers
+    TabulatedData filteredData(filteredHeaders);
+
+    // Step 3: Filter entries based on the indices
+    for (const auto& entry : _entries) {
+        std::vector<StringPair> filteredEntry;
+        for (int index : indices) {
+            filteredEntry.push_back({_headerTypes[index].first, entry[index]});
+        }
+        filteredData.addEntry(filteredEntry);
+    }
+
+    return filteredData;
+}
+

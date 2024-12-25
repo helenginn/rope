@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <atomic>
 #include "StructureModification.h"
+#include "HBondManager.h"
 
 
 class Flexibility : public Display, public StructureModification {
@@ -46,8 +47,8 @@ public:
 	void prepareResources();
     void calculateTorsionFlexibility(CoordManager* specific_manager);
 	void submitJob(float weight);
-    void addMultipleHBonds(const std::vector<std::pair<std::string, std::string>>& donorAcceptorPairs);
-    void addHBond(std::string donor, std::string acceptor);
+    void addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs);
+    void addHBond(const HBondManager::HBondPair &hbondPair);
     void printHBonds() const;
     int accessAtomBlock(Atom* atom);
     float calculateDistance(const glm::vec3& vector1, const glm::vec3& vector2) 
@@ -61,10 +62,15 @@ public:
    void buildJacobianMatrix();
    void calculateSVD();
    void calculateFlexWeights();
+   void loadHBondsFromManager(HBondManager* hbondManager);
+   void clearHBonds();
+   bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
+   bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
 protected:
     float _chosenWeight = 0.5;;
 private:
 	bool _gui = false;
+    std::mutex _mutex;
 	bool _setup = false;
     bool _displayTargets = false;
     std::vector<HBondEntity> _hbonds;

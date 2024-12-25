@@ -4,11 +4,12 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/HBondMenu.h>
 
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Result.h>
-#include <vagabond/core/Flexibility.h>
+#include <vagabond/core/HBondManager.h>
 
 
 
@@ -24,7 +25,7 @@ FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 FlexibilityView::~FlexibilityView()
 {
 	stopGui();
-	_instance->unload();
+	// _instance->unload();
 }
 
 void FlexibilityView::makeMenu()
@@ -42,9 +43,16 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 		glm::vec2 c = button->xy();
 		Menu *m = new Menu(this, this, "options");
 		m->addOption("Save state as PDB", "save_state");
+		m->addOption("Select h-bonds from file", "selected_hbonds");
+		m->addOption("Clear hydrogen bonds", "clear_hbonds");
 		m->setup(c.x, c.y);
 		setModal(m);
 	}
+	else if (tag == "clear_hbonds") // Handle clearing hydrogen bonds
+    {
+        reset();  // Clear internal state
+        _flex->clearHBonds(); // Notify Flexibility to clear bonds
+    }
 	else if (tag == "options_save_state")
 	{
 		AskForText *aft = new AskForText(this, "PDB file name to save to:",
@@ -62,9 +70,43 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 
 		_instance->currentAtoms()->writeToFile(filename);
 	}
+	else if (tag == "options_selected_hbonds")
+	{
+		_selectFlag = true;
+		HBondMenu *hbmenu = new HBondMenu(this);
+		hbmenu->setCallBackFunction([this](std::vector<HBondManager::HBondPair> pairs) 
+		{
+            _hBondPairs = pairs;
+            handleHBonds(_hBondPairs);
+
+        });
+		selectMode(hbmenu, true); // this is neseccary so that the select button appears on screen
+		hbmenu->show();
+	} 
 	Display::buttonPressed(tag, button);
 }
 
+void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& pairs)
+{
+    // Add to internal list or perform any other action
+    callAddHBonds(pairs);
+	_flex->addMultipleHBonds(pairs);
+	// _flex->printHBonds();
+
+}
+
+void FlexibilityView::reset()
+{
+    // Clear hydrogen bond pairs
+    _hBondPairs.clear();
+    
+    // Reset selection flag
+    _selectFlag = false;
+    if (_flex)
+    {
+        _flex->clearHBonds();
+    }
+}
 
 void FlexibilityView::setup()
 {
@@ -82,23 +124,39 @@ void FlexibilityView::setup()
 	_flex->submitJobAndRetrieve(0.0);
 	// _flex->submitJobAndRetrieve(0.0);
 	makeMenu();
-	// Create a vector of donor-acceptor pairs
-    std::vector<std::pair<std::string, std::string>> donorAcceptorPairs = 
-    {
-        {"A-ILE3:N", "A-ASP32:O"},
-        {"A-TYR22:N", "A-SER18:O"}
-    };
-    _flex->addMultipleHBonds(donorAcceptorPairs);
-    // callAddHBonds(donorAcceptorPairs);
-	_flex->printHBonds();
+	// checkHBondSelection();
 }
 
-void FlexibilityView::callAddHBonds(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs) 
+void FlexibilityView::checkHBondSelection()
 {
-	for (const auto& pair : donorAcceptorPairs) 
+    if (_selectFlag) {
+       	callAddHBonds(_hBondPairs);
+        _flex->addMultipleHBonds(_hBondPairs);
+        // _flex->printHBonds();
+    }
+}
+
+	// Create a vector of donor-acceptor pairs
+    // std::vector<std::pair<std::string, std::string>> donorAcceptorPairs = 
+    // {
+    //     {"A-ILE3:N", "A-ASP32:O"},
+    //     {"A-TYR22:N", "A-SER18:O"}
+    // };
+    // _flex->addMultipleHBonds(donorAcceptorPairs);
+	// std::cout << "_selectFlag = " << _selectFlag << std::endl;
+	// if (_selectFlag)
+	// {
+	// 	callAddHBonds(_hBondPairs);
+	// 	_flex->addMultipleHBonds(_hBondPairs);
+	// 	_flex->printHBonds();
+	// }
+
+void FlexibilityView::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
+{
+	for (auto &pair : donorAcceptorPairs) 
 	{
 		std::cout << "Calling callAddHbonds..." << std::endl;
-    	_flex->addHBond(pair.first, pair.second);
+    	_flex->addHBond(pair);
     }
 }
 
@@ -109,7 +167,7 @@ void FlexibilityView::setupSlider()
 	Slider *s = new Slider();
 	s->setDragResponder(this);
 	s->resize(0.5);
-	s->setup("Flexibility amplifier", _min, _max, _step);
+	s->setup("Flexibility amplifier", _min*10, _max*10, _step);
 	s->setStart(0.5, 0.);
 	s->setCentre(0.5, 0.85);
 	_rangeSlider = s;
