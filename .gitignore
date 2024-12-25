@@ -7,6 +7,15 @@ data
 doc/
 tags
 gemmi/
+vagabond/compile_commands.json
+vagabond/meson-info/
+vagabond/meson-logs/
+vagabond/meson-private/
+vagabond/meson-uninstalled/
+vagabond/config/
+vagabond/gui/HBondDataList.cpp
+vagabond/gui/HBondDataList.h
+
 
 *.sw?
 
