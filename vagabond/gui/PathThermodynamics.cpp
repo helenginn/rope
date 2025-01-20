@@ -16,11 +16,12 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-
+#include <string>
 #include "PathThermodynamics.h"
 #include "CandidateView.h"
-#include <vagabond/core/Entity.h>
+#include <vagabond/core/PathGroup.h>
 #include <vagabond/core/Instance.h>
+#include <vagabond/core/Sequence.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
 #include <vagabond/utils/FileReader.h>
@@ -30,9 +31,9 @@
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
-PathThermodynamics::PathThermodynamics(Scene *prev, Entity *ent) : Scene(prev)
+PathThermodynamics::PathThermodynamics(Scene *prev, std::vector<PathGroup> &paths) : Scene(prev)
 {
-	_entity = ent;
+
 }
 
 void PathThermodynamics::addTypeButtons()
@@ -71,11 +72,15 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		struct Entropy entropy;
 
 		PathEntropy path_entropy;
+		Sequence seq;
+		std::map<int, BondTorsion *> Tors_res4nn;
 
-		path_entropy.get_atoms_and_residues(&model_id);
-	
+		const std::string model_id = "uperin-alpha-6gs3";
+		
+		path_entropy.get_atoms_and_residues(model_id);
+		std::cout << seq.size() << std::endl;
+
 		path_entropy.init_flag_par(&flag_par);
-		std::cout << "flags initiated" << std::endl;
 
 		path_entropy.calculate_entropy_independent(1, flag_par, &entropy);
 		std::cout << "entropy calculated" << std::endl;
