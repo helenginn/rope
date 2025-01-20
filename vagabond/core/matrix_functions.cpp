@@ -372,3 +372,9 @@ double dist_ang(double *a, double *b, int n)
 
 	return sqrt(t);
 }
+
+double distv(double r1, double r2)
+{
+	double d = glm::distance(r1, r2);
+	return d;
+}

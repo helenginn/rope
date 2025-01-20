@@ -27,7 +27,7 @@ class Entity;
 class PathThermodynamics : public Scene
 {
 public:
-	PathThermodynamics(Scene *prev, Entity *entity);
+	PathThermodynamics(Scene *prev, std::vector<PathGroup> &paths);
 	virtual ~PathThermodynamics(){};
 
 	virtual void setup();
@@ -39,6 +39,7 @@ public:
 
 private:
 	Entity *_entity = nullptr;
+	PathGroup *_paths = nullptr;
 };
 
 #endif
