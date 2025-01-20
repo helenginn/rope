@@ -2,6 +2,8 @@
 #define __vagabond__PathEntropy__
 
 #include <stdlib.h>
+#include <map>
+#include <BondTorsion.h>
 
 struct Entropy {
 int n_single;
@@ -10,7 +12,7 @@ int n_nn;
 double **h1;
 double **sd1;
 double **dm1;
-double **hd1lm;
+double **h1lm;
 double **sd1lm;
 double **dm1lm;
 double *total;
@@ -19,9 +21,12 @@ double *dm_total;
 };
 
 
-struct Tors_res4nn {
+/* struct Tors_res4nn {
 	int n_ang;
-};
+	double **phi;
+}; */
+
+extern std::map<int, BondTorsion *> Tors_res4nn;
 
 struct Flag_par {
 	int n;
