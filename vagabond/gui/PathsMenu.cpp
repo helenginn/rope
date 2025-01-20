@@ -496,7 +496,7 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     }
 	{
-		PathThermodynamics *pt = new PathThermodynamics(this, _entity);
+		PathThermodynamics *pt = new PathThermodynamics(this, _paths);
 		pt->show();
 		return;
 	}

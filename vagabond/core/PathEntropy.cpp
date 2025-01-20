@@ -177,15 +177,8 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
         kNearestNeighbours(torsRes, entropy, flagParameters, numTors, nf, numResPerModel, K, n);
  
         ent4Matrix.totalEntropy.push_back(entropy->totalEntropy);
-		
-        for(int k = 0; k < flagParameters.n; k++)
-		{
-			entropy->sigmaTotal[k] = sqrt(entropy->sigmaTotal[k]);
-			entropy->meanDistTotal[k] = sqrt(entropy->meanDistTotal[k]/ (double) numTors);
-		}
-
-		delete entropy;
-    }
+	
+	}
 
 	return ent4Matrix;
 }
@@ -409,66 +402,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 		   
         delete entropy;
     } 
-
-
-	return ent4Matrix;
-
-}
-
-void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel, std::vector<TorsRes4NN*> &torsMi, int &numResPerModelMI, int *group2res, struct FlagParameters flagParameters, int numDivisions)
-{
-	int l = 0;
-
-	for(int i = 0; i < numResPerModel; i++)
-	{
-		l = l + (int) floor((double) torsRes[i]->nAng / (double) flagParameters.kmi);
-
-		if((torsRes[i]->nAng % flagParameters.kmi) !=0) l++; 
-	}
-
-	numResPerModelMI = l;
-
-	group2res = new int[numResPerModelMI];
-
-	for(int i = 0; i < numResPerModelMI; i++)
-	{
-        torsMi.push_back(new TorsRes4NN);
-        torsMi[i]->ang.resize(numDivisions);
-        
-        for(int j = 0; j < numDivisions; j++)
-        {
-		    torsMi[i]->ang[j].push_back(std::vector<double>(flagParameters.kmi, 0));
-        }
-
-		torsMi[i]->v.resize(flagParameters.kmi);
-		torsMi[i]->bondSymmetry.resize(flagParameters.kmi);
-	}
-
-	// group torsions
-
-    int j = 0;
-
-	for(int i = 0; i < numResPerModel; i++)
-	{
-		for(int k = 0; k < torsRes[i]->nAng; k++)
-		{
-			torsMi[j]->bondSymmetry[k % flagParameters.kmi] = torsRes[i]->bondSymmetry[k];
-     
-            for(int t = 0; t < numDivisions; t++)
-            {
-			    torsMi[j]->ang[t][k % flagParameters.kmi] = torsRes[i]->ang[t][k];
-			}
-            torsMi[j]->v[k % flagParameters.kmi] = torsRes[i]->v[k];
-			torsMi[j]->nAng = k % flagParameters.kmi + 1;
-
-		    if(( k % flagParameters.kmi) == (flagParameters.kmi - 1) || k == (torsRes[i]->nAng - 1))
-		    {
-			    group2res[j] = i;
-			    j++;
-		    }
-        }
-	}
-}
 
 void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct EntropyKL* entropy, struct FlagParameters flagParameters, int &numTors, int nf, int numResPerModel, int K, int timeDivisions)
 { 
