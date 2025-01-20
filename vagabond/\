@@ -79,13 +79,6 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 	ent_k_2 = (double*)calloc(K-1, sizeof(double));
 	ent_k_tot_2 = (double*)calloc(K-1, sizeof(double));
 
-	x = (double*)calloc(K-1, sizeof(double));
-	y = (double*)calloc(K-1, sizeof(double));
-	w = (double*)calloc(K-1, sizeof(double));
-	
-	a = (double*)calloc(3, sizeof(double));
-	sd = (double*)calloc(3, sizeof(double));
-
 	for(k = 1; k <= K-1; k++)
 	{
 		(*entropy).total[k-1] = 0.0;
@@ -203,7 +196,7 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 
 		fitlw(x,y,w,K-1,a,sd,&ok);
 
-		(*entropy).h1lm[m] = &a[0];
+		(*entropy).hd1lm[m] = &a[0];
 		(*entropy).sd1lm[m] = &sd[0];
 		// (*entropy).dm1lm[m] = d_mean[1]/sqrt((double) torsionAngles[m]);
 
@@ -356,20 +349,15 @@ int PathEntropy::fitlw(double *x, double *y, double *w, int n, double *a, double
 /* allocates memory to entropy structure */
 int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct Flag_par flag_par)
 {
-	int i;
-
 	(*entropy).total = (double*) calloc(n_nn, sizeof(double));
 	(*entropy).sd_total = (double*) calloc(n_nn, sizeof(double));
 	(*entropy).dm_total = (double*) calloc(n_nn, sizeof(double));
-	(*entropy).h1lm = (double**) calloc(n_single, sizeof(double));
-	(*entropy).sd1lm = (double**) calloc(n_single, sizeof(double));
-	(*entropy).sd1 = (double**) calloc(n_single, sizeof(double*));
+	(*entropy).h1 = (double**) calloc(n_single, sizeof(double*));
 	(*entropy).dm1 = (double**) calloc(n_single, sizeof(double*));
 
 	for(i = 0; i < n_single; i++)
 	{
 		(*entropy).h1[i] = (double*) calloc(n_nn, sizeof(double));
-		(*entropy).sd1[i] = (double*) calloc(n_nn, sizeof(double));
 		(*entropy).dm1[i] = (double*) calloc(n_nn, sizeof(double));
 	}
 }
