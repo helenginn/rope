@@ -132,24 +132,8 @@ void FlexibilityView::checkHBondSelection()
     if (_selectFlag) {
        	callAddHBonds(_hBondPairs);
         _flex->addMultipleHBonds(_hBondPairs);
-        // _flex->printHBonds();
     }
 }
-
-	// Create a vector of donor-acceptor pairs
-    // std::vector<std::pair<std::string, std::string>> donorAcceptorPairs = 
-    // {
-    //     {"A-ILE3:N", "A-ASP32:O"},
-    //     {"A-TYR22:N", "A-SER18:O"}
-    // };
-    // _flex->addMultipleHBonds(donorAcceptorPairs);
-	// std::cout << "_selectFlag = " << _selectFlag << std::endl;
-	// if (_selectFlag)
-	// {
-	// 	callAddHBonds(_hBondPairs);
-	// 	_flex->addMultipleHBonds(_hBondPairs);
-	// 	_flex->printHBonds();
-	// }
 
 void FlexibilityView::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
 {
@@ -162,6 +146,7 @@ void FlexibilityView::callAddHBonds(const std::vector<HBondManager::HBondPair> &
 
 void FlexibilityView::setupSlider()
 {
+	std::cout << "setupSlider called" << std::endl;
 	removeObject(_rangeSlider);
 	delete _rangeSlider;
 	Slider *s = new Slider();
