@@ -9,6 +9,7 @@
 #include <vagabond/core/files/File.h>
 #include <vagabond/gui/elements/Scene.h>
 #include <functional>
+#include <memory> 
 
 
 class HBondDataView;

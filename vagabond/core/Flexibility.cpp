@@ -344,7 +344,7 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector)
     if (blocks[block_idx].torsion_idx >= 0) 
     {
         // torsionVector.push_back(blocks[block_idx].torsion_idx); changed to: 
-        torsionVector.push_back(block_idx); // if the hbond is between two molecules htat are not conected with a common ancestor: this case need to be handle this case
+        torsionVector.push_back(blocks[block_idx].torsion_idx); // if the hbond is between two molecules htat are not conected with a common ancestor: this case need to be handle this case
     }
     // print a statement if there is no common ancestor: if you reach 0 (or maybe 1, but basically the first depth)
     return block_idx;
@@ -375,12 +375,12 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
 
-            std::cout << "derivatives " << numRow << std::endl;
-            std::cout << "Processing row " << i << ", column " << j << std::endl;
-            std::cout << "APos: " << APos.x << ", " << APos.y << ", " << APos.z << std::endl;
-            std::cout << "BPos: " << BPos.x << ", " << BPos.y << ", " << BPos.z << std::endl;
-            std::cout << "CPos: " << CPos.x << ", " << CPos.y << ", " << CPos.z << std::endl;
-            std::cout << "DPos: " << DPos.x << ", " << DPos.y << ", " << DPos.z << std::endl;
+            // std::cout << "derivatives " << numRow << std::endl;
+            // std::cout << "Processing row " << i << ", column " << j << std::endl;
+            // std::cout << "APos: " << APos.x << ", " << APos.y << ", " << APos.z << std::endl;
+            // std::cout << "BPos: " << BPos.x << ", " << BPos.y << ", " << BPos.z << std::endl;
+            // std::cout << "CPos: " << CPos.x << ", " << CPos.y << ", " << CPos.z << std::endl;
+            // std::cout << "DPos: " << DPos.x << ", " << DPos.y << ", " << DPos.z << std::endl;
 
             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
             jacobianMatrix(i,j) = derivative;
@@ -402,25 +402,53 @@ void Flexibility::calculateSVD()
 
 }
 
+
 void Flexibility::calculateFlexWeights()
 {
-    std::cout << "Calculate flex weights " << std::endl;
-    // get the all the torsions of the protein 
+    std::cout << "Calculating flex weights..." << std::endl;
+
+    // Get all the torsions of the protein
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
+    std::cout << "Total torsions: " << totalTorsionNum << std::endl;
+
     std::vector<float> weightColumn(_V.rows());
+    std::cout << "Weight column size: " << _V.rows() << std::endl;
+
     for (int i = 0; i < _V.rows(); ++i)
     {
         weightColumn[i] = _V(i, _V.cols() - 1);
     }
-    _allTorsions = std::vector<float> (totalTorsionNum);
+
+    _allTorsions = std::vector<float>(totalTorsionNum); // Initialize with zeros
+    std::cout << "_allTorsions size: " << _allTorsions.size() << std::endl;
+
+    // Debug size of _globalTorsionVector
+    std::cout << "_globalTorsionVector size: " << _globalTorsionVector.size() << std::endl;
+
+    if (_globalTorsionVector.size() != weightColumn.size())
+    {
+        std::cerr << "Error: Size mismatch between _globalTorsionVector ("
+                  << _globalTorsionVector.size() << ") and weightColumn ("
+                  << weightColumn.size() << ")." << std::endl;
+        return;
+    }
 
     // Assign weights to torsion vectors
-    for (int i = 0; i < _globalTorsionVector.size(); ++i) 
+    for (int i = 0; i < _globalTorsionVector.size(); ++i)
     {
-        _allTorsions[_globalTorsionVector[i]] = weightColumn[i];
+        int index = _globalTorsionVector[i];
+        if (index < 0 || index >= totalTorsionNum)
+        {
+            std::cerr << "Error: Index out of bounds in _globalTorsionVector: "
+                      << index << std::endl;
+            continue;
+        }
+        _allTorsions[index] = weightColumn[i];
     }
-    std::cout << "Finishin calcualting flex weights " << std::endl;
+
+    std::cout << "Finished calculating flex weights." << std::endl;
 }
+
 
 void Flexibility::clearHBonds()
 {
