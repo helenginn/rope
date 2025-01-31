@@ -133,6 +133,7 @@ install_data(
 'assets/images/strong_bond.png',
 'assets/images/weak_bond.png',
 'assets/images/unassigned_bond.png',
+'assets/images/hydrogen_bond.png',
 install_dir : images)
 
 subdir('config')
