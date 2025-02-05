@@ -132,18 +132,6 @@ inline auto clash_to_lookup(PairwiseDeviations::ClashInfo *scratch)
 
 			glm::vec3 posdiff = apos - bpos;
 			float r = glm::length(posdiff);
-			
-			/*
-			if (r < d * 1.3)
-			{
-				float term = (r - d * 1.3);
-				return term * term * term;
-			}
-			return 0;
-			*/
-		
-
-//			float ratio = vdw_ratio(p, q);
 
 			long double to3 = r * r * r;
 			long double to6 = to3 * to3;
@@ -156,7 +144,6 @@ inline auto clash_to_lookup(PairwiseDeviations::ClashInfo *scratch)
 
 			const double mod = pow(1.4, 6);
 			long double potential = 6 * dto6 / to7 - 12 * dto12 / to13;
-//			potential = -1 * dto6 / (1.4 * to6);
 			potential *= weight;
 			return potential;
 		}
