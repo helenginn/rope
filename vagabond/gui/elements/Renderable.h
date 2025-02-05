@@ -129,6 +129,40 @@ public:
 	
 	glm::mat4x4 projection();
 	glm::mat4x4 model();
+
+	void addThickLine(glm::vec3 start, glm::vec3 dir)
+	{
+		{
+			Snow::Vertex &v = addVertex(start);
+			v.normal = dir;
+			v.tex[0] = -0.5;
+			v.tex[1] = 0;
+		}
+
+		{
+			Snow::Vertex &v = addVertex(start + dir);
+			v.normal = dir;
+			v.tex[0] = -0.5;
+			v.tex[1] = 1;
+		}
+
+		{
+			Snow::Vertex &v = addVertex(start);
+			v.normal = dir;
+			v.tex[0] = +0.5;
+			v.tex[1] = 0;
+		}
+
+		{
+			Snow::Vertex &v = addVertex(start + dir);
+			v.normal = dir;
+			v.tex[0] = +0.5;
+			v.tex[1] = 1;
+		}
+
+		addIndices(-4, -3, -2);
+		addIndices(-3, -2, -1);
+	}
 	
 	void setUnproj(glm::mat4x4 unproj)
 	{
