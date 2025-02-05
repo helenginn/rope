@@ -96,6 +96,7 @@ install_data(
 'assets/images/gel_top.png',
 'assets/images/files.png',
 'assets/images/happy_face.png',
+'assets/images/half_arrow.png',
 'assets/images/lemon.png',
 'assets/images/little_line.png',
 'assets/images/line.png',
