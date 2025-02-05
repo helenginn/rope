@@ -40,6 +40,7 @@ private:
 	Untangle *_untangle = nullptr;
 	Visual *_visual = nullptr;
 
+	std::set<std::string> _geometries;
 	std::string _filename;
 	int _resi = -1;
 };

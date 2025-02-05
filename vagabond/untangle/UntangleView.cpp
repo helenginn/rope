@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/core/files/File.h>
 #include "Untangle.h"
 #include "Visual.h"
 #include "Points.h"
@@ -34,7 +35,22 @@ UntangleView::UntangleView(Scene *prev)
 void UntangleView::load(const std::string &filename)
 {
 	_filename = filename;
-	_untangle = new Untangle(this, filename);
+	
+	File *file = File::loadUnknown(filename);
+	File::Type type = file->cursoryLook();
+	
+	if (type & File::Geometry)
+	{
+		std::cout << "Inserting " << filename << " into geometry" << std::endl;
+		_geometries.insert(filename);
+		return;
+	}
+	else
+	{
+		std::cout << "Not geometry file" << std::endl;
+	}
+
+	_untangle = new Untangle(this, filename, _geometries);
 	Visual *visual = new Visual(_untangle);
 	addObject(visual);
 	addObject(visual->points());

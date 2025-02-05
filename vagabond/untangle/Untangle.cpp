@@ -19,14 +19,18 @@
 #include "Untangle.h"
 #include "UntangleView.h"
 #include "MemoryTangle.h"
+#include <vagabond/core/GeometryTable.h>
 #include <vagabond/core/files/PdbFile.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/BondLength.h>
 
-Untangle::Untangle(UntangleView *view, const std::string &filename)
+Untangle::Untangle(UntangleView *view, const std::string &filename,
+const std::set<std::string> &geometries)
 {
 	_filename = filename;
 	_view = view;
+	_geometries = geometries;
+	GeometryTable::loadExtraGeometries(_geometries);
 	
 	setup();
 }
@@ -307,6 +311,7 @@ void Untangle::untangle(const std::set<Atom *> &avoid)
 		}
 	}
 
+	return;
 	std::unique_lock<std::mutex> lock(_memtex);
 	MemoryTangle memory(this);
 	memory.setMaxLead(4);

@@ -32,7 +32,10 @@ void UntangleWindow::setup(int argc, char **argv)
 	
 	if (argc > 1)
 	{
-		view->load(argv[1]);
+		for (int i = 1; i < argc; i++)
+		{
+			view->load(argv[i]);
+		}
 	}
 
 	setCurrentScene(view, true);

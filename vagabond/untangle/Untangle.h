@@ -38,7 +38,8 @@ class Atom;
 class Untangle
 {
 public:
-	Untangle(UntangleView *view, const std::string &filename);
+	Untangle(UntangleView *view, const std::string &filename,
+	         const std::set<std::string> &geometries);
 
 	void setup();
 
@@ -90,6 +91,8 @@ private:
 	std::thread *_worker = nullptr;
 	MemoryTangle *_memory = nullptr;
 	std::mutex _memtex;
+	
+	std::set<std::string> _geometries;
 };
 
 #endif
