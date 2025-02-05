@@ -16,22 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Decree__
-#define __vagabond__Decree__
+#ifndef __vagabond__SymMates__
+#define __vagabond__SymMates__
 
-#include <string>
+class AtomGroup;
 
-class Decree
+namespace SymMates
 {
-public:
-	Decree(const std::string &name)
-	{
-		_name = name;
-	}
-
-private:
-	std::string _name;
-
+	AtomGroup *getSymmetryMates(AtomGroup *const &other, 
+	                            const std::string &spg_name,
+	                            const std::array<double, 6> &uc, float distance);
 };
 
 #endif
