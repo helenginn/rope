@@ -345,7 +345,10 @@ std::vector<BondTorsion *> HasBondstraints::findBondTorsions(Atom *a, Atom *b,
 		if (_torsions[i]->matchesAtoms(a, b, c, d))
 		{
 			torsions.push_back(_torsions[i]);
-			if (one) return _torsions;
+			if (one) 
+			{
+				return torsions;
+			}
 		}
 	}
 
