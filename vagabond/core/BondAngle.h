@@ -70,6 +70,14 @@ public:
 		throw std::runtime_error("asked for silly atom number from bond angle");
 	}
 	
+	Atom *get_other_atom(Atom *known1, Atom *known2)
+	{
+		if (atom(0) != known1 && atom(0) != known2) return atom(0);
+		if (atom(2) != known1 && atom(2) != known2) return atom(2);
+		if (atom(1) != known1 && atom(1) != known2) return atom(1);
+		return nullptr;
+	}
+	
 	bool hasAtom(Atom *a)
 	{
 		return (_c == a || _a == a || _b == a);
