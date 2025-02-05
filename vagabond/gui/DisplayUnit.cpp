@@ -114,6 +114,11 @@ void DisplayUnit::loadAtoms(AtomGroup *group, Entity *entity)
 	_entity = entity;
 }
 
+void DisplayUnit::setVisuals(VisualPreferences &vp)
+{
+	_guiAtoms->applyVisuals(&vp);
+}
+
 void DisplayUnit::setVisuals()
 {
 	if (!_entity)

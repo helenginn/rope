@@ -23,6 +23,7 @@ class Display;
 class GuiAtom;
 class GuiRefls;
 class GuiDensity;
+class VisualPreferences;
 class AtomGroup;
 class Diffraction;
 class ArbitraryMap;
@@ -72,6 +73,7 @@ public:
 	void loadReflections(Diffraction *diff);
 
 	void displayAtoms(bool hide_balls = false, bool hide_ribbon = false);
+	void setVisuals(VisualPreferences &vp);
 
 	void setMultiBondMode(bool mode);
 	void startWatch();
