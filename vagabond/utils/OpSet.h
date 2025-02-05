@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 #include <set>
 
 template <class Type>
@@ -48,6 +49,19 @@ public:
 		{
 			this->insert(t);
 		}
+	}
+	
+	/* returns an arbitrary indexing scheme */
+	std::map<Type, int> indexing()
+	{
+		std::map<Type, int> index;
+		int idx = 0;
+		for (const Type &t : *this)
+		{
+			index[t] = idx;
+			idx++;
+		}
+		return index;
 	}
 	
 	/*
