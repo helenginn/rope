@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Display.h"
+#include "ForceAnalysisView.h"
 #include "FileView.h"
 #include "FileLine.h"
 
@@ -107,11 +108,13 @@ void FileView::handleFileWithoutChoice(std::string filename)
 	}
 
 	File::Type type = file->cursoryLook();
+	std::cout << type << std::endl;
 
 	if (type & File::CompAtoms || type & File::MacroAtoms)
 	{
 		if (file->atomCount() > 0)
 		{
+			/*
 			Display *display = new Display(this);
 
 			DisplayUnit *unit = new DisplayUnit(display);
@@ -119,8 +122,10 @@ void FileView::handleFileWithoutChoice(std::string filename)
 			unit->displayAtoms();
 			unit->startWatch();
 			display->addDisplayUnit(unit);
+			*/
 
-			display->show();
+			ForceAnalysisView *fav = new ForceAnalysisView(this, file->atoms());
+			fav->show();
 		}
 	}
 	else if (type & File::Reflections)
