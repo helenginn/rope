@@ -316,9 +316,10 @@ void Loopy::prepareLoop(const Loop &loop)
 		if (last_c && first_n)
 		{
 			std::cout << "Hooking up " << last_c->desc() << " to " << first_n->desc() << std::endl;
-			float standard = gt->length(last_c->code(), last_c->atomName(),
+			auto standard = gt->length(last_c->code(), last_c->atomName(),
 			                            first_n->atomName(), true);
-			new BondLength(contents, last_c, first_n, standard);
+			new BondLength(contents, last_c, first_n, 
+			               standard.first, standard.second);
 		}
 	};
 

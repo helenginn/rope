@@ -98,14 +98,21 @@ const size_t File::atomCount() const
 
 AtomContent *File::compAtoms()
 {
-	return new AtomContent(*_compAtoms);
+	AtomContent *content = new AtomContent(*_compAtoms);
+	return content;
 }
 
 AtomContent *File::atoms()
 {
 	if (_macroAtoms->size() > 0)
 	{
-		return new AtomContent(*_macroAtoms);
+		AtomContent *content = new AtomContent(*_macroAtoms);
+		std::array<double, 6> uc = unitCell();
+		std::string name = spaceGroupName();
+		content->setUnitCell(uc);
+		content->setSpaceGroup(name);
+
+		return content;
 	}
 	else
 	{

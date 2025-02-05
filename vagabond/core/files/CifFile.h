@@ -43,6 +43,7 @@ private:
 	static std::string angleHeaders[];
 	static std::string torsionHeaders[];
 	static std::string compHeaders[];
+	static std::string compCoreHeaders[];
 	static std::string reflHeaders[];
 	static std::string unitCellKeys[];
 	static std::string intTableKeys[];

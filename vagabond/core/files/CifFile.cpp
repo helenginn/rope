@@ -35,6 +35,14 @@ std::string CifFile::ignoreChirals[] =
 	"_ignore_chirals.atom_id", ""
 };
 
+std::string CifFile::compCoreHeaders[] = 
+{
+	"_chem_comp_atom.comp_id", "_chem_comp_atom.x",
+	"_chem_comp_atom.y", "_chem_comp_atom.z",
+	"_chem_comp_atom.atom_id", "_chem_comp_atom.type_symbol", 
+	""
+};
+
 std::string CifFile::compHeaders[] = 
 {
 	"_chem_comp_atom.comp_id", "_chem_comp_atom.x",
@@ -835,7 +843,7 @@ File::Type CifFile::cursoryLook()
 		type = File::Type(type | Reflections);
 	}
 
-	if (identifyHeader(doc, compHeaders))
+	if (identifyHeader(doc, compCoreHeaders))
 	{
 		type = File::Type(type | CompAtoms);
 	}
