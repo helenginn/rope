@@ -64,6 +64,14 @@ GeometryTable &GeometryTable::getAllGeometry()
 	return _loadedGeometry;
 }
 
+void GeometryTable::loadExtraGeometries(const std::set<std::string> &geometries)
+{
+	std::set<std::string> files = geometries;
+	files.insert("assets/geometry/standard_geometry.cif");
+	_loadedGeometry.loadExtraGeometries(files);
+
+}
+
 void GeometryTable::addGeometryLength(std::string code, std::string pName,
                                       std::string qName, double mean, 
                                       double stdev, bool link)
@@ -171,22 +179,24 @@ bool GeometryTable::lengthExists(std::string code, std::string pName,
 	return (map.lengths.count(pair) > 0);
 }
 
-double GeometryTable::length(const GeometryMap &map, std::string pName, 
-                             std::string qName) const
+std::pair<double, double> GeometryTable::length(const GeometryMap &map,
+                                                std::string pName, 
+                                                std::string qName) const
 {
 	AtomPair pair = {pName, qName};
 	if (map.lengths.count(pair) == 0)
 	{
-		return -1;
+		return {-1, 0};
 	}
 
 	const Value &v = map.lengths.at(pair);
 
-	return v.mean;
+	return {v.mean, v.stdev};
 }
 
-double GeometryTable::length(std::string code, std::string pName,
-                             std::string qName, bool links) 
+std::pair<double, double> GeometryTable::length(std::string code,
+                                                std::string pName,
+                                                std::string qName, bool links) 
 {
 	if (_codes.count(code))
 	{
@@ -194,33 +204,33 @@ double GeometryTable::length(std::string code, std::string pName,
 
 		if (!links)
 		{
-			double l = length(map, pName, qName);
+			auto l = length(map, pName, qName);
 
-			if (l >= 0)
+			if (l.first >= 0)
 			{
 				return l;
 			}
 		}
 		else
 		{
-			double l = checkLengthLinks(code, pName, qName);
+			auto l = checkLengthLinks(code, pName, qName);
 			return l;
 		}
 	}
 
 	if (_codes.count(".") == 0 || !links)
 	{
-		return -1;
+		return {-1, 0};
 	}
 
-	double l = -1;
 	if (_filterPeptides && 
 	    (!(pName == "N" && qName == "C") && 
 	     !(pName == "C" && qName == "N")))
 	{
-		l = length(_codes.at("."), pName, qName);
+		auto l = length(_codes.at("."), pName, qName);
+		return l;
 	}
-	return l;
+	return {-1, 0};
 }
 
 double GeometryTable::length_stdev(std::string code, std::string pName,
@@ -449,8 +459,9 @@ GeometryTable::Value GeometryTable::checkAngleLinks(std::string code,
 	return {-1, -1};
 }
 
-double GeometryTable::checkLengthLinks(std::string code, std::string pName,
-                                      std::string qName) const
+std::pair<double, double> 
+GeometryTable::checkLengthLinks(std::string code, std::string pName,
+                                std::string qName) const
 {
 	std::map<std::string, GeometryMap>::const_iterator it;
 	
@@ -465,15 +476,15 @@ double GeometryTable::checkLengthLinks(std::string code, std::string pName,
 		}
 		
 		const GeometryMap &map = it->second;
-		double l = length(map, pName, qName);
+		auto l = length(map, pName, qName);
 
-		if (l >= 0)
+		if (l.first >= 0)
 		{
 			return l;
 		}
 	}
 
-	return -1;
+	return {-1, 0};
 }
 
 std::set<std::string> GeometryTable::allAtomNames(std::string &code)

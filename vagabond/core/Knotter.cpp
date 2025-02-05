@@ -82,7 +82,7 @@ void Knotter::checkAtoms(HelpKnot &knot, Atom *atom, int start)
 		std::string orig = atom->atomName();
 		std::string compare = other->atomName();
 		
-		double standard = -1;
+		std::pair<double, double> standard = {-1, -1};
 		
 		if ((atom->code() == "HOH" && other->code() != "HOH") ||
 		    (atom->code() != "HOH" && other->code() == "HOH"))
@@ -99,22 +99,23 @@ void Knotter::checkAtoms(HelpKnot &knot, Atom *atom, int start)
 		{
 			standard = _table->length(code, orig, compare, true);
 
-			if (standard < 0)
+			if (standard.first  < 0)
 			{
 				standard = _table->length(other->code(), compare, orig, true);
 			}
 		}
 
-		if (standard < 0)
+		if (standard.first < 0)
 		{
 			continue;
 		}
 		
 		double length = glm::length(diff);
 		
-		if (length < standard * 1.4)
+		if (length < standard.first * 1.4)
 		{
-			new BondLength(_group, atom, other, standard);
+			new BondLength(_group, atom, other, 
+			               standard.first, standard.second);
 		}
 	}
 

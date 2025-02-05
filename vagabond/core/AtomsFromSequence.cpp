@@ -76,9 +76,9 @@ AtomGroup *AtomsFromSequence::atoms()
 
 		if (last != nullptr)
 		{
-			float standard = gt->length(code, last->atomName(),
+			auto standard = gt->length(code, last->atomName(),
 			                            next->atomName(), true);
-			new BondLength(total, next, last, standard);
+			new BondLength(total, next, last, standard.first, standard.second);
 		}
 
 		last = ag->firstAtomWithName("C");

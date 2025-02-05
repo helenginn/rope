@@ -30,7 +30,8 @@ class BondLength : public Bondstraint
 {
 public:
 	/** ownership is taken over by the AtomGroup after creation */
-	BondLength(AtomGroup *owner, Atom *a, Atom *b, double length);
+	BondLength(AtomGroup *owner, Atom *a, Atom *b, 
+	           double length, double stdev = 0);
 	virtual ~BondLength() {};
 
 	const double measurement() const;

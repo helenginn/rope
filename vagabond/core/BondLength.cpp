@@ -19,13 +19,16 @@
 #include "BondLength.h"
 #include "AtomGroup.h"
 
-BondLength::BondLength(AtomGroup *owner, Atom *a, Atom *b, double length)
+BondLength::BondLength(AtomGroup *owner, Atom *a, Atom *b, 
+                       double length, double stdev)
 {
 	_owner = owner;
 	_a = a;
 	_b = b;
 	_length = length;
-	
+	_stdev = stdev;
+//	_stdev += 0.01;
+
 	if (_a == nullptr || _b == nullptr)
 	{
 		throw(std::runtime_error("Initialising bond length with null values"));
