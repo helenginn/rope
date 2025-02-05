@@ -208,6 +208,8 @@ cfile,
 'paths/Scores.h',
 'paths/Selection.cpp',
 'paths/Selection.h',
+'paths/SubmissionHelp.cpp',
+'paths/SubmissionHelp.h',
 'paths/Targets.cpp',
 'paths/Targets.h',
 

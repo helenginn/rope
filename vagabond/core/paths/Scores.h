@@ -61,7 +61,7 @@ struct ResultBy
 	}
 };
 
-typedef SingleResult<ResidueId> SingleResidueResult;
-typedef ResultBy<ResidueId> ByResidueResult;
+//typedef SingleResult<ResidueId> SingleResidueResult;
+//typedef ResultBy<ResidueId> ByResidueResult;
 
 #endif

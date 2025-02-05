@@ -54,10 +54,10 @@ public:
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
 
-	ByResidueResult *byResidueScore(int steps, const CalcOptions &add_options
-	                                = CalcOptions(PerResidue | VdWClashes),
-	                                const CalcOptions &subtract_options
-	                                = None);
+	ResultBy<ResidueId> *byResidueScore(int steps, const CalcOptions &add_options
+	                                    = CalcOptions(PerResidue | VdWClashes),
+	                                    const CalcOptions &subtract_options
+	                                    = None);
 
 	typedef std::function<void()> Task;
 

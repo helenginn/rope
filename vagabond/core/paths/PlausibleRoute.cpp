@@ -213,8 +213,7 @@ void PlausibleRoute::setTargets()
 	prepareTorsionFetcher(_hydrogenFreeSequences);
 }
 
-PlausibleRoute::CalcOptions 
-PlausibleRoute::calcOptions(const CalcOptions &add_options,
+CalcOptions PlausibleRoute::calcOptions(const CalcOptions &add_options,
                                         const CalcOptions &subtract_options)
 {
 	CalcOptions options = Pairwise;
@@ -232,8 +231,8 @@ PlausibleRoute::calcOptions(const CalcOptions &add_options,
 		options = (CalcOptions)(options | PerResidue);
 	}
 	
-	options = Route::CalcOptions(options & (~subtract_options));
-	options = Route::CalcOptions(options | (add_options));
+	options = CalcOptions(options & (~subtract_options));
+	options = CalcOptions(options | (add_options));
 	
 	return options;
 }
@@ -274,7 +273,7 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	std::set<RankedResidue> residues;
 	
 	_ids.clear();
-	ByResidueResult *rr = byResidueScore(nudgeCount());
+	ResultBy<ResidueId> *rr = byResidueScore(nudgeCount());
 	std::map<ResidueId, float> highests = rr->activations;
 	delete rr;
 
@@ -529,7 +528,7 @@ bool PlausibleRoute::applyGradients()
 	return meaningful;
 }
 
-ByResidueResult *PlausibleRoute::byResidueScore(int steps, 
+ResultBy<ResidueId> *PlausibleRoute::byResidueScore(int steps, 
                                                 const CalcOptions &add_options,
                                                 const CalcOptions 
                                                 &subtract_options)
@@ -544,10 +543,10 @@ ByResidueResult *PlausibleRoute::byResidueScore(int steps,
 		                         "score in PlausibleRoute.cpp");
 	}
 
-	submitValue(options, steps, nullptr);
+	submitValue(options, steps);
 	retrieve();
 	_perResBin.releaseHorses();
-	ByResidueResult *r = _perResBin.acquireObject();
+	ResultBy<ResidueId> *r = _perResBin.acquireObject();
 	return r;
 }
 
@@ -565,7 +564,7 @@ float PlausibleRoute::routeScore(int steps, const CalcOptions &add_options,
 	}
 
 	float sc = 0;
-	submitValue(options, steps, nullptr);
+	submitValue(options, steps);
 	retrieve();
 	sc = _point2Score[0].deviations / (float)steps;
 	float highest = _point2Score[0].highest_energy;
@@ -866,7 +865,7 @@ std::map<ResidueId, float> PlausibleRoute::
 		retrieve();
 	}
 	
-	ByResidueResult *rr = nullptr;
+	ResultBy<ResidueId> *rr = nullptr;
 	if (doingClashes())
 	{
 		rr = byResidueScore(num);
@@ -922,7 +921,7 @@ Contacts PlausibleRoute::contactMap()
 	clearTickets();
 	CalcOptions options = calcOptions(CalcOptions(VdWClashes | ContactMap),
 	                                  None);
-	submitValue(options, nudgeCount(), nullptr);
+	submitValue(options, nudgeCount());
 	
 	Contacts contacts{};
 	auto handle_results = [&contacts](Result *r)

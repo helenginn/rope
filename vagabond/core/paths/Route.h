@@ -24,6 +24,7 @@
 #include "engine/CoordManager.h"
 #include "function_typedefs.h"
 #include "BestGuessTorsions.h"
+#include "SubmissionHelp.h"
 #include "NonCovalents.h"
 #include "Selection.h"
 #include "Resource.h"
@@ -55,23 +56,13 @@ public:
 	Route(Instance *from, Instance *to, const RTAngles &list);
 	Route(const RTAngles &list);
 	
+	friend SubmissionHelp;
+	
 	void addLinkedInstances(Instance *from, Instance *to);
 	virtual ~Route();
 
 	virtual void setup();
 
-	enum CalcOptions
-	{
-		None = 0,
-		Pairwise = 1 << 0,
-		NoHydrogens = 1 << 1,
-		TorsionEnergies = 1 << 2,
-		VdWClashes = 1 << 3,
-		PerResidue = 1 << 4,
-		ContactMap = 1 << 5,
-	};
-
-	friend std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts);
 	friend Selection;
 	friend BestGuessTorsions;
 
@@ -388,8 +379,7 @@ protected:
 	                              const ValidateIndex &validate = {},
 	                              BondSequenceHandler *handler = nullptr);
 
-	void submitValue(const CalcOptions &options, int steps,
-	                 BondSequenceHandler *handler);
+	void submitValue(const CalcOptions &options, int steps);
 
 	virtual void doCalculations() {};
 	
@@ -459,7 +449,7 @@ protected:
 	int _order = 3;
 	bool _gui = false;
 
-	Bin<ByResidueResult> _perResBin;
+	Bin<ResultBy<ResidueId>> _perResBin;
 	Bin<GradientPath> _gradientBin;
 	
 	float _chosenFrac = 0.5;
@@ -511,15 +501,5 @@ private:
 	bool _setup = false;
 
 };
-
-inline std::ostream &operator<<(std::ostream &ss, const Route::CalcOptions &opts)
-{
-	if (opts & Route::Pairwise) ss << "Pairwise ";
-	if (opts & Route::NoHydrogens) ss << "NoHydrogens ";
-	if (opts & Route::TorsionEnergies) ss << "TorsionEnergies ";
-	if (opts & Route::VdWClashes) ss << "VdWClashes ";
-	if (opts & Route::PerResidue) ss << "PerResidue ";
-	return ss;
-}
 
 #endif

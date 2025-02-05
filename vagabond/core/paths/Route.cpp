@@ -202,13 +202,6 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	return r;
 }
 
-struct TaskInfo
-{
-	CalcTask *final_hook;
-	Task<BondSequence *, void *> *let_go;
-	Task<BundleBonds *, void *> *delete_bundle;
-	Task<BundleBonds *, BundleBonds *> *bundle_hook;
-};
 
 void Route::prepareAlignment()
 {
@@ -241,8 +234,7 @@ void Route::applyPostCalcTasks(CalcTask *&hook, const float &frac)
 	}
 }
 
-void Route::submitValue(const CalcOptions &options, int steps,
-                        BondSequenceHandler *handler)
+void Route::submitValue(const CalcOptions &options, int steps)
 {
 	bool pairwise = (options & Pairwise);
 	bool hydrogens = !(options & NoHydrogens);
@@ -250,8 +242,6 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	bool vdw_clashes = (options & VdWClashes);
 	bool per_residue = (options & PerResidue);
 	bool contact_map = (options & ContactMap && vdw_clashes);
-
-	Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
 
 	std::vector<BaseTask *> firsts;
 	std::map<int, TaskInfo> frac_tasks;
@@ -288,8 +278,10 @@ void Route::submitValue(const CalcOptions &options, int steps,
 		applyPostCalcTasks(final_hook, frac);
 
 		Task<Result, void *> *sr = pairwise ? nullptr : submit_result;
+		Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
 		
-		// only put deviations together for non-pairwise calculation
+		// only put deviations together for non-pairwise calculation as we
+		// are then done
 		Task<BondSequence *, void *> *let = 
 		sequences->extract(gets, sr, final_hook);
 
@@ -300,7 +292,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	}
 
 	Task<Result, void *> *first_only = nullptr;
-	Task<ByResidueResult, void *> *by_residue = nullptr;
+	Task<ResultBy<ResidueId>, void *> *by_residue = nullptr;
 
 	if (pairwise)
 	{
@@ -316,6 +308,9 @@ void Route::submitValue(const CalcOptions &options, int steps,
 	bool uses_bundles = vdw_clashes;
 
 	int n_bundles = 0;
+	// deciding what goes into the bond sequence bit, and whether it should
+	// be bundled
+
 	for (int i = 0; i < steps && pairwise; i++)
 	{
 		TaskInfo &info = frac_tasks[i];
@@ -389,10 +384,13 @@ void Route::submitValue(const CalcOptions &options, int steps,
 
 		std::set<ResidueId> active_ids = 
 		doingSides() ? _ids : std::set<ResidueId>();
+		
+		
+		// deciding what to calculate from the bond sequences
 
-		if (!vdw_clashes && !contact_map)
+		if (!vdw_clashes && !contact_map) // normal momentum
 		{
-			if (!per_residue)
+			if (!per_residue) // fullblown score
 			{
 				Task<BondSequence *, Deviation> *task = nullptr;
 				task = chosen->momentum_task(frac, active_ids);
@@ -400,7 +398,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 				task->must_complete_before(info.let_go);
 				setup_submit_hooks(task, i);
 			}
-			else
+			else // separated by residue
 			{
 				std::set<ResidueId> residues = chosen->residues();
 
@@ -417,13 +415,13 @@ void Route::submitValue(const CalcOptions &options, int steps,
 					setup_submit_hooks(task, i);
 
 					auto convert = [id, steps](const Deviation &ae) 
-					-> SingleResidueResult
+					-> SingleResult<ResidueId>
 					{
 						return {id, ae.value / steps};
 					};
 
 					auto *momentum_conv =
-					new Task<Deviation, SingleResidueResult>
+					new Task<Deviation, SingleResult<ResidueId>>
 					(convert, "convert score to single residue result");
 
 					task->follow_with(momentum_conv);
@@ -431,14 +429,14 @@ void Route::submitValue(const CalcOptions &options, int steps,
 				}
 			}
 		}
-		else if (!contact_map)
+		else if (!contact_map) // we want activation energies for clashes
 		{
 			Task<BundleBonds *, ActivationEnergy> *task = nullptr;
 			task = chosen->bundle_clash(active_ids);
 			info.bundle_hook->follow_with(task);
 			setup_submit_hooks(task, i);
 		}
-		else
+		else // we want energies for a contact map
 		{
 			Task<BundleBonds *, Contacts> *task = nullptr;
 			task = chosen->contact_map(active_ids);
@@ -472,13 +470,13 @@ void Route::submitValue(const CalcOptions &options, int steps,
 				}
 
 				auto convert = [id, steps](const ActivationEnergy &ae) 
-				-> SingleResidueResult
+				-> SingleResult<ResidueId>
 				{
 					return {id, ae.value / steps};
 				};
 
 				auto *vdw_conv =
-				new Task<ActivationEnergy, SingleResidueResult>(convert,
+				new Task<ActivationEnergy, SingleResult<ResidueId>>(convert,
 				                                                "convert vdw to single residue result");
 
 				task->follow_with(vdw_conv);
@@ -488,7 +486,7 @@ void Route::submitValue(const CalcOptions &options, int steps,
 				{
 					auto *engy_conv =
 					new Task<ActivationEnergy, 
-					SingleResidueResult>(convert,
+					SingleResult<ResidueId>>(convert,
 					                     "convert energy to single");
 
 					engy->follow_with(engy_conv);
