@@ -29,8 +29,8 @@
 Visual::Visual(Untangle *untangle)
 {
 	setUsesProjection(true);
-	setVertexShaderFile("assets/shaders/axes.vsh");
-	setFragmentShaderFile("assets/shaders/axes.fsh");
+	setVertexShaderFile("assets/shaders/untangle_axes.vsh");
+	setFragmentShaderFile("assets/shaders/untangle_axes.fsh");
 	setImage("assets/images/bond.png");
 	
 	_colours["A"] = glm::vec4(0, 0, 0.9, 0);
