@@ -59,7 +59,12 @@ public:
 	
 	const float as_z_score(const float &other) const
 	{
-		return fabs(other - expectation()) / stdev();
+		return fabs(as_signed_z_score(other));
+	}
+
+	const float as_signed_z_score(const float &other) const
+	{
+		return (other - expectation()) / stdev();
 	}
 	
 	Atom *const &atom(int i) const
@@ -144,7 +149,7 @@ private:
 	Atom *_a;
 	Atom *_b;
 	Atom *_c;
-	double _angle;
+	double _angle{};
 	double _stdev = 0;
 };
 

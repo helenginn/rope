@@ -58,7 +58,12 @@ public:
 	
 	const float as_z_score(const float &other) const
 	{
-		return fabs(other - expectation()) / stdev();
+		return fabs(as_signed_z_score(other));
+	}
+
+	const float as_signed_z_score(const float &other) const
+	{
+		return (other - expectation()) / stdev();
 	}
 	
 	virtual const std::string desc();
