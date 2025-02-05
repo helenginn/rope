@@ -334,18 +334,36 @@ BondTorsion *HasBondstraints::findBondTorsion(std::string desc)
 	return nullptr;
 }
 
-BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, 
-                                              Atom *c, Atom *d) const
+std::vector<BondTorsion *> HasBondstraints::findBondTorsions(Atom *a, Atom *b, 
+                                                             Atom *c, 
+                                                             Atom *d,
+                                                             bool one) const
 {
+	std::vector<BondTorsion *> torsions;
 	for (size_t i = 0; i < _torsions.size(); i++)
 	{
 		if (_torsions[i]->matchesAtoms(a, b, c, d))
 		{
-			return _torsions[i];
+			torsions.push_back(_torsions[i]);
+			if (one) return _torsions;
 		}
 	}
 
-	return nullptr;
+	return torsions;
+}
+
+
+BondTorsion *HasBondstraints::findBondTorsion(Atom *a, Atom *b, 
+                                              Atom *c, Atom *d) const
+{
+	std::vector<BondTorsion *> torsions = findBondTorsions(a, b, c, d, true);
+
+	if (torsions.size() == 0)
+	{
+		return nullptr;
+	}
+
+	return torsions[0];
 }
 
 Chirality *HasBondstraints::findChirality(Atom *cen, Atom *a, Atom *b, Atom *c)

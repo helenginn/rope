@@ -86,6 +86,9 @@ public:
 	HyperValue *findHyperValue(Atom *a);
 	BondLength *findBondLength(Atom *a, Atom *b);
 	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d) const;
+	std::vector<BondTorsion *> findBondTorsions(Atom *a, Atom *b, 
+	                                            Atom *c, Atom *d,
+	                                            bool one = false) const;
 	BondTorsion *findBondTorsion(std::string desc);
 	Parameter *findParameter(std::string desc, const ResidueId &id);
 	Chirality *findChirality(Atom *cen, Atom *a, Atom *b, Atom *c);
