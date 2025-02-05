@@ -31,7 +31,7 @@ TangledBond::TangledBond(BondLength &src) : _src(src)
 float TangledBond::simple_score(const std::string &q, const std::string &r) 
 {
 //	return length_score(q, q, r, r);
-	return (length_score(q, q, r, r) + angle_score(q, q, r, r)) / 2;
+	return sqrt(length_score(q, q, r, r) * angle_score(q, q, r, r));
 }
 
 std::vector<std::pair<std::string, std::string>> TangledBond::options()
@@ -104,9 +104,10 @@ float TangledBond::total_score(float bias)
 			if (second == "") continue;
 			if (first == second)
 			{
-				total += length_score(first, first, second, second);
-				count++;
-				total += angle_score(first, first, second, second);
+				float add = length_score(first, first, second, second);
+				add *= angle_score(first, first, second, second);
+				add = sqrt(add);
+				total += add;
 				count++;
 			}
 			else
@@ -224,15 +225,15 @@ float TangledBond::length_score(const std::string &p, const std::string &q,
 
 			BondLength *length = atom->bondLength(i);
 			float zsc = length->as_z_score(measured);
-			total += zsc;
+			total += -zsc * zsc;
 			count++;
 		}
 	}
 
-	total /= count;
+	total = exp(total / count);
 	if (total != total) return 0;
 	
-	return exp(-total);
+	return total;
 }
 	
 float TangledBond::angle_score(const std::string &p, const std::string &q, 
@@ -271,11 +272,12 @@ float TangledBond::angle_score(const std::string &p, const std::string &q,
 		}
 		
 		float zsc = angle->as_z_score(measured);
-		total += zsc;
+		float contrib = -zsc * zsc;
+		total += contrib;
 		count++;
 	}
 
-	if (false && ((left->atomName() == "N" || right->atomName() == "C") || 
+	if (((left->atomName() == "N" || right->atomName() == "C") || 
 	              (left->atomName() == "C" || right->atomName() == "N")))
 	{
 		BondTorsion *t = left->findBondTorsion("CA-N-C-CA");
@@ -316,10 +318,11 @@ float TangledBond::angle_score(const std::string &p, const std::string &q,
 			// get it into a reasonable reference frame
 			if (torsion < 0.f) torsion += 360.f;
 
-			float stdev = 5.f;
+			float stdev = 4.f;
 			torsion -= 180.f; // minus mean
 			float zsc = fabs(torsion / stdev);
-			total += zsc;
+//			std::cout << left->desc() << ": " << exp(-zsc * zsc) << std::endl;
+			total += -zsc * zsc;
 			count++;
 		}
 	}
@@ -327,8 +330,11 @@ float TangledBond::angle_score(const std::string &p, const std::string &q,
 	if (total != total) return 0;
 	if (count == 0) return 0;
 
-	total /= count;
+//	total /= count;
 	
+	total = exp(total / count);
+	
+	return total;
 	return exp(-total);
 }
 
