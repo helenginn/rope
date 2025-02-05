@@ -20,6 +20,7 @@
 #define __vagabond__AtomContent__
 
 #include "AtomGroup.h"
+#include <array>
 #include <map>
 
 class Chain;
@@ -54,12 +55,32 @@ public:
 
 		return nullptr;
 	}
+	
+	void setSpaceGroup(std::string name)
+	{
+		_spgName = name;
+	}
+	
+	const std::string &spaceGroup() const
+	{
+		return _spgName;
+	}
 
+	void setUnitCell(const std::array<double, 6> &uc)
+	{
+		_uc = uc;
+	}
+	
+	const std::array<double, 6> &unitCell() const
+	{
+		return _uc;
+	}
 private:
 	void groupByChain();
 	std::vector<Chain *> _chains;
 	std::map<std::string, Chain *> _id2Chain;
-
+	std::array<double, 6> _uc;
+	std::string _spgName;
 };
 
 #endif
