@@ -78,3 +78,36 @@ void Particle::insertForcesInto(const std::map<ForceCoordinate, int>
 		}
 	}
 }
+
+float Particle::dotReactionForceAgainst(const AbstractForce::Reason &reason, 
+                                        bool normalise, bool &found)
+{
+	glm::vec3 combined{};
+	glm::vec3 reaction{};
+	found = false;
+	bool found_reaction = false;
+	bool found_reason = false;
+
+	for (AppliedForce &applied : _forces)
+	{
+		if (applied.force->reason() == reason)
+		{
+			combined += applied.force->get_vector();
+			found_reason = true;
+		}
+		if (applied.force->reason() == Force::ReasonReactionForce)
+		{
+			reaction += applied.force->get_vector();
+			found_reaction = true;
+		}
+	}
+	found = found_reaction & found_reason;
+	
+	float dot = glm::dot(combined, reaction);
+	if (normalise)
+	{
+		dot /= glm::length(combined) * glm::length(reaction);
+	}
+	return dot;
+}
+

@@ -80,6 +80,11 @@ public:
 		_getMag = func;
 	}
 	
+	float magnitude()
+	{
+		return _getMag();
+	}
+	
 	void setStatus(Status status)
 	{
 		_status = status;
@@ -95,6 +100,16 @@ public:
 		return _reason;
 	}
 	
+	void setReport(const std::function<std::string()> &report)
+	{
+		_report = report;
+	}
+	
+	std::string report()
+	{
+		return _report ? _report() : "(empty report)";
+	}
+	
 	friend std::ostream &operator<<(std::ostream &ss, const AbstractForce *f);
 private:
 	Status _status{};
@@ -102,6 +117,7 @@ private:
 
 	std::function<glm::vec3()> _getUnit;
 	std::function<float()> _getMag;
+	std::function<std::string()> _report;
 };
 
 inline std::ostream &operator<<(std::ostream &ss, const AbstractForce *f)

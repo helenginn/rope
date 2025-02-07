@@ -78,6 +78,9 @@ public:
 
 	void insertForcesInto(const std::map<ForceCoordinate, int> &indexing_map,
 	                      int coord, const InsertIntoRow &insert);
+
+	float dotReactionForceAgainst(const AbstractForce::Reason &reason, 
+	                              bool normalise, bool &found);
 private:
 	std::function<glm::vec3()> _getPos;
 	std::function<std::string()> _getDesc;

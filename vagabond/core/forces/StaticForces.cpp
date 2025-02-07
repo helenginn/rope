@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Rod.h"
+#include "Particle.h"
 #include "StaticForces.h"
 
 #include <vagabond/utils/Eigen/Dense>
@@ -77,16 +78,13 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 			n++;
 		}
 	}
+	
+	std::cout << "==== targets ==== " << std::endl;
+	std::cout << targets << std::endl;
 
-	/*
 	std::cout << "==== weights ==== " << std::endl;
 	std::cout << weights << std::endl;
 	std::cout << std::endl;
-
-	std::cout << "==== targets ==== " << std::endl;
-	std::cout << targets << std::endl;
-	std::cout << std::endl;
-	*/
 
 	weights.makeCompressed();
 	Eigen::SparseQR<SpMat, Eigen::COLAMDOrdering<int>> qr(weights);
@@ -101,12 +99,21 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	*/
 
 	Eigen::MatrixXf estimates = weights * results;
+	Eigen::MatrixXf display(targets.rows(), 2);
+	display(Eigen::all, 0) = targets;
+	display(Eigen::all, 1) = estimates;
+
+	std::cout << "==== targets vs estimates ==== " << std::endl;
+	std::cout << display << std::endl;
+	std::cout << std::endl;
+
 	Eigen::MatrixXf diff = estimates - targets;
 	
 	float f = 0; float g = 0;
 	for (int i = 0; i < diff.rows(); i++)
 	{
 		f += fabs(diff(i, 0));
+		g += fabs(targets(i, 0));
 	}
 	f /= (float)diff.rows();
 	g /= (float)diff.rows();
@@ -166,9 +173,26 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	std::cout << "Correlation of bond lengths: " << eval << std::endl;
 	std::cout << "Rod stress-strains written to file." << std::endl;
 	file.close();
+	
+	std::ofstream dfile;
+	dfile.open("torsion_electromagnetic.csv");
+	dfile << "torsion" << std::endl;
+	float dots = 0;
+	for (Particle *p : _particles)
+	{
+		bool found;
+		float dot =
+		p->dotReactionForceAgainst(AbstractForce::ReasonElectrostaticContact,
+		                           true, found);
+		if (found)
+		{
+			dfile << dot << " " << p->desc() << std::endl;
+		}
+	}
 
 	time_t end = time(NULL);
 	int seconds = end - start;
+	dfile.close();
 
 	std::cout << std::endl;
 	std::cout << "Time taken: " << seconds << " s " <<  std::endl;

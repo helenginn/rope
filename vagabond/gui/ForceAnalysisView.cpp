@@ -93,9 +93,12 @@ void ForceAnalysisView::setup()
 	tickboxes->addOption("Electrostatic contacts", 
 	                     toggle_type("Electrostatic contacts", 
 	                     AbstractForce::ReasonElectrostaticContact), true);
+	tickboxes->addOption("Torsion angles", 
+	                     toggle_type("Torsion angles", 
+	                     AbstractForce::ReasonBondTorsion), true);
 	tickboxes->setVertical(true);
 	tickboxes->setOneOnly(false);
-	tickboxes->arrange(0.8, 0.2, 1.02, 0.46);
+	tickboxes->arrange(0.8, 0.2, 1.02, 0.52);
 	addObject(tickboxes);
 	
 	TextButton *calculate = new TextButton("Calculate", this);

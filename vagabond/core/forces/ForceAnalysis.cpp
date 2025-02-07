@@ -18,6 +18,7 @@
 
 #include <gemmi/elem.hpp>
 
+#include <vagabond/utils/FileReader.h>
 #include "ForceAnalysis.h"
 #include "BondTorsion.h"
 #include "BondLength.h"
@@ -100,7 +101,7 @@ void ForceAnalysis::createRods()
 
 		if (left->elementSymbol() == "H" || right->elementSymbol() == "H")
 		{
-			continue;
+//			continue;
 		}
 		
 		rod->setCategory(1);
@@ -138,17 +139,6 @@ void ForceAnalysis::createTorsionTorques()
 		Atom *left = bond->atom(0);
 		Atom *right = bond->atom(1);
 
-		BondTorsion *torsion = left->findBondTorsion(nullptr, left, 
-		                                             right, nullptr);
-
-		if (!torsion || torsion->isConstrained())
-		{
-			continue;
-		}
-		
-		std::vector<BondAngle *> common_angles;
-		common_angles = left->findBondAngles({left, right});
-
 		auto get_unit = [left, right]()
 		{
 			glm::vec3 a = left->initialPosition(); // replace with particle
@@ -157,28 +147,55 @@ void ForceAnalysis::createTorsionTorques()
 			return perp;
 		};
 
-		Torque *torque = new Torque(Torque::StatusKnownDirOnly,
-		                            Torque::ReasonBondTorsion);
-		torque->setUnitGetter(get_unit);
+		std::vector<BondTorsion *> torsions = 
+		left->findBondTorsions(nullptr, left, right, nullptr);
 		
-		for (BondAngle *angle : common_angles)
+		for (BondTorsion *t : torsions)
 		{
-			int backward = (angle->atom(1) == left);
-			int mult = backward ? -1 : 1;
-
-			Atom *other = angle->get_other_atom(left, right);
-			if (left->elementSymbol() == "H" || right->elementSymbol() == "H" ||
-			    other->elementSymbol() == "H")
+			if (t->isConstrained())
 			{
-//				continue;
+				continue;
 			}
 
-			Atom *central = angle->atom(1);
-			Particle *point = _atom2Particle[central];
-			BondLength *applied_bond = central->findBondLength(central, other);
-			Rod *corresponding_rod = _bond2Rod[applied_bond];
+			auto get_mag = [t, left]() -> float
+			{
+				int backward = (t->atom(1) == left);
+				int mult = backward ? -1 : 1;
+				float lw = t->atom(0)->elementSymbol() == "H" ? 1 : 4;
+				float rw = t->atom(3)->elementSymbol() == "H" ? 1 : 4;
+				float candidate = t->measurement(BondTorsion::SourceDerived);
+				float limit = 60;
+				float mag = 0;
+				if (fabs(candidate) < limit)
+				{
+					float transformed = candidate / limit * M_PI;
+					float sine = -sin(transformed);
+					mag = sine * lw * rw * 0.05;
+				}
+				return mag;
+			};
+			
+			if (fabs(get_mag()) < 1e-6)
+			{
+				continue;
+			}
 
-			applyTorque(point, corresponding_rod, torque, mult);
+			Torque *torque = new Torque(Torque::StatusKnown,
+			                            Torque::ReasonBondTorsion);
+			torque->setUnitGetter(get_unit);
+			torque->setMagGetter(get_mag);
+
+			auto add_to_torsion = [this, t, torque](int n, int m, float dir)
+			{
+				Particle *point = _atom2Particle[t->atom(m)];
+				BondLength *applied = t->atom(m)->findBondLength(t->atom(m),
+				                                                 t->atom(n));
+				Rod *corresponding_rod = _bond2Rod[applied];
+				applyTorque(point, corresponding_rod, torque, dir);
+			};
+			
+			add_to_torsion(1, 0, 1);
+			add_to_torsion(2, 3, -1);
 		}
 	}
 }
