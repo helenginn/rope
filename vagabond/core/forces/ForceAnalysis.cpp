@@ -343,16 +343,6 @@ void ForceAnalysis::createElectrostaticContacts()
 			};
 			
 			prep[p] += glm::normalize(diff) * get_mag();
-
-			/*
-			Force *force = new Force(Force::StatusKnown, 
-			                         Force::ReasonVdwContact);
-			force->setUnitGetter(get_unit);
-			force->setMagGetter(get_mag);
-			
-						applyForce(p, force, 1);
-						applyForce(q, force, -1);
-						*/
 		}
 	}
 
