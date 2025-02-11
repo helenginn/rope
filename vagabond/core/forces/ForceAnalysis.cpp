@@ -396,9 +396,9 @@ void ForceAnalysis::createCloseContacts()
 
 		glm::vec3 posdiff = apos - bpos;
 		float r = glm::length(posdiff);
-		float force = weight * (d - r) / 1000.f;
-		if (force < 0) force = 0;
-		return force;
+//		float force = weight * (d - r) / 1000.f;
+//		if (force < 0) force = 0;
+//		return force;
 
 		float dto3 = d * d * d;
 		float dto6 = dto3 * dto3;
@@ -411,7 +411,7 @@ void ForceAnalysis::createCloseContacts()
 
 		long double potential = 6 * dto6 / to7 - 12 * dto12 / to13;
 		potential *= weight / 500;
-		return (float)potential;
+		return -(float)potential;
 	};
 	
 	std::map<Particle *, glm::vec3> prep;
@@ -439,7 +439,8 @@ void ForceAnalysis::createCloseContacts()
 
 			for (size_t k = 0; k < left->bondTorsionCount(); k++)
 			{
-				if (left->bondTorsion(k)->hasAtom(right))
+				if (left->bondTorsion(k)->hasAtom(right) &&
+				    !left->bondTorsion(k)->isConstrained())
 				{
 					too_close = true;
 				}
