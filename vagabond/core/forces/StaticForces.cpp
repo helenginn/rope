@@ -104,23 +104,29 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	display(Eigen::all, 1) = estimates;
 
 	std::cout << "==== targets vs estimates ==== " << std::endl;
+	
+	std::ofstream ffile;
+	ffile.open("forces.csv");
 	std::cout << display << std::endl;
+	ffile << display << std::endl;
 	std::cout << std::endl;
+	ffile.close();
 
 	Eigen::MatrixXf diff = estimates - targets;
 	
 	float f = 0; float g = 0;
 	for (int i = 0; i < diff.rows(); i++)
 	{
-		f += fabs(diff(i, 0));
-		g += fabs(targets(i, 0));
+		f += diff(i, 0) * diff(i, 0);
+		g += targets(i, 0) * targets(i, 0);
 	}
 	f /= (float)diff.rows();
+	f = sqrt(f);
 	g /= (float)diff.rows();
+	g = sqrt(g);
 
-	std::cout << "==== diff ==== " << std::endl;
-//	std::cout << diff << std::endl;
-	std::cout << " --> average: " << f << std::endl;
+	std::cout << "==== remaining errors ==== " << std::endl;
+	std::cout << " --> diffs: " << f << std::endl;
 	std::cout << " --> targets: " << g << std::endl;
 	std::cout << " --> percentage error: " << f / g * 100.f << "%" << std::endl;
 	std::cout << std::endl;
