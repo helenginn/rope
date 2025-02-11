@@ -409,10 +409,7 @@ void Flexibility::calculateFlexWeights()
 
     // Get all the torsions of the protein
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
-    std::cout << "Total torsions: " << totalTorsionNum << std::endl;
-
     std::vector<float> weightColumn(_V.rows());
-    std::cout << "Weight column size: " << _V.rows() << std::endl;
 
     for (int i = 0; i < _V.rows(); ++i)
     {
@@ -420,10 +417,9 @@ void Flexibility::calculateFlexWeights()
     }
 
     _allTorsions = std::vector<float>(totalTorsionNum); // Initialize with zeros
-    std::cout << "_allTorsions size: " << _allTorsions.size() << std::endl;
 
     // Debug size of _globalTorsionVector
-    std::cout << "_globalTorsionVector size: " << _globalTorsionVector.size() << std::endl;
+
 
     if (_globalTorsionVector.size() != weightColumn.size())
     {
