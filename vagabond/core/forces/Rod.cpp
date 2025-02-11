@@ -124,7 +124,8 @@ void Rod::insertCoupleInto(const std::map<ForceCoordinate, int>
                            const InsertIntoRow &insert, float &target)
 {
 	glm::vec3 bond_axis = bond_dir(); // relative to left
-	glm::vec3 known_forces = _left->all_known_forces();
+	glm::vec3 known_forces = (_left->all_known_forces() -
+	                          _right->all_known_forces()) / 2.f;
 
 	int first = (coord + 1) % 3;
 	int second = (coord + 2) % 3;
@@ -136,19 +137,23 @@ void Rod::insertCoupleInto(const std::map<ForceCoordinate, int>
 	
 	target -= target_contribution;
 	
-	// add components corresponding to unknown force
-	for (const AppliedForce &applied : _left->forces())
+	for (Particle *p : {_left, _right})
 	{
-		if (applied.force->status() == Force::StatusUnknown)
+		// add components corresponding to unknown force
+		for (const AppliedForce &applied : p->forces())
 		{
-			ForceCoordinate first_unknown = {applied.force, first};
-			ForceCoordinate second_unknown = {applied.force, second};
-			
-			int first_idx = indexing_map.at(first_unknown);
-			int second_idx = indexing_map.at(second_unknown);
-			
-			insert(first_idx, bond_axis[second]);
-			insert(second_idx, -bond_axis[first]);
+			if (applied.force->status() == Force::StatusUnknown)
+			{
+				float mult = (p == _left ? 1 : -1);
+				ForceCoordinate first_unknown = {applied.force, first};
+				ForceCoordinate second_unknown = {applied.force, second};
+
+				int first_idx = indexing_map.at(first_unknown);
+				int second_idx = indexing_map.at(second_unknown);
+
+				insert(first_idx, bond_axis[second] * mult);
+				insert(second_idx, -bond_axis[first] * mult);
+			}
 		}
 	}
 }
@@ -157,7 +162,7 @@ void Rod::forcesEquation(const std::map<ForceCoordinate, int> &indexing_map,
                          int coord, const InsertIntoRow &insert, 
                          float &target)
 {
-//	std::cout << "Forces equation for " << desc() << ", coord " << coord << std::endl;
+	//	std::cout << "Forces equation for " << desc() << ", coord " << coord << std::endl;
 	glm::vec3 all_known = all_known_forces();
 	target = all_known[coord] * -1.f;
 
