@@ -410,7 +410,7 @@ void ForceAnalysis::createCloseContacts()
 		long double to7 = to6 * r;
 
 		long double potential = 6 * dto6 / to7 - 12 * dto12 / to13;
-		potential *= weight / 500;
+		potential *= weight / 1000;
 		return -(float)potential;
 	};
 	
@@ -439,8 +439,12 @@ void ForceAnalysis::createCloseContacts()
 
 			for (size_t k = 0; k < left->bondTorsionCount(); k++)
 			{
-				if (left->bondTorsion(k)->hasAtom(right) &&
-				    !left->bondTorsion(k)->isConstrained())
+				if (!left->bondTorsion(k)->isConstrained())
+				{
+					continue;
+				}
+
+				if (left->bondTorsion(k)->hasAtom(right))
 				{
 					too_close = true;
 				}
@@ -474,16 +478,6 @@ void ForceAnalysis::createCloseContacts()
 			};
 			
 			prep[p] += glm::normalize(diff) * get_mag();
-//			prep[q] -= glm::normalize(diff) * get_mag();
-
-			if (fabs(get_mag()) > 0.1)
-			{
-				std::cout << p->desc() << " to " << q->desc() << ": " << get_mag() 
-				<< std::endl;
-			}
-
-			//			applyForce(p, force, 1);
-			//			applyForce(q, force, -1);
 		}
 	}
 
