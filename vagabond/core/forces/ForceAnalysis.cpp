@@ -101,7 +101,7 @@ void ForceAnalysis::createRods()
 
 		if (left->elementSymbol() == "H" || right->elementSymbol() == "H")
 		{
-//			continue;
+			continue;
 		}
 		
 		rod->setCategory(1);
