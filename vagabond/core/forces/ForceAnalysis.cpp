@@ -150,9 +150,10 @@ void ForceAnalysis::createTorsionTorques()
 		std::vector<BondTorsion *> torsions = 
 		left->findBondTorsions(nullptr, left, right, nullptr);
 		
+		float sum = 0;
 		for (BondTorsion *t : torsions)
 		{
-			if (t->isConstrained())
+			if (t->isConstrained() || t->isPeptideBond())
 			{
 				continue;
 			}
@@ -161,8 +162,11 @@ void ForceAnalysis::createTorsionTorques()
 			{
 				int backward = (t->atom(1) == left);
 				int mult = backward ? -1 : 1;
-				float lw = t->atom(0)->elementSymbol() == "H" ? 1 : 4;
-				float rw = t->atom(3)->elementSymbol() == "H" ? 1 : 4;
+				gemmi::El lele, rele;
+				lele = gemmi::find_element(t->atom(0)->elementSymbol().c_str());
+				rele = gemmi::find_element(t->atom(3)->elementSymbol().c_str());
+				float lw = gemmi::molecular_weight(lele);
+				float rw = gemmi::molecular_weight(rele);
 				float candidate = t->measurement(BondTorsion::SourceDerived);
 				float limit = 60;
 				float mag = 0;
@@ -170,7 +174,7 @@ void ForceAnalysis::createTorsionTorques()
 				{
 					float transformed = candidate / limit * M_PI;
 					float sine = -sin(transformed);
-					mag = sine * lw * rw * 0.05;
+					mag = sine * lw * rw * 0.002;
 				}
 				return mag;
 			};
@@ -179,12 +183,17 @@ void ForceAnalysis::createTorsionTorques()
 			{
 				continue;
 			}
+			
+			sum += get_mag();
+		}
 
-			Torque *torque = new Torque(Torque::StatusKnown,
-			                            Torque::ReasonBondTorsion);
-			torque->setUnitGetter(get_unit);
-			torque->setMagGetter(get_mag);
+		Torque *torque = new Torque(Torque::StatusKnown,
+		                            Torque::ReasonBondTorsion);
+		torque->setUnitGetter(get_unit);
+		torque->setMagGetter([sum]() { return sum; });
 
+		for (BondTorsion *t : torsions)
+		{
 			auto add_to_torsion = [this, t, torque](int n, int m, float dir)
 			{
 				Particle *point = _atom2Particle[t->atom(m)];
@@ -193,7 +202,7 @@ void ForceAnalysis::createTorsionTorques()
 				Rod *corresponding_rod = _bond2Rod[applied];
 				applyTorque(point, corresponding_rod, torque, dir);
 			};
-			
+
 			add_to_torsion(1, 0, 1);
 			add_to_torsion(2, 3, -1);
 		}
