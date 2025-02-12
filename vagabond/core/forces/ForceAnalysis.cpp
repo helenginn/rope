@@ -252,7 +252,14 @@ void ForceAnalysis::createElectrostaticContacts()
 		float charge = 0;
 		if (a->elementSymbol() == "C")
 		{
-			charge += 0.3;
+			if (a->isMainChain())
+			{
+				charge += 0.3;
+			}
+			else
+			{
+				charge -= 0.1;
+			}
 		}
 		if (a->elementSymbol() == "H")
 		{
