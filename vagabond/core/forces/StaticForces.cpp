@@ -107,6 +107,7 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	
 	std::ofstream ffile;
 	ffile.open("forces.csv");
+	ffile << "target, estimate" << std::endl;
 	std::cout << display << std::endl;
 	ffile << display << std::endl;
 	std::cout << std::endl;
@@ -165,7 +166,7 @@ void StaticForces::calculateUnknowns(const std::map<ForceCoordinate, int>
 	
 	std::ofstream file;
 	file.open("stress_strain.csv");
-	file << "stress, strain" << std::endl;
+	file << "stress, strain, desc" << std::endl;
 	CorrelData data = empty_CD();
 	for (Rod *rod : _rods)
 	{
