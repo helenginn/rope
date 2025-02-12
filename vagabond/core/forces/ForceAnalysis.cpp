@@ -249,6 +249,17 @@ void ForceAnalysis::createElectrostaticContacts()
 
 	auto charge = [&ave_charge](Atom *a) -> float
 	{
+		auto is_of_name = [a](const std::vector<std::string> &names)
+		{
+			for (const std::string &name : names)
+			{
+				if (a->atomName() == name)
+				{
+					return true;
+				}
+			}
+			return false;
+		};
 		float charge = 0;
 		if (a->elementSymbol() == "C")
 		{
