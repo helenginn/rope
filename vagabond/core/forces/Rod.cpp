@@ -144,7 +144,7 @@ void Rod::insertCoupleInto(const std::map<ForceCoordinate, int>
 		{
 			if (applied.force->status() == Force::StatusUnknown)
 			{
-				float mult = (p == _left ? 1 : -1);
+				float mult = (p == _left ? 0.5 : -0.5);
 				ForceCoordinate first_unknown = {applied.force, first};
 				ForceCoordinate second_unknown = {applied.force, second};
 
