@@ -130,32 +130,33 @@ public:
 	glm::mat4x4 projection();
 	glm::mat4x4 model();
 
-	void addThickLine(glm::vec3 start, glm::vec3 dir)
+	void addThickLine(glm::vec3 start, glm::vec3 dir, bool invert = false)
 	{
+		float mult = invert ? -1 : 1;
 		{
 			Snow::Vertex &v = addVertex(start);
-			v.normal = dir;
+			v.normal = dir * mult;
 			v.tex[0] = -0.5;
 			v.tex[1] = 0;
 		}
 
 		{
 			Snow::Vertex &v = addVertex(start + dir);
-			v.normal = dir;
+			v.normal = dir * mult;
 			v.tex[0] = -0.5;
 			v.tex[1] = 1;
 		}
 
 		{
 			Snow::Vertex &v = addVertex(start);
-			v.normal = dir;
+			v.normal = dir * mult;
 			v.tex[0] = +0.5;
 			v.tex[1] = 0;
 		}
 
 		{
 			Snow::Vertex &v = addVertex(start + dir);
-			v.normal = dir;
+			v.normal = dir * mult;
 			v.tex[0] = +0.5;
 			v.tex[1] = 1;
 		}

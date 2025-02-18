@@ -51,10 +51,11 @@ void ShowTorque::update()
 
 		glm::vec3 dir = cross(offset, _torque->moment());
 		dir *= _magnitude * TORQUE_FORCE_MAGNITUDE;
+		std::cout << "mag: " << _magnitude << std::endl;
 
 		glm::vec3 start = middle - dir / 2.f;
 
-		addThickLine(start, dir);
+		addThickLine(start, dir, _magnitude > 0);
 
 		if (_torque->status() == AbstractForce::StatusCalculatedDirOnly)
 		{
