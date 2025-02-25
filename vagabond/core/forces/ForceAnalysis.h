@@ -34,7 +34,7 @@ class Atom;
 class Rod;
 
 typedef std::function<void(Particle *p, Rod *rod, 
-                           Torque *torque, float magnitude)> 
+                           Torque *torque, float magnitude, bool invert)> 
 HandleTorque;
 typedef std::function<void(Particle *p, Force *force, float magnitude)> 
 HandleForce;
@@ -69,7 +69,8 @@ private:
 	void createElectrostaticContacts();
 	void augmentSymmetry();
 
-	void applyTorque(Particle *p, Rod *rod, Torque *torque, float magnitude);
+	void applyTorque(Particle *p, Rod *rod, Torque *torque, 
+	                 float magnitude, bool invert);
 	void applyForce(Particle *p, Force *force, float magnitude);
 
 	AtomContent *_group{};

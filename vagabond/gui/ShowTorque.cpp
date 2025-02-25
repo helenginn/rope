@@ -21,16 +21,18 @@
 #include <vagabond/core/forces/Particle.h>
 #include "ShowTorque.h"
 
-ShowTorque::ShowTorque(Particle *p, Rod *rod, Torque *torque, float magnitude)
+ShowTorque::ShowTorque(Particle *p, Rod *rod, Torque *torque, 
+                       float magnitude, bool invert)
 : Image("assets/images/half_arrow.png")
 {
 	_rod = rod;
 	_torque = torque;
 	_particle = p;
 	_magnitude = magnitude;
+	_invert = invert;
 
-	Image::setVertexShaderFile("assets/shaders/axes.vsh");
-	Image::setFragmentShaderFile("assets/shaders/axes.fsh");
+	Image::setVertexShaderFile("assets/shaders/torque.vsh");
+	Image::setFragmentShaderFile("assets/shaders/torque.fsh");
 	Image::setUsesProjection(true);
 	
 	update();
@@ -51,11 +53,13 @@ void ShowTorque::update()
 
 		glm::vec3 dir = cross(offset, _torque->moment());
 		dir *= _magnitude * TORQUE_FORCE_MAGNITUDE;
-		std::cout << "mag: " << _magnitude << std::endl;
 
 		glm::vec3 start = middle - dir / 2.f;
 
-		addThickLine(start, dir, _magnitude > 0);
+		bool mag_above_zero = _magnitude > 0;
+		
+		// xor
+		addThickLine(start, dir, false, centre);
 
 		if (_torque->status() == AbstractForce::StatusCalculatedDirOnly)
 		{

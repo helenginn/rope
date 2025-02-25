@@ -1385,3 +1385,43 @@ void Renderable::setDelegate(Renderable *r)
 		object(i)->setDelegate(r);
 	}
 }
+
+void Renderable::addThickLine(glm::vec3 start, glm::vec3 dir,
+                              bool invert_x, glm::vec3 focus)
+{
+	float inv_dir = invert_x ? -1 : 1;
+	{
+		Snow::Vertex &v = addVertex(start);
+		v.normal = dir * inv_dir;
+		v.tex[0] = -0.5;
+		v.tex[1] = 0;
+		v.extra = glm::vec4{focus, 1.f};
+	}
+
+	{
+		Snow::Vertex &v = addVertex(start + dir);
+		v.normal = dir * inv_dir;
+		v.tex[0] = -0.5;
+		v.tex[1] = 1;
+		v.extra = glm::vec4{focus, 1.f};
+	}
+
+	{
+		Snow::Vertex &v = addVertex(start);
+		v.normal = dir * inv_dir;
+		v.tex[0] = +0.5;
+		v.tex[1] = 0;
+		v.extra = glm::vec4{focus, 1.f};
+	}
+
+	{
+		Snow::Vertex &v = addVertex(start + dir);
+		v.normal = dir * inv_dir;
+		v.tex[0] = +0.5;
+		v.tex[1] = 1;
+		v.extra = glm::vec4{focus, 1.f};
+	}
+
+	addIndices(-4, -3, -2);
+	addIndices(-3, -2, -1);
+}

@@ -50,13 +50,13 @@ void ForceAnalysis::applyForce(Particle *p, Force *force, float magnitude)
 }
 
 void ForceAnalysis::applyTorque(Particle *p, Rod *rod, 
-                                Torque *torque, float magnitude)
+                                Torque *torque, float magnitude, bool invert)
 {
 	rod->applyTorque(torque, magnitude);
 
 	if (_handleTorque)
 	{
-		_handleTorque(p, rod, torque, magnitude);
+		_handleTorque(p, rod, torque, magnitude, invert);
 	}
 	
 	_allForces.insert(torque);
@@ -200,7 +200,7 @@ void ForceAnalysis::createTorsionTorques()
 				BondLength *applied = t->atom(m)->findBondLength(t->atom(m),
 				                                                 t->atom(n));
 				Rod *corresponding_rod = _bond2Rod[applied];
-				applyTorque(point, corresponding_rod, torque, dir);
+				applyTorque(point, corresponding_rod, torque, dir, false);
 			};
 
 			add_to_torsion(1, 0, 1);
@@ -247,8 +247,8 @@ void ForceAnalysis::createBondAngleTorques()
 		torque->setUnitGetter(get_moment_unit);
 		torque->setMagGetter(get_moment_mag);
 
-		applyTorque(centre, left, torque, 1);
-		applyTorque(centre, right, torque, -1);
+		applyTorque(centre, left, torque, 1, get_moment_mag() < 0);
+		applyTorque(centre, right, torque, -1, get_moment_mag() < 0);
 	}
 }
 

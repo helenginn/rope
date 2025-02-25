@@ -35,7 +35,8 @@ public:
 
 	virtual void setup();
 	
-	void handleTorque(Particle *p, Rod *rod, Torque *torque, float magnitude);
+	void handleTorque(Particle *p, Rod *rod, Torque *torque, 
+	                  float magnitude, bool invert);
 	void handleForce(Particle *p, Force *force, float magnitude);
 private:
 	void updateForces();

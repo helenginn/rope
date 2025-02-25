@@ -32,7 +32,8 @@ class Particle;
 class ShowTorque : public Image, public ShowAbstractForce
 {
 public:
-	ShowTorque(Particle *p, Rod *rod, Torque *torque, float magnitude);
+	ShowTorque(Particle *p, Rod *rod, Torque *torque, float magnitude, 
+	           bool invert);
 	
 	virtual void update();
 private:
@@ -40,7 +41,7 @@ private:
 	Torque *_torque{};
 	Particle *_particle{};
 	float _magnitude{};
-
+	bool _invert{};
 };
 
 #endif

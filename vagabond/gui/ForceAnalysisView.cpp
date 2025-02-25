@@ -54,9 +54,10 @@ void ForceAnalysisView::updateForces()
 
 void ForceAnalysisView::setup()
 {
-	auto thandle = [this](Particle *p, Rod *rod, Torque *torque, float magnitude)
+	auto thandle = [this](Particle *p, Rod *rod, Torque *torque,
+	                      float magnitude, bool invert)
 	{
-		handleTorque(p, rod, torque, magnitude);
+		handleTorque(p, rod, torque, magnitude, invert);
 	};
 
 	auto fhandle = [this](Particle *p, Force *force, float magnitude)
@@ -114,9 +115,10 @@ void ForceAnalysisView::setup()
 }
 
 void ForceAnalysisView::handleTorque(Particle *p, Rod *rod, 
-                                     Torque *torque, float magnitude)
+                                     Torque *torque, float magnitude, 
+                                     bool invert)
 {
-	ShowTorque *st = new ShowTorque(p, rod, torque, magnitude);
+	ShowTorque *st = new ShowTorque(p, rod, torque, magnitude, invert);
 	addObject((Image *)st);
 	_shows.push_back(st);
 }
