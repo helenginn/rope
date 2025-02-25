@@ -85,9 +85,26 @@ void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 
 		std::string str;
 		str += a->altloc;
+		if (str[0] == 0)
+		{
+			str = "";
+		}
 		vagatom->conformerPositions()[str].pos.ave = pos;
 		vagatom->conformerPositions()[str].b = a->b_iso;
 		vagatom->conformerPositions()[str].occ = a->occ;
+		
+		glm::mat3x3 tensor = {};
+		tensor[0][0] = a->aniso.u11;
+		tensor[0][1] = a->aniso.u12;
+		tensor[0][2] = a->aniso.u13;
+		tensor[1][0] = a->aniso.u12;
+		tensor[1][1] = a->aniso.u22;
+		tensor[1][2] = a->aniso.u23;
+		tensor[2][0] = a->aniso.u13;
+		tensor[2][1] = a->aniso.u23;
+		tensor[2][2] = a->aniso.u33;
+
+		vagatom->conformerPositions()[str].tensor = tensor;
 	}
 	
 	_num++;
