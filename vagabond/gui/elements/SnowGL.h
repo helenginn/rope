@@ -209,7 +209,7 @@ protected:
 	GLuint _pingPongMap[2] = {0, 0};
 	GLuint _pingPongFbo[2] = {0, 0};
 	
-	float _camAlpha, _camBeta, _camGamma;
+	float _camAlpha{}, _camBeta{}, _camGamma{};
 	float _zNear = 1;
 	float _zFar = 400;
 
@@ -220,9 +220,9 @@ protected:
 	bool _invertZ;
 
 	glm::vec3 _centre = glm::vec3(0.f);
-	glm::vec3 _translation;
-	glm::vec3 _transOnly;
-	glm::vec3 _totalCentroid;
+	glm::vec3 _translation{};
+	glm::vec3 _transOnly{};
+	glm::vec3 _totalCentroid{};
 
 	glm::mat4x4 _lightMat;
 	glm::mat4x4 _model;
@@ -241,7 +241,7 @@ protected:
 
 	double _lastX; double _lastY;
 	double _shadowing;
-	bool _left = true;
+	bool _left = false;
 	bool _right = false;
 	bool _controlPressed = false;
 	bool _altPressed = false;

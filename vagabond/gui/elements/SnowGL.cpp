@@ -401,8 +401,7 @@ void SnowGL::render()
 void SnowGL::updateCamera()
 {
 	glm::vec3 centre = _centre;
-	glm::vec3 negCentre = centre;
-	negCentre *= -1;
+	glm::vec3 negCentre = _centre * -1.f;
 	
 	if (fabs(_camAlpha) > 1e-6 || fabs(_camBeta) > 1e-6
 	    || fabs(_camGamma) > 1e-6)
@@ -417,12 +416,15 @@ void SnowGL::updateCamera()
 
 	/* move to centre, rotate, move away from centre */
 	glm::mat4x4 back = glm::translate(glm::mat4(1.f), negCentre);
-	glm::mat4x4 rot = glm::rotate(glm::mat4(1.f), _camAlpha, glm::vec3(1, 0, 0));
+
+	glm::mat4x4 rot = glm::rotate(glm::mat4(1.f), _camAlpha, 
+	                              glm::vec3(1, 0, 0));
 	rot = glm::rotate(rot, _camBeta, glm::vec3(0, 1, 0));
 	rot = glm::rotate(rot, _camGamma, glm::vec3(0, 0, 1));
-	glm::mat4x4 front = glm::translate(glm::mat4(1.f), centre);
 
-	glm::mat4x4 change = front * rot * back;
+	glm::mat4x4 return_to = glm::translate(glm::mat4(1.f), centre);
+
+	glm::mat4x4 change = return_to * rot * back;
 
 	_centre += _translation;
 	glm::mat4x4 transMat = glm::translate(glm::mat4(1.f), _translation);
@@ -557,12 +559,18 @@ void SnowGL::resetMouseKeyboard()
 
 void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
 {
-	glm::vec3 diff = update - _centre;
+	glm::mat4x4 step_back = glm::translate(glm::mat4(1.f), -_centre);
+	glm::mat4x4 step_forward = glm::translate(glm::mat4(1.f), _centre);
+	glm::mat4x4 rot = glm::mat4(glm::mat3(_model));
+
+	glm::vec3 diff = (update - _centre);
 	_model = glm::mat4(1.f);
 	_centre += diff;
 	_translation = -diff;
 	_translation.z -= distance;
 	updateCamera();
+	
+	_model = step_forward * rot * step_back * _model;
 }
 
 void SnowGL::renderQuad()
