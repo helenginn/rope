@@ -93,7 +93,7 @@ public:
 
 	virtual void interactedWithNothing(bool left, bool hover = false);
 	virtual void keyPressEvent(SDL_Keycode pressed);
-	void focusOnResidue(int res);
+	virtual void focusOnResidue(int res);
 private:
 	void resetDensityMap();
 
