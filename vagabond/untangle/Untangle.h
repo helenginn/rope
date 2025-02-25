@@ -54,8 +54,6 @@ public:
 	void switchConfs(Atom *a, const std::string &l, 
 	                 const std::string &r, bool one_only, 
 	                 const std::function<void(Atom *)> &per_job = {});
-
-	void untangle(const std::set<Atom *> &avoid = {});
 	
 	std::list<TangledBond> &bonds()
 	{
@@ -71,7 +69,6 @@ public:
 	
 	OpSet<TangledBond *> neighbours(TangledBond *first);
 	void triggerDisplay();
-	void backgroundUntangle(const std::set<Atom *> &avoid);
 	
 	const std::vector<Atom *> &atoms();
 private:
@@ -88,8 +85,6 @@ private:
 	std::vector<TangledBond *> _touched;
 	std::map<BondLength *, TangledBond *> _map;
 	
-	std::thread *_worker = nullptr;
-	MemoryTangle *_memory = nullptr;
 	std::mutex _memtex;
 	
 	std::set<std::string> _geometries;

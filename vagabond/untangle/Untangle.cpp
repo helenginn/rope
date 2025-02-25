@@ -18,7 +18,6 @@
 
 #include "Untangle.h"
 #include "UntangleView.h"
-#include "MemoryTangle.h"
 #include <vagabond/core/GeometryTable.h>
 #include <vagabond/core/files/PdbFile.h>
 #include <vagabond/core/AtomGroup.h>
@@ -259,86 +258,6 @@ float Untangle::biasedScore()
 	return total / count;
 }
 
-void Untangle::backgroundUntangle(const std::set<Atom *> &avoid)
-{
-	std::unique_lock<std::mutex> lock(_memtex);
-	if (_worker && _memory)
-	{
-		_memory->cancel();
-		_worker->join();
-		_worker = nullptr;
-	}
-
-	_worker = new std::thread([this, avoid]() { untangle(avoid); });
-	lock.unlock();
-}
-
-void Untangle::untangle(const std::set<Atom *> &avoid)
-{
-	std::vector<TangledBond *> to_work_with = _touched;
-	std::reverse(to_work_with.begin(), to_work_with.end());
-	to_work_with = volatileBonds();
-
-	const int limit = 400;
-	if (to_work_with.size() > limit)
-	{
-		to_work_with.resize(limit);
-	}
-	
-	std::sort(to_work_with.begin(), to_work_with.end(),
-	          [](TangledBond *const &a, TangledBond *const &b)
-			  {
-			       return a->atom(1)->residueNumber() < 
-			              b->atom(1)->residueNumber();
-			  });
-
-	std::vector<Atom *> atoms;
-	for (TangledBond *const &bond : to_work_with)
-	{
-		for (int i = 0; i < 2; i++)
-		{
-			Atom *a = bond->atom(i);
-			if ((a->code() == "PRO" || a->code() == "TYR" ||
-			     a->code() == "PHE" || a->code() == "TRP" ||
-			     a->code() == "HIS") && !a->isMainChain())
-			{
-//				continue;
-			}
-			if (std::find(atoms.begin(), atoms.end(), a) == atoms.end())
-			{
-				atoms.push_back(a);
-			}
-		}
-	}
-
-	return;
-	std::unique_lock<std::mutex> lock(_memtex);
-	MemoryTangle memory(this);
-	memory.setMaxLead(4);
-	_memory = &memory;
-	lock.unlock();
-
-	for (Atom *const &atom : atoms)
-	{
-		if (avoid.count(atom) == 0)
-		{
-			if (memory.cancelled())
-			{
-				break;
-			}
-
-			memory.tryTangle(atom);
-		}
-		else
-		{
-			std::cout << "skip " << atom->desc() << std::endl;
-		}
-	}
-	
-	_memory = nullptr;
-	triggerDisplay();
-}
-
 void Untangle::triggerDisplay()
 {
 	_view->recalculate();
@@ -346,7 +265,9 @@ void Untangle::triggerDisplay()
 
 void Untangle::save(const std::string &filename)
 {
-	PdbFile::writeAtoms(_group, filename, true);
+	Write write(_filename, filename, _group);
+	write();
+//	PdbFile::writeAtoms(_group, filename, true);
 }
 
 int Untangle::firstResidue()
