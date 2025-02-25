@@ -24,7 +24,8 @@ void main()
 				    model[2][0], model[2][1], model[2][2]);
 
 	vec3 n = rot * normal;
-	n.z = 0.;
+//	n.z = 0.;
+	vNormal = n;
 
 	mat2 turn = mat2(n.x, n.y, n.y, -n.x);
 	turn[1] *= 0.25;
@@ -34,8 +35,8 @@ void main()
 	vPos = projection * mPos;
 	gl_Position = vPos;
 	vColor = color;
-	vExtra = extra;
-	vNormal = n;
+	vec3 offset = extra.xyz - position.xyz;
+	vExtra = vec4(rot * offset, extra.w);
 }
 
 

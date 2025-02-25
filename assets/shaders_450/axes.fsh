@@ -15,7 +15,8 @@ layout (location = 1) out uint ValIndex;
 
 void main()
 {
-	vec4 result = texture(pic_tex, vTex);
+	vec2 tex = vTex;
+	vec4 result = texture(pic_tex, tex);
 
 	if (result.a < 0.05)
 	{
@@ -30,6 +31,11 @@ void main()
 		(vPos.z > far_slab || vPos.z < near_slab))
 	{
 		discard;
+	}
+
+	if (vExtra[0] > 0.5 && vNormal.z < 0.)
+	{
+		result.r += 1;
 	}
 
 	result += vColor;
