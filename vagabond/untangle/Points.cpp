@@ -19,6 +19,7 @@
 #include "Points.h"
 #include "Visual.h"
 #include "Untangle.h"
+#include "UndoStack.h"
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/BondLength.h>
 #include <vagabond/gui/elements/Window.h>
@@ -35,6 +36,8 @@ Points::Points(Visual *visual)
 	setImage("assets/images/blob.png");
 
 	_size = 15 * Window::ratio() / 2;
+
+	_undo = new UndoStack();
 }
 
 void Points::colourAtom(Vertex &vertex, const std::string &conf)
@@ -43,6 +46,23 @@ void Points::colourAtom(Vertex &vertex, const std::string &conf)
 	glm::vec4 grey = glm::vec4(0.2, 0.2, 0.2, 0.);
 	vertex.color = grey + colour * 2.f;
 	vertex.color[3] = 1;
+}
+
+void Points::updateBadness(Atom *atom, const std::string &conf, float badness)
+{
+	std::vector<int> &indices = _map[atom];
+
+	for (const int &idx : indices)
+	{
+		const std::string &candidate = _atoms[idx].second;
+		
+		if (candidate == conf)
+		{
+			_vertices[idx].extra[0] = badness;
+			std::cout << atom->desc() << " " <<
+			conf << " - " << badness << std::endl;
+		}
+	}
 }
 
 void Points::repositionAtoms()
@@ -62,8 +82,11 @@ void Points::repositionAtom(Atom *atom)
 	for (const int &idx : indices)
 	{
 		const std::string &conf = _atoms[idx].second;
-		glm::vec3 tmp = atom->conformerPositions()[conf].pos.ave;
-		_vertices[idx].pos = tmp;
+		if (atom->conformerPositions().count(conf))
+		{
+			glm::vec3 tmp = atom->conformerPositions()[conf].pos.ave;
+			_vertices[idx].pos = tmp;
+		}
 	}
 }
 
@@ -73,6 +96,11 @@ void Points::addAtom(Atom *atom)
 
 	for (const std::string &conf : confs)
 	{
+		if (atom->conformerPositions().count(conf) == 0)
+		{
+			continue;
+		}
+
 		glm::vec3 p = atom->conformerPositions()[conf].pos.ave;
 		
 		Vertex &vert = addVertex(p);
@@ -96,20 +124,28 @@ void Points::reindex()
 void Points::switchConfs(Atom *a, const std::string &l, const std::string &r,
                          bool one_only)
 {
-	auto per_job = [this](Atom *a) { repositionAtom(a); };
-	
-	
-	_untangle->switchConfs(a, l, r, one_only, per_job);
-//	_untangle->backgroundUntangle({a});
+	auto generate_job = [this, a, one_only](const std::string &l,
+	                                        const std::string &r)
+	{
+		return [this, a, one_only, l, r]()
+		{
+			auto per_job = [this](Atom *a) { repositionAtom(a); };
+			_untangle->switchConfs(a, l, r, one_only, per_job);
+			_untangle->reevaluateAtoms();
+			_visual->updateBonds();
+			forceRender(true, true);
+		};
+	};
 
-	_visual->updateBonds();
-
-	forceRender(true, true);
+	auto forward_job = generate_job(l, r);
+	auto backward_job = generate_job(r, l);
+	
+	_undo->addJobAndExecute(forward_job, backward_job);
 }
 
 void Points::interacted(int idx, bool hover, bool left)
 {
-	if (!hover)
+	if (!hover && left)
 	{
 		std::pair<Atom *, std::string> pair = _atoms[idx];
 		Atom *atom = pair.first;
@@ -121,6 +157,28 @@ void Points::interacted(int idx, bool hover, bool left)
 			std::string second = *(++confs.begin());
 			switchConfs(atom, first, second, !left);
 		}
+		else
+		{
+			std::cout << "Conformer list not yet handled: ";
+			for (const std::string &conf : confs)
+			{
+				std::cout << conf << ", ";
+			}
+			std::cout << std::endl;
+		}
+	}
+	else if (!hover && !left)
+	{
+		std::pair<Atom *, std::string> pair = _atoms[idx];
+		Atom *atom = pair.first;
+		_untangle->informationAbout(atom);
+	}
+	else if (hover)
+	{
+		std::pair<Atom *, std::string> pair = _atoms[idx];
+		Atom *atom = pair.first;
+		_visual->labelAtom(atom);
+
 	}
 }
 

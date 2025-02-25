@@ -1,10 +1,12 @@
 untanglefiles = [
-'MemoryTangle.h',
-'MemoryTangle.cpp',
+'NonBonds.h',
+'NonBonds.cpp',
 'Points.h',
 'Points.cpp',
 'TangledBond.h',
 'TangledBond.cpp',
+'UndoStack.h',
+'UndoStack.cpp',
 'UntangleWindow.h',
 'UntangleWindow.cpp',
 'UntangleView.h',
@@ -13,6 +15,8 @@ untanglefiles = [
 'Untangle.cpp',
 'Visual.h',
 'Visual.cpp',
+'Write.h',
+'Write.cpp',
 'main.cpp',
 ]
 

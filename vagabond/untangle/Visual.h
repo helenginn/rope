@@ -27,6 +27,8 @@ class TangledBond;
 class BondLength;
 class Untangle;
 class Points;
+class Atom;
+class Text;
 
 class Visual : public SimplePolygon
 {
@@ -42,15 +44,25 @@ public:
 	void updateBonds();
 	void updateScore();
 	
+	void undo();
+	void redo();
+
 	Points *points()
 	{
 		return _points;
 	}
 	
+	std::function<void(Atom *, const std::string &, float)> updateBadness();
+	
 	glm::vec4 colourFor(const std::string &conf) 
 	{
 		return _colours[conf];
 	}
+
+	// taking into account the other conformer in the pair
+	glm::vec4 colourForConfs(const std::string &conf1, 
+	                         const std::string &conf2,
+	                         const std::string &chosen);
 	
 	Untangle *const &untangle() const
 	{
@@ -59,6 +71,15 @@ public:
 
 	void labelAtom(Atom *atom);
 	void focusOn(int resi);
+	virtual void extraUniforms();
+	void findDisulphides();
+	
+	void setShowDirt(bool dirt)
+	{
+		_showDirt = dirt;
+	}
+
+	void clearBadness();
 private:
 	void setupPoints();
 	void addBonded(Atom *left, Atom *right, TangledBond *tb,
@@ -88,10 +109,14 @@ private:
 	
 	std::list<Bonded> _bonded;
 
+	int _showDirt = 0;
 	float biasedScore();
 	float updateBond(Bonded *bonded);
 	FloatingText *_text = nullptr;
 	Text *_scoreText = nullptr;
+	Text *_clashText = nullptr;
+	
+	std::map<TangledBond *, Text *> _disulphides;
 
 	std::map<Atom *, std::vector<Bonded *>> _mapping;
 };

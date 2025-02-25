@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Write.h"
+#include "Visual.h"
 #include "Untangle.h"
 #include "UntangleView.h"
 #include <vagabond/core/GeometryTable.h>
@@ -71,7 +73,36 @@ void Untangle::setup()
 {
 	loadFile();
 	extract();
-//	untangle();
+	setupNonBonds();
+}
+
+void Untangle::setupNonBonds()
+{
+	_nonBonds = new NonBonds();
+	_nonBonds->setAtoms(atoms());
+}
+
+void Untangle::informationAbout(Atom *atom)
+{
+	_nonBonds->evaluateAtom(atom, true);
+
+}
+
+float Untangle::reevaluateAtoms()
+{
+	float total = 0;
+	_view->visual()->clearBadness();
+	_nonBonds->setUpdateBadness(_view->visual()->updateBadness());
+
+	int count = 0;
+	for (Atom *atom : atoms())
+	{
+		total += _nonBonds->evaluateAtom(atom, false);
+		count++;
+	}
+
+	_clash = total;
+	return _clash;
 }
 
 void Untangle::addTouchedBond(BondLength *bl)
@@ -87,14 +118,22 @@ void Untangle::switchConfs(Atom *a, const std::string &l,
                            const std::string &r, bool one_only, 
                            const std::function<void(Atom *)> &per_job)
 {
-	auto job = [l, r, &per_job](Atom *a)
+	auto job = [l, r, &per_job](Atom *a) -> bool
 	{
-		glm::vec3 tmp = a->conformerPositions()[l].pos.ave;
-		a->conformerPositions()[l].pos.ave = a->conformerPositions()[r].pos.ave;
-		a->conformerPositions()[r].pos.ave = tmp;
-		if (per_job)
+		try
 		{
-			per_job(a);
+			Atom::AtomPlacement place = a->conformerPositions().at(l);
+			a->conformerPositions()[l] = a->conformerPositions().at(r);
+			a->conformerPositions()[r] = place;
+			if (per_job)
+			{
+				per_job(a);
+			}
+			return true;
+		}
+		catch (...)
+		{
+			return false;
 		}
 	};
 
@@ -102,20 +141,22 @@ void Untangle::switchConfs(Atom *a, const std::string &l,
 	std::set<Atom *> really_done;
 
 	auto job_from_bl = [&really_done, orig, job]
-	(std::set<Atom *> &done, BondLength *bl)
+	(std::set<Atom *> &done, BondLength *bl) -> bool
 	{
+		bool success = false;
 		for (int i = 0; i < 2; i++)
 		{
 			Atom *a = bl->atom(i);
 			if (really_done.count(a) == 0 && a != orig)
 			{
 				really_done.insert(a);
-				job(a);
+				success |= job(a);
 			}
 		}
+		return success;
 	};
 
-	Atom *found = nullptr;
+	Atom *found = nullptr; // get the correct direction to move forward in
 	for (int i = 0; i < a->bondLengthCount(); i++)
 	{
 		if (a->connectedAtom(i)->atomNum() < a->atomNum() &&
@@ -128,9 +169,9 @@ void Untangle::switchConfs(Atom *a, const std::string &l,
 		}
 	}
 
-	job(a);
+	bool first_success = job(a);
 
-	if (!one_only)
+	if (!one_only && first_success)
 	{
 		if ((a->code() == "PRO" || a->code() == "TYR" ||
 		     a->code() == "PHE" || a->code() == "TRP" ||
@@ -191,6 +232,7 @@ void Untangle::doJobDownstream(Atom *atom, const DownstreamJob &job,
 	
 	add_bl(atom, max_hops);
 
+	bool success = true;
 	while (queue.size())
 	{
 		Entry last = queue.back();
@@ -201,7 +243,7 @@ void Untangle::doJobDownstream(Atom *atom, const DownstreamJob &job,
 		
 		queue.pop_back();
 
-		job(done, bond);
+		success = job(done, bond);
 		done.insert(atom);
 
 		Atom *next = other_side(bond);
@@ -241,12 +283,20 @@ std::vector<TangledBond *> Untangle::volatileBonds()
 	return tangles;
 }
 
-float Untangle::biasedScore()
+float Untangle::biasedScore(bool disulphides)
 {
 	float total = 0;
 	float count = 0;
 	for (TangledBond &bond : _bonds)
 	{
+		bool ss = (bond.atom(0)->elementSymbol() == "S" &&
+		           bond.atom(1)->elementSymbol() == "S");
+
+		if ((disulphides && ss) || (!disulphides && !ss))
+		{
+			continue;
+		}
+
 		float add = bond.total_score(1.);
 		if (add > 1e-6)
 		{

@@ -26,11 +26,11 @@
 #include <string>
 #include <thread>
 #include <functional>
+#include "NonBonds.h"
 #include "TangledBond.h"
 #include <vagabond/utils/OpSet.h>
 #include <vagabond/utils/glm_import.h>
 
-class MemoryTangle;
 class UntangleView;
 class AtomGroup;
 class Atom;
@@ -45,7 +45,7 @@ public:
 
 	std::vector<TangledBond *> volatileBonds();
 
-	typedef std::function<void(std::set<Atom *>&, BondLength *)> DownstreamJob;
+	typedef std::function<bool(std::set<Atom *>&, BondLength *)> DownstreamJob;
 
 	void doJobDownstream(Atom *atom, const DownstreamJob &job,
 	                     int max_hops = INT_MAX, std::set<Atom *> done = {});
@@ -61,7 +61,7 @@ public:
 	}
 	
 	int firstResidue();
-	float biasedScore();
+	float biasedScore(bool disulphides);
 	
 	void save(const std::string &filename);
 	glm::vec3 positionFor(int resi);
@@ -69,22 +69,33 @@ public:
 	
 	OpSet<TangledBond *> neighbours(TangledBond *first);
 	void triggerDisplay();
+	float reevaluateAtoms();
+	void informationAbout(Atom *atom);
 	
 	const std::vector<Atom *> &atoms();
+	
+	const float &clashScore() const
+	{
+		return _clash;
+	}
 private:
 	void loadFile();
 	void extract();
 	void extractBonds(Atom *const &atom);
 	void addTouchedBond(BondLength *bl);
+	void setupNonBonds();
+
 
 	std::string _filename;
 	UntangleView *_view = nullptr;
+	float _clash = 0;
 
 	AtomGroup *_group = nullptr;
 	std::list<TangledBond> _bonds;
 	std::vector<TangledBond *> _touched;
 	std::map<BondLength *, TangledBond *> _map;
 	
+	NonBonds *_nonBonds = nullptr;
 	std::mutex _memtex;
 	
 	std::set<std::string> _geometries;

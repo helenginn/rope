@@ -16,42 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__UntangleView__
-#define __vagabond__UntangleView__
+#ifndef __vagabond__Write__
+#define __vagabond__Write__
 
-#include <vagabond/gui/Display.h>
+#include <vector>
+#include <string>
 
-class Untangle;
-class Visual;
+namespace gemmi { struct Model; struct Chain; struct Residue; struct Atom;};
+class AtomGroup;
 
-class UntangleView : public Display
+class Write
 {
 public:
-	UntangleView(Scene *prev = nullptr);
+	Write(const std::string &pattern, 
+	      const std::string &output, AtomGroup *group);
 
-	virtual void setup();
-
-	virtual void recalculate();
-	
-	void load(const std::string &filename);
-	virtual void focusOnResidue(int res);
-	virtual void buttonPressed(std::string tag, Button *button);
-
-	virtual void keyPressEvent(SDL_Keycode pressed);
-	virtual void keyReleaseEvent(SDL_Keycode pressed);
-	virtual void interactedWithNothing(bool left, bool hover);
-	
-	Visual *const visual() const
-	{
-		return _visual;
-	}
+	void operator()();
+	void processModel(gemmi::Model &m);
+	void processAtom(gemmi::Chain &c, gemmi::Residue &r, gemmi::Atom &a);
 private:
-	Untangle *_untangle = nullptr;
-	Visual *_visual = nullptr;
+	AtomGroup *_group{};
+	std::string _patternFile;
+	std::string _outputFile;
 
-	std::set<std::string> _geometries;
-	std::string _filename;
-	int _resi = -1;
 };
 
 #endif

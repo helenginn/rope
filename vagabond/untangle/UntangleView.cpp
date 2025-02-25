@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/core/files/File.h>
 #include "Untangle.h"
 #include "Visual.h"
@@ -66,17 +67,45 @@ void UntangleView::setup()
 	IndexResponseView::setup();
 	
 	TextButton *tb = new TextButton("Save", this);
-	tb->setReturnTag("save");
 	tb->setRight(0.95, 0.1);
+	auto ask_job = [this]()
+	{
+		AskForText *aft = new AskForText(this, "PDB file name to save to:",
+		                                 "export_pdb", this);
+		setModal(aft);
+	};
+	tb->setReturnJob(ask_job);
 	addObject(tb);
+	
+	_untangle->reevaluateAtoms();
+	_visual->updateScore();
+	_visual->findDisulphides();
 }
 
 void UntangleView::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "save")
+	if (tag == "export_pdb")
 	{
-		_untangle->save("output.pdb");
+		TextEntry *te = static_cast<TextEntry *>(button);
+		std::string filename = te->scratch();
+		_untangle->save(filename);
 	}
+}
+
+void UntangleView::keyPressEvent(SDL_Keycode pressed)
+{
+	Display::keyPressEvent(pressed);
+
+	if (pressed == SDLK_c)
+	{
+		_visual->setShowDirt(true);
+	}
+}
+
+void UntangleView::focusOnResidue(int res)
+{
+	_visual->focusOn(res);
+	_resi = res;
 }
 
 void UntangleView::keyReleaseEvent(SDL_Keycode pressed)
@@ -87,6 +116,23 @@ void UntangleView::keyReleaseEvent(SDL_Keycode pressed)
 
 		_visual->focusOn(_resi);
 	}
+
+	if (pressed == SDLK_c)
+	{
+		_visual->setShowDirt(false);
+	}
+	
+	if (_controlPressed && !_shiftPressed && pressed == SDLK_z)
+	{
+		_visual->undo();
+	}
+	
+	if ((_controlPressed && _shiftPressed && pressed == SDLK_z) ||
+	    (_controlPressed && pressed == SDLK_y))
+	{
+		_visual->redo();
+	}
+
 	Scene::keyReleaseEvent(pressed);
 }
 
@@ -100,4 +146,12 @@ void UntangleView::recalculate()
 			_visual->points()->repositionAtoms();
 		}
 	});
+}
+
+void UntangleView::interactedWithNothing(bool left, bool hover)
+{
+	if (hover && _visual)
+	{
+		_visual->labelAtom(nullptr);
+	}
 }

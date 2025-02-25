@@ -26,6 +26,7 @@
 class Atom;
 class Visual;
 class Untangle;
+class UndoStack;
 
 class Points : public IndexResponder
 {
@@ -45,6 +46,13 @@ public:
 	virtual void interacted(int idx, bool hover, bool left);
 
 	virtual void extraUniforms();
+	
+	UndoStack *const &stack() const
+	{
+		return _undo;
+	}
+
+	void updateBadness(Atom *atom, const std::string &conf, float badness);
 private:
 	void switchConfs(Atom *a, const std::string &l, const std::string &r,
 	                 bool one_only);
@@ -53,10 +61,12 @@ private:
 	
 	std::vector<std::pair<Atom *, std::string> > _atoms;
 	std::map<Atom *, std::vector<int>> _map;
+	std::map<Atom *, std::vector<Atom *>> _contacts;
 	Visual *_visual = nullptr;
 	Untangle *_untangle = nullptr;
 	float _size = 1;
 
+	UndoStack *_undo{};
 };
 
 #endif

@@ -1,4 +1,4 @@
-// vagabond
+// 
 // Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -16,42 +16,41 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__UntangleView__
-#define __vagabond__UntangleView__
+#ifndef __vagabond__NonBonds__
+#define __vagabond__NonBonds__
 
-#include <vagabond/gui/Display.h>
+#include <vector>
+#include <set>
+#include <map>
 
-class Untangle;
-class Visual;
+class Atom;
 
-class UntangleView : public Display
+class NonBonds
 {
 public:
-	UntangleView(Scene *prev = nullptr);
+	NonBonds();
 
-	virtual void setup();
+	void setAtoms(const std::vector<Atom *> &atoms);
 
-	virtual void recalculate();
+	std::set<Atom *> acquireContacts(Atom *const &atom,
+	                                 const std::vector<Atom *> &source,
+	                                 float threshold);
 	
-	void load(const std::string &filename);
-	virtual void focusOnResidue(int res);
-	virtual void buttonPressed(std::string tag, Button *button);
+	typedef std::function<void (Atom *, const std::string &, float)> 
+	UpdateBadness;
 
-	virtual void keyPressEvent(SDL_Keycode pressed);
-	virtual void keyReleaseEvent(SDL_Keycode pressed);
-	virtual void interactedWithNothing(bool left, bool hover);
-	
-	Visual *const visual() const
+	void setUpdateBadness(const UpdateBadness &update)
 	{
-		return _visual;
+		_update = update;
 	}
-private:
-	Untangle *_untangle = nullptr;
-	Visual *_visual = nullptr;
 
-	std::set<std::string> _geometries;
-	std::string _filename;
-	int _resi = -1;
+	float evaluateAtom(Atom *const &atom, bool print);
+private:
+	std::set<Atom *> _atoms;
+	std::map<Atom *, std::set<Atom *>> _contacts;
+	std::map<Atom *, float> _radii;
+
+	UpdateBadness _update{};
 };
 
 #endif

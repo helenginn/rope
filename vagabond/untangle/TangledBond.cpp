@@ -171,15 +171,22 @@ float measured_torsion(Atom *left, Atom *midleft, Atom *midright, Atom *right,
                        const std::string &p, const std::string &q, 
                        const std::string &r, const std::string &s)
 {
-	glm::vec3 u = left->conformerPositions()[p].pos.ave;
-	glm::vec3 v = midleft->conformerPositions()[q].pos.ave;
-	glm::vec3 w = midright->conformerPositions()[r].pos.ave;
-	glm::vec3 x = right->conformerPositions()[s].pos.ave;
+	try
+	{
+		glm::vec3 u = left->conformerPositions().at(p).pos.ave;
+		glm::vec3 v = midleft->conformerPositions().at(q).pos.ave;
+		glm::vec3 w = midright->conformerPositions().at(r).pos.ave;
+		glm::vec3 x = right->conformerPositions().at(s).pos.ave;
 
-	glm::vec3 positions[] = {u, v, w, x};
-	float torsion = measure_bond_torsion(positions);
+		glm::vec3 positions[] = {u, v, w, x};
+		float torsion = measure_bond_torsion(positions);
 
-	return torsion;
+		return torsion;
+	}
+	catch (...)
+	{
+		return 180;
+	}
 }
 
 float TangledBond::length_score(const std::string &p, const std::string &q, 

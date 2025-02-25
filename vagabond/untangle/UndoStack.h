@@ -16,42 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__UntangleView__
-#define __vagabond__UntangleView__
+#ifndef __vagabond__UndoStack__
+#define __vagabond__UndoStack__
 
-#include <vagabond/gui/Display.h>
+#include <vector>
+#include <functional>
 
-class Untangle;
-class Visual;
-
-class UntangleView : public Display
+class UndoStack
 {
 public:
-	UntangleView(Scene *prev = nullptr);
+	UndoStack();
 
-	virtual void setup();
-
-	virtual void recalculate();
-	
-	void load(const std::string &filename);
-	virtual void focusOnResidue(int res);
-	virtual void buttonPressed(std::string tag, Button *button);
-
-	virtual void keyPressEvent(SDL_Keycode pressed);
-	virtual void keyReleaseEvent(SDL_Keycode pressed);
-	virtual void interactedWithNothing(bool left, bool hover);
-	
-	Visual *const visual() const
-	{
-		return _visual;
-	}
+	void addJobAndExecute(std::function<void()> job,
+	                      std::function<void()> reverse);
+	void undo();
+	void redo();
 private:
-	Untangle *_untangle = nullptr;
-	Visual *_visual = nullptr;
+	
+	struct JobPair
+	{
+		std::function<void()> forward;
+		std::function<void()> reverse;
+	};
 
-	std::set<std::string> _geometries;
-	std::string _filename;
-	int _resi = -1;
+	std::vector<JobPair> _jobs;
+	int _tracker = 0;
 };
 
 #endif

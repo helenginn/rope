@@ -19,9 +19,11 @@
 #include <vagabond/gui/RenderLine.h>
 
 #include <vagabond/gui/elements/FloatingText.h>
+#include <vagabond/utils/FileReader.h>
 #include <vagabond/core/BondLength.h>
 #include <vagabond/core/Atom.h>
 #include "TangledBond.h"
+#include "UndoStack.h"
 #include "Untangle.h"
 #include "Visual.h"
 #include "Points.h"
@@ -35,14 +37,20 @@ Visual::Visual(Untangle *untangle)
 	
 	_colours["A"] = glm::vec4(0, 0, 0.9, 0);
 	_colours["B"] = glm::vec4(0.5, 0.4, 0, 0);
-	_colours[""] = glm::vec4(0.5, 0.5, 0.5, 0);
+	_colours[""] = glm::vec4(0.0, 0.0, 0.0, 0);
 
 	_untangle = untangle;
 	setup();
 	
-	_scoreText = new Text("Score: ");
+	_scoreText = new Text("except S-S: ");
 	_scoreText->setLeft(0.1, 0.1);
+	_scoreText->resize(0.4);
 	addObject(_scoreText);
+
+	_clashText = new Text("Clash: ");
+	_clashText->setLeft(0.1, 0.14);
+	_clashText->resize(0.4);
+	addObject(_clashText);
 }
 
 void Visual::addBond(const glm::vec3 &v, const glm::vec3 &w, float score,
@@ -65,6 +73,18 @@ void Visual::addBond(const glm::vec3 &v, const glm::vec3 &w, float score,
 	add_indices_for_renderable(this);
 }
 
+glm::vec4 Visual::colourForConfs(const std::string &conf1,
+                                 const std::string &conf2,
+                                 const std::string &chosen)
+{
+	if (conf1 == "" || conf2 == "" || conf1 == conf2)
+	{
+		return _colours[""];
+	}
+
+	return _colours[chosen];
+}
+
 float Visual::updateBond(Bonded *bonded)
 {
 	Atom *left = bonded->a;
@@ -83,16 +103,9 @@ float Visual::updateBond(Bonded *bonded)
 
 		_vertices[j].pos = pos;
 		_vertices[j].normal = dir;
-		if (bonded->p == bonded->q)
-		{
-			_vertices[j].color = glm::vec4(0.f);
-		}
-		else
-		{
-			std::string conf = (i % 2 == 0 ? bonded->p : bonded->q);
-			_vertices[j].color = colourFor(conf);
-		}
+		std::string chosen = (i % 2 == 0 ? bonded->p : bonded->q);
 
+		_vertices[j].color = colourForConfs(bonded->p, bonded->q, chosen);
 		_vertices[j].color[3] = score;
 	}
 	
@@ -101,11 +114,26 @@ float Visual::updateBond(Bonded *bonded)
 
 void Visual::updateScore()
 {
-	float total = _untangle->biasedScore();
+	float ss = _untangle->biasedScore(false);
+	float no_ss = _untangle->biasedScore(true);
+	float clash = _untangle->clashScore();
 
-	auto fix_text = [total, this]()
+	auto fix_text = [ss, no_ss, clash, this]()
 	{
-		_scoreText->setText("Score: " + std::to_string(total));
+		_scoreText->setText("Not S-S score: " + std::to_string(no_ss));
+		_clashText->setText("Clash: " + std::to_string(clash));
+		
+		for (auto it = _disulphides.begin(); it != _disulphides.end(); it++)
+		{
+			TangledBond *bond = it->first;
+			float score = bond->total_score(1.f);
+			std::string str_score = f_to_str(score, 2);
+			std::string resi_left = bond->atom(0)->residueId().str();
+			std::string resi_right = bond->atom(1)->residueId().str();
+			
+			Text *text = it->second;
+			text->setText(resi_left + "-S " + str_score + " S-" + resi_right);
+		}
 	};
 	
 	addMainThreadJob(fix_text);
@@ -164,14 +192,15 @@ void Visual::addBond(TangledBond &bond)
 			float score = bond.simple_score(first, second);
 			addBonded(left, right, &bond, first, second);
 
-			if (first[0] == 0 || second[0] == 0 || first == second)
+			if (first == "" || second == "" || first == second)
 			{
 				addBond(v, w, score);
 			}
 			else
 			{
-				std::cout << "'" << first << "' '" << second << "'" <<std::endl;
-				addBond(v, w, score, _colours[first], _colours[second]);
+				glm::vec4 lCol = _colours[first];
+				glm::vec4 rCol = _colours[second];
+				addBond(v, w, score, lCol, rCol);
 			}
 		}
 	}
@@ -183,6 +212,12 @@ void Visual::labelAtom(Atom *atom)
 	{
 		removeObject(_text);
 		delete _text;
+		_text = nullptr;
+	}
+	
+	if (atom == nullptr)
+	{
+		return;
 	}
 
 	FloatingText *text = new FloatingText(atom->desc(), 20, 2.0);
@@ -227,13 +262,92 @@ void Visual::setup()
 	
 	setupPoints();
 	updateBonds();
-	_untangle->backgroundUntangle({});
 }
 
 void Visual::render(SnowGL *gl)
 {
-//	glEnable(GL_DEPTH_TEST);
 	Renderable::render(gl);
-//	glDisable(GL_DEPTH_TEST);
 }
 
+void Visual::undo()
+{
+	_points->stack()->undo();
+}
+
+void Visual::redo()
+{
+	_points->stack()->redo();
+}
+
+void Visual::clearBadness()
+{
+	for (Vertex &v : _vertices)
+	{
+		v.extra[0] = 0;
+	}
+}
+
+std::function<void(Atom *, const std::string &, float)> Visual::updateBadness()
+{
+	return [this](Atom *atom, const std::string &conf, float badness)
+	{
+		// we aren't displaying hydrogens so they need to be foisted onto
+		// the closest bond
+		if (atom->elementSymbol() == "H" && atom->bondLengthCount() == 1)
+		{
+			atom = atom->connectedAtom(0);
+		}
+
+		float bad = (exp(-badness * badness / 2.f) - 1);
+		auto bondeds = _mapping[atom];
+
+		for (Bonded *bonded : bondeds)
+		{
+			if (bonded->p == conf && bonded->q == conf)
+			{
+				int idx = bonded->idx;
+				int offset = (bonded->a == atom) ? 0 : 1;
+
+				for (int i = 0; i <= 2; i += 2)
+				{
+					Vertex &v = _vertices[idx + offset + i];
+					v.extra[0] += bad;
+				}
+			}
+		}
+		
+		forceRender(true, true);
+	};
+}
+
+void Visual::extraUniforms()
+{
+	const char *uniform_name = "show_dirt";
+	GLuint u = glGetUniformLocation(_program, uniform_name);
+	glUniform1i(u, _showDirt);
+}
+
+void Visual::findDisulphides()
+{
+	float top = 0.2;
+	for (Bonded &bonded : _bonded)
+	{
+		if (_disulphides.count(bonded.tb) > 0)
+		{
+			continue;
+		}
+
+		if (bonded.a->elementSymbol() == "S" &&
+		    bonded.b->elementSymbol() == "S")
+		{
+			Text *text = new Text("disulphide");
+			text->setLeft(0.1, top);
+			text->resize(0.4);
+			addObject(text);
+
+			_disulphides[bonded.tb] = text;
+			top += 0.04;
+		}
+	}
+
+}
