@@ -1833,6 +1833,8 @@ VAL    C     O      DOUB N N  7    1.229    0.019    4 .
 VAL    C     OXT    SING N N  8    1.229    0.019    5 .
 VAL    N     CA     SING N N  1    1.459    0.020   36 .
 VAL    N     H      SING N N  2    0.860    0.020    0 .
+VAL    N     H2     SING N N  0    0.911    0.020    0 .
+VAL    N     H3     SING N N  0    0.911    0.020    0 .
 VAL    N     HN2    SING N N  3    0.860    0.020    0 .
 VAL    CA    HA     SING N N  6    0.980    0.020    0 .
 VAL    CB    HB     SING N N 11    0.980    0.020    0 .
