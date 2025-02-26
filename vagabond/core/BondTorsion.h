@@ -161,6 +161,7 @@ public:
 	
 	virtual const std::string desc();
 	virtual const std::string reverse_desc();
+	virtual const std::string short_desc();
 
 	virtual bool hasDesc(std::string d)
 	{
@@ -179,6 +180,7 @@ private:
 	
 	std::string _desc;
 	std::string _rDesc;
+	std::string _sDesc;
 
 	double _angle = 0;
 	double _refinedAngle = 0;

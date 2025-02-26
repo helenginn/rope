@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <iostream>
+#include <regex>
 #include "matrix_functions.h"
 #include "BondTorsion.h"
 #include "AtomGroup.h"
@@ -106,6 +107,60 @@ const std::string BondTorsion::desc()
 	         _c->atomName() + "-" + _d->atomName());
 	
 	return _desc;
+}
+
+const std::string BondTorsion::short_desc() 
+{
+	if (_sDesc.length()) return _sDesc;
+
+	if ((_b->atomName() == "CA" && _c->atomName() == "N") ||
+	    (_b->atomName() == "N" && _c->atomName() == "CA"))
+	{
+		_sDesc = "phi";
+	}
+
+	else if ((_b->atomName() == "CA" && _c->atomName() == "C") ||
+	    (_b->atomName() == "C" && _c->atomName() == "CA"))
+	{
+		_sDesc = "psi";
+	}
+
+	else if ((_b->atomName() == "C" && _c->atomName() == "N") ||
+	    (_b->atomName() == "N" && _c->atomName() == "C"))
+	{
+		_sDesc = "omega";
+	}
+	
+	else if ((_b->atomName() == "CA" && _c->atomName() == "CB") ||
+	    (_b->atomName() == "CB" && _c->atomName() == "CA"))
+	{
+		_sDesc = "chi1";
+	}
+
+	else if ((_b->atomName() == "CB" && std::regex_match(_c->atomName(), std::regex("CG."))) ||
+	    (std::regex_match(_b->atomName(), std::regex("CG.")) && _c->atomName() == "CB"))
+	{
+		_sDesc = "chi2";
+	}
+
+	else if ((_b->atomName() == "CG" && std::regex_match(_c->atomName(), std::regex(".D"))) ||
+	    (std::regex_match(_b->atomName(), std::regex(".D")) && _c->atomName() == "CG"))
+	{
+		_sDesc = "chi3";
+	}
+
+	else if ((_b->atomName() == "CD" && std::regex_match(_c->atomName(), std::regex(".E"))) ||
+	    (std::regex_match(_b->atomName(), std::regex(".E")) && _c->atomName() == "CD"))
+	{
+		_sDesc = "chi4";
+	}
+
+	else if (_b->atomName() == "CZ" || _c->atomName() == "CZ")
+	{
+		_sDesc = "chi5";
+	}
+
+	return _sDesc;
 }
 
 double BondTorsion::startingAngle()
