@@ -165,12 +165,10 @@ const std::string BondTorsion::shortDesc()
 	{
 		_sDesc = "chi3";
 	}
-
 	if (checkBothPairs(matchesName("CD"), matchesRegex(".E")))
 	{
 		_sDesc = "chi4";
 	}
-
 	if (std::regex_match(_b->atomName(), std::regex(".Z")) || std::regex_match(_c->atomName(), std::regex(".Z")))
 	{
 		_sDesc = "chi5";
