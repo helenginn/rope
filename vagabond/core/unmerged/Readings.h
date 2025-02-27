@@ -20,6 +20,7 @@
 #define __vagabond__Readings__
 
 #include "Locality.h"
+#include <vector>
 
 class Readings : public std::map<Reflection::HKL, std::vector<Locality>>
 {
