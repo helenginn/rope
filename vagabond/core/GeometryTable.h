@@ -113,7 +113,6 @@ public:
 	                            int *atomNum, int terminal = 0);
 
 private:
-	void loadExtraGeometries(std::set<std::string> &files);
 
 	struct Value
 	{
