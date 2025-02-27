@@ -80,7 +80,6 @@ void EntityFromSequence::handleError()
 
 void EntityFromSequence::processResult(std::string seq)
 {
-
 	try
 	{
 		json all = json::parse(seq);
@@ -116,6 +115,9 @@ void EntityFromSequence::processResult(std::string seq)
 	}
 	catch (...)
 	{
+		std::cout << "Returned from request:" << std::endl;
+		std::cout << seq << std::endl;
+
 		BadChoice *bc = new BadChoice(this, "Sequence could not be obtained");
 		setModal(bc);
 		return;

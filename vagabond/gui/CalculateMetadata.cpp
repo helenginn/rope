@@ -139,7 +139,14 @@ void CalculateMetadata::doThings()
 {
 	if (_process)
 	{
-		processResult(_result);
+		try
+		{
+			processResult(_result);
+		}
+		catch (...)
+		{
+			std::cout << "Problem processing result " << _result << std::endl;
+		}
 		_process = false;
 		_result = "";
 	}
