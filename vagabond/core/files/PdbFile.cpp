@@ -18,6 +18,7 @@
 
 #define GEMMI_WRITE_IMPLEMENTATION
 
+#include <gemmi/polyheur.hpp>
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>
 #include <fstream>
@@ -205,7 +206,7 @@ void PdbFile::parseFileContents()
 	_values["_cell.angle_beta"] = std::to_string(st.cell.beta);
 	_values["_cell.angle_gamma"] = std::to_string(st.cell.gamma);
 
-	setup_entities(st);
+	gemmi::setup_entities(st);
 	
 	for (size_t i = 0; i < st.entities.size(); i++)
 	{
@@ -236,7 +237,7 @@ void PdbFile::parseFileContents()
 void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
                                     const std::string &model_name, bool altConfs)
 {
-	st.models.push_back(gemmi::Model(model_name));
+	st.models.push_back(gemmi::Model());
 	
 	gemmi::Model &m = st.models.back();
 	gemmi::Chain *c = nullptr;
