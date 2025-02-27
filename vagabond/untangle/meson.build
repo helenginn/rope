@@ -1,4 +1,6 @@
 untanglefiles = [
+'ClashView.h',
+'ClashView.cpp',
 'NonBonds.h',
 'NonBonds.cpp',
 'Points.h',

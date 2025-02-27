@@ -103,10 +103,87 @@ void NonBonds::setAtoms(const std::vector<Atom *> &atoms)
 		gemmi::Element ele = gemmi::Element(mySymbol);
 		float myVdwRadius = ele.vdw_r();
 		_radii[atom] = myVdwRadius;
+		
+		_byResidue[{atom->chain(), atom->residueId()}].push_back(atom);
+		
+		for (size_t k = 0; k < atom->bondTorsionCount(); k++)
+		{
+			Atom *a = atom->bondTorsion(k)->atom(1);
+			Atom *b = atom->bondTorsion(k)->atom(2);
+			if (a->elementSymbol() == "S" && b->elementSymbol() == "S")
+			{
+				_exclude.insert({{a->chain(), a->residueId()},
+			                     {b->chain(), b->residueId()}});
+			}
+		}
 	}
 }
 
+template <class It>
+struct increment_atom
+{
+	increment_atom(const It &begin, const It &end) :
+	_begin(begin), _end(end), _increment(begin)
+	{}
+
+	Atom *operator()()
+	{
+		if (_increment == _end)
+		{
+			_increment = _begin;
+			return nullptr;
+		}
+
+		It copy = _increment;
+		_increment++;
+		return *copy;
+	}
+
+	It _begin;
+	It _end;
+	It _increment;
+};
+
+float NonBonds::evaluateResiduePair(const ChainResi &a, 
+                                    const ChainResi &b)
+{
+	if (_exclude.count({a, b}) || _exclude.count({b, a}))
+	{
+		return 0;
+	}
+
+	increment_atom<std::vector<Atom *>::iterator> a_atoms = 
+	increment_atom<std::vector<Atom *>::iterator>(_byResidue[a].begin(),
+	                                              _byResidue[a].end());
+
+	increment_atom<std::vector<Atom *>::iterator> b_atoms = 
+	increment_atom<std::vector<Atom *>::iterator>(_byResidue[b].begin(),
+	                                              _byResidue[b].end());
+
+	Atom *atom = nullptr;
+	float sum = 0;
+	while (true)
+	{
+		atom = a_atoms();
+		if (!atom) break;
+		
+		sum += evaluateAtom(atom, false, false, b_atoms);
+	}
+	
+	return sum;
+}
+
 float NonBonds::evaluateAtom(Atom *const &atom, bool print)
+{
+	increment_atom<std::set<Atom *>::iterator> inc = 
+	increment_atom<std::set<Atom *>::iterator>(_contacts[atom].begin(),
+	                                           _contacts[atom].end());
+	
+	return evaluateAtom(atom, print, true, inc);
+}
+
+float NonBonds::evaluateAtom(Atom *const &atom, bool print, bool accumulate,
+                             const std::function<Atom *()> &acquireAtom)
 {
 	float myVdwRadius = _radii[atom];
 	float total = 0;
@@ -128,12 +205,17 @@ float NonBonds::evaluateAtom(Atom *const &atom, bool print)
 		glm::vec3 pos = it->second.pos.ave;
 		int count = 0;
 		
-		for (auto jt = _contacts[atom].begin();
-		     jt != _contacts[atom].end(); jt++)
+		Atom *contact = nullptr;
+		while (true)
 		{
-			Atom *contact = *jt;
+			contact = acquireAtom();
+			if (contact == nullptr)
+			{
+				break;
+			}
 			
-			if (contact->conformerPositions().count(conf) == 0)
+			if (atom == contact || 
+			    contact->conformerPositions().count(conf) == 0)
 			{
 				continue;
 			}
@@ -157,6 +239,11 @@ float NonBonds::evaluateAtom(Atom *const &atom, bool print)
 				float ratio = target / actual;
 				long double to12 = ratio * ratio * ratio;
 				to12 *= to12;
+				
+				if (!std::isfinite(to12))
+				{
+					std::cout << "problem" << std::endl;
+				}
 
 				if (print)
 				{
@@ -171,7 +258,10 @@ float NonBonds::evaluateAtom(Atom *const &atom, bool print)
 		if (count == 0) sum = 0;
 		total += sum;
 
-		_update(atom, conf, sum);
+		if (accumulate)
+		{
+			_update(atom, conf, sum);
+		}
 	}
 
 	if (print)
@@ -185,4 +275,14 @@ float NonBonds::evaluateAtom(Atom *const &atom, bool print)
 	}
 
 	return total;
+}
+
+std::set<ChainResi> NonBonds::residueIds()
+{
+	std::set<ChainResi> ids;
+	for (auto it = _byResidue.begin(); it != _byResidue.end(); it++)
+	{
+		ids.insert(it->first);
+	}
+	return ids;
 }

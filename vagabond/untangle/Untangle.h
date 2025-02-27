@@ -40,6 +40,16 @@ class Untangle
 public:
 	Untangle(UntangleView *view, const std::string &filename,
 	         const std::set<std::string> &geometries);
+	
+	AtomGroup * const &group() const
+	{
+		return _group;
+	}
+	
+	NonBonds *const &nonBonds() const
+	{
+		return _nonBonds;
+	}
 
 	void setup();
 

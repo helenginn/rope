@@ -18,7 +18,9 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/core/files/File.h>
+#include "ClashView.h"
 #include "Untangle.h"
 #include "Visual.h"
 #include "Points.h"
@@ -65,18 +67,39 @@ void UntangleView::setup()
 {
 	addTitle("Untangle");
 	IndexResponseView::setup();
-	
-	TextButton *tb = new TextButton("Save", this);
-	tb->setRight(0.95, 0.1);
-	auto ask_job = [this]()
+
+	TextButton *text = new TextButton("Menu", this);
+	auto provide_menu = [this, text]()
 	{
-		AskForText *aft = new AskForText(this, "PDB file name to save to:",
-		                                 "export_pdb", this);
-		setModal(aft);
+		Menu *m = new Menu(this, this, "options");
+		auto ask_save = [this]()
+		{
+			AskForText *aft = new AskForText(this, "PDB file name to save to:",
+			                                 "export_pdb", this);
+			setModal(aft);
+		};
+
+		m->addOption("Save", ask_save);
+
+		auto clash_view = [this]()
+		{
+			ClashView *view = new ClashView(this, _untangle->group(),
+			                                _untangle->nonBonds());
+			view->show();
+		};
+
+		m->addOption("Clashes", clash_view);
+
+		m->setRight(0.95, 0.1);
+		glm::vec2 c = text->xy();
+		m->setup(c.x, c.y);
+		setModal(m);
 	};
-	tb->setReturnJob(ask_job);
-	addObject(tb);
 	
+	text->setReturnJob(provide_menu);
+	text->setRight(0.95, 0.1);
+	addObject(text);
+
 	_untangle->reevaluateAtoms();
 	_visual->updateScore();
 	_visual->findDisulphides();

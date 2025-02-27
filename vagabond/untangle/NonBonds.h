@@ -22,8 +22,20 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <vagabond/core/ResidueId.h>
 
 class Atom;
+
+struct ChainResi
+{
+	std::string ch;
+	ResidueId id;
+
+	bool operator<(const ChainResi &b) const
+	{
+		return (ch == b.ch) ? (id < b.id) : (ch < b.ch);
+	}
+};
 
 class NonBonds
 {
@@ -43,12 +55,21 @@ public:
 	{
 		_update = update;
 	}
-
+	
+	std::set<ChainResi> residueIds();
+	
 	float evaluateAtom(Atom *const &atom, bool print);
+	float evaluateAtom(Atom *const &atom, bool print, bool accumulate,
+	                   const std::function<Atom *()> &acquireAtom);
+
+	float evaluateResiduePair(const ChainResi &a, const ChainResi &b);
 private:
 	std::set<Atom *> _atoms;
 	std::map<Atom *, std::set<Atom *>> _contacts;
 	std::map<Atom *, float> _radii;
+	
+	std::map<ChainResi, std::vector<Atom *>> _byResidue;
+	std::set<std::pair<ChainResi, ChainResi>> _exclude;
 
 	UpdateBadness _update{};
 };

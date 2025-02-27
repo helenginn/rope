@@ -20,6 +20,7 @@
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/utils/FileReader.h>
+#include <gemmi/polyheur.hpp>
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>
 #include <iostream>
