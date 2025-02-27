@@ -35,7 +35,7 @@ GeometryTable::GeometryTable()
 
 }
 
-void GeometryTable::loadExtraGeometries(std::set<std::string> &files)
+void GeometryTable::loadExtraGeometryFiles(std::set<std::string> &files)
 {
 	std::unique_lock<std::mutex> lock(*_mutex);
 	
@@ -68,7 +68,7 @@ void GeometryTable::loadExtraGeometries(const std::set<std::string> &geometries)
 {
 	std::set<std::string> files = geometries;
 	files.insert("assets/geometry/standard_geometry.cif");
-	_loadedGeometry.loadExtraGeometries(files);
+	_loadedGeometry.loadExtraGeometryFiles(files);
 
 }
 
