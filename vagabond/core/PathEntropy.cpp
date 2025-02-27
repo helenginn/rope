@@ -162,7 +162,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 
 	struct EntropyForMatrix ent4Matrix;
     int K = flagParameters.n + 1;
-
 	/* for each residue, compute entropy, sd and dm for the residue
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
@@ -173,11 +172,9 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 		entropy->nSingle = numResPerModel;
 		entropy->nNearestNeighbours = flagParameters.n;
 		allocEntropy(entropy, numResPerModel, 0, entropy->nNearestNeighbours, flagParameters);
-
         kNearestNeighbours(torsRes, entropy, flagParameters, numTors, nf, numResPerModel, K, n);
  
         ent4Matrix.totalEntropy.push_back(entropy->totalEntropy);
-	
 	}
 
 	return ent4Matrix;
