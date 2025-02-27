@@ -20,6 +20,7 @@
 #define __vagabond__AbstractForce__
 
 #include <vagabond/utils/glm_import.h>
+#include <functional>
 #include <iostream>
 
 typedef std::function<void(int, float)> InsertIntoRow;
