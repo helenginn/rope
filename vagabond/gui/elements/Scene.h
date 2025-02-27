@@ -74,12 +74,6 @@ public:
 	}
 	
 	void setInformation(std::string str);
-	
-	void getLastCoords(double &lastX, double &lastY)
-	{
-		lastX = _lastX; lastY = _lastY;
-		convertToGLCoords(&lastX, &lastY);
-	}
 
 	void convertToPixels(float *x, float *y);
 	void convertToGLCoords(float *x, float *y);

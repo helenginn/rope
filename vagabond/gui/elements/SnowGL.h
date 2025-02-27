@@ -168,6 +168,12 @@ public:
 		lastY = _lastY;
 	}
 	
+	void getMovePos(int &lastX, int &lastY)
+	{
+		lastX = _moveX;
+		lastY = _moveY;
+	}
+	
 	void getFractionalPos(float &x, float &y)
 	{
 		x = _lastX / (float)_w;
@@ -178,6 +184,18 @@ public:
 	{
 		near = _nearSlab;
 		far = _farSlab;
+	}
+
+	void getLastCoords(double &lastX, double &lastY)
+	{
+		lastX = _lastX; lastY = _lastY;
+		convertCoords(&lastX, &lastY);
+	}
+
+	void getMoveCoords(double &moveX, double &moveY)
+	{
+		moveX = _moveX; moveY = _moveY;
+		convertCoords(&moveX, &moveY);
 	}
 protected:
 	void shadowProgram();
@@ -240,6 +258,7 @@ protected:
 	double _a; double _r; double _g; double _b;
 
 	double _lastX; double _lastY;
+	double _moveX; double _moveY;
 	double _shadowing;
 	bool _left = false;
 	bool _right = false;

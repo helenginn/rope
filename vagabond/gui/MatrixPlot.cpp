@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "MatrixPlot.h"
+#include <vagabond/gui/elements/SnowGL.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/utils/maths.h>
 #include <vagabond/gui/ColourLegend.h>
@@ -151,6 +152,24 @@ bool MatrixPlot::checkDimensions()
 	float scale = resizeScale();
 	resize(scale);
 	setResizeScale(scale);
+	
+	return true;
+}
+
+bool MatrixPlot::mouseOver()
+{
+	if (!_hoverJob) return false;
+
+	double x, y;
+	_gl->getMoveCoords(x, y);
+	
+	x -= _vertices[0].pos.x;
+	y -= _vertices[0].pos.y;
+	
+	x /= maximalWidth();
+	y /= maximalHeight();
+	
+	_hoverJob(x, y);
 	
 	return true;
 }

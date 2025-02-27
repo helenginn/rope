@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/gui/elements/Image.h>
+#include <functional>
 #include <mutex>
 
 class ColourLegend;
@@ -31,6 +32,13 @@ public:
 	MatrixPlot(PCA::Matrix &mat, std::mutex &mutex);
 
 	virtual void update();
+	virtual bool mouseOver();
+	
+	void setHoverJob(const std::function<void(float, float)> &job)
+	{
+		_hoverJob = job;
+		setSelectable(true);
+	}
 
 	const PCA::Matrix &mat() const
 	{
@@ -59,6 +67,7 @@ private:
 	int _rows = 0;
 	int _cols = 0;
 	
+	std::function<void(float, float)> _hoverJob;
 	ColourLegend *_legend{};
 };
 

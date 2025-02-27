@@ -226,6 +226,8 @@ void Scene::mouseMoveEvent(double x, double y)
 
 	double tx = x;
 	double ty = y;
+	_moveX = tx;
+	_moveY = ty;
 	convertToGLCoords(&tx, &ty);
 	_moving = true;
 
