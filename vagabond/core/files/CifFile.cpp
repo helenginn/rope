@@ -123,7 +123,7 @@ void CifFile::parseFileContents(std::string file)
 	{
 		doc = read_file(tmp);
 	}
-	catch (std::runtime_error err)
+	catch (const std::runtime_error &err)
 	{
 		std::cout << "Could not load file " << file << std::endl;
 		std::cout << err.what() << std::endl;
