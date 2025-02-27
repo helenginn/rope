@@ -29,6 +29,13 @@ float test = 0;
 
 int main (int argc, char **argv)
 {
+	if (argc == 1)
+	{
+		std::cout << "Please supply ligand CIF files followed by "
+		"your PDB file as command line arguments." << std::endl;
+		exit(0);
+	}
+
 	UntangleWindow window;
 	window.setup(argc, argv);
 

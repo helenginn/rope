@@ -37,6 +37,13 @@ UntangleView::UntangleView(Scene *prev)
 
 void UntangleView::load(const std::string &filename)
 {
+	if (_untangle)
+	{
+		std::cout << "Already have a PDB file, so " << filename << " is "
+		"superfluous and ignored." << std::endl;
+		return;
+	}
+
 	_filename = filename;
 	
 	File *file = File::loadUnknown(filename);
@@ -50,7 +57,8 @@ void UntangleView::load(const std::string &filename)
 	}
 	else
 	{
-		std::cout << "Not geometry file" << std::endl;
+		std::cout << filename << " is not geometry file. Trying "
+		" to handle like a PDB file." << std::endl;
 	}
 
 	_untangle = new Untangle(this, filename, _geometries);
