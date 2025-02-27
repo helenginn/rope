@@ -42,7 +42,11 @@ void PathEntropy::get_atoms_and_residues(const std::string &model_id)
 	for(int i = 0; i < content->bondTorsionCount(); i++)
 	{
 		BondTorsion *torsion = content->bondTorsion(i);
-		torsionMeasurements.push_back(torsion->measurement(BondTorsion::SourceDerived, true));
+
+		if (torsion->short_desc() == "phi")
+		{
+			torsionMeasurements.push_back(torsion->measurement(BondTorsion::SourceDerived, true));
+		}
 
 		//Tors_res4nn.insert(std::make_pair(torsion->residueId(), torsion));
 		Tors_res4nn.insert(std::make_pair(i, torsion));
@@ -62,8 +66,6 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 	double logdk, c, L;
 	int n_res_per_model = seq.size();
 	int n_tors = torsionMeasurements.size();
-
-	std::cout << torsionMeasurements[1] << " + " << n_tors << std::endl;
 
 	(*entropy).n_single = n_res_per_model;
 	(*entropy).n_nn = flag_par.n;
@@ -104,9 +106,11 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 		{
 		phit = (double **)calloc(1, sizeof(double *));
 		phit[0] = (double*)calloc(n_tors, sizeof(double));
-		
+	
+		d = (double*)calloc(1, sizeof(double));
+
 		for(j = 0; j < n_tors; j++)
-			phit[0][j] = Tors_res4nn[0]->refinedAngle();
+			phit[0][j] = torsionMeasurements[j];
 
 		for(i = 0; i < K; i++)
 			d_mean[i] = ld_mean[i] = 0;
@@ -119,8 +123,6 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 
 		/* calculate the distance between samples in the n_ang - dimensional
 	 	  space of torsion angles */
-
-		d = (double*)calloc(1, sizeof(double));
 
 		for(j = 0; j < nf; j++)
 		{
