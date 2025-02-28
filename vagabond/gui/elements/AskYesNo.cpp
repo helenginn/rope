@@ -23,8 +23,22 @@ Modal(scene, 0.6, 0.4)
 
 void AskYesNo::buttonPressed(std::string tag, Button *button)
 {
-	hide();
-	_sender->buttonPressed(tag + "_" + _tag);
+	if (_jobs.count(tag))
+	{
+		hide();
+		_jobs[tag]();
+	}
+	else
+	{
+		hide();
+		if (_sender)
+		{
+			std::cout << tag <<std::endl;
+			std::cout << _tag <<std::endl;
+			_sender->buttonPressed(tag + "_" + _tag);
+
+		}
+	}
 }
 
 AskYesNo::~AskYesNo()
