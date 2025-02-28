@@ -2,6 +2,7 @@ cloc.sh
 cloc.txt
 
 .DS_Store
+.vimrc
 build
 data
 doc/
