@@ -59,6 +59,12 @@ void DisplayUnit::stopGui()
 		_parent->removeObject(_guiAtoms);
 		_guiAtoms = nullptr;
 	}
+
+	if (_guiRefls != nullptr)
+	{
+		_parent->removeObject(_guiRefls);
+		delete _guiRefls;
+	}
 }
 
 GuiBalls *const &DisplayUnit::balls()
@@ -69,8 +75,6 @@ GuiBalls *const &DisplayUnit::balls()
 DisplayUnit::~DisplayUnit()
 {
 	resetDensityMap();
-
-	delete _guiRefls;
 	
 	stopGui();
 

@@ -108,6 +108,8 @@ void FileView::provideHandleMenu(std::string filename, Button *button)
 				unit->startWatch();
 				display->addDisplayUnit(unit);
 				display->show();
+				
+				delete file;
 			};
 
 			auto forces_open = [this, filename]()
@@ -116,6 +118,7 @@ void FileView::provideHandleMenu(std::string filename, Button *button)
 				ForceAnalysisView *fav = new ForceAnalysisView(this,
 				                                               file->atoms());
 				fav->show();
+				delete file;
 			};
 
 			m->addOption("open", normal_open);
@@ -174,6 +177,7 @@ void FileView::handleFileWithoutChoice(std::string filename)
 			unit->displayAtoms();
 			unit->startWatch();
 			display->addDisplayUnit(unit);
+
 			display->show();
 		}
 	}
