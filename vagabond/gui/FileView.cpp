@@ -27,6 +27,7 @@
 
 #include "MetadataView.h"
 
+#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -86,6 +87,59 @@ void FileView::setup()
 	ListView::setup();
 }
 
+void FileView::provideHandleMenu(std::string filename, Button *button)
+{
+	try
+	{
+		Menu *m = new Menu(this, this);
+		File *file = File::loadUnknown(filename);
+		File::Type type = file->cursoryLook();
+
+		if (type & File::CompAtoms || type & File::MacroAtoms)
+		{
+			auto normal_open = [this, filename]()
+			{
+				File *file = File::loadUnknown(filename);
+				Display *display = new Display(this);
+
+				DisplayUnit *unit = new DisplayUnit(display);
+				unit->loadAtoms(file->atoms());
+				unit->displayAtoms();
+				unit->startWatch();
+				display->addDisplayUnit(unit);
+				display->show();
+			};
+
+			auto forces_open = [this, filename]()
+			{
+				File *file = File::loadUnknown(filename);
+				ForceAnalysisView *fav = new ForceAnalysisView(this,
+				                                               file->atoms());
+				fav->show();
+			};
+
+			m->addOption("open", normal_open);
+			m->addOption("forces", forces_open);
+		}
+		else
+		{
+			auto normal_open = [this, filename]()
+			{
+				handleFileOrError(filename);
+			};
+			m->addOption("open", normal_open);
+		}
+
+		m->setup(button);
+		setModal(m);
+		
+		delete file;
+	}
+	catch (const std::runtime_error &err)
+	{
+	}
+}
+
 void FileView::handleFileOrError(std::string filename)
 {
 	try
@@ -108,13 +162,11 @@ void FileView::handleFileWithoutChoice(std::string filename)
 	}
 
 	File::Type type = file->cursoryLook();
-	std::cout << type << std::endl;
 
 	if (type & File::CompAtoms || type & File::MacroAtoms)
 	{
 		if (file->atomCount() > 0)
 		{
-			/*
 			Display *display = new Display(this);
 
 			DisplayUnit *unit = new DisplayUnit(display);
@@ -122,10 +174,7 @@ void FileView::handleFileWithoutChoice(std::string filename)
 			unit->displayAtoms();
 			unit->startWatch();
 			display->addDisplayUnit(unit);
-			*/
-
-			ForceAnalysisView *fav = new ForceAnalysisView(this, file->atoms());
-			fav->show();
+			display->show();
 		}
 	}
 	else if (type & File::Reflections)
@@ -163,7 +212,14 @@ void FileView::buttonPressed(std::string tag, Button *button)
 	{
 		if (responderCount() == 0)
 		{
-			handleFileOrError(filename);
+			if (_left)
+			{
+				handleFileOrError(filename);
+			}
+			else
+			{
+				provideHandleMenu(filename, button);
+			}
 		}
 		else
 		{
