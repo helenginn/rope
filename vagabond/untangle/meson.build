@@ -26,5 +26,5 @@ executable('untangle', untanglefiles,
     link_with : [gui, core],
     link_args: [links],
 	include_directories: ['../..'],
-    dependencies : deps, 
+    dependencies : all_deps, 
     install: false)

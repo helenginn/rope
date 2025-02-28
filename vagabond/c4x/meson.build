@@ -17,4 +17,4 @@ cluster4x = static_library('cluster4x', c4xfiles,
 	link_args: ['-L/usr/local/lib', links],
 	link_with: vagutils,
 	include_directories: ['../..'],
-	dependencies : deps, install: false)
+	dependencies : all_deps, install: false)

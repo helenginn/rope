@@ -36,7 +36,10 @@ install_subdir('assets/shaders_450', install_dir: assets_dir / 'shaders', strip_
 install_subdir('assets/images', install_dir: assets_dir)
 
 # Execute meson.build files in subdirectories
-deps = [glm, json]
+header_deps = [glm, json]
+all_deps = [header_deps, gl, sdl2, sdl2image, 
+            curl, thread_dep, gemmi, fftw, zlib]
+
 subdir('config')
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
@@ -45,9 +48,9 @@ subdir('vagabond/cmd')
 subdir('vagabond/gui/elements')
 subdir('vagabond/gui')
 
+
 # Create executables
 if is_native  # Native builds
-  deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
 
   # Additional subdirectories for native builds
   subdir('vagabond/untangle')
@@ -55,7 +58,7 @@ if is_native  # Native builds
   executable('rope.gui', 'vagabond/gui/main.cpp',
     link_with: [gui, core],
     link_args: [links],
-    dependencies: deps,
+    dependencies: all_deps,
     install: true)
 
   executable('rope', 'vagabond/cmd/main.cpp',
@@ -70,7 +73,7 @@ if is_native  # Native builds
      'vagabond/gui/tests/CheckList.h'],
     link_with: [gui, core],
     link_args: [links],
-    dependencies: deps,
+    dependencies: all_deps,
     install: true)
 
 else  # emscripten
@@ -81,7 +84,7 @@ else  # emscripten
     link_with: [core, gui],
     cpp_args: ['-I/usr/local/include', compile_args],
     link_args: [links],
-    dependencies: deps,
+    dependencies: header_deps,
     install: true)
 endif
 

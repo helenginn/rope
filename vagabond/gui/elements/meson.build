@@ -14,7 +14,7 @@ sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 
 if (links == [])
-  deps += [glew, gl, sdl2, sdl2image]
+  all_deps += [glew, gl, sdl2, sdl2image]
 endif
 
 guielementfiles = [
@@ -148,7 +148,7 @@ guielements = static_library('vagguielements', guielementfiles,
 	cpp_args: [compile_args],
 	include_directories: ['../../..'],
 	link_args: [links],
-	dependencies : deps, install: true)
+	dependencies : all_deps, install: true)
 
 pkg.generate([guielements],
              subdirs : [''],
