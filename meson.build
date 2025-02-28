@@ -27,10 +27,8 @@ thread_dep = dependency('threads')
 zlib = dependency('zlib')
 
 # Paths
-data_dir = build_dir / 'vagabond'
+data_dir = get_option('prefix') / get_option('datadir') / 'vagabond'
 assets_dir = data_dir / 'assets'
-examples = data_dir / 'assets' / 'examples'
-combined = join_paths(build_dir, data_dir)
 
 # Install assets
 install_subdir('assets/geometry', install_dir: assets_dir)

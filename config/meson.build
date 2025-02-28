@@ -1,6 +1,6 @@
 conf = configuration_data()
 
-conf.set('datadir', combined)
+conf.set('datadir', data_dir)
 
 cfile = configure_file(input : 'config.h.in',
   output : 'config.h',
