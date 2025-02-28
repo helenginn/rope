@@ -3,30 +3,27 @@ build_dir = meson.current_build_dir()
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
 
-message('Building RoPE version ' + meson.project_version() + ' in ' + build_dir)
-message('  PREFIX: ' + get_option('prefix'))
+# Check if we are building natively or for emscripten
+is_native = (links == [])
 
-glm = dependency('glm', required: false)
-gl = dependency('glew')
+# Debugging
+message('Building RoPE version', meson.project_version(), 'in', build_dir)
+message('  PREFIX:', get_option('prefix'))
+message('  NATIVE:', is_native)
+
+# Dependencies
 curl = dependency('libcurl')
-zlib = dependency('zlib')
+fftw = dependency('fftw3f', required: is_native)
+gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
+gl = dependency('glew')
+glm = dependency('glm', required: false)
+json = dependency('nlohmann_json')
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
 thread_dep = dependency('threads')
+zlib = dependency('zlib')
 
-fftw_req = false
-if (links == [])
-  fftw_req = true
-endif
-
-native = (links == [])
-req = native ? true : false
-
-fftw = dependency('fftw3f', required: fftw_req)
-json = dependency('nlohmann_json')
-gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: req)
-deps = [glm, json]
-
+# Paths
 data_dir = build_dir / 'vagabond'
 assets_dir = data_dir / 'assets'
 examples = data_dir / 'assets' / 'examples'
@@ -38,6 +35,8 @@ install_subdir('assets/geometry', install_dir: assets_dir)
 install_subdir('assets/shaders_450', install_dir: assets_dir / 'shaders', strip_directory: true)
 install_subdir('assets/images', install_dir: assets_dir)
 
+# Execute meson.build files in subdirectories
+deps = [glm, json]
 subdir('config')
 #add_data = find_program('get_config.sh')
 #out_path = 'config.h'
@@ -45,10 +44,9 @@ subdir('config')
 #                        input : ['config.h.in'],
 #                        output : [out_path],
 #                        command : [add_data, '@INPUT@', '@OUTPUT@',
-#						combined],
-#                       build_by_default: true,
+#						            combined],
+#                        build_by_default: true,
 #                        build_always_stale: false)
-
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
 subdir('vagabond/core')
@@ -56,31 +54,40 @@ subdir('vagabond/cmd')
 subdir('vagabond/gui/elements')
 subdir('vagabond/gui')
 
-if (native)  # not emscripten
+# Create executables
+if is_native  # Native builds
   deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
 
+  # Additional subdirectories for native builds
+  subdir('vagabond/untangle')
+  subdir('vagabond/c4x/tests')
+  subdir('vagabond/utils/tests')
+  subdir('vagabond/core/tests')
+  subdir('vagabond/gui/tests')
+  subdir('vagabond/gui/elements/tests')
+
   executable('rope.gui', 'vagabond/gui/main.cpp',
-    link_with : [gui, core],
+    link_with: [gui, core],
     cpp_args: ['-std=c++11'],
     link_args: [links],
-    dependencies : deps,
+    dependencies: deps,
     install: true)
 
   executable('rope', 'vagabond/cmd/main.cpp',
-    link_with : [core, cli],
+    link_with: [core, cli],
     cpp_args: ['-std=c++14'],
     link_args: [links],
-    dependencies : [fftw, json, gemmi, thread_dep, curl],
+    dependencies: [fftw, json, gemmi, thread_dep, curl],
     install: true)
 
   executable('rope.gui.test',
     ['vagabond/gui/tests/main.cpp',
      'vagabond/gui/tests/CheckList.cpp',
      'vagabond/gui/tests/CheckList.h'],
-    link_with : [gui, core],
+    link_with: [gui, core],
     cpp_args: ['-std=c++11'],
     link_args: [links],
-    dependencies : deps,
+    dependencies: deps,
     install: true)
 
 else  # emscripten
@@ -91,15 +98,7 @@ else  # emscripten
     link_with: [core, gui],
     cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
     link_args: [links],
-    dependencies : deps,
+    dependencies: deps,
     install: true)
 endif
 
-if (links == [])
-  subdir('vagabond/untangle')
-  subdir('vagabond/c4x/tests')
-  subdir('vagabond/utils/tests')
-  subdir('vagabond/core/tests')
-  subdir('vagabond/gui/tests')
-  subdir('vagabond/gui/elements/tests')
-endif
