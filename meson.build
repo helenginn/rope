@@ -1,14 +1,12 @@
 project('rope', 'cpp', 'c', version: '0.1.7',
+        default_options: ['cpp_std=c++20'],  # C++ version
         meson_version: '>=1.1.0')
 build_dir = meson.current_build_dir()
-links = meson.get_cross_property('links', [])
-compile_args = meson.get_cross_property('compile_args', [])
+links = meson.get_external_property('links', [])
+compile_args = meson.get_external_property('compile_args', [])
 
 # Check if we are building natively or for emscripten
 is_native = (links == [])
-
-# C++ version
-add_global_arguments('-std=c++20', language: 'cpp')
 
 # Debugging
 message('Building RoPE version', meson.project_version(), 'in', build_dir)
