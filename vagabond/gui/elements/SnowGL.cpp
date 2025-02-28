@@ -559,10 +559,7 @@ void SnowGL::resetMouseKeyboard()
 
 void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
 {
-	glm::mat4x4 step_back = glm::translate(glm::mat4(1.f), -_centre);
-	glm::mat4x4 step_forward = glm::translate(glm::mat4(1.f), _centre);
 	glm::mat4x4 rot = glm::mat4(glm::mat3(_model));
-
 	glm::vec3 diff = (update - _centre);
 	_model = glm::mat4(1.f);
 	_centre += diff;
@@ -570,6 +567,9 @@ void SnowGL::shiftToCentre(const glm::vec3 &update, float distance)
 	_translation.z -= distance;
 	updateCamera();
 	
+	glm::mat4x4 step_back = glm::translate(glm::mat4(1.f), -_centre);
+	glm::mat4x4 step_forward = glm::translate(glm::mat4(1.f), _centre);
+
 	_model = step_forward * rot * step_back * _model;
 }
 
