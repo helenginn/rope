@@ -1,24 +1,28 @@
-name: CI Meson
+name: Compile Linux
 
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }} with Meson ${{ matrix.meson_version }}
+    name: Build on ${{ matrix.os }} with Meson ${{ matrix.meson_version }} and Ninja ${{ matrix.ninja_version }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, ubuntu-22.04]
-        meson_version: ["1.7.0", "1.4.0"]
+        os: [ubuntu-22.04]
+        meson_version: ["1.7.0"]
+        ninja_version: ["1.10.2"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           path: rope
+      - name: Symlink .github
+        run: |
+          ln -s $GITHUB_WORKSPACE/rope/.github .github
       - name: Install Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.13'
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -27,8 +31,8 @@ jobs:
           sudo apt-get -y install make
           sudo apt-get -y install build-essential
           sudo apt-get -y install gdb
-          python3 -m pip install meson==${{ matrix.meson_version }} ninja
-      - name: Install RoPE dependencies (pt. 1)
+          python3 -m pip install meson==${{ matrix.meson_version }} ninja==${{ matrix.ninja_version }}
+      - name: Install RoPE dependencies
         run: |
           sudo apt-get -y install libglm-dev
           sudo apt-get -y install libglew-dev
@@ -37,25 +41,30 @@ jobs:
           sudo apt-get -y install libsdl2-image-dev
           sudo apt-get -y install libfftw3-dev
           sudo apt-get -y install libboost-all-dev
-      - name: Install RoPE dependencies (pt. 2)
+      - name: Debug ls
         run: |
-          git clone https://github.com/project-gemmi/gemmi.git
-          cd gemmi
-          cmake .
-          sudo make install
-          cd ..
-          git clone https://github.com/nlohmann/json.git
-          cd json
-          cmake .
-          sudo make install
-          cd ..
+          pwd
+          ls -lrta
+          ls -lrta rope
+      - name: Install Gemmi
+        uses: ./rope/.github/workflows/shared/cmake_from_github.yaml
+        with:
+          repo: gemmi
+          owner: project-gemmi
+          os: ${{ matrix.os }}
+      - name: Install nlohmann json
+        uses: ./rope/.github/workflows/shared/cmake_from_github.yaml
+        with:
+          repo: json
+          owner: nlohmann
+          os: ${{ matrix.os }}
       - name: Debug ls
         run: |
           pwd
           ls -lrta
       - name: Configure build
         run: |
-          meson setup ./build ./rope --buildtype=release --prefix=./install
+          meson setup ./build ./rope --buildtype=release --prefix=$(pwd)/install
       - name: Compile
         run: |
           ninja -C ./build install          
