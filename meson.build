@@ -1,7 +1,11 @@
 project('rope', 'cpp', 'c', version : '0.1.7')
-
+build_dir = meson.current_build_dir()
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
+
+message('Building RoPE version ' + meson.project_version() + ' in ' + build_dir)
+message('  PREFIX: ' + get_option('prefix'))
+
 glm = dependency('glm', required: false)
 gl = dependency('glew')
 curl = dependency('libcurl')
@@ -22,16 +26,6 @@ fftw = dependency('fftw3f', required: fftw_req)
 json = dependency('nlohmann_json')
 gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: req)
 deps = [glm, json]
-name = 'index.html'
-
-if (native)
-  deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
-  name = 'rope.gui'
-endif
-
-build_dir = meson.current_build_dir()
-message('Building RoPE version ' + meson.project_version() + ' in ' + build_dir)
-message('  PREFIX: ' + get_option('prefix'))
 
 data_dir = build_dir / 'vagabond'
 assets_dir = data_dir / 'assets'
@@ -46,7 +40,6 @@ install_subdir('assets/images', install_dir: assets_dir)
 
 subdir('config')
 #add_data = find_program('get_config.sh')
-
 #out_path = 'config.h'
 #gen_src = custom_target('config-output',
 #                        input : ['config.h.in'],
@@ -56,24 +49,17 @@ subdir('config')
 #                       build_by_default: true,
 #                        build_always_stale: false)
 
-compile_args += ['-DNDEBUG', '-DBOOST_UBLAS_NDEBUG']
-
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
 subdir('vagabond/core')
 subdir('vagabond/cmd')
-
 subdir('vagabond/gui/elements')
 subdir('vagabond/gui')
 
-extrafiles = []
+if (native)  # not emscripten
+  deps += [gl, sdl2, sdl2image, curl, thread_dep, gemmi, fftw, zlib]
 
-if (not native)
-  extrafiles += 'vagabond/gui/print_file.cpp'
-endif
-
-if (native) # not emscripten
-  executable(name, 'vagabond/gui/main.cpp',
+  executable('rope.gui', 'vagabond/gui/main.cpp',
     link_with : [gui, core],
     cpp_args: ['-std=c++11'],
     link_args: [links],
@@ -96,13 +82,17 @@ if (native) # not emscripten
     link_args: [links],
     dependencies : deps,
     install: true)
-else # emscripten
+
+else  # emscripten
+  extrafiles = ['vagabond/gui/print_file.cpp']
   start_cpp = 'vagabond/gui/main.cpp'
-  executable(name, extrafiles, start_cpp,
+  compile_args += ['-DNDEBUG', '-DBOOST_UBLAS_NDEBUG']
+  executable('index.html', extrafiles, start_cpp,
     link_with: [core, gui],
     cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
     link_args: [links],
-    dependencies : deps, install: true)
+    dependencies : deps,
+    install: true)
 endif
 
 if (links == [])
