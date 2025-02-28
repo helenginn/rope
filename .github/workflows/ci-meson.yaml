@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: rope
       - name: Install Python
         uses: actions/setup-python@v5
         with:
@@ -46,8 +48,10 @@ jobs:
           cd json
           cmake .
           sudo make install
+          cd ..
       - name: Debug ls
         run: |
+          pwd
           ls -lrta
       - name: Configure build
         run: |
