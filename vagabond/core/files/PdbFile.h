@@ -60,7 +60,6 @@ private:
 
 	void processModel(gemmi::Model &m, int idx);
 	void processResidue(gemmi::Residue &r, AtomInfo &ai);
-	void processAtom(gemmi::Atom &a, AtomInfo &ai, char conf);
 	void processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai);
 
 	void parseFileContents();

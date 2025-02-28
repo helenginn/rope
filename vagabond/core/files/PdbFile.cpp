@@ -38,28 +38,6 @@ void PdbFile::getAllGeometry()
 	_table = new GeometryTable(GeometryTable::getAllGeometry());
 }
 
-void PdbFile::processAtom(gemmi::Atom &a, AtomInfo &ai, char conf)
-{
-	if (a.altloc != conf && a.altloc != '\0')
-	{
-		return;
-	}
-
-	Atom *vagatom = new Atom();
-	vagatom->setElementSymbol(a.element.name());
-	vagatom->setAtomNum(_num);
-	vagatom->setAtomName(a.name);
-	vagatom->setResidueId(ai.resid);
-	vagatom->setChain(ai.chain);
-	vagatom->setHetatm(ai.isHetatm);
-	vagatom->setCode(ai.res);
-	glm::vec3 pos = glm::vec3(a.pos.x, a.pos.y, a.pos.z);
-	vagatom->setInitialPosition(pos, a.b_iso);
-	
-	_num++;
-	*_macroAtoms += vagatom;
-}
-
 void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 {
 	Atom *vagatom = new Atom();
@@ -73,13 +51,11 @@ void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 	
 	for (gemmi::Atom *const &a : atoms)
 	{
-		glm::vec3 pos = glm::vec3(a->pos.x, a->pos.y, a->pos.z);
+		vagatom->setAtomName(a->name);
+		vagatom->setElementSymbol(a->element.name());
 
 		if (first)
 		{
-			vagatom->setAtomName(a->name);
-			vagatom->setElementSymbol(a->element.name());
-			vagatom->setInitialPosition(pos, a->b_iso, {}, a->occ);
 			first = false;
 		}
 
@@ -89,6 +65,8 @@ void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 		{
 			str = "";
 		}
+
+		glm::vec3 pos = glm::vec3(a->pos.x, a->pos.y, a->pos.z);
 		vagatom->conformerPositions()[str].pos.ave = pos;
 		vagatom->conformerPositions()[str].b = a->b_iso;
 		vagatom->conformerPositions()[str].occ = a->occ;
@@ -106,6 +84,30 @@ void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 
 		vagatom->conformerPositions()[str].tensor = tensor;
 	}
+	
+	std::string chosen = vagatom->conformerPositions().begin()->first;
+	
+	auto better_than_chosen = [&chosen](const std::string &alternative)
+	{
+		if (alternative.length() < chosen.length())
+		{
+			return true;
+		}
+		
+		return (alternative < chosen);
+	};
+	
+	for (auto it = vagatom->conformerPositions().begin();
+	     it != vagatom->conformerPositions().end(); it++)
+	{
+		if (better_than_chosen(it->first))
+		{
+			chosen = it->first;
+		}
+	}
+	
+	Atom::AtomPlacement &pl = vagatom->conformerPositions()[chosen];
+	vagatom->setInitialPosition(pl.pos.ave, pl.b, pl.tensor, pl.occ);
 	
 	_num++;
 	*_macroAtoms += vagatom;
