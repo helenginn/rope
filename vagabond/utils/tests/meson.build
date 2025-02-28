@@ -9,5 +9,5 @@ boost_unit_test = dependency('boost', modules: ['unit_test_framework'])
 utils_test = executable('boost_test_utils', boost_files, 
 link_with : [vagutils],
 dependencies : [boost_unit_test, glm],
- cpp_args : ['-I/usr/local/include/vaginclude', '-std=c++11'], 
+ cpp_args : ['-I/usr/local/include/vaginclude'],
  include_directories: '../../../')

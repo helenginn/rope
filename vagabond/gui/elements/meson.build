@@ -145,7 +145,7 @@ subdir : 'vagabond/gui/elements')
 pkg = import('pkgconfig')
 
 guielements = static_library('vagguielements', guielementfiles,
-	cpp_args: ['-std=c++11', compile_args],
+	cpp_args: [compile_args],
 	include_directories: ['../../..'],
 	link_args: [links],
 	dependencies : deps, install: true)

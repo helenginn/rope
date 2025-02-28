@@ -197,7 +197,7 @@ guifiles = [
 ]
 
 gui = static_library('vaggui', guifiles,
-	cpp_args: ['-std=c++20', compile_args],
+	cpp_args: [compile_args],
 	link_args: [links],
 	dependencies : deps, 
     include_directories: ['../..', '../core'],
