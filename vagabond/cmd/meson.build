@@ -11,7 +11,7 @@ clifiles = [
 cli = static_library('rope_cli', clifiles,
 	cpp_args: [compile_args],
 	link_args: [links],
-	dependencies : all_deps, 
+	dependencies : cli_deps,
     include_directories: ['../..', '../core'],
 	link_with : [core],
 	install: false)

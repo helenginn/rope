@@ -1,4 +1,5 @@
-project('rope', 'cpp', 'c', version: '0.1.7')
+project('rope', 'cpp', 'c', version: '0.1.7',
+        meson_version: '>=1.1.0')
 build_dir = meson.current_build_dir()
 links = meson.get_cross_property('links', [])
 compile_args = meson.get_cross_property('compile_args', [])
@@ -15,16 +16,24 @@ message('  PREFIX:', get_option('prefix'))
 message('  NATIVE:', is_native)
 
 # Dependencies
-curl = dependency('libcurl')
+curl = dependency('libcurl', required: is_native)
 fftw = dependency('fftw3f', required: is_native)
 gemmi = dependency('gemmi', modules: ['gemmi::gemmi_cpp'], required: is_native)
-gl = dependency('glew')
-glm = dependency('glm', required: false)
+gl = dependency('gl', method: 'system', required: false)
+glew = dependency('glew', required: false)
+glm = dependency('glm')
 json = dependency('nlohmann_json')
 sdl2 = dependency('SDL2', required: false)
 sdl2image = dependency('SDL2_image', required: false)
-thread_dep = dependency('threads')
+thread_dep = dependency('threads')  # Check: is this required for emscripten?
 zlib = dependency('zlib')
+
+# Dependency groups
+header_deps = [glm, json]
+core_deps = [curl, fftw, gemmi, thread_dep, zlib]
+graphics_deps = [gl, glew, sdl2, sdl2image]
+cli_deps = [header_deps, core_deps]
+gui_deps = [header_deps, core_deps, graphics_deps]
 
 # Paths
 data_dir = get_option('prefix') / get_option('datadir') / 'vagabond'
@@ -36,10 +45,6 @@ install_subdir('assets/shaders_450', install_dir: assets_dir / 'shaders', strip_
 install_subdir('assets/images', install_dir: assets_dir)
 
 # Execute meson.build files in subdirectories
-header_deps = [glm, json]
-all_deps = [header_deps, gl, sdl2, sdl2image, 
-            curl, thread_dep, gemmi, fftw, zlib]
-
 subdir('config')
 subdir('vagabond/utils')
 subdir('vagabond/c4x')
@@ -47,7 +52,6 @@ subdir('vagabond/core')
 subdir('vagabond/cmd')
 subdir('vagabond/gui/elements')
 subdir('vagabond/gui')
-
 
 # Create executables
 if is_native  # Native builds
@@ -58,13 +62,13 @@ if is_native  # Native builds
   executable('rope.gui', 'vagabond/gui/main.cpp',
     link_with: [gui, core],
     link_args: [links],
-    dependencies: all_deps,
+    dependencies: gui_deps,
     install: true)
 
   executable('rope', 'vagabond/cmd/main.cpp',
     link_with: [core, cli],
     link_args: [links],
-    dependencies: [fftw, json, gemmi, thread_dep, curl],
+    dependencies: cli_deps,
     install: true)
 
   executable('rope.gui.test',
@@ -73,7 +77,7 @@ if is_native  # Native builds
      'vagabond/gui/tests/CheckList.h'],
     link_with: [gui, core],
     link_args: [links],
-    dependencies: all_deps,
+    dependencies: gui_deps,
     install: true)
 
 else  # emscripten
