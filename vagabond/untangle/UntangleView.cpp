@@ -133,10 +133,19 @@ void UntangleView::keyPressEvent(SDL_Keycode pressed)
 	}
 }
 
-void UntangleView::focusOnResidue(int res)
+void UntangleView::focusOnResidue(std::string chain, int res)
 {
-	_visual->focusOn(res);
-	_resi = res;
+	bool success = _visual->focusOn(chain, res);
+	
+	if (success)
+	{
+		_resi = res;
+		_chain = chain;
+	}
+	else
+	{
+
+	}
 }
 
 void UntangleView::keyReleaseEvent(SDL_Keycode pressed)
@@ -144,8 +153,7 @@ void UntangleView::keyReleaseEvent(SDL_Keycode pressed)
 	if (pressed == SDLK_SPACE)
 	{
 		_shiftPressed ? _resi-- : _resi++;
-
-		_visual->focusOn(_resi);
+		focusOnResidue(_chain, _resi);
 	}
 
 	if (pressed == SDLK_c)

@@ -226,9 +226,13 @@ void Visual::labelAtom(Atom *atom)
 	_text = text;
 }
 
-void Visual::focusOn(int resi)
+bool Visual::focusOn(std::string chain, int resi)
 {
-	Atom *atom = _untangle->atomFor(resi);
+	Atom *atom = _untangle->atomFor(chain, resi);
+	if (!atom)
+	{
+		return false;
+	}
 	labelAtom(atom);
 	glm::vec3 pos = atom->initialPosition();
 	
@@ -236,6 +240,7 @@ void Visual::focusOn(int resi)
 	{
 		_gl->shiftToCentre(pos, 0);
 	}
+	return true;
 }
 
 void Visual::setupPoints()

@@ -70,7 +70,7 @@ public:
 	}
 
 	void labelAtom(Atom *atom);
-	void focusOn(int resi);
+	bool focusOn(std::string chain, int resi);
 	virtual void extraUniforms();
 	void findDisulphides();
 	

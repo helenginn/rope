@@ -203,22 +203,22 @@ void Display::supplyFloatingText(FloatingText *text)
 	addObject(_text);
 }
 
-void Display::focusOnResidue(int res)
+void Display::focusOnResidue(std::string chain, int res)
 {
 	for (DisplayUnit *const &unit : _units)
 	{
 		AtomGroup *atoms = unit->atoms();
-		Atom *chosen = atoms->atomByIdName({res}, "CA");
+		Atom *chosen = atoms->atomByIdName({res}, "CA", chain);
 		if (!chosen)
 		{
-			chosen = atoms->atomByIdName({res}, "");
+			chosen = atoms->atomByIdName({res}, "", chain);
 		}
 		if (!chosen)
 		{
 			continue;
 		}
 
-		shiftToCentre(chosen->derivedPosition(), 5);
+		shiftToCentre(chosen->derivedPosition(), 0);
 	}
 }
 
@@ -227,14 +227,37 @@ void Display::keyPressEvent(SDL_Keycode pressed)
 	if (pressed == SDLK_g && !_modal)
 	{
 		TextEntry *te = new TextEntry("enter residue", this);
-		te->setValidationType(TextEntry::Numeric);
-		te->setReturnJob([this, te]()
-		                 {
-			                std::string scr = te->scratch();
-			                int res = atoi(scr.c_str());
-			                focusOnResidue(res);
-			                removeObject(te);
-		                 });
+		te->setValidationType(TextEntry::None);
+		
+		auto process_request = [this, te]()
+		{
+			// expecting a request like "16" or "B16"
+			std::string str = te->scratch();
+			char *ch = &str[0];
+			// navigate to beginning of numbers, leave chain as it is.
+			while (!(*ch >= '0' && *ch <= '9') && *ch != '\0') 
+			{
+				ch++;
+			}
+
+			// grab the residue number
+			int res = atoi(ch); 
+			std::string chain = "";
+			
+			// in the event of chain, grab separate chain
+			if (ch != &str[0])
+			{
+				*ch = '\0';
+				chain = std::string(&str[0]);
+				std::transform(chain.begin(), chain.end(), 
+				               chain.begin(), ::toupper);
+			}
+
+			focusOnResidue(chain, res);
+			removeObject(te);
+		};
+
+		te->setReturnJob(process_request);
 		te->setCentre(0.5, 0.3);
 		addObject(te);
 		

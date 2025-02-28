@@ -34,7 +34,7 @@ public:
 	virtual void recalculate();
 	
 	void load(const std::string &filename);
-	virtual void focusOnResidue(int res);
+	virtual void focusOnResidue(std::string chain, int res);
 	virtual void buttonPressed(std::string tag, Button *button);
 
 	virtual void keyPressEvent(SDL_Keycode pressed);
@@ -51,6 +51,8 @@ private:
 
 	std::set<std::string> _geometries;
 	std::string _filename;
+
+	std::string _chain = "A";
 	int _resi = -1;
 };
 
