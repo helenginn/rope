@@ -1,0 +1,57 @@
+name: CI Meson
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }} with Meson ${{ matrix.meson_version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+        meson_version: ["1.7.0", "1.4.0"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install git
+          sudo apt-get -y install cmake
+          sudo apt-get -y install make
+          sudo apt-get -y install build-essential
+          sudo apt-get -y install gdb
+          python3 -m pip install meson==${{ matrix.meson_version }} ninja
+      - name: Install RoPE dependencies (pt. 1)
+        run: |
+          sudo apt-get -y install libglm-dev
+          sudo apt-get -y install libglew-dev
+          sudo apt-get -y install libcurlpp-dev
+          sudo apt-get -y install libsdl2-dev
+          sudo apt-get -y install libsdl2-image-dev
+          sudo apt-get -y install libfftw3-dev
+          sudo apt-get -y install libboost-all-dev
+      - name: Install RoPE dependencies (pt. 2)
+        run: |
+          git clone https://github.com/project-gemmi/gemmi.git
+          cd gemmi
+          cmake .
+          sudo make install
+          cd ..
+          git clone https://github.com/nlohmann/json.git
+          cd json
+          cmake .
+          sudo make install
+      - name: Debug ls
+        run: |
+          ls -lrta
+      - name: Configure build
+        run: |
+          meson setup ./build ./rope --buildtype=release --prefix=./install
+      - name: Compile
+        run: |
+          ninja -C ./build install          
