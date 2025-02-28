@@ -29,21 +29,23 @@ if (native)
   name = 'rope.gui'
 endif
 
-data_dir = get_option('datadir') / 'vagabond'
+build_dir = meson.current_build_dir()
+message('Building RoPE version ' + meson.project_version() + ' in ' + build_dir)
+message('  PREFIX: ' + get_option('prefix'))
+
+data_dir = build_dir / 'vagabond'
 shaders = data_dir / 'assets' / 'shaders'
 images = data_dir / 'assets' / 'images'
 geometry = data_dir / 'assets' / 'geometry'
 examples = data_dir / 'assets' / 'examples'
-dir_base = get_option('prefix')
-combined = join_paths(dir_base, data_dir)
+combined = join_paths(build_dir, data_dir)
+
+install_data(install_dir: examples)
 
 install_data(
-install_dir : examples)
-
-install_data(
-'assets/geometry/standard_geometry.cif',
-'assets/geometry/proline.json',
-install_dir : geometry)
+ 'assets/geometry/standard_geometry.cif',
+ 'assets/geometry/proline.json',
+ install_dir: geometry)
 
 install_data(
 'assets/shaders_450/axes.vsh',
@@ -169,16 +171,16 @@ subdir('vagabond/gui')
 extrafiles = []
 
 if (not native)
-extrafiles += 'vagabond/gui/print_file.cpp'
+  extrafiles += 'vagabond/gui/print_file.cpp'
 endif
 
 if (native) # not emscripten
   executable(name, 'vagabond/gui/main.cpp',
-  link_with : [gui, core],
-  cpp_args: ['-std=c++11'],
-  link_args: [links],
-  dependencies : deps, 
-  install: true)
+    link_with : [gui, core],
+    cpp_args: ['-std=c++11'],
+    link_args: [links],
+    dependencies : deps,
+    install: true)
 
   executable('rope', 'vagabond/cmd/main.cpp',
     link_with : [core, cli],
@@ -188,21 +190,21 @@ if (native) # not emscripten
     install: true)
 
   executable('rope.gui.test',
-  ['vagabond/gui/tests/main.cpp',
-   'vagabond/gui/tests/CheckList.cpp',
-   'vagabond/gui/tests/CheckList.h'],
-  link_with : [gui, core],
-  cpp_args: ['-std=c++11'],
-  link_args: [links],
-  dependencies : deps, 
-  install: true)
+    ['vagabond/gui/tests/main.cpp',
+     'vagabond/gui/tests/CheckList.cpp',
+     'vagabond/gui/tests/CheckList.h'],
+    link_with : [gui, core],
+    cpp_args: ['-std=c++11'],
+    link_args: [links],
+    dependencies : deps,
+    install: true)
 else # emscripten
   start_cpp = 'vagabond/gui/main.cpp'
   executable(name, extrafiles, start_cpp,
-  link_with: [core, gui],
-  cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
-  link_args: [links],
-  dependencies : deps, install: true)
+    link_with: [core, gui],
+    cpp_args: ['-I/usr/local/include', '-std=c++11', compile_args],
+    link_args: [links],
+    dependencies : deps, install: true)
 endif
 
 if (links == [])
@@ -213,4 +215,3 @@ if (links == [])
   subdir('vagabond/gui/tests')
   subdir('vagabond/gui/elements/tests')
 endif
-
