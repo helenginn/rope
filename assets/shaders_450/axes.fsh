@@ -33,11 +33,6 @@ void main()
 		discard;
 	}
 
-	if (vExtra[0] > 0.5 && vNormal.z < 0.)
-	{
-		result.r += 1;
-	}
-
 	result += vColor;
 	ValIndex = uint(vExtra.w);
 	FragColor = result;
