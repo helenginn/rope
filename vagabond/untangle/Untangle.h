@@ -56,8 +56,10 @@ public:
 	std::vector<TangledBond *> volatileBonds();
 
 	typedef std::function<bool(std::set<Atom *>&, BondLength *)> DownstreamJob;
+	typedef std::function<bool(Atom *)> CheckAtom;
 
-	void doJobDownstream(Atom *atom, const DownstreamJob &job,
+	void doJobDownstream(Atom *atom, const CheckAtom &check,
+	                     const DownstreamJob &job,
 	                     int max_hops = INT_MAX, std::set<Atom *> done = {});
 	
 
@@ -74,8 +76,7 @@ public:
 	float biasedScore(bool disulphides);
 	
 	void save(const std::string &filename);
-	glm::vec3 positionFor(int resi);
-	Atom * atomFor(int resi);
+	Atom *atomFor(std::string chain, int resi);
 	
 	OpSet<TangledBond *> neighbours(TangledBond *first);
 	void triggerDisplay();

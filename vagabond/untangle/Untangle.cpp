@@ -136,6 +136,12 @@ void Untangle::switchConfs(Atom *a, const std::string &l,
 			return false;
 		}
 	};
+	
+	auto doable_atom = [l, r](Atom *a) -> bool
+	{
+		return (a->conformerPositions().count(l) &&
+		        a->conformerPositions().count(r));
+	};
 
 	Atom *orig = a;
 	std::set<Atom *> really_done;
@@ -180,13 +186,14 @@ void Untangle::switchConfs(Atom *a, const std::string &l,
 		}
 		else
 		{
-			doJobDownstream(a, job_from_bl, INT_MAX, {found});
+			doJobDownstream(a, doable_atom, job_from_bl, INT_MAX, {found});
 		}
 	}
 	
 }
 
-void Untangle::doJobDownstream(Atom *atom, const DownstreamJob &job, 
+void Untangle::doJobDownstream(Atom *atom, const CheckAtom &check,
+                               const DownstreamJob &job, 
                                int max_hops, std::set<Atom *> done)
 {
 	struct Entry
@@ -205,7 +212,7 @@ void Untangle::doJobDownstream(Atom *atom, const DownstreamJob &job,
 		return nullptr;
 	};
 
-	auto add_bl = [&queue, &done](Atom *atom, int hops_remaining)
+	auto add_bl = [&queue, &done, &check](Atom *atom, int hops_remaining)
 	{
 		if (hops_remaining <= 0)
 		{
@@ -222,6 +229,11 @@ void Untangle::doJobDownstream(Atom *atom, const DownstreamJob &job,
 			
 			if (next->residueNumber() < atom->residueNumber() ||
 			    next->residueNumber() > atom->residueNumber() + 1)
+			{
+				continue;
+			}
+			
+			if (!check(next))
 			{
 				continue;
 			}
@@ -328,19 +340,12 @@ int Untangle::firstResidue()
 	return min;
 }
 
-glm::vec3 Untangle::positionFor(int resi)
+Atom *Untangle::atomFor(std::string chain, int resi)
 {
-	Atom *a = atomFor(resi);
-	std::cout << a->desc() << std::endl;
-	return a->initialPosition();
-}
-
-Atom *Untangle::atomFor(int resi)
-{
-	Atom *a = _group->atomByIdName(ResidueId(resi), "CA", "");
+	Atom *a = _group->atomByIdName(ResidueId(resi), "CA", chain);
 	if (!a)
 	{
-		a = _group->atomVector()[0];
+		return nullptr;
 	}
 
 	return a;
