@@ -34,117 +34,15 @@ message('Building RoPE version ' + meson.project_version() + ' in ' + build_dir)
 message('  PREFIX: ' + get_option('prefix'))
 
 data_dir = build_dir / 'vagabond'
-shaders = data_dir / 'assets' / 'shaders'
-images = data_dir / 'assets' / 'images'
-geometry = data_dir / 'assets' / 'geometry'
+assets_dir = data_dir / 'assets'
 examples = data_dir / 'assets' / 'examples'
 combined = join_paths(build_dir, data_dir)
 
-install_data(install_dir: examples)
-
-install_data(
- 'assets/geometry/standard_geometry.cif',
- 'assets/geometry/proline.json',
- install_dir: geometry)
-
-install_data(
-'assets/shaders_450/axes.vsh',
-'assets/shaders_450/axes.fsh',
-'assets/shaders_450/box.vsh',
-'assets/shaders_450/box.fsh',
-'assets/shaders_450/color_only.fsh',
-'assets/shaders_450/density.vsh',
-'assets/shaders_450/density.fsh',
-'assets/shaders_450/floating_box.vsh',
-'assets/shaders_450/indexed_box.fsh',
-'assets/shaders_450/lemon.vsh',
-'assets/shaders_450/lemon.fsh',
-'assets/shaders_450/lighting.fsh',
-'assets/shaders_450/multiply.fsh',
-'assets/shaders_450/pencil_shading.fsh',
-'assets/shaders_450/point.vsh',
-'assets/shaders_450/point.fsh',
-'assets/shaders_450/progress.fsh',
-'assets/shaders_450/quad.vsh',
-'assets/shaders_450/quad.fsh',
-'assets/shaders_450/reflections.fsh',
-'assets/shaders_450/scrollbox.fsh',
-'assets/shaders_450/shade.fsh',
-'assets/shaders_450/simple_point.fsh',
-'assets/shaders_450/simple_point.vsh',
-'assets/shaders_450/torque.fsh',
-'assets/shaders_450/torque.vsh',
-'assets/shaders_450/unproj_axes.vsh',
-'assets/shaders_450/untangle_axes.fsh',
-'assets/shaders_450/untangle_axes.vsh',
-'assets/shaders_450/with_matrix.vsh',
-install_dir : shaders)
-
-install_data(
-'assets/images/arrow.png',
-'assets/images/axes.png',
-'assets/images/axis.png',
-'assets/images/bee.png',
-'assets/images/big_button.png',
-'assets/images/black.png',
-'assets/images/blank.png',
-'assets/images/blob.png',
-'assets/images/bond.png',
-'assets/images/box.png',
-'assets/images/cartoon.png',
-'assets/images/colour_scheme.png',
-'assets/images/confspace.png',
-'assets/images/cross.png',
-'assets/images/data_model.png',
-'assets/images/density.png',
-'assets/images/eye.png',
-'assets/images/dot.png',
-'assets/images/gel.png',
-'assets/images/gel_top.png',
-'assets/images/files.png',
-'assets/images/happy_face.png',
-'assets/images/half_arrow.png',
-'assets/images/lemon.png',
-'assets/images/little_line.png',
-'assets/images/line.png',
-'assets/images/map.png',
-'assets/images/metadata.png',
-'assets/images/mini_rope.png',
-'assets/images/misc_data.png',
-'assets/images/model.png',
-'assets/images/ok_face.png',
-'assets/images/orange.png',
-'assets/images/palette.png',
-'assets/images/paper.jpg',
-'assets/images/peak.png',
-'assets/images/pencil_shading.png',
-'assets/images/phenylalanine.png',
-'assets/images/points.png',
-'assets/images/present_bond.png',
-'assets/images/protein.png',
-'assets/images/protractor.png',
-'assets/images/reflections.png',
-'assets/images/refresh.png',
-'assets/images/rope.png',
-'assets/images/ruler.png',
-'assets/images/sad_face.png',
-'assets/images/search.png',
-'assets/images/sequence.png',
-'assets/images/some_atoms.png',
-'assets/images/tick.png',
-'assets/images/tickbox_empty.png',
-'assets/images/tickbox_filled.png',
-'assets/images/transparency.png',
-'assets/images/triangle.png',
-'assets/images/tools.png',
-'assets/images/torsion.png',
-'assets/images/tube_1.5ml.png',
-'assets/images/unit_cell.png',
-'assets/images/us28.png',
-'assets/images/strong_bond.png',
-'assets/images/weak_bond.png',
-'assets/images/unassigned_bond.png',
-install_dir : images)
+# Install assets
+install_data(install_dir: examples)  # What does this install?
+install_subdir('assets/geometry', install_dir: assets_dir)
+install_subdir('assets/shaders_450', install_dir: assets_dir / 'shaders', strip_directory: true)
+install_subdir('assets/images', install_dir: assets_dir)
 
 subdir('config')
 #add_data = find_program('get_config.sh')
