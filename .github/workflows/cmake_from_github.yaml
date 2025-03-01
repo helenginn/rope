@@ -21,6 +21,10 @@ jobs:
     name: Build ${{ inputs.repo }} on ${{ inputs.os }} with CMake
     runs-on: ${{ inputs.os }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: ${{ inputs.repo }}
       - name: Install build dependencies
         run: |
           sudo apt-get update
