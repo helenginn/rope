@@ -49,15 +49,14 @@ jobs:
           ls -lrtaf .github
           ls -lrta rope/.github
           ls -lrta rope/.github/workflows
-          ls -lrta rope/.github/workflows/shared
       - name: Install Gemmi
-        uses: ./.github/workflows/shared/cmake_from_github.yaml
+        uses: ./rope/.github/workflows/cmake_from_github.yaml
         with:
           repo: gemmi
           owner: project-gemmi
           os: ${{ matrix.os }}
       - name: Install nlohmann json
-        uses: ./.github/workflows/shared/cmake_from_github.yaml
+        uses: ./rope/.github/workflows/cmake_from_github.yaml
         with:
           repo: json
           owner: nlohmann
