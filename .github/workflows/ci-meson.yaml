@@ -35,8 +35,8 @@ jobs:
           git clone https://www.github.com/project-gemmi/gemmi.git
           cd gemmi
           mkdir build && cd build
-          cmake .. -G Ninja -DCMAKE_INSTALL_PREFIX=$(pwd)/../install && cd ..
-          ninja -C ./build install
+          cmake ..
+          sudo make -j$(nproc) install
           cd ..
           git clone https://www.github.com/nlohmann/json.git
           cd json
