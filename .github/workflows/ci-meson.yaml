@@ -23,21 +23,11 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install git
-          sudo apt-get -y install cmake
-          sudo apt-get -y install make
-          sudo apt-get -y install build-essential
-          sudo apt-get -y install gdb
+          sudo apt-get -y install git cmake make build-essential gdb
           python3 -m pip install meson==${{ matrix.meson_version }} ninja==${{ matrix.ninja_version }}
       - name: Install RoPE dependencies (pt 1)
         run: |
-          sudo apt-get -y install libglm-dev
-          sudo apt-get -y install libglew-dev
-          sudo apt-get -y install libcurlpp-dev
-          sudo apt-get -y install libsdl2-dev
-          sudo apt-get -y install libsdl2-image-dev
-          sudo apt-get -y install libfftw3-dev
-          sudo apt-get -y install libboost-all-dev
+          sudo apt-get -y install libglm-dev libglew-dev libcurlpp-dev libsdl2-dev libsdl2-image-dev libfftw3-dev libboost-all-dev
       - name: Install RoPE dependencies (pt 2)
         run: |
           git clone https://www.github.com/project-gemmi/gemmi.git
@@ -47,7 +37,7 @@ jobs:
           cd ..
           git clone https://www.github.com/nlohmann/json.git
           cd json
-          cmake .
+          cmake . -DJSON_BuildTests=OFF
           sudo make install
           cd ..
       - name: Debug ls
