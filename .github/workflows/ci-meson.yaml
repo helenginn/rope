@@ -32,8 +32,8 @@ jobs:
         run: |
           git clone https://www.github.com/project-gemmi/gemmi.git
           cd gemmi
-          cmake .
-          sudo make install
+          cmake . -G Ninja
+          sudo ninja -C . install
           cd ..
           git clone https://www.github.com/nlohmann/json.git
           cd json
