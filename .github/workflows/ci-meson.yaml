@@ -53,4 +53,11 @@ jobs:
           meson setup ./build ./rope --buildtype=release --prefix=$(pwd)/install
       - name: Compile
         run: |
-          ninja -C ./build install          
+          ninja -C ./build install
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: rope_${{ matrix.os }}_${{ GITHUB_SHA }}
+          path: $(pwd)/install/bin
+          if-no-files-found: error
+
