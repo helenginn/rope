@@ -36,7 +36,7 @@ jobs:
           cd gemmi
           mkdir build && cd build
           cmake .. -G Ninja && cd ..
-          sudo ninja -C ./build install
+          ninja -C ./build install
           cd ..
           git clone https://www.github.com/nlohmann/json.git
           cd json
