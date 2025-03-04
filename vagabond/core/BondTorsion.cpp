@@ -140,7 +140,7 @@ const std::string BondTorsion::shortDesc()
 	{
 		_sDesc = "phi";
 	}
-	
+
 	if (checkBothPairs(matchesName("CA"), matchesName("C")))
 	{
 		_sDesc = "psi";
