@@ -78,7 +78,6 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		const std::string model_id = "uperin-alpha-6gs3";
 		
 		path_entropy.get_atoms_and_residues(model_id);
-		std::cout << seq.size() << std::endl;
 
 		path_entropy.init_flag_par(&flag_par);
 
@@ -87,9 +86,8 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 		{
 			std::string str = std::to_string(*(double *)entropy.total);
-			std::cout << "entropy stringified" << std::endl;
 			Text *t = new Text(str);
-			t->setRight(0.2, 0.6);
+			t->setRight(0.4, 0.6);
 			addTempObject(t);
 		}
 	}
