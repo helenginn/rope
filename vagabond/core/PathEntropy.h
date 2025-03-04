@@ -21,12 +21,13 @@ double *dm_total;
 };
 
 
-/* struct Tors_res4nn {
+struct Tors_res4nn {
+	int n_models;
 	int n_ang;
 	double **phi;
-}; */
-
-extern std::map<int, BondTorsion *> Tors_res4nn;
+	double **v;
+	int res_n;
+};
 
 struct Flag_par {
 	int n;
