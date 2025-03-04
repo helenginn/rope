@@ -117,7 +117,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 	for (int i = 0; i < numPaths && i < paths.size(); i++)
 	{
-
 		if (!paths[i]->startInstance()->hasSequence())
 		{
 			continue;
@@ -159,7 +158,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 	int numResPerModel = torsRes.size();
 
 	int numTors = 0;
-
+	
 	struct EntropyForMatrix ent4Matrix;
     int K = flagParameters.n + 1;
 	/* for each residue, compute entropy, sd and dm for the residue
