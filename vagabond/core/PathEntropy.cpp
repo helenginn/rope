@@ -18,7 +18,7 @@ Sequence seq;
 BondTorsion *torsion;
 double *torsionAngles;
 std::vector<double> torsionMeasurements;
-std::map<int, BondTorsion*> Tors_res4nn;
+struct Tors_res4nn tors_res4nn;
 
 void PathEntropy::init_flag_par(struct Flag_par *flag_par)
 	{
@@ -37,21 +37,16 @@ void PathEntropy::get_atoms_and_residues(const std::string &model_id)
 	content->recalculate();
 	Atom *atom = (*content)[0];
 
-	//std::map <ResidueId,  BondTorsion *> Tors_res4nn;
-
 	for(int i = 0; i < content->bondTorsionCount(); i++)
 	{
 		BondTorsion *torsion = content->bondTorsion(i);
 
-		if (torsion->short_desc() == "phi")
+		if (torsion->measurement(BondTorsion::SourceDerived, true) < 0)
 		{
 			torsionMeasurements.push_back(torsion->measurement(BondTorsion::SourceDerived, true));
+			// Tors_res4nn.insert(s;
 		}
-
-		//Tors_res4nn.insert(std::make_pair(torsion->residueId(), torsion));
-		Tors_res4nn.insert(std::make_pair(i, torsion));
 	}
-
 
 	seq = Sequence(atom);
 } 
@@ -69,7 +64,7 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 
 	(*entropy).n_single = n_res_per_model;
 	(*entropy).n_nn = flag_par.n;
-	alloc_entropy(entropy, n_res_per_model, 0, (*entropy).n_nn, flag_par);
+	alloc_entropy(entropy, n_tors, 0, (*entropy).n_nn, flag_par);
 
 	K = flag_par.n + 1;
 
@@ -101,21 +96,21 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 
 	// std::cout << Tors_res4nn[0]->refinedAngle() << std::endl;
 
-	for(m = 0; m < n_res_per_model; m++)
-		if (torsionMeasurements[m] > 0)
+	for(m = 0; m < n_tors; m++)
+		if (torsionMeasurements[m] < 0)
 		{
-		phit = (double **)calloc(1, sizeof(double *));
-		phit[0] = (double*)calloc(n_tors, sizeof(double));
+			phit = (double **)calloc(1, sizeof(double *));
+			phit[0] = (double*)calloc(1, sizeof(double));
 	
-		d = (double*)calloc(1, sizeof(double));
+			d = (double*)calloc(1, sizeof(double));
 
-		for(j = 0; j < n_tors; j++)
-			phit[0][j] = torsionMeasurements[j];
+			for(j = 0; j < 1; j++)
+				phit[0][j] = torsionMeasurements[j];
 
-		for(i = 0; i < K; i++)
-			d_mean[i] = ld_mean[i] = 0;
+			for(i = 0; i < K; i++)
+				d_mean[i] = ld_mean[i] = 0;
 
-		for(i = 0; i < K-1; i++)
+			for(i = 0; i < K-1; i++)
 			{
 				ent_k[i] = 0;
 				ent_k_2[i] = 0;
@@ -124,49 +119,52 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 		/* calculate the distance between samples in the n_ang - dimensional
 	 	  space of torsion angles */
 
-		for(j = 0; j < nf; j++)
-		{
-			d[j] = dist_ang(phit[0], phit[j], 1);
-			d[j] = deg2rad(d[j]);
-		}
+			for(j = 0; j < nf; j++)
+  	 		{
+				d[j] = dist_ang(phit[0], phit[j], 1);
+				d[j] = deg2rad(d[j]);
+				std::cout << d[j] << std::endl;
+			}
 
-		/* sort the distances */
-		qsort(d, nf, sizeof(double), comp);
+			/* sort the distances */
+			qsort(d, nf, sizeof(double), comp);
 
-		/* apply the entropy calculation based on the nearest neighbour */
-		for(k = 1; k < K; k++)
-		{
-			/* if the distance is less than a pre-set value, reset the 
-			 * distance to the pre-set values, to avoid NaNs */
+			/* apply the entropy calculation based on the nearest neighbour */
+			for(k = 1; k < K; k++)
+			{
+				/* if the distance is less than a pre-set value, reset the 
+				 * distance to the pre-set values, to avoid NaNs */
 			
-			if(d[k] < flag_par.minres)
-			{
-				logdk = log(flag_par.minres);
+				if(d[k] < flag_par.minres)
+				{
+					logdk = log(flag_par.minres);
+				}
+				else
+				{
+					logdk = log(d[k]);
+				}
+
+				ent_k_2[k-1] = ent_k_2[k-1] + logdk*logdk;
+				ent_k[k-1] = ent_k[k-1] + logdk;
+				d_mean[k] = d_mean[k] + d[k];
+				ld_mean[k] = ld_mean[k] + logdk;
 			}
-			else
+			
+			free(d);
+
+			for(k = 1; k < K; k++)
 			{
-				logdk = log(d[k]);
+				ent_k[k-1] = ent_k[k-1] * 1;
+				ent_k_2[k-1] = ent_k_2[k-1] * 1 * 1;
 			}
 
-			ent_k_2[k-1] = ent_k_2[k-1] + logdk*logdk;
-			ent_k[k-1] = ent_k[k-1] + logdk;
-			d_mean[k] = d_mean[k] + d[k];
-			ld_mean[k] = ld_mean[k] + logdk;
-		}
+		for(k = 0, c = 0.0; k < 1; k++)
+			{
+				c = c - log(2 * M_PI);
+				c = c + 1.0 * log(M_PI)/2.0 - lgamma(1.0 +  1/2.0) + 0.5722;
+			}
 
-		for(k = 1; k < K; k++)
-		{
-			ent_k[k-1] = ent_k[k-1] * torsionMeasurements[m];
-			ent_k_2[k-1] = ent_k_2[k-1] * torsionMeasurements[m] * torsionMeasurements[m];
-		}
-
-		for(k = 0, c = 0.0; k < torsionMeasurements[m]; k++)
-		{
-			c = c - log(2 * M_PI);
-			c = + torsionMeasurements[m] * log(M_PI)/2.0 - lgamma(1.0 +  torsionMeasurements[m]/2.0) + 0.5722;
-		}
-
-		for(k = 1; k <= K-1; k++)
+		for(k = 1, L = 0; k <= K-1; k++)
 		{
 			// before adding c-L compute sd
 			ent_k_tot_2[k-1] = ent_k_tot_2[k-1] + ent_k_2[k-1] - ent_k[k-1]*ent_k[k-1];
@@ -208,12 +206,12 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 		(*entropy).h1lm[m] = &a[0];
 		(*entropy).sd1lm[m] = &sd[0];
 		// (*entropy).dm1lm[m] = d_mean[1]/sqrt((double) torsionAngles[m]);
-
-		for(k = 0; k < flag_par.n; k++)
-		{
-			(*entropy).sd_total[k] = sqrt((*entropy).sd_total[k]);
-			(*entropy).dm_total[k] = sqrt((*entropy).dm_total[k]);
 		}
+	
+	for(k = 0; k < flag_par.n; k++)
+	{
+		(*entropy).sd_total[k] = sqrt((*entropy).sd_total[k]);
+		(*entropy).dm_total[k] = sqrt((*entropy).dm_total[k]/ (double) n_tors);
 	}
 
 }
