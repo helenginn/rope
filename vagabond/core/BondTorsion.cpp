@@ -113,49 +113,65 @@ const std::string BondTorsion::short_desc()
 {
 	if (_sDesc.length()) return _sDesc;
 
-	if ((_b->atomName() == "CA" && _c->atomName() == "N") ||
-	    (_b->atomName() == "N" && _c->atomName() == "CA"))
+	auto check_both_pairs = [this](std::function<bool(Atom *)> req1,
+			std::function<bool(Atom *)> req2)
+	{
+		return ((req1(_b) && req2(_c)) || (req1(_c) && req2(_b)));
+	};
+
+	auto matches_name = [](std::string name)
+	{
+		return [name](Atom *atom)
+		{
+			return (atom->atomName() == name);
+		};
+	
+	};
+
+	auto matches_regex = [](std::string reg)
+	{
+		return [reg](Atom *atom)
+		{
+			return (std::regex_match(atom->atomName(), std::regex(reg)));
+		};
+	};
+
+	if (check_both_pairs(matches_name("CA"), matches_name("N")))
 	{
 		_sDesc = "phi";
 	}
-
-	else if ((_b->atomName() == "CA" && _c->atomName() == "C") ||
-	    (_b->atomName() == "C" && _c->atomName() == "CA"))
+	
+	if (check_both_pairs(matches_name("CA"), matches_name("C")))
 	{
 		_sDesc = "psi";
 	}
-
-	else if ((_b->atomName() == "C" && _c->atomName() == "N") ||
-	    (_b->atomName() == "N" && _c->atomName() == "C"))
+	
+	if (check_both_pairs(matches_name("C"), matches_name("N")))
 	{
 		_sDesc = "omega";
 	}
-	
-	else if ((_b->atomName() == "CA" && _c->atomName() == "CB") ||
-	    (_b->atomName() == "CB" && _c->atomName() == "CA"))
+
+	if (check_both_pairs(matches_name("CA"), matches_name("CB")))
 	{
 		_sDesc = "chi1";
 	}
-
-	else if ((_b->atomName() == "CB" && std::regex_match(_c->atomName(), std::regex("CG."))) ||
-	    (std::regex_match(_b->atomName(), std::regex("CG.")) && _c->atomName() == "CB"))
+					
+	if (check_both_pairs(matches_name("CB"), matches_regex("CG.")))
 	{
 		_sDesc = "chi2";
 	}
 
-	else if ((_b->atomName() == "CG" && std::regex_match(_c->atomName(), std::regex(".D"))) ||
-	    (std::regex_match(_b->atomName(), std::regex(".D")) && _c->atomName() == "CG"))
+	if (check_both_pairs(matches_name("CG"), matches_regex(".D")))
 	{
 		_sDesc = "chi3";
 	}
 
-	else if ((_b->atomName() == "CD" && std::regex_match(_c->atomName(), std::regex(".E"))) ||
-	    (std::regex_match(_b->atomName(), std::regex(".E")) && _c->atomName() == "CD"))
+	if (check_both_pairs(matches_name("CD"), matches_regex(".E")))
 	{
 		_sDesc = "chi4";
 	}
 
-	else if (_b->atomName() == "CZ" || _c->atomName() == "CZ")
+	if (_b->atomName() == "CZ" || _c->atomName() == "CZ")
 	{
 		_sDesc = "chi5";
 	}
