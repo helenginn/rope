@@ -28,6 +28,10 @@ public:
 	
 	void addTwoButtons(std::string left, std::string ltag,
 	                   std::string right, std::string rtag);
+	
+	void addThreeButtons(std::string left, std::string ltag,
+						  std::string center, std::string ctag,
+                          std::string right, std::string rtag);
 
 	void dismiss();
 	
