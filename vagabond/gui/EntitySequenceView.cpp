@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AtomRecall.h"
-#include "DistanceMaker.h"
+#include "EntitySequenceView.h"
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Entity.h>
