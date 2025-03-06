@@ -416,7 +416,7 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "sequence" && _existing)
 	{
-		DistanceMaker *view = new DistanceMaker(this, _obj.sequence());
+		EntitySequenceView *view = new EntitySequenceView(this, _obj.sequence());
 		view->setEntity(&_obj);
 		view->show();
 	}
