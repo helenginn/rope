@@ -26,7 +26,21 @@ Entity *HasEntity::entity()
 		return _entity;
 	}
 	
-	_entity = Environment::entityManager()->entity(_entity_id);
-	return _entity;
+	if (_entity_id.length())
+	{
+		_entity = Environment::entityManager()->entity(_entity_id);
+	}
 
+	return _entity;
+}
+
+void HasEntity::setEntity(Entity *entity)
+{
+	_entity = entity;
+	_entity_id = entity->name();
+}
+
+void HasEntity::setEntityId(const std::string &id)
+{
+	_entity_id = id;
 }

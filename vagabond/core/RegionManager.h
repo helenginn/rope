@@ -16,30 +16,43 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HasEntity__
-#define __vagabond__HasEntity__
+#ifndef __vagabond__RegionManager__
+#define __vagabond__RegionManager__
 
-#include <string>
-class Entity;
+#include "Manager.h"
+#include "HasEntity.h"
+#include "Region.h"
 
-class HasEntity
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+
+class RegionManager : public Manager<Region>, public HasEntity
 {
 public:
-	Entity *entity();
-	
-	void setEntity(Entity *entity);
-	
-	void setEntityId(const std::string &id);
-	
-	const std::string &entity_id() const
-	{
-		return _entity_id;
-	}
+	RegionManager();
 
-protected:
-	std::string _entity_id;
-	Entity *_entity = nullptr;
+	virtual Region *insertIfUnique(Region &r);
 
+	void housekeeping();
+private:
+
+	std::map<std::string, Region *> _name2Region;
 };
+
+inline void to_json(json &j, const RegionManager &value)
+{
+	j["regions"] = value.objects();
+}
+
+inline void from_json(const json &j, RegionManager &value)
+{
+    std::list<Region> regions = j.at("regions");
+    value.objects() = regions;
+	
+	for (Region &r : value.objects())
+	{
+		r.housekeeping();
+	}
+}
 
 #endif
