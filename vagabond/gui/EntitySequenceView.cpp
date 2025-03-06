@@ -348,5 +348,19 @@ void EntitySequenceView::defineRegion()
 void EntitySequenceView::makeRegion(const std::string &name,
                                     Residue *a, Residue *b)
 {
+	Region reg;
+	reg.setEntityId(_entity->name());
+	reg.setId(name);
+	reg.setRange(a->id(), b->id());
 
+	try
+	{
+		_entity->regionManager().insertIfUnique(reg);
+		definingButton();
+	}
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(this, err.what());
+		setModal(bc);
+	}
 }
