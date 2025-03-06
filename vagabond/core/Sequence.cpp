@@ -277,28 +277,6 @@ Residue *Sequence::master_residue(Residue *const local)
 	return _map2Master.at(local);
 }
 
-void Sequence::setEntity(Entity *entity)
-{
-	_entity_id = entity->name();
-	_entity = entity;
-}
-
-Entity *Sequence::entity()
-{
-	if (_entity)
-	{
-		return _entity;
-	}
-
-	if (_entity_id.length())
-	{
-		Entity *ent = EntityManager::manager()->entity(_entity_id);
-		_entity = ent;
-	}
-	
-	return _entity;
-}
-
 void Sequence::remapFromMaster()
 {
 	if (!entity() || _residues.size() == 0)
