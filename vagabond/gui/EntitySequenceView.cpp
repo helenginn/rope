@@ -28,6 +28,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskForText.h>
 #include <iostream>
 
 EntitySequenceView::EntitySequenceView(Scene *prev, IndexedSequence *sequence)
@@ -54,32 +55,44 @@ void EntitySequenceView::wipe()
 	_stage = Nothing;
 }
 
-void EntitySequenceView::angleButton()
+ImageButton *EntitySequenceView::addButton(const std::string &image,
+                                           const EntitySequenceView::Mode 
+                                           &mode, float resize, 
+                                           const std::string &alt_tag)
 {
 	wipe();
 
-	ImageButton *angle = new ImageButton("assets/images/protractor.png", this);
-	angle->resize(0.06);
-	angle->setCentre(0.9, 0.1);
-	angle->setReturnJob([this]() { distanceButton(); });
-	angle->addAltTag("measuring angles");
-	addObject(angle);
-	_modeButton = angle;
-	_mode = Angle;
+	ImageButton *b = new ImageButton(image, this);
+	b->resize(resize);
+	b->setCentre(0.9, 0.1);
+	b->addAltTag(alt_tag);
+	addObject(b);
+	_modeButton = b;
+	_mode = mode;
+	refresh();
+
+	return b;
+}
+
+void EntitySequenceView::angleButton()
+{
+	ImageButton *b = addButton("assets/images/protractor.png", Angle,
+	                           0.06, "measuring angles");
+	b->setReturnJob([this]() { definingButton(); });
+}
+
+void EntitySequenceView::definingButton()
+{
+	ImageButton *b = addButton("assets/images/protein-coloured.png", Defining,
+	                           0.08, "defining regions");
+	b->setReturnJob([this]() { distanceButton(); });
 }
 
 void EntitySequenceView::distanceButton()
 {
-	wipe();
-
-	ImageButton *ruler = new ImageButton("assets/images/ruler.png", this);
-	ruler->resize(0.03);
-	ruler->setReturnJob([this]() { angleButton(); });
-	ruler->addAltTag("measuring distances");
-	ruler->setCentre(0.9, 0.1);
-	addObject(ruler);
-	_modeButton = ruler;
-	_mode = Ruler;
+	ImageButton *b = addButton("assets/images/ruler.png", Ruler,
+	                           0.03, "measuring distances");
+	b->setReturnJob([this]() { angleButton(); });
 }
 
 void EntitySequenceView::setup()
@@ -87,6 +100,20 @@ void EntitySequenceView::setup()
 	SequenceView::setup();
 
 	distanceButton();
+}
+
+void EntitySequenceView::handleResidue(Button *button, Residue *r)
+{
+	if (_mode != Defining)
+	{
+		PickAtomFromSequence::handleResidue(button, r);
+	}
+	else
+	{
+		_curr = r;
+		_candidate = "";
+		confirmAtom();
+	}
 }
 
 void EntitySequenceView::handleAtomName(std::string name)
@@ -141,6 +168,10 @@ void EntitySequenceView::confirmAtom()
 		_first = _candidate;
 		_aRes = _curr;
 		_stage = ChosenFirst;
+		if (_mode == Defining)
+		{
+			refresh();
+		}
 	}
 	else if (_stage == ChosenFirst)
 	{
@@ -151,6 +182,10 @@ void EntitySequenceView::confirmAtom()
 		if (_mode == Ruler)
 		{
 			calculateDistance();
+		}
+		else if (_mode == Defining)
+		{
+			defineRegion();
 		}
 	}
 	else if (_stage == ChosenSecond)
@@ -254,12 +289,19 @@ void EntitySequenceView::buttonPressed(std::string tag, Button *button)
 	}
 	
 	std::string yes = Button::tagEnd(tag, "yes_");
-	std::cout << "Yes: " << yes << std::endl;
 	
 	if (yes == "confirm_atom")
 	{
 		confirmAtom();
 		return;
+	}
+	
+	if (tag == "name_region")
+	{
+		TextEntry *entry = static_cast<TextEntry *>(button);
+		std::string name = entry->scratch();
+		makeRegion(name, _aRes, _bRes);
+		definingButton();
 	}
 
 	SequenceView::buttonPressed(tag, button);
@@ -268,6 +310,43 @@ void EntitySequenceView::buttonPressed(std::string tag, Button *button)
 void EntitySequenceView::setEntity(Entity *ent)
 {
 	_entity = Environment::entityManager()->entity(ent->name());
-	std::cout << "Entity ptr: " << _entity << std::endl;
+
+}
+
+void EntitySequenceView::addExtras(TextButton *t, Residue *r) 
+{
+	PickAtomFromSequence::addExtras(t, r);
+	
+	auto hover_job = [this, r]()
+	{
+		if (_stage == ChosenFirst && _mode == Defining)
+		{
+			_bRes = r;
+			refresh();
+		}
+	};
+
+	t->setHoverJob(hover_job);
+
+	if (_mode == Defining && _aRes && _bRes && 
+	    r->id() >= _aRes->id() && r->id() <= _bRes->id())
+	{
+		t->resize(1.2);
+	}
+}
+
+void EntitySequenceView::defineRegion()
+{
+	std::string str = "Name for new region, residues " + 
+	_aRes->id().str() + "-" + _bRes->id().str();
+
+	AskForText *aft = new AskForText(this, str, "name_region",
+	                                 this, TextEntry::Id);
+	setModal(aft);
+}
+
+void EntitySequenceView::makeRegion(const std::string &name,
+                                    Residue *a, Residue *b)
+{
 
 }
