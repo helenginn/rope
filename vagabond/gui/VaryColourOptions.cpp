@@ -45,7 +45,6 @@ void VaryColourOptions::setup()
 
 		TextEntry *t = new TextEntry(str, this);
 		t->setValidationType(TextEntry::Numeric);
-		t->setReturnTag("min");
 		t->setRight(0.2, 0.7);
 		_min = t;
 		addObject(t);
@@ -56,7 +55,6 @@ void VaryColourOptions::setup()
 
 		TextEntry *t = new TextEntry(str, this);
 		t->setValidationType(TextEntry::Numeric);
-		t->setReturnTag("max");
 		t->setRight(0.8, 0.7);
 		_max = t;
 		addObject(t);
@@ -73,16 +71,12 @@ void VaryColourOptions::setup()
 
 void VaryColourOptions::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "min")
+	if (tag == "back")
 	{
 		float new_min = _min->as_num();
 		_rule.setMin(new_min);
-	}
-	else if (tag == "max")
-	{
 		float new_max = _max->as_num();
 		_rule.setMax(new_max);
 	}
-
 	Scene::buttonPressed(tag, button);
 }
