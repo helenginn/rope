@@ -49,6 +49,11 @@ bool Button::mouseOver()
 	{
 		return false;
 	}
+	
+	if (_hoverJob)
+	{
+		_hoverJob();
+	}
 
 	setHighlighted(true);
 	return true;
