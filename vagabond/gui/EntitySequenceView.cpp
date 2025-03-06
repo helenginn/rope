@@ -61,7 +61,7 @@ void EntitySequenceView::angleButton()
 	ImageButton *angle = new ImageButton("assets/images/protractor.png", this);
 	angle->resize(0.06);
 	angle->setCentre(0.9, 0.1);
-	angle->setReturnTag("angle");
+	angle->setReturnJob([this]() { distanceButton(); });
 	angle->addAltTag("measuring angles");
 	addObject(angle);
 	_modeButton = angle;
@@ -74,7 +74,7 @@ void EntitySequenceView::distanceButton()
 
 	ImageButton *ruler = new ImageButton("assets/images/ruler.png", this);
 	ruler->resize(0.03);
-	ruler->setReturnTag("ruler");
+	ruler->setReturnJob([this]() { angleButton(); });
 	ruler->addAltTag("measuring distances");
 	ruler->setCentre(0.9, 0.1);
 	addObject(ruler);
@@ -182,7 +182,19 @@ void EntitySequenceView::prepareAngles()
 
 	Metadata *md = _entity->funcBetweenAtoms({get_first, get_second, get_third},
 	                                         header, &angle_between, closest_to(0));
-	_result = md;
+	queueMetadataForShow(md);
+}
+
+void EntitySequenceView::queueMetadataForShow(Metadata *md)
+{
+	auto display_metadata = [this, md]()
+	{
+		MetadataView *mv = new MetadataView(this, md);
+		mv->show();
+		_stage = Nothing;
+	};
+	
+	addMainThreadJob(display_metadata);
 }
 
 void EntitySequenceView::prepareDistances()
@@ -199,7 +211,7 @@ void EntitySequenceView::prepareDistances()
 
 	Metadata *md = _entity->funcBetweenAtoms({get_first, get_second}, header,
 	                                         &distance_between, closest_to(0));
-	_result = md;
+	queueMetadataForShow(md);
 }
 
 void EntitySequenceView::stop()
@@ -231,29 +243,8 @@ void EntitySequenceView::calculateAngle()
 }
 
 
-void EntitySequenceView::doThings()
-{
-	if (_result != nullptr)
-	{
-		MetadataView *mv = new MetadataView(this, _result);
-		mv->show();
-		_stage = Nothing;
-		_result = nullptr;
-	}
-}
-
 void EntitySequenceView::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "ruler")
-	{
-		angleButton();
-	}
-
-	if (tag == "angle")
-	{
-		distanceButton();
-	}
-
 	std::string atom = Button::tagEnd(tag, "atomname_");
 	
 	if (atom.length())
