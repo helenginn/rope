@@ -16,7 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Region.h"
 #include "AtomRecall.h"
+#include "RegionMenu.h"
 #include "EntitySequenceView.h"
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Metadata.h>
@@ -25,6 +27,7 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/MetadataView.h>
 #include <vagabond/gui/VagWindow.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskYesNo.h>
@@ -86,6 +89,23 @@ void EntitySequenceView::definingButton()
 	ImageButton *b = addButton("assets/images/protein-coloured.png", Defining,
 	                           0.08, "defining regions");
 	b->setReturnJob([this]() { distanceButton(); });
+	
+	int num = _entity->regionManager().objectCount();
+	if (num > 0)
+	{
+		std::string text = "See " + std::to_string(num) + " region";
+		if (num > 1) { text += "s"; }
+		TextButton *see = new TextButton(text, this);
+		see->setCentre(0.9, 0.16);
+		see->resize(0.6);
+		auto make_menu = [this]()
+		{
+			RegionMenu *menu = new RegionMenu(this, &_entity->regionManager());
+			menu->show();
+		};
+		see->setReturnJob(make_menu);
+		b->addObject(see);
+	}
 }
 
 void EntitySequenceView::distanceButton()
