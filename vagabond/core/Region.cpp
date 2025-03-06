@@ -16,30 +16,14 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HasEntity__
-#define __vagabond__HasEntity__
+#include "Region.h"
 
-#include <string>
-class Entity;
-
-class HasEntity
+Region::Region()
 {
-public:
-	Entity *entity();
-	
-	void setEntity(Entity *entity);
-	
-	void setEntityId(const std::string &id);
-	
-	const std::string &entity_id() const
-	{
-		return _entity_id;
-	}
 
-protected:
-	std::string _entity_id;
-	Entity *_entity = nullptr;
+}
 
-};
+void Region::housekeeping()
+{
 
-#endif
+}

@@ -36,6 +36,11 @@ public:
 		return _objects.size();
 	}
 	
+	const std::list<T> &objects() const
+	{
+		return _objects;
+	}
+
 	std::list<T> &objects()
 	{
 		return _objects;

@@ -16,30 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HasEntity__
-#define __vagabond__HasEntity__
+#include <vagabond/utils/FileReader.h>
+#include "RegionManager.h"
 
-#include <string>
-class Entity;
-
-class HasEntity
+RegionManager::RegionManager()
 {
-public:
-	Entity *entity();
+
+}
+
+Region *RegionManager::insertIfUnique(Region &r)
+{
+    std::string name = r.id();
+    to_lower(name);
+
+    if (_name2Region.count(name) > 0)
+    {
+        throw std::runtime_error("Region with same name exists");
+    }
 	
-	void setEntity(Entity *entity);
-	
-	void setEntityId(const std::string &id);
-	
-	const std::string &entity_id() const
+	if (name.length() == 0)
 	{
-		return _entity_id;
+		throw std::runtime_error("Region has no name");
+	}
+	
+	_objects.push_back(r);
+	housekeeping();
+	
+	return &_objects.back();
+}
+
+void RegionManager::housekeeping()
+{
+	for (Region &r : _objects)
+	{
+        std::string name = r.id();
+        to_lower(name);
+		_name2Region[name] = &r;
 	}
 
-protected:
-	std::string _entity_id;
-	Entity *_entity = nullptr;
-
-};
-
-#endif
+}
