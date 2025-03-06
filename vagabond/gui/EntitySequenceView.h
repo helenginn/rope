@@ -36,10 +36,10 @@ public:
 	void setEntity(Entity *ent);
 	virtual void setup();
 
-	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void handleAtomName(std::string name);
+	void queueMetadataForShow(Metadata *md);
 	void calculateDistance();
 	void calculateAngle();
 	void distanceButton();
@@ -71,7 +71,6 @@ private:
 	ImageButton *_modeButton = nullptr;
 	
 	std::thread *_worker = nullptr;
-	Metadata *_result = nullptr;
 	
 	enum Mode
 	{
