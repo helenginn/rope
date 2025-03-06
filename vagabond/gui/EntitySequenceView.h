@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__DistanceMaker__
-#define __vagabond__DistanceMaker__
+#ifndef __vagabond__EntitySequenceView__
+#define __vagabond__EntitySequenceView__
 
 #include <thread>
 
@@ -28,10 +28,10 @@ class Entity;
 class Metadata;
 class ImageButton;
 
-class DistanceMaker : public PickAtomFromSequence
+class EntitySequenceView : public PickAtomFromSequence
 {
 public:
-	DistanceMaker(Scene *prev, IndexedSequence *sequence);
+	EntitySequenceView(Scene *prev, IndexedSequence *sequence);
 	
 	void setEntity(Entity *ent);
 	virtual void setup();

@@ -30,13 +30,13 @@
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <iostream>
 
-DistanceMaker::DistanceMaker(Scene *prev, IndexedSequence *sequence)
+EntitySequenceView::EntitySequenceView(Scene *prev, IndexedSequence *sequence)
 : PickAtomFromSequence(prev, sequence)
 {
 
 }
 
-void DistanceMaker::wipe()
+void EntitySequenceView::wipe()
 {
 	if (_modeButton != nullptr)
 	{
@@ -54,7 +54,7 @@ void DistanceMaker::wipe()
 	_stage = Nothing;
 }
 
-void DistanceMaker::angleButton()
+void EntitySequenceView::angleButton()
 {
 	wipe();
 
@@ -68,7 +68,7 @@ void DistanceMaker::angleButton()
 	_mode = Angle;
 }
 
-void DistanceMaker::distanceButton()
+void EntitySequenceView::distanceButton()
 {
 	wipe();
 
@@ -82,14 +82,14 @@ void DistanceMaker::distanceButton()
 	_mode = Ruler;
 }
 
-void DistanceMaker::setup()
+void EntitySequenceView::setup()
 {
 	SequenceView::setup();
 
 	distanceButton();
 }
 
-void DistanceMaker::handleAtomName(std::string name)
+void EntitySequenceView::handleAtomName(std::string name)
 {
 	_candidate = name;
 	std::string mesg;
@@ -134,7 +134,7 @@ void DistanceMaker::handleAtomName(std::string name)
 
 }
 
-void DistanceMaker::confirmAtom()
+void EntitySequenceView::confirmAtom()
 {
 	if (_stage == Nothing)
 	{
@@ -165,7 +165,7 @@ void DistanceMaker::confirmAtom()
 	}
 }
 
-void DistanceMaker::prepareAngles()
+void EntitySequenceView::prepareAngles()
 {
 	Atom3DPosition one(_aRes, _first);
 	Atom3DPosition two(_bRes, _second);
@@ -185,7 +185,7 @@ void DistanceMaker::prepareAngles()
 	_result = md;
 }
 
-void DistanceMaker::prepareDistances()
+void EntitySequenceView::prepareDistances()
 {
 	Atom3DPosition one(_aRes, _first);
 	Atom3DPosition two(_bRes, _second);
@@ -202,7 +202,7 @@ void DistanceMaker::prepareDistances()
 	_result = md;
 }
 
-void DistanceMaker::stop()
+void EntitySequenceView::stop()
 {
 	if (_worker != nullptr)
 	{
@@ -212,26 +212,26 @@ void DistanceMaker::stop()
 	}
 }
 
-void DistanceMaker::calculateDistance()
+void EntitySequenceView::calculateDistance()
 {
 	std::string title = "Calculating distances...";
 	VagWindow::window()->requestProgressBar(_entity->modelCount(), title);
 	stop();
 
-	_worker = new std::thread(&DistanceMaker::prepareDistances, this);
+	_worker = new std::thread(&EntitySequenceView::prepareDistances, this);
 }
 
-void DistanceMaker::calculateAngle()
+void EntitySequenceView::calculateAngle()
 {
 	std::string title = "Calculating angles...";
 	VagWindow::window()->requestProgressBar(_entity->modelCount(), title);
 	stop();
 
-	_worker = new std::thread(&DistanceMaker::prepareAngles, this);
+	_worker = new std::thread(&EntitySequenceView::prepareAngles, this);
 }
 
 
-void DistanceMaker::doThings()
+void EntitySequenceView::doThings()
 {
 	if (_result != nullptr)
 	{
@@ -242,7 +242,7 @@ void DistanceMaker::doThings()
 	}
 }
 
-void DistanceMaker::buttonPressed(std::string tag, Button *button)
+void EntitySequenceView::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "ruler")
 	{
@@ -274,7 +274,7 @@ void DistanceMaker::buttonPressed(std::string tag, Button *button)
 	SequenceView::buttonPressed(tag, button);
 }
 
-void DistanceMaker::setEntity(Entity *ent)
+void EntitySequenceView::setEntity(Entity *ent)
 {
 	_entity = Environment::entityManager()->entity(ent->name());
 	std::cout << "Entity ptr: " << _entity << std::endl;
