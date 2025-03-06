@@ -42,11 +42,13 @@ private:
 inline void to_json(json &j, const RegionManager &value)
 {
 	j["regions"] = value.objects();
+	j["entity"] = value.entity_id();
 }
 
 inline void from_json(const json &j, RegionManager &value)
 {
     std::list<Region> regions = j.at("regions");
+	value.setEntityId(j["entity"]);
     value.objects() = regions;
 	
 	for (Region &r : value.objects())
