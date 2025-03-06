@@ -30,6 +30,7 @@
 #include "HasMetadata.h"
 #include "ResidueId.h"
 #include "RopeTypes.h"
+#include "HasEntity.h"
 
 using nlohmann::json;
 
@@ -51,7 +52,7 @@ class Ligand;
 class Model;
 class Atom;
 
-class Instance : public HasMetadata 
+class Instance : public HasMetadata , public HasEntity
 {
 public:
 	Instance();
@@ -139,18 +140,6 @@ public:
 	bool unload();
 	void reload();
 
-	Entity *entity();
-	
-	void setEntity(Entity *entity)
-	{
-		_entity = entity;
-	}
-	
-	const std::string &entity_id() const
-	{
-		return _entity_id;
-	}
-
 	virtual bool isProlined() const
 	{
 		return true;
@@ -205,10 +194,8 @@ protected:
 	void grabBFactors(RAFloats &bVals);
 
 	std::string _model_id;
-	std::string _entity_id;
 
 	Model *_model = nullptr;
-	Entity *_entity = nullptr;
 
 	AtomGroup *_currentAtoms = nullptr;
 	AtomGroup *_motherAtoms = nullptr;
