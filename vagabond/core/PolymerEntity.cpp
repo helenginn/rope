@@ -152,6 +152,7 @@ void PolymerEntity::housekeeping()
 	std::sort(_molecules.begin(), _molecules.end(), compare_id);
 	Entity::housekeeping();
 	_sequence.setEntity(this);
+	regionManager().setEntity(this);
 }
 
 TorsionData PolymerEntity::prepareTorsionGroup()

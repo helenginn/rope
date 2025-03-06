@@ -57,6 +57,11 @@ public:
 	{
 		return _name;
 	}
+
+	const RegionManager &regionManager() const
+	{
+		return _regionManager;
+	}
 	
 	RegionManager &regionManager()
 	{
