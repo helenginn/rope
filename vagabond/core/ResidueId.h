@@ -87,6 +87,16 @@ struct ResidueId
 		return !(o == *this);
 	}
 
+	const bool operator<=(const ResidueId &o) const
+	{
+		return (*this < o) || (*this == o);
+	}
+
+	const bool operator>=(const ResidueId &o) const
+	{
+		return (*this > o) || (*this == o);
+	}
+
 	const bool operator>(const ResidueId &o) const
 	{
 		if (num == o.num)
