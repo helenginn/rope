@@ -1,0 +1,46 @@
+# Based on https://github.com/Neumann-A/meson-vcpkg
+#
+# Install dependencies with vcpkg (from project directory):
+#    & 'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\vcpkg\vcpkg.exe' install
+#
+# Build with meson (from project directory):
+#    meson --native-file=meson-vcpkg.txt --wrap-mode nodownload .\build .
+#
+# Manually create glm.pc under vcpkg_installed/x64-windows/lib/pkgconfig:
+#    prefix=${pcfiledir}/../..
+#    includedir=${prefix}/include
+#
+#    Name: glm
+#    Description: OpenGL Mathematics (GLM)
+#    Version: 1.0.3
+#    Cflags: "-I${includedir}"
+#
+# Read more: https://decovar.dev/blog/2022/10/30/cpp-dependencies-with-vcpkg/
+
+[constants]
+vcpkg_base_path = 'C:/Program Files/Microsoft Visual Studio/2022/Community/VC/vcpkg'
+# FIX: This needs to be dynamic!
+vcpkg_base_install_dir = 'D:/code/rope/vcpkg_installed/'
+vcpkg_target_triplet = 'x64-windows'
+vcpkg_host_triplet = 'x64-windows'
+vcpkg_installed_dir =  vcpkg_base_install_dir + vcpkg_target_triplet + '/'
+vcpkg_host_installed_dir = vcpkg_base_install_dir + vcpkg_host_triplet + '/'
+vcpkg_toolchain_file =  vcpkg_base_path + 'scripts/toolchains/windows.cmake'
+
+[properties]
+cmake_toolchain_file = vcpkg_base_path + 'scripts/buildsystems/vcpkg.cmake'
+
+[binaries]
+vcpkg = [ vcpkg_base_path + 'vcpkg.exe']
+pkgconfig = [ vcpkg_installed_dir + 'tools/pkgconf/pkgconf.exe']
+
+[cmake]
+VCPKG_TARGET_TRIPLET = vcpkg_target_triplet
+VCPKG_HOST_TRIPLET = vcpkg_host_triplet
+VCPKG_CHAINLOAD_TOOLCHAIN_FILE = vcpkg_base_path + 'scripts/toolchains/windows.cmake'
+_VCPKG_INSTALLED_DIR = vcpkg_installed_dir
+VCPKG_CRT_LINKAGE = 'dynamic'
+
+[built-in options]
+pkg_config_path =  [ vcpkg_installed_dir + 'lib/pkgconfig;' + vcpkg_installed_dir + 'share/pkgconfig']
+cmake_prefix_path = [ vcpkg_installed_dir ]

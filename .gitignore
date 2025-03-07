@@ -2,6 +2,7 @@ cloc.sh
 cloc.txt
 
 .DS_Store
+.idea
 .vimrc
 build
 data
@@ -10,3 +11,4 @@ tags
 
 *.sw?
 
+vcpkg_installed

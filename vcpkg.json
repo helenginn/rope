@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "rope",
+  "version": "0.1.7",
+  "description": "Representation of Protein Entities",
+  "dependencies": [
+    "pkgconf",
+    "curl",
+    "gemmi",
+    "fftw3",
+    "opengl",
+    "glew",
+    "glm",
+    "nlohmann-json",
+    "sdl2",
+    "sdl2-image",
+    "pthreads",
+    "zlib"
+  ],
+  "builtin-baseline": "21abda44e081b30b722a6e63f9e7c91d0533527f"
+}

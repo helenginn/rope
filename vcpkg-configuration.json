@@ -1,0 +1,12 @@
+{
+  "registries": [
+    {
+      "kind": "git",
+      "baseline": "dbb3cbf29a614cd0a6e25482ef4b0737b383fdeb",
+      "repository": "https://github.com/dtriand/vcpkg-registry",
+      "packages": [
+        "gemmi"
+      ]
+    }
+  ]
+}
