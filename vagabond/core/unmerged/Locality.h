@@ -40,7 +40,7 @@ struct Obs
 	
 	bool near(const Obs &other) const
 	{
-		return hkl.near(other.hkl, 1);
+		return hkl.is_near(other.hkl, 1);
 	}
 };
 
