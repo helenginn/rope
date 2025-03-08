@@ -248,7 +248,8 @@ Refine::Calculate Wiggler::prepareSubmission()
 			auto *acquire = new FailableTask<void *, AnisoMap *>(get_implicit,
 			                                                     "get_implicit");
 
-			make_map->must_complete_before(acquire);
+			// make_map->must_complete_before(acquire);
+			make_map->must_complete_before(static_cast<Task<void *, AnisoMap *> *>(acquire));
 			std::vector<float> anisos = paramses[3];
 
 			auto add_implicit = [anisos](ApplyAniso aa) -> AtomMap *
