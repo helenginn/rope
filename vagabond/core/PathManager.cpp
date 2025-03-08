@@ -272,8 +272,8 @@ void do_on_each_pair_of_paths(const Job &job,
 		Instance *const &first = instances.at(i);
 
 		int window = 10;
-		int start = std::max(i - window, 0);
-		int end = std::min(i, (int)instances.size());
+		int start = (std::max)(i - window, 0);
+		int end = (std::min)(i, (int)instances.size());
 		start = 0;
 		end = instances.size();
 		for (int j = start + 1; j < end; j++)
