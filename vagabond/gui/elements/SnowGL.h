@@ -3,6 +3,12 @@
 #ifndef __Slip__SnowGL__
 #define __Slip__SnowGL__
 
+#include <vagabond/utils/os.h>
+#ifdef OS_WINDOWS
+#undef near
+#undef far
+#endif
+
 #include <vagabond/utils/glm_import.h>
 #include <mutex>
 #include <vagabond/utils/gl_import.h>
