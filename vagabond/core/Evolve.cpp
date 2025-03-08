@@ -142,7 +142,7 @@ Eigen::MatrixXf Evolve::convergence()
 	dev /= _contacts.size();
 	dev = sqrt(dev);
 	std::cout << _num << "\tdeviation: " << dev << std::endl;
-	dev = std::max(1.f, dev);
+	dev = (std::max)(1.f, dev);
 	dev *= _stabilisation;
 	
 	Eigen::MatrixXf cmap(params.size(), _contacts.size());

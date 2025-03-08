@@ -69,7 +69,7 @@ struct Motion
 
 		float diff = fabs(p) - fabs(workingAngle());
 
-		float result = std::max(0.f, diff);
+		float result = (std::max)(0.f, diff);
 
 		return result;
 	}

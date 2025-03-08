@@ -140,7 +140,7 @@ public:
 	const std::string desc() const;
 	
 	const std::string exactDesc() const;
-	const float &max() const
+	const float &(max)() const
 	{
 		return _maxVal;
 	}
@@ -155,7 +155,7 @@ public:
 		_minVal = min;
 	}
 	
-	const float &min() const
+	const float &(min)() const
 	{
 		return _minVal;
 	}

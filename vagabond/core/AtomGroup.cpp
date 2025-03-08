@@ -523,8 +523,8 @@ void AtomGroup::getLimitingResidues(int *min, int *max)
 		}
 
 		int num = atom(i)->residueNumber();
-		*min = std::min(*min, num);
-		*max = std::max(*max, num);
+		*min = (std::min)(*min, num);
+		*max = (std::max)(*max, num);
 	}
 	
 	if (size() == 0)
