@@ -4,6 +4,8 @@
 #include "../../utils/os.h"
 #ifdef OS_WINDOWS
 	#define NOMINMAX  // avoid conflict with std::min and std::max in gemmi
+#undef min
+#undef max
 #endif
 
 #include <map>

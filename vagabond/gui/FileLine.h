@@ -19,6 +19,10 @@
 #ifndef __vagabond__FileLine__
 #define __vagabond__FileLine__
 
+#include <vagabond/utils/os.h>
+#ifdef OS_WINDOWS
+#define NOMINMAX
+#endif
 #include <vagabond/core/files/CifFile.h>
 #include <vagabond/gui/elements/Box.h>
 
