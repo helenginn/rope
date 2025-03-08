@@ -15,7 +15,11 @@
     "sdl2",
     "sdl2-image",
     "pthreads",
-    "zlib"
+    "zlib",
+    {
+      "name": "dirent",
+      "platform": "windows"
+    }
   ],
   "builtin-baseline": "21abda44e081b30b722a6e63f9e7c91d0533527f"
 }
