@@ -86,8 +86,9 @@ void ElectricFielder::
 	
 	auto *grab = new FailableTask<void *, 
 	QuickSegment *>(grab_segment, "grab quick segment");
-	
-	hook->must_complete_before(grab);
+
+	// hook->must_complete_before(grab);
+	hook->must_complete_before(static_cast<Task<void *, QuickSegment *> *>(grab));
 
 	auto seq2poslist = [](BondSequence *seq) -> AtomPosList *
 	{
