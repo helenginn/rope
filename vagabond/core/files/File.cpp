@@ -16,6 +16,11 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "../../utils/os.h"
+#ifdef OS_WINDOWS
+	#define NOMINMAX  // avoid conflict with std::min and std::max in gemmi
+#endif
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <gemmi/numb.hpp>
@@ -32,7 +37,6 @@
 #include "RefList.h"
 #include "FileManager.h"
 
-using namespace gemmi::cif;
 
 File::File(std::string filename)
 {
@@ -146,12 +150,12 @@ std::array<double, 6> File::unitCell() const
 		throw std::runtime_error("Requested non-existent unit cell");
 	}
 
-	double a = as_number(_values.at("_cell.length_a"));
-	double b = as_number(_values.at("_cell.length_b"));
-	double c = as_number(_values.at("_cell.length_c"));
-	double alpha = as_number(_values.at("_cell.angle_alpha"));
-	double beta = as_number(_values.at("_cell.angle_beta"));
-	double gamma = as_number(_values.at("_cell.angle_gamma"));
+	double a = gemmi::cif::as_number(_values.at("_cell.length_a"));
+	double b = gemmi::cif::as_number(_values.at("_cell.length_b"));
+	double c = gemmi::cif::as_number(_values.at("_cell.length_c"));
+	double alpha = gemmi::cif::as_number(_values.at("_cell.angle_alpha"));
+	double beta = gemmi::cif::as_number(_values.at("_cell.angle_beta"));
+	double gamma = gemmi::cif::as_number(_values.at("_cell.angle_gamma"));
 	
 	std::array<double, 6> cell = {a, b, c, alpha, beta, gamma};
 	
@@ -175,7 +179,7 @@ int File::spaceGroupNum() const
 	int spg = -1;
 	if (_values.count("_symmetry.Int_Tables_number") > 0)
 	{
-		spg = as_number(_values.at("_symmetry.Int_Tables_number"));
+		spg = gemmi::cif::as_number(_values.at("_symmetry.Int_Tables_number"));
 	}
 	else if (_values.count("_symmetry.space_group_name_H-M") > 0)
 	{

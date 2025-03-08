@@ -19,6 +19,11 @@
 #ifndef __vagabond__MtzFile__
 #define __vagabond__MtzFile__
 
+#include "../../utils/os.h"
+#ifdef OS_WINDOWS
+	#define NOMINMAX  // avoid conflict with std::min and std::max in gemmi
+#endif
+
 #include <functional>
 #include "File.h"
 

@@ -16,8 +16,12 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define GEMMI_WRITE_IMPLEMENTATION
+#include "../../utils/os.h"
+#ifdef OS_WINDOWS
+	#define NOMINMAX  // avoid conflict with std::min and std::max in gemmi
+#endif
 
+#define GEMMI_WRITE_IMPLEMENTATION
 #include <gemmi/polyheur.hpp>
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>

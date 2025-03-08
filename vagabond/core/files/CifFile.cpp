@@ -1,3 +1,8 @@
+#include "../../utils/os.h"
+#ifdef OS_WINDOWS
+	#define NOMINMAX  // avoid conflict with std::min and std::max in gemmi
+#endif
+
 #include <iostream>
 #include "../utils/glm_import.h"
 #include <gemmi/numb.hpp>

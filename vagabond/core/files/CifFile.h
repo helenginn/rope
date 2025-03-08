@@ -1,6 +1,11 @@
 #ifndef __vagabond__CifFile__
 #define __vagabond__CifFile__
 
+#include "../../utils/os.h"
+#ifdef OS_WINDOWS
+	#define NOMINMAX  // avoid conflict with std::min and std::max in gemmi
+#endif
+
 #include <map>
 #include <gemmi/cifdoc.hpp>
 #include <vagabond/utils/FileReader.h>
