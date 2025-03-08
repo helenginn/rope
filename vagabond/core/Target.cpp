@@ -35,8 +35,8 @@ void Target::minMaxComponents(size_t num_axes, std::vector<float> &mins,
 		
 		for (size_t j = 0; j < truncated.size(); j++)
 		{
-			mins[j] = std::min(mins[j], truncated[j]);
-			maxes[j] = std::max(maxes[j], truncated[j]);
+			mins[j] = (std::min)(mins[j], truncated[j]);
+			maxes[j] = (std::max)(maxes[j], truncated[j]);
 		}
 	}
 

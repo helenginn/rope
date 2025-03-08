@@ -17,7 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
-#include "unistd.h"
+#ifdef OS_UNIX  // Is unistd.h required in the first place?
+#include <unistd.h>
+#else
+#ifdef OS_WINDOWS
+#include <fileapi.h>
+#endif
+#endif
 
 #include "Window.h"
 #include "Library.h"

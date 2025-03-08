@@ -29,7 +29,13 @@
 #include <vagabond/core/ModelManager.h>
 #include <vagabond/core/Reporter.h>
 #include <iostream>
+#ifdef OS_UNIX  // Is unistd.h required in the first place?
 #include <unistd.h>
+#else
+#ifdef OS_WINDOWS
+#include <fileapi.h>
+#endif
+#endif
 #include <algorithm>
 
 std::map<std::string, std::string> Dictator::_properties;

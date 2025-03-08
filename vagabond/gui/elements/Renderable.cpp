@@ -718,13 +718,13 @@ bool Renderable::polygonIncludes(glm::vec3 point, GLuint *trio)
 	vs[1] = _vertices[trio[1]].pos;
 	vs[2] = _vertices[trio[2]].pos;
 
-	double xmin = std::min(std::min(vs[0].x, vs[1].x), vs[2].x);
-	double ymin = std::min(std::min(vs[0].y, vs[1].y), vs[2].y);
-	double zmin = std::min(std::min(vs[0].z, vs[1].z), vs[2].z);
+	double xmin = (std::min)((std::min)(vs[0].x, vs[1].x), vs[2].x);
+	double ymin = (std::min)((std::min)(vs[0].y, vs[1].y), vs[2].y);
+	double zmin = (std::min)((std::min)(vs[0].z, vs[1].z), vs[2].z);
 	
-	double xmax = std::max(std::max(vs[0].x, vs[1].x), vs[2].x);
-	double ymax = std::max(std::max(vs[0].y, vs[1].y), vs[2].y);
-	double zmax = std::max(std::max(vs[0].z, vs[1].z), vs[2].z);
+	double xmax = (std::max)((std::max)(vs[0].x, vs[1].x), vs[2].x);
+	double ymax = (std::max)((std::max)(vs[0].y, vs[1].y), vs[2].y);
+	double zmax = (std::max)((std::max)(vs[0].z, vs[1].z), vs[2].z);
 	
 	double zdiff = zmax - zmin;
 	double ydiff = ymax - ymin;
@@ -1186,8 +1186,8 @@ void Renderable::triangulate()
 		{
 			int ij = i + (j % 3);
 			int ij1 = i + ((j + 1) % 3);
-			int min = std::min(_indices[ij], _indices[ij1]);
-			int max = std::max(_indices[ij], _indices[ij1]);
+			int min = (std::min)(_indices[ij], _indices[ij1]);
+			int max = (std::max)(_indices[ij], _indices[ij1]);
 			
 			std::pair<GLuint, GLuint> pair = std::make_pair(min, max);
 
