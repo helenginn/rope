@@ -16,18 +16,29 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "../utils/os.h"
 #include "Socket.h"
 #include "Dictator.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gemmi/cif.hpp>
 
-#include <arpa/inet.h>
-#include <netdb.h> /* getprotobyname */
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
+#ifdef OS_UNIX
+	#include <arpa/inet.h>
+	#include <netdb.h> /* getprotobyname */
+	#include <netinet/in.h>
+	#include <sys/socket.h>
+	#include <unistd.h>
+#else
+#ifdef OS_WINDOWS
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+	#include <windows.h>
+	#pragma comment(lib, "ws2_32.lib")
+#endif
+#endif
 
 Socket::Socket(Dictator *dictator, unsigned short port)
 {
@@ -45,7 +56,13 @@ bool Socket::operator()()
 	int newline_found = 0;
 	int server_sockfd, client_sockfd;
 	socklen_t client_len;
+#ifdef OS_UNIX
 	ssize_t nbytes_read;
+#else
+#ifdef OS_WINDOWS
+	int nbytes_read;
+#endif
+#endif
 	struct sockaddr_in client_address, server_address;
 	unsigned short server_port = _port;
 
@@ -66,7 +83,13 @@ bool Socket::operator()()
 		return false;
 	}
 
+#ifdef OS_UNIX
 	if (setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0)
+#else
+#ifdef OS_WINDOWS
+		if (setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&enable), sizeof(enable)) < 0)
+#endif
+#endif
 	{
 		perror("setsockopt(SO_REUSEADDR) failed");
 		return false;
@@ -97,15 +120,34 @@ bool Socket::operator()()
 		client_sockfd = accept(server_sockfd,
 		                       (struct sockaddr*)&client_address,
 		                       &client_len);
+#ifdef OS_UNIX
 		while ((nbytes_read = read(client_sockfd, buffer, BUFSIZ)) > 0)
+#else
+#ifdef OS_WINDOWS
+		while ((nbytes_read = recv(server_sockfd, buffer, BUFSIZ, 0)) > 0)
+#endif
+#endif
 		{
 			printf("received:\n");
+#ifdef OS_UNIX
 			write(STDOUT_FILENO, buffer, nbytes_read);
+#else
+#ifdef OS_WINDOWS
+			send(1, buffer, nbytes_read, 0);
+#endif
+#endif
 			if (buffer[nbytes_read - 1] == '\n')
 			{
 				const char *heard = "RoPE acknowledges: ";
+#ifdef OS_UNIX
 				write(client_sockfd, heard, strlen(heard));
 				write(client_sockfd, buffer, nbytes_read);
+#else
+#ifdef OS_WINDOWS
+				send(client_sockfd, heard, strlen(heard), 0);
+				send(client_sockfd, buffer, nbytes_read, 0);
+#endif
+#endif
 				std::string str = buffer;
 				str.pop_back();
 				buffer[nbytes_read - 1] = '\0';
@@ -115,7 +157,13 @@ bool Socket::operator()()
 
 		std::cout << "done" << std::endl;
 
+#ifdef OS_UNIX
 		close(client_sockfd);
+#else
+#ifdef OS_WINDOWS
+		closesocket(client_sockfd);
+#endif
+#endif
 	}
 
 	return true;
