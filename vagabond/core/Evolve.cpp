@@ -16,6 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include <gemmi/to_pdb.hpp>
 
 #include "Evolve.h"

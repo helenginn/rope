@@ -1,8 +1,6 @@
 #ifndef __vagabond__Atom__
 #define __vagabond__Atom__
 
-#define _USE_MATH_DEFINES
-#include <math.h>
 #include "../utils/glm_import.h"
 #include "HasBondstraints.h"
 #include "AtomPosMap.h"

@@ -23,7 +23,6 @@
  *  molecule from a structure */
 
 #include <vagabond/utils/glm_json.h>
-#include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Posular.h>
 
 #include "ResidueTorsion.h"
