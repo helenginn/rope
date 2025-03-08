@@ -49,8 +49,8 @@ struct GroupBounds
 
 			for (size_t j = 0; j < 3; j++)
 			{
-				min[j] = std::min(min[j], pos[j]);
-				max[j] = std::max(max[j], pos[j]);
+				min[j] = (std::min)(min[j], pos[j]);
+				max[j] = (std::max)(max[j], pos[j]);
 			}
 		}
 
