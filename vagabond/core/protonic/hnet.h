@@ -19,6 +19,7 @@
 #ifndef __vagabond__hnet__
 #define __vagabond__hnet__
 
+#include <string>
 #include <iostream>
 #include <variant>
 #include <vector>

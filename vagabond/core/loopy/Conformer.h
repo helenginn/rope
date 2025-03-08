@@ -19,6 +19,8 @@
 #ifndef __vagabond__Conformer__
 #define __vagabond__Conformer__
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <vector>
 #include <string>
 #include <functional>

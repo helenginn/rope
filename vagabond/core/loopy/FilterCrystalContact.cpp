@@ -16,6 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include "FilterCrystalContact.h"
 #include "Conformer.h"
 #include "Loopy.h"
