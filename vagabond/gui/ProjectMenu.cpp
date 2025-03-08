@@ -16,7 +16,14 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/os.h>
+#ifdef OS_UNIX
 #include "unistd.h"
+#else
+#ifdef OS_WINDOWS
+#include <fileapi.h>
+#endif
+#endif
 #include <fstream>
 
 #include "ProjectMenu.h"
