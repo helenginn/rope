@@ -20,6 +20,7 @@
 #define __vagabond__PathsMenu__
 
 #include <vagabond/gui/elements/ListView.h>
+#include "Path.h"
 #include "PathGroup.h"
 #include <Responder.h>
 
