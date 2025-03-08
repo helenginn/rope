@@ -51,7 +51,7 @@ struct Reflection
 			return (h == other.h && k == other.k && l == other.l);
 		}
 
-		bool near(const HKL &other, int tol = 1) const
+		bool is_near(const HKL &other, int tol = 1) const
 		{
 			return (abs(other.h - h) <= tol && abs(other.k - k) <= tol &&
 			        abs(other.l - l) <= tol);
