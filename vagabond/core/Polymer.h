@@ -19,7 +19,6 @@
 #ifndef __vagabond__Polymer__
 #define __vagabond__Polymer__
 
-#include <vagabond/c4x/Angular.h>
 #include <vagabond/c4x/Posular.h>
 
 #include "Instance.h"

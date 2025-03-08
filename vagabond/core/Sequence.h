@@ -26,7 +26,6 @@
 #include "RopeTypes.h"
 #include "Residue.h"
 #include "ResidueTorsion.h"
-#include <vagabond/c4x/Angular.h>
 #include "IndexedSequence.h"
 
 class Atom;

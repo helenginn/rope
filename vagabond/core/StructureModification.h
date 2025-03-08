@@ -22,7 +22,6 @@
 /** \class StructureModification will set up a calculator for editing a
  * Instance in a structure */
 
-#include <vagabond/c4x/Angular.h>
 #include "AtomPosMap.h"
 #include "Result.h"
 #include "Residue.h"

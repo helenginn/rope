@@ -20,7 +20,6 @@
 #define __vagabond__RAFloats__
 
 #include "RAVector.h"
-#include <vagabond/c4x/Angular.h>
 #include <sstream>
 
 class RAFloats : public RAVector<DataFloat>

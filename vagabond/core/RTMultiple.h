@@ -19,6 +19,9 @@
 #ifndef __vagabond__RTMultiple__
 #define __vagabond__RTMultiple__
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "RTVector.h"
 #include "RTAngles.h"
 #include <vagabond/c4x/Angular.h>

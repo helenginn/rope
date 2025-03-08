@@ -19,6 +19,9 @@
 #ifndef __vagabond__RTAngles__
 #define __vagabond__RTAngles__
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+
 #include "RTVector.h"
 #include <vagabond/c4x/Angular.h>
 #include <sstream>
