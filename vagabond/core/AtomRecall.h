@@ -19,6 +19,12 @@
 #ifndef __vagabond__AtomRecall__
 #define __vagabond__AtomRecall__
 
+// #include <vagabond/utils/os.h>
+// #ifdef OS_WINDOWS
+// #undef FindAtom  // Clashes with WinBase.h
+// #undef FindAtomA
+// #endif
+
 #include "Atom.h"
 #include "Model.h"
 #include "Instance.h"
@@ -94,10 +100,10 @@ inline auto search_models(const CheckInstance &check, const Atom3DPosition &pos)
 
 typedef std::function<std::vector<std::pair<Atom *, Instance *>>
 (Model *model, Instance *reference)> 
-FindAtom;
+findAtom;
 
 
-inline FindAtom search_models_any_instance(Entity *entity, const Atom3DPosition &pos)
+inline findAtom search_models_any_instance(Entity *entity, const Atom3DPosition &pos)
 {
 	auto check = [entity](Instance *instance, Instance *reference) -> bool
 	{
@@ -107,7 +113,7 @@ inline FindAtom search_models_any_instance(Entity *entity, const Atom3DPosition 
 	return search_models(check, pos);
 }
 
-inline FindAtom search_models_different_instance(Entity *entity, 
+inline findAtom search_models_different_instance(Entity *entity,
                                              const Atom3DPosition &pos)
 {
 	auto check = [entity](Instance *instance,
@@ -120,7 +126,7 @@ inline FindAtom search_models_different_instance(Entity *entity,
 	return search_models(check, pos);
 }
 
-inline FindAtom search_models_same_instance(Entity *entity, const Atom3DPosition &pos)
+inline findAtom search_models_same_instance(Entity *entity, const Atom3DPosition &pos)
 {
 	auto check = [entity](Instance *instance, Instance *reference) -> bool
 	{
