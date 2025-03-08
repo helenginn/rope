@@ -399,7 +399,7 @@ inline int max_sequence_gap(Alignment &ala, Alignment &alb, int prev_gap, int wi
 	their_gap -= other_start + 1;
 	my_gap -= prev_gap + 1;
 	
-	return std::max(my_gap, their_gap);
+	return (std::max)(my_gap, their_gap);
 }
 
 inline std::string write_gap(Alignment &a, int start, int end, int shortfall,
@@ -466,7 +466,7 @@ inline void print_gap_between_alignments(Alignment &ala, Alignment &alb,
 	int l_shortfall = gap_size - wind + last + 1;
 	int r_shortfall = gap_size - r_wind + r_last + 1;
 	
-	int max_shortfall = std::max(l_shortfall, r_shortfall);
+	int max_shortfall = (std::max)(l_shortfall, r_shortfall);
 	int matched = gap_size - max_shortfall;
 	int negative = (l_shortfall > r_shortfall);
 

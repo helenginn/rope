@@ -201,7 +201,7 @@ inline void val_to_cluster4x_colour(double val, T *red, T *green, T *blue)
 	}
 	else if (val <= 0) /* we go black */
 	{
-		val = std::min(-val, 1.);
+		val = (std::min)(-val, 1.);
 		*red = 0;
 		*green = 0;
 		*blue = 255 - val * 255;
