@@ -25,6 +25,11 @@
 #include <ostream>
 #include <vagabond/utils/degrad.h>
 
+#include <vagabond/utils/os.h>
+#ifdef OS_WINDOWS
+#undef hyper
+#endif
+
 
 struct Angular
 {
