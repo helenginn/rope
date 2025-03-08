@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#define _USE_MATH_DEFINES
 #include "Hypersphere.h"
 #include <cmath>
 #include <iostream>
