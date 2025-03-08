@@ -155,8 +155,12 @@ void SnowGL::prepareDepthColourIndex(bool bright)
 	                       GL_TEXTURE_2D, _sceneDepth, 0);
 	checkFrameBuffers();
 
+#ifdef OS_UNIX
 	unsigned int attachments[_sceneMapCount];
-	
+#else
+	std::vector<unsigned int> attachments(_sceneMapCount);
+#endif
+
 	/* additional attachments */
 	for (size_t i = 0; i < _sceneMapCount; i++)
 	{
@@ -193,8 +197,12 @@ void SnowGL::prepareDepthColourIndex(bool bright)
 		
 		attachments[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
-	
-	glDrawBuffers(_sceneMapCount, attachments); 
+
+#ifdef OS_UNIX
+	glDrawBuffers(_sceneMapCount, attachments);
+#else
+	glDrawBuffers(_sceneMapCount, attachments.data());
+#endif
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	_indices = new GLuint[_dw * _dh];
