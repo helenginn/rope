@@ -10,12 +10,15 @@
 #include <fstream>
 #include <sstream>
 #include <cerrno>
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include "os.h"
 #ifdef OS_UNIX
+#include <glob.h>
 #include <unistd.h>
 #else
 #ifdef OS_WINDOWS
-#include <direct.h>  // TODO: Check what else is missing
+#include <fileapi.h>
 #endif
 #endif
 #include <sys/stat.h>
@@ -262,6 +265,86 @@ void print_cc_diff(std::ostream *stream, double diff, int limit)
 		}
 	}
 }
+
+#ifdef OS_UNIX
+std::vector<std::string> glob_pattern(const std::string& pattern)
+{
+	using namespace std;
+
+	// glob struct resides on the stack
+	glob_t glob_result;
+	memset(&glob_result, 0, sizeof(glob_result));
+
+	// do the glob operation
+	int return_value = glob(pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
+	if (return_value != 0)
+	{
+		globfree(&glob_result);
+
+		if (return_value == GLOB_NOMATCH)
+		{
+			return std::vector<std::string>();
+		}
+
+		stringstream ss;
+		ss << "glob() failed with return_value " << return_value << endl;
+		throw std::runtime_error(ss.str());
+	}
+
+	// collect all the filenames into a std::list<std::string>
+	vector<string> filenames;
+
+	for (size_t i = 0; i < glob_result.gl_pathc; i++)
+	{
+		filenames.push_back(string(glob_result.gl_pathv[i]));
+	}
+
+	// cleanup
+	globfree(&glob_result);
+
+	// done
+	return filenames;
+}
+#elif OS_WINDOWS
+std::vector<std::string> glob_pattern(const std::string& pattern)
+{
+	return std::vector<std::string>();
+
+	// TODO: Implementation with fileapi.h below / needs testing
+	// std::vector<std::string> filenames;
+	// WIN32_FIND_DATA findFileData;
+	// HANDLE hFind = FindFirstFile(pattern.c_str(), &findFileData);
+	//
+	// if (hFind == INVALID_HANDLE_VALUE)
+	// {
+	// 	if (GetLastError() == ERROR_FILE_NOT_FOUND)
+	// 	{
+	// 		return filenames;
+	// 	}
+	// 	else
+	// 	{
+	// 		throw std::runtime_error("FindFirstFile failed");
+	// 	}
+	// }
+	//
+	// do
+	// {
+	// 	if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+	// 	{
+	// 		filenames.push_back(findFileData.cFileName);
+	// 	}
+	// } while (FindNextFile(hFind, &findFileData) != 0);
+	//
+	// FindClose(hFind);
+	//
+	// if (GetLastError() != ERROR_NO_MORE_FILES)
+	// {
+	// 	throw std::runtime_error("FindNextFile failed");
+	// }
+	//
+	// return filenames;
+}
+#endif
 
 void to_lower(std::string &str)
 {
