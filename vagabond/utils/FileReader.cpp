@@ -11,7 +11,13 @@
 #include <sstream>
 #include <cerrno>
 #include <cmath>
+#ifdef OS_UNIX
 #include <unistd.h>
+#else
+#ifdef OS_WINDOWS
+#include <direct.h>  // TODO: Check what else is missing
+#endif
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
