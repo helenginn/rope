@@ -9,6 +9,8 @@
 #ifndef __FileReader__
 #define __FileReader__
 
+#include "../utils/os.h"
+
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
@@ -17,7 +19,13 @@
 #include <string>
 #include <vector>
 #include <cerrno>
-#include <sys/stat.h>
+#ifdef OS_UNIX
+#include <sys/stat.h>  // provides mkdir on UNIX
+#else
+#ifdef OS_WINDOWS
+#include <direct.h>    // provides _mkdir on Windows
+#endif
+#endif
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -121,7 +129,7 @@ public:
             mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #else
 #ifdef OS_WINDOWS
-            mkdir(_dir.c_str());
+            _mkdir(_dir.c_str());
 #endif
 #endif
 		}

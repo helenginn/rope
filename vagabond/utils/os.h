@@ -8,7 +8,7 @@
 #ifdef _WIN64
     #define OS_WINDOWS
 #elif _WIN32
-    #define OS_INVALID
+    #define OS_WINDOWS
 #elif __APPLE__
 #include "TargetConditionals.h"
     #if TARGET_OS_IPHONE && TARGET_OS_SIMULATOR

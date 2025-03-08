@@ -305,7 +305,8 @@ std::vector<std::string> glob_pattern(const std::string& pattern)
 	// done
 	return filenames;
 }
-#elif OS_WINDOWS
+#else
+#ifdef OS_WINDOWS
 std::vector<std::string> glob_pattern(const std::string& pattern)
 {
 	return std::vector<std::string>();
@@ -344,6 +345,7 @@ std::vector<std::string> glob_pattern(const std::string& pattern)
 	//
 	// return filenames;
 }
+#endif
 #endif
 
 void to_lower(std::string &str)
