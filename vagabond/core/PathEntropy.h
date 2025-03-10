@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <map>
+#include <string>
 #include <BondTorsion.h>
 
 struct Entropy {
@@ -24,8 +25,9 @@ double *dm_total;
 struct Tors_res4nn {
 	int n_models;
 	int n_ang;
-	double **phi;
-	double **v;
+	std::string tors_name;
+	double *phi;
+	double *v;
 	int res_n;
 };
 
