@@ -346,6 +346,10 @@ void Scene::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")
 	{
+		if (_backJob)
+		{
+			_backJob();
+		}
 		_previous->showSimple();
 		Window::setDelete(this);
 	}

@@ -3,6 +3,7 @@
 #ifndef __practical__Scene__
 #define __practical__Scene__
 
+#include <functional>
 #include "SnowGL.h"
 #include "SDL2/SDL.h"
 #include "ButtonResponder.h"
@@ -66,6 +67,10 @@ public:
 	virtual void keyPressEvent(SDL_Keycode pressed);
 
 	virtual void back(int num = 0);
+	void setBackJob(const std::function<void()> &backJob)
+	{
+		_backJob = backJob;
+	}
 	void buttonPressed(std::string tag, Button *button);
 	
 	virtual const bool hasIndexedObjects() const
@@ -101,6 +106,8 @@ protected:
 	Button *_back = nullptr;
 	TextButton *_info = nullptr;
 	Text *_titleText = nullptr;
+	
+	std::function<void()> _backJob{};
 	
 	SDL_Cursor *_cursor = nullptr;
 
