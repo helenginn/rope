@@ -27,3 +27,13 @@ void Region::housekeeping()
 {
 
 }
+
+std::string Region::rangeDesc()
+{
+	return _start.str() + "-" + _end.str();
+}
+
+bool Region::covers(const ResidueId &other)
+{
+	return (other >= _start && other <= _end);
+}

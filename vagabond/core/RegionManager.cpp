@@ -21,7 +21,7 @@
 
 RegionManager::RegionManager()
 {
-
+	_rules.push_back(_defaultEnable);
 }
 
 Region *RegionManager::insertIfUnique(Region &r)
@@ -47,6 +47,7 @@ Region *RegionManager::insertIfUnique(Region &r)
 
 void RegionManager::housekeeping()
 {
+	_name2Region.clear();
 	for (Region &r : _objects)
 	{
         std::string name = r.id();
@@ -54,4 +55,93 @@ void RegionManager::housekeeping()
 		_name2Region[name] = &r;
 	}
 
+}
+
+bool RegionManager::nameIsAvailable(std::string id)
+{
+	to_lower(id);
+	return (_name2Region.count(id) == 0);
+}
+
+void RegionManager::rename(Region &r, std::string id)
+{
+	if (!nameIsAvailable(id))
+	{
+		return;
+	}
+
+	_name2Region.erase(r.id());
+	r.setId(id);
+
+	_name2Region[id] = &r;
+}
+
+void RegionManager::purgeRegion(Region &r)
+{
+	std::list<Region>::iterator it = _objects.begin();
+	for (Region &region : _objects)
+	{
+		if (region.id() == r.id())
+		{
+			_objects.erase(it);
+			break;
+		}
+
+		it++;
+	}
+
+	housekeeping();
+}
+
+bool RegionManager::isRuleValid(RegionRule &rule)
+{
+	return _name2Region.count(rule.id) || (rule.id == "");
+}
+
+RegionManager::RegionRule::RegionRule(RegionManager *manager, 
+                                      Region *region, bool enable)
+{
+	auto check_residue = [manager, region, enable, this](const ResidueId &id)
+	{
+		if (region == nullptr)
+		{
+			return enable;
+		}
+
+		if (manager->isRuleValid(*this)) // in case rule was deleted
+		{
+			bool coverage = (region->covers(id));
+			return (coverage && enable) || (!coverage && !enable);
+		}
+
+		return false;
+	};
+
+	desc = (enable ? "Enable " : "Disable ");
+	
+	if (region)
+	{
+		id = region->id();
+		desc += region->id() + " (" + region->rangeDesc() + ")";
+	}
+	else
+	{
+		desc += "everything";
+	}
+
+	rule = check_residue;
+}
+
+void RegionManager::addRule(Region *region, bool enable)
+{
+	RegionRule rule(this, region, enable);
+	_rules.push_back(rule);
+}
+
+void RegionManager::deleteRule(int idx)
+{
+	if (idx > 0)
+	{
+		_rules.erase(_rules.begin() + idx);
+	}
 }
