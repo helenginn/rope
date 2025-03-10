@@ -34,6 +34,7 @@
 #include "PathsDetail.h"
 #include "EvolveView.h"
 #include "AddModel.h"
+#include "RegionRuleView.h"
 
 #include <vagabond/utils/version.h>
 #include <vagabond/utils/FileReader.h>
@@ -136,8 +137,29 @@ void ConfSpaceView::setup()
 	}
 	
 	{
-		Text *text = new Text(_entity->name());
+		TextButton *text = new TextButton(_entity->name(), this);
 		text->setCentre(0.5, 0.80);
+		auto make_menu = [this, text]()
+		{
+			auto show_region_rules = [this]()
+			{
+				RegionRuleView *rr = new RegionRuleView(this, _entity);
+				rr->show();
+			};
+
+			auto hide_label = [this, text]()
+			{
+				text->setDisabled(true);
+			};
+
+			Menu *m = new Menu(this);
+			m->addOption("edit active regions", show_region_rules);
+			m->addOption("hide label", hide_label);
+			m->setup(text);
+			setModal(m);
+		};
+
+		text->setReturnJob(make_menu);
 		addObject(text);
 	}
 }

@@ -40,6 +40,8 @@ public:
 		_id = id;
 	}
 	
+	std::string rangeDesc();
+	
 	const ResidueId &start() const
 	{
 		return _start;
@@ -49,6 +51,8 @@ public:
 	{
 		return _end;
 	}
+	
+	bool covers(const ResidueId &other);
 	
 	void setRange(const ResidueId &start, const ResidueId &end)
 	{
