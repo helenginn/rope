@@ -39,6 +39,16 @@ public:
 	
 	void allowCapitals(bool capitals);
 	virtual void respond();
+	
+	void setReturnJob(const std::function<void(std::string)> &job)
+	{
+		_job = job;
+	}
+	
+	void setCancelJob(const std::function<void()> &job)
+	{
+		_cancel = job;
+	}
 
 	virtual ~AskForText();
 	virtual void buttonPressed(std::string tag, Button *button);
@@ -46,6 +56,8 @@ public:
 	virtual void keyPressed(char key);
 private:
 	TextEntry *_text;
+	std::function<void(std::string)> _job{};
+	std::function<void()> _cancel{};
 
 };
 

@@ -64,13 +64,25 @@ void AskForText::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "cancel")
 	{
+		if (_cancel)
+		{
+			_cancel();
+		}
 		hide();
 	}
 
 	if (tag == "ok")
 	{
 		hide();
-		_sender->buttonPressed(AskForText::tag(), _text);
+		
+		if (_job)
+		{
+			_job(_text->scratch());
+		}
+		else
+		{
+			_sender->buttonPressed(AskForText::tag(), _text);
+		}
 	}
 }
 
