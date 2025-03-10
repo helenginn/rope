@@ -26,16 +26,50 @@
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 
+struct ResidueId;
+
 class RegionManager : public Manager<Region>, public HasEntity
 {
 public:
 	RegionManager();
 
 	virtual Region *insertIfUnique(Region &r);
+	
+	bool nameIsAvailable(std::string id);
+	void rename(Region &r, std::string id);
 
+	void purgeRegion(Region &r);
 	void housekeeping();
-private:
+	
+	size_t ruleCount()
+	{
+		return _rules.size();
+	}
+	
+	struct RegionRule
+	{
+		RegionRule(RegionManager *manager, Region *region, bool enable);
+		std::function<bool(const ResidueId &)> rule;
+		std::string desc;
+		std::string id;
+	};
+	
+	std::vector<RegionRule> &rules()
+	{
+		return _rules;
+	}
+	
+	void addRule(Region *region, bool enable);
+	
+	void deleteRule(int idx);
+	
+	bool isRuleValid(RegionRule &rule);
 
+private:
+	std::vector<RegionRule> _rules;
+	
+	RegionRule _defaultEnable{this, nullptr, true};
+	RegionRule _defaultDisable{this, nullptr, false};
 	std::map<std::string, Region *> _name2Region;
 };
 

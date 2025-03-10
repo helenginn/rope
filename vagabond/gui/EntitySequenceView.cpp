@@ -100,7 +100,13 @@ void EntitySequenceView::definingButton()
 		see->resize(0.6);
 		auto make_menu = [this]()
 		{
+			auto back_refresh = [this]()
+			{
+				definingButton();
+			};
+
 			RegionMenu *menu = new RegionMenu(this, &_entity->regionManager());
+			menu->setBackJob(back_refresh);
 			menu->show();
 		};
 		see->setReturnJob(make_menu);
@@ -316,14 +322,6 @@ void EntitySequenceView::buttonPressed(std::string tag, Button *button)
 		return;
 	}
 	
-	if (tag == "name_region")
-	{
-		TextEntry *entry = static_cast<TextEntry *>(button);
-		std::string name = entry->scratch();
-		makeRegion(name, _aRes, _bRes);
-		definingButton();
-	}
-
 	SequenceView::buttonPressed(tag, button);
 }
 
@@ -359,9 +357,25 @@ void EntitySequenceView::defineRegion()
 {
 	std::string str = "Name for new region, residues " + 
 	_aRes->id().str() + "-" + _bRes->id().str();
+	
+	auto handle_name = [this](std::string name)
+	{
+		makeRegion(name, _aRes, _bRes);
+		definingButton();
+	};
+	
+	auto cancel_name = [this]()
+	{
+		_aRes = nullptr;
+		_bRes = nullptr;
+		_stage = Nothing;
+		refresh();
+	};
 
 	AskForText *aft = new AskForText(this, str, "name_region",
 	                                 this, TextEntry::Id);
+	aft->setReturnJob(handle_name);
+	aft->setCancelJob(cancel_name);
 	setModal(aft);
 }
 
@@ -384,3 +398,4 @@ void EntitySequenceView::makeRegion(const std::string &name,
 		setModal(bc);
 	}
 }
+

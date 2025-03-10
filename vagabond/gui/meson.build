@@ -110,6 +110,8 @@ guifiles = [
 'ProtonNetworkView.h',
 'RegionMenu.h',
 'RegionMenu.cpp',
+'RegionRuleView.h',
+'RegionRuleView.cpp',
 'ResolveIssues.cpp',
 'RopeSpaceItem.cpp',
 'RouteExplorer.cpp',

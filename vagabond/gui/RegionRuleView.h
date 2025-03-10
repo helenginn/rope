@@ -16,32 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__RegionMenu__
-#define __vagabond__RegionMenu__
+#ifndef __vagabond__RegionRuleView__
+#define __vagabond__RegionRuleView__
 
-#include <vagabond/core/RegionManager.h>
-#include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/ListView.h>
 
-class RegionMenu : public ListView
+class Entity;
+class RegionManager;
+
+class RegionRuleView : public ListView
 {
 public:
-	RegionMenu(Scene *prev, RegionManager *manager);
-	
-	void setPickJob(const std::function<void(Region &)> &job)
-	{
-		_pickRule = job;
-	}
+	RegionRuleView(Scene *prev, Entity *entity);
 
 	virtual void setup();
-
 	virtual size_t lineCount();
 	virtual Renderable *getLine(int i);
-	virtual void buttonPressed(std::string tag, Button *button);
 private:
+	Entity *_entity{};
 	RegionManager *_manager{};
-
-	std::function<void(Region &)> _pickRule{};
 };
 
 #endif
