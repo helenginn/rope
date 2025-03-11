@@ -107,6 +107,7 @@ public:
 	
 	size_t selectedCount();
 	void prepareCluster();
+	std::function<bool(int)> setupResidueFilter();
 	virtual void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();

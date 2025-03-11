@@ -47,31 +47,48 @@ public:
 		return _rules.size();
 	}
 	
+	bool residueIsAcceptable(const ResidueId &id);
+	
 	struct RegionRule
 	{
-		RegionRule(RegionManager *manager, Region *region, bool enable);
-		std::function<bool(const ResidueId &)> rule;
+		RegionRule(Region *region, bool enable);
+
+		void prepare_functions(RegionManager *manager, Region *region);
+
+		// returns -1 if disabled, +1 if enabled, 0 if no opinion
+		std::function<int(const ResidueId &)> rule;
 		std::function<std::string()> desc;
 		std::string id;
 		bool enable;
+		int num;
 	};
 	
-	std::vector<RegionRule> &rules()
+	RegionRule *rule(int idx)
 	{
-		return _rules;
+		int i = 0;
+		for (RegionRule &rule : _rules)
+		{
+			if (i == idx)
+			{
+				return &rule;
+			}
+			i++;
+		}
+		return nullptr;
 	}
 	
 	void addRule(Region *region, bool enable);
+
+	RegionRule *rule_by_num(int num);
 	
-	void deleteRule(int idx);
+	void deleteRule(RegionRule &rule);
 	
 	bool isRuleValid(RegionRule &rule);
 
 private:
-	std::vector<RegionRule> _rules;
+	std::list<RegionRule> _rules;
+	int _nextNum = 0;
 	
-	RegionRule _defaultEnable{this, nullptr, true};
-	RegionRule _defaultDisable{this, nullptr, false};
 	std::map<std::string, Region *> _name2Region;
 };
 

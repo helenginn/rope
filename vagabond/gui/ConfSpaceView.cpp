@@ -143,7 +143,14 @@ void ConfSpaceView::setup()
 		{
 			auto show_region_rules = [this]()
 			{
+				auto must_cluster = [this]()
+				{
+					_selected->setMustCluster();
+					refresh();
+				};
+
 				RegionRuleView *rr = new RegionRuleView(this, _entity);
+				rr->setBackJob(must_cluster);
 				rr->show();
 			};
 
