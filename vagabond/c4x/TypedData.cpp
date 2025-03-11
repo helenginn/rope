@@ -447,4 +447,12 @@ void TypedData<Unit, Header>::rawVectorToCSV(Cluster *cluster, int axis_idx,
 	arrayToCSV(arr, ss);
 }
 
+template <class Unit, class Header>
+bool TypedData<Unit, Header>::filter(const std::function<bool(int)> 
+                                     &filter_header, int i)
+{
+	return filter_header(i);
+}
+
 #endif
+

@@ -59,14 +59,6 @@ public:
 
 	/* post-SVD vector for a single dataset */
 	std::vector<float> mappedVector(int idx) const;
-
-	/** implement by superclass to map raw vector into clustered space */
-	/*
-	virtual std::vector<float> mapVector(typename DG::Array &raw)
-	{
-		return std::vector<float>();
-	}
-	*/
 	
 	size_t columns() const
 	{

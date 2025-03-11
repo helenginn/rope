@@ -37,12 +37,15 @@ int Data::groupForIndex(int i)
 	return _groupMembership[i];
 }
 
-float Data::correlation_between(const Comparable &v, const Comparable &w)
+float Data::correlation_between(const Comparable &v, const Comparable &w,
+                                const FilterHeader &filter, int stride)
 {
 	float x{}, y{}, xx{}, yy{}, xy{}, s{};
 
 	for (size_t n = 0; n < v.size(); n++)
 	{
+		int n_unit = n / (float)stride;
+
 		if (v[n] != v[n] || w[n] != w[n])
 		{
 			continue;
@@ -52,6 +55,12 @@ float Data::correlation_between(const Comparable &v, const Comparable &w)
 		{
 			continue;
 		}
+
+		if (filter && !filter(n_unit))
+		{
+			continue;
+		}
+
 		
 		float vn = v[n];
 		float wn = w[n];
@@ -76,7 +85,7 @@ float Data::correlation_between(const Comparable &v, const Comparable &w)
 
 }
 
-float Data::correlation_between(int i, int j)
+float Data::correlation_between(int i, int j, const FilterHeader &filter)
 {
 	if (i == j)
 	{
@@ -86,10 +95,10 @@ float Data::correlation_between(int i, int j)
 	Comparable &v = _comparables[i];
 	Comparable &w = _comparables[j];
 	
-	return correlation_between(v, w);
+	return correlation_between(v, w, filter, comparable_size());
 }
 
-float Data::distance_between(int i, int j)
+float Data::distance_between(int i, int j, const FilterHeader &filter)
 {
 	if (i == j)
 	{
@@ -103,6 +112,11 @@ float Data::distance_between(int i, int j)
 	
 	for (size_t n = 0; n < _length; n++)
 	{
+		if (filter && !filter(n))
+		{
+			continue;
+		}
+
 		if (v[n] != v[n] || w[n] != w[n])
 		{
 			continue;
@@ -120,7 +134,7 @@ float Data::distance_between(int i, int j)
 }
 
 MatrixXf Data::arbitraryMatrix(const std::function<float(int, int)> 
-                                  &comparison)
+                               &comparison)
 {
 	findDifferences();
 	
@@ -171,16 +185,24 @@ void Data::removeNormals(Comparable &arr)
 	}
 }
 
-MatrixXf Data::distanceMatrix()
+MatrixXf Data::distanceMatrix(const FilterHeader &filter)
 {
-	return arbitraryMatrix([this](int i, int j) 
-	                       { return distance_between(i, j); });
+	auto comparison = [this, filter](int i, int j)
+	{
+		return distance_between(i, j, filter);
+	};
+
+	return arbitraryMatrix(comparison);
 }
 
-MatrixXf Data::correlationMatrix()
+MatrixXf Data::correlationMatrix(const FilterHeader &filter)
 {
-	return arbitraryMatrix([this](int i, int j) 
-	                       { return correlation_between(i, j); });
+	auto comparison = [this, filter](int i, int j)
+	{
+		return correlation_between(i, j, filter);
+	};
+
+	return arbitraryMatrix(comparison);
 }
 
 Data::Comparable Data::weightedComparable(const std::vector<float> &weights)
@@ -213,7 +235,7 @@ Data::Comparable Data::weightedComparable(const std::vector<float> &weights)
 	return vals;
 }
 
-Eigen::MatrixXf Data::dataMatrix()
+Eigen::MatrixXf Data::dataMatrix(const FilterHeader &filter)
 {
 	findDifferences();
 //	Eigen::MatrixXf values(length(), vectorCount());

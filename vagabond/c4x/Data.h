@@ -84,7 +84,11 @@ public:
 
 	virtual void purge(int i) = 0;
 
-	static float correlation_between(const Comparable &v, const Comparable &w);
+	typedef std::function<bool(int)> FilterHeader;
+	virtual bool filter(const FilterHeader &filter_header, int i) = 0;
+
+	static float correlation_between(const Comparable &v, const Comparable &w,
+	                                 const FilterHeader &filter, int stride = 1);
 	
 	void registerChanged()
 	{
@@ -96,18 +100,19 @@ public:
 		return _groupCount;
 	}
 
-	Eigen::MatrixXf dataMatrix();
+	Eigen::MatrixXf dataMatrix(const FilterHeader &filter);
 	
 	/** Return distance matrix of size m*m where m = member size */
-	Eigen::MatrixXf distanceMatrix();
+	Eigen::MatrixXf distanceMatrix(const FilterHeader &filter);
 
 	/** Return correlation matrix of size m*m where m = member size */
-	Eigen::MatrixXf correlationMatrix();
+	Eigen::MatrixXf correlationMatrix(const FilterHeader &filter);
+
 	Eigen::MatrixXf arbitraryMatrix(const std::function<float(int, int)> 
-	                            &comparison);
+	                                &comparison);
 protected:
-	float correlation_between(int i, int j);
-	float distance_between(int i, int j);
+	float correlation_between(int i, int j, const FilterHeader &filter);
+	float distance_between(int i, int j, const FilterHeader &filter);
 
 	int groupForIndex(int i);
 

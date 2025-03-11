@@ -108,6 +108,8 @@ public:
 	{
 		return _entries[i].diff;
 	}
+
+	virtual bool filter(const std::function<bool(int)> &filter_header, int i);
 	
 	virtual void cutVectorsToIndexList(const std::vector<int> &indices);
 
