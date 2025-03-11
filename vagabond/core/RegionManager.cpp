@@ -17,11 +17,13 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
+#include "Entity.h"
+#include "EntityManager.h"
 #include "RegionManager.h"
 
 RegionManager::RegionManager()
 {
-	_rules.push_back(_defaultEnable);
+	
 }
 
 Region *RegionManager::insertIfUnique(Region &r)
@@ -55,6 +57,10 @@ void RegionManager::housekeeping()
 		_name2Region[name] = &r;
 	}
 
+	if (ruleCount() == 0)
+	{
+		addRule(nullptr, true);
+	}
 }
 
 bool RegionManager::nameIsAvailable(std::string id)
@@ -103,68 +109,133 @@ bool RegionManager::isRuleValid(RegionRule &rule)
 	return _name2Region.count(rule.id) || (rule.id == "");
 }
 
-RegionManager::RegionRule::RegionRule(RegionManager *manager, 
-                                      Region *region, bool include)
+RegionManager::RegionRule::RegionRule(Region *region, bool include)
 {
 	enable = include;
-	auto check_residue = [manager, region, this](const ResidueId &id)
-	{
-		if (region == nullptr)
-		{
-			return enable;
-		}
-
-		if (manager->isRuleValid(*this)) // in case rule was deleted
-		{
-			bool coverage = (region->covers(id));
-			return (coverage && enable) || (!coverage && !enable);
-		}
-
-		return false;
-	};
-
-	rule = check_residue;
 	if (region)
 	{
 		id = region->id();
 	}
+}
 
-	desc = [this, manager]()
+void RegionManager::RegionRule::prepare_functions(RegionManager *manager,
+                                                  Region *region)
+{
+	int n = num;
+	std::string entity_id = manager->entity_id();
+
+	auto check_residue = [entity_id, region, n](const ResidueId &res_id)
+	-> int
 	{
-		std::string desc = (enable ? "Enable " : "Disable ");
-		if (id.length())
+		Entity *entity = EntityManager::manager()->entity(entity_id);
+		if (!entity) { return 0; }
+
+		RegionManager *manager = &entity->regionManager();
+		if (!manager) { return 0; }
+
+		RegionRule *me = manager->rule_by_num(n);
+
+		if (region == nullptr)
 		{
-			if (manager->isRuleValid(*this)) // in case rule was deleted
+			return me->enable ? +1 : -1;
+		}
+
+		if (manager->isRuleValid(*me)) // in case rule was deleted
+		{
+			bool coverage = (region->covers(res_id));
+			if (coverage)
 			{
-				Region *region = manager->region(id);
-				desc += id + " (" + region->rangeDesc() + ")";
+				int result = me->enable ? +1 : -1;
+				return result;
+			}
+			return 0;
+		}
+
+		return 0;
+	};
+
+	rule = check_residue;
+
+	desc = [n, entity_id]() -> std::string
+	{
+		Entity *entity = EntityManager::manager()->entity(entity_id);
+		if (!entity)
+		{
+			return "(deleted entity)";
+		}
+		RegionManager *manager = &entity->regionManager();
+		RegionRule *me = manager->rule_by_num(n);
+		if (!me)
+		{
+			return "(deleted rule)";
+		}
+
+		std::string desc = (me->enable ? "Enable " : "Disable ");
+
+		if (me->id.length())
+		{
+			if (manager->isRuleValid(*me)) // in case rule was deleted
+			{
+				Region *region = manager->region(me->id);
+				desc += me->id + " (" + region->rangeDesc() + ")";
 			}
 			else
 			{
-				desc += id + " (deleted)";
-
+				desc += me->id + " (deleted)";
 			}
 		}
-		else
+		else if (me->id.length() == 0)
 		{
 			desc += "everything";
 		}
+
 		return desc;
 	};
-	
 }
 
 void RegionManager::addRule(Region *region, bool enable)
 {
-	RegionRule rule(this, region, enable);
-	_rules.push_back(rule);
+	_rules.push_back(RegionRule(region, enable));
+	_rules.back().num = ++_nextNum;
+	_rules.back().prepare_functions(this, region);
+
 }
 
-void RegionManager::deleteRule(int idx)
+void RegionManager::deleteRule(RegionRule &rule)
 {
-	if (idx > 0)
+	for (auto it = _rules.begin(); it != _rules.end(); it++)
 	{
-		_rules.erase(_rules.begin() + idx);
+		if (&*it == &rule)
+		{
+			_rules.erase(it);
+			return;
+		}
 	}
 }
 
+RegionManager::RegionRule *RegionManager::rule_by_num(int num)
+{
+	for (RegionRule &rule : _rules)
+	{
+		if (rule.num == num)
+		{
+			return &rule;
+		}
+	}
+
+	return nullptr;
+}
+
+bool RegionManager::residueIsAcceptable(const ResidueId &id)
+{
+	bool ok = true;
+
+	for (RegionRule &rule : _rules)
+	{
+		int result = (rule.rule(id));
+		if (result == 1) ok = true;
+		if (result == -1) ok = false;
+	}
+
+	return ok;
+}

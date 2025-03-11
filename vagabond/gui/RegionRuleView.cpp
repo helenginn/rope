@@ -20,6 +20,9 @@
 #include "RegionRuleView.h"
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskMultipleChoice.h>
 #include <vagabond/core/Entity.h>
 
 RegionRuleView::RegionRuleView(Scene *prev, Entity *entity)
@@ -47,11 +50,36 @@ Renderable *RegionRuleView::getLine(int i)
 	
 	if (i < _manager->ruleCount())
 	{
-		RegionManager::RegionRule &rule = _manager->rules()[i];
+		RegionManager::RegionRule *rule = _manager->rule(i);
 
-		Text *t = new Text(rule.desc());
+		Text *t = new Text(rule->desc());
 		t->setLeft(0.f, 0.f);
 		b->addObject(t);
+		
+		if (i > 0)
+		{
+			ImageButton *ib = new ImageButton("assets/images/cross.png", this);
+			ib->resize(0.06);
+			ib->setRight(0.65, 0.0);
+
+			auto ask_to_delete = [this, rule]()
+			{
+				auto delete_region = [this, rule]()
+				{
+					_manager->deleteRule(*rule);
+					refresh();
+				};
+
+				AskYesNo *ayn = new AskYesNo(this, "Do you want to delete "
+				                             "rule for region '"
+				                             + rule->id + "'?", "", this);
+				ayn->addJob("yes", delete_region);
+				setModal(ayn);
+			};
+
+			ib->setReturnJob(ask_to_delete);
+			b->addObject(ib);
+		}
 	}
 	else
 	{
@@ -59,8 +87,21 @@ Renderable *RegionRuleView::getLine(int i)
 		{
 			auto acquire_pick = [this](Region &r)
 			{
-				BadChoice *bc = new BadChoice(this, r.id());
-				setModal(bc);
+				auto make_choose_type = [this, &r](bool enable)
+				{
+					return [this, &r, enable]()
+					{
+						_manager->addRule(&r, enable);
+						refresh();
+					};
+				};
+
+				AskMultipleChoice *amc = 
+				new AskMultipleChoice(this, "Residues in this region '"
+				                      + r.id() + "' should be", true);
+				amc->addChoice("enabled", make_choose_type(true));
+				amc->addChoice("disabled", make_choose_type(false));
+				setModal(amc);
 			};
 
 			RegionMenu *menu = new RegionMenu(this, _manager);

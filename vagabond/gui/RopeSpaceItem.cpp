@@ -84,6 +84,7 @@ void RopeSpaceItem::clusterIfNeeded()
 	}
 
 	_confView->assignRopeSpace(nullptr);
+	_cluster->setFilterHeader(setupResidueFilter());
 	_cluster->cluster();
 	_view->setCluster(_cluster, _group);
 
@@ -575,4 +576,32 @@ void RopeSpaceItem::changeMetadata()
 RopeSpaceItem *RopeSpaceItem::ropeSpaceItem(int idx)
 {
 	return static_cast<RopeSpaceItem *>(item(idx));
+}
+
+std::function<bool(int)> RopeSpaceItem::setupResidueFilter()
+{
+	auto header_check = [this](int i)
+	{
+		RegionManager *manager = &_entity->regionManager();
+		BitIdentifier bit{};
+		if (_type == ConfTorsions)
+		{
+			TorsionData *group = static_cast<TorsionData *>(_group);
+			bit = group->headers()[i];
+		}
+		else if (_type == ConfPositional)
+		{
+			PositionData *group = static_cast<PositionData *>(_group);
+			bit = group->headers()[i];
+		}
+		else
+		{
+			return true;
+		}
+
+		bool accept = (manager->residueIsAcceptable(bit.id()));
+		return accept;
+	};
+	
+	return header_check;
 }
