@@ -127,8 +127,6 @@ private:
 
 	void askToFoldIn(int extra);
 	
-	static std::map<Entity *, 
-	std::map<rope::ConfType, RopeSpaceItem *>> _savedSpaces;
 	SavedSpace &_savedSpace;
 	
 	RopeSpaceItem *_ropeSpace = nullptr;

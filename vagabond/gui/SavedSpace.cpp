@@ -35,3 +35,9 @@ void SavedSpace::addAssociatedMetadata(Metadata *metadata)
 
 	*_metadata += *metadata;
 }
+
+void do_on_all_spaces(Entity *entity, 
+                      const std::function<void(RopeSpaceItem *)> &job)
+{
+
+}

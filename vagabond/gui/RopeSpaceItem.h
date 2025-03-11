@@ -94,10 +94,7 @@ public:
 		_md = md;
 	}
 	
-	void setMustCluster()
-	{
-		_mustCluster = true;
-	}
+	void setMustCluster(bool recursive = false);
 	
 	Axes *createReference(Instance *inst);
 	RopeSpaceItem *branchFromRule(Rule *rule, bool inverse);

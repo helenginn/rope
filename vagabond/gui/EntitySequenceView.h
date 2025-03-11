@@ -33,7 +33,8 @@ class ImageButton;
 class EntitySequenceView : public PickAtomFromSequence
 {
 public:
-	EntitySequenceView(Scene *prev, IndexedSequence *sequence);
+	EntitySequenceView(Scene *prev, IndexedSequence *sequence,
+	                   bool define_only = false);
 	
 	void setEntity(Entity *ent);
 	virtual void setup();
@@ -93,6 +94,7 @@ private:
 	                       float resize, const std::string &alt_tag);
 
 	Mode _mode = Ruler;
+	bool _defineOnly = false;
 };
 
 #endif

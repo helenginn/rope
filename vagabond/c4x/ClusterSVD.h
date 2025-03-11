@@ -102,6 +102,11 @@ public:
 	{
 		_filter = filter;
 	}
+	
+	const FilterHeader &filterHeader() const
+	{
+		return _filter;
+	}
 
 	void recalculateResult();
 	void calculateInverse();

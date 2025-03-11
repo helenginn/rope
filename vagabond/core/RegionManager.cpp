@@ -118,43 +118,35 @@ RegionManager::RegionRule::RegionRule(Region *region, bool include)
 	}
 }
 
+int RegionManager::RegionRule::check_residue(RegionManager *manager,
+                                             const ResidueId &res)
+{
+	if (id.length() == 0)
+	{
+		return enable ? +1 : -1;
+	}
+
+	if (manager->isRuleValid(*this)) // in case rule was deleted
+	{
+		Region *region = manager->region(id);
+		bool coverage = (region->covers(res));
+		if (coverage)
+		{
+			int result = enable ? +1 : -1;
+			return result;
+		}
+		return 0;
+	}
+
+	return 0;
+}
+
 void RegionManager::RegionRule::prepare_functions(RegionManager *manager,
-                                                  Region *region)
+                                                  Region *reg)
 {
 	int n = num;
 	std::string entity_id = manager->entity_id();
-
-	auto check_residue = [entity_id, region, n](const ResidueId &res_id)
-	-> int
-	{
-		Entity *entity = EntityManager::manager()->entity(entity_id);
-		if (!entity) { return 0; }
-
-		RegionManager *manager = &entity->regionManager();
-		if (!manager) { return 0; }
-
-		RegionRule *me = manager->rule_by_num(n);
-
-		if (region == nullptr)
-		{
-			return me->enable ? +1 : -1;
-		}
-
-		if (manager->isRuleValid(*me)) // in case rule was deleted
-		{
-			bool coverage = (region->covers(res_id));
-			if (coverage)
-			{
-				int result = me->enable ? +1 : -1;
-				return result;
-			}
-			return 0;
-		}
-
-		return 0;
-	};
-
-	rule = check_residue;
+	Entity *entity = EntityManager::manager()->entity(entity_id);
 
 	desc = [n, entity_id]() -> std::string
 	{
@@ -232,7 +224,7 @@ bool RegionManager::residueIsAcceptable(const ResidueId &id)
 
 	for (RegionRule &rule : _rules)
 	{
-		int result = (rule.rule(id));
+		int result = (rule.check_residue(this, id));
 		if (result == 1) ok = true;
 		if (result == -1) ok = false;
 	}

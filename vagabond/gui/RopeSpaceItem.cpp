@@ -599,9 +599,22 @@ std::function<bool(int)> RopeSpaceItem::setupResidueFilter()
 			return true;
 		}
 
-		bool accept = (manager->residueIsAcceptable(bit.id()));
+		bool accept = manager->residueIsAcceptable(bit.id());
 		return accept;
 	};
 	
 	return header_check;
+}
+
+
+void RopeSpaceItem::setMustCluster(bool recursive)
+{
+	_mustCluster = true;
+	
+	if (!recursive) return;
+	
+	for (size_t i = 0; i < itemCount(); i++)
+	{
+		ropeSpaceItem(i)->setMustCluster(recursive);
+	}
 }

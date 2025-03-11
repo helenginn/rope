@@ -18,6 +18,7 @@
 
 #include "RegionMenu.h"
 #include "RegionRuleView.h"
+#include "EntitySequenceView.h"
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -36,6 +37,20 @@ void RegionRuleView::setup()
 	std::string title = _entity->name() + " active regions";
 	addTitle(title);
 	
+	auto show_sequence = [this]()
+	{
+		EntitySequenceView *esv = nullptr;
+		Sequence *seq = _entity->sequence();
+		esv = new EntitySequenceView(this, seq, true);
+		esv->setEntity(_entity);
+		esv->show();
+	};
+
+	TextButton *seeRegions = new TextButton("define regions", this);
+	seeRegions->setCentre(0.5, 0.16);
+	seeRegions->setReturnJob(show_sequence);
+	addObject(seeRegions);
+	
 	ListView::setup();
 }
 
@@ -51,9 +66,29 @@ Renderable *RegionRuleView::getLine(int i)
 	if (i < _manager->ruleCount())
 	{
 		RegionManager::RegionRule *rule = _manager->rule(i);
+		
+		auto ask_to_toggle = [this, rule]()
+		{
+			auto make_toggle_type = [this, rule](bool enable)
+			{
+				return [this, rule, enable]()
+				{
+					rule->enable = enable;
+					refresh();
+				};
+			};
 
-		Text *t = new Text(rule->desc());
+			AskMultipleChoice *amc = 
+			new AskMultipleChoice(this, "Residues in this region '"
+			                      + rule->id + "' should be", true);
+			amc->addChoice("enabled", make_toggle_type(true));
+			amc->addChoice("disabled", make_toggle_type(false));
+			setModal(amc);
+		};
+
+		TextButton *t = new TextButton(rule->desc(), this);
 		t->setLeft(0.f, 0.f);
+		t->setReturnJob(ask_to_toggle);
 		b->addObject(t);
 		
 		if (i > 0)

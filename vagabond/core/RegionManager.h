@@ -56,7 +56,8 @@ public:
 		void prepare_functions(RegionManager *manager, Region *region);
 
 		// returns -1 if disabled, +1 if enabled, 0 if no opinion
-		std::function<int(const ResidueId &)> rule;
+		int check_residue(RegionManager *manager, const ResidueId &res);
+
 		std::function<std::string()> desc;
 		std::string id;
 		bool enable;
