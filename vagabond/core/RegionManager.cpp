@@ -93,15 +93,21 @@ void RegionManager::purgeRegion(Region &r)
 	housekeeping();
 }
 
+Region *RegionManager::region(std::string id)
+{
+	return _name2Region[id];
+}
+
 bool RegionManager::isRuleValid(RegionRule &rule)
 {
 	return _name2Region.count(rule.id) || (rule.id == "");
 }
 
 RegionManager::RegionRule::RegionRule(RegionManager *manager, 
-                                      Region *region, bool enable)
+                                      Region *region, bool include)
 {
-	auto check_residue = [manager, region, enable, this](const ResidueId &id)
+	enable = include;
+	auto check_residue = [manager, region, this](const ResidueId &id)
 	{
 		if (region == nullptr)
 		{
@@ -117,19 +123,35 @@ RegionManager::RegionRule::RegionRule(RegionManager *manager,
 		return false;
 	};
 
-	desc = (enable ? "Enable " : "Disable ");
-	
+	rule = check_residue;
 	if (region)
 	{
 		id = region->id();
-		desc += region->id() + " (" + region->rangeDesc() + ")";
-	}
-	else
-	{
-		desc += "everything";
 	}
 
-	rule = check_residue;
+	desc = [this, manager]()
+	{
+		std::string desc = (enable ? "Enable " : "Disable ");
+		if (id.length())
+		{
+			if (manager->isRuleValid(*this)) // in case rule was deleted
+			{
+				Region *region = manager->region(id);
+				desc += id + " (" + region->rangeDesc() + ")";
+			}
+			else
+			{
+				desc += id + " (deleted)";
+
+			}
+		}
+		else
+		{
+			desc += "everything";
+		}
+		return desc;
+	};
+	
 }
 
 void RegionManager::addRule(Region *region, bool enable)
@@ -145,3 +167,4 @@ void RegionManager::deleteRule(int idx)
 		_rules.erase(_rules.begin() + idx);
 	}
 }
+
