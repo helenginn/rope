@@ -269,17 +269,6 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 #endif
 	}
 	
-	/*
-	std::string end = Button::tagEnd(tag, "format_");
-	if (end.length())
-	{
-		_ensemble = (end == "ensemble");
-		AskForText *aft = new AskForText(this, "How many samples along the path?", 
-		                                 "samples", this, TextEntry::Numeric);
-		setModal(aft);
-	}
-	*/
-	
 	if (tag == "samples")
 	{
 		std::string str = static_cast<TextEntry *>(button)->scratch();
