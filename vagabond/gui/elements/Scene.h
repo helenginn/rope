@@ -51,7 +51,13 @@ public:
 		_title = title;
 	}
 
-	void show();
+	void show(bool permanent = false);
+	
+	const bool &isPermanent() const
+	{
+		return _permanent;
+	}
+
 	void queueToShow();
 	void showBackButton();
 	void hideBackButton();
@@ -117,6 +123,7 @@ protected:
 	bool _expired = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
+	bool _permanent = false;
 	static std::string _defaultBg;
 };
 
