@@ -377,7 +377,7 @@ void AddEntity::loadConfSpaceView(std::string suffix)
 		view->setMode(rope::ConfBFactor);
 	}
 
-	view->show();
+	view->show(true);
 }
 
 void AddEntity::serialRefinement()
