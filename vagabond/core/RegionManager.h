@@ -35,6 +35,7 @@ public:
 
 	virtual Region *insertIfUnique(Region &r);
 	
+	Region *region(std::string id);
 	bool nameIsAvailable(std::string id);
 	void rename(Region &r, std::string id);
 
@@ -50,8 +51,9 @@ public:
 	{
 		RegionRule(RegionManager *manager, Region *region, bool enable);
 		std::function<bool(const ResidueId &)> rule;
-		std::string desc;
+		std::function<std::string()> desc;
 		std::string id;
+		bool enable;
 	};
 	
 	std::vector<RegionRule> &rules()

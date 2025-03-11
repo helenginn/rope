@@ -49,7 +49,7 @@ Renderable *RegionRuleView::getLine(int i)
 	{
 		RegionManager::RegionRule &rule = _manager->rules()[i];
 
-		Text *t = new Text(rule.desc);
+		Text *t = new Text(rule.desc());
 		t->setLeft(0.f, 0.f);
 		b->addObject(t);
 	}
