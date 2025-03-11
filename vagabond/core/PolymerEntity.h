@@ -102,13 +102,13 @@ inline void from_json(const json &j, PolymerEntity &value)
 	{
 		value._visPrefs = j.at("visuals");
 		value.regionManager() = j.at("regions");
-		value.regionManager().housekeeping();
 	}
 	catch (...)
 	{
-		
+		value.regionManager().setEntityId(value._name);
 	}
 	
+	value.regionManager().housekeeping();
 	value.clickTicker();
 }
 
