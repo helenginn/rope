@@ -34,10 +34,15 @@
 #include <vagabond/gui/elements/AskForText.h>
 #include <iostream>
 
-EntitySequenceView::EntitySequenceView(Scene *prev, IndexedSequence *sequence)
+EntitySequenceView::EntitySequenceView(Scene *prev, IndexedSequence *sequence,
+bool define_only)
 : PickAtomFromSequence(prev, sequence)
 {
-
+	_defineOnly = define_only;
+	if (_defineOnly)
+	{
+		_mode = Defining;
+	}
 }
 
 void EntitySequenceView::wipe()
@@ -88,7 +93,13 @@ void EntitySequenceView::definingButton()
 {
 	ImageButton *b = addButton("assets/images/protein-coloured.png", Defining,
 	                           0.08, "defining regions");
-	b->setReturnJob([this]() { distanceButton(); });
+	b->setReturnJob([this]()
+	{
+		if (!_defineOnly)
+		{
+			distanceButton();
+		}
+    });
 	
 	int num = _entity->regionManager().objectCount();
 	if (num > 0)
@@ -125,7 +136,7 @@ void EntitySequenceView::setup()
 {
 	SequenceView::setup();
 
-	distanceButton();
+	_defineOnly ? definingButton() : distanceButton();
 }
 
 void EntitySequenceView::handleResidue(Button *button, Residue *r)

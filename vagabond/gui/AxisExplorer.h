@@ -59,6 +59,7 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button);
 	virtual void finishedDragging(std::string tag, double x, double y);
 	void perResidueLocalMotions();
+	RTAngles filteredAngles();
 protected:
 	void setupColoursForList(RTAngles &angles);
 	virtual void prepareResources();

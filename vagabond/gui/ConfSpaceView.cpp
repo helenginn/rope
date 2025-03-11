@@ -53,8 +53,6 @@
 #include <vagabond/core/Metadata.h>
 
 using namespace rope;
-std::map<Entity *, std::map<rope::ConfType, RopeSpaceItem *>> 
-	ConfSpaceView::_savedSpaces;
 	
 bool ConfSpaceView::_madePaths = false;
 
@@ -145,7 +143,7 @@ void ConfSpaceView::setup()
 			{
 				auto must_cluster = [this]()
 				{
-					_selected->setMustCluster();
+					_ropeSpace->setMustCluster(true);
 					refresh();
 				};
 

@@ -46,7 +46,6 @@ private:
 	TorsionData *_tData = nullptr;
 
 	ClusterSVD *_tCluster = nullptr;
-	ClusterSVD *_pCluster = nullptr;
 };
 
 #endif
