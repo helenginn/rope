@@ -20,19 +20,17 @@
 #define __vagabond__AskMultipleChoice__
 
 #include "Modal.h"
+#include <functional>
 #include "ButtonResponder.h"
 
 class AskMultipleChoice : public Modal
 {
 public:
-	AskMultipleChoice(Scene *scene, std::string text, std::string tag, 
-	                  ButtonResponder *sender);
-	
-	void addChoice(std::string text, std::string tag);
+	AskMultipleChoice(Scene *scene, std::string text, bool cancel);
 	
 	virtual ~AskMultipleChoice() {};
 
-	virtual void buttonPressed(std::string tag, Button *button);
+	void addChoice(const std::string &answer, const std::function<void()> &job);
 
 private:
 	ButtonResponder *_sender;
@@ -40,6 +38,7 @@ private:
 
 	float _top = 0.43;
 
+	std::map<std::string, std::function<void()>> _jobs;
 };
 
 #endif

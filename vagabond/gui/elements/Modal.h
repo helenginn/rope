@@ -26,6 +26,7 @@ public:
 		_dismissable = dismiss;
 	}
 	
+	virtual void buttonPressed(std::string, Button *button) {}
 	void addTwoButtons(std::string left, std::string ltag,
 	                   std::string right, std::string rtag);
 
