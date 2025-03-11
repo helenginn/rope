@@ -103,7 +103,7 @@ SimpleWeights obtain_weights(TorsionData *data, ClusterSVD *tc,
 		std::vector<float> chosen;
 		data->convertToComparable(entry, chosen);
 
-		float cc = TorsionData::correlation_between(compare, chosen);
+		float cc = TorsionData::correlation_between(compare, chosen, {});
 
 		weight.scores[instance] = cc;
 	}

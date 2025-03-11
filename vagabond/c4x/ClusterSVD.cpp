@@ -38,11 +38,11 @@ MatrixXf ClusterSVD::matrix(Data *const &data)
 {
 	if (_type == PCA::Distance)
 	{
-		return data->distanceMatrix();
+		return data->distanceMatrix(_filter);
 	}
 	else 
 	{
-		return data->correlationMatrix();
+		return data->correlationMatrix(_filter);
 	}
 	
 }
