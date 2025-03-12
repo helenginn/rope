@@ -36,6 +36,11 @@ void Renderable::addToVertices(glm::vec3 add)
 
 	addToVertexArray(add, &_vertices);
 	addToVertexArray(add, &_unselectedVertices);
+	
+	for (Renderable *r : objects())
+	{
+		r->addToVertices(add);
+	}
 
 	positionChanged();
 }
