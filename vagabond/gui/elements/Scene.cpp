@@ -282,8 +282,9 @@ void Scene::queueToShow()
 	Window::setNextScene(this);
 }
 
-void Scene::show()
+void Scene::show(bool permanent)
 {
+	_permanent = permanent;
 	Window::setCurrentScene(this);
 }
 
@@ -346,8 +347,15 @@ void Scene::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "back")
 	{
+		if (_backJob)
+		{
+			_backJob();
+		}
 		_previous->showSimple();
-		Window::setDelete(this);
+		if (!isPermanent())
+		{
+			Window::setDelete(this);
+		}
 	}
 	else if (tag == "yes_quit")
 	{
@@ -364,7 +372,10 @@ void Scene::buttonPressed(std::string tag, Button *button)
 void Scene::back(int num)
 {
 	_previous->showSimple();
-	Window::setDelete(this);
+	if (!isPermanent())
+	{
+		Window::setDelete(this);
+	}
 	
 	/* recursively remove scenes */
 	if (num > 0)

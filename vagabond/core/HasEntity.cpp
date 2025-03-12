@@ -16,28 +16,31 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SavedSpace.h"
-#include "Metadata.h"
+#include "HasEntity.h"
+#include "EntityManager.h"
 
-SavedSpace SavedSpace::_defaultSpace{};
-
-SavedSpace::SavedSpace()
+Entity *HasEntity::entity()
 {
-
-}
-
-void SavedSpace::addAssociatedMetadata(Metadata *metadata)
-{
-	if (!_metadata)
+	if (_entity != nullptr)
 	{
-		_metadata = new Metadata();
+		return _entity;
+	}
+	
+	if (_entity_id.length())
+	{
+		_entity = Environment::entityManager()->entity(_entity_id);
 	}
 
-	*_metadata += *metadata;
+	return _entity;
 }
 
-void do_on_all_spaces(Entity *entity, 
-                      const std::function<void(RopeSpaceItem *)> &job)
+void HasEntity::setEntity(Entity *entity)
 {
+	_entity = entity;
+	_entity_id = entity->name();
+}
 
+void HasEntity::setEntityId(const std::string &id)
+{
+	_entity_id = id;
 }

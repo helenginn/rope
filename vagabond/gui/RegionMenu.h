@@ -16,28 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SavedSpace.h"
-#include "Metadata.h"
+#ifndef __vagabond__RegionMenu__
+#define __vagabond__RegionMenu__
 
-SavedSpace SavedSpace::_defaultSpace{};
+#include <vagabond/core/RegionManager.h>
+#include <vagabond/core/Responder.h>
+#include <vagabond/gui/elements/ListView.h>
 
-SavedSpace::SavedSpace()
+class RegionMenu : public ListView
 {
-
-}
-
-void SavedSpace::addAssociatedMetadata(Metadata *metadata)
-{
-	if (!_metadata)
+public:
+	RegionMenu(Scene *prev, RegionManager *manager);
+	
+	void setPickJob(const std::function<void(Region &)> &job)
 	{
-		_metadata = new Metadata();
+		_pickRule = job;
 	}
 
-	*_metadata += *metadata;
-}
+	virtual void setup();
 
-void do_on_all_spaces(Entity *entity, 
-                      const std::function<void(RopeSpaceItem *)> &job)
-{
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
+	virtual void buttonPressed(std::string tag, Button *button);
+private:
+	RegionManager *_manager{};
 
-}
+	std::function<void(Region &)> _pickRule{};
+};
+
+#endif

@@ -21,13 +21,14 @@
 
 #include <set>
 #include <map>
+#include "Model.h"
 #include "Sequence.h"
 #include "Substance.h"
-#include "Model.h"
+#include "Responder.h"
 #include "TorsionData.h"
 #include "BFactorData.h"
 #include "PositionData.h"
-#include "Responder.h"
+#include "RegionManager.h"
 #include "VisualPreferences.h"
 
 #include <nlohmann/json.hpp>
@@ -55,6 +56,16 @@ public:
 	const std::string &name() const
 	{
 		return _name;
+	}
+
+	const RegionManager &regionManager() const
+	{
+		return _regionManager;
+	}
+	
+	RegionManager &regionManager()
+	{
+		return _regionManager;
 	}
 	
 	void checkModel(Model &m);
@@ -131,6 +142,7 @@ public:
 	virtual BFactorData prepareBFactorGroup() { return BFactorData(0); }
 protected:
 	Instance *_reference = nullptr;
+	RegionManager _regionManager{};
 
 	VisualPreferences _visPrefs;
 	

@@ -16,28 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SavedSpace.h"
-#include "Metadata.h"
+#ifndef __vagabond__HasEntity__
+#define __vagabond__HasEntity__
 
-SavedSpace SavedSpace::_defaultSpace{};
+#include <string>
+class Entity;
 
-SavedSpace::SavedSpace()
+class HasEntity
 {
-
-}
-
-void SavedSpace::addAssociatedMetadata(Metadata *metadata)
-{
-	if (!_metadata)
+public:
+	Entity *entity();
+	
+	void setEntity(Entity *entity);
+	
+	void setEntityId(const std::string &id);
+	
+	const std::string &entity_id() const
 	{
-		_metadata = new Metadata();
+		return _entity_id;
 	}
 
-	*_metadata += *metadata;
-}
+protected:
+	std::string _entity_id;
+	Entity *_entity = nullptr;
 
-void do_on_all_spaces(Entity *entity, 
-                      const std::function<void(RopeSpaceItem *)> &job)
-{
+};
 
-}
+#endif

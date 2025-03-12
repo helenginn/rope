@@ -90,6 +90,7 @@ inline void to_json(json &j, const PolymerEntity &value)
 	j["name"] = value._name;
 	j["sequence"] = value._sequence;
 	j["visuals"] = value._visPrefs;
+	j["regions"] = value.regionManager();
 }
 
 inline void from_json(const json &j, PolymerEntity &value)
@@ -100,12 +101,14 @@ inline void from_json(const json &j, PolymerEntity &value)
 	try
 	{
 		value._visPrefs = j.at("visuals");
+		value.regionManager() = j.at("regions");
 	}
 	catch (...)
 	{
-		
+		value.regionManager().setEntityId(value._name);
 	}
 	
+	value.regionManager().housekeeping();
 	value.clickTicker();
 }
 

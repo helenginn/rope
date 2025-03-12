@@ -5,6 +5,7 @@
 
 #include "Modal.h"
 #include "ButtonResponder.h"
+#include <functional>
 
 /** AskYesNo: simple yes/no dialogue with a question and a tag {tag} for
  * later identification.

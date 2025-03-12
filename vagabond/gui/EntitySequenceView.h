@@ -16,8 +16,8 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__DistanceMaker__
-#define __vagabond__DistanceMaker__
+#ifndef __vagabond__EntitySequenceView__
+#define __vagabond__EntitySequenceView__
 
 #include <thread>
 
@@ -25,31 +25,41 @@
 #include <thread>
 
 class Entity;
+class Residue;
 class Metadata;
+class TextButton;
 class ImageButton;
 
-class DistanceMaker : public PickAtomFromSequence
+class EntitySequenceView : public PickAtomFromSequence
 {
 public:
-	DistanceMaker(Scene *prev, IndexedSequence *sequence);
+	EntitySequenceView(Scene *prev, IndexedSequence *sequence,
+	                   bool define_only = false);
 	
 	void setEntity(Entity *ent);
 	virtual void setup();
 
-	virtual void doThings();
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	virtual void handleResidue(Button *button, Residue *r);
+	virtual void addExtras(TextButton *t, Residue *r) ;
 private:
 	void handleAtomName(std::string name);
+	void queueMetadataForShow(Metadata *md);
 	void calculateDistance();
 	void calculateAngle();
+	void definingButton();
 	void distanceButton();
 	void angleButton();
+
 	void confirmAtom();
 	void wipe();
+
+	void makeRegion(const std::string &name, Residue *a, Residue *b);
 
 	void stop();
 	void prepareDistances();
 	void prepareAngles();
+	void defineRegion();
 
 	enum Stage
 	{
@@ -71,15 +81,20 @@ private:
 	ImageButton *_modeButton = nullptr;
 	
 	std::thread *_worker = nullptr;
-	Metadata *_result = nullptr;
 	
 	enum Mode
 	{
 		Ruler,
 		Angle,
+		Defining,
 	};
 
+	ImageButton *addButton(const std::string &image,
+	                       const EntitySequenceView::Mode &mode,
+	                       float resize, const std::string &alt_tag);
+
 	Mode _mode = Ruler;
+	bool _defineOnly = false;
 };
 
 #endif

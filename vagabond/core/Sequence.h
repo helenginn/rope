@@ -23,14 +23,14 @@
 #include <map>
 #include <set>
 #include <sstream>
-#include "RopeTypes.h"
 #include "Residue.h"
+#include "HasEntity.h"
+#include "RopeTypes.h"
 #include "ResidueTorsion.h"
 #include <vagabond/c4x/Angular.h>
 #include "IndexedSequence.h"
 
 class Atom;
-class Entity;
 class RTAngles;
 class AtomGroup;
 class SequenceComparison;
@@ -39,7 +39,7 @@ class Atom3DPosition;
 
 typedef std::map<Residue *, Residue *> ResidueMap;
 
-class Sequence : public IndexedSequence
+class Sequence : public IndexedSequence, public HasEntity
 {
 public:
 	Sequence(Atom *anchor);
@@ -171,14 +171,6 @@ public:
 	/** if a master-to-local mapping has already been generated, re-generate
 	 * the mapping from master-to-local */
 	void remapFromMaster();
-	
-	void setEntityId(std::string id)
-	{
-		_entity_id = id;
-	}
-
-	void setEntity(Entity *entity);
-	Entity *entity();
 
 	/** name in style t<id>:<desc> to torsion angle (if available) */
 	bool torsionByName(const std::string name, Residue **res);
@@ -251,8 +243,6 @@ private:
 	ResidueMap _map2Master;
 	ResidueMap _map2Local;
 	Atom *_anchor = nullptr;
-	Entity *_entity = nullptr;
-	std::string _entity_id;
 };
 
 /* sequence */

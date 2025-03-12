@@ -240,26 +240,33 @@ void PathsDetail::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "export")
 	{
+		auto make_choose_style = [this](bool ensemble)
+		{
+			return [this, ensemble]
+			{
+				_ensemble = ensemble;
+				std::string str = "How many samples along the path?"; 
+				AskForText *aft = new AskForText(this, str, "samples", 
+				                                 this, TextEntry::Numeric);
+				setModal(aft);
+			};
+		};
+
 #ifndef __EMSCRIPTEN__
 		AskMultipleChoice *amc = nullptr;
 		amc = new AskMultipleChoice(this, "What kind of ensemble format would you"
-		                            " like to export?", "format", this);
-		amc->addChoice("One PDB file per structure", "per_structure");
-		amc->addChoice("Ensemble PDB file with all structures", "ensemble");
+		                            " like to export?", true);
+
+		amc->addChoice("One PDB file per structure", make_choose_style(false));
+
+		amc->addChoice("Ensemble PDB file with all structures", 
+		               make_choose_style(true));
+
 		setModal(amc);
 #else
-	buttonPressed("format_ensemble", nullptr);
+	make_choose_style(true)();
 	return;
 #endif
-	}
-	
-	std::string end = Button::tagEnd(tag, "format_");
-	if (end.length())
-	{
-		_ensemble = (end == "ensemble");
-		AskForText *aft = new AskForText(this, "How many samples along the path?", 
-		                                 "samples", this, TextEntry::Numeric);
-		setModal(aft);
 	}
 	
 	if (tag == "samples")

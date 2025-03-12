@@ -96,11 +96,23 @@ public:
 	{
 		return 3;
 	}
+	
+	typedef std::function<bool(int)> FilterHeader;
+	void setFilterHeader(const FilterHeader &filter)
+	{
+		_filter = filter;
+	}
+	
+	const FilterHeader &filterHeader() const
+	{
+		return _filter;
+	}
 
 	void recalculateResult();
 	void calculateInverse();
 private:
 	Eigen::MatrixXf matrix(Data *const &data);
+	FilterHeader _filter{};
 
 	PCA::SVD _svd{};
 	PCA::MatrixType _type = PCA::Correlation;

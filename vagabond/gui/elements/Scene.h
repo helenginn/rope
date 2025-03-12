@@ -3,6 +3,7 @@
 #ifndef __practical__Scene__
 #define __practical__Scene__
 
+#include <functional>
 #include "SnowGL.h"
 #include "SDL2/SDL.h"
 #include "ButtonResponder.h"
@@ -50,7 +51,13 @@ public:
 		_title = title;
 	}
 
-	void show();
+	void show(bool permanent = false);
+	
+	const bool &isPermanent() const
+	{
+		return _permanent;
+	}
+
 	void queueToShow();
 	void showBackButton();
 	void hideBackButton();
@@ -66,6 +73,10 @@ public:
 	virtual void keyPressEvent(SDL_Keycode pressed);
 
 	virtual void back(int num = 0);
+	void setBackJob(const std::function<void()> &backJob)
+	{
+		_backJob = backJob;
+	}
 	void buttonPressed(std::string tag, Button *button);
 	
 	virtual const bool hasIndexedObjects() const
@@ -102,6 +113,8 @@ protected:
 	TextButton *_info = nullptr;
 	Text *_titleText = nullptr;
 	
+	std::function<void()> _backJob{};
+	
 	SDL_Cursor *_cursor = nullptr;
 
 	int _lastIdx;
@@ -110,6 +123,7 @@ protected:
 	bool _expired = false;
 	bool _mouseDown = false;
 	bool _mustRefresh = false;
+	bool _permanent = false;
 	static std::string _defaultBg;
 };
 

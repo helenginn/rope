@@ -16,28 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SavedSpace.h"
-#include "Metadata.h"
+#ifndef __vagabond__RegionRuleView__
+#define __vagabond__RegionRuleView__
 
-SavedSpace SavedSpace::_defaultSpace{};
+#include <vagabond/gui/elements/ListView.h>
 
-SavedSpace::SavedSpace()
+class Entity;
+class RegionManager;
+
+class RegionRuleView : public ListView
 {
+public:
+	RegionRuleView(Scene *prev, Entity *entity);
 
-}
+	virtual void setup();
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
+private:
+	Entity *_entity{};
+	RegionManager *_manager{};
+};
 
-void SavedSpace::addAssociatedMetadata(Metadata *metadata)
-{
-	if (!_metadata)
-	{
-		_metadata = new Metadata();
-	}
-
-	*_metadata += *metadata;
-}
-
-void do_on_all_spaces(Entity *entity, 
-                      const std::function<void(RopeSpaceItem *)> &job)
-{
-
-}
+#endif

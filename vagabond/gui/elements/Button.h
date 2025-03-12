@@ -19,14 +19,14 @@ public:
 	
 	static std::string tagEnd(std::string tag, std::string prefix);
 
-	void setReturnTag(std::string tag)
+	void setHoverJob(const std::function<void()> &job)
 	{
-		_tag = tag;
+		_hoverJob = job;
 	}
 	
-	void setReturnObject(void *ptr)
+	const std::function<void()> &hoverJob() const
 	{
-		_object = ptr;
+		return _hoverJob;
 	}
 	
 	void setReturnJob(const std::function<void()> &job)
@@ -37,6 +37,16 @@ public:
 	const std::function<void()> &returnJob() const
 	{
 		return _returnJob;
+	}
+	
+	void setReturnTag(std::string tag)
+	{
+		_tag = tag;
+	}
+	
+	void setReturnObject(void *ptr)
+	{
+		_object = ptr;
 	}
 	
 	void *returnObject()
@@ -87,6 +97,7 @@ protected:
 private:
 	void *_object = nullptr;
 	std::function<void()> _returnJob{};
+	std::function<void()> _hoverJob{};
 	std::string _tag;
 	bool _left = true;
 

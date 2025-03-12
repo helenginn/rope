@@ -19,34 +19,45 @@
 #include "AskMultipleChoice.h"
 #include "TextButton.h"
 
-AskMultipleChoice::AskMultipleChoice(Scene *scene, std::string text,
-                                     std::string tag, ButtonResponder *sender) :
-Modal(scene, 0.6, 0.4)
+AskMultipleChoice::AskMultipleChoice(Scene *scene, std::string text, bool cancel)
+: Modal(scene, 0.6, 0.4)
 {
 	Text *t = new Text(text);
 	t->resize(0.8);
 	t->setCentre(0.5, 0.35);
 	addObject(t);
 
-	_sender = sender;
-	_tag = tag;
-
 	setDismissible(false);
+	
+	if (cancel)
+	{
+		TextButton *tb = new TextButton("Cancel", this);
+		tb->resize(0.8);
+		auto hide_modal = [this]() { hide(); };
+
+		tb->setReturnJob(hide_modal);
+		tb->setLeft(0.35, 0.63);
+		addObject(tb);
+	}
 }
 
-void AskMultipleChoice::addChoice(std::string text, std::string tag)
+void AskMultipleChoice::addChoice(const std::string &text, 
+                                  const std::function<void()> &job)
 {
 	TextButton *tb = new TextButton(text, this);
 	tb->resize(0.8);
-	tb->setReturnTag(tag);
+	_jobs[text] = job;
+
+	auto hide_and_job = [this, text]()
+	{
+		hide();
+		_jobs[text]();
+	};
+
+	tb->setReturnJob(hide_and_job);
 	tb->setLeft(0.35, _top);
 	addObject(tb);
 	
 	_top += 0.07;
 }
 
-void AskMultipleChoice::buttonPressed(std::string tag, Button *button)
-{
-	hide();
-	_sender->buttonPressed(_tag + "_" + tag);
-}

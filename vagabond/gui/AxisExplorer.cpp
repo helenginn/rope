@@ -161,11 +161,28 @@ void AxisExplorer::setupSlider()
 	addObject(s);
 }
 
+RTAngles AxisExplorer::filteredAngles()
+{
+	RTAngles angles = _rawAngles;
+
+	for (int i = 0; i < angles.size(); i++)
+	{
+		if (!_cluster->filterHeader()(i))
+		{
+			angles.storage(i) = 0;
+		}
+	}
+
+	return angles;
+}
+
 void AxisExplorer::adjustTorsions()
 {
 	Entity *entity = _instance->entity();
 	Torsion2Atomic t2a(entity, _cluster, _tData, _instance);
-	_movement = t2a.convertAnglesSimple(_instance, _rawAngles);
+	RTAngles angles = filteredAngles();
+
+	_movement = t2a.convertAnglesSimple(_instance, angles);
 	_movement.attachInstance(_instance);
 	_displayTargets = true;
 	_showingAtomic = true;
@@ -192,7 +209,7 @@ void AxisExplorer::supplyTorsions(CoordManager *manager)
 	BondSequenceHandler *sequences = _resources.sequences;
 	const std::vector<Parameter *> &params =
 	sequences->torsionBasis()->parameters();
-	RTAngles filtered = _rawAngles;
+	RTAngles filtered = filteredAngles();
 	filtered.attachInstance(_instance);
 	filtered.filter_according_to(params);
 
@@ -530,7 +547,8 @@ void AxisExplorer::setupColours()
 		a->setAddedColour(0.f);
 	}
 	
-	setupColoursForList(_rawAngles);
+	RTAngles filtered = filteredAngles();
+	setupColoursForList(filtered);
 }
 
 void AxisExplorer::setupColourLegend()

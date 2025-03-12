@@ -94,10 +94,7 @@ public:
 		_md = md;
 	}
 	
-	void setMustCluster()
-	{
-		_mustCluster = true;
-	}
+	void setMustCluster(bool recursive = false);
 	
 	Axes *createReference(Instance *inst);
 	RopeSpaceItem *branchFromRule(Rule *rule, bool inverse);
@@ -107,6 +104,7 @@ public:
 	
 	size_t selectedCount();
 	void prepareCluster();
+	std::function<bool(int)> setupResidueFilter();
 	virtual void sendObject(std::string tag, void *object);
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();

@@ -1,0 +1,155 @@
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
+
+#include "RegionMenu.h"
+#include "RegionRuleView.h"
+#include "EntitySequenceView.h"
+#include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskMultipleChoice.h>
+#include <vagabond/core/Entity.h>
+
+RegionRuleView::RegionRuleView(Scene *prev, Entity *entity)
+: ListView(prev), _entity(entity), _manager(&_entity->regionManager())
+{
+
+}
+
+void RegionRuleView::setup()
+{
+	std::string title = _entity->name() + " active regions";
+	addTitle(title);
+	
+	auto show_sequence = [this]()
+	{
+		EntitySequenceView *esv = nullptr;
+		Sequence *seq = _entity->sequence();
+		esv = new EntitySequenceView(this, seq, true);
+		esv->setEntity(_entity);
+		esv->show();
+	};
+
+	TextButton *seeRegions = new TextButton("define regions", this);
+	seeRegions->setCentre(0.5, 0.16);
+	seeRegions->setReturnJob(show_sequence);
+	addObject(seeRegions);
+	
+	ListView::setup();
+}
+
+size_t RegionRuleView::lineCount()
+{
+	return _manager->ruleCount() + 1;
+}
+
+Renderable *RegionRuleView::getLine(int i)
+{
+	Box *b = new Box();
+	
+	if (i < _manager->ruleCount())
+	{
+		RegionManager::RegionRule *rule = _manager->rule(i);
+		
+		auto ask_to_toggle = [this, rule]()
+		{
+			auto make_toggle_type = [this, rule](bool enable)
+			{
+				return [this, rule, enable]()
+				{
+					rule->enable = enable;
+					refresh();
+				};
+			};
+
+			AskMultipleChoice *amc = 
+			new AskMultipleChoice(this, "Residues in this region '"
+			                      + rule->id + "' should be", true);
+			amc->addChoice("enabled", make_toggle_type(true));
+			amc->addChoice("disabled", make_toggle_type(false));
+			setModal(amc);
+		};
+
+		TextButton *t = new TextButton(rule->desc(), this);
+		t->setLeft(0.f, 0.f);
+		t->setReturnJob(ask_to_toggle);
+		b->addObject(t);
+		
+		if (i > 0)
+		{
+			ImageButton *ib = new ImageButton("assets/images/cross.png", this);
+			ib->resize(0.06);
+			ib->setRight(0.65, 0.0);
+
+			auto ask_to_delete = [this, rule]()
+			{
+				auto delete_region = [this, rule]()
+				{
+					_manager->deleteRule(*rule);
+					refresh();
+				};
+
+				AskYesNo *ayn = new AskYesNo(this, "Do you want to delete "
+				                             "rule for region '"
+				                             + rule->id + "'?", "", this);
+				ayn->addJob("yes", delete_region);
+				setModal(ayn);
+			};
+
+			ib->setReturnJob(ask_to_delete);
+			b->addObject(ib);
+		}
+	}
+	else
+	{
+		auto ask_for_pick = [this]()
+		{
+			auto acquire_pick = [this](Region &r)
+			{
+				auto make_choose_type = [this, &r](bool enable)
+				{
+					return [this, &r, enable]()
+					{
+						_manager->addRule(&r, enable);
+						refresh();
+					};
+				};
+
+				AskMultipleChoice *amc = 
+				new AskMultipleChoice(this, "Residues in this region '"
+				                      + r.id() + "' should be", true);
+				amc->addChoice("enabled", make_choose_type(true));
+				amc->addChoice("disabled", make_choose_type(false));
+				setModal(amc);
+			};
+
+			RegionMenu *menu = new RegionMenu(this, _manager);
+			menu->setPickJob(acquire_pick);
+			menu->show();
+		};
+
+		TextButton *t = new TextButton("(+) new region rule", this);
+		t->setLeft(0.f, 0.f);
+		t->setReturnJob(ask_for_pick);
+		b->addObject(t);
+	}
+
+	return b;
+}
+

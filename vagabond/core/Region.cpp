@@ -16,28 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SavedSpace.h"
-#include "Metadata.h"
+#include "Region.h"
 
-SavedSpace SavedSpace::_defaultSpace{};
-
-SavedSpace::SavedSpace()
+Region::Region()
 {
 
 }
 
-void SavedSpace::addAssociatedMetadata(Metadata *metadata)
+void Region::housekeeping()
 {
-	if (!_metadata)
-	{
-		_metadata = new Metadata();
-	}
 
-	*_metadata += *metadata;
 }
 
-void do_on_all_spaces(Entity *entity, 
-                      const std::function<void(RopeSpaceItem *)> &job)
+std::string Region::rangeDesc()
 {
+	return _start.str() + "-" + _end.str();
+}
 
+bool Region::covers(const ResidueId &other)
+{
+	return (other >= _start && other <= _end);
 }

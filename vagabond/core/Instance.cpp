@@ -181,17 +181,6 @@ Atom *Instance::atomByIdName(const ResidueId &id, std::string name,
 	return p;
 }
 
-Entity *Instance::entity()
-{
-	if (_entity != nullptr)
-	{
-		return _entity;
-	}
-	
-	_entity = Environment::entityManager()->entity(_entity_id);
-	return _entity;
-}
-
 void Instance::insertTransforms(AtomContent *atoms)
 {
 	std::map<std::string, glm::mat4x4>::iterator it;

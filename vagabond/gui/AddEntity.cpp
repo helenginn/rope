@@ -28,6 +28,7 @@
 #include <math.h>
 #include "AddEntity.h"
 #include "ChooseEntity.h"
+#include "EntitySequenceView.h"
 #include "CalculateMetadata.h"
 
 #include <vagabond/core/Environment.h>
@@ -36,8 +37,6 @@
 #include <vagabond/core/Chain.h>
 #include <vagabond/core/Entity.h>
 
-
-#include <vagabond/gui/DistanceMaker.h>
 #include <vagabond/gui/DisplayOptions.h>
 #include <vagabond/gui/FixIssuesView.h>
 #include <vagabond/gui/ConfSpaceView.h>
@@ -378,7 +377,7 @@ void AddEntity::loadConfSpaceView(std::string suffix)
 		view->setMode(rope::ConfBFactor);
 	}
 
-	view->show();
+	view->show(true);
 }
 
 void AddEntity::serialRefinement()
@@ -417,7 +416,7 @@ void AddEntity::buttonPressed(std::string tag, Button *button)
 	}
 	else if (tag == "sequence" && _existing)
 	{
-		DistanceMaker *view = new DistanceMaker(this, _obj.sequence());
+		EntitySequenceView *view = new EntitySequenceView(this, _obj.sequence());
 		view->setEntity(&_obj);
 		view->show();
 	}

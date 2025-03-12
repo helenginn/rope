@@ -103,7 +103,9 @@ SimpleWeights obtain_weights(TorsionData *data, ClusterSVD *tc,
 		std::vector<float> chosen;
 		data->convertToComparable(entry, chosen);
 
-		float cc = TorsionData::correlation_between(compare, chosen);
+		float cc = TorsionData::correlation_between(compare, chosen, 
+		                                            tc->filterHeader(),
+		                                            data->comparable_size());
 
 		weight.scores[instance] = cc;
 	}
@@ -346,6 +348,7 @@ RAMovement Torsion2Atomic::convertAnglesSimple(Instance *ref,
 		                         return weight(instance);
 	                          },
 	                          _pData, 1, true);
+	
 	
 	return results[0];
 }

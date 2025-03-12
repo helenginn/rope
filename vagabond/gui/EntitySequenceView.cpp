@@ -16,8 +16,10 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Region.h"
 #include "AtomRecall.h"
-#include "DistanceMaker.h"
+#include "RegionMenu.h"
+#include "EntitySequenceView.h"
 #include <vagabond/core/Residue.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Entity.h>
@@ -25,18 +27,25 @@
 #include <vagabond/core/Environment.h>
 #include <vagabond/gui/MetadataView.h>
 #include <vagabond/gui/VagWindow.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/AskForText.h>
 #include <iostream>
 
-DistanceMaker::DistanceMaker(Scene *prev, IndexedSequence *sequence)
+EntitySequenceView::EntitySequenceView(Scene *prev, IndexedSequence *sequence,
+bool define_only)
 : PickAtomFromSequence(prev, sequence)
 {
-
+	_defineOnly = define_only;
+	if (_defineOnly)
+	{
+		_mode = Defining;
+	}
 }
 
-void DistanceMaker::wipe()
+void EntitySequenceView::wipe()
 {
 	if (_modeButton != nullptr)
 	{
@@ -54,42 +63,97 @@ void DistanceMaker::wipe()
 	_stage = Nothing;
 }
 
-void DistanceMaker::angleButton()
+ImageButton *EntitySequenceView::addButton(const std::string &image,
+                                           const EntitySequenceView::Mode 
+                                           &mode, float resize, 
+                                           const std::string &alt_tag)
 {
 	wipe();
 
-	ImageButton *angle = new ImageButton("assets/images/protractor.png", this);
-	angle->resize(0.06);
-	angle->setCentre(0.9, 0.1);
-	angle->setReturnTag("angle");
-	angle->addAltTag("measuring angles");
-	addObject(angle);
-	_modeButton = angle;
-	_mode = Angle;
+	ImageButton *b = new ImageButton(image, this);
+	b->resize(resize);
+	b->setCentre(0.9, 0.1);
+	b->addAltTag(alt_tag);
+	addObject(b);
+	_modeButton = b;
+	_mode = mode;
+	refresh();
+
+	return b;
 }
 
-void DistanceMaker::distanceButton()
+void EntitySequenceView::angleButton()
 {
-	wipe();
-
-	ImageButton *ruler = new ImageButton("assets/images/ruler.png", this);
-	ruler->resize(0.03);
-	ruler->setReturnTag("ruler");
-	ruler->addAltTag("measuring distances");
-	ruler->setCentre(0.9, 0.1);
-	addObject(ruler);
-	_modeButton = ruler;
-	_mode = Ruler;
+	ImageButton *b = addButton("assets/images/protractor.png", Angle,
+	                           0.06, "measuring angles");
+	b->setReturnJob([this]() { definingButton(); });
 }
 
-void DistanceMaker::setup()
+void EntitySequenceView::definingButton()
+{
+	ImageButton *b = addButton("assets/images/protein-coloured.png", Defining,
+	                           0.08, "defining regions");
+	b->setReturnJob([this]()
+	{
+		if (!_defineOnly)
+		{
+			distanceButton();
+		}
+    });
+	
+	int num = _entity->regionManager().objectCount();
+	if (num > 0)
+	{
+		std::string text = "See " + std::to_string(num) + " region";
+		if (num > 1) { text += "s"; }
+		TextButton *see = new TextButton(text, this);
+		see->setCentre(0.9, 0.16);
+		see->resize(0.6);
+		auto make_menu = [this]()
+		{
+			auto back_refresh = [this]()
+			{
+				definingButton();
+			};
+
+			RegionMenu *menu = new RegionMenu(this, &_entity->regionManager());
+			menu->setBackJob(back_refresh);
+			menu->show();
+		};
+		see->setReturnJob(make_menu);
+		b->addObject(see);
+	}
+}
+
+void EntitySequenceView::distanceButton()
+{
+	ImageButton *b = addButton("assets/images/ruler.png", Ruler,
+	                           0.03, "measuring distances");
+	b->setReturnJob([this]() { angleButton(); });
+}
+
+void EntitySequenceView::setup()
 {
 	SequenceView::setup();
 
-	distanceButton();
+	_defineOnly ? definingButton() : distanceButton();
 }
 
-void DistanceMaker::handleAtomName(std::string name)
+void EntitySequenceView::handleResidue(Button *button, Residue *r)
+{
+	if (_mode != Defining)
+	{
+		PickAtomFromSequence::handleResidue(button, r);
+	}
+	else
+	{
+		_curr = r;
+		_candidate = "";
+		confirmAtom();
+	}
+}
+
+void EntitySequenceView::handleAtomName(std::string name)
 {
 	_candidate = name;
 	std::string mesg;
@@ -134,13 +198,17 @@ void DistanceMaker::handleAtomName(std::string name)
 
 }
 
-void DistanceMaker::confirmAtom()
+void EntitySequenceView::confirmAtom()
 {
 	if (_stage == Nothing)
 	{
 		_first = _candidate;
 		_aRes = _curr;
 		_stage = ChosenFirst;
+		if (_mode == Defining)
+		{
+			refresh();
+		}
 	}
 	else if (_stage == ChosenFirst)
 	{
@@ -151,6 +219,10 @@ void DistanceMaker::confirmAtom()
 		if (_mode == Ruler)
 		{
 			calculateDistance();
+		}
+		else if (_mode == Defining)
+		{
+			defineRegion();
 		}
 	}
 	else if (_stage == ChosenSecond)
@@ -165,7 +237,7 @@ void DistanceMaker::confirmAtom()
 	}
 }
 
-void DistanceMaker::prepareAngles()
+void EntitySequenceView::prepareAngles()
 {
 	Atom3DPosition one(_aRes, _first);
 	Atom3DPosition two(_bRes, _second);
@@ -182,10 +254,22 @@ void DistanceMaker::prepareAngles()
 
 	Metadata *md = _entity->funcBetweenAtoms({get_first, get_second, get_third},
 	                                         header, &angle_between, closest_to(0));
-	_result = md;
+	queueMetadataForShow(md);
 }
 
-void DistanceMaker::prepareDistances()
+void EntitySequenceView::queueMetadataForShow(Metadata *md)
+{
+	auto display_metadata = [this, md]()
+	{
+		MetadataView *mv = new MetadataView(this, md);
+		mv->show();
+		_stage = Nothing;
+	};
+	
+	addMainThreadJob(display_metadata);
+}
+
+void EntitySequenceView::prepareDistances()
 {
 	Atom3DPosition one(_aRes, _first);
 	Atom3DPosition two(_bRes, _second);
@@ -199,10 +283,10 @@ void DistanceMaker::prepareDistances()
 
 	Metadata *md = _entity->funcBetweenAtoms({get_first, get_second}, header,
 	                                         &distance_between, closest_to(0));
-	_result = md;
+	queueMetadataForShow(md);
 }
 
-void DistanceMaker::stop()
+void EntitySequenceView::stop()
 {
 	if (_worker != nullptr)
 	{
@@ -212,48 +296,27 @@ void DistanceMaker::stop()
 	}
 }
 
-void DistanceMaker::calculateDistance()
+void EntitySequenceView::calculateDistance()
 {
 	std::string title = "Calculating distances...";
 	VagWindow::window()->requestProgressBar(_entity->modelCount(), title);
 	stop();
 
-	_worker = new std::thread(&DistanceMaker::prepareDistances, this);
+	_worker = new std::thread(&EntitySequenceView::prepareDistances, this);
 }
 
-void DistanceMaker::calculateAngle()
+void EntitySequenceView::calculateAngle()
 {
 	std::string title = "Calculating angles...";
 	VagWindow::window()->requestProgressBar(_entity->modelCount(), title);
 	stop();
 
-	_worker = new std::thread(&DistanceMaker::prepareAngles, this);
+	_worker = new std::thread(&EntitySequenceView::prepareAngles, this);
 }
 
 
-void DistanceMaker::doThings()
+void EntitySequenceView::buttonPressed(std::string tag, Button *button)
 {
-	if (_result != nullptr)
-	{
-		MetadataView *mv = new MetadataView(this, _result);
-		mv->show();
-		_stage = Nothing;
-		_result = nullptr;
-	}
-}
-
-void DistanceMaker::buttonPressed(std::string tag, Button *button)
-{
-	if (tag == "ruler")
-	{
-		angleButton();
-	}
-
-	if (tag == "angle")
-	{
-		distanceButton();
-	}
-
 	std::string atom = Button::tagEnd(tag, "atomname_");
 	
 	if (atom.length())
@@ -263,20 +326,87 @@ void DistanceMaker::buttonPressed(std::string tag, Button *button)
 	}
 	
 	std::string yes = Button::tagEnd(tag, "yes_");
-	std::cout << "Yes: " << yes << std::endl;
 	
 	if (yes == "confirm_atom")
 	{
 		confirmAtom();
 		return;
 	}
-
+	
 	SequenceView::buttonPressed(tag, button);
 }
 
-void DistanceMaker::setEntity(Entity *ent)
+void EntitySequenceView::setEntity(Entity *ent)
 {
 	_entity = Environment::entityManager()->entity(ent->name());
-	std::cout << "Entity ptr: " << _entity << std::endl;
 
 }
+
+void EntitySequenceView::addExtras(TextButton *t, Residue *r) 
+{
+	PickAtomFromSequence::addExtras(t, r);
+	
+	auto hover_job = [this, r]()
+	{
+		if (_stage == ChosenFirst && _mode == Defining)
+		{
+			_bRes = r;
+			refresh();
+		}
+	};
+
+	t->setHoverJob(hover_job);
+
+	if (_mode == Defining && _aRes && _bRes && 
+	    r->id() >= _aRes->id() && r->id() <= _bRes->id())
+	{
+		t->resize(1.2);
+	}
+}
+
+void EntitySequenceView::defineRegion()
+{
+	std::string str = "Name for new region, residues " + 
+	_aRes->id().str() + "-" + _bRes->id().str();
+	
+	auto handle_name = [this](std::string name)
+	{
+		makeRegion(name, _aRes, _bRes);
+		definingButton();
+	};
+	
+	auto cancel_name = [this]()
+	{
+		_aRes = nullptr;
+		_bRes = nullptr;
+		_stage = Nothing;
+		refresh();
+	};
+
+	AskForText *aft = new AskForText(this, str, "name_region",
+	                                 this, TextEntry::Id);
+	aft->setReturnJob(handle_name);
+	aft->setCancelJob(cancel_name);
+	setModal(aft);
+}
+
+void EntitySequenceView::makeRegion(const std::string &name,
+                                    Residue *a, Residue *b)
+{
+	Region reg;
+	reg.setEntityId(_entity->name());
+	reg.setId(name);
+	reg.setRange(a->id(), b->id());
+
+	try
+	{
+		_entity->regionManager().insertIfUnique(reg);
+		definingButton();
+	}
+	catch (const std::runtime_error &err)
+	{
+		BadChoice *bc = new BadChoice(this, err.what());
+		setModal(bc);
+	}
+}
+
