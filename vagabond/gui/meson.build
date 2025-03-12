@@ -68,6 +68,8 @@ guifiles = [
 'GuiRepresentation.cpp',
 'GuiRibbon.cpp',
 'GuiRefls.cpp',
+'Graph.h',
+'Graph.cpp',
 'IconLegend.cpp',
 'LineSeries.cpp',
 'LineSeriesOptions.cpp',
