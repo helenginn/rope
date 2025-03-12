@@ -33,9 +33,11 @@ public:
 	void setup(float width, float height);
 private:
 	void addAxes(float width, float height);
+	void addAxisLabels(int axis, float width, float height);
+	void determineLimits();
 
 	std::map<int, std::vector<glm::vec2>> _data;
-	std::map<char, glm::vec2> _axisRanges;
+	std::map<int, glm::vec2> _axisRanges;
 };
 
 #endif
