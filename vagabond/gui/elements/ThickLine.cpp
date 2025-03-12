@@ -38,6 +38,7 @@ ThickLine::ThickLine(bool proj, const std::string &filename)
 	}
 
 	setFragmentShaderFile("assets/shaders/axes.fsh");
+	clearVertices();
 }
 
 void ThickLine::addThickLine(glm::vec3 start, glm::vec3 dir, glm::vec3 colour)
