@@ -41,9 +41,19 @@ public:
 		_normalise = other._normalise;
 	}
 
-	virtual std::string csvFirstLine()
+	std::vector<std::string> columns_for_entry_in_csv_file()
 	{
-		return "residue_id,quadratic,cubic";
+		return {"First harmonic (degrees)", "Second harmonic (degrees)"};
+	}
+	
+	virtual std::string y_axis_label()
+	{
+		return "Harmonic perturbation (degrees)";
+	}
+
+	virtual std::string header_for_entry_in_csv_file()
+	{
+		return "Torsion ID";
 	}
 
 	virtual ~PathData();

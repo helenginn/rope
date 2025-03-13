@@ -47,9 +47,19 @@ public:
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 	virtual void addMetadataArray(HasMetadata *hmd, RTAngles next);
 
-	virtual std::string csvFirstLine()
+	std::vector<std::string> columns_for_entry_in_csv_file()
 	{
-		return "torsion_id,torsion(degrees)";
+		return {"Torsion angle (degrees)"};
+	}
+
+	virtual std::string y_axis_label()
+	{
+		return "Torsion angle (degrees)";
+	}
+
+	virtual std::string header_for_entry_in_csv_file()
+	{
+		return "Torsion ID";
 	}
 
 	virtual const int groupCount() const
