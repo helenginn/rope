@@ -42,11 +42,24 @@ public:
 		_objects = other._objects;
 	}
 
-	virtual std::string csvFirstLine()
+	std::vector<std::string> columns_for_entry_in_csv_file()
 	{
-		return "atom_id,delta_position_x,delta_position_y,delta_position_z";
+		return 
+		{"Delta position (Ang, x)", 
+		 "Delta position (Ang, y)", 
+		 "Delta position (Ang, z)"};
 	}
 	
+	virtual std::string y_axis_label()
+	{
+		return "Delta position (Ang)";
+	}
+
+	virtual std::string header_for_entry_in_csv_file()
+	{
+		return "Atom ID";
+	}
+
 	virtual ~PositionData();
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 private:

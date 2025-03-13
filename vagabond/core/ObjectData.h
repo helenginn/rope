@@ -62,7 +62,11 @@ public:
 
 	virtual void write_data(std::string filename);
 	
-	virtual std::string csvFirstLine() = 0;
+	std::string csvFirstLine();
+	
+	virtual std::string header_for_entry_in_csv_file() = 0;
+	virtual std::vector<std::string> columns_for_entry_in_csv_file() = 0;
+	virtual std::string y_axis_label() = 0;
 
 	void rawVectorToCSV(Cluster *cluster, int axis_idx, std::ostream &ss);
 	

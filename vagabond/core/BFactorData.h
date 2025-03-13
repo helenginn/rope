@@ -43,11 +43,21 @@ public:
 		_objects = other._objects;
 	}
 
-	virtual std::string csvFirstLine()
+	std::vector<std::string> columns_for_entry_in_csv_file()
 	{
-		return "atom_id,b_factor_norm";
+		return {"Normalised B factor"};
 	}
-	
+
+	virtual std::string y_axis_label()
+	{
+		return "Normalised B factor";
+	}
+
+	virtual std::string header_for_entry_in_csv_file()
+	{
+		return "Atom ID";
+	}
+
 	virtual ~BFactorData();
 	virtual void addMetadataArray(HasMetadata *hmd, Array next);
 

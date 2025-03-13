@@ -204,3 +204,18 @@ void ObjectData::doRequest(Axes *axes, const std::string &request)
 	_doRequest(axes, request);
 
 }
+
+std::string ObjectData::csvFirstLine()
+{
+	std::string str = header_for_entry_in_csv_file();
+
+	std::vector<std::string> columns = columns_for_entry_in_csv_file();
+	
+	for (std::string &col : columns)
+	{
+		str += "," + col;
+	}
+	
+	return str;
+}
+
