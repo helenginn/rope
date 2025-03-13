@@ -129,6 +129,8 @@ guifiles = [
 'TableView.h',
 'TickList.cpp',
 'TickList.h',
+'TorsionAxisView.cpp',
+'TorsionAxisView.h',
 'Toolkit.cpp',
 'VagWindow.cpp',
 'VaryColourOptions.cpp',

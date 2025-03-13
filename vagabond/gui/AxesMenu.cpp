@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "AxesMenu.h"
+#include "TorsionAxisView.h"
 #include <vagabond/c4x/ClusterSVD.h>
 #include <vagabond/core/HasMetadata.h>
 #include <vagabond/core/TorsionData.h>
@@ -104,21 +105,18 @@ Renderable *AxesMenu::getLine(int i)
 	{
 		ImageButton *fb = ImageButton::arrow(-90., this);
 		fb->setLeft(0.7, 0.0);
-		fb->setReturnTag("export_" + i_to_str(i));
+		
+		auto show_axis_view = [this, i]()
+		{
+			TorsionAxisView *tav = new TorsionAxisView(this, _data,
+			                                           _cluster, i);
+			tav->show();
+		};
+		fb->setReturnJob(show_axis_view);
 		b->addObject(fb);
 	}
 	
 	return b;
-}
-
-void AxesMenu::supplySingleAxis(int i)
-{
-	_csv = "";
-	_csv += _data->csvFirstLine() + "\n";
-	
-	std::ostringstream ss;
-	_data->rawVectorToCSV(_cluster, i, ss);
-	_csv += ss.str();
 }
 
 void AxesMenu::supplyMainPlot()
@@ -142,15 +140,7 @@ void AxesMenu::supplyMainPlot()
 
 void AxesMenu::supplyCSV(std::string indicator)
 {
-	if (indicator == "")
-	{
-		supplyMainPlot();
-	}
-	else
-	{
-		int axis = atoi(indicator.c_str());
-		supplySingleAxis(axis);
-	}
+	supplyMainPlot();
 }
 
 void AxesMenu::buttonPressed(std::string tag, Button *button)

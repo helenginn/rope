@@ -16,49 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AxesMenu__
-#define __vagabond__AxesMenu__
+#ifndef __vagabond__TorsionAxisView__
+#define __vagabond__TorsionAxisView__
 
-#include <vagabond/gui/elements/ListView.h>
+#include <vagabond/gui/elements/Scene.h>
 #include "ExportsCSV.h"
 
 class ObjectData;
 class ClusterSVD;
+class Graph;
 
-class AxesMenu : public ListView, public ExportsCSV
+class TorsionAxisView : public Scene, public ExportsCSV
 {
 public:
-	AxesMenu(Scene *prev);
-	
-	void setEntityId(std::string entity_id)
-	{
-		_entity_id = entity_id;
-	}
+	TorsionAxisView(Scene *prev, ObjectData *data, 
+	                ClusterSVD *cluster, int axis);
 
-	void setCluster(ClusterSVD *cluster, ObjectData *data)
-	{
-		_cluster = cluster;
-		_data = data;
-	}
-
-	virtual size_t lineCount();
-	virtual Renderable *getLine(int i);
-
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
+	void supplyCSV(std::string indicator);
 
 	virtual void setup();
+	virtual void buttonPressed(std::string tag, Button *button);
 private:
-	ClusterSVD *_cluster = nullptr;
-	ObjectData *_data = nullptr;
-	std::string _entity_id;
+	void loadIntoGraph(Graph *graph);
 
-	virtual void supplyCSV(std::string indicator = "");
-	virtual void supplyModal(Modal *m)
-	{
-		setModal(m);
-	}
-	
-	void supplyMainPlot();
+	ObjectData *_data{};
+	ClusterSVD *_cluster{};
+
+	int _axis{};
 };
 
 #endif
