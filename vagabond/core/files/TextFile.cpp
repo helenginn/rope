@@ -57,9 +57,8 @@ File::Type TextFile::cursoryLook()
 		return Nothing;
 	}
 	
-	std::vector<std::string> headers = split(line, ' ');
-	
-
+	char delimiter = (line.find('\t') != std::string::npos) ? '\t' : ' ';
+	std::vector<std::string> headers = split(line, delimiter);
 	for (std::string &header : headers)
 	{
 		trim(header);
@@ -78,14 +77,18 @@ File::Type TextFile::cursoryLook()
 
 void TextFile::processLine(std::string line)
 {
-	std::vector<std::string> components = split(line, ' ');
+	// std::vector<std::string> components = split(line, '\t');
+	char delimiter = (line.find('\t') != std::string::npos) ? '\t' : ' ';
+	std::vector<std::string> components = split(line, delimiter);
+
+
 	
 	HBondData::KeyValues kvs;
 	for (size_t i = 0; i < components.size() && i < _headers.size(); i++)
 	{
 		std::string h = _headers[i];
 		
-		if (components[i].length())
+		if (components[i].length() == 0)
 		{
 			defenestrate(components[i]);
 			trim(components[i]);
@@ -105,8 +108,8 @@ void TextFile::processLine(std::string line)
 
 void TextFile::processHeaders(std::string line)
 {
-	_headers = split(line, ' ');
-
+	char delimiter = (line.find('\t') != std::string::npos) ? '\t' : ' ';
+	_headers = split(line, delimiter);
 	for (std::string &h : _headers)
 	{
 		defenestrate(h);

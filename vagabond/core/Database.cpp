@@ -173,7 +173,6 @@ TabulatedData *Database::asModelData()
 
 TabulatedData *Database::asHBondData()
 {
-	std::cout << "In asHBondData" << std::endl;
 	OpSet<std::string> hBond = values_for(_data, "H-bond_ID");
 	return asData(hBond.toVector());
 }
