@@ -22,22 +22,39 @@
 #include <vagabond/gui/elements/Box.h>
 #include <map>
 
+class ThickLine;
+
 class Graph : public Box
 {
 public:
 	Graph();
 
-	void addDataPoint(int series, float x, float y);
+	void addPoint(int series, float x, float y);
 	void setRange(char axis, float min, float max);
 	
+	// width and height of box contents.
 	void setup(float width, float height);
+	void addToGraphPosition(float cx, float cy);
+	
+	void setSeriesColour(int series, glm::vec3 colour);
+	
+	void setAxisLabel(char axis, std::string name);
 private:
 	void addAxes(float width, float height);
+	void addAxisTicks(int axis, float width, float height);
 	void addAxisLabels(int axis, float width, float height);
+	void addLines(float width, float height);
+	void addLine(float width, float height, int series, 
+	             std::vector<glm::vec2> &line);
 	void determineLimits();
+	void loadLine(ThickLine *tl, glm::vec3 &start, const glm::vec3 &move,
+	              glm::vec3 colour = {0.2, 0.2, 0.2});
 
 	std::map<int, std::vector<glm::vec2>> _data;
 	std::map<int, glm::vec2> _axisRanges;
+	
+	std::map<int, std::string> _labels;
+	std::map<int, glm::vec3> _colours;
 };
 
 #endif
