@@ -17,10 +17,12 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Graph.h"
-#include <vagabond/utils/FileReader.h>
+//#include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/ThickLine.h>
 #include <vagabond/gui/elements/Window.h>
 #include <vagabond/gui/elements/Text.h>
+#include <sstream>
+#include <iomanip>
 
 Graph::Graph()
 {
@@ -28,7 +30,7 @@ Graph::Graph()
 
 }
 
-void Graph::addDataPoint(int series, float x, float y)
+void Graph::addPoint(int series, float x, float y)
 {
 	_data[series].push_back({x, y});
 }
@@ -39,39 +41,58 @@ void Graph::setRange(char axis, float min, float max)
 	_axisRanges[num] = {min, max};
 }
 
-void Graph::addAxes(float width, float height)
+void Graph::loadLine(ThickLine *tl, glm::vec3 &start, const glm::vec3 &move,
+                     glm::vec3 colour)
 {
-	auto load_thick_line = [this](ThickLine *tl, glm::vec3 &start,
-	                          const glm::vec3 &move)
-	{
-		int divs = (glm::length(move) / 0.05) + 1;
-		glm::vec3 dir = move / (float)divs;
+	int divs = lrint(glm::length(move) / 0.05);
+	if (divs == 0) divs = 1;
+	float ratio = glm::length(move) / 0.05f;
 
-		for (int i = 0; i <= divs; i++)
+	glm::vec3 dir = move / (float)divs;
+
+	for (int i = 0; i <= divs; i++)
+	{
+		glm::vec3 point = start;
+		tl->addPoint(point, colour);
+		start += dir;
+		
+		// last vertices: to be scaled by ratio if ratio < 1.
+		if (ratio > 1 || tl->vertexCount() < 4)
 		{
-			glm::vec3 point = start;
-			tl->addPoint(point, {0.2, 0.2, 0.2});
-			start += dir;
+			continue;
+		}
+
+		for (int j = tl->vertexCount() - 4; j < tl->vertexCount(); j++)
+		{
+			Vertex v = tl->vertex(j);
+			v.tex[1] *= ratio;
+			v.normal /= ratio;
+			tl->setVertex(j, v); // arrgh something went wrong.
 		}
 		
-		tl->setThickness(0.5 * Window::aspect());
-		addObject(tl);
-	};
-	
+	}
+}
+
+void Graph::addAxes(float width, float height)
+{
 	glm::vec3 start = {-width / 2.f, +height / 2.f, 0};
 	glm::vec3 move_x = {width, 0.f, 0.f};
 	glm::vec3 move_y = {0.f, -height, 0.f};
 
 	glm::vec3 xstart = start;
 	ThickLine *tlx = new ThickLine(false, "assets/images/vertical_line.png");
-	load_thick_line(tlx, xstart, move_x);
+	loadLine(tlx, xstart, move_x);
+	tlx->setThickness(0.5 * Window::aspect());
+	addObject(tlx);
 
 	glm::vec3 ystart = start;
 	ThickLine *tly = new ThickLine(false, "assets/images/vertical_line.png");
-	load_thick_line(tly, ystart, move_y);
+	loadLine(tly, ystart, move_y);
+	tly->setThickness(0.5 * Window::aspect());
+	addObject(tly);
 }
 
-void Graph::addAxisLabels(int axis, float width, float height)
+void Graph::addAxisTicks(int axis, float width, float height)
 {
 	float diff = _axisRanges[axis][1] - _axisRanges[axis][0];
 	float log_diff_b10 = log(diff) / log(10.f);
@@ -93,40 +114,62 @@ void Graph::addAxisLabels(int axis, float width, float height)
 	float log_diff = log(diff) / log(best_log);
 	float mod_bx = floor(log_diff);
 	float total = pow(best_log, mod_bx);
-	float one_tick = total / 5;
 
-	/*
-	std::cout << "diff: " << diff << std::endl;
-	std::cout << "log_diff_b10: " << log_diff_b10 << std::endl;
-	std::cout << "log_diff_b5: " << log_diff_b5 << std::endl;
-	std::cout << "log_diff_b2: " << log_diff_b2 << std::endl;
-	std::cout << "best_log: " << best_log << std::endl;
-	std::cout << "log_diff: " << log_diff << std::endl;
-	std::cout << "mod_bx: " << mod_bx << std::endl;
-	std::cout << "total: " << total << std::endl;
-	std::cout << "tick: " << one_tick << std::endl;
-	std::cout << std::endl;
-	*/
+	float log_min = log(_axisRanges[axis][0]) / log(best_log);
+	float mod_min_bx = floor(log_min);
+	float min = pow(best_log, mod_min_bx);
+	
+	float divide = 5;
+	int best_logi = (long int)lrint(best_log);
+	switch (best_logi)
+	{
+		case 2: divide = 4; break;
+		case 5: divide = 5; break;
+		case 10: divide = 5; break;
+		default: break;
+	}
+
+	float one_tick = total / divide;
+	std::cout << total << " / " << divide << std::endl;
 
 	float xmult = (axis == 0 ? 1 : 0);
 	float ymult = (axis == 1 ? 1 : 0);
 	glm::vec2 start = {-width / 2.f, +height / 2.f};
-	glm::vec2 offset = {-width * 0.1f * ymult, +height * 0.1f * xmult};
+	glm::vec2 offset = {-width * 0.04f * ymult, +height * 0.06f * xmult};
 	glm::vec2 stride = {width, -height};
 	float tick_step = one_tick / diff;
-	std::cout << "tick step " << tick_step << std::endl;
-	stride *= tick_step;
+	divide = floor(diff / one_tick);
+	Renderable::Alignment a{};
+	a = axis == 0 ?  Renderable::Centre : Renderable::Right;
+	
+	float min_tick = std::round(_axisRanges[axis][0] / one_tick) * one_tick;
 
-	for (int i = 0; i <= 5; i++)
+	for (int i = 0; i <= divide; i++)
 	{
-		float val = one_tick * i;
+		float val = one_tick * i + min_tick;
+		float prop = (val - _axisRanges[axis][0]) / diff;
+		if (prop > 1 || prop < 0)
+		{
+			continue;
+		}
+
+		std::ostringstream ss;
+		if (val > 1)
+		{
+			ss << std::defaultfloat << val;
+		}
+		else
+		{
+			ss << std::setprecision(3) << val;
+		}
+		
 		int precision = val < 1 ? 3 : 1;
-		Text *text = new Text(f_to_str(val, precision));
-		glm::vec2 xy = {(stride * (float)i).x * xmult, 
-		                (stride * (float)i).y * ymult};
+		Text *text = new Text(ss.str());
+		glm::vec2 xy = {(stride * prop).x * xmult, 
+		                (stride * prop).y * ymult};
 		xy += start + offset;
-		std::cout << "i: " << i << " " << xy << std::endl;
-		text->setCentre(xy.x, xy.y);
+		text->resize(0.8);
+		text->setArbitrary(xy.x, xy.y, a);
 		addObject(text);
 		
 		Image *tick = new Image("assets/images/little_line.png");
@@ -140,14 +183,31 @@ void Graph::addAxisLabels(int axis, float width, float height)
 		}
 
 		tick->resize(0.02);
-		Renderable::Alignment a{};
-		a = axis == 0 ? 
-		    Renderable::Alignment(Renderable::Centre | Renderable::Top) :
-		    Renderable::Alignment(Renderable::Right | Renderable::Middle);
 		tick->setArbitrary(xy.x - offset.x, xy.y - offset.y, a);
 		addObject(tick);
 	}
-	std::cout << std::endl;
+}
+
+void Graph::addAxisLabels(int axis, float width, float height)
+{
+	if (_labels.count(axis) == 0)
+	{
+		return;
+	}
+
+	std::string &label = _labels[axis];
+
+	float xmult = (axis == 0 ? 1 : 0);
+	float ymult = (axis == 1 ? 1 : 0);
+
+	glm::vec2 start = {-width * 0.5f, +height * 0.7f};
+	glm::vec2 stride = {width * 0.5f * xmult, -height * 1.3f * ymult};
+	
+	glm::vec2 pos = start + stride;
+
+	Text *text = new Text(label);
+	text->setCentre(pos.x, pos.y);
+	addObject(text);
 }
 
 void Graph::determineLimits()
@@ -184,12 +244,84 @@ void Graph::determineLimits()
 	}
 }
 
+void Graph::addLine(float width, float height, int series, 
+                    std::vector<glm::vec2> &line)
+{
+	glm::vec2 start = {-width / 2.f, +height / 2.f};
+	glm::vec2 stride = {width, -height};
+	const float &xmin  = _axisRanges[0][0];
+	const float &xmax  = _axisRanges[0][1];
+	const float &ymin  = _axisRanges[1][0];
+	const float &ymax  = _axisRanges[1][1];
+
+	glm::vec2 diff = {xmax - xmin, ymax - ymin};
+
+	ThickLine *tl = new ThickLine(false, "assets/images/vertical_line.png");
+	
+	bool first = true;
+	glm::vec3 last{};
+	for (const glm::vec2 &point : line)
+	{
+		glm::vec2 scaled = glm::vec2((point.x - xmin) / diff.x, 
+		                             (point.y - ymin) / diff.y);
+		glm::vec2 offset = glm::vec2(stride.x * scaled.x, stride.y * scaled.y);
+		glm::vec3 pos = glm::vec3(start + offset, 0.f);
+		if (first)
+		{
+			first = false;
+		}
+		else
+		{
+			glm::vec3 c = {0.2f, 0.2f, 0.2f};
+			if (_colours.count(series))
+			{
+				c = _colours[series];
+			}
+			loadLine(tl, last, (pos - last), c);
+		}
+
+		last = pos;
+	}
+
+	tl->setThickness(0.1);
+	addObject(tl);
+}
+
+void Graph::addLines(float width, float height)
+{
+	for (auto it = _data.begin(); it != _data.end(); it++)
+	{
+		std::vector<glm::vec2> &line = it->second;
+		addLine(width, height, it->first, line);
+	}
+
+}
+
 void Graph::setup(float width, float height)
 {
 	determineLimits();
 	addAxes(width, height);
-	_axisRanges[0] = {0, 106};
-	_axisRanges[1] = {0, 0.24};
+	addAxisTicks(0, width, height);
+	addAxisTicks(1, width, height);
 	addAxisLabels(0, width, height);
 	addAxisLabels(1, width, height);
+	addLines(width, height);
+}
+
+void Graph::addToGraphPosition(float cx, float cy)
+{
+	glm::vec3 unit = glm::vec3(cx * 2, -cy * 2, 0);
+	addToVertices(unit);
+
+}
+
+void Graph::setAxisLabel(char axis, std::string name)
+{
+	int num = (axis == 'x' ? 0 : 1);
+	_labels[num] = name;
+}
+
+void Graph::setSeriesColour(int series, glm::vec3 colour)
+{
+	_colours[series] = colour;
 }
