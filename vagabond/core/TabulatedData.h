@@ -88,6 +88,9 @@ public:
 
 
 	TabulatedData filterColumns(const std::vector<std::string>& selectedColumns) const;
+	bool hasColumn(const std::string& colName) const {
+        return !column(colName).empty();
+    }
 	friend std::ostream &operator<<(std::ostream &ss, const TabulatedData &data);
 private:
 	int indexForHeader(const std::string &header) const;
