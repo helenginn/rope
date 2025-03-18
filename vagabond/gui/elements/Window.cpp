@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <SDL2/SDL_image.h>
+#include "config/config.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -472,3 +473,14 @@ void Window::reloadScene(Scene *scene)
 	_current->refresh();
 }
 
+std::string Window::dataDirectory()
+{
+	std::string data = std::string(DATA_DIRECTORY) + "/";
+	char *override_data = getenv("ROPE_DATA_DIRECTORY");
+	if (override_data != nullptr)
+	{
+		data = std::string(override_data) + "/";
+	}
+
+	return data;
+}

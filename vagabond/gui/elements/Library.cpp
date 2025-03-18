@@ -79,8 +79,8 @@ GLuint Library::getTexture(std::string filename, int *w, int *h,
 
 void Library::correctFilename(std::string &filename)
 {
-	std::string path = filename;
-#ifndef __EMSCRIPTEN__
+	std::string path = Window::dataDirectory() + filename;
+#ifdef __CANCEL_THIS_CODE__
 	bool native = Window::isNativeApp();
 	if (!native)
 	{

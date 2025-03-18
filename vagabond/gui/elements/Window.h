@@ -116,12 +116,15 @@ public:
 	{
 		return _myWindow;
 	}
-	static bool isNativeApp()
+	
+	static std::string dataDirectory();
+
+	static bool mustChooseWorkingDir()
 	{
 #ifdef __EMSCRIPTEN__
 		return false;
 #endif
-		char *native = getenv("MAC_NATIVE_APP");
+		char *native = getenv("MUST_CHOOSE_WORK_DIR");
 		return (native != nullptr);
 	}
 	

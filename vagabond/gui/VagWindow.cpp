@@ -103,9 +103,9 @@ void VagWindow::setup(int argc, char **argv)
 	_first = menu;
 	_menu = menu;
 	
-	bool is_native = isNativeApp();
+	bool choose_project = mustChooseWorkingDir();
 
-	if (!is_native)
+	if (!choose_project)
 	{
 		prepareProgressView();
 	}
