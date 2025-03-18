@@ -46,12 +46,46 @@ void ShowForce::update()
 		glm::vec3 start = _particle->pos();
 		glm::vec3 dir = _force->get_vector();
 		dir *= _magnitude * TORQUE_FORCE_MAGNITUDE;
+		float ratio = 2;
+		float length = glm::length(dir);
+		if (length < 2.f)
+		{
+			ratio = length / 2.f;
+		}
+		std::cout << "length: " << length << std::endl;
 
 		addThickLine(start, dir);
-		
+		float transition = 0.87;
+
+		for (int j = vertexCount() - 4; j < vertexCount(); j++)
+		{
+			Vertex v = vertex(j);
+			v.normal /= ratio;
+			if (j % 2 == 1)
+			{
+				v.tex[1] = transition;
+			}
+			setVertex(j, v);
+		}
+
+		start += dir;
+		dir = glm::normalize(dir) * 0.3f;
+		addThickLine(start, dir);
+
+		for (int j = vertexCount() - 4; j < vertexCount(); j++)
+		{
+			Vertex v = vertex(j);
+			v.normal = glm::normalize(v.normal) * 1.6f;
+			if (j % 2 == 0)
+			{
+				v.tex[1] = transition;
+			}
+			setVertex(j, v);
+		}
+
 		if (_force->status() == AbstractForce::StatusCalculated)
 		{
-			setColour(0.2f, 0.2f, 1.0f);
+			setColour(0.52f, 0.1f, 0.67f);
 		}
 		else
 		{
