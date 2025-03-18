@@ -67,7 +67,7 @@ void Graph::loadLine(ThickLine *tl, glm::vec3 &start, const glm::vec3 &move,
 			Vertex v = tl->vertex(j);
 			v.tex[1] *= ratio;
 			v.normal /= ratio;
-			tl->setVertex(j, v); // arrgh something went wrong.
+			tl->setVertex(j, v);
 		}
 		
 	}

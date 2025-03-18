@@ -1428,5 +1428,5 @@ void Renderable::addThickLine(glm::vec3 start, glm::vec3 dir,
 	}
 
 	addIndices(-4, -3, -2);
-	addIndices(-3, -2, -1);
+	addIndices(-2, -3, -1);
 }

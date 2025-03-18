@@ -22,6 +22,7 @@ void main()
 	{
 		discard;
 	}
+
 	if (vColor.a < -0.99)
 	{
 		discard;
