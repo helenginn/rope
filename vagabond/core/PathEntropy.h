@@ -25,7 +25,7 @@ double *dm_total;
 struct Tors_res4nn {
 	int n_models;
 	int n_ang;
-	std::string tors_name;
+	const std::string tors_name;
 	double *phi;
 	double *v;
 	int res_n;
