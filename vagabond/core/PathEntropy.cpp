@@ -51,6 +51,8 @@ void PathEntropy::get_atoms_and_residues(const std::string &model_id)
 				Residue *res = seq.residue(j);
 				std::set<TorsionRef> torsions = res->torsions();
 
+				int n_ang = 0;
+
 				for (auto it = torsions.begin(); it != torsions.end(); it++)
 				{
 					Parameter *param = content->findParameter(it->desc(), res->id());
@@ -58,6 +60,15 @@ void PathEntropy::get_atoms_and_residues(const std::string &model_id)
 					if (param->isTorsion())
 					{
 						static_cast<BondTorsion *>(param);
+
+						if (!(param->hasHydrogen()))
+						{
+							tors_res[j].n_ang = n_ang;
+							tors_res[j].phi[n_ang] = it->refinedAngle();
+							//tors_res[j].tors_name[n_ang] = it->desc();
+							n_ang++;
+						}
+
 					}
 				}
 			}
@@ -91,16 +102,6 @@ void PathEntropy::get_atoms_and_residues(const std::string &model_id)
 			tors_res[j].n_ang++;
 		}
 		
-	}*/
-
-	/*for(int j = 0; j < content->bondTorsionCount(); j++)
-	{
-		BondTorsion *torsion = content->bondTorsion(j);
-
-		if (torsion->measurement(BondTorsion::SourceDerived, true) < 0)
-		{
-			torsionMeasurements.push_back(torsion->measurement(BondTorsion::SourceDerived, true));
-		}
 	}*/
 }
 
