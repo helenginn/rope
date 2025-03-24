@@ -355,7 +355,7 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "menu_path_thermodynamics")
 	{
-		PathThermodynamics *pt = new PathThermodynamics(this, _paths);
+		PathThermodynamics *pt = new PathThermodynamics(this, _entity, _paths);
 		pt->show();
 		return;
 	}
