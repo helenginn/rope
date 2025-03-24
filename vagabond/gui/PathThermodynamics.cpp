@@ -19,8 +19,11 @@
 #include <string>
 #include "PathThermodynamics.h"
 #include "CandidateView.h"
+#include <vagabond/core/PathManager.h>
 #include <vagabond/core/PathGroup.h>
+#include <vagabond/core/Path.h>
 #include <vagabond/core/Instance.h>
+#include <vagabond/core/Model.h>
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
@@ -31,9 +34,10 @@
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
-PathThermodynamics::PathThermodynamics(Scene *prev, std::vector<PathGroup> &paths) : Scene(prev)
+PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths) : Scene(prev)
 {
-
+	_entity = entity;
+	_paths = paths;
 }
 
 void PathThermodynamics::addTypeButtons()
@@ -71,13 +75,16 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		struct Flag_par flag_par;
 		struct Entropy entropy;
 
+		PathManager path_man;
 		PathEntropy path_entropy;
 		Sequence seq;
-		std::map<int, BondTorsion *> Tors_res4nn;
 
-		const std::string model_id = "uperin-alpha-6gs3";
+		std::vector<Path *> paths = path_man.pathsForEntity(_entity);
+
+		const std::string mod_id = paths[0]->startInstance()->model_id();
+		std::cout << mod_id << std::endl;
 		
-		path_entropy.get_atoms_and_residues(model_id);
+		path_entropy.get_atoms_and_residues(mod_id);
 
 		path_entropy.init_flag_par(&flag_par);
 
