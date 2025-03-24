@@ -57,10 +57,10 @@ public:
 				{
 					return true;
 				}
-                if (other.atoms[i] > atoms[i])
-                {
-                    return false;
-                }
+		                if (other.atoms[i] > atoms[i])
+        		        {
+                			return false;
+				}
 			}
 			
 			return false;
@@ -78,8 +78,11 @@ public:
 			
 			return true;
 		}
+	
 	};
 	
+	const bool hasHydrogen() const;
+		
 	virtual const size_t keyCount() const
 	{
 		return 2;
