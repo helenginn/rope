@@ -12,6 +12,8 @@
 #include <vagabond/core/BondCalculator.h>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/Eigen/Dense>
+#include "Torsion2Atomic.h"
+
 
 using Eigen::MatrixXf;
 using Eigen::VectorXf;
@@ -32,7 +34,8 @@ Flexibility::~Flexibility()
 // Submits a flexibility calculation job and retrieves the result
 float Flexibility::submitJobAndRetrieve(float weight) 
 {
-	submitJob(weight); 
+	submitJob(weight);
+
 	Result *r = _resources.calculator->acquireObject();
 	r->transplantPositions(_displayTargets);
 
@@ -40,6 +43,36 @@ float Flexibility::submitJobAndRetrieve(float weight)
 	r->destroy(); 
 	return weight; 
 }
+
+void Flexibility::atomCloud()
+{
+    std::string tag = "flexPos";
+    AtomGroup *group = _instance->currentAtoms();
+    const AtomVector &atoms = group->atomVector();
+
+    for (float weight = -1; weight<=1; weight++)
+    {
+        submitJobAndRetrieve(weight);
+        for (Atom *atom : atoms)
+        {
+            glm::vec3 vec = atom->derivedPosition();
+            atom->addOtherPosition(tag, vec);
+        }
+    }
+    for (Atom *atom : atoms)
+    {
+        // Retrieve the WithPos back and print it
+        const WithPos &wp = atom->otherPositions(tag);
+        for (const glm::vec3 &sample: wp.samples)
+        {
+            std::cout << sample << std::endl;
+        }
+    }
+    std::cout << "End of B-factor estimation!" << std::endl;
+
+    // now I need to save this values on a txt file? 
+}
+
 
 // Prepares resources for flexibility calculations
 void Flexibility::prepareResources() 
@@ -59,7 +92,7 @@ void Flexibility::prepareResources()
 }
 
 // Calculates torsion flexibility using a lambda function
-void Flexibility::calculateTorsionFlexibility(CoordManager* specific_manager) 
+void Flexibility::calculateTorsionFlexibility(CoordManager* manager) 
 {
     std::cout << "Starting caclulating torsion Flexibility" << std::endl;
 	auto calculateFlexibility = [this](const Coord::Get &get, const int &idx) 
@@ -67,11 +100,34 @@ void Flexibility::calculateTorsionFlexibility(CoordManager* specific_manager)
 		float weight = get(0); // Gets weight value passed into submitJob
         int bigVecIdx = idx; 
         float flexWeight = _allTorsions[bigVecIdx]*weight;
+        // <-- debug print flexWeight here
+        std::cout << "  flexWeight[" << idx << "] = " << flexWeight << std::endl;
 		return flexWeight; 
 	};
-	specific_manager->setTorsionFetcher(calculateFlexibility); // Sets the torsion fetcher
+
+	manager->setTorsionFetcher(calculateFlexibility); // Sets the torsion fetcher
     std::cout << "Finishing caclulating torsion Flexibility" << std::endl;
 }
+
+// TEST
+void Flexibility::calculateTorsionFlexibilityTEST(CoordManager* manager) 
+{
+    std::cout << "Starting calculating torsion Flexibility" << std::endl;
+    _colIdx = 5;
+
+    auto calculateFlexibility = [this](const Coord::Get &get, const int &idx)
+    {
+        float jobWeight = get(0);
+        return _allTorsionsHistory[_colIdx][idx]*jobWeight;
+    };
+
+    std::cout << "--- Setting torsion fetcher for colIdx = " << _colIdx << " ---" << std::endl;
+    manager->setTorsionFetcher(calculateFlexibility);
+
+    std::cout << "Finished calculating torsion Flexibility" << std::endl;
+}
+
+
 
 // Submits a flexibility calculation job
 void Flexibility::submitJob(float weight) 
@@ -117,6 +173,22 @@ void Flexibility::loadHBondsFromManager(HBondManager* hbondManager)
 
 void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
 {
+/**
+ * @brief Adds multiple hydrogen bonds (HBonds) and updates flexibility calculations.
+ *
+ * This function takes a list of all the donor-acceptor hydrogen bond pairs that were foudn in the
+ * file, validates them, and integrates them into the system. If the input list is empty, 
+ * an error message is displayed, and the function returns early.
+ *
+ * After adding the HBonds, the function updates key flexibility-related calculations:
+ * - Computes the Jacobian matrix.
+ * - Calculates Singular Value Decomposition (SVD) matrices.
+ * - Updates the flexibility weights.
+ * - Retrieves the coordinate manager and recalculates torsion flexibility.
+ *
+ * @param donorAcceptorPairs A vector of HBondPair objects containing donor and acceptor atom descriptors.
+ */
+
 
     if (donorAcceptorPairs.empty()) 
     {
@@ -136,9 +208,9 @@ void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &
     calculateFlexWeights();
 
     // Gets the coordinate manager
-    CoordManager* that_is_manager = _resources.sequences->manager(); 
+    CoordManager* coord_manager = _resources.sequences->manager(); 
     // Calculates torsion flexibility
-    calculateTorsionFlexibility(that_is_manager); 
+    calculateTorsionFlexibilityTEST(coord_manager); 
 }
 
 bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
@@ -194,7 +266,21 @@ bool Flexibility::checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomD
 }
 
 
-void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair) {
+void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair) 
+{
+/**
+ * @brief Adds a hydrogen bond (HBond) to the internal list while ensuring validity.
+ *
+ * This function first validates the given HBondPair to ensure that both the donor
+ * and acceptor atoms exist. It then retrieves the corresponding Atom objects,
+ * performs necessary error handling, and determines the relevant atom blocks.
+ *
+ * The function computes key hydrogen bond properties, including distances and angles,
+ * and stores them in an HBondEntity. The computed torsion vector is added to the 
+ * global torsion set.
+ *
+ * @param hbondPair The hydrogen bond pair containing donor and acceptor atom descriptors.
+ */
     // Validate the HBondPair atoms
     if (!validateHBondPair(hbondPair)) {
         std::cerr << "Validation failed: One or both atoms not found. Skipping HBond addition." << std::endl;
@@ -307,6 +393,7 @@ int Flexibility::accessAtomBlock(Atom* atom)
     return -1;
 }
 
+
 std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acceptorBlock_idx)
 {
     std::vector<int> torsionVector;
@@ -393,34 +480,96 @@ void Flexibility::calculateSVD()
 {
     MatrixXf jacobMtrT = _jacobMtx.transpose();
     BDCSVD<MatrixXf> svdJac = jacobMtrT.bdcSvd();
-    std::cout << "Singular values: " << svdJac.singularValues().transpose() << std::endl;
-
     svdJac.compute(jacobMtrT, Eigen::ComputeFullU | Eigen::ComputeFullV);
     _U = svdJac.matrixU();
     _singularValues = svdJac.singularValues();
     _V = svdJac.matrixV();
+     std::cout << "nullspace matrix size: " << _V.size() << std::endl;
 
 }
 
 
+void Flexibility::calculateFlexWeightsTest()
+{
+    std::cout << "TEST: Calculating flex weights..." << std::endl;
+
+    // Get all the torsions of the protein
+    int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
+    std::vector<std::vector<float>> V_columns; // To store all v_i vectors
+
+    // Extract columns from _V and store as vectors
+    for (int colIdx = 0; colIdx < _V.cols(); ++colIdx)
+    {
+        std::vector<float> v_i;
+        for (int rowIdx = 0; rowIdx < _V.rows(); ++rowIdx)
+        {
+            float value = _V(rowIdx, colIdx);
+            v_i.push_back(value);
+        }
+        V_columns.push_back(v_i);
+
+        // Assign weights from this column to _allTorsions
+        for (int i = 0; i < _globalTorsionVector.size(); ++i)
+        {
+            int index = _globalTorsionVector[i];
+            if (index < 0 || index >= totalTorsionNum)
+            {
+                std::cerr << "Error: Index out of bounds in _globalTorsionVector: "
+                          << index << std::endl;
+                continue;
+            }
+            _allTorsions[index] = v_i[i];
+        }
+        _allTorsionsHistory.push_back(_allTorsions);
+    }
+    // Simple debug print of _allTorsionsHistory
+    std::cout << "DEBUG: _allTorsionsHistory (" << _allTorsionsHistory.size() << " confirmation):" << std::endl;
+    for (size_t i = 0; i < _allTorsionsHistory.size(); ++i)
+    {
+        std::cout << "  [" << i << "]: ";
+        for (float val : _allTorsionsHistory[i])
+        {
+            std::cout << val << " ";
+        }
+        std::cout << std::endl;
+    }
+
+}
+
+
+
 void Flexibility::calculateFlexWeights()
 {
+/**
+ * @brief Computes flexibility weights for protein torsions.
+ *
+ * This function calculates flexibility weights based on the last column of the 
+ * precomputed SVD matrix (_V). It retrieves all torsion angles in the system 
+ * and assigns corresponding weights to them.
+ *
+ * Key steps:
+ * - Extracts the last column of the SVD matrix as the weight column.
+ * - Initializes the torsion vector with zeros.
+ * - Ensures the weight column size matches the global torsion vector size.
+ * - Assigns weights to the appropriate torsion indices, with error handling 
+ *   for out-of-bounds indices.
+ *
+ * Error handling:
+ * - Prints an error if `_globalTorsionVector` and `weightColumn` sizes do not match.
+ * - Checks for invalid torsion indices before assigning values.
+ *
+ * @note This function assumes that `_V` has been computed and that 
+ *       `_globalTorsionVector` correctly maps torsions.
+ */
     std::cout << "Calculating flex weights..." << std::endl;
 
     // Get all the torsions of the protein
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
     std::vector<float> weightColumn(_V.rows());
 
-    for (int i = 0; i < _V.rows(); ++i)
-    {
-        weightColumn[i] = _V(i, _V.cols() - 1);
-    }
-
-    _allTorsions = std::vector<float>(totalTorsionNum); // Initialize with zeros
+    _allTorsions = std::vector<float>(totalTorsionNum, 0.0f); // Initialize with zeros
 
     // Debug size of _globalTorsionVector
-
-
     if (_globalTorsionVector.size() != weightColumn.size())
     {
         std::cerr << "Error: Size mismatch between _globalTorsionVector ("
@@ -428,7 +577,6 @@ void Flexibility::calculateFlexWeights()
                   << weightColumn.size() << ")." << std::endl;
         return;
     }
-
     // Assign weights to torsion vectors
     for (int i = 0; i < _globalTorsionVector.size(); ++i)
     {
@@ -439,10 +587,12 @@ void Flexibility::calculateFlexWeights()
                       << index << std::endl;
             continue;
         }
-        _allTorsions[index] = weightColumn[i];
+        // _allTorsions[index] = weightColumn[i];
     }
+    calculateFlexWeightsTest();
 
-    std::cout << "Finished calculating flex weights." << std::endl;
+
+
 }
 
 

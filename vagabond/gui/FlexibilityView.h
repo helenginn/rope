@@ -71,7 +71,7 @@ private:
 	DisplayUnit *_unit = nullptr;
 	AtomMap *_latest = nullptr;
 	bool _first = true;
-
+	int _colidx = 0;
 	// Minimum value for the slider
 	double _min = -1; 
 	// Maximum value for the slider

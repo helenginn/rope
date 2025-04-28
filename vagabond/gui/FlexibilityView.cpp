@@ -44,9 +44,11 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 		Menu *m = new Menu(this, this, "options");
 		m->addOption("Save state as PDB", "save_state");
 		m->addOption("Select h-bonds from file", "selected_hbonds");
+		m->addOption("Create B-factor cloud", "bfactor_cloud");
 		m->addOption("Clear hydrogen bonds", "clear_hbonds");
 		m->setup(c.x, c.y);
 		setModal(m);
+
 	}
 	else if (tag == "clear_hbonds") // Handle clearing hydrogen bonds
     {
@@ -79,11 +81,25 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
             _hBondPairs = pairs;
             handleHBonds(_hBondPairs);
 
-        });
-		selectMode(hbmenu, true); // this is neseccary so that the select button appears on screen
+
+       	});
+
+        selectMode(hbmenu, true); // this is neseccary so that the select button appears on screen
 		hbmenu->show();
-	} 
+	}
+else if (tag == "options_bfactor_cloud")
+	{
+		if (_selectFlag == true)
+		{
+			_flex->atomCloud();
+		}
+		else
+		{
+			std::cout << "Please select hbonds first and then come back for the B-factors" << std::endl;
+		}
+	}
 	Display::buttonPressed(tag, button);
+
 }
 
 void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& pairs)
@@ -91,6 +107,7 @@ void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& p
     // Add to internal list or perform any other action
     callAddHBonds(pairs);
 	_flex->addMultipleHBonds(pairs);
+
 	// _flex->printHBonds();
 
 }
@@ -113,13 +130,15 @@ void FlexibilityView::setup()
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
 	DisplayUnit *unit = new DisplayUnit(this);
-	// unit->loadAtoms(grp, _instance->entity());
 	unit->loadAtoms(grp, _instance->entity());
 	unit->displayAtoms();
+	unit->startWatch();
 	addDisplayUnit(unit);
 
 	Display::setup();
 	_flex->prepareResources();
+	// return to main menu of FlexibilityView
+
 	setupSlider();
 	_flex->submitJobAndRetrieve(0.0);
 	// _flex->submitJobAndRetrieve(0.0);

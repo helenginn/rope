@@ -4,11 +4,13 @@
 #include <algorithm>
 #include <vagabond/gui/Display.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/core/TorsionData.h>
 #include <stdlib.h>
 #include <atomic>
 #include "StructureModification.h"
 #include "HBondManager.h"
 
+class ClusterSVD;
 
 class Flexibility : public Display, public StructureModification {
 public:
@@ -58,14 +60,25 @@ public:
     float calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2);
     float calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3);
     std::vector<int> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
-   int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
-   void buildJacobianMatrix();
-   void calculateSVD();
-   void calculateFlexWeights();
-   void loadHBondsFromManager(HBondManager* hbondManager);
-   void clearHBonds();
-   bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
-   bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
+    int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
+    void buildJacobianMatrix();
+    void calculateSVD();
+    void calculateFlexWeights();
+    void loadHBondsFromManager(HBondManager* hbondManager);
+    void clearHBonds();
+    bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
+    bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
+    void calculateFlexWeightsTest();
+    void calculateTorsionFlexibilityTEST(CoordManager* manager);
+    void setCluster(ClusterSVD *const &cluster, TorsionData *const &data)
+    {
+        _cluster = cluster;
+        _tData = data;
+    }
+
+    void atomCloud();
+
+
 protected:
     float _chosenWeight = 0.5;;
 private:
@@ -77,10 +90,14 @@ private:
     std::set<int> _globalTorsionSet;
     std::vector<int> _globalTorsionVector;
     std::vector<float> _allTorsions;
+    std::vector<std::vector<float>> _allTorsionsHistory;
     Eigen::MatrixXf _jacobMtx;
     Eigen::MatrixXf _U;
     Eigen::VectorXf _singularValues;
     Eigen::MatrixXf _V;
+    ClusterSVD *_cluster = nullptr;
+    TorsionData *_tData = nullptr;
+    int _colIdx;
 };
 
 #endif

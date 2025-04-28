@@ -75,12 +75,6 @@ void Metadata::addKeyValues(const KeyValues &kv, const bool overwrite)
 		std::string instance_id = processKeyValue(kv, {"molecule", "instance"}, _inst2Data, true);
 		headersFromValues(kv);
 		_inst2Model[instance_id] = model_id;
-
-		// Log the state of the maps after update
-	    std::cout << "Updated maps:" << std::endl;
-	    std::cout << "_file2Data: " << _file2Data.size() << std::endl;
-	    std::cout << "_model2Data: " << _model2Data.size() << std::endl;
-	    std::cout << "_inst2Data: " << _inst2Data.size() << std::endl;
 }
 
 void Metadata::extractData(std::ostringstream &csv, KeyValues &kv) const
