@@ -101,8 +101,8 @@ void MainMenu::setup()
 	}
 
 	{
-		// ImageButton *button = new ImageButton("assets/images/hydrogen_bond.png", this);
-		ImageButton *button = new ImageButton("assets/images/happy_face.png", this);
+		ImageButton *button = new ImageButton("assets/images/hydrogen_bond.png", this);
+//		ImageButton *button = new ImageButton("assets/images/happy_face.png", this);
 		button->resize(0.25);
 		button->setReturnTag("hbonds");
 		button->setCentre(0.5, 0.65);
