@@ -57,9 +57,9 @@ Renderable *HBondMenu::getLine(int i)
 			tselect->setReturnTag("select_hbonds_" + filename);
 			tselect->setRight(0.6, 0.0);
 			b->addObject(tselect);
+
 		
 	}
-
 	return b;
 }
 
@@ -90,6 +90,7 @@ void HBondMenu::buttonPressed(std::string tag, Button *button)
 			}
             // }
 		}
+		back();
 	}
 	Scene::buttonPressed(tag, button);
 }
