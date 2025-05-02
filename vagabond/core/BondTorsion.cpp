@@ -155,7 +155,7 @@ const std::string BondTorsion::shortDesc()
 	{
 		_sDesc = "chi1";
 	}
-					
+		
 	if (checkBothPairs(matchesName("CB"), matchesRegex("CG.?")))
 	{
 		_sDesc = "chi2";
