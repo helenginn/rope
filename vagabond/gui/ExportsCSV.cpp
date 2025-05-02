@@ -48,7 +48,6 @@ void ExportsCSV::exportCSVToClipboard()
 
 void ExportsCSV::exportCSVToFile(std::string filename)
 {
-	std::cout << "I am here" << std::endl;
 	std::ofstream file;
 	file.open(filename);
 
