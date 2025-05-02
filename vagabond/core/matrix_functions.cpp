@@ -357,10 +357,10 @@ double dist_ang(double *a, double *b, int n)
 
 	for(i = 0, t = 0; i < n; i++)
 	{
-		while(a[i] > 180.0) a[i] = a[i] - 360.0;
-		while(a[i] < -180.0) a[i] = a[i] + 360.0;
-		while(b[i] > 180.0) b[i] = b[i] - 360.0;
-		while(b[i] < -180.0) b[i] = b[i] + 360.0;
+		if(a[i] > 180.0) a[i] = a[i] - 360.0;
+		if(a[i] < -180.0) a[i] = a[i] + 360.0;
+		if(b[i] > 180.0) b[i] = b[i] - 360.0;
+		if(b[i] < -180.0) b[i] = b[i] + 360.0;
 		
 		d = fabs(a[i] - b[i]);
 
