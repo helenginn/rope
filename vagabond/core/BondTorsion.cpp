@@ -156,7 +156,7 @@ const std::string BondTorsion::short_desc()
 		_sDesc = "chi1";
 	}
 					
-	if (check_both_pairs(matches_name("CB"), matches_regex("CG.")))
+	if (check_both_pairs(matches_name("CB"), matches_regex("CG.?")))
 	{
 		_sDesc = "chi2";
 	}
@@ -171,7 +171,7 @@ const std::string BondTorsion::short_desc()
 		_sDesc = "chi4";
 	}
 
-	if (check_both_pairs(matches_regex(".Z"), matches_regex(".Z")))
+	if (std::regex_match(_b->atomName(), std::regex(".Z")) || std::regex_match(_c->atomName(), std::regex(".Z")))
 	{
 		_sDesc = "chi5";
 	}
