@@ -70,13 +70,19 @@ public:
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
     void calculateFlexWeightsTest();
     void calculateTorsionFlexibilityTEST(CoordManager* manager);
+    void savePositionsToCSV(const std::string &filename, std::string &tag);
+    void generateAtomCloud();
+    void setColIdx(int chosen_colIdx)
+    {
+        _colIdx = chosen_colIdx;
+    }
     void setCluster(ClusterSVD *const &cluster, TorsionData *const &data)
     {
         _cluster = cluster;
         _tData = data;
     }
 
-    void atomCloud();
+    void atomCloud(float weight);
 
 
 protected:
@@ -86,6 +92,7 @@ private:
     std::mutex _mutex;
 	bool _setup = false;
     bool _displayTargets = false;
+    bool _cloudFlag = false;
     std::vector<HBondEntity> _hbonds;
     std::set<int> _globalTorsionSet;
     std::vector<int> _globalTorsionVector;

@@ -34,6 +34,8 @@ Flexibility::~Flexibility()
 // Submits a flexibility calculation job and retrieves the result
 float Flexibility::submitJobAndRetrieve(float weight) 
 {
+
+    std::cout << "For debugging: In submitJobAndRetrieve, weight is =  " << weight << std::endl;
 	submitJob(weight);
 
 	Result *r = _resources.calculator->acquireObject();
@@ -44,33 +46,107 @@ float Flexibility::submitJobAndRetrieve(float weight)
 	return weight; 
 }
 
-void Flexibility::atomCloud()
+void Flexibility::generateAtomCloud()
 {
+    _cloudFlag = true;
+    std::string tag = "flexPos";
+    AtomGroup *group = _instance->currentAtoms();
+    const AtomVector &atoms = group->atomVector();
+    for (Atom *atom : atoms)
+    {
+        atom->removeOtherPosition(tag); 
+    }
+
+    for (float weight = -1; weight <= 1.05; weight += 0.1) //         for (int i = 1; i <= 5; ++i)
+    {
+        // _flex->setColIdx(i);
+        atomCloud(weight);
+    }
+
+
+}
+
+void Flexibility::atomCloud(float weight)
+{
+    _cloudFlag = true;
     std::string tag = "flexPos";
     AtomGroup *group = _instance->currentAtoms();
     const AtomVector &atoms = group->atomVector();
 
-    for (float weight = -1; weight<=1; weight++)
-    {
-        submitJobAndRetrieve(weight);
-        for (Atom *atom : atoms)
+    int total_samples = 0;
+        // for (float weight = -1; weight <= 1.1; weight += 0.1)
+        for (int i = 0; i <= 5; ++i)
         {
-            glm::vec3 vec = atom->derivedPosition();
-            atom->addOtherPosition(tag, vec);
+            // weight = 0.5;
+            setColIdx(i);
+            submitJobAndRetrieve(weight);
+            for (Atom *atom : atoms)
+            {
+                glm::vec3 vec = atom->derivedPosition();
+                atom->addOtherPosition(tag, vec);   
+            }
         }
-    }
+    // }
+    
     for (Atom *atom : atoms)
     {
         // Retrieve the WithPos back and print it
         const WithPos &wp = atom->otherPositions(tag);
-        for (const glm::vec3 &sample: wp.samples)
+    }
+
+    // Check and print the number of samples (positions) stored for each atom
+    int sample_size = 0;
+    if (!atoms.empty())
+    {
+        const WithPos &wp = atoms[0]->otherPositions(tag);
+        sample_size = wp.samples.size();  // assuming WithPos is a container or has .size()
+    }
+
+    std::cout << "-- Sample size per atom: " << sample_size << "--" << std::endl;
+    
+    std::cout << "End of B-factor estimation!" << std::endl;
+    std::cout << "*** Saving posiition to sampled_positions.csv... ***" << std::endl;
+    savePositionsToCSV("sampled_positions.csv", tag);
+
+}
+
+void Flexibility::savePositionsToCSV(const std::string &filename, std::string &tag)
+{
+    AtomGroup *group = _instance->currentAtoms();
+    const AtomVector &atoms = group->atomVector();
+
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cerr << "Could not open file: " << filename << std::endl;
+        return;
+    }
+
+    // Write header
+    file << "Description,Element,ResidueID,AtomName,Chain,SampleIndex,X,Y,Z\n";
+for (Atom *atom : atoms)
+    {
+        const WithPos &positions = atom->otherPositions(tag);
+        std::cout<< positions.samples.size() <<std::endl;
+        for (size_t i = 0; i < positions.samples.size(); ++i)
         {
-            std::cout << sample << std::endl;
+            const glm::vec3 &pos = positions.samples[i];
+
+            file << atom->desc() << ","
+                 << atom->elementSymbol() << ","
+                 << atom->residueId() << ","
+                 << atom->atomName() << ","
+                 << atom->chain() << ","
+                 << i << ","
+                 << std::fixed << std::setprecision(3)
+                 << pos.x << ","
+                 << pos.y << ","
+                 << pos.z << "\n";
         }
     }
-    std::cout << "End of B-factor estimation!" << std::endl;
 
-    // now I need to save this values on a txt file? 
+    file.close();
+    std::cout << "Saved sampled positions to " << filename << std::endl;
 }
 
 
@@ -113,15 +189,13 @@ void Flexibility::calculateTorsionFlexibility(CoordManager* manager)
 void Flexibility::calculateTorsionFlexibilityTEST(CoordManager* manager) 
 {
     std::cout << "Starting calculating torsion Flexibility" << std::endl;
-    _colIdx = 5;
-
     auto calculateFlexibility = [this](const Coord::Get &get, const int &idx)
     {
         float jobWeight = get(0);
+        std::cout << "--- Setting torsion fetcher for colIdx = " << _colIdx << " ---" << std::endl;
+        std::cout << "For debugging: In calculateTorsionFlexibilityTEST, weight is =  " << jobWeight << std::endl;
         return _allTorsionsHistory[_colIdx][idx]*jobWeight;
     };
-
-    std::cout << "--- Setting torsion fetcher for colIdx = " << _colIdx << " ---" << std::endl;
     manager->setTorsionFetcher(calculateFlexibility);
 
     std::cout << "Finished calculating torsion Flexibility" << std::endl;
@@ -523,16 +597,18 @@ void Flexibility::calculateFlexWeightsTest()
         _allTorsionsHistory.push_back(_allTorsions);
     }
     // Simple debug print of _allTorsionsHistory
-    std::cout << "DEBUG: _allTorsionsHistory (" << _allTorsionsHistory.size() << " confirmation):" << std::endl;
-    for (size_t i = 0; i < _allTorsionsHistory.size(); ++i)
-    {
-        std::cout << "  [" << i << "]: ";
-        for (float val : _allTorsionsHistory[i])
-        {
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
-    }
+    // std::cout << "DEBUG: _allTorsionsHistory (" << _allTorsionsHistory.size() << " confirmation):" << std::endl;
+    // for (size_t i = 0; i < _allTorsionsHistory.size(); ++i)
+    // {
+    //     std::cout << "  [" << i << "]: ";
+    //     for (float val : _allTorsionsHistory[i])
+    //     {
+    //         std::cout << val << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    std::cout << "V_columns.size()" << std::endl;
+    std::cout << V_columns.size() << std::endl;
 
 }
 

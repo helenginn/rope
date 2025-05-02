@@ -80,8 +80,6 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 		{
             _hBondPairs = pairs;
             handleHBonds(_hBondPairs);
-
-
        	});
 
         selectMode(hbmenu, true); // this is neseccary so that the select button appears on screen
@@ -91,7 +89,18 @@ else if (tag == "options_bfactor_cloud")
 	{
 		if (_selectFlag == true)
 		{
-			_flex->atomCloud();
+			_flex->generateAtomCloud();
+			// add the code for making a new display unit, imilar to WatchRefinement::setup()
+			// AtomGroup *grp = _refine->model()->currentAtoms();
+			// DisplayUnit *unit = new DisplayUnit(this);
+			// for every atom* in group:
+			// 	get withPos from tag 
+			// 	set derived postions with withPos
+			// unit->loadAtoms(grp);
+			// unit->displayAtoms();
+			// unit->setMultiBondMode(true);
+			// unit->startWatch();
+			// addDisplayUnit(unit);
 		}
 		else
 		{
@@ -106,6 +115,7 @@ void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& p
 {
     // Add to internal list or perform any other action
     callAddHBonds(pairs);
+    _flex->setColIdx(10);
 	_flex->addMultipleHBonds(pairs);
 
 	// _flex->printHBonds();
