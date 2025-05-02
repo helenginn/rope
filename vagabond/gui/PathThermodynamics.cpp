@@ -22,6 +22,7 @@
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/PathGroup.h>
 #include <vagabond/core/Path.h>
+#include <vagabond/core/Entity.h>
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/Model.h>
 #include <vagabond/core/Sequence.h>
@@ -75,20 +76,27 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		struct Flag_par flag_par;
 		struct Entropy entropy;
 
-		PathManager path_man;
+		Sequence *seq = _entity->sequence();
+
 		PathEntropy path_entropy;
-		Sequence seq;
 
-		std::vector<Path *> paths = path_man.pathsForEntity(_entity);
+		if (_paths.size())
+		{
+			PathGroup &group = _paths[0];
+			const std::string mod_id = group[0]->startInstance()->model_id();
+			std::cout << "Model ID: " << mod_id << std::endl;
+		}
 
-		const std::string mod_id = paths[0]->startInstance()->model_id();
+		std::cout << "Out of if statement..." << std::endl;
+		const std::string mod_id = _paths[0].front()->startInstance()->model_id();
 		std::cout << mod_id << std::endl;
-		
-		path_entropy.get_atoms_and_residues(mod_id);
 
-		path_entropy.init_flag_par(&flag_par);
+		Tors_res4nn* tors_res = new Tors_res4nn[seq->size()]{};
 
-		path_entropy.calculate_entropy_independent(1, flag_par, &entropy);
+		path_entropy.init_flag_par(&flag_par);	
+		path_entropy.get_atoms_and_residues(mod_id, *tors_res);
+
+		path_entropy.calculate_entropy_independent(1, flag_par, seq, tors_res, &entropy);
 		std::cout << "entropy calculated" << std::endl;
 
 		{
