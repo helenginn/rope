@@ -20,7 +20,7 @@
 #define __vagabond__TransformedGrid__
 
 #include "OriginGrid.h"
-#include "../utils/glm_import.h"
+#include <vagabond/utils/glm_import.h>
 
 template <class T>
 class TransformedGrid : public OriginGrid<T>

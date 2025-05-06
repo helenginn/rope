@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Graph.h"
+#include "Scatter.h"
 //#include <vagabond/utils/FileReader.h>
 #include <vagabond/gui/elements/ThickLine.h>
 #include <vagabond/gui/elements/Window.h>
@@ -287,6 +288,18 @@ void Graph::addLine(float width, float height, int series,
 	addObject(tl);
 }
 
+void Graph::plotData(float width, float height)
+{
+	if (style == StyleLine)
+	{
+		addLines(width, height);
+	}
+	else if (style == StyleScatter)
+	{
+		addScatters(width, height);
+	}
+}
+
 void Graph::addLines(float width, float height)
 {
 	for (auto it = _data.begin(); it != _data.end(); it++)
@@ -294,18 +307,64 @@ void Graph::addLines(float width, float height)
 		std::vector<glm::vec2> &line = it->second;
 		addLine(width, height, it->first, line);
 	}
+}
 
+void Graph::addPoints(float width, float height, int series,
+                     std::vector<glm::vec2> &line)
+{
+	glm::vec2 start = {-width / 2.f, +height / 2.f};
+	glm::vec2 stride = {width, -height};
+	const float &xmin  = _axisRanges[0][0];
+	const float &xmax  = _axisRanges[0][1];
+	const float &ymin  = _axisRanges[1][0];
+	const float &ymax  = _axisRanges[1][1];
+
+	glm::vec2 diff = {xmax - xmin, ymax - ymin};
+	Scatter *sc = new Scatter();
+
+	for (const glm::vec2 &point : line)
+	{
+		glm::vec2 scaled = glm::vec2((point.x - xmin) / diff.x, 
+		                             (point.y - ymin) / diff.y);
+		glm::vec2 offset = glm::vec2(stride.x * scaled.x, stride.y * scaled.y);
+		glm::vec3 pos = glm::vec3(start + offset, 0.f);
+		glm::vec3 c = {0.2f, 0.2f, 0.2f};
+		if (_colours.count(series))
+		{
+			c = _colours[series];
+		}
+
+		sc->addPoint(pos, c, 4);
+	}
+
+	addObject(sc);
+}
+
+void Graph::addScatters(float width, float height)
+{
+	for (auto it = _data.begin(); it != _data.end(); it++)
+	{
+		std::vector<glm::vec2> &line = it->second;
+		addPoints(width, height, it->first, line);
+	}
+
+}
+
+void Graph::clear()
+{
+	clearObjects();
 }
 
 void Graph::setup(float width, float height)
 {
+	clear();
 	determineLimits();
 	addAxes(width, height);
 	addAxisTicks(0, width, height);
 	addAxisTicks(1, width, height);
 	addAxisLabels(0, width, height);
 	addAxisLabels(1, width, height);
-	addLines(width, height);
+	plotData(width, height);
 }
 
 void Graph::addToGraphPosition(float cx, float cy)

@@ -19,8 +19,12 @@
 #include <SDL2/SDL_clipboard.h>
 
 #include <vagabond/core/TabulatedData.h>
+#include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/Graph.h>
+#include <vagabond/gui/GraphView.h>
 
 #include "ColumnView.h"
 #include "TableView.h"
@@ -30,7 +34,7 @@ TableView::TableView(Scene *prev, TabulatedData *data, const std::string &title)
 {
 	_title = title;
 	_data = data;
-	_data->hideAfterEntry(20);
+	_data->hideAfterHeader(20);
 	setExportHandler(this);
 }
 
@@ -65,8 +69,8 @@ size_t TableView::unitsPerPage()
 	return ceil(ListView::unitsPerPage() / size);
 }
 
-Box *makeTextBoxes(TableView *view, std::vector<std::string> strings,
-                   TabulatedData *data)
+Box *TableView::makeTextBoxes(TableView *view, std::vector<std::string> strings,
+                              TabulatedData *data)
 {
 	Box *box = new Box();
 
@@ -92,7 +96,130 @@ Box *makeTextBoxes(TableView *view, std::vector<std::string> strings,
 		if (view)
 		{
 			TextButton *b = new TextButton(display, view, false, Font::Thick);
-			b->setReturnTag("header_" + strings[j]);
+
+			std::string header = strings[j];
+			
+			auto edit_column_menu = [this, header, b]()
+			{
+				glm::vec2 c = b->xy();
+
+				Menu *m = new Menu(this, this, "menu");
+
+				m->addOption("Sort ascending", [this, header]()
+				{
+					_data->order_by(header, true);
+					refresh();
+				});
+
+				m->addOption("Sort descending", [this, header]()
+				{
+					_data->order_by(header, false);
+					refresh();
+				});
+
+				m->addOption("Copy list", [this, header]()
+				{
+					std::vector<std::string> vals = _data->column(header);
+					std::string total;
+
+					for (const std::string &str : vals)
+					{
+						total += str + ",";
+					}
+
+					total.pop_back();
+					SDL_SetClipboardText(total.c_str());
+
+				});
+				
+				auto make_sub = [this, header]()
+				{
+					Menu *sub = new Menu(this, this, "submenu");
+					sub->addOption("as independent", [this, header]()
+					               {
+						              _makeGraph.independent = header;
+						              _makeGraph(this);
+					               });
+					sub->addOption("as dependent", [this, header]()
+					               {
+						              _makeGraph.dependent = header;
+						              _makeGraph(this);
+					               });
+
+					return sub;
+				};
+
+				m->addSubMenu("Plot", make_sub);
+				
+				auto apply_filter = [this, header](float min, float max)
+				{
+					_data->filterIn(header, min, max);
+					refresh();
+				};
+
+				auto prep_filter = [this, header, apply_filter]()
+				{
+					
+					float min, max;
+					_data->extremes(header, min, max);
+
+					ChooseRange *cr = new ChooseRange(this, 
+					                                  "Choose accepted range",
+					                                  "", nullptr, true);
+					cr->setRange(min, max);
+					cr->setReturn(apply_filter);
+					setModal(cr);
+				};
+
+				TabulatedData::DataType type;
+				type = _data->typeForHeader(header);
+
+				if (type == TabulatedData::Number)
+				{
+					m->addOption("Filter", prep_filter);
+				}
+				else if (type == TabulatedData::Text)
+				{
+					auto make_options = [this, header]()
+					{
+						std::set<std::string> set = _data->all_options(header);
+						Menu *sub = new Menu(this, this, "submenu");
+
+						for (const std::string &str : set)
+						{
+							sub->addOption(str, [this, str, header]()
+							               {
+								              _data->filterIn(header, str);
+								              refresh();
+							               });
+						}
+
+						return sub;
+					};
+
+					m->addSubMenu("Filter", make_options);
+				}
+
+				if (_data->hasFilters())
+				{
+					m->addOption("Clear filters", [this]()
+					             {
+						            _data->clearFilters();
+						            refresh();
+					             });
+				}
+
+				m->addOption("Hide", [this, header]()
+ 		        {
+	                _data->hide(header);
+	                refresh();
+	            });
+				m->setup(c.x, c.y);
+
+				setModal(m);
+			};
+
+			b->setReturnJob(edit_column_menu);
 			text = b;
 		}
 		else
@@ -122,7 +249,18 @@ void TableView::displayHeaders()
 void TableView::addMenu()
 {
 	TextButton *text = new TextButton("Menu", this);
-	text->setReturnTag("main_menu");
+	
+	auto create_menu = [this, text]()
+	{
+		glm::vec2 c = text->xy();
+		Menu *m = new Menu(this, this, "overall");
+		m->addOption("Copy CSV", "copy_csv");
+		m->addOption("Export CSV", "export");
+		m->setup(c.x, c.y);
+		setModal(m);
+	};
+
+	text->setReturnJob(create_menu);
 	text->setRight(0.95, 0.1);
 	addObject(text);
 }
@@ -143,7 +281,14 @@ void TableView::addPlusSign()
 
 	TextButton *plus = new TextButton("+", this, false, Font::Thick);
 	plus->setRight(0.95, 0.2);
-	plus->setReturnTag("plus");
+
+	auto show_other_columns = [this]()
+	{
+		ColumnView *view = new ColumnView(this, _data);
+		view->show();
+	};
+
+	plus->setReturnJob(show_other_columns);
 	addTempObject(plus);
 }
 
@@ -179,21 +324,6 @@ void TableView::supplyCSV(std::string indicator)
 
 void TableView::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "main_menu")
-	{
-		glm::vec2 c = button->xy();
-		Menu *m = new Menu(this, this, "overall");
-		m->addOption("Copy CSV", "copy_csv");
-		m->addOption("Export CSV", "export");
-		m->setup(c.x, c.y);
-		setModal(m);
-	}
-	else if (tag == "plus")
-	{
-		ColumnView *view = new ColumnView(this, _data);
-		view->show();
-	}
-
 	std::string overall = Button::tagEnd(tag, "overall_");
 	
 	if (overall == "copy_csv" || overall == "export")
@@ -201,57 +331,59 @@ void TableView::buttonPressed(std::string tag, Button *button)
 		ExportsCSV::buttonPressed(overall, button);
 		return;
 	}
-	
-	std::string header = Button::tagEnd(tag, "header_");
-	std::string menu = Button::tagEnd(tag, "menu_");
-	
-	if (menu == "asort")
-	{
-		_data->order_by(_current, true);
-		refresh();
-	}
-	if (menu == "hide")
-	{
-		_data->hide(_current);
-		refresh();
-	}
-	else if (menu == "dsort")
-	{
-		_data->order_by(_current, false);
-		refresh();
-	}
-	else if (menu == "copy")
-	{
-		std::vector<std::string> vals = _data->column(_current);
-		std::string total;
-
-		for (const std::string &str : vals)
-		{
-			total += str + ",";
-		}
-
-		total.pop_back();
-		SDL_SetClipboardText(total.c_str());
-	}
-
-	if (header.length())
-	{
-		glm::vec2 c = button->xy();
-		Menu *m = new Menu(this, this, "menu");
-		m->addOption("Sort ascending", "asort");
-		m->addOption("Sort descending", "dsort");
-		m->addOption("Copy list", "copy");
-		m->addOption("Hide", "hide");
-		m->setup(c.x, c.y);
-		setModal(m);
-
-		_current = header;
-	}
-	else
-	{
-		_current = "";
-	}
-	
 
 	ListView::buttonPressed(tag, button);
+}
+
+void TableView::MakeGraph::operator()(TableView *tv)
+{
+	if (dependent == "" || independent == "")
+	{
+		return;
+	}
+
+	if (dependent == independent)
+	{
+		BadChoice *bc = new BadChoice(tv, "Dependent and independent "
+		                              "variables are the same (" +
+		                              dependent + ").");
+		std::cout << bc << std::endl;
+		tv->setModal(bc);
+		return;
+	}
+	
+	std::vector<std::string> headers = tv->data()->all_headers();
+	int header_count = tv->data()->all_headers().size();
+
+	Graph *graph = new Graph();
+
+	for (int i = 0; i < tv->data()->entryCount(); i++)
+	{
+		std::vector<std::string> strings = tv->data()->entry(i);
+
+		float x = NAN; float y = NAN;
+		for (int j = 0; j < header_count; j++)
+		{
+			if (headers[j] == dependent && strings[j].length())
+			{
+				y = atof(strings[j].c_str());
+			}
+			if (headers[j] == independent && strings[j].length())
+			{
+				x = atof(strings[j].c_str());
+			}
+		}
+		
+		if (x == x && y == y)
+		{
+			graph->addPoint(0, x, y);
+		}
+	}
+	
+	graph->style = Graph::StyleScatter;
+	graph->setAxisLabel('x', independent);
+	graph->setAxisLabel('y', dependent);
+
+	GraphView *graphView = new GraphView(tv, graph);
+	graphView->show();
 }

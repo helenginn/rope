@@ -28,6 +28,14 @@ class Graph : public Box
 {
 public:
 	Graph();
+	
+	enum Style
+	{
+		StyleLine,
+		StyleScatter,
+	};
+	
+	Style style = StyleLine;
 
 	void addPoint(int series, float x, float y);
 	void setRange(char axis, float min, float max);
@@ -39,10 +47,15 @@ public:
 	void setSeriesColour(int series, glm::vec3 colour);
 	
 	void setAxisLabel(char axis, std::string name);
+	void plotData(float width, float height);
+	void clear();
 private:
 	void addAxes(float width, float height);
 	void addAxisTicks(int axis, float width, float height);
 	void addAxisLabels(int axis, float width, float height);
+	void addPoints(float width, float height, int series,
+	               std::vector<glm::vec2> &line);
+	void addScatters(float width, float height);
 	void addLines(float width, float height);
 	void addLine(float width, float height, int series, 
 	             std::vector<glm::vec2> &line);

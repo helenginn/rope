@@ -63,6 +63,7 @@ bool is_str_alphabetical(const std::string &str);
 /* Random string things */
 
 void trim(std::string& str);
+void trim(std::string& str, char trim_it);
 void to_lower(std::string &str);
 void to_upper(std::string &str);
 

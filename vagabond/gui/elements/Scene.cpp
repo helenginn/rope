@@ -68,24 +68,65 @@ void Scene::setBackground()
 	_background = r;
 }
 
-void Scene::setModal(Modal *modal)
+void Scene::setModal(Modal *modal, bool replace)
 {
-	if (!_modal)
+	auto append_modal = [this, modal]()
 	{
-		_modal = modal;
+		_modals.push_back(modal);
 		_left = false;
 		_right = false;
+	};
+
+	if (replace)
+	{
+		auto destroy_existing = destroyModals(false);
+		
+		addMainThreadJob([append_modal, destroy_existing]()
+		{
+			destroy_existing();
+			append_modal();
+		});
 	}
+	else
+	{
+		addMainThreadJob(append_modal);
+	}
+	
 }
 
-void Scene::removeModal()
+std::function<void()> Scene::destroyModals(bool last_only)
 {
-	_removeModal = _modal;
-	_modal = nullptr;
-	resetMouseKeyboard();
-	_mouseDown = false;
-	_moving = false;
-	_left = false;
+	auto destroy_modals = [this, last_only]()
+	{
+		if (!lastModal())
+		{
+			return;
+		}
+
+		delete lastModal();
+		_modals.pop_back();
+		
+		if (!last_only)
+		{
+			for (Modal *modal : _modals)
+			{
+				delete modal;
+			}
+			_modals.clear();
+		}
+		
+		resetMouseKeyboard();
+		_mouseDown = false;
+		_moving = false;
+		_left = false;
+	};
+
+	return destroy_modals;
+}
+
+void Scene::removeModals(bool last_only)
+{
+	addMainThreadJob(destroyModals(last_only));
 }
 
 void Scene::doThings()
@@ -102,15 +143,9 @@ void Scene::render()
 {
 	SnowGL::render();
 
-	if (_modal != nullptr)
+	for (Modal *modal : _modals)
 	{
-		_modal->render(this);
-	}
-	
-	if (_removeModal != nullptr)
-	{
-		delete _removeModal;
-		_removeModal = nullptr;
+		modal->render(this);
 	}
 }
 
@@ -142,9 +177,9 @@ void Scene::convertToGLCoords(double *x, double *y)
 
 std::vector<Renderable *> &Scene::pertinentObjects()
 {
-	if (_modal != nullptr)
+	if (_modals.size())
 	{
-		return _modal->objects();
+		return _modals.back()->objects();
 	}
 
 	return objects();
@@ -166,20 +201,20 @@ void Scene::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 	_dragged = nullptr;
 	convertToGLCoords(&x, &y);
 
-	if (_modal != nullptr && _chosen == nullptr)
+	if (lastModal() && _chosen == nullptr)
 	{
 		double z = -FLT_MAX;
-		bool hit = _modal->intersectsRay(x, y, &z);
+		bool hit = lastModal()->intersectsRay(x, y, &z);
 
 		if (!hit && _left)
 		{
-			_modal->dismiss();
+			lastModal()->dismiss();
 		}
 	}
 
 	_left = button.button == SDL_BUTTON_LEFT;
 
-	if (hasIndexedObjects() > 0 && _modal == nullptr && _chosen == nullptr
+	if (hasIndexedObjects() > 0 && !lastModal() && _chosen == nullptr
 	    && !_moving)
 	{
 		checkIndexBuffer(x, y, false, true, _left);
@@ -253,7 +288,7 @@ void Scene::mouseMoveEvent(double x, double y)
 	
 	swapCursor(cursor);
 	
-	if (hasIndexedObjects() > 0 && _modal == nullptr)
+	if (hasIndexedObjects() > 0 && !lastModal())
 	{
 		checkIndexBuffer(tx, ty, true, arrow, true);
 	}
@@ -328,7 +363,7 @@ void Scene::addTitle(std::string title)
 
 void Scene::askToQuit()
 {
-	if (!_modal)
+	if (!lastModal())
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Are you sure you want to quit?",
 				"quit", this);
@@ -338,7 +373,7 @@ void Scene::askToQuit()
 	}
 	else
 	{
-		_modal->dismiss();
+		lastModal()->dismiss();
 		viewChanged();
 	}
 }
@@ -416,9 +451,9 @@ void Scene::keyPressEvent(SDL_Keycode pressed)
 
 	if (!keyResponder())
 	{
-		if (_modal)
+		if (lastModal())
 		{
-			_modal->doAccessibilityThings(pressed, _shiftPressed);
+			lastModal()->doAccessibilityThings(pressed, _shiftPressed);
 		}
 		else
 		{

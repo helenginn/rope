@@ -52,7 +52,7 @@ void ExportsCSV::exportCSVToFile(std::string filename)
 	std::ofstream file;
 	file.open(filename);
 
-	_me->removeModal();
+	_me->removeModals();
 
 	if (file.is_open())
 	{

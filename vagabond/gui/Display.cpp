@@ -224,7 +224,7 @@ void Display::focusOnResidue(std::string chain, int res)
 
 void Display::keyPressEvent(SDL_Keycode pressed)
 {
-	if (pressed == SDLK_g && !_modal)
+	if (pressed == SDLK_g && !lastModal())
 	{
 		TextEntry *te = new TextEntry("enter residue", this);
 		te->setValidationType(TextEntry::None);

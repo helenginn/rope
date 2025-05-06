@@ -19,11 +19,13 @@
 #ifndef __vagabond__TabulatedData__
 #define __vagabond__TabulatedData__
 
+#include "HasFilters.h"
+#include <set>
 #include <string>
 #include <vector>
 #include <sstream>
 
-class TabulatedData
+class TabulatedData : public HasFilters<std::vector<std::string>>
 {
 public:
 	enum DataType
@@ -41,17 +43,24 @@ public:
 
 	TabulatedData(const std::vector<HeaderTypePair> &headerTypes);
 
+	void filterIn(std::string header, float min, float max);
+	void filterIn(std::string header, std::string value);
+
+	DataType typeForHeader(const std::string &header);
+	void extremes(const std::string &header, float &min, float &max);
+	std::set<std::string> all_options(const std::string &header);
+
 	void addEntry(const std::vector<StringPair> &entries);
 	Strings column(const std::string &header) const;
 
 	size_t longestEntryLength(const std::string &header) const;
 	size_t totalWidth(std::vector<size_t> &sizes, size_t max_out = 0) const;
 	
-	void hideAfterEntry(int idx);
+	void hideAfterHeader(int idx);
 	
 	size_t entryCount() const
 	{
-		return _entries.size();
+		return this->filteredCount(_entries);
 	}
 	
 	std::vector<std::string> entry(int i) const;

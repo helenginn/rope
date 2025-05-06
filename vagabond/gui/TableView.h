@@ -22,6 +22,7 @@
 #include <vagabond/gui/elements/ListView.h>
 #include <vagabond/gui/ExportsCSV.h>
 
+class Box;
 class TabulatedData;
 
 class TableView : public ListView, public ExportsCSV
@@ -52,14 +53,27 @@ public:
 	float resizing();
 	void addPlusSign();
 private:
+
+	Box *makeTextBoxes(TableView *view, std::vector<std::string> strings,
+	                   TabulatedData *data);
+
 	virtual void supplyCSV(std::string indicator = "");
 	void displayHeaders();
 	void addMenu();
+	
+	struct MakeGraph
+	{
+		void operator()(TableView *tv);
+
+		std::string dependent;
+		std::string independent;
+	};
+	
+	MakeGraph _makeGraph{};
 
 	TabulatedData *_data;
 
 	std::string _title;
-	std::string _current;
 };
 
 #endif

@@ -83,7 +83,7 @@ void Mouse2D::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
 {
 	Scene::mousePressEvent(x, y, button);
 
-	if (_modal != nullptr)
+	if (lastModal())
 	{
 		return;
 	}
@@ -119,7 +119,7 @@ void Mouse2D::mouseMoveEvent(double x, double y)
 {
 	Scene::mouseMoveEvent(x, y);
 
-	if (_modal != nullptr || _dragged != nullptr)
+	if (lastModal() || _dragged != nullptr)
 	{
 		return;
 	}
@@ -218,7 +218,7 @@ void Mouse2D::mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button)
 		_reducingSelection = false;
 	}
 
-	if (_modal != nullptr)
+	if (lastModal())
 	{
 		return;
 	}

@@ -20,7 +20,7 @@
 #define __vagabond__OriginGrid__
 
 #include "Grid.h"
-#include "../utils/glm_import.h"
+#include <vagabond/utils/glm_import.h>
 #include <iostream>
 
 template <class T>

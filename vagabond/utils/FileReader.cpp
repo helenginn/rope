@@ -212,11 +212,16 @@ std::string findNextFilename(std::string file)
 
 void trim(std::string &str)
 {
-	std::string::size_type pos = str.find_last_not_of(' ');
+	trim(str, ' ');
+}
+
+void trim(std::string &str, char trim_it)
+{
+	std::string::size_type pos = str.find_last_not_of(trim_it);
 	if(pos != std::string::npos)
 	{
 		str.erase(pos + 1);
-		pos = str.find_first_not_of(' ');
+		pos = str.find_first_not_of(trim_it);
 		if(pos != std::string::npos) str.erase(0, pos);
 	}
 	else str.erase(str.begin(), str.end());

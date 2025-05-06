@@ -139,3 +139,33 @@ void Menu::buttonPressed(std::string tag, Button *button)
 	}
 }
 
+std::function<void(Menu *)> Menu::alignNewMenuWithButton(TextButton *button)
+{
+	std::function<void(Menu *)> alignment_job;
+	
+	alignment_job = [this, button](Menu *menu)
+	{
+		float y = button->xy().y;
+		double min = FLT_MAX; double max = -FLT_MAX;
+		maximalDim(&min, &max, 0);
+		float x = max / 2 + 0.5;
+
+		menu->setup(x, y);
+		_scene->setModal(menu, false);
+	};
+	
+	return alignment_job;
+}
+
+TextButton *Menu::addSubMenu(std::string text, std::function<Menu *()> subMenu)
+{
+	TextButton *option = addOption(text, "");
+	auto make_submenu = alignNewMenuWithButton(option);
+	
+	option->setReturnJob([subMenu, make_submenu]
+	{
+		make_submenu(subMenu());
+	});
+
+	return option;
+}

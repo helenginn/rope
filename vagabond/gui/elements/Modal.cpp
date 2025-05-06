@@ -48,7 +48,7 @@ void Modal::conv_coords(double *fx, double *fy)
 
 void Modal::hide()
 {
-	_scene->removeModal();
+	_scene->removeModals();
 }
 
 void Modal::dismiss()
@@ -61,8 +61,11 @@ void Modal::dismiss()
 
 Modal::~Modal()
 {
-	delete _darker;
-	_darker = NULL;
+	if (_darker)
+	{
+		delete _darker;
+		_darker = nullptr;
+	}
 }
 
 void Modal::addTwoButtons(std::string left, std::string ltag,

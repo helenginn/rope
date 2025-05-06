@@ -32,8 +32,8 @@ public:
 		return _previous;
 	}
 	
-	void setModal(Modal *modal);
-	void removeModal();
+	void setModal(Modal *modal, bool replace = true);
+	void removeModals(bool last_only = false);
 
 	void preSetup();
 	virtual void setup() = 0;
@@ -94,6 +94,8 @@ public:
 		return _mouseDown;
 	}
 protected:
+	std::function<void()> destroyModals(bool last_only);
+
 	void reloadBackground();
 	virtual std::vector<Renderable *> &pertinentObjects();
 	void convertToGLCoords(double *x, double *y);
@@ -104,10 +106,19 @@ protected:
 	void interpretControlKey(SDL_Keycode pressed, bool dir);
 	
 	std::string _title;
+	
+	Modal *const lastModal() const
+	{
+		if (_modals.size() == 0)
+		{
+			return nullptr;
+		}
+
+		return _modals.back();
+	}
 
 	Renderable *_background = nullptr;
-	Modal *_modal = nullptr;
-	Modal *_removeModal = nullptr;
+	std::vector<Modal *> _modals;
 	Scene *_previous = nullptr;
 	Button *_back = nullptr;
 	TextButton *_info = nullptr;

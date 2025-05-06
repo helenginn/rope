@@ -21,7 +21,7 @@
 
 #include <iostream>
 #include <vector>
-#include "../utils/glm_import.h"
+#include <vagabond/utils/glm_import.h>
 
 template <class T>
 class Grid

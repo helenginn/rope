@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "TabulatedData.h"
+#include <float.h>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
@@ -142,6 +143,67 @@ int TabulatedData::indexForHeader(const std::string &header) const
 	return -1;
 }
 
+void TabulatedData::filterIn(std::string header, std::string value)
+{
+	int idx = indexForHeader(header);
+
+	auto filter = [idx, value](const Strings &str)
+	{
+		return str[idx] == value;
+	};
+	
+	addFilter(filter);
+}
+
+void TabulatedData::filterIn(std::string header, float min, float max)
+{
+	int idx = indexForHeader(header);
+
+	auto filter = [idx, min, max](const Strings &str)
+	{
+		float val = atof(str[idx].c_str());
+		return (val > min && val <= max);
+	};
+	
+	addFilter(filter);
+}
+
+TabulatedData::DataType TabulatedData::typeForHeader(const std::string &header)
+{
+	int idx = indexForHeader(header);
+	return _headerTypes[idx].second;
+}
+
+std::set<std::string> TabulatedData::all_options(const std::string &header)
+{
+	std::set<std::string> strings;
+
+	int idx = indexForHeader(header);
+	for (Strings &entry : _entries)
+	{
+		if (entry[idx].length() > 0)
+		{
+			strings.insert(entry[idx]);
+		}
+	}
+
+	return strings;
+}
+
+void TabulatedData::extremes(const std::string &header, float &min, float &max)
+{
+	int idx = indexForHeader(header);
+	min = FLT_MAX;
+	max = -FLT_MAX;
+
+	for (Strings &entry : _entries)
+	{
+		float val = atof(entry[idx].c_str());
+		if (val < min) min = val;
+		if (val > max) max = val;
+	}
+}
+
 bool TabulatedData::hasHidden() const
 {
 	for (const bool &vis : _visible)
@@ -154,10 +216,12 @@ bool TabulatedData::hasHidden() const
 
 std::vector<std::string> TabulatedData::entry(int i) const
 {
+	Strings entry = filtered(_entries, i);
+
 	std::vector<std::string> strings;
 
 	auto start = _visible.begin();
-	for (const std::string &str : _entries[i])
+	for (const std::string &str : entry)
 	{
 		if (*start)
 		{
@@ -192,7 +256,7 @@ std::vector<std::string> TabulatedData::headers(bool all) const
 	return headers;
 }
 
-void TabulatedData::hideAfterEntry(int idx)
+void TabulatedData::hideAfterHeader(int idx)
 {
 	for (int i = 0; i < idx && i < _headerTypes.size(); i++)
 	{
