@@ -14,8 +14,8 @@ public:
 
 	virtual void makeQuad();
 protected:
-	int _w;
-	int _h;
+	int _w{};
+	int _h{};
 };
 
 #endif
