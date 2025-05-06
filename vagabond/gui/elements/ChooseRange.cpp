@@ -73,6 +73,7 @@ void ChooseRange::setRange(float min, float max, float steps)
 
 void ChooseRange::buttonPressed(std::string tag, Button *button)
 {
+
 	if (tag == "cancel")
 	{
 		hide();
@@ -88,12 +89,19 @@ void ChooseRange::buttonPressed(std::string tag, Button *button)
 	{
 		_max = _min;
 	}
-	
+
 	if (_min > _max)
 	{
 		float tmp = _min;
 		_min = _max;
 		_max = tmp;
+	}
+
+	if (_return)
+	{
+		_return(_min, _max);
+		hide();
+		return;
 	}
 
 	setReturnObject(this);

@@ -40,6 +40,11 @@ public:
 		_default = def;
 	}
 	
+	void setReturn(std::function<void(float, float)> ret)
+	{
+		_return = ret;
+	}
+	
 	float min()
 	{
 		return _min;
@@ -53,6 +58,7 @@ private:
 	Slider *_minSlider = nullptr;
 	Slider *_maxSlider = nullptr;
 
+	std::function<void(float, float)> _return{};
 	ButtonResponder *_sender = nullptr;
 	float _min = 0;
 	float _max = 0;
