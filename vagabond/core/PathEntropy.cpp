@@ -89,7 +89,6 @@ void PathEntropy::get_atoms_and_residues(const std::string &model_id, struct Tor
 						(&tors_res)[j].n_ang = n_ang;
 						(&tors_res)[j].phi[n_ang] = TorsionRef(param).refinedAngle();
 						(&tors_res)[j].tors_name[n_ang] = bondT->short_desc();
-						std::cout << n_ang << std::endl;
 						n_ang++;
 					}
 				}
@@ -117,9 +116,8 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 	double *d, *ent_k, *ent_k_2, *sd_k, *ent_k_tot, *ent_k_tot_2, *d_mean, *ld_mean, *x, *y, *w, *a, *sd;
 	double logdk, c, L;
 	int n_res_per_model = seq->size();
-	int n_tors = sizeof(tors_res->n_ang)/sizeof(int);
 
-	std::cout << n_res_per_model << " " << n_tors << std::endl;
+	int n_tors = 0;
 
 	(*entropy).n_single = n_res_per_model;
 	(*entropy).n_nn = flag_par.n;
@@ -156,12 +154,12 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 	for(m = 0; m < n_res_per_model; m++)
 		if (tors_res[m].n_ang > 0)
 		{
+			n_tors = n_tors + tors_res[m].n_ang;
+
 			phit = (double **)calloc(nf, sizeof(double *));
 			phit[0] = (double*)calloc(tors_res[m].n_ang, sizeof(double));
 			for (j = 0; j < tors_res[m].n_ang; j++)
 			{
-				std::cout << tors_res[m].tors_name[j] << std::endl;
-
 				if(tors_res[m].tors_name[j] == "phi")
 				{
 					phit[0][j] = tors_res[m].phi[j];
