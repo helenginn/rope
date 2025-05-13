@@ -139,7 +139,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 					Parameter *param = content->findParameter(torsRes[j]->desc[k], polySeq->residue(j)->id());
 
 					torsRes[j]->ang[l][k][i] = param->empiricalMeasurement();
-				 
+				
 				}
 
 			}
