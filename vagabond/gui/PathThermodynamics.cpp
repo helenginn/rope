@@ -35,7 +35,7 @@
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/BadChoice.h>
 
-int pathNum = 0;
+int PathThermodynamics::_pathNum = 0;
 
 PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths) : Scene(prev)
 {
@@ -59,18 +59,6 @@ void PathThermodynamics::setup()
 	{
 		//PathGroup &group = _paths[0];
 		//const std::string mod_id = group[0]->startInstance()->model_id();
-		
-		if (pathNum < 1)
-		{
-			std::string str = "Choose number of paths (\"frames\") to utilise";
-			ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-			cr->setDefault(1);
-			cr->setRange(1, _paths.size(), _paths.size()-1);
-			setModal(cr);
-	
-			float num = cr->max();
-			int pathNum = lrint(num);
-		}
 	}
 
 
@@ -86,14 +74,23 @@ void PathThermodynamics::setup()
 		t->setReturnTag("calc_indep");
 		addObject(t);
 	}
-
-	refresh();
 }
 
 void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "calc_indep")
-	{
+	{	
+		deleteTemps();
+
+		if (_pathNum > -1)
+		{
+			std::string str = "Choose number of paths (\"frames\") to utilise";
+			ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
+			cr->setDefault(1);
+			cr->setRange(1, _paths.size(), _paths.size()-1);
+			setModal(cr);
+		}
+
 		struct Flag_par flag_par;
 		struct Entropy entropy;
 		
@@ -106,10 +103,12 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 		Tors_res4nn* tors_res = new Tors_res4nn[seq->size()]{};
 
-		path_entropy.init_flag_par(&flag_par);	
-		path_entropy.get_atoms_and_residues(mod_id, *tors_res);
+		std::cout << _pathNum << std::endl;
 
-		path_entropy.calculate_entropy_independent(pathNum, flag_par, seq, tors_res, &entropy);
+		path_entropy.init_flag_par(&flag_par);	
+		path_entropy.get_atoms_and_residues(_pathNum, _paths, mod_id, *tors_res);
+
+		path_entropy.calculate_entropy_independent(_pathNum, flag_par, seq, tors_res, &entropy);
 		std::cout << "entropy calculated" << std::endl;
 
 		{
@@ -118,6 +117,15 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 			t->setLeft(0.2, 0.6);
 			addTempObject(t);
 		}
+	}
+
+	if (tag == "choose_paths")
+	{
+	
+		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
+		float num = cr->max();
+		_pathNum = lrint(num);
+		refresh();
 	}
 
 	Scene::buttonPressed(tag, button);
