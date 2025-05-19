@@ -21,7 +21,6 @@
 struct FlagParameters PathEntropy::initFlagPar()
 {
     struct FlagParameters flagParameters;
-
 	flagParameters.n = 10; /* number of nearest neighbours */
     flagParameters.nf = 11;
     flagParameters.ne = 5;
@@ -139,7 +138,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 					Parameter *param = content->findParameter(torsRes[j]->desc[k], polySeq->residue(j)->id());
 
 					torsRes[j]->ang[l][k][i] = param->empiricalMeasurement();
-				
 				}
 
 			}
@@ -156,10 +154,8 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> torsRes, int numDivisions)
 {
 	int numResPerModel = torsRes.size();
-
 	int numTors = 0;
-
-	struct EntropyForMatrix ent4Matrix;
+    struct EntropyForMatrix ent4Matrix;
     int K = flagParameters.n + 1;
 	/* for each residue, compute entropy, sd and dm for the residue
 	   sum to total entropy, sd and dm

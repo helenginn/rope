@@ -69,18 +69,6 @@ void PathThermodynamics::setup()
 	{
 		//PathGroup &group = _paths[0];
 		//const std::string mod_id = group[0]->startInstance()->model_id();
-		
-		if (pathNum < 1)
-		{
-			std::string str = "Choose number of paths (\"frames\") to utilise";
-			ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-			cr->setDefault(1);
-			cr->setRange(1, _paths.size(), _paths.size()-1);
-			setModal(cr);
-	
-			float num = cr->max();
-			int pathNum = lrint(num);
-		}
 	}
 
 
@@ -203,6 +191,15 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 	{
 		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
 		setModal(aft);
+	}
+
+	if (tag == "choose_paths")
+	{
+	
+		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
+		float num = cr->max();
+		_pathNum = lrint(num);
+		refresh();
 	}
 
 	Scene::buttonPressed(tag, button);
