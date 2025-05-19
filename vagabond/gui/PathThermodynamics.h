@@ -39,7 +39,9 @@ public:
 
 private:
 	Entity *_entity = nullptr;
-	std::vector<PathGroup> _paths;;
+	std::vector<PathGroup> _paths;
+
+	static int _pathNum;
 };
 
 #endif
