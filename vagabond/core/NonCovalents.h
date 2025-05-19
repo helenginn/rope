@@ -44,6 +44,12 @@ struct Segment
 
 	int num = -1;
 	AtomGroup *grp = new AtomGroup();
+
+	bool operator!=(const Segment &other) const
+	{
+		return !(*this == other);
+	}
+	
 	
 	bool operator==(const Segment &other) const
 	{
