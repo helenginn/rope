@@ -22,13 +22,17 @@
 #include <iostream>
 #include "engine/ElementTypes.h"
 #include "engine/Task.h"
+#include "paths/EnergyTorsions.h"
 #include "paths/BundleBonds.h"
+#include "paths/Scores.h"
+#include "Bin.h"
 
 class BondSequenceHandler;
 class PairwiseDeviations;
 class BondSequence;
 class BaseTask;
 class Route;
+class Atom;
 
 typedef Task<BondSequence *, BondSequence *> CalcTask;
 
@@ -41,6 +45,7 @@ enum CalcOptions
 	VdWClashes = 1 << 3,
 	PerResidue = 1 << 4,
 	ContactMap = 1 << 5,
+	WithSideChains = 1 << 6,
 };
 
 inline std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts)
@@ -50,6 +55,7 @@ inline std::ostream &operator<<(std::ostream &ss, const CalcOptions &opts)
 	if (opts & TorsionEnergies) ss << "TorsionEnergies ";
 	if (opts & VdWClashes) ss << "VdWClashes ";
 	if (opts & PerResidue) ss << "PerResidue ";
+	if (opts & WithSideChains) ss << "PerResidue ";
 	return ss;
 }
 
@@ -67,21 +73,56 @@ public:
 	SubmissionHelp(Route *route, const CalcOptions &options);
 
 	BondSequenceHandler *sequences();
+	
+	void setParticularResidues(const std::set<ResidueId> &ids)
+	{
+		_ids = ids;
+	}
+	
+	/* gets the Route's result bins ready including activation energy bin
+	 * 	if needed  */
 	void prepareBinForScoreResult();
+
+	/* next: calculation of atom positions based on torsion angles, stored
+	 * 	locally */
 	void torsionPositionCalculation();
 
+	/* pairwise calculations if required for given CalcOptions */
 	void pairwiseWorkIfApplicable();
+
+	void finaliseJobSubmission();
+	
+	void setAcquirePositions(bool acquire, float frac)
+	{
+		_acquirePositions = true;
+		_steps = 1;
+		_frac = frac;
+	}
+	
+	void setFocusAtom(Atom *atom)
+	{
+		_atom = atom;
+	}
 private:
 	int _steps = 12;
+	float _frac = 0;
 	Route *_route = nullptr;
 	CalcOptions _options{};
+	std::set<ResidueId> _ids;
 
+	Bin<ResultBy<ResidueId>> &perResidueBin();
+	Task<ResultBy<ResidueId>, void *> *submitResidueResult{};
+
+	bool doingSides();
 	void bundleWorkIfApplicable(int idx);
+	void pairwiseWork(int idx);
 	void calculationExtractionFlags(Flag::Calc *calc,
 	                                Flag::Extract *extract);
 	void applyPostCalcTasks(CalcTask *&hook, const float &frac);
 
 	PairwiseDeviations *chosenCache();
+	EnergyTorsions *chosenEnergyTorsions();
+
 	std::vector<std::function<BondSequence *(BondSequence *)>> 
 	extraTasks(const float &frac);
 	
@@ -95,6 +136,9 @@ private:
 	std::vector<BaseTask *> _first_tasks;
 	std::map<int, TaskInfo> _frac_tasks;
 	int _nBundles = 0;
+	
+	bool _acquirePositions = false;
+	Atom *_atom = nullptr;
 };
 
 #endif

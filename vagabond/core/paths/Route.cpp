@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "paths/Route.h"
+#include "SubmissionHelp.h"
 #include "Polymer.h"
 #include "Grapher.h"
 #include "ParamSet.h"
@@ -237,289 +238,27 @@ void Route::applyPostCalcTasks(CalcTask *&hook, const float &frac)
 
 void Route::submitValue(const CalcOptions &options, int steps)
 {
-	bool pairwise = (options & Pairwise);
-	bool hydrogens = !(options & NoHydrogens);
-	bool torsion_energies = (options & TorsionEnergies);
-	bool vdw_clashes = (options & VdWClashes);
-	bool per_residue = (options & PerResidue);
-	bool contact_map = (options & ContactMap && vdw_clashes);
+	SubmissionHelp help(this, options);
+	help.prepareBinForScoreResult();
+	help.torsionPositionCalculation();
+	help.pairwiseWorkIfApplicable();
+	help.setParticularResidues(_ids);
+	help.finaliseJobSubmission();
+}
 
-	std::vector<BaseTask *> firsts;
-	std::map<int, TaskInfo> frac_tasks;
-
-	/* get easy references to resources */
-	BondSequenceHandler *sequences = (hydrogens ? _resources.sequences : 
-	                                  _hydrogenFreeSequences);
-
-	BondCalculator *const &calculator = _resources.calculator;
-	calculator->reset();
-	Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
-	calculator->holdHorses();
-
-	// dependent on sequences, steps, firsts, frac_tasks, extra tasks like noncovs
-	for (int i = 0; i < steps; i++)
+void Route::submitToShow(float frac, Atom *atom)
+{
+	if (frac < 0)
 	{
-		float frac = i / (float)steps;
-
-		BaseTask *first_hook = nullptr;
-		CalcTask *final_hook = nullptr;
-
-		/* this final task returns the result to the pool to collect later */
-
-		Flag::Calc calc = Flag::Calc(Flag::DoTorsions);
-		if (!pairwise)
-		{
-			calc = Flag::Calc(Flag::DoSuperpose | calc);
-		}
-
-		/* calculation of torsion angle-derived and target-derived
-		 * atom positions */
-		sequences->calculate(calc, {frac}, &first_hook, &final_hook);
-
-		applyPostCalcTasks(final_hook, frac);
-
-		Task<Result, void *> *sr = pairwise ? nullptr : submit_result;
-		Flag::Extract gets = pairwise ? Flag::NoExtract : Flag::Deviation;
-		
-		// only put deviations together for non-pairwise calculation as we
-		// are then done
-		Task<BondSequence *, void *> *let = 
-		sequences->extract(gets, sr, final_hook);
-
-		frac_tasks[i].final_hook = final_hook;
-		frac_tasks[i].let_go = let;
-		
-		firsts.push_back(first_hook);
+		frac = _chosenFrac;
 	}
 
-	Task<Result, void *> *first_only = nullptr;
-	Task<ResultBy<ResidueId>, void *> *by_residue = nullptr;
-
-	if (pairwise)
-	{
-		first_only = calculator->actOfSubmission(1);
-
-		if (per_residue)
-		{
-			by_residue = _perResBin.actOfSubmission(0);
-			_perResBin.holdHorses();
-		}
-	}
-	
-	bool uses_bundles = vdw_clashes;
-
-	int n_bundles = 0;
-	// deciding what goes into the bond sequence bit, and whether it should
-	// be bundled
-
-	for (int i = 0; i < steps && pairwise; i++)
-	{
-		TaskInfo &info = frac_tasks[i];
-
-		float frac = i / (float)steps;
-
-		if (uses_bundles)
-		{
-			BundleBonds *bbs = new BundleBonds(sequences->sequence(), frac);
-
-			auto bundle_hook = [](BundleBonds *bbs) -> BundleBonds *
-			{
-				return bbs;
-			};
-
-			auto del_bundle = [](BundleBonds *bbs) -> void *
-			{
-				delete bbs;
-				return nullptr;
-			};
-
-			info.delete_bundle =
-			new Task<BundleBonds *, void *>(del_bundle, "delete bundle "
-			                                + std::to_string(i));
-
-			info.bundle_hook = 
-			new Task<BundleBonds *, BundleBonds *>(bundle_hook, "bundle hook "
-			                                       + std::to_string(i));
-
-			for (int j = -1; j <= 2; j++)
-			{
-				int n = i + j;
-				if (n < 0 || n >= steps)
-				{
-					continue;
-				}
-
-				TaskInfo &local_info = frac_tasks[n];
-				auto bundle_seq = [j, bbs](BondSequence *seq) -> BundleBonds *
-				{
-					*bbs += {j + 1, seq};
-					return bbs;
-				};
-
-				n_bundles++;
-				auto *bundle = new Task<BondSequence *, BundleBonds *>
-				(bundle_seq, "bundle sequence " + std::to_string(n_bundles));
-
-				local_info.final_hook->follow_with(bundle);
-				bundle->follow_with(info.bundle_hook);
-				bundle->must_complete_before(local_info.let_go);
-			}
-
-			submit_result->must_complete_before(info.delete_bundle);
-			first_only->must_complete_before(info.delete_bundle);
-			info.bundle_hook->follow_with(info.delete_bundle);
-		}
-
-		auto setup_submit_hooks =
-		[&submit_result, &first_only] <typename SpecificTask>
-		(SpecificTask *task, int i)
-		{
-			task->follow_with(submit_result);
-			if (i == 0)
-			{
-				task->follow_with(first_only);
-			}
-		};
-
-		PairwiseDeviations *chosen = _helpers[sequences].pairwise.acquire();
-
-		std::set<ResidueId> active_ids = 
-		doingSides() ? _ids : std::set<ResidueId>();
-		
-		
-		// deciding what to calculate from the bond sequences
-
-		if (!vdw_clashes && !contact_map) // normal momentum
-		{
-			if (!per_residue) // fullblown score
-			{
-				Task<BondSequence *, Deviation> *task = nullptr;
-				task = chosen->momentum_task(frac, active_ids);
-				info.final_hook->follow_with(task);
-				task->must_complete_before(info.let_go);
-				setup_submit_hooks(task, i);
-			}
-			else // separated by residue
-			{
-				std::set<ResidueId> residues = chosen->residues();
-
-				for (const ResidueId &id : residues)
-				{
-					if (_ids.size() > 0 && _ids.count(id) == 0)
-					{
-						continue;
-					}
-					Task<BondSequence *, Deviation> *task = nullptr;
-					task = chosen->momentum_task(frac, {id});
-					info.final_hook->follow_with(task);
-					task->must_complete_before(info.let_go);
-					setup_submit_hooks(task, i);
-
-					auto convert = [id, steps](const Deviation &ae) 
-					-> SingleResult<ResidueId>
-					{
-						return {id, ae.value / steps};
-					};
-
-					auto *momentum_conv =
-					new Task<Deviation, SingleResult<ResidueId>>
-					(convert, "convert score to single residue result");
-
-					task->follow_with(momentum_conv);
-					momentum_conv->follow_with(by_residue);
-				}
-			}
-		}
-		else if (!contact_map) // we want activation energies for clashes
-		{
-			Task<BundleBonds *, ActivationEnergy> *task = nullptr;
-			task = chosen->bundle_clash(active_ids);
-			info.bundle_hook->follow_with(task);
-			setup_submit_hooks(task, i);
-		}
-		else // we want energies for a contact map
-		{
-			Task<BundleBonds *, Contacts> *task = nullptr;
-			task = chosen->contact_map(active_ids);
-			info.bundle_hook->follow_with(task);
-			setup_submit_hooks(task, i);
-		}
-
-
-		if (per_residue && vdw_clashes)
-		{
-			std::set<ResidueId> residues = chosen->residues();
-
-			for (const ResidueId &id : residues)
-			{
-				if (_ids.size() > 0 && _ids.count(id) == 0)
-				{
-					continue;
-				}
-				Task<BundleBonds *, ActivationEnergy> *task = nullptr;
-				task = chosen->bundle_clash({id});
-				info.bundle_hook->follow_with(task);
-				task->must_complete_before(info.delete_bundle);
-
-				Task<BondSequence *, ActivationEnergy> *engy = nullptr;
-				if (torsion_energies && hydrogens)
-				{
-					EnergyTorsions *chosen = _helpers[sequences].et;
-					engy = chosen->energy_task({id}, frac);
-					info.final_hook->follow_with(engy);
-					engy->must_complete_before(info.let_go);
-				}
-
-				auto convert = [id, steps](const ActivationEnergy &ae) 
-				-> SingleResult<ResidueId>
-				{
-					return {id, ae.value / steps};
-				};
-
-				auto *vdw_conv =
-				new Task<ActivationEnergy, SingleResult<ResidueId>>(convert,
-				                                                "convert vdw to single residue result");
-
-				task->follow_with(vdw_conv);
-				vdw_conv->follow_with(by_residue);
-
-				if (engy)
-				{
-					auto *engy_conv =
-					new Task<ActivationEnergy, 
-					SingleResult<ResidueId>>(convert,
-					                     "convert energy to single");
-
-					engy->follow_with(engy_conv);
-					engy_conv->follow_with(by_residue);
-				}
-			}
-		}
-
-		// torsion energies
-		if (torsion_energies && hydrogens && !per_residue)
-		{
-			EnergyTorsions *chosen = _helpers[sequences].et;
-			Task<BondSequence *, ActivationEnergy> *task = nullptr;
-			task = chosen->energy_task(active_ids, frac);
-			info.final_hook->follow_with(task);
-			task->must_complete_before(info.let_go);
-			setup_submit_hooks(task, i);
-		}
-	}
-
-	_ticket2Point[0] = 0;
-	_point2Score[0] = Score{};
-
-	_ticket2Point[1] = 1;
-	_point2Score[1] = Score{};
-	
-	for (BaseTask *t : firsts)
-	{
-		_resources.tasks->addTask(t);
-	}
-
-	calculator->releaseHorses();
+	SubmissionHelp help(this, {});
+	help.setAcquirePositions(true, frac);
+	help.setFocusAtom(atom);
+	help.prepareBinForScoreResult();
+	help.torsionPositionCalculation();
+	help.finaliseJobSubmission();
 }
 
 void Route::colourHiddenHinges(float frac)
@@ -556,66 +295,6 @@ void Route::colourHiddenHinges(float frac)
 			atom->addToColour(hinge);
 		}
 	}
-}
-
-void Route::submitToShow(float frac, Atom *atom)
-{
-	if (frac < 0)
-	{
-		frac = _chosenFrac;
-	}
-
-	Flag::Extract gets = (atom ? Flag::NoExtract : Flag::AtomVector);
-
-	BaseTask *first_hook = nullptr;
-	CalcTask *final_hook = nullptr;
-	
-	/* get easy references to resources */
-	BondCalculator *const &calculator = _resources.calculator;
-	BondSequenceHandler *sequences = _resources.sequences;
-
-	/* this final task returns the result to the pool to collect later */
-	Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
-
-	Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoSuperpose);
-
-	/* calculation of torsion angle-derived and target-derived
-	 * atom positions */
-	sequences->calculate(calc, {frac}, &first_hook, &final_hook);
-	
-	applyPostCalcTasks(final_hook, frac);
-
-	Task<BondSequence *, void *> *let = 
-	sequences->extract(gets, submit_result, final_hook);
-	
-	if (atom)
-	{
-		auto get_position = [atom](BondSequence *const &seq) -> AtomPosList *
-		{
-			for (int i = 0; i < seq->blockCount(); i++)
-			{
-				if (seq->blocks()[i].atom == atom)
-				{
-					AtomPosList *apl = new AtomPosList(1);
-					(*apl)[0].atom = atom;
-					(*apl)[0].wp.ave = seq->blocks()[i].my_position();
-					return apl;
-				}
-			}
-			return new AtomPosList(0);
-		};
-
-		auto *get_atom = new Task<BondSequence *, AtomPosList *>(get_position, 
-		                                                         "get atom");
-		final_hook->follow_with(get_atom);
-		get_atom->must_complete_before(let);
-		get_atom->follow_with(submit_result);
-	}
-
-	_ticket2Point[0] = 0;
-	_point2Score[0] = Score{};
-	
-	_resources.tasks->addTask(first_hook);
 }
 
 const Grapher &Route::grapher() const
