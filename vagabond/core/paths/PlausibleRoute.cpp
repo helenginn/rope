@@ -228,7 +228,7 @@ CalcOptions PlausibleRoute::calcOptions(const CalcOptions &add_options,
 	}
 	if (doingSides())
 	{
-		options = (CalcOptions)(options | PerResidue);
+		options = (CalcOptions)(options | PerResidue | WithSideChains);
 	}
 	
 	options = CalcOptions(options & (~subtract_options));
@@ -790,7 +790,6 @@ void PlausibleRoute::doCalculations()
 	
 	finishTicker();
 	Route::_finish = false;
-	std::cout << "Sending response now" << std::endl;
 	Route::sendResponse("done", (void *)this);
 }
 
