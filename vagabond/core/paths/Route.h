@@ -66,6 +66,7 @@ public:
 	friend Selection;
 	friend BestGuessTorsions;
 
+	float submitJobAndRetrieve(float frac, bool show);
 	void submitToShow(float frac = -1, Atom *atom = nullptr);
 	
 	void setNonCovalents(NonCovalents *noncovs)
@@ -73,8 +74,6 @@ public:
 		_noncovs = noncovs;
 	}
 
-	float submitJobAndRetrieve(float frac, bool show = true);
-	
 	void colourHiddenHinges(float frac); // need to clear the colour yourself
 	
 	void shouldUpdateAtoms(bool update)
