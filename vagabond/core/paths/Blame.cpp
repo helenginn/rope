@@ -45,7 +45,7 @@ void Blame::process()
 			PlausibleRoute *pr = path->toRoute();
 			pr->setup();
 
-			Contacts contacts = pr->contactMap();
+			Contacts contacts = {};//pr->contactMap();
 			{
 				std::unique_lock<std::mutex> lock(mutex());
 				_contacts[path] = contacts;
