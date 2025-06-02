@@ -47,7 +47,6 @@ public:
 		_gui = gui;
 	}
 	void prepareResources();
-    void calculateTorsionFlexibility(CoordManager* specific_manager);
 	void submitJob(float weight);
     void addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs);
     void addHBond(const HBondManager::HBondPair &hbondPair);
@@ -63,27 +62,36 @@ public:
     int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
     void buildJacobianMatrix();
     void calculateSVD();
-    void calculateFlexWeights();
     void loadHBondsFromManager(HBondManager* hbondManager);
     void clearHBonds();
     bool validateHBondPair(const HBondManager::HBondPair &hbondPair);
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
-    void calculateFlexWeightsTest();
-    void calculateTorsionFlexibilityTEST(CoordManager* manager);
-    void savePositionsToCSV(const std::string &filename, std::string &tag);
+    void calculateFlexWeights();
+    void calculateTorsionFlexibility(CoordManager* manager);
     void generateAtomCloud();
+    void atomCloud(float weight, const AtomVector &atoms);
+    void savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
+    void calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms);
     void setColIdx(int chosen_colIdx)
     {
         _colIdx = chosen_colIdx;
+    }
+    void setFlexTag(std::string tagFlex)
+    {
+        std::string _flexTag = tagFlex;
+    }
+    std::string getFlexTag()
+    {
+        return _flexTag;
     }
     void setCluster(ClusterSVD *const &cluster, TorsionData *const &data)
     {
         _cluster = cluster;
         _tData = data;
     }
-
-    void atomCloud(float weight);
-
+    Eigen::Matrix3f covariance(const std::vector<glm::vec3> &samples);
+    void calculateCovSVD(Eigen::Matrix3f covMtx);
+    void saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
 
 protected:
     float _chosenWeight = 0.5;;
@@ -105,6 +113,7 @@ private:
     ClusterSVD *_cluster = nullptr;
     TorsionData *_tData = nullptr;
     int _colIdx;
+    std::string _flexTag;
 };
 
 #endif

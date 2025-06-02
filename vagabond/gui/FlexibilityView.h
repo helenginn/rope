@@ -29,7 +29,7 @@
 
 class Slider;
 class Residue;
-class Instance;
+class Instance; 
 class AtomContent;
 
 // FlexibilityView class - Inherits from Display and DragResponder
@@ -61,6 +61,7 @@ public:
 	void hbondSelected(HBondMenu* hbondMenu, const std::vector<HBondManager::HBondPair> &selectedHBonds);
 	void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
 	void reset();
+	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
 
 private: 
 	bool _selectFlag = false;

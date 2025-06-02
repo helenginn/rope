@@ -16,7 +16,9 @@
 
 
 using Eigen::MatrixXf;
+using Eigen::Matrix3f;
 using Eigen::VectorXf;
+using Eigen::Vector3f;
 using Eigen::BDCSVD;
 
 // Initializes the Flexibility object with an instance pointer
@@ -48,73 +50,44 @@ float Flexibility::submitJobAndRetrieve(float weight)
 
 void Flexibility::generateAtomCloud()
 {
-    _cloudFlag = true;
-    std::string tag = "flexPos";
-    AtomGroup *group = _instance->currentAtoms();
-    const AtomVector &atoms = group->atomVector();
+    setFlexTag("flexPos");
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+
     for (Atom *atom : atoms)
     {
-        atom->removeOtherPosition(tag); 
+        atom->removeOtherPosition(_flexTag); 
     }
 
-    for (float weight = -1; weight <= 1.05; weight += 0.1) //         for (int i = 1; i <= 5; ++i)
+    for (float weight = -1; weight <= 1.05; weight += 0.1)
     {
-        // _flex->setColIdx(i);
-        atomCloud(weight);
+        atomCloud(weight, atoms);
     }
-
-
 }
 
-void Flexibility::atomCloud(float weight)
+void Flexibility::atomCloud(float weight, const AtomVector &atoms)
 {
-    _cloudFlag = true;
-    std::string tag = "flexPos";
-    AtomGroup *group = _instance->currentAtoms();
-    const AtomVector &atoms = group->atomVector();
-
-    int total_samples = 0;
-        // for (float weight = -1; weight <= 1.1; weight += 0.1)
-        for (int i = 0; i <= 5; ++i)
+    for (int i = 0; i <= 5; ++i)
+    {
+        setColIdx(i);
+        submitJobAndRetrieve(weight);
+        for (Atom *atom : atoms)
         {
-            // weight = 0.5;
-            setColIdx(i);
-            submitJobAndRetrieve(weight);
-            for (Atom *atom : atoms)
-            {
-                glm::vec3 vec = atom->derivedPosition();
-                atom->addOtherPosition(tag, vec);   
-            }
+            glm::vec3 vec = atom->derivedPosition();
+            atom->addOtherPosition(_flexTag, vec);   
         }
-    // }
-    
-    for (Atom *atom : atoms)
-    {
-        // Retrieve the WithPos back and print it
-        const WithPos &wp = atom->otherPositions(tag);
     }
 
-    // Check and print the number of samples (positions) stored for each atom
-    int sample_size = 0;
-    if (!atoms.empty())
-    {
-        const WithPos &wp = atoms[0]->otherPositions(tag);
-        sample_size = wp.samples.size();  // assuming WithPos is a container or has .size()
-    }
-
-    std::cout << "-- Sample size per atom: " << sample_size << "--" << std::endl;
-    
     std::cout << "End of B-factor estimation!" << std::endl;
-    std::cout << "*** Saving posiition to sampled_positions.csv... ***" << std::endl;
-    savePositionsToCSV("sampled_positions.csv", tag);
+    std::cout << "*** Saving position to sampled_positions.csv... ***" << std::endl;
+    savePositionsToCSV("sampled_positions.csv", _flexTag, atoms);
+    std::cout << "Average positions" << std::endl;
+    calculateAnisoBfactors(_flexTag, atoms);
+    saveBfactorsToCSV("bfactors.csv", _flexTag, atoms);
 
 }
 
-void Flexibility::savePositionsToCSV(const std::string &filename, std::string &tag)
+void Flexibility::savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms)
 {
-    AtomGroup *group = _instance->currentAtoms();
-    const AtomVector &atoms = group->atomVector();
-
     std::ofstream file(filename);
     if (!file.is_open())
     {
@@ -124,31 +97,132 @@ void Flexibility::savePositionsToCSV(const std::string &filename, std::string &t
 
     // Write header
     file << "Description,Element,ResidueID,AtomName,Chain,SampleIndex,X,Y,Z\n";
-for (Atom *atom : atoms)
-    {
-        const WithPos &positions = atom->otherPositions(tag);
-        std::cout<< positions.samples.size() <<std::endl;
-        for (size_t i = 0; i < positions.samples.size(); ++i)
+    for (Atom *atom : atoms)
         {
-            const glm::vec3 &pos = positions.samples[i];
+            const WithPos &positions = atom->otherPositions(_flexTag);
+            for (size_t i = 0; i < positions.samples.size(); ++i)
+            {
+                const glm::vec3 &pos = positions.samples[i];
 
-            file << atom->desc() << ","
-                 << atom->elementSymbol() << ","
-                 << atom->residueId() << ","
-                 << atom->atomName() << ","
-                 << atom->chain() << ","
-                 << i << ","
-                 << std::fixed << std::setprecision(3)
-                 << pos.x << ","
-                 << pos.y << ","
-                 << pos.z << "\n";
+                file << atom->desc() << ","
+                     << atom->elementSymbol() << ","
+                     << atom->residueId() << ","
+                     << atom->atomName() << ","
+                     << atom->chain() << ","
+                     << i << ","
+                     << std::fixed << std::setprecision(3)
+                     << pos.x << ","
+                     << pos.y << ","
+                     << pos.z << "\n";
+            }
         }
-    }
 
     file.close();
     std::cout << "Saved sampled positions to " << filename << std::endl;
 }
 
+void Flexibility::saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms)
+{
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cerr << "Could not open file: " << filename << std::endl;
+        return;
+    }
+
+    // Write header
+    file << "Description,Element,ResidueID,AtomName,Chain,"
+         << "B11,B22,B33,B12,B13,B23\n";
+    for (Atom *atom : atoms)
+        {
+            const Eigen::Matrix3f &cov = atom->otherAnisoBfactors(_flexTag);
+            file << atom->desc() << ","
+                 << atom->elementSymbol() << ","
+                 << atom->residueId() << ","
+                 << atom->atomName() << ","
+                 << atom->chain() << ","
+                 << std::fixed << std::setprecision(4)
+                 << cov(0, 0) << "," << cov(1, 1) << "," << cov(2, 2) << ","
+                 << cov(0, 1) << "," << cov(0, 2) << "," << cov(1, 2) << "\n";
+
+        }
+
+    file.close();
+    std::cout << "Saved Bfactors to " << filename << std::endl;
+}
+
+void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms)
+{
+
+    for (Atom *atom : atoms)
+        {
+            const WithPos &positions = atom->otherPositions(_flexTag);
+            const std::vector<glm::vec3> &samples = positions.samples;
+            if (samples.empty())
+            {
+                continue;
+            }
+            glm::vec3 sum(0.f);
+            for (const glm::vec3 &pos : samples)
+            {
+                sum += pos;
+            }
+            glm::vec3 avg = sum / static_cast<float>(samples.size());
+            atom->setDerivedPosition(avg);
+            // calculate covariance matrix 
+            Eigen::Matrix3f covMat = covariance(samples);
+            // Output: average and covariance
+            std::cout << atom->desc() << ","
+                    << atom->elementSymbol() << ","
+                    << atom->residueId() << ","
+                    << atom->atomName() << ","
+                    << atom->chain() << ","
+                    << std::fixed << std::setprecision(3)
+                    << "AVG: (" << avg.x << ", " << avg.y << ", " << avg.z << "), " << std::endl;
+            Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
+            std::cout << "COV:\n" << covMat.format(cleanFmt) << "\n";
+            calculateCovSVD(covMat);
+            Eigen::Matrix3f bFactorTens = 8 * M_PI * M_PI * covMat;
+            std::cout << "B factor tenstor:\n" << bFactorTens.format(cleanFmt) << "\n";
+            atom->setDerivedAnisoBfactors(bFactorTens);
+
+        }
+
+}
+
+Eigen::Matrix3f Flexibility::covariance(const std::vector<glm::vec3> &samples)
+{
+    glm::vec3 mean(0.0f);
+    for (const glm::vec3 &v : samples)
+    {
+        mean += v;
+    }
+    mean /= static_cast<float>(samples.size());
+
+    Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
+    for (const glm::vec3 &v : samples)
+    {
+        Eigen::Vector3f diff(v.x - mean.x, v.y - mean.y, v.z - mean.z);
+        cov += diff * diff.transpose();
+    }
+
+    cov /= static_cast<float>(samples.size());
+    return cov;
+}
+
+void Flexibility::calculateCovSVD(Eigen::Matrix3f covMtx)
+{
+    Eigen::MatrixXf covDynamic = covMtx;
+    Eigen::BDCSVD<Eigen::MatrixXf> svdCov;
+    svdCov.compute(covDynamic, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+    Eigen::MatrixXf U = svdCov.matrixU();
+    Eigen::VectorXf S = svdCov.singularValues();
+    Eigen::MatrixXf V = svdCov.matrixV();
+    Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
+    std::cout << "singularValues of COV:\n" << S.format(cleanFmt) << "\n";
+
+}
 
 // Prepares resources for flexibility calculations
 void Flexibility::prepareResources() 
@@ -167,33 +241,13 @@ void Flexibility::prepareResources()
 	_resources.sequences->prepareSequences(); // Prepares sequences
 }
 
-// Calculates torsion flexibility using a lambda function
 void Flexibility::calculateTorsionFlexibility(CoordManager* manager) 
-{
-    std::cout << "Starting caclulating torsion Flexibility" << std::endl;
-	auto calculateFlexibility = [this](const Coord::Get &get, const int &idx) 
-	{
-		float weight = get(0); // Gets weight value passed into submitJob
-        int bigVecIdx = idx; 
-        float flexWeight = _allTorsions[bigVecIdx]*weight;
-        // <-- debug print flexWeight here
-        std::cout << "  flexWeight[" << idx << "] = " << flexWeight << std::endl;
-		return flexWeight; 
-	};
-
-	manager->setTorsionFetcher(calculateFlexibility); // Sets the torsion fetcher
-    std::cout << "Finishing caclulating torsion Flexibility" << std::endl;
-}
-
-// TEST
-void Flexibility::calculateTorsionFlexibilityTEST(CoordManager* manager) 
 {
     std::cout << "Starting calculating torsion Flexibility" << std::endl;
     auto calculateFlexibility = [this](const Coord::Get &get, const int &idx)
     {
         float jobWeight = get(0);
-        std::cout << "--- Setting torsion fetcher for colIdx = " << _colIdx << " ---" << std::endl;
-        std::cout << "For debugging: In calculateTorsionFlexibilityTEST, weight is =  " << jobWeight << std::endl;
+        // std::cout << "--- Setting torsion fetcher for colIdx = " << _colIdx << " ---" << std::endl;
         return _allTorsionsHistory[_colIdx][idx]*jobWeight;
     };
     manager->setTorsionFetcher(calculateFlexibility);
@@ -284,7 +338,7 @@ void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &
     // Gets the coordinate manager
     CoordManager* coord_manager = _resources.sequences->manager(); 
     // Calculates torsion flexibility
-    calculateTorsionFlexibilityTEST(coord_manager); 
+    calculateTorsionFlexibility(coord_manager); 
 }
 
 bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
@@ -536,13 +590,6 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
 
-            // std::cout << "derivatives " << numRow << std::endl;
-            // std::cout << "Processing row " << i << ", column " << j << std::endl;
-            // std::cout << "APos: " << APos.x << ", " << APos.y << ", " << APos.z << std::endl;
-            // std::cout << "BPos: " << BPos.x << ", " << BPos.y << ", " << BPos.z << std::endl;
-            // std::cout << "CPos: " << CPos.x << ", " << CPos.y << ", " << CPos.z << std::endl;
-            // std::cout << "DPos: " << DPos.x << ", " << DPos.y << ", " << DPos.z << std::endl;
-
             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
             jacobianMatrix(i,j) = derivative;
         }
@@ -563,12 +610,26 @@ void Flexibility::calculateSVD()
 }
 
 
-void Flexibility::calculateFlexWeightsTest()
+void Flexibility::calculateFlexWeights()
 {
-    std::cout << "TEST: Calculating flex weights..." << std::endl;
+    std::cout << "Calculating flex weights..." << std::endl;
 
     // Get all the torsions of the protein
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
+
+    //try
+    std::vector<float> weightColumn(_V.rows());
+    _allTorsions = std::vector<float>(totalTorsionNum, 0.0f); // Initialize with zeros
+    // Debug size of _globalTorsionVector
+    if (_globalTorsionVector.size() != weightColumn.size())
+    {
+        std::cerr << "Error: Size mismatch between _globalTorsionVector ("
+                  << _globalTorsionVector.size() << ") and weightColumn ("
+                  << weightColumn.size() << ")." << std::endl;
+        return;
+    }
+    // finish try
+    
     std::vector<std::vector<float>> V_columns; // To store all v_i vectors
 
     // Extract columns from _V and store as vectors
@@ -596,80 +657,11 @@ void Flexibility::calculateFlexWeightsTest()
         }
         _allTorsionsHistory.push_back(_allTorsions);
     }
-    // Simple debug print of _allTorsionsHistory
-    // std::cout << "DEBUG: _allTorsionsHistory (" << _allTorsionsHistory.size() << " confirmation):" << std::endl;
-    // for (size_t i = 0; i < _allTorsionsHistory.size(); ++i)
-    // {
-    //     std::cout << "  [" << i << "]: ";
-    //     for (float val : _allTorsionsHistory[i])
-    //     {
-    //         std::cout << val << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
     std::cout << "V_columns.size()" << std::endl;
     std::cout << V_columns.size() << std::endl;
 
 }
 
-
-
-void Flexibility::calculateFlexWeights()
-{
-/**
- * @brief Computes flexibility weights for protein torsions.
- *
- * This function calculates flexibility weights based on the last column of the 
- * precomputed SVD matrix (_V). It retrieves all torsion angles in the system 
- * and assigns corresponding weights to them.
- *
- * Key steps:
- * - Extracts the last column of the SVD matrix as the weight column.
- * - Initializes the torsion vector with zeros.
- * - Ensures the weight column size matches the global torsion vector size.
- * - Assigns weights to the appropriate torsion indices, with error handling 
- *   for out-of-bounds indices.
- *
- * Error handling:
- * - Prints an error if `_globalTorsionVector` and `weightColumn` sizes do not match.
- * - Checks for invalid torsion indices before assigning values.
- *
- * @note This function assumes that `_V` has been computed and that 
- *       `_globalTorsionVector` correctly maps torsions.
- */
-    std::cout << "Calculating flex weights..." << std::endl;
-
-    // Get all the torsions of the protein
-    int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
-    std::vector<float> weightColumn(_V.rows());
-
-    _allTorsions = std::vector<float>(totalTorsionNum, 0.0f); // Initialize with zeros
-
-    // Debug size of _globalTorsionVector
-    if (_globalTorsionVector.size() != weightColumn.size())
-    {
-        std::cerr << "Error: Size mismatch between _globalTorsionVector ("
-                  << _globalTorsionVector.size() << ") and weightColumn ("
-                  << weightColumn.size() << ")." << std::endl;
-        return;
-    }
-    // Assign weights to torsion vectors
-    for (int i = 0; i < _globalTorsionVector.size(); ++i)
-    {
-        int index = _globalTorsionVector[i];
-        if (index < 0 || index >= totalTorsionNum)
-        {
-            std::cerr << "Error: Index out of bounds in _globalTorsionVector: "
-                      << index << std::endl;
-            continue;
-        }
-        // _allTorsions[index] = weightColumn[i];
-    }
-    calculateFlexWeightsTest();
-
-
-
-}
 
 
 void Flexibility::clearHBonds()

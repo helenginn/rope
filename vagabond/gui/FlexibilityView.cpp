@@ -4,12 +4,16 @@
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/HBondMenu.h>
 
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Result.h>
 #include <vagabond/core/HBondManager.h>
+#include <vagabond/utils/Eigen/Dense>
+
+using Eigen::Matrix3f;
 
 
 
@@ -25,7 +29,6 @@ FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 FlexibilityView::~FlexibilityView()
 {
 	stopGui();
-	// _instance->unload();
 }
 
 void FlexibilityView::makeMenu()
@@ -90,24 +93,38 @@ else if (tag == "options_bfactor_cloud")
 		if (_selectFlag == true)
 		{
 			_flex->generateAtomCloud();
-			// add the code for making a new display unit, imilar to WatchRefinement::setup()
-			// AtomGroup *grp = _refine->model()->currentAtoms();
-			// DisplayUnit *unit = new DisplayUnit(this);
-			// for every atom* in group:
-			// 	get withPos from tag 
-			// 	set derived postions with withPos
-			// unit->loadAtoms(grp);
-			// unit->displayAtoms();
-			// unit->setMultiBondMode(true);
-			// unit->startWatch();
-			// addDisplayUnit(unit);
+			std::string flexTag = _flex->getFlexTag();
+			DisplayUnit *unitCloud = new DisplayUnit(this);
+			AtomGroup *grp = _instance->currentAtoms();
+			const AtomVector &atoms = grp->atomVector();
+			// for (Atom *atom : atoms)
+			// {
+			// 	WithPos pos = atom->otherPositions(flexTag);
+			// 	atom->setDerivedPositions(pos);
+			// 	Matrix3f cov = atom->otherAnisoBfactors(flexTag);
+			// 	atom->setDerivedAnisoBfactors(cov);
+			// }
+    		showCloud(unitCloud, grp);
 		}
 		else
 		{
-			std::cout << "Please select hbonds first and then come back for the B-factors" << std::endl;
+			BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
+			setModal(bch);
 		}
 	}
 	Display::buttonPressed(tag, button);
+
+}
+
+void FlexibilityView::showCloud(DisplayUnit *unit, AtomGroup *grp)
+{	
+	unit->loadAtoms(grp);
+	_unit->disableUnit(true);
+	unit->displayAtoms(false, true);
+	unit->setMultiBondMode(true);
+	unit->startWatch();
+	addDisplayUnit(unit);
+
 
 }
 
@@ -139,11 +156,11 @@ void FlexibilityView::setup()
 {
 	AtomGroup *grp = _instance->currentAtoms();
 	grp->recalculate();
-	DisplayUnit *unit = new DisplayUnit(this);
-	unit->loadAtoms(grp, _instance->entity());
-	unit->displayAtoms();
-	unit->startWatch();
-	addDisplayUnit(unit);
+	_unit = new DisplayUnit(this);
+	_unit->loadAtoms(grp, _instance->entity());
+	_unit->displayAtoms();
+	_unit->startWatch();
+	addDisplayUnit(_unit);
 
 	Display::setup();
 	_flex->prepareResources();
