@@ -32,6 +32,7 @@ class Model;
 class AtomMap;
 class GuiBalls;
 
+
 template <typename Thing> class Responder;
 
 struct DisplayUnit
@@ -81,12 +82,14 @@ public:
 	void displayDensityFromAtoms();
 	void densityFromMap(ArbitraryMap *map);
 	void makeMapFromDiffraction();
+	void disableUnit(bool dis);
 private:
 	void resetDensityMap();
 	void setVisuals();
 
 	bool _atoms_are_mine = false;
 	bool _map_is_mine = false;
+
 
 	Model *_model = nullptr;
 	AtomGroup *_atoms = nullptr;
@@ -97,6 +100,7 @@ private:
 	Entity *_entity = nullptr;
 	ArbitraryMap *_map = nullptr;
 	Display *_parent = nullptr;
+	bool _disabled = false;
 	
 };
 

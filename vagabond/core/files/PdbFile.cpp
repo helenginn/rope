@@ -71,18 +71,18 @@ void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 		vagatom->conformerPositions()[str].b = a->b_iso;
 		vagatom->conformerPositions()[str].occ = a->occ;
 		
-		glm::mat3x3 tensor = {};
-		tensor[0][0] = a->aniso.u11;
-		tensor[0][1] = a->aniso.u12;
-		tensor[0][2] = a->aniso.u13;
-		tensor[1][0] = a->aniso.u12;
-		tensor[1][1] = a->aniso.u22;
-		tensor[1][2] = a->aniso.u23;
-		tensor[2][0] = a->aniso.u13;
-		tensor[2][1] = a->aniso.u23;
-		tensor[2][2] = a->aniso.u33;
+		Eigen::Matrix3f anisoBfactors = {};
+		anisoBfactors(0,0) = a->aniso.u11;
+		anisoBfactors(0,1) = a->aniso.u12;
+		anisoBfactors(0,2) = a->aniso.u13;
+		anisoBfactors(1,0) = a->aniso.u12;
+		anisoBfactors(1,1) = a->aniso.u22;
+		anisoBfactors(1,2) = a->aniso.u23;
+		anisoBfactors(2,0) = a->aniso.u13;
+		anisoBfactors(2,1) = a->aniso.u23;
+		anisoBfactors(2,2) = a->aniso.u33;
 
-		vagatom->conformerPositions()[str].tensor = tensor;
+		vagatom->conformerPositions()[str].anisoBfactors = anisoBfactors;
 	}
 	
 	std::string chosen = vagatom->conformerPositions().begin()->first;
@@ -107,7 +107,7 @@ void PdbFile::processAtomSet(std::vector<gemmi::Atom *> &atoms, AtomInfo &ai)
 	}
 	
 	Atom::AtomPlacement &pl = vagatom->conformerPositions()[chosen];
-	vagatom->setInitialPosition(pl.pos.ave, pl.b, pl.tensor, pl.occ);
+	vagatom->setInitialPosition(pl.pos.ave, pl.b, pl.anisoBfactors, pl.occ);
 	
 	_num++;
 	*_macroAtoms += vagatom;
@@ -305,6 +305,22 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 			a.pos.y = pos.y;
 			a.pos.z = pos.z;
 			first = nullptr;
+
+		    // Add anisotropic B-factors
+		    const Eigen::Matrix3f &m = atom->derivedAnisoBfactors();
+		    // Eigen::Matrix3f m;
+			// m << 10.0, 1.0, 2.0,
+			//      1.0, 20.0, 3.0,
+			//      2.0, 3.0, 30.0;
+		    std::cout << "Aniso for atom " << atom->atomName() << ":\n";
+		    std::cout << m << "\n\n";
+
+            a.aniso.u11 = m(0, 0);
+            a.aniso.u22 = m(1, 1);
+            a.aniso.u33 = m(2, 2);
+            a.aniso.u12 = m(0, 1);
+            a.aniso.u13 = m(0, 2);
+            a.aniso.u23 = m(1, 2);
 		}
 		else if (last != nullptr && altConfs)
 		{

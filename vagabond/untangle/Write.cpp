@@ -74,12 +74,12 @@ void Write::processAtom(gemmi::Chain &c, gemmi::Residue &r, gemmi::Atom &a)
 	try
 	{
 		Atom::AtomPlacement &results = found->conformerPositions().at(search);
-		a.aniso.u11 = results.tensor[0][0];
-		a.aniso.u12 = results.tensor[0][1];
-		a.aniso.u13 = results.tensor[0][2];
-		a.aniso.u22 = results.tensor[1][1];
-		a.aniso.u23 = results.tensor[1][2];
-		a.aniso.u33 = results.tensor[2][2];
+		a.aniso.u11 = results.anisoBfactors(0,0);
+		a.aniso.u12 = results.anisoBfactors(0,1);
+		a.aniso.u13 = results.anisoBfactors(0,2);
+		a.aniso.u22 = results.anisoBfactors(1,1);
+		a.aniso.u23 = results.anisoBfactors(1,2);
+		a.aniso.u33 = results.anisoBfactors(2,2);
 		a.occ = results.occ;
 		a.b_iso = results.b;
 		a.pos.x = results.pos.ave.x;

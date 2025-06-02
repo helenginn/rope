@@ -542,7 +542,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 	if (tag == "flexibility_analysis")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
-
 		Flexibility *flex;
 		flex  = new Flexibility(i);
 		FlexibilityView *flexview;

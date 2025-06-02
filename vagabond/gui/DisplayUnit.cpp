@@ -242,3 +242,9 @@ void DisplayUnit::addAtomIndexResponder(Responder<GuiBalls> *const &rsp)
 	}
 
 }
+
+void  DisplayUnit::disableUnit(bool dis)
+{
+	_guiAtoms->setDisableBalls(dis);
+	_guiAtoms->setDisableRibbon(dis);
+}

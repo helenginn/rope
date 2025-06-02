@@ -7,6 +7,7 @@
 #include "Chirality.h"
 #include "../utils/FileReader.h"
 
+
 Atom::Atom()
 {
 
@@ -33,7 +34,7 @@ Atom::Atom(std::string code, std::string name)
 	_atomName = name;
 }
 
-void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor,
+void Atom::setInitialPosition(glm::vec3 pos, float b, Eigen::Matrix3f anisoBfactors,
                               float occupancy)
 {
 	_initial.pos.ave = pos;
@@ -41,7 +42,7 @@ void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor,
 	{
 		_initial.b = b;
 	}
-	_initial.tensor = tensor;
+	_initial.anisoBfactors = anisoBfactors;
 	
 	if (!_setupInitial)
 	{
@@ -50,7 +51,7 @@ void Atom::setInitialPosition(glm::vec3 pos, float b, glm::mat3x3 tensor,
 		{
 			_derived.b = b;
 		}
-		_derived.tensor = tensor;
+		_derived.anisoBfactors = anisoBfactors;
 		_setupInitial = true;
 	}
 	
@@ -103,6 +104,15 @@ void Atom::setDerivedPositions(WithPos &pos)
 {
 	lockMutex();
 	_derived.pos = pos;
+	unlockMutex();
+	changedPosition();
+}
+
+void Atom::setDerivedAnisoBfactors(const Matrix3f &anisoB)
+{
+	lockMutex();
+	_derived.anisoBfactors = anisoB;
+	std::cout << "Set derived anisotropic B-factors:\n" << anisoB << std::endl;
 	unlockMutex();
 	changedPosition();
 }

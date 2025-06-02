@@ -9,8 +9,11 @@
 #include "ResidueId.h"
 #include <mutex>
 #include <vagabond/utils/OpSet.h>
+#include <vagabond/utils/Eigen/Dense>
 #include <vector>
 #include "BackboneType.h"
+
+using Eigen::Matrix3f;
 
 struct BondNum
 {
@@ -35,6 +38,7 @@ public:
 		float b;
 		float occ;
 		WithPos pos;
+		Eigen::Matrix3f anisoBfactors;	
 	}; 
 	
 	typedef std::map<std::string, AtomPlacement> ConformerInfo;
@@ -43,7 +47,7 @@ public:
 	 * @param b B factor in Angstroms squared
 	 * @param tensor anisotropic tensor; values in PDB divided by 10000 */
 	void setInitialPosition(glm::vec3 pos, float b = -1, 
-	                        glm::mat3x3 tensor = glm::mat3(1.f),
+	                        Eigen::Matrix3f anisoBfactors = Eigen::Matrix3f::Identity(),
 	                        float occupancy = 1.f);
 	
 	/** @returns initial B factor, usually as found in the PDB/mmCIF file */
@@ -80,14 +84,29 @@ public:
 		return _derived.pos.ave;
 	}
 	
+	const Eigen::Matrix3f &derivedAnisoBfactors() const
+	{
+		return _derived.anisoBfactors;
+	}
+
 	const void addOtherPosition(std::string tag, glm::vec3 val)
 	{
 		_others[tag].pos.samples.push_back(val);
 	}
 
+	const void addOtherAnisoBfactor(std::string tag, Eigen::Matrix3f anisoB)
+	{
+		_others[tag].anisoBfactors = anisoB;
+	}
+
 	const WithPos &otherPositions(std::string tag)
 	{
 		return _others[tag].pos;
+	}
+
+	const Matrix3f &otherAnisoBfactors(std::string tag)
+	{
+		return _others[tag].anisoBfactors;
 	}
 	
 	const void setOtherPosition(std::string tag, glm::vec3 val)
@@ -111,6 +130,7 @@ public:
 	}
 	
 	void setDerivedPosition(const glm::vec3 &pos);
+	void setDerivedAnisoBfactors(const Matrix3f &cov);
 	void setDerivedPositions(WithPos &pos);
 	
 	void setDerivedBFactor(double b)
@@ -118,6 +138,7 @@ public:
 		_derived.b = b;
 	}
 	
+
 	/** @param name identifier for atom within monomer, e.g. CG2 in valine */
 	void setAtomName(std::string name);
 	
