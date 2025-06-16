@@ -955,7 +955,7 @@ void Renderable::setImage(std::string imagename, bool wrap)
 	_texture = imagename;
 }
 
-void Renderable::maximalDim(double *min, double *max, int dim)
+void Renderable::maximalDim(double *min, double *max, int dim, bool recursive)
 {
 	if (isDisabled())
 	{
@@ -982,7 +982,7 @@ void Renderable::maximalDim(double *min, double *max, int dim)
 		}
 	}
 	
-	for (size_t i = 0; i < objectCount(); i++)
+	for (size_t i = 0; i < objectCount() && recursive; i++)
 	{
 		object(i)->maximalDim(min, max, dim);
 	}

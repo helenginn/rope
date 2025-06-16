@@ -18,6 +18,7 @@ Slider::Slider() : Image("assets/images/line.png")
 void Slider::setup(std::string text, double min, double max, double step)
 {
 	_width = maximalWidth();
+	setCentre(0.f, 0.f);
 
 	if (_vert)
 	{
@@ -46,11 +47,11 @@ void Slider::setup(std::string text, double min, double max, double step)
 		addObject(_display);
 	}
 
-	DraggableImage *dot = new DraggableImage("assets/images/dot.png", this);
+	DraggableImage *dot = new DraggableImage("assets/images/dot.png", 
+	                                         this, this);
 	dot->setReturnTag("dot");
 	dot->rescale(0.02, 0.02);
-	dot->setCentre(0., 0.);
-	dot->setDragCentre(cx(), cy());
+	dot->setCentre(0.f, 0.f);
 	
 	if (_vert)
 	{
@@ -91,6 +92,12 @@ void Slider::updateDisplay(double val)
 	}
 }
 
+void Slider::setDotLocationAndUpdate(double x, double y)
+{
+	_dot->setProportion(x / (_max - _min), y / (_max - _min));
+	updateDisplay(x);
+}
+
 void Slider::setStep(double val)
 {
 	double disp = val;
@@ -123,7 +130,7 @@ void Slider::finishedDragging(std::string tag, double x, double y)
 
 void Slider::setCentre(double x, double y)
 {
-	_dot->setDragCentre(x, y);
+//	_dot->setDragCentre(x, y);
 	Image::setCentre(x, y);
 }
 

@@ -10,7 +10,7 @@ class DragResponder;
 class Draggable : virtual public Box
 {
 public:
-	Draggable(DragResponder *sender = NULL);
+	Draggable(DragResponder *sender = nullptr, Box *limits = nullptr);
 	
 	void setSender(DragResponder *sender)
 	{
@@ -49,9 +49,9 @@ protected:
 	DragResponder *_sender;
 private:
 	glm::vec3 topLeftLimit();
-	glm::vec3 bottomRightLimit();
 	glm::vec3 boxLimit();
 
+	Box *_limits{};
 	glm::vec3 _centre = glm::vec3{};
 	std::string _tag;
 	double _xspan;
@@ -63,9 +63,10 @@ private:
 class DraggableImage : public Image, public Draggable
 {
 public:
-	DraggableImage(std::string filename, DragResponder *sender = NULL)
+	DraggableImage(std::string filename, DragResponder *sender = nullptr, 
+	               Box *limits = nullptr)
 	: Image(filename),
-	Draggable(sender)
+	Draggable(sender, limits)
 	{}
 
 };

@@ -303,7 +303,7 @@ public:
 	                     std::vector<Snow::Vertex> &vertices, GLint i);
 	void addIndices(GLuint i1, GLuint i2, GLuint i3);
 	void addIndices(GLuint i1, GLuint i2);
-	void maximalDim(double *min, double *max, int dim);
+	void maximalDim(double *min, double *max, int dim, bool recursive = false);
 	double maximalWidth();
 	double maximalHeight();
 

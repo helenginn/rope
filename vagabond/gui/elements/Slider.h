@@ -49,6 +49,8 @@ public:
 
 	virtual void setCentre(double x, double y);
 	virtual void setStep(double val);
+	
+	void setDotLocationAndUpdate(double x, double y);
 
 	void setStart(double x, double y);
 private:

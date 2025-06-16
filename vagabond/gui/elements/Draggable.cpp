@@ -4,8 +4,9 @@
 #include "Draggable.h"
 #include "DragResponder.h"
 
-Draggable::Draggable(DragResponder *sender) : Box()
+Draggable::Draggable(DragResponder *sender, Box *limits) : Box()
 {
+	_limits = limits;
 	setDraggable(true);
 	setSelectable(true);
 	_centre = glm::vec3(0, 0, 0);
@@ -14,6 +15,7 @@ Draggable::Draggable(DragResponder *sender) : Box()
 	_yspan = 0;
 	_xstep = 10;
 	_ystep = 10;
+	setName("Draggable");
 }
 
 void Draggable::unMouseOver()
@@ -27,19 +29,37 @@ bool Draggable::mouseOver()
 	return true;
 }
 
-glm::vec3 Draggable::bottomRightLimit()
-{
-	glm::vec3 v = glm::vec3(0, 0, 0);
-	v.x = _centre.x + _xspan / 2;
-	v.y = _centre.y + _yspan / 2;
-	return v;
-}
-
 glm::vec3 Draggable::topLeftLimit()
 {
+	double xmin = FLT_MAX; double xmax = -FLT_MAX;
+	double ymin = FLT_MAX; double ymax = -FLT_MAX;
+
+	if (_limits)
+	{
+		_limits->maximalDim(&xmin, &xmax, 0);
+		_limits->maximalDim(&ymin, &ymax, 1);
+	}
+	else
+	{
+		xmin = 0; ymin = 0;
+	}
+
 	glm::vec3 v = glm::vec3(0, 0, 0);
-	v.x = _centre.x - _xspan / 2;
-	v.y = _centre.y - _yspan / 2;
+	
+	if (_yspan <= 1e-6)
+	{
+		ymin = (ymin + ymax) / 2;
+	}
+	else
+	{
+		xmin = (xmin + xmax) / 2;
+	}
+
+	xmin = (xmin / 2) + 0.5;
+	ymin = 0.5 - (ymin / 2);
+
+	v.x = xmin;// + _centre.x - _xspan / 2;
+	v.y = ymin;// + _centre.y - _yspan / 2;
 	return v;
 }
 
