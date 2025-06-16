@@ -219,10 +219,14 @@ void regression_line(std::vector<float> xs, std::vector<float> ys,
 
 void hsv_to_rgb(float &H, float &S, float &V)
 {
-	if(H > 360 || H < 0 || S > 100 || S < 0 || V > 100 || V < 0)
-	{
-		return;
-	}
+	while (H > 360) H -= 360;
+	while (H <= 0) H += 360;
+
+	if (S > 100) S = 100;
+	if (S < 0) S = 0;
+
+	if (V > 100) V = 100;
+	if (V < 0) V = 0;
 
 	float s = S / 100;
 	float v = V / 100;
