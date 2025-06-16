@@ -185,6 +185,7 @@ inline double evaluate_CD(CorrelData &cd)
 	return r;
 }
 
+// hue is 0 to 360, saturation from 0 to 100, value from 0 to 100
 void hsv_to_rgb(float &H, float &S, float &V);
 void rgb_to_hsv(float &r, float &g, float &b);
 
