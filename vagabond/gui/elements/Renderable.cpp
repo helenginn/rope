@@ -313,12 +313,12 @@ void Renderable::runProgram()
 
 void Renderable::render(GLView *sender)
 {
+	_gl = sender;
+	
 	if (_disabled)
 	{
 		return;
 	}
-	
-	_gl = sender;
 	
 	if (_program == 0)
 	{
