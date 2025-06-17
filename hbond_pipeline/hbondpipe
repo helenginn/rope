@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Activate conda environment
+source /Applications/phenix-1.20.1-4487/phenix_env.sh
+eval "$(conda shell.bash hook)"
+conda activate pymol_env
+
+# Define path to scripts
+SCRIPT_DIR="$HOME/Desktop/ROPE/hbond_pipeline"
+
+# ---- Start pipeline ----
+
+# Get input file and extension
+input="$1"
+ext="${input##*.}"
+base=$(basename "$input" .${ext})
+
+# Step 1: Convert CIF to PDB if needed
+if [[ "$ext" == "cif" ]]; then
+    echo "Converting CIF to PDB..."
+    python "$SCRIPT_DIR/convert_cif_to_pdb_gemmi.py" "$input"
+elif [[ "$ext" == "pdb" ]]; then
+    echo "Input is already a PDB file. Skipping conversion."
+else
+    echo "Error: unsupported input file type '$ext'. Please provide a .cif or .pdb file."
+    exit 1
+fi
+
+# Step 2: Add hydrogens
+phenix.reduce "${base}.pdb" > "${base}.h.pdb"
+
+# Step 3: Calculate hydrogen bonds
+phenix.hbond "${base}.h.pdb" > "${base}_hbonds.txt"
+
+echo "Hydrogen bonds written to ${base}_hbonds.txt"
+
+# Step 4: Prepare Hydrogen bonds for ROPE
+echo "Final step: prepare Hydrogen bonds for ROPE: write in ${base}_hbonds_ROPE.txt"
+python "$SCRIPT_DIR/prepare_hbonds_rope.py" -hb "${base}_hbonds.txt" -p "${base}.h.pdb" -o "${base}_hbonds_ROPE.txt" --openpymol N
