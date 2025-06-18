@@ -157,7 +157,8 @@ void Mouse2D::mouseMoveEvent(double x, double y)
 		return;
 	}
 
-	if (_left && !_shiftPressed && _controlPressed)
+	if ((_left && !_shiftPressed && _controlPressed) || 
+	    (_2D && _left && !_shiftPressed && !_controlPressed))
 	{
 		double dx = x - _lastX;
 		double dy = y - _lastY;
