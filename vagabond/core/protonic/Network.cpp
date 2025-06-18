@@ -54,76 +54,6 @@ void Network::findAtomAndNameIt(::Atom *atom, const std::string &atomName,
 	}
 }
 
-void Network::setupSingleAlcohol(::Atom *atom)
-{
-	if (!((atom->atomName() == "OG" && atom->code() == "SER") ||
-	    (atom->atomName() == "OG1" && atom->code() == "THR") ||
-	    (atom->atomName() == "OH" && atom->code() == "TYR")))
-	{ return; }
-	
-	std::string str = atom->code() == "SER" ? "Ser" : "";
-	
-	if (str == "")
-	{
-		str = atom->code() == "TYR" ? "Tyr" : "Thr";
-	}
-
-	if (str == "Tyr")
-	{
-		findAtomAndNameIt(atom, "CZ", str);
-	}
-	else
-	{
-		findAtomAndNameIt(atom, "CB", str);
-	}
-
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::One);
-}
-
-void Network::setupLysineAmine(::Atom *atom)
-{
-	if (!(atom->atomName() == "NZ" && atom->code() == "LYS")) { return; }
-
-	_atomMap[atom]->prepareCoordinated(Count::One, Count::Four, Count::Two);
-	findAtomAndNameIt(atom, "CE", "Lys");
-}
-
-void Network::setupAmineNitrogen(::Atom *atom)
-{
-	if (atom->atomName() != "N") { return; }
-
-	int min, max;
-	_original->getLimitingResidues(&min, &max);
-	
-	bool terminal = (atom->residueId() == min);
-
-	if (terminal)
-	{
-		Count::Values n_charge = terminal ? Count::OneOrZero : Count::Zero;
-		_atomMap[atom]->prepareCoordinated(n_charge, Count::Four, Count::Two);
-	}
-	else
-	{
-		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
-	}
-}
-
-void Network::setupAsnGlnNitrogen(::Atom *atom)
-{
-	bool bad = true;
-	if ((atom->atomName() == "ND2" && atom->code() == "ASN") ||
-	    (atom->atomName() == "NE2" && atom->code() == "GLN"))
-	{
-		bad = false;
-	}
-	if (bad) return;
-
-	findAtomAndNameIt(atom, "CG", "Asn");
-	findAtomAndNameIt(atom, "CD", "Gln");
-
-	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Two);
-}
-
 void Network::showCarboxylAtom(::Atom *atom)
 {
 	findAtomAndNameIt(atom, "CG", "Asp");
@@ -183,7 +113,85 @@ void Network::shareCharges(::Atom *left, ::Atom *right,
 	return partner;
 }
 
-void Network::setupHistidine(::Atom *atom)
+bool Network::setupSingleAlcohol(::Atom *atom)
+{
+	if (!((atom->atomName() == "OG" && atom->code() == "SER") ||
+	    (atom->atomName() == "OG1" && atom->code() == "THR") ||
+	    (atom->atomName() == "OH" && atom->code() == "TYR")))
+	{ return false; }
+	
+	std::string str = atom->code() == "SER" ? "Ser" : "";
+	
+	if (str == "")
+	{
+		str = atom->code() == "TYR" ? "Tyr" : "Thr";
+	}
+
+	if (str == "Tyr")
+	{
+		findAtomAndNameIt(atom, "CZ", str);
+	}
+	else
+	{
+		findAtomAndNameIt(atom, "CB", str);
+	}
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::One);
+	return true;
+}
+
+bool Network::setupLysineAmine(::Atom *atom)
+{
+	if (!(atom->atomName() == "NZ" && atom->code() == "LYS"))
+	{
+		return false;
+	}
+
+	_atomMap[atom]->prepareCoordinated(Count::One, Count::Four, Count::Two);
+	findAtomAndNameIt(atom, "CE", "Lys");
+	return true;
+}
+
+bool Network::setupAmineNitrogen(::Atom *atom)
+{
+	if (atom->atomName() != "N") { return false; }
+
+	int min, max;
+	_original->getLimitingResidues(&min, &max);
+	
+	bool terminal = (atom->residueId() == min);
+
+	if (terminal)
+	{
+		Count::Values n_charge = terminal ? Count::OneOrZero : Count::Zero;
+		_atomMap[atom]->prepareCoordinated(n_charge, Count::Four, Count::Two);
+	}
+	else
+	{
+		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
+	}
+
+	return true;
+}
+
+bool Network::setupAsnGlnNitrogen(::Atom *atom)
+{
+	bool bad = true;
+	if ((atom->atomName() == "ND2" && atom->code() == "ASN") ||
+	    (atom->atomName() == "NE2" && atom->code() == "GLN"))
+	{
+		bad = false;
+	}
+	if (bad) return false;
+
+	findAtomAndNameIt(atom, "CG", "Asn");
+	findAtomAndNameIt(atom, "CD", "Gln");
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Two);
+	return true;
+}
+
+bool Network::setupHistidine(::Atom *atom)
 {
 	bool bad = true;
 	if (atom->atomName() == "ND1" && atom->code() == "HIS")
@@ -193,14 +201,14 @@ void Network::setupHistidine(::Atom *atom)
 	
 	if (bad)
 	{
-		return;
+		return false;
 	}
 	
 	::Atom *partner = find_partner(atom, "NE2");
 	
 	if (!partner)
 	{
-		return;
+		return false;
 	}
 
 	const Count::Values charge = Count::OneOrZero;
@@ -217,9 +225,10 @@ void Network::setupHistidine(::Atom *atom)
 	
 	findAtomAndNameIt(atom, "CE1", "His");
 	findAtomAndNameIt(partner, "CE1", "His");
+	return true;
 }
 
-void Network::setupCarboxylOxygen(::Atom *atom)
+bool Network::setupCarboxylOxygen(::Atom *atom)
 {
 	bool bad = true;
 	std::string search;
@@ -237,14 +246,14 @@ void Network::setupCarboxylOxygen(::Atom *atom)
 	
 	if (bad)
 	{
-		return;
+		return false;
 	}
 	
 	::Atom *partner = find_partner(atom, search);
 	
 	if (!partner)
 	{
-		return;
+		return false;
 	}
 
 	Count::Values charge = Count::mOneOrZero;
@@ -261,9 +270,10 @@ void Network::setupCarboxylOxygen(::Atom *atom)
 	
 	showCarboxylAtom(atom);
 	showCarboxylAtom(partner);
+	return true;
 }
 
-void Network::setupCarbonylOxygen(::Atom *atom)
+bool Network::setupCarbonylOxygen(::Atom *atom)
 {
 	bool bad = false;
 	Count::Values coordination = Count::Two;
@@ -284,25 +294,27 @@ void Network::setupCarbonylOxygen(::Atom *atom)
 	
 	if (bad)
 	{
-		return;
+		return false;
 	}
 
 	_atomMap[atom]->prepareCoordinated(Count::Zero, coordination, Count::Zero);
+	return true;
 }
 
-void Network::setupWater(::Atom *atom)
+bool Network::setupWater(::Atom *atom)
 {
-	if (atom->code() != "HOH") { return; }
+	if (atom->code() != "HOH") { return false; }
 	
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::Two);
+	return true;
 }
 
-void Network::setupArginine(::Atom *atom)
+bool Network::setupArginine(::Atom *atom)
 {
 	if (atom->code() != "ARG" || 
 	    !(atom->atomName() == "NH1" || atom->atomName() == "NH2" || 
 	    atom->atomName() == "NE"))
-	{ return; }
+	{ return false; }
 
 	std::cout << "Processing arginine atom " << atom->desc() << std::endl;
 	if (atom->atomName() == "NH1" || atom->atomName() == "NH2")
@@ -317,21 +329,24 @@ void Network::setupArginine(::Atom *atom)
 	}
 
 	findAtomAndNameIt(atom, "CZ", "Arg");
+	return true;
 }
 
-void Network::setupTryptophan(::Atom *atom)
+bool Network::setupTryptophan(::Atom *atom)
 {
 	if (atom->code() != "TRP")
 	{
-		return;
+		return false;
 	}
 
 	if (!(atom->code() == "TRP" && atom->atomName() == "NE1"))
-	{ return; }
+	{ return false; }
 
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
 	findAtomAndNameIt(atom, "CD1", "Trp");
 	findAtomAndNameIt(atom, "CE2", "Trp");
+
+	return true;
 }
 	
 void Network::setupAtom(::Atom *atom)

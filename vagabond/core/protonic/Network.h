@@ -87,16 +87,16 @@ public:
 private:
 	void establishAtom(::Atom *atom);
 
-	void setupAmineNitrogen(::Atom *atom);
-	void setupCarbonylOxygen(::Atom *atom);
-	void setupSingleAlcohol(::Atom *atom);
-	void setupLysineAmine(::Atom *atom);
-	void setupWater(::Atom *atom);
-	void setupArginine(::Atom *atom);
-	void setupAsnGlnNitrogen(::Atom *atom);
-	void setupCarboxylOxygen(::Atom *atom);
-	void setupHistidine(::Atom *atom);
-	void setupTryptophan(::Atom *atom);
+	bool setupAmineNitrogen(::Atom *atom);
+	bool setupCarbonylOxygen(::Atom *atom);
+	bool setupSingleAlcohol(::Atom *atom);
+	bool setupLysineAmine(::Atom *atom);
+	bool setupWater(::Atom *atom);
+	bool setupArginine(::Atom *atom);
+	bool setupAsnGlnNitrogen(::Atom *atom);
+	bool setupCarboxylOxygen(::Atom *atom);
+	bool setupHistidine(::Atom *atom);
+	bool setupTryptophan(::Atom *atom);
 
 	void showCarboxylAtom(::Atom *atom);
 	void shareCharges(::Atom *left, ::Atom *right,
