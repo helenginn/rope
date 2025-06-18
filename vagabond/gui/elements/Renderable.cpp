@@ -346,6 +346,8 @@ void Renderable::setAlpha(double alpha)
 	{
 		_unselectedVertices[i].color[3] = alpha;
 	}
+
+	forceRender(true, false);
 }
 
 void Renderable::recolour(double red, double green, double blue,
