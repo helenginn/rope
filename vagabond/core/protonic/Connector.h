@@ -103,7 +103,7 @@ struct Connector
 		
 		return (before != after);
 	}
-	
+
 	bool forget(void *blame)
 	{
 		int total = _conditions.remove_condition_with_blame(blame);
@@ -116,6 +116,11 @@ struct Connector
 		for (Forget &forget_condition : _forgets)
 		{
 			forget_condition(blame);
+		}
+
+		if (_update)
+		{
+			_update();
 		}
 		
 		return true;
