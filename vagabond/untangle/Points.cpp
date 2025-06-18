@@ -19,7 +19,7 @@
 #include "Points.h"
 #include "Visual.h"
 #include "Untangle.h"
-#include "UndoStack.h"
+#include <vagabond/utils/UndoStack.h>
 #include <vagabond/core/Atom.h>
 #include <vagabond/core/BondLength.h>
 #include <vagabond/gui/elements/Window.h>

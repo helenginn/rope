@@ -55,6 +55,7 @@ public:
 	}
 	
 	void setMenu(Menu *menu);
+	virtual void keyReleaseEvent(SDL_Keycode pressed);
 private:
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);

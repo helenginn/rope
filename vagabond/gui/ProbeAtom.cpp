@@ -136,11 +136,31 @@ void ProbeAtom::reindex()
 
 void ProbeAtom::declareHydrogen(Hydrogen::Values value)
 {
-	std::string name = "Declare hydrogen present";
+	std::string name = "Declare hydrogen";
 	Decree *d = _view->network().newDecree(name);
 
 	HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
-	hProbe->_obj.assign_value(value, d, d);
+	std::string present = (value == Hydrogen::Present ? "present" : "absent");
+
+	std::string message = "Declare hydrogen " + present;
+
+	auto make_declaration = [d, value, this]
+	{
+		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
+		hProbe->_obj.assign_value(value, d, d);
+	};
+
+	auto rescind_declaration = [d, this]
+	{
+		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
+
+		hProbe->_obj.forget(d);
+		hProbe->_obj.check_all(d);
+	};
+	
+	_view->network().undoStack().addJobAndExecute(make_declaration,
+	                                              rescind_declaration,
+	                                              message);
 }
 
 void ProbeAtom::buttonPressed(std::string tag, Button *button)

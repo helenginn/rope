@@ -22,6 +22,7 @@
 #include <list>
 #include <map>
 
+#include <vagabond/utils/UndoStack.h>
 #include "Connector.h"
 #include "Constraint.h"
 #include "Probe.h"
@@ -69,6 +70,11 @@ public:
 	const std::list<AtomProbe *> &atomProbes() const
 	{
 		return _atomProbes;
+	}
+	
+	UndoStack &undoStack()
+	{
+		return _undoStack;
 	}
 	
 	glm::vec3 centre() const;
@@ -127,6 +133,7 @@ private:
 	AtomGroup *_originalAndMates = nullptr;
 	
 	std::vector<Decree *> _decrees;
+	UndoStack _undoStack{};
 };
 
 #endif

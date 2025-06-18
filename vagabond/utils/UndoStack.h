@@ -28,7 +28,8 @@ public:
 	UndoStack();
 
 	void addJobAndExecute(std::function<void()> job,
-	                      std::function<void()> reverse);
+	                      std::function<void()> reverse,
+	                      const std::string &name = "");
 	void undo();
 	void redo();
 private:
@@ -37,6 +38,7 @@ private:
 	{
 		std::function<void()> forward;
 		std::function<void()> reverse;
+		std::string name;
 	};
 
 	std::vector<JobPair> _jobs;

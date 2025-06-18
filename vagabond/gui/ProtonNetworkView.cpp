@@ -104,3 +104,19 @@ void ProtonNetworkView::setMenu(Menu *menu)
 
 	setModal(menu);
 }
+
+void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
+{
+	if (_controlPressed && !_shiftPressed && pressed == SDLK_z)
+	{
+		network().undoStack().undo();
+	}
+
+	if ((_controlPressed && _shiftPressed && pressed == SDLK_z) ||
+	    (_controlPressed && pressed == SDLK_y))
+	{
+		network().undoStack().redo();
+	}
+
+	Scene::keyReleaseEvent(pressed);
+}

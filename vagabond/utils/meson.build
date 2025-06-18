@@ -19,6 +19,8 @@ utilfiles = [
 'ProbDist.h',
 'AcquireCoord.h',
 'ConvertIndex.h',
+'UndoStack.h',
+'UndoStack.cpp',
 'OpVec.h',
 'OpList.h',
 'histogram.h',

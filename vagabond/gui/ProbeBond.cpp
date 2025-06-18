@@ -133,6 +133,25 @@ void ProbeBond::declareBond(Bond::Values value)
 	Decree *d = _view->network().newDecree(name);
 
 	_probe->_obj.assign_value(value, d, d);
+	std::ostringstream ss;
+
+	auto make_declaration = [d, value, this]
+	{
+		_probe->_obj.assign_value(value, d, d);
+	};
+
+	auto rescind_declaration = [d, this]
+	{
+		_probe->_obj.forget(d);
+		_probe->_obj.check_all(d);
+	};
+
+	ss << name << " " << value << std::endl;
+	std::string message = ss.str();
+	
+	_view->network().undoStack().addJobAndExecute(make_declaration,
+	                                              rescind_declaration,
+	                                              message);
 }
 
 void ProbeBond::buttonPressed(std::string tag, Button *button)

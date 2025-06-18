@@ -7,8 +7,6 @@ untanglefiles = [
 'Points.cpp',
 'TangledBond.h',
 'TangledBond.cpp',
-'UndoStack.h',
-'UndoStack.cpp',
 'UntangleWindow.h',
 'UntangleWindow.cpp',
 'UntangleView.h',

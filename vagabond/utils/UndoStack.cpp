@@ -26,7 +26,9 @@ UndoStack::UndoStack()
 
 
 void UndoStack::addJobAndExecute(std::function<void()> forward,
-                                 std::function<void()> reverse)
+                                 std::function<void()> reverse,
+                                 const std::string &name)
+
 {
 	// if we're behind in the undo stack, delete all jobs in the old branch
 	if (_tracker < 0)
@@ -35,7 +37,7 @@ void UndoStack::addJobAndExecute(std::function<void()> forward,
 		_tracker = 0;
 	}
 
-	_jobs.push_back({forward, reverse});
+	_jobs.push_back({forward, reverse, name});
 	forward();
 }
 

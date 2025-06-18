@@ -23,7 +23,7 @@
 #include <vagabond/core/BondLength.h>
 #include <vagabond/core/Atom.h>
 #include "TangledBond.h"
-#include "UndoStack.h"
+#include <vagabond/utils/UndoStack.h>
 #include "Untangle.h"
 #include "Visual.h"
 #include "Points.h"
