@@ -47,9 +47,9 @@ public:
 		_colour = colour;
 	}
 
-	void setPosition(const glm::vec2 &position)
+	void setPosition(const glm::vec3 &position)
 	{
-		_pos = glm::vec3(position, Z_DEF);
+		_pos = position;
 	}
 	
 	void register_probe(Probe *other)
@@ -72,15 +72,33 @@ public:
 	
 	virtual bool is_certain() = 0;
 	
-	void setAlpha(float alpha)
+	void setAlpha(float alpha, OpSet<Probe *> &fixed)
 	{
 		_alpha = alpha;
+		fixed.insert(this);
 		
 		for (Probe *other : _others)
 		{
-			other->setAlpha(_alpha);
+			if (fixed.count(other) == 0)
+			{
+				other->setAlpha(_alpha, fixed);
+			}
 		}
 		sendResponse("alpha", this);
+	}
+
+	void setAlpha(float alpha, bool recursive = true)
+	{
+		if (recursive)
+		{
+			OpSet<Probe *> fixed;
+			setAlpha(alpha, fixed);
+		}
+		else
+		{
+			_alpha = alpha;
+			sendResponse("alpha", this);
+		}
 	}
 
 	float alpha() const
@@ -276,6 +294,9 @@ public:
 		
 		left.register_probe(this);
 		right.register_probe(this);
+		
+		register_probe(&left);
+		register_probe(&right);
 	}
 
 	virtual const glm::vec3 &position() const
