@@ -76,7 +76,8 @@ namespace Atom
 		Oxygen        = 1 << 0,
 		Nitrogen      = 1 << 1,
 		Sulphur       = 1 << 2,
-		Unassigned    = (1 << 0 | 1 << 1 | 1 << 2),
+		Inactive      = 1 << 3, // e.g. carbon
+		Unassigned    = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
 };
 
@@ -245,6 +246,42 @@ inline std::ostream &operator<<(std::ostream &ss, const Count::Values &v)
 {
 	switch (v)
 	{
+		default:
+		ss << to_string(v);
+		break;
+	}
+
+	return ss;
+}
+
+inline std::ostream &operator<<(std::ostream &ss, const Atom::Values &v)
+{
+	switch (v)
+	{
+		case Atom::Contradiction:
+		ss << std::string("Contradiction!");
+		break;
+
+		case Atom::Oxygen:
+		ss << std::string("Oxygen");
+		break;
+
+		case Atom::Nitrogen:
+		ss << std::string("Nitrogen");
+		break;
+
+		case Atom::Sulphur:
+		ss << std::string("Sulphur");
+		break;
+
+		case Atom::Inactive:
+		ss << std::string("Inactive atom");
+		break;
+
+		case Atom::Unassigned:
+		ss << std::string("Unassigned");
+		break;
+
 		default:
 		ss << to_string(v);
 		break;
