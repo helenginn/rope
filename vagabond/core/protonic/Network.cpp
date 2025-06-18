@@ -465,8 +465,8 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
 	std::cout << failCount << " failed some logical check." << std::endl;
 	std::cout << std::endl;
-	HideComplete hide(*this);
-	hide(true);
+//	HideComplete hide(*this);
+//	hide(true);
 }
 
 glm::vec3 Network::centre() const
