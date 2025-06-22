@@ -448,18 +448,18 @@ void Window::deleteQueued()
 	}
 
 	_deleteRenderables.clear();
-	_deleteMutex.unlock();
 }
 
 void Window::render()
 {
-	std::unique_lock<std::mutex> switchlock(_switchMutex);
-	std::unique_lock<std::mutex> dellock(_deleteMutex);
+	Scene *curr = nullptr;
+	{
+		std::unique_lock<std::mutex> switchlock(_switchMutex);
+		std::unique_lock<std::mutex> dellock(_deleteMutex);
 
-	Scene *curr = _current;
-	switchlock.unlock();
+		curr = _current;
+	}
 
-	dellock.unlock();
 	curr->doThingsCircuit();
 
 	if (!curr->isViewChanged())
@@ -486,15 +486,16 @@ void Window::render()
 
 void Window::setCurrentScene(Scene *scene, bool show)
 {
-	std::unique_lock<std::mutex> lock(_switchMutex);
-	if (_current != nullptr)
 	{
-		_current->resetMouseKeyboard();
+		std::unique_lock<std::mutex> lock(_switchMutex);
+		if (_current != nullptr)
+		{
+			_current->resetMouseKeyboard();
+		}
+		_current = scene;
+		_current->setDims(_rect.w, _rect.h);
 	}
-	_current = scene;
-	_current->setDims(_rect.w, _rect.h);
-	_switchMutex.unlock();
-	
+
 	if (show)
 	{
 		_current->preSetup();
