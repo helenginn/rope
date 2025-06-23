@@ -20,6 +20,7 @@
 #define __vagabond__alignment__
 
 #include "hnet.h"
+#include "Atom.h"
 #include "Connector.h"
 #include "Superpose.h"
 #include <vagabond/utils/OpSet.h>
@@ -29,8 +30,30 @@ class Atom;
 namespace hnet
 {
 
-typedef std::pair<::Atom *, hnet::BondConnector *> ABPair;
+typedef std::pair<AtomConf, hnet::BondConnector *> ABPair;
 typedef OpSet<ABPair> PairSet;
+
+inline std::ostream &operator<<(std::ostream &ss, const ABPair &pair)
+{
+	ss << pair.first;
+	
+	if (pair.second == nullptr)
+	{
+		ss << "(nullptr)";
+	}
+	return ss;
+}
+
+
+inline std::ostream &operator<<(std::ostream &ss, const PairSet &all)
+{
+	for (const ABPair &ps : all)
+	{
+		ss << ps << " ";
+	}
+	ss << "(" << all.size() << ")";
+	return ss;
+}
 
 inline std::vector<std::string> inactiveHydrogenNames(::Atom *atom)
 {
@@ -229,7 +252,7 @@ inline OpSet<::Atom *> inactiveHydrogens(::Atom *atom, int &coord)
 /* finding the "uninvolved" atom for throwing out non-bondable possibilities
  * due to violating bond angle: Ser-CB---O:::H---X where CB-O-X must be reasonable
  * values */
-inline OpSet<ABPair> uninvolvedCoordinators(::Atom *atom)
+inline OpSet<ABPair> uninvolvedCoordinators(const AtomConf &atom)
 {
 	struct FindUninvolved
 	{
@@ -238,6 +261,11 @@ inline OpSet<ABPair> uninvolvedCoordinators(::Atom *atom)
 		std::string uninvolved;
 	};
 
+	std::string conf;
+	if (atom.conf != '\0') 
+	{
+		conf += atom.conf;
+	}
 	std::vector<FindUninvolved> list = {{"SER", "OG", "CB"},
 		                                {"THR", "OG1", "CB"},
 		                                {"TYR", "OH", "CZ"},
@@ -267,17 +295,28 @@ inline OpSet<ABPair> uninvolvedCoordinators(::Atom *atom)
 	OpSet<ABPair> found;
 	for (FindUninvolved &find : list)
 	{
-		if ((atom->code() != find.code && find.code.length() > 0)
-		    || atom->atomName() != find.active)
+		if ((atom.ptr->code() != find.code && find.code.length() > 0)
+		    || (atom.ptr->atomName() != find.active))
 		{
 			continue;
 		}
-		
-		for (size_t i = 0; i < atom->bondLengthCount(); i++)
+
+		for (size_t i = 0; i < atom.ptr->bondLengthCount(); i++)
 		{
-			if (atom->connectedAtom(i)->atomName() == find.uninvolved)
+			if (atom.ptr->connectedAtom(i)->atomName() == find.uninvolved)
 			{
-				found.insert({atom->connectedAtom(i), nullptr});
+				::Atom *connected = atom.ptr->connectedAtom(i);
+				if (connected->conformerList().count(conf))
+				{
+					found.insert({{connected, atom.conf}, nullptr});
+					continue;
+				}
+				for (const std::string &new_conf : connected->conformerList())
+				{
+					char c = char_from_conf(new_conf);
+					AtomConf ac = {connected, c};
+					found.insert({ac, nullptr});
+				}
 			}
 		}
 	}

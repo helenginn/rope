@@ -137,6 +137,7 @@ public:
 	}
 	
 	Atom *_atom = nullptr;
+	char _conf;
 	glm::vec3 _pos = {};
 	glm::vec3 _init = {};
 	
@@ -150,12 +151,15 @@ class AtomProbe : public Probe
 {
 public:
 	AtomProbe(hnet::AtomConnector &obj, Atom *inherit = nullptr,
-	          const std::string &custom_text = {}) : _obj(obj)
+	          char conf = '\0', const std::string &custom_text = {})
+	: _obj(obj)
 	{
 		if (inherit)
 		{
 			_atom = inherit;
-			_init = _atom->initialPosition();
+			_conf = conf;
+			hnet::AtomConf ac = {_atom, _conf};
+			_init = ac.position();
 			_colour = (_atom->code() == "HOH" ? 
 			           glm::vec3(0, 0, 0.0) : glm::vec3(-0.3f));
 		}
@@ -234,7 +238,7 @@ public:
 class HydrogenProbe : public Probe
 {
 public:
-	HydrogenProbe(hnet::HydrogenConnector &obj, 
+	HydrogenProbe(hnet::ExistenceConnector &obj, 
 	              AtomProbe &left, AtomProbe &right) :
 	_obj(obj), _left(left), _right(right)
 	{
@@ -302,7 +306,7 @@ public:
 		return _obj.value() == hnet::Existence::Absent;
 	}
 
-	hnet::HydrogenConnector &_obj;
+	hnet::ExistenceConnector &_obj;
 	AtomProbe &_left;
 	AtomProbe &_right;
 };

@@ -93,7 +93,8 @@ void ProbeAtom::hoverOverAtom()
 	{
 		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
 		::Atom *atom = aProbe->atom();
-		_view->setInformation(atom->desc());
+		std::string conf; conf += aProbe->_conf;
+		_view->setInformation(atom->desc() + "," + conf);
 	}
 }
 

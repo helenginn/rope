@@ -24,6 +24,7 @@
 #include <variant>
 #include <vector>
 #include <functional>
+#include "Atom.h"
 
 /** serious missing features:
  * - missing hydrogens off non-donors // sorted?
@@ -31,6 +32,8 @@
  *    - in trypsin, Ser170 and Ser167 for example
  * - alternate conformers
  */
+
+class Atom;
 
 namespace hnet
 {
@@ -80,6 +83,60 @@ namespace Atom
 		Unassigned    = (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
 	};
 };
+
+struct AtomConf
+{
+	::Atom *ptr = nullptr;
+	char conf = '\0';
+
+	bool operator==(const AtomConf &other) const
+	{
+		return (ptr == other.ptr && conf == other.conf);
+	}
+
+	bool operator<(const AtomConf &other) const
+	{
+		if (ptr == other.ptr)
+		{
+			return conf < other.conf;
+		}
+
+		return ptr < other.ptr;
+	}
+
+	glm::vec3 position() const
+	{
+		std::string c; if (conf != '\0') { c += conf; }
+		glm::vec3 pos = ptr->conformerPositions().at(c).pos.ave;
+		return pos;
+	}
+};
+
+inline char char_from_conf(const std::string &conformer)
+{
+	return conformer.length() ? conformer[0] : '\0';
+}
+
+
+
+inline std::ostream &operator<<(std::ostream &ss, const AtomConf &ac)
+{
+	if (ac.ptr)
+	{
+		ss << ac.ptr->desc();
+	}
+	else
+	{
+		ss << "(nullptr)";
+	}
+	if (ac.ptr && ac.conf != '\0')
+	{
+		std::string conf; conf += ac.conf;
+		ss << "," << conf;
+	}
+	return ss;
+}
+
 
 /*  definitions for atoms which are heavier than hydrogen */
 namespace Count

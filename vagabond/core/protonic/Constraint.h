@@ -221,7 +221,7 @@ struct AnyConstraint
 			delete static_cast<CountAdder *>(_ptr); break;
 
 			case HBond:
-			delete static_cast<HydrogenConnector *>(_ptr); break;
+			delete static_cast<ExistenceConnector *>(_ptr); break;
 			
 			case Equal:
 			delete static_cast<EqualBonds *>(_ptr); break;

@@ -32,11 +32,11 @@ namespace hnet
 class Coordinated
 {
 public:
-	Coordinated(::Atom *atom, Network &network);
+	Coordinated(Network &network, ::Atom *atom, char conf = '\0');
 	
 	operator ::Atom *const &() const
 	{
-		return _atom;
+		return _atomConf.ptr;
 	}
 
 	template <class Connector>
@@ -57,13 +57,18 @@ public:
 	                        const Count::Values &n_coord_num,
 	                        const Count::Values &remaining_valency);
 
-	AtomGroup *findNeighbours(AtomGroup *group, const glm::vec3 &v, 
-	                          float distance, bool one_sided);
+	OpSet<AtomConf> expandGroupToSet(AtomGroup *group);
+	OpSet<AtomConf> findNeighbours(const OpSet<AtomConf> &group,
+	                               const glm::vec3 &v, 
+	                               float distance, bool one_sided);
+
 	void attachToNeighbours(AtomGroup *searchGroup);
 	void mutualExclusions(AtomGroup *clashCheck);
 	void attachAdderConstraints();
 
 	void probeAtom();
+	
+	glm::vec3 atomic_position();
 
 	AtomProbe *const &probe() const
 	{
@@ -139,15 +144,20 @@ public:
 private:
 	OpSet<PairSet> findSeeds();
 	ABPair makePossibleHydrogen(const glm::vec3 &pos);
+	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen);
 	void comparePairs(OpSet<PairSet> &results,
 	                  const ABPair &first, const ABPair &second,
 	                  glm::vec3 &centre);
 	PairSet developSeed(const PairSet &seed, const PairSet &all,
 	                    const PairSet &uninvolved, const glm::vec3 &centre,
-	                    AtomGroup *clashCheck, int &fake_atom_count);
-	OpSet<PairSet> expandAllSeeds(AtomGroup *clashCheck);
+	                    OpSet<AtomConf> &clashCheck, int &fake_atom_count);
+	OpSet<PairSet> expandAllSeeds(OpSet<AtomConf> &clashCheck,
+	                              const PairSet &uninvolved_group,
+	                              PairSet &all_used);
+	
+	OpSet<ABPair> uninvolvedCoordinators();
 
-	std::map<::Atom *, Coordinated *> &atomMap() const
+	std::map<hnet::AtomConf, Coordinated *> &atomMap() const
 	{
 		return _network.atomMap();
 	}
@@ -167,15 +177,21 @@ private:
 	PairSet _bonds;
 	
 	// the atom not involved in hydrogen bonding, but important for coordination
+	OpSet<PairSet> _uninvolved_groups{};
 	OpSet<ABPair> _uninvolved{};
 	
 	int _coordNum = 0;
 	bool _failedCheck = false;
 
 	AtomProbe *_probe{};
+	
+	::Atom *const &atom() const
+	{
+		return _atomConf.ptr;
+	}
 
 	Network &_network;
-	::Atom *_atom = nullptr;
+	AtomConf _atomConf = {nullptr, '\0'};
 };
 
 }

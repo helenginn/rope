@@ -138,13 +138,29 @@ public:
 	}
 
 	template <class Filter>
-	void filter(const Filter &filter)
+	OpSet<Type> filter(const Filter &filter_in) const
 	{
 		OpSet<Type> filtered;
 
 		for (Type t : *this)
 		{
-			if (filter(t))
+			if (filter_in(t))
+			{
+				filtered.insert(t);
+			}
+		}
+
+		return filtered;
+	}
+
+	template <class Filter>
+	void filter(const Filter &filter_in)
+	{
+		OpSet<Type> filtered;
+
+		for (Type t : *this)
+		{
+			if (filter_in(t))
 			{
 				filtered.insert(t);
 			}

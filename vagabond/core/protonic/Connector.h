@@ -199,7 +199,7 @@ struct Connector
 
 typedef Connector<Atom::Values> AtomConnector;
 typedef Connector<Bond::Values> BondConnector;
-typedef Connector<Existence::Values> HydrogenConnector;
+typedef Connector<Existence::Values> ExistenceConnector;
 typedef Connector<Count::Values> CountConnector;
 
 /* union to store created connectors in a list */
@@ -207,7 +207,7 @@ struct AnyConnector
 {
 	enum Type
 	{
-		Atom, Bond, Hydrogen, Count
+		Atom, Bond, Existence, Count
 	};
 	
 	AnyConnector(BondConnector *const &connector)
@@ -228,9 +228,9 @@ struct AnyConnector
 		_ptr = connector;
 	}
 	
-	AnyConnector(HydrogenConnector *const &connector)
+	AnyConnector(ExistenceConnector *const &connector)
 	{
-		_type = Hydrogen;
+		_type = Existence;
 		_ptr = connector;
 	}
 	
@@ -250,8 +250,8 @@ struct AnyConnector
 			delete static_cast<CountConnector *>(_ptr);
 			break;
 
-			case Hydrogen:
-			delete static_cast<HydrogenConnector *>(_ptr);
+			case Existence:
+			delete static_cast<ExistenceConnector *>(_ptr);
 			break;
 			
 			default: break;

@@ -35,24 +35,6 @@ namespace hnet
 	class Coordinated;
 }
 
-struct AtomConf
-{
-	::Atom *ptr = nullptr;
-	char conformer = '\0';
-	
-	bool operator<(const AtomConf &other) const
-	{
-		if (ptr == other.ptr)
-		{
-			return conformer < other.conformer;
-		}
-		else
-		{
-			return ptr < other.ptr;
-		}
-	}
-};
-
 class Network
 {
 public:
@@ -102,7 +84,7 @@ public:
 	CountProbe &add_probe(CountProbe *const &probe);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
 
-	std::map<::Atom *, hnet::Coordinated *> &atomMap()
+	std::map<hnet::AtomConf, hnet::Coordinated *> &atomMap()
 	{
 		return _atomMap;
 	}
@@ -111,28 +93,24 @@ public:
 private:
 	void establishAtom(::Atom *atom);
 
-	void setupInactiveAtom(::Atom *atom);
-	bool setupAmineNitrogen(::Atom *atom);
-	bool setupCarbonylOxygen(::Atom *atom);
-	bool setupSingleAlcohol(::Atom *atom);
-	bool setupLysineAmine(::Atom *atom);
-	bool setupWater(::Atom *atom);
-	bool setupArginine(::Atom *atom);
-	bool setupAsnGlnNitrogen(::Atom *atom);
-	bool setupCarboxylOxygen(::Atom *atom);
-	bool setupHistidine(::Atom *atom);
-	bool setupTryptophan(::Atom *atom);
+	void setupInactiveAtom(hnet::AtomConf atom);
+	bool setupAmineNitrogen(hnet::AtomConf atom);
+	bool setupCarbonylOxygen(hnet::AtomConf atom);
+	bool setupSingleAlcohol(hnet::AtomConf atom);
+	bool setupLysineAmine(hnet::AtomConf atom);
+	bool setupWater(hnet::AtomConf atom);
+	bool setupArginine(hnet::AtomConf atom);
+	bool setupAsnGlnNitrogen(hnet::AtomConf atom);
+	bool setupCarboxylOxygen(hnet::AtomConf atom);
+	bool setupHistidine(hnet::AtomConf atom);
+	bool setupTryptophan(hnet::AtomConf atom);
 
-	void showCarboxylAtom(::Atom *atom);
-	void shareCharges(::Atom *left, ::Atom *right,
+	void shareCharges(hnet::AtomConf left, hnet::AtomConf right,
 	                 const hnet::Count::Values &allowable);
-	void shareStrong(::Atom *left, ::Atom *right,
+	void shareStrong(hnet::AtomConf left, hnet::AtomConf right,
 	                 const hnet::Count::Values &allowable);
 
-	void findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
-	                       const std::string &name);
-
-	void setupAtom(::Atom *atom);
+	void setupAtom(hnet::AtomConf atom);
 
 	std::list<hnet::AnyConnector> _connectors;
 	std::list<hnet::AnyConstraint> _constraints;
@@ -141,9 +119,9 @@ private:
 	std::list<BondProbe *> _bondProbes;
 	std::list<CountProbe *> _countProbes;
 
-	std::map<Atom *, hnet::Coordinated *> _atomMap;
-	std::map<Atom *, AtomProbe *> _atom2Probe;
-	std::map<Atom *, std::vector<HydrogenProbe *> > _h2Probe;
+	std::map<hnet::AtomConf, hnet::Coordinated *> _atomMap;
+	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;
+	std::map<hnet::AtomConf, std::vector<HydrogenProbe *> > _h2Probe;
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_symMates = nullptr;

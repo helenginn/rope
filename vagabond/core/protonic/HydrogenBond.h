@@ -26,7 +26,7 @@ namespace hnet
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
 struct HydrogenBond
 {
-	HydrogenBond(BondConnector &left, HydrogenConnector &centre, 
+	HydrogenBond(BondConnector &left, ExistenceConnector &centre, 
 	             BondConnector &right) 
 	: _left(left), _centre(centre), _right(right)
 	{
@@ -153,7 +153,7 @@ struct HydrogenBond
 	}
 	
 	BondConnector &_left;
-	HydrogenConnector &_centre;
+	ExistenceConnector &_centre;
 	BondConnector &_right;
 };
 };

@@ -25,14 +25,13 @@
 #include "CountAdder.h"
 #include "Hydrogenate.h"
 #include "Coordinated.h"
-#include "HideComplete.h"
 #include "HydrogenBond.h"
 
 
 using namespace hnet;
 
 template <typename Obtain>
-void shareProperty(Network *me, ::Atom *left, ::Atom *right, 
+void shareProperty(Network *me, AtomConf left, AtomConf right, 
                    const Obtain &obtain, const Count::Values &allowable)
 {
 	CountConnector &sum = me->add(new CountConnector());
@@ -47,10 +46,10 @@ void shareProperty(Network *me, ::Atom *left, ::Atom *right,
 	}
 }
 
-void Network::shareStrong(::Atom *left, ::Atom *right,
+void Network::shareStrong(AtomConf left, AtomConf right,
                            const Count::Values &allowable)
 {
-	auto get_strong = [this](::Atom *atom)
+	auto get_strong = [this](AtomConf atom)
 	{
 		return _atomMap[atom]->strong();
 	};
@@ -58,10 +57,10 @@ void Network::shareStrong(::Atom *left, ::Atom *right,
 	shareProperty(this, left, right, get_strong, allowable);
 }
 
-void Network::shareCharges(::Atom *left, ::Atom *right,
+void Network::shareCharges(AtomConf left, AtomConf right,
                            const Count::Values &allowable)
 {
-	auto get_charges = [this](::Atom *atom)
+	auto get_charges = [this](AtomConf atom)
 	{
 		return _atomMap[atom]->charge();
 	};
@@ -69,42 +68,49 @@ void Network::shareCharges(::Atom *left, ::Atom *right,
 	shareProperty(this, left, right, get_charges, allowable);
 }
 
-::Atom *find_partner(::Atom *atom, const std::string &search)
+AtomConf find_partner(AtomConf atom, const std::string &search)
 {
-	::Atom *partner = nullptr;
-	for (size_t i = 0; i < atom->bondAngleCount(); i++)
+	AtomConf partner = {};
+	char conf = atom.conf;
+	for (size_t i = 0; i < atom.ptr->bondAngleCount(); i++)
 	{
-		BondAngle *angle = atom->bondAngle(i);
-		if (angle->atom(0)->atomName() == search) partner = angle->atom(0);
-		if (angle->atom(2)->atomName() == search) partner = angle->atom(2);
+		BondAngle *angle = atom.ptr->bondAngle(i);
+		if (angle->atom(0)->atomName() == search)
+		{
+			partner = {angle->atom(0), conf};
+		}
+		if (angle->atom(2)->atomName() == search)
+		{
+			partner = {angle->atom(2), conf};
+		}
 
-		if (partner) break;
+		if (partner.ptr) break;
 	}
 
 	return partner;
 }
 
-bool Network::setupSingleAlcohol(::Atom *atom)
+bool Network::setupSingleAlcohol(AtomConf atom)
 {
-	if (!((atom->atomName() == "OG" && atom->code() == "SER") ||
-	    (atom->atomName() == "OG1" && atom->code() == "THR") ||
-	    (atom->atomName() == "OH" && atom->code() == "TYR")))
+	if (!((atom.ptr->atomName() == "OG" && atom.ptr->code() == "SER") ||
+	    (atom.ptr->atomName() == "OG1" && atom.ptr->code() == "THR") ||
+	    (atom.ptr->atomName() == "OH" && atom.ptr->code() == "TYR")))
 	{ return false; }
 	
-	std::string str = atom->code() == "SER" ? "Ser" : "";
+	std::string str = atom.ptr->code() == "SER" ? "Ser" : "";
 	
 	if (str == "")
 	{
-		str = atom->code() == "TYR" ? "Tyr" : "Thr";
+		str = atom.ptr->code() == "TYR" ? "Tyr" : "Thr";
 	}
 
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::One);
 	return true;
 }
 
-bool Network::setupLysineAmine(::Atom *atom)
+bool Network::setupLysineAmine(AtomConf atom)
 {
-	if (!(atom->atomName() == "NZ" && atom->code() == "LYS"))
+	if (!(atom.ptr->atomName() == "NZ" && atom.ptr->code() == "LYS"))
 	{
 		return false;
 	}
@@ -113,14 +119,14 @@ bool Network::setupLysineAmine(::Atom *atom)
 	return true;
 }
 
-bool Network::setupAmineNitrogen(::Atom *atom)
+bool Network::setupAmineNitrogen(AtomConf atom)
 {
-	if (atom->atomName() != "N") { return false; }
+	if (atom.ptr->atomName() != "N") { return false; }
 
 	int min, max;
 	_original->getLimitingResidues(&min, &max);
 	
-	bool terminal = (atom->residueId() == min);
+	bool terminal = (atom.ptr->residueId() == min);
 
 	if (terminal)
 	{
@@ -135,11 +141,11 @@ bool Network::setupAmineNitrogen(::Atom *atom)
 	return true;
 }
 
-bool Network::setupAsnGlnNitrogen(::Atom *atom)
+bool Network::setupAsnGlnNitrogen(AtomConf atom)
 {
 	bool bad = true;
-	if ((atom->atomName() == "ND2" && atom->code() == "ASN") ||
-	    (atom->atomName() == "NE2" && atom->code() == "GLN"))
+	if ((atom.ptr->atomName() == "ND2" && atom.ptr->code() == "ASN") ||
+	    (atom.ptr->atomName() == "NE2" && atom.ptr->code() == "GLN"))
 	{
 		bad = false;
 	}
@@ -149,10 +155,10 @@ bool Network::setupAsnGlnNitrogen(::Atom *atom)
 	return true;
 }
 
-bool Network::setupHistidine(::Atom *atom)
+bool Network::setupHistidine(AtomConf atom)
 {
 	bool bad = true;
-	if (atom->atomName() == "ND1" && atom->code() == "HIS")
+	if (atom.ptr->atomName() == "ND1" && atom.ptr->code() == "HIS")
 	{
 		bad = false;
 	}
@@ -162,9 +168,9 @@ bool Network::setupHistidine(::Atom *atom)
 		return false;
 	}
 	
-	::Atom *partner = find_partner(atom, "NE2");
+	AtomConf partner = find_partner(atom, "NE2");
 	
-	if (!partner)
+	if (!partner.ptr)
 	{
 		return false;
 	}
@@ -184,17 +190,17 @@ bool Network::setupHistidine(::Atom *atom)
 	return true;
 }
 
-bool Network::setupCarboxylOxygen(::Atom *atom)
+bool Network::setupCarboxylOxygen(AtomConf atom)
 {
 	bool bad = true;
 	std::string search;
-	if (atom->atomName() == "OD1" && atom->code() == "ASP")
+	if (atom.ptr->atomName() == "OD1" && atom.ptr->code() == "ASP")
 	{
 		bad = false;
 		search = "OD2";
 
 	}
-	if (atom->atomName() == "OE1" && atom->code() == "GLU")
+	if (atom.ptr->atomName() == "OE1" && atom.ptr->code() == "GLU")
 	{
 		bad = false;
 		search = "OE2";
@@ -205,9 +211,9 @@ bool Network::setupCarboxylOxygen(::Atom *atom)
 		return false;
 	}
 	
-	::Atom *partner = find_partner(atom, search);
+	AtomConf partner = find_partner(atom, search);
 	
-	if (!partner)
+	if (!partner.ptr)
 	{
 		return false;
 	}
@@ -224,22 +230,20 @@ bool Network::setupCarboxylOxygen(::Atom *atom)
 	shareCharges(atom, partner, charge_sum);
 	shareStrong(atom, partner, strong_sum);
 	
-	showCarboxylAtom(atom);
-	showCarboxylAtom(partner);
 	return true;
 }
 
-bool Network::setupCarbonylOxygen(::Atom *atom)
+bool Network::setupCarbonylOxygen(AtomConf atom)
 {
 	bool bad = false;
 	Count::Values coordination = Count::Two;
 
-	if (atom->atomName() != "O" || atom->code() == "HOH")
+	if (atom.ptr->atomName() != "O" || atom.ptr->code() == "HOH")
 	{
 		bad = true;
 	}
-	if ((atom->atomName() == "OD1" && atom->code() == "ASN") ||
-	    (atom->atomName() == "OE1" && atom->code() == "GLN"))
+	if ((atom.ptr->atomName() == "OD1" && atom.ptr->code() == "ASN") ||
+	    (atom.ptr->atomName() == "OE1" && atom.ptr->code() == "GLN"))
 	{
 		bad = false;
 		coordination = Count::Three;
@@ -254,23 +258,22 @@ bool Network::setupCarbonylOxygen(::Atom *atom)
 	return true;
 }
 
-bool Network::setupWater(::Atom *atom)
+bool Network::setupWater(AtomConf atom)
 {
-	if (atom->code() != "HOH") { return false; }
+	if (atom.ptr->code() != "HOH") { return false; }
 	
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::Two);
 	return true;
 }
 
-bool Network::setupArginine(::Atom *atom)
+bool Network::setupArginine(AtomConf atom)
 {
-	if (atom->code() != "ARG" || 
-	    !(atom->atomName() == "NH1" || atom->atomName() == "NH2" || 
-	    atom->atomName() == "NE"))
+	if (atom.ptr->code() != "ARG" || 
+	    !(atom.ptr->atomName() == "NH1" || atom.ptr->atomName() == "NH2" || 
+	    atom.ptr->atomName() == "NE"))
 	{ return false; }
 
-	std::cout << "Processing arginine atom " << atom->desc() << std::endl;
-	if (atom->atomName() == "NH1" || atom->atomName() == "NH2")
+	if (atom.ptr->atomName() == "NH1" || atom.ptr->atomName() == "NH2")
 	{
 		_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three,
 		                                   Count::Two);
@@ -284,14 +287,14 @@ bool Network::setupArginine(::Atom *atom)
 	return true;
 }
 
-bool Network::setupTryptophan(::Atom *atom)
+bool Network::setupTryptophan(AtomConf atom)
 {
-	if (atom->code() != "TRP")
+	if (atom.ptr->code() != "TRP")
 	{
 		return false;
 	}
 
-	if (!(atom->code() == "TRP" && atom->atomName() == "NE1"))
+	if (!(atom.ptr->code() == "TRP" && atom.ptr->atomName() == "NE1"))
 	{ return false; }
 
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
@@ -299,26 +302,26 @@ bool Network::setupTryptophan(::Atom *atom)
 	return true;
 }
 
-void Network::setupInactiveAtom(::Atom *atom)
+void Network::setupInactiveAtom(AtomConf atom)
 {
 	AtomProbe *probe = _atom2Probe[atom];
 	
 	auto either_are_named_couple = []
 	(const std::string &a, const std::string &b)
 	{
-		return [a, b](::Atom *left, ::Atom *right) -> bool
+		return [a, b](AtomConf left, AtomConf right) -> bool
 		{
-			return (left->atomName() == a && right->atomName() == b) ||
-			        (right->atomName() == a && left->atomName() == b);
+			return (left.ptr->atomName() == a && right.ptr->atomName() == b) ||
+			        (right.ptr->atomName() == a && left.ptr->atomName() == b);
 		};
 	};
 
-	for (int i = 0; i < atom->bondLengthCount(); i++)
+	for (int i = 0; i < atom.ptr->bondLengthCount(); i++)
 	{
-		::Atom *connected = atom->connectedAtom(i);
+		AtomConf connected = {atom.ptr->connectedAtom(i), atom.conf};
 		AtomProbe *other = _atom2Probe[connected];
 		if (!other || (other->_obj.value() == hnet::Atom::Inactive &&
-		    connected->atomNum() < atom->atomNum()))
+		    connected.ptr->atomNum() < atom.ptr->atomNum()))
 		{
 			continue;
 		}
@@ -332,7 +335,7 @@ void Network::setupInactiveAtom(::Atom *atom)
 
 }
 	
-void Network::setupAtom(::Atom *atom)
+void Network::setupAtom(AtomConf atom)
 {
 	bool found = false;
 	if (_atomMap[atom]->bondCount())
@@ -388,8 +391,12 @@ AtomGroup *rehydrogenate(AtomGroup *const &full_set)
 
 void Network::establishAtom(::Atom *atom)
 {
-	Coordinated *coord = new Coordinated(atom, *this);
-	_atomMap[atom] = coord;
+	for (const std::string &conformer : atom->conformerList())
+	{
+		char conf = conformer.length() ? conformer[0] : '\0';
+		Coordinated *coord = new Coordinated(*this, atom, conf);
+		_atomMap[AtomConf{atom, conf}] = coord;
+	}
 }
 
 Network::Network(AtomGroup *group, const std::string &spg_name,
@@ -421,41 +428,62 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	// then set up the connectors and probes for each symmetry-related atom
 //	_symMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 
+	auto on_each_conf = [] <typename Func>(const Func &func)
+	{
+		return [&func](::Atom *a)
+		{
+			for (std::string conformer : a->conformerList())
+			{
+				char conf = char_from_conf(conformer);
+				func(a, conf);
+			}
+		};
+	};
+
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
-	donors->do_op([this, symDonors](::Atom *a)
+	donors->do_op(on_each_conf([this, symDonors](::Atom *a, char conf)
 	{
-		_atomMap[a]->attachToNeighbours(symDonors);
-	});
+		_atomMap[{a, conf}]->attachToNeighbours(symDonors);
+	}));
 
 	// here is when the coordination is prepared
-	_original->do_op([this](::Atom *a) { setupAtom(a); });
+	for (auto it = atomMap().begin(); it != atomMap().end(); it++)
+	{
+		const AtomConf &ac = it->first;
+		setupAtom(ac);
+	}
 
 	// find sets of bonds which can/cannot participate in bonding together
-	donors->do_op([this](::Atom *a)
-	              { _atomMap[a]->mutualExclusions(_originalAndMates); });
+	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	{
+		_atomMap[{a, conf}]->mutualExclusions(_originalAndMates);
+	}));
 
 	// make sure bonds in the next crystal contact are the same as this asu
-	donors->do_op([this](::Atom *a)
-	              { _atomMap[a]->findSymmetricallyRelatedBonds(); });
+	donors->do_op(on_each_conf([this](::Atom *a, char conf)
+	{
+		_atomMap[{a, conf}]->findSymmetricallyRelatedBonds();
+	}));
 	
 	// set the previously determined adder constraints linking actual
 	// bonding patterns to the coordinated atom.
-	auto job = [this](::Atom *a) { _atomMap[a]->attachAdderConstraints(); };
+	auto job = [this](::Atom *a, char conf)
+	{
+		_atomMap[{a, conf}]->attachAdderConstraints();
+	};
 
-	donors->do_op(job);
+	donors->do_op(on_each_conf(job));
 	
 	int failCount = 0;
-	donors->do_op([this, &failCount](::Atom *a)
+	donors->do_op(on_each_conf([this, &failCount](::Atom *a, char conf)
 	{
-		failCount += (atomMap()[a]->failedCheck()) ? 1 : 0;
-	});
+		failCount += (atomMap()[{a, conf}]->failedCheck()) ? 1 : 0;
+	}));
 	
 	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
 	std::cout << failCount << " failed some logical check." << std::endl;
 	std::cout << std::endl;
-//	HideComplete hide(*this);
-//	hide(true);
 }
 
 glm::vec3 Network::centre() const
@@ -476,16 +504,19 @@ CountProbe &Network::add_probe(CountProbe *const &probe)
 
 HydrogenProbe &Network::add_probe(HydrogenProbe *const &probe)
 {
+	char lconf = probe->left()._conf;
+	char rconf = probe->right()._conf;
 	_hydrogenProbes.push_back(probe);
-	_h2Probe[probe->left().atom()].push_back(probe);
-	_h2Probe[probe->right().atom()].push_back(probe);
+	_h2Probe[{probe->left().atom(), lconf}].push_back(probe);
+	_h2Probe[{probe->right().atom(), rconf}].push_back(probe);
 	return *probe;
 }
 
 AtomProbe &Network::add_probe(AtomProbe *const &probe)
 {
+	char conf = probe->_conf;
 	_atomProbes.push_back(probe);
-	_atom2Probe[probe->atom()] = probe;
+	_atom2Probe[{probe->atom(), conf}] = probe;
 	return *probe;
 }
 

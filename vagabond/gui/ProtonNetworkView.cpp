@@ -92,6 +92,10 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 	{
 		Menu *menu = new Menu(this);
 		menu->addOption("arrange figure", [this]() { arrangeFigure(); });
+		menu->addOption("add neighbours", 
+		                [this]() { expandSelectionToNeighbours(); });
+		menu->addOption("complete residues", 
+		                [this]() { completeResidues(); });
 		setMenu(menu);
 	}
 
