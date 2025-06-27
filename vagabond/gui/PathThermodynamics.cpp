@@ -202,6 +202,12 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		refresh();
 	}
 
+	if (tag == "divisions")
+	{
+		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
+		setModal(aft);
+	}
+
 	Scene::buttonPressed(tag, button);
 }
 

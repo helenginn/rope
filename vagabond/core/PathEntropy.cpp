@@ -29,7 +29,6 @@ struct FlagParameters PathEntropy::initFlagPar()
     flagParameters.timeDivisions = 1;
 	flagParameters.mist = false;
     flagParameters.kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
-
     return flagParameters;
 }
 
