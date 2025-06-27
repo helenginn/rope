@@ -250,6 +250,7 @@ public:
 	
 	void setCode(std::string code);
 	
+	void disconnectAtom(Atom *);
 	Atom *connectedAtom(int i) const;
 	bool isConnectedToAtom(Atom *a) const;
 	

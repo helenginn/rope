@@ -57,7 +57,7 @@ public:
 	                        const Count::Values &n_coord_num,
 	                        const Count::Values &remaining_valency);
 
-	OpSet<AtomConf> expandGroupToSet(AtomGroup *group);
+	static OpSet<AtomConf> expandGroupToSet(AtomGroup *group);
 	OpSet<AtomConf> findNeighbours(const OpSet<AtomConf> &group,
 	                               const glm::vec3 &v, 
 	                               float distance, bool one_sided);
@@ -65,6 +65,7 @@ public:
 	void attachToNeighbours(AtomGroup *searchGroup);
 	void mutualExclusions(AtomGroup *clashCheck);
 	void attachAdderConstraints();
+	void clashLogic(OpSet<AtomConf> &clash_check);
 
 	void probeAtom();
 	
@@ -73,6 +74,11 @@ public:
 	AtomProbe *const &probe() const
 	{
 		return _probe;
+	}
+	
+	hnet::ExistenceConnector *const &existence() const
+	{
+		return _existence;
 	}
 	
 	hnet::AtomConnector *const &connector() const
@@ -142,18 +148,21 @@ public:
 
 	void eitherOr(const ABPair &first, const ABPair &second);
 private:
-	OpSet<PairSet> findSeeds();
+	OpSet<PairSet> findSeeds(int coord_num);
 	ABPair makePossibleHydrogen(const glm::vec3 &pos);
-	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen);
+	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen, int coordNum);
 	void comparePairs(OpSet<PairSet> &results,
 	                  const ABPair &first, const ABPair &second,
-	                  glm::vec3 &centre);
-	PairSet developSeed(const PairSet &seed, const PairSet &all,
-	                    const PairSet &uninvolved, const glm::vec3 &centre,
-	                    OpSet<AtomConf> &clashCheck, int &fake_atom_count);
-	OpSet<PairSet> expandAllSeeds(OpSet<AtomConf> &clashCheck,
-	                              const PairSet &uninvolved_group,
-	                              PairSet &all_used);
+	                  glm::vec3 &centre, int coordNum);
+	AcceptableGroup developSeed(const PairSet &seed, const PairSet &all,
+	                            const glm::vec3 &centre,
+	                            OpSet<AtomConf> &clashCheck,
+	                            int &fake_atom_count, int coord_num);
+	OpSet<AcceptableGroup> expandAllSeeds(OpSet<AtomConf> &clashCheck,
+	                                      const PairSet &uninvolved_group,
+	                                      PairSet &all_used, int coord_num);
+	void applyRestrictionsToUnbrokenBonds
+	(const std::map<int, std::vector<int>> &coord_state_broken_bond_counts);
 	
 	OpSet<ABPair> uninvolvedCoordinators();
 
@@ -163,7 +172,9 @@ private:
 	}
 
 	hnet::AtomConnector *_connector{};
+	hnet::ExistenceConnector *_existence{};
 
+	hnet::CountConnector *_coord_num{};
 	hnet::CountConnector *_charge{};
 	hnet::CountConnector *_donors{};
 
@@ -172,6 +183,8 @@ private:
 	hnet::CountConnector *_present{};
 	hnet::CountConnector *_absent{};
 	hnet::CountConnector *_expl_bonds{};
+
+	void clashLogic();
 
 	// all bonds regardless of who made them
 	PairSet _bonds;
@@ -192,6 +205,7 @@ private:
 
 	Network &_network;
 	AtomConf _atomConf = {nullptr, '\0'};
+	OpSet<AtomConf> _neighbours{};
 };
 
 }

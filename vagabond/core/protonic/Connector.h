@@ -23,6 +23,7 @@
 #include "Conditions.h"
 #include <functional>
 #include <list>
+#include <sstream>
 
 namespace hnet
 {
@@ -80,6 +81,11 @@ struct Connector
 		std::cout << "Report for " << this << std::endl;
 		_conditions.report_conditions();
 	}
+	
+	void setDesc(const std::string &desc)
+	{
+		_desc = desc;
+	}
 
 	/* returns true if changed */
 	bool assign_value_without_checking(const Value &value, void *informant,
@@ -95,13 +101,16 @@ struct Connector
 		Value before = _conditions.belief();
 		_conditions.apply_condition(informant, blame, value);
 		Value after = _conditions.belief();
-		/*
-		std::cout << this << " " << before << 
-		" before applying condition " << value << 
-		" resulting in " << after << std::endl;
-		*/
+
+		bool changed = (before != after);
+		if (changed && _desc.length())
+		{
+			std::cout << "CONNECTOR: \"" << *this << "\" was " << before << 
+			", before applying condition " << value << 
+			", resulting in " << after << std::endl;
+		}
 		
-		return (before != after);
+		return changed;
 	}
 
 	bool forget(void *blame)
@@ -194,8 +203,20 @@ struct Connector
 	
 	Conditions<Value> _conditions;
 	
+	std::string _desc{};
 	bool _user = false;
 };
+
+template <typename Value>
+inline std::ostream &operator<<(std::ostream &ss, const Connector<Value> &c)
+	{
+		if (c._desc.length())
+		{
+			ss << c._desc;
+		}
+		else ss << "(unnamed)";
+		return ss;
+	}
 
 typedef Connector<Atom::Values> AtomConnector;
 typedef Connector<Bond::Values> BondConnector;
@@ -260,6 +281,25 @@ struct AnyConnector
 	
 	Type _type;
 	void *_ptr;
+};
+
+template <class Me>
+auto make_assign_and_say(Me *me, void *previous)
+{
+	return [me, previous]
+	<typename Type> (Connector<Type> &which, const Type &what)
+	{
+		Type before = which.value();
+		which.assign_value(what, me, previous);
+		Type after = which.value();
+		
+		if (before != after)
+		{
+			std::cout << "CONSTRAINT: \"" << me->desc() << 
+			"\" forcing assignment of " << what << " on " << which << std::endl;
+		}
+	};
+
 };
 
 };

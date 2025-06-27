@@ -66,9 +66,10 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void hoverOverAtom();
-	void offerAtomMenu();
+	void offerHeavyAtomMenu();
 	void offerHydrogenMenu();
 	void declareHydrogen(hnet::Existence::Values value);
+	void declareAtomExistence(hnet::Existence::Values value);
 
 	Probe *_probe = nullptr;
 

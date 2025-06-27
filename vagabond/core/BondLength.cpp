@@ -36,13 +36,14 @@ BondLength::BondLength(AtomGroup *owner, Atom *a, Atom *b,
 	
 	if (owner && (!owner->hasAtom(a) || !owner->hasAtom(b)))
 	{
-		throw(std::runtime_error("Owner does not own atom assigned to BondLength"));
+		throw(std::runtime_error("Owner does not own either atom "\
+		                         "assigned to BondLength"));
 	}
 	
+	_a->addBondstraint(this);
+	_b->addBondstraint(this);
 	if (_owner)
 	{
-		_a->addBondstraint(this);
-		_b->addBondstraint(this);
 		_owner->addBondstraint(this);
 	}
 }

@@ -156,6 +156,7 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 	fullUpdate();
 
 	_probe->_obj.set_update([this](){ updateProbe(); });
+	_probe->existence().set_update([this]() { updateProbe(); });
 }
 
 void ProbeBond::declareBond(Bond::Values value)
@@ -168,7 +169,8 @@ void ProbeBond::declareBond(Bond::Values value)
 
 	auto make_declaration = [d, value, this]
 	{
-		_probe->_obj.assign_value(value, d, d);
+		bool contra = _probe->_obj.assign_value(value, d, d);
+		std::cout << "OK: " << contra << std::endl;
 	};
 
 	auto rescind_declaration = [d, this]

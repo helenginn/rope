@@ -25,8 +25,6 @@
 #include "CountAdder.h"
 #include "Hydrogenate.h"
 #include "Coordinated.h"
-#include "HydrogenBond.h"
-
 
 using namespace hnet;
 
@@ -212,6 +210,7 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 	}
 	
 	AtomConf partner = find_partner(atom, search);
+	std::cout << "For carboxyl oxygen I have: " << partner << std::endl;
 	
 	if (!partner.ptr)
 	{
@@ -236,15 +235,20 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 bool Network::setupCarbonylOxygen(AtomConf atom)
 {
 	bool bad = false;
-	Count::Values coordination = Count::Two;
+	Count::Values coordination = Count::Values(Count::Two | Count::Three);
 
-	if (atom.ptr->atomName() != "O" || atom.ptr->code() == "HOH")
+	if ((atom.ptr->atomName() != "O" && atom.ptr->atomName() != "OXT") ||
+	    atom.ptr->code() == "HOH")
 	{
 		bad = true;
 	}
+
 	if ((atom.ptr->atomName() == "OD1" && atom.ptr->code() == "ASN") ||
+	    (atom.ptr->atomName() == "OE2" && atom.ptr->code() == "GLN") ||
+	    (atom.ptr->atomName() == "OD2" && atom.ptr->code() == "ASN") ||
 	    (atom.ptr->atomName() == "OE1" && atom.ptr->code() == "GLN"))
 	{
+		std::cout << "Allowing " << atom << std::endl;
 		bad = false;
 		coordination = Count::Three;
 	}
@@ -287,6 +291,21 @@ bool Network::setupArginine(AtomConf atom)
 	return true;
 }
 
+bool Network::setupMethionine(AtomConf atom)
+{
+	if (atom.ptr->code() != "MET")
+	{
+		return false;
+	}
+
+	if (!(atom.ptr->code() == "MET" && atom.ptr->atomName() == "SD"))
+	{ return false; }
+
+	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::Two);
+
+	return true;
+}
+
 bool Network::setupTryptophan(AtomConf atom)
 {
 	if (atom.ptr->code() != "TRP")
@@ -315,30 +334,117 @@ void Network::setupInactiveAtom(AtomConf atom)
 			        (right.ptr->atomName() == a && left.ptr->atomName() == b);
 		};
 	};
+	
+	auto make_certain_covalent_bond = [this, &either_are_named_couple]
+	(AtomConf atom, AtomConf connected)
+	{
+		AtomProbe *probe = _atom2Probe[atom];
+		AtomProbe *other = _atom2Probe[connected];
+		std::ostringstream ss;
+		ss << atom << " and " << connected;
+
+		ExistenceConnector &covalent = add(new ExistenceConnector());
+		covalent.setDesc("covalent bond between " + ss.str());
+		ExistenceConnector &left = probe->existence();
+		ExistenceConnector &right = other->existence();
+
+		float diff = abs(atom.occupancy() - connected.occupancy());
+		
+		if (diff < 0.005)
+		{
+			add_constraint(new MutualExistence(left, covalent));
+			add_constraint(new MutualExistence(covalent, right));
+		}
+		else
+		{
+			std::cout << "Mutual existence definition MISSING: [" << left << ", "
+			<< covalent << ", " << right << "] due to occupancy difference of " 
+			<< diff << std::endl;
+			std::cout << "\t" << atom.occupancy() << " vs " <<
+			connected.occupancy() << std::endl;
+		}
+		
+		std::cout << "Making certain bond between " << ss.str() << std::endl;
+		
+		bool double_bond = false;
+		double_bond |= either_are_named_couple("C", "O")(connected, atom);
+		BondProbe &cov = add_probe(new CovalentProbe(*probe, *other, 
+		                                             covalent, double_bond));
+
+		if (atom.ptr->elementSymbol() == "H" || 
+		    connected.ptr->elementSymbol() == "H")
+		{
+			cov.setHide(-1, false);
+		}
+	};
+
+	auto make_maybe_covalent_bond = [this, &either_are_named_couple]
+	(AtomConf atom, AtomConf connected)
+	{
+		AtomProbe *probe = _atom2Probe[atom];
+		AtomProbe *other = _atom2Probe[connected];
+		std::ostringstream ss;
+		ss << atom << " and " << connected;
+		
+		if (!other)
+		{
+			std::cout << "Couldn't find " << connected << std::endl;
+		}
+
+		ExistenceConnector &covalent = add(new ExistenceConnector());
+		covalent.setDesc("covalent bond between " + ss.str());
+		ExistenceConnector &left = probe->existence();
+		ExistenceConnector &right = other->existence();
+
+		add_constraint(new SubExistence(left, covalent, right));
+
+		std::cout << "Making maybe-bond between " << atom.ptr->desc() << " and "
+		<< connected.ptr->desc() << std::endl;
+		bool double_bond = false;
+		double_bond |= either_are_named_couple("C", "O")(connected, atom);
+		add_probe(new CovalentProbe(*probe, *other, covalent, double_bond));
+	};
 
 	for (int i = 0; i < atom.ptr->bondLengthCount(); i++)
 	{
-		AtomConf connected = {atom.ptr->connectedAtom(i), atom.conf};
+		::Atom *connect = atom.ptr->connectedAtom(i);
+		AtomConf connected = {connect, atom.conf};
 		AtomProbe *other = _atom2Probe[connected];
-		if (!other || (other->_obj.value() == hnet::Atom::Inactive &&
-		    connected.ptr->atomNum() < atom.ptr->atomNum()))
+		
+		bool priority = (connected.ptr->elementSymbol() != "H" && 
+		                 connected.ptr->atomNum() < atom.ptr->atomNum());
+
+		priority |= (connected.ptr->elementSymbol() == "H");
+
+		if (other && (other->_obj.value() == hnet::Atom::Inactive &&
+		    !priority))
 		{
 			continue;
 		}
-		
-		bool double_bond = false;
+		else if (other)
+		{
+			make_certain_covalent_bond(atom, connected);
 
-		double_bond |= either_are_named_couple("C", "O")(connected, atom);
-
-		add_probe(new CovalentProbe(*probe, *other, double_bond));
+		}
+		else if (!other)
+		{
+			std::cout << "we have no definitive other for " << 
+			connect->desc() << std::endl;
+			for (const std::string &c : connect->conformerList())
+			{
+				char conf = char_from_conf(c);
+				make_maybe_covalent_bond(atom, {connect, conf});
+			}
+		}
 	}
 
 }
-	
+
 void Network::setupAtom(AtomConf atom)
 {
 	bool found = false;
-	if (_atomMap[atom]->bondCount())
+	std::cout << "Registering " << atom << std::endl;
+	if (_atomMap[atom])//->bondCount()) // not okay
 	{
 		found |= setupAmineNitrogen(atom);
 		found |= setupLysineAmine(atom);
@@ -349,6 +455,7 @@ void Network::setupAtom(AtomConf atom)
 		found |= setupHistidine(atom);
 		found |= setupArginine(atom);
 		found |= setupTryptophan(atom);
+		found |= setupMethionine(atom);
 		found |= setupWater(atom);
 	}
 	
@@ -362,6 +469,13 @@ AtomGroup *nonHydrogensFrom(AtomGroup *const &other)
 {
 	return other->new_subset([](::Atom *const &atom)
 	{
+		if (atom->elementSymbol() == "H")
+		{
+			if (atom->bondLengthCount() > 0)
+			{
+				atom->connectedAtom(0)->purgeConnectionsToAtom(atom);
+			}
+		}
 		return (atom->elementSymbol() != "H");
 	});
 }
@@ -391,17 +505,42 @@ AtomGroup *rehydrogenate(AtomGroup *const &full_set)
 
 void Network::establishAtom(::Atom *atom)
 {
+	Coordinated *coord = {};
+	std::vector<ExistenceConnector *> connections;
+	float total_occ = 0;
+
 	for (const std::string &conformer : atom->conformerList())
 	{
 		char conf = conformer.length() ? conformer[0] : '\0';
-		Coordinated *coord = new Coordinated(*this, atom, conf);
-		_atomMap[AtomConf{atom, conf}] = coord;
+		coord = new Coordinated(*this, atom, conf);
+		AtomConf tmp = AtomConf{atom, conf};
+//		std::cout << "establishing " << tmp << " also " << atom <<  std::endl;
+		_atomMap[tmp] = coord;
+		total_occ += tmp.occupancy();
+		connections.push_back(coord->existence());
+	}
+	
+	// only one is allowed to exist at the same time
+	
+	if (connections.size() > 1)
+	{
+		add_constraint(new OnlyOne(connections));
+	}
+	else if (coord && total_occ > 0.995)
+	{
+		// existence of a heavy atom can be constrained to Present if it only
+		// has one conformer.
+		std::cout << "Constraining " << *coord->existence() << " to be"\
+		" present due to 100% occupancy" << std::endl;
+		add_constraint(new ExistenceConstant(*coord->existence(), 
+		                                     hnet::Existence::Present));
 	}
 }
 
 Network::Network(AtomGroup *group, const std::string &spg_name,
                  const std::array<double, 6> &unit_cell)
 {
+	_extraHydrogens = new AtomGroup();
 	_original = rehydrogenate(nonHydrogensFrom(group));
 	AtomGroup *mates = SymMates::getSymmetryMates(_original, spg_name, 
 	                                              unit_cell, 4.0);
@@ -425,8 +564,6 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 	// set up the connectors and probes for each atom
 	_originalAndMates->do_op([this](::Atom *atom) { establishAtom(atom); });
-	// then set up the connectors and probes for each symmetry-related atom
-//	_symMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 
 	auto on_each_conf = [] <typename Func>(const Func &func)
 	{
@@ -464,6 +601,20 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	donors->do_op(on_each_conf([this](::Atom *a, char conf)
 	{
 		_atomMap[{a, conf}]->findSymmetricallyRelatedBonds();
+	}));
+
+	// add clash logic
+	OpSet<AtomConf> searchGroup = 
+	Coordinated::expandGroupToSet(_originalAndMates);
+	
+	std::cout << "================================" << std::endl;
+	std::cout << "==        CLASH LOGIC         ==" << std::endl;
+	std::cout << "================================" << std::endl;
+
+	_originalAndMates->do_op(on_each_conf([this, &searchGroup]
+	                                      (::Atom *a, char conf)
+	{
+		_atomMap[{a, conf}]->clashLogic(searchGroup);
 	}));
 	
 	// set the previously determined adder constraints linking actual
@@ -531,4 +682,10 @@ Decree *Network::newDecree(const std::string &str)
 	Decree *decree = new Decree(str);
 	_decrees.push_back(decree);
 	return decree;
+}
+
+void Network::addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord)
+{
+	*_extraHydrogens += hydrogen.ptr;
+	_atomMap[hydrogen] = coord;
 }

@@ -83,6 +83,8 @@ public:
 		return _bondLengths[i];
 	}
 	
+	void purgeConnectionsToAtom(Atom *atom);
+	
 	HyperValue *findHyperValue(Atom *a);
 	BondLength *findBondLength(Atom *a, Atom *b);
 	BondTorsion *findBondTorsion(Atom *a, Atom *b, Atom *c, Atom *d) const;

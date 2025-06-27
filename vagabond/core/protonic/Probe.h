@@ -87,38 +87,44 @@ public:
 	
 	virtual bool is_certain() = 0;
 	
-	void setAlpha(float alpha, OpSet<Probe *> &fixed)
+	void setHide(float alpha, OpSet<Probe *> &fixed)
 	{
-		_alpha = alpha;
+		_hide = alpha;
 		fixed.insert(this);
 		
 		for (Probe *other : _others)
 		{
 			if (fixed.count(other) == 0)
 			{
-				other->setAlpha(_alpha, fixed);
+				other->setHide(_hide, fixed);
 			}
 		}
 		sendResponse("alpha", this);
 	}
 
-	void setAlpha(float alpha, bool recursive = true)
+	void setHide(float alpha, bool recursive = true)
 	{
 		if (recursive)
 		{
 			OpSet<Probe *> fixed;
-			setAlpha(alpha, fixed);
+			setHide(alpha, fixed);
 		}
 		else
 		{
-			_alpha = alpha;
+			std::cout << "_hide now " << alpha << std::endl;
+			_hide = alpha;
 			sendResponse("alpha", this);
 		}
 	}
 
-	float alpha() const
+	virtual float transparency()
 	{
-		return _alpha;
+		return 0.f;
+	}
+
+	float alpha()
+	{
+		return _hide + transparency();
 	}
 
 	void setMult(const float &m)
@@ -144,15 +150,16 @@ public:
 	std::vector<Probe *> _others;
 	glm::vec3 _colour = {};
 	float _mult = 25;
-	float _alpha = 0.f;
+	float _hide = 0.f;
 };
 
 class AtomProbe : public Probe
 {
 public:
-	AtomProbe(hnet::AtomConnector &obj, Atom *inherit = nullptr,
-	          char conf = '\0', const std::string &custom_text = {})
-	: _obj(obj)
+	AtomProbe(hnet::AtomConnector &obj, hnet::ExistenceConnector &exist,
+	          Atom *inherit = nullptr, char conf = '\0', 
+	          const std::string &custom_text = {})
+	: _obj(obj), _exist(exist)
 	{
 		if (inherit)
 		{
@@ -218,6 +225,23 @@ public:
 		return str;
 	}
 
+	virtual float transparency()
+	{
+		if (!_exist.is_certain())
+		{
+			return -0.5f;
+		}
+		else if (_exist.is_certain() &&
+		         _exist.value() == hnet::Existence::Absent)
+		{
+			return -1.0f;
+		}
+		else 
+		{
+			return -0.0f;
+		}
+	}
+
 	virtual bool is_certain()
 	{
 		bool good = true;
@@ -230,17 +254,24 @@ public:
 		}
 		return _obj.is_certain() && good;
 	}
+	
+	hnet::ExistenceConnector &existence()
+	{
+		return _exist;
+	}
 
 	std::string _text;
 	hnet::AtomConnector &_obj;
+	hnet::ExistenceConnector &_exist;
 };
 
 class HydrogenProbe : public Probe
 {
 public:
 	HydrogenProbe(hnet::ExistenceConnector &obj, 
+	              hnet::ExistenceConnector &exist,
 	              AtomProbe &left, AtomProbe &right) :
-	_obj(obj), _left(left), _right(right)
+	_obj(obj), _exist(exist), _left(left), _right(right)
 	{
 		_init = left.position() + right.position();
 		_init /= 2;
@@ -296,9 +327,32 @@ public:
 		return _right;
 	}
 
+	hnet::ExistenceConnector &existence()
+	{
+		return _exist;
+	}
+
+	virtual float transparency()
+	{
+		if (!_exist.is_certain())
+		{
+			return -0.5f;
+		}
+		else if (_exist.is_certain() &&
+		         _exist.value() == hnet::Existence::Absent)
+		{
+			return -1.0f;
+		}
+		else 
+		{
+			return -0.0f;
+		}
+	}
+
+
 	virtual bool is_certain()
 	{
-		return _obj.is_certain();
+		return _obj.is_certain() && _exist.is_certain();
 	}
 
 	virtual bool is_absent()
@@ -307,6 +361,7 @@ public:
 	}
 
 	hnet::ExistenceConnector &_obj;
+	hnet::ExistenceConnector &_exist;
 	AtomProbe &_left;
 	AtomProbe &_right;
 };
@@ -315,8 +370,9 @@ public:
 class BondProbe : public Probe
 {
 public:
-	BondProbe(hnet::BondConnector &obj, Probe &left, Probe &right) :
-	_obj(obj), _left(left), _right(right)
+	BondProbe(hnet::BondConnector &obj, Probe &left, Probe &right,
+          hnet::ExistenceConnector &exist) :
+	_obj(obj), _left(left), _right(right), _exist(exist)
 	{
 		_init = left.position();
 		_pos = _init;
@@ -352,6 +408,24 @@ public:
 	{
 		return _right;
 	}
+
+	virtual float transparency()
+	{
+		if (!_exist.is_certain())
+		{
+			return -0.5f;
+		}
+		else if (_exist.is_certain() &&
+		         _exist.value() == hnet::Existence::Absent)
+		{
+			return -1.0f;
+		}
+		else 
+		{
+			return -0.0f;
+		}
+	}
+
 
 	virtual bool is_bond()
 	{
@@ -399,19 +473,26 @@ public:
 
 	virtual bool is_certain()
 	{
-		return _obj.is_certain();
+		return _obj.is_certain() && _exist.is_certain();
+	}
+
+	hnet::ExistenceConnector &existence()
+	{
+		return _exist;
 	}
 
 	hnet::BondConnector &_obj;
 	Probe &_left;
 	Probe &_right;
+	hnet::ExistenceConnector &_exist;
 };
 
 class CovalentProbe : public BondProbe
 {
 public:
-	CovalentProbe(Probe &left, Probe &right, bool doubleBond) 
-	: BondProbe(_silent, left, right)
+	CovalentProbe(Probe &left, Probe &right, hnet::ExistenceConnector &exist, 
+	              bool doubleBond) 
+	: BondProbe(_silent, left, right, exist)
 	{
 		_doubleBond = doubleBond;
 	}
@@ -446,11 +527,6 @@ public:
 		{
 			return "single_bond";
 		}
-	}
-
-	virtual bool is_certain()
-	{
-		return _left.is_certain() && _right.is_certain();
 	}
 
 	bool _doubleBond{false};

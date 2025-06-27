@@ -25,26 +25,28 @@ namespace hnet
 {
 /* simple constant class to impose a stricter belief when satisfying a
  * Condition */
-struct StricterBond
+template <class ImposeType, class CondType>
+class Stricter
 {
-	typedef std::function<bool(const Bond::Values &)> Condition;
+public:
+	typedef std::function<bool(const CondType &)> Condition;
 
-	StricterBond(BondConnector &bond, const Condition &cond, 
-             Bond::Values impose) :
-	_condition(cond), _bond(bond), _impose(impose)
+	Stricter(Connector<CondType> &obj, const Condition &cond, 
+             Connector<ImposeType> &affected, ImposeType impose) :
+	_condition(cond), _impose(impose), _conditionObj(obj), _imposeObj(affected)
 	{
 		auto self_check = [this](void *prev) { return check(prev); };
 
 		/* add this object's constraint check function to the connector */
-		_bond.add_constraint_check(self_check);
+		_conditionObj.add_constraint_check(self_check);
 
 		auto forget_me = [this](void *blame) { return forget(blame); };
 
-		_bond.add_forget(forget_me);
+		_conditionObj.add_forget(forget_me);
 
 		if (!check(this))
 		{
-			_bond.pop_last_check(this);
+			_conditionObj.pop_last_check(this);
 
 			throw std::runtime_error("New stricter condition immediately "\
 			                         "failed validation check");
@@ -52,27 +54,47 @@ struct StricterBond
 		}
 	}
 	
+	std::string desc()
+	{
+		std::ostringstream ss;
+		ss << "Stricter requirement on " << _conditionObj << " may impose "
+		<< _impose << " on " << _imposeObj;
+		return ss.str();
+	}
+	
 	void forget(void *blame)
 	{
-		_bond.forget(blame);
+		_conditionObj.forget(blame);
 	}
 	
 	bool check(void *previous)
 	{
-		if (_condition(_bond.value()))
+		auto assign = make_assign_and_say(this, previous);
+		if (_condition(_conditionObj.value()))
 		{
-			_bond.assign_value(_impose, this, previous);
+			assign(_imposeObj, _impose);
 		}
 		
-		return !is_contradictory(_bond.value());
+		return !is_contradictory(_imposeObj.value());
 	}
 	
 	Condition _condition;
-	BondConnector &_bond;
-	Bond::Values _impose;
+	ImposeType _impose;
+	Connector<CondType> &_conditionObj;
+	Connector<ImposeType> &_imposeObj;
 };
 
+class StricterBond : public Stricter<Bond::Values, Bond::Values>
+{
+public:
+	StricterBond(Connector<Bond::Values> &bond, const Condition &cond, 
+                 Bond::Values impose) :
+	Stricter<Bond::Values, Bond::Values>(bond, cond, bond, impose) {};
 };
+
+typedef Stricter<Count::Values, Count::Values> IfCountThenImpose;
+};
+
 
 #endif
 

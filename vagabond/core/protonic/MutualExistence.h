@@ -16,18 +16,19 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EitherOrBond__
-#define __vagabond__EitherOrBond__
+#ifndef __vagabond__MutualExistence__
+#define __vagabond__MutualExistence__
 
 #include "hnet.h"
 
 namespace hnet
 {
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct EitherOrBond
+struct MutualExistence
 {
-	EitherOrBond(BondConnector &left, BondConnector &right)
-	: _left(left), _right(right)
+	MutualExistence(ExistenceConnector &left, ExistenceConnector &right,
+	                std::string desc = "")
+	: _left(left), _right(right), _desc(desc)
 	{
 		auto self_check = [this](void *prev) { return check(prev); };
 
@@ -44,17 +45,9 @@ struct EitherOrBond
 			_left.pop_last_check(this);
 			_right.pop_last_check(this);
 
-			throw std::runtime_error("New either/or dichotomy immediately "\
+			throw std::runtime_error("New mutual existence immediately "\
 			                         "failed validation check");
 		}
-	}
-
-	std::string desc()
-	{
-		std::ostringstream ss;
-		ss << "either " << _left << " or " << _right << " may be present, "\
-		"not both";
-		return ss.str();
 	}
 	
 	void forget(void *blame)
@@ -62,30 +55,50 @@ struct EitherOrBond
 		_left.forget(blame);
 		_right.forget(blame);
 	}
+	
+	std::string desc()
+	{
+		std::ostringstream ss;
+		ss << "mutual existence between " << _left << " and " << _right;
+		return ss.str();
+	}
 
 	bool check(void *previous)
 	{
 		auto assign = make_assign_and_say(this, previous);
 
-		if ((_left.value() & Bond::NotBroken) && 
-		    !(_left.value() & Bond::Broken))
+		if (_left.value() == Existence::Present)
 		{
-			assign(_right, Bond::Broken);
+			assign(_right, Existence::Present);
 		}
-		if ((_right.value() & Bond::NotBroken) &&
-		    !(_right.value() & Bond::Broken))
+		else if (_right.value() == Existence::Present)
 		{
-			assign(_left, Bond::Broken);
+			assign(_left, Existence::Present);
 		}
+		else if (_left.value() == Existence::Absent)
+		{
+			assign(_right, Existence::Absent);
+		}
+		else if (_right.value() == Existence::Absent)
+		{
+			assign(_left, Existence::Absent);
+		}
+
 
 		bool con = (!is_contradictory(_left.value()) &&
 		            !is_contradictory(_right.value()));
 		
+		if (!con)
+		{
+			std::cout << " - - - this led to a contradiction!" << std::endl;
+		}
+		
 		return con;
 	}
 
-	BondConnector &_left;
-	BondConnector &_right;
+	ExistenceConnector &_left;
+	ExistenceConnector &_right;
+	std::string _desc{};
 };
 };
 

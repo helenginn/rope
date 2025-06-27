@@ -33,6 +33,59 @@ namespace hnet
 typedef std::pair<AtomConf, hnet::BondConnector *> ABPair;
 typedef OpSet<ABPair> PairSet;
 
+struct AcceptableGroup
+{
+	PairSet group{};
+	int coord_num = {};
+	
+	size_t size() const
+	{
+		return group.size();
+	}
+	
+	bool operator<(const AcceptableGroup &other) const
+	{
+		if (coord_num == other.coord_num)
+		{
+			return group < other.group;
+		}
+		return coord_num < other.coord_num;
+	}
+};
+
+inline std::vector<int> 
+combined_mapping_totals(const std::map<int, std::vector<int>> &map)
+{
+	std::vector<int> result;
+
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		for (const int &right : it->second)
+		{
+			result.push_back(right);
+		}
+	}
+
+	return result;
+}
+
+inline std::map<int, std::vector<int>> 
+invert_one_to_many_mapping(const std::map<int, std::vector<int>> &map)
+{
+	std::map<int, std::vector<int>> result;
+
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		const int &left = it->first;
+		for (const int &right : it->second)
+		{
+			result[right].push_back(left);
+		}
+	}
+
+	return result;
+}
+
 inline std::ostream &operator<<(std::ostream &ss, const ABPair &pair)
 {
 	ss << pair.first;
@@ -44,7 +97,6 @@ inline std::ostream &operator<<(std::ostream &ss, const ABPair &pair)
 	return ss;
 }
 
-
 inline std::ostream &operator<<(std::ostream &ss, const PairSet &all)
 {
 	for (const ABPair &ps : all)
@@ -52,6 +104,12 @@ inline std::ostream &operator<<(std::ostream &ss, const PairSet &all)
 		ss << ps << " ";
 	}
 	ss << "(" << all.size() << ")";
+	return ss;
+}
+
+inline std::ostream &operator<<(std::ostream &ss, const AcceptableGroup &grp)
+{
+	ss << "grp: " << grp.group << " - for coordination " << grp.coord_num;
 	return ss;
 }
 
@@ -64,7 +122,7 @@ inline std::vector<std::string> inactiveHydrogenNames(::Atom *atom)
 		std::vector<std::string> hydroNames;
 	};
 
-	std::vector<NameInfo> list = {{"GLY", "CA", {"HA1", "HA2"}},
+	std::vector<NameInfo> list = {{"GLY", "CA", {"HA2", "HA3"}},
                            	      {"", "CA", {"HA"}},
 	                              {"ALA", "CB", {"HB1", "HB2", "HB3"}},
 	                              {"ARG", "CB", {"HB2", "HB3"}},
@@ -83,7 +141,7 @@ inline std::vector<std::string> inactiveHydrogenNames(::Atom *atom)
 	                              {"SER", "CB", {"HB2", "HB3"}},
 	                              {"ILE", "CB", {"HB"}},
 	                              {"ILE", "CG1", {"HG12", "HG13"}},
-	                              {"ILE", "CG2", {"HG12", "HG22", "HG23"}},
+	                              {"ILE", "CG2", {"HG21", "HG22", "HG23"}},
 	                              {"ILE", "CD1", {"HD11", "HD12", "HD13"}},
 	                              {"LEU", "CB", {"HB2", "HB3"}},
 	                              {"LEU", "CG", {"HG"}},

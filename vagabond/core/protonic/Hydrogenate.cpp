@@ -19,6 +19,7 @@
 #include "AtomGroup.h"
 #include "alignment.h"
 #include "Hydrogenate.h"
+#include "BondLength.h"
 
 using namespace hnet;
 
@@ -34,9 +35,23 @@ void Hydrogenate::operator()()
 	{
 		return;
 	}
+	
+	std::vector<::Atom *> to_purge;
+	for (int i = 0; i < _atom->bondLengthCount(); i++)
+	{
+		::Atom *other = _atom->connectedAtom(i);
+		if (other->elementSymbol() == "H")
+		{
+			to_purge.push_back(other);
+		}
+	}
+
+	for (::Atom *to_go : to_purge)
+	{
+		_atom->purgeConnectionsToAtom(to_go);
+	}
 
 	int coordNum = 0;
-
 	OpSet<::Atom *> to_align = inactiveHydrogens(_atom, coordNum);
 
 	if (coordNum == 0 || to_align.size() == 0 ||
@@ -44,40 +59,61 @@ void Hydrogenate::operator()()
 	{
 		return;
 	}
-	
-	glm::vec3 centre = _atom->initialPosition();
 
-	std::vector<glm::vec3> some;
-	for (::Atom *const &atom : to_align)
+	auto acquire_positions_for_conf = [coordNum, to_align, this](char conf)
 	{
-		some.push_back(atom->initialPosition());
-	}
-	
-	std::vector<glm::vec3> all = align(coordNum, centre, some);
-	
-	if (coordNum > 10)
-	{
-		coordNum -= 9;
-	}
+		AtomConf ac = {_atom, conf};
+		glm::vec3 centre = ac.soft_position();
+
+		std::vector<glm::vec3> some;
+		for (::Atom *const &atom : to_align)
+		{
+			AtomConf tmp = {atom, conf};
+			some.push_back(tmp.soft_position());
+		}
+
+		std::vector<glm::vec3> all = align(coordNum, centre, some);
+		return all;
+	};
+
 	
 	std::vector<std::string> names = inactiveHydrogenNames(_atom);
 	int n = 0;
 	
-	if (names.size() != (coordNum - some.size()))
+	if (coordNum > 10)
+	{
+		coordNum -= 10;
+	}
+
+	if (names.size() != (coordNum - to_align.size()))
 	{
 		std::cout << "Warning: name numbers don't match!" << std::endl;
 	}
 
-	for (size_t i = some.size(); i < coordNum; i++)
+	for (size_t i = to_align.size(); i < coordNum; i++)
 	{
 		::Atom *hAtom = new ::Atom();
 		hAtom->setResidueId(_atom->residueId());
-		hAtom->setInitialPosition(all[i]);
+
+		for (const std::string &conformer : _atom->conformerList())
+		{
+			char conf = char_from_conf(conformer);
+			std::vector<glm::vec3> all = acquire_positions_for_conf(conf);
+			hAtom->conformerPositions()[conformer].pos.ave = all[i];
+			hAtom->conformerPositions()[conformer].occ = 
+			_atom->conformerPositions()[conformer].occ;
+
+			std::cout << "\tnew H for " << _atom->desc() << "," << conformer
+			<< " at " << glm::to_string(all[i]) << std::endl;
+		}
+
+		hAtom->setChain(_atom->chain());
 		hAtom->setCode(_atom->code());
 		hAtom->setAtomName(names[n]); n++;
 		hAtom->setElementSymbol("H");
-		std::cout << "\tnew H for " << _atom->desc() << " at " 
-		<< glm::to_string(all[i]) << std::endl;
+		std::cout << "Created new atom! " << hAtom->desc() << std::endl;
+
 		*_destination += hAtom;
+		new BondLength(nullptr, _atom, hAtom, 0.98, 0.01);
 	}
 }

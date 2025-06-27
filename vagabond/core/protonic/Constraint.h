@@ -30,6 +30,9 @@
 #include "CountAdder.h"
 #include "Limit.h"
 #include "Stricter.h"
+#include "MutualExistence.h"
+#include "SubExistence.h"
+#include "OnlyOne.h"
 
 namespace hnet
 {
@@ -83,6 +86,7 @@ struct Constant
 typedef Constant<AtomConnector, Atom::Values> AtomConstant;
 typedef Constant<BondConnector, Bond::Values> BondConstant;
 typedef Constant<CountConnector, Count::Values> CountConstant;
+typedef Constant<ExistenceConnector, Existence::Values> ExistenceConstant;
 
 /* union to store created constraints in a list */
 struct AnyConstraint
@@ -90,8 +94,15 @@ struct AnyConstraint
 	enum Type
 	{
 		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, 
-		AbsentAdd, NotBrokenAdd, EiOrBond, Min, Max, Equal, Stricter
+		AbsentAdd, NotBrokenAdd, EiOrBond, Min, Max, Equal, Stricter,
+		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen
 	};
+	
+	AnyConstraint(IfCountThenImpose *const &constraint)
+	{
+		_type = IfCountThen;
+		_ptr = constraint;
+	}
 	
 	AnyConstraint(StricterBond *const &constraint)
 	{
@@ -111,6 +122,12 @@ struct AnyConstraint
 		_ptr = constraint;
 	}
 	
+	AnyConstraint(OnlyOne *const &constraint)
+	{
+		_type = OnlyOneOf;
+		_ptr = constraint;
+	}
+	
 	AnyConstraint(CountConstant *const &constraint)
 	{
 		_type = Count;
@@ -126,6 +143,24 @@ struct AnyConstraint
 	AnyConstraint(BondConstant *const &constraint)
 	{
 		_type = Bond;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(SubExistence *const &constraint)
+	{
+		_type = SubExist;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(MutualExistence *const &constraint)
+	{
+		_type = MutualExist;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(ExistenceConstant *const &constraint)
+	{
+		_type = Existence;
 		_ptr = constraint;
 	}
 	
@@ -220,6 +255,15 @@ struct AnyConstraint
 			case CountAdd:
 			delete static_cast<CountAdder *>(_ptr); break;
 
+			case MutualExist:
+			delete static_cast<MutualExistence *>(_ptr); break;
+
+			case SubExist:
+			delete static_cast<SubExistence *>(_ptr); break;
+
+			case Existence:
+			delete static_cast<ExistenceConnector *>(_ptr); break;
+
 			case HBond:
 			delete static_cast<ExistenceConnector *>(_ptr); break;
 			
@@ -228,10 +272,15 @@ struct AnyConstraint
 			
 			case EiOrBond:
 			delete static_cast<EitherOrBond *>(_ptr); break;
+			
+			case OnlyOneOf:
+			delete static_cast<OnlyOne *>(_ptr); break;
 
 			case Stricter:
 			delete static_cast<StricterBond *>(_ptr); break;
 
+			case IfCountThen:
+			delete static_cast<IfCountThenImpose *>(_ptr); break;
 
 			default: break;
 		}

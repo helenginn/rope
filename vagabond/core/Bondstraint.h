@@ -87,6 +87,18 @@ public:
 
 	virtual const Key key(int i) const = 0;
 
+	bool containsAtom(Atom *atom)
+	{
+		if (!atom) return false;
+		for (int i = 0; i < 4; i++)
+		{
+			if (key(0).atoms[i] == atom)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 protected:
 	AtomGroup *_owner;
 };

@@ -269,7 +269,7 @@ void PositionShifter::move()
 	}
 
 	float alpha = 0.2;
-	float learning_rate = 0.0005;
+	float learning_rate = 0.0012;
 	glm::vec3 average = {};
 	float count = 0;
 	for (Element &ele : _objects)

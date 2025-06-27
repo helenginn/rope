@@ -83,6 +83,13 @@ public:
 	BondProbe &add_probe(BondProbe *const &probe);
 	CountProbe &add_probe(CountProbe *const &probe);
 	HydrogenProbe &add_probe(HydrogenProbe *const &probe);
+	
+	void addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord);
+	
+	AtomGroup *extraHydrogens()
+	{
+		return _extraHydrogens;
+	}
 
 	std::map<hnet::AtomConf, hnet::Coordinated *> &atomMap()
 	{
@@ -104,6 +111,7 @@ private:
 	bool setupCarboxylOxygen(hnet::AtomConf atom);
 	bool setupHistidine(hnet::AtomConf atom);
 	bool setupTryptophan(hnet::AtomConf atom);
+	bool setupMethionine(hnet::AtomConf atom);
 
 	void shareCharges(hnet::AtomConf left, hnet::AtomConf right,
 	                 const hnet::Count::Values &allowable);
@@ -126,6 +134,7 @@ private:
 	AtomGroup *_original = nullptr;
 	AtomGroup *_symMates = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
+	AtomGroup *_extraHydrogens = nullptr;
 	
 	std::vector<Decree *> _decrees;
 	UndoStack _undoStack{};

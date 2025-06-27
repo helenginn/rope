@@ -167,6 +167,11 @@ void Atom::setCode(std::string code)
 	_code = code;
 }
 
+void Atom::disconnectAtom(Atom *)
+{
+
+}
+
 bool Atom::isConnectedToAtom(Atom *a) const
 {
 	for (size_t i = 0; i < bondLengthCount(); i++)

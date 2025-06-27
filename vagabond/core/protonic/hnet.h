@@ -27,10 +27,17 @@
 #include "Atom.h"
 
 /** serious missing features:
- * - missing hydrogens off non-donors // sorted?
+ * - may need to generate more than one surviving group from developSeed,
+ *    as multiple bonding partners may match, especially with altconfs.
  * - donatable hydrogens which are incompatible with each other
  *    - in trypsin, Ser170 and Ser167 for example
- * - alternate conformers
+ * - alternate conformers - in Arbeit.
+ * - coordination of lone pairs may rely on the previous atom too.
+ * - carbonyls can coordinate either 2 or 3 coordNums
+ *
+ * - OnlyOne needs to force presence of final remaining conf // handled
+ * - missing hydrogens off non-donors // sorted?
+ * - currently bonds don't appear between conformations... // handled
  */
 
 class Atom;
@@ -103,12 +110,35 @@ struct AtomConf
 
 		return ptr < other.ptr;
 	}
+	
+	std::string as_string() const
+	{
+		std::string c; if (conf != '\0') { c += conf; }
+		return c;
+	}
+
+	float occupancy() const
+	{
+		std::string c = as_string();
+		float occ = ptr->conformerPositions().at(c).occ;
+		return occ;
+	}
 
 	glm::vec3 position() const
 	{
-		std::string c; if (conf != '\0') { c += conf; }
+		std::string c = as_string();
 		glm::vec3 pos = ptr->conformerPositions().at(c).pos.ave;
 		return pos;
+	}
+
+	glm::vec3 soft_position() const
+	{
+		std::string c = as_string();
+		if (ptr->conformerPositions().count(c) == 0)
+		{
+			return ptr->initialPosition();
+		}
+		return ptr->conformerPositions().at(c).pos.ave;
 	}
 };
 

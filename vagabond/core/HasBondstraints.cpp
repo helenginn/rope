@@ -512,3 +512,46 @@ bool HasBondstraints::propagateRigidity(BondTorsion *torsion)
 
 	return changed;
 }
+
+void HasBondstraints::purgeConnectionsToAtom(Atom *atom)
+{
+	auto erase_in = [atom]<class Container>(Container &c)
+	{
+		std::erase_if(c, [atom](Bondstraint *l)
+		              { return l->containsAtom(atom); });
+	};
+
+	auto erase_in_map = [&erase_in]<class MapContainer>(MapContainer &mc)
+	{
+		for (auto it = mc.begin(); it != mc.end(); it++)
+		{
+			erase_in(it->second);
+		}
+	};
+
+	auto erase_from_values = [atom]
+	<class MapContainer>(MapContainer &mc)
+	{
+		std::erase_if(mc, [atom](auto it)
+		              { return it.second->containsAtom(atom); });
+	};
+
+
+	erase_in(_bondLengths);
+	erase_in(_bondAngles);
+	erase_in(_terminalBondAngles);
+	erase_in(_centralBondAngles);
+	erase_in(_bondstraints);
+	erase_in(_hyperValues);
+	erase_in(_parameters);
+	erase_in(_torsions);
+	erase_in(_terminalTorsions);
+	erase_in(_centralTorsions);
+	erase_in_map(_residue2Parameters);
+	erase_from_values(_torsionMap);
+	erase_from_values(_lengthMap);
+	erase_from_values(_angleMap);
+	erase_from_values(_chiralMap);
+	erase_from_values(_hyperValueMap);
+}
+	

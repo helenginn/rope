@@ -32,7 +32,8 @@ void main()
 		discard;
 	}
 
-	result += vColor;
+	result.xyz += vColor.xyz;
+	result.a *= (1. + vColor.a);
 	FragColor = result;
 }
 

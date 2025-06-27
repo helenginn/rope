@@ -46,6 +46,7 @@ void ProbeAtom::updatePosition()
 void ProbeAtom::updateProbe()
 {
 	FloatingText::changeText(_probe->display());
+	FloatingText::setAlpha(_probe->alpha());
 }
 
 ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
@@ -63,6 +64,7 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
 
 	FloatingText::setFragmentShaderFile(shader);
 	probe->_obj.set_update([this]() { updateProbe(); });
+	probe->existence().set_update([this]() { updateProbe(); });
 	fullUpdate();
 }
 
@@ -83,6 +85,7 @@ ProbeAtom::ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe)
 #endif
 	FloatingText::setFragmentShaderFile(shader);
 	probe->_obj.set_update([this]() { updateProbe(); });
+	probe->existence().set_update([this]() { updateProbe(); });
 
 	fullUpdate();
 }
@@ -96,6 +99,29 @@ void ProbeAtom::hoverOverAtom()
 		std::string conf; conf += aProbe->_conf;
 		_view->setInformation(atom->desc() + "," + conf);
 	}
+}
+
+void ProbeAtom::offerHeavyAtomMenu()
+{
+	AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
+	if (aProbe->existence().is_certain())
+	{
+		return;
+	}
+
+	std::vector<Existence::Values> options = aProbe->existence().values();
+
+	Menu *m = new Menu(_view, this);
+	
+	for (const Existence::Values &option : options)
+	{
+		std::ostringstream ss;
+		ss << option;
+		m->addOption(ss.str(), [this, option]
+		             () { declareAtomExistence(option); });
+	}
+
+	_view->setMenu(m);
 }
 
 void ProbeAtom::offerHydrogenMenu()
@@ -130,6 +156,12 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 	{
 		offerHydrogenMenu();
 	}
+	else
+	if (!left && !hover && _probe->is_atom())
+	{
+		offerHeavyAtomMenu();
+	}
+
 }
 
 void ProbeAtom::reindex()
@@ -160,6 +192,36 @@ void ProbeAtom::selected(int idx, bool inverse)
 	FloatingText::forceRender(true, false);
 }
 
+void ProbeAtom::declareAtomExistence(Existence::Values value)
+{
+	std::string name = "Declare atom";
+	Decree *d = _view->network().newDecree(name);
+
+	AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
+	std::string present = (value == Existence::Present ? "present" : "absent");
+
+	std::string message = "Declare atom " + present;
+
+	auto make_declaration = [d, value, this]
+	{
+		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
+		bool contra = aProbe->existence().assign_value(value, d, d);
+		std::cout << "OK: " << contra << std::endl;
+	};
+
+	auto rescind_declaration = [d, this]
+	{
+		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
+
+		aProbe->existence().forget(d);
+		aProbe->existence().check_all(d);
+	};
+	
+	_view->network().undoStack().addJobAndExecute(make_declaration,
+	                                              rescind_declaration,
+	                                              message);
+}
+
 void ProbeAtom::declareHydrogen(Existence::Values value)
 {
 	std::string name = "Declare hydrogen";
@@ -173,7 +235,8 @@ void ProbeAtom::declareHydrogen(Existence::Values value)
 	auto make_declaration = [d, value, this]
 	{
 		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
-		hProbe->_obj.assign_value(value, d, d);
+		bool contra = hProbe->_obj.assign_value(value, d, d);
+		std::cout << "OK: " << contra << std::endl;
 	};
 
 	auto rescind_declaration = [d, this]
