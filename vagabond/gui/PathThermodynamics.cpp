@@ -18,8 +18,6 @@
 
 #include <string>
 #include "PathThermodynamics.h"
-#include "CandidateView.h"
-#include <vagabond/core/PathManager.h>
 #include <vagabond/core/PathGroup.h>
 #include <vagabond/core/Path.h>
 #include <vagabond/core/Entity.h>
@@ -34,6 +32,7 @@
 #include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/AskForText.h>
 
 int PathThermodynamics::_pathNum = 0;
 
@@ -82,41 +81,46 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 	{	
 		deleteTemps();
 
-		if (_pathNum > -1)
+		std::string str = "Choose number of paths (\"frames\") to utilise";
+		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
+		cr->setDefault(1);
+		cr->setRange(1, _paths.size(), _paths.size()-1);
+
+		auto respondToVal = [this](float min, float max)
 		{
-			std::string str = "Choose number of paths (\"frames\") to utilise";
-			ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-			cr->setDefault(1);
-			cr->setRange(1, _paths.size(), _paths.size()-1);
-			setModal(cr);
-		}
+			_pathNum = lrint(min);
+			
+			struct Flag_par flag_par;
+			struct Entropy entropy;
 
-		struct Flag_par flag_par;
-		struct Entropy entropy;
-		
-		Sequence *seq = _entity->sequence();
+			Sequence *seq = _entity->sequence();
 
-		PathEntropy path_entropy;
+			PathEntropy path_entropy;
 
-		std::cout << "Out of if statement..." << std::endl;
-		const std::string mod_id = _paths[0].front()->startInstance()->model_id();
+			const std::string mod_id = _paths[0].front()->startInstance()->model_id();
 
-		Tors_res4nn* tors_res = new Tors_res4nn[seq->size()]{};
+			Tors_res4nn* tors_res = new Tors_res4nn[seq->size()]{};
 
-		std::cout << _pathNum << std::endl;
+			path_entropy.init_flag_par(&flag_par);	
+			path_entropy.get_atoms_and_residues(_pathNum, _paths, mod_id, *tors_res);
 
-		path_entropy.init_flag_par(&flag_par);	
-		path_entropy.get_atoms_and_residues(_pathNum, _paths, mod_id, *tors_res);
+			path_entropy.calculate_entropy_independent(_pathNum, flag_par, seq, tors_res, &entropy);
 
-		path_entropy.calculate_entropy_independent(_pathNum, flag_par, seq, tors_res, &entropy);
-		std::cout << "entropy calculated" << std::endl;
+			for (int i = 0; i < seq->size(); i++)
+			{
 
-		{
+				std::cout << *entropy.h1lm[i] << std::endl;
+			
+			}
 			std::string str = "Total: " +  std::to_string(*(double *)entropy.total) + " (R units)\n" + "Per residue: " + std::to_string(*(double *)entropy.total/seq->size()) + " (R units)";
-			Text *t = new Text(str);
-			t->setLeft(0.2, 0.6);
-			addTempObject(t);
-		}
+			
+			displayEntropy(str);
+	
+		};
+
+		cr->setReturn(respondToVal);
+		setModal(cr);
+
 	}
 
 	if (tag == "choose_paths")
@@ -128,7 +132,21 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		refresh();
 	}
 
+	if (tag == "divisions")
+	{
+		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
+		setModal(aft);
+	}
+
 	Scene::buttonPressed(tag, button);
+}
+
+void PathThermodynamics::displayEntropy(std::string str)
+{
+	std::cout << "entropy calculated" << std::endl;
+	Text *t = new Text(str);
+	t->setLeft(0.2, 0.6);
+	addTempObject(t);
 }
 
 void PathThermodynamics::refresh()

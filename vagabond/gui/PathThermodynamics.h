@@ -42,6 +42,10 @@ private:
 	std::vector<PathGroup> _paths;
 
 	static int _pathNum;
+
+	int _samples = 0;
+
+	void displayEntropy(std::string str);
 };
 
 #endif
