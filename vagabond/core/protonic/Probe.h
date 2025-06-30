@@ -111,7 +111,6 @@ public:
 		}
 		else
 		{
-			std::cout << "_hide now " << alpha << std::endl;
 			_hide = alpha;
 			sendResponse("alpha", this);
 		}

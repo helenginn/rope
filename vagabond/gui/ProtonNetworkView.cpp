@@ -235,11 +235,9 @@ void ProtonNetworkView::arrangeFigure()
 
 void ProtonNetworkView::sendObject(std::string tag, void *object)
 {
-	std::cout << "received tag " << tag << std::endl;
 	auto main_job = [this, &object]()
 	{
 		Probe *p = static_cast<Probe *>(object);
-		std::cout << "Got to this point" << std::endl;
 		if (_textProbes.count(p))
 		{
 			_textProbes[p]->FloatingText::setAlpha(p->alpha());
@@ -249,7 +247,6 @@ void ProtonNetworkView::sendObject(std::string tag, void *object)
 		{
 			_bondProbes[p]->updateProbe();
 		}
-		std::cout << "Updated all this" << std::endl;
 	};
 
 	main_job();
