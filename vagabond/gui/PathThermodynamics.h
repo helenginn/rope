@@ -25,7 +25,7 @@ class PathGroup;
 class Entity;
 class PathEntropy;
 
-struct Flag_par;
+struct FlagParameters;
 struct Entropy;
 
 class PathThermodynamics : public Scene
@@ -46,7 +46,7 @@ private:
 	PathEntropy *_pathEntropy;
 	std::vector<PathGroup> _paths;
 
-	struct Flag_par *_flag_par;
+	struct FlagParameters *_flagParameters;
 	struct Entropy *_entropy;
 
 	static int _pathNum;

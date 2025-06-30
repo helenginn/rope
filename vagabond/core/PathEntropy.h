@@ -32,7 +32,7 @@ struct Tors_res4nn {
 	int res_n{};
 };
 
-struct Flag_par {
+struct FlagParameters {
 	int n{};
 	double minres{};
 	int kmi{};
@@ -47,16 +47,16 @@ public:
 	//~PathEntropy(){};
 
 	/* Default flag parameters as chosen in pdb2entropy programme */
-	void init_flag_par(struct Flag_par *flag_par);
+	void init_flag_par(struct FlagParameters *flagParameters);
 
 	int alloc_tors(struct Tors_res4nn *tors_res, int seqSize);
-	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct Flag_par *flag_par);
+	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters *flagParameters);
 
 	void get_atoms_and_residues(const int pathNum, const std::vector<PathGroup> &paths, const std::string &model_id, struct Tors_res4nn &tors_res);
 
 	// void calculate_entropy_independent(const std::string &model_id);
 	
-	int calculate_entropy_independent(int nf, struct Flag_par *flag_par, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy);
+	int calculate_entropy_independent(int nf, struct FlagParameters *flagParameters, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy);
 
 	/* implicit compare function for qsort */
 	static int comp (const void * elem1, const void * elem2);
