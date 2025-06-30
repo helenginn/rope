@@ -90,29 +90,24 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_pathNum = lrint(min);
 			
-			struct Flag_par flag_par;
-			struct Entropy entropy;
-
 			Sequence *seq = _entity->sequence();
-
-			PathEntropy path_entropy;
 
 			const std::string mod_id = _paths[0].front()->startInstance()->model_id();
 
 			Tors_res4nn* tors_res = new Tors_res4nn[seq->size()]{};
 
-			path_entropy.init_flag_par(&flag_par);	
-			path_entropy.get_atoms_and_residues(_pathNum, _paths, mod_id, *tors_res);
+			_pathEntropy->init_flag_par(_flag_par);	
+			_pathEntropy->get_atoms_and_residues(_pathNum, _paths, mod_id, *tors_res);
 
-			path_entropy.calculate_entropy_independent(_pathNum, flag_par, seq, tors_res, &entropy);
+			_pathEntropy->calculate_entropy_independent(_pathNum, _flag_par, seq, tors_res, _entropy);
 
 			for (int i = 0; i < seq->size(); i++)
 			{
 
-				std::cout << *entropy.h1lm[i] << std::endl;
+				std::cout << _entropy->h1lm[i] << std::endl;
 			
 			}
-			std::string str = "Total: " +  std::to_string(*(double *)entropy.total) + " (R units)\n" + "Per residue: " + std::to_string(*(double *)entropy.total/seq->size()) + " (R units)";
+			std::string str = "Total: " +  std::to_string(*(double *)_entropy->total) + " (R units)\n" + "Per residue: " + std::to_string(*(double *)_entropy->total/seq->size()) + " (R units)";
 			
 			displayEntropy(str);
 	
