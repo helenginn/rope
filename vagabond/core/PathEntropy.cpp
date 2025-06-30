@@ -9,7 +9,6 @@
 #include <PathEntropy.h>
 #include <Sequence.h>
 #include <TorsionRef.h>
-#include <RTAngles.h>
 #include <Model.h>
 #include <Residue.h>
 #include <Environment.h>
@@ -51,8 +50,7 @@ void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGrou
 
 		Sequence *polySeq = static_cast<Polymer *>(pr->instance())->sequence();
 
-		/* AtomGroup *content = paths[i].front()->startInstance()->currentAtoms();
-		content->recalculate(); */
+		content->recalculate();
 			
 		for (int j = 0; j < polySeq->size(); j++)
 		{
