@@ -32,7 +32,7 @@ class PathThermodynamics : public Scene
 {
 public:
 	PathThermodynamics(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths);
-	virtual ~PathThermodynamics(){};
+	~PathThermodynamics();
 
 	virtual void setup();
 	virtual void refresh();

@@ -40,6 +40,13 @@ PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::v
 {
 	_entity = entity;
 	_paths = paths;
+
+	_pathEntropy = new PathEntropy();
+}
+
+PathThermodynamics::~PathThermodynamics()
+{
+	delete _pathEntropy;
 }
 
 void PathThermodynamics::addTypeButtons()
