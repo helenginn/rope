@@ -28,7 +28,7 @@ class PathGroup;
 class Entity;
 class PathEntropy;
 
-struct Flag_par;
+struct FlagParameters;
 struct Entropy;
 
 class PathThermodynamics : public Scene

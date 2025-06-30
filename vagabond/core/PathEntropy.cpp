@@ -169,7 +169,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
         kNearestNeighbours(torsRes, entropy, flagParameters, numTors, nf, numResPerModel, K, n);
  
         ent4Matrix.totalEntropy.push_back(entropy->totalEntropy);
-
 	}
 
 	return ent4Matrix;
