@@ -23,6 +23,10 @@
 
 class PathGroup;
 class Entity;
+class PathEntropy;
+
+struct Flag_par;
+struct Entropy;
 
 class PathThermodynamics : public Scene
 {
@@ -39,10 +43,13 @@ public:
 
 private:
 	Entity *_entity = nullptr;
+	PathEntropy *_pathEntropy = nullptr;
 	std::vector<PathGroup> _paths;
 
-	static int _pathNum;
+	struct Flag_par *_flag_par = nullptr;
+	struct Entropy *_entropy = nullptr;
 
+	static int _pathNum;
 	int _samples = 0;
 
 	void displayEntropy(std::string str);

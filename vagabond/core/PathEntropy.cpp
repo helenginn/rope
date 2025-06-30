@@ -113,7 +113,7 @@ void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGrou
 
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
-int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy){
+int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par *flag_par, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy){
 	int i, j, k, K, m, ok;
 	double **phit;
 	double *d, *ent_k, *ent_k_2, *sd_k, *ent_k_tot, *ent_k_tot_2, *d_mean, *ld_mean, *x, *y, *w, *a, *sd;
@@ -123,10 +123,10 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 	int n_tors = 0;
 
 	(*entropy).n_single = n_res_per_model;
-	(*entropy).n_nn = flag_par.n;
+	(*entropy).n_nn = flag_par->n;
 	alloc_entropy(entropy, (*entropy).n_single, 0, (*entropy).n_nn, flag_par);
 
-	K = flag_par.n + 1;
+	K = flag_par->n + 1;
 
 	d_mean = (double*)calloc(K, sizeof(double));
 	ld_mean = (double*)calloc(K, sizeof(double));
@@ -205,9 +205,9 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 					/* if the distance is less than a pre-set value, reset the 
 					 * distance to the pre-set values, to avoid NaNs */
 				
-					if(d[k] < flag_par.minres)
+					if(d[k] < flag_par->minres)
 					{
-						logdk = log(flag_par.minres);
+						logdk = log(flag_par->minres);
 					}
 					else
 					{
@@ -284,7 +284,7 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par flag_par,
 	//	(*entropy).dm1lm[m] = &d_mean[1]/sqrt(tors_res[m].n_ang);
 		}
 	
-	for(k = 0; k < flag_par.n; k++)
+	for(k = 0; k < flag_par->n; k++)
 	{
 		(*entropy).sd_total[k] = sqrt((*entropy).sd_total[k]);
 		(*entropy).dm_total[k] = sqrt((*entropy).dm_total[k]/ (double) n_tors);
@@ -435,7 +435,7 @@ int PathEntropy::alloc_tors(struct Tors_res4nn *tors_res, int seqSize)
 }
 
 /* allocates memory to entropy structure */
-int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct Flag_par flag_par)
+int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct Flag_par *flag_par)
 {
 	int i;
 
