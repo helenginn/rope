@@ -43,11 +43,11 @@ public:
 
 private:
 	Entity *_entity = nullptr;
-	PathEntropy *_pathEntropy = nullptr;
+	PathEntropy *_pathEntropy;
 	std::vector<PathGroup> _paths;
 
-	struct Flag_par *_flag_par = nullptr;
-	struct Entropy *_entropy = nullptr;
+	struct Flag_par *_flag_par;
+	struct Entropy *_entropy;
 
 	static int _pathNum;
 	int _samples = 0;
