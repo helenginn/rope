@@ -19,11 +19,11 @@
 #include <BondTorsion.h>
 #include <HasBondstraints.h>
 
-void PathEntropy::init_flag_par(struct Flag_par *flag_par)
+void PathEntropy::init_flag_par(struct FlagParameters *flagParameters)
 	{
-		(*flag_par).n = 10; /* number of nearest neighbours */
-		(*flag_par).minres = 1e-10;
-		(*flag_par).kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+		flagParameters->n = 10; /* number of nearest neighbours */
+		flagParameters->minres = 1e-10;
+		flagParameters->kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
 	}
  
 void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGroup> &paths, const std::string &model_id, struct Tors_res4nn &tors_res)
@@ -111,7 +111,7 @@ void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGrou
 
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
-int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par *flag_par, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy){
+int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *flagParameters, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy){
 	int i, j, k, K, m, ok;
 	double **phit;
 	double *d, *ent_k, *ent_k_2, *sd_k, *ent_k_tot, *ent_k_tot_2, *d_mean, *ld_mean, *x, *y, *w, *a, *sd;
@@ -121,10 +121,10 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par *flag_par
 	int n_tors = 0;
 
 	(*entropy).n_single = n_res_per_model;
-	(*entropy).n_nn = flag_par->n;
-	alloc_entropy(entropy, (*entropy).n_single, 0, (*entropy).n_nn, flag_par);
+	(*entropy).n_nn = flagParameters->n;
+	alloc_entropy(entropy, (*entropy).n_single, 0, (*entropy).n_nn, flagParameters);
 
-	K = flag_par->n + 1;
+	K = flagParameters->n + 1;
 
 	d_mean = (double*)calloc(K, sizeof(double));
 	ld_mean = (double*)calloc(K, sizeof(double));
@@ -203,9 +203,9 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par *flag_par
 					/* if the distance is less than a pre-set value, reset the 
 					 * distance to the pre-set values, to avoid NaNs */
 				
-					if(d[k] < flag_par->minres)
+					if(d[k] < flagParameters->minres)
 					{
-						logdk = log(flag_par->minres);
+						logdk = log(flagParameters->minres);
 					}
 					else
 					{
@@ -282,7 +282,7 @@ int PathEntropy::calculate_entropy_independent(int nf, struct Flag_par *flag_par
 	//	(*entropy).dm1lm[m] = &d_mean[1]/sqrt(tors_res[m].n_ang);
 		}
 	
-	for(k = 0; k < flag_par->n; k++)
+	for(k = 0; k < flagParameters->n; k++)
 	{
 		(*entropy).sd_total[k] = sqrt((*entropy).sd_total[k]);
 		(*entropy).dm_total[k] = sqrt((*entropy).dm_total[k]/ (double) n_tors);
@@ -433,7 +433,7 @@ int PathEntropy::alloc_tors(struct Tors_res4nn *tors_res, int seqSize)
 }
 
 /* allocates memory to entropy structure */
-int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct Flag_par *flag_par)
+int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters *flagParameters)
 {
 	int i;
 
