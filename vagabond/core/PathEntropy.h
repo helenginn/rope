@@ -8,34 +8,34 @@
 #include <PathGroup.h>
 
 struct Entropy {
-int n_single;
-int n_pair;
-int n_nn;
-double **h1;
-double **sd1;
-double **dm1;
-double **h1lm;
-double **sd1lm;
-double **dm1lm;
-double *total;
-double *sd_total;
-double *dm_total;
+int n_single{};
+int n_pair{};
+int n_nn{};
+double **h1{};
+double **sd1{};
+double **dm1{};
+double **h1lm{};
+double **sd1lm{};
+double **dm1lm{};
+double *total{};
+double *sd_total{};
+double *dm_total{};
 };
 
 
 struct Tors_res4nn {
-	int n_models;
-	int n_ang;
-	std::string *tors_name;
-	double **phi;
-	double *v;
-	int res_n;
+	int n_models{};
+	int n_ang{};
+	std::string *tors_name{};
+	double **phi{};
+	double *v{};
+	int res_n{};
 };
 
 struct Flag_par {
-	int n;
-	double minres;
-	int kmi;
+	int n{};
+	double minres{};
+	int kmi{};
 };
 
 
