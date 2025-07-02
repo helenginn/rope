@@ -27,7 +27,7 @@ struct Tors_res4nn {
 	int n_models{};
 	int n_ang{};
 	std::string *tors_name{};
-	double **phi{};
+	double **ang{};
 	double *v{};
 	int res_n{};
 };
@@ -52,7 +52,7 @@ public:
 	int alloc_tors(struct Tors_res4nn *tors_res, int seqSize);
 	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters *flagParameters);
 
-	void get_atoms_and_residues(const int pathNum, const std::vector<PathGroup> &paths, const std::string &model_id, struct Tors_res4nn &tors_res);
+	Tors_res4nn* get_atoms_and_residues(const int pathNum, const std::vector<PathGroup> &paths, Sequence *seq);
 
 	// void calculate_entropy_independent(const std::string &model_id);
 	
