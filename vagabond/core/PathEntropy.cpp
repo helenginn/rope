@@ -107,9 +107,9 @@ int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *fl
 
 	int n_tors = 0;
 
-	(*entropy).n_single = n_res_per_model;
-	(*entropy).n_nn = flagParameters->n;
-	alloc_entropy(entropy, (*entropy).n_single, 0, (*entropy).n_nn, flagParameters);
+	entropy->n_single = n_res_per_model;
+	entropy->n_nn = flagParameters->n;
+	alloc_entropy(entropy, entropy->n_single, 0, entropy->n_nn, flagParameters);
 
 	K = flagParameters->n + 1;
 
@@ -130,9 +130,9 @@ int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *fl
 
 	for(k = 1; k <= K-1; k++)
 	{
-		(*entropy).total[k-1] = 0.0;
-		(*entropy).sd_total[k-1] = 0.0;
-		(*entropy).dm_total[k-1] = 0.0;
+		entropy->total[k-1] = 0.0;
+		entropy->sd_total[k-1] = 0.0;
+		entropy->dm_total[k-1] = 0.0;
 	}
 
 	/* for each residue, compute entropy, sd and dm for the residue
@@ -231,12 +231,12 @@ int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *fl
 			d_mean[k] = d_mean[k] / (double) nf;
 			ld_mean[k] = ld_mean[k] / (double) nf;
 
-			(*entropy).h1[m][k-1] = ent_k[k-1];
-			(*entropy).dm1[m][k-1] = d_mean[k];
-			(*entropy).sd1[m][k-1] = sd_k[k-1];
-			(*entropy).total[k-1] = (*entropy).total[k-1] + ent_k[k-1];
-			(*entropy).sd_total[k-1] = (*entropy).sd_total[k-1] + (*entropy).sd1[m][k-1] * (*entropy).sd1[m][k-1];
-			(*entropy).dm_total[k-1] = (*entropy).dm_total[k-1] + (*entropy).dm1[m][k-1] * (*entropy).dm1[m][k-1];
+			entropy->h1[m][k-1] = ent_k[k-1];
+			entropy->dm1[m][k-1] = d_mean[k];
+			entropy->sd1[m][k-1] = sd_k[k-1];
+			entropy->total[k-1] = entropy->total[k-1] + ent_k[k-1];
+			entropy->sd_total[k-1] = entropy->sd_total[k-1] + entropy->sd1[m][k-1] * entropy->sd1[m][k-1];
+			entropy->dm_total[k-1] = entropy->dm_total[k-1] + entropy->dm1[m][k-1] * entropy->dm1[m][k-1];
 		}
 
 		ok = 1;
@@ -264,15 +264,15 @@ int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *fl
 
 		fitlw(x,y,w,K-1,a,sd,&ok);
 
-		(*entropy).h1lm[m] = &a[0];
-		(*entropy).sd1lm[m] = &sd[0];
-	//	(*entropy).dm1lm[m] = &d_mean[1]/sqrt(tors_res[m].n_ang);
+		entropy->h1lm[m] = &a[0];
+		entropy->sd1lm[m] = &sd[0];
+	//	entropy->dm1lm[m] = &d_mean[1]/sqrt(tors_res[m].n_ang);
 		}
 	
 	for(k = 0; k < flagParameters->n; k++)
 	{
-		(*entropy).sd_total[k] = sqrt((*entropy).sd_total[k]);
-		(*entropy).dm_total[k] = sqrt((*entropy).dm_total[k]/ (double) n_tors);
+		entropy->sd_total[k] = sqrt(entropy->sd_total[k]);
+		entropy->dm_total[k] = sqrt(entropy->dm_total[k]/ (double) n_tors);
 	}
 
 }
@@ -424,19 +424,19 @@ int PathEntropy::alloc_entropy(struct Entropy *entropy, int n_single, int n_pair
 {
 	int i;
 
-	(*entropy).total = (double*) calloc(n_nn, sizeof(double));
-	(*entropy).sd_total = (double*) calloc(n_nn, sizeof(double));
-	(*entropy).dm_total = (double*) calloc(n_nn, sizeof(double));
-	(*entropy).h1lm = (double**) calloc(n_single, sizeof(double));
-	(*entropy).sd1lm = (double**) calloc(n_single, sizeof(double));
-	(*entropy).sd1 = (double**) calloc(n_single, sizeof(double*));
-	(*entropy).dm1 = (double**) calloc(n_single, sizeof(double*));
+	entropy->total = (double*) calloc(n_nn, sizeof(double));
+	entropy->sd_total = (double*) calloc(n_nn, sizeof(double));
+	entropy->dm_total = (double*) calloc(n_nn, sizeof(double));
+	entropy->h1lm = (double**) calloc(n_single, sizeof(double));
+	entropy->sd1lm = (double**) calloc(n_single, sizeof(double));
+	entropy->sd1 = (double**) calloc(n_single, sizeof(double*));
+	entropy->dm1 = (double**) calloc(n_single, sizeof(double*));
 
 	for(i = 0; i < n_single; i++)
 	{
-		(*entropy).h1[i] = (double*) calloc(n_nn, sizeof(double));
-		(*entropy).sd1[i] = (double*) calloc(n_nn, sizeof(double));
-		(*entropy).dm1[i] = (double*) calloc(n_nn, sizeof(double));
+		entropy->h1[i] = (double*) calloc(n_nn, sizeof(double));
+		entropy->sd1[i] = (double*) calloc(n_nn, sizeof(double));
+		entropy->dm1[i] = (double*) calloc(n_nn, sizeof(double));
 	}
 }
 
