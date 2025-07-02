@@ -707,7 +707,6 @@ void PathEntropy::kruskal(struct EntropyKL *entropy, int *group2res, struct Flag
 void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
 {
     entropy->nPairs = nPairs;
-
 	entropy->pathTotal.resize(nNearestNeighbours);
 	entropy->sigmaTotal.resize(nNearestNeighbours);
 	entropy->meanDistTotal.resize(nNearestNeighbours);
