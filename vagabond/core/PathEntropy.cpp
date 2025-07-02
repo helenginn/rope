@@ -24,13 +24,13 @@ void PathEntropy::init_flag_par(struct FlagParameters *flagParameters)
 		flagParameters->kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
 	}
  
-Tors_res4nn* PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGroup> &paths, Sequence *seq)
+Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector<PathGroup> &paths, Sequence *seq)
 {
     Tors_res4nn* tors_res = new Tors_res4nn[seq->size()];
 
 	//std::vector<Instance *> instances = model->instances();
 
-	for (int i = 0; i < pathNum; i++)
+	for (int i = 0; i < numPaths; i++)
 	{
 
 		if (!paths[i].front()->startInstance()->hasSequence())
@@ -59,7 +59,7 @@ Tors_res4nn* PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<
 			tors_res[j].ang = new double*[res->torsionCount()];
 			for(int k = 0; k < res->torsionCount(); k++)
 			{
-			    tors_res[j].ang[k] = (double*) calloc(pathNum, sizeof(double));
+			    tors_res[j].ang[k] = (double*) calloc(numPaths, sizeof(double));
 			}
 
 			tors_res[j].tors_name = (std::string*) calloc(res->torsionCount(), sizeof(std::string));	
