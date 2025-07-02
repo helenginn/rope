@@ -33,7 +33,7 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskForText.h>
 
-int PathThermodynamics::_pathNum = 0;
+int PathThermodynamics::_numPaths = 0;
 
 PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths) : Scene(prev)
 {
@@ -94,7 +94,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 		auto respondToVal = [this](float min, float max)
 		{
-			_pathNum = lrint(min);
+			_numPaths = lrint(min);
 			
 			Sequence *seq = _entity->sequence();
 
@@ -102,9 +102,9 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 			_pathEntropy->init_flag_par(_flagParameters);	
 			
-            Tors_res4nn* tors_res = _pathEntropy->get_atoms_and_residues(_pathNum, _paths, seq);
+            Tors_res4nn* tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths, seq);
 
-			_pathEntropy->calculate_entropy_independent(_pathNum, _flagParameters, seq, tors_res, _entropy);
+			_pathEntropy->calculate_entropy_independent(_numPaths, _flagParameters, seq, tors_res, _entropy);
 
 			for (int i = 0; i < seq->size(); i++)
 			{
@@ -128,7 +128,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 	
 		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
 		float num = cr->max();
-		_pathNum = lrint(num);
+		_numPaths = lrint(num);
 		refresh();
 	}
 
