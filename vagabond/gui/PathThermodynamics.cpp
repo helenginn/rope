@@ -22,7 +22,6 @@
 #include <vagabond/core/Path.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Instance.h>
-#include <vagabond/core/Model.h>
 #include <vagabond/core/Sequence.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
