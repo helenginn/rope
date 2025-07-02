@@ -26,11 +26,13 @@ void PathEntropy::init_flag_par(struct FlagParameters *flagParameters)
 		flagParameters->kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
 	}
  
-void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGroup> &paths, const std::string &model_id, struct Tors_res4nn &tors_res)
+Tors_res4nn* PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGroup> &paths, Sequence *seq)
 {
-	ModelManager *mm = Environment::modelManager();
+/*	ModelManager *mm = Environment::modelManager();
 	Model *const model = mm->model(model_id);
-	model->load();
+	model->load();*/
+
+    Tors_res4nn* tors_res = new Tors_res4nn[seq->size()];
 
 	//std::vector<Instance *> instances = model->instances();
 
@@ -60,13 +62,13 @@ void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGrou
 
 			int n_ang = 0;
 
-			(&tors_res)[j].phi = new double*[res->torsionCount()];
+			tors_res[j].ang = new double*[res->torsionCount()];
 			for(int k = 0; k < res->torsionCount(); k++)
 			{
-				(&tors_res)[j].phi[k] = (double*) calloc(pathNum, sizeof(double));
+			    tors_res[j].ang[k] = (double*) calloc(pathNum, sizeof(double));
 			}
 
-			(&tors_res)[j].tors_name = (std::string*) calloc(res->torsionCount(), sizeof(std::string));	
+			tors_res[j].tors_name = (std::string*) calloc(res->torsionCount(), sizeof(std::string));	
 			for (auto it = torsions.begin(); it != torsions.end(); it++)
 			{
 				Parameter *param = content->findParameter(it->desc(), res->id());
@@ -84,28 +86,19 @@ void PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGrou
 
 					BondTorsion* bondT = static_cast<BondTorsion *>(param);
 
-					(&tors_res)[j].n_ang = n_ang;
-					(&tors_res)[j].phi[n_ang][i] = param->empiricalMeasurement();
-					(&tors_res)[j].tors_name[n_ang] = bondT->short_desc();
+					tors_res[j].n_ang = n_ang;
+					tors_res[j].ang[n_ang][i] = param->empiricalMeasurement();
+					tors_res[j].tors_name[n_ang] = bondT->short_desc();
 					n_ang++;
 				}
 
 			}
 
-			std::cout << "N_ang for residue " << j << ": " << n_ang << std::endl;
 
 		}
 	}
 
-	// loop around model->instances()
-	// // check if instance->hasSequence()
-	// // // if so, loop round sequence->size()...
-	// // // // Residue -> residueId
-	// // // // Residue -> torsionRefs (loop around these)
-	// // // // // torsionRef + residueId in findParameter(instance->currentAtoms()) to get Parameter
-	// // // // // Parameter check isTorsion(), if so static_cast<BondTorsion *>(parameter)
-	// // // // // check if you want to include it (hydrogens?) - if so, count++
-	//
+	return tors_res;
 }
 
 
@@ -165,7 +158,7 @@ int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *fl
 				for (j = 0; j < tors_res[m].n_ang; j++)
 				//	if(tors_res[m].tors_name[j] == "phi");
 					{
-						phit[i][j] = tors_res[m].phi[j][i];
+						phit[i][j] = tors_res[m].ang[j][i];
 						std::cout << "Phi angle (" << i << ", " << j << "): " << phit[i][j] << std::endl;
 						n_tors++;
 					}
