@@ -49,7 +49,7 @@ private:
 	struct FlagParameters *_flagParameters;
 	struct Entropy *_entropy;
 
-	static int _pathNum;
+	static int _numPaths;
 	int _samples = 0;
 
 	void displayEntropy(std::string str);
