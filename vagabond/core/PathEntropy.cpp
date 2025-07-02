@@ -133,6 +133,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			for (int j = 0; j < torsRes.size(); j++)
 			{
 				for (int k = 0; k < torsRes[j]->nAng; k++)
+
 				{
 					Parameter *param = content->findParameter(torsRes[j]->desc[k], polySeq->residue(j)->id());
 

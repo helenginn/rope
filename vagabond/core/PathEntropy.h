@@ -88,7 +88,6 @@ public:
 
 	struct EntropyForMatrix calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
     struct EntropyForMatrix calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
-
 	/* linear weighting function */
 	void fitlw(std::vector<double> x, std::vector<double> y, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd);
 
