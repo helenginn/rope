@@ -9,10 +9,8 @@
 #include <PathEntropy.h>
 #include <Sequence.h>
 #include <TorsionRef.h>
-#include <Model.h>
 #include <Residue.h>
 #include <Environment.h>
-#include <ModelManager.h>
 #include <AtomGroup.h>
 #include <Path.h>
 #include <PathGroup.h>
@@ -28,10 +26,6 @@ void PathEntropy::init_flag_par(struct FlagParameters *flagParameters)
  
 Tors_res4nn* PathEntropy::get_atoms_and_residues(int pathNum, const std::vector<PathGroup> &paths, Sequence *seq)
 {
-/*	ModelManager *mm = Environment::modelManager();
-	Model *const model = mm->model(model_id);
-	model->load();*/
-
     Tors_res4nn* tors_res = new Tors_res4nn[seq->size()];
 
 	//std::vector<Instance *> instances = model->instances();
