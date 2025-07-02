@@ -198,7 +198,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 	
 		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
 		float num = cr->max();
-		_pathNum = lrint(num);
+		_numPaths = lrint(num);
 		refresh();
 	}
 
