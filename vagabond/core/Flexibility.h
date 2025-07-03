@@ -72,9 +72,10 @@ public:
     void atomCloud(float weight, const AtomVector &atoms);
     void savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
     void calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms);
-    void setColIdx(int chosen_colIdx)
+    void setColIdx(int chosen_colIdx, bool singleColumn = true)
     {
         _colIdx = chosen_colIdx;
+        _useSingleColumn = singleColumn;
     }
     void setFlexTag(std::string tagFlex)
     {
@@ -90,7 +91,7 @@ public:
         _tData = data;
     }
     Eigen::Matrix3f covariance(const std::vector<glm::vec3> &samples);
-    void calculateCovSVD(Eigen::Matrix3f covMtx);
+    Eigen::Matrix3f calculateCovSVD(Eigen::Matrix3f covMtx);
     void saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
 
 protected:
@@ -101,6 +102,7 @@ private:
 	bool _setup = false;
     bool _displayTargets = false;
     bool _cloudFlag = false;
+    bool _useSingleColumn = false;
     std::vector<HBondEntity> _hbonds;
     std::set<int> _globalTorsionSet;
     std::vector<int> _globalTorsionVector;
@@ -110,10 +112,13 @@ private:
     Eigen::MatrixXf _U;
     Eigen::VectorXf _singularValues;
     Eigen::MatrixXf _V;
+    Eigen::Matrix3f _directCov;
     ClusterSVD *_cluster = nullptr;
     TorsionData *_tData = nullptr;
     int _colIdx;
     std::string _flexTag;
+    float _lambda = 1.0f;
+    float _epsilon = 1e-3f;
 };
 
 #endif

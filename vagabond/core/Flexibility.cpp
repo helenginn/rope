@@ -58,23 +58,11 @@ void Flexibility::generateAtomCloud()
         atom->removeOtherPosition(_flexTag); 
     }
 
-    for (float weight = -1; weight <= 1.05; weight += 0.1)
+// for (float weight = -3.0f; weight <= 3.01f; weight += 0.2f)
+    // for (float weight = -1f; weight <= 1.05f; weight += 0.5f)
+    for (float weight = -0.5; weight <= 0.5001; weight += 0.1)
     {
         atomCloud(weight, atoms);
-    }
-}
-
-void Flexibility::atomCloud(float weight, const AtomVector &atoms)
-{
-    for (int i = 0; i <= 5; ++i)
-    {
-        setColIdx(i);
-        submitJobAndRetrieve(weight);
-        for (Atom *atom : atoms)
-        {
-            glm::vec3 vec = atom->derivedPosition();
-            atom->addOtherPosition(_flexTag, vec);   
-        }
     }
 
     std::cout << "End of B-factor estimation!" << std::endl;
@@ -83,6 +71,24 @@ void Flexibility::atomCloud(float weight, const AtomVector &atoms)
     std::cout << "Average positions" << std::endl;
     calculateAnisoBfactors(_flexTag, atoms);
     saveBfactorsToCSV("bfactors.csv", _flexTag, atoms);
+}
+
+void Flexibility::atomCloud(float weight, const AtomVector &atoms)
+{
+    for (int i = 0; i <= 5; ++i)
+    {
+        float sigma = _singularValues[i];
+        float scaled_weight = _lambda * weight / (sigma + _epsilon);
+        setColIdx(i);
+        // submitJobAndRetrieve(weight);
+        submitJobAndRetrieve(weight);
+        for (Atom *atom : atoms)
+        {
+            glm::vec3 vec = atom->derivedPosition();
+            atom->addOtherPosition(_flexTag, vec);   
+        }
+    }
+
 
 }
 
@@ -181,7 +187,10 @@ void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector
                     << "AVG: (" << avg.x << ", " << avg.y << ", " << avg.z << "), " << std::endl;
             Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
             std::cout << "COV:\n" << covMat.format(cleanFmt) << "\n";
-            calculateCovSVD(covMat);
+            _directCov = calculateCovSVD(covMat);
+            // Regularize the covariance matrix
+            float epsilon = 0.01f; // in Å²
+            // covMat += epsilon * Eigen::Matrix3f::Identity();
             Eigen::Matrix3f bFactorTens = 8 * M_PI * M_PI * covMat;
             std::cout << "B factor tenstor:\n" << bFactorTens.format(cleanFmt) << "\n";
             atom->setDerivedAnisoBfactors(bFactorTens);
@@ -189,6 +198,8 @@ void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector
         }
 
 }
+
+
 
 Eigen::Matrix3f Flexibility::covariance(const std::vector<glm::vec3> &samples)
 {
@@ -210,7 +221,7 @@ Eigen::Matrix3f Flexibility::covariance(const std::vector<glm::vec3> &samples)
     return cov;
 }
 
-void Flexibility::calculateCovSVD(Eigen::Matrix3f covMtx)
+Eigen::Matrix3f Flexibility::calculateCovSVD(Eigen::Matrix3f covMtx)
 {
     Eigen::MatrixXf covDynamic = covMtx;
     Eigen::BDCSVD<Eigen::MatrixXf> svdCov;
@@ -222,6 +233,11 @@ void Flexibility::calculateCovSVD(Eigen::Matrix3f covMtx)
     Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
     std::cout << "singularValues of COV:\n" << S.format(cleanFmt) << "\n";
 
+    // Reconstruct the covariance matrix from SVD
+    Eigen::Matrix3f _directCov = U * S.asDiagonal() * V;
+    std::cout << "Reconstructed COV from SVD:\n" << _directCov.format(cleanFmt) << "\n";
+
+    return _directCov;
 }
 
 // Prepares resources for flexibility calculations
@@ -636,9 +652,14 @@ void Flexibility::calculateFlexWeights()
     for (int colIdx = 0; colIdx < _V.cols(); ++colIdx)
     {
         std::vector<float> v_i;
+        // this can be used to select a specific column of the _V. 
+        // could be used instead of colIdx
+        int selectedCol = _V.cols() - 1; 
+
         for (int rowIdx = 0; rowIdx < _V.rows(); ++rowIdx)
         {
-            float value = _V(rowIdx, colIdx);
+            // float value = _V(rowIdx, colIdx);
+            float value = _V(rowIdx, selectedCol);
             v_i.push_back(value);
         }
         V_columns.push_back(v_i);
