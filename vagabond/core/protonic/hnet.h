@@ -418,7 +418,7 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		break;
 
 		case Bond::AbsentOrWeak:
-		ss << std::string("AbsentOrWeak");
+		ss << std::string("AbsentOrAcceptor");
 		break;
 
 		case Bond::NotAbsent:
@@ -426,19 +426,19 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		break;
 
 		case Bond::Weak:
-		ss << std::string("Weak");
+		ss << std::string("Acceptor");
 		break;
 
 		case Bond::NotWeak:
-		ss << std::string("NotWeak");
+		ss << std::string("NotAcceptor");
 		break;
 
 		case Bond::Strong:
-		ss << std::string("Strong");
+		ss << std::string("Donor");
 		break;
 
 		case Bond::NotStrong:
-		ss << std::string("NotStrong");
+		ss << std::string("NotDonor");
 		break;
 
 		case Bond::Present:

@@ -193,11 +193,11 @@ void ProbeBond::buttonPressed(std::string tag, Button *button)
 	{
 		declareBond(Bond::Absent);
 	}
-	else if (tag == "setB_Weak")
+	else if (tag == "setB_Acceptor")
 	{
 		declareBond(Bond::Weak);
 	}
-	else if (tag == "setB_Strong")
+	else if (tag == "setB_Donor")
 	{
 		declareBond(Bond::Strong);
 	}
