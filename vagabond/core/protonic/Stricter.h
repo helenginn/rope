@@ -65,6 +65,7 @@ public:
 	void forget(void *blame)
 	{
 		_conditionObj.forget(blame);
+		_imposeObj.forget(blame);
 	}
 	
 	bool check(void *previous)

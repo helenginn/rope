@@ -65,6 +65,7 @@ struct BondAdder
 
 		auto forget_me = [this](void *blame) { return forget(blame); };
 
+		_sum.add_forget(forget_me);
 		for (BondConnector *const &bc : bonds)
 		{
 			bc->add_forget(forget_me);
