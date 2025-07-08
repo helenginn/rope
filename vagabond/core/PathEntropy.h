@@ -26,8 +26,8 @@ double *dm_total{};
 struct Tors_res4nn {
 	int n_models{};
 	int n_ang{};
-	std::string *tors_name{};
-	double **ang{};
+	std::vector<std::string> *tors_name{};
+	std::vector<std::vector<double>> **ang{};
 	double *v{};
 	int res_n{};
 };
@@ -47,7 +47,7 @@ public:
 	//~PathEntropy(){};
 
 	/* Default flag parameters as chosen in pdb2entropy programme */
-	void init_flag_par(struct FlagParameters *flagParameters);
+	void init_flag_par();
 
 	int alloc_tors(struct Tors_res4nn *tors_res, int seqSize);
 	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters *flagParameters);
@@ -56,7 +56,7 @@ public:
 
 	// void calculate_entropy_independent(const std::string &model_id);
 	
-	int calculate_entropy_independent(int nf, struct FlagParameters *flagParameters, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy);
+	int calculate_entropy_independent(int nf, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy);
 
 	/* implicit compare function for qsort */
 	static int comp (const void * elem1, const void * elem2);
