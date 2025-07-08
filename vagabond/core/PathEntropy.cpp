@@ -37,7 +37,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 	Instance *instance = paths.front()->startInstance();
 	Model *model = instance->model();
 	model->load();
-
 	std::vector<TorsRes4NN*> torsRes;
     Sequence *polySeq = static_cast<Polymer *>(instance)->sequence();
 	
