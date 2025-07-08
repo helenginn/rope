@@ -15,7 +15,6 @@
 #include <Path.h>
 #include <PathGroup.h>
 #include <BondTorsion.h>
-#include <HasBondstraints.h>
 
 struct FlagParameters *flagParameters;
 
@@ -30,7 +29,7 @@ Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector
 {
     Tors_res4nn* tors_res = new Tors_res4nn[seq->size()];
 
-	//std::vector<Instance *> instances = model->instances();
+	//std::vector<Instance *> instances = model->instances();			
 
 	for (int i = 0; i < numPaths; i++)
 	{
