@@ -31,7 +31,7 @@ Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector
 
 	//std::vector<Instance *> instances = model->instances();			
 
-	for (int i = 0; i < numPaths; i++)
+	for (int i = 0; i < numPaths && i < paths.size(); i++)
 	{
 
 		if (!paths[i].front()->startInstance()->hasSequence())
