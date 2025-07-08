@@ -17,7 +17,9 @@
 #include <BondTorsion.h>
 #include <HasBondstraints.h>
 
-void PathEntropy::init_flag_par(struct FlagParameters *flagParameters)
+struct FlagParameters *flagParameters;
+
+void PathEntropy::init_flag_par()
 	{
 		flagParameters->n = 10; /* number of nearest neighbours */
 		flagParameters->minres = 1e-10;
@@ -98,7 +100,7 @@ Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector
 
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
-int PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters *flagParameters, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy){
+int PathEntropy::calculate_entropy_independent(int nf, Sequence *seq, struct Tors_res4nn *tors_res, struct Entropy *entropy){
 	int i, j, k, K, m, ok;
 	double **phit;
 	double *d, *ent_k, *ent_k_2, *sd_k, *ent_k_tot, *ent_k_tot_2, *d_mean, *ld_mean, *x, *y, *w, *a, *sd;
