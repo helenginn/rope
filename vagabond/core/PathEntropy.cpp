@@ -28,8 +28,39 @@ void PathEntropy::init_flag_par()
 Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector<PathGroup> &paths, Sequence *seq)
 {
     Tors_res4nn* tors_res = new Tors_res4nn[seq->size()];
+    Sequence *polySeq = static_cast<Polymer *>(paths[0].front()->startInstance())->sequence();
+    AtomGroup *content = paths[0].front()->startInstance()->currentAtoms();
 
-	//std::vector<Instance *> instances = model->instances();			
+    for (int i = 0; i < polySeq->size(); i++)
+    {
+        Residue *res = polySeq->residue(i);
+     
+        std::set<TorsionRef> torsions = res->torsions();
+
+        int n_ang = 0;
+
+        for (auto it = torsions.begin(); it != torsions.end(); it++)
+		{
+			Parameter *param = content->findParameter(it->desc(), res->id());
+
+			if (param == nullptr)
+			{
+				std::cout << "NULL parameter" << std::endl;
+			}
+			else if (param->isTorsion() && !param->hasHydrogen()) 
+			{
+				BondTorsion* bondT = static_cast<BondTorsion *>(param);
+
+    			tors_res[i].n_ang = n_ang;
+				//tors_res[i].ang[n_ang]->push_back(std::vector<double>(numPaths, 0));
+				tors_res[i].tors_name[n_ang] = bondT->short_desc();
+                tors_res[i].desc[n_ang] = bondT->desc();
+				n_ang++;
+			}
+
+		}
+
+	}
 
 	for (int i = 0; i < numPaths && i < paths.size(); i++)
 	{
@@ -45,54 +76,19 @@ Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector
 
 		pr->submitJobAndRetrieve(0.5, true);
 
-		Sequence *polySeq = static_cast<Polymer *>(pr->instance())->sequence();
-
 		content->recalculate();
-			
-		for (int j = 0; j < polySeq->size(); j++)
-		{
-			Residue *res = polySeq->residue(j);
 
-			std::set<TorsionRef> torsions = res->torsions();
+        for (int j = 0; j < polySeq->size(); j++)
+        {
+            for (int k = 0; k < tors_res[j].n_ang; k++)
+            {
+                Parameter *param = content->findParameter(tors_res[j].desc[k], polySeq->residue(j)->id());
 
-			int n_ang = 0;
-
-			tors_res[j].ang = new double*[res->torsionCount()];
-			for(int k = 0; k < res->torsionCount(); k++)
-			{
-			    tors_res[j].ang[k] = (double*) calloc(numPaths, sizeof(double));
-			}
-
-			tors_res[j].tors_name = (std::string*) calloc(res->torsionCount(), sizeof(std::string));	
-			for (auto it = torsions.begin(); it != torsions.end(); it++)
-			{
-				Parameter *param = content->findParameter(it->desc(), res->id());
-
-				if (param == nullptr)
-				{
-					std::cout << "NULL parameter" << std::endl;
-				}
-				else if (param->isTorsion())
-				{
-					if (param->hasHydrogen()) 
-					{
-						continue;
-					}
-
-					BondTorsion* bondT = static_cast<BondTorsion *>(param);
-
-					tors_res[j].n_ang = n_ang;
-					tors_res[j].ang[n_ang][i] = param->empiricalMeasurement();
-					tors_res[j].tors_name[n_ang] = bondT->short_desc();
-					n_ang++;
-				}
-
-			}
-
-
-		}
-	}
-
+                tors_res[j].ang[k][i] = param->empiricalMeasurement();
+            }
+        }
+    }
+	
 	return tors_res;
 }
 
