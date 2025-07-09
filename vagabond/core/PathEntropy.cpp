@@ -111,7 +111,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
     PlausibleRoute *workingPath = paths.front()->toRoute();
     workingPath->setup();
     AtomGroup *content = workingPath->all_atoms();
-
 	for (int i = 0; i < numPaths && i < paths.size(); i++)
 	{
 		if (!paths[i]->startInstance()->hasSequence())
