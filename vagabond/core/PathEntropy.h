@@ -26,8 +26,9 @@ double *dm_total{};
 struct Tors_res4nn {
 	int n_models{};
 	int n_ang{};
-	std::vector<std::string> *tors_name{};
-	std::vector<std::vector<double>> **ang{};
+	std::string *tors_name{};
+    std::string *desc{};
+	double **ang{};
 	double *v{};
 	int res_n{};
 };
