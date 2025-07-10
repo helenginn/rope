@@ -21,6 +21,7 @@
 #include <gemmi/polyheur.hpp>
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>
+#include <gemmi/to_cif.hpp>
 #include <fstream>
 #include "files/PdbFile.h"
 #include "files/CifFile.h"
@@ -468,4 +469,5 @@ File::Type PdbFile::cursoryLook()
 	
 	return type;
 }
+
 

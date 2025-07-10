@@ -132,8 +132,8 @@ void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& p
 {
     // Add to internal list or perform any other action
     callAddHBonds(pairs);
-    _flex->setColIdx(10, false);
-	_flex->addMultipleHBonds(pairs);
+    _flex->setColRange(5, false);
+	_flex->addMultipleHBonds(_hBondPairs);
 
 	// _flex->printHBonds();
 

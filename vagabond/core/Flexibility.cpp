@@ -36,14 +36,9 @@ Flexibility::~Flexibility()
 // Submits a flexibility calculation job and retrieves the result
 float Flexibility::submitJobAndRetrieve(float weight) 
 {
-
-    std::cout << "For debugging: In submitJobAndRetrieve, weight is =  " << weight << std::endl;
 	submitJob(weight);
-
 	Result *r = _resources.calculator->acquireObject();
 	r->transplantPositions(_displayTargets);
-
-	// retrieve(); // Retrieves data, implementationin StructuralModification class
 	r->destroy(); 
 	return weight; 
 }
@@ -58,9 +53,7 @@ void Flexibility::generateAtomCloud()
         atom->removeOtherPosition(_flexTag); 
     }
 
-// for (float weight = -3.0f; weight <= 3.01f; weight += 0.2f)
-    // for (float weight = -1f; weight <= 1.05f; weight += 0.5f)
-    for (float weight = -0.5; weight <= 0.5001; weight += 0.1)
+    for (float weight = -1.0f; weight <= 1.0f; weight += 0.1f)
     {
         atomCloud(weight, atoms);
     }
@@ -75,12 +68,9 @@ void Flexibility::generateAtomCloud()
 
 void Flexibility::atomCloud(float weight, const AtomVector &atoms)
 {
-    for (int i = 0; i <= 5; ++i)
+    for (int i = 0; i <= 5; ++i) // the range here suggests how many columns out of the V matrix you choosing
     {
-        float sigma = _singularValues[i];
-        float scaled_weight = _lambda * weight / (sigma + _epsilon);
-        setColIdx(i);
-        // submitJobAndRetrieve(weight);
+        setColRange(i); // this will set th private variable _colIdx to certain number
         submitJobAndRetrieve(weight);
         for (Atom *atom : atoms)
         {
@@ -88,8 +78,6 @@ void Flexibility::atomCloud(float weight, const AtomVector &atoms)
             atom->addOtherPosition(_flexTag, vec);   
         }
     }
-
-
 }
 
 void Flexibility::savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms)
@@ -189,8 +177,6 @@ void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector
             std::cout << "COV:\n" << covMat.format(cleanFmt) << "\n";
             _directCov = calculateCovSVD(covMat);
             // Regularize the covariance matrix
-            float epsilon = 0.01f; // in Å²
-            // covMat += epsilon * Eigen::Matrix3f::Identity();
             Eigen::Matrix3f bFactorTens = 8 * M_PI * M_PI * covMat;
             std::cout << "B factor tenstor:\n" << bFactorTens.format(cleanFmt) << "\n";
             atom->setDerivedAnisoBfactors(bFactorTens);
@@ -268,6 +254,8 @@ void Flexibility::calculateTorsionFlexibility(CoordManager* manager)
     };
     manager->setTorsionFetcher(calculateFlexibility);
 
+
+
     std::cout << "Finished calculating torsion Flexibility" << std::endl;
 }
 
@@ -278,22 +266,18 @@ void Flexibility::submitJob(float weight)
 {
   BaseTask *first_hook = nullptr; // Initialize first hook
   CalcTask *final_hook = nullptr; // Initialize final hook
-  
   CalcTask *calc_hook = nullptr; // Initialize calc hook
+
   Task<BondSequence *, void *> *let_sequence_go = nullptr; // Initialize let_sequence_go
-  
   BondCalculator *const &calculator = _resources.calculator; // Gets the calculator
   BondSequenceHandler *sequences = _resources.sequences; // Gets the sequences
   
   /* this final task returns the result to the pool to collect later */
   Task<Result, void *> *submit_result = calculator->actOfSubmission(0); // Submits the result
   Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoSuperpose); // Sets calculation flags
-  
-  sequences->calculate(calc, {weight}, &first_hook, &final_hook); // Calculates sequences
-  
-  BondSequence* firstSequence = sequences->getSequences()[0]; // Gets the first sequence  
+  sequences->calculate(calc, {weight}, &first_hook, &final_hook); // Calculates sequences 
+  BondSequence* firstSequence = sequences->getSequences()[0];
   Flag::Extract gets = Flag::Extract(Flag::AtomVector); // Sets extraction flags
-  
   let_sequence_go = sequences->extract(gets, submit_result, final_hook); // Extracts data
   _resources.tasks->addTask(first_hook); // Adds task to the task list
 }
@@ -306,16 +290,11 @@ void Flexibility::loadHBondsFromManager(HBondManager* hbondManager)
         return;
     }
     
-    auto& donorAcceptorPairs = hbondManager->getHBondPairs();
-    
-    // Add the HBonds into the Flexibility class
-    // addMultipleHBonds(donorAcceptorPairs);
-    
     std::cout << "Successfully loaded HBond pairs into Flexibility." << std::endl;
 }
 
 
-void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
+void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) // called directly 
 {
 /**
  * @brief Adds multiple hydrogen bonds (HBonds) and updates flexibility calculations.
@@ -330,15 +309,14 @@ void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &
  * - Updates the flexibility weights.
  * - Retrieves the coordinate manager and recalculates torsion flexibility.
  *
- * @param donorAcceptorPairs A vector of HBondPair objects containing donor and acceptor atom descriptors.
  */
-
 
     if (donorAcceptorPairs.empty()) 
     {
         std::cerr << "Error: No HBonds to add." << std::endl;
         return;
     }
+
     // Calculate the Jacobian matrix
     buildJacobianMatrix();
 

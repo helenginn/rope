@@ -20,7 +20,7 @@ Required tools and libraries:
 
 - **Python 3** (with `conda` environment manager)
 - **Phenix** (must be installable via terminal; script sources `phenix_env.sh`)
-- **PyMOL** (CLI access required, used via `pymol_env`)
+- **PyMOL** (https://anaconda.org/conda-forge/pymol-open-source, used via `pymol_env`)
 - **Conda** (must be installed and available in your shell)
 - **Python libraries**: Listed in `dependencies.yml` in this directory
 
