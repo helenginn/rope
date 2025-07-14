@@ -29,7 +29,8 @@ Tors_res4nn* PathEntropy::get_atoms_and_residues(int numPaths, const std::vector
 {
     Tors_res4nn* tors_res = new Tors_res4nn[seq->size()];
     Sequence *polySeq = static_cast<Polymer *>(paths[0].front()->startInstance())->sequence();
-    AtomGroup *content = paths[0].front()->startInstance()->currentAtoms();
+    
+    AtomGroup *content = paths[0].front()->toRoute()->instance()->currentAtoms();
 
     content->recalculate();
 
