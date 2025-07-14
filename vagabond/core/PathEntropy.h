@@ -34,9 +34,9 @@ struct Tors_res4nn {
 };
 
 struct FlagParameters {
-	int n{};
-	double minres{};
-	int kmi{};
+	int n;
+	double minres;
+	int kmi;
 };
 
 
@@ -51,7 +51,7 @@ public:
 	void init_flag_par();
 
 	int alloc_tors(struct Tors_res4nn *tors_res, int seqSize);
-	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters *flagParameters);
+	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters flagParameters);
 
 	Tors_res4nn* get_atoms_and_residues(const int numPaths, const std::vector<PathGroup> &paths, Sequence *seq);
 
