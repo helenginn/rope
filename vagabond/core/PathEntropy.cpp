@@ -86,12 +86,11 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 		}
 
 		PlausibleRoute *pr = paths[i].front()->toRoute();
+        pr->submitJobAndRetrieve(0.05, true);
+        pr->setup();
+
 		AtomGroup *content = pr->instance()->currentAtoms();
-		pr->setup();
-
-		pr->submitJobAndRetrieve(0.05, true);
-
-		content->recalculate();
+		//content->recalculate();
 
         for (int j = 0; j < polySeq->size(); j++)
         {
@@ -111,9 +110,9 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
 struct Entropy* PathEntropy::calculate_entropy_independent(int nf, Sequence *seq, std::vector<Tors_res4nn*> tors_res){
-	int i, j, k, K, m, ok;
+	int i, j, k, ok;
 	double **phit;
-	double *ent_k, *ent_k_2, *sd_k, *ent_k_tot, *ent_k_tot_2, *x, *y, *w, *a, *sd;
+	double *x, *y, *w, *a, *sd, *ent_k, *ent_k_2, *ent_k_tot, *ent_k_tot_2;
 	double logdk, c, L;
 	int n_res_per_model = seq->size();
 
@@ -125,23 +124,18 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, Sequence *seq
 	entropy->n_nn = flagParameters.n;
 	alloc_entropy(entropy, entropy->n_single, 0, entropy->n_nn, flagParameters);
 
-	K = flagParameters.n + 1;
+	int K = flagParameters.n + 1;
 
     double d[nf] = {};
 	double d_mean[K] = {};
 	double ld_mean[K] = {};
-	sd_k = (double*)calloc(K-1, sizeof(double));
+	double sd_k[K-1] = {};
 
-	ent_k = (double*)calloc(K-1, sizeof(double));
-	ent_k_2 = (double*)calloc(K-1, sizeof(double));
-	ent_k_tot_2 = (double*)calloc(K-1, sizeof(double));
+	ent_k, ent_k_2, ent_k_tot_2 = new double[K-1];
 
-	x = (double*)calloc(K-1, sizeof(double));
-	y = (double*)calloc(K-1, sizeof(double));
-	w = (double*)calloc(K-1, sizeof(double));
-	
-	a = (double*)calloc(3, sizeof(double));
-	sd = (double*)calloc(3, sizeof(double));
+	x, y, w = new double[K-1];
+
+    a, sd = new double[3];	
 
 	for(k = 1; k <= K-1; k++)
 	{
@@ -154,18 +148,18 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, Sequence *seq
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
 
-	for(m = 0; m < n_res_per_model; m++)
+	for(int m = 0; m < n_res_per_model; m++)
 		if (tors_res[m]->n_ang > 0)
 		{
-			phit = (double **)calloc(nf, sizeof(double *));
+			phit = new double *[nf];
 
 			for(i=0; i < nf; i++)
 			{
 				std::cout << tors_res[m]->n_ang << std::endl;
-				phit[i] = (double*)calloc(tors_res[m]->n_ang, sizeof(double));
+				phit[i] = new double[tors_res[m]->n_ang];
 			
 				for (j = 0; j < tors_res[m]->n_ang; j++)
-				//	if(tors_res[m].tors_name[j] == "phi");
+				    if(tors_res[m]->tors_name[j] == "phi");
 					{
 						phit[i][j] = tors_res[m]->ang[j][i];
 						std::cout << "Phi angle (" << i << ", " << j << "): " << phit[i][j] << std::endl;
