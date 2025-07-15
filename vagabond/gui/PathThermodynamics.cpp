@@ -102,9 +102,9 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 			_pathEntropy->init_flag_par();	
 			
-            Tors_res4nn* tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths, seq);
+            std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths, seq);
 
-			_pathEntropy->calculate_entropy_independent(_numPaths, seq, tors_res, _entropy);
+			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, seq, tors_res);
 
 			for (int i = 0; i < seq->size(); i++)
 			{
