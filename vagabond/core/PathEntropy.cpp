@@ -282,7 +282,7 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, Sequence *seq
 
 /* Calculates entropy using mutual information for torsions closer in space than a given value */
 
-struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res, struct FlagParameters flagParameters)
+struct Entropy* PathEntropy::calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res, struct FlagParameters flagParameters)
 {
 	int i, j, k, ii, jj, kk, K, l, m, ok, *group2res;
 	double **phit;
@@ -298,7 +298,7 @@ struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res,
 	K = flagParameters.n + 1;
 	tors_res2mi(tors_res, n_res_per_model, tors_mi, n_res_per_model, group2res, flagParameters);
 
-    ent_k, ent_k_2, ent_k_tot, ent_k_tot_2 = new double[K-1]
+    ent_k, ent_k_2, ent_k_tot, ent_k_tot_2 = new double[K-1];
 
 	//... based on a cutoff distance, calculate how many pairs of groups must be considered
 	entropy->n_single = n_res_per_model_mi;
@@ -432,13 +432,13 @@ struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res,
 	}
 	
     // ... then prepare for mutual information calculation ... 
-	tors_mi2.ang = new double *[2*flag_par.kmi];
+	tors_mi2.ang.resize(2*flagParameters.kmi);
 	
     phit = new double *[nf];
 	
     for(i = 0; i < nf; i++)
     {
-	    phit[i] = calloc(2*flag_par.kmi,sizeof(double));
+	    phit[i] = new double[2*flagParameters.kmi];
     }
 
 	kk = 0;
@@ -448,7 +448,7 @@ struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res,
 	for(jj = ii + 1; jj < n_res_per_model_mi; jj++)
 	for(l = 0; l < tors_mi[ii]->n_ang; l++)
 	for(m = 0; m < tors_mi[jj]->n_ang; m++)
-		if(glm::length(tors_mi[ii]->v[l] - tors_mi[jj]->v[m]) <= flag_par.cutoff)
+		if(glm::length(tors_mi[ii]->v[l] - tors_mi[jj]->v[m]) <= flagParameters.cutoff)
 		{
 			entropy->i1[kk] = ii;
 			entropy->i2[kk] = jj;
@@ -493,9 +493,9 @@ struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res,
 
 			for(k = 1; k < K; k++)
 			{
-			    if(d[k] < flag_par.minres)
+			    if(d[k] < flagParameters.minres)
                 {
-			        logdk = log(flag_par.minres);
+			        logdk = log(flagParameters.minres);
                 }
 		    	else
                 {
