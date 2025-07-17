@@ -210,7 +210,9 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 						m = torsMi[j]->nAng + 1;
 						nPairs++;
 					}
+
 				}
+            }
 		}
 
     // for each group, compute entropy, sd and dm for the group and map to residues
@@ -749,6 +751,12 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
             entropy->dmmi[i].resize(nNearestNeighbours);
         }
 	}
+
+    if(flagParameters.mutualInformation)
+    {
+        entropy->mi = new double*[entropy->n_pair];
+    }
+
 }
 
 /* allocates memory to entropy calculation variables */
