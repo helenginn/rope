@@ -81,8 +81,8 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 		}
 
 		PlausibleRoute *pr = paths[i].front()->toRoute();
-        pr->submitJobAndRetrieve(0.05, true);
         pr->setup();
+        pr->submitJobAndRetrieve(0.05, true);
 
 		AtomGroup *content = pr->instance()->currentAtoms();
 		//content->recalculate();
