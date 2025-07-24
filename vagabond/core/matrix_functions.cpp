@@ -367,7 +367,6 @@ double dist_ang(std::vector<double> &a, std::vector<double> &b, int n,
         {
             d = bondSymmetry[i] - d;
         }
-
 		t = t + d*d;
 	}
 
