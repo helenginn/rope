@@ -13,6 +13,7 @@
 #include <PathEntropy.h>
 #include <Sequence.h>
 #include <TorsionRef.h>
+#include <FixIssues.h>
 #include <Residue.h>
 #include <AtomGroup.h>
 #include <Path.h>
