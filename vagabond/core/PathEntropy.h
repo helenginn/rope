@@ -40,7 +40,7 @@ struct Tors_res4nn {
 	int n_ang{};
 	std::vector<std::string> tors_name{};
     std::vector<std::string> desc{};
-    std::vector<int> bondSymmetry{};
+    std::vector<double> bondSymmetry{};
     std::vector<std::vector<double>> ang{};
 	std::vector<std::vector<glm::vec3>> v{};
 	int res_n{};
