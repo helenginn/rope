@@ -75,11 +75,11 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
             (tors_res[i]->desc[j] == "chi3" && res->code() == "GLU") ||
             (tors_res[i]->desc[j] == "chi4" && res->code() == "ARG"))
             {
-                tors_res[i].bondSymmetry = 2;
+                tors_res[i]->bondSymmetry = 2;
             }
             else
             {
-                tors_res[i].bondSymmetry = 1;
+                tors_res[i]->bondSymmetry = 1;
             }
 		}
 
