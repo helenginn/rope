@@ -6,10 +6,12 @@
 #include <math.h>
 #include <../utils/degrad.h>
 #include <../utils/glm_import.h>
+#include <../c4x/Cluster.h>
 #include <matrix_functions.h>
 #include <PathEntropy.h>
 #include <Sequence.h>
 #include <TorsionRef.h>
+#include <FixIssues.h>
 #include <Residue.h>
 #include <AtomGroup.h>
 #include <Path.h>
@@ -68,6 +70,17 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
             tors_res[i]->v.push_back(std::vector<glm::vec3>(numPaths));
             tors_res[i]->tors_name[j] = valid_bondT[j]->short_desc();
             tors_res[i]->desc[j] = valid_bondT[j]->desc();
+
+            if((tors_res[i]->desc[j] == "chi2" && (res->code() == "ASP"|| res->code() == "PHE" || res->code() == "TYR")) ||
+            (tors_res[i]->desc[j] == "chi3" && res->code() == "GLU") ||
+            (tors_res[i]->desc[j] == "chi4" && res->code() == "ARG"))
+            {
+                tors_res[i].bondSymmetry = 2;
+            }
+            else
+            {
+                tors_res[i].bondSymmetry = 1;
+            }
 		}
 
 	}
