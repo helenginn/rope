@@ -350,21 +350,22 @@ void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr)
 }
 
 
-double dist_ang(double *a, double *b, int n)
+double dist_ang(double *a, double *b, int n, double *bondSymmetry)
 {
 	double t = 0.0, d;
 	int i;
 
 	for(i = 0, t = 0; i < n; i++)
 	{
-		if(a[i] > 180.0) a[i] = a[i] - 360.0;
-		if(a[i] < -180.0) a[i] = a[i] + 360.0;
-		if(b[i] > 180.0) b[i] = b[i] - 360.0;
-		if(b[i] < -180.0) b[i] = b[i] + 360.0;
+		while(a[i] > bondSymmetry[i]/2.0) a[i] = a[i] - bondSymmetry[i];
 		
+		while(a[i] < -bondSymmetry[i]/2.0) a[i] = a[i] + bondSymmetry[i];
+		while(b[i] > bondSymmetry[i]/2.0) b[i] = a[i] - bondSymmetry[i];
+		while(b[i] < -bondSymmetry[i]/2.0) b[i] = b[i] + bondSymmetry[i];
+	
 		d = fabs(a[i] - b[i]);
 
-		if(d > 180.0) d = 360.0 - d;
+		if(d > bondSymmetry[i]/2.0) d = bondSymmetry[i] - d;
 
 		d = d*d;
 
