@@ -129,7 +129,7 @@ void insert_two_atoms(glm::mat4x4 &ret, float *lengths, float angle);
 void insert_one_atom(glm::mat4x4 &ret, float length);
 
 /** calculates n-dimensional angular distances */
-double dist_ang(double *a, double *b, int n);
+double dist_ang(double *a, double *b, int n, double *bondSymmetry);
 
 /** calculates magnitude of difference between two vectors (bonds) */
 double distv(double r1, double r2);
