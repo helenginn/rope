@@ -2,6 +2,8 @@
 #define __matrix__functions__
 
 #include "../utils/glm_import.h"
+#include <vector>
+
 using namespace glm;
 
 using std::isfinite;
@@ -129,7 +131,7 @@ void insert_two_atoms(glm::mat4x4 &ret, float *lengths, float angle);
 void insert_one_atom(glm::mat4x4 &ret, float length);
 
 /** calculates n-dimensional angular distances */
-double dist_ang(double *a, double *b, int n, double *bondSymmetry);
+double dist_ang(std::vector<double> &a, std::vector<double> &b, int n, std::vector<double> &bondSymmetry);
 
 /** calculates magnitude of difference between two vectors (bonds) */
 double distv(double r1, double r2);

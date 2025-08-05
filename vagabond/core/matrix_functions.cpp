@@ -350,22 +350,21 @@ void unit_cell_from_mat3x3(const glm::mat3x3 &mat, double *uc_ptr)
 }
 
 
-double dist_ang(double *a, double *b, int n, double *bondSymmetry)
+double dist_ang(std::vector<double> &a, std::vector<double> &b, int n, 
+		std::vector<double> &bondSymmetry)
 {
 	double t = 0.0, d;
-	int i;
 
-	for(i = 0, t = 0; i < n; i++)
+	for(int i = 0; i < n; i++)
 	{
-		while(a[i] > bondSymmetry[i]/2.0) a[i] = a[i] - bondSymmetry[i];
-		
-		while(a[i] < -bondSymmetry[i]/2.0) a[i] = a[i] + bondSymmetry[i];
-		while(b[i] > bondSymmetry[i]/2.0) b[i] = a[i] - bondSymmetry[i];
-		while(b[i] < -bondSymmetry[i]/2.0) b[i] = b[i] + bondSymmetry[i];
+		while(a[i] > 180/bondSymmetry[i]) a[i] = a[i] - 180/bondSymmetry[i];
+		while(a[i] < -180/bondSymmetry[i]) a[i] = a[i] + 180/bondSymmetry[i];
+		while(b[i] > 180/bondSymmetry[i]) b[i] = a[i] - 180/bondSymmetry[i];
+		while(b[i] < -180/bondSymmetry[i]) b[i] = b[i] + 180/bondSymmetry[i];
 	
 		d = fabs(a[i] - b[i]);
 
-		if(d > bondSymmetry[i]/2.0) d = bondSymmetry[i] - d;
+		if(d > 180/bondSymmetry[i]) d = 180/bondSymmetry[i] - d;
 
 		d = d*d;
 
