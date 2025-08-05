@@ -22,7 +22,6 @@
 #include <vagabond/core/Path.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/Instance.h>
-#include <vagabond/core/Sequence.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
 #include <vagabond/utils/FileReader.h>
@@ -96,24 +95,16 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
-			Sequence *seq = _entity->sequence();
-
 			const std::string mod_id = _paths[0].front()->startInstance()->model_id();
 
 			_pathEntropy->init_flag_par();	
 			
-            std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths, seq);
+            std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
 
-			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, seq, tors_res);
+			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, tors_res);
 
-			for (int i = 0; i < seq->size(); i++)
-			{
-
-				std::cout << _entropy->h1lm[i] << std::endl;
-			
-			}
-			std::string str = "Total: " +  std::to_string(*(double *)_entropy->total) + " (R units)\n" + "Per residue: " + std::to_string(*(double *)_entropy->total/seq->size()) + " (R units)";
-			
+		    std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
+		    delete(_entropy);	
 			displayEntropy(str);
 	
 		};
