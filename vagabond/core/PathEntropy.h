@@ -32,15 +32,19 @@ double **sdmi{};
 double *total{};
 double *sd_total{};
 double *dm_total{};
+double totalEntropy;
+double sdTotalEntropy;
+double dmeanTotal;
+double *entResidue{};
 };
 
 
 struct Tors_res4nn {
 	int n_models{};
 	int n_ang{};
+    std::vector<double> bondSymmetry{};
 	std::vector<std::string> tors_name{};
     std::vector<std::string> desc{};
-    std::vector<double> bondSymmetry{};
     std::vector<std::vector<double>> ang{};
 	std::vector<std::vector<glm::vec3>> v{};
 	int res_n{};
@@ -65,12 +69,11 @@ public:
 	/* Default flag parameters as chosen in pdb2entropy programme */
 	void init_flag_par();
 
-	int alloc_tors(struct Tors_res4nn *tors_res, int seqSize);
 	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters flagParameters);
 
-	std::vector<Tors_res4nn*> get_atoms_and_residues(const int numPaths, const std::vector<PathGroup> &paths, Sequence *seq);
+	std::vector<Tors_res4nn*> get_atoms_and_residues(const int numPaths, const std::vector<PathGroup> &paths);
 
-	struct Entropy* calculate_entropy_independent(int nf, Sequence *seq, std::vector<Tors_res4nn*> tors_res);
+	struct Entropy* calculate_entropy_independent(int nf, std::vector<Tors_res4nn*> tors_res);
     struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res, struct FlagParameters flagParameters);
 
 	/* implicit compare function for qsort */
