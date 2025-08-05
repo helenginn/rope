@@ -13,7 +13,6 @@
 #include <PathEntropy.h>
 #include <Sequence.h>
 #include <TorsionRef.h>
-#include <FixIssues.h>
 #include <Residue.h>
 #include <AtomGroup.h>
 #include <Path.h>
@@ -753,10 +752,10 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
         }
 	}
 
-    if(flagParameters.mutualInformation)
-    {
-        entropy->mi = new double*[entropy->n_pair];
-    }
+	if(flagParameters.mutualInformation)
+	{
+		entropy->mi = new double*[entropy->n_pair];
+	}
 
 }
 
