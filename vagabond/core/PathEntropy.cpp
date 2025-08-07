@@ -311,7 +311,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 									{
 										logdk = log(d[k]);
 									}
-
+									
 									entk2[k-1] = entk2[k-1] + logdk*logdk;
 									entk[k-1] = entk[k-1] + logdk;
 									meanDist[k] = meanDist[k] + d[k];
