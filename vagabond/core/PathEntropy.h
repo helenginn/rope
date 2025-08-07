@@ -46,14 +46,14 @@ struct Tors_res4nn {
 	std::vector<std::string> tors_name{};
     std::vector<std::string> desc{};
     std::vector<std::vector<double>> ang{};
-	std::vector<std::vector<glm::vec3>> v{};
+	std::vector<glm::vec3> v{};
 	int res_n{};
 };
 
 struct FlagParameters {
 	int n;
 	double minres;
-    double cutoff;
+    float cutoff;
     int mutualInformation;
 	int kmi;
 };
