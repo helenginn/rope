@@ -23,7 +23,7 @@ void PathEntropy::init_flag_par()
 {
 	flagParameters.n = 5; /* number of nearest neighbours */
 	flagParameters.minres = 1e-10;
-	flagParameters.kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+	flagParameters.kmi = 2; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
 }
 
 std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, const std::vector<PathGroup> &paths)
@@ -313,21 +313,22 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, std::vector<T
 
 /* Calculates entropy using mutual information for torsions closer in space than a given value */
 
-struct Entropy* PathEntropy::calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res, struct FlagParameters flagParameters)
+struct Entropy* PathEntropy::calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res)
 {
 	int i, j, k, ii, jj, kk, l, m, ok, *group2res;
 	std::vector<std::vector<double>> phit(nf); 
     double *ent_k, *ent_k_tot, *ent_k_2, *sd_k, *ent_k_tot_2, *d_mean, *ld_mean, *x, *y, *w, *a, *sd, *d, logdk, c, L;
 
-	int n_res_per_model, n_res_per_model_mi = tors_res.size();
-	std::vector<Tors_res4nn*> tors_mi(n_res_per_model_mi);
+	int n_res_per_model = tors_res.size();
+    int n_res_per_model_mi;
+	std::vector<Tors_res4nn*> tors_mi;
 
 	struct Tors_res4nn tors_mi2;
 	struct Entropy *entropy = new Entropy;
 
 	// for each residue...
 	int K = flagParameters.n + 1;
-	tors_res2mi(tors_res, n_res_per_model, tors_mi, n_res_per_model, group2res, flagParameters);
+	tors_res2mi(tors_res, n_res_per_model, tors_mi, n_res_per_model_mi, group2res, flagParameters);
 
 	ent_k, ent_k_2, ent_k_tot, ent_k_tot_2 = new double[K-1];
 
@@ -609,6 +610,8 @@ int PathEntropy::tors_res2mi(std::vector<Tors_res4nn*> tors_res, int n_res_per_m
 	}
 
 	n_res_per_model_mi = l;
+
+    tors_mi.resize(n_res_per_model_mi);
 
 	group2res = new int[n_res_per_model_mi];
 
