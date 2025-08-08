@@ -74,7 +74,7 @@ public:
 	std::vector<Tors_res4nn*> get_atoms_and_residues(const int numPaths, const std::vector<PathGroup> &paths);
 
 	struct Entropy* calculate_entropy_independent(int nf, std::vector<Tors_res4nn*> tors_res);
-    struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res, struct FlagParameters flagParameters);
+    struct Entropy* calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res);
 
 	/* implicit compare function for qsort */
 	static int comp (const void * elem1, const void * elem2);
