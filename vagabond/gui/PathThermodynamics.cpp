@@ -71,7 +71,6 @@ void PathThermodynamics::setup()
 		//const std::string mod_id = group[0]->startInstance()->model_id();
 	}
 
-
 	{
 		Text *t = new Text("Calculate single-structure entropy");
 		t->setLeft(0.2, top);
@@ -192,7 +191,6 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		AskForText *aft = new AskForText(this, "How many samples along the paths?", "samples", this, TextEntry::Numeric);
 		setModal(aft);
 	}
-
 	if (tag == "choose_paths")
 	{
 	
