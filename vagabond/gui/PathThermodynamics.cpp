@@ -65,7 +65,6 @@ void PathThermodynamics::setup()
 		//const std::string mod_id = group[0]->startInstance()->model_id();
 	}
 
-
 	{
 		Text *t = new Text("Calculate single-structure entropy");
 		t->setLeft(0.2, top);
@@ -73,30 +72,37 @@ void PathThermodynamics::setup()
 	}
 
 	{
-		TextButton *t = new TextButton("Calculate", this);
+		TextButton *t = new TextButton("Calculate (no MIST)", this);
 		t->setLeft(0.2, 0.4);
 		t->setReturnTag("calc_indep");
+		addObject(t);
+	}	
+
+	{
+		TextButton *t = new TextButton("Calculate (MIST)", this);
+		t->setLeft(0.2, 0.5);
+		t->setReturnTag("calc_mist");
 		addObject(t);
 	}
 }
 
 void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 {
+
+    deleteTemps();
+
+    std::string str = "Choose number of paths (\"frames\") to utilise";
+	
+    ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
+	cr->setDefault(1);
+	cr->setRange(1, _paths.size(), _paths.size()-1);
+
 	if (tag == "calc_indep")
 	{	
-		deleteTemps();
-
-		std::string str = "Choose number of paths (\"frames\") to utilise";
-		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-		cr->setDefault(1);
-		cr->setRange(1, _paths.size(), _paths.size()-1);
-
 		auto respondToVal = [this](float min, float max)
 		{
 			_numPaths = lrint(min);
 			
-			const std::string mod_id = _paths[0].front()->startInstance()->model_id();
-
 			_pathEntropy->init_flag_par();	
 			
             std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
@@ -113,6 +119,30 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		setModal(cr);
 
 	}
+
+   	if (tag == "calc_mist")
+	{	
+		auto respondToVal = [this](float min, float max)
+		{
+			_numPaths = lrint(min);
+			
+			_pathEntropy->init_flag_par();	
+			
+            std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
+
+			_entropy = _pathEntropy->calculate_entropy_mi(_numPaths, tors_res);
+
+		    std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
+		    delete(_entropy);	
+			displayEntropy(str);
+	
+		};
+
+		cr->setReturn(respondToVal);
+		setModal(cr);
+
+	}
+
 
 	if (tag == "choose_paths")
 	{
@@ -136,7 +166,7 @@ void PathThermodynamics::displayEntropy(std::string str)
 {
 	std::cout << "entropy calculated" << std::endl;
 	Text *t = new Text(str);
-	t->setLeft(0.2, 0.6);
+	t->setLeft(0.2, 0.8);
 	addTempObject(t);
 }
 
