@@ -91,28 +91,32 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
     deleteTemps();
 
+    struct FlagParameters flagPar = _pathEntropy->initFlagPar();
+
+    if (_paths.size() < flagPar.n)
+    {
+        pathNumTooLow();
+    }
+
     std::string str = "Choose number of paths (\"frames\") to utilise";
 	
     ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-	cr->setDefault(1);
-	cr->setRange(1, _paths.size(), _paths.size()-1);
+	cr->setDefault(flagPar.n);
+	cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n-1));
 
 	if (tag == "calc_indep")
 	{	
-		auto respondToVal = [this](float min, float max)
+		auto respondToVal = [this, flagPar](float min, float max)
 		{
 			_numPaths = lrint(min);
 			
-			_pathEntropy->init_flag_par();	
-			
             std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
 
-			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, tors_res);
+			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, flagPar, tors_res);
 
 		    std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
 		    delete(_entropy);	
 			displayEntropy(str);
-	
 		};
 
 		cr->setReturn(respondToVal);
@@ -122,20 +126,17 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
    	if (tag == "calc_mist")
 	{	
-		auto respondToVal = [this](float min, float max)
+		auto respondToVal = [this, flagPar](float min, float max)
 		{
 			_numPaths = lrint(min);
 			
-			_pathEntropy->init_flag_par();	
-			
             std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
 
-			_entropy = _pathEntropy->calculate_entropy_mi(_numPaths, tors_res);
+			_entropy = _pathEntropy->calculate_entropy_mi(_numPaths, flagPar, tors_res);
 
 		    std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
 		    delete(_entropy);	
 			displayEntropy(str);
-	
 		};
 
 		cr->setReturn(respondToVal);
@@ -143,10 +144,8 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 	}
 
-
 	if (tag == "choose_paths")
 	{
-	
 		ChooseRange *cr = static_cast<ChooseRange *>(button->returnObject());
 		float num = cr->max();
 		_numPaths = lrint(num);
@@ -165,6 +164,14 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 void PathThermodynamics::displayEntropy(std::string str)
 {
 	std::cout << "entropy calculated" << std::endl;
+	Text *t = new Text(str);
+	t->setLeft(0.2, 0.8);
+	addTempObject(t);
+}
+
+void PathThermodynamics::pathNumTooLow()
+{
+	std::string str = "Desired number of nearest neighbours exceeds total available paths. Try again.";
 	Text *t = new Text(str);
 	t->setLeft(0.2, 0.8);
 	addTempObject(t);
