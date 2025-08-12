@@ -80,7 +80,6 @@ class PathEntropy
 public:
 	PathEntropy(){};
     ~PathEntropy(){};
-
 	/* default flag parameters as chosen in pdb2entropy programme */
 	struct FlagParameters initFlagPar();
 	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<Path*> paths, int numDivisions = 1);
