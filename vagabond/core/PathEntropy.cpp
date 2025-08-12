@@ -17,13 +17,15 @@
 #include <PathGroup.h>
 #include <BondTorsion.h>
 
-struct FlagParameters flagParameters = {0};
-
-void PathEntropy::init_flag_par()
+struct FlagParameters PathEntropy::initFlagPar()
 {
+    struct FlagParameters flagParameters;
+
 	flagParameters.n = 5; /* number of nearest neighbours */
 	flagParameters.minres = 1e-10;
-	flagParameters.kmi = 2; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+	flagParameters.kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+
+    return flagParameters;
 }
 
 std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, const std::vector<PathGroup> &paths)
@@ -124,7 +126,7 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
-struct Entropy* PathEntropy::calculate_entropy_independent(int nf, std::vector<Tors_res4nn*> tors_res){
+struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters flagParameters, std::vector<Tors_res4nn*> tors_res){
 	std::vector<std::vector<double>> phit(nf);
 	double *x, *y, *w, *a, *sd, *ent_k, *ent_k_2, *ent_k_tot, *ent_k_tot_2;
 	double logdk, c, L;
@@ -313,7 +315,7 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, std::vector<T
 
 /* Calculates entropy using mutual information for torsions closer in space than a given value */
 
-struct Entropy* PathEntropy::calculate_entropy_mi(int nf, std::vector<Tors_res4nn*> tors_res)
+struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters flagParameters, std::vector<Tors_res4nn*> tors_res)
 {
 	int i, j, k, ii, jj, kk, l, m, ok, *group2res;
 	std::vector<std::vector<double>> phit(nf); 
@@ -335,7 +337,6 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, std::vector<Tors_res4n
 	//... based on a cutoff distance, calculate how many pairs of groups must be considered
 	entropy->n_single = n_res_per_model_mi;
 	entropy->n_pair = 0;
-	entropy->n_nn = flagParameters.n;
 
 	for(i = 0; i < n_res_per_model_mi; i++)
 		for(j = i+1; j < n_res_per_model_mi; j++)
@@ -598,7 +599,7 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, std::vector<Tors_res4n
 
 }
 
-int PathEntropy::tors_res2mi(std::vector<Tors_res4nn*> tors_res, int n_res_per_model, std::vector<Tors_res4nn*> tors_mi, int n_res_per_model_mi, int *group2res, struct FlagParameters flagParameters)
+void PathEntropy::tors_res2mi(std::vector<Tors_res4nn*> tors_res, int n_res_per_model, std::vector<Tors_res4nn*> tors_mi, int n_res_per_model_mi, int *group2res, struct FlagParameters flagParameters)
 {
 	int l = 0;
 
@@ -611,20 +612,20 @@ int PathEntropy::tors_res2mi(std::vector<Tors_res4nn*> tors_res, int n_res_per_m
 
 	n_res_per_model_mi = l;
 
-    tors_mi.resize(n_res_per_model_mi);
-
 	group2res = new int[n_res_per_model_mi];
 
 	for(int i = 0; i < n_res_per_model_mi; i++)
 	{
-		tors_mi[i]->ang.resize(flagParameters.kmi);
+        tors_mi.push_back(new Tors_res4nn);
+
+		tors_mi[i]->ang.push_back(std::vector<double>(flagParameters.kmi, 0));
 		tors_mi[i]->v.resize(flagParameters.kmi);
 		tors_mi[i]->bondSymmetry.resize(flagParameters.kmi);
 		tors_mi[i]->tors_name.resize(flagParameters.kmi);
 	}
 
 	// group torsions
-	for(int i = 0, j = 0; i < n_res_per_model_mi; i++)
+	for(int i = 0, j = 0; i < n_res_per_model; i++)
 	{
 		for(int k = 0; k < tors_res[i]->n_ang; k++)
 		{
