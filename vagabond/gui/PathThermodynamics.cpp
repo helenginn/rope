@@ -28,6 +28,7 @@
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TickBoxes.h>
+#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskForText.h>
@@ -59,12 +60,6 @@ void PathThermodynamics::setup()
 	addTitle("Calculate path thermodynamics");
 	float top = 0.3;
 
-	if (_paths.size())
-	{
-		//PathGroup &group = _paths[0];
-		//const std::string mod_id = group[0]->startInstance()->model_id();
-	}
-
 	{
 		Text *t = new Text("Calculate single-structure entropy");
 		t->setLeft(0.2, top);
@@ -93,29 +88,36 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
     struct FlagParameters flagPar = _pathEntropy->initFlagPar();
 
-    if (_paths.size() < flagPar.n)
-    {
-        pathNumTooLow();
-    }
-
-    std::string str = "Choose number of paths (\"frames\") to utilise";
-	
-    ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
-	cr->setDefault(flagPar.n);
-	cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n-1));
-
 	if (tag == "calc_indep")
-	{	
+	{
+		try
+		{
+		   checkPathNum(flagPar.n);
+		}
+		catch (const std::runtime_error &err)
+		{
+			BadChoice *bc = new BadChoice(this, err.what());
+            bc->setDismissible(true);
+			this->setModal(bc);
+            return;
+		}
+
+		std::string str = "Choose number of paths (\"frames\") to utilise";
+		
+		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
+		cr->setDefault(flagPar.n);
+		cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n));
+
 		auto respondToVal = [this, flagPar](float min, float max)
 		{
 			_numPaths = lrint(min);
 			
-            std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
+			std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
 
 			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, flagPar, tors_res);
 
-		    std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
-		    delete(_entropy);	
+			std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
+			delete(_entropy);	
 			displayEntropy(str);
 		};
 
@@ -124,24 +126,41 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
 	}
 
-   	if (tag == "calc_mist")
+	if (tag == "calc_mist")
 	{	
+		try
+		{
+		   checkPathNum(flagPar.n);
+		}
+		catch (const std::runtime_error &err)
+		{
+			BadChoice *bc = new BadChoice(this, err.what());
+            bc->setDismissible(true);
+            this->setModal(bc);
+            return;
+		}
+
+		std::string str = "Choose number of paths (\"frames\") to utilise";
+		
+		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);
+		cr->setDefault(flagPar.n);
+		cr->setRange(flagPar.n, _paths.size(), (_paths.size()-flagPar.n));
+
 		auto respondToVal = [this, flagPar](float min, float max)
 		{
 			_numPaths = lrint(min);
 			
-            std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
+			std::vector<Tors_res4nn*> tors_res = _pathEntropy->get_atoms_and_residues(_numPaths, _paths);
 
 			_entropy = _pathEntropy->calculate_entropy_mi(_numPaths, flagPar, tors_res);
 
-		    std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
-		    delete(_entropy);	
+			std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
+			delete(_entropy);	
 			displayEntropy(str);
 		};
 
 		cr->setReturn(respondToVal);
 		setModal(cr);
-
 	}
 
 	if (tag == "choose_paths")
@@ -169,12 +188,12 @@ void PathThermodynamics::displayEntropy(std::string str)
 	addTempObject(t);
 }
 
-void PathThermodynamics::pathNumTooLow()
+void PathThermodynamics::checkPathNum(int nearestNeighbours)
 {
-	std::string str = "Desired number of nearest neighbours exceeds total available paths. Try again.";
-	Text *t = new Text(str);
-	t->setLeft(0.2, 0.8);
-	addTempObject(t);
+    if (_paths.size() < nearestNeighbours)
+    {
+        throw std::runtime_error("Desired nearest neighbour value exceeds total number of paths.");
+    }
 }
 
 void PathThermodynamics::refresh()

@@ -37,7 +37,7 @@ public:
 	virtual void refresh();
 	
 	void addTypeButtons();
-    void pathNumTooLow();
+    void checkPathNum(int nn);
 
 	virtual void buttonPressed(std::string tag, Button *button);
 
