@@ -65,12 +65,6 @@ void PathThermodynamics::setup()
 
     float top = 0.3;
 
-	if (_paths.size())
-	{
-		//PathGroup &group = _paths[0];
-		//const std::string mod_id = group[0]->startInstance()->model_id();
-	}
-
 	{
 		Text *t = new Text("Calculate single-structure entropy");
 		t->setLeft(0.2, top);
@@ -171,6 +165,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
             double meanTotalEntropy = (std::accumulate(entropyVec.begin(), entropyVec.end(), 0))/entropyVec.size();
 
 			std::string str = "Total: " +  std::to_string(meanTotalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(meanTotalEntropy/torsRes.size()) + " (R units)";
+
 			displayEntropy(str);
 		};
 
