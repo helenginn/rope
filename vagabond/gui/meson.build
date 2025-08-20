@@ -74,6 +74,8 @@ guifiles = [
 'Graph.cpp',
 'GraphView.h',
 'GraphView.cpp',
+'HBondAnalysisControl.cpp',
+'HBondAnalysisControl.h',
 'IconLegend.cpp',
 'LineSeries.cpp',
 'LineSeriesOptions.cpp',

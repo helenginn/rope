@@ -163,14 +163,14 @@ void MainMenu::buttonPressed(std::string tag, Button *button)
 #ifdef __EMSCRIPTEN__
 		m->addOption("Load", "load");
 #endif
-		m->addOption("Save", "save");
+		m->addOption("Save",
+		[]()
+		{
+			Environment::environment().save();
+		});
 		m->addOption("Options", "options");
 		m->setup(c.x, c.y);
 		setModal(m);
-	}
-	else if (tag == "file_save")
-	{
-		Environment::environment().save();
 	}
 	else if (tag == "file_load")
 	{

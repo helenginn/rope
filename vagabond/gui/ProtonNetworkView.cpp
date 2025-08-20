@@ -23,8 +23,10 @@
 #include <vagabond/core/protonic/CliqueFinder.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/core/PositionShifter.h>
+#include <vagabond/core/Environment.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/gui/CliqueView.h>
+#include <vagabond/gui/HBondAnalysisControl.h>
 #include <vagabond/gui/elements/FloatingText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -40,6 +42,7 @@ ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network)
 ProtonNetworkView::~ProtonNetworkView()
 {
 	delete _shifter;
+	delete &_network;
 
 }
 
@@ -282,6 +285,7 @@ void ProtonNetworkView::arrangeFigure()
 
 			_shifter->addTidy(make_tidy(probe));
 		}
+
 		probe->selected(0, true);
 	}
 	_shifter->unpause();
@@ -369,20 +373,38 @@ void ProtonNetworkView::makeMainMenu()
 		}
 		glm::vec2 c = text->xy();
 		Menu *m = new Menu(this, this, "options");
-		m->addOption("Browse cliques", browse_cliques);
-		
-//		if (_cv)
+		if (!_activeClique)
 		{
-//			const OpSet<Probe *> &interesting = _cv->interesting();
-			OpSet<Probe *> selected = selected_probes(_textProbes);
-			selected += selected_probes(_bondProbes);
-
-			if (selected.size())
-			{
-				m->addOption("Exhaustive search H-bonds", 
-				             analyse(selected));
-			}
+			m->addOption("Browse cliques", browse_cliques);
 		}
+
+		m->addOption("Save", [this]()
+		{
+			_network.updateModelCliques();
+			Environment::environment().save();
+		});
+		
+		OpSet<Probe *> selected = selected_probes(_textProbes);
+		selected += selected_probes(_bondProbes);
+
+		if (selected.size())
+		{
+			m->addOption("Exhaustive search selected", 
+			             analyse(selected));
+		}
+		
+		auto control_analysis = [this]()
+		{
+			HBondAnalysisControl *hbac = 
+			new HBondAnalysisControl(this, _activeClique);
+			hbac->show();
+		};
+		
+		if (_activeClique)
+		{
+			m->addOption("Analysis overview", control_analysis);
+		}
+
 		m->setup(c.x, c.y);
 		setModal(m);
 	};

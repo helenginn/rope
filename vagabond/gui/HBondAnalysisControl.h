@@ -16,44 +16,22 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__CliqueView__
-#define __vagabond__CliqueView__
+#ifndef __vagabond__HBondAnalysisControl__
+#define __vagabond__HBondAnalysisControl__
 
-#include <vagabond/gui/elements/Image.h>
-#include <vagabond/core/Item.h>
+#include <vagabond/gui/elements/Scene.h>
 
-class Network;
-class ProtonNetworkView;
+class Clique;
 
-class CliqueView : public Image
+class HBondAnalysisControl : public Scene
 {
 public:
-	CliqueView(ProtonNetworkView *scene, 
-	Network &network, const OpSet<Probe *> &probes);
+	HBondAnalysisControl(Scene *prev, Clique *clique);
 
-	void setupConstants();
-	
-	void setKillAndClean(const std::function<void()> &do_it)
-	{
-		_kill = do_it;
-	}
-	
-	void kill()
-	{
-		if (_kill) _kill();
-	}
+	virtual void setup();
 private:
-	void setupCloseButton();
+	Clique *_clique{};
 
-	Network &_network;
-	std::function<void()> _kill{};
-	
-	ProtonNetworkView *_scene{};
-	Item _parent{};
-	Item _ambiguous{};
-	Item _wet{};
-	Item _dry{};
-	Item _certain{};
 };
 
 #endif

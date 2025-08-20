@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
 #include <vagabond/gui/elements/list/ItemLine.h>
@@ -78,61 +79,45 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 		};
 	};
 
-	auto handle_clique = [this, scene, lg, add_clique]
-	(const OpSet<Probe *> &probes)
+	auto click = [this, scene, lg](Clique *clique)
 	{
-		Clique *clique = _network.newClique(probes);
-		
-		auto click = [this, clique, scene, lg](bool left)
+		return [this, clique, scene, lg](bool left)
 		{
 			if (left)
 			{
 				scene->selectProbes(clique->probes());
 				return;
 			}
-			
-			bool has_interest = false;
-			bool has_disinterest = false;
-			
+
 			OpSet<Probe *> probes = clique->probes();
 			
-			for (Probe *const &pr : probes)
+			auto change_name = [clique, scene]()
 			{
-				(_interesting.count(pr) ? 
-				 has_interest : has_disinterest) = true;
-			}
+				AskForText *aft = new AskForText(scene, "New clique name:",
+				                                 "tag", scene);
+				aft->setReturnJob
+				([clique](std::string text)
+				 {
+					clique->setName(text);
+				 });
+				
+				scene->setModal(aft);
+			};
 			
-			auto add_or_subtract = [this, probes, clique, lg](bool add)
+			auto analyse_bonds = [this, clique, scene]()
 			{
-				return [this, add, probes, clique, lg]()
-				{
-					add ?  _interesting += probes : _interesting -= probes;
-					if (add)
-					{
-						lg->display(clique)->setColour(0.4, 0.2, 0.4);
-						_interesting += probes;
-					}
-					else
-					{
-						lg->display(clique)->setColour(0.0f, 0.0f, 0.0f);
-						_interesting -= probes;
-					}
-				};
+				scene->deselect();
+				scene->selectProbes(clique->probes());
+				scene->completeResidues(true);
+				scene->arrangeFigure();
+				scene->setActive(clique);
+				_kill();
 			};
 			
 			Menu *menu = new Menu(scene);
-			if (has_disinterest)
-			{
-				menu->addOption("mark as interesting", 
-				                add_or_subtract(true));
-			}
-			
-			if (has_interest)
-			{
-				menu->addOption("mark as uninteresting", 
-				                add_or_subtract(false));
-			}
-			
+			menu->addOption("rename", change_name);
+			menu->addOption("analyse", analyse_bonds);
+
 			float x = 0.5; float y = 0.5;
 			if (_gl)
 			{
@@ -142,9 +127,13 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 			menu->setup(x, y);
 			scene->setModal(menu);
 		};
-		
-		clique->setHandleBeingChosen(click);
-		
+	};
+
+	auto handle_clique = [this, click, add_clique]
+	(const OpSet<Probe *> &probes)
+	{
+		Clique *clique = _network.newClique(probes);
+		clique->setHandleBeingChosen(click(clique));
 		addMainThreadJob(add_clique(clique));
 	};
 
@@ -164,7 +153,7 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	{
 		for (Clique &clique : _network.cliques())
 		{
-			std::cout << "adding clique: " << clique.name() << std::endl;
+			clique.setHandleBeingChosen(click(&clique));
 			add_clique(&clique)();
 		}
 	}

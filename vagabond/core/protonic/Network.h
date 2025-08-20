@@ -43,6 +43,7 @@ class Network
 public:
 	friend HideComplete;
 	Network();
+	~Network();
 	Network(AtomGroup *group, const std::string &spg_name,
 	        const std::array<double, 6> &unit_cell = {}, 
 	        Model *const &model = {});
@@ -119,6 +120,7 @@ public:
 	}
 	
 	Decree *newDecree(const std::string &str);
+	void updateModelCliques();
 private:
 	void establishAtom(::Atom *atom);
 

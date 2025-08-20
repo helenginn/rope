@@ -25,6 +25,11 @@ Clique::Clique(const OpSet<Probe *> &probes) : _probes(probes)
 	setSelectable(true);
 }
 
+Clique::Clique()
+{
+	setSelectable(true);
+}
+
 int Clique::num_waters() const
 {
 	int waters = 0;
@@ -69,7 +74,6 @@ std::string Clique::name()
 	
 	str += std::to_string(protein) + " protein atoms, ";
 	str += std::to_string(waters) + " waters";
-	_name = str;
 	return str;
 }
 

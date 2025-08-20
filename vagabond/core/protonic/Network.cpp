@@ -538,6 +538,19 @@ void Network::establishAtom(::Atom *atom)
 	}
 }
 
+void Network::updateModelCliques()
+{
+	if (_model)
+	{
+		_model->setCliques(_cliques);
+	}
+}
+
+Network::~Network()
+{
+	updateModelCliques();
+}
+
 Network::Network(AtomGroup *group, const std::string &spg_name,
                  const std::array<double, 6> &unit_cell,
                  Model *const &model)
@@ -719,9 +732,7 @@ Probe *Network::probeForDesc(const std::string &desc)
 Clique *Network::newClique(const OpSet<Probe *> &probes)
 {
 	_cliques.push_back(Clique(probes));
-	if (_model)
-	{
-		_model->setCliques(_cliques);
-	}
+	updateModelCliques();
+
 	return &_cliques.back();
 }

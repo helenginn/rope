@@ -32,12 +32,17 @@ class Network;
 class Clique : public Item
 {
 public:
-	Clique() {};
+	Clique();
 	Clique(const OpSet<Probe *> &probes);
 	
 	void housekeeping(Network &network);
 
 	std::string name();
+	void setName(std::string name)
+	{
+		_name = name;
+		setDisplayName(name);
+	}
 	
 	bool is_certain() const;
 	

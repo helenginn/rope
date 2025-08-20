@@ -72,9 +72,13 @@ public:
 	void expandSelectionToNeighbours();
 	void completeResidues(bool stop_at_alpha = false);
 	void selectProbes(const OpSet<Probe *> &probes);
-
-private:
 	void arrangeFigure();
+
+	void setActive(Clique *clique)
+	{
+		_activeClique = clique;
+	}
+private:
 
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
@@ -96,6 +100,8 @@ private:
 	ProbeAtom *_activeProbe = nullptr;
 	Renderable *_active = nullptr;
 	CliqueView *_cv = nullptr;
+	
+	Clique *_activeClique = nullptr;
 	
 	std::function<void()> _onClick{};
 };
