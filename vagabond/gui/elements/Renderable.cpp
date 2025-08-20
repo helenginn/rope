@@ -986,7 +986,7 @@ void Renderable::maximalDim(double *min, double *max, int dim, bool recursive)
 	
 	for (size_t i = 0; i < objectCount() && recursive; i++)
 	{
-		object(i)->maximalDim(min, max, dim);
+		object(i)->maximalDim(min, max, dim, recursive);
 	}
 }
 
@@ -995,7 +995,7 @@ double Renderable::maximalHeight()
 	double max = -FLT_MAX;
 	double min = FLT_MAX;
 	
-	maximalDim(&min, &max, 1);
+	maximalDim(&min, &max, 1, true);
 	
 	if (max == -FLT_MAX || min == FLT_MAX)
 	{
@@ -1010,7 +1010,7 @@ double Renderable::maximalWidth()
 	double max = -FLT_MAX;
 	double min = FLT_MAX;
 	
-	maximalDim(&min, &max, 0);
+	maximalDim(&min, &max, 0, true);
 	
 	if (max == -FLT_MAX || min == FLT_MAX)
 	{

@@ -35,6 +35,8 @@ public:
 
 	void update();
 	
+	void setColour(float r, float g, float b);
+	
 	/** return renderable for Item. Default is display name.
 	 * Renderable should be top-left justified i.e. setLeft(0.0, 0.0); */
 	virtual Renderable *displayRenderable(ButtonResponder *parent) const;

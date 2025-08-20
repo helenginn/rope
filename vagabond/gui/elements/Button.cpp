@@ -12,9 +12,14 @@ Button::Button(ButtonResponder *sender) : Box()
 	_tickable = true;
 }
 
+bool Button::validJob()
+{
+	return (_sender || (!_sender && _returnJob));
+}
+
 void Button::click(bool left)
 {
-	if ((!_returnJob && _sender == nullptr) || _inert)
+	if (!validJob() || _inert)
 	{
 		return;
 	}

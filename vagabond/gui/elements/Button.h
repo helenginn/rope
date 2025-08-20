@@ -95,6 +95,7 @@ protected:
 	bool _tickable;
 	ButtonResponder *_sender;
 private:
+	bool validJob();
 	void *_object = nullptr;
 	std::function<void()> _returnJob{};
 	std::function<void()> _hoverJob{};

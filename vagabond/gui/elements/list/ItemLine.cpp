@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/SnowGL.h>
 #include "../ImageButton.h"
 #include "../Window.h"
 #include "ItemLine.h"
@@ -206,6 +207,10 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	{
 		TextButton *tb = new TextButton(_item->displayName(), parent);
 		tb->setReturnTag("select_" + _item->tag());
+		tb->setReturnJob([this, tb]() 
+		{
+			_item->select(tb->left());
+		});
 		text = tb;
 	}
 	else if (!text && !_item->isSelectable())
@@ -229,4 +234,10 @@ void ItemLine::doThings()
 {
 	update();
 
+}
+
+void ItemLine::setColour(float r, float g, float b)
+{
+	_content->setColour(r, g, b);
+	_content->forceRender();
 }

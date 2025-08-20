@@ -58,6 +58,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 	}
 	
 	_line = new ItemLine(this, item);
+	_topLevel->_itemMap[item] = _line;
 	addObject(_line);
 	
 	setupGroups();

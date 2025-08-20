@@ -27,6 +27,14 @@ Image::Image(int texid) : Box()
 	makeQuad();
 }
 
+void Image::setQuickSwitch(const std::vector<std::string> &filenames)
+{
+	for (const std::string &filename : filenames)
+	{
+		GLuint tex = Library::getLibrary()->getTexture(filename, &_w, &_h);
+		_switches[filename] = tex;
+	}
+}
 
 void Image::makeQuad()
 {
@@ -43,6 +51,15 @@ void Image::makeQuad()
 
 void Image::changeImage(std::string filename)
 {
+	if (_switches.size())
+	{
+		if (_switches.count(filename))
+		{
+			_texid = _switches.at(filename);
+			return;
+		}
+	}
+
 	if (_texid > 0)
 	{
 		Library::getLibrary()->dropTexture(_texid);

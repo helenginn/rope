@@ -35,8 +35,16 @@ public:
 
 	void setup();
 	void refreshGroups();
+	
+	ItemLine *display(Item *item)
+	{
+		return _itemMap.count(item) ? _itemMap.at(item) : nullptr;
+	}
 
 	virtual void buttonPressed(std::string tag, Button *button);
+
+protected:
+	std::map<Item *, ItemLine *> _itemMap;
 private:
 	void fixUpperCorner(Renderable *r, float x = 0, float y = 0);
 	LineGroup(Item *item, LineGroup *topLevel);

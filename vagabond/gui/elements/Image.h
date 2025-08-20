@@ -12,10 +12,13 @@ public:
 	
 	void changeImage(std::string filename);
 
+	void setQuickSwitch(const std::vector<std::string> &filenames);
 	virtual void makeQuad();
 protected:
 	int _w{};
 	int _h{};
+	
+	std::map<std::string, GLuint> _switches;
 };
 
 #endif

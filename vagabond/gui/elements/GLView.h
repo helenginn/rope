@@ -74,6 +74,11 @@ public:
 		return _time;
 	}
 	
+	bool leftMouse()
+	{
+		return _left;
+	}
+	
 	glm::mat4x4 getModel()
 	{
 		return _model;

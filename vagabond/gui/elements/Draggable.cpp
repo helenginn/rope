@@ -49,14 +49,17 @@ glm::vec3 Draggable::topLeftLimit()
 	if (_yspan <= 1e-6)
 	{
 		ymin = (ymin + ymax) / 2;
+		xmin = (xmin / 2) + 0.5;
+		ymin = 0.5 - (ymin / 2);
 	}
 	else
 	{
 		xmin = (xmin + xmax) / 2;
+		ymin = -ymax;
+		xmin = (xmin / 2) + 0.5;
+		ymin = (ymin / 2) + 0.5;
 	}
 
-	xmin = (xmin / 2) + 0.5;
-	ymin = 0.5 - (ymin / 2);
 
 	v.x = xmin;// + _centre.x - _xspan / 2;
 	v.y = ymin;// + _centre.y - _yspan / 2;

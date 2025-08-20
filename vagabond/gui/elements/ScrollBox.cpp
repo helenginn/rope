@@ -63,6 +63,7 @@ void ScrollBox::drawSlider()
 	slider->resize(screenBoundHeight());
 	slider->setup("", 0, 0.99, 0.01);
 	slider->setCentre(screenBoundRight(), screenMidHeight());
+	slider->setStart(0, 0);
 	_slider = slider;
 	addObject(slider);
 }

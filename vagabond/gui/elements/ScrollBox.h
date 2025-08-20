@@ -35,6 +35,8 @@ public:
 
 	virtual void finishedDragging(std::string tag, double x, double y);
 
+	void addSliderIfNeeded();
+	void drawSlider();
 protected:
 	virtual void respond();
 	virtual void extraUniforms();
@@ -54,8 +56,6 @@ private:
 
 
 	void deleteSlider();
-	void drawSlider();
-	void addSliderIfNeeded();
 
 	glm::vec4 _screenBounds = {0, 0, 1, 1};
 	glm::vec4 _glBounds = {-1, -1, 1, 1};
