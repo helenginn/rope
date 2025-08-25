@@ -357,14 +357,14 @@ double dist_ang(std::vector<double> &a, std::vector<double> &b, int n,
 
 	for(int i = 0; i < n; i++)
 	{
-		while(a[i] > 180/bondSymmetry[i]) a[i] = a[i] - 180/bondSymmetry[i];
-		while(a[i] < -180/bondSymmetry[i]) a[i] = a[i] + 180/bondSymmetry[i];
-		while(b[i] > 180/bondSymmetry[i]) b[i] = a[i] - 180/bondSymmetry[i];
-		while(b[i] < -180/bondSymmetry[i]) b[i] = b[i] + 180/bondSymmetry[i];
+		while(a[i] > bondSymmetry[i]/2.0) a[i] = a[i] - bondSymmetry[i];
+		while(a[i] < -bondSymmetry[i]/2.0) a[i] = a[i] + bondSymmetry[i];
+		while(b[i] > bondSymmetry[i]/2.0) b[i] = a[i] - bondSymmetry[i];
+		while(b[i] < -bondSymmetry[i]/2.0) b[i] = b[i] + bondSymmetry[i];
 	
 		d = fabs(a[i] - b[i]);
 
-		if(d > 180/bondSymmetry[i]) d = 180/bondSymmetry[i] - d;
+		if(d > bondSymmetry[i]/2.0) d = bondSymmetry[i] - d;
 
 		d = d*d;
 
