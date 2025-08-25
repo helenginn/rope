@@ -190,7 +190,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
     
     // for each residue...
 	int K = flagParameters.n + 1;
-	
+
     torsRes2MI(torsRes, numResPerModel, torsMi, numResPerModelMI, group2res, flagParameters, numDivisions);
     
 	//... based on a cutoff distance, calculate how many pairs of groups must be considered
@@ -252,6 +252,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 				for(int l = 0; l < torsMi[ii]->nAng; l++)
 					for(int m = 0; m < torsMi[jj]->nAng; m++)
 						if(glm::distance(torsMi[ii]->v[l], torsMi[jj]->v[m]) <= flagParameters.cutoff)
+
 						{
 							entropy->i1[kk] = ii;
 							entropy->i2[kk] = jj;
@@ -263,6 +264,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 							int i = 0;
 							
 							for(int k = 0; k < torsMi[ii]->nAng; k++)
+
 							{
 								torsMi2.ang[i] = torsMi[ii]->ang[k];
 								torsMi2.bondSymmetry[i] = torsMi[ii]->bondSymmetry[k];
@@ -335,7 +337,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 							c = c + ((double) torsMi2.nAng) * log(M_PI)/2.0 - lgamma(1.0 + ((double) torsMi2.nAng)/2.0) + 0.5722 + log( (double) nf);
 						   
 							int L = 0;
-
 							for(int k = 1; k <= K - 1; k++)
 							{
 								// before adding c-L compute sd
@@ -582,8 +583,8 @@ void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vecto
 	xy = xy/wt;
 	xm = xm/wt;
 
-	a[1] = (xy - xm*ym)/(x2 - xm*xm);
-	a[0] = ym - a[1]*xm;
+	a[1] = (xy - xm*ym)/(y2 - ym*ym);
+	a[0] = xm - a[1]*ym;
 
 	double sig2 = 0;
 
@@ -594,7 +595,7 @@ void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vecto
 
 	sig2 = sig2/wt;
 
-	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + xm*xm/((double) n * (x2 - xm*xm)));
+	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + ym*ym/((double) n * (y2 - ym*ym)));
 	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (x2 - xm*xm));
 }
 
