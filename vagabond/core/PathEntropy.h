@@ -82,7 +82,7 @@ public:
 	/* linear weighting function */
 	int fitlw(double *x, double *y, double *w, int n, double *a, double *sd, int *ok);
 
-    void tors_res2mi(std::vector<Tors_res4nn*> tors_res, int resPerModel, std::vector<Tors_res4nn*> tors_mi, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+    void tors_res2mi(std::vector<Tors_res4nn*> tors_res, int resPerModel, std::vector<Tors_res4nn*> &tors_mi, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
 };
 
 #endif
