@@ -10,23 +10,30 @@ Modal::Modal(Scene *scene)
 	_scene = scene;
 }
 
+void Modal::makeFreshBox(double width, double height)
+{
+	clearVertices();
+	addQuad(0.9);
+	setColour(0.0, 0.0, 0.0);
+	rescale(width, height);
+	_width = width;
+	_height = height;
+}
+
 Modal::Modal(Scene *scene, double width, double height) : Box()
 {
+	setImage("assets/images/box.png");
+
 	_darker = new Box();
 	_darker->addQuad(0.8);
 	_darker->setAlpha(0.5);
 	_darker->setFragmentShaderFile("assets/shaders/shade.fsh");
-
-	addQuad(0.9);
-	setColour(0.0, 0.0, 0.0);
-	rescale(width, height);
-	setImage("assets/images/box.png");
+	
+	makeFreshBox(width, height);
 	
 	_dismissable = true;
 
 	_scene = scene;
-	_width = width;
-	_height = height;
 }
 
 void Modal::render(GLView *gl)

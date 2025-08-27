@@ -30,10 +30,13 @@ public:
 	void addTwoButtons(std::string left, std::string ltag,
 	                   std::string right, std::string rtag);
 
+	/* called just before display if you need to rearrange things */
+	virtual void refresh() {};
 	void dismiss();
 	
 	void squeezeToWidth(Renderable *r);
 protected:
+	void makeFreshBox(double width, double height);
 	Scene *_scene;
 private:
 	void conv_coords(double *fx, double *fy);

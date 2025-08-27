@@ -72,6 +72,7 @@ void Scene::setModal(Modal *modal, bool replace)
 {
 	auto append_modal = [this, modal]()
 	{
+		modal->refresh();
 		_modals.push_back(modal);
 		_left = false;
 		_right = false;
