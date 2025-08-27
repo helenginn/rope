@@ -102,16 +102,51 @@ void Clique::housekeeping(Network &network)
 	for (const std::string &desc : _descs)
 	{
 		Probe *probe = network.probeForDesc(desc);
-		std::cout << "test: " << probe << std::endl;
 		if (probe)
 		{
 			_probes.insert(probe);
 		}
 	}
+	_descs = {};
 
+	std::list<Clique> cleaned;
+	for (Clique cl : _subdivs)
+	{
+		cl.housekeeping(network);
+		cleaned.push_back(cl);
+	}
+	_subdivs = cleaned;
 }
 
 void Clique::addProbeDesc(const std::string &str)
 {
 	_descs.push_back(str);
+}
+
+OpSet<Probe *> Clique::nonWaterProbes()
+{
+	OpSet<Probe *> nonwater;
+	for (Probe *pr : _probes)
+	{
+		if (pr->is_atom())
+		{
+			bool water = (pr->atom()->code() == "HOH");
+			if (!water && !pr->is_certain())
+			{
+				nonwater.insert(pr);
+			}
+			else if (!water && pr->is_certain())
+			{
+				for (Probe *connected : pr->others())
+				{
+					if (!connected->is_covalent() && !connected->is_certain())
+					{
+						nonwater.insert(connected);
+					}
+				}
+			}
+		}
+	}
+
+	return nonwater;
 }

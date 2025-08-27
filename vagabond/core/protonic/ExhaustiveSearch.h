@@ -26,6 +26,7 @@
 #include <condition_variable>
 #include "Probe.h"
 #include "Network.h"
+#include "ProbeResult.h"
 
 class Decree;
 class Network;
@@ -44,6 +45,7 @@ public:
 	virtual ~IteratedProbe() {}
 	
 	virtual Probe *const &probe() const = 0;
+	virtual std::string type() = 0;
 };
 
 template <class Connector, class HValue>
@@ -167,6 +169,11 @@ public:
 	{
 		return _probe;
 	}
+	
+	std::string type()
+	{
+		return _add;
+	}
 private:
 	Probe *_probe{};
 	Connector &_connector;
@@ -186,9 +193,19 @@ public:
 
 	void search();
 	
+	size_t probe_count()
+	{
+		return _iterations.size();
+	}
+	
 	void setup();
 	bool next();
 	void cleanup();
+	
+	const std::vector<ProbeResult> &results() const
+	{
+		return _results;
+	}
 	
 	virtual void tick()
 	{
@@ -199,6 +216,7 @@ private:
 	typedef std::vector<unsigned int> Config;
 	OpSet<Config> _configs;
 
+	std::vector<ProbeResult> _results;
 	std::list<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;
 	int _certain{0};

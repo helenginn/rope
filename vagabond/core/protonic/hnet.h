@@ -91,6 +91,13 @@ namespace Atom
 	};
 };
 
+enum Types
+{
+	Unassigned = 0,
+	BondType,
+	ExistenceType,
+};
+
 struct AtomConf
 {
 	::Atom *ptr = nullptr;

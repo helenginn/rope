@@ -243,11 +243,29 @@ bool ExhaustiveSearch::next()
 		count_down();
 	}
 	
+	auto process_result = [this](const Config &c)
+	{
+		int i = 0;
+		for (IteratedProbe *ip : _iterations)
+		{
+			int val = c[i];
+			hnet::Types type = (ip->type() == "exist"
+			                   ? hnet::Types::ExistenceType
+			                   : hnet::Types::BondType);
+			Probe *const &pr = ip->probe();
+			i++;
+			
+			ProbeResult pres = {pr, type, val};
+			_results.push_back(pres);
+		}
+	};
+	
 	if (_counter < 0 || (_counter == 0 && (**it).done()))
 	{
 		std::cout << "Final: " << std::endl;
 		for (const Config &c : _configs)
 		{
+			process_result(c);
 			std::cout << "\t";
 			print(c);
 		}

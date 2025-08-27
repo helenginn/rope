@@ -658,7 +658,6 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	for (Clique &cl : _cliques)
 	{
 		cl.housekeeping(*this);
-		std::cout << std::endl;
 	}
 }
 

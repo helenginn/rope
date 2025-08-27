@@ -16,26 +16,35 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#ifndef __vagabond__CommunicationChoice__
+#define __vagabond__CommunicationChoice__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/ListView.h>
+#include <vagabond/utils/OpSet.h>
 
 class Clique;
-class Network;
+class Probe;
 
-class HBondAnalysisControl : public Scene
+class CommunicationChoice : public ListView
 {
 public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
+	CommunicationChoice(Scene *prev, Clique *clique);
 
 	virtual void setup();
 	virtual void refresh();
+
+	virtual size_t lineCount();
+	virtual Renderable *getLine(int i);
+	virtual size_t unitsPerPage()
+	{
+		return 14;
+	}
 private:
 	Clique *_clique{};
-	Network &_network;
 
-	std::vector<std::function<void()>> _refreshes;
+	std::set<int> _selected;
+	std::vector<Probe *> _candidates;
+	
 };
 
 #endif

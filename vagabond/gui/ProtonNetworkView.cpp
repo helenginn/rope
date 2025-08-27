@@ -396,13 +396,37 @@ void ProtonNetworkView::makeMainMenu()
 		auto control_analysis = [this]()
 		{
 			HBondAnalysisControl *hbac = 
-			new HBondAnalysisControl(this, _activeClique);
+			new HBondAnalysisControl(this, _activeClique, _network);
 			hbac->show();
 		};
 		
 		if (_activeClique)
 		{
 			m->addOption("Analysis overview", control_analysis);
+		}
+		
+		auto freeze_positions = [this]()
+		{
+			if (_shifter)
+			{
+				_shifter->pause();
+			}
+		};
+		auto unfreeze_positions = [this]()
+		{
+			if (_shifter)
+			{
+				_shifter->unpause();
+			}
+		};
+		
+		if (_shifter && !_shifter->isPaused())
+		{
+			m->addOption("Freeze positions", freeze_positions);
+		}
+		else if (_shifter && _shifter->isPaused())
+		{
+			m->addOption("Unfreeze positions", unfreeze_positions);
 		}
 
 		m->setup(c.x, c.y);

@@ -16,26 +16,32 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#include "ViewCorrelations.h"
+#include <vagabond/core/protonic/Clique.h>
+#include <vagabond/gui/elements/list/LineGroup.h>
+#include <vagabond/gui/elements/ScrollBox.h>
 
-#include <vagabond/gui/elements/Scene.h>
-
-class Clique;
-class Network;
-
-class HBondAnalysisControl : public Scene
+ViewCorrelations::ViewCorrelations(Scene *prev, Clique *clique)
+: Scene(prev), _clique(clique)
 {
-public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
 
-	virtual void setup();
-	virtual void refresh();
-private:
-	Clique *_clique{};
-	Network &_network;
+}
 
-	std::vector<std::function<void()>> _refreshes;
-};
+void ViewCorrelations::setup()
+{
+	addTitle("Sub-network correlations");
 
-#endif
+	makeList();
+}
+
+void ViewCorrelations::makeList()
+{
+	LineGroup *lg = new LineGroup(_clique, this);
+	lg->setLeft(0.1, 0.23);
+
+	ScrollBox *sb = new ScrollBox();
+	sb->setContent(lg);
+	sb->setBounds(glm::vec4(0.23, 0.1, 0.35, 0.9));
+	addObject(sb);
+
+}

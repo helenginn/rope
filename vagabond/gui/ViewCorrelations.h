@@ -16,26 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#ifndef __vagabond__ViewCorrelations__
+#define __vagabond__ViewCorrelations__
 
 #include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Item.h>
 
 class Clique;
-class Network;
 
-class HBondAnalysisControl : public Scene
+class ViewCorrelations : public Scene
 {
 public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
+	ViewCorrelations(Scene *prev, Clique *clique);
 
 	virtual void setup();
-	virtual void refresh();
+	void makeList();
 private:
 	Clique *_clique{};
-	Network &_network;
 
-	std::vector<std::function<void()>> _refreshes;
 };
 
 #endif

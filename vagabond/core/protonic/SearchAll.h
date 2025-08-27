@@ -16,26 +16,24 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#ifndef __vagabond__SearchAll__
+#define __vagabond__SearchAll__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/Progressor.h>
 
 class Clique;
 class Network;
 
-class HBondAnalysisControl : public Scene
+class SearchAll : public Progressor
 {
 public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
+	SearchAll(Clique *parent, Network &network);
 
-	virtual void setup();
-	virtual void refresh();
+	void run();
 private:
 	Clique *_clique{};
 	Network &_network;
 
-	std::vector<std::function<void()>> _refreshes;
 };
 
 #endif

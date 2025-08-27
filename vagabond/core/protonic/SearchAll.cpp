@@ -16,26 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#include "SearchAll.h"
+#include "ExhaustiveSearch.h"
+#include "Clique.h"
 
-#include <vagabond/gui/elements/Scene.h>
-
-class Clique;
-class Network;
-
-class HBondAnalysisControl : public Scene
+SearchAll::SearchAll(Clique *parent, Network &network) : 
+_clique(parent), _network(network)
 {
-public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
 
-	virtual void setup();
-	virtual void refresh();
-private:
-	Clique *_clique{};
-	Network &_network;
+}
 
-	std::vector<std::function<void()>> _refreshes;
-};
+void SearchAll::run()
+{
+	std::list<Clique> &subs = _clique->subdivisions();
 
-#endif
+	for (Clique &clique : subs)
+	{
+		ExhaustiveSearch search(clique.probes(), _network);
+		search.search();
+		clickTicker();
+		clique.setResults(search.results());
+		int num_nodes = search.probe_count();
+		int num_results = search.results().size();
+		std::string name = "Subnetwork (" + std::to_string(num_nodes) +
+		" nodes, " + std::to_string(num_results) + " arrangements)";
+		clique.setName(name);
+		_clique->addItem(&clique);
+	}
+	
+	finishTicker();
+}

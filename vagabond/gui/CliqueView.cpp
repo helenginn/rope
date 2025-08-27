@@ -64,6 +64,7 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 		return [this, clique]()
 		{
 			clique->setDisplayName(clique->name());
+			clique->removeSelf(true);
 			if (clique->is_certain())
 			{
 				_certain.addItem(clique);
@@ -78,10 +79,49 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 			}
 		};
 	};
-
-	auto click = [this, scene, lg](Clique *clique)
+	
+	auto reinsert = [this](Clique *clique)
 	{
-		return [this, clique, scene, lg](bool left)
+		Item *parent = clique->parent();
+		Item *lastWithName = nullptr;
+		for (Item *const &child : parent->items())
+		{
+			Clique *cl = static_cast<Clique *>(child);
+			bool has_name = cl->hasCustomName();
+			
+			if (has_name)
+			{
+				lastWithName = cl;
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		if (clique == lastWithName)
+		{
+			return;
+		}
+
+		clique->removeSelf(true);
+		parent->addItemAfter(clique, lastWithName);
+		
+		Clique &last = *static_cast<Clique *>(lastWithName);
+		std::list<Clique> &l = _network.cliques();
+		auto it = std::find(l.begin(), l.end(), last);
+		auto oldt = std::find(l.begin(), l.end(), *clique);
+		if (it != l.end())
+		{
+			it++;
+			l.erase(oldt);
+			l.insert(it, *clique);
+		}
+	};
+
+	auto click = [this, reinsert, scene, lg](Clique *clique)
+	{
+		return [this, reinsert, clique, scene](bool left)
 		{
 			if (left)
 			{
@@ -91,14 +131,15 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 
 			OpSet<Probe *> probes = clique->probes();
 			
-			auto change_name = [clique, scene]()
+			auto change_name = [clique, reinsert, scene]()
 			{
 				AskForText *aft = new AskForText(scene, "New clique name:",
 				                                 "tag", scene);
 				aft->setReturnJob
-				([clique](std::string text)
+				([reinsert, clique](std::string text)
 				 {
 					clique->setName(text);
+					reinsert(clique);
 				 });
 				
 				scene->setModal(aft);
@@ -156,6 +197,12 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 			clique.setHandleBeingChosen(click(&clique));
 			add_clique(&clique)();
 		}
+
+		addMainThreadJob([sb, lg]()
+		{
+			lg->refreshGroups();
+			sb->addSliderIfNeeded();
+		});
 	}
 	else
 	{

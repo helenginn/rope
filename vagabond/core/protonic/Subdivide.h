@@ -16,26 +16,28 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#ifndef __vagabond__Subdivide__
+#define __vagabond__Subdivide__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/utils/OpSet.h>
 
+class Probe;
 class Clique;
-class Network;
 
-class HBondAnalysisControl : public Scene
+class Subdivide
 {
 public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
+	Subdivide(Clique *clique);
 
-	virtual void setup();
-	virtual void refresh();
+	void subdivide();
+
+	OpSet<Probe *> hop_one_chunk(Probe *probe, OpSet<Probe *> *feels);
+	OpSet<Probe *> spread(const OpSet<Probe *> &orig);
 private:
 	Clique *_clique{};
-	Network &_network;
 
-	std::vector<std::function<void()>> _refreshes;
+	int _hop = 3;
+	int _spread = 1;
 };
 
 #endif

@@ -75,6 +75,12 @@ public:
 		_tidyJobs.push_back(tidy);
 	}
 	
+	bool isPaused()
+	{
+		std::unique_lock<std::mutex> lk(_pauseMutex);
+		return _pause;
+	}
+	
 	void pause();
 	void unpause();
 	void run();

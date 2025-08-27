@@ -16,26 +16,19 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__HBondAnalysisControl__
-#define __vagabond__HBondAnalysisControl__
+#ifndef __vagabond__ProbeResult__
+#define __vagabond__ProbeResult__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/core/protonic/hnet.h>
 
-class Clique;
-class Network;
+class Probe;
 
-class HBondAnalysisControl : public Scene
+struct ProbeResult
 {
-public:
-	HBondAnalysisControl(Scene *prev, Clique *clique, Network &network);
-
-	virtual void setup();
-	virtual void refresh();
-private:
-	Clique *_clique{};
-	Network &_network;
-
-	std::vector<std::function<void()>> _refreshes;
+	Probe *probe;
+	hnet::Types type;
+	int value;
 };
+
 
 #endif
