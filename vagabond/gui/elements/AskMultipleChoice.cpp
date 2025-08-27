@@ -38,6 +38,7 @@ AskMultipleChoice::AskMultipleChoice(Scene *scene, std::string text, bool cancel
 		tb->setReturnJob(hide_modal);
 		tb->setLeft(0.35, 0.63);
 		addObject(tb);
+		_cancel = tb;
 	}
 }
 
@@ -56,8 +57,25 @@ void AskMultipleChoice::addChoice(const std::string &text,
 
 	tb->setReturnJob(hide_and_job);
 	tb->setLeft(0.35, _top);
+	_boxes.push_back(tb);
 	addObject(tb);
 	
-	_top += 0.07;
+	_top += _inc;
 }
 
+void AskMultipleChoice::refresh()
+{
+	if (_boxes.size() > 3)
+	{
+		float height = 0.4 + _inc * (_boxes.size() - 3);
+		makeFreshBox(0.6, height);
+		_top = 0.43 - _inc / 2.;
+		
+		for (Renderable *r : _boxes)
+		{
+			r->setLeft(0.35, _top);
+			_top += _inc;
+		}
+		_cancel->setLeft(0.35, 0.5 + height / 2 - _inc);
+	}
+}

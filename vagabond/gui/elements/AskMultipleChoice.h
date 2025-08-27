@@ -32,12 +32,16 @@ public:
 
 	void addChoice(const std::string &answer, const std::function<void()> &job);
 
+	virtual void refresh();
 private:
 	ButtonResponder *_sender;
 	std::string _tag;
 
 	float _top = 0.43;
+	float _inc = 0.05;
 
+	std::vector<Renderable *> _boxes;
+	Box *_cancel = nullptr;
 	std::map<std::string, std::function<void()>> _jobs;
 };
 
