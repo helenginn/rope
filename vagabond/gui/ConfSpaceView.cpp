@@ -32,7 +32,6 @@
 #include "LoopyDisplay.h"
 #include "ProtonNetworkView.h"
 #include "PathsDetail.h"
-#include "EvolveView.h"
 #include "AddModel.h"
 #include "RegionRuleView.h"
 
@@ -522,13 +521,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		}
 	}
 	
-	if (tag == "evolve")
-	{
-		Instance *i = static_cast<Instance *>(button->returnObject());
-		EvolveView *ev = new EvolveView(this, i);
-		ev->show();
-	}
-	
 	if (tag == "refinement_setup")
 	{
 		Instance *i = static_cast<Instance *>(button->returnObject());
@@ -707,7 +699,6 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 	m->addOption("set as reference", "set_as_reference");
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
-	m->addOption("evolve", "evolve");
 #endif
 #ifdef VERSION_MUTATE
 //	m->addOption("mutate", "mutate");
