@@ -95,22 +95,22 @@ void Item::sanityCheckItem(Item *item)
 
 void Item::addItemAfter(Item *item, Item *after)
 {
-	if (after == nullptr)
-	{
-		addItem(item);
-		return;
-	}
-
 	sanityCheckItem(item);
 	
 	auto it = std::find(_items.begin(), _items.end(), after);
 	
-	if (it == _items.end())
+	if (after == nullptr)
+	{
+		it = _items.begin();
+	}
+	else if (it == _items.end())
 	{
 		throw std::runtime_error("Cannot add item after another, isn't here");
 	}
-
-	it++;
+	else
+	{
+		it++;
+	}
 
 	item->setParent(this);
 	_items.insert(it, item);
