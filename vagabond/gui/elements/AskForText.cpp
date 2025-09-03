@@ -21,10 +21,10 @@
 
 AskForText::AskForText(Scene *scene, std::string text, std::string tag,
                        ButtonResponder *sender, TextEntry::Validation v)
-: Modal(scene, 0.6, 0.4), Button(sender)
+: Modal(scene, 0.6, 0.4)
 {
 	setInert(true);
-
+	_sender = sender;
 	Text *t = new Text(text);
 	t->setCentre(0.5, 0.45);
 	addObject(t);
@@ -35,7 +35,6 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	te->setCentre(0.5, 0.5);
 	te->setReturnTag("text");
 	_text = te;
-	_text->HasResponder<Responder<TextEntry>>::setResponder(this);
 	addObject(te);
 
 	addTwoButtons("Cancel", "cancel", "OK", "ok");

@@ -60,8 +60,8 @@ public:
 	int calculateMaximumTorsionSetSize(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs);
 	void hbondSelected(HBondMenu* hbondMenu, const std::vector<HBondManager::HBondPair> &selectedHBonds);
 	void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
-	void reset();
-	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
+	void reset();	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
+
 
 private: 
 	bool _selectFlag = false;
@@ -72,6 +72,9 @@ private:
 	DisplayUnit *_unit = nullptr;
 	AtomMap *_latest = nullptr;
 	bool _first = true;
+	double _minRange = 0; 
+	double _maxRange; 
+	double _numSample = 1;
 	int _colidx = 0;
 	// Minimum value for the slider
 	double _min = -1; 
@@ -79,6 +82,7 @@ private:
 	double _max = 1; 
 	// Step size for the slider
 	double _step = 0.001;
+	
 
 
 

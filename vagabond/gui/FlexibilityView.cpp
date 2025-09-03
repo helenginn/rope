@@ -1,10 +1,10 @@
 #include "FlexibilityView.h"
-
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/AskForRange.h>
 #include <vagabond/gui/HBondMenu.h>
 
 #include <vagabond/core/Instance.h>
@@ -49,6 +49,7 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 		m->addOption("Select h-bonds from file", "selected_hbonds");
 		m->addOption("Create B-factor cloud", "bfactor_cloud");
 		m->addOption("Clear hydrogen bonds", "clear_hbonds");
+		m->addOption("Save sampled structures", "save_samples");
 		m->setup(c.x, c.y);
 		setModal(m);
 
@@ -89,29 +90,97 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 		hbmenu->show();
 	}
 else if (tag == "options_bfactor_cloud")
+{
+	if (!_selectFlag)
 	{
-		if (_selectFlag == true)
+		BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
+		setModal(bch);
+	}
+	else
+	{
+		// Start the range input sequence
+		AskForText *aft = new AskForText(this, "Enter minimum range (default 0):",
+		                                 "range_min", this, TextEntry::Numeric);
+		setModal(aft);
+	}
+}
+else if (tag == "range_min")
+{
+	TextEntry *te = static_cast<TextEntry *>(button);
+	float min = atof(te->scratch().c_str());
+	if (min != min || !isfinite(min))
+	{
+		min = 0;
+	}
+	_minRange = min;
+
+	// Now ask for the max
+	AskForText *aft = new AskForText(this, "Enter maximum range (default num of V columns):",
+	                                 "range_max", this, TextEntry::Numeric);
+	setModal(aft);
+}
+else if (tag == "range_max")
+{
+	TextEntry *te = static_cast<TextEntry *>(button);
+	std::string text = te->scratch();
+	float max = _flex->getVcolumns();
+
+	if (!text.empty())
+	{
+		max = atof(text.c_str());
+		if (max != max || !isfinite(max))
 		{
-			_flex->generateAtomCloud();
-			std::string flexTag = _flex->getFlexTag();
-			DisplayUnit *unitCloud = new DisplayUnit(this);
-			AtomGroup *grp = _instance->currentAtoms();
-			const AtomVector &atoms = grp->atomVector();
-			// for (Atom *atom : atoms)
-			// {
-			// 	WithPos pos = atom->otherPositions(flexTag);
-			// 	atom->setDerivedPositions(pos);
-			// 	Matrix3f cov = atom->otherAnisoBfactors(flexTag);
-			// 	atom->setDerivedAnisoBfactors(cov);
-			// }
-    		showCloud(unitCloud, grp);
-		}
-		else
-		{
-			BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
-			setModal(bch);
+			max = _flex->getVcolumns();  // fallback if garbage typed
 		}
 	}
+	_maxRange = max;
+
+	// Perform calculation
+	_flex->setColRangeUser(_minRange, _maxRange-1);
+	_flex->generateAtomCloud();
+	_flex->calculateFreeEnergy();
+
+	std::string flexTag = _flex->getFlexTag();
+	DisplayUnit *unitCloud = new DisplayUnit(this);
+	AtomGroup *grp = _instance->currentAtoms();
+	const AtomVector &atoms = grp->atomVector();
+	for (Atom *atom : atoms)
+	{
+		WithPos pos = atom->otherPositions(flexTag);
+		atom->setDerivedPositions(pos);
+		Matrix3f cov = atom->otherAnisoBfactors(flexTag);
+	}
+	showCloud(unitCloud, grp);
+}
+else if (tag == "options_save_samples")
+{
+	if (!_selectFlag)
+	{
+		BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
+		setModal(bch);
+	}
+	else
+	{
+		AskForText *aft = new AskForText(this, "How many samples strcutures you want to save?:",
+		                                 "num_samples", this, TextEntry::Numeric);
+		setModal(aft);
+	}
+}
+else if (tag == "num_samples")
+{
+	TextEntry *te = static_cast<TextEntry *>(button);
+	float numSample = atof(te->scratch().c_str());
+	if (numSample != numSample || !isfinite(numSample) || numSample <= 0)
+	{
+		numSample = 1;
+	}
+	_numSample = static_cast<int>(numSample);
+	_flex->setNumSamples(_numSample);
+	_flex->generateAtomCloud();
+	double lambda = 0.5;
+	_flex->saveSampledStructures(_numSample, "sample_structure", lambda);
+}
+
 	Display::buttonPressed(tag, button);
 
 }
@@ -132,10 +201,9 @@ void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& p
 {
     // Add to internal list or perform any other action
     callAddHBonds(pairs);
-    _flex->setColRange(5, false);
-	_flex->addMultipleHBonds(_hBondPairs);
+    // _flex->setColRange(10, true);
+	_flex->processMultipleHBonds();
 
-	// _flex->printHBonds();
 
 }
 
@@ -165,19 +233,16 @@ void FlexibilityView::setup()
 	Display::setup();
 	_flex->prepareResources();
 	// return to main menu of FlexibilityView
-
 	setupSlider();
 	_flex->submitJobAndRetrieve(0.0);
-	// _flex->submitJobAndRetrieve(0.0);
 	makeMenu();
-	// checkHBondSelection();
 }
 
 void FlexibilityView::checkHBondSelection()
 {
     if (_selectFlag) {
        	callAddHBonds(_hBondPairs);
-        _flex->addMultipleHBonds(_hBondPairs);
+        _flex->processMultipleHBonds();
     }
 }
 
@@ -188,6 +253,7 @@ void FlexibilityView::callAddHBonds(const std::vector<HBondManager::HBondPair> &
 		std::cout << "Calling callAddHbonds..." << std::endl;
     	_flex->addHBond(pair);
     }
+    _flex->addVnWBond();
 }
 
 void FlexibilityView::setupSlider()

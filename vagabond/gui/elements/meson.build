@@ -1,6 +1,7 @@
 guielementfiles = [
 cfile,
 'AskYesNo.cpp',
+'AskForRange.cpp',
 'AskToSave.cpp',
 'AskForText.cpp',
 'AskMultipleChoice.cpp',
@@ -56,6 +57,7 @@ cfile,
 'ShaderGets.h',
 
 'AskYesNo.h',
+'AskForRange.h',
 'AskForText.h',
 'BadChoice.h',
 'Box.h',

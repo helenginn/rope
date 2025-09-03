@@ -15,6 +15,7 @@
 #include "Torsion2Atomic.h"
 
 
+
 using Eigen::MatrixXf;
 using Eigen::Matrix3f;
 using Eigen::VectorXf;
@@ -37,7 +38,6 @@ Flexibility::~Flexibility()
 float Flexibility::submitJobAndRetrieve(float weight) 
 {
 
-    std::cout << "For debugging: In submitJobAndRetrieve, weight is =  " << weight << std::endl;
 	submitJob(weight);
 
 	Result *r = _resources.calculator->acquireObject();
@@ -58,12 +58,16 @@ void Flexibility::generateAtomCloud()
         atom->removeOtherPosition(_flexTag); 
     }
 
-// for (float weight = -3.0f; weight <= 3.01f; weight += 0.2f)
-    // for (float weight = -1f; weight <= 1.05f; weight += 0.5f)
-    for (float weight = -0.5; weight <= 0.5001; weight += 0.1)
+    // for (float weight = -0.5; weight <= 0.5001; weight += 0.1)
+    std::vector<float> weights = { -3.0f, 0.0f, 3.0f };
+    for (float weight : weights)
     {
         atomCloud(weight, atoms);
     }
+
+    std::cout << "Samples in first atom: "
+          << atoms.front()->otherPositions(_flexTag).samples.size()
+          << std::endl;
 
     std::cout << "End of B-factor estimation!" << std::endl;
     std::cout << "*** Saving position to sampled_positions.csv... ***" << std::endl;
@@ -73,14 +77,20 @@ void Flexibility::generateAtomCloud()
     saveBfactorsToCSV("bfactors.csv", _flexTag, atoms);
 }
 
+
+// void Flexibility::generateSamples()
+// {
+//     generateAtomCloud();
+// }
+
+
+
 void Flexibility::atomCloud(float weight, const AtomVector &atoms)
 {
-    for (int i = 0; i <= 5; ++i)
+    // change here witht the values that you get from the FlexView (give by the user)
+    for (int i = _minCol; i <= _maxCol; ++i)
     {
-        float sigma = _singularValues[i];
-        float scaled_weight = _lambda * weight / (sigma + _epsilon);
-        setColIdx(i);
-        // submitJobAndRetrieve(weight);
+        _colIdx = i;
         submitJobAndRetrieve(weight);
         for (Atom *atom : atoms)
         {
@@ -88,7 +98,6 @@ void Flexibility::atomCloud(float weight, const AtomVector &atoms)
             atom->addOtherPosition(_flexTag, vec);   
         }
     }
-
 
 }
 
@@ -187,7 +196,6 @@ void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector
                     << "AVG: (" << avg.x << ", " << avg.y << ", " << avg.z << "), " << std::endl;
             Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
             std::cout << "COV:\n" << covMat.format(cleanFmt) << "\n";
-            _directCov = calculateCovSVD(covMat);
             // Regularize the covariance matrix
             float epsilon = 0.01f; // in Å²
             // covMat += epsilon * Eigen::Matrix3f::Identity();
@@ -198,7 +206,6 @@ void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector
         }
 
 }
-
 
 
 Eigen::Matrix3f Flexibility::covariance(const std::vector<glm::vec3> &samples)
@@ -221,24 +228,6 @@ Eigen::Matrix3f Flexibility::covariance(const std::vector<glm::vec3> &samples)
     return cov;
 }
 
-Eigen::Matrix3f Flexibility::calculateCovSVD(Eigen::Matrix3f covMtx)
-{
-    Eigen::MatrixXf covDynamic = covMtx;
-    Eigen::BDCSVD<Eigen::MatrixXf> svdCov;
-    svdCov.compute(covDynamic, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-    Eigen::MatrixXf U = svdCov.matrixU();
-    Eigen::VectorXf S = svdCov.singularValues();
-    Eigen::MatrixXf V = svdCov.matrixV();
-    Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
-    std::cout << "singularValues of COV:\n" << S.format(cleanFmt) << "\n";
-
-    // Reconstruct the covariance matrix from SVD
-    Eigen::Matrix3f _directCov = U * S.asDiagonal() * V;
-    std::cout << "Reconstructed COV from SVD:\n" << _directCov.format(cleanFmt) << "\n";
-
-    return _directCov;
-}
 
 // Prepares resources for flexibility calculations
 void Flexibility::prepareResources() 
@@ -257,20 +246,32 @@ void Flexibility::prepareResources()
 	_resources.sequences->prepareSequences(); // Prepares sequences
 }
 
+
 void Flexibility::calculateTorsionFlexibility(CoordManager* manager) 
 {
     std::cout << "Starting calculating torsion Flexibility" << std::endl;
+
+
     auto calculateFlexibility = [this](const Coord::Get &get, const int &idx)
     {
         float jobWeight = get(0);
-        // std::cout << "--- Setting torsion fetcher for colIdx = " << _colIdx << " ---" << std::endl;
-        return _allTorsionsHistory[_colIdx][idx]*jobWeight;
+
+        if (_colIdx < 0 || _colIdx >= _allTorsions.size())
+        {
+            std::cerr << "[ERROR] Invalid colIdx = " << _colIdx 
+                      << " with _allTorsions.size() = " 
+                      << _allTorsions.size() << std::endl;
+            return 0.0f;
+        }
+
+        float val = _allTorsions[_colIdx][idx] * jobWeight;
+        return val;
     };
+
     manager->setTorsionFetcher(calculateFlexibility);
 
     std::cout << "Finished calculating torsion Flexibility" << std::endl;
 }
-
 
 
 // Submits a flexibility calculation job
@@ -315,7 +316,7 @@ void Flexibility::loadHBondsFromManager(HBondManager* hbondManager)
 }
 
 
-void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
+void Flexibility::processMultipleHBonds() 
 {
 /**
  * @brief Adds multiple hydrogen bonds (HBonds) and updates flexibility calculations.
@@ -333,22 +334,14 @@ void Flexibility::addMultipleHBonds(const std::vector<HBondManager::HBondPair> &
  * @param donorAcceptorPairs A vector of HBondPair objects containing donor and acceptor atom descriptors.
  */
 
-
-    if (donorAcceptorPairs.empty()) 
+    if (_hbonds.size() == 0) 
     {
         std::cerr << "Error: No HBonds to add." << std::endl;
         return;
     }
     // Calculate the Jacobian matrix
     buildJacobianMatrix();
-
-    // Print the Jacobian matrix
-    std::cout << "Jacobian Matrix:" << std::endl;
-    // std::cout << _jacobMtx << std::endl;
-
     // calculate SVD matrices 
-    _globalTorsionVector.assign(_globalTorsionSet.begin(), _globalTorsionSet.end());
-    calculateSVD();
     calculateFlexWeights();
 
     // Gets the coordinate manager
@@ -488,6 +481,85 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     _globalTorsionSet.insert(hbe.TorsionVec.begin(), hbe.TorsionVec.end());
 }
 
+double getVdWRadius(const Atom* atom) 
+{
+    std::string atomName = atom->atomName();
+    char elem = atomName[0]; 
+
+    if (elem == 'C') return 1.70;
+    if (elem == 'S') return 1.80;
+
+    // not hydrophobic → return 0.0 to skip
+    return 0.0;
+}
+
+void Flexibility::addVnWBond()
+{
+    // not sure yet if cutoff distanc is correct maybe this should change
+    double cutoffD = 0.25; // from KGS: Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
+    int count_vdW = 0;
+
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    
+    // for debugging printing, to be removed: 
+    bool scaleChecked = false;
+    int printed = 0;
+
+
+    for (size_t i = 0; i < atoms.size()-1; i++)
+    {
+        Atom *atom_i = atoms[i];
+        int block_i = accessAtomBlock(atom_i);
+        double r_i = getVdWRadius(atom_i);
+        if (r_i <= 0.0) continue; // skip non-hydrophobic atoms
+        glm::vec3 pos_i = blocks[block_i].my_position();
+        
+
+        for (size_t j = i+1; j < atoms.size(); j++)
+        {
+            Atom *atom_j = atoms[j];
+            int block_j = accessAtomBlock(atom_j);
+            double r_j = getVdWRadius(atom_j);
+            if (r_j <= 0.0) continue;
+            glm::vec3 pos_j = blocks[block_j].my_position();
+            
+
+            // calculate distance between the two atoms
+            glm::vec3 diff = pos_i - pos_j;
+            float dist_sq = glm::dot(diff, diff);
+
+            double threshold = r_i + r_j + cutoffD;
+
+            // debug print to inspect units / values for the first few checks
+            if (!scaleChecked && printed < 6) {
+                std::cout << "[vdW-debug] pair (" << i << "," << j << ") dist_sq=" << dist_sq
+                          << " r_i=" << r_i << " r_j=" << r_j
+                          << " rsum=" << r_i + r_j << " cutoff_ij=" << threshold << std::endl;
+                printed++;
+                if (printed >= 6) scaleChecked = true;
+            }
+
+            if (dist_sq < threshold*threshold)
+            {
+                VdWBondEntity vdw;
+                vdw.Atom1 = atom_i;
+                vdw.atomIdx1 = block_i;
+                vdw.Atom2 = atom_j;
+                vdw.atomIdx2 = block_j;
+                vdw.startDist = glm::length(diff);
+                vdw.contactDist =  threshold;
+                vdw.TorsionVec = lastCommonAncestorIdx(block_i, block_j);
+
+                _VdWBonds.push_back(vdw);
+
+                count_vdW++;
+            }
+        }
+    }
+    std::cout << "Total vdW bonds found: " << count_vdW << std::endl;
+
+}
 
 
 float Flexibility::calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3) 
@@ -521,20 +593,33 @@ float Flexibility::calculateAngle(const glm::vec3& vector1, const glm::vec3& vec
 
 int Flexibility::accessAtomBlock(Atom* atom) 
 {
-    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
-    for (int i = 0; i < blocks.size(); i++) 
+    auto lookup_atom = [this, atom]()
     {
-        const AtomBlock& block = blocks[i];
-
-        if (block.atom == atom) 
+        if (_atom2Block.count(atom) == 0) 
         {
-            // Atom found within the block
-            return i; // Return the index of the block
+            return -1;
         }
+        return _atom2Block[atom];
+    };
+
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+
+    if (_atom2Block.size())
+    {
+        return lookup_atom();
     }
 
-    // Atom not found in any block
-    return -1;
+    for (int i = 0; i < blocks.size(); i++) 
+    {
+
+        const AtomBlock& block = blocks[i];
+
+        if (block.atom)
+        {
+            _atom2Block[block.atom] = i;
+        }
+    }
+    return lookup_atom();
 }
 
 
@@ -581,26 +666,60 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector)
     return block_idx;
 }
 
+// void Flexibility::buildJacobianMatrix()
+// {
+//     // Get the number of torsions and values
+//     int numCol = _hbonds.size();
+//     std::vector<int> torsionVector = getGlobalTorsionVector();
+//     int numRow = _globalTorsionSet.size();
+
+//     // set up the JacobianMatrix
+//     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
+//     jacobianMatrix.setZero();
+//     // Loop through the Jacobian matrix and print elements
+//     for (int i = 0; i < numRow; ++i) 
+//     {
+//         for (int j = 0; j < numCol; ++j) 
+//         {
+//             int torsionIdx = torsionVector[i];
+//             HBondEntity& hbe = _hbonds[j];
+
+//             const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+//             glm::vec3 APos = blocks[torsionIdx].my_position(); 
+//             glm::vec3 BPos = blocks[torsionIdx].inherit; 
+//             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
+//             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
+
+//             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+//             jacobianMatrix(i,j) = derivative;
+//         }
+//     }
+//     _jacobMtx = jacobianMatrix;
+// }
+
 void Flexibility::buildJacobianMatrix()
 {
-    // Get the number of torsions and values
-    int numCol = _hbonds.size();
-    std::cout << "Number of columns of JacMat = " << numCol << std::endl;
-    std::vector<int> globalTorsionVector(_globalTorsionSet.begin(), _globalTorsionSet.end());
+    // Columns = total number of constraints (Hbonds + vdW bonds)
+    int numCol = _hbonds.size() + _VdWBonds.size();
+
+    // Rows = torsion angles
+    std::vector<int> torsionVector = getGlobalTorsionVector();
     int numRow = _globalTorsionSet.size();
-    std::cout << "Number of rows of JacMat = " << numRow << std::endl;
+
     // set up the JacobianMatrix
     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
     jacobianMatrix.setZero();
-    // Loop through the Jacobian matrix and print elements
+
+    const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+
+    // --- Hydrogen bonds ---
     for (int i = 0; i < numRow; ++i) 
     {
-        for (int j = 0; j < numCol; ++j) 
+        int torsionIdx = torsionVector[i];
+        for (int j = 0; j < _hbonds.size(); ++j) 
         {
-            int torsionIdx = globalTorsionVector[i];
             HBondEntity& hbe = _hbonds[j];
 
-            const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
             glm::vec3 APos = blocks[torsionIdx].my_position(); 
             glm::vec3 BPos = blocks[torsionIdx].inherit; 
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
@@ -610,19 +729,38 @@ void Flexibility::buildJacobianMatrix()
             jacobianMatrix(i,j) = derivative;
         }
     }
+
+    // --- VdW bonds ---
+    for (int i = 0; i < numRow; ++i) 
+    {
+        int torsionIdx = torsionVector[i];
+        for (int j = 0; j < _VdWBonds.size(); ++j) 
+        {
+            VdWBondEntity& vdw = _VdWBonds[j];
+
+            glm::vec3 APos = blocks[torsionIdx].my_position(); 
+            glm::vec3 BPos = blocks[torsionIdx].inherit; 
+            glm::vec3 CPos = blocks[vdw.atomIdx1].my_position(); 
+            glm::vec3 DPos = blocks[vdw.atomIdx2].my_position(); 
+
+            float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+            jacobianMatrix(i, _hbonds.size() + j) = derivative;
+        }
+    }
+
     _jacobMtx = jacobianMatrix;
 }
 
-void Flexibility::calculateSVD() 
+SVDResult Flexibility::calculateSVD() const
 {
     MatrixXf jacobMtrT = _jacobMtx.transpose();
-    BDCSVD<MatrixXf> svdJac = jacobMtrT.bdcSvd();
-    svdJac.compute(jacobMtrT, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    _U = svdJac.matrixU();
-    _singularValues = svdJac.singularValues();
-    _V = svdJac.matrixV();
-     std::cout << "nullspace matrix size: " << _V.size() << std::endl;
+    BDCSVD<MatrixXf> svd(jacobMtrT, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
+    return {
+        svd.matrixU(),
+        svd.singularValues(),
+        svd.matrixV()
+    };
 }
 
 
@@ -630,57 +768,57 @@ void Flexibility::calculateFlexWeights()
 {
     std::cout << "Calculating flex weights..." << std::endl;
 
-    // Get all the torsions of the protein
+    SVDResult svd = calculateSVD();
+    _vSize = static_cast<int>(svd.V.cols());
+    _V = svd.V;
+    _S = svd.singularValues;
+    std::vector<int> torsionVector = getGlobalTorsionVector();
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
-
-    //try
-    std::vector<float> weightColumn(_V.rows());
-    _allTorsions = std::vector<float>(totalTorsionNum, 0.0f); // Initialize with zeros
-    // Debug size of _globalTorsionVector
-    if (_globalTorsionVector.size() != weightColumn.size())
+    if (torsionVector.size() != svd.V.rows())
     {
-        std::cerr << "Error: Size mismatch between _globalTorsionVector ("
-                  << _globalTorsionVector.size() << ") and weightColumn ("
-                  << weightColumn.size() << ")." << std::endl;
+        std::cerr << "Error: Size mismatch between globalTorsionVector ("
+                  << torsionVector.size() << ") and V rows ("
+                  << svd.V.rows() << ")." << std::endl;
         return;
     }
-    // finish try
-    
-    std::vector<std::vector<float>> V_columns; // To store all v_i vectors
-
-    // Extract columns from _V and store as vectors
-    for (int colIdx = 0; colIdx < _V.cols(); ++colIdx)
+    int maxCol = _useSingleColumn ? _colIdx + 1 : std::min(_colIdx + 1, _vSize);
+    for (int colIdx = 0; colIdx < _vSize; ++colIdx)
     {
-        std::vector<float> v_i;
-        // this can be used to select a specific column of the _V. 
-        // could be used instead of colIdx
-        int selectedCol = _V.cols() - 1; 
-
-        for (int rowIdx = 0; rowIdx < _V.rows(); ++rowIdx)
-        {
-            // float value = _V(rowIdx, colIdx);
-            float value = _V(rowIdx, selectedCol);
-            v_i.push_back(value);
-        }
-        V_columns.push_back(v_i);
-
-        // Assign weights from this column to _allTorsions
-        for (int i = 0; i < _globalTorsionVector.size(); ++i)
-        {
-            int index = _globalTorsionVector[i];
-            if (index < 0 || index >= totalTorsionNum)
-            {
-                std::cerr << "Error: Index out of bounds in _globalTorsionVector: "
-                          << index << std::endl;
-                continue;
-            }
-            _allTorsions[index] = v_i[i];
-        }
-        _allTorsionsHistory.push_back(_allTorsions);
+        std::vector<float> v_i = extractVColumn(svd.V, colIdx);
+    
+        std::vector<float> allTorsions = assignWeightsToTorsions(v_i, torsionVector);
+        _allTorsions.push_back(allTorsions);
     }
-    std::cout << "V_columns.size()" << std::endl;
-    std::cout << V_columns.size() << std::endl;
+}
 
+std::vector<float> Flexibility::extractVColumn(const Eigen::MatrixXf &V, int colIdx) const
+{
+    std::vector<float> column(V.rows());
+    for (int rowIdx = 0; rowIdx < V.rows(); ++rowIdx)
+    {
+        column[rowIdx] = V(rowIdx, colIdx);
+    }
+    return column;
+}
+
+std::vector<float> Flexibility::assignWeightsToTorsions(const std::vector<float>& v_i,
+                                          const std::vector<int>& torsionVector)
+{
+    int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
+    std::vector<float> allTorsions(totalTorsionNum, 0.0f);
+    for (int i = 0; i < torsionVector.size(); ++i)
+    {
+        int index = torsionVector[i];
+        if (index < 0 || index >= totalTorsionNum)
+        {
+            std::cerr << "Error: Index out of bounds in globalTorsionVector: "
+                      << index << std::endl;
+            continue;
+        }
+        allTorsions[index] = v_i[i];
+
+    }
+    return allTorsions;
 }
 
 
@@ -710,7 +848,207 @@ void Flexibility::printHBonds() const
 }
 
 
+std::vector<int> Flexibility::sampleColumnIndices(int N, int sampleCount, double lambda)
+{
+    std::vector<double> weights(N);
+    for (int i=0; i<N; i++)
+    {
+        weights[i] = std::exp(lambda * i);
+    }
+    // normalise weights 
+    double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
+    for (auto& w : weights) w /= sum;
+
+    // compute CDF
+    std::vector<double> cdf(N);
+    cdf[0] = weights[0];
+    for (int i = 1; i < N; ++i)
+        cdf[i] = cdf[i - 1] + weights[i];
+    // Sample indices
+    std::vector<int> sampled;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+    std::cout << "indices";
+    while (sampled.size() < sampleCount)
+    {
+        double r = dis(gen);
+        auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
+        int idx = std::distance(cdf.begin(), it);
+        std::cout << idx << " ";  
+        sampled.push_back(idx);
+    }
+    std::cout << std::endl;
+    return sampled;
 
 
+}
+
+void Flexibility::saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda)
+{
+    std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        // submitJobRandom(colIdx);
+        _colIdx = indices[i];
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(-10.0, 10.0);
+        double randomWeight = dis(gen);
+        submitJob(randomWeight);
+        Result *r = _resources.calculator->acquireObject();
+        r->transplantPositions(false);  // Or true, depending on what you want saved
+
+        std::ostringstream oss;
+        oss << baseFileName << "_" << i << ".pdb";
+        _instance->currentAtoms()->writeToFile(oss.str());
+
+        r->destroy();
+    }
+}
+
+void Flexibility::submitJobRandom(int colIdx)
+{
+    if (colIdx < 0 || colIdx >= _vSize) 
+    {
+        std::cerr << "Invalid column index for _V: " << colIdx << std::endl;
+        return;
+    }
+
+    std::vector<int> torsionVector = getGlobalTorsionVector();
+    std::vector<float> v_i = extractVColumn(_V, colIdx);
+    std::cout << "submitJobRandom: Using column index " << colIdx 
+          << " from _V (length = " << v_i.size() << ")" << std::endl;
+    std::vector<float> allTorsions = assignWeightsToTorsions(v_i, torsionVector);
+    std::cout << "submitJobRandom: Assigned weights to " << allTorsions.size() 
+              << " torsions. First 5 weights: ";
+    std::cout << std::endl;
+    BaseTask *first_hook = nullptr;
+    CalcTask *final_hook = nullptr;
+    BondCalculator *const &calculator = _resources.calculator;
+    BondSequenceHandler *sequences = _resources.sequences;
+
+    Task<Result, void *> *submit_result = calculator->actOfSubmission(0);
+    Flag::Calc calc = Flag::Calc(Flag::DoTorsions | Flag::DoSuperpose);
+
+    sequences->calculate(calc, allTorsions, &first_hook, &final_hook);
+    BondSequence* firstSequence = sequences->getSequences()[0];
+    Flag::Extract gets = Flag::Extract(Flag::AtomVector);
+
+    Task<BondSequence *, void *> *let_sequence_go = sequences->extract(gets, submit_result, final_hook);
+    _resources.tasks->addTask(first_hook);
+}
 
 
+void Flexibility::calculateFreeEnergy()
+{
+// check if svd has already been calculated adn _Vsize and _V has been assinged: 
+// this is done in calculateFlexWeights, called in processMultipleHBonds
+
+
+    if (_V.size() == 0 || _S.size() == 0)
+    {
+        std::cerr << "Error: SVD has not been computed. "
+                  << "Please run calculateFlexWeights() or equivalent first." 
+                  << std::endl;
+    }
+    std::cout << "Calculating free energies for " << _vSize << " modes..." << std::endl;
+
+    int numModes = _S.size();;
+    std::vector<double> enthalpies(numModes);
+    std::vector<double> entropies(numModes);
+    std::vector<double> freeEnergies(numModes);
+
+    for (int i = 0; i < numModes; ++i)
+    {
+        // pick up singular values for matrix _S:
+        double sigma_i = _S(i);
+        double enthalpy = computeEnthalpy(sigma_i);
+        enthalpies[i] = enthalpy;
+
+        std::vector<float> v_i = extractVColumn(_V, i);
+        double entropy = computeEntropy(v_i);
+        entropies[i] = entropy;
+
+        // calucate free energy
+        double c_T = 1.0;
+        freeEnergies[i] = enthalpy - c_T * entropy;
+    }
+    saveFreeEnergyCSV("enthalpy_entropy_energy.csv", enthalpies, entropies, freeEnergies);
+}
+
+double Flexibility::computeEnthalpy(double sigma)
+{
+    const double k = 3.24; // kcal/mol scaling factor
+    double maxSingVal = _S.maxCoeff();
+    return (maxSingVal > 0.0) ? sigma / maxSingVal : 0.0;
+}
+
+double Flexibility::computeEntropy(const std::vector<float>& v_i)
+{
+    double sqSum = 0.0;
+    std::vector<double> kappa(v_i.size());
+    for (size_t j = 0; j < v_i.size(); j++)
+    {
+        kappa[j] = v_i[j] * v_i[j];
+        sqSum += kappa[j];
+    }
+
+    if (sqSum > 0)
+    {
+        for (size_t j = 0; j < kappa.size(); j++)
+        {
+            kappa[j] /= sqSum;
+        }
+    }
+
+    // Shannon entropy
+    double eVal = 0.0;
+    for (size_t j = 0; j < kappa.size(); j++)
+    {
+        if (kappa[j] > 0)
+        {
+            eVal += -kappa[j] * log(kappa[j]);
+        }
+    }
+
+    // normalized collectivity measure: between [1/N, 1]
+    return (1.0 / (double)kappa.size()) * exp(eVal);
+
+}
+
+void Flexibility::saveFreeEnergyCSV(const std::string &filename,
+                                    const std::vector<double> &enthalpies,
+                                    const std::vector<double> &entropies,
+                                    const std::vector<double> &freeEnergies)
+{
+    if (enthalpies.size() != entropies.size() || enthalpies.size() != freeEnergies.size())
+    {
+        std::cerr << "Error: Mismatched vector sizes for free energy data." << std::endl;
+        return;
+    }
+
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        std::cerr << "Error: Could not open file " << filename << " for writing." << std::endl;
+        return;
+    }
+
+    // Write header
+    file << "Mode,Enthalpy,Entropy,FreeEnergy\n";
+
+    // Write values with 6 decimal places
+    file << std::fixed << std::setprecision(6);
+    for (size_t i = 0; i < enthalpies.size(); ++i)
+    {
+        file << i << "," 
+             << enthalpies[i] << "," 
+             << entropies[i] << "," 
+             << freeEnergies[i] << "\n";
+    }
+
+    file.close();
+    std::cout << "Free energy data saved to " << filename << std::endl;
+}

@@ -7,10 +7,17 @@
 #include <vagabond/core/TorsionData.h>
 #include <stdlib.h>
 #include <atomic>
+#include <map>
 #include "StructureModification.h"
 #include "HBondManager.h"
 
 class ClusterSVD;
+
+struct SVDResult {
+    Eigen::MatrixXf U;
+    Eigen::VectorXf singularValues;
+    Eigen::MatrixXf V;
+};
 
 class Flexibility : public Display, public StructureModification {
 public:
@@ -31,6 +38,17 @@ public:
         std::vector<int> TorsionVec;
     }; 
 
+    struct VdWBondEntity
+    {
+        Atom* Atom1;         // first atom
+        int atomIdx1;        // index in blocks
+        Atom* Atom2;         // second atom
+        int atomIdx2;        // index in blocks
+        float startDist;     // initial distance
+        float contactDist;   // sum of vdW radii + tolerance
+        std::vector<int> TorsionVec;  // torsions influencing this pair
+    };
+
     // === GUI-INTERFACED FUNCTIONS ===
     float submitJobAndRetrieve(float weight);
     void generateAtomCloud();
@@ -38,14 +56,20 @@ public:
     {
         return  _flexTag;
     }
-    void setColRange(int chosen_colIdx, bool singleColumn = true)
+    void setColRangeUser(float min, float max)
     {
-        _colIdx = chosen_colIdx;
-        _useSingleColumn = singleColumn;
+        _minCol = min;
+        _maxCol = max;
     }
-    void addMultipleHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs);
+    void setNumSamples(float num)
+    {
+        _numSamples = num;;
+    }
+
+    void processMultipleHBonds();
     void prepareResources();
     void addHBond(const HBondManager::HBondPair &hbondPair);
+    void addVnWBond();
 
     // === FRONT-END CONTROL AND CONFIG ===
     void setChosenWeight(const float &weight)
@@ -73,6 +97,11 @@ public:
         _tData = data;
     }
 
+    int getVcolumns()
+    {
+        return _vSize;
+    }
+
     // === HBOND HANDLING ===
     void printHBonds() const;
     void clearHBonds();
@@ -83,15 +112,34 @@ public:
     // === FLEXIBILITY CALCULATION ===
     void submitJob(float weight);
     void calculateFlexWeights();
+    std::vector<int> getGlobalTorsionVector() const 
+    {
+        return std::vector<int>(_globalTorsionSet.begin(), _globalTorsionSet.end());
+    }
     void calculateTorsionFlexibility(CoordManager* manager);
     void buildJacobianMatrix();
-    void calculateSVD();
+    SVDResult calculateSVD() const;
+    std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,
+                                const std::vector<int>& torsionVector);
+    std::vector<float> extractVColumn(const Eigen::MatrixXf &V, int colIdx) const;
+    std::vector<int> sampleColumnIndices(int N, int sampleCount, double lambda);
+    void saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda);
+
+    void calculateFreeEnergy();
+    double computeEnthalpy(double sigma);
+    double computeEntropy(const std::vector<float>& v_i);
 
     // === OUTPUT & ANALYSIS ===
     void atomCloud(float weight, const AtomVector &atoms);
     void savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
     void calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms);
     void saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
+    void saveSampledStructures(int numSamples, const std::string &baseFileName);
+    void submitJobRandom(int colIdx);
+    void saveFreeEnergyCSV(const std::string &filename,
+                                    const std::vector<double> &enthalpies,
+                                    const std::vector<double> &entropies,
+                                    const std::vector<double> &freeEnergies);
 
     // === UTILITY ===
     int accessAtomBlock(Atom* atom);
@@ -104,7 +152,9 @@ public:
     std::vector<int> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
     int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
     Eigen::Matrix3f covariance(const std::vector<glm::vec3> &samples);
-    Eigen::Matrix3f calculateCovSVD(Eigen::Matrix3f covMtx);
+
+
+    // === DEBUGGING ===
 
 protected:
     float _chosenWeight = 0.5;
@@ -116,24 +166,27 @@ private:
     bool _displayTargets = false;
     bool _cloudFlag = false;
     bool _useSingleColumn = false;
+    std::map<Atom*, int> _atom2Block;
 
     std::vector<HBondEntity> _hbonds;
+    std::vector<VdWBondEntity> _VdWBonds;
     std::set<int> _globalTorsionSet;
-    std::vector<int> _globalTorsionVector;
-    std::vector<float> _allTorsions;
-    std::vector<std::vector<float>> _allTorsionsHistory;
+    std::vector<std::vector<float>> _allTorsions;
+    std::string _flexTag;
 
     Eigen::MatrixXf _jacobMtx;
-    Eigen::MatrixXf _U;
-    Eigen::VectorXf _singularValues;
     Eigen::MatrixXf _V;
-    Eigen::Matrix3f _directCov;
+    Eigen::VectorXf _S;
 
     ClusterSVD *_cluster = nullptr;
     TorsionData *_tData = nullptr;
 
     int _colIdx;
-    std::string _flexTag;
+    int _vSize;
+    
+    float _minCol = 0;
+    float _maxCol = 0;
+    float _numSamples = 1;
 };
 
 #endif
