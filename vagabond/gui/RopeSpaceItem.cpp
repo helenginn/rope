@@ -618,3 +618,8 @@ void RopeSpaceItem::setMustCluster(bool recursive)
 		ropeSpaceItem(i)->setMustCluster(recursive);
 	}
 }
+
+void RopeSpaceItem::select(bool left)
+{
+	_confView->setSelectedSpace(this);
+}

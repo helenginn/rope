@@ -43,6 +43,12 @@ public:
 
 	virtual void buttonPressed(std::string tag, Button *button);
 
+	LineGroup *const &topLevel() const
+	{
+		return _topLevel;
+	}
+
+	void reorganiseHeights();
 protected:
 	std::map<Item *, ItemLine *> _itemMap;
 private:
@@ -51,7 +57,6 @@ private:
 	void initialise(Item *item, LineGroup *top);
 	Menu *prepareMenu();
 	void setupGroups();
-	void reorganiseHeights();
 	void reorganiseGroups();
 	void resetGroups();
 

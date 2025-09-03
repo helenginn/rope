@@ -132,7 +132,15 @@ void ItemLine::addArrow()
 		ImageButton *b = new ImageButton("assets/images/triangle.png", _group);
 		b->rescale(0.025, 0.025);
 		b->setLeft(start_indent + xy().x, 0.0 + xy().y);
-		b->setReturnTag("toggle_" + _item->tag());
+		
+		auto toggle_button = [this]()
+		{
+			_item->toggleCollapsed();
+			_group->topLevel()->reorganiseHeights();
+		};
+
+//		b->setReturnTag("toggle_" + _item->tag());
+		b->setReturnJob(toggle_button);
 		addObject(b);
 		_displayCollapse = false;
 		_triangle = b;
@@ -206,7 +214,6 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	else if (!text && _item->isSelectable())
 	{
 		TextButton *tb = new TextButton(_item->displayName(), parent);
-		tb->setReturnTag("select_" + _item->tag());
 		tb->setReturnJob([this, tb]() 
 		{
 			_item->select(tb->left());

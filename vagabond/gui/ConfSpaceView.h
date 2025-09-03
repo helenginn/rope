@@ -84,6 +84,12 @@ public:
 
 	void assignRopeSpace(RopeSpaceItem *item);
 	
+	void setSelectedSpace(RopeSpaceItem *rsi)
+	{
+		_selected = rsi;
+		showCurrentCluster();
+	}
+	
 	void setMadePaths()
 	{
 		_madePaths = true;

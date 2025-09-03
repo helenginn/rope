@@ -56,17 +56,6 @@ public:
 	{
 		return _selectable;
 	}
-	
-	static Item *const itemForTag(const std::string &tag)
-	{
-		std::unique_lock<std::mutex> lock(_tagMutex);
-		return _tag2Item[tag];
-	}
-
-	const std::string &tag() const
-	{
-		return _tag;
-	}
 
 	virtual std::string displayName() const
 	{
@@ -256,7 +245,6 @@ private:
 	void resolveDeletion();
 	
 	void readdressParents();
-	std::string issueNextTag();
 	
 	void setParent(Item *item)
 	{
@@ -269,11 +257,6 @@ private:
 	void addAllToList(std::vector<Item *> &list);
 	void deselectAllCascade();
 	
-	std::string _tag;
-	
-	static int _tagNum;
-	static std::map<std::string, Item *> _tag2Item;
-	static std::mutex _tagMutex;
 	static std::set<Item *> _deletedItems;
 
 	bool _editable = false;

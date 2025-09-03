@@ -20,38 +20,16 @@
 #include <iostream>
 #include "Item.h"
 
-int Item::_tagNum = 0;
-std::map<std::string, Item *> Item::_tag2Item{};
 std::set<Item *> Item::_deletedItems;
-std::mutex Item::_tagMutex;
 
 Item::Item()
 {
-	issueNextTag();
-}
 
-/*
-Item::Item(const Item &other) : HasResponder<Responder<Item>>(other)
-{
-	issueNextTag();
-	_name = other._name;
 }
-*/
 
 Item::~Item()
 {
-	std::unique_lock<std::mutex> lock(_tagMutex);
-	_tag2Item.erase(_tag);
-}
 
-std::string Item::issueNextTag()
-{
-	std::unique_lock<std::mutex> lock(_tagMutex);
-	_tagNum++;
-	std::string tag = "tag_" + std::to_string(_tagNum);
-	_tag = tag;
-	_tag2Item[_tag] = this;
-	return tag;
 }
 
 bool Item::hasAncestor(Item *item)
@@ -311,8 +289,6 @@ void Item::readdress()
 
 void Item::readdressParents()
 {
-	issueNextTag();
-
 	for (Item *item : _items)
 	{
 		item->setParent(this);

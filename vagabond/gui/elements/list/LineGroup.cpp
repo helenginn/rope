@@ -216,15 +216,6 @@ void LineGroup::buttonPressed(std::string tag, Button *button)
 		_scene->setModal(menu);
 		return;
 	}
-	std::string toggle = Button::tagEnd(tag, "toggle_");
-
-	if (toggle.length() > 0)
-	{
-		Item *item = Item::itemForTag(toggle);
-		item->toggleCollapsed();
-		_topLevel->reorganiseHeights();
-		return;
-	}
 
 	if (_sender)
 	{

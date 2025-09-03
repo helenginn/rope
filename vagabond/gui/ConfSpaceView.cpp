@@ -585,16 +585,6 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 			menu->show();
 		}
 	}
-	
-	std::string select = Button::tagEnd(tag, "select_");
-	
-	if (select.length())
-	{
-		Item *item = Item::itemForTag(select);
-		RopeSpaceItem *rsi = static_cast<RopeSpaceItem *>(item);
-		_selected = rsi;
-		showCurrentCluster();
-	}
 
 	Scene::buttonPressed(tag, button);
 }

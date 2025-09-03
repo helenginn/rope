@@ -109,6 +109,8 @@ public:
 	virtual void buttonPressed(std::string tag, Button *button);
 	void deleteAxes();
 	virtual Menu *rightClickMenu();
+
+	virtual void select(bool left);
 protected:
 private:
 	void setFixedTitle(const std::string &title)
