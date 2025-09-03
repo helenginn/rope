@@ -31,6 +31,8 @@ public:
 	ScrollBox();
 	
 	void setContent(Box *box);
+	// pos.y must be between frac[0] and frac[2]
+	// pos.x must be between frac[1] and frac[3]
 	void setBounds(glm::vec4 frac);
 
 	virtual void finishedDragging(std::string tag, double x, double y);
