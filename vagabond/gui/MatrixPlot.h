@@ -30,6 +30,7 @@ class MatrixPlot : public Image
 {
 public:
 	MatrixPlot(PCA::Matrix &mat, std::mutex &mutex);
+	MatrixPlot(PCA::Matrix &mat);
 
 	virtual void update();
 	virtual bool mouseOver();
@@ -59,7 +60,7 @@ private:
 	void setup();
 
 	PCA::Matrix &_mat;
-	std::mutex &_mutex;
+	std::mutex *_mutex{};
 
 	float _xProp = 1;
 	float _yProp = 1;
