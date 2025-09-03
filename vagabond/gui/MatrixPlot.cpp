@@ -23,8 +23,19 @@
 #include <vagabond/gui/ColourLegend.h>
 #include <vagabond/core/Environment.h>
 
+MatrixPlot::MatrixPlot(PCA::Matrix &mat) 
+: Image(Environment::matrixBackgroundFilename()), _mat(mat)
+{
+	_legend = new ColourLegend(Cluster4x, true, nullptr);
+	_legend->disableButtons();
+
+	clearVertices();
+	setup();
+}
+
+
 MatrixPlot::MatrixPlot(PCA::Matrix &mat, std::mutex &mutex) 
-: Image(Environment::matrixBackgroundFilename()), _mat(mat), _mutex(mutex)
+: Image(Environment::matrixBackgroundFilename()), _mat(mat), _mutex(&mutex)
 {
 	_legend = new ColourLegend(Cluster4x, true, nullptr);
 	_legend->disableButtons();
@@ -48,10 +59,13 @@ void MatrixPlot::update()
 		lock.unlock();
 	}
 
-	std::unique_lock<std::mutex> datalock(_mutex, std::defer_lock);
-	if (datalock.try_lock())
+	if (_mutex)
 	{
-		updateColours();
+		std::unique_lock<std::mutex> datalock(*_mutex, std::defer_lock);
+		if (datalock.try_lock())
+		{
+			updateColours();
+		}
 	}
 }
 
@@ -136,6 +150,7 @@ void MatrixPlot::setup()
 	prepareSmallVertices();
 
 	rescale(Window::aspect(), 1.);
+	updateColours();
 }
 
 bool MatrixPlot::checkDimensions()
