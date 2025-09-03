@@ -1,6 +1,7 @@
 import pymol
 import pandas as pd
 import argparse
+import shlex
 import re
 
 parser = argparse.ArgumentParser()
@@ -21,9 +22,10 @@ data = []
 with open(args.hbonds, "r", encoding="utf-8") as f:
     for line in f:
         line = line.replace('"', '')
+        line = re.sub(r'(<>)', r'\1 ', line)
         if "symop" in line:
             category = re.split(r'\s+', line.strip())
-            if len(category) < 14:
+            if len(category) < 12:
                 print(f"Fail: Not enough columns -> {category}")
                 continue
         
@@ -37,9 +39,18 @@ with open(args.hbonds, "r", encoding="utf-8") as f:
             Acceptor_residue = category[8]
             chain2 = category[9]
             Aresidue_number = category[10]
-            d_HA = re.search(r"(\d+\.\d+)", category[11]).group(1)  
-            d_DA = re.search(r"(\d+\.\d+)", category[12]).group(1)
-            d_DHA = re.search(r"(\d+\.\d+)", category[13]).group(1)
+
+            # Pull key=value parameters safely from the line
+            param_string = " ".join(category)
+            matches = dict(re.findall(r'(\w+)=([\d\.\-]+)', param_string))
+
+            try:
+                d_HA = matches["d_HA"]
+                d_DA = matches["d_AD"]
+                d_DHA = matches["a_DHA"]
+            except KeyError as e:
+                print(f"Skipping line due to missing field {e}: {line.strip()}")
+                continue
 
             # save Data 
             data.append([h_rang, acc_rang, h_atom, Donor_residue, chain, Dresidue_number, Acceptor, Acceptor_residue,
@@ -70,6 +81,7 @@ for i in range(len(df)):
     AcceptorResidue = df.iloc[i]['Acceptor_Residue']
     ChainAB2 = df.iloc[i]['Chain2']
     Acceptor_residue_number = df.iloc[i]['Acceptor residue number']
+    print(Donor_Residue)
     DistanceDA = df.iloc[i]['Distance_DA']
     AngleDHA = df.iloc[i]['Angle_DHA']
 
