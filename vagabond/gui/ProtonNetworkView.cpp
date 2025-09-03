@@ -355,7 +355,8 @@ void ProtonNetworkView::makeMainMenu()
 		return [this, interesting]()
 		{
 			_shifter->pause();
-			ExhaustiveSearch *es = new ExhaustiveSearch(interesting, _network);
+			ExhaustiveSearch *es = new ExhaustiveSearch(interesting, 
+			                                            interesting, _network);
 			new DoJob([this, es]()
 			{
 				es->search();

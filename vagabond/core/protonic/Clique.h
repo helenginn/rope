@@ -20,8 +20,8 @@
 #define __vagabond__Clique__
 
 #include <vagabond/utils/OpSet.h>
-#include "ProbeResult.h"
 #include "Probe.h"
+#include "ProbeResult.h"
 #include <vagabond/core/Item.h>
 
 #include <nlohmann/json.hpp>
@@ -29,6 +29,7 @@ using nlohmann::json;
 
 class Probe;
 class Network;
+struct ProbeResult;
 
 class Clique : public Item
 {
@@ -168,10 +169,7 @@ public:
 		return _results;
 	}
 	
-	void setResults(const std::vector<ProbeResult> &results)
-	{
-		_results = results;
-	}
+	void setResults(const std::vector<ProbeResult> &results);
 private:
 	class ProbeKey : public OpSet<Probe *>
 	{

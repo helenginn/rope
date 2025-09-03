@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Item.h>
+#include <vagabond/utils/Eigen/Dense>
 
 class Clique;
 
@@ -31,9 +32,12 @@ public:
 
 	virtual void setup();
 	void makeList();
+	void viewSubnetwork(Clique &clique);
+	void viewAll();
 private:
 	Clique *_clique{};
 
+	Eigen::MatrixXf _overall{};
 };
 
 #endif

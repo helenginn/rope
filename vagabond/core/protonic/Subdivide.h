@@ -27,17 +27,17 @@ class Clique;
 class Subdivide
 {
 public:
-	Subdivide(Clique *clique);
+	Subdivide(Clique *clique, int min, int max);
 
 	void subdivide();
 
-	OpSet<Probe *> hop_one_chunk(Probe *probe, OpSet<Probe *> *feels);
-	OpSet<Probe *> spread(const OpSet<Probe *> &orig);
+	void spread(OpSet<Probe *> &chunk);
+	void prune(OpSet<Probe *> &chunk);
 private:
 	Clique *_clique{};
 
-	int _hop = 3;
-	int _spread = 1;
+	int _min = 12;
+	int _max = 25;
 };
 
 #endif

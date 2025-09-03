@@ -16,33 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SearchAll.h"
-#include "ExhaustiveSearch.h"
-#include "Clique.h"
+#include "CommunicationAnalysis.h"
 
-SearchAll::SearchAll(Clique *parent, Network &network) : 
-_clique(parent), _network(network)
+CommunicationAnalysis::CommunicationAnalysis(Scene *scene, const MatrixXf &mat,
+                                             const std::map<ProbeTypePair, 
+                                             std::pair<int, int>> &insertions)
+: Scene(scene), _mat(mat), _lookup(insertions)
 {
 
 }
 
-void SearchAll::run()
+void CommunicationAnalysis::setup()
 {
-	std::list<Clique> &subs = _clique->subdivisions();
-
-	for (Clique &clique : subs)
-	{
-		ExhaustiveSearch search(clique.probes(), _clique->probes(), _network);
-		search.search();
-		clickTicker();
-		clique.setResults(search.results());
-		int num_nodes = search.probe_count();
-		int num_results = search.results().size();
-		std::string name = "Subnetwork (" + std::to_string(num_nodes) +
-		" nodes, " + std::to_string(num_results) + " arrangements)";
-		clique.setName(name);
-		_clique->addItem(&clique);
-	}
-	
-	finishTicker();
+	addTitle("Communication Analysis");
 }

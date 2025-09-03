@@ -150,3 +150,8 @@ OpSet<Probe *> Clique::nonWaterProbes()
 
 	return nonwater;
 }
+
+void Clique::setResults(const std::vector<ProbeResult> &results)
+{
+	_results = results;
+}

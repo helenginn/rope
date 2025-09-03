@@ -21,8 +21,9 @@
 #include <unistd.h>
 
 ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
+                                   const OpSet<Probe *> &wider,
                                    Network &network)
-: _all(interesting), _network(network)
+: _all(interesting), _wider(wider), _network(network)
 {
 
 }
@@ -117,6 +118,27 @@ void ExhaustiveSearch::search()
 	cleanup();
 }
 
+float ExhaustiveSearch::score_wider_clique()
+{
+	float score = 0;
+	for (Probe *const &probe : _wider)
+	{
+		if (probe->is_bond() && !probe->is_covalent())
+		{
+			BondProbe *bp = static_cast<BondProbe *>(probe);
+			hnet::Bond::Values val = bp->_obj.value();
+
+			if (val & hnet::Bond::Present && 
+			    !(val & hnet::Bond::NotPresent))
+			{
+				score -= 0.75 * 4.18; // kcal -> mol
+			}
+		}
+	}
+
+	return score;
+}
+
 bool ExhaustiveSearch::next()
 {
 	if (_iterations.size() == 0)
@@ -161,7 +183,6 @@ bool ExhaustiveSearch::next()
 		{
 			std::cout << i << "-";
 		}
-		std::cout << std::endl;
 	};
 	
 	auto add_result = [this, &check_certainty, &print]
@@ -175,8 +196,12 @@ bool ExhaustiveSearch::next()
 		
 		if (cert && _configs.count(c) == 0)
 		{
+			float score = score_wider_clique();
 			_configs += c;
+			_scores[c] = score;
 			print(c);
+			std::cout << "\t" << score;
+			std::cout << std::endl;
 		}
 	};
 	
@@ -243,9 +268,18 @@ bool ExhaustiveSearch::next()
 		count_down();
 	}
 	
-	auto process_result = [this](const Config &c)
+	float ave_score = 0;
+	for (auto it = _scores.begin(); it != _scores.end(); it++)
+	{
+		ave_score += it->second;
+	}
+	ave_score /= (float)_scores.size();
+	
+	auto process_result = [this, &ave_score](const Config &c)
 	{
 		int i = 0;
+		float sc = _scores[c] - ave_score;
+		ProbeResult result{{}, sc};
 		for (IteratedProbe *ip : _iterations)
 		{
 			int val = c[i];
@@ -255,9 +289,12 @@ bool ExhaustiveSearch::next()
 			Probe *const &pr = ip->probe();
 			i++;
 			
-			ProbeResult pres = {pr, type, val};
-			_results.push_back(pres);
+			OneProbe pres = {pr, type, val};
+			result.results.push_back(pres);
 		}
+
+		std::cout << sc << " ";
+		_results.push_back(result);
 	};
 	
 	if (_counter < 0 || (_counter == 0 && (**it).done()))
@@ -266,8 +303,6 @@ bool ExhaustiveSearch::next()
 		for (const Config &c : _configs)
 		{
 			process_result(c);
-			std::cout << "\t";
-			print(c);
 		}
 		std::cout << std::endl;
 		return false;

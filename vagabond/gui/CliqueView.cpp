@@ -46,40 +46,6 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	_wet.setDisplayName("Wet");
 	_dry.setDisplayName("Dry");
 
-	_parent.addItem(&_ambiguous);
-	_ambiguous.addItem(&_wet);
-	_ambiguous.addItem(&_dry);
-	_parent.addItem(&_certain);
-
-	LineGroup *lg = new LineGroup(&_parent, _scene);
-	lg->setLeft(0.65, 0.23);
-
-	ScrollBox *sb = new ScrollBox();
-	sb->setContent(lg);
-	sb->setBounds(glm::vec4(0.23, 0.65, 0.9, 0.9));
-	addObject(sb);
-	
-	auto add_clique = [this](Clique *clique)
-	{
-		return [this, clique]()
-		{
-			clique->setDisplayName(clique->name());
-			clique->removeSelf(true);
-			if (clique->is_certain())
-			{
-				_certain.addItem(clique);
-			}
-			else if (clique->num_waters() > 0)
-			{
-				_wet.addItem(clique);
-			}
-			else
-			{
-				_dry.addItem(clique);
-			}
-		};
-	};
-	
 	auto reinsert = [this](Clique *clique)
 	{
 		Item *parent = clique->parent();
@@ -106,19 +72,53 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 
 		clique->removeSelf(true);
 		parent->addItemAfter(clique, lastWithName);
-		
-		Clique &last = *static_cast<Clique *>(lastWithName);
-		std::list<Clique> &l = _network.cliques();
-		auto it = std::find(l.begin(), l.end(), last);
-		auto oldt = std::find(l.begin(), l.end(), *clique);
-		if (it != l.end())
+	};
+	
+	auto insert_clique = [this, reinsert](Item &parent, Clique *clique)
+	{
+		if (clique->parent() == &parent)
 		{
-			it++;
-			l.erase(oldt);
-			l.insert(it, *clique);
+			reinsert(clique);
+			return;
 		}
+		parent.addItem(clique);
+		reinsert(clique);
 	};
 
+	_parent.addItem(&_ambiguous);
+	_ambiguous.addItem(&_wet);
+	_ambiguous.addItem(&_dry);
+	_parent.addItem(&_certain);
+
+	LineGroup *lg = new LineGroup(&_parent, _scene);
+	lg->setLeft(0.65, 0.23);
+
+	ScrollBox *sb = new ScrollBox();
+	sb->setContent(lg);
+	sb->setBounds(glm::vec4(0.23, 0.65, 0.9, 0.9));
+	addObject(sb);
+	
+	auto add_clique = [this, insert_clique](Clique *clique)
+	{
+		return [this, insert_clique, clique]()
+		{
+			clique->setDisplayName(clique->name());
+			clique->removeSelf(true);
+			if (clique->is_certain())
+			{
+				insert_clique(_certain, clique);
+			}
+			else if (clique->num_waters() > 0)
+			{
+				insert_clique(_wet, clique);
+			}
+			else
+			{
+				insert_clique(_dry, clique);
+			}
+		};
+	};
+	
 	auto click = [this, reinsert, scene, lg](Clique *clique)
 	{
 		return [this, reinsert, clique, scene](bool left)

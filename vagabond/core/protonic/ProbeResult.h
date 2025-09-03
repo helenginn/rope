@@ -20,15 +20,40 @@
 #define __vagabond__ProbeResult__
 
 #include <vagabond/core/protonic/hnet.h>
+#include <vagabond/utils/Eigen/Dense>
+
+using Eigen::MatrixXf;
 
 class Probe;
+typedef std::pair<Probe *, hnet::Types> ProbeTypePair;
 
-struct ProbeResult
+struct OneProbe
 {
 	Probe *probe;
 	hnet::Types type;
 	int value;
 };
 
+struct ProbeResult
+{
+	std::vector<OneProbe> results;
+	float score;
+};
+
+struct ProbeCorrelation
+{
+	ProbeTypePair left{};
+	ProbeTypePair right{};
+	hnet::Types lType{};
+	hnet::Types rType{};
+	MatrixXf mat{};
+};
+
+int dim_for_type(const hnet::Types &type);
+
+std::vector<ProbeTypePair> probes(const std::vector<ProbeResult> &source);
+
+ProbeCorrelation correlate(const std::vector<ProbeResult> &source, 
+                           ProbeTypePair left, ProbeTypePair right, bool norm);
 
 #endif

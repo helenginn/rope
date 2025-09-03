@@ -20,17 +20,26 @@
 #include "Probe.h"
 #include "Clique.h"
 
-Subdivide::Subdivide(Clique *clique) : _clique(clique)
+Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 {
+	_min = min; _max = max;
+	int actual_max = _clique->probes().size();
+	if (_max > actual_max)
+	{
+		_max = actual_max;
+	}
 	subdivide();
 }
 
-OpSet<Probe *> Subdivide::spread(const OpSet<Probe *> &orig)
+void Subdivide::spread(OpSet<Probe *> &chunk)
 {
-	OpSet<Probe *> chunk = orig;
-
-	for (int i = 0; i < _spread; i++)
+	while (chunk.size() < _min)
 	{
+		if (chunk.size() >= _max)
+		{
+			break;
+		}
+
 		OpSet<Probe *> last = chunk;
 		OpSet<Probe *> add = {};
 		for (Probe *const &current : last)
@@ -43,99 +52,45 @@ OpSet<Probe *> Subdivide::spread(const OpSet<Probe *> &orig)
 				}
 			}
 		}
+		
+		if (add.size() == 0)
+		{
+			break;
+		}
 
 		chunk += add;
 	}
-	
-	return chunk;
 }
 
-OpSet<Probe *> Subdivide::hop_one_chunk(Probe *probe, OpSet<Probe *> *feels)
+void Subdivide::prune(OpSet<Probe *> &chunk)
 {
-	OpSet<Probe *> chunk;
-	OpSet<Probe *> feelers; // last added
-	chunk += probe;
-
-	for (int i = 0; i < _hop; i++)
-	{
-		feelers = {};
-		OpSet<Probe *> last = chunk;
-		for (Probe *const &current : last)
-		{
-			for (Probe *const &other : current->others())
-			{
-				if (chunk.count(other) == 0)
-				{
-					chunk += other;
-					feelers += other;
-				}
-			}
-		}
-	}
-
-	if (feels)
-	{
-		*feels = feelers;
-	}
-	return chunk;
+	std::erase_if(chunk,
+	              [](Probe *const &probe)
+	              {
+		             return probe->is_certain() || probe->is_covalent();
+		          });
 }
 
 void Subdivide::subdivide()
 {
 	OpSet<Probe *> to_chunk = _clique->probes();
-	OpSet<Probe *> done;
-	OpSet<Clique> chunks;
-
-	OpSet<Probe *> feelers;
-	auto get_random = [&to_chunk]()
-	{
-		int random = rand() % to_chunk.size();
-		auto it = to_chunk.begin();
-		std::advance(it, random);
-		return *it;
-	};
-
-	feelers += get_random();
+	OpSet<OpSet<Probe *>> chunks;
+	OpSet<Clique> cliques;
 	
-	while (true)
+	for (Probe *probe : to_chunk)
 	{
-		Probe *next = *feelers.begin();
-		feelers -= next;
-		done -= next;
-
-		OpSet<Probe *> unf_next_feelers;
-		OpSet<Probe *> unfiltered_chunk = hop_one_chunk(next, &unf_next_feelers);
-		
-		OpSet<Probe *> chunk = to_chunk.common_to_both(unfiltered_chunk);
-		OpSet<Probe *> next_feelers = to_chunk.common_to_both(unf_next_feelers);
-
-		if (chunk.size())
-		{
-			OpSet<Probe *> expanded = spread(chunk);
-			chunks += Clique(expanded);
-		}
-		
-		next_feelers -= done;
-		done += chunk;
-		to_chunk -= chunk;
-		
-		if (!next_feelers.size() && to_chunk.size())
-		{
-			next_feelers += get_random();
-		}
-		else if (!next_feelers.size() && !to_chunk.size())
-		{
-			break;
-		}
-
-		feelers = next_feelers;
+		OpSet<Probe *> chunk = {probe};
+		spread(chunk);
+		prune(chunk);
+		chunks += chunk;
 	}
 	
-	if (to_chunk.size())
+	for (const OpSet<Probe *> &chunk : chunks)
 	{
-		std::cout << "warning - missing " << to_chunk.size() << " probes" << std::endl;
+		cliques.insert(Clique(chunk));
 	}
-	
-	_clique->setSubdivisions(chunks);
+
+	std::cout << "Found " << cliques.size() << std::endl;
+	_clique->setSubdivisions(cliques);
 }
 

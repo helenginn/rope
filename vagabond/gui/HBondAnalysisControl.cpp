@@ -22,6 +22,7 @@
 #include "CommunicationChoice.h"
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ChooseRange.h>
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/protonic/SearchAll.h>
 #include <vagabond/core/protonic/Clique.h>
@@ -67,16 +68,35 @@ void HBondAnalysisControl::setup()
 		addObject(tb);
 	}
 	
-	auto subdivide_with_defaults = [this]()
+	auto subdivide_with_values = [this](int min, int max)
 	{
-		Subdivide sd(_clique);
-		refresh();
+		return [this, min, max]()
+		{
+			Subdivide sd(_clique, min, max);
+			refresh();
+		};
 	};
 	
-	auto ask_to_subdivide = [this, subdivide_with_defaults]()
+	auto ask_for_min_max = [this, subdivide_with_values]()
+	{
+		auto convert = [subdivide_with_values](float min, float max)
+		{
+			subdivide_with_values(min, max)();
+		};
+
+		ChooseRange *cr = new ChooseRange(this, "Set search size for "\
+		                                  "hydrogen bond subnetwork", "",
+		                                  this, true);
+		cr->setRange(2, 50, 48);
+		cr->setReturn(convert);
+		setModal(cr);
+	};
+	
+	auto ask_to_subdivide = [this, ask_for_min_max, subdivide_with_values]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Subdivide network using defaults?");
-		ayn->addJob("yes", subdivide_with_defaults);
+		ayn->addJob("yes", subdivide_with_values(10, 20));
+		ayn->addJob("no", ask_for_min_max);
 		setModal(ayn);
 	};
 
@@ -163,48 +183,16 @@ void HBondAnalysisControl::setup()
 				}
 			}
 
-			TextButton *tb = new TextButton("View correlations", this);
-			tb->setRight(right, 0.5);
-			tb->setReturnJob(view_correlations);
-			addTempObject(tb);
+			if (has_results)
+			{
+				TextButton *tb = new TextButton("View correlations", this);
+				tb->setRight(right, 0.5);
+				tb->setReturnJob(view_correlations);
+				addTempObject(tb);
+			}
 		};
 		
 		_refreshes.push_back(show_view_results);
-	}
-
-	{
-		TextButton *tb = new TextButton("Prepare groups for path", this);
-		tb->setLeft(left, 0.6);
-		addObject(tb);
-		
-		auto enable_for_groups = [this, tb]()
-		{
-			int num = _clique->allCommsNames().size();
-			if (num >= 2)
-			{
-				tb->setInert(false, true);
-			}
-			else if (num >= 1)
-			{
-				tb->addAltTag("Requires one more communication group "\
-				              "to be defined");
-				tb->setInert(true, true);
-			}
-			else if (num >= 0)
-			{
-				tb->addAltTag("Requires definition of communication groups");
-				tb->setInert(true, true);
-			}
-		};
-		
-		_refreshes.push_back(enable_for_groups);
-	}
-
-	{
-		TextButton *tb = new TextButton("Best path search", this);
-		tb->setLeft(left, 0.7);
-		tb->setInert(true, true);
-		addObject(tb);
 	}
 	
 	refresh();

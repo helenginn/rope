@@ -35,6 +35,8 @@ guifiles = [
 'ConfSpaceView.cpp',
 'ColourLegend.cpp',
 'ColourScheme.cpp',
+'CommunicationAnalysis.cpp',
+'CommunicationAnalysis.h',
 'CommunicationChoice.cpp',
 'CommunicationChoice.h',
 'ConformerClusters.cpp',

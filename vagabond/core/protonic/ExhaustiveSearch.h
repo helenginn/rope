@@ -189,7 +189,8 @@ private:
 class ExhaustiveSearch
 {
 public:
-	ExhaustiveSearch(const OpSet<Probe *> &interesting, Network &network);
+	ExhaustiveSearch(const OpSet<Probe *> &interesting, 
+	                 const OpSet<Probe *> &wider, Network &network);
 
 	void search();
 	
@@ -213,12 +214,16 @@ public:
 		_cv.notify_one();
 	}
 private:
+	float score_wider_clique();
+
 	typedef std::vector<unsigned int> Config;
 	OpSet<Config> _configs;
+	std::map<Config, float> _scores;
 
 	std::vector<ProbeResult> _results;
 	std::list<IteratedProbe *> _iterations;
 	OpSet<Probe *> _all;
+	OpSet<Probe *> _wider;
 	int _certain{0};
 	int _counter{0};
 	Network &_network;

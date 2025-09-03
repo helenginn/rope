@@ -16,33 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "SearchAll.h"
-#include "ExhaustiveSearch.h"
-#include "Clique.h"
+#ifndef __vagabond__CommunicationAnalysis__
+#define __vagabond__CommunicationAnalysis__
 
-SearchAll::SearchAll(Clique *parent, Network &network) : 
-_clique(parent), _network(network)
+#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/utils/Eigen/Dense>
+#include <vagabond/core/protonic/ProbeResult.h>
+
+using Eigen::MatrixXf;
+
+class CommunicationAnalysis : public Scene
 {
+public:
+	CommunicationAnalysis(Scene *scene, const MatrixXf &mat,
+	                      const std::map<ProbeTypePair, 
+	                      std::pair<int, int>> &insertions);
 
-}
+	virtual void setup();
+private:
+	MatrixXf _mat;
+	std::map<ProbeTypePair, std::pair<int, int>> _lookup;
+};
 
-void SearchAll::run()
-{
-	std::list<Clique> &subs = _clique->subdivisions();
-
-	for (Clique &clique : subs)
-	{
-		ExhaustiveSearch search(clique.probes(), _clique->probes(), _network);
-		search.search();
-		clickTicker();
-		clique.setResults(search.results());
-		int num_nodes = search.probe_count();
-		int num_results = search.results().size();
-		std::string name = "Subnetwork (" + std::to_string(num_nodes) +
-		" nodes, " + std::to_string(num_results) + " arrangements)";
-		clique.setName(name);
-		_clique->addItem(&clique);
-	}
-	
-	finishTicker();
-}
+#endif
