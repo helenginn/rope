@@ -252,7 +252,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 				for(int l = 0; l < torsMi[ii]->nAng; l++)
 					for(int m = 0; m < torsMi[jj]->nAng; m++)
 						if(glm::distance(torsMi[ii]->v[l], torsMi[jj]->v[m]) <= flagParameters.cutoff)
-
 						{
 							entropy->i1[kk] = ii;
 							entropy->i2[kk] = jj;
@@ -596,7 +595,7 @@ void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vecto
 	sig2 = sig2/wt;
 
 	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + ym*ym/((double) n * (y2 - ym*ym)));
-	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (x2 - xm*xm));
+	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (y2 - ym*ym));
 }
 
 void PathEntropy::kruskal(struct EntropyKL *entropy, int *group2res, struct FlagParameters flagParameters)
