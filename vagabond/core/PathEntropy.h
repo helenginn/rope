@@ -52,6 +52,7 @@ struct Tors_res4nn {
 
 struct FlagParameters {
 	int n;
+    int ne;
 	double minres;
     float cutoff;
     int mutualInformation;
@@ -69,8 +70,6 @@ public:
 	/* default flag parameters as chosen in pdb2entropy programme */
 	struct FlagParameters initFlagPar();
 
-	int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters flagParameters);
-
 	std::vector<Tors_res4nn*> get_atoms_and_residues(const int numPaths, const std::vector<PathGroup> &paths);
 
 	struct Entropy* calculate_entropy_independent(int nf, struct FlagParameters flagPar, std::vector<Tors_res4nn*> tors_res);
@@ -80,9 +79,13 @@ public:
 	static int comp (const void * elem1, const void * elem2);
 
 	/* linear weighting function */
-	int fitlw(double *x, double *y, double *w, int n, double *a, double *sd, int *ok);
+	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);
 
     void tors_res2mi(std::vector<Tors_res4nn*> tors_res, int resPerModel, std::vector<Tors_res4nn*> &tors_mi, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+	
+    int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters flagParameters);
+
+    int allocVariables(int nf, double **ent_k, double **ent_k_tot, double **ent_k_2, double **ent_k_tot_2, double **sd_k, struct FlagParameters *flagParameters);
 };
 
 #endif
