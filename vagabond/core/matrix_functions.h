@@ -28,6 +28,14 @@ float mat3x3_volume(const glm::mat3x3 &mat);
 float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
                                          const glm::vec3 &c, const glm::vec3 &d);
 
+float bond_rotation_on_angle_gradient(const glm::vec3 &a, const glm::vec3 &b,
+                                      const glm::vec3 &p, const glm::vec3 &v,
+                                      const glm::vec3 &q);
+
+float bond_rotation_on_torsion_gradient(const glm::vec3 &a, const glm::vec3 &b,
+										const glm::vec3 &p1, const glm::vec3 &p2,
+										const glm::vec3 &p3, const glm::vec3 &p4);
+
 glm::mat3x3 unit_vec_rotation(glm::vec3 axis, double radians);
 
 /** Rotate vector (vec1) around axis (axis) by angle theta. Find value of

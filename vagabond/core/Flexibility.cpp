@@ -443,6 +443,7 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     // Access donor and acceptor positions
     int donorBlock_idx = accessAtomBlock(donorAtom);
     int acceptorBlock_idx = accessAtomBlock(acceptorAtom);
+    int hydrogenBlock_idx = accessAtomBlock(hydrogenAtom);
 
     // Access the donor and acceptor AtomBlock objects
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
@@ -468,6 +469,8 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     hbe.donorIdx = donorBlock_idx;
     hbe.Acceptor = acceptorAtom;
     hbe.acceptorIdx = acceptorBlock_idx;
+    hbe.Hydrogen = hydrogenAtom;                
+    hbe.hydrogenIdx = hydrogenBlock_idx;
     hbe.startDist = distance;
     hbe.ParentDonor = blocks[donorBlock_idx - 1].atom;
     hbe.ParentAcceptor = blocks[acceptorBlock_idx - 1].atom;
@@ -699,8 +702,8 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector)
 
 void Flexibility::buildJacobianMatrix()
 {
-    // Columns = total number of constraints (Hbonds + vdW bonds)
-    int numCol = _hbonds.size() + _VdWBonds.size();
+    // Columns = total number of constraints (5 per Hbonds +one per vdW bonds)
+    int numCol = 5 * _hbonds.size() + _VdWBonds.size();
 
     // Rows = torsion angles
     std::vector<int> torsionVector = getGlobalTorsionVector();
@@ -716,21 +719,49 @@ void Flexibility::buildJacobianMatrix()
     for (int i = 0; i < numRow; ++i) 
     {
         int torsionIdx = torsionVector[i];
+
         for (int j = 0; j < _hbonds.size(); ++j) 
         {
             HBondEntity& hbe = _hbonds[j];
+            int colBase = j * 5; // 5 constraints per Hbond
 
             glm::vec3 APos = blocks[torsionIdx].my_position(); 
             glm::vec3 BPos = blocks[torsionIdx].inherit; 
+            
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
+            glm::vec3 HPos = blocks[hbe.hydrogenIdx].my_position();
 
-            float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
-            jacobianMatrix(i,j) = derivative;
+            glm::vec3 parentDonor = blocks[hbe.donorIdx - 1].my_position();
+            glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx - 1].my_position();
+
+            // 1) Distance H–A
+            float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+            jacobianMatrix(i,colBase + 0) = dDist;
+
+            // 2) Angle D-H-A
+            float dAngle1 = bond_rotation_on_angle_gradient(APos, BPos, DPos, HPos, CPos);
+            jacobianMatrix(i,colBase + 1) = dAngle1;
+
+            // 3) Angle H-A-B
+            float dAngle2 = bond_rotation_on_angle_gradient(APos, BPos,
+                                                HPos, CPos, parentAcceptor);
+            jacobianMatrix(i,colBase + 2) = dAngle2;
+
+            // 4) Dihedral C-D-H-A
+            float dDihedral1 = bond_rotation_on_torsion_gradient(APos, BPos, parentDonor, DPos, HPos, CPos);
+            jacobianMatrix(i, colBase + 3) = dDihedral1;
+
+            // 4) Dihedral D-H-A-B
+            float dDihedral2 = bond_rotation_on_torsion_gradient(APos, BPos, DPos, HPos, CPos, parentAcceptor);
+            jacobianMatrix(i, colBase + 4) = dDihedral2;
+
+
         }
     }
 
     // --- VdW bonds ---
+    int vdwColBase = 5 * _hbonds.size();
     for (int i = 0; i < numRow; ++i) 
     {
         int torsionIdx = torsionVector[i];
@@ -744,7 +775,7 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 DPos = blocks[vdw.atomIdx2].my_position(); 
 
             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
-            jacobianMatrix(i, _hbonds.size() + j) = derivative;
+            jacobianMatrix(i, vdwColBase + j) = derivative;
         }
     }
 

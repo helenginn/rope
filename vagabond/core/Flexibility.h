@@ -30,6 +30,8 @@ public:
         int donorIdx;
         Atom* Acceptor;
         int acceptorIdx;
+        Atom* Hydrogen;     
+        int hydrogenIdx;   
         float startDist;
         Atom* ParentDonor;
         Atom* ParentAcceptor;

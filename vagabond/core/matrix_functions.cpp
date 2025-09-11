@@ -246,6 +246,80 @@ float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
 	return dD_by_dA;
 }
 
+float bond_rotation_on_angle_gradient(const glm::vec3 &a, const glm::vec3 &b,
+                                      const glm::vec3 &p, const glm::vec3 &v,
+                                      const glm::vec3 &q)
+{
+	glm::vec3 axis = glm::normalize(b - a);
+	/* u and w are vectors to query atoms H or A */
+	glm::vec3 u = p - v;
+	glm::vec3 w = q - v;
+
+	float u_len = glm::length(u);
+	float w_len = glm::length(w);
+
+	float dot_uw = glm::dot(u, w);
+	float cos_val = dot_uw / (u_len * w_len);
+
+	glm::vec3 dFdu = (w / (u_len * w_len)) - (dot_uw / (u_len*u_len*u_len*w_len)) * u;
+	glm::vec3 dFdw = (u / (u_len * w_len)) - (dot_uw / (u_len*w_len*w_len*w_len)) * w;
+
+	// map it back to atoms: u = p - v, w = q - v
+	glm::vec3 dFdP = dFdu;
+	glm::vec3 dFdQ = dFdw;
+	glm::vec3 dFdV = -(dFdu + dFdw);
+
+	// chain rule 
+	float deriv =  0.0f;
+	glm::vec3 dr;
+
+	dr = glm::cross(axis, (p - a)); 
+	deriv += glm::dot(dFdP, dr);
+    dr = glm::cross(axis, (q - a)); 
+    deriv += glm::dot(dFdQ, dr);
+    dr = glm::cross(axis, (v - a)); 
+    deriv += glm::dot(dFdV, dr);
+
+    return deriv;
+
+}
+
+float bond_rotation_on_torsion_gradient(const glm::vec3 &a, const glm::vec3 &b,
+										const glm::vec3 &p1, const glm::vec3 &p2,
+										const glm::vec3 &p3, const glm::vec3 &p4)
+{
+	glm::vec3 axis = glm::normalize(b - a);
+	glm::vec3 b1 = p2 - p1;
+	glm::vec3 b2 = p3 - p2;
+	glm::vec3 b3 = p4 - p3;
+
+	// normals to planes
+	glm::vec3 n1 = glm::cross(b1, b2);
+	glm::vec3 n2 = glm::cross(b2, b3);
+
+	float n1_norm = glm::dot(n1, n1);
+	float n2_norm = glm::dot(n2, n2);
+
+	float b2_norm = glm::length(b2);
+	glm::vec3 b2_hat = b2/b2_norm;
+
+	glm::vec3 dTau_dp1 = -(b2_norm / n1_norm) * n1;
+	glm::vec3 dTau_dp4 = (b2_norm / n2_norm) * n2;
+	glm::vec3 dTau_dp2 = ( (glm::dot(b1, b2) / n1_norm) * n1 ) 
+						-( (glm::dot(b3,b2) / n2_norm) * n2);
+	glm::vec3 dTau_dp3 = -dTau_dp1 - dTau_dp2 - dTau_dp4;
+
+	float deriv = 0.0f;
+	glm::vec3 dr;
+
+	dr = glm::cross(axis, (p1-a)); deriv += glm::dot(dTau_dp1, dr);
+	dr = glm::cross(axis, (p2-a)); deriv += glm::dot(dTau_dp2, dr);
+	dr = glm::cross(axis, (p3-a)); deriv += glm::dot(dTau_dp3, dr);
+	dr = glm::cross(axis, (p4-a)); deriv += glm::dot(dTau_dp4, dr);
+
+	return deriv;
+}
+
 mat3x3 unit_vec_rotation(vec3 axis, double radians)
 {
 	mat3x3 mat{};
