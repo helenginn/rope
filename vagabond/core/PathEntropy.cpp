@@ -66,6 +66,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			}
             if (angNames.size() > 0 && std::find(angNames.begin(), angNames.end(), static_cast<BondTorsion *>(param)->shortDesc()) != angNames.end())
             {
+                std::cout << "Bond torsion " << static_cast<BondTorsion *>(param)->short_desc() << " of residue " << res->desc() << " already added! Skipping..." << std::endl;
 				continue;
             }
 			
@@ -263,6 +264,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 							int i = 0;
 							
 							for(int k = 0; k < torsMi[ii]->nAng; k++)
+
 
 							{
 								torsMi2.ang[i] = torsMi[ii]->ang[k];
