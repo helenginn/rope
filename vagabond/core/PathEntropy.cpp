@@ -41,7 +41,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
     Sequence *polySeq = static_cast<Polymer *>(instance)->sequence();
 	
     AtomGroup *rawAtoms = instance->model()->currentAtoms();
-		
+
 	for (int i = 0; i < polySeq->size(); i++)
 	{
 		if(polySeq->residue(i) == nullptr)
@@ -69,7 +69,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
                 std::cout << "Bond torsion " << static_cast<BondTorsion *>(param)->short_desc() << " of residue " << res->desc() << " already added! Skipping..." << std::endl;
 				continue;
             }
-			
+		
 			validBondT.push_back(static_cast<BondTorsion *>(param));
 			angNames.push_back(static_cast<BondTorsion *> (param)->shortDesc());
 		}
@@ -86,6 +86,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 		for(int j = 0; j < validBondT.size(); j++)
 		{
+
             for(int l = 0; l < numDivisions; l++)
             {
 			    torsRes[i]->ang[l].push_back(std::vector<double>(numPaths, 0));
@@ -182,7 +183,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
     int numResPerModelMI;
 	int numResPerModel = torsRes.size();
 	std::vector<TorsRes4NN*> torsMi;
-
 	struct TorsRes4NN torsMi2;
     struct EntropyForMatrix ent4Matrix;
 

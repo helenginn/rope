@@ -115,7 +115,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		auto respondToVal = [this, flagPar](float min, float max)
 		{
 			_numPaths = lrint(min);
-			
+
 			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths, 15);
 
 			struct EntropyForMatrix entropy4Mat = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes,15);
