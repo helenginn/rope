@@ -39,15 +39,15 @@ double *entResidue{};
 };
 
 
-struct Tors_res4nn {
-	int n_models{};
-	int n_ang{};
+struct TorsRes4NN {
+	int nModels{};
+	int nAng{};
     std::vector<double> bondSymmetry{};
-	std::vector<std::string> tors_name{};
+	std::vector<std::string> torsName{};
     std::vector<std::string> desc{};
     std::vector<std::vector<double>> ang{};
 	std::vector<glm::vec3> v{};
-	int res_n{};
+	int resID{};
 };
 
 struct FlagParameters {
@@ -70,10 +70,10 @@ public:
 	/* default flag parameters as chosen in pdb2entropy programme */
 	struct FlagParameters initFlagPar();
 
-	std::vector<Tors_res4nn*> get_atoms_and_residues(const int numPaths, const std::vector<PathGroup> &paths);
+	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<PathGroup> &paths);
 
-	struct Entropy* calculate_entropy_independent(int nf, struct FlagParameters flagPar, std::vector<Tors_res4nn*> tors_res);
-    struct Entropy* calculate_entropy_mi(int nf, struct FlagParameters flagPar, std::vector<Tors_res4nn*> tors_res);
+	struct Entropy* calculate_entropy_independent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> tors_res);
+    struct Entropy* calculate_entropy_mi(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> tors_res);
 
 	/* implicit compare function for qsort */
 	static int comp (const void * elem1, const void * elem2);
@@ -81,7 +81,7 @@ public:
 	/* linear weighting function */
 	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);
 
-    void tors_res2mi(std::vector<Tors_res4nn*> tors_res, int resPerModel, std::vector<Tors_res4nn*> &tors_mi, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+    void tors_res2mi(std::vector<TorsRes4NN*> tors_res, int resPerModel, std::vector<TorsRes4NN*> &tors_mi, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
 	
     int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters flagParameters);
 
