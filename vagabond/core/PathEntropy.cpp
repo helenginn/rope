@@ -30,9 +30,9 @@ struct FlagParameters PathEntropy::initFlagPar()
     return flagParameters;
 }
 
-std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, const std::vector<PathGroup> &paths)
+std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const std::vector<PathGroup> &paths)
 {
-	std::vector<Tors_res4nn*> tors_res;
+	std::vector<TorsRes4NN*> tors_res;
     Sequence *polySeq = static_cast<Polymer *>(paths[0].front()->startInstance())->sequence();
 
 	AtomGroup *content = paths[0].front()->toRoute()->instance()->currentAtoms();
@@ -57,35 +57,33 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 		{
 			Parameter *param = content->findParameter(it->desc(), res->id());
 
-			if (param == nullptr)
+			if (param == nullptr || !param->isTorsion() || param->hasHydrogen())
 			{
-				std::cout << "NULL parameter" << std::endl;
+				std::cout << res->id() << " invalid parameter" << std::endl;
                 continue;
 			}
-            else if (angNames.size() > 0 && std::find(angNames.begin(), angNames.end(), static_cast<BondTorsion *>(param)->short_desc()) != angNames.end())
+            if (angNames.size() > 0 && std::find(angNames.begin(), angNames.end(), static_cast<BondTorsion *>(param)->short_desc()) != angNames.end())
             {
                 std::cout << "Bond torsion " << static_cast<BondTorsion *>(param)->short_desc() << " of residue " << res->desc() << " already added! Skipping..." << std::endl;
 				continue;
             }
-			else if (param->isTorsion() && !param->hasHydrogen()) 
-			{
-				valid_bondT.push_back(static_cast<BondTorsion *>(param));
-                angNames.push_back(static_cast<BondTorsion *> (param)->short_desc());
-                std::cout << "Bond torsion " << static_cast<BondTorsion *>(param)->short_desc() << " of residue " << res->desc() << " added!" << std::endl;
-			}
+			
+			valid_bondT.push_back(static_cast<BondTorsion *>(param));
+			angNames.push_back(static_cast<BondTorsion *> (param)->short_desc());
+			std::cout << "Bond torsion " << static_cast<BondTorsion *>(param)->short_desc() << " of residue " << res->desc() << " added!" << std::endl;
 		}
 
-		tors_res.push_back(new Tors_res4nn);
-		tors_res[i]->tors_name.resize(valid_bondT.size());
+		tors_res.push_back(new TorsRes4NN);
+		tors_res[i]->torsName.resize(valid_bondT.size());
 		tors_res[i]->desc.resize(valid_bondT.size());
 		tors_res[i]->bondSymmetry.resize(valid_bondT.size());
         tors_res[i]->v.resize(valid_bondT.size());
-		tors_res[i]->n_ang = valid_bondT.size();
+		tors_res[i]->nAng = valid_bondT.size();
 
 		for(int j = 0; j < valid_bondT.size(); j++)
 		{
 			tors_res[i]->ang.push_back(std::vector<double>(numPaths, 0));
-			tors_res[i]->tors_name[j] = valid_bondT[j]->short_desc();
+			tors_res[i]->torsName[j] = valid_bondT[j]->short_desc();
 			tors_res[i]->desc[j] = valid_bondT[j]->desc();
             tors_res[i]->v[j] = valid_bondT[j]->bondMidPoint();
 
@@ -122,7 +120,7 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 
 		for (int j = 0; j < tors_res.size(); j++)
 		{
-			for (int k = 0; k < tors_res[j]->n_ang; k++)
+			for (int k = 0; k < tors_res[j]->nAng; k++)
 			{
 				Parameter *param = content->findParameter(tors_res[j]->desc[k], polySeq->residue(j)->id());
 
@@ -137,7 +135,7 @@ std::vector<Tors_res4nn*> PathEntropy::get_atoms_and_residues(int numPaths, cons
 
 /* Calculates entropy from torsion angles, assuming independence between the residues */
 
-struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters flagParameters, std::vector<Tors_res4nn*> tors_res){
+struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> tors_res){
 	std::vector<std::vector<double>> phit(nf);
 	double *a, *sd, *sd_k, *ent_k, *ent_k_2, *ent_k_tot, *ent_k_tot_2;
 	int n_res_per_model = tors_res.size();
@@ -166,13 +164,13 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagPa
 	   dm will be normalised by sqrt(dof)  */
 
 	for(int m = 0; m < n_res_per_model; m++)
-		if (tors_res[m]->n_ang > 0)
+		if (tors_res[m]->nAng > 0)
 		{
 			for(int i = 0; i < nf; i++)
 			{
-				phit[i] = std::vector<double> (tors_res[m]->n_ang);
+				phit[i] = std::vector<double> (tors_res[m]->nAng);
 
-				for (int j = 0; j < tors_res[m]->n_ang; j++)
+				for (int j = 0; j < tors_res[m]->nAng; j++)
 				{
 					phit[i][j] = tors_res[m]->ang[j][i];
 					n_tors++;
@@ -194,7 +192,7 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagPa
 				ent_k_2[i] = 0;
 			}
 
-			/* calculate the distance between samples in the n_ang - dimensional
+			/* calculate the distance between samples in the nAng - dimensional
 			   space of torsion angles */
 
 			double d[nf];
@@ -217,7 +215,7 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagPa
                
 				for(int j = 0; j < nf; j++)
 				{
-					d[j] = dist_ang(phit[i], phit[j], tors_res[m]->n_ang, tors_res[m]->bondSymmetry);
+					d[j] = dist_ang(phit[i], phit[j], tors_res[m]->nAng, tors_res[m]->bondSymmetry);
 					d[j] = deg2rad(d[j]);
 				}
 
@@ -252,19 +250,19 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagPa
 
 			for(int k = 1; k < K; k++)
 			{
-				ent_k[k-1] = ent_k[k-1] * ((double) tors_res[m]->n_ang / (double) nf);
-				ent_k_2[k-1] = ent_k_2[k-1] * (double) tors_res[m]->n_ang * (double) tors_res[m]->n_ang / (double) nf;
+				ent_k[k-1] = ent_k[k-1] * ((double) tors_res[m]->nAng / (double) nf);
+				ent_k_2[k-1] = ent_k_2[k-1] * (double) tors_res[m]->nAng * (double) tors_res[m]->nAng / (double) nf;
 			}
 
             double c = 0.0;
             int L = 0;
 
-			for(int k = 0; k < tors_res[m]->n_ang; k++)
+			for(int k = 0; k < tors_res[m]->nAng; k++)
 			{
 				c = c - log(tors_res[m]->bondSymmetry[k] * M_PI / 180.0);
             }
 				
-            c = c + (((double) tors_res[m]->n_ang) * log(M_PI)/2.0) - lgamma(1.0 +  ((double) tors_res[m]->n_ang)/2.0) + 0.5722 + log((double) nf);
+            c = c + (((double) tors_res[m]->nAng) * log(M_PI)/2.0) - lgamma(1.0 +  ((double) tors_res[m]->nAng)/2.0) + 0.5722 + log((double) nf);
 
 			for(int k = 1; k < K; k++)
 			{
@@ -319,7 +317,7 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagPa
 
 			entropy->h1lm[m] = a[0];
 			entropy->sd1lm[m] = sd[0];
-			//entropy->dm1lm[m] = d_mean[1]/sqrt((double) tors_res[m]->n_ang);
+			//entropy->dm1lm[m] = d_mean[1]/sqrt((double) tors_res[m]->nAng);
 			//entropy->totalEntropy = entropy->totalEntropy + a[0];
             entropy->totalEntropy = entropy->totalEntropy/(double) (K-1);
 		}
@@ -336,7 +334,7 @@ struct Entropy* PathEntropy::calculate_entropy_independent(int nf, struct FlagPa
 
 /* Calculates entropy using mutual information for torsions closer in space than a given value */
 
-struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters flagParameters, std::vector<Tors_res4nn*> tors_res)
+struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> tors_res)
 {
 	int *group2res;
 	std::vector<std::vector<double>> phit(nf); 
@@ -344,9 +342,9 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 
 	int n_res_per_model = tors_res.size();
     int n_res_per_model_mi = 0;
-	std::vector<Tors_res4nn*> tors_mi;
+	std::vector<TorsRes4NN*> tors_mi;
 
-	struct Tors_res4nn tors_mi2;
+	struct TorsRes4NN tors_mi2;
 	struct Entropy *entropy = new Entropy;
 
     int nTors = 0;
@@ -375,16 +373,16 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 	for(int i = 0; i < n_res_per_model_mi; i++)
 		for(int j = i+1; j < n_res_per_model_mi; j++)
 		{
-			for(int l = 0; l < tors_mi[i]->n_ang; l++)
-				for(int m = 0; m < tors_mi[j]->n_ang; m++)
+			for(int l = 0; l < tors_mi[i]->nAng; l++)
+				for(int m = 0; m < tors_mi[j]->nAng; m++)
 				{
-                    glm::vec3 u(tors_mi[i]->v[l][0], tors_mi[i]->v[l][1], tors_mi[i]->v[l][2]);
-                    glm::vec3 v(tors_mi[i]->v[m][0], tors_mi[i]->v[m][1], tors_mi[i]->v[m][2]);
+                    glm::vec3 u(tors_mi[i]->v[l]);
+                    glm::vec3 v(tors_mi[j]->v[m]);
 
 					if(glm::distance(u, v) <= flagParameters.cutoff)
 					{
-						l = tors_mi[i]->n_ang + 1;
-						m = tors_mi[j]->n_ang + 1;
+						l = tors_mi[i]->nAng + 1;
+						m = tors_mi[j]->nAng + 1;
 						entropy->n_pair++;
 					}
 				}
@@ -397,9 +395,9 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 	{
 		for(int i = 0; i < nf; i++)
 		{
-			phit[i] = std::vector<double> (tors_mi[m]->n_ang);
+			phit[i] = std::vector<double> (tors_mi[m]->nAng);
 
-			for(int j = 0; j < tors_mi[m]->n_ang; j++)
+			for(int j = 0; j < tors_mi[m]->nAng; j++)
 			{
 				phit[i][j] = tors_mi[m]->ang[j][i];
                 nTors++;
@@ -427,7 +425,7 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 		{
 			for(int j = 0; j < nf; j++)
 			{
-				d[j] = dist_ang(phit[i], phit[j], tors_mi[m]->n_ang, tors_mi[m]->bondSymmetry);
+				d[j] = dist_ang(phit[i], phit[j], tors_mi[m]->nAng, tors_mi[m]->bondSymmetry);
 				d[j] = deg2rad(d[j]);
 			}
 		}
@@ -455,16 +453,16 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 
 		for(int k = 1; k < K; k++)
 		{
-			ent_k[k-1] = ent_k[k-1] * ((double) tors_mi[m]->n_ang / (double) nf);
-			ent_k_2[k-1] = ent_k_2[k-1] * (double) tors_mi[m]->n_ang * (double) tors_mi[m]->n_ang / (double) nf;
+			ent_k[k-1] = ent_k[k-1] * ((double) tors_mi[m]->nAng / (double) nf);
+			ent_k_2[k-1] = ent_k_2[k-1] * (double) tors_mi[m]->nAng * (double) tors_mi[m]->nAng / (double) nf;
 		}
  
         double c = 0.0;
 
-		for(int k = 0; k < tors_mi[m]->n_ang; k++)
+		for(int k = 0; k < tors_mi[m]->nAng; k++)
 		{
 			c = c - log(M_PI /180.0);
-			c = c + (double) tors_mi[m]->n_ang * log(M_PI)/2.0 - lgamma(1.0 + (double) tors_mi[m]->n_ang)/2.0 + 0.5722 + log((double) nf);
+			c = c + (double) tors_mi[m]->nAng * log(M_PI)/2.0 - lgamma(1.0 + (double) tors_mi[m]->nAng)/2.0 + 0.5722 + log((double) nf);
 		}
 
         int L = 0;
@@ -528,31 +526,31 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 	// with the nearest neighbour method ... 
 	for(int ii = 0; ii < n_res_per_model_mi; ii++)
 		for(int jj = ii + 1; jj < n_res_per_model_mi; jj++)
-			for(int l = 0; l < tors_mi[ii]->n_ang; l++)
-				for(int m = 0; m < tors_mi[jj]->n_ang; m++)
+			for(int l = 0; l < tors_mi[ii]->nAng; l++)
+				for(int m = 0; m < tors_mi[jj]->nAng; m++)
 					if(glm::distance(tors_mi[ii]->v[l], tors_mi[jj]->v[m]) <= flagParameters.cutoff)
 					{
 						entropy->i1[kk] = ii;
 						entropy->i2[kk] = jj;
 
-						l = tors_mi[ii]->n_ang + 1;
-						m = tors_mi[jj]->n_ang + 1;
-						tors_mi2.n_ang = tors_mi[ii]->n_ang + tors_mi[jj]->n_ang;
+						l = tors_mi[ii]->nAng + 1;
+						m = tors_mi[jj]->nAng + 1;
+						tors_mi2.nAng = tors_mi[ii]->nAng + tors_mi[jj]->nAng;
 
 						int i = 0;
 						
-						for(int k = 0; k < tors_mi[ii]->n_ang; k++)
+						for(int k = 0; k < tors_mi[ii]->nAng; k++)
 						{
 							tors_mi2.ang[i] = tors_mi[ii]->ang[k];
 						}
 
-						for(int k = 0; k < tors_mi[jj]->n_ang; k++)
+						for(int k = 0; k < tors_mi[jj]->nAng; k++)
 						{
 							tors_mi2.ang[i] = tors_mi[jj]->ang[k];
 						}
 
 						for(int i = 0; i < nf; i++)
-							for(int j = 0; j < tors_mi2.n_ang; j++)
+							for(int j = 0; j < tors_mi2.nAng; j++)
 								phit[i][j] = tors_mi2.ang[j][i];
 
 						for(int i = 0; i < K-1; i++)
@@ -573,7 +571,7 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 
 						for(int j = 0; j < nf; j++)
 						{
-							d[j] = dist_ang(phit[i], phit[j], tors_mi2.n_ang, tors_mi2.bondSymmetry);
+							d[j] = dist_ang(phit[i], phit[j], tors_mi2.nAng, tors_mi2.bondSymmetry);
 							d[j] = deg2rad(d[j]);
 						}
 
@@ -600,18 +598,18 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 
 						for(int k = 1; k<K; k++)
 						{
-							ent_k[k-1] = ent_k[k-1] * ((double) tors_mi2.n_ang / (double) nf);
-							ent_k_2[k-1] = ent_k_2[k-1] * ((double) tors_mi2.n_ang * (double) tors_mi2.n_ang/ (double) nf);
+							ent_k[k-1] = ent_k[k-1] * ((double) tors_mi2.nAng / (double) nf);
+							ent_k_2[k-1] = ent_k_2[k-1] * ((double) tors_mi2.nAng * (double) tors_mi2.nAng/ (double) nf);
 						}
 
 						double c = 0.0;
 
-						for(int k = 0; k < tors_mi2.n_ang; k++)
+						for(int k = 0; k < tors_mi2.nAng; k++)
 						{
 						    c = c - log(tors_mi2.bondSymmetry[k] * M_PI / 180.0);
                         }
 						
-						c = c + ((double) tors_mi2.n_ang) * log(M_PI)/2.0 - lgamma(1.0 + ((double) tors_mi2.n_ang)/2.0) + 0.5722 + log( (double) nf);
+						c = c + ((double) tors_mi2.nAng) * log(M_PI)/2.0 - lgamma(1.0 + ((double) tors_mi2.nAng)/2.0) + 0.5722 + log( (double) nf);
 					   
 						int L = 0;
 
@@ -666,15 +664,15 @@ struct Entropy* PathEntropy::calculate_entropy_mi(int nf, struct FlagParameters 
 
 }
 
-void PathEntropy::tors_res2mi(std::vector<Tors_res4nn*> tors_res, int n_res_per_model, std::vector<Tors_res4nn*> &tors_mi, int n_res_per_model_mi, int *group2res, struct FlagParameters flagParameters)
+void PathEntropy::tors_res2mi(std::vector<TorsRes4NN*> tors_res, int n_res_per_model, std::vector<TorsRes4NN*> &tors_mi, int n_res_per_model_mi, int *group2res, struct FlagParameters flagParameters)
 {
 	int l = 0;
 
 	for(int i = 0; i < n_res_per_model; i++)
 	{
-		l = l + (int) floor((double) tors_res[i]->n_ang / (double) flagParameters.kmi);
+		l = l + (int) floor((double) tors_res[i]->nAng / (double) flagParameters.kmi);
 
-		if((tors_res[i]->n_ang % flagParameters.kmi) !=0) l++; 
+		if((tors_res[i]->nAng % flagParameters.kmi) !=0) l++; 
 	}
 
 	n_res_per_model_mi = l;
@@ -683,25 +681,25 @@ void PathEntropy::tors_res2mi(std::vector<Tors_res4nn*> tors_res, int n_res_per_
 
 	for(int i = 0; i < n_res_per_model_mi; i++)
 	{
-        tors_mi.push_back(new Tors_res4nn);
+        tors_mi.push_back(new TorsRes4NN);
 
 		tors_mi[i]->ang.push_back(std::vector<double>(flagParameters.kmi, 0));
 		tors_mi[i]->v.resize(flagParameters.kmi);
 		tors_mi[i]->bondSymmetry.resize(flagParameters.kmi);
-		tors_mi[i]->tors_name.resize(flagParameters.kmi);
+		tors_mi[i]->torsName.resize(flagParameters.kmi);
 	}
 
 	// group torsions
 	for(int i = 0, j = 0; i < n_res_per_model; i++)
 	{
-		for(int k = 0; k < tors_res[i]->n_ang; k++)
+		for(int k = 0; k < tors_res[i]->nAng; k++)
 		{
 			tors_mi[j]->bondSymmetry[k % flagParameters.kmi] = tors_res[i]->bondSymmetry[k];
 			tors_mi[j]->ang[k % flagParameters.kmi] = tors_res[i]->ang[k];
 			tors_mi[j]->v[k % flagParameters.kmi] = tors_res[i]->v[k];
-			tors_mi[j]->n_ang = k % flagParameters.kmi + 1;
+			tors_mi[j]->nAng = k % flagParameters.kmi + 1;
 
-		    if(( k % flagParameters.kmi) == (flagParameters.kmi - 1) || k == (tors_res[i]->n_ang - 1))
+		    if(( k % flagParameters.kmi) == (flagParameters.kmi - 1) || k == (tors_res[i]->nAng - 1))
 		    {
 			    group2res[j] = i;
 			    j++;
