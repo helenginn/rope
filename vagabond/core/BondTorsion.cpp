@@ -109,17 +109,17 @@ const std::string BondTorsion::desc()
 	return _desc;
 }
 
-const std::string BondTorsion::short_desc() 
+const std::string BondTorsion::shortDesc() 
 {
 	if (_sDesc.length()) return _sDesc;
 
-	auto check_both_pairs = [this](std::function<bool(Atom *)> req1,
+	auto checkBothPairs = [this](std::function<bool(Atom *)> req1,
 			std::function<bool(Atom *)> req2)
 	{
 		return ((req1(_b) && req2(_c)) || (req1(_c) && req2(_b)));
 	};
 
-	auto matches_name = [](std::string name)
+	auto matchesName = [](std::string name)
 	{
 		return [name](Atom *atom)
 		{
@@ -128,7 +128,7 @@ const std::string BondTorsion::short_desc()
 	
 	};
 
-	auto matches_regex = [](std::string reg)
+	auto matchesRegex = [](std::string reg)
 	{
 		return [reg](Atom *atom)
 		{
@@ -136,37 +136,37 @@ const std::string BondTorsion::short_desc()
 		};
 	};
 
-	if (check_both_pairs(matches_name("CA"), matches_name("N")))
+	if (checkBothPairs(matchesName("CA"), matchesName("N")))
 	{
 		_sDesc = "phi";
 	}
 	
-	if (check_both_pairs(matches_name("CA"), matches_name("C")))
+	if (checkBothPairs(matchesName("CA"), matchesName("C")))
 	{
 		_sDesc = "psi";
 	}
 	
-	if (check_both_pairs(matches_name("C"), matches_name("N")))
+	if (checkBothPairs(matchesName("C"), matchesName("N")))
 	{
 		_sDesc = "omega";
 	}
 
-	if (check_both_pairs(matches_name("CA"), matches_name("CB")))
+	if (checkBothPairs(matchesName("CA"), matchesName("CB")))
 	{
 		_sDesc = "chi1";
 	}
 					
-	if (check_both_pairs(matches_name("CB"), matches_regex("CG.?")))
+	if (checkBothPairs(matchesName("CB"), matchesRegex("CG.?")))
 	{
 		_sDesc = "chi2";
 	}
 
-	if (check_both_pairs(matches_name("CG"), matches_regex(".D")))
+	if (checkBothPairs(matchesName("CG"), matchesRegex(".D")))
 	{
 		_sDesc = "chi3";
 	}
 
-	if (check_both_pairs(matches_name("CD"), matches_regex(".E")))
+	if (checkBothPairs(matchesName("CD"), matchesRegex(".E")))
 	{
 		_sDesc = "chi4";
 	}
