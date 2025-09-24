@@ -161,7 +161,7 @@ public:
 	
 	virtual const std::string desc();
 	virtual const std::string reverse_desc();
-	virtual const std::string short_desc();
+	virtual const std::string shortDesc();
 
 	virtual bool hasDesc(std::string d)
 	{

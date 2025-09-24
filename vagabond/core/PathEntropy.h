@@ -8,9 +8,9 @@
 #include <PathGroup.h>
 
 struct Entropy {
-int n_single{};
-int n_pair{};
-int n_nn{};
+int nSingle{};
+int nPairs{};
+int nNearestNeighbours{};
 double **h1{};
 double **sd1{};
 double **dm1{};
@@ -29,12 +29,12 @@ double **mi{};
 double *milm{};
 double **dmmi{};
 double **sdmi{};
-double *total{};
-double *sd_total{};
-double *dm_total{};
+double *pathTotal{};
+double *sigmaTotal{};
+double *meanDistTotal{};
 double totalEntropy;
-double sdTotalEntropy;
-double dmeanTotal;
+double sigmaTotalEntropy;
+double meanDistTotalEntropy;
 double *entResidue{};
 };
 
@@ -72,8 +72,8 @@ public:
 
 	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<PathGroup> &paths);
 
-	struct Entropy* calculate_entropy_independent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> tors_res);
-    struct Entropy* calculate_entropy_mi(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> tors_res);
+	struct Entropy* calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
+    struct Entropy* calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
 
 	/* implicit compare function for qsort */
 	static int comp (const void * elem1, const void * elem2);
@@ -81,11 +81,11 @@ public:
 	/* linear weighting function */
 	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);
 
-    void tors_res2mi(std::vector<TorsRes4NN*> tors_res, int resPerModel, std::vector<TorsRes4NN*> &tors_mi, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+    void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
 	
-    int alloc_entropy(struct Entropy *entropy, int n_single, int n_pair, int n_nn, struct FlagParameters flagParameters);
+    int allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
 
-    int allocVariables(int nf, double **ent_k, double **ent_k_tot, double **ent_k_2, double **ent_k_tot_2, double **sd_k, struct FlagParameters *flagParameters);
+    int allocVariables(int nf, double **entk, double **entkTotal, double **entk2, double **entkTotal2, double **sigmak, struct FlagParameters *flagParameters);
 };
 
 #endif
