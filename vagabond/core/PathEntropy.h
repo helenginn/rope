@@ -81,7 +81,7 @@ public:
 	/* linear weighting function */
 	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);
 
-    void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+    void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters);
 	
     int allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
 
