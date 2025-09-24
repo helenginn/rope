@@ -59,7 +59,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 			if (param == nullptr || !param->isTorsion() || param->hasHydrogen())
 			{
-				std::cout << res->id() << " invalid parameter" << std::endl;
                 continue;
 			}
             if (angNames.size() > 0 && std::find(angNames.begin(), angNames.end(), static_cast<BondTorsion *>(param)->shortDesc()) != angNames.end())
@@ -350,20 +349,12 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
     allocVariables(nf, &entk, &entkTotal, &entk2, &entkTotal2, &sigmak, &flagParameters);
 
     entropy->nNearestNeighbours = flagParameters.n;
-    allocEntropy(entropy, numResPerModel, 0, entropy->nNearestNeighbours, flagParameters);
-
-	// for each residue...
+    
+    // for each residue...
 	int K = flagParameters.n + 1;
 	
     torsRes2MI(torsRes, numResPerModel, torsMi, numResPerModelMI, group2res, flagParameters);
     
-    for(int k = 1; k <= K-1; k++)
-	{
-		entropy->pathTotal[k-1] = 0.0;
-		entropy->sigmaTotal[k-1] = 0.0;
-		entropy->meanDistTotal[k-1] = 0.0;
-	}
-
 	//... based on a cutoff distance, calculate how many pairs of groups must be considered
 	entropy->nSingle = numResPerModelMI;
 	entropy->nPairs = 0;
@@ -386,7 +377,16 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 				}
 		}
 
-	// for each group, compute entropy, sd and dm for the group and map to residues
+    allocEntropy(entropy, numResPerModelMI, entropy->nPairs, entropy->nNearestNeighbours, flagParameters);
+
+    for(int k = 1; k <= K-1; k++)
+	{
+		entropy->pathTotal[k-1] = 0.0;
+		entropy->sigmaTotal[k-1] = 0.0;
+		entropy->meanDistTotal[k-1] = 0.0;
+	}
+
+    // for each group, compute entropy, sd and dm for the group and map to residues
 	// sum to total entrop, sd and dm
 	// normalise dm by sqrt(dof)
 	for(int m = 0; m < numResPerModelMI; m++)
@@ -483,18 +483,22 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 		}
 
 		// Linear weighted fit
-		int  ok = 1;
+		int  weightCheck = 1;
+
+        double x[K-1];
+        double y[K-1];
+        double w[K-1];
 
 		for(int k = 0; k < K-1; k++)
 		{
-			x[k] = meanDist[k+1];
-			y[k] = entk[k];
+			x[k] = entk[k];
+            y[k] = meanDist[k+1];
 
-			if(sigmak[k] > 0) w[k] = 1/(sigmak[k] * sigmak[k]);
-			else ok = 0;
+			if(sigmak[k] > 1e-12) w[k] = 1/(sigmak[k] * sigmak[k]);
+			else weightCheck = 0;
 		}
 
-		if(ok == 0)
+		if(weightCheck == 0)
 		{
 			for(int k = 0; k< K-1; k++)
 				w[k] = 1;
@@ -502,13 +506,13 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 	
         double a[3];
-        double sd[3];	
+        double sd[3];
 
-        fitlw(x,y,w,K-1,a,sd,&ok);
+        fitlw(x,y,w,K-1,a,sd,&weightCheck);
 
 		entropy->h1lm[m] = a[0];
 		entropy->sd1lm[m] = sd[0] * sd[0];
-		entropy->dm1lm[m] = meanDist[1] * meanDist[1];
+		//entropy->dm1lm[m] = meanDist[1] * meanDist[1];
 	}
 
 	// ... then prepare for mutual information calculation ... 
@@ -662,7 +666,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 }
 
-void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel, std::vector<TorsRes4NN*> &torsMi, int numResPerModelMI, int *group2res, struct FlagParameters flagParameters)
+void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel, std::vector<TorsRes4NN*> &torsMi, int &numResPerModelMI, int *group2res, struct FlagParameters flagParameters)
 {
 	int l = 0;
 
@@ -781,6 +785,8 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
 	if(flagParameters.mutualInformation)
 	{
 		entropy->mi = new double*[entropy->nPairs];
+		entropy->i1 = new int[entropy->nPairs];
+        entropy->i2 = new int[entropy->nPairs];
 	}
 
 }
