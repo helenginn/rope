@@ -415,6 +415,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					phit[i].resize(torsRes[m]->nAng);
                    
 					for (int j = 0; j < torsRes[m]->nAng; j++)
+
 					{
 						phit[i][j] = torsRes[m]->ang[timeDivisions][j][i];
 						numTors++;
@@ -758,6 +759,8 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
 	if(flagParameters.mutualInformation)
 	{
 		entropy->mi = new double*[entropy->nPairs];
+		entropy->i1 = new int[entropy->nPairs];
+        entropy->i2 = new int[entropy->nPairs];
 	}
 
 }
