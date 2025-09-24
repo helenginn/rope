@@ -112,11 +112,11 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
-			std::vector<TorsRes4NN*> tors_res = _pathEntropy->getAtomsAndResidues(_numPaths, _paths);
+			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths);
 
-			_entropy = _pathEntropy->calculate_entropy_independent(_numPaths, flagPar, tors_res);
+			_entropy = _pathEntropy->calculateEntropyIndependent(_numPaths, flagPar, torsRes);
 
-			std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
+			std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/torsRes.size()) + " (R units)";
 			delete(_entropy);	
 			displayEntropy(str);
 		};
@@ -150,11 +150,11 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 		{
 			_numPaths = lrint(min);
 			
-			std::vector<TorsRes4NN*> tors_res = _pathEntropy->getAtomsAndResidues(_numPaths, _paths);
+			std::vector<TorsRes4NN*> torsRes = _pathEntropy->getAtomsAndResidues(_numPaths, _paths);
 
-			_entropy = _pathEntropy->calculate_entropy_mi(_numPaths, flagPar, tors_res);
+			_entropy = _pathEntropy->calculateEntropyMI(_numPaths, flagPar, torsRes);
 
-			std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/tors_res.size()) + " (R units)";
+			std::string str = "Total: " +  std::to_string(_entropy->totalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(_entropy->totalEntropy/torsRes.size()) + " (R units)";
 			delete(_entropy);	
 			displayEntropy(str);
 		};
