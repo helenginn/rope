@@ -66,10 +66,8 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			}
             if (angNames.size() > 0 && std::find(angNames.begin(), angNames.end(), static_cast<BondTorsion *>(param)->shortDesc()) != angNames.end())
             {
-                std::cout << "Bond torsion " << static_cast<BondTorsion *>(param)->short_desc() << " of residue " << res->desc() << " already added! Skipping..." << std::endl;
 				continue;
             }
-		
 			validBondT.push_back(static_cast<BondTorsion *>(param));
 			angNames.push_back(static_cast<BondTorsion *> (param)->shortDesc());
 		}
@@ -99,6 +97,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			if((torsRes[i]->torsName[j] == "chi2" && (res->code() == "ASP"|| res->code() == "PHE" || res->code() == "TYR")) ||
 					(torsRes[i]->torsName[j] == "chi3" && res->code() == "GLU") ||
 					(torsRes[i]->torsName[j] == "chi4" && res->code() == "ARG"))
+
 			{
 				torsRes[i]->bondSymmetry[j] = 180.0;
 			}
@@ -157,6 +156,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 	int numTors = 0;
     struct EntropyForMatrix ent4Matrix;
     int K = flagParameters.n + 1;
+
 	/* for each residue, compute entropy, sd and dm for the residue
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
@@ -493,6 +493,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					entk[k-1] = entk[k-1] + c - L;
 					L = L + 1/k;
 
+
 					meanDist[k] = meanDist[k] / (double) nf;
 					meanLogDist[k] = meanLogDist[k] / (double) nf;
 
@@ -756,7 +757,7 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
 
 	if(flagParameters.mutualInformation)
 	{
-		entropy->mi = new double*[entropy->n_pair];
+		entropy->mi = new double*[entropy->nPairs];
 	}
 
 }
