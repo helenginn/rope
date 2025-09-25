@@ -78,12 +78,6 @@ void Flexibility::generateAtomCloud()
 }
 
 
-// void Flexibility::generateSamples()
-// {
-//     generateAtomCloud();
-// }
-
-
 
 void Flexibility::atomCloud(float weight, const AtomVector &atoms)
 {
@@ -365,10 +359,10 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     }
 
     // Check if donor exists
-    Atom* donorAtom = atomGroup->atomByDesc(hbondPair.donor);
+    Atom* donorAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
     if (!donorAtom) {
         ++missingDonorCount;
-        std::cerr << "Error: Donor atom '" << hbondPair.donor 
+        std::cerr << "Error: Donor atom '" << hbondPair.hydrogen 
                   << "' not found in the AtomGroup. Total missing donors: " 
                   << missingDonorCount << std::endl;
         return false;
@@ -423,22 +417,40 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         std::cerr << "Validation failed: One or both atoms not found. Skipping HBond addition." << std::endl;
         return;
     }
+
+
     // Proceed with the rest of the addHBond logic as before
     AtomGroup* atomGroup = _instance->currentAtoms();
     Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
-    Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.donor);
+    Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
 
     // Error handling for acceptor
     if (!checkAndGetAtom(atomGroup, hbondPair.acceptor, acceptorAtom) || 
-        !checkAndGetAtom(atomGroup, hbondPair.donor, hydrogenAtom)) {
+        !checkAndGetAtom(atomGroup, hbondPair.hydrogen, hydrogenAtom)) {
         return;
     }
 
     Atom* donorAtom = hydrogenAtom->connectedAtom(0); // Assuming bonded atom is donor
     if (!donorAtom) {
-        std::cerr << "Error: Hydrogen atom '" << hbondPair.donor << "' is not connected to any atom." << std::endl;
+        std::cerr << "Error: Hydrogen atom '" << hbondPair.hydrogen << "' is not connected to any atom." << std::endl;
         return;
     }
+
+    // ---- Debug print: verify assignments ----
+    std::cout << "[HBond] Adding hydrogen bond:" << std::endl;
+    std::cout << "   Acceptor: " 
+              << (acceptorAtom ? acceptorAtom->desc(): "<null>")
+              << " @ index " << accessAtomBlock(acceptorAtom) << std::endl;
+    std::cout << "   Hydrogen: " 
+              << (hydrogenAtom ? hydrogenAtom->desc() : "<null>")
+              << " @ index " << accessAtomBlock(hydrogenAtom) << std::endl;
+    std::cout << "   Donor:    " 
+              << (donorAtom ? donorAtom->desc() : "<null>")
+              << " @ index " << accessAtomBlock(donorAtom) << std::endl;
+    std::cout << std::endl;
+
+
+
 
     // Access donor and acceptor positions
     int donorBlock_idx = accessAtomBlock(donorAtom);
@@ -669,37 +681,6 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector)
     return block_idx;
 }
 
-// void Flexibility::buildJacobianMatrix()
-// {
-//     // Get the number of torsions and values
-//     int numCol = _hbonds.size();
-//     std::vector<int> torsionVector = getGlobalTorsionVector();
-//     int numRow = _globalTorsionSet.size();
-
-//     // set up the JacobianMatrix
-//     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
-//     jacobianMatrix.setZero();
-//     // Loop through the Jacobian matrix and print elements
-//     for (int i = 0; i < numRow; ++i) 
-//     {
-//         for (int j = 0; j < numCol; ++j) 
-//         {
-//             int torsionIdx = torsionVector[i];
-//             HBondEntity& hbe = _hbonds[j];
-
-//             const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
-//             glm::vec3 APos = blocks[torsionIdx].my_position(); 
-//             glm::vec3 BPos = blocks[torsionIdx].inherit; 
-//             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
-//             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
-
-//             float derivative = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
-//             jacobianMatrix(i,j) = derivative;
-//         }
-//     }
-//     _jacobMtx = jacobianMatrix;
-// }
-
 void Flexibility::buildJacobianMatrix()
 {
     // Columns = total number of constraints (5 per Hbonds +one per vdW bonds)
@@ -715,15 +696,16 @@ void Flexibility::buildJacobianMatrix()
 
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
 
+
     // --- Hydrogen bonds ---
     for (int i = 0; i < numRow; ++i) 
     {
         int torsionIdx = torsionVector[i];
-
+        int colBase = 0;
         for (int j = 0; j < _hbonds.size(); ++j) 
         {
             HBondEntity& hbe = _hbonds[j];
-            int colBase = j * 5; // 5 constraints per Hbond
+            // int colBase = j * 5; // 5 constraints per Hbond
 
             glm::vec3 APos = blocks[torsionIdx].my_position(); 
             glm::vec3 BPos = blocks[torsionIdx].inherit; 
@@ -732,8 +714,18 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
             glm::vec3 HPos = blocks[hbe.hydrogenIdx].my_position();
 
-            glm::vec3 parentDonor = blocks[hbe.donorIdx - 1].my_position();
-            glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx - 1].my_position();
+            int parentDonor_idx = blocks[hbe.donorIdx].parent_idx;
+            int parentAcceptor_idx = blocks[hbe.acceptorIdx].parent_idx;
+
+
+    // // Compute positions, distances, and angles
+    // glm::vec3 donorPos = blocks[donorBlock_idx].my_position();
+    // glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
+    // glm::vec3 parentDonorPos = blocks[donorBlock_idx + parentDonor_idx].my_position();
+    // glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx + parentAcceptor_idx].my_position();
+            // NEW
+            glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
+            glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
 
             // 1) Distance H–A
             float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
@@ -755,7 +747,7 @@ void Flexibility::buildJacobianMatrix()
             // 4) Dihedral D-H-A-B
             float dDihedral2 = bond_rotation_on_torsion_gradient(APos, BPos, DPos, HPos, CPos, parentAcceptor);
             jacobianMatrix(i, colBase + 4) = dDihedral2;
-
+            colBase += 5;
 
         }
     }
@@ -900,44 +892,166 @@ std::vector<int> Flexibility::sampleColumnIndices(int N, int sampleCount, double
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis(0.0, 1.0);
-    std::cout << "indices";
     while (sampled.size() < sampleCount)
     {
         double r = dis(gen);
         auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
         int idx = std::distance(cdf.begin(), it);
-        std::cout << idx << " ";  
         sampled.push_back(idx);
     }
-    std::cout << std::endl;
     return sampled;
-
-
 }
 
 void Flexibility::saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda)
 {
+    // Call sampleColumnIndices to choose numSamples columns from _V
     std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
+    int saved = 0;
+    int attempts = 0;
+    int maxAttempts = numSamples * 10; // safeguard: don't loop forever
 
-    for (int i = 0; i < numSamples; ++i)
+    // prepare radii
+    std::set<std::pair<int,int>> exclude;
+    std::vector<float> radii;
+
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    OpSet<Atom*> atom_set(atoms);
+    std::vector<Atom*> orderedAtoms = atom_set.toVector();
+    radii = makeRadiiVec(orderedAtoms);
+
+    // prepare exclude
+    exclude = makeExcList(atom_set);
+
+    while (saved < numSamples && attempts < maxAttempts)
     {
-        // submitJobRandom(colIdx);
-        _colIdx = indices[i];
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(-10.0, 10.0);
+        ++attempts;
+        // * store index in _colIdx
+        _colIdx = indices[saved];
+        // * Generate a random scalar weight in [-10, 10] (amplitude of the pertubation along that column)
+        std::random_device rd; std::mt19937 gen(rd()); 
+        std::uniform_real_distribution<> dis(-10.0, 10.0); 
         double randomWeight = dis(gen);
+        // * Call submitJob for the randomWeight
         submitJob(randomWeight);
         Result *r = _resources.calculator->acquireObject();
-        r->transplantPositions(false);  // Or true, depending on what you want saved
-
-        std::ostringstream oss;
-        oss << baseFileName << "_" << i << ".pdb";
-        _instance->currentAtoms()->writeToFile(oss.str());
-
-        r->destroy();
+        r->transplantPositions(false); // Or true, depending on what you want saved
+        // check for classes
+        std::vector<glm::vec3> positions;
+        float tol = 0.2f;
+        bool clashOK = checkClashes(positions, radii, exclude, tol);
+        if (!clashOK)
+        {
+            std::cerr << "[saveSampledStructures] Sample " << saved << " rejected due to atom clash\n"; 
+            r->destroy(); 
+            continue; // skip writing this structure
+        }
+        std::ostringstream oss; oss << baseFileName << "_" << saved << ".pdb"; 
+        _instance->currentAtoms()->writeToFile(oss.str()); 
+        r->destroy(); 
+        ++saved;   
     }
+    if (saved < numSamples) 
+    { 
+        std::cerr << "[saveSampledStructures] Warning: only saved " 
+        << saved << "/" << numSamples << " due to clashes (maxAttempts=" 
+        << maxAttempts << ")\n"; 
+    }
+
 }
+
+std::vector<float> Flexibility::makeRadiiVec(const AtomVector &atoms)
+{
+    std::vector<float> radii;
+    radii.reserve(atoms.size());
+    for (Atom *atom : atoms) 
+    {
+        // Add van der Waals radius
+        std::string symbol = atom->elementSymbol();
+        gemmi::Element ele = gemmi::Element(symbol);
+        radii.push_back(ele.vdw_r());
+    }
+    return radii;
+}
+
+std::set<std::pair<int,int>> Flexibility::makeExcList(OpSet<Atom*> &atom_set)
+{
+    std::set<std::pair<int,int>> exclude;
+    std::map<Atom*, int> indexing = atom_set.indexing();
+    for (Atom *left_atom : atom_set)
+    {
+        // go throught all the Bondstraints
+        int left_idx = indexing[left_atom]; 
+        int torsionCount = left_atom->bondTorsionCount();
+        // for each torsion involving left_atom 
+        for (int t = 0; t < torsionCount; ++t)
+        {
+            BondTorsion *torsion = left_atom->bondTorsion(t);
+            int atomCount = torsion->atomCount();
+            for (int k = 0; k < atomCount; ++k)
+            {
+                Atom *right_atom = torsion->atom(k);
+                if (right_atom == left_atom) continue;
+                int right_idx = indexing[right_atom];
+                auto key = std::minmax(left_idx, right_idx);
+                exclude.insert(key);
+                // Debug print
+                // std::cout << "[makeExcList] Excluding pair: " 
+                //           << key.first << " - " << key.second << "\n";
+            }
+        }
+    }
+    return exclude;
+}
+
+bool Flexibility::checkClashes(const std::vector<glm::vec3> &positions, 
+                               const std::vector<float> &radii,
+                               const std::set<std::pair<int,int>> &exclude,
+                               float tolerance)
+{
+    // build bounding box for each atom 
+    using Pair = std::pair<int, int>;
+    // auto make_key = [](int a, int b)
+    // {
+    //     return std::minmax(a,b);
+    // };
+    std::set<Pair> skip; 
+    for (const auto &p : exclude) 
+    { 
+        skip.insert(std::minmax(p.first, p.second)); 
+    }
+    int n = positions.size();
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = i + 1; j < n; ++j)
+        {
+            if (skip.count(std::minmax(i, j)) > 0) continue; 
+            float limit = radii[i] + radii[j] - tolerance;
+            if (limit < 0.0f) continue; //radii to small
+
+            // caclulate coordinate differences
+            float  dx = positions[i].x - positions[j].x;
+            if (std::abs(dx) > limit) continue; // early exit 
+
+            float  dy = positions[i].y - positions[j].y;
+            if (std::abs(dy) > limit) continue; // early exit 
+
+            float dz = positions[i].z - positions[j].z;
+            if (std::abs(dz) > limit) continue; // early exit 
+
+            // only now compute the squared distance
+            float dist2 = dx*dx + dy*dy + dz*dz;
+            if (dist2 < limit * limit) 
+            {
+                std::cerr << "[checkClashes] Clash between atoms "
+                          << i << " and " << j << "\n";
+                return false;
+            }
+        }
+    }
+    return true;
+
+}
+
 
 void Flexibility::submitJobRandom(int colIdx)
 {

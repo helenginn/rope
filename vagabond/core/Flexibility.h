@@ -19,6 +19,11 @@ struct SVDResult {
     Eigen::MatrixXf V;
 };
 
+struct BoundBox {
+    glm::vec3 min; // (x_min, y_min, z_min)
+    glm::vec3 max; // (x_max, y_max, z_max)
+};
+
 class Flexibility : public Display, public StructureModification {
 public:
     Flexibility(Instance *i);
@@ -31,7 +36,7 @@ public:
         Atom* Acceptor;
         int acceptorIdx;
         Atom* Hydrogen;     
-        int hydrogenIdx;   
+        int hydrogenIdx;  
         float startDist;
         Atom* ParentDonor;
         Atom* ParentAcceptor;
@@ -137,6 +142,12 @@ public:
     void calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms);
     void saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
     void saveSampledStructures(int numSamples, const std::string &baseFileName);
+    bool checkClashes(const std::vector<glm::vec3> &positions, 
+                               const std::vector<float> &radii,
+                               const std::set<std::pair<int,int>> &exclude,
+                               float tolerance);
+    std::vector<float> makeRadiiVec(const AtomVector &atoms);
+    std::set<std::pair<int,int>> makeExcList(OpSet<Atom*> &atom_set);
     void submitJobRandom(int colIdx);
     void saveFreeEnergyCSV(const std::string &filename,
                                     const std::vector<double> &enthalpies,
