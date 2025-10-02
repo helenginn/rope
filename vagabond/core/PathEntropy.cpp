@@ -34,11 +34,9 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 {
 	std::vector<TorsRes4NN*> torsRes;
     Sequence *polySeq = static_cast<Polymer *>(paths[0].front()->startInstance())->sequence();
-
-	AtomGroup *content = paths[0].front()->toRoute()->instance()->currentAtoms();
-
-	content->recalculate();
-
+	
+    AtomGroup *rawAtoms = polySeq->convertToAtoms();
+		
 	for (int i = 0; i < polySeq->size(); i++)
 	{
 		if(polySeq->residue(i) == nullptr)
@@ -55,7 +53,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 		for (auto it = torsions.begin(); it != torsions.end(); it++)
 		{
-			Parameter *param = content->findParameter(it->desc(), res->id());
+			Parameter *param = rawAtoms->findParameter(it->desc(), res->id());
 
 			if (param == nullptr || !param->isTorsion() || param->hasHydrogen())
 			{
@@ -516,12 +514,14 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 	}
 
 	// ... then prepare for mutual information calculation ... 
-	torsMi2.ang.resize(2*flagParameters.kmi);
 
 	for(int i = 0; i < nf; i++)
 	{
-		phit[i].resize(2*flagParameters.kmi);
+	    phit[i] = std::vector<double> (2*flagParameters.kmi);
+        torsMi2.ang.push_back(std::vector<double> (2*flagParameters.kmi, 0));
 	}
+
+    torsMi2.bondSymmetry.resize(2*flagParameters.kmi);
 
 	int kk = 0;
 	// ... and calculate the entropy for paired groups of torsions 
@@ -544,11 +544,13 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 						for(int k = 0; k < torsMi[ii]->nAng; k++)
 						{
 							torsMi2.ang[i] = torsMi[ii]->ang[k];
+                            torsMi2.bondSymmetry[i++] = torsMi[ii]->bondSymmetry[k];
 						}
 
 						for(int k = 0; k < torsMi[jj]->nAng; k++)
 						{
 							torsMi2.ang[i] = torsMi[jj]->ang[k];
+                            torsMi2.bondSymmetry[i++] = torsMi[jj]->bondSymmetry[k];
 						}
 
 						for(int i = 0; i < nf; i++)
