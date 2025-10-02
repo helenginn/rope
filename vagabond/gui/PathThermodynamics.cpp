@@ -56,7 +56,7 @@ void PathThermodynamics::addTypeButtons()
 
 void PathThermodynamics::setup()
 {
-	addTitle("Calculate path thermodynamics");    
+    addTitle("Calculate path thermodynamics");    
     Path *path = _paths.front();
     Text *t = new Text(path->desc());
     t->setCentre(0.5, 0.15);
