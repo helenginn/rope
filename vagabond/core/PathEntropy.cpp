@@ -41,7 +41,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
     Sequence *polySeq = static_cast<Polymer *>(instance)->sequence();
 	
     AtomGroup *rawAtoms = instance->model()->currentAtoms();
-
 	for (int i = 0; i < polySeq->size(); i++)
 	{
 		if(polySeq->residue(i) == nullptr)
