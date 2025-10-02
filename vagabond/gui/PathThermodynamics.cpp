@@ -21,7 +21,6 @@
 #include <vagabond/core/PathGroup.h>
 #include <vagabond/core/Path.h>
 #include <vagabond/core/Entity.h>
-#include <vagabond/core/Instance.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
 #include <vagabond/utils/FileReader.h>
@@ -58,7 +57,14 @@ void PathThermodynamics::addTypeButtons()
 void PathThermodynamics::setup()
 {
 	addTitle("Calculate path thermodynamics");
-	float top = 0.3;
+
+    Path *path = _paths[0].front();
+    Text *t = new Text(path->desc());
+    t->setCentre(0.5, 0.15);
+    t->squishToWidth(0.8);
+    addObject(t);
+
+    float top = 0.3;
 
 	{
 		Text *t = new Text("Calculate single-structure entropy");
