@@ -142,12 +142,15 @@ public:
     void calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms);
     void saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
     void saveSampledStructures(int numSamples, const std::string &baseFileName);
-    bool checkClashes(const std::vector<glm::vec3> &positions, 
+    bool checkClashes(const std::vector<Atom*> orderedAtoms, 
+                                int saved,
                                const std::vector<float> &radii,
                                const std::set<std::pair<int,int>> &exclude,
                                float tolerance);
     std::vector<float> makeRadiiVec(const AtomVector &atoms);
+    std::vector<glm::vec3> makePosVec(const AtomVector &atoms);
     std::set<std::pair<int,int>> makeExcList(OpSet<Atom*> &atom_set);
+    std::set<std::pair<int,int>> makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing);
     void submitJobRandom(int colIdx);
     void saveFreeEnergyCSV(const std::string &filename,
                                     const std::vector<double> &enthalpies,
@@ -168,6 +171,11 @@ public:
 
 
     // === DEBUGGING ===
+    void listClashes(const std::string &filename,
+                              int saved,
+                              const std::vector<Atom*> &orderedAtoms,
+                              int i, int j,
+                              const std::vector<float> &radii);
 
 protected:
     float _chosenWeight = 0.5;

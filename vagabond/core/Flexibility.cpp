@@ -7,6 +7,7 @@
 #include "AtomGroup.h"
 #include "BondSequence.h"
 #include "BondCalculator.h"
+#include "BondAngle.h"
 #include "BondSequenceHandler.h"
 #include "HBondManager.h"
 #include <vagabond/core/BondCalculator.h>
@@ -380,8 +381,8 @@ bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
 
     // If both atoms are found
     ++successfulValidations;
-    std::cout << "Validation successful. Total successful validations: " 
-              << successfulValidations << std::endl;
+    // std::cout << "Validation successful. Total successful validations: " 
+    //           << successfulValidations << std::endl;
 
     return true;
 }
@@ -437,17 +438,17 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
     }
 
     // ---- Debug print: verify assignments ----
-    std::cout << "[HBond] Adding hydrogen bond:" << std::endl;
-    std::cout << "   Acceptor: " 
-              << (acceptorAtom ? acceptorAtom->desc(): "<null>")
-              << " @ index " << accessAtomBlock(acceptorAtom) << std::endl;
-    std::cout << "   Hydrogen: " 
-              << (hydrogenAtom ? hydrogenAtom->desc() : "<null>")
-              << " @ index " << accessAtomBlock(hydrogenAtom) << std::endl;
-    std::cout << "   Donor:    " 
-              << (donorAtom ? donorAtom->desc() : "<null>")
-              << " @ index " << accessAtomBlock(donorAtom) << std::endl;
-    std::cout << std::endl;
+    // std::cout << "[HBond] Adding hydrogen bond:" << std::endl;
+    // std::cout << "   Acceptor: " 
+    //           << (acceptorAtom ? acceptorAtom->desc(): "<null>")
+    //           << " @ index " << accessAtomBlock(acceptorAtom) << std::endl;
+    // std::cout << "   Hydrogen: " 
+    //           << (hydrogenAtom ? hydrogenAtom->desc() : "<null>")
+    //           << " @ index " << accessAtomBlock(hydrogenAtom) << std::endl;
+    // std::cout << "   Donor:    " 
+    //           << (donorAtom ? donorAtom->desc() : "<null>")
+    //           << " @ index " << accessAtomBlock(donorAtom) << std::endl;
+    // std::cout << std::endl;
 
 
 
@@ -906,6 +907,10 @@ void Flexibility::saveSampledStructures(int numSamples, const std::string& baseF
 {
     // Call sampleColumnIndices to choose numSamples columns from _V
     std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
+    
+    // start - debugging
+    const unsigned displayLimit = 5;
+
     int saved = 0;
     int attempts = 0;
     int maxAttempts = numSamples * 10; // safeguard: don't loop forever
@@ -922,23 +927,33 @@ void Flexibility::saveSampledStructures(int numSamples, const std::string& baseF
     // prepare exclude
     exclude = makeExcList(atom_set);
 
+    // * Call submitJob for the randomWeight
+    double weight = 0;
+    submitJob(weight);
+    Result *r = _resources.calculator->acquireObject();
+    r->transplantPositions(false, true); // Or true, depending on what you want saved
+
     while (saved < numSamples && attempts < maxAttempts)
     {
         ++attempts;
         // * store index in _colIdx
-        _colIdx = indices[saved];
+        // try:
+        _colIdx = indices[attempts % indices.size()];
+        // _colIdx = indices[saved];
+
         // * Generate a random scalar weight in [-10, 10] (amplitude of the pertubation along that column)
         std::random_device rd; std::mt19937 gen(rd()); 
-        std::uniform_real_distribution<> dis(-10.0, 10.0); 
+        std::uniform_real_distribution<> dis(-5.0, 5.0); 
         double randomWeight = dis(gen);
         // * Call submitJob for the randomWeight
         submitJob(randomWeight);
         Result *r = _resources.calculator->acquireObject();
         r->transplantPositions(false); // Or true, depending on what you want saved
+
+
         // check for classes
-        std::vector<glm::vec3> positions;
-        float tol = 0.2f;
-        bool clashOK = checkClashes(positions, radii, exclude, tol);
+        float tol = 0.25f;
+        bool clashOK = checkClashes(orderedAtoms, saved, radii, exclude, tol);
         if (!clashOK)
         {
             std::cerr << "[saveSampledStructures] Sample " << saved << " rejected due to atom clash\n"; 
@@ -959,6 +974,19 @@ void Flexibility::saveSampledStructures(int numSamples, const std::string& baseF
 
 }
 
+std::vector<glm::vec3> Flexibility::makePosVec(const AtomVector &atoms)
+{
+    std::vector<glm::vec3> positions;
+    positions.reserve(atoms.size());
+    for (Atom *atom : atoms) 
+    {
+        // std::cout << positions.size() << " is atom " << atom->desc() << std::endl;
+        glm::vec3 pos = atom->derivedPosition();
+        positions.push_back(pos);
+    }
+    return positions;
+}
+
 std::vector<float> Flexibility::makeRadiiVec(const AtomVector &atoms)
 {
     std::vector<float> radii;
@@ -973,47 +1001,112 @@ std::vector<float> Flexibility::makeRadiiVec(const AtomVector &atoms)
     return radii;
 }
 
+
 std::set<std::pair<int,int>> Flexibility::makeExcList(OpSet<Atom*> &atom_set)
 {
     std::set<std::pair<int,int>> exclude;
     std::map<Atom*, int> indexing = atom_set.indexing();
-    for (Atom *left_atom : atom_set)
+    std::vector<Atom*> orderedAtoms = atom_set.toVector();
+    auto check_bondstraint = [&exclude, &indexing]<class Type>(Type *b, Atom *left_atom)
+    {
+        int atomCount = b->atomCount();
+        int left_idx = indexing[left_atom]; 
+        for (int k = 0; k < atomCount; ++k)
+        {
+            Atom *right_atom = b->atom(k);
+            if (right_atom == left_atom) continue;
+            int right_idx = indexing[right_atom];
+            auto key = std::minmax(left_idx, right_idx);
+            exclude.insert(key);
+            // Debug print
+            // std::cout << "[makeExcList] Excluding pair: " 
+            //           << key.first << " - " << key.second << "\n";
+        }
+    };
+
+    for (Atom *left_atom : orderedAtoms)
     {
         // go throught all the Bondstraints
-        int left_idx = indexing[left_atom]; 
         int torsionCount = left_atom->bondTorsionCount();
         // for each torsion involving left_atom 
         for (int t = 0; t < torsionCount; ++t)
         {
             BondTorsion *torsion = left_atom->bondTorsion(t);
-            int atomCount = torsion->atomCount();
-            for (int k = 0; k < atomCount; ++k)
-            {
-                Atom *right_atom = torsion->atom(k);
-                if (right_atom == left_atom) continue;
-                int right_idx = indexing[right_atom];
-                auto key = std::minmax(left_idx, right_idx);
-                exclude.insert(key);
-                // Debug print
-                // std::cout << "[makeExcList] Excluding pair: " 
-                //           << key.first << " - " << key.second << "\n";
-            }
+            check_bondstraint(torsion, left_atom);
         }
+        int angleCount = left_atom->bondAngleCount();
+        // for each torsion involving left_atom 
+        for (int t = 0; t < angleCount; ++t)
+        {
+            BondAngle *angle = left_atom->bondAngle(t);
+            check_bondstraint(angle, left_atom);
+        }
+
     }
+    std::set<std::pair<int,int>> hbond_exclusions = makeExcHBonds(orderedAtoms, indexing);
+    exclude.insert(hbond_exclusions.begin(), hbond_exclusions.end());
+
     return exclude;
 }
 
-bool Flexibility::checkClashes(const std::vector<glm::vec3> &positions, 
+std::set<std::pair<int,int>> Flexibility::makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing)
+{
+    std::set<std::pair<int,int>> excludeHAtom;
+    // std::map<Atom*, int> indexing = atom_set.indexing();
+
+    // std::vector<Atom*> orderedAtoms = atom_set.toVector();
+    std::vector<glm::vec3> positions = makePosVec(orderedAtoms);
+    int n = positions.size();
+
+    
+    // Typical covalent N-H ~1.0 Å, O-H ~0.96 Å. Use a small margin.
+    const float OH_cutoff = 0.96f; // 1.20f;
+    const float NH_cutoff = 1.00f; //1.20f; 
+
+    for (int i = 0; i < n; ++i)
+    {
+        Atom *a_i = orderedAtoms[i];
+        if (a_i->elementSymbol() != "H") continue;
+
+        for (int j = 0; j < n; ++j)
+        {
+            if (i == j) continue; 
+            Atom *a_j = orderedAtoms[j];
+            std::string elem = a_j ->elementSymbol();
+            if (elem != "O" && elem !="N") continue;
+            // choose cutoff based on heavy atom type
+            float cutoff = (elem == "O") ? OH_cutoff : NH_cutoff;
+            // axis-aligned early exits
+            float dx = positions[i].x - positions[j].x;
+            if (std::abs(dx) > cutoff) continue;
+            float dy = positions[i].y - positions[j].y;
+            if (std::abs(dy) > cutoff) continue;
+            float dz = positions[i].z - positions[j].z;
+            if (std::abs(dz) > cutoff) continue;
+
+
+            // full squared-distance check
+            float dist2 = dx*dx + dy*dy + dz*dz;
+            if (dist2 <= cutoff * cutoff)
+            {
+                auto key = std::minmax(indexing[a_i], indexing[a_j]);
+                excludeHAtom.insert(key);
+            }
+        }
+    }
+    return excludeHAtom;
+}
+
+
+
+bool Flexibility::checkClashes(const std::vector<Atom*> orderedAtoms, 
+                                int saved,
                                const std::vector<float> &radii,
                                const std::set<std::pair<int,int>> &exclude,
                                float tolerance)
 {
-    // build bounding box for each atom 
+    std::vector<glm::vec3> positions = makePosVec(orderedAtoms);
     using Pair = std::pair<int, int>;
-    // auto make_key = [](int a, int b)
-    // {
-    //     return std::minmax(a,b);
-    // };
     std::set<Pair> skip; 
     for (const auto &p : exclude) 
     { 
@@ -1024,8 +1117,14 @@ bool Flexibility::checkClashes(const std::vector<glm::vec3> &positions,
     {
         for (int j = i + 1; j < n; ++j)
         {
+            // std::cout << "[checkClashes] Clash between atoms "
+            //               << i << " and " << j << std::endl;
+
             if (skip.count(std::minmax(i, j)) > 0) continue; 
             float limit = radii[i] + radii[j] - tolerance;
+            // float collisionFactor = 0.85f; // or 0.8–0.9, tune as needed
+            // float limit = collisionFactor * (radii[i] + radii[j]);
+
             if (limit < 0.0f) continue; //radii to small
 
             // caclulate coordinate differences
@@ -1040,12 +1139,25 @@ bool Flexibility::checkClashes(const std::vector<glm::vec3> &positions,
 
             // only now compute the squared distance
             float dist2 = dx*dx + dy*dy + dz*dz;
-            if (dist2 < limit * limit) 
+            if (dist2 > limit * limit) continue;
+
+            Atom *left = orderedAtoms[i];
+            Atom *right = orderedAtoms[j];
+            glm::vec3 left_initial = left->otherPosition("other");
+            glm::vec3 right_initial = right->otherPosition("other");
+            // calculate dist between left_initial and right_intitila
+            float dist_initial =  glm::length(left_initial - right_initial);
+            if (dist_initial - tolerance < limit)
             {
-                std::cerr << "[checkClashes] Clash between atoms "
-                          << i << " and " << j << "\n";
-                return false;
+                limit = dist_initial - tolerance;
             }
+            if (dist2 > limit * limit) continue;
+
+            std::cerr << "[checkClashes] Clash between atoms " << i << " and " << j << "\n";
+            std::cerr << "[checkClashes] dist2 " << dist2 << " and limit " << limit << "\n";
+            listClashes("list_clashes.csv", saved, orderedAtoms, i, j, radii);
+            return false;
+            
         }
     }
     return true;
@@ -1196,4 +1308,31 @@ void Flexibility::saveFreeEnergyCSV(const std::string &filename,
 
     file.close();
     std::cout << "Free energy data saved to " << filename << std::endl;
+}
+
+void Flexibility::listClashes(const std::string &filename,
+                              int saved,
+                              const std::vector<Atom*> &orderedAtoms,
+                              int i, int j,
+                              const std::vector<float> &radii)
+{
+    std::ofstream file(filename, std::ios::app); // append mode
+    if (!file.is_open())
+    {
+        std::cerr << "Could not open file: " << filename << std::endl;
+        return;
+    }
+
+    // Write header if this is the first clash for this sample
+    file << "sample_structure_" << saved << "\n";
+
+    Atom *a1 = orderedAtoms[i];
+    Atom *a2 = orderedAtoms[j];
+
+    file << a1->desc() << "," 
+         << std::fixed << std::setprecision(3) << radii[i] << ","
+         << a2->desc() << ","
+         << std::fixed << std::setprecision(3) << radii[j] << "\n";
+
+    file.close();
 }
