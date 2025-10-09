@@ -231,7 +231,6 @@ void AxisExplorer::localMotion()
 	glm::vec3 min = bounds.min - 5.f;
 	glm::vec3 max = bounds.max + 5.f;
 	
-	std::cout << min << " " << max << std::endl;
 	float cube = 1.f;
 
 	AtomMap *map = new AtomMap();
@@ -489,8 +488,6 @@ void AxisExplorer::setupColoursForList(RTAngles &angles)
 		}
 
 		float val = angles.storage(i);
-		
-//		std::cout << id.str() << " " << tr.desc() << " " << val << std::endl;
 
 		float sqval = val * val;
 		list[id] += sqval;

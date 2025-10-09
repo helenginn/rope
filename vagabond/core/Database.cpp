@@ -118,7 +118,7 @@ OpSet<std::string> values_for(const std::list<Database::KeyValues> &data,
 		{
 			results.insert(kv.at(header).text());
 			// Print the extracted value here
-      		std::cout << kv.at(header).text() << std::endl;
+      		// std::cout << kv.at(header).text() << std::endl;
 
 		}
 	}
@@ -211,9 +211,10 @@ TabulatedData *Database::asData(const std::vector<std::string> &ids)
 			for (auto it = kv->begin(); it != kv->end(); it++)
 			{
 				pairs.push_back({it->first, it->second.text()});
-				std::cout << it->first << "=" << it->second << ", ";
+				// std::cout << "In Database.cpp we checkign the headers... "<< std::endl;
+				// std::cout << it->first << "=" << it->second << ", ";
 			}
-			std::cout << std::endl;
+			// std::cout << std::endl;
 			if (pairs.size())
 			{
 				entries.push_back(pairs);
@@ -235,8 +236,8 @@ TabulatedData *Database::asData(const std::vector<std::string> &ids)
   }
 
   	// Print the tabulated data
-	std::cout << "Generated Tabulated Data:" << std::endl;
-	std::cout << *data << std::endl;
+	// std::cout << "Generated Tabulated Data:" << std::endl;
+	// std::cout << *data << std::endl;
 
 return data;
 

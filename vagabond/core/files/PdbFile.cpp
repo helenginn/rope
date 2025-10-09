@@ -231,25 +231,13 @@ void PdbFile::parseFileContents()
 	_values["_cell.angle_gamma"] = std::to_string(st.cell.gamma);
 
 	gemmi::setup_entities(st);
-	
-	/*
-	for (size_t i = 0; i < st.entities.size(); i++)
-	{
-		std::vector<std::string> seq = st.entities[i].full_sequence;
-
-//		std::cout << st.entities[i].name << " = ";
-//		std::cout << gemmi::one_letter_code(seq) << std::endl;
-	}
-	*/
 
 	for (size_t i = 0; i < st.models.size(); i++)
 	{
 		int idx = st.models.size() == 1 ? -1 : i;
 		processModel(st.models[i], idx);
 	}
-	
-//	std::cout << "This file " << _filename << " has " << atomCount() 
-//	<< " atoms.\n";
+
 	std::string spgname = st.spacegroup_hm;
 	_values["_symmetry.space_group_name_H-M"] = spgname;
 
@@ -309,13 +297,6 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 
 		    // Add anisotropic B-factors
 		    const Eigen::Matrix3f &m = atom->derivedAnisoBfactors();
-		    // Eigen::Matrix3f m;
-			// m << 10.0, 1.0, 2.0,
-			//      1.0, 20.0, 3.0,
-			//      2.0, 3.0, 30.0;
-		    std::cout << "Aniso for atom " << atom->atomName() << ":\n";
-		    std::cout << m << "\n\n";
-
             a.aniso.u11 = m(0, 0);
             a.aniso.u22 = m(1, 1);
             a.aniso.u33 = m(2, 2);

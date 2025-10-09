@@ -207,8 +207,6 @@ void FileManager::acceptDownload(void *me, std::string contents)
 	file.open(filename);
 	file << contents;
 	file.close();
-	
-	std::cout << filename << std::endl;
 	fm->acceptFile(filename);
 }
 

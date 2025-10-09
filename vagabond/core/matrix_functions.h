@@ -136,5 +136,6 @@ void insert_three_atoms(glm::mat4x4 &ret, float *lengths, float *angles);
 void insert_two_atoms(glm::mat4x4 &ret, float *lengths, float angle);
 void insert_one_atom(glm::mat4x4 &ret, float length);
 
+
 #endif
 

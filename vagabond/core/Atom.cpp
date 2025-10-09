@@ -106,13 +106,13 @@ void Atom::setDerivedPositions(WithPos &pos)
 	_derived.pos = pos;
 	unlockMutex();
 	changedPosition();
+
 }
 
 void Atom::setDerivedAnisoBfactors(const Matrix3f &anisoB)
 {
 	lockMutex();
 	_derived.anisoBfactors = anisoB;
-	std::cout << "Set derived anisotropic B-factors:\n" << anisoB << std::endl;
 	unlockMutex();
 	changedPosition();
 }

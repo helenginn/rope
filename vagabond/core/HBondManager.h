@@ -29,7 +29,7 @@ public:
 	struct HBondPair 
 	{
 		std::string acceptor;
-		std::string donor;
+		std::string hydrogen;
 	};
 	void housekeeping();
 	// void findTxtType(File::Type type);

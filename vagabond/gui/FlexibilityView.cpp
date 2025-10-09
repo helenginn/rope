@@ -176,7 +176,7 @@ else if (tag == "num_samples")
 	}
 	_numSample = static_cast<int>(numSample);
 	_flex->setNumSamples(_numSample);
-	_flex->generateAtomCloud();
+	// _flex->generateAtomCloud();
 	double lambda = 0.5;
 	_flex->saveSampledStructures(_numSample, "sample_structure", lambda);
 }
@@ -199,6 +199,7 @@ void FlexibilityView::showCloud(DisplayUnit *unit, AtomGroup *grp)
 
 void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& pairs)
 {
+	std::cout << "IN FLEXIBILITYVIEW" << std::endl;
     // Add to internal list or perform any other action
     callAddHBonds(pairs);
     // _flex->setColRange(10, true);
@@ -258,7 +259,6 @@ void FlexibilityView::callAddHBonds(const std::vector<HBondManager::HBondPair> &
 
 void FlexibilityView::setupSlider()
 {
-	std::cout << "setupSlider called" << std::endl;
 	removeObject(_rangeSlider);
 	delete _rangeSlider;
 	Slider *s = new Slider();

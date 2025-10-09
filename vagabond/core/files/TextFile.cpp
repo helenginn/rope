@@ -115,7 +115,7 @@ void TextFile::processHeaders(std::string line)
 		defenestrate(h);
 		remove_quotes(h);
 	}
-	std::cout << std::endl;
+	// std::cout << std::endl;
 	
 }
 

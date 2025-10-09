@@ -52,7 +52,7 @@ public:
 
 	double measurement() const;
 	
-	size_t count()
+	size_t atomCount()
 	{
 		return 3;
 	}

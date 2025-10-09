@@ -266,6 +266,7 @@ void FileView::buttonPressed(std::string tag, Button *button)
 
 	ListView::buttonPressed(tag, button);
 }
+	
 
 Renderable *FileView::getLine(int i)
 {
@@ -284,7 +285,6 @@ size_t FileView::lineCount()
 
 void FileView::respond()
 {
-	std::cout << "Triggered response" << std::endl;
 	refreshNextRender();
 }
 
