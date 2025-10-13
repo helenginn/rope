@@ -96,6 +96,9 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 	}
 
+    PlausibleRoute *workingPath = paths[0].front()->toRoute();
+    workingPath->setup();
+
 	for (int i = 0; i < numPaths && i < paths.size(); i++)
 	{
 
@@ -104,14 +107,12 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			continue;
 		}
 
-		PlausibleRoute *pr = paths[i].front()->toRoute();
-		pr->setup();
-		pr->submitJobAndRetrieve(0.1, true);
+		Route *newRoute = paths[i].front()->toRoute();
+        workingPath->transplantFromOtherRoute(newRoute);
+        workingPath->submitJobAndRetrieve(0.5, true);
 
-		//Floats ref_coords = Cluster::weights(paths[i].front()->startInstance());
-
-		AtomGroup *content = pr->instance()->currentAtoms();
-		//content->recalculate();
+		AtomGroup *content = workingPath->all_atoms();
+        content->recalculate();
 
 		for (int j = 0; j < torsRes.size(); j++)
 		{
