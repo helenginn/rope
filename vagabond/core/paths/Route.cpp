@@ -622,3 +622,25 @@ int Route::paramIdxForAtom(Atom *const &atom)
 	return -1;
 }
 
+void Route::transplantFromOtherRoute(Route *other)
+{
+    if (this->wayPointCount() == other->wayPointCount())
+    {
+        for (int i = 0; i < other->wayPointCount(); i++)
+        {
+            if (this->residueTorsion(i).desc() != other->residueTorsion(i).desc())
+            {
+                std::cout << "Routes are have differing torsions" << std::endl;
+                return;
+            }
+        }
+        
+        setMotions(other->_motions);
+    }
+    else
+    {
+        std::cout << "Routes are different sizes" << std::endl;
+        return;
+    }
+}
+

@@ -204,6 +204,8 @@ public:
 	void setFlips(std::vector<int> &idxs, std::vector<int> &fs);
 	
 	int indexOfParameter(Parameter *t);
+
+    void transplantFromOtherRoute(Route *other);
 	
 	BestGuessTorsions &bestGuessTorsions()
 	{
