@@ -20,6 +20,7 @@
 #include "ModelManager.h"
 #include "Environment.h"
 #include "paths/NewPath.h"
+#include "PathEntropy.h"
 #include <fstream>
 
 PathManager::PathManager()
@@ -440,4 +441,21 @@ void PathManager::pathMatrix(const std::string &filename,
 	
 	file.close();
 	
+}
+
+void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
+{
+    Instance *startPoint = ModelManager::manager()->instance(args[0]);
+    Instance *endPoint = ModelManager::manager()->instance(args[1]);
+
+    int numPaths = stoi(args[2]);
+
+    std::vector<Path *> paths = pathsBetweenInstances(startPoint, endPoint);
+   
+    PathEntropy *pE = new PathEntropy();
+
+    struct FlagParameters flagPar = pE->initFlagPar();
+
+    std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths);
+    struct Entropy* entropy = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes);
 }
