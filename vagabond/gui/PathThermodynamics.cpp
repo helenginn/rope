@@ -20,6 +20,7 @@
 #include "PathThermodynamics.h"
 #include <vagabond/core/PathGroup.h>
 #include <vagabond/core/Path.h>
+#include <vagabond/core/PathManager.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/PathEntropy.h>
 #include <nlohmann/json.hpp>
@@ -34,10 +35,10 @@
 
 int PathThermodynamics::_numPaths = 0;
 
-PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths) : Scene(prev)
+PathThermodynamics::PathThermodynamics(Scene *prev, Entity *entity, const std::vector<Path*> paths) : Scene(prev)
 {
 	_entity = entity;
-	_paths = paths;
+    _paths = paths;
 
 	_pathEntropy = new PathEntropy();
 }
@@ -57,8 +58,8 @@ void PathThermodynamics::addTypeButtons()
 void PathThermodynamics::setup()
 {
 	addTitle("Calculate path thermodynamics");
-
-    Path *path = _paths[0].front();
+    
+    Path *path = _paths.front();
     Text *t = new Text(path->desc());
     t->setCentre(0.5, 0.15);
     t->squishToWidth(0.8);

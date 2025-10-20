@@ -21,7 +21,7 @@
 
 #include <vagabond/gui/elements/Scene.h>
 
-class PathGroup;
+class Path;
 class Entity;
 class PathEntropy;
 
@@ -30,7 +30,7 @@ struct Entropy;
 class PathThermodynamics : public Scene
 {
 public:
-	PathThermodynamics(Scene *prev, Entity *entity, const std::vector<PathGroup> &paths);
+	PathThermodynamics(Scene *prev, Entity *entity, const std::vector<Path *> paths);
 	~PathThermodynamics();
 
 	virtual void setup();
@@ -43,8 +43,8 @@ public:
 
 private:
 	Entity *_entity = nullptr;
-	PathEntropy *_pathEntropy;
-	std::vector<PathGroup> _paths;
+	PathEntropy *_pathEntropy = nullptr;
+	std::vector<Path *> _paths;
 
 	struct Entropy *_entropy;
 
