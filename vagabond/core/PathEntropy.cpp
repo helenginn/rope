@@ -14,7 +14,6 @@
 #include <Residue.h>
 #include <AtomGroup.h>
 #include <Path.h>
-#include <PathGroup.h>
 #include <BondTorsion.h>
 
 struct FlagParameters PathEntropy::initFlagPar()
@@ -30,10 +29,10 @@ struct FlagParameters PathEntropy::initFlagPar()
     return flagParameters;
 }
 
-std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const std::vector<PathGroup> &paths)
+std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const std::vector<Path*> paths)
 {
 	std::vector<TorsRes4NN*> torsRes;
-    Sequence *polySeq = static_cast<Polymer *>(paths[0].front()->startInstance())->sequence();
+    Sequence *polySeq = static_cast<Polymer *>(paths.front()->startInstance())->sequence();
 	
     AtomGroup *rawAtoms = polySeq->convertToAtoms();
 		
@@ -96,23 +95,21 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 	}
 
-    PlausibleRoute *workingPath = paths[0].front()->toRoute();
+    PlausibleRoute *workingPath = paths.front()->toRoute();
     workingPath->setup();
+    AtomGroup *content = workingPath->all_atoms();
 
 	for (int i = 0; i < numPaths && i < paths.size(); i++)
 	{
 
-		if (!paths[i].front()->startInstance()->hasSequence())
+		if (!paths[i]->startInstance()->hasSequence())
 		{
 			continue;
 		}
 
-		Route *newRoute = paths[i].front()->toRoute();
+		Route *newRoute = paths[i]->toRoute();
         workingPath->transplantFromOtherRoute(newRoute);
         workingPath->submitJobAndRetrieve(0.5, true);
-
-		AtomGroup *content = workingPath->all_atoms();
-        content->recalculate();
 
 		for (int j = 0; j < torsRes.size(); j++)
 		{
@@ -120,7 +117,17 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			{
 				Parameter *param = content->findParameter(torsRes[j]->desc[k], polySeq->residue(j)->id());
 
-				torsRes[j]->ang[k][i] = param->empiricalMeasurement();
+                /*if (param == nullptr)
+                {
+                    std::ofstream ofs;
+                    ofs.open("null_params.txt", std::ofstream::out | std::ofstream::app);
+                    ofs << torsRes[j]->desc[k] << "\t" << polySeq->residue(j)->id() << "\n";
+                    ofs.close();
+                }
+                else
+                {*/
+			    torsRes[j]->ang[k][i] = param->empiricalMeasurement();
+             
 			}
 		}
 	}

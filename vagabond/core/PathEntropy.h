@@ -4,8 +4,7 @@
 #include <stdlib.h>
 #include <map>
 #include <string>
-#include <Sequence.h>
-#include <PathGroup.h>
+#include <Path.h>
 
 struct Entropy {
 int nSingle{};
@@ -63,14 +62,13 @@ struct FlagParameters {
 class PathEntropy
 {
 public:
-	//PathEntropy();
-
-	//~PathEntropy(){};
+	PathEntropy(){};
+    ~PathEntropy(){};
 
 	/* default flag parameters as chosen in pdb2entropy programme */
 	struct FlagParameters initFlagPar();
 
-	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<PathGroup> &paths);
+	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<Path*> paths);
 
 	struct Entropy* calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
     struct Entropy* calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
