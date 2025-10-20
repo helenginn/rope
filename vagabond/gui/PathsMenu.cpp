@@ -356,8 +356,15 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	}
 
 	if (tag == "menu_path_thermodynamics")
-	{
-		PathThermodynamics *pt = new PathThermodynamics(this, _entity, _paths);
+	{ 
+        std::vector<Path *> pathsForCalc;
+
+		for (Path *const &path : _allPaths)
+        {
+			pathsForCalc.push_back(path);
+		}
+
+		PathThermodynamics *pt = new PathThermodynamics(this, _entity, pathsForCalc);
 		pt->show();
 		return;
 	}
