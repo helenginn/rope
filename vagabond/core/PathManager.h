@@ -63,6 +63,7 @@ public:
 
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
+    void pathEntropyHeatMap(const std::vector<std::string> &args);
 	void makePathBetween(const std::string &start, const std::string &end,
 	                     int cycles = 1);
 	void obstacles(const std::vector<std::string> &insts);
@@ -82,7 +83,6 @@ private:
 	/** file name (within the paths directory) last written or loaded for
 	 *  each group, and how many paths it contained */
 	std::map<GroupKey, std::pair<std::string, size_t>> _groupFiles;
-
 };
 
 /* the paths themselves live in the paths directory (see savePathGroups),

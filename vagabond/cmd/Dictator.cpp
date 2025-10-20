@@ -44,6 +44,7 @@ void Dictator::makeCommands()
 
 	_commands["path-obstacles"] = "List residues according to their contribution to energy terms in pathways. All following arguments: instance identifiers for which paths should be examined";
 	_commands["path-matrix"] = "Matrix of thermodynamic scores for paths between list of instances. First argument: output filename; all following arguments: instance identifiers";
+    _commands["path-entropy"] = "Generate heat map of average entropy for paths between list of instances.";
 	_commands["refine-path"] = "Refine between instances (first and second argument), for N cycles (third argument, default 1)";
 	_commands["auto-paths"] = "Refine all pairs within a group of instances. First argument: integer number of cycles; all following arguments: instance identifiers";
 	_commands["save"] = "Save to environment file.";
@@ -189,6 +190,12 @@ void Dictator::processRequest(std::string &first, std::string &last)
 		args.erase(args.begin());
 		PathManager::manager()->pathMatrix(filename, args);
 	}
+
+    if (first == "path-entropy")
+    {
+        std::vector<std::string> args = split(last, ',');
+        PathManager::manager()->pathEntropyHeatMap(args);
+    }
 
 	if (first == "auto-paths")
 	{
