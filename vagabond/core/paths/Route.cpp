@@ -70,6 +70,8 @@ void Route::addLinkedInstances(Instance *from, Instance *to)
 AtomGroup *Route::all_atoms()
 {
 	AtomGroup *grp = new AtomGroup();
+
+    grp->setGrabsBondstraints(true);
 	
 	for (InstancePair &pair : _pairs)
 	{
