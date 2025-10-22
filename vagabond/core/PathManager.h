@@ -52,6 +52,7 @@ public:
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
     void pathEntropyHeatMap(const std::vector<std::string> &args);
+    double pathEntropyInstancePair(int numPaths, std::vector<Path *> paths);
 	void makePathBetween(const std::string &start, const std::string &end,
 	                     int cycles = 1);
 	void obstacles(const std::vector<std::string> &insts);

@@ -18,6 +18,7 @@
 
 #include "PathManager.h"
 #include "ModelManager.h"
+#include "EntityManager.h"
 #include "Environment.h"
 #include "paths/NewPath.h"
 #include "PathEntropy.h"
@@ -443,19 +444,39 @@ void PathManager::pathMatrix(const std::string &filename,
 	
 }
 
-void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
+double PathManager::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths)
 {
-    Instance *startPoint = ModelManager::manager()->instance(args[0]);
-    Instance *endPoint = ModelManager::manager()->instance(args[1]);
-
-    int numPaths = stoi(args[2]);
-
-    std::vector<Path *> paths = pathsBetweenInstances(startPoint, endPoint);
-   
     PathEntropy *pE = new PathEntropy();
 
     struct FlagParameters flagPar = pE->initFlagPar();
 
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths);
     struct Entropy* entropy = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes);
+    return entropy->totalEntropy;
+}
+
+void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
+{
+    Entity *ent = Environment::entityManager()->entity(args[0]);
+    GroupedMap pathMap = groupedPathsForEntity(ent);
+
+    int numPaths = stoi(args[1]);
+
+    struct {
+        std::vector<std::string> start;
+        std::vector<std::string> end;
+        std::vector<double> entropy;
+        std::vector<double> entropyPerRes;
+    } data = {};
+
+    for (auto it = pathMap.begin(); it != pathMap.end(); it++)
+    {
+        data.start.push_back(it->first.first->model_id());
+        data.end.push_back(it->first.second->model_id());
+
+        double entropy = pathEntropyInstancePair(numPaths, it->second);
+         
+        data.entropy.push_back(entropy);
+        data.entropyPerRes.push_back(entropy/ent->sequence()->size());
+    }
 }
