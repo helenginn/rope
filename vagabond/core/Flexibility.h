@@ -147,6 +147,7 @@ public:
                                const std::vector<float> &radii,
                                const std::set<std::pair<int,int>> &exclude,
                                float tolerance);
+    std::vector<int> getSoftestModeIndices(const Eigen::VectorXf& singularValues);
     std::vector<float> makeRadiiVec(const AtomVector &atoms);
     std::vector<glm::vec3> makePosVec(const AtomVector &atoms);
     std::set<std::pair<int,int>> makeExcList(OpSet<Atom*> &atom_set);
@@ -202,12 +203,12 @@ private:
     ClusterSVD *_cluster = nullptr;
     TorsionData *_tData = nullptr;
 
-    int _colIdx;
-    int _vSize;
+    int _colIdx = 0;
+    int _vSize = 0;
     
-    float _minCol = 0;
-    float _maxCol = 0;
-    float _numSamples = 1;
+    float _minCol = 0.0;
+    float _maxCol = 0.0;
+    float _numSamples = 1.0;
 };
 
 #endif

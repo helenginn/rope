@@ -6,12 +6,19 @@
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/AskForRange.h>
 #include <vagabond/gui/HBondMenu.h>
+#include <vagabond/gui/Atom2AtomExplorer.h>
 
 #include <vagabond/core/Instance.h>
 #include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Result.h>
+#include <vagabond/core/ResidueId.h>
 #include <vagabond/core/HBondManager.h>
+#include <vagabond/core/RAMovement.h>
+#include <vagabond/core/Atom3DPosition.h>
 #include <vagabond/utils/Eigen/Dense>
+
+
+
 
 using Eigen::Matrix3f;
 
@@ -50,12 +57,14 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 		m->addOption("Create B-factor cloud", "bfactor_cloud");
 		m->addOption("Clear hydrogen bonds", "clear_hbonds");
 		m->addOption("Save sampled structures", "save_samples");
+		m->addOption("Explore distance matrix", "dist_matrix");
 		m->setup(c.x, c.y);
 		setModal(m);
 
 	}
 	else if (tag == "clear_hbonds") // Handle clearing hydrogen bonds
     {
+
         reset();  // Clear internal state
         _flex->clearHBonds(); // Notify Flexibility to clear bonds
     }
@@ -91,6 +100,7 @@ void FlexibilityView::buttonPressed(std::string tag, Button *button)
 	}
 else if (tag == "options_bfactor_cloud")
 {
+	openAtom2AtomExplorer();
 	if (!_selectFlag)
 	{
 		BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
@@ -180,6 +190,10 @@ else if (tag == "num_samples")
 	double lambda = 0.5;
 	_flex->saveSampledStructures(_numSample, "sample_structure", lambda);
 }
+else if (tag == "options_dist_matrix")
+{
+	openAtom2AtomExplorer();
+}
 
 	Display::buttonPressed(tag, button);
 
@@ -193,13 +207,10 @@ void FlexibilityView::showCloud(DisplayUnit *unit, AtomGroup *grp)
 	unit->setMultiBondMode(true);
 	unit->startWatch();
 	addDisplayUnit(unit);
-
-
 }
 
 void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& pairs)
 {
-	std::cout << "IN FLEXIBILITYVIEW" << std::endl;
     // Add to internal list or perform any other action
     callAddHBonds(pairs);
     // _flex->setColRange(10, true);
@@ -277,12 +288,42 @@ void FlexibilityView::finishedDragging(std::string tag, double x, double y)
 	float num = x / 1.;
 	float test_retrival = _flex->submitJobAndRetrieve(num);
 	_first = false;
+} 
+
+// add button text to slider that gets you to atom2artoExpolorer
+// fo rthis i will need: scene (this), _instance, RAMovent
+void FlexibilityView::openAtom2AtomExplorer()
+{
+	_flex->submitJobAndRetrieve(0.5f);
+	std::vector<Atom3DPosition> list; // or should it be std::vector<Atom3DPosition*> list?
+	std::vector<Posular> disVec;
+	AtomGroup *grp = _instance->currentAtoms();
+	disVec.reserve(grp->sequence()->size());
+	const AtomVector &atoms = grp->atomVector();
+	for (Atom *atom : atoms)
+	{
+		if (!atom->isReporterAtom()){ continue; }
+		const ResidueId &id = atom->residueId();
+		Residue *res = grp->sequence()->residueLike(id);
+
+		Atom3DPosition a3Dp(res, atom->atomName()); // is this ok? or should it be the Atom3DPosition a3Dp = new Atom3DPosition(res, "CA")?
+		list.push_back(a3Dp);
+
+		glm::vec3 curPos = atom->derivedPosition();
+        glm::vec3 initPos = atom->otherPosition("other");
+
+        glm::vec3 displacement = curPos - initPos;
+        disVec.push_back(displacement);
+        std::cout << atom->desc() << " " << displacement << " " << a3Dp << std::endl;
+
+	}
+
+	std::cout << "[debug_openAtom2AtomExplorer] Greetings from openAtom2AtomExplorer!" << std::endl;
+	std::cout << list.size() << std::endl;
+	RAMovement movement = RAMovement::movements_from(list, disVec);
+	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement);
+	a2a->show();
 }
-
-
-
-
-
 
 
 

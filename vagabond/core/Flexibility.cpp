@@ -437,19 +437,6 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         return;
     }
 
-    // ---- Debug print: verify assignments ----
-    // std::cout << "[HBond] Adding hydrogen bond:" << std::endl;
-    // std::cout << "   Acceptor: " 
-    //           << (acceptorAtom ? acceptorAtom->desc(): "<null>")
-    //           << " @ index " << accessAtomBlock(acceptorAtom) << std::endl;
-    // std::cout << "   Hydrogen: " 
-    //           << (hydrogenAtom ? hydrogenAtom->desc() : "<null>")
-    //           << " @ index " << accessAtomBlock(hydrogenAtom) << std::endl;
-    // std::cout << "   Donor:    " 
-    //           << (donorAtom ? donorAtom->desc() : "<null>")
-    //           << " @ index " << accessAtomBlock(donorAtom) << std::endl;
-    // std::cout << std::endl;
-
 
 
 
@@ -549,9 +536,9 @@ void Flexibility::addVnWBond()
 
             // debug print to inspect units / values for the first few checks
             if (!scaleChecked && printed < 6) {
-                std::cout << "[vdW-debug] pair (" << i << "," << j << ") dist_sq=" << dist_sq
-                          << " r_i=" << r_i << " r_j=" << r_j
-                          << " rsum=" << r_i + r_j << " cutoff_ij=" << threshold << std::endl;
+                // std::cout << "[vdW-debug] pair (" << i << "," << j << ") dist_sq=" << dist_sq
+                //           << " r_i=" << r_i << " r_j=" << r_j
+                //           << " rsum=" << r_i + r_j << " cutoff_ij=" << threshold << std::endl;
                 printed++;
                 if (printed >= 6) scaleChecked = true;
             }
@@ -573,7 +560,6 @@ void Flexibility::addVnWBond()
             }
         }
     }
-    std::cout << "Total vdW bonds found: " << count_vdW << std::endl;
 
 }
 
@@ -670,26 +656,34 @@ std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acce
 int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector) 
 {
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
+    TorsionBasis *basis = _resources.sequences->sequence()->torsionBasis();
     int blockParent_idx = blocks[block_idx].parent_idx;
     block_idx += blockParent_idx;
+
+    // check for peptide bonds   
     // If the block has torsion larger than -1, add them to the torsion vector
     if (blocks[block_idx].torsion_idx >= 0) 
     {
-        // torsionVector.push_back(blocks[block_idx].torsion_idx); changed to: 
-        torsionVector.push_back(blocks[block_idx].torsion_idx); // if the hbond is between two molecules htat are not conected with a common ancestor: this case need to be handle this case
+        Parameter *p = basis->parameter(blocks[block_idx].torsion_idx);
+        if (p->isPeptideBond())
+        {
+            return block_idx; // Do NOT push on torsionVector, but update block_idx
+        }
+        torsionVector.push_back(blocks[block_idx].torsion_idx); // if the hbond is between two molecules htat are 
+                                                                //not conected with a common ancestor: this case                                                                // need to be handle this case
     }
-    // print a statement if there is no common ancestor: if you reach 0 (or maybe 1, but basically the first depth)
     return block_idx;
 }
+
 
 void Flexibility::buildJacobianMatrix()
 {
     // Columns = total number of constraints (5 per Hbonds +one per vdW bonds)
     int numCol = 5 * _hbonds.size() + _VdWBonds.size();
 
-    // Rows = torsion angles
     std::vector<int> torsionVector = getGlobalTorsionVector();
     int numRow = _globalTorsionSet.size();
+
 
     // set up the JacobianMatrix
     Eigen::MatrixXf jacobianMatrix(numRow, numCol);
@@ -718,13 +712,6 @@ void Flexibility::buildJacobianMatrix()
             int parentDonor_idx = blocks[hbe.donorIdx].parent_idx;
             int parentAcceptor_idx = blocks[hbe.acceptorIdx].parent_idx;
 
-
-    // // Compute positions, distances, and angles
-    // glm::vec3 donorPos = blocks[donorBlock_idx].my_position();
-    // glm::vec3 acceptorPos = blocks[acceptorBlock_idx].my_position();
-    // glm::vec3 parentDonorPos = blocks[donorBlock_idx + parentDonor_idx].my_position();
-    // glm::vec3 parentAcceptorPos = blocks[acceptorBlock_idx + parentAcceptor_idx].my_position();
-            // NEW
             glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
             glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
 
@@ -903,10 +890,36 @@ std::vector<int> Flexibility::sampleColumnIndices(int N, int sampleCount, double
     return sampled;
 }
 
+std::vector<int> Flexibility::getSoftestModeIndices(const Eigen::VectorXf& singularValues)
+{
+    int totalModes = static_cast<int>(singularValues.size());
+    std::vector<int> indices(totalModes);
+    std::cout << "[getSoftestModeIndices]: Singular values (nonzero only):\n";
+    for (int i = totalModes -1; i >= 0; i--)
+    {
+        if (singularValues[i] < 1e-6)
+        {
+            std::cout << "σ[" << i << "] = " << singularValues[i] << "\n";
+            indices.push_back(i);
+        }
+    }
+    return indices;
+}
+ 
+
 void Flexibility::saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda)
 {
+
+    std::cout << "[saveSampledStructures] _S size = " << _S.size() << "\n";
+    if (_S.size() > 0)
+        std::cout << "First few singular values: " << _S.head(std::min<int>(10, _S.size())).transpose() << "\n";
+    else
+        std::cerr << "[saveSampledStructures] _S is empty!\n";
     // Call sampleColumnIndices to choose numSamples columns from _V
-    std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
+    // std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
+    std::vector<int> indices = getSoftestModeIndices(_S);
+    // Print the indices and their corresponding singular values
+
     
     // start - debugging
     const unsigned displayLimit = 5;
@@ -1324,7 +1337,7 @@ void Flexibility::listClashes(const std::string &filename,
     }
 
     // Write header if this is the first clash for this sample
-    file << "sample_structure_" << saved << "\n";
+    file << "sample_structure_wo_vdW" << saved << "\n";
 
     Atom *a1 = orderedAtoms[i];
     Atom *a2 = orderedAtoms[j];

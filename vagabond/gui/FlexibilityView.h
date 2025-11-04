@@ -61,6 +61,7 @@ public:
 	void hbondSelected(HBondMenu* hbondMenu, const std::vector<HBondManager::HBondPair> &selectedHBonds);
 	void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
 	void reset();	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
+	void openAtom2AtomExplorer();
 
 
 private: 
