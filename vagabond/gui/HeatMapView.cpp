@@ -230,4 +230,3 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	setInformation(names.first + " vs " + names.second);
 	Scene::mousePressEvent(x, y, button);
 }
-
