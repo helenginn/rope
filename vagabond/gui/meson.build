@@ -78,6 +78,8 @@ guifiles = [
 'GraphView.cpp',
 'HBondAnalysisControl.cpp',
 'HBondAnalysisControl.h',
+'HeatMapView.cpp',
+'HeatMapView.h',
 'IconLegend.cpp',
 'LineSeries.cpp',
 'LineSeriesOptions.cpp',
