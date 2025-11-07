@@ -32,6 +32,13 @@
 #include <unistd.h>
 #include <algorithm>
 
+// exampl for path-entropy
+// first=last
+// path-entropy=entity, numPaths
+// first will be "path-entropy"
+// last will be "entity, numPaths"
+// --> std::vector<std::string> arg = split(last, ',')
+
 std::map<std::string, std::string> Dictator::_properties;
 std::map<std::string, std::string> Dictator::_commands;
 
@@ -192,9 +199,20 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	}
 
     if (first == "path-entropy")
-    {
+    {  
+        std::cout << "beginning heat map data generation..." << std::endl;
         std::vector<std::string> args = split(last, ',');
+        
+        std::cout << args.size() << std::endl; 
+        if (args.size() != 2)
+	    {
+			std::cout << "Wrong number of arguments" << std::endl;
+            return;
+		}
+
         PathManager::manager()->pathEntropyHeatMap(args);
+
+        std::cout << "done" << std::endl;
     }
 
 	if (first == "auto-paths")
