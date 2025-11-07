@@ -210,7 +210,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
 			std::cout << "Wrong number of arguments" << std::endl;
             return;
 		}
-
+		
         std::cout << "Calling map function" << std::endl;
 //        PathManager::manager()->pathEntropyHeatMap(args);
 
