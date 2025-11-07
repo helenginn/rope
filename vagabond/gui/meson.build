@@ -86,6 +86,8 @@ guifiles = [
 'HBondAnalysisControl.h',
 'HBondDiagram.cpp',
 'HBondDiagram.h',
+'HeatMapView.cpp',
+'HeatMapView.h',
 'IconLegend.cpp',
 'LineSeries.cpp',
 'LineSeriesOptions.cpp',
