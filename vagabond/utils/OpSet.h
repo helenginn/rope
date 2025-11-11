@@ -33,6 +33,12 @@ public:
 
 	}
 
+	OpSet(const std::less<Type> &key) : std::set<Type>(key)
+	{
+
+	}
+
+
 	OpSet(const std::set<Type> &other) : std::set<Type>(other)
 	{
 

@@ -55,6 +55,8 @@ void CommunicationChoice::refresh()
 		return [this, to_descs, name]()
 		{
 			_clique->addCommunicationPoints(name, to_descs());
+			_selected = {};
+			refresh();
 		};
 	};
 	

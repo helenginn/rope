@@ -20,10 +20,10 @@
 #include "GuiAtom.h"
 #include "GuiRefls.h"
 #include "GuiDensity.h"
+#include "FocusResidue.h"
 
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/FloatingText.h>
 
 #include <vagabond/core/AtomGroup.h>
@@ -219,6 +219,7 @@ void Display::focusOnResidue(std::string chain, int res)
 		}
 
 		shiftToCentre(chosen->derivedPosition(), 0);
+		break;
 	}
 }
 
@@ -226,43 +227,13 @@ void Display::keyPressEvent(SDL_Keycode pressed)
 {
 	if (pressed == SDLK_g && !lastModal())
 	{
-		TextEntry *te = new TextEntry("enter residue", this);
-		te->setValidationType(TextEntry::None);
-		
-		auto process_request = [this, te]()
+		FocusResidue::prepareEnter
+		(this, [this](std::string chain, int res)
 		{
-			// expecting a request like "16" or "B16"
-			std::string str = te->scratch();
-			char *ch = &str[0];
-			// navigate to beginning of numbers, leave chain as it is.
-			while (!(*ch >= '0' && *ch <= '9') && *ch != '\0') 
-			{
-				ch++;
-			}
-
-			// grab the residue number
-			int res = atoi(ch); 
-			std::string chain = "";
-			
-			// in the event of chain, grab separate chain
-			if (ch != &str[0])
-			{
-				*ch = '\0';
-				chain = std::string(&str[0]);
-				std::transform(chain.begin(), chain.end(), 
-				               chain.begin(), ::toupper);
-			}
-
 			focusOnResidue(chain, res);
-			removeObject(te);
-		};
-
-		te->setReturnJob(process_request);
-		te->setCentre(0.5, 0.3);
-		addObject(te);
-		
-		addMainThreadJob([te]() { te->click(); });
+		});
 	}
 
 	Mouse2D::keyPressEvent(pressed);
 }
+

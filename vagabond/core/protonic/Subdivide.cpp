@@ -28,11 +28,11 @@ Subdivide::Subdivide(Clique *clique, int min, int max) : _clique(clique)
 	{
 		_max = actual_max;
 	}
-	subdivide();
 }
 
 void Subdivide::spread(OpSet<Probe *> &chunk)
 {
+	OpSet<Probe *> last = chunk;
 	while (chunk.size() < _min)
 	{
 		if (chunk.size() >= _max)
@@ -40,12 +40,16 @@ void Subdivide::spread(OpSet<Probe *> &chunk)
 			break;
 		}
 
-		OpSet<Probe *> last = chunk;
 		OpSet<Probe *> add = {};
 		for (Probe *const &current : last)
 		{
 			for (Probe *const &other : current->others())
 			{
+				if (other->is_definitely_not_present())
+				{
+					continue;
+				}
+
 				if (chunk.count(other) == 0)
 				{
 					add += other;
@@ -59,6 +63,7 @@ void Subdivide::spread(OpSet<Probe *> &chunk)
 		}
 
 		chunk += add;
+		last = add;
 	}
 }
 
@@ -69,6 +74,16 @@ void Subdivide::prune(OpSet<Probe *> &chunk)
 	              {
 		             return probe->is_certain() || probe->is_covalent();
 		          });
+}
+
+void Subdivide::one()
+{
+	_min = INT_MAX;
+	_max = INT_MAX;
+
+	OpSet<Probe *> expanded = _clique->probes();
+//	spread(expanded);
+	_clique->setSubdivisions({Clique(expanded)});
 }
 
 void Subdivide::subdivide()

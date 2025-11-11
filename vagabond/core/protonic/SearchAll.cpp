@@ -29,9 +29,16 @@ _clique(parent), _network(network)
 void SearchAll::run()
 {
 	std::list<Clique> &subs = _clique->subdivisions();
+	_clique->removeChildren();
 
 	for (Clique &clique : subs)
 	{
+		if (clique.results().size())
+		{
+			_clique->addItem(&clique);
+			continue;
+		}
+
 		ExhaustiveSearch search(clique.probes(), _clique->probes(), _network);
 		search.search();
 		clickTicker();

@@ -86,6 +86,11 @@ public:
 		return _existence;
 	}
 	
+	hnet::ExistenceConnector *existence()
+	{
+		return _existence;
+	}
+	
 	hnet::AtomConnector *const &connector() const
 	{
 		return _connector;
@@ -151,12 +156,31 @@ public:
 		return _charge;
 	}
 
-	void eitherOr(const ABPair &first, const ABPair &second);
+	void eitherOr(const ABPair &first, const ABPair &second,
+	              bool break_only);
 
 	const std::map<BondConnector *, ExistenceConnector *> &bond2Exist() const
 	{
 		return _bond2Exist;
 	}
+
+	const std::map<BondConnector *, ExistenceConnector *> 
+	&bond2HydrogenSample() const
+	{
+		return _bond2HydrogenSample;
+	}
+
+	const std::map<BondConnector *, ExistenceConnector *> 
+	&bond2HydrogenStatus() const
+	{
+		return _bond2HydrogenStatus;
+	}
+
+	std::map<hnet::AtomConf, Coordinated *> &atomMap() const
+	{
+		return _network.atomMap();
+	}
+
 private:
 	OpSet<PairSet> findSeeds(int coord_num);
 	::Atom *makeHydrogen(const glm::vec3 &pos);
@@ -165,10 +189,10 @@ private:
 	void comparePairs(OpSet<PairSet> &results,
 	                  const ABPair &first, const ABPair &second,
 	                  glm::vec3 &centre, int coordNum);
-	AcceptableGroup developSeed(const PairSet &seed, const PairSet &all,
-	                            const glm::vec3 &centre,
-	                            OpSet<AtomConf> &clashCheck,
-	                            int &fake_atom_count, int coord_num);
+	OpSet<AcceptableGroup> developSeed(const PairSet &seed, const PairSet &all,
+	                                   const glm::vec3 &centre,
+	                                   OpSet<AtomConf> &clashCheck,
+	                                   int &fake_atom_count, int coord_num);
 	OpSet<AcceptableGroup> expandAllSeeds(OpSet<AtomConf> &clashCheck,
 	                                      const PairSet &uninvolved_group,
 	                                      PairSet &all_used, int coord_num);
@@ -176,11 +200,7 @@ private:
 	(const std::map<int, std::vector<int>> &coord_state_broken_bond_counts);
 	
 	OpSet<ABPair> uninvolvedCoordinators();
-
-	std::map<hnet::AtomConf, Coordinated *> &atomMap() const
-	{
-		return _network.atomMap();
-	}
+	AtomConf findPlanarAtom(); // e.g. for ASP or ARG
 
 	hnet::AtomConnector *_connector{};
 	hnet::ExistenceConnector *_existence{};
@@ -215,8 +235,11 @@ private:
 	}
 
 	std::map<BondConnector *, ExistenceConnector *> _bond2Exist;
+	std::map<BondConnector *, ExistenceConnector *> _bond2HydrogenSample;
+	std::map<BondConnector *, ExistenceConnector *> _bond2HydrogenStatus;
 	Network &_network;
 	AtomConf _atomConf = {nullptr, '\0'};
+	AtomConf _planar = {nullptr, '\0'};
 	OpSet<AtomConf> _neighbours{};
 };
 

@@ -50,15 +50,15 @@ namespace Bond
 	enum Values
 	{
 		Contradiction   =  (0),
-		Absent          =  (1 << 0),
-		NotAbsent       =  (1 << 1 | 1 << 2 | 1 << 3),
-		AbsentOrWeak    =  (1 << 0 | 1 << 1),
+		LonePair        =  (1 << 0),
+		NotLonePair     =  (1 << 1 | 1 << 2 | 1 << 3),
+		LonePairOrWeak  =  (1 << 0 | 1 << 1),
 		Weak            =  (1 << 1),
 		NotWeak         =  (1 << 0 | 1 << 2 | 1 << 3),
 		Strong          =  (1 << 2),
 		NotStrong       =  (1 << 0 | 1 << 1 | 1 << 3),
-		Present         =  (1 << 1 | 1 << 2),
-		NotPresent      =  (1 << 0 | 1 << 3),
+		Bonded         =  (1 << 1 | 1 << 2),
+		NotBonded      =  (1 << 0 | 1 << 3),
 		Broken          =  (1 << 3),
 		NotBroken       =  (1 << 0 | 1 << 1 | 1 << 2),
 		Unassigned      =  (1 << 0 | 1 << 1 | 1 << 2 | 1 << 3),
@@ -428,16 +428,16 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		ss << std::string("Contradiction!");
 		break;
 
-		case Bond::Absent:
-		ss << std::string("Absent");
+		case Bond::LonePair:
+		ss << std::string("LonePair");
 		break;
 
-		case Bond::AbsentOrWeak:
-		ss << std::string("AbsentOrAcceptor");
+		case Bond::LonePairOrWeak:
+		ss << std::string("LonePairOrAcceptor");
 		break;
 
-		case Bond::NotAbsent:
-		ss << std::string("NotAbsent");
+		case Bond::NotLonePair:
+		ss << std::string("NotLonePair");
 		break;
 
 		case Bond::Weak:
@@ -456,12 +456,12 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 		ss << std::string("NotDonor");
 		break;
 
-		case Bond::Present:
-		ss << std::string("Present");
+		case Bond::Bonded:
+		ss << std::string("Bonded");
 		break;
 
-		case Bond::NotPresent:
-		ss << std::string("NotPresent");
+		case Bond::NotBonded:
+		ss << std::string("NotBonded");
 		break;
 
 		case Bond::NotBroken:
@@ -486,7 +486,8 @@ inline std::ostream &operator<<(std::ostream &ss, const Bond::Values &v)
 }
 
 /* for counts / integer conversion */
-inline Count::Values values_as_count(const std::vector<int> &values)
+template <class Container>
+inline Count::Values values_as_count(const Container &values)
 {
 	auto int_to_count = [](const int &val)
 	{

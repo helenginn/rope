@@ -303,11 +303,12 @@ public:
 		_init /= 2;
 		_pos = _init;
 
-		left.register_probe(this);
-		right.register_probe(this);
+		// covered by creation of bonds I think!
+//		left.register_probe(this);
+//		right.register_probe(this);
 
-		register_probe(&left);
-		register_probe(&right);
+//		register_probe(&left);
+//		register_probe(&right);
 		_colour = glm::vec3(0.28f, 0.1f, -0.147f);
 	}
 	
@@ -461,7 +462,7 @@ public:
 
 	virtual bool is_definitely_not_present()
 	{
-		return !(_obj.value() & hnet::Bond::Present);
+		return !(_obj.value() & hnet::Bond::Bonded);
 	}
 
 	virtual std::string value()
@@ -515,7 +516,7 @@ public:
 			str = "strong_bond";
 			break;
 
-			case hnet::Bond::Absent:
+			case hnet::Bond::LonePair:
 			str = "transparency";
 			break;
 
@@ -523,11 +524,11 @@ public:
 			str = "transparency";
 			break;
 
-			case hnet::Bond::NotPresent:
+			case hnet::Bond::NotBonded:
 			str = "transparency";
 			break;
 
-			case hnet::Bond::Present:
+			case hnet::Bond::Bonded:
 			str = "present_bond";
 			break;
 

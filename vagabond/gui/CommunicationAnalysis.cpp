@@ -17,16 +17,307 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "CommunicationAnalysis.h"
+#include <vagabond/gui/elements/list/LineGroup.h>
+#include <vagabond/gui/elements/list/ItemLine.h>
+#include <vagabond/gui/elements/ScrollBox.h>
+#include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/core/protonic/Clique.h>
+#include <vagabond/core/protonic/ProbeResult.h>
+#include <vagabond/utils/Canonical.h>
 
-CommunicationAnalysis::CommunicationAnalysis(Scene *scene, const MatrixXf &mat,
+using Eigen::seqN;
+using Eigen::seq;
+
+CommunicationAnalysis::CommunicationAnalysis(Scene *scene, Clique *clique,
+                                             const MatrixXf &mat,
                                              const std::map<ProbeTypePair, 
                                              std::pair<int, int>> &insertions)
-: Scene(scene), _mat(mat), _lookup(insertions)
+: Scene(scene), _clique(clique), _mat(mat), _lookup(insertions)
 {
 
+}
+
+void CommunicationAnalysis::prepareGroups()
+{
+	OpSet<std::string> names = _clique->allCommsNames();
+	_parent.setDisplayName("Groups");
+	for (const std::string &name : names)
+	{
+		Item *item = new Item();
+
+		auto job = [this, item, name]()
+		{
+			if (_chosen.count(name))
+			{
+				_chosen -= name;
+				_lg->display(item)->setColour(0.0, 0.0, 0.0);
+			}
+			else
+			{
+				_chosen += name;
+				_lg->display(item)->setColour(0.4, 0.0, 0.4);
+			}
+			
+			checkChosen();
+		};
+
+		item->setDisplayName(name);
+		item->setSelectable(true);
+		item->setSelectJob(job);
+		_parent.addItem(item);
+	}
+
+	LineGroup *lg = new LineGroup(&_parent, this);
+	lg->setLeft(0.1, 0.2);
+	_lg = lg;
+	std::cout << "Name count: " << _parent.itemCount() << std::endl;
+
+	ScrollBox *sb = new ScrollBox();
+	sb->setContent(lg);
+	sb->setBounds(glm::vec4(0.15, 0.0, 0.9, 0.35));
+	addObject(sb);
+
+}
+
+void CommunicationAnalysis::checkChosen()
+{
+	if (_chosen.size() != 2)
+	{
+		return;
+	}
+
+	std::string first = *_chosen.begin();
+	std::string second = *(++_chosen.begin());
+	
+	auto check_pair = [this](const ProbeTypePair &ptp, const std::string &check,
+	                         OpSet<ProbeTypePair> &which)
+	{
+		const OpSet<std::string> &descs = _clique->nodeDescsForGroup(check);
+
+		if (descs.count(ptp.first->desc()))
+		{
+			if (ptp.first->is_bond() && ptp.second == hnet::Types::BondType)
+			{
+				which += ptp;
+			}
+			else if (ptp.first->is_atom() && ptp.second == 
+			         hnet::Types::ExistenceType)
+			{
+				which += ptp;
+			}
+		}
+	};
+	
+	OpSet<ProbeTypePair> lefts{}, rights{};
+	std::cout << "Lefts: " << lefts.size() << std::endl;
+	std::cout << "Rights: " << rights.size() << std::endl;
+
+	for (auto it = _lookup.begin(); it != _lookup.end(); it++)
+	{
+		const ProbeTypePair &ptp = it->first;
+		check_pair(ptp, first, lefts);
+		check_pair(ptp, second, rights);
+	}
+	
+	auto add_to_size = [this](int &size)
+	{
+		return [this, &size](const ProbeTypePair &ptp)
+		{
+			size += _lookup[ptp].second;
+		};
+	};
+	
+	int ln{}, rn{};
+	deleteTemps();
+	
+	auto add_to_matrix = [this](MatrixXf &mat, int &inc, float &drop)
+	{
+		return [this, &drop, &inc, &mat](const ProbeTypePair &ptp)
+		{
+			int ins = _lookup[ptp].first;
+			int dim = _lookup[ptp].second;
+
+			MatrixXf tmp = _wU(Eigen::all, seqN(ins, dim));
+			mat(Eigen::all, seqN(inc, dim)) = tmp;
+
+			MatrixXf cut = tmp;
+
+			PCA::Matrix mat = PCA::Matrix(cut.transpose());
+
+			MatrixPlot *mp = new MatrixPlot(mat);
+			mp->setCentre(0.75 + drop, 0.5);
+			mp->resize(2.0);
+			drop += 0.02;
+			addTempObject(mp);
+//			std::cout << ptp.first->desc() << " " << ins << std::endl;
+
+			inc += dim;
+		};
+	};
+
+	std::for_each(lefts.begin(), lefts.end(), add_to_size(ln));
+	std::for_each(rights.begin(), rights.end(), add_to_size(rn));
+	
+	std::cout << "Left num: " << ln << std::endl;
+	std::cout << "Right num: " << rn << std::endl;
+	std::cout << "Over one: " << _overOne << std::endl;
+	
+	if (ln == 0 || rn == 0)
+	{
+		return;
+	}
+
+	_lMat = MatrixXf(_overOne, ln);
+	_lMat.setZero();
+	_rMat = MatrixXf(_overOne, rn);
+	_rMat.setZero();
+
+	Eigen::MatrixXf cMat = MatrixXf(ln, rn);
+	cMat.setZero();
+	
+	int linc{}, rinc{};
+	float drop{};
+
+	std::for_each(lefts.begin(), lefts.end(), add_to_matrix(_lMat, linc, drop));
+	std::for_each(rights.begin(), rights.end(), add_to_matrix(_rMat, rinc, drop));
+	/*
+	std::cout << linc << " and " << drop << std::endl;
+	
+	std::cout << "Left matrix: " << std::endl;
+	std::cout << _lMat << std::endl;
+	std::cout << "Right matrix: " << std::endl;
+	std::cout << _rMat << std::endl;
+	*/
+	
+	for (int j = 0; j < ln; j++)
+	{
+		for (int i = 0; i < rn; i++)
+		{
+			float cc = 0;
+			for (int k = 0; k < _overOne; k++)
+			{
+				cc += _lMat(k, j) * _rMat(k, i);
+			}
+			cMat(j, i) = cc;
+		}
+	}
+
+	float sum = 0;
+	for (int j = 0; j < ln; j++)
+	{
+		for (int i = 0; i < ln; i++)
+		{
+			float diffsq = 0;
+//			float lsq = 0;
+//			float rsq = 0;
+			for (int k = 0; k < rn; k++)
+			{
+				float contrib = cMat(i, k) - cMat(j, k);
+				diffsq += contrib * contrib;
+//				lsq += cMat(i, k) * cMat(i, k);
+//				rsq += cMat(j, k) * cMat(j, k);
+			}
+			sum += sqrt(diffsq);
+		}
+	}
+	
+	float r = sum;
+
+	PCA::Matrix mat = PCA::Matrix(cMat);
+	MatrixPlot *mp = new MatrixPlot(mat);
+	mp->setCentre(0.5, 0.5);
+	addTempObject(mp);
+	
+	auto to_vector = [](MatrixXf &mat, int r)
+	{
+		std::vector<double> ret(mat.cols());
+		for (int i = 0; i < mat.cols(); i++)
+		{
+			ret[i] = mat(r, i);
+		}
+		return ret;
+	};
+	
+	Canonical cc(ln, rn);
+	cc.sizeHint(_lMat.rows());
+
+	for (int r = 0; r < _lMat.rows(); r++)
+	{
+		cc.addVecs(to_vector(_lMat, r), to_vector(_rMat, r));
+	}
+	
+	auto get_weight = [this](const int &idx)
+	{
+		return _w[idx];
+	};
+	cc.addWeights(get_weight);
+	
+	try
+	{
+		cc.run();
+		float r = fabs(cc.correlation());
+		setInformation("Comparing " + first + " to " + second + ", correl: " +
+		               std::to_string(r));
+		std::cout << "Correlation: " << r << std::endl;
+
+		MatrixPlot *uMP = new MatrixPlot(cc.u());
+		uMP->setCentre(0.86, 0.5);
+		uMP->resize(2.0);
+		addTempObject(uMP);
+
+		MatrixPlot *vMP = new MatrixPlot(cc.v());
+		vMP->setCentre(0.88, 0.5);
+		vMP->resize(2.0);
+		addTempObject(vMP);
+	}
+	catch (int e)
+	{
+		setInformation("Failed correlation");
+	}
+}
+
+void CommunicationAnalysis::svd()
+{
+	Eigen::JacobiSVD<MatrixXf> svd(_mat, Eigen::ComputeFullU | 
+	                               Eigen::ComputeFullV);
+	Eigen::MatrixXf u = svd.matrixU().transpose();
+	Eigen::VectorXf w = svd.singularValues();
+	for (float &f : w)
+	{
+		f = sqrt(f);
+	}
+	_w = w;
+	_wU = u;
+	
+	/*
+	int n = 0;
+	for (const float &val : w)
+	{
+		if (val < 1)
+		{
+//			break;
+		}
+
+		n++;
+	}
+	*/
+	int n = w.size();
+	
+	/*
+	PCA::Matrix mat = PCA::Matrix(_wU);
+	MatrixPlot *mp = new MatrixPlot(mat);
+	mp->setCentre(0.75, 0.25);
+	addObject(mp);
+	*/
+
+	_overOne = n;
 }
 
 void CommunicationAnalysis::setup()
 {
 	addTitle("Communication Analysis");
+	
+	svd();
+	prepareGroups();
+
 }

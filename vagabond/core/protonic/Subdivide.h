@@ -30,14 +30,15 @@ public:
 	Subdivide(Clique *clique, int min, int max);
 
 	void subdivide();
+	void one();
 
 	void spread(OpSet<Probe *> &chunk);
 	void prune(OpSet<Probe *> &chunk);
 private:
 	Clique *_clique{};
 
-	int _min = 12;
-	int _max = 25;
+	int _min = 0;
+	int _max = 0;
 };
 
 #endif

@@ -445,6 +445,11 @@ inline std::vector<glm::vec3> align(int coordNum, const glm::vec3 &centre,
 	glm::mat3x3 super = pose.rotation();
 	
 	std::vector<glm::vec3> to_return;
+	
+	if (coordNum > 10)
+	{
+		coordNum -= 9;
+	}
 
 	for (size_t i = 0; i < coordNum; i++)
 	{

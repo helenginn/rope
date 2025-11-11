@@ -27,8 +27,8 @@ namespace hnet
 struct SubExistence
 {
 	SubExistence(ExistenceConnector &left, ExistenceConnector &sub,
-	             ExistenceConnector &right)
-	: _left(left), _sub(sub), _right(right)
+	             ExistenceConnector &right, bool strong = false)
+	: _strong(strong), _left(left), _sub(sub), _right(right)
 	{
 		prep_constraints_and_forgets(this, {&left, &sub, &right});
 	}
@@ -53,41 +53,39 @@ struct SubExistence
 	{
 		auto assign = make_assign_and_say(this, previous);
 
-		if (_left.value() == Existence::Present && 
-		    _right.value() == Existence::Present)
+		if ((_left.value() == Existence::Present && 
+		    _right.value() == Existence::Present) || (_strong &&
+		    (_left.value() == Existence::Present || 
+		    _right.value() == Existence::Present)))
 		{
 			assign(_sub, Existence::Present);
 		}
 
-		if (_sub.value() == Existence::Present)
-		{
-			assign(_left, Existence::Present);
-			assign(_right, Existence::Present);
-		}
-
-		if (_left.value() == Existence::Absent ||
+		if (_left.value() == Existence::Absent &&
 		    _right.value() == Existence::Absent)
 		{
-			assign(_sub, Existence::Absent);
+			assign(_sub, Existence::Absent, "both left and right existences"\
+			       " were absent so middle existence should also be absent");
 		}
 		
-		if (_sub.value() == Existence::Absent)
+		if (_sub.value() == Existence::Absent && !_strong)
 		{
-			if (_left.value() & Existence::Absent &&
-			    _right.value() == Existence::Present)
+			if (_left.value() & Existence::Absent)
 			{
-				assign(_left, Existence::Absent);
+				assign(_left, Existence::Absent, "middle existence was absent"\
+				" and left existence could be absent");
 			}
-			if (_right.value() & Existence::Absent &&
-			    _left.value() == Existence::Present)
+			if (_right.value() & Existence::Absent)
 			{
-				assign(_right, Existence::Absent);
+				assign(_right, Existence::Absent, "middle existence was absent"\
+				       "and right existence could be absent");
 			}
 		}
 
 		return assign.okay();
 	}
 
+	bool _strong = false;
 	ExistenceConnector &_left;
 	ExistenceConnector &_sub;
 	ExistenceConnector &_right;

@@ -32,7 +32,9 @@
 #include "HydrogenBond.h"
 #include "EitherOrBond.h"
 #include "SubExistence.h"
+#include "BreakMatrix.h"
 #include "MutualExistence.h"
+//#include "LinkBondPresence.h"
 
 namespace hnet
 {
@@ -51,17 +53,16 @@ struct Constant
 		_connector.forget(blame);
 	}
 	
+	std::string desc()
+	{
+		return "Constant for connector " + _connector.desc();
+	}
+	
 	bool check(void *previous)
 	{
-		Value candidate = Value(_connector.value() & _constant);
-		if (is_contradictory(candidate))
-		{
-			return false;
-		}
-		else
-		{
-			return _connector.assign_value(_constant, this, previous);
-		}
+		auto assign = make_assign_and_say(this, previous);
+		assign(_connector, _constant);
+		return assign.okay();
 	}
 	
 	Connector &_connector;
@@ -80,9 +81,10 @@ struct AnyConstraint
 {
 	enum Type
 	{
-		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, 
-		AbsentAdd, NotBrokenAdd, EiOrBond, Equal, Stricter,
-		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen,
+		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, BondedAdd, 
+		LonePairAdd, NotBrokenAdd, EiOrBond, Equal, Stricter,
+		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen, 
+		BreakingMatrix, BreakIfUnsampled,
 	};
 	
 	AnyConstraint(IfCountThenImpose *const &constraint)
@@ -169,9 +171,9 @@ struct AnyConstraint
 		_ptr = constraint;
 	}
 	
-	AnyConstraint(AbsentAdder *const &constraint)
+	AnyConstraint(LonePairAdder *const &constraint)
 	{
-		_type = AbsentAdd;
+		_type = LonePairAdd;
 		_ptr = constraint;
 	}
 	
@@ -187,9 +189,21 @@ struct AnyConstraint
 		_ptr = constraint;
 	}
 	
-	AnyConstraint(PresentAdder *const &constraint)
+	AnyConstraint(BreakMatrix *const &constraint)
 	{
-		_type = PresentAdd;
+		_type = BreakingMatrix;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(BreakIfUnsampledBond *const &constraint)
+	{
+		_type = BreakIfUnsampled;
+		_ptr = constraint;
+	}
+	
+	AnyConstraint(BondedAdder *const &constraint)
+	{
+		_type = BondedAdd;
 		_ptr = constraint;
 	}
 	
@@ -212,11 +226,11 @@ struct AnyConstraint
 			case StrongAdd:
 			delete static_cast<StrongAdder *>(_ptr); break;
 
-			case PresentAdd:
-			delete static_cast<PresentAdder *>(_ptr); break;
+			case BondedAdd:
+			delete static_cast<BondedAdder *>(_ptr); break;
 
-			case AbsentAdd:
-			delete static_cast<AbsentAdder *>(_ptr); break;
+			case LonePairAdd:
+			delete static_cast<LonePairAdder *>(_ptr); break;
 
 			case NotBrokenAdd:
 			delete static_cast<NotBrokenAdder *>(_ptr); break;
@@ -251,6 +265,12 @@ struct AnyConstraint
 			case IfCountThen:
 			delete static_cast<IfCountThenImpose *>(_ptr); break;
 			
+			case BreakingMatrix:
+			delete static_cast<BreakMatrix *>(_ptr); break;
+			
+			case BreakIfUnsampled:
+			delete static_cast<BreakIfUnsampledBond *>(_ptr); break;
+
 			default: break;
 		}
 	}

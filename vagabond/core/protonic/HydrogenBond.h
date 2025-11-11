@@ -40,15 +40,19 @@ struct HydrogenBond
 		_right.forget(blame);
 	}
 	
-	bool bond_definitely_present(const Bond::Values &val)
+	bool bond_weak_or_broken(const Bond::Values &val)
 	{
-		return (val & Bond::Present) && !(val & Bond::NotPresent);
+		return (val & Bond::Weak) && !(val & Bond::Broken);
 	}
 	
-	bool bond_definitely_not_used(const Bond::Values &val)
+	bool bond_definitely_present(const Bond::Values &val)
 	{
-		return (val == Bond::Absent || val == Bond::Broken || 
-		        val == Bond::NotPresent);
+		return (val & Bond::Bonded) && !(val & Bond::NotBonded);
+	}
+	
+	bool bond_definitely_not_bonded(const Bond::Values &val)
+	{
+		return !(val & Bond::Bonded);
 	}
 	
 	std::string desc()
@@ -75,64 +79,49 @@ struct HydrogenBond
 	bool impose(void *previous)
 	{
 		auto assign = make_assign_and_say(this, previous);
-		Bond::Values forLeft = _left.value();
-		Existence::Values forCentre = _centre.value();
-		Bond::Values forRight = _right.value();
 
-		if ((_centre.value() == Existence::Absent) ||
-		    bond_definitely_not_used(_left.value()) ||
-		    bond_definitely_not_used(_right.value()))
+		// if H is missing, it can only be a lone pair OR broken bond
+		if (_centre.value() == Existence::Absent)
 		{
-			/* if anything is absent, hydrogen & all bonds must also be absent */
-			forLeft = Bond::Values(forLeft & Bond::NotPresent);
-			forCentre = Existence::Values(forCentre & Existence::Absent);
-			forRight = Bond::Values(forRight & Bond::NotPresent);
-		}
-
-		if ((_centre.value() == Existence::Present) ||
-		    bond_definitely_present(_left.value()) ||
-		    bond_definitely_present(_right.value()))
-		{
-			/* if anything is present, hydrogen & all bonds must also be present */
-			forLeft = Bond::Values(forLeft & Bond::Present);
-			forRight = Bond::Values(forRight & Bond::Present);
-			forCentre = Existence::Values(forCentre & Existence::Present);
-		}
-
-		/* must also impose the strong/weak bond dichotomy, 
-		 * i.e.: X----H . . . Y has strong X-H and weak H-Y bond */
-
-		if (_left.value() == Bond::Strong)
-		{
-			forRight = Bond::Values(forRight & Bond::Weak);
-		}
-		else if (_left.value() == Bond::Weak)
-		{
-			forRight = Bond::Values(forRight & Bond::Strong);
-		}
-
-		if (_right.value() == Bond::Strong)
-		{
-			forLeft = Bond::Values(forLeft & Bond::Weak);
-		}
-		else if (_right.value() == Bond::Weak)
-		{
-			forLeft = Bond::Values(forLeft & Bond::Strong);
+			assign(_left, Bond::NotBonded, "an absent hydrogen cannot be "\
+			       "adjacent to a donor or acceptor bond");
 		}
 		
-		// if each bond on either side can only do weak, we cannot have a
-		// hydrogen bond
-		if (_right.value() & Bond::Weak 
-		    && _left.value() & Bond::Weak
-		    && !(_right.value() & Bond::Strong) && 
-		       !(_left.value() & Bond::Strong))
+		// if H is present, one bond must be a donor, other cannot be a donor
+		if (_centre.value() == Existence::Present)
 		{
-			forCentre = Existence::Values(forCentre & Existence::Absent);
+			if (_right.value() == Bond::Strong)
+			{
+				assign(_left, Bond::NotStrong, "a hydrogen with a donor on"\
+				       " one side must be accepted on the other");
+			}
+			
+			if (!(_right.value() & Bond::Strong))
+			{
+				assign(_left, Bond::Strong, "a hydrogen with a non-donor on "\
+				       "one side must be a donor on the other");
+			}
 		}
 		
-		assign(_left, forLeft);
-		assign(_centre, forCentre);
-		assign(_right, forRight);
+		// if we definitely have a donor/acceptor bond then we must have H
+		if (bond_definitely_present(_left.value()))
+		{
+			assign(_centre, Existence::Present, "a donor/acceptor bond must "\
+			       "have a present hydrogen");
+		}
+		
+		if (bond_definitely_not_bonded(_left.value()) && 
+		    bond_definitely_not_bonded(_right.value()))
+		{
+			assign(_centre, Existence::Absent, "a hydrogen braced by two "\
+			       "non-bonds must be absent");
+		}
+		
+		if (_right.value() == Bond::Broken)
+		{
+			assign(_left, Bond::NotWeak, "a broken bond on one side cannot "\
+			       "be juxtaposed by an acceptor bond on the other");
+		}
 
 		return assign.okay();
 	}

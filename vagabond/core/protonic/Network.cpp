@@ -38,6 +38,9 @@ void shareProperty(Network *me, AtomConf left, AtomConf right,
 	
 	CountConnector *lConnect = obtain(left);
 	CountConnector *rConnect = obtain(right);
+	
+	me->probeForAtom(left)->register_probe(me->probeForAtom(right));
+	me->probeForAtom(right)->register_probe(me->probeForAtom(left));
 
 	if (lConnect && rConnect)
 	{
@@ -129,7 +132,7 @@ bool Network::setupAmineNitrogen(AtomConf atom)
 
 	if (terminal)
 	{
-		Count::Values n_charge = terminal ? Count::OneOrZero : Count::Zero;
+		Count::Values n_charge = Count::OneOrZero;
 		_atomMap[atom]->prepareCoordinated(n_charge, Count::Four, Count::Two);
 	}
 	else
@@ -220,7 +223,7 @@ bool Network::setupCarboxylOxygen(AtomConf atom)
 
 	Count::Values charge = Count::mOneOrZero;
 	Count::Values donors = Count::OneOrZero;
-	Count::Values strong_sum = Count::OneOrZero;
+	Count::Values strong_sum = Count::mOneOrZero;
 
 	Count::Values charge_sum = Count::mOneOrZero;
 
@@ -237,6 +240,7 @@ bool Network::setupCarbonylOxygen(AtomConf atom)
 {
 	bool bad = false;
 	Count::Values coordination = Count::Values(Count::Two | Count::Three);
+	coordination = Count::Three; // fix
 
 	if ((atom.ptr->atomName() != "O" && atom.ptr->atomName() != "OXT") ||
 	    atom.ptr->code() == "HOH")
@@ -354,7 +358,9 @@ void Network::setupInactiveAtom(AtomConf atom)
 		if (diff < 0.005)
 		{
 			add_constraint(new MutualExistence(left, covalent));
+			add_constraint(new MutualExistence(covalent, left));
 			add_constraint(new MutualExistence(covalent, right));
+			add_constraint(new MutualExistence(right, covalent));
 		}
 		else
 		{
@@ -399,8 +405,8 @@ void Network::setupInactiveAtom(AtomConf atom)
 
 		add_constraint(new SubExistence(left, covalent, right));
 
-		std::cout << "Making maybe-bond between " << atom.ptr->desc() << " and "
-		<< connected.ptr->desc() << std::endl;
+		std::cout << "Making maybe-bond between " << atom << " and "
+		<< connected << std::endl;
 		bool double_bond = false;
 		double_bond |= either_are_named_couple("C", "O")(connected, atom);
 		add_probe(new CovalentProbe(*probe, *other, covalent, double_bond));
@@ -410,27 +416,29 @@ void Network::setupInactiveAtom(AtomConf atom)
 	{
 		::Atom *connect = atom.ptr->connectedAtom(i);
 		AtomConf connected = {connect, atom.conf};
+		// we try to find the conformer which matches our own
 		AtomProbe *other = _atom2Probe[connected];
 		
-		bool priority = (connected.ptr->elementSymbol() != "H" && 
+		bool priority = (connected.ptr->elementSymbol() == "H" || 
 		                 connected.ptr->atomNum() < atom.ptr->atomNum());
-
-		priority |= (connected.ptr->elementSymbol() == "H");
 
 		if (other && (other->_obj.value() == hnet::Atom::Inactive &&
 		    !priority))
 		{
 			continue;
 		}
-		else if (other)
+
+		if (other)
 		{
+			std::cout << "Definitive bond between " << atom << " and "
+			<< connected << std::endl;
 			make_certain_covalent_bond(atom, connected);
 
 		}
 		else if (!other)
 		{
 			std::cout << "we have no definitive other for " << 
-			connect->desc() << std::endl;
+			connect->desc() << " from " << atom << std::endl;
 			for (const std::string &c : connect->conformerList())
 			{
 				char conf = char_from_conf(c);
@@ -509,6 +517,7 @@ void Network::establishAtom(::Atom *atom)
 	std::cout << "establishing atom " << atom->desc() << std::endl;
 	Coordinated *coord = {};
 	std::vector<ExistenceConnector *> connections;
+	std::vector<Coordinated *> these_coords;
 	float total_occ = 0;
 
 	for (const std::string &conformer : atom->conformerList())
@@ -519,6 +528,19 @@ void Network::establishAtom(::Atom *atom)
 		_atomMap[tmp] = coord;
 		total_occ += tmp.occupancy();
 		connections.push_back(coord->existence());
+		these_coords.push_back(coord);
+	}
+
+	for (Coordinated *l : these_coords)
+	{
+		for (Coordinated *r : these_coords)
+		{
+			if (l != r)
+			{
+				l->probe()->register_probe(r->probe());
+			}
+
+		}
 	}
 	
 	// only one is allowed to exist at the same time
@@ -532,7 +554,7 @@ void Network::establishAtom(::Atom *atom)
 		// existence of a heavy atom can be constrained to Present if it only
 		// has one conformer.
 		std::cout << "Constraining " << *coord->existence() << " to be"\
-		" present due to 100% occupancy" << std::endl;
+		" present due to 100% occupancy (" << total_occ << ")" << std::endl;
 		add_constraint(new ExistenceConstant(*coord->existence(), 
 		                                     hnet::Existence::Present));
 	}

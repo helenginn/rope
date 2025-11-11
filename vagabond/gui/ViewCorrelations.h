@@ -22,6 +22,8 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/core/Item.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/utils/svd/PCA.h>
+#include <mutex>
 
 class Clique;
 
@@ -38,6 +40,9 @@ private:
 	Clique *_clique{};
 
 	Eigen::MatrixXf _overall{};
+	Eigen::MatrixXf _written{};
+	PCA::Matrix _matrix{};
+	std::mutex _mutex{};
 };
 
 #endif

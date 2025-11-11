@@ -21,11 +21,36 @@
 
 #include <vagabond/core/protonic/hnet.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/core/protonic/Probe.h>
 
 using Eigen::MatrixXf;
 
 class Probe;
-typedef std::pair<Probe *, hnet::Types> ProbeTypePair;
+
+struct ProbeTypePair : public std::pair<Probe *, hnet::Types>
+{
+	ProbeTypePair(const std::pair<Probe *, hnet::Types> &orig = {})
+	{
+		this->first = orig.first;
+		this->second = orig.second;
+	}
+
+	bool operator<(const ProbeTypePair &other) const
+	{
+		if (!this->first || !other.first)
+		{
+			return this->first < other.first;
+		}
+		else if (this->second == other.second)
+		{
+			return this->first->desc() < other.first->desc();
+		}
+		else
+		{
+			return this->second > other.second;
+		}
+	}
+};
 
 struct OneProbe
 {
@@ -47,13 +72,16 @@ struct ProbeCorrelation
 	hnet::Types lType{};
 	hnet::Types rType{};
 	MatrixXf mat{};
+	MatrixXf weights{};
 };
 
 int dim_for_type(const hnet::Types &type);
 
 std::vector<ProbeTypePair> probes(const std::vector<ProbeResult> &source);
+float average_score(const std::vector<ProbeResult> &source);
 
 ProbeCorrelation correlate(const std::vector<ProbeResult> &source, 
-                           ProbeTypePair left, ProbeTypePair right, bool norm);
+                           ProbeTypePair left, ProbeTypePair right, 
+                           float all_ave, bool norm);
 
 #endif

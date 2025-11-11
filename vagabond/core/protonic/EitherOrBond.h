@@ -26,10 +26,11 @@ namespace hnet
 /* logic for determining hydrogen bonding patterns between two heavier atoms */
 struct EitherOrBond
 {
-	EitherOrBond(BondConnector &left, BondConnector &right)
+	EitherOrBond(BondConnector &left, BondConnector &right, bool break_only)
 	: _left(left), _right(right)
 	{
 		prep_constraints_and_forgets(this, {&left, &right});
+		_breakOnly = break_only;
 	}
 
 	std::string desc()
@@ -55,17 +56,13 @@ struct EitherOrBond
 		{
 			assign(_right, Bond::Broken);
 		}
-		if ((_right.value() & Bond::NotBroken) &&
-		    !(_right.value() & Bond::Broken))
-		{
-			assign(_left, Bond::Broken);
-		}
 
 		return assign.okay();
 	}
 
 	BondConnector &_left;
 	BondConnector &_right;
+	bool _breakOnly{};
 };
 };
 

@@ -8,6 +8,7 @@ in vec2 vTex;
 uniform sampler2D pic_tex;
 uniform float near_slab;
 uniform float far_slab;
+uniform vec4 aGlow;
 
 layout (location = 0) out vec4 FragColor;
 layout (location = 1) out uint ValIndex;

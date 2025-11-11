@@ -106,6 +106,10 @@ void Clique::housekeeping(Network &network)
 		{
 			_probes.insert(probe);
 		}
+		else
+		{
+			std::cout << "Warning! Missing probe for desc: " << desc << std::endl;
+		}
 	}
 	_descs = {};
 
@@ -131,11 +135,11 @@ OpSet<Probe *> Clique::nonWaterProbes()
 		if (pr->is_atom())
 		{
 			bool water = (pr->atom()->code() == "HOH");
-			if (!water && !pr->is_certain())
+			if (!pr->is_certain())
 			{
 				nonwater.insert(pr);
 			}
-			else if (!water && pr->is_certain())
+			if (pr->is_certain())
 			{
 				for (Probe *connected : pr->others())
 				{

@@ -156,7 +156,19 @@ public:
 	
 	virtual void select(bool left)
 	{
-
+		if (_job)
+		{
+			_job();
+		}
+	}
+	
+	void setSelectJob(const std::function<void()> &job)
+	{
+		_job = job;
+		if (_job)
+		{
+			setSelectable(true);
+		}
 	}
 	
 	void setSelected(bool selected)
@@ -182,7 +194,8 @@ public:
 		return nullptr;
 	}
 	
-	virtual Box *customRenderable(ButtonResponder *parent)
+	virtual Box *customRenderable(ButtonResponder *parent,
+	                              const std::function<void(Item *)> &job)
 	{
 		return nullptr;
 	}
@@ -219,6 +232,8 @@ public:
 	
 	Item *previousItem(bool enter_set = false);
 	Item *nextItem(bool enter_set = true);
+	void deleteChildren();
+	void removeChildren();
 
 	void clearParent()
 	{
@@ -240,7 +255,6 @@ protected:
 private:
 	void sanityCheckItem(Item *item);
 	void deleteSelf();
-	void deleteChildren();
 
 	void resolveDeletion();
 	
@@ -272,6 +286,7 @@ private:
 	
 	Item *_parent = nullptr;
 	std::vector<Item *> _items;
+	std::function<void()> _job{};
 
 };
 

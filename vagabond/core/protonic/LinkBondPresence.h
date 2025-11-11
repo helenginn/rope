@@ -16,56 +16,68 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MutualExistence__
-#define __vagabond__MutualExistence__
+#ifndef __vagabond__LinkBondPresence__
+#define __vagabond__LinkBondPresence__
 
 #include "hnet.h"
 
 namespace hnet
 {
-/* logic for determining hydrogen bonding patterns between two heavier atoms */
-struct MutualExistence
+/* linking the hydrogen bond breakage status to presence status */
+class LinkBondPresence
 {
-	MutualExistence(ExistenceConnector &left, ExistenceConnector &right,
-	                bool strong = true, std::string desc = "")
-	: _left(left), _right(right), _desc(desc), _strong(strong)
+public:
+	LinkBondPresence(ExistenceConnector &exist, BondConnector &bond)
+	: _exist(exist), _bond(bond)
 	{
-		prep_constraints_and_forgets(this, {&left, &right});
+		prep_constraints_and_forgets(this, {&exist, &bond});
 	}
-	
-	void forget(OpSet<void *> &blame)
-	{
-		_left.forget(blame);
-		_right.forget(blame);
-	}
-	
+
 	std::string desc()
 	{
 		std::ostringstream ss;
-		ss << "mutual existence between " << _left << " and " << _right;
+		ss << "direct link between existence and bond status for " << _bond;
 		return ss.str();
+	}
+
+	void forget(OpSet<void *> &blame)
+	{
+		_exist.forget(blame);
+		_bond.forget(blame);
 	}
 
 	bool check(void *previous)
 	{
 		auto assign = make_assign_and_say(this, previous);
 
-		if (_left.value() == Existence::Present && _strong)
+		if (_exist.value() == Existence::Present)
 		{
-			assign(_right, Existence::Present);
+			assign(_bond, Bond::NotBroken);
 		}
-		else if (_left.value() == Existence::Absent)
+
+		if (_exist.value() == Existence::Absent)
 		{
-			assign(_right, Existence::Absent);
+			assign(_bond, Bond::Broken);
 		}
+
+		if (!(_bond.value() & Bond::Broken))
+		{
+			assign(_exist, Existence::Present);
+		}
+
+		/*
+		if ((_bond.value() & Bond::Broken))
+		{
+			assign(_exist, Existence::Absent);
+		}
+		*/
 
 		return assign.okay();
 	}
+private:
 
-	ExistenceConnector &_left;
-	ExistenceConnector &_right;
-	std::string _desc{};
-	bool _strong{};
+	ExistenceConnector &_exist;
+	BondConnector &_bond;
 };
 };
 

@@ -664,10 +664,7 @@ void NonCovalents::prepareBarycentricTargetMatrices()
 	
 	for (Interface &face : _faces)
 	{
-//		if (face.sums.size() >= 3)
-		{
-			m += face.sums.size();
-		}
+		m += face.sums.size();
 	}
 
 	_barycentrics = MatrixXf(n, m);

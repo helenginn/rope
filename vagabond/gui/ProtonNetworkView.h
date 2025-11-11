@@ -65,6 +65,7 @@ public:
 	void setMenu(Menu *menu);
 	void makeMainMenu();
 	virtual void keyReleaseEvent(SDL_Keycode pressed);
+	virtual void keyPressEvent(SDL_Keycode pressed);
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
 
@@ -80,6 +81,7 @@ public:
 	}
 private:
 
+	void focusOnResidue(std::string chain, int res);
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();

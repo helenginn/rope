@@ -58,6 +58,19 @@ public:
 		_checks.pop_back();
 		_forgets.pop_back();
 	}
+	
+	inline static std::ostringstream _out{};
+	inline static bool _silent{false};
+
+	static std::ostringstream &my_out()
+	{
+		return _out;
+	}
+	
+	static std::ostream &out()
+	{
+		return (ConnectBase::_silent ? _out : std::cout);
+	}
 };
 
 template <typename Value>
@@ -102,11 +115,10 @@ struct Connector : public ConnectBase
 	bool assign_value_without_checking(const Value &value, void *informant,
 	                                   void *blame)
 	{
-		bool ignore = false;
-
 		if (_conditions.from_informant_and_blame(informant, blame) == value)
 		{
-			return ignore; // tbd
+			// if there's no change in value then we end the propagation
+			return false;
 		}
 		
 		Value before = _conditions.belief();
@@ -115,11 +127,10 @@ struct Connector : public ConnectBase
 
 		bool changed = (before != after);
 		if (changed && _desc.length())
-		if (false)
 		{
-			std::cout << "CONNECTOR: \"" << *this << "\" was " << before << 
-			", before applying condition " << value << 
-			std::endl;
+			ConnectBase::out() << "CONNECTOR: \"" << *this << "\" was " 
+			<< before << ", before applying condition " << value << 
+			" resulting in " << after << std::endl;
 		}
 		
 		return changed;
@@ -166,19 +177,21 @@ struct Connector : public ConnectBase
 		
 	bool check_all(void *blame)
 	{
-		if (is_contradictory(value()))
-		{
-			return false;
-		}
-		
 		/* if we reassign a new value, we recalculate checks */
 		for (Checker &checker : _checks)
 		{
 			if (!checker(blame))
 			{
+				std::cout << "That was a bad check, abort" << std::endl;
 				return false;
 			}
 		}
+
+		if (is_contradictory(value()))
+		{
+			return false;
+		}
+		
 		
 		return true;
 	}
@@ -192,21 +205,21 @@ struct Connector : public ConnectBase
 	
 	bool assign_value(const Value &value, void *informant, void *blame)
 	{
-		int init = _conditions.size();
 		if (assign_value_without_checking(value, informant, blame))
 		{
 			if (_update)
 			{
 				_update();
 			}
+
+			// handles next assignment
 			bool result = check_all(blame);
 			
-			int end = _conditions.size();
-			if (false)
+			if (!result && !ConnectBase::_silent)
 			{
-				std::cout << "ASSIGNED: " << desc() << ": " << init << " + " << end - init << " = " << end << " (" << _conditions.size() << " conditions)" << std::endl;
+				std::cout << ConnectBase::my_out().str();
 			}
-			
+
 			return result;
 		}
 
@@ -326,18 +339,24 @@ struct make_assign_and_say
 	: _me(me), _prev(previous) {}
 
 	template <typename Type>
-	bool operator()(Connector<Type> &which, const Type &what)
+	bool operator()(Connector<Type> &which, const Type &what,
+	                const std::string &reason = "")
 	{
+		ConnectBase::my_out() = {};
 		Type before = which.value();
 		_okay &= which.assign_value(what, _me, _prev);
 		Type after = which.value();
 
 		if (before != after)
-		if (false)
 		{
-			std::cout << "CONSTRAINT: \"" << _me->desc() << 
+			ConnectBase::out() << "... from CONSTRAINT: \"" << _me->desc() << 
 			"\" forcing assignment of " << what << " on " << 
-			which << " resulting in " << after << std::endl;
+			which << " resulting in " << after;
+			if (reason.size())
+			{
+				std::cout << ", due to reason: " << reason;
+			}
+			std::cout << std::endl;
 			return true;
 		}
 
@@ -370,15 +389,21 @@ void prep_constraints_and_forgets(ConstraintType *constraint,
 
 	for (ConnectBase *connector : connections)
 	{
-		connector->add_constraint_check(self_check);
-		connector->add_forget(forget_me);
+		if (connector)
+		{
+			connector->add_constraint_check(self_check);
+			connector->add_forget(forget_me);
+		}
 	}
 
 	if (!constraint->check(constraint))
 	{
 		for (ConnectBase *connector : connections)
 		{
-			connector->pop_last_check(constraint);
+			if (connector)
+			{
+				connector->pop_last_check(constraint);
+			}
 		}
 
 		throw std::runtime_error("New constraint immediately "\

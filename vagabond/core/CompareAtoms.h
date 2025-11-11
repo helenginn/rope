@@ -20,52 +20,56 @@
 
 inline auto atom_ptr_compare_function()
 {
-	std::function<bool(Atom *const &, Atom *const &)> compare_ids;
-	compare_ids = [&compare_ids](Atom *const &a, Atom *const &b) -> bool
+	auto comparison = [](Atom *const &a, Atom *const &b) -> bool
 	{
-		if ((!a && b) || (!a && !b))
+		auto compare_ids = [](Atom *const &a, Atom *const &b, auto &compare)
 		{
-			return false;
-		}
-		if (b && !a) 
-		{
-			return true;
-		}
-
-		if (a->symmetryCopyOf() && !b->symmetryCopyOf())
-		{
-			return false;
-		}
-		else if (!a->symmetryCopyOf() && b->symmetryCopyOf())
-		{
-			return true;
-		}
-		else if (a->symmetryCopyOf() && b->symmetryCopyOf())
-		{
-			if (a->symmetryCopyOf() == b->symmetryCopyOf())
+			if ((!a && b) || (!a && !b))
 			{
-				return (a->desc() < b->desc());
+				return false;
+			}
+			if (b && !a) 
+			{
+				return true;
 			}
 
-			return compare_ids(a->symmetryCopyOf(), b->symmetryCopyOf());
-		}
-		if (a->residueId() > b->residueId())
-		{
-			return false;
-		}
-		else if (a->residueId() < b->residueId()) 
-		{
-			return true;
-		}
-		else if (a->atomNum() >= b->atomNum())
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
+			if (a->symmetryCopyOf() && !b->symmetryCopyOf())
+			{
+				return false;
+			}
+			else if (!a->symmetryCopyOf() && b->symmetryCopyOf())
+			{
+				return true;
+			}
+			else if (a->symmetryCopyOf() && b->symmetryCopyOf())
+			{
+				if (a->symmetryCopyOf() == b->symmetryCopyOf())
+				{
+					return (a->desc() < b->desc());
+				}
+
+				return compare(a->symmetryCopyOf(), b->symmetryCopyOf(), compare);
+			}
+			if (a->residueId() > b->residueId())
+			{
+				return false;
+			}
+			else if (a->residueId() < b->residueId()) 
+			{
+				return true;
+			}
+			else if (a->atomNum() >= b->atomNum())
+			{
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		};
+		
+		return compare_ids(a, b, compare_ids);
 	};
 	
-	return compare_ids;
+	return comparison;
 }

@@ -23,6 +23,7 @@
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ChooseRange.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/core/protonic/Subdivide.h>
 #include <vagabond/core/protonic/SearchAll.h>
 #include <vagabond/core/protonic/Clique.h>
@@ -73,8 +74,19 @@ void HBondAnalysisControl::setup()
 		return [this, min, max]()
 		{
 			Subdivide sd(_clique, min, max);
+			sd.subdivide();
 			refresh();
 		};
+	};
+
+	auto dont_subdivide = [this]()
+	{
+//		Clique copy = _clique->probes();
+//		_clique->setSubdivisions({copy});
+
+		Subdivide sd(_clique, INT_MAX, INT_MAX);
+		sd.one();
+		refresh();
 	};
 	
 	auto ask_for_min_max = [this, subdivide_with_values]()
@@ -91,12 +103,20 @@ void HBondAnalysisControl::setup()
 		cr->setReturn(convert);
 		setModal(cr);
 	};
+
+	auto ask_to_brute_force = [this, ask_for_min_max, dont_subdivide]()
+	{
+		AskYesNo *ayn = new AskYesNo(this, "Do entire network by brute force?");
+		ayn->addJob("yes", dont_subdivide);
+		ayn->addJob("no", ask_for_min_max);
+		setModal(ayn);
+	};
 	
-	auto ask_to_subdivide = [this, ask_for_min_max, subdivide_with_values]()
+	auto ask_to_subdivide = [this, ask_to_brute_force, subdivide_with_values]()
 	{
 		AskYesNo *ayn = new AskYesNo(this, "Subdivide network using defaults?");
-		ayn->addJob("yes", subdivide_with_values(10, 20));
-		ayn->addJob("no", ask_for_min_max);
+		ayn->addJob("yes", subdivide_with_values(18, 25));
+		ayn->addJob("no", ask_to_brute_force);
 		setModal(ayn);
 	};
 
@@ -128,7 +148,26 @@ void HBondAnalysisControl::setup()
 			addTempObject(num);
 		};
 		
+		auto delete_subdiv_button = [this, right]()
+		{
+			auto delete_subdivs = [this]()
+			{
+				_clique->setSubdivisions({});
+				refresh();
+			};
+
+			if (_clique->subdivisions().size())
+			{
+				ImageButton *ib = new ImageButton("assets/images/cross.png", this);
+				ib->resize(0.06);
+				ib->setLeft(right, 0.4);
+				ib->setReturnJob(delete_subdivs);
+				addTempObject(ib);
+			}
+		};
+		
 		_refreshes.push_back(add_subdiv_summary);
+		_refreshes.push_back(delete_subdiv_button);
 	}
 	
 	auto start_subdivisions = [this]()

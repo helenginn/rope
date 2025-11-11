@@ -19,6 +19,8 @@
 #include "ExhaustiveSearch.h"
 #include "Network.h"
 #include <unistd.h>
+#include <random>
+#include <algorithm>
 
 ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
                                    const OpSet<Probe *> &wider,
@@ -30,6 +32,8 @@ ExhaustiveSearch::ExhaustiveSearch(const OpSet<Probe *> &interesting,
 
 void ExhaustiveSearch::setup()
 {
+	hnet::ConnectBase::_silent = true;
+
 	auto make_bond_decree = [this](BondProbe *probe) -> IteratedProbe *
 	{
 		if (probe->_obj.is_certain()) { return nullptr; }
@@ -76,6 +80,12 @@ void ExhaustiveSearch::setup()
 		}
 	}
 
+	std::random_device rd;
+    std::mt19937 g(rd());
+	std::vector<IteratedProbe *> copy(_iterations.begin(), _iterations.end());
+    std::shuffle(copy.begin(), copy.end(), g);
+	_iterations = std::list<IteratedProbe *>(copy.begin(), copy.end());
+	
 	for (Probe *const &probe : _all)
 	{
 		if (probe->is_bond())
@@ -92,6 +102,7 @@ void ExhaustiveSearch::setup()
 		std::cout << "Iterator: " << it->desc() << std::endl;
 	}
 	std::cout << std::endl;
+	hnet::ConnectBase::_silent = true;
 }
 	
 void ExhaustiveSearch::cleanup()
@@ -101,6 +112,7 @@ void ExhaustiveSearch::cleanup()
 		it->reset(_cv, _m);
 		delete it;
 	}
+	hnet::ConnectBase::_silent = false;
 }
 
 void ExhaustiveSearch::search()
@@ -128,8 +140,8 @@ float ExhaustiveSearch::score_wider_clique()
 			BondProbe *bp = static_cast<BondProbe *>(probe);
 			hnet::Bond::Values val = bp->_obj.value();
 
-			if (val & hnet::Bond::Present && 
-			    !(val & hnet::Bond::NotPresent))
+			if (val & hnet::Bond::Weak && 
+			    !(val & hnet::Bond::NotWeak))
 			{
 				score -= 0.75 * 4.18; // kcal -> mol
 			}
@@ -199,9 +211,9 @@ bool ExhaustiveSearch::next()
 			float score = score_wider_clique();
 			_configs += c;
 			_scores[c] = score;
-			print(c);
-			std::cout << "\t" << score;
-			std::cout << std::endl;
+			//print(c);
+//			std::cout << "\t" << score;
+//			std::cout << std::endl;
 		}
 	};
 	
@@ -274,6 +286,7 @@ bool ExhaustiveSearch::next()
 		ave_score += it->second;
 	}
 	ave_score /= (float)_scores.size();
+	ave_score = 0;
 	
 	auto process_result = [this, &ave_score](const Config &c)
 	{
@@ -293,18 +306,18 @@ bool ExhaustiveSearch::next()
 			result.results.push_back(pres);
 		}
 
-		std::cout << sc << " ";
+//		std::cout << sc << " ";
 		_results.push_back(result);
 	};
 	
 	if (_counter < 0 || (_counter == 0 && (**it).done()))
 	{
-		std::cout << "Final: " << std::endl;
+//		std::cout << "Final: " << std::endl;
 		for (const Config &c : _configs)
 		{
 			process_result(c);
 		}
-		std::cout << std::endl;
+//		std::cout << std::endl;
 		return false;
 
 	}

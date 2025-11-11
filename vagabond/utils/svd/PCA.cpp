@@ -64,6 +64,10 @@ Eigen::MatrixXf PCA::Matrix::toEigen()
 
 void PCA::setupMatrix(Matrix *mat, int rows, int cols)
 {
+	if (cols == 0)
+	{
+		cols = rows;
+	}
 	mat->vals = (double *)calloc(rows * cols, sizeof(double));
 	mat->ptrs = (double **)malloc(sizeof(double *) * rows);
 	mat->rows = rows;

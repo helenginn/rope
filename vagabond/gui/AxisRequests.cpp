@@ -106,6 +106,10 @@ DoRequest doRequest(PositionData *group)
 			}
 
 			RAMovement movement = RAMovement::movements_from(list, vec);
+			for (int i = 0; i < list.size(); i++)
+			{
+				std::cout << list[i] << " " << vec[i] << std::endl;
+			}
 
 			std::string str = axes->titleForAxis();
 			Instance *instance = static_cast<Instance *>(axes->focus());

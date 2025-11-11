@@ -22,20 +22,42 @@
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/protonic/ProbeResult.h>
+#include <vagabond/core/Item.h>
 
 using Eigen::MatrixXf;
+using Eigen::VectorXf;
+
+class Clique;
+class LineGroup;
 
 class CommunicationAnalysis : public Scene
 {
 public:
-	CommunicationAnalysis(Scene *scene, const MatrixXf &mat,
+	CommunicationAnalysis(Scene *scene, Clique *clique, const MatrixXf &mat,
 	                      const std::map<ProbeTypePair, 
 	                      std::pair<int, int>> &insertions);
 
 	virtual void setup();
 private:
+	void prepareGroups();
+	void checkChosen();
+	void svd();
+
+	Clique *_clique{};
+
 	MatrixXf _mat;
+	MatrixXf _wU;
+	VectorXf _w;
+	int _overOne{};
+	
+	MatrixXf _lMat{};
+	MatrixXf _rMat{};
+
 	std::map<ProbeTypePair, std::pair<int, int>> _lookup;
+	
+	LineGroup *_lg{};
+	Item _parent{};
+	OpSet<std::string> _chosen;
 };
 
 #endif

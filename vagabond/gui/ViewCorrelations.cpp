@@ -16,12 +16,19 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/Eigen/Core>
 #include "ViewCorrelations.h"
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/utils/FloydWarshall.h>
+#include <vagabond/utils/DoJob.h>
 #include <fstream>
 #include <vagabond/core/protonic/Clique.h>
 #include <vagabond/gui/elements/list/LineGroup.h>
+#include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/MatrixPlot.h>
+#include <vagabond/gui/CommunicationChoice.h>
+#include <vagabond/gui/CommunicationAnalysis.h>
 #include <vagabond/gui/elements/ScrollBox.h>
 #include <vagabond/gui/elements/Window.h>
 
@@ -58,6 +65,9 @@ void ViewCorrelations::makeList()
 	}
 
 	_clique->setHandleBeingChosen([this](bool left) { if (left) viewAll(); });
+	std::cout << ("Subgroups of " + 
+	                        std::to_string(_clique->probes().size())
+	                        + " nodes") << std::endl;
 
 	LineGroup *lg = new LineGroup(_clique, this);
 	lg->setLeft(-0.04, 0.2);
@@ -72,17 +82,55 @@ void ViewCorrelations::makeList()
 	sb->addSliderIfNeeded();
 }
 
+void removeRow(MatrixXf &matrix, unsigned int rowToRemove)
+{
+	unsigned int numRows = matrix.rows() - 1;
+	unsigned int numCols = matrix.cols();
+
+	if (rowToRemove < numRows)
+	{
+		matrix.block(rowToRemove, 0, numRows - rowToRemove, numCols) 
+		= matrix.bottomRows(numRows - rowToRemove);
+	}
+
+	matrix.conservativeResize(numRows, numCols);
+}
+
+void removeColumn(MatrixXf &matrix, unsigned int colToRemove)
+{
+	unsigned int numRows = matrix.rows();
+	unsigned int numCols = matrix.cols() - 1;
+
+	if (colToRemove < numCols)
+	{
+		matrix.block(0, colToRemove, numRows, numCols - colToRemove) 
+		= matrix.rightCols(numCols - colToRemove);
+	}
+
+	matrix.conservativeResize(numRows, numCols);
+}
+
 void ViewCorrelations::viewAll()
 {
 	OpSet<ProbeTypePair> all;
 
+	float all_sum = 0;
+	float all_count = 0;
 	for (Clique &clique : _clique->subdivisions())
 	{
 		const std::vector<ProbeResult> &results = clique.results();
+		float sum = average_score(results) * results.size();
+		if (sum != sum)
+		{
+			continue;
+		}
+		all_sum += sum;
+		all_count += results.size();
 		std::vector<ProbeTypePair> active_probes = 
 		probes(results);
 		all += active_probes;
 	}
+	float all_ave = all_sum / all_count;
 	
 	std::map<ProbeTypePair, std::pair<int, int>> insertions;
 
@@ -95,9 +143,11 @@ void ViewCorrelations::viewAll()
 	}
 	
 	_overall = MatrixXf(accumulative, accumulative);
+	_written = MatrixXf(accumulative, accumulative);
 	_overall.setZero();
+	_written.setZero();
 
-	auto process_clique = [this, &insertions](const Clique &clique)
+	auto process_clique = [this, &insertions, all_ave](const Clique &clique)
 	{
 		const std::vector<ProbeResult> &results = clique.results();
 		std::vector<ProbeTypePair> active_probes = 
@@ -112,10 +162,27 @@ void ViewCorrelations::viewAll()
 			{
 				int y = insertions[right].first;
 				int n = insertions[right].second;
-				ProbeCorrelation corr = correlate(results, left, 
-				                                  right, false);
+				float ave = average_score(results);
+				ProbeCorrelation c = correlate(results, left, 
+				                                  right, all_ave, false);
 				
-				_overall(seqN(x, m), seqN(y, n)) += corr.mat;
+				Eigen::MatrixXf cc = c.mat;
+				Eigen::MatrixXf csq = c.mat;
+				
+				for (int j = 0; j < cc.cols(); j++)
+				{
+					for (int i = 0; i < cc.rows(); i++)
+					{
+						cc(i, j) = fabs(cc(i, j));
+						csq(i, j) = csq(i, j) * csq(i, j);
+					}
+				}
+				
+				_overall(seqN(x, m), seqN(y, n)) += csq;
+				_written(seqN(x, m), seqN(y, n)) += cc;
+
+				_overall(seqN(y, n), seqN(x, m)) += csq.transpose();
+				_written(seqN(y, n), seqN(x, m)) += cc.transpose();
 			}
 		}
 	};
@@ -125,16 +192,20 @@ void ViewCorrelations::viewAll()
 		process_clique(clique);
 	}
 
-	for (int i = 0; i < accumulative; i++)
+	for (int i = 0; i < _overall.rows(); i++)
 	{
-		float max = _overall(i, i);
-		float mult = max > 1e-6 ? 1 / max : 0;
-		_overall(i, Eigen::all) *= mult;
+		for (int j = 0; j < _overall.cols(); j++)
+		{
+			if (_written(i, j) > 1e-6)
+			{
+				_overall(i, j) /= _written(i, j);
+			}
+		}
 	}
 	
 	deleteTemps();
-	PCA::Matrix pca = PCA::Matrix(_overall);
-	MatrixPlot *mp = new MatrixPlot(pca);
+	_matrix = PCA::Matrix(_overall);
+	MatrixPlot *mp = new MatrixPlot(_matrix, _mutex);
 	glm::mat3x3 rot = glm::mat3x3(1.f);
 	rot[1] *= -1;
 	mp->rotateRoundCentre(rot);
@@ -142,6 +213,56 @@ void ViewCorrelations::viewAll()
 	(Renderable::Alignment::Left | Renderable::Alignment::Top);
 	mp->setArbitrary(0.4, 0.25, align);
 	addTempObject(mp);
+	
+	auto choose_groups = [this]()
+	{
+		CommunicationChoice *cc = new CommunicationChoice(this, _clique);
+		cc->show();
+	};
+	
+	auto comm_analysis = [this, choose_groups, insertions]()
+	{
+		int num = _clique->allCommsNames().size();
+		if (num <= 1)
+		{
+			AskYesNo *ayn = 
+			new AskYesNo(this, "Need to define at least two communication "\
+			             "groups before analysis. Choose them now?", "", this);
+
+			ayn->addJob("yes", choose_groups);
+			setModal(ayn);
+		}
+		else
+		{
+			CommunicationAnalysis *ca = 
+			new CommunicationAnalysis(this, _clique, _overall, insertions);
+			ca->show();
+		}
+	};
+	
+	auto fill_gaps = [this, mp]()
+	{
+		auto combine = [](float x, float y)
+		{
+			return x * y;
+		};
+
+		FloydWarshall fw(_overall, combine, true);
+		fw.addDisplayMatrix(_matrix, _mutex, [mp]() { mp->update(); });
+		fw.run();
+	};
+	
+	/*
+	TextButton *fill = new TextButton("Shortest paths", this);
+	fill->setCentre(0.55, 0.8);
+	fill->setReturnJob(fill_gaps);
+	addTempObject(fill);
+	*/
+	
+	TextButton *comm = new TextButton("Communication analysis", this);
+	comm->setCentre(0.55, 0.9);
+	comm->setReturnJob(comm_analysis);
+	addTempObject(comm);
 	
 	std::ofstream file;
 	file.open("hbond_matrix.csv");
@@ -152,7 +273,7 @@ void ViewCorrelations::viewAll()
 		{
 			switch (i)
 			{
-				case 0: return "present";
+				case 0: return "absent";
 				case 1: return "present";
 				default: break;
 			}
@@ -207,6 +328,7 @@ void ViewCorrelations::viewAll()
 
 	file.close();
 	
+	new DoJob(fill_gaps);
 
 }
 
@@ -286,8 +408,9 @@ void ViewCorrelations::viewSubnetwork(Clique &clique)
 	{
 		for (int n = 0; n < active_probes.size(); n++)
 		{
+			float ave = average_score(results);
 			ProbeCorrelation corr = correlate(results, active_probes[m], 
-			                                  active_probes[n], true);
+			                                  active_probes[n], ave, true);
 			
 			PCA::Matrix pca = PCA::Matrix(corr.mat);
 			MatrixPlot *mp = new MatrixPlot(pca);

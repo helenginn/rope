@@ -29,8 +29,13 @@ zlib = dependency('zlib')
 # Dependency groups
 header_deps = [glm, json]
 core_deps = [curl, fftw, gemmi, thread_dep, zlib]
-graphics_deps = [gl, glew, sdl2, sdl2image]
+graphics_deps = []
 cli_deps = [header_deps, core_deps]
+
+if is_native
+  graphics_deps = [gl, glew, sdl2, sdl2image]
+endif
+
 gui_deps = [header_deps, core_deps, graphics_deps]
 
 # Windows wiring
@@ -102,6 +107,7 @@ else  # emscripten
   extrafiles = ['vagabond/gui/print_file.cpp']
   start_cpp = 'vagabond/gui/main.cpp'
   compile_args += ['-DNDEBUG', '-DBOOST_UBLAS_NDEBUG']
+  message(links)
   executable('index.html', extrafiles, start_cpp,
     link_with: [core, gui],
     cpp_args: [compile_args],

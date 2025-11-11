@@ -31,7 +31,8 @@ class Item;
 class ItemLine : public Box, public Responder<Item>
 {
 public:
-	ItemLine(LineGroup *group, Item *item);
+	ItemLine(LineGroup *group, Item *item,
+	         const std::function<void(Item *)> &job);
 
 	void update();
 	
@@ -43,6 +44,10 @@ public:
 	
 	virtual void doThings();
 
+	LineGroup *group()
+	{
+		return _group;
+	}
 protected:
 	virtual void respond();
 private:
@@ -65,6 +70,7 @@ private:
 	ImageButton *_triangle = nullptr;
 	Image *_dot = nullptr;
 	Renderable *_content = nullptr;
+    std::function<void(Item *)> _job{};
 };
 
 #endif

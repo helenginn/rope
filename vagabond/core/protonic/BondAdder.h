@@ -23,6 +23,29 @@
 #include <sstream>
 #include "Constraint.h"
 
+enum CountType
+{
+	Certain,
+	Maybe,
+	Not,
+};
+
+inline std::ostream &operator<<(std::ostream &ss, const CountType &ct)
+{
+	switch (ct)
+	{
+		case Certain:
+		ss << "Certain"; break;
+		case Maybe:
+		ss << "Maybe"; break;
+		case Not:
+		ss << "Not"; break;
+		default:
+		ss << "WeirdCountType"; break;
+	}
+	return ss;
+}
+
 namespace hnet
 {
 /* addition of all strong bonds from an atom and output of a total sum */
@@ -39,26 +62,42 @@ struct BondAdder
 		return existence;
 	}
 	
-	bool value_is_certain(BondConnector *const &bond,
-	                      ExistenceConnector *const &exist)
+	CountType type_of_bond(BondConnector *const &bond,
+	                       ExistenceConnector *const &exist)
 	{
 		Existence::Values existence = existence_of(exist);
 		Bond::Values obj = bond->value();
-
-		return (value_is_requested_and_nothing_else(obj) && 
-		        (is_definitely_present(existence) || does_not_matter()));
-	}
-
-	bool value_is_maybe(BondConnector *const &bond,
-	                    ExistenceConnector *const &exist)
-	{
-		Existence::Values existence = existence_of(exist);
-		Bond::Values obj = bond->value();
-
-		return (value_is_not_purely_requested(obj) ||
-		        (value_is_requested_and_nothing_else(obj) && 
-		        (can_be_present_or_absent(existence) || 
-		        does_not_matter())));
+		
+		if (existence == Existence::Absent)
+		{
+			return Not;
+		}
+		else if (existence == Existence::Unassigned)
+		{
+			if (obj & Request)
+			{
+				return Maybe;
+			}
+			else
+			{
+				return Not;
+			}
+		}
+		else
+		{
+			if (value_is_not_purely_requested(obj))
+			{
+				return Maybe;
+			}
+			else if (value_is_requested_and_nothing_else(obj))
+			{
+				return Certain;
+			}
+			else
+			{
+				return Not;
+			}
+		}
 	}
 
 	void get_certains_maybes(int &total, int &certain, int &maybe)
@@ -72,14 +111,16 @@ struct BondAdder
 			BondConnector *const &bond = it->first;
 			ExistenceConnector *const &exist = it->second;
 
-			if (value_is_certain(bond, exist))
-			{
-				certain++;
-			}
-			else if (value_is_maybe(bond, exist))
-			{
-				maybe++;
-			}
+			CountType type = type_of_bond(bond, exist);
+//			std::cout << "What type of bond is " << *bond << " (requested:"
+//			<< Request << ")? -> " << type << std::endl;
+			
+
+//			std::cout << "Checking " << Request << " for " << bond->desc() << " (obj_value=" << bond->value() <<
+//			", existence=" << existence_of(exist) << ")" << " --> " << type << std::endl;
+
+			if (type == Certain) certain++;
+			if (type == Maybe) maybe++;
 
 			total++;
 		}
@@ -90,7 +131,7 @@ struct BondAdder
 	          const std::string &centre)
 	: _bonds(bonds), _sum(sum), _coordExist(coord), _centre(centre)
 	{
-		std::vector<ConnectBase *> list = {&sum};
+		std::vector<ConnectBase *> list = {&sum, coord};
 		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
 		{
 			list.push_back(it->first);
@@ -126,21 +167,6 @@ struct BondAdder
 		}
 	}
 
-	bool does_not_matter()
-	{
-		return (Request == Bond::NotBroken);
-	}
-	
-	bool can_be_present_or_absent(const Existence::Values &exist)
-	{
-		return (exist == Existence::Unassigned); 
-	}
-	
-	bool is_definitely_present(const Existence::Values &exist)
-	{
-		return (exist == Existence::Present); 
-	}
-	
 	bool value_is_not_purely_requested(const Bond::Values &val)
 	{
 		Bond::Values not_request = (Bond::Values)(Bond::Unassigned & ~Request);
@@ -156,7 +182,8 @@ struct BondAdder
 	}
 	
 	template <class MakeAssign>
-	void tell_maybe_bonds(const Bond::Values &tell, MakeAssign &assign)
+	void tell_maybe_bonds(const Bond::Values &tell, MakeAssign &assign,
+	                      bool positive)
 	{
 		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
 		{
@@ -166,12 +193,16 @@ struct BondAdder
 			Bond::Values obj = bond->value();
 			Existence::Values existence = existence_of(exist);
 
-			bool maybe = (value_is_not_purely_requested(obj) &&
-			              (is_definitely_present(existence) || 
-			              does_not_matter()));
+			CountType type = type_of_bond(bond, exist);
+			if (type != Maybe)
+			{
+				continue;
+			}
+			// don't even think about playing with sampling!
+			// a bond adder cannot determine occupancy
 
 			/* go on, tell them they're not requested! */
-			if (maybe)
+			if (existence == Existence::Present || !positive)
 			{
 				assign(*bond, tell);
 			}
@@ -182,7 +213,7 @@ struct BondAdder
 	{
 		auto assign = make_assign_and_say(this, previous);
 		
-		if (_coordExist && !(_coordExist->value() == Existence::Present))
+		if (_coordExist && !(_coordExist->value() & Existence::Present))
 		{
 //			std::cout << "Skipping evaluation of adder for " << _centre << std::endl;
 			return true;
@@ -191,18 +222,31 @@ struct BondAdder
 		int total = 0;
 		int certain = 0;
 		int maybe = 0;
+		
 
 		get_certains_maybes(total, certain, maybe);
+//		std::cout << "BondAdder (" << Request << ") for " << *_coordExist << std::endl;
 //		std::cout << _centre << ": " << total << " bonds of which " << certain << " are "\
-//		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
+		"certainly " << Request << " and " << maybe << " maybe" << std::endl;
+//		std::cout << "Bonds: ";
+		for (auto it = _bonds.begin(); it != _bonds.end(); it++)
+		{
+			BondConnector *const &bond = it->first;
+//			std::cout << bond->desc() << ", ";
+		}
+//		std::cout << std::endl;
+
 		
 		/* firstly we impose the range of certain and maybe bonds to sum */
-		std::vector<int> possibilities;
-		possibilities.reserve(maybe + 1);
+		OpSet<int> possibilities;
 
-		auto print = [](const std::vector<int> &options)
+		for (int i = certain; i <= certain + maybe; i++)
 		{
-			return;
+			possibilities.insert(i);
+		}
+
+		auto print = [](const OpSet<int> &options)
+		{
 			for (const int &o : options)
 			{
 				std::cout << o << " ";
@@ -210,53 +254,56 @@ struct BondAdder
 			std::cout << std::endl;
 		};
 
-		for (int i = certain; i <= certain + maybe; i++)
-		{
-			possibilities.push_back(i);
-		}
 
-		print(possibilities);
 		Count::Values count = values_as_count(possibilities);
 		assign(_sum, count);
-		
-		/* now we find all the possible values of sum, in integer form. */
-		std::vector<int> sum_options = possible_values(_sum.value());
-		print(sum_options);
-		
-		/* how many of these are acceptable? */
-		std::vector<int> acceptables;
-		for (const int &option : sum_options)
+		if (!assign.okay())
 		{
-			if (option >= certain && option <= certain + maybe)
-			{
-				acceptables.push_back(option);
-			}
+			return assign.okay();
 		}
 		
+		/* now we find all the possible values of sum, in integer form. */
+		OpSet<int> sum_options = possible_values(_sum.value());
+		
+		OpSet<int> common = possibilities.common_to_both(sum_options);
+
+		/*
+		std::cout << "Possibilities from counting: ";
+		print(possibilities);
+		std::cout << "Possibilities from prescribed sum: ";
 		print(sum_options);
+		std::cout << "Common to both: ";
+		print(common);
+		*/
+		
 		/* if there's only one acceptable value and it's either certain or
 		 * (certain + maybe) then we can assign the remainder */
+
 		
-		if (acceptables.size() == 1)
+		if (common.size() == 1)
 		{
-			if (acceptables[0] == certain)
+			if (*common.begin() == certain)
 			{
+//				std::cout << "Common is equal to certain" << std::endl;
 				Bond::Values not_request;
 				not_request = (Bond::Values)(Bond::Unassigned & ~Request);
-				tell_maybe_bonds(not_request, assign);
+				tell_maybe_bonds(not_request, assign, false);
 			}
-			else if (acceptables[0] == certain + maybe)
+			else if (*common.begin() == certain + maybe)
 			{
-				tell_maybe_bonds((Bond::Values)Request, assign);
+//				std::cout << "Common is equal to certain + maybe" << std::endl;
+				tell_maybe_bonds((Bond::Values)Request, assign, true);
 			}
 		}
 		/* but if there's no acceptable solution then it's a contradiction */
-		else if (acceptables.size() == 0)
+		else if (common.size() == 0)
 		{
 			return false;
 		}
 		
-		return assign.okay();
+		bool result = assign.okay() && !is_contradictory(_sum.value());
+		
+		return result;
 	}
 
 	std::map<BondConnector *, ExistenceConnector *> _bonds;
@@ -267,8 +314,8 @@ struct BondAdder
 
 typedef BondAdder<Bond::Strong> StrongAdder;
 typedef BondAdder<Bond::Weak> WeakAdder;
-typedef BondAdder<Bond::Present> PresentAdder;
-typedef BondAdder<Bond::Absent> AbsentAdder;
+typedef BondAdder<Bond::Bonded> BondedAdder;
+typedef BondAdder<Bond::LonePair> LonePairAdder;
 typedef BondAdder<Bond::NotBroken> NotBrokenAdder;
 };
 

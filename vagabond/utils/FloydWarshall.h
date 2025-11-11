@@ -1,0 +1,62 @@
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
+
+#ifndef __vagabond__FloydWarshall__
+#define __vagabond__FloydWarshall__
+
+#include "svd/PCA.h"
+#include <functional>
+#include <mutex>
+#include "Eigen/Dense"
+
+class FloydWarshall
+{
+public:
+	typedef std::function<float(float, float)> CombineWeight;
+
+	FloydWarshall(Eigen::MatrixXf &sqMat, const CombineWeight &cw,
+	              bool maximise = false);
+	
+	typedef std::function<void()> VoidFunction;
+	
+	void addDisplayMatrix(PCA::Matrix &mat, std::mutex &mutex,
+	                      const VoidFunction &update)
+	{
+		_mat = &mat;
+		_mutex = &mutex;
+		_update = update;
+	}
+	
+	void addJobAfterDone(const VoidFunction &done)
+	{
+		_done = done;
+	}
+
+	void run();
+private:
+	Eigen::MatrixXf &_sqMat;
+	CombineWeight _combineWeight{};
+	bool _maximise{};
+
+	PCA::Matrix *_mat{};
+	std::mutex *_mutex{};
+	VoidFunction _update{};
+	VoidFunction _done{};
+};
+
+#endif

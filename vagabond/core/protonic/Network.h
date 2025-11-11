@@ -91,6 +91,11 @@ public:
 	
 	void addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord);
 	
+	AtomGroup *atoms()
+	{
+		return _original;
+	}
+
 	AtomGroup *extraHydrogens()
 	{
 		return _extraHydrogens;

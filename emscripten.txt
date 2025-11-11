@@ -11,6 +11,7 @@ pkgconfig = 'pkg-config'
 sdl_options = ['-s', 'USE_SDL=2', '-s', 'USE_SDL_IMAGE=2', '-pthread']
 threads = ['-pthread', '-s', 'USE_PTHREADS=1']
 optimisation = ['-O3']
+std = ['-std=c++20']
 exceptions = ['-s', 'NO_DISABLE_EXCEPTION_CATCHING']
 shell_file = ['--shell-file', '../../minimal_shell.html']
 preload = ['--use-preload-plugins', '--preload-file', 'assets/']
@@ -32,4 +33,4 @@ shared_module_suffix = 'js'
 exe_suffix = 'js'
 
 links = sdl_options + shell_file + gemmi + preload + export + threads + memory + exceptions + fftwf + gl + download + total + sanitise + optimisation
-compile_args = threads + exceptions + incdir + sanitise + optimisation + sdl_options
+compile_args = threads + exceptions + incdir + sanitise + optimisation + sdl_options + std

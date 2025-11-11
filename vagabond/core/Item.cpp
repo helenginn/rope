@@ -99,6 +99,11 @@ void Item::addItemAfter(Item *item, Item *after)
 
 void Item::addItem(Item *item)
 {
+	if (item->parent() == this)
+	{
+		return;
+	}
+
 	sanityCheckItem(item);
 
 	item->setParent(this);
@@ -124,6 +129,16 @@ void Item::deleteSelf()
 {
 	_deleted = true;
 	_deletedItems.insert(this);
+}
+
+void Item::removeChildren()
+{
+	while (_items.size())
+	{
+		Item *item = _items.back();
+		item->clearParent();
+		removeItem(item);
+	}
 }
 
 void Item::deleteChildren()

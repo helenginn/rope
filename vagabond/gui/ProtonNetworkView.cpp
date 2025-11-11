@@ -18,11 +18,13 @@
 
 #include "ProbeAtom.h"
 #include "ProbeBond.h"
+#include "FocusResidue.h"
 #include "ProtonNetworkView.h"
 #include <vagabond/core/protonic/ExhaustiveSearch.h>
 #include <vagabond/core/protonic/CliqueFinder.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/core/PositionShifter.h>
+#include <vagabond/core/AtomGroup.h>
 #include <vagabond/core/Environment.h>
 #include <vagabond/utils/DoJob.h>
 #include <vagabond/gui/CliqueView.h>
@@ -181,6 +183,17 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 			};
 
 			menu->addOption("hide selection", hide_selected);
+			
+			if (_2D && _activeClique)
+			{
+				auto subnetwork = [this, selected]()
+				{
+					_activeClique->addSubdivision(Clique(selected));
+					deselect();
+				};
+
+				menu->addOption("make into subnetwork", subnetwork);
+			}
 		if (!_2D)
 		{
 			menu->addOption("arrange figure", [this]() { arrangeFigure(); });
@@ -194,8 +207,6 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 
 		setMenu(menu);
 	}
-
-	setInformation("");
 }
 
 void ProtonNetworkView::arrangeFigure()
@@ -457,6 +468,37 @@ void ProtonNetworkView::setMenu(Menu *menu)
 	setModal(menu);
 }
 
+void ProtonNetworkView::focusOnResidue(std::string chain, int res)
+{
+	AtomGroup *atoms = _network.atoms();
+	Atom *chosen = atoms->atomByIdName({res}, "CA", chain);
+	if (!chosen)
+	{
+		chosen = atoms->atomByIdName({res}, "", chain);
+	}
+	if (!chosen)
+	{
+		return;
+	}
+
+	shiftToCentre(chosen->derivedPosition(), 0);
+}
+
+void ProtonNetworkView::keyPressEvent(SDL_Keycode pressed)
+{
+	if (pressed == SDLK_g && !lastModal())
+	{
+		FocusResidue::prepareEnter
+		(this, [this](std::string chain, int res)
+		{
+			focusOnResidue(chain, res);
+		});
+	}
+
+	Mouse2D::keyPressEvent(pressed);
+
+}
+
 void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
 {
 	if (_controlPressed && !_shiftPressed && pressed == SDLK_z)
@@ -484,6 +526,10 @@ void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes)
 		else if (_bondProbes.count(other))
 		{
 			_bondProbes[other]->selected(0, 0);
+		}
+		else
+		{
+			std::cout << "Could not find probe: " << other->desc() << std::endl;
 		}
 	}
 }

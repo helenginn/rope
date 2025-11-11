@@ -97,7 +97,7 @@ public:
 	virtual bool operator()(std::condition_variable &cv, std::mutex &m)
 	{
 		forget_last_decree(cv, m);
-		HValue value = _values[_num];
+		HValue value = _values[_num < 0 ? 0 : _num];
 
 		while (true)
 		{
@@ -131,6 +131,7 @@ public:
 //			std::unique_lock lk(m);
 //			cv.wait(lk);
 		}
+		hnet::ConnectBase::out() << "Declaring: " << desc() << std::endl;
 		bool okay = _connector.assign_value(value, _lastDecree, _lastDecree);
 //		std::cout << "... result: " << (okay ? "good" : "bad, must forget") 
 //		<< std::endl;

@@ -93,7 +93,7 @@ void PlausibleRoute::prepareJobs()
 {
 	auto large_main = [this](int idx) -> bool
 	{
-		return validateTorsion(idx, 120, 360., true, false);
+		return validateTorsion(idx, 30, 360., true, false);
 	};
 
 	auto flip_main_chain = [this, large_main]()
@@ -103,7 +103,7 @@ void PlausibleRoute::prepareJobs()
 	
 	auto large_side = [this](int idx) -> bool
 	{
-		return validateTorsion(idx, 90, 360., false, true);
+		return validateTorsion(idx, 30, 360., false, true);
 	};
 
 	auto flip_side_chain = [this, large_side]()

@@ -26,7 +26,9 @@
 #include <vagabond/core/Item.h>
 #include "LineGroup.h"
 
-ItemLine::ItemLine(LineGroup *group, Item *item) : Box()
+ItemLine::ItemLine(LineGroup *group, Item *item,
+                   const std::function<void(Item *)> &job) 
+: Box()
 {
 	if (item == nullptr)
 	{
@@ -40,6 +42,7 @@ ItemLine::ItemLine(LineGroup *group, Item *item) : Box()
 
 	_item = item;
 	_group = group;
+	_job = job;
 
 	setName(item->displayName() + " line");
 	
@@ -205,7 +208,27 @@ void ItemLine::setup()
 Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 {
 	Box *text = nullptr;
-	text = _item->customRenderable(parent);
+	text = _item->customRenderable(parent, _job);
+
+	auto wrap_job = [this](const std::function<void(Item *)> &job)
+	{
+		return [this, job]()
+		{
+			std::cout << "group left: " << _gl->leftMouse() << std::endl;
+			if (_gl->leftMouse() && job)
+			{
+				job(_item);
+			}
+			else if (_gl->leftMouse())
+			{
+				_item->select(_gl->leftMouse());
+			}
+			else
+			{
+				_group->makeMenu();
+			}
+		};
+	};
 
 	if (!text && _item->isEditable())
 	{
@@ -214,10 +237,10 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	else if (!text && _item->isSelectable())
 	{
 		TextButton *tb = new TextButton(_item->displayName(), parent);
-		tb->setReturnJob([this, tb]() 
+		if (_job)
 		{
-			_item->select(tb->left());
-		});
+			tb->setReturnJob(wrap_job(_job));
+		}
 		text = tb;
 	}
 	else if (!text && !_item->isSelectable())

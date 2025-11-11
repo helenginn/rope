@@ -135,6 +135,11 @@ public:
 		}
 	}
 	
+	const OpSet<std::string> &nodeDescsForGroup(const std::string &name)
+	{
+		return _communication[name];
+	}
+	
 	OpSet<std::string> allCommsNames()
 	{
 		OpSet<std::string> names;
@@ -162,6 +167,11 @@ public:
 	void setSubdivisions(const OpSet<Clique> &cliques)
 	{
 		_subdivs = std::list(cliques.begin(), cliques.end());
+	}
+	
+	void addSubdivision(const Clique &sub)
+	{
+		_subdivs.push_back(sub);
 	}
 	
 	const std::vector<ProbeResult> &results() const

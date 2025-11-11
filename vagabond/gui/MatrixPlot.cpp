@@ -87,6 +87,10 @@ void MatrixPlot::updateColours()
 	}
 
 	forceRender(true, false);
+	if (_gl)
+	{
+		_gl->viewChanged();
+	}
 }
 
 void MatrixPlot::prepareSmallVertices()

@@ -25,6 +25,8 @@ utilfiles = [
 'OpList.h',
 'histogram.h',
 'histogram.cpp',
+'FloydWarshall.cpp',
+'FloydWarshall.h',
 'brain/Layer.cpp',
 'brain/Layer.h',
 'brain/InputLayer.cpp',

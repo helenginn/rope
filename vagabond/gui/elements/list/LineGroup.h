@@ -22,6 +22,7 @@
 #include "../Box.h"
 #include "../Button.h"
 #include "../ButtonResponder.h"
+#include <functional>
 
 class Item;
 class Menu;
@@ -31,10 +32,19 @@ class ItemLine;
 class LineGroup : public ButtonResponder, public Button
 {
 public:
-	LineGroup(Item *item, Scene *sender = nullptr);
+	LineGroup(Item *item, Scene *sender = nullptr,
+	          const std::function<void(Item *)> &job = {});
 
 	void setup();
 	void refreshGroups();
+	
+	void setDefaultClickJob(const std::function<void(Item *)> 
+	                        &job)
+	{
+		_job = job;
+	}
+	
+	virtual void doThings();
 	
 	ItemLine *display(Item *item)
 	{
@@ -48,6 +58,8 @@ public:
 		return _topLevel;
 	}
 
+	void makeMenu();
+
 	void reorganiseHeights();
 protected:
 	std::map<Item *, ItemLine *> _itemMap;
@@ -57,6 +69,8 @@ private:
 	void initialise(Item *item, LineGroup *top);
 	Menu *prepareMenu();
 	void setupGroups();
+	void updateGroups();
+	void updateHeights();
 	void reorganiseGroups();
 	void resetGroups();
 
@@ -68,6 +82,10 @@ private:
 	Scene *_scene = nullptr;
 
 	std::vector<LineGroup *> _groups;
+	std::function<void(Item *)> _job;
+	
+	bool _update{false};
+	bool _updateTop{false};
 };
 
 #endif

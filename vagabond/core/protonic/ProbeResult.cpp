@@ -23,8 +23,22 @@ int dim_for_type(const hnet::Types &type)
 	return (type == hnet::Types::BondType ? 3 : 2);
 }
 
+float average_score(const std::vector<ProbeResult> &source)
+{
+	float ave = 0;
+	for (const ProbeResult &pr : source)
+	{
+		float probability = pr.score;
+		ave += probability;
+	}
+
+	ave /= source.size();
+	return ave;
+}
+
 ProbeCorrelation correlate(const std::vector<ProbeResult> &source, 
-                           ProbeTypePair left, ProbeTypePair right, bool norm)
+                           ProbeTypePair left, ProbeTypePair right, float ave,
+                           bool norm)
 {
 	if (source.size() == 0)
 	{
@@ -35,6 +49,10 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 	corr.left = left;
 	corr.right = right;
 	
+	// we have full list of source material consisting of all nodes, but
+	// we only want ccs for a pair of nodes: left and right. 
+	// We now find their indices.
+
 	int m = -1; int n = -1; int i = 0;
 	for (const OneProbe &op : source[0].results)
 	{
@@ -52,12 +70,17 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 		i++;
 	}
 	
+	// establishing dimensions of this particular matrix
 	int rows = dim_for_type(corr.lType);
 	int cols = dim_for_type(corr.rType);
 	
 	corr.mat = MatrixXf(rows, cols);
-//	std::cout << corr.mat << std::endl;
+	corr.mat.setZero();
+	corr.weights = MatrixXf(rows, cols);
+	corr.weights.setZero();
 	
+	// func: based on a value coming out of the probe result, we convert it 
+	// to an index.
 	auto get_index = [](const int &v)
 	{
 		for (int i = 0; i <= 3; i++)
@@ -70,36 +93,94 @@ ProbeCorrelation correlate(const std::vector<ProbeResult> &source,
 		return -1;
 	};
 	
-	auto print = [](const ProbeResult &pr)
+	auto normalize_map = [](std::map<int, float> &map)
 	{
-		for (const OneProbe &op : pr.results)
+		float sum = 0;
+		for (auto it = map.begin(); it != map.end(); it++)
 		{
-			//std::cout << op.value << "-";
+			sum += it->second;
 		}
-		//std::cout << std::endl;
+		for (auto it = map.begin(); it != map.end(); it++)
+		{
+			it->second /= sum;
+		}
 	};
 	
+	// first we need to collect averages, by figuring out proportions for each
+	// possible result for left and right nodes.
+	std::map<int, float> lSum, rSum;
+
+	// we want to keep track of relative probabilities of each state according
+	// to partial energy knowledge.
+	float rt = 2.57;
+	int idx = 0;
+	std::map<int, float> relProbs;
+	float total_probs = 0;
+
+	for (const ProbeResult &pr : source)
+	{
+		int mv = pr.results[m].value;
+		int l = get_index(mv);
+		int nv = pr.results[n].value;
+		int r = get_index(nv);
+		
+		// we also want to figure out the total sum of energy weights
+		float contrib = exp((pr.score - ave) / rt);
+		relProbs[idx] = contrib;
+		lSum[l] += contrib;
+		rSum[r] += contrib;
+		total_probs += contrib;
+
+		idx++;
+	}
+
+//	normalize_map(lSum);
+//	normalize_map(rSum);
+//	normalize_map(relProbs);
+	
+	idx = 0;
 	for (const ProbeResult &pr : source)
 	{
 		int mv = pr.results[m].value;
 		int nv = pr.results[n].value;
 		int l = get_index(mv);
 		int r = get_index(nv);
-		float probability = pr.score;
-		
-		corr.mat(l, r) += exp(probability);
+
+		// for Boltzmann energy calculation
+		float prob = relProbs[idx];
+
+		corr.mat(l, r) += prob;
+		idx++;
+	}
+	
+	for (int j = 0; j < corr.mat.rows(); j++)
+	{
+		float row_total = corr.mat.row(j).sum();
+		corr.mat.row(j) /= row_total;
 	}
 
-	if (norm)
+	for (int i = 0; i < corr.mat.cols(); i++)
 	{
-		float weight = (float)source.size();
-		corr.mat /= weight;
+		float adjust = rSum[i] / total_probs;
+		for (int j = 0; j < corr.mat.rows(); j++)
+		{
+			corr.mat(j, i) -= adjust;
+			if (corr.mat(j, i) != corr.mat(j, i))
+			{
+				corr.mat(j, i) = 0;
+			}
+		}
+	}
+
+	if (!norm)
+	{
+//		corr.mat *= (float)source.size();
 	}
 	
 	return corr;
 }
 
-std::vector<std::pair<Probe *, hnet::Types>> 
+std::vector<ProbeTypePair>
 probes(const std::vector<ProbeResult> &source)
 {
 	if (source.size() == 0)
@@ -107,10 +188,10 @@ probes(const std::vector<ProbeResult> &source)
 		return {};
 	}
 
-	std::vector<std::pair<Probe *, hnet::Types>> ret;
+	std::vector<ProbeTypePair> ret;
 	for (const OneProbe &op : source[0].results)
 	{
-		ret.push_back({op.probe, op.type});
+		ret.push_back(ProbeTypePair({op.probe, op.type}));
 	}
 	
 	return ret;

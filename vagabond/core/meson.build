@@ -95,6 +95,8 @@ cfile,
 'loopy/RoughLoop.h',
 
 'protonic/alignment.h',
+'protonic/BreakMatrix.h',
+'protonic/BreakMatrix.cpp',
 'protonic/Clique.h',
 'protonic/Clique.cpp',
 'protonic/CliqueFinder.h',

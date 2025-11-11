@@ -179,13 +179,19 @@ void ProbeBond::declareBond(Bond::Values value)
 	std::string name = "Declare bond";
 	Decree *d = _view->network().newDecree(name);
 
-	_probe->_obj.assign_value(value, d, d);
+//	_probe->_obj.assign_value(value, d, d);
 	std::ostringstream ss;
 
 	auto make_declaration = [d, value, this]
 	{
-		bool contra = _probe->_obj.assign_value(value, d, d);
-		std::cout << "OK: " << contra << std::endl;
+		bool okay = _probe->_obj.assign_value(value, d, d);
+		std::cout << "Declared " << _probe->desc() << ", ";
+		std::cout << "OK: " << (okay ? "YES" : "NO") << std::endl;
+		if (!okay)
+		{
+			_view->setInformation("Contradiction occurred in logical "\
+			                      "network!!\nCtrl+Z to undo");
+		}
 	};
 
 	auto rescind_declaration = [d, this]
@@ -204,9 +210,9 @@ void ProbeBond::declareBond(Bond::Values value)
 
 void ProbeBond::buttonPressed(std::string tag, Button *button)
 {
-	if (tag == "setB_Absent")
+	if (tag == "setB_LonePair")
 	{
-		declareBond(Bond::Absent);
+		declareBond(Bond::LonePair);
 	}
 	else if (tag == "setB_Acceptor")
 	{

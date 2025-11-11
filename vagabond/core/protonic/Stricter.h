@@ -59,6 +59,7 @@ public:
 		auto assign = make_assign_and_say(this, previous);
 		if (_condition(_conditionObj.value()))
 		{
+//			std::cout << "Imposing " << _impose << " on " << _imposeObj << std::endl;
 			assign(_imposeObj, _impose);
 		}
 		

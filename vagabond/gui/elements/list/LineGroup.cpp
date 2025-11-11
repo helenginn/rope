@@ -25,10 +25,12 @@
 #include <iostream>
 #include "../Scene.h"
 
-LineGroup::LineGroup(Item *item, Scene *resp) 
+LineGroup::LineGroup(Item *item, Scene *resp, 
+	          const std::function<void(Item *)> &job)
 : Box(), Button(resp)
 {
 	_scene = resp;
+	_job = job;
 	initialise(item, (LineGroup *)nullptr);
 }
 
@@ -48,6 +50,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 	}
 	else
 	{
+		_job = top->_job;
 		_topLevel = _parent->_topLevel;
 		_scene = _parent->_scene;
 	}
@@ -57,7 +60,7 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 		throw std::runtime_error("Cannot make LineGroup from nullptr Item.");
 	}
 	
-	_line = new ItemLine(this, item);
+	_line = new ItemLine(this, item, _job);
 	_topLevel->_itemMap[item] = _line;
 	addObject(_line);
 	
@@ -74,6 +77,16 @@ void LineGroup::initialise(Item *item, LineGroup *top)
 
 void LineGroup::refreshGroups()
 {
+	_update = true;
+}
+
+void LineGroup::updateGroups()
+{
+	if (!_update)
+	{
+		return;
+	}
+	
 	bool same = (_groups.size() == _item->itemCount());
 
 	for (size_t i = 0; i < _groups.size() && same; i++)
@@ -100,6 +113,13 @@ void LineGroup::refreshGroups()
 	reorganiseGroups();
 
 	_topLevel->reorganiseHeights();
+	_update = false;
+}
+
+void LineGroup::doThings()
+{
+	updateGroups();
+	updateHeights();
 }
 
 void LineGroup::setupGroups()
@@ -200,20 +220,26 @@ Menu *LineGroup::prepareMenu()
 
 }
 
+void LineGroup::makeMenu()
+{
+	Menu *menu = prepareMenu();
+	if (!menu)
+	{
+		return;
+	}
+
+	float x; float y;
+	_scene->getFractionalPos(x, y);
+	menu->setup(x, y, 0.6);
+	_scene->setModal(menu);
+
+}
+
 void LineGroup::buttonPressed(std::string tag, Button *button) 
 {
 	if (!button->left()) // right click
 	{
-		Menu *menu = prepareMenu();
-		if (!menu)
-		{
-			return;
-		}
-
-		float x; float y;
-		_scene->getFractionalPos(x, y);
-		menu->setup(x, y, 0.6);
-		_scene->setModal(menu);
+		makeMenu();
 		return;
 	}
 
@@ -225,13 +251,25 @@ void LineGroup::buttonPressed(std::string tag, Button *button)
 
 void LineGroup::setup()
 {
-	reorganiseHeights();
+	_updateTop = true;
+	updateHeights();
 }
 
 void LineGroup::reorganiseHeights()
 {
+	_updateTop = true;
+}
+
+void LineGroup::updateHeights()
+{
+	if (!_updateTop)
+	{
+		return;
+	}
+
 	glm::vec2 tmp = xy();
 	resetGroups();
 	reorganiseGroups();
 	fixUpperCorner(this, tmp.x, tmp.y);
+	_updateTop = false;
 }
