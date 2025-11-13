@@ -4,7 +4,6 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/BadChoice.h>
-#include <vagabond/gui/elements/AskForRange.h>
 #include <vagabond/gui/HBondMenu.h>
 #include <vagabond/gui/Atom2AtomExplorer.h>
 
@@ -297,16 +296,25 @@ void FlexibilityView::openAtom2AtomExplorer()
 	_flex->submitJobAndRetrieve(0.5f);
 	std::vector<Atom3DPosition> list; // or should it be std::vector<Atom3DPosition*> list?
 	std::vector<Posular> disVec;
+
+	if (!_instance->hasSequence())
+	{
+		return; // maybe with error message
+	}
+
 	AtomGroup *grp = _instance->currentAtoms();
-	disVec.reserve(grp->sequence()->size());
+	Sequence *seq = static_cast<Polymer *>(_instance)->sequence();
+	disVec.reserve(seq->size());
 	const AtomVector &atoms = grp->atomVector();
 	for (Atom *atom : atoms)
 	{
 		if (!atom->isReporterAtom()){ continue; }
 		const ResidueId &id = atom->residueId();
-		Residue *res = grp->sequence()->residueLike(id);
+		Residue *local = seq->residue(id);
+		Residue *res = seq->master_residue(local);
 
 		Atom3DPosition a3Dp(res, atom->atomName()); // is this ok? or should it be the Atom3DPosition a3Dp = new Atom3DPosition(res, "CA")?
+		a3Dp.setEntity(_instance->entity());
 		list.push_back(a3Dp);
 
 		glm::vec3 curPos = atom->derivedPosition();

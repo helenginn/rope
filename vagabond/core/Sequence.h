@@ -96,7 +96,7 @@ public:
 	}
 	
 	/** @return residue associated with a ResidueId */
-	Residue *residue(ResidueId &id)
+	Residue *residue(const ResidueId &id)
 	{
 		if (_id2Residue.count(id) == 0)
 		{
