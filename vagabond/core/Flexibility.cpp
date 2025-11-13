@@ -31,7 +31,7 @@ Flexibility::Flexibility(Instance *i)
 
 Flexibility::~Flexibility() 
 {
-	stopGui();
+	// stopGui();
 	_instance->unload();
 }
 
@@ -766,6 +766,25 @@ SVDResult Flexibility::calculateSVD() const
 {
     MatrixXf jacobMtrT = _jacobMtx.transpose();
     BDCSVD<MatrixXf> svd(jacobMtrT, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+
+// debuging 
+    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+
+    std::cout << "[DEBUG]" << std::endl;
+    std::cout << "\n================= JACOBIAN MATRIX =================\n";
+    std::cout << "Dimensions: " << _jacobMtx.rows() << " x " << _jacobMtx.cols() << "\n";
+    std::cout << _jacobMtx.format(CleanFmt) << "\n";
+
+    std::cout << "\n================= SINGULAR VALUES =================\n";
+    std::cout << svd.singularValues().transpose().format(CleanFmt) << "\n";
+
+    std::cout << "\n================= V MATRIX (Null-space basis) =================\n";
+    std::cout << "Dimensions: " << svd.matrixV().rows() << " x " << svd.matrixV().cols() << "\n";
+    std::cout << svd.matrixV().format(CleanFmt) << "\n";
+
+    std::cout << "\n===================================================\n";
+
 
     return {
         svd.matrixU(),

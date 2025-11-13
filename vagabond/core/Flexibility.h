@@ -2,7 +2,6 @@
 #define __vagabond__Flexibility__
 
 #include <algorithm>
-#include <vagabond/gui/Display.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/TorsionData.h>
 #include <stdlib.h>
@@ -24,7 +23,7 @@ struct BoundBox {
     glm::vec3 max; // (x_max, y_max, z_max)
 };
 
-class Flexibility : public Display, public StructureModification {
+class Flexibility : public StructureModification {
 public:
     Flexibility(Instance *i);
     ~Flexibility();

@@ -10,7 +10,6 @@
 #include "HBondData.h"
 #include "Progressor.h"
 #include "Responder.h"
-#include <vagabond/gui/HBondDataView.h>
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
