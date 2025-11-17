@@ -43,6 +43,10 @@
 #include <functional>
 #include <vagabond/gui/elements/TickBoxes.h>
 #include "PathThermodynamics.h"
+#include "HeatMapView.h"
+#include <fstream>
+#include <sstream>
+#include <functional>
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
                      const std::vector<PathGroup> &paths)
@@ -500,6 +504,45 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 		pt->show();
 		return;
 	}
+
+    if (tag == "menu_map_entropy")
+    {
+        struct Entropy entropy = {};
+        
+        std::cout << "adding job" << std::endl;
+
+        std::function<void(Entropy &)> callback;
+		callback = [this](Entropy &entropy)
+		{
+			HeatMapView *view = new HeatMapView(this, entropy);
+			view->show();
+		};
+           
+		Environment::pathManager()->setEntropyCallback(callback);
+        VagWindow::addJob("path-entropy=" + _entity->name() + ",11");
+        
+        std::cout << "path entropy data calculated" << std::endl;
+        std::ifstream dataFile(_entity->name() + "_10");
+        std::string line, tempStart, tempEnd, tempEnt, tempEPR;
+        std::getline(dataFile, line);
+       
+        while(std::getline(dataFile, line))
+        {
+           std::istringstream iss(line);
+ 
+           getline(iss, tempStart, ',');
+           getline(iss, tempEnd, ',');
+           getline(iss, tempEnt, ',');
+           getline(iss, tempEPR, '\n');
+
+           entropy.start.push_back(tempStart);
+           entropy.end.push_back(tempEnd);
+           entropy.total.push_back(stod(tempEnt));
+           entropy.perRes.push_back(stod(tempEPR));
+        }
+ 
+        HeatMapView *hmv = new HeatMapView(this, entropy);
+    }
 	
     if (tag == "menu_map_path_values")
     {
