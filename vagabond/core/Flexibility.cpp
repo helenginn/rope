@@ -242,10 +242,10 @@ void Flexibility::prepareResources()
 }
 
 
-void Flexibility::calculateTorsionFlexibility(CoordManager* manager) 
+void Flexibility::calculateTorsionFlexibility() 
 {
     std::cout << "Starting calculating torsion Flexibility" << std::endl;
-
+    CoordManager* coord_manager = _resources.sequences->manager();
 
     auto calculateFlexibility = [this](const Coord::Get &get, const int &idx)
     {
@@ -263,7 +263,7 @@ void Flexibility::calculateTorsionFlexibility(CoordManager* manager)
         return val;
     };
 
-    manager->setTorsionFetcher(calculateFlexibility);
+    coord_manager->setTorsionFetcher(calculateFlexibility);
 
     std::cout << "Finished calculating torsion Flexibility" << std::endl;
 }
@@ -310,40 +310,6 @@ void Flexibility::loadHBondsFromManager(HBondManager* hbondManager)
     std::cout << "Successfully loaded HBond pairs into Flexibility." << std::endl;
 }
 
-
-void Flexibility::processMultipleHBonds() 
-{
-/**
- * @brief Adds multiple hydrogen bonds (HBonds) and updates flexibility calculations.
- *
- * This function takes a list of all the donor-acceptor hydrogen bond pairs that were foudn in the
- * file, validates them, and integrates them into the system. If the input list is empty, 
- * an error message is displayed, and the function returns early.
- *
- * After adding the HBonds, the function updates key flexibility-related calculations:
- * - Computes the Jacobian matrix.
- * - Calculates Singular Value Decomposition (SVD) matrices.
- * - Updates the flexibility weights.
- * - Retrieves the coordinate manager and recalculates torsion flexibility.
- *
- * @param donorAcceptorPairs A vector of HBondPair objects containing donor and acceptor atom descriptors.
- */
-
-    if (_hbonds.size() == 0) 
-    {
-        std::cerr << "Error: No HBonds to add." << std::endl;
-        return;
-    }
-    // Calculate the Jacobian matrix
-    buildJacobianMatrix();
-    // calculate SVD matrices 
-    calculateFlexWeights();
-
-    // Gets the coordinate manager
-    CoordManager* coord_manager = _resources.sequences->manager(); 
-    // Calculates torsion flexibility
-    calculateTorsionFlexibility(coord_manager); 
-}
 
 bool Flexibility::validateHBondPair(const HBondManager::HBondPair &hbondPair) {
     // Initialize static counters
@@ -419,8 +385,6 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         return;
     }
 
-
-    // Proceed with the rest of the addHBond logic as before
     AtomGroup* atomGroup = _instance->currentAtoms();
     Atom* acceptorAtom = atomGroup->atomByDesc(hbondPair.acceptor);
     Atom* hydrogenAtom = atomGroup->atomByDesc(hbondPair.hydrogen);
@@ -436,9 +400,6 @@ void Flexibility::addHBond(const HBondManager::HBondPair &hbondPair)
         std::cerr << "Error: Hydrogen atom '" << hbondPair.hydrogen << "' is not connected to any atom." << std::endl;
         return;
     }
-
-
-
 
     // Access donor and acceptor positions
     int donorBlock_idx = accessAtomBlock(donorAtom);
@@ -500,15 +461,9 @@ void Flexibility::addVnWBond()
 {
     // not sure yet if cutoff distanc is correct maybe this should change
     double cutoffD = 0.25; // from KGS: Cutoff distance for hydrophobic interactions, sum of vdW + cutoffD
-    int count_vdW = 0;
 
     const AtomVector &atoms = _instance->currentAtoms()->atomVector();
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
-    
-    // for debugging printing, to be removed: 
-    bool scaleChecked = false;
-    int printed = 0;
-
 
     for (size_t i = 0; i < atoms.size()-1; i++)
     {
@@ -527,21 +482,11 @@ void Flexibility::addVnWBond()
             if (r_j <= 0.0) continue;
             glm::vec3 pos_j = blocks[block_j].my_position();
             
-
             // calculate distance between the two atoms
             glm::vec3 diff = pos_i - pos_j;
             float dist_sq = glm::dot(diff, diff);
 
             double threshold = r_i + r_j + cutoffD;
-
-            // debug print to inspect units / values for the first few checks
-            if (!scaleChecked && printed < 6) {
-                // std::cout << "[vdW-debug] pair (" << i << "," << j << ") dist_sq=" << dist_sq
-                //           << " r_i=" << r_i << " r_j=" << r_j
-                //           << " rsum=" << r_i + r_j << " cutoff_ij=" << threshold << std::endl;
-                printed++;
-                if (printed >= 6) scaleChecked = true;
-            }
 
             if (dist_sq < threshold*threshold)
             {
@@ -553,10 +498,7 @@ void Flexibility::addVnWBond()
                 vdw.startDist = glm::length(diff);
                 vdw.contactDist =  threshold;
                 vdw.TorsionVec = lastCommonAncestorIdx(block_i, block_j);
-
                 _VdWBonds.push_back(vdw);
-
-                count_vdW++;
             }
         }
     }
@@ -678,6 +620,11 @@ int Flexibility::rewindBlock(int &block_idx, std::vector<int> &torsionVector)
 
 void Flexibility::buildJacobianMatrix()
 {
+    if (_hbonds.size() == 0) 
+    {
+        std::cerr << "Error: No HBonds to add." << std::endl;
+        return;
+    }
     // Columns = total number of constraints (5 per Hbonds +one per vdW bonds)
     int numCol = 5 * _hbonds.size() + _VdWBonds.size();
 

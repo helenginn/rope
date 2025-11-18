@@ -72,7 +72,6 @@ public:
         _numSamples = num;;
     }
 
-    void processMultipleHBonds();
     void prepareResources();
     void addHBond(const HBondManager::HBondPair &hbondPair);
     void addVnWBond();
@@ -122,7 +121,7 @@ public:
     {
         return std::vector<int>(_globalTorsionSet.begin(), _globalTorsionSet.end());
     }
-    void calculateTorsionFlexibility(CoordManager* manager);
+    void calculateTorsionFlexibility();
     void buildJacobianMatrix();
     SVDResult calculateSVD() const;
     std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,

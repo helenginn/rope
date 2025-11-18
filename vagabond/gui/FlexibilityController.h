@@ -1,0 +1,65 @@
+// vagabond
+// Copyright (C) 2022 Helen Ginn
+// 
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program.  If n ot, see <https://www.gnu.org/licenses/>.
+// 
+// Please email: vagabond @ hginn.co.uk for more details.
+
+#ifndef __vagabond__FlexibilityController__
+#define __vagabond__FlexibilityController__
+
+
+#include <vagabond/gui/Display.h>
+#include <vagabond/core/Flexibility.h>
+#include <memory>
+
+class Flexibility;
+class FlexibilityView;
+class Instance;
+class HBondManager;
+
+class FlexibilityController {
+public:
+	FlexibilityController(FlexibilityView *view, Flexibility *flex, Instance *instance);
+	void showMenu(Button *button);
+	bool handleButton(const std::string &tag, Button *button);
+protected:
+	void handleClearHBonds();
+    void handleSaveState();
+    void handleExportPDB(Button *button);
+    void handleSelectedHBonds(Button *button);
+    void handleBFactorCloud();
+    void handleRangeMin(Button* button);
+    void handleRangeMax(Button* button);
+    void handleSaveSamples();
+    void handleNumSamples(Button* button);
+    void handleDistMatrix();
+
+
+private:
+	FlexibilityView *_view = nullptr;
+    Flexibility *_flex = nullptr;
+    Instance *_instance = nullptr;
+    std::string _tag;
+
+    bool _selectFlag = false;
+    float _minRange  = 0.0f;
+    float _maxRange  = 0.0f;
+    int   _numSample = 1;
+
+    std::vector<HBondManager::HBondPair> _hBondPairs;
+
+};
+
+#endif

@@ -2,8 +2,6 @@
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/TextButton.h>
-#include <vagabond/gui/elements/AskForText.h>
-#include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/HBondMenu.h>
 #include <vagabond/gui/Atom2AtomExplorer.h>
 
@@ -29,6 +27,7 @@ FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 	_flex = flex;
 	_instance = inst;
 	_instance->load();
+	_controller = new FlexibilityController(this, _flex, _instance);
 	setPingPong(true);
 }
 
@@ -47,156 +46,24 @@ void FlexibilityView::makeMenu()
 
 void FlexibilityView::buttonPressed(std::string tag, Button *button)
 {
+
+    if (_controller && _controller->handleButton(tag, button))
+        return;
+
 	if (tag == "menu")
 	{
-		glm::vec2 c = button->xy();
-		Menu *m = new Menu(this, this, "options");
-		m->addOption("Save state as PDB", "save_state");
-		m->addOption("Select h-bonds from file", "selected_hbonds");
-		m->addOption("Create B-factor cloud", "bfactor_cloud");
-		m->addOption("Clear hydrogen bonds", "clear_hbonds");
-		m->addOption("Save sampled structures", "save_samples");
-		m->addOption("Explore distance matrix", "dist_matrix");
-		m->setup(c.x, c.y);
-		setModal(m);
+		_controller->showMenu(button);
+		return;
+	}
 
-	}
-	else if (tag == "clear_hbonds") // Handle clearing hydrogen bonds
-    {
-
-        reset();  // Clear internal state
-        _flex->clearHBonds(); // Notify Flexibility to clear bonds
-    }
-	else if (tag == "options_save_state")
+	else if (_controller->handleButton(tag, button))
 	{
-		AskForText *aft = new AskForText(this, "PDB file name to save to:",
-		                                 "export_pdb", this);
-		setModal(aft);
+		return; 
 	}
-	else if (tag == "export_pdb")
-	{
-		TextEntry *te = static_cast<TextEntry *>(button);
-		std::string filename = te->scratch();
-
-		std::string path = getPath(filename);
-		std::string file = getFilename(filename);
-		check_path_and_make(path);
-
-		_instance->currentAtoms()->writeToFile(filename);
-	}
-	else if (tag == "options_selected_hbonds")
-	{
-		_selectFlag = true;
-		HBondMenu *hbmenu = new HBondMenu(this);
-		hbmenu->setCallBackFunction([this](std::vector<HBondManager::HBondPair> pairs) 
-		{
-            _hBondPairs = pairs;
-            handleHBonds(_hBondPairs);
-       	});
-
-        selectMode(hbmenu, true); // this is neseccary so that the select button appears on screen
-		hbmenu->show();
-	}
-else if (tag == "options_bfactor_cloud")
-{
-	openAtom2AtomExplorer();
-	if (!_selectFlag)
-	{
-		BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
-		setModal(bch);
-	}
-	else
-	{
-		// Start the range input sequence
-		AskForText *aft = new AskForText(this, "Enter minimum range (default 0):",
-		                                 "range_min", this, TextEntry::Numeric);
-		setModal(aft);
-	}
-}
-else if (tag == "range_min")
-{
-	TextEntry *te = static_cast<TextEntry *>(button);
-	float min = atof(te->scratch().c_str());
-	if (min != min || !isfinite(min))
-	{
-		min = 0;
-	}
-	_minRange = min;
-
-	// Now ask for the max
-	AskForText *aft = new AskForText(this, "Enter maximum range (default num of V columns):",
-	                                 "range_max", this, TextEntry::Numeric);
-	setModal(aft);
-}
-else if (tag == "range_max")
-{
-	TextEntry *te = static_cast<TextEntry *>(button);
-	std::string text = te->scratch();
-	float max = _flex->getVcolumns();
-
-	if (!text.empty())
-	{
-		max = atof(text.c_str());
-		if (max != max || !isfinite(max))
-		{
-			max = _flex->getVcolumns();  // fallback if garbage typed
-		}
-	}
-	_maxRange = max;
-
-	// Perform calculation
-	_flex->setColRangeUser(_minRange, _maxRange-1);
-	_flex->generateAtomCloud();
-	_flex->calculateFreeEnergy();
-
-	std::string flexTag = _flex->getFlexTag();
-	DisplayUnit *unitCloud = new DisplayUnit(this);
-	AtomGroup *grp = _instance->currentAtoms();
-	const AtomVector &atoms = grp->atomVector();
-	for (Atom *atom : atoms)
-	{
-		WithPos pos = atom->otherPositions(flexTag);
-		atom->setDerivedPositions(pos);
-		Matrix3f cov = atom->otherAnisoBfactors(flexTag);
-	}
-	showCloud(unitCloud, grp);
-}
-else if (tag == "options_save_samples")
-{
-	if (!_selectFlag)
-	{
-		BadChoice *bch = new BadChoice(this, "Please select hbonds first and then come back for the B-factors");
-		setModal(bch);
-	}
-	else
-	{
-		AskForText *aft = new AskForText(this, "How many samples strcutures you want to save?:",
-		                                 "num_samples", this, TextEntry::Numeric);
-		setModal(aft);
-	}
-}
-else if (tag == "num_samples")
-{
-	TextEntry *te = static_cast<TextEntry *>(button);
-	float numSample = atof(te->scratch().c_str());
-	if (numSample != numSample || !isfinite(numSample) || numSample <= 0)
-	{
-		numSample = 1;
-	}
-	_numSample = static_cast<int>(numSample);
-	_flex->setNumSamples(_numSample);
-	// _flex->generateAtomCloud();
-	double lambda = 0.5;
-	_flex->saveSampledStructures(_numSample, "sample_structure", lambda);
-}
-else if (tag == "options_dist_matrix")
-{
-	openAtom2AtomExplorer();
-}
-
+		
 	Display::buttonPressed(tag, button);
-
 }
+
 
 void FlexibilityView::showCloud(DisplayUnit *unit, AtomGroup *grp)
 {	
@@ -208,15 +75,7 @@ void FlexibilityView::showCloud(DisplayUnit *unit, AtomGroup *grp)
 	addDisplayUnit(unit);
 }
 
-void FlexibilityView::handleHBonds(const std::vector<HBondManager::HBondPair>& pairs)
-{
-    // Add to internal list or perform any other action
-    callAddHBonds(pairs);
-    // _flex->setColRange(10, true);
-	_flex->processMultipleHBonds();
 
-
-}
 
 void FlexibilityView::reset()
 {
@@ -253,7 +112,7 @@ void FlexibilityView::checkHBondSelection()
 {
     if (_selectFlag) {
        	callAddHBonds(_hBondPairs);
-        _flex->processMultipleHBonds();
+        // _flex->processMultipleHBonds();
     }
 }
 

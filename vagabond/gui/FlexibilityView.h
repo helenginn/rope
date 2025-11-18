@@ -23,13 +23,16 @@
 #include <vagabond/gui/Display.h>
 #include <vagabond/gui/elements/DragResponder.h>
 #include <vagabond/gui/HBondMenu.h>
+#include <vagabond/gui/FlexibilityController.h>
 #include <vagabond/core/Flexibility.h>
+
 #include <memory> 
 
 
 class Slider;
 class Residue;
-class Instance; 
+class Instance;
+class FlexibilityController; 
 class AtomContent;
 
 // FlexibilityView class - Inherits from Display and DragResponder
@@ -59,8 +62,9 @@ public:
 	void callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs);	
 	int calculateMaximumTorsionSetSize(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs);
 	void hbondSelected(HBondMenu* hbondMenu, const std::vector<HBondManager::HBondPair> &selectedHBonds);
-	void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
-	void reset();	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
+	// void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
+	void reset();	
+	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
 	void openAtom2AtomExplorer();
 
 
@@ -69,6 +73,7 @@ private:
 	std::vector<HBondManager::HBondPair> _hBondPairs;
 	Flexibility *_flex = nullptr;
 	Instance *_instance = nullptr;
+	FlexibilityController *_controller = nullptr;
 	Slider *_rangeSlider = nullptr;
 	DisplayUnit *_unit = nullptr;
 	AtomMap *_latest = nullptr;
