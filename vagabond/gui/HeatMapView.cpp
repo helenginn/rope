@@ -5,7 +5,7 @@
 #include <HeatMapView.h>
 #include <MatrixPlot.h>
 
-HeatMapView::HeatMapView(Scene *prev, struct Entropy &entropy) : Scene(prev), _entropy(entropy)
+HeatMapView::HeatMapView(Scene *prev, struct EntropyForHeatMap &entropy) : Scene(prev), _entropy(entropy)
 {
 
 }
