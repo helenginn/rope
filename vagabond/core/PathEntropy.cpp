@@ -414,7 +414,6 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					phit[i].resize(torsRes[m]->nAng);
                    
 					for (int j = 0; j < torsRes[m]->nAng; j++)
-
 					{
 						phit[i][j] = torsRes[m]->ang[timeDivisions][j][i];
 						numTors++;
@@ -760,6 +759,25 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
 		entropy->mi = new double*[entropy->nPairs];
 		entropy->i1 = new int[entropy->nPairs];
         entropy->i2 = new int[entropy->nPairs];
+        entropy->h2 = new double*[entropy->nPairs];
+        entropy->sd2 = new double*[entropy->nPairs];
+        entropy->dm2 = new double*[entropy->nPairs];
+        entropy->sdmi = new double*[entropy->nPairs];
+        entropy->dmmi = new double*[entropy->nPairs];
+        entropy->h2lm = new double[entropy->nPairs];
+        entropy->milm = new double[entropy->nPairs];
+        entropy->sd2lm = new double[entropy->nPairs];
+        entropy->dm2lm = new double[entropy->nPairs];
+    
+        for(int i = 0; i < entropy->nPairs; i++)
+        {
+            entropy->mi[i] = new double[nNearestNeighbours];
+            entropy->h2[i] = new double[nNearestNeighbours];
+            entropy->sd2[i] = new double[nNearestNeighbours];
+            entropy->dm2[i] = new double[nNearestNeighbours];
+            entropy->sdmi[i] = new double[nNearestNeighbours];
+            entropy->dmmi[i] = new double[nNearestNeighbours];
+        }
 	}
 
 }
