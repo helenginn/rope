@@ -22,6 +22,7 @@
 #include "Environment.h"
 #include "paths/NewPath.h"
 #include "PathEntropy.h"
+#include "Entropy.h"
 #include <fstream>
 
 PathManager::PathManager()
@@ -457,26 +458,53 @@ double PathManager::pathEntropyInstancePair(int numPaths, std::vector<Path *> pa
 
 void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 {
-    Entity *ent = Environment::entityManager()->entity(args[0]);
+    std::cout << "Entity: " << args[0] << std::endl;
+	Entity *ent = Environment::entityManager()->entity(args[0]);
+
+    std::ofstream file;
+	file.open(args[0] + "_" + args[1]);
+    file << "start,end,entropy,entropyPerRes" << std::endl;
+
     GroupedMap pathMap = groupedPathsForEntity(ent);
+    std::cout << "done" << std::endl;
 
     int numPaths = stoi(args[1]);
 
-    struct {
-        std::vector<std::string> start;
-        std::vector<std::string> end;
-        std::vector<double> entropy;
-        std::vector<double> entropyPerRes;
-    } data = {};
+    struct EntropyForHeatMap data = {};
+
+    int i = 0;
 
     for (auto it = pathMap.begin(); it != pathMap.end(); it++)
     {
         data.start.push_back(it->first.first->model_id());
         data.end.push_back(it->first.second->model_id());
 
+        std::cout << "path between models " << data.start[i] << " and " << data.end[i] << std::endl; 
+
+        file << data.start[i] << "," << data.end[i] << ",";
         double entropy = pathEntropyInstancePair(numPaths, it->second);
          
-        data.entropy.push_back(entropy);
-        data.entropyPerRes.push_back(entropy/ent->sequence()->size());
+        data.total.push_back(entropy);
+        data.perRes.push_back(entropy/ent->sequence()->size());
+
+        file << data.total[i] << "," << data.perRes[i] << std::endl;
+     
+        i++;
     }
+
+    file.close();
+
+	if (_callback)
+	{
+        std::cout << "callback initiated" << std::endl;
+		setEntropyCallback(_callback);
+        _callback(data);
+		_callback = {};
+	}
+	/*else
+	{
+		writeToFile(data); // pseudocode
+	}*/
+
+    ModelManager::manager()->finishTicker();
 }
