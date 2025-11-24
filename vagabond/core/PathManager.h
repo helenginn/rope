@@ -68,6 +68,11 @@ public:
         return _callback;
     };
 
+    const std::function<void(struct EntropyForHeatMap &)> &callback() const
+    {
+        return _callback;
+    };
+
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
     void pathEntropyHeatMap(const std::vector<std::string> &args);
@@ -88,7 +93,6 @@ private:
 	typedef std::pair<std::string, std::string> GroupKey;
 
 	std::mutex *_addMutex = nullptr;
-
 	std::map<GroupKey, std::pair<std::string, size_t>> _groupFiles;
         std::function<void(struct EntropyForHeatMap &)> _callback{};
 };
