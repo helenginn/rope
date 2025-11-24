@@ -1,3 +1,3 @@
 #include <Entropy.h>
 
-std::mutex *Entropy::mutex = new std::mutex();
+std::mutex *EntropyForHeatMap::mutex = new std::mutex();
