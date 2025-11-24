@@ -10,12 +10,12 @@ class MatrixPlot;
 class HeatMapView : public Scene
 {
 public:
-    HeatMapView(Scene *prev, struct Entropy &entropy);
+    HeatMapView(Scene *prev, struct EntropyForHeatMap &entropy);
 
     virtual void setup();
 
 private:
-    struct Entropy _entropy;
+    struct EntropyForHeatMap _entropy;
 
     PCA::Matrix _pcaMatrix{};
     
