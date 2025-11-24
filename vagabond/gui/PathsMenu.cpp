@@ -159,6 +159,28 @@ void PathsMenu::setup()
 	ListView::setup();
 }
 
+void PathsMenu::displayTree()
+{
+	if (_pathsTree)
+	{
+		return;
+		removeObject(_pathsTree);
+		delete _pathsTree;
+		_pathsTree = nullptr;
+	}
+
+	if (_paths.size() == 0)
+	{
+		return;
+	}
+
+    RopeSpaceItem *item = new RopeSpaceItem(_entity);
+
+	_pathsTree = new LineGroup(item, this);
+	_pathsTree->setLeft(0.02, 0.2);
+	addObject(_pathsTree);
+}
+
 size_t PathsMenu::lineCount()
 {
 	return _paths.size() + (_parent ? 1 : 0);
@@ -381,21 +403,25 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     if (tag == "menu_map_entropy")
     {
-        struct Entropy entropy = {};
+        struct EntropyForHeatMap entropyData = {};
         
         std::cout << "adding job" << std::endl;
 
-        std::function<void(Entropy &)> callback;
-		callback = [this](Entropy &entropy)
+        std::function<void(EntropyForHeatMap &)> callback;
+		callback = [this](EntropyForHeatMap &entropyData)
 		{
-			HeatMapView *view = new HeatMapView(this, entropy);
+            std::cout << "callback passed back to menu" << std::endl;
+			HeatMapView *view = new HeatMapView(this, entropyData);
 			view->show();
 		};
            
 		Environment::pathManager()->setEntropyCallback(callback);
+
+        prepareProgress(10, "Calculating path entropy...");
+
         VagWindow::addJob("path-entropy=" + _entity->name() + ",11");
         
-        std::cout << "path entropy data calculated" << std::endl;
+        /* std::cout << "path entropy data calculated" << std::endl;
         std::ifstream dataFile(_entity->name() + "_10");
         std::string line, tempStart, tempEnd, tempEnt, tempEPR;
         std::getline(dataFile, line);
@@ -409,13 +435,15 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
            getline(iss, tempEnt, ',');
            getline(iss, tempEPR, '\n');
 
-           entropy.start.push_back(tempStart);
-           entropy.end.push_back(tempEnd);
-           entropy.total.push_back(stod(tempEnt));
-           entropy.perRes.push_back(stod(tempEPR));
+           entropyData.start.push_back(tempStart);
+           entropyData.end.push_back(tempEnd);
+           entropyData.total.push_back(stod(tempEnt));
+           entropyData.perRes.push_back(stod(tempEPR));
         }
  
-        HeatMapView *hmv = new HeatMapView(this, entropy);
+        HeatMapView *hmv = new HeatMapView(this, entropyData);*/
+
+        return;
     }
 	
 	ListView::buttonPressed(tag, button);
@@ -466,5 +494,10 @@ void PathsMenu::prepareSpace()
 	ConfSpaceView *csv = new ConfSpaceView(this, entity, *_space);
 	csv->setMode(rope::ConfPath);
 	csv->show();
+}
+
+void PathsMenu::prepareProgress(int ticks, std::string text)
+{
+    VagWindow::window()->requestProgressBar(ticks, text);
 }
 

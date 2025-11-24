@@ -20,6 +20,7 @@
 #define __vagabond__PathsMenu__
 
 #include <vagabond/gui/elements/ListView.h>
+#include <vagabond/gui/elements/list/LineGroup.h>
 #include "PathGroup.h"
 #include "Path.h"
 #include <Responder.h>
@@ -49,6 +50,10 @@ public:
 private:
 	void prepareSpace();
 	void preparePaths();
+    void prepareProgress(int ticks, std::string text);
+    void displayTree();
+
+    LineGroup *_pathsTree = nullptr;
 
 	Entity *_entity = nullptr;
 
