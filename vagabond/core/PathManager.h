@@ -61,9 +61,15 @@ public:
 	 *  existing paths. Returns the number of paths loaded. */
 	size_t loadPathGroups(const std::string &directory);
     void setEntropyCallback(const std::function<void(struct Entropy &)> &callback)
+    void setEntropyCallback(const std::function<void(struct EntropyForHeatMap &)> &callback)
     {
         _callback = callback;
     }
+
+    const std::function<void(struct EntropyForHeatMap &)> &callback() const
+    {
+        return _callback;
+    };
 
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
@@ -89,6 +95,7 @@ private:
 	 *  each group, and how many paths it contained */
 	std::map<GroupKey, std::pair<std::string, size_t>> _groupFiles;
         std::function<void(struct Entropy &)> _callback{};
+        std::function<void(struct EntropyForHeatMap &)> _callback{};
 };
 
 /* the paths themselves live in the paths directory (see savePathGroups),
