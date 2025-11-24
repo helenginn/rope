@@ -5,11 +5,11 @@
 #include <string>
 #include <mutex>
 
-struct Entropy
+struct EntropyForHeatMap
 {
     static std::mutex *mutex;
 
-    ~Entropy()
+    ~EntropyForHeatMap()
     {
     }
 
@@ -17,6 +17,11 @@ struct Entropy
     std::vector<std::string> end;
     std::vector<double> total;
     std::vector<double> perRes;
+
+    void operator=(const EntropyForHeatMap &e)
+    {
+        std::unique_lock<std::mutex> lock(*mutex);
+    }
 };
 
 #endif
