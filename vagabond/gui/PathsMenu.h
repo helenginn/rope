@@ -52,6 +52,7 @@ public:
 private:
 	void prepareSpace();
 	void preparePaths();
+
     void displayTree();
 
     LineGroup *_pathsTree = nullptr;
