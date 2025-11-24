@@ -341,7 +341,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 {
 	int *group2res;
 	std::vector<std::vector<double>> phit(nf); 
-    double *entk, *entkTotal, *entk2, *sigmak, *entkTotal2, *x, *y, *w, *d;
+    double *entk, *entkTotal, *entk2, *sigmak, *entkTotal2, *d;
 
 	int numResPerModel = torsRes.size();
     int numResPerModelMI = 0;
@@ -514,7 +514,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
         double a[3];
         double sd[3];
 
-        fitlw(x,y,w,K-1,a,sd,&weightCheck);
+        //fitlw(x,y,w,K-1,a,sd,&weightCheck);
 
 		entropy->h1lm[m] = a[0];
 		entropy->sd1lm[m] = sd[0] * sd[0];
@@ -644,12 +644,16 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 							entropy->sd2[kk][k] = sigmak[k];
 							entropy->dm2[kk][k] = meanDist[k];
 							entropy->mi[kk][k] = entropy->h2[kk][k] - entropy->h1[entropy->i1[kk]][k] - entropy->h1[entropy->i2[kk]][k];
-							entropy->sdmi[kk][k] =  pow(entropy->sd2[kk][k],2) + pow(entropy->sd1[entropy->i1[kk]][k],2) + pow(entropy->sd1[entropy->i2[kk]][k],2);
+							entropy->sdmi[kk][k] = pow(entropy->sd2[kk][k],2) + pow(entropy->sd1[entropy->i1[kk]][k],2) + pow(entropy->sd1[entropy->i2[kk]][k],2);
 							entropy->dmmi[kk][k] = pow(entropy->dm2[kk][k],2) + pow(entropy->dm1[entropy->i1[kk]][k],2) + pow((*entropy).dm1[entropy->i2[kk]][k],2);
 						}
 
 						// linear weighted fit
 						int ok = 1;
+        
+                        double x[K-1];
+                        double y[K-1];
+                        double w[K-1];
 
 						for(int k = 0; k < K - 1; k++)
 						{
@@ -668,8 +672,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 						entropy->h2lm[kk] = a[0]; 
 						entropy->sd2lm[kk] = sd[0]; 
 						entropy->dm2lm[kk] = meanDist[1];
-						entropy->milm[kk] = entropy->h2lm[kk] - entropy->h1lm[entropy->i1[kk]] - entropy->h1lm[entropy->i2[kk]]; 
-						kk++;
+						entropy->milm[kk] = entropy->h2lm[kk] - entropy->h1lm[entropy->i1[kk]] - entropy->h1lm[entropy->i2[kk]];
+			            entropy->totalEntropy +=entropy->milm[kk];
+	kk++;
 					}
 
 	return entropy;
@@ -797,6 +802,25 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
 		entropy->mi = new double*[entropy->nPairs];
 		entropy->i1 = new int[entropy->nPairs];
         entropy->i2 = new int[entropy->nPairs];
+        entropy->h2 = new double*[entropy->nPairs];
+        entropy->sd2 = new double*[entropy->nPairs];
+        entropy->dm2 = new double*[entropy->nPairs];
+        entropy->sdmi = new double*[entropy->nPairs];
+        entropy->dmmi = new double*[entropy->nPairs];
+        entropy->h2lm = new double[entropy->nPairs];
+        entropy->milm = new double[entropy->nPairs];
+        entropy->sd2lm = new double[entropy->nPairs];
+        entropy->dm2lm = new double[entropy->nPairs];
+    
+        for(int i = 0; i < entropy->nPairs; i++)
+        {
+            entropy->mi[i] = new double[nNearestNeighbours];
+            entropy->h2[i] = new double[nNearestNeighbours];
+            entropy->sd2[i] = new double[nNearestNeighbours];
+            entropy->dm2[i] = new double[nNearestNeighbours];
+            entropy->sdmi[i] = new double[nNearestNeighbours];
+            entropy->dmmi[i] = new double[nNearestNeighbours];
+        }
 	}
 
 }
