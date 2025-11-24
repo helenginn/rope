@@ -49,10 +49,15 @@ public:
 
 	void housekeeping();
 
-    void setEntropyCallback(const std::function<void(struct Entropy &)> &callback)
+    void setEntropyCallback(const std::function<void(struct EntropyForHeatMap &)> &callback)
     {
         _callback = callback;
     }
+
+    const std::function<void(struct EntropyForHeatMap &)> &callback() const
+    {
+        return _callback;
+    };
 
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
@@ -71,7 +76,7 @@ public:
 	friend void from_json(const json &j, PathManager &value);
 private:
 	std::mutex *_addMutex = nullptr;
-    std::function<void(struct Entropy &)> _callback{};
+    std::function<void(struct EntropyForHeatMap &)> _callback{};
 };
 
 inline void to_json(json &j, const PathManager &value)
