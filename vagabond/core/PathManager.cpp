@@ -23,6 +23,7 @@
 #include "paths/NewPath.h"
 #include "PathEntropy.h"
 #include "Entropy.h"
+#include "Progressor.h"
 #include <fstream>
 
 PathManager::PathManager()
@@ -466,30 +467,47 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
     file << "start,end,entropy,entropyPerRes" << std::endl;
 
     GroupedMap pathMap = groupedPathsForEntity(ent);
+
+	std::vector<Instance *> allInstances = ent->instances();
     std::cout << "done" << std::endl;
 
     int numPaths = stoi(args[1]);
 
     struct EntropyForHeatMap data = {};
 
-    int i = 0;
+    data.dataMatrix.resize(allInstances.size(), allInstances.size());
 
-    for (auto it = pathMap.begin(); it != pathMap.end(); it++)
+    Progressor *prog = new Progressor();
+
+    std::cout << allInstances.size() << std::endl; 
+
+	for (int i = 0; i < allInstances.size(); i++)
     {
-        data.start.push_back(it->first.first->model_id());
-        data.end.push_back(it->first.second->model_id());
+		for (int j = 0; j < allInstances.size(); j++)
+		{
+            std::cout << "i: " << i << ", j: " << j << std::endl;
+            
+            if(i == j)
+            {
+                data.dataMatrix(i, j) = 0;
+            }
+            else
+            {
+			    std::vector<Path *> pathsForInstance = pathsBetweenInstances(allInstances[i], allInstances[j]);
 
-        std::cout << "path between models " << data.start[i] << " and " << data.end[i] << std::endl; 
+				if (pathsForInstance.size() != 0)
+				{
+			
+					float entropy = pathEntropyInstancePair(numPaths, pathsForInstance);
 
-        file << data.start[i] << "," << data.end[i] << ",";
-        double entropy = pathEntropyInstancePair(numPaths, it->second);
-         
-        data.total.push_back(entropy);
-        data.perRes.push_back(entropy/ent->sequence()->size());
+					data.dataMatrix(i, j) = entropy;
+					data.dataMatrix(j, i) = entropy;
 
-        file << data.total[i] << "," << data.perRes[i] << std::endl;
-     
-        i++;
+                    std::cout << data.dataMatrix(i, j) <<std::endl;
+				}
+            }
+		}
+        prog->clickTicker();    
     }
 
     file.close();
@@ -505,6 +523,8 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 	{
 		writeToFile(data); // pseudocode
 	}*/
+
+    std::cout << data.dataMatrix << std::endl;
 
     ModelManager::manager()->finishTicker();
 }
