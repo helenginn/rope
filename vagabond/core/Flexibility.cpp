@@ -259,6 +259,9 @@ void Flexibility::calculateTorsionFlexibility()
             return 0.0f;
         }
 
+
+// Start editing from here
+        int access_idx = _allTorsions.size() - _colIdx;
         float val = _allTorsions[_colIdx][idx] * jobWeight;
         return val;
     };

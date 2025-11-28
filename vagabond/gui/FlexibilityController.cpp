@@ -26,12 +26,24 @@
 #include <vagabond/gui/elements/BadChoice.h>
 
 
-FlexibilityController::FlexibilityController(FlexibilityView *view, Flexibility *flex,
-                                             Instance *instance)
+FlexibilityController::FlexibilityController(FlexibilityView *view, Instance *instance, Flexibility *flex)
 {
 	_view = view;
 	_flex = flex;
 	_instance = instance;
+}
+
+void FlexibilityController::reset()
+{
+    // Clear hydrogen bond pairs
+    _hBondPairs.clear();
+    
+    // Reset selection flag
+    _selectFlag = false;
+    if (_flex)
+    {
+        _flex->clearHBonds();
+    }
 }
 
 void FlexibilityController::showMenu(Button *button)
@@ -70,7 +82,7 @@ bool FlexibilityController::handleButton(const std::string &tag, Button *button)
 
 void FlexibilityController::handleClearHBonds()
 {
-    _view->reset();
+    reset();
     _flex->clearHBonds();
 }
 
@@ -104,7 +116,7 @@ void FlexibilityController::handleSelectedHBonds(Button *button)
     hbmenu->setCallBackFunction([this](std::vector<HBondManager::HBondPair> pairs)
     {
         _hBondPairs = pairs;
-        _view->callAddHBonds(_hBondPairs);
+        callAddHBonds(_hBondPairs);
         _flex->buildJacobianMatrix();
         _flex->calculateFlexWeights();
         _flex->calculateTorsionFlexibility();
@@ -222,11 +234,30 @@ void FlexibilityController::handleDistMatrix()
 }
 
 
+// void FlexibilityController::checkHBondSelection()
+// {
+//     if (_selectFlag) {
+//        	callAddHBonds(_hBondPairs);
+//         _flex->processMultipleHBonds();
+//     }
+// }
 
+void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
+{
+	for (auto &pair : donorAcceptorPairs) 
+	{
+		std::cout << "Calling callAddHbonds..." << std::endl;
+    	_flex->addHBond(pair);
+    }
+    _flex->addVnWBond();
+}
 
-
-
-
+void FlexibilityController::finishedDragging(std::string tag, double x, double y)
+{
+	float num = x / 1.;
+	float test_retrival = _flex->submitJobAndRetrieve(num);
+	_first = false;
+} 
 
 
 

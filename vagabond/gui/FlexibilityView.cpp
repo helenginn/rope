@@ -16,7 +16,6 @@
 
 
 
-
 using Eigen::Matrix3f;
 
 
@@ -24,10 +23,9 @@ using Eigen::Matrix3f;
 FlexibilityView::FlexibilityView(Scene *prev, Instance *inst, Flexibility *flex)
 : Scene(prev), Display(prev)
 {
-	_flex = flex;
 	_instance = inst;
 	_instance->load();
-	_controller = new FlexibilityController(this, _flex, _instance);
+	_controller = new FlexibilityController(this, _instance, flex);
 	setPingPong(true);
 }
 
@@ -76,20 +74,6 @@ void FlexibilityView::showCloud(DisplayUnit *unit, AtomGroup *grp)
 }
 
 
-
-void FlexibilityView::reset()
-{
-    // Clear hydrogen bond pairs
-    _hBondPairs.clear();
-    
-    // Reset selection flag
-    _selectFlag = false;
-    if (_flex)
-    {
-        _flex->clearHBonds();
-    }
-}
-
 void FlexibilityView::setup()
 {
 	AtomGroup *grp = _instance->currentAtoms();
@@ -101,37 +85,21 @@ void FlexibilityView::setup()
 	addDisplayUnit(_unit);
 
 	Display::setup();
-	_flex->prepareResources();
+	_controller->callPrepareResiurces();
 	// return to main menu of FlexibilityView
 	setupSlider();
-	_flex->submitJobAndRetrieve(0.0);
+	_controller->callSubmitJobAndRetrieve(0.0);
+	_controller->callSubmitJobAndRetrieve(0.0);
 	makeMenu();
 }
 
-void FlexibilityView::checkHBondSelection()
-{
-    if (_selectFlag) {
-       	callAddHBonds(_hBondPairs);
-        // _flex->processMultipleHBonds();
-    }
-}
-
-void FlexibilityView::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
-{
-	for (auto &pair : donorAcceptorPairs) 
-	{
-		std::cout << "Calling callAddHbonds..." << std::endl;
-    	_flex->addHBond(pair);
-    }
-    _flex->addVnWBond();
-}
 
 void FlexibilityView::setupSlider()
 {
 	removeObject(_rangeSlider);
 	delete _rangeSlider;
 	Slider *s = new Slider();
-	s->setDragResponder(this);
+	s->setDragResponder(_controller);
 	s->resize(0.5);
 	s->setup("Flexibility amplifier", _min*10, _max*10, _step);
 	s->setStart(0.5, 0.);
@@ -141,18 +109,12 @@ void FlexibilityView::setupSlider()
 
 }
 
-void FlexibilityView::finishedDragging(std::string tag, double x, double y)
-{
-	float num = x / 1.;
-	float test_retrival = _flex->submitJobAndRetrieve(num);
-	_first = false;
-} 
 
 // add button text to slider that gets you to atom2artoExpolorer
 // fo rthis i will need: scene (this), _instance, RAMovent
 void FlexibilityView::openAtom2AtomExplorer()
 {
-	_flex->submitJobAndRetrieve(0.5f);
+	_controller->callSubmitJobAndRetrieve(0.5f);
 	std::vector<Atom3DPosition> list; // or should it be std::vector<Atom3DPosition*> list?
 	std::vector<Posular> disVec;
 

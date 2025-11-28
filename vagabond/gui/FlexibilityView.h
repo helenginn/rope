@@ -21,7 +21,6 @@
 
 
 #include <vagabond/gui/Display.h>
-#include <vagabond/gui/elements/DragResponder.h>
 #include <vagabond/gui/HBondMenu.h>
 #include <vagabond/gui/FlexibilityController.h>
 #include <vagabond/core/Flexibility.h>
@@ -36,7 +35,7 @@ class FlexibilityController;
 class AtomContent;
 
 // FlexibilityView class - Inherits from Display and DragResponder
-class FlexibilityView: public Display, public DragResponder
+class FlexibilityView: public Display
 {
 public:
 	// Constructor - Takes a pointer to the previous scene, instance, and flexibility object
@@ -54,34 +53,28 @@ public:
 		// HBondMenu *hbmenu = new HBondMenu(this);
 		hbmenu->setMode(flag);
 	}
-	void checkHBondSelection();
 	// Submits a flexibility calculation job with a specific weight
 	void submitJob(float prop, bool tear = false);
 	// Handles finishing drag interaction on the slider (updates flexibility weight)
-	virtual void finishedDragging(std::string tag, double x, double y);
-	void callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs);	
 	int calculateMaximumTorsionSetSize(const std::vector<std::pair<std::string, std::string>> &donorAcceptorPairs);
 	void hbondSelected(HBondMenu* hbondMenu, const std::vector<HBondManager::HBondPair> &selectedHBonds);
-	// void handleHBonds(const std::vector<HBondManager::HBondPair>& pairs);
-	void reset();	
+	// void handleHBonds(consfinishet std::vector<HBondManager::HBondPair>& pairs);
 	void showCloud(DisplayUnit *unitCloud, AtomGroup *grp);
 	void openAtom2AtomExplorer();
 
 
 private: 
 	bool _selectFlag = false;
-	std::vector<HBondManager::HBondPair> _hBondPairs;
-	Flexibility *_flex = nullptr;
 	Instance *_instance = nullptr;
 	FlexibilityController *_controller = nullptr;
 	Slider *_rangeSlider = nullptr;
 	DisplayUnit *_unit = nullptr;
 	AtomMap *_latest = nullptr;
-	bool _first = true;
 	double _minRange = 0; 
 	double _maxRange; 
 	double _numSample = 1;
 	int _colidx = 0;
+	bool _first = true;
 	// Minimum value for the slider
 	double _min = -1; 
 	// Maximum value for the slider

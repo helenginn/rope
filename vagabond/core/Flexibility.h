@@ -55,6 +55,7 @@ public:
         std::vector<int> TorsionVec;  // torsions influencing this pair
     };
 
+
     // === GUI-INTERFACED FUNCTIONS ===
     float submitJobAndRetrieve(float weight);
     void generateAtomCloud();

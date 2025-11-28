@@ -21,6 +21,7 @@
 
 
 #include <vagabond/gui/Display.h>
+#include <vagabond/gui/elements/DragResponder.h>
 #include <vagabond/core/Flexibility.h>
 #include <memory>
 
@@ -29,11 +30,26 @@ class FlexibilityView;
 class Instance;
 class HBondManager;
 
-class FlexibilityController {
+class FlexibilityController: public Display, public DragResponder
+{
 public:
-	FlexibilityController(FlexibilityView *view, Flexibility *flex, Instance *instance);
+	FlexibilityController(FlexibilityView *view, Instance *instance, Flexibility *flex);
 	void showMenu(Button *button);
 	bool handleButton(const std::string &tag, Button *button);
+    void reset();
+    // void checkHBondSelection();
+    void callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs); 
+    void callPrepareResiurces()
+    {
+        _flex->prepareResources();
+    }
+    void callSubmitJobAndRetrieve(float weight)
+    {
+        _flex->submitJobAndRetrieve(weight);
+    }
+    virtual void finishedDragging(std::string tag, double x, double y);
+    
+
 protected:
 	void handleClearHBonds();
     void handleSaveState();
@@ -47,12 +63,15 @@ protected:
     void handleDistMatrix();
 
 
+
+
 private:
 	FlexibilityView *_view = nullptr;
     Flexibility *_flex = nullptr;
     Instance *_instance = nullptr;
     std::string _tag;
 
+    bool _first = true;
     bool _selectFlag = false;
     float _minRange  = 0.0f;
     float _maxRange  = 0.0f;
@@ -60,6 +79,6 @@ private:
 
     std::vector<HBondManager::HBondPair> _hBondPairs;
 
-};
 
+};
 #endif
