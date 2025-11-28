@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <vagabond/utils/Eigen/Dense>
 
 struct EntropyForHeatMap
 {
@@ -18,10 +19,7 @@ struct EntropyForHeatMap
     std::vector<double> total;
     std::vector<double> perRes;
 
-    void operator=(const EntropyForHeatMap &e)
-    {
-        std::unique_lock<std::mutex> lock(*mutex);
-    }
+    Eigen::MatrixXf dataMatrix;
 };
 
 #endif
