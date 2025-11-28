@@ -679,6 +679,8 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
     file << "start,end,entropy,entropyPerRes" << std::endl;
 
     GroupedMap pathMap = groupedPathsForEntity(ent);
+
+	std::vector<Instance *> allInstances = ent->instances();
     std::cout << "done" << std::endl;
 
 	std::vector<Instance *> allInstances = ent->instances();
@@ -686,7 +688,6 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 
     int numPaths = stoi(args[1]);
     int numDivisions = stoi(args[2]);
-
 
     bool mist = false;
 
@@ -767,6 +768,8 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 	//{
 	//	writeToFile(data); // pseudocode
 	//}
+
+    std::cout << data.dataMatrix << std::endl;
 
     ModelManager::manager()->finishTicker();
 }*/
