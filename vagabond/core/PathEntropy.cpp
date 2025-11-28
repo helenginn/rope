@@ -500,6 +500,8 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 			x[k] = entk[k];
             y[k] = meanDist[k+1];
 
+            entropy->h1lm[m] += entk[k];
+
 			if(sigmak[k] > 1e-12) w[k] = 1/(sigmak[k] * sigmak[k]);
 			else weightCheck = 0;
 		}
@@ -516,7 +518,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
         //fitlw(x,y,w,K-1,a,sd,&weightCheck);
 
-		entropy->h1lm[m] = a[0];
+		entropy->h1lm[m] = entropy->h1lm[m] / double (K-1);
 		entropy->sd1lm[m] = sd[0] * sd[0];
 		//entropy->dm1lm[m] = meanDist[1] * meanDist[1];
 	}
@@ -660,6 +662,8 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 							x[k] = meanDist[k+1];
 							y[k] = entk[k];
 
+                            entropy->h2lm[kk] += entk[k];
+
 							if(k == 0) w[k] = M_PI * M_PI /6;
 							else w[k] = w[k-1] - 1/(double) (k*k);
 						}
@@ -669,13 +673,16 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 						fitlw(y,x,w,K-1,a,sd,&ok);
 
-						entropy->h2lm[kk] = a[0]; 
+						entropy->h2lm[kk] = entropy->h2lm[kk] / double (K-1); 
 						entropy->sd2lm[kk] = sd[0]; 
 						entropy->dm2lm[kk] = meanDist[1];
 						entropy->milm[kk] = entropy->h2lm[kk] - entropy->h1lm[entropy->i1[kk]] - entropy->h1lm[entropy->i2[kk]];
 			            entropy->totalEntropy +=entropy->milm[kk];
 	kk++;
 					}
+    
+    std::cout << "kk: " << kk << std::endl;
+    //entropy->totalEntropy = entropy->totalEntropy / double (kk);
 
 	return entropy;
 
