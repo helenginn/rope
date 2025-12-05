@@ -61,6 +61,7 @@ protected:
     void handleSaveSamples();
     void handleNumSamples(Button* button);
     void handleDistMatrix();
+    void handleColumnIdx(Button* button);
 
 
 

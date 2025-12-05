@@ -68,10 +68,19 @@ public:
         _minCol = min;
         _maxCol = max;
     }
+    void setColumnIdx(int chosenIdx)
+    {
+        _colIdx = chosenIdx;
+    }
     void setNumSamples(float num)
     {
         _numSamples = num;;
     }
+
+
+    // Getters for SVD components
+    const Eigen::MatrixXf& getV() const { return _V; }
+    const Eigen::VectorXf& getS() const { return _S; }
 
     void prepareResources();
     void addHBond(const HBondManager::HBondPair &hbondPair);
@@ -128,7 +137,13 @@ public:
     std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,
                                 const std::vector<int>& torsionVector);
     std::vector<float> extractVColumn(const Eigen::MatrixXf &V, int colIdx) const;
+    std::vector<float> lastColumn(const Eigen::MatrixXf& V)
+    {
+       Eigen::VectorXf col =  V.col(V.cols() - 1);
+       return std::vector<float>(col.data(), col.data() + col.size());
+    }
     std::vector<int> sampleColumnIndices(int N, int sampleCount, double lambda);
+    void computeOneSample(int colIdx, double weight);
     void saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda);
 
     void calculateFreeEnergy();
@@ -156,6 +171,7 @@ public:
                                     const std::vector<double> &enthalpies,
                                     const std::vector<double> &entropies,
                                     const std::vector<double> &freeEnergies);
+    void writeAllTorsionsToCSV(const std::string& filename);
 
     // === UTILITY ===
     int accessAtomBlock(Atom* atom);
@@ -186,7 +202,6 @@ private:
     bool _setup = false;
     bool _displayTargets = false;
     bool _cloudFlag = false;
-    bool _useSingleColumn = false;
     std::map<Atom*, int> _atom2Block;
 
     std::vector<HBondEntity> _hbonds;

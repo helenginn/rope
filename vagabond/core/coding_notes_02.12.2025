@@ -1,0 +1,122 @@
+============================
+ROPE code notes - 02.12.2025
+============================
+
+
+* When running atomCloud or saveSamples, you get an error from calculaateTorsionFlexibility:
+	 [ERROR] Invalid colIdx = 9 with _allTorsions.size() = 1
+
+Why? The value of colIdx increases as expected (for example in this instance i asked for 10 columns, so 9 is 
+correct), but what is happenign on _allTorsions? and how it supposed to be? 
+
+* Why did i had _colIdx = i in atomCloud? (i have since put it on comment) --> the error above is either way unrelated
+cause it appears even if you don't have _colIdx = i
+
+* Then the other issue is that when I am running saveSamples _colIdx = 0, is this only when i am running saveSamples
+after atomCloud? --> no, it's always an issue 
+
+* what is interesting is that if i have run the cloud calcualtion and then I ask to add the hbond again, it 
+takes longer and then the rotsion movement is completely different. I think that this is because it 
+tries to add the hbond that are in the file int the "new" structure? 
+
+* The main issue to debug is the error here: "[ERROR] Invalid colIdx = 100 with _allTorsions.size() = 1" 
+---> in sumbmitJob()
+
+* always forget/need to make that clear: how does calculateTorsionFlexibility is related to sumbitJob 
+(that why flexANalysis and flexSamples are very useful) 
+
+* in saveSampledStructures, why am i callign sumbitJob twice? one for weight and one for randomweight?
+
+* the refactoring is on the way but of course have not been tested and it will have a lot of errors
+Things that I know that they will go wrong already: 
+	1. how i am supposed to call from the FlexibilityController? 
+	2. missing libraries 
+	3. what's the best way to deal with fucking _colIdx?
+
+
+============================
+ROPE code notes - 03.12.2025
+============================
+
+* Going back on the issue with the [ERROR] Invalid colIdx = 100 with _allTorsions.size() = 1
+This is probably caused because in caclulateFlexWeight, because this is were the where _allTorsions 
+gets its values. 
+
+* in calculateFlexWeights, it goes: 
+1. calculateFlexWeigths
+	* actually computes SVD
+	* stores number of modes _vSize
+	* v_i corresponds to one DoF in the reduced null-space
+	* (currently): extracts one torsion-mode vector, the last one
+	* maps this mode vector onto all torsions: 
+
+		vector<float> allTorsions = assignWeightsToTorsions(v_i, torsionVector);
+		-> this is where we "expand" that mode into the FULL torsion space
+		-> creates a full-length torsion vector: std::vector<float> allTorsions(totalTorsionNum, 0.0f);
+		-> then fills only the "active" indices: allTorsions[torsionVector[i]] = v_i[i]; 
+		-> MEANING: every DOF represented in the SVD that was chosen gets a weight and all other torsions are 0 
+
+2. calculateTorsionFlexiibility
+	* how is calculateFlexWeights affects calculateTorsionFlexiibility and the _coldiD, that is then used in saveSamples? 
+		* need to do: 
+			-> independly, if _colIdx = 0 or _V.size, in calculateTorsionFlexibility colIdx is always 0 :/
+			-> also what'sa up with this? 
+				// Start editing from here
+		        int access_idx = _allTorsions.size() - _colIdx;
+		        float val = _allTorsions[_colIdx][idx] * jobWeight;
+		        return val;
+
+	* here is something interesting: the distance matrix when using the DoF from v_i = 0 is almost opposite than using the v_i = _V.size()
+		* need to:
+			-> save the flex_torison.csv in differnet names and compare
+			-> make some modifications in the KFA so I can have some comparable structures/distance matrices
+
+
+============================
+ROPE code notes - 04.12.2025
+============================
+
+* can you make some suggestions on how to go back to the original architectures, 
+where _colIdx was used to choose which column to chose from?
+* at the moment _allTorsion actuall contains only one torsion --> i changed that
+* Currently how the view of distance matrxi works is :
+
+addHbonds-->Calculate jacobian matrix-->calculate SVD-->store ALL modes into 
+__allTorsions[]-->choose (hardcoded) an colIdx (currently set to choose the last one)
+-->save 1 sample (which corresponds to the torsion modification based on the last columns 
+of the nullspace _V)-->call distance matrix
+
+* I change the code in Controller, so i can just set a _coldIdx from the user and directrly get 
+a look into the Dist matrix wihtout having to save the sample strucutre. 
+
+* but there is soemthign funcy with the resutls
+
+* Again, the problem lies in colIdx
+    * when i am calculating flexWeight and torsions etc, i get the outpit on 
+    screen --> this shoudl correspond to a range of all of indexes, right? 
+    * but it's braking a lot of "rules" and the movement si not really representative 
+    to the real thing.. 
+    * but at that poitn i haven't given any coldIdx as user 
+
+* i NEED to refactor Flexibility: it's too large and it confuses me a lot 
+* i need to concentrate to a easier example. 
+* run it with KGS and then compare it again with mine 
+* i need to implement the distance algorithm 
+
+* it looks now that when i am choosing 0 or max columns of _V, 
+i am getting the same ptterns just ont he oposite sides WHY? 
+
+* how was i gettign other values of colidx in the FlexTorsion etc? 
+
+
+
+
+
+
+
+
+
+
+
+
+

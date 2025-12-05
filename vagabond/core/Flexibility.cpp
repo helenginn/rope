@@ -49,6 +49,7 @@ float Flexibility::submitJobAndRetrieve(float weight)
 	return weight; 
 }
 
+
 void Flexibility::generateAtomCloud()
 {
     setFlexTag("flexPos");
@@ -85,7 +86,7 @@ void Flexibility::atomCloud(float weight, const AtomVector &atoms)
     // change here witht the values that you get from the FlexView (give by the user)
     for (int i = _minCol; i <= _maxCol; ++i)
     {
-        _colIdx = i;
+        // _colIdx = i;
         submitJobAndRetrieve(weight);
         for (Atom *atom : atoms)
         {
@@ -93,6 +94,7 @@ void Flexibility::atomCloud(float weight, const AtomVector &atoms)
             atom->addOtherPosition(_flexTag, vec);   
         }
     }
+   
 
 }
 
@@ -182,20 +184,20 @@ void Flexibility::calculateAnisoBfactors(std::string &_flexTag, const AtomVector
             // calculate covariance matrix 
             Eigen::Matrix3f covMat = covariance(samples);
             // Output: average and covariance
-            std::cout << atom->desc() << ","
-                    << atom->elementSymbol() << ","
-                    << atom->residueId() << ","
-                    << atom->atomName() << ","
-                    << atom->chain() << ","
-                    << std::fixed << std::setprecision(3)
-                    << "AVG: (" << avg.x << ", " << avg.y << ", " << avg.z << "), " << std::endl;
-            Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
-            std::cout << "COV:\n" << covMat.format(cleanFmt) << "\n";
+            // std::cout << atom->desc() << ","
+            //         << atom->elementSymbol() << ","
+            //         << atom->residueId() << ","
+            //         << atom->atomName() << ","
+            //         << atom->chain() << ","
+            //         << std::fixed << std::setprecision(3)
+            //         << "AVG: (" << avg.x << ", " << avg.y << ", " << avg.z << "), " << std::endl;
+            // Eigen::IOFormat cleanFmt(3, 0, ", ", "\n", "[", "]");
+            // std::cout << "COV:\n" << covMat.format(cleanFmt) << "\n";
             // Regularize the covariance matrix
             float epsilon = 0.01f; // in Å²
             // covMat += epsilon * Eigen::Matrix3f::Identity();
             Eigen::Matrix3f bFactorTens = 8 * M_PI * M_PI * covMat;
-            std::cout << "B factor tenstor:\n" << bFactorTens.format(cleanFmt) << "\n";
+            // std::cout << "B factor tenstor:\n" << bFactorTens.format(cleanFmt) << "\n";
             atom->setDerivedAnisoBfactors(bFactorTens);
 
         }
@@ -261,14 +263,13 @@ void Flexibility::calculateTorsionFlexibility()
 
 
 // Start editing from here
-        int access_idx = _allTorsions.size() - _colIdx;
         float val = _allTorsions[_colIdx][idx] * jobWeight;
         return val;
     };
 
     coord_manager->setTorsionFetcher(calculateFlexibility);
 
-    std::cout << "Finished calculating torsion Flexibility" << std::endl;
+    std::cout << "Finished calculating torsion Flexibility, _colIdx = " << _colIdx << std::endl;
 }
 
 
@@ -710,6 +711,7 @@ void Flexibility::buildJacobianMatrix()
     }
 
     _jacobMtx = jacobianMatrix;
+    std::cout << "Finished building Jacobian matrix! " << std::endl;
 }
 
 SVDResult Flexibility::calculateSVD() const
@@ -719,22 +721,23 @@ SVDResult Flexibility::calculateSVD() const
 
 
 // debuging 
-    Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
+    // Eigen::IOFormat CleanFmt(4, 0, ", ", "\n", "[", "]");
 
-    std::cout << "[DEBUG]" << std::endl;
-    std::cout << "\n================= JACOBIAN MATRIX =================\n";
-    std::cout << "Dimensions: " << _jacobMtx.rows() << " x " << _jacobMtx.cols() << "\n";
-    std::cout << _jacobMtx.format(CleanFmt) << "\n";
+    // std::cout << "[DEBUG]" << std::endl;
+    // std::cout << "\n================= JACOBIAN MATRIX =================\n";
+    // std::cout << "Dimensions: " << _jacobMtx.rows() << " x " << _jacobMtx.cols() << "\n";
+    // std::cout << _jacobMtx.format(CleanFmt) << "\n";
 
-    std::cout << "\n================= SINGULAR VALUES =================\n";
-    std::cout << svd.singularValues().transpose().format(CleanFmt) << "\n";
+    // std::cout << "\n================= SINGULAR VALUES =================\n";
+    // std::cout << svd.singularValues().transpose().format(CleanFmt) << "\n";
 
-    std::cout << "\n================= V MATRIX (Null-space basis) =================\n";
-    std::cout << "Dimensions: " << svd.matrixV().rows() << " x " << svd.matrixV().cols() << "\n";
-    std::cout << svd.matrixV().format(CleanFmt) << "\n";
+    // std::cout << "\n================= V MATRIX (Null-space basis) =================\n";
+    // std::cout << "Dimensions: " << svd.matrixV().rows() << " x " << svd.matrixV().cols() << "\n";
+    // std::cout << svd.matrixV().format(CleanFmt) << "\n";
 
-    std::cout << "\n===================================================\n";
+    // std::cout << "\n===================================================\n";
 
+    
 
     return {
         svd.matrixU(),
@@ -749,9 +752,9 @@ void Flexibility::calculateFlexWeights()
     std::cout << "Calculating flex weights..." << std::endl;
 
     SVDResult svd = calculateSVD();
-    _vSize = static_cast<int>(svd.V.cols());
     _V = svd.V;
     _S = svd.singularValues;
+    _vSize = static_cast<int>(svd.V.cols());
     std::vector<int> torsionVector = getGlobalTorsionVector();
     int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
     if (torsionVector.size() != svd.V.rows())
@@ -761,15 +764,61 @@ void Flexibility::calculateFlexWeights()
                   << svd.V.rows() << ")." << std::endl;
         return;
     }
-    int maxCol = _useSingleColumn ? _colIdx + 1 : std::min(_colIdx + 1, _vSize);
+
+
+    // ---------------------------------
+    //   Store ALL torsion-weight sets
+    // ---------------------------------
+
+    _allTorsions.clear();
+    _allTorsions.reserve(_vSize);
     for (int colIdx = 0; colIdx < _vSize; ++colIdx)
     {
-        std::vector<float> v_i = extractVColumn(svd.V, colIdx);
-    
+        std::vector<float> v_i = extractVColumn(svd.V, _vSize-1);
+        // std::vector<float> v_i = lastColumn(svd.V);
         std::vector<float> allTorsions = assignWeightsToTorsions(v_i, torsionVector);
         _allTorsions.push_back(allTorsions);
+        writeAllTorsionsToCSV("flex_torsions.csv");
     }
+    // [debug]: default to the last mode
+    // _colIdx = _vSize - 1;
+    std::cout << "Stored " << _allTorsions.size() << " torsion-weight vectors." << std::endl;
+    std::cout << "Finished calculating calculateFlexWeights, _colIdx = " << _colIdx << std::endl;
 }
+
+void Flexibility::writeAllTorsionsToCSV(const std::string& filename)
+{
+    std::ofstream out(filename);
+    if (!out.is_open())
+    {
+        std::cerr << "Error: Cannot open file " << filename << std::endl;
+        return;
+    }
+
+    if (_allTorsions.empty())
+    {
+        std::cerr << "Warning: _allTorsions is empty, nothing to write." << std::endl;
+        return;
+    }
+
+    // We currently only push_back ONE vector (since you removed the loop)
+    // but I keep the structure general
+    const std::vector<float>& torsions = _allTorsions.back();
+
+    // ---- Write header ----
+    out << "torsion,weight\n";
+
+    // ---- Write each torsion-weight pair ----
+    for (int i = 0; i < torsions.size(); ++i)
+    {
+        out << i << "," << torsions[i] << "\n";
+    }
+
+    out.close();
+    // std::cout << "Wrote torsion weights to " << filename << std::endl;
+}
+
+
 
 std::vector<float> Flexibility::extractVColumn(const Eigen::MatrixXf &V, int colIdx) const
 {
@@ -863,41 +912,21 @@ std::vector<int> Flexibility::getSoftestModeIndices(const Eigen::VectorXf& singu
 {
     int totalModes = static_cast<int>(singularValues.size());
     std::vector<int> indices(totalModes);
-    std::cout << "[getSoftestModeIndices]: Singular values (nonzero only):\n";
     for (int i = totalModes -1; i >= 0; i--)
     {
         if (singularValues[i] < 1e-6)
         {
-            std::cout << "σ[" << i << "] = " << singularValues[i] << "\n";
             indices.push_back(i);
         }
     }
     return indices;
 }
- 
 
-void Flexibility::saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda)
+void Flexibility::computeOneSample(int colIdx, double weight)
 {
-
-    std::cout << "[saveSampledStructures] _S size = " << _S.size() << "\n";
-    if (_S.size() > 0)
-        std::cout << "First few singular values: " << _S.head(std::min<int>(10, _S.size())).transpose() << "\n";
-    else
-        std::cerr << "[saveSampledStructures] _S is empty!\n";
-    // Call sampleColumnIndices to choose numSamples columns from _V
-    // std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
-    std::vector<int> indices = getSoftestModeIndices(_S);
-    // Print the indices and their corresponding singular values
-
-    
-    // start - debugging
-    const unsigned displayLimit = 5;
-
-    int saved = 0;
+    _colIdx = colIdx;
+    int saved = colIdx;
     int attempts = 0;
-    int maxAttempts = numSamples * 10; // safeguard: don't loop forever
-
-    // prepare radii
     std::set<std::pair<int,int>> exclude;
     std::vector<float> radii;
 
@@ -905,11 +934,58 @@ void Flexibility::saveSampledStructures(int numSamples, const std::string& baseF
     OpSet<Atom*> atom_set(atoms);
     std::vector<Atom*> orderedAtoms = atom_set.toVector();
     radii = makeRadiiVec(orderedAtoms);
+    exclude = makeExcList(atom_set);
+    submitJob(weight);
 
-    // prepare exclude
+    Result *r = _resources.calculator->acquireObject();
+    r->transplantPositions(false, true); // Or true, depending on what you want saved
+
+    std::cout << "[debug] In [computeOneSample], inside while, _colIdx = " << _colIdx << std::endl;
+
+    // * Generate a random scalar weight in [-10, 10] (amplitude of the pertubation along that column)
+    std::random_device rd; std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> dis(-5.0, 5.0); 
+    double randomWeight = dis(gen);
+    // * Call submitJob for the randomWeight
+    submitJob(randomWeight);
+    r->transplantPositions(false); // Or true, depending on what you want saved
+    // check for classes
+    float tol = 0.25f;
+    bool clashOK = checkClashes(orderedAtoms, saved, radii, exclude, tol);
+    if (!clashOK)
+    {
+        std::cerr << "[saveSampledStructures] Sample " << saved << " rejected due to atom clash\n"; 
+        r->destroy(); 
+    }
+}
+
+
+void Flexibility::saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda)
+{
+
+    if (_vSize <= 0 || _allTorsions.empty())
+    {
+        std::cerr << "[saveSampledStructures] ERROR: no modes available (_vSize=" << _vSize
+                  << ", _allTorsions.size()=" << _allTorsions.size() << ")\n";
+        return;
+    }
+    std::vector<int> indices = getSoftestModeIndices(_S);
+    int saved = 0;
+    int attempts = 0;
+    int maxAttempts = numSamples * 10;
+    std::random_device rd; std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> dis(-5.0, 5.0); 
+
+    std::set<std::pair<int,int>> exclude;
+    std::vector<float> radii;
+
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    OpSet<Atom*> atom_set(atoms);
+    std::vector<Atom*> orderedAtoms = atom_set.toVector();
+    radii = makeRadiiVec(orderedAtoms);
     exclude = makeExcList(atom_set);
 
-    // * Call submitJob for the randomWeight
+    // Apply the mode (colIdx) with a weight
     double weight = 0;
     submitJob(weight);
     Result *r = _resources.calculator->acquireObject();
@@ -917,21 +993,13 @@ void Flexibility::saveSampledStructures(int numSamples, const std::string& baseF
 
     while (saved < numSamples && attempts < maxAttempts)
     {
-        ++attempts;
-        // * store index in _colIdx
-        // try:
-        _colIdx = indices[attempts % indices.size()];
-        // _colIdx = indices[saved];
+        attempts++;
+        int _colIdx = indices[saved % indices.size()];
 
-        // * Generate a random scalar weight in [-10, 10] (amplitude of the pertubation along that column)
-        std::random_device rd; std::mt19937 gen(rd()); 
-        std::uniform_real_distribution<> dis(-5.0, 5.0); 
         double randomWeight = dis(gen);
-        // * Call submitJob for the randomWeight
         submitJob(randomWeight);
         Result *r = _resources.calculator->acquireObject();
         r->transplantPositions(false); // Or true, depending on what you want saved
-
 
         // check for classes
         float tol = 0.25f;
@@ -945,16 +1013,20 @@ void Flexibility::saveSampledStructures(int numSamples, const std::string& baseF
         std::ostringstream oss; oss << baseFileName << "_" << saved << ".pdb"; 
         _instance->currentAtoms()->writeToFile(oss.str()); 
         r->destroy(); 
-        ++saved;   
+        ++saved;
     }
+
     if (saved < numSamples) 
     { 
         std::cerr << "[saveSampledStructures] Warning: only saved " 
         << saved << "/" << numSamples << " due to clashes (maxAttempts=" 
         << maxAttempts << ")\n"; 
-    }
-
+    }   
+    
 }
+
+
+
 
 std::vector<glm::vec3> Flexibility::makePosVec(const AtomVector &atoms)
 {
@@ -1318,3 +1390,5 @@ void Flexibility::listClashes(const std::string &filename,
 
     file.close();
 }
+
+

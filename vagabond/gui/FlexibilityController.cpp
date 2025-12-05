@@ -75,6 +75,8 @@ bool FlexibilityController::handleButton(const std::string &tag, Button *button)
     if (tag == "options_save_samples") { handleSaveSamples(); return true; }
     if (tag == "num_samples")  { handleNumSamples(button); return true; }
     if (tag == "options_dist_matrix") { handleDistMatrix(); return true; }
+    if (tag == "enter_colIdx")   { handleColumnIdx(button); return true; }
+
 
 
     return false; // FlexibilityView or Display will handle it
@@ -223,6 +225,7 @@ void FlexibilityController::handleNumSamples(Button* button)
 	_numSample = static_cast<int>(numSample);
 	_flex->setNumSamples(_numSample);
 	double lambda = 0.5;
+	std::cout << "[handleNumSamples] _numSample "  << _numSample << std::endl;
 	_flex->saveSampledStructures(_numSample, "sample_structure", lambda);
 
 }
@@ -230,23 +233,27 @@ void FlexibilityController::handleNumSamples(Button* button)
 
 void FlexibilityController::handleDistMatrix()
 {
-	_view->openAtom2AtomExplorer();
+
+	AskForText *aft = new AskForText(_view, "Enter the column index from _V you want to use:",
+	                                 "enter_colIdx", _view, TextEntry::Numeric);
+	_view->setModal(aft);
 }
 
 
-// void FlexibilityController::checkHBondSelection()
-// {
-//     if (_selectFlag) {
-//        	callAddHBonds(_hBondPairs);
-//         _flex->processMultipleHBonds();
-//     }
-// }
+void FlexibilityController::handleColumnIdx(Button* button)
+{
+	TextEntry *te = static_cast<TextEntry *>(button);
+	double w = 0.5;
+	int idx = atof(te->scratch().c_str());
+	if (idx < 0) return;
+    _flex->computeOneSample(idx, w);
+    _view->openAtom2AtomExplorer();
+}
 
 void FlexibilityController::callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs) 
 {
 	for (auto &pair : donorAcceptorPairs) 
 	{
-		std::cout << "Calling callAddHbonds..." << std::endl;
     	_flex->addHBond(pair);
     }
     _flex->addVnWBond();

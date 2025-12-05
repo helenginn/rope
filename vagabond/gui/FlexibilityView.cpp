@@ -143,7 +143,6 @@ void FlexibilityView::openAtom2AtomExplorer()
 
         glm::vec3 displacement = curPos - initPos;
         disVec.push_back(displacement);
-        std::cout << atom->desc() << " " << displacement << " " << a3Dp << std::endl;
 
 	}
 
