@@ -446,14 +446,23 @@ void PathManager::pathMatrix(const std::string &filename,
 	
 }
 
-double PathManager::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths)
+double PathManager::pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, bool mist)
 {
     PathEntropy *pE = new PathEntropy();
-
+    struct Entropy* entropy;
     struct FlagParameters flagPar = pE->initFlagPar();
 
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths);
-    struct Entropy* entropy = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes);
+
+    if (mist == false)
+    {
+        entropy = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes);
+    }
+    else
+    {
+        entropy = pE->calculateEntropyMI(numPaths, flagPar, torsRes);
+    }
+
     return entropy->totalEntropy;
 }
 
@@ -473,13 +482,18 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
     int numPaths = stoi(args[1]);
 
-    struct EntropyForHeatMap data = {};
+    bool mist = false;
 
-    data.dataMatrix.resize(allInstances.size(), allInstances.size());
+    if(args.size() < 3)
+    {
+        mist = true;
+    } 
+
+    struct EntropyForHeatMap entropyData = {};
+
+    entropyData.dataMatrix.resize(allInstances.size(), allInstances.size());
 
     Progressor *prog = new Progressor();
-
-    std::cout << allInstances.size() << std::endl; 
 
 	for (int i = 0; i < allInstances.size(); i++)
     {
@@ -489,7 +503,7 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
             
             if(i == j)
             {
-                data.dataMatrix(i, j) = 0;
+                entropyData.dataMatrix(i, j) = NAN;
             }
             else
             {
@@ -498,12 +512,10 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 				if (pathsForInstance.size() != 0)
 				{
 			
-					float entropy = pathEntropyInstancePair(numPaths, pathsForInstance);
+					float entropy = pathEntropyInstancePair(numPaths, pathsForInstance, mist);
 
-					data.dataMatrix(i, j) = entropy;
-					data.dataMatrix(j, i) = entropy;
-
-                    std::cout << data.dataMatrix(i, j) <<std::endl;
+					entropyData.dataMatrix(i, j) = entropy;
+					entropyData.dataMatrix(j, i) = entropy;
 				}
             }
 		}
@@ -512,19 +524,18 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
     file.close();
 
+    entropyData.dataMatrix.colwise().reverse();
 	if (_callback)
 	{
         std::cout << "callback initiated" << std::endl;
-		setEntropyCallback(_callback);
-        _callback(data);
+		//setEntropyCallback(_callback);
+        _callback(entropyData);
 		_callback = {};
 	}
 	/*else
 	{
 		writeToFile(data); // pseudocode
 	}*/
-
-    std::cout << data.dataMatrix << std::endl;
 
     ModelManager::manager()->finishTicker();
 }
