@@ -715,7 +715,6 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 
     Progressor *prog = new Progressor();
 
-
 	for (int i = 0; i < allInstances.size(); i++)
 	{
 		for (int j = 0; j < allInstances.size(); j++)
@@ -768,8 +767,6 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 	//{
 	//	writeToFile(data); // pseudocode
 	//}
-
-    std::cout << data.dataMatrix << std::endl;
 
     ModelManager::manager()->finishTicker();
 }*/
