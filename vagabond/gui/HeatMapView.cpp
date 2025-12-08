@@ -5,7 +5,7 @@
 #include <HeatMapView.h>
 #include <MatrixPlot.h>
 
-HeatMapView::HeatMapView(Scene *prev, struct EntropyForHeatMap &entropy) : Scene(prev), _entropy(entropy)
+HeatMapView::HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy) : Scene(prev), _entropy(entropy)
 {
 
 }
@@ -14,14 +14,15 @@ void HeatMapView::setup()
 {
     if (_entropy.dataMatrix.size() == 0)
     { 
-        return;
+//        return;
     }
 
     int rows = _entropy.dataMatrix.rows();
     int cols = _entropy.dataMatrix.cols();
 	std::cout << rows << " x " << cols << std::endl;
+	std::cout << _entropy.dataMatrix << std::endl;
 
-    /*Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
+    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
 
     int nonZero = 0;
 
@@ -29,20 +30,14 @@ void HeatMapView::setup()
     {
         for (int j = 0; j < cols; j++)
         {
-            if(i < j)
-            {
-                matrix(i, j) =  _entropy.perRes[nonZero];
-                nonZero++;
-            }
+            _entropy.dataMatrix(i,j)+=20;
+            _entropy.dataMatrix(i,j)/=10;
         }
     }
 
-	std::cout << "Matrix:" << std::endl;
-	std::cout << matrix << std::endl;*/
-
     _pcaMatrix = PCA::Matrix(_entropy.dataMatrix);
+	printMatrix(&_pcaMatrix);
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
-    addObject(_plot);  
-	_plot->update();
+    addObject(_plot);
 }
