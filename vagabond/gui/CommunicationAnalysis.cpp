@@ -45,8 +45,12 @@ void CommunicationAnalysis::prepareGroups()
 	{
 		Item *item = new Item();
 
-		auto job = [this, item, name]()
+		auto job = [this, item, name](bool left)
 		{
+			if (!left)
+			{
+				return;
+			}
 			if (_chosen.count(name))
 			{
 				_chosen -= name;

@@ -89,14 +89,6 @@ bool Clique::is_certain() const
 	return true;
 }
 
-void Clique::select(bool left)
-{
-	if (_beingChosen)
-	{
-		_beingChosen(left);
-	}
-}
-
 void Clique::housekeeping(Network &network)
 {
 	for (const std::string &desc : _descs)

@@ -72,13 +72,6 @@ public:
 	bool is_certain() const;
 	
 	int num_waters() const;
-	
-	void setHandleBeingChosen(const std::function<void(bool left)> &chosen)
-	{
-		_beingChosen = chosen;
-	}
-	
-	virtual void select(bool left);
 
 	friend void to_json(json &j, const Clique &value);
 	friend void from_json(const json &j, Clique &value);
@@ -219,7 +212,6 @@ private:
 	ProbeKey _probes{};
 	
 	std::string _name{};
-	std::function<void(bool left)> _beingChosen{};
 	std::map<std::string, OpSet<std::string>> _communication;
 	std::map<std::string, std::string> _descToCommune;
 	std::vector<std::string> _descs;

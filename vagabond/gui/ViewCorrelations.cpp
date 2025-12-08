@@ -49,7 +49,7 @@ void ViewCorrelations::setup()
 
 void ViewCorrelations::makeList()
 {
-	_clique->setHandleBeingChosen({});
+	_clique->setSelectJob({});
 	
 	for (Clique &clique : _clique->subdivisions())
 	{
@@ -61,10 +61,10 @@ void ViewCorrelations::makeList()
 			}
 		};
 
-		clique.setHandleBeingChosen(view_subnetwork);
+		clique.setSelectJob(view_subnetwork);
 	}
 
-	_clique->setHandleBeingChosen([this](bool left) { if (left) viewAll(); });
+	_clique->setSelectJob([this](bool left) { if (left) viewAll(); });
 	std::cout << ("Subgroups of " + 
 	                        std::to_string(_clique->probes().size())
 	                        + " nodes") << std::endl;

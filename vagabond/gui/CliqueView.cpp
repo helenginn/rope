@@ -174,7 +174,7 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	(const OpSet<Probe *> &probes)
 	{
 		Clique *clique = _network.newClique(probes);
-		clique->setHandleBeingChosen(click(clique));
+		clique->setSelectJob(click(clique));
 		addMainThreadJob(add_clique(clique));
 	};
 
@@ -194,7 +194,7 @@ CliqueView::CliqueView(ProtonNetworkView *scene, Network &network,
 	{
 		for (Clique &clique : _network.cliques())
 		{
-			clique.setHandleBeingChosen(click(&clique));
+			clique.setSelectJob(click(&clique));
 			add_clique(&clique)();
 		}
 
