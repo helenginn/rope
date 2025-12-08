@@ -24,7 +24,8 @@ struct FlagParameters PathEntropy::initFlagPar()
     flagParameters.ne = 5;
 	flagParameters.minres = 1e-10;
     flagParameters.cutoff = 6.0;
-	flagParameters.kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+	flagParameters.kmi = 1;
+    flagParameters.mist = false; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
 
     return flagParameters;
 }
