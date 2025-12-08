@@ -82,10 +82,12 @@ void MatrixPlot::updateColours()
 		
 		for (size_t i = 0; i < 4; i++)
 		{
-			_vertices[idx + i].color = colourForValue(val);
+			glm::vec4 colour = colourForValue(val);
+			_vertices[idx + i].color = colour;
 		}
 	}
 
+	std::cout << _vertices.size() << std::endl;
 	forceRender(true, false);
 }
 
