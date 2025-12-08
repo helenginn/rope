@@ -158,11 +158,16 @@ public:
 	{
 		if (_job)
 		{
-			_job();
+			_job(left);
 		}
 	}
 	
-	void setSelectJob(const std::function<void()> &job)
+	const std::function<void(bool left)> &selectJob() const
+	{
+		return _job;
+	}
+	
+	void setSelectJob(const std::function<void(bool left)> &job)
 	{
 		_job = job;
 		if (_job)
@@ -214,9 +219,19 @@ public:
 
 	void readdress();
 	
+	bool isSkipped()
+	{
+		return _skip;
+	}
+	
 	bool isHidden()
 	{
 		return _hidden;
+	}
+	
+	void setSkip(bool skip)
+	{
+		_skip = skip;
 	}
 	
 	void setHidden(bool hide)
@@ -281,12 +296,13 @@ private:
 	bool _hidden = false;
 	
 	bool _selected = false;
+	bool _skip = false;
 
 	std::string _name;
 	
 	Item *_parent = nullptr;
 	std::vector<Item *> _items;
-	std::function<void()> _job{};
+	std::function<void(bool left)> _job{};
 
 };
 

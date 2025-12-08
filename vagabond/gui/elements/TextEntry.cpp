@@ -19,6 +19,7 @@
 #include "TextEntry.h"
 #include "ButtonResponder.h"
 #include "GLView.h"
+#include "Scene.h"
 #include <SDL2/SDL_clipboard.h>
 #include <iostream>
 
@@ -32,7 +33,7 @@ void TextEntry::click(bool left)
 	_active = true;
 	showInsert();
 
-	_scene->setKeyResponder(this);
+	_responder->setKeyResponder(this);
 }
 
 void TextEntry::showInsert()
@@ -142,18 +143,18 @@ void TextEntry::keyPressed(char key)
 {
 	if (_active)
 	{
-		if (!_gl->controlPressed())
+		if (_gl && !_gl->controlPressed())
 		{
 			shiftKey(key);
 		}
-		else if (_gl->controlPressed() && key == 'v')
+		else if (_gl && _gl->controlPressed() && key == 'v')
 		{
 			const char *ch = SDL_GetClipboardText();
 			std::string str(ch);
 			_scratch += str;
 		}
 
-		if (!_gl->controlPressed() && validateKey(key))
+		if (_gl && !_gl->controlPressed() && validateKey(key))
 		{
 			_scratch += key;
 		}
@@ -164,7 +165,7 @@ void TextEntry::keyPressed(char key)
 
 void TextEntry::finish()
 {
-	_scene->unsetKeyResponder(this);
+	_responder->unsetKeyResponder(this);
 	_active = false;
 	showInsert();
 	Button::click();
@@ -173,7 +174,16 @@ void TextEntry::finish()
 
 void TextEntry::keyPressed(SDL_Keycode other)
 {
-	if (other == SDLK_BACKSPACE)
+	if (other == SDLK_RETURN && _gl->shiftPressed() && _multiLine)
+	{
+		_scratch += "\n";
+		showInsert();
+		if (_stretch)
+		{
+			_stretch(this);
+		}
+	}
+	else if (other == SDLK_BACKSPACE)
 	{
 		if (_scratch.length() > 0)
 		{

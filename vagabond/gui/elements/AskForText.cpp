@@ -28,15 +28,18 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 	Text *t = new Text(text);
 	t->setCentre(0.5, 0.45);
 	addObject(t);
+	_preamble = t;
 	
 	_scene = scene;
-	TextEntry *te = new TextEntry("enter", scene);
+	TextEntry *te = new TextEntry("enter", scene, scene);
 	te->setValidationType(v);
 	te->setCentre(0.5, 0.5);
 	te->setReturnTag("text");
 	_text = te;
 	_text->HasResponder<Responder<TextEntry>>::setResponder(this);
 	addObject(te);
+	float height = te->maximalHeight();
+	stretchToFit(te);
 
 	addTwoButtons("Cancel", "cancel", "OK", "ok");
 	setReturnTag(tag);
@@ -48,6 +51,31 @@ AskForText::AskForText(Scene *scene, std::string text, std::string tag,
 void AskForText::allowCapitals(bool capitals)
 {
 	_text->allowCapitals(capitals);
+}
+
+void AskForText::allowMultiLine(bool allow)
+{
+	_text->allowMultiLine(allow);
+	if (allow)
+	{
+		_text->setStretchFunction([this](TextEntry *te)
+		                          {
+			                         stretchToFit(te);
+			                      });
+	}
+	else
+	{
+		_text->setStretchFunction({});
+	}
+}
+
+void AskForText::stretchToFit(TextEntry *te)
+{
+	float delta_height = (te->maximalHeight()) / 2;
+	float adjusted = 0.4 + delta_height / 2;
+	float preamble = 0.45 - delta_height / 2;
+	makeFreshBox(0.6, adjusted);
+	_preamble->setCentre(0.5, preamble);
 }
 
 AskForText::~AskForText()

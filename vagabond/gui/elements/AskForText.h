@@ -34,10 +34,12 @@ public Responder<TextEntry>
 {
 public:
 	AskForText(Scene *scene, std::string text, 
-	           std::string tag, ButtonResponder *sender,
+	           std::string tag = "", ButtonResponder *sender = nullptr,
 	           TextEntry::Validation v = TextEntry::None);
 	
 	void allowCapitals(bool capitals);
+	void allowMultiLine(bool multiline);
+
 	virtual void respond();
 	
 	void setReturnJob(const std::function<void(std::string)> &job)
@@ -55,9 +57,12 @@ public:
 	virtual void keyPressed(SDL_Keycode other);
 	virtual void keyPressed(char key);
 private:
+	void stretchToFit(TextEntry *te);
+	Text *_preamble{};
 	TextEntry *_text;
 	std::function<void(std::string)> _job{};
 	std::function<void()> _cancel{};
+	bool _multiLine = false;
 
 };
 

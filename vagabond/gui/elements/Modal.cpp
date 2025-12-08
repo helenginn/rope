@@ -18,6 +18,7 @@ void Modal::makeFreshBox(double width, double height)
 	rescale(width, height);
 	_width = width;
 	_height = height;
+	forceRender(true, false);
 }
 
 Modal::Modal(Scene *scene, double width, double height) : Box()

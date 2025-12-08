@@ -169,7 +169,7 @@ void LineGroup::reorganiseGroups()
 
 	float y = 0;
 	Renderable *line = _line;
-	bool hide_self = _item->isHidden();
+	bool hide_self = _item->isHidden() || _item->isSkipped();
 	line->setDisabled(hide_self);
 
 	for (Renderable *object : objects())
@@ -192,7 +192,7 @@ void LineGroup::reorganiseGroups()
 		}
 	}
 	
-	forceRender();
+	forceRender(true, false);
 }
 
 Menu *LineGroup::prepareMenu()

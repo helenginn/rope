@@ -330,6 +330,46 @@ void GLView::grabIndexBuffer()
 	checkErrors("read pixels");
 }
 
+SDL_Surface *GLView::createSDLSurface()
+{
+	SDL_Surface *surface;
+			int h, w, bpp, bpr;
+	void *data = createImage(&h, &w, &bpp, &bpr);
+	surface = SDL_CreateRGBSurfaceFrom(data, w, h, bpp * 8,
+	                                   bpr, 0x000000FF, 0x0000FF00,
+	                                   0x00FF0000, 0xFF000000);
+
+	delete [] data;
+	return surface;
+}
+
+void *GLView::createImage(int *h, int *w, int *bpp, int *bpr)
+{
+	*w = Window::width();
+	*h = Window::height();
+	*bpp = 4; // bytes per pixel
+	*bpr = *bpp * *w; // bytes per row
+	
+	std::cout << *w << " x " << *h << std::endl;
+	int total = *w * *h * *bpp;
+	unsigned char *tmp = new unsigned char[total];
+	unsigned char *data = new unsigned char[total];
+	std::cout << "Total: " << total << std::endl;
+
+	glReadPixels(0, 0, *w, *h, GL_RGBA, GL_UNSIGNED_BYTE, tmp);
+	
+	for (int xd = 0; xd < *h; xd++)
+	{
+		int xs = *h - xd - 1;
+		size_t source = xs * *bpr;
+		size_t dest = xd * *bpr;
+		memcpy(&data[dest], &tmp[source], *bpr);
+	}
+	
+	delete [] tmp;
+	return data;
+}
+
 void GLView::prepareShadowBuffer()
 {
 	glGenFramebuffers(1, &_depthFbo);

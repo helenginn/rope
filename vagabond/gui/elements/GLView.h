@@ -211,6 +211,9 @@ public:
 		moveX = _moveX; moveY = _moveY;
 		convertCoords(&moveX, &moveY);
 	}
+
+	void *createImage(int *h, int *w, int *bpp, int *bpr);
+	SDL_Surface *createSDLSurface();
 protected:
 	void shadowProgram();
 	void prepareShadowBuffer();

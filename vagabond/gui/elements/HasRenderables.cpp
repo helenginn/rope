@@ -66,12 +66,12 @@ Renderable *HasRenderables::findObject(double x, double y)
 		Renderable *r = objs[i];
 
 		/* search inside the object first */
-		if (!r->isDisabled())
+		if (!r->isDisabled() && !r->prioritySelect())
 		{
 			chosen = r->findObject(x, y);
 		}
 		
-		if (chosen != NULL)
+		if (chosen)
 		{
 			break;
 		}

@@ -210,20 +210,19 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	Box *text = nullptr;
 	text = _item->customRenderable(parent, _job);
 
-	auto wrap_job = [this](const std::function<void(Item *)> &job)
+	auto wrap_job = [this]()
 	{
-		return [this, job]()
+		return [this]()
 		{
-			std::cout << "group left: " << _gl->leftMouse() << std::endl;
-			if (_gl->leftMouse() && job)
+			if (_item->selectJob())
 			{
-				job(_item);
+				_item->selectJob()(_gl->leftMouse());
 			}
-			else if (_gl->leftMouse())
+			else if (_job && _gl->leftMouse())
 			{
-				_item->select(_gl->leftMouse());
+				_job(_item);
 			}
-			else
+			else if (!_gl->leftMouse())
 			{
 				_group->makeMenu();
 			}
@@ -237,10 +236,7 @@ Renderable *ItemLine::displayRenderable(ButtonResponder *parent) const
 	else if (!text && _item->isSelectable())
 	{
 		TextButton *tb = new TextButton(_item->displayName(), parent);
-		if (_job)
-		{
-			tb->setReturnJob(wrap_job(_job));
-		}
+		tb->setReturnJob(wrap_job());
 		text = tb;
 	}
 	else if (!text && !_item->isSelectable())

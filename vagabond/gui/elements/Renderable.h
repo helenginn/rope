@@ -315,6 +315,11 @@ public:
 	{
 		return _selected;
 	}
+	
+	bool prioritySelect()
+	{
+		return _prioritySelect;
+	}
 
 	void setupVBOBuffers();
 	void rebufferVertexData();
@@ -468,6 +473,7 @@ protected:
 	ShaderGets *_shaderGets = nullptr;
 	std::mutex _vertLock;
 	std::mutex _buffLock;
+	bool _prioritySelect = false;
 private:
 	glm::mat4x4 getModel();
 	void deleteTextures();

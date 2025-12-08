@@ -7,6 +7,9 @@
 #include "Button.h"
 #include "KeyResponder.h"
 #include <vagabond/core/Responder.h>
+#include <functional>
+
+class Scene;
 
 class TextEntry : public Text, public Button, public KeyResponder,
 public HasResponder<Responder<TextEntry>>
@@ -16,10 +19,10 @@ public:
 	          ButtonResponder *scene = nullptr) :
 	Text(text), Button(sender)
 	{
-		_scene = scene;
-		if (_scene == nullptr)
+		_responder = scene;
+		if (_responder == nullptr)
 		{
-			_scene = sender;
+			_responder = sender;
 		}
 	}
 	
@@ -36,6 +39,11 @@ public:
 		_validation = v;
 	}
 	
+	void allowMultiLine(bool allow)
+	{
+		_multiLine = allow;
+	}
+	
 	void allowCapitals(bool allow)
 	{
 		_capitals = allow;
@@ -47,6 +55,11 @@ public:
 	std::string scratch()
 	{
 		return _scratch;
+	}
+	
+	void setStretchFunction(const std::function<void(TextEntry *)> &stretch)
+	{
+		_stretch = stretch;
 	}
 	
 	void setScratch(std::string scratch)
@@ -67,7 +80,9 @@ private:
 	bool _active = false;
 	bool _capitals = false;
 	Validation _validation = None;
-	ButtonResponder *_scene = nullptr;
+	ButtonResponder *_responder = nullptr;
+	std::function<void(TextEntry *)> _stretch;
+	bool _multiLine{false};
 };
 
 #endif
