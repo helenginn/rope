@@ -203,7 +203,7 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "beginning heat map data generation..." << std::endl;
         std::vector<std::string> args = split(last, ',');
         
-        if (args.size() != 2)
+        if (args.size() < 2)
 	    {
 			std::cout << "Wrong number of arguments" << std::endl;
             return;
