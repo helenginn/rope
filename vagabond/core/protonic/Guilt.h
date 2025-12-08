@@ -20,6 +20,7 @@
 #define __vagabond__Guilt__
 
 #include <vagabond/utils/OpSet.h>
+#include <functional>
 
 class Guilt
 {

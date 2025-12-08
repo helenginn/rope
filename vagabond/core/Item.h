@@ -25,6 +25,7 @@
 #include <vector>
 #include <set>
 #include <vagabond/core/Responder.h>
+#include <functional>
 #include <mutex>
 
 class ButtonResponder;

@@ -21,6 +21,7 @@
 
 class Probe;
 #include <vagabond/utils/OpSet.h>
+#include <functional>
 
 class CliqueFinder
 {
