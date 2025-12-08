@@ -44,8 +44,6 @@
 #include <vagabond/gui/elements/TickBoxes.h>
 #include "PathThermodynamics.h"
 #include "HeatMapView.h"
-#include <fstream>
-#include <sstream>
 #include <functional>
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
@@ -507,6 +505,10 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     if (tag == "menu_map_entropy")
     {
+        AskMultipleChoice *amc = new AskMultipleChoice(this, "Select calculation parameters", "mist", this);
+        amc->addChoice("Use MIST?", "mist");
+        setModal(amc);
+
         struct EntropyForHeatMap entropyData = {};
         
         std::cout << "adding job" << std::endl;
@@ -514,14 +516,20 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
         std::function<void(EntropyForHeatMap &)> callback;
 		callback = [this](EntropyForHeatMap &entropyData)
 		{
-            std::cout << "callback passed back to menu" << std::endl;
-			HeatMapView *view = new HeatMapView(this, entropyData);
-			view->show();
+			addMainThreadJob([this, entropyData]()
+					{
+					HeatMapView *view = new HeatMapView(this, 
+							entropyData);
+					view->show();
+					});
+            showBackButton();
 		};
            
 		Environment::pathManager()->setEntropyCallback(callback);
+        
+        hideBackButton();
 
-        prepareProgress(10, "Calculating path entropy...");
+        prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
 
         VagWindow::addJob("path-entropy=" + _entity->name() + ",11");
         
