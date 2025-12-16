@@ -12,7 +12,7 @@ MultiOptions::MultiOptions(Scene *scene, std::string text, std::string tag, Butt
 
     _sender = sender;
     _tag = tag;
-
+    
     setDismissible(true);
 }
 
