@@ -492,7 +492,6 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					entk[k-1] = entk[k-1] + c - L;
 					L = L + 1/k;
 
-
 					meanDist[k] = meanDist[k] / (double) nf;
 					meanLogDist[k] = meanLogDist[k] / (double) nf;
 
@@ -553,6 +552,15 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
     //outputALA.close();
     outputLR.close();
+}
+
+int PathEntropy::compedge(const void* elem1, const void* elem2)
+{
+ 	struct Edge f1 = *((struct Edge*)elem1);
+	struct Edge f2 = *((struct Edge*)elem2);
+	if (f1.weight > f2.weight) return 1;
+	if (f1.weight < f2.weight) return -1;
+	return 0;
 }
 
 /* linear weighting function */
