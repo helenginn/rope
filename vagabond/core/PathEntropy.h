@@ -10,6 +10,7 @@ struct Entropy {
 int nSingle{};
 int nPairs{};
 int nNearestNeighbours{};
+int nEdges{};
 double **h1{};
 double **sd1{};
 double **dm1{};
@@ -28,6 +29,9 @@ double **mi{};
 double *milm{};
 double **dmmi{};
 double **sdmi{};
+int *mst1{};
+int *mst2{};
+double *mstw{};
 double *pathTotal{};
 double *sigmaTotal{};
 double *meanDistTotal{};
@@ -59,6 +63,12 @@ struct FlagParameters {
 	int kmi;
 };
 
+struct Edge {
+    double weight;
+    int u;
+    int v;
+    int orig;
+};
 
 class PathEntropy
 {
@@ -74,13 +84,17 @@ public:
 	struct Entropy* calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
     struct Entropy* calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
 
-	/* implicit compare function for qsort */
-	static int comp (const void * elem1, const void * elem2);
+	/* implicit compare functions for qsort */
+	static int comp (const void* elem1, const void* elem2);
+    static int compedge(const void* elem1, const void* elem2);
 
 	/* linear weighting function */
 	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);
 
     void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+
+    /* kruskal algorithm */
+    void kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters);
 	
     int allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
 
