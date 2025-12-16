@@ -24,8 +24,8 @@ struct FlagParameters PathEntropy::initFlagPar()
     flagParameters.ne = 5;
 	flagParameters.minres = 1e-10;
     flagParameters.cutoff = 6.0;
-	flagParameters.kmi = 1;
-    flagParameters.mist = false; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
+	flagParameters.mist = false;
+    flagParameters.kmi = 1; /* grouping of torsions within the same residue for mutual information calculations. Mutual information among groups will involve at most 2k torsions */
 
     return flagParameters;
 }
@@ -296,6 +296,7 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 			for(int k = 0; k < K-1; k++)
 			{
 				x[k] = entk[k];
+                std::cout << x[k] << std::endl;
 				y[k] = meanDist[k+1];
 
                 entropy->totalEntropy += entk[0];
@@ -499,6 +500,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 		for(int k = 0; k < K-1; k++)
 		{
 			x[k] = entk[k];
+            std::cout << x[k] << std::endl;
             y[k] = meanDist[k+1];
 
             entropy->h1lm[m] += entk[k];
@@ -681,8 +683,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 			            entropy->totalEntropy +=entropy->milm[kk];
 	kk++;
 					}
+
+    kruskal(entropy, group2res, flagParameters);
     
-    std::cout << "kk: " << kk << std::endl;
     //entropy->totalEntropy = entropy->totalEntropy / double (kk);
 
 	return entropy;
@@ -733,11 +736,21 @@ void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerMode
 	}
 }
 
-int PathEntropy::comp(const void* elem1, const void* elem2){
+int PathEntropy::comp(const void* elem1, const void* elem2)
+{
 	double f1 = *((double *)elem1);
 	double f2 = *((double *)elem2);
 	if (f1 > f2) return 1;
 	if (f1 < f2) return -1;
+	return 0;
+}
+
+int PathEntropy::compedge(const void* elem1, const void* elem2)
+{
+ 	struct Edge f1 = *((struct Edge*)elem1);
+	struct Edge f2 = *((struct Edge*)elem2);
+	if (f1.weight > f2.weight) return 1;
+	if (f1.weight < f2.weight) return -1;
 	return 0;
 }
 
@@ -784,6 +797,90 @@ int PathEntropy::fitlw(double *x, double *y, double *w, int n, double (&a)[3], d
 
 	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + ym*ym/((double) n * (y2 - ym*ym)));
 	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (y2 - ym*ym));
+}
+
+void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters)
+{
+    std::vector<Edge*> edges;
+    std::vector<Edge*> MST;
+
+    int set[entropy->nSingle];
+
+    for(int i = 0; i < entropy->nPairs; i++)
+    {
+        edges.push_back(new Edge);
+        edges[i]->u = entropy->i1[i];
+        edges[i]->v = entropy->i2[i];
+        edges[i]->orig = i;
+    }
+
+    for(int i = 0; i < flagParameters.n; i++)
+    {
+        entropy->totalEntropy = 0.0;
+        entropy->sigmaTotalEntropy = 0.0;
+        entropy->meanDistTotalEntropy = 0.0;
+    }
+
+    for(int i = 0; i < entropy->nSingle; i++)
+    {
+        for(int j = 0; j < flagParameters.n; j++)
+        {
+            entropy->totalEntropy += entropy->h1[i][j];
+            entropy->sigmaTotalEntropy += pow(entropy->sd1[i][j],2.0);
+            entropy->meanDistTotalEntropy += pow(entropy->dm1[i][j],2.0);
+        }
+    }
+
+    for(int i = 0; i < entropy->nSingle; i++)
+    {
+        set[i]=i;
+    }
+
+    qsort(&edges, entropy->nPairs, sizeof(struct Edge), compedge);
+
+    int counts = 0;
+
+    for(int i = 0; i < entropy->nPairs; i++)
+    {
+        int j = edges[i]->u;
+        int k = edges[i]->v;
+
+        if(set[j] != set[k])
+        {
+            entropy->mst1[counts] = edges[i]->u;
+            entropy->mst2[counts] = edges[i]->v;
+            entropy->mstw[counts] = edges[i]->weight;
+
+            MST[counts]->u = edges[i]->u;
+            MST[counts]->v = edges[i]->v;
+            MST[counts]->weight = edges[i]->weight;
+            MST[counts]->orig = edges[i]->orig;
+
+            counts++;
+
+            int r = set[k];
+
+            for(int l = 0; l < entropy->nSingle; l++)
+            {
+                if(set[l] == r) set[l] = set[j];
+            }
+        }
+    }
+    
+    entropy->nEdges = counts;
+
+    if(entropy->nPairs > 0)
+    {
+        for(int i = 0; i < entropy->nEdges; i++)
+        {
+            for(int j = 0; j < flagParameters.n; j++)
+            {
+                entropy->totalEntropy += entropy->h2[MST[i]->orig][j] - entropy->h1[MST[i]->u][j] - entropy->h1[MST[i]->v][j];
+                entropy->sigmaTotalEntropy += pow(entropy->sd2[MST[i]->orig][j], 2) + pow(entropy->sd1[MST[i]->u][j], 2) - pow(entropy->sd1[MST[i]->v][j], 2);
+                entropy->meanDistTotalEntropy += (entropy->dm2[MST[i]->orig][j] * entropy->dm2[MST[i]->orig][j]);
+            }
+        }
+    }
 }
 
 /* allocates memory to entropy structure */
