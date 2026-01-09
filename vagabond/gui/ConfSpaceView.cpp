@@ -697,9 +697,6 @@ void ConfSpaceView::prepareModelMenu(HasMetadata *hm)
 #ifdef VERSION_REFINEMENT
 	m->addOption("refinement setup", "refinement_setup");
 #endif
-#ifdef VERSION_MUTATE
-//	m->addOption("mutate", "mutate");
-#endif
 #ifdef VERSION_PROTON_NETWORK
 	m->addOption("proton network", "proton");
 #endif

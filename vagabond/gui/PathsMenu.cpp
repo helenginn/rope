@@ -241,11 +241,13 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 			MakeNewPaths *mnp = new MakeNewPaths(this, _entity);
 			mnp->show();
 		}
+#ifdef MULTI_MOLECULE_PATH
 		else
 		{
 			WholeModelPathSetupView *wmpsv = new WholeModelPathSetupView(this);
 			wmpsv->show();
 		}
+#endif
 
 		return;
 	}
