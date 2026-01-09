@@ -183,8 +183,15 @@ void ConfSpaceView::displayTree()
 		return;
 	}
 
-	_ropeTree = new LineGroup(_ropeSpace, this);
+	auto handle_click = [this](Item *item)
+	{
+		RopeSpaceItem *rsi = static_cast<RopeSpaceItem *>(item);
+		setSelectedSpace(rsi);
+	};
+
+	_ropeTree = new LineGroup(_ropeSpace, this, handle_click);
 	_ropeTree->setLeft(0.02, 0.2);
+
 	addObject(_ropeTree);
 }
 
