@@ -20,5 +20,4 @@ private:
     std::string _tag;
 };
 
-#endif
-~        
+#endif     
