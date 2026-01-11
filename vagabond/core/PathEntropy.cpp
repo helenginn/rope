@@ -554,15 +554,6 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     outputLR.close();
 }
 
-int PathEntropy::compedge(const void* elem1, const void* elem2)
-{
- 	struct Edge f1 = *((struct Edge*)elem1);
-	struct Edge f2 = *((struct Edge*)elem2);
-	if (f1.weight > f2.weight) return 1;
-	if (f1.weight < f2.weight) return -1;
-	return 0;
-}
-
 /* linear weighting function */
 void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd)
 {
@@ -765,6 +756,9 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
 	if(flagParameters.mutualInformation)
 	{
 		entropy->mi = new double*[entropy->nPairs];
+        entropy->mst1 = new int[entropy->nPairs];
+        entropy->mst2 = new int[entropy->nPairs];
+        entropy->mstw = new double[entropy->nPairs];
 		entropy->i1 = new int[entropy->nPairs];
         entropy->i2 = new int[entropy->nPairs];
         entropy->h2 = new double*[entropy->nPairs];
