@@ -86,7 +86,6 @@ public:
 
 	/* implicit compare functions for qsort */
 	static int comp (const void* elem1, const void* elem2);
-    static int compedge(const void* elem1, const void* elem2);
 
 	/* linear weighting function */
 	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);

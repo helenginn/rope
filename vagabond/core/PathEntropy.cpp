@@ -685,9 +685,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 					}
 
     kruskal(entropy, group2res, flagParameters);
-    
-    //entropy->totalEntropy = entropy->totalEntropy / double (kk);
 
+    entropy->sigmaTotalEntropy = sqrt(entropy->sigmaTotalEntropy);
+    
 	return entropy;
 
 }
@@ -742,15 +742,6 @@ int PathEntropy::comp(const void* elem1, const void* elem2)
 	double f2 = *((double *)elem2);
 	if (f1 > f2) return 1;
 	if (f1 < f2) return -1;
-	return 0;
-}
-
-int PathEntropy::compedge(const void* elem1, const void* elem2)
-{
- 	struct Edge f1 = *((struct Edge*)elem1);
-	struct Edge f2 = *((struct Edge*)elem2);
-	if (f1.weight > f2.weight) return 1;
-	if (f1.weight < f2.weight) return -1;
 	return 0;
 }
 
@@ -836,7 +827,10 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
         set[i]=i;
     }
 
-    qsort(&edges, entropy->nPairs, sizeof(struct Edge), compedge);
+    std::sort(edges.begin(), edges.end(), [](const Edge* a, const Edge* b)
+    {
+        return a->weight < b ->weight;
+    });
 
     int counts = 0;
 
@@ -850,7 +844,8 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
             entropy->mst1[counts] = edges[i]->u;
             entropy->mst2[counts] = edges[i]->v;
             entropy->mstw[counts] = edges[i]->weight;
-
+     
+            MST.push_back(new Edge);
             MST[counts]->u = edges[i]->u;
             MST[counts]->v = edges[i]->v;
             MST[counts]->weight = edges[i]->weight;
@@ -905,6 +900,9 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
 	if(flagParameters.mutualInformation)
 	{
 		entropy->mi = new double*[entropy->nPairs];
+        entropy->mst1 = new int[entropy->nPairs];
+        entropy->mst2 = new int[entropy->nPairs];
+        entropy->mstw = new double[entropy->nPairs];
 		entropy->i1 = new int[entropy->nPairs];
         entropy->i2 = new int[entropy->nPairs];
         entropy->h2 = new double*[entropy->nPairs];
