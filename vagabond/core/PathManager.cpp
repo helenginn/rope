@@ -484,7 +484,7 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
     bool mist = false;
 
-    if(args.size() < 3)
+    if(args.size() > 2)
     {
         mist = true;
     } 
