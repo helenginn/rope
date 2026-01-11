@@ -12,7 +12,6 @@ MultiOptions::MultiOptions(Scene *scene, std::string text, std::string tag, Butt
 
     _sender = sender;
     _tag = tag;
-    
     setDismissible(true);
 }
 
@@ -33,3 +32,11 @@ void MultiOptions::buttonPressed(std::string tag, Button *button)
     hide();
     _sender->buttonPressed(_tag + "_" + tag);
 }
+
+void MultiOptions::buttonPressed(std::string tag, Button *button)
+{
+    hide();
+    _sender->buttonPressed(_tag + "_" + tag);
+}
+
+
