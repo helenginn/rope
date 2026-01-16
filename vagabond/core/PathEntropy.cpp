@@ -417,6 +417,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					{
 						phit[i][j] = torsRes[m]->ang[timeDivisions][j][i];
 						numTors++;
+
 					}
 				}
 			
