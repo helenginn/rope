@@ -181,14 +181,8 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 				}
 			}
             
-            double meanDist[K];
-            double meanLogDist[K];            
-
-			for(int i = 0; i < K; i++)
-            {
-				meanDist[i] = 0;
-                meanLogDist[i] = 0;
-			}
+            std::vector<double> meanDist(K);
+            std::vector<double> meanLogDist(K);            
 
 			for(int i = 0; i < K-1; i++)
 			{
@@ -199,7 +193,7 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 			/* calculate the distance between samples in the nAng - dimensional
 			   space of torsion angles */
 
-			double d[nf];
+			std::vector<double> d(nf);
 
 			/*auto display = [nf, m](double *d)
 			{
@@ -425,7 +419,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
             meanLogDist[i] = 0;
 		}
 
-        double d[nf];
+        std::vector<double> d(nf);
 
 		for(int i = 0; i < nf; i++)
 		{
@@ -584,7 +578,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
                             meanLogDist[i] = 0;
 						}
 
-						d = new double[nf];
+						std::vector<double> d(nf);
 
                         for(int i = 0; i < nf; i++)
                         {
