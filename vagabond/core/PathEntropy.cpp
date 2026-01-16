@@ -683,7 +683,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 }
 
-void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel, std::vector<TorsRes4NN*> &torsMi, int &numResPerModelMI, int *group2res, struct FlagParameters flagParameters)
+int PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel, std::vector<TorsRes4NN*> &torsMi, int &numResPerModelMI, int *group2res, struct FlagParameters flagParameters)
 {
 	int l = 0;
 
