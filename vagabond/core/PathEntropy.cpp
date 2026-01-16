@@ -226,7 +226,7 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
                 //display(d);
 
 				/* sort the distances */
-				qsort(d, nf, sizeof(double), comp);
+                std::sort(d.begin(), d.end());
 
 				/* apply the entropy calculation based on the nearest neighbour */
 				for(int k = 1; k < K; k++)
@@ -436,7 +436,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 			}
 		}
 
-		qsort(d,nf,sizeof(double), comp);
+			std::sort(d.begin(), d.end());
 
 		for(int k = 1; k < K; k++)
 		{
@@ -586,23 +586,17 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 						d = new double[nf];
 
-						for(int j = 0; j < nf; j++)
-						{
-							d[j] = dist_ang(phit[i], phit[j], torsMi2.nAng, torsMi2.bondSymmetry);
-							d[j] = deg2rad(d[j]);
-						}
-
-						qsort(d, nf, sizeof(double), comp);
-
-						for(int k = 1; k < K; k++)
-						{
-                            double logdk; 
-
-							if(d[k] < flagParameters.minres)
+                        for(int i = 0; i < nf; i++)
+                        {
+							for(int j = 0; j < nf; j++)
 							{
-								logdk = log(flagParameters.minres);
+								d[j] = dist_ang(phit[i], phit[j], torsMi2.nAng, torsMi2.bondSymmetry);
+								d[j] = deg2rad(d[j]);
 							}
-							else
+
+							std::sort(d.begin(), d.end());
+
+							for(int k = 1; k < K; k++)
 							{
 								logdk = log(d[k]);
 							}
