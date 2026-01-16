@@ -717,15 +717,6 @@ void PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerMode
 	}
 }
 
-int PathEntropy::comp(const void* elem1, const void* elem2)
-{
-	double f1 = *((double *)elem1);
-	double f2 = *((double *)elem2);
-	if (f1 > f2) return 1;
-	if (f1 < f2) return -1;
-	return 0;
-}
-
 /* linear weighting function */
 int PathEntropy::fitlw(double *y, double *x, double *w, int n, double (&a)[3], double (&sd)[3], int *ok)
 {
