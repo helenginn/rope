@@ -460,12 +460,12 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 		for(int k = 0; k < torsMi[m]->nAng; k++)
 		{
-			c = c - log(M_PI /180.0);
-			c = c + (double) torsMi[m]->nAng * log(M_PI)/2.0 - lgamma(1.0 + (double) torsMi[m]->nAng)/2.0 + 0.5722 + log((double) nf);
+			c = c - log(torsMi[m]->bondSymmetry[k]*M_PI /180.0);
 		}
 
-        int L = 0;
+    	c = c + (double) torsMi[m]->nAng * log(M_PI)/2.0 - lgamma(1.0 + (double) torsMi[m]->nAng)/2.0 + 0.5722 + log((double) nf);
 
+        int L = 0;
 		for(int k = 1; k < K; k++)
 		{
 			// before adding c-L compute sd
@@ -546,13 +546,15 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 						for(int k = 0; k < torsMi[ii]->nAng; k++)
 						{
 							torsMi2.ang[i] = torsMi[ii]->ang[k];
-                            torsMi2.bondSymmetry[i++] = torsMi[ii]->bondSymmetry[k];
+                            torsMi2.bondSymmetry[i] = torsMi[ii]->bondSymmetry[k];
+                            i++;
 						}
 
 						for(int k = 0; k < torsMi[jj]->nAng; k++)
 						{
 							torsMi2.ang[i] = torsMi[jj]->ang[k];
-                            torsMi2.bondSymmetry[i++] = torsMi[jj]->bondSymmetry[k];
+                            torsMi2.bondSymmetry[i] = torsMi[jj]->bondSymmetry[k];
+                            i++;
 						}
 
 						for(int i = 0; i < nf; i++)
