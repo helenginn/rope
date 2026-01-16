@@ -520,9 +520,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 	for(int i = 0; i < nf; i++)
 	{
 	    phit[i] = std::vector<double> (2*flagParameters.kmi);
-        torsMi2.ang.push_back(std::vector<double> (2*flagParameters.kmi, 0));
 	}
-
+    
+    torsMi2.ang.resize(2*flagParameters.kmi);
     torsMi2.bondSymmetry.resize(2*flagParameters.kmi);
 
 	int kk = 0;
@@ -705,7 +705,6 @@ int PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel
 		torsMi[i]->ang.push_back(std::vector<double>(flagParameters.kmi, 0));
 		torsMi[i]->v.resize(flagParameters.kmi);
 		torsMi[i]->bondSymmetry.resize(flagParameters.kmi);
-		torsMi[i]->torsName.resize(flagParameters.kmi);
 	}
 
 	// group torsions
