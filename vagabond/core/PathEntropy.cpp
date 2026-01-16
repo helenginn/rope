@@ -312,13 +312,12 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 			double a[3];
             double sd[3];
 
-			fitlw(x, y, w, K-1, a, sd, &weightCheck);
+			fitlw(y, x, w, K-1, a, sd, &weightCheck);
 
 			entropy->h1lm[m] = a[0];
 			entropy->sd1lm[m] = sd[0];
 			//entropy->dm1lm[m] = meanDist[1]/sqrt((double) torsRes[m]->nAng);
-			//entropy->totalEntropy = entropy->totalEntropy + a[0];
-            entropy->totalEntropy = entropy->totalEntropy/(double) (K-1);
+			entropy->totalEntropy = entropy->totalEntropy + a[0];
 		}
 
 	for(int k = 0; k < flagParameters.n; k++)
@@ -493,11 +492,8 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 		for(int k = 0; k < K-1; k++)
 		{
-			x[k] = entk[k];
-            std::cout << x[k] << std::endl;
-            y[k] = meanDist[k+1];
-
-            entropy->h1lm[m] += entk[k];
+			y[k] = entk[k];
+            x[k] = meanDist[k+1];
 
 			if(sigmak[k] > 1e-12) w[k] = 1/(sigmak[k] * sigmak[k]);
 			else weightCheck = 0;
@@ -513,9 +509,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
         double a[3];
         double sd[3];
 
-        //fitlw(x,y,w,K-1,a,sd,&weightCheck);
+        fitlw(y,x,w,K-1,a,sd,&weightCheck);
 
-		entropy->h1lm[m] = entropy->h1lm[m] / double (K-1);
+		entropy->h1lm[m] = a[0];
 		entropy->sd1lm[m] = sd[0] * sd[0];
 		//entropy->dm1lm[m] = meanDist[1] * meanDist[1];
 	}
@@ -653,8 +649,6 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 							x[k] = meanDist[k+1];
 							y[k] = entk[k];
 
-                            entropy->h2lm[kk] += entk[k];
-
 							if(k == 0) w[k] = M_PI * M_PI /6;
 							else w[k] = w[k-1] - 1/(double) (k*k);
 						}
@@ -664,12 +658,11 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
 						fitlw(y,x,w,K-1,a,sd,&ok);
 
-						entropy->h2lm[kk] = entropy->h2lm[kk] / double (K-1); 
+						entropy->h2lm[kk] = a[0]; 
 						entropy->sd2lm[kk] = sd[0]; 
 						entropy->dm2lm[kk] = meanDist[1];
 						entropy->milm[kk] = entropy->h2lm[kk] - entropy->h1lm[entropy->i1[kk]] - entropy->h1lm[entropy->i2[kk]];
-			            entropy->totalEntropy +=entropy->milm[kk];
-	kk++;
+                    	kk++;
 					}
 
     kruskal(entropy, group2res, flagParameters);
@@ -734,25 +727,25 @@ int PathEntropy::comp(const void* elem1, const void* elem2)
 }
 
 /* linear weighting function */
-int PathEntropy::fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok)
+int PathEntropy::fitlw(double *y, double *x, double *w, int n, double (&a)[3], double (&sd)[3], int *ok)
 {
-	double wt = 0;
-	double xm = 0;
-	double ym = 0;
-	double x2 = 0;
-	double y2 = 0;
-	double xy = 0;
-    double xy2 = 0;
+	double wt = 0.0;
+	double xm = 0.0;
+	double ym = 0.0;
+	double x2 = 0.0;
+	double y2 = 0.0;
+	double xy = 0.0;
+    double xy2 = 0.0;
 
 	for(int i = 0; i < n; i++)
 	{
-		xm = xm + x[i]*w[i];
-		ym = ym + y[i]*w[i];
-		x2 = x2 + x[i]*x[i]*w[i];
-		y2 = y2 + y[i]*y[i]*w[i];
-		xy = xy + x[i]*y[i]*w[i];
-		xy2 = xy2 + x[i]*y[i]*x[i]*y[i]*w[i];
-		wt = wt + w[i];
+		xm += x[i]*w[i];
+		ym += y[i]*w[i];
+		x2 += x[i]*x[i]*w[i];
+		y2 += y[i]*y[i]*w[i];
+		xy += x[i]*y[i]*w[i];
+		xy2 += x[i]*y[i]*x[i]*y[i]*w[i];
+		wt += w[i];
 	}
 
 	xm = xm/wt;
@@ -762,20 +755,20 @@ int PathEntropy::fitlw(double *x, double *y, double *w, int n, double (&a)[3], d
 	xy = xy/wt;
 	xm = xm/wt;
 
-	a[1] = (xy - xm*ym)/(y2 - ym*ym);
-	a[0] = xm - a[1]*ym;
+	a[1] = (xy - xm*ym)/(x2 - xm*xm);
+	a[0] = ym - a[1]*xm;
 
 	double sig2 = 0;
 
 	for(int i = 0; i < n; i++)
 	{
-		sig2 = sig2 + (x[i] - a[0] - a[1]*y[i])*(x[i] - a[0] - a[1]*y[i])*w[i];
+		sig2 += (y[i] - a[0] - a[1]*x[i])*(y[i] - a[0] - a[1]*x[i])*w[i];
 	}
 
 	sig2 = sig2/wt;
 
-	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + ym*ym/((double) n * (y2 - ym*ym)));
-	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (y2 - ym*ym));
+	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + xm*xm/((double) n * (x2 - xm*xm)));
+	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (x2 - xm*xm));
 }
 
 void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters)
