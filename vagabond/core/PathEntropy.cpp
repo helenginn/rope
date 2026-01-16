@@ -583,8 +583,8 @@ void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vecto
 	xy = xy/wt;
 	xm = xm/wt;
 
-	a[1] = (xy - xm*ym)/(y2 - ym*ym);
-	a[0] = xm - a[1]*ym;
+	a[1] = (xy - xm*ym)/(x2 - xm*xm);
+	a[0] = ym - a[1]*xm;
 
 	double sig2 = 0;
 
@@ -595,8 +595,8 @@ void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vecto
 
 	sig2 = sig2/wt;
 
-	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + ym*ym/((double) n * (y2 - ym*ym)));
-	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (y2 - ym*ym));
+	sd[0] = sqrt(sig2 * (double) n / (double) (n-2)) * sqrt((1.0/(double) n) + xm*xm/((double) n * (x2 - xm*xm)));
+	sd[1] = sqrt(sig2 * (double) n / (double) (n-2)) / sqrt((double) n * (x2 - xm*xm));
 }
 
 void PathEntropy::kruskal(struct EntropyKL *entropy, int *group2res, struct FlagParameters flagParameters)
