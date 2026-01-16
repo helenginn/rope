@@ -289,11 +289,10 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 
 			for(int k = 0; k < K-1; k++)
 			{
-				x[k] = entk[k];
-                std::cout << x[k] << std::endl;
-				y[k] = meanDist[k+1];
+				y[k] = entk[k];
+				x[k] = meanDist[k+1];
 
-                entropy->totalEntropy += entk[0];
+                //entropy->totalEntropy += entk[0];
 
 				if(sigmak[k] > 1e-12)
 					w[k] = 1/(sigmak[k] * sigmak[k]);
