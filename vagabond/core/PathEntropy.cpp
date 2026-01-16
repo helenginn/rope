@@ -786,6 +786,7 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
         edges.push_back(new Edge);
         edges[i]->u = entropy->i1[i];
         edges[i]->v = entropy->i2[i];
+        edges[i]->weight = entropy->milm[i];
         edges[i]->orig = i;
     }
 
@@ -860,6 +861,21 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
 			    entropy->meanDistTotalEntropy += (entropy->dm2[MST[i]->orig][kk] * entropy->dm2[MST[i]->orig][kk]);   
             }
         }
+    }
+
+    entropy->totalEntropy = 0.0;
+
+    if(entropy->nPairs > 0)
+    {
+        for(int i = 0; i < entropy->nEdges; i++)
+        {
+            entropy->totalEntropy += MST[i]->weight;
+        }
+    }
+
+    for(int i =0; i < entropy->nSingle; i++)
+    {
+        entropy->totalEntropy += entropy->h1lm[i];
     }
 }
 
