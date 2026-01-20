@@ -19,21 +19,30 @@ void HeatMapView::setup()
 
     int rows = _entropy.dataMatrix.rows();
     int cols = _entropy.dataMatrix.cols();
-	std::cout << rows << " x " << cols << std::endl;
-	std::cout << _entropy.dataMatrix << std::endl;
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
 
     int nonZero = 0;
+//"    _entropy.dataMatrix -= _entropy.dataMatrix.mean();
+    double sigma = 0;
 
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
-            _entropy.dataMatrix(i,j)+=20;
-            _entropy.dataMatrix(i,j)/=10;
+            if (i != j)
+            {
+                std::cout << "NonZero!" << std::endl;
+                sigma += pow(_entropy.dataMatrix(i,j), 2.0);
+                nonZero++;
+            }
         }
     }
+
+    sigma = sqrt(sigma/nonZero);
+
+//    _entropy.dataMatrix = ((_entropy.dataMatrix - mean * Eigen::MatrixXf::Identity(rows, cols))/sigma);
+    _entropy.dataMatrix -= 0.5 * Eigen::MatrixXf::Identity(rows, cols);
 
     _pcaMatrix = PCA::Matrix(_entropy.dataMatrix);
 	printMatrix(&_pcaMatrix);
