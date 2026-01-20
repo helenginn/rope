@@ -137,7 +137,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 					torsRes[j]->ang[l][k][i] = param->empiricalMeasurement();
 				}
-
 			}
         }
 	}
@@ -160,6 +159,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
 
+
     for(int n = 0; n < numDivisions; n++)
     {
 		struct EntropyKL* entropy = new EntropyKL;
@@ -179,6 +179,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> torsRes, int numDivisions)
 {
 	int *group2res;
+
     int numResPerModelMI;
 	int numResPerModel = torsRes.size();
 	std::vector<TorsRes4NN*> torsMi;
