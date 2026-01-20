@@ -35,9 +35,9 @@ double *mstw{};
 double *pathTotal{};
 double *sigmaTotal{};
 double *meanDistTotal{};
-double totalEntropy;
-double sigmaTotalEntropy;
-double meanDistTotalEntropy;
+double totalEntropy{};
+double sigmaTotalEntropy{};
+double meanDistTotalEntropy{};
 double *entResidue{};
 };
 
@@ -85,7 +85,7 @@ public:
     struct Entropy* calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
 
 	/* linear weighting function */
-	int fitlw(double *x, double *y, double *w, int n, double (&a)[3], double (&sd)[3], int *ok);
+	int fitlw(std::vector<double> x, std::vector<double> y, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd);
 
     int torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters);
 
