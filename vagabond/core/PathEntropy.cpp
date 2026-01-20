@@ -118,16 +118,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 			{
 				Parameter *param = content->findParameter(torsRes[j]->desc[k], polySeq->residue(j)->id());
 
-                /*if (param == nullptr)
-                {
-                    std::ofstream ofs;
-                    ofs.open("null_params.txt", std::ofstream::out | std::ofstream::app);
-                    ofs << torsRes[j]->desc[k] << "\t" << polySeq->residue(j)->id() << "\n";
-                    ofs.close();
-                }
-                else
-                {*/
-			    torsRes[j]->ang[k][i] = param->empiricalMeasurement();
+    		    torsRes[j]->ang[k][i] = param->empiricalMeasurement();
              
 			}
 		}
@@ -141,7 +132,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> torsRes){
 	std::vector<std::vector<double>> phit(nf);
-	double *a, *sd, *sigmak, *entk, *entk2, *entkTotal, *entkTotal2;
+	double *sigmak, *entk, *entk2, *entkTotal, *entkTotal2;
 	int numResPerModel = torsRes.size();
 
 	int numTors = 0;
@@ -195,19 +186,6 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 
 			std::vector<double> d(nf);
 
-			/*auto display = [nf, m](double *d)
-			{
-			    if (m != 4) { return; }
-			    std::cout << "4th residue: ";
-			 
-                for (int i = 0; i < nf; i++)
-			    {
-			        std::cout << d[i] << ", ";
-			    }
-			    std::cout << std::endl;
-			};*/
-
-
 			for(int i = 0; i < nf; i++)
 			{
                
@@ -216,8 +194,6 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 					d[j] = dist_ang(phit[i], phit[j], torsRes[m]->nAng, torsRes[m]->bondSymmetry);
 					d[j] = deg2rad(d[j]);
 				}
-
-                //display(d);
 
 				/* sort the distances */
                 std::sort(d.begin(), d.end());
@@ -283,16 +259,14 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 
 			int weightCheck = 1;
 
-            double x[K-1];
-            double y[K-1];
-            double w[K-1];
+            std::vector<double> x(K-1);
+            std::vector<double> y(K-1);
+            std::vector<double> w(K-1);
 
 			for(int k = 0; k < K-1; k++)
 			{
 				y[k] = entk[k];
 				x[k] = meanDist[k+1];
-
-                //entropy->totalEntropy += entk[0];
 
 				if(sigmak[k] > 1e-12)
 					w[k] = 1/(sigmak[k] * sigmak[k]);
@@ -308,10 +282,10 @@ struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagPara
 					w[k] = 1;
 			}
 
-			double a[3];
-            double sd[3];
+			std::vector<double> a(2);
+            std::vector<double> sd(2);
 
-			fitlw(y, x, w, K-1, a, sd, &weightCheck);
+			fitlw(y, x, w, K-1,a,sd);
 
 			entropy->h1lm[m] = a[0];
 			entropy->sd1lm[m] = sd[0];
@@ -337,8 +311,8 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 	std::vector<std::vector<double>> phit(nf); 
     double *entk, *entkTotal, *entk2, *sigmak, *entkTotal2, *d;
 
+    int numResPerModelMI;
 	int numResPerModel = torsRes.size();
-    int numResPerModelMI = 0;
 	std::vector<TorsRes4NN*> torsMi;
 
 	struct TorsRes4NN torsMi2;
@@ -378,13 +352,6 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 		}
 
     allocEntropy(entropy, numResPerModelMI, entropy->nPairs, entropy->nNearestNeighbours, flagParameters);
-
-    for(int k = 1; k <= K-1; k++)
-	{
-		entropy->pathTotal[k-1] = 0.0;
-		entropy->sigmaTotal[k-1] = 0.0;
-		entropy->meanDistTotal[k-1] = 0.0;
-	}
 
     // for each group, compute entropy, sd and dm for the group and map to residues
 	// sum to total entrop, sd and dm
@@ -427,7 +394,6 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 				d[j] = deg2rad(d[j]);
 			}
 	
-
 			std::sort(d.begin(), d.end());
 
 			for(int k = 1; k < K; k++)
@@ -486,9 +452,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 		// Linear weighted fit
 		int  weightCheck = 1;
 
-        double x[K-1];
-        double y[K-1];
-        double w[K-1];
+        std::vector<double> x(K-1);
+        std::vector<double> y(K-1);
+        std::vector<double> w(K-1);
 
 		for(int k = 0; k < K-1; k++)
 		{
@@ -505,10 +471,10 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 				w[k] = 1;
 		}
 	
-        double a[3];
-        double sd[3];
+        std::vector<double> a(2);
+        std::vector<double> sd(2);
 
-        fitlw(y,x,w,K-1,a,sd,&weightCheck);
+        fitlw(y,x,w,K-1,a,sd);
 
 		entropy->h1lm[m] = a[0];
 		entropy->sd1lm[m] = sd[0] * sd[0];
@@ -566,15 +532,8 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 							entk2[i] = entk[i] = 0.0;
 						}
 
-                        double meanDist[K];
-                        double meanLogDist[K];
-
-						for(int i = 0; i < K; i++)
-						{
-							meanDist[i] = 0;
-                            meanLogDist[i] = 0;
-						}
-
+                        std::vector<double> meanDist(K, 0.0);
+                        std::vector<double> meanLogDist(K, 0.0);
 						std::vector<double> d(nf);
 
                         for(int i = 0; i < nf; i++)
@@ -650,9 +609,9 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 						// linear weighted fit
 						int ok = 1;
         
-                        double x[K-1];
-                        double y[K-1];
-                        double w[K-1];
+                        std::vector<double> x(K-1);
+                        std::vector<double> y(K-1);
+                        std::vector<double> w(K-1);
 
 						for(int k = 0; k < K - 1; k++)
 						{
@@ -663,10 +622,10 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 							else w[k] = w[k-1] - 1/(double) (k*k);
 						}
 
-						double a[3];
-						double sd[3];
+						std::vector<double> a(2);
+						std::vector<double> sd(2);
 
-						fitlw(y,x,w,K-1,a,sd,&ok);
+						fitlw(y,x,w,K-1,a,sd);
 
 						entropy->h2lm[kk] = a[0]; 
 						entropy->sd2lm[kk] = sd[0]; 
@@ -730,7 +689,7 @@ int PathEntropy::torsRes2MI(std::vector<TorsRes4NN*> torsRes, int numResPerModel
 }
 
 /* linear weighting function */
-int PathEntropy::fitlw(double *y, double *x, double *w, int n, double (&a)[3], double (&sd)[3], int *ok)
+int PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd)
 {
 	double wt = 0.0;
 	double xm = 0.0;
