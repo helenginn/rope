@@ -841,48 +841,48 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
 /* allocates memory to entropy structure */
 int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
 {
-	entropy->pathTotal = new double[nNearestNeighbours];
-	entropy->sigmaTotal = new double[nNearestNeighbours];
-	entropy->meanDistTotal = new double[nNearestNeighbours];
-	entropy->h1lm = new double [nSingle];
-	entropy->sd1lm = new double[nSingle];
-	entropy->h1 = new double *[nSingle];
-	entropy->sd1 = new double *[nSingle];
-	entropy->dm1 = new double *[nSingle];
+	entropy->pathTotal.resize(nNearestNeighbours);
+	entropy->sigmaTotal.resize(nNearestNeighbours);
+	entropy->meanDistTotal.resize(nNearestNeighbours);
+	entropy->h1lm.resize(nSingle);
+	entropy->sd1lm.resize(nSingle);
+	entropy->h1.resize(nSingle);
+	entropy->sd1.resize(nSingle);
+	entropy->dm1.resize(nSingle);
 
 	for(int i = 0; i < nSingle; i++)
 	{
-		entropy->h1[i] = new double[nNearestNeighbours];
-		entropy->sd1[i] = new double[nNearestNeighbours];
-		entropy->dm1[i] = new double[nNearestNeighbours];
+		entropy->h1[i].resize(nNearestNeighbours);
+		entropy->sd1[i].resize(nNearestNeighbours);
+		entropy->dm1[i].resize(nNearestNeighbours);
 	}
 
 	if(flagParameters.mutualInformation)
 	{
-		entropy->mi = new double*[entropy->nPairs];
-        entropy->mst1 = new int[entropy->nPairs];
-        entropy->mst2 = new int[entropy->nPairs];
-        entropy->mstw = new double[entropy->nPairs];
-		entropy->i1 = new int[entropy->nPairs];
-        entropy->i2 = new int[entropy->nPairs];
-        entropy->h2 = new double*[entropy->nPairs];
-        entropy->sd2 = new double*[entropy->nPairs];
-        entropy->dm2 = new double*[entropy->nPairs];
-        entropy->sdmi = new double*[entropy->nPairs];
-        entropy->dmmi = new double*[entropy->nPairs];
-        entropy->h2lm = new double[entropy->nPairs];
-        entropy->milm = new double[entropy->nPairs];
-        entropy->sd2lm = new double[entropy->nPairs];
-        entropy->dm2lm = new double[entropy->nPairs];
+		entropy->mi.resize(entropy->nPairs);
+        entropy->mst1.resize(entropy->nPairs);
+        entropy->mst2.resize(entropy->nPairs);
+        entropy->mstw.resize(entropy->nPairs);
+		entropy->i1.resize(entropy->nPairs);
+        entropy->i2.resize(entropy->nPairs);
+        entropy->h2.resize(entropy->nPairs);
+        entropy->sd2.resize(entropy->nPairs);
+        entropy->dm2.resize(entropy->nPairs);
+        entropy->sdmi.resize(entropy->nPairs);
+        entropy->dmmi.resize(entropy->nPairs);
+        entropy->h2lm.resize(entropy->nPairs);
+        entropy->milm.resize(entropy->nPairs);
+        entropy->sd2lm.resize(entropy->nPairs);
+        entropy->dm2lm.resize(entropy->nPairs);
     
         for(int i = 0; i < entropy->nPairs; i++)
         {
-            entropy->mi[i] = new double[nNearestNeighbours];
-            entropy->h2[i] = new double[nNearestNeighbours];
-            entropy->sd2[i] = new double[nNearestNeighbours];
-            entropy->dm2[i] = new double[nNearestNeighbours];
-            entropy->sdmi[i] = new double[nNearestNeighbours];
-            entropy->dmmi[i] = new double[nNearestNeighbours];
+            entropy->mi[i].resize(nNearestNeighbours);
+            entropy->h2[i].resize(nNearestNeighbours);
+            entropy->sd2[i].resize(nNearestNeighbours);
+            entropy->dm2[i].resize(nNearestNeighbours);
+            entropy->sdmi[i].resize(nNearestNeighbours);
+            entropy->dmmi[i].resize(nNearestNeighbours);
         }
 	}
 
