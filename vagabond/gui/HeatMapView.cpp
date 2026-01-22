@@ -2,6 +2,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
+#include <vagabond/utils/maths.h>
 #include <HeatMapView.h>
 #include <MatrixPlot.h>
 
@@ -22,27 +23,17 @@ void HeatMapView::setup()
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
 
-    int nonZero = 0;
-//"    _entropy.dataMatrix -= _entropy.dataMatrix.mean();
-    double sigma = 0;
+    double meanEntropy = mean(_entropy.total);
+    double stdEntropy = standard_deviation(_entropy.total);
 
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
-            if (i != j)
-            {
-                std::cout << "NonZero!" << std::endl;
-                sigma += pow(_entropy.dataMatrix(i,j), 2.0);
-                nonZero++;
-            }
+            _entropy.dataMatrix(i,j)-=meanEntropy;
+            _entropy.dataMatrix(i,j)/=stdEntropy;
         }
     }
-
-    sigma = sqrt(sigma/nonZero);
-
-//    _entropy.dataMatrix = ((_entropy.dataMatrix - mean * Eigen::MatrixXf::Identity(rows, cols))/sigma);
-    _entropy.dataMatrix -= 0.5 * Eigen::MatrixXf::Identity(rows, cols);
 
     _pcaMatrix = PCA::Matrix(_entropy.dataMatrix);
 	printMatrix(&_pcaMatrix);
