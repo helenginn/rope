@@ -132,14 +132,14 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 struct Entropy* PathEntropy::calculateEntropyIndependent(int nf, struct FlagParameters flagParameters, std::vector<TorsRes4NN*> torsRes){
 	std::vector<std::vector<double>> phit(nf);
-	double *sigmak, *entk, *entk2, *entkTotal, *entkTotal2;
+	std::vector<double> sigmak, entk, entk2, entkTotal, entkTotal2;
 	int numResPerModel = torsRes.size();
 
 	int numTors = 0;
 
 	struct Entropy* entropy = new Entropy;
 
-    allocVariables(nf, &entk, &entkTotal, &entk2, &entkTotal2, &sigmak, &flagParameters);
+    allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
 
 	entropy->nSingle = numResPerModel;
 	entropy->nNearestNeighbours = flagParameters.n;
@@ -309,7 +309,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 {
 	int *group2res;
 	std::vector<std::vector<double>> phit(nf); 
-    double *entk, *entkTotal, *entk2, *sigmak, *entkTotal2, *d;
+    std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
 
     int numResPerModelMI;
 	int numResPerModel = torsRes.size();
@@ -320,7 +320,7 @@ struct Entropy* PathEntropy::calculateEntropyMI(int nf, struct FlagParameters fl
 
     int nTors = 0;
 
-    allocVariables(nf, &entk, &entkTotal, &entk2, &entkTotal2, &sigmak, &flagParameters);
+    allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
 
     entropy->nNearestNeighbours = flagParameters.n;
     
@@ -889,21 +889,20 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
 }
 
 /* allocates memory to entropy calculation variables */
-int PathEntropy::allocVariables(int nf, double **entk, double **entkTotal, double **entk2, double **entkTotal2, double **sigmak, struct FlagParameters *flagParameters)
+int PathEntropy::allocVariables(int nf, std::vector<double> &entk, std::vector<double> &entkTotal, std::vector<double> &entk2, std::vector<double> &entkTotal2, std::vector<double> &sigmak, struct FlagParameters &flagParameters)
 {
-    int K = flagParameters->n + 1;
+    int K = flagParameters.n + 1;
     
     if (K > nf)
     {
         K = nf;
-        flagParameters->n = K - 1;
+        flagParameters.n = K - 1;
     }
 
-	*sigmak = new double[K-1];
-
-	*entk = new double[K-1]; 
-	*entk2 = new double[K-1];
-    *entkTotal = new double[K-1];
-	*entkTotal2 = new double[K-1];
+	entk.resize(K-1);
+    entkTotal.resize(K-1);
+    entk2.resize(K-1);
+    entkTotal2.resize(K-1);
+    sigmak.resize(K-1);
 }
 
