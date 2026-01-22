@@ -755,30 +755,30 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
 
 	if(flagParameters.mutualInformation)
 	{
-		entropy->mi = new double*[entropy->nPairs];
-        entropy->mst1 = new int[entropy->nPairs];
-        entropy->mst2 = new int[entropy->nPairs];
-        entropy->mstw = new double[entropy->nPairs];
-		entropy->i1 = new int[entropy->nPairs];
-        entropy->i2 = new int[entropy->nPairs];
-        entropy->h2 = new double*[entropy->nPairs];
-        entropy->sd2 = new double*[entropy->nPairs];
-        entropy->dm2 = new double*[entropy->nPairs];
-        entropy->sdmi = new double*[entropy->nPairs];
-        entropy->dmmi = new double*[entropy->nPairs];
-        entropy->h2lm = new double[entropy->nPairs];
-        entropy->milm = new double[entropy->nPairs];
-        entropy->sd2lm = new double[entropy->nPairs];
-        entropy->dm2lm = new double[entropy->nPairs];
+		entropy->mi.resize(entropy->nPairs);
+        entropy->mst1.resize(entropy->nPairs);
+        entropy->mst2.resize(entropy->nPairs);
+        entropy->mstw.resize(entropy->nPairs);
+		entropy->i1.resize(entropy->nPairs);
+        entropy->i2.resize(entropy->nPairs);
+        entropy->h2.resize(entropy->nPairs);
+        entropy->sd2.resize(entropy->nPairs);
+        entropy->dm2.resize(entropy->nPairs);
+        entropy->sdmi.resize(entropy->nPairs);
+        entropy->dmmi.resize(entropy->nPairs);
+        entropy->h2lm.resize(entropy->nPairs);
+        entropy->milm.resize(entropy->nPairs);
+        entropy->sd2lm.resize(entropy->nPairs);
+        entropy->dm2lm.resize(entropy->nPairs);
     
         for(int i = 0; i < entropy->nPairs; i++)
         {
-            entropy->mi[i] = new double[nNearestNeighbours];
-            entropy->h2[i] = new double[nNearestNeighbours];
-            entropy->sd2[i] = new double[nNearestNeighbours];
-            entropy->dm2[i] = new double[nNearestNeighbours];
-            entropy->sdmi[i] = new double[nNearestNeighbours];
-            entropy->dmmi[i] = new double[nNearestNeighbours];
+            entropy->mi[i].resize(nNearestNeighbours);
+            entropy->h2[i].resize(nNearestNeighbours);
+            entropy->sd2[i].resize(nNearestNeighbours);
+            entropy->dm2[i].resize(nNearestNeighbours);
+            entropy->sdmi[i].resize(nNearestNeighbours);
+            entropy->dmmi[i].resize(nNearestNeighbours);
         }
 	}
 
