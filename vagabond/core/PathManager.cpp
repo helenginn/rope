@@ -451,6 +451,7 @@ double PathManager::pathEntropyInstancePair(int numPaths, std::vector<Path *> pa
     PathEntropy *pE = new PathEntropy();
     struct Entropy* entropy;
     struct FlagParameters flagPar = pE->initFlagPar();
+    flagPar.mist = true;
 
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths);
 
@@ -516,6 +517,8 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
 					entropyData.dataMatrix(i, j) = entropy;
 					entropyData.dataMatrix(j, i) = entropy;
+
+                    entropyData.total.push_back(entropy);
 				}
             }
 		}
