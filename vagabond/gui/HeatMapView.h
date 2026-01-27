@@ -4,26 +4,29 @@
 #include <mutex>
 #include <vagabond/core/Entropy.h>
 #include <vagabond/utils/Eigen/Dense>
+#include <vagabond/gui/elements/DragResponder.h>
 
 class MatrixPlot;
+class Slider;
 
-class HeatMapView : public Scene
+class HeatMapView : public Scene, public DragResponder
 {
 public:
     HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy);
 
     virtual void setup();
+    void setupSlider(int timeDivisions);
+
+    virtual void finishedDragging(std::string tag, double x);
 
 private:
     struct EntropyForHeatMap _entropy;
 
     PCA::Matrix _pcaMatrix{};
-    PCA::Matrix _weirdMatrix{};
     
     MatrixPlot *_plot;
-    MatrixPlot *_weird;
+    Slider *_rangeSlider;
     std::mutex _mutex;
-    std::mutex _wMutex;
 };
 
 #endif
