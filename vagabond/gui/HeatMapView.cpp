@@ -13,9 +13,9 @@ HeatMapView::HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy) :
 
 void HeatMapView::setup()
 {
-    if (_entropy.dataMatrix.size() == 0)
+    if (_entropy.timeDivisions > 1)
     { 
-//        return;
+        setupSlider(int _entropy.timeDivisions);
     }
 
     int rows = _entropy.dataMatrix.rows();
@@ -32,6 +32,8 @@ void HeatMapView::setup()
         {
             _entropy.dataMatrix(i,j)-=meanEntropy;
             _entropy.dataMatrix(i,j)/=stdEntropy;
+
+            _entropy.dataMatrix(i,j)-=0.5;
         }
     }
 
@@ -40,4 +42,14 @@ void HeatMapView::setup()
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
     addObject(_plot);
+}
+
+void HeatMapView::setupSlider(int timeDivisions);
+{
+    Slider *s = new Slider();
+    s->setDragResponder(this);
+    s->resize(0.5);
+    s->setup("Route point number", 1, timeDivisions, 1);
+    s->setCentre(0.5, 0.85);
+    addObject(s);
 }
