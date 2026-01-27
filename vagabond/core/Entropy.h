@@ -10,6 +10,8 @@ struct EntropyForHeatMap
 {
     static std::mutex *mutex;
 
+    int timeDivisions;
+
     ~EntropyForHeatMap()
     {
     }
