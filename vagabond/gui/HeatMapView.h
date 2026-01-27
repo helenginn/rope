@@ -41,7 +41,6 @@ private:
     Slider *_rangeSlider;
 
     std::mutex _mutex;
-    std::mutex _wMutex;
 };
 
 #endif

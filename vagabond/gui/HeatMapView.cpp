@@ -230,3 +230,13 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	setInformation(names.first + " vs " + names.second);
 	Scene::mousePressEvent(x, y, button);
 }
+
+void HeatMapView::setupSlider(int timeDivisions);
+{
+    Slider *s = new Slider();
+    s->setDragResponder(this);
+    s->resize(0.5);
+    s->setup("Route point number", 1, timeDivisions, 1);
+    s->setCentre(0.5, 0.85);
+    addObject(s);
+}
