@@ -78,6 +78,7 @@ if is_native  # Native builds
 
   # Additional subdirectories for native builds
   subdir('vagabond/untangle')
+  subdir('vagabond/mabscape')
 
   executable('rope.gui', 'vagabond/gui/main.cpp',
     link_with: [gui, core],

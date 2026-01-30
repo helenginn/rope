@@ -20,13 +20,12 @@
 #define __vagabond__AddModel__
 
 #include <vagabond/gui/elements/TextButton.h>
-#include "FileView.h"
 #include "AddObject.h"
 #include <vagabond/core/Model.h>
 
 class TextEntry;
 
-class AddModel : public AddObject<Model>, public Responder<FileView>
+class AddModel : public AddObject<Model>
 {
 public:
 	AddModel(Scene *prev, Model *chosen);

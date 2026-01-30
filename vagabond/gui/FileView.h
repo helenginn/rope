@@ -27,22 +27,12 @@
 
 class FileManager;
 
-/*
-class FileViewResponder : public virtual Scene
-{
-public:
-	FileViewResponder(Scene *prev) {}
-	virtual ~FileViewResponder() {};
-	virtual void fileChosen(std::string filename) = 0;
-};
-*/
-
 class FileView : public ListView, public Responder<FileManager>,
 public HasResponder<Responder<FileView> >
 {
 public:
 	FileView(Scene *prev);
-	FileView(Scene *prev, Responder<FileView> *resp, bool choose);
+	FileView(Scene *prev, const std::function<void(std::string)> &handle);
 	
 	void globRefresh();
 	void filterForTypes(File::Type type);
@@ -64,6 +54,7 @@ public:
 private:
 	void loadFilesFrom(int start, int num);
 	FileManager *_manager;
+	std::function<void(std::string)> _handle{};
 };
 
 #endif

@@ -21,11 +21,9 @@
 
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/gui/Fetcher.h>
-#include "FileView.h"
 #include <thread>
 
-class EntityFromSequence : public Scene, public Fetcher,
-public Responder<FileView>
+class EntityFromSequence : public Scene, public Fetcher
 {
 public:
 	EntityFromSequence(Scene *prev);

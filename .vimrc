@@ -1,4 +1,4 @@
-set path=vagabond/core/**,vagabond/gui/**,vagabond/gui/elements/**,vagabond/utils/**,vagabond/cmd/**,vagabond/c4x/**,vagabond/untangle/**,vagabond/core/protonic/**
+set path=vagabond/core/**,vagabond/gui/**,vagabond/gui/elements/**,vagabond/utils/**,vagabond/cmd/**,vagabond/c4x/**,vagabond/untangle/**,vagabond/core/protonic/**,vagabond/mabscape/**
 
 command! Tags !ctags -R vagabond/core/* vagabond/gui/* vagabond/utils/* vagabond/c4x/* vagabond/core/paths/* vagabond/core/protonic/*
 

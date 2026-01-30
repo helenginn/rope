@@ -27,6 +27,7 @@
 #include <vagabond/utils/FileReader.h>
 
 #include "EntityFromSequence.h"
+#include "FileView.h"
 #include "FastaView.h"
 #include "AddEntity.h"
 
@@ -144,7 +145,13 @@ void EntityFromSequence::buttonPressed(std::string tag, Button *button)
 	
 	if (tag == "fasta")
 	{
-		FileView *view = new FileView(this, this, true);
+		auto view_fasta = [this](std::string filename)
+		{
+			FastaView *fv = new FastaView(this, filename, true);
+			fv->show();
+		};
+
+		FileView *view = new FileView(this, view_fasta);
 		view->filterForTypes(File::Sequence);
 		view->show();
 	}

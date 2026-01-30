@@ -45,10 +45,9 @@ FileView::FileView(Scene *prev) : ListView(prev)
 	_manager->HasResponder<Responder<FileManager>>::setResponder(this);
 }
 
-FileView::FileView(Scene *prev, Responder<FileView> *resp, bool choose) 
-: ListView(prev)
+FileView::FileView(Scene *prev, const std::function<void(std::string)> &handle)
+: ListView(prev), _handle(handle)
 {
-	setResponder(resp);
 	_manager = Environment::fileManager();
 	_manager->setFilterType(File::Nothing);
 	_manager->HasResponder<Responder<FileManager>>::setResponder(this);
@@ -202,7 +201,6 @@ void FileView::handleFileWithoutChoice(std::string filename)
 
 void FileView::returnToResponder(std::string filename)
 {
-	Scene::back();
 	sendResponse(filename, nullptr);
 }
 
@@ -214,7 +212,7 @@ void FileView::buttonPressed(std::string tag, Button *button)
 
 	if (filename.length())
 	{
-		if (responderCount() == 0)
+		if (!_handle)
 		{
 			if (_left)
 			{
@@ -227,7 +225,8 @@ void FileView::buttonPressed(std::string tag, Button *button)
 		}
 		else
 		{
-			returnToResponder(filename);
+			Scene::back();
+			_handle(filename);
 		}
 	}
 
