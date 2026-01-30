@@ -28,8 +28,14 @@ zlib = dependency('zlib')
 
 # Dependency groups
 header_deps = [glm, json]
-core_deps = [curl, fftw, gemmi, thread_dep, zlib]
-graphics_deps = [gl, glew, sdl2, sdl2image]
+core_deps = [gemmi, thread_dep]
+graphics_deps = []
+
+if is_native
+  core_deps = [curl, fftw, gemmi, thread_dep, zlib]
+  graphics_deps = [gl, glew, sdl2, sdl2image]
+endif
+
 cli_deps = [header_deps, core_deps]
 gui_deps = [header_deps, core_deps, graphics_deps]
 
@@ -56,6 +62,7 @@ if is_native  # Native builds
 
   # Additional subdirectories for native builds
   subdir('vagabond/untangle')
+  subdir('vagabond/mabscape')
 
   executable('rope.gui', 'vagabond/gui/main.cpp',
     link_with: [gui, core],

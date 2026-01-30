@@ -23,9 +23,8 @@
 //#define VERSION_EXTEND_ENTITY_MENU
 
 #ifndef __EMSCRIPTEN__
-#define VERSION_REFINEMENT
 #define VERSION_PROTON_NETWORK
-//#define VERSION_MUTATE
+#define MULTI_MOLECULE_PATH
 #endif
 
 #endif

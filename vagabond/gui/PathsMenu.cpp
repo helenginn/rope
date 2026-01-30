@@ -21,6 +21,7 @@
 #include <vagabond/gui/elements/AskYesNo.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ConfSpaceView.h>
+#include <vagabond/utils/version.h>
 #include "WholeModelPathSetupView.h"
 #include "SavedSpace.h"
 #include "RopeSpaceItem.h"
@@ -238,11 +239,13 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 	{
 		if (_left)
 		{
+			std::cout << "THERE!" << std::endl;
 			MakeNewPaths *mnp = new MakeNewPaths(this, _entity);
 			mnp->show();
 		}
 		else
 		{
+			std::cout << "HERE!" << std::endl;
 			WholeModelPathSetupView *wmpsv = new WholeModelPathSetupView(this);
 			wmpsv->show();
 		}

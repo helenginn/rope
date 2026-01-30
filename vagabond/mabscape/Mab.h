@@ -16,33 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityFromSequence__
-#define __vagabond__EntityFromSequence__
+#ifndef __vagabond__Mab__
+#define __vagabond__Mab__
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
-#include <thread>
+class AtomGroup;
+class Metadata;
 
-class EntityFromSequence : public Scene, public Fetcher
+struct Antigen
 {
-public:
-	EntityFromSequence(Scene *prev);
-	~EntityFromSequence();
+	std::string filename{};
+	std::string title{};
+	AtomGroup *atoms{};
+};
 
-	virtual void setup();
+struct Competition
+{
+	std::string filename{};
+	Metadata *metadata{};
 
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual std::string toURL(std::string query);
-	virtual void processResult(std::string seq);
-	virtual void handleError();
-	
-	virtual void doThings();
-protected:
-	virtual void sendObject(std::string tag, void *object);
-private:
-	void makePeptide(std::string text);
+};
 
-	std::string _url;
+struct Mab
+{
+	Antigen antigen{};
+	Competition competition{};
 
 };
 

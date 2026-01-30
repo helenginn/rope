@@ -16,34 +16,30 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityFromSequence__
-#define __vagabond__EntityFromSequence__
+#include "MabscapeWindow.h"
+#include "MabscapeSetup.h"
+#include <vagabond/core/Environment.h>
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
-#include <thread>
-
-class EntityFromSequence : public Scene, public Fetcher
+MabscapeWindow::MabscapeWindow() : Window()
 {
-public:
-	EntityFromSequence(Scene *prev);
-	~EntityFromSequence();
+	Environment::env() = Environment();
 
-	virtual void setup();
+}
 
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual std::string toURL(std::string query);
-	virtual void processResult(std::string seq);
-	virtual void handleError();
+void MabscapeWindow::setup(int argc, char **argv)
+{
+	windowSetup();
+
+	MabscapeSetup *view = new MabscapeSetup();
 	
-	virtual void doThings();
-protected:
-	virtual void sendObject(std::string tag, void *object);
-private:
-	void makePeptide(std::string text);
+	if (argc > 1)
+	{
+		for (int i = 1; i < argc; i++)
+		{
+			view->load(argv[i]);
+		}
+	}
 
-	std::string _url;
-
-};
-
-#endif
+	setCurrentScene(view, true);
+	_first = view;
+}

@@ -192,13 +192,23 @@ void AddModel::buttonPressed(std::string tag, Button *button)
 	_lastTag = tag;
 	if (tag == "choose_initial_file")
 	{
-		FileView *view = new FileView(this, this, true);
+		auto set_filename = [this](std::string name)
+		{
+			_obj.setFilename(name);
+		};
+
+		FileView *view = new FileView(this, set_filename);
 		view->filterForTypes(File::MacroAtoms);
 		view->show();
 	}
 	else if (tag == "choose_data_file")
 	{
-		FileView *view = new FileView(this, this, true);
+		auto set_datafile = [this](std::string name)
+		{
+			_obj.setDataFile(name);
+		};
+
+		FileView *view = new FileView(this, set_datafile);
 		view->filterForTypes(File::Reflections);
 		view->show();
 	}

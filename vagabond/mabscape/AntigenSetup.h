@@ -16,33 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityFromSequence__
-#define __vagabond__EntityFromSequence__
+#ifndef __vagabond__AntigenSetup__
+#define __vagabond__AntigenSetup__
 
 #include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
-#include <thread>
+#include "Mab.h"
 
-class EntityFromSequence : public Scene, public Fetcher
+class FileManager;
+
+
+class AntigenSetup : public Scene
 {
 public:
-	EntityFromSequence(Scene *prev);
-	~EntityFromSequence();
+	AntigenSetup(Scene *scene, Antigen &antigen);
+	void prepareChoosePDB();
+	void prepareChooseTitle();
 
-	virtual void setup();
-
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual std::string toURL(std::string query);
-	virtual void processResult(std::string seq);
-	virtual void handleError();
-	
-	virtual void doThings();
-protected:
-	virtual void sendObject(std::string tag, void *object);
+	void setup();
+	void refresh();
 private:
-	void makePeptide(std::string text);
-
-	std::string _url;
+	Antigen &_antigen;
 
 };
 

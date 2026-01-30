@@ -16,38 +16,50 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__AddModel__
-#define __vagabond__AddModel__
-
 #include <vagabond/gui/elements/TextButton.h>
-#include "AddObject.h"
-#include <vagabond/core/Model.h>
+#include "MabscapeSetup.h"
+#include "AntigenSetup.h"
+#include "CompetitionSetup.h"
 
-class TextEntry;
-
-class AddModel : public AddObject<Model>
+MabscapeSetup::MabscapeSetup() : Scene(nullptr)
 {
-public:
-	AddModel(Scene *prev, Model *chosen);
-	AddModel(Scene *prev);
-	~AddModel();
 
-	virtual void setup();
+}
+
+void MabscapeSetup::load(const std::string &command)
+{
+
+}
+
+void MabscapeSetup::setup()
+{
+	addTitle("Mabscape epitope mapping setup");
 	
-	const Model &model() const
+	auto setup_antigen = [this]()
 	{
-		return _obj;
+		AntigenSetup *as = new AntigenSetup(this, _mab.antigen);
+		as->show();
+	};
+	
+	auto setup_competition_data = [this]()
+	{
+		CompetitionSetup *cs = 
+		new CompetitionSetup(this, _mab.competition);
+		cs->show();
+	};
+
+	{
+		TextButton *tb = new TextButton("Antigen details", this);
+		tb->setLeft(0.2, 0.3);
+		tb->setReturnJob(setup_antigen);
+		addObject(tb);
 	}
 
-	void refreshInfo();
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual void sendObject(std::string filename, void *object);
-private:
-	void fileTextOrChoose(std::string &file, std::string other = "Choose...");
-	TextButton *_initialFile = nullptr;
-	TextButton *_initialData = nullptr;
-	TextEntry *_name = nullptr;
-	std::string _lastTag;
-};
+	{
+		TextButton *tb = new TextButton("Competition data", this);
+		tb->setLeft(0.2, 0.4);
+		tb->setReturnJob(setup_competition_data);
+		addObject(tb);
+	}
+}
 
-#endif

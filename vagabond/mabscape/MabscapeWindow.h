@@ -16,33 +16,23 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__EntityFromSequence__
-#define __vagabond__EntityFromSequence__
+#ifndef __vagabond__MabscapeWindow__
+#define __vagabond__MabscapeWindow__
 
-#include <vagabond/gui/elements/Scene.h>
-#include <vagabond/gui/Fetcher.h>
-#include <thread>
+#include <vagabond/gui/elements/Window.h>
 
-class EntityFromSequence : public Scene, public Fetcher
+class MabscapeWindow : public Window
 {
 public:
-	EntityFromSequence(Scene *prev);
-	~EntityFromSequence();
+	MabscapeWindow();
 
-	virtual void setup();
+	virtual void setup(int argc, char **argv);
 
-	virtual void buttonPressed(std::string tag, Button *button = nullptr);
-	virtual std::string toURL(std::string query);
-	virtual void processResult(std::string seq);
-	virtual void handleError();
-	
-	virtual void doThings();
-protected:
-	virtual void sendObject(std::string tag, void *object);
+	virtual void extraWindowFlags(unsigned int &flags)
+	{
+		flags += SDL_WINDOW_RESIZABLE;
+	}
 private:
-	void makePeptide(std::string text);
-
-	std::string _url;
 
 };
 
