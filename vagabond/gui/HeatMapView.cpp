@@ -5,6 +5,7 @@
 #include <vagabond/utils/maths.h>
 #include <HeatMapView.h>
 #include <MatrixPlot.h>
+#include <ColourLegend.h>
 
 HeatMapView::HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy) : Scene(prev), _entropy(entropy)
 {
@@ -15,7 +16,7 @@ void HeatMapView::setup()
 {
     if (_entropy.timeDivisions > 1)
     { 
-        setupSlider(int _entropy.timeDivisions);
+        setupSlider(_entropy.timeDivisions);
     }
 
     int rows = _entropy.dataMatrix.rows();
@@ -41,6 +42,8 @@ void HeatMapView::setup()
 	printMatrix(&_pcaMatrix);
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
+
+    _plot->legend()->setScheme(Heat);
     addObject(_plot);
 }
 
