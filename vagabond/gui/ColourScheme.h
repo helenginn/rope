@@ -39,6 +39,11 @@ public:
 	{
 		return _scheme;
 	}
+
+    void setScheme(Scheme scheme)
+    {
+        _scheme = scheme;
+    }
 	
 	/* create vertices/indices to display colour scheme */
 	void setup();
@@ -46,10 +51,6 @@ protected:
 	bool _vert = false;
 private:
 	bool sanitisePoints();
-	void setScheme(Scheme scheme)
-	{
-		_scheme = scheme;
-	}
 
 	struct FixedPoint
 	{
