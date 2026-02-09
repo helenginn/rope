@@ -9,8 +9,8 @@
 struct Entropy {
 int nSingle{};
 int nPairs{};
-int nNearestNeighbours{};
 int nEdges{};
+int nNearestNeighbours{};
 std::vector<std::vector<double>> h1{};
 std::vector<std::vector<double>> sd1{};
 std::vector<std::vector<double>> dm1{};
@@ -41,6 +41,9 @@ double meanDistTotalEntropy{};
 std::vector<double> entResidue{};
 };
 
+struct EntropyForMatrix {
+    std::vector<double> totalEntropy{};
+};
 
 struct TorsRes4NN {
 	int nModels{};
@@ -48,7 +51,7 @@ struct TorsRes4NN {
     std::vector<double> bondSymmetry{};
 	std::vector<std::string> torsName{};
     std::vector<std::string> desc{};
-    std::vector<std::vector<double>> ang{};
+    std::vector<std::vector<std::vector<double>>> ang{};
 	std::vector<glm::vec3> v{};
 	int resID{};
 };
@@ -79,15 +82,17 @@ public:
 	/* default flag parameters as chosen in pdb2entropy programme */
 	struct FlagParameters initFlagPar();
 
-	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<Path*> paths);
+	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<Path*> paths, int numDivisions = 1);
 
-	struct Entropy* calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
-    struct Entropy* calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes);
+	struct EntropyForMatrix calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
+    struct EntropyForMatrix calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
 
 	/* linear weighting function */
 	int fitlw(std::vector<double> x, std::vector<double> y, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd);
 
     int torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters);
+
+    void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, int nf, int numResPerModel, int K, int timeDivisions = 1);
 
     /* kruskal algorithm */
     void kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters);
