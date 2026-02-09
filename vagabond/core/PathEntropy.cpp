@@ -83,7 +83,6 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 		for(int j = 0; j < validBondT.size(); j++)
 		{
-
             for(int l = 0; l < numDivisions; l++)
             {
 			    torsRes[i]->ang[l].push_back(std::vector<double>(numPaths, 0));
@@ -158,7 +157,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 	/* for each residue, compute entropy, sd and dm for the residue
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
-
 
     for(int n = 0; n < numDivisions; n++)
     {
@@ -552,6 +550,150 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
     //outputALA.close();
     outputLR.close();
+}
+
+void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, int nf, int numResPerModel, int K, int timeDivisions)
+{ 
+    std::vector<std::vector<double>> phit(nf); 
+    std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
+
+    for(int m = 0; m < numResPerModel; m++)
+	{	
+        if (torsRes[m]->nAng > 0)
+			{
+				for(int i = 0; i < nf; i++)
+				{
+					phit[i] = std::vector<double> (torsRes[m]->nAng);
+
+					for (int j = 0; j < torsRes[m]->nAng; j++)
+					{
+						phit[i][j] = torsRes[m]->ang[j][i][timeDivisions];
+						numTors++;
+					}
+				}
+				
+				std::vector<double> meanDist(K);
+				std::vector<double> meanLogDist(K);            
+
+				for(int i = 0; i < K-1; i++)
+				{
+					entk[i] = 0;
+					entk2[i] = 0;
+				}
+
+				/* calculate the distance between samples in the nAng - dimensional
+				   space of torsion angles */
+
+				std::vector<double> d(nf);
+
+				for(int i = 0; i < nf; i++)
+				{
+				   
+					for(int j = 0; j < nf; j++)
+					{
+						d[j] = dist_ang(phit[i], phit[j], torsRes[m]->nAng, torsRes[m]->bondSymmetry);
+						d[j] = deg2rad(d[j]);
+					}
+
+					/* sort the distances */
+					std::sort(d.begin(), d.end());
+
+					/* apply the entropy calculation based on the nearest neighbour */
+					for(int k = 1; k < K; k++)
+					{
+						/* if the distance is less than a pre-set value, reset the 
+						 * distance to the pre-set values, to avoid NaNs */
+
+						double logdk;
+
+						if(d[k] < flagParameters.minres)
+						{
+							logdk = log(flagParameters.minres);
+						}
+						else
+						{
+							logdk = log(d[k]);
+						}
+
+						entk2[k-1] = entk2[k-1] + logdk*logdk;
+						entk[k-1] = entk[k-1] + logdk;
+						meanDist[k] = meanDist[k] + d[k];
+						meanLogDist[k] = meanLogDist[k] + logdk;
+					}
+				}
+
+				for(int k = 1; k < K; k++)
+				{
+					entk[k-1] = entk[k-1] * ((double) torsRes[m]->nAng / (double) nf);
+					entk2[k-1] = entk2[k-1] * (double) torsRes[m]->nAng * (double) torsRes[m]->nAng / (double) nf;
+				}
+
+				double c = 0.0;
+				int L = 0;
+
+				for(int k = 0; k < torsRes[m]->nAng; k++)
+				{
+					c = c - log(torsRes[m]->bondSymmetry[k] * M_PI / 180.0);
+				}
+					
+				c = c + (((double) torsRes[m]->nAng) * log(M_PI)/2.0) - lgamma(1.0 +  ((double) torsRes[m]->nAng)/2.0) + 0.5722 + log((double) nf);
+
+				for(int k = 1; k < K; k++)
+				{
+					// before adding c-L compute sd
+					entkTotal2[k-1] = entkTotal2[k-1] + entk2[k-1] - entk[k-1]*entk[k-1];
+					sigmak[k-1] = sqrt(entk2[k-1] - entk[k-1]*entk[k-1]);
+					entk[k-1] = entk[k-1] + c - L;
+					L = L + 1/k;
+
+					meanDist[k] = meanDist[k] / (double) nf;
+					meanLogDist[k] = meanLogDist[k] / (double) nf;
+
+					entropy->h1[m][k-1] = entk[k-1];
+					entropy->dm1[m][k-1] = meanDist[k];
+					entropy->sd1[m][k-1] = sigmak[k-1];
+					entropy->pathTotal[k-1] = entropy->pathTotal[k-1] + entk[k-1];
+					entropy->sigmaTotal[k-1] = entropy->sigmaTotal[k-1] + entropy->sd1[m][k-1] * entropy->sd1[m][k-1];
+					entropy->meanDistTotal[k-1] = entropy->meanDistTotal[k-1] + entropy->dm1[m][k-1] * entropy->dm1[m][k-1];
+				}
+
+				int weightCheck = 1;
+
+				std::vector<double> x(K-1);
+				std::vector<double> y(K-1);
+				std::vector<double> w(K-1);
+
+				for(int k = 0; k < K-1; k++)
+				{
+					y[k] = entk[k];
+					x[k] = meanDist[k+1];
+
+					if(sigmak[k] > 1e-12)
+						w[k] = 1/(sigmak[k] * sigmak[k]);
+					else
+						weightCheck = 0;
+				}
+
+				/* if one of the weights for the linear fit is infinite,
+				 * set all weights to 1 */
+				if(weightCheck == 0)
+				{
+					for(int k = 0; k < K-1; k++)
+						w[k] = 1;
+				}
+
+				std::vector<double> a(2);
+				std::vector<double> sd(2);
+
+				fitlw(y, x, w, K-1,a,sd);
+
+				entropy->h1lm[m] = a[0];
+				entropy->sd1lm[m] = sd[0];
+				//entropy->dm1lm[m] = meanDist[1]/sqrt((double) torsRes[m]->nAng);
+				entropy->totalEntropy = entropy->totalEntropy + a[0];
+	    }
+    }          
+
 }
 
 /* linear weighting function */

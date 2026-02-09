@@ -84,6 +84,7 @@ public:
 	struct FlagParameters initFlagPar();
 
 	std::vector<TorsRes4NN*> getAtomsAndResidues(const int numPaths, const std::vector<Path*> paths, int numDivisions = 1);
+
 	struct EntropyForMatrix calculateEntropyIndependent(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
     struct EntropyForMatrix calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
 	/* linear weighting function */
@@ -92,6 +93,8 @@ public:
     void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters, int timeDivisions = 1);
 
     void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct EntropyKL* entropy, struct FlagParameters flagParameters, int &nTors, int nf, int numResPerModel, int K, int timeDivisions = 1);
+
+    void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, int nf, int numResPerModel, int K, int timeDivisions = 1);
 
     /* kruskal algorithm */
     void kruskal(struct EntropyKL *entropy, int *group2res, struct FlagParameters flagParameters);
