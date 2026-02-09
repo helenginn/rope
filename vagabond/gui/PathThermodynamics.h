@@ -25,8 +25,6 @@ class Path;
 class Entity;
 class PathEntropy;
 
-struct Entropy;
-
 class PathThermodynamics : public Scene
 {
 public:
@@ -45,8 +43,6 @@ private:
 	Entity *_entity = nullptr;
 	PathEntropy *_pathEntropy = nullptr;
 	std::vector<Path *> _paths;
-
-	struct Entropy *_entropy;
 
 	static int _numPaths;
 	int _samples = 0;
