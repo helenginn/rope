@@ -231,7 +231,7 @@ void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent butto
 	Scene::mousePressEvent(x, y, button);
 }
 
-void HeatMapView::setupSlider(int timeDivisions);
+void HeatMapView::setupSlider(int timeDivisions)
 {
     Slider *s = new Slider();
     s->setDragResponder(this);
