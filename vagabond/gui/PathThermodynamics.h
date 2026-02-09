@@ -28,8 +28,6 @@ class PathGroup;
 class Entity;
 class PathEntropy;
 
-struct Entropy;
-
 class PathThermodynamics : public Scene
 {
 public:
