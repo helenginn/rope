@@ -1,5 +1,6 @@
 #include <vagabond/gui/TableView.h>
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/Slider.h>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/utils/maths.h>
@@ -47,7 +48,7 @@ void HeatMapView::setup()
     addObject(_plot);
 }
 
-void HeatMapView::setupSlider(int timeDivisions);
+void HeatMapView::setupSlider(int timeDivisions)
 {
     Slider *s = new Slider();
     s->setDragResponder(this);
