@@ -17,7 +17,7 @@ public:
     virtual void setup();
     void setupSlider(int timeDivisions);
 
-    virtual void finishedDragging(std::string tag, double x);
+    virtual void finishedDragging(std::string tag, double x, double y);
 
 private:
     struct EntropyForHeatMap _entropy;
