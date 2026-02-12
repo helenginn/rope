@@ -57,3 +57,7 @@ void HeatMapView::setupSlider(int timeDivisions)
     s->setCentre(0.5, 0.85);
     addObject(s);
 }
+
+void HeatMapView::finishedDragging(std::string tag, double x, double y)
+{
+}
