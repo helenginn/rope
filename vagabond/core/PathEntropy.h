@@ -94,7 +94,7 @@ public:
 
     void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct EntropyKL* entropy, struct FlagParameters flagParameters, int &nTors, int nf, int numResPerModel, int K, int timeDivisions = 1);
 
-    void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, int nf, int numResPerModel, int K, int timeDivisions = 1);
+    void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, struct FlagParameters flagParameters, int &nTors, int nf, int numResPerModel, int K, int timeDivisions = 1);
 
     /* kruskal algorithm */
     void kruskal(struct EntropyKL *entropy, int *group2res, struct FlagParameters flagParameters);

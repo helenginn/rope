@@ -151,6 +151,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 {
 	int numResPerModel = torsRes.size();
 	int numTors = 0;
+
     struct EntropyForMatrix ent4Matrix;
     int K = flagParameters.n + 1;
 
@@ -552,11 +553,13 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     outputLR.close();
 }
 
-void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, int nf, int numResPerModel, int K, int timeDivisions)
+void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, struct FlagParameters flagParameters, int &numTors, int nf, int numResPerModel, int K, int timeDivisions)
 { 
     std::vector<std::vector<double>> phit(nf); 
     std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
 
+    allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
+    
     for(int m = 0; m < numResPerModel; m++)
 	{	
         if (torsRes[m]->nAng > 0)
