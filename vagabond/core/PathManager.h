@@ -68,7 +68,7 @@ public:
         return _callback;
     };
 
-    const std::function<void(struct EntropyForHeatMap &)> &callback() const
+    const std::function<void(std::vector<struct EntropyForHeatMap> &)> &callback() const
     {
         return _callback;
     };

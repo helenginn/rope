@@ -648,7 +648,6 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 {
     PathEntropy *pE = new PathEntropy();
     std::vector<double> entropy;
-
     struct FlagParameters flagPar = pE->initFlagPar();
     flagPar.mist = true;
 
@@ -700,7 +699,7 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
         } 
     }
 
-    struct EntropyForHeatMap entropyData = {};
+    std::vector<struct EntropyForHeatMap> entropyData(numDivisions);
 
     entropyData.numDivisions = numDivisions; 
 
@@ -715,6 +714,7 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
     }
 
     Progressor *prog = new Progressor();
+
 
 	for (int i = 0; i < allInstances.size(); i++)
 	{
