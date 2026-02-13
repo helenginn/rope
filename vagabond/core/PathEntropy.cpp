@@ -125,7 +125,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
         {
             float time = (l+1)/((double) numDivisions+1.0);
 
-			workingPath->submitJobAndRetrieve(time, true);
+		//	workingPath->submitJobAndRetrieve(time, true);
 
 			for (int j = 0; j < torsRes.size(); j++)
 			{
@@ -136,6 +136,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 
 					torsRes[j]->ang[l][k][i] = param->empiricalMeasurement();
 				}
+
 			}
         }
 	}
@@ -559,7 +560,9 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
 
     allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
-    
+   
+    std::ofstream outputLR("linear_regression.csv");
+ 
     for(int m = 0; m < numResPerModel; m++)
 	{	
         if (torsRes[m]->nAng > 0)
@@ -570,7 +573,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
 					for (int j = 0; j < torsRes[m]->nAng; j++)
 					{
-						phit[i][j] = torsRes[m]->ang[j][i][timeDivisions];
+						phit[i][j] = torsRes[m]->ang[0][j][i];
 						numTors++;
 					}
 				}
@@ -671,6 +674,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					y[k] = entk[k];
 					x[k] = meanDist[k+1];
 
+                    outputLR << "entk[" << k << "], " << y[k] << "\t" << "meanDist[" << k+1 << "], " << x[k] << std::endl;
 					if(sigmak[k] > 1e-12)
 						w[k] = 1/(sigmak[k] * sigmak[k]);
 					else
@@ -690,6 +694,8 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
 				fitlw(y, x, w, K-1,a,sd);
 
+                outputLR << std::endl << "Intercept: " << a[0] << "\t" << "Slope: " << a[1] << "\n\n";
+
 				entropy->h1lm[m] = a[0];
 				entropy->sd1lm[m] = sd[0];
 				//entropy->dm1lm[m] = meanDist[1]/sqrt((double) torsRes[m]->nAng);
@@ -697,6 +703,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 	    }
     }          
 
+    outputLR.close();
 }
 
 /* linear weighting function */
