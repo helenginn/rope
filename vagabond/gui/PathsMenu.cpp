@@ -19,6 +19,7 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskYesNo.h>
+#include <vagabond/gui/elements/MultiOptions.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/elements/TickBoxes.h>
@@ -400,16 +401,16 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
     if (tag == "menu_map_entropy")
     {
-        AskMultipleChoice *amc = new AskMultipleChoice(this, "Select calculation parameters", "mist", this);
-        amc->addChoice("Use MIST?", "mist");
-        setModal(amc);
+        MultiOptions *mo = new MultiOptions(this, "Select calculation parameters", "params", this);
+        mo->addYesNo("Use MIST?");
+        setModal(mo);
 
-        struct EntropyForHeatMap entropyData = {};
+        std::vector<struct EntropyForHeatMap> entropyData = {};
         
         std::cout << "adding job" << std::endl;
 
-        std::function<void(EntropyForHeatMap &)> callback;
-		callback = [this](EntropyForHeatMap &entropyData)
+        std::function<void(std::vector<EntropyForHeatMap> &)> callback;
+		callback = [this](std::vector<EntropyForHeatMap> &entropyData)
 		{
 			addMainThreadJob([this, entropyData]()
 					{

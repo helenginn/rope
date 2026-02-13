@@ -49,12 +49,12 @@ public:
 
 	void housekeeping();
 
-    void setEntropyCallback(const std::function<void(struct EntropyForHeatMap &)> &callback)
+    void setEntropyCallback(std::function<void(std::vector<struct EntropyForHeatMap> &)> &callback)
     {
         _callback = callback;
     }
 
-    const std::function<void(struct EntropyForHeatMap &)> &callback() const
+    const std::function<void(std::vector<struct EntropyForHeatMap> &)> &callback() const
     {
         return _callback;
     };
@@ -62,7 +62,7 @@ public:
 	void pathMatrix(const std::string &filename,
 	                const std::vector<std::string> &insts);
     void pathEntropyHeatMap(const std::vector<std::string> &args);
-    double pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, bool mist = false);
+    std::vector<double> pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int timeDivisions = 1, bool mist = false);
 	void makePathBetween(const std::string &start, const std::string &end,
 	                     int cycles = 1);
 	void obstacles(const std::vector<std::string> &insts);
@@ -76,7 +76,7 @@ public:
 	friend void from_json(const json &j, PathManager &value);
 private:
 	std::mutex *_addMutex = nullptr;
-    std::function<void(struct EntropyForHeatMap &)> _callback{};
+    std::function<void(std::vector<struct EntropyForHeatMap > &)> _callback{};
 };
 
 inline void to_json(json &j, const PathManager &value)
