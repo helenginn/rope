@@ -12,7 +12,7 @@ class Slider;
 class HeatMapView : public Scene, public DragResponder
 {
 public:
-    HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy);
+    HeatMapView(Scene *prev, const std::vector<struct EntropyForHeatMap> &entropy);
 
     virtual void setup();
     void setupSlider(int timeDivisions);
@@ -20,7 +20,7 @@ public:
     virtual void finishedDragging(std::string tag, double x, double y);
 
 private:
-    struct EntropyForHeatMap _entropy;
+    std::vector<struct EntropyForHeatMap> _entropy;
 
     PCA::Matrix _pcaMatrix{};
     
