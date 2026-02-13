@@ -8,38 +8,38 @@
 #include <MatrixPlot.h>
 #include <ColourLegend.h>
 
-HeatMapView::HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy) : Scene(prev), _entropy(entropy)
+HeatMapView::HeatMapView(Scene *prev, const std::vector<struct EntropyForHeatMap> &entropy) : Scene(prev), _entropy(entropy)
 {
 
 }
 
 void HeatMapView::setup()
 {
-    if (_entropy.timeDivisions > 1)
+    if (_entropy.size() > 1)
     { 
-        setupSlider(_entropy.timeDivisions);
+        setupSlider(_entropy.size());
     }
 
-    int rows = _entropy.dataMatrix.rows();
-    int cols = _entropy.dataMatrix.cols();
+    int rows = _entropy[0].dataMatrix.rows();
+    int cols = _entropy[0].dataMatrix.cols();
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
 
-    double meanEntropy = mean(_entropy.total);
-    double stdEntropy = standard_deviation(_entropy.total);
+    double meanEntropy = mean(_entropy[0].total);
+    double stdEntropy = standard_deviation(_entropy[0].total);
 
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
-            _entropy.dataMatrix(i,j)-=meanEntropy;
-            _entropy.dataMatrix(i,j)/=stdEntropy;
+            _entropy[0].dataMatrix(i,j)-=meanEntropy;
+            _entropy[0].dataMatrix(i,j)/=stdEntropy;
 
-            _entropy.dataMatrix(i,j)-=0.5;
+            _entropy[0].dataMatrix(i,j)-=0.5;
         }
     }
 
-    _pcaMatrix = PCA::Matrix(_entropy.dataMatrix);
+    _pcaMatrix = PCA::Matrix(_entropy[0].dataMatrix);
 	printMatrix(&_pcaMatrix);
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
