@@ -125,7 +125,7 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
 
             std::vector<double> entropyVec = entropy4Mat.totalEntropy;
 
-            double meanTotalEntropy = (std::accumulate(entropyVec.begin(), entropyVec.end(), 0))/entropyVec.size();
+            double meanTotalEntropy = (std::accumulate(entropyVec.begin(), entropyVec.end(), 0.0))/entropyVec.size();
 
 			std::string str = "Total: " +  std::to_string(meanTotalEntropy) + " (R units)\n" + "Per residue: " + std::to_string(meanTotalEntropy/torsRes.size()) + " (R units)";
 			displayEntropy(str);
