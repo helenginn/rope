@@ -647,3 +647,32 @@ int BondSequence::activeTorsions() const
 {
 	return _activeTorsions;
 }
+
+void BondSequence::generateTorsionLookupTable()
+{
+	for (int block_idx = 0; block_idx < _blocks.size(); block_idx++)
+	{
+		int torsion_idx = _blocks[block_idx].torsion_idx;
+		if (torsion_idx < 0)
+		{
+			continue;
+		}
+		
+		_torsion2Block[torsion_idx] += block_idx;
+	}
+}
+
+OpSet<int> BondSequence::blocksForTorsionIdx(int torsion_idx)
+{
+	if (_torsion2Block.size() == 0)
+	{
+		generateTorsionLookupTable();
+	}
+	
+	if (_torsion2Block.count(torsion_idx) == 0)
+	{
+		return {};
+	}
+	
+	return _torsion2Block[torsion_idx];
+}

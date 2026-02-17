@@ -110,6 +110,7 @@ public:
 	}
 	
 	int activeTorsions() const;
+	void generateTorsionLookupTable();
 	
 	TorsionBasis *torsionBasis() const
 	{
@@ -187,6 +188,8 @@ public:
 	void makeTorsionBasis();
 	
 	void generateBlocks();
+	
+	OpSet<int> blocksForTorsionIdx(int torsion_idx);
 
 	void getCalculationBoundaries(int &start, int &end);
 private:
@@ -236,6 +239,8 @@ private:
 	
 	Index::Convert _convertIndex = Index::identity();
 	int _activeTorsions = 0;
+	
+	std::map<int, OpSet<int>> _torsion2Block; // one-to-many
 
 	AtomPosMap _posAtoms;
 };
