@@ -21,7 +21,7 @@
 #include <float.h>
 #include <algorithm>
 #include <iostream>
-#include "MultiSimplex.h"
+#include "MultiEngineBase.h"
 
 SimplexEngine::SimplexEngine(RunsEngine *ref) : Engine(ref)
 {
@@ -364,7 +364,7 @@ void SimplexEngine::finish()
 	_finish = true;
 }
 
-void SimplexEngine::handleShrink(MultiEngine *ms, Task<void *, void *> *&first)
+void SimplexEngine::handleShrink(MultiEngineBase *ms, Task<void *, void *> *&first)
 {
 	Task<void *, void *> *before = nullptr;
 	for (int i = 0; i < pointCount(); i++)
@@ -406,7 +406,7 @@ void SimplexEngine::handleShrink(MultiEngine *ms, Task<void *, void *> *&first)
 
 Task<void *, void *> *
 SimplexEngine::taskedHandleJobs(Task<void *, void *> *before,
-                                MultiEngine *ms)
+                                MultiEngineBase *ms)
 {
 	for (int i = 0; i < pointCount(); i++)
 	{
@@ -436,7 +436,7 @@ SimplexEngine::taskedHandleJobs(Task<void *, void *> *before,
 	return after;
 }
 
-void SimplexEngine::prepareCycle(MultiEngine *ms)
+void SimplexEngine::prepareCycle(MultiEngineBase *ms)
 {	
 	_declare_done = [this, ms](void *)
 	{
@@ -545,7 +545,7 @@ void SimplexEngine::prepareCycle(MultiEngine *ms)
 	};
 }
 
-void SimplexEngine::taskedCycle(Task<void *, void *> *before, MultiEngine *ms)
+void SimplexEngine::taskedCycle(Task<void *, void *> *before, MultiEngineBase *ms)
 {
 	auto check_convergence = 
 	new Task<void *, void *>(_cycle, "start new cycle",
@@ -554,7 +554,8 @@ void SimplexEngine::taskedCycle(Task<void *, void *> *before, MultiEngine *ms)
 	before->must_complete_before(check_convergence);
 }
 
-Task<void *, void *> *SimplexEngine::taskedRun(MultiEngine *ms)
+// returns the "pre-run" task, but can also set up all other tasks
+Task<void *, void *> *SimplexEngine::taskedRun(MultiEngineBase *ms)
 {
 	_count = 0;
 	_shrinkCount = 0;
@@ -580,12 +581,12 @@ Task<void *, void *> *SimplexEngine::taskedRun(MultiEngine *ms)
 	},
 	"handle_baseline");
 	
-	auto *handleJobs = taskedHandleJobs(handle_baseline, ms);
-	taskedCycle(handleJobs, ms);
+	auto *handleJobs = taskedHandleJobs(handle_baseline, ms); // collect results
+	taskedCycle(handleJobs, ms); // decision tree + restart
 	
-	ms->addHangingTask(handle_baseline);
+	ms->addHangingTask(handle_baseline); 
 
-	return prerun;
+	return prerun; // preliminary
 	
 }
 
