@@ -19,7 +19,7 @@
 #ifndef __vagabond__MultiLBFGS__
 #define __vagabond__MultiLBFGS__
 
-#include "MultiEngine.h"
+#include "MultiEngineBase.h"
 
 template <class Key>
 class MultiLBFGS;
@@ -37,7 +37,7 @@ public:
 };
 
 template <class Key>
-class MultiLBFGS : public RunsEngine, public MultiEngine
+class MultiLBFGS : public RunsEngine, public MultiEngineBase
 {
 public:
 	MultiLBFGS(RunsMultiLBFGS<Key> *runs, int count)

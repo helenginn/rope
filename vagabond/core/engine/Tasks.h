@@ -124,7 +124,7 @@ public:
 
 	Handler::TaskPool _pool;
 	std::vector<BaseTask *> _bin;
-	bool back_default = false;
+	bool back_default = false; // put new jobs at the back or not
 	std::string name = "tasks";
 };
 

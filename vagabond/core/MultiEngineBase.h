@@ -16,43 +16,44 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "MultiEngine.h"
-#include "engine/Tasks.h"
+#ifndef __vagabond__MultiEngineBase__
+#define __vagabond__MultiEngineBase__
 
-MultiEngine::MultiEngine()
+#include <engine/Task.h>
+
+class Engine;
+class Tasks;
+class BaseTask;
+
+class MultiEngineBase
 {
-	_immediate = new Tasks();
-	_immediate->prepare_threads(1);
-	_immediate->name = "immediate";
-	_hanging = new Tasks();
-	_hanging->prepare_threads(1);
-	_hanging->back_default = true;
-	_hanging->name = "hanging";
-}
+public:
+	void addImmediateTask(BaseTask *bt);
+	void addHangingTask(BaseTask *bt);
+	
+	Tasks *const &immediate() const
+	{
+		return _immediate;
+	}
 
-void MultiEngine::clearTasks()
-{
-	_immediate->clear();
-	_hanging->clear();
+	Tasks *const &hanging() const
+	{
+		return _hanging;
+	}
+	
+	void clearTasks();
 
-}
+	virtual void declareDone(Engine *sender, const std::vector<float> &best) = 0;
+protected:
+	MultiEngineBase();
+	~MultiEngineBase();
+	
+	Tasks *_immediate = nullptr;
+	Tasks *_hanging = nullptr;
+	int _threads = 4;
 
-MultiEngine::~MultiEngine()
-{
-	_immediate->cleanup();
-	_hanging->cleanup();
-	delete _immediate;
-	delete _hanging;
-	_immediate = nullptr;
-	_hanging = nullptr;
-}
+private:
 
-void MultiEngine::addImmediateTask(BaseTask *bt)
-{
-	_immediate->addTask(bt);
-}
+};
 
-void MultiEngine::addHangingTask(BaseTask *bt)
-{
-	_hanging->addTask(bt);
-}
+#endif

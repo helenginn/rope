@@ -84,6 +84,7 @@ void LBFGSEngine::run()
 	lbfgs_parameter_t param;
 	
 	lbfgs_parameter_init(&param);
-	param.epsilon = 1e-14;
 	param.max_iterations = 10;
+	params.max_linesearch = 10;
+	
 }
