@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/core/TorsionData.h>
+#include "BondCalculator.h"
 #include <stdlib.h>
 #include <atomic>
 #include <map>
@@ -58,60 +59,28 @@ public:
 
     // === GUI-INTERFACED FUNCTIONS ===
     float submitJobAndRetrieve(float weight);
-    void generateAtomCloud();
-    std::string getFlexTag()
-    {
-        return  _flexTag;
-    }
-    void setColRangeUser(float min, float max)
-    {
-        _minCol = min;
-        _maxCol = max;
-    }
-    void setColumnIdx(int chosenIdx)
-    {
-        _colIdx = chosenIdx;
-    }
-    void setNumSamples(float num)
-    {
-        _numSamples = num;;
-    }
-
-
     // Getters for SVD components
     const Eigen::MatrixXf& getV() const { return _V; }
     const Eigen::VectorXf& getS() const { return _S; }
 
     void prepareResources();
+    Result* getResult()
+    {
+        return _resources.calculator->acquireObject();
+    }
     void addHBond(const HBondManager::HBondPair &hbondPair);
     void addVnWBond();
 
     // === FRONT-END CONTROL AND CONFIG ===
-    void setChosenWeight(const float &weight)
-    {
-        _chosenWeight = weight;
-        if (weight < 0.01 || weight > 0.99)
-        {
-            _chosenWeight = 0.5;
-        }
-    }
-
     void setGui(bool gui)
     {
         _gui = gui;
     }
-
-    void setFlexTag(std::string tagFlex)
-    {
-        std::string _flexTag = tagFlex;
-    }
-
     void setCluster(ClusterSVD *const &cluster, TorsionData *const &data)
     {
         _cluster = cluster;
         _tData = data;
     }
-
     int getVcolumns()
     {
         return _vSize;
@@ -124,6 +93,7 @@ public:
     void loadHBondsFromManager(HBondManager* hbondManager);
     bool checkAndGetAtom(AtomGroup* atomGroup, const std::string& atomDesc, Atom*& atom);
 
+
     // === FLEXIBILITY CALCULATION ===
     void submitJob(float weight);
     void calculateFlexWeights();
@@ -133,47 +103,35 @@ public:
     }
     void calculateTorsionFlexibility();
     void buildJacobianMatrix();
+
     SVDResult calculateSVD() const;
     std::vector<float> assignWeightsToTorsions(const std::vector<float>& v_i,
                                 const std::vector<int>& torsionVector);
     std::vector<float> extractVColumn(const Eigen::MatrixXf &V, int colIdx) const;
-    std::vector<float> lastColumn(const Eigen::MatrixXf& V)
-    {
-       Eigen::VectorXf col =  V.col(V.cols() - 1);
-       return std::vector<float>(col.data(), col.data() + col.size());
-    }
-    std::vector<int> sampleColumnIndices(int N, int sampleCount, double lambda);
-    void computeOneSample(int colIdx, double weight);
-    void saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda);
-
-    void calculateFreeEnergy();
-    double computeEnthalpy(double sigma);
-    double computeEntropy(const std::vector<float>& v_i);
 
     // === OUTPUT & ANALYSIS ===
-    void atomCloud(float weight, const AtomVector &atoms);
-    void savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
-    void calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms);
-    void saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms);
-    void saveSampledStructures(int numSamples, const std::string &baseFileName);
     bool checkClashes(const std::vector<Atom*> orderedAtoms, 
                                 int saved,
                                const std::vector<float> &radii,
                                const std::set<std::pair<int,int>> &exclude,
                                float tolerance);
-    std::vector<int> getSoftestModeIndices(const Eigen::VectorXf& singularValues);
     std::vector<float> makeRadiiVec(const AtomVector &atoms);
     std::vector<glm::vec3> makePosVec(const AtomVector &atoms);
     std::set<std::pair<int,int>> makeExcList(OpSet<Atom*> &atom_set);
     std::set<std::pair<int,int>> makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing);
     void submitJobRandom(int colIdx);
-    void saveFreeEnergyCSV(const std::string &filename,
-                                    const std::vector<double> &enthalpies,
-                                    const std::vector<double> &entropies,
-                                    const std::vector<double> &freeEnergies);
     void writeAllTorsionsToCSV(const std::string& filename);
+    void setColIdx(int chosenColIdx)
+    {
+        _colIdx = chosenColIdx;
+    }
+
 
     // === UTILITY ===
+    const std::vector<HBondEntity>& getHBonds() const 
+    { 
+        return _hbonds; 
+    }
     int accessAtomBlock(Atom* atom);
     float calculateDistance(const glm::vec3& vector1, const glm::vec3& vector2)
     {
@@ -182,9 +140,8 @@ public:
     float calculateAngle(const glm::vec3& vector1, const glm::vec3& vector2);
     float calculateAngleDistance(const glm::vec3 &vector1, const glm::vec3 &vector2, const glm::vec3 &vector3);
     std::vector<int> lastCommonAncestorIdx(int donorBlock_idx, int donorAcceptor_idx);
+    bool isAncestor(int torsionBlockIdx, int atomBlockIdx);
     int rewindBlock(int &block_idx, std::vector<int> &torsionVector);
-    Eigen::Matrix3f covariance(const std::vector<glm::vec3> &samples);
-
 
     // === DEBUGGING ===
     void listClashes(const std::string &filename,
@@ -193,15 +150,12 @@ public:
                               int i, int j,
                               const std::vector<float> &radii);
 
-protected:
-    float _chosenWeight = 0.5;
 
 private:
     bool _gui = false;
     std::mutex _mutex;
     bool _setup = false;
     bool _displayTargets = false;
-    bool _cloudFlag = false;
     std::map<Atom*, int> _atom2Block;
 
     std::vector<HBondEntity> _hbonds;
@@ -219,10 +173,7 @@ private:
 
     int _colIdx = 0;
     int _vSize = 0;
-    
-    float _minCol = 0.0;
-    float _maxCol = 0.0;
-    float _numSamples = 1.0;
+
 };
 
 #endif

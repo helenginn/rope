@@ -39,7 +39,7 @@ public:
     void reset();
     // void checkHBondSelection();
     void callAddHBonds(const std::vector<HBondManager::HBondPair> &donorAcceptorPairs); 
-    void callPrepareResiurces()
+    void callPrepareResources()
     {
         _flex->prepareResources();
     }
@@ -76,10 +76,8 @@ private:
     bool _selectFlag = false;
     float _minRange  = 0.0f;
     float _maxRange  = 0.0f;
-    int   _numSample = 1;
 
     std::vector<HBondManager::HBondPair> _hBondPairs;
-
 
 };
 #endif

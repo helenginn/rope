@@ -1,45 +1,48 @@
 #ifndef __vagabond__FlexSample__
 #define __vagabond__FlexSample__
 
-#include <algorithm>
+#include <vector>
+#include <string>
 #include <vagabond/utils/Eigen/Dense>
-#include <vagabond/core/TorsionData.h>
-#include <stdlib.h>
-#include <atomic>
-#include <map>
-#include "StructureModification.h"
-#include "HBondManager.h"
-#include "Flexibility.h"
+#include <vagabond/core/StructureModification.h>
+#include <vagabond/core/BondCalculator.h>
 
+class Flexibility;
+class Instance;
 
-class FlexSample {
+struct DeviationData {
+    int sampleIdx;
+    int modeIdx;
+    float weight;
+    int bondIdx;
+    float startDist;
+    float finalDist;
+    float deviation;
+};
+
+class FlexSample : public StructureModification {
 public: 
-	FlexSample(Flexibility *flex);
-	std::vector<int> sampleColumnIndices(int N, int sampleCount, double lambda);
+	FlexSample(Flexibility *flex, Instance *instance);
+	void saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile);
+	std::vector<int> sampleColumnIndices(int N, int sampleCount);
+	std::vector<int> sampleColumnIndicesExp(int N, int sampleCount, double lambda);
 	std::vector<int> getSoftestModeIndices(const Eigen::VectorXf& singularValues);
-	void saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda);
-	std::vector<glm::vec3> makePosVec(const AtomVector &atoms);
-	std::vector<float> makeRadiiVec(const AtomVector &atoms);
-	std::set<std::pair<int,int>> makeExcList(OpSet<Atom*> &atom_set);
-	std::set<std::pair<int,int>> makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing);
-	bool checkClashes(const std::vector<Atom*> orderedAtoms, 
-                                int saved,
-                               const std::vector<float> &radii,
-                               const std::set<std::pair<int,int>> &exclude,
-                               float tolerance);
-	void listClashes(const std::string &filename,
-                              int saved,
-                              const std::vector<Atom*> &orderedAtoms,
-                              int i, int j,
-                              const std::vector<float> &radii);
-
-	private:
-    	Flexibility* _flex;  
-    	const Eigen::MatrixXf& _V;
-		const Eigen::MatrixXf& _S;
-};
-
-
-
+	void saveHierarchySamples(int numSamples, const std::string& baseFileName, float stepSize = 1.0f);
+	void computeOneSample(int pickIdx, double weight);
+    int pickIndex(const std::vector<int>& cumulativeWeights)
+	{
+	    float randomValue = static_cast<float>(rand()) / RAND_MAX;
+	    float threshold = randomValue * cumulativeWeights.back();
+	    return std::lower_bound(cumulativeWeights.begin(),
+	                            cumulativeWeights.end(),
+	                            threshold) - cumulativeWeights.begin();
+	}
+	// NEW: Helper function to write the CSV
+    void saveBondDeviations(const std::vector<DeviationData>& data, const std::string& filename);
+private:
+    	Flexibility* _flex;
+    	Instance *_instance = nullptr;
 
 };
+
+#endif

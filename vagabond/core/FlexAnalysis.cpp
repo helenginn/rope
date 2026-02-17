@@ -1,5 +1,6 @@
 #include "FlexAnalysis.h"
-#include "Flexibility.h"
+#include <vagabond/core/Flexibility.h>
+#include <vagabond/core/Instance.h>
 
 #include <iostream>
 #include <fstream>
@@ -10,19 +11,19 @@
 #include "AtomGroup.h"
 
 
-FlexAnalysis::FlexAnalysis(Flexibility *flex) : _flex(flex)
+FlexAnalysis::FlexAnalysis(Flexibility *flex, Instance *instance) 
+: _flex(flex), _instance(instance), _flexTag("flexPos")
 {
 	if (_flex == nullptr)
     {
         throw std::runtime_error("FlexAnalysis requires a valid Flexibility pointer");
     }
-    setFlexTag("flexPos");
 }
 
-void FlexAnalysis::generateAtomCloud()
+void FlexAnalysis::generateAtomCloud(int minCol, int maxCol, std::string flexTag)
 {
-    
-    const AtomVector &atoms = _flex->_instance->currentAtoms()->atomVector();
+    _flexTag = flexTag;
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
 
     for (Atom *atom : atoms)
     {
@@ -32,7 +33,7 @@ void FlexAnalysis::generateAtomCloud()
     std::vector<float> weights = { -3.0f, 0.0f, 3.0f };
     for (float weight : weights)
     {
-        atomCloud(weight, atoms);
+        atomCloud(minCol, maxCol, weight, atoms);
     }
 
     std::cout << "Samples in first atom: "
@@ -41,30 +42,31 @@ void FlexAnalysis::generateAtomCloud()
 
     std::cout << "End of B-factor estimation!" << std::endl;
     std::cout << "*** Saving position to sampled_positions.csv... ***" << std::endl;
-    savePositionsToCSV("sampled_positions.csv", _flexTag, atoms);
+    savePositionsToCSV("sampled_positions.csv", atoms);
     std::cout << "Average positions" << std::endl;
-    calculateAnisoBfactors(_flexTag, atoms);
-    saveBfactorsToCSV("bfactors.csv", _flexTag, atoms);
+    calculateAnisoBfactors(atoms);
+    saveBfactorsToCSV("bfactors.csv", atoms);
 }
 
 
-void FlexAnalysis::atomCloud(float weight, const AtomVector &atoms)
+void FlexAnalysis::atomCloud(int minCol, int maxCol, float weight, const AtomVector &atoms)
 {
     // change here witht the values that you get from the FlexView (give by the user)
-    for (int i = _minCol; i <= _maxCol;; ++i)
+
+    for (int i = minCol; i <= maxCol; ++i)
     {
         // _colIdx = i;
         _flex->submitJobAndRetrieve(weight);
         for (Atom *atom : atoms)
         {
-            glm::vec3 vec = atom->derivedPosition();g
+            glm::vec3 vec = atom->derivedPosition();
             atom->addOtherPosition(_flexTag, vec);   
         }
     }
 
 }
 
-void FlexAnalysis::savePositionsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms)
+void FlexAnalysis::savePositionsToCSV(const std::string &filename, const AtomVector &atoms) const
 {
     std::ofstream file(filename);
     if (!file.is_open())
@@ -77,7 +79,7 @@ void FlexAnalysis::savePositionsToCSV(const std::string &filename, std::string &
     file << "Description,Element,ResidueID,AtomName,Chain,SampleIndex,X,Y,Z\n";
     for (Atom *atom : atoms)
         {
-            const WithPos &positions = atom->otherPositions(flexTag);
+            const WithPos &positions = atom->otherPositions(_flexTag);
             for (size_t i = 0; i < positions.samples.size(); ++i)
             {
                 const glm::vec3 &pos = positions.samples[i];
@@ -99,7 +101,7 @@ void FlexAnalysis::savePositionsToCSV(const std::string &filename, std::string &
     std::cout << "Saved sampled positions to " << filename << std::endl;
 }
 
-void FlexAnalysis::saveBfactorsToCSV(const std::string &filename, std::string &_flexTag, const AtomVector &atoms)
+void FlexAnalysis::saveBfactorsToCSV(const std::string &filename, const AtomVector &atoms) const
 {
     std::ofstream file(filename);
     if (!file.is_open())
@@ -129,7 +131,7 @@ void FlexAnalysis::saveBfactorsToCSV(const std::string &filename, std::string &_
     std::cout << "Saved Bfactors to " << filename << std::endl;
 }
 
-void FlexAnalysis::calculateAnisoBfactors(std::string &_flexTag, const AtomVector &atoms)
+void FlexAnalysis::calculateAnisoBfactors(const AtomVector &atoms)
 {
 
     for (Atom *atom : atoms)
@@ -171,7 +173,7 @@ void FlexAnalysis::calculateAnisoBfactors(std::string &_flexTag, const AtomVecto
 }
 
 
-Eigen::Matrix3f FlexAnalysis::covariance(const std::vector<glm::vec3> &samples)
+Eigen::Matrix3f FlexAnalysis::covariance(const std::vector<glm::vec3> &samples) const
 {
     glm::vec3 mean(0.0f);
     for (const glm::vec3 &v : samples)
@@ -196,31 +198,31 @@ void FlexAnalysis::calculateFreeEnergy()
 {
 // check if svd has already been calculated adn _Vsize and _V has been assinged: 
 // this is done in calculateFlexWeights, called in processMultipleHBonds
-	const Eigen::MatrixXf& _V = _flex->getV();
-	const Eigen::MatrixXf& _S = _flex->getV();
+	const Eigen::MatrixXf& V = _flex->getV();
+	const Eigen::MatrixXf& S = _flex->getS();
 
-    if (_V.size() == 0 || _S.size() == 0)
+    if (V.size() == 0 || S.size() == 0)
     {
         std::cerr << "Error: SVD has not been computed. "
                   << "Please run calculateFlexWeights() or equivalent first." 
                   << std::endl;
     }
 
-    std::cout << "Calculating free energies for " << _V.size() << " modes..." << std::endl;
+    std::cout << "Calculating free energies for " << V.size() << " modes..." << std::endl;
 
-    int numModes = _S.size();;
+    int numModes = S.size();;
     std::vector<double> enthalpies(numModes);
     std::vector<double> entropies(numModes);
     std::vector<double> freeEnergies(numModes);
 
     for (int i = 0; i < numModes; ++i)
     {
-        // pick up singular values for matrix _S:
-        double sigma_i = _S(i);
+        // pick up singular values for matrix S:
+        double sigma_i = S(i);
         double enthalpy = computeEnthalpy(sigma_i);
         enthalpies[i] = enthalpy;
 
-        std::vector<float> v_i = extractVColumn(_V, i);
+        std::vector<float> v_i = _flex->extractVColumn(V, i);
         double entropy = computeEntropy(v_i);
         entropies[i] = entropy;
 
@@ -231,14 +233,15 @@ void FlexAnalysis::calculateFreeEnergy()
     saveFreeEnergyCSV("enthalpy_entropy_energy.csv", enthalpies, entropies, freeEnergies);
 }
 
-double FlexAnalysis::computeEnthalpy(double sigma)
+double FlexAnalysis::computeEnthalpy(double sigma) const
 {
+    const Eigen::MatrixXf& S = _flex->getS();
     const double k = 3.24; // kcal/mol scaling factor
-    double maxSingVal = _S.maxCoeff();
+    double maxSingVal = S.maxCoeff();
     return (maxSingVal > 0.0) ? sigma / maxSingVal : 0.0;
 }
 
-double FlexAnalysis::computeEntropy(const std::vector<float>& v_i)
+double FlexAnalysis::computeEntropy(const std::vector<float>& v_i) const
 {
     double sqSum = 0.0;
     std::vector<double> kappa(v_i.size());
@@ -274,7 +277,7 @@ double FlexAnalysis::computeEntropy(const std::vector<float>& v_i)
 void FlexAnalysis::saveFreeEnergyCSV(const std::string &filename,
                                     const std::vector<double> &enthalpies,
                                     const std::vector<double> &entropies,
-                                    const std::vector<double> &freeEnergies)
+                                    const std::vector<double> &freeEnergies) const
 {
     if (enthalpies.size() != entropies.size() || enthalpies.size() != freeEnergies.size())
     {

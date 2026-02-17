@@ -40,6 +40,11 @@ cfile,
 'HBondManager.cpp',
 'Flexibility.cpp',
 'Flexibility.h',
+'FlexAnalysis.cpp',
+'FlexAnalysis.h',
+'FlexSample.cpp',
+'FlexSample.h',
+
 
 'files/File.cpp',
 'files/FastaFile.cpp',

@@ -417,33 +417,27 @@ std::vector<int> Flexibility::lastCommonAncestorIdx(int donorBlock_idx, int acce
 {
     std::vector<int> torsionVector;
     const std::vector<AtomBlock>& blocks = _resources.sequences->sequence()->blocks();
-    std::cout << "[DEBUG] donorBlock_idx = " << donorBlock_idx << std::endl;
-    std::cout << "[DEBUG] acceptorBlock_idx = " << acceptorBlock_idx << std::endl;
     while (true)
     {
         // CASE 1: Donor is deeper -> Move Donor up
         if (blocks[donorBlock_idx].depth > blocks[acceptorBlock_idx].depth)
         {
             donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
-            std::cout << "[DEBUG] rewind donorBlock_idx = " << donorBlock_idx << std::endl;
         }
         // CASE 2: Acceptor is deeper -> Move Acceptor up
         else if (blocks[donorBlock_idx].depth < blocks[acceptorBlock_idx].depth)
         {
-            acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector); 
-            std::cout << "[DEBUG] rewind acceptorBlock_idx = " << acceptorBlock_idx << std::endl; 
+            acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);  
         }
         else // equal depth 
         {
-            // if (blocks[donorBlock_idx].depth == blocks[acceptorBlock_idx].depth) // found common ancestor 
-            if (donorBlock_idx == acceptorBlock_idx)
+            if (blocks[donorBlock_idx].depth == blocks[acceptorBlock_idx].depth) // found common ancestor 
             {
                 return torsionVector;
             }
             // rewind at the same time
             acceptorBlock_idx = rewindBlock(acceptorBlock_idx, torsionVector);
             donorBlock_idx = rewindBlock(donorBlock_idx, torsionVector);
-            std::cout << "[DEBUG] rewind both = " << acceptorBlock_idx << donorBlock_idx << std::endl; 
         }
 
     }
@@ -501,16 +495,6 @@ void Flexibility::buildJacobianMatrix()
     for (int i = 0; i < numRow; ++i) 
     {
         int torsionIdx = torsionVector[i];
-        // NEW =================================================
-        // convertign trison idx to block idx
-        const AtomBlock& child = blocks[torsionIdx];
-        int meIdx = torsionIdx + child.parent_idx;
-        const AtomBlock& me = blocks[meIdx];
-        int grandParentIdx = meIdx + me.parent_idx;
-        const AtomBlock& grandParent = blocks[grandParentIdx];
-        std::cout << "[DEBUG] torsionIdx = " << torsionIdx << std::endl;
-        child.printBlock();
-        //=======================================================
         // int colBase = 0;
         for (int j = 0; j < _hbonds.size(); ++j) 
         {
@@ -518,9 +502,8 @@ void Flexibility::buildJacobianMatrix()
             // int colBase = j * 5; // 5 constraints per Hbond
             int colBase = j * 1; // [DEBUG 2] 
 
-            glm::vec3 APos = blocks[meIdx].my_position(); 
-            glm::vec3 BPos = blocks[grandParentIdx].my_position();
-            // glm::vec3 BPos = blocks[meIdx].inherit; 
+            glm::vec3 APos = blocks[torsionIdx].my_position(); 
+            glm::vec3 BPos = blocks[torsionIdx].inherit; 
             
             glm::vec3 CPos = blocks[hbe.acceptorIdx].my_position(); 
             glm::vec3 DPos = blocks[hbe.donorIdx].my_position(); 
@@ -532,6 +515,40 @@ void Flexibility::buildJacobianMatrix()
             glm::vec3 parentDonor = blocks[hbe.donorIdx + parentDonor_idx].my_position();
             glm::vec3 parentAcceptor = blocks[hbe.acceptorIdx + parentAcceptor_idx].my_position();
 
+
+            // [DEBUG START] Print Blocks for the first entry (i=0, j=0)
+            if (i == 0 && j == 0)
+            {
+                const AtomBlock& child = blocks[torsionIdx];
+                std::cout << "  [Child/A] block " << torsionIdx << ": " << child.atom->desc() 
+                          << " | TorsionID: " << child.torsion_idx << std::endl;
+
+                int meIdx = torsionIdx + child.parent_idx;
+                const AtomBlock& me = blocks[meIdx];
+                std::cout << "  [Me/Parent] block " << meIdx << ": " << me.atom->desc() 
+                          << " | torsionID: " << me.torsion_idx << std::endl;
+                
+                int grandParentIdx = meIdx + me.parent_idx;
+                const AtomBlock& grandParent = blocks[grandParentIdx];
+                std::cout << "  [Parent/GrandParent] block " << grandParentIdx << ": " << grandParent.atom->desc() 
+                          << " | torsionID: " << grandParent.torsion_idx << std::endl;
+
+
+                std::cout << "\n[DEBUG] Jacobian Entry (0,0) Atom Blocks:" << std::endl;
+                
+                std::cout << "--- Covalent Atom (A) [Block Idx: " << torsionIdx << "] ---" << std::endl;
+                blocks[torsionIdx].printBlock();    
+                
+                std::cout << "--- Acceptor Atom (C) [Block Idx: " << hbe.acceptorIdx << "] ---" << std::endl;
+                blocks[hbe.acceptorIdx].printBlock(); 
+
+                std::cout << "--- Hydrogen Atom (H) [Block Idx: " << hbe.hydrogenIdx << "] ---" << std::endl;
+                blocks[hbe.hydrogenIdx].printBlock(); 
+                
+                std::cout << "--- Donor Atom (D) [Block Idx: " << hbe.donorIdx << "] ---" << std::endl;
+                blocks[hbe.donorIdx].printBlock();
+            }
+            // [DEBUG END]
 
             // 1) Distance H–A
             // float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
@@ -552,7 +569,7 @@ void Flexibility::buildJacobianMatrix()
             // float dDihedral1 = bond_rotation_on_torsion_gradient(APos, BPos, parentDonor, DPos, HPos, CPos);
             // jacobianMatrix(i, colBase + 3) = dDihedral1;
 
-            // // 4) Dihedral D-H-A-B
+            // // 5) Dihedral D-H-A-B
             // float dDihedral2 = bond_rotation_on_torsion_gradient(APos, BPos, DPos, HPos, CPos, parentAcceptor);
             // jacobianMatrix(i, colBase + 4) = dDihedral2;
 

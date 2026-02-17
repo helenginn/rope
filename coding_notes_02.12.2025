@@ -1,0 +1,621 @@
+============================
+ROPE code notes - 02.12.2025
+============================
+
+
+* When running atomCloud or saveSamples, you get an error from calculaateTorsionFlexibility:
+	 [ERROR] Invalid colIdx = 9 with _allTorsions.size() = 1
+
+Why? The value of colIdx increases as expected (for example in this instance i asked for 10 columns, so 9 is 
+correct), but what is happenign on _allTorsions? and how it supposed to be? 
+
+* Why did i had _colIdx = i in atomCloud? (i have since put it on comment) --> the error above is either way unrelated
+cause it appears even if you don't have _colIdx = i
+
+* Then the other issue is that when I am running saveSamples _colIdx = 0, is this only when i am running saveSamples
+after atomCloud? --> no, it's always an issue 
+
+* what is interesting is that if i have run the cloud calcualtion and then I ask to add the hbond again, it 
+takes longer and then the rotsion movement is completely different. I think that this is because it 
+tries to add the hbond that are in the file int the "new" structure? 
+
+* The main issue to debug is the error here: "[ERROR] Invalid colIdx = 100 with _allTorsions.size() = 1" 
+---> in sumbmitJob()
+
+* always forget/need to make that clear: how does calculateTorsionFlexibility is related to sumbitJob 
+(that why flexANalysis and flexSamples are very useful) 
+
+* in saveSampledStructures, why am i callign sumbitJob twice? one for weight and one for randomweight?
+
+* the refactoring is on the way but of course have not been tested and it will have a lot of errors
+Things that I know that they will go wrong already: 
+	1. how i am supposed to call from the FlexibilityController? 
+	2. missing libraries 
+	3. what's the best way to deal with fucking _colIdx?
+
+
+============================
+ROPE code notes - 03.12.2025
+============================
+
+* Going back on the issue with the [ERROR] Invalid colIdx = 100 with _allTorsions.size() = 1
+This is probably caused because in caclulateFlexWeight, because this is were the where _allTorsions 
+gets its values. 
+
+* in calculateFlexWeights, it goes: 
+1. calculateFlexWeigths
+	* actually computes SVD
+	* stores number of modes _vSize
+	* v_i corresponds to one DoF in the reduced null-space
+	* (currently): extracts one torsion-mode vector, the last one
+	* maps this mode vector onto all torsions: 
+
+		vector<float> allTorsions = assignWeightsToTorsions(v_i, torsionVector);
+		-> this is where we "expand" that mode into the FULL torsion space
+		-> creates a full-length torsion vector: std::vector<float> allTorsions(totalTorsionNum, 0.0f);
+		-> then fills only the "active" indices: allTorsions[torsionVector[i]] = v_i[i]; 
+		-> MEANING: every DOF represented in the SVD that was chosen gets a weight and all other torsions are 0 
+
+2. calculateTorsionFlexiibility
+	* how is calculateFlexWeights affects calculateTorsionFlexiibility and the _coldiD, that is then used in saveSamples? 
+		* need to do: 
+			-> independly, if _colIdx = 0 or _V.size, in calculateTorsionFlexibility colIdx is always 0 :/
+			-> also what'sa up with this? 
+				// Start editing from here
+		        int access_idx = _allTorsions.size() - _colIdx;
+		        float val = _allTorsions[_colIdx][idx] * jobWeight;
+		        return val;
+
+	* here is something interesting: the distance matrix when using the DoF from v_i = 0 is almost opposite than using the v_i = _V.size()
+		* need to:
+			-> save the flex_torison.csv in differnet names and compare
+			-> make some modifications in the KFA so I can have some comparable structures/distance matrices
+
+
+============================
+ROPE code notes - 04.12.2025
+============================
+
+* can you make some suggestions on how to go back to the original architectures, 
+where _colIdx was used to choose which column to chose from?
+* at the moment _allTorsion actuall contains only one torsion --> i changed that
+* Currently how the view of distance matrxi works is :
+
+addHbonds-->Calculate jacobian matrix-->calculate SVD-->store ALL modes into 
+__allTorsions[]-->choose (hardcoded) an colIdx (currently set to choose the last one)
+-->save 1 sample (which corresponds to the torsion modification based on the last columns 
+of the nullspace _V)-->call distance matrix
+
+* I change the code in Controller, so i can just set a _coldIdx from the user and directrly get 
+a look into the Dist matrix wihtout having to save the sample strucutre. 
+
+* but there is soemthign funcy with the resutls
+
+* Again, the problem lies in colIdx
+    * when i am calculating flexWeight and torsions etc, i get the outpit on 
+    screen --> this shoudl correspond to a range of all of indexes, right? 
+    * but it's braking a lot of "rules" and the movement si not really representative 
+    to the real thing.. 
+    * but at that poitn i haven't given any coldIdx as user 
+
+* i NEED to refactor Flexibility: it's too large and it confuses me a lot 
+* i need to concentrate to a easier example. 
+* run it with KGS and then compare it again with mine 
+* i need to implement the distance algorithm 
+
+* it looks now that when i am choosing 0 or max columns of _V, 
+i am getting the same ptterns just ont he oposite sides WHY? 
+
+* how was i gettign other values of colidx in the FlexTorsion etc? 
+
+
+============================
+ROPE code notes - 09.12.2025
+============================
+
+* When I am just asking for one sampled structure in openAtom2AtomExplorer, it runs smoothly
+but I getting always the same resutls, although the value of _colIdx is changed correctly
+* Move computeOneSample to FlexSample - FIXED
+* the problem is on the initialisation of _resources - FIXED
+* There is two main issues that i don't get:
+	* when Result *r was in Flexibility, i could redifine r, but now I can't  - FIXED by not redining Result.
+	* Nevertheless the main issue which is the fact that i am alway getting the same diff matrix stays the same, need to 
+	figure out there what i should do. 
+	* I get the following output:
+
+		[debug] In [saveSampledStructures], inside while, pickIdx (old _colIdx) = 14
+		[checkClashes] Clash between atoms 1446 and 1598
+		[checkClashes] dist2 7.0554 and limit 2.79044
+		[FlexSample] Sample rejected (clash) at attempt 1 (mode=14, weight=-1.94803)
+		[debug] In [saveSampledStructures], inside while, pickIdx (old _colIdx) = 15
+		[handleNumSamples] _numSample 1
+    
+    Why is pickIdx = 15?
+
+
+============================
+ROPE code notes - 10.12.2025
+============================
+
+* As discussed with Helen: on FlexSample:saveSampledStructure and form computeOnesample, move the following lines: 
+    
+    // _flex->submitJob(0);
+    // Result *r = _flex->getResult();
+    // r->transplantPositions(false, true);
+    
+    that were just before the while loop, on the end of Flex::buildJacobian
+    ---> DIDN'T WORK AS INTENTED: DEBUG disVec was always the same, regardless the selectedColumn
+
+* why is the backward iteration starting form 811? FIXED 
+* distances between H atoma and acceptor
+* why the samples are just seperated from the one side to the other? where does the separation start? 
+	* is there an issue with radnom weight? 
+* FIX in FlexSample: change makeExcList so it also uses orderedAtoms 
+* FIX: make weight float and remove static casts 
+* try the samples with the random sampling 
+* change the save so that the name relfects the column that it was saved from 
+
+============================
+ROPE code notes - 11.12.2025
+============================
+* In FlexSample::sampleColumnIndices(int N, int sampleCount, double lambda):
+	* change the weight calculation to weights[i] = std::exp(lambda * (i-(N-1))) --> did it made a difference?
+* play arround with lambda:
+	* I think that lambda 0.1 (strong preference towards the end of the matrix) is too "harsh", 0.05 looks good (the screenshot that i send to Helen is with lambda 0.05)
+	* For a test to see what happens when we add a bias towards the first columns, I used a lambda=0.7 (generally the more closer to 1 the more bias towards the beginning)
+* OneSampler is not working correlty still, i can't see why though... 
+* I don't see a difference using the bias: for example for bias = -1, which it shoudl be more bias towards the beginning of the matrix, i am still getting quute a vast 
+number of columns in whihc the code is trying, from 9 to 412, i don't undersntad why
+* Things to read to better understand this distribution: 
+	* Linear Ranking Selection 
+	* Linear Ramp Distribution 
+	* Linearly Increasing Probability Distribution
+	* Samping with Linear weights
+	* Rank-Based selection 
+
+============================
+ROPE code notes - 12.12.2025
+============================
+* What's wrong with OneSampling? 
+* Samplign method 
+	* I am trying a inverse-CDF sampling via cumulative weights for the samp;ing 
+	* How we sample plays an important role
+		++ When I'm using the exponetional sampling, I am getting result much 
+		closer to the real KGS one
+		-- Numerical unstample: requires an extra parameter lambda and it 
+		fails for some values of N 
+* Distance calculation 
+* Small molecule
+
+
+
+* Looking back to the KGS algorithm for getting samples: 
+	1. Initialise protein structure, spanning tree, energies
+	2. Computed Jacobian and null space from SVD
+	3. Map residue to iMOD DoFs (?????)
+	4. Loop until maxSamples: 
+		1. Restore initial configuration 
+		2. Pick a null-space mode 
+======================================================================================	
+	if(options.sampleFree){//pick sample Free index
+        v_i = gsl_vector_get(freeEnergyIdx,sampleCount);//sorted from reverse to fit numCols - v_i - 1
+    }
+    else{
+        v_i++; //increase nullspace column counter, move along V indices
+        // V: 
+        cout << "TESTING (V): ";
+        cout << v_i << endl;
+        if (v_i == nullspaceCols) {
+            log("hierarchy") << endl << "Now motions outside of the nullspace." << endl << endl;
+        }
+    }
+======================================================================================
+		3. Extract the null-space vector and scale to step size
+======================================================================================
+    gsl_vector_view projected_gradient_view = gsl_matrix_column(baseNullspaceV,numCols - v_i - 1);
+    gsl_vector_memcpy(projected_gradient, &projected_gradient_view.vector);
+
+    //Scale to desired step size
+    gsl_vector_scale_to_length(projected_gradient, options.stepSize);
+======================================================================================
+		4. Project null-space vector onto full protien DOFs
+======================================================================================
+    //Now we have the correct cycle-dof projected gradient --> we need to scale it to the full-dof vector=
+    // Convert back to full length DOFs vector
+    for( auto const& edge: protein->m_spanningTree->m_edges){
+      int dof_id = edge->getDOF()->getIndex();
+      int cycle_dof_id = edge->getDOF()->getCycleIndex();
+      if ( cycle_dof_id!=-1 ) {
+        gsl_vector_set(allDofs,dof_id,gsl_vector_get(projected_gradient,cycle_dof_id));
+      }
+      else if ( dof_id!=-1 ) {//use zeros for free dofs
+        gsl_vector_set(allDofs,dof_id,0);
+      }
+    }
+======================================================================================
+		5. Predict violation using Jacobian 
+		6. Create new Configuration witht these DOFs
+		7. Check for collisions, cycle closure and log statistics
+		8. Save the configuration and log statistics
+
+
+
+* I don't understand what does projected_gradient actually do 
+* KGS explicitly separates cycle DOFs (constrained) and free DOFs (global motions) and maps the null-space vector to all DOFs for actual displacements.
+
+============================
+ROPE code notes - 15.12.2025
+============================
+
+* Could be tha the VnW are overconstraining my system?
+* In KGS the steric clashes are handled after generatign the move or as a soft potential, not as a constraint in the SVD
+* add an "is_ansestor" check inside the Jacobian loop 
+
+* put the first sumbitJob in savedSampledStucutres directly after buildJacobian 
+    // * Call submitJob for the randomWeight
+    // it's caclulate the seed postions before going to the sample
+    // take out of here, and make it happen automatically once i set the Jacobian 
+
+
+* WHY I AM GETTING DIFF RESULTS BETWEEN ONESAMPLE AND MANY ?
+* WHY THE RANDOM SMAPLING MATTERS ?
+* Remove isAncecstor check form Jacobian 
+
+
+TO DO: 
+* change all the checks if (___.size() == 0) to if (___.empty())
+* FIX: change makeExcList so it also uses orderedAtoms
+
+============================
+ROPE code notes - 17.12.2025
+============================
+
+* I changed in Flexibility.cpp:
+FROM: 
+std::vector<float> v_i = extractVColumn(svd.V, _vSize-1);
+TO:
+std::vector<float> v_i = extractVColumn(svd.V, colIdx);
+
+That seems to make a big difference on the difference matrix WHY?
+
+* I have added the following on Hierarchy sampling, but not sure if it nessecary or not: 
+    // is this nessecary? i don't do it on the random sampling...
+    _flex->submitJob(0.0f);
+    Result *rInitial = _flex->getResult();
+    rInitial->transplantPositions(false, true); 
+    rInitial->destroy();
+
+* Fix the OneSample code
+
+
+* I'm changing calculateFlexWeights back to the original, but let's keep the verison that i used to this day as back up (and as a way to figure out maybe what is going on)
+
+
+void Flexibility::calculateFlexWeights()
+{
+    std::cout << "Calculating flex weights..." << std::endl;
+
+    SVDResult svd = calculateSVD();
+    _V = svd.V;
+    _S = svd.singularValues;
+    _vSize = static_cast<int>(svd.V.cols());
+    std::vector<int> torsionVector = getGlobalTorsionVector();
+    int totalTorsionNum = _resources.sequences->torsionBasis()->parameterCount();
+    if (torsionVector.size() != svd.V.rows())
+    {
+        std::cerr << "Error: Size mismatch between globalTorsionVector ("
+                  << torsionVector.size() << ") and V rows ("
+                  << svd.V.rows() << ")." << std::endl;
+        return;
+    }
+
+
+    // ---------------------------------
+    //   Store ALL torsion-weight sets
+    // ---------------------------------
+
+    _allTorsions.clear();
+    _allTorsions.reserve(_vSize);
+    for (int colIdx = 0; colIdx < _vSize; ++colIdx)
+    {
+        std::cout << "[debug] In Flexibility::calculateFlexWeights, colIdx = " << colIdx << std::endl;
+        // std::vector<float> v_i = extractVColumn(svd.V, _vSize-1);
+        std::vector<float> v_i = extractVColumn(svd.V, colIdx);
+        std::vector<float> allTorsions = assignWeightsToTorsions(v_i, torsionVector);
+        _allTorsions.push_back(allTorsions);
+        writeAllTorsionsToCSV("flex_torsions.csv");
+    }
+    // [debug]: default to the last mode
+    // _colIdx = _vSize - 1;
+    std::cout << "Stored " << _allTorsions.size() << " torsion-weight vectors." << std::endl;
+    std::cout << "Finished calculating calculateFlexWeights, _colIdx = " << _colIdx << std::endl;
+}
+
+
+
+* Obviously having a biggest distribution, change stuff. 
+	* I was running for (-0.5, 0.5) and the resutls were very different
+
+**** CAUTION ****
+I have two old versions of Flexibility and FlexSample in the Downlaod folder
+
+* Things to check tomorrow: 
+
+1. rerunt he hierarchy with the changes in Flexibility: mainly the removal of affectsAcceptor, and aaffectDonor 
+2. play aroudn and try to udnerstand the distribution effect
+3. fix the onesample
+4. fix the ditance 
+
+
+* I can't find what i change that effects so much the results, so i am returning t
+version I had on Monday before trying to reproduce the Hierarchy resutl. I have saved this version on a file in the Desktop, that I shoudl delete. 
+
+============================
+ROPE code notes - 09.01.2026
+============================
+
+* Need to calculate the distnance between the hydrogen bonds for different 
+-- I already have something that claculate and saves the intial distance: is Flexibility::calcualteDistance. 
+   I use it as follows: "float distance = calculateDistance(donorPos, acceptorPos);" 
+   But I want the distance between H atom and acceptor. So i will motify this line. ---> ABORT, Helen said that it shouldn't matter
+
+-- but coming to think of this, i need to change the Jacobian as well. The Jacobian matrix is calcualted based on the distance 
+
+changes in buildJaconian:
+
+* FORM THIS float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, DPos);
+* TO THIS float dDist = bond_rotation_on_distance_gradient(APos, BPos, CPos, HPos);
+
+* added:             int colBase = j * 5; // 5 constraints per Hbond 
+and removed commented colBase += 5;
+
+NEXT: 
+* calcualte the distance. 
+* You’ll need to take the magnitude if you want to take the average deviation across lots of hydrogen bonds
+
+
+============================
+ROPE code notes - 11.01.2026
+============================
+
+* TEMP changes in 
+
+        // ---------------------------------------------------------
+        // DEBUGGING: Force sampling from the last columns of Matrix V
+        // ---------------------------------------------------------
+        // Instead of using 'candidateIndices', we mathematically force the index.
+        // Sample 0 -> Last Column (N-1)
+        // Sample 1 -> Second to Last (N-2)
+        int pickIdx = N - 1 - saved;
+
+* get it back in the orginial by "returning" the canditateIndices
+
+============================
+ROPE code notes - 12.01.2026
+============================
+
+-----
+TESTS
+-----
+1) reduce hbonds ever more, so much that ou have fewer hbonds than torsion angles
+2) try run the samples generator as is maybe the changes you made to the Jacobian were engouh
+534swx2
+If the plots are normal at this poind, but smaples are still looking funny, then:
+3) start removing angles and torsion constraints one by one.  If by removing one by one the constraints
+the resutls become better, then you have your answer (easy edit: set the constraint to 0)
+
+------------
+FUTURE TASKS
+------------
+* in the view of the portien in the FlexibilityView to be able to see whihc sample structure is shown 
+on screen (i.e. which column of V) when using the slider
+
+------
+DEBUGS
+------
+* change the random weights in the FlexSample::saveSampledStructure() to 1 instead of [-5, 5] (temp)
+
+------------
+OTHER FIXERS
+------------
+* Fix the python plot
+	* Double check the lable name, I think they might be mislabeked
+	* Make sure/clear which columns are plotting 
+		-> is the sample name matching the V-column 
+		-> this can be confusing/mixed because of the backtrack loop 
+	*Make sure axis are correct 
+
+
+============================
+ROPE code notes - 06.02.2026
+============================
+
+1. check crystalline, run for many samples, usual work load for flexibility
+2. Just one contrain on the distnace: thsi will show if the distance constraint is correctly calculated, cause the columns of the V matrix should be enough to maintain the distanc as if you have mroe dof than contraints
+3. if that's work, chenge to the angle and see if that working 
+
+multiple V axis that maintain hydrogen bond distnace complete
+
+4. y-axis: correct as is
+x-axis: column number (it's currently reportign on the Hbond number)
+scatter: a dot per hudrogen bond
+
+5. For fixing the correlation matrix view: use AtomGroup::atomByIdName(50, CA), 
+print it for the derived positiona adn the other positions eahc time 
+and to try find out when and if it overwritten 
+cehck torisoFethcer--> values in that column should be different
+Are the values in the block matrix the same?
+
+
+============================
+ROPE code notes - 09.02.2026
+============================
+1. usually workflow does not look like it imporoves the result, going back to debugging mode 
+2. let's start with constraint
+
+
+============================
+ROPE code notes - 11.02.2026
+============================
+* working on the small example with 6 tosrions and 1 hbond 
+* i have eliminate the constraints to only examine the distance constraint to begin with 
+
+============================
+ROPE code notes - 12.02.2026
+============================
+* inverted the Jacobian matrix so that now i have columns as dof and rows as constraints. At least for now and for the simple case.
+
+============================
+ROPE code notes - 13.02.2026
+============================
+
+-----------------------------------------------------------------------------------------------------------------------
+I have the following Jacobian and the following V matrix after the SVD:
+
+Calculating flex weights...
+[debug] Jacobian  transpose= -2.48012 -5.35046 0.718962  -3.2185   5.7136 -3.99267
+[debug] J.rows transpose= 1
+[debug] J.cols transpose= 6
+[debug] singularValues size = 1
+[debug] _V size = 36
+[debug] _U = 1
+
+[debug] --- Singular Values ---
+S.rows = 1
+S.cols = 1
+
+[debug] --- Matrix V (Right Singular Vectors / Null Space) ---
+ -0.255478  -0.551153  0.0740605  -0.331539    0.58856  -0.411286
+ -0.551153   0.758045  0.0325124  -0.145545   0.258377  -0.180554
+ 0.0740605  0.0325124   0.995631  0.0195574 -0.0347191  0.0242617
+ -0.331539  -0.145545  0.0195574   0.912449   0.155423   -0.10861
+   0.58856   0.258377 -0.0347191   0.155423   0.724087   0.192808
+ -0.411286  -0.180554  0.0242617   -0.10861   0.192808   0.865265
+
+
+I have currently 6 torsion contributing to that motion: 
+idx = 18, 19, 23, 24, 29, 30
+
+when I am isolating the idx = 18 and i am samplign for 6 samples, i am getting back the basically the first mode: 
+
+[FlexSample] Selected 6 modes for sampling.
+[debug] Flex Calc (Mode 5, Idx 18): Raw ( -0.411286 ) * Weight ( 1 ) = -0.411286
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.26197
+Column (Constraint ID): 0 | Deviation: 5.947351e-03
+[FlexSample] Saved sample_structure_0_mode_5.pdb (Mode: 5, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 4, Idx 18): Raw ( 5.885596e-01 ) * Weight ( 1.000000e+00 ) = 5.885596e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: -8.104801e-03
+[FlexSample] Saved sample_structure_1_mode_4.pdb (Mode: 4, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 3, Idx 18): Raw ( -3.315386e-01 ) * Weight ( 1.000000e+00 ) = -3.315386e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: 4.754782e-03
+[FlexSample] Saved sample_structure_2_mode_3.pdb (Mode: 3, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 2, Idx 18): Raw ( 7.406054e-02 ) * Weight ( 1.000000e+00 ) = 7.406054e-02
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: -1.010180e-03
+[FlexSample] Saved sample_structure_3_mode_2.pdb (Mode: 2, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 1, Idx 18): Raw ( -5.511526e-01 ) * Weight ( 1.000000e+00 ) = -5.511526e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: 7.984638e-03
+[FlexSample] Saved sample_structure_4_mode_1.pdb (Mode: 1, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 0, Idx 18): Raw ( -2.554783e-01 ) * Weight ( 1.000000e+00 ) = -2.554783e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: 3.666878e-03
+[FlexSample] Saved sample_structure_5_mode_0.pdb (Mode: 0, Weight: 1.000000e+00)
+[FlexSample] Saved 6 deviation records to structure_deviation.csv
+
+
+but when i am isolating the idx = 30, I am getting back this:
+
+[FlexSample] Selected 6 modes for sampling.
+[debug] Flex Calc (Mode 5, Idx 30): Raw ( 0.865265 ) * Weight ( 1 ) = 0.865265
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.26197
+Column (Constraint ID): 0 | Deviation: 9.319305e-03
+[FlexSample] Saved sample_structure_0_mode_5.pdb (Mode: 5, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 4, Idx 30): Raw ( 1.928081e-01 ) * Weight ( 1.000000e+00 ) = 1.928081e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: 2.012730e-03
+[FlexSample] Saved sample_structure_1_mode_4.pdb (Mode: 4, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 3, Idx 30): Raw ( -1.086098e-01 ) * Weight ( 1.000000e+00 ) = -1.086098e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: -1.144171e-03
+[FlexSample] Saved sample_structure_2_mode_3.pdb (Mode: 3, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 2, Idx 30): Raw ( 2.426173e-02 ) * Weight ( 1.000000e+00 ) = 2.426173e-02
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: 2.472401e-04
+[FlexSample] Saved sample_structure_3_mode_2.pdb (Mode: 2, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 1, Idx 30): Raw ( -1.805538e-01 ) * Weight ( 1.000000e+00 ) = -1.805538e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: -1.858234e-03
+[FlexSample] Saved sample_structure_4_mode_1.pdb (Mode: 1, Weight: 1.000000e+00)
+[debug] Flex Calc (Mode 0, Idx 30): Raw ( -4.112861e-01 ) * Weight ( 1.000000e+00 ) = -4.112861e-01
+[DEBUG] hbonds.size() = 1
+[DEBUG] bond.startDist (must be always the same) = 2.261974e+00
+Column (Constraint ID): 0 | Deviation: -4.146576e-03
+[FlexSample] Saved sample_structure_5_mode_0.pdb (Mode: 0, Weight: 1.000000e+00)
+[FlexSample] Saved 6 deviation records to structure_deviation.csv
+
+
+WHY?  
+-----------------------------------------------------------------------------------------------------------------------
+
+
+============================
+ROPE code notes - 17.02.2026
+============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

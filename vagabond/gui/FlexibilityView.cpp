@@ -85,7 +85,7 @@ void FlexibilityView::setup()
 	addDisplayUnit(_unit);
 
 	Display::setup();
-	_controller->callPrepareResiurces();
+	_controller->callPrepareResources();
 	// return to main menu of FlexibilityView
 	setupSlider();
 	_controller->callSubmitJobAndRetrieve(0.0);
@@ -114,8 +114,8 @@ void FlexibilityView::setupSlider()
 // fo rthis i will need: scene (this), _instance, RAMovent
 void FlexibilityView::openAtom2AtomExplorer()
 {
-	_controller->callSubmitJobAndRetrieve(0.5f);
-	std::vector<Atom3DPosition> list; // or should it be std::vector<Atom3DPosition*> list?
+	// _controller->callSubmitJobAndRetrieve(0.5f);
+	std::vector<Atom3DPosition> list; 
 	std::vector<Posular> disVec;
 
 	if (!_instance->hasSequence())
@@ -124,6 +124,7 @@ void FlexibilityView::openAtom2AtomExplorer()
 	}
 
 	AtomGroup *grp = _instance->currentAtoms();
+	// grp.printbyname
 	Sequence *seq = static_cast<Polymer *>(_instance)->sequence();
 	disVec.reserve(seq->size());
 	const AtomVector &atoms = grp->atomVector();
@@ -144,10 +145,20 @@ void FlexibilityView::openAtom2AtomExplorer()
         glm::vec3 displacement = curPos - initPos;
         disVec.push_back(displacement);
 
+
 	}
 
 	std::cout << "[debug_openAtom2AtomExplorer] Greetings from openAtom2AtomExplorer!" << std::endl;
 	std::cout << list.size() << std::endl;
+	std::cout << "[DEBUG disVec] Total atoms: " << disVec.size() << "\n";
+	for (size_t i = 0; i < disVec.size(); ++i)
+	{
+	    const glm::vec3 &d = disVec[i];
+	    std::cout << "Atom " << i << ": (" 
+	              << d.x << ", " 
+	              << d.y << ", " 
+	              << d.z << ")\n";
+	}
 	RAMovement movement = RAMovement::movements_from(list, disVec);
 	Atom2AtomExplorer *a2a = new Atom2AtomExplorer(this, _instance, movement);
 	a2a->show();

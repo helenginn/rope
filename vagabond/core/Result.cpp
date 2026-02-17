@@ -66,6 +66,7 @@ void Result::transplantColours()
 	}
 
 }
+
 void Result::destroy()
 {
 	delete map;

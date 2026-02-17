@@ -19,6 +19,8 @@
 #include "FlexibilityController.h"
 #include <vagabond/gui/FlexibilityView.h>
 #include <vagabond/core/Instance.h>
+#include <vagabond/core/FlexSample.h>
+#include <vagabond/core/FlexAnalysis.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/elements/Button.h>
 #include <vagabond/gui/elements/AskForText.h>
@@ -179,12 +181,12 @@ void FlexibilityController::handleRangeMax(Button* button)
 		}
 	}
 	_maxRange = max;
-	// Perform calculation
-	_flex->setColRangeUser(_minRange, _maxRange-1);
-	_flex->generateAtomCloud();
-	_flex->calculateFreeEnergy();
+	std::string flexTag = "flexPos";
+	FlexAnalysis analysis(_flex, _instance);
+	analysis.generateAtomCloud(_minRange, _minRange, flexTag);
+	analysis.calculateFreeEnergy();
 
-	std::string flexTag = _flex->getFlexTag();
+	
 	DisplayUnit *unitCloud = new DisplayUnit(_view);
 	AtomGroup *grp = _instance->currentAtoms();
 	const AtomVector &atoms = grp->atomVector();
@@ -207,7 +209,7 @@ void FlexibilityController::handleSaveSamples()
 	}
 	else
 	{
-		AskForText *aft = new AskForText(_view, "How many samples strcutures you want to save?:",
+		AskForText *aft = new AskForText(_view, "How many sampled structures you want to save?:",
 		                                 "num_samples", _view, TextEntry::Numeric);
 		_view->setModal(aft);
 	}	
@@ -217,17 +219,11 @@ void FlexibilityController::handleSaveSamples()
 void FlexibilityController::handleNumSamples(Button* button)
 {
 	TextEntry *te = static_cast<TextEntry *>(button);
-	float numSample = atof(te->scratch().c_str());
-	if (numSample != numSample || !isfinite(numSample) || numSample <= 0)
-	{
-		numSample = 1;
-	}
-	_numSample = static_cast<int>(numSample);
-	_flex->setNumSamples(_numSample);
-	double lambda = 0.5;
-	std::cout << "[handleNumSamples] _numSample "  << _numSample << std::endl;
-	_flex->saveSampledStructures(_numSample, "sample_structure", lambda);
-
+	int numSample = atoi(te->scratch().c_str());
+	FlexSample sampler(_flex, _instance);
+	sampler.saveSampledStructures(numSample, "sample_structure", "structure_deviation.csv");
+	float stepSize = 0.5f; 
+    // sampler.saveHierarchySamples(numSample, "hierarchy_sample", stepSize);
 }
 
 
@@ -245,8 +241,10 @@ void FlexibilityController::handleColumnIdx(Button* button)
 	TextEntry *te = static_cast<TextEntry *>(button);
 	double w = 0.5;
 	int idx = atof(te->scratch().c_str());
-	if (idx < 0) return;
-    _flex->computeOneSample(idx, w);
+	if (idx < 0) return; // FIX: if -1 should go to the back and so on, python style 
+	FlexSample sampler(_flex, _instance);
+    sampler.computeOneSample(idx, w);
+
     _view->openAtom2AtomExplorer();
 }
 
@@ -265,70 +263,6 @@ void FlexibilityController::finishedDragging(std::string tag, double x, double y
 	float test_retrival = _flex->submitJobAndRetrieve(num);
 	_first = false;
 } 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

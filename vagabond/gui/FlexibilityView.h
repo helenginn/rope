@@ -73,7 +73,6 @@ private:
 	double _minRange = 0; 
 	double _maxRange; 
 	double _numSample = 1;
-	int _colidx = 0;
 	bool _first = true;
 	// Minimum value for the slider
 	double _min = -1; 

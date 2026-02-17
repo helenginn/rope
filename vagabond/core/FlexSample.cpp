@@ -1,16 +1,22 @@
 #include "FlexSample.h"
-#include "Flexibility.h"
-
+#include <vagabond/core/Flexibility.h>
+#include <vagabond/core/Instance.h>
+#include <vagabond/core/AtomGroup.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include <cmath>
-#include <stdexcept>
+#include <random>
+#include <numeric>
+#include <set>
+#include <sstream>
 
 #include "AtomGroup.h"
 
+using Eigen::VectorXf;
 
-FlexSample::FlexSample(Flexibility *flex) : _flex(flex)
+
+FlexSample::FlexSample(Flexibility *flex, Instance *instance) 
+    : _flex(flex), _instance(instance)
 {
     if (_flex == nullptr)
     {
@@ -19,125 +25,350 @@ FlexSample::FlexSample(Flexibility *flex) : _flex(flex)
 }
 
 
-void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFileName, double lambda)
+void FlexSample::saveHierarchySamples(int numSamples, const std::string& baseFileName, float stepSize)
 {
-    const Eigen::MatrixXf& _V = _flex->getV();
-    const Eigen::MatrixXf& _S = _flex->getV();
+    if (!std::isfinite(numSamples) || numSamples <= 0) numSamples = 1;
 
-    std::cout << "[saveSampledStructures] _S size = " << _S.size() << "\n";
-    if (_S.size() > 0)
-        std::cout << "First few singular values: " << _S.head(std::min<int>(10, _S.size())).transpose() << "\n";
-    else
-        std::cerr << "[saveSampledStructures] _S is empty!\n";
-    // Call sampleColumnIndices to choose numSamples columns from _V
-    // std::vector<int> indices = sampleColumnIndices(_vSize, numSamples, lambda);
-    std::vector<int> indices = getSoftestModeIndices(_S);
-    // Print the indices and their corresponding singular values
+    const Eigen::MatrixXf& V = _flex->getV();
+    int N = V.cols();
+    if (N == 0) {
+        std::cerr << "[FlexSample] No modes available (V has 0 columns). Aborting.\n";
+        return;
+    }
 
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    OpSet<Atom*> atom_set(atoms);
+    std::vector<Atom*> orderedAtoms = atom_set.toVector();
+    std::vector<float> radii = _flex->makeRadiiVec(orderedAtoms);
+    std::set<std::pair<int,int>> exclude = _flex->makeExcList(atom_set);
+
+    // is this nessecary? i don't do it on the random sampling...
+    _flex->submitJob(0.0f);
+    Result *rInitial = _flex->getResult();
+    rInitial->transplantPositions(false, true);
+
+    int saved = 0;
+    int currentModeIdx = N - 1; // Start from the floppiest mode
+
+    // 4. The Loop: Continue until we have enough samples or run out of modes
+    while (saved < numSamples && currentModeIdx >= 0)
+    {
+        _flex->submitJob(0.0f);
+        Result *rReset = _flex->getResult();
+        rReset->transplantPositions(false, true); 
+        rReset->destroy();
+
+        int pickIdx = currentModeIdx;
+        currentModeIdx--; // Decrement now so next loop takes the next mode
+
+        _flex->setColIdx(pickIdx);
+        _flex->submitJob(stepSize);
+
+        Result *r = _flex->getResult();
+        r->transplantPositions(false); 
+
+        float tol = 0.25f;
+        bool clashOK = _flex->checkClashes(orderedAtoms, saved, radii, exclude, tol);
+
+        if (!clashOK)
+        {
+            // REJECT: Don't save, just destroy and loop to the next mode
+            std::cout << "[FlexSample] Rejected Mode " << pickIdx 
+                      << " (Clash detected). Moving to next mode.\n";
+            r->destroy();
+            continue; 
+        }
+
+        std::ostringstream oss; 
+        oss << baseFileName << "_" << saved << "_mode_" << pickIdx << ".pdb"; 
+        _instance->currentAtoms()->writeToFile(oss.str()); 
+        
+        std::cout << "[FlexSample] Saved hierarchy sample: " << oss.str() 
+                  << " (Mode: " << pickIdx << ", Step: " << stepSize << ")\n";
+
+        r->destroy();
+        saved++; // Only increment saved count if valid
+    }
+
+    if (saved < numSamples) 
+    { 
+        std::cerr << "[FlexSample] Warning: Requested " << numSamples << " samples, but only found "
+                  << saved << " clash-free modes before running out.\n"; 
+    }
+}
+
+
+void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFileName, const std::string& csvDistFile)
+{
+
+
+    if (!isfinite(numSamples) || numSamples <= 0)
+    {
+        numSamples = 1;
+    }
+    const Eigen::MatrixXf& V = _flex->getV();
+    const Eigen::MatrixXf& S = _flex->getS();
+    int totalModes = std::max(0, (int)V.cols());
+    if (totalModes == 0)
+    {
+        std::cerr << "[FlexSample] No modes available (V has 0 columns). Aborting.\n";
+        return;
+    }
+    // std::vector<int> candidateIndices = getSoftestModeIndices(S);
+    int N = V.cols();
+    if (N == 0)
+    {
+        std::cerr << "[FlexSample] No modes available (V has 0 columsn). Aborting. " << std::endl;
+    }
+    std::vector<int> candidateIndices = sampleColumnIndices(N, numSamples);
     
-    // start - debugging
-    const unsigned displayLimit = 5;
+    // Debug output
+    std::cout << "[FlexSample] Selected " << candidateIndices.size() 
+              << " modes for sampling." << std::endl;
+
+
+    // in the future, we might want to use sampleColumnIndices which returns
+    // random indeces from a canonical distribution    
+
+    // prepare collision detection
+    const AtomVector &atoms = _instance->currentAtoms()->atomVector();
+    OpSet<Atom*> atom_set(atoms);
+    std::vector<Atom*> orderedAtoms = atom_set.toVector();
+    std::vector<float> radii = _flex->makeRadiiVec(orderedAtoms);
+
+    // We use the exclude list to ignore bonded atoms (they don't clash)
+    std::set<std::pair<int,int>> exclude = _flex->makeExcList(atom_set);
+
+    // Prepare for Deviation Calculation
+    std::vector<DeviationData> collectedData;
+    const auto& hbonds = _flex->getHBonds(); // Requires getter in Flexibility.h
+
+
+    // Random Number Generator (used for the weights)
+    std::random_device rd; 
+    std::mt19937 gen(rd()); 
+    std::uniform_real_distribution<> dis(-5.0, 5.0); // debug: set a wegith of 1 for now
 
     int saved = 0;
     int attempts = 0;
-    int maxAttempts = numSamples * 10; // safeguard: don't loop forever
+    int maxAttempts = numSamples * 50; // safeguard: don't loop forever
 
-    // prepare radii
-    std::set<std::pair<int,int>> exclude;
-    std::vector<float> radii;
-
-    const AtomVector &atoms = _flex->_instance->currentAtoms()->atomVector();
-    OpSet<Atom*> atom_set(atoms);
-    std::vector<Atom*> orderedAtoms = atom_set.toVector();
-    radii = makeRadiiVec(orderedAtoms);
-
-    // prepare exclude
-    exclude = makeExcList(atom_set);
-
-    // * Call submitJob for the randomWeight
-    double weight = 0;
-    _flex->submitJob(weight);
-    Result *r = _resources.calculator->acquireObject();
-    r->transplantPositions(false, true); // Or true, depending on what you want saved
-
+    // Reset to base position
+    _flex->submitJob(0);
+    Result *rInitial = _flex->getResult();
+    rInitial->transplantPositions(false, true);
+    
+    
+    // backwards iteration
+    int candidateIdx = candidateIndices.size() - 1;
+    
     while (saved < numSamples && attempts < maxAttempts)
     {
         ++attempts;
-        // * store index in _colIdx
-        // try:
-        // _colIdx = indices[attempts % indices.size()];
-        std::cout << "[debug] In [saveSampledStructures], inside while, _colIdx = " << _colIdx << std::endl;
-        // _colIdx = indices[saved];
+        // ---------------------------------------------------------
+        // DEBUGGING: Force sampling from the last columns of Matrix V
+        // ---------------------------------------------------------
+        // Instead of using 'candidateIndices', we force the index.
+        // Sample 0 -> Last Column (N-1)
+        // Sample 1 -> Second to Last (N-2)
+        // int pickIdx = N - 1 - saved; // previoud
+        int pickIdx = saved; // debug
 
-        // * Generate a random scalar weight in [-10, 10] (amplitude of the pertubation along that column)
-        std::random_device rd; std::mt19937 gen(rd()); 
-        std::uniform_real_distribution<> dis(-5.0, 5.0); 
-        double randomWeight = dis(gen);
-        // * Call submitJob for the randomWeight
+        // If we run out of indices going backwards, reset to the end
+        // if (candidateIdx < 0) 
+        // {
+        //     candidateIdx = candidateIndices.size() - 1;
+        // }
+        if (pickIdx < 0)
+        {
+            pickIdx = 0;
+        }
+
+        // Pick mode
+        // int pickIdx = candidateIndices[candidateIdx]; 
+        _flex->setColIdx(pickIdx);
+
+        // float randomWeight = dis(gen); // change for debugging: float randomWeight = 1;
+        float randomWeight = 1;
         _flex->submitJob(randomWeight);
-        Result *r = _resources.calculator->acquireObject();
-        r->transplantPositions(false); // Or true, depending on what you want saved
+        Result *r = _flex->getResult();
+        r->transplantPositions(false);
 
+        // NEW: Measure Deviations
+        std::cout << "[DEBUG] hbonds.size() = " << hbonds.size() << std::endl;
+        for (size_t bIdx = 0; bIdx < hbonds.size(); ++bIdx)
+        {
 
-        // check for classes
+            const auto& bond = hbonds[bIdx];
+            std::cout << "[DEBUG] bond.startDist (must be always the same) = " << bond.startDist << std::endl;
+            // Get ACTUAL positions from the modified atoms
+            float finalDist = glm::distance(bond.Hydrogen->derivedPosition(), 
+                                          bond.Acceptor->derivedPosition());
+            
+            float deviation = finalDist - bond.startDist;
+            std::cout << "Column (Constraint ID): " << bIdx 
+                      << " | Deviation: " << std::scientific << deviation 
+                      << std::endl;
+            collectedData.push_back({
+                saved,          // Sample Index
+                pickIdx,        // Mode Index
+                randomWeight,   // Weight
+                (int)bIdx,      // Bond Index
+                bond.startDist, // Original Distance
+                finalDist,      // New Distance
+                finalDist - bond.startDist // Deviation
+            });
+        }
+        
+
         float tol = 0.25f;
-        bool clashOK = checkClashes(orderedAtoms, saved, radii, exclude, tol);
+        bool clashOK = _flex->checkClashes(orderedAtoms, saved, radii, exclude, tol);
         if (!clashOK)
         {
-            std::cerr << "[saveSampledStructures] Sample " << saved << " rejected due to atom clash\n"; 
+            std::cerr << "[FlexSample] Sample rejected (clash) at attempt " << attempts
+                      << " (mode=" << pickIdx << ", weight=" << randomWeight << ")\n";
             r->destroy(); 
+            candidateIdx--;
             continue; // skip writing this structure
         }
-        std::ostringstream oss; oss << baseFileName << "_" << saved << ".pdb"; 
+
+        std::ostringstream oss; 
+        oss << baseFileName << "_" << saved << "_mode_" << pickIdx << ".pdb"; 
+        
         _instance->currentAtoms()->writeToFile(oss.str()); 
+        std::cout << "[FlexSample] Saved " << oss.str() 
+                  << " (Mode: " << pickIdx << ", Weight: " << randomWeight << ")\n";
+
         r->destroy(); 
-        ++saved;   
+        ++saved;
+        // candidateIdx--;
     }
+    saveBondDeviations(collectedData, csvDistFile);
+
+
     if (saved < numSamples) 
     { 
-        std::cerr << "[saveSampledStructures] Warning: only saved " 
-        << saved << "/" << numSamples << " due to clashes (maxAttempts=" 
-        << maxAttempts << ")\n"; 
+        std::cerr << "[FlexSample] Warning: Could not generate all samples. "
+                  << "Saved " << saved << "/" << numSamples 
+                  << " (Max attempts reached).\n"; 
     }
 
 }
 
-std::vector<int> FlexSample::sampleColumnIndices(int N, int sampleCount, double lambda)
+
+std::vector<int> FlexSample::sampleColumnIndices(int N, int sampleCount)
 {
-    std::vector<double> weights(N);
-    for (int i=0; i<N; i++)
+    if (N <= 0 || sampleCount <= 0) return {};
+    std::cout << "[debug] Flag 1: Hello from sampleColumnIndices! " << std::endl;
+    std::vector<int> weights(N); // numbers from 0 to N
+    for (int i = 0; i < N; i++)
     {
-        weights[i] = std::exp(lambda * i);
+        weights[i] = i+1;
     }
-    // normalise weights 
-    double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-    for (auto& w : weights) w /= sum;
-
-    // compute CDF
-    std::vector<double> cdf(N);
-    cdf[0] = weights[0];
-    for (int i = 1; i < N; ++i)
-        cdf[i] = cdf[i - 1] + weights[i];
-    // Sample indices
-    std::vector<int> sampled;
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-    while (sampled.size() < sampleCount)
+    std::cout << "[debug] Flag 2: Finished calculating weights " << std::endl;
+    std::vector<int> cumulativeWeights(N);
+    cumulativeWeights[0] = weights[0];
+    std::cout << "[debug] Flag 3: Assigned  weights[0] to cumulativeWeights[0] = " 
+                                            << cumulativeWeights[0] << std::endl;
+    for (int i = 1; i < N; i++)
     {
-        double r = dis(gen);
-        auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
-        int idx = std::distance(cdf.begin(), it);
-        sampled.push_back(idx);
+        cumulativeWeights[i] = cumulativeWeights[i-1] + weights[i];
     }
-    return sampled;
+    std::cout << "[debug] Flag 4: Finished calculating cumulative sum! " << std::endl;
+    std::vector<int> result;
+    result.reserve(sampleCount);
+    std::cout << "[debug] Flag 5: About to calculate the ranodm index " << std::endl;
+    for (int j = 0; j < sampleCount; ++j)
+    {    
+        int idx = pickIndex(cumulativeWeights);
+        result.push_back(idx);
+    }
+    std::cout << "[debug] Flag 6: Finished! Return result " << std::endl;
+    return result; 
 }
+
+
+
+// std::vector<int> Flexibility::sampleColumnIndicesExp(int N, int sampleCount, double lambda)
+// {
+//     std::vector<double> weights(N);
+//     for (int i=0; i<N; i++)
+//     {
+//         weights[i] = std::exp(lambda * i);
+//     }
+//     // normalise weights 
+//     double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
+//     for (auto& w : weights) w /= sum;
+
+//     // compute CDF
+//     std::vector<double> cdf(N);
+//     cdf[0] = weights[0];
+//     for (int i = 1; i < N; ++i)
+//         cdf[i] = cdf[i - 1] + weights[i];
+//     // Sample indices
+//     std::vector<int> sampled;
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_real_distribution<> dis(0.0, 1.0);
+//     while (sampled.size() < sampleCount)
+//     {
+//         double r = dis(gen);
+//         auto it = std::lower_bound(cdf.begin(), cdf.end(), r);
+//         int idx = std::distance(cdf.begin(), it);
+//         sampled.push_back(idx);
+//     }
+//     return sampled;
+// }
+
+void FlexSample::computeOneSample(int pickIdx, double weight)
+{
+    _flex->setColIdx(pickIdx);
+    _flex->submitJob(static_cast<float>(0));
+    {
+        Result *r = _flex->getResult(); // FIX: clean up the results in the end 
+        r->transplantPositions(false, true); // Or true, depending on what you want saved
+        r->destroy();
+    }
+    // pritn atombyname here
+    std::cout << "[debug] In [computeOneSample], inside while, pickIdx (should be equal to _coldIdx) = " << pickIdx << std::endl;
+    // * Call submitJob for the randomWeight
+    _flex->submitJob(static_cast<float>(weight));
+    Result *r = _flex->getResult();
+    r->transplantPositions(false); // Or true, depending on what you want saved
+    // pritn atombyname here 
+    r->destroy(); 
+}
+
+// === NEW: MEASURE H-A DISTANCE ===
+void FlexSample::saveBondDeviations(const std::vector<DeviationData>& data, const std::string& filename)
+{
+    std::ofstream csv(filename);
+    if (!csv.is_open())
+    {
+        std::cerr << "[FlexSample] Error: Could not open file" << filename << "for writing.";
+
+    }
+     csv <<"SampleIdx, ModeIdx, Weight, BondIdx, StartDist, FinalDist, DistDiff\n";
+         for (const auto& row : data)
+    {
+        csv << row.sampleIdx << "," 
+            << row.modeIdx << "," 
+            << row.weight << "," 
+            << row.bondIdx << "," 
+            << row.startDist << "," 
+            << row.finalDist << "," 
+            << row.deviation << "\n";
+    }
+
+    std::cout << "[FlexSample] Saved " << data.size() << " deviation records to " << filename << std::endl;
+}
+
 
 
 std::vector<int> FlexSample::getSoftestModeIndices(const Eigen::VectorXf& singularValues)
 {
     int totalModes = static_cast<int>(singularValues.size());
-    std::vector<int> indices(totalModes);
+    std::vector<int> indices;
     for (int i = totalModes -1; i >= 0; i--)
     {
         if (singularValues[i] < 1e-6)
@@ -148,222 +379,7 @@ std::vector<int> FlexSample::getSoftestModeIndices(const Eigen::VectorXf& singul
     return indices;
 }
 
-std::vector<glm::vec3> Flexibility::makePosVec(const AtomVector &atoms)
-{
-    std::vector<glm::vec3> positions;
-    positions.reserve(atoms.size());
-    for (Atom *atom : atoms) 
-    {
-        // std::cout << positions.size() << " is atom " << atom->desc() << std::endl;
-        glm::vec3 pos = atom->derivedPosition();
-        positions.push_back(pos);
-    }
-    return positions;
-}
-
-std::vector<float> Flexibility::makeRadiiVec(const AtomVector &atoms)
-{
-    std::vector<float> radii;
-    radii.reserve(atoms.size());
-    for (Atom *atom : atoms) 
-    {
-        // Add van der Waals radius
-        std::string symbol = atom->elementSymbol();
-        gemmi::Element ele = gemmi::Element(symbol);
-        radii.push_back(ele.vdw_r());
-    }
-    return radii;
-}
 
 
-std::set<std::pair<int,int>> Flexibility::makeExcList(OpSet<Atom*> &atom_set)
-{
-    std::set<std::pair<int,int>> exclude;
-    std::map<Atom*, int> indexing = atom_set.indexing();
-    std::vector<Atom*> orderedAtoms = atom_set.toVector();
-    auto check_bondstraint = [&exclude, &indexing]<class Type>(Type *b, Atom *left_atom)
-    {
-        int atomCount = b->atomCount();
-        int left_idx = indexing[left_atom]; 
-        for (int k = 0; k < atomCount; ++k)
-        {
-            Atom *right_atom = b->atom(k);
-            if (right_atom == left_atom) continue;
-            int right_idx = indexing[right_atom];
-            auto key = std::minmax(left_idx, right_idx);
-            exclude.insert(key);
-            // Debug print
-            // std::cout << "[makeExcList] Excluding pair: " 
-            //           << key.first << " - " << key.second << "\n";
-        }
-    };
-
-    for (Atom *left_atom : orderedAtoms)
-    {
-        // go throught all the Bondstraints
-        int torsionCount = left_atom->bondTorsionCount();
-        // for each torsion involving left_atom 
-        for (int t = 0; t < torsionCount; ++t)
-        {
-            BondTorsion *torsion = left_atom->bondTorsion(t);
-            check_bondstraint(torsion, left_atom);
-        }
-        int angleCount = left_atom->bondAngleCount();
-        // for each torsion involving left_atom 
-        for (int t = 0; t < angleCount; ++t)
-        {
-            BondAngle *angle = left_atom->bondAngle(t);
-            check_bondstraint(angle, left_atom);
-        }
-
-    }
-    std::set<std::pair<int,int>> hbond_exclusions = makeExcHBonds(orderedAtoms, indexing);
-    exclude.insert(hbond_exclusions.begin(), hbond_exclusions.end());
-
-    return exclude;
-}
-
-std::set<std::pair<int,int>> Flexibility::makeExcHBonds(std::vector<Atom*> orderedAtoms, std::map<Atom*, int> indexing)
-{
-    std::set<std::pair<int,int>> excludeHAtom;
-    // std::map<Atom*, int> indexing = atom_set.indexing();
-
-    // std::vector<Atom*> orderedAtoms = atom_set.toVector();
-    std::vector<glm::vec3> positions = makePosVec(orderedAtoms);
-    int n = positions.size();
-
-    
-    // Typical covalent N-H ~1.0 Å, O-H ~0.96 Å. Use a small margin.
-    const float OH_cutoff = 0.96f; // 1.20f;
-    const float NH_cutoff = 1.00f; //1.20f; 
-
-    for (int i = 0; i < n; ++i)
-    {
-        Atom *a_i = orderedAtoms[i];
-        if (a_i->elementSymbol() != "H") continue;
-
-        for (int j = 0; j < n; ++j)
-        {
-            if (i == j) continue; 
-            Atom *a_j = orderedAtoms[j];
-            std::string elem = a_j ->elementSymbol();
-            if (elem != "O" && elem !="N") continue;
-            // choose cutoff based on heavy atom type
-            float cutoff = (elem == "O") ? OH_cutoff : NH_cutoff;
-            // axis-aligned early exits
-            float dx = positions[i].x - positions[j].x;
-            if (std::abs(dx) > cutoff) continue;
-            float dy = positions[i].y - positions[j].y;
-            if (std::abs(dy) > cutoff) continue;
-            float dz = positions[i].z - positions[j].z;
-            if (std::abs(dz) > cutoff) continue;
-
-
-            // full squared-distance check
-            float dist2 = dx*dx + dy*dy + dz*dz;
-            if (dist2 <= cutoff * cutoff)
-            {
-                auto key = std::minmax(indexing[a_i], indexing[a_j]);
-                excludeHAtom.insert(key);
-            }
-        }
-    }
-    return excludeHAtom;
-}
-
-
-
-bool Flexibility::checkClashes(const std::vector<Atom*> orderedAtoms, 
-                                int saved,
-                               const std::vector<float> &radii,
-                               const std::set<std::pair<int,int>> &exclude,
-                               float tolerance)
-{
-    std::vector<glm::vec3> positions = makePosVec(orderedAtoms);
-    using Pair = std::pair<int, int>;
-    std::set<Pair> skip; 
-    for (const auto &p : exclude) 
-    { 
-        skip.insert(std::minmax(p.first, p.second)); 
-    }
-    int n = positions.size();
-    for (int i = 0; i < n; ++i)
-    {
-        for (int j = i + 1; j < n; ++j)
-        {
-            // std::cout << "[checkClashes] Clash between atoms "
-            //               << i << " and " << j << std::endl;
-
-            if (skip.count(std::minmax(i, j)) > 0) continue; 
-            float limit = radii[i] + radii[j] - tolerance;
-            // float collisionFactor = 0.85f; // or 0.8–0.9, tune as needed
-            // float limit = collisionFactor * (radii[i] + radii[j]);
-
-            if (limit < 0.0f) continue; //radii to small
-
-            // caclulate coordinate differences
-            float  dx = positions[i].x - positions[j].x;
-            if (std::abs(dx) > limit) continue; // early exit 
-
-            float  dy = positions[i].y - positions[j].y;
-            if (std::abs(dy) > limit) continue; // early exit 
-
-            float dz = positions[i].z - positions[j].z;
-            if (std::abs(dz) > limit) continue; // early exit 
-
-            // only now compute the squared distance
-            float dist2 = dx*dx + dy*dy + dz*dz;
-            if (dist2 > limit * limit) continue;
-
-            Atom *left = orderedAtoms[i];
-            Atom *right = orderedAtoms[j];
-            glm::vec3 left_initial = left->otherPosition("other");
-            glm::vec3 right_initial = right->otherPosition("other");
-            // calculate dist between left_initial and right_intitila
-            float dist_initial =  glm::length(left_initial - right_initial);
-            if (dist_initial - tolerance < limit)
-            {
-                limit = dist_initial - tolerance;
-            }
-            if (dist2 > limit * limit) continue;
-
-            std::cerr << "[checkClashes] Clash between atoms " << i << " and " << j << "\n";
-            std::cerr << "[checkClashes] dist2 " << dist2 << " and limit " << limit << "\n";
-            listClashes("list_clashes.csv", saved, orderedAtoms, i, j, radii);
-            return false;
-            
-        }
-    }
-    return true;
-
-}
-
-
-void Flexibility::listClashes(const std::string &filename,
-                              int saved,
-                              const std::vector<Atom*> &orderedAtoms,
-                              int i, int j,
-                              const std::vector<float> &radii)
-{
-    std::ofstream file(filename, std::ios::app); // append mode
-    if (!file.is_open())
-    {
-        std::cerr << "Could not open file: " << filename << std::endl;
-        return;
-    }
-
-    // Write header if this is the first clash for this sample
-    file << "sample_structure_wo_vdW" << saved << "\n";
-
-    Atom *a1 = orderedAtoms[i];
-    Atom *a2 = orderedAtoms[j];
-
-    file << a1->desc() << "," 
-         << std::fixed << std::setprecision(3) << radii[i] << ","
-         << a2->desc() << ","
-         << std::fixed << std::setprecision(3) << radii[j] << "\n";
-
-    file.close();
-}
 
 
