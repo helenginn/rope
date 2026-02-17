@@ -21,7 +21,7 @@
 
 #include "paths/Route.h"
 #include "Progressor.h"
-#include "MultiSimplex.h"
+#include "MultiEngine.h"
 #include "SimplexEngine.h"
 #include "GradientTerm.h"
 #include <vagabond/c4x/Angular.h>
@@ -32,7 +32,7 @@ class Path;
 template <class Type> class OpSet;
 
 class PlausibleRoute : public Route, public Progressor, public RunsEngine,
-public RunsMultiSimplex<ResidueId>
+public RunsMultiEngine<ResidueId, SimplexEngine>
 {
 	friend RouteValidator;
 	friend Path;
@@ -113,7 +113,7 @@ protected:
 
 	virtual std::map<ResidueId, float> 
 	getMultiResult(const std::vector<float> &all, 
-	               MultiSimplex<ResidueId> *caller);
+	               MultiEngine<ResidueId, SimplexEngine> *caller);
 
 	virtual void finishedKey(const ResidueId &key);
 
