@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "MultiSimplex.h"
+#include "MultiEngine.h"
 #include "engine/Tasks.h"
 
 MultiEngine::MultiEngine()

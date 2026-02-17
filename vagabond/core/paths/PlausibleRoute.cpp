@@ -332,7 +332,8 @@ bool PlausibleRoute::sideChainGradients(int order)
 	{
 		ResidueTorsion &rt = residueTorsion(i);
 		if (!parameter(i) || (parameter(i)->isTorsion() &&
-		    (parameter(i)->coversMainChain() || parameter(i)->isConstrained())))
+		                      (parameter(i)->coversMainChain() ||
+		                      parameter(i)->isConstrained())))
 		{
 			continue;
 		}
@@ -453,7 +454,8 @@ void PlausibleRoute::prepareGradients(lbfgsfloatval_t *g)
 	};
 
 	delete _path;
-	GradientPath *path = gradients(doingSides() ? side_chain : ValidateIndex{});
+	GradientPath *path = gradients(doingSides() ? 
+	                               side_chain : ValidateIndex{});
 	_path = path;
 
 	for (int j = 0; j < _path->motion_idxs.size(); j++)
@@ -513,8 +515,10 @@ bool PlausibleRoute::applyGradients()
 	_bestScore = startScore;
 
 	_path = path;
-	std::vector<float> current = save_current(path, _motions, currentOrder());
+	std::vector<float> current = save_current(path, _motions,
+	                                          currentOrder());
 	float endScore = 0;
+
 	lbfgs(current.size(), &current[0], &endScore, &evaluateLbfgs,
 	      nullptr, this, &params);
 
