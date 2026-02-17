@@ -20,7 +20,6 @@
 #include "ResidueId.h"
 #include "paths/PlausibleRoute.h"
 #include "BondCalculator.h"
-#include "MultiSimplex.h"
 #include "GradientTerm.h"
 #include "BondSequence.h"
 #include "Polymer.h"
@@ -857,7 +856,7 @@ void PlausibleRoute::finishedKey(const ResidueId &key)
 
 std::map<ResidueId, float> PlausibleRoute::
 	getMultiResult(const std::vector<float> &all,
-	               MultiSimplex<ResidueId> *caller)
+	               MultiEngine<ResidueId, SimplexEngine> *caller)
 {
 	assignParameterValues(all);
 	

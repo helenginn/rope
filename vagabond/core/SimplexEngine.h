@@ -27,7 +27,7 @@
 #include "Engine.h"
 
 template <class X, class Y> class Task;
-class MultiEngine;
+class MultiEngineBase;
 class BaseTask;
 
 class SimplexEngine : public Engine
@@ -46,7 +46,7 @@ public:
 		_maxJobs = maxJobs;
 	}
 
-	Task<void *, void *> *taskedRun(MultiEngine *ms);
+	Task<void *, void *> *taskedRun(MultiEngineBase *ms);
 
 	virtual void finish();
 protected:
@@ -124,11 +124,11 @@ private:
 	void handleContraction();
 
 	Task<void *, void *> *taskedHandleJobs(Task<void *, void *> *before,
-	                                       MultiEngine *ms);
-	void handleShrink(MultiEngine *ms, Task<void *, void *> *&first);
+	                                       MultiEngineBase *ms);
+	void handleShrink(MultiEngineBase *ms, Task<void *, void *> *&first);
 
-	void taskedCycle(Task<void *, void *> *before, MultiEngine *ms);
-	void prepareCycle(MultiEngine *ms);
+	void taskedCycle(Task<void *, void *> *before, MultiEngineBase *ms);
+	void prepareCycle(MultiEngineBase *ms);
 	
 	int pointCount()
 	{
