@@ -25,16 +25,13 @@
 #include <vagabond/utils/Vec3s.h>
 #include <queue>
 #include <atomic>
-#include <engine/Task.h>
 
-class Tasks;
-class BaseTask;
+#include "MultiEngine.h"
 
-template <class Key>
-class MultiSimplex;
+template <class Key> class MultiSimplex;
 
 template <class Key>
-class RunsMultiEngine
+class RunsMultiSimplex
 {
 public:
 	virtual std::map<Key, float> 
@@ -44,39 +41,11 @@ public:
 
 };
 
-class MultiEngine
-{
-public:
-	void addImmediateTask(BaseTask *bt);
-	void addHangingTask(BaseTask *bt);
-	
-	Tasks *const &immediate() const
-	{
-		return _immediate;
-	}
-
-	Tasks *const &hanging() const
-	{
-		return _hanging;
-	}
-	
-	void clearTasks();
-
-	virtual void declareDone(Engine *sender, const std::vector<float> &best) = 0;
-protected:
-	MultiEngine();
-	~MultiEngine();
-	
-	Tasks *_immediate = nullptr;
-	Tasks *_hanging = nullptr;
-	int _threads = 4;
-};
-
 template <class Key>
 class MultiSimplex : public RunsEngine, public MultiEngine
 {
 public:
-	MultiSimplex(RunsMultiEngine<Key> *runs, int count)
+	MultiSimplex(RunsMultiSimplex<Key> *runs, int count)
 	{
 		_count = count;
 		_ref = runs;
@@ -92,6 +61,7 @@ public:
 		_maxRuns = mr;
 	}
 
+	// which key is sensitive to which parameters
 	void supplyInfo(const std::map<Key, std::vector<int>> &crucial_info)
 	{
 		for (auto it = crucial_info.begin(); it != crucial_info.end(); it++)
@@ -385,7 +355,7 @@ private:
 	float _step = 1;
 	std::condition_variable _cv;
 	std::mutex _result;
-	RunsMultiEngine<Key> *_ref;
+	RunsMultiSimplex<Key> *_ref;
 };
 
 #endif

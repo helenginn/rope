@@ -32,7 +32,7 @@ class Path;
 template <class Type> class OpSet;
 
 class PlausibleRoute : public Route, public Progressor, public RunsEngine,
-public RunsMultiEngine<ResidueId>
+public RunsMultiSimplex<ResidueId>
 {
 	friend RouteValidator;
 	friend Path;
