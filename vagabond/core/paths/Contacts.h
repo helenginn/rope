@@ -20,11 +20,11 @@
 
 #include <map>
 #include <mutex>
-#include "../ResidueId.h"
+#include "Scores.h"
 
 struct Contacts
 {
-	typedef std::map<ResidueId, std::map<ResidueId, float>> Map;
+	typedef std::map<ScoreBucket, std::map<ScoreBucket, float>> Map;
 	static std::mutex *mutex;
 	
 	~Contacts()
@@ -50,7 +50,7 @@ struct Contacts
 		return sum / 2;
 	}
 
-	std::map<ResidueId, float> &operator[](const ResidueId &id)
+	std::map<ScoreBucket, float> &operator[](const ScoreBucket &id)
 	{
 		return totals[id];
 	}

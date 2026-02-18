@@ -26,7 +26,41 @@
 // helpful rant:
 // The spaghetti code is really upsetting. I built this lovely control system which splits jobs arbitrarily on different threads, and somehow the control mechanism is just a giant IF statement maze now. I can split the scores up by residue ID but not by subunit. I’ve got a class called “ByResidueResult” and obviously I will need a “ByInstanceResult”, but I should make it templated for the future (“ResultBy<Custom>” where Custom can be whatever I like). In fact, “DetermineCustom” should be an actual function figuring out what “Custom” is. Then I can return e.g. instance ID or residue ID or whatever I like elsewhere in the code.
 
+// that's a bit weird, Past Helen. Just have one Custom option which covers both chains & residue ranges. Your ByResidueResult is not going to work when you have multiple chains anyway.
+
 struct ActivationEnergy;
+
+struct ScoreBucket
+{
+	std::string chain{};
+	ResidueId minRes{};
+	ResidueId maxRes{};
+	
+	int as_num() const
+	{
+		return minRes.as_num();
+	}
+	
+	bool operator<(const ScoreBucket &other) const;
+	bool operator==(const ScoreBucket &other) const;
+	
+	bool single() const;
+	ScoreBucket()
+	{
+		chain = {};
+		minRes = {};
+		maxRes = {};
+	}
+
+	ScoreBucket(Atom *atom);
+	ScoreBucket(int res)
+	{
+		chain = "";
+		minRes = res;
+		maxRes = res;
+	}
+	bool fully_contains(const ScoreBucket &other) const;
+};
 
 template <class Custom>
 struct SingleResult
@@ -61,7 +95,5 @@ struct ResultBy
 	}
 };
 
-//typedef SingleResult<ResidueId> SingleResidueResult;
-//typedef ResultBy<ResidueId> ByResidueResult;
 
 #endif

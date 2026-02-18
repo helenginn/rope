@@ -435,13 +435,13 @@ void RouteExplorer::makeLemons()
 
 	for (auto lemon : lemons)
 	{
-		ResidueId &id = lemon.first;
+		ScoreBucket &id = lemon.first;
 		float score = lemon.second;
 
-		Atom *chosen = _atoms->atomByIdName({id}, "CA");
+		Atom *chosen = _atoms->atomByIdName({id.as_num()}, "CA", id.chain);
 		if (!chosen)
 		{
-			chosen = _atoms->atomByIdName({id}, "");
+			chosen = _atoms->atomByIdName({id.as_num()}, "", id.chain);
 		}
 
 		if (chosen)

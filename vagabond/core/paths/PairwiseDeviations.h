@@ -34,7 +34,7 @@ class BondSequence;
 class BundleBonds;
 class Separation;
 struct AtomBlock; 
-struct ResidueId;
+struct ScoreBucket;
 struct Deviation; 
 struct ActivationEnergy; 
 
@@ -95,7 +95,7 @@ public:
 		return _pairs;
 	}
 
-	const std::set<ResidueId> &residues() const
+	const std::set<ScoreBucket> &residues() const
 	{
 		return _residues;
 	}
@@ -132,7 +132,7 @@ public:
 		return (_atoms2Info.count({left, right}) > 0);
 	}
 	
-	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
+	const std::map<ScoreBucket, std::vector<int>> &perResiduePairs()
 	{
 		return _perResidue;
 	}
@@ -148,13 +148,13 @@ public:
 	}
 	
 	Task<BondSequence *, Deviation> *
-	momentum_task(float frac, const std::set<ResidueId> &forResidues);
+	momentum_task(float frac, const std::set<ScoreBucket> &forResidues);
 
 	Task<BundleBonds *, ActivationEnergy> *
-	bundle_clash(const std::set<ResidueId> &forResidues);
+	bundle_clash(const std::set<ScoreBucket> &forResidues);
 
 	Task<BundleBonds *, Contacts> *
-	contact_map(const std::set<ResidueId> &forResidues);
+	contact_map(const std::set<ScoreBucket> &forResidues);
 
 	bool filter_in(int p) const
 	{
@@ -181,8 +181,8 @@ private:
 	typedef std::pair<Atom *, Atom *> AtomAtom;
 
 	glm::vec3 *_reference = nullptr;
-	std::map<ResidueId, std::vector<int>> _perResidue;
-	std::set<ResidueId> _residues;
+	std::map<ScoreBucket, std::vector<int>> _perResidue;
+	std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;
 	std::vector<Atom *> _atoms;
 	std::vector<TargetInfo> _infoPairs;

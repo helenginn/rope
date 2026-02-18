@@ -40,7 +40,7 @@ EnergyTorsions::~EnergyTorsions()
 }
 
 auto energy_term(EnergyTorsions *et, float frac, 
-                 const std::set<ResidueId> &forResidues)
+                 const std::set<ScoreBucket> &forResidues)
 {
 	LoopMechanism loop = loop_mechanism(et->pairs(), et->perResiduePairs(),
 	                                    forResidues);
@@ -81,7 +81,7 @@ auto energy_term(EnergyTorsions *et, float frac,
 }
 
 Task<BondSequence *, ActivationEnergy> *
-EnergyTorsions::energy_task(const std::set<ResidueId> &forResidues, float frac)
+EnergyTorsions::energy_task(const std::set<ScoreBucket> &forResidues, float frac)
 {
 	auto energy = energy_term(this, frac, forResidues);
 	auto *task = new Task<BondSequence *, ActivationEnergy>(energy, "torsion activation energy");
@@ -209,8 +209,8 @@ void EnergyTorsions::prepare(BondSequence *sequence,
 			Parameter *p = basis->parameter(block.torsion_idx);
 			start_angle = p->value();
 			idx = lookup(p);
-			ResidueId resi = p->residueId();
-			_perResidues[resi].push_back(_energies.size());
+			ScoreBucket bucket = ScoreBucket(p->anAtom());
+			_perResidues[bucket].push_back(_energies.size());
 		}
 		else
 		{

@@ -31,7 +31,7 @@ class Path;
 template <class Type> class OpSet;
 
 class PlausibleRoute : public Route, public Progressor, public RunsEngine,
-public RunsMultiEngine<ResidueId, SimplexEngine>
+public RunsMultiEngine<ScoreBucket, SimplexEngine>
 {
 	friend RouteValidator;
 	friend Path;
@@ -48,12 +48,12 @@ public:
 
 	void refreshScores();
 	void setTargets();
-	OpSet<ResidueId> worstSidechains(int num);
+	OpSet<ScoreBucket> worstSidechains(int num);
 	
 	float routeScore(int steps, const CalcOptions &add_options = None,
 	                 const CalcOptions &sub_options = None);
 
-	ResultBy<ResidueId> *byResidueScore(int steps, const CalcOptions &add_options
+	ResultBy<ScoreBucket> *byResidueScore(int steps, const CalcOptions &add_options
 	                                    = CalcOptions(PerResidue | VdWClashes),
 	                                    const CalcOptions &subtract_options
 	                                    = None);
@@ -110,11 +110,11 @@ public:
 protected:
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 
-	virtual std::map<ResidueId, float> 
+	virtual std::map<ScoreBucket, float> 
 	getMultiResult(const std::vector<float> &all, 
-	               MultiEngine<ResidueId, SimplexEngine> *caller);
+	               MultiEngine<ScoreBucket, SimplexEngine> *caller);
 
-	virtual void finishedKey(const ResidueId &key);
+	virtual void finishedKey(const ScoreBucket &key);
 
 	virtual size_t parameterCount(Engine *caller = nullptr);
 

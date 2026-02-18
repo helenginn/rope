@@ -74,7 +74,7 @@ public:
 
 	BondSequenceHandler *sequences();
 	
-	void setParticularResidues(const std::set<ResidueId> &ids)
+	void setParticularResidues(const std::set<ScoreBucket> &ids)
 	{
 		_ids = ids;
 	}
@@ -108,10 +108,10 @@ private:
 	float _frac = 0;
 	Route *_route = nullptr;
 	CalcOptions _options{};
-	std::set<ResidueId> _ids;
+	std::set<ScoreBucket> _ids;
 
-	Bin<ResultBy<ResidueId>> &perResidueBin();
-	Task<ResultBy<ResidueId>, void *> *submitResidueResult{};
+	Bin<ResultBy<ScoreBucket>> &perResidueBin();
+	Task<ResultBy<ScoreBucket>, void *> *submitResidueResult{};
 
 	bool doingSides();
 	void bundleWorkIfApplicable(int idx);

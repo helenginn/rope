@@ -362,7 +362,7 @@ public:
 		return _hash;
 	}
 	
-	std::vector<std::pair<ResidueId, float>> lemons()
+	std::vector<std::pair<ScoreBucket, float>> lemons()
 	{
 		return _lemons;
 	}
@@ -425,7 +425,7 @@ protected:
 	int _jobOrder = 0;
 	std::vector<int> _activeParams;
 	
-	std::set<ResidueId> _ids;
+	std::set<ScoreBucket> _ids;
 	
 	void setScores(float &momentum, float &clash)
 	{
@@ -448,7 +448,7 @@ protected:
 	int _order = 3;
 	bool _gui = false;
 
-	Bin<ResultBy<ResidueId>> _perResBin;
+	Bin<ResultBy<ScoreBucket>> _perResBin;
 	Bin<GradientPath> _gradientBin;
 	
 	float _chosenFrac = 0.5;
@@ -466,7 +466,7 @@ protected:
 	void installAllResidues();
 
 	NonCovalents *_noncovs = nullptr;
-	std::vector<std::pair<ResidueId, float>> _lemons;
+	std::vector<std::pair<ScoreBucket, float>> _lemons;
 private:
 	bool _calculating = false;
 	

@@ -32,7 +32,7 @@ struct ActivationEnergy;
 template <typename In, typename Out> class Task;
 class BondSequence;
 class RTMotion;
-struct ResidueId;
+struct ScoreBucket;
 
 class EnergyTorsions
 {
@@ -44,7 +44,7 @@ public:
 	
 	typedef std::function<float(const float &)> Torsion2Energy;
 	
-	const std::map<ResidueId, std::vector<int>> &perResiduePairs()
+	const std::map<ScoreBucket, std::vector<int>> &perResiduePairs()
 	{
 		return _perResidues;
 	}
@@ -62,16 +62,16 @@ public:
 	float reference_torsion(int idx, float frac);
 
 	Task<BondSequence *, ActivationEnergy> *
-	energy_task(const std::set<ResidueId> &forResidues, float frac);
+	energy_task(const std::set<ScoreBucket> &forResidues, float frac);
 private:
 	void prepare(BondSequence *sequence, const RTMotion &motions,
 	             const std::function<int(Parameter *)> &lookup);
 
 	std::vector<int> _pairs;
-	std::map<ResidueId, std::vector<int>> _perResidues;
+	std::map<ScoreBucket, std::vector<int>> _perResidues;
 	std::vector<std::pair<float, float> > _angles;
 	std::vector<Torsion2Energy> _energies;
-	std::vector<OpSet<ResidueId>> _partitions;
+	std::vector<OpSet<ScoreBucket>> _partitions;
 };
 
 #endif

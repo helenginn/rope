@@ -19,7 +19,7 @@
 #include <vagabond/utils/compatibility.h>
 #include "LBFGSEngine.h"
 #include "ParamSet.h"
-#include "ResidueId.h"
+#include "Scores.h"
 #include "paths/PlausibleRoute.h"
 #include "BondCalculator.h"
 #include "GradientTerm.h"
@@ -258,12 +258,12 @@ std::vector<float> save_current(GradientPath *path, const RTMotion &motions,
 	return current;
 }
 
-OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
+OpSet<ScoreBucket> PlausibleRoute::worstSidechains(int num)
 {
 	struct RankedResidue
 	{
 		float score;
-		ResidueId id;
+		ScoreBucket id;
 
 		bool operator<(const RankedResidue &other) const
 		{
@@ -274,17 +274,17 @@ OpSet<ResidueId> PlausibleRoute::worstSidechains(int num)
 	std::set<RankedResidue> residues;
 	
 	_ids.clear();
-	ResultBy<ResidueId> *rr = byResidueScore(nudgeCount());
-	std::map<ResidueId, float> highests = rr->activations;
+	ResultBy<ScoreBucket> *rr = byResidueScore(nudgeCount());
+	std::map<ScoreBucket, float> highests = rr->activations;
 	delete rr;
 
 	for (auto it = highests.begin(); it != highests.end(); it++)
 	{
-		const ResidueId &local = it->first;
+		const ScoreBucket &local = it->first;
 		residues.insert({it->second, local});
 	}
 
-	OpSet<ResidueId> chosen;
+	OpSet<ScoreBucket> chosen;
 
 	int n = 0;
 	float sum = 0;
@@ -323,10 +323,10 @@ bool PlausibleRoute::sideChainGradients(int order)
 	_paramStarts.clear();
 	_steps.clear();
 
-	OpSet<ResidueId> chosen = worstSidechains(5);
+	OpSet<ScoreBucket> chosen = worstSidechains(5);
 
 	float step = doingClashes() ? 10 : 2.0;
-	std::map<ResidueId, std::vector<int>> map;
+	std::map<ScoreBucket, std::vector<int>> map;
 	int n = 0;
 	for (int i = 0; i < motionCount(); i++)
 	{
@@ -345,13 +345,12 @@ bool PlausibleRoute::sideChainGradients(int order)
 			continue;
 		}
 
-		const ResidueId &local = rt.local_id();
 		WayPoints &wps = wayPoints(i);
 
 		for (int j = 0; j < order; j++)
 		{
 			addFloatParameter(&wps._amps[j], step);
-			map[local].push_back(n);
+			map[ScoreBucket(parameter(i)->anAtom())].push_back(n);
 			n++;
 		}
 	}
@@ -360,7 +359,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 	postScore(oldsc);
 
 	installAllResidues();
-	MultiSimplex<ResidueId> ms(this, parameterCount());
+	MultiSimplex<ScoreBucket> ms(this, parameterCount());
 	ms.setStepSize(step);
 	ms.supplyInfo(map);
 	ms.run();
@@ -376,15 +375,15 @@ bool PlausibleRoute::sideChainGradients(int order)
 	chosen = worstSidechains(5);
 	_ids = chosen;
 
-	std::map<ResidueId, std::vector<int>> mini;
-	for (const ResidueId &id : chosen)
+	std::map<ScoreBucket, std::vector<int>> mini;
+	for (const ScoreBucket &id : chosen)
 	{
 		mini[id] = map[id];
 	}
 
 	{
 		if (!doingClashes()) step = 1;
-		MultiSimplex<ResidueId> ms(this, parameterCount());
+		MultiSimplex<ScoreBucket> ms(this, parameterCount());
 		ms.setStepSize(step);
 		ms.supplyInfo(mini);
 		for (int i = 0; i < 10; i++)
@@ -545,7 +544,7 @@ bool PlausibleRoute::refineMomentum()
 	return meaningful;
 }
 
-ResultBy<ResidueId> *PlausibleRoute::byResidueScore(int steps, 
+ResultBy<ScoreBucket> *PlausibleRoute::byResidueScore(int steps, 
                                                 const CalcOptions &add_options,
                                                 const CalcOptions 
                                                 &subtract_options)
@@ -563,7 +562,7 @@ ResultBy<ResidueId> *PlausibleRoute::byResidueScore(int steps,
 	submitValue(options, steps);
 	retrieve();
 	_perResBin.releaseHorses();
-	ResultBy<ResidueId> *r = _perResBin.acquireObject();
+	ResultBy<ScoreBucket> *r = _perResBin.acquireObject();
 	return r;
 }
 
@@ -863,14 +862,14 @@ void PlausibleRoute::assignParameterValues(const std::vector<float> &trial)
 	}
 }
 
-void PlausibleRoute::finishedKey(const ResidueId &key)
+void PlausibleRoute::finishedKey(const ScoreBucket &key)
 {
 	_ids.erase(key);
 }
 
-std::map<ResidueId, float> PlausibleRoute::
+std::map<ScoreBucket, float> PlausibleRoute::
 	getMultiResult(const std::vector<float> &all,
-	               MultiEngine<ResidueId, SimplexEngine> *caller)
+	               MultiEngine<ScoreBucket, SimplexEngine> *caller)
 {
 	assignParameterValues(all);
 	
@@ -881,7 +880,7 @@ std::map<ResidueId, float> PlausibleRoute::
 		retrieve();
 	}
 	
-	ResultBy<ResidueId> *rr = nullptr;
+	ResultBy<ScoreBucket> *rr = nullptr;
 	if (doingClashes())
 	{
 		rr = byResidueScore(num);
@@ -891,7 +890,14 @@ std::map<ResidueId, float> PlausibleRoute::
 		rr = byResidueScore(num, NoHydrogens, VdWClashes);
 	}
 
-	std::map<ResidueId, float> scores = rr->scores;
+	std::map<ScoreBucket, float> scores = rr->scores;
+	
+	for (auto it = scores.begin(); it != scores.end(); it++)
+	{
+		std::cout << it->first.chain << " (" << it->first.minRes << "-" <<
+		it->first.maxRes << ") -> " <<
+		it->second << std::endl;
+	}
 
 	delete rr;
 	return scores;

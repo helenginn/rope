@@ -86,7 +86,7 @@ std::pair<int, int> Blame::index(Instance *start, Instance *end)
 	return {st_idx, end_idx};
 }	
 
-float Blame::sum_for_residue(Path *const &path, ResidueId residue)
+float Blame::sum_for_residue(Path *const &path, ScoreBucket residue)
 {
 	std::unique_lock<std::mutex> lock(mutex());
 
@@ -97,7 +97,7 @@ float Blame::sum_for_residue(Path *const &path, ResidueId residue)
 
 	Contacts &contacts = _contacts[path];
 
-	std::map<ResidueId, float> for_res = contacts[residue];
+	std::map<ScoreBucket, float> for_res = contacts[residue];
 	
 	float sum = 0;
 	for (auto it = for_res.begin(); it != for_res.end(); it++)
