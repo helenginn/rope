@@ -72,6 +72,8 @@ guifiles = [
 'Graph.cpp',
 'GraphView.h',
 'GraphView.cpp',
+'HeatMapOptions.cpp',
+'HeatMapOptions.h',
 'HeatMapView.cpp',
 'HeatMapView.h',
 'IconLegend.cpp',
