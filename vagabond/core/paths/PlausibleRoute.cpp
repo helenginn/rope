@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/compatibility.h>
+#include "LBFGSEngine.h"
 #include "ParamSet.h"
 #include "ResidueId.h"
 #include "paths/PlausibleRoute.h"
@@ -425,7 +426,7 @@ auto do_on_each_path_component(PlausibleRoute *pr,
 
 }
 
-float PlausibleRoute::evaluateMomentum(const lbfgsfloatval_t *x)
+float PlausibleRoute::evaluateMomentum(const float *x)
 {
 	do_on_each_path_component(this, _path,
 	[this, x](int p, int i, int n)
@@ -444,7 +445,7 @@ float PlausibleRoute::evaluateMomentum(const lbfgsfloatval_t *x)
 	return score;
 }
 
-void PlausibleRoute::prepareGradients(lbfgsfloatval_t *g)
+std::vector<float> PlausibleRoute::prepareGradients(int size)
 {
 	const auto side_chain = [this](int idx) -> bool
 	{
@@ -453,10 +454,10 @@ void PlausibleRoute::prepareGradients(lbfgsfloatval_t *g)
 	};
 
 	delete _path;
-	GradientPath *path = gradients(doingSides() ? 
-	                               side_chain : ValidateIndex{});
+	GradientPath *path = gradients(doingSides() ?  side_chain : ValidateIndex{});
 	_path = path;
 
+	std::vector<float> gs(size);
 	for (int j = 0; j < _path->motion_idxs.size(); j++)
 	{
 		int p = _path->motion_idxs[j]; // motion_idx
@@ -466,21 +467,11 @@ void PlausibleRoute::prepareGradients(lbfgsfloatval_t *g)
 			for (int i = 0; i < sines.size(); i++)
 			{
 				int n = p * currentOrder() + i;
-				g[n] = sines[i];
+				gs[n] = sines[i];
 			}
 		}
 	}
-}
-
-lbfgsfloatval_t evaluateLbfgs(void *instance, 
-                                 const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
-                                 const int n, const lbfgsfloatval_t step)
-{
-
-	PlausibleRoute *pr = static_cast<PlausibleRoute *>(instance);
-	float result = pr->evaluateMomentum(x);
-	pr->prepareGradients(g);
-	return result;
+	return gs;
 }
 
 GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
@@ -504,12 +495,6 @@ bool PlausibleRoute::applyGradients()
 		return false;
 	}
 
-	lbfgs_parameter_t params;
-	
-	lbfgs_parameter_init(&params);
-	params.max_iterations = 10;
-	params.max_linesearch = 10;
-
 	float startScore = routeScore(nudgeCount());
 	_bestScore = startScore;
 
@@ -518,8 +503,36 @@ bool PlausibleRoute::applyGradients()
 	                                          currentOrder());
 	float endScore = 0;
 
-	lbfgs(current.size(), &current[0], &endScore, &evaluateLbfgs,
-	      nullptr, this, &params);
+	LBFGSEngine engine(this, [&current]() { return current.size(); });
+	resetTickets();
+
+	engine.setGetScoreGetTicket
+	([this](int *job_id)
+	 {
+		float score = getResult(job_id, nullptr);
+		return score;
+	});
+	engine.setSendJobGetTicket
+	([this, current](const std::vector<float> &all)
+	 {
+		std::vector<float> copy = current;
+		for (int i = 0; i < copy.size(); i++)
+		{
+			copy[i] += all[i];
+		}
+		const float *x = &copy[0];
+		float result = evaluateMomentum(x);
+		int ticket = getNextTicket();
+		setScoreForTicket(ticket, result);
+		return ticket;
+	});
+	engine.setGetGradientVector
+	([this, &current]()
+	 {
+		std::vector<float> gs = prepareGradients(current.size());
+		return gs;
+	 });
+	engine.start();
 
 	sideChainGradients(currentOrder());
 	endScore = routeScore(nudgeCount());
