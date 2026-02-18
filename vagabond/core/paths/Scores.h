@@ -48,7 +48,7 @@ struct ScoreBucket
 	{
 		return !(*this == other);
 	}
-	
+
 	bool single() const;
 	ScoreBucket()
 	{

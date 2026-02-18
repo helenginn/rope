@@ -180,7 +180,6 @@ private:
 	// built on first use by pairsForBlockIdx()
 	std::map<int, std::vector<int>> _neighbouring;
 	std::once_flag _neighbourFlag;
-	std::vector<int> _gaps;
 
 	std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;
