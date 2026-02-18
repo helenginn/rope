@@ -83,10 +83,9 @@ public:
 
 			if (!_key2Info.at(it->first).engine)
 			{
+				int size = it->second.size();
 				EngineType *engine = nullptr;
-				engine = new EngineType(this, 
-				                        [this, engine]()
-				                        { return parameterCount(engine); } );
+				engine = new EngineType(this, [size]() { return size; } );
 
 				engine->setGetScoreGetTicket
 				([this, engine](int *job_id)
@@ -108,16 +107,6 @@ public:
 		}
 	}
 
-	virtual size_t parameterCount(Engine *caller)
-	{
-		if (_engine2Key.count(caller) == 0)
-		{
-			return 0; // will be updated later
-		}
-		Key &key = _engine2Key.at(caller);
-		return _key2Info.at(key).idxs.size();
-	}
-	
 	template <typename Func>
 	void do_on_each_engine(const Func &func)
 	{
