@@ -281,7 +281,7 @@ void SubmissionHelp::pairwiseWork(int idx)
 			std::set<ScoreBucket> residues = _ids;
 //			std::set<ScoreBucket> residues = chosen->residues();
 			if (residues.size() == 0)
-			{
+                        {
 				residues = chosen->residues();
 			}
 
@@ -300,7 +300,7 @@ void SubmissionHelp::pairwiseWork(int idx)
 				setup_submit_hooks(task, idx);
 				float steps = _steps;
 
-				auto convert = [id, steps](const Deviation &ae) 
+				auto convert = [id, steps](const Deviation &ae)
 				-> SingleResult<ScoreBucket>
 				{
 					SingleResult<ScoreBucket> sr = 
@@ -365,7 +365,7 @@ void SubmissionHelp::pairwiseWork(int idx)
 			}
 
 			float steps = _steps;
-			auto convert = [id, steps](const ActivationEnergy &ae) 
+			auto convert = [id, steps](const ActivationEnergy &ae)
 			-> SingleResult<ScoreBucket>
 			{
 				return {id, ae.value / steps};

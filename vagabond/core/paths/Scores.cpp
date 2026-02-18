@@ -39,7 +39,7 @@ bool ScoreBucket::fully_contains(const ScoreBucket &other) const
 	}
 	
 	if (minRes <= other.minRes && maxRes >= other.maxRes)
-	{
+        {
 		return true;
 	}
 	
@@ -51,7 +51,7 @@ bool ScoreBucket::operator<(const ScoreBucket &other) const
 	if (chain == other.chain || 
 	    chain.length() == 0 || 
 	    other.chain.length() == 0)
-	{
+        {
 		if (minRes == other.minRes)
 		{
 			return maxRes < other.maxRes;

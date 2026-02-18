@@ -212,7 +212,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			{
 				too_close = true;
 			}
-		}
+                }
 
 		if (!_momentum && too_close)
 		{
@@ -295,7 +295,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	
 	_reference = scratch;
 }
-
 
 auto simple(PairwiseDeviations *dev, float frac, std::set<ScoreBucket> forResidues)
 {

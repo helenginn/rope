@@ -177,7 +177,7 @@ private:
 	// for every m near n, all m's pairs gets given to n
 	std::map<int, std::vector<int>> _neighbouring;
 
-	std::set<ScoreBucket> _residues;
+        std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;
 	std::vector<Atom *> _atoms;
 	std::vector<TargetInfo> _infoPairs;
