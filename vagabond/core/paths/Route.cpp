@@ -241,8 +241,8 @@ void Route::submitValue(const CalcOptions &options, int steps)
 	SubmissionHelp help(this, options);
 	help.prepareBinForScoreResult();
 	help.torsionPositionCalculation();
-	help.pairwiseWorkIfApplicable();
 	help.setParticularResidues(_ids);
+	help.pairwiseWorkIfApplicable();
 	help.finaliseJobSubmission();
 }
 
