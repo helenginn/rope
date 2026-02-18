@@ -22,7 +22,7 @@
 #include <vagabond/utils/OpSet.h>
 #include "PathGroup.h"
 #include "Progressor.h"
-#include "ResidueId.h"
+#include "Scores.h"
 #include "Instance.h"
 #include <map>
 #include <mutex>
@@ -45,7 +45,7 @@ public:
 	std::pair<int, int> index(Instance *start, Instance *end);
 	std::pair<std::string, std::string> names(int l, int r);
 	
-	float sum_for_residue(Path *const &path, ResidueId residue);
+	float sum_for_residue(Path *const &path, ScoreBucket residue);
 
 	size_t pathCount()
 	{

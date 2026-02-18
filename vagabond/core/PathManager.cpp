@@ -310,7 +310,7 @@ void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
 
 void PathManager::obstacles(const std::vector<std::string> &insts)
 {
-	std::map<ResidueId, float> results;
+	std::map<ScoreBucket, float> results;
 
 	auto report_paths = [this, &results]
 	(Instance *first, Instance *second)
@@ -330,9 +330,9 @@ void PathManager::obstacles(const std::vector<std::string> &insts)
 			float weight = exp(-boltzmann * boltzmann);
 			weight *= 3;
 
-			OpSet<ResidueId> worst = pr->worstSidechains(10);
+			OpSet<ScoreBucket> worst = pr->worstSidechains(10);
 			
-			for (const ResidueId &id : worst)
+			for (const ScoreBucket &id : worst)
 			{
 				results[id] += weight;
 			}
@@ -343,14 +343,13 @@ void PathManager::obstacles(const std::vector<std::string> &insts)
 		std::cout << "=======================" << std::endl;
 		std::cout << results.size() << " res" << std::endl;
 		std::cout << "=======================" << std::endl;
-		ResidueId start = results.begin()->first;
+		ScoreBucket start = results.begin()->first;
 		auto it = results.end(); it--;
-		ResidueId end = it->first;
+		ScoreBucket end = it->first;
 
 		for (int i = start.as_num(); i <= end.as_num(); i++)
 		{
-			ResidueId id(i);
-			id.insert = " ";
+			ScoreBucket id(i);
 			if (results.count(id))
 			{
 				std::cout << i << ", " << results.at(id) << std::endl;

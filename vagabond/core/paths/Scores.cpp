@@ -17,4 +17,57 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Scores.h"
+#include "Atom.h"
 
+ScoreBucket::ScoreBucket(Atom *atom)
+{
+	chain = atom->chain();
+	minRes = atom->residueId();
+	maxRes = atom->residueId();
+}
+
+bool ScoreBucket::single() const
+{
+	return (minRes == maxRes);
+}
+
+bool ScoreBucket::fully_contains(const ScoreBucket &other) const
+{
+	if (other.chain != chain && chain.length() > 0 && other.chain.length() > 0)
+	{
+		return false;
+	}
+	
+	if (minRes >= other.minRes && maxRes <= other.maxRes)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+bool ScoreBucket::operator<(const ScoreBucket &other) const
+{
+	if (chain == other.chain || chain.length() == 0 || other.chain.length() == 0)
+	{
+		if (minRes == other.minRes)
+		{
+			return maxRes < other.maxRes;
+		}
+		else
+		{
+			return minRes < other.minRes;
+		}
+	}
+	else
+	{
+		return chain < other.chain;
+	}
+}
+
+bool ScoreBucket::operator==(const ScoreBucket &other) const
+{
+	return (chain == other.chain && 
+	        minRes == other.minRes && 
+	        maxRes == other.maxRes);
+}
