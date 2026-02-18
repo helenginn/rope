@@ -10,7 +10,7 @@
 
 HeatMapView::HeatMapView(Scene *prev, const std::vector<struct EntropyForHeatMap> &entropy) : Scene(prev), _entropy(entropy)
 {
-
+    //_timeDivisions = _entropy.size();
 }
 
 void HeatMapView::setup()
@@ -48,6 +48,43 @@ void HeatMapView::setup()
     addObject(_plot);
 }
 
+void HeatMapView::redrawHeatMap(double num)
+{
+    if(_plot)
+    {
+        removeObject(_plot);
+    }
+
+    int t = (int) num;
+
+    int rows = _entropy[t].dataMatrix.rows();
+    int cols = _entropy[t].dataMatrix.cols();
+
+    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
+
+    double meanEntropy = mean(_entropy[t].total);
+    double stdEntropy = standard_deviation(_entropy[t].total);
+
+    for (int i = 0; i < rows; i++)
+    {
+        for (int j = 0; j < cols; j++)
+        {
+            _entropy[t].dataMatrix(i,j)-=meanEntropy;
+            _entropy[t].dataMatrix(i,j)/=stdEntropy;
+
+            _entropy[t].dataMatrix(i,j)-=0.5;
+        }
+    }
+
+    _pcaMatrix = PCA::Matrix(_entropy[t].dataMatrix);
+	printMatrix(&_pcaMatrix);
+
+    _plot = new MatrixPlot(_pcaMatrix, _mutex);
+
+    _plot->legend()->setScheme(Heat);
+    addObject(_plot);
+}
+
 void HeatMapView::setupSlider(int timeDivisions)
 {
     Slider *s = new Slider();
@@ -55,9 +92,13 @@ void HeatMapView::setupSlider(int timeDivisions)
     s->resize(0.5);
     s->setup("Route point number", 1, timeDivisions, 1);
     s->setCentre(0.5, 0.85);
+    _rangeSlider = s;
     addObject(s);
 }
 
 void HeatMapView::finishedDragging(std::string tag, double x, double y)
 {
+    double num = x;
+    
+    redrawHeatMap(num);
 }
