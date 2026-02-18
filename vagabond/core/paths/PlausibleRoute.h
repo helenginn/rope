@@ -25,7 +25,6 @@
 #include "SimplexEngine.h"
 #include "GradientTerm.h"
 #include <vagabond/c4x/Angular.h>
-#include "../lbfgs/lbfgs.h"
 #include <functional>
 
 class Path;
@@ -106,8 +105,8 @@ public:
 
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);
 
-	void prepareGradients(lbfgsfloatval_t *g);
-	float evaluateMomentum(const lbfgsfloatval_t *x);
+	std::vector<float> prepareGradients(int size);
+	float evaluateMomentum(const float *x);
 protected:
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 
