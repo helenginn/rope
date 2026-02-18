@@ -85,7 +85,18 @@ void WarpControl::replaceSimplex(SimplexEngine *&ptr,
 		ptr = nullptr;
 	}
 
-	ptr = new SimplexEngine(this);
+	ptr = new SimplexEngine(this, [this]() { return parameterCount(nullptr); });
+	ptr->setGetScoreGetTicket
+	([this](int *job_id)
+	 {
+		return getResult(job_id, nullptr);
+	});
+	ptr->setSendJobGetTicket
+	([this](const std::vector<float> &all)
+	 {
+		return sendJob(all, nullptr);
+	});
+
 	ptr->setMaxRuns(max_runs);
 	ptr->setStepSize(step_size);
 	ptr->start();

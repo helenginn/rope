@@ -31,7 +31,7 @@
 class Engine
 {
 public:
-	Engine(RunsEngine *ref);
+	Engine(RunsEngine *ref, const std::function<int()> &paramCount);
 	virtual ~Engine() {};
 	
 	virtual void start();
@@ -68,6 +68,20 @@ public:
 	}
 
 	void preRun();
+	
+	typedef std::function<float(int *)> GetScoreGetTicket;
+	typedef std::function<int(const std::vector<float> &)> SendJobGetTicket;
+
+	void setSendJobGetTicket(const SendJobGetTicket &job)
+	{
+		_sendJobGetTicket = job;
+	}
+
+	void setGetScoreGetTicket(const GetScoreGetTicket &job)
+	{
+		_getScoreGetTicket = job;
+	}
+
 private:
 	struct TicketScore
 	{
@@ -123,10 +137,17 @@ protected:
 	std::mutex _mutex;
 	std::vector<float> _current, _bestResult;
 	float _bestScore = FLT_MAX;
+
+	std::function<int()> _paramCount{};
+	GetScoreGetTicket _getScoreGetTicket{};
+	SendJobGetTicket _sendJobGetTicket{};
+
+	void validateFunctions();
 private:
 	void postRun();
 	void trueGradients(float *g, const float *x);
 	void estimateGradients(float *g, const float *x);
+	
 
 	RunsEngine *_ref = nullptr;
 	bool _verbose = false;

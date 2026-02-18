@@ -83,7 +83,22 @@ public:
 
 			if (!_key2Info.at(it->first).engine)
 			{
-				EngineType *engine = new EngineType(this);
+				EngineType *engine = nullptr;
+				engine = new EngineType(this, 
+				                        [this, engine]()
+				                        { return parameterCount(engine); } );
+
+				engine->setGetScoreGetTicket
+				([this, engine](int *job_id)
+				 {
+					return getResult(job_id, engine);
+				});
+				engine->setSendJobGetTicket
+				([this, engine](const std::vector<float> &all)
+				 {
+					return sendJob(all, engine);
+				});
+
 				engine->setMaxRuns(_maxRuns);
 				engine->setStepSize(_step);
 				_key2Info.at(it->first).engine = engine;

@@ -20,7 +20,9 @@
 #include <stdio.h>
 #include <stdexcept>
 
-LBFGSEngine::LBFGSEngine(RunsEngine *ref) : Engine(ref)
+LBFGSEngine::LBFGSEngine(RunsEngine *ref, 
+                         const std::function<int()> &paramCount)
+: Engine(ref, paramCount)
 {
 
 }
@@ -67,8 +69,10 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 	return eval;
 }
 
-void LBFGSEngine::run()
+void LBFGSEngine::preRun()
 {
+	n() = _paramCount();
+
 	if (n() <= 0)
 	{
 		throw std::runtime_error("Nonsensical dimensions for LBFGSEngine");
@@ -79,12 +83,17 @@ void LBFGSEngine::run()
 	std::vector<float> empty = std::vector<float>(n(), 0);
 	sendJob(empty);
 
+}
+
+void LBFGSEngine::run()
+{
+	preRun();
 	getResults();
 
 	lbfgs_parameter_t param;
 	
 	lbfgs_parameter_init(&param);
 	param.max_iterations = 10;
-	params.max_linesearch = 10;
+	param.max_linesearch = 10;
 	
 }

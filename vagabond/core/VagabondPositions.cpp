@@ -195,7 +195,17 @@ bool VagabondPositions::refineBetween(int min, int max)
 	
 	while (count < 1)
 	{
-		SimplexEngine engine(this);
+		SimplexEngine engine(this, [this]() { return parameterCount(nullptr); });
+		engine.setGetScoreGetTicket
+		([this](int *job_id)
+		 {
+			return getResult(job_id, nullptr);
+		});
+		engine.setSendJobGetTicket
+		([this](const std::vector<float> &all)
+		 {
+			return sendJob(all, nullptr);
+		});
 		engine.setStepSize(0.2);
 		engine.setMaxJobsPerVertex(1);
 		engine.start();

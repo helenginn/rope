@@ -98,7 +98,6 @@ public:
 		_magnitude = mag;
 	}
 
-	virtual size_t parameterCount(Engine *caller);
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 	virtual float getResult(int *job_id, Engine *caller);
 
