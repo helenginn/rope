@@ -152,7 +152,7 @@ private:
 	CalcOptions calcOptions(const CalcOptions &add_options,
 	                  const CalcOptions &subtract_options);
 
-	bool applyGradients();
+	bool refineMomentum();
 	bool sideChainGradients(int i);
 
 	GradientPath *gradients(const ValidateIndex &validate,
