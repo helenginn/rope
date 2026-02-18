@@ -107,7 +107,9 @@ public:
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);
 
 	std::vector<float> prepareGradients(int size);
+
 //	float evaluateMomentum(const float *x);
+
 protected:
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 
