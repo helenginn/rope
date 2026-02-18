@@ -70,7 +70,13 @@ public:
 	void preRun();
 	
 	typedef std::function<float(int *)> GetScoreGetTicket;
+	typedef std::function<std::vector<float>()> GetGradientVector;
 	typedef std::function<int(const std::vector<float> &)> SendJobGetTicket;
+
+	void setGetGradientVector(const GetGradientVector &job)
+	{
+		_getGradientVector = job;
+	}
 
 	void setSendJobGetTicket(const SendJobGetTicket &job)
 	{
@@ -141,11 +147,11 @@ protected:
 	std::function<int()> _paramCount{};
 	GetScoreGetTicket _getScoreGetTicket{};
 	SendJobGetTicket _sendJobGetTicket{};
+	GetGradientVector _getGradientVector{};
 
 	void validateFunctions();
 private:
 	void postRun();
-	void trueGradients(float *g, const float *x);
 	void estimateGradients(float *g, const float *x);
 	
 
