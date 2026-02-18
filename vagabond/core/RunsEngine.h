@@ -57,10 +57,6 @@ public:
 		_scores.clear();
 	}
 	
-	bool returnsGradients()
-	{
-		return (!!_gradient);
-	}
 protected:
 	int getNextTicket()
 	{
@@ -70,12 +66,6 @@ protected:
 	const int getLastTicket() const
 	{
 		return _ticket;
-	}
-	
-	void setGradientFunction(const std::function<std::vector<float>(int)>
-	                         &gradient)
-	{
-		_gradient = gradient;
 	}
 	
 	float scoreForTicket(int ticket)
@@ -95,7 +85,6 @@ protected:
 private:
 	int _ticket = 0;
 	std::map<int, double> _scores;
-	std::function<std::vector<float>(int)> _gradient{};
 };
 
 #endif

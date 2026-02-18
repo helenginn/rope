@@ -203,11 +203,6 @@ void Engine::start()
 	postRun();
 }
 
-void Engine::trueGradients(float *g, const float *x)
-{
-
-}
-
 void Engine::estimateGradients(float *g, const float *x)
 {
 	std::vector<float> vals(n());
@@ -243,10 +238,16 @@ void Engine::estimateGradients(float *g, const float *x)
 
 void Engine::grabGradients(float *g, const float *x)
 {
-	if (_ref->returnsGradients())
+	if (_getGradientVector)
 	{
-		trueGradients(g, x);
+		std::vector<float> gs = _getGradientVector();
+		for (int i = 0; i < gs.size(); i++)
+		{
+			g[i] = gs[i];
+		}
 	}
-
-	estimateGradients(g, x);
+	else
+	{
+		estimateGradients(g, x);
+	}
 }
