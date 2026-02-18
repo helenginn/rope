@@ -190,7 +190,7 @@ void PlausibleRoute::prepareJobs()
 		}
 		else
 		{
-			bool success = applyGradients();
+			bool success = refineMomentum();
 			return success;
 		};
 	};
@@ -484,7 +484,7 @@ GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
 	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
 
-bool PlausibleRoute::applyGradients()
+bool PlausibleRoute::refineMomentum()
 {
 	GradientPath *path = gradients(ValidateIndex{});
 
