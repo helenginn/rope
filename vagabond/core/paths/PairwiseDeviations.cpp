@@ -156,7 +156,7 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			{
 				too_close = true;
 			}
-		}
+                }
 
 		if (!_momentum && too_close)
 		{

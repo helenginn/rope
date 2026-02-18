@@ -181,7 +181,7 @@ private:
 	std::map<int, std::vector<int>> _neighbouring;
 	std::once_flag _neighbourFlag;
 
-	std::set<ScoreBucket> _residues;
+        std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;
 	std::vector<Atom *> _atoms;
 	std::vector<TargetInfo> _infoPairs;

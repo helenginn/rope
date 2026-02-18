@@ -936,7 +936,7 @@ std::map<ScoreBucket, float> PlausibleRoute::
 	}
 	std::cout << std::endl;
 	*/
-
+	
 	delete rr;
 	return scores;
 }
