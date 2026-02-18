@@ -33,7 +33,7 @@ class BaseTask;
 class SimplexEngine : public Engine
 {
 public:
-	SimplexEngine(RunsEngine *ref);
+	SimplexEngine(RunsEngine *ref, const std::function<int()> &paramCount);
 	virtual ~SimplexEngine() {};
 	
 	void chooseStepSizes(std::vector<float> &steps)

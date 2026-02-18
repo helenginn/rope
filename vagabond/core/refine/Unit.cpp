@@ -89,7 +89,7 @@ void Unit::submitJob()
 int Unit::sendJob(const std::vector<float> &all, Engine *caller)
 {
 	std::vector<float> chosen = all;
-	chosen.resize(parameterCount());
+	chosen.resize(_info->total_params());
 	_setter(chosen);
 	_info->bind_parameters(_parameters);
 	submitJob();
@@ -121,11 +121,6 @@ void Unit::retrieveJobs()
 	calc->reset();
 }
 
-size_t Unit::parameterCount(Engine *caller)
-{
-	return _info->total_params();
-}
-
 void Unit::runEngine()
 {
 	prepareResources();
@@ -135,21 +130,33 @@ void Unit::runEngine()
 		throw std::runtime_error("Map provided to refinement is null");
 	}
 	
-	std::cout << "Param count: " << parameterCount() << std::endl;
-	if (parameterCount() == 0)
+	std::cout << "Param count: " << _info->total_params() << std::endl;
+	if (_info->total_params() == 0)
 	{
 		std::cout << "Skipping refinement - no parameters" << std::endl;
 		return;
 	}
 	
-	std::cout << parameterCount() << " parameters for: ";
+	std::cout << _info->total_params() << " parameters for: ";
 	for (Instance *const &inst : _info->instances)
 	{
 		std::cout << inst->id() << ", ";
 	}
 	std::cout << std::endl;
 	
-	SimplexEngine *engine = new SimplexEngine(this);
+	SimplexEngine *engine = new SimplexEngine(this,
+	[this]() { return _info->total_params(); });
+
+	engine->setGetScoreGetTicket
+	([this](int *job_id)
+	{
+		return getResult(job_id, nullptr);
+	});
+	engine->setSendJobGetTicket
+	([this](const std::vector<float> &all)
+	{
+		return sendJob(all, nullptr);
+	});
 	engine->setVerbose(true);
 	engine->setStepSize(0.5);
 	engine->setMaxRuns(200);
@@ -215,7 +222,7 @@ void Unit::prepareResources()
 
 void Unit::setGetterSetters()
 {
-	_parameters.resize(parameterCount());
+	_parameters.resize(_info->total_params());
 
 	_getter = [this](std::vector<float> &values)
 	{

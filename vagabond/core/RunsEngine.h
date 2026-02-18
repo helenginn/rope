@@ -35,9 +35,6 @@ class RunsEngine
 {
 public:
 	virtual ~RunsEngine() {};
-	virtual size_t parameterCount(Engine *caller) = 0;
-	virtual int sendJob(const std::vector<float> &all, 
-	                    Engine *sender = nullptr) = 0;
 
 	virtual float getResult(int *job_id, Engine *sender)
 	{

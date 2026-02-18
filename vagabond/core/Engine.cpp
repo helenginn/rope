@@ -20,11 +20,13 @@
 #include <iostream>
 #include <cstring>
 
-Engine::Engine(RunsEngine *ref)
+Engine::Engine(RunsEngine *ref, const std::function<int()> &paramCount)
 {
 	_ref = ref;
 	_ref->resetTickets();
-	_n = _ref->parameterCount(this);
+
+	_paramCount = paramCount;
+	_n = _paramCount();
 }
 
 void Engine::currentScore()
@@ -60,7 +62,7 @@ float Engine::findBestScore()
 bool Engine::getOneResult()
 {
 	int job_id = -1;
-	float score = _ref->getResult(&job_id, this);
+	float score = _getScoreGetTicket(&job_id);
 
 	if (job_id < 0)
 	{
@@ -104,7 +106,8 @@ void Engine::getResults()
 
 int Engine::sendJob(const std::vector<float> &all)
 {
-	int ticket = _ref->sendJob(all, this);
+	validateFunctions();
+	int ticket = _sendJobGetTicket(all);
 	TicketScore ts{};
 	ts.vals = all;
 
@@ -138,9 +141,25 @@ void Engine::add_current_to(std::vector<float> &other)
 	add_to(other, _current);
 }
 
+void Engine::validateFunctions()
+{
+	if (!_paramCount)
+	{
+		throw std::runtime_error("No function for param count");
+	}
+	if (!_getScoreGetTicket)
+	{
+		throw std::runtime_error("No function for getting result");
+	}
+	if (!_sendJobGetTicket)
+	{
+		throw std::runtime_error("No function for sending job");
+	}
+}
+
 void Engine::preRun()
 {
-	_n = _ref->parameterCount(this);
+	_n = _paramCount();
 	_current.clear();
 	_bestResult.clear();
 	_bestScore = FLT_MAX;

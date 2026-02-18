@@ -25,11 +25,12 @@
 class LBFGSEngine : public Engine
 {
 public:
-	LBFGSEngine(RunsEngine *ref);
+	LBFGSEngine(RunsEngine *ref, const std::function<int()> &paramCount);
 	virtual ~LBFGSEngine() {};
 
 protected:
 	virtual void run();
+	void preRun();
 
 private:
 	static lbfgsfloatval_t evaluate(void *engine, const lbfgsfloatval_t *x, 

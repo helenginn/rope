@@ -55,7 +55,6 @@ public:
 	Result *submitJobAndRetrieve(const std::vector<float> &all);
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 	virtual float getResult(int *job_id, Engine *caller);
-	virtual size_t parameterCount(Engine *caller = nullptr);
 
 	virtual void prepareResources();
 protected:

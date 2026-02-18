@@ -23,7 +23,9 @@
 #include <iostream>
 #include "MultiEngineBase.h"
 
-SimplexEngine::SimplexEngine(RunsEngine *ref) : Engine(ref)
+SimplexEngine::SimplexEngine(RunsEngine *ref, 
+                             const std::function<int()> &paramCount) 
+: Engine(ref, paramCount)
 {
 	_finish = false;
 }
@@ -278,7 +280,7 @@ void SimplexEngine::submitShrink()
 
 void SimplexEngine::preRun()
 {
-	n() = ref()->parameterCount(this);
+	n() = _paramCount();
 
 	if (n() <= 0)
 	{
@@ -559,8 +561,10 @@ Task<void *, void *> *SimplexEngine::taskedRun(MultiEngineBase *ms)
 {
 	_count = 0;
 	_shrinkCount = 0;
-	n() = ref()->parameterCount(this);
+	n() = _paramCount();
 	allocateResources();
+	
+	// this prepares the _cycle function.
 	prepareCycle(ms);
 
 	auto *prerun = new Task<void *, void *>
@@ -571,6 +575,8 @@ Task<void *, void *> *SimplexEngine::taskedRun(MultiEngineBase *ms)
 	},
 	 "pre-run");
 
+	// this can start because it's going to hang on the "getOneResult"
+	// until something comes back anyway (when preRun() is called)
 	auto *handle_baseline = new Task<void *, void *>
 	([this](void *)
 	 {
@@ -581,12 +587,14 @@ Task<void *, void *> *SimplexEngine::taskedRun(MultiEngineBase *ms)
 	},
 	"handle_baseline");
 	
-	auto *handleJobs = taskedHandleJobs(handle_baseline, ms); // collect results
-	taskedCycle(handleJobs, ms); // decision tree + restart
+	auto *handleJobs = taskedHandleJobs(handle_baseline, ms); 
+	// chain collection of results after handling the baseline.
+
+	taskedCycle(handleJobs, ms); // chaining decision tree + restart
 	
 	ms->addHangingTask(handle_baseline); 
 
-	return prerun; // preliminary
+	return prerun; // the starting gun is returned to MultiEngine
 	
 }
 

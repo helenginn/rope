@@ -309,15 +309,26 @@ float Cyclic::score()
 
 void Cyclic::refine()
 {
-	_start = _pams;
-	_engine = new ChemotaxisEngine(this);
-	_engine->start();
-}
+	auto param_count = [this]()
+	{
+		size_t count = Parameters::parameterCount() + atomCount();
+		return count;
+	};
 
-size_t Cyclic::parameterCount(Engine *caller)
-{
-	size_t count = Parameters::parameterCount() + atomCount();
-	return count;
+	_start = _pams;
+	_engine = new ChemotaxisEngine(this, param_count);
+	_engine->setGetScoreGetTicket
+	([this](int *job_id)
+	{
+		return getResult(job_id, nullptr);
+	});
+	_engine->setSendJobGetTicket
+	([this](const std::vector<float> &all)
+	{
+		return sendJob(all, nullptr);
+	});
+
+	_engine->start();
 }
 
 int Cyclic::indexOfName(std::string name) const
