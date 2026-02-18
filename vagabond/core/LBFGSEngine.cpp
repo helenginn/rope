@@ -60,6 +60,7 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 	std::vector<float> vals = vec_from_lbfgs(x, n);
 	
 	sendJob(vals);
+	getResults();
 	float eval = findBestScore();
 
 	Engine::grabGradients(g, x);
@@ -96,4 +97,9 @@ void LBFGSEngine::run()
 	param.max_iterations = 10;
 	param.max_linesearch = 10;
 	
+	float endScore = 0;
+	std::vector<float> vals(n());
+
+	lbfgs(vals.size(), &vals[0], &endScore, &LBFGSEngine::evaluate,
+	      nullptr, this, &param);
 }
