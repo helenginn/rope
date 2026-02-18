@@ -58,7 +58,7 @@ EnergyTorsions *SubmissionHelp::chosenEnergyTorsions()
 	return _route->_helpers[sequences()].et;
 }
 
-Bin<ResultBy<ResidueId>> &SubmissionHelp::perResidueBin()
+Bin<ResultBy<ScoreBucket>> &SubmissionHelp::perResidueBin()
 {
 	return _route->_perResBin;
 }
@@ -268,8 +268,8 @@ void SubmissionHelp::pairwiseWork(int idx)
 
 	PairwiseDeviations *chosen = chosenCache();
 
-	std::set<ResidueId> active_ids = 
-	doingSides() ? _ids : std::set<ResidueId>();
+	std::set<ScoreBucket> active_ids = 
+	doingSides() ? _ids : std::set<ScoreBucket>();
 
 	// deciding what to calculate from the bond sequences
 
@@ -278,9 +278,9 @@ void SubmissionHelp::pairwiseWork(int idx)
 	{
 		if (_options & PerResidue) // separated: one residue, one score
 		{
-			std::set<ResidueId> residues = chosen->residues();
+			std::set<ScoreBucket> residues = chosen->residues();
 
-			for (const ResidueId &id : residues)
+			for (const ScoreBucket &id : residues)
 			{
 				if (_ids.size() > 0 && _ids.count(id) == 0)
 				{
@@ -293,13 +293,13 @@ void SubmissionHelp::pairwiseWork(int idx)
 				setup_submit_hooks(task, idx);
 
 				auto convert = [id, this](const Deviation &ae) 
-				-> SingleResult<ResidueId>
+				-> SingleResult<ScoreBucket>
 				{
 					return {id, ae.value / _steps};
 				};
 
 				auto *momentum_conv =
-				new Task<Deviation, SingleResult<ResidueId>>
+				new Task<Deviation, SingleResult<ScoreBucket>>
 				(convert, "convert score to single residue result");
 
 				task->follow_with(momentum_conv);
@@ -332,9 +332,9 @@ void SubmissionHelp::pairwiseWork(int idx)
 
 	if (_options & PerResidue && _options & VdWClashes)
 	{
-		std::set<ResidueId> residues = chosen->residues();
+		std::set<ScoreBucket> residues = chosen->residues();
 
-		for (const ResidueId &id : residues)
+		for (const ScoreBucket &id : residues)
 		{
 			if (_ids.size() > 0 && _ids.count(id) == 0)
 			{
@@ -355,13 +355,13 @@ void SubmissionHelp::pairwiseWork(int idx)
 			}
 
 			auto convert = [id, this](const ActivationEnergy &ae) 
-			-> SingleResult<ResidueId>
+			-> SingleResult<ScoreBucket>
 			{
 				return {id, ae.value / _steps};
 			};
 
 			auto *vdw_conv =
-			new Task<ActivationEnergy, SingleResult<ResidueId>>(convert,
+			new Task<ActivationEnergy, SingleResult<ScoreBucket>>(convert,
 			                                                    "convert vdw to single residue result");
 
 			task->follow_with(vdw_conv);
@@ -371,7 +371,7 @@ void SubmissionHelp::pairwiseWork(int idx)
 			{
 				auto *engy_conv =
 				new Task<ActivationEnergy, 
-				SingleResult<ResidueId>>(convert,
+				SingleResult<ScoreBucket>>(convert,
 				                         "convert energy to single");
 
 				engy->follow_with(engy_conv);

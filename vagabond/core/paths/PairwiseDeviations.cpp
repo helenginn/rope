@@ -137,20 +137,11 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			
 			int size = _infoPairs.size();
 
-			// we check if it's a side chain, because we are not interested 
-			// in a per-residue check if we can't move it.
-//			if (!left->isMainChain())
-			{
-				_perResidue[left->residueId()].push_back(size);
-			}
+			_perResidue[ScoreBucket(left)].push_back(size);
+			_perResidue[ScoreBucket(right)].push_back(size);
 			
-//			if (!right->isMainChain())
-			{
-				_perResidue[right->residueId()].push_back(size);
-			}
-			
-			_residues.insert(left->residueId());
-			_residues.insert(right->residueId());
+			_residues.insert(ScoreBucket(left));
+			_residues.insert(ScoreBucket(right));
 			
 			bool close = (start < 2 || end < 2);
 
@@ -185,7 +176,7 @@ void PairwiseDeviations::addWaypoint(Atom *const &left, Atom *const &right,
 	info.dMid = current + distance;
 }
 
-auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues)
+auto simple(PairwiseDeviations *dev, float frac, std::set<ScoreBucket> forResidues)
 {
 	LoopMechanism loop = loop_mechanism(dev->pairs(), dev->perResiduePairs(), 
 	                                    forResidues);
@@ -248,7 +239,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ResidueId> forResidues
 
 Task<BondSequence *, Deviation> *
 PairwiseDeviations::momentum_task(float frac, 
-                                  const std::set<ResidueId> &forResidues)
+                                  const std::set<ScoreBucket> &forResidues)
 {
 	auto return_deviation = simple(this, frac, forResidues);
 	auto *task = new Task<BondSequence *, Deviation>(return_deviation, "momentum");
@@ -256,7 +247,7 @@ PairwiseDeviations::momentum_task(float frac,
 }
 
 Task<BundleBonds *, ActivationEnergy> *
-PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
+PairwiseDeviations::bundle_clash(const std::set<ScoreBucket> &forResidues)
 {
 	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
 
@@ -313,7 +304,7 @@ PairwiseDeviations::bundle_clash(const std::set<ResidueId> &forResidues)
 }
 
 Task<BundleBonds *, Contacts> *
-PairwiseDeviations::contact_map(const std::set<ResidueId> &forResidues)
+PairwiseDeviations::contact_map(const std::set<ScoreBucket> &forResidues)
 {
 	LoopMechanism loop = loop_mechanism(pairs(), perResiduePairs(), forResidues);
 
@@ -345,8 +336,8 @@ PairwiseDeviations::contact_map(const std::set<ResidueId> &forResidues)
 					continue;
 				}
 
-				const ResidueId &l = _atoms[p]->residueId();
-				const ResidueId &r = _atoms[q]->residueId();
+				const ScoreBucket &l(_atoms[p]);
+				const ScoreBucket &r(_atoms[q]);
 
 				long double ref_distance = info.target(frac);
 				long double reference = lookup(p, q, ref_distance);

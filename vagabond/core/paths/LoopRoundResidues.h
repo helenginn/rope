@@ -21,25 +21,46 @@
 
 #include <map>
 #include <set>
-#include "ResidueId.h"
+#include "Scores.h"
 #include <gemmi/elem.hpp>
 
 typedef std::function<void(const std::vector<int> &pairs)> JobOnPair;
 typedef std::function<void(JobOnPair)> LoopMechanism;
 
-inline auto for_each_residue(const std::map<ResidueId,
+inline auto for_each_residue(int max_size, const std::map<ScoreBucket,
                              std::vector<int>> &perResidues, 
-                             const std::set<ResidueId> &forResidues)
+                             const std::set<ScoreBucket> &forResidues)
 {
-	return [&perResidues, forResidues](const JobOnPair &job)
+	return [max_size, &perResidues, forResidues](const JobOnPair &job)
 	{
-		for (const ResidueId &id : forResidues)
+		for (const ScoreBucket &id : forResidues)
 		{
-			if (perResidues.count(id))
+			if (id.single() && perResidues.count(id))
 			{
 				const std::vector<int> &pairs = perResidues.at(id);
 				job(pairs);
 			}
+			else
+			{
+				std::vector<int> concat; 
+				concat.reserve(max_size);
+
+				for (auto it = perResidues.begin();
+				     it != perResidues.end(); it++)
+				{
+					const ScoreBucket &candidate = it->first;
+					if (id.fully_contains(candidate))
+					{
+						const std::vector<int> &pairs = 
+						perResidues.at(candidate);
+
+						concat.insert(concat.end(), pairs.begin(), pairs.end());
+					}
+				}
+				
+				job(concat);
+			}
+
 		}
 	};
 };
@@ -54,14 +75,18 @@ auto do_on_each_block(const std::vector<AtomBlock> &blocks,
 	}
 }
 
+//
+// -> pairs: all pairs in PairwiseDeviations
+// -> perResidues: all chopped up residues in PairwiseDeviations
+// -> forResidues: the ones we care about only.
 inline LoopMechanism loop_mechanism(const std::vector<int> &pairs,
-                                    const std::map<ResidueId, 
+                                    const std::map<ScoreBucket, 
                                     std::vector<int>> &perResidues,
-                                    const std::set<ResidueId> &forResidues)
+                                    const std::set<ScoreBucket> &forResidues)
 {
 	if (forResidues.size())
 	{
-		return for_each_residue(perResidues, forResidues);
+		return for_each_residue(pairs.size(), perResidues, forResidues);
 	}
 	else
 	{
