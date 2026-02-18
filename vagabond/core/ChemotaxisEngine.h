@@ -26,7 +26,7 @@ class Hypersphere;
 class ChemotaxisEngine : public Engine
 {
 public:
-	ChemotaxisEngine(RunsEngine *ref);
+	ChemotaxisEngine(RunsEngine *ref, const std::function<int()> &paramCount);
 	virtual ~ChemotaxisEngine();
 
 	virtual void run();

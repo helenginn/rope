@@ -68,12 +68,6 @@ RoughLoop::calculateWeights()
 	return _active.weights();
 }
 
-size_t RoughLoop::parameterCount(Engine *caller)
-{
-	size_t count = _active.parameterCount();
-	return count;
-}
-
 int RoughLoop::submitJob(bool show, const std::vector<float> &vals)
 {
 	int ticket = getNextTicket();
@@ -156,8 +150,25 @@ float RoughLoop::refine(const LoopStage &stage)
 
 	float best = FLT_MAX;
 
+	auto param_count = [this]()
+	{
+		size_t count = _active.parameterCount();
+		return count;
+	};
+
 	int runs = 300 * (_loopy->loop().length() + 2);
-	SimplexEngine engine(this);
+
+	SimplexEngine engine(this, param_count);
+	engine.setGetScoreGetTicket
+	([this](int *job_id)
+	{
+		return getResult(job_id, nullptr);
+	});
+	engine.setSendJobGetTicket
+	([this](const std::vector<float> &all)
+	{
+		return sendJob(all, nullptr);
+	});
 	engine.chooseStepSizes(steps);
 	engine.setMaxRuns(runs);
 	engine.setMaxJobsPerVertex(1);

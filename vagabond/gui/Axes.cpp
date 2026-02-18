@@ -390,7 +390,17 @@ void Axes::prioritiseDirection(std::string key)
 		delete _engine;
 		_engine = nullptr;
 	}
-	_engine = new ChemotaxisEngine(this);
+	_engine = new ChemotaxisEngine(this, [this]() { return parameterCount(nullptr); });
+	_engine->setGetScoreGetTicket
+	([this](int *job_id)
+	 {
+		return getResult(job_id, nullptr);
+	});
+	_engine->setSendJobGetTicket
+	([this](const std::vector<float> &all)
+	 {
+		return sendJob(all, nullptr);
+	});
 	_engine->start();
 	
 	if (_lastIdx >= 0)

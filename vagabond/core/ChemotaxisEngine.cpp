@@ -20,7 +20,9 @@
 #include <iostream>
 #include <vagabond/utils/Hypersphere.h>
 
-ChemotaxisEngine::ChemotaxisEngine(RunsEngine *ref) : Engine(ref)
+ChemotaxisEngine::ChemotaxisEngine(RunsEngine *ref, 
+                                   const std::function<int()> &paramCount) 
+: Engine(ref, paramCount)
 {
 	_hypersphere = new Hypersphere(n() - 1, n() * 10);
 }
