@@ -17,14 +17,17 @@ public:
     virtual void setup();
     void setupSlider(int timeDivisions);
 
+    void redrawHeatMap(double num);
+
     virtual void finishedDragging(std::string tag, double x, double y);
 
 private:
     std::vector<struct EntropyForHeatMap> _entropy;
 
-    PCA::Matrix _pcaMatrix{};
-    
-    MatrixPlot *_plot;
+    long *_timeDivisions = nullptr;
+
+    PCA::Matrix _pcaMatrix{};    
+    MatrixPlot *_plot{};
     Slider *_rangeSlider;
     std::mutex _mutex;
 };
