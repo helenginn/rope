@@ -450,14 +450,15 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 {
     PathEntropy *pE = new PathEntropy();
     std::vector<double> entropy;
-    struct FlagParameters flagPar = pE->initFlagPar();
-    flagPar.mist = true;
 
-    std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths);
+    struct FlagParameters flagPar = pE->initFlagPar();
+    flagPar.mist = false;
+
+    std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths, numDivisions);
 
     if (mist == false)
     {
-        struct EntropyForMatrix ent4Mat = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes);
+        struct EntropyForMatrix ent4Mat = pE->calculateEntropyIndependent(numPaths, flagPar, torsRes, numDivisions);
 
         entropy = ent4Mat.totalEntropy;
     }
@@ -492,8 +493,11 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
     if(args.size() > 3)
     {
-        mist = true;
-    } 
+        if (strcmp(args[3].c_str(),"true") != 0)
+        {
+            mist = true;
+        } 
+    }
 
     std::vector<struct EntropyForHeatMap> entropyData(numDivisions);
 
@@ -514,8 +518,6 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 	{
 		for (int j = 0; j < allInstances.size(); j++)
 		{
-			std::cout << "i: " << i << ", j: " << j << std::endl;
-			
 	        if(i == j)
             {
                 continue;
@@ -544,7 +546,11 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 
     file.close();
 
-    // entropyData.dataMatrix.colwise().reverse();
+    for(int t = 0; t < numDivisions; t++)
+    {
+        entropyData[t].dataMatrix.colwise().reverse();
+        std::cout << entropyData[t].dataMatrix << std::endl << std::endl;
+    }
 	
     if (_callback)
 	{
