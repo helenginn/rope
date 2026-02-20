@@ -37,6 +37,11 @@ public:
 	virtual void start();
 	virtual void run() = 0;
 	
+	int &n()
+	{
+		return _n;
+	}
+	
 	void setStepSize(float size)
 	{
 		_step = size;
@@ -129,11 +134,6 @@ protected:
 	RunsEngine *const &ref()
 	{
 		return _ref;
-	}
-	
-	int &n()
-	{
-		return _n;
 	}
 
 	bool _improved = false;

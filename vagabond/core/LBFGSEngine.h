@@ -20,7 +20,12 @@
 #define __vagabond__LBFGSEngine__
 
 #include "Engine.h"
+#include "engine/Tasks.h"
 #include "lbfgs/lbfgs.h"
+
+template <class X, class Y> class Task;
+class MultiEngineBase;
+class BaseTask;
 
 class LBFGSEngine : public Engine
 {
@@ -28,6 +33,7 @@ public:
 	LBFGSEngine(RunsEngine *ref, const std::function<int()> &paramCount);
 	virtual ~LBFGSEngine() {};
 
+	Task<void *, void *> *taskedRun(MultiEngineBase *ms);
 protected:
 	virtual void run();
 	void preRun();
@@ -50,6 +56,8 @@ private:
 	lbfgsfloatval_t evaluate(const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
 	                         const int n, const lbfgsfloatval_t step);
 
+	
+	Tasks *_tasks = nullptr;
 };
 
 #endif
