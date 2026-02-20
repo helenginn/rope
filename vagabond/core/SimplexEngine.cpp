@@ -19,7 +19,6 @@
 #include "SimplexEngine.h"
 #include "engine/Task.h"
 #include <float.h>
-#include <algorithm>
 #include <iostream>
 #include "MultiEngineBase.h"
 

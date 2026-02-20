@@ -21,6 +21,7 @@
 
 #include "engine/ExpectantPhore.h"
 #include "SimplexEngine.h"
+#include "LBFGSEngine.h"
 #include "ResidueId.h"
 #include <vagabond/utils/Vec3s.h>
 #include <queue>
@@ -36,7 +37,7 @@ class RunsMultiEngine
 public:
 	virtual std::map<Key, float> 
 	getMultiResult(const std::vector<float> &all, 
-	               MultiEngine<Key, EngineType> *caller) = 0;
+	               MultiEngineBase *caller) = 0;
 
 	virtual void finishedKey(const Key &key) {};
 
@@ -65,6 +66,11 @@ public:
 	// which key is sensitive to which parameters
 	void supplyInfo(const std::map<Key, std::vector<int>> &crucial_info)
 	{
+		if (_getGradientVector)
+		{
+			_gradients.resize(_num);
+		}
+
 		for (auto it = crucial_info.begin(); it != crucial_info.end(); it++)
 		{
 			if (it->second.size() == 0)
@@ -83,7 +89,8 @@ public:
 
 			if (!_key2Info.at(it->first).engine)
 			{
-				int size = it->second.size();
+				const std::vector<int> &idxs = it->second;
+				int size = idxs.size();
 				EngineType *engine = nullptr;
 				engine = new EngineType(this, [size]() { return size; } );
 
@@ -97,6 +104,22 @@ public:
 				 {
 					return sendJob(all, engine);
 				});
+				
+				if (_getGradientVector)
+				{
+					engine->setGetGradientVector
+					([this, size, idxs]()
+					 {
+						std::vector<float> gs(size);
+						int i = 0;
+						for (const int &idx : idxs)
+						{
+							gs[i] = _gradients[idx];
+							i++;
+						}
+						return gs;
+					 });
+				}
 
 				engine->setMaxRuns(_maxRuns);
 				engine->setStepSize(_step);
@@ -215,13 +238,23 @@ public:
 					new_receive++;
 				}
 			}
-
 		}
 		
 		_received = new_receive;
 		
+		if (_setParameters)
+		{
+			_setParameters(everything);
+		}
+		
 		// needs to be able to return lots of [results per key]
 		std::map<Key, float> map = _ref->getMultiResult(everything, this);
+
+		// prepare gradients now before the mini-engines are notified
+		if (_getGradientVector)
+		{
+			_gradients = _getGradientVector();
+		}
 		
 		for (auto it = map.begin(); it != map.end(); it++)
 		{
@@ -257,6 +290,7 @@ public:
 		info.for_collection.pop();
 		float score = scoreForTicket(ticket);
 		*job_id = ticket;
+		
 		return score;
 	}
 	
@@ -308,6 +342,19 @@ public:
 			bp[key] = 0;
 		}
 		return bp;
+	}
+
+	typedef std::function<void(const std::vector<float> &)> SetParameters;
+	typedef std::function<std::vector<float>()> GetGradientVector;
+
+	void setGetGradientVector(const GetGradientVector &job)
+	{
+		_getGradientVector = job;
+	}
+	
+	void setSetParameters(const SetParameters &job)
+	{
+		_setParameters = job;
 	}
 private:
 	std::map<Engine *, Key> _engine2Key;
@@ -362,6 +409,9 @@ private:
 	std::condition_variable _cv;
 	std::mutex _result;
 	RunsMultiEngine<Key, EngineType> *_ref;
+	GetGradientVector _getGradientVector{};
+	SetParameters _setParameters{};
+	std::vector<float> _gradients{};
 };
 
 template <class Key>
@@ -375,5 +425,18 @@ public:
 	}
 
 };
+
+template <class Key>
+class MultiLBFGS : public MultiEngine<Key, LBFGSEngine>
+{
+public:
+	MultiLBFGS(RunsMultiEngine<Key, LBFGSEngine> *caller, int param_num)
+	: MultiEngine<Key, LBFGSEngine>(caller, param_num)
+	{
+
+	}
+
+};
+
 
 #endif
