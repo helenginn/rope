@@ -149,7 +149,7 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 	
 	for (int i = 0; i < idxs.size(); i++)
 	{
-		motion_idxs[i] = idxs[i].second;
+		motion_idxs[i] = idxs[i].second; // gradient position index
 	}
 
 	big_submission->input.grads.resize(idxs.size());
