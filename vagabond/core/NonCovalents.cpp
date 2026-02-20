@@ -145,7 +145,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 	
 	auto valid_distance = [](glm::vec3 &a, glm::vec3 &b) -> bool
 	{
-		const float max = 3.5f;
+		const float max = 4.5f;
 		bool bad = false;
 		for (int i = 0; i < 3; i++)
 		{
@@ -165,7 +165,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 
 	for (Atom *atom : grp->atomVector())
 	{
-		if (atom->elementSymbol() == "H")
+		if (atom->elementSymbol() == "H" || !atom->isMainChain())
 		{
 			continue;
 		}
@@ -244,7 +244,7 @@ void NonCovalents::findInterfaces(const std::function<int(Atom *const &)>
 {
 	for (Segment &first : _segments)
 	{
-		if (first == _invariant) { continue; }
+//		if (first == _invariant) { continue; }
 
 		for (Segment &second : _segments)
 		{
@@ -456,9 +456,27 @@ void NonCovalents::prepareBarycentricWeights()
 		for (WeightedSum &sum : face.sums)
 		{
 			int size = _positions.cols();
-			bool invariant = (face.right == _invariant);
+			bool l_invariant = (face.left == _invariant);
+			
+			if (l_invariant)
+			{
+				std::vector<MatId> tids = target_coordinates();
+				sum.weights_to_matrix_column = 
+				[size, col_idx_for_atom, &sum](float frac)
+				{
+					Eigen::VectorXf vec(size);
+					vec.setZero();
+					int col = col_idx_for_atom(sum.atom);
+					vec[col] = 1;
+					return vec;
+				};
+
+				continue;
+			}
+
+			bool r_invariant = (face.right == _invariant);
 			sum.weights_to_matrix_column = 
-			[size, col_idx_for_atom, &sum, invariant](float frac)
+			[size, col_idx_for_atom, &sum, r_invariant](float frac)
 			{
 				Eigen::VectorXf vec(size);
 				vec.setZero();
@@ -479,7 +497,7 @@ void NonCovalents::prepareBarycentricWeights()
 				// subtract calculated atom's position to aim for zero
 				int col = col_idx_for_atom(sum.atom);
 				
-				if (!invariant)
+				if (!r_invariant)
 				{
 					vec[col] = -1;
 				}
@@ -591,6 +609,50 @@ NonCovalents::target_coordinates()
 	return ids;
 }
 
+std::vector<NonCovalents::SummedId> NonCovalents::summedTargets()
+{
+	// returning functions which take fraction and return summed target
+	int n = 0;
+	std::vector<SummedId> summers;
+	
+	auto get_position_getter = [](BondSequence *seq, Interface::Side &side)
+	{
+		return [seq, &side](Atom *a) -> glm::vec3
+		{
+			int b_idx = side.seq_idxs[side.locs[a]];
+			return seq->blocks()[b_idx].my_position();
+		};
+	};
+
+	for (Interface &face : _faces)
+	{
+		for (WeightedSum &sum : face.sums)
+		{
+			SummedId summer{-1, -1, {}};
+			if (face.left == _invariant)
+			{
+				Atom *a = sum.atom; // right atom
+				int idx = face.rights.seq_idxs[face.rights.locs[a]];
+				summer.idx = idx;
+				summer.col = n;
+				summer.sum = [get_position_getter, &face, &sum]
+				(BondSequence *seq, const float &frac)
+				{
+					auto pos_getter = get_position_getter(seq, face.lefts);
+					OpVec<float> weights = sum.weights_for_frac(frac);
+					glm::vec3 pos = sum.position_for_weights(pos_getter, 
+					                                         weights);
+					return pos;
+				};
+			}
+			summers.push_back(summer);
+			n++;
+		}
+	}
+	
+	return summers;
+}
+
 std::vector<NonCovalents::MatId> 
 NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
                                  const std::function<int(Atom *const &)> 
@@ -646,8 +708,10 @@ OpSet<Atom *> total_atoms(const std::vector<NonCovalents::Interface> &faces,
 //	std::cout << "Total atoms: " << std::endl;
 	for (const NonCovalents::Interface &face : faces)
 	{
-		std::cout << " + " << face.lefts.atoms.size() << std::endl;
-		all += face.lefts.atoms;
+		if (face.left != invariant)
+		{
+			all += face.lefts.atoms;
+		}
 		if (face.right != invariant)
 		{
 			all += face.rights.atoms;
@@ -732,6 +796,22 @@ void NonCovalents::prepareTargets()
 			}
 		}
 	};
+	
+	std::vector<SummedId> summers = summedTargets();
+	
+	_sumsToTargetMatrix = [summers](BondSequence *seq, Eigen::MatrixXf &dest,
+	                         const float &frac)
+	{
+		for (const SummedId &summer : summers)
+		{
+			if (summer.col >= 0)
+			{
+				const glm::vec3 &p = summer.sum(seq, frac);
+				Eigen::Vector3f vec(p.x, p.y, p.z);
+				dest(Eigen::all, summer.col) = vec;
+			}
+		}
+	};
 }
 
 glm::mat4x4 eigenMat4x3ToGlm(Eigen::MatrixXf &mat)
@@ -766,6 +846,7 @@ NonCovalents::align(const float &frac)
 		_blocksToMatrixPositions(seq, translations, true);
 		_weightsToMatrixPositions(frac, barycentrics);
 		_blocksToTargetMatrix(seq, b);
+		_sumsToTargetMatrix(seq, b, frac);
 		
 		Eigen::MatrixXf A = positions * barycentrics;
 
@@ -776,10 +857,9 @@ NonCovalents::align(const float &frac)
 
 		std::cout << "positions: " << std::endl << positions << std::endl;
 		std::cout << "barycentrics: " << std::endl << barycentrics << std::endl;
-		std::cout << std::endl;
 
 		std::cout << "A: " << std::endl << A << std::endl;
-		std::cout << "b: " << std::endl << b << std::endl;
+		std::cout << "targets: " << std::endl << b << std::endl;
 		std::cout << std::endl;
 		*/
 
@@ -912,4 +992,19 @@ NonCovalents::align_task(const float &frac)
 	auto alignment = align(frac);
 
 	return alignment;
+}
+
+std::set<ScoreBucket> NonCovalents::buckets()
+{
+	std::set<ScoreBucket> buckets;
+	for (Segment &segment : _segments)
+	{
+		int min, max;
+		AtomGroup *group = segment.grp;
+		std::string chain = group->chosenAnchor()->chain();
+		group->getLimitingResidues(&min, &max);
+		buckets.insert(ScoreBucket{chain, min, max});
+	}
+
+	return buckets;
 }

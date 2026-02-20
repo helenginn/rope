@@ -29,6 +29,7 @@
 #include <vagabond/utils/Eigen/Dense>
 #include <vagabond/utils/glm_import.h>
 #include "AtomGroup.h"
+#include "paths/Scores.h"
 
 class Atom;
 class Instance;
@@ -127,6 +128,7 @@ public:
 		std::vector<WeightedSum> sums;
 	};
 
+	std::set<ScoreBucket> buckets();
 private:
 	void prepare(BondSequence *const &seq);
 	void prepareMatrix();
@@ -137,6 +139,15 @@ private:
 		int col; // column corresponding to atom info
 		int idx; // index of BondSequence's AtomBlocks
 		float weight = 1; // per-sum weight
+	};
+
+	typedef std::function<glm::vec3(BondSequence *seq, const float &frac)> 
+	SummedWeight;
+	struct SummedId
+	{
+		int col;
+		int idx;
+		SummedWeight sum;
 	};
 
 	std::vector<MatId> 
@@ -158,6 +169,7 @@ private:
 	NonCovalents::Interface findInterface(Segment first, Segment second);
 
 	std::function<BondSequence *(BondSequence *)> align(const float &frac);
+	std::vector<SummedId> summedTargets();
 
 	std::vector<Segment> _segments;
 	std::vector<Instance *> _instances;
@@ -168,6 +180,8 @@ private:
 	                   bool trans_only)> _blocksToMatrixPositions;
 	std::function<void(BondSequence *seq, 
 	                   Eigen::MatrixXf &dest)> _blocksToTargetMatrix;
+	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
+	                   const float &frac)> _sumsToTargetMatrix;
 	std::function<void(const float &frac,
 	                   Eigen::MatrixXf &dest)> _weightsToMatrixPositions;
 
