@@ -61,8 +61,8 @@ struct FlagParameters {
     int ne;
 	double minres;
     float cutoff;
+    int timeDivisions;
     bool mist;
-    int mutualInformation;
 	int kmi;
 };
 
