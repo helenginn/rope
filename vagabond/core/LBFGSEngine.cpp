@@ -114,7 +114,6 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 	auto *prerun = new Task<void *, void *>
 	([this](void *)
 	 {
-		std::cout << "running the pre-run on " << n() << " params" << std::endl;
 		preRun();
 		return nullptr;
 	},
@@ -125,9 +124,7 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 	auto *handle_baseline = new Task<void *, void *>
 	([this, ms](void *)
 	 {
-		std::cout << "retrieving a result." << n() << std::endl;
 		getOneResult();
-		std::cout << "about to LBFGS!! " << n() << std::endl;
 		lbfgs_parameter_t param;
 
 		lbfgs_parameter_init(&param);
@@ -137,7 +134,6 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 		float endScore = 0;
 		std::vector<float> vals(n());
 
-		std::cout << "got to this point" << std::endl;
 		lbfgs(vals.size(), &vals[0], &endScore, &LBFGSEngine::evaluate,
 		      nullptr, this, &param);
 		_bestResult = vals;
