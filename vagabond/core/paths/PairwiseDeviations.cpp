@@ -206,7 +206,7 @@ auto simple(PairwiseDeviations *dev, float frac, std::set<ScoreBucket> forResidu
 		{
 			for (int i = 0; i < pairs.size(); i++)
 			{
-				TargetInfo &info = dev->info(i);
+				TargetInfo &info = dev->info(pairs[i]);
 				const int &p = info.p;
 				const int &q = info.q;
 				if (!dev->filter_in(p) || !dev->filter_in(q))
