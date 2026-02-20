@@ -192,7 +192,10 @@ void PathInterfaceSetupView::preparePath()
 		{
 			Instance *left = _from->instanceWithId(key);
 			Instance *right = _to->instanceWithId(_map[key]);
-			new_path.addLinkedInstances(left, right);
+			if (left && right)
+			{
+				new_path.addLinkedInstances(left, right);
+			}
 		}
 	}
 
