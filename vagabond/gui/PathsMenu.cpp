@@ -429,7 +429,7 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
         prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
 
-        VagWindow::addJob("path-entropy=" + _entity->name() + ",11");
+        VagWindow::addJob("path-entropy=" + _entity->name() + ",11" + ",2");
         
         /* std::cout << "path entropy data calculated" << std::endl;
         std::ifstream dataFile(_entity->name() + "_10");
