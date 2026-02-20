@@ -278,7 +278,12 @@ void SubmissionHelp::pairwiseWork(int idx)
 	{
 		if (_options & PerResidue) // separated: one residue, one score
 		{
-			std::set<ScoreBucket> residues = chosen->residues();
+			std::set<ScoreBucket> residues = _ids;
+//			std::set<ScoreBucket> residues = chosen->residues();
+			if (residues.size() == 0)
+			{
+				residues = chosen->residues();
+			}
 
 			for (const ScoreBucket &id : residues)
 			{
@@ -429,3 +434,4 @@ void SubmissionHelp::finaliseJobSubmission()
 	calculator->releaseHorses();
 	// perResBin needs to be released after collecting calculator results
 }
+

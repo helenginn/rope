@@ -38,7 +38,7 @@ bool ScoreBucket::fully_contains(const ScoreBucket &other) const
 		return false;
 	}
 	
-	if (minRes >= other.minRes && maxRes <= other.maxRes)
+	if (minRes <= other.minRes && maxRes >= other.maxRes)
 	{
 		return true;
 	}

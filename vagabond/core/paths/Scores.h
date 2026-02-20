@@ -52,6 +52,13 @@ struct ScoreBucket
 		maxRes = {};
 	}
 
+	ScoreBucket(std::string ch, int m, int M)
+	{
+		chain = ch;
+		minRes = m;
+		maxRes = M;
+	}
+
 	ScoreBucket(Atom *atom);
 	ScoreBucket(int res)
 	{
