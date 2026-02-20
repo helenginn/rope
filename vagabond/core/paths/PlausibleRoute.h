@@ -31,7 +31,8 @@ class Path;
 template <class Type> class OpSet;
 
 class PlausibleRoute : public Route, public Progressor, public RunsEngine,
-public RunsMultiEngine<ScoreBucket, SimplexEngine>
+public RunsMultiEngine<ScoreBucket, SimplexEngine>,
+public RunsMultiEngine<ScoreBucket, LBFGSEngine>
 {
 	friend RouteValidator;
 	friend Path;
@@ -106,13 +107,14 @@ public:
 	bool meaningfulUpdate(float new_score, float old_score, float threshold);
 
 	std::vector<float> prepareGradients(int size);
-	float evaluateMomentum(const float *x);
+//	float evaluateMomentum(const float *x);
 protected:
 	virtual int sendJob(const std::vector<float> &all, Engine *caller);
 
 	virtual std::map<ScoreBucket, float> 
 	getMultiResult(const std::vector<float> &all, 
-	               MultiEngine<ScoreBucket, SimplexEngine> *caller);
+	               MultiEngineBase *caller);
+
 
 	virtual void finishedKey(const ScoreBucket &key);
 
@@ -152,7 +154,8 @@ private:
 	CalcOptions calcOptions(const CalcOptions &add_options,
 	                  const CalcOptions &subtract_options);
 
-	bool refineMomentum();
+//	bool refineMomentum();
+	bool refineSegmentedMomentum();
 	bool sideChainGradients(int i);
 
 	GradientPath *gradients(const ValidateIndex &validate,
