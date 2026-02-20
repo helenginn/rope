@@ -190,7 +190,7 @@ void PlausibleRoute::prepareJobs()
 		}
 		else
 		{
-			bool success = refineMomentum();
+			bool success = refineSegmentedMomentum();
 			return success;
 		};
 	};
@@ -241,6 +241,7 @@ std::vector<float> save_current(GradientPath *path, const RTMotion &motions,
                                  int to_order)
 {
 	std::vector<float> current = std::vector<float>(motions.size() * to_order);
+	std::cout << "we have: " << motions.size() * to_order << std::endl;
 
 	for (int i = 0; i < path->motion_idxs.size(); i++)
 	{
@@ -354,12 +355,18 @@ bool PlausibleRoute::sideChainGradients(int order)
 		}
 	}
 
+	auto assign_params = [this](const std::vector<float> &all)
+	{
+		assignParameterValues(all);
+	};
+
 	float oldsc = routeScore(nudgeCount());
 	postScore(oldsc);
 
 	installAllResidues();
 	MultiSimplex<ScoreBucket> ms(this, parameterCount());
 	ms.setStepSize(step);
+	ms.setSetParameters(assign_params);
 	ms.supplyInfo(map);
 	ms.run();
 	zeroParameters();
@@ -383,6 +390,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 	{
 		if (!doingClashes()) step = 1;
 		MultiSimplex<ScoreBucket> ms(this, parameterCount());
+		ms.setSetParameters(assign_params);
 		ms.setStepSize(step);
 		ms.supplyInfo(mini);
 		for (int i = 0; i < 10; i++)
@@ -404,6 +412,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 	return meaningfulUpdate(newsc, oldsc, 0.90);
 }
 
+/*
 template <typename JobOnTerm>
 auto do_on_each_path_component(PlausibleRoute *pr, 
                                GradientPath *path, const JobOnTerm &job)
@@ -442,6 +451,7 @@ float PlausibleRoute::evaluateMomentum(const float *x)
 
 	return score;
 }
+*/
 
 std::vector<float> PlausibleRoute::prepareGradients(int size)
 {
@@ -478,11 +488,154 @@ GradientPath *PlausibleRoute::gradients(const ValidateIndex &validate,
 {
 	CalcOptions options = calcOptions(add_options, subtract_options);
 	
-	int order = _jobOrder + 1;
+	int order = currentOrder();
 
 	return submitGradients(options, order, validate, _hydrogenFreeSequences);
 }
 
+bool PlausibleRoute::refineSegmentedMomentum()
+{
+	_paramPtrs.clear();
+	_paramStarts.clear();
+	_steps.clear();
+
+	GradientPath *path = gradients(ValidateIndex{});
+
+	if (Route::_finish)
+	{
+		delete path;
+		return false;
+	}
+
+	float startScore = routeScore(nudgeCount());
+	_bestScore = startScore;
+
+	_path = path;
+	std::vector<float> current = save_current(path, _motions,
+	                                          currentOrder());
+	std::vector<int> param_equiv(current.size(), -1);
+	std::cout << "current: " << std::endl;
+	for (float &f : current)
+	{
+		std::cout << f << " ";
+	}
+	std::cout << std::endl;
+	float endScore = 0;
+
+	std::map<ScoreBucket, std::vector<int>> map;
+	if (_noncovs)
+	{
+		std::set<ScoreBucket> buckets = _noncovs->buckets();
+		_ids = buckets;
+		for (const ScoreBucket &bucket : buckets)
+		{
+			map[bucket] = {};
+		}
+	}
+	else
+	{
+		int min, max;
+		instance()->currentAtoms()->getLimitingResidues(&min, &max);
+		ScoreBucket catch_all("", min, max);
+		_ids = {catch_all};
+		map[catch_all] = {};
+	}
+
+	int n = 0;
+	for (int i = 0; i < motionCount(); i++)
+	{
+		ResidueTorsion &rt = residueTorsion(i);
+		if (!parameter(i) || (parameter(i)->isTorsion() &&
+		                      parameter(i)->isConstrained()))
+		{
+			continue;
+		}
+		
+		if (!doingClashes() &&
+		    (parameter(i)->atom(0)->elementSymbol() == "H" ||
+		     parameter(i)->atom(3)->elementSymbol() == "H"))
+		{
+			// trying to do this on momentum isn't very successful.
+			continue;
+		}
+
+		WayPoints &wps = wayPoints(i);
+
+		for (int j = 0; j < currentOrder(); j++)
+		{
+			addFloatParameter(&wps._amps[j], 1.);
+			// save this information for later and better
+			
+			ScoreBucket forAtom = ScoreBucket(parameter(i)->anAtom());
+
+			for (auto it = map.begin(); it != map.end(); it++)
+			{
+				if (it->first.fully_contains(forAtom))
+				{
+					map[it->first].push_back(n);
+					param_equiv[i * currentOrder() + j] = n;
+					n++;
+					break;
+				}
+			}
+		}
+	}
+	std::cout << "Current: " << current.size() <<  std::endl;
+	
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		std::cout << "Idxs: ";
+		for (int i = 0; i < 5; i ++)
+		{
+			std::cout << it->second[i] << ", ";
+		}
+		std::cout << std::endl;
+	}
+
+	MultiLBFGS<ScoreBucket> ms(this, parameterCount());
+	ms.setGetGradientVector
+	([this, &current, &param_equiv]()
+	 {
+		std::vector<float> gs = prepareGradients(current.size());
+		std::vector<float> gradients; gradients.resize(_paramPtrs.size());
+		for (int i = 0; i < current.size(); i++)
+		{
+			int all_idx = param_equiv[i];
+			if (all_idx >= 0)
+			{
+				gradients[all_idx] = gs[i];
+			}
+		}
+		return gradients;
+	 });
+
+	ms.setSetParameters
+	([this, &current, &param_equiv](const std::vector<float> &all)
+	{
+		assignParameterValues(all);
+	});
+	ms.setStepSize(1.);
+	ms.supplyInfo(map);
+	ms.run();
+
+	endScore = routeScore(nudgeCount());
+	postScore(endScore);
+
+	if (_finish) return false;
+
+	sideChainGradients(currentOrder());
+	endScore = routeScore(nudgeCount());
+	postScore(endScore);
+	
+	delete _path; _path = nullptr;
+	bool meaningful = endScore < startScore - 0.001;
+	std::cout << "n = " << current.size() << ", " << 
+	startScore << " --> " << endScore << " ";
+	std::cout << (meaningful ? "(meaningful)" : "(meaningless)") << std::endl;
+	return meaningful;
+}
+
+/*
 bool PlausibleRoute::refineMomentum()
 {
 	GradientPath *path = gradients(ValidateIndex{});
@@ -542,6 +695,7 @@ bool PlausibleRoute::refineMomentum()
 	std::cout << (meaningful ? "(meaningful)" : "(meaningless)") << std::endl;
 	return meaningful;
 }
+*/
 
 ResultBy<ScoreBucket> *PlausibleRoute::byResidueScore(int steps, 
                                                 const CalcOptions &add_options,
@@ -560,6 +714,7 @@ ResultBy<ScoreBucket> *PlausibleRoute::byResidueScore(int steps,
 
 	submitValue(options, steps);
 	retrieve();
+	float score = routeScore(nudgeCount());
 	_perResBin.releaseHorses();
 	ResultBy<ScoreBucket> *r = _perResBin.acquireObject();
 	return r;
@@ -868,10 +1023,8 @@ void PlausibleRoute::finishedKey(const ScoreBucket &key)
 
 std::map<ScoreBucket, float> PlausibleRoute::
 	getMultiResult(const std::vector<float> &all,
-	               MultiEngine<ScoreBucket, SimplexEngine> *caller)
+	               MultiEngineBase *caller)
 {
-	assignParameterValues(all);
-	
 	int num = nudgeCount();
 	if (_gui)
 	{
@@ -890,7 +1043,6 @@ std::map<ScoreBucket, float> PlausibleRoute::
 	}
 
 	std::map<ScoreBucket, float> scores = rr->scores;
-	
 	for (auto it = scores.begin(); it != scores.end(); it++)
 	{
 		std::cout << it->first.chain << " (" << it->first.minRes << "-" <<
