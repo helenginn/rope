@@ -28,20 +28,23 @@ template <typename Storage>
 class RAVector : public HeadedVector<Atom3DPosition, Storage>
 {
 public:
-	using HeadedVector<Atom3DPosition, Storage>::_pairs;
+	using HeadedVector<Atom3DPosition, Storage>::clearPairs;
+	using HeadedVector<Atom3DPosition, Storage>::reservePairs;
+	using HeadedVector<Atom3DPosition, Storage>::addPair;
+	using HeadedVector<Atom3DPosition, Storage>::pairs;
 	typedef typename HeadedVector<Atom3DPosition, Storage>::HeaderValue RTValue;
 
 	void addAtom3DPosition(const Atom3DPosition &rt, 
 	                       const Storage &st = Storage{})
 	{
-		_pairs.push_back(RTValue{rt, st});
+		addPair(RTValue{rt, st});
 	}
 	
 	void vector_from(const std::vector<Atom3DPosition> &ras,
 	                 const std::vector<Storage> &storage)
 	{
-		_pairs.clear();
-		_pairs.reserve(ras.size());
+		clearPairs();
+		reservePairs(ras.size());
 		for (int i = 0; i < ras.size(); i++)
 		{
 			if (storage.size() > i)
@@ -57,8 +60,8 @@ public:
 	
 	void vector_from(const std::vector<Atom3DPosition> &ras)
 	{
-		_pairs.clear();
-		_pairs.reserve(ras.size());
+		clearPairs();
+		reservePairs(ras.size());
 		for (const Atom3DPosition &rt : ras)
 		{
 			addAtom3DPosition(rt);
@@ -67,7 +70,7 @@ public:
 	
 	void attachInstance(Instance *inst)
 	{
-		for (RTValue &val : _pairs)
+		for (RTValue &val : pairs())
 		{
 			val.header.attachToInstance(inst);
 		}
@@ -75,10 +78,10 @@ public:
 	
 	void filter_according_to(const std::vector<Atom *> &as)
 	{
-		std::vector<RTValue> copy = _pairs;
+		std::vector<RTValue> copy = pairs();
 
-		_pairs.clear();
-		_pairs.reserve(as.size());
+		clearPairs();
+		reservePairs(as.size());
 		
 		for (int i = 0; i < as.size(); i++)
 		{
@@ -94,11 +97,11 @@ public:
 			
 			if (idx >= 0)
 			{
-				_pairs.push_back(copy[idx]);
+				addPair(copy[idx]);
 			}
 			else
 			{
-				_pairs.push_back(RTValue{});
+				addPair(RTValue{});
 			}
 		}
 	}
