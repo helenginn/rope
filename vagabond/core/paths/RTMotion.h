@@ -93,6 +93,11 @@ inline void from_json(const json &j, Motion &id)
 class RTMotion : public RTVector<Motion>
 {
 public:
+	using RTVector<Motion>::clearPairs;
+	using RTVector<Motion>::reservePairs;
+	using RTVector<Motion>::addPair;
+	using RTVector<Motion>::pairs;
+
 	static RTMotion motions_from(const std::vector<ResidueTorsion> &rts,
 	                             const std::vector<Motion> &motions)
 	{
@@ -103,11 +108,11 @@ public:
 	
 	void flips_from(const std::vector<bool> &flips)
 	{
-		assert(flips.size() == _pairs.size());
+		assert(flips.size() == pairs().size());
 		
 		for (int i = 0; i < flips.size(); i++)
 		{
-			_pairs[i].storage.flip = flips[i];
+			storage(i).flip = flips[i];
 		}
 	}
 
@@ -115,17 +120,17 @@ public:
 	{
 		for (auto it = wps.begin(); it != wps.end(); it++)
 		{
-			_pairs[it->first].storage.wp = it->second;
+			storage(it->first).wp = it->second;
 		}
 	}
 
 	void motion_angles_from(const std::vector<float> &dest)
 	{
-		assert(dest.size() == _pairs.size());
+		assert(dest.size() == pairs().size());
 		
 		for (int i = 0; i < dest.size(); i++)
 		{
-			_pairs[i].storage.angle = dest[i];
+			storage(i).angle = dest[i];
 		}
 	}
 
@@ -150,14 +155,14 @@ inline void from_json(const json &j, RTVector<Motion>::RTValue &id)
 
 inline void to_json(json &j, const RTMotion &id)
 {
-	j = id._pairs;
+	j = id.pairs();
 
 }
 
 inline void from_json(const json &j, RTMotion &id)
 {
 	std::vector<RTMotion::RTValue> values = j;
-	id._pairs = values;
+	id.pairs() = values;
 }
 
 
