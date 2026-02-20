@@ -125,7 +125,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
         {
             float time = (l+1)/((double) numDivisions+1.0);
 
-		//	workingPath->submitJobAndRetrieve(time, true);
+			workingPath->submitJobAndRetrieve(time, true);
 
 			for (int j = 0; j < torsRes.size(); j++)
 			{
@@ -160,7 +160,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
 
-    for(int n = 0; n < numDivisions; n++)
+    for(int n = 1; n < numDivisions; n++)
     {
 		struct EntropyKL* entropy = new EntropyKL;
 		entropy->nSingle = numResPerModel;
@@ -573,7 +573,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
 					for (int j = 0; j < torsRes[m]->nAng; j++)
 					{
-						phit[i][j] = torsRes[m]->ang[0][j][i];
+						phit[i][j] = torsRes[m]->ang[timeDivisions][j][i];
 						numTors++;
 					}
 				}
