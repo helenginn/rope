@@ -45,17 +45,6 @@ public:
 		return ss;
 	}
 	
-	void order_by_magnitude()
-	{
-		std::sort(_pairs.begin(), _pairs.end(), 
-		          [](const RAFloats::HeaderValue &a, 
-		             const RAFloats::HeaderValue &b) -> bool
-		{
-			return (a.storage * a.storage > b.storage * b.storage);
-
-		});
-	}
-	
 	const DataFloat &value(int i) const
 	{
 		return this->storage(i);
