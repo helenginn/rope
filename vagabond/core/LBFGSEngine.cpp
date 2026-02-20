@@ -16,7 +16,9 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "MultiEngineBase.h"
 #include "LBFGSEngine.h"
+#include "engine/Task.h"
 #include <stdio.h>
 #include <stdexcept>
 
@@ -60,7 +62,7 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 	std::vector<float> vals = vec_from_lbfgs(x, n);
 	
 	sendJob(vals);
-	getResults();
+	getOneResult();
 	float eval = findBestScore();
 
 	Engine::grabGradients(g, x);
@@ -89,7 +91,7 @@ void LBFGSEngine::preRun()
 void LBFGSEngine::run()
 {
 	preRun();
-	getResults();
+	getOneResult();
 
 	lbfgs_parameter_t param;
 	
@@ -103,3 +105,56 @@ void LBFGSEngine::run()
 	lbfgs(vals.size(), &vals[0], &endScore, &LBFGSEngine::evaluate,
 	      nullptr, this, &param);
 }
+
+// returns the "pre-run" task, but can also set up all other tasks
+Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
+{
+	n() = _paramCount();
+
+	auto *prerun = new Task<void *, void *>
+	([this](void *)
+	 {
+		std::cout << "running the pre-run on " << n() << " params" << std::endl;
+		preRun();
+		return nullptr;
+	},
+	 "pre-run");
+
+	// this can start because it's going to hang on the "getOneResult"
+	// until something comes back anyway (when preRun() is called)
+	auto *handle_baseline = new Task<void *, void *>
+	([this, ms](void *)
+	 {
+		std::cout << "retrieving a result." << n() << std::endl;
+		getOneResult();
+		std::cout << "about to LBFGS!! " << n() << std::endl;
+		lbfgs_parameter_t param;
+
+		lbfgs_parameter_init(&param);
+		param.max_iterations = 10;
+		param.max_linesearch = 10;
+
+		float endScore = 0;
+		std::vector<float> vals(n());
+
+		std::cout << "got to this point" << std::endl;
+		lbfgs(vals.size(), &vals[0], &endScore, &LBFGSEngine::evaluate,
+		      nullptr, this, &param);
+		_bestResult = vals;
+		
+		ms->declareDone(this, vals);
+		_bestResult.clear();
+		_bestScore = FLT_MAX;
+		return nullptr;
+	},
+	"handle_baseline");
+	
+	_tasks = new Tasks();
+	_tasks->prepare_threads(1);
+	_tasks->name = "lbfgs";
+	_tasks->addTask(handle_baseline); 
+
+	return prerun; // the starting gun is returned to MultiEngine
+	
+}
+
