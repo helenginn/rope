@@ -26,19 +26,23 @@ template <typename Storage>
 class RTVector : public HeadedVector<ResidueTorsion, Storage>
 {
 public:
-	using HeadedVector<ResidueTorsion, Storage>::_pairs;
+	using HeadedVector<ResidueTorsion, Storage>::clearPairs;
+	using HeadedVector<ResidueTorsion, Storage>::reservePairs;
+	using HeadedVector<ResidueTorsion, Storage>::pairs;
+	using HeadedVector<ResidueTorsion, Storage>::header;
+	using HeadedVector<ResidueTorsion, Storage>::addPair;
 	typedef typename HeadedVector<ResidueTorsion, Storage>::HeaderValue RTValue;
 
 	void addResidueTorsion(const ResidueTorsion &rt, 
 	                       const Storage &st = Storage{})
 	{
-		_pairs.push_back(RTValue{rt, st});
+		addPair(RTValue{rt, st});
 	}
 	
 	void vector_from(const std::vector<ResidueTorsion> &rts)
 	{
-		_pairs.clear();
-		_pairs.reserve(rts.size());
+		clearPairs();
+		reservePairs(rts.size());
 		for (const ResidueTorsion &rt : rts)
 		{
 			addResidueTorsion(rt);
@@ -47,7 +51,7 @@ public:
 	
 	void attachInstance(Instance *inst)
 	{
-		for (RTValue &val : _pairs)
+		for (RTValue &val : pairs())
 		{
 			val.header.attachToInstance(inst);
 		}
@@ -56,8 +60,8 @@ public:
 	void vector_from(const std::vector<ResidueTorsion> &rts,
 	                 const std::vector<Storage> &storage)
 	{
-		_pairs.clear();
-		_pairs.reserve(rts.size());
+		clearPairs();
+		reservePairs(rts.size());
 		for (int i = 0; i < rts.size(); i++)
 		{
 			if (storage.size() > i)
@@ -73,20 +77,20 @@ public:
 	
 	const ResidueTorsion &rt(int i) const
 	{
-		return _pairs[i].header;
+		return header(i);
 	}
 	
 	ResidueTorsion &rt(int i)
 	{
-		return _pairs[i].header;
+		return header(i);
 	}
 	
 	void filter_according_to(const std::vector<Parameter *> &ps)
 	{
-		std::vector<RTValue> copy = _pairs;
+		std::vector<RTValue> copy = pairs();
 
-		_pairs.clear();
-		_pairs.reserve(ps.size());
+		clearPairs();
+		reservePairs(ps.size());
 		
 		for (int i = 0; i < ps.size(); i++)
 		{
@@ -102,11 +106,11 @@ public:
 			
 			if (idx >= 0)
 			{
-				_pairs.push_back(copy[idx]);
+				addPair(copy[idx]);
 			}
 			else
 			{
-				_pairs.push_back(RTValue{});
+				addPair(RTValue{});
 			}
 		}
 	}

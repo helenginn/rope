@@ -26,6 +26,7 @@
 class RTMultiple : public RTVector<std::vector<Angular>>
 {
 public:
+	using RTVector<std::vector<Angular>>::pairs;
 	void add_angles_from(RTAngles &other)
 	{
 		assert(other.size() == size());
@@ -37,8 +38,8 @@ public:
 	
 	size_t steps()
 	{
-		if (_pairs.size() == 0) return 0;
-		return _pairs[0].storage.size();
+		if (pairs().size() == 0) return 0;
+		return pairs()[0].storage.size();
 	}
 
 	float angle_for_index(int inst_idx, int tors_idx)

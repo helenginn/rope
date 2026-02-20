@@ -147,8 +147,47 @@ protected:
 		Storage storage;
 
 	};
+	
+	void reservePairs(size_t reserve)
+	{
+		_pairs.reserve(reserve);
+	}
 
+	void clearPairs()
+	{
+		_pairs.clear();
+		_header2Idx.clear();
+	}
+
+	std::vector<HeaderValue> &pairs() 
+	{
+		return _pairs;
+	}
+	
+	const std::vector<HeaderValue> &pairs() const
+	{
+		return _pairs;
+	}
+	
+	void addPair(const HeaderValue &tmp)
+	{
+		_pairs.push_back(tmp);
+	}
+	
+	void order_by_magnitude()
+	{
+		std::sort(_pairs.begin(), _pairs.end(), 
+		          [](const HeaderValue &a, 
+		             const HeaderValue &b) -> bool
+		{
+			return (a.storage * a.storage > b.storage * b.storage);
+
+		});
+	}
+
+private:
 	std::vector<HeaderValue> _pairs;
+	std::map<std::string, int> _header2Idx;
 };
 
 #endif
