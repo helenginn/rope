@@ -105,6 +105,8 @@ public:
 		glm::vec3 position_for_weights(const GetPos &getPos,
 		                               const OpVec<float> &weights);
 
+		// glm::vec3 average_fiducials_position();
+
 		std::function<OpVec<float>(float)> weights_for_frac;
 
 		std::function<Eigen::VectorXf(float)> weights_to_matrix_column;
