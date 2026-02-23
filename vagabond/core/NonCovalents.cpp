@@ -146,7 +146,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 	auto valid_distance = [](glm::vec3 &a, glm::vec3 &b) -> bool
 	{
 		const float max = 4.5f;
-		bool bad = false;
+		// bool bad = false;
 		for (int i = 0; i < 3; i++)
 		{
 			if (fabs(a[i] - b[i]) > max)
@@ -165,7 +165,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 
 	for (Atom *atom : grp->atomVector())
 	{
-		if (atom->elementSymbol() == "H" || !atom->isMainChain())
+		if (atom->elementSymbol() == "H")
 		{
 			continue;
 		}
@@ -388,6 +388,20 @@ NonCovalents::WeightedSum::WeightedSum(Atom *a,
 	};
 }
 
+glm::vec3 average_fiducials_position(const std::vector<Atom *> &fiducials)
+{
+	glm::vec3 ave{};
+
+	for (Atom *fid : fiducials)
+	{
+		glm::vec3 pos = fid->derivedPosition();
+		ave += pos;
+	}
+	
+	ave /= (float)fiducials.size();
+	return ave;
+}
+
 void weighted_sums_for_side(NonCovalents::Interface &face, 
                             NonCovalents::Interface::Side &lefts, 
                             NonCovalents::Interface::Side &rights)
@@ -397,29 +411,74 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		auto l = closest_atoms(lefts.atoms, 4);
 		std::vector<Atom *> neighbours = (l(right)).toVector();
 
+		Eigen::MatrixXf posmat(3, 3);
+
+		posmat.setZero();	
+		for (Atom *fid : neighbours)
+		{
+			glm::vec3 derivpos = fid->derivedPosition() - average_fiducials_position(neighbours);
+		
+			for (int i = 0; i < 3; i++)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					posmat(i, j) += derivpos[i] * derivpos[j];
+				}
+			}
+		}
+		std::cout << "\n" << "POSMAT: " << posmat;		
+
+		// Eigen::MatrixXf pos_matrix(3, 4);
+
+		// int col = 0;
+		// for (Atom *fid : neighbours)
+		// {
+		// 	glm::vec3 pos = fid->derivedPosition();
+		// 	pos_matrix(0, col) = pos.x - average_fiducials_position(fid).x;
+		// 	pos_matrix(1, col) = pos.y - average_fiducials_position(fid).y;
+		// 	pos_matrix(2, col) = pos.z - average_fiducials_position(fid).z;
+		// 	col++;
+		// }
+
+		// // Calculate the 3x3 covariance matrix: (W * W^T)
+		// Eigen::MatrixXf covsvd = pos_matrix * pos_matrix.transpose();
+		// std::cout << "COVSVD: " << covsvd << "\n";
+
+		Eigen::JacobiSVD<Eigen::MatrixXf> svd(posmat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+		std::cout << "\n" << "SVD Singular values: " << svd.singularValues().transpose();
+
+		bool svdplane = (svd.singularValues()(2) < 0.1f);
+		std::cout << ", Plane = " << svdplane << std::endl;
+
 		NonCovalents::WeightedSum candidate = 
 		NonCovalents::WeightedSum(right, neighbours);
 
-		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0)
+		std::cout << "\t" << "Candidate atomos: " << candidate.atom->desc() << " <-> ";
+		
+		for (Atom *f : candidate.fiducials)
 		{
-			candidate.ave_weight = 1 / (candidate.ave_weight *
-			                            candidate.ave_weight);
+			std::cout << f->desc() << ", ";
+		}
+
+		std::cout << "ave_weight = " << candidate.ave_weight;
+
+		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0 && svdplane == false)
+		{
 			if (candidate.ave_weight != candidate.ave_weight ||
 			    !isfinite(candidate.ave_weight))
 			{
+				std::cout << ", rejected" << std::endl;
 				continue;
 			}
 			
-			std::cout << "\t" << candidate.atom->desc() << " <-> ";
-			
-			for (Atom *f : candidate.fiducials)
-			{
-				std::cout << f->desc() << ", ";
-			}
-			std::cout << std::endl;
+			std::cout << ", ACCEPTED" << std::endl;
 
 			candidate.ave_weight = 1;
 			face.sums.push_back(candidate);
+		}
+		else
+		{
+			std::cout << ", rejected" << std::endl;
 		}
 	}
 }
