@@ -885,7 +885,6 @@ NonCovalents::align(const float &frac)
 		Eigen::MatrixXf sol;
 		sol = A.transpose().colPivHouseholderQr().solve(b.transpose());
 		write_to_file(sol, "orig_solution.2d");
-		exit(0);
 
 		/*
 		std::cout << "Sol, pre-clean: " << std::endl;
@@ -939,6 +938,8 @@ NonCovalents::align(const float &frac)
 
 		// now we need to re-calculate the translations needed.
 		Eigen::MatrixXf result = sol.transpose() * A;
+		write_to_file(result, "orig_result.2d");
+		exit(0);
 		/*
 		std::cout << "rot check:\n" << result << std::endl;
 		std::cout << std::endl;
