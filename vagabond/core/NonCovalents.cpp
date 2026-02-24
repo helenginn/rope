@@ -24,12 +24,29 @@
 #include "Instance.h"
 #include "Atom.h"
 #include "engine/Task.h"
+#include <fstream>
 
 using Eigen::MatrixXf;
 
 NonCovalents::NonCovalents()
 {
 
+}
+
+void write_to_file(const Eigen::MatrixXf &src, std::string file)
+{
+	return;
+	std::ofstream f;
+	f.open(file);
+	for (int j = 0; j < src.cols(); j++)
+	{
+		for (int i = 0; i < src.rows(); i++)
+		{
+			f << src(i, j) << (i < src.rows() - 1 ? " " : "");
+		}
+		f << std::endl;
+	}
+	f.close();
 }
 
 template <typename Func>
@@ -61,6 +78,26 @@ bool atomBelongsToSegment(Atom *atom, Segment &seg)
 	return (seg.grp->hasAtom(atom));
 }
 
+OpSet<Atom *> total_invariant_atoms(const std::vector<NonCovalents::Interface> 
+                                    &faces, const Segment &invariant)
+{
+	int total = 0;
+	OpSet<Atom *> all;
+	for (const NonCovalents::Interface &face : faces)
+	{
+		if (face.left == invariant)
+		{
+			all += face.lefts.atoms;
+		}
+		if (face.right == invariant)
+		{
+			all += face.rights.atoms;
+		}
+	}
+	return all;
+}
+
+
 void NonCovalents::assignSegmentsToAtoms(BondSequence *const &seq)
 {
 	Segment *segment = nullptr;
@@ -83,11 +120,8 @@ void NonCovalents::assignSegmentsToAtoms(BondSequence *const &seq)
 				_invariant = *segment;
 				std::cout << "Assigning invariant" << std::endl;
 			}
-			else
-			{
-				_segment2Idx[*segment] = m;
-				m++;
-			}
+			_segment2Idx[*segment] = m;
+			m++;
 
 			delete segment;
 			segment = nullptr;
@@ -108,6 +142,7 @@ void NonCovalents::assignSegmentsToAtoms(BondSequence *const &seq)
 		{
 			numbers.push_back(i);
 			segment->grp->add(block.atom);
+			_atom2Seq[block.atom] = i;
 		}
 
 		i++;
@@ -244,8 +279,6 @@ void NonCovalents::findInterfaces(const std::function<int(Atom *const &)>
 {
 	for (Segment &first : _segments)
 	{
-//		if (first == _invariant) { continue; }
-
 		for (Segment &second : _segments)
 		{
 			if (first == second) continue;
@@ -490,6 +523,7 @@ void NonCovalents::prepareBarycentricWeights()
 		return _seqToId.count(idx) ? _seqToId.at(idx).col : -1;
 	};
 
+	int size = _positions.cols();
 	for (Interface &face : _faces)
 	{
 		weighted_sums_for_side(face, face.lefts, face.rights);
@@ -514,28 +548,8 @@ void NonCovalents::prepareBarycentricWeights()
 		
 		for (WeightedSum &sum : face.sums)
 		{
-			int size = _positions.cols();
-			bool l_invariant = (face.left == _invariant);
-			
-			if (l_invariant)
-			{
-				std::vector<MatId> tids = target_coordinates();
-				sum.weights_to_matrix_column = 
-				[size, col_idx_for_atom, &sum](float frac)
-				{
-					Eigen::VectorXf vec(size);
-					vec.setZero();
-					int col = col_idx_for_atom(sum.atom);
-					vec[col] = 1;
-					return vec;
-				};
-
-				continue;
-			}
-
-			bool r_invariant = (face.right == _invariant);
 			sum.weights_to_matrix_column = 
-			[size, col_idx_for_atom, &sum, r_invariant](float frac)
+			[size, col_idx_for_atom, &sum](float frac)
 			{
 				Eigen::VectorXf vec(size);
 				vec.setZero();
@@ -555,36 +569,50 @@ void NonCovalents::prepareBarycentricWeights()
 				
 				// subtract calculated atom's position to aim for zero
 				int col = col_idx_for_atom(sum.atom);
-				
-				if (!r_invariant)
-				{
-					vec[col] = -1;
-				}
-
+				vec[col] = -1;
 				vec *= sum.ave_weight;
 
 				return vec;
 			};
 		}
 	}
+
+	OpSet<Atom *> fixed_atoms = total_invariant_atoms(_faces, _invariant);
+	std::vector<int> columns_for_fixed; 
+	columns_for_fixed.reserve(fixed_atoms.size());
 	
-	_weightsToMatrixPositions = [this](const float &frac, 
-	                                   Eigen::MatrixXf &dest)
+	for (Atom *atom : fixed_atoms)
+	{
+		int b_idx = _atom2Seq[atom];
+		int col_idx = _seqToId[b_idx].col;
+		columns_for_fixed.push_back(col_idx);
+	}
+	
+	_weightsToMatrixPositions = [this, columns_for_fixed, size]
+	(const float &frac, Eigen::MatrixXf &dest)
 	{
 		int n = 0;
 		for (Interface &face : _faces)
 		{
-			if (face.sums.size() < 3)
-			{
-//				continue;
-			}
-
 			for (WeightedSum &sum : face.sums)
 			{
 				Eigen::VectorXf vec = sum.weights_to_matrix_column(frac);
 				dest(Eigen::all, n) = vec;
 				n++;
 			}
+		}
+		
+		for (int fixed : columns_for_fixed)
+		{
+			if (n >= _barycentrics.cols())
+			{
+				break;
+			}
+			Eigen::VectorXf vec(size);
+			vec.setZero();
+			vec[fixed] = 1;
+			dest(Eigen::all, n) = vec;
+			n++;
 		}
 	};
 }
@@ -606,18 +634,18 @@ void NonCovalents::prepare(BondSequence *const &seq)
 
 	// enough information now to prepare the matrix sizes.
 	preparePositionMatrix();
+	
+	// decide which participating atoms go into which columns for matrix
+	prepareCoordinateColumns(atom_index);
 
 	// prepare the barycentric coordinates for each atom!
 	prepareBarycentricWeights();
 	
 	// prepare the barycentric matrix template.
 	prepareBarycentricTargetMatrices();
-	
-	// decide which participating atoms go into which columns for matrix
-	prepareCoordinateColumns(atom_index);
 
 	// prepare the target weights from invariant instance
-	prepareTargets();
+	prepareTargets(atom_index);
 }
 
 template <class T>
@@ -641,78 +669,6 @@ void NonCovalents::Interface::Side::reindex()
 }
 
 std::vector<NonCovalents::MatId> 
-NonCovalents::target_coordinates()
-{
-	std::vector<MatId> ids; ids.reserve(_barycentrics.rows());
-	int n = 0;
-	
-	for (Interface &face : _faces)
-	{
-		for (WeightedSum &sum : face.sums)
-		{
-			MatId id = {-1, -1, -1};
-			if (face.right == _invariant)
-			{
-				Atom *a = sum.atom;
-				int seq = face.rights.seq_idxs[face.rights.locs[a]];
-				id.col = n;
-				id.idx = seq;
-				id.weight = sum.ave_weight;
-
-			}
-			ids.push_back(id);
-			n++;
-		}
-	}
-	
-	return ids;
-}
-
-std::vector<NonCovalents::SummedId> NonCovalents::summedTargets()
-{
-	// returning functions which take fraction and return summed target
-	int n = 0;
-	std::vector<SummedId> summers;
-	
-	auto get_position_getter = [](BondSequence *seq, Interface::Side &side)
-	{
-		return [seq, &side](Atom *a) -> glm::vec3
-		{
-			int b_idx = side.seq_idxs[side.locs[a]];
-			return seq->blocks()[b_idx].my_position();
-		};
-	};
-
-	for (Interface &face : _faces)
-	{
-		for (WeightedSum &sum : face.sums)
-		{
-			SummedId summer{-1, -1, {}};
-			if (face.left == _invariant)
-			{
-				Atom *a = sum.atom; // right atom
-				int idx = face.rights.seq_idxs[face.rights.locs[a]];
-				summer.idx = idx;
-				summer.col = n;
-				summer.sum = [get_position_getter, &face, &sum]
-				(BondSequence *seq, const float &frac)
-				{
-					auto pos_getter = get_position_getter(seq, face.lefts);
-					OpVec<float> weights = sum.weights_for_frac(frac);
-					glm::vec3 pos = sum.position_for_weights(pos_getter, 
-					                                         weights);
-					return pos;
-				};
-			}
-			summers.push_back(summer);
-			n++;
-		}
-	}
-	
-	return summers;
-}
-
-std::vector<NonCovalents::MatId> 
 NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
                                  const std::function<int(Atom *const &)> 
                                  &atom_idx)
@@ -722,7 +678,7 @@ NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
 	std::map<Atom *, int> locate = to_indices(vec);
 
 	auto get_row = [this](Segment &seg)
-	{
+	{	
 		return _segment2Idx.count(seg) ? 4 * _segment2Idx.at(seg) : -1;
 	};
 
@@ -733,7 +689,6 @@ NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
 
 	std::vector<MatId> ids; ids.reserve(vec.size());
 	
-//	std::cout << "Invariant: " << _invariant->id() << std::endl;
 	for (Atom *const &atom : vec)
 	{
 		Segment chosen{-1};
@@ -744,34 +699,38 @@ NonCovalents::matrix_coordinates(const OpSet<Atom *> &all,
 				chosen = segment;
 			}
 		}
-		if (chosen.num < 0) { continue; }
+		if (chosen.num < 0)
+		{
+			continue;
+		}
 
 		int row = get_row(chosen);
 		int col = get_col(atom);
 		int seq = seqs[col];
+		bool inv = (chosen == _invariant);
 		
 		std::cout << chosen.grp->size() << "," << chosen.num << " -> ";
-		std::cout << row << ", " << col << ", " << seq << std::endl;
+		std::cout << row << ", " << col << ", " << seq << ", " <<
+		(inv ? "fixed" : "variable") << std::endl;
 
-		ids.push_back({row, col, seq});
+		ids.push_back({row, col, seq, inv});
 	}
 	
 	return ids;
 }
 
-OpSet<Atom *> total_atoms(const std::vector<NonCovalents::Interface> &faces,
-                          Segment &invariant)
+OpSet<Atom *> total_atoms(const std::vector<NonCovalents::Interface> &faces)
 {
 	int total = 0;
 	OpSet<Atom *> all;
 //	std::cout << "Total atoms: " << std::endl;
 	for (const NonCovalents::Interface &face : faces)
 	{
-		if (face.left != invariant)
+//		if (face.left != invariant)
 		{
 			all += face.lefts.atoms;
 		}
-		if (face.right != invariant)
+//		if (face.right != invariant)
 		{
 			all += face.rights.atoms;
 		}
@@ -784,14 +743,18 @@ void NonCovalents::prepareBarycentricTargetMatrices()
 	int l = _positions.rows();
 	int n = _positions.cols();
 	int m = 0;
+
+	OpSet<Atom *> invariants = total_invariant_atoms(_faces, _invariant);
 	
 	for (Interface &face : _faces)
 	{
-//		if (face.sums.size() >= 3)
-		{
-			m += face.sums.size();
-		}
+		m += face.sums.size();
 	}
+	
+	_snapColumnFrom = m;
+	
+	m += 4;
+//	m += invariants.size();
 
 	_barycentrics = MatrixXf(n, m);
 	_barycentrics.setZero();
@@ -803,8 +766,8 @@ void NonCovalents::prepareBarycentricTargetMatrices()
 
 void NonCovalents::preparePositionMatrix()
 {
-	int l = (_segments.size() - 1) * 4;
-	int n = total_atoms(_faces, _invariant).size();
+	int l = _segments.size() * 4;
+	int n = total_atoms(_faces).size();
 
 	_positions = MatrixXf(l, n);
 	_positions.setZero();
@@ -813,7 +776,7 @@ void NonCovalents::preparePositionMatrix()
 void NonCovalents::
 	prepareCoordinateColumns(const std::function<int(Atom *const &)> &atom_idx)
 {
-	OpSet<Atom *> all = total_atoms(_faces, _invariant);
+	OpSet<Atom *> all = total_atoms(_faces);
 	std::vector<MatId> ids = matrix_coordinates(all, atom_idx);
 	std::cout << "position ids: " << ids.size() << std::endl;
 	
@@ -837,43 +800,35 @@ void NonCovalents::
 			dest(id.row + 3, id.col) = 1;
 		}
 	};
+	
+	_snapToTargetColumns = [ids, this]
+	(BondSequence *seq, Eigen::MatrixXf &dest)
+	{
+		int n{};
+		for (const MatId &id : ids)
+		{
+			if (!id.fixed)
+			{
+				continue;
+			}
+
+			int t = _snapColumnFrom + n;
+			if (t >= _targets.cols())
+			{
+				continue;
+			}
+			const glm::vec3 &p = seq->blocks()[id.idx].my_position();
+			Eigen::Vector3f vec(p.x, p.y, p.z);
+			dest(Eigen::seqN(id.row, 3), t) = vec;
+			n++;
+		}
+	};
+
 }
 
-void NonCovalents::prepareTargets()
+void NonCovalents::prepareTargets(const std::function<int(Atom *const &)> 
+                                  &atom_idx)
 {	
-	std::vector<MatId> tids = target_coordinates();
-	_matIds = tids;
-	std::cout << "target ids: " << tids.size() << std::endl;
-
-	_blocksToTargetMatrix = [tids](BondSequence *seq, 
-	                                    Eigen::MatrixXf &dest)
-	{
-		for (const MatId &id : tids)
-		{
-			if (id.col >= 0)
-			{
-				const glm::vec3 &p = seq->blocks()[id.idx].my_position();
-				Eigen::Vector3f vec(p.x, p.y, p.z);
-				dest(Eigen::all, id.col) = vec * id.weight;
-			}
-		}
-	};
-	
-	std::vector<SummedId> summers = summedTargets();
-	
-	_sumsToTargetMatrix = [summers](BondSequence *seq, Eigen::MatrixXf &dest,
-	                         const float &frac)
-	{
-		for (const SummedId &summer : summers)
-		{
-			if (summer.col >= 0)
-			{
-				const glm::vec3 &p = summer.sum(seq, frac);
-				Eigen::Vector3f vec(p.x, p.y, p.z);
-				dest(Eigen::all, summer.col) = vec;
-			}
-		}
-	};
 }
 
 glm::mat4x4 eigenMat4x3ToGlm(Eigen::MatrixXf &mat)
@@ -907,8 +862,11 @@ NonCovalents::align(const float &frac)
 		_blocksToMatrixPositions(seq, positions, false);
 		_blocksToMatrixPositions(seq, translations, true);
 		_weightsToMatrixPositions(frac, barycentrics);
-		_blocksToTargetMatrix(seq, b);
-		_sumsToTargetMatrix(seq, b, frac);
+		_snapToTargetColumns(seq, b);
+		
+		write_to_file(positions, "positions.2d");
+		write_to_file(barycentrics, "barycentrics.2d");
+		write_to_file(b, "targets.2d");
 		
 		Eigen::MatrixXf A = positions * barycentrics;
 
@@ -998,8 +956,6 @@ NonCovalents::align(const float &frac)
 		std::cout << "trans check:\n" << check << std::endl;
 		std::cout << std::endl;
 		
-		std::cout << "Sol * Positions: " << std::endl;
-		std::cout << sol * positions << std::endl;
 		*/
 
 		std::map<Segment, glm::mat4x4> rots;
@@ -1022,18 +978,12 @@ NonCovalents::align(const float &frac)
 
 		for (Segment &seg : _segments)
 		{
-			if (seg == _invariant)
-			{
-				continue;
-			}
-
 			std::vector<int> &idxs = _atomNumbers[seg];
 			if (rots.count(seg) == 0)
 			{
 				continue;
 			}
 			const glm::mat4x4 &transform = rots.at(seg);
-//			std::cout << transform << std::endl;
 
 			for (const int &idx : idxs)
 			{
