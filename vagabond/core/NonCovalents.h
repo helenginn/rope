@@ -140,16 +140,7 @@ private:
 		int row; // instance, should already be multiplied by 4
 		int col; // column corresponding to atom info
 		int idx; // index of BondSequence's AtomBlocks
-		float weight = 1; // per-sum weight
-	};
-
-	typedef std::function<glm::vec3(BondSequence *seq, const float &frac)> 
-	SummedWeight;
-	struct SummedId
-	{
-		int col;
-		int idx;
-		SummedWeight sum;
+		bool fixed; // is it invariant
 	};
 
 	std::vector<MatId> 
@@ -158,7 +149,7 @@ private:
 	                   &atom_idx);
 
 	std::vector<MatId> target_coordinates();
-	void prepareTargets();
+	void prepareTargets(const std::function<int(Atom *const &)> &func);
 
 	void prepareCoordinateColumns(const std::function<int(Atom *const &)> &atom_idx);
 
@@ -171,7 +162,6 @@ private:
 	NonCovalents::Interface findInterface(Segment first, Segment second);
 
 	std::function<BondSequence *(BondSequence *)> align(const float &frac);
-	std::vector<SummedId> summedTargets();
 
 	std::vector<Segment> _segments;
 	std::vector<Instance *> _instances;
@@ -180,15 +170,14 @@ private:
 
 	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
 	                   bool trans_only)> _blocksToMatrixPositions;
-	std::function<void(BondSequence *seq, 
-	                   Eigen::MatrixXf &dest)> _blocksToTargetMatrix;
-	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
-	                   const float &frac)> _sumsToTargetMatrix;
 	std::function<void(const float &frac,
 	                   Eigen::MatrixXf &dest)> _weightsToMatrixPositions;
 
 	std::map<int, MatId> _seqToId;
+	std::map<Atom *, int> _atom2Seq;
 	std::vector<MatId> _matIds;
+	std::function<void(BondSequence *seq, 
+	                   Eigen::MatrixXf &dest)> _snapToTargetColumns;
 
 	std::map<Segment, std::vector<int>> _atomNumbers;
 
@@ -200,6 +189,7 @@ private:
 	Eigen::MatrixXf _rightMatrix;
 	
 	Segment _invariant{-1};
+	int _snapColumnFrom{0};
 	bool _ready = false;
 };
 
