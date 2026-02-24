@@ -575,7 +575,6 @@ void NonCovalents::prepareBarycentricWeights()
 			};
 		}
 	}
-
 	
 	OpSet<Atom *> fixed_atoms = total_invariant_atoms(_faces, 
 	                                                  _invariant);
