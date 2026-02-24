@@ -35,7 +35,6 @@ NonCovalents::NonCovalents()
 
 void write_to_file(const Eigen::MatrixXf &src, std::string file)
 {
-	return;
 	std::ofstream f;
 	f.open(file);
 	for (int j = 0; j < src.cols(); j++)
@@ -885,6 +884,8 @@ NonCovalents::align(const float &frac)
 
 		Eigen::MatrixXf sol;
 		sol = A.transpose().colPivHouseholderQr().solve(b.transpose());
+		write_to_file(sol, "orig_solution.2d");
+		exit(0);
 
 		/*
 		std::cout << "Sol, pre-clean: " << std::endl;
