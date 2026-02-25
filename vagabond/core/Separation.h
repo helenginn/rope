@@ -38,51 +38,49 @@ public:
 		prepare(atoms);
 	}
 	
-	int index_of(Atom *const &ptr)
+	int index_of(Atom *const &a) const
 	{
-		return _atoms.index_of(ptr);
-	}
-
-	int separationBetween(Atom *const &a, Atom *const &b);
-	int separationBetween(int i, int j)
-	{
-		return _matrix(i, j);
+		return _indices.at(a);
 	}
 	
-	auto &operator()(Atom *const &a, Atom *const &b)
-	{
-		int i = _atoms.index_of(a);
-		int j = _atoms.index_of(b);
-		if (i < 0 || j < 0)
-		{
-			return _fail;
-		}
+	int separationBetween(Atom *const &a, Atom *const &b);
+	int separationBetween(int i, int j);
 
-		return _matrix(i, j);
-	}
+	bool partOfSameMolecule(int m, int n);
+	
+	Eigen::MatrixXi::Scalar &operator()(Atom *const &a, Atom *const &b);
 private:
 	void prepare(const std::vector<Atom *> &atoms);
-	void prepareSegment(const std::vector<Atom *> &atoms);
-
-	Eigen::MatrixXi _matrix;
 	
 	struct SortedVector
 	{
 		SortedVector(std::vector<Atom *> atoms);
 		SortedVector() {}
 		
-		int index_of(Atom *const &ptr);
+		int index_of(Atom *const &ptr) const;
 		
-		size_t size()
+		size_t size() const
 		{
 			return _atoms.size();
+		}
+		
+		Atom *const &atom(int i) const
+		{
+			return _atoms[i];
 		}
 		
 		std::map<Atom *, int> _map;
 		std::vector<Atom *> _atoms;
 	};
 
-	SortedVector _atoms;
+	void prepareSegment(const SortedVector &atoms);
+
+	std::map<std::pair<int, int>, SortedVector> _atoms;
+	std::map<std::pair<int, int>, Eigen::MatrixXi> _matrices;
+	std::map<Atom *, int> _indices;
+	std::map<Atom *, std::pair<int, int>> _grouping;
+	std::map<int, std::pair<int, int>> _idxGroups;
+
 	int _fail = -1;
 };
 
