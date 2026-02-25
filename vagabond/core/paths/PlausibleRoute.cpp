@@ -614,7 +614,7 @@ bool PlausibleRoute::refineSegmentedMomentum()
 	{
 		assignParameterValues(all);
 	});
-	ms.setStepSize(1.);
+	ms.setStepSize(0.2);
 	ms.supplyInfo(map);
 	ms.run();
 
