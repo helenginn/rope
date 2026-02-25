@@ -36,60 +36,74 @@ void wipe(Matrix &mat)
 
 void Separation::prepare(const std::vector<Atom *> &atoms)
 {
-	std::vector<std::vector<Atom *>> set;
+	std::map<std::pair<int, int>, std::vector<Atom *>> set;
 
 	std::vector<Atom *> wip;
+	int start = 0; int end = 0;
 	for (int i = 0; i < atoms.size(); i++)
 	{
 		Atom *a = atoms[i];
 		if (!a && wip.size())
 		{
-			set.push_back(wip);
+			set[{start, end}] = wip;
 			wip.clear();
+			start = i + 1; end = i + 1;
 		}
 		else
 		{
+			_indices[a] = i;
 			wip.push_back(a);
+			end++;
 		}
 	}
 
 	if (wip.size())
 	{
-		set.push_back(wip);
+		set[{start, end}] = wip;
 	}
 	
-	_atoms = SortedVector(atoms);
-	int n = _atoms.size();
-	_matrix = Matrix(n, n);
-
-	wipe(_matrix);
-	
-	std::cout << "Atoms: ";
-	for (std::vector<Atom *> &wip : set)
+	for (auto it = set.begin(); it != set.end(); it++)
 	{
-		std::cout << wip.size() << ", ";
-		prepareSegment(wip);
+		std::pair<int, int> start_end = it->first;
+		std::vector<Atom *> &atomRun = it->second;
+		_atoms[start_end] = SortedVector(atomRun);
+		int n = atomRun.size();
+		_matrices[start_end] = Matrix(n, n);
+
+		wipe(_matrices[start_end]);
 	}
-	std::cout << std::endl;
+
+	std::cout << "Atoms: ";
+	for (auto it = _atoms.begin(); it != _atoms.end(); it++)
+	{
+		SortedVector &atomRun = it->second;
+		std::pair<int, int> pair = it->first;
+		for (Atom *atom : atomRun._atoms)
+		{
+			_grouping[atom] = pair;
+		}
+		
+		for (int i = pair.first; i <= pair.second; i++)
+		{
+			_idxGroups[i] = pair;
+		}
+
+		std::cout << atomRun.size() << ", ";
+		prepareSegment(atomRun);
+	}
 	
-	/*
-	std::ofstream file;
-	file.open("check_matrix.csv");
-	file << _matrix << std::endl;
-	file.close();
-	*/
 }
 
-void Separation::prepareSegment(const std::vector<Atom *> &atoms)
+void Separation::prepareSegment(const SortedVector &atoms)
 {
 	OpSet<Atom *> included;
 	OpSet<Atom *> leads;
 
 	for (int i = 0; i < atoms.size(); i++)
 	{
-		Atom *a = atoms[i];
+		Atom *a = atoms._atoms[i];
 		if (!a) continue;
-		int a_idx = _atoms.index_of(a);
+		int a_idx = atoms.index_of(a);
 		if (a_idx >= 0)
 		{
 			leads.insert(a);
@@ -117,7 +131,7 @@ void Separation::prepareSegment(const std::vector<Atom *> &atoms)
 					continue;
 				}
 
-				int b_idx = _atoms.index_of(b);
+				int b_idx = atoms.index_of(b);
 				if (b_idx < 0)
 				{
 					continue;
@@ -125,7 +139,7 @@ void Separation::prepareSegment(const std::vector<Atom *> &atoms)
 
 				for (Atom *const prev : included)
 				{
-					if (_atoms.index_of(prev) < 0) { continue; }
+					if (atoms.index_of(prev) < 0) { continue; }
 
 					int prev_to_a = me(prev, a) < 0 ? 0 : me(prev, a);
 					int increment = prev_to_a + 1;
@@ -161,16 +175,50 @@ Separation::Separation(BondSequence *const &sequence)
 	prepare(atoms);
 }
 
+Eigen::MatrixXi::Scalar &Separation::operator()(Atom *const &a, Atom *const &b)
+{
+	std::pair<int, int> aGroup = _grouping[a];
+	std::pair<int, int> bGroup = _grouping[b];
+	
+	if (aGroup != bGroup)
+	{
+		return _fail;
+	}
+
+	// rewrite for speed
+	int i = _atoms[aGroup].index_of(a);
+	int j = _atoms[bGroup].index_of(b);
+
+	if (i < 0 || j < 0)
+	{
+		return _fail;
+	}
+
+	return _matrices[aGroup](i, j);
+}
+
+bool Separation::partOfSameMolecule(int m, int n)
+{
+	std::pair<int, int> &aGroup = _idxGroups[m];
+	bool result = (n <= aGroup.second && n >= aGroup.first);
+	return result;
+}
+
 int Separation::separationBetween(Atom *const &a, Atom *const &b)
 {
-	int i = _atoms.index_of(a);
-	int j = _atoms.index_of(b);
-	if (i < 0 || j < 0)
+	int val = (*this)(a, b);
+	return val;
+}
+
+int Separation::separationBetween(int i, int j)
+{
+	std::pair<int, int> &group = _idxGroups[i];
+	if (j > group.second || j < group.first)
 	{
 		return -1;
 	}
-
-	return _matrix(i, j);
+	
+	return _matrices[group](i - group.first, j - group.first);
 }
 
 Separation::SortedVector::SortedVector(std::vector<Atom *> atoms) //:
@@ -182,7 +230,7 @@ Separation::SortedVector::SortedVector(std::vector<Atom *> atoms) //:
 	}
 }
 
-int Separation::SortedVector::index_of(Atom *const &ptr)
+int Separation::SortedVector::index_of(Atom *const &ptr) const
 {
 	if (_map.count(ptr) == 0)
 	{
