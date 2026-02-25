@@ -41,6 +41,19 @@ PairwiseDeviations::~PairwiseDeviations()
 
 }
 
+bool worth_checking_distance(const glm::vec3 &rest_i, const glm::vec3 &rest_j,
+                             const glm::vec3 &move_i, const glm::vec3 &move_j,
+                             float threshold)
+{
+	for (int n = 0; n < 3; n++)
+	{
+		if (fabs(rest_i[n] - rest_j[n]) > threshold) return false;
+		if (fabs(move_i[n] - move_j[n]) > threshold) return false;
+	}
+
+	return true;
+}
+
 void PairwiseDeviations::prepare(BondSequence *seq)
 {
 	const std::vector<AtomBlock> &blocks = seq->blocks();
@@ -53,8 +66,8 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		Atom *const &atom = block.atom;
 		if (atom)
 		{
-			glm::vec3 orig = atom->otherPosition("target");
-			glm::vec3 moving = atom->otherPosition("moving");
+			const glm::vec3 &orig = atom->otherPosition("target");
+			const glm::vec3 &moving = atom->otherPosition("moving");
 			
 			if (glm::length(orig) < 1e-6)
 			{
@@ -117,9 +130,16 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			
 			const glm::vec3 &at_rest_j = scratch[j];
 			const glm::vec3 &moving_j = scratch[j + 1];
+			
+			if (!worth_checking_distance(at_rest_i, at_rest_j, 
+			                             moving_i, moving_j, threshold))
+			{
+				continue;
+			}
 
 			glm::vec3 at_rest = at_rest_i - at_rest_j;
 			glm::vec3 moving = moving_i - moving_j;
+
 			float start = distance_between_atoms(at_rest, moving, 0);
 			float end = distance_between_atoms(at_rest, moving, 1);
 			
