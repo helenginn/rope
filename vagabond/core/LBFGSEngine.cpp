@@ -60,6 +60,10 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
                                       const lbfgsfloatval_t step)
 {
 	std::vector<float> vals = vec_from_lbfgs(x, n);
+	for (float &f : vals)
+	{
+		f *= _step;
+	}
 	
 	sendJob(vals);
 	getOneResult();
@@ -136,6 +140,12 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 
 		lbfgs(vals.size(), &vals[0], &endScore, &LBFGSEngine::evaluate,
 		      nullptr, this, &param);
+		
+		for (float &f : vals)
+		{
+			f *= _step;
+		}
+
 		_bestResult = vals;
 		
 		ms->declareDone(this, vals);
