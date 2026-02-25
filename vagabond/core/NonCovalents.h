@@ -163,30 +163,27 @@ private:
 
 	std::function<BondSequence *(BondSequence *)> align(const float &frac);
 
-	std::vector<Segment> _segments;
-	std::vector<Instance *> _instances;
-	std::map<Segment, int> _segment2Idx;
-	std::vector<Interface> _faces;
-
 	std::function<void(BondSequence *seq, Eigen::MatrixXf &dest,
 	                   bool trans_only)> _blocksToMatrixPositions;
 	std::function<void(const float &frac,
 	                   Eigen::MatrixXf &dest)> _weightsToMatrixPositions;
 
-	std::map<int, MatId> _seqToId;
-	std::map<Atom *, int> _atom2Seq;
-	std::vector<MatId> _matIds;
 	std::function<void(BondSequence *seq, 
 	                   Eigen::MatrixXf &dest)> _snapToTargetColumns;
 
 	std::map<Segment, std::vector<int>> _atomNumbers;
 
+	std::vector<Segment> _segments;
+	std::vector<Instance *> _instances;
+	std::map<Segment, int> _segment2Idx;
+	std::vector<Interface> _faces;
+	std::map<int, MatId> _seqToId;
+	std::map<Atom *, int> _atom2Seq;
+	std::vector<MatId> _matIds;
+
 	Eigen::MatrixXf _positions;
 	Eigen::MatrixXf _barycentrics;
 	Eigen::MatrixXf _targets;
-
-	Eigen::MatrixXf _leftMatrix;
-	Eigen::MatrixXf _rightMatrix;
 	
 	Segment _invariant{-1};
 	int _snapColumnFrom{0};

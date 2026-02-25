@@ -576,10 +576,12 @@ void NonCovalents::prepareBarycentricWeights()
 		}
 	}
 
-	OpSet<Atom *> fixed_atoms = total_invariant_atoms(_faces, _invariant);
+	
+	OpSet<Atom *> fixed_atoms = total_invariant_atoms(_faces, 
+	                                                  _invariant);
 	std::vector<int> columns_for_fixed; 
 	columns_for_fixed.reserve(fixed_atoms.size());
-	
+
 	for (Atom *atom : fixed_atoms)
 	{
 		int b_idx = _atom2Seq[atom];
@@ -783,10 +785,16 @@ void NonCovalents::
 	{
 		_seqToId[id.idx] = id;
 	}
+
+	auto get_row = [this](Segment &seg)
+	{	
+		return _segment2Idx.count(seg) ? 4 * _segment2Idx.at(seg) : -1;
+	};
+
+	int fixed_row = get_row(_invariant);
 	
-	_blocksToMatrixPositions = [this, ids](BondSequence *seq, 
-	                                       Eigen::MatrixXf &dest,
-	                                       bool trans_only)
+	_blocksToMatrixPositions = [this, ids, fixed_row]
+	(BondSequence *seq, Eigen::MatrixXf &dest, bool trans_only)
 	{
 		for (const MatId &id : ids)
 		{
@@ -863,11 +871,12 @@ NonCovalents::align(const float &frac)
 		_weightsToMatrixPositions(frac, barycentrics);
 		_snapToTargetColumns(seq, b);
 		
-		write_to_file(positions, "positions.2d");
-		write_to_file(barycentrics, "barycentrics.2d");
-		write_to_file(b, "targets.2d");
+//		write_to_file(positions, "positions.2d");
+//		write_to_file(barycentrics, "barycentrics.2d");
+//		write_to_file(b, "targets.2d");
 		
 		Eigen::MatrixXf A = positions * barycentrics;
+//		write_to_file(A, "multiplied.2d");
 
 		/*
 		std::cout << "positions = " << positions.rows() << " x " << positions.cols() << " and "
@@ -882,9 +891,10 @@ NonCovalents::align(const float &frac)
 		std::cout << std::endl;
 		*/
 
-		Eigen::MatrixXf sol;
-		sol = A.transpose().colPivHouseholderQr().solve(b.transpose());
-		write_to_file(sol, "orig_solution.2d");
+		Eigen::BDCSVD<Eigen::MatrixXf> svd(A.transpose(), 
+		                                   Eigen::ComputeThinU | Eigen::ComputeThinV);
+		MatrixXf sol = svd.solve(b.transpose());
+//		write_to_file(sol, "solution.2d");
 
 		/*
 		std::cout << "Sol, pre-clean: " << std::endl;
@@ -894,6 +904,8 @@ NonCovalents::align(const float &frac)
 
 		// now we need to re-calculate the translations needed.
 		Eigen::MatrixXf check = sol.transpose() * A;
+//		write_to_file(check, "check.2d");
+
 		/*
 		std::cout << "pre-clean check:\n" << check << std::endl;
 		std::cout << std::endl;
@@ -929,7 +941,6 @@ NonCovalents::align(const float &frac)
 			}
 
 			sol(Eigen::seqN(j, 3), {0, 1, 2}) = fixed;
-//			sol(j + 3, {0, 1, 2}) = empty;
 		}
 		
 		/*
@@ -938,8 +949,7 @@ NonCovalents::align(const float &frac)
 
 		// now we need to re-calculate the translations needed.
 		Eigen::MatrixXf result = sol.transpose() * A;
-		write_to_file(result, "orig_result.2d");
-		exit(0);
+//		write_to_file(result, "result.2d");
 		/*
 		std::cout << "rot check:\n" << result << std::endl;
 		std::cout << std::endl;
