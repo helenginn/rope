@@ -185,7 +185,7 @@ public:
 		addImmediateTask(mother_task);
 		_cv.wait(lock);
 
-		prepareSendJob();
+		prepareSendWholeJob();
 	}
 	
 	void checkCompletion()
@@ -199,11 +199,11 @@ public:
 				break;
 			}
 
-			prepareSendJob();
+			prepareSendWholeJob();
 		}
 	}
 
-	void prepareSendJob()
+	void prepareSendWholeJob()
 	{
 		std::vector<float> everything(_num);
 		
