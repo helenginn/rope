@@ -22,9 +22,11 @@
 #include "PairwiseDeviations.h"
 #include "LoopRoundResidues.h"
 
-void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
-                             Separation *sep)
+void GradientTerm::momentum(BondSequence *seq, 
+                            PairwiseDeviations *dev,
+                            Separation *sep)
 {
+//	const std::vector<int> &pairs = dev->pairsForResidue(_bucket);
 	const std::vector<int> &pairs = dev->pairs();
 	auto loop = [pairs](const JobOnPair &job)
 	{
@@ -52,6 +54,7 @@ void GradientTerm::momentum(BondSequence *seq, PairwiseDeviations *dev,
 
 	int a_idx = sep->index_of(param->atom(1));
 	int c_idx = sep->index_of(param->atom(2));
+	// if block index is second of bond, choose first of bond
 	int pre = (b_idx == c_idx ? a_idx : c_idx);
 	
 	auto check_momentum = [this, &pre, &blocks, lookup, 
