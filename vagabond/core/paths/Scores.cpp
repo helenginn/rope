@@ -48,7 +48,9 @@ bool ScoreBucket::fully_contains(const ScoreBucket &other) const
 
 bool ScoreBucket::operator<(const ScoreBucket &other) const
 {
-	if (chain == other.chain || chain.length() == 0 || other.chain.length() == 0)
+	if (chain == other.chain || 
+	    chain.length() == 0 || 
+	    other.chain.length() == 0)
 	{
 		if (minRes == other.minRes)
 		{
