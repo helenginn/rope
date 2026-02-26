@@ -36,7 +36,7 @@ void wipe(Matrix &mat)
 
 void Separation::prepare(const std::vector<Atom *> &atoms)
 {
-	std::map<std::pair<int, int>, std::vector<Atom *>> set;
+	std::map<BlockRegion, std::vector<Atom *>> set;
 
 	std::vector<Atom *> wip;
 	int start = 0; int end = 0;
@@ -45,7 +45,8 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 		Atom *a = atoms[i];
 		if (!a && wip.size())
 		{
-			set[{start, end}] = wip;
+			BlockRegion block(start, end);
+			set[block] = wip;
 			wip.clear();
 			start = i + 1; end = i + 1;
 		}
@@ -64,7 +65,7 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 	
 	for (auto it = set.begin(); it != set.end(); it++)
 	{
-		std::pair<int, int> start_end = it->first;
+		BlockRegion start_end = it->first;
 		std::vector<Atom *> &atomRun = it->second;
 		_atoms[start_end] = SortedVector(atomRun);
 		int n = atomRun.size();
@@ -77,21 +78,19 @@ void Separation::prepare(const std::vector<Atom *> &atoms)
 	for (auto it = _atoms.begin(); it != _atoms.end(); it++)
 	{
 		SortedVector &atomRun = it->second;
-		std::pair<int, int> pair = it->first;
+		BlockRegion pair = it->first;
 		for (Atom *atom : atomRun._atoms)
 		{
 			_grouping[atom] = pair;
 		}
 		
-		for (int i = pair.first; i <= pair.second; i++)
-		{
-			_idxGroups[i] = pair;
-		}
+		_starts.insert(pair.first);
+		_idxGroups[pair.first] = pair;
 
 		std::cout << atomRun.size() << ", ";
 		prepareSegment(atomRun);
 	}
-	
+	std::cout << std::endl;
 }
 
 void Separation::prepareSegment(const SortedVector &atoms)
@@ -177,8 +176,8 @@ Separation::Separation(BondSequence *const &sequence)
 
 Eigen::MatrixXi::Scalar &Separation::operator()(Atom *const &a, Atom *const &b)
 {
-	std::pair<int, int> aGroup = _grouping[a];
-	std::pair<int, int> bGroup = _grouping[b];
+	BlockRegion aGroup = _grouping[a];
+	BlockRegion bGroup = _grouping[b];
 	
 	if (aGroup != bGroup)
 	{
@@ -197,9 +196,17 @@ Eigen::MatrixXi::Scalar &Separation::operator()(Atom *const &a, Atom *const &b)
 	return _matrices[aGroup](i, j);
 }
 
+Separation::BlockRegion &Separation::group_for_idx(int i)
+{
+	GroupStarts::iterator it = _starts.lower_bound(i);
+	it--;
+	BlockRegion &group = _idxGroups[*it];
+	return group;
+}
+
 bool Separation::partOfSameMolecule(int m, int n)
 {
-	std::pair<int, int> &aGroup = _idxGroups[m];
+	BlockRegion &aGroup = _idxGroups[m];
 	bool result = (n <= aGroup.second && n >= aGroup.first);
 	return result;
 }
@@ -210,9 +217,11 @@ int Separation::separationBetween(Atom *const &a, Atom *const &b)
 	return val;
 }
 
+
 int Separation::separationBetween(int i, int j)
 {
-	std::pair<int, int> &group = _idxGroups[i];
+	BlockRegion group = group_for_idx(i);
+
 	if (j > group.second || j < group.first)
 	{
 		return -1;
