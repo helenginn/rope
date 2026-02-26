@@ -287,20 +287,25 @@ void SubmissionHelp::pairwiseWork(int idx)
 
 			for (const ScoreBucket &id : residues)
 			{
+				ScoreBucket dup = id;
 				if (_ids.size() > 0 && _ids.count(id) == 0)
 				{
 					continue;
 				}
+
 				Task<BondSequence *, Deviation> *task = nullptr;
 				task = chosen->momentum_task(frac, {id});
 				info.final_hook->follow_with(task);
 				task->must_complete_before(info.let_go);
 				setup_submit_hooks(task, idx);
+				float steps = _steps;
 
-				auto convert = [id, this](const Deviation &ae) 
+				auto convert = [id, steps](const Deviation &ae) 
 				-> SingleResult<ScoreBucket>
 				{
-					return {id, ae.value / _steps};
+					SingleResult<ScoreBucket> sr = 
+					{id, ae.value / steps};
+					return sr;
 				};
 
 				auto *momentum_conv =
@@ -359,10 +364,11 @@ void SubmissionHelp::pairwiseWork(int idx)
 				engy->must_complete_before(info.let_go);
 			}
 
-			auto convert = [id, this](const ActivationEnergy &ae) 
+			float steps = _steps;
+			auto convert = [id, steps](const ActivationEnergy &ae) 
 			-> SingleResult<ScoreBucket>
 			{
-				return {id, ae.value / _steps};
+				return {id, ae.value / steps};
 			};
 
 			auto *vdw_conv =
