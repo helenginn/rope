@@ -188,6 +188,10 @@ Selection::activeParameters(BondSequenceHandler *const &handler,
 		{
 			continue;
 		}
+		if (blocks[bidx].atom == nullptr)
+		{
+			continue;
+		}
 
 		idxs.push_back({bidx, pidx}); // block index, param (also motion) index
 	}
