@@ -1043,13 +1043,13 @@ std::map<ScoreBucket, float> PlausibleRoute::
 		rr = byResidueScore(num, NoHydrogens, VdWClashes);
 	}
 
+	std::cout << "Scores: ";
 	std::map<ScoreBucket, float> scores = rr->scores;
 	for (auto it = scores.begin(); it != scores.end(); it++)
 	{
-		std::cout << it->first.chain << " (" << it->first.minRes << "-" <<
-		it->first.maxRes << ") -> " <<
-		it->second << std::endl;
+		std::cout << it->second << " ";
 	}
+	std::cout << std::endl;
 
 	delete rr;
 	return scores;
