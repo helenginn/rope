@@ -82,7 +82,8 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 	return eval;
 }
 
-void LBFGSEngine::send(const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
+void LBFGSEngine::send(const lbfgsfloatval_t *x, 
+                       lbfgsfloatval_t *g,
                       const int n, const lbfgsfloatval_t step)
 {
 	std::vector<float> vals = vec_from_lbfgs(x, n);
