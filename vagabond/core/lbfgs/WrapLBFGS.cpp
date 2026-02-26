@@ -18,24 +18,24 @@
 
 #include <math.h>
 #include "WrapLBFGS.h"
+#include "LBFGSEngine.h"
+#include "MultiEngineBase.h"
 #include "arithmetic_ansi.h"
 
 WrapLBFGS::WrapLBFGS(int _n, lbfgsfloatval_t *_x, 
                      lbfgsfloatval_t *_ptr_fx,
-                     lbfgs_evaluate_t _proc_evaluate,
-                     lbfgs_progress_t _proc_progress,
+                     lbfgs_send_t _proc_send,
+                     lbfgs_receive_t _proc_receive,
                      void *_instance,
                      lbfgs_parameter_t *_param)
-: n(_n), x(_x), ptr_fx(_ptr_fx), proc_evaluate(_proc_evaluate),
-proc_progress(_proc_progress), instance(_instance)
+: n(_n), x(_x), ptr_fx(_ptr_fx), proc_send(_proc_send),
+proc_receive(_proc_receive), instance(_instance)
 {
 	/* set parameters to their default values if passed null. */
 	(!_param) ? (param = _defparam) : (param = *_param);
 
 	cd.n = n;
 	cd.instance = instance;
-	cd.proc_evaluate = proc_evaluate;
-	cd.proc_progress = proc_progress;
 
 	errorChecking();
 	allocation();
@@ -194,8 +194,9 @@ int WrapLBFGS::run()
 	try
 	{
 		initialise();
+		handleFirstResult();
 		computeInitialStep();
-		cycle();
+		macrocycle();
 	}
 	catch (const int &err)
 	{
@@ -207,8 +208,27 @@ int WrapLBFGS::run()
 
 void WrapLBFGS::initialise()
 {
-	/* Evaluate the function value and its gradient. */
-	fx = cd.proc_evaluate(cd.instance, x, g, cd.n, 0);
+	sendJob(0.f);
+}
+
+void WrapLBFGS::sendCurrent()
+{
+	sendJob(step);
+}
+
+void WrapLBFGS::sendJob(float one_step)
+{
+	proc_send(cd.instance, x, g, cd.n, one_step);
+}
+
+void WrapLBFGS::receiveJob()
+{
+	fx = proc_receive(cd.instance, x, g);
+}
+
+void WrapLBFGS::handleFirstResult()
+{
+	receiveJob();
 
 	/* Store the initial value of the objective function. */
 	if (pf != NULL) {
@@ -249,177 +269,205 @@ void WrapLBFGS::computeInitialStep()
 	vec2norminv(&step, d, n);
 }
 
-void WrapLBFGS::cycle()
+void WrapLBFGS::macrocycle()
 {
-	int m = param.m;
 	for (;;) {
 		/* Store the current position and gradient vectors. */
-		veccpy(xp, x, n);
-		veccpy(gp, g, n);
+		macrocyclePrepare();
 
 		/* Search for an optimal step. */
-		int ls = line_search_morethuente(n, x, &fx, g, d, &step, 
-		                                 xp, gp, w, &cd, &param);
+		ls = lineSearch();
 
-		if (ls < 0) {
-			/* Revert to the previous point. */
-			veccpy(x, xp, n);
-			veccpy(g, gp, n);
-			throw ls;
-		}
-
-		/* Compute x and g norms. */
-		vec2norm(&xnorm, x, n);
-		vec2norm(&gnorm, g, n);
-
-		/* Don't report the progress. */
-
-		/* Convergence test.
-The criterion is given by the following formula:
-		|g(x)| / \max(1, |x|) < \epsilon
-		*/
-		if (xnorm < 1.0) xnorm = 1.0;
-		if (gnorm / xnorm <= param.epsilon) {
-			/* Convergence. */
-			throw LBFGS_SUCCESS;
-		}
-
-		/*
-		Test for stopping criterion.
-		The criterion is given by the following formula:
-		(f(past_x) - f(x)) / f(x) < \delta
-		*/
-
-		if (pf != NULL) {
-			/* We don't test the stopping criterion while k < past. */
-			if (param.past <= k) {
-				/* Compute the relative improvement from the past. */
-				rate = (pf[k % param.past] - fx) / fx;
-
-				/* The stopping criterion. */
-				if (rate < param.delta) {
-					throw LBFGS_STOP;
-				}
-			}
-
-			/* Store the current value of the objective function. */
-			pf[k % param.past] = fx;
-		}
-
-		if (param.max_iterations != 0 && 
-		    param.max_iterations < k+1)
-		{
-			/* Maximum number of iterations. */
-			throw LBFGSERR_MAXIMUMITERATION;
-		}
-
-		/*
-		Update vectors s and y:
-		s_{k+1} = x_{k+1} - x_{k} = \step * d_{k}.
-		y_{k+1} = g_{k+1} - g_{k}.
-		*/
-		it = &lm[end];
-		vecdiff(it->s, x, xp, n);
-		vecdiff(it->y, g, gp, n);
-
-		/*
-		Compute scalars ys and yy:
-		ys = y^t \cdot s = 1 / \rho.
-		yy = y^t \cdot y.
-		Notice that yy is used for scaling the hessian matrix 
-		H_0 (Cholesky factor).
-		*/
-		vecdot(&ys, it->y, it->s, n);
-		vecdot(&yy, it->y, it->y, n);
-		it->ys = ys;
-
-		/*
-            Recursive formula to compute dir = -(H \cdot g).
-                This is described in page 779 of:
-                Jorge Nocedal.
-                Updating Quasi-Newton Matrices with Limited Storage.
-                Mathematics of Computation, Vol. 35, No. 151,
-                pp. 773--782, 1980.
-         */
-        bound = (m <= k) ? m : k;
-        ++k;
-        end = (end + 1) % m;
-
-        /* Compute the steepest direction. */
-        if (param.orthantwise_c == 0.) {
-            /* Compute the negative of gradients. */
-            vecncpy(d, g, n);
-        } else {
-            vecncpy(d, pg, n);
-        }
-
-        j = end;
-        for (int i = 0;i < bound;++i) {
-            j = (j + m - 1) % m;    /* if (--j == -1) j = m-1; */
-            it = &lm[j];
-            /* \alpha_{j} = \rho_{j} s^{t}_{j} \cdot q_{k+1}. */
-            vecdot(&it->alpha, it->s, d, n);
-            it->alpha /= it->ys;
-            /* q_{i} = q_{i+1} - \alpha_{i} y_{i}. */
-            vecadd(d, it->y, -it->alpha, n);
-        }
-
-        vecscale(d, ys / yy, n);
-
-        for (int i = 0;i < bound;++i) {
-            it = &lm[j];
-            /* \beta_{j} = \rho_{j} y^t_{j} \cdot \gamma_{i}. */
-            vecdot(&beta, it->y, d, n);
-            beta /= it->ys;
-            /* \gamma_{i+1} = \gamma_{i} + (\alpha_{j} - \beta_{j}) s_{j}. */
-            vecadd(d, it->s, it->alpha - beta, n);
-            j = (j + 1) % m;        /* if (++j == m) j = 0; */
-        }
-
-        /* Now the search direction d is ready. 
-		   We try step = 1 first.
-         */
-        step = 1.0;
+		macrocycleHandle();
 	}
+}
+
+int WrapLBFGS::lineSearch()
+{
+	lineSearchPrepare();
+
+	int ret = lineSearchCycle();
+
+    return ret;
+}
+
+int WrapLBFGS::lineSearchCycle()
+{
+	for (;;)
+	{
+		lineSearchCyclePrepare();
+
+        /* Evaluate the function and gradient values. */
+		sendCurrent();
+		receiveJob();
+
+		int ret = lineSearchCycleHandle();
+
+		if (ret != LBFGS_SUCCESS)
+		{
+			return ret;
+		}
+    }
+
+    return LBFGSERR_LOGICERROR;
+}
+
+void WrapLBFGS::macrocyclePrepare()
+{
+	veccpy(xp, x, n);
+	veccpy(gp, g, n);
+
+}
+
+void WrapLBFGS::macrocycleHandle()
+{
+	int m = param.m;
+	if (ls < 0) {
+		/* Revert to the previous point. */
+		veccpy(x, xp, n);
+		veccpy(g, gp, n);
+		throw ls;
+	}
+
+	/* Compute x and g norms. */
+	vec2norm(&xnorm, x, n);
+	vec2norm(&gnorm, g, n);
+
+	/* Don't report the progress. */
+
+	/* Convergence test.
+The criterion is given by the following formula:
+	|g(x)| / \max(1, |x|) < \epsilon
+	*/
+	if (xnorm < 1.0) xnorm = 1.0;
+	if (gnorm / xnorm <= param.epsilon) {
+		/* Convergence. */
+		throw LBFGS_SUCCESS;
+	}
+
+	/*
+	Test for stopping criterion.
+The criterion is given by the following formula:
+	(f(past_x) - f(x)) / f(x) < \delta
+	*/
+
+	if (pf != NULL) {
+		/* We don't test the stopping criterion while k < past. */
+		if (param.past <= k) {
+			/* Compute the relative improvement from the past. */
+			rate = (pf[k % param.past] - fx) / fx;
+
+			/* The stopping criterion. */
+			if (rate < param.delta) {
+				throw LBFGS_STOP;
+			}
+		}
+
+		/* Store the current value of the objective function. */
+		pf[k % param.past] = fx;
+	}
+
+	if (param.max_iterations != 0 && 
+	    param.max_iterations < k+1)
+	{
+		/* Maximum number of iterations. */
+		throw LBFGSERR_MAXIMUMITERATION;
+	}
+
+	/* Update vectors s and y:
+	s_{k+1} = x_{k+1} - x_{k} = \step * d_{k}.
+	y_{k+1} = g_{k+1} - g_{k}.
+	*/
+	it = &lm[end];
+	vecdiff(it->s, x, xp, n);
+	vecdiff(it->y, g, gp, n);
+
+	/*
+Compute scalars ys and yy:
+	ys = y^t \cdot s = 1 / \rho.
+	yy = y^t \cdot y.
+	Notice that yy is used for scaling the hessian matrix 
+	H_0 (Cholesky factor).
+	*/
+	vecdot(&ys, it->y, it->s, n);
+	vecdot(&yy, it->y, it->y, n);
+	it->ys = ys;
+
+	/*
+	Recursive formula to compute dir = -(H \cdot g).
+This is described in page 779 of:
+	Jorge Nocedal.
+	Updating Quasi-Newton Matrices with Limited Storage.
+	Mathematics of Computation, Vol. 35, No. 151,
+	pp. 773--782, 1980.
+	*/
+	bound = (m <= k) ? m : k;
+	++k;
+	end = (end + 1) % m;
+
+	/* Compute the steepest direction. */
+	if (param.orthantwise_c == 0.) {
+		/* Compute the negative of gradients. */
+		vecncpy(d, g, n);
+	} else {
+		vecncpy(d, pg, n);
+	}
+
+	j = end;
+	for (int i = 0;i < bound;++i) {
+		j = (j + m - 1) % m;    /* if (--j == -1) j = m-1; */
+		it = &lm[j];
+		/* \alpha_{j} = \rho_{j} s^{t}_{j} \cdot q_{k+1}. */
+		vecdot(&it->alpha, it->s, d, n);
+		it->alpha /= it->ys;
+		/* q_{i} = q_{i+1} - \alpha_{i} y_{i}. */
+		vecadd(d, it->y, -it->alpha, n);
+	}
+
+	vecscale(d, ys / yy, n);
+
+	for (int i = 0;i < bound;++i) {
+		it = &lm[j];
+		/* \beta_{j} = \rho_{j} y^t_{j} \cdot \gamma_{i}. */
+		vecdot(&beta, it->y, d, n);
+		beta /= it->ys;
+		/* \gamma_{i+1} = \gamma_{i} + (\alpha_{j} - \beta_{j}) s_{j}. */
+		vecadd(d, it->s, it->alpha - beta, n);
+		j = (j + 1) % m;        /* if (++j == m) j = 0; */
+	}
+
+	/* Now the search direction d is ready. 
+	We try step = 1 first.
+	*/
+	step = 1.0;
 }
 
 #define min2(a, b)      ((a) <= (b) ? (a) : (b))
 #define max2(a, b)      ((a) >= (b) ? (a) : (b))
 #define max3(a, b, c)   max2(max2((a), (b)), (c));
 
-int 
-WrapLBFGS::line_search_morethuente(int n,
-                                   lbfgsfloatval_t *x,
-                                   lbfgsfloatval_t *f,
-                                   lbfgsfloatval_t *g,
-                                   lbfgsfloatval_t *s,
-                                   lbfgsfloatval_t *stp,
-                                   const lbfgsfloatval_t* xp,
-                                   const lbfgsfloatval_t* gp,
-                                   lbfgsfloatval_t *wa,
-                                   callback_data_t *cd,
-                                   const lbfgs_parameter_t *param)
+void WrapLBFGS::lineSearchPrepare()
 {
 	/* Check the input parameters for errors. */
-	if (*stp <= 0.)
+	if (step <= 0.)
 	{
 		throw LBFGSERR_INVALIDPARAMETERS;
 	}
 
 	/* Compute the initial gradient in the search direction. */
-	vecdot(&dginit, g, s, n);
+	vecdot(&dginit, g, d, n);
 
 	/* Make sure that s points to a descent direction. */
 	if (0 < dginit) {
-		return LBFGSERR_INCREASEGRADIENT;
+		throw LBFGSERR_INCREASEGRADIENT;
 	}
 
 	/* Initialize local variables. */
 	brackt = 0;
 	stage1 = 1;
-	finit = *f;
-	dgtest = param->ftol * dginit;
-	width = param->max_step - param->min_step;
+	finit = fx;
+	dgtest = param.ftol * dginit;
+	width = param.max_step - param.min_step;
 	prev_width = 2.0 * width;
 
 	/*
@@ -434,158 +482,142 @@ WrapLBFGS::line_search_morethuente(int n,
 	stx = sty = 0.;
 	lsfx = fy = finit;
 	dgx = dgy = dginit;
-
-	int ret = line_search_cycle(n, x, f, g, s, stp, 
-	                            xp, gp, wa, cd, param);
-
-    return ret;
 }
 
-int 
-WrapLBFGS::line_search_cycle(int n,
-                             lbfgsfloatval_t *x,
-                             lbfgsfloatval_t *f,
-                             lbfgsfloatval_t *g,
-                             lbfgsfloatval_t *s,
-                             lbfgsfloatval_t *stp,
-                             const lbfgsfloatval_t* xp,
-                             const lbfgsfloatval_t* gp,
-                             lbfgsfloatval_t *wa,
-                             callback_data_t *cd,
-                             const lbfgs_parameter_t *param)
+
+void WrapLBFGS::lineSearchCyclePrepare()
 {
-    for (;;) {
-        /*
-            Set the minimum and maximum steps to correspond to the
-            present interval of uncertainty.
-         */
-        if (brackt) {
-            stmin = min2(stx, sty);
-            stmax = max2(stx, sty);
-        } else {
-            stmin = stx;
-            stmax = *stp + 4.0 * (*stp - stx);
-        }
+	/*
+	Set the minimum and maximum steps to correspond to the
+	present interval of uncertainty.
+	*/
+	if (brackt) {
+		stmin = min2(stx, sty);
+		stmax = max2(stx, sty);
+	} else {
+		stmin = stx;
+		stmax = step + 4.0 * (step - stx);
+	}
 
-        /* Clip the step in the range of [stpmin, stpmax]. */
-        if (*stp < param->min_step) *stp = param->min_step;
-        if (param->max_step < *stp) *stp = param->max_step;
+	/* Clip the step in the range of [stpmin, stpmax]. */
+	if (step < param.min_step) step = param.min_step;
+	if (param.max_step < step) step = param.max_step;
 
-        /*
-            If an unusual termination is to occur then let
-            stp be the lowest point obtained so far.
-         */
-        if ((brackt && ((*stp <= stmin || stmax <= *stp) || param->max_linesearch <= count + 1 || uinfo != 0)) || (brackt && (stmax - stmin <= param->xtol * stmax))) {
-            *stp = stx;
-        }
+	/*
+	If an unusual termination is to occur then let
+	stp be the lowest point obtained so far.
+	*/
+	if ((brackt && ((step <= stmin || stmax <= step) || param.max_linesearch <= count + 1 || uinfo != 0)) || (brackt && (stmax - stmin <= param.xtol * stmax))) {
+		step = stx;
+	}
 
-        /*
-            Compute the current value of x:
-                x <- x + (*stp) * s.
-         */
-        veccpy(x, xp, n);
-        vecadd(x, s, *stp, n);
-
-        /* Evaluate the function and gradient values. */
-        *f = cd->proc_evaluate(cd->instance, x, g, cd->n, *stp);
-        vecdot(&dg, g, s, n);
-
-        ftest1 = finit + *stp * dgtest;
-        ++count;
-
-        /* Test for errors and convergence. */
-        if (brackt && ((*stp <= stmin || stmax <= *stp) || uinfo != 0)) {
-            /* Rounding errors prevent further progress. */
-            return LBFGSERR_ROUNDING_ERROR;
-        }
-        if (*stp == param->max_step && *f <= ftest1 && dg <= dgtest) {
-            /* The step is the maximum value. */
-            return LBFGSERR_MAXIMUMSTEP;
-        }
-        if (*stp == param->min_step && (ftest1 < *f || dgtest <= dg)) {
-            /* The step is the minimum value. */
-            return LBFGSERR_MINIMUMSTEP;
-        }
-        if (brackt && (stmax - stmin) <= param->xtol * stmax) {
-            /* Relative width of the interval of uncertainty is at most xtol. */
-            return LBFGSERR_WIDTHTOOSMALL;
-        }
-        if (param->max_linesearch <= count) {
-            /* Maximum number of iteration. */
-            return LBFGSERR_MAXIMUMLINESEARCH;
-        }
-        if (*f <= ftest1 && fabs(dg) <= param->gtol * (-dginit)) {
-            /* The sufficient decrease condition and the directional derivative condition hold. */
-            return count;
-        }
-
-        /*
-            In the first stage we seek a step for which the modified
-            function has a nonpositive value and nonnegative derivative.
-         */
-        if (stage1 && *f <= ftest1 && min2(param->ftol, param->gtol) * dginit <= dg) {
-            stage1 = 0;
-        }
-
-        /*
-            A modified function is used to predict the step only if
-            we have not obtained a step for which the modified
-            function has a nonpositive function value and nonnegative
-            derivative, and if a lower function value has been
-            obtained but the decrease is not sufficient.
-         */
-        if (stage1 && ftest1 < *f && *f <= lsfx) {
-            /* Define the modified function and derivative values. */
-            fm = *f - *stp * dgtest;
-            fxm = lsfx - stx * dgtest;
-            fym = fy - sty * dgtest;
-            dgm = dg - dgtest;
-            dgxm = dgx - dgtest;
-            dgym = dgy - dgtest;
-
-            /*
-                Call update_trial_interval() to update the interval of
-                uncertainty and to compute the new step.
-             */
-            uinfo = update_trial_interval(
-                &stx, &fxm, &dgxm,
-                &sty, &fym, &dgym,
-                stp, &fm, &dgm,
-                stmin, stmax, &brackt
-                );
-
-            /* Reset the function and gradient values for f. */
-            lsfx = fxm + stx * dgtest;
-            fy = fym + sty * dgtest;
-            dgx = dgxm + dgtest;
-            dgy = dgym + dgtest;
-        } else {
-            /*
-                Call update_trial_interval() to update the interval of
-                uncertainty and to compute the new step.
-             */
-            uinfo = update_trial_interval(
-                &stx, &lsfx, &dgx,
-                &sty, &fy, &dgy,
-                stp, f, &dg,
-                stmin, stmax, &brackt
-                );
-        }
-
-        /*
-            Force a sufficient decrease in the interval of uncertainty.
-         */
-        if (brackt) {
-            if (0.66 * prev_width <= fabs(sty - stx)) {
-                *stp = stx + 0.5 * (sty - stx);
-            }
-            prev_width = width;
-            width = fabs(sty - stx);
-        }
-    }
-
-    return LBFGSERR_LOGICERROR;
+	/*
+	Compute the current value of x:
+	x <- x + (step) * s.
+	*/
+	veccpy(x, xp, n);
+	vecadd(x, d, step, n);
 }
+
+int WrapLBFGS::lineSearchCycleHandle()
+{
+	vecdot(&dg, g, d, n);
+	ftest1 = finit + step * dgtest;
+	++count;
+
+	/* Test for errors and convergence. */
+	if (brackt && ((step <= stmin || stmax <= step) || uinfo != 0)) {
+		/* Rounding errors prevent further progress. */
+		return LBFGSERR_ROUNDING_ERROR;
+	}
+	if (step == param.max_step && fx <= ftest1 && dg <= dgtest) {
+		/* The step is the maximum value. */
+		return LBFGSERR_MAXIMUMSTEP;
+	}
+	if (step == param.min_step && (ftest1 < fx || dgtest <= dg)) {
+		/* The step is the minimum value. */
+		return LBFGSERR_MINIMUMSTEP;
+	}
+	if (brackt && (stmax - stmin) <= param.xtol * stmax) {
+		/* Relative width of the interval of uncertainty is at most xtol. */
+		return LBFGSERR_WIDTHTOOSMALL;
+	}
+	if (param.max_linesearch <= count) {
+		/* Maximum number of iteration. */
+		return LBFGSERR_MAXIMUMLINESEARCH;
+	}
+	if (fx <= ftest1 && fabs(dg) <= param.gtol * (-dginit)) {
+		/* The sufficient decrease condition and the directional derivative condition hold. */
+		return count;
+	}
+
+	/*
+	In the first stage we seek a step for which the modified
+	function has a nonpositive value and nonnegative derivative.
+	*/
+	if (stage1 && fx <= ftest1 && min2(param.ftol, param.gtol) * dginit <= dg) {
+		stage1 = 0;
+	}
+
+	/*
+	A modified function is used to predict the step only if
+	we have not obtained a step for which the modified
+	function has a nonpositive function value and nonnegative
+	derivative, and if a lower function value has been
+	obtained but the decrease is not sufficient.
+	*/
+	if (stage1 && ftest1 < fx && fx <= lsfx) {
+		/* Define the modified function and derivative values. */
+		fm = fx - step * dgtest;
+		fxm = lsfx - stx * dgtest;
+		fym = fy - sty * dgtest;
+		dgm = dg - dgtest;
+		dgxm = dgx - dgtest;
+		dgym = dgy - dgtest;
+
+		/*
+		Call update_trial_interval() to update the interval of
+		uncertainty and to compute the new step.
+		*/
+		uinfo = update_trial_interval(
+		                              &stx, &fxm, &dgxm,
+		                              &sty, &fym, &dgym,
+		                              step, &fm, &dgm,
+		                              stmin, stmax, &brackt
+		                              );
+
+		/* Reset the function and gradient values for f. */
+		lsfx = fxm + stx * dgtest;
+		fy = fym + sty * dgtest;
+		dgx = dgxm + dgtest;
+		dgy = dgym + dgtest;
+	} else {
+		/*
+		Call update_trial_interval() to update the interval of
+		uncertainty and to compute the new step.
+		*/
+		uinfo = update_trial_interval(
+		                              &stx, &lsfx, &dgx,
+		                              &sty, &fy, &dgy,
+		                              step, &fx, &dg,
+		                              stmin, stmax, &brackt
+		                              );
+	}
+
+	/*
+	Force a sufficient decrease in the interval of uncertainty.
+	*/
+	if (brackt) {
+		if (0.66 * prev_width <= fabs(sty - stx)) {
+			step = stx + 0.5 * (sty - stx);
+		}
+		prev_width = width;
+		width = fabs(sty - stx);
+	}
+
+	return LBFGS_SUCCESS;
+}
+
 
 /**
  * Define the local variables for computing minimizers.
@@ -714,7 +746,7 @@ int WrapLBFGS::update_trial_interval(
     lbfgsfloatval_t *y,
     lbfgsfloatval_t *fy,
     lbfgsfloatval_t *dy,
-    lbfgsfloatval_t *t,
+    lbfgsfloatval_t &t,
     lbfgsfloatval_t *ft,
     lbfgsfloatval_t *dt,
     const lbfgsfloatval_t tmin,
@@ -731,11 +763,11 @@ int WrapLBFGS::update_trial_interval(
 
     /* Check the input parameters for errors. */
     if (*brackt) {
-        if (*t <= min2(*x, *y) || max2(*x, *y) <= *t) {
+        if (t <= min2(*x, *y) || max2(*x, *y) <= t) {
             /* The trival value t is out of the interval. */
             return LBFGSERR_OUTOFINTERVAL;
         }
-        if (0. <= *dx * (*t - *x)) {
+        if (0. <= *dx * (t - *x)) {
             /* The function must decrease from x. */
             return LBFGSERR_INCREASEGRADIENT;
         }
@@ -757,8 +789,8 @@ int WrapLBFGS::update_trial_interval(
          */
         *brackt = 1;
         bound = 1;
-        CUBIC_MINIMIZER(mc, *x, *fx, *dx, *t, *ft, *dt);
-        QUARD_MINIMIZER(mq, *x, *fx, *dx, *t, *ft);
+        CUBIC_MINIMIZER(mc, *x, *fx, *dx, t, *ft, *dt);
+        QUARD_MINIMIZER(mq, *x, *fx, *dx, t, *ft);
         if (fabs(mc - *x) < fabs(mq - *x)) {
             newt = mc;
         } else {
@@ -773,9 +805,9 @@ int WrapLBFGS::update_trial_interval(
          */
         *brackt = 1;
         bound = 0;
-        CUBIC_MINIMIZER(mc, *x, *fx, *dx, *t, *ft, *dt);
-        QUARD_MINIMIZER2(mq, *x, *dx, *t, *dt);
-        if (fabs(mc - *t) > fabs(mq - *t)) {
+        CUBIC_MINIMIZER(mc, *x, *fx, *dx, t, *ft, *dt);
+        QUARD_MINIMIZER2(mq, *x, *dx, t, *dt);
+        if (fabs(mc - t) > fabs(mq - t)) {
             newt = mc;
         } else {
             newt = mq;
@@ -793,16 +825,16 @@ int WrapLBFGS::update_trial_interval(
             farthest away is taken.
          */
         bound = 1;
-        CUBIC_MINIMIZER2(mc, *x, *fx, *dx, *t, *ft, *dt, tmin, tmax);
-        QUARD_MINIMIZER2(mq, *x, *dx, *t, *dt);
+        CUBIC_MINIMIZER2(mc, *x, *fx, *dx, t, *ft, *dt, tmin, tmax);
+        QUARD_MINIMIZER2(mq, *x, *dx, t, *dt);
         if (*brackt) {
-            if (fabs(*t - mc) < fabs(*t - mq)) {
+            if (fabs(t - mc) < fabs(t - mq)) {
                 newt = mc;
             } else {
                 newt = mq;
             }
         } else {
-            if (fabs(*t - mc) > fabs(*t - mq)) {
+            if (fabs(t - mc) > fabs(t - mq)) {
                 newt = mc;
             } else {
                 newt = mq;
@@ -817,8 +849,8 @@ int WrapLBFGS::update_trial_interval(
          */
         bound = 0;
         if (*brackt) {
-            CUBIC_MINIMIZER(newt, *t, *ft, *dt, *y, *fy, *dy);
-        } else if (*x < *t) {
+            CUBIC_MINIMIZER(newt, t, *ft, *dt, *y, *fy, *dy);
+        } else if (*x < t) {
             newt = tmax;
         } else {
             newt = tmin;
@@ -838,7 +870,7 @@ int WrapLBFGS::update_trial_interval(
      */
     if (*fx < *ft) {
         /* Case a */
-        *y = *t;
+        *y = t;
         *fy = *ft;
         *dy = *dt;
     } else {
@@ -849,7 +881,7 @@ int WrapLBFGS::update_trial_interval(
             *dy = *dx;
         }
         /* Cases b and c */
-        *x = *t;
+        *x = t;
         *fx = *ft;
         *dx = *dt;
     }
@@ -872,6 +904,71 @@ int WrapLBFGS::update_trial_interval(
     }
 
     /* Return the new trial value. */
-    *t = newt;
+    t = newt;
     return 0;
+}
+
+// returns the "pre-run" task, but can also set up all other tasks
+Task<void *, void *> *WrapLBFGS::taskedRun(MultiEngineBase *ms,
+                                           LBFGSEngine *engine)
+{
+	_declare_done = [engine, ms](void *)
+	{
+		ms->declareDone(engine, engine->vals());
+		engine->reset();
+		return nullptr;
+	};
+
+	auto reset = [this, ms]()
+	{
+		auto receive = 
+		new Task<void *, void *>(_receiveLineSearch,
+		                         "receive line search");
+
+		ms->addHangingTask(receive);
+		
+		sendCurrent();
+	};
+
+	_receiveLineSearch = [this, reset, ms](void *) -> void *
+	{
+		receiveJob();
+
+		ls = lineSearchCycleHandle();
+
+		if (ls < 0) // this was an error
+		{
+			ms->addImmediateTask
+			(new Task<void *, void *>(_declare_done,
+			                          "declare done"));
+		}
+		else if (ls != LBFGS_SUCCESS) // we stopped line searching
+		{
+			try
+			{
+				macrocycleHandle();
+				macrocyclePrepare();
+				lineSearchPrepare();
+				lineSearchCyclePrepare();
+			}
+			catch (const int &err)
+			{
+				ms->addImmediateTask
+				(new Task<void *, void *>(_declare_done,
+				                          "declare done"));
+				return nullptr;
+			}
+
+			reset();
+		}
+		else // we must search again
+		{
+			lineSearchCyclePrepare();
+			reset();
+		}
+		return nullptr;
+	};
+
+	return new Task<void *, void *>(_receiveLineSearch,
+	                                "first receive line search");
 }
