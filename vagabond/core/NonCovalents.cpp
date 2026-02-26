@@ -754,8 +754,8 @@ void NonCovalents::prepareBarycentricTargetMatrices()
 	
 	_snapColumnFrom = m;
 	
-	m += 4;
-//	m += invariants.size();
+//	m += 4;
+	m += invariants.size();
 
 	_barycentrics = MatrixXf(n, m);
 	_barycentrics.setZero();
