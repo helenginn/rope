@@ -67,7 +67,18 @@ struct ScoreBucket
 		maxRes = res;
 	}
 	bool fully_contains(const ScoreBucket &other) const;
+	
+	friend std::ostream &operator<<(std::ostream &ss, 
+	                                const ScoreBucket &sb);
+
 };
+
+inline std::ostream &operator<<(std::ostream &ss, 
+                                const ScoreBucket &sb)
+{
+	ss << sb.chain << " (" << sb.minRes << "-" << sb.maxRes << ")";
+	return ss;
+}
 
 template <class Custom>
 struct SingleResult
@@ -77,6 +88,13 @@ struct SingleResult
 	float highest = 0;
 };
 
+inline std::ostream &operator<<(std::ostream &ss, 
+                                const SingleResult<ScoreBucket> &sr)
+{
+	ss << sr.id << ":" << sr.score;
+	return ss;
+}
+
 template <class Custom>
 struct ResultBy
 {
@@ -84,6 +102,7 @@ struct ResultBy
 	std::map<Custom, float> activations;
 	std::mutex *mutex = new std::mutex();
 	int ticket;
+	int n{};
 	
 	void destroy()
 	{
@@ -94,6 +113,7 @@ struct ResultBy
 	void operator=(const SingleResult<Custom> &srr)
 	{
 		std::unique_lock<std::mutex> lock(*mutex);
+		n++;
 		scores[srr.id] += srr.score;
 		if (activations[srr.id] < srr.score)
 		{
