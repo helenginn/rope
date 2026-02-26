@@ -23,6 +23,7 @@
 #include <mutex>
 #include <list>
 #include "RTMotion.h"
+#include "Scores.h"
 
 class BondSequence;
 class Parameter;
@@ -43,6 +44,7 @@ struct GradientTerm
 		g_idx = gidx;
 		param = p;
 		_weights = weights;
+		_bucket = ScoreBucket(param->anAtom());
 		grads.resize(order);
 	}
 	
@@ -54,6 +56,7 @@ struct GradientTerm
 	int g_idx = 0; // gradient index
 	Parameter *param = nullptr;
 	Weights _weights;
+	ScoreBucket _bucket{};
 
 	Floats grads;
 };

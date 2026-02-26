@@ -95,6 +95,9 @@ public:
 		return _pairs;
 	}
 
+	const std::vector<int> 
+	&pairsForResidue(const ScoreBucket &sb) const;
+
 	const std::set<ScoreBucket> &residues() const
 	{
 		return _residues;
