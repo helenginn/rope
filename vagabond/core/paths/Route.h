@@ -460,8 +460,6 @@ protected:
 	BestGuessTorsions _bestGuessTorsions{this};
 	
 	void prepareAlignment();
-	std::vector<std::function<BondSequence *(BondSequence *)>> 
-	extraTasks(const float &frac);
 	
 	void installAllResidues();
 
@@ -485,7 +483,6 @@ private:
 	friend void setup_helpers(Route::Helpers &helpers, BondSequence *seq, 
 	                          float distance, bool multi, bool momentum);
 	
-	void applyPostCalcTasks(CalcTask *&hook, const float &frac);
 	void deleteHelpers();
 	
 	std::vector<InstancePair> _pairs;
