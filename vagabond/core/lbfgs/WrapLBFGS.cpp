@@ -951,7 +951,7 @@ Task<void *, void *> *WrapLBFGS::taskedRun(MultiEngineBase *ms,
 				lineSearchPrepare();
 				lineSearchCyclePrepare();
 			}
-			catch (const int &err)
+			catch (...)
 			{
 				ms->addImmediateTask
 				(new Task<void *, void *>(_declare_done,

@@ -182,16 +182,25 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 	 "pre-run");
 
 	// this can start because it's going to hang on the "getOneResult"
-	// until something comes back anyway (when preRun() is called)
+	// until something comes back anyway 
 	auto *handle_baseline = new Task<void *, void *>
-	([this](void *)
+	([this, ms](void *)
 	 {
-		_wrapped->handleFirstResult();
-		_wrapped->computeInitialStep();
-		_wrapped->macrocyclePrepare();
-		_wrapped->lineSearchPrepare();
-		_wrapped->lineSearchCyclePrepare();
-		_wrapped->sendCurrent();
+		try
+		{
+			_wrapped->handleFirstResult();
+			_wrapped->computeInitialStep();
+			_wrapped->macrocyclePrepare();
+			_wrapped->lineSearchPrepare();
+			_wrapped->lineSearchCyclePrepare();
+			_wrapped->sendCurrent();
+		}
+		catch (...)
+		{
+			ms->declareDone(this, vals());
+			reset();
+		}
+
 		return nullptr;
 	},
 	"handle_baseline");
