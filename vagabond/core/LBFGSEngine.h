@@ -21,7 +21,7 @@
 
 #include "Engine.h"
 #include "engine/Tasks.h"
-#include "lbfgs/lbfgs.h"
+#include "lbfgs/WrapLBFGS.h"
 
 template <class X, class Y> class Task;
 class MultiEngineBase;
@@ -31,14 +31,29 @@ class LBFGSEngine : public Engine
 {
 public:
 	LBFGSEngine(RunsEngine *ref, const std::function<int()> &paramCount);
-	virtual ~LBFGSEngine() {};
+	virtual ~LBFGSEngine();
 
 	Task<void *, void *> *taskedRun(MultiEngineBase *ms);
+	void reset();
+
+	std::vector<float> vals() const
+	{
+		std::vector<float> tmp = _vals;
+		for (float &f : tmp)
+		{
+			f *= _step;
+		}
+		return tmp;
+	}
 protected:
 	virtual void run();
 	void preRun();
 
 private:
+	float receive(const lbfgsfloatval_t *x, lbfgsfloatval_t *g);
+	void send(const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
+	          const int n, const lbfgsfloatval_t step);
+
 	static lbfgsfloatval_t evaluate(void *engine, const lbfgsfloatval_t *x, 
 	                                lbfgsfloatval_t *g, const int n,
 	                                const lbfgsfloatval_t step)
@@ -58,6 +73,9 @@ private:
 
 	
 	Tasks *_tasks = nullptr;
+	WrapLBFGS *_wrapped{};
+	std::vector<float> _vals;
+	float _score{};
 };
 
 #endif
