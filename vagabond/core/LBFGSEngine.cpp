@@ -30,6 +30,11 @@ LBFGSEngine::LBFGSEngine(RunsEngine *ref,
 
 }
 
+LBFGSEngine::~LBFGSEngine()
+{
+	delete _wrapped;
+}
+
 int LBFGSEngine::progress(void *instance, const lbfgsfloatval_t *x,
                           const lbfgsfloatval_t *g, 
                           const lbfgsfloatval_t fx,
@@ -77,6 +82,27 @@ lbfgsfloatval_t LBFGSEngine::evaluate(const lbfgsfloatval_t *x,
 	return eval;
 }
 
+void LBFGSEngine::send(const lbfgsfloatval_t *x, lbfgsfloatval_t *g,
+                      const int n, const lbfgsfloatval_t step)
+{
+	std::vector<float> vals = vec_from_lbfgs(x, n);
+	for (float &f : vals)
+	{
+		f *= _step;
+	}
+	
+	sendJob(vals);
+}
+
+float LBFGSEngine::receive(const lbfgsfloatval_t *x, lbfgsfloatval_t *g)
+{
+	getOneResult();
+	float eval = findBestScore();
+	Engine::grabGradients(g, x);
+	clearResults();
+	return eval;
+}
+
 void LBFGSEngine::preRun()
 {
 	n() = _paramCount();
@@ -91,6 +117,12 @@ void LBFGSEngine::preRun()
 	std::vector<float> empty = std::vector<float>(n(), 0);
 	sendJob(empty);
 
+}
+
+void LBFGSEngine::reset()
+{
+	_vals.clear();
+	_score = FLT_MAX;
 }
 
 void LBFGSEngine::run()
@@ -115,11 +147,35 @@ void LBFGSEngine::run()
 Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 {
 	n() = _paramCount();
+	_vals = std::vector<float>(n(), 0);
+
+	lbfgs_parameter_t param;
+	lbfgs_parameter_init(&param);
+	param.max_iterations = 10;
+	param.max_linesearch = 10;
+	
+	auto send_to_me = [this](void *instance, const lbfgsfloatval_t *x,
+	                         lbfgsfloatval_t *g, const int n,
+	                         const lbfgsfloatval_t step)
+	{
+		this->send(x, g, n, step);
+		return 0;
+	};
+	
+	auto receive_by_me = [this](void *instance, const lbfgsfloatval_t *x,
+	                            lbfgsfloatval_t *g)
+	{
+		return this->receive(x, g);
+	};
+
+	_wrapped = new WrapLBFGS(_vals.size(), &_vals[0], &_score, 
+	                         send_to_me, receive_by_me, 
+	                         this, &param);
 
 	auto *prerun = new Task<void *, void *>
 	([this](void *)
 	 {
-		preRun();
+		_wrapped->initialise();
 		return nullptr;
 	},
 	 "pre-run");
@@ -127,41 +183,22 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 	// this can start because it's going to hang on the "getOneResult"
 	// until something comes back anyway (when preRun() is called)
 	auto *handle_baseline = new Task<void *, void *>
-	([this, ms](void *)
+	([this](void *)
 	 {
-		getOneResult();
-		lbfgs_parameter_t param;
-
-		lbfgs_parameter_init(&param);
-		param.max_iterations = 10;
-		param.max_linesearch = 10;
-
-		float endScore = 0;
-		std::vector<float> vals(n());
-
-		WrapLBFGS wrapped(vals.size(), &vals[0], &endScore, 
-		                  &LBFGSEngine::evaluate, nullptr, 
-		                  this, &param);
-		wrapped.run();
-		
-		for (float &f : vals)
-		{
-			f *= _step;
-		}
-
-		_bestResult = vals;
-		
-		ms->declareDone(this, vals);
-		_bestResult.clear();
-		_bestScore = FLT_MAX;
+		_wrapped->handleFirstResult();
+		_wrapped->computeInitialStep();
+		_wrapped->macrocyclePrepare();
+		_wrapped->lineSearchPrepare();
+		_wrapped->lineSearchCyclePrepare();
+		_wrapped->sendCurrent();
 		return nullptr;
 	},
 	"handle_baseline");
 	
-	_tasks = new Tasks();
-	_tasks->prepare_threads(1);
-	_tasks->name = "lbfgs";
-	_tasks->addTask(handle_baseline); 
+	auto *handleJobs = _wrapped->taskedRun(ms, this);
+	handle_baseline->must_complete_before(handleJobs);
+
+	ms->addHangingTask(handle_baseline); 
 
 	return prerun; // the starting gun is returned to MultiEngine
 	
