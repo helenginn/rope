@@ -188,7 +188,7 @@ public:
 		prepareSendWholeJob();
 	}
 	
-	void checkCompletion()
+	void checkIfSubmissionComplete()
 	{
 		while (_received + _done >= _key2Info.size())
 		{
@@ -316,7 +316,7 @@ public:
 			info.tickets.push(ticket);
 		}
 		
-		checkCompletion();
+		checkIfSubmissionComplete();
 		
 		return ticket;
 	}
@@ -330,7 +330,7 @@ public:
 		Info &info = _key2Info.at(key);
 		info.best = best;
 		info.done = true;
-		checkCompletion();
+		checkIfSubmissionComplete();
 	}
 	
 	std::map<Key, float> blueprint()
