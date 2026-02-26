@@ -212,29 +212,6 @@ void Route::prepareAlignment()
 	}
 }
 
-std::vector<std::function<BondSequence *(BondSequence *)>> 
-Route::extraTasks(const float &frac)
-{
-	std::vector<std::function<BondSequence *(BondSequence *)>> ret;
-	if (_noncovs && _noncovs->ready())
-	{
-		auto alignment = _noncovs->align_task(frac);
-		ret.push_back(alignment);
-	}
-	return ret;
-}
-
-void Route::applyPostCalcTasks(CalcTask *&hook, const float &frac)
-{
-	auto tasks = extraTasks(frac);
-	for (auto &task : tasks)
-	{
-		CalcTask *job = new CalcTask(task, "post-calc task");
-		hook->follow_with(job);
-		hook = job;
-	}
-}
-
 void Route::submitValue(const CalcOptions &options, int steps)
 {
 	SubmissionHelp help(this, options);
