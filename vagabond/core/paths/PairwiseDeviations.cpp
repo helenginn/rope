@@ -60,8 +60,10 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	glm::vec3 *scratch = new glm::vec3[blocks.size() * 2];
 	_atoms = std::vector<Atom *>(blocks.size());
 
+	std::vector<int> gaps;
 	int n = 0;
-	auto collect_targets = [this, scratch, &n](const AtomBlock &block)
+	auto collect_targets = [this, scratch, &n, &gaps]
+	(const AtomBlock &block)
 	{
 		Atom *const &atom = block.atom;
 		if (atom)
@@ -76,11 +78,16 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			scratch[n] = orig;
 			scratch[n + 1] = moving;
 		}
+		else
+		{
+			gaps.push_back(n + 2);
+		}
 		_atoms[n / 2] = atom;
 		n += 2;
 	};
 	
 	do_on_each_block(blocks, collect_targets);
+	gaps.push_back(n);
 
 	// pre-calculate pairs to interrogate
 	
@@ -93,88 +100,175 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	
 	std::vector<int> pairs;
 	
-	const float threshold = _limit;
-	for (int i = 0; i < n - 2; i += 2)
+	auto loop_over_atoms = [this](int n0, int n1, auto job)
 	{
-		int m = i / 2;
-		Atom *left = _atoms[m];
-		if (!left) continue;
+		for (int i = n0; i < n1 - 2; i += 2)
+		{
+			int m = i / 2;
+			Atom *left = _atoms[m];
+			if (!left) continue;
+
+			for (int j = i + 2; j < n1; j += 2)
+			{
+				int n = j / 2;
+				Atom *right = _atoms[n];
+				if (!right) continue;
+				
+				job(left, right, i, j);
+
+			}
+		}
+	};
+
+	auto populate_neighbours = [this, scratch]
+	(Atom *left, Atom *right, int i, int j)
+	{
+		int p = i / 2; int q = j / 2;
+		/*
+		const float threshold = _limit;
+		const glm::vec3 &at_rest_i = scratch[i];
+		const glm::vec3 &at_rest_j = scratch[j];
+		const glm::vec3 &moving_i = scratch[i + 1];
+		const glm::vec3 &moving_j = scratch[j + 1];
+
+		if (!worth_checking_distance(at_rest_i, at_rest_j, 
+		                             moving_i, moving_j, 
+		                             threshold))
+		{
+			return;
+		}
+		*/
+		
+		auto check_pair = [&p, &q, this](int b)
+		{
+			if (_sep)
+			{
+				int lr = _sep->separationBetween(b, q);
+				int lc = _sep->separationBetween(b, p);
+				int cr = _sep->separationBetween(p, q);
+				if (lr < 0) { return false; }
+				if (lc < 0 || lc > lr) { return false; }
+				if (cr < 0) { return false; }
+				bool reject = (lc + cr - lr > 0);
+				if (reject) { return false; }
+				/*
+				if (p == 349)
+				{
+					std::cout << b << " " << p << " " << q << " - " 
+					<< lc << " " << cr << " " << lr << std::endl;
+				}
+				*/
+			}
+
+			return true;
+		};
+		
+		auto add_pairs = [this, &check_pair](int p, int q)
+		{
+			std::vector<int> &qPairs = _perIdx[q];
+			_neighbouring[p].reserve(_neighbouring[p].size() +
+			                         qPairs.size());
+			
+			for (const int &pair : qPairs)
+			{
+				TargetInfo &pInfo = info(pair);
+				int m = pInfo.p; int n = pInfo.q;
+				int chosen = (m == q) ? n : m;
+				if (check_pair(chosen))
+				{
+					_neighbouring[p].push_back(pair);
+				}
+			}
+		};
+		
+		add_pairs(p, q);
+		add_pairs(q, p);
+	};
+	
+	auto add_if_acceptable = [this, &scratch, 
+	                          &distance_between_atoms]
+	(Atom *left, Atom *right, int i, int j)
+	{
+		int m = i / 2; int n = j / 2;
+		const float threshold = _limit;
 
 		const glm::vec3 &at_rest_i = scratch[i];
 		const glm::vec3 &moving_i = scratch[i + 1];
 		
-		for (int j = i + 2; j < n; j += 2)
+		bool too_close = false;
+		for (size_t k = 0; k < left->bondTorsionCount(); k++)
 		{
-			int n = j / 2;
-			Atom *right = _atoms[n];
-			if (!right) continue;
-
-			bool too_close = false;
-			for (size_t k = 0; k < left->bondTorsionCount(); k++)
+			if (left->bondTorsion(k)->hasAtom(right))
 			{
-				if (left->bondTorsion(k)->hasAtom(right))
-				{
-					too_close = true;
-				}
+				too_close = true;
 			}
-			
-			if (!_momentum && too_close)
-			{
-				continue;
-			}
-			
-			if (_sep && _sep->separationBetween(m, n) < 0)
-			{
-				continue;
-			}
-			
-			const glm::vec3 &at_rest_j = scratch[j];
-			const glm::vec3 &moving_j = scratch[j + 1];
-			
-			if (!worth_checking_distance(at_rest_i, at_rest_j, 
-			                             moving_i, moving_j, threshold))
-			{
-				continue;
-			}
-
-			glm::vec3 at_rest = at_rest_i - at_rest_j;
-			glm::vec3 moving = moving_i - moving_j;
-
-			float start = distance_between_atoms(at_rest, moving, 0);
-			float end = distance_between_atoms(at_rest, moving, 1);
-			
-			bool is_side = !(left->isMainChain() && right->isMainChain());
-
-			float modulate = is_side ? 0.5 : 1.0;
-
-			bool ok = (start < threshold * modulate || 
-			           end < threshold * modulate);
-			
-			if (!ok)
-			{
-				continue;
-			}
-			
-			int size = _infoPairs.size();
-
-			_perResidue[ScoreBucket(left)].push_back(size);
-			_perResidue[ScoreBucket(right)].push_back(size);
-			
-			_residues.insert(ScoreBucket(left));
-			_residues.insert(ScoreBucket(right));
-			
-			bool close = (start < 2 || end < 2);
-
-			if (_pairs.size() % n == 0)
-			{
-				_pairs.reserve(_pairs.size() + n);
-			}
-
-			_pairs.push_back(_infoPairs.size());
-			_infoPairs.push_back({m, n, start, end, close});
-			_atoms2Info[{left, right}] = size;
-			_atoms2Info[{right, left}] = size;
 		}
+
+		if (!_momentum && too_close)
+		{
+			return;
+		}
+
+		if (_sep && _sep->separationBetween(m, n) < 0)
+		{
+			return;
+		}
+
+		const glm::vec3 &at_rest_j = scratch[j];
+		const glm::vec3 &moving_j = scratch[j + 1];
+
+		if (!worth_checking_distance(at_rest_i, at_rest_j, 
+		                             moving_i, moving_j, threshold))
+		{
+			return;
+		}
+
+		glm::vec3 at_rest = at_rest_i - at_rest_j;
+		glm::vec3 moving = moving_i - moving_j;
+
+		float start = distance_between_atoms(at_rest, moving, 0);
+		float end = distance_between_atoms(at_rest, moving, 1);
+
+		bool is_side = !(left->isMainChain() && right->isMainChain());
+
+		float modulate = is_side ? 0.5 : 1.0;
+
+		bool ok = (start < threshold * modulate || 
+		           end < threshold * modulate);
+
+		if (!ok)
+		{
+			return;
+		}
+
+		int size = _infoPairs.size();
+
+		_perResidue[ScoreBucket(left)].push_back(size);
+		_perResidue[ScoreBucket(right)].push_back(size);
+		_perIdx[m].push_back(size);
+		_perIdx[n].push_back(size);
+		_residues.insert(ScoreBucket(left));
+		_residues.insert(ScoreBucket(right));
+
+		bool close = (start < 2 || end < 2);
+
+		if (_pairs.size() % n == 0)
+		{
+			_pairs.reserve(_pairs.size() + n);
+		}
+
+		_pairs.push_back(_infoPairs.size());
+		_infoPairs.push_back({m, n, start, end, close});
+		_atoms2Info[{left, right}] = size;
+		_atoms2Info[{right, left}] = size;
+	};
+	
+	for (int i = 0; i < gaps.size() - 1; i++)
+	{
+		int n0 = gaps[i];
+		int n1 = gaps[i + 1];
+		loop_over_atoms(n0, n1, add_if_acceptable);
+		loop_over_atoms(n0, n1, populate_neighbours);
 	}
 	
 	_reference = scratch;
@@ -365,8 +459,8 @@ PairwiseDeviations::contact_map(const std::set<ScoreBucket> &forResidues)
 }
 
 
-const std::vector<int> 
-&PairwiseDeviations::pairsForResidue(const ScoreBucket &sb) const
+std::vector<int> &PairwiseDeviations::pairsForBlockIdx
+(const int &bidx)
 {
-	return _perResidue.at(sb);
+	return _neighbouring[bidx];
 }
