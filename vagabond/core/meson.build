@@ -159,6 +159,8 @@ cfile,
 'LBFGSEngine.h',
 'lbfgs/lbfgs.c',
 'lbfgs/lbfgs.h',
+'lbfgs/WrapLBFGS.cpp',
+'lbfgs/WrapLBFGS.h',
 'matrix_functions.cpp',
 
 'engine/AreaMeasurer.cpp',

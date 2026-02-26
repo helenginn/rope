@@ -22,23 +22,49 @@
 #include "lbfgs.h"
 #include "../engine/Task.h"
 
+class MultiEngineBase;
+class LBFGSEngine;
+
+typedef std::function<int(void *instance, const lbfgsfloatval_t *x,
+                          lbfgsfloatval_t *g, const int n,
+                          const lbfgsfloatval_t step)> lbfgs_send_t;
+
+typedef std::function<float(void *instance, const lbfgsfloatval_t *x,
+                          lbfgsfloatval_t *g)> lbfgs_receive_t;
+
 class WrapLBFGS
 {
 public:
-	WrapLBFGS( int n, lbfgsfloatval_t *x, lbfgsfloatval_t *ptr_fx,
-	          lbfgs_evaluate_t proc_evaluate,
-	          lbfgs_progress_t proc_progress,
-	          void *instance,
+	WrapLBFGS(int n, lbfgsfloatval_t *x, lbfgsfloatval_t *ptr_fx,
+	          lbfgs_send_t _proc_send,
+	          lbfgs_receive_t _proc_receive,
+	          void *_instance,
 	          lbfgs_parameter_t *_param);
 	~WrapLBFGS();
-
 	int run();
+
+	Task<void *, void *> *taskedRun(MultiEngineBase *ms,
+	                                LBFGSEngine *engine);
+
+	void initialise();
+	void handleFirstResult();
+	void computeInitialStep();
+	void sendCurrent();
+
+	void macrocyclePrepare();
+	void lineSearchPrepare();
+	int lineSearchCycle();
+	void lineSearchCyclePrepare();
+	int lineSearchCycleHandle();
 private:
 	void errorChecking();
 	void allocation();
-	void initialise();
-	void computeInitialStep();
-	void cycle();
+	void macrocycle();
+	int lineSearch();
+	void macrocycleHandle();
+	void receiveJob();
+	
+	void sendJob(float step);
 
 	struct tag_callback_data {
 		int n;
@@ -63,45 +89,6 @@ private:
 		0.0, 0, -1,
 	};
 
-	// LINE SEARCH PROTOCOLS
-	typedef int (*line_search_proc)( int n,
-	                                lbfgsfloatval_t *x,
-	                                lbfgsfloatval_t *f,
-	                                lbfgsfloatval_t *g,
-	                                lbfgsfloatval_t *s,
-	                                lbfgsfloatval_t *stp,
-	                                const lbfgsfloatval_t* xp,
-	                                const lbfgsfloatval_t* gp,
-	                                lbfgsfloatval_t *wa,
-	                                callback_data_t *cd,
-	                                const lbfgs_parameter_t *param
-	                                );
-
-	int line_search_morethuente( int n,
-	                            lbfgsfloatval_t *x,
-	                            lbfgsfloatval_t *f,
-	                            lbfgsfloatval_t *g,
-	                            lbfgsfloatval_t *s,
-	                            lbfgsfloatval_t *stp,
-	                            const lbfgsfloatval_t* xp,
-	                            const lbfgsfloatval_t* gp,
-	                            lbfgsfloatval_t *wa,
-	                            callback_data_t *cd,
-	                            const lbfgs_parameter_t *param
-	                            );
-
-	int line_search_cycle(
-	                      int n,
-	                      lbfgsfloatval_t *x,
-	                      lbfgsfloatval_t *f,
-	                      lbfgsfloatval_t *g,
-	                      lbfgsfloatval_t *s,
-	                      lbfgsfloatval_t *stp,
-	                      const lbfgsfloatval_t* xp,
-	                      const lbfgsfloatval_t* gp,
-	                      lbfgsfloatval_t *wa,
-	                      callback_data_t *cd,
-	                      const lbfgs_parameter_t *param);
 
 	int update_trial_interval( lbfgsfloatval_t *x,
 	                          lbfgsfloatval_t *fx,
@@ -109,7 +96,7 @@ private:
 	                          lbfgsfloatval_t *y,
 	                          lbfgsfloatval_t *fy,
 	                          lbfgsfloatval_t *dy,
-	                          lbfgsfloatval_t *t,
+	                          lbfgsfloatval_t &t,
 	                          lbfgsfloatval_t *ft,
 	                          lbfgsfloatval_t *dt,
 	                          const lbfgsfloatval_t tmin,
@@ -122,10 +109,11 @@ private:
 	int k = 1; // used in cycle
 	int bound = 0; // used in cycle
 	int end = 0; // used in cycle
+    int ls{};
 	lbfgsfloatval_t *x;
 	lbfgsfloatval_t *ptr_fx;
-    lbfgs_evaluate_t proc_evaluate;
-    lbfgs_progress_t proc_progress;
+    lbfgs_send_t proc_send;
+    lbfgs_receive_t proc_receive;
     void *instance;
     lbfgs_parameter_t param;
 	callback_data_t cd;
@@ -150,6 +138,9 @@ private:
     lbfgsfloatval_t finit, ftest1, dginit, dgtest;
     lbfgsfloatval_t width, prev_width;
     lbfgsfloatval_t stmin, stmax;
+
+	std::function<void *(void *)> _receiveLineSearch;
+	std::function<void *(void *)> _declare_done;
 };
 
 #endif
