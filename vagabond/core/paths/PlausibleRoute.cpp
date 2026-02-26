@@ -412,47 +412,6 @@ bool PlausibleRoute::sideChainGradients(int order)
 	return meaningfulUpdate(newsc, oldsc, 0.90);
 }
 
-/*
-template <typename JobOnTerm>
-auto do_on_each_path_component(PlausibleRoute *pr, 
-                               GradientPath *path, const JobOnTerm &job)
-{
-	for (int j = 0; j < path->motion_idxs.size(); j++)
-	{
-		int p = path->motion_idxs[j]; // motion_idx
-		if (p >= 0 && p < pr->motionCount())
-		{
-			const Floats &sines = path->grads[j];
-			for (int i = 0; i < sines.size(); i++)
-			{
-				int n = p * pr->currentOrder() + i;
-				job(p, i, n);
-			}
-		}
-	}
-
-}
-
-float PlausibleRoute::evaluateMomentum(const float *x)
-{
-	do_on_each_path_component(this, _path,
-	[this, x](int p, int i, int n)
-	{
-		motion(p).wp._amps[i] = x[n];
-	});
-
-	float score = routeScore(nudgeCount());
-	
-	if (score < _bestScore)
-	{
-		_bestScore = score;
-		postScore(score);
-	}
-
-	return score;
-}
-*/
-
 std::vector<float> PlausibleRoute::prepareGradients(int size)
 {
 	const auto side_chain = [this](int idx) -> bool
@@ -634,68 +593,6 @@ bool PlausibleRoute::refineSegmentedMomentum()
 	std::cout << (meaningful ? "(meaningful)" : "(meaningless)") << std::endl;
 	return meaningful;
 }
-
-/*
-bool PlausibleRoute::refineMomentum()
-{
-	GradientPath *path = gradients(ValidateIndex{});
-
-	if (Route::_finish)
-	{
-		delete path;
-		return false;
-	}
-
-	float startScore = routeScore(nudgeCount());
-	_bestScore = startScore;
-
-	_path = path;
-	std::vector<float> current = save_current(path, _motions,
-	                                          currentOrder());
-	float endScore = 0;
-
-	LBFGSEngine engine(this, [&current]() { return current.size(); });
-	resetTickets();
-
-	engine.setGetScoreGetTicket
-	([this](int *job_id)
-	 {
-		float score = getResult(job_id, nullptr);
-		return score;
-	});
-	engine.setSendJobGetTicket
-	([this, current](const std::vector<float> &all)
-	 {
-		std::vector<float> copy = current;
-		for (int i = 0; i < copy.size(); i++)
-		{
-			copy[i] += all[i];
-		}
-		const float *x = &copy[0];
-		float result = evaluateMomentum(x);
-		int ticket = getNextTicket();
-		setScoreForTicket(ticket, result);
-		return ticket;
-	});
-	engine.setGetGradientVector
-	([this, &current]()
-	 {
-		std::vector<float> gs = prepareGradients(current.size());
-		return gs;
-	 });
-	engine.start();
-
-	sideChainGradients(currentOrder());
-	endScore = routeScore(nudgeCount());
-	
-	delete _path; _path = nullptr;
-	bool meaningful = endScore < startScore - 0.001;
-	std::cout << "n = " << current.size() << ", " << 
-	startScore << " --> " << endScore << " ";
-	std::cout << (meaningful ? "(meaningful)" : "(meaningless)") << std::endl;
-	return meaningful;
-}
-*/
 
 ResultBy<ScoreBucket> *PlausibleRoute::byResidueScore(int steps, 
                                                 const CalcOptions &add_options,
