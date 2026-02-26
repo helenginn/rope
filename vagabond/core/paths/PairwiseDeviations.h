@@ -48,24 +48,10 @@ struct TargetInfo
 	float dStart;
 	float dEnd;
 	bool close = false;
-	float mFrac = -1;
-	float dMid = -1;
 	
 	float target(float frac)
 	{
-		if (mFrac < 0 || frac < 0.01 || frac > 0.99)
-		{
-			float targdist = dStart + frac * (dEnd - dStart);
-			return targdist;
-		}
-		else
-		{
-			float start = (frac < mFrac ? dStart : dMid);
-			float end = (frac < mFrac ? dMid : dEnd);
-			float f = (frac < mFrac ? frac / mFrac : (frac - mFrac) / (1 - mFrac));
-			return start + f * (end - start);
-		}
-
+		return dStart + frac * (dEnd - dStart);
 	}
 };
 
