@@ -81,8 +81,7 @@ public:
 		return _pairs;
 	}
 
-	const std::vector<int> 
-	&pairsForResidue(const ScoreBucket &sb) const;
+	std::vector<int> &pairsForBlockIdx(const int &bidx);
 
 	const std::set<ScoreBucket> &residues() const
 	{
@@ -171,6 +170,13 @@ private:
 
 	glm::vec3 *_reference = nullptr;
 	std::map<ScoreBucket, std::vector<int>> _perResidue;
+
+	// for every pair (m, n), has an entry for each m, n
+	std::map<int, std::vector<int>> _perIdx;
+
+	// for every m near n, all m's pairs gets given to n
+	std::map<int, std::vector<int>> _neighbouring;
+
 	std::set<ScoreBucket> _residues;
 	std::map<AtomAtom, int> _atoms2Info;
 	std::vector<Atom *> _atoms;
