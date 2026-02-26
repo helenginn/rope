@@ -26,8 +26,9 @@ void GradientTerm::momentum(BondSequence *seq,
                             PairwiseDeviations *dev,
                             Separation *sep)
 {
-//	const std::vector<int> &pairs = dev->pairsForResidue(_bucket);
-	const std::vector<int> &pairs = dev->pairs();
+	const std::vector<int> &pairs = dev->pairsForBlockIdx(b_idx);
+//	const std::vector<int> &pairs = dev->pairs();
+	pair_num = pairs.size();
 	auto loop = [pairs](const JobOnPair &job)
 	{
 		job(pairs);
@@ -67,9 +68,10 @@ void GradientTerm::momentum(BondSequence *seq,
 
 		for (int i = 0; i < pairs.size(); i++)
 		{
-			TargetInfo &info = dev->info(i);
+			TargetInfo &info = dev->info(pairs[i]);
 			int p = info.p;
 			int q = info.q;
+
 			if (!dev->filter_in(p) || !dev->filter_in(q))
 			{
 				continue;
