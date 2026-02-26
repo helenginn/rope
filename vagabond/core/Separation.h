@@ -74,12 +74,19 @@ private:
 	};
 
 	void prepareSegment(const SortedVector &atoms);
+	
+	typedef std::pair<int, int> BlockRegion;
 
-	std::map<std::pair<int, int>, SortedVector> _atoms;
-	std::map<std::pair<int, int>, Eigen::MatrixXi> _matrices;
+	std::map<BlockRegion, SortedVector> _atoms;
+	std::map<BlockRegion, Eigen::MatrixXi> _matrices;
 	std::map<Atom *, int> _indices;
-	std::map<Atom *, std::pair<int, int>> _grouping;
-	std::map<int, std::pair<int, int>> _idxGroups;
+	std::map<Atom *, BlockRegion> _grouping;
+	std::map<int, BlockRegion> _idxGroups;
+
+	typedef std::set<int> GroupStarts;
+	GroupStarts _starts;
+	
+	BlockRegion &group_for_idx(int i);
 
 	int _fail = -1;
 };
