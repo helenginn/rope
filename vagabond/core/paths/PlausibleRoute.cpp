@@ -538,7 +538,8 @@ bool PlausibleRoute::refineSegmentedMomentum()
 	([this, &current, &param_equiv]()
 	 {
 		std::vector<float> gs = prepareGradients(current.size());
-		std::vector<float> gradients; gradients.resize(_paramPtrs.size());
+		std::vector<float> gradients; 
+		gradients.resize(_paramPtrs.size());
 		for (int i = 0; i < current.size(); i++)
 		{
 			int all_idx = param_equiv[i];
