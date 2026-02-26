@@ -241,7 +241,6 @@ std::vector<float> save_current(GradientPath *path, const RTMotion &motions,
                                  int to_order)
 {
 	std::vector<float> current = std::vector<float>(motions.size() * to_order);
-	std::cout << "we have: " << motions.size() * to_order << std::endl;
 
 	for (int i = 0; i < path->motion_idxs.size(); i++)
 	{
@@ -473,12 +472,6 @@ bool PlausibleRoute::refineSegmentedMomentum()
 	std::vector<float> current = save_current(path, _motions,
 	                                          currentOrder());
 	std::vector<int> param_equiv(current.size(), -1);
-	std::cout << "current: " << std::endl;
-	for (float &f : current)
-	{
-		std::cout << f << " ";
-	}
-	std::cout << std::endl;
 	float endScore = 0;
 
 	std::map<ScoreBucket, std::vector<int>> map;
@@ -538,17 +531,6 @@ bool PlausibleRoute::refineSegmentedMomentum()
 				}
 			}
 		}
-	}
-	std::cout << "Current: " << current.size() <<  std::endl;
-	
-	for (auto it = map.begin(); it != map.end(); it++)
-	{
-		std::cout << "Idxs: ";
-		for (int i = 0; i < 5; i ++)
-		{
-			std::cout << it->second[i] << ", ";
-		}
-		std::cout << std::endl;
 	}
 
 	MultiLBFGS<ScoreBucket> ms(this, parameterCount());
@@ -611,7 +593,6 @@ ResultBy<ScoreBucket> *PlausibleRoute::byResidueScore(int steps,
 
 	submitValue(options, steps);
 	retrieve();
-	float score = routeScore(nudgeCount());
 	_perResBin.releaseHorses();
 	ResultBy<ScoreBucket> *r = _perResBin.acquireObject();
 	return r;
