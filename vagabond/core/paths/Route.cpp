@@ -172,7 +172,8 @@ GradientPath *Route::submitGradients(const CalcOptions &options, int order,
 			int b_idx = idxs[j].first;
 			Parameter *p = basis->parameter(blocks[b_idx].torsion_idx);
 			int g_idx = j;
-			auto momentum_term = [sep, order, frac, g_idx, b_idx, p, pw]
+			auto momentum_term = [sep, order, frac, 
+			                      g_idx, b_idx, p, pw]
 			(BondSequence *seq) -> GradientTerm
 			{
 				std::function<Floats(const float &)> weights =
