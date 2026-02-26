@@ -18,6 +18,7 @@
 
 #include "MultiEngineBase.h"
 #include "LBFGSEngine.h"
+#include "lbfgs/WrapLBFGS.h"
 #include "engine/Task.h"
 #include <stdio.h>
 #include <stdexcept>
@@ -138,8 +139,10 @@ Task<void *, void *> *LBFGSEngine::taskedRun(MultiEngineBase *ms)
 		float endScore = 0;
 		std::vector<float> vals(n());
 
-		lbfgs(vals.size(), &vals[0], &endScore, &LBFGSEngine::evaluate,
-		      nullptr, this, &param);
+		WrapLBFGS wrapped(vals.size(), &vals[0], &endScore, 
+		                  &LBFGSEngine::evaluate, nullptr, 
+		                  this, &param);
+		wrapped.run();
 		
 		for (float &f : vals)
 		{
