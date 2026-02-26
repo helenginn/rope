@@ -380,3 +380,8 @@ PairwiseDeviations::contact_map(const std::set<ScoreBucket> &forResidues)
 }
 
 
+const std::vector<int> 
+&PairwiseDeviations::pairsForResidue(const ScoreBucket &sb) const
+{
+	return _perResidue.at(sb);
+}
