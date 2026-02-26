@@ -180,21 +180,6 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	_reference = scratch;
 }
 
-void PairwiseDeviations::addWaypoint(Atom *const &left, Atom *const &right,
-                                     const float &frac, const float &distance)
-{
-	std::pair<Atom *, Atom *> pair{left, right};
-	if (_atoms2Info.count(pair) == 0)
-	{
-		return;
-	}
-
-	const int &idx = _atoms2Info[pair];
-	TargetInfo &info = _infoPairs[idx];
-	float current = info.target(frac);
-	info.mFrac = frac;
-	info.dMid = current + distance;
-}
 
 auto simple(PairwiseDeviations *dev, float frac, std::set<ScoreBucket> forResidues)
 {
