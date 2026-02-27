@@ -142,6 +142,7 @@ std::vector<TorsRes4NN*> PathEntropy::getAtomsAndResidues(int numPaths, const st
 	}
 
 	delete workingPath;
+
 	model->unload();
 
 	return torsRes;
@@ -562,7 +563,8 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
    
     std::ofstream outputLR("linear_regression.csv");
- 
+    //std::ofstream outputALA("ala_angles_check.csv");
+
     for(int m = 0; m < numResPerModel; m++)
 	{	
         if (torsRes[m]->nAng > 0)
@@ -570,7 +572,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 				for(int i = 0; i < nf; i++)
 				{
 					phit[i] = std::vector<double> (torsRes[m]->nAng);
-
+                   
 					for (int j = 0; j < torsRes[m]->nAng; j++)
 					{
 						phit[i][j] = torsRes[m]->ang[timeDivisions][j][i];
@@ -593,13 +595,12 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 				std::vector<double> d(nf);
 
 				for(int i = 0; i < nf; i++)
-				{
-				   
+				{ 
 					for(int j = 0; j < nf; j++)
 					{
 						d[j] = dist_ang(phit[i], phit[j], torsRes[m]->nAng, torsRes[m]->bondSymmetry);
 						d[j] = deg2rad(d[j]);
-					}
+                	}
 
 					/* sort the distances */
 					std::sort(d.begin(), d.end());
@@ -662,7 +663,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 					entropy->sigmaTotal[k-1] = entropy->sigmaTotal[k-1] + entropy->sd1[m][k-1] * entropy->sd1[m][k-1];
 					entropy->meanDistTotal[k-1] = entropy->meanDistTotal[k-1] + entropy->dm1[m][k-1] * entropy->dm1[m][k-1];
 				}
-
+               
 				int weightCheck = 1;
 
 				std::vector<double> x(K-1);
@@ -673,6 +674,8 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 				{
 					y[k] = entk[k];
 					x[k] = meanDist[k+1];
+
+                    entropy->h1lm[m]+= entk[k];
 
                     outputLR << "entk[" << k << "], " << y[k] << "\t" << "meanDist[" << k+1 << "], " << x[k] << std::endl;
 					if(sigmak[k] > 1e-12)
@@ -692,17 +695,24 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 				std::vector<double> a(2);
 				std::vector<double> sd(2);
 
+
 				fitlw(y, x, w, K-1,a,sd);
 
-                outputLR << std::endl << "Intercept: " << a[0] << "\t" << "Slope: " << a[1] << "\n\n";
+                outputLR << std::endl << "Intercept: " << a[0] << "\t" << "Slope: " << a[1] << "\n";
 
-				entropy->h1lm[m] = a[0];
+			//	entropy->h1lm[m] = a[0];
 				entropy->sd1lm[m] = sd[0];
 				//entropy->dm1lm[m] = meanDist[1]/sqrt((double) torsRes[m]->nAng);
 				entropy->totalEntropy = entropy->totalEntropy + a[0];
+
+                outputLR << "Average unweighted ent[k]: " << entropy->h1lm[m]/(double) (K-1) << std::endl;
+                outputLR << torsRes[m]->resName << torsRes[m]->resID+1 << " difference" <<  a[0] - entropy->h1lm[m]/(double)(K-1) << std::endl << std::endl;
+         
+          
 	    }
     }          
 
+    //outputALA.close();
     outputLR.close();
 }
 
