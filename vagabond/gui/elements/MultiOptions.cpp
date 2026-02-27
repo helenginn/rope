@@ -18,7 +18,7 @@ MultiOptions::MultiOptions(Scene *scene, std::string text, std::string tag, Butt
 
 void MultiOptions::addYesNo(std::string ynText)
 {
-   //AskYesNo *ayn = new AskYesNo(this, std::string ynText, "mist", _sender);
+   //AskYesNo *ayn = new AskYesNo(this, ynText, "mist", _sender);
 }
 
 void MultiOptions::addSlider(std::string sliderText, float min, float max)
