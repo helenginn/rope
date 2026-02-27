@@ -203,13 +203,14 @@ void Dictator::processRequest(std::string &first, std::string &last)
         std::cout << "beginning heat map data generation..." << std::endl;
         std::vector<std::string> args = split(last, ',');
          
-        std::cout << args.size() << std::endl;
         if (args.size() < 2)
 	    {
+            std::cout << "Number of arguments: " << args.size() << std::endl;
 			std::cout << "Wrong number of arguments" << std::endl;
             return;
 		}
 
+        std::cout << "Calling map function" << std::endl;
         PathManager::manager()->pathEntropyHeatMap(args);
 
         std::cout << "done" << std::endl;
