@@ -227,7 +227,7 @@ void MakeNewPaths::prepare()
 		}
 	}
 
-	NewPath new_path(from, to, _blueprint);
+	NewPath new_path(from, to, _blueprint, _randomDegrees);
 	PlausibleRoute *route = new_path();
 	route->setMaximumMomentumDistance(_maxMomentumDistance);
 	route->setMaximumClashDistance(_maxClashDistance);
