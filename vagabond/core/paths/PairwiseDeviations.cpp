@@ -56,6 +56,7 @@ bool worth_checking_distance(const glm::vec3 &rest_i, const glm::vec3 &rest_j,
 
 void PairwiseDeviations::prepare(BondSequence *seq)
 {
+	std::cout << "Preparing pairwise deviations" << std::endl;
 	const std::vector<AtomBlock> &blocks = seq->blocks();
 	glm::vec3 *scratch = new glm::vec3[blocks.size() * 2];
 	_atoms = std::vector<Atom *>(blocks.size());
@@ -99,8 +100,20 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 	};
 	
 	std::vector<int> pairs;
-	
+
 	auto loop_over_atoms = [this](int n0, int n1, auto job)
+	{
+		for (int i = n0; i < n1 - 2; i += 2)
+		{
+			int m = i / 2;
+			Atom *left = _atoms[m];
+			if (!left) continue;
+
+			job(left, i);
+		}
+	};
+	
+	auto loop_over_atom_pairs = [this](int n0, int n1, auto job)
 	{
 		for (int i = n0; i < n1 - 2; i += 2)
 		{
@@ -119,73 +132,70 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 			}
 		}
 	};
-
-	auto populate_neighbours = [this, scratch]
-	(Atom *left, Atom *right, int i, int j)
+	
+	auto reserve_sizes = [this](Atom *const &atom, const int &i)
 	{
-		int p = i / 2; int q = j / 2;
-		/*
-		const float threshold = _limit;
-		const glm::vec3 &at_rest_i = scratch[i];
-		const glm::vec3 &at_rest_j = scratch[j];
-		const glm::vec3 &moving_i = scratch[i + 1];
-		const glm::vec3 &moving_j = scratch[j + 1];
+		int p = i / 2;
+		_neighbouring[p].reserve(10000);
+	};
 
-		if (!worth_checking_distance(at_rest_i, at_rest_j, 
-		                             moving_i, moving_j, 
-		                             threshold))
-		{
-			return;
-		}
-		*/
-		
-		auto check_pair = [&p, &q, this](int b)
-		{
-			if (_sep)
-			{
-				int lr = _sep->separationBetween(b, q);
-				int lc = _sep->separationBetween(b, p);
-				int cr = _sep->separationBetween(p, q);
-				if (lr < 0) { return false; }
-				if (lc < 0 || lc > lr) { return false; }
-				if (cr < 0) { return false; }
-				bool reject = (lc + cr - lr > 0);
-				if (reject) { return false; }
-				/*
-				if (p == 349)
-				{
-					std::cout << b << " " << p << " " << q << " - " 
-					<< lc << " " << cr << " " << lr << std::endl;
-				}
-				*/
-			}
+	auto shrink_sizes = [this](Atom *const &atom, const int &i)
+	{
+		int p = i / 2;
+		_neighbouring[p].shrink_to_fit();
+	};
 
-			return true;
-		};
-		
-		auto add_pairs = [this, &check_pair](int p, int q)
+	auto populate_neighbours = 
+	[this, scratch]
+	(const Separation::BlockRegion &br)
+	{
+		return [this, &br]
+		(Atom *left, Atom *right, int i, int j)
 		{
-			std::vector<int> &qPairs = _perIdx[q];
-			_neighbouring[p].reserve(_neighbouring[p].size() +
-			                         qPairs.size());
-			
-			for (const int &pair : qPairs)
+			int p = i / 2; int q = j / 2;
+
+			auto check_pair = [&p, &q, &br, this] (int b)
 			{
-				TargetInfo &pInfo = info(pair);
-				int m = pInfo.p; int n = pInfo.q;
-				int chosen = (m == q) ? n : m;
-				if (check_pair(chosen))
+				// sensitive distance between q and b
+				if (_sep)
 				{
-					_neighbouring[p].push_back(pair);
+					int lr = _sep->separationBetween(br, b, q);
+					if (lr < 0) { return false; }
+					int lc = _sep->separationBetween(br, b, p);
+					if (lc < 0 || lc > lr) { return false; }
+					int cr = _sep->separationBetween(br, p, q);
+					if (cr < 0) { return false; }
+					bool reject = (lc + cr - lr > 0);
+					if (reject) { return false; }
 				}
-			}
+
+				return true;
+			};
+
+			auto add_pairs = [this, &check_pair](int p, int q)
+			{
+				std::vector<int> &qPairs = _perIdx[q];
+				_neighbouring[p].reserve(_neighbouring[p].size());
+
+				for (const int &pair : qPairs)
+				{
+					TargetInfo &pInfo = info(pair);
+					int m = pInfo.p; int n = pInfo.q;
+					int chosen = (m == q) ? n : m;
+					if (check_pair(chosen))
+					{
+						_neighbouring[p].push_back(pair);
+					}
+				}
+			};
+
+			add_pairs(p, q);
+			add_pairs(q, p);
 		};
-		
-		add_pairs(p, q);
-		add_pairs(q, p);
 	};
 	
-	auto add_if_acceptable = [this, &scratch, 
+	auto add_if_acceptable = 
+	                          [this, &scratch, 
 	                          &distance_between_atoms]
 	(Atom *left, Atom *right, int i, int j)
 	{
@@ -263,13 +273,25 @@ void PairwiseDeviations::prepare(BondSequence *seq)
 		_atoms2Info[{right, left}] = size;
 	};
 	
+	std::cout << "Segments: " << gaps.size() - 1 << std::endl;
 	for (int i = 0; i < gaps.size() - 1; i++)
 	{
 		int n0 = gaps[i];
 		int n1 = gaps[i + 1];
-		loop_over_atoms(n0, n1, add_if_acceptable);
-		loop_over_atoms(n0, n1, populate_neighbours);
+		int p = n0 / 2 + 1;
+		Separation::BlockRegion br = {n0/2, n1/2};
+		if (_sep)
+		{
+			br = _sep->group_for_idx(p);
+		}
+		std::cout << "." << std::flush;
+
+		loop_over_atom_pairs(n0, n1, add_if_acceptable);
+		loop_over_atoms(n0, n1, reserve_sizes);
+		loop_over_atom_pairs(n0, n1, populate_neighbours(br));
+		loop_over_atoms(n0, n1, shrink_sizes);
 	}
+	std::cout << std::endl;
 	
 	_reference = scratch;
 }
