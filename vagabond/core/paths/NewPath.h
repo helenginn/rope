@@ -29,7 +29,8 @@ class Path;
 class NewPath
 {
 public:
-	NewPath(Instance *from, Instance *to, Path *blueprint = nullptr);
+	NewPath(Instance *from, Instance *to, Path *blueprint = nullptr,
+	        float randomDegrees = 0);
 	NewPath(Path *blueprint = nullptr);
 	
 	void addLinkedInstances(Instance *from, Instance *to);
@@ -49,6 +50,7 @@ private:
 	std::vector<InstancePair> _pairs;
 	Instance *_from = nullptr;
 	Instance *_to = nullptr;
+	float _randomPerturb = 0;
 
 };
 

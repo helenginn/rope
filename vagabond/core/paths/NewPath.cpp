@@ -22,10 +22,12 @@
 #include "Path.h"
 #include "Entity.h"
 
-NewPath::NewPath(Instance *from, Instance *to, Path *blueprint)
+NewPath::NewPath(Instance *from, Instance *to, Path *blueprint,
+                 float randomDegrees)
 {
 	addLinkedInstances(from, to);
 	_blueprint = blueprint;
+	_randomPerturb = randomDegrees;
 }
 
 NewPath::NewPath(Path *blueprint)
@@ -98,6 +100,13 @@ PlausibleRoute *NewPath::operator()()
 	{
 		RTMotion motions = _blueprint->motions();
 		motions.attachInstance(_from);
+		
+		for (int i = 0; i < motions.size(); i++)
+		{
+			motions.storage(i).wp._amps[0] += _randomPerturb * 
+			(rand() / (double)RAND_MAX - 0.5);
+		}
+
 		pr->setMotions(motions);
 		pr->setNew(false);
 	}
