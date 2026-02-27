@@ -43,10 +43,15 @@ public:
 		return _indices.at(a);
 	}
 	
+	typedef std::pair<int, int> BlockRegion;
+	
 	int separationBetween(Atom *const &a, Atom *const &b);
 	int separationBetween(int i, int j);
+	int separationBetween(const BlockRegion &br, int i, int j);
 
 	bool partOfSameMolecule(int m, int n);
+
+	BlockRegion &group_for_idx(int i);
 	
 	Eigen::MatrixXi::Scalar &operator()(Atom *const &a, Atom *const &b);
 private:
@@ -74,8 +79,6 @@ private:
 	};
 
 	void prepareSegment(const SortedVector &atoms);
-	
-	typedef std::pair<int, int> BlockRegion;
 
 	std::map<BlockRegion, SortedVector> _atoms;
 	std::map<BlockRegion, Eigen::MatrixXi> _matrices;
@@ -86,7 +89,6 @@ private:
 	typedef std::set<int> GroupStarts;
 	GroupStarts _starts;
 	
-	BlockRegion &group_for_idx(int i);
 
 	int _fail = -1;
 };
