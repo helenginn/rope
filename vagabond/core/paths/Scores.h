@@ -43,6 +43,11 @@ struct ScoreBucket
 	
 	bool operator<(const ScoreBucket &other) const;
 	bool operator==(const ScoreBucket &other) const;
+
+	bool operator!=(const ScoreBucket &other) const
+	{
+		return !(*this == other);
+	}
 	
 	bool single() const;
 	ScoreBucket()
