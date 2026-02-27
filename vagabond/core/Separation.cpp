@@ -217,6 +217,10 @@ int Separation::separationBetween(Atom *const &a, Atom *const &b)
 	return val;
 }
 
+int Separation::separationBetween(const BlockRegion &br, int i, int j)
+{
+	return _matrices[br](i - br.first, j - br.first);
+}
 
 int Separation::separationBetween(int i, int j)
 {
