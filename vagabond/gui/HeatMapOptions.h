@@ -27,6 +27,7 @@ private:
 
     PathEntropy *_pathEntropy = nullptr;
     struct FlagParameters _flagPar;
+
     std::vector<PathGroup> _paths;
     Entity *_entity = nullptr;
 
