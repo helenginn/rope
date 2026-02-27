@@ -54,6 +54,7 @@ struct TorsRes4NN {
     std::vector<std::vector<std::vector<double>>> ang{};
 	std::vector<glm::vec3> v{};
 	int resID{};
+    std::string resName{};
 };
 
 struct FlagParameters {
