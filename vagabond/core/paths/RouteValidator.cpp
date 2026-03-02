@@ -30,12 +30,6 @@ RouteValidator::RouteValidator(PlausibleRoute &route) : _route(route)
 
 float RouteValidator::validate(Instance *start, Instance *end)
 {
-	start->currentAtoms()->recalculate();
-	end->currentAtoms()->recalculate();
-
-	_route.submitToShow(1);
-	_route.retrieve();
-
 	end->superposeOn(start);
 	AtomGroup *grp = end->currentAtoms();
 	AtomGroup *nonH = grp->new_subset(rope::atom_is_not_hydrogen());
@@ -58,9 +52,17 @@ std::string RouteValidator::validate()
 
 	for (size_t i = 0; i < _route.instanceCount(); i++)
 	{
-		_route.startInstance(i)->load();
-		_route.endInstance(i)->load();
+		Instance *const &start = _route.startInstance(i);
+		Instance *const &end = _route.endInstance(i);
+		start->load();
+		end->load();
+
+		start->currentAtoms()->recalculate();
+		end->currentAtoms()->recalculate();
 	}
+
+	_route.submitToShow(1);
+	_route.retrieve();
 
 	for (size_t i = 0; i < _route.instanceCount(); i++)
 	{
