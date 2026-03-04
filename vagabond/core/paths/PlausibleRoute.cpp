@@ -351,7 +351,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 
 		WayPoints &wps = wayPoints(i);
 
-		for (int j = 0; j <= order; j++)
+		for (int j = 0; j < order; j++)
 		{
 			addFloatParameter(&wps._amps[j], step);
 			map[ScoreBucket(parameter(i)->anAtom())].push_back(n);
