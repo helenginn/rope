@@ -199,7 +199,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 
 	for (Atom *atom : grp->atomVector())
 	{
-		if (atom->elementSymbol() == "H")
+		if (atom->elementSymbol() == "H" || !atom->isMainChain())
 		{
 			continue;
 		}
@@ -434,6 +434,50 @@ glm::vec3 average_fiducials_position(const std::vector<Atom *> &fiducials)
 	return ave;
 }
 
+bool is_coplanar(const std::vector<Atom *> &neighbours)
+{
+	Eigen::MatrixXf posmat(3, 3);
+	glm::vec3 avg_fid = average_fiducials_position(neighbours);
+
+	posmat.setZero();	
+	for (Atom *fid : neighbours)
+	{
+		glm::vec3 derivpos = fid->derivedPosition() - avg_fid;
+	
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 3; j++)
+			{
+				posmat(i, j) += derivpos[i] * derivpos[j];
+			}
+		}
+	}
+	std::cout << "\n" << "POSMAT: " << posmat;		
+
+	// Eigen::MatrixXf pos_matrix(3, 4);
+
+	// int col = 0;
+	// for (Atom *fid : neighbours)
+	// {
+	// 	glm::vec3 pos = fid->derivedPosition();
+	// 	pos_matrix(0, col) = pos.x - avg_fid.x;
+	// 	pos_matrix(1, col) = pos.y - avg_fid.y;
+	// 	pos_matrix(2, col) = pos.z - avg_fid.z;
+	// 	col++;
+	// }
+
+	// // Calculate the 3x3 covariance matrix: (W * W^T)
+	// Eigen::MatrixXf covsvd = pos_matrix * pos_matrix.transpose();
+	// std::cout << "\n" << "COVSVD: " << covsvd;
+
+	Eigen::JacobiSVD<Eigen::MatrixXf> svd(posmat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+	std::cout << "\n" << "SVD Singular values: " << svd.singularValues().transpose();
+
+	bool svdplane = (svd.singularValues()(2) < 0.1f);
+	std::cout << ", Plane = " << svdplane << std::endl;
+	return svdplane;
+}
+
 void weighted_sums_for_side(NonCovalents::Interface &face, 
                             NonCovalents::Interface::Side &lefts, 
                             NonCovalents::Interface::Side &rights)
@@ -443,44 +487,7 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		auto l = closest_atoms(lefts.atoms, 4);
 		std::vector<Atom *> neighbours = (l(right)).toVector();
 
-		Eigen::MatrixXf posmat(3, 3);
-
-		posmat.setZero();	
-		for (Atom *fid : neighbours)
-		{
-			glm::vec3 derivpos = fid->derivedPosition() - average_fiducials_position(neighbours);
-		
-			for (int i = 0; i < 3; i++)
-			{
-				for (int j = 0; j < 3; j++)
-				{
-					posmat(i, j) += derivpos[i] * derivpos[j];
-				}
-			}
-		}
-		std::cout << "\n" << "POSMAT: " << posmat;		
-
-		// Eigen::MatrixXf pos_matrix(3, 4);
-
-		// int col = 0;
-		// for (Atom *fid : neighbours)
-		// {
-		// 	glm::vec3 pos = fid->derivedPosition();
-		// 	pos_matrix(0, col) = pos.x - average_fiducials_position(fid).x;
-		// 	pos_matrix(1, col) = pos.y - average_fiducials_position(fid).y;
-		// 	pos_matrix(2, col) = pos.z - average_fiducials_position(fid).z;
-		// 	col++;
-		// }
-
-		// // Calculate the 3x3 covariance matrix: (W * W^T)
-		// Eigen::MatrixXf covsvd = pos_matrix * pos_matrix.transpose();
-		// std::cout << "COVSVD: " << covsvd << "\n";
-
-		Eigen::JacobiSVD<Eigen::MatrixXf> svd(posmat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-		std::cout << "\n" << "SVD Singular values: " << svd.singularValues().transpose();
-
-		bool svdplane = (svd.singularValues()(2) < 0.1f);
-		std::cout << ", Plane = " << svdplane << std::endl;
+		bool svdplane = is_coplanar(neighbours);
 
 		NonCovalents::WeightedSum candidate = 
 		NonCovalents::WeightedSum(right, neighbours);
