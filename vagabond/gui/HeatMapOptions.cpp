@@ -4,6 +4,7 @@
 
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TickBoxes.h>
+#include <vagabond/gui/elements/TextButton.h>
 
 HeatMapOptions::HeatMapOptions(Scene *scene, const std::vector<Path*> paths) : Scene(scene)
 {
@@ -22,6 +23,7 @@ void HeatMapOptions::setup()
         sPaths->setDragResponder(this);
         sPaths->setup("Number of paths", 2, 11, 1);
         sPaths->setReturnTag("paths");
+	sPaths->setCentre(0.2, 0.5);
         addObject(sPaths);
     }
 
@@ -30,6 +32,7 @@ void HeatMapOptions::setup()
         sTime->setDragResponder(this);
         sTime->setup("Number of time divisions", 1, 10, 1);
         sTime->setReturnTag("timepoints");
+	sTime->setCentre(0.3, 0.5);
         addObject(sTime);
     }
 
@@ -38,6 +41,14 @@ void HeatMapOptions::setup()
         tb->addOption("mist");
         tb->arrange(0.4, 0.22, 0.9, 0.5);
         addObject(tb);
+    }
+
+    float bottom = 0.2;
+
+    {
+	    TextButton *t = new TextButton("Generate heat map", this);
+	    t->setRight(0.2, bottom);
+	    addObject(t);
     }
 }
 
