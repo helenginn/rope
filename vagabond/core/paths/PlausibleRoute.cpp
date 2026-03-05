@@ -319,6 +319,11 @@ OpSet<ScoreBucket> PlausibleRoute::worstSidechains(int num)
 
 bool PlausibleRoute::sideChainGradients(int order)
 {
+	if (order > _order - 1) 
+	{
+		order = _order - 1;
+	}
+
 	_paramPtrs.clear();
 	_paramStarts.clear();
 	_steps.clear();
@@ -347,7 +352,7 @@ bool PlausibleRoute::sideChainGradients(int order)
 
 		WayPoints &wps = wayPoints(i);
 
-		for (int j = 0; j < order; j++)
+		for (int j = 0; j <= order; j++)
 		{
 			addFloatParameter(&wps._amps[j], step);
 			map[ScoreBucket(parameter(i)->anAtom())].push_back(n);
