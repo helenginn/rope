@@ -107,7 +107,6 @@ void HeatMapOptions::loadOptions()
 	    sTime->setCentre(0.7, 0.65);
         addTempObject(sTime);
     }
-
 }
 
 void HeatMapOptions::buttonPressed(std::string tag, Button *button)
