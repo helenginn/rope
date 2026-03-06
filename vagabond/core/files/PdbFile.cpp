@@ -263,9 +263,11 @@ void PdbFile::parseFileContents()
 void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
                                     const std::string &model_name, bool altConfs)
 {
-	st.models.push_back(gemmi::Model());
+	std::map<int, gemmi::Model> models;
+	models[0] = gemmi::Model();
 	
-	gemmi::Model &m = st.models.back();
+	int mnum = 0;
+	std::string fullchain;
 	gemmi::Chain *c = nullptr;
 	
 	ResidueId prev("");
@@ -276,10 +278,30 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 	{
 		Atom *atom = (*grp)[i];
 
-		if (!c || atom->chain() != c->name)
+		if (!c || atom->chain() != fullchain)
 		{
-			m.chains.push_back(gemmi::Chain(atom->chain()));
-			c = &m.chains.back();
+			std::string ch; ch += atom->chain()[0];
+			std::string num;
+			num = atom->chain().substr(1, std::string::npos);
+			mnum = atoi(num.c_str());
+			
+			if (models.count(mnum) == 0)
+			{
+				models[mnum].chains.push_back(gemmi::Chain(ch));
+				c = &models[mnum].chains.back();
+			}
+			else
+			{
+				c = models[mnum].find_chain(ch);
+
+				if (!c)
+				{
+					models[mnum].chains.push_back(gemmi::Chain(ch));
+					c = &models[mnum].chains.back();
+				}
+			}
+
+			fullchain = atom->chain();
 		}
 
 		const ResidueId &id = atom->residueId();
@@ -334,6 +356,11 @@ void PdbFile::writeAtomsToStructure(AtomGroup *grp, gemmi::Structure &st,
 				}
 			}
 		}
+	}
+
+	for (auto it = models.begin(); it != models.end(); it++)
+	{
+		st.models.push_back(it->second);
 	}
 }
 
