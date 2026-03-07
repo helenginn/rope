@@ -97,6 +97,7 @@ public:
 		Atom *atom;
 		std::vector<Atom *> fiducials;
 		float ave_weight = 1;
+		float weight_variance = 0;
 
 		typedef std::function<glm::vec3(Atom *)> GetPos;
 		

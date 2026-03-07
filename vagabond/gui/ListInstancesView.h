@@ -40,7 +40,14 @@ public:
 		_toList = list;
 	}
 	
+	void setModels(class Model *from, class Model *to)
+	{
+		_fromModel = from;
+		_toModel = to;
+	}
+
 	virtual void setup();
+	virtual void refresh();
 	
 	const std::string &selected() const
 	{
@@ -72,6 +79,9 @@ private:
 
 	Map _fromTo;
 	
+	class Model *_fromModel = nullptr;
+	class Model *_toModel = nullptr;
+
 	std::string _selected;
 };
 

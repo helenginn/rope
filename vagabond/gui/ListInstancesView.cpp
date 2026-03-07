@@ -21,6 +21,7 @@
 #include <vagabond/gui/elements/Image.h>
 #include "ChooseHeader.h"
 #include "ListInstancesView.h"
+#include "PathInterfaceSetupView.h"
 
 ListInstancesView::ListInstancesView(Scene *prev) : ListView(prev)
 {
@@ -31,6 +32,48 @@ void ListInstancesView::setup()
 {
 	addTitle("Include instances");
 	ListView::setup();
+}
+
+void ListInstancesView::refresh()
+{
+	deleteTemps();
+	ListView::refresh();
+
+	size_t chosen = 0;
+	for (auto it = _fromTo.begin(); it != _fromTo.end(); it++)
+	{
+		auto &pair = it->second;
+		if (pair.active && pair.id.length() > 0)
+		{
+			chosen++;
+		}
+	}
+
+	if (chosen > 1)
+	{
+		TextButton *t = new TextButton("Next", this);
+		t->setRight(0.8, 0.8);
+		t->setReturnJob
+		([this]()
+		 {
+			std::map<std::string, std::string> simple_map;
+			for (auto it = _fromTo.begin(); it != _fromTo.end(); it++)
+			{
+				auto &pair = it->second;
+				if (pair.active && pair.id.length() > 0)
+				{
+					simple_map[it->first] = pair.id;
+				}
+			}
+
+			PathInterfaceSetupView *view;
+			view = new PathInterfaceSetupView(this, _fromModel, _toModel);
+			view->setMap(simple_map);
+			view->show();
+		 });
+
+		addTempObject(t);
+	}
 }
 
 size_t ListInstancesView::lineCount()
@@ -54,6 +97,7 @@ Renderable *ListInstancesView::getLine(int i)
 			 {
 				bool ticked = tb->isTicked(text);
 				_fromTo[text].active = ticked;
+				
 				refresh();
 			 });
 		}
@@ -98,6 +142,7 @@ void ListInstancesView::sendObject(std::string tag, void *object)
 	_fromTo[_selected].id = tag;
 	_fromTo[_selected].active = true;
 	std::cout << _selected << " to " << tag << std::endl;
+	
 	refresh();
 }
 

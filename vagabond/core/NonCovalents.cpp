@@ -408,11 +408,16 @@ NonCovalents::WeightedSum::WeightedSum(Atom *a,
 	OpVec<float> diffs = end_weights - start_weights;
 	
 	ave_weight = 0;
-	for (float &f : start_weights)
+	weight_variance = 0;
+	for (size_t i = 0; i < start_weights.size(); i++)
 	{
-		ave_weight += fabs(f);
+		ave_weight += fabs(start_weights[i]);
+		weight_variance += diffs[i] * diffs[i];
 	}
 	ave_weight /= (float)start_weights.size();
+	weight_variance /= (float)start_weights.size();
+	std::cout << "AVERAGE = " << ave_weight << std::endl;
+	std::cout << "VARIANCE = " << weight_variance << std::endl;
 
 	weights_for_frac = [start_weights, diffs](float frac)
 	{
@@ -500,8 +505,12 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
 		}
 
 		std::cout << "ave_weight = " << candidate.ave_weight;
+		std::cout << ", weight_variance = " << candidate.weight_variance;
 
-		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0 && svdplane == false)
+		const float MAX_VARIANCE = 0.5f;
+
+		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0 && 
+		    candidate.weight_variance < MAX_VARIANCE && svdplane == false)
 		{
 			if (candidate.ave_weight != candidate.ave_weight ||
 			    !isfinite(candidate.ave_weight))

@@ -137,11 +137,15 @@ void WholeModelPathSetupView::refresh()
 				std::vector<std::string> froms = instances_for(_fromId);
 				std::vector<std::string> tos = instances_for(_toId);
 
+				Model *from = ModelManager::manager()->model(_fromId);
+				Model *to = ModelManager::manager()->model(_toId);
+
 				ListInstancesView *view = new ListInstancesView(this);
 				view->setResponder(this);
 				view->setMap(_map);
 				view->setFromList(froms);
 				view->setToList(tos);
+				view->setModels(from, to);
 				view->show();
 
 			 });
@@ -154,7 +158,7 @@ void WholeModelPathSetupView::refresh()
 			addTempObject(info);
 		}
 
-		if (chosen > 0)
+		if (chosen > 1)
 		{
 			TextButton *t = new TextButton("Next", this);
 			t->setRight(0.8, 0.8);
