@@ -211,4 +211,7 @@ void ProbeBond::buttonPressed(std::string tag, Button *button)
 void ProbeBond::selected(int idx, bool inverse)
 {
 	_selected = !inverse;
+	float colour = (inverse ? 0.f : 0.3f);
+	Image::setColour(colour, colour, colour * 2.f);
+	Image::forceRender(true, false);
 }

@@ -39,6 +39,11 @@ public:
 	
 	virtual size_t requestedIndices();
 
+	BondProbe *bondProbe()
+	{
+		return _probe;
+	}
+
 	Probe *probe()
 	{
 		return _probe;

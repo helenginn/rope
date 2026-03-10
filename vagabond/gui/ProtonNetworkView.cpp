@@ -63,6 +63,12 @@ void ProtonNetworkView::findAtomProbes()
 	for (BondProbe *const &probe : _network.bondProbes())
 	{
 		ProbeBond *bond = new ProbeBond(this, probe);
+		if (probe && probe->left().atom() && probe->right().atom() &&
+		    (probe->left().atom()->elementSymbol() == "H" ||
+		    probe->right().atom()->elementSymbol() == "H"))
+		{
+			continue;
+		}
 		addObject((Image *)bond);
 		_bondProbes[probe] = bond;
 		_allProbes.insert(probe);
@@ -110,11 +116,17 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 		{
 			menu->addOption("arrange figure", [this]() { arrangeFigure(); });
 		}
+		else
+		{
+			menu->addOption("add to figure", [this]() { arrangeFigure(); });
+		}
 
 		menu->addOption("add neighbours", 
 		                [this]() { expandSelectionToNeighbours(); });
 		menu->addOption("complete residues", 
-		                [this]() { completeResidues(); });
+		                [this]() { completeResidues(false); });
+		menu->addOption("complete to C-alpha", 
+		                [this]() { completeResidues(true); });
 		
 		OpSet<Probe *> selected = selected_probes(_textProbes);
 		selected += selected_probes(_bondProbes);
@@ -123,11 +135,29 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 			// add option to remove
 			auto hide_selected = [this, selected]()
 			{
+				if (_shifter) { _shifter->pause(); }
 				for (Probe *probe : selected)
 				{
-					std::cout << "Hiding another probe: " << probe << std::endl;
 					probe->setHide(-1, false);
+					
+					if (_textProbes.count(probe))
+					{
+						if (_shifter)
+						{
+							_shifter->removePointer(_textProbes[probe]);
+						}
+						_textProbes[probe]->selected(0, true);
+					}
+					else if (_bondProbes.count(probe))
+					{
+						if (_shifter)
+						{
+							_shifter->removePointer(_bondProbes[probe]);
+						}
+						_bondProbes[probe]->selected(0, true);
+					}
 				}
+				if (_shifter) { _shifter->unpause(); }
 			};
 
 			menu->addOption("hide selection", hide_selected);
@@ -141,16 +171,19 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 
 void ProtonNetworkView::arrangeFigure()
 {
-	_2D = true;
-	
-	PositionShifter *shifter = new PositionShifter(getModel());
-	_shifter = shifter;
-	
 	auto make_getter = [](Probe *probe)
 	{
 		return [probe]() -> glm::vec3
 		{
 			return probe->position();
+		};
+	};
+
+	auto make_init = [](Probe *probe)
+	{
+		return [probe]() -> glm::vec3
+		{
+			return probe->_init;
 		};
 	};
 
@@ -161,9 +194,26 @@ void ProtonNetworkView::arrangeFigure()
 			probe->setPosition(vec);
 		};
 	};
+
+	// template this one
+	auto make_tidy = []<class ProbeType> (ProbeType *probe)
+	{
+		return [probe]()
+		{
+			probe->updatePosition();
+		};
+	};
 	
-	std::function<void(Probe *, OpSet<void *> &)> get_others_as_set;
-	get_others_as_set = [this, &get_others_as_set]
+	_2D = true;
+	
+	if (!_shifter)
+	{
+		_shifter = new PositionShifter(getModel());
+		_shifter->run();
+	}
+	
+	std::function<void(Probe *, OpSet<void *> &)> get_probes_as_set;
+	get_probes_as_set = [this, &get_probes_as_set]
 	(Probe *base, OpSet<void *> &growing)
 	{
 		for (Probe *other : base->others())
@@ -171,7 +221,7 @@ void ProtonNetworkView::arrangeFigure()
 			if (_bondProbes.count(other))
 			{
 				Probe *deeper = _bondProbes[other]->probe();
-				get_others_as_set(deeper, growing);
+				get_probes_as_set(deeper, growing);
 			}
 			if (_textProbes.count(other))
 			{
@@ -185,52 +235,48 @@ void ProtonNetworkView::arrangeFigure()
 	
 	std::vector<std::function<void()>> tidyJobs;
 
+	_shifter->pause();
 	for (auto it = _textProbes.begin(); it != _textProbes.end(); it++)
 	{
 		ProbeAtom *probe = it->second;
-		if (!probe->isSelected())
+		if (!probe->isSelected() && !_shifter->hasPointer(probe))
 		{
 			it->first->setHide(-1.f, false);
 		}
-		else
+		else if (!_shifter->hasPointer(probe))
 		{
-			shifter->addPosition(probe, make_getter(probe->probe()), 
-			                     make_setter(probe->probe()));
+			it->first->setHide(0.f, false);
+			_shifter->addPosition(probe, make_init(probe->probe()),
+			                      make_getter(probe->probe()), 
+			                      make_setter(probe->probe()));
 
 			OpSet<void *> set;
-			get_others_as_set(probe->probe(), set);
-			shifter->limitSensitivity(probe, set);
+			get_probes_as_set(probe->probe(), set);
+			_shifter->limitSensitivity(probe, set);
 
-			tidyJobs.push_back([probe]() { probe->updatePosition(); });
-			probe->selected(0, true);
+			_shifter->addTidy(make_tidy(probe));
 		}
+		probe->selected(0, true);
 	}
+	_shifter->unpause();
 
 	for (auto it = _bondProbes.begin(); it != _bondProbes.end(); it++)
 	{
 		ProbeBond *probe = it->second;
-		if (!probe->isSelected())
+		if (!probe->isSelected() && !_shifter->hasPointer(probe))
 		{
 			it->first->setHide(-1.f, false);
 		}
-		else
+		else if (!_shifter->hasPointer(probe))
 		{
-			tidyJobs.push_back([probe]() { probe->updatePosition(); });
-			probe->selected(0, true);
+			it->first->setHide(0.f, false);
+			_shifter->includePointer(probe);
+			_shifter->addTidy(make_tidy(probe));
 		}
+		probe->selected(0, true);
 	}
 	
-	auto tidy = [tidyJobs]()
-	{
-		for (const auto &tidyJob : tidyJobs)
-		{
-			tidyJob();
-		}
-	};
-	
-	shifter->setTidy(tidy);
-	shifter->setup();
-	shifter->run();
+	_shifter->tidy();
 }
 
 void ProtonNetworkView::sendObject(std::string tag, void *object)
@@ -284,21 +330,71 @@ void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
 	Scene::keyReleaseEvent(pressed);
 }
 
-void ProtonNetworkView::completeResidues()
+void ProtonNetworkView::completeResidues(bool stop_at_alpha)
 {
-	// get the initial selected probes into a set.
-	OpSet<Probe *> done = selected_probes(_textProbes);
-
-	OpSet<ResidueId> residues;
+	typedef std::pair<std::string, ResidueId> ChainRes;
+	OpSet<ChainRes> residues;
 	
 	// go through covalently bound atoms and extend to include all 
 	// existing residue IDs
 	
+	auto chain_res = [](Atom *const &atom) -> ChainRes
+	{
+		return {atom->chain(), atom->residueId()};
+	};
+	
+	auto initial_assessment = [&residues, chain_res](Probe *probe)
+	{
+		residues.insert(chain_res(probe->atom()));
+	};
+	
+	auto check_probe = [&residues, chain_res, stop_at_alpha]
+	(Probe *other, Probe *prev) -> bool
+	{
+		if (other->is_bond())
+		{
+			BondProbe *bp = static_cast<BondProbe *>(other);
+			// exclude those which bridge a hydrogen (nullptr atom)
+			if (!(bp->left().atom() && bp->right().atom()))
+			{
+				return false;
+			}
+			if (!(residues.count(chain_res(bp->left().atom())) &&
+			      residues.count(chain_res(bp->right().atom()))))
+			{
+				return false;
+			}
+			
+			if (stop_at_alpha && prev->atom() && prev->atom()->isReporterAtom())
+			{
+				return false;
+			}
+		}
+
+		if (other->atom() && 
+		    !residues.count(chain_res(other->atom())))
+		{
+			return false;
+		}
+
+		return true;
+	};
+	
+	completeOnCondition(initial_assessment, check_probe);
+}
+
+void ProtonNetworkView::
+completeOnCondition(std::function<void(Probe *probe)> initial_assessment,
+                    std::function<bool(Probe *probe, Probe *prev)> check_probe)
+{
+	// get the initial selected probes into a set.
+	OpSet<Probe *> done = selected_probes(_textProbes);
+
 	for (Probe *probe : done)
 	{
 		if (probe->atom())
 		{
-			residues.insert(probe->atom()->residueId());
+			initial_assessment(probe);
 		}
 	}
 
@@ -316,23 +412,7 @@ void ProtonNetworkView::completeResidues()
 					continue;
 				}
 				
-				if (other->is_bond())
-				{
-					BondProbe *bp = static_cast<BondProbe *>(other);
-					// exclude those which bridge a hydrogen (nullptr atom)
-					if (!(bp->left().atom() && bp->right().atom()))
-					{
-						continue;
-					}
-					if (!(residues.count(bp->left().atom()->residueId()) &&
-					      residues.count(bp->right().atom()->residueId())))
-					{
-						continue;
-					}
-				}
-
-				if (other->atom() && 
-				    !residues.count(other->atom()->residueId()))
+				if (!check_probe(other, probe))
 				{
 					continue;
 				}
@@ -381,6 +461,15 @@ void ProtonNetworkView::expandSelectionToNeighbours()
 				{
 					continue;
 				}
+				
+				if (other->is_bond())
+				{
+					BondProbe *bp = static_cast<BondProbe *>(other);
+					if (bp->_obj.value() == hnet::Bond::Broken)
+					{
+						continue;
+					}
+				}
 
 				std::cout << "inserting " << other->display() << std::endl;
 				done.insert(other);
@@ -405,20 +494,6 @@ void ProtonNetworkView::sendSelection(float t, float l, float b, float r,
                                       bool inverse)
 {
 	IndexResponseView::sendSelection(t, l, b, r, inverse);
-	
-	if (!inverse)
-	{
-		Menu *menu = new Menu(this);
-		menu->addOption("add neighbours", 
-		                [this]() { expandSelectionToNeighbours(); });
-		menu->addOption("complete residues", 
-		                [this]() { completeResidues(); });
-		float x, y;
-		getFractionalPos(x, y);
-		menu->setup(x + 0.1, y + 0.1);
-
-		setModal(menu);
-	}
 }
 
 void ProtonNetworkView::setManualAdjust(Probe *probe)

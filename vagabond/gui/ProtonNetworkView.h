@@ -67,7 +67,7 @@ public:
 
 	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
 	void expandSelectionToNeighbours();
-	void completeResidues();
+	void completeResidues(bool stop_at_alpha = false);
 
 private:
 	void arrangeFigure();
@@ -75,6 +75,10 @@ private:
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
+
+void completeOnCondition(std::function<void(Probe *probe)> initial_assessment,
+                         std::function<bool(Probe *probe, Probe *prev)> 
+                         check_probe);
 	
 	std::map<Probe *, ProbeAtom *> _textProbes;
 	std::map<Probe *, ProbeBond *> _bondProbes;
