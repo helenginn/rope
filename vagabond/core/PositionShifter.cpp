@@ -118,29 +118,55 @@ glm::vec3 PositionShifter::gradient(Element *ele)
 	glm::vec3 dir = {};
 	Element &left = *ele;
 	int count = 0;
+	OpSet<Element *> process;
+	OpSet<Element *> done;
 
 	for (Element &right : _objects)
 	{
-		if (&left == &right)
-		{
-			continue;
-		}
-		
 		if (_sensitivities.count(left.reference) && 
 		    !_sensitivities[left.reference].count(right.reference))
 		{
 			continue;
 		}
 
-		float target = glm::length(left.init - right.init);
-		glm::vec3 motion = left.getter() - right.getter();
-		float actual = glm::length(motion);
+		process.insert(&right);
+	}
+	
+	int depth = 2;
+	
+	while (depth > 0)
+	{
+		OpSet<Element *> tmp;
+		for (Element *right_ptr : process)
+		{
+			Element &right = *right_ptr;
 
-		float c = 2 * (target - actual);
-		glm::vec3 contrib = motion * c / actual;
+			if (&left == &right)
+			{
+				continue;
+			}
 
-		dir += contrib;
-		count++;
+			float target = glm::length(left.init - right.init);
+			glm::vec3 motion = left.getter() - right.getter();
+			float actual = glm::length(motion);
+
+			float c = 2 * (target - actual);
+			glm::vec3 contrib = motion * c / actual;
+
+			dir += contrib;
+			count++;
+			
+			for (void *sensitive : _sensitivities[right.reference])
+			{
+				if (sensitive && _map[sensitive] && !done.count(_map[sensitive]))
+				{
+					tmp.insert(_map[sensitive]);
+					done.insert(_map[sensitive]);
+				}
+			}
+		}
+		process = tmp;
+		depth--;
 	}
 
 	return dir;
@@ -179,8 +205,10 @@ void PositionShifter::move()
 		skip = _skip;
 	}
 
-	float alpha = 0.5;
-	float learning_rate = 0.0001;
+	float alpha = 0.2;
+	float learning_rate = 0.0005;
+	glm::vec3 average = {};
+	float count = 0;
 	for (Element &ele : _objects)
 	{
 		if (ele.reference == skip)
@@ -194,21 +222,25 @@ void PositionShifter::move()
 		{
 			motion = move;
 		}
+		average += motion;
+		count++;
 		
-		auto adjust = [&ele, motion, learning_rate]()
+		float z = _z;
+		auto adjust = [&ele, &average, motion, learning_rate, z]()
 		{
 			glm::vec3 current = ele.getter();
 			glm::vec3 little = motion * learning_rate;
-			if (glm::length(motion) > 1e-5)
-			{
-				current += motion * learning_rate;
-			}
+			glm::vec3 correction = average * learning_rate;
+			current += motion * learning_rate - correction;
+			current.z = z;
 			ele.setter(current);
 			ele.momentum = motion;
 		};
 		
 		adjustments.push_back(adjust);
 	}
+	
+	average /= count;
 
 	{
 		std::unique_lock<std::mutex> lock(_mutex);
