@@ -35,6 +35,24 @@ namespace hnet
 	class Coordinated;
 }
 
+struct AtomConf
+{
+	::Atom *ptr = nullptr;
+	char conformer = '\0';
+	
+	bool operator<(const AtomConf &other) const
+	{
+		if (ptr == other.ptr)
+		{
+			return conformer < other.conformer;
+		}
+		else
+		{
+			return ptr < other.ptr;
+		}
+	}
+};
+
 class Network
 {
 public:
@@ -93,6 +111,7 @@ public:
 private:
 	void establishAtom(::Atom *atom);
 
+	void setupInactiveAtom(::Atom *atom);
 	bool setupAmineNitrogen(::Atom *atom);
 	bool setupCarbonylOxygen(::Atom *atom);
 	bool setupSingleAlcohol(::Atom *atom);
@@ -128,8 +147,6 @@ private:
 
 	AtomGroup *_original = nullptr;
 	AtomGroup *_symMates = nullptr;
-	AtomGroup *_group = nullptr;
-	AtomGroup *_groupAndMates = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
 	
 	std::vector<Decree *> _decrees;

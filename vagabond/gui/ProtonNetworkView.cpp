@@ -134,8 +134,7 @@ void ProtonNetworkView::arrangeFigure()
 			}
 			if (_textProbes.count(other))
 			{
-				// disconnect absents
-				if (other->display() != " ")
+				if (!other->is_absent())
 				{
 					growing.insert(_textProbes[other]);
 				}
@@ -239,43 +238,124 @@ void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
 	Scene::keyReleaseEvent(pressed);
 }
 
-void ProtonNetworkView::expandSelectionToNeighbours()
+template <class Container>
+OpSet<Probe *> selected_probes(const Container &container)
 {
-	OpSet<Probe *> selected;
-	for (auto it = _textProbes.begin(); it != _textProbes.end(); it++)
+	OpSet<Probe *> done;
+	for (auto it = container.begin(); it != container.end(); it++)
 	{
 		ProbeAtom *probe = it->second;
 		if (probe->isSelected())
 		{
-			selected.insert(it->first);
+			done.insert(it->first);
 		}
 	}
 
-	// go through selected probes and add neighbours if they are in the set.
-	// continue until neighbours are exhausted
-	OpSet<Probe *> fresh;
+	return done;
+}
+
+void ProtonNetworkView::completeResidues()
+{
+	// get the initial selected probes into a set.
+	OpSet<Probe *> done = selected_probes(_textProbes);
+
+	OpSet<ResidueId> residues;
 	
+	// go through covalently bound atoms and extend to include all 
+	// existing residue IDs
+	
+	for (Probe *probe : done)
+	{
+		if (probe->atom())
+		{
+			residues.insert(probe->atom()->residueId());
+		}
+	}
+
+	OpSet<Probe *> fresh = done;
 	do
 	{
-		OpSet<Probe *> tmp = selected;
+		OpSet<Probe *> tmp = fresh;
 		fresh = {};
-		std::cout << "now we have " << selected.size() << std::endl;
 		for (Probe *probe : tmp)
 		{
-			std::cout << "Checking " << probe->display() << " which has " << probe->others().size() << " neighbours" <<  std::endl;
-
 			for (Probe *other : probe->others())
 			{
-				if (selected.count(other) > 0)
+				if (done.count(other) > 0)
 				{
-					std::cout << "\tgot " << other->display() << std::endl;
+					continue;
+				}
+				
+				if (other->is_bond())
+				{
+					BondProbe *bp = static_cast<BondProbe *>(other);
+					// exclude those which bridge a hydrogen (nullptr atom)
+					if (!(bp->left().atom() && bp->right().atom()))
+					{
+						continue;
+					}
+					if (!(residues.count(bp->left().atom()->residueId()) &&
+					      residues.count(bp->right().atom()->residueId())))
+					{
+						continue;
+					}
+				}
+
+				if (other->atom() && 
+				    !residues.count(other->atom()->residueId()))
+				{
 					continue;
 				}
 
-				selected.insert(other);
+				done.insert(other);
 				fresh.insert(other);
 
-				std::cout << "\tfound " << other->display() << std::endl;
+				if (other->atom() && _textProbes.count(other))
+				{
+					_textProbes[other]->selected(0, 0);
+				}
+				else if (_bondProbes.count(other))
+				{
+					_bondProbes[other]->selected(0, 0);
+				}
+			}
+		}
+
+	}
+	while (fresh.size() > 0);
+}
+
+void ProtonNetworkView::expandSelectionToNeighbours()
+{
+	// get the initial selected probes into a set.
+	OpSet<Probe *> done = selected_probes(_textProbes);
+
+	// go through selected probes and add neighbours if they are in the set.
+	// continue until neighbours are exhausted
+	OpSet<Probe *> fresh = done;
+	
+	do
+	{
+		OpSet<Probe *> tmp = fresh;
+		fresh = {};
+		for (Probe *probe : tmp)
+		{
+			for (Probe *other : probe->others())
+			{
+				if (done.count(other) > 0)
+				{
+					continue;
+				}
+
+				if (other->is_covalent())
+				{
+					continue;
+				}
+
+				std::cout << "inserting " << other->display() << std::endl;
+				done.insert(other);
+				fresh.insert(other);
+
 				if (_textProbes.count(other))
 				{
 					_textProbes[other]->selected(0, 0);
@@ -283,11 +363,10 @@ void ProtonNetworkView::expandSelectionToNeighbours()
 				else if (_bondProbes.count(other))
 				{
 					_bondProbes[other]->selected(0, 0);
-					continue;
 				}
 			}
-			std::cout << "Still got " << fresh.size() << " new" << std::endl;
 		}
+
 	}
 	while (fresh.size() > 0);
 }
@@ -302,12 +381,24 @@ void ProtonNetworkView::sendSelection(float t, float l, float b, float r,
 		Menu *menu = new Menu(this);
 		menu->addOption("add neighbours", 
 		                [this]() { expandSelectionToNeighbours(); });
+		menu->addOption("complete residues", 
+		                [this]() { completeResidues(); });
 		float x, y;
 		getFractionalPos(x, y);
 		menu->setup(x + 0.1, y + 0.1);
 
 		setModal(menu);
 	}
+}
+
+void ProtonNetworkView::setManualAdjust(Probe *probe)
+{
+	if (!_textProbes.count(probe))
+	{
+		return;
+	}
+
+	setManualAdjust(_textProbes.at(probe));
 }
 
 void ProtonNetworkView::setManualAdjust(ProbeAtom *probe)

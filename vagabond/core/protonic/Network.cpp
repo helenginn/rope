@@ -31,35 +31,6 @@
 
 using namespace hnet;
 
-void Network::findAtomAndNameIt(::Atom *atom, const std::string &atomName, 
-                                const std::string &name)
-{
-	for (int i = 0; i < atom->bondLengthCount(); i++)
-	{
-		::Atom *c = atom->connectedAtom(i);
-		if (c->atomName() == atomName)
-		{
-			AtomConnector &conn = add(new AtomConnector());
-			BondConnector &bond = add(new BondConnector());
-			add_constraint(new BondConstant(bond, Bond::Strong));
-
-			std::string str = name;
-			str += atom->residueId().str();
-			AtomProbe &sideProbe = add_probe(new AtomProbe(conn, c, str));
-
-			sideProbe.setMult(15);
-			AtomProbe *aProbe = _atomMap[atom]->probe();
-			add_probe(new BondProbe(bond, *aProbe, sideProbe));
-		}
-	}
-}
-
-void Network::showCarboxylAtom(::Atom *atom)
-{
-	findAtomAndNameIt(atom, "CG", "Asp");
-	findAtomAndNameIt(atom, "CD", "Glu");
-}
-
 template <typename Obtain>
 void shareProperty(Network *me, ::Atom *left, ::Atom *right, 
                    const Obtain &obtain, const Count::Values &allowable)
@@ -127,15 +98,6 @@ bool Network::setupSingleAlcohol(::Atom *atom)
 		str = atom->code() == "TYR" ? "Tyr" : "Thr";
 	}
 
-	if (str == "Tyr")
-	{
-		findAtomAndNameIt(atom, "CZ", str);
-	}
-	else
-	{
-		findAtomAndNameIt(atom, "CB", str);
-	}
-
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Four, Count::One);
 	return true;
 }
@@ -148,7 +110,6 @@ bool Network::setupLysineAmine(::Atom *atom)
 	}
 
 	_atomMap[atom]->prepareCoordinated(Count::One, Count::Four, Count::Two);
-	findAtomAndNameIt(atom, "CE", "Lys");
 	return true;
 }
 
@@ -183,9 +144,6 @@ bool Network::setupAsnGlnNitrogen(::Atom *atom)
 		bad = false;
 	}
 	if (bad) return false;
-
-	findAtomAndNameIt(atom, "CG", "Asn");
-	findAtomAndNameIt(atom, "CD", "Gln");
 
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::Two);
 	return true;
@@ -223,8 +181,6 @@ bool Network::setupHistidine(::Atom *atom)
 	shareCharges(atom, partner, charge_sum);
 	shareStrong(atom, partner, strong_sum);
 	
-	findAtomAndNameIt(atom, "CE1", "His");
-	findAtomAndNameIt(partner, "CE1", "His");
 	return true;
 }
 
@@ -287,9 +243,6 @@ bool Network::setupCarbonylOxygen(::Atom *atom)
 	{
 		bad = false;
 		coordination = Count::Three;
-
-		findAtomAndNameIt(atom, "CG", "Asn");
-		findAtomAndNameIt(atom, "CD", "Gln");
 	}
 	
 	if (bad)
@@ -328,7 +281,6 @@ bool Network::setupArginine(::Atom *atom)
 		                                   Count::One);
 	}
 
-	findAtomAndNameIt(atom, "CZ", "Arg");
 	return true;
 }
 
@@ -343,26 +295,63 @@ bool Network::setupTryptophan(::Atom *atom)
 	{ return false; }
 
 	_atomMap[atom]->prepareCoordinated(Count::Zero, Count::Three, Count::One);
-	findAtomAndNameIt(atom, "CD1", "Trp");
-	findAtomAndNameIt(atom, "CE2", "Trp");
 
 	return true;
+}
+
+void Network::setupInactiveAtom(::Atom *atom)
+{
+	AtomProbe *probe = _atom2Probe[atom];
+	
+	auto either_are_named_couple = []
+	(const std::string &a, const std::string &b)
+	{
+		return [a, b](::Atom *left, ::Atom *right) -> bool
+		{
+			return (left->atomName() == a && right->atomName() == b) ||
+			        (right->atomName() == a && left->atomName() == b);
+		};
+	};
+
+	for (int i = 0; i < atom->bondLengthCount(); i++)
+	{
+		::Atom *connected = atom->connectedAtom(i);
+		AtomProbe *other = _atom2Probe[connected];
+		if (!other || (other->_obj.value() == hnet::Atom::Inactive &&
+		    connected->atomNum() < atom->atomNum()))
+		{
+			continue;
+		}
+		
+		bool double_bond = false;
+
+		double_bond |= either_are_named_couple("C", "O")(connected, atom);
+
+		add_probe(new CovalentProbe(*probe, *other, double_bond));
+	}
+
 }
 	
 void Network::setupAtom(::Atom *atom)
 {
+	bool found = false;
 	if (_atomMap[atom]->bondCount())
 	{
-		setupAmineNitrogen(atom);
-		setupLysineAmine(atom);
-		setupAsnGlnNitrogen(atom);
-		setupCarbonylOxygen(atom);
-		setupCarboxylOxygen(atom);
-		setupSingleAlcohol(atom);
-		setupHistidine(atom);
-		setupArginine(atom);
-		setupTryptophan(atom);
-		setupWater(atom);
+		found |= setupAmineNitrogen(atom);
+		found |= setupLysineAmine(atom);
+		found |= setupAsnGlnNitrogen(atom);
+		found |= setupCarbonylOxygen(atom);
+		found |= setupCarboxylOxygen(atom);
+		found |= setupSingleAlcohol(atom);
+		found |= setupHistidine(atom);
+		found |= setupArginine(atom);
+		found |= setupTryptophan(atom);
+		found |= setupWater(atom);
+	}
+	
+	if (!found) // this atom is inactive.
+	{
+		setupInactiveAtom(atom);
 	}
 }
 
@@ -413,51 +402,51 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	_originalAndMates->add(mates);
 	_originalAndMates->add(_original);
 	_originalAndMates->orderByResidueId();
-
 	_originalAndMates->writeToFile("tmp.pdb");
 
-	_group = hydrogenDonorsFrom(_original);
-	_symMates = SymMates::getSymmetryMates(_group, spg_name, unit_cell, 4.0);
-	_groupAndMates = new AtomGroup();
-	_groupAndMates->add(_group);
-	_groupAndMates->add(_symMates);
-	_groupAndMates->orderByResidueId();
+	_symMates = SymMates::getSymmetryMates(_original, spg_name, unit_cell, 4.0);
 
-	std::cout << _group->size() << " original atoms." << std::endl;
+	AtomGroup *donors = hydrogenDonorsFrom(_original);
+	AtomGroup *symDonors = hydrogenDonorsFrom(_originalAndMates);
+	symDonors->orderByResidueId();
+
+	std::cout << _original->size() << " original atoms." << std::endl;
+	std::cout << donors->size() << " donor atoms from those." << std::endl;
 	std::cout << _symMates->size() << " symmetry atoms." << std::endl;
-	std::cout << _groupAndMates->size() << " original+symmetry atoms." << std::endl;
+	std::cout << _originalAndMates->size() << " original+symmetry atoms." << std::endl;
+	std::cout << symDonors->size() << " donor atoms from those." << std::endl;
 
 	// set up the connectors and probes for each atom
-	_group->do_op([this](::Atom *atom) { establishAtom(atom); });
-	// set up the connectors and probes for each symmetry-related atom
-	_symMates->do_op([this](::Atom *atom) { establishAtom(atom); });
+	_originalAndMates->do_op([this](::Atom *atom) { establishAtom(atom); });
+	// then set up the connectors and probes for each symmetry-related atom
+//	_symMates->do_op([this](::Atom *atom) { establishAtom(atom); });
 
 	// record the hydrogen-bonding neighbours for each atom
 	// generate connectors for each acquired bond
-	_group->do_op([this](::Atom *a)
+	donors->do_op([this, symDonors](::Atom *a)
 	{
-		_atomMap[a]->attachToNeighbours(_groupAndMates);
+		_atomMap[a]->attachToNeighbours(symDonors);
 	});
 
 	// here is when the coordination is prepared
-	_group->do_op([this](::Atom *a) { setupAtom(a); });
+	_original->do_op([this](::Atom *a) { setupAtom(a); });
 
 	// find sets of bonds which can/cannot participate in bonding together
-	_group->do_op([this](::Atom *a)
+	donors->do_op([this](::Atom *a)
 	              { _atomMap[a]->mutualExclusions(_originalAndMates); });
 
-	// find sets of bonds which can/cannot participate in bonding together
-	_group->do_op([this](::Atom *a)
+	// make sure bonds in the next crystal contact are the same as this asu
+	donors->do_op([this](::Atom *a)
 	              { _atomMap[a]->findSymmetricallyRelatedBonds(); });
 	
 	// set the previously determined adder constraints linking actual
 	// bonding patterns to the coordinated atom.
 	auto job = [this](::Atom *a) { _atomMap[a]->attachAdderConstraints(); };
 
-	_group->do_op(job);
+	donors->do_op(job);
 	
 	int failCount = 0;
-	_group->do_op([this, &failCount](::Atom *a)
+	donors->do_op([this, &failCount](::Atom *a)
 	{
 		failCount += (atomMap()[a]->failedCheck()) ? 1 : 0;
 	});
@@ -471,7 +460,7 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 
 glm::vec3 Network::centre() const
 {
-	return _group->initialCentre();
+	return _original->initialCentre();
 }
 
 Network::Network()

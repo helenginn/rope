@@ -56,7 +56,7 @@ namespace Bond
 };
 
 /*  definitions for atoms which either are hydrogen or absent */
-namespace Hydrogen
+namespace Existence
 {
 	enum Values
 	{
@@ -178,9 +178,9 @@ inline bool is_unassigned(const Atom::Values &val)
 	return (val == Atom::Unassigned);
 }
 
-inline bool is_unassigned(const Hydrogen::Values &val)
+inline bool is_unassigned(const Existence::Values &val)
 {
-	return (val == Hydrogen::Unassigned);
+	return (val == Existence::Unassigned);
 }
 
 inline bool is_unassigned(const Count::Values &val)
@@ -201,9 +201,9 @@ inline void init_unassigned(Bond::Values &val)
 	val = Bond::Unassigned;
 }
 
-inline void init_unassigned(Hydrogen::Values &val)
+inline void init_unassigned(Existence::Values &val)
 {
-	val = Hydrogen::Unassigned;
+	val = Existence::Unassigned;
 }
 
 inline void init_unassigned(Count::Values &val)
@@ -224,9 +224,9 @@ inline bool is_contradictory(const Atom::Values &val)
 	return (val == Atom::Contradiction);
 }
 
-inline bool is_contradictory(const Hydrogen::Values &val)
+inline bool is_contradictory(const Existence::Values &val)
 {
-	return (val == Hydrogen::Contradiction);
+	return (val == Existence::Contradiction);
 }
 
 inline bool is_contradictory(const Count::Values &val)
@@ -290,23 +290,23 @@ inline std::ostream &operator<<(std::ostream &ss, const Atom::Values &v)
 	return ss;
 }
 
-inline std::ostream &operator<<(std::ostream &ss, const Hydrogen::Values &v)
+inline std::ostream &operator<<(std::ostream &ss, const Existence::Values &v)
 {
 	switch (v)
 	{
-		case Hydrogen::Contradiction:
+		case Existence::Contradiction:
 		ss << std::string("Contradiction!");
 		break;
 
-		case Hydrogen::Absent:
+		case Existence::Absent:
 		ss << std::string("Absent");
 		break;
 
-		case Hydrogen::Present:
+		case Existence::Present:
 		ss << std::string("Present");
 		break;
 
-		case Hydrogen::Unassigned:
+		case Existence::Unassigned:
 		ss << std::string("Unassigned");
 		break;
 

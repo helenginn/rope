@@ -20,6 +20,7 @@
 
 #include <iostream>
 
+#include <vagabond/utils/FileReader.h>
 #include "Coordinated.h"
 #include "AtomGroup.h"
 
@@ -123,11 +124,25 @@ void Coordinated::probeAtom()
 	{
 		v = hnet::Atom::Sulphur;
 	}
+	else
+	{
+		v = hnet::Atom::Inactive;
+	}
 
 	_connector = &(add(new AtomConnector()));
 	_network.add_constraint(new AtomConstant(*_connector, v));
+	
+	std::string str = "";
+	if (_atom->isReporterAtom())
+	{
+		str = _atom->code();
+		to_lower(str);
+		str[0] = _atom->code()[0];
+		str += _atom->residueId().str();
+	}
 
-	_probe = &(_network.add_probe(new AtomProbe(*_connector, _atom)));
+	_probe = &(_network.add_probe(new AtomProbe(*_connector, _atom, str)));
+	_probe->setMult(15);
 	
 	if (_atom->symmetryCopyOf())
 	{
@@ -617,6 +632,11 @@ void Coordinated::mutualExclusions(AtomGroup *clashCheck)
 
 void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 {
+	if (_connector->value() == hnet::Atom::Inactive)
+	{
+		return;
+	}
+
 	AtomGroup *search = findNeighbours(searchGroup, _atom->initialPosition(),
 	                                   3.2, true);
 	AtomProbe *ref = atomMap()[_atom]->probe();
@@ -627,6 +647,10 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 	for (::Atom *const &candidate : search->atomVector()) 
 	{
 		AtomProbe *other = atomMap()[candidate]->probe();
+		if (other->_obj.value() == hnet::Atom::Inactive)
+		{
+			continue;
+		}
 		
 		HydrogenConnector &h = add(new HydrogenConnector());
 		HydrogenProbe &hProbe = _network.add_probe(new HydrogenProbe(h, *ref, 

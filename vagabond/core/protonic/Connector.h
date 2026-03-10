@@ -199,7 +199,7 @@ struct Connector
 
 typedef Connector<Atom::Values> AtomConnector;
 typedef Connector<Bond::Values> BondConnector;
-typedef Connector<Hydrogen::Values> HydrogenConnector;
+typedef Connector<Existence::Values> HydrogenConnector;
 typedef Connector<Count::Values> CountConnector;
 
 /* union to store created connectors in a list */

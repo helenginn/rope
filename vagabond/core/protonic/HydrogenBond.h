@@ -89,27 +89,27 @@ struct HydrogenBond
 	bool impose(void *prev)
 	{
 		Bond::Values forLeft = _left.value();
-		Hydrogen::Values forCentre = _centre.value();
+		Existence::Values forCentre = _centre.value();
 		Bond::Values forRight = _right.value();
 
-		if ((_centre.value() == Hydrogen::Absent) ||
+		if ((_centre.value() == Existence::Absent) ||
 		    bond_definitely_not_used(_left.value()) ||
 		    bond_definitely_not_used(_right.value()))
 		{
 			/* if anything is absent, hydrogen & all bonds must also be absent */
 			forLeft = Bond::Values(forLeft & Bond::NotPresent);
-			forCentre = Hydrogen::Values(forCentre & Hydrogen::Absent);
+			forCentre = Existence::Values(forCentre & Existence::Absent);
 			forRight = Bond::Values(forRight & Bond::NotPresent);
 		}
 
-		if ((_centre.value() == Hydrogen::Present) ||
+		if ((_centre.value() == Existence::Present) ||
 		    bond_definitely_present(_left.value()) ||
 		    bond_definitely_present(_right.value()))
 		{
 			/* if anything is present, hydrogen & all bonds must also be present */
 			forLeft = Bond::Values(forLeft & Bond::Present);
 			forRight = Bond::Values(forRight & Bond::Present);
-			forCentre = Hydrogen::Values(forCentre & Hydrogen::Present);
+			forCentre = Existence::Values(forCentre & Existence::Present);
 		}
 
 		/* must also impose the strong/weak bond dichotomy, 

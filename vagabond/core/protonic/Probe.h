@@ -51,6 +51,21 @@ public:
 	{
 		_pos = position;
 	}
+
+	virtual bool is_absent()
+	{
+		return false;
+	}
+
+	virtual bool is_covalent()
+	{
+		return false;
+	}
+
+	virtual bool is_bond()
+	{
+		return false;
+	}
 	
 	void register_probe(Probe *other)
 	{
@@ -183,6 +198,10 @@ public:
 			str = "S";
 			break;
 
+			case hnet::Atom::Inactive:
+			str = " ";
+			break;
+
 			case hnet::Atom::Contradiction:
 			str = "!";
 			break;
@@ -230,23 +249,23 @@ public:
 	virtual std::string display()
 	{
 		std::string str;
-		hnet::Hydrogen::Values val = _obj.value();
+		hnet::Existence::Values val = _obj.value();
 
 		switch (val)
 		{
-			case hnet::Hydrogen::Absent:
+			case hnet::Existence::Absent:
 			str = " ";
 			break;
 
-			case hnet::Hydrogen::Present:
+			case hnet::Existence::Present:
 			str = "H";
 			break;
 
-			case hnet::Hydrogen::Contradiction:
+			case hnet::Existence::Contradiction:
 			str = "!";
 			break;
 
-			case hnet::Hydrogen::Unassigned:
+			case hnet::Existence::Unassigned:
 			str = "?";
 			break;
 
@@ -278,10 +297,16 @@ public:
 		return _obj.is_certain();
 	}
 
+	virtual bool is_absent()
+	{
+		return _obj.value() == hnet::Existence::Absent;
+	}
+
 	hnet::HydrogenConnector &_obj;
 	AtomProbe &_left;
 	AtomProbe &_right;
 };
+
 
 class BondProbe : public Probe
 {
@@ -313,7 +338,22 @@ public:
 	{
 		return false;
 	}
-	
+
+	Probe &left() const
+	{
+		return _left;
+	}
+
+	Probe &right() const
+	{
+		return _right;
+	}
+
+	virtual bool is_bond()
+	{
+		return true;
+	}
+
 	virtual std::string display()
 	{
 		std::string str;
@@ -362,6 +402,57 @@ public:
 	Probe &_left;
 	Probe &_right;
 };
+
+class CovalentProbe : public BondProbe
+{
+public:
+	CovalentProbe(Probe &left, Probe &right, bool doubleBond) 
+	: BondProbe(_silent, left, right)
+	{
+		_doubleBond = doubleBond;
+	}
+
+	virtual const glm::vec3 &position() const
+	{
+		return _left.position();
+	}
+	
+	const glm::vec3 &end() const
+	{
+		return _right.position();
+	}
+
+	virtual bool is_covalent()
+	{
+		return true;
+	}
+
+	virtual bool is_text()
+	{
+		return false;
+	}
+	
+	virtual std::string display()
+	{
+		if (_doubleBond)
+		{
+			return "double_bond";
+		}
+		else
+		{
+			return "single_bond";
+		}
+	}
+
+	virtual bool is_certain()
+	{
+		return _left.is_certain() && _right.is_certain();
+	}
+
+	bool _doubleBond{false};
+	hnet::BondConnector _silent{};
+};
+
 
 class CountProbe : public Probe
 {

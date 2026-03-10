@@ -87,6 +87,12 @@ void ProbeBond::offerBondMenu()
 
 void ProbeBond::interacted(int idx, bool hover, bool left)
 {
+	if (hover)
+	{
+		Probe *pr = &_probe->left();
+		_view->setManualAdjust(pr);
+	
+	}
 	if (!hover && !left)
 	{
 		offerBondMenu();
@@ -118,9 +124,16 @@ void ProbeBond::updatePosition()
 {
 	glm::vec3 start = _probe->position();
 	glm::vec3 end = _probe->end();
-	glm::vec3 dir = end - start;
-	dir /= 4.f;
-	fixVertices(start + dir, end - start - 2.f * dir);
+	glm::vec3 truncate = (end - start) / 4.f;
+	
+	float left = 0;
+	float right = 0;
+	if (_probe->_left.display() != " ") {left += 1; right -= 1; }
+	if (_probe->_right.display() != " ") { right -= 1; }
+
+	fixVertices(start + truncate * left, 
+	            end - start + truncate * right);
+
 	Image::forceRender(true, true);
 }
 

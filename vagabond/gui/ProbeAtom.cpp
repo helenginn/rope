@@ -101,11 +101,11 @@ void ProbeAtom::offerHydrogenMenu()
 {
 	HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
 
-	std::vector<Hydrogen::Values> options = hProbe->_obj.values();
+	std::vector<Existence::Values> options = hProbe->_obj.values();
 
 	Menu *m = new Menu(_view, this);
 	
-	for (const Hydrogen::Values &option : options)
+	for (const Existence::Values &option : options)
 	{
 		std::ostringstream ss;
 		ss << option;
@@ -128,11 +128,6 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 	if (!left && !hover && !_probe->is_atom())
 	{
 		offerHydrogenMenu();
-	}
-	
-	if (left && hover)
-	{
-//		_view->setManualAdjust(this);
 	}
 }
 
@@ -164,13 +159,13 @@ void ProbeAtom::selected(int idx, bool inverse)
 	FloatingText::forceRender(true, false);
 }
 
-void ProbeAtom::declareHydrogen(Hydrogen::Values value)
+void ProbeAtom::declareHydrogen(Existence::Values value)
 {
 	std::string name = "Declare hydrogen";
 	Decree *d = _view->network().newDecree(name);
 
 	HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
-	std::string present = (value == Hydrogen::Present ? "present" : "absent");
+	std::string present = (value == Existence::Present ? "present" : "absent");
 
 	std::string message = "Declare hydrogen " + present;
 
@@ -197,11 +192,11 @@ void ProbeAtom::buttonPressed(std::string tag, Button *button)
 {
 	if (tag == "setH_Present")
 	{
-		declareHydrogen(Hydrogen::Present);
+		declareHydrogen(Existence::Present);
 	}
 	else if (tag == "setH_Absent")
 	{
-		declareHydrogen(Hydrogen::Absent);
+		declareHydrogen(Existence::Absent);
 	}
 
 }

@@ -59,6 +59,7 @@ public:
 		return _selected;
 	}
 
+
 	virtual void interacted(int idx, bool hover, bool left);
 	virtual void reindex();
 	virtual void selected(int idx, bool inverse);
@@ -67,7 +68,7 @@ private:
 	void hoverOverAtom();
 	void offerAtomMenu();
 	void offerHydrogenMenu();
-	void declareHydrogen(hnet::Hydrogen::Values value);
+	void declareHydrogen(hnet::Existence::Values value);
 
 	Probe *_probe = nullptr;
 

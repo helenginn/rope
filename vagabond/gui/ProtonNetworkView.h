@@ -58,6 +58,7 @@ public:
 	}
 	
 	void setManualAdjust(ProbeAtom *probe);
+	void setManualAdjust(Probe *probe);
 	
 	void setMenu(Menu *menu);
 	virtual void keyReleaseEvent(SDL_Keycode pressed);
@@ -66,6 +67,7 @@ public:
 
 	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
 	void expandSelectionToNeighbours();
+	void completeResidues();
 
 private:
 	void arrangeFigure();
