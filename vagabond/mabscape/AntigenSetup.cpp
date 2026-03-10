@@ -19,6 +19,8 @@
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/gui/elements/ImageButton.h>
+#include <vagabond/gui/ModelTopologyView.h>
 #include <vagabond/gui/FileView.h>
 #include <vagabond/core/files/PdbFile.h>
 #include <vagabond/core/AtomContent.h>
@@ -38,9 +40,7 @@ void AntigenSetup::prepareChoosePDB()
 		{
 			PdbFile pdb(filename);
 			pdb.parse();
-			AtomGroup *grp = pdb.atoms();
-			_antigen.atoms = grp;
-			_antigen.filename = filename;
+			_antigen.model.setFilename(filename);
 			_antigen.title = filename.substr(0, filename.rfind('.'));
 			refresh();
 		}
@@ -58,7 +58,8 @@ void AntigenSetup::prepareChoosePDB()
 		fv->show();
 	};
 
-	std::string name = _antigen.filename.length() ? _antigen.filename : "choose";
+	std::string name = _antigen.model.filename().length() 
+	? _antigen.model.filename() : "choose";
 	TextButton *tb = new TextButton(name, this);
 	tb->setRight(0.8, 0.3);
 	tb->setReturnJob(choose_pdb);
@@ -87,6 +88,38 @@ void AntigenSetup::prepareChooseTitle()
 	addTempObject(te);
 }
 
+void AntigenSetup::prepareAssignChains()
+{
+	if (_antigen.model.filename().length() == 0)
+	{
+		return;
+	}
+
+	Text *text = new Text("Assign chains");
+	text->setLeft(0.2, 0.5);
+	addTempObject(text);
+	
+	auto show_topology = [this]()
+	{
+		if (_antigen.model.filename().length() == 0)
+		{
+			BadChoice *bc = new BadChoice(this, "Error: filename missing");
+			setModal(bc);
+		}
+		else
+		{
+			ModelTopologyView *mtv = 
+			new ModelTopologyView(this, _antigen.model);
+			mtv->show();
+		}
+	};
+
+	ImageButton *t = ImageButton::arrow(-90., this);
+	t->setReturnJob(show_topology);
+	t->setCentre(0.8, 0.5);
+	addTempObject(t);
+}
+
 void AntigenSetup::setup()
 {
 	addTitle("Antigen details");
@@ -97,6 +130,7 @@ void AntigenSetup::setup()
 	
 	prepareChoosePDB();
 	prepareChooseTitle();
+	prepareAssignChains();
 }
 
 void AntigenSetup::refresh()
@@ -104,4 +138,5 @@ void AntigenSetup::refresh()
 	deleteTemps();
 	prepareChoosePDB();
 	prepareChooseTitle();
+	prepareAssignChains();
 }
