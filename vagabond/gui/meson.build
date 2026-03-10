@@ -109,6 +109,8 @@ guifiles = [
 'MetadataView.cpp',
 'ModelMenu.cpp',
 'ModelMetadataView.cpp',
+'ModelTopologyView.cpp',
+'ModelTopologyView.h',
 'ParamTweaker.cpp',
 'ParamTweaker.h',
 'PathTweaker.cpp',
