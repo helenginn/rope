@@ -164,17 +164,9 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 	AtomGroup *compare = second.grp;
 	
 	GroupBounds bounds_grp(grp);
-	GroupBounds bounds_compare(compare);
-
-	for (int i = 0; i < 3; i++)
+	if (!bounds_grp.worth_checking_interface_with(compare, 5))
 	{
-		glm::vec3 &min1 = bounds_grp.min;
-		glm::vec3 &max1 = bounds_compare.max;
-		if (max1[i] < min1[i] - 5) return interface;
-
-		glm::vec3 &max2 = bounds_grp.max;
-		glm::vec3 &min2 = bounds_compare.min;
-		if (max2[i] < min2[i] - 5) return interface;
+		return interface;
 	}
 	
 	auto valid_distance = [](glm::vec3 &a, glm::vec3 &b) -> bool

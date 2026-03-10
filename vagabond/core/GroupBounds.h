@@ -67,6 +67,26 @@ struct GroupBounds
 	glm::vec3 min{};
 	glm::vec3 max{};
 	bool _done = false;
+	
+	bool worth_checking_interface_with(AtomGroup *other, 
+	                                   float min_dist)
+	{
+		AtomGroup *compare = other;
+		GroupBounds bounds_compare(compare);
+
+		for (int i = 0; i < 3; i++)
+		{
+			glm::vec3 &min1 = min;
+			glm::vec3 &max1 = bounds_compare.max;
+			if (max1[i] < min1[i] - min_dist) return false;
+
+			glm::vec3 &max2 = max;
+			glm::vec3 &min2 = bounds_compare.min;
+			if (max2[i] < min2[i] - min_dist) return false;
+		}
+
+		return true;
+	}
 };
 
 #endif
