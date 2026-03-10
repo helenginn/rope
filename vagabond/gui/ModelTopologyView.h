@@ -19,11 +19,15 @@
 #ifndef __vagabond__ModelTopologyView__
 #define __vagabond__ModelTopologyView__
 
-#include <vagabond/gui/elements/Scene.h>
+#include <vagabond/gui/elements/Mouse3D.h>
+#include <map>
 
 class Model;
+class Chain;
+class FloatingImage;
+class PositionShifter;
 
-class ModelTopologyView : public Scene
+class ModelTopologyView : public Mouse3D
 {
 public:
 	ModelTopologyView(Scene *prev, Model &contents);
@@ -31,7 +35,19 @@ public:
 
 	virtual void setup();
 private:
-	Model &_model{};
+	void makeShifter();
+	void makeDots();
+	void addLinks();
+	Model &_model;
+	PositionShifter *_shifter{};
+	
+	typedef struct 
+	{
+		Chain *ch;
+		glm::vec3 pos;
+	} ChainInfo;
+
+	std::map<FloatingImage *, ChainInfo> _map;
 
 };
 
