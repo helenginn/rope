@@ -35,16 +35,33 @@ public:
 	ProbeAtom(ProtonNetworkView *view, AtomProbe *probe);
 	ProbeAtom(ProtonNetworkView *view, HydrogenProbe *probe);
 
+	void updatePosition();
 	void updateProbe();
 	void fullUpdate();
+	
+	Probe *probe()
+	{
+		return _probe;
+	}
 
 	virtual size_t requestedIndices()
 	{
 		return 1;
 	}
 
+	virtual bool selectable() const
+	{
+		return true;
+	}
+	
+	bool isSelected() const
+	{
+		return _selected;
+	}
+
 	virtual void interacted(int idx, bool hover, bool left);
 	virtual void reindex();
+	virtual void selected(int idx, bool inverse);
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
 	void hoverOverAtom();
@@ -55,6 +72,7 @@ private:
 	Probe *_probe = nullptr;
 
 	ProtonNetworkView *_view = nullptr;
+	bool _selected{};
 };
 
 #endif

@@ -19,6 +19,7 @@
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/core/protonic/hnet.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <sstream>
 #include "ProtonNetworkView.h"
 #include "ProbeBond.h"
 
@@ -26,39 +27,45 @@ using namespace hnet;
 
 void ProbeBond::fixVertices(const glm::vec3 &start, const glm::vec3 &dir)
 {
-	Image::clearVertices();
+	Image::_vertices.resize(4);
 
 	{
-		Snow::Vertex &v = Image::addVertex(start);
+		Snow::Vertex &v = Image::_vertices[0];
+		v.pos = start;
 		v.normal = dir;
 		v.tex[0] = -0.5;
 		v.tex[1] = 0;
 	}
 
 	{
-		Snow::Vertex &v = Image::addVertex(start + dir);
+		Snow::Vertex &v = Image::_vertices[1];
+		v.pos = start + dir;
 		v.normal = dir;
 		v.tex[0] = -0.5;
 		v.tex[1] = 1;
 	}
 
 	{
-		Snow::Vertex &v = Image::addVertex(start);
+		Snow::Vertex &v = Image::_vertices[2];
+		v.pos = start;
 		v.normal = dir;
 		v.tex[0] = +0.5;
 		v.tex[1] = 0;
 	}
 
 	{
-		Snow::Vertex &v = Image::addVertex(start + dir);
+		Snow::Vertex &v = Image::_vertices[3];
+		v.pos = start + dir;
 		v.normal = dir;
 		v.tex[0] = +0.5;
 		v.tex[1] = 1;
 	}
 
-	Image::addIndices(-4, -3, -2);
-	Image::addIndices(-3, -2, -1);
-
+	if (Image::_indices.size() == 0)
+	{
+		Image::addIndices(-4, -3, -2);
+		Image::addIndices(-3, -2, -1);
+	}
 }
 
 void ProbeBond::offerBondMenu()
@@ -103,8 +110,24 @@ size_t ProbeBond::requestedIndices()
 
 void ProbeBond::updateProbe()
 {
-	Image::setAlpha(_probe->alpha());
 	changeImage("assets/images/" + _probe->display() + ".png");
+	Image::setAlpha(_probe->alpha());
+}
+
+void ProbeBond::updatePosition()
+{
+	glm::vec3 start = _probe->position();
+	glm::vec3 end = _probe->end();
+	glm::vec3 dir = end - start;
+	dir /= 4.f;
+	fixVertices(start + dir, end - start - 2.f * dir);
+	Image::forceRender(true, true);
+}
+
+void ProbeBond::fullUpdate()
+{
+	updateProbe();
+	updatePosition();
 }
 
 ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
@@ -117,13 +140,8 @@ ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 	Image::setFragmentShaderFile("assets/shaders/axes.fsh");
 	Image::setUsesProjection(true);
 
-	glm::vec3 start = _probe->position();
-	glm::vec3 end = _probe->end();
-	glm::vec3 dir = end - start;
-	dir /= 4.f;
-	fixVertices(start + dir, end - start - 2.f * dir);
-	
-	updateProbe();
+	fullUpdate();
+
 	_probe->_obj.set_update([this](){ updateProbe(); });
 }
 
@@ -173,4 +191,9 @@ void ProbeBond::buttonPressed(std::string tag, Button *button)
 		declareBond(Bond::Broken);
 	}
 
+}
+
+void ProbeBond::selected(int idx, bool inverse)
+{
+	_selected = !inverse;
 }

@@ -310,7 +310,7 @@ void Scene::mouseMoveEvent(double x, double y)
 	
 	if (hasIndexedObjects() > 0 && !lastModal())
 	{
-		checkIndexBuffer(tx, ty, true, arrow, true);
+		checkIndexBuffer(tx, ty, true, arrow, _mouseDown);
 	}
 }
 

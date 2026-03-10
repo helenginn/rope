@@ -23,12 +23,14 @@
 #include <vagabond/core/protonic/Network.h>
 #include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/utils/OpSet.h>
 
-class BondProbe;
-class AtomProbe;
-class ProbeAtom;
+class PositionShifter;
 class HydrogenProbe;
 class ProbeBond;
+class ProbeAtom;
+class BondProbe;
+class AtomProbe;
 class Probe;
 class Menu;
 
@@ -37,6 +39,7 @@ public IndexResponseView
 {
 public:
 	ProtonNetworkView(Scene *scene, Network &network);
+	~ProtonNetworkView();
 	
 	Network &network()
 	{
@@ -54,9 +57,19 @@ public:
 		_active = r;
 	}
 	
+	void setManualAdjust(ProbeAtom *probe);
+	
 	void setMenu(Menu *menu);
 	virtual void keyReleaseEvent(SDL_Keycode pressed);
+	virtual void mouseMoveEvent(double x, double y);
+	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
+
+	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
+	void expandSelectionToNeighbours();
+
 private:
+	void arrangeFigure();
+
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
@@ -64,8 +77,14 @@ private:
 	std::map<Probe *, ProbeAtom *> _textProbes;
 	std::map<Probe *, ProbeBond *> _bondProbes;
 	
+	OpSet<Probe *> _allProbes;
+
+	PositionShifter *_shifter{};
+	ProbeAtom *_manual{};
+
 	Network &_network;
 
+	ProbeAtom *_activeProbe = nullptr;
 	Renderable *_active = nullptr;
 };
 

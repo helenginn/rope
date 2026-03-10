@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/Image.h>
 #include <vagabond/gui/elements/IndexResponder.h>
+#include <vagabond/core/protonic/Probe.h>
 
 class BondProbe;
 class ProtonNetworkView;
@@ -32,13 +33,31 @@ public:
 	ProbeBond(ProtonNetworkView *view, BondProbe *probe);
 
 	void updateProbe();
+	void updatePosition();
+	void fullUpdate();
 	void fixVertices(const glm::vec3 &start, const glm::vec3 &dir);
 	
 	virtual size_t requestedIndices();
+
+	Probe *probe()
+	{
+		return _probe;
+	}
+
+	virtual bool selectable() const
+	{
+		return true;
+	}
+	
+	bool isSelected()
+	{
+		return _selected;
+	}
 	
 	void reindex();
 	void interacted(int idx, bool hover, bool left);
 	void offerBondMenu();
+	virtual void selected(int idx, bool inverse);
 
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
@@ -47,6 +66,7 @@ private:
 	BondProbe *_probe = nullptr;
 	ProtonNetworkView *_view = nullptr;
 
+	bool _selected{};
 };
 
 #endif

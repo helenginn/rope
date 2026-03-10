@@ -33,8 +33,14 @@ void ProbeAtom::fullUpdate()
 	FloatingText::setPosition(_probe->position());
 	FloatingText::setColour(c.x, c.y, c.z);
 	FloatingText::setAlpha(_probe->alpha());
-	FloatingText::rebufferVertexData();
-	FloatingText::rebufferIndexData();
+	updateProbe();
+	FloatingText::forceRender(true, true);
+}
+
+void ProbeAtom::updatePosition()
+{
+	FloatingText::setPosition(_probe->position());
+	FloatingText::forceRender(true, false);
 }
 
 void ProbeAtom::updateProbe()
@@ -114,6 +120,7 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 	if (hover)
 	{
 		FloatingText::setHighlighted(true);
+		_view->setManualAdjust(this);
 		_view->setActive((FloatingText *)this);
 		hoverOverAtom();
 	}
@@ -121,6 +128,11 @@ void ProbeAtom::interacted(int idx, bool hover, bool left)
 	if (!left && !hover && !_probe->is_atom())
 	{
 		offerHydrogenMenu();
+	}
+	
+	if (left && hover)
+	{
+//		_view->setManualAdjust(this);
 	}
 }
 
@@ -132,6 +144,24 @@ void ProbeAtom::reindex()
 		/* in the case of multiple responders */
 		FloatingText::_vertices[i].extra[3] = offset + 1.5;
 	}
+}
+
+void ProbeAtom::selected(int idx, bool inverse)
+{
+	_selected = !inverse;
+
+	if (!_selected)
+	{
+		glm::vec3 c = _probe->colour();
+		FloatingText::setColour(c.x, c.y, c.z);
+	}
+	else
+	{
+		glm::vec3 c = _probe->colour();
+		FloatingText::setColour(c.x + 0.5, c.y + 0.5, c.z + 0.5);
+	}
+
+	FloatingText::forceRender(true, false);
 }
 
 void ProbeAtom::declareHydrogen(Hydrogen::Values value)
