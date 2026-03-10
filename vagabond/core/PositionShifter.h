@@ -20,6 +20,7 @@
 #define __vagabond__PositionShifter__
 
 #include <map>
+#include <list>
 #include <atomic>
 #include <thread>
 #include <functional>
@@ -36,15 +37,28 @@ public:
 	typedef std::function<void(const glm::vec3 &)> Setter;
 	typedef std::function<void()> Tidy;
 
-	void addPosition(void *ptr, const Getter &getter, const Setter &setter);
+	void addPosition(void *ptr, const Getter &init,
+	                 const Getter &getter, const Setter &setter);
+	void removePointer(void *ptr);
 	
+	void includePointer(void *ptr)
+	{
+		_ptrs.insert(ptr);
+	}
+
 	void limitSensitivity(void *ptr, OpSet<void *> &white_list)
 	{
+		std::unique_lock<std::mutex> lock(_pauseMutex);
 		_sensitivities[ptr] = white_list;
 	}
 	
 	glm::vec3 getPosition(void *ptr);
 	void setPosition(void *ptr, glm::vec3 pos);
+	
+	bool hasPointer(void *ptr)
+	{
+		return _ptrs.count(ptr);
+	}
 	
 	void setSkip(void *ptr)
 	{
@@ -53,16 +67,18 @@ public:
 	
 	std::mutex &skip_lock()
 	{
-		return _mutex;
+		return _partialMutex;
 	}
 	
-	void setTidy(const Tidy &tidy)
+	void addTidy(const Tidy &tidy)
 	{
-		_tidy = tidy;
+		_tidyJobs.push_back(tidy);
 	}
 	
-	void setup();
+	void pause();
+	void unpause();
 	void run();
+	void tidy();
 private:
 	struct Element
 	{
@@ -77,27 +93,32 @@ private:
 	};
 	
 	int _num = 0;
-	float score();
 	void move();
 	glm::vec3 gradient(Element *ele);
 
-	void setupGetterSetters();
+	void setupGetterSetters(Element &ele);
+	void adjustZ(Element &ele);
 	std::map<void *, Element *> _map;
 	std::map<void *, OpSet<void *>> _sensitivities;
+	std::set<void *> _ptrs;
 
-	std::vector<Element> _objects;
-	Tidy _tidy{};
+	std::list<Element> _objects;
 	
 	void *_skip = nullptr; // not allowed to set/get.
 	
-	float _z{};
+	float _z = 0;
+	int _n = 0;
 
 	glm::mat4x4 _model;
 	glm::mat4x4 _inv;
 
 	bool _stop{false};
 	std::thread *_worker = nullptr;
-	std::mutex _mutex{};
+	std::mutex _partialMutex{};
+	std::mutex _pauseMutex{};
+	std::condition_variable _waitForPause{};
+	std::atomic<bool> _pause{false};
+	std::vector<Tidy> _tidyJobs;
 };
 
 #endif

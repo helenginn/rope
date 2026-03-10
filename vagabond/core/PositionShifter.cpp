@@ -36,50 +36,76 @@ PositionShifter::~PositionShifter()
 	}
 }
 
-void PositionShifter::addPosition(void *ptr, const Getter &getter,
-                                  const Setter &setter)
+void PositionShifter::removePointer(void *ptr)
 {
+	for (auto it = _objects.begin(); it != _objects.end(); it++)
+	{
+		if (it->reference == ptr)
+		{
+			_objects.erase(it);
+			break;
+		}
+	}
+
+	_sensitivities.erase(ptr);
+	_map.erase(ptr);
+	_ptrs.erase(ptr);
+}
+
+void PositionShifter::addPosition(void *ptr, const Getter &init,
+                                  const Getter &getter, const Setter &setter)
+{
+	if (_ptrs.count(ptr))
+	{
+		return;
+	}
+
 	Element ele{};
 	ele.reference = ptr;
 	ele.raw_getter = getter;
 	ele.raw_setter = setter;
-	ele.init = getter();
+	ele.init = init();
 	_objects.push_back(ele);
+	_ptrs.insert(ptr);
+	
+	setupGetterSetters(_objects.back());
+	adjustZ(_objects.back());
+	tidy();
 }
 
-void PositionShifter::setupGetterSetters()
+void PositionShifter::setupGetterSetters(Element &ele)
 {
 	// set getters/setters accounting for model view
-	for (Element &ele : _objects)
+	ele.getter = [&ele, this]()
 	{
-		ele.getter = [&ele, this]()
-		{
-			glm::vec3 raw = ele.raw_getter();
-			return glm::vec3(_model * glm::vec4(raw, 1.f));
-		};
+		glm::vec3 raw = ele.raw_getter();
+		return glm::vec3(_model * glm::vec4(raw, 1.f));
+	};
 
-		ele.setter = [&ele, this](const glm::vec3 &vec)
-		{
-			glm::vec3 result = glm::vec3(_inv * glm::vec4(vec, 1.f));
-			ele.raw_setter(result);
-		};
-		
-		if (ele.reference)
-		{
-			_map[ele.reference] = &ele;
-		}
+	ele.setter = [&ele, this](const glm::vec3 &vec)
+	{
+		glm::vec3 result = glm::vec3(_inv * glm::vec4(vec, 1.f));
+		ele.raw_setter(result);
+	};
+
+	if (ele.reference)
+	{
+		_map[ele.reference] = &ele;
+	}
+}
+
+void PositionShifter::adjustZ(Element &ele)
+{
+	// adjust the z axis if we haven't had many pointers yet
+	if (_n <= 10)
+	{
+		_z *= _n;
+		_z += ele.getter().z;
+		_n++;
+		_z /= (float)_n;
 	}
 
-	// reset the z axis
-
-	float sum_z = 0;
-	for (Element &ele : _objects)
-	{
-		glm::vec3 with_z = ele.getter();
-		sum_z += with_z.z;
-	}
-	_z = sum_z / (float)_objects.size();
-
+	// go through all objects and update the z-axis for all of them.
 	for (Element &ele : _objects)
 	{
 		glm::vec3 vec = ele.getter();
@@ -88,41 +114,20 @@ void PositionShifter::setupGetterSetters()
 	}
 }
 
-float PositionShifter::score()
-{
-	float score = {};
-
-	for (Element &left : _objects)
-	{
-		for (Element &right : _objects)
-		{
-			if (&left == &right)
-			{
-				continue;
-			}
-
-			float target = glm::length(left.init - right.init);
-			float actual = glm::length(left.raw_getter() - right.raw_getter());
-			
-			float r = target / actual;
-			float contrib = (r - 1) * (r - 1) / (1 + r * r);
-			score += contrib;
-		}
-	}
-	
-	return score;
-}
-
 glm::vec3 PositionShifter::gradient(Element *ele)
 {
-	glm::vec3 dir = {};
 	Element &left = *ele;
-	int count = 0;
 	OpSet<Element *> process;
 	OpSet<Element *> done;
+	OpSet<Element *> all;
 
 	for (Element &right : _objects)
 	{
+		if (&left != &right)
+		{
+			all.insert(&right);
+		}
+
 		if (_sensitivities.count(left.reference) && 
 		    !_sensitivities[left.reference].count(right.reference))
 		{
@@ -131,9 +136,36 @@ glm::vec3 PositionShifter::gradient(Element *ele)
 
 		process.insert(&right);
 	}
+
+	auto make_target = [](float target)
+	{
+		return [target](Element &left, Element &right) -> float
+		{
+			return target;
+		};
+	};
+
+	auto get_target = [](Element &left, Element &right) -> float
+	{
+		float target = glm::length(left.init - right.init);
+		if (target < 1.f) target = 1.f;
+		return target;
+	};
 	
+	auto contribution_from = []<typename GetTarget>
+	(const GetTarget &getTarget, Element &left, Element &right)
+	{
+		float target = getTarget(left, right);
+		glm::vec3 motion = left.getter() - right.getter();
+		float actual = glm::length(motion);
+		float c = 2 * (target - actual);
+		glm::vec3 contrib = motion * c / actual;
+		return contrib;
+	};
+	
+	glm::vec3 dir = {};
 	int depth = 2;
-	
+
 	while (depth > 0)
 	{
 		OpSet<Element *> tmp;
@@ -146,15 +178,9 @@ glm::vec3 PositionShifter::gradient(Element *ele)
 				continue;
 			}
 
-			float target = glm::length(left.init - right.init);
-			glm::vec3 motion = left.getter() - right.getter();
-			float actual = glm::length(motion);
-
-			float c = 2 * (target - actual);
-			glm::vec3 contrib = motion * c / actual;
+			glm::vec3 contrib = contribution_from(get_target, left, right);
 
 			dir += contrib;
-			count++;
 			
 			for (void *sensitive : _sensitivities[right.reference])
 			{
@@ -168,18 +194,50 @@ glm::vec3 PositionShifter::gradient(Element *ele)
 		process = tmp;
 		depth--;
 	}
+	
+	OpSet<Element *> remaining = all - done;
 
-	return dir;
+	int count = 0;
+	glm::vec3 repulsion = {};
+	for (Element *right_ptr : remaining)
+	{
+		Element &right = *right_ptr;
+		glm::vec3 motion = left.getter() - right.getter();
+		float actual = glm::length(motion);
+		if (actual < 2)
+		{
+			count++;
+			glm::vec3 contrib = contribution_from(make_target(2), left, right);
+			repulsion += contrib;
+		}
+	}
+	if (count > 0)
+	{
+		repulsion /= (float)count;
+	}
+
+	return dir + repulsion;
 }
 
-//(2(x-1)(1+x^2)-2x(x-1)^2)/(1+x^2)^2
-//
-
-void PositionShifter::setup()
+void PositionShifter::tidy()
 {
-	setupGetterSetters();
+	for (const Tidy &tidy : _tidyJobs)
+	{
+		tidy();
+	}
+}
 
-	_tidy();
+void PositionShifter::pause()
+{
+	std::unique_lock<std::mutex> lock(_pauseMutex);
+	_pause = true;
+}
+
+void PositionShifter::unpause()
+{
+	std::unique_lock<std::mutex> lock(_pauseMutex);
+	_pause = false;
+	_waitForPause.notify_one();
 }
 
 void PositionShifter::run()
@@ -188,6 +246,11 @@ void PositionShifter::run()
 	{
 		while (!_stop)
 		{
+			std::unique_lock<std::mutex> lock(_pauseMutex);
+			if (_pause)
+			{
+				_waitForPause.wait(lock);
+			}
 			move();
 		}
 	};
@@ -201,7 +264,7 @@ void PositionShifter::move()
 	
 	void *skip = nullptr;
 	{
-		std::unique_lock<std::mutex> lock(_mutex);
+		std::unique_lock<std::mutex> lock(_partialMutex);
 		skip = _skip;
 	}
 
@@ -243,14 +306,14 @@ void PositionShifter::move()
 	average /= count;
 
 	{
-		std::unique_lock<std::mutex> lock(_mutex);
+		std::unique_lock<std::mutex> lock(_partialMutex);
 		for (auto adjust : adjustments)
 		{
 			adjust();
 		}
 	}
 	
-	_tidy();
+	tidy();
 	
 	_num++;
 }
