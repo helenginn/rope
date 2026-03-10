@@ -19,14 +19,15 @@
 #ifndef __vagabond__Mab__
 #define __vagabond__Mab__
 
+#include <vagabond/core/Model.h>
+
 class AtomGroup;
 class Metadata;
 
 struct Antigen
 {
-	std::string filename{};
 	std::string title{};
-	AtomGroup *atoms{};
+	Model model{};
 };
 
 struct Competition

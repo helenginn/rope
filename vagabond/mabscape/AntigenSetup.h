@@ -31,6 +31,7 @@ public:
 	AntigenSetup(Scene *scene, Antigen &antigen);
 	void prepareChoosePDB();
 	void prepareChooseTitle();
+	void prepareAssignChains();
 
 	void setup();
 	void refresh();
