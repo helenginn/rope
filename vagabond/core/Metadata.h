@@ -86,6 +86,22 @@ public:
 		return nullptr;
 	}
 
+	bool areAllNumbers(const std::string header);
+	
+	template <class Container>
+	bool areAllNumbers(const Container &kvs, const std::string header)
+	{
+		for (const KeyValues &kv : _data)
+		{
+			if (kv.count(header) && !kv.at(header).hasNumber())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+
 	const KeyValues *values(const std::string model_id = "", 
 	                        const std::string filename = "");
 	
@@ -126,6 +142,7 @@ public:
 	TabulatedData *asInstanceData();
 	TabulatedData *asModelData();
 	TabulatedData *asData(const std::vector<std::string> &ids);
+	TabulatedData *asData();
 
 	friend void to_json(json &j, const Metadata &value);
 	friend void from_json(const json &j, Metadata &value);
