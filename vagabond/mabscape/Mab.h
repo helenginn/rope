@@ -20,28 +20,47 @@
 #define __vagabond__Mab__
 
 #include <vagabond/core/Model.h>
+#include <vagabond/utils/OpSet.h>
 
-class AtomGroup;
+class Chain;
 class Metadata;
+class AtomGroup;
 
 struct Antigen
 {
 	std::string title{};
 	Model model{};
+	OpSet<std::string> entities;
+	
+	std::string validate();
 };
 
 struct Competition
 {
 	std::string filename{};
 	Metadata *metadata{};
+};
 
+struct ColourMap
+{
+	glm::vec3 colour_for(std::string ch)
+	{
+		if (mapping.count(ch) == 0)
+		{
+			return {0., 0., 0.};
+		}
+		else return mapping.at(ch);
+	}
+
+	std::map<std::string, glm::vec3> mapping{};
+	void recalculate();
 };
 
 struct Mab
 {
 	Antigen antigen{};
 	Competition competition{};
-
+	ColourMap colours{};
 };
 
 #endif

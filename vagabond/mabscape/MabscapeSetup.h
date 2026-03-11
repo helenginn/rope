@@ -28,11 +28,13 @@ public:
 	MabscapeSetup();
 
 	virtual void setup();
+	virtual void refresh();
 
 	void load(const std::string &command);
 private:
 	Mab _mab{};
 
+	bool _validateAntigen{false};
 };
 
 #endif

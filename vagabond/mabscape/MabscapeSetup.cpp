@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/gui/elements/TextButton.h>
+#include <vagabond/gui/elements/ImageButton.h>
 #include "MabscapeSetup.h"
 #include "AntigenSetup.h"
 #include "CompetitionSetup.h"
@@ -37,8 +38,10 @@ void MabscapeSetup::setup()
 	
 	auto setup_antigen = [this]()
 	{
-		AntigenSetup *as = new AntigenSetup(this, _mab.antigen);
+		AntigenSetup *as = new AntigenSetup(this, _mab.colours, 
+		                                    _mab.antigen);
 		as->show();
+		_validateAntigen = true;
 	};
 	
 	auto setup_competition_data = [this]()
@@ -63,3 +66,30 @@ void MabscapeSetup::setup()
 	}
 }
 
+void MabscapeSetup::refresh()
+{
+	deleteTemps();
+	auto make_button = [this](const std::string &reason)
+	{
+		ImageButton *ib = nullptr;
+		if (!reason.length())
+		{
+			ib = new ImageButton("assets/images/happy_face.png", this);
+			ib->resize(0.06);
+		}
+		else
+		{
+			ib = new ImageButton("assets/images/sad_face.png", this);
+			ib->resize(0.06);
+			ib->addAltTag(reason);
+		}
+		return ib;
+	};
+
+	if (_validateAntigen)
+	{
+		ImageButton *ib = make_button(_mab.antigen.validate());
+		ib->setRight(0.19, 0.3);
+		addTempObject(ib);
+	}
+}
