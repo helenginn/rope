@@ -19,13 +19,16 @@
 #include "ModelTopologyView.h"
 #include <vagabond/core/Model.h>
 #include <vagabond/core/Chain.h>
+#include <vagabond/core/GroupBounds.h>
 #include <vagabond/core/PositionShifter.h>
+#include <vagabond/gui/elements/Line.h>
 #include <vagabond/gui/elements/Mouse3D.h>
-#include <vagabond/gui/elements/FloatingImage.h>
+#include <vagabond/gui/TopologyCircle.h>
+#include <vagabond/gui/elements/FloatingText.h>
 
 ModelTopologyView::ModelTopologyView(Scene *prev, 
                                      Model &contents)
-: Scene(prev), Mouse3D(prev), _model(contents)
+: Scene(prev), Mouse3D(prev), IndexResponseView(prev), _model(contents)
 {
 	_farSlab = 80;
 	_slabbing = true;
@@ -37,6 +40,8 @@ ModelTopologyView::ModelTopologyView(Scene *prev,
 
 ModelTopologyView::~ModelTopologyView()
 {
+	_shifter->pause();
+	delete _shifter;
 	_model.unload();
 }
 
@@ -47,12 +52,15 @@ void ModelTopologyView::makeDots()
 	for (size_t i = 0; i < ac->chainCount(); i++)
 	{
 		Chain *ch = ac->chain(i);
-		FloatingImage *fi
-		= new FloatingImage("assets/images/circle.png", 10);
-		fi->setPosition(ch->initialCentre());
-		addObject(fi);
-		glm::vec3 start = ch->initialCentre();
-		_map[fi] = {ch, start};
+		TopologyCircle *fi = new TopologyCircle(this);
+		FloatingText *ft = new FloatingText(ch->id(), 100);
+
+		glm::vec3 start = ch->initialCentre() / 3.f;
+		fi->FloatingImage::setPosition(start);
+		ft->FloatingImage::setPosition(start);
+
+		_image2Info[fi] = {ch, start, ft};
+		_chain2Image[ch] = fi;
 		shiftToCentre(start, 0);
 	}
 
@@ -61,6 +69,7 @@ void ModelTopologyView::makeDots()
 void ModelTopologyView::makeShifter()
 {
 	_shifter = new PositionShifter(getModel());
+//	_shifter->setUniformDistance(10.f);
 	_shifter->run();
 	
 	auto make_init = [](ChainInfo &info)
@@ -90,18 +99,23 @@ void ModelTopologyView::makeShifter()
 
 	auto tidy = [this]()
 	{
-		for (auto it = _map.begin(); it != _map.end(); it++)
+		for (auto it = _image2Info.begin(); 
+		     it != _image2Info.end(); it++)
 		{
-			FloatingImage *fi = it->first;
-			fi->setPosition(it->second.pos);
-			fi->forceRender(true, false);
+			TopologyCircle *fi = it->first;
+			fi->FloatingImage::setPosition(it->second.pos);
+			fi->FloatingImage::forceRender(true, false);
+
+			FloatingText *ft = it->second.text;
+			ft->setPosition(it->second.pos);
+			ft->forceRender(true, false);
 		}
 	};
 	
 	_shifter->pause();
-	for (auto it = _map.begin(); it != _map.end(); it++)
+	for (auto it = _image2Info.begin(); it != _image2Info.end(); it++)
 	{
-		FloatingImage *fi = it->first;
+		TopologyCircle *fi = it->first;
 		ChainInfo &info = it->second;
 		_shifter->addPosition(fi, make_init(info),
 		                      make_getter(info),
@@ -114,7 +128,100 @@ void ModelTopologyView::makeShifter()
 
 void ModelTopologyView::addLinks()
 {
+	float max = 8.f;
+	auto valid_distance = [max](glm::vec3 &a, glm::vec3 &b) -> bool
+	{
+		bool bad = false;
+		for (int i = 0; i < 3; i++)
+		{
+			if (fabs(a[i] - b[i]) > max)
+			{
+				return false;
+			}
+		}
 
+		if (glm::dot(a - b, a - b) > max * max)
+		{
+			return false;
+		}
+
+		return true;
+	};
+
+	auto close_contact = [valid_distance](Chain *chain, Chain *other)
+	{
+		for (Atom *atom : chain->atomVector())
+		{
+			glm::vec3 p1 = atom->initialPosition();
+			for (Atom *other : other->atomVector())
+			{
+				glm::vec3 p2 = other->initialPosition();
+				if (valid_distance(p1, p2))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	};
+
+	AtomContent *ac = _model.currentAtoms();
+
+	_shifter->pause();
+	for (size_t i = 0; i < ac->chainCount() - 1; i++)
+	{
+		Chain *left = ac->chain(i);
+		GroupBounds bounds(left);
+
+		OpSet<void *> list;
+		for (size_t j = i + 1; j < ac->chainCount(); j++)
+		{
+			Chain *right = ac->chain(j);
+			if (!bounds.worth_checking_interface_with(right, max + 2))
+			{
+				continue;
+			}
+
+			if (!close_contact(left, right))
+			{
+				continue;
+			}
+			
+			Line *line = new Line();
+			line->addPoint(posForChain(left));
+			line->addPoint(posForChain(right));
+			addObject(line);
+			_links[line] = {_chain2Image[left], _chain2Image[right]};
+			list += (void *)_chain2Image[right];
+		}
+		_shifter->limitSensitivity(_chain2Image[left], list);
+	}
+	
+	auto tidy = [this]()
+	{
+		for (auto it = _links.begin(); it != _links.end(); it++)
+		{
+			Line *const &l = it->first;
+			l->vertices()[0].pos = _image2Info[it->second.left].pos;
+			l->vertices()[1].pos = _image2Info[it->second.right].pos;
+			l->forceRender(true, false);
+		}
+	};
+
+	_shifter->addTidy(tidy);
+	_shifter->unpause();
+}
+
+void ModelTopologyView::addCircles()
+{
+	for (auto it = _image2Info.begin(); it != _image2Info.end(); it++)
+	{
+		TopologyCircle *fi = it->first;
+		addObject((FloatingImage *)fi);
+		addIndexResponder(fi);
+		addObject(it->second.text);
+	}
 }
 
 void ModelTopologyView::setup()
@@ -122,4 +229,52 @@ void ModelTopologyView::setup()
 	makeDots();
 	_2D = true;
 	makeShifter();
+	addLinks();
+	addCircles();
+	updateColours();
+	IndexResponseView::setup();
 }
+
+void ModelTopologyView::unhighlight()
+{
+	for (auto it = _image2Info.begin(); it != _image2Info.end(); it++)
+	{
+		TopologyCircle *fi = it->first;
+		fi->FloatingImage::setHighlighted(false);
+	}
+
+}
+
+void ModelTopologyView::clicked(TopologyCircle *circle)
+{
+	if (_clickChainEvent)
+	{
+		ChainInfo &info = _image2Info[circle];
+		float x, y;
+		getFractionalPos(x, y);
+		_clickChainEvent(this, info.ch, {x, y, 0});
+	}
+}
+
+void ModelTopologyView::updateColours()
+{
+	if (!_colourFunc)
+	{
+		return;
+	}
+
+	for (auto it = _image2Info.begin(); it != _image2Info.end(); it++)
+	{
+		TopologyCircle *fi = it->first;
+		Chain *ch = it->second.ch;
+		glm::vec3 colour = _colourFunc(ch);
+		fi->FloatingImage::setColour(colour.x, colour.y, colour.z);
+		fi->FloatingImage::forceRender(true, false);
+	}
+}
+
+void ModelTopologyView::interactedWithNothing(bool left, bool hover)
+{
+	unhighlight();
+}
+
