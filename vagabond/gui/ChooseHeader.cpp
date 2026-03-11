@@ -60,11 +60,21 @@ Renderable *ChooseHeader::getLine(int i)
 	{
 		TextButton *text = new TextButton(_headers[i], this);
 		text->setLeft(0.0, 0.0);
-		text->setReturnTag(_headers[i]);
-		if (!_choose)
+		
+		if (_chooseFunc)
 		{
-			text->setInert(true);
+			text->setReturnJob
+			([this, i]() { back(); _chooseFunc(_headers[i]); });
 		}
+		else
+		{
+			text->setReturnTag(_headers[i]);
+			if (!_choose)
+			{
+				text->setInert(true);
+			}
+		}
+
 		b->addObject(text);
 	}
 
