@@ -26,13 +26,42 @@ class Chain;
 class Metadata;
 class AtomGroup;
 
+namespace MabUtils
+{
+	template <class Object>
+	std::string gather_validations
+	(const std::function<std::string(const Object &)> &validate,
+	 const std::vector<Object> &objects)
+	{
+		std::string problems;
+		for (const Object &object : objects)
+		{
+			std::string contribution = validate(object);
+			if (contribution.length())
+			{
+				problems += contribution;
+				problems += "\n";
+			}
+		}
+		if (problems.length() > 0)
+		{
+			problems.pop_back();
+		}
+		if (objects.size() == 0)
+		{
+			problems += "Nothing defined";
+		}
+		return problems;
+	};
+};
+
 struct Antigen
 {
 	std::string title{};
 	Model model{};
 	OpSet<std::string> entities;
 	
-	std::string validate();
+	std::string validate() const;
 };
 
 class Antigens : public std::vector<Antigen>
@@ -57,6 +86,17 @@ struct Competition
 	std::string interpretation_as_desc();
 	
 	std::string antigen;
+
+	std::string validate(const Antigens &antigens) const;
+};
+
+class Competitions : public std::vector<Competition>
+{
+public:
+	std::string validate(const Antigens &antigens);
+
+};
+
 };
 
 struct ColourMap
@@ -77,7 +117,7 @@ struct ColourMap
 struct Mab
 {
 	Antigens antigens{};
-	Competition competition{};
+	Competitions competitions{};
 	ColourMap colours{};
 };
 

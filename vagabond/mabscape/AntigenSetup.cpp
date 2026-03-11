@@ -16,9 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskForText.h>
-#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/BadChoice.h>
 #include <vagabond/gui/elements/Menu.h>
@@ -34,13 +32,9 @@
 
 AntigenSetup::AntigenSetup(Scene *scene, ColourMap &colours,
                            Antigens &antigens) 
-: Scene(scene), _antigens(antigens), _colours(colours)
+: MultipleSetup(scene, antigens), _colours(colours)
 {
-	if (_antigens.size() == 0)
-	{
-		_antigens.push_back(Antigen());
-	}
-	_antigen = _antigens.begin();
+
 }
 
 void AntigenSetup::prepareChoosePDB()
@@ -274,24 +268,6 @@ void AntigenSetup::refresh()
 	deleteButton();
 }
 
-void AntigenSetup::deleteButton()
-{
-	if (_antigens.size() > 1)
-	{
-		TextButton *tb = new TextButton("Delete", this);
-		tb->setRight(0.9, 0.1);
-		tb->setReturnJob
-		([this]()
-		 {
-			_antigens.erase(_antigen);
-			_antigen = _antigens.begin();
-			refresh();
-		 });
-		addTempObject(tb);
-	}
-
-}
-
 void AntigenSetup::listAntigenChains()
 {
 	if (antigen().entities.size() == 0)
@@ -326,48 +302,7 @@ void AntigenSetup::listAntigenChains()
 	}
 }
 
-void AntigenSetup::scrollButtons()
+bool AntigenSetup::acceptable_to_add_after(Antigen &antigen)
 {
-	if (_antigen != _antigens.begin())
-	{
-		ImageButton *bb = ImageButton::arrow(+90., this);
-		bb->setCentre(0.1, 0.8);
-		bb->setReturnJob
-		([this]()
-		 {
-			_antigen--;
-			refresh();
-		 });
-		addTempObject(bb);
-	}
-
-	if (_antigen != _antigens.end() - 1)
-	{
-		ImageButton *bb = ImageButton::arrow(-90., this);
-		bb->setCentre(0.9, 0.8);
-		bb->setReturnJob
-		([this]()
-		 {
-			_antigen++;
-			refresh();
-		 });
-		addTempObject(bb);
-	}
-
-	if (_antigen == _antigens.end() - 1 && 
-	    antigen().model.filename().length() > 0)
-	{
-		ImageButton *bb = new ImageButton("assets/images/plus.png", 
-		                                  this);
-		bb->resize(0.06);
-		bb->setCentre(0.9, 0.8);
-		bb->setReturnJob
-		([this]()
-		 {
-			_antigens.push_back(Antigen());
-			_antigen = _antigens.end() - 1;
-			refresh();
-		 });
-		addTempObject(bb);
-	}
+	return (antigen.model.filename().length() > 0);
 }

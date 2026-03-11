@@ -19,17 +19,23 @@
 #ifndef __vagabond__CompetitionSetup__
 #define __vagabond__CompetitionSetup__
 
-#include <vagabond/gui/elements/Scene.h>
+#include "MultipleSetup.h"
 #include "Mab.h"
 
-class CompetitionSetup : public Scene
+class CompetitionSetup : public MultipleSetup<Competition>
 {
 public:
-	CompetitionSetup(Scene *scene, Competition &comp, 
+	CompetitionSetup(Scene *scene, Competitions &comp, 
 	                 Antigens &antigens);
 
 	void setup();
 	virtual void refresh();
+	
+	Competition &comp()
+	{
+		return *_object;
+	}
+	
 private:
 	void guessHeaders();
 	void showViewTable();
@@ -38,7 +44,9 @@ private:
 	void howToReadResult();
 	void relevantAntigen();
 
-	Competition &_comp;
+protected:
+	virtual bool acceptable_to_add_after(Competition &comp);
+
 	Antigens &_antigens;
 
 };

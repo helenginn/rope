@@ -19,13 +19,13 @@
 #ifndef __vagabond__AntigenSetup__
 #define __vagabond__AntigenSetup__
 
-#include <vagabond/gui/elements/Scene.h>
+#include "MultipleSetup.h"
 #include "Mab.h"
 
 class FileManager;
 
 
-class AntigenSetup : public Scene
+class AntigenSetup : public MultipleSetup<Antigen>
 {
 public:
 	AntigenSetup(Scene *scene, ColourMap &colours, Antigens &antigens);
@@ -33,19 +33,18 @@ public:
 	void prepareChooseTitle();
 	void prepareAssignChains();
 	void listAntigenChains();
-	void scrollButtons();
-	void deleteButton();
 
 	void setup();
 	void refresh();
-	
+
 	Antigen &antigen()
 	{
-		return *_antigen;
+		return *_object;
 	}
+	
+protected:
+	virtual bool acceptable_to_add_after(Antigen &antigen);
 private:
-	Antigens &_antigens;
-	Antigens::iterator _antigen;
 	ColourMap &_colours;
 
 };

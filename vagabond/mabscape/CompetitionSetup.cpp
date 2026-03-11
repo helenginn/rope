@@ -26,40 +26,40 @@
 #include <vagabond/gui/ChooseHeader.h>
 #include <vagabond/core/files/CsvFile.h>
 
-CompetitionSetup::CompetitionSetup(Scene *scene, Competition &comp,
+CompetitionSetup::CompetitionSetup(Scene *scene, Competitions &comps,
                                    Antigens &antigens)
-: Scene(scene), _comp(comp), _antigens(antigens)
+: MultipleSetup(scene, comps), _antigens(antigens)
 {
 
 }
 
 void CompetitionSetup::guessHeaders()
 {
-	if (!_comp.metadata)
+	if (!comp().metadata)
 	{
 		return;
 	}
 	
-	for (const std::string &header : _comp.metadata->headers())
+	for (const std::string &header : comp().metadata->headers())
 	{
-		bool numbers = _comp.metadata->areAllNumbers(header);
-		if (!numbers && _comp.left_header.length() == 0)
+		bool numbers = comp().metadata->areAllNumbers(header);
+		if (!numbers && comp().left_header.length() == 0)
 		{
-			_comp.left_header = header;
+			comp().left_header = header;
 		}
-		else if (!numbers && _comp.right_header.length() == 0)
+		else if (!numbers && comp().right_header.length() == 0)
 		{
-			_comp.right_header = header;
+			comp().right_header = header;
 		}
-		else if (numbers && _comp.value_header.length() == 0)
+		else if (numbers && comp().value_header.length() == 0)
 		{
-			_comp.value_header = header;
+			comp().value_header = header;
 		}
 	}
 	
 	if (_antigens.size() == 1)
 	{
-		_comp.antigen = _antigens.front().title;
+		comp().antigen = _antigens.front().title;
 	}
 }
 
@@ -73,8 +73,8 @@ void CompetitionSetup::prepareChooseCSV()
 			csv.parse();
 			Metadata *md = csv.metadata();
 			md->housekeeping();
-			_comp.metadata = md;
-			_comp.filename = filename;
+			comp().metadata = md;
+			comp().filename = filename;
 			guessHeaders();
 			refresh();
 		}
@@ -96,8 +96,8 @@ void CompetitionSetup::prepareChooseCSV()
 		fv->show();
 	};
 
-	std::string name = _comp.filename.length() ? 
-	_comp.filename : "choose";
+	std::string name = comp().filename.length() ? 
+	comp().filename : "choose";
 
 	TextButton *tb = new TextButton(name, this);
 	tb->setRight(0.8, 0.3);
@@ -118,16 +118,16 @@ void CompetitionSetup::setup()
 
 void CompetitionSetup::showViewTable()
 {
-	if (!_comp.metadata)
+	if (!comp().metadata)
 	{
 		return;
 	}
 	
 	auto show_data = [this]()
 	{
-		std::string title = "Data - " + _comp.metadata->source();
+		std::string title = "Data - " + comp().metadata->source();
 		TableView *view = new TableView(this, 
-		                                _comp.metadata->asData(), 
+		                                comp().metadata->asData(), 
 		                                title);
 		view->show();
 	};
@@ -145,7 +145,7 @@ void CompetitionSetup::showViewTable()
 
 void CompetitionSetup::relevantHeaders()
 {
-	if (!_comp.metadata)
+	if (!comp().metadata)
 	{
 		return;
 	}
@@ -168,7 +168,7 @@ void CompetitionSetup::relevantHeaders()
 		return [picked_header, this]()
 		{
 			ChooseHeader *ch = new ChooseHeader(this, true);
-			ch->setHeaders(_comp.metadata->headers());
+			ch->setHeaders(comp().metadata->headers());
 			ch->setChoose(picked_header);
 			ch->show();
 		};
@@ -190,16 +190,16 @@ void CompetitionSetup::relevantHeaders()
 	};
 
 	add_line("Header for first antibody ID", 
-	         _comp.left_header, 0.52);
+	         comp().left_header, 0.52);
 	add_line("Header for second antibody ID",
-	         _comp.right_header, 0.58);
+	         comp().right_header, 0.58);
 	add_line("Header for experimental result",
-	         _comp.value_header, 0.64);
+	         comp().value_header, 0.64);
 }
 
 void CompetitionSetup::howToReadResult()
 {
-	if (!_comp.metadata || _comp.value_header.length() == 0)
+	if (!comp().metadata || comp().value_header.length() == 0)
 	{
 		return;
 	}
@@ -209,32 +209,32 @@ void CompetitionSetup::howToReadResult()
 	        " 1 = full competition"] =
 	[this]()
 	{
-		_comp.as_competition = true;
-		_comp.scale = 1;
+		comp().as_competition = true;
+		comp().scale = 1;
 	};
 
 	options["0 = no competition,"\
 	        " 100 = full competition"] =
 	[this]()
 	{
-		_comp.as_competition = true;
-		_comp.scale = 100;
+		comp().as_competition = true;
+		comp().scale = 100;
 	};
 
 	options["0 = no simultaneous binding, "\
 	        "1 = full simultaneous binding"] =
 	[this]()
 	{
-		_comp.as_competition = false;
-		_comp.scale = 1;
+		comp().as_competition = false;
+		comp().scale = 1;
 	};
 
 	options["0 = no simultaneous binding, "\
 	        "100 = full simultaneous binding"] =
 	[this]()
 	{
-		_comp.as_competition = true;
-		_comp.scale = 100;
+		comp().as_competition = true;
+		comp().scale = 100;
 	};
 
 	Text *t = new Text("How to interpret values:");
@@ -265,7 +265,7 @@ void CompetitionSetup::howToReadResult()
 	};
 
 	TextButton *tb = 
-	new TextButton(_comp.interpretation_as_desc(), this);
+	new TextButton(comp().interpretation_as_desc(), this);
 	tb->setRight(0.8, 0.7);
 	tb->setReturnJob(choose_new_interpretation);
 	addTempObject(tb);
@@ -273,7 +273,7 @@ void CompetitionSetup::howToReadResult()
 
 void CompetitionSetup::relevantAntigen()
 {
-	if (!_comp.metadata)
+	if (!comp().metadata)
 	{
 		return;
 	}
@@ -282,7 +282,7 @@ void CompetitionSetup::relevantAntigen()
 	{
 		auto picked_antigen = [this](std::string antigen)
 		{
-			_comp.antigen = antigen;
+			comp().antigen = antigen;
 			refresh();
 		};
 
@@ -314,8 +314,8 @@ void CompetitionSetup::relevantAntigen()
 	addTempObject(t);
 
 	TextButton *tb = 
-	new TextButton(_comp.antigen.length() ? 
-	               _comp.antigen : "choose", this);
+	new TextButton(comp().antigen.length() ? 
+	               comp().antigen : "choose", this);
 	tb->setRight(0.8, 0.8);
 	tb->setReturnJob(choose_antigen);
 	addTempObject(tb);
@@ -330,5 +330,12 @@ void CompetitionSetup::refresh()
 	relevantHeaders();
 	howToReadResult();
 	relevantAntigen();
+	scrollButtons();
+	deleteButton();
+}
+
+bool CompetitionSetup::acceptable_to_add_after(Competition &comp)
+{
+	return (comp.metadata);
 }
 
