@@ -41,7 +41,7 @@ class Entity : public HasResponder<Responder<Entity>>
 public:
 	Entity();
 	
-	virtual bool hasSequence() { return false; }
+	virtual bool hasSequence() const { return false; }
 
 	virtual Sequence *sequence()
 	{
