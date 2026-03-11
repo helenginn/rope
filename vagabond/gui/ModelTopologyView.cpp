@@ -40,7 +40,6 @@ ModelTopologyView::ModelTopologyView(Scene *prev,
 
 ModelTopologyView::~ModelTopologyView()
 {
-	_shifter->pause();
 	delete _shifter;
 	_model.unload();
 }
