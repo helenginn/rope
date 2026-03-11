@@ -21,6 +21,7 @@
 
 #include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/ListView.h>
+#include <algorithm>
 #include <set>
 
 /** \class ChooseHeader will call sendObject(tag, nullptr) on a responder
@@ -37,7 +38,12 @@ public:
 	ChooseHeader(Scene *prev, bool choose = true);
 	~ChooseHeader();
 	
-	void setHeaders(std::set<std::string> &headers)
+	void setChoose(const std::function<void(std::string)> &choose)
+	{
+		_chooseFunc = choose;
+	}
+	
+	void setHeaders(const std::set<std::string> &headers)
 	{
 		_headers.clear();
 		for (const std::string &h : headers)
@@ -79,6 +85,7 @@ private:
 	Metadata *_md = nullptr;
 	ObjectData *_group = nullptr;
 
+	std::function<void(std::string)> _chooseFunc;
 };
 
 #endif
