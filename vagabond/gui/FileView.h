@@ -44,6 +44,7 @@ public:
 	FileView(Scene *prev);
 	FileView(Scene *prev, Responder<FileView> *resp, bool choose);
 	
+	void globRefresh();
 	void filterForTypes(File::Type type);
 	
 	virtual ~FileView();
