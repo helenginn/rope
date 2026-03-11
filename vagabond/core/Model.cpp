@@ -55,7 +55,7 @@ const std::string Model::entityForChain(std::string id) const
 	return "";
 }
 
-void Model::swapChainToEntity(std::string id, std::string entity)
+void Model::unassignChainEntity(std::string id)
 {
 
 	Polymer *found = nullptr;
@@ -64,9 +64,6 @@ void Model::swapChainToEntity(std::string id, std::string entity)
 		found = _chain2Polymer[id];
 		if (found != nullptr)
 		{
-			std::cout << "Found old polymer of entity " << 
-			found->entity_id() << ", chain " << id << std::endl;
-			std::cout << "Purging old polymer from environment for chain " << found->model_chain_id() << std::endl;
 			_chain2Entity.erase(id);
 		}
 	}
@@ -81,22 +78,15 @@ void Model::swapChainToEntity(std::string id, std::string entity)
 			break;
 		}
 	}
-
-	_chain2Entity[id] = entity;
-	std::cout << "Assigning new entity, " << entity << " for chain " 
-	<< id << std::endl;
 }
 
 void Model::setEntityForChain(std::string id, std::string entity)
 {
 	if (_chain2Entity.count(id) && _chain2Entity[id] != entity)
 	{
-		swapChainToEntity(id, entity);
+		unassignChainEntity(id);
 	}
-	else
-	{
-		_chain2Entity[id] = entity;
-	}
+	_chain2Entity[id] = entity;
 }
 
 bool Model::hasEntity(std::string entity) const

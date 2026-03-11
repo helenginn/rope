@@ -123,6 +123,7 @@ public:
 		NoInsert = 1 << 2,
 	};
 
+	void unassignChainEntity(std::string id);
 	void load(LoadOptions opts = Everything);
 	bool unload();
 	void reload();
@@ -167,7 +168,6 @@ public:
 
     void export_refined(std::string prefix = "rope", std::string suffix = "");
 private:
-	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriatePolymers();
 	bool mergePolymersInSet(std::set<Polymer *> polymers);
 	void assignSequencedPolymers(Entity *chosen);
