@@ -33,7 +33,7 @@ class AskForText : public Modal, public Button, public KeyResponder,
 public Responder<TextEntry>
 {
 public:
-	AskForText(Scene *scene, std::string text, 
+	AskForText(Scene *scene, std::string text,
 	           std::string tag = "", ButtonResponder *sender = nullptr,
 	           TextEntry::Validation v = TextEntry::None);
 	

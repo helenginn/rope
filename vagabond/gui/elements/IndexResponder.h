@@ -26,6 +26,7 @@
 // and prepare to get signals on interacted(...)
 // addIndexResponder for each of the responders
 // also IndexResponseView::setup needs calling
+// if these don't work, also check if shader writes indices
 
 class IndexResponder : public SimplePolygon
 {
