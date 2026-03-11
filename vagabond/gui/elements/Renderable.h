@@ -46,6 +46,11 @@ public:
 		return _vertices.size();
 	}
 	
+	std::vector<Vertex> &vertices()
+	{
+		return _vertices;
+	}
+	
 	virtual const std::vector<Vertex> &vertices() const
 	{
 		return _vertices;

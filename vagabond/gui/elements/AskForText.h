@@ -34,7 +34,8 @@ public Responder<TextEntry>
 {
 public:
 	AskForText(Scene *scene, std::string text, 
-	           std::string tag, ButtonResponder *sender,
+	           std::string tag = "", 
+	           ButtonResponder *sender = nullptr,
 	           TextEntry::Validation v = TextEntry::None);
 	
 	void allowCapitals(bool capitals);
