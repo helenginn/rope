@@ -18,6 +18,7 @@
 
 #include "Mab.h"
 #include <vagabond/core/EntityManager.h>
+#include <vagabond/core/Metadata.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/utils/maths.h>
 
@@ -38,8 +39,12 @@ void ColourMap::recalculate()
 	}
 }
 
-std::string Antigen::validate()
+std::string Antigen::validate() const
 {
+	if (title == "")
+	{
+		return "Model title/filename missing for antigen";
+	}
 	if (model.filename() == "")
 	{
 		return "No model PDB chosen for " + title;
@@ -64,21 +69,13 @@ std::string Antigen::validate()
 
 std::string Antigens::validate()
 {
-	std::string problems;
-	for (Antigen &antigen : *this)
+	auto validate_antigen = [](const Antigen &antigen)
 	{
-		std::string contribution = antigen.validate();
-		if (contribution.length())
-		{
-			problems += contribution;
-			problems += "\n";
-		}
-	}
-	if (problems.length() > 0)
-	{
-		problems.pop_back();
-	}
-	return problems;
+		return antigen.validate();
+	};
+
+	return MabUtils::gather_validations<Antigen>
+	(validate_antigen, *this);
 }
 
 OpSet<std::string> Antigens::entities()
@@ -97,4 +94,64 @@ std::string Competition::interpretation_as_desc()
 	std::string str = (as_competition ? "competition, " : "binding, ");
 	str += "0-" + f_to_str(scale, 0);
 	return str;
+}
+
+std::string Competition::validate(const Antigens &antigens) const
+{
+	if (filename.length() == 0)
+	{
+		return "Competition data table missing filename";
+	}
+	if (!metadata)
+	{
+		return "Competition data table " + filename + " could not be loaded";
+	}
+	if (left_header.length() == 0)
+	{
+		return "No first antibody header for " + filename;
+	}
+	if (right_header.length() == 0)
+	{
+		return "No second antibody header for " + filename;
+	}
+	if (value_header.length() == 0)
+	{
+		return "No data value header for " + filename;
+	}
+	if (!metadata->areAllNumbers(value_header))
+	{
+		return "CSV values for header " + value_header + 
+		" in \n" + filename + " are mixed text/numbers and "\
+		"cannot be used as experimental data";
+	}
+	if (!antigen.length())
+	{
+		return "No antigen model listed as subject for " + filename;
+	}
+	bool found = false;
+	for (const Antigen &atgn : antigens)
+	{
+		if (atgn.title == antigen)
+		{
+			found = true; break;
+		}
+	}
+	if (!found)
+	{
+		return "Antigen model \"" + antigen + "\" for " + filename
+		+ " does not exist";
+	}
+
+	return "";
+}
+
+std::string Competitions::validate(const Antigens &antigens)
+{
+	auto validate_comp = [antigens](const Competition &comp)
+	{
+		return comp.validate(antigens);
+	};
+
+	return MabUtils::gather_validations<Competition>
+	(validate_comp, *this);
 }
