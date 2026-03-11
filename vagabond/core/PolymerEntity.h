@@ -28,7 +28,7 @@ class PolymerEntity : public Entity, public HasResponder<Responder<PolymerEntity
 public:
 	PolymerEntity();
 
-	virtual bool hasSequence()
+	virtual bool hasSequence() const
 	{
 		return true;
 	}
