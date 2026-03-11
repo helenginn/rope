@@ -28,15 +28,17 @@ class FileManager;
 class AntigenSetup : public Scene
 {
 public:
-	AntigenSetup(Scene *scene, Antigen &antigen);
+	AntigenSetup(Scene *scene, ColourMap &colours, Antigen &antigen);
 	void prepareChoosePDB();
 	void prepareChooseTitle();
 	void prepareAssignChains();
+	void listAntigenChains();
 
 	void setup();
 	void refresh();
 private:
 	Antigen &_antigen;
+	ColourMap &_colours;
 
 };
 
