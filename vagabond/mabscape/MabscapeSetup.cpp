@@ -151,6 +151,14 @@ void MabscapeSetup::summariseNumbers()
 		tb->setRight(0.8, 0.4);
 		addTempObject(tb);
 	}
+
+	if (_mab.fiducials.size())
+	{
+		Text *tb = new Text(as_string(_mab.fiducials.size(), 
+		                              "fiducial"));
+		tb->setRight(0.8, 0.5);
+		addTempObject(tb);
+	}
 }
 
 void MabscapeSetup::refresh()

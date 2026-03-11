@@ -29,8 +29,19 @@ public:
 	              Competitions &comps);
 
 	virtual void setup();
+	virtual void refresh();
+
+	Fiducial &fiducial()
+	{
+		return *_object;
+	}
+protected:
+	virtual bool acceptable_to_add_after(Fiducial &fiducial);
 private:
+	void chooseName();
+
 	Competitions &_comps;
+	Fiducials &_fiducials;
 
 };
 
