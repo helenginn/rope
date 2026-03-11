@@ -40,12 +40,23 @@ class Antigens : public std::vector<Antigen>
 public:
 	std::string validate();
 
+	OpSet<std::string> entities();
 };
 
 struct Competition
 {
 	std::string filename{};
 	Metadata *metadata{};
+
+	std::string left_header;
+	std::string right_header;
+	std::string value_header;
+	
+	bool as_competition{false};
+	float scale{1};
+	std::string interpretation_as_desc();
+	
+	std::string antigen;
 };
 
 struct ColourMap

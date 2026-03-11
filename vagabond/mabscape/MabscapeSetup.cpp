@@ -47,7 +47,7 @@ void MabscapeSetup::setup()
 	auto setup_competition_data = [this]()
 	{
 		CompetitionSetup *cs = 
-		new CompetitionSetup(this, _mab.competition);
+		new CompetitionSetup(this, _mab.competition, _mab.antigens);
 		cs->show();
 	};
 

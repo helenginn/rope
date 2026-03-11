@@ -80,3 +80,21 @@ std::string Antigens::validate()
 	}
 	return problems;
 }
+
+OpSet<std::string> Antigens::entities()
+{
+	OpSet<std::string> entities;
+	for (Antigen &antigen : *this)
+	{
+		entities += antigen.entities;
+	}
+
+	return entities;
+}
+
+std::string Competition::interpretation_as_desc()
+{
+	std::string str = (as_competition ? "competition, " : "binding, ");
+	str += "0-" + f_to_str(scale, 0);
+	return str;
+}

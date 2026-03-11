@@ -25,13 +25,21 @@
 class CompetitionSetup : public Scene
 {
 public:
-	CompetitionSetup(Scene *scene, Competition &comp);
+	CompetitionSetup(Scene *scene, Competition &comp, 
+	                 Antigens &antigens);
 
 	void setup();
+	virtual void refresh();
 private:
+	void guessHeaders();
+	void showViewTable();
 	void prepareChooseCSV();
+	void relevantHeaders();
+	void howToReadResult();
+	void relevantAntigen();
 
 	Competition &_comp;
+	Antigens &_antigens;
 
 };
 
