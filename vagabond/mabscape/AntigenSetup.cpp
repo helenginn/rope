@@ -33,10 +33,14 @@
 #include "AntigenSetup.h"
 
 AntigenSetup::AntigenSetup(Scene *scene, ColourMap &colours,
-                           Antigen &antigen) 
-: Scene(scene), _antigen(antigen), _colours(colours)
+                           Antigens &antigens) 
+: Scene(scene), _antigens(antigens), _colours(colours)
 {
-
+	if (_antigens.size() == 0)
+	{
+		_antigens.push_back(Antigen());
+	}
+	_antigen = _antigens.begin();
 }
 
 void AntigenSetup::prepareChoosePDB()
@@ -47,8 +51,8 @@ void AntigenSetup::prepareChoosePDB()
 		{
 			PdbFile pdb(filename);
 			pdb.parse();
-			_antigen.model.setFilename(filename);
-			_antigen.title = filename.substr(0, filename.rfind('.'));
+			antigen().model.setFilename(filename);
+			antigen().title = filename.substr(0, filename.rfind('.'));
 			refresh();
 		}
 		catch (const std::runtime_error &err)
@@ -69,8 +73,8 @@ void AntigenSetup::prepareChoosePDB()
 		fv->show();
 	};
 
-	std::string name = _antigen.model.filename().length() 
-	? _antigen.model.filename() : "choose";
+	std::string name = antigen().model.filename().length() 
+	? antigen().model.filename() : "choose";
 	TextButton *tb = new TextButton(name, this);
 	tb->setRight(0.8, 0.3);
 	tb->setReturnJob(choose_pdb);
@@ -79,19 +83,19 @@ void AntigenSetup::prepareChoosePDB()
 
 void AntigenSetup::prepareChooseTitle()
 {
-	if (_antigen.title.length() == 0)
+	if (antigen().title.length() == 0)
 	{
 		return;
 	}
 
 	Text *text = new Text("Name of antigen:");
 	text->setLeft(0.2, 0.4);
-	addObject(text);
+	addTempObject(text);
 	
-	TextEntry *te = new TextEntry(_antigen.title, this);
+	TextEntry *te = new TextEntry(antigen().title, this);
 	auto change_title = [this, te]()
 	{
-		_antigen.title = te->scratch();
+		antigen().title = te->scratch();
 	};
 
 	te->setRight(0.8, 0.4);
@@ -101,7 +105,7 @@ void AntigenSetup::prepareChooseTitle()
 
 void AntigenSetup::prepareAssignChains()
 {
-	if (_antigen.model.filename().length() == 0)
+	if (antigen().model.filename().length() == 0)
 	{
 		return;
 	}
@@ -112,7 +116,7 @@ void AntigenSetup::prepareAssignChains()
 	
 	auto provide_colours = [this](Chain *ch) -> glm::vec3
 	{
-		std::string entity = _antigen.model.entityForChain(ch->id());
+		std::string entity = antigen().model.entityForChain(ch->id());
 		if (entity.length() == 0)
 		{
 			return {0., 0., 0.};
@@ -132,10 +136,10 @@ void AntigenSetup::prepareAssignChains()
 				PolymerEntity obj; obj.setName(str);
 				obj.setSequence(ch->fullSequence()); 
 				Environment::entityManager()->insertIfUnique(obj);
-				_antigen.model.setEntityForChain(ch->id(), str);
-				_antigen.model.housekeeping();
+				antigen().model.setEntityForChain(ch->id(), str);
+				antigen().model.housekeeping();
 				_colours.recalculate();
-				_antigen.entities += str;
+				antigen().entities += str;
 				view->updateColours();
 			}
 			catch (const std::runtime_error &err)
@@ -151,10 +155,22 @@ void AntigenSetup::prepareAssignChains()
 	{
 		return [ent, ch, view, this]()
 		{
-			_antigen.model.setEntityForChain(ch->id(), ent);
-			_antigen.model.housekeeping();
+			antigen().model.setEntityForChain(ch->id(), ent);
+			antigen().model.housekeeping();
 			_colours.recalculate();
-			_antigen.entities += ent;
+			antigen().entities += ent;
+			view->updateColours();
+		};
+	};
+
+	auto unassign_monomer = [this]
+	(ModelTopologyView *view, Chain *ch)
+	{
+		return [ch, view, this]()
+		{
+			antigen().model.unassignChainEntity(ch->id());
+			antigen().model.housekeeping();
+			_colours.recalculate();
 			view->updateColours();
 		};
 	};
@@ -172,11 +188,12 @@ void AntigenSetup::prepareAssignChains()
 		};
 	};
 
-	auto click_chain = [make_ask_for_monomer, assign_monomer, this]
+	auto click_chain = [make_ask_for_monomer, assign_monomer, 
+	unassign_monomer, this]
 	(ModelTopologyView *view, Chain *ch, const glm::vec3 &where)
 	{
-		std::set<Entity *> entities = _antigen.model.entities();
-		std::cout << "Entity set: " << entities.size() << std::endl;
+		EntityManager *m = Environment::entityManager();
+		std::vector<Entity *> entities = m->entities();
 
 		Menu *menu = new Menu(view);
 		menu->addOption("assign as new antigen protein",
@@ -202,13 +219,18 @@ void AntigenSetup::prepareAssignChains()
 			menu->addOption(msg,
 			                assign_monomer(view, ch, ent->name()));
 		}
+		if (antigen().model.entityForChain(ch->id()).length())
+		{
+			menu->addOption("unassign", unassign_monomer(view, ch));
+
+		}
 		menu->setup(where.x, where.y, 1);
 		view->setModal(menu);
 	};
 	
 	auto show_topology = [this, click_chain, provide_colours]()
 	{
-		if (_antigen.model.filename().length() == 0)
+		if (antigen().model.filename().length() == 0)
 		{
 			BadChoice *bc = new BadChoice(this, "Error: filename missing");
 			setModal(bc);
@@ -216,7 +238,7 @@ void AntigenSetup::prepareAssignChains()
 		else
 		{
 			ModelTopologyView *mtv = 
-			new ModelTopologyView(this, _antigen.model);
+			new ModelTopologyView(this, antigen().model);
 			mtv->setClickChainEvent(click_chain);
 			mtv->setColouringFunction(provide_colours);
 			mtv->show();
@@ -237,10 +259,7 @@ void AntigenSetup::setup()
 	text->setLeft(0.2, 0.3);
 	addObject(text);
 	
-	prepareChoosePDB();
-	prepareChooseTitle();
-	prepareAssignChains();
-	listAntigenChains();
+	refresh();
 }
 
 void AntigenSetup::refresh()
@@ -250,21 +269,41 @@ void AntigenSetup::refresh()
 	prepareChooseTitle();
 	prepareAssignChains();
 	listAntigenChains();
+	scrollButtons();
+	deleteButton();
+}
+
+void AntigenSetup::deleteButton()
+{
+	if (_antigens.size() > 1)
+	{
+		TextButton *tb = new TextButton("Delete", this);
+		tb->setRight(0.9, 0.1);
+		tb->setReturnJob
+		([this]()
+		 {
+			_antigens.erase(_antigen);
+			_antigen = _antigens.begin();
+			refresh();
+		 });
+		addTempObject(tb);
+	}
+
 }
 
 void AntigenSetup::listAntigenChains()
 {
-	if (_antigen.entities.size() == 0)
+	if (antigen().entities.size() == 0)
 	{
 		return;
 	}
 
 	Text *text = new Text("Antigen entities:");
 	text->setLeft(0.2, 0.6);
-	addObject(text);
+	addTempObject(text);
 
 	float top = 0.6;
-	for (const std::string &ent : _antigen.entities)
+	for (const std::string &ent : antigen().entities)
 	{
 		Text *text = new Text(ent);
 		text->setRight(0.8, top);
@@ -277,11 +316,57 @@ void AntigenSetup::listAntigenChains()
 		ib->setReturnJob
 		([this, ent]()
 		 {
-			_antigen.entities -= ent;
+			antigen().entities -= ent;
 			refresh();
 		 });
 		addTempObject(ib);
 
 		top += 0.06;
+	}
+}
+
+void AntigenSetup::scrollButtons()
+{
+	if (_antigen != _antigens.begin())
+	{
+		ImageButton *bb = ImageButton::arrow(+90., this);
+		bb->setCentre(0.1, 0.8);
+		bb->setReturnJob
+		([this]()
+		 {
+			_antigen--;
+			refresh();
+		 });
+		addTempObject(bb);
+	}
+
+	if (_antigen != _antigens.end() - 1)
+	{
+		ImageButton *bb = ImageButton::arrow(-90., this);
+		bb->setCentre(0.9, 0.8);
+		bb->setReturnJob
+		([this]()
+		 {
+			_antigen++;
+			refresh();
+		 });
+		addTempObject(bb);
+	}
+
+	if (_antigen == _antigens.end() - 1 && 
+	    antigen().model.filename().length() > 0)
+	{
+		ImageButton *bb = new ImageButton("assets/images/plus.png", 
+		                                  this);
+		bb->resize(0.06);
+		bb->setCentre(0.9, 0.8);
+		bb->setReturnJob
+		([this]()
+		 {
+			_antigens.push_back(Antigen());
+			_antigen = _antigens.end() - 1;
+			refresh();
+		 });
+		addTempObject(bb);
 	}
 }
