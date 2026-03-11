@@ -97,6 +97,15 @@ public:
 
 };
 
+struct Fiducial
+{
+
+};
+
+class Fiducials : public std::vector<Fiducial>
+{
+public:
+
 };
 
 struct ColourMap
@@ -118,6 +127,7 @@ struct Mab
 {
 	Antigens antigens{};
 	Competitions competitions{};
+	Fiducials fiducials{};
 	ColourMap colours{};
 };
 

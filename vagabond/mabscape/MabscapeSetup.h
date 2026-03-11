@@ -32,9 +32,14 @@ public:
 
 	void load(const std::string &command);
 private:
+	void validationSmileys();
+	void summariseNumbers();
+	void trustedAntibodies();
+
 	Mab _mab{};
 
 	bool _validateAntigen{false};
+	bool _validateComp{false};
 };
 
 #endif
