@@ -155,3 +155,25 @@ std::string Competitions::validate(const Antigens &antigens)
 	return MabUtils::gather_validations<Competition>
 	(validate_comp, *this);
 }
+
+OpSet<std::string> Competitions::all_antibodies()
+{
+	OpSet<std::string> all;
+	for (Competition &comp : *this)
+	{
+		TabulatedData *data = comp.metadata->asData();
+		all += data->all_options(comp.left_header);
+		all += data->all_options(comp.right_header);
+	}
+	return all;
+}
+
+OpSet<std::string> Fiducials::all_fiducials()
+{
+	OpSet<std::string> all;
+	for (Fiducial &fid : *this)
+	{
+		all += fid.name;
+	}
+	return all;
+}

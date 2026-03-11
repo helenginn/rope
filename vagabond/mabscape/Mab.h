@@ -95,16 +95,19 @@ class Competitions : public std::vector<Competition>
 public:
 	std::string validate(const Antigens &antigens);
 
+	OpSet<std::string> all_antibodies();
 };
 
 struct Fiducial
 {
+	std::string name;
 
 };
 
 class Fiducials : public std::vector<Fiducial>
 {
 public:
+	OpSet<std::string> all_fiducials();
 
 };
 
