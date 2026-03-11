@@ -110,10 +110,6 @@ void AntigenSetup::prepareAssignChains()
 		return;
 	}
 
-	Text *text = new Text("Assign chains");
-	text->setLeft(0.2, 0.5);
-	addTempObject(text);
-	
 	auto provide_colours = [this](Chain *ch) -> glm::vec3
 	{
 		std::string entity = antigen().model.entityForChain(ch->id());
@@ -245,6 +241,11 @@ void AntigenSetup::prepareAssignChains()
 		}
 	};
 
+	TextButton *text = new TextButton("Assign chains", this);
+	text->setLeft(0.2, 0.5);
+	text->setReturnJob(show_topology);
+	addTempObject(text);
+	
 	ImageButton *t = ImageButton::arrow(-90., this);
 	t->setReturnJob(show_topology);
 	t->setCentre(0.8, 0.5);
