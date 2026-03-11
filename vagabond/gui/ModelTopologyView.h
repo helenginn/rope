@@ -19,25 +19,51 @@
 #ifndef __vagabond__ModelTopologyView__
 #define __vagabond__ModelTopologyView__
 
+#include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/gui/elements/Mouse3D.h>
 #include <map>
 
+class Line;
 class Model;
 class Chain;
-class FloatingImage;
+class FloatingText;
+class TopologyCircle;
 class PositionShifter;
 
-class ModelTopologyView : public Mouse3D
+class ModelTopologyView : public Mouse3D, public IndexResponseView
 {
 public:
 	ModelTopologyView(Scene *prev, Model &contents);
 	~ModelTopologyView();
 
 	virtual void setup();
+	void unhighlight();
+	void updateColours();
+	
+	typedef std::function<void(ModelTopologyView *me,
+	                           Chain *chain, const glm::vec3 &where)>
+	                            ClickChainEvent;
+
+	typedef std::function<glm::vec3(Chain *chain)> ColouringFunction;
+	
+	void setClickChainEvent(const ClickChainEvent &event)
+	{
+		_clickChainEvent = event;
+	}
+	
+	void setColouringFunction(const ColouringFunction &func)
+	{
+		_colourFunc = func;
+	}
+
+	void clicked(TopologyCircle *circle);
+protected:
+	virtual void interactedWithNothing(bool left, bool hover);
 private:
 	void makeShifter();
 	void makeDots();
 	void addLinks();
+	void addCircles();
 	Model &_model;
 	PositionShifter *_shifter{};
 	
@@ -45,10 +71,27 @@ private:
 	{
 		Chain *ch;
 		glm::vec3 pos;
+		FloatingText *text;
 	} ChainInfo;
+	
+	typedef struct 
+	{
+		TopologyCircle *left;
+		TopologyCircle *right;
+	} LinkInfo;
+	
+	glm::vec3 &posForChain(Chain *chain)
+	{
+		TopologyCircle *fi = _chain2Image[chain];
+		return _image2Info[fi].pos;
+	}
 
-	std::map<FloatingImage *, ChainInfo> _map;
+	std::map<TopologyCircle *, ChainInfo> _image2Info;
+	std::map<Chain *, TopologyCircle *> _chain2Image;
+	std::map<Line *, LinkInfo> _links;
 
+	ClickChainEvent _clickChainEvent{};
+	ColouringFunction _colourFunc{};
 };
 
 #endif

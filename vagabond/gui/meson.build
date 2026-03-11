@@ -177,6 +177,8 @@ guifiles = [
 'TableView.h',
 'TickList.cpp',
 'TickList.h',
+'TopologyCircle.cpp',
+'TopologyCircle.h',
 'TorsionAxisView.cpp',
 'TorsionAxisView.h',
 'Toolkit.cpp',
