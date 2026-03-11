@@ -58,21 +58,33 @@ const std::string Model::entityForChain(std::string id) const
 void Model::swapChainToEntity(std::string id, std::string entity)
 {
 
-	std::cout << "Switching entity for polymer." << std::endl;
+	Polymer *found = nullptr;
 	if (_chain2Polymer.count(id))
 	{
-		Polymer *pol = _chain2Polymer[id];
-		if (pol != nullptr)
+		found = _chain2Polymer[id];
+		if (found != nullptr)
 		{
 			std::cout << "Found old polymer of entity " << 
-			pol->entity_id() << std::endl;
-			std::cout << "Purging old polymer from environment" << std::endl;
+			found->entity_id() << ", chain " << id << std::endl;
+			std::cout << "Purging old polymer from environment for chain " << found->model_chain_id() << std::endl;
 			_chain2Entity.erase(id);
 		}
 	}
+	
+	_chain2Polymer.erase(id);
+	
+	for (auto it = _polymers.begin(); it != _polymers.end(); it++)
+	{
+		if (&*it == found)
+		{
+			_polymers.erase(it);
+			break;
+		}
+	}
 
-	std::cout << "Assigning new entity, " << entity << std::endl;
 	_chain2Entity[id] = entity;
+	std::cout << "Assigning new entity, " << entity << " for chain " 
+	<< id << std::endl;
 }
 
 void Model::setEntityForChain(std::string id, std::string entity)
@@ -117,6 +129,7 @@ Polymer *Model::polymerFromChain(Chain *ch)
 
 	ref.addChain(ch->id());
 	ref.putTorsionRefsInSequence(ch);
+	ref.setModel(this);
 	
 	return &_polymers.back();
 }
@@ -204,8 +217,6 @@ void Model::createPolymers()
 		{
 			continue;
 		}
-		
-		load();
 
 		Chain *ch = _currentAtoms->chain(id);
 		
@@ -256,10 +267,22 @@ bool Model::mergePolymersInSet(std::set<Polymer *> polymers)
 	float best_distance = FLT_MAX;
 	Polymer *best_a = nullptr;
 	Polymer *best_b = nullptr;
-
-	for (Polymer *a : polymers)
+	
+	auto matches_entity_sequence = [](Polymer *pol)
 	{
-		for (Polymer *b : polymers)
+		SequenceComparison *sc = 
+		new SequenceComparison(pol->sequence(), 
+		                       pol->entity()->sequence());
+		float match = sc->match();
+		return (match > 0.5);
+	};
+
+	OpSet<Polymer *> pruned = polymers;
+	pruned.filter(matches_entity_sequence);
+
+	for (Polymer *a : pruned)
+	{
+		for (Polymer *b : pruned)
 		{
 			if (a == b)
 			{
@@ -486,23 +509,33 @@ const Metadata::KeyValues Model::metadata(Metadata *source) const
 
 void Model::housekeeping()
 {
-	for (Polymer &pol : _polymers)
+	auto polymers_get_model_info = [this]()
 	{
-		for (const std::string &ch : pol.chain_ids())
+		for (Polymer &pol : _polymers)
 		{
-			_chain2Polymer[ch] = &pol;
+			for (const std::string &ch : pol.chain_ids())
+			{
+				_chain2Polymer[ch] = &pol;
+			}
+
+			pol.setModel(this);
 		}
 
-		pol.setModel(this);
-		
-	}
+		for (Ligand &lig : _ligands)
+		{
+			lig.setModel(this);
+		}
+	};
 	
+	polymers_get_model_info();
+
 	if (_chain2Polymer.size() >= _chain2Entity.size())
 	{
 		return;
 	}
 
 	createPolymers();
+	polymers_get_model_info();
 	
 	std::set<Entity *> ents = entities();
 	for (Entity *ent : ents)

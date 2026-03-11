@@ -68,8 +68,6 @@ public:
 		return false;
 	}
 	
-	std::set<std::string> ents() const;
-	
 	void setName(std::string name)
 	{
 		_name = name;
