@@ -79,7 +79,7 @@ void FileView::setup()
 		ImageButton *image = new ImageButton("assets/images/refresh.png", this);
 		image->setCentre(0.9, 0.1);
 		image->resize(0.08);
-		image->setReturnTag("refresh");
+		image->setReturnJob([this]() { globRefresh(); });
 		addObject(image);
 	}
 #endif
@@ -236,29 +236,27 @@ void FileView::buttonPressed(std::string tag, Button *button)
 	{
 		upload_file();
 	}
-#else
-	if (tag == "refresh")
-	{
-		_manager->loadGlobFiles();
-		int count = _manager->unloadMissingFiles();
-		
-		if (count > 0)
-		{
-			std::string str = std::to_string(count);
-			str += " non-existent files were found \nwhich are used in ";
-			str += "existing models.\nPurge models and filenames?";
-			AskYesNo *yn = new AskYesNo(this, str, "purge", this);
-			setModal(yn);
-		}
-	}
 #endif
 
-	if (tag == "yes_purge")
+	ListView::buttonPressed(tag, button);
+}
+
+void FileView::globRefresh()
+{
+	_manager->loadGlobFiles();
+	int count = _manager->unloadMissingFiles();
+
+	if (count > 0)
 	{
-		_manager->unloadMissingFiles(true);
+		std::string str = std::to_string(count);
+		str += " non-existent files were found \nwhich are used in ";
+		str += "existing models.\nPurge models and filenames?";
+		AskYesNo *yn = new AskYesNo(this, str);
+		yn->addJob("yes", [this]()
+		           { _manager->unloadMissingFiles(true); });
+		setModal(yn);
 	}
 
-	ListView::buttonPressed(tag, button);
 }
 
 Renderable *FileView::getLine(int i)
