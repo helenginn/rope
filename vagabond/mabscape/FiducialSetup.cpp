@@ -16,30 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MabscapeSetup__
-#define __vagabond__MabscapeSetup__
+#include "FiducialSetup.h"
 
-#include <vagabond/gui/elements/Scene.h>
-#include "Mab.h"
-
-class MabscapeSetup : public Scene
+FiducialSetup::FiducialSetup(Scene *scene, Fiducials &fiducials, 
+                             Competitions &comps)
+: MultipleSetup(scene, fiducials), _comps(comps)
 {
-public:
-	MabscapeSetup();
 
-	virtual void setup();
-	virtual void refresh();
+}
 
-	void load(const std::string &command);
-private:
-	void validationSmileys();
-	void summariseNumbers();
-	void trustedAntibodies();
-
-	Mab _mab{};
-
-	bool _validateAntigen{false};
-	bool _validateComp{false};
-};
-
-#endif
+void FiducialSetup::setup()
+{
+	addTitle("Trusted antibody setup");
+}

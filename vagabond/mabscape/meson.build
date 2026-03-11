@@ -3,6 +3,8 @@ mabscapefiles = [
 'AntigenSetup.cpp',
 'CompetitionSetup.h',
 'CompetitionSetup.cpp',
+'FiducialSetup.h',
+'FiducialSetup.cpp',
 'Mab.h',
 'Mab.cpp',
 'MabscapeWindow.h',
