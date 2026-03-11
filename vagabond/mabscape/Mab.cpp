@@ -42,21 +42,41 @@ std::string Antigen::validate()
 {
 	if (model.filename() == "")
 	{
-		return "No model PDB chosen";
+		return "No model PDB chosen for " + title;
 	}
 
 	if (entities.size() == 0)
 	{
-		return "No entities assigned";
+		return "No entities assigned for " + title;
 	}
 	
 	for (const std::string &ent : entities)
 	{
 		if (!model.hasEntity(ent))
 		{
-			return "Model missing assigned entity: " + ent;
+			return "Model missing assigned entity " + ent + " in "
+			+ title;
 		}
 	}
 	
 	return "";
+}
+
+std::string Antigens::validate()
+{
+	std::string problems;
+	for (Antigen &antigen : *this)
+	{
+		std::string contribution = antigen.validate();
+		if (contribution.length())
+		{
+			problems += contribution;
+			problems += "\n";
+		}
+	}
+	if (problems.length() > 0)
+	{
+		problems.pop_back();
+	}
+	return problems;
 }

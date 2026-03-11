@@ -39,7 +39,7 @@ void MabscapeSetup::setup()
 	auto setup_antigen = [this]()
 	{
 		AntigenSetup *as = new AntigenSetup(this, _mab.colours, 
-		                                    _mab.antigen);
+		                                    _mab.antigens);
 		as->show();
 		_validateAntigen = true;
 	};
@@ -88,7 +88,7 @@ void MabscapeSetup::refresh()
 
 	if (_validateAntigen)
 	{
-		ImageButton *ib = make_button(_mab.antigen.validate());
+		ImageButton *ib = make_button(_mab.antigens.validate());
 		ib->setRight(0.19, 0.3);
 		addTempObject(ib);
 	}

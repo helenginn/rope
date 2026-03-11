@@ -35,6 +35,13 @@ struct Antigen
 	std::string validate();
 };
 
+class Antigens : public std::vector<Antigen>
+{
+public:
+	std::string validate();
+
+};
+
 struct Competition
 {
 	std::string filename{};
@@ -58,7 +65,7 @@ struct ColourMap
 
 struct Mab
 {
-	Antigen antigen{};
+	Antigens antigens{};
 	Competition competition{};
 	ColourMap colours{};
 };

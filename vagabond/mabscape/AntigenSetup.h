@@ -28,16 +28,24 @@ class FileManager;
 class AntigenSetup : public Scene
 {
 public:
-	AntigenSetup(Scene *scene, ColourMap &colours, Antigen &antigen);
+	AntigenSetup(Scene *scene, ColourMap &colours, Antigens &antigens);
 	void prepareChoosePDB();
 	void prepareChooseTitle();
 	void prepareAssignChains();
 	void listAntigenChains();
+	void scrollButtons();
+	void deleteButton();
 
 	void setup();
 	void refresh();
+	
+	Antigen &antigen()
+	{
+		return *_antigen;
+	}
 private:
-	Antigen &_antigen;
+	Antigens &_antigens;
+	Antigens::iterator _antigen;
 	ColourMap &_colours;
 
 };
