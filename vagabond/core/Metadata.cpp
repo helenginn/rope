@@ -312,6 +312,44 @@ TabulatedData *Metadata::asModelData()
 	return asData(models.toVector());
 }
 
+TabulatedData *Metadata::asData()
+{
+	OpSet<TabulatedData::HeaderTypePair> ids;
+	for (const std::string &header : _headers)
+	{
+		TabulatedData::DataType type = TabulatedData::Text; 
+		if (areAllNumbers(_data, header))
+		{
+			type = TabulatedData::Number;
+		}
+
+		ids.insert({header, type});
+	}
+
+	TabulatedData *data = new TabulatedData(ids.toVector());
+
+	for (const KeyValues &kv : _data)
+	{
+		std::vector<TabulatedData::StringPair> pairs;
+		for (const std::string &id : _headers)
+		{
+			if (kv.count(id))
+			{
+				pairs.push_back({id, kv.at(id).text()});
+			}
+			else
+			{
+				pairs.push_back({id, ""});
+			}
+		}
+
+		data->addEntry(pairs);
+	}
+	
+	return data;
+}
+
+
 TabulatedData *Metadata::asData(const std::vector<std::string> &ids) 
 {
 	OpSet<TabulatedData::HeaderTypePair> headers;
@@ -386,4 +424,9 @@ void Metadata::setModelIdForInstanceId(std::string inst_id, std::string mod_id)
 {
 	_inst2Model[inst_id] = mod_id;
 
+}
+
+bool Metadata::areAllNumbers(const std::string header)
+{
+	return areAllNumbers(_data, header);
 }
