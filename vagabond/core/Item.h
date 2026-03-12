@@ -160,6 +160,16 @@ public:
 	/** pushes an item to a specific point in the list */
 	void addItemAfter(Item *item, Item *after);
 	
+	virtual void select()
+	{
+		select(true);
+	}
+	
+	virtual void select(bool left)
+	{
+
+	}
+	
 	void setSelected(bool selected)
 	{
 		_selected = selected;
