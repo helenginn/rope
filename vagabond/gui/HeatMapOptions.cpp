@@ -4,7 +4,6 @@
 #include <vagabond/core/PathManager.h>
 #include <vagabond/core/Entity.h>
 #include <vagabond/core/paths/Entropy.h>
-
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/TextButton.h>
