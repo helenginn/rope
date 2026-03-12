@@ -21,12 +21,14 @@
 
 #include <vagabond/gui/elements/IndexResponseView.h>
 #include <vagabond/core/protonic/Network.h>
-#include <vagabond/core/Responder.h>
 #include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/gui/elements/Renderable.h>
+#include <vagabond/core/Responder.h>
 #include <vagabond/utils/OpSet.h>
 
 class PositionShifter;
 class HydrogenProbe;
+class CliqueView;
 class ProbeBond;
 class ProbeAtom;
 class BondProbe;
@@ -61,6 +63,7 @@ public:
 	void setManualAdjust(Probe *probe);
 	
 	void setMenu(Menu *menu);
+	void makeMainMenu();
 	virtual void keyReleaseEvent(SDL_Keycode pressed);
 	virtual void mouseMoveEvent(double x, double y);
 	virtual void mouseReleaseEvent(double x, double y, SDL_MouseButtonEvent button);
@@ -68,6 +71,7 @@ public:
 	virtual void sendSelection(float t, float l, float b, float r, bool inverse);
 	void expandSelectionToNeighbours();
 	void completeResidues(bool stop_at_alpha = false);
+	void selectProbes(const OpSet<Probe *> &probes);
 
 private:
 	void arrangeFigure();
@@ -75,15 +79,14 @@ private:
 	virtual void sendObject(std::string tag, void *object);
 	virtual void interactedWithNothing(bool left, bool hover);
 	void findAtomProbes();
+	void linkSymmetricAtomProbes(const hnet::AtomConf &ac);
 
-void completeOnCondition(std::function<void(Probe *probe)> initial_assessment,
-                         std::function<bool(Probe *probe, Probe *prev)> 
-                         check_probe);
 	
 	std::map<Probe *, ProbeAtom *> _textProbes;
 	std::map<Probe *, ProbeBond *> _bondProbes;
 	
 	OpSet<Probe *> _allProbes;
+	OpSet<Probe *> _hProbes;
 
 	PositionShifter *_shifter{};
 	ProbeAtom *_manual{};
@@ -92,6 +95,9 @@ void completeOnCondition(std::function<void(Probe *probe)> initial_assessment,
 
 	ProbeAtom *_activeProbe = nullptr;
 	Renderable *_active = nullptr;
+	CliqueView *_cv = nullptr;
+	
+	std::function<void()> _onClick{};
 };
 
 #endif

@@ -22,17 +22,17 @@
 
 #include <variant>
 #include <functional>
+#include "Limit.h"
+#include "OnlyOne.h"
+#include "Stricter.h"
 #include "Connector.h"
+#include "BondAdder.h"
+#include "EqualBonds.h"
+#include "CountAdder.h"
 #include "HydrogenBond.h"
 #include "EitherOrBond.h"
-#include "EqualBonds.h"
-#include "BondAdder.h"
-#include "CountAdder.h"
-#include "Limit.h"
-#include "Stricter.h"
-#include "MutualExistence.h"
 #include "SubExistence.h"
-#include "OnlyOne.h"
+#include "MutualExistence.h"
 
 namespace hnet
 {
@@ -43,23 +43,10 @@ struct Constant
 	Constant(Connector &connector, const Value &constant) :
 	_connector(connector), _constant(constant)
 	{
-		/* add this object's constraint check function to the connector */
-		auto self_check = [this](void *prev) { return check(prev); };
-		_connector.add_constraint_check(self_check);
-
-		auto forget_me = [this](void *blame) { return forget(blame); };
-		_connector.add_forget(forget_me);
-
-		if (!check(this))
-		{
-			_connector.pop_last_check(this);
-
-			throw std::runtime_error("New constraint immediately "\
-			                         "failed validation check");
-		}
+		prep_constraints_and_forgets(this, {&connector});
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_connector.forget(blame);
 	}
@@ -94,8 +81,8 @@ struct AnyConstraint
 	enum Type
 	{
 		Count, Atom, Bond, HBond, StrongAdd, CountAdd, WeakAdd, PresentAdd, 
-		AbsentAdd, NotBrokenAdd, EiOrBond, Min, Max, Equal, Stricter,
-		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen
+		AbsentAdd, NotBrokenAdd, EiOrBond, Equal, Stricter,
+		Existence, MutualExist, SubExist, OnlyOneOf, IfCountThen,
 	};
 	
 	AnyConstraint(IfCountThenImpose *const &constraint)
@@ -107,18 +94,6 @@ struct AnyConstraint
 	AnyConstraint(StricterBond *const &constraint)
 	{
 		_type = Stricter;
-		_ptr = constraint;
-	}
-	
-	AnyConstraint(MaxLimit *const &constraint)
-	{
-		_type = Max;
-		_ptr = constraint;
-	}
-	
-	AnyConstraint(MinLimit *const &constraint)
-	{
-		_type = Min;
 		_ptr = constraint;
 	}
 	
@@ -231,12 +206,6 @@ struct AnyConstraint
 			case Bond:
 			delete static_cast<BondConstant *>(_ptr); break;
 
-			case Min:
-			delete static_cast<MinLimit *>(_ptr); break;
-
-			case Max:
-			delete static_cast<MaxLimit *>(_ptr); break;
-
 			case WeakAdd:
 			delete static_cast<WeakAdder *>(_ptr); break;
 
@@ -281,7 +250,7 @@ struct AnyConstraint
 
 			case IfCountThen:
 			delete static_cast<IfCountThenImpose *>(_ptr); break;
-
+			
 			default: break;
 		}
 	}

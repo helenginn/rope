@@ -32,9 +32,9 @@
  * - donatable hydrogens which are incompatible with each other
  *    - in trypsin, Ser170 and Ser167 for example
  * - alternate conformers - in Arbeit.
- * - coordination of lone pairs may rely on the previous atom too.
- * - carbonyls can coordinate either 2 or 3 coordNums
+ * - coordination of lone pairs may rely on the previous atom too (e.g. asp).
  *
+ * - carbonyls can coordinate either 2 or 3 coordNums // handled
  * - OnlyOne needs to force presence of final remaining conf // handled
  * - missing hydrogens off non-donors // sorted?
  * - currently bonds don't appear between conformations... // handled
@@ -140,6 +140,8 @@ struct AtomConf
 		}
 		return ptr->conformerPositions().at(c).pos.ave;
 	}
+	
+	std::string desc() const;
 };
 
 inline char char_from_conf(const std::string &conformer)
@@ -167,6 +169,12 @@ inline std::ostream &operator<<(std::ostream &ss, const AtomConf &ac)
 	return ss;
 }
 
+inline std::string AtomConf::desc() const
+{
+	std::ostringstream ss;
+	ss << *this;
+	return ss.str();
+}
 
 /*  definitions for atoms which are heavier than hydrogen */
 namespace Count
@@ -325,7 +333,7 @@ inline bool is_contradictory(const Count::Values &val)
 
 typedef std::function<void()> UpdateProbe;
 typedef std::function<bool(void *previous)> Checker;
-typedef std::function<void(void *previous)> Forget;
+typedef std::function<void(OpSet<void *> &previous)> Forget;
 
 /* write descriptions of states to stream */
 

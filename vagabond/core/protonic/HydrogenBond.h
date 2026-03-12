@@ -30,30 +30,10 @@ struct HydrogenBond
 	             BondConnector &right) 
 	: _left(left), _centre(centre), _right(right)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-
-		_left.add_constraint_check(self_check);
-		_right.add_constraint_check(self_check);
-		_centre.add_constraint_check(self_check);
-
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		_left.add_forget(forget_me);
-		_centre.add_forget(forget_me);
-		_right.add_forget(forget_me);
-		
-		if (!check(this))
-		{
-			_left.pop_last_check(this);
-			_centre.pop_last_check(this);
-			_right.pop_last_check(this);
-
-			throw std::runtime_error("New hydrogen bond immediately "\
-			                         "failed validation check");
-		}
+		prep_constraints_and_forgets(this, {&left, &centre, &right});
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_left.forget(blame);
 		_centre.forget(blame);
@@ -71,6 +51,12 @@ struct HydrogenBond
 		        val == Bond::NotPresent);
 	}
 	
+	std::string desc()
+	{
+		return "Hydrogen bonding pattern between \"" + _left.desc() + "\", \"" + 
+		_centre.desc() + "\", \"" + _right.desc() + "\"";
+	}
+	
 	void print_bond()
 	{
 		std::cout << _left.value() << " " << _centre.value() << 
@@ -86,8 +72,9 @@ struct HydrogenBond
 		}
 	}
 	
-	bool impose(void *prev)
+	bool impose(void *previous)
 	{
+		auto assign = make_assign_and_say(this, previous);
 		Bond::Values forLeft = _left.value();
 		Existence::Values forCentre = _centre.value();
 		Bond::Values forRight = _right.value();
@@ -133,16 +120,21 @@ struct HydrogenBond
 			forLeft = Bond::Values(forLeft & Bond::Strong);
 		}
 		
-		_left.assign_value(forLeft, this, prev);
-		if (is_contradictory(_left.value())) return false;
+		// if each bond on either side can only do weak, we cannot have a
+		// hydrogen bond
+		if (_right.value() & Bond::Weak 
+		    && _left.value() & Bond::Weak
+		    && !(_right.value() & Bond::Strong) && 
+		       !(_left.value() & Bond::Strong))
+		{
+			forCentre = Existence::Values(forCentre & Existence::Absent);
+		}
+		
+		assign(_left, forLeft);
+		assign(_centre, forCentre);
+		assign(_right, forRight);
 
-		_centre.assign_value(forCentre, this, prev);
-		if (is_contradictory(_centre.value())) return false;
-
-		_right.assign_value(forRight, this, prev);
-		if (is_contradictory(_right.value())) return false;
-
-		return true;
+		return assign.okay();
 	}
 	
 	bool check(void *previous)

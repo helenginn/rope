@@ -30,27 +30,7 @@ struct SubExistence
 	             ExistenceConnector &right)
 	: _left(left), _sub(sub), _right(right)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-
-		_left.add_constraint_check(self_check);
-		_sub.add_constraint_check(self_check);
-		_right.add_constraint_check(self_check);
-		
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		_left.add_forget(forget_me);
-		_sub.add_forget(forget_me);
-		_right.add_forget(forget_me);
-
-		if (!check(this))
-		{
-			_left.pop_last_check(this);
-			_sub.pop_last_check(this);
-			_right.pop_last_check(this);
-
-			throw std::runtime_error("New mutual existence immediately "\
-			                         "failed validation check");
-		}
+		prep_constraints_and_forgets(this, {&left, &sub, &right});
 	}
 	
 	std::string desc()
@@ -62,7 +42,7 @@ struct SubExistence
 
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_left.forget(blame);
 		_sub.forget(blame);
@@ -79,16 +59,33 @@ struct SubExistence
 			assign(_sub, Existence::Present);
 		}
 
+		if (_sub.value() == Existence::Present)
+		{
+			assign(_left, Existence::Present);
+			assign(_right, Existence::Present);
+		}
+
 		if (_left.value() == Existence::Absent ||
 		    _right.value() == Existence::Absent)
 		{
 			assign(_sub, Existence::Absent);
 		}
-
-		bool con = (!is_contradictory(_left.value()) &&
-		            !is_contradictory(_right.value()));
 		
-		return con;
+		if (_sub.value() == Existence::Absent)
+		{
+			if (_left.value() & Existence::Absent &&
+			    _right.value() == Existence::Present)
+			{
+				assign(_left, Existence::Absent);
+			}
+			if (_right.value() & Existence::Absent &&
+			    _left.value() == Existence::Present)
+			{
+				assign(_right, Existence::Absent);
+			}
+		}
+
+		return assign.okay();
 	}
 
 	ExistenceConnector &_left;

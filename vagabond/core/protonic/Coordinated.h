@@ -38,6 +38,11 @@ public:
 	{
 		return _atomConf.ptr;
 	}
+	
+	const AtomConf &atomConf() const
+	{
+		return _atomConf;
+	}
 
 	template <class Connector>
 	auto &add(Connector *const &connector)
@@ -147,8 +152,14 @@ public:
 	}
 
 	void eitherOr(const ABPair &first, const ABPair &second);
+
+	const std::map<BondConnector *, ExistenceConnector *> &bond2Exist() const
+	{
+		return _bond2Exist;
+	}
 private:
 	OpSet<PairSet> findSeeds(int coord_num);
+	::Atom *makeHydrogen(const glm::vec3 &pos);
 	ABPair makePossibleHydrogen(const glm::vec3 &pos);
 	bool acceptableHydrogenAngle(const glm::vec3 &hydrogen, int coordNum);
 	void comparePairs(OpSet<PairSet> &results,
@@ -203,6 +214,7 @@ private:
 		return _atomConf.ptr;
 	}
 
+	std::map<BondConnector *, ExistenceConnector *> _bond2Exist;
 	Network &_network;
 	AtomConf _atomConf = {nullptr, '\0'};
 	OpSet<AtomConf> _neighbours{};

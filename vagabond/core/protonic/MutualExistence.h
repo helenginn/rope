@@ -30,27 +30,10 @@ struct MutualExistence
 	                std::string desc = "")
 	: _left(left), _right(right), _desc(desc)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-
-		_left.add_constraint_check(self_check);
-		_right.add_constraint_check(self_check);
-		
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		_left.add_forget(forget_me);
-		_right.add_forget(forget_me);
-
-		if (!check(this))
-		{
-			_left.pop_last_check(this);
-			_right.pop_last_check(this);
-
-			throw std::runtime_error("New mutual existence immediately "\
-			                         "failed validation check");
-		}
+		prep_constraints_and_forgets(this, {&left, &right});
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_left.forget(blame);
 		_right.forget(blame);
@@ -84,16 +67,7 @@ struct MutualExistence
 			assign(_left, Existence::Absent);
 		}
 
-
-		bool con = (!is_contradictory(_left.value()) &&
-		            !is_contradictory(_right.value()));
-		
-		if (!con)
-		{
-			std::cout << " - - - this led to a contradiction!" << std::endl;
-		}
-		
-		return con;
+		return assign.okay();
 	}
 
 	ExistenceConnector &_left;

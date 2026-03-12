@@ -47,7 +47,7 @@ AtomGroup::AtomGroup(size_t preload) : HasBondstraints()
 
 void AtomGroup::writeToFile(std::string name)
 {
-	PdbFile::writeAtoms(this, name);
+	PdbFile::writeAtoms(this, name, true);
 }
 
 void AtomGroup::cancelRefinement()

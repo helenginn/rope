@@ -16,30 +16,17 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Hydrogenate__
-#define __vagabond__Hydrogenate__
+#ifndef __vagabond__SavedCliques__
+#define __vagabond__SavedCliques__
 
-/** \class Hydrogenate
- * does that margarine thing for the protein backbone/unmoving hydrogens. */
-
-class Atom;
-class AtomGroup;
-
-namespace hnet
-{
-class Hydrogenate
+class SavedCliques
 {
 public:
-	Hydrogenate(::Atom *atom, AtomGroup *destination);
+	SavedCliques() {};
+	~SavedCliques() {};
 
-	void operator()();
 private:
-	void purgeExisting();
 
-	AtomGroup *_destination = nullptr;
-	::Atom *_atom = nullptr;
-
-};
 };
 
 #endif

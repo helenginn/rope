@@ -24,6 +24,8 @@
 #include <mutex>
 #include <iostream>
 
+#include <vagabond/core/protonic/Clique.h>
+
 #include "HasMetadata.h"
 #include "Metadata.h"
 
@@ -167,7 +169,17 @@ public:
 
 	virtual void respond();
 
-    void export_refined(std::string prefix = "rope", std::string suffix = "");
+	void export_refined(std::string prefix = "rope", std::string suffix = "");
+
+	const std::list<Clique> &cliques() const
+	{
+		return _cliques;
+	}
+	
+	void setCliques(const std::list<Clique> &cliques)
+	{
+		_cliques = cliques;
+	}
 private:
 	void swapChainToEntity(std::string id, std::string entity);
 	void mergeAppropriatePolymers();
@@ -187,6 +199,7 @@ private:
 
 	std::list<Polymer> _polymers;
 	std::list<Ligand> _ligands;
+	std::list<Clique> _cliques;
 
 	int _loadCounter = 0;
 	std::mutex *_loadMutex = nullptr;
@@ -208,6 +221,11 @@ inline void to_json(json &j, const Model &value)
 	{
 
 	}
+	
+	if (value._cliques.size())
+	{
+		j["cliques"] = value._cliques;
+	}
 	j["datafile"] = value._dataFile;
 }
 
@@ -228,6 +246,11 @@ inline void from_json(const json &j, Model &value)
 	catch (...)
 	{
 
+	}
+	
+	if (j.count("cliques"))
+	{
+		value._cliques = j.at("cliques");
 	}
 
 	if (j.count("datafile"))

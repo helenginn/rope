@@ -25,11 +25,14 @@
 #include <vagabond/utils/UndoStack.h>
 #include "Connector.h"
 #include "Constraint.h"
+#include "Clique.h"
 #include "Probe.h"
 
 class HideComplete;
 class Probe;
 class Decree;
+class Model;
+
 namespace hnet
 {
 	class Coordinated;
@@ -41,7 +44,8 @@ public:
 	friend HideComplete;
 	Network();
 	Network(AtomGroup *group, const std::string &spg_name,
-	        const std::array<double, 6> &unit_cell = {});
+	        const std::array<double, 6> &unit_cell = {}, 
+	        Model *const &model = {});
 
 	template <class Connector>
 	auto &add(Connector *const &connector)
@@ -96,6 +100,24 @@ public:
 		return _atomMap;
 	}
 	
+	Probe *probeForDesc(const std::string &desc);
+	
+	AtomProbe *probeForAtom(const hnet::AtomConf &ac)
+	{
+		if (_atom2Probe.count(ac))
+		{
+			return _atom2Probe.at(ac);
+		}
+		return nullptr;
+	}
+	
+	Clique *newClique(const OpSet<Probe *> &probes);
+	
+	std::list<Clique> &cliques()
+	{
+		return _cliques;
+	}
+	
 	Decree *newDecree(const std::string &str);
 private:
 	void establishAtom(::Atom *atom);
@@ -126,13 +148,16 @@ private:
 	std::list<HydrogenProbe *> _hydrogenProbes;
 	std::list<BondProbe *> _bondProbes;
 	std::list<CountProbe *> _countProbes;
+	std::map<std::string, Probe *> _desc2Probe;
+	
+	std::list<Clique> _cliques;
+	Model *_model{};
 
 	std::map<hnet::AtomConf, hnet::Coordinated *> _atomMap;
 	std::map<hnet::AtomConf, AtomProbe *> _atom2Probe;
 	std::map<hnet::AtomConf, std::vector<HydrogenProbe *> > _h2Probe;
 
 	AtomGroup *_original = nullptr;
-	AtomGroup *_symMates = nullptr;
 	AtomGroup *_originalAndMates = nullptr;
 	AtomGroup *_extraHydrogens = nullptr;
 	

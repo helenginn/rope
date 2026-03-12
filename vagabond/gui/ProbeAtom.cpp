@@ -45,8 +45,12 @@ void ProbeAtom::updatePosition()
 
 void ProbeAtom::updateProbe()
 {
-	FloatingText::changeText(_probe->display());
-	FloatingText::setAlpha(_probe->alpha());
+	FloatingText::addMainThreadJob
+	([this]()
+	{
+		FloatingText::changeText(_probe->display());
+		FloatingText::setAlpha(_probe->alpha());
+	});
 }
 
 ProbeAtom::ProbeAtom(ProtonNetworkView *view, AtomProbe *probe)
@@ -196,17 +200,19 @@ void ProbeAtom::declareAtomExistence(Existence::Values value)
 {
 	std::string name = "Declare atom";
 	Decree *d = _view->network().newDecree(name);
-
-	AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
 	std::string present = (value == Existence::Present ? "present" : "absent");
-
 	std::string message = "Declare atom " + present;
 
-	auto make_declaration = [d, value, this]
+	auto make_declaration = [d, value, message, this]
 	{
 		AtomProbe *aProbe = static_cast<AtomProbe *>(_probe);
-		bool contra = aProbe->existence().assign_value(value, d, d);
-		std::cout << "OK: " << contra << std::endl;
+		bool okay = aProbe->existence().assign_value(value, d, d);
+		std::cout << "OK: " << okay << std::endl;
+		if (!okay)
+		{
+			_view->setInformation("Contradiction occurred in logical "\
+			                      "network!!\nCtrl+Z to undo");
+		}
 	};
 
 	auto rescind_declaration = [d, this]
@@ -226,17 +232,19 @@ void ProbeAtom::declareHydrogen(Existence::Values value)
 {
 	std::string name = "Declare hydrogen";
 	Decree *d = _view->network().newDecree(name);
-
-	HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
 	std::string present = (value == Existence::Present ? "present" : "absent");
-
 	std::string message = "Declare hydrogen " + present;
 
 	auto make_declaration = [d, value, this]
 	{
 		HydrogenProbe *hProbe = static_cast<HydrogenProbe *>(_probe);
-		bool contra = hProbe->_obj.assign_value(value, d, d);
-		std::cout << "OK: " << contra << std::endl;
+		bool okay = hProbe->_obj.assign_value(value, d, d);
+		std::cout << "OK: " << okay << std::endl;
+		if (!okay)
+		{
+			_view->setInformation("Contradiction occurred in logical "\
+			                      "network!!\nCtrl+Z to undo");
+		}
 	};
 
 	auto rescind_declaration = [d, this]
@@ -262,5 +270,16 @@ void ProbeAtom::buttonPressed(std::string tag, Button *button)
 	{
 		declareHydrogen(Existence::Absent);
 	}
+
+}
+
+void ProbeAtom::extraUniforms()
+{
+	glm::vec4 glow = _probe->glow();
+	GLint uGlow = 
+	glGetUniformLocation(FloatingText::_program, "aGlow");
+	glUniform4f(uGlow, glow[0], glow[1], glow[2], glow[3]);
+	FloatingText::_gl->checkErrors("glowing");
+	FloatingText::extraUniforms();
 
 }

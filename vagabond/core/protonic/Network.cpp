@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "Model.h"
 #include "Decree.h"
 #include "Network.h"
 #include "SymMates.h"
@@ -505,6 +506,7 @@ AtomGroup *rehydrogenate(AtomGroup *const &full_set)
 
 void Network::establishAtom(::Atom *atom)
 {
+	std::cout << "establishing atom " << atom->desc() << std::endl;
 	Coordinated *coord = {};
 	std::vector<ExistenceConnector *> connections;
 	float total_occ = 0;
@@ -514,7 +516,6 @@ void Network::establishAtom(::Atom *atom)
 		char conf = conformer.length() ? conformer[0] : '\0';
 		coord = new Coordinated(*this, atom, conf);
 		AtomConf tmp = AtomConf{atom, conf};
-//		std::cout << "establishing " << tmp << " also " << atom <<  std::endl;
 		_atomMap[tmp] = coord;
 		total_occ += tmp.occupancy();
 		connections.push_back(coord->existence());
@@ -538,8 +539,15 @@ void Network::establishAtom(::Atom *atom)
 }
 
 Network::Network(AtomGroup *group, const std::string &spg_name,
-                 const std::array<double, 6> &unit_cell)
+                 const std::array<double, 6> &unit_cell,
+                 Model *const &model)
+: _model(model)
 {
+	if (model)
+	{
+		_cliques = model->cliques();
+	}
+
 	_extraHydrogens = new AtomGroup();
 	_original = rehydrogenate(nonHydrogensFrom(group));
 	AtomGroup *mates = SymMates::getSymmetryMates(_original, spg_name, 
@@ -550,15 +558,13 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	_originalAndMates->orderByResidueId();
 	_originalAndMates->writeToFile("tmp.pdb");
 
-	_symMates = SymMates::getSymmetryMates(_original, spg_name, unit_cell, 4.0);
-
 	AtomGroup *donors = hydrogenDonorsFrom(_original);
 	AtomGroup *symDonors = hydrogenDonorsFrom(_originalAndMates);
 	symDonors->orderByResidueId();
 
 	std::cout << _original->size() << " original atoms." << std::endl;
 	std::cout << donors->size() << " donor atoms from those." << std::endl;
-	std::cout << _symMates->size() << " symmetry atoms." << std::endl;
+	std::cout << mates->size() << " symmetry atoms." << std::endl;
 	std::cout << _originalAndMates->size() << " original+symmetry atoms." << std::endl;
 	std::cout << symDonors->size() << " donor atoms from those." << std::endl;
 
@@ -635,6 +641,12 @@ Network::Network(AtomGroup *group, const std::string &spg_name,
 	std::cout << "Out of " << atomMap().size() << " coordinated atoms, ";
 	std::cout << failCount << " failed some logical check." << std::endl;
 	std::cout << std::endl;
+
+	for (Clique &cl : _cliques)
+	{
+		cl.housekeeping(*this);
+		std::cout << std::endl;
+	}
 }
 
 glm::vec3 Network::centre() const
@@ -650,6 +662,7 @@ Network::Network()
 CountProbe &Network::add_probe(CountProbe *const &probe)
 {
 	_countProbes.push_back(probe);
+	_desc2Probe[probe->desc()] = probe;
 	return *probe;
 }
 
@@ -658,6 +671,7 @@ HydrogenProbe &Network::add_probe(HydrogenProbe *const &probe)
 	char lconf = probe->left()._conf;
 	char rconf = probe->right()._conf;
 	_hydrogenProbes.push_back(probe);
+	_desc2Probe[probe->desc()] = probe;
 	_h2Probe[{probe->left().atom(), lconf}].push_back(probe);
 	_h2Probe[{probe->right().atom(), rconf}].push_back(probe);
 	return *probe;
@@ -667,6 +681,7 @@ AtomProbe &Network::add_probe(AtomProbe *const &probe)
 {
 	char conf = probe->_conf;
 	_atomProbes.push_back(probe);
+	_desc2Probe[probe->desc()] = probe;
 	_atom2Probe[{probe->atom(), conf}] = probe;
 	return *probe;
 }
@@ -674,6 +689,7 @@ AtomProbe &Network::add_probe(AtomProbe *const &probe)
 BondProbe &Network::add_probe(BondProbe *const &probe)
 {
 	_bondProbes.push_back(probe);
+	_desc2Probe[probe->desc()] = probe;
 	return *probe;
 }
 
@@ -688,4 +704,24 @@ void Network::addNewHydrogen(hnet::AtomConf hydrogen, hnet::Coordinated *coord)
 {
 	*_extraHydrogens += hydrogen.ptr;
 	_atomMap[hydrogen] = coord;
+}
+
+
+Probe *Network::probeForDesc(const std::string &desc)
+{
+	if (_desc2Probe.count(desc) == 0)
+	{
+		return nullptr;
+	}
+	return _desc2Probe.at(desc);
+}
+
+Clique *Network::newClique(const OpSet<Probe *> &probes)
+{
+	_cliques.push_back(Clique(probes));
+	if (_model)
+	{
+		_model->setCliques(_cliques);
+	}
+	return &_cliques.back();
 }

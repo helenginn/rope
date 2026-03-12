@@ -19,9 +19,14 @@
 #include "ProbeAtom.h"
 #include "ProbeBond.h"
 #include "ProtonNetworkView.h"
+#include <vagabond/core/protonic/ExhaustiveSearch.h>
+#include <vagabond/core/protonic/CliqueFinder.h>
 #include <vagabond/core/protonic/Probe.h>
 #include <vagabond/core/PositionShifter.h>
+#include <vagabond/utils/DoJob.h>
+#include <vagabond/gui/CliqueView.h>
 #include <vagabond/gui/elements/FloatingText.h>
+#include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/Menu.h>
 
 ProtonNetworkView::ProtonNetworkView(Scene *scene, Network &network) 
@@ -38,12 +43,31 @@ ProtonNetworkView::~ProtonNetworkView()
 
 }
 
+void ProtonNetworkView::linkSymmetricAtomProbes(const hnet::AtomConf &ac)
+{
+	if (!ac.ptr || !ac.ptr->symmetryCopyOf())
+	{
+		return;
+	}
+
+	AtomProbe *p = _network.probeForAtom(ac);
+	AtomProbe *q = _network.probeForAtom({ac.ptr->symmetryCopyOf(), ac.conf});
+	if (!(p && q))
+	{
+		return;
+	}
+	
+	p->register_probe(q);
+	q->register_probe(p);
+}
+
 void ProtonNetworkView::findAtomProbes()
 {
 	for (AtomProbe *const &probe : _network.atomProbes())
 	{
 		ProbeAtom *text = new ProbeAtom(this, probe);
 		addObject((FloatingText *)text);
+		linkSymmetricAtomProbes(probe->atomConf());
 		_textProbes[probe] = text;
 		_allProbes.insert(probe);
 		probe->setResponder(this);
@@ -56,6 +80,7 @@ void ProtonNetworkView::findAtomProbes()
 		addObject((FloatingText *)text);
 		_textProbes[probe] = text;
 		_allProbes.insert(probe);
+		_hProbes.insert(probe);
 		probe->setResponder(this);
 		addIndexResponder(text);
 	}
@@ -79,6 +104,7 @@ void ProtonNetworkView::findAtomProbes()
 	shiftToCentre(_network.centre(), 50);
 	setMakesSelections();
 	IndexResponseView::setup();
+//	preparePingPongBuffers();
 }
 
 template <class Container>
@@ -112,16 +138,7 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 	if (!_shiftPressed && !left && !_moving)
 	{
 		Menu *menu = new Menu(this);
-		if (!_2D)
-		{
-			menu->addOption("arrange figure", [this]() { arrangeFigure(); });
-		}
-		else
-		{
-			menu->addOption("add to figure", [this]() { arrangeFigure(); });
-		}
-
-		menu->addOption("add neighbours", 
+		menu->addOption("expand to clique", 
 		                [this]() { expandSelectionToNeighbours(); });
 		menu->addOption("complete residues", 
 		                [this]() { completeResidues(false); });
@@ -161,6 +178,15 @@ void ProtonNetworkView::interactedWithNothing(bool left, bool hover)
 			};
 
 			menu->addOption("hide selection", hide_selected);
+		if (!_2D)
+		{
+			menu->addOption("arrange figure", [this]() { arrangeFigure(); });
+		}
+		else
+		{
+			menu->addOption("add to figure", [this]() { arrangeFigure(); });
+		}
+
 		}
 
 		setMenu(menu);
@@ -298,11 +324,81 @@ void ProtonNetworkView::sendObject(std::string tag, void *object)
 	main_job();
 }
 
+void ProtonNetworkView::makeMainMenu()
+{
+	auto browse_cliques = [this]()
+	{
+		if (_cv)
+		{
+			addObject(_cv);
+		}
+		else
+		{
+			_cv = new CliqueView(this, _network, _hProbes);
+
+			auto kill = [this]()
+			{
+				removeObject(_cv);
+			};
+
+			_cv->setKillAndClean(kill);
+			addObject(_cv);
+		}
+	};
+	
+	auto analyse = [this](const OpSet<Probe *> &interesting)
+	{
+		return [this, interesting]()
+		{
+			_shifter->pause();
+			ExhaustiveSearch *es = new ExhaustiveSearch(interesting, _network);
+			new DoJob([this, es]()
+			{
+				es->search();
+				_shifter->unpause();
+			});
+		};
+	};
+
+	TextButton *text = new TextButton("Menu", this);
+	auto make_menu = [this, browse_cliques, analyse, text]()
+	{
+		if (hasObject(_cv))
+		{
+			_cv->kill();
+		}
+		glm::vec2 c = text->xy();
+		Menu *m = new Menu(this, this, "options");
+		m->addOption("Browse cliques", browse_cliques);
+		
+//		if (_cv)
+		{
+//			const OpSet<Probe *> &interesting = _cv->interesting();
+			OpSet<Probe *> selected = selected_probes(_textProbes);
+			selected += selected_probes(_bondProbes);
+
+			if (selected.size())
+			{
+				m->addOption("Exhaustive search H-bonds", 
+				             analyse(selected));
+			}
+		}
+		m->setup(c.x, c.y);
+		setModal(m);
+	};
+	
+	text->setReturnJob(make_menu);
+	text->setRight(0.95, 0.1);
+	addObject(text);
+
+}
+
 void ProtonNetworkView::setup()
 {
 	addTitle("Proton network");
 
 	findAtomProbes();
+	makeMainMenu();
 }
 
 void ProtonNetworkView::setMenu(Menu *menu)
@@ -330,8 +426,25 @@ void ProtonNetworkView::keyReleaseEvent(SDL_Keycode pressed)
 	Scene::keyReleaseEvent(pressed);
 }
 
+void ProtonNetworkView::selectProbes(const OpSet<Probe *> &probes)
+{
+	for (Probe *const &other : probes)
+	{
+		if (_textProbes.count(other))
+		{
+			_textProbes[other]->selected(0, 0);
+		}
+		else if (_bondProbes.count(other))
+		{
+			_bondProbes[other]->selected(0, 0);
+		}
+	}
+}
+
 void ProtonNetworkView::completeResidues(bool stop_at_alpha)
 {
+	OpSet<Probe *> done = selected_probes(_textProbes);
+
 	typedef std::pair<std::string, ResidueId> ChainRes;
 	OpSet<ChainRes> residues;
 	
@@ -380,114 +493,19 @@ void ProtonNetworkView::completeResidues(bool stop_at_alpha)
 		return true;
 	};
 	
-	completeOnCondition(initial_assessment, check_probe);
+	OpSet<Probe *> ps = 
+	CliqueFinder::completeOnCondition(done, initial_assessment, check_probe);
+	selectProbes(ps);
 }
 
-void ProtonNetworkView::
-completeOnCondition(std::function<void(Probe *probe)> initial_assessment,
-                    std::function<bool(Probe *probe, Probe *prev)> check_probe)
-{
-	// get the initial selected probes into a set.
-	OpSet<Probe *> done = selected_probes(_textProbes);
-
-	for (Probe *probe : done)
-	{
-		if (probe->atom())
-		{
-			initial_assessment(probe);
-		}
-	}
-
-	OpSet<Probe *> fresh = done;
-	do
-	{
-		OpSet<Probe *> tmp = fresh;
-		fresh = {};
-		for (Probe *probe : tmp)
-		{
-			for (Probe *other : probe->others())
-			{
-				if (done.count(other) > 0)
-				{
-					continue;
-				}
-				
-				if (!check_probe(other, probe))
-				{
-					continue;
-				}
-
-				done.insert(other);
-				fresh.insert(other);
-
-				if (other->atom() && _textProbes.count(other))
-				{
-					_textProbes[other]->selected(0, 0);
-				}
-				else if (_bondProbes.count(other))
-				{
-					_bondProbes[other]->selected(0, 0);
-				}
-			}
-		}
-
-	}
-	while (fresh.size() > 0);
-}
 
 void ProtonNetworkView::expandSelectionToNeighbours()
 {
 	// get the initial selected probes into a set.
 	OpSet<Probe *> done = selected_probes(_textProbes);
 
-	// go through selected probes and add neighbours if they are in the set.
-	// continue until neighbours are exhausted
-	OpSet<Probe *> fresh = done;
-	
-	do
-	{
-		OpSet<Probe *> tmp = fresh;
-		fresh = {};
-		for (Probe *probe : tmp)
-		{
-			for (Probe *other : probe->others())
-			{
-				if (done.count(other) > 0)
-				{
-					continue;
-				}
-
-				if (other->is_covalent())
-				{
-					continue;
-				}
-				
-				if (other->is_bond())
-				{
-					BondProbe *bp = static_cast<BondProbe *>(other);
-					if (bp->_obj.value() == hnet::Bond::Broken)
-					{
-						continue;
-					}
-				}
-
-				std::cout << "inserting " << other->display() << std::endl;
-				done.insert(other);
-				fresh.insert(other);
-
-				if (_textProbes.count(other))
-				{
-					_textProbes[other]->selected(0, 0);
-				}
-				else if (_bondProbes.count(other))
-				{
-					_bondProbes[other]->selected(0, 0);
-				}
-			}
-		}
-
-	}
-	while (fresh.size() > 0);
+	OpSet<Probe *> ps = CliqueFinder::expandSelectionToNeighbours(done);
+	selectProbes(ps);
 }
 
 void ProtonNetworkView::sendSelection(float t, float l, float b, float r,
@@ -523,6 +541,11 @@ void ProtonNetworkView::mouseReleaseEvent(double x, double y,
 	{
 		_shifter->setSkip(nullptr);
 		_manual = nullptr;
+	}
+
+	if (_onClick)
+	{
+		_onClick();
 	}
 
 	Mouse3D::mouseReleaseEvent(x, y, button);

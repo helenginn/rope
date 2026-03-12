@@ -65,6 +65,10 @@ public:
 	virtual void selected(int idx, bool inverse);
 	virtual void buttonPressed(std::string tag, Button *button = nullptr);
 private:
+
+	virtual void extraUniforms();
+
+	void addGlow(float glow);
 	void hoverOverAtom();
 	void offerHeavyAtomMenu();
 	void offerHydrogenMenu();

@@ -20,13 +20,21 @@
 #define __vagabond__Conditions__
 
 #include "hnet.h"
+#include "Guilt.h"
 #include <map>
+#include <mutex>
 
 template <class Value>
 struct Conditions
 {
 	typedef std::map<std::pair<void *, void *>, Value> ConditionMap;
 	ConditionMap _conditions;
+	std::mutex _m;
+	
+	size_t size() const
+	{
+		return _conditions.size();
+	}
 	
 	template <typename FilterIn>
 	Value belief_when(const FilterIn &filtered) const
@@ -46,10 +54,30 @@ struct Conditions
 		return val;
 	}
 	
-	Value belief() const
+	Value belief(bool *acquired = nullptr)
 	{
-		return belief_when([](const typename ConditionMap::const_iterator &) 
-		                   { return true; });
+		if (!acquired)
+		{
+			std::unique_lock<std::mutex> lk(_m);
+			return belief_when([](const typename ConditionMap::const_iterator &) 
+			                   { return true; });
+		}
+		else
+		{
+			std::unique_lock<std::mutex> lk(_m, std::defer_lock);
+			if (lk.try_lock())
+			{
+				*acquired = true;
+				return belief_when([](const typename 
+				                      ConditionMap::const_iterator &) 
+				{ return true; });
+			}
+			else
+			{
+				*acquired = false;
+				return (Value)(~Value{});
+			}
+		}
 	}
 
 	Value from_informant(void *informant) const
@@ -80,25 +108,24 @@ struct Conditions
 		return _conditions.at(std::make_pair(informant, blame));
 	}
 
-	int remove_condition_with_blame(void *blame)
+	int remove_conditions_with_blame(const OpSet<void *> &guilts)
 	{
-		bool success = false;
 		int count = 0;
-		while (!success)
+		std::unique_lock<std::mutex> lk(_m);
+		ConditionMap tmp;
+		for (auto it = _conditions.begin(); it != _conditions.end(); it++)
 		{
-			success = true;
-			for (auto it = _conditions.begin(); it != _conditions.end(); it++)
+			if (guilts.count(it->first.second))
 			{
-				if (it->first.second == blame)
-				{
-					_conditions.erase(it->first);
-					success = false;
-					count++;
-					break;
-				}
+				count++;
+			}
+			else
+			{
+				tmp[it->first] = it->second;
 			}
 		}
 		
+		_conditions = tmp;
 		return count;
 	}
 	
@@ -120,8 +147,12 @@ struct Conditions
 
 	void apply_condition(void *informant, void *blame, const Value &value)
 	{
+		Guilt::guilt().addGuilt(blame);
+
+		std::unique_lock<std::mutex> lk(_m);
 		_conditions[std::make_pair(informant, blame)] = value;
 	}
+	
 };
 
 #endif

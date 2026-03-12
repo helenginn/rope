@@ -28,36 +28,24 @@ struct CountAdder
 	           CountConnector &sum)
 	: _left(left), _right(right), _sum(sum)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-		
-		_sum.add_constraint_check(self_check);
-		_left.add_constraint_check(self_check);
-		_right.add_constraint_check(self_check);
-
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		_left.add_forget(forget_me);
-		_sum.add_forget(forget_me);
-		_right.add_forget(forget_me);
-
-		if (!check(this))
-		{
-			_left.pop_last_check(this);
-			_sum.pop_last_check(this);
-			_right.pop_last_check(this);
-
-			throw std::runtime_error("New addition of Adder immediately "\
-			                         "failed validation check");
-		}
-
+		prep_constraints_and_forgets(this, {&left, &right, &sum});
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_left.forget(blame);
 		_sum.forget(blame);
 		_right.forget(blame);
 	}
+	
+	std::string desc()
+	{
+		std::ostringstream ss;
+		ss << "sum of " << _left << " and " << _right << " must be "
+		<< _sum;
+		return ss.str();
+	}
+
 	
 	template <class Op>
 	std::vector<int> permutations(const std::vector<int> &vs, 
@@ -79,6 +67,7 @@ struct CountAdder
 	
 	bool check(void *previous)
 	{
+		auto assign = make_assign_and_say(this, previous);
 		/* however, partial assignments of all values will lead to some
 		 * values being permitted and others not, so we can generate a list
 		 * of permitted values for each pair, and constrain the latter. */
@@ -92,10 +81,9 @@ struct CountAdder
 			std::vector<int> options = permutations(left_options, right_options,
 			                                        [](const int &a, const int &b)
 			                                        { return a + b; });
-			
 
 			Count::Values sum_count = values_as_count(options);
-			_sum.assign_value(sum_count, this, previous);
+			assign(_sum, sum_count);
 		}
 
 		/* impose options on left */
@@ -108,7 +96,7 @@ struct CountAdder
 			                                        { return a - b; });
 
 			Count::Values left_count = values_as_count(options);
-			_left.assign_value(left_count, this, previous);
+			assign(_left, left_count);
 		}
 
 		/* impose options on right */
@@ -121,12 +109,10 @@ struct CountAdder
 			                                        { return a - b; });
 
 			Count::Values right_count = values_as_count(options);
-			_right.assign_value(right_count, this, previous); 
+			assign(_right, right_count);
 		}
 
-		return (!is_contradictory(_sum.value()) || 
-		        !is_contradictory(_left.value()) ||
-		        !is_contradictory(_right.value()));
+		return assign.okay();
 	}
 
 	CountConnector &_left;

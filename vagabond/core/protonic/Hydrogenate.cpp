@@ -29,13 +29,8 @@ Hydrogenate::Hydrogenate(::Atom *atom, AtomGroup *destination)
 	_destination = destination;
 }
 
-void Hydrogenate::operator()()
+void Hydrogenate::purgeExisting()
 {
-	if (!_atom || _atom->elementSymbol() == "H")
-	{
-		return;
-	}
-	
 	std::vector<::Atom *> to_purge;
 	for (int i = 0; i < _atom->bondLengthCount(); i++)
 	{
@@ -51,6 +46,18 @@ void Hydrogenate::operator()()
 		_atom->purgeConnectionsToAtom(to_go);
 	}
 
+
+}
+
+void Hydrogenate::operator()()
+{
+	if (!_atom || _atom->elementSymbol() == "H")
+	{
+		return;
+	}
+	
+	purgeExisting();
+	
 	int coordNum = 0;
 	OpSet<::Atom *> to_align = inactiveHydrogens(_atom, coordNum);
 
@@ -82,7 +89,7 @@ void Hydrogenate::operator()()
 	
 	if (coordNum > 10)
 	{
-		coordNum -= 10;
+		coordNum -= 9;
 	}
 
 	if (names.size() != (coordNum - to_align.size()))

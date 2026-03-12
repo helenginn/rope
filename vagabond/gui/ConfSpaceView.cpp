@@ -554,7 +554,8 @@ void ConfSpaceView::buttonPressed(std::string tag, Button *button)
 		start = std::chrono::system_clock::now();
 
 		ProtonNetworkView *sb;
-		sb = new ProtonNetworkView(this, *(new Network(grp, spg_name, uc)));
+		sb = new ProtonNetworkView(this, *(new Network(grp, spg_name, 
+		                                               uc, i->model())));
 		sb->show();
 
 		end = std::chrono::system_clock::now();

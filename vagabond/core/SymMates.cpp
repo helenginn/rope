@@ -72,72 +72,129 @@ AtomGroup *SymMates::getSymmetryMates(AtomGroup *const &other,
 		return (lsq < distsq && lsq >= 1e-3);
 	};
 
-
-	auto add_symop_atom_if_nearby = 
-	[grp, close_to, other, to_frac, uc_mat, total, outside_bounds]
-	(::Atom *const &atom)
+	auto do_on_nearby_unit_cells = [grp]<typename Func>(const Func &func)
 	{
-		glm::vec3 pos = atom->initialPosition();
-		glm::vec3 frac = to_frac * pos;
-		glm::vec3 nearest_origin = {};
-
-		for (int i = 0; i < 3; i++)
+		for (int k = -1; k <= 2; k++)
 		{
-			nearest_origin[i] = (int)floor(frac[i]);
-		}
-
-		frac -= nearest_origin;
-		std::array<double, 3> f = {frac.x, frac.y, frac.z};
-
-		for (int l = 0; l < grp.sym_ops.size(); l++)
-		{
-			gemmi::Op op = grp.get_op(l);
-			if (op == gemmi::Op::identity())
+			for (int j = -1; j <= 2; j++)
 			{
-				continue;
-			}
-
-			std::array<double, 3> g = op.apply_to_xyz(f);
-			glm::vec3 sym_pos = glm::vec3(g[0] + nearest_origin.x,
-			                              g[1] + nearest_origin.y,
-			                              g[2] + nearest_origin.z);
-
-			for (int k = -1; k <= 2; k++)
-			{
-				for (int j = -1; j <= 2; j++)
+				for (int i = -1; i <= 2; i++)
 				{
-					for (int i = -1; i <= 2; i++)
+					for (int l = 0; l < grp.sym_ops.size(); l++)
 					{
-						glm::vec3 trial_frac = sym_pos + glm::vec3(i, j, k);
-						glm::vec3 trial = uc_mat * trial_frac;
-						if (outside_bounds(trial))
+						if (grp.get_op(l) == gemmi::Op::identity())
 						{
 							continue;
 						}
-						
-						::Atom *near = other->find_by([close_to, trial]
-						                              (::Atom *const &a)
-						                              {return close_to(a, trial);});
-						if (near)
+
+						if (func(i, j, k, l))
 						{
-							::Atom *copy = new ::Atom(*atom);
-							std::string note = ("rot " + std::to_string(l) + 
-							                    " trans " + std::to_string(i) +
-							                    " " + std::to_string(j) +
-							                    " " + std::to_string(k));
-							copy->setSymmetryCopyOf(atom, note);
-							copy->setInitialPosition(trial);
-							copy->setDerivedPosition(trial);
-							total->add(copy);
-							return;
+							return true;
 						}
 					}
 				}
 			}
 		}
+		
+		return false;
+	};
+	
+	auto make_do_sym_op = [grp, to_frac](int l)
+	{
+		return [grp, to_frac, l](const glm::vec3 &orig)
+		{
+			glm::vec3 frac = to_frac * orig;
+			glm::vec3 nearest_origin = {};
+
+			for (int i = 0; i < 3; i++)
+			{
+				nearest_origin[i] = (int)floor(frac[i]);
+			}
+
+			frac -= nearest_origin;
+			std::array<double, 3> f = {frac.x, frac.y, frac.z};
+			gemmi::Op op = grp.get_op(l);
+			std::array<double, 3> g = op.apply_to_xyz(f);
+			glm::vec3 rfrac = {g[0], g[1], g[2]};
+			glm::vec3 sym_pos = glm::vec3(rfrac + nearest_origin);
+			return sym_pos;
+		};
 	};
 
-	other->do_op(add_symop_atom_if_nearby);
+	auto add_symop_atom_if_nearby = 
+	[close_to, other, uc_mat, total, outside_bounds,
+	 do_on_nearby_unit_cells, make_do_sym_op]
+	(::Atom *const &atom, glm::vec3 pos)
+	{
+		auto check_if_atom_is_near = 
+		[pos, uc_mat, outside_bounds, other, close_to, atom, 
+		 total, make_do_sym_op]
+		(int i, int j, int k, int l)
+		{
+			auto do_frac_sym = make_do_sym_op(l);
+			glm::vec3 sym_pos = do_frac_sym(pos);
+
+			glm::vec3 trial_frac = sym_pos + glm::vec3(i, j, k);
+			glm::vec3 trial = uc_mat * trial_frac;
+			if (outside_bounds(trial))
+			{
+				return false;
+			}
+
+			::Atom *near = other->find_by([close_to, trial]
+			                              (::Atom *const &a)
+			                              {return close_to(a, trial);});
+			if (near)
+			{
+				::Atom *copy = new ::Atom(*atom);
+				std::string note = ("rot " + std::to_string(l) + 
+				                    " trans " + std::to_string(i) +
+				                    " " + std::to_string(j) +
+				                    " " + std::to_string(k));
+				copy->setSymmetryCopyOf(atom, note);
+				copy->setInitialPosition(trial);
+
+				for (std::string c : atom->conformerList())
+				{
+					glm::vec3 other = atom->conformerPositions()[c].pos.ave;
+					float b = atom->conformerPositions()[c].b;
+					float occ = atom->conformerPositions()[c].occ;
+					glm::vec3 fracsym = do_frac_sym(other) + glm::vec3(i, j, k);
+					glm::vec3 sympos = uc_mat * fracsym;
+					std::cout << "sympos: " << sympos << " near " <<
+					pos << std::endl;
+					copy->conformerPositions()[c].pos.ave = sympos;
+					copy->conformerPositions()[c].occ = occ;
+					copy->conformerPositions()[c].b = b;
+				}
+
+				copy->setDerivedPosition(trial);
+				total->add(copy);
+				return true;
+			}
+
+			return false;
+		};
+
+		return do_on_nearby_unit_cells(check_if_atom_is_near);
+	};
+
+	auto on_each_conf_pos = [] <typename Func>(const Func &func)
+	{
+		return [&func](::Atom *a)
+		{
+			for (std::string conformer : a->conformerList())
+			{
+				glm::vec3 pos = a->conformerPositions()[conformer].pos.ave;
+				if (func(a, pos)) // when successful, stop
+				{
+					return;
+				}
+			}
+		};
+	};
+
+	other->do_op(on_each_conf_pos(add_symop_atom_if_nearby));
 	return total;
 }
 

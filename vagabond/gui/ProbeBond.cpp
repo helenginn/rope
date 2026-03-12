@@ -116,20 +116,30 @@ size_t ProbeBond::requestedIndices()
 
 void ProbeBond::updateProbe()
 {
-	changeImage("assets/images/" + _probe->display() + ".png");
+	std::string result = _probe->display();
+	if (result == "")
+	{
+		return;
+	}
+	changeImage("assets/images/" + result + ".png");
 	Image::setAlpha(_probe->alpha());
 }
 
 void ProbeBond::updatePosition()
 {
+	std::string lres = _probe->_left.display();
+	if (lres == "") return;
+	std::string rres = _probe->_right.display();
+	if (rres == "") return;
+
 	glm::vec3 start = _probe->position();
 	glm::vec3 end = _probe->end();
 	glm::vec3 truncate = (end - start) / 4.f;
 	
 	float left = 0;
 	float right = 0;
-	if (_probe->_left.display() != " ") {left += 1; right -= 1; }
-	if (_probe->_right.display() != " ") { right -= 1; }
+	if (lres != " ") {left += 1; right -= 1; }
+	if (rres != " ") { right -= 1; }
 
 	fixVertices(start + truncate * left, 
 	            end - start + truncate * right);
@@ -146,6 +156,11 @@ void ProbeBond::fullUpdate()
 ProbeBond::ProbeBond(ProtonNetworkView *view, BondProbe *probe)
 : Image("assets/images/" + probe->display() + ".png")
 {
+	setQuickSwitch({"assets/images/weak_bond.png", 
+		            "assets/images/strong_bond.png", 
+		            "assets/images/transparency.png", 
+		            "assets/images/present_bond.png", 
+		            "assets/images/unassigned_bond.png"});
 	_view = view;
 	_probe = probe;
 

@@ -16,30 +16,51 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Hydrogenate__
-#define __vagabond__Hydrogenate__
+#ifndef __vagabond__CliqueView__
+#define __vagabond__CliqueView__
 
-/** \class Hydrogenate
- * does that margarine thing for the protein backbone/unmoving hydrogens. */
+#include <vagabond/gui/elements/Image.h>
+#include <vagabond/core/Item.h>
 
-class Atom;
-class AtomGroup;
+class Network;
+class ProtonNetworkView;
 
-namespace hnet
-{
-class Hydrogenate
+class CliqueView : public Image
 {
 public:
-	Hydrogenate(::Atom *atom, AtomGroup *destination);
+	CliqueView(ProtonNetworkView *scene, 
+	Network &network, const OpSet<Probe *> &probes);
 
-	void operator()();
+	void setupConstants();
+	
+	void setKillAndClean(const std::function<void()> &do_it)
+	{
+		_kill = do_it;
+	}
+	
+	void kill()
+	{
+		if (_kill) _kill();
+	}
+	
+	const OpSet<Probe *> &interesting() const
+	{
+		return _interesting;
+	}
 private:
-	void purgeExisting();
+	void setupCloseButton();
 
-	AtomGroup *_destination = nullptr;
-	::Atom *_atom = nullptr;
-
-};
+	Network &_network;
+	std::function<void()> _kill{};
+	
+	ProtonNetworkView *_scene{};
+	Item _parent{};
+	Item _ambiguous{};
+	Item _wet{};
+	Item _dry{};
+	Item _certain{};
+	
+	OpSet<Probe *> _interesting;
 };
 
 #endif

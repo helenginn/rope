@@ -24,6 +24,8 @@ guifiles = [
 'ChooseHeader.cpp',
 'ChooseHeaderValue.cpp',
 'ChooseEntity.cpp',
+'CliqueView.cpp',
+'CliqueView.h',
 'ClusterPointDemo.cpp',
 'ClusterView.cpp',
 'ColumnView.cpp',

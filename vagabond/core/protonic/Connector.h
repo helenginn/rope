@@ -27,9 +27,41 @@
 
 namespace hnet
 {
+struct ConnectBase
+{
+public:
+	virtual bool forget(void *blame) = 0;
+	virtual ~ConnectBase() {}
+
+	/* list of attached constraint-checking functions */
+	std::list<Checker> _checks;
+	std::list<Forget> _forgets;
+	
+	/* add a constraint check function to the list of functions to run on
+	 * an update of value */
+	void add_constraint_check(const Checker &checker)
+	{
+		_checks.push_back(checker);
+	}
+	
+	/* add a forget routine called from a constraint */
+	void add_forget(const Forget &forget)
+	{
+		_forgets.push_back(forget);
+	}
+	
+	void pop_last_check(void *blame)
+	{
+		OpSet<void *> guilts = Guilt::guilt().rollBackBefore(blame);
+		forget(blame);
+
+		_checks.pop_back();
+		_forgets.pop_back();
+	}
+};
 
 template <typename Value>
-struct Connector
+struct Connector : public ConnectBase
 {
 	Connector()
 	{
@@ -48,32 +80,6 @@ struct Connector
 		_default = _value;
 	}
 
-	/* add a constraint check function to the list of functions to run on
-	 * an update of value */
-	void add_constraint_check(const Checker &checker)
-	{
-		_checks.push_back(checker);
-	}
-	
-	/* add a forget routine called from a constraint */
-	void add_forget(const Forget &forget)
-	{
-		_forgets.push_back(forget);
-	}
-	
-	void pop_last_check(void *ptr)
-	{
-		forget(ptr);
-
-		_checks.pop_back();
-		_forgets.pop_back();
-	}
-	
-	void forget_all(void *blame)
-	{
-		forget(blame);
-		check_all(blame);
-	}
 	
 	void report()
 	{
@@ -85,6 +91,11 @@ struct Connector
 	void setDesc(const std::string &desc)
 	{
 		_desc = desc;
+	}
+	
+	const std::string &desc() const
+	{
+		return _desc;
 	}
 
 	/* returns true if changed */
@@ -104,10 +115,11 @@ struct Connector
 
 		bool changed = (before != after);
 		if (changed && _desc.length())
+		if (false)
 		{
 			std::cout << "CONNECTOR: \"" << *this << "\" was " << before << 
 			", before applying condition " << value << 
-			", resulting in " << after << std::endl;
+			std::endl;
 		}
 		
 		return changed;
@@ -115,21 +127,38 @@ struct Connector
 
 	bool forget(void *blame)
 	{
-		int total = _conditions.remove_condition_with_blame(blame);
+		OpSet<void *> guilts = Guilt::guilt().rollBackBefore(blame);
+		return forget(guilts);
+	}
+
+	bool forget(OpSet<void *> &guilts)
+	{
+		Value before = _conditions.belief();
+		int grand_total = _conditions.size();
+
+		int total = _conditions.remove_conditions_with_blame(guilts);
+
 		if (total == 0)
 		{
 			return false;
 		}
 
-		/* if we reassign a new value, we recalculate checks */
-		for (Forget &forget_condition : _forgets)
-		{
-			forget_condition(blame);
-		}
-
 		if (_update)
 		{
 			_update();
+		}
+
+		if (false)
+		{
+			std::cout << "ABSOLVE: " << desc() << " forgetting: " << guilts.size() << 
+			" (" << grand_total << " - " << total << " = " << _conditions.size() << " conditions)" << std::endl;
+			std::cout << "\t" << desc() << " was " << before << " now " << _conditions.belief() << std::endl;
+		}
+
+		/* if we reassign a new value, we must invoke forget cascade */
+		for (Forget &forget_cascade : _forgets)
+		{
+			forget_cascade(guilts);
 		}
 		
 		return true;
@@ -163,13 +192,22 @@ struct Connector
 	
 	bool assign_value(const Value &value, void *informant, void *blame)
 	{
+		int init = _conditions.size();
 		if (assign_value_without_checking(value, informant, blame))
 		{
 			if (_update)
 			{
 				_update();
 			}
-			return check_all(blame);
+			bool result = check_all(blame);
+			
+			int end = _conditions.size();
+			if (false)
+			{
+				std::cout << "ASSIGNED: " << desc() << ": " << init << " + " << end - init << " = " << end << " (" << _conditions.size() << " conditions)" << std::endl;
+			}
+			
+			return result;
 		}
 
 		return true;
@@ -180,9 +218,9 @@ struct Connector
 		_update = update;
 	}
 
-	Value value()
+	Value value(bool *access = nullptr)
 	{
-		return _conditions.belief();
+		return _conditions.belief(access);
 	}
 	
 	std::vector<Value> values()
@@ -191,10 +229,6 @@ struct Connector
 		return split_into_options(as_one);
 	}
 
-	/* list of attached constraint-checking functions */
-	std::list<Checker> _checks;
-	std::list<Forget> _forgets;
-	
 	UpdateProbe _update;
 
 	/* working value associated with this connector */
@@ -283,24 +317,74 @@ struct AnyConnector
 	void *_ptr;
 };
 
+template <typename Type> struct Connector;
+
 template <class Me>
-auto make_assign_and_say(Me *me, void *previous)
+struct make_assign_and_say
 {
-	return [me, previous]
-	<typename Type> (Connector<Type> &which, const Type &what)
+	make_assign_and_say(Me *me, void *previous)
+	: _me(me), _prev(previous) {}
+
+	template <typename Type>
+	bool operator()(Connector<Type> &which, const Type &what)
 	{
 		Type before = which.value();
-		which.assign_value(what, me, previous);
+		_okay &= which.assign_value(what, _me, _prev);
 		Type after = which.value();
-		
+
 		if (before != after)
+		if (false)
 		{
-			std::cout << "CONSTRAINT: \"" << me->desc() << 
-			"\" forcing assignment of " << what << " on " << which << std::endl;
+			std::cout << "CONSTRAINT: \"" << _me->desc() << 
+			"\" forcing assignment of " << what << " on " << 
+			which << " resulting in " << after << std::endl;
+			return true;
 		}
+
+		return false;
+	}
+	
+	const bool &okay() const
+	{
+		return _okay;
+	}
+
+	Me *_me{};
+	void *_prev{};
+	bool _okay{true};
+};
+
+template <typename ConstraintType>
+void prep_constraints_and_forgets(ConstraintType *constraint,
+                                  const std::vector<ConnectBase *> &connections)
+{
+	auto self_check = [constraint](void *prev)
+	{
+		return constraint->check(prev);
 	};
 
-};
+	auto forget_me = [constraint](OpSet<void *> &blame)
+	{
+		return constraint->forget(blame);
+	};
+
+	for (ConnectBase *connector : connections)
+	{
+		connector->add_constraint_check(self_check);
+		connector->add_forget(forget_me);
+	}
+
+	if (!constraint->check(constraint))
+	{
+		for (ConnectBase *connector : connections)
+		{
+			connector->pop_last_check(constraint);
+		}
+
+		throw std::runtime_error("New constraint immediately "\
+		                         "failed validation check");
+	}
+}
 
 };
 

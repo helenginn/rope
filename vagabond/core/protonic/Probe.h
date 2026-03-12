@@ -20,8 +20,8 @@
 #define __vagabond__Probe__
 
 #define Z_DEF (-0)
-#include <vagabond/core/Atom.h>
 #include "Connector.h"
+#include <vagabond/core/Atom.h>
 #include <vagabond/core/Responder.h>
 
 class Probe : public HasResponder<Responder<Probe>>
@@ -40,6 +40,11 @@ public:
 	const glm::vec3 colour() const
 	{
 		return _colour;
+	}
+	
+	const glm::vec4 glow() const
+	{
+		return _glow;
 	}
 	
 	void setColour(const glm::vec3 &colour)
@@ -66,6 +71,13 @@ public:
 	{
 		return false;
 	}
+
+	virtual bool is_definitely_not_present()
+	{
+		return false;
+	}
+	
+	virtual std::string desc() = 0;
 	
 	void register_probe(Probe *other)
 	{
@@ -79,6 +91,10 @@ public:
 	
 	virtual bool is_text() = 0;
 	virtual std::string display() = 0;
+	virtual std::string value()
+	{
+		return "";
+	}
 
 	virtual bool is_atom()
 	{
@@ -141,10 +157,16 @@ public:
 		return _atom;
 	}
 	
+	hnet::AtomConf atomConf() const
+	{
+		return {_atom, _conf};
+	}
+	
 	Atom *_atom = nullptr;
 	char _conf;
 	glm::vec3 _pos = {};
 	glm::vec3 _init = {};
+	glm::vec4 _glow = {};
 	
 	std::vector<Probe *> _others;
 	glm::vec3 _colour = {};
@@ -166,8 +188,12 @@ public:
 			_conf = conf;
 			hnet::AtomConf ac = {_atom, _conf};
 			_init = ac.position();
-			_colour = (_atom->code() == "HOH" ? 
-			           glm::vec3(0, 0, 0.0) : glm::vec3(-0.3f));
+			_colour = glm::vec3(-0.3f);
+			if (_atom->code() == "HOH")
+			{
+				_colour = glm::vec3(0.6, -0.2, -0.2);
+				_glow = {0.3f, 0.3f, 2.f, 1.f};
+			}
 		}
 
 		_pos = _init;
@@ -184,6 +210,11 @@ public:
 		return true;
 	}
 	
+	virtual std::string desc()
+	{
+		return atomConf().desc();
+	}
+
 	virtual std::string display()
 	{
 		if (_text.length())
@@ -192,7 +223,12 @@ public:
 		}
 
 		std::string str;
-		hnet::Atom::Values val = _obj.value();
+		bool accessed = false;
+		hnet::Atom::Values val = _obj.value(&accessed);
+		if (!accessed)
+		{
+			return "";
+		}
 
 		switch (val)
 		{
@@ -230,8 +266,7 @@ public:
 		{
 			return -0.5f;
 		}
-		else if (_exist.is_certain() &&
-		         _exist.value() == hnet::Existence::Absent)
+		else if (_exist.value() == hnet::Existence::Absent)
 		{
 			return -1.0f;
 		}
@@ -243,15 +278,7 @@ public:
 
 	virtual bool is_certain()
 	{
-		bool good = true;
-		for (Probe *const &other : others())
-		{
-			if (!other->is_certain())
-			{
-				good = false;
-			}
-		}
-		return _obj.is_certain() && good;
+		return _obj.is_certain() && _exist.is_certain();
 	}
 	
 	hnet::ExistenceConnector &existence()
@@ -278,12 +305,21 @@ public:
 
 		left.register_probe(this);
 		right.register_probe(this);
+
+		register_probe(&left);
+		register_probe(&right);
+		_colour = glm::vec3(0.28f, 0.1f, -0.147f);
 	}
 	
 	virtual std::string display()
 	{
 		std::string str;
-		hnet::Existence::Values val = _obj.value();
+		bool accessed = false;
+		hnet::Existence::Values val = _obj.value(&accessed);
+		if (!accessed)
+		{
+			return "";
+		}
 
 		switch (val)
 		{
@@ -316,6 +352,11 @@ public:
 		return true;
 	}
 
+	virtual std::string desc()
+	{
+		return _obj.desc();
+	}
+
 	const AtomProbe &left() const
 	{
 		return _left;
@@ -329,6 +370,11 @@ public:
 	hnet::ExistenceConnector &existence()
 	{
 		return _exist;
+	}
+
+	virtual bool is_definitely_not_present()
+	{
+		return (_obj.value() == hnet::Existence::Absent);
 	}
 
 	virtual float transparency()
@@ -408,6 +454,24 @@ public:
 		return _right;
 	}
 
+	virtual std::string desc()
+	{
+		return _obj.desc();
+	}
+
+	virtual bool is_definitely_not_present()
+	{
+		return !(_obj.value() & hnet::Bond::Present);
+	}
+
+	virtual std::string value()
+	{
+		std::ostringstream ss;
+		ss << "{" << _obj.value() << "} and ";
+		ss << "{" << _exist.value() << "}";
+		return ss.str();
+	}
+
 	virtual float transparency()
 	{
 		if (!_exist.is_certain())
@@ -434,7 +498,12 @@ public:
 	virtual std::string display()
 	{
 		std::string str;
-		hnet::Bond::Values val = _obj.value();
+		bool accessed = false;
+		hnet::Bond::Values val = _obj.value(&accessed);
+		if (!accessed)
+		{
+			return "";
+		}
 
 		switch (val)
 		{
@@ -472,6 +541,11 @@ public:
 
 	virtual bool is_certain()
 	{
+		if (_exist.value() == hnet::Existence::Absent)
+		{
+			return true;
+		}
+
 		return _obj.is_certain() && _exist.is_certain();
 	}
 
@@ -515,6 +589,11 @@ public:
 	{
 		return false;
 	}
+
+	virtual std::string desc()
+	{
+		return "covalent bond between " + _left.desc() + " and " + _right.desc();
+	}
 	
 	virtual std::string display()
 	{
@@ -552,7 +631,12 @@ public:
 	virtual std::string display()
 	{
 		std::string str;
-		hnet::Count::Values val = _obj.value();
+		bool accessed = false;
+		hnet::Count::Values val = _obj.value(&accessed);
+		if (!accessed)
+		{
+			return "";
+		}
 		std::vector<int> options = hnet::possible_values(val);
 
 		std::string list;
@@ -563,6 +647,11 @@ public:
 		list.pop_back();
 		
 		return list;
+	}
+
+	virtual std::string desc()
+	{
+		return _obj.desc();
 	}
 
 	virtual bool is_certain()

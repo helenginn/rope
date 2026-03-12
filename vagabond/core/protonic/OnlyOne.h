@@ -31,33 +31,15 @@ struct OnlyOne
 	        bool must_be_one = true)
 	: _exclusives(exclusives), _must_be_one(must_be_one)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-
-		for (ExistenceConnector *&existence : _exclusives)
+		std::vector<ConnectBase *> list;
+		for (ExistenceConnector *conn : exclusives)
 		{
-			existence->add_constraint_check(self_check);
+			list.push_back(conn);
 		}
-		
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		for (ExistenceConnector *&existence : _exclusives)
-		{
-			existence->add_forget(forget_me);
-		}
-
-		if (!check(this))
-		{
-			for (ExistenceConnector *&existence : _exclusives)
-			{
-				existence->pop_last_check(this);
-			}
-
-			throw std::runtime_error("New mutual existence immediately "\
-			                         "failed validation check");
-		}
+		prep_constraints_and_forgets(this, list);
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		for (ExistenceConnector *&existence : _exclusives)
 		{
@@ -108,7 +90,6 @@ struct OnlyOne
 			}
 		}
 
-		bool contradictory = false;
 		for (ExistenceConnector *&existence : _exclusives)
 		{
 			if (existence->value() != Existence::Present && declare_absent)
@@ -120,11 +101,9 @@ struct OnlyOne
 			{
 				assign(*existence, Existence::Present);
 			}
-			
-			contradictory |= is_contradictory(existence->value());
 		}
 		
-		return !contradictory;
+		return assign.okay();
 	}
 
 	std::vector<ExistenceConnector *> _exclusives;

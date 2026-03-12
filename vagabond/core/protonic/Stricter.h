@@ -20,6 +20,7 @@
 #define __vagabond__Stricter__
 
 #include "hnet.h"
+#include "Connector.h"
 
 namespace hnet
 {
@@ -35,23 +36,8 @@ public:
              Connector<ImposeType> &affected, ImposeType impose) :
 	_condition(cond), _impose(impose), _conditionObj(obj), _imposeObj(affected)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-
-		/* add this object's constraint check function to the connector */
-		_conditionObj.add_constraint_check(self_check);
-
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		_conditionObj.add_forget(forget_me);
-
-		if (!check(this))
-		{
-			_conditionObj.pop_last_check(this);
-
-			throw std::runtime_error("New stricter condition immediately "\
-			                         "failed validation check");
-
-		}
+		std::vector<ConnectBase *> list = {&affected, &obj};
+		prep_constraints_and_forgets(this, list);
 	}
 	
 	std::string desc()
@@ -62,7 +48,7 @@ public:
 		return ss.str();
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_conditionObj.forget(blame);
 		_imposeObj.forget(blame);
@@ -76,7 +62,7 @@ public:
 			assign(_imposeObj, _impose);
 		}
 		
-		return !is_contradictory(_imposeObj.value());
+		return assign.okay();
 	}
 	
 	Condition _condition;
@@ -94,6 +80,7 @@ public:
 };
 
 typedef Stricter<Count::Values, Count::Values> IfCountThenImpose;
+typedef Stricter<Bond::Values, Existence::Values> BreakIfUnsampledBond;
 };
 
 

@@ -16,30 +16,33 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__Hydrogenate__
-#define __vagabond__Hydrogenate__
+#ifndef __vagabond__CliqueFinder__
+#define __vagabond__CliqueFinder__
 
-/** \class Hydrogenate
- * does that margarine thing for the protein backbone/unmoving hydrogens. */
+class Probe;
+#include <vagabond/utils/OpSet.h>
 
-class Atom;
-class AtomGroup;
-
-namespace hnet
-{
-class Hydrogenate
+class CliqueFinder
 {
 public:
-	Hydrogenate(::Atom *atom, AtomGroup *destination);
+	static OpSet<Probe *> 
+	completeOnCondition(const OpSet<Probe *> &start,
+	                    std::function<void(Probe *probe)> initial_assessment,
+	                    std::function<bool(Probe *probe, Probe *prev)> 
+	                    check_probe);
 
-	void operator()();
+	static 
+	OpSet<Probe *> expandSelectionToNeighbours(const OpSet<Probe *> &done);
+	
+	typedef std::function<void(const OpSet<Probe *> &)> HandleClique;
+	
+	void completeAndChop(const OpSet<Probe *> &done,
+	                     const HandleClique &handle_clique = {});
 private:
-	void purgeExisting();
+	OpSet<Probe *> findOneClique(const OpSet<Probe *> &all);
 
-	AtomGroup *_destination = nullptr;
-	::Atom *_atom = nullptr;
+	std::vector<OpSet<Probe *>> _cliques;
 
-};
 };
 
 #endif

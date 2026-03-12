@@ -124,9 +124,18 @@ void Coordinated::probeAtom()
 		str = atom()->code();
 		to_lower(str);
 		str[0] = atom()->code()[0];
+		str += "-" + atom()->chain();
 		str += atom()->residueId().str();
+		if (_atomConf.conf != '\0')
+		{
+			std::string confstr;
+			confstr += _atomConf.conf;
+			to_lower(confstr);
+			str += confstr;
+		}
 	}
 
+	std::cout << "Adding network probe " << atom()->desc() << std::endl;
 	_probe = &(_network.add_probe(new AtomProbe(*_connector, *_existence,
 	                                            atom(), _atomConf.conf, str)));
 	_probe->setMult(15);
@@ -177,6 +186,7 @@ void Coordinated::comparePairs(OpSet<PairSet> &results,
 		{
 			std::cout << "Oh no, no coord for " << check.first 
 			<< "!!!" << std::endl;
+			return true;
 		}
 		
 		std::vector<int> nums = possible_values(coord->_coord_num->value());
@@ -450,7 +460,7 @@ auto prep_find_candidates(const PairSet &candidates, const glm::vec3 &centre)
 	};
 }
 
-ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
+::Atom *Coordinated::makeHydrogen(const glm::vec3 &pos)
 {
 	::Atom *hAtom = new ::Atom();
 	hAtom->setResidueId(atom()->residueId());
@@ -462,7 +472,12 @@ ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
 	hAtom->setCode(atom()->code());
 	hAtom->setElementSymbol("H");
 	_network.addNewHydrogen({hAtom, _atomConf.conf}, this);
+	return hAtom;
+}
 
+ABPair Coordinated::makePossibleHydrogen(const glm::vec3 &pos)
+{
+	::Atom *hAtom = makeHydrogen(pos);
 	BondConnector &new_bond = add(new BondConnector());
 	return {{hAtom, _atomConf.conf}, &new_bond};
 }
@@ -771,6 +786,7 @@ void Coordinated::mutualExclusions(AtomGroup *toClashCheck)
 				if (acceptable.first.ptr->atomName() == "H!")
 				{
 					addBond(acceptable);
+					_bond2Exist[acceptable.second] = nullptr;
 				}
 			}
 		}
@@ -894,6 +910,9 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 
 	for (const AtomConf &candidate : rough) 
 	{
+		glm::vec3 pos1 = _atomConf.position();
+		glm::vec3 pos2 = candidate.position();
+
 		AtomProbe *other = atomMap()[candidate]->probe();
 		if ((other->_obj.value() == hnet::Atom::Inactive)
 		    || (candidate.ptr == _atomConf.ptr))
@@ -901,27 +920,30 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 			continue;
 		}
 		
-		std::ostringstream ss;
+		std::ostringstream ss, rev;
 		ss << _atomConf << " and " << candidate;
+		rev << candidate << " and " << _atomConf;
 		
 		ExistenceConnector &h = add(new ExistenceConnector());
 		h.setDesc("presence of hydrogen atom in H-bond between " + ss.str());
 		ExistenceConnector &hExist = add(new ExistenceConnector());
-		hExist.setDesc("sampling of hydrogen atom "
+		hExist.setDesc("existence of hydrogen atom "
 		               "in H-bond between " + ss.str());
+		makeHydrogen((pos1 + pos2) / 2.f);
 
 		HydrogenProbe &hProbe = 
 		_network.add_probe(new HydrogenProbe(h, hExist, *ref, *other));
+		std::cout << "ADDING hydrogen connector: " << h << std::endl;
 		
 		BondConnector &left = add(new BondConnector());
 		left.setDesc("half the H-bond between " + ss.str());
 		BondConnector &right = add(new BondConnector());
-		right.setDesc("half the H-bond between " + ss.str());
+		right.setDesc("half the H-bond between " + rev.str());
 
 		ExistenceConnector &le = add(new ExistenceConnector());
-		le.setDesc("sampling of half the H-bond between " + ss.str());
+		le.setDesc("existence of half the H-bond between " + ss.str());
 		ExistenceConnector &re = add(new ExistenceConnector());
-		re.setDesc("sampling of half the H-bond between " + ss.str());
+		re.setDesc("existence of half the H-bond between " + rev.str());
 		
 		add_constraint(new SubExistence(ref->existence(), le, 
 		                                other->existence()));
@@ -929,15 +951,17 @@ void Coordinated::attachToNeighbours(AtomGroup *searchGroup)
 		                                other->existence()));
 		add_constraint(new SubExistence(ref->existence(), re,
 		                                other->existence()));
-
+		
 		add_constraint(new MutualExistence(hExist, le));
 		add_constraint(new MutualExistence(hExist, re));
 
 		ABPair left_pair = {candidate, &left};
 		addBond(left_pair);
+		_bond2Exist[&left] = &le;
 
 		ABPair right_pair = {_atomConf, &right};
 		atomMap()[candidate]->addBond(right_pair);
+		atomMap()[candidate]->_bond2Exist[&right] = &re;
 
 		_network.add_probe(new BondProbe(left, *ref, hProbe, le));
 		_network.add_probe(new BondProbe(right, hProbe, *other, re));
@@ -951,18 +975,45 @@ void Coordinated::clashLogic(OpSet<AtomConf> &clash_check)
 	OpSet<AtomConf> hits = findNeighbours(clash_check, atomic_position(),
 	                                      2.0, false);
 	
+	auto is_twirling_hydrogen = [this](const ::Atom *q)
+	{
+		if (q->elementSymbol() != "H" || q->bondLengthCount() != 1)
+		{
+			return false;
+		}
+
+		::Atom *p = q->connectedAtom(0);
+		
+		int hcount = 0;
+		for (int i = 0; i < p->bondLengthCount(); i++)
+		{
+			if (p->connectedAtom(i)->elementSymbol() == "H")
+			{
+				hcount++;
+			}
+		}
+		
+		return (hcount == 3);
+	};
+	
 	ExistenceConnector *&left = _existence;
 	for (const AtomConf &hit : hits)
 	{
 		ExistenceConnector *right = atomMap()[hit]->existence();
 
-		if (hit.ptr->elementSymbol() == "H" && 
-		    _atomConf.ptr->elementSymbol() == "H")
+		// assume freely rotatable hydrogens will find a way not to clash
+		if (is_twirling_hydrogen(hit.ptr) && is_twirling_hydrogen(_atomConf.ptr))
 		{
 			continue;
 		}
 
 		float l = glm::length(_atomConf.position() - hit.position());
+		
+		if (_atomConf.ptr->elementSymbol() == "H" &&
+		    hit.ptr->elementSymbol() == "H" && l > 1.5)
+		{
+			continue;
+		}
 
 		std::cout << "Organising a clash between " << *left << " and "
 		<< *right << " due to length " << l << std::endl;
@@ -999,12 +1050,13 @@ void trappedAdder(Coordinated *me, hnet::CountConnector *adder,
 
 	try
 	{
-		me->add_constraint(new Adder(me->bonds_only(), *adder));
+		me->add_constraint(new Adder(me->bond2Exist(), *adder, 
+		                             me->existence(), me->atomConf().desc()));
 	}
 	catch (const std::runtime_error &err)
 	{
-		std::cout << "Adding " + fail_msg + " problem: " 
-		<< adder->value() << " for " << me->bondCount() << " bonds." 
+		std::cout << "Adding " + fail_msg + " problem: adder value is " 
+		<< adder->value() << " across " << me->bondCount() << " bonds." 
 		<< std::endl;
 		std::cout << "\tThey are: " << me->bonds() << std::endl;
 		throw err;
@@ -1038,15 +1090,20 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 {
 	std::cout << "Preparing coordinated for " << _atomConf << std::endl;
 	CountConnector &expl_strong = add_zero_or_positive_connector();
+	expl_strong.setDesc("Donor bonds of " + _atomConf.desc());
 	CountConnector &expl_weak = add_zero_or_positive_connector();
 	CountConnector &expl_absent = add_zero_or_positive_connector();
 	CountConnector &expl_vacancies = add_zero_or_positive_connector();
+	expl_vacancies.setDesc("Explicit vacancies of " + _atomConf.desc());
 	CountConnector &expl_present = add_zero_or_positive_connector();
 	CountConnector &expl_bonds = add_zero_or_positive_connector();
 
 	CountConnector &charge = add(new CountConnector());
+	charge.setDesc("Charge on " + _atomConf.desc());
 	CountConnector &coord_num = add(new CountConnector());
+	charge.setDesc("Coordination number for " + _atomConf.desc());
 	CountConnector &valency = add(new CountConnector());
+	charge.setDesc("Valency of " + _atomConf.desc());
 	
 	/* CountAdder format: arg0 + arg1 = arg2 */
 
@@ -1074,9 +1131,13 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	/* counts which need to be hooked up to bond adders later */
 	_strong = &expl_strong;
 	_weak = &expl_weak;
+	_weak->setDesc("Acceptor bonds of " + _atomConf.desc());
 	_present = &expl_present;
+	_present->setDesc("Present bonds of " + _atomConf.desc());
 	_absent = &expl_absent;
+	_absent->setDesc("Absent bonds of " + _atomConf.desc());
 	_expl_bonds = &expl_bonds;
+	_expl_bonds->setDesc("Unbroken bonds of " + _atomConf.desc());
 
 	// we ensure that if a bond can be present and cannot be broken in any way,
 	// it must be present
@@ -1110,7 +1171,7 @@ void Coordinated::prepareCoordinated(const Count::Values &n_charge,
 	CountProbe &probe = _network.add_probe(new CountProbe(*_charge, atom()));
 	_charge->set_update([&probe, this]()
 	{
-		std::cout << _atomConf << " charge: " << probe.display() << std::endl;
+//		std::cout << _atomConf << " charge: " << probe.display() << std::endl;
 	});
 }
 
@@ -1143,9 +1204,10 @@ void Coordinated::findSymmetricallyRelatedBonds()
 		}
 
 		// get the asymmetric version of our symmetry mate
-		::Atom *asym_other = bond.first.ptr->symmetryCopyOf();
+		::Atom *asym_atom = bond.first.ptr->symmetryCopyOf();
+		AtomConf asym_other = {asym_atom, bond.first.conf};
 		
-		Coordinated *other = atomMap()[{asym_other, _atomConf.conf}];
+		Coordinated *other = atomMap()[asym_other];
 		
 		// ask the asymmetric version for the symmetry mate of my own atom
 		const ABPair &corresponding = other->bondedSymmetricAtom(atom());

@@ -276,6 +276,7 @@ void PositionShifter::move()
 	{
 		if (ele.reference == skip)
 		{
+			ele.momentum = {};
 			continue;
 		}
 

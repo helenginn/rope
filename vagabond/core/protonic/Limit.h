@@ -31,29 +31,10 @@ struct Limit
 	Limit(CountConnector &informant, CountConnector &affected) :
 	_informant(informant), _affected(affected)
 	{
-		auto self_check = [this](void *prev) { return check(prev); };
-
-		/* add this object's constraint check function to the connector */
-		_informant.add_constraint_check(self_check);
-		_affected.add_constraint_check(self_check);
-
-		auto forget_me = [this](void *blame) { return forget(blame); };
-
-		_affected.add_forget(forget_me);
-		_informant.add_forget(forget_me);
-
-		if (!check(this))
-		{
-			_affected.pop_last_check(this);
-			_informant.pop_last_check(this);
-
-			throw std::runtime_error("New limit immediately "\
-			                         "failed validation check");
-
-		}
+		prep_constraints_and_forgets(this, {&_affected, &_informant});
 	}
 	
-	void forget(void *blame)
+	void forget(OpSet<void *> &blame)
 	{
 		_affected.forget(blame);
 		_informant.forget(blame);
@@ -74,6 +55,7 @@ struct Limit
 	
 	bool check(void *previous)
 	{
+		auto assign = make_assign_and_say(this, previous);
 		int min, max;
 		min_max_values(min, max);
 
@@ -94,16 +76,13 @@ struct Limit
 
 		Count::Values onehot = values_as_count(acceptable);
 		
-		_affected.assign_value(onehot, this, previous);
-		return !is_contradictory(_affected.value());
+		assign(_affected, onehot);
+		return assign.okay();
 	}
 	
 	CountConnector &_informant;
 	CountConnector &_affected;
 };
-
-typedef Limit<true> MaxLimit;
-typedef Limit<false> MinLimit;
 };
 
 #endif
