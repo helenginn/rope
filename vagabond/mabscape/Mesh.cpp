@@ -21,6 +21,7 @@
 #include <vagabond/gui/GuiDensity.h>
 #include <vagabond/core/GroupBounds.h>
 #include <vagabond/core/AtomGroup.h>
+#include <vagabond/core/matrix_functions.h>
 
 Mesh::Mesh(Antigen &antigen) : _antigen(antigen)
 {
@@ -215,14 +216,14 @@ int Mesh::removeHollows(ArbitraryMap &map)
 	return remove_runs_from_map.changed;
 }
 
-void Mesh::growBorder(ArbitraryMap &map)
+void Mesh::growOrShrinkBorder(ArbitraryMap &map, int dir)
 {
 	for (int i = 0; i < map.nn(); i++)
 	{
 		map.element(i)[1] = map.element(i)[0];
 	}
 	
-	auto check_neighbours = [&map](int x, int y, int z)
+	auto check_neighbours = [&map, dir](int x, int y, int z)
 	{
 		long idx = map.index(x, y, z);
 		for (int k = -1; k <= 1; k++)
@@ -233,9 +234,9 @@ void Mesh::growBorder(ArbitraryMap &map)
 				{
 					long check = map.index(x + i, y + j, z + k);
 					float val = map.element(check)[1];
-					if (val > 0.5)
+					if (dir ? (val > 0.5) : (val < 0.5))
 					{
-						map.setReal(idx, 1);
+						map.setReal(idx, 1 - dir);
 						return;
 					}
 				}
@@ -250,7 +251,8 @@ void Mesh::growBorder(ArbitraryMap &map)
 			for (int i = 0; i < map.nx(); i++)
 			{
 				long check = map.index(i, j, k);
-				if (map.elementValue(check) > 0.5) continue;
+				if (dir ? (map.elementValue(check) > 0.5) :
+				    (map.elementValue(check) < 0.5)) continue;
 				check_neighbours(i, j, k);
 			}
 		}
@@ -262,7 +264,7 @@ void Mesh::growBorder(ArbitraryMap &map)
 	}
 }
 
-void Mesh::adjustVertices()
+float Mesh::adjustVertices(bool planar)
 {
 	// must be in lines
 	for (int i = 0; i < indices().size(); i += 2) 
@@ -284,28 +286,140 @@ void Mesh::adjustVertices()
 		sum /= (float)neighbours.size();
 		return sum;
 	};
+
+	auto nudged = [&copy](const OpSet<GLuint> &neighbours,
+	                      const glm::vec3 &orig)
+	{
+		std::vector<glm::vec3> bits; bits.reserve(neighbours.size());
+		std::vector<float> radii;
+		float ave_radius{};
+		glm::vec3 ave_bit{};
+
+		for (const GLuint &idx : neighbours)
+		{
+			const glm::vec3 &pos = copy[idx].pos;
+			glm::vec3 diff = pos - orig;
+			float length = glm::length(diff);
+			radii.push_back(length);
+			ave_radius += length;
+			float multiplier = 0.5 / length;
+			glm::vec3 contrib{};
+			for (int i = 0; i < 3; i++)
+			{
+				contrib[i] = -2 * diff[i] * orig[i];
+			}
+			contrib *= multiplier;
+			if (contrib != contrib)
+			{
+				contrib = {};
+			}
+			bits.push_back(contrib);
+			ave_bit += contrib;
+		}
+		ave_radius /= (float)neighbours.size();
+		ave_bit /= (float)neighbours.size();
+
+		glm::vec3 grad{};
+		
+		for (int j = 0; j < 3; j++)
+		{
+			for (int i = 0; i < radii.size(); i++)
+			{
+				float first = radii[i] - ave_radius;
+				float second = bits[i][j] - ave_bit[j];
+				grad[j] += -2 * first * second / (float)radii.size();
+			}
+		}
+		
+		return orig + grad * 0.001f;
+	};
 	
+	float all_changes = {};
 	for (int i = 0; i < copy.size(); i++)
 	{
 		const OpSet<GLuint> &neighbours = _connections[i];
 		glm::vec3 orig = copy[i].pos;
-		glm::vec3 target = average(neighbours);
+		glm::vec3 target = (planar ? nudged(neighbours, orig) 
+		                    : average(neighbours));
 		glm::vec3 diff = target - orig;
 		glm::vec3 &norm = copy[i].normal;
-		bool concave = glm::dot(diff, norm) > 0;
-		glm::vec3 update = orig + diff * 0.1f;
-		edit[i] = update;
+		float curvature = glm::dot(diff, norm);
+		glm::vec3 plane = diff - norm * curvature;
+		glm::vec3 mod = {};
+		if (!planar && curvature > 0)
+		{
+			mod += diff;
+		}
+		else if (planar)
+		{
+			mod += plane;
+		}
+		mod *= 0.01f;
+		edit[i].pos += mod;
+		all_changes += glm::dot(mod, mod);
 	}
+	all_changes = sqrt(all_changes / (float)copy.size());
 
 	std::unique_lock<std::mutex> lock(_vertLock);
 	vertices() = edit;
 	forceRender(true, true);
+	return all_changes;
+}
+
+void Mesh::calculateNormalsFrom(const std::vector<GLuint> &indices)
+{
+	std::unique_lock<std::mutex> lock(_vertLock);
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		_vertices[i].normal = glm::vec3(0.);
+	}
+	
+	for (size_t i = 0; i < indices.size(); i += 3)
+	{
+		glm::vec3 &pos1 = _vertices[indices[i+0]].pos;
+		glm::vec3 &pos2 = _vertices[indices[i+1]].pos;
+		glm::vec3 &pos3 = _vertices[indices[i+2]].pos;
+
+		glm::vec3 diff31 = pos3 - pos1;
+		glm::vec3 diff21 = pos2 - pos1;
+
+		glm::vec3 cross = glm::cross(diff31, diff21);
+		cross = glm::normalize(cross);
+		
+		if (!is_glm_vec_sane(cross))
+		{
+			continue;
+		}
+		
+		/* Normals */					
+		for (int j = 0; j < 3; j++)
+		{
+			_vertices[indices[i + j]].normal += cross;
+		}
+	}
+
+	for (size_t i = 0; i < _vertices.size(); i++)
+	{
+		glm::vec3 &norm = _vertices[i].normal;
+		norm = glm::normalize(norm);
+	}
+}
+
+void Mesh::normalsFromLines()
+{
+	calculateNormalsFrom(_triangleIdxs);
 }
 
 void Mesh::marchingCubes()
 {
 	ArbitraryMap map = mappedAtoms();
-	growBorder(map);
+	for (int i = 0; i < 2; i++)
+	{
+		growOrShrinkBorder(map, 1);
+	}
+		growOrShrinkBorder(map, -1);
+		growOrShrinkBorder(map, -1);
+	growOrShrinkBorder(map, 1);
 	
 	// loop until no more hollows
 	while (removeHollows(map) > 0) {};
@@ -316,13 +430,27 @@ void Mesh::marchingCubes()
 	density.populateFromMap(&map);
 	copyFrom(&density);
 	calculateNormals();
+
+	_triangleIdxs = indices();
 	changeToLines();
+	_lineIdxs = indices();
 }
 
 void Mesh::refine()
 {
-	while (true)
+	auto loop = [this](bool planar)
 	{
-		adjustVertices();
-	}
+		while (true)
+		{
+			float result = adjustVertices(planar);
+			if (result < 1e-04)
+			{
+				break;
+			}
+			normalsFromLines();
+		}
+	};
+
+	loop(true);
+	loop(false);
 }
