@@ -30,7 +30,8 @@ struct DoJob
 		_worker = std::thread(func);
 		_worker.detach();
 		/*
-        delete _worker;
+		_worker->join();
+		delete _worker;
 		delete this;
 		*/
 	}
