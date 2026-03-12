@@ -917,6 +917,7 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
 
 	if(flagParameters.mutualInformation)
 	{
+        std::cout << "Entering mist = true loop, mist = " << flagParameters.mist << std::endl;
 		entropy->mi.resize(entropy->nPairs);
         entropy->mst1.resize(entropy->nPairs);
         entropy->mst2.resize(entropy->nPairs);
@@ -935,6 +936,7 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
     
         for(int i = 0; i < entropy->nPairs; i++)
         {
+            std::cout << "Entering nested if loop" << std::endl;
             entropy->mi[i].resize(nNearestNeighbours);
             entropy->h2[i].resize(nNearestNeighbours);
             entropy->sd2[i].resize(nNearestNeighbours);
@@ -944,6 +946,7 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
         }
 	}
 
+    return 0;
 }
 
 /* allocates memory to entropy calculation variables */
