@@ -112,7 +112,7 @@ std::function<void()> AssignChains::operator()()
 		return [assign_new_entity, ch, view]()
 		{
 			AskForText *aft = 
-			new AskForText(view, "Name new antigen monomer:", 
+			new AskForText(view, "Name new monomer:", 
 			               "", nullptr);
 			aft->setReturnJob(assign_new_entity(ch, view));
 			view->setModal(aft);
@@ -127,7 +127,7 @@ std::function<void()> AssignChains::operator()()
 		std::vector<Entity *> entities = m->entities();
 
 		Menu *menu = new Menu(view);
-		menu->addOption("assign as new antigen protein",
+		menu->addOption("assign as new protein",
 		                make_ask_for_monomer(view, ch));
 		for (Entity *const &ent : entities)
 		{
