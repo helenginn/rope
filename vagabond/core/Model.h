@@ -117,6 +117,7 @@ public:
 	}
 
 	std::set<Entity *> entities();
+	std::set<std::string> entity_names();
 	std::set<Polymer *> polymersForEntity(Entity *ent);
 
 	Polymer *polymerFromChain(Chain *ch);
