@@ -16,41 +16,26 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FiducialSetup__
-#define __vagabond__FiducialSetup__
-
-#include "MultipleSetup.h"
+#include "PrepWorkView.h"
+#include "Mesh.h"
 #include "Mab.h"
 
-class FiducialSetup : public MultipleSetup<Fiducial>
+PrepWorkView::PrepWorkView(Scene *prev, Mab &mab) 
+: Scene(prev), Mouse3D(prev), _mab(mab)
 {
-public:
-	FiducialSetup(Scene *scene, Fiducials &fiducials, 
-	              Antigens &antigens, Competitions &comps, 
-	              ColourMap &colours);
+	_farSlab = 80;
+	_slabbing = true;
+	shiftToCentre({}, 80);
 
-	virtual void setup();
-	virtual void refresh();
+}
 
-	Fiducial &fiducial()
-	{
-		return *_object;
-	}
+void PrepWorkView::setup()
+{
+	addTitle("Preparing workspace");
 
-protected:
-	virtual bool acceptable_to_add_after(Fiducial &fiducial);
-private:
-	void chooseName();
-	void choosePDB();
-	void assignChains();
-	void chooseAntigen();
-	void listFiducialChains();
-
-	Competitions &_comps;
-	Fiducials &_fiducials;
-	Antigens &_antigens;
-	ColourMap &_colours;
-
-};
-
-#endif
+	Antigen &front = _mab.antigens.front();
+	Mesh *mesh = front.mesh();
+	
+	addObject(mesh);
+	shiftToCentre(mesh->centroid(), 0);
+}

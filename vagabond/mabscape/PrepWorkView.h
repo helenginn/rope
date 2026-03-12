@@ -16,40 +16,21 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FiducialSetup__
-#define __vagabond__FiducialSetup__
+#ifndef __vagabond__PrepWorkView__
+#define __vagabond__PrepWorkView__
 
-#include "MultipleSetup.h"
-#include "Mab.h"
+#include <vagabond/gui/elements/Mouse3D.h>
 
-class FiducialSetup : public MultipleSetup<Fiducial>
+struct Mab;
+
+class PrepWorkView : public Mouse3D
 {
 public:
-	FiducialSetup(Scene *scene, Fiducials &fiducials, 
-	              Antigens &antigens, Competitions &comps, 
-	              ColourMap &colours);
+	PrepWorkView(Scene *prev, Mab &mab);
 
 	virtual void setup();
-	virtual void refresh();
-
-	Fiducial &fiducial()
-	{
-		return *_object;
-	}
-
-protected:
-	virtual bool acceptable_to_add_after(Fiducial &fiducial);
 private:
-	void chooseName();
-	void choosePDB();
-	void assignChains();
-	void chooseAntigen();
-	void listFiducialChains();
-
-	Competitions &_comps;
-	Fiducials &_fiducials;
-	Antigens &_antigens;
-	ColourMap &_colours;
+	Mab &_mab;
 
 };
 

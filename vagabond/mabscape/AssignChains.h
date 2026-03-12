@@ -16,40 +16,27 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FiducialSetup__
-#define __vagabond__FiducialSetup__
+#ifndef __vagabond__AssignChains__
+#define __vagabond__AssignChains__
 
-#include "MultipleSetup.h"
-#include "Mab.h"
+#include <vagabond/utils/OpSet.h>
 
-class FiducialSetup : public MultipleSetup<Fiducial>
+class Model;
+class Scene;
+struct ColourMap;
+
+class AssignChains
 {
 public:
-	FiducialSetup(Scene *scene, Fiducials &fiducials, 
-	              Antigens &antigens, Competitions &comps, 
-	              ColourMap &colours);
+	AssignChains(Scene *parent, Model &model, ColourMap &colours,
+	             OpSet<std::string> &names);
 
-	virtual void setup();
-	virtual void refresh();
-
-	Fiducial &fiducial()
-	{
-		return *_object;
-	}
-
-protected:
-	virtual bool acceptable_to_add_after(Fiducial &fiducial);
+	std::function<void()> operator()();
 private:
-	void chooseName();
-	void choosePDB();
-	void assignChains();
-	void chooseAntigen();
-	void listFiducialChains();
-
-	Competitions &_comps;
-	Fiducials &_fiducials;
-	Antigens &_antigens;
+	Model &_model;
 	ColourMap &_colours;
+	OpSet<std::string> &_names;
+	Scene *_parent{};
 
 };
 

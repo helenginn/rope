@@ -16,31 +16,40 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__MabscapeSetup__
-#define __vagabond__MabscapeSetup__
+#ifndef __vagabond__ListDeletable__
+#define __vagabond__ListDeletable__
 
+#include <vagabond/utils/OpSet.h>
+#include <vagabond/gui/elements/Text.h>
 #include <vagabond/gui/elements/Scene.h>
-#include "Mab.h"
+#include <vagabond/gui/elements/ImageButton.h>
 
-class MabscapeSetup : public Scene
+inline
+void make_list_deletable(Scene *scene, OpSet<std::string> *where,
+                         const OpSet<std::string> &start,
+                         float &top)
 {
-public:
-	MabscapeSetup();
+	for (const std::string &str : start)
+	{
+		Text *text = new Text(str);
+		text->setRight(0.8, top);
+		scene->addTempObject(text);
 
-	virtual void setup();
-	virtual void refresh();
+		ImageButton *ib = new ImageButton("assets/images/cross.png", 
+		                                  scene);
+		ib->resize(0.06);
+		ib->setLeft(0.8, top);
+		ib->setReturnJob
+		([scene, where, str]()
+		 {
+			*where -= str;
+			scene->refresh();
+		 });
+		scene->addTempObject(ib);
 
-	void load(const std::string &command);
-private:
-	void validationSmileys();
-	void summariseNumbers();
-	void trustedAntibodies();
-
-	Mab _mab{};
-
-	bool _validateAntigen{false};
-	bool _validateComp{false};
-	bool _validateFiducials{false};
-};
+		top += 0.06;
+	}
+	
+}
 
 #endif

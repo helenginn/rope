@@ -19,6 +19,7 @@
 #ifndef __vagabond__MultipleSetup__
 #define __vagabond__MultipleSetup__
 
+#include <list>
 #include <vagabond/gui/elements/Scene.h>
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
@@ -27,8 +28,8 @@ template <class Object>
 class MultipleSetup : public Scene
 {
 public:
-	typedef std::vector<Object> Objects;
-	MultipleSetup(Scene *scene, std::vector<Object> &objects)
+	typedef std::list<Object> Objects;
+	MultipleSetup(Scene *scene, std::list<Object> &objects)
 	: Scene(scene), _objects(objects)
 	{
 		if (_objects.size() == 0)
@@ -71,7 +72,8 @@ public:
 			addTempObject(bb);
 		}
 
-		if (_object != _objects.end() - 1)
+		auto check = _objects.end(); check--;
+		if (_object != check)
 		{
 			ImageButton *bb = ImageButton::arrow(-90., this);
 			bb->setCentre(0.9, 0.8);
@@ -84,7 +86,7 @@ public:
 			addTempObject(bb);
 		}
 
-		if (_object == _objects.end() - 1 && 
+		if (_object == check && 
 		    acceptable_to_add_after(*_object))
 		{
 			ImageButton *bb = new ImageButton("assets/images/plus.png", 
@@ -95,7 +97,7 @@ public:
 			([this]()
 			 {
 				_objects.push_back(Object());
-				_object = _objects.end() - 1;
+				_object = _objects.end(); _object--;
 				refresh();
 			});
 			addTempObject(bb);

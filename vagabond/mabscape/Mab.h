@@ -19,9 +19,11 @@
 #ifndef __vagabond__Mab__
 #define __vagabond__Mab__
 
+#include <list>
 #include <vagabond/core/Model.h>
 #include <vagabond/utils/OpSet.h>
 
+class Mesh;
 class Chain;
 class Metadata;
 class AtomGroup;
@@ -30,11 +32,11 @@ namespace MabUtils
 {
 	template <class Object>
 	std::string gather_validations
-	(const std::function<std::string(const Object &)> &validate,
-	 const std::vector<Object> &objects)
+	(const std::function<std::string(Object &)> &validate,
+	 std::list<Object> &objects)
 	{
 		std::string problems;
-		for (const Object &object : objects)
+		for (Object &object : objects)
 		{
 			std::string contribution = validate(object);
 			if (contribution.length())
@@ -60,16 +62,25 @@ struct Antigen
 	std::string title{};
 	Model model{};
 	OpSet<std::string> entities;
+	Mesh *_mesh{};
+	
+	std::vector<Instance *> instances();
 	
 	std::string validate() const;
+	
+	Mesh *mesh();
+
+	void wipe() { /* fill me in */ }
 };
 
-class Antigens : public std::vector<Antigen>
+class Antigens : public std::list<Antigen>
 {
 public:
 	std::string validate();
 
-	OpSet<std::string> entities();
+	OpSet<std::string> entities() const;
+	
+	const Antigen *antigen(const std::string &id) const;
 };
 
 struct Competition
@@ -90,7 +101,7 @@ struct Competition
 	std::string validate(const Antigens &antigens) const;
 };
 
-class Competitions : public std::vector<Competition>
+class Competitions : public std::list<Competition>
 {
 public:
 	std::string validate(const Antigens &antigens);
@@ -101,14 +112,21 @@ public:
 struct Fiducial
 {
 	std::string name;
+	Model model{};
+	OpSet<std::string> entities;
+	OpSet<std::string> non_antigen_entities(const Antigens &antigens);
 
+	std::string antigen;
+
+	std::string validate(const Antigens &antigens);
 };
 
-class Fiducials : public std::vector<Fiducial>
+class Fiducials : public std::list<Fiducial>
 {
 public:
 	OpSet<std::string> all_fiducials();
 
+	std::string validate(const Antigens &antigens);
 };
 
 struct ColourMap

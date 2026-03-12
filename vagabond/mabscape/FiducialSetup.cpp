@@ -16,14 +16,25 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "ListDeletable.h"
+#include "AssignChains.h"
+#include "ChooseAntigen.h"
 #include "FiducialSetup.h"
 #include <vagabond/gui/ChooseHeader.h>
+#include <vagabond/gui/elements/BadChoice.h>
+#include <vagabond/core/files/PdbFile.h>
+#include <vagabond/gui/FileView.h>
 
 FiducialSetup::FiducialSetup(Scene *scene, Fiducials &fiducials, 
-                             Competitions &comps)
+                             Antigens &antigens,
+                             Competitions &comps, ColourMap &colours)
 : MultipleSetup(scene, fiducials), 
-_comps(comps), _fiducials(fiducials)
+_comps(comps), _fiducials(fiducials), _antigens(antigens), _colours(colours)
 {
+	if (_antigens.size() == 1)
+	{
+		fiducial().antigen = _antigens.front().title;
+	}
 
 }
 
@@ -40,7 +51,7 @@ void FiducialSetup::chooseName()
 	auto available_names = [this]()
 	{
 		OpSet<std::string> all = _comps.all_antibodies();
-		all -= _fiducials.all_fiducials();
+//		all -= _fiducials.all_fiducials();
 		return all;
 	};
 	
@@ -78,13 +89,130 @@ void FiducialSetup::chooseName()
 void FiducialSetup::refresh()
 {
 	deleteTemps();
-
 	chooseName();
+	choosePDB();
+	assignChains();
 	scrollButtons();
 	deleteButton();
+	chooseAntigen();
+	listFiducialChains();
+}
+
+void FiducialSetup::choosePDB()
+{
+	if (fiducial().name.length() == 0)
+	{
+		return;
+	}
+
+	auto select_pdb = [this](std::string filename)
+	{
+		try
+		{
+			PdbFile pdb(filename);
+			pdb.parse();
+			fiducial().model.setFilename(filename);
+			refresh();
+		}
+		catch (const std::runtime_error &err)
+		{
+			BadChoice *bc = new BadChoice(this, "Could not open reference PDB: " 
+			                              + std::string(err.what()));
+			setModal(bc);
+		}
+	};
+	
+	auto choose_pdb = [this, select_pdb]()
+	{
+		FileView *fv = new FileView(this, select_pdb);
+		if (fv->lineCount() == 0)
+		{
+			fv->globRefresh();
+		}
+		fv->show();
+	};
+
+	std::string name = fiducial().model.filename().length() 
+	? fiducial().model.filename() : "choose";
+	{
+	TextButton *tb = new TextButton(name, this);
+	tb->setRight(0.8, 0.4);
+	tb->setReturnJob(choose_pdb);
+	addTempObject(tb);
+	}
+
+	{
+	TextButton *tb = new TextButton("Antigen-antibody PDB file", 
+	                                this);
+	tb->setLeft(0.2, 0.4);
+	tb->setReturnJob(choose_pdb);
+	addTempObject(tb);
+	}
 }
 
 bool FiducialSetup::acceptable_to_add_after(Fiducial &fiducial)
 {
 	return (fiducial.name.length() > 0);
+}
+
+void FiducialSetup::assignChains()
+{
+	if (fiducial().model.filename().length() == 0)
+	{
+		return;
+	}
+
+	AssignChains assign_topology(this, fiducial().model, 
+	                             _colours, fiducial().entities);
+
+	TextButton *text = new TextButton("Assign chains", this);
+	text->setLeft(0.2, 0.5);
+	text->setReturnJob(assign_topology());
+	addTempObject(text);
+	
+	ImageButton *t = ImageButton::arrow(-90., this);
+	t->setReturnJob(assign_topology());
+	t->setCentre(0.8, 0.5);
+	addTempObject(t);
+}
+
+void FiducialSetup::chooseAntigen()
+{
+	if (fiducial().model.filename().length() == 0)
+	{
+		return;
+	}
+
+	auto choose_antigen = make_choose_antigen(this, 
+	                                          &fiducial().antigen,
+	                                          &_antigens);
+
+	TextButton *t = new TextButton("Model of antigen used:", this);
+	t->setLeft(0.2, 0.6);
+	t->setReturnJob(choose_antigen);
+	addTempObject(t);
+
+	TextButton *tb = 
+	new TextButton(fiducial().antigen.length() ? 
+	               fiducial().antigen : "choose", this);
+	tb->setRight(0.8, 0.6);
+	tb->setReturnJob(choose_antigen);
+	addTempObject(tb);
+}
+
+void FiducialSetup::listFiducialChains()
+{
+	auto starts = fiducial().non_antigen_entities(_antigens);
+	if (starts.size() == 0)
+	{
+		return;
+	}
+
+	Text *text = new Text("Antibody entities:");
+	text->setLeft(0.2, 0.7);
+	addTempObject(text);
+
+	float top = 0.7;
+	make_list_deletable(this, &(fiducial().entities), starts, 
+	                    top);
 }

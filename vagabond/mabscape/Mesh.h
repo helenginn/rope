@@ -16,41 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__FiducialSetup__
-#define __vagabond__FiducialSetup__
+#ifndef __vagabond__Mesh__
+#define __vagabond__Mesh__
 
-#include "MultipleSetup.h"
-#include "Mab.h"
+#include <nlohmann/json.hpp>
+#include <vagabond/utils/OpSet.h>
+#include <vagabond/gui/elements/SimplePolygon.h>
+#include <vagabond/core/grids/ArbitraryMap.h>
+using nlohmann::json;
 
-class FiducialSetup : public MultipleSetup<Fiducial>
+struct Antigen;
+class AtomGroup;
+
+class Mesh : public SimplePolygon
 {
 public:
-	FiducialSetup(Scene *scene, Fiducials &fiducials, 
-	              Antigens &antigens, Competitions &comps, 
-	              ColourMap &colours);
+	Mesh(Antigen &antigen);
 
-	virtual void setup();
-	virtual void refresh();
+	AtomGroup *atoms();
 
-	Fiducial &fiducial()
-	{
-		return *_object;
-	}
-
-protected:
-	virtual bool acceptable_to_add_after(Fiducial &fiducial);
+	void refine();
 private:
-	void chooseName();
-	void choosePDB();
-	void assignChains();
-	void chooseAntigen();
-	void listFiducialChains();
+	ArbitraryMap mappedAtoms();
+	int removeHollows(ArbitraryMap &map);
+	void growBorder(ArbitraryMap &map);
+	void marchingCubes();
+	Antigen &_antigen;
 
-	Competitions &_comps;
-	Fiducials &_fiducials;
-	Antigens &_antigens;
-	ColourMap &_colours;
-
+	AtomGroup *_atoms{};
+	std::map<GLuint, OpSet<GLuint>> _connections;
+	void adjustVertices();
 };
 
 #endif
