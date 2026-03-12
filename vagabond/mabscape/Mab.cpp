@@ -257,6 +257,18 @@ std::string Fiducial::validate(const Antigens &antigens)
 	return "";
 }
 
+Antigen *Antigens::antigen(const std::string &id) 
+{
+	for (Antigen &antigen : *this)
+	{
+		if (antigen.title == id)
+		{
+			return &antigen;
+		}
+	}
+	return nullptr;
+}
+
 const Antigen *Antigens::antigen(const std::string &id) const
 {
 	for (const Antigen &antigen : *this)
