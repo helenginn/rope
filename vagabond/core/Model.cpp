@@ -222,6 +222,18 @@ void Model::createPolymers()
 	unload();
 }
 
+std::set<std::string> Model::entity_names()
+{
+	std::set<Entity *> ents = entities();
+	std::set<std::string> names;
+
+	for (Entity *ent : ents)
+	{
+		names.insert(ent->name());
+	}
+	return names;
+}
+
 std::set<Entity *> Model::entities()
 {
 	std::set<Entity *> entities;
