@@ -5,6 +5,8 @@ mabscapefiles = [
 'AssignChains.cpp',
 'CompetitionSetup.h',
 'CompetitionSetup.cpp',
+'ContactPoint.h',
+'ContactPoint.cpp',
 'FiducialSetup.h',
 'FiducialSetup.cpp',
 'Mab.h',
