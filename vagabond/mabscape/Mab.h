@@ -81,6 +81,7 @@ public:
 	OpSet<std::string> entities() const;
 	
 	const Antigen *antigen(const std::string &id) const;
+	Antigen *antigen(const std::string &id);
 };
 
 struct Competition
