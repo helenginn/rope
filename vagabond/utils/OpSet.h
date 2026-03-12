@@ -64,33 +64,22 @@ public:
 		return index;
 	}
 	
-	/*
-	bool operator<(const OpSet<Type> &other) const
+	// intersect
+	template <class Container>
+	OpSet<Type> common_to_both(const Container &other)
 	{
-		auto it = other.begin();
-		for (const Type &ours : *this)
+		OpSet<Type> ret;
+
+		for (const Type &left : *this)
 		{
-			const Type &theirs = *it;
-			if (ours != theirs)
+			if (other.count(left))
 			{
-				return ours < theirs;
-			}
-			
-			it++;
-			if (it == other.end())
-			{
-				return false;
+				ret.insert(left);
 			}
 		}
-
-		if (it != other.end())
-		{
-			return true;
-		}
-
-		return false;
+		
+		return ret;
 	}
-	*/
 	
 	template <class Container>
 	OpSet<std::pair<Type, Type>> pairs_with(const Container &other)
