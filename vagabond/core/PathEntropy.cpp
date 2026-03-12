@@ -771,6 +771,8 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
 /* allocates memory to entropy structure */
 int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
 {
+    entropy->nPairs = nPairs;
+
 	entropy->pathTotal.resize(nNearestNeighbours);
 	entropy->sigmaTotal.resize(nNearestNeighbours);
 	entropy->meanDistTotal.resize(nNearestNeighbours);
@@ -787,8 +789,11 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
 		entropy->dm1[i].resize(nNearestNeighbours);
 	}
 
-	if(flagParameters.mist)
+    std::cout << "after if\n" << std::flush;
+
+	if(flagParameters.mist == true)
 	{
+        std::cout << "Entering mist = true loop, mist = " << flagParameters.mist << std::endl;
 		entropy->mi.resize(entropy->nPairs);
         entropy->mst1.resize(entropy->nPairs);
         entropy->mst2.resize(entropy->nPairs);
@@ -807,6 +812,7 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
     
         for(int i = 0; i < entropy->nPairs; i++)
         {
+            std::cout << "Entering nested if loop" << std::endl;
             entropy->mi[i].resize(nNearestNeighbours);
             entropy->h2[i].resize(nNearestNeighbours);
             entropy->sd2[i].resize(nNearestNeighbours);
@@ -816,6 +822,7 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
         }
 	}
 
+    return 0;
 }
 
 /* allocates memory to entropy calculation variables */
