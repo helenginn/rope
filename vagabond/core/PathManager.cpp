@@ -452,7 +452,6 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
     std::vector<double> entropy;
 
     struct FlagParameters flagPar = pE->initFlagPar();
-    flagPar.mist = false;
 
     std::vector<TorsRes4NN*> torsRes = pE->getAtomsAndResidues(numPaths, paths, numDivisions);
 

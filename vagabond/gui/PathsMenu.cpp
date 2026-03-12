@@ -19,7 +19,6 @@
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
 #include <vagabond/gui/elements/AskYesNo.h>
-#include <vagabond/gui/elements/MultiOptions.h>
 #include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ConfSpaceView.h>
 #include <vagabond/gui/elements/TickBoxes.h>
@@ -39,9 +38,8 @@
 #include "PathsDetail.h"
 #include "MakeNewPaths.h"
 #include "Entropy.h"
-#include "VagWindow.h"
 #include "PathThermodynamics.h"
-#include "HeatMapView.h"
+#include "HeatMapOptions.h"
 #include <functional>
 
 PathsMenu::PathsMenu(Scene *prev, Entity *entity,
@@ -389,48 +387,25 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
 
 	if (tag == "menu_path_thermodynamics")
 	{ 
-        std::vector<Path *> pathsForCalc;
+            std::vector<Path *> pathsForCalc;
 
-		for (Path *const &path : _allPaths)
-        {
-			pathsForCalc.push_back(path);
-		}
+	    for (Path *const &path : _allPaths)
+            {
+	        pathsForCalc.push_back(path);
+	    }
 
-		PathThermodynamics *pt = new PathThermodynamics(this, _entity, pathsForCalc);
-		pt->show();
-		return;
+	    PathThermodynamics *pt = new PathThermodynamics(this, _entity, pathsForCalc);
+	    pt->show();
+	    return;
 	}
 
     if (tag == "menu_map_entropy")
     {
-        MultiOptions *mo = new MultiOptions(this, "Select calculation parameters", "params", this);
-        mo->addYesNo("Use MIST?");
-        setModal(mo);
+	HeatMapOptions *hmo = new HeatMapOptions(this, _entity);
 
-        std::vector<struct EntropyForHeatMap> entropyData = {};
-        
-        std::cout << "adding job" << std::endl;
+	hmo->show();
+	return;
 
-        std::function<void(std::vector<EntropyForHeatMap> &)> callback;
-		callback = [this](std::vector<EntropyForHeatMap> &entropyData)
-		{
-			addMainThreadJob([this, entropyData]()
-					{
-					HeatMapView *view = new HeatMapView(this, 
-							entropyData);
-					view->show();
-					});
-            showBackButton();
-		};
-           
-		Environment::pathManager()->setEntropyCallback(callback);
-        
-        hideBackButton();
-
-        prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
-
-        VagWindow::addJob("path-entropy=" + _entity->name() + ",11" + ",2");
-        
         /* std::cout << "path entropy data calculated" << std::endl;
         std::ifstream dataFile(_entity->name() + "_10");
         std::string line, tempStart, tempEnd, tempEnt, tempEPR;
@@ -453,10 +428,9 @@ void PathsMenu::buttonPressed(std::string tag, Button *button)
  
         HeatMapView *hmv = new HeatMapView(this, entropyData);*/
 
-        return;
     }
 	
-	ListView::buttonPressed(tag, button);
+    ListView::buttonPressed(tag, button);
 }
 
 void PathsMenu::prepareSpace()
@@ -504,10 +478,5 @@ void PathsMenu::prepareSpace()
 	ConfSpaceView *csv = new ConfSpaceView(this, entity, *_space);
 	csv->setMode(rope::ConfPath);
 	csv->show();
-}
-
-void PathsMenu::prepareProgress(int ticks, std::string text)
-{
-    VagWindow::window()->requestProgressBar(ticks, text);
 }
 

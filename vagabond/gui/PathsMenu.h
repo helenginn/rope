@@ -50,7 +50,6 @@ public:
 private:
 	void prepareSpace();
 	void preparePaths();
-    void prepareProgress(int ticks, std::string text);
     void displayTree();
 
     LineGroup *_pathsTree = nullptr;
