@@ -16,12 +16,14 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "ContactPoint.h"
 #include "PrepWorkView.h"
 #include "Mesh.h"
 #include "Mab.h"
+#include <vagabond/utils/DoJob.h>
 
 PrepWorkView::PrepWorkView(Scene *prev, Mab &mab) 
-: Scene(prev), Mouse3D(prev), _mab(mab)
+: Scene(prev), Display(prev), _mab(mab)
 {
 	_farSlab = 80;
 	_slabbing = true;
@@ -33,9 +35,29 @@ void PrepWorkView::setup()
 {
 	addTitle("Preparing workspace");
 
-	Antigen &front = _mab.antigens.front();
-	Mesh *mesh = front.mesh();
-	
-	addObject(mesh);
-	shiftToCentre(mesh->centroid(), 0);
+	DoJob([this]() { prepareAntigens(_mab.antigens); });
+}
+
+void PrepWorkView::prepareAntigens(Antigens &antigens)
+{
+	for (Antigen &antigen : _mab.antigens)
+	{
+		setInformation("Meshing up antigen " + antigen.title);
+		Mesh *mesh = antigen.mesh();
+
+		addObject(mesh);
+		shiftToCentre(mesh->centroid(), 0);
+
+		mesh->refine();
+		removeObject(mesh);
+
+		for (Fiducial &fid : _mab.fiducials)
+		{
+			if (fid.antigen == antigen.title)
+			{
+				ContactPoint contact(fid, _mab.antigens);
+				std::cout << std::endl;
+			}
+		}
+	}
 }
