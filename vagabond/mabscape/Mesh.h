@@ -39,13 +39,18 @@ public:
 private:
 	ArbitraryMap mappedAtoms();
 	int removeHollows(ArbitraryMap &map);
-	void growBorder(ArbitraryMap &map);
+	void growOrShrinkBorder(ArbitraryMap &map, int dir);
 	void marchingCubes();
+	void normalsFromLines();
 	Antigen &_antigen;
 
 	AtomGroup *_atoms{};
 	std::map<GLuint, OpSet<GLuint>> _connections;
-	void adjustVertices();
+	void calculateNormalsFrom(const std::vector<GLuint> &indices);
+	float adjustVertices(bool planar);
+	
+	std::vector<GLuint> _triangleIdxs;
+	std::vector<GLuint> _lineIdxs;
 };
 
 #endif
