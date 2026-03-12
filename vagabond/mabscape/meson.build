@@ -1,6 +1,8 @@
 mabscapefiles = [
 'AntigenSetup.h',
 'AntigenSetup.cpp',
+'AssignChains.h',
+'AssignChains.cpp',
 'CompetitionSetup.h',
 'CompetitionSetup.cpp',
 'FiducialSetup.h',
@@ -11,6 +13,10 @@ mabscapefiles = [
 'MabscapeWindow.cpp',
 'MabscapeSetup.h',
 'MabscapeSetup.cpp',
+'Mesh.h',
+'Mesh.cpp',
+'PrepWorkView.h',
+'PrepWorkView.cpp',
 'main.cpp',
 ]
 

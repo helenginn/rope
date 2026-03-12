@@ -26,7 +26,8 @@ class FiducialSetup : public MultipleSetup<Fiducial>
 {
 public:
 	FiducialSetup(Scene *scene, Fiducials &fiducials, 
-	              Competitions &comps);
+	              Antigens &antigens, Competitions &comps, 
+	              ColourMap &colours);
 
 	virtual void setup();
 	virtual void refresh();
@@ -35,13 +36,20 @@ public:
 	{
 		return *_object;
 	}
+
 protected:
 	virtual bool acceptable_to_add_after(Fiducial &fiducial);
 private:
 	void chooseName();
+	void choosePDB();
+	void assignChains();
+	void chooseAntigen();
+	void listFiducialChains();
 
 	Competitions &_comps;
 	Fiducials &_fiducials;
+	Antigens &_antigens;
+	ColourMap &_colours;
 
 };
 

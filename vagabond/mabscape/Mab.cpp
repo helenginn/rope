@@ -17,6 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "Mab.h"
+#include "Mesh.h"
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/Metadata.h>
 #include <vagabond/core/Entity.h>
@@ -78,10 +79,10 @@ std::string Antigens::validate()
 	(validate_antigen, *this);
 }
 
-OpSet<std::string> Antigens::entities()
+OpSet<std::string> Antigens::entities() const
 {
 	OpSet<std::string> entities;
-	for (Antigen &antigen : *this)
+	for (const Antigen &antigen : *this)
 	{
 		entities += antigen.entities;
 	}
@@ -139,10 +140,21 @@ std::string Competition::validate(const Antigens &antigens) const
 	if (!found)
 	{
 		return "Antigen model \"" + antigen + "\" for " + filename
-		+ " does not exist";
+		+ " does not exist anymore";
 	}
 
 	return "";
+}
+
+std::string Fiducials::validate(const Antigens &antigens)
+{
+	auto validate_fiducial = [antigens](Fiducial &fid)
+	{
+		return fid.validate(antigens);
+	};
+
+	return MabUtils::gather_validations<Fiducial>
+	(validate_fiducial, *this);
 }
 
 std::string Competitions::validate(const Antigens &antigens)
@@ -176,4 +188,113 @@ OpSet<std::string> Fiducials::all_fiducials()
 		all += fid.name;
 	}
 	return all;
+}
+
+OpSet<std::string> Fiducial::non_antigen_entities
+(const Antigens &antigens)
+{
+	OpSet<std::string> all = entities;
+	OpSet<std::string> excluded = antigens.entities();
+	all -= excluded;
+	return all;
+}
+
+std::string Fiducial::validate(const Antigens &antigens)
+{
+	if (name == "")
+	{
+		return "Antibody is not chosen";
+	}
+
+	if (model.filename() == "")
+	{
+		return "Antibody " + name + " model PDB not chosen";
+	}
+	
+	if (antigen == "")
+	{
+		return "Antigen model not assigned for " + name;
+	}
+
+	const Antigen *found = antigens.antigen(antigen);
+	if (!found)
+	{
+		return "Antigen \"" + antigen + "\" assigned to " + name
+		+ " does not exist anymore";
+	}
+	
+	OpSet<std::string> model_names = model.entity_names();
+	OpSet<std::string> antigen_names = found->entities;
+
+	if (model_names.size() == 0)
+	{
+		return "No chain assignment in " + name;
+	}
+	
+	for (const std::string &antigen_name : antigen_names)
+	{
+		if (model_names.count(antigen_name) == 0)
+		{
+			return "Antibody " + name + " is missing chain "\
+			"assignment of "\
+			"antigen component \"" + antigen_name + "\"";
+		}
+	}
+	
+	model_names -= antigen_names;
+	if (model_names.size() == 0)
+	{
+		return "Antibody " + name + " has no non-antigen entities"
+		+ " assigned";
+	}
+	
+	if (non_antigen_entities(antigens).size() == 0)
+	{
+		return "Antibody " + name + " has non-antigen entities"
+		+ " assigned, but\nall removed from definition of antibody";
+	}
+
+	return "";
+}
+
+const Antigen *Antigens::antigen(const std::string &id) const
+{
+	for (const Antigen &antigen : *this)
+	{
+		if (antigen.title == id)
+		{
+			return &antigen;
+		}
+	}
+	return nullptr;
+}
+
+std::vector<Instance *> Antigen::instances()
+{
+	model.load();
+	std::vector<Instance *> instances = model.instances();
+	std::vector<Instance *> antigen_only;
+	
+	for (Instance *const &inst : instances)
+	{
+		if (entities.count(inst->entity_id()))
+		{
+			antigen_only.push_back(inst);
+		}
+	}
+	
+	model.unload();
+	return antigen_only;
+
+}
+
+Mesh *Antigen::mesh()
+{
+	if (!_mesh)
+	{
+		model.load();
+		_mesh = new Mesh(*this);
+		model.unload();
+	}
+	return _mesh;
 }

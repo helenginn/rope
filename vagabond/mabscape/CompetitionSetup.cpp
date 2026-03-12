@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "ChooseAntigen.h"
 #include "CompetitionSetup.h"
 #include <vagabond/core/Metadata.h>
 #include <vagabond/gui/elements/TextButton.h>
@@ -278,39 +279,12 @@ void CompetitionSetup::relevantAntigen()
 		return;
 	}
 	
-	auto choose_antigen = [this]()
-	{
-		auto picked_antigen = [this](std::string antigen)
-		{
-			comp().antigen = antigen;
-			refresh();
-		};
+	auto choose_antigen = make_choose_antigen(this, &(comp().antigen),
+	                                          &_antigens);
 
-		OpSet<std::string> antigens;
-		for (const Antigen &antigen : _antigens)
-		{
-			antigens += antigen.title;
-		}
-		
-		if (antigens.size())
-		{
-			ChooseHeader *ch = new ChooseHeader(this, true);
-			ch->setHeaders(antigens);
-			ch->setChoose(picked_antigen);
-			ch->show();
-		}
-		else
-		{
-			BadChoice *bc = 
-			new BadChoice(this, "Please add at least one antigen \n"
-			              "model from the previous menu in order \n"
-			              "to be able to pick it from a list.");
-			setModal(bc);
-		}
-	};
-
-	Text *t = new Text("Model of antigen used:");
+	TextButton *t = new TextButton("Model of antigen used:", this);
 	t->setLeft(0.2, 0.8);
+	t->setReturnJob(choose_antigen);
 	addTempObject(t);
 
 	TextButton *tb = 

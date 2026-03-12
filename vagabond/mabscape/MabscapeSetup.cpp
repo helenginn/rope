@@ -18,6 +18,7 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 #include <vagabond/gui/elements/ImageButton.h>
+#include "PrepWorkView.h"
 #include "MabscapeSetup.h"
 #include "FiducialSetup.h"
 #include "AntigenSetup.h"
@@ -72,17 +73,29 @@ void MabscapeSetup::trustedAntibodies()
 {
 	if (_mab.competitions.size() == 0)
 	{
+		_validateFiducials = false;
 		return;
 	}
 
+	bool ok = false;
+	for (const Competition &comp : _mab.competitions)
+	{
+		if (comp.metadata)
+		{
+			ok = true;
+		}
+	}
+
+	if (ok)
 	{
 		auto setup_fiducials = [this]()
 		{
 			FiducialSetup *fs = 
-			new FiducialSetup(this, _mab.fiducials, 
-			                  _mab.competitions);
+			new FiducialSetup(this, _mab.fiducials, _mab.antigens,
+			                  _mab.competitions, _mab.colours);
 
 			fs->show();
+			_validateFiducials = true;
 		};
 
 		TextButton *tb = new TextButton("Trusted antibodies", this);
@@ -94,7 +107,8 @@ void MabscapeSetup::trustedAntibodies()
 
 void MabscapeSetup::validationSmileys()
 {
-	auto make_smiley = [](const std::string &reason)
+	bool all_ok = true;
+	auto make_smiley = [&all_ok](const std::string &reason)
 	{
 		Image *ib = nullptr;
 		if (!reason.length())
@@ -107,6 +121,7 @@ void MabscapeSetup::validationSmileys()
 			ib = new Image("assets/images/sad_face.png");
 			ib->resize(0.06);
 			ib->addAltTag(reason);
+			all_ok = false;
 		}
 		return ib;
 	};
@@ -124,6 +139,28 @@ void MabscapeSetup::validationSmileys()
 		make_smiley(_mab.competitions.validate(_mab.antigens));
 		ib->setRight(0.19, 0.4);
 		addTempObject(ib);
+	}
+
+	if (_validateFiducials)
+	{
+		Image *ib = 
+		make_smiley(_mab.fiducials.validate(_mab.antigens));
+		ib->setRight(0.19, 0.5);
+		addTempObject(ib);
+	}
+	
+	if (all_ok)
+	{
+		auto prepwork = [this]()
+		{
+			PrepWorkView *pwv = new PrepWorkView(this, _mab);
+			pwv->show();
+		};
+		TextButton *tb = new TextButton("Next", this);
+		tb->setLeft(0.8, 0.9);
+		tb->setReturnJob(prepwork);
+		addTempObject(tb);
+
 	}
 }
 

@@ -16,19 +16,16 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "AssignChains.h"
+#include "AntigenSetup.h"
+#include "ListDeletable.h"
 #include <vagabond/gui/elements/AskForText.h>
 #include <vagabond/gui/elements/TextEntry.h>
 #include <vagabond/gui/elements/BadChoice.h>
-#include <vagabond/gui/elements/Menu.h>
 #include <vagabond/gui/ModelTopologyView.h>
-#include <vagabond/gui/FileView.h>
-#include <vagabond/core/SequenceComparison.h>
 #include <vagabond/core/files/PdbFile.h>
+#include <vagabond/gui/FileView.h>
 #include <vagabond/core/AtomContent.h>
-#include <vagabond/core/PolymerEntity.h>
-#include <vagabond/core/EntityManager.h>
-#include <vagabond/core/Chain.h>
-#include "AntigenSetup.h"
 
 AntigenSetup::AntigenSetup(Scene *scene, ColourMap &colours,
                            Antigens &antigens) 
@@ -45,6 +42,7 @@ void AntigenSetup::prepareChoosePDB()
 		{
 			PdbFile pdb(filename);
 			pdb.parse();
+			antigen().wipe();
 			antigen().model.setFilename(filename);
 			antigen().title = filename.substr(0, filename.rfind('.'));
 			refresh();
@@ -104,144 +102,16 @@ void AntigenSetup::prepareAssignChains()
 		return;
 	}
 
-	auto provide_colours = [this](Chain *ch) -> glm::vec3
-	{
-		std::string entity = antigen().model.entityForChain(ch->id());
-		if (entity.length() == 0)
-		{
-			return {0., 0., 0.};
-		}
-		else
-		{
-			return _colours.colour_for(entity);
-		}
-	};
-
-	auto assign_new_entity = [this](Chain *ch, ModelTopologyView *view)
-	{
-		return [ch, view, this](std::string str)
-		{
-			try
-			{
-				PolymerEntity obj; obj.setName(str);
-				obj.setSequence(ch->fullSequence()); 
-				Environment::entityManager()->insertIfUnique(obj);
-				antigen().model.setEntityForChain(ch->id(), str);
-				antigen().model.housekeeping();
-				_colours.recalculate();
-				antigen().entities += str;
-				view->updateColours();
-			}
-			catch (const std::runtime_error &err)
-			{
-				BadChoice *bad = new BadChoice(this, err.what());
-				view->setModal(bad);
-			}
-		};
-	};
-
-	auto assign_monomer = [this]
-	(ModelTopologyView *view, Chain *ch, const std::string &ent)
-	{
-		return [ent, ch, view, this]()
-		{
-			antigen().model.setEntityForChain(ch->id(), ent);
-			antigen().model.housekeeping();
-			_colours.recalculate();
-			antigen().entities += ent;
-			view->updateColours();
-		};
-	};
-
-	auto unassign_monomer = [this]
-	(ModelTopologyView *view, Chain *ch)
-	{
-		return [ch, view, this]()
-		{
-			antigen().model.unassignChainEntity(ch->id());
-			antigen().model.housekeeping();
-			_colours.recalculate();
-			view->updateColours();
-		};
-	};
-
-	auto make_ask_for_monomer = [assign_new_entity]
-	(ModelTopologyView *view, Chain *ch)
-	{
-		return [assign_new_entity, ch, view]()
-		{
-			AskForText *aft = 
-			new AskForText(view, "Name new antigen monomer:", 
-			               "", nullptr);
-			aft->setReturnJob(assign_new_entity(ch, view));
-			view->setModal(aft);
-		};
-	};
-
-	auto click_chain = [make_ask_for_monomer, assign_monomer, 
-	unassign_monomer, this]
-	(ModelTopologyView *view, Chain *ch, const glm::vec3 &where)
-	{
-		EntityManager *m = Environment::entityManager();
-		std::vector<Entity *> entities = m->entities();
-
-		Menu *menu = new Menu(view);
-		menu->addOption("assign as new antigen protein",
-		                make_ask_for_monomer(view, ch));
-		for (Entity *const &ent : entities)
-		{
-			if (!ent->hasSequence())
-			{
-				continue;
-			}
-
-			Sequence *trial = 
-			static_cast<PolymerEntity *>(ent)->sequence(); 
-
-			SequenceComparison *sc = 
-			new SequenceComparison(ch->fullSequence(), trial);
-			                 
-			float match = sc->match();
-			
-			std::string msg = "assign as " + ent->name();
-			msg += " (" + f_to_str(match * 100, 1) + "% alignment)";
-
-			menu->addOption(msg,
-			                assign_monomer(view, ch, ent->name()));
-		}
-		if (antigen().model.entityForChain(ch->id()).length())
-		{
-			menu->addOption("unassign", unassign_monomer(view, ch));
-
-		}
-		menu->setup(where.x, where.y, 1);
-		view->setModal(menu);
-	};
-	
-	auto show_topology = [this, click_chain, provide_colours]()
-	{
-		if (antigen().model.filename().length() == 0)
-		{
-			BadChoice *bc = new BadChoice(this, "Error: filename missing");
-			setModal(bc);
-		}
-		else
-		{
-			ModelTopologyView *mtv = 
-			new ModelTopologyView(this, antigen().model);
-			mtv->setClickChainEvent(click_chain);
-			mtv->setColouringFunction(provide_colours);
-			mtv->show();
-		}
-	};
+	AssignChains assign_topology(this, antigen().model, 
+	                             _colours, antigen().entities);
 
 	TextButton *text = new TextButton("Assign chains", this);
 	text->setLeft(0.2, 0.5);
-	text->setReturnJob(show_topology);
+	text->setReturnJob(assign_topology());
 	addTempObject(text);
 	
 	ImageButton *t = ImageButton::arrow(-90., this);
-	t->setReturnJob(show_topology);
+	t->setReturnJob(assign_topology());
 	t->setCentre(0.8, 0.5);
 	addTempObject(t);
 }
@@ -280,26 +150,8 @@ void AntigenSetup::listAntigenChains()
 	addTempObject(text);
 
 	float top = 0.6;
-	for (const std::string &ent : antigen().entities)
-	{
-		Text *text = new Text(ent);
-		text->setRight(0.8, top);
-		addTempObject(text);
-
-		ImageButton *ib = new ImageButton("assets/images/cross.png", 
-		                                  this);
-		ib->resize(0.06);
-		ib->setLeft(0.8, top);
-		ib->setReturnJob
-		([this, ent]()
-		 {
-			antigen().entities -= ent;
-			refresh();
-		 });
-		addTempObject(ib);
-
-		top += 0.06;
-	}
+	make_list_deletable(this, &(antigen().entities), 
+	                    antigen().entities, top);
 }
 
 bool AntigenSetup::acceptable_to_add_after(Antigen &antigen)
