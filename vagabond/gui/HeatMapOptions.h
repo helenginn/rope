@@ -5,7 +5,7 @@
 #include <vagabond/gui/elements/DragResponder.h>
 #include <vagabond/core/PathEntropy.h>
 
-class Path;
+class Entity;
 class PathEntropy;
 
 class Slider;
@@ -13,17 +13,19 @@ class Slider;
 class HeatMapOptions : public Scene, public DragResponder
 {
 public:
-    HeatMapOptions(Scene *prev, const std::vector<Path *> paths);
+    HeatMapOptions(Scene *prev, Entity *entity);
     ~HeatMapOptions();
 
     virtual void setup();
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
-    virtual void finishedDragging(std::string tag, int x);
+    virtual void finishedDragging(std::string tag, double x, double y);
 
 private:
+    void prepareProgress(int ticks, std::string text);
+
     PathEntropy *_pathEntropy = nullptr;
     struct FlagParameters _flagPar;
-    std::vector<Path *> _paths;
+    Entity *_entity = nullptr;
 
     Slider *_pathsSlider;
     Slider *_timeSlider;

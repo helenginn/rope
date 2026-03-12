@@ -1,17 +1,26 @@
 #include <vagabond/gui/HeatMapOptions.h>
-#include <vagabond/core/Path.h>
+#include <vagabond/gui/HeatMapView.h>
 #include <vagabond/core/PathEntropy.h>
+#include <vagabond/core/PathManager.h>
+#include <vagabond/core/Entity.h>
 
 #include <vagabond/gui/elements/Slider.h>
 #include <vagabond/gui/elements/TickBoxes.h>
 #include <vagabond/gui/elements/TextButton.h>
 
-HeatMapOptions::HeatMapOptions(Scene *scene, const std::vector<Path*> paths) : Scene(scene)
+#include "VagWindow.h"
+
+HeatMapOptions::HeatMapOptions(Scene *prev, Entity *entity) : Scene(prev), _entity(entity)
 {
-    _paths = paths;
+    _entity = entity;
 
     _pathEntropy = new PathEntropy();
     _flagPar = _pathEntropy->initFlagPar();
+}
+
+HeatMapOptions::~HeatMapOptions()
+{
+    delete _pathEntropy;
 }
 
 void HeatMapOptions::setup()
@@ -23,7 +32,7 @@ void HeatMapOptions::setup()
         sPaths->setDragResponder(this);
         sPaths->setup("Number of paths", 2, 11, 1);
         sPaths->setReturnTag("paths");
-	sPaths->setCentre(0.2, 0.5);
+	sPaths->setCentre(0.5, 0.5);
         addObject(sPaths);
     }
 
@@ -32,7 +41,7 @@ void HeatMapOptions::setup()
         sTime->setDragResponder(this);
         sTime->setup("Number of time divisions", 1, 10, 1);
         sTime->setReturnTag("timepoints");
-	sTime->setCentre(0.3, 0.5);
+	sTime->setCentre(0.5, 0.75);
         addObject(sTime);
     }
 
@@ -43,11 +52,12 @@ void HeatMapOptions::setup()
         addObject(tb);
     }
 
-    float bottom = 0.2;
+    float bottom = 0.9;
 
     {
 	    TextButton *t = new TextButton("Generate heat map", this);
-	    t->setRight(0.2, bottom);
+	    t->setRight(0.8, bottom);
+	    t->setReturnTag("heatmap");
 	    addObject(t);
     }
 }
@@ -63,16 +73,52 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
             _flagPar.mist = true;
         }
     }
+
+    if (tag == "heatmap")
+    {
+        std::vector<struct EntropyForHeatMap> entropyData = {};
+        
+        std::cout << "adding job" << std::endl;
+
+        std::function<void(std::vector<EntropyForHeatMap> &)> callback;
+	callback = [this](std::vector<EntropyForHeatMap> &entropyData)
+	{
+	    addMainThreadJob([this, entropyData]()
+	    {
+		HeatMapView *view = new HeatMapView(this, entropyData);
+		view->show();
+	    });
+            
+	    showBackButton();
+	};
+           
+	Environment::pathManager()->setEntropyCallback(callback);
+        
+        hideBackButton();
+
+        prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
+
+        VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(_flagPar.n) + "," + std::to_string( _flagPar.timeDivisions));
+ 
+	return;
+    }
+
+    Scene::buttonPressed(tag, button);
 }
 
-void HeatMapOptions::finishedDragging(std::string tag, int x)
+void HeatMapOptions::finishedDragging(std::string tag, double x, double y)
 {
     if(tag == "paths")
     {
-        _flagPar.n = x;
+        _flagPar.n = lrint(x);
     }
     else if(tag == "timepoints")
     {
-        _flagPar.timeDivisions = x;
+        _flagPar.timeDivisions = lrint(x);
     }
+}
+
+void HeatMapOptions::prepareProgress(int ticks, std::string text)
+{
+
 }
