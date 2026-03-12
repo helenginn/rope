@@ -19,17 +19,19 @@
 #ifndef __vagabond__PrepWorkView__
 #define __vagabond__PrepWorkView__
 
-#include <vagabond/gui/elements/Mouse3D.h>
+#include <vagabond/gui/Display.h>
 
 struct Mab;
+class Antigens;
 
-class PrepWorkView : public Mouse3D
+class PrepWorkView : public Display
 {
 public:
 	PrepWorkView(Scene *prev, Mab &mab);
 
 	virtual void setup();
 private:
+	void prepareAntigens(Antigens &antigens);
 	Mab &_mab;
 
 };
