@@ -31,6 +31,7 @@ class ContactPoint
 public:
 	ContactPoint(Fiducial &fiducial, Antigens &antigens);
 
+	void findMapping();
 private:
 	Fiducial &_fiducial;
 	Antigens &_antigens;
@@ -44,6 +45,7 @@ private:
 
 	// instances belonging to antigen
 	std::vector<Instance *> _iAntigens;
+
 };
 
 #endif

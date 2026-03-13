@@ -54,7 +54,7 @@ void ModelTopologyView::makeDots()
 		TopologyCircle *fi = new TopologyCircle(this);
 		FloatingText *ft = new FloatingText(ch->id(), 100);
 
-		glm::vec3 start = ch->initialCentre() / 3.f;
+		glm::vec3 start = ch->initialCentre();
 		fi->FloatingImage::setPosition(start);
 		ft->FloatingImage::setPosition(start);
 

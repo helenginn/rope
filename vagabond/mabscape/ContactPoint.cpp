@@ -65,3 +65,8 @@ ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens)
 	std::cout << "Antibody's antigen instances: " << _iFidAntigens.size() << std::endl;
 	std::cout << "Antigens's antigen instances: " << _iAntigens.size() << std::endl;
 }
+
+void ContactPoint::findMapping()
+{
+
+}
