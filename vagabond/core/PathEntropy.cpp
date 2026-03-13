@@ -473,7 +473,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 			{
 				for(int i = 0; i < nf; i++)
 				{
-					phit[i] = std::vector<double> (torsRes[m]->nAng);
+					phit[i].resize(torsRes[m]->nAng);
                    
 					for (int j = 0; j < torsRes[m]->nAng; j++)
 					{
