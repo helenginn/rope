@@ -20,6 +20,7 @@
 #define __vagabond__AssignChains__
 
 #include <vagabond/utils/OpSet.h>
+#include <functional>
 
 class Model;
 class Scene;
