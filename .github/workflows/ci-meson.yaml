@@ -5,6 +5,7 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   build:
     name: Build on ${{ matrix.os }} with Meson ${{ matrix.meson_version }} and Ninja ${{ matrix.ninja_version }}
+    if: ${{ !contains(github.event.head_commit.message, '/skip-ci') }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
