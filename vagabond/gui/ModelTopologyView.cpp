@@ -56,7 +56,7 @@ void ModelTopologyView::makeDots()
 
 		glm::vec3 start = ch->initialCentre();
 		fi->FloatingImage::setPosition(start);
-		ft->FloatingImage::setPosition(start);
+		ft->FloatingText::setPosition(start);
 
 		_image2Info[fi] = {ch, start, ft};
 		_chain2Image[ch] = fi;
