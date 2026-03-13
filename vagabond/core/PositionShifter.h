@@ -21,9 +21,11 @@
 
 #include <map>
 #include <list>
+#include <mutex>
 #include <atomic>
 #include <thread>
 #include <functional>
+#include <condition_variable>
 #include <vagabond/utils/glm_import.h>
 #include <vagabond/utils/OpSet.h>
 
