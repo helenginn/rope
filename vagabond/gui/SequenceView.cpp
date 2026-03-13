@@ -26,7 +26,7 @@
 
 #include <vagabond/gui/elements/TextButton.h>
 
-#define ROWS_PER_PAGE 10
+#define ROWS_PER_PAGE 8
 
 SequenceView::SequenceView(Scene *prev, IndexedSequence *sequence) 
 : ForwardBackward(prev)

@@ -23,7 +23,7 @@
 #include "AskForText.h"
 #include <sstream>
 
-#define LINES_PER_PAGE 8
+#define LINES_PER_PAGE 7
 
 ListView::ListView(Scene *prev) : ForwardBackward(prev)
 {
@@ -80,7 +80,7 @@ void ListView::loadFilesFrom(int start, int num)
 		std::ostringstream ss;
 		ss << "(" << mypage + 1 << " / " << npages << ")";
 		TextButton *pageNo = new TextButton(ss.str(), this);
-		pageNo->setCentre(0.5, 0.8);
+		pageNo->setCentre(0.5, 0.75);
 		pageNo->setReturnJob([this]()
 		{
 			AskForText *aft = new AskForText(this, "Jump to page:", 

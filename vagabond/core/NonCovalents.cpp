@@ -25,6 +25,7 @@
 #include "Atom.h"
 #include "engine/Task.h"
 #include <fstream>
+#include <algorithm>
 
 using Eigen::MatrixXf;
 
@@ -199,7 +200,7 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 
 	for (Atom *atom : grp->atomVector())
 	{
-		if (atom->elementSymbol() == "H" || !atom->isMainChain())
+		if (atom->elementSymbol() == "H")
 		{
 			continue;
 		}
@@ -224,9 +225,10 @@ NonCovalents::Interface NonCovalents::findInterface(Segment first,
 	return interface;
 }
 
-auto closest_atoms(OpSet<Atom *> &atoms, int total)
+auto closest_atoms(OpSet<Atom *> &atoms, float bond_len)
+// Add total ~ 9 fiducials. 9C4 = 126.
 {
-	return [&atoms, total](Atom *const &atom) -> OpSet<Atom *> 
+	return [&atoms, bond_len](Atom *const &atom) -> std::vector<Atom *> 
 	{
 		struct AtomDist
 		{
@@ -234,7 +236,8 @@ auto closest_atoms(OpSet<Atom *> &atoms, int total)
 			float distsq = FLT_MAX;
 		};
 		
-		AtomDist *dist = new AtomDist[total];
+		std::vector<AtomDist> dists;
+        float min_dsq = bond_len * bond_len;
 
 		for (Atom *other : atoms)
 		{
@@ -243,32 +246,27 @@ auto closest_atoms(OpSet<Atom *> &atoms, int total)
 
 			float dsq = glm::dot(vec, vec);
 			
-			for (int i = 0; i < total; i++)
-			{
-				if (dsq < dist[i].distsq)
-				{
-					for (int j = total - 1; j >= i + 1; j--)
-					{
-						dist[j] = dist[j - 1];
-					}
-
-					dist[i].distsq = dsq;
-					dist[i].partner = other;
-					break;
-				}
-			}
+            if (dsq <= min_dsq)
+            {
+                AtomDist datum;
+                datum.partner = other;
+                datum.distsq = dsq;
+                dists.push_back(datum);
+            }
 		}
-		
-		OpSet<Atom *> ret;
-		for (int i = 0; i < total; i++)
+        
+        std::sort(dists.begin(), dists.end(), [](const AtomDist &a, const AtomDist &b)
 		{
-			if (dist[i].partner)
-			{
-				ret += dist[i].partner;
-			}
+            return a.distsq < b.distsq;
+		}); // IDK if this matches the house style?
+		
+		std::vector<Atom *> ret; // HELEN: Change to std::vector
+		for (const auto &d : dists)
+		{
+            // Future conditions for selecting 4 fiducials.
+            ret.push_back(d.partner);
 		}
 
-		delete [] dist;
 		return ret;
 	};
 };
@@ -331,7 +329,7 @@ NonCovalents::WeightedSum::position_for_weights(const GetPos &getPos,
 }
 
 OpVec<float>
-NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos)
+NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos) // Helen: optimize
 {
 	glm::vec3 ave{};
 	
@@ -340,44 +338,63 @@ NonCovalents::WeightedSum::weights_for_positions(const GetPos &getPos)
 		return {};
 	}
 
-	Eigen::MatrixXf to_centric(fiducials.size(), 4);
-	int n = 0;
+	std::vector<glm::vec3> positions;
+	positions.reserve(fiducials.size());
+	
 	for (Atom *fid : fiducials)
 	{
 		glm::vec3 pos = getPos(fid);
-		to_centric(n, Eigen::seq(0, 2)) = Eigen::Vector3f(pos.x, pos.y, pos.z);
-		to_centric(n, 3) = 1;
+		positions.push_back(pos);
 		ave += pos;
-		n++;
 	}
 	
 	ave /= (float)fiducials.size();
-	for (int i = 0; i < n; i++)
+
+	Eigen::MatrixXf to_centric(4, fiducials.size());
+	for (size_t i = 0; i < positions.size(); i++)
 	{
-		to_centric(i, Eigen::seq(0, 2)) -= Eigen::Vector3f(ave.x, ave.y, ave.z);
+		to_centric(0, i) = positions[i].x - ave.x;
+		to_centric(1, i) = positions[i].y - ave.y;
+		to_centric(2, i) = positions[i].z - ave.z;
+		to_centric(3, i) = 1.0f;
 	}
 
-	to_centric.transposeInPlace();
 	glm::vec3 q = getPos(atom);
-	Eigen::Vector4f vec(4);
-	vec = {q.x - ave.x, q.y - ave.y, q.z - ave.z, 0};
+	Eigen::Vector4f vec(q.x - ave.x, q.y - ave.y, q.z - ave.z, 0.0f);
 
-	Eigen::MatrixXf weights = to_centric.colPivHouseholderQr().solve(vec);
-	
+	Eigen::MatrixXf weights = to_centric.fullPivLu().solve(vec);
+
 	/*
+	Eigen::MatrixXf weights;
+	if (fiducials.size() == 4)
 	{
-		std::cout << "SOLVE: " << std::endl;
-		std::cout << to_centric << std::endl;
-		std::cout << "EQUALS: " << std::endl;
-		std::cout << vec << std::endl;
-		std::cout << "WEIGHTS: " << std::endl;
-		std::cout << weights << std::endl;
-		std::cout << std::endl;
+		weights = to_centric.partialPivLu().solve(vec);
+	}
+	else
+	{
+		weights = to_centric.colPivHouseholderQr().solve(vec);
 	}
 	*/
 
-	std::vector<float> ws = {weights(0), weights(1), weights(2), weights(3)};
-	return OpVec<float>(ws);
+	/*
+    {
+        std::cout << "SOLVE: " << std::endl;
+        std::cout << to_centric << std::endl;
+        std::cout << "EQUALS: " << std::endl;
+        std::cout << vec << std::endl;
+        std::cout << "WEIGHTS: " << std::endl;
+        std::cout << weights << std::endl;
+        std::cout << std::endl;
+    }
+    */
+
+    OpVec<float> ws(weights.rows());
+	for (int i = 0; i < weights.rows(); i++)
+	{
+		ws[i] = weights(i, 0);
+	}
+
+	return ws;
 }
 
 NonCovalents::WeightedSum::WeightedSum(Atom *a, 
@@ -409,77 +426,104 @@ NonCovalents::WeightedSum::WeightedSum(Atom *a,
 	
 	ave_weight = 0;
 	weight_variance = 0;
-	for (size_t i = 0; i < start_weights.size(); i++)
+	
+	size_t count = 0;
+	for (float &f : start_weights)
 	{
-		ave_weight += fabs(start_weights[i]);
-		weight_variance += diffs[i] * diffs[i];
+		start_weight_cache.push_back(f);
+		ave_weight += fabs(f);
+		weight_variance += diffs[count] * diffs[count];
+		count++;
 	}
-	ave_weight /= (float)start_weights.size();
-	weight_variance /= (float)start_weights.size();
-	std::cout << "AVERAGE = " << ave_weight << std::endl;
-	std::cout << "VARIANCE = " << weight_variance << std::endl;
 
-	weights_for_frac = [start_weights, diffs](float frac)
+    ave_weight /= (float)start_weights.size();
+    weight_variance /= (float)start_weights.size();
+    //std::cout << "AVERAGE = " << ave_weight << std::endl;
+    //std::cout << "VARIANCE = " << weight_variance << std::endl;
+
+    weights_for_frac = [start_weights, diffs](float frac)
 	{
 		return start_weights + diffs * frac;
-	};
+    };
 }
 
-glm::vec3 average_fiducials_position(const std::vector<Atom *> &fiducials)
+template <typename GetPos>
+glm::vec3 average_atoms_position(const std::vector<Atom *> &atoms,
+                                 GetPos getPos)
 {
 	glm::vec3 ave{};
 
-	for (Atom *fid : fiducials)
+	for (Atom *a : atoms)
 	{
-		glm::vec3 pos = fid->derivedPosition();
+		glm::vec3 pos = getPos(a);
 		ave += pos;
 	}
+
+	if (!atoms.empty())
+	{
+		ave /= (float)atoms.size();
+	}
 	
-	ave /= (float)fiducials.size();
 	return ave;
 }
 
-bool is_coplanar(const std::vector<Atom *> &neighbours)
+template <typename GetPos>
+bool is_coplanar(const std::vector<Atom *> &neighbours, GetPos getPos,
+                 float threshold = 0.1f, bool log = false)
 {
-	Eigen::MatrixXf posmat(3, 3);
-	glm::vec3 avg_fid = average_fiducials_position(neighbours);
-
-	posmat.setZero();	
-	for (Atom *fid : neighbours)
+	if (neighbours.size() < 4)
 	{
-		glm::vec3 derivpos = fid->derivedPosition() - avg_fid;
-	
-		for (int i = 0; i < 3; i++)
-		{
-			for (int j = 0; j < 3; j++)
-			{
-				posmat(i, j) += derivpos[i] * derivpos[j];
-			}
-		}
+		return true;
 	}
-	std::cout << "\n" << "POSMAT: " << posmat;		
 
-	// Eigen::MatrixXf pos_matrix(3, 4);
+	Eigen::MatrixXf posmat(3, 3);
+	glm::vec3 avg_pos = average_atoms_position(neighbours, getPos);
 
-	// int col = 0;
-	// for (Atom *fid : neighbours)
-	// {
-	// 	glm::vec3 pos = fid->derivedPosition();
-	// 	pos_matrix(0, col) = pos.x - avg_fid.x;
-	// 	pos_matrix(1, col) = pos.y - avg_fid.y;
-	// 	pos_matrix(2, col) = pos.z - avg_fid.z;
-	// 	col++;
-	// }
+	posmat.setZero();
+	for (Atom *a : neighbours)
+	{
+    glm::vec3 derivpos = getPos(a) - avg_pos;
 
-	// // Calculate the 3x3 covariance matrix: (W * W^T)
-	// Eigen::MatrixXf covsvd = pos_matrix * pos_matrix.transpose();
-	// std::cout << "\n" << "COVSVD: " << covsvd;
+    for (int i = 0; i < 3; i++)
+	{
+      for (int j = 0; j < 3; j++)
+	  {
+        posmat(i, j) += derivpos[i] * derivpos[j];
+      }
+    }
+  }
+
+  // Eigen::MatrixXf pos_matrix(3, 4);
+
+  // int col = 0;
+  // for (Atom *fid : neighbours)
+  // {
+  // 	glm::vec3 pos = fid->derivedPosition();
+  // 	pos_matrix(0, col) = pos.x - avg_fid.x;
+  // 	pos_matrix(1, col) = pos.y - avg_fid.y;
+  // 	pos_matrix(2, col) = pos.z - avg_fid.z;
+  // 	col++;
+  // }
+
+  // // Calculate the 3x3 covariance matrix: (W * W^T)
+  // Eigen::MatrixXf covsvd = pos_matrix * pos_matrix.transpose();
+  // std::cout << "\n" << "COVSVD: " << covsvd;
 
 	Eigen::JacobiSVD<Eigen::MatrixXf> svd(posmat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-	std::cout << "\n" << "SVD Singular values: " << svd.singularValues().transpose();
+	bool svdplane = (svd.singularValues()(2) < threshold);
 
-	bool svdplane = (svd.singularValues()(2) < 0.1f);
-	std::cout << ", Plane = " << svdplane << std::endl;
+	if (log)
+	{
+		std::cout << "\n" << "POSMAT: " << posmat;
+
+		std::cout << "\n"
+				  << "SVD Singular values: "
+				  << svd.singularValues().transpose();
+				  
+		std::cout << (svdplane ? ", are coplanar." : ", are NOT coplanar.")
+				  << std::endl;
+    }
+
 	return svdplane;
 }
 
@@ -487,48 +531,231 @@ void weighted_sums_for_side(NonCovalents::Interface &face,
                             NonCovalents::Interface::Side &lefts, 
                             NonCovalents::Interface::Side &rights)
 {
+	auto target_pos = [](Atom *a)
+	{
+		return a->otherPosition("target");
+	};
+	auto derived_pos = [](Atom *a)
+	{
+		return a->derivedPosition();
+	};
+    // Could use "std::function<glm::vec3(Atom *)>" instead of auto. Should I?
+
+    struct AtomScore
+	{
+		NonCovalents::WeightedSum candidate;
+		float stability_penalty;
+		float sparsity_penalty;
+		float total_penalty;
+	};
+
+	std::vector<AtomScore> scores;
+    const float MAX_VARIANCE = 1.0f;
+	const float fiducial_coplanar_threshold = 0.01f;
+	const float right_coplanar_threshold = 0.1f;
+	
 	for (Atom *right : rights.atoms)
 	{
-		auto l = closest_atoms(lefts.atoms, 4);
-		std::vector<Atom *> neighbours = (l(right)).toVector();
-
-		bool svdplane = is_coplanar(neighbours);
-
-		NonCovalents::WeightedSum candidate = 
-		NonCovalents::WeightedSum(right, neighbours);
-
-		std::cout << "\t" << "Candidate atomos: " << candidate.atom->desc() << " <-> ";
+		auto l = closest_atoms(lefts.atoms, 10.0f);
+		std::vector<Atom *> neighbours = l(right);
 		
-		for (Atom *f : candidate.fiducials)
+		if (neighbours.size() < 4)
+		{
+			continue;
+		}
+		
+        NonCovalents::WeightedSum pool_candidate =
+        NonCovalents::WeightedSum(right, neighbours);
+
+		std::cout << "\t" << "Candidate atomos: " << pool_candidate.atom->desc() << " <-> ";
+		for (Atom *f : pool_candidate.fiducials)
 		{
 			std::cout << f->desc() << ", ";
 		}
 
+		std::vector<Atom *> best_fiducials;
+		float best_subset_score = FLT_MAX;
+		bool found = false;
+		
+		for (size_t i = 0; i < neighbours.size() - 3; i++) // Helen: Kinetic trap, figuratively
+		{
+			for (size_t j = i + 1; j < neighbours.size() - 2; j++)
+			{
+				for (size_t k = j + 1; k < neighbours.size() - 1; k++)
+				{
+					for (size_t m = k + 1; m < neighbours.size(); m++) // Helen: Lambda func to absorb the 4 for loops for readability.
+					{
+						std::vector<Atom *> subset = {neighbours[i], neighbours[j], neighbours[k], neighbours[m]};
+						// Helen: Weight_variance check for stability
+						
+						if (!is_coplanar(subset, derived_pos, fiducial_coplanar_threshold))
+						// Minimise is_coplanar usage; make it last check.
+						{
+							auto get_w = [&](Atom *a)
+							{
+								for (size_t l = 0; l < neighbours.size(); l++)
+								{
+									if (neighbours[l] == a) return pool_candidate.start_weight_cache[l];
+								}
+								return 0.0f;
+							};
+							
+							float sum = 0;
+							for (Atom *a : subset) sum += fabs(get_w(a));
+							float mean = sum / 4.0f;
+							float var = 0;
+							for (Atom *a : subset)
+							{
+								float d = fabs(get_w(a)) - mean;
+								//float d = fabs(get_w(a)) - pool_candidate.ave_weight;
+								var += d * d;
+							}
+
+							if (var < best_subset_score)
+							{
+								best_subset_score = var;
+								best_fiducials = subset;
+								found = true;
+							}
+
+							if (found && best_subset_score < 0.001f) break; 
+						}
+					}
+					if (found && best_subset_score < 0.001f) break;
+				}
+				if (found && best_subset_score < 0.001f) break;
+			}
+			if (found && best_subset_score < 0.001f) break;
+		}
+		
+		if (!found)
+		{
+			std::cout << "REJECTED (unoptimized 4-set)" << std::endl;
+			continue;
+		}
+		
+		NonCovalents::WeightedSum candidate = NonCovalents::WeightedSum(right, best_fiducials);
+
 		std::cout << "ave_weight = " << candidate.ave_weight;
 		std::cout << ", weight_variance = " << candidate.weight_variance;
 
-		const float MAX_VARIANCE = 0.5f;
-
 		if (candidate.ave_weight < 5 && candidate.ave_weight >= 0 && 
-		    candidate.weight_variance < MAX_VARIANCE && svdplane == false)
+		    candidate.weight_variance < MAX_VARIANCE)
 		{
 			if (candidate.ave_weight != candidate.ave_weight ||
 			    !isfinite(candidate.ave_weight))
 			{
-				std::cout << ", rejected" << std::endl;
+				std::cout << ", REJECTED (invalid)" << std::endl;
 				continue;
 			}
 			
-			std::cout << ", ACCEPTED" << std::endl;
+			std::cout << ", preliminarily ACCEPTED" << std::endl;
 
-			candidate.ave_weight = 1;
-			face.sums.push_back(candidate);
+			AtomScore score = {candidate, 0.0f, 0.0f};
+			scores.push_back(score);
 		}
 		else
 		{
-			std::cout << ", rejected" << std::endl;
+			std::cout << ", REJECTED (failed weights criteria)" << std::endl;
 		}
 	}
+
+	std::cout << "\n" << scores.size() << " candidates before penalty." << std::endl;
+
+	if (scores.empty()) return;
+
+	std::vector<AtomScore> active_scores = scores;
+
+	std::cout << "Optimizing selection from " << active_scores.size() << " right atoms." << std::endl;
+
+    bool use_min_distance = true;
+	
+	// HELEN: Function encapsulates dynamic penalty calculation and pruning logic
+	auto recalculate_and_prune = [&]() -> bool
+	{
+		for (size_t i = 0; i < active_scores.size(); i++)
+		{
+			float min_dist_sq = FLT_MAX;
+			float sum_dist_sq = 0;
+			int count = 0;
+			glm::vec3 posA = target_pos(active_scores[i].candidate.atom);
+			
+			for (size_t j = 0; j < active_scores.size(); j++)
+			{
+				if (i == j) continue;
+				glm::vec3 posB = target_pos(active_scores[j].candidate.atom);
+				float dist_sq = glm::dot(posA - posB, posA - posB);
+				if (dist_sq < min_dist_sq) min_dist_sq = dist_sq;
+				sum_dist_sq += dist_sq;
+				count++;
+			}
+			
+			float mean_dist_sq = (count > 0) ? (sum_dist_sq / count) : 1.0f;
+			
+			if (use_min_distance)
+			{
+				active_scores[i].sparsity_penalty = 1.0f / min_dist_sq;
+			}
+			else
+			{
+				active_scores[i].sparsity_penalty = 1.0f / mean_dist_sq;
+			}
+			
+			active_scores[i].total_penalty = active_scores[i].sparsity_penalty + active_scores[i].stability_penalty;
+		}
+
+		std::sort(active_scores.begin(), active_scores.end(), [](const AtomScore &a, const AtomScore &b)
+		{
+			return a.total_penalty > b.total_penalty;
+		});
+
+		for (auto it = active_scores.begin(); it != active_scores.end(); ++it)
+		{
+			if (it->total_penalty < 0.6f)
+			{
+				return false;
+			}
+			
+			std::vector<Atom *> test_pool;
+			for (auto test_it = active_scores.begin(); test_it != active_scores.end(); ++test_it)
+			{
+				if (test_it != it)
+				{
+					test_pool.push_back(test_it->candidate.atom);
+				}
+			}
+			
+			bool coplanar_choice = is_coplanar(test_pool, target_pos, right_coplanar_threshold);
+			
+			if (!coplanar_choice)
+			{
+				std::cout << "\tRemoved worst atom: " << it->candidate.atom->desc() 
+						  << " (penalty: " << it->total_penalty << ")" << std::endl;
+				
+				active_scores.erase(it);
+				return true;
+			}
+			else
+			{
+				std::cout << "\tKept atom (needed for planarity): " << it->candidate.atom->desc() << std::endl;
+			}
+		}
+		
+		return false;
+	};
+
+	while (active_scores.size() > 4)
+	{
+		if (!recalculate_and_prune()) break;
+	}
+
+	for (auto &s : active_scores)
+	{
+		s.candidate.ave_weight = 1;
+		face.sums.push_back(s.candidate);
+	}
+
+	std::cout << "Final selection size: " << face.sums.size() << std::endl;
 }
 
 void NonCovalents::prepareBarycentricWeights()

@@ -51,8 +51,8 @@ void ListInstancesView::refresh()
 
 	if (chosen > 1)
 	{
-		TextButton *t = new TextButton("Next", this);
-		t->setRight(0.8, 0.8);
+		TextButton *t = new TextButton("Find path(s)", this);
+		t->setRight(0.8, 0.85);
 		t->setReturnJob
 		([this]()
 		 {
@@ -112,7 +112,7 @@ Renderable *ListInstancesView::getLine(int i)
 			                                          glm::vec3(0., 0., -1.)));
 			image->rotateRoundCentre(rot);
 			image->rescale(0.012, 0.04);
-			image->setCentre(0.35, 0);
+			image->setCentre(0.3, 0);
 			b->addObject(image);
 
 			std::string inviteText = _fromTo[text].id;

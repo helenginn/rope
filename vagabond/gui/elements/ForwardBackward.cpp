@@ -52,7 +52,7 @@ void ForwardBackward::buttonPressed(std::string tag, Button *button)
 void ForwardBackward::scrollBackButton()
 {
 	ImageButton *bb = ImageButton::arrow(+90., this);
-	bb->setCentre(0.1, 0.8);
+	bb->setCentre(0.1, 0.75);
 	bb->setReturnTag("scroll_back");
 	addTempObject(bb);
 }
@@ -60,7 +60,7 @@ void ForwardBackward::scrollBackButton()
 void ForwardBackward::scrollForwardButton()
 {
 	ImageButton *fb = ImageButton::arrow(-90., this);
-	fb->setCentre(0.9, 0.8);
+	fb->setCentre(0.9, 0.75);
 	fb->setReturnTag("scroll_forward");
 	addTempObject(fb);
 }

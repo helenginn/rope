@@ -99,6 +99,9 @@ public:
 		float ave_weight = 1;
 		float weight_variance = 0;
 
+		//std::vector<float> fiducial_variances;
+		OpVec<float> start_weight_cache;
+
 		typedef std::function<glm::vec3(Atom *)> GetPos;
 		
 		OpVec<float> weights_for_positions(const GetPos &getPos);
