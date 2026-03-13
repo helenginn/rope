@@ -157,6 +157,8 @@ void FlexSample::saveSampledStructures(int numSamples, const std::string& baseFi
     _flex->submitJob(0);
     Result *rInitial = _flex->getResult();
     rInitial->transplantPositions(false, true);
+
+
     
     
     // backwards iteration
