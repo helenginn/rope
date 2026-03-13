@@ -1,4 +1,3 @@
-// vagabond
 // Copyright (C) 2022 Helen Ginn
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -544,7 +543,7 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
     }
 
     file.close();
-
+  
     for(int t = 0; t < numDivisions; t++)
     {
         entropyData[t].dataMatrix.colwise().reverse();
