@@ -23,6 +23,7 @@ struct FlagParameters PathEntropy::initFlagPar()
     struct FlagParameters flagParameters;
 
 	flagParameters.n = 10; /* number of nearest neighbours */
+    flagParameters.nf = 11;
     flagParameters.ne = 5;
 	flagParameters.minres = 1e-10;
     flagParameters.cutoff = 6.0;
@@ -462,6 +463,13 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     std::vector<std::vector<double>> phit(nf); 
     std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
 
+    std::cout
+    << "ang d "
+    << torsRes[0]->ang.size() << " "
+    << torsRes[0]->ang[timeDivisions].size() << " "
+    << torsRes[0]->ang[timeDivisions][0].size()
+    << "\n";
+
     allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
    
     std::ofstream outputLR("linear_regression.csv");
@@ -619,7 +627,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 }
 
 /* linear weighting function */
-int PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd)
+void PathEntropy::fitlw(std::vector<double> y, std::vector<double> x, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd)
 {
 	double wt = 0.0;
 	double xm = 0.0;
@@ -769,7 +777,7 @@ void PathEntropy::kruskal(struct Entropy *entropy, int *group2res, struct FlagPa
 }
 
 /* allocates memory to entropy structure */
-int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
+void PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters)
 {
     entropy->nPairs = nPairs;
 
@@ -821,12 +829,10 @@ int PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, 
             entropy->dmmi[i].resize(nNearestNeighbours);
         }
 	}
-
-    return 0;
 }
 
 /* allocates memory to entropy calculation variables */
-int PathEntropy::allocVariables(int nf, std::vector<double> &entk, std::vector<double> &entkTotal, std::vector<double> &entk2, std::vector<double> &entkTotal2, std::vector<double> &sigmak, struct FlagParameters &flagParameters)
+void PathEntropy::allocVariables(int nf, std::vector<double> &entk, std::vector<double> &entkTotal, std::vector<double> &entk2, std::vector<double> &entkTotal2, std::vector<double> &sigmak, struct FlagParameters &flagParameters)
 {
     int K = flagParameters.n + 1;
     
