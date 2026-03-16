@@ -528,7 +528,7 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 				{
 					std::vector<double> entropy = pathEntropyInstancePair(numPaths, pathsForInstance, numDivisions, mist);
 
-                    for(int t = 0; t < numDivisions; t++)
+                    for(int t = 0; t < numDivisions-1; t++)
                     {
 						entropyData[t].dataMatrix(i, j) = entropy[t];
 						entropyData[t].dataMatrix(j, i) = entropy[t];

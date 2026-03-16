@@ -58,7 +58,8 @@ struct TorsRes4NN {
 };
 
 struct FlagParameters {
-	int n;
+	int n; //number of nearest neighbours
+    int nf; //number of paths considered
     int ne;
 	double minres;
     float cutoff;
@@ -89,7 +90,7 @@ public:
     struct EntropyForMatrix calculateEntropyMI(int nf, struct FlagParameters flagPar, std::vector<TorsRes4NN*> torsRes, int numDivisions = 1);
 
 	/* linear weighting function */
-	int fitlw(std::vector<double> x, std::vector<double> y, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd);
+	void fitlw(std::vector<double> x, std::vector<double> y, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd);
 
     int torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters, int timeDivisions = 1);
 
@@ -98,9 +99,9 @@ public:
     /* kruskal algorithm */
     void kruskal(struct Entropy *entropy, int *group2res, struct FlagParameters flagParameters);
 	
-    int allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
+    void allocEntropy(struct Entropy *entropy, int nSingle, int nPairs, int nNearestNeighbours, struct FlagParameters flagParameters);
 
-    int allocVariables(int nf, std::vector<double> &entk, std::vector<double> &entkTotal, std::vector<double> &entk2, std::vector<double> &entkTotal2, std::vector<double> &sigmak, struct FlagParameters &flagParameters);
+    void allocVariables(int nf, std::vector<double> &entk, std::vector<double> &entkTotal, std::vector<double> &entk2, std::vector<double> &entkTotal2, std::vector<double> &sigmak, struct FlagParameters &flagParameters);
 };
 
 #endif
