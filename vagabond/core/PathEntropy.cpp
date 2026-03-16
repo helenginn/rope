@@ -560,6 +560,13 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     std::vector<std::vector<double>> phit(nf); 
     std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
 
+    std::cout
+    << "ang d "
+    << torsRes[0]->ang.size() << " "
+    << torsRes[0]->ang[timeDivisions].size() << " "
+    << torsRes[0]->ang[timeDivisions][0].size()
+    << "\n";
+
     allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
    
     std::ofstream outputLR("linear_regression.csv");
@@ -945,8 +952,6 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
             entropy->dmmi[i].resize(nNearestNeighbours);
         }
 	}
-
-    return 0;
 }
 
 /* allocates memory to entropy calculation variables */
