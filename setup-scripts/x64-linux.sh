@@ -36,6 +36,7 @@ warn()    { echo -e "${YELLOW}  ⚠${RESET} $*"; }
 error()   { echo -e "${RED}  ✘${RESET} $*" >&2; }
 section() { echo -e "\n${BOLD}${CYAN}── $* $(printf '─%.0s' {1..50})${RESET}"; }
 die()     { error "$*"; echo; exit 1; }
+print()   { echo -e "    $*"; }
 
 ask_yn() {
   local prompt="$1"
@@ -87,18 +88,34 @@ else
   warn "pkg-config not found — dependency detection may fail"
 fi
 
+if pkg-config --exists sdl2 ; then
+  ok "SDL2: $(pkg-config --modversion sdl2)"
+else
+  error "SDL2 not found on system"
+  print "Make sure SDL2 is installed via your system package manager"
+  die "Abort setup."
+fi
+
+if pkg-config --exists SDL2_image; then
+  ok "SDL2_image: $(pkg-config --modversion SDL2_image)"
+else
+  error "SDL2_image not found on system"
+  print "Make sure SDL2_image is installed via your system package manager"
+  die "Abort setup."
+fi
+
 if command -v conan &>/dev/null; then
   ok "conan: $(conan --version)"
   CONAN_COMMAND=(conan)
   CONAN_AVAILABLE=true
 else
-  warn "conan not found — attempt pipx run conan"
+  warn "conan not found; attempting ${BOLD}${YELLOW}pipx run conan${RESET}"
   if command -v pipx &>/dev/null; then
     ok "pipx: $(pipx --version)"
     CONAN_COMMAND=(pipx run conan)
     CONAN_AVAILABLE=true
   else
-    warn "pipx not found — attempt uvx conan"
+    warn "pipx not found; attempting ${BOLD}${YELLOW}uvx conan${RESET}"
     if command -v uvx &>/dev/null; then
       ok "uvx: $(uvx --version)"
       CONAN_COMMAND=(uvx conan)
@@ -150,9 +167,16 @@ fi
 if $USE_CONAN; then 
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b=missing
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b=missing
-  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini
+  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" --reconfigure
 else
-  meson setup "$BUILDDIR"
+  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" --reconfigure
 fi
 meson compile -C "$BUILDDIR"
+
+section "Done!"
+ok "RoPE succesfully built in $BUILDDIR"
+info "Run RoPE locally by starting"
+print "${BOLD}${YELLOW}$BUILDDIR/rope.gui${RESET} from the terminal"
+info "Install RoPE globally by running"
+print "${BOLD}${YELLOW}meson install -C $BUILDDIR${RESET}"
 
