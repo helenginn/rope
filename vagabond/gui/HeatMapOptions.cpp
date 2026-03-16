@@ -30,18 +30,30 @@ void HeatMapOptions::setup()
     {
         Slider *sPaths = new Slider();
         sPaths->setDragResponder(this);
+        sPaths->resize(0.5);
         sPaths->setup("Number of paths", 2, 11, 1);
         sPaths->setReturnTag("paths");
-	sPaths->setCentre(0.5, 0.5);
+	    sPaths->setCentre(0.7, 0.35);
         addObject(sPaths);
+    }
+
+    {
+        Slider *sNN = new Slider();
+        sNN->setDragResponder(this);
+        sNN->resize(0.5);
+        sNN->setup("Number of nearest neighbours", 2, 10, 1);
+        sNN->setReturnTag("neighbours");
+	    sNN->setCentre(0.7, 0.5);
+        addObject(sNN);
     }
 
     {
         Slider *sTime = new Slider();
         sTime->setDragResponder(this);
+        sTime->resize(0.5);
         sTime->setup("Number of time divisions", 1, 10, 1);
         sTime->setReturnTag("timepoints");
-	sTime->setCentre(0.5, 0.75);
+	    sTime->setCentre(0.7, 0.65);
         addObject(sTime);
     }
 
@@ -98,7 +110,7 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
 
         prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
 
-        VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(_flagPar.n) + "," + std::to_string( _flagPar.timeDivisions));
+        VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(_flagPar.nf) + "," + std::to_string( _flagPar.timeDivisions));
  
 	return;
     }
@@ -110,6 +122,10 @@ void HeatMapOptions::finishedDragging(std::string tag, double x, double y)
 {
     if(tag == "paths")
     {
+        _flagPar.nf = lrint(x);
+    }
+    else if(tag == "neighbours")
+    {
         _flagPar.n = lrint(x);
     }
     else if(tag == "timepoints")
@@ -120,5 +136,5 @@ void HeatMapOptions::finishedDragging(std::string tag, double x, double y)
 
 void HeatMapOptions::prepareProgress(int ticks, std::string text)
 {
-
+    VagWindow::window()->requestProgressBar(ticks, text);
 }
