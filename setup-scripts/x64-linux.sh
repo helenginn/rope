@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 # -- COLOURS --
 
 RED='\033[0;31m'
@@ -47,7 +48,7 @@ ask_yn() {
     echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}${hint}${RESET} "
     read -r answer
     answer="${answer:-$default}"
-    case "${answer,,}" in
+    case "$(echo "$answer" | tr '[:upper:]' '[:lower:]')" in
       y|yes) return 0 ;;
       n|no)  return 1 ;;
       *)     echo -e "  ${YELLOW}Please answer y or n.${RESET}" ;;
@@ -91,17 +92,15 @@ fi
 if pkg-config --exists sdl2 ; then
   ok "SDL2: $(pkg-config --modversion sdl2)"
 else
-  error "SDL2 not found on system"
+  error "SDL2 not found on system, meson will verify"
   print "Make sure SDL2 is installed via your system package manager"
-  die "Abort setup."
 fi
 
 if pkg-config --exists SDL2_image; then
   ok "SDL2_image: $(pkg-config --modversion SDL2_image)"
 else
-  error "SDL2_image not found on system"
+  error "SDL2_image not found on system, meson will verify"
   print "Make sure SDL2_image is installed via your system package manager"
-  die "Abort setup."
 fi
 
 if command -v conan &>/dev/null; then
