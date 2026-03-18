@@ -3,6 +3,7 @@ cloc.txt
 
 .DS_Store
 .vimrc
+.clangd
 build
 data
 doc/

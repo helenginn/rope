@@ -154,9 +154,26 @@ else
   fi
 fi
 
+if ask_yn "Set up .clangd file for LSP?" "Y"; then
+  USE_CLANGD=true
+else
+  USE_CLANGD=false 
+fi
+
 section Confirm
 BUILDDIR="build/${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
 info "Planning to build in ${BUILDDIR}"
+
+if $USE_CONAN; then
+  info "Using conan for dependency package management"
+else
+  info "Relying on system packages for dependencies"
+fi
+
+if $USE_CLANGD; then
+  info "Set up .clangd for LSP"
+fi
+
 if ask_yn "Proceed?" "Y"; then
   echo 
 else 
@@ -172,10 +189,20 @@ else
 fi
 meson compile -C "$BUILDDIR"
 
+if $USE_CLANGD; then
+  section "Setup .clangd"
+  cat > ".clangd" <<EOF
+CompileFlags:
+  CompilationDatabase: "${BUILDDIR}"
+EOF
+  ok "Compilation database points at $BUILDDIR"
+fi
+
 section "Done!"
 ok "RoPE succesfully built in $BUILDDIR"
 info "Run RoPE locally by starting"
 print "${BOLD}${YELLOW}$BUILDDIR/rope.gui${RESET} from the terminal"
 info "Install RoPE globally by running"
 print "${BOLD}${YELLOW}meson install -C $BUILDDIR${RESET}"
+print ""
 
