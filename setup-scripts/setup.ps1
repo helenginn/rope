@@ -3,7 +3,8 @@ param(
   [Alias("y")]
   [switch]$Yesman = $false,
   [Alias("f")]
-  [switch]$ForceRebuildDependencies = $false
+  [switch]$ForceRebuildDependencies = $false,
+  [string]$Build = ""
 )
 
 Set-StrictMode -Version Latest
@@ -186,7 +187,12 @@ if (Ask-YN "Set up .clangd file for LSP?" "Y") {
 
 # -- CONFIRM --
 Section "Confirm"
-$BUILDDIR="build\${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+if ($Build -ne "") {
+    Warn "Custom build directory"
+    $BUILDDIR = $Build
+  } else {
+    $BUILDDIR="build\${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+  }
 Info "Planning to build in ${BUILDDIR}"
 Info "Using conan for dependency package management"
 if ($USE_CLANGD) {Info "Set up .clangd for LSP"}

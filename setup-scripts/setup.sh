@@ -2,10 +2,12 @@
 set -euo pipefail
 YESMAN=false 
 FORCE_REBUILD_DEP=false
+BUILD_OVERRIDE=""
 for arg in "$@"; do
   case "$arg" in
     --yesman|-y) YESMAN=true ;;
     --force-rebuild-dependencies|-f) FORCE_REBUILD_DEP=true ;;
+    --build=*) BUILD_OVERRIDE="${arg#--build=}" ;;
   *) echo "Unknown argument: $arg";;
   esac
 done
@@ -122,6 +124,7 @@ else
   print "Make sure SDL2_image is installed via your system package manager"
 fi
 
+USE_CONAN=false
 if command -v conan &>/dev/null; then
   ok "conan: $(conan --version)"
   CONAN_COMMAND=(conan)
@@ -180,7 +183,12 @@ fi
 
 # -- CONFIRM --
 section "Confirm"
-BUILDDIR="build/${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+if [ -n "$BUILD_OVERRIDE" ]; then
+  warn "Custom build directory"
+  BUILDDIR="$BUILD_OVERRIDE"
+else
+  BUILDDIR="build/${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+fi
 info "Planning to build in ${BUILDDIR}"
 
 if $USE_CONAN; then
