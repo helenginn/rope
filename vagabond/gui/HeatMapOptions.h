@@ -17,11 +17,13 @@ public:
     ~HeatMapOptions();
 
     virtual void setup();
+    virtual void refresh();
     virtual void buttonPressed(std::string tag, Button *button = nullptr);
     virtual void finishedDragging(std::string tag, double x, double y);
 
 private:
     void prepareProgress(int ticks, std::string text);
+    void loadOptions();
 
     PathEntropy *_pathEntropy = nullptr;
     struct FlagParameters _flagPar;

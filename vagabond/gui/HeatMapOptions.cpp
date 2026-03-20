@@ -27,24 +27,64 @@ void HeatMapOptions::setup()
 {
     addTitle("Select Calculation Parameters");
 
+    PathManager::GroupedMap map = Environment::pathManager()->groupedPathsForEntity(_entity);
+
+    {
+        Text *t = new Text("Use MIST algorithm?");
+        t->setLeft(0.15, 0.22);
+        addObject(t);
+    }
+ 
+    {
+        Text *t = new Text("Number of paths:");
+        t->setLeft(0.15, 0.35);
+        addObject(t);
+    }
+ 
+    {
+        Text *t = new Text("Number of nearest neighbours:");
+        mist->setLeft(0.15, 0.5);
+        addObject(t);
+    }
+
+    loadOptions();
+}
+
+void HeatMapOptions::loadOptions()
+{
+    deleteTemps();
+
+    {
+        TickBoxes *tb = new TickBoxes(this, this);
+        tb->addOption("Yes", "mist");
+        tb->arrange(0.8, 0.22, 0.9, 0.8);
+        addTempObject(tb);
+    }
+   
     {
         Slider *sPaths = new Slider();
         sPaths->setDragResponder(this);
         sPaths->resize(0.5);
-        sPaths->setup("Number of paths", 2, 11, 1);
+        sPaths->setup("Number of paths", 2, 20, 1);
         sPaths->setReturnTag("paths");
 	    sPaths->setCentre(0.7, 0.35);
-        addObject(sPaths);
+        addTempObject(sPaths);
     }
 
     {
         Slider *sNN = new Slider();
         sNN->setDragResponder(this);
         sNN->resize(0.5);
-        sNN->setup("Number of nearest neighbours", 2, 10, 1);
+        sNN->setup("Number of nearest neighbours", 2, 20, 1);
         sNN->setReturnTag("neighbours");
 	    sNN->setCentre(0.7, 0.5);
-        addObject(sNN);
+        addTempObject(sNN);
+    }
+
+    {
+        Text *t = new Text("Number of timepoints:");
+        t->setLeft(0.15, 0.65);
+        addTempObject(t);
     }
 
     {
@@ -54,23 +94,16 @@ void HeatMapOptions::setup()
         sTime->setup("Number of time divisions", 1, 10, 1);
         sTime->setReturnTag("timepoints");
 	    sTime->setCentre(0.7, 0.65);
-        addObject(sTime);
-    }
-
-    {
-        TickBoxes *tb = new TickBoxes(this, this);
-        tb->addOption("mist");
-        tb->arrange(0.4, 0.22, 0.9, 0.5);
-        addObject(tb);
+        addTempObject(sTime);
     }
 
     float bottom = 0.9;
 
     {
 	    TextButton *t = new TextButton("Generate heat map", this);
-	    t->setRight(0.8, bottom);
+	    t->setRight(0.9, bottom);
 	    t->setReturnTag("heatmap");
-	    addObject(t);
+	    addTempObject(t);
     }
 }
 
@@ -89,30 +122,28 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
     if (tag == "heatmap")
     {
         std::vector<struct EntropyForHeatMap> entropyData = {};
-        
-        std::cout << "adding job" << std::endl;
 
         std::function<void(std::vector<EntropyForHeatMap> &)> callback;
-	callback = [this](std::vector<EntropyForHeatMap> &entropyData)
-	{
-	    addMainThreadJob([this, entropyData]()
-	    {
-		HeatMapView *view = new HeatMapView(this, entropyData);
-		view->show();
-	    });
-            
-	    showBackButton();
-	};
+		callback = [this](std::vector<EntropyForHeatMap> &entropyData)
+		{
+			addMainThreadJob([this, entropyData]()
+			{
+			HeatMapView *view = new HeatMapView(this, entropyData);
+			view->show();
+			});
+				
+			showBackButton();
+		};
            
-	Environment::pathManager()->setEntropyCallback(callback);
+	    Environment::pathManager()->setEntropyCallback(callback);
         
         hideBackButton();
+        button->setInert();
 
         prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
 
         VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(_flagPar.nf) + "," + std::to_string( _flagPar.timeDivisions));
  
-	return;
     }
 
     Scene::buttonPressed(tag, button);
@@ -137,4 +168,9 @@ void HeatMapOptions::finishedDragging(std::string tag, double x, double y)
 void HeatMapOptions::prepareProgress(int ticks, std::string text)
 {
     VagWindow::window()->requestProgressBar(ticks, text);
+}
+
+void HeatMapOptions::refresh()
+{
+    loadOptions();
 }
