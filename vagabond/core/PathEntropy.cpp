@@ -161,22 +161,21 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 
 	int numTors = 0;
 
-	struct Entropy* entropy = new Entropy;
-    struct EntropyForMatrix ent4Matrix;
-
-	entropy->nSingle = numResPerModel;
-	entropy->nNearestNeighbours = flagParameters.n;
-	allocEntropy(entropy, numResPerModel, 0, entropy->nNearestNeighbours, flagParameters);
-
+	struct EntropyForMatrix ent4Matrix;
     int K = flagParameters.n + 1;
 
 	/* for each residue, compute entropy, sd and dm for the residue
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
 
-    for(int n = 1; n < numDivisions; n++)
+    for(int n = 0; n < numDivisions; n++)
     {
-        kNearestNeighbours(torsRes, entropy, flagParameters, numTors, nf, numResPerModel, K, numDivisions - 1);
+		struct Entropy* entropy = new Entropy;
+		entropy->nSingle = numResPerModel;
+		entropy->nNearestNeighbours = flagParameters.n;
+		allocEntropy(entropy, numResPerModel, 0, entropy->nNearestNeighbours, flagParameters);
+
+        kNearestNeighbours(torsRes, entropy, flagParameters, numTors, nf, numResPerModel, K, n);
  
         ent4Matrix.totalEntropy.push_back(entropy->totalEntropy);
 		
@@ -185,7 +184,10 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 			entropy->sigmaTotal[k] = sqrt(entropy->sigmaTotal[k]);
 			entropy->meanDistTotal[k] = sqrt(entropy->meanDistTotal[k]/ (double) numTors);
 		}
+
+		delete entropy;
     }
+
 
 	return ent4Matrix;
 }

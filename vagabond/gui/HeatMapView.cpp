@@ -20,6 +20,8 @@ void HeatMapView::setup()
         setupSlider(_entropy.size());
     }
 
+	redrawHeatMap(+0.1f);
+/*
     int rows = _entropy[0].dataMatrix.rows();
     int cols = _entropy[0].dataMatrix.cols();
 
@@ -46,6 +48,7 @@ void HeatMapView::setup()
 
     _plot->legend()->setScheme(Heat);
     addObject(_plot);
+*/
 }
 
 void HeatMapView::redrawHeatMap(double num)
@@ -69,14 +72,15 @@ void HeatMapView::redrawHeatMap(double num)
     {
         for (int j = 0; j < cols; j++)
         {
-            _entropy[t].dataMatrix(i,j)-=meanEntropy;
-            _entropy[t].dataMatrix(i,j)/=stdEntropy;
+			matrix(i, j) = _entropy[t].dataMatrix(i, j);
+            matrix(i,j)-=meanEntropy;
+            matrix(i,j)/=stdEntropy;
 
-            _entropy[t].dataMatrix(i,j)-=0.5;
+            matrix(i,j)-=0.5;
         }
     }
 
-    _pcaMatrix = PCA::Matrix(_entropy[t].dataMatrix);
+    _pcaMatrix = PCA::Matrix(matrix);
 	printMatrix(&_pcaMatrix);
 
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
@@ -98,7 +102,7 @@ void HeatMapView::setupSlider(int timeDivisions)
 
 void HeatMapView::finishedDragging(std::string tag, double x, double y)
 {
-    double num = x;
+    double num = x - 1;
     
     redrawHeatMap(num);
 }
