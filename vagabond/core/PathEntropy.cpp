@@ -161,7 +161,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyIndependent(int nf, struct 
 	   sum to total entropy, sd and dm
 	   dm will be normalised by sqrt(dof)  */
 
-    for(int n = 1; n < numDivisions; n++)
+    for(int n = 0; n < numDivisions; n++)
     {
 		struct EntropyKL* entropy = new EntropyKL;
 		entropy->nSingle = numResPerModel;
