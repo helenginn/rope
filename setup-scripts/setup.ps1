@@ -133,23 +133,22 @@ if (Get-Command conan -ErrorAction SilentlyContinue) {
     Ok "conan: $conanVer"
     $CONAN_COMMAND = @("conan")
   } else {
-    Warn "conan not found; attempting ${BOLD}${YELLOW}pipx run conan${RESET}"
-    if (Get-Command pipx -ErrorAction SilentlyContinue) {
-        $pipxVer = & pipx --version 2>&1
-        Ok "pipx: $pipxVer"
-        $CONAN_COMMAND = @("pipx", "run", "conan")
-      } else {
-        Warn "pipx not found; attempting ${BOLD}${YELLOW}uvx conan${RESET}"
-        if (Get-Command uvx -ErrorAction SilentlyContinue) {
-          $uvxVer = & uvx --version 2>&1
-          Ok "uvx: $uvxVer"
-          $CONAN_COMMAND = @("uvx", "conan")
+    Warn "conan not found; attempting ${BOLD}${YELLOW}uvx conan${RESET}"
+    if (Get-Command uvx -ErrorAction SilentlyContinue) {
+        $uvxVer = & uvx --version 2>&1
+        Ok "uvx: $uvxVer"
+        $CONAN_COMMAND = @("uvx", "conan")
         } else {
+          Warn "uvx not found; attempting ${BOLD}${YELLOW}pipx run conan${RESET}"
+          if (Get-Command pipx -ErrorAction SilentlyContinue) {
+              $pipxVer = & pipx --version 2>&1
+              Ok "pipx: $pipxVer"
+              $CONAN_COMMAND = @("pipx", "run", "conan")
+      } else {
           Die "conan is required on Windows but could not be found. Install conan, pipx or uvx."
         }
       }
   }
-
 # -- CONFIGURE BUILD --
 Section "Configure Build"
 Info "Using conan for dependency management (required on Windows)"
