@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 set -e
+
+SCRPTDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SRCDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+
+SRCBASENAME=$(basename "$SRCDIR")
+SCRPTBASENAME=$(basename "$SCRPTDIR")
+
 # -- COLOURS --
 
 RED='\033[0;31m'
@@ -11,13 +18,8 @@ BOLD='\033[1m'
 DIM='\033[2m'
 RESET='\033[0m'
 
-SCRPTDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SRCDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
-SRCBASENAME=$(basename "$SRCDIR")
-SCRPTBASENAME=$(basename "$SCRPTDIR")
-
-# -- Banner --
+# -- BANNER --
 
 echo
 echo -e "\033[1m\033[38;5;57m  \xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\033[1m\033[38;5;93m\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88 \033[1m\033[38;5;129m  \xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\033[1m\033[38;5;165m\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88 \033[1m\033[38;5;201m \xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\033[1m\033[38;5;200m\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88  \033[1m\033[38;5;197m\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88\033[1m\033[38;5;196m\xe2\x96\x88\xe2\x96\x88\xe2\x96\x88 \033[0m"
@@ -30,7 +32,8 @@ echo -e "  ${BOLD}Representation of Protein Entities${RESET}"
 echo -e "  ${DIM}Build configuration script${RESET}"
 echo
 
-# -- Helpers --
+# -- HELPERS --
+
 info()    { echo -e "${BLUE}  ●${RESET} $*"; }
 ok()      { echo -e "${GREEN}  ✓${RESET} $*"; }
 warn()    { echo -e "${YELLOW}  ⚠${RESET} $*"; }
@@ -72,15 +75,15 @@ else
 fi
  
 if command -v meson &>/dev/null; then
-  ok "Meson: $(meson --version)"
+  ok "meson: $(meson --version)"
 else
-  die "Meson not found. Install meson"
+  die "meson not found. Install meson"
 fi
  
 if command -v ninja &>/dev/null; then
-  ok "Ninja: $(ninja --version)"
+  ok "ninja: $(ninja --version)"
 else
-  die "Ninja not found. Install ninja-build"
+  die "ninja not found. Install ninja-build"
 fi
  
 if command -v pkg-config &>/dev/null; then
@@ -160,7 +163,8 @@ else
   USE_CLANGD=false 
 fi
 
-section Confirm
+# -- CONFIRM --
+section "Confirm"
 BUILDDIR="build/${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
 info "Planning to build in ${BUILDDIR}"
 
@@ -175,11 +179,12 @@ if $USE_CLANGD; then
 fi
 
 if ask_yn "Proceed?" "Y"; then
-  echo 
+  print ""
 else 
   die "Aborted manually"
 fi
 
+# -- BUILD --
 if $USE_CONAN; then 
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b=missing
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b=missing
