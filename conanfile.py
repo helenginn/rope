@@ -9,7 +9,6 @@ class Rope(ConanFile):
         self.requires("libcurl/[*]")
         self.requires("fftw/[*]")
         self.requires("gemmi/[*]")
-        self.requires("glew/[*]")
         self.requires("glm/[*]")
         self.requires("nlohmann_json/[*]")
         self.requires("zlib/[*]")
@@ -17,6 +16,7 @@ class Rope(ConanFile):
         if self.settings.os == "Windows":
             self.requires("sdl/[~2]")
             self.requires("sdl_image/[~2]")
+            self.requires("glew/[*]")
 
     def build_requirements(self):
         if self.settings.os == "Windows":

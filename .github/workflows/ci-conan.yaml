@@ -28,7 +28,7 @@ jobs:
           python3 -m pip install meson==${{ matrix.meson_version }} ninja==${{ matrix.ninja_version }} conan
       - name: Install system dependencies (SDL2)
         run: |
-          sudo apt-get -y install libsdl2-dev libsdl2-image-dev
+          sudo apt-get -y install libsdl2-dev libsdl2-image-dev libglew-dev
       - name: Run setup script
         working-directory: rope
         run: setup-scripts/setup.sh --yesman --build=build/ci_build
