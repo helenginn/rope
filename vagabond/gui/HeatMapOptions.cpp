@@ -44,7 +44,7 @@ void HeatMapOptions::setup()
  
     {
         Text *t = new Text("Number of nearest neighbours:");
-        mist->setLeft(0.15, 0.5);
+        t->setLeft(0.15, 0.5);
         addObject(t);
     }
 
