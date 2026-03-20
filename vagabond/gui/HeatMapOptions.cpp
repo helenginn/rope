@@ -28,6 +28,40 @@ void HeatMapOptions::setup()
 {
     addTitle("Select Calculation Parameters");
 
+    PathManager::GroupedMap map = Environment::pathManager()->groupedPathsForEntity(_entity);
+
+    {
+        Text *t = new Text("Use MIST algorithm?");
+        t->setLeft(0.15, 0.22);
+        addObject(t);
+    }
+ 
+    {
+        Text *t = new Text("Number of paths:");
+        t->setLeft(0.15, 0.35);
+        addObject(t);
+    }
+ 
+    {
+        Text *t = new Text("Number of nearest neighbours:");
+        mist->setLeft(0.15, 0.5);
+        addObject(t);
+    }
+
+    loadOptions();
+}
+
+void HeatMapOptions::loadOptions()
+{
+    deleteTemps();
+
+    {
+        TickBoxes *tb = new TickBoxes(this, this);
+        tb->addOption("Yes", "mist");
+        tb->arrange(0.8, 0.22, 0.9, 0.8);
+        addTempObject(tb);
+    }
+   
     {
         Text *t = new Text("Use MIST algorithm?");
         t->setLeft(0.15, 0.22);
@@ -52,7 +86,7 @@ void HeatMapOptions::setup()
 	    TextButton *t = new TextButton("Generate heat map", this);
 	    t->setRight(0.9, bottom);
 	    t->setReturnTag("heatmap");
-	    addObject(t);
+	    addTempObject(t);
     }
 
     loadOptions();
@@ -122,7 +156,7 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
 
     if (tag == "heatmap")
     {
-		HeatMapView *view = new HeatMapView(this, _paths, _flagPar);
+        HeatMapView *view = new HeatMapView(this, _paths, _flagPar);
         view->show();
 		std::cout << "Wrapping up showing heatmapview now" << std::endl;
     }
@@ -156,6 +190,11 @@ int HeatMapOptions::maxPaths()
     }
 
     return max;
+}
+
+void HeatMapOptions::refresh()
+{
+    loadOptions();
 }
 
 void HeatMapOptions::refresh()
