@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 YESMAN=false 
+FORCE_REBUILD_DEP=false
 for arg in "$@"; do
   case "$arg" in
     --yesman|-y) YESMAN=true ;;
-  *) warn "Unknown argument: $arg";;
+    --force-rebuild-dependencies|-f) FORCE_REBUILD_DEP=true ;;
+  *) echo "Unknown argument: $arg";;
   esac
 done
 
@@ -198,12 +200,18 @@ else
 fi
 
 # -- BUILD --
+CONAN_BUILD_FLAG="missing"
+if $FORCE_REBUILD_DEP; then
+  CONAN_BUILD_FLAG="*"
+  warn "Force-rebuilding all conan dependencies"
+fi
+
 if $USE_CONAN; then
   if ! "${CONAN_COMMAND[@]}" profile detect 2>/dev/null; then
     warn "conan profile already exists. Please verify manually."
   fi
-  "${CONAN_COMMAND[@]}" create recipes/gemmi -b=missing
-  "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b=missing
+  "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
+  "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG"
   meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" --reconfigure
 else
   meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" --reconfigure

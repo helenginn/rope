@@ -1,7 +1,9 @@
 #!/usr/bin/env pwsh
 param(
   [Alias("y")]
-  [switch]$Yesman = $false
+  [switch]$Yesman = $false,
+  [Alias("f")]
+  [switch]$ForceRebuildDependencies = $false
 )
 
 Set-StrictMode -Version Latest
@@ -196,11 +198,17 @@ if (Ask-YN "Proceed?" "Y") {
     }
 
 # -- BUILD --
+$ConanBuildFlag = "missing"
+if ($ForceRebuildDependencies) {
+    $ConanBuildFlag = "*"
+    Warn "Force-rebuilding all conan dependencies"
+  }
+
 Invoke-Conan profile detect 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {Warn "conan profile already exists. Please verify manually."}
-Invoke-Conan create .\recipes\gemmi -b="missing"
+Invoke-Conan create .\recipes\gemmi "-b=$ConanBuildFlag"
 if ($LASTEXITCODE -ne 0) {Die "conan create gemmi failed"}
-Invoke-Conan install . "-of=${BUILDDIR}" -b=missing
+Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag"
 if ($LASTEXITCODE -ne 0) {Die "conan install failed"}
 
 meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" --reconfigure
