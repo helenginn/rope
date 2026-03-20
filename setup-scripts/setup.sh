@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
+YESMAN=false 
+for arg in "$@"; do
+  case "$arg" in
+    --yesman|-y) YESMAN=true ;;
+  *) warn "Unknown argument: $arg";;
+  esac
+done
 
 SCRPTDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SRCDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -50,6 +57,10 @@ ask_yn() {
   local default="${2:-Y}"
   local hint
   if [ "$default" = "Y" ]; then hint="[Y/n]"; else hint="[y/N]"; fi
+  if $YESMAN; then
+    echo -e "  ${BOLD}${prompt}${RESET} ${DIM}${hint}${RESET} ${DIM}y (--yesman)${RESET}"
+    return 0
+  fi
   while true; do
     echo -ne "  ${BOLD}${prompt}${RESET} ${DIM}${hint}${RESET} "
     read -r answer

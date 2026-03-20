@@ -1,4 +1,9 @@
 #!/usr/bin/env pwsh
+param(
+  [Alias("y")]
+  [switch]$Yesman = $false
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -7,6 +12,7 @@ $SRCDIR   = Split-Path -Parent $SCRPTDIR
 
 $SRCBASENAME  = Split-Path -Leaf $SRCDIR
 $SCRPTBASENAME = Split-Path -Leaf $SCRPTDIR
+
 
 # -- COLOURS --
 $RED = "`e[0;31m"
@@ -60,6 +66,13 @@ function Ask-YN {
         [string]$Default = "Y"
     )
     $hint = if ($Default -eq "Y") { "[Y/n]" } else { "[y/N]" }
+    if ($script:Yesman) {
+        Write-Host "  " -NoNewline
+        Write-Host $Prompt -ForegroundColor White -NoNewline
+        Write-Host " $hint " -ForegroundColor DarkGray -NoNewline
+        Write-Host "y (--yesman)" -ForegroundColor DarkGray
+        return $true
+    }
     while ($true) {
         Write-Host "  " -NoNewline
         Write-Host $Prompt -ForegroundColor White -NoNewline
@@ -89,7 +102,7 @@ function Invoke-Conan {
 
 Info "Running script from $SRCBASENAME\$SCRPTBASENAME"
 
-section "System Checks"
+Section "System Checks"
 
 if (-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
     Die "This setup script only supports Windows. Use setup.sh on Linux/macOS."
@@ -209,7 +222,7 @@ CompileFlags:
 Section "Done!"
 Ok "RoPE succesfully built in $BUILDDIR"
 Info "Run RoPE locally by starting"
-Print "${BOLD}${YELLOW}$BUILDDIR/rope.gui${RESET} from the terminal"
+Print "${BOLD}${YELLOW}$BUILDDIR\rope.gui${RESET} from the terminal"
 Info "Install RoPE globally by running"
 Print "${BOLD}${YELLOW}meson install -C $BUILDDIR${RESET}"
 Print ""
