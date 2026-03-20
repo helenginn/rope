@@ -183,6 +183,8 @@ if (Ask-YN "Proceed?" "Y") {
     }
 
 # -- BUILD --
+Invoke-Conan profile detect 2>&1 | Out-Null
+if ($LASTEXITCODE -ne 0) {Warn "conan profile already exists. Please verify manually."}
 Invoke-Conan create .\recipes\gemmi -b="missing"
 if ($LASTEXITCODE -ne 0) {Die "conan create gemmi failed"}
 Invoke-Conan install . "-of=${BUILDDIR}" -b=missing

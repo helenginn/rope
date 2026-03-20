@@ -188,6 +188,9 @@ fi
 
 # -- BUILD --
 if $USE_CONAN; then
+  if ! "${CONAN_COMMAND[@]}" profile detect 2>/dev/null; then
+    warn "conan profile already exists. Please verify manually."
+  fi
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b=missing
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b=missing
   meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" --reconfigure
