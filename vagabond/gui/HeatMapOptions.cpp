@@ -43,7 +43,7 @@ void HeatMapOptions::setup()
  
     {
         Text *t = new Text("Number of nearest neighbours:");
-        mist->setLeft(0.15, 0.5);
+        t->setLeft(0.15, 0.5);
         addObject(t);
     }
 
@@ -121,6 +121,8 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
 
     if (tag == "heatmap")
     {
+        struct FlagParameters options = _flagPar;
+
         std::vector<struct EntropyForHeatMap> entropyData = {};
 
         std::function<void(std::vector<EntropyForHeatMap> &)> callback;
@@ -142,8 +144,7 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
 
         prepareProgress(_entity->instanceCount()-1, "Calculating path entropy...");
 
-        VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(_flagPar.nf) + "," + std::to_string( _flagPar.timeDivisions));
- 
+        VagWindow::addJob("path-entropy=" + _entity->name() + "," + std::to_string(options.nf) + "," + std::to_string(options.timeDivisions));
     }
 
     Scene::buttonPressed(tag, button);
