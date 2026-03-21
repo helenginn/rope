@@ -16,7 +16,15 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#include "unistd.h"
+#include <vagabond/utils/os.h>
+#ifdef OS_UNIX
+    #include "unistd.h"
+#else
+#ifdef OS_WINDOWS
+    #include <direct.h>
+    #include "windows.h"
+#endif
+#endif
 #include <fstream>
 
 #include "ProjectMenu.h"
@@ -234,11 +242,23 @@ void ProjectMenu::sendObject(std::string tag, void *object)
 
 void ProjectMenu::goToProject()
 {
+#ifdef OS_UNIX
 	char cwd[PATH_MAX + 1];
 	getcwd(cwd, PATH_MAX);
 	Environment::fileManager()->setDataDirectory(std::string(cwd));
 
 	chdir(_path.c_str());
+#else
+#ifdef OS_WINDOWS
+    char cwd[MAX_PATH + 1];
+    if (_getcwd(cwd, MAX_PATH) == nullptr)
+    {
+        std::cout << "Couldn't get current directory" << std::endl;
+    }
+    Environment::fileManager()->setDataDirectory(std::string(cwd));
+    _chdir(_path.c_str());
+#endif
+#endif
 	
 	VagWindow::dictator()->addArg("environment=rope.json");
 	VagWindow::dictator()->addArg("get-files-native-app");
