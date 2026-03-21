@@ -110,11 +110,11 @@ public:
 	
 	typedef std::function<std::vector<std::pair<Atom *, Instance *>>
 	(Model *model, Instance *reference)> 
-	FindAtom;
+	findAtom;
 	typedef std::function<float(const std::vector<Atom *> &)> Calculate;
 	typedef std::function<float(const std::vector<float> &)> Compare;
 
-	virtual Metadata *funcBetweenAtoms(const std::vector<FindAtom> &ps,
+	virtual Metadata *funcBetweenAtoms(const std::vector<findAtom> &ps,
 	                                   const std::string &header, 
 	                                   const Calculate &calculate,
 	                                   const Compare &compare)

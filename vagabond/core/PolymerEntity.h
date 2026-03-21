@@ -66,7 +66,7 @@ public:
 	virtual void housekeeping();
 	
 
-	virtual Metadata *funcBetweenAtoms(const std::vector<FindAtom> &ps,
+	virtual Metadata *funcBetweenAtoms(const std::vector<findAtom> &ps,
 	                                   const std::string &header, 
 	                                   const Calculate &calculate,
 	                                   const Compare &compare);

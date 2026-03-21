@@ -87,7 +87,7 @@ public:
 	}
 };
 
-Metadata *PolymerEntity::funcBetweenAtoms(const std::vector<FindAtom> &ps,
+Metadata *PolymerEntity::funcBetweenAtoms(const std::vector<findAtom> &ps,
                                           const std::string &header,
                                           const Calculate &calculate,
                                           const Compare &compare)

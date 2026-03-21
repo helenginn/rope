@@ -243,9 +243,9 @@ void EntitySequenceView::prepareAngles()
 	Atom3DPosition two(_bRes, _second);
 	Atom3DPosition three(_cRes, _third);
 
-	PolymerEntity::FindAtom get_first = search_models_any_instance(_entity, one);
-	PolymerEntity::FindAtom get_second = search_models_same_instance(_entity, two);
-	PolymerEntity::FindAtom get_third = search_models_same_instance(_entity, three);
+	PolymerEntity::findAtom get_first = search_models_any_instance(_entity, one);
+	PolymerEntity::findAtom get_second = search_models_same_instance(_entity, two);
+	PolymerEntity::findAtom get_third = search_models_same_instance(_entity, three);
 
 	std::string header;
 	header += _aRes->id().as_string() + _first;
@@ -274,8 +274,8 @@ void EntitySequenceView::prepareDistances()
 	Atom3DPosition one(_aRes, _first);
 	Atom3DPosition two(_bRes, _second);
 	
-	PolymerEntity::FindAtom get_first = search_models_any_instance(_entity, one);
-	PolymerEntity::FindAtom get_second = search_models_same_instance(_entity, two);
+	PolymerEntity::findAtom get_first = search_models_any_instance(_entity, one);
+	PolymerEntity::findAtom get_second = search_models_same_instance(_entity, two);
 
 	std::string header;
 	header += _aRes->id().as_string() + _first;
