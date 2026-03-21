@@ -1,6 +1,12 @@
 #ifndef __vagabond__CifFile__
 #define __vagabond__CifFile__
 
+// For some reason we also need the undef to handle issues
+// in min/max macros in gemmi here
+#include <vagabond/utils/compatibility.h>
+#undef min
+#undef max
+
 #include <map>
 #include <gemmi/cifdoc.hpp>
 #include <vagabond/utils/FileReader.h>

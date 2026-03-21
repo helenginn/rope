@@ -1,3 +1,4 @@
+#include <vagabond/utils/compatibility.h>
 #include <iostream>
 #include "../utils/glm_import.h"
 #include <gemmi/numb.hpp>

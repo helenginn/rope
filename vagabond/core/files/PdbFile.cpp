@@ -18,6 +18,7 @@
 
 #define GEMMI_WRITE_IMPLEMENTATION
 
+#include <vagabond/utils/compatibility.h>
 #include <gemmi/polyheur.hpp>
 #include <gemmi/mmread.hpp>
 #include <gemmi/to_pdb.hpp>

@@ -19,6 +19,10 @@
 #ifndef __vagabond__ChooseRange__
 #define __vagabond__ChooseRange__
 
+#include <vagabond/utils/compatibility.h>
+#undef min
+#undef max
+
 #include "Modal.h"
 #include "Button.h"
 #include "ButtonResponder.h"

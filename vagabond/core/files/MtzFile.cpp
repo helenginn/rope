@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/compatibility.h>
 #include "files/MtzFile.h"
 #define GEMMI_WRITE_IMPLEMENTATION
 #include <gemmi/mtz.hpp>
