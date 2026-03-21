@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include "compatibility.h"
 #include "Hypersphere.h"
 #include <cmath>
 #include <iostream>
