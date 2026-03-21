@@ -12,6 +12,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip>
+#include <vector>
 
 #define MOUSE_SENSITIVITY 500
 
@@ -209,8 +210,8 @@ void GLView::prepareDepthColourIndex(bool bright)
 	                       GL_TEXTURE_2D, _sceneDepth, 0);
 	checkFrameBuffers();
 
-	unsigned int attachments[_sceneMapCount];
-	
+	std::vector<unsigned int> attachments(_sceneMapCount);
+
 	/* additional attachments */
 	for (size_t i = 0; i < _sceneMapCount; i++)
 	{
@@ -248,7 +249,7 @@ void GLView::prepareDepthColourIndex(bool bright)
 		attachments[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
 	
-	glDrawBuffers(_sceneMapCount, attachments); 
+	glDrawBuffers(_sceneMapCount, attachments.data());
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	_indices = new GLuint[_dw * _dh];
