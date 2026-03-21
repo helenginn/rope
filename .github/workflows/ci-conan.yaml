@@ -33,7 +33,7 @@ jobs:
         working-directory: rope
         run: setup-scripts/setup.sh --yesman --build=build/ci_build
       - name: Install
-        run: meson install -C rope/build/ci_build --destdir=$(pwd)/install
+        run: meson install -C rope/build/ci_build --destdir=$(pwd)/install --prefix=/
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
