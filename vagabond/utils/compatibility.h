@@ -19,6 +19,12 @@
     #ifndef _USE_MATH_DEFINES
         #define _USE_MATH_DEFINES
     #endif
+
+    // Define NOMINMAX to prevent Windows headers from defining min and max macros
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+
 #endif
 
 

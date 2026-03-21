@@ -19,6 +19,7 @@
 #ifndef __vagabond__Rule__
 #define __vagabond__Rule__
 
+#include <vagabond/utils/compatibility.h>
 #include <string>
 #include <iostream>
 #include <vagabond/utils/glm_import.h>
@@ -140,7 +141,7 @@ public:
 	const std::string desc() const;
 	
 	const std::string exactDesc() const;
-	const float &max() const
+	const float &(max)() const
 	{
 		return _maxVal;
 	}
@@ -155,7 +156,7 @@ public:
 		_minVal = min;
 	}
 	
-	const float &min() const
+	const float &(min)() const
 	{
 		return _minVal;
 	}

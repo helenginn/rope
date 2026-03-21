@@ -16,7 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#define _USE_MATH_DEFINES
+#include <vagabond/utils/compatibility.h>
 #include <math.h>
 #include "Rule.h"
 #include "HasMetadata.h"

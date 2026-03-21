@@ -19,6 +19,7 @@
 #ifndef __vagabond__RTMotion__
 #define __vagabond__RTMotion__
 
+#include <vagabond/utils/compatibility.h>
 #include <vagabond/c4x/DataFloat.h>
 #include "RTVector.h"
 #include "WayPoint.h"
@@ -69,7 +70,7 @@ struct Motion
 
 		float diff = fabs(p) - fabs(workingAngle());
 
-		float result = std::max(0.f, diff);
+		float result = (std::max)(0.f, diff);
 
 		return result;
 	}
