@@ -17,7 +17,7 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include <vagabond/utils/FileReader.h>
-#include "unistd.h"
+// #include "unistd.h"
 
 #include "Window.h"
 #include "Library.h"

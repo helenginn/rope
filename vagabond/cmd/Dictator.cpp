@@ -29,7 +29,7 @@
 #include <vagabond/core/ModelManager.h>
 #include <vagabond/core/Reporter.h>
 #include <iostream>
-#include <unistd.h>
+// #include <unistd.h>
 #include <algorithm>
 
 std::map<std::string, std::string> Dictator::_properties;
