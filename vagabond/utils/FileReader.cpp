@@ -21,6 +21,7 @@
     #include <unistd.h>
     #include <sys/stat.h>    // mkdir, mode_t, S_IRWXU et al.
     #include <sys/types.h>
+    #include <cstring>
 #endif
 #endif
 #include "FileReader.h"
@@ -31,7 +32,6 @@
 
 #include <iomanip>
 #include <algorithm>
-#include <errno.h>
 
 std::string FileReader::outputDir;
 
