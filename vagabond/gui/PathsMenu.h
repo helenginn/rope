@@ -21,6 +21,7 @@
 
 #include <vagabond/gui/elements/ListView.h>
 #include "PathGroup.h"
+#include "Path.h"
 #include <Responder.h>
 
 class Path;

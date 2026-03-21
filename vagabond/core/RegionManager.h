@@ -19,9 +19,9 @@
 #ifndef __vagabond__RegionManager__
 #define __vagabond__RegionManager__
 
+#include "Region.h"
 #include "Manager.h"
 #include "HasEntity.h"
-#include "Region.h"
 
 #include <nlohmann/json.hpp>
 using nlohmann::json;
