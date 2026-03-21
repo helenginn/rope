@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/compatibility.h>
 #include "FixIssues.h"
 #include "Model.h"
 #include "AtomGroup.h"

@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/compatibility.h>
 #include "ParamSet.h"
 #include "ResidueId.h"
 #include "paths/PlausibleRoute.h"

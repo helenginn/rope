@@ -19,7 +19,7 @@
 #ifndef __vagabond__Angular__
 #define __vagabond__Angular__
 
-#define _USE_MATH_DEFINES
+#include <vagabond/utils/compatibility.h>
 #include <cmath>
 #include <ostream>
 #include <vagabond/utils/degrad.h>

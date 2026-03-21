@@ -16,6 +16,7 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
+#include <vagabond/utils/compatibility.h>
 #include "FilterCrystalContact.h"
 #include "Conformer.h"
 #include "Loopy.h"
