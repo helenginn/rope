@@ -3,69 +3,69 @@
 
 namespace ThinFont
 {
-static unsigned char ascii_0[] = {};
+static unsigned char ascii_0[1] = {0};
 
-static unsigned char ascii_1[] = {};
+static unsigned char ascii_1[1] = {0};
 
-static unsigned char ascii_2[] = {};
+static unsigned char ascii_2[1] = {0};
 
-static unsigned char ascii_3[] = {};
+static unsigned char ascii_3[1] = {0};
 
-static unsigned char ascii_4[] = {};
+static unsigned char ascii_4[1] = {0};
 
-static unsigned char ascii_5[] = {};
+static unsigned char ascii_5[1] = {0};
 
-static unsigned char ascii_6[] = {};
+static unsigned char ascii_6[1] = {0};
 
-static unsigned char ascii_7[] = {};
+static unsigned char ascii_7[1] = {0};
 
-static unsigned char ascii_8[] = {};
+static unsigned char ascii_8[1] = {0};
 
-static unsigned char ascii_9[] = {};
+static unsigned char ascii_9[1] = {0};
 
-static unsigned char ascii_10[] = {};
+static unsigned char ascii_10[1] = {0};
 
-static unsigned char ascii_11[] = {};
+static unsigned char ascii_11[1] = {0};
 
-static unsigned char ascii_12[] = {};
+static unsigned char ascii_12[1] = {0};
 
-static unsigned char ascii_13[] = {};
+static unsigned char ascii_13[1] = {0};
 
-static unsigned char ascii_14[] = {};
+static unsigned char ascii_14[1] = {0};
 
-static unsigned char ascii_15[] = {};
+static unsigned char ascii_15[1] = {0};
 
-static unsigned char ascii_16[] = {};
+static unsigned char ascii_16[1] = {0};
 
-static unsigned char ascii_17[] = {};
+static unsigned char ascii_17[1] = {0};
 
-static unsigned char ascii_18[] = {};
+static unsigned char ascii_18[1] = {0};
 
-static unsigned char ascii_19[] = {};
+static unsigned char ascii_19[1] = {0};
 
-static unsigned char ascii_20[] = {};
+static unsigned char ascii_20[1] = {0};
 
-static unsigned char ascii_21[] = {};
+static unsigned char ascii_21[1] = {0};
 
-static unsigned char ascii_22[] = {};
+static unsigned char ascii_22[1] = {0};
 
-static unsigned char ascii_23[] = {};
+static unsigned char ascii_23[1] = {0};
 
-static unsigned char ascii_24[] = {};
+static unsigned char ascii_24[1] = {0};
 
-static unsigned char ascii_25[] = {};
+static unsigned char ascii_25[1] = {0};
 
-static unsigned char ascii_26[] = {};
+static unsigned char ascii_26[1] = {0};
 
-static unsigned char ascii_27[] = {};
+static unsigned char ascii_27[1] = {0};
 
-static unsigned char ascii_28[] = {};
+static unsigned char ascii_28[1] = {0};
 
-static unsigned char ascii_29[] = {};
+static unsigned char ascii_29[1] = {0};
 
-static unsigned char ascii_30[] = {};
+static unsigned char ascii_30[1] = {0};
 
-static unsigned char ascii_31[] = {};
+static unsigned char ascii_31[1] = {0};
 
 static unsigned char ascii_32[] = {255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 
 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 
@@ -12119,261 +12119,261 @@ static unsigned char ascii_126[] = {255, 255, 255, 0, 255, 255, 255, 0, 255, 255
 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 255, 255, 255, 0, 
 };
 
-static unsigned char ascii_127[] = {};
+static unsigned char ascii_127[1] = {0};
 
-static unsigned char ascii_128[] = {};
+static unsigned char ascii_128[1] = {0};
 
-static unsigned char ascii_129[] = {};
+static unsigned char ascii_129[1] = {0};
 
-static unsigned char ascii_130[] = {};
+static unsigned char ascii_130[1] = {0};
 
-static unsigned char ascii_131[] = {};
+static unsigned char ascii_131[1] = {0};
 
-static unsigned char ascii_132[] = {};
+static unsigned char ascii_132[1] = {0};
 
-static unsigned char ascii_133[] = {};
+static unsigned char ascii_133[1] = {0};
 
-static unsigned char ascii_134[] = {};
+static unsigned char ascii_134[1] = {0};
 
-static unsigned char ascii_135[] = {};
+static unsigned char ascii_135[1] = {0};
 
-static unsigned char ascii_136[] = {};
+static unsigned char ascii_136[1] = {0};
 
-static unsigned char ascii_137[] = {};
+static unsigned char ascii_137[1] = {0};
 
-static unsigned char ascii_138[] = {};
+static unsigned char ascii_138[1] = {0};
 
-static unsigned char ascii_139[] = {};
+static unsigned char ascii_139[1] = {0};
 
-static unsigned char ascii_140[] = {};
+static unsigned char ascii_140[1] = {0};
 
-static unsigned char ascii_141[] = {};
+static unsigned char ascii_141[1] = {0};
 
-static unsigned char ascii_142[] = {};
+static unsigned char ascii_142[1] = {0};
 
-static unsigned char ascii_143[] = {};
+static unsigned char ascii_143[1] = {0};
 
-static unsigned char ascii_144[] = {};
+static unsigned char ascii_144[1] = {0};
 
-static unsigned char ascii_145[] = {};
+static unsigned char ascii_145[1] = {0};
 
-static unsigned char ascii_146[] = {};
+static unsigned char ascii_146[1] = {0};
 
-static unsigned char ascii_147[] = {};
+static unsigned char ascii_147[1] = {0};
 
-static unsigned char ascii_148[] = {};
+static unsigned char ascii_148[1] = {0};
 
-static unsigned char ascii_149[] = {};
+static unsigned char ascii_149[1] = {0};
 
-static unsigned char ascii_150[] = {};
+static unsigned char ascii_150[1] = {0};
 
-static unsigned char ascii_151[] = {};
+static unsigned char ascii_151[1] = {0};
 
-static unsigned char ascii_152[] = {};
+static unsigned char ascii_152[1] = {0};
 
-static unsigned char ascii_153[] = {};
+static unsigned char ascii_153[1] = {0};
 
-static unsigned char ascii_154[] = {};
+static unsigned char ascii_154[1] = {0};
 
-static unsigned char ascii_155[] = {};
+static unsigned char ascii_155[1] = {0};
 
-static unsigned char ascii_156[] = {};
+static unsigned char ascii_156[1] = {0};
 
-static unsigned char ascii_157[] = {};
+static unsigned char ascii_157[1] = {0};
 
-static unsigned char ascii_158[] = {};
+static unsigned char ascii_158[1] = {0};
 
-static unsigned char ascii_159[] = {};
+static unsigned char ascii_159[1] = {0};
 
-static unsigned char ascii_160[] = {};
+static unsigned char ascii_160[1] = {0};
 
-static unsigned char ascii_161[] = {};
+static unsigned char ascii_161[1] = {0};
 
-static unsigned char ascii_162[] = {};
+static unsigned char ascii_162[1] = {0};
 
-static unsigned char ascii_163[] = {};
+static unsigned char ascii_163[1] = {0};
 
-static unsigned char ascii_164[] = {};
+static unsigned char ascii_164[1] = {0};
 
-static unsigned char ascii_165[] = {};
+static unsigned char ascii_165[1] = {0};
 
-static unsigned char ascii_166[] = {};
+static unsigned char ascii_166[1] = {0};
 
-static unsigned char ascii_167[] = {};
+static unsigned char ascii_167[1] = {0};
 
-static unsigned char ascii_168[] = {};
+static unsigned char ascii_168[1] = {0};
 
-static unsigned char ascii_169[] = {};
+static unsigned char ascii_169[1] = {0};
 
-static unsigned char ascii_170[] = {};
+static unsigned char ascii_170[1] = {0};
 
-static unsigned char ascii_171[] = {};
+static unsigned char ascii_171[1] = {0};
 
-static unsigned char ascii_172[] = {};
+static unsigned char ascii_172[1] = {0};
 
-static unsigned char ascii_173[] = {};
+static unsigned char ascii_173[1] = {0};
 
-static unsigned char ascii_174[] = {};
+static unsigned char ascii_174[1] = {0};
 
-static unsigned char ascii_175[] = {};
+static unsigned char ascii_175[1] = {0};
 
-static unsigned char ascii_176[] = {};
+static unsigned char ascii_176[1] = {0};
 
-static unsigned char ascii_177[] = {};
+static unsigned char ascii_177[1] = {0};
 
-static unsigned char ascii_178[] = {};
+static unsigned char ascii_178[1] = {0};
 
-static unsigned char ascii_179[] = {};
+static unsigned char ascii_179[1] = {0};
 
-static unsigned char ascii_180[] = {};
+static unsigned char ascii_180[1] = {0};
 
-static unsigned char ascii_181[] = {};
+static unsigned char ascii_181[1] = {0};
 
-static unsigned char ascii_182[] = {};
+static unsigned char ascii_182[1] = {0};
 
-static unsigned char ascii_183[] = {};
+static unsigned char ascii_183[1] = {0};
 
-static unsigned char ascii_184[] = {};
+static unsigned char ascii_184[1] = {0};
 
-static unsigned char ascii_185[] = {};
+static unsigned char ascii_185[1] = {0};
 
-static unsigned char ascii_186[] = {};
+static unsigned char ascii_186[1] = {0};
 
-static unsigned char ascii_187[] = {};
+static unsigned char ascii_187[1] = {0};
 
-static unsigned char ascii_188[] = {};
+static unsigned char ascii_188[1] = {0};
 
-static unsigned char ascii_189[] = {};
+static unsigned char ascii_189[1] = {0};
 
-static unsigned char ascii_190[] = {};
+static unsigned char ascii_190[1] = {0};
 
-static unsigned char ascii_191[] = {};
+static unsigned char ascii_191[1] = {0};
 
-static unsigned char ascii_192[] = {};
+static unsigned char ascii_192[1] = {0};
 
-static unsigned char ascii_193[] = {};
+static unsigned char ascii_193[1] = {0};
 
-static unsigned char ascii_194[] = {};
+static unsigned char ascii_194[1] = {0};
 
-static unsigned char ascii_195[] = {};
+static unsigned char ascii_195[1] = {0};
 
-static unsigned char ascii_196[] = {};
+static unsigned char ascii_196[1] = {0};
 
-static unsigned char ascii_197[] = {};
+static unsigned char ascii_197[1] = {0};
 
-static unsigned char ascii_198[] = {};
+static unsigned char ascii_198[1] = {0};
 
-static unsigned char ascii_199[] = {};
+static unsigned char ascii_199[1] = {0};
 
-static unsigned char ascii_200[] = {};
+static unsigned char ascii_200[1] = {0};
 
-static unsigned char ascii_201[] = {};
+static unsigned char ascii_201[1] = {0};
 
-static unsigned char ascii_202[] = {};
+static unsigned char ascii_202[1] = {0};
 
-static unsigned char ascii_203[] = {};
+static unsigned char ascii_203[1] = {0};
 
-static unsigned char ascii_204[] = {};
+static unsigned char ascii_204[1] = {0};
 
-static unsigned char ascii_205[] = {};
+static unsigned char ascii_205[1] = {0};
 
-static unsigned char ascii_206[] = {};
+static unsigned char ascii_206[1] = {0};
 
-static unsigned char ascii_207[] = {};
+static unsigned char ascii_207[1] = {0};
 
-static unsigned char ascii_208[] = {};
+static unsigned char ascii_208[1] = {0};
 
-static unsigned char ascii_209[] = {};
+static unsigned char ascii_209[1] = {0};
 
-static unsigned char ascii_210[] = {};
+static unsigned char ascii_210[1] = {0};
 
-static unsigned char ascii_211[] = {};
+static unsigned char ascii_211[1] = {0};
 
-static unsigned char ascii_212[] = {};
+static unsigned char ascii_212[1] = {0};
 
-static unsigned char ascii_213[] = {};
+static unsigned char ascii_213[1] = {0};
 
-static unsigned char ascii_214[] = {};
+static unsigned char ascii_214[1] = {0};
 
-static unsigned char ascii_215[] = {};
+static unsigned char ascii_215[1] = {0};
 
-static unsigned char ascii_216[] = {};
+static unsigned char ascii_216[1] = {0};
 
-static unsigned char ascii_217[] = {};
+static unsigned char ascii_217[1] = {0};
 
-static unsigned char ascii_218[] = {};
+static unsigned char ascii_218[1] = {0};
 
-static unsigned char ascii_219[] = {};
+static unsigned char ascii_219[1] = {0};
 
-static unsigned char ascii_220[] = {};
+static unsigned char ascii_220[1] = {0};
 
-static unsigned char ascii_221[] = {};
+static unsigned char ascii_221[1] = {0};
 
-static unsigned char ascii_222[] = {};
+static unsigned char ascii_222[1] = {0};
 
-static unsigned char ascii_223[] = {};
+static unsigned char ascii_223[1] = {0};
 
-static unsigned char ascii_224[] = {};
+static unsigned char ascii_224[1] = {0};
 
-static unsigned char ascii_225[] = {};
+static unsigned char ascii_225[1] = {0};
 
-static unsigned char ascii_226[] = {};
+static unsigned char ascii_226[1] = {0};
 
-static unsigned char ascii_227[] = {};
+static unsigned char ascii_227[1] = {0};
 
-static unsigned char ascii_228[] = {};
+static unsigned char ascii_228[1] = {0};
 
-static unsigned char ascii_229[] = {};
+static unsigned char ascii_229[1] = {0};
 
-static unsigned char ascii_230[] = {};
+static unsigned char ascii_230[1] = {0};
 
-static unsigned char ascii_231[] = {};
+static unsigned char ascii_231[1] = {0};
 
-static unsigned char ascii_232[] = {};
+static unsigned char ascii_232[1] = {0};
 
-static unsigned char ascii_233[] = {};
+static unsigned char ascii_233[1] = {0};
 
-static unsigned char ascii_234[] = {};
+static unsigned char ascii_234[1] = {0};
 
-static unsigned char ascii_235[] = {};
+static unsigned char ascii_235[1] = {0};
 
-static unsigned char ascii_236[] = {};
+static unsigned char ascii_236[1] = {0};
 
-static unsigned char ascii_237[] = {};
+static unsigned char ascii_237[1] = {0};
 
-static unsigned char ascii_238[] = {};
+static unsigned char ascii_238[1] = {0};
 
-static unsigned char ascii_239[] = {};
+static unsigned char ascii_239[1] = {0};
 
-static unsigned char ascii_240[] = {};
+static unsigned char ascii_240[1] = {0};
 
-static unsigned char ascii_241[] = {};
+static unsigned char ascii_241[1] = {0};
 
-static unsigned char ascii_242[] = {};
+static unsigned char ascii_242[1] = {0};
 
-static unsigned char ascii_243[] = {};
+static unsigned char ascii_243[1] = {0};
 
-static unsigned char ascii_244[] = {};
+static unsigned char ascii_244[1] = {0};
 
-static unsigned char ascii_245[] = {};
+static unsigned char ascii_245[1] = {0};
 
-static unsigned char ascii_246[] = {};
+static unsigned char ascii_246[1] = {0};
 
-static unsigned char ascii_247[] = {};
+static unsigned char ascii_247[1] = {0};
 
-static unsigned char ascii_248[] = {};
+static unsigned char ascii_248[1] = {0};
 
-static unsigned char ascii_249[] = {};
+static unsigned char ascii_249[1] = {0};
 
-static unsigned char ascii_250[] = {};
+static unsigned char ascii_250[1] = {0};
 
-static unsigned char ascii_251[] = {};
+static unsigned char ascii_251[1] = {0};
 
-static unsigned char ascii_252[] = {};
+static unsigned char ascii_252[1] = {0};
 
-static unsigned char ascii_253[] = {};
+static unsigned char ascii_253[1] = {0};
 
-static unsigned char ascii_254[] = {};
+static unsigned char ascii_254[1] = {0};
 
 static unsigned char *asciis[] = {ascii_0, ascii_1, ascii_2, ascii_3, ascii_4, ascii_5, ascii_6, ascii_7, ascii_8, ascii_9, ascii_10, ascii_11, ascii_12, ascii_13, ascii_14, ascii_15, ascii_16, ascii_17, ascii_18, ascii_19, ascii_20, ascii_21, ascii_22, ascii_23, ascii_24, ascii_25, ascii_26, ascii_27, ascii_28, ascii_29, ascii_30, ascii_31, ascii_32, ascii_33, ascii_34, ascii_35, ascii_36, ascii_37, ascii_38, ascii_39, ascii_40, ascii_41, ascii_42, ascii_43, ascii_44, ascii_45, ascii_46, ascii_47, ascii_48, ascii_49, ascii_50, ascii_51, ascii_52, ascii_53, ascii_54, ascii_55, ascii_56, ascii_57, ascii_58, ascii_59, ascii_60, ascii_61, ascii_62, ascii_63, ascii_64, ascii_65, ascii_66, ascii_67, ascii_68, ascii_69, ascii_70, ascii_71, ascii_72, ascii_73, ascii_74, ascii_75, ascii_76, ascii_77, ascii_78, ascii_79, ascii_80, ascii_81, ascii_82, ascii_83, ascii_84, ascii_85, ascii_86, ascii_87, ascii_88, ascii_89, ascii_90, ascii_91, ascii_92, ascii_93, ascii_94, ascii_95, ascii_96, ascii_97, ascii_98, ascii_99, ascii_100, ascii_101, ascii_102, ascii_103, ascii_104, ascii_105, ascii_106, ascii_107, ascii_108, ascii_109, ascii_110, ascii_111, ascii_112, ascii_113, ascii_114, ascii_115, ascii_116, ascii_117, ascii_118, ascii_119, ascii_120, ascii_121, ascii_122, ascii_123, ascii_124, ascii_125, ascii_126, ascii_127, ascii_128, ascii_129, ascii_130, ascii_131, ascii_132, ascii_133, ascii_134, ascii_135, ascii_136, ascii_137, ascii_138, ascii_139, ascii_140, ascii_141, ascii_142, ascii_143, ascii_144, ascii_145, ascii_146, ascii_147, ascii_148, ascii_149, ascii_150, ascii_151, ascii_152, ascii_153, ascii_154, ascii_155, ascii_156, ascii_157, ascii_158, ascii_159, ascii_160, ascii_161, ascii_162, ascii_163, ascii_164, ascii_165, ascii_166, ascii_167, ascii_168, ascii_169, ascii_170, ascii_171, ascii_172, ascii_173, ascii_174, ascii_175, ascii_176, ascii_177, ascii_178, ascii_179, ascii_180, ascii_181, ascii_182, ascii_183, ascii_184, ascii_185, ascii_186, ascii_187, ascii_188, ascii_189, ascii_190, ascii_191, ascii_192, ascii_193, ascii_194, ascii_195, ascii_196, ascii_197, ascii_198, ascii_199, ascii_200, ascii_201, ascii_202, ascii_203, ascii_204, ascii_205, ascii_206, ascii_207, ascii_208, ascii_209, ascii_210, ascii_211, ascii_212, ascii_213, ascii_214, ascii_215, ascii_216, ascii_217, ascii_218, ascii_219, ascii_220, ascii_221, ascii_222, ascii_223, ascii_224, ascii_225, ascii_226, ascii_227, ascii_228, ascii_229, ascii_230, ascii_231, ascii_232, ascii_233, ascii_234, ascii_235, ascii_236, ascii_237, ascii_238, ascii_239, ascii_240, ascii_241, ascii_242, ascii_243, ascii_244, ascii_245, ascii_246, ascii_247, ascii_248, ascii_249, ascii_250, ascii_251, ascii_252, ascii_253, ascii_254, };
 
