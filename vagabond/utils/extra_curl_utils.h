@@ -23,6 +23,9 @@
 #include <vector>
 #include <sstream>
 
+#include <curl/curl.h>
+#include <curl/easy.h>
+
 inline static size_t curlWriteCallback(void *contents, size_t size, 
                                 size_t nmemb, void *userp)
 {
