@@ -23,7 +23,7 @@
 #include <emscripten.h>
 #else
 #include <curl/curl.h>
-#include <pthread.h>
+#include <thread>
 #include <vagabond/utils/extra_curl_utils.h>
 #endif
 
@@ -38,9 +38,9 @@ public:
 	virtual ~Fetcher()
 	{
 #ifndef __EMSCRIPTEN__
-		if (_allocated)
+		if (_allocated && _thread.joinable())
 		{
-			pthread_join(_thread, NULL);
+			_thread.join();
 		}
 #endif
 	}
@@ -80,7 +80,9 @@ public:
 		Fetcher *f = static_cast<Fetcher *>(this);
 #ifndef __EMSCRIPTEN__
 		ThreadStuff *ts = new ThreadStuff{url, &prepareResult, f};
-		pthread_create(&_thread, NULL, pull_one_url, ts);
+	    _thread = std::thread([ts]() {
+            pull_one_url(ts);
+        });
 		_allocated = true;
 #else
 		emscripten_async_wget_data(url.c_str(), f, handleResult, handleError);
@@ -98,7 +100,7 @@ protected:
 	std::string _result;
 	std::atomic<bool> _process{false};
 
-	pthread_t _thread{};
+	std::thread _thread;
 	bool _allocated = false;
 private:
 };

@@ -23,6 +23,7 @@
 #include <fstream>
 #include <sstream>
 #include "config/config.h"
+#include "vagabond/utils/extra_curl_utils.h"
 
 
 std::string FileManager::_dataDir;
@@ -212,10 +213,20 @@ void FileManager::acceptDownload(void *me, std::string contents)
 	fm->acceptFile(filename);
 }
 
-pthread_t &FileManager::thread()
+void FileManager::thread(ThreadStuff *ts)
 {
 	FileManager *fm = Environment::fileManager();
-	return fm->_thread;
+
+    // join previous thread if still running
+    if (fm->_allocated && fm->_thread.joinable())
+    {
+        fm->_thread.join();
+    }
+
+    fm->_thread = std::thread([ts]() {
+        pull_one_url(static_cast<void *>(ts));
+    });
+    fm->_allocated = true;
 }
 
 void FileManager::loadGlobFiles()

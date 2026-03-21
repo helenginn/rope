@@ -21,12 +21,16 @@
 
 #include <string>
 #include <vector>
-#include <pthread.h>
+#ifndef __EMSCRIPTEN__
+#include <thread>
+#include "vagabond/utils/extra_curl_utils.h"
+#endif
 #include "files/File.h"
 #include "Progressor.h"
 #include "Responder.h"
 
 #include <nlohmann/json.hpp>
+
 using nlohmann::json;
 
 class FileManagerResponder
@@ -103,7 +107,7 @@ public:
 	
 	std::set<std::string> &geometryFiles();
 	
-	static pthread_t &thread();
+	void thread(ThreadStuff* ts);
 
 	friend void to_json(json &j, const FileManager &value);
 	friend void from_json(const json &j, FileManager &value);
@@ -111,7 +115,8 @@ private:
 	void loadFile(std::string &file);
 	std::vector<std::string> _list;
 	std::vector<std::string> _filtered;
-	pthread_t _thread;
+    bool _allocated = false;
+	std::thread _thread;
 	
 	std::set<std::string> _geometries;
 	bool _foundGeometries = false;
