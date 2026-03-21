@@ -189,10 +189,10 @@ public:
 		y = _lastY / (float)_h;
 	}
 	
-	void getSlabs(float &near, float &far)
+	void getSlabs(float &nearSlab, float &farSlab)
 	{
-		near = _nearSlab;
-		far = _farSlab;
+		nearSlab = _nearSlab;
+		farSlab = _farSlab;
 	}
 
 	void getLastCoords(double &lastX, double &lastY)

@@ -452,7 +452,7 @@ void Sequence::torsionsFromMapped(RTAngles &angles, rope::TorsionType type)
 			}
 		}
 
-		f.hyper = (match.isHyperParameter());
+		f.isHyper = (match.isHyperParameter());
 
 		angles.storage(i) = f;
 	}

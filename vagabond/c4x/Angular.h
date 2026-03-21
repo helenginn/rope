@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/compatibility.h>
 #include <cmath>
+#include <string>
 #include <ostream>
 #include <vagabond/utils/degrad.h>
 
@@ -28,7 +29,7 @@
 struct Angular
 {
 	float angle;
-	bool hyper = false;
+	bool isHyper = false;
 	
 	Angular()
 	{
