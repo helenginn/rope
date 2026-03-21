@@ -8,9 +8,10 @@
 #ifdef _WIN64
     #define OS_WINDOWS
 #elif _WIN32
+    // _WIN32 is defined for both 32-bit and 64-bit environments, so we check _WIN64 first.
     #define OS_INVALID
 #elif __APPLE__
-#include "TargetConditionals.h"
+    #include "TargetConditionals.h"
     #if TARGET_OS_IPHONE && TARGET_OS_SIMULATOR
         // define something for simulator
         // (although, checking for TARGET_OS_IPHONE should not be required).
@@ -31,5 +32,4 @@
     #define OS_INVALID
 #endif
 
-
-#endif //ROPE_OS_H
+#endif // ROPE_OS_H

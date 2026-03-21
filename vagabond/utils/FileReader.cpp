@@ -6,20 +6,77 @@
 //  Copyright (c) 2014 Helen Ginn. All rights reserved.
 //
 
+#include "os.h"
+#ifdef OS_WINDOWS
+    // windows.h needs to be imported first to prevent issues with compilers
+    #include <windows.h>     // GetLastError, ERROR_ALREADY_EXISTS
+    #include <fileapi.h>     // CreateDirectoryA, GetFileAttributesA, DWORD, INVALID_FILE_ATTRIBUTES, ...
+    #include <direct.h>
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    #define stat _stat
+#else
+#ifdef OS_UNIX
+    #include <dirent.h>      // opendir, readdir, closedir, DIR
+    #include <unistd.h>
+    #include <sys/stat.h>    // mkdir, mode_t, S_IRWXU et al.
+    #include <sys/types.h>
+#endif
+#endif
 #include "FileReader.h"
 #include <fstream>
 #include <sstream>
 #include <cerrno>
 #include <cmath>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
+
 #include <iomanip>
 #include <algorithm>
 #include <errno.h>
 
 std::string FileReader::outputDir;
+
+void FileReader::makeDirectoryIfNeeded(std::string _dir)
+{
+#ifdef OS_UNIX
+    // Try to open the directory
+    DIR *dir = opendir(_dir.c_str());
+
+    // Close if it exists
+    if (dir)
+    {
+        closedir(dir);
+    }
+    // If error was "does not exist", then create
+    else if (ENOENT == errno)
+    {
+        mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+#else
+#ifdef OS_WINDOWS
+    // Get the file attributes for the path
+    DWORD attrs = GetFileAttributesA(_dir.c_str());
+
+    // Check if the path exists and is a directory
+    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY))
+    {
+        return;
+    }
+
+    // Attempt to create the directory
+    if (!CreateDirectoryA(_dir.c_str(), nullptr))
+    {
+        DWORD err = GetLastError();
+        if (err != ERROR_ALREADY_EXISTS)
+        {
+            std::ostringstream ss;
+            ss << "Failed to create directory \"" << _dir
+               << "\". GetLastError=" << err;
+            throw std::runtime_error(ss.str());
+        }
+    }
+#endif
+#endif
+}
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) 
 {

@@ -11,11 +11,10 @@
 
 #include "os.h"
 #ifdef OS_UNIX
-#include <glob.h> // glob(), globfree()
-#else
-#ifdef OS_WINDOWS
-#include <fileapi.h>
-#endif
+    #include <glob.h>        // glob, glob_t, globfree
+    #include <sys/stat.h>    // mkdir, mode_t, S_IRWXU et al.
+    #include <sys/types.h>
+    #include <dirent.h>      // opendir, readdir, closedir, DIR
 #endif
 
 #include <stdexcept>
@@ -25,10 +24,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cerrno>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
+#include <cerrno>           // errno, ENOENT
 
 std::string get_file_contents(std::string filename);
 
@@ -163,25 +159,7 @@ class FileReader
 {
 
 public:
-	static void makeDirectoryIfNeeded(std::string _dir)
-	{
-		DIR *dir = opendir(_dir.c_str());
-
-		if (dir)
-		{
-			closedir(dir);
-		}
-		else if (ENOENT == errno)
-		{
-#ifdef OS_UNIX
-            mkdir(_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#else
-#ifdef OS_WINDOWS
-            mkdir(_dir.c_str());
-#endif
-#endif
-		}
-	}
+	static void makeDirectoryIfNeeded(std::string _dir);
 
 	static void setOutputDirectory(std::string _dir)
 	{
