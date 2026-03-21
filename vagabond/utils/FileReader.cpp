@@ -14,9 +14,9 @@
     #include <direct.h>
     #include <sys/stat.h>
     #include <sys/types.h>
-    #define stat _stat
 #else
 #ifdef OS_UNIX
+    #include <glob.h>        // glob, glob_t, globfree
     #include <dirent.h>      // opendir, readdir, closedir, DIR
     #include <unistd.h>
     #include <sys/stat.h>    // mkdir, mode_t, S_IRWXU et al.
@@ -74,6 +74,104 @@ void FileReader::makeDirectoryIfNeeded(std::string _dir)
             throw std::runtime_error(ss.str());
         }
     }
+#endif
+#endif
+}
+
+std::vector<std::string> glob_pattern(const std::string &pattern)
+{
+#ifdef OS_UNIX
+    using namespace std;
+
+    // glob struct resides on the stack
+    glob_t glob_result;
+    memset(&glob_result, 0, sizeof(glob_result));
+
+    // do the glob operation
+    int return_value = glob(pattern.c_str(), GLOB_TILDE, NULL, &glob_result);
+    if (return_value != 0)
+    {
+        globfree(&glob_result);
+
+        if (return_value == GLOB_NOMATCH)
+        {
+            return std::vector<std::string>();
+        }
+
+        stringstream ss;
+        ss << "glob() failed with return_value " << return_value << endl;
+        throw std::runtime_error(ss.str());
+    }
+
+    // collect all the filenames into a std::list<std::string>
+    vector<string> filenames;
+
+    for (size_t i = 0; i < glob_result.gl_pathc; i++)
+    {
+        filenames.push_back(string(glob_result.gl_pathv[i]));
+    }
+
+    // cleanup
+    globfree(&glob_result);
+
+    // done
+    return filenames;
+#else
+#ifdef OS_WINDOWS
+    std::vector<std::string> results;
+
+    // Split pattern into directory part and wildcard part
+    std::string dir;
+    std::string mask;
+
+    std::size_t pos = pattern.find_last_of("\\/");
+    if (pos == std::string::npos)
+    {
+        dir = ".";
+        mask = pattern;
+    }
+    else
+    {
+        dir  = pattern.substr(0, pos);
+        mask = pattern.substr(pos + 1);
+    }
+
+    std::string searchPath = dir + "\\" + mask;
+
+    WIN32_FIND_DATAA ffd;
+    HANDLE hFind = FindFirstFileA(searchPath.c_str(), &ffd);
+    if (hFind == INVALID_HANDLE_VALUE)
+    {
+        // No match or error; for *glob*\(\) parity, just return empty on "no match"
+        if (GetLastError() == ERROR_FILE_NOT_FOUND)
+        {
+            return results;
+        }
+        else
+        {
+            std::ostringstream ss;
+            ss << "FindFirstFileA failed for pattern \"" << pattern
+               << "\". GetLastError=" << GetLastError();
+            throw std::runtime_error(ss.str());
+        }
+    }
+
+    // Enumerate files that match the pattern
+    do
+    {
+        const char *name = ffd.cFileName;
+        // Skip "." and ".."
+        if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+            continue;
+
+        std::string fullPath = dir + "\\" + name;
+        results.push_back(fullPath);
+    }
+    while (FindNextFileA(hFind, &ffd) != 0);
+
+    FindClose(hFind);
+    return results;
+
 #endif
 #endif
 }
