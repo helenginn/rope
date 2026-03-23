@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 YESMAN=false 
 FORCE_REBUILD_DEP=false
 BUILD_OVERRIDE=""
+PREFIX_OVERRIDE=""
+DATADIR_OVERRIDE=""
+
 for arg in "$@"; do
   case "$arg" in
     --yesman|-y) YESMAN=true ;;
     --force-rebuild-dependencies|-f) FORCE_REBUILD_DEP=true ;;
     --build=*) BUILD_OVERRIDE="${arg#--build=}" ;;
+    --prefix=*) PREFIX_OVERRIDE="${arg#--prefix=}" ;;
+    --datadir=*) DATADIR_OVERRIDE="${arg#--datadir=}" ;;
   *) echo "Unknown argument: $arg";;
   esac
 done
@@ -17,6 +23,9 @@ SRCDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 
 SRCBASENAME=$(basename "$SRCDIR")
 SCRPTBASENAME=$(basename "$SCRPTDIR")
+
+EXTRA_MESON_ARGS=""
+EXTRA_MESON_ARGS="${PREFIX_OVERRIDE:+--prefix "$PREFIX_OVERRIDE"} ${DATADIR_OVERRIDE:+--datadir "$DATADIR_OVERRIDE"}"
 
 # -- COLOURS --
 
@@ -220,9 +229,9 @@ if $USE_CONAN; then
   fi
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG"
-  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" --reconfigure
+  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure
 else
-  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" --reconfigure
+  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure
 fi
 meson compile -C "$BUILDDIR"
 
