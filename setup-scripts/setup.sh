@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-YESMAN=false 
+YESMAN=false
 FORCE_REBUILD_DEP=false
 BUILD_OVERRIDE=""
 PREFIX_OVERRIDE=""
@@ -9,12 +9,12 @@ DATADIR_OVERRIDE=""
 
 for arg in "$@"; do
   case "$arg" in
-    --yesman|-y) YESMAN=true ;;
-    --force-rebuild-dependencies|-f) FORCE_REBUILD_DEP=true ;;
-    --build=*) BUILD_OVERRIDE="${arg#--build=}" ;;
-    --prefix=*) PREFIX_OVERRIDE="${arg#--prefix=}" ;;
-    --datadir=*) DATADIR_OVERRIDE="${arg#--datadir=}" ;;
-  *) echo "Unknown argument: $arg";;
+  --yesman | -y) YESMAN=true ;;
+  --force-rebuild-dependencies | -f) FORCE_REBUILD_DEP=true ;;
+  --build=*) BUILD_OVERRIDE="${arg#--build=}" ;;
+  --prefix=*) PREFIX_OVERRIDE="${arg#--prefix=}" ;;
+  --datadir=*) DATADIR_OVERRIDE="${arg#--datadir=}" ;;
+  *) echo "Unknown argument: $arg" ;;
   esac
 done
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env pwsh
 param(
-  [Alias("y")]
-  [switch]$Yesman = $false,
-  [Alias("f")]
-  [switch]$ForceRebuildDependencies = $false,
-  [string]$Build = ""
-)
+    [Alias("y")]
+    [switch]$Yesman = $false,
+    [Alias("f")]
+    [switch]$ForceRebuildDependencies = $false,
+    [string]$Build = ""
+    )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -51,54 +51,54 @@ function Warn   { param($msg) Write-Host "  " -NoNewline; Write-Host "⚠" -Fore
 function Err    { param($msg) Write-Host "  " -NoNewline; Write-Host "✘" -ForegroundColor Red -NoNewline; Write-Host " $msg" }
 function Print  { param($msg) Write-Host "    $msg" }
 function Section {
-    param($msg)
+  param($msg)
     $line = "─" * 50
     Write-Host ""
     Write-Host "── $msg $line" -ForegroundColor Cyan
 }
 function Die {
-    param($msg)
+  param($msg)
     Err $msg
     Write-Host ""
     exit 1
 }
- 
+
 function Ask-YN {
-    param(
-        [string]$Prompt,
-        [string]$Default = "Y"
-    )
+  param(
+      [string]$Prompt,
+      [string]$Default = "Y"
+      )
     $hint = if ($Default -eq "Y") { "[Y/n]" } else { "[y/N]" }
-    if ($script:Yesman) {
-        Write-Host "  " -NoNewline
-        Write-Host $Prompt -ForegroundColor White -NoNewline
-        Write-Host " $hint " -ForegroundColor DarkGray -NoNewline
-        Write-Host "y (--yesman)" -ForegroundColor DarkGray
-        return $true
+  if ($script:Yesman) {
+    Write-Host "  " -NoNewline
+      Write-Host $Prompt -ForegroundColor White -NoNewline
+      Write-Host " $hint " -ForegroundColor DarkGray -NoNewline
+      Write-Host "y (--yesman)" -ForegroundColor DarkGray
+      return $true
+  }
+  while ($true) {
+    Write-Host "  " -NoNewline
+      Write-Host $Prompt -ForegroundColor White -NoNewline
+      Write-Host " $hint " -ForegroundColor DarkGray -NoNewline
+      $answer = Read-Host
+      if ([string]::IsNullOrWhiteSpace($answer)) { $answer = $Default }
+    switch ($answer.ToLower()) {
+      "y"   { return $true }
+      "yes" { return $true }
+      "n"   { return $false }
+      "no"  { return $false }
+      default { Write-Host "  Please answer y or n." -ForegroundColor Yellow }
     }
-    while ($true) {
-        Write-Host "  " -NoNewline
-        Write-Host $Prompt -ForegroundColor White -NoNewline
-        Write-Host " $hint " -ForegroundColor DarkGray -NoNewline
-        $answer = Read-Host
-        if ([string]::IsNullOrWhiteSpace($answer)) { $answer = $Default }
-        switch ($answer.ToLower()) {
-            "y"   { return $true }
-            "yes" { return $true }
-            "n"   { return $false }
-            "no"  { return $false }
-            default { Write-Host "  Please answer y or n." -ForegroundColor Yellow }
-        }
-    }
+  }
 }
 
 function Invoke-Conan {
-    if ($script:CONAN_COMMAND.Count -gt 1) {
-        $pre = [array]($script:CONAN_COMMAND[1..($script:CONAN_COMMAND.Count - 1)])
-    } else {
-        $pre = @()
-    }
-    & $script:CONAN_COMMAND[0] @pre @args
+  if ($script:CONAN_COMMAND.Count -gt 1) {
+    $pre = [array]($script:CONAN_COMMAND[1..($script:CONAN_COMMAND.Count - 1)])
+  } else {
+    $pre = @()
+  }
+  & $script:CONAN_COMMAND[0] @pre @args
 }
 
 # -- SCRIPT START --
@@ -108,7 +108,7 @@ Info "Running script from $SRCBASENAME\$SCRPTBASENAME"
 Section "System Checks"
 
 if (-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
-    Die "This setup script only supports Windows. Use setup.sh on Linux/macOS."
+  Die "This setup script only supports Windows. Use setup.sh on Linux/macOS."
 }
 
 $OS   = "Windows"
@@ -117,98 +117,98 @@ Ok "Platform: $OS / $ARCH"
 
 $CXX = $null
 foreach ($candidate in @("cl", "clang-cl", "g++")) {
-    if (Get-Command $candidate -ErrorAction SilentlyContinue) {
-        $CXX = $candidate
-        break
-      }
+  if (Get-Command $candidate -ErrorAction SilentlyContinue) {
+    $CXX = $candidate
+      break
   }
+}
 if ($null -eq $CXX) {
-    Die "No C++ compiler found. Install Visual Studio Build Tools (cl) or LLVM (clang-cl). Make sure compiler is in Path (e.g., via Developer Shell)."
-  }
+  Die "No C++ compiler found. Install Visual Studio Build Tools (cl) or LLVM (clang-cl). Make sure compiler is in Path (e.g., via Developer Shell)."
+}
 $cxxVer = & $CXX --version 2>&1 | Select-Object -First 1
 Ok "C++ compiler: $CXX $cxxVer"
 
 if (Get-Command meson -ErrorAction SilentlyContinue) {
-    $mesonVer = & meson --version 2>&1
+  $mesonVer = & meson --version 2>&1
     Ok "meson: $mesonVer"
-  } else {
-    Die "meson not found. Install via pip or winget."
-  }
+} else {
+  Die "meson not found. Install via pip or winget."
+}
 
 if (Get-Command ninja -ErrorAction SilentlyContinue) {
-    $ninjaVer = & ninja --version 2>&1
+  $ninjaVer = & ninja --version 2>&1
     Ok "ninja: $ninjaVer"
-  } else {
-    Die "ninja not found. Install via pip or winget."
-  }
+} else {
+  Die "ninja not found. Install via pip or winget."
+}
 
 $CONAN_COMMAND = $null
 
 if (Get-Command conan -ErrorAction SilentlyContinue) {
-    $conanVer = & conan --version 2>&1 | Select-Object -First 1
+  $conanVer = & conan --version 2>&1 | Select-Object -First 1
     Ok "conan: $conanVer"
     $CONAN_COMMAND = @("conan")
-  } else {
-    Warn "conan not found; attempting ${BOLD}${YELLOW}uvx conan${RESET}"
+} else {
+  Warn "conan not found; attempting ${BOLD}${YELLOW}uvx conan${RESET}"
     if (Get-Command uvx -ErrorAction SilentlyContinue) {
-        $uvxVer = & uvx --version 2>&1
+      $uvxVer = & uvx --version 2>&1
         Ok "uvx: $uvxVer"
         $CONAN_COMMAND = @("uvx", "conan")
+    } else {
+      Warn "uvx not found; attempting ${BOLD}${YELLOW}pipx run conan${RESET}"
+        if (Get-Command pipx -ErrorAction SilentlyContinue) {
+          $pipxVer = & pipx --version 2>&1
+            Ok "pipx: $pipxVer"
+            $CONAN_COMMAND = @("pipx", "run", "conan")
         } else {
-          Warn "uvx not found; attempting ${BOLD}${YELLOW}pipx run conan${RESET}"
-          if (Get-Command pipx -ErrorAction SilentlyContinue) {
-              $pipxVer = & pipx --version 2>&1
-              Ok "pipx: $pipxVer"
-              $CONAN_COMMAND = @("pipx", "run", "conan")
-      } else {
           Die "conan is required on Windows but could not be found. Install conan, pipx or uvx."
         }
-      }
-  }
+    }
+}
 # -- CONFIGURE BUILD --
 Section "Configure Build"
 Info "Using conan for dependency management (required on Windows)"
 $PKG_MODE="conan"
 
 if (Ask-YN "Compile in release mode? (debug otherwise)" "Y") {
-    $BUILD_TYPE="release"
-  } else {
-    $BUILD_TYPE="debugoptimized"
+  $BUILD_TYPE="release"
+} else {
+  $BUILD_TYPE="debugoptimized"
     if (Ask-YN "Enable extra debug symbols? (full debug, slower build)" "N") {
-        $BUILD_TYPE="debug"
-      }
-  }
+      $BUILD_TYPE="debug"
+    }
+}
 
 if (Ask-YN "Set up .clangd file for LSP?" "Y") {
-    $USE_CLANGD=$true
-  } else {
-    $USE_CLANGD=$false
-  }
+  $USE_CLANGD=$true
+} else {
+  $USE_CLANGD=$false
+}
 
 # -- CONFIRM --
 Section "Confirm"
 if ($Build -ne "") {
-    Warn "Custom build directory"
+  Warn "Custom build directory"
     $BUILDDIR = $Build
-  } else {
-    $BUILDDIR="build\${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
-  }
+} else {
+  $BUILDDIR="build\${ARCH}_${OS}_${PKG_MODE}_${BUILD_TYPE}"
+}
 Info "Planning to build in ${BUILDDIR}"
 Info "Using conan for dependency package management"
 if ($USE_CLANGD) {Info "Set up .clangd for LSP"}
 
 if (Ask-YN "Proceed?" "Y") {
-    Print ""
-  } else {
-      Die "Aborted manually"
-    }
+  Print ""
+} else {
+  Die "Aborted manually"
+}
 
 # -- BUILD --
 $ConanBuildFlag = "missing"
 if ($ForceRebuildDependencies) {
-    $ConanBuildFlag = "*"
+  $ConanBuildFlag = "*"
     Warn "Force-rebuilding all conan dependencies"
-  }
+}
 
 Invoke-Conan profile detect 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) {Warn "conan profile already exists. Please verify manually."}
@@ -224,14 +224,14 @@ if ($LASTEXITCODE -ne 0) {Die "meson compile failed"}
 
 # -- CLANGD --
 if ($USE_CLANGD) {
-    Section "Setup .clangd"
+  Section "Setup .clangd"
     $clangdContent = @"
-CompileFlags:
-  CompilationDatabase: "$BUILDDIR"
-"@
-    Set-Content -Path ".clangd" -Value $clangdContent -Encoding UTF8
-    Ok "Compilation database points at $BUILDDIR"
-  }
+    CompileFlags:
+CompilationDatabase: "$BUILDDIR"
+                     "@
+                     Set-Content -Path ".clangd" -Value $clangdContent -Encoding UTF8
+                     Ok "Compilation database points at $BUILDDIR"
+}
 
 Section "Done!"
 Ok "RoPE succesfully built in $BUILDDIR"
