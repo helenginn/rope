@@ -31,4 +31,13 @@ jobs:
           sudo apt-get -y install libsdl2-dev libsdl2-image-dev libglew-dev
       - name: Run setup script
         working-directory: rope
-        run: setup-scripts/setup.sh --yesman
+        run: setup-scripts/setup.sh --yesman --build=ci_build --prefix=$(pwd)/install
+      - name: Install RoPE
+        run: meson install -C build/ci_build
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: rope_conan_${{ matrix.os }}_${{ github.sha }}
+          path: .install/bin/*
+          if-no-files-found: error
+
