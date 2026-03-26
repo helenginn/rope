@@ -150,6 +150,8 @@ void PathThermodynamics::buttonPressed(std::string tag, Button *button)
             return;
 		}
 
+        flagPar.mist = true;
+
 		std::string str = "Choose number of paths (\"frames\") to utilise";
 		
 		ChooseRange *cr = new ChooseRange(this, str, "choose_paths", this);

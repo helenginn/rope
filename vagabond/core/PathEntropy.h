@@ -92,7 +92,7 @@ public:
 	/* linear weighting function */
 	void fitlw(std::vector<double> x, std::vector<double> y, std::vector<double> w, int n, std::vector<double> &a, std::vector<double> &sd);
 
-    int torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters, int timeDivisions = 1);
+    void torsRes2MI(std::vector<TorsRes4NN*> torsRes, int resPerModel, std::vector<TorsRes4NN*> &torsMI, int& resPerModelMI, int *group2res, struct FlagParameters flagParameters, int timeDivisions = 1);
 
     void kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct Entropy* entropy, struct FlagParameters flagParameters, int &nTors, int nf, int numResPerModel, int K, int timeDivisions = 1);
 
