@@ -63,7 +63,28 @@ jobs:
 
       - name: Install RoPE
         working-directory: rope
-        run: meson install -C build/ci_build
+        run: |
+          source build/ci_build/conanbuild.sh
+          meson install -C build/ci_build
+
+      - name: Clean stale build artifacts
+        working-directory: rope/build/ci_build
+        run: |
+          if [ -f .ninja_log ]; then
+            used=$(awk 'NR>1 {print $4}' .ninja_log)
+            find . -name "*.o" | while read f; do
+              clean="${f#./}"
+              if ! echo "$used" | grep -qF "$clean"; then
+                echo "Removing stale: $clean"
+                rm "$f"
+              fi
+            done
+          else
+            echo "No .ninja_log found, skipping cleanup"
+          fi
+
+      - name: Clean stale Conan packages
+        run: uvx conan remove "*" --lru=1h -c
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4

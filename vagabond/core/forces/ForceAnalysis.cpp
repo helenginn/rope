@@ -18,6 +18,7 @@
 
 #include <gemmi/elem.hpp>
 
+#include <iostream>
 #include <vagabond/utils/FileReader.h>
 #include "ForceAnalysis.h"
 #include "BondTorsion.h"
