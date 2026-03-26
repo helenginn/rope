@@ -215,7 +215,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 				}
             }
 		}
-
     // for each group, compute entropy, sd and dm for the group and map to residues
 	// sum to total entrop, sd and dm
 	// normalise dm by sqrt(dof)
@@ -264,8 +263,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 							int i = 0;
 							
 							for(int k = 0; k < torsMi[ii]->nAng; k++)
-
-
 							{
 								torsMi2.ang[i] = torsMi[ii]->ang[k];
 								torsMi2.bondSymmetry[i] = torsMi[ii]->bondSymmetry[k];
@@ -314,7 +311,7 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 									{
 										logdk = log(d[k]);
 									}
-									
+
 									entk2[k-1] = entk2[k-1] + logdk*logdk;
 									entk[k-1] = entk[k-1] + logdk;
 									meanDist[k] = meanDist[k] + d[k];
@@ -373,7 +370,6 @@ struct EntropyForMatrix PathEntropy::calculateEntropyMI(int nf, struct FlagParam
 								x[k] = meanDist[k+1];
 								y[k] = entk[k];
 
-                                std::cout << "entk[" << k << "]: " << entk[k] << std::endl;
 								if(k == 0) w[k] = M_PI * M_PI /6;
 								else w[k] = w[k-1] - 1/(double) (k*k);
 							}
@@ -560,17 +556,9 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
     std::vector<std::vector<double>> phit(nf); 
     std::vector<double> entk, entkTotal, entk2, entkTotal2, sigmak;
 
-    std::cout
-    << "ang d "
-    << torsRes[0]->ang.size() << " "
-    << torsRes[0]->ang[timeDivisions].size() << " "
-    << torsRes[0]->ang[timeDivisions][0].size()
-    << "\n";
-
     allocVariables(nf, entk, entkTotal, entk2, entkTotal2, sigmak, flagParameters);
    
-    std::ofstream outputLR("linear_regression.csv");
-    //std::ofstream outputALA("ala_angles_check.csv");
+    std::ofstream outputLR("linear_regression_" + std::to_string(timeDivisions) + ".csv");
 
     for(int m = 0; m < numResPerModel; m++)
 	{	
@@ -586,10 +574,7 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 						numTors++;
 					}
 				}
-				
-				std::vector<double> meanDist(K);
-				std::vector<double> meanLogDist(K);            
-
+			
 				for(int i = 0; i < K-1; i++)
 				{
 					entk[i] = 0;
@@ -598,7 +583,9 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
 				/* calculate the distance between samples in the nAng - dimensional
 				   space of torsion angles */
-
+	
+				std::vector<double> meanDist(K);
+				std::vector<double> meanLogDist(K);            
 				std::vector<double> d(nf);
 
 				for(int i = 0; i < nf; i++)
@@ -701,7 +688,6 @@ void PathEntropy::kNearestNeighbours(std::vector<TorsRes4NN*> torsRes, struct En
 
 				std::vector<double> a(2);
 				std::vector<double> sd(2);
-
 
 				fitlw(y, x, w, K-1,a,sd);
 
