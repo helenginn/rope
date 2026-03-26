@@ -95,44 +95,6 @@ OS=$(uname -s)
 ARCH=$(uname -m)
 ok "Platform: $OS / $ARCH"
 
-if command -v c++ &>/dev/null; then
-  ok "C++ compiler: $(c++ --version | head -1)"
-else
-  die "No C++ compiler found. Install build-essential."
-fi
-
-if command -v meson &>/dev/null; then
-  ok "meson: $(meson --version)"
-else
-  die "meson not found. Install meson"
-fi
-
-if command -v ninja &>/dev/null; then
-  ok "ninja: $(ninja --version)"
-else
-  die "ninja not found. Install ninja-build"
-fi
-
-if command -v pkg-config &>/dev/null; then
-  ok "pkg-config: $(pkg-config --version)"
-else
-  warn "pkg-config not found — dependency detection may fail"
-fi
-
-if pkg-config --exists sdl2; then
-  ok "SDL2: $(pkg-config --modversion sdl2)"
-else
-  error "SDL2 not found on system, meson will verify"
-  print "Make sure SDL2 is installed via your system package manager"
-fi
-
-if pkg-config --exists SDL2_image; then
-  ok "SDL2_image: $(pkg-config --modversion SDL2_image)"
-else
-  error "SDL2_image not found on system, meson will verify"
-  print "Make sure SDL2_image is installed via your system package manager"
-fi
-
 USE_CONAN=false
 if command -v conan &>/dev/null; then
   ok "conan: $(conan --version)"
@@ -159,17 +121,65 @@ else
   fi
 fi
 
+if command -v c++ &>/dev/null; then
+  ok "C++ compiler: $(c++ --version | head -1)"
+else
+  die "No C++ compiler found. Install build-essential."
+fi
+
+if command -v pkg-config &>/dev/null; then
+  ok "pkg-config: $(pkg-config --version)"
+else
+  warn "pkg-config not found — dependency detection may fail"
+fi
+
+MUST_USE_CONAN=false
+if command -v meson &>/dev/null; then
+  ok "meson: $(meson --version)"
+else
+  warn "meson not on path. Conan build mandatory"
+  MUST_USE_CONAN=true
+fi
+
+if command -v ninja &>/dev/null; then
+  ok "ninja: $(ninja --version)"
+else
+  warn "ninja not on path. Conan build mandatory"
+  MUST_USE_CONAN=true
+fi
+
+if pkg-config --exists sdl2; then
+  ok "SDL2: $(pkg-config --modversion sdl2)"
+else
+  error "SDL2 not found on system, meson will verify"
+  print "Make sure SDL2 is installed via your system package manager"
+fi
+
+if pkg-config --exists SDL2_image; then
+  ok "SDL2_image: $(pkg-config --modversion SDL2_image)"
+else
+  error "SDL2_image not found on system, meson will verify"
+  print "Make sure SDL2_image is installed via your system package manager"
+fi
+
+
 section "Configure Build"
 
 # conan
 
 PKG_MODE="sys"
 if $CONAN_AVAILABLE; then
-  if ask_yn "Use conan for dependencies? (uses system libraries otherwise)" "Y"; then
+  if $MUST_USE_CONAN; then
     USE_CONAN=true
     PKG_MODE="conan"
+    warn "Using system packages not possible"
   else
-    USE_CONAN=false
+    if ask_yn "Use conan for dependencies? (uses system libraries otherwise)" "Y"; then
+      USE_CONAN=true
+      PKG_MODE="conan"
+    else
+      USE_CONAN=false
+    fi
   fi
 fi
 
@@ -229,6 +239,7 @@ if $USE_CONAN; then
   fi
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG"
+  source "./${BUILDDIR}/conanbuild.sh"
   meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure
 else
   meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure
