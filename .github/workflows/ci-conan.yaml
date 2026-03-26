@@ -12,6 +12,9 @@ jobs:
         os: [ubuntu-22.04, ubuntu-24.04]
         meson_version: ["1.7.0"]
         ninja_version: ["1.10.2"]
+    env:
+      # change cache version here to reset cache (if corrupted, e.g.)
+      CACHE_V: v0
     steps:
 
       - name: Checkout code
@@ -41,21 +44,56 @@ jobs:
         run: |
           sudo apt-get -y install libsdl2-dev libsdl2-image-dev libglew-dev
 
-      - name: Cache Conan packages
-        uses: actions/cache@v4
+      - name: Generate cache keys
+        id: get-key
+        run: |
+
+          echo "CONAN_KEY=conan-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('rope/conanfile.py', 'rope/recipes/**') }}" >> $GITHUB_OUTPUT
+          echo "MESON_KEY=meson-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('rope/vagabond/**/*.cpp', 'rope/vagabond/**/*.h', 'rope/**/meson.build') }}" >> $GITHUB_OUTPUT
+
+      - name: Restore Conan cache
+        id: conan-cache-restore
+        uses: actions/cache/restore@v4
         with:
           path: ~/.conan2/p
-          key: conan-${{ matrix.os }}-${{ hashFiles('rope/conanfile.py', 'rope/recipes/**') }}
+          key: ${{ steps.get-key.outputs.CONAN_KEY }}
           restore-keys: |
-            conan-${{ matrix.os }}-
+            conan-${{ matrix.os }}-${{ env.CACHE_V }}-
 
-      - name: Cache Meson build
-        uses: actions/cache@v4
+      - name: Restore Meson build cache
+        id: meson-cache-restore
+        uses: actions/cache/restore@v4
         with:
           path: rope/build/ci_build
-          key: meson-${{ matrix.os }}-${{ hashFiles('rope/**/*.cpp', 'rope/**/*.h', 'rope/**/meson.build') }}
+          key: ${{ steps.get-key.outputs.MESON_KEY }}
           restore-keys: |
-            meson-${{ matrix.os }}-
+            meson-${{ matrix.os }}-${{ env.CACHE_V }}-
+
+      - name: Classify cache result
+        run: |
+          echo "Conan caches"
+          echo "primary: ${{ steps.conan-cache-restore.outputs.cache-primary-key }}"
+          echo "matched: ${{ steps.conan-cache-restore.outputs.cache-matched-key }}"
+
+          if [ "${{ steps.conan-cache-restore.outputs.cache-hit }}" = "true" ]; then
+          echo "→ exact hit"
+          elif [ "${{ steps.conan-cache-restore.outputs.cache-matched-key }}" != "" ]; then
+          echo "→ restore-key hit"
+          else
+          echo "→ full miss"
+          fi
+
+          echo "Meson caches"
+          echo "primary: ${{ steps.meson-cache-restore.outputs.cache-primary-key }}"
+          echo "matched: ${{ steps.meson-cache-restore.outputs.cache-matched-key }}"
+
+          if [ "${{ steps.meson-cache-restore.outputs.cache-hit }}" = "true" ]; then
+          echo "→ exact hit"
+          elif [ "${{ steps.meson-cache-restore.outputs.cache-matched-key }}" != "" ]; then
+          echo "→ restore-key hit"
+          else
+          echo "→ full miss"
+          fi
 
       - name: Run setup script
         working-directory: rope
@@ -67,24 +105,28 @@ jobs:
           source build/ci_build/conanbuild.sh
           meson install -C build/ci_build
 
-      - name: Clean stale build artifacts
+      - name: Clean build dir
         working-directory: rope/build/ci_build
         run: |
-          if [ -f .ninja_log ]; then
-            used=$(awk 'NR>1 {print $4}' .ninja_log)
-            find . -name "*.o" | while read f; do
-              clean="${f#./}"
-              if ! echo "$used" | grep -qF "$clean"; then
-                echo "Removing stale: $clean"
-                rm "$f"
-              fi
-            done
-          else
-            echo "No .ninja_log found, skipping cleanup"
-          fi
+          source conanbuild.sh
+          ninja -t cleandead
 
       - name: Clean stale Conan packages
         run: uvx conan remove "*" --lru=1h -c
+
+      - name: Save Conan cache
+        if: ${{ steps.conan-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.conan2/p
+          key: ${{ steps.get-key.outputs.CONAN_KEY }}
+
+      - name: Save Meson build cache
+        if: ${{ steps.meson-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: rope/build/ci_build
+          key: ${{ steps.get-key.outputs.MESON_KEY }}
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4

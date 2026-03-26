@@ -27,3 +27,4 @@ class Rope(ConanFile):
     def configure(self):
         self.options["fftw"].enable_float = True
         self.options["*"].shared = False
+

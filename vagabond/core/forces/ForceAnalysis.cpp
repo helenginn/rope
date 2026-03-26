@@ -118,7 +118,7 @@ void ForceAnalysis::createRods()
 		auto get_mag = [bond]()
 		{
 			float z_score = bond->as_signed_z_score(bond->measurement());
-			return z_score;
+			return z_score; 
 		};
 
 		// FORCE ATTRIBUTABLE TO COMPRESSION/TENSION ON BOND LENGTH

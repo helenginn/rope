@@ -16,8 +16,10 @@ class GemmiConan(ConanFile):
         self.run(
             "git clone --depth 1 --branch v0.6.7 https://github.com/project-gemmi/gemmi.git ."
         )
+
     def build_requirements(self):
         self.tool_requires("cmake/[*]")
+
     def layout(self):
         cmake_layout(self)
 
