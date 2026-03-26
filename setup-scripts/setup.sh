@@ -162,6 +162,19 @@ else
   print "Make sure SDL2_image is installed via your system package manager"
 fi
 
+if pkg-config --exists glew; then
+  ok "SDL2_image: $(pkg-config --modversion glew)"
+else
+  error "glew not found on system, meson will verify"
+  print "Make sure glew is installed via your system package manager"
+fi
+
+if $MUST_USE_CONAN && ! $CONAN_AVAILABLE; then
+  print ""
+  section "ABORTING"
+  die "Neither system build tools, nor conan found."
+  print ""
+fi
 
 section "Configure Build"
 
