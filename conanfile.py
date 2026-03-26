@@ -5,6 +5,12 @@ class Rope(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "MesonToolchain", "PkgConfigDeps"
 
+    def build_requirements(self):
+        self.tool_requires("meson/[*]")
+        self.tool_requires("ninja/[*]")
+        if self.settings.os == "Windows":
+            self.tool_requires("pkgconf/[*]")
+
     def requirements(self):
         self.requires("libcurl/[*]")
         self.requires("fftw/[*]")
@@ -17,10 +23,6 @@ class Rope(ConanFile):
             self.requires("sdl/[~2]")
             self.requires("sdl_image/[~2]")
             self.requires("glew/[*]")
-
-    def build_requirements(self):
-        if self.settings.os == "Windows":
-            self.tool_requires("pkgconf/[*]")
 
     def configure(self):
         self.options["fftw"].enable_float = True
