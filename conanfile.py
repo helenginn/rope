@@ -18,6 +18,7 @@ class Rope(ConanFile):
         self.requires("glm/[*]")
         self.requires("nlohmann_json/[*]")
         self.requires("zlib/[*]")
+        self.requires("doctest/[*]")
 
         if self.settings.os == "Windows":
             self.requires("sdl/[~2]")

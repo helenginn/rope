@@ -6,6 +6,11 @@
 #include <curl/curl.h>
 #include "Dictator.h"
 
+#ifdef ROPE_INLINE_TESTS
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest/doctest.h>
+#endif
+
 float test = 0;
 
 int main (int argc, char **argv)

@@ -23,6 +23,11 @@
 #include <cstring>
 #include <fstream>
 
+#ifdef ROPE_INLINE_TESTS
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest/doctest.h>
+#endif
+
 int main(int argc, char **argv)
 {
 	curl_global_init(CURL_GLOBAL_ALL);

@@ -184,3 +184,15 @@ void Rod::torquesEquation(const std::map<ForceCoordinate, int> &indexing_map,
 //	std::cout << std::endl;
 }
 
+#ifdef ROPE_INLINE_TESTS
+#include <doctest/doctest.h>
+
+TEST_CASE("Test Inline CORRECT")
+{
+  CHECK(2+2==4);
+}
+TEST_CASE("Test Inline WRONG")
+{
+  CHECK(2+2==5);
+}
+#endif

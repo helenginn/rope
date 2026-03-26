@@ -33,6 +33,14 @@ graphics_deps = [gl, glew, sdl2, sdl2image]
 cli_deps = [header_deps, core_deps]
 gui_deps = [header_deps, core_deps, graphics_deps]
 
+# Test-mode wiring
+if is_native and get_option('enable_tests')
+  doctest_dep = dependency('doctest', required: true)
+  compile_args += ['-DROPE_INLINE_TESTS']
+  cli_deps += [doctest_dep]
+  gui_deps += [doctest_dep]
+endif
+
 # Paths
 data_dir = get_option('prefix') / get_option('datadir') / 'vagabond'
 assets_dir = data_dir / 'assets'
@@ -53,6 +61,10 @@ subdir('vagabond/gui')
 
 # Create executables
 if is_native  # Native builds
+
+  if get_option('enable_tests')
+    subdir('tests')
+  endif
 
   # Additional subdirectories for native builds
   subdir('vagabond/untangle')
@@ -92,4 +104,3 @@ else  # emscripten
     dependencies: header_deps,
     install: true)
 endif
-
