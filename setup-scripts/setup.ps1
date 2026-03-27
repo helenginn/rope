@@ -225,12 +225,12 @@ if ($LASTEXITCODE -ne 0) {Die "meson compile failed"}
 # -- CLANGD --
 if ($USE_CLANGD) {
   Section "Setup .clangd"
-    $clangdContent = @"
-    CompileFlags:
+$clangdContent = @"
+CompileFlags:
 CompilationDatabase: "$BUILDDIR"
-                     "@
-                     Set-Content -Path ".clangd" -Value $clangdContent -Encoding UTF8
-                     Ok "Compilation database points at $BUILDDIR"
+"@
+  Set-Content -Path ".clangd" -Value $clangdContent -Encoding UTF8
+  Ok "Compilation database points at $BUILDDIR"
 }
 
 Section "Done!"
