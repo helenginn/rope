@@ -169,12 +169,26 @@ else
   print "Make sure glew is installed via your system package manager"
 fi
 
-if $MUST_USE_CONAN && ! $CONAN_AVAILABLE; then
+if $MUST_USE_CONAN; then
+  if ! $CONAN_AVAILABLE; then
+    print ""
+    section "ABORTING"
+    die "Neither system build tools, nor conan found."
+  else
+    print ""
+    section "WARNING"
+    warn "System package dependencies not satisfied. Conan build mandatory."
+    print ""
+  fi
+fi
+
+if ! $CONAN_AVAILABLE && ! $MUST_USE_CONAN; then
   print ""
-  section "ABORTING"
-  die "Neither system build tools, nor conan found."
+  section "WARNING"
+  warn "Conan not available, using system dependencies."
   print ""
 fi
+
 
 section "Configure Build"
 
