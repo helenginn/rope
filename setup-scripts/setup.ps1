@@ -4,7 +4,9 @@ param(
     [switch]$Yesman = $false,
     [Alias("f")]
     [switch]$ForceRebuildDependencies = $false,
-    [string]$Build = ""
+    [string]$Build = "",
+    [string]$Prefix = "",
+    [string]$Datadir = ""
     )
 
 Set-StrictMode -Version Latest
@@ -16,6 +18,9 @@ $SRCDIR   = Split-Path -Parent $SCRPTDIR
 $SRCBASENAME  = Split-Path -Leaf $SRCDIR
 $SCRPTBASENAME = Split-Path -Leaf $SCRPTDIR
 
+$EXTRA_MESON_ARGS = @()
+if ($Prefix -ne "") { $EXTRA_MESON_ARGS += "--prefix=$Prefix" }
+if ($Datadir -ne "") { $EXTRA_MESON_ARGS += "--datadir=$Datadir" }
 
 # -- COLOURS --
 $RED = "`e[0;31m"
@@ -217,7 +222,7 @@ if ($LASTEXITCODE -ne 0) {Die "conan create gemmi failed"}
 Invoke-Conan install . "-of=${BUILDDIR}" "-b=$ConanBuildFlag"
 if ($LASTEXITCODE -ne 0) {Die "conan install failed"}
 
-meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" --reconfigure
+meson setup $BUILDDIR "--native-file=${BUILDDIR}\conan_meson_native.ini" "--buildtype=${BUILD_TYPE}" @EXTRA_MESON_ARGS --reconfigure --clearcache
 if ($LASTEXITCODE -ne 0) {Die "meson setup failed"}
 meson compile -C $BUILDDIR
 if ($LASTEXITCODE -ne 0) {Die "meson compile failed"}
@@ -227,7 +232,7 @@ if ($USE_CLANGD) {
   Section "Setup .clangd"
 $clangdContent = @"
 CompileFlags:
-CompilationDatabase: "$BUILDDIR"
+  CompilationDatabase: "$BUILDDIR"
 "@
   Set-Content -Path ".clangd" -Value $clangdContent -Encoding UTF8
   Ok "Compilation database points at $BUILDDIR"

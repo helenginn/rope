@@ -1,4 +1,4 @@
-name: Compile Linux (Ubuntu LTS) with conan
+name: Compile Ubuntu LTS with conan
 
 on: [push, pull_request, workflow_dispatch]
 
@@ -10,8 +10,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-22.04, ubuntu-24.04]
-        meson_version: ["1.7.0"]
-        ninja_version: ["1.10.2"]
     env:
       # change cache version here to reset cache (if corrupted, e.g.)
       CACHE_V: v0
@@ -20,11 +18,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          path: rope
           fetch-depth: 0
 
       - name: Restore source file timestamps for meson caching
-        working-directory: rope
         run: |
           git ls-files | while read f; do
             [ -f "$f" ] || continue
@@ -48,8 +44,8 @@ jobs:
         id: get-key
         run: |
 
-          echo "CONAN_KEY=conan-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('rope/conanfile.py', 'rope/recipes/**') }}" >> $GITHUB_OUTPUT
-          echo "MESON_KEY=meson-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('rope/vagabond/**/*.cpp', 'rope/vagabond/**/*.h', 'rope/**/meson.build') }}" >> $GITHUB_OUTPUT
+          echo "CONAN_KEY=conan-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('conanfile.py', 'recipes/**') }}" >> $GITHUB_OUTPUT
+          echo "MESON_KEY=meson-${{ matrix.os }}-${{ env.CACHE_V }}-${{ hashFiles('vagabond/**/*.cpp', 'vagabond/**/*.h', '**/meson.build') }}" >> $GITHUB_OUTPUT
 
       - name: Restore Conan cache
         id: conan-cache-restore
@@ -64,7 +60,7 @@ jobs:
         id: meson-cache-restore
         uses: actions/cache/restore@v4
         with:
-          path: rope/build/ci_build
+          path: build/ci_build
           key: ${{ steps.get-key.outputs.MESON_KEY }}
           restore-keys: |
             meson-${{ matrix.os }}-${{ env.CACHE_V }}-
@@ -96,17 +92,15 @@ jobs:
           fi
 
       - name: Run setup script
-        working-directory: rope
         run: setup-scripts/setup.sh --yesman --build=build/ci_build --prefix=$(pwd)/install
 
       - name: Install RoPE
-        working-directory: rope
         run: |
           source build/ci_build/conanbuild.sh
           meson install -C build/ci_build
 
       - name: Clean build dir
-        working-directory: rope/build/ci_build
+        working-directory: build/ci_build
         run: |
           source conanbuild.sh
           ninja -t cleandead
@@ -125,13 +119,13 @@ jobs:
         if: ${{ steps.meson-cache-restore.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
-          path: rope/build/ci_build
+          path: build/ci_build
           key: ${{ steps.get-key.outputs.MESON_KEY }}
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
           name: rope_conan_${{ matrix.os }}_${{ github.sha }}
-          path: rope/install/bin/*
+          path: install/bin/*
           if-no-files-found: error
 

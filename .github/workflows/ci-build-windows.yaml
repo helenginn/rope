@@ -1,0 +1,130 @@
+name: Compile Windows build with conan
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }} with conan
+    if: ${{ !contains(github.event.head_commit.message, '/skip-ci') }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2025]
+    env:
+      CACHE_V: v0
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restore source file timestamps for meson caching
+        shell: pwsh
+        run: |
+          git ls-files | ForEach-Object {
+            $f = $_
+            if (-not (Test-Path $f)) { return }
+            $t = git log -1 --format="%ct" -- $f
+            $dt = [System.DateTimeOffset]::FromUnixTimeSeconds([long]$t).LocalDateTime
+            (Get-Item $f).LastWriteTime = $dt
+          }
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Generate cache keys
+        id: get-key
+        shell: pwsh
+        run: |
+          $conanHash = "${{ hashFiles('conanfile.py', 'recipes/**') }}"
+          $mesonHash = "${{ hashFiles('vagabond/**/*.cpp', 'vagabond/**/*.h', '**/meson.build') }}"
+          echo "CONAN_KEY=conan-${{ matrix.os }}-${{ env.CACHE_V }}-$conanHash" >> $env:GITHUB_OUTPUT
+          echo "MESON_KEY=meson-${{ matrix.os }}-${{ env.CACHE_V }}-$mesonHash" >> $env:GITHUB_OUTPUT
+
+      - name: Restore Conan cache
+        id: conan-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.conan2/p
+          key: ${{ steps.get-key.outputs.CONAN_KEY }}
+          restore-keys: |
+            conan-${{ matrix.os }}-${{ env.CACHE_V }}-
+
+      - name: Restore Meson build cache
+        id: meson-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: build/ci_build
+          key: ${{ steps.get-key.outputs.MESON_KEY }}
+          restore-keys: |
+            meson-${{ matrix.os }}-${{ env.CACHE_V }}-
+
+      - name: Classify cache result
+        shell: pwsh
+        run: |
+          Write-Host "Conan caches"
+          Write-Host "primary: ${{ steps.conan-cache-restore.outputs.cache-primary-key }}"
+          Write-Host "matched: ${{ steps.conan-cache-restore.outputs.cache-matched-key }}"
+
+          if ("${{ steps.conan-cache-restore.outputs.cache-hit }}" -eq "true") {
+            Write-Host "→ exact hit"
+          } elseif ("${{ steps.conan-cache-restore.outputs.cache-matched-key }}" -ne "") {
+            Write-Host "→ restore-key hit"
+          } else {
+            Write-Host "→ full miss"
+          }
+
+          Write-Host "Meson caches"
+          Write-Host "primary: ${{ steps.meson-cache-restore.outputs.cache-primary-key }}"
+          Write-Host "matched: ${{ steps.meson-cache-restore.outputs.cache-matched-key }}"
+
+          if ("${{ steps.meson-cache-restore.outputs.cache-hit }}" -eq "true") {
+            Write-Host "→ exact hit"
+          } elseif ("${{ steps.meson-cache-restore.outputs.cache-matched-key }}" -ne "") {
+            Write-Host "→ restore-key hit"
+          } else {
+            Write-Host "→ full miss"
+          }
+
+      - name: Run setup script
+        shell: pwsh
+        run: setup-scripts/setup.ps1 --yesman --build=build/ci_build --prefix="$((Get-Location).Path)/install"
+
+      - name: Install RoPE
+        shell: pwsh
+        run: |
+          . build/ci_build/conanbuild.ps1
+          meson install -C build/ci_build
+
+      - name: Clean build dir
+        working-directory: build/ci_build
+        shell: pwsh
+        run: |
+          . conanbuild.ps1
+          ninja -t cleandead
+
+      - name: Clean stale Conan packages
+        shell: pwsh
+        run: uvx conan remove "*" --lru=1h -c
+
+      - name: Save Conan cache
+        if: ${{ steps.conan-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.conan2/p
+          key: ${{ steps.get-key.outputs.CONAN_KEY }}
+
+      - name: Save Meson build cache
+        if: ${{ steps.meson-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: build/ci_build
+          key: ${{ steps.get-key.outputs.MESON_KEY }}
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: rope_conan_${{ matrix.os }}_${{ github.sha }}
+          path: install/bin/*
+          if-no-files-found: error
