@@ -253,9 +253,9 @@ if $USE_CONAN; then
   "${CONAN_COMMAND[@]}" create recipes/gemmi -b="$CONAN_BUILD_FLAG"
   "${CONAN_COMMAND[@]}" install . -of="${BUILDDIR}" -b="$CONAN_BUILD_FLAG"
   source "./${BUILDDIR}/conanbuild.sh"
-  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure
+  meson setup "$BUILDDIR" --native-file="${BUILDDIR}"/conan_meson_native.ini --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache
 else
-  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure
+  meson setup "$BUILDDIR" --buildtype="$BUILD_TYPE" $EXTRA_MESON_ARGS --reconfigure --clearcache
 fi
 meson compile -C "$BUILDDIR"
 
