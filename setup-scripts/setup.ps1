@@ -133,19 +133,6 @@ if ($null -eq $CXX) {
 $cxxVer = & $CXX --version 2>&1 | Select-Object -First 1
 Ok "C++ compiler: $CXX $cxxVer"
 
-if (Get-Command meson -ErrorAction SilentlyContinue) {
-  $mesonVer = & meson --version 2>&1
-    Ok "meson: $mesonVer"
-} else {
-  Die "meson not found. Install via pip or winget."
-}
-
-if (Get-Command ninja -ErrorAction SilentlyContinue) {
-  $ninjaVer = & ninja --version 2>&1
-    Ok "ninja: $ninjaVer"
-} else {
-  Die "ninja not found. Install via pip or winget."
-}
 
 $CONAN_COMMAND = $null
 
