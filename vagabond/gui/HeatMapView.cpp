@@ -175,3 +175,39 @@ void HeatMapView::finishedDragging(std::string tag, double x, double y)
     
     redrawHeatMap(num);
 }
+
+void HeatMapView::buttonPressed(std::string tag, Button *button)
+{
+    if (tag == "sum")
+    {
+        sumHeatMap(); 
+    }
+
+    Scene::buttonPressed(tag, button);
+}
+
+void HeatMapView::mousePressEvent(double x, double y, SDL_MouseButtonEvent button)
+{
+ 	double tx = x; double ty = y;
+	convertToGLCoords(&tx, &ty);
+
+	glm::vec3 v = glm::vec3(tx, ty, 0);
+	glm::vec3 min, max;
+	_plot->boundaries(&min, &max);
+
+	v -= min;
+	v /= (max - min);
+	v.z = 0;
+
+	if ((v.x < 0 || v.x > 1) || (v.y < 0 || v.y > 1))
+	{
+		Scene::mousePressEvent(x, y, button);
+		return;
+	}
+
+	int left = v.x * _pcaMatrix.cols;
+	int right = v.y * _pcaMatrix.rows;
+	std::cout << left << " " << right << std::endl;
+	setInformation(_entropy.start[left] + " to " + _entropy.end[right]);
+	Scene::mousePressEvent(x, y, button);
+}
