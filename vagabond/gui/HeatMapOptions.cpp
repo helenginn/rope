@@ -47,6 +47,15 @@ void HeatMapOptions::setup()
         addObject(t);
     }
 
+    float bottom = 0.9;
+
+    {
+	    TextButton *t = new TextButton("Generate heat map", this);
+	    t->setRight(0.9, bottom);
+	    t->setReturnTag("heatmap");
+	    addObject(t);
+    }
+
     loadOptions();
 }
 
@@ -97,14 +106,6 @@ void HeatMapOptions::loadOptions()
         addTempObject(sTime);
     }
 
-    float bottom = 0.9;
-
-    {
-	    TextButton *t = new TextButton("Generate heat map", this);
-	    t->setRight(0.9, bottom);
-	    t->setReturnTag("heatmap");
-	    addTempObject(t);
-    }
 }
 
 void HeatMapOptions::buttonPressed(std::string tag, Button *button)
@@ -123,18 +124,20 @@ void HeatMapOptions::buttonPressed(std::string tag, Button *button)
     {
         struct FlagParameters options = _flagPar;
 
-        std::vector<struct EntropyForHeatMap> entropyData = {};
+        struct EntropyForHeatMap entropyData = {};
 
-        std::function<void(std::vector<EntropyForHeatMap> &)> callback;
-		callback = [this](std::vector<EntropyForHeatMap> &entropyData)
+        std::function<void(EntropyForHeatMap &)> callback;
+		callback = [this, button](EntropyForHeatMap &entropyData)
 		{
-			addMainThreadJob([this, entropyData]()
+			addMainThreadJob([this, entropyData, button]()
 			{
 			HeatMapView *view = new HeatMapView(this, entropyData);
-			view->show();
+
+            showBackButton();
+			button->setInert(false);
+
+            view->show();
 			});
-				
-			showBackButton();
 		};
            
 	    Environment::pathManager()->setEntropyCallback(callback);
