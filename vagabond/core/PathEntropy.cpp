@@ -929,7 +929,6 @@ void PathEntropy::allocEntropy(struct EntropyKL *entropy, int nSingle, int nPair
     
         for(int i = 0; i < entropy->nPairs; i++)
         {
-            std::cout << "Entering nested if loop" << std::endl;
             entropy->mi[i].resize(nNearestNeighbours);
             entropy->h2[i].resize(nNearestNeighbours);
             entropy->sd2[i].resize(nNearestNeighbours);
