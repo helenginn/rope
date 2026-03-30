@@ -497,15 +497,17 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
         } 
     }
 
-    std::vector<struct EntropyForHeatMap> entropyData(numDivisions);
+    struct EntropyForHeatMap entropyData = {};
+
+    entropyData.numDivisions = numDivisions; 
 
     for(int t = 0; t < numDivisions; t++)
     {
-        entropyData[t].dataMatrix.resize(allInstances.size(), allInstances.size());
+        entropyData.dataMatrix.push_back(Eigen::MatrixXf::Zero(allInstances.size(), allInstances.size()));
         
         for(int i = 0; i < allInstances.size(); i++)
 		{
-			entropyData[t].dataMatrix(i, i) = NAN;
+			entropyData.dataMatrix[t](i, i) = NAN;
 		}
     }
 
@@ -516,24 +518,27 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
 	{
 		for (int j = 0; j < allInstances.size(); j++)
 		{
-	        if(i == j)
+            entropyData.start.push_back(allInstances[i]->model_id());
+            entropyData.end.push_back(allInstances[j]->model_id());
+
+            if(i == j)
             {
                 continue;
             }		
-			else
+			
+            else
 			{
 				std::vector<Path *> pathsForInstance = pathsBetweenInstances(allInstances[i], allInstances[j]);
 
 				if (pathsForInstance.size() != 0)
 				{
 					std::vector<double> entropy = pathEntropyInstancePair(numPaths, pathsForInstance, numDivisions, mist);
-
                     for(int t = 0; t < numDivisions; t++)
                     {
-						entropyData[t].dataMatrix(i, j) = entropy[t];
-						entropyData[t].dataMatrix(j, i) = entropy[t];
+						entropyData.dataMatrix[t](i, j) = entropy[t];
+						entropyData.dataMatrix[t](j, i) = entropy[t];
 
-						entropyData[t].total.push_back(entropy[t]);
+                        entropyData.total.push_back(entropy);
                     }
 				}
 			}
@@ -546,8 +551,8 @@ void PathManager::pathEntropyHeatMap(const std::vector<std::string> &args)
   
     for(int t = 0; t < numDivisions; t++)
     {
-        entropyData[t].dataMatrix.colwise().reverse();
-        std::cout << entropyData[t].dataMatrix << std::endl << std::endl;
+        entropyData.dataMatrix[t].colwise().reverse();
+        std::cout << entropyData.dataMatrix[t] << std::endl << std::endl;
     }
 	
     if (_callback)
