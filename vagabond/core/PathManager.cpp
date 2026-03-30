@@ -697,7 +697,9 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
         } 
     }
 
-    std::vector<struct EntropyForHeatMap> entropyData(numDivisions);
+    struct EntropyForHeatMap entropyData = {};
+
+    entropyData.numDivisions = numDivisions; 
 
     entropyData.numDivisions = numDivisions; 
 
@@ -733,13 +735,7 @@ std::vector<double> PathManager::pathEntropyInstancePair(int numPaths, std::vect
 				if (pathsForInstance.size() != 0)
 				{
 					std::vector<double> entropy = pathEntropyInstancePair(numPaths, pathsForInstance, numDivisions, mist);
-
                     for(int t = 0; t < numDivisions; t++)
-
-                    {
-						entropyData.dataMatrix[t](i, j) = entropy[t];
-						entropyData.dataMatrix[t](j, i) = entropy[t];
-
                         entropyData.total.push_back(entropy);
                     }
 				}

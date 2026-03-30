@@ -10,7 +10,7 @@ struct EntropyForHeatMap
 {
     static std::mutex *mutex;
 
-    int timeDivisions;
+    int numDivisions;
 
     ~EntropyForHeatMap()
     {
@@ -18,10 +18,10 @@ struct EntropyForHeatMap
 
     std::vector<std::string> start;
     std::vector<std::string> end;
-    std::vector<double> total;
-    std::vector<double> perRes;
+    std::vector<std::vector<double>> total;
+    std::vector<std::vector<double>> perRes;
 
-    Eigen::MatrixXf dataMatrix;
+    std::vector<Eigen::MatrixXf> dataMatrix;
 };
 
 #endif
