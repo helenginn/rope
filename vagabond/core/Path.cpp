@@ -34,6 +34,7 @@ Path::Path(PlausibleRoute *pr)
 	_instance = pr->instance();
 	_end = pr->endInstance();
 
+    _randomPerturb = pr->randomPerturb();
 	_motions = pr->motions();
 	
 	_route = nullptr;

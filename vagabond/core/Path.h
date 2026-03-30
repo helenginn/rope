@@ -174,8 +174,9 @@ private:
 	
 	bool _contributeSVD = false;
 	bool _visible = true;
-	bool _dirty = true;
+        bool _dirty = true;
 	
+        float _randomPerturb = 0.f;	
 	float _activationEnergy = FLT_MAX;
 	float _torsionEnergy = FLT_MAX;
 	float _momentum = FLT_MAX;
@@ -198,6 +199,7 @@ inline void to_json(json &j, const Path &value)
 	j["start"] = value._startInstance;
 	j["end"] = value._endInstance;
 	j["motions"] = value._motions;
+    j["random_perturbation"] = value._randomPerturb;
 
 	j["hash"] = value._hash;
 	j["clash_score"] = value._clash;
@@ -220,6 +222,11 @@ inline void from_json(const json &j, Path &value)
 	value._endInstance = j.at("end");
 	value._model_id = j.at("model");
 	value._motions = j.at("motions");
+
+    if (j.count("random_perturbation"))
+    {
+        value._randomPerturb = j.at("random_perturbation");
+    }
 	
 	if (j.count("hash"))
 	{
