@@ -48,6 +48,15 @@ void HeatMapOptions::setup()
         addObject(t);
     }
 
+    float bottom = 0.9;
+
+    {
+	    TextButton *t = new TextButton("Generate heat map", this);
+	    t->setRight(0.9, bottom);
+	    t->setReturnTag("heatmap");
+	    addObject(t);
+    }
+
     loadOptions();
 }
 
