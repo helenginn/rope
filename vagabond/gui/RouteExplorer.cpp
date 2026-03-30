@@ -605,7 +605,7 @@ void RouteExplorer::saveAndRestart()
 	time_t duration = end - _start;
 	int seconds = duration % 60;
 	int minutes = (duration - seconds + 1) / 60;
-	std::cout << "Route took " << minutes << " mins and " << seconds 
+	std::cout << "Route number " << _numberMade << " took " << minutes << " mins and " << seconds 
 	<< " seconds to refine." << std::endl;
 
 	_plausibleRoute->clearCustomisation();
