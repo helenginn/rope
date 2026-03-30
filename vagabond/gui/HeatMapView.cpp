@@ -8,28 +8,33 @@
 #include <MatrixPlot.h>
 #include <ColourLegend.h>
 
-HeatMapView::HeatMapView(Scene *prev, const std::vector<struct EntropyForHeatMap> &entropy) : Scene(prev), _entropy(entropy)
+HeatMapView::HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy) : Scene(prev), _entropy(entropy)
 {
     //_timeDivisions = _entropy.size();
 }
 
+HeatMapView::~HeatMapView()
+{
+}
+
 void HeatMapView::setup()
 {
-    if (_entropy.size() > 1)
+    addTitle("Heat Map");    
+
+    if (_entropy.numDivisions > 1)
     { 
-        setupSlider(_entropy.size());
+        setupSlider(_entropy.numDivisions);
+    }
+
+    {
+        TextButton *t = new TextButton("Sum entropy", this);
+        t->setRight(0.9, 0.1);
+        t->setReturnTag("sum");
+        addObject(t);
     }
 
 	redrawHeatMap(+0.1f);
 /*
-    int rows = _entropy[0].dataMatrix.rows();
-    int cols = _entropy[0].dataMatrix.cols();
-
-    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
-
-    double meanEntropy = mean(_entropy[0].total);
-    double stdEntropy = standard_deviation(_entropy[0].total);
-
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
@@ -40,14 +45,6 @@ void HeatMapView::setup()
             _entropy[0].dataMatrix(i,j)-=0.5;
         }
     }
-
-    _pcaMatrix = PCA::Matrix(_entropy[0].dataMatrix);
-	printMatrix(&_pcaMatrix);
-
-    _plot = new MatrixPlot(_pcaMatrix, _mutex);
-
-    _plot->legend()->setScheme(Heat);
-    addObject(_plot);
 */
 }
 
@@ -60,25 +57,38 @@ void HeatMapView::redrawHeatMap(double num)
 
     int t = (int) num;
 
-    int rows = _entropy[t].dataMatrix.rows();
-    int cols = _entropy[t].dataMatrix.cols();
+    int rows = _entropy.dataMatrix[t].rows();
+    int cols = _entropy.dataMatrix[t].cols();
 
     Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
+    
+    std::vector<double> entropyVals(_entropy.total[t].size());
 
-    double meanEntropy = mean(_entropy[t].total);
-    double stdEntropy = standard_deviation(_entropy[t].total);
+    double maxEntVal = _entropy.total[t].front();
+    double minEntVal = _entropy.total[t].front();
+
+    for(int i = 0; i < _entropy.total[t].size(); i++)
+    {
+        if(_entropy.total[t][i] > maxEntVal)
+        {
+            maxEntVal = _entropy.total[t][i];
+        }
+        if(_entropy.total[t][i] < minEntVal)
+        {
+            minEntVal = _entropy.total[t][i];
+        }
+    }
 
     for (int i = 0; i < rows; i++)
     {
         for (int j = 0; j < cols; j++)
         {
-			matrix(i, j) = _entropy[t].dataMatrix(i, j);
-            matrix(i,j)-=meanEntropy;
-            matrix(i,j)/=stdEntropy;
-
-            matrix(i,j)-=0.5;
+			matrix(i, j) = _entropy.dataMatrix[t](i, j);
         }
     }
+
+    matrix = Eigen::MatrixXf::Ones(rows, cols) * maxEntVal - matrix;
+    matrix = matrix/(maxEntVal - minEntVal);
 
     _pcaMatrix = PCA::Matrix(matrix);
 	printMatrix(&_pcaMatrix);
@@ -86,6 +96,65 @@ void HeatMapView::redrawHeatMap(double num)
     _plot = new MatrixPlot(_pcaMatrix, _mutex);
 
     _plot->legend()->setScheme(Heat);
+    addObject(_plot);
+}
+
+void HeatMapView::sumHeatMap()
+{
+    if(_plot)
+    {
+        removeObject(_plot);
+    }
+
+    if(_rangeSlider)
+    {
+        removeObject(_rangeSlider);
+    }
+
+    int rows = _entropy.dataMatrix[0].rows();
+    int cols = _entropy.dataMatrix[0].cols();
+
+    Eigen::MatrixXf matrix = Eigen::MatrixXf::Zero(rows, cols);
+    
+    std::vector<double> entropyVals(_entropy.total[0].size());
+
+    for (int t = 0; t < _entropy.numDivisions; t++)
+    {
+        for(int i = 0; i < _entropy.total[t].size(); i++) 
+        {
+            entropyVals[i] += _entropy.total[t][i];
+            
+            std::cout << i << ": " << entropyVals[i] << std::endl;
+        }
+        matrix += _entropy.dataMatrix[t];
+    }
+   
+    double meanEntropy = mean(entropyVals);
+    double stdEntropy = standard_deviation(entropyVals);
+ 
+    double maxEntVal = entropyVals[0];
+    double minEntVal = entropyVals[0];
+
+    for(int i = 0; i < entropyVals.size(); i++)
+    {
+        if(entropyVals[i] > maxEntVal)
+        {
+            maxEntVal = entropyVals[i];
+        }
+        if(entropyVals[i] < minEntVal)
+        {
+            minEntVal = entropyVals[i];
+        }
+    }
+
+    matrix = Eigen::MatrixXf::Ones(rows, cols) * maxEntVal - matrix;
+    matrix = matrix/(maxEntVal - minEntVal);
+
+    _pcaMatrix = PCA::Matrix(matrix);
+	printMatrix(&_pcaMatrix);
+
+    _plot = new MatrixPlot(_pcaMatrix, _mutex);
+    _plot->setColourScheme(Heat);
     addObject(_plot);
 }
 

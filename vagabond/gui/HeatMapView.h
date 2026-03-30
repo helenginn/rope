@@ -12,17 +12,21 @@ class Slider;
 class HeatMapView : public Scene, public DragResponder
 {
 public:
-    HeatMapView(Scene *prev, const std::vector<struct EntropyForHeatMap> &entropy);
+    HeatMapView(Scene *prev, const struct EntropyForHeatMap &entropy);
+    ~HeatMapView();
 
     virtual void setup();
+    
     void setupSlider(int timeDivisions);
 
     void redrawHeatMap(double num);
+    void sumHeatMap();
 
     virtual void finishedDragging(std::string tag, double x, double y);
-
+    virtual void buttonPressed(std::string tag, Button *button = nullptr);
+    virtual void mousePressEvent(double x, double y, SDL_MouseButtonEvent button);
 private:
-    std::vector<struct EntropyForHeatMap> _entropy;
+    struct EntropyForHeatMap _entropy;
 
     long *_timeDivisions = nullptr;
 
