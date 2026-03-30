@@ -800,11 +800,8 @@ void PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs,
 		entropy->dm1[i].resize(nNearestNeighbours);
 	}
 
-    std::cout << "after if\n" << std::flush;
-
 	if(flagParameters.mist == true)
 	{
-        std::cout << "Entering mist = true loop, mist = " << flagParameters.mist << std::endl;
 		entropy->mi.resize(entropy->nPairs);
         entropy->mst1.resize(entropy->nPairs);
         entropy->mst2.resize(entropy->nPairs);
@@ -823,7 +820,6 @@ void PathEntropy::allocEntropy(struct Entropy *entropy, int nSingle, int nPairs,
     
         for(int i = 0; i < entropy->nPairs; i++)
         {
-            std::cout << "Entering nested if loop" << std::endl;
             entropy->mi[i].resize(nNearestNeighbours);
             entropy->h2[i].resize(nNearestNeighbours);
             entropy->sd2[i].resize(nNearestNeighbours);
