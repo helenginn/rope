@@ -198,3 +198,9 @@ bool MatrixPlot::mouseOver()
 	
 	return true;
 }
+
+void MatrixPlot::setColourScheme(const Scheme &scheme)
+{
+	legend()->setScheme(scheme);
+	updateColours();
+}

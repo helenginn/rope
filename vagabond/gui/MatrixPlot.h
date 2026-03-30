@@ -21,6 +21,7 @@
 
 #include <vagabond/utils/svd/PCA.h>
 #include <vagabond/gui/elements/Image.h>
+#include <vagabond/core/Rule.h>
 #include <functional>
 #include <mutex>
 
@@ -52,6 +53,8 @@ public:
 	{
 		return _legend;
 	}
+
+	void setColourScheme(const Scheme &scheme);
 protected:
 	std::map<int, int> _index2Vertex;
 private:
