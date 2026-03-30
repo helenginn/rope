@@ -61,12 +61,7 @@ public:
 	 *  existing paths. Returns the number of paths loaded. */
 	size_t loadPathGroups(const std::string &directory);
 	
-    void setEntropyCallback(std::function<void(std::vector<struct EntropyForHeatMap> &)> &callback)
-    {
-        _callback = callback;
-    }
-
-    const std::function<void(std::vector<struct EntropyForHeatMap> &)> &callback() const
+    const std::function<void(struct EntropyForHeatMap &)> &callback() const
     {
         return _callback;
     };
