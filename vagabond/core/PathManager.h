@@ -35,7 +35,7 @@ public:
 	void purgeEntity(Entity *ent);
 
 	void makePathsWithinGroup(const std::vector<std::string> &insts,
-	                          int cycles);
+	                          int cycles, float startAng);
 
 	virtual const std::string progressName() const
 	{
@@ -64,7 +64,7 @@ public:
     void pathEntropyHeatMap(const std::vector<std::string> &args);
     std::vector<double> pathEntropyInstancePair(int numPaths, std::vector<Path *> paths, int timeDivisions = 1, bool mist = false);
 	void makePathBetween(const std::string &start, const std::string &end,
-	                     int cycles = 1);
+	                     int cycles = 1, float startAng = 0.f);
 	void obstacles(const std::vector<std::string> &insts);
 
 	typedef std::map<std::pair<Instance *, Instance *>, std::vector<Path *>>

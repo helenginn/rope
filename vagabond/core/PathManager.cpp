@@ -180,7 +180,7 @@ void PathManager::purgePath(Path *path)
 }
 
 void PathManager::makePathBetween(const std::string &start,
-                                  const std::string &end, int cycles)
+                                  const std::string &end, int cycles, float startAng)
 {
 	Instance *first = ModelManager::manager()->instance(start);
 	Instance *second = ModelManager::manager()->instance(end);
@@ -208,6 +208,7 @@ void PathManager::makePathBetween(const std::string &start,
 	route->setAtoms(grp);
 
 	route->setThreads(8);
+    route->setRandomPerturb(startAng);
 	route->setMaximumMomentumDistance(8.f);
 	route->setMaximumClashDistance(10.f);
 	route->setMaximumFlipTrial(1);
@@ -296,15 +297,15 @@ void do_on_each_pair_of_paths(const Job &job,
 };
 
 void PathManager::makePathsWithinGroup(const std::vector<std::string> &insts,
-                                       int cycles)
+                                       int cycles, float startAng)
 {
-	auto make_path = [this, cycles](Instance *first, Instance *second)
+	auto make_path = [this, cycles, startAng](Instance *first, Instance *second)
 	{
 		std::vector<Path *> pairPaths = pathsBetweenInstances(first, second);
 		int total = cycles - pairPaths.size();
 		if (total <= 0) { return false; };
 
-		makePathBetween(first->id(), second->id(), total);
+		makePathBetween(first->id(), second->id(), total, startAng);
 		return true;
 	};
 	
