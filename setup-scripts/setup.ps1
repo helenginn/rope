@@ -196,6 +196,7 @@ if (Ask-YN "Proceed?" "Y") {
 }
 
 # -- BUILD --
+Set-Location $SRCDIR
 $ConanBuildFlag = "missing"
 if ($ForceRebuildDependencies) {
   $ConanBuildFlag = "*"

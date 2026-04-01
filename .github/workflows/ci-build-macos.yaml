@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-13, macos-15] # intel and arm macs
+        os: [macos-15-intel, macos-15] # intel and arm macs
     env:
       CACHE_V: v0
     steps:

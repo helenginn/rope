@@ -254,6 +254,9 @@ else
 fi
 
 # -- BUILD --
+
+cd "$SRCDIR"
+
 CONAN_BUILD_FLAG="missing"
 if $FORCE_REBUILD_DEP; then
   CONAN_BUILD_FLAG="*"
