@@ -220,9 +220,11 @@ void Dictator::processRequest(std::string &first, std::string &last)
 	{
 		std::vector<std::string> args = split(last, ',');
 		int num = atoi(args[0].c_str());
-		args.erase(args.begin());
+        float startAng = atoi(args[1].c_str());
 
-		PathManager::manager()->makePathsWithinGroup(args, num);
+		args.erase(args.begin(), args.begin()+1);
+
+		PathManager::manager()->makePathsWithinGroup(args, num, startAng);
 	}
 
 	if (first == "refine-path")
