@@ -228,14 +228,15 @@ float bond_rotation_on_distance_gradient(const glm::vec3 &a, const glm::vec3 &b,
 	             (q.z - p.z) * (q.z - p.z));
 	
 	/* derivative of q.x with respect to alpha */
-	/*
 	float dQx_by_dA = y * q.z - z * q.y;
 	float dQy_by_dA = z * q.x - x * q.z;
 	float dQz_by_dA = x * q.y - y * q.x;
-	*/
+
+	/*
 	float dQx_by_dA = q.z * (y - x * z) - q.y * (x * y + z);
 	float dQy_by_dA = q.x * (z - y * x) - q.z * (y * z + x);
 	float dQz_by_dA = q.y * (x - z * y) - q.x * (z * x + y);
+	*/
 
 	/* dfx = derivative of fx */
 	float dfx = (2*(q.x - p.x) * dQx_by_dA + 2*(q.y - p.y) * dQy_by_dA +
