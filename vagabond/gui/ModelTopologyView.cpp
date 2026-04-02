@@ -231,6 +231,7 @@ void ModelTopologyView::setup()
 	addLinks();
 	addCircles();
 	updateColours();
+	updateLegend();
 	IndexResponseView::setup();
 }
 
@@ -270,6 +271,28 @@ void ModelTopologyView::updateColours()
 		fi->FloatingImage::setColour(colour.x, colour.y, colour.z);
 		fi->FloatingImage::forceRender(true, false);
 	}
+}
+
+void ModelTopologyView::updateLegend()
+{
+	if (!_legendFunc)
+	{
+		return;
+	}
+
+	for (Box *box : _legends)
+	{
+		removeObject(box);
+		delete box;
+	}
+
+	_legends.clear();
+
+	Box *legend = _legendFunc();
+	legend->setArbitrary(0.9, 0.1, Box::Alignment(Box::Alignment::Right 
+	                                                | Box::Alignment::Top));
+	addObject(legend);
+	_legends.push_back(legend);
 }
 
 void ModelTopologyView::interactedWithNothing(bool left, bool hover)
