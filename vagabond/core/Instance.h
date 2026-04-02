@@ -104,7 +104,7 @@ public:
 		return nullptr;
 	}
 	
-	void superposeOn(Instance *other);
+	glm::mat4x4 superposeOn(Instance *other, bool do_it = true);
 	
 	virtual const Residue *
 	localResidueForResidueTorsion(const ResidueTorsion &rt);
@@ -190,6 +190,10 @@ public:
 
 	void addTorsionsToGroup(TorsionData &group, rope::TorsionType type);
 	void addBFactorsToGroup(BFactorData &group);
+	
+	static glm::mat4x4 superposeInstances(const std::list<Instance *> &lefts,
+	                                      const std::list<Instance *> &rights,
+	                                      bool do_it = true);
 protected:
 	void grabBFactors(RAFloats &bVals);
 
