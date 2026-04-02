@@ -310,39 +310,9 @@ void Instance::addTorsionsToGroup(TorsionData &group, rope::TorsionType type)
 	group.addMetadataArray(this, angles);
 }
 
-void Instance::superposeOn(Instance *other)
+glm::mat4x4 Instance::superposeOn(Instance *other, bool do_it)
 {
-	AtomGroup *otherAtoms = other->currentAtoms();
-	AtomGroup *myAtoms = currentAtoms();
-	
-	Superpose sp;
-	for (Atom *a : myAtoms->atomVector())
-	{
-		a->setOtherPosition("original", glm::vec3(NAN));
-	}
-
-	for (Atom *theirs : otherAtoms->atomVector())
-	{
-		Atom *mine = equivalentForAtom(other, theirs);
-		
-		if (mine)
-		{
-			glm::vec3 t = theirs->derivedPosition();
-			glm::vec3 d = mine->derivedPosition();
-			mine->setOtherPosition("original", t);
-			sp.addPositionPair(t, d);
-		}
-	}
-
-	sp.superpose();
-	glm::mat4 tr = sp.transformation();
-
-	for (Atom *mine : myAtoms->atomVector())
-	{
-		glm::vec3 d = mine->derivedPosition();
-		glm::vec3 update = glm::vec3(tr * glm::vec4(d, 1.f));
-		mine->setDerivedPosition(update);
-	}
+	return superposeInstances({this}, {other}, do_it);
 }
 
 Atom *Instance::equivalentForAtom(Instance *other, Atom *atom)
@@ -417,4 +387,92 @@ void Instance::addBFactorsToGroup(BFactorData &group)
 	group.addMetadataArray(this, bVals.storage_only());
 
 	model()->unload();
+}
+
+glm::mat4x4 Instance::superposeInstances(const std::list<Instance *> &lefts,
+                                         const std::list<Instance *> &rights,
+                                         bool do_it)
+{
+	if (lefts.size() != rights.size())
+	{
+		throw std::runtime_error("Left/right instances don't have "\
+		                         "the same number");
+	}
+
+	auto do_on_pairs = [&lefts, &rights]
+	(const std::function<void(Instance *, Instance *)> &job)
+	{
+		auto it = lefts.begin();
+		auto jt = rights.begin();
+		while (it != lefts.end())
+		{
+			job(*it, *jt);
+			it++; jt++;
+		}
+	};
+
+	auto do_on_set = [](std::list<Instance *> insts,
+	                    const std::function<void(Instance *)> &job)
+	{
+		for (Instance *const &inst : insts)
+		{
+			job(inst);
+		}
+	};
+
+	do_on_set(lefts, [](Instance *inst) { inst->model()->load(); });
+	do_on_set(rights, [](Instance *inst) { inst->model()->load(); });
+	
+	Superpose sp;
+
+	auto add_to_superpose = [&sp]
+	(Instance *const &left, Instance *const &right)
+	{
+		AtomGroup *myAtoms = left->currentAtoms();
+		AtomGroup *otherAtoms = right->currentAtoms();
+
+		for (Atom *a : myAtoms->atomVector())
+		{
+			a->setOtherPosition("original", glm::vec3(NAN));
+		}
+
+		for (Atom *theirs : otherAtoms->atomVector())
+		{
+			Atom *mine = left->equivalentForAtom(right, theirs);
+
+			if (mine)
+			{
+				glm::vec3 t = theirs->derivedPosition();
+				glm::vec3 d = mine->derivedPosition();
+				mine->setOtherPosition("original", t);
+				sp.addPositionPair(t, d);
+			}
+		}
+
+	};
+
+	do_on_pairs(add_to_superpose);
+
+	sp.superpose();
+	glm::mat4 tr = sp.transformation();
+
+	if (do_it)
+	{
+		do_on_set
+		(lefts, [tr](Instance *const &left)
+		 {
+			AtomGroup *myAtoms = left->currentAtoms();
+			for (Atom *mine : myAtoms->atomVector())
+			{
+				glm::vec3 d = mine->derivedPosition();
+				glm::vec3 update = glm::vec3(tr * glm::vec4(d, 1.f));
+				mine->setDerivedPosition(update);
+			}
+		});
+	}
+
+	do_on_set(lefts, [](Instance *inst) { inst->model()->unload(); });
+	do_on_set(rights, [](Instance *inst) { inst->model()->unload(); });
+
+	return tr;
 }
