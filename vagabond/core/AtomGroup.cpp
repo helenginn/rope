@@ -592,18 +592,63 @@ float AtomGroup::rmsd() const
 	return sum;
 }
 
-glm::vec3 AtomGroup::initialCentre()
+Atom *AtomGroup::mostCentralAtom(const std::function<glm::vec3(Atom *)> &get_pos)
+{
+	struct AtomAveDist
+	{
+		Atom *atom;
+		float ave_dist;
+		
+		bool operator<(const AtomAveDist &other) const
+		{
+			return ave_dist < other.ave_dist;
+		}
+	};
+	
+	auto make_entry = [this, &get_pos](Atom *atom) -> AtomAveDist
+	{
+		AtomAveDist entry{atom, 0};
+
+		glm::vec3 p = get_pos(atom);
+		for (Atom *const &other : _atoms)
+		{
+			glm::vec3 q = get_pos(other);
+			float sq = glm::dot(p-q, p-q);
+			entry.ave_dist += sq;
+		}
+		entry.ave_dist /= (float)size();
+		entry.ave_dist = sqrt(entry.ave_dist);
+		return entry;
+	};
+
+	OpSet<AtomAveDist> set;
+	for (Atom *a : _atoms)
+	{
+		set += make_entry(a);
+	}
+
+	if (set.size() == 0) return nullptr;
+
+	return set.begin()->atom;
+}
+
+glm::vec3 AtomGroup::centre(const std::function<glm::vec3(Atom *)> &get_pos)
 {
 	glm::vec3 sum = glm::vec3(0.f);
 	double weight = 0;
 	for (Atom *a : _atoms)
 	{
-		sum += a->initialPosition();
+		sum += get_pos(a);
 		weight++;
 	}
 
 	sum /= weight;
 	return sum;
+}
+
+glm::vec3 AtomGroup::initialCentre()
+{
+	return centre([](Atom *a) { return a->initialPosition(); });
 }
 
 void AtomGroup::finishedRefining()

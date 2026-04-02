@@ -127,6 +127,8 @@ public:
 	
 	void recalculate();
 	
+	Atom *mostCentralAtom(const std::function<glm::vec3(Atom *)> &get_pos);
+	glm::vec3 centre(const std::function<glm::vec3(Atom *)> &get_pos);
 	glm::vec3 initialCentre();
 	
 	void setLastResidual(double last)
