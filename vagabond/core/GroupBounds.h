@@ -23,12 +23,16 @@
 
 struct GroupBounds
 {
-	GroupBounds(AtomGroup *const &grp) : _atoms(grp->atomVector())
+	typedef std::function<glm::vec3(Atom *const &)> GetPosition;
+	
+	GroupBounds(AtomGroup *const &grp, GetPosition get_pos = {})
+	: _atoms(grp->atomVector()), _getPos(get_pos)
 	{
 		calculate();
 	}
 
-	GroupBounds(const std::vector<Atom *> &atoms) : _atoms(atoms)
+	GroupBounds(const std::vector<Atom *> &atoms, GetPosition get_pos = {})
+	: _atoms(atoms), _getPos(get_pos)
 	{
 		calculate();
 	}
@@ -39,13 +43,15 @@ struct GroupBounds
 		{
 			return;
 		}
+		
+		if (!_getPos) _getPos = [](Atom *a) { return a->initialPosition(); };
 
 		min = glm::vec3(+FLT_MAX, +FLT_MAX, +FLT_MAX);
 		max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (size_t i = 0; i < _atoms.size(); i++)
 		{
-			glm::vec3 pos = _atoms.at(i)->initialPosition();
+			glm::vec3 pos = _getPos(_atoms.at(i));
 
 			for (size_t j = 0; j < 3; j++)
 			{
@@ -67,6 +73,7 @@ struct GroupBounds
 	glm::vec3 min{};
 	glm::vec3 max{};
 	bool _done = false;
+	GetPosition _getPos{};
 	
 	bool worth_checking_interface_with(AtomGroup *other, 
 	                                   float min_dist)
@@ -86,6 +93,53 @@ struct GroupBounds
 		}
 
 		return true;
+	}
+
+	AtomGroup *atoms_from_other_group_within(AtomGroup *other, float max_dist)
+	{
+		AtomGroup *all = new AtomGroup();
+		for (Atom *const &atom : other->atomVector())
+		{
+			const glm::vec3 &pos = _getPos(atom);
+			
+			// first check: within bounds
+			bool skip = false;
+			for (int i = 0; i < 3 && !skip; i++)
+			{
+				if (pos[i] < min[i] - max_dist) skip = true;
+				if (pos[i] > max[i] + max_dist) skip = true;
+			}
+			
+			if (skip) continue;
+
+			auto close_enough = [&pos, max_dist](const glm::vec3 &other)
+			{
+				for (int i = 0; i < 3; i++)
+				{
+					if (pos[i] < other[i] - max_dist) return false;
+					if (pos[i] > other[i] + max_dist) return false;
+				}
+
+				return true;
+			};
+			
+			// now for those atoms close enough, we check possible
+			// individual partners
+			for (Atom *const &mine : _atoms)
+			{
+				const glm::vec3 &q = _getPos(mine);
+				if (close_enough(q))
+				{
+					float length = glm::length(pos - q);
+					if (length < max_dist)
+					{
+						*all += atom; // other atom
+					}
+				}
+			}
+		}
+
+		return all;
 	}
 };
 
