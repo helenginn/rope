@@ -482,3 +482,4 @@ TabulatedData TabulatedData::operator+(const std::pair<TabulatedData *,
 	
 	return new_data;
 }
+
