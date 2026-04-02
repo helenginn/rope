@@ -21,6 +21,8 @@
 #include <vagabond/core/Chain.h>
 #include <vagabond/core/Model.h>
 #include <vagabond/gui/elements/Menu.h>
+#include <vagabond/gui/elements/Text.h>
+#include <vagabond/gui/elements/Image.h>
 #include <vagabond/core/EntityManager.h>
 #include <vagabond/core/PolymerEntity.h>
 #include <vagabond/gui/ModelTopologyView.h>
@@ -72,6 +74,7 @@ std::function<void()> AssignChains::operator()()
 				colours->recalculate();
 				*names += str;
 				view->updateColours();
+				view->updateLegend();
 			}
 			catch (const std::runtime_error &err)
 			{
@@ -91,6 +94,7 @@ std::function<void()> AssignChains::operator()()
 			colours->recalculate();
 			*names += ent;
 			view->updateColours();
+			view->updateLegend();
 		};
 	};
 
@@ -103,6 +107,7 @@ std::function<void()> AssignChains::operator()()
 			model->housekeeping();
 			colours->recalculate();
 			view->updateColours();
+			view->updateLegend();
 		};
 	};
 
@@ -159,7 +164,32 @@ std::function<void()> AssignChains::operator()()
 		view->setModal(menu);
 	};
 	
-	auto show_topology = [model, parent, click_chain, 
+	auto show_legend = [colours]()
+	{
+		EntityManager *m = Environment::entityManager();
+		std::vector<Entity *> entities = m->entities();
+
+		Box *box = new Box();
+		float top = 0;
+		for (Entity *const &ent : entities)
+		{
+			Image *image = new Image("assets/images/circle.png");
+			image->resize(0.05);
+			image->setLeft(0, top);
+			glm::vec3 colour = colours->colour_for(ent->name());
+			image->setColour(colour.x, colour.y, colour.z);
+			box->addObject(image);
+
+			Text *text = new Text(ent->name());
+			text->setRight(-0.01, top);
+			box->addObject(text);
+			
+			top += 0.07;
+		}
+		return box;
+	};
+	
+	auto show_topology = [model, parent, click_chain, show_legend,
 	                      provide_colours]()
 	{
 		if (model->filename().length() == 0)
@@ -174,6 +204,7 @@ std::function<void()> AssignChains::operator()()
 			new ModelTopologyView(parent, *model);
 			mtv->setClickChainEvent(click_chain);
 			mtv->setColouringFunction(provide_colours);
+			mtv->setLegendFunction(show_legend);
 			mtv->show();
 		}
 	};

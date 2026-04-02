@@ -16,41 +16,42 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__DoJob__
-#define __vagabond__DoJob__
+#include "AntibodyOrderingView.h"
+#include <vagabond/gui/MatrixPlot.h>
+#include "Mab.h"
 
-#include <functional>
-#include <thread>
-#include <condition_variable>
-
-struct DoJob
+AntibodyOrderingView::AntibodyOrderingView(Scene *prev, Mab &mab)
+: MultipleSetup(prev, mab.competitions), _mab(mab)
 {
-	DoJob(const std::function<void()> &func, bool use_conditional = false)
-	{
-		if (!use_conditional)
-		{
-			_worker = std::thread(func);
-		}
-		else
-		{
-			_worker = std::thread([this, func]()
-			                      {
-				                     func();
-				                     _cond.notify_one();
-			                      });
-		}
-		_worker.detach();
-	}
-	
-	void join()
-	{
-		std::unique_lock<std::mutex> lock(_mutex);
-		_cond.wait(lock);
-	}
-	
-	std::mutex _mutex;
-	std::condition_variable _cond;
-	std::thread _worker;
-};
 
-#endif
+}
+
+void AntibodyOrderingView::setup()
+{
+	addTitle("Adjust antibody ordering");
+
+	refresh();
+}
+
+void AntibodyOrderingView::makePlot()
+{
+	std::vector<std::string> order;
+	Eigen::MatrixXf mat = comp().make_plot(order);
+
+	_forDisplay = PCA::Matrix(mat);
+	MatrixPlot *plot = new MatrixPlot(_forDisplay, _mutex);
+	addTempObject(plot);
+
+}
+
+void AntibodyOrderingView::refresh()
+{
+	deleteTemps();
+	makePlot();
+
+}
+
+bool AntibodyOrderingView::acceptable_to_add_after(Competition &comp)
+{
+	return false;
+}

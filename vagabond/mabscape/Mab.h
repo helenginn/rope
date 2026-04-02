@@ -22,6 +22,7 @@
 #include <list>
 #include <vagabond/core/Model.h>
 #include <vagabond/utils/OpSet.h>
+#include <vagabond/utils/Eigen/Dense>
 
 class Mesh;
 class Chain;
@@ -71,7 +72,25 @@ struct Antigen
 	Mesh *mesh();
 
 	void wipe() { /* fill me in */ }
+
+	friend void to_json(json &j, const Antigen &a);
+	friend void from_json(const json &j, Antigen &a);
+	void housekeeping();
 };
+
+inline void to_json(json &j, const Antigen &a)
+{
+	j["title"] = a.title;
+	j["model"] = a.model;
+	j["entities"] = a.entities;
+}
+
+inline void from_json(const json &j, Antigen &a)
+{
+	a.title = j.at("title");
+	a.model = j.at("model");
+	a.entities = j.at("entities");
+}
 
 class Antigens : public std::list<Antigen>
 {
@@ -88,6 +107,14 @@ struct Competition
 {
 	std::string filename{};
 	Metadata *metadata{};
+	TabulatedData *_asData{};
+
+	TabulatedData *asData();
+
+	Eigen::MatrixXf make_plot(std::vector<std::string> &order);
+
+	std::vector<std::string> 
+	clean_order(const std::vector<std::string> &order);
 
 	std::string left_header;
 	std::string right_header;
@@ -95,12 +122,50 @@ struct Competition
 	
 	bool as_competition{false};
 	float scale{1};
-	std::string interpretation_as_desc();
+	
+	float value(const std::string &left, const std::string &right);
+	void adjust_value(float &val);
 	
 	std::string antigen;
 
+	std::string interpretation_as_desc();
+	OpSet<std::string> antibody_names();
+	
+	std::vector<std::string> favoured_ordering;
+
 	std::string validate(const Antigens &antigens) const;
+
+	friend void to_json(json &j, const Competition &c);
+	friend void from_json(const json &j, Competition &c);
 };
+
+inline void to_json(json &j, const Competition &c)
+{
+	j["filename"] = c.filename;
+	j["metadata"] = *c.metadata;
+
+	j["left_header"] = c.left_header;
+	j["right_header"] = c.right_header;
+	j["value_header"] = c.value_header;
+
+	j["as_competition"] = c.as_competition;
+	j["scale"] = c.scale;
+	j["antigen"] = c.antigen;
+}
+
+inline void from_json(const json &j, Competition &c)
+{
+	c.filename = j.at("filename");
+	c.metadata = new Metadata(j.at("metadata"));;
+
+	c.left_header = j.at("left_header");
+	c.right_header = j.at("right_header");
+	c.value_header = j.at("value_header");
+
+	c.as_competition = j.at("as_competition");
+	c.scale = j.at("scale");
+	c.antigen = j.at("antigen");
+}
 
 class Competitions : public std::list<Competition>
 {
@@ -120,7 +185,27 @@ struct Fiducial
 	std::string antigen;
 
 	std::string validate(const Antigens &antigens);
+	void housekeeping();
+
+	friend void to_json(json &j, const Fiducial &f);
+	friend void from_json(const json &j, Fiducial &f);
 };
+
+inline void to_json(json &j, const Fiducial &f)
+{
+	j["name"] = f.name;
+	j["model"] = f.model;
+	j["entities"] = f.entities;
+	j["antigen"] = f.antigen;
+}
+
+inline void from_json(const json &j, Fiducial &f)
+{
+	f.name = j.at("name");
+	f.model = j.at("model");
+	f.entities = j.at("entities");
+	f.antigen = j.at("antigen");
+}
 
 class Fiducials : public std::list<Fiducial>
 {
@@ -151,6 +236,33 @@ struct Mab
 	Competitions competitions{};
 	Fiducials fiducials{};
 	ColourMap colours{};
+	
+	void save();
+	void load();
+	void housekeeping();
+
+	friend void to_json(json &j, const Mab &m);
+	friend void from_json(const json &j, Mab &m);
 };
+
+inline void to_json(json &j, const Mab &m)
+{
+	j["antigens"] = m.antigens;
+	j["competitions"] = m.competitions;
+	j["fiducials"] = m.fiducials;
+}
+
+inline void from_json(const json &j, Mab &m)
+{
+	m.antigens = j.at("antigens");
+	if (j.count("competitions"))
+	{
+		m.competitions = j.at("competitions");
+	}
+	if (j.count("fiducials"))
+	{
+		m.fiducials = j.at("fiducials");
+	}
+}
 
 #endif

@@ -4,6 +4,7 @@ command! Tags !ctags -R vagabond/core/* vagabond/gui/* vagabond/utils/* vagabond
 
 command! Ninja :wa|!ninja -C build/current rope.gui
 command! Dinja :wa|!ninja -C build/debug rope.gui
+command! Minja :wa|!ninja -C build/current vagabond/mabscape/mabscape
 command! Winja :wa|!ninja -C build/website
 
 command! Unit :wa|!ninja -C build/current vagabond/core/tests/boost_test_core &&  build/current/vagabond/core/tests/boost_test_core; ninja -C build/current vagabond/utils/tests/boost_test_utils &&  build/current/vagabond/utils/tests/boost_test_utils; 
@@ -12,9 +13,9 @@ command! Dunit :wa|!ninja -C build/debug vagabond/core/tests/boost_test_core && 
 command! Integration :wa|!cd build/current; meson test --suite=integration
 command! Dintegration :wa|!cd build/debug; meson test --suite=integration
 
-" `u to compile unit tests
-:imap `u :Tinja
-:nmap `u :Tinja
+" `m to compile mabscapej
+:imap `m :Minja
+:nmap `m :Minja
 
 :imap `D :AsyncRun ninja -C build/debug rope.gui
 :nmap `D :AsyncRun ninja -C build/debug rope.gui

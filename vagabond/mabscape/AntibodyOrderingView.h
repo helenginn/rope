@@ -16,41 +16,36 @@
 // 
 // Please email: vagabond @ hginn.co.uk for more details.
 
-#ifndef __vagabond__DoJob__
-#define __vagabond__DoJob__
+#ifndef __vagabond__AntibodyOrderingView__
+#define __vagabond__AntibodyOrderingView__
 
-#include <functional>
-#include <thread>
-#include <condition_variable>
+#include "MultipleSetup.h"
+#include <vagabond/utils/svd/PCA.h>
+#include <mutex>
 
-struct DoJob
+struct Mab;
+struct Competition;
+
+class AntibodyOrderingView : public MultipleSetup<Competition>
 {
-	DoJob(const std::function<void()> &func, bool use_conditional = false)
+public:
+	AntibodyOrderingView(Scene *prev, Mab &mab);
+
+	virtual void setup();
+	virtual void refresh();
+
+	Competition &comp()
 	{
-		if (!use_conditional)
-		{
-			_worker = std::thread(func);
-		}
-		else
-		{
-			_worker = std::thread([this, func]()
-			                      {
-				                     func();
-				                     _cond.notify_one();
-			                      });
-		}
-		_worker.detach();
+		return *_object;
 	}
-	
-	void join()
-	{
-		std::unique_lock<std::mutex> lock(_mutex);
-		_cond.wait(lock);
-	}
-	
+protected:
+	virtual bool acceptable_to_add_after(Competition &comp);
+private:
+	void makePlot();
+	PCA::Matrix _forDisplay{};
+	Mab &_mab;
 	std::mutex _mutex;
-	std::condition_variable _cond;
-	std::thread _worker;
+
 };
 
 #endif
