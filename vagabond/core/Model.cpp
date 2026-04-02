@@ -603,11 +603,13 @@ void Model::housekeeping()
 			}
 
 			pol.setModel(this);
+			pol.housekeeping();
 		}
 
 		for (Ligand &lig : _ligands)
 		{
 			lig.setModel(this);
+			lig.housekeeping();
 		}
 	};
 	

@@ -251,8 +251,15 @@ void Instance::updateRmsdMetadata()
 
 void Instance::housekeeping()
 {
-	_model = (Environment::modelManager()->model(_model_id));
-	_entity = (Environment::entityManager()->entity(_entity_id));
+	if (!_model)
+	{
+		_model = (Environment::modelManager()->model(_model_id));
+	}
+	
+	if (!_entity)
+	{
+		_entity = (Environment::entityManager()->entity(_entity_id));
+	}
 	
 }
 
