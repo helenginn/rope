@@ -23,6 +23,7 @@
 #include <vagabond/gui/elements/Mouse3D.h>
 #include <map>
 
+class Box;
 class Line;
 class Model;
 class Chain;
@@ -38,6 +39,7 @@ public:
 
 	virtual void setup();
 	void unhighlight();
+	void updateLegend();
 	void updateColours();
 	
 	typedef std::function<void(ModelTopologyView *me,
@@ -45,6 +47,7 @@ public:
 	                            ClickChainEvent;
 
 	typedef std::function<glm::vec3(Chain *chain)> ColouringFunction;
+	typedef std::function<Box *()> LegendFunction;
 	
 	void setClickChainEvent(const ClickChainEvent &event)
 	{
@@ -57,6 +60,11 @@ public:
 	}
 
 	void clicked(TopologyCircle *circle);
+	
+	void setLegendFunction(const LegendFunction &func)
+	{
+		_legendFunc = func;
+	}
 protected:
 	virtual void interactedWithNothing(bool left, bool hover);
 private:
@@ -64,6 +72,7 @@ private:
 	void makeDots();
 	void addLinks();
 	void addCircles();
+
 	Model &_model;
 	PositionShifter *_shifter{};
 	
@@ -92,6 +101,9 @@ private:
 
 	ClickChainEvent _clickChainEvent{};
 	ColouringFunction _colourFunc{};
+	LegendFunction _legendFunc{};
+	
+	std::vector<Box *> _legends;
 };
 
 #endif
