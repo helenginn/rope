@@ -36,6 +36,8 @@ public:
 	
 	void globRefresh();
 	void filterForTypes(File::Type type);
+
+	void filterForName(const std::function<bool(std::string)> &filter);
 	
 	virtual ~FileView();
 	virtual void setup();
