@@ -95,11 +95,9 @@ void FileManager::preFilter()
 	}
 }
 
-void FileManager::setFilterType(File::Type type)
+void FileManager::refilter()
 {
-	_type = type;
-
-	if (type == File::Nothing)
+	if (_type == File::Nothing && !_filter)
 	{
 		_filtered = _list;
 		std::reverse(_filtered.begin(), _filtered.end());
@@ -119,17 +117,29 @@ void FileManager::setFilterType(File::Type type)
 	std::reverse(_filtered.begin(), _filtered.end());
 }
 
+void FileManager::setFilterType(File::Type type)
+{
+	_type = type;
+	refilter();
+}
+
 bool FileManager::valid(std::string filename)
 {
+	bool ok = true;
+	if (_filter && !_filter(filename))
+	{
+		ok = false;
+	}
 	if (_filename2Type.count(filename))
 	{
-		return (_type & _filename2Type[filename]);
+		ok |= (_type & _filename2Type[filename]);
 	}
 
 	File::Type type = File::typeUnknown(filename);
 	_filename2Type[filename] = type;
 
-	return (type & _type);
+	ok |= (type & _type);
+	return ok;
 }
 
 bool FileManager::hasFile(std::string filename)
