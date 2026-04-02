@@ -57,6 +57,7 @@ public:
 	size_t totalWidth(std::vector<size_t> &sizes, size_t max_out = 0) const;
 	
 	void hideAfterHeader(int idx);
+	int indexForHeader(const std::string &header) const;
 	
 	size_t entryCount() const
 	{
@@ -88,7 +89,6 @@ public:
 	
 	friend std::ostream &operator<<(std::ostream &ss, const TabulatedData &data);
 private:
-	int indexForHeader(const std::string &header) const;
 	std::vector<HeaderTypePair> _headerTypes;
 	std::vector<bool> _visible;
 
