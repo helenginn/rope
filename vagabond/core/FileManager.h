@@ -19,6 +19,7 @@
 #ifndef __vagabond__FileManager__
 #define __vagabond__FileManager__
 
+#include <functional>
 #include <string>
 #include <vector>
 #ifndef __EMSCRIPTEN__
@@ -60,6 +61,13 @@ public:
 	int unloadMissingFiles(bool wipeUsing = false);
 	
 	void preFilter();
+	void refilter();
+
+	void filterForName(const std::function<bool(std::string)> &filter)
+	{
+		_filter = filter;
+		refilter();
+	}
 
 	const size_t filteredCount() const
 	{
@@ -123,6 +131,7 @@ private:
 	std::map<std::string, File::Type> _filename2Type;
 
 	File::Type _type = File::Nothing;
+	std::function<bool(std::string)> _filter{};
 };
 
 inline void to_json(json &j, const FileManager &manager)
