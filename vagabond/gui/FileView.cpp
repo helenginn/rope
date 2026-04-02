@@ -50,11 +50,18 @@ FileView::FileView(Scene *prev, const std::function<void(std::string)> &handle)
 {
 	_manager = Environment::fileManager();
 	_manager->setFilterType(File::Nothing);
+	_manager->filterForName({});
 	_manager->HasResponder<Responder<FileManager>>::setResponder(this);
 }
 
 FileView::~FileView()
 {
+}
+
+void FileView::filterForName(const std::function<bool(std::string)> 
+                             &filter)
+{
+	_manager->filterForName(filter);
 }
 
 void FileView::filterForTypes(File::Type type)
