@@ -19,7 +19,9 @@
 #ifndef __vagabond__ContactPoint__
 #define __vagabond__ContactPoint__
 
+#include <list>
 #include <vector>
+#include <vagabond/utils/glm_import.h>
 
 struct Fiducial;
 class Antigens;
@@ -32,7 +34,16 @@ public:
 	ContactPoint(Fiducial &fiducial, Antigens &antigens);
 
 	void findMapping();
+	
+	void applyTransform(const glm::mat4x4 &which);
+	
+	const std::vector<glm::mat4x4> &transforms() const
+	{
+		return _transforms;
+	}
 private:
+	void establishMidpoint();
+
 	Fiducial &_fiducial;
 	Antigens &_antigens;
 	Antigen *_chosen{};
@@ -46,6 +57,20 @@ private:
 	// instances belonging to antigen
 	std::vector<Instance *> _iAntigens;
 
+	float _threshold{10.f};
+	
+	struct Entry
+	{
+		glm::mat4x4 transform;
+		std::list<Instance *> fids;
+		std::list<Instance *> ants;
+	};
+
+	std::vector<glm::mat4x4> _transforms;
+	std::vector<Entry> _entries;
+	
+	glm::mat4x4 _applied = glm::mat4{1.f};
+	glm::vec3 _reference{};
 };
 
 #endif

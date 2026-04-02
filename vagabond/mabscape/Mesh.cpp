@@ -354,7 +354,7 @@ float Mesh::adjustVertices(bool planar)
 		{
 			mod += plane;
 		}
-		mod *= 0.01f;
+		mod *= (planar ? 0.03f : 0.01f);
 		edit[i].pos += mod;
 		all_changes += glm::dot(mod, mod);
 	}

@@ -34,6 +34,8 @@ private:
 	void prepareAntigens(Antigens &antigens);
 	Mab &_mab;
 
+	std::vector<std::function<void()>> _tidy;
+	std::vector<std::string> _messages;
 };
 
 #endif

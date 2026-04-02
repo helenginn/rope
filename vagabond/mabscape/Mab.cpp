@@ -168,14 +168,21 @@ std::string Competitions::validate(const Antigens &antigens)
 	(validate_comp, *this);
 }
 
+OpSet<std::string> Competition::antibody_names()
+{
+	OpSet<std::string> all;
+	TabulatedData *data = metadata->asData();
+	all += data->all_options(left_header);
+	all += data->all_options(right_header);
+	return all;
+}
+
 OpSet<std::string> Competitions::all_antibodies()
 {
 	OpSet<std::string> all;
 	for (Competition &comp : *this)
 	{
-		TabulatedData *data = comp.metadata->asData();
-		all += data->all_options(comp.left_header);
-		all += data->all_options(comp.right_header);
+		all += comp.antibody_names();
 	}
 	return all;
 }
@@ -309,4 +316,166 @@ Mesh *Antigen::mesh()
 		model.unload();
 	}
 	return _mesh;
+}
+
+void Mab::save()
+{
+	json data;
+	data["entity_manager"] = *Environment::entityManager();
+	data["mabscape"] = *this;
+
+	std::ofstream file;
+	file.open("mabscape.json");
+	file << data.dump(1);
+	file << std::endl;
+	file.close();
+}
+
+void Mab::load()
+{
+	if (!file_exists("mabscape.json"))
+	{
+		std::cout << "Could not find json environment; "\
+		"starting new one." << std::endl;
+		return;
+	}
+
+	json data;
+	std::ifstream f;
+	f.open("mabscape.json");
+	f >> data;
+	f.close();
+
+	*Environment::entityManager() = data["entity_manager"];
+	Environment::entityManager()->housekeeping();
+	*this = data["mabscape"];
+
+	housekeeping();
+}
+
+void Mab::housekeeping()
+{
+	colours.recalculate();
+
+	for (Antigen &a : antigens)
+	{
+		a.housekeeping();
+	}
+
+	for (Fiducial &f : fiducials)
+	{
+		f.housekeeping();
+	}
+}
+
+void Antigen::housekeeping()
+{
+	model.housekeeping();
+}
+
+void Fiducial::housekeeping()
+{
+	model.housekeeping();
+}
+
+std::vector<std::string> 
+Competition::clean_order(const std::vector<std::string> &order)
+{
+	OpSet<std::string> all = antibody_names();
+	std::vector<std::string> finalised;
+
+	for (const std::string &ab : order)
+	{
+		if (all.count(ab))
+		{
+			finalised.push_back(ab);
+			all -= ab;
+		}
+	}
+	
+	for (const std::string &ab : all)
+	{
+		finalised.push_back(ab);
+	}
+	return finalised;
+}
+
+Eigen::MatrixXf Competition::make_plot(std::vector<std::string> &order)
+{
+	std::vector<std::string> all = clean_order(order);
+
+	Eigen::MatrixXf mat(all.size(), all.size());
+
+	for (int i = 0; i < all.size(); i++)
+	{
+		const std::string &a = all[i];
+		for (int j = 0; j < all.size(); j++)
+		{
+			const std::string &b = all[j];
+			float val = value(a, b);
+			mat(i, j) = val;
+		}
+
+	}
+	return mat;
+}
+
+TabulatedData *Competition::asData()
+{
+	if (!metadata)
+	{
+		return nullptr;
+	}
+
+	if (!_asData)
+	{
+		_asData = metadata->asData();
+	}
+
+	return _asData;
+}
+
+float Competition::value(const std::string &ab1, const std::string &ab2)
+{
+	if (ab1 == ab2)
+	{
+		return NAN;
+	}
+
+	TabulatedData *data = asData();
+
+	int l = data->indexForHeader(left_header);
+	int r = data->indexForHeader(right_header);
+	int v = data->indexForHeader(value_header);
+	
+	if (l < 0 || r < 0 || v < 0) 
+	{
+		return NAN;
+	}
+	
+	float sum = 0;
+	float count = 0;
+	for (int i = 0; i < data->entryCount(); i++)
+	{
+		std::vector<std::string> vals = data->entry(i);
+		if ((vals[l] == ab1 && vals[r] == ab2) ||
+		    (vals[l] == ab2 && vals[r] == ab1))
+		{
+			sum += atof(vals[v].c_str());
+			count++;
+		}
+	}
+	
+	float ave = sum / count;
+	adjust_value(ave);
+	return ave;
+}
+
+void Competition::adjust_value(float &val)
+{
+	val /= scale;
+	if (!as_competition)
+	{
+		val = 1 - val;
+	}
 }

@@ -21,22 +21,35 @@
 
 #include <functional>
 #include <thread>
+#include <condition_variable>
 
-template <class Function>
 struct DoJob
 {
-	DoJob(const Function &func)
+	DoJob(const std::function<void()> &func, bool use_conditional = false)
 	{
-		_worker = std::thread(func);
+		if (!use_conditional)
+		{
+			_worker = std::thread(func);
+		}
+		else
+		{
+			_worker = std::thread([this, func]()
+			                      {
+				                     func();
+				                     _cond.notify_one();
+			                      });
+		}
 		_worker.detach();
-		/*
-		_worker->join();
-		delete _worker;
-		delete this;
-		*/
 	}
 	
-
+	void join()
+	{
+		std::unique_lock<std::mutex> lock(_mutex);
+		_cond.wait(lock);
+	}
+	
+	std::mutex _mutex;
+	std::condition_variable _cond;
 	std::thread _worker;
 };
 

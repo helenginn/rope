@@ -1,4 +1,6 @@
 mabscapefiles = [
+'AntibodyOrderingView.h',
+'AntibodyOrderingView.cpp',
 'AntigenSetup.h',
 'AntigenSetup.cpp',
 'AssignChains.h',

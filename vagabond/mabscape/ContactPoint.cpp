@@ -17,8 +17,10 @@
 // Please email: vagabond @ hginn.co.uk for more details.
 
 #include "ContactPoint.h"
-#include <vagabond/core/Model.h>
 #include "Mab.h"
+#include <vagabond/core/Model.h>
+#include <vagabond/core/GroupBounds.h>
+#include <algorithm>
 
 ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens)
 : _fiducial(fiducial), _antigens(antigens)
@@ -68,5 +70,253 @@ ContactPoint::ContactPoint(Fiducial &fiducial, Antigens &antigens)
 
 void ContactPoint::findMapping()
 {
+	if (!_chosen)
+	{
+		throw std::runtime_error("Could not find chosen antigen");
+	}
 
+	std::cout << std::endl;
+	_fiducial.model.load();
+	_chosen->model.load();
+	// need to get a mapping of every transformation matrix to every other
+	
+	std::map<Instance *, std::map<Instance *, glm::mat4x4>> fid_to_agn;
+	std::map<std::string, OpSet<Instance *>> lefts;
+	std::map<std::string, OpSet<Instance *>> rights;
+
+	for (Instance *left : _iFidAntigens)
+	{
+		for (Instance *right : _iAntigens)
+		{
+			if (left->entity_id() != right->entity_id())
+			{
+				continue;
+			}
+			
+			lefts[left->entity_id()] += left;
+			rights[right->entity_id()] += right;
+
+			glm::mat4x4 result = left->superposeOn(right, false);
+			fid_to_agn[left][right] = result;
+		}
+	}
+
+	auto write_instances = []<class Container>(const Container &c)
+	{
+		for (Instance *const &inst : c)
+		{
+			if (inst == nullptr) std::cout << "nullptr ";
+			else std::cout << inst->id() << " ";
+		}
+		std::cout << std::endl;
+	};
+	
+	std::cout << "Lefts (fid): ";
+	for (auto &pair : lefts)
+	{
+		std::cout << pair.first << " ";
+		write_instances(pair.second);
+	}
+
+	std::cout << "Rights (ant): ";
+	for (auto &pair : rights)
+	{
+		std::cout << pair.first << " ";
+		write_instances(pair.second);
+	}
+	
+	auto similarity_score = [](const glm::mat4x4 &left,
+	                           const glm::mat4x4 &right)
+	{
+		glm::mat4x4 undo = glm::inverse(right) * left;
+		float trace = 3 - (undo[0][0] + undo[1][1] + undo[2][2]);
+		float trans = glm::length(glm::vec3(undo[3]));
+		float result = (1 + trace) * (1 + trans) - 1;
+		return result;
+	};
+	
+	auto check_permutation = [&fid_to_agn, &write_instances, &similarity_score]
+	(const std::vector<Instance *> &ref, std::list<Instance *> &arranged)
+	{
+		std::vector<glm::mat4x4> mats;
+		std::cout << "Arrangement: ";
+		write_instances(arranged);
+
+		auto it = ref.begin(); auto jt = arranged.begin();
+		
+		for (; it != ref.end(); it++, jt++)
+		{
+			Instance *left = *it; Instance *right = *jt;
+			if (left == nullptr)
+			{
+				continue;
+			}
+			mats.push_back(fid_to_agn[left][right]);
+		}
+
+		float ave = 0;
+		float count = 0;
+		for (int i = 0; i < mats.size() - 1; i++)
+		{
+			const glm::mat4x4 &left = mats[i];
+			for (int j = i + 1; j < mats.size(); j++)
+			{
+				const glm::mat4x4 &right = mats[j];
+				ave += similarity_score(left, right);
+				count++;
+			}
+		}
+		ave /= count;
+		if (ave != ave) { ave = 0; }
+		std::cout << "score: " << ave << std::endl;
+		return ave;
+	};
+	
+	std::vector<glm::mat4x4> accepted;
+	
+	for (const auto &pair : lefts)
+	{
+		const std::string &entity = pair.first;
+		std::cout << "Doing entity " << entity << std::endl;
+		std::vector<Instance *> leftInsts 
+		= {pair.second.begin(), pair.second.end()};
+		std::list<Instance *> leftList 
+		= {pair.second.begin(), pair.second.end()};
+		
+		std::cout << "Rights size: " << rights.at(entity).size() << std::endl;
+
+		if (rights.count(entity) == 0 ||
+		    rights.at(entity).size() < leftInsts.size())
+		{
+			throw std::runtime_error("More instances of " + entity + " in "\
+			                         "antibody than in antigen; cannot align");
+		}
+
+		const OpSet<Instance *> &rightInsts = rights[entity];
+		int orig_size = leftInsts.size();
+		std::cout << "Sizes: " << orig_size << " to " << 
+		rightInsts.size() << std::endl;
+		// fill any other positions with nulls
+		leftInsts.resize(rightInsts.size());
+
+		std::list<Instance *> arranged = 
+		std::list<Instance *>(rightInsts.begin(), rightInsts.end());
+		write_instances(leftInsts);
+		float best_score = FLT_MAX;
+		std::list<Instance *> arrangement;
+		OpSet<std::list<Instance *>> arrangements;
+
+		std::cout << "with: " << std::endl;
+		do
+		{
+			float score = check_permutation(leftInsts, arranged);
+			std::list<Instance *> trunc = arranged;
+			trunc.resize(orig_size);
+
+			if (score < best_score) 
+			{
+				write_instances(trunc);
+				best_score = score;
+				std::cout << " -> " << score << std::endl;
+				arrangement = trunc;
+			}
+			if (score < _threshold)
+			{
+				arrangements.insert(trunc);
+			}
+		}
+		while (std::next_permutation(arranged.begin(), arranged.end()));
+		
+		std::cout << "... -> best: " << std::endl;
+		write_instances(arrangement);
+		if (arrangements.size() == 0)
+		{
+			arrangements.insert(arrangement);
+		}
+		std::cout << "total: " << arrangements.size() << std::endl;
+		
+		for (auto arrangement : arrangements)
+		{
+			std::list<Instance *> ltrunc = leftList;
+			ltrunc.resize(arrangement.size());
+
+			glm::mat4x4 new_mat = 
+			Instance::superposeInstances(ltrunc, arrangement, false);
+			std::cout << new_mat << std::endl;
+
+			bool found = false;
+			for (const glm::mat4x4 &old : accepted)
+			{
+				if (similarity_score(old, new_mat) < _threshold)
+				{
+					found = true; break;
+				}
+			}
+
+			if (!found)
+			{
+				_transforms.push_back(new_mat);
+				_entries.push_back({new_mat, ltrunc, arrangement});
+			}
+		}
+	}
+
+	_fiducial.model.unload();
+	_chosen->model.unload();
+	
+	establishMidpoint();
+}
+
+void ContactPoint::establishMidpoint()
+{
+	_fiducial.model.load();
+	applyTransform(_transforms.front());
+
+	AtomGroup *abs = new AtomGroup();
+	AtomGroup *anti = new AtomGroup();
+	
+	for (Instance *const &inst : _iFiducials)
+	{
+		abs->add(inst->currentAtoms());
+	}
+
+	for (Instance *const &inst : _iFidAntigens)
+	{
+		anti->add(inst->currentAtoms());
+	}
+	
+	GroupBounds bounds(abs, [](Atom *a) { return a->derivedPosition(); });
+	AtomGroup *interface = bounds.atoms_from_other_group_within(anti, 5);
+	std::cout << "Number of antibody atoms: " << abs->size() << std::endl;
+	std::cout << "Number of antigen atoms: " << anti->size() << std::endl;
+	std::cout << "Number of shared atoms: " << interface->size() << std::endl;
+	
+	if (interface->size() == 0)
+	{
+		throw std::runtime_error("No interface atoms for antibody");
+	}
+	
+	Atom *central = interface->mostCentralAtom
+	([](Atom *a) { return a->derivedPosition();});
+	std::cout << "Central atom: " << central->desc() << std::endl;
+	_reference = central->derivedPosition();
+	
+	delete interface;
+	delete abs;
+	delete anti;
+
+	_fiducial.model.unload();
+}
+
+void ContactPoint::applyTransform(const glm::mat4x4 &which)
+{
+	AtomGroup *myAtoms = _fiducial.model.currentAtoms();
+	glm::mat4x4 undo = which * glm::inverse(_applied);
+	for (Atom *mine : myAtoms->atomVector())
+	{
+		glm::vec3 d = mine->derivedPosition();
+		glm::vec3 update = glm::vec3(undo * glm::vec4(d, 1.f));
+		mine->setDerivedPosition(update);
+	}
+	_applied = undo;
 }

@@ -26,6 +26,16 @@
 
 MabscapeSetup::MabscapeSetup() : Scene(nullptr)
 {
+	_mab.load();
+	if (_mab.antigens.size() > 0)
+	{
+		_validateAntigen = true;
+	}
+	if (_mab.competitions.size() > 0)
+	{
+		_validateComp = true;
+		_validateFiducials = true;
+	}
 
 }
 
@@ -67,6 +77,15 @@ void MabscapeSetup::setup()
 		tb->setReturnJob(setup_competition_data);
 		addObject(tb);
 	}
+
+	{
+		TextButton *tb = new TextButton("Save", this);
+		tb->setLeft(0.9, 0.1);
+		tb->setReturnJob([this]() { _mab.save(); });
+		addObject(tb);
+	}
+
+	refresh();
 }
 
 void MabscapeSetup::trustedAntibodies()

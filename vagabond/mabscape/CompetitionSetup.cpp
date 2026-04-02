@@ -87,13 +87,19 @@ void CompetitionSetup::prepareChooseCSV()
 		}
 	};
 	
-	auto choose_csv = [this, select_csv]()
+	auto is_csv = [](const std::string &file)
+	{
+		return (file.rfind(".csv") == file.length() - 4);
+	};
+	
+	auto choose_csv = [this, select_csv, is_csv]()
 	{
 		FileView *fv = new FileView(this, select_csv);
 		if (fv->lineCount() == 0)
 		{
 			fv->globRefresh();
 		}
+		fv->filterForName(is_csv);
 		fv->show();
 	};
 
