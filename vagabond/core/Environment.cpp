@@ -100,7 +100,7 @@ void Environment::load(std::string file)
 {
 	if (!file_exists(file))
 	{
-		std::cout << "Could not find json environment." << std::endl;
+		std::cout << "Could not find json environment; starting new one." << std::endl;
 		if (_pg)
 		{
 			std::cout << "finish!" << std::endl;
